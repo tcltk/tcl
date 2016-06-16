@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinChan.c,v 1.59 2010/09/13 14:20:39 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -276,7 +274,7 @@ FileCheckProc(
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->watchMask && !(infoPtr->flags & FILE_PENDING)) {
 	    infoPtr->flags |= FILE_PENDING;
-	    evPtr = (FileEvent *) ckalloc(sizeof(FileEvent));
+	    evPtr = ckalloc(sizeof(FileEvent));
 	    evPtr->header.proc = FileEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -443,7 +441,7 @@ FileCloseProc(
 	    break;
 	}
     }
-    ckfree((char *)fileInfoPtr);
+    ckfree(fileInfoPtr);
     return errorCode;
 }
 
@@ -942,8 +940,9 @@ TclpOpenFileChannel(
 	}
 	TclWinConvertError(err);
 	if (interp != (Tcl_Interp *) NULL) {
-	    Tcl_AppendResult(interp, "couldn't open \"", TclGetString(pathPtr),
-		    "\": ", Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "couldn't open \"%s\": %s",
+		    TclGetString(pathPtr), Tcl_PosixError(interp)));
 	}
 	return NULL;
     }
@@ -961,9 +960,9 @@ TclpOpenFileChannel(
 	if (handle == INVALID_HANDLE_VALUE) {
 	    TclWinConvertError(GetLastError());
 	    if (interp != (Tcl_Interp *) NULL) {
-		Tcl_AppendResult(interp, "couldn't reopen serial \"",
-			TclGetString(pathPtr), "\": ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't reopen serial \"%s\": %s",
+			TclGetString(pathPtr), Tcl_PosixError(interp)));
 	    }
 	    return NULL;
 	}
@@ -997,8 +996,11 @@ TclpOpenFileChannel(
 	 */
 
 	channel = NULL;
-	Tcl_AppendResult(interp, "couldn't open \"", TclGetString(pathPtr),
-		"\": bad file type", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't open \"%s\": bad file type",
+		TclGetString(pathPtr)));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "BAD_TYPE",
+		NULL);
 	break;
     }
 
@@ -1027,7 +1029,7 @@ Tcl_MakeFileChannel(
     int mode)			/* ORed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
-#ifdef HAVE_NO_SEH
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
     EXCEPTION_REGISTRATION registration;
 #endif
     char channelName[16 + TCL_INTEGER_SPACE];
@@ -1225,7 +1227,7 @@ TclpGetDefaultStdChannel(
     HANDLE handle;
     int mode = -1;
     const char *bufMode = NULL;
-    DWORD handleId = (DWORD)INVALID_HANDLE_VALUE;
+    DWORD handleId = (DWORD) -1;
 				/* Standard handle to retrieve. */
 
     switch (type) {
@@ -1324,7 +1326,7 @@ TclWinOpenFileChannel(
 	}
     }
 
-    infoPtr = (FileInfo *) ckalloc((unsigned) sizeof(FileInfo));
+    infoPtr = ckalloc(sizeof(FileInfo));
 
     /*
      * TIP #218. Removed the code inserting the new structure into the global
@@ -1338,7 +1340,7 @@ TclWinOpenFileChannel(
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;
     infoPtr->dirty = 0;
-    wsprintfA(channelName, "file%lx", (int) infoPtr);
+    sprintf(channelName, "file%" TCL_I_MODIFIER "x", (size_t) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
 	    infoPtr, permissions);

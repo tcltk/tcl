@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclHash.c,v 1.46 2010/08/24 06:17:55 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -37,7 +35,7 @@
  */
 
 #define RANDOM_INDEX(tablePtr, i) \
-    (((((long) (i))*1103515245) >> (tablePtr)->downShift) & (tablePtr)->mask)
+    ((((i)*1103515245L) >> (tablePtr)->downShift) & (tablePtr)->mask)
 
 /*
  * Prototypes for the array hash key methods.
@@ -48,7 +46,9 @@ static int		CompareArrayKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 static unsigned int	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
- * Prototypes for the one word hash key methods.
+ * Prototypes for the one word hash key methods. Not actually declared because
+ * this is a critical path that is implemented in the core hash table access
+ * function.
  */
 
 #if 0
@@ -362,7 +362,7 @@ CreateHashEntry(
     if (typePtr->allocEntryProc) {
 	hPtr = typePtr->allocEntryProc(tablePtr, (void *) key);
     } else {
-	hPtr = (Tcl_HashEntry *) ckalloc((unsigned) sizeof(Tcl_HashEntry));
+	hPtr = ckalloc(sizeof(Tcl_HashEntry));
 	hPtr->key.oneWordValue = (char *) key;
 	hPtr->clientData = 0;
     }
@@ -436,7 +436,7 @@ Tcl_DeleteHashEntry(
 #if TCL_HASH_KEY_STORE_HASH
     if (typePtr->hashKeyProc == NULL
 	    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-	index = RANDOM_INDEX(tablePtr, entryPtr->hash);
+	index = RANDOM_INDEX(tablePtr, PTR2INT(entryPtr->hash));
     } else {
 	index = PTR2UINT(entryPtr->hash) & tablePtr->mask;
     }
@@ -464,7 +464,7 @@ Tcl_DeleteHashEntry(
     if (typePtr->freeEntryProc) {
 	typePtr->freeEntryProc(entryPtr);
     } else {
-	ckfree((char *) entryPtr);
+	ckfree(entryPtr);
     }
 }
 
@@ -515,7 +515,7 @@ Tcl_DeleteHashTable(
 	    if (typePtr->freeEntryProc) {
 		typePtr->freeEntryProc(hPtr);
 	    } else {
-		ckfree((char *) hPtr);
+		ckfree(hPtr);
 	    }
 	    hPtr = nextPtr;
 	}
@@ -529,7 +529,7 @@ Tcl_DeleteHashTable(
 	if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
 	    TclpSysFree((char *) tablePtr->buckets);
 	} else {
-	    ckfree((char *) tablePtr->buckets);
+	    ckfree(tablePtr->buckets);
 	}
     }
 
@@ -674,7 +674,7 @@ Tcl_HashStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    result = (char *) ckalloc((unsigned) (NUM_COUNTERS*60) + 300);
+    result = ckalloc((NUM_COUNTERS * 60) + 300);
     sprintf(result, "%d entries in table, %d buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
@@ -723,7 +723,7 @@ AllocArrayEntry(
     if (size < sizeof(Tcl_HashEntry)) {
 	size = sizeof(Tcl_HashEntry);
     }
-    hPtr = (Tcl_HashEntry *) ckalloc(size);
+    hPtr = ckalloc(size);
 
     for (iPtr1 = array, iPtr2 = hPtr->key.words;
 	    count > 0; count--, iPtr1++, iPtr2++) {
@@ -829,14 +829,14 @@ AllocStringEntry(
 {
     const char *string = (const char *) keyPtr;
     Tcl_HashEntry *hPtr;
-    unsigned int size;
+    unsigned int size, allocsize;
 
-    size = sizeof(Tcl_HashEntry) + strlen(string) + 1 - sizeof(hPtr->key);
-    if (size < sizeof(Tcl_HashEntry)) {
-	size = sizeof(Tcl_HashEntry);
+    allocsize = size = strlen(string) + 1;
+    if (size < sizeof(hPtr->key)) {
+	allocsize = sizeof(hPtr->key);
     }
-    hPtr = (Tcl_HashEntry *) ckalloc(size);
-    strcpy(hPtr->key.string, string);
+    hPtr = ckalloc(TclOffset(Tcl_HashEntry, key) + allocsize);
+    memcpy(hPtr->key.string, string, size);
     hPtr->clientData = 0;
     return hPtr;
 }
@@ -1044,8 +1044,8 @@ RebuildTable(
 	tablePtr->buckets = (Tcl_HashEntry **) TclpSysAlloc((unsigned)
 		(tablePtr->numBuckets * sizeof(Tcl_HashEntry *)), 0);
     } else {
-	tablePtr->buckets = (Tcl_HashEntry **) ckalloc((unsigned)
-		(tablePtr->numBuckets * sizeof(Tcl_HashEntry *)));
+	tablePtr->buckets =
+		ckalloc(tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
     }
     for (count = tablePtr->numBuckets, newChainPtr = tablePtr->buckets;
 	    count > 0; count--, newChainPtr++) {
@@ -1065,7 +1065,7 @@ RebuildTable(
 #if TCL_HASH_KEY_STORE_HASH
 	    if (typePtr->hashKeyProc == NULL
 		    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-		index = RANDOM_INDEX(tablePtr, hPtr->hash);
+		index = RANDOM_INDEX(tablePtr, PTR2INT(hPtr->hash));
 	    } else {
 		index = PTR2UINT(hPtr->hash) & tablePtr->mask;
 	    }
@@ -1102,7 +1102,7 @@ RebuildTable(
 	if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
 	    TclpSysFree((char *) oldBuckets);
 	} else {
-	    ckfree((char *) oldBuckets);
+	    ckfree(oldBuckets);
 	}
     }
 }

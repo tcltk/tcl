@@ -8,8 +8,6 @@
 # this all out for themselves.
 #
 # The information in this file is specific to a single platform.
-#
-# RCS: @(#) $Id: tclooConfig.sh,v 1.2 2009/11/27 07:27:53 dkf Exp $
 
 # These are mostly empty because no special steps are ever needed from Tcl 8.6
 # onwards; all libraries and include files are just part of Tcl.
@@ -17,5 +15,5 @@ TCLOO_LIB_SPEC=""
 TCLOO_STUB_LIB_SPEC=""
 TCLOO_INCLUDE_SPEC=""
 TCLOO_PRIVATE_INCLUDE_SPEC=""
-TCLOO_CFLAGS=-DUSE_TCLOO_STUBS
-TCLOO_VERSION=0.6.2
+TCLOO_CFLAGS=""
+TCLOO_VERSION=1.0

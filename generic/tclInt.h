@@ -14,8 +14,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclInt.h,v 1.483 2010/09/27 19:42:38 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -803,13 +801,17 @@ typedef struct VarInHash {
 #define TclSetVarNamespaceVar(varPtr) \
     if (!TclIsVarNamespaceVar(varPtr)) {\
 	(varPtr)->flags |= VAR_NAMESPACE_VAR;\
-	((VarInHash *)(varPtr))->refCount++;\
+	if (TclIsVarInHash(varPtr)) {\
+	    ((VarInHash *)(varPtr))->refCount++;\
+	}\
     }
 
 #define TclClearVarNamespaceVar(varPtr) \
     if (TclIsVarNamespaceVar(varPtr)) {\
 	(varPtr)->flags &= ~VAR_NAMESPACE_VAR;\
-	((VarInHash *)(varPtr))->refCount--;\
+	if (TclIsVarInHash(varPtr)) {\
+	    ((VarInHash *)(varPtr))->refCount--;\
+	}\
     }
 
 /*
@@ -954,7 +956,7 @@ typedef struct CompiledLocal {
 				 * is marked by a unique ClientData tag during
 				 * compilation, and that same tag is used to
 				 * find the variable at runtime. */
-    char name[4];		/* Name of the local variable starts here. If
+    char name[1];		/* Name of the local variable starts here. If
 				 * the name is NULL, this will just be '\0'.
 				 * The actual size of this field will be large
 				 * enough to hold the name. MUST BE THE LAST
@@ -1152,7 +1154,7 @@ typedef struct CallFrame {
 				 * meaning of the value is, which we do not
 				 * specify. */
     LocalCache *localCachePtr;
-    struct TEOV_callback *tailcallPtr;
+    struct NRE_callback *tailcallPtr;
 				/* NULL if no tailcall is scheduled */
 } CallFrame;
 
@@ -1493,8 +1495,8 @@ typedef struct ExecEnv {
 				 * stack on the heap. */
     Tcl_Obj *constants[2];	/* Pointers to constant "0" and "1" objs. */
     struct Tcl_Interp *interp;
-    struct TEOV_callback *callbackPtr;
-				/* Top callback in TEOV's stack. */
+    struct NRE_callback *callbackPtr;
+				/* Top callback in NRE's stack. */
     struct CoroutineData *corPtr;
     int rewind;
 } ExecEnv;
@@ -1601,6 +1603,8 @@ typedef struct {
     CompileProc *compileProc;	/* The compiler for the subcommand. */
     Tcl_ObjCmdProc *nreProc;	/* NRE implementation of this command. */
     ClientData clientData;	/* Any clientData to give the command. */
+    int unsafe;			/* Whether this command is to be hidden by
+				 * default in a safe interpreter. */
 } EnsembleImplMap;
 
 /*
@@ -2133,7 +2137,7 @@ typedef struct Interp {
 				 * tclOOInt.h and tclOO.c for real definition
 				 * and setup. */
 
-    struct TEOV_callback *deferredCallbacks;
+    struct NRE_callback *deferredCallbacks;
 				/* Callbacks that are set previous to a call
 				 * to some Eval function but that actually
 				 * belong to the command that is about to be
@@ -2159,6 +2163,8 @@ typedef struct Interp {
     Tcl_Obj *errorStack;	/* [info errorstack] value (as a Tcl_Obj). */
     Tcl_Obj *upLiteral;		/* "UP" literal for [info errorstack] */
     Tcl_Obj *callLiteral;	/* "CALL" literal for [info errorstack] */
+    Tcl_Obj *innerLiteral;	/* "INNER" literal for [info errorstack] */
+    Tcl_Obj *innerContext;	/* cached list for fast reallocation */
     int resetErrorStack;        /* controls cleaning up of ::errorStack */
 
 #ifdef TCL_COMPILE_STATS
@@ -2178,6 +2184,22 @@ typedef struct Interp {
 
 #define TclAsyncReady(iPtr) \
     *((iPtr)->asyncReadyPtr)
+
+/*
+ * Macros for script cancellation support (TIP #285).
+ */
+
+#define TclCanceled(iPtr) \
+    (((iPtr)->flags & CANCELED) || ((iPtr)->flags & TCL_CANCEL_UNWIND))
+
+#define TclSetCancelFlags(iPtr, cancelFlags)   \
+    (iPtr)->flags |= CANCELED;                 \
+    if ((cancelFlags) & TCL_CANCEL_UNWIND) {   \
+        (iPtr)->flags |= TCL_CANCEL_UNWIND;    \
+    }
+
+#define TclUnsetCancelFlags(iPtr) \
+    (iPtr)->flags &= (~(CANCELED | TCL_CANCEL_UNWIND))
 
 /*
  * General list of interpreters. Doubly linked for easier removal of items
@@ -2251,6 +2273,9 @@ typedef struct InterpList {
  * SAFE_INTERP:		Non zero means that the current interp is a safe
  *			interp (i.e. it has only the safe commands installed,
  *			less priviledge than a regular interp).
+ * INTERP_DEBUG_FRAME:	Used for switching on various extra interpreter
+ *			debug/info mechanisms (e.g. info frame eval/uplevel
+ *			tracing) which are performance intensive.
  * INTERP_TRACE_IN_PROGRESS: Non-zero means that an interp trace is currently
  *			active; so no further trace callbacks should be
  *			invoked.
@@ -2276,6 +2301,7 @@ typedef struct InterpList {
 
 #define DELETED				     1
 #define ERR_ALREADY_LOGGED		     4
+#define INTERP_DEBUG_FRAME		  0x10
 #define DONT_COMPILE_CMDS_INLINE	  0x20
 #define RAND_SEED_INITIALIZED		  0x40
 #define SAFE_INTERP			  0x80
@@ -2419,6 +2445,11 @@ typedef struct List {
 				 * accomodate all elements. */
 } List;
 
+#define LIST_MAX \
+	(1 + (int)(((size_t)UINT_MAX - sizeof(List))/sizeof(Tcl_Obj *)))
+#define LIST_SIZE(numElems) \
+	(unsigned)(sizeof(List) + (((numElems) - 1) * sizeof(Tcl_Obj *)))
+
 /*
  * Macro used to get the elements of a list object.
  */
@@ -2426,12 +2457,21 @@ typedef struct List {
 #define ListRepPtr(listPtr) \
     ((List *) (listPtr)->internalRep.twoPtrValue.ptr1)
 
+#define ListSetIntRep(objPtr, listRepPtr) \
+    (objPtr)->internalRep.twoPtrValue.ptr1 = (void *)(listRepPtr), \
+    (objPtr)->internalRep.twoPtrValue.ptr2 = NULL, \
+    (listRepPtr)->refCount++, \
+    (objPtr)->typePtr = &tclListType
+
 #define ListObjGetElements(listPtr, objc, objv) \
     ((objv) = &(ListRepPtr(listPtr)->elements), \
      (objc) = ListRepPtr(listPtr)->elemCount)
 
 #define ListObjLength(listPtr, len) \
     ((len) = ListRepPtr(listPtr)->elemCount)
+
+#define ListObjIsCanonical(listPtr) \
+    (((listPtr)->bytes == NULL) || ListRepPtr(listPtr)->canonicalFlag)
 
 #define TclListObjGetElements(interp, listPtr, objcPtr, objvPtr) \
     (((listPtr)->typePtr == &tclListType) \
@@ -2442,6 +2482,17 @@ typedef struct List {
     (((listPtr)->typePtr == &tclListType) \
 	    ? ((ListObjLength((listPtr), *(lenPtr))), TCL_OK)\
 	    : Tcl_ListObjLength((interp), (listPtr), (lenPtr)))
+
+#define TclListObjIsCanonical(listPtr) \
+    (((listPtr)->typePtr == &tclListType) ? ListObjIsCanonical((listPtr)) : 0)
+
+/*
+ * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
+ * TclNRLmapCmd and their compilations.
+ */
+
+#define TCL_EACH_KEEP_NONE  0	/* Discard iteration result like [foreach] */
+#define TCL_EACH_COLLECT    1	/* Collect iteration result like [lmap] */
 
 /*
  * Macros providing a faster path to integers: Tcl_GetLongFromObj everywhere,
@@ -2513,6 +2564,8 @@ typedef struct List {
 
 #define TCL_FILESYSTEM_VERSION_2	((Tcl_FSVersion) 0x2)
 typedef ClientData (TclFSGetCwdProc2)(ClientData clientData);
+typedef int (Tcl_FSLoadFileProc2) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
+	Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
 
 /*
  * The following types are used for getting and storing platform-specific file
@@ -2728,29 +2781,32 @@ MODULE_SCOPE char	tclEmptyString;
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_ObjCmdProc TclNRNamespaceObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRApplyObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNREvalObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRCatchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRExprObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRForObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRForeachCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRIfObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRLmapCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSourceObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSubstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSwitchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRTryObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRWhileObjCmd;
 
 MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
+MODULE_SCOPE Tcl_NRPostProc TclNRCoroutineActivateCallback;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRTailcallObjCmd;
+MODULE_SCOPE Tcl_NRPostProc TclNRTailcallEval;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRCoroutineObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 
 MODULE_SCOPE void  TclSpliceTailcall(Tcl_Interp *interp,
-	               struct TEOV_callback *tailcallPtr);
+	               struct NRE_callback *tailcallPtr);
 
 /*
  * This structure holds the data for the various iteration callbacks used to
@@ -2789,6 +2845,32 @@ struct Tcl_LoadHandle_ {
 				/* Procedure that unloads a loaded module */
 };
 
+/* Flags for conversion of doubles to digit strings */
+
+#define TCL_DD_SHORTEST 		0x4
+				/* Use the shortest possible string */
+#define TCL_DD_STEELE   		0x5
+				/* Use the original Steele&White algorithm */
+#define TCL_DD_E_FORMAT 		0x2
+				/* Use a fixed-length string of digits,
+				 * suitable for E format*/
+#define TCL_DD_F_FORMAT 		0x3
+				/* Use a fixed number of digits after the
+				 * decimal point, suitable for F format */
+
+#define TCL_DD_SHORTEN_FLAG 		0x4
+				/* Allow return of a shorter digit string
+				 * if it converts losslessly */
+#define TCL_DD_NO_QUICK 		0x8
+				/* Debug flag: forbid quick FP conversion */
+
+#define TCL_DD_CONVERSION_TYPE_MASK	0x3
+				/* Mask to isolate the conversion type */
+#define TCL_DD_STEELE0 			0x1
+				/* 'Steele&White' after masking */
+#define TCL_DD_SHORTEST0		0x0
+				/* 'Shortest possible' after masking */
+
 /*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside world:
@@ -2826,10 +2908,9 @@ MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp,
 			    const char *value);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
+MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
 MODULE_SCOPE int	TclClearRootEnsemble(ClientData data[],
 			    Tcl_Interp *interp, int result);
-MODULE_SCOPE void	TclCleanupLiteralTable(Tcl_Interp *interp,
-			    LiteralTable *tablePtr);
 MODULE_SCOPE ContLineLoc *TclContinuationsEnter(Tcl_Obj *objPtr, int num,
 			    int *loc);
 MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
@@ -2837,26 +2918,30 @@ MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
 MODULE_SCOPE ContLineLoc *TclContinuationsGet(Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 			    Tcl_Obj *originObjPtr);
-MODULE_SCOPE int	TclDoubleDigits(char *buf, double value, int *signum);
+MODULE_SCOPE int	TclConvertElement(const char *src, int length,
+			    char *dst, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 /* TIP #280 - Modified token based evulation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags, int line,
 			    int *clNextOuter, const char *outerScript);
-MODULE_SCOPE int	TclFileAttrsCmd(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclFileCopyCmd(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclFileDeleteCmd(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclFileMakeDirsCmd(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclFileRenameCmd(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_ObjCmdProc TclFileAttrsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileCopyCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileDeleteCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileLinkCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileMakeDirsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileReadLinkCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileRenameCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileTemporaryCmd;
 MODULE_SCOPE void	TclCreateLateExitHandler(Tcl_ExitProc *proc,
 			    ClientData clientData);
 MODULE_SCOPE void	TclDeleteLateExitHandler(Tcl_ExitProc *proc,
 			    ClientData clientData);
+MODULE_SCOPE char *	TclDStringAppendObj(Tcl_DString *dsPtr,
+			    Tcl_Obj *objPtr);
+MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
+			    Tcl_DString *toAppendPtr);
+MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
 MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
 MODULE_SCOPE void	TclFinalizeAsync(void);
 MODULE_SCOPE void	TclFinalizeDoubleConversion(void);
@@ -2931,6 +3016,8 @@ MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE void	TclInitSubsystems(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
 MODULE_SCOPE int	TclIsLocalScalar(const char *src, int len);
+MODULE_SCOPE int	TclIsSpaceProc(char byte);
+MODULE_SCOPE Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj * const objv[]);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
@@ -2948,12 +3035,12 @@ MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
 			    const EnsembleImplMap map[]);
-MODULE_SCOPE int	TclMarkList(Tcl_Interp *interp, const char *list,
-			    const char *end, int *argcPtr,
-			    const int **argszPtr, const char ***argvPtr);
+MODULE_SCOPE int	TclMaxListLength(const char *bytes, int numBytes,
+			    const char **endPtr);
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
+MODULE_SCOPE Tcl_Obj *  TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options);
 MODULE_SCOPE int	TclNokia770Doubles(void);
 MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
@@ -2967,7 +3054,7 @@ MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 MODULE_SCOPE int	TclParseBackslash(const char *src,
 			    int numBytes, int *readPtr, char *dst);
 MODULE_SCOPE int	TclParseHex(const char *src, int numBytes,
-			    Tcl_UniChar *resultPtr);
+			    int *resultPtr);
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    const char *expected, const char *bytes,
 			    int numBytes, const char **endPtrPtr, int flags);
@@ -2986,6 +3073,10 @@ MODULE_SCOPE void	TclpFinalizeCondition(Tcl_Condition *condPtr);
 MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);
 MODULE_SCOPE void	TclpFinalizePipes(void);
 MODULE_SCOPE void	TclpFinalizeSockets(void);
+MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
+			    struct addrinfo **addrlist,
+			    const char *host, int port, int willBind,
+			    const char **errorMsgPtr);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, ClientData clientData,
 			    int stackSize, int flags);
@@ -2995,12 +3086,6 @@ MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
 MODULE_SCOPE void	TclpInitLock(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
 MODULE_SCOPE void	TclpInitUnlock(void);
-MODULE_SCOPE int	TclpLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
-			    const char *sym1, const char *sym2,
-			    Tcl_PackageInitProc **proc1Ptr,
-			    Tcl_PackageInitProc **proc2Ptr,
-			    ClientData *clientDataPtr,
-			    Tcl_FSUnloadFileProc **unloadProcPtr);
 MODULE_SCOPE Tcl_Obj *	TclpObjListVolumes(void);
 MODULE_SCOPE void	TclpMasterLock(void);
 MODULE_SCOPE void	TclpMasterUnlock(void);
@@ -3041,6 +3126,8 @@ MODULE_SCOPE void	TclRememberMutex(Tcl_Mutex *mutex);
 MODULE_SCOPE void	TclRemoveScriptLimitCallbacks(Tcl_Interp *interp);
 MODULE_SCOPE int	TclReToGlob(Tcl_Interp *interp, const char *reStr,
 			    int reStrLen, Tcl_DString *dsPtr, int *flagsPtr);
+MODULE_SCOPE int	TclScanElement(const char *string, int length,
+			    int *flagPtr);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);
 MODULE_SCOPE void	TclSetBignumIntRep(Tcl_Obj *objPtr,
@@ -3069,17 +3156,21 @@ MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int count, int *tokensLeftPtr, int line,
 			    int *clNextOuter, const char *outerScript);
+MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
+			    const char *trim, int numTrim);
+MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
+			    const char *trim, int numTrim);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_LoadHandle *loadHandle,
-			    Tcl_FSUnloadFileProc **unloadProcPtr);
+			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
 MODULE_SCOPE int	TclpUtime(Tcl_Obj *pathPtr, struct utimbuf *tval);
 #ifdef TCL_LOAD_FROM_MEMORY
 MODULE_SCOPE void *	TclpLoadMemoryGetBuffer(Tcl_Interp *interp, int size);
 MODULE_SCOPE int	TclpLoadMemory(Tcl_Interp *interp, void *buffer,
 			    int size, int codeSize, Tcl_LoadHandle *loadHandle,
-			    Tcl_FSUnloadFileProc **unloadProcPtr);
+			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
 #endif
 MODULE_SCOPE void	TclInitThreadStorage(void);
 MODULE_SCOPE void	TclFinalizeThreadDataThread(void);
@@ -3094,6 +3185,8 @@ MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void	TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
 MODULE_SCOPE void *	TclpThreadGetMasterTSD(void *tsdKeyPtr);
+
+MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp, const char *msg, int length);
 
 /*
  *----------------------------------------------------------------
@@ -3155,9 +3248,24 @@ MODULE_SCOPE int	TclDefaultBgErrorHandlerObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE Tcl_Command TclInitDictCmd(Tcl_Interp *interp);
+MODULE_SCOPE int	TclDictWithFinish(Tcl_Interp *interp, Var *varPtr,
+			    Var *arrayPtr, Tcl_Obj *part1Ptr,
+			    Tcl_Obj *part2Ptr, int index, int pathc,
+			    Tcl_Obj *const pathv[], Tcl_Obj *keysPtr);
+MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+			    int pathc, Tcl_Obj *const pathv[]);
 MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+			    
+/* Assemble command function */			    
+MODULE_SCOPE int	Tcl_AssembleObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);			    
+MODULE_SCOPE int	TclNRAssembleObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);			    
+			    
 MODULE_SCOPE int	Tcl_EncodingObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3188,9 +3296,8 @@ MODULE_SCOPE int	Tcl_FconfigureObjCmd(
 MODULE_SCOPE int	Tcl_FcopyObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	Tcl_FileObjCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_Command TclInitFileCmd(Tcl_Interp *interp);
+MODULE_SCOPE int	TclMakeFileCommandSafe(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_FileEventObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3246,6 +3353,9 @@ MODULE_SCOPE int	Tcl_LlengthObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_ListObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LmapObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LoadObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3270,9 +3380,7 @@ MODULE_SCOPE int	Tcl_LsetObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_LsortObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	Tcl_NamespaceObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_Command TclInitNamespaceCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	TclNamespaceEnsembleCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3383,6 +3491,15 @@ MODULE_SCOPE int	Tcl_WhileObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclCompileAppendCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileArrayExistsCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileArraySetCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileArrayUnsetCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileBreakCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
@@ -3393,6 +3510,12 @@ MODULE_SCOPE int	TclCompileContinueCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileDictAppendCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictCreateCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictExistsCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileDictForCmd(Tcl_Interp *interp,
@@ -3407,10 +3530,22 @@ MODULE_SCOPE int	TclCompileDictIncrCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileDictLappendCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictMapCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictMergeCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileDictSetCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictUnsetCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileDictUpdateCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictWithCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileEnsemble(Tcl_Interp *interp,
@@ -3428,13 +3563,34 @@ MODULE_SCOPE int	TclCompileForCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileForeachCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileFormatCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileGlobalCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileIfCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileInfoCommandsCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileInfoCoroutineCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileInfoExistsCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileInfoLevelCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileInfoObjectClassCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileInfoObjectIsACmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileInfoObjectNamespaceCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileIncrCmd(Tcl_Interp *interp,
@@ -3455,16 +3611,46 @@ MODULE_SCOPE int	TclCompileListCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileLlengthCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileLmapCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileLrangeCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileLreplaceCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileLsetCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE int	TclCompileNamespaceCmd(Tcl_Interp *interp,
+MODULE_SCOPE int	TclCompileNamespaceCodeCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileNamespaceCurrentCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileNamespaceQualifiersCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileNamespaceTailCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileNamespaceUpvarCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileNamespaceWhichCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileNoOp(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileObjectSelfCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileRegexpCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileRegsubCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileReturnCmd(Tcl_Interp *interp,
@@ -3479,19 +3665,34 @@ MODULE_SCOPE int	TclCompileStringCmpCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileStringEqualCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStringFirstCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileStringIndexCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStringLastCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileStringLenCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStringMapCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileStringMatchCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStringRangeCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileSubstCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileSwitchCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileTailcallCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileThrowCmd(Tcl_Interp *interp,
@@ -3510,6 +3711,9 @@ MODULE_SCOPE int	TclCompileVariableCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileWhileCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileYieldCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 
@@ -3651,6 +3855,10 @@ MODULE_SCOPE int	TclStreqOpCmd(ClientData clientData,
 MODULE_SCOPE int	TclCompileStreqOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+			    
+MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 
 /*
  * Functions defined in generic/tclVar.c and currenttly exported only for use
@@ -3701,6 +3909,8 @@ MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
 MODULE_SCOPE int	TclCompareObjKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 MODULE_SCOPE void	TclFreeObjEntry(Tcl_HashEntry *hPtr);
 MODULE_SCOPE unsigned	TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
+
+MODULE_SCOPE int	TclFullFinalizationRequested(void);
 
 /*
  *----------------------------------------------------------------
@@ -3860,6 +4070,13 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 
 #else /* not PURIFY or USE_THREAD_ALLOC */
 
+#if defined(USE_TCLALLOC) && USE_TCLALLOC
+    MODULE_SCOPE void TclFinalizeAllocSubsystem();
+    MODULE_SCOPE void TclInitAlloc();
+#else
+#   define USE_TCLALLOC 0
+#endif
+
 #ifdef TCL_THREADS
 /* declared in tclObj.c */
 MODULE_SCOPE Tcl_Mutex	tclObjMutex;
@@ -3968,9 +4185,10 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclFreeIntRep(objPtr) \
-    if ((objPtr)->typePtr != NULL && \
-	    (objPtr)->typePtr->freeIntRepProc != NULL) { \
-	(objPtr)->typePtr->freeIntRepProc(objPtr); \
+    if ((objPtr)->typePtr != NULL) { \
+	if ((objPtr)->typePtr->freeIntRepProc != NULL) { \
+	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
+	} \
 	(objPtr)->typePtr = NULL; \
     }
 
@@ -4005,8 +4223,22 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  *----------------------------------------------------------------
  */
 
+/* General tuning for minimum growth in Tcl growth algorithms */
+#ifndef TCL_MIN_GROWTH
+#  ifdef TCL_GROWTH_MIN_ALLOC
+     /* Support for any legacy tuners */
+#    define TCL_MIN_GROWTH TCL_GROWTH_MIN_ALLOC
+#  else
+#    define TCL_MIN_GROWTH 1024
+#  endif
+#endif
+
+/* Token growth tuning, default to the general value. */
+#ifndef TCL_MIN_TOKEN_GROWTH
+#define TCL_MIN_TOKEN_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Token)
+#endif
+
 #define TCL_MAX_TOKENS (int)(UINT_MAX / sizeof(Tcl_Token))
-#define TCL_MIN_TOKEN_GROWTH 50
 #define TclGrowTokenArray(tokenPtr, used, available, append, staticPtr)	\
     do {								\
 	int needed = (used) + (append);					\
@@ -4061,8 +4293,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclUtfToUniChar(str, chPtr) \
-	((((unsigned char) *(str)) < 0xC0) ? \
-	    ((*(chPtr) = (Tcl_UniChar) *(str)), 1) \
+	((((unsigned char) *(str)) < 0xC0) ?		\
+	    ((*(chPtr) = (Tcl_UniChar) *(str)), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
 
 /*
@@ -4135,8 +4367,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInvalidateNsCmdLookup(nsPtr) \
-    if ((nsPtr)->numExportPatterns) {	\
-	(nsPtr)->exportLookupEpoch++;	\
+    if ((nsPtr)->numExportPatterns) {		\
+	(nsPtr)->exportLookupEpoch++;		\
+    }						\
+    if ((nsPtr)->commandPathLength) {		\
+	(nsPtr)->cmdRefEpoch++;			\
     }
 
 /*
@@ -4181,18 +4416,6 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 #define TclMatchIsTrivial(pattern) \
     (strpbrk((pattern), "*[?\\") == NULL)
-
-/*
- *----------------------------------------------------------------
- * Macro used by the Tcl core to write the string rep of a long integer to a
- * character buffer. The ANSI C "prototype" for this macro is:
- *
- * MODULE_SCOPE int	TclFormatInt(char *buf, long n);
- *----------------------------------------------------------------
- */
-
-#define TclFormatInt(buf, n) \
-    sprintf((buf), "%ld", (long)(n))
 
 /*
  *----------------------------------------------------------------
@@ -4331,6 +4554,21 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  */
 #define TclNewLiteralStringObj(objPtr, sLiteral) \
     TclNewStringObj((objPtr), (sLiteral), (int) (sizeof(sLiteral "") - 1))
+
+/*
+ *----------------------------------------------------------------
+ * Convenience macros for DStrings.
+ * The ANSI C "prototypes" for these macros are:
+ *
+ * MODULE_SCOPE char * TclDStringAppendLiteral(Tcl_DString *dsPtr,
+ *			const char *sLiteral);
+ * MODULE_SCOPE void   TclDStringClear(Tcl_DString *dsPtr);
+ */
+
+#define TclDStringAppendLiteral(dsPtr, sLiteral) \
+    Tcl_DStringAppend((dsPtr), (sLiteral), (int) (sizeof(sLiteral "") - 1))
+#define TclDStringClear(dsPtr) \
+    Tcl_DStringSetLength((dsPtr), 0)
 
 /*
  *----------------------------------------------------------------
@@ -4508,11 +4746,11 @@ void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
  * available.
  */
 
-typedef struct TEOV_callback {
+typedef struct NRE_callback {
     Tcl_NRPostProc *procPtr;
     ClientData data[4];
-    struct TEOV_callback *nextPtr;
-} TEOV_callback;
+    struct NRE_callback *nextPtr;
+} NRE_callback;
 
 #define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
 
@@ -4522,7 +4760,7 @@ typedef struct TEOV_callback {
 
 #define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3) \
     do {								\
-	TEOV_callback *callbackPtr;					\
+	NRE_callback *callbackPtr;					\
 	TCLNR_ALLOC((interp), (callbackPtr));				\
 	callbackPtr->procPtr = (postProcPtr);				\
 	callbackPtr->data[0] = (ClientData)(data0);			\
@@ -4535,7 +4773,7 @@ typedef struct TEOV_callback {
 
 #define TclNRDeferCallback(interp,postProcPtr,data0,data1,data2,data3) \
     do {								\
-	TEOV_callback *callbackPtr;					\
+	NRE_callback *callbackPtr;					\
 	TCLNR_ALLOC((interp), (callbackPtr));				\
 	callbackPtr->procPtr = (postProcPtr);				\
 	callbackPtr->data[0] = (ClientData)(data0);			\
@@ -4548,7 +4786,7 @@ typedef struct TEOV_callback {
 
 #define TclNRSpliceCallbacks(interp, topPtr) \
     do {					\
-	TEOV_callback *bottomPtr = topPtr;	\
+	NRE_callback *bottomPtr = topPtr;	\
 	while (bottomPtr->nextPtr) {		\
 	    bottomPtr = bottomPtr->nextPtr;	\
 	}					\
@@ -4564,11 +4802,11 @@ typedef struct TEOV_callback {
 
 #if NRE_USE_SMALL_ALLOC
 #define TCLNR_ALLOC(interp, ptr) \
-    TclSmallAllocEx(interp, sizeof(TEOV_callback), (ptr))
+    TclSmallAllocEx(interp, sizeof(NRE_callback), (ptr))
 #define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
 #else
 #define TCLNR_ALLOC(interp, ptr) \
-    (ptr = ((ClientData) ckalloc(sizeof(TEOV_callback))))
+    (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
 #define TCLNR_FREE(interp, ptr)  ckfree((char *) (ptr))
 #endif
 
@@ -4581,6 +4819,12 @@ typedef struct TEOV_callback {
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
 #include "tclTomMathDecls.h"
+
+#if !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
+#define Tcl_AttemptAlloc(size)        TclpAlloc(size)
+#define Tcl_AttemptRealloc(ptr, size) TclpRealloc((ptr), (size))
+#define Tcl_Free(ptr)                 TclpFree(ptr)
+#endif
 
 #endif /* _TCLINT */
 

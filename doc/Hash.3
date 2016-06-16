@@ -5,8 +5,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Hash.3,v 1.34 2010/08/14 20:58:30 nijtmans Exp $
-'\" 
 .so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
 .BS
@@ -59,7 +57,7 @@ Kind of keys to use for new hash table.  Must be either
 \fBTCL_STRING_KEYS\fR, \fBTCL_ONE_WORD_KEYS\fR, \fBTCL_CUSTOM_TYPE_KEYS\fR,
 \fBTCL_CUSTOM_PTR_KEYS\fR, or an integer value greater than 1.
 .AP Tcl_HashKeyType *typePtr in
-Address of structure which defines the behaviour of the hash table.
+Address of structure which defines the behavior of the hash table.
 .AP "const void" *key in
 Key to use for probe into table.  Exact form depends on
 \fIkeyType\fR used to create table.
@@ -312,14 +310,14 @@ typedef Tcl_HashEntry *\fBTcl_AllocHashEntryProc\fR(
         void *\fIkeyPtr\fR);
 .CE
 .PP
-If this is NULL then Tcl_Alloc is used to allocate enough space for a
+If this is NULL then \fBTcl_Alloc\fR is used to allocate enough space for a
 Tcl_HashEntry, the key pointer is assigned to key.oneWordValue and the
 clientData is set to NULL. String keys and array keys use this function to
 allocate enough space for the entry and the key in one block, rather than
 doing it in two blocks. This saves space for a pointer to the key from the
 entry and another memory allocation. Tcl_Obj* keys use this function to
 allocate enough space for an entry and increment the reference count on the
-object.
+value.
 .PP
 The \fIfreeEntryProc\fR member contains the address of a function called to
 free space for an entry.
@@ -329,8 +327,8 @@ typedef void \fBTcl_FreeHashEntryProc\fR(
         Tcl_HashEntry *\fIhPtr\fR);
 .CE
 .PP
-If this is NULL then Tcl_Free is used to free the space for the entry.
+If this is NULL then \fBTcl_Free\fR is used to free the space for the entry.
 Tcl_Obj* keys use this function to decrement the reference count on the
-object.
+value.
 .SH KEYWORDS
 hash table, key, lookup, search, value

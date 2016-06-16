@@ -8,11 +8,16 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: event.test,v 1.29 2010/07/05 09:50:10 dkf Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
+
+catch {
+    ::tcltest::loadTestedCommands
+    package require -exact Tcltest [info patchlevel]
+    set ::tcltestlib [lindex [package ifneeded Tcltest [info patchlevel]] 1]
+}
+
 
 testConstraint testfilehandler [llength [info commands testfilehandler]]
 testConstraint testexithandler [llength [info commands testexithandler]]
@@ -429,6 +434,7 @@ catch {rename bgerror {}}
 
 test event-8.1 {Tcl_CreateExitHandler procedure} {stdio testexithandler} {
     set child [open |[list [interpreter]] r+]
+    puts $child "catch {load $::tcltestlib Tcltest}"
     puts $child "testexithandler create 41; testexithandler create 4"
     puts $child "testexithandler create 6; exit"
     flush $child
@@ -442,6 +448,7 @@ odd 41
 
 test event-9.1 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
     set child [open |[list [interpreter]] r+]
+    puts $child "catch {load $::tcltestlib Tcltest}"
     puts $child "testexithandler create 41; testexithandler create 4"
     puts $child "testexithandler create 6; testexithandler delete 41"
     puts $child "testexithandler create 16; exit"
@@ -455,6 +462,7 @@ even 4
 }
 test event-9.2 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
     set child [open |[list [interpreter]] r+]
+    puts $child "catch {load $::tcltestlib Tcltest}"
     puts $child "testexithandler create 41; testexithandler create 4"
     puts $child "testexithandler create 6; testexithandler delete 4"
     puts $child "testexithandler create 16; exit"
@@ -468,6 +476,7 @@ odd 41
 }
 test event-9.3 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
     set child [open |[list [interpreter]] r+]
+    puts $child "catch {load $::tcltestlib Tcltest}"
     puts $child "testexithandler create 41; testexithandler create 4"
     puts $child "testexithandler create 6; testexithandler delete 6"
     puts $child "testexithandler create 16; exit"
@@ -481,6 +490,7 @@ odd 41
 }
 test event-9.4 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
     set child [open |[list [interpreter]] r+]
+    puts $child "catch {load $::tcltestlib Tcltest}"
     puts $child "testexithandler create 41; testexithandler delete 41"
     puts $child "testexithandler create 16; exit"
     flush $child

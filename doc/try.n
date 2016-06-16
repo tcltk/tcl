@@ -4,8 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: try.n,v 1.3 2010/04/15 08:52:55 dkf Exp $
-'\" 
 .so man.macros
 .TH try n 8.6 Tcl "Tcl Built-In Commands"
 .BS

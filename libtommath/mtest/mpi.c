@@ -5,8 +5,6 @@
     Copyright (C) 1998 Michael J. Fromberger, All Rights Reserved
 
     Arbitrary precision integer arithmetic library
-
-    $Id: mpi.c,v 1.2 2010/03/23 12:58:41 nijtmans Exp $
  */
 
 #include "mpi.h"
@@ -3979,7 +3977,3 @@ int      s_mp_outlen(int bits, int r)
 /*------------------------------------------------------------------------*/
 /* HERE THERE BE DRAGONS                                                  */
 /* crc==4242132123, version==2, Sat Feb 02 06:43:52 2002 */
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/mtest/mpi.c,v $ */
-/* $Revision: 1.2 $ */
-/* $Date: 2010/03/23 12:58:41 $ */

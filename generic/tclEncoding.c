@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclEncoding.c,v 1.72 2010/09/16 14:49:37 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -594,14 +592,14 @@ TclInitEncodingSubsystem(void)
      * code to duplicate the structure of a table encoding here.
      */
 
-    dataPtr = (TableEncodingData *) ckalloc(sizeof(TableEncodingData));
+    dataPtr = ckalloc(sizeof(TableEncodingData));
     memset(dataPtr, 0, sizeof(TableEncodingData));
     dataPtr->fallback = '?';
 
     size = 256*(sizeof(unsigned short *) + sizeof(unsigned short));
-    dataPtr->toUnicode = (unsigned short **) ckalloc(size);
+    dataPtr->toUnicode = ckalloc(size);
     memset(dataPtr->toUnicode, 0, size);
-    dataPtr->fromUnicode = (unsigned short **) ckalloc(size);
+    dataPtr->fromUnicode = ckalloc(size);
     memset(dataPtr->fromUnicode, 0, size);
 
     dataPtr->toUnicode[0] = (unsigned short *) (dataPtr->toUnicode + 256);
@@ -851,8 +849,8 @@ FreeEncoding(
 	if (encodingPtr->hPtr != NULL) {
 	    Tcl_DeleteHashEntry(encodingPtr->hPtr);
 	}
-	ckfree((char *) encodingPtr->name);
-	ckfree((char *) encodingPtr);
+	ckfree(encodingPtr->name);
+	ckfree(encodingPtr);
     }
 }
 
@@ -981,13 +979,13 @@ Tcl_GetEncodingNames(
 int
 Tcl_SetSystemEncoding(
     Tcl_Interp *interp,		/* Interp for error reporting, if not NULL. */
-    const char *name)		/* The name of the desired encoding, or NULL
+    const char *name)		/* The name of the desired encoding, or NULL/""
 				 * to reset to default encoding. */
 {
     Tcl_Encoding encoding;
     Encoding *encodingPtr;
 
-    if (name == NULL) {
+    if (!name || !*name) {
 	Tcl_MutexLock(&encodingMutex);
 	encoding = defaultEncoding;
 	encodingPtr = (Encoding *) encoding;
@@ -1056,9 +1054,9 @@ Tcl_CreateEncoding(
 	encodingPtr->hPtr = NULL;
     }
 
-    name = ckalloc((unsigned) strlen(typePtr->encodingName) + 1);
+    name = ckalloc(strlen(typePtr->encodingName) + 1);
 
-    encodingPtr = (Encoding *) ckalloc(sizeof(Encoding));
+    encodingPtr = ckalloc(sizeof(Encoding));
     encodingPtr->name		= strcpy(name, typePtr->encodingName);
     encodingPtr->toUtfProc	= typePtr->toUtfProc;
     encodingPtr->fromUtfProc	= typePtr->fromUtfProc;
@@ -1544,7 +1542,8 @@ OpenEncodingFileChannel(
     }
 
     if ((NULL == chan) && (interp != NULL)) {
-	Tcl_AppendResult(interp, "unknown encoding \"", name, "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"unknown encoding \"%s\"", name));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, NULL);
     }
     Tcl_DecrRefCount(fileNameObj);
@@ -1618,7 +1617,8 @@ LoadEncodingFile(
 	break;
     }
     if ((encoding == NULL) && (interp != NULL)) {
-	Tcl_AppendResult(interp, "invalid encoding file \"", name, "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"invalid encoding file \"%s\"", name));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, NULL);
     }
     Tcl_Close(NULL, chan);
@@ -1709,7 +1709,7 @@ LoadTableEncoding(
 #undef PAGESIZE
 #define PAGESIZE    (256 * sizeof(unsigned short))
 
-    dataPtr = (TableEncodingData *) ckalloc(sizeof(TableEncodingData));
+    dataPtr = ckalloc(sizeof(TableEncodingData));
     memset(dataPtr, 0, sizeof(TableEncodingData));
 
     dataPtr->fallback = fallback;
@@ -1721,7 +1721,7 @@ LoadTableEncoding(
      */
 
     size = 256 * sizeof(unsigned short *) + numPages * PAGESIZE;
-    dataPtr->toUnicode = (unsigned short **) ckalloc(size);
+    dataPtr->toUnicode = ckalloc(size);
     memset(dataPtr->toUnicode, 0, size);
     pageMemPtr = (unsigned short *) (dataPtr->toUnicode + 256);
 
@@ -1779,7 +1779,7 @@ LoadTableEncoding(
 	}
     }
     size = 256 * sizeof(unsigned short *) + numPages * PAGESIZE;
-    dataPtr->fromUnicode = (unsigned short **) ckalloc(size);
+    dataPtr->fromUnicode = ckalloc(size);
     memset(dataPtr->fromUnicode, 0, size);
     pageMemPtr = (unsigned short *) (dataPtr->fromUnicode + 256);
 
@@ -1874,9 +1874,9 @@ LoadTableEncoding(
      * Read lines from the encoding until EOF.
      */
 
-    for (Tcl_DStringSetLength(&lineString, 0);
+    for (TclDStringClear(&lineString);
 	    (len = Tcl_Gets(chan, &lineString)) >= 0;
-	    Tcl_DStringSetLength(&lineString, 0)) {
+	    TclDStringClear(&lineString)) {
 	const unsigned char *p;
 	int to, from;
 
@@ -2011,17 +2011,17 @@ LoadEscapeEncoding(
 		Tcl_DStringAppend(&escapeData, (char *) &est, sizeof(est));
 	    }
 	}
-	ckfree((char *) argv);
+	ckfree(argv);
 	Tcl_DStringFree(&lineString);
     }
 
     size = sizeof(EscapeEncodingData) - sizeof(EscapeSubTable)
 	    + Tcl_DStringLength(&escapeData);
-    dataPtr = (EscapeEncodingData *) ckalloc(size);
+    dataPtr = ckalloc(size);
     dataPtr->initLen = strlen(init);
-    strcpy(dataPtr->init, init);
+    memcpy(dataPtr->init, init, (unsigned) dataPtr->initLen + 1);
     dataPtr->finalLen = strlen(final);
-    strcpy(dataPtr->final, final);
+    memcpy(dataPtr->final, final, (unsigned) dataPtr->finalLen + 1);
     dataPtr->numSubTables =
 	    Tcl_DStringLength(&escapeData) / sizeof(EscapeSubTable);
     memcpy(dataPtr->subTables, Tcl_DStringValue(&escapeData),
@@ -2957,9 +2957,9 @@ TableFreeProc(
      * Make sure we aren't freeing twice on shutdown. [Bug 219314]
      */
 
-    ckfree((char *) dataPtr->toUnicode);
-    ckfree((char *) dataPtr->fromUnicode);
-    ckfree((char *) dataPtr);
+    ckfree(dataPtr->toUnicode);
+    ckfree(dataPtr->fromUnicode);
+    ckfree(dataPtr);
 }
 
 /*
@@ -3434,7 +3434,7 @@ EscapeFreeProc(
 	    subTablePtr++;
 	}
     }
-    ckfree((char *) dataPtr);
+    ckfree(dataPtr);
 }
 
 /*
@@ -3572,7 +3572,7 @@ InitializeEncodingSearchPath(
     bytes = Tcl_GetStringFromObj(searchPathObj, &numBytes);
 
     *lengthPtr = numBytes;
-    *valuePtr = ckalloc((unsigned) numBytes + 1);
+    *valuePtr = ckalloc(numBytes + 1);
     memcpy(*valuePtr, bytes, (size_t) numBytes + 1);
     Tcl_DecrRefCount(searchPathObj);
 }

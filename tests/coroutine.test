@@ -8,13 +8,14 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: coroutine.test,v 1.14 2010/08/11 23:38:57 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testnrelevels [llength [info commands testnrelevels]]
 testConstraint memory [llength [info commands memory]]
@@ -437,6 +438,31 @@ test coroutine-4.5 {bug #2724403} -constraints {memory} \
     unset i ns start end
 } -result 0
 
+test coroutine-4.6 {compile context, bug #3282869} -setup {
+    unset ::x
+    proc f x {
+	coroutine D eval {yield X$x;yield Y}
+    }
+} -body {
+    f 12
+} -cleanup {
+    rename f {}
+} -returnCodes error -match glob -result {can't read *}
+
+test coroutine-4.7 {compile context, bug #3282869} -setup {
+    proc f x {
+	coroutine D eval {yield X$x;yield Y$x}
+    }
+} -body {
+    set ::x 15
+    set ::x [f 12]
+    D
+} -cleanup {
+    D
+    unset ::x
+    rename f {}
+} -result YX15
+
 test coroutine-5.1 {right numLevels on coro return} -constraints {testnrelevels} \
 -setup {
     proc nestedYield {{val {}}} {
@@ -534,12 +560,25 @@ test coroutine-6.3 {coroutine nargs} -body {
 } -cleanup {
     rename a {}
 } -returnCodes error -result {wrong # args: should be "a ?arg?"}
-test coroutine-6.4 {unsupported: multi-argument yield} -body {
+
+test coroutine-7.1 {yieldto} -body {
+    coroutine c apply {{} {
+	yield
+	yieldto return -level 0 -code 1 quux
+	return quuy
+    }}
+    set res [list [catch c msg] $msg]
+    lappend res [catch c msg] $msg
+    lappend res [catch c msg] $msg
+} -cleanup {
+    unset res
+} -result [list 1 quux 0 quuy 1 {invalid command name "c"}]
+test coroutine-7.2 {multi-argument yielding with yieldto} -body {
     proc corobody {} {
 	set a 1
 	while 1 {
 	    set a [yield $a]
-	    set a [::tcl::unsupported::yieldm $a]
+	    set a [yieldto return -level 0 $a]
 	    lappend a [llength $a]
 	}
     }
@@ -550,20 +589,26 @@ test coroutine-6.4 {unsupported: multi-argument yield} -body {
 } -cleanup {
     rename corobody {}
 } -result {x {y z 2} \{p {\{q r 2} {} 0 {} ok {}}
-
-test coroutine-7.1 {yieldTo} -body {
-    coroutine c apply {{} {
-	yield
-	tcl::unsupported::yieldTo return -level 0 -code 1 quux
-	return quuy
-    }}
-    set res [list [catch c msg] $msg]
-    lappend res [catch c msg] $msg
-    lappend res [catch c msg] $msg
+test coroutine-7.3 {yielding between coroutines} -body {
+    proc juggler {target {value ""}} {
+	if {$value eq ""} {
+	    set value [yield [info coroutine]]
+	}
+	while {[llength $value]} {
+	    lappend ::result $value [info coroutine]
+	    set value [lrange $value 0 end-1]
+	    lassign [yieldto $target $value] value
+	}
+	# Clear nested collection of coroutines
+	catch $target
+    }
+    set result ""
+    coroutine j1 juggler [coroutine j2 juggler [coroutine j3 juggler j1]]\
+	{a b c d e}
+    list $result [info command j1] [info command j2] [info command j3]
 } -cleanup {
-    unset res
-} -result [list 1 quux 0 quuy 1 {invalid command name "c"}]
-
+    catch {rename juggler ""}
+} -result {{{a b c d e} ::j1 {a b c d} ::j2 {a b c} ::j3 {a b} ::j1 a ::j2} {} {} {}}
 
 # cleanup
 unset lambda

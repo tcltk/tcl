@@ -4,8 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: prefix.n,v 1.5 2010/01/13 09:13:35 dkf Exp $
-'\" 
 .so man.macros
 .TH prefix n 8.6 Tcl "Tcl Built-In Commands"
 .BS

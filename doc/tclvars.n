@@ -5,8 +5,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.42 2010/01/14 11:47:09 dkf Exp $
-'\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
 .BS
@@ -101,6 +99,23 @@ Tcl format, using
 .QW /
 as the path separator, regardless of platform.
 This variable is only used when initializing the \fBauto_path\fR variable.
+.TP
+\fBenv(TCL_TZ)\fR, \fBenv(TZ)\fR
+.
+These specify the default timezone used for parsing and formatting times and
+dates in the \fBclock\fR command. On many platforms, the TZ environment
+variable is set up by the operating system.
+.TP
+\fBenv(LC_ALL)\fR, \fBenv(LC_MESSAGES)\fR, \fBenv(LANG)\fR
+.
+These environment variables are used by the \fBmsgcat\fR package to
+determine what locale to format messages using.
+.TP
+\fBenv(TCL_INTERP_DEBUG_FRAME)\fR
+.
+If existing, it has the same effect as running \fBinterp debug\fR
+\fB{} -frame 1\fR
+as the very first command of each new Tcl interpreter.
 .RE
 .TP
 \fBerrorCode\fR
@@ -360,21 +375,40 @@ binary number.
 .RE
 .PP
 .RS
-17 digits is
+If \fBtcl_precision\fR is not zero, then when Tcl converts a floating
+point number, it creates a decimal representation of at most 
+\fBtcl_precision\fR significant digits; the result may be shorter if
+the shorter result represents the original number exactly. If no
+result of at most \fBtcl_precision\fR digits is an exact representation
+of the original number, the one that is closest to the original
+number is chosen.
+If the original number lies precisely between two equally accurate
+decimal representations, then the one with an even value for the least
+significant digit is chosen; for instance, if \fBtcl_precision\fR is 3, then
+0.3125 will convert to 0.312, not 0.313, while 0.6875 will convert to
+0.688, not 0.687. Any string of trailing zeroes that remains is trimmed.
+.RE
+.PP
+.RS
+a \fBtcl_precision\fR value of 17 digits is
 .QW perfect
 for IEEE floating-point in that it allows
 double-precision values to be converted to strings and back to
-binary with no loss of information.  However, using 17 digits prevents
-any rounding, which produces longer, less intuitive results.  For example,
-\fBexpr {1.4}\fR returns 1.3999999999999999 with \fBtcl_precision\fR
-set to 17, vs. 1.4 if \fBtcl_precision\fR is 12.
+binary with no loss of information. For this reason, you will often
+see it as a value in legacy code that must run on Tcl versions before
+8.5. It is no longer recommended; as noted above, a zero value is the
+preferred method.
 .RE
 .PP
 .RS
 All interpreters in a thread share a single \fBtcl_precision\fR value:
 changing it in one interpreter will affect all other interpreters as
-well.  However, safe interpreters are not allowed to modify the
+well.  Safe interpreters are not allowed to modify the
 variable.
+.RE
+.PP
+.RS
+Valid values for \fBtcl_precision\fR range from 0 to 17.
 .RE
 .TP
 \fBtcl_rcFileName\fR
@@ -462,6 +496,7 @@ bug fixes that retain backward compatibility.
 The value of this variable is returned by the \fBinfo tclversion\fR
 command.
 .SH "OTHER GLOBAL VARIABLES"
+.PP
 The following variables are only guaranteed to exist in \fBtclsh\fR
 and \fBwish\fR executables; the Tcl library does not define them
 itself but many Tcl environments do.
@@ -485,6 +520,42 @@ was invoked.
 Contains 1 if \fBtclsh\fR or \fBwish\fR is running interactively (no
 script was specified and standard input is a terminal-like device), 0
 otherwise.
+.SH EXAMPLES
+.PP
+To add a directory to the collection of locations searched by
+\fBpackage require\fR, e.g., because of some application-specific
+packages that are used, the \fBauto_path\fR variable needs to be
+updated:
+.PP
+.CS
+lappend ::\fBauto_path\fR [file join [pwd] "theLibDir"]
+.CE
+.PP
+A simple though not very robust way to handle command line arguments
+of the form
+.QW "\-foo 1 \-bar 2"
+is to load them into an array having first loaded in the default settings:
+.CS
+array set arguments {-foo 0 -bar 0 -grill 0}
+array set arguments $::\fBargv\fR
+puts "foo is $arguments(-foo)"
+puts "bar is $arguments(-bar)"
+puts "grill is $arguments(-grill)"
+.CE
+.PP
+The \fBargv0\fR global variable can be used (in conjunction with the
+\fBinfo script\fR command) to determine whether the current script is
+being executed as the main script or loaded as a library.  This is
+useful because it allows a single script to be used as both a library
+and a demonstration of that library:
+.PP
+.CS
+if {$::\fBargv0\fR eq [info script]} {
+    # running as: tclsh example.tcl
+} else {
+    package provide Example 1.0
+}
+.CE
 .SH "SEE ALSO"
 eval(n), library(n), tclsh(1), tkvars(n), wish(1)
 .SH KEYWORDS

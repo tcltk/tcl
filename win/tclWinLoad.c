@@ -9,31 +9,27 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.32 2010/09/13 14:20:39 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
 
 /*
- * Mutex protecting static data in this file;
+ * Native name of the directory in the native filesystem where DLLs used in
+ * this process are copied prior to loading, and mutex used to protect its
+ * allocation.
  */
 
-static Tcl_Mutex loadMutex;
+static WCHAR *dllDirectoryName = NULL;
+static Tcl_Mutex dllDirectoryNameMutex;
 
 /*
- * Name of the directory in the native filesystem where DLLs used in this
- * process are copied prior to loading.
+ * Static functions defined within this file.
  */
 
-static WCHAR* dllDirectoryName = NULL;
-
-/* Static functions defined within this file */
-
-void* FindSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
-		 const char* symbol);
-void UnloadFile(Tcl_LoadHandle loadHandle);
-
+static void *		FindSymbol(Tcl_Interp *interp,
+			    Tcl_LoadHandle loadHandle, const char *symbol);
+static int		InitDLLDirectoryName(void);
+static void		UnloadFile(Tcl_LoadHandle loadHandle);
 
 /*
  *----------------------------------------------------------------------
@@ -61,10 +57,11 @@ TclpDlopen(
     Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
+    Tcl_FSUnloadFileProc **unloadProcPtr,
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
+    int flags)
 {
     HINSTANCE hInstance;
     const TCHAR *nativeName;
@@ -77,8 +74,7 @@ TclpDlopen(
      */
 
     nativeName = Tcl_FSGetNativePath(pathPtr);
-    hInstance = LoadLibraryEx(nativeName, NULL,
-	    LOAD_WITH_ALTERED_SEARCH_PATH);
+    hInstance = LoadLibraryEx(nativeName,NULL,LOAD_WITH_ALTERED_SEARCH_PATH);
     if (hInstance == NULL) {
 	/*
 	 * Let the OS loader examine the binary search path for whatever
@@ -87,9 +83,8 @@ TclpDlopen(
 	 */
 
 	Tcl_DString ds;
-	const char *fileName = Tcl_GetString(pathPtr);
 
-	nativeName = Tcl_WinUtfToTChar(fileName, -1, &ds);
+	nativeName = Tcl_WinUtfToTChar(Tcl_GetString(pathPtr), -1, &ds);
 	hInstance = LoadLibraryEx(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
 	Tcl_DStringFree(&ds);
@@ -97,26 +92,8 @@ TclpDlopen(
 
     if (hInstance == NULL) {
 	DWORD lastError = GetLastError();
-
-#if 0
-	/*
-	 * It would be ideal if the FormatMessage stuff worked better, but
-	 * unfortunately it doesn't seem to want to...
-	 */
-
-	LPTSTR lpMsgBuf;
-	char *buf;
-	int size;
-
-	size = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
-		FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, lastError, 0,
-		(LPTSTR) &lpMsgBuf, 0, NULL);
-	buf = (char *) ckalloc((unsigned) TCL_INTEGER_SPACE + size + 1);
-	sprintf(buf, "%d %s", lastError, (char *)lpMsgBuf);
-#endif
-
-	Tcl_AppendResult(interp, "couldn't load library \"",
-		Tcl_GetString(pathPtr), "\": ", NULL);
+	Tcl_Obj *errMsg = Tcl_ObjPrintf("couldn't load library \"%s\": ",
+		Tcl_GetString(pathPtr));
 
 	/*
 	 * Check for possible DLL errors. This doesn't work quite right,
@@ -127,37 +104,48 @@ TclpDlopen(
 
 	switch (lastError) {
 	case ERROR_MOD_NOT_FOUND:
+	    Tcl_SetErrorCode(interp, "WIN_LOAD", "MOD_NOT_FOUND", NULL);
+	    goto notFoundMsg;
 	case ERROR_DLL_NOT_FOUND:
-	    Tcl_AppendResult(interp, "this library or a dependent library"
-		    " could not be found in library path", NULL);
+	    Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_NOT_FOUND", NULL);
+	notFoundMsg:
+	    Tcl_AppendToObj(errMsg, "this library or a dependent library"
+		    " could not be found in library path", -1);
 	    break;
 	case ERROR_PROC_NOT_FOUND:
-	    Tcl_AppendResult(interp, "A function specified in the import"
-		    " table could not be resolved by the system.  Windows"
-		    " is not telling which one, I'm sorry.", NULL);
+	    Tcl_SetErrorCode(interp, "WIN_LOAD", "PROC_NOT_FOUND", NULL);
+	    Tcl_AppendToObj(errMsg, "A function specified in the import"
+		    " table could not be resolved by the system. Windows"
+		    " is not telling which one, I'm sorry.", -1);
 	    break;
 	case ERROR_INVALID_DLL:
-	    Tcl_AppendResult(interp, "this library or a dependent library"
-		    " is damaged", NULL);
+	    Tcl_SetErrorCode(interp, "WIN_LOAD", "INVALID_DLL", NULL);
+	    Tcl_AppendToObj(errMsg, "this library or a dependent library"
+		    " is damaged", -1);
 	    break;
 	case ERROR_DLL_INIT_FAILED:
-	    Tcl_AppendResult(interp, "the library initialization"
-		    " routine failed", NULL);
+	    Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_INIT_FAILED", NULL);
+	    Tcl_AppendToObj(errMsg, "the library initialization"
+		    " routine failed", -1);
 	    break;
 	default:
 	    TclWinConvertError(lastError);
-	    Tcl_AppendResult(interp, Tcl_PosixError(interp), NULL);
+	    Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), -1);
 	}
+	Tcl_SetObjResult(interp, errMsg);
 	return TCL_ERROR;
-    } else {
-	handlePtr =
-	    (Tcl_LoadHandle) ckalloc(sizeof(struct Tcl_LoadHandle_));
-	handlePtr->clientData = (ClientData) hInstance;
-	handlePtr->findSymbolProcPtr = &FindSymbol;
-	handlePtr->unloadFileProcPtr = &UnloadFile;
-	*loadHandle = handlePtr;
-	*unloadProcPtr = &UnloadFile;
     }
+
+    /*
+     * Succeded; package everything up for Tcl.
+     */
+
+    handlePtr = ckalloc(sizeof(struct Tcl_LoadHandle_));
+    handlePtr->clientData = (ClientData) hInstance;
+    handlePtr->findSymbolProcPtr = &FindSymbol;
+    handlePtr->unloadFileProcPtr = &UnloadFile;
+    *loadHandle = handlePtr;
+    *unloadProcPtr = &UnloadFile;
     return TCL_OK;
 }
 
@@ -177,32 +165,34 @@ TclpDlopen(
  *----------------------------------------------------------------------
  */
 
-void *
+static void *
 FindSymbol(
     Tcl_Interp *interp,
     Tcl_LoadHandle loadHandle,
     const char *symbol)
 {
+    HINSTANCE hInstance = (HINSTANCE) loadHandle->clientData;
     Tcl_PackageInitProc *proc = NULL;
-    HINSTANCE hInstance = (HINSTANCE)(loadHandle->clientData);
 
     /*
      * For each symbol, check for both Symbol and _Symbol, since Borland
      * generates C symbols with a leading '_' by default.
      */
 
-    proc = (void*) GetProcAddress(hInstance, symbol);
+    proc = (void *) GetProcAddress(hInstance, symbol);
     if (proc == NULL) {
 	Tcl_DString ds;
-	const char* sym2;
+	const char *sym2;
+
 	Tcl_DStringInit(&ds);
-	Tcl_DStringAppend(&ds, "_", 1);
+	TclDStringAppendLiteral(&ds, "_");
 	sym2 = Tcl_DStringAppend(&ds, symbol, -1);
 	proc = (Tcl_PackageInitProc *) GetProcAddress(hInstance, sym2);
 	Tcl_DStringFree(&ds);
     }
     if (proc == NULL && interp != NULL) {
-	Tcl_AppendResult(interp, "cannot find symbol \"", symbol, "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"cannot find symbol \"%s\"", symbol));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, NULL);
     }
     return proc;
@@ -226,15 +216,16 @@ FindSymbol(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 UnloadFile(
     Tcl_LoadHandle loadHandle)	/* loadHandle returned by a previous call to
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
     HINSTANCE hInstance = (HINSTANCE) loadHandle->clientData;
+
     FreeLibrary(hInstance);
-    ckfree((char*) loadHandle);
+    ckfree(loadHandle);
 }
 
 /*
@@ -268,7 +259,7 @@ TclGuessPackageName(
 }
 
 /*
- *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
  * TclpTempFileNameForLibrary --
  *
@@ -278,87 +269,126 @@ TclGuessPackageName(
  *	Returns the constructed file name.
  *
  * On Windows, a DLL is identified by the final component of its path name.
- * Cross linking among DLL's (and hence, preloading) will not work unless
- * this name is preserved when copying a DLL from a VFS to a temp file for
- * preloading. For this reason, all DLLs in a given process are copied
- * to a temp directory, and their names are preserved.
+ * Cross linking among DLL's (and hence, preloading) will not work unless this
+ * name is preserved when copying a DLL from a VFS to a temp file for
+ * preloading. For this reason, all DLLs in a given process are copied to a
+ * temp directory, and their names are preserved.
  *
- *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
 
-Tcl_Obj*
-TclpTempFileNameForLibrary(Tcl_Interp* interp, /* Tcl interpreter */
-			   Tcl_Obj* path)      /* Path name of the DLL in
-						* the VFS */
+Tcl_Obj *
+TclpTempFileNameForLibrary(
+    Tcl_Interp *interp,		/* Tcl interpreter. */
+    Tcl_Obj *path)		/* Path name of the DLL in the VFS. */
 {
-    size_t nameLen;		/* Length of the temp folder name */
-    WCHAR name[MAX_PATH];	/* Path name of the temp folder */
-    BOOL status;		/* Status from Win32 API calls */
-    Tcl_Obj* fileName;		/* Name of the temp file */
-    Tcl_Obj* tail;		/* Tail of the source path */
+    Tcl_Obj *fileName;		/* Name of the temp file. */
+    Tcl_Obj *tail;		/* Tail of the source path. */
+
+    Tcl_MutexLock(&dllDirectoryNameMutex);
+    if (dllDirectoryName == NULL) {
+	if (InitDLLDirectoryName() == TCL_ERROR) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "couldn't create temporary directory: %s",
+		    Tcl_PosixError(interp)));
+	    Tcl_MutexUnlock(&dllDirectoryNameMutex);
+	    return NULL;
+	}
+    }
+    Tcl_MutexUnlock(&dllDirectoryNameMutex);
 
     /*
-     * Determine the name of the directory to use, and create it.
-     * (Keep trying with new names until an attempt to create the directory
-     * succeeds)
+     * Now we know where to put temporary DLLs, construct the name.
      */
 
-    nameLen = 0;
-    if (dllDirectoryName == NULL) {
-	Tcl_MutexLock(&loadMutex);
-	if (dllDirectoryName == NULL) {
-	    nameLen = GetTempPathW(MAX_PATH, name);
-	    if (nameLen >= MAX_PATH-12) {
-		Tcl_SetErrno(ENAMETOOLONG);
-		nameLen = 0;
-	    } else {
-		wcscpy(name+nameLen, L"TCLXXXXXXXX");
-		nameLen += 11;
-	    }
-	    status = 1;
-	    if (nameLen != 0) {
-		DWORD id;
-		int i = 0;
-		id = GetCurrentProcessId();
-		for (;;) {
-		    DWORD lastError;
-		    wsprintfW(name+nameLen-8, L"%08x", id);
-		    status = CreateDirectoryW(name, NULL);
-		    if (status) {
-			break;
-		    }
-		    if ((lastError = GetLastError()) != ERROR_ALREADY_EXISTS) {
-			TclWinConvertError(lastError);
-			break;
-		    } else if (++i > 256) {
-			TclWinConvertError(lastError);
-			break;
-		    }
-		    id *= 16777619;
-		}
-	    }
-	    if (status != 0) {
-		dllDirectoryName = (WCHAR*)
-		    ckalloc((nameLen+1) * sizeof(WCHAR));
-		wcscpy(dllDirectoryName, name);
-	    }
-	}
-	Tcl_MutexUnlock(&loadMutex);
-    }
-    if (dllDirectoryName == NULL) {
-	Tcl_AppendResult(interp, "couldn't create temporary directory: ",
-			 Tcl_PosixError(interp), NULL);
-    }
     fileName = TclpNativeToNormalized(dllDirectoryName);
     tail = TclPathPart(interp, path, TCL_PATH_TAIL);
     if (tail == NULL) {
 	Tcl_DecrRefCount(fileName);
 	return NULL;
-    } else {
-	Tcl_AppendToObj(fileName, "/", 1);
-	Tcl_AppendObjToObj(fileName, tail);
-	return fileName;
     }
+    Tcl_AppendToObj(fileName, "/", 1);
+    Tcl_AppendObjToObj(fileName, tail);
+    return fileName;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitDLLDirectoryName --
+ *
+ *	Helper for TclpTempFileNameForLibrary; builds a temporary directory
+ *	that is specific to the current process. Should only be called once
+ *	per process start. Caller must hold dllDirectoryNameMutex.
+ *
+ * Results:
+ *	Tcl result code.
+ *
+ * Side-effects:
+ *	Creates temp directory.
+ *	Allocates memory pointed to by dllDirectoryName.
+ *
+ *----------------------------------------------------------------------
+ * [Candidate for process global?]
+ */
+
+static int
+InitDLLDirectoryName(void)
+{
+    size_t nameLen;		/* Length of the temp folder name. */
+    WCHAR name[MAX_PATH];	/* Path name of the temp folder. */
+    DWORD id;			/* The process id. */
+    DWORD lastError;		/* Last error to happen in Win API. */
+    int i;
+
+    /*
+     * Determine the name of the directory to use, and create it.  (Keep
+     * trying with new names until an attempt to create the directory
+     * succeeds)
+     */
+
+    nameLen = GetTempPathW(MAX_PATH, name);
+    if (nameLen >= MAX_PATH-12) {
+	Tcl_SetErrno(ENAMETOOLONG);
+	return TCL_ERROR;
+    }
+
+    wcscpy(name+nameLen, L"TCLXXXXXXXX");
+    nameLen += 11;
+
+    id = GetCurrentProcessId();
+    lastError = ERROR_ALREADY_EXISTS;
+
+    for (i=0 ; i<256 ; i++) {
+	wsprintfW(name+nameLen-8, L"%08x", id);
+	if (CreateDirectoryW(name, NULL)) {
+	    /*
+	     * Issue: we don't schedule this directory for deletion by anyone.
+	     * Can we ask the OS to do this for us?  There appears to be
+	     * potential for using CreateFile (with the flag
+	     * FILE_FLAG_BACKUP_SEMANTICS) and RemoveDirectory to do this...
+	     */
+
+	    goto copyToGlobalBuffer;
+	}
+	lastError = GetLastError();
+	if (lastError != ERROR_ALREADY_EXISTS) {
+	    break;
+	}
+	id *= 16777619;
+    }
+
+    TclWinConvertError(lastError);
+    return TCL_ERROR;
+
+    /*
+     * Store our computed value in the global.
+     */
+
+  copyToGlobalBuffer:
+    dllDirectoryName = ckalloc((nameLen+1) * sizeof(WCHAR));
+    wcscpy(dllDirectoryName, name);
+    return TCL_OK;
 }
 
 /*

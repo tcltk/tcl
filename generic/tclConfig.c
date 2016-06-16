@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclConfig.c,v 1.25 2009/01/09 11:21:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -80,7 +78,7 @@ Tcl_RegisterConfig(
     Tcl_DString cmdName;
     const Tcl_Config *cfg;
     Tcl_Encoding venc = Tcl_GetEncoding(NULL, valEncoding);
-    QCCD *cdPtr = (QCCD *) ckalloc(sizeof(QCCD));
+    QCCD *cdPtr = ckalloc(sizeof(QCCD));
 
     cdPtr->interp = interp;
     cdPtr->pkg = Tcl_NewStringObj(pkgName, -1);
@@ -157,7 +155,7 @@ Tcl_RegisterConfig(
      */
 
     Tcl_DStringInit(&cmdName);
-    Tcl_DStringAppend(&cmdName, "::", -1);
+    TclDStringAppendLiteral(&cmdName, "::");
     Tcl_DStringAppend(&cmdName, pkgName, -1);
 
     /*
@@ -175,7 +173,7 @@ Tcl_RegisterConfig(
 	}
     }
 
-    Tcl_DStringAppend(&cmdName, "::pkgconfig", -1);
+    TclDStringAppendLiteral(&cmdName, "::pkgconfig");
 
     if (Tcl_CreateObjCommand(interp, Tcl_DStringValue(&cmdName),
 	    QueryConfigObjCmd, cdPtr, QueryConfigDelete) == NULL) {
@@ -238,7 +236,9 @@ QueryConfigObjCmd(
 	 * present.
 	 */
 
-	Tcl_SetResult(interp, "package not known", TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("package not known", -1));
+	Tcl_SetErrorCode(interp, "TCL", "FATAL", "PKGCFG_BASE",
+		Tcl_GetString(pkgName), NULL);
 	return TCL_ERROR;
     }
 
@@ -249,9 +249,11 @@ QueryConfigObjCmd(
 	    return TCL_ERROR;
 	}
 
-	if (Tcl_DictObjGet(interp, pkgDict, objv [2], &val) != TCL_OK
+	if (Tcl_DictObjGet(interp, pkgDict, objv[2], &val) != TCL_OK
 		|| val == NULL) {
-	    Tcl_SetResult(interp, "key not known", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("key not known", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONFIG",
+		    Tcl_GetString(objv[2]), NULL);
 	    return TCL_ERROR;
 	}
 
@@ -268,25 +270,20 @@ QueryConfigObjCmd(
 	listPtr = Tcl_NewListObj(n, NULL);
 
 	if (!listPtr) {
-	    Tcl_SetResult(interp, "insufficient memory to create list",
-		    TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "insufficient memory to create list", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	    return TCL_ERROR;
 	}
 
 	if (n) {
-	    List *listRepPtr = (List *)
-		    listPtr->internalRep.twoPtrValue.ptr1;
 	    Tcl_DictSearch s;
-	    Tcl_Obj *key, **vals;
-	    int done, i = 0;
-
-	    listRepPtr->elemCount = n;
-	    vals = &listRepPtr->elements;
+	    Tcl_Obj *key;
+	    int done;
 
 	    for (Tcl_DictObjFirst(interp, pkgDict, &s, &key, NULL, &done);
 		    !done; Tcl_DictObjNext(&s, &key, NULL, &done)) {
-		vals[i++] = key;
-		Tcl_IncrRefCount(key);
+		Tcl_ListObjAppendElement(NULL, listPtr, key);
 	    }
 	}
 
@@ -321,12 +318,13 @@ static void
 QueryConfigDelete(
     ClientData clientData)
 {
-    QCCD *cdPtr = (QCCD *) clientData;
+    QCCD *cdPtr = clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB = GetConfigDict(cdPtr->interp);
+
     Tcl_DictObjRemove(NULL, pDB, pkgName);
     Tcl_DecrRefCount(pkgName);
-    ckfree((char *)cdPtr);
+    ckfree(cdPtr);
 }
 
 /*

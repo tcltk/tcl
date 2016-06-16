@@ -9,8 +9,6 @@
  * copyright notice appear in all copies. The University of California makes
  * no representations about the suitability of this software for any purpose.
  * It is provided "as is" without express or implied warranty.
- *
- * RCS: @(#) $Id: unistd.h,v 1.5 2010/04/29 09:23:57 nijtmans Exp $
  */
 
 #ifndef _UNISTD

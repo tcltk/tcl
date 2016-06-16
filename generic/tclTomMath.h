@@ -15,7 +15,6 @@
 #ifndef BN_H_
 #define BN_H_
 
-#include "tclInt.h"
 #include "tclTomMathDecls.h"
 #ifndef MODULE_SCOPE
 #define MODULE_SCOPE extern
@@ -831,10 +830,3 @@ MODULE_SCOPE const char *mp_s_rmap;
 #endif
 
 #endif
-
-
-/* $Source: /root/tcl/repos-to-convert/tcl/generic/tclTomMath.h,v $ */
-/* Based on Tom's version 1.8 */
-/* $Revision: 1.14 $ */
-/* $Date: 2010/05/03 14:36:41 $ */
-

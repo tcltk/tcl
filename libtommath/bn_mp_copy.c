@@ -62,7 +62,3 @@ mp_copy (const mp_int * a, mp_int * b)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_copy.c,v $ */
-/* $Revision: 1.2 $ */
-/* $Date: 2010/05/03 14:36:40 $ */

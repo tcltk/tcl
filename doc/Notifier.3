@@ -5,13 +5,11 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Notifier.3,v 1.25 2008/12/18 21:23:47 dkf Exp $
-'\" 
 .so man.macros
 .TH Notifier 3 8.1 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_CreateEventSource, Tcl_DeleteEventSource, Tcl_SetMaxBlockTime, Tcl_QueueEvent, Tcl_ThreadQueueEvent, Tcl_ThreadAlert, Tcl_GetCurrentThread, Tcl_DeleteEvents, Tcl_InitNotifier, Tcl_FinalizeNotifier, Tcl_WaitForEvent, Tcl_AlertNotifier, Tcl_SetTimer, Tcl_ServiceAll, Tcl_ServiceEvent, Tcl_GetServiceMode, Tcl_SetServiceMode \- the event queue and notifier interfaces
+Tcl_CreateEventSource, Tcl_DeleteEventSource, Tcl_SetMaxBlockTime, Tcl_QueueEvent, Tcl_ThreadQueueEvent, Tcl_ThreadAlert, Tcl_GetCurrentThread, Tcl_DeleteEvents, Tcl_InitNotifier, Tcl_FinalizeNotifier, Tcl_WaitForEvent, Tcl_AlertNotifier, Tcl_SetTimer, Tcl_ServiceAll, Tcl_ServiceEvent, Tcl_GetServiceMode, Tcl_SetServiceMode, Tcl_ServiceModeHook, Tcl_SetNotifier \- the event queue and notifier interfaces
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -413,7 +411,7 @@ an event to the current thread's queue.
 To add an event to another thread's queue, use \fBTcl_ThreadQueueEvent\fR.
 \fBTcl_ThreadQueueEvent\fR accepts as an argument a Tcl_ThreadId argument,
 which uniquely identifies a thread in a Tcl application.  To obtain the
-Tcl_ThreadID for the current thread, use the \fBTcl_GetCurrentThread\fR
+Tcl_ThreadId for the current thread, use the \fBTcl_GetCurrentThread\fR
 procedure.  (A thread would then need to pass this identifier to other
 threads for those threads to be able to add events to its queue.)
 After adding an event to another thread's queue, you then typically

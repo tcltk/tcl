@@ -16,12 +16,9 @@
  *	this software, provided that the author is not construed to be liable
  *	for any results of using the software, alterations are clearly marked
  *	as such, and this notice is not modified.
- *
- * RCS: @(#) $Id: dlfcn.h,v 1.5 2010/04/29 09:23:57 nijtmans Exp $
  */
 
 /*
- * @(#)dlfcn.h	1.4 revision of 95/04/25  09:36:52
  * This is an unpublished work copyright (c) 1992 HELIOS Software GmbH
  * 30159 Hannover, Germany
  */

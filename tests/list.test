@@ -10,8 +10,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: list.test,v 1.8 2010/02/12 03:21:32 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -126,6 +124,10 @@ proc slowsort list {
 test list-3.1 {SetListFromAny and lrange/concat results} {
     slowsort {fred julie alex carol bill annie}
 } {alex annie bill carol fred julie}
+
+test list-4.1 {Bug 3173086} {
+    string is list "{[list \\\\\}]}"
+} 1
 
 # cleanup
 ::tcltest::cleanupTests

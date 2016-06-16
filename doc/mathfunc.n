@@ -6,8 +6,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: mathfunc.n,v 1.22 2008/06/29 22:28:24 dkf Exp $
-'\" 
 .so man.macros
 .TH mathfunc n 8.5 Tcl "Tcl Mathematical Functions"
 .BS
@@ -197,16 +195,19 @@ Returns the floating-point remainder of the division of \fIx\fR by
 .TP
 \fBhypot \fIx y\fR
 .
-Computes the length of the hypotenuse of a right-angled triangle
-.QW "\fBsqrt\fR [\fBexpr\fR {\fIx\fB*\fIx\fB+\fIy\fB*\fIy\fR}]".
+Computes the length of the hypotenuse of a right-angled triangle,
+approximately
+.QW "\fBsqrt\fR [\fBexpr\fR {\fIx\fB*\fIx\fB+\fIy\fB*\fIy\fR}]"
+except for being more numerically stable when the two arguments have
+substantially different magnitudes.
 .TP
 \fBint \fIarg\fR
 .
 The argument may be any numeric value.  The integer part of \fIarg\fR
 is determined, and then the low order bits of that integer value up
 to the machine word size are returned as an integer value.  For reference,
-the number of bytes in the machine word are stored in
-\fBtcl_platform(wordSize)\fR.
+the number of bytes in the machine word are stored in the \fBwordSize\fR
+element of the \fBtcl_platform\fR array.
 .TP
 \fBisqrt \fIarg\fR
 .
@@ -298,3 +299,7 @@ Copyright (c) 1993 The Regents of the University of California.
 Copyright (c) 1994-2000 Sun Microsystems Incorporated.
 Copyright (c) 2005, 2006 by Kevin B. Kenny <kennykb@acm.org>.
 .fi
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

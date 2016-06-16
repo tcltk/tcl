@@ -12,8 +12,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclLiteral.c,v 1.43 2010/04/29 23:39:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -77,78 +75,6 @@ TclInitLiteralTable(
 /*
  *----------------------------------------------------------------------
  *
- * TclCleanupLiteralTable --
- *
- *	This function frees the internal representation of every literal in a
- *	literal table. It is called prior to deleting an interp, so that
- *	variable refs will be cleaned up properly.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Each literal in the table has its internal representation freed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclCleanupLiteralTable(
-    Tcl_Interp *interp,		/* Interpreter containing literals to purge */
-    LiteralTable *tablePtr)	/* Points to the literal table being
-				 * cleaned. */
-{
-    int i;
-    LiteralEntry *entryPtr;	/* Pointer to the current entry in the hash
-				 * table of literals. */
-    LiteralEntry *nextPtr;	/* Pointer to the next entry in the bucket. */
-    Tcl_Obj *objPtr;		/* Pointer to a literal object whose internal
-				 * rep is being freed. */
-    const Tcl_ObjType *typePtr;	/* Pointer to the object's type. */
-    int didOne;			/* Flag for whether we've removed a literal in
-				 * the current bucket. */
-
-#ifdef TCL_COMPILE_DEBUG
-    TclVerifyGlobalLiteralTable((Interp *) interp);
-#endif /* TCL_COMPILE_DEBUG */
-
-    for (i=0 ; i<tablePtr->numBuckets ; i++) {
-	/*
-	 * It is tempting simply to walk each hash bucket once and delete the
-	 * internal representations of each literal in turn. It's also wrong.
-	 * The problem is that freeing a literal's internal representation can
-	 * delete other literals to which it refers, making nextPtr invalid.
-	 * So each time we free an internal rep, we start its bucket over
-	 * again.
-	 */
-
-	do {
-	    didOne = 0;
-	    entryPtr = tablePtr->buckets[i];
-	    while (entryPtr != NULL) {
-		objPtr = entryPtr->objPtr;
-		nextPtr = entryPtr->nextPtr;
-		typePtr = objPtr->typePtr;
-		if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
-		    if (objPtr->bytes == NULL) {
-			Tcl_Panic("%s: literal without a string rep",
-				"TclCleanupLiteralTable");
-		    }
-		    objPtr->typePtr = NULL;
-		    typePtr->freeIntRepProc(objPtr);
-		    didOne = 1;
-		    break;
-		} else {
-		    entryPtr = nextPtr;
-		}
-	    }
-	} while (didOne);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclDeleteLiteralTable --
  *
  *	This function frees up everything associated with a literal table
@@ -201,7 +127,7 @@ TclDeleteLiteralTable(
 	    objPtr = entryPtr->objPtr;
 	    TclDecrRefCount(objPtr);
 	    nextPtr = entryPtr->nextPtr;
-	    ckfree((char *) entryPtr);
+	    ckfree(entryPtr);
 	    entryPtr = nextPtr;
 	}
     }
@@ -211,7 +137,7 @@ TclDeleteLiteralTable(
      */
 
     if (tablePtr->buckets != tablePtr->staticBuckets) {
-	ckfree((char *) tablePtr->buckets);
+	ckfree(tablePtr->buckets);
     }
 }
 
@@ -285,7 +211,7 @@ TclCreateLiteral(
 		*globalPtrPtr = globalPtr;
 	    }
 	    if (flags & LITERAL_ON_HEAP) {
-		ckfree((char *) bytes);
+		ckfree(bytes);
 	    }
 	    globalPtr->refCount++;
 	    return objPtr;
@@ -293,7 +219,7 @@ TclCreateLiteral(
     }
     if (!newPtr) {
 	if (flags & LITERAL_ON_HEAP) {
-	    ckfree((char *) bytes);
+	    ckfree(bytes);
 	}
 	return NULL;
     }
@@ -319,7 +245,7 @@ TclCreateLiteral(
     }
 #endif
 
-    globalPtr = (LiteralEntry *) ckalloc((unsigned) sizeof(LiteralEntry));
+    globalPtr = ckalloc(sizeof(LiteralEntry));
     globalPtr->objPtr = objPtr;
     globalPtr->refCount = 1;
     globalPtr->nsPtr = nsPtr;
@@ -441,7 +367,7 @@ TclRegisterLiteral(
 		|| ((objPtr->bytes[0] == bytes[0])
 		&& (memcmp(objPtr->bytes, bytes, (unsigned) length) == 0)))) {
 	    if (flags & LITERAL_ON_HEAP) {
-		ckfree((char *) bytes);
+		ckfree(bytes);
 	    }
 	    objIndex = (localPtr - envPtr->literalArrayPtr);
 #ifdef TCL_COMPILE_DEBUG
@@ -759,15 +685,14 @@ ExpandLocalLiteralArray(
     int i;
 
     if (envPtr->mallocedLiteralArray) {
-	newArrayPtr = (LiteralEntry *)
-		ckrealloc((char *)currArrayPtr, 2 * currBytes);
+	newArrayPtr = ckrealloc(currArrayPtr, 2 * currBytes);
     } else {
 	/*
 	 * envPtr->literalArrayPtr isn't a ckalloc'd pointer, so we must
 	 * code a ckrealloc equivalent for ourselves.
 	 */
 
-	newArrayPtr = (LiteralEntry *) ckalloc(2 * currBytes);
+	newArrayPtr = ckalloc(2 * currBytes);
 	memcpy(newArrayPtr, currArrayPtr, currBytes);
 	envPtr->mallocedLiteralArray = 1;
     }
@@ -856,7 +781,7 @@ TclReleaseLiteral(
 		} else {
 		    prevPtr->nextPtr = entryPtr->nextPtr;
 		}
-		ckfree((char *) entryPtr);
+		ckfree(entryPtr);
 		globalTablePtr->numEntries--;
 
 		TclDecrRefCount(objPtr);
@@ -978,8 +903,7 @@ RebuildLiteralTable(
      */
 
     tablePtr->numBuckets *= 4;
-    tablePtr->buckets = (LiteralEntry **) ckalloc((unsigned)
-	    (tablePtr->numBuckets * sizeof(LiteralEntry *)));
+    tablePtr->buckets = ckalloc(tablePtr->numBuckets * sizeof(LiteralEntry*));
     for (count=tablePtr->numBuckets, newChainPtr=tablePtr->buckets;
 	    count>0 ; count--, newChainPtr++) {
 	*newChainPtr = NULL;
@@ -1008,7 +932,47 @@ RebuildLiteralTable(
      */
 
     if (oldBuckets != tablePtr->staticBuckets) {
-	ckfree((char *) oldBuckets);
+	ckfree(oldBuckets);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclInvalidateCmdLiteral --
+ *
+ *	Invalidate a command literal entry, if present in the literal hash
+ *	tables, by resetting its internal representation. This invalidation
+ *	leaves it in the literal tables and in existing literal arrays. As a
+ *	result, existing references continue to work but we force a fresh
+ *	command look-up upon the next use (see, in particular,
+ *	TclSetCmdNameObj()).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects: 
+ *	Resets the internal representation of the CmdName Tcl_Obj
+ *	using TclFreeIntRep().
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclInvalidateCmdLiteral(
+    Tcl_Interp *interp,		/* Interpreter for which to invalidate a
+				 * command literal. */
+    const char *name,		/* Points to the start of the cmd literal
+				 * name. */
+    Namespace *nsPtr)		/* The namespace for which to lookup and
+				 * invalidate a cmd literal. */
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *literalObjPtr = TclCreateLiteral(iPtr, (char *) name,
+	    strlen(name), -1, NULL, nsPtr, 0, NULL);
+
+    if (literalObjPtr != NULL && literalObjPtr->typePtr == &tclCmdNameType) {
+	TclFreeIntRep(literalObjPtr);
     }
 }
 
@@ -1070,7 +1034,7 @@ TclLiteralStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    result = (char *) ckalloc((unsigned) ((NUM_COUNTERS*60) + 300));
+    result = ckalloc(NUM_COUNTERS*60 + 300);
     sprintf(result, "%d entries in table, %d buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);

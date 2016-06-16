@@ -10,8 +10,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: join.test,v 1.7 2009/01/08 16:41:35 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -39,7 +37,7 @@ test join-2.2 {join errors} {
 } {1 {wrong # args: should be "join list ?joinString?"} {TCL WRONGARGS}}
 test join-2.3 {join errors} {
     list [catch {join "a \{ c" 111} msg] $msg $errorCode
-} {1 {unmatched open brace in list} {TCL VALUE LIST}}
+} {1 {unmatched open brace in list} {TCL VALUE LIST BRACE}}
 
 test join-3.1 {joinString is binary ok} {
   string length [join {a b c} a\0b]

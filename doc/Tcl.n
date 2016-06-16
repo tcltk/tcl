@@ -4,11 +4,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-'\" RCS: @(#) $Id: Tcl.n,v 1.24 2010/01/13 12:08:30 dkf Exp $
 '\"
 .so man.macros
-.TH Tcl n "8.5" Tcl "Tcl Built-In Commands"
+.TH Tcl n "8.6" Tcl "Tcl Built-In Commands"
 .BS
 .SH NAME
 Tcl \- Tool Command Language
@@ -110,6 +108,8 @@ Variable substitution may take any of the following forms:
 \fIName\fR is the name of a scalar variable;  the name is a sequence
 of one or more characters that are a letter, digit, underscore,
 or namespace separators (two or more colons).
+Letters and digits are \fIonly\fR the standard ASCII ones (\fB0\fR\-\fB9\fR,
+\fBA\fR\-\fBZ\fR and \fBa\fR\-\fBz\fR).
 .TP 15
 \fB$\fIname\fB(\fIindex\fB)\fR
 .
@@ -117,6 +117,8 @@ or namespace separators (two or more colons).
 the name of an element within that array.
 \fIName\fR must contain only letters, digits, underscores, and
 namespace separators, and may be an empty string.
+Letters and digits are \fIonly\fR the standard ASCII ones (\fB0\fR\-\fB9\fR,
+\fBA\fR\-\fBZ\fR and \fBa\fR\-\fBz\fR).
 Command substitutions, variable substitutions, and backslash
 substitutions are performed on the characters of \fIindex\fR.
 .TP 15
@@ -136,6 +138,10 @@ substitutions are performed during the parsing of \fIname\fR.
 .PP
 There may be any number of variable substitutions in a single word.
 Variable substitution is not performed on words enclosed in braces.
+.PP
+Note that variables may contain character sequences other than those listed
+above, but in that case other mechanisms must be used to access them (e.g.,
+via the \fBset\fR command's single-argument form).
 .RE
 .IP "[9] \fBBackslash substitution.\fR"
 If a backslash
@@ -187,23 +193,33 @@ Backslash
 .TP 7
 \e\fIooo\fR 
 .
-The digits \fIooo\fR (one, two, or three of them) give an eight-bit octal 
-value for the Unicode character that will be inserted.  The upper bits of the
-Unicode character will be 0.
+The digits \fIooo\fR (one, two, or three of them) give a eight-bit octal 
+value for the Unicode character that will be inserted, in the range \fI000\fR
+- \fI377\fR.  The parser will stop just before this range overflows, or when
+the maximum of three digits is reached.  The upper bits of the Unicode
+character will be 0.
 .TP 7
 \e\fBx\fIhh\fR 
 .
-The hexadecimal digits \fIhh\fR give an eight-bit hexadecimal value for the
-Unicode character that will be inserted.  Any number of hexadecimal digits
-may be present; however, all but the last two are ignored (the result is
-always a one-byte quantity).  The upper bits of the Unicode character will
-be 0.
+The hexadecimal digits \fIhh\fR (one or two of them) give an eight-bit
+hexadecimal value for the Unicode character that will be inserted.  The upper
+bits of the Unicode character will be 0.
 .TP 7
 \e\fBu\fIhhhh\fR 
 .
 The hexadecimal digits \fIhhhh\fR (one, two, three, or four of them) give a
 sixteen-bit hexadecimal value for the Unicode character that will be
-inserted.
+inserted.  The upper bits of the Unicode character will be 0.
+.TP 7
+\e\fBU\fIhhhhhhhh\fR 
+.
+The hexadecimal digits \fIhhhhhhhh\fR (one up to eight of them) give a
+twenty-one-bit hexadecimal value for the Unicode character that will be
+inserted, in the range U+0000..U+10FFFF.  The parser will stop just
+before this range overflows, or when the maximum of eight digits
+is reached.  The upper bits of the Unicode character will be 0.
+.PP
+The range U+010000..U+10FFFD is reserved for the future.
 .PP
 Backslash substitution is not performed on words enclosed in braces,
 except for backslash-newline as described above.

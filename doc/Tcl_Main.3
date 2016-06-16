@@ -6,8 +6,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl_Main.3,v 1.20 2008/12/19 18:23:04 dgp Exp $
-'\" 
 .so man.macros
 .TH Tcl_Main 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -30,7 +28,8 @@ Tcl_Obj *
 .AP int argc in
 Number of elements in \fIargv\fR.
 .AP char *argv[] in
-Array of strings containing command-line arguments.
+Array of strings containing command-line arguments. On Windows, when
+using -DUNICODE, the parameter type changes to wchar_t *.
 .AP Tcl_AppInitProc *appInitProc in
 Address of an application-specific initialization procedure.
 The value for this argument is usually \fBTcl_AppInit\fR.

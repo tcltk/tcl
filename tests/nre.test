@@ -8,13 +8,14 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: nre.test,v 1.12 2010/01/21 17:23:49 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testnrelevels [llength [info commands testnrelevels]]
 
@@ -62,7 +63,7 @@ if {[testConstraint testnrelevels]} {
     }
     namespace import testnre::*
 }
-
+
 test nre-1.1 {self-recursive procs} -setup {
     proc a i [makebody {a $i}]
 } -body {
@@ -163,7 +164,7 @@ test nre-5.1 {[namespace eval] is not recursive} -setup {
     namespace delete ::foo
 } -constraints {
     testnrelevels
-} -result {{0 2 2 2} 0}
+} -result {{0 3 2 2} 0}
 
 test nre-5.2 {[namespace eval] is not recursive} -setup {
     namespace eval ::foo {
@@ -176,7 +177,7 @@ test nre-5.2 {[namespace eval] is not recursive} -setup {
     namespace delete ::foo
 } -constraints {
     testnrelevels
-} -result {{0 2 2 2} 0}
+} -result {{0 3 2 2} 0}
 
 test nre-6.1 {[uplevel] is not recursive} -setup {
     proc a i [makebody {uplevel 1 [list a $i]}]
@@ -304,7 +305,7 @@ test nre-7.8 {bug #2910748: switch out of stale BC is not nre-aware} -setup {
 
 test nre-8.1 {nre and {*}} -body {
     # force an expansion that grows the evaluation stack, check that nre
-    # adapts the bottomPtr. This crashes on failure.
+    # adapts the TEBCdataPtr. This crashes on failure.
 
     proc inner {} {
 	set long [lrepeat 1000000 1]
@@ -413,23 +414,24 @@ test nre-oo.5 {really deep calls in oo - forwards} -setup {
 # NASTY BUG found by tcllib's interp package
 #
 
-test nre-X.1 {eval in wrong interp} {
+test nre-X.1 {eval in wrong interp} -setup {
     set i [interp create]
-    set res [$i eval {
+    $i eval {proc filter lst {lsearch -all -inline -not $lst "::tcl"}}
+} -body {
+    $i eval {
 	set x {namespace children ::}
 	set y [list namespace children ::]
-	namespace delete {*}[{*}$y]
+	namespace delete {*}[filter [{*}$y]]
 	set j [interp create]
-	$j eval {namespace delete {*}[namespace children ::]}
+	$j alias filter filter
+	$j eval {namespace delete {*}[filter [namespace children ::]]}
 	namespace eval foo {}
-	set res [list [eval $x] [eval $y] [$j eval $x] [$j eval $y]]
-	interp delete $j
-	set res
-    }]
+	list [filter [eval $x]] [filter [eval $y]] [filter [$j eval $x]] [filter [$j eval $y]]
+    }
+} -cleanup {
     interp delete $i
-    set res
-} {::foo ::foo {} {}}
-
+} -result {::foo ::foo {} {}}
+
 # cleanup
 ::tcltest::cleanupTests
 
@@ -439,3 +441,8 @@ if {[testConstraint testnrelevels]} {
 }
 
 return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

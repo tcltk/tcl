@@ -1,5 +1,3 @@
-# $Id: tclOO.decls,v 1.8 2010/09/15 07:33:54 nijtmans Exp $
-
 library tclOO
 
 ######################################################################
@@ -8,7 +6,7 @@ library tclOO
 
 interface tclOO
 hooks tclOOInt
-scspec EXTERN
+scspec TCLOOAPI
 
 declare 0 {
     Tcl_Object Tcl_CopyObjectInstance(Tcl_Interp *interp,

@@ -2,8 +2,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Panic.3,v 1.9 2008/06/29 22:28:24 dkf Exp $
-'\" 
 .so man.macros
 .TH Tcl_Panic 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -51,7 +49,10 @@ same formatting rules are also used by the built-in Tcl command
 In a freshly loaded Tcl library, \fBTcl_Panic\fR prints the formatted
 error message to the standard error file of the process, and then
 calls \fBabort\fR to terminate the process.  \fBTcl_Panic\fR does not
-return.
+return. On Windows, when a debugger is running, the formatted error
+message is sent to the debugger in stead. If the windows executable
+does not have a stderr channel (e.g. \fBwish.exe\fR), then a
+system dialog box is used to display the panic message.
 .PP
 \fBTcl_SetPanicProc\fR may be used to modify the behavior of
 \fBTcl_Panic\fR.  The \fIpanicProc\fR argument should match the
@@ -65,19 +66,14 @@ typedef void \fBTcl_PanicProc\fR(
 .PP
 After \fBTcl_SetPanicProc\fR returns, any future calls to
 \fBTcl_Panic\fR will call \fIpanicProc\fR, passing along the
-\fIformat\fR and \fIarg\fR arguments.  To maintain consistency with the
-callers of \fBTcl_Panic\fR, \fIpanicProc\fR must not return; it must
-call \fBabort\fR.  \fIpanicProc\fR should avoid making calls into the
-Tcl library, or into other libraries that may call the Tcl library,
-since the original call to \fBTcl_Panic\fR indicates the Tcl library is
-not in a state of reliable operation.  
+\fIformat\fR and \fIarg\fR arguments. \fIpanicProc\fR should avoid
+making calls into the Tcl library, or into other libraries that may
+call the Tcl library, since the original call to \fBTcl_Panic\fR
+indicates the Tcl library is not in a state of reliable operation.  
 .PP
 The typical use of \fBTcl_SetPanicProc\fR arranges for the error message
 to be displayed or reported in a manner more suitable for the
-application or the platform.  As an example, the Windows implementation
-of \fBwish\fR calls \fBTcl_SetPanicProc\fR to force all panic messages
-to be displayed in a system dialog box, rather than to be printed to the
-standard error file (usually not visible under Windows).
+application or the platform.
 .PP
 Although the primary callers of \fBTcl_Panic\fR are the procedures of
 the Tcl library, \fBTcl_Panic\fR is a public function and may be called

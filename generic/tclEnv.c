@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclEnv.c,v 1.43 2010/04/28 11:50:54 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -47,11 +45,8 @@ MODULE_SCOPE void	TclSetEnv(const char *name, const char *value);
 MODULE_SCOPE void	TclUnsetEnv(const char *name);
 
 #if defined(__CYGWIN__)
-/* On Cygwin, the environment is imported from the Cygwin DLL. */
-     DLLIMPORT extern int cygwin_posix_to_win32_path_list_buf_size(char *value);
-     DLLIMPORT extern void cygwin_posix_to_win32_path_list(char *buf, char *value);
-#    define putenv TclCygwinPutenv
-static void		TclCygwinPutenv(char *string);
+    static void TclCygwinPutenv(char *string);
+#   define putenv TclCygwinPutenv
 #endif
 
 /*
@@ -163,7 +158,8 @@ TclSetEnv(
     const char *value)		/* New value for variable (UTF-8). */
 {
     Tcl_DString envString;
-    int index, length, nameLength;
+    unsigned nameLength, valueLength;
+    int index, length;
     char *p, *oldValue;
     const char *p2;
 
@@ -185,12 +181,11 @@ TclSetEnv(
 	 */
 
 	if ((env.ourEnviron != environ) || (length+2 > env.ourEnvironSize)) {
-	    char **newEnviron = (char **)
-		    ckalloc(((unsigned) length + 5) * sizeof(char *));
+	    char **newEnviron = ckalloc((length + 5) * sizeof(char *));
 
 	    memcpy(newEnviron, environ, length * sizeof(char *));
 	    if ((env.ourEnvironSize != 0) && (env.ourEnviron != NULL)) {
-		ckfree((char *) env.ourEnviron);
+		ckfree(env.ourEnviron);
 	    }
 	    environ = env.ourEnviron = newEnviron;
 	    env.ourEnvironSize = length + 5;
@@ -220,7 +215,7 @@ TclSetEnv(
 	Tcl_DStringFree(&envString);
 
 	oldValue = environ[index];
-	nameLength = length;
+	nameLength = (unsigned) length;
     }
 
     /*
@@ -229,18 +224,19 @@ TclSetEnv(
      * and set the environ array value.
      */
 
-    p = ckalloc((unsigned) nameLength + strlen(value) + 2);
-    strcpy(p, name);
+    valueLength = strlen(value);
+    p = ckalloc(nameLength + valueLength + 2);
+    memcpy(p, name, nameLength);
     p[nameLength] = '=';
-    strcpy(p+nameLength+1, value);
+    memcpy(p+nameLength+1, value, valueLength+1);
     p2 = Tcl_UtfToExternalDString(NULL, p, -1, &envString);
 
     /*
      * Copy the native string to heap memory.
      */
 
-    p = ckrealloc(p, strlen(p2) + 1);
-    strcpy(p, p2);
+    p = ckrealloc(p, Tcl_DStringLength(&envString) + 1);
+    memcpy(p, p2, (unsigned) Tcl_DStringLength(&envString) + 1);
     Tcl_DStringFree(&envString);
 
 #ifdef USE_PUTENV
@@ -400,19 +396,20 @@ TclUnsetEnv(
      */
 
 #if defined(__WIN32__) || defined(__CYGWIN__)
-    string = ckalloc((unsigned) length+2);
+    string = ckalloc(length + 2);
     memcpy(string, name, (size_t) length);
     string[length] = '=';
     string[length+1] = '\0';
 #else
-    string = ckalloc((unsigned) length+1);
+    string = ckalloc(length + 1);
     memcpy(string, name, (size_t) length);
     string[length] = '\0';
 #endif /* WIN32 */
 
     Tcl_UtfToExternalDString(NULL, string, -1, &envString);
-    string = ckrealloc(string, (unsigned) Tcl_DStringLength(&envString)+1);
-    strcpy(string, Tcl_DStringValue(&envString));
+    string = ckrealloc(string, Tcl_DStringLength(&envString) + 1);
+    memcpy(string, Tcl_DStringValue(&envString),
+	    (unsigned) Tcl_DStringLength(&envString)+1);
     Tcl_DStringFree(&envString);
 
     putenv(string);
@@ -645,11 +642,11 @@ ReplaceString(
 
 	const int growth = 5;
 
-	env.cache = (char **) ckrealloc((char *) env.cache,
+	env.cache = ckrealloc(env.cache,
 		(env.cacheSize + growth) * sizeof(char *));
 	env.cache[env.cacheSize] = newStr;
-	(void) memset(env.cache+env.cacheSize+1, (int) 0,
-		(size_t) (growth-1) * sizeof(char*));
+	(void) memset(env.cache+env.cacheSize+1, 0,
+		(size_t) (growth-1) * sizeof(char *));
 	env.cacheSize += growth;
     }
 }
@@ -684,7 +681,7 @@ TclFinalizeEnvironment(void)
      */
 
     if (env.cache) {
-	ckfree((char *) env.cache);
+	ckfree(env.cache);
 	env.cache = NULL;
 	env.cacheSize = 0;
 #ifndef USE_PUTENV
@@ -701,6 +698,7 @@ TclFinalizeEnvironment(void)
  * fork) and the Windows environment (in case the application TCL code calls
  * exec, which calls the Windows CreateProcess function).
  */
+DLLIMPORT extern void __stdcall SetEnvironmentVariableA(const char*, const char *);
 
 static void
 TclCygwinPutenv(
@@ -754,15 +752,11 @@ TclCygwinPutenv(
 	 */
 
 	if (strcmp(name, "Path") == 0) {
-#ifdef __WIN32__
 	    SetEnvironmentVariableA("PATH", NULL);
-#endif
 	    unsetenv("PATH");
 	}
 
-#ifdef __WIN32__
 	SetEnvironmentVariableA(name, value);
-#endif
     } else {
 	char *buf;
 
@@ -770,9 +764,7 @@ TclCygwinPutenv(
 	 * Eliminate any Path variable, to prevent any confusion.
 	 */
 
-#ifdef __WIN32__
 	SetEnvironmentVariableA("Path", NULL);
-#endif
 	unsetenv("Path");
 
 	if (value == NULL) {
@@ -780,14 +772,12 @@ TclCygwinPutenv(
 	} else {
 	    int size;
 
-	    size = cygwin_posix_to_win32_path_list_buf_size(value);
+	    size = cygwin_conv_path_list(0, value, NULL, 0);
 	    buf = alloca(size + 1);
-	    cygwin_posix_to_win32_path_list(value, buf);
+	    cygwin_conv_path_list(0, value, buf, size);
 	}
 
-#ifdef __WIN32__
 	SetEnvironmentVariableA(name, buf);
-#endif
     }
 }
 #endif /* __CYGWIN__ */

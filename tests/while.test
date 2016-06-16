@@ -9,8 +9,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: while.test,v 1.14 2009/10/30 16:28:02 dkf Exp $
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2

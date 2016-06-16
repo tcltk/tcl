@@ -4,7 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: RegConfig.3,v 1.11 2008/10/04 11:34:19 nijtmans Exp $
 .so man.macros
 .TH Tcl_RegisterConfig 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -81,7 +80,7 @@ create a namespace having the provided \fIpkgName\fR, if not yet
 existing.
 .IP (2)
 create the command \fBpkgconfig\fR in that namespace and link it to
-the provided information so that the keys from _configuration_ and
+the provided information so that the keys from \fIconfiguration\fR and
 their associated values can be retrieved through calls to
 \fBpkgconfig\fR.
 .PP

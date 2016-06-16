@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclRegexp.c,v 1.34 2010/02/24 10:32:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -716,14 +714,14 @@ TclRegError(
     int status)			/* Status code to report. */
 {
     char buf[100];		/* ample in practice */
-    char cbuf[100];		/* lots in practice */
+    char cbuf[TCL_INTEGER_SPACE];
     size_t n;
     const char *p;
 
     Tcl_ResetResult(interp);
     n = TclReError(status, NULL, buf, sizeof(buf));
     p = (n > sizeof(buf)) ? "..." : "";
-    Tcl_AppendResult(interp, msg, buf, p, NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s%s%s", msg, buf, p));
 
     sprintf(cbuf, "%d", status);
     (void) TclReError(REG_ITOA, NULL, cbuf, sizeof(cbuf));
@@ -907,7 +905,7 @@ CompileRegexp(
      * This is a new expression, so compile it and add it to the cache.
      */
 
-    regexpPtr = (TclRegexp *) ckalloc(sizeof(TclRegexp));
+    regexpPtr = ckalloc(sizeof(TclRegexp));
     regexpPtr->objPtr = NULL;
     regexpPtr->string = NULL;
     regexpPtr->details.rm_extend.rm_so = -1;
@@ -934,7 +932,7 @@ CompileRegexp(
 	 * Clean up and report errors in the interpreter, if possible.
 	 */
 
-	ckfree((char *)regexpPtr);
+	ckfree(regexpPtr);
 	if (interp) {
 	    TclRegError(interp,
 		    "couldn't compile regular expression pattern: ", status);
@@ -949,10 +947,8 @@ CompileRegexp(
      */
 
     if (TclReToGlob(NULL, string, length, &stringBuf, &exact) == TCL_OK) {
-	regexpPtr->globObjPtr = Tcl_NewStringObj(Tcl_DStringValue(&stringBuf),
-		Tcl_DStringLength(&stringBuf));
+	regexpPtr->globObjPtr = TclDStringToObj(&stringBuf);
 	Tcl_IncrRefCount(regexpPtr->globObjPtr);
-	Tcl_DStringFree(&stringBuf);
     } else {
 	regexpPtr->globObjPtr = NULL;
     }
@@ -962,7 +958,7 @@ CompileRegexp(
      * the entire pattern.
      */
 
-    regexpPtr->matches = (regmatch_t *)
+    regexpPtr->matches =
 	    ckalloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
 
     /*
@@ -989,8 +985,8 @@ CompileRegexp(
 	tsdPtr->patLengths[i+1] = tsdPtr->patLengths[i];
 	tsdPtr->regexps[i+1] = tsdPtr->regexps[i];
     }
-    tsdPtr->patterns[0] = ckalloc((unsigned) length+1);
-    strcpy(tsdPtr->patterns[0], string);
+    tsdPtr->patterns[0] = ckalloc(length + 1);
+    memcpy(tsdPtr->patterns[0], string, (unsigned) length + 1);
     tsdPtr->patLengths[0] = length;
     tsdPtr->regexps[0] = regexpPtr;
 
@@ -1022,9 +1018,9 @@ FreeRegexp(
 	TclDecrRefCount(regexpPtr->globObjPtr);
     }
     if (regexpPtr->matches) {
-	ckfree((char *) regexpPtr->matches);
+	ckfree(regexpPtr->matches);
     }
-    ckfree((char *) regexpPtr);
+    ckfree(regexpPtr);
 }
 
 /*

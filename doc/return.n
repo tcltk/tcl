@@ -6,8 +6,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: return.n,v 1.27 2010/04/07 09:51:31 dkf Exp $
-'\" 
 .so man.macros
 .TH return n 8.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -319,7 +317,8 @@ proc myReturn {args} {
 }
 .CE
 .SH "SEE ALSO"
-break(n), catch(n), continue(n), dict(n), error(n), proc(n), source(n), tclvars(n)
+break(n), catch(n), continue(n), dict(n), error(n), proc(n),
+source(n), tclvars(n), throw(n), try(n)
 .SH KEYWORDS
 break, catch, continue, error, exception, procedure, result, return
 .\" Local Variables:

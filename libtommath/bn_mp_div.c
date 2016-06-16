@@ -286,7 +286,3 @@ LBL_Q:mp_clear (&q);
 #endif
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_div.c,v $ */
-/* $Revision: 1.4 $ */
-/* $Date: 2006/12/01 19:45:38 $ */

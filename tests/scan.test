@@ -10,8 +10,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: scan.test,v 1.23 2008/12/10 18:21:47 ferrieux Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -330,7 +328,7 @@ test scan-4.60 {Tcl_ScanObjCmd, set errors} {
 	    $msg $x $y]
     unset z
     set result
-} {1 {couldn't set variable "z"} abc ghi}
+} {1 {can't set "z": variable is array} abc ghi}
 test scan-4.61 {Tcl_ScanObjCmd, set errors} {
     set x {}
     catch {unset y}; array set y {}
@@ -340,7 +338,7 @@ test scan-4.61 {Tcl_ScanObjCmd, set errors} {
     unset y
     unset z
     set result
-} {1 {couldn't set variable "z"couldn't set variable "y"} abc}
+} {1 {can't set "z": variable is array} abc}
 
 # procedure that returns the range of integers
 
@@ -547,27 +545,27 @@ test scan-8.12 {error conditions} {
     catch {unset a}
     set a(0) 44
     list [catch {scan 44 %d a} msg] $msg
-} {1 {couldn't set variable "a"}}
+} {1 {can't set "a": variable is array}}
 test scan-8.13 {error conditions} {
     catch {unset a}
     set a(0) 44
     list [catch {scan 44 %c a} msg] $msg
-} {1 {couldn't set variable "a"}}
+} {1 {can't set "a": variable is array}}
 test scan-8.14 {error conditions} {
     catch {unset a}
     set a(0) 44
     list [catch {scan 44 %s a} msg] $msg
-} {1 {couldn't set variable "a"}}
+} {1 {can't set "a": variable is array}}
 test scan-8.15 {error conditions} {
     catch {unset a}
     set a(0) 44
     list [catch {scan 44 %f a} msg] $msg
-} {1 {couldn't set variable "a"}}
+} {1 {can't set "a": variable is array}}
 test scan-8.16 {error conditions} {
     catch {unset a}
     set a(0) 44
     list [catch {scan 44 %f a} msg] $msg
-} {1 {couldn't set variable "a"}}
+} {1 {can't set "a": variable is array}}
 catch {unset a}
 test scan-8.17 {error conditions} {
     list [catch {scan 44 %2c a} msg] $msg
@@ -755,11 +753,11 @@ testConstraint ieeeFloatingPoint [testIEEE]
 
 # scan infinities - not working
 
-test scan-14.1 {infinity} ieeeFloatingPoint {
+test scan-14.1 {infinity} {
     scan Inf %g d
     set d
 } Inf
-test scan-14.2 {infinity} ieeeFloatingPoint {
+test scan-14.2 {infinity} {
     scan -Inf %g d
     set d
 } -Inf

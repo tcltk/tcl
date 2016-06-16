@@ -4,8 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: define.n,v 1.3 2009/04/11 11:18:51 dkf Exp $
-'\"
 .so man.macros
 .TH define n 0.3 TclOO "TclOO Commands"
 .BS
@@ -83,14 +81,18 @@ class being defined. Note that the methods themselves may be actually defined
 by a superclass; subclass exports override superclass visibility, and may in
 turn be overridden by instances.
 .TP
-\fBfilter\fR ?\fImethodName ...\fR?
-.
-This sets or updates the list of method names that are used to guard whether a
+\fBfilter\fR ?\fI\-slotOperation\fR? ?\fImethodName ...\fR?
+.VS
+This slot (see \fBSLOTTED DEFINITIONS\fR below)
+.VE
+sets or updates the list of method names that are used to guard whether
 method call to instances of the class may be called and what the method's
 results are. Each \fImethodName\fR names a single filtering method (which may
 be exposed or not exposed); it is not an error for a non-existent method to be
-named since they may be defined by subclasses. If no \fImethodName\fR
-arguments are present, the list of filter names is set to empty.
+named since they may be defined by subclasses.
+.VS
+By default, this slot works by appending.
+.VE
 .TP
 \fBforward\fI name cmdName \fR?\fIarg ...\fR?
 .
@@ -116,12 +118,16 @@ exported if \fIname\fR starts with a lower-case letter, and non-exported
 otherwise; this behavior can be overridden via \fBexport\fR and
 \fBunexport\fR.
 .TP
-\fBmixin\fR ?\fIclassName ...\fR?
-.
-This sets or updates the list of additional classes that are to be mixed into
+\fBmixin\fR ?\fI\-slotOperation\fR? ?\fIclassName ...\fR?
+.VS
+This slot (see \fBSLOTTED DEFINITIONS\fR below)
+.VE
+sets or updates the list of additional classes that are to be mixed into
 all the instances of the class being defined. Each \fIclassName\fR argument
-names a single class that is to be mixed in; if no classes are present, the
-list of mixed-in classes is set to be empty.
+names a single class that is to be mixed in.
+.VS
+By default, this slot works by replacement.
+.VE
 .TP
 \fBrenamemethod\fI fromName toName\fR
 .
@@ -146,12 +152,19 @@ and
 operates identically to
 .QW "\fBoo::objdefine \fIcls subcommand ...\fR" .
 .TP
-\fBsuperclass\fI className \fR?\fIclassName ...\fR?
-.
-This allows the alteration of the superclasses of the class being defined.
+\fBsuperclass\fR ?\fI\-slotOperation\fR? ?\fIclassName ...\fR?
+.VS
+This slot (see \fBSLOTTED DEFINITIONS\fR below)
+.VE
+allows the alteration of the superclasses of the class being defined.
 Each \fIclassName\fR argument names one class that is to be a superclass of
 the defined class. Note that objects must not be changed from being classes to
-being non-classes or vice-versa.
+being non-classes or vice-versa, that an empty parent class is equivalent to
+\fBoo::object\fR, and that the parent classes of \fBoo::object\fR and
+\fBoo::class\fR may not be modified.
+.VS
+By default, this slot works by replacement.
+.VE
 .TP
 \fBunexport\fI name \fR?\fIname ...\fR?
 .
@@ -162,18 +175,18 @@ context) by the class being defined. Note that the methods themselves may be
 actually defined by a superclass; subclass unexports override superclass
 visibility, and may be overridden by instance unexports.
 .TP
-\fBvariable\fR ?\fIname ...\fR?
+\fBvariable\fR ?\fI\-slotOperation\fR? ?\fIname ...\fR?
 .VS
-This arranges for each of the named variables to be automatically made
+This slot (see \fBSLOTTED DEFINITIONS\fR below) arranges for each of the named
+variables to be automatically made
 available in the methods, constructor and destructor declared by the class
-being defined. Note that the list of variable names is the whole list of
-variable names for the class. Each variable name must not have any namespace
+being defined. Each variable name must not have any namespace
 separators and must not look like an array access. All variables will be
 actually present in the instance object on which the method is executed. Note
 that the variable lists declared by a superclass or subclass are completely
 disjoint, as are variable lists declared by instances; the list of variable
 names is just for methods (and constructors and destructors) declared by this
-class.
+class. By default, this slot works by appending.
 .VE
 .SS "CONFIGURING OBJECTS"
 .PP
@@ -200,15 +213,19 @@ This arranges for each of the named methods, \fIname\fR, to be exported
 being defined. Note that the methods themselves may be actually defined by a
 class or superclass; object exports override class visibility.
 .TP
-\fBfilter\fR ?\fImethodName ...\fR?
-.
-This sets or updates the list of method names that are used to guard whether a
+\fBfilter\fR ?\fI\-slotOperation\fR? ?\fImethodName ...\fR?
+.VS
+This slot (see \fBSLOTTED DEFINITIONS\fR below)
+.VE
+sets or updates the list of method names that are used to guard whether a
 method call to the object may be called and what the method's results are.
 Each \fImethodName\fR names a single filtering method (which may be exposed or
-not exposed); it is not an error for a non-existent method to be named. If no
-\fImethodName\fR arguments are present, the list of filter names is set to
-empty. Note that the actual list of filters also depends on the filters set
-upon any classes that the object is an instance of.
+not exposed); it is not an error for a non-existent method to be named. Note
+that the actual list of filters also depends on the filters set upon any
+classes that the object is an instance of.
+.VS
+By default, this slot works by appending.
+.VE
 .TP
 \fBforward\fI name cmdName \fR?\fIarg ...\fR?
 .
@@ -229,12 +246,16 @@ current namespace of the method will be a namespace that is unique to the
 object. The method will be exported if \fIname\fR starts with a lower-case
 letter, and non-exported otherwise.
 .TP
-\fBmixin\fR ?\fIclassName ...\fR?
-.
-This sets or updates a per-object list of additional classes that are to be
+\fBmixin\fR ?\fI\-slotOperation\fR? ?\fIclassName ...\fR?
+.VS
+This slot (see \fBSLOTTED DEFINITIONS\fR below)
+.VE
+sets or updates a per-object list of additional classes that are to be
 mixed into the object. Each argument, \fIclassName\fR, names a single class
-that is to be mixed in; if no classes are present, the list of mixed-in
-classes is set to be empty.
+that is to be mixed in.
+.VS
+By default, this slot works by replacement.
+.VE
 .TP
 \fBrenamemethod\fI fromName toName\fR
 .
@@ -252,16 +273,70 @@ just through the \fBmy\fR command visible in the object's context) by the
 object being defined. Note that the methods themselves may be actually defined
 by a class; instance unexports override class visibility.
 .TP
-\fBvariable\fR ?\fIname ...\fR?
+\fBvariable\fR ?\fI\-slotOperation\fR? ?\fIname ...\fR?
 .VS
-This arranges for each of the named variables to be automatically made
-available in the methods declared by the object being defined. Note that the
-list of variable names is the whole list of variable names for the object.
-Each variable name must not have any namespace separators and must not look
-like an array access. All variables will be actually present in the object on
-which the method is executed. Note that the variable lists declared by the
-classes and mixins of which the object is an instance are completely disjoint;
-the list of variable names is just for methods declared by this object.
+This slot (see \fBSLOTTED DEFINITIONS\fR below) arranges for each of the named
+variables to be automatically made available in the methods declared by the
+object being defined.  Each variable name must not have any namespace
+separators and must not look like an array access. All variables will be
+actually present in the object on which the method is executed. Note that the
+variable lists declared by the classes and mixins of which the object is an
+instance are completely disjoint; the list of variable names is just for
+methods declared by this object. By default, this slot works by appending.
+.SH "SLOTTED DEFINITIONS"
+Some of the configurable definitions of a class or object are \fIslotted
+definitions\fR. This means that the configuration is implemented by a slot
+object, that is an instance of the class \fBoo::Slot\fR, which manages a list
+of values (class names, variable names, etc.) that comprises the contents of
+the slot. The class defines three operations (as methods) that may be done on
+the slot:
+.VE
+.TP
+\fIslot\fR \fB\-append\fR ?\fImember ...\fR?
+.VS
+This appends the given \fImember\fR elements to the slot definition.
+.VE
+.TP
+\fIslot\fR \fB\-clear\fR
+.VS
+This sets the slot definition to the empty list.
+.VE
+.TP
+\fIslot\fR \fB\-set\fR ?\fImember ...\fR?
+.VS
+This replaces the slot definition with the given \fImember\fR elements.
+.PP
+A consequence of this is that any use of a slot's default operation where the
+first member argument begins with a hyphen will be an error. One of the above
+operations should be used explicitly in those circumstances.
+.SS "SLOT IMPLEMENTATION"
+Internally, slot objects also define a method \fB\-\-default\-operation\fR
+which is forwarded to the default operation of the slot (thus, for the class
+.QW \fBvariable\fR
+slot, this is forwarded to
+.QW "\fBmy \-append\fR" ),
+and these methods which provide the implementation interface:
+.VE
+.TP
+\fIslot\fR \fBGet\fR
+.VS
+Returns a list that is the current contents of the slot. This method must
+always be called from a stack frame created by a call to \fBoo::define\fR or
+\fBoo::objdefine\fR.
+.VE
+.TP
+\fIslot\fR \fBSet \fIelementList\fR
+.VS
+Sets the contents of the slot to the list \fIelementList\fR and returns the
+empty string. This method must always be called from a stack frame created by
+a call to \fBoo::define\fR or \fBoo::objdefine\fR.
+.PP
+The implementation of these methods is slot-dependent (and responsible for
+accessing the correct part of the class or object definition). Slots also have
+an unknown method handler to tie all these pieces together, and they hide
+their \fBdestroy\fR method so that it is not invoked inadvertently. It is
+\fIrecommended\fR that any user changes to the slot mechanism be restricted to
+defining new operations whose names start with a hyphen.
 .VE
 .SH EXAMPLES
 This example demonstrates how to use both forms of the \fBoo::define\fR and
@@ -288,11 +363,41 @@ o Foo Bar            \fI\(-> error "unknown method Foo"\fR
 \fBoo::objdefine\fR o \fBrenamemethod\fR bar lollipop
 o lollipop           \fI\(-> prints "hello world"\fR
 .CE
+.PP
+This example shows how additional classes can be mixed into an object. It also
+shows how \fBmixin\fR is a slot that supports appending:
+.PP
+.CS
+oo::object create inst
+inst m1              \fI\(-> error "unknown method m1"\fR
+inst m2              \fI\(-> error "unknown method m2"\fR
+
+oo::class create A {
+    \fBmethod\fR m1 {} {
+        puts "red brick"
+    }
+}
+\fBoo::objdefine\fR inst {
+    \fBmixin\fR A
+}
+inst m1              \fI\(-> prints "red brick"\fR
+inst m2              \fI\(-> error "unknown method m2"\fR
+
+oo::class create B {
+    \fBmethod\fR m2 {} {
+        puts "blue brick"
+    }
+}
+\fBoo::objdefine\fR inst {
+    \fBmixin -append\fR B
+}
+inst m1              \fI\(-> prints "red brick"\fR
+inst m2              \fI\(-> prints "blue brick"\fR
+.CE
 .SH "SEE ALSO"
 next(n), oo::class(n), oo::object(n)
 .SH KEYWORDS
-class, definition, method, object
-
+class, definition, method, object, slot
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78

@@ -5,8 +5,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.44 2008/12/15 17:11:33 ferrieux Exp $
-'\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
 .BS
@@ -15,9 +13,9 @@
 binary \- Insert and extract fields from binary strings
 .SH SYNOPSIS
 .VS 8.6
-\fBbinary decode \fIformat\fR ?\fI-option value ...\fR? \fIdata\fR
+\fBbinary decode \fIformat\fR ?\fI\-option value ...\fR? \fIdata\fR
 .br
-\fBbinary encode \fIformat\fR ?\fI-option value ...\fR? \fIdata\fR
+\fBbinary encode \fIformat\fR ?\fI\-option value ...\fR? \fIdata\fR
 .br
 .VE 8.6
 \fBbinary format \fIformatString \fR?\fIarg arg ...\fR?
@@ -94,7 +92,7 @@ Instructs the decoder to throw an error if it encounters whitespace characters. 
 .
 The \fBuuencode\fR binary encoding used to be common for transfer of data
 between Unix systems and on USENET, but is less common these days, having been
-largely superceded by the \fBbase64\fR binary encoding.
+largely superseded by the \fBbase64\fR binary encoding.
 .RS
 .PP
 During encoding, the following options are supported:
@@ -137,7 +135,7 @@ is a non-negative decimal integer or \fB*\fR, which normally indicates
 that all of the items in the value are to be used.  If the number of
 arguments does not match the number of fields in the format string
 that consume arguments, then an error is generated. The flag character
-is ignored for for \fBbinary format\fR.
+is ignored for \fBbinary format\fR.
 .PP
 Here is a small example to clarify the relation between the field
 specifiers and the arguments:

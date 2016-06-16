@@ -3,8 +3,6 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.126 2010/06/18 12:41:42 dkf Exp $
-#
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 Scriptics Corporation.
@@ -17,7 +15,7 @@
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact Tcl 8.6b1.2
+package require -exact Tcl 8.6.0
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -653,7 +651,7 @@ proc auto_execok name {
 	set execExtensions [list {} .com .exe .bat .cmd]
     }
 
-    if {$name in $shellBuiltins} {
+    if {[string tolower $name] in $shellBuiltins} {
 	# When this is command.com for some reason on Win2K, Tcl won't
 	# exec it unless the case is right, which this corrects.  COMSPEC
 	# may not point to a real file, so do the check.
@@ -691,13 +689,14 @@ proc auto_execok name {
 	}
     }
 
-    foreach dir [split $path {;}] {
-	# Skip already checked directories
-	if {[info exists checked($dir)] || ($dir eq "")} {
-	    continue
-	}
-	set checked($dir) {}
-	foreach ext $execExtensions {
+    foreach ext $execExtensions {
+	unset -nocomplain checked
+	foreach dir [split $path {;}] {
+	    # Skip already checked directories
+	    if {[info exists checked($dir)] || ($dir eq "")} {
+		continue
+	    }
+	    set checked($dir) {}
 	    set file [file join $dir ${name}${ext}]
 	    if {[file exists $file] && ![file isdirectory $file]} {
 		return [set auto_execs($name) [list $file]]
@@ -822,4 +821,32 @@ proc tcl::CopyDirectory {action src dest} {
 	}
     }
     return
+}
+
+# TIP 131
+if 0 {
+proc tcl::rmmadwiw {} {
+    set magic {
+        42 83 fe f6 ff f8 f1 e5 c6 f9 eb fd ff fb f1 e5 cc f5 ec f5 e3 fd fe
+        ff f5 fa f3 e1 c7 f9 f2 fd ff f9 fe f9 ed f4 fa f6 e6 f9 f2 e6 fd f9
+        ff f9 f6 e6 fa fd ff fc fb fc f9 f1 ed
+    }
+    foreach mystic [lassign $magic tragic] {
+        set comic [expr (0x$mystic ^ 0x$tragic) - 255 + 0x$tragic]
+        append logic [format %x $comic]
+        set tragic $mystic
+    }
+    binary format H* $logic
+}
+
+proc tcl::mathfunc::rmmadwiw {} {
+    set age [expr {9*6}]
+    set mind ""
+    while {$age} {
+        lappend mind [expr {$age%13}]
+        set age [expr {$age/13}]
+    }
+    set matter [lreverse $mind]
+    return [join $matter ""]
+}
 }

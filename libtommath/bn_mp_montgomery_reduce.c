@@ -112,7 +112,3 @@ mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_montgomery_reduce.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2006/12/01 00:08:11 $ */

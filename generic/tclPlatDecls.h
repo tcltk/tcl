@@ -5,8 +5,6 @@
  *
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
- *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.40 2010/08/19 04:26:03 nijtmans Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -33,7 +31,7 @@
  * TCHAR is needed here for win32, so if it is not defined yet do it here.
  * This way, we don't need to include <tchar.h> just for one define.
  */
-#if defined(_WIN32) && !defined(_TCHAR_DEFINED)
+#if (defined(_WIN32) || defined(__CYGWIN__)) && !defined(_TCHAR_DEFINED)
 #   if defined(_UNICODE)
 	typedef wchar_t TCHAR;
 #   else
@@ -48,7 +46,7 @@
  * Exported function declarations:
  */
 
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
 /* 0 */
 EXTERN TCHAR *		Tcl_WinUtfToTChar(const char *str, int len,
 				Tcl_DString *dsPtr);
@@ -71,9 +69,9 @@ EXTERN int		Tcl_MacOSXOpenVersionedBundleResources(
 
 typedef struct TclPlatStubs {
     int magic;
-    const struct TclPlatStubHooks *hooks;
+    void *hooks;
 
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     TCHAR * (*tcl_WinUtfToTChar) (const char *str, int len, Tcl_DString *dsPtr); /* 0 */
     char * (*tcl_WinTCharToUtf) (const TCHAR *str, int len, Tcl_DString *dsPtr); /* 1 */
 #endif /* WIN */
@@ -97,7 +95,7 @@ extern const TclPlatStubs *tclPlatStubsPtr;
  * Inline function declarations:
  */
 
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
 #define Tcl_WinUtfToTChar \
 	(tclPlatStubsPtr->tcl_WinUtfToTChar) /* 0 */
 #define Tcl_WinTCharToUtf \

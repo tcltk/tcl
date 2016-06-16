@@ -9,13 +9,14 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# SCCS: @(#) result.test 1.4 97/12/08 15:07:49
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
 
 # Some tests require the testsaveresult command
 
@@ -135,14 +136,14 @@ test result-6.3 {Bug 2383005} {
      catch {return -code error -errorcode {{}a} eek} m
      set m
 } {bad -errorcode value: expected a list but got "{}a"}
-test result-6.4 {non-list -errorstack} {
+test result-6.4 {non-list -errorstack} -body {
      catch {return -code error -errorstack {{}a} eek} m o
      list $m [dict get $o -errorcode] [dict get $o -errorstack]
-} {{bad -errorstack value: expected a list but got "{}a"} {TCL RESULT NONLIST_ERRORSTACK} {UP 1}}
-test result-6.5 {odd-sized-list -errorstack} {
+} -match glob -result {{bad -errorstack value: expected a list but got "{}a"} {TCL RESULT NONLIST_ERRORSTACK} {INNER * UP 1}}
+test result-6.5 {odd-sized-list -errorstack} -body {
      catch {return -code error -errorstack a eek} m o
      list $m [dict get $o -errorcode] [dict get $o -errorstack]
-} {{forbidden odd-sized list for -errorstack: "a"} {TCL RESULT ODDSIZEDLIST_ERRORSTACK} {UP 1}}
+} -match glob -result {{forbidden odd-sized list for -errorstack: "a"} {TCL RESULT ODDSIZEDLIST_ERRORSTACK} {INNER * UP 1}}
 # cleanup
 cleanupTests
 return

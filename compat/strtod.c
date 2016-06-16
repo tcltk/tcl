@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: strtod.c,v 1.11 2010/04/27 12:36:23 nijtmans Exp $
  */
 
 #include "tclInt.h"
