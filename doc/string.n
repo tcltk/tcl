@@ -19,27 +19,7 @@ string \- Manipulate strings
 Performs one of several string operations, depending on \fIoption\fR.
 The legal \fIoption\fRs (which may be abbreviated) are:
 .TP
-\fBstring bytelength \fIstring\fR
-.
-Returns a decimal string giving the number of bytes used to represent
-\fIstring\fR in memory.  Because UTF\-8 uses one to three bytes to
-represent Unicode characters, the byte length will not be the same as
-the character length in general.  The cases where a script cares about
-the byte length are rare.
-.RS
-.PP
-In almost all cases, you should use the
-\fBstring length\fR operation (including determining the length of a
-Tcl byte array value).  Refer to the \fBTcl_NumUtfChars\fR manual
-entry for more details on the UTF\-8 representation.
-.PP
-\fICompatibility note:\fR it is likely that this subcommand will be
-withdrawn in a future version of Tcl. It is better to use the
-\fBencoding convertto\fR command to convert a string to a known
-encoding and then apply \fBstring length\fR to that.
-.RE
-.TP
-\fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length int\fR? \fIstring1 string2\fR
+\fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
 Perform a character-by-character comparison of strings \fIstring1\fR
 and \fIstring2\fR.  Returns \-1, 0, or 1, depending on whether
@@ -49,7 +29,7 @@ first \fIlength\fR characters are used in the comparison.  If
 \fB\-length\fR is negative, it is ignored.  If \fB\-nocase\fR is
 specified, then the strings are compared in a case-insensitive manner.
 .TP
-\fBstring equal\fR ?\fB\-nocase\fR? ?\fB\-length int\fR? \fIstring1 string2\fR
+\fBstring equal\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
 Perform a character-by-character comparison of strings \fIstring1\fR
 and \fIstring2\fR.  Returns 1 if \fIstring1\fR and \fIstring2\fR are
@@ -354,6 +334,31 @@ Returns a value equal to \fIstring\fR except that any trailing
 characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (any character
 for which \fBstring is space\fR returns 1, and "\0").
+.SS "OBSOLETE SUBCOMMANDS"
+.PP
+These subcommands are currently supported, but are likely to go away in a
+future release as their functionality is either virtually never used or highly
+misleading.
+.TP
+\fBstring bytelength \fIstring\fR
+.
+Returns a decimal string giving the number of bytes used to represent
+\fIstring\fR in memory.  Because UTF\-8 uses one to three bytes to
+represent Unicode characters, the byte length will not be the same as
+the character length in general.  The cases where a script cares about
+the byte length are rare.
+.RS
+.PP
+In almost all cases, you should use the
+\fBstring length\fR operation (including determining the length of a
+Tcl byte array value).  Refer to the \fBTcl_NumUtfChars\fR manual
+entry for more details on the UTF\-8 representation.
+.PP
+\fICompatibility note:\fR it is likely that this subcommand will be
+withdrawn in a future version of Tcl. It is better to use the
+\fBencoding convertto\fR command to convert a string to a known
+encoding and then apply \fBstring length\fR to that.
+.RE
 .TP
 \fBstring wordend \fIstring charIndex\fR
 .

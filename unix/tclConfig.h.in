@@ -241,6 +241,9 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
+/* Define to 1 if you have the <termios.h> header file. */
+#undef HAVE_TERMIOS_H
+
 /* Should we use the global timezone variable? */
 #undef HAVE_TIMEZONE_VAR
 
@@ -340,8 +343,8 @@
 /* Do we have <values.h>? */
 #undef NO_VALUES_H
 
-/* No visibility attribute */
-#undef NO_VIZ
+/* Compiler support for module scope symbols */
+#undef HAVE_HIDDEN
 
 /* Do we have wait3() */
 #undef NO_WAIT3
@@ -432,15 +435,6 @@
 
 /* Should we use FIONBIO? */
 #undef USE_FIONBIO
-
-/* Use the sgtty API for serial lines */
-#undef USE_SGTTY
-
-/* Use the termio API for serial lines */
-#undef USE_TERMIO
-
-/* Use the termios API for serial lines */
-#undef USE_TERMIOS
 
 /* Do we want to use the threaded memory allocator? */
 #undef USE_THREAD_ALLOC

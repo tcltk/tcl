@@ -244,7 +244,7 @@ MODULE_SCOPE long tclMacOSXDarwinRelease;
 #endif /* NO_REALPATH */
 
 #ifdef HAVE_FTS
-#ifdef HAVE_STRUCT_STAT64
+#if defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
 /* fts doesn't do stat64 */
 #   define noFtsStat	1
 #elif defined(__APPLE__) && defined(__LP64__) && \
@@ -2226,13 +2226,13 @@ DefaultTempDir(void)
 
     dir = getenv("TMPDIR");
     if (dir && dir[0] && stat(dir, &buf) == 0 && S_ISDIR(buf.st_mode)
-	    && access(dir, W_OK)) {
+	    && access(dir, W_OK) == 0) {
 	return dir;
     }
 
 #ifdef P_tmpdir
     dir = P_tmpdir;
-    if (stat(dir, &buf) == 0 && S_ISDIR(buf.st_mode) && access(dir, W_OK)) {
+    if (stat(dir, &buf)==0 && S_ISDIR(buf.st_mode) && access(dir, W_OK)==0) {
 	return dir;
     }
 #endif
