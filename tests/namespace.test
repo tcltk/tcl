@@ -303,7 +303,7 @@ test namespace-9.4 {Tcl_Import, simple import} {
     }
     test_ns_import::p
 } {cmd1: 123}
-test namespace-9.5 {Tcl_Import, can't redefine cmd unless allowOverwrite!=0} {
+test namespace-9.5 {Tcl_Import, RFE 1230597} {
     list [catch {namespace eval test_ns_import {namespace import ::test_ns_export::*}} msg] $msg
 } {0 {}}
 test namespace-9.6 {Tcl_Import, cmd redefinition ok if allowOverwrite!=0} {
@@ -558,6 +558,15 @@ test namespace-13.1 {DeleteImportedCmd, deletes imported cmds} {
         lappend l [info commands ::test_ns_import::*]
     }
 } {::test_ns_import::cmd1 {}}
+test namespace-13.2 {DeleteImportedCmd, Bug a4494e28ed} {
+    # Will panic if still buggy
+    namespace eval src {namespace export foo; proc foo {} {}}
+    namespace eval dst {namespace import [namespace parent]::src::foo}
+    trace add command src::foo delete \
+        "[list namespace delete [namespace current]::dst] ;#"
+    proc src::foo {} {}
+    namespace delete src
+} {}
 
 test namespace-14.1 {TclGetNamespaceForQualName, absolute names} {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -2940,6 +2949,49 @@ test namespace-54.1 {leak on namespace deletion} -constraints {memory} \
     rename getbytes {}
     unset i ns start end
 } -result 0
+
+test namespace-55.1 {compiled ensembles inside compiled ensembles: Bug 6d2f249a01} {
+    info class [format %s constructor] oo::object
+} ""
+
+test namespace-56.1 {bug f97d4ee020: mutually-entangled deletion} {
+    namespace eval ::testing {
+	proc abc {} {}
+	proc def {} {}
+	trace add command abc delete "rename ::testing::def {}; #"
+	trace add command def delete "rename ::testing::abc {}; #"
+    }
+    namespace delete ::testing
+} {}
+test namespace-56.2 {bug f97d4ee020: mutually-entangled deletion} {
+    namespace eval ::testing {
+	namespace eval abc {proc xyz {} {}}
+	namespace eval def {proc xyz {} {}}
+	trace add command abc::xyz delete "namespace delete ::testing::def {}; #"
+	trace add command def::xyz delete "namespace delete ::testing::abc {}; #"
+    }
+    namespace delete ::testing
+} {}
+test namespace-56.3 {bug f97d4ee020: mutually-entangled deletion} {
+    namespace eval ::testing {
+	variable gone {}
+	oo::class create CB {
+	    variable cmd
+	    constructor other {set cmd $other}
+	    destructor {rename $cmd {}; lappend ::testing::gone $cmd}
+	}
+	namespace eval abc {
+	    ::testing::CB create def ::testing::abc::ghi
+	    ::testing::CB create ghi ::testing::abc::def
+	}
+	namespace delete abc
+	try {
+	    return [lsort $gone]
+	} finally {
+	    namespace delete ::testing
+	}
+    }
+} {::testing::abc::def ::testing::abc::ghi}
 
 # cleanup
 catch {rename cmd1 {}}

@@ -406,11 +406,14 @@ ValidateFormat(
 	     */
 	case 'd':
 	case 'e':
+	case 'E':
 	case 'f':
 	case 'g':
+	case 'G':
 	case 'i':
 	case 'o':
 	case 'x':
+	case 'X':
 	case 'b':
 	    break;
 	case 'u':
@@ -592,7 +595,7 @@ Tcl_ScanObjCmd(
 	return TCL_ERROR;
     }
 
-    format = Tcl_GetStringFromObj(objv[2], NULL);
+    format = Tcl_GetString(objv[2]);
     numVars = objc-3;
 
     /*
@@ -614,7 +617,7 @@ Tcl_ScanObjCmd(
 	}
     }
 
-    string = Tcl_GetStringFromObj(objv[1], NULL);
+    string = Tcl_GetString(objv[1]);
     baseString = string;
 
     /*
@@ -743,6 +746,7 @@ Tcl_ScanObjCmd(
 	    parseFlag |= TCL_PARSE_OCTAL_ONLY | TCL_PARSE_SCAN_PREFIXES;
 	    break;
 	case 'x':
+	case 'X':
 	    op = 'i';
 	    parseFlag |= TCL_PARSE_HEXADECIMAL_ONLY;
 	    break;
@@ -758,7 +762,9 @@ Tcl_ScanObjCmd(
 
 	case 'f':
 	case 'e':
+	case 'E':
 	case 'g':
+	case 'G':
 	    op = 'f';
 	    break;
 
