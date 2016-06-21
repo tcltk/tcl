@@ -1043,6 +1043,9 @@ TclInitSubsystems(void)
 #if USE_TCLALLOC
 	    TclInitAlloc();		/* Process wide mutex init */
 #endif
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+	    TclpInitAllocCache();
+#endif
 #ifdef TCL_MEM_DEBUG
 	    TclInitDbCkalloc();		/* Process wide mutex init */
 #endif
@@ -1462,6 +1465,8 @@ VwaitVarProc(
     int *donePtr = clientData;
 
     *donePtr = 1;
+    Tcl_UntraceVar(interp, name1, TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+	    VwaitVarProc, clientData);
     return NULL;
 }
 

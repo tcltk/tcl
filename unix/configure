@@ -4983,7 +4983,7 @@ fi
     if test "$GCC" = yes; then :
 
 	CFLAGS_OPTIMIZE=-O2
-	CFLAGS_WARNING="-Wall"
+	CFLAGS_WARNING="-Wall -Wsign-compare -Wdeclaration-after-statement"
 
 else
 

@@ -135,7 +135,7 @@ typedef struct ExceptionAux {
     int numBreakTargets;	/* The number of [break]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    int *breakTargets;		/* The offsets of the INST_JUMP4 instructions
+    unsigned int *breakTargets;	/* The offsets of the INST_JUMP4 instructions
 				 * issued by the [break]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
@@ -145,7 +145,7 @@ typedef struct ExceptionAux {
     int numContinueTargets;	/* The number of [continue]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    int *continueTargets;	/* The offsets of the INST_JUMP4 instructions
+    unsigned int *continueTargets; /* The offsets of the INST_JUMP4 instructions
 				 * issued by the [continue]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
@@ -928,7 +928,7 @@ typedef enum {
 
 typedef struct JumpFixup {
     TclJumpType jumpType;	/* Indicates the kind of jump. */
-    int codeOffset;		/* Offset of the first byte of the one-byte
+    unsigned int codeOffset;	/* Offset of the first byte of the one-byte
 				 * forward jump's code. */
     int cmdIndex;		/* Index of the first command after the one
 				 * for which the jump was emitted. Used to
@@ -1067,7 +1067,6 @@ MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, int depth, Command *cmdPtr,
 			    CompileEnv *envPtr);
-MODULE_SCOPE void	TclCleanupByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
@@ -1119,8 +1118,9 @@ MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    int distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
-MODULE_SCOPE void	TclInitByteCodeObj(Tcl_Obj *objPtr,
-			    CompileEnv *envPtr);
+MODULE_SCOPE ByteCode *	TclInitByteCode(CompileEnv *envPtr);
+MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
+			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
 			    int numBytes, const CmdFrame *invoker, int word);
@@ -1157,6 +1157,8 @@ MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
 			    int *isScalarPtr);
+MODULE_SCOPE void	TclPreserveByteCode(ByteCode *codePtr);
+MODULE_SCOPE void	TclReleaseByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);

@@ -657,7 +657,7 @@ Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 #	$(SHELL) config.status
 
 clean: clean-packages
-	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
+	rm -rf *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
 		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl @DTRACE_HDR@
 	cd dltest ; $(MAKE) clean
 
@@ -857,8 +857,8 @@ install-libraries: libraries
 	    done;
 	@echo "Installing package msgcat 1.6.0 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(LIB_INSTALL_DIR)"/tcl8/8.5/msgcat-1.6.0.tm;
-	@echo "Installing package tcltest 2.3.8 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(LIB_INSTALL_DIR)"/tcl8/8.5/tcltest-2.3.8.tm;
+	@echo "Installing package tcltest 2.4.0 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(LIB_INSTALL_DIR)"/tcl8/8.5/tcltest-2.4.0.tm;
 
 	@echo "Installing package platform 1.0.14 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(LIB_INSTALL_DIR)"/tcl8/8.4/platform-1.0.14.tm;
@@ -1604,7 +1604,7 @@ tclWinError.o: $(TOP_DIR)/win/tclWinError.c
 
 # DTrace support
 
-$(TCL_OBJS) $(STUB_LIB_OBJS) $(TCLSH_OBJS) $(TCLTEST_OBJS) $(XTTEST_OBJS): @DTRACE_HDR@
+$(TCL_OBJS) $(STUB_LIB_OBJS) $(TCLSH_OBJS) $(TCLTEST_OBJS) $(XTTEST_OBJS) $(TOMMATH_OBJS): @DTRACE_HDR@
 
 $(DTRACE_HDR): $(DTRACE_SRC)
 	$(DTRACE) -h $(DTRACE_SWITCHES) -o $@ -s $(DTRACE_SRC)
