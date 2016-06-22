@@ -161,8 +161,8 @@ of a command;  when the command is invoked during a \fBpackage require\fR
 command, Tcl appends one or more additional arguments giving the desired
 package name and requirements.
 For example, if \fIcommand\fR is \fBfoo bar\fR and later the command
-\fBpackage require test 2.4\fR is invoked, then Tcl will execute
-the command \fBfoo bar test 2.4\fR to load the package.
+\fBpackage require test 2.4.0\fR is invoked, then Tcl will execute
+the command \fBfoo bar test 2.4.0\fR to load the package.
 If no requirements are supplied to the \fBpackage require\fR command,
 then only the name will be added to invoked command.
 If the \fBpackage unknown\fR command is invoked without a \fIcommand\fR
@@ -231,7 +231,7 @@ is equal to the \fImin\fR.
 Otherwise if, and only if the \fIversion\fR is greater than or equal
 to the \fImin\fR, and less than the \fImax\fR, where both \fImin\fR
 and \fImax\fR have been padded internally with
-.QW a0 .
+.QW -alpha.0 .
 Note that while the comparison to \fImin\fR is inclusive, the
 comparison to \fImax\fR is exclusive.
 .RE
@@ -249,7 +249,7 @@ A \fIversion\fR satisfies a
 .QW min-unbound
 requirement if, and only if it is greater than or equal to the
 \fImin\fR, where the \fImin\fR has been padded internally with
-.QW a0 .
+.QW -alpha.0 .
 There is no constraint to a maximum.
 .RE
 .TP
@@ -291,46 +291,60 @@ the initial (and permanent) selection mode value is set to
 .SH "VERSION NUMBERS"
 .PP
 Version numbers consist of one or more decimal numbers separated
-by dots, such as 2 or 1.162 or 3.1.13.1.
+by dots, such as 2.0.0 or 1.162.0 or 3.1.13.
 The first number is called the major version number.
 Larger numbers correspond to later versions of a package, with
 leftmost numbers having greater significance.
-For example, version 2.1 is later than 1.3 and version
+For example, version 2.1.0 is later than 1.3.0 and version
 3.4.6 is later than 3.3.5.
 Missing fields are equivalent to zeroes:  version 1.3 is the
 same as version 1.3.0 and 1.3.0.0, so it is earlier than 1.3.1 or 1.3.0.2.
-In addition, the letters
-.QW a
+In addition, the specifiers
+.QW -alpha
 (alpha) and/or
-.QW b
-(beta) may appear
-exactly once to replace a dot for separation. These letters
+.QW -beta
+(beta) may be inserted
+exactly once just before a dot for separation. These specifiers
 semantically add a negative specifier into the version, where
-.QW a
+.QW -alpha
 is \-2, and
-.QW b
+.QW -beta
 is \-1. Each may be specified only once, and
-.QW a
+.QW -alpha
 or
-.QW b
-are mutually exclusive in a specifier. Thus 1.3a1 becomes (semantically)
-1.3.\-2.1, 1.3b1 is 1.3.\-1.1. Negative numbers are not directly allowed
+.QW -beta
+are mutually exclusive in a specifier. Thus 1.3.0-alpha.1 becomes (semantically)
+1.3.0.\-2.1, 1.3.0-beta.1 is 1.3.0.\-1.1. Negative numbers are not directly allowed
 in version specifiers.
-A version number not containing the letters
-.QW a
+A version number not containing the specifier
+.QW -alpha
 or
-.QW b
+.QW -beta
 as specified
-above is called a \fBstable\fR version, whereas presence of the letters
+above is called a \fBstable\fR version, whereas presence of the specifier
 causes the version to be called is \fBunstable\fR.
 A later version number is assumed to be upwards compatible with
 an earlier version number as long as both versions have the same
 major version number.
-For example, Tcl scripts written for version 2.3 of a package should
-work unchanged under versions 2.3.2, 2.4, and 2.5.1.
+For example, Tcl scripts written for version 2.3.0 of a package should
+work unchanged under versions 2.3.2, 2.4.0, and 2.5.1.
 Changes in the major version number signify incompatible changes:
-if code is written to use version 2.1 of a package, it is not guaranteed
+if code is written to use version 2.1.0 of a package, it is not guaranteed
 to work unmodified with either version 1.7.3 or version 3.1.
+.PP
+Instead of the full specifiers \fB-alpha.\fR and \fB-beta.\fR (with dot this
+time), it is allowed to shorten this to simply \fBa\fR resp \fBb\fR. The
+number of elements doesn't need to be 3 (MAJOR, MINOR, PATCH), but it could
+be for reasons of compatibility with the "Semantic Versioning" specification.
+Tcl and Tk >= 8.7 follow this specificiation, but packages are
+not required to do that: Those packages will still function as expected
+with Tcl and Tk >= 8.7.
+.PP
+Note that valid version number may contain a "-", while a dash can
+also be used to separate two version numbers in a requirement. The rule
+is that if the dash is followed by a non-digit, then the dash is
+interpreted as being part of the version number. Otherwise, it is
+handled as part of the requirement syntax.
 .SH "PACKAGE INDICES"
 .PP
 The recommended way to use packages in Tcl is to invoke \fBpackage require\fR
