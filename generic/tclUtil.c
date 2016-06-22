@@ -2431,8 +2431,20 @@ Tcl_DStringAppend(
 	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
+	    int offset = -1;
+
+	    /* See [16896d49fd] */
+	    if (bytes >= dsPtr->string
+		    && bytes <= dsPtr->string + dsPtr->length) {
+		offset = bytes - dsPtr->string;
+	    }
+
 	    dsPtr->string = ckrealloc((void *) dsPtr->string,
 		    (size_t) dsPtr->spaceAvl);
+
+	    if (offset >= 0) {
+		bytes = dsPtr->string + offset;
+	    }
 	}
     }
 
@@ -2495,8 +2507,20 @@ Tcl_DStringAppendElement(
 	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
+	    int offset = -1;
+
+	    /* See [16896d49fd] */
+	    if (element >= dsPtr->string
+		    && element <= dsPtr->string + dsPtr->length) {
+		offset = element - dsPtr->string;
+	    }
+
 	    dsPtr->string = (char *) ckrealloc((void *) dsPtr->string,
 		    (size_t) dsPtr->spaceAvl);
+
+	    if (offset >= 0) {
+		element = dsPtr->string + offset;
+	    }
 	}
 	dst = dsPtr->string + dsPtr->length;
     }
