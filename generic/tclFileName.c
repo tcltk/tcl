@@ -1609,6 +1609,7 @@ Tcl_GlobObjCmd(
 
 	Tcl_DStringInit(&str);
 	for (i = 0; i < objc; i++) {
+	    Tcl_DStringSetLength(&str, 0);
 	    if (dir == PATH_GENERAL) {
 		TclDStringAppendDString(&str, &prefix);
 	    }
