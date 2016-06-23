@@ -870,7 +870,7 @@ TclObjGetFrame(
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad level \"%s\"", name));
-    Tcl_SetErrorCode(interp, "TCL", "VALUE", "STACKLEVEL", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL", name, NULL);
     return -1;
 }
 

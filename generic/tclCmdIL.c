@@ -1203,7 +1203,7 @@ InfoFrameCmd(
     levelError:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad level \"%s\"", TclGetString(objv[1])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_FRAME",
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 		TclGetString(objv[1]), NULL);
 	code = TCL_ERROR;
 	goto done;
@@ -1638,7 +1638,7 @@ InfoLevelCmd(
   levelError:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "bad level \"%s\"", TclGetString(objv[1])));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_LEVEL",
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 	    TclGetString(objv[1]), NULL);
     return TCL_ERROR;
 }
