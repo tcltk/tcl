@@ -4925,7 +4925,8 @@ Tcl_UpvarObjCmd(
 
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad level \"%s\"", TclGetString(levelObj)));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LEVEL", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
+		TclGetString(levelObj), NULL);
 	return TCL_ERROR;
     }
 
