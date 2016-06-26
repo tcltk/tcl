@@ -661,6 +661,7 @@ InstructionDesc const tclInstructionTable[] = {
  * Prototypes for procedures defined later in this file:
  */
 
+static void		CleanupByteCode(ByteCode *codePtr);
 static ByteCode *	CompileSubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
 static void		DupByteCodeInternalRep(Tcl_Obj *srcPtr,
@@ -676,6 +677,7 @@ static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
 static int		IsCompactibleCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
+static void		PreventCycle(Tcl_Obj *objPtr, CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
 #endif /* TCL_COMPILE_STATS */
@@ -866,7 +868,7 @@ TclSetByteCodeFromAny(
 #endif /*TCL_COMPILE_DEBUG*/
 
     if (result == TCL_OK) {
-	TclInitByteCodeObj(objPtr, &compEnv);
+	(void) TclInitByteCodeObj(objPtr, &tclByteCodeType, &compEnv);
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceCompile >= 2) {
 	    TclPrintByteCodeObj(interp, objPtr);
@@ -967,16 +969,13 @@ FreeByteCodeInternalRep(
 {
     register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    objPtr->typePtr = NULL;
-    if (codePtr->refCount-- <= 1) {
-	TclCleanupByteCode(codePtr);
-    }
+    TclReleaseByteCode(codePtr);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclCleanupByteCode --
+ * TclReleaseByteCode --
  *
  *	This procedure does all the real work of freeing up a bytecode
  *	object's ByteCode structure. It's called only when the structure's
@@ -993,7 +992,26 @@ FreeByteCodeInternalRep(
  */
 
 void
-TclCleanupByteCode(
+TclPreserveByteCode(
+    register ByteCode *codePtr)
+{
+    codePtr->refCount++;
+}
+
+void
+TclReleaseByteCode(
+    register ByteCode *codePtr)
+{
+    if (--codePtr->refCount) {
+	return;
+    }
+
+    /* Just dropped to refcount==0.  Clean up. */
+    CleanupByteCode(codePtr);
+}
+
+static void
+CleanupByteCode(
     register ByteCode *codePtr)	/* Points to the ByteCode to free. */
 {
     Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
@@ -1260,8 +1278,6 @@ Tcl_NRSubstObj(
  *
  * Results:
  *	A (ByteCode *) is returned pointing to the resulting ByteCode.
- *	The caller must manage its refCount and arrange for a call to
- *	TclCleanupByteCode() when the last reference disappears.
  *
  * Side effects:
  *	The Tcl_ObjType of objPtr is changed to the "substcode" type, and the
@@ -1292,7 +1308,7 @@ CompileSubstObj(
 		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)
 		|| (codePtr->localCachePtr !=
 		iPtr->varFramePtr->localCachePtr)) {
-	    FreeSubstCodeInternalRep(objPtr);
+	    TclFreeIntRep(objPtr);
 	}
     }
     if (objPtr->typePtr != &substCodeType) {
@@ -1306,11 +1322,9 @@ CompileSubstObj(
 	TclSubstCompile(interp, bytes, numBytes, flags, 1, &compEnv);
 
 	TclEmitOpcode(INST_DONE, &compEnv);
-	TclInitByteCodeObj(objPtr, &compEnv);
-	objPtr->typePtr = &substCodeType;
+	codePtr = TclInitByteCodeObj(objPtr, &substCodeType, &compEnv);
 	TclFreeCompileEnv(&compEnv);
 
-	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
 	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(flags);
 	if (iPtr->varFramePtr->localCachePtr) {
@@ -1353,10 +1367,7 @@ FreeSubstCodeInternalRep(
 {
     register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    objPtr->typePtr = NULL;
-    if (codePtr->refCount-- <= 1) {
-	TclCleanupByteCode(codePtr);
-    }
+    TclReleaseByteCode(codePtr);
 }
 
 static void
@@ -2697,11 +2708,40 @@ TclCompileNoOp(
  *----------------------------------------------------------------------
  */
 
-void
-TclInitByteCodeObj(
-    Tcl_Obj *objPtr,		/* Points object that should be initialized,
-				 * and whose string rep contains the source
-				 * code. */
+static void
+PreventCycle(
+    Tcl_Obj *objPtr,
+    CompileEnv *envPtr)
+{
+    int i;
+
+    for (i = 0;  i < envPtr->literalArrayNext; i++) {
+	if (objPtr == TclFetchLiteral(envPtr, i)) {
+	    /*
+	     * Prevent circular reference where the bytecode intrep of
+	     * a value contains a literal which is that same value.
+	     * If this is allowed to happen, refcount decrements may not
+	     * reach zero, and memory may leak.  Bugs 467523, 3357771
+	     *
+	     * NOTE:  [Bugs 3392070, 3389764] We make a copy based completely
+	     * on the string value, and do not call Tcl_DuplicateObj() so we
+             * can be sure we do not have any lingering cycles hiding in
+	     * the intrep.
+	     */
+	    int numBytes;
+	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+	    Tcl_Obj *copyPtr = Tcl_NewStringObj(bytes, numBytes);
+
+	    Tcl_IncrRefCount(copyPtr);
+	    TclReleaseLiteral((Tcl_Interp *)envPtr->iPtr, objPtr);
+
+	    envPtr->literalArrayPtr[i].objPtr = copyPtr;
+	}
+    }
+}
+
+ByteCode *
+TclInitByteCode(
     register CompileEnv *envPtr)/* Points to the CompileEnv structure from
 				 * which to create a ByteCode structure. */
 {
@@ -2752,7 +2792,8 @@ TclInitByteCodeObj(
     codePtr->compileEpoch = iPtr->compileEpoch;
     codePtr->nsPtr = namespacePtr;
     codePtr->nsEpoch = namespacePtr->resolverEpoch;
-    codePtr->refCount = 1;
+    codePtr->refCount = 0;
+    TclPreserveByteCode(codePtr);
     if (namespacePtr->compiledVarResProc || iPtr->resolverPtr) {
 	codePtr->flags = TCL_BYTECODE_RESOLVE_VARS;
     } else {
@@ -2778,29 +2819,7 @@ TclInitByteCodeObj(
     p += TCL_ALIGN(codeBytes);		/* align object array */
     codePtr->objArrayPtr = (Tcl_Obj **) p;
     for (i = 0;  i < numLitObjects;  i++) {
-	Tcl_Obj *fetched = TclFetchLiteral(envPtr, i);
-
-	if (objPtr == fetched) {
-	    /*
-	     * Prevent circular reference where the bytecode intrep of
-	     * a value contains a literal which is that same value.
-	     * If this is allowed to happen, refcount decrements may not
-	     * reach zero, and memory may leak.  Bugs 467523, 3357771
-	     *
-	     * NOTE:  [Bugs 3392070, 3389764] We make a copy based completely
-	     * on the string value, and do not call Tcl_DuplicateObj() so we
-             * can be sure we do not have any lingering cycles hiding in
-	     * the intrep.
-	     */
-	    int numBytes;
-	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
-
-	    codePtr->objArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
-	    Tcl_IncrRefCount(codePtr->objArrayPtr[i]);
-	    TclReleaseLiteral((Tcl_Interp *)iPtr, objPtr);
-	} else {
-	    codePtr->objArrayPtr[i] = fetched;
-	}
+	codePtr->objArrayPtr[i] = TclFetchLiteral(envPtr, i);
     }
 
     p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
@@ -2843,15 +2862,6 @@ TclInitByteCodeObj(
 #endif /* TCL_COMPILE_STATS */
 
     /*
-     * Free the old internal rep then convert the object to a bytecode object
-     * by making its internal rep point to the just compiled ByteCode.
-     */
-
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
-    objPtr->typePtr = &tclByteCodeType;
-
-    /*
      * TIP #280. Associate the extended per-word line information with the
      * byte code object (internal rep), for use with the bc compiler.
      */
@@ -2864,6 +2874,33 @@ TclInitByteCodeObj(
     envPtr->iPtr = NULL;
 
     codePtr->localCachePtr = NULL;
+    return codePtr;
+}
+
+ByteCode *
+TclInitByteCodeObj(
+    Tcl_Obj *objPtr,		/* Points object that should be initialized,
+				 * and whose string rep contains the source
+				 * code. */
+    const Tcl_ObjType *typePtr,
+    register CompileEnv *envPtr)/* Points to the CompileEnv structure from
+				 * which to create a ByteCode structure. */
+{
+    ByteCode *codePtr;
+
+    PreventCycle(objPtr, envPtr);
+
+    codePtr = TclInitByteCode(envPtr);
+
+    /*
+     * Free the old internal rep then convert the object to a bytecode object
+     * by making its internal rep point to the just compiled ByteCode.
+     */
+
+    TclFreeIntRep(objPtr);
+    objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
+    objPtr->typePtr = typePtr;
+    return codePtr;
 }
 
 /*
@@ -3239,8 +3276,10 @@ EnterCmdWordData(
 	TclAdvanceLines(&wordLine, last, tokenPtr->start);
 	TclAdvanceContinuations(&wordLine, &wordNext,
 		tokenPtr->start - envPtr->source);
+	/* See Ticket 4b61afd660 */
 	wwlines[wordIdx] =
-		(TclWordKnownAtCompileTime(tokenPtr, NULL) ? wordLine : -1);
+		((wordIdx == 0) || TclWordKnownAtCompileTime(tokenPtr, NULL))
+		? wordLine : -1;
 	ePtr->line[wordIdx] = wordLine;
 	ePtr->next[wordIdx] = wordNext;
 	last = tokenPtr->start;

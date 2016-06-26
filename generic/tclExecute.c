@@ -1499,11 +1499,9 @@ ExprObjCallback(
  *
  * Results:
  *	A (ByteCode *) is returned pointing to the resulting ByteCode.
- *	The caller must manage its refCount and arrange for a call to
- *	TclCleanupByteCode() when the last reference disappears.
  *
  * Side effects:
- *	The Tcl_ObjType of objPtr is changed to the "bytecode" type,
+ *	The Tcl_ObjType of objPtr is changed to the "exprcode" type,
  *	and the ByteCode is kept in the internal rep (along with context
  *	data for checking validity) for faster operations the next time
  *	CompileExprObj is called on the same value.
@@ -1536,7 +1534,7 @@ CompileExprObj(
 		|| (codePtr->nsPtr != namespacePtr)
 		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)
 		|| (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)) {
-	    FreeExprCodeInternalRep(objPtr);
+	    TclFreeIntRep(objPtr);
 	}
     }
     if (objPtr->typePtr != &exprCodeType) {
@@ -1567,10 +1565,8 @@ CompileExprObj(
 	 */
 
 	TclEmitOpcode(INST_DONE, &compEnv);
-	TclInitByteCodeObj(objPtr, &compEnv);
-	objPtr->typePtr = &exprCodeType;
+	codePtr = TclInitByteCodeObj(objPtr, &exprCodeType, &compEnv);
 	TclFreeCompileEnv(&compEnv);
-	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
@@ -1644,10 +1640,7 @@ FreeExprCodeInternalRep(
 {
     ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    objPtr->typePtr = NULL;
-    if (codePtr->refCount-- <= 1) {
-	TclCleanupByteCode(codePtr);
-    }
+    TclReleaseByteCode(codePtr);
 }
 
 /*
@@ -2033,7 +2026,7 @@ TclNRExecuteByteCode(
 		* sizeof(void *);
     int numWords = (size + sizeof(Tcl_Obj *) - 1) / sizeof(Tcl_Obj *);
 
-    codePtr->refCount++;
+    TclPreserveByteCode(codePtr);
 
     /*
      * Reserve the stack, setup the TEBCdataPtr (TD) and CallFrame
@@ -7721,6 +7714,7 @@ TEBCresume(
 		goto gotError;
 	    }
 	}
+	Tcl_IncrRefCount(dictPtr);
 	if (TclListObjGetElements(interp, OBJ_AT_TOS, &length,
 		&keyPtrPtr) != TCL_OK) {
 	    TRACE_ERROR(interp);
@@ -7733,6 +7727,7 @@ TEBCresume(
 	    if (Tcl_DictObjGet(interp, dictPtr, keyPtrPtr[i],
 		    &valuePtr) != TCL_OK) {
 		TRACE_ERROR(interp);
+		Tcl_DecrRefCount(dictPtr);
 		goto gotError;
 	    }
 	    varPtr = LOCAL(duiPtr->varIndices[i]);
@@ -7749,10 +7744,12 @@ TEBCresume(
 		    duiPtr->varIndices[i]) == NULL) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
+		Tcl_DecrRefCount(dictPtr);
 		goto gotError;
 	    }
 	    CACHE_STACK_INFO();
 	}
+	TclDecrRefCount(dictPtr);
 	TRACE_APPEND(("OK\n"));
 	NEXT_INST_F(9, 0, 0);
 
@@ -8197,9 +8194,7 @@ TEBCresume(
     }
 
     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
-    if (codePtr->refCount-- <= 1) {
-	TclCleanupByteCode(codePtr);
-    }
+    TclReleaseByteCode(codePtr);
     TclStackFree(interp, TD);	/* free my stack */
 
     return result;
