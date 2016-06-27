@@ -294,20 +294,48 @@ Tcl_ParseCommand(
 	}
     }
 
-    /* Jump to where we check for command termination */
-
-    parsePtr->commandStart = src;
-    type = CHAR_TYPE(*src);
-    scanned = 1;
-    goto start;
-
     /*
      * The following loop parses the words of the command, one word in each
      * iteration through the loop.
      */
 
+    parsePtr->commandStart = src;
+    type = CHAR_TYPE(*src);
+    scanned = 1;	/* Can't have missing whitepsace before first word. */
     while (1) {
 	int expandWord = 0;
+
+	/* Are we at command termination? */
+
+	if ((numBytes == 0) || (type & terminators) != 0) {
+	    parsePtr->term = src;
+	    parsePtr->commandSize = src + (numBytes != 0)
+		    - parsePtr->commandStart;
+	    return TCL_OK;
+	}
+
+	/* Are we missing white space after previous word? */
+
+	if (scanned == 0) {
+	    if (src[-1] == '"') {
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "extra characters after close-quote", -1));
+		}
+		parsePtr->errorType = TCL_PARSE_QUOTE_EXTRA;
+	    } else {
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "extra characters after close-brace", -1));
+		}
+		parsePtr->errorType = TCL_PARSE_BRACE_EXTRA;
+	    }
+	    parsePtr->term = src;
+	error:
+	    Tcl_FreeParse(parsePtr);
+	    parsePtr->commandSize = parsePtr->end - parsePtr->commandStart;
+	    return TCL_ERROR;
+	}
 
 	/*
 	 * Create the token for the word.
@@ -537,50 +565,12 @@ Tcl_ParseCommand(
 	    tokenPtr->type = TCL_TOKEN_SIMPLE_WORD;
 	}
 
-	/*
-	 * Do two additional checks: (a) make sure we're really at the end of
-	 * a word (there might have been garbage left after a quoted or braced
-	 * word), and (b) check for the end of the command.
-	 */
+	/* Parse the whitespace between words. */
 
 	scanned = ParseWhiteSpace(src,numBytes, &parsePtr->incomplete, &type);
 	src += scanned;
 	numBytes -= scanned;
-
-    start:
-	if (numBytes == 0) {
-	    parsePtr->term = src;
-	    break;
-	}
-	if ((type & terminators) != 0) {
-	    parsePtr->term = src;
-	    src++;
-	    break;
-	}
-	if (scanned == 0) {
-	    if (src[-1] == '"') {
-		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "extra characters after close-quote", -1));
-		}
-		parsePtr->errorType = TCL_PARSE_QUOTE_EXTRA;
-	    } else {
-		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "extra characters after close-brace", -1));
-		}
-		parsePtr->errorType = TCL_PARSE_BRACE_EXTRA;
-	    }
-	    parsePtr->term = src;
-	error:
-	    Tcl_FreeParse(parsePtr);
-	    parsePtr->commandSize = parsePtr->end - parsePtr->commandStart;
-	    return TCL_ERROR;
-	}
     }
-
-    parsePtr->commandSize = src - parsePtr->commandStart;
-    return TCL_OK;
 }
 
 /*
