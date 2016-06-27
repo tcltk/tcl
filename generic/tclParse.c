@@ -167,6 +167,8 @@ static int		ParseTokens(const char *src, int numBytes, int mask,
 			    int flags, Tcl_Parse *parsePtr);
 static int		ParseWhiteSpace(const char *src, int numBytes,
 			    int *incompletePtr, char *typePtr);
+static int		ParseAllWhiteSpace(const char *src, int numBytes,
+			    int *incompletePtr);
 
 /*
  *----------------------------------------------------------------------
@@ -733,22 +735,31 @@ ParseWhiteSpace(
  *----------------------------------------------------------------------
  */
 
+static int
+ParseAllWhiteSpace(
+    const char *src,		/* First character to parse. */
+    int numBytes,		/* Max number of byes to scan */
+    int *incompletePtr)		/* Set true if parse is incomplete. */
+{
+    char type;
+    const char *p = src;
+
+    do {
+	int scanned = ParseWhiteSpace(p, numBytes, incompletePtr, &type);
+
+	p += scanned;
+	numBytes -= scanned;
+    } while (numBytes && (*p == '\n') && (p++, --numBytes));
+    return (p-src);
+}
+
 int
 TclParseAllWhiteSpace(
     const char *src,		/* First character to parse. */
     int numBytes)		/* Max number of byes to scan */
 {
     int dummy;
-    char type;
-    const char *p = src;
-
-    do {
-	int scanned = ParseWhiteSpace(p, numBytes, &dummy, &type);
-
-	p += scanned;
-	numBytes -= scanned;
-    } while (numBytes && (*p == '\n') && (p++, --numBytes));
-    return (p-src);
+    return ParseAllWhiteSpace(src, numBytes, &dummy);
 }
 
 /*
@@ -1021,17 +1032,12 @@ ParseComment(
 				 * command. */
 {
     register const char *p = src;
+    int incomplete = parsePtr->incomplete;
 
     while (numBytes) {
-	char type;
-	int scanned;
-
-	do {
-	    scanned = ParseWhiteSpace(p, numBytes,
-		    &parsePtr->incomplete, &type);
-	    p += scanned;
-	    numBytes -= scanned;
-	} while (numBytes && (*p == '\n') && (p++,numBytes--));
+	int scanned = ParseAllWhiteSpace(p, numBytes, &incomplete);
+	p += scanned;
+	numBytes -= scanned;
 
 	if ((numBytes == 0) || (*p != '#')) {
 	    break;
@@ -1039,36 +1045,29 @@ ParseComment(
 	if (parsePtr->commentStart == NULL) {
 	    parsePtr->commentStart = p;
 	}
-
+	
+	p++;
+	numBytes--;
 	while (numBytes) {
-	    if (*p == '\\') {
-		scanned = ParseWhiteSpace(p, numBytes, &parsePtr->incomplete,
-			&type);
-		if (scanned) {
-		    p += scanned;
-		    numBytes -= scanned;
-		} else {
-		    /*
-		     * General backslash substitution in comments isn't part
-		     * of the formal spec, but test parse-15.47 and history
-		     * indicate that it has been the de facto rule. Don't
-		     * change it now.
-		     */
-
-		    TclParseBackslash(p, numBytes, &scanned, NULL);
-		    p += scanned;
-		    numBytes -= scanned;
-		}
-	    } else {
+	    if (*p == '\n') {
 		p++;
 		numBytes--;
-		if (p[-1] == '\n') {
+		break;
+	    }
+	    if (*p == '\\') {
+		p++;
+		numBytes--;
+		if (numBytes == 0) {
 		    break;
 		}
 	    }
+	    incomplete = (*p == '\n');
+	    p++;
+	    numBytes--;
 	}
 	parsePtr->commentSize = p - parsePtr->commentStart;
     }
+    parsePtr->incomplete = incomplete;
     return (p - src);
 }
 
