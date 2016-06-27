@@ -105,12 +105,15 @@ extern "C" {
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #   define TCL_NORETURN __attribute__ ((noreturn))
 #   define TCL_NORETURN1 __attribute__ ((noreturn))
+#   define TCL_NOINLINE __attribute__ ((noinline))
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER) && (_MSC_VER >= 1310)
 #	define TCL_NORETURN _declspec(noreturn)
+#	define TCL_NOINLINE __declspec(noinline)
 #   else
 #	define TCL_NORETURN /* nothing */
+#	define TCL_NOINLINE /* nothing */
 #   endif
 #   define TCL_NORETURN1 /* nothing */
 #endif
@@ -2155,7 +2158,7 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * stubs tables.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACB + (int) sizeof(void *))
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2165,23 +2168,26 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  */
 
 const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
-			    int exact, const char *tclversion, int magic);
+			    int exact, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
 #ifdef USE_TCL_STUBS
 #if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
 #   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)((interp), (version), (exact)|(int)sizeof(size_t), \
-	TCL_VERSION, TCL_STUB_MAGIC)
+	(Tcl_InitStubs)(interp, version, \
+	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
+	    TCL_STUB_MAGIC)
 #else
 #   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, TCL_PATCH_LEVEL, 1|(int)sizeof(size_t), \
-	TCL_VERSION, TCL_STUB_MAGIC)
+	(Tcl_InitStubs)(interp, TCL_PATCH_LEVEL, \
+	    1|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
+	    TCL_STUB_MAGIC)
 #endif
 #else
 #define Tcl_InitStubs(interp, version, exact) \
-    Tcl_PkgInitStubsCheck(interp, version, exact)
+    Tcl_PkgInitStubsCheck(interp, version, \
+	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
 #endif
 
 /*
