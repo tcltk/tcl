@@ -1458,6 +1458,11 @@ InvokeForwardMethod(
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
     Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
+    /*
+     * NOTE: The combination of direct set of iPtr->lookupNsPtr and the use
+     * of the TCL_EVAL_NOERR flag results in an evaluation configuration
+     * very much like TCL_EVAL_INVOKE.
+     */
     ((Interp *)interp)->lookupNsPtr
 	    = (Namespace *) contextPtr->oPtr->namespacePtr;
     return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_NOERR, NULL);
@@ -1594,12 +1599,9 @@ InitEnsembleRewrite(
     int *lengthPtr)		/* Where to write the resulting length of the
 				 * array of rewritten arguments. */
 {
-    Interp *iPtr = (Interp *) interp;
-    int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
-    Tcl_Obj **argObjs;
     unsigned len = rewriteLength + objc - toRewrite;
+    Tcl_Obj **argObjs = TclStackAlloc(interp, sizeof(Tcl_Obj *) * len);
 
-    argObjs = TclStackAlloc(interp, sizeof(Tcl_Obj *) * len);
     memcpy(argObjs, rewriteObjs, rewriteLength * sizeof(Tcl_Obj *));
     memcpy(argObjs + rewriteLength, objv + toRewrite,
 	    sizeof(Tcl_Obj *) * (objc - toRewrite));
@@ -1613,22 +1615,9 @@ InitEnsembleRewrite(
      * (and unavoidably).
      */
 
-    if (isRootEnsemble) {
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = toRewrite;
-	iPtr->ensembleRewrite.numInsertedObjs = rewriteLength;
-    } else {
-	int numIns = iPtr->ensembleRewrite.numInsertedObjs;
-
-	if (numIns < toRewrite) {
-	    iPtr->ensembleRewrite.numRemovedObjs += toRewrite - numIns;
-	    iPtr->ensembleRewrite.numInsertedObjs += rewriteLength - 1;
-	} else {
-	    iPtr->ensembleRewrite.numInsertedObjs +=
-		    rewriteLength - toRewrite;
-	}
+    if (TclInitRewriteEnsemble(interp, toRewrite, rewriteLength, objv)) {
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
-
     *lengthPtr = len;
     return argObjs;
 }
