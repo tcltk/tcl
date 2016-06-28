@@ -4877,7 +4877,8 @@ TEBCresume(
 
     {
 	int index, numIndices, fromIdx, toIdx;
-	int nocase, match, length2, cflags, s1len, s2len;
+	int nocase, match, length2, cflags;
+	int s1len, s2len;
 	const char *s1, *s2;
 
     case INST_LIST:
@@ -5176,7 +5177,8 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 
-	s1 = TclGetStringFromObj(valuePtr, &s1len);
+	s1 = TclGetString(valuePtr);
+	s1len = valuePtr->length;
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 	if (TclListObjLength(interp, value2Ptr, &length) != TCL_OK) {
 	    TRACE_ERROR(interp);
@@ -5194,7 +5196,8 @@ TEBCresume(
 	    do {
 		Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
 		if (o != NULL) {
-		    s2 = TclGetStringFromObj(o, &s2len);
+		    s2 = TclGetString(o);
+		    s2len = o->length;
 		} else {
 		    s2 = "";
 		    s2len = 0;

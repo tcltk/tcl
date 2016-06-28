@@ -432,7 +432,7 @@ Tcl_DeleteHashTable(
 {
     register Tcl_HashEntry *hPtr, *nextPtr;
     const Tcl_HashKeyType *typePtr;
-    int i;
+    size_t i;
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;

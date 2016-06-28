@@ -6643,7 +6643,7 @@ TestHashSystemHashCmd(
 	Tcl_SetHashValue(hPtr, INT2PTR(i+42));
     }
 
-    if (hash.numEntries != limit) {
+    if (hash.numEntries != (size_t)limit) {
 	Tcl_AppendResult(interp, "unexpected maximal size", NULL);
 	Tcl_DeleteHashTable(&hash);
 	return TCL_ERROR;

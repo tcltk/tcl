@@ -1242,7 +1242,7 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    Tcl_SetLongObj(Tcl_GetObjResult(interp), (varPtr[varIndex] != NULL)
-		    ? varPtr[varIndex]->length : -1);
+		    ? varPtr[varIndex]->length : (size_t)-1);
 	    break;
 	case 5:				/* length2 */
 	    if (objc != 3) {
