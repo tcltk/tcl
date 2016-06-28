@@ -426,7 +426,7 @@ TclRegisterLiteral(
     } else {
 	nsPtr = NULL;
     }
-    
+
     /*
      * Is it in the interpreter's global literal table? If not, create it.
      */
@@ -938,7 +938,8 @@ RebuildLiteralTable(
     register LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     const char *bytes;
-    int oldSize, count, index, length;
+    unsigned int oldSize;
+    int count, index, length;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;
@@ -1007,7 +1008,7 @@ RebuildLiteralTable(
  * Results:
  *	None.
  *
- * Side effects: 
+ * Side effects:
  *	Resets the internal representation of the CmdName Tcl_Obj
  *	using TclFreeIntRep().
  *

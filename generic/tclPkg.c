@@ -1854,7 +1854,7 @@ Tcl_PkgInitStubsCheck(
 {
     const char *actualVersion = Tcl_PkgPresentEx(interp, "Tcl", version, 0, NULL);
 
-    if (exact && actualVersion) {
+    if ((exact&1) && actualVersion) {
 	const char *p = version;
 	int count = 0;
 

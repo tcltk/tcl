@@ -564,13 +564,13 @@ ParseExpr(
 {
     OpNode *nodes = NULL;	/* Pointer to the OpNode storage array where
 				 * we build the parse tree. */
-    int nodesAvailable = 64;	/* Initial size of the storage array. This
+    unsigned int nodesAvailable = 64; /* Initial size of the storage array. This
 				 * value establishes a minimum tree memory
 				 * cost of only about 1 kibyte, and is large
 				 * enough for most expressions to parse with
 				 * no need for array growth and
 				 * reallocation. */
-    int nodesUsed = 0;		/* Number of OpNodes filled. */
+    unsigned int nodesUsed = 0;	/* Number of OpNodes filled. */
     int scanned = 0;		/* Capture number of byte scanned by parsing
 				 * routines. */
     int lastParsed;		/* Stores info about what the lexeme parsed
@@ -662,7 +662,7 @@ ParseExpr(
 	 */
 
 	if (nodesUsed >= nodesAvailable) {
-	    int size = nodesUsed * 2;
+	    unsigned int size = nodesUsed * 2;
 	    OpNode *newPtr = NULL;
 
 	    do {
@@ -2181,7 +2181,6 @@ ExecConstantExprTree(
     CompileEnv *envPtr;
     ByteCode *byteCodePtr;
     int code;
-    Tcl_Obj *byteCodeObj = Tcl_NewObj();
     NRE_callback *rootPtr = TOP_CB(interp);
 
     /*
@@ -2195,14 +2194,12 @@ ExecConstantExprTree(
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
 	    0 /* optimize */);
     TclEmitOpcode(INST_DONE, envPtr);
-    Tcl_IncrRefCount(byteCodeObj);
-    TclInitByteCodeObj(byteCodeObj, envPtr);
+    byteCodePtr = TclInitByteCode(envPtr);
     TclFreeCompileEnv(envPtr);
     TclStackFree(interp, envPtr);
-    byteCodePtr = byteCodeObj->internalRep.twoPtrValue.ptr1;
     TclNRExecuteByteCode(interp, byteCodePtr);
     code = TclNRRunCallbacks(interp, TCL_OK, rootPtr);
-    Tcl_DecrRefCount(byteCodeObj);
+    TclReleaseByteCode(byteCodePtr);
     return code;
 }
 

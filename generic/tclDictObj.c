@@ -3048,14 +3048,14 @@ DictFilterCmd(
 	    Tcl_IncrRefCount(valueObj);
 	    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
-		Tcl_AddErrorInfo(interp, 
+		Tcl_AddErrorInfo(interp,
 			"\n    (\"dict filter\" filter script key variable)");
 		result = TCL_ERROR;
 		goto abnormalResult;
 	    }
 	    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
-		Tcl_AddErrorInfo(interp, 
+		Tcl_AddErrorInfo(interp,
 			"\n    (\"dict filter\" filter script value variable)");
 		result = TCL_ERROR;
 		goto abnormalResult;

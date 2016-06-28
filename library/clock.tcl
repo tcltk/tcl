@@ -111,6 +111,7 @@ proc ::tcl::clock::Initialize {} {
     mcpackagelocale set {}
     ::msgcat::mcpackageconfig set mcfolder [file join $LibDir msgs]
     ::msgcat::mcpackageconfig set unknowncmd ""
+    ::msgcat::mcpackageconfig set changecmd ChangeCurrentLocale
 
     # Define the message catalog for the root locale.
 
@@ -4247,7 +4248,7 @@ proc ::tcl::clock::add { clockval args } {
              ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?\""
     }
     if { [catch { expr {wide($clockval)} } result] } {
-	return -code error $result
+	return -code error "expected integer but got \"$clockval\""
     }
 
     set offsets {}
@@ -4286,9 +4287,6 @@ proc ::tcl::clock::add { clockval args } {
 	    -errorcode [list CLOCK gmtWithTimezone] \
 	    "cannot use -gmt and -timezone in same call"
     }
-    if { [catch { expr { wide($clockval) } } result] } {
-	return -code error "expected integer but got \"$clockval\""
-    }
     if { ![string is boolean -strict $gmt] } {
 	return -code error "expected boolean value but got \"$gmt\""
     } elseif { $gmt } {
@@ -4322,6 +4320,11 @@ proc ::tcl::clock::add { clockval args } {
 		}
 		days - day {
 		    set clockval [AddDays $quantity $clockval $timezone \
+			    $changeover]
+		}
+
+		weekdays - weekday {
+		    set clockval [AddWeekDays $quantity $clockval $timezone \
 			    $changeover]
 		}
 
@@ -4424,6 +4427,56 @@ proc ::tcl::clock::AddMonths { months clockval timezone changeover } {
 
 #----------------------------------------------------------------------
 #
+# AddWeekDays --
+#
+#	Add a given number of week days (skipping Saturdays and Sundays)
+#	to a given clock value in a given time zone.
+#
+# Parameters:
+#	days - Number of days to add (may be negative)
+#	clockval - Seconds since the epoch before the operation
+#	timezone - Time zone in which the operation is to be performed
+#	changeover - Julian Day on which the Gregorian calendar was adopted
+#		     in the target locale.
+#
+# Results:
+#	Returns the new clock value as a number of seconds since the epoch.
+#
+# Side effects:
+#	None.
+#
+#----------------------------------------------------------------------
+
+proc ::tcl::clock::AddWeekDays { days clockval timezone changeover } {
+
+    if {$days == 0} {
+        return $clockval
+    }
+
+    set day [format $clockval -format %u]
+
+    set weeks  [expr {$days / 5}]
+    set rdays  [expr {$days % 5}]
+    set toAdd  [expr {7 * $weeks + $rdays}]
+    set resDay [expr {$day + ($toAdd % 7)}]
+
+    # Adjust if we start from a weekend
+    if {$day > 5} {
+	set adj [expr {5 - $day}]
+	incr toAdd  $adj
+	incr resDay $adj
+    }
+
+    # Adjust if we end up on a weekend
+    if {$resDay > 5} {
+	incr toAdd 2
+    }
+
+    AddDays $toAdd $clockval $timezone $changeover
+}
+
+#----------------------------------------------------------------------
+#
 # AddDays --
 #
 #	Add a given number of days to a given clock value in a given time
@@ -4471,6 +4524,41 @@ proc ::tcl::clock::AddDays { days clockval timezone changeover } {
 
     return [dict get $date seconds]
 
+}
+
+#----------------------------------------------------------------------
+#
+# ChangeCurrentLocale --
+#
+#        The global locale was changed within msgcat.
+#        Clears the buffered parse functions of the current locale.
+#
+# Parameters:
+#        loclist (ignored)
+#
+# Results:
+#        None.
+#
+# Side effects:
+#        Buffered parse functions are cleared.
+#
+#----------------------------------------------------------------------
+
+proc ::tcl::clock::ChangeCurrentLocale {args} {
+    variable FormatProc
+    variable LocaleNumeralCache
+    variable CachedSystemTimeZone
+    variable TimeZoneBad
+
+    foreach p [info procs [namespace current]::scanproc'*'current] {
+        rename $p {}
+    }
+    foreach p [info procs [namespace current]::formatproc'*'current] {
+        rename $p {}
+    }
+
+    catch {array unset FormatProc *'current}
+    set LocaleNumeralCache {}
 }
 
 #----------------------------------------------------------------------

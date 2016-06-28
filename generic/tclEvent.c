@@ -89,7 +89,7 @@ static int subsystemsInitialized = 0;
  * non-NULL value.
  */
 
-static Tcl_ExitProc *appExitPtr = NULL;
+static TCL_NORETURN1 Tcl_ExitProc *appExitPtr = NULL;
 
 typedef struct ThreadSpecificData {
     ExitHandler *firstExitPtr;	/* First in list of all exit handlers for this
@@ -857,7 +857,7 @@ Tcl_DeleteThreadExitHandler(
 
 Tcl_ExitProc *
 Tcl_SetExitProc(
-    Tcl_ExitProc *proc)		/* New exit handler for app or NULL */
+    TCL_NORETURN1 Tcl_ExitProc *proc)		/* New exit handler for app or NULL */
 {
     Tcl_ExitProc *prevExitProc;
 
@@ -933,12 +933,12 @@ InvokeExitHandlers(void)
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 Tcl_Exit(
     int status)			/* Exit status for application; typically 0
 				 * for normal return, 1 for error return. */
 {
-    Tcl_ExitProc *currentAppExitPtr;
+    TCL_NORETURN1 Tcl_ExitProc *currentAppExitPtr;
 
     Tcl_MutexLock(&exitMutex);
     currentAppExitPtr = appExitPtr;
@@ -1042,6 +1042,9 @@ TclInitSubsystems(void)
 					 * thread local storage */
 #if USE_TCLALLOC
 	    TclInitAlloc();		/* Process wide mutex init */
+#endif
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+	    TclpInitAllocCache();
 #endif
 #ifdef TCL_MEM_DEBUG
 	    TclInitDbCkalloc();		/* Process wide mutex init */
@@ -1462,6 +1465,8 @@ VwaitVarProc(
     int *donePtr = clientData;
 
     *donePtr = 1;
+    Tcl_UntraceVar(interp, name1, TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+	    VwaitVarProc, clientData);
     return NULL;
 }
 

@@ -535,7 +535,7 @@ TclFindDictElement(
 				 * indicate that the substring of *sizePtr
 				 * bytes starting at **elementPtr is/is not
 				 * the literal key or value and therefore
-				 * does not/does require a call to 
+				 * does not/does require a call to
 				 * TclCopyAndCollapse() by the caller. */
 {
     return FindElement(interp, dict, dictLength, "dict", "DICTIONARY",
@@ -567,7 +567,7 @@ FindElement(
 				 * indicate that the substring of *sizePtr
 				 * bytes starting at **elementPtr is/is not
 				 * the literal list/dict element and therefore
-				 * does not/does require a call to 
+				 * does not/does require a call to
 				 * TclCopyAndCollapse() by the caller. */
 {
     const char *p = string;
@@ -582,7 +582,7 @@ FindElement(
 
     /*
      * Skim off leading white space and check for an opening brace or quote.
-     * We treat embedded NULLs in the list/dict as bytes belonging to a list 
+     * We treat embedded NULLs in the list/dict as bytes belonging to a list
      * element (or dictionary key or value).
      */
 
@@ -1934,7 +1934,11 @@ Tcl_ConcatObj(
 		continue;
 	    }
 	    if (resPtr) {
-		Tcl_ListObjAppendList(NULL, resPtr, objPtr);
+		if (TCL_OK != Tcl_ListObjAppendList(NULL, resPtr, objPtr)) {
+		    /* Abandon ship! */
+		    Tcl_DecrRefCount(resPtr);
+		    goto slow;
+		}
 	    } else {
 		resPtr = TclListObjCopy(NULL, objPtr);
 	    }
@@ -1945,6 +1949,7 @@ Tcl_ConcatObj(
 	return resPtr;
     }
 
+  slow:
     /*
      * Something cannot be determined to be safe, so build the concatenation
      * the slow way, using the string representations.
@@ -2581,7 +2586,19 @@ Tcl_DStringAppend(
 	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
+	    int offset = -1;
+
+	    /* See [16896d49fd] */
+	    if (bytes >= dsPtr->string
+		    && bytes <= dsPtr->string + dsPtr->length) {
+		offset = bytes - dsPtr->string;
+	    }
+
 	    dsPtr->string = ckrealloc(dsPtr->string, dsPtr->spaceAvl);
+
+	    if (offset >= 0) {
+		bytes = dsPtr->string + offset;
+	    }
 	}
     }
 
@@ -2671,7 +2688,19 @@ Tcl_DStringAppendElement(
 	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
+	    int offset = -1;
+
+	    /* See [16896d49fd] */
+	    if (element >= dsPtr->string
+		    && element <= dsPtr->string + dsPtr->length) {
+		offset = element - dsPtr->string;
+	    }
+
 	    dsPtr->string = ckrealloc(dsPtr->string, dsPtr->spaceAvl);
+
+	    if (offset >= 0) {
+		element = dsPtr->string + offset;
+	    }
 	}
 	dst = dsPtr->string + dsPtr->length;
     }

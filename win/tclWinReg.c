@@ -163,7 +163,7 @@ Registry_Init(
     cmd = Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvideEx(interp, "registry", "1.3.1", NULL);
+    return Tcl_PkgProvide(interp, "registry", "1.3.2");
 }
 
 /*
@@ -282,8 +282,8 @@ RegistryObjCmd(
     }
 
     if (Tcl_GetString(objv[n])[0] == '-') {
-	if (Tcl_GetIndexFromObjStruct(interp, objv[n++], modes,
-		sizeof(char *), "mode", 0, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[n++], modes, "mode", 0,
+		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (index) {
@@ -299,8 +299,8 @@ RegistryObjCmd(
 	}
     }
 
-    if (Tcl_GetIndexFromObjStruct(interp, objv[n++], subcommands,
-	    sizeof(char *), "option", 0, &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[n++], subcommands, "option", 0,
+	    &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -520,8 +520,7 @@ DeleteValue(
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to delete value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj),
-		Tcl_GetString(keyNameObj)));
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
 	AppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
@@ -682,8 +681,7 @@ GetType(
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to get type of value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj),
-		Tcl_GetString(keyNameObj)));
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -694,7 +692,7 @@ GetType(
      */
 
     if (type > lastType) {
-	Tcl_SetObjResult(interp, Tcl_NewLongObj((int) type));
+	Tcl_SetObjResult(interp, Tcl_NewIntObj((int) type));
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(typeNames[type], -1));
     }
@@ -778,8 +776,7 @@ GetValue(
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to get value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj),
-		Tcl_GetString(keyNameObj)));
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
 	AppendSystemError(interp, result);
 	Tcl_DStringFree(&data);
 	return TCL_ERROR;
@@ -793,7 +790,7 @@ GetValue(
      */
 
     if (type == REG_DWORD || type == REG_DWORD_BIG_ENDIAN) {
-	Tcl_SetObjResult(interp, Tcl_NewLongObj((long) ConvertDWORD(type,
+	Tcl_SetObjResult(interp, Tcl_NewIntObj((int) ConvertDWORD(type,
 		*((DWORD *) Tcl_DStringValue(&data)))));
     } else if (type == REG_MULTI_SZ) {
 	char *p = Tcl_DStringValue(&data);
@@ -806,17 +803,17 @@ GetValue(
 	 * we get bogus data.
 	 */
 
-	while ((p < end) && *((Tcl_UniChar *) p) != 0) {
-	    Tcl_UniChar *up;
+	while ((p < end) && *((WCHAR *) p) != 0) {
+	    WCHAR *wp;
 
 	    Tcl_WinTCharToUtf((TCHAR *) p, -1, &buf);
 	    Tcl_ListObjAppendElement(interp, resultPtr,
 		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf)));
-	    up = (Tcl_UniChar *) p;
+	    wp = (WCHAR *) p;
 
-	    while (*up++ != 0) {/* empty body */}
-	    p = (char *) up;
+	    while (*wp++ != 0) {/* empty body */}
+	    p = (char *) wp;
 	    Tcl_DStringFree(&buf);
 	}
 	Tcl_SetObjResult(interp, resultPtr);
@@ -1124,8 +1121,8 @@ ParseKeyName(
      */
 
     rootObj = Tcl_NewStringObj(rootName, -1);
-    result = Tcl_GetIndexFromObjStruct(interp, rootObj, rootKeyNames,
-	    sizeof(char *), "root name", TCL_EXACT, &index);
+    result = Tcl_GetIndexFromObj(interp, rootObj, rootKeyNames, "root name",
+	    TCL_EXACT, &index);
     Tcl_DecrRefCount(rootObj);
     if (result != TCL_OK) {
 	return TCL_ERROR;
@@ -1261,8 +1258,8 @@ SetValue(
 
     if (typeObj == NULL) {
 	type = REG_SZ;
-    } else if (Tcl_GetIndexFromObjStruct(interp, typeObj, typeNames,
-	    sizeof(char *), "type", 0, (int *) &type) != TCL_OK) {
+    } else if (Tcl_GetIndexFromObj(interp, typeObj, typeNames, "type",
+	    0, (int *) &type) != TCL_OK) {
 	if (Tcl_GetIntFromObj(NULL, typeObj, (int *) &type) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -1335,7 +1332,7 @@ SetValue(
 	data = (char *) Tcl_WinUtfToTChar(data, length, &buf);
 
 	/*
-	 * Include the null in the length, padding if needed for Unicode.
+	 * Include the null in the length, padding if needed for WCHAR.
 	 */
 
 	Tcl_DStringSetLength(&buf, Tcl_DStringLength(&buf)+1);
@@ -1396,9 +1393,10 @@ BroadcastValue(
     DWORD_PTR sendResult;
     int timeout = 3000;
     size_t len;
-    int unilen;
     const char *str;
     Tcl_Obj *objPtr;
+    WCHAR *wstr;
+    Tcl_DString ds;
 
     if (objc == 3) {
 	str = Tcl_GetString(objv[1]);
@@ -1411,9 +1409,11 @@ BroadcastValue(
 	}
     }
 
-    str = (char*)Tcl_GetUnicodeFromObj(objv[0], &unilen);
-    if (unilen == 0) {
-	str = NULL;
+    str = Tcl_GetString(objv[0]);
+    len = objv[0]->length;
+    wstr = (WCHAR *) Tcl_WinUtfToTChar(str, len, &ds);
+    if (Tcl_DStringLength(&ds) == 0) {
+	wstr = NULL;
     }
 
     /*
@@ -1421,11 +1421,12 @@ BroadcastValue(
      */
 
     result = SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE,
-	    (WPARAM) 0, (LPARAM) str, SMTO_ABORTIFHUNG, (UINT) timeout, &sendResult);
+	    (WPARAM) 0, (LPARAM) wstr, SMTO_ABORTIFHUNG, (UINT) timeout, &sendResult);
+    Tcl_DStringFree(&ds);
 
     objPtr = Tcl_NewObj();
-    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewLongObj((long) result));
-    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewLongObj((long) sendResult));
+    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewWideIntObj((Tcl_WideInt) result));
+    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewWideIntObj((Tcl_WideInt) sendResult));
     Tcl_SetObjResult(interp, objPtr);
 
     return TCL_OK;

@@ -1177,7 +1177,7 @@ ReflectInput(
 	     */
 
 	    rtPtr->eofPending = 1;
-	
+
 		/*
 		 * Now this is a bit different. The partial data waiting is
 		 * converted and returned.

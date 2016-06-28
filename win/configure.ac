@@ -4,7 +4,7 @@
 # to configure the system for the local environment.
 
 AC_INIT(../generic/tcl.h)
-AC_PREREQ(2.59)
+AC_PREREQ(2.69)
 
 # The following define is needed when building with Cygwin since newer
 # versions of autoconf incorrectly set SHELL to /bin/bash instead of
@@ -290,19 +290,19 @@ TCL_SHARED_LIB_SUFFIX="\${NODOT_VERSION}${DLLSUFFIX}"
 TCL_UNSHARED_LIB_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
 TCL_EXPORT_FILE_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
 
-eval "TCL_SRC_DIR=\"`cd $srcdir/..; pwd`\""
+eval "TCL_SRC_DIR=\"`cd $srcdir/..; $CYGPATH $(pwd)`\""
 
 eval "TCL_DLL_FILE=tcl${VER}${DLLSUFFIX}"
 
 eval "TCL_STUB_LIB_FILE=\"${LIBPREFIX}tclstub${VER}${LIBSUFFIX}\""
 eval "TCL_STUB_LIB_FLAG=\"-ltclstub${VER}${LIBFLAGSUFFIX}\""
-eval "TCL_BUILD_STUB_LIB_SPEC=\"-L`pwd` ${TCL_STUB_LIB_FLAG}\""
+eval "TCL_BUILD_STUB_LIB_SPEC=\"-L`$CYGPATH $(pwd)` ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_STUB_LIB_SPEC=\"-L${libdir} ${TCL_STUB_LIB_FLAG}\""
-eval "TCL_BUILD_STUB_LIB_PATH=\"`pwd`/${TCL_STUB_LIB_FILE}\""
+eval "TCL_BUILD_STUB_LIB_PATH=\"`$CYGPATH $(pwd)`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${libdir}/${TCL_STUB_LIB_FILE}\""
 
 eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
-eval "TCL_BUILD_LIB_SPEC=\"-L`pwd` -ltcl${VER}${FLAGSUFFIX}\""
+eval "TCL_BUILD_LIB_SPEC=\"-L`$CYGPATH $(pwd)` -ltcl${VER}${FLAGSUFFIX}\""
 eval "TCL_LIB_SPEC=\"-L${libdir} -ltcl${VER}${FLAGSUFFIX}\""
 
 # Install time header dir can be set via --includedir

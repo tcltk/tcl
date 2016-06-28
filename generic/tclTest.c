@@ -302,6 +302,9 @@ static int		TestparsevarObjCmd(ClientData dummy,
 static int		TestparsevarnameObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+static int		TestpreferstableObjCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestregexpObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -387,6 +390,12 @@ static int		TestNumUtfCharsCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static int		TestHashSystemHashCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+
+static int              NREUnwind_callback(ClientData data[], Tcl_Interp *interp,
+                            int result);
+static int		TestNREUnwind(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static int		TestNRELevels(ClientData clientData,
@@ -620,6 +629,8 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testparsevarname", TestparsevarnameObjCmd,
 	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testpreferstable", TestpreferstableObjCmd,
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testregexp", TestregexpObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testreturn", TestreturnObjCmd,
@@ -659,6 +670,8 @@ Tcltest_Init(
 	    (ClientData) 0, NULL);
 #endif
 
+    Tcl_CreateObjCommand(interp, "testnreunwind", TestNREUnwind,
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testnrelevels", TestNRELevels,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testinterpresolver", TestInterpResolverCmd,
@@ -3605,6 +3618,36 @@ TestparsevarnameObjCmd(
     parse.commandSize = 0;
     PrintParse(interp, &parse);
     Tcl_FreeParse(&parse);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestpreferstableObjCmd --
+ *
+ *	This procedure implements the "testpreferstable" command.  It is
+ *	used for being able to test the "package" command even when the
+ *  environment variable TCL_PKG_PREFER_LATEST is set in your environment.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestpreferstableObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    Interp *iPtr = (Interp *) interp;
+    iPtr->packagePrefer = PKG_PREFER_STABLE;
     return TCL_OK;
 }
 
@@ -6662,6 +6705,51 @@ TestgetintCmd(
     }
 }
 
+static int
+NREUnwind_callback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    int none;
+
+    if (data[0] == INT2PTR(-1)) {
+        Tcl_NRAddCallback(interp, NREUnwind_callback, &none, INT2PTR(-1),
+                INT2PTR(-1), NULL);
+    } else if (data[1] == INT2PTR(-1)) {
+        Tcl_NRAddCallback(interp, NREUnwind_callback, data[0], &none,
+                INT2PTR(-1), NULL);
+    } else if (data[2] == INT2PTR(-1)) {
+        Tcl_NRAddCallback(interp, NREUnwind_callback, data[0], data[1],
+                &none, NULL);
+    } else {
+        Tcl_Obj *idata[3];
+        idata[0] = Tcl_NewIntObj((int) ((char *) data[1] - (char *) data[0]));
+        idata[1] = Tcl_NewIntObj((int) ((char *) data[2] - (char *) data[0]));
+        idata[2] = Tcl_NewIntObj((int) ((char *) &none   - (char *) data[0]));
+        Tcl_SetObjResult(interp, Tcl_NewListObj(3, idata));
+    }
+    return TCL_OK;
+}
+
+static int
+TestNREUnwind(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    /*
+     * Insure that callbacks effectively run at the proper level during the
+     * unwinding of the NRE stack.
+     */
+
+    Tcl_NRAddCallback(interp, NREUnwind_callback, INT2PTR(-1), INT2PTR(-1),
+            INT2PTR(-1), NULL);
+    return TCL_OK;
+}
+
+
 static int
 TestNRELevels(
     ClientData clientData,

@@ -1,4 +1,4 @@
-# The file tests the tcl_platform variable
+# The file tests the tcl_platform variable and platform package.
 #
 # This file contains a collection of tests for one or more of the Tcl
 # built-in commands.  Sourcing this file into Tcl runs the tests and
@@ -23,6 +23,10 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testCPUID [llength [info commands testcpuid]]
 
+test platform-1.0 {tcl_platform(engine)} {
+  set tcl_platform(engine)
+} {Tcl}
+
 test platform-1.1 {TclpSetVariables: tcl_platform} {
     interp create i
     i eval {catch {unset tcl_platform(debug)}}
@@ -30,7 +34,7 @@ test platform-1.1 {TclpSetVariables: tcl_platform} {
     set result [i eval {lsort [array names tcl_platform]}]
     interp delete i
     set result
-} {byteOrder machine os osVersion pathSeparator platform pointerSize user wordSize}
+} {byteOrder engine machine os osVersion pathSeparator platform pointerSize user wordSize}
 
 # Test assumes twos-complement arithmetic, which is true of virtually
 # everything these days.  Note that this does *not* use wide(), and
@@ -47,15 +51,26 @@ test platform-2.1 {tcl_platform(wordSize) indicates size of native word} {
 
 test platform-3.1 {CPU ID on Windows/UNIX} \
     -constraints testCPUID \
-    -body {		
+    -body {
 	set cpudata [testcpuid 0]
 	binary format iii \
 	    [lindex $cpudata 1] \
 	    [lindex $cpudata 3] \
-	    [lindex $cpudata 2] 
+	    [lindex $cpudata 2]
     } \
     -match regexp \
     -result {^(?:AuthenticAMD|CentaurHauls|CyrixInstead|GenuineIntel)$}
+
+# The platform package makes very few promises, but does promise that the
+# format of string it produces consists of two non-empty words separated by a
+# hyphen.
+package require platform
+test platform-4.1 {format of platform::identify result} -match regexp -body {
+    platform::identify
+} -result {^([^-]+-)+[^-]+$}
+test platform-4.2 {format of platform::generic result} -match regexp -body {
+    platform::generic
+} -result {^([^-]+-)+[^-]+$}
 
 # cleanup
 cleanupTests

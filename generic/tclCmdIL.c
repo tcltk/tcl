@@ -1203,7 +1203,7 @@ InfoFrameCmd(
     levelError:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad level \"%s\"", TclGetString(objv[1])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_FRAME",
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 		TclGetString(objv[1]), NULL);
 	code = TCL_ERROR;
 	goto done;
@@ -1638,7 +1638,7 @@ InfoLevelCmd(
   levelError:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "bad level \"%s\"", TclGetString(objv[1])));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_LEVEL",
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 	    TclGetString(objv[1]), NULL);
     return TCL_ERROR;
 }
@@ -2390,7 +2390,10 @@ Tcl_LinsertObjCmd(
 
 	Tcl_ListObjAppendElement(NULL, listPtr, objv[3]);
     } else {
-	Tcl_ListObjReplace(NULL, listPtr, index, 0, (objc-3), &(objv[3]));
+	if (TCL_OK != Tcl_ListObjReplace(interp, listPtr, index, 0,
+		(objc-3), &(objv[3]))) {
+	    return TCL_ERROR;
+	}
     }
 
     /*
@@ -2752,7 +2755,7 @@ Tcl_LreplaceObjCmd(
      * (to allow for replacing the last elem).
      */
 
-    if ((first >= listLen) && (listLen > 0)) {
+    if ((first > listLen) && (listLen > 0)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"list doesn't contain element %s", TclGetString(objv[2])));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPLACE", "BADIDX",
@@ -2786,7 +2789,10 @@ Tcl_LreplaceObjCmd(
      * optimize this case away.
      */
 
-    Tcl_ListObjReplace(NULL, listPtr, first, numToDelete, objc-4, objv+4);
+    if (TCL_OK != Tcl_ListObjReplace(interp, listPtr, first, numToDelete,
+	    objc-4, objv+4)) {
+	return TCL_ERROR;
+    }
 
     /*
      * Set the interpreter's object result.
