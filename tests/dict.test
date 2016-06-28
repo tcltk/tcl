@@ -2048,6 +2048,13 @@ test dict-24.25 {dict map with huge dict (compiled)} {
     }} 100000
 } 166666666600000
 
+test dict-25.1 {compiled dict update with low-refcount values [Bug d553228d9f]} {
+    # Test crashes on failure
+    apply {{} {
+	lassign {} item
+	dict update item item item two two {}
+    }}
+} {}
 
 # cleanup
 ::tcltest::cleanupTests
