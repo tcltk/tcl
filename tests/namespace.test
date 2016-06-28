@@ -2928,6 +2928,22 @@ test namespace-53.10 {ensembles: nested rewrite} -setup {
     0 {1 v}\
     1 {wrong # args: should be "ns v x z2 a2"}\
     0 {2 v v2}}
+test namespace-53.11 {ensembles: nested rewrite} -setup {
+    namespace eval ns {
+	namespace export x
+	namespace eval x {
+	    proc z2 {a1 a2} {list 2 $a1 $a2}
+	    namespace export z*
+	    namespace ensemble create -parameter p
+	}
+	namespace ensemble create
+    }
+} -body {
+    list [catch {ns x 1 z2} msg] $msg
+} -cleanup {
+    namespace delete ns
+    unset -nocomplain msg
+} -result {1 {wrong # args: should be "ns x 1 z2 a2"}}
 
 test namespace-54.1 {leak on namespace deletion} -constraints {memory} \
 -setup {
