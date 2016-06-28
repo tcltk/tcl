@@ -171,7 +171,7 @@ TCLTEST_EXE		= tcltest${EXE_SUFFIX}
 NATIVE_TCLSH		= @TCLSH_PROG@
 
 # The symbols below provide support for dynamic loading and shared libraries.
-# See configure.in for a description of what the symbols mean. The values of
+# See configure.ac for a description of what the symbols mean. The values of
 # the symbols are normally set by the configure script. You shouldn't normally
 # need to modify any of these definitions by hand.
 
@@ -626,7 +626,7 @@ ${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS}
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
 	@if test "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll"; then \
-	    (cd ${TOP_DIR}/win; ${MAKE} tcldde14.dll tclreg13.dll); \
+	    (cd ${TOP_DIR}/win; ${MAKE} winextensions); \
 	fi
 	rm -f $@
 	@MAKE_STUB_LIB@
@@ -655,7 +655,7 @@ Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 #	$(SHELL) config.status
 
 clean: clean-packages
-	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
+	rm -rf *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
 		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl @DTRACE_HDR@
 	cd dltest ; $(MAKE) clean
 
@@ -819,7 +819,7 @@ install-libraries: libraries
 		else true; \
 		fi; \
 	    done;
-	@for i in opt0.4 http1.0 encoding ../tcl8 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5 ../tcl8/8.6; \
+	@for i in opt0.4 http1.0 encoding ../tcl9 ../tcl9/9.0; \
 	    do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -839,21 +839,21 @@ install-libraries: libraries
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/http1.0; \
 	    done;
 	@echo "Installing package http 2.8.9 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.8.9.tm;
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl9/9.0/http-2.8.9.tm;
 	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/";
 	@for i in $(TOP_DIR)/library/opt/*.tcl ; \
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/opt0.4; \
 	    done;
 	@echo "Installing package msgcat 1.6.0 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.6.0.tm;
-	@echo "Installing package tcltest 2.3.8 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.3.8.tm;
+	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl9/9.0/msgcat-1.6.0.tm;
+	@echo "Installing package tcltest 2.4.0 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl9/9.0/tcltest-2.4.0.tm;
 
 	@echo "Installing package platform 1.0.14 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.14.tm;
+	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl9/9.0/platform-1.0.14.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform/shell-1.1.4.tm;
+	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl9/9.0/platform/shell-1.1.4.tm;
 
 	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/";
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
@@ -1594,7 +1594,7 @@ tclWinError.o: $(TOP_DIR)/win/tclWinError.c
 
 # DTrace support
 
-$(TCL_OBJS) $(STUB_LIB_OBJS) $(TCLSH_OBJS) $(TCLTEST_OBJS) $(XTTEST_OBJS): @DTRACE_HDR@
+$(TCL_OBJS) $(STUB_LIB_OBJS) $(TCLSH_OBJS) $(TCLTEST_OBJS) $(XTTEST_OBJS) $(TOMMATH_OBJS): @DTRACE_HDR@
 
 $(DTRACE_HDR): $(DTRACE_SRC)
 	$(DTRACE) -h $(DTRACE_SWITCHES) -o $@ -s $(DTRACE_SRC)
@@ -1706,7 +1706,7 @@ tclTomMathStubLib.o: $(GENERIC_DIR)/tclTomMathStubLib.c
 # Propagate configure args like --enable-64bit to package configure
 PKG_CFG_ARGS		= @PKG_CFG_ARGS@
 # If PKG_DIR is changed to a different relative depth to the build dir, need
-# to adapt the ../.. relative paths below and at the top of configure.in (we
+# to adapt the ../.. relative paths below and at the top of configure.ac (we
 # cannot use absolute paths due to issues in nested configure when path to
 # build dir contains spaces).
 PKG_DIR			= ./pkgs
@@ -1823,7 +1823,7 @@ gendate:
 #	    -e 's?SCCSID?RCS: @(#) ?' \
 #	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 #	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
-#	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
+#	    -e '/#include <inttypes.h>/d' \
 #           -e '/#define YYNEW/s/malloc/TclDateAlloc/g' \
 #	    -e '/#define YYENLARGE/,/realloc/s/realloc/TclDateRealloc/g' \
 #	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
@@ -1939,7 +1939,7 @@ DISTROOT = /tmp/dist
 DISTNAME = tcl${VERSION}${PATCH_LEVEL}
 ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}-src.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
-$(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in $(UNIX_DIR)/tcl.m4 \
+$(UNIX_DIR)/configure: $(UNIX_DIR)/configure.ac $(UNIX_DIR)/tcl.m4 \
 		$(UNIX_DIR)/aclocal.m4
 	cd $(UNIX_DIR); autoconf
 $(MAC_OSX_DIR)/configure: $(MAC_OSX_DIR)/configure.ac $(UNIX_DIR)/configure
@@ -1953,14 +1953,14 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	cp -p $(UNIX_DIR)/*.[ch] $(DISTDIR)/unix
 	cp $(UNIX_DIR)/Makefile.in $(DISTDIR)/unix
 	chmod 664 $(DISTDIR)/unix/Makefile.in
-	cp $(UNIX_DIR)/configure $(UNIX_DIR)/configure.in \
+	cp $(UNIX_DIR)/configure $(UNIX_DIR)/configure.ac \
 		$(UNIX_DIR)/tcl.m4 $(UNIX_DIR)/aclocal.m4 \
 		$(UNIX_DIR)/tclConfig.sh.in $(UNIX_DIR)/tclooConfig.sh \
 		$(UNIX_DIR)/install-sh \
 		$(UNIX_DIR)/README $(UNIX_DIR)/ldAix $(UNIX_DIR)/tcl.spec \
 		$(UNIX_DIR)/installManPage $(UNIX_DIR)/tclConfig.h.in \
 		$(UNIX_DIR)/tcl.pc.in $(DISTDIR)/unix
-	chmod 775 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.in
+	chmod 775 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.ac
 	chmod 775 $(DISTDIR)/unix/ldAix
 	@mkdir $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/*.[cdh] $(DISTDIR)/generic
@@ -2005,7 +2005,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 		$(DISTDIR)/tests
 	@mkdir $(DISTDIR)/win
 	cp $(TOP_DIR)/win/Makefile.in $(DISTDIR)/win
-	cp $(TOP_DIR)/win/configure.in $(TOP_DIR)/win/configure \
+	cp $(TOP_DIR)/win/configure.ac $(TOP_DIR)/win/configure \
 		$(TOP_DIR)/win/tclConfig.sh.in $(TOP_DIR)/win/tclooConfig.sh \
 		$(TOP_DIR)/win/tcl.m4 $(TOP_DIR)/win/aclocal.m4 \
 		$(TOP_DIR)/win/tclsh.exe.manifest.in \
@@ -2039,7 +2039,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 		$(UNIX_DIR)/dltest/README $(DISTDIR)/unix/dltest
 	@mkdir $(DISTDIR)/tools
 	cp -p $(TOOL_DIR)/Makefile.in $(TOOL_DIR)/README \
-		$(TOOL_DIR)/configure $(TOOL_DIR)/configure.in \
+		$(TOOL_DIR)/configure $(TOOL_DIR)/configure.ac \
 		$(TOOL_DIR)/*.tcl $(TOOL_DIR)/man2tcl.c \
 		$(TOOL_DIR)/*.bmp $(TOOL_DIR)/tcl.hpj.in \
 		$(DISTDIR)/tools
@@ -2060,8 +2060,8 @@ alldist: dist
 #--------------------------------------------------------------------------
 # This target creates the HTML folder for Tcl & Tk and places it in
 # DISTDIR/html. It uses the tcltk-man2html.tcl tool from the Tcl group's tool
-# workspace. It depends on the Tcl & Tk being in directories called tcl8.* &
-# tk8.* up two directories from the TOOL_DIR.
+# workspace. It depends on the Tcl & Tk being in directories called tcl9.* &
+# tk9.* up two directories from the TOOL_DIR.
 #
 # Note that for platforms where this is important, it is more common to use a
 # build of this HTML documentation that has already been placed online. As

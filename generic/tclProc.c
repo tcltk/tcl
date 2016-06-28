@@ -69,9 +69,8 @@ const Tcl_ObjType tclProcBodyType = {
 };
 
 /*
- * The [upvar]/[uplevel] level reference type. Uses the twoPtrValue field,
- * encoding the type of level reference in ptr and the actual parsed out
- * offset in ptr2.
+ * The [upvar]/[uplevel] level reference type. Uses the longValue field
+ * to remember the integer value of a parsed #<integer> format.
  *
  * Uses the default behaviour throughout, and never disposes of the string
  * rep; it's just a cache type.
@@ -785,7 +784,7 @@ TclGetFrame(
  * Results:
  *	The return value is -1 if an error occurred in finding the frame (in
  *	this case an error message is left in the interp's result). 1 is
- *	returned if objPtr was either a number or a number preceded by "#" and
+ *	returned if objPtr was either an int or an int preceded by "#" and
  *	it specified a valid frame. 0 is returned if objPtr isn't one of the
  *	two things above (in this case, the lookup acts as if objPtr were
  *	"1"). The variable pointed to by framePtrPtr is filled in with the
@@ -807,97 +806,71 @@ TclObjGetFrame(
 {
     register Interp *iPtr = (Interp *) interp;
     int curLevel, level, result;
-    CallFrame *framePtr;
-    const char *name;
+    const char *name = NULL;
 
     /*
      * Parse object to figure out which level number to go to.
      */
 
-    result = 1;
+    result = 0;
     curLevel = iPtr->varFramePtr->level;
-    if (objPtr == NULL) {
-	name = "1";
-	goto haveLevel1;
-    }
-
-    name = TclGetString(objPtr);
-    if (objPtr->typePtr == &levelReferenceType) {
-	if (objPtr->internalRep.twoPtrValue.ptr1) {
-	    level = curLevel - PTR2INT(objPtr->internalRep.twoPtrValue.ptr2);
-	} else {
-	    level = PTR2INT(objPtr->internalRep.twoPtrValue.ptr2);
-	}
-	if (level < 0) {
-	    goto levelError;
-	}
-	/* TODO: Consider skipping the typePtr checks */
-    } else if (objPtr->typePtr == &tclIntType
-#ifndef TCL_WIDE_INT_IS_LONG
-	    || objPtr->typePtr == &tclWideIntType
-#endif
-	    ) {
-	if (TclGetIntFromObj(NULL, objPtr, &level) != TCL_OK || level < 0) {
-	    goto levelError;
-	}
-	level = curLevel - level;
-    } else if (*name == '#') {
-	if (Tcl_GetInt(interp, name+1, &level) != TCL_OK || level < 0) {
-	    goto levelError;
-	}
-
-	/*
-	 * Cache for future reference.
-	 */
-
-	TclFreeIntRep(objPtr);
-	objPtr->typePtr = &levelReferenceType;
-	objPtr->internalRep.twoPtrValue.ptr1 = (void *) 0;
-	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(level);
-    } else if (isdigit(UCHAR(*name))) { /* INTL: digit */
-	if (Tcl_GetInt(interp, name, &level) != TCL_OK) {
-	    return -1;
-	}
-
-	/*
-	 * Cache for future reference.
-	 */
-
-	TclFreeIntRep(objPtr);
-	objPtr->typePtr = &levelReferenceType;
-	objPtr->internalRep.twoPtrValue.ptr1 = (void *) 1;
-	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(level);
-	level = curLevel - level;
-    } else {
-	/*
-	 * Don't cache as the object *isn't* a level reference (might even be
-	 * NULL...)
-	 */
-
-    haveLevel1:
-	level = curLevel - 1;
-	result = 0;
-    }
 
     /*
-     * Figure out which frame to use, and return it to the caller.
+     * Check for integer first, since that has potential to spare us
+     * a generation of a stringrep.
      */
 
-    for (framePtr = iPtr->varFramePtr; framePtr != NULL;
-	    framePtr = framePtr->callerVarPtr) {
-	if (framePtr->level == level) {
-	    break;
+    if (objPtr == NULL) {
+	/* Do nothing */
+    } else if (TCL_OK == Tcl_GetIntFromObj(NULL, objPtr, &level)
+	    && (level >= 0)) {
+	level = curLevel - level;
+	result = 1;
+    } else if (objPtr->typePtr == &levelReferenceType) {
+	level = (int) objPtr->internalRep.longValue;
+	result = 1;
+    } else {
+	name = TclGetString(objPtr);
+	if (name[0] == '#') {
+	    if (TCL_OK == Tcl_GetInt(NULL, name+1, &level) && level >= 0) {
+		TclFreeIntRep(objPtr);
+		objPtr->typePtr = &levelReferenceType;
+		objPtr->internalRep.longValue = level;
+		result = 1;
+	    } else {
+		result = -1;
+	    }
+	} else if (isdigit(UCHAR(name[0]))) { /* INTL: digit */
+	    /*
+	     * If this were an integer, we'd have succeeded already.
+	     * Docs say we have to treat this as a 'bad level'  error.
+	     */
+	    result = -1;
 	}
     }
-    if (framePtr == NULL) {
-	goto levelError;
-    }
-    *framePtrPtr = framePtr;
-    return result;
 
-  levelError:
+    if (result == 0) {
+	level = curLevel - 1;
+	name = "1";
+    }
+    if (result != -1) {
+	if (level >= 0) {
+	    CallFrame *framePtr;
+	    for (framePtr = iPtr->varFramePtr; framePtr != NULL;
+		    framePtr = framePtr->callerVarPtr) {
+		if (framePtr->level == level) {
+		    *framePtrPtr = framePtr;
+		    return result;
+		}
+	    }
+	}
+	if (name == NULL) {
+	    name = TclGetString(objPtr);
+	}
+    }
+
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad level \"%s\"", name));
-    Tcl_SetErrorCode(interp, "TCL", "VALUE", "STACKLEVEL", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL", name, NULL);
     return -1;
 }
 
@@ -1854,8 +1827,8 @@ InterpProcNR2(
     if (result != TCL_OK) {
 	goto process;
     }
-    
-    done: 
+
+    done:
     if (TCL_DTRACE_PROC_RESULT_ENABLED()) {
 	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 	Tcl_Obj *r = Tcl_GetObjResult(interp);

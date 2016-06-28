@@ -446,7 +446,7 @@ Tcl_AppendElement(
 
     if (Tcl_IsShared(iPtr->objResultPtr)) {
 	Tcl_SetObjResult(interp, Tcl_DuplicateObj(iPtr->objResultPtr));
-    } 
+    }
     bytes = Tcl_GetStringFromObj(iPtr->objResultPtr, &length);
     if (TclNeedSpace(bytes, bytes+length)) {
 	Tcl_AppendToObj(iPtr->objResultPtr, " ", 1);
@@ -879,7 +879,7 @@ TclProcessReturn(
 
             if (Tcl_IsShared(iPtr->errorStack)) {
                 Tcl_Obj *newObj;
-                
+
                 newObj = Tcl_DuplicateObj(iPtr->errorStack);
                 Tcl_DecrRefCount(iPtr->errorStack);
                 Tcl_IncrRefCount(newObj);
@@ -1212,7 +1212,7 @@ TclNoErrorStack(
     Tcl_Obj *options)
 {
     Tcl_Obj **keys = GetKeys();
-    
+
     Tcl_DictObjRemove(interp, options, keys[KEY_ERRORSTACK]);
     return options;
 }

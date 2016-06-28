@@ -57,7 +57,6 @@ Tcl_InitStubs(
     Tcl_Interp *interp,
     const char *version,
     int exact,
-    const char *tclversion,
     int magic)
 {
     Interp *iPtr = (Interp *) interp;
@@ -71,7 +70,7 @@ Tcl_InitStubs(
      * times. [Bug 615304]
      */
 
-    if (!stubsPtr || (stubsPtr->magic != TCL_STUB_MAGIC)) {
+    if (!stubsPtr || (stubsPtr->magic != magic)) {
 	iPtr->legacyResult = "interpreter uses an incompatible stubs mechanism";
 	iPtr->legacyFreeProc = 0; /* TCL_STATIC */
 	return NULL;

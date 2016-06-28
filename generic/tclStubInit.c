@@ -41,8 +41,6 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #undef Tcl_NewStringObj
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
-#undef Tcl_FindHashEntry
-#undef Tcl_CreateHashEntry
 #undef TclpGetPid
 #undef TclPkgProvide
 #undef Tcl_SetIntObj
@@ -680,6 +678,9 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_init_set_int, /* 61 */
     TclBN_mp_set_int, /* 62 */
     TclBN_mp_cnt_lsb, /* 63 */
+    TclBNInitBignumFromLong, /* 64 */
+    TclBNInitBignumFromWideInt, /* 65 */
+    TclBNInitBignumFromWideUInt, /* 66 */
 };
 
 static const TclStubHooks tclStubHooks = {
@@ -1138,8 +1139,8 @@ const TclStubs tclStubs = {
     Tcl_IsChannelExisting, /* 418 */
     Tcl_UniCharNcasecmp, /* 419 */
     Tcl_UniCharCaseMatch, /* 420 */
-    Tcl_FindHashEntry, /* 421 */
-    Tcl_CreateHashEntry, /* 422 */
+    0, /* 421 */
+    0, /* 422 */
     Tcl_InitCustomHashTable, /* 423 */
     Tcl_InitObjHashTable, /* 424 */
     Tcl_CommandTraceInfo, /* 425 */

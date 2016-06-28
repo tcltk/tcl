@@ -62,15 +62,6 @@
 #undef TCL_FEATURE_KEEPALIVE_NAGLE
 
 /*
- * Make sure to remove the redirection defines set in tclWinPort.h that is in
- * use in other sections of the core, except for us.
- */
-
-#undef getservbyname
-#undef getsockopt
-#undef setsockopt
-
-/*
  * Helper macros to make parts of this file clearer. The macros do exactly
  * what they say on the tin. :-) They also only ever refer to their arguments
  * once, and so can be used without regard to side effects.
@@ -90,7 +81,7 @@
  */
 
 static int initialized = 0;
-static const TCHAR classname[] = TEXT("TclSocket");
+static const TCHAR className[] = TEXT("TclSocket");
 TCL_DECLARE_MUTEX(socketMutex)
 
 /*
@@ -2061,7 +2052,6 @@ Tcl_OpenTcpServer(
     char channelName[SOCK_CHAN_LENGTH];
     u_long flag = 1;		/* Indicates nonblocking mode. */
     const char *errorMsg = NULL;
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     if (TclpHasSockets(interp) != TCL_OK) {
 	return NULL;
@@ -2177,6 +2167,7 @@ error:
     }
 
     if (statePtr != NULL) {
+	ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
 	statePtr->acceptProc = acceptProc;
 	statePtr->acceptProcData = acceptProcData;
@@ -2336,7 +2327,7 @@ InitSockets(void)
 	windowClass.hInstance = TclWinGetTclInstance();
 	windowClass.hbrBackground = NULL;
 	windowClass.lpszMenuName = NULL;
-	windowClass.lpszClassName = classname;
+	windowClass.lpszClassName = className;
 	windowClass.lpfnWndProc = SocketProc;
 	windowClass.hIcon = NULL;
 	windowClass.hCursor = NULL;
@@ -2466,7 +2457,7 @@ SocketExitHandler(
      */
 
     TclpFinalizeSockets();
-    UnregisterClass(classname, TclWinGetTclInstance());
+    UnregisterClass(className, TclWinGetTclInstance());
     initialized = 0;
     Tcl_MutexUnlock(&socketMutex);
 }
@@ -2992,7 +2983,7 @@ SocketThread(
      * Create a dummy window receiving socket events.
      */
 
-    tsdPtr->hwnd = CreateWindow(classname, classname, WS_TILED, 0, 0, 0, 0,
+    tsdPtr->hwnd = CreateWindow(className, className, WS_TILED, 0, 0, 0, 0,
 	    NULL, NULL, windowClass.hInstance, arg);
 
     /*

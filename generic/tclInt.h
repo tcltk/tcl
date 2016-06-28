@@ -48,7 +48,8 @@
 #else
 #include <string.h>
 #endif
-#ifdef STDC_HEADERS
+#if defined(STDC_HEADERS) || defined(__STDC__) || defined(__C99__FUNC__) \
+     || defined(__cplusplus) || defined(_MSC_VER)
 #include <stddef.h>
 #else
 typedef int ptrdiff_t;
@@ -3085,6 +3086,7 @@ MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
+MODULE_SCOPE int	TclUtfCount(int ch);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
@@ -3104,7 +3106,6 @@ MODULE_SCOPE void	TclFinalizeThreadStorage(void);
 MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
 #endif
-MODULE_SCOPE Tcl_Obj *	TclDisassembleByteCodeObj(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
@@ -4043,6 +4044,7 @@ MODULE_SCOPE void	TclFreeAllocCache(void *);
 MODULE_SCOPE void *	TclpGetAllocCache(void);
 MODULE_SCOPE void	TclpSetAllocCache(void *);
 MODULE_SCOPE void	TclpFreeAllocMutex(Tcl_Mutex *mutex);
+MODULE_SCOPE void	TclpInitAllocCache(void);
 MODULE_SCOPE void	TclpFreeAllocCache(void *);
 
 /*
@@ -4393,17 +4395,12 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 /*
  *----------------------------------------------------------------------
  *
- * Core procedures added to libtommath for bignum manipulation.
+ * Core procedure added to libtommath for bignum manipulation.
  *
  *----------------------------------------------------------------------
  */
 
 MODULE_SCOPE Tcl_PackageInitProc TclTommath_Init;
-MODULE_SCOPE void	TclBNInitBignumFromLong(mp_int *bignum, long initVal);
-MODULE_SCOPE void	TclBNInitBignumFromWideInt(mp_int *bignum,
-			    Tcl_WideInt initVal);
-MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
-			    Tcl_WideUInt initVal);
 
 /*
  *----------------------------------------------------------------------
@@ -4728,7 +4725,9 @@ void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
  */
 
 #define NRE_USE_SMALL_ALLOC	1  /* Only turn off for debugging purposes. */
-#define NRE_ENABLE_ASSERTS	1
+#ifndef NRE_ENABLE_ASSERTS
+#define NRE_ENABLE_ASSERTS	0
+#endif
 
 /*
  * This is the main data struct for representing NR commands. It is designed

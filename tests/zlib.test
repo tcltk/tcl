@@ -132,6 +132,12 @@ test zlib-7.6 {zlib stream} zlib {
     $s close
     lappend result $data
 } {{} 69f34b6a abcdeEDCBA..}
+test zlib-7.7 {zlib stream: Bug 25842c161} -constraints zlib -body {
+    set s [zlib stream deflate]
+    $s put {}
+} -cleanup {
+    catch {$s close}
+} -result ""
 
 test zlib-8.1 {zlib transformation} -constraints zlib -setup {
     set file [makeFile {} test.gz]
@@ -395,6 +401,26 @@ test zlib-8.16 {Bug 3603553: buffer transfer with large writes} -setup {
 } -cleanup {
     removeFile $file
 } -result 57647
+test zlib-8.17 {Bug dd260aaf: fconfigure} -setup {
+    lassign [chan pipe] inSide outSide
+} -constraints zlib -body {
+    zlib push inflate $inSide
+    zlib push deflate $outSide
+    list [chan configure $inSide -dictionary] [chan configure $outSide -dictionary]
+} -cleanup {
+    catch {close $inSide}
+    catch {close $outSide}
+} -result {{} {}}
+test zlib-8.18 {Bug dd260aaf: fconfigure} -setup {
+    lassign [chan pipe] inSide outSide
+} -constraints zlib -body {
+    zlib push inflate $inSide -dictionary "one two"
+    zlib push deflate $outSide -dictionary "one two"
+    list [chan configure $inSide -dictionary] [chan configure $outSide -dictionary]
+} -cleanup {
+    catch {close $inSide}
+    catch {close $outSide}
+} -result {{one two} {one two}}
 
 test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]
@@ -869,6 +895,24 @@ test zlib-11.3 {Bug 3595576 variant} -setup {
 } -cleanup {
     removeFile $file
 } -returnCodes error -result {can't set "noSuchNs::foo": parent namespace doesn't exist}
+
+test zlib-12.1 {Tk Bug 9eb55debc5} -constraints zlib -setup {
+    set stream [zlib stream compress]
+} -body {
+    for {set opts {};set y 0} {$y < 60} {incr y} {
+	for {set line {};set x 0} {$x < 100} {incr x} {
+	    append line [binary format ccc $x $y 128]
+	}
+	if {$y == 59} {
+	    set opts -finalize
+	}
+	$stream put {*}$opts $line
+    }
+    set data [$stream get]
+    list [string length $data] [string length [zlib decompress $data]]
+} -cleanup {
+    $stream close
+} -result {12026 18000}
 
 ::tcltest::cleanupTests
 return

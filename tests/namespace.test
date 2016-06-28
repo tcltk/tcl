@@ -56,7 +56,7 @@ test namespace-2.2 {Tcl_GetCurrentNamespace} {
 
 test namespace-3.1 {Tcl_GetGlobalNamespace} {
     namespace eval test_ns_1 {namespace eval foo {namespace eval bar {} } }
-    # namespace children uses Tcl_GetGlobalNamespace 
+    # namespace children uses Tcl_GetGlobalNamespace
     namespace eval test_ns_1 {namespace children foo b*}
 } {::test_ns_1::foo::bar}
 
@@ -106,7 +106,7 @@ test namespace-6.2 {Tcl_CreateNamespace, odd number of :'s in name is okay} {
          [namespace eval test_ns_2:::::foo {namespace current}]
 } {::test_ns_1::foo ::test_ns_2::foo}
 test namespace-6.3 {Tcl_CreateNamespace, trailing ::s in ns name are ignored} {
-    list [catch {namespace eval test_ns_7::: {namespace current}} msg] $msg 
+    list [catch {namespace eval test_ns_7::: {namespace current}} msg] $msg
 } {0 ::test_ns_7}
 test namespace-6.4 {Tcl_CreateNamespace, trailing ::s in ns name are ignored} {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -264,7 +264,7 @@ test namespace-8.5 {TclTeardownNamespace: preserve errorInfo; errorCode values} 
     invoked from within
 "slave eval error foo bar baz"}
 test namespace-8.6 {TclTeardownNamespace: preserve errorInfo; errorCode values} {
-    interp create slave 
+    interp create slave
     slave eval {trace add variable errorCode write {namespace delete :: ;#}}
     catch {slave eval error foo bar baz}
     interp delete slave
@@ -971,17 +971,17 @@ test namespace-22.5 {NamespaceCodeCmd, in other namespace} {
         namespace code cmd
     }
 } {::namespace inscope ::test_ns_1 cmd}
-test namespace-22.6 {NamespaceCodeCmd, in other namespace} { 
-    namespace eval test_ns_1 { 
-	variable v 42 
-    } 
-    namespace eval test_ns_2 { 
-	proc namespace args {} 
-    } 
-    namespace eval test_ns_2 [namespace eval test_ns_1 { 
-	namespace code {set v} 
-    }] 
-} {42} 
+test namespace-22.6 {NamespaceCodeCmd, in other namespace} {
+    namespace eval test_ns_1 {
+	variable v 42
+    }
+    namespace eval test_ns_2 {
+	proc namespace args {}
+    }
+    namespace eval test_ns_2 [namespace eval test_ns_1 {
+	namespace code {set v}
+    }]
+} {42}
 test namespace-22.7 {NamespaceCodeCmd, Bug 3202171} {
     namespace eval demo {
 	proc namespace args {puts $args}
@@ -1449,7 +1449,7 @@ test namespace-40.1 {Ignoring namespace proc "unknown"} -setup {
     namespace eval ns {proc unknown args {return local}}
     list [namespace eval ns aaa bbb] [namespace eval ns aaa]
 } -cleanup {
-    rename unknown {}   
+    rename unknown {}
     rename _unknown unknown
     namespace delete ns
 } -result {global global}
@@ -1460,7 +1460,7 @@ test namespace-41.1 {Shadowing byte-compiled commands, Bug: 231259} {
 	set res {}
 	proc test {} {
 	    set ::g 0
-	}  
+	}
 	lappend ::res [test]
 	proc set {a b} {
 	    ::set a [incr b]
@@ -2953,6 +2953,45 @@ test namespace-54.1 {leak on namespace deletion} -constraints {memory} \
 test namespace-55.1 {compiled ensembles inside compiled ensembles: Bug 6d2f249a01} {
     info class [format %s constructor] oo::object
 } ""
+
+test namespace-56.1 {bug f97d4ee020: mutually-entangled deletion} {
+    namespace eval ::testing {
+	proc abc {} {}
+	proc def {} {}
+	trace add command abc delete "rename ::testing::def {}; #"
+	trace add command def delete "rename ::testing::abc {}; #"
+    }
+    namespace delete ::testing
+} {}
+test namespace-56.2 {bug f97d4ee020: mutually-entangled deletion} {
+    namespace eval ::testing {
+	namespace eval abc {proc xyz {} {}}
+	namespace eval def {proc xyz {} {}}
+	trace add command abc::xyz delete "namespace delete ::testing::def {}; #"
+	trace add command def::xyz delete "namespace delete ::testing::abc {}; #"
+    }
+    namespace delete ::testing
+} {}
+test namespace-56.3 {bug f97d4ee020: mutually-entangled deletion} {
+    namespace eval ::testing {
+	variable gone {}
+	oo::class create CB {
+	    variable cmd
+	    constructor other {set cmd $other}
+	    destructor {rename $cmd {}; lappend ::testing::gone $cmd}
+	}
+	namespace eval abc {
+	    ::testing::CB create def ::testing::abc::ghi
+	    ::testing::CB create ghi ::testing::abc::def
+	}
+	namespace delete abc
+	try {
+	    return [lsort $gone]
+	} finally {
+	    namespace delete ::testing
+	}
+    }
+} {::testing::abc::def ::testing::abc::ghi}
 
 # cleanup
 catch {rename cmd1 {}}

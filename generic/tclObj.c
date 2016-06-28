@@ -320,7 +320,7 @@ const Tcl_HashKeyType tclObjHashKeyType = {
  * does allow them to delete a command when references to it are gone, which
  * is fragile but useful given their somewhat-OO style. Because of this, this
  * structure MUST NOT be const so that the C compiler puts the data in
- * writable memory. [Bug 2558422]
+ * writable memory. [Bug 2558422] [Bug 07d13d99b0a9]
  * TODO: Provide a better API for those extensions so that they can coexist...
  */
 
@@ -3973,10 +3973,10 @@ TclCompareObjKeys(
     /*
      * If the object pointers are the same then they match.
      * OPT: this comparison was moved to the caller
-     
+
        if (objPtr1 == objPtr2) return 1;
     */
-    
+
     /*
      * Don't use Tcl_GetStringFromObj as it would prevent l1 and l2 being
      * in a register.
@@ -4177,7 +4177,8 @@ Tcl_GetCommandFromObj(
      * had is invalid one way or another.
      */
 
-    if (SetCmdNameFromAny(interp, objPtr) != TCL_OK) {
+    /* See [07d13d99b0a9] why we cannot call SetCmdNameFromAny() directly here. */
+    if (tclCmdNameType.setFromAnyProc(interp, objPtr) != TCL_OK) {
         return NULL;
     }
     resPtr = objPtr->internalRep.twoPtrValue.ptr1;

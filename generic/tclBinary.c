@@ -630,7 +630,7 @@ TclAppendBytesToByteArray(
     size_t len)
 {
     ByteArray *byteArrayPtr;
-    int needed;
+    size_t needed;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
