@@ -778,17 +778,13 @@ TclParseCommand(
 
 	if (scanned == 0) {
 	    if (src[-1] == '"') {
-		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "extra characters after close-quote", -1));
-		}
 		parsePtr->errorType = TCL_PARSE_QUOTE_EXTRA;
 	    } else {
-		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "extra characters after close-brace", -1));
-		}
 		parsePtr->errorType = TCL_PARSE_BRACE_EXTRA;
+	    }
+	    if (parsePtr->interp != NULL) {
+		Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
+			parseErrorMsg[parsePtr->errorType], -1));
 	    }
 	    parsePtr->term = src;
 	error:
@@ -819,7 +815,7 @@ TclParseCommand(
 
     parseWord:
 	if (*src == '"') {
-	    if (TclParseQuotedString(interp, src, numBytes, parsePtr,
+	    if (TclParseQuotedString(NULL, src, numBytes, parsePtr,
 		    flags | PARSE_APPEND, &termPtr) != TCL_OK) {
 		goto error;
 	    }
@@ -829,7 +825,7 @@ TclParseCommand(
 	    int expIdx = wordIndex + 1;
 	    Tcl_Token *expPtr;
 
-	    if (ParseBraces(interp, src, numBytes, parsePtr,
+	    if (ParseBraces(NULL, src, numBytes, parsePtr,
 		    flags | PARSE_APPEND, &termPtr) != TCL_OK) {
 		goto error;
 	    }
@@ -1603,7 +1599,7 @@ ParseTokens(
 	     */
 
 	    varToken = parsePtr->numTokens;
-	    if (TclParseVarName(parsePtr->interp, src, numBytes, parsePtr,
+	    if (TclParseVarName(NULL, src, numBytes, parsePtr,
 		    flags | PARSE_APPEND) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1666,11 +1662,11 @@ ParseTokens(
 		    break;
 		}
 		if (numBytes == 0) {
+		    parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 		    if (parsePtr->interp != NULL) {
 			Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-				"missing close-bracket", -1));
+				parseErrorMsg[parsePtr->errorType], -1));
 		    }
-		    parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 		    parsePtr->term = tokenPtr->start;
 		    parsePtr->incomplete = 1;
 		    TclStackFree(parsePtr->interp, nestedPtr);
@@ -1959,11 +1955,11 @@ TclParseVarName(
 	    src++;
 	}
 	if (numBytes == 0) {
+	    parsePtr->errorType = TCL_PARSE_MISSING_VAR_BRACE;
 	    if (parsePtr->interp != NULL) {
 		Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-			"missing close-brace for variable name", -1));
+			parseErrorMsg[parsePtr->errorType], -1));
 	    }
-	    parsePtr->errorType = TCL_PARSE_MISSING_VAR_BRACE;
 	    parsePtr->term = tokenPtr->start-1;
 	    parsePtr->incomplete = 1;
 	    goto error;
@@ -2017,11 +2013,11 @@ TclParseVarName(
 		goto error;
 	    }
 	    if ((parsePtr->term == src+numBytes) || (*parsePtr->term != ')')){
-		if (parsePtr->interp != NULL) {
-		    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-			    "missing )", -1));
-		}
 		parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
+		if (parsePtr->interp != NULL) {
+    		    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
+			    parseErrorMsg[parsePtr->errorType], -1));
+		}
 		parsePtr->term = src;
 		parsePtr->incomplete = 1;
 		goto error;
@@ -2321,7 +2317,7 @@ ParseBraces(
     }
 
     Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-	    "missing close-brace", -1));
+	    parseErrorMsg[parsePtr->errorType], -1));
 
     /*
      * Guess if the problem is due to comments by searching the source string
@@ -2443,11 +2439,11 @@ TclParseQuotedString(
 	goto error;
     }
     if (*parsePtr->term != '"') {
+	parsePtr->errorType = TCL_PARSE_MISSING_QUOTE;
 	if (parsePtr->interp != NULL) {
 	    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-		    "missing \"", -1));
+		    parseErrorMsg[parsePtr->errorType], -1));
 	}
-	parsePtr->errorType = TCL_PARSE_MISSING_QUOTE;
 	parsePtr->term = start;
 	parsePtr->incomplete = 1;
 	goto error;
