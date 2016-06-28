@@ -1832,7 +1832,6 @@ NsEnsembleImplementationCmdNR(
 	Tcl_Obj *copyPtr;	/* The actual list of words to dispatch to.
 				 * Will be freed by the dispatch engine. */
 	int prefixObjc, copyObjc;
-	Interp *iPtr = (Interp *) interp;
 
 	/*
 	 * Get the prefix that we're rewriting to. To do this we need to
@@ -1876,25 +1875,10 @@ NsEnsembleImplementationCmdNR(
 	 * count both as inserted and removed arguments.
 	 */
 
-	if (iPtr->ensembleRewrite.sourceObjs == NULL) {
-	    iPtr->ensembleRewrite.sourceObjs = objv;
-	    iPtr->ensembleRewrite.numRemovedObjs =
-		    2 + ensemblePtr->numParameters;
-	    iPtr->ensembleRewrite.numInsertedObjs =
-		    prefixObjc + ensemblePtr->numParameters;
+	if (TclInitRewriteEnsemble(interp, 2 + ensemblePtr->numParameters,
+		prefixObjc + ensemblePtr->numParameters, objv)) {
 	    TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL,
 		    NULL);
-	} else {
-	    register int ni = 2 + ensemblePtr->numParameters
-		    - iPtr->ensembleRewrite.numInsertedObjs;
-				/* Position in objv of new front of insertion
-				 * relative to old one. */
-	    if (ni > 0) {
-		iPtr->ensembleRewrite.numRemovedObjs += ni;
-		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc-1;
-	    } else {
-		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc-2;
-	    }
 	}
 
 	/*
@@ -2013,7 +1997,7 @@ TclInitRewriteEnsemble(
 
 	if (numIns < numRemoved) {
 	    iPtr->ensembleRewrite.numRemovedObjs += numRemoved - numIns;
-	    iPtr->ensembleRewrite.numInsertedObjs += numInserted - 1;
+	    iPtr->ensembleRewrite.numInsertedObjs = numInserted;
 	} else {
 	    iPtr->ensembleRewrite.numInsertedObjs += numInserted - numRemoved;
 	}
