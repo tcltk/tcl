@@ -4486,7 +4486,7 @@ Tcl_RepresentationCmd(
     descObj = Tcl_ObjPrintf("value is a %s with a refcount of %d,"
             " object pointer at %s",
             objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
-	    objv[1]->refCount, ptrBuffer);
+	    (int) objv[1]->refCount, ptrBuffer);
 
     if (objv[1]->typePtr) {
 	sprintf(ptrBuffer, "%p:%p",
