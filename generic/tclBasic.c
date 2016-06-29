@@ -943,8 +943,8 @@ Tcl_CreateInterp(void)
      * Set up other variables such as tcl_version and tcl_library
      */
 
-    Tcl_SetVar(interp, "tcl_patchLevel", TCL_PATCH_LEVEL, TCL_GLOBAL_ONLY);
-    Tcl_SetVar(interp, "tcl_version", TCL_VERSION, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_patchLevel", NULL, TCL_PATCH_LEVEL, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_version", NULL, TCL_VERSION, TCL_GLOBAL_ONLY);
     Tcl_TraceVar2(interp, "tcl_precision", NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    TclPrecTraceProc, NULL);
@@ -6857,7 +6857,7 @@ Tcl_VarEvalVA(
 	Tcl_DStringAppend(&buf, string, -1);
     }
 
-    result = Tcl_Eval(interp, Tcl_DStringValue(&buf));
+    result = Tcl_EvalEx(interp, Tcl_DStringValue(&buf), -1, 0);
     Tcl_DStringFree(&buf);
     return result;
 }
@@ -6927,7 +6927,7 @@ Tcl_GlobalEval(
 
     savedVarFramePtr = iPtr->varFramePtr;
     iPtr->varFramePtr = iPtr->rootFramePtr;
-    result = Tcl_Eval(interp, command);
+    result = Tcl_EvalEx(interp, command, -1, 0);
     iPtr->varFramePtr = savedVarFramePtr;
     return result;
 }

@@ -2369,7 +2369,7 @@ SlaveCreate(
 	    SlaveObjCmd, NRSlaveCmd, slaveInterp, SlaveObjCmdDeleteProc);
     Tcl_InitHashTable(&slavePtr->aliasTable, TCL_STRING_KEYS);
     Tcl_SetHashValue(hPtr, slavePtr);
-    Tcl_SetVar(slaveInterp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(slaveInterp, "tcl_interactive", NULL, "0", TCL_GLOBAL_ONLY);
 
     /*
      * Inherit the recursion limit.

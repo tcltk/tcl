@@ -197,7 +197,7 @@ TclCreateSocketAddress(
      */
 
     if (interp != NULL) {
-        family = Tcl_GetVar(interp, "::tcl::unsupported::socketAF", 0);
+        family = Tcl_GetVar2(interp, "::tcl::unsupported::socketAF", NULL, 0);
         if (family != NULL) {
             if (strcmp(family, "inet") == 0) {
                 hints.ai_family = AF_INET;
