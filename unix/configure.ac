@@ -860,7 +860,7 @@ else
     eval libdir="$libdir"
     # default install directory for bundled packages
     PACKAGE_DIR="$libdir"
-    TCL_LIB_FLAG="-ltcl${TCL_MAJOR_VERSION}"
+    TCL_LIB_FLAG="-ltcl${TCL_MAJOR_VERSION}${with_dbgx}"
     TCL_BUILD_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_LIB_FLAG}"
     TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
 fi
@@ -898,7 +898,7 @@ eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
 eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_DIR=${libdir}"
 
-TCL_STUB_LIB_FLAG="-ltclstub${TCL_MAJOR_VERSION}"
+TCL_STUB_LIB_FLAG="-ltclstub${TCL_MAJOR_VERSION}${with_dbgx}"
 
 TCL_BUILD_STUB_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_STUB_LIB_FLAG}"
 TCL_STUB_LIB_SPEC="-L${TCL_STUB_LIB_DIR} ${TCL_STUB_LIB_FLAG}"

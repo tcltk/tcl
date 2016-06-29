@@ -401,6 +401,26 @@ test zlib-8.16 {Bug 3603553: buffer transfer with large writes} -setup {
 } -cleanup {
     removeFile $file
 } -result 57647
+test zlib-8.17 {Bug dd260aaf: fconfigure} -setup {
+    lassign [chan pipe] inSide outSide
+} -constraints zlib -body {
+    zlib push inflate $inSide
+    zlib push deflate $outSide
+    list [chan configure $inSide -dictionary] [chan configure $outSide -dictionary]
+} -cleanup {
+    catch {close $inSide}
+    catch {close $outSide}
+} -result {{} {}}
+test zlib-8.18 {Bug dd260aaf: fconfigure} -setup {
+    lassign [chan pipe] inSide outSide
+} -constraints zlib -body {
+    zlib push inflate $inSide -dictionary "one two"
+    zlib push deflate $outSide -dictionary "one two"
+    list [chan configure $inSide -dictionary] [chan configure $outSide -dictionary]
+} -cleanup {
+    catch {close $inSide}
+    catch {close $outSide}
+} -result {{one two} {one two}}
 
 test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]

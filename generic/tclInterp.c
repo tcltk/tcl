@@ -1796,11 +1796,9 @@ AliasNRCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
-    Interp *iPtr = (Interp *) interp;
     Alias *aliasPtr = clientData;
     int prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
-    int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
     Tcl_Obj *listPtr;
     List *listRep;
     int flags = TCL_EVAL_INVOKE;
@@ -1832,21 +1830,7 @@ AliasNRCmd(
      * only the source command should show, not the full target prefix.
      */
 
-    if (isRootEnsemble) {
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = 1;
-	iPtr->ensembleRewrite.numInsertedObjs = prefc;
-    } else {
-	iPtr->ensembleRewrite.numInsertedObjs += prefc - 1;
-    }
-
-    /*
-     * We are sending a 0-refCount obj, do not need a callback: it will be
-     * cleaned up automatically. But we may need to clear the rootEnsemble
-     * stuff ...
-     */
-
-    if (isRootEnsemble) {
+    if (TclInitRewriteEnsemble(interp, 1, prefc, objv)) {
 	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
     TclSkipTailcall(interp);
@@ -1867,7 +1851,7 @@ AliasObjCmd(
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *cmdArr[ALIAS_CMDV_PREALLOC];
     Interp *tPtr = (Interp *) targetInterp;
-    int isRootEnsemble = (tPtr->ensembleRewrite.sourceObjs == NULL);
+    int isRootEnsemble;
 
     /*
      * Append the arguments to the command prefix and invoke the command in
@@ -1897,13 +1881,7 @@ AliasObjCmd(
      * only the source command should show, not the full target prefix.
      */
 
-    if (isRootEnsemble) {
-	tPtr->ensembleRewrite.sourceObjs = objv;
-	tPtr->ensembleRewrite.numRemovedObjs = 1;
-	tPtr->ensembleRewrite.numInsertedObjs = prefc;
-    } else {
-	tPtr->ensembleRewrite.numInsertedObjs += prefc - 1;
-    }
+    isRootEnsemble = TclInitRewriteEnsemble((Tcl_Interp *)tPtr, 1, prefc, objv);
 
     /*
      * Protect the target interpreter if it isn't the same as the source
@@ -1926,9 +1904,7 @@ AliasObjCmd(
      */
 
     if (isRootEnsemble) {
-	tPtr->ensembleRewrite.sourceObjs = NULL;
-	tPtr->ensembleRewrite.numRemovedObjs = 0;
-	tPtr->ensembleRewrite.numInsertedObjs = 0;
+	TclResetRewriteEnsemble((Tcl_Interp *)tPtr, 1);
     }
 
     /*

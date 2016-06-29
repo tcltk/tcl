@@ -1687,7 +1687,7 @@ Tcl_NewObjectInstance(
 		TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL);
 
 	if (contextPtr != NULL) {
-	    int result;
+	    int isRoot, result;
 	    Tcl_InterpState state;
 
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
@@ -1698,12 +1698,13 @@ Tcl_NewObjectInstance(
 	     * Adjust the ensmble tracking record if necessary. [Bug 3514761]
 	     */
 
-	    if (((Interp*) interp)->ensembleRewrite.sourceObjs) {
-		((Interp*) interp)->ensembleRewrite.numInsertedObjs += skip-1;
-		((Interp*) interp)->ensembleRewrite.numRemovedObjs += skip-1;
-	    }
+	    isRoot = TclInitRewriteEnsemble(interp, skip, skip, objv);
 	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
 		    objc, objv);
+
+	    if (isRoot) {
+		TclResetRewriteEnsemble(interp, 1);
+	    }
 
 	    /*
 	     * It's an error if the object was whacked in the constructor.
@@ -1827,9 +1828,8 @@ TclNRNewObjectInstance(
      * Adjust the ensmble tracking record if necessary. [Bug 3514761]
      */
 
-    if (((Interp *) interp)->ensembleRewrite.sourceObjs) {
-	((Interp *) interp)->ensembleRewrite.numInsertedObjs += skip - 1;
-	((Interp *) interp)->ensembleRewrite.numRemovedObjs += skip - 1;
+    if (TclInitRewriteEnsemble(interp, skip, skip, objv)) {
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
 
     /*

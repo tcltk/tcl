@@ -761,6 +761,7 @@ enable_shared
 enable_64bit
 enable_64bit_vis
 enable_rpath
+with_dbgx
 enable_corefoundation
 enable_load
 enable_symbols
@@ -1416,6 +1417,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-encoding         encoding for configuration values (default:
                           iso8859-1)
+  --with-dbgx             debug extension for binaries
   --with-tzdata           install timezone data (default: autodetect)
 
 Some influential environment variables:
@@ -4969,6 +4971,13 @@ fi
 
     # Step 3: set configuration options based on system name and version.
 
+
+# Check whether --with-dbgx was given.
+if test "${with_dbgx+set}" = set; then :
+  withval=$with_dbgx; with_dbgx=${withval}
+fi
+
+
     do64bit_ok=no
     # default to '{$LIBS}' and set to "" on per-platform necessary basis
     SHLIB_LD_LIBS='${LIBS}'
@@ -5260,7 +5269,7 @@ fi
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    TCL_NEEDS_EXP_FILE=1
-	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.dll.a'
+	    TCL_EXPORT_FILE_SUFFIX='${VERSION}${with_dbgx}.dll.a'
 	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,--out-implib,\$@.a"
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Cygwin version of gcc" >&5
 $as_echo_n "checking for Cygwin version of gcc... " >&6; }
@@ -5771,7 +5780,7 @@ fi
 		    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 fi
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-		SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}.so.${SHLIB_VERSION}'
+		SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.so.${SHLIB_VERSION}'
 		LDFLAGS="-Wl,-export-dynamic"
 		;;
 	    esac
@@ -5795,7 +5804,7 @@ fi
 
 fi
 	    # OpenBSD doesn't do version numbers with dots.
-	    UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}.a'
+	    UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.a'
 	    ;;
 	NetBSD-*)
 	    # NetBSD has ELF and can use 'cc -shared' to build shared libs
@@ -5843,8 +5852,8 @@ fi
 	    case $system in
 	    FreeBSD-3.*)
 		# Version numbers are dot-stripped by system policy.
-		UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}.a'
-		SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}.so'
+		UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.a'
+		SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.so'
 		;;
 	    esac
 	    ;;
@@ -6317,8 +6326,8 @@ fi
 	    # requires an extra version number at the end of .so file names.
 	    # So, the library has to have a name like libtcl75.so.1.0
 
-	    SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}.so.${SHLIB_VERSION}'
-	    UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}.a'
+	    SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.so.${SHLIB_VERSION}'
+	    UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.a'
 	    ;;
 	SunOS-5.[0-6])
 	    # Careful to not let 5.10+ fall into this case
@@ -6649,11 +6658,11 @@ fi
 
     if test "$SHARED_LIB_SUFFIX" = ""; then :
 
-	SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${SHLIB_SUFFIX}'
+	SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}${SHLIB_SUFFIX}'
 fi
     if test "$UNSHARED_LIB_SUFFIX" = ""; then :
 
-	UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}.a'
+	UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.a'
 fi
     DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
 
@@ -6801,7 +6810,6 @@ else
 fi
 
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
-    DBGX=""
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
@@ -10361,7 +10369,7 @@ else
     eval libdir="$libdir"
     # default install directory for bundled packages
     PACKAGE_DIR="$libdir"
-    TCL_LIB_FLAG="-ltcl${TCL_MAJOR_VERSION}"
+    TCL_LIB_FLAG="-ltcl${TCL_MAJOR_VERSION}${with_dbgx}"
     TCL_BUILD_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_LIB_FLAG}"
     TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
 fi
@@ -10399,7 +10407,7 @@ eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
 eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_DIR=${libdir}"
 
-TCL_STUB_LIB_FLAG="-ltclstub${TCL_MAJOR_VERSION}"
+TCL_STUB_LIB_FLAG="-ltclstub${TCL_MAJOR_VERSION}${with_dbgx}"
 
 TCL_BUILD_STUB_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_STUB_LIB_FLAG}"
 TCL_STUB_LIB_SPEC="-L${TCL_STUB_LIB_DIR} ${TCL_STUB_LIB_FLAG}"

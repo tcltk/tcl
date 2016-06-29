@@ -4,7 +4,7 @@
 # to configure the system for the local environment.
 
 AC_INIT(../generic/tcl.h)
-AC_PREREQ(2.59)
+AC_PREREQ(2.69)
 
 # The following define is needed when building with Cygwin since newer
 # versions of autoconf incorrectly set SHELL to /bin/bash instead of
@@ -268,7 +268,7 @@ fi
 
 SC_ENABLE_SYMBOLS
 
-TCL_DBGX=${DBGX}
+TCL_DBGX=""
 
 #--------------------------------------------------------------------
 # Embed the manifest if we can determine how
@@ -324,17 +324,9 @@ CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}
 #--------------------------------------------------------------------
 
 if test ${SHARED_BUILD} = 0 ; then
-    if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD ${RC_DEFINE} DEBUG"
-    else
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
-    fi
+    RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
 else
-    if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} DEBUG"
-    else
-        RC_DEFINES=""
-    fi
+    RC_DEFINES=""
 fi
 
 #--------------------------------------------------------------------
