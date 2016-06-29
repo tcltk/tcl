@@ -246,7 +246,7 @@ Tcl_SourceRCFile(
     const char *fileName;
     Tcl_Channel chan;
 
-    fileName = Tcl_GetVar(interp, "tcl_rcFileName", TCL_GLOBAL_ONLY);
+    fileName = Tcl_GetVar2(interp, "tcl_rcFileName", NULL, TCL_GLOBAL_ONLY);
     if (fileName != NULL) {
 	Tcl_Channel c;
 	const char *fullName;
@@ -266,14 +266,16 @@ Tcl_SourceRCFile(
 
 	    c = Tcl_OpenFileChannel(NULL, fullName, "r", 0);
 	    if (c != NULL) {
+		Tcl_Obj *fullNameObj = Tcl_NewStringObj(fullName, -1);
 		Tcl_Close(NULL, c);
-		if (Tcl_EvalFile(interp, fullName) != TCL_OK) {
+		if (Tcl_FSEvalFile(interp, fullNameObj) != TCL_OK) {
 		    chan = Tcl_GetStdChannel(TCL_STDERR);
 		    if (chan) {
 			Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
 			Tcl_WriteChars(chan, "\n", 1);
 		    }
 		}
+		Tcl_DecrRefCount(fullNameObj);
 	    }
 	}
 	Tcl_DStringFree(&temp);
