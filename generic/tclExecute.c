@@ -2017,6 +2017,8 @@ TclNRExecuteByteCode(
      * Push the callback for bytecode execution
      */
 
+    TclResetRewriteEnsemble(interp, 1);
+
     TclNRAddCallback(interp, TEBCresume, TD, /* pc */ NULL,
 	    /* cleanup */ INT2PTR(0), NULL);
     return TCL_OK;
@@ -3040,9 +3042,8 @@ TEBCresume(
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
 	    ArgumentBCEnter(interp, codePtr, TD, pc, objc, objv);
 	}
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = opnd;
-	iPtr->ensembleRewrite.numInsertedObjs = 1;
+
+	TclInitRewriteEnsemble(interp, opnd, 1, objv);
 	DECACHE_STACK_INFO();
 	pc += 6;
 	TEBC_YIELD();
