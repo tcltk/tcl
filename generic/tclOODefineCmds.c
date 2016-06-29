@@ -847,9 +847,8 @@ TclOODefineObjCmd(
 	TclDecrRefCount(objNameObj);
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
-	Interp *iPtr = (Interp *) interp;
 	Tcl_Command cmd;
-	int dummy;
+	int isRoot, dummy;
 
 	/*
 	 * More than one argument: fire them through the ensemble processing
@@ -861,18 +860,7 @@ TclOODefineObjCmd(
 	 * the moment. Ugly!
 	 */
 
-	if (iPtr->ensembleRewrite.sourceObjs == NULL) {
-	    iPtr->ensembleRewrite.sourceObjs = objv;
-	    iPtr->ensembleRewrite.numRemovedObjs = 3;
-	    iPtr->ensembleRewrite.numInsertedObjs = 1;
-	} else {
-	    int ni = iPtr->ensembleRewrite.numInsertedObjs;
-	    if (ni < 3) {
-		iPtr->ensembleRewrite.numRemovedObjs += 3 - ni;
-	    } else {
-		iPtr->ensembleRewrite.numInsertedObjs -= 2;
-	    }
-	}
+	isRoot = TclInitRewriteEnsemble(interp, 3, 1, objv);
 
 	/*
 	 * Build the list of arguments using a Tcl_Obj as a workspace. See
@@ -894,6 +882,9 @@ TclOODefineObjCmd(
 	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
 
 	result = Tcl_EvalObjv(interp, objc-2, objs, TCL_EVAL_INVOKE);
+	if (isRoot) {
+	    TclResetRewriteEnsemble(interp, 1);
+	}
 	Tcl_DecrRefCount(objPtr);
     }
     DelRef(oPtr);
@@ -927,7 +918,7 @@ TclOOObjDefObjCmd(
     Tcl_Obj *const *objv)
 {
     Foundation *fPtr = TclOOGetFoundation(interp);
-    int result;
+    int isRoot, result;
     Object *oPtr;
 
     if (objc < 3) {
@@ -962,7 +953,6 @@ TclOOObjDefObjCmd(
 	TclDecrRefCount(objNameObj);
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
-	Interp *iPtr = (Interp *) interp;
 	Tcl_Command cmd;
 	int dummy;
 
@@ -976,18 +966,7 @@ TclOOObjDefObjCmd(
 	 * the moment. Ugly!
 	 */
 
-	if (iPtr->ensembleRewrite.sourceObjs == NULL) {
-	    iPtr->ensembleRewrite.sourceObjs = objv;
-	    iPtr->ensembleRewrite.numRemovedObjs = 3;
-	    iPtr->ensembleRewrite.numInsertedObjs = 1;
-	} else {
-	    int ni = iPtr->ensembleRewrite.numInsertedObjs;
-	    if (ni < 3) {
-		iPtr->ensembleRewrite.numRemovedObjs += 3 - ni;
-	    } else {
-		iPtr->ensembleRewrite.numInsertedObjs -= 2;
-	    }
-	}
+	isRoot = TclInitRewriteEnsemble(interp, 3, 1, objv);
 
 	/*
 	 * Build the list of arguments using a Tcl_Obj as a workspace. See
@@ -1009,6 +988,10 @@ TclOOObjDefObjCmd(
 	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
 
 	result = Tcl_EvalObjv(interp, objc-2, objs, TCL_EVAL_INVOKE);
+
+	if (isRoot) {
+	    TclResetRewriteEnsemble(interp, 1);
+	}
 	Tcl_DecrRefCount(objPtr);
     }
     DelRef(oPtr);
@@ -1077,9 +1060,8 @@ TclOODefineSelfObjCmd(
 	TclDecrRefCount(objNameObj);
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
-	Interp *iPtr = (Interp *) interp;
 	Tcl_Command cmd;
-	int dummy;
+	int isRoot, dummy;
 
 	/*
 	 * More than one argument: fire them through the ensemble processing
@@ -1091,18 +1073,7 @@ TclOODefineSelfObjCmd(
 	 * the moment. Ugly!
 	 */
 
-	if (iPtr->ensembleRewrite.sourceObjs == NULL) {
-	    iPtr->ensembleRewrite.sourceObjs = objv;
-	    iPtr->ensembleRewrite.numRemovedObjs = 2;
-	    iPtr->ensembleRewrite.numInsertedObjs = 1;
-	} else {
-	    int ni = iPtr->ensembleRewrite.numInsertedObjs;
-	    if (ni < 2) {
-		iPtr->ensembleRewrite.numRemovedObjs += 2 - ni;
-	    } else {
-		iPtr->ensembleRewrite.numInsertedObjs -= 1;
-	    }
-	}
+	isRoot = TclInitRewriteEnsemble(interp, 2, 1, objv);
 
 	/*
 	 * Build the list of arguments using a Tcl_Obj as a workspace. See
@@ -1124,6 +1095,9 @@ TclOODefineSelfObjCmd(
 	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
 
 	result = Tcl_EvalObjv(interp, objc-1, objs, TCL_EVAL_INVOKE);
+	if (isRoot) {
+	    TclResetRewriteEnsemble(interp, 1);
+	}
 	Tcl_DecrRefCount(objPtr);
     }
     DelRef(oPtr);
