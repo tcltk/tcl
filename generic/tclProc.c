@@ -23,7 +23,6 @@
  */
 
 typedef struct {
-    int isRootEnsemble;
     Command cmd;
     ExtraFrameInfo efi;
 } ApplyExtraData;
@@ -2696,10 +2695,9 @@ TclNRApplyObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Interp *iPtr = (Interp *) interp;
     Proc *procPtr = NULL;
     Tcl_Obj *lambdaPtr, *nsObjPtr;
-    int result, isRootEnsemble;
+    int result;
     Tcl_Namespace *nsPtr;
     ApplyExtraData *extraPtr;
 
@@ -2772,15 +2770,9 @@ TclNRApplyObjCmd(
     extraPtr->efi.fields[0].clientData = lambdaPtr;
     extraPtr->cmd.clientData = &extraPtr->efi;
 
-    isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
-    if (isRootEnsemble) {
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = 1;
-	iPtr->ensembleRewrite.numInsertedObjs = 0;
-    } else {
-	iPtr->ensembleRewrite.numInsertedObjs -= 1;
+    if (TclInitRewriteEnsemble(interp, 1, 0, objv)) {
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
-    extraPtr->isRootEnsemble = isRootEnsemble;
 
     result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
     if (result == TCL_OK) {
@@ -2797,10 +2789,6 @@ ApplyNR2(
     int result)
 {
     ApplyExtraData *extraPtr = data[0];
-
-    if (extraPtr->isRootEnsemble) {
-	((Interp *) interp)->ensembleRewrite.sourceObjs = NULL;
-    }
 
     TclStackFree(interp, extraPtr);
     return result;
