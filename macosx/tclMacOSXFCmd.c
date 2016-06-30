@@ -106,7 +106,7 @@ typedef	struct finderinfo {
     u_int32_t extendedFileInfo[4];
 } __attribute__ ((__packed__)) finderinfo;
 
-typedef struct fileinfobuf {
+typedef struct {
     u_int32_t info_length;
     u_int32_t data[8];
 } fileinfobuf;

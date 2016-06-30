@@ -67,7 +67,7 @@ struct DdeEnumServices {
     HWND hwnd;
 };
 
-typedef struct ThreadSpecificData {
+typedef struct {
     Conversation *currentConversations;
 				/* A list of conversations currently being
 				 * processed. */
