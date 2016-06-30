@@ -24,7 +24,7 @@
 
 #ifndef TCL_NO_DEPRECATED
 static Tcl_ThreadDataKey tmKey;
-typedef struct ThreadSpecificData {
+typedef struct {
     struct tm gmtime_buf;
     struct tm localtime_buf;
 } ThreadSpecificData;
