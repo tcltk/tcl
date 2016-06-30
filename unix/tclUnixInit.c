@@ -115,7 +115,7 @@ static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
  * first list checked for a mapping from env encoding to Tcl encoding name.
  */
 
-typedef struct LocaleTable {
+typedef struct {
     const char *lang;
     const char *encoding;
 } LocaleTable;
