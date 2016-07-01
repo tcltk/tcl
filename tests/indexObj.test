@@ -107,11 +107,6 @@ test indexObj-5.5 {Tcl_WrongNumArgs} testindexobj {
 test indexObj-5.6 {Tcl_WrongNumArgs} testindexobj {
     testwrongnumargs 2 "" mycmd foo
 } "wrong # args: should be \"mycmd foo\""
-# Contrast this with test proc-3.6; they have to be like this because
-# of [Bug 1066837] so Itcl won't break.
-test indexObj-5.7 {Tcl_WrongNumArgs} testindexobj {
-    testwrongnumargs 2 "fee fi" "fo fum" foo bar
-} "wrong # args: should be \"fo fum foo fee fi\""
 
 test indexObj-6.1 {Tcl_GetIndexFromObjStruct} testindexobj {
     set x a

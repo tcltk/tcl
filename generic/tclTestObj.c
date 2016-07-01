@@ -19,6 +19,7 @@
 #endif
 #include "tclInt.h"
 #include "tommath.h"
+#include "tclStringRep.h"
 
 
 /*
@@ -46,13 +47,6 @@ static int		TestobjCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		TeststringobjCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-
-typedef struct {
-    int numChars;
-    int allocated;
-    int maxChars;
-    Tcl_UniChar unicode[2];
-} TestString;
 
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
@@ -1142,7 +1136,7 @@ TeststringobjCmd(
     int varIndex, option, i, length;
 #define MAX_STRINGS 11
     const char *index, *string, *strings[MAX_STRINGS+1];
-    TestString *strPtr;
+    String *strPtr;
     Tcl_Obj **varPtr;
     static const char *const options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",

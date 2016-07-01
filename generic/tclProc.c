@@ -1087,13 +1087,7 @@ ProcWrongNumArgs(
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
     } else {
-	((Interp *) interp)->ensembleRewrite.numInsertedObjs -= skip - 1;
-
-#ifdef AVOID_HACKS_FOR_ITCL
 	desiredObjs[0] = framePtr->objv[skip-1];
-#else
-	desiredObjs[0] = Tcl_NewListObj(skip, framePtr->objv);
-#endif /* AVOID_HACKS_FOR_ITCL */
     }
     Tcl_IncrRefCount(desiredObjs[0]);
 
@@ -1525,6 +1519,10 @@ InitArgsAndLocals(
      */
 
   incorrectArgs:
+    if ((skip != 1) &&
+	    TclInitRewriteEnsemble(interp, skip-1, 0, framePtr->objv)) {
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+    }
     memset(varPtr, 0,
 	    ((framePtr->compiledLocals + localCt)-varPtr) * sizeof(Var));
     return ProcWrongNumArgs(interp, skip);
@@ -2713,10 +2711,6 @@ TclNRApplyObjCmd(
     extraPtr->efi.fields[0].proc = NULL;
     extraPtr->efi.fields[0].clientData = lambdaPtr;
     extraPtr->cmd.clientData = &extraPtr->efi;
-
-    if (TclInitRewriteEnsemble(interp, 1, 0, objv)) {
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
-    }
 
     result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
     if (result == TCL_OK) {
