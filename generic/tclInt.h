@@ -401,7 +401,7 @@ typedef struct {
 				 * ensemble. */
     Tcl_Command token;		/* Reference to the comamnd for which this
 				 * structure is a cache of the resolution. */
-    Tcl_HashTable *tablePtr;	/* The subcommand hash table. */
+    Tcl_Obj *fix;		/* Corrected spelling, if needed. */
     Tcl_HashEntry *hPtr;	/* Direct link to entry in the subcommand
 				 * hash table. */
 } EnsembleCmdRep;
@@ -3109,6 +3109,9 @@ MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
 			    Tcl_Obj *newValue, Tcl_Encoding encoding);
 MODULE_SCOPE void	TclSignalExitThread(Tcl_ThreadId id, int result);
+MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
+			    Tcl_Obj *const *objv, int objc, int subIdx,
+			    Tcl_Obj *bad, Tcl_Obj *fix);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 			    int numBytes);
 MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
