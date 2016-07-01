@@ -2000,7 +2000,7 @@ Tcl_AppendFormatToObj(
 		const char *bytes;
 
 		if (useShort) {
-		    pure = Tcl_NewLongObj((long) s);
+		    pure = Tcl_NewIntObj((int) s);
 		} else if (useWide) {
 		    pure = Tcl_NewWideIntObj(w);
 		} else if (useBig) {
@@ -2474,7 +2474,7 @@ AppendPrintfToObjVA(
 		break;
 	    case '*':
 		lastNum = (int) va_arg(argList, int);
-		Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(lastNum));
+		Tcl_ListObjAppendElement(NULL, list, Tcl_NewIntObj(lastNum));
 		p++;
 		break;
 	    case '0': case '1': case '2': case '3': case '4':

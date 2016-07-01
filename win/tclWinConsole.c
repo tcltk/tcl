@@ -112,7 +112,7 @@ typedef struct ConsoleInfo {
 				/* Data consumed by reader thread. */
 } ConsoleInfo;
 
-typedef struct{
+typedef struct {
     /*
      * The following pointer refers to the head of the list of consoles that
      * are being watched for file events.

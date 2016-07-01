@@ -215,7 +215,7 @@ Pkgua_Init(
 	return code;
     }
 
-    Tcl_SetVar(interp, "::pkgua_loaded", ".", TCL_APPEND_VALUE);
+    Tcl_SetVar2(interp, "::pkgua_loaded", NULL, ".", TCL_APPEND_VALUE);
 
     cmdTokens = PkguaInterpToTokens(interp);
     cmdTokens[cmdIndex++] =
@@ -290,7 +290,7 @@ Pkgua_Unload(
 
     PkguaDeleteTokens(interp);
 
-    Tcl_SetVar(interp, "::pkgua_detached", ".", TCL_APPEND_VALUE);
+    Tcl_SetVar2(interp, "::pkgua_detached", NULL, ".", TCL_APPEND_VALUE);
 
     if (flags == TCL_UNLOAD_DETACH_FROM_PROCESS) {
 	/*
@@ -300,7 +300,7 @@ Pkgua_Unload(
 	 */
 
 	PkguaFreeTokensHashTable();
-	Tcl_SetVar(interp, "::pkgua_unloaded", ".", TCL_APPEND_VALUE);
+	Tcl_SetVar2(interp, "::pkgua_unloaded", NULL, ".", TCL_APPEND_VALUE);
     }
     return TCL_OK;
 }
