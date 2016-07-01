@@ -76,13 +76,29 @@ enum EnsConfigOpts {
  * that implements it.
  */
 
-const Tcl_ObjType tclEnsembleCmdType = {
+static const Tcl_ObjType ensembleCmdType = {
     "ensembleCommand",		/* the type's name */
     FreeEnsembleCmdRep,		/* freeIntRepProc */
     DupEnsembleCmdRep,		/* dupIntRepProc */
     NULL,			/* updateStringProc */
     NULL			/* setFromAnyProc */
 };
+
+/*
+ * The internal rep for caching ensemble subcommand lookups and
+ * spell corrections.
+ */
+
+typedef struct {
+    int epoch;                  /* Used to confirm when the data in this
+                                 * really structure matches up with the
+                                 * ensemble. */
+    Tcl_Command token;          /* Reference to the comamnd for which this
+                                 * structure is a cache of the resolution. */
+    Tcl_Obj *fix;               /* Corrected spelling, if needed. */
+    Tcl_HashEntry *hPtr;        /* Direct link to entry in the subcommand
+                                 * hash table. */
+} EnsembleCmdRep;
 
 
 static inline Tcl_Obj *
@@ -1707,7 +1723,7 @@ NsEnsembleImplementationCmdNR(
 	 * part where we do the invocation of the subcommand.
 	 */
 
-	if (subObj->typePtr==&tclEnsembleCmdType){
+	if (subObj->typePtr==&ensembleCmdType){
 	    EnsembleCmdRep *ensembleCmd = subObj->internalRep.twoPtrValue.ptr1;
 
 	    if (ensembleCmd->epoch == ensemblePtr->epoch &&
@@ -2366,7 +2382,7 @@ MakeCachedEnsembleCommand(
 {
     register EnsembleCmdRep *ensembleCmd;
 
-    if (objPtr->typePtr == &tclEnsembleCmdType) {
+    if (objPtr->typePtr == &ensembleCmdType) {
 	ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
 	if (ensembleCmd->fix) {	
 	    Tcl_DecrRefCount(ensembleCmd->fix);
@@ -2380,7 +2396,7 @@ MakeCachedEnsembleCommand(
 	TclFreeIntRep(objPtr);
 	ensembleCmd = ckalloc(sizeof(EnsembleCmdRep));
 	objPtr->internalRep.twoPtrValue.ptr1 = ensembleCmd;
-	objPtr->typePtr = &tclEnsembleCmdType;
+	objPtr->typePtr = &ensembleCmdType;
     }
 
     /*
@@ -2807,7 +2823,7 @@ DupEnsembleCmdRep(
     EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
     EnsembleCmdRep *ensembleCopy = ckalloc(sizeof(EnsembleCmdRep));
 
-    copyPtr->typePtr = &tclEnsembleCmdType;
+    copyPtr->typePtr = &ensembleCmdType;
     copyPtr->internalRep.twoPtrValue.ptr1 = ensembleCopy;
     ensembleCopy->epoch = ensembleCmd->epoch;
     ensembleCopy->token = ensembleCmd->token;
