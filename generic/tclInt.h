@@ -390,23 +390,6 @@ struct NamespacePathEntry {
 #define TCL_FIND_ONLY_NS		0x1000
 
 /*
- * The data cached in an ensemble subcommand's Tcl_Obj rep (reference in
- * twoPtrValue.ptr1 field). This structure is not shared between Tcl_Objs
- * referring to the same subcommand, even where one is a duplicate of another.
- */
-
-typedef struct {
-    int epoch;			/* Used to confirm when the data in this
-				 * really structure matches up with the
-				 * ensemble. */
-    Tcl_Command token;		/* Reference to the comamnd for which this
-				 * structure is a cache of the resolution. */
-    Tcl_Obj *fix;		/* Corrected spelling, if needed. */
-    Tcl_HashEntry *hPtr;	/* Direct link to entry in the subcommand
-				 * hash table. */
-} EnsembleCmdRep;
-
-/*
  * The client data for an ensemble command. This consists of the table of
  * commands that are actually exported by the namespace, and an epoch counter
  * that, combined with the exportLookupEpoch field of the namespace structure,
