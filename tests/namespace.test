@@ -2107,6 +2107,52 @@ test namespace-50.4 {chained ensembles affect error messages} -body {
     rename a {}
     rename c {}
 }
+test namespace-50.5 {[4402cfa58c]} -setup {
+    proc bar {ev} {}
+    proc bingo {xx} {}
+    namespace ensemble create -command launch -map {foo bar event bingo}
+    set result {}
+} -body {
+    catch {launch foo} m; lappend result $m
+    catch {launch ev} m; lappend result $m
+    catch {launch foo} m; lappend result $m
+} -cleanup {
+    rename launch {}
+    rename bingo {}
+    rename bar {}
+} -result {{wrong # args: should be "launch foo ev"} {wrong # args: should be "launch event xx"} {wrong # args: should be "launch foo ev"}}
+test namespace-50.6 {[4402cfa58c]} -setup {
+    proc target {x y} {}
+    namespace ensemble create -command e2 -map {s2 target}
+    namespace ensemble create -command e1 -map {s1 e2}
+    set result {}
+} -body {
+    set s s
+    catch {e1 s1 s2 a} m; lappend result $m
+    catch {e1 $s s2 a} m; lappend result $m
+    catch {e1 s1 $s a} m; lappend result $m
+    catch {e1 $s $s a} m; lappend result $m
+} -cleanup {
+    rename e1 {}
+    rename e2 {}
+    rename target {}
+} -result {{wrong # args: should be "e1 s1 s2 x y"} {wrong # args: should be "e1 s1 s2 x y"} {wrong # args: should be "e1 s1 s2 x y"} {wrong # args: should be "e1 s1 s2 x y"}}
+test namespace-50.7 {[4402cfa58c]} -setup {
+    proc target {x y} {}
+    namespace ensemble create -command e2 -map {s2 target}
+    namespace ensemble create -command e1 -map {s1 e2} -parameters foo
+    set result {}
+} -body {
+    set s s
+    catch {e1 s2 s1 a} m; lappend result $m
+    catch {e1 $s s1 a} m; lappend result $m
+    catch {e1 s2 $s a} m; lappend result $m
+    catch {e1 $s $s a} m; lappend result $m
+} -cleanup {
+    rename e1 {}
+    rename e2 {}
+    rename target {}
+} -result {{wrong # args: should be "e1 s2 s1 x y"} {wrong # args: should be "e1 s2 s1 x y"} {wrong # args: should be "e1 s2 s1 x y"} {wrong # args: should be "e1 s2 s1 x y"}}
 
 test namespace-51.1 {name resolution path control} -body {
     namespace eval ::test_ns_1 {
