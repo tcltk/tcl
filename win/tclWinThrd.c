@@ -130,7 +130,7 @@ typedef struct {
  * to TclWinThreadStart.
  */
 
-typedef struct WinThread {
+typedef struct {
   LPTHREAD_START_ROUTINE lpStartAddress; /* Original startup routine */
   LPVOID lpParameter;		/* Original startup data */
   unsigned int fpControl;	/* Floating point control word from the

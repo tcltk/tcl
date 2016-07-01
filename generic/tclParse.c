@@ -1022,7 +1022,7 @@ ParseComment(
 	if (parsePtr->commentStart == NULL) {
 	    parsePtr->commentStart = p;
 	}
-	
+
 	p++;
 	numBytes--;
 	while (numBytes) {
