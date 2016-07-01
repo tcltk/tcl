@@ -2030,6 +2030,40 @@ TclResetRewriteEnsemble(
 	iPtr->ensembleRewrite.numInsertedObjs = 0;
     }
 }
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFetchEnsembleRoot --
+ *
+ *	Returns the root of ensemble rewriting, if any.
+ *	If no root exists, returns objv instead.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *const *
+TclFetchEnsembleRoot(
+    Tcl_Interp *interp,
+    Tcl_Obj *const *objv,
+    int objc,
+    int *objcPtr)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    if (iPtr->ensembleRewrite.sourceObjs) {
+	*objcPtr = objc + iPtr->ensembleRewrite.numRemovedObjs
+		- iPtr->ensembleRewrite.numInsertedObjs;
+	return iPtr->ensembleRewrite.sourceObjs;
+    }
+    *objcPtr = objc;
+    return objv;
+}
 
 /*
  * ----------------------------------------------------------------------
