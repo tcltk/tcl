@@ -42,7 +42,7 @@ typedef struct FileHandler {
  * handlers are ready to fire.
  */
 
-typedef struct FileHandlerEvent {
+typedef struct {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     int fd;			/* File descriptor that is ready. Used to find
