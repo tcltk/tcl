@@ -1674,18 +1674,11 @@ NsEnsembleImplementationCmdNR(
 	 */
 
 	Tcl_DString buf;	/* Message being built */
-	Tcl_Obj **elemPtrs;	/* Parameter names */
-	int len;		/* Number of parameters to append */
 
 	Tcl_DStringInit(&buf);
-	if (ensemblePtr->parameterList == NULL) {
-	    len = 0;
-	} else if (TclListObjGetElements(NULL, ensemblePtr->parameterList,
-		&len, &elemPtrs) != TCL_OK) {
-	    Tcl_Panic("List of ensemble parameters is not a list");
-	}
-	for (; len>0; len--,elemPtrs++) {
-	    TclDStringAppendObj(&buf, *elemPtrs);
+	if (ensemblePtr->parameterList) {
+	    Tcl_DStringAppend(&buf,
+		    TclGetString(ensemblePtr->parameterList), -1);
 	    TclDStringAppendLiteral(&buf, " ");
 	}
 	TclDStringAppendLiteral(&buf, "subcommand ?arg ...?");
