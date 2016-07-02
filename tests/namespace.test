@@ -2153,6 +2153,15 @@ test namespace-50.7 {[4402cfa58c]} -setup {
     rename e2 {}
     rename target {}
 } -result {{wrong # args: should be "e1 s2 s1 x y"} {wrong # args: should be "e1 s2 s1 x y"} {wrong # args: should be "e1 s2 s1 x y"} {wrong # args: should be "e1 s2 s1 x y"}}
+test namespace-50.8 {[f961d7d1dd]} -setup {
+    proc target {} {}
+    namespace ensemble create -command e -map {s target} -parameters {{a b}}
+} -body {
+    e
+} -returnCodes error -result {wrong # args: should be "e {a b} subcommand ?arg ...?"} -cleanup {
+    rename e {}
+    rename target {}
+}
 
 test namespace-51.1 {name resolution path control} -body {
     namespace eval ::test_ns_1 {
