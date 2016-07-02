@@ -3374,14 +3374,7 @@ NRNamespaceEvalCmd(
     (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    namespacePtr, /*isProcCallFrame*/ 0);
 
-    if (iPtr->ensembleRewrite.sourceObjs == NULL) {
-	framePtr->objc = objc;
-	framePtr->objv = objv;
-    } else {
-	framePtr->objc = objc + iPtr->ensembleRewrite.numRemovedObjs
-		- iPtr->ensembleRewrite.numInsertedObjs;
-	framePtr->objv = iPtr->ensembleRewrite.sourceObjs;
-    }
+    framePtr->objv = TclFetchEnsembleRoot(interp, objv, objc, &framePtr->objc);
 
     if (objc == 3) {
 	/*
@@ -3788,7 +3781,6 @@ NRNamespaceInscopeCmd(
 {
     Tcl_Namespace *namespacePtr;
     CallFrame *framePtr, **framePtrPtr;
-    register Interp *iPtr = (Interp *) interp;
     int i;
     Tcl_Obj *cmdObjPtr;
 
@@ -3814,14 +3806,7 @@ NRNamespaceInscopeCmd(
     (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    namespacePtr, /*isProcCallFrame*/ 0);
 
-    if (iPtr->ensembleRewrite.sourceObjs == NULL) {
-	framePtr->objc = objc;
-	framePtr->objv = objv;
-    } else {
-	framePtr->objc = objc + iPtr->ensembleRewrite.numRemovedObjs
-		- iPtr->ensembleRewrite.numInsertedObjs;
-	framePtr->objv = iPtr->ensembleRewrite.sourceObjs;
-    }
+    framePtr->objv = TclFetchEnsembleRoot(interp, objv, objc, &framePtr->objc);
 
     /*
      * Execute the command. If there is just one argument, just treat it as a
