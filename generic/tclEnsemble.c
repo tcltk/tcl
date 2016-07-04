@@ -41,6 +41,9 @@ static int		CompileBasicNArgCommand(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    CompileEnv *envPtr);
 
+static Tcl_NRPostProc	FreeObj;
+static Tcl_NRPostProc	FreeER;
+
 /*
  * The lists of subcommands and options for the [namespace ensemble] command.
  */
@@ -1843,45 +1846,31 @@ NsEnsembleImplementationCmdNR(
      */
 
     {
-	Tcl_Obj **prefixObjv;	/* The list of objects to substitute in as the
-				 * target command prefix. */
 	Tcl_Obj *copyPtr;	/* The actual list of words to dispatch to.
 				 * Will be freed by the dispatch engine. */
-	int prefixObjc, copyObjc;
+	int prefixObjc;
 
+	Tcl_ListObjLength(NULL, prefixObj, &prefixObjc);
+
+	if (0 && objc == 2) {
 	/*
-	 * Get the prefix that we're rewriting to. To do this we need to
-	 * ensure that the internal representation of the list does not change
-	 * so that we can safely keep the internal representations of the
-	 * elements in the list.
-	 *
-	 * TODO: Use conventional list operations to make this code sane!
+	 * TODO: This branch is disabled because it botches or exposes
+	 * something wrong with nested ensemble usage messages. See
+	 * tests oo-16.1 and oo-17.1
 	 */
+	    copyPtr = prefixObj;
+	    Tcl_IncrRefCount(copyPtr);
+	    TclNRAddCallback(interp, FreeObj, copyPtr, NULL, NULL, NULL);
+	} else {
+	    int copyObjc = objc - 2 + prefixObjc;
 
-	TclListObjGetElements(NULL, prefixObj, &prefixObjc, &prefixObjv);
-
-	copyObjc = objc - 2 + prefixObjc;
-	copyPtr = Tcl_NewListObj(copyObjc, NULL);
-	if (copyObjc > 0) {
-	    register Tcl_Obj **copyObjv;
-				/* Space used to construct the list of
-				 * arguments to pass to the command that
-				 * implements the ensemble subcommand. */
-	    register List *listRepPtr = copyPtr->internalRep.twoPtrValue.ptr1;
-	    register int i;
-
-	    listRepPtr->elemCount = copyObjc;
-	    copyObjv = &listRepPtr->elements;
-	    memcpy(copyObjv, prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
-	    memcpy(copyObjv+prefixObjc, objv+1,
-		    sizeof(Tcl_Obj *) * ensemblePtr->numParameters);
-	    memcpy(copyObjv+prefixObjc+ensemblePtr->numParameters,
-		    objv+ensemblePtr->numParameters+2,
-		    sizeof(Tcl_Obj *) * (objc-ensemblePtr->numParameters-2));
-
-	    for (i=0; i < copyObjc; i++) {
-		Tcl_IncrRefCount(copyObjv[i]);
-	    }
+	    copyPtr = Tcl_NewListObj(copyObjc, NULL);
+	    Tcl_ListObjAppendList(NULL, copyPtr, prefixObj);
+	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0,
+		    ensemblePtr->numParameters, objv+1);
+	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0,
+		    objc - 2 - ensemblePtr->numParameters,
+		    objv + 2 + ensemblePtr->numParameters);
 	}
 	TclDecrRefCount(prefixObj);
 
@@ -2055,7 +2044,7 @@ TclResetRewriteEnsemble(
  *
  * TclSpellFix --
  *
- *	Record a spelling correction that needs making in the 
+ *	Record a spelling correction that needs making in the
  *	generation of the WrongNumArgs usage message.
  *
  * Results:
@@ -2115,7 +2104,7 @@ TclSpellFix(
 
     /* Compute the valid length of the ensemble root */
 
-    size = iPtr->ensembleRewrite.numRemovedObjs + objc 
+    size = iPtr->ensembleRewrite.numRemovedObjs + objc
 		- iPtr->ensembleRewrite.numInsertedObjs;
 
     search = iPtr->ensembleRewrite.sourceObjs;
@@ -2377,7 +2366,7 @@ MakeCachedEnsembleCommand(
 
     if (objPtr->typePtr == &ensembleCmdType) {
 	ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
-	if (ensembleCmd->fix) {	
+	if (ensembleCmd->fix) {
 	    Tcl_DecrRefCount(ensembleCmd->fix);
 	}
     } else {
