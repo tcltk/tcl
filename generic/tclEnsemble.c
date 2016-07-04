@@ -1866,9 +1866,9 @@ NsEnsembleImplementationCmdNR(
 
 	    copyPtr = Tcl_NewListObj(copyObjc, NULL);
 	    Tcl_ListObjAppendList(NULL, copyPtr, prefixObj);
-	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0, 
+	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0,
 		    ensemblePtr->numParameters, objv+1);
-	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0, 
+	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0,
 		    objc - 2 - ensemblePtr->numParameters,
 		    objv + 2 + ensemblePtr->numParameters);
 	}
@@ -2044,7 +2044,7 @@ TclResetRewriteEnsemble(
  *
  * TclSpellFix --
  *
- *	Record a spelling correction that needs making in the 
+ *	Record a spelling correction that needs making in the
  *	generation of the WrongNumArgs usage message.
  *
  * Results:
@@ -2104,7 +2104,7 @@ TclSpellFix(
 
     /* Compute the valid length of the ensemble root */
 
-    size = iPtr->ensembleRewrite.numRemovedObjs + objc 
+    size = iPtr->ensembleRewrite.numRemovedObjs + objc
 		- iPtr->ensembleRewrite.numInsertedObjs;
 
     search = iPtr->ensembleRewrite.sourceObjs;
@@ -2366,7 +2366,7 @@ MakeCachedEnsembleCommand(
 
     if (objPtr->typePtr == &ensembleCmdType) {
 	ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
-	if (ensembleCmd->fix) {	
+	if (ensembleCmd->fix) {
 	    Tcl_DecrRefCount(ensembleCmd->fix);
 	}
     } else {
