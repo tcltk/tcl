@@ -1852,12 +1852,7 @@ NsEnsembleImplementationCmdNR(
 
 	Tcl_ListObjLength(NULL, prefixObj, &prefixObjc);
 
-	if (0 && objc == 2) {
-	/*
-	 * TODO: This branch is disabled because it botches or exposes
-	 * something wrong with nested ensemble usage messages. See
-	 * tests oo-16.1 and oo-17.1
-	 */
+	if (objc == 2) {
 	    copyPtr = prefixObj;
 	    Tcl_IncrRefCount(copyPtr);
 	    TclNRAddCallback(interp, FreeObj, copyPtr, NULL, NULL, NULL);
