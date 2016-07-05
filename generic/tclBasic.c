@@ -4986,6 +4986,7 @@ TclEvalEx(
 				 * to the table entry holding the location of
 				 * the next invisible continuation line to
 				 * look for, while parsing the script. */
+    int invoke = flags & TCL_EVAL_INVOKE;
 
     if (iPtr->scriptCLLocPtr) {
 	if (clNextOuter) {
@@ -5258,7 +5259,7 @@ TclEvalEx(
 
 	    TclArgumentEnter(interp, objv, objectsUsed, eeFramePtr);
 	    code = Tcl_EvalObjv(interp, objectsUsed, objv,
-		    TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME);
+		    TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME | invoke);
 	    TclArgumentRelease(interp, objv, objectsUsed);
 
 	    eeFramePtr->line = NULL;
@@ -5306,6 +5307,7 @@ TclEvalEx(
 	TclAdvanceLines(&line, parsePtr->commandStart, p);
 	Tcl_FreeParse(parsePtr);
 	gotParse = 0;
+	invoke = 0;
     } while (bytesLeft > 0);
     iPtr->varFramePtr = savedVarFramePtr;
     code = TCL_OK;
@@ -5325,7 +5327,8 @@ TclEvalEx(
 	    code = TCL_ERROR;
 	}
     }
-    if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
+    if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED) &&
+	!(flags & TCL_EVAL_INVOKE)) {
 	commandLength = parsePtr->commandSize;
 	if (parsePtr->term == parsePtr->commandStart + commandLength - 1) {
 	    /*

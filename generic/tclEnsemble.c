@@ -1852,7 +1852,7 @@ NsEnsembleImplementationCmdNR(
 
 	Tcl_ListObjLength(NULL, prefixObj, &prefixObjc);
 
-	if (0 && objc == 2) {
+	if (1 && objc == 2) {
 	    /*
  	     * Branch disabled until it works. See oo-1[67].1.1
  	     * 
@@ -1892,7 +1892,7 @@ NsEnsembleImplementationCmdNR(
 	 */
 
 	TclSkipTailcall(interp);
-	return TclNREvalObjEx(interp, copyPtr, TCL_EVAL_INVOKE, NULL,INT_MIN);
+	return TclNREvalObjEx(interp, copyPtr, TCL_EVAL_DIRECT|TCL_EVAL_INVOKE, NULL, INT_MIN);
     }
 
   unknownOrAmbiguousSubcommand:
