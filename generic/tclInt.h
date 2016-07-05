@@ -4313,7 +4313,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 #define TclNumUtfChars(numChars, bytes, numBytes) \
     do { \
-	int count, i = (numBytes); \
+	size_t count, i = (numBytes); \
 	unsigned char *str = (unsigned char *) (bytes); \
 	while (i && (*str < 0xC0)) { i--; str++; } \
 	count = (numBytes) - i; \
