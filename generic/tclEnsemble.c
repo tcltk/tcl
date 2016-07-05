@@ -1852,7 +1852,13 @@ NsEnsembleImplementationCmdNR(
 
 	Tcl_ListObjLength(NULL, prefixObj, &prefixObjc);
 
-	if (objc == 2) {
+	if (0 && objc == 2) {
+	    /*
+ 	     * Branch disabled until it works. See oo-1[67].1.1
+ 	     * 
+ 	     * Key here is the difference between the canonical list invocation
+ 	     * and compilation/execution paths.
+ 	     */
 	    copyPtr = prefixObj;
 	    Tcl_IncrRefCount(copyPtr);
 	    TclNRAddCallback(interp, FreeObj, copyPtr, NULL, NULL, NULL);
