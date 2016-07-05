@@ -2074,8 +2074,6 @@ TclNRExecuteByteCode(
      * Push the callback for bytecode execution
      */
 
-    TclResetRewriteEnsemble(interp, 1);
-
     TclNRAddCallback(interp, TEBCresume, TD, /* pc */ NULL,
 	    /* cleanup */ INT2PTR(0), NULL);
     return TCL_OK;
