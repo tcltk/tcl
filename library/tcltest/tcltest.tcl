@@ -614,7 +614,7 @@ namespace eval tcltest {
 	set levelMap {
 	    l list
 	    p pass
-	    b body 
+	    b body
 	    s skip
 	    t start
 	    e error
