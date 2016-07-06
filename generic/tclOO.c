@@ -68,12 +68,9 @@ static int		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 static void		DeletedDefineNamespace(ClientData clientData);
 static void		DeletedObjdefNamespace(ClientData clientData);
 static void		DeletedHelpersNamespace(ClientData clientData);
-static int		FinalizeAlloc(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		FinalizeNext(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		FinalizeObjectCall(ClientData data[],
-			    Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	FinalizeAlloc;
+static Tcl_NRPostProc	FinalizeNext;
+static Tcl_NRPostProc	FinalizeObjectCall;
 static int		InitFoundation(Tcl_Interp *interp);
 static void		KillFoundation(ClientData clientData,
 			    Tcl_Interp *interp);

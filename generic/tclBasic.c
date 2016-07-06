@@ -128,7 +128,7 @@ static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
-static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	NRCommand;
 
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
