@@ -648,7 +648,7 @@ TclAppendBytesToByteArray(
     }
     byteArrayPtr = GET_BYTEARRAY(objPtr);
 
-    if (len > INT_MAX - byteArrayPtr->used) {
+    if (len + byteArrayPtr->used > UINT_MAX) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
@@ -685,7 +685,7 @@ TclAppendBytesToByteArray(
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
     }
 
-    if (bytes && (len > 0) && (len != (size_t)-1)) {
+    if (bytes) {
 	memcpy(byteArrayPtr->bytes + byteArrayPtr->used, bytes, len);
     }
     byteArrayPtr->used += len;

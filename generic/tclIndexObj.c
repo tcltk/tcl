@@ -820,29 +820,6 @@ Tcl_WrongNumArgs(
     Interp *iPtr = (Interp *) interp;
     const char *elementStr;
 
-    /*
-     * [incr Tcl] does something fairly horrific when generating error
-     * messages for its ensembles; it passes the whole set of ensemble
-     * arguments as a list in the first argument. This means that this code
-     * causes a problem in iTcl if it attempts to correctly quote all
-     * arguments, which would be the correct thing to do. We work around this
-     * nasty behaviour for now, and hope that we can remove it all in the
-     * future...
-     */
-
-#ifndef AVOID_HACKS_FOR_ITCL
-    int isFirst = 1;		/* Special flag used to inhibit the treating
-				 * of the first word as a list element so the
-				 * hacky way Itcl generates error messages for
-				 * its ensembles will still work. [Bug
-				 * 1066837] */
-#   define MAY_QUOTE_WORD	(!isFirst)
-#   define AFTER_FIRST_WORD	(isFirst = 0)
-#else /* !AVOID_HACKS_FOR_ITCL */
-#   define MAY_QUOTE_WORD	1
-#   define AFTER_FIRST_WORD	(void) 0
-#endif /* AVOID_HACKS_FOR_ITCL */
-
     TclNewObj(objPtr);
     if (iPtr->flags & INTERP_ALTERNATE_WRONG_ARGS) {
 	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
@@ -861,6 +838,14 @@ Tcl_WrongNumArgs(
 	int toSkip = iPtr->ensembleRewrite.numInsertedObjs;
 	int toPrint = iPtr->ensembleRewrite.numRemovedObjs;
 	Tcl_Obj *const *origObjv = iPtr->ensembleRewrite.sourceObjs;
+
+	/*
+	 * Check for spelling fixes, and substitute the fixed values.
+	 */
+
+	if (origObjv[0] == NULL) {
+	    origObjv = (Tcl_Obj *const *)origObjv[2];
+	}
 
 	/*
 	 * We only know how to do rewriting if all the replaced objects are
@@ -895,19 +880,13 @@ Tcl_WrongNumArgs(
 
 		elementStr = EXPAND_OF(indexRep);
 		elemLen = strlen(elementStr);
-	    } else if (origObjv[i]->typePtr == &tclEnsembleCmdType) {
-		register EnsembleCmdRep *ecrPtr =
-			origObjv[i]->internalRep.twoPtrValue.ptr1;
-
-		elementStr = ecrPtr->fullSubcmdName;
-		elemLen = strlen(elementStr);
 	    } else {
 		elementStr = TclGetStringFromObj(origObjv[i], &elemLen);
 	    }
 	    flags = 0;
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
-	    if (MAY_QUOTE_WORD && len != elemLen) {
+	    if (len != elemLen) {
 		char *quotedElementStr = TclStackAlloc(interp,
 			(unsigned)len + 1);
 
@@ -918,8 +897,6 @@ Tcl_WrongNumArgs(
 	    } else {
 		Tcl_AppendToObj(objPtr, elementStr, elemLen);
 	    }
-
-	    AFTER_FIRST_WORD;
 
 	    /*
 	     * Add a space if the word is not the last one (which has a
@@ -949,11 +926,6 @@ Tcl_WrongNumArgs(
 	    register IndexRep *indexRep = objv[i]->internalRep.twoPtrValue.ptr1;
 
 	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), NULL);
-	} else if (objv[i]->typePtr == &tclEnsembleCmdType) {
-	    register EnsembleCmdRep *ecrPtr =
-		    objv[i]->internalRep.twoPtrValue.ptr1;
-
-	    Tcl_AppendStringsToObj(objPtr, ecrPtr->fullSubcmdName, NULL);
 	} else {
 	    /*
 	     * Quote the argument if it contains spaces (Bug 942757).
@@ -963,7 +935,7 @@ Tcl_WrongNumArgs(
 	    flags = 0;
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
-	    if (MAY_QUOTE_WORD && len != elemLen) {
+	    if (len != elemLen) {
 		char *quotedElementStr = TclStackAlloc(interp,
 			(unsigned) len + 1);
 
@@ -975,8 +947,6 @@ Tcl_WrongNumArgs(
 		Tcl_AppendToObj(objPtr, elementStr, elemLen);
 	    }
 	}
-
-	AFTER_FIRST_WORD;
 
 	/*
 	 * Append a space character (" ") if there is more text to follow
@@ -1000,8 +970,6 @@ Tcl_WrongNumArgs(
     Tcl_AppendStringsToObj(objPtr, "\"", NULL);
     Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
     Tcl_SetObjResult(interp, objPtr);
-#undef MAY_QUOTE_WORD
-#undef AFTER_FIRST_WORD
 }
 
 /*

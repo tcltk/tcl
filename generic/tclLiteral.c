@@ -176,7 +176,7 @@ TclCreateLiteral(
     Interp *iPtr,
     char *bytes,		/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
-    int length,			/* Number of bytes in the string. */
+    size_t length,			/* Number of bytes in the string. */
     unsigned hash,		/* The string's hash. If -1, it will be
 				 * computed here. */
     int *newPtr,
@@ -245,7 +245,7 @@ TclCreateLiteral(
 #ifdef TCL_COMPILE_DEBUG
     if (LookupLiteralEntry((Tcl_Interp *) iPtr, objPtr) != NULL) {
 	Tcl_Panic("%s: literal \"%.*s\" found globally but shouldn't be",
-		"TclRegisterLiteral", (length>60? 60 : length), bytes);
+		"TclRegisterLiteral", (length>60? 60 : (int)length), bytes);
     }
 #endif
 
@@ -363,7 +363,7 @@ TclRegisterLiteral(
     register char *bytes,	/* Points to string for which to find or
 				 * create an object in CompileEnv's object
 				 * array. */
-    int length,			/* Number of bytes in the string. If < 0, the
+    size_t length,			/* Number of bytes in the string. If -1, the
 				 * string consists of all bytes up to the
 				 * first null character. */
     int flags)			/* If LITERAL_ON_HEAP then the caller already
@@ -381,7 +381,7 @@ TclRegisterLiteral(
     int localHash, objIndex, new;
     Namespace *nsPtr;
 
-    if (length < 0) {
+    if (length == (size_t)-1) {
 	length = (bytes ? strlen(bytes) : 0);
     }
     hash = HashString(bytes, length);
@@ -397,7 +397,7 @@ TclRegisterLiteral(
 	objPtr = localPtr->objPtr;
 	if ((objPtr->length == length) && ((length == 0)
 		|| ((objPtr->bytes[0] == bytes[0])
-		&& (memcmp(objPtr->bytes, bytes, (unsigned) length) == 0)))) {
+		&& (memcmp(objPtr->bytes, bytes, length) == 0)))) {
 	    if (flags & LITERAL_ON_HEAP) {
 		ckfree(bytes);
 	    }

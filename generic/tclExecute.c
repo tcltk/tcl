@@ -2017,8 +2017,6 @@ TclNRExecuteByteCode(
      * Push the callback for bytecode execution
      */
 
-    TclResetRewriteEnsemble(interp, 1);
-
     TclNRAddCallback(interp, TEBCresume, TD, /* pc */ NULL,
 	    /* cleanup */ INT2PTR(0), NULL);
     return TCL_OK;
@@ -5290,9 +5288,9 @@ TEBCresume(
 
 		s1len = Tcl_GetCharLength(valuePtr);
 		s2len = Tcl_GetCharLength(value2Ptr);
-		if ((s1len == valuePtr->length)
+		if (((size_t)s1len == valuePtr->length)
 			&& (valuePtr->bytes != NULL)
-			&& (s2len == value2Ptr->length)
+			&& ((size_t)s2len == value2Ptr->length)
 			&& (value2Ptr->bytes != NULL)) {
 		    s1 = valuePtr->bytes;
 		    s2 = value2Ptr->bytes;
@@ -5461,7 +5459,7 @@ TEBCresume(
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
 		    Tcl_GetByteArrayFromObj(valuePtr, NULL)+index, 1);
-	} else if (valuePtr->bytes && length == valuePtr->length) {
+	} else if (valuePtr->bytes && (size_t)length == valuePtr->length) {
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
 	} else {
