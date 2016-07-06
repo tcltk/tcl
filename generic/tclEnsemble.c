@@ -1848,31 +1848,24 @@ NsEnsembleImplementationCmdNR(
     {
 	Tcl_Obj *copyPtr;	/* The actual list of words to dispatch to.
 				 * Will be freed by the dispatch engine. */
-	int prefixObjc;
+	Tcl_Obj **copyObjv;
+	int copyObjc, prefixObjc;
 
 	Tcl_ListObjLength(NULL, prefixObj, &prefixObjc);
 
-	if (0 && objc == 2) {
-	    /*
- 	     * Branch disabled until it works. See oo-1[67].1.1
- 	     * 
- 	     * Key here is the difference between the canonical list invocation
- 	     * and compilation/execution paths.
- 	     */
-	    copyPtr = prefixObj;
-	    Tcl_IncrRefCount(copyPtr);
-	    TclNRAddCallback(interp, FreeObj, copyPtr, NULL, NULL, NULL);
+	if (objc == 2) {
+	    copyPtr = TclListObjCopy(NULL, prefixObj);
 	} else {
-	    int copyObjc = objc - 2 + prefixObjc;
-
-	    copyPtr = Tcl_NewListObj(copyObjc, NULL);
+	    copyPtr = Tcl_NewListObj(objc - 2 + prefixObjc, NULL);
 	    Tcl_ListObjAppendList(NULL, copyPtr, prefixObj);
 	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0,
-		    ensemblePtr->numParameters, objv+1);
+		    ensemblePtr->numParameters, objv + 1);
 	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0,
 		    objc - 2 - ensemblePtr->numParameters,
 		    objv + 2 + ensemblePtr->numParameters);
 	}
+	Tcl_IncrRefCount(copyPtr);
+	TclNRAddCallback(interp, FreeObj, copyPtr, NULL, NULL, NULL);
 	TclDecrRefCount(prefixObj);
 
 	/*
@@ -1892,7 +1885,8 @@ NsEnsembleImplementationCmdNR(
 	 */
 
 	TclSkipTailcall(interp);
-	return TclNREvalObjEx(interp, copyPtr, TCL_EVAL_INVOKE, NULL,INT_MIN);
+	Tcl_ListObjGetElements(NULL, copyPtr, &copyObjc, &copyObjv);
+	return TclNREvalObjv(interp, copyObjc, copyObjv, TCL_EVAL_INVOKE, NULL);
     }
 
   unknownOrAmbiguousSubcommand:
