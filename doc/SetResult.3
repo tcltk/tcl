@@ -131,8 +131,7 @@ pointing to an unshared value representing an empty string.
 If the result is a dynamically allocated string, its memory is free*d
 and the result is left as a empty string.
 \fBTcl_ResetResult\fR also clears the error state managed by
-\fBTcl_AddErrorInfo\fR, \fBTcl_AddObjErrorInfo\fR,
-and \fBTcl_SetErrorCode\fR.
+\fBTcl_AddErrorInfo\fR and \fBTcl_SetErrorCode\fR.
 .PP
 \fBTcl_AppendResult\fR makes it easy to build up Tcl results in pieces.
 It takes each of its \fIresult\fR arguments and appends them in order
@@ -164,7 +163,7 @@ The source interpreter will have its result reset by this operation.
 .SH "DEPRECATED INTERFACES"
 .SS "OLD STRING PROCEDURES"
 .PP
-Use of the following procedures (is deprecated
+Use of the following procedures is deprecated
 since they manipulate the Tcl result as a string.
 Procedures such as \fBTcl_SetObjResult\fR
 that manipulate the result as a value

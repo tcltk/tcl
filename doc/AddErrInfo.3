@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_GetReturnOptions, Tcl_SetReturnOptions, Tcl_AddErrorInfo, Tcl_AppendObjToErrorInfo, Tcl_AddObjErrorInfo, Tcl_SetObjErrorCode, Tcl_SetErrorCode, Tcl_SetErrorCodeVA, Tcl_SetErrorLine, Tcl_GetErrorLine, Tcl_PosixError, Tcl_LogCommandInfo \- retrieve or record information about errors and other return options
+Tcl_GetReturnOptions, Tcl_SetReturnOptions, Tcl_AddErrorInfo, Tcl_AppendObjToErrorInfo, Tcl_SetObjErrorCode, Tcl_SetErrorCode, Tcl_SetErrorCodeVA, Tcl_SetErrorLine, Tcl_GetErrorLine, Tcl_PosixError, Tcl_LogCommandInfo \- retrieve or record information about errors and other return options
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -23,8 +23,6 @@ int
 \fBTcl_AddErrorInfo\fR(\fIinterp, message\fR)
 .sp
 \fBTcl_AppendObjToErrorInfo\fR(\fIinterp, objPtr\fR)
-.sp
-\fBTcl_AddObjErrorInfo\fR(\fIinterp, message, length\fR)
 .sp
 \fBTcl_SetObjErrorCode\fR(\fIinterp, errorObjPtr\fR)
 .sp
@@ -52,11 +50,6 @@ A dictionary of return options.
 .AP char *message in
 For \fBTcl_AddErrorInfo\fR,
 this is a conventional C string to append to the \fB\-errorinfo\fR return option.
-For \fBTcl_AddObjErrorInfo\fR,
-this points to the first byte of an array of \fIlength\fR bytes
-containing a string to append to the \fB\-errorinfo\fR return option.
-This byte array may contain embedded null bytes
-unless \fIlength\fR is negative.
 .AP Tcl_Obj *objPtr in
 A message to be appended to the \fB\-errorinfo\fR return option
 in the form of a Tcl_Obj value.
@@ -221,15 +214,6 @@ a useful part of the \fImessage\fR passed to \fBTcl_AddErrorInfo\fR.
 same functionality as \fBTcl_AddErrorInfo\fR.  \fBTcl_AppendObjToErrorInfo\fR
 is called when the string value to be appended to the \fB\-errorinfo\fR option
 is available as a \fBTcl_Obj\fR instead of as a \fBchar\fR array.
-.PP
-\fBTcl_AddObjErrorInfo\fR is nearly identical
-to \fBTcl_AddErrorInfo\fR, except that it has an additional \fIlength\fR
-argument.  This allows the \fImessage\fR string to contain
-embedded null bytes.  This is essentially never a good idea.
-If the \fImessage\fR needs to contain the null character \fBU+0000\fR,
-Tcl's usual internal encoding rules should be used to avoid
-the need for a null byte.  If the \fBTcl_AddObjErrorInfo\fR
-interface is used at all, it should be with a negative \fIlength\fR value.
 .PP
 The procedure \fBTcl_SetObjErrorCode\fR is used to set the
 \fB\-errorcode\fR return option to the list value \fIerrorObjPtr\fR

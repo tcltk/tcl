@@ -1527,7 +1527,7 @@ int
 TclObjBeingDeleted(
     Tcl_Obj *objPtr)
 {
-    return (objPtr->length == -1);
+    return (objPtr->length == (size_t)-1);
 }
 
 /*
