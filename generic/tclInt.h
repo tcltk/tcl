@@ -2538,7 +2538,7 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, size_t *lengthPtr,
  */
 
 typedef struct ProcessGlobalValue {
-    int epoch;			/* Epoch counter to detect changes in the
+    size_t epoch;		/* Epoch counter to detect changes in the
 				 * master value. */
     size_t numBytes;		/* Length of the master string. */
     char *value;		/* The master string value. */
