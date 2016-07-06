@@ -89,7 +89,7 @@ PkguaDeleteTokens(
     Tcl_Interp *interp)
 {
     Tcl_HashEntry *entryPtr =
-	    Tcl_FindHashEntry(&interpTokenMap, (char *) interp);
+	    Tcl_FindHashEntry(&interpTokenMap, interp);
 
     if (entryPtr) {
 	Tcl_Free((char *) Tcl_GetHashValue(entryPtr));
