@@ -41,7 +41,6 @@ static int		CompileBasicNArgCommand(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    CompileEnv *envPtr);
 
-static Tcl_NRPostProc	FreeObj;
 static Tcl_NRPostProc	FreeER;
 
 /*
@@ -1865,7 +1864,7 @@ NsEnsembleImplementationCmdNR(
 		    objv + 2 + ensemblePtr->numParameters);
 	}
 	Tcl_IncrRefCount(copyPtr);
-	TclNRAddCallback(interp, FreeObj, copyPtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclNRReleaseValues, copyPtr, NULL, NULL, NULL);
 	TclDecrRefCount(prefixObj);
 
 	/*
@@ -2064,18 +2063,6 @@ FreeER(
     return result;
 }
 
-static int
-FreeObj(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Tcl_Obj *objPtr = (Tcl_Obj *)data[0];
-
-    Tcl_DecrRefCount(objPtr);
-    return result;
-}
-
 void
 TclSpellFix(
     Tcl_Interp *interp,
@@ -2151,7 +2138,7 @@ TclSpellFix(
 
     store[idx] = fix;
     Tcl_IncrRefCount(fix);
-    TclNRAddCallback(interp, FreeObj, fix, NULL, NULL, NULL);
+    TclNRAddCallback(interp, TclNRReleaseValues, fix, NULL, NULL, NULL);
 }
 
 /*
