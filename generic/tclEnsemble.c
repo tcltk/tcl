@@ -41,7 +41,6 @@ static int		CompileBasicNArgCommand(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    CompileEnv *envPtr);
 
-static Tcl_NRPostProc	FreeObj;
 static Tcl_NRPostProc	FreeER;
 
 /*
@@ -1848,25 +1847,24 @@ NsEnsembleImplementationCmdNR(
     {
 	Tcl_Obj *copyPtr;	/* The actual list of words to dispatch to.
 				 * Will be freed by the dispatch engine. */
-	int prefixObjc;
+	Tcl_Obj **copyObjv;
+	int copyObjc, prefixObjc;
 
 	Tcl_ListObjLength(NULL, prefixObj, &prefixObjc);
 
 	if (objc == 2) {
-	    copyPtr = prefixObj;
-	    Tcl_IncrRefCount(copyPtr);
-	    TclNRAddCallback(interp, FreeObj, copyPtr, NULL, NULL, NULL);
+	    copyPtr = TclListObjCopy(NULL, prefixObj);
 	} else {
-	    int copyObjc = objc - 2 + prefixObjc;
-
-	    copyPtr = Tcl_NewListObj(copyObjc, NULL);
+	    copyPtr = Tcl_NewListObj(objc - 2 + prefixObjc, NULL);
 	    Tcl_ListObjAppendList(NULL, copyPtr, prefixObj);
 	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0,
-		    ensemblePtr->numParameters, objv+1);
+		    ensemblePtr->numParameters, objv + 1);
 	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0,
 		    objc - 2 - ensemblePtr->numParameters,
 		    objv + 2 + ensemblePtr->numParameters);
 	}
+	Tcl_IncrRefCount(copyPtr);
+	TclNRAddCallback(interp, TclNRReleaseValues, copyPtr, NULL, NULL, NULL);
 	TclDecrRefCount(prefixObj);
 
 	/*
@@ -1886,7 +1884,8 @@ NsEnsembleImplementationCmdNR(
 	 */
 
 	TclSkipTailcall(interp);
-	return TclNREvalObjEx(interp, copyPtr, TCL_EVAL_INVOKE, NULL,INT_MIN);
+	Tcl_ListObjGetElements(NULL, copyPtr, &copyObjc, &copyObjv);
+	return TclNREvalObjv(interp, copyObjc, copyObjv, TCL_EVAL_INVOKE, NULL);
     }
 
   unknownOrAmbiguousSubcommand:
@@ -2064,18 +2063,6 @@ FreeER(
     return result;
 }
 
-static int
-FreeObj(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Tcl_Obj *objPtr = (Tcl_Obj *)data[0];
-
-    Tcl_DecrRefCount(objPtr);
-    return result;
-}
-
 void
 TclSpellFix(
     Tcl_Interp *interp,
@@ -2151,7 +2138,7 @@ TclSpellFix(
 
     store[idx] = fix;
     Tcl_IncrRefCount(fix);
-    TclNRAddCallback(interp, FreeObj, fix, NULL, NULL, NULL);
+    TclNRAddCallback(interp, TclNRReleaseValues, fix, NULL, NULL, NULL);
 }
 
 /*
