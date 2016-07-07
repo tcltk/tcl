@@ -3442,10 +3442,12 @@ test oo-27.23 {variable resolver leakage: Bug 1493a43044} -setup {
 	variable member1 result
 	constructor {m} {
 	    set [namespace current]::member1 child1
-	    namespace upvar [info object namespace $m] \
-		member1 local1 member2 local2
-	    upvar 1 member1 local3 member2 local4
-	    set result [list $local1 $local2 $local3 $local4]
+	    set ns [info object namespace $m]
+	    namespace upvar $ns member1 l1 member2 l2
+	    upvar 1 member1 l3 member2 l4
+	    [format namespace] upvar $ns member1 l5 member2 l6
+	    [format upvar] 1 member1 l7 member2 l8
+	    set result [list $l1 $l2 $l3 $l4 $l5 $l6 $l7 $l8]
 	}
 	method result {} {return $result}
     }
@@ -3453,7 +3455,7 @@ test oo-27.23 {variable resolver leakage: Bug 1493a43044} -setup {
     [[Master new] getChild] result
 } -cleanup {
     Super destroy
-} -result {master1 master2 master1 master2}
+} -result {master1 master2 master1 master2 master1 master2 master1 master2}
 
 # A feature that's not supported because the mechanism may change without
 # warning, but is supposed to work...
