@@ -393,8 +393,7 @@ static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
-static int              NREUnwind_callback(ClientData data[], Tcl_Interp *interp,
-                            int result);
+static Tcl_NRPostProc	NREUnwind_callback;
 static int		TestNREUnwind(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);

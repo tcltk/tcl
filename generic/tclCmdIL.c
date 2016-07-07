@@ -105,8 +105,7 @@ typedef struct {
  */
 
 static int		DictionaryCompare(const char *left, const char *right);
-static int		IfConditionCallback(ClientData data[],
-			    Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	IfConditionCallback;
 static int		InfoArgsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoBodyCmd(ClientData dummy, Tcl_Interp *interp,
