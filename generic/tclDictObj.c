@@ -70,18 +70,12 @@ static inline void	DeleteChainTable(struct Dict *dict);
 static inline Tcl_HashEntry *CreateChainEntry(struct Dict *dict,
 			    Tcl_Obj *keyPtr, int *newPtr);
 static inline int	DeleteChainEntry(struct Dict *dict, Tcl_Obj *keyPtr);
-static int		FinalizeDictUpdate(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		FinalizeDictWith(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		DictForNRCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictMapNRCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictForLoopCallback(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		DictMapLoopCallback(ClientData data[],
-			    Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	FinalizeDictUpdate;
+static Tcl_NRPostProc	FinalizeDictWith;
+static Tcl_ObjCmdProc	DictForNRCmd;
+static Tcl_ObjCmdProc	DictMapNRCmd;
+static Tcl_NRPostProc	DictForLoopCallback;
+static Tcl_NRPostProc	DictMapLoopCallback;
 
 /*
  * Table of dict subcommand names and implementations.

@@ -1468,14 +1468,16 @@ if {[testConstraint testsetplatform]} {
 }
 test filename-17.2 {windows specific glob with executable} -body {
     makeDirectory execglob
-    makeFile contents execglob/abc.exe
-    makeFile contents execglob/abc.notexecutable
-    glob -nocomplain -dir [temporaryDirectory]/execglob -tails -types x *
+    foreach ext {exe com cmd bat ps1 notexecutable} {
+        makeFile contents execglob/abc.$ext
+    }
+    lsort [glob -nocomplain -dir [temporaryDirectory]/execglob -tails -types x *]
 } -constraints {win} -cleanup {
-    removeFile execglob/abc.exe
-    removeFile execglob/abc.notexecutable
+    foreach ext {exe com cmd bat ps1 notexecutable} {
+        removeFile execglob/abc.$ext
+    }
     removeDirectory execglob
-} -result {abc.exe}
+} -result {abc.bat abc.cmd abc.com abc.exe abc.ps1}
 test filename-17.3 {Bug 2571597} win {
     set p /a
     file pathtype $p
