@@ -170,6 +170,21 @@ typedef struct Tcl_ResolverInfo {
 } Tcl_ResolverInfo;
 
 /*
+ * This flag bit should not interfere with TCL_GLOBAL_ONLY,
+ * TCL_NAMESPACE_ONLY, or TCL_LEAVE_ERR_MSG; it signals that the variable
+ * lookup is performed for upvar (or similar) purposes, with slightly
+ * different rules:
+ *    - Bug #696893 - variable is either proc-local or in the current
+ *	namespace; never follow the second (global) resolution path
+ *    - Bug #631741 - do not use special namespace or interp resolvers
+ *
+ * It should also not collide with the (deprecated) TCL_PARSE_PART1 flag
+ * (Bug #835020)
+ */
+
+#define TCL_AVOID_RESOLVERS 0x40000
+
+/*
  *----------------------------------------------------------------
  * Data structures related to namespaces.
  *----------------------------------------------------------------
