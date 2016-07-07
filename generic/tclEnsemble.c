@@ -93,7 +93,7 @@ typedef struct {
     int epoch;                  /* Used to confirm when the data in this
                                  * really structure matches up with the
                                  * ensemble. */
-    Tcl_Command token;          /* Reference to the comamnd for which this
+    Command *token;             /* Reference to the command for which this
                                  * structure is a cache of the resolution. */
     Tcl_Obj *fix;               /* Corrected spelling, if needed. */
     Tcl_HashEntry *hPtr;        /* Direct link to entry in the subcommand
@@ -1727,7 +1727,7 @@ NsEnsembleImplementationCmdNR(
 	    EnsembleCmdRep *ensembleCmd = subObj->internalRep.twoPtrValue.ptr1;
 
 	    if (ensembleCmd->epoch == ensemblePtr->epoch &&
-		    ensembleCmd->token == ensemblePtr->token) {
+		    ensembleCmd->token == (Command *)ensemblePtr->token) {
 		prefixObj = Tcl_GetHashValue(ensembleCmd->hPtr);
 		Tcl_IncrRefCount(prefixObj);
 		if (ensembleCmd->fix) {
@@ -2404,7 +2404,8 @@ MakeCachedEnsembleCommand(
      */
 
     ensembleCmd->epoch = ensemblePtr->epoch;
-    ensembleCmd->token = ensemblePtr->token;
+    ensembleCmd->token = (Command *) ensemblePtr->token;
+    ensembleCmd->token->refCount++;
     if (fix) {
 	Tcl_IncrRefCount(fix);
     }
@@ -2790,6 +2791,7 @@ FreeEnsembleCmdRep(
 {
     EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
 
+    TclCleanupCommandMacro(ensembleCmd->token);
     if (ensembleCmd->fix) {
 	Tcl_DecrRefCount(ensembleCmd->fix);
     }
@@ -2827,6 +2829,7 @@ DupEnsembleCmdRep(
     copyPtr->internalRep.twoPtrValue.ptr1 = ensembleCopy;
     ensembleCopy->epoch = ensembleCmd->epoch;
     ensembleCopy->token = ensembleCmd->token;
+    ensembleCopy->token->refCount++;
     ensembleCopy->fix = ensembleCmd->fix;
     if (ensembleCopy->fix) {
 	Tcl_IncrRefCount(ensembleCopy->fix);
