@@ -879,19 +879,18 @@ test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unix testchmod} {
 test cmdAH-18.5 {Tcl_FileObjCmd: executable} -constraints {win} -body {
     # On pc, must be a .exe, .com, etc.
     set x [file exe $gorpfile]
-    set gorpexe [makeFile foo gorp.exe]
-    lappend x [file exe $gorpexe]
+    set gorpexes {}
+    foreach ext {exe com cmd bat ps1} {
+        set gorpexe [makeFile foo gorp.$ext]
+        lappend gorpexes $gorpexe
+        lappend x [file exe $gorpexe] [file exe [string toupper $gorpexe]]
+    }
+    set x
 } -cleanup {
-    removeFile $gorpexe
-} -result {0 1}
-test cmdAH-18.5.1 {Tcl_FileObjCmd: executable} -constraints {win} -body {
-    # On pc, must be a .exe, .com, etc.
-    set x [file exe $gorpfile]
-    set gorpexe [makeFile foo gorp.exe]
-    lappend x [file exe [string toupper $gorpexe]]
-} -cleanup {
-    removeFile $gorpexe
-} -result {0 1}
+    foreach gorpexe $gorpexes {
+        removeFile $gorpexe
+    }
+} -result {0 1 1 1 1 1 1 1 1 1 1}
 test cmdAH-18.6 {Tcl_FileObjCmd: executable} {} {
     # Directories are always executable.
     file exe $dirfile
