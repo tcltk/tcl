@@ -2384,6 +2384,7 @@ MakeCachedEnsembleCommand(
 
     if (objPtr->typePtr == &ensembleCmdType) {
 	ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
+	TclCleanupCommandMacro(ensembleCmd->token);
 	if (ensembleCmd->fix) {	
 	    Tcl_DecrRefCount(ensembleCmd->fix);
 	}
