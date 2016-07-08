@@ -29,7 +29,7 @@ static void		FreeVarEntry(Tcl_HashEntry *hPtr);
 static int		CompareVarKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 
 static const Tcl_HashKeyType tclVarHashKeyType = {
-    TCL_HASH_KEY_TYPE_VERSION,	/* version */
+    TCL_HASH_KEY_TYPE_VERSION_2,	/* version */
     0,				/* flags */
     TclHashObjKey,		/* hashKeyProc */
     CompareVarKeys,		/* compareKeysProc */

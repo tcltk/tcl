@@ -2884,7 +2884,7 @@ CheckJumpTableLabels(
 	valEntryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
 		Tcl_GetString(symbolObj));
 	DEBUG_PRINT("  %s -> %s (%d)\n",
-		(char*) Tcl_GetHashKey(symHash, symEntryPtr),
+		Tcl_GetHashKey(symHash, symEntryPtr),
 		Tcl_GetString(symbolObj), (valEntryPtr != NULL));
 	if (valEntryPtr == NULL) {
 	    ReportUndefinedLabel(assemEnvPtr, bbPtr, symbolObj);

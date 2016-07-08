@@ -259,7 +259,7 @@ typedef struct Tcl_HashKeyType {
 .PP
 The \fIversion\fR member is the version of the table. If this structure is
 extended in future then the version can be used to distinguish between
-different structures. It should be set to \fBTCL_HASH_KEY_TYPE_VERSION\fR.
+different structures. It should be set to \fBTCL_HASH_KEY_TYPE_VERSION_2\fR.
 .PP
 The \fIflags\fR member is 0 or one or more of the following values OR'ed
 together:
@@ -281,7 +281,7 @@ The \fIhashKeyProc\fR member contains the address of a function called to
 calculate a hash value for the key.
 .PP
 .CS
-typedef unsigned int \fBTcl_HashKeyProc\fR(
+typedef size_t \fBTcl_HashKeyProc\fR(
         Tcl_HashTable *\fItablePtr\fR,
         void *\fIkeyPtr\fR);
 .CE
