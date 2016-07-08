@@ -293,7 +293,7 @@ const Tcl_ObjType tclBignumType = {
  */
 
 const Tcl_HashKeyType tclObjHashKeyType = {
-    TCL_HASH_KEY_TYPE_VERSION_2,	/* version */
+    TCL_HASH_KEY_TYPE_VERSION,	/* version */
     0,				/* flags */
     TclHashObjKey,		/* hashKeyProc */
     TclCompareObjKeys,		/* compareKeysProc */
@@ -4049,7 +4049,7 @@ TclFreeObjEntry(
  *----------------------------------------------------------------------
  */
 
-size_t
+TCL_HASH_TYPE
 TclHashObjKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
@@ -4057,7 +4057,7 @@ TclHashObjKey(
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     const char *string = TclGetString(objPtr);
     size_t length = objPtr->length;
-    size_t result = 0;
+    TCL_HASH_TYPE result = 0;
 
     /*
      * I tried a zillion different hash functions and asked many other people

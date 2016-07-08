@@ -28,7 +28,7 @@
  */
 
 #define RANDOM_INDEX(tablePtr, i) \
-    ((((i)*1103515245L) >> (tablePtr)->downShift) & (tablePtr)->mask)
+    ((((i)*1103515245L) >> (tablePtr)->downShift) & (tablePtr)->mask1)
 
 /*
  * Prototypes for the array hash key methods.
@@ -36,7 +36,7 @@
 
 static Tcl_HashEntry *	AllocArrayEntry(Tcl_HashTable *tablePtr, void *keyPtr);
 static int		CompareArrayKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static size_t	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
+static TCL_HASH_TYPE	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Prototypes for the one word hash key methods. Not actually declared because
@@ -58,7 +58,7 @@ static size_t	HashOneWordKey(Tcl_HashTable *tablePtr, const void *keyPtr);
 static Tcl_HashEntry *	AllocStringEntry(Tcl_HashTable *tablePtr,
 			    void *keyPtr);
 static int		CompareStringKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static size_t	HashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
+static TCL_HASH_TYPE	HashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Function prototypes for static functions in this file:
@@ -73,7 +73,7 @@ static Tcl_HashEntry *	FindHashEntry(Tcl_HashTable *tablePtr, const void *key);
 static void		RebuildTable(Tcl_HashTable *tablePtr);
 
 const Tcl_HashKeyType tclArrayHashKeyType = {
-    TCL_HASH_KEY_TYPE_VERSION_2,		/* version */
+    TCL_HASH_KEY_TYPE_VERSION,		/* version */
     TCL_HASH_KEY_RANDOMIZE_HASH,	/* flags */
     HashArrayKey,			/* hashKeyProc */
     CompareArrayKeys,			/* compareKeysProc */
@@ -82,7 +82,7 @@ const Tcl_HashKeyType tclArrayHashKeyType = {
 };
 
 const Tcl_HashKeyType tclOneWordHashKeyType = {
-    TCL_HASH_KEY_TYPE_VERSION_2,		/* version */
+    TCL_HASH_KEY_TYPE_VERSION,		/* version */
     0,					/* flags */
     NULL, /* HashOneWordKey, */		/* hashProc */
     NULL, /* CompareOneWordKey, */	/* compareProc */
@@ -91,7 +91,7 @@ const Tcl_HashKeyType tclOneWordHashKeyType = {
 };
 
 const Tcl_HashKeyType tclStringHashKeyType = {
-    TCL_HASH_KEY_TYPE_VERSION_2,		/* version */
+    TCL_HASH_KEY_TYPE_VERSION,		/* version */
     0,					/* flags */
     HashStringKey,			/* hashKeyProc */
     CompareStringKeys,			/* compareKeysProc */
@@ -179,7 +179,7 @@ Tcl_InitCustomHashTable(
     tablePtr->numEntries = 0;
     tablePtr->rebuildSize = TCL_SMALL_HASH_TABLE*REBUILD_MULTIPLIER;
     tablePtr->downShift = 28;
-    tablePtr->mask = 3;
+    tablePtr->mask1 = 3;
     tablePtr->keyType = keyType;
     tablePtr->findProc = FindHashEntry;
     tablePtr->createProc = CreateHashEntry;
@@ -243,8 +243,7 @@ CreateHashEntry(
 {
     register Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
-    size_t hash;
-    size_t index;
+    TCL_HASH_TYPE hash, index;
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
@@ -258,16 +257,11 @@ CreateHashEntry(
     }
 
     if (typePtr->hashKeyProc) {
-	if (typePtr->version == TCL_HASH_KEY_TYPE_VERSION) {
-	    hash = ((unsigned int (*)(Tcl_HashTable *, void *))
-		    typePtr->hashKeyProc)(tablePtr, (void *) key);
-	} else {
-	    hash = typePtr->hashKeyProc(tablePtr, (void *) key);
-	}
+	hash = typePtr->hashKeyProc(tablePtr, (void *) key);
 	if (typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 	    index = RANDOM_INDEX(tablePtr, hash);
 	} else {
-	    index = hash & tablePtr->mask;
+	    index = hash & tablePtr->mask1;
 	}
     } else {
 	hash = (size_t)(key);
@@ -387,7 +381,7 @@ Tcl_DeleteHashEntry(
 	    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 	index = RANDOM_INDEX(tablePtr, entryPtr->hash);
     } else {
-	index = entryPtr->hash & tablePtr->mask;
+	index = entryPtr->hash & tablePtr->mask1;
     }
 
     bucketPtr = &tablePtr->buckets[index];
@@ -736,13 +730,13 @@ CompareArrayKeys(
  *----------------------------------------------------------------------
  */
 
-static size_t
+static TCL_HASH_TYPE
 HashArrayKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     register const int *array = (const int *) keyPtr;
-    register size_t result;
+    register TCL_HASH_TYPE result;
     int count;
 
     for (result = 0, count = tablePtr->keyType; count > 0;
@@ -832,13 +826,13 @@ CompareStringKeys(
  *----------------------------------------------------------------------
  */
 
-static size_t
+static TCL_HASH_TYPE
 HashStringKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     register const char *string = keyPtr;
-    register size_t result;
+    register TCL_HASH_TYPE result;
     register char c;
 
     /*
@@ -960,7 +954,8 @@ static void
 RebuildTable(
     register Tcl_HashTable *tablePtr)	/* Table to enlarge. */
 {
-    size_t oldSize, count, index;
+    size_t oldSize, count;
+    TCL_HASH_TYPE index;
     Tcl_HashEntry **oldBuckets;
     register Tcl_HashEntry **oldChainPtr, **newChainPtr;
     register Tcl_HashEntry *hPtr;
@@ -999,7 +994,7 @@ RebuildTable(
     }
     tablePtr->rebuildSize *= 4;
     tablePtr->downShift -= 2;
-    tablePtr->mask = (tablePtr->mask << 2) + 3;
+    tablePtr->mask1 = (tablePtr->mask1 << 2) + 3;
 
     /*
      * Rehash all of the existing entries into the new bucket array.
@@ -1012,7 +1007,7 @@ RebuildTable(
 		    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 		index = RANDOM_INDEX(tablePtr, hPtr->hash);
 	    } else {
-		index = hPtr->hash & tablePtr->mask;
+		index = hPtr->hash & tablePtr->mask1;
 	    }
 	    hPtr->nextPtr = tablePtr->buckets[index];
 	    tablePtr->buckets[index] = hPtr;

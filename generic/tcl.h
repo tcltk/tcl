@@ -936,11 +936,15 @@ typedef struct Tcl_DString {
  * Forward declarations of Tcl_HashTable and related types.
  */
 
+#ifndef TCL_HASH_TYPE
+#  define TCL_HASH_TYPE size_t
+#endif
+
 typedef struct Tcl_HashKeyType Tcl_HashKeyType;
 typedef struct Tcl_HashTable Tcl_HashTable;
 typedef struct Tcl_HashEntry Tcl_HashEntry;
 
-typedef size_t (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
+typedef TCL_HASH_TYPE (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
 typedef int (Tcl_CompareHashKeysProc) (void *keyPtr, Tcl_HashEntry *hPtr);
 typedef Tcl_HashEntry * (Tcl_AllocHashEntryProc) (Tcl_HashTable *tablePtr,
 	void *keyPtr);
@@ -992,7 +996,6 @@ struct Tcl_HashEntry {
  */
 
 #define TCL_HASH_KEY_TYPE_VERSION 1
-#define TCL_HASH_KEY_TYPE_VERSION_2 2
 
 struct Tcl_HashKeyType {
     int version;		/* Version of the table. If this structure is
@@ -1052,7 +1055,7 @@ struct Tcl_HashTable {
 				 * table. */
     size_t rebuildSize;		/* Enlarge table when numEntries gets to be
 				 * this large. */
-    size_t mask;			/* Mask value used in hashing function. */
+    TCL_HASH_TYPE mask1;			/* Mask value used in hashing function. */
     int downShift;		/* Shift count used in hashing function.
 				 * Designed to use high-order bits of
 				 * randomized keys. */
