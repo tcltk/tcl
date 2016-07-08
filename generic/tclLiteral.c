@@ -671,7 +671,7 @@ AddLocalLiteralEntry(
 	}
 
 	if (!found) {
-	    bytes = Tcl_GetStringFromObj(objPtr, &length);
+	    bytes = TclGetStringFromObj(objPtr, &length);
 	    Tcl_Panic("%s: literal \"%.*s\" wasn't found locally",
 		    "AddLocalLiteralEntry", (length>60? 60 : length), bytes);
 	}
@@ -1147,14 +1147,14 @@ TclVerifyLocalLiteralTable(
 		localPtr=localPtr->nextPtr) {
 	    count++;
 	    if (localPtr->refCount != -1) {
-		bytes = Tcl_GetStringFromObj(localPtr->objPtr, &length);
+		bytes = TclGetStringFromObj(localPtr->objPtr, &length);
 		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %d",
 			"TclVerifyLocalLiteralTable",
 			(length>60? 60 : length), bytes, localPtr->refCount);
 	    }
 	    if (LookupLiteralEntry((Tcl_Interp *) envPtr->iPtr,
 		    localPtr->objPtr) == NULL) {
-		bytes = Tcl_GetStringFromObj(localPtr->objPtr, &length);
+		bytes = TclGetStringFromObj(localPtr->objPtr, &length);
 		Tcl_Panic("%s: local literal \"%.*s\" is not global",
 			"TclVerifyLocalLiteralTable",
 			(length>60? 60 : length), bytes);
@@ -1205,7 +1205,7 @@ TclVerifyGlobalLiteralTable(
 		globalPtr=globalPtr->nextPtr) {
 	    count++;
 	    if (globalPtr->refCount < 1) {
-		bytes = Tcl_GetStringFromObj(globalPtr->objPtr, &length);
+		bytes = TclGetStringFromObj(globalPtr->objPtr, &length);
 		Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
 			"TclVerifyGlobalLiteralTable",
 			(length>60? 60 : length), bytes, globalPtr->refCount);
