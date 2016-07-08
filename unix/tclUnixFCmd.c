@@ -1507,7 +1507,7 @@ SetGroupAttribute(
 	const char *string;
 	int length;
 
-	string = Tcl_GetStringFromObj(attributePtr, &length);
+	string = TclGetStringFromObj(attributePtr, &length);
 
 	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
 	groupPtr = TclpGetGrNam(native); /* INTL: Native. */
@@ -1574,7 +1574,7 @@ SetOwnerAttribute(
 	const char *string;
 	int length;
 
-	string = Tcl_GetStringFromObj(attributePtr, &length);
+	string = TclGetStringFromObj(attributePtr, &length);
 
 	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
 	pwPtr = TclpGetPwNam(native);			/* INTL: Native. */
@@ -1946,7 +1946,7 @@ TclpObjNormalizePath(
     const char *currentPathEndPosition;
     int pathLen;
     char cur;
-    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+    const char *path = TclGetStringFromObj(pathPtr, &pathLen);
     Tcl_DString ds;
     const char *nativePath;
 #ifndef NO_REALPATH
@@ -2182,7 +2182,7 @@ TclUnixOpenTemporaryFile(
      */
 
     if (dirObj) {
-	string = Tcl_GetStringFromObj(dirObj, &len);
+	string = TclGetStringFromObj(dirObj, &len);
 	Tcl_UtfToExternalDString(NULL, string, len, &template);
     } else {
 	Tcl_DStringInit(&template);
@@ -2192,7 +2192,7 @@ TclUnixOpenTemporaryFile(
     TclDStringAppendLiteral(&template, "/");
 
     if (basenameObj) {
-	string = Tcl_GetStringFromObj(basenameObj, &len);
+	string = TclGetStringFromObj(basenameObj, &len);
 	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
 	TclDStringAppendDString(&template, &tmp);
 	Tcl_DStringFree(&tmp);
@@ -2204,7 +2204,7 @@ TclUnixOpenTemporaryFile(
 
 #ifdef HAVE_MKSTEMPS
     if (extensionObj) {
-	string = Tcl_GetStringFromObj(extensionObj, &len);
+	string = TclGetStringFromObj(extensionObj, &len);
 	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
 	TclDStringAppendDString(&template, &tmp);
 	fd = mkstemps(Tcl_DStringValue(&template), Tcl_DStringLength(&tmp));

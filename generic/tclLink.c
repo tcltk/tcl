@@ -526,7 +526,7 @@ LinkTraceProc(
 	break;
 
     case TCL_LINK_STRING:
-	value = Tcl_GetStringFromObj(valueObj, &valueLength);
+	value = TclGetStringFromObj(valueObj, &valueLength);
 	valueLength++;
 	pp = (char **) linkPtr->addr;
 
