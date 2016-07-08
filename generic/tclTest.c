@@ -6611,7 +6611,7 @@ TestHashSystemHashCmd(
     Tcl_Obj *const objv[])
 {
     static const Tcl_HashKeyType hkType = {
-	TCL_HASH_KEY_TYPE_VERSION_2, TCL_HASH_KEY_SYSTEM_HASH,
+	TCL_HASH_KEY_TYPE_VERSION, TCL_HASH_KEY_SYSTEM_HASH,
 	NULL, NULL, NULL, NULL
     };
     Tcl_HashTable hash;

@@ -179,7 +179,7 @@ const Tcl_ObjType tclDictType = {
  */
 
 static const Tcl_HashKeyType chainHashType = {
-    TCL_HASH_KEY_TYPE_VERSION_2,
+    TCL_HASH_KEY_TYPE_VERSION,
     0,
     TclHashObjKey,
     TclCompareObjKeys,

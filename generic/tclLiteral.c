@@ -31,7 +31,7 @@
 static int		AddLocalLiteralEntry(CompileEnv *envPtr,
 			    Tcl_Obj *objPtr, int localHash);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
-static size_t		HashString(const char *string, size_t length);
+static TCL_HASH_TYPE		HashString(const char *string, size_t length);
 #ifdef TCL_COMPILE_DEBUG
 static LiteralEntry *	LookupLiteralEntry(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -176,8 +176,8 @@ TclCreateLiteral(
     Interp *iPtr,
     char *bytes,		/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
-    int length,			/* Number of bytes in the string. */
-    unsigned hash,		/* The string's hash. If -1, it will be
+    size_t length,			/* Number of bytes in the string. */
+    TCL_HASH_TYPE hash,		/* The string's hash. If -1, it will be
 				 * computed here. */
     int *newPtr,
     Namespace *nsPtr,
@@ -193,7 +193,7 @@ TclCreateLiteral(
      * Is it in the interpreter's global literal table?
      */
 
-    if (hash == (unsigned) -1) {
+    if (hash == (TCL_HASH_TYPE) -1) {
 	hash = HashString(bytes, length);
     }
     globalHash = (hash & globalTablePtr->mask);
@@ -201,9 +201,9 @@ TclCreateLiteral(
 	    globalPtr = globalPtr->nextPtr) {
 	objPtr = globalPtr->objPtr;
 	if ((globalPtr->nsPtr == nsPtr)
-		&& (objPtr->length == length) && ((length == 0)
+		&& ((size_t)objPtr->length == length) && ((length == 0)
 		|| ((objPtr->bytes[0] == bytes[0])
-		&& (memcmp(objPtr->bytes, bytes, (unsigned) length) == 0)))) {
+		&& (memcmp(objPtr->bytes, bytes, length) == 0)))) {
 	    /*
 	     * A literal was found: return it
 	     */
@@ -864,12 +864,12 @@ TclReleaseLiteral(
  *----------------------------------------------------------------------
  */
 
-static size_t
+static TCL_HASH_TYPE
 HashString(
     register const char *string,	/* String for which to compute hash value. */
     size_t length)			/* Number of bytes in the string. */
 {
-    register size_t result = 0;
+    register TCL_HASH_TYPE result = 0;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -938,8 +938,9 @@ RebuildLiteralTable(
     register LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     const char *bytes;
-    unsigned int oldSize;
-    int count, index, length;
+    size_t oldSize;
+    size_t count, length;
+    TCL_HASH_TYPE index;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;
@@ -974,8 +975,9 @@ RebuildLiteralTable(
 
     for (oldChainPtr=oldBuckets ; oldSize>0 ; oldSize--,oldChainPtr++) {
 	for (entryPtr=*oldChainPtr ; entryPtr!=NULL ; entryPtr=*oldChainPtr) {
-	    bytes = TclGetStringFromObj(entryPtr->objPtr, &length);
-	    index = (HashString(bytes, length) & tablePtr->mask);
+	    bytes = TclGetString(entryPtr->objPtr);
+	    length = entryPtr->objPtr->length;
+	    index = HashString(bytes, length) & tablePtr->mask;
 
 	    *oldChainPtr = entryPtr->nextPtr;
 	    bucketPtr = &tablePtr->buckets[index];
