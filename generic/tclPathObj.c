@@ -869,12 +869,16 @@ TclJoinPath(
 	 * object which can be normalized more efficiently. Currently we only
 	 * use the special case when we have exactly two elements, but we
 	 * could expand that in the future.
+         *
+         * Bugfix [a47641a0]. TclNewFSPathObj requires first argument
+         * to be an absolute path. Added a check for that elt is absolute.
 	 */
 
 	if ((i == (elements-2)) && (i == 0)
-		&& (elt->typePtr == &tclFsPathType)
-		&& !((elt->bytes != NULL) && (elt->bytes[0] == '\0'))) {
-	    Tcl_Obj *tailObj = objv[i+1];
+                && (elt->typePtr == &tclFsPathType)
+		&& !((elt->bytes != NULL) && (elt->bytes[0] == '\0'))
+                && TclGetPathType(elt, NULL, NULL, NULL) == TCL_PATH_ABSOLUTE) {
+            Tcl_Obj *tailObj = objv[i+1];
 
 	    type = TclGetPathType(tailObj, NULL, NULL, NULL);
 	    if (type == TCL_PATH_RELATIVE) {
