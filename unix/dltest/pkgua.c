@@ -69,7 +69,7 @@ PkguaInterpToTokens(
     int newEntry;
     Tcl_Command *cmdTokens;
     Tcl_HashEntry *entryPtr =
-	    Tcl_CreateHashEntry(&interpTokenMap, (char *) interp, &newEntry);
+	    Tcl_CreateHashEntry(&interpTokenMap, interp, &newEntry);
 
     if (newEntry) {
 	cmdTokens = (Tcl_Command *)

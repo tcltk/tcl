@@ -940,7 +940,7 @@ typedef struct Tcl_HashKeyType Tcl_HashKeyType;
 typedef struct Tcl_HashTable Tcl_HashTable;
 typedef struct Tcl_HashEntry Tcl_HashEntry;
 
-typedef unsigned (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
+typedef size_t (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
 typedef int (Tcl_CompareHashKeysProc) (void *keyPtr, Tcl_HashEntry *hPtr);
 typedef Tcl_HashEntry * (Tcl_AllocHashEntryProc) (Tcl_HashTable *tablePtr,
 	void *keyPtr);
@@ -955,13 +955,11 @@ struct Tcl_HashEntry {
     Tcl_HashEntry *nextPtr;	/* Pointer to next entry in this hash bucket,
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
-    void *hash;			/* Hash value, stored as pointer to ensure
-				 * that the offsets of the fields in this
-				 * structure are not changed. */
+    size_t hash;			/* Hash value */
     ClientData clientData;	/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */
-	char *oneWordValue;	/* One-word value for key. */
+	const void *oneWordValue;	/* One-word value for key. */
 	Tcl_Obj *objPtr;	/* Tcl_Obj * key value. */
 	int words[1];		/* Multiple integer words for key. The actual
 				 * size will be as large as necessary for this
@@ -994,6 +992,8 @@ struct Tcl_HashEntry {
  */
 
 #define TCL_HASH_KEY_TYPE_VERSION 1
+#define TCL_HASH_KEY_TYPE_VERSION_2 2
+
 struct Tcl_HashKeyType {
     int version;		/* Version of the table. If this structure is
 				 * extended in future then the version can be
@@ -1046,23 +1046,23 @@ struct Tcl_HashTable {
     Tcl_HashEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables (to
 				 * avoid mallocs and frees). */
-    int numBuckets;		/* Total number of buckets allocated at
+    size_t numBuckets;		/* Total number of buckets allocated at
 				 * **bucketPtr. */
-    int numEntries;		/* Total number of entries present in
+    size_t numEntries;		/* Total number of entries present in
 				 * table. */
-    int rebuildSize;		/* Enlarge table when numEntries gets to be
+    size_t rebuildSize;		/* Enlarge table when numEntries gets to be
 				 * this large. */
+    size_t mask;			/* Mask value used in hashing function. */
     int downShift;		/* Shift count used in hashing function.
 				 * Designed to use high-order bits of
 				 * randomized keys. */
-    int mask;			/* Mask value used in hashing function. */
     int keyType;		/* Type of keys used in this table. It's
 				 * either TCL_CUSTOM_KEYS, TCL_STRING_KEYS,
 				 * TCL_ONE_WORD_KEYS, or an integer giving the
 				 * number of ints that is the size of the
 				 * key. */
-    Tcl_HashEntry *(*findProc) (Tcl_HashTable *tablePtr, const char *key);
-    Tcl_HashEntry *(*createProc) (Tcl_HashTable *tablePtr, const char *key,
+    Tcl_HashEntry *(*findProc) (Tcl_HashTable *tablePtr, const void *key);
+    Tcl_HashEntry *(*createProc) (Tcl_HashTable *tablePtr, const void *key,
 	    int *newPtr);
     const Tcl_HashKeyType *typePtr;
 				/* Type of the keys used in the
@@ -1076,7 +1076,7 @@ struct Tcl_HashTable {
 
 typedef struct Tcl_HashSearch {
     Tcl_HashTable *tablePtr;	/* Table being searched. */
-    int nextIndex;		/* Index of next bucket to be enumerated after
+    size_t nextIndex;		/* Index of next bucket to be enumerated after
 				 * present one. */
     Tcl_HashEntry *nextEntryPtr;/* Next entry to be enumerated in the current
 				 * bucket. */
@@ -2360,9 +2360,9 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 #define Tcl_FindHashEntry(tablePtr, key) \
-	(*((tablePtr)->findProc))(tablePtr, (const char *)(key))
+	(*((tablePtr)->findProc))(tablePtr, key)
 #define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
-	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
+	(*((tablePtr)->createProc))(tablePtr, key, newPtr)
 
 /*
  *----------------------------------------------------------------------------
