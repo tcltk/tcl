@@ -663,7 +663,7 @@ TclContinuationsEnterDerived(
      * better way which doesn't shimmer?)
      */
 
-    Tcl_GetStringFromObj(objPtr, &length);
+    TclGetStringFromObj(objPtr, &length);
     end = start + length;       /* First char after the word */
 
     /*
@@ -1989,7 +1989,7 @@ TclSetBooleanFromAny(
   badBoolean:
     if (interp != NULL) {
 	int length;
-	const char *str = Tcl_GetStringFromObj(objPtr, &length);
+	const char *str = TclGetStringFromObj(objPtr, &length);
 	Tcl_Obj *msg;
 
 	TclNewLiteralStringObj(msg, "expected boolean value but got \"");
