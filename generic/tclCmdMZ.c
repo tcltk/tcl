@@ -22,14 +22,10 @@
 
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
-static int		SwitchPostProc(ClientData data[], Tcl_Interp *interp,
-			    int result);
-static int		TryPostBody(ClientData data[], Tcl_Interp *interp,
-			    int result);
-static int		TryPostFinal(ClientData data[], Tcl_Interp *interp,
-			    int result);
-static int		TryPostHandler(ClientData data[], Tcl_Interp *interp,
-			    int result);
+static Tcl_NRPostProc	SwitchPostProc;
+static Tcl_NRPostProc	TryPostBody;
+static Tcl_NRPostProc	TryPostFinal;
+static Tcl_NRPostProc	TryPostHandler;
 static int		UniCharIsAscii(int character);
 static int		UniCharIsHexDigit(int character);
 

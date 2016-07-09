@@ -2285,7 +2285,7 @@ Tcl_AppendFormatToObj(
 	    }
 	}
 
-	Tcl_GetStringFromObj(segment, &segmentNumBytes);
+	TclGetStringFromObj(segment, &segmentNumBytes);
 	if (segmentNumBytes > limit) {
 	    if (allocSegment) {
 		Tcl_DecrRefCount(segment);

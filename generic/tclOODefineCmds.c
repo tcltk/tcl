@@ -525,7 +525,7 @@ TclOOUnknownDefinition(
 	return TCL_ERROR;
     }
 
-    soughtStr = Tcl_GetStringFromObj(objv[1], &soughtLen);
+    soughtStr = TclGetStringFromObj(objv[1], &soughtLen);
     if (soughtLen == 0) {
 	goto noMatch;
     }
@@ -585,7 +585,7 @@ FindCommand(
     Tcl_Namespace *const namespacePtr)
 {
     int length;
-    const char *nameStr, *string = Tcl_GetStringFromObj(stringObj, &length);
+    const char *nameStr, *string = TclGetStringFromObj(stringObj, &length);
     register Namespace *const nsPtr = (Namespace *) namespacePtr;
     FOREACH_HASH_DECLS;
     Tcl_Command cmd, cmd2;
@@ -774,7 +774,7 @@ GenerateErrorInfo(
     int length;
     Tcl_Obj *realNameObj = Tcl_ObjectDeleted((Tcl_Object) oPtr)
 	    ? savedNameObj : TclOOObjectName(interp, oPtr);
-    const char *objName = Tcl_GetStringFromObj(realNameObj, &length);
+    const char *objName = TclGetStringFromObj(realNameObj, &length);
     int limit = OBJNAME_LENGTH_IN_ERRORINFO_LIMIT;
     int overflow = (length > limit);
 
@@ -1239,7 +1239,7 @@ TclOODefineConstructorObjCmd(
     }
     clsPtr = oPtr->classPtr;
 
-    Tcl_GetStringFromObj(objv[2], &bodyLength);
+    TclGetStringFromObj(objv[2], &bodyLength);
     if (bodyLength > 0) {
 	/*
 	 * Create the method structure.
@@ -1358,7 +1358,7 @@ TclOODefineDestructorObjCmd(
     }
     clsPtr = oPtr->classPtr;
 
-    Tcl_GetStringFromObj(objv[1], &bodyLength);
+    TclGetStringFromObj(objv[1], &bodyLength);
     if (bodyLength > 0) {
 	/*
 	 * Create the method structure.
