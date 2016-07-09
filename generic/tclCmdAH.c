@@ -12,6 +12,9 @@
  */
 
 #include "tclInt.h"
+#ifdef _WIN32
+#   include "tclWinInt.h"
+#endif
 #include <locale.h>
 
 /*
@@ -1600,21 +1603,13 @@ FileAttrIsOwnedCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    if (GetStatBuf(NULL, objv[1], Tcl_FSStat, &buf) == TCL_OK) {
-	/*
-	 * For Windows, there are no user ids associated with a file, so we
-	 * always return 1.
-	 *
-	 * TODO: use GetSecurityInfo to get the real owner of the file and
-	 * test for equivalence to the current user.
-	 */
-
 #if defined(_WIN32) || defined(__CYGWIN__)
-	value = 1;
+    value = TclWinFileOwned(objv[1]);
 #else
+    if (GetStatBuf(NULL, objv[1], Tcl_FSStat, &buf) == TCL_OK) {
 	value = (geteuid() == buf.st_uid);
-#endif
     }
+#endif
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
     return TCL_OK;
 }

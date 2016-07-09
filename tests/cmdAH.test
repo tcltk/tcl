@@ -1296,6 +1296,12 @@ test cmdAH-25.2.1 {Tcl_FileObjCmd: owned} -constraints unix -setup {
 test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unix notRoot} {
     file owned /
 } 0
+test cmdAH-25.3.1 {Tcl_FileObjCmd: owned} -constraints win -body {
+    file owned $env(windir)
+} -result 0
+test cmdAH-25.4 {Tcl_FileObjCmd: owned} -body {
+    file owned nosuchfile
+} -result 0
 
 # readlink
 test cmdAH-26.1 {Tcl_FileObjCmd: readlink} -returnCodes error -body {
