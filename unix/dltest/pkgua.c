@@ -11,7 +11,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
 #include "tcl.h"
 
 /*
@@ -70,7 +69,7 @@ PkguaInterpToTokens(
     int newEntry;
     Tcl_Command *cmdTokens;
     Tcl_HashEntry *entryPtr =
-	    Tcl_CreateHashEntry(&interpTokenMap, (char *) interp, &newEntry);
+	    Tcl_CreateHashEntry(&interpTokenMap, interp, &newEntry);
 
     if (newEntry) {
 	cmdTokens = (Tcl_Command *)
@@ -90,7 +89,7 @@ PkguaDeleteTokens(
     Tcl_Interp *interp)
 {
     Tcl_HashEntry *entryPtr =
-	    Tcl_FindHashEntry(&interpTokenMap, (char *) interp);
+	    Tcl_FindHashEntry(&interpTokenMap, interp);
 
     if (entryPtr) {
 	Tcl_Free((char *) Tcl_GetHashValue(entryPtr));
