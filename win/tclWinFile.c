@@ -16,8 +16,9 @@
 #include "tclFileSystem.h"
 #include <winioctl.h>
 #include <shlobj.h>
-#include <lm.h>		/* For TclpGetUserHome(). */
+#include <lm.h>		        /* For TclpGetUserHome(). */
 #include <userenv.h>		/* For TclpGetUserHome(). */
+#include <aclapi.h>             /* For GetNamedSecurityInfo */
 
 #ifdef _MSC_VER
 #   pragma comment(lib, "userenv.lib")
@@ -3133,6 +3134,69 @@ TclpUtime(
     return res;
 }
 
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclWinFileOwned --
+ *
+ *	Returns 1 if the specified file exists and is owned by the current
+ *      user and 0 otherwise. Like the Unix case, the check is made using
+ *      the real process SID, not the effective (impersonation) one.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclWinFileOwned(
+    Tcl_Obj *pathPtr)		/* File whose ownership is to be checked */
+{
+    const TCHAR *native;
+    PSID ownerSid = NULL;
+    PSECURITY_DESCRIPTOR secd = NULL;
+    HANDLE token;
+    LPBYTE buf = NULL;
+    DWORD bufsz;
+    int owned = 0;
+
+    native = Tcl_FSGetNativePath(pathPtr);
+
+    if (GetNamedSecurityInfo(native, SE_FILE_OBJECT,
+                             OWNER_SECURITY_INFORMATION, &ownerSid,
+                             NULL, NULL, NULL, &secd) != ERROR_SUCCESS) {
+        /* Either not a file, or we do not have access to it in which
+           case we are in all likelihood not the owner */
+        return 0;
+    }
+        
+    /* 
+     * Getting the current process SID is a multi-step process.
+     * We make the assumption that if a call fails, this process is
+     * so underprivileged it could not possibly own anything. Normally
+     * a process can *always* look up its own token.
+     */
+    if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
+        /* Find out how big the buffer needs to be */
+        bufsz = 0;
+        GetTokenInformation(token, TokenUser, NULL, 0, &bufsz);
+        if (bufsz) {
+            buf = ckalloc(bufsz);
+            if (GetTokenInformation(token, TokenUser, buf, bufsz, &bufsz)) {
+                owned = EqualSid(ownerSid, ((PTOKEN_USER) buf)->User.Sid);
+            }
+        }
+        CloseHandle(token);
+    }
+
+vamoose:
+    /* Free allocations and be done */
+    if (secd)
+        LocalFree(secd);            /* Also frees ownerSid */
+    if (buf)
+        ckfree(buf);
+    
+    return (owned != 0);        /* Convert non-0 to 1 */
+}
+    
 /*
  * Local Variables:
  * mode: c
