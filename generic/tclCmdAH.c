@@ -1157,6 +1157,16 @@ FileAttrAccessTimeCmd(
     if (GetStatBuf(interp, objv[1], Tcl_FSStat, &buf) != TCL_OK) {
 	return TCL_ERROR;
     }
+#if defined(_WIN32)
+    /* We use a value of 0 to indicate the access time not available */
+    if (buf.st_atime == 0) {
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                             "could not get access time for file \"%s\"",
+                             TclGetString(objv[1])));
+        return TCL_ERROR;
+    }
+#endif
+
     if (objc == 3) {
 	/*
 	 * Need separate variable for reading longs from an object on 64-bit
@@ -1229,6 +1239,15 @@ FileAttrModifyTimeCmd(
     if (GetStatBuf(interp, objv[1], Tcl_FSStat, &buf) != TCL_OK) {
 	return TCL_ERROR;
     }
+#if defined(_WIN32)
+    /* We use a value of 0 to indicate the modification time not available */
+    if (buf.st_mtime == 0) {
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                             "could not get modification time for file \"%s\"",
+                             TclGetString(objv[1])));
+        return TCL_ERROR;
+    }
+#endif
     if (objc == 3) {
 	/*
 	 * Need separate variable for reading longs from an object on 64-bit
