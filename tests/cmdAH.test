@@ -1433,13 +1433,13 @@ test cmdAH-28.12 {Tcl_FileObjCmd: stat} -setup {
 } -cleanup {
     removeFile $filename
 } -result 1
-test cmdAH-28.13 {Tcl_FileObjCmd: stat (built-in Windows names)} -setup {
+test cmdAH-28.13 {Tcl_FileObjCmd: stat (built-in Windows names)} -constraints {win} -setup {
     unset -nocomplain stat
 } -body {
     file stat con stat
     lmap elem {atime ctime dev gid ino mode mtime nlink size type uid} {set stat($elem)}
 } -result {0 0 -1 0 0 8630 0 0 0 characterSpecial 0}
-test cmdAH-28.13.1 {Tcl_FileObjCmd: stat (built-in Windows names)} -setup {
+test cmdAH-28.13.1 {Tcl_FileObjCmd: stat (built-in Windows names)} -constraints {win} -setup {
     unset -nocomplain stat
 } -body {
     file stat [file join [temporaryDirectory] CON.txt] stat
