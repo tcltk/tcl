@@ -682,6 +682,22 @@ test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix} -setup {
 } -cleanup {
     removeFile $tmpfile
 } -result 14
+
+# Tests to ensure batch files and .CMD (Bug 9ece99d58b)
+# can be executed on Windows
+test exec-20.0 {exec .bat file} -constraints {win} -body {
+    set log [makeFile {} exec20.log]
+    exec [makeFile "echo %1> $log" exec20.bat] "Testing exec-20.0"
+    viewFile $log
+} -result "\"Testing exec-20.0\""
+test exec-20.1 {exec .CMD file} -constraints {win} -body {
+    set log [makeFile {} exec201.log]
+    exec [makeFile "echo %1> $log" exec201.CMD] "Testing exec-20.1"
+    viewFile $log
+} -result "\"Testing exec-20.1\""
+    
+
+
 
 # ----------------------------------------------------------------------
 # cleanup
