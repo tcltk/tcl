@@ -3424,6 +3424,38 @@ test oo-27.22 {variables declaration uniqueifies: Bug 3396896} -setup {
 } -cleanup {
     foo destroy
 } -result {v t}
+test oo-27.23 {variable resolver leakage: Bug 1493a43044} -setup {
+    oo::class create Super
+    oo::class create Master {
+	superclass Super
+	variable member1 member2
+	constructor {} {
+	    set member1 master1
+	    set member2 master2
+	}
+	method getChild {} {
+	    Child new [self]
+	}
+    }
+    oo::class create Child {
+	superclass Super
+	variable member1 result
+	constructor {m} {
+	    set [namespace current]::member1 child1
+	    set ns [info object namespace $m]
+	    namespace upvar $ns member1 l1 member2 l2
+	    upvar 1 member1 l3 member2 l4
+	    [format namespace] upvar $ns member1 l5 member2 l6
+	    [format upvar] 1 member1 l7 member2 l8
+	    set result [list $l1 $l2 $l3 $l4 $l5 $l6 $l7 $l8]
+	}
+	method result {} {return $result}
+    }
+} -body {
+    [[Master new] getChild] result
+} -cleanup {
+    Super destroy
+} -result {master1 master2 master1 master2 master1 master2 master1 master2}
 
 # A feature that's not supported because the mechanism may change without
 # warning, but is supposed to work...
