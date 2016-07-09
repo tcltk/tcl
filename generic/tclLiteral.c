@@ -1010,7 +1010,7 @@ TclVerifyLocalLiteralTable(
 	}
 	if (LookupLiteralEntry((Tcl_Interp *) envPtr->iPtr, objPtr) == NULL) {
 	    int length;
-	    const char *bytes = Tcl_GetStringFromObj(objPtr, &length);
+	    const char *bytes = TclGetStringFromObj(objPtr, &length);
 	    Tcl_Panic("%s: local literal \"%.*s\" is not global",
 			"TclVerifyLocalLiteralTable",
 			(length>60? 60 : length), bytes);
@@ -1052,7 +1052,7 @@ TclVerifyGlobalLiteralTable(
 		globalPtr=globalPtr->nextPtr) {
 	    count++;
 	    if (globalPtr->refCount < 1) {
-		bytes = Tcl_GetStringFromObj(globalPtr->objPtr, &length);
+		bytes = TclGetStringFromObj(globalPtr->objPtr, &length);
 		Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
 			"TclVerifyGlobalLiteralTable",
 			(length>60? 60 : length), bytes, globalPtr->refCount);

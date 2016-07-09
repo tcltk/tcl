@@ -1341,7 +1341,7 @@ CompileSubstObj(
     if (objPtr->typePtr != &substCodeType) {
 	CompileEnv compEnv;
 	int numBytes;
-	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+	const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
 
 	/* TODO: Check for more TIP 280 */
 	TclInitCompileEnv(interp, &compEnv, bytes, numBytes, NULL, 0);
@@ -1812,7 +1812,7 @@ CompileCmdLiteral(
     CompileEnv *envPtr)
 {
     int numBytes;
-    const char *bytes = Tcl_GetStringFromObj(cmdObj, &numBytes);
+    const char *bytes = TclGetStringFromObj(cmdObj, &numBytes);
     int cmdLitIdx = TclRegisterNewCmdLiteral(envPtr, bytes, numBytes);
     Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
 
@@ -2785,7 +2785,7 @@ PreventCycle(
 	 * the intrep.
 	 */
 	int numBytes, i = PTR2INT(Tcl_GetHashValue(hePtr));
-	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+	const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
 
 	envPtr->literalArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
 	Tcl_IncrRefCount(envPtr->literalArrayPtr[i]);
@@ -3018,7 +3018,7 @@ TclFindCompiledLocal(
 	varNamePtr = &cachePtr->varName0;
 	for (i=0; i < cachePtr->numVars; varNamePtr++, i++) {
 	    if (*varNamePtr) {
-		localName = Tcl_GetStringFromObj(*varNamePtr, &len);
+		localName = TclGetStringFromObj(*varNamePtr, &len);
 		if ((len == nameBytes) && !strncmp(name, localName, len)) {
 		    return i;
 		}

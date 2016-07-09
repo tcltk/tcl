@@ -116,7 +116,7 @@ static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
-static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	NRCommand;
 
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
 			    int returnCode);
@@ -132,7 +132,6 @@ static int		TEOV_RunEnterTraces(Tcl_Interp *interp,
 			    Command **cmdPtrPtr, Tcl_Obj *commandPtr, int objc,
 			    Tcl_Obj *const objv[]);
 static Tcl_NRPostProc	RewindCoroutineCallback;
-static Tcl_NRPostProc	TailcallCleanup;
 static Tcl_NRPostProc	TEOEx_ByteCodeCallback;
 static Tcl_NRPostProc	TEOEx_ListCallback;
 static Tcl_NRPostProc	TEOV_Error;
@@ -2227,27 +2226,8 @@ Tcl_CreateObjCommand(
     if (!isNew) {
 	cmdPtr = Tcl_GetHashValue(hPtr);
 
-	/* Command already exists. */
-
 	/*
-	 * [***] This is wrong.  See Tcl Bug a16752c252.
-	 * However, this buggy behavior is kept under particular
-	 * circumstances to accommodate deployed binaries of the
-	 * "tclcompiler" program. http://sourceforge.net/projects/tclpro/
-	 * that crash if the bug is fixed.
-	 */
-
-	if (cmdPtr->objProc == TclInvokeStringCommand
-		&& cmdPtr->clientData == clientData
-		&& cmdPtr->deleteData == clientData
-		&& cmdPtr->deleteProc == deleteProc) {
-	    cmdPtr->objProc = proc;
-	    cmdPtr->objClientData = clientData;
-	    return (Tcl_Command) cmdPtr;
-	}
-
-	/*
-	 * Otherwise, we delete the old command. Be careful to preserve any
+	 * Command already exists; delete it. Be careful to preserve any
 	 * existing import links so we can restore them down below. That way,
 	 * you can redefine a command and its import status will remain
 	 * intact.
@@ -3554,7 +3534,7 @@ Tcl_Canceled(
          */
 
         if (iPtr->asyncCancelMsg != NULL) {
-            message = Tcl_GetStringFromObj(iPtr->asyncCancelMsg, &length);
+            message = TclGetStringFromObj(iPtr->asyncCancelMsg, &length);
         } else {
             length = 0;
         }
@@ -3653,7 +3633,7 @@ Tcl_CancelEval(
      */
 
     if (resultObjPtr != NULL) {
-	result = Tcl_GetStringFromObj(resultObjPtr, &cancelInfo->length);
+	result = TclGetStringFromObj(resultObjPtr, &cancelInfo->length);
 	cancelInfo->result = ckrealloc(cancelInfo->result,cancelInfo->length);
 	memcpy(cancelInfo->result, result, (size_t) cancelInfo->length);
 	TclDecrRefCount(resultObjPtr);	/* Discard their result object. */
@@ -4150,7 +4130,7 @@ TEOV_Error(
 	 */
 
 	listPtr = Tcl_NewListObj(objc, objv);
-	cmdString = Tcl_GetStringFromObj(listPtr, &cmdLen);
+	cmdString = TclGetStringFromObj(listPtr, &cmdLen);
 	Tcl_LogCommandInfo(interp, cmdString, cmdString, cmdLen);
 	Tcl_DecrRefCount(listPtr);
     }
@@ -4296,7 +4276,7 @@ TEOV_RunEnterTraces(
     Command *cmdPtr = *cmdPtrPtr;
     int newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
     int length, traceCode = TCL_OK;
-    const char *command = Tcl_GetStringFromObj(commandPtr, &length);
+    const char *command = TclGetStringFromObj(commandPtr, &length);
 
     /*
      * Call trace functions.
@@ -4348,7 +4328,7 @@ TEOV_RunLeaveTraces(
     Command *cmdPtr = data[2];
     Tcl_Obj **objv = data[3];
     int length;
-    const char *command = Tcl_GetStringFromObj(commandPtr, &length);
+    const char *command = TclGetStringFromObj(commandPtr, &length);
 
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
 	if (cmdPtr->flags & CMD_HAS_EXEC_TRACES){
@@ -5605,7 +5585,7 @@ TEOEx_ByteCodeCallback(
 
 	    ProcessUnexpectedResult(interp, result);
 	    result = TCL_ERROR;
-	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+	    script = TclGetStringFromObj(objPtr, &numSrcBytes);
 	    Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
 	}
 
@@ -7643,7 +7623,7 @@ TclNRTailcallEval(
          * a now-gone namespace: cleanup and return.
          */
 
-        TailcallCleanup(data, interp, result);
+	Tcl_DecrRefCount(listPtr);
         return result;
     }
 
@@ -7652,18 +7632,26 @@ TclNRTailcallEval(
      */
 
     TclMarkTailcall(interp);
-    TclNRAddCallback(interp, TailcallCleanup, listPtr, NULL, NULL,NULL);
+    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
     return TclNREvalObjv(interp, objc-1, objv+1, 0, NULL);
 }
 
-static int
-TailcallCleanup(
+int
+TclNRReleaseValues(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_DecrRefCount((Tcl_Obj *) data[0]);
+    int i = 0;
+    while (i < 4) {
+	if (data[i]) {
+	    Tcl_DecrRefCount((Tcl_Obj *) data[i]);
+	} else {
+	    break;
+	}
+	i++;
+    }
     return result;
 }
 

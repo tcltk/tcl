@@ -4643,8 +4643,8 @@ NamespaceUpvarCmd(
 	savedNsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
 	iPtr->varFramePtr->nsPtr = (Namespace *) nsPtr;
 	otherPtr = TclObjLookupVarEx(interp, objv[0], NULL,
-		(TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
-		/*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+		(TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG|TCL_AVOID_RESOLVERS),
+		"access", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
 	iPtr->varFramePtr->nsPtr = (Namespace *) savedNsPtr;
 	if (otherPtr == NULL) {
 	    return TCL_ERROR;

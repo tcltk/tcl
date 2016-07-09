@@ -70,10 +70,8 @@ static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
 static int		InvokeProcedureMethod(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		FinalizeForwardCall(ClientData data[], Tcl_Interp *interp,
-			    int result);
-static int		FinalizePMCall(ClientData data[], Tcl_Interp *interp,
-			    int result);
+static Tcl_NRPostProc	FinalizeForwardCall;
+static Tcl_NRPostProc	FinalizePMCall;
 static int		PushMethodCallFrame(Tcl_Interp *interp,
 			    CallContext *contextPtr, ProcedureMethod *pmPtr,
 			    int objc, Tcl_Obj *const *objv,
@@ -1168,7 +1166,7 @@ MethodErrorHandler(
     CallContext *contextPtr = ((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     const char *objectName, *kindName, *methodName =
-	    Tcl_GetStringFromObj(mPtr->namePtr, &nameLen);
+	    TclGetStringFromObj(mPtr->namePtr, &nameLen);
     Object *declarerPtr;
 
     if (mPtr->declaringObjectPtr != NULL) {
