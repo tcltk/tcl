@@ -1795,7 +1795,6 @@ NativeIsExec(
     if ((_tcsicmp(path+len-3, TEXT("exe")) == 0)
 	    || (_tcsicmp(path+len-3, TEXT("com")) == 0)
 	    || (_tcsicmp(path+len-3, TEXT("cmd")) == 0)
-	    || (_tcsicmp(path+len-3, TEXT("ps1")) == 0)
 	    || (_tcsicmp(path+len-3, TEXT("bat")) == 0)) {
 	return 1;
     }
