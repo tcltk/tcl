@@ -3159,7 +3159,7 @@ TclWinFileOwned(
 
     native = Tcl_FSGetNativePath(pathPtr);
 
-    if (GetNamedSecurityInfo(native, SE_FILE_OBJECT,
+    if (GetNamedSecurityInfo((LPTSTR) native, SE_FILE_OBJECT,
                              OWNER_SECURITY_INFORMATION, &ownerSid,
                              NULL, NULL, NULL, &secd) != ERROR_SUCCESS) {
         /* Either not a file, or we do not have access to it in which
@@ -3186,7 +3186,6 @@ TclWinFileOwned(
         CloseHandle(token);
     }
 
-vamoose:
     /* Free allocations and be done */
     if (secd)
         LocalFree(secd);            /* Also frees ownerSid */
