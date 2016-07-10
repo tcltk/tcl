@@ -421,6 +421,7 @@ Tcl_GetCharLength(
 	return length;
     }
 
+
     /*
      * OK, need to work with the object as a string.
      */
@@ -438,6 +439,53 @@ Tcl_GetCharLength(
 	stringPtr->numChars = numChars;
     }
     return numChars;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIsEmpty --
+ *
+ *	Determine whether the string value of an object is or would be the
+ *	empty string, without generating a string representation.
+ *
+ * Results:
+ *	Returns 1 if empty, 0 if not, and -1 if unknown.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclIsEmpty (
+    Tcl_Obj *objPtr
+) {
+    int length = -1;
+
+    if (objPtr->bytes == tclEmptyStringRep) {
+	return 1;
+    }
+
+    if (TclIsPureList(objPtr)) {
+	Tcl_ListObjLength(NULL, objPtr, &length);
+	return length == 0;
+    }
+
+    if (TclIsPureDict(objPtr)) {
+	Tcl_DictObjSize(NULL, objPtr, &length);
+	return length == 0;
+    }
+
+    if (objPtr->bytes == NULL) {
+	return -1;
+    }
+    if (objPtr->bytes[0] == '\0') {
+	return 1;
+    }
+    return 0;
 }
 
 /*

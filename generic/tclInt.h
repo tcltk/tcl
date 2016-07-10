@@ -4411,6 +4411,12 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #define TclIsPureByteArray(objPtr) \
 	(((objPtr)->typePtr==&tclByteArrayType) && ((objPtr)->bytes==NULL))
 
+#define TclIsPureDict(objPtr) \
+	(((objPtr)->typePtr==&tclDictType) && ((objPtr)->bytes==NULL))
+
+#define TclIsPureList(objPtr) \
+	(((objPtr)->typePtr==&tclListType) && ((objPtr)->bytes==NULL))
+
 /*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to compare Unicode strings. On big-endian

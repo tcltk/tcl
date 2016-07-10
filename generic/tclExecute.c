@@ -5443,22 +5443,57 @@ TEBCresume(
 		}
 	    } else {
 		/*
-		 * strcmp can't do a simple memcmp in order to handle the
-		 * special Tcl \xC0\x80 null encoding for utf-8.
+		 * In order to handle the special Tcl \xC0\x80 null encoding
+		 * for utf-8, strcmp can't do a simple memcmp.
 		 */
 
-		s1 = TclGetStringFromObj(valuePtr, &s1len);
-		s2 = TclGetStringFromObj(value2Ptr, &s2len);
+		if (TclIsEmpty(valuePtr) > 0) {
+		    s1 = "";
+		    s1len = 0;
+		    switch (TclIsEmpty(value2Ptr)) {
+			case -1:
+			    s2 = TclGetStringFromObj(value2Ptr, &s2len);
+			case 0:
+			    /* Synthesize a value for comparison */
+			    s2 = "1";
+			    s2len = 1;
+			    break;
+			case 1:
+			    s2 = "";
+			    s2len = 0;
+		    }
+		} else if (TclIsEmpty(value2Ptr) > 0) {
+		    s2 = "";
+		    s2len = 0;
+		    switch (TclIsEmpty(valuePtr)) {
+			case -1:
+			    s1 = TclGetStringFromObj(valuePtr, &s1len);
+			    break;
+			case 0:
+			    /* Synthesize a value for comparison */
+			    s1 = "1";
+			    s1len = 1;
+			    break;
+			case 1:
+			    s1 = "";
+			    s1len = 0;
+		    }
+		} else {
+		    s1 = TclGetStringFromObj(valuePtr, &s1len);
+		    s2 = TclGetStringFromObj(value2Ptr, &s2len);
+		}
+
 		if (checkEq) {
 		    memCmpFn = memcmp;
 		} else {
 		    memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
 		}
+
 	    }
 
 	    if (checkEq && (s1len != s2len)) {
 		match = 1;
-	    } else {
+	    }  else {
 		/*
 		 * The comparison function should compare up to the minimum
 		 * byte length only.
@@ -6168,6 +6203,20 @@ TEBCresume(
 
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
+
+	/*
+	    Try to determine, without triggering generation of a string
+	    representation, whether one value is not a number.
+	*/
+#       define TclIsNotNumber(objPtr) ( \
+           ( TclIsEmpty((objPtr)) > 0 \
+           || ( (objPtr)->bytes != NULL && \
+           TclParseNumber( \
+               interp, (objPtr), "number", NULL, -1, NULL, 0) != TCL_OK)) \
+        )
+	if (TclIsNotNumber(valuePtr) || TclIsNotNumber(value2Ptr)) {
+	    goto stringCompare;
+	}
 
 	if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK) {
 	    /*
