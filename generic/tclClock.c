@@ -1499,7 +1499,19 @@ GetJulianDayFromEraYearMonthDay(
      * Try an initial conversion in the Gregorian calendar.
      */
 
+#if 0 /* BUG http://core.tcl.tk/tcl/tktview?name=da340d4f32 */
     ym1o4 = ym1 / 4;
+#else
+    /*
+     * Have to make sure quotient is truncated towards 0 when negative.
+     * See above bug for details. The casts are necessary.
+     */
+    if (ym1 >= 0)
+        ym1o4 = ym1 / 4;
+    else {
+        ym1o4 = - (int) (((unsigned int) -ym1) / 4);
+    }
+#endif
     if (ym1 % 4 < 0) {
 	ym1o4--;
     }
