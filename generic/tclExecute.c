@@ -5453,6 +5453,7 @@ TEBCresume(
 		    switch (TclIsEmpty(value2Ptr)) {
 			case -1:
 			    s2 = TclGetStringFromObj(value2Ptr, &s2len);
+			    break;
 			case 0:
 			    /* Synthesize a value for comparison */
 			    s2 = "1";
