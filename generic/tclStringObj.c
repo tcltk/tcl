@@ -446,7 +446,7 @@ Tcl_GetCharLength(
 /*
  *----------------------------------------------------------------------
  *
- * TclIsEmpty --
+ * TclCheckEmptyString --
  *
  *	Determine whether the string value of an object is or would be the
  *	empty string, without generating a string representation.
@@ -460,13 +460,14 @@ Tcl_GetCharLength(
  *----------------------------------------------------------------------
  */
 int
-TclIsEmpty (
+TclCheckEmptyString (
     Tcl_Obj *objPtr
 ) {
     int length = -1;
+    enum result {EMPTY_UNKNOWN = -1, EMPTY_NO, EMPTY_YES};
 
     if (objPtr->bytes == tclEmptyStringRep) {
-	return 1;
+	return EMPTY_YES;
     }
 
     if (TclIsPureList(objPtr)) {
@@ -480,12 +481,9 @@ TclIsEmpty (
     }
 
     if (objPtr->bytes == NULL) {
-	return -1;
+	return EMPTY_UNKNOWN;
     }
-    if (objPtr->bytes[0] == '\0') {
-	return 1;
-    }
-    return 0;
+    return objPtr->length == 0;
 }
 
 /*

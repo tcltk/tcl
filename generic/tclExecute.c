@@ -5447,10 +5447,10 @@ TEBCresume(
 		 * for utf-8, strcmp can't do a simple memcmp.
 		 */
 
-		if (TclIsEmpty(valuePtr) > 0) {
+		if (TclCheckEmptyString(valuePtr) > 0) {
 		    s1 = "";
 		    s1len = 0;
-		    switch (TclIsEmpty(value2Ptr)) {
+		    switch (TclCheckEmptyString(value2Ptr)) {
 			case -1:
 			    s2 = TclGetStringFromObj(value2Ptr, &s2len);
 			    break;
@@ -5463,10 +5463,10 @@ TEBCresume(
 			    s2 = "";
 			    s2len = 0;
 		    }
-		} else if (TclIsEmpty(value2Ptr) > 0) {
+		} else if (TclCheckEmptyString(value2Ptr) > 0) {
 		    s2 = "";
 		    s2len = 0;
-		    switch (TclIsEmpty(valuePtr)) {
+		    switch (TclCheckEmptyString(valuePtr)) {
 			case -1:
 			    s1 = TclGetStringFromObj(valuePtr, &s1len);
 			    break;
@@ -6210,7 +6210,7 @@ TEBCresume(
 	    representation, whether one value is not a number.
 	*/
 #       define TclIsNotNumber(objPtr) ( \
-           ( TclIsEmpty((objPtr)) > 0 \
+           ( TclCheckEmptyString((objPtr)) > 0 \
            || ( (objPtr)->bytes != NULL && \
            TclParseNumber( \
                interp, (objPtr), "number", NULL, -1, NULL, 0) != TCL_OK)) \

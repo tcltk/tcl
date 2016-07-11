@@ -3926,6 +3926,7 @@ MODULE_SCOPE int	TclCompileStreqOpCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCheckEmptyString(Tcl_Obj *objPtr);
 
 /*
  * Functions defined in generic/tclVar.c and currenttly exported only for use
@@ -4412,10 +4413,10 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(((objPtr)->typePtr==&tclByteArrayType) && ((objPtr)->bytes==NULL))
 
 #define TclIsPureDict(objPtr) \
-	(((objPtr)->typePtr==&tclDictType) && ((objPtr)->bytes==NULL))
+	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclDictType))
 
 #define TclIsPureList(objPtr) \
-	(((objPtr)->typePtr==&tclListType) && ((objPtr)->bytes==NULL))
+	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclListType))
 
 /*
  *----------------------------------------------------------------
