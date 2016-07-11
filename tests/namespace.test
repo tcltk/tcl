@@ -2356,6 +2356,13 @@ test namespace-50.8 {[f961d7d1dd]} -setup {
     rename e {}
     rename target {}
 }
+test namespace-50.9 {[cea0344a51]} -body {
+    namespace eval foo {
+	namespace eval bar {
+	    namespace delete foo
+	}
+    }
+} -returnCodes error -result {unknown namespace "foo" in namespace delete command}
 
 test namespace-51.1 {name resolution path control} -body {
     namespace eval ::test_ns_1 {
