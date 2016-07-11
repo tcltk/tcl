@@ -464,10 +464,9 @@ TclCheckEmptyString (
     Tcl_Obj *objPtr
 ) {
     int length = -1;
-    enum result {EMPTY_UNKNOWN = -1, EMPTY_NO, EMPTY_YES};
 
     if (objPtr->bytes == tclEmptyStringRep) {
-	return EMPTY_YES;
+	return TCL_EMPTYSTRING_YES;
     }
 
     if (TclIsPureList(objPtr)) {
@@ -481,7 +480,7 @@ TclCheckEmptyString (
     }
 
     if (objPtr->bytes == NULL) {
-	return EMPTY_UNKNOWN;
+	return TCL_EMPTYSTRING_UNKNOWN;
     }
     return objPtr->length == 0;
 }
