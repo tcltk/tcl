@@ -2014,6 +2014,13 @@ TclNRExecuteByteCode(
 #endif
 
     /*
+     * Test namespace-50.9 demonstrates the need for this call.
+     * Use a --enable-symbols=mem bug to see.
+     */
+
+    TclResetRewriteEnsemble(interp, 1);
+
+    /*
      * Push the callback for bytecode execution
      */
 
