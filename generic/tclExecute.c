@@ -1538,7 +1538,7 @@ CompileExprObj(
 		|| (codePtr->nsPtr != namespacePtr)
 		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)
 		|| (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)) {
-	    TclFreeIntRep(objPtr);
+	    Tcl_StoreIntRep(objPtr, &exprCodeType, NULL);
 	    codePtr = NULL;
 	}
     }
