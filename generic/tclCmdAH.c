@@ -1460,14 +1460,19 @@ FileAttrIsOwnedCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+#ifdef __CYGWIN__
+#define geteuid() (short)(geteuid)() 
+#endif
+#if !defined(_WIN32)
     Tcl_StatBuf buf;
+#endif
     int value = 0;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(_WIN32)
     value = TclWinFileOwned(objv[1]);
 #else
     if (GetStatBuf(NULL, objv[1], Tcl_FSStat, &buf) == TCL_OK) {

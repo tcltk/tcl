@@ -176,8 +176,8 @@ TclCreateLiteral(
     Interp *iPtr,
     char *bytes,		/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
-    int length,			/* Number of bytes in the string. */
-    unsigned hash,		/* The string's hash. If -1, it will be
+    size_t length,			/* Number of bytes in the string. */
+    TCL_HASH_TYPE hash,		/* The string's hash. If -1, it will be
 				 * computed here. */
     int *newPtr,
     Namespace *nsPtr,
@@ -186,14 +186,14 @@ TclCreateLiteral(
 {
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     LiteralEntry *globalPtr;
-    int globalHash;
+    TCL_HASH_TYPE globalHash;
     Tcl_Obj *objPtr;
 
     /*
      * Is it in the interpreter's global literal table?
      */
 
-    if (hash == (unsigned) -1) {
+    if (hash == (TCL_HASH_TYPE) -1) {
 	hash = HashString(bytes, length);
     }
     globalHash = (hash & globalTablePtr->mask);
@@ -201,9 +201,9 @@ TclCreateLiteral(
 	    globalPtr = globalPtr->nextPtr) {
 	objPtr = globalPtr->objPtr;
 	if ((globalPtr->nsPtr == nsPtr)
-		&& (objPtr->length == length) && ((length == 0)
+		&& ((size_t)objPtr->length == length) && ((length == 0)
 		|| ((objPtr->bytes[0] == bytes[0])
-		&& (memcmp(objPtr->bytes, bytes, (unsigned) length) == 0)))) {
+		&& (memcmp(objPtr->bytes, bytes, length) == 0)))) {
 	    /*
 	     * A literal was found: return it
 	     */
@@ -245,7 +245,7 @@ TclCreateLiteral(
 #ifdef TCL_COMPILE_DEBUG
     if (LookupLiteralEntry((Tcl_Interp *) iPtr, objPtr) != NULL) {
 	Tcl_Panic("%s: literal \"%.*s\" found globally but shouldn't be",
-		"TclRegisterLiteral", (length>60? 60 : length), bytes);
+		"TclRegisterLiteral", (length>60? 60 : (int)length), bytes);
     }
 #endif
 
