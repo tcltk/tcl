@@ -867,7 +867,7 @@ CompileAssembleObj(
 	 * Not valid, so free it and regenerate.
 	 */
 
-	TclFreeIntRep(objPtr);
+	Tcl_StoreIntRep(objPtr, &assembleCodeType, NULL);
     }
 
     /*
