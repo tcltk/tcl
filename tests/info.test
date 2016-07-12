@@ -2398,7 +2398,7 @@ test info-33.35 {{*}, literal, simple, bytecompiled} -body {
 # -------------------------------------------------------------------------
 unset -nocomplain res
 
-test info-39.0 {Bug 4b61afd660} -setup {
+test info-39.1 {Bug 4b61afd660} -setup {
     proc probe {} {
 	return [dict get [info frame -1] line]
     }
