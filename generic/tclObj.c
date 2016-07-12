@@ -4048,7 +4048,7 @@ TclFreeObjEntry(
  *----------------------------------------------------------------------
  */
 
-unsigned int
+TCL_HASH_TYPE
 TclHashObjKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
@@ -4098,7 +4098,7 @@ TclHashObjKey(
 	    result += (result << 3) + UCHAR(*++string);
 	}
     }
-    return result;
+    return (TCL_HASH_TYPE) result;
 }
 
 /*
