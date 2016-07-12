@@ -4049,15 +4049,15 @@ TclFreeObjEntry(
  *----------------------------------------------------------------------
  */
 
-unsigned int
+TCL_HASH_TYPE
 TclHashObjKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = keyPtr;
-    int length;
-    const char *string = TclGetStringFromObj(objPtr, &length);
-    unsigned int result = 0;
+    const char *string = TclGetString(objPtr);
+    size_t length = objPtr->length;
+    TCL_HASH_TYPE result = 0;
 
     /*
      * I tried a zillion different hash functions and asked many other people
