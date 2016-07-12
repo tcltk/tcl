@@ -1313,7 +1313,7 @@ CompileSubstObj(
 		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)
 		|| (codePtr->localCachePtr !=
 		iPtr->varFramePtr->localCachePtr)) {
-	    TclFreeIntRep(objPtr);
+	    Tcl_StoreIntRep(objPtr, &substCodeType, NULL);
 	    codePtr = NULL;
 	}
     }
