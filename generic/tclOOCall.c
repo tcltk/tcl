@@ -966,7 +966,7 @@ TclOOGetCallContext(
 		callPtr->refCount++;
 		goto returnContext;
 	    }
-	    Tcl_FreeIntRep(cacheInThisObj);
+	    Tcl_StoreIntRep(cacheInThisObj, &methodNameType, NULL);
 	}
 
 	if (oPtr->flags & USE_CLASS_CACHE) {
