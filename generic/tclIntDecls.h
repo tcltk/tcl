@@ -310,7 +310,7 @@ TCLAPI int		TclSetByteCodeFromAny(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, CompileHookProc *hookProc,
 				ClientData clientData);
 /* 143 */
-TCLAPI int		TclAddLiteralObj(struct CompileEnv *envPtr,
+TCLAPI unsigned int	TclAddLiteralObj(struct CompileEnv *envPtr,
 				Tcl_Obj *objPtr, LiteralEntry **litPtrPtr);
 /* 144 */
 TCLAPI void		TclHideLiteral(Tcl_Interp *interp,
@@ -547,8 +547,8 @@ TCLAPI char *		TclDoubleDigits(double dv, int ndigits, int flags,
 TCLAPI void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
 				int force);
 /* 251 */
-TCLAPI int		TclRegisterLiteral(void *envPtr, char *bytes,
-				int length, int flags);
+TCLAPI unsigned int	TclRegisterLiteral(void *envPtr, char *bytes,
+				size_t length, int flags);
 
 typedef struct TclIntStubs {
     int magic;
@@ -697,7 +697,7 @@ typedef struct TclIntStubs {
     void (*reserved140)(void);
     const char * (*tclpGetCwd) (Tcl_Interp *interp, Tcl_DString *cwdPtr); /* 141 */
     int (*tclSetByteCodeFromAny) (Tcl_Interp *interp, Tcl_Obj *objPtr, CompileHookProc *hookProc, ClientData clientData); /* 142 */
-    int (*tclAddLiteralObj) (struct CompileEnv *envPtr, Tcl_Obj *objPtr, LiteralEntry **litPtrPtr); /* 143 */
+    unsigned int (*tclAddLiteralObj) (struct CompileEnv *envPtr, Tcl_Obj *objPtr, LiteralEntry **litPtrPtr); /* 143 */
     void (*tclHideLiteral) (Tcl_Interp *interp, struct CompileEnv *envPtr, int index); /* 144 */
     const struct AuxDataType * (*tclGetAuxDataType) (const char *typeName); /* 145 */
     TclHandle (*tclHandleCreate) (void *ptr); /* 146 */
@@ -805,7 +805,7 @@ typedef struct TclIntStubs {
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
     void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
-    int (*tclRegisterLiteral) (void *envPtr, char *bytes, int length, int flags); /* 251 */
+    unsigned int (*tclRegisterLiteral) (void *envPtr, char *bytes, size_t length, int flags); /* 251 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;

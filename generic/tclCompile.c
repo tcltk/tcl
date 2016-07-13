@@ -1314,7 +1314,7 @@ CompileSubstObj(
     if (objPtr->typePtr != &substCodeType) {
 	CompileEnv compEnv;
 	int numBytes;
-	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+	const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
 
 	/* TODO: Check for more TIP 280 */
 	TclInitCompileEnv(interp, &compEnv, bytes, numBytes, NULL, 0);
@@ -1630,7 +1630,7 @@ TclFreeCompileEnv(
 	 * have transferred to it.
 	 */
 
-	int i;
+	size_t i;
 	LiteralEntry *entryPtr = envPtr->literalArrayPtr;
 	AuxData *auxDataPtr = envPtr->auxDataArrayPtr;
 
@@ -1792,7 +1792,7 @@ CompileCmdLiteral(
     CompileEnv *envPtr)
 {
     int numBytes;
-    const char *bytes = Tcl_GetStringFromObj(cmdObj, &numBytes);
+    const char *bytes = TclGetStringFromObj(cmdObj, &numBytes);
     int cmdLitIdx = TclRegisterNewCmdLiteral(envPtr, bytes, numBytes);
     Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
 
@@ -2713,7 +2713,7 @@ PreventCycle(
     Tcl_Obj *objPtr,
     CompileEnv *envPtr)
 {
-    int i;
+    size_t i;
 
     for (i = 0;  i < envPtr->literalArrayNext; i++) {
 	if (objPtr == TclFetchLiteral(envPtr, i)) {
@@ -2729,7 +2729,7 @@ PreventCycle(
 	     * the intrep.
 	     */
 	    int numBytes;
-	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+	    const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
 	    Tcl_Obj *copyPtr = Tcl_NewStringObj(bytes, numBytes);
 
 	    Tcl_IncrRefCount(copyPtr);
@@ -2968,7 +2968,7 @@ TclFindCompiledLocal(
 	varNamePtr = &cachePtr->varName0;
 	for (i=0; i < cachePtr->numVars; varNamePtr++, i++) {
 	    if (*varNamePtr) {
-		localName = Tcl_GetStringFromObj(*varNamePtr, &len);
+		localName = TclGetStringFromObj(*varNamePtr, &len);
 		if ((len == nameBytes) && !strncmp(name, localName, len)) {
 		    return i;
 		}
@@ -3683,7 +3683,7 @@ TclCreateAuxData(
     register CompileEnv *envPtr)/* Points to the CompileEnv for which a new
 				 * aux data structure is to be allocated. */
 {
-    int index;			/* Index for the new AuxData structure. */
+    size_t index;			/* Index for the new AuxData structure. */
     register AuxData *auxDataPtr;
 				/* Points to the new AuxData structure */
 

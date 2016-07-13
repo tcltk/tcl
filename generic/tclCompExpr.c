@@ -498,7 +498,7 @@ typedef struct JumpList {
  */
 
 static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
-			    int index, Tcl_Obj *const **litObjvPtr,
+			    unsigned int index, Tcl_Obj *const **litObjvPtr,
 			    Tcl_Obj *const *funcObjv, Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr, int optimize);
 static void		ConvertTreeToTokens(const char *start, int numBytes,
@@ -2230,7 +2230,7 @@ static void
 CompileExprTree(
     Tcl_Interp *interp,
     OpNode *nodes,
-    int index,
+    unsigned int index,
     Tcl_Obj *const **litObjvPtr,
     Tcl_Obj *const *funcObjv,
     Tcl_Token *tokenPtr,

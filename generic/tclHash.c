@@ -28,7 +28,7 @@
  */
 
 #define RANDOM_INDEX(tablePtr, i) \
-    ((((i)*1103515245L) >> (tablePtr)->downShift) & (tablePtr)->mask1)
+    ((((i)*1103515245L) >> (tablePtr)->downShift) & (tablePtr)->mask)
 
 /*
  * Prototypes for the array hash key methods.
@@ -179,7 +179,7 @@ Tcl_InitCustomHashTable(
     tablePtr->numEntries = 0;
     tablePtr->rebuildSize = TCL_SMALL_HASH_TABLE*REBUILD_MULTIPLIER;
     tablePtr->downShift = 28;
-    tablePtr->mask1 = 3;
+    tablePtr->mask = 3;
     tablePtr->keyType = keyType;
     tablePtr->findProc = FindHashEntry;
     tablePtr->createProc = CreateHashEntry;
@@ -243,7 +243,7 @@ CreateHashEntry(
 {
     register Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
-    TCL_HASH_TYPE hash, index;
+    size_t hash, index;
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
@@ -261,7 +261,7 @@ CreateHashEntry(
 	if (typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 	    index = RANDOM_INDEX(tablePtr, hash);
 	} else {
-	    index = hash & tablePtr->mask1;
+	    index = hash & tablePtr->mask;
 	}
     } else {
 	hash = (size_t)(key);
@@ -381,7 +381,7 @@ Tcl_DeleteHashEntry(
 	    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 	index = RANDOM_INDEX(tablePtr, entryPtr->hash);
     } else {
-	index = entryPtr->hash & tablePtr->mask1;
+	index = entryPtr->hash & tablePtr->mask;
     }
 
     bucketPtr = &tablePtr->buckets[index];
@@ -955,7 +955,7 @@ RebuildTable(
     register Tcl_HashTable *tablePtr)	/* Table to enlarge. */
 {
     size_t oldSize, count;
-    TCL_HASH_TYPE index;
+    size_t index;
     Tcl_HashEntry **oldBuckets;
     register Tcl_HashEntry **oldChainPtr, **newChainPtr;
     register Tcl_HashEntry *hPtr;
@@ -994,7 +994,7 @@ RebuildTable(
     }
     tablePtr->rebuildSize *= 4;
     tablePtr->downShift -= 2;
-    tablePtr->mask1 = (tablePtr->mask1 << 2) + 3;
+    tablePtr->mask = (tablePtr->mask << 2) + 3;
 
     /*
      * Rehash all of the existing entries into the new bucket array.
@@ -1007,7 +1007,7 @@ RebuildTable(
 		    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 		index = RANDOM_INDEX(tablePtr, hPtr->hash);
 	    } else {
-		index = hPtr->hash & tablePtr->mask1;
+		index = hPtr->hash & tablePtr->mask;
 	    }
 	    hPtr->nextPtr = tablePtr->buckets[index];
 	    tablePtr->buckets[index] = hPtr;
