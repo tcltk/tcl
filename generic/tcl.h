@@ -937,7 +937,7 @@ typedef struct Tcl_DString {
  */
 
 #ifndef TCL_HASH_TYPE
-#  define TCL_HASH_TYPE size_t
+#  define TCL_HASH_TYPE unsigned
 #endif
 
 typedef struct Tcl_HashKeyType Tcl_HashKeyType;
@@ -1055,7 +1055,7 @@ struct Tcl_HashTable {
 				 * table. */
     size_t rebuildSize;		/* Enlarge table when numEntries gets to be
 				 * this large. */
-    TCL_HASH_TYPE mask1;			/* Mask value used in hashing function. */
+    size_t mask;			/* Mask value used in hashing function. */
     int downShift;		/* Shift count used in hashing function.
 				 * Designed to use high-order bits of
 				 * randomized keys. */

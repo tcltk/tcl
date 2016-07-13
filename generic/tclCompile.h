@@ -318,8 +318,8 @@ typedef struct CompileEnv {
 				 * codeStart points into the heap.*/
     LiteralEntry *literalArrayPtr;
     				/* Points to start of LiteralEntry array. */
-    int literalArrayNext;	/* Index of next free object array entry. */
-    int literalArrayEnd;	/* Index just after last obj array entry. */
+    size_t literalArrayNext;	/* Index of next free object array entry. */
+    size_t literalArrayEnd;	/* Index just after last obj array entry. */
     int mallocedLiteralArray;	/* 1 if object array was expanded and objArray
 				 * points into the heap, else 0. */
     ExceptionRange *exceptArrayPtr;
@@ -346,11 +346,11 @@ typedef struct CompileEnv {
     int mallocedCmdMap;		/* 1 if command map array was expanded and
 				 * cmdMapPtr points in the heap, else 0. */
     AuxData *auxDataArrayPtr;	/* Points to auxiliary data array start. */
-    int auxDataArrayNext;	/* Next free compile aux data array index.
+    size_t auxDataArrayNext;	/* Next free compile aux data array index.
 				 * auxDataArrayNext is the number of aux data
 				 * items and (auxDataArrayNext-1) is index of
 				 * current aux data array entry. */
-    int auxDataArrayEnd;	/* Index after last aux data array entry. */
+    size_t auxDataArrayEnd;	/* Index after last aux data array entry. */
     int mallocedAuxDataArray;	/* 1 if aux data array was expanded and
 				 * auxDataArrayPtr points in heap else 0. */
     unsigned char staticCodeSpace[COMPILEENV_INIT_CODE_BYTES];
@@ -1096,7 +1096,7 @@ MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, char *bytes,
-			    size_t length, TCL_HASH_TYPE hash, int *newPtr,
+			    size_t length, size_t hash, int *newPtr,
 			    Namespace *nsPtr, int flags,
 			    LiteralEntry **globalPtrPtr);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
@@ -1110,7 +1110,7 @@ MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
 MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
-MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, unsigned int index);
+MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, size_t index);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,

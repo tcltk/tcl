@@ -900,10 +900,10 @@ Tcl_AfterObjCmd(
 	} else {
 	    commandPtr = Tcl_ConcatObj(objc-2, objv+2);;
 	}
-	command = Tcl_GetStringFromObj(commandPtr, &length);
+	command = TclGetStringFromObj(commandPtr, &length);
 	for (afterPtr = assocPtr->firstAfterPtr;  afterPtr != NULL;
 		afterPtr = afterPtr->nextPtr) {
-	    tempCommand = Tcl_GetStringFromObj(afterPtr->commandPtr,
+	    tempCommand = TclGetStringFromObj(afterPtr->commandPtr,
 		    &tempLength);
 	    if ((length == tempLength)
 		    && !memcmp(command, tempCommand, (unsigned) length)) {
