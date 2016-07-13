@@ -2907,7 +2907,7 @@ GetNamespaceFromObj(
 	    *nsPtrPtr = (Tcl_Namespace *) nsPtr;
 	    return TCL_OK;
 	}
-	TclFreeIntRep(objPtr);
+	Tcl_StoreIntRep(objPtr, &nsNameType, NULL);
     }
     if (SetNsNameFromAny(interp, objPtr) == TCL_OK) {
 	NsNameGetIntRep(objPtr, resNamePtr);
