@@ -791,6 +791,7 @@ PushMethodCallFrame(
     register int result;
     const char *namePtr;
     CallFrame **framePtrPtr = &fdPtr->framePtr;
+    ByteCode *codePtr;
 
     /*
      * Compute basic information on the basis of the type of method it is.
@@ -856,10 +857,8 @@ PushMethodCallFrame(
      * alternative is *so* slow...
      */
 
-    if (pmPtr->procPtr->bodyPtr->typePtr == &tclByteCodeType) {
-	ByteCode *codePtr =
-		pmPtr->procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
-
+    ByteCodeGetIntRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, codePtr);
+    if (codePtr) {
 	codePtr->nsPtr = nsPtr;
     }
     result = TclProcCompileProc(interp, pmPtr->procPtr,
@@ -1314,7 +1313,7 @@ CloneProcedureMethod(
      */
 
     bodyObj = Tcl_DuplicateObj(pmPtr->procPtr->bodyPtr);
-    TclFreeIntRep(bodyObj);
+    Tcl_StoreIntRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, NULL);
 
     /*
      * Create the actual copy of the method record, manufacturing a new proc
