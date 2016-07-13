@@ -2000,7 +2000,7 @@ TclProcCompileProc(
 	    codePtr->compileEpoch = iPtr->compileEpoch;
 	    codePtr->nsPtr = nsPtr;
 	} else {
-	    TclFreeIntRep(bodyPtr);
+	    Tcl_StoreIntRep(bodyPtr, &tclByteCodeType, NULL);
 	    codePtr = NULL;
 	}
     }
