@@ -141,9 +141,13 @@ test cmdAH-2.6.2 {cd} -constraints {unix nonPortable} -setup {
 } -cleanup {
     cd $dir
 } -result {/}
-test cmdAH-2.6.3 {Tcl_CdObjCmd, bug #3118489} -returnCodes error -body {
+test cmdAH-2.6.3 {Tcl_CdObjCmd, bug #3118489} -setup {
+    set dir [pwd]
+} -returnCodes error -body {
     cd .\0
-} -result "couldn't change working directory to \".\0\": no such file or directory"
+} -cleanup {
+    cd $dir
+} -match glob -result "couldn't change working directory to \".\0\": *"
 test cmdAH-2.7 {Tcl_ConcatObjCmd} {
     concat
 } {}
