@@ -4203,6 +4203,59 @@ Tcl_GetCommandFromObj(
  *----------------------------------------------------------------------
  */
 
+static void
+SetCmdNameObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Command *cmdPtr,
+    ResolvedCmdName *resPtr)
+{
+    Interp *iPtr = (Interp *) interp;
+    ResolvedCmdName *fillPtr;
+    const char *name = TclGetString(objPtr);
+
+    if (resPtr) {
+	fillPtr = resPtr;
+    } else {
+	fillPtr = ckalloc(sizeof(ResolvedCmdName));
+	fillPtr->refCount = 1;
+    }
+
+    fillPtr->cmdPtr = cmdPtr;
+    cmdPtr->refCount++;
+    fillPtr->cmdEpoch = cmdPtr->cmdEpoch;
+
+    /* NOTE: relying on NULL termination here. */
+    if ((name[0] == ':') && (name[1] == ':')) {
+	/*
+	 * Fully qualified names always resolve to same thing. No need
+	 * to record resolution context information.
+	 */
+
+	fillPtr->refNsPtr = NULL;
+	fillPtr->refNsId = 0;		/* Will not be read */
+	fillPtr->refNsCmdEpoch = 0;	/* Will not be read */
+    } else {
+	/*
+	 * Record current state of current namespace as the resolution
+	 * context of this command name lookup.
+	 */
+	Namespace *currNsPtr = iPtr->varFramePtr->nsPtr;
+
+	fillPtr->refNsPtr = currNsPtr;
+	fillPtr->refNsId = currNsPtr->nsId;
+	fillPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
+    }
+
+    if (resPtr == NULL) {
+	TclFreeIntRep(objPtr);
+
+	objPtr->internalRep.twoPtrValue.ptr1 = fillPtr;
+	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	objPtr->typePtr = &tclCmdNameType;
+    }
+}
+
 void
 TclSetCmdNameObj(
     Tcl_Interp *interp,		/* Points to interpreter containing command
@@ -4212,45 +4265,11 @@ TclSetCmdNameObj(
     Command *cmdPtr)		/* Points to Command structure that the
 				 * CmdName object should refer to. */
 {
-    Interp *iPtr = (Interp *) interp;
-    register ResolvedCmdName *resPtr;
-    register Namespace *currNsPtr;
-    const char *name;
-
     if (objPtr->typePtr == &tclCmdNameType) {
 	return;
     }
 
-    cmdPtr->refCount++;
-    resPtr = ckalloc(sizeof(ResolvedCmdName));
-    resPtr->cmdPtr = cmdPtr;
-    resPtr->cmdEpoch = cmdPtr->cmdEpoch;
-    resPtr->refCount = 1;
-
-    name = TclGetString(objPtr);
-    if ((*name++ == ':') && (*name == ':')) {
-	/*
-	 * The name is fully qualified: set the referring namespace to
-	 * NULL.
-	 */
-
-	resPtr->refNsPtr = NULL;
-    } else {
-	/*
-	 * Get the current namespace.
-	 */
-
-	currNsPtr = iPtr->varFramePtr->nsPtr;
-
-	resPtr->refNsPtr = currNsPtr;
-	resPtr->refNsId = currNsPtr->nsId;
-	resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
-    }
-
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.twoPtrValue.ptr1 = resPtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    objPtr->typePtr = &tclCmdNameType;
+    SetCmdNameObj(interp, objPtr, cmdPtr, NULL);
 }
 
 /*
@@ -4360,10 +4379,8 @@ SetCmdNameFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
-    Interp *iPtr = (Interp *) interp;
     const char *name;
     register Command *cmdPtr;
-    Namespace *currNsPtr;
     register ResolvedCmdName *resPtr;
 
     if (interp == NULL) {
@@ -4391,52 +4408,23 @@ SetCmdNameFromAny(
 	return TCL_ERROR;
     }
 
-    /*
-     * Free the old internalRep before setting the new one. Do this after
-     * getting the string rep to allow the conversion code (in particular,
-     * Tcl_GetStringFromObj) to use that old internalRep.
-     */
+    resPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    if ((objPtr->typePtr == &tclCmdNameType) && (resPtr->refCount == 1)) {
+	/*
+	 * Re-use existing ResolvedCmdName struct when possible.
+	 * Cleanup the old fields that need it.
+	 */
 
-	cmdPtr->refCount++;
-	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
-	if ((objPtr->typePtr == &tclCmdNameType) && (resPtr->refCount == 1)) {
-	    /*
-	     * Reuse the old ResolvedCmdName struct instead of freeing it
-	     */
+	Command *oldCmdPtr = resPtr->cmdPtr;
 
-	    Command *oldCmdPtr = resPtr->cmdPtr;
-
-	    if (--oldCmdPtr->refCount == 0) {
-		TclCleanupCommandMacro(oldCmdPtr);
-	    }
-	} else {
-	    TclFreeIntRep(objPtr);
-	    resPtr = ckalloc(sizeof(ResolvedCmdName));
-	    resPtr->refCount = 1;
-	    objPtr->internalRep.twoPtrValue.ptr1 = resPtr;
-	    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-	    objPtr->typePtr = &tclCmdNameType;
+	if (--oldCmdPtr->refCount == 0) {
+	    TclCleanupCommandMacro(oldCmdPtr);
 	}
-	resPtr->cmdPtr = cmdPtr;
-	resPtr->cmdEpoch = cmdPtr->cmdEpoch;
-	if ((*name++ == ':') && (*name == ':')) {
-	    /*
-	     * The name is fully qualified: set the referring namespace to
-	     * NULL.
-	     */
+    } else {
+	resPtr = NULL;
+    }
 
-	    resPtr->refNsPtr = NULL;
-	} else {
-	    /*
-	     * Get the current namespace.
-	     */
-
-	    currNsPtr = iPtr->varFramePtr->nsPtr;
-
-	    resPtr->refNsPtr = currNsPtr;
-	    resPtr->refNsId = currNsPtr->nsId;
-	    resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
-	}
+    SetCmdNameObj(interp, objPtr, cmdPtr, resPtr);
     return TCL_OK;
 }
 
