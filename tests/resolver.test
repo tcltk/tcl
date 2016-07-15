@@ -69,19 +69,20 @@ test resolver-1.2 {cmdNameObj sharing vs. cmd resolver: proc creation} -setup {
     }
 } -constraints testinterpresolver -body {
     set r0 [x]
-    set r1 [z]
+    set r1 untouched
+    catch {set r1 [z]}
     proc ::foo {} {
 	proc ::z {} { return Z }
 	return [z]
     }
-    list $r0 $r1 [::foo]
+    list $r0 $r1 [::foo] [x]
 } -cleanup {
     testinterpresolver down
     rename ::x ""
     rename ::y ""
     rename ::foo ""
     rename ::z ""
-} -result {Y Y Z}
+} -result {Y untouched Z Y}
 test resolver-1.3 {cmdNameObj sharing vs. cmd resolver: rename} -setup {
     testinterpresolver up
     proc ::Z {} { return Z }
@@ -91,18 +92,20 @@ test resolver-1.3 {cmdNameObj sharing vs. cmd resolver: rename} -setup {
     }
 } -constraints testinterpresolver -body {
     set r0 [x]
-    set r1 [z]
+    set r1 untouched
+    catch {set r1 [z]}
     namespace eval :: {
 	rename ::Z ::z
 	set r2 [z]
     }
-    list $r0 $r1 $r2
+    set r3 [x]
+    list $r0 $r1 $r2 $r3
 } -cleanup {
     testinterpresolver down
     rename ::x ""
     rename ::y ""
     rename ::z ""
-} -result {Y Y Z}
+} -result {Y untouched Z Y}
 test resolver-1.4 {cmdNameObj sharing vs. cmd resolver: interp expose} -setup {
     testinterpresolver up
     proc ::Z {} { return Z }
@@ -113,18 +116,20 @@ test resolver-1.4 {cmdNameObj sharing vs. cmd resolver: interp expose} -setup {
     }
 } -constraints testinterpresolver -body {
     set r0 [x]
-    set r1 [z]
+    set r1 untouched
+    catch {set r1 [z]}
     interp expose {} Z z
     namespace eval :: {
 	set r2 [z]
     }
-    list $r0 $r1 $r2
+    set r0 [x]
+    list $r0 $r1 $r2 $r3
 } -cleanup {
     testinterpresolver down
     rename ::x ""
     rename ::y ""
     rename ::z ""
-} -result {Y Y Z}
+} -result {Y untouched Z Y}
 test resolver-1.5 {cmdNameObj sharing vs. cmd resolver: other than global NS} -setup {
     testinterpresolver up
     namespace eval ::ns1 {
@@ -142,17 +147,19 @@ test resolver-1.5 {cmdNameObj sharing vs. cmd resolver: other than global NS} -s
     }
 } -constraints testinterpresolver -body {
     set r0 [namespace eval ::ns2 {x}]
-    set r1 [namespace eval ::ns2 {z}]
+    set r1 untouched
+    catch {set r1 [namespace eval ::ns2 {z}]}
     namespace eval ::ns2 {
 	namespace import ::ns1::z
 	set r2 [z]
     }
-    list $r0 $r1 $r2
+    set r3 [namespace eval ::ns2 {x}]
+    list $r0 $r1 $r2 $r3
 } -cleanup {
     testinterpresolver down
     namespace delete ::ns2
     namespace delete ::ns1
-} -result {Y Y Z}
+} -result {Y untouched Z Y}
 test resolver-1.6 {cmdNameObj sharing vs. cmd resolver: interp alias} -setup {
     testinterpresolver up
     proc ::Z {} { return Z }
@@ -162,18 +169,20 @@ test resolver-1.6 {cmdNameObj sharing vs. cmd resolver: interp alias} -setup {
     }
 } -constraints testinterpresolver -body {
     set r0 [x]
-    set r1 [z]
+    set r1 untouched
+    catch {set r1 [z]}
     namespace eval :: {
 	interp alias {} ::z {} ::Z
 	set r2 [z]
     }
-    list $r0 $r1 $r2
+    set r3 [x]
+    list $r0 $r1 $r2 $r3
 } -cleanup {
     testinterpresolver down
     rename ::x ""
     rename ::y ""
     rename ::Z ""
-} -result {Y Y Z}
+} -result {Y untouched Z Y}
 
 test resolver-2.1 {compiled var resolver: Bug #3383616} -setup {
     testinterpresolver up
