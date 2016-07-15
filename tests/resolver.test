@@ -41,7 +41,8 @@ test resolver-1.1 {cmdNameObj sharing vs. cmd resolver: namespace import} -setup
     # 2) After having requested cmd resolution above, we can now use the
     # globally shared CmdName Tcl_Obj "z", now bound to cmd ::y. This is
     # certainly questionable, but defensible
-    set r1 [z];			# --> The result of [z] is "Y"
+    set r1 untouched
+    catch {set r1 [z]};			# --> The result of [z] is "Y"
     # 3) We import from the namespace ns1 another z. [namespace import] takes
     # care "shadowed" cmd references, however, till now cmd literals have not
     # been touched. This is, however, necessary since the BC compiler (used in
@@ -52,13 +53,14 @@ test resolver-1.1 {cmdNameObj sharing vs. cmd resolver: namespace import} -setup
 	namespace import ::ns1::z
 	set r2 [z]
     }
-    list $r0 $r1 $::r2
+    set r3 [x]
+    list $r0 $r1 $::r2 $r3
 } -cleanup {
     testinterpresolver down
     rename ::x ""
     rename ::y ""
     namespace delete ::ns1
-} -result {Y Y Z}
+} -result {Y untouched Z Y}
 test resolver-1.2 {cmdNameObj sharing vs. cmd resolver: proc creation} -setup {
     testinterpresolver up
     proc ::y {} { return Y }
