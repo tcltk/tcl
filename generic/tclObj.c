@@ -4131,6 +4131,7 @@ Tcl_GetCommandFromObj(
 				 * global namespace. */
 {
     register ResolvedCmdName *resPtr;
+    Tcl_Command result = NULL;
 
     /*
      * Get the internal representation, converting to a command type if
@@ -4176,11 +4177,14 @@ Tcl_GetCommandFromObj(
      */
 
     /* See [07d13d99b0a9] why we cannot call SetCmdNameFromAny() directly here. */
-    if (tclCmdNameType.setFromAnyProc(interp, objPtr) != TCL_OK) {
-        return NULL;
+    if (tclCmdNameType.setFromAnyProc(interp, objPtr) == TCL_OK) {
+	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
+	if (resPtr) {
+	    result = (Tcl_Command) resPtr->cmdPtr;
+	}
+	TclFreeIntRep(objPtr);
     }
-    resPtr = objPtr->internalRep.twoPtrValue.ptr1;
-    return (Tcl_Command) (resPtr ? resPtr->cmdPtr : NULL);
+    return result;
 }
 
 /*
@@ -4268,6 +4272,7 @@ TclSetCmdNameObj(
     if (objPtr->typePtr == &tclCmdNameType) {
 	return;
     }
+    return;
 
     SetCmdNameObj(interp, objPtr, cmdPtr, NULL);
 }
