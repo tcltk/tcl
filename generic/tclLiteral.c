@@ -993,51 +993,6 @@ RebuildLiteralTable(
     }
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * TclInvalidateCmdLiteral --
- *
- *	Invalidate a command literal entry, if present in the literal hash
- *	tables, by resetting its internal representation. This invalidation
- *	leaves it in the literal tables and in existing literal arrays. As a
- *	result, existing references continue to work but we force a fresh
- *	command look-up upon the next use (see, in particular,
- *	TclSetCmdNameObj()).
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Resets the internal representation of the CmdName Tcl_Obj
- *	using TclFreeIntRep().
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclInvalidateCmdLiteral(
-    Tcl_Interp *interp,		/* Interpreter for which to invalidate a
-				 * command literal. */
-    const char *name,		/* Points to the start of the cmd literal
-				 * name. */
-    Namespace *nsPtr)		/* The namespace for which to lookup and
-				 * invalidate a cmd literal. */
-{
-    Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *literalObjPtr = TclCreateLiteral(iPtr, (char *) name,
-	    strlen(name), -1, NULL, nsPtr, 0, NULL);
-
-    if (literalObjPtr != NULL) {
-	if (literalObjPtr->typePtr == &tclCmdNameType) {
-	    TclFreeIntRep(literalObjPtr);
-	}
-	/* Balance the refcount effects of TclCreateLiteral() above */
-	Tcl_IncrRefCount(literalObjPtr);
-	TclReleaseLiteral(interp, literalObjPtr);
-    }
-}
-
 #ifdef TCL_COMPILE_STATS
 /*
  *----------------------------------------------------------------------

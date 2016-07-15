@@ -1160,8 +1160,6 @@ MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 MODULE_SCOPE void	TclPreserveByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
-MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
-			    const char *name, Namespace *nsPtr);
 MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
