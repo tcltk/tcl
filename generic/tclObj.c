@@ -4152,7 +4152,7 @@ Tcl_GetCommandFromObj(
      */
 
     resPtr = objPtr->internalRep.twoPtrValue.ptr1;
-    if ((objPtr->typePtr == &tclCmdNameType) && (resPtr != NULL)) {
+    if (objPtr->typePtr == &tclCmdNameType) {
         register Command *cmdPtr = resPtr->cmdPtr;
 
         if ((cmdPtr->cmdEpoch == resPtr->cmdEpoch)
@@ -4281,7 +4281,6 @@ FreeCmdNameInternalRep(
 {
     register ResolvedCmdName *resPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    if (resPtr != NULL) {
 	/*
 	 * Decrement the reference count of the ResolvedCmdName structure. If
 	 * there are no more uses, free the ResolvedCmdName structure.
@@ -4299,7 +4298,6 @@ FreeCmdNameInternalRep(
 	    TclCleanupCommandMacro(cmdPtr);
 	    ckfree(resPtr);
 	}
-    }
     objPtr->typePtr = NULL;
 }
 
@@ -4332,9 +4330,7 @@ DupCmdNameInternalRep(
 
     copyPtr->internalRep.twoPtrValue.ptr1 = resPtr;
     copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    if (resPtr != NULL) {
 	resPtr->refCount++;
-    }
     copyPtr->typePtr = &tclCmdNameType;
 }
 
@@ -4387,16 +4383,23 @@ SetCmdNameFromAny(
 	    Tcl_FindCommand(interp, name, /*ns*/ NULL, /*flags*/ 0);
 
     /*
+     * Stop shimmering and caching nothing when we found nothing.  Just
+     * report the failure to find the command as an error.
+     */
+
+    if (cmdPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
      * Free the old internalRep before setting the new one. Do this after
      * getting the string rep to allow the conversion code (in particular,
      * Tcl_GetStringFromObj) to use that old internalRep.
      */
 
-    if (cmdPtr) {
 	cmdPtr->refCount++;
 	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
-	if ((objPtr->typePtr == &tclCmdNameType)
-		&& resPtr && (resPtr->refCount == 1)) {
+	if ((objPtr->typePtr == &tclCmdNameType) && (resPtr->refCount == 1)) {
 	    /*
 	     * Reuse the old ResolvedCmdName struct instead of freeing it
 	     */
@@ -4434,12 +4437,6 @@ SetCmdNameFromAny(
 	    resPtr->refNsId = currNsPtr->nsId;
 	    resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
 	}
-    } else {
-	TclFreeIntRep(objPtr);
-	objPtr->internalRep.twoPtrValue.ptr1 = NULL;
-	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-	objPtr->typePtr = &tclCmdNameType;
-    }
     return TCL_OK;
 }
 
