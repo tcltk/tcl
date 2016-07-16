@@ -4285,6 +4285,13 @@ test io-33.4 {Tcl_Gets with long line} {
     close $f
     set x
 } {abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ}
+set f [open $path(test3) w]
+puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+puts $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+close $f
 test io-33.5 {Tcl_Gets with long line} {
     set f [open $path(test3)]
     set x [gets $f y]
@@ -7141,7 +7148,12 @@ test io-52.10 {TclCopyChannel & encodings} {fcopy} {
 
     file size $path(utf8-fcopy.txt)
 } 5
-test io-52.11 {TclCopyChannel & encodings} {fcopy} {
+test io-52.11 {TclCopyChannel & encodings} -setup {
+    set out [open $path(utf8-fcopy.txt) w]
+    fconfigure $out -encoding utf-8 -translation lf
+    puts $out "\u0410\u0410"
+    close $out
+} -constraints {fcopy} -body {
     # binary to encoding => the input has to be
     # in utf-8 to make sense to the encoder
 
@@ -7157,7 +7169,7 @@ test io-52.11 {TclCopyChannel & encodings} {fcopy} {
     close $out
 
     file size $path(kyrillic.txt)
-} 3
+} -result 3
 
 test io-52.12 {coverage of -translation auto} {
     file delete $path(test1) $path(test2)
