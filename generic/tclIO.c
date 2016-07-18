@@ -337,6 +337,13 @@ static const Tcl_ObjType chanObjType = {
     NULL			/* setFromAnyProc */
 };
 
+#define ChanGetIntRep(objPtr, resPtr)					\
+    do {								\
+	const Tcl_ObjIntRep *irPtr;					\
+	irPtr = Tcl_FetchIntRep((objPtr), &chanObjType);		\
+	(resPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+    } while (0)
+
 #define BUSY_STATE(st, fl) \
      ((((st)->csPtrR) && ((fl) & TCL_READABLE)) || \
       (((st)->csPtrW) && ((fl) & TCL_WRITABLE)))
@@ -1501,12 +1508,12 @@ TclGetChannelFromObj(
 	return TCL_ERROR;
     }
 
-    if (objPtr->typePtr == &chanObjType) {
+    ChanGetIntRep(objPtr, resPtr);
+    if (resPtr) {
 	/*
  	 * Confirm validity of saved lookup results.
  	 */
 
-	resPtr = (ResolvedChanName *) objPtr->internalRep.twoPtrValue.ptr1;
 	statePtr = resPtr->statePtr;
 	if ((resPtr->interp == interp)		/* Same interp context */
 			/* No epoch change in channel since lookup */
@@ -1521,7 +1528,7 @@ TclGetChannelFromObj(
 
     if (chan == NULL) {
 	if (resPtr) {
-	    FreeChannelIntRep(objPtr);
+	    Tcl_StoreIntRep(objPtr, &chanObjType, NULL);
 	}
 	return TCL_ERROR;
     }
@@ -11164,7 +11171,10 @@ DupChannelIntRep(
     register Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
 				 * currently have an internal rep.*/
 {
-    ResolvedChanName *resPtr = srcPtr->internalRep.twoPtrValue.ptr1;
+    ResolvedChanName *resPtr;
+
+    ChanGetIntRep(srcPtr, resPtr);
+    assert(resPtr);
 
     resPtr->refCount++;
     copyPtr->internalRep.twoPtrValue.ptr1 = resPtr;
@@ -11191,9 +11201,10 @@ static void
 FreeChannelIntRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
-    ResolvedChanName *resPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    ResolvedChanName *resPtr;
 
-    objPtr->typePtr = NULL;
+    ChanGetIntRep(objPtr, resPtr);
+    assert(resPtr);
     if (--resPtr->refCount) {
 	return;
     }
