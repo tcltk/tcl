@@ -577,11 +577,7 @@ TclObjLookupVarEx(
 		}
 		return NULL;
 	    }
-	    if ((part2Ptr = part1Ptr->internalRep.twoPtrValue.ptr2)) {
-		if (createPart2) {
-		    Tcl_IncrRefCount(part2Ptr);
-		}
-	    }
+	    part2Ptr = part1Ptr->internalRep.twoPtrValue.ptr2;
 	    part1Ptr = part1Ptr->internalRep.twoPtrValue.ptr1;
 	    typePtr = part1Ptr->typePtr;
 	    if (typePtr == &localVarNameType) {
@@ -622,9 +618,6 @@ TclObjLookupVarEx(
 		len1 = i;
 
 		part2Ptr = Tcl_NewStringObj(part2, len2);
-		if (createPart2) {
-		    Tcl_IncrRefCount(part2Ptr);
-		}
 
 		/*
 		 * Free the internal rep of the original part1Ptr, now renamed

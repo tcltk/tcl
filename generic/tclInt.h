@@ -2504,6 +2504,15 @@ typedef struct TclFileAttrProcs {
 } TclFileAttrProcs;
 
 /*
+ * Private flag value which controls Tcl_GetIndexFromObj*() routines
+ * to instruct them not to cache lookups because the table will not
+ * live long enough to make it worthwhile.  Must not clash with public
+ * flag value TCL_EXACT.
+ */
+
+#define INDEX_TEMP_TABLE 2
+
+/*
  * Opaque handle used in pipeline routines to encapsulate platform-dependent
  * state.
  */

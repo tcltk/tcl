@@ -1079,11 +1079,8 @@ TclFileAttrsCmd(
 	}
 
 	if (Tcl_GetIndexFromObjStruct(interp, objv[0], attributeStrings,
-		sizeof(char *), "option", 0, &index) != TCL_OK) {
+		sizeof(char *), "option", INDEX_TEMP_TABLE, &index) != TCL_OK) {
 	    goto end;
-	}
-	if (attributeStringsAllocated != NULL) {
-	    TclFreeIntRep(objv[0]);
 	}
 	if (Tcl_FSFileAttrsGet(interp, index, filePtr,
 		&objPtr) != TCL_OK) {
@@ -1107,11 +1104,9 @@ TclFileAttrsCmd(
 
 	for (i = 0; i < objc ; i += 2) {
 	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], attributeStrings,
-		    sizeof(char *), "option", 0, &index) != TCL_OK) {
+		    sizeof(char *), "option", INDEX_TEMP_TABLE, &index)
+		    != TCL_OK) {
 		goto end;
-	    }
-	    if (attributeStringsAllocated != NULL) {
-		TclFreeIntRep(objv[i]);
 	    }
 	    if (i + 1 == objc) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(

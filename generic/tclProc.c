@@ -2648,30 +2648,6 @@ TclNRApplyObjCmd(
 	procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
     }
 
-#define JOE_EXTENSION 0
-/*
- * Note: this code is NOT FUNCTIONAL due to the NR implementation; DO NOT
- * ENABLE! Leaving here as reminder to (a) TIP the suggestion, and (b) adapt
- * the code. (MS)
- */
-
-#if JOE_EXTENSION
-    else {
-	/*
-	 * Joe English's suggestion to allow cmdNames to function as lambdas.
-	 */
-
-	Tcl_Obj *elemPtr;
-	int numElem;
-
-	if ((lambdaPtr->typePtr == &tclCmdNameType) ||
-		(TclListObjGetElements(interp, lambdaPtr, &numElem,
-		&elemPtr) == TCL_OK && numElem == 1)) {
-	    return Tcl_EvalObjv(interp, objc-1, objv+1, 0);
-	}
-    }
-#endif
-
     if ((procPtr == NULL) || (procPtr->iPtr != iPtr)) {
 	result = SetLambdaFromAny(interp, lambdaPtr);
 	if (result != TCL_OK) {

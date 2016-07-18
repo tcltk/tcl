@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest
+package require tcltest 2
 namespace import ::tcltest::*
 
 ::tcltest::loadTestedCommands
@@ -37,7 +37,7 @@ proc getArgs args {
     global argv
     set argv $args
 }
-
+
 # Basic argument parsing.
 
 test parseOld-1.1 {basic argument parsing} {
@@ -296,6 +296,7 @@ test parseOld-8.4 {semi-colons} {
 # The following checks are to ensure that the interpreter's result
 # gets re-initialized by Tcl_Eval in all the right places.
 
+set a 22
 test parseOld-9.1 {result initialization} {concat abc} abc
 test parseOld-9.2 {result initialization} {concat abc; proc foo {} {}} {}
 test parseOld-9.3 {result initialization} {concat abc; proc foo {} $a} {}
@@ -408,6 +409,8 @@ test parseOld-11.7 {long values} {
     set b [concat 1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG HHHH]
     llength $b
 } 43
+# Duplicate action of previous test
+llength [set b [concat 1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG HHHH]]
 test parseOld-11.8 {long values} {
     set b
 } $a
@@ -538,8 +541,12 @@ test parseOld-15.4 {TclScriptEnd procedure} {
 test parseOld-15.5 {TclScriptEnd procedure} {
     info complete "xyz \[abc"
 } {0}
-
+
 # cleanup
 set argv $savedArgv
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:
