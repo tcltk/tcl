@@ -141,9 +141,13 @@ test cmdAH-2.6.2 {cd} -constraints {unix nonPortable} -setup {
 } -cleanup {
     cd $dir
 } -result {/}
-test cmdAH-2.6.3 {Tcl_CdObjCmd, bug #3118489} -returnCodes error -body {
+test cmdAH-2.6.3 {Tcl_CdObjCmd, bug #3118489} -setup {
+    set dir [pwd]
+} -returnCodes error -body {
     cd .\0
-} -result "couldn't change working directory to \".\0\": no such file or directory"
+} -cleanup {
+    cd $dir
+} -match glob -result "couldn't change working directory to \".\0\": *"
 test cmdAH-2.7 {Tcl_ConcatObjCmd} {
     concat
 } {}
@@ -878,9 +882,10 @@ test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unix testchmod} {
 } 1
 test cmdAH-18.5 {Tcl_FileObjCmd: executable} -constraints {win} -body {
     # On pc, must be a .exe, .com, etc.
-    set x [file exe $gorpfile]
+    set x {}
     set gorpexes {}
-    foreach ext {exe com cmd bat ps1} {
+    foreach ext {exe com cmd bat} {
+        lappend x [file exe nosuchfile.$ext]
         set gorpexe [makeFile foo gorp.$ext]
         lappend gorpexes $gorpexe
         lappend x [file exe $gorpexe] [file exe [string toupper $gorpexe]]
@@ -890,7 +895,7 @@ test cmdAH-18.5 {Tcl_FileObjCmd: executable} -constraints {win} -body {
     foreach gorpexe $gorpexes {
         removeFile $gorpexe
     }
-} -result {0 1 1 1 1 1 1 1 1 1 1}
+} -result {0 1 1 0 1 1 0 1 1 0 1 1}
 test cmdAH-18.6 {Tcl_FileObjCmd: executable} {} {
     # Directories are always executable.
     file exe $dirfile
