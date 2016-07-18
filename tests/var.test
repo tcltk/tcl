@@ -184,7 +184,9 @@ test var-1.17 {TclLookupVar, resurrect array element via upvar to deleted array:
 	set result
     }
 } {0 2 1 {can't set "foo": upvar refers to element in deleted array}}
-test var-1.18 {TclLookupVar, resurrect array element via upvar to deleted array: uncompiled code path} {
+test var-1.18 {TclLookupVar, resurrect array element via upvar to deleted array: uncompiled code path} -setup {
+    unset -nocomplain test_ns_var::x
+} -body {
     namespace eval test_ns_var {
 	variable result {}
 	variable x
@@ -196,7 +198,7 @@ test var-1.18 {TclLookupVar, resurrect array element via upvar to deleted array:
         namespace delete [namespace current]
 	set result
     }
-} {0 2 1 {can't set "foo": upvar refers to element in deleted array}}
+} -result {0 2 1 {can't set "foo": upvar refers to element in deleted array}}
 test var-1.19 {TclLookupVar, right error message when parsing variable name} -body {
     [format set] thisvar(doesntexist)
 } -returnCodes error -result {can't read "thisvar(doesntexist)": no such variable}

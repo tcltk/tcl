@@ -124,9 +124,11 @@ test load-3.2 {error in _Init procedure, slave interpreter} \
 test load-4.1 {reloading package into same interpreter} [list $dll $loaded] {
     list [catch {load [file join $testDir pkga$ext] pkga} msg] $msg
 } {0 {}}
-test load-4.2 {reloading package into same interpreter} [list $dll $loaded] {
-    list [catch {load [file join $testDir pkga$ext] pkgb} msg] $msg
-} [list 1 "file \"[file join $testDir pkga$ext]\" is already loaded for package \"Pkga\""]
+test load-4.2 {reloading package into same interpreter} -setup {
+    catch {load [file join $testDir pkga$ext] pkga}
+} -constraints [list $dll $loaded] -returnCodes error -body {
+    load [file join $testDir pkga$ext] pkgb
+} -result "file \"[file join $testDir pkga$ext]\" is already loaded for package \"Pkga\""
 
 test load-5.1 {file name not specified and no static package: pick default} \
 	[list $dll $loaded] {
@@ -169,26 +171,40 @@ test load-7.3 {Tcl_StaticPackage procedure} [list teststaticpkg] {
     load {} More
     set x
 } {not loaded}
-test load-7.4 {Tcl_StaticPackage procedure, redundant calls} \
-    [list teststaticpkg $dll $loaded] {
-	teststaticpkg Double 0 1
-	teststaticpkg Double 0 1
-	info loaded
-    } [concat [list {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkge$ext] Pkge] [list [file join $testDir pkgb$ext] Pkgb] [list [file join $testDir pkga$ext] Pkga]] $alreadyTotalLoaded]
-
-test load-8.1 {TclGetLoadedPackages procedure} [list teststaticpkg $dll $loaded] {
+catch {load [file join $testDir pkga$ext] pkga}
+catch {load [file join $testDir pkgb$ext] pkgb}
+catch {load [file join $testDir pkge$ext] pkge}
+set currentRealPackages [list [list [file join $testDir pkge$ext] Pkge] [list [file join $testDir pkgb$ext] Pkgb] [list [file join $testDir pkga$ext] Pkga]]
+test load-7.4 {Tcl_StaticPackage procedure, redundant calls} -setup {
+    teststaticpkg Test 1 0
+    teststaticpkg Another 0 0
+    teststaticpkg More 0 1
+} -constraints [list teststaticpkg $dll $loaded] -body {
+    teststaticpkg Double 0 1
+    teststaticpkg Double 0 1
     info loaded
-} [concat [list {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkge$ext] Pkge] [list [file join $testDir pkgb$ext] Pkgb] [list [file join $testDir pkga$ext] Pkga]] $alreadyTotalLoaded]
-test load-8.2 {TclGetLoadedPackages procedure} [list teststaticpkg] {
-    list [catch {info loaded gorp} msg] $msg
-} {1 {could not find interpreter "gorp"}}
-test load-8.3 {TclGetLoadedPackages procedure} [list teststaticpkg $dll $loaded] {
-    list [info loaded {}] [info loaded child]
-} [list [concat [list {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga]] $alreadyLoaded] [list {{} Test} [list [file join $testDir pkgb$ext] Pkgb]]]
+} -result [list {{} Double} {{} More} {{} Another} {{} Test} {*}$currentRealPackages {*}$alreadyTotalLoaded]
+
+teststaticpkg Test 1 1
+teststaticpkg Another 0 1
+teststaticpkg More 0 1
+teststaticpkg Double 0 1
+test load-8.1 {TclGetLoadedPackages procedure} [list teststaticpkg $dll $loaded] {
+    lsort -index 1 [info loaded]
+} [lsort -index 1 [list {{} Double} {{} More} {{} Another} {{} Test} {*}$currentRealPackages {*}$alreadyTotalLoaded]]
+test load-8.2 {TclGetLoadedPackages procedure} -body {
+    info loaded gorp
+} -returnCodes error -result {could not find interpreter "gorp"}
+test load-8.3a {TclGetLoadedPackages procedure} [list teststaticpkg $dll $loaded] {
+    lsort -index 1 [info loaded {}]
+} [lsort -index 1 [list {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga] [list [file join $testDir pkgb$ext] Pkgb] {*}$alreadyLoaded]]
+test load-8.3b {TclGetLoadedPackages procedure} [list teststaticpkg $dll $loaded] {
+    lsort -index 1 [info loaded child]
+} [lsort -index 1 [list {{} Test} [list [file join $testDir pkgb$ext] Pkgb]]]
 test load-8.4 {TclGetLoadedPackages procedure} [list $dll $loaded teststaticpkg] {
     load [file join $testDir pkgb$ext] pkgb
-    list [info loaded {}] [lsort [info commands pkgb_*]]
-} [list [concat [list [list [file join $testDir pkgb$ext] Pkgb] {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga]] $alreadyLoaded] {pkgb_demo pkgb_sub pkgb_unsafe}]
+    list [lsort -index 1 [info loaded {}]] [lsort [info commands pkgb_*]]
+} [list [lsort -index 1 [concat [list [list [file join $testDir pkgb$ext] Pkgb] {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga]] $alreadyLoaded]] {pkgb_demo pkgb_sub pkgb_unsafe}]
 interp delete child
 
 test load-9.1 {Tcl_StaticPackage, load already-loaded package into another interp} \
