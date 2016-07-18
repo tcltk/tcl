@@ -49,6 +49,29 @@ typedef struct Package {
     const void *clientData;	/* Client data. */
 } Package;
 
+
+/* PkgRequireState is passed between functions that form a unit of execution but that
+*  are chunked up for the NRE *
+*/
+typedef struct PkgRequireState {
+    const char *name;
+    int reqc;
+    int pass;
+    int code;
+    Package *pkgPtr;
+    PkgAvail *availPtr;
+    PkgAvail *bestPtr;
+    PkgAvail *bestStablePtr;
+    char *bestVersion; /* Internal rep. of versions */
+    char *availVersion;
+    int availStable;
+    char *pkgVersionI;
+    void *clientDataPtr;
+    char *result;
+    char *versionToProvide;
+    Tcl_Obj *scriptObj;
+} PkgRequireState;
+
 /*
  * Prototypes for functions defined in this file:
  */
@@ -69,10 +92,24 @@ static void		AddRequirementsToResult(Tcl_Interp *interp, int reqc,
 static void		AddRequirementsToDString(Tcl_DString *dstring,
 			    int reqc, Tcl_Obj *const reqv[]);
 static Package *	FindPackage(Tcl_Interp *interp, const char *name);
-static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
-			    int reqc, Tcl_Obj *const reqv[],
-			    void *clientDataPtr);
 
+/* 
+    This sequence is listed in order of execution.  Later in the code they
+    don't appear in order of execution because they are pushed onto the
+    callback stack in reverse order of execution, and dynamically as processing
+    of the callback stack proceeds.
+*/
+int			TclNRPkgRequireProc(ClientData data[], Tcl_Interp *interp, int result);
+int			PkgRequireCore(ClientData data[], Tcl_Interp *interp, int result);
+int			PkgRequireCoreUnknown(ClientData data[], Tcl_Interp *interp, int result);
+int			PkgRequireCoreUnknownEvalFinish(ClientData data[], Tcl_Interp *interp, int result);
+int			PkgRequireCoreUnknownFinish(ClientData data[], Tcl_Interp *interp, int result);
+int			PkgRequireCoreBest(ClientData data[], Tcl_Interp *interp, int result);
+int			PkgRequireCoreBestEvalFinish(ClientData data[], Tcl_Interp *interp, int result);
+int			PkgRequireCoreBestFinish(ClientData data[], Tcl_Interp *interp, int result);
+int			PkgRequireCoreCheckFound(ClientData data[], Tcl_Interp *interp, int result);
+int			PkgRequireCoreFinish(ClientData data[], Tcl_Interp *interp, int result);
+int			PkgRequireProcFinish(ClientData data[], Tcl_Interp *interp, int result);
 /*
  * Helper macros.
  */
@@ -299,18 +336,22 @@ Tcl_PkgRequireEx(
      */
 
     if (version == NULL) {
-	result = PkgRequireCore(interp, name, 0, NULL, clientDataPtr);
+	if (Tcl_PkgRequireProc(interp, name, 0, NULL, clientDataPtr) == TCL_OK) {
+	    result = Tcl_GetStringResult(interp);
+	}
     } else {
 	if (exact && TCL_OK
 		!= CheckVersionAndConvert(interp, version, NULL, NULL)) {
 	    return NULL;
 	}
 	ov = Tcl_NewStringObj(version, -1);
+	Tcl_IncrRefCount(ov);
 	if (exact) {
 	    Tcl_AppendStringsToObj(ov, "-", version, NULL);
 	}
-	Tcl_IncrRefCount(ov);
-	result = PkgRequireCore(interp, name, 1, &ov, clientDataPtr);
+	if (Tcl_PkgRequireProc(interp, name, 1, &ov, clientDataPtr) == TCL_OK) {
+	    result = Tcl_GetStringResult(interp);
+	}
 	TclDecrRefCount(ov);
     }
 
@@ -328,39 +369,65 @@ Tcl_PkgRequireProc(
 				 * available. */
     void *clientDataPtr)
 {
-    const char *result =
-	    PkgRequireCore(interp, name, reqc, reqv, clientDataPtr);
+    NRE_callback *rootPtr = TOP_CB(interp);
+    TclNRAddCallback(
+	interp, TclNRPkgRequireProc, name, INT2PTR(reqc), reqv, clientDataPtr);
+    return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
+}
 
-    if (result == NULL) {
+int
+TclNRPkgRequireProc(
+    ClientData data[],
+    Tcl_Interp *interp,		/* Interpreter in which package is now
+				 * available. */
+    int result
+
+) {
+    PkgRequireState *statePtr;
+    statePtr = ckalloc(sizeof(PkgRequireState));
+    statePtr->code = TCL_OK;
+    statePtr->name = data[0];
+    statePtr->reqc = PTR2INT(data[1]);
+    statePtr->pass = 1;
+    statePtr->clientDataPtr = data[3];
+    statePtr->result = NULL;
+
+    if (TCL_OK != CheckAllRequirements(interp, statePtr->reqc, data[2])) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(result, -1));
+
+    Tcl_NRAddCallback(interp, PkgRequireCore, statePtr, data[2], NULL, NULL);
     return TCL_OK;
 }
 
-static const char *
-PkgRequireCore(
-    Tcl_Interp *interp,		/* Interpreter in which package is now
-				 * available. */
-    const char *name,		/* Name of desired package. */
-    int reqc,			/* Requirements constraining the desired
-				 * version. */
-    Tcl_Obj *const reqv[],	/* 0 means to use the latest version
-				 * available. */
-    void *clientDataPtr)
-{
-    Interp *iPtr = (Interp *) interp;
-    Package *pkgPtr;
-    PkgAvail *availPtr, *bestPtr, *bestStablePtr;
-    char *availVersion, *bestVersion;
-				/* Internal rep. of versions */
-    int availStable, code, satisfies, pass;
-    char *script, *pkgVersionI;
-    Tcl_DString command;
-
-    if (TCL_OK != CheckAllRequirements(interp, reqc, reqv)) {
-	return NULL;
+int
+TclPkgRequireProcFinish(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result
+) {
+    int objc = PTR2INT(data[0]);
+    Tcl_Obj *const *objv = data[1];
+    while (objc-- > 0) {
+	Tcl_DecrRefCount(objv[objc]);
     }
+    if (data[2] != NULL) {
+	Tcl_DecrRefCount(data[2]);
+    }
+    return result;
+}
+
+int
+PkgRequireCore(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result0
+) {
+    PkgRequireState *statePtr = data[0];
+    Tcl_Obj *const *reqv = data[1];
+
+    Interp *iPtr = (Interp *) interp;
+    int satisfies;
 
     /*
      * It can take up to three passes to find the package: one pass to run the
@@ -369,256 +436,380 @@ PkgRequireCore(
      * the "package ifneeded" script.
      */
 
-    for (pass=1 ;; pass++) {
-	pkgPtr = FindPackage(interp, name);
-	if (pkgPtr->version != NULL) {
-	    break;
+    statePtr->pkgPtr = FindPackage(interp, statePtr->name);
+    if (statePtr->pkgPtr->version != NULL) {
+	Tcl_NRAddCallback(interp, PkgRequireCoreCheckFound,
+	    statePtr, (ClientData)reqv, NULL, NULL);
+	return TCL_OK;
+    }
+
+    /*
+     * Check whether we're already attempting to load some version of this
+     * package (circular dependency detection).
+     */
+
+    if (statePtr->pkgPtr->clientData != NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"circular package dependency:"
+		" attempt to provide %s %s requires %s",
+		statePtr->name, (char *) statePtr->pkgPtr->clientData,
+		statePtr->name));
+	AddRequirementsToResult(interp, statePtr->reqc, reqv);
+	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "CIRCULARITY", NULL);
+	TclNRAddCallback(
+	    interp, PkgRequireCoreFinish, statePtr, NULL, NULL, NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * The package isn't yet present. Search the list of available
+     * versions and invoke the script for the best available version. We
+     * are actually locating the best, and the best stable version. One of
+     * them is then chosen based on the selection mode.
+     */
+
+    statePtr->bestPtr = NULL;
+    statePtr->bestStablePtr = NULL;
+    statePtr->bestVersion = NULL;
+
+    for (statePtr->availPtr = statePtr->pkgPtr->availPtr; statePtr->availPtr != NULL;
+	    statePtr->availPtr = statePtr->availPtr->nextPtr) {
+	if (CheckVersionAndConvert(interp, statePtr->availPtr->version,
+		&statePtr->availVersion, &statePtr->availStable) != TCL_OK) {
+	    /*
+	     * The provided version number has invalid syntax. This
+	     * should not happen. This should have been caught by the
+	     * 'package ifneeded' registering the package.
+	     */
+
+	    continue;
 	}
 
-	/*
-	 * Check whether we're already attempting to load some version of this
-	 * package (circular dependency detection).
-	 */
+	if (statePtr->bestPtr != NULL) {
+	    int res = CompareVersions(statePtr->availVersion, statePtr->bestVersion, NULL);
 
-	if (pkgPtr->clientData != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "circular package dependency:"
-		    " attempt to provide %s %s requires %s",
-		    name, (char *) pkgPtr->clientData, name));
-	    AddRequirementsToResult(interp, reqc, reqv);
-	    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "CIRCULARITY", NULL);
-	    return NULL;
-	}
+	    /*
+	     * Note: Use internal reps!
+	     */
 
-	/*
-	 * The package isn't yet present. Search the list of available
-	 * versions and invoke the script for the best available version. We
-	 * are actually locating the best, and the best stable version. One of
-	 * them is then chosen based on the selection mode.
-	 */
-
-	bestPtr = NULL;
-	bestStablePtr = NULL;
-	bestVersion = NULL;
-
-	for (availPtr = pkgPtr->availPtr; availPtr != NULL;
-		availPtr = availPtr->nextPtr) {
-	    if (CheckVersionAndConvert(interp, availPtr->version,
-		    &availVersion, &availStable) != TCL_OK) {
+	    if (res <= 0) {
 		/*
-		 * The provided version number has invalid syntax. This
-		 * should not happen. This should have been caught by the
-		 * 'package ifneeded' registering the package.
+		 * The version of the package sought is not as good as the
+		 * currently selected version. Ignore it.
 		 */
 
+		ckfree(statePtr->availVersion);
+		statePtr->availVersion = NULL;
 		continue;
 	    }
-
-	    if (bestPtr != NULL) {
-		int res = CompareVersions(availVersion, bestVersion, NULL);
-
-		/*
-		 * Note: Use internal reps!
-		 */
-
-		if (res <= 0) {
-		    /*
-		     * The version of the package sought is not as good as the
-		     * currently selected version. Ignore it.
-		     */
-
-		    ckfree(availVersion);
-		    availVersion = NULL;
-		    continue;
-		}
-	    }
-
-	    /*
-	     * We have found a version which is better than our max.
-	     */
-
-	    if (reqc > 0) {
-		/* Check satisfaction of requirements. */
-
-		satisfies = SomeRequirementSatisfied(availVersion, reqc, reqv);
-		if (!satisfies) {
-		    ckfree(availVersion);
-		    availVersion = NULL;
-		    continue;
-		}
-	    }
-
-	    bestPtr = availPtr;
-
-	    if (bestVersion != NULL) {
-		ckfree(bestVersion);
-	    }
-	    bestVersion = availVersion;
-
-	    /*
-	     * If this new best version is stable then it also has to be
-	     * better than the max stable version found so far.
-	     */
-
-	    if (availStable) {
-		bestStablePtr = availPtr;
-	    }
-	}
-
-	if (bestVersion != NULL) {
-	    ckfree(bestVersion);
 	}
 
 	/*
-	 * Now choose a version among the two best. For 'latest' we simply
-	 * take (actually keep) the best. For 'stable' we take the best
-	 * stable, if there is any, or the best if there is nothing stable.
+	 * We have found a version which is better than our max.
 	 */
 
-	if ((iPtr->packagePrefer == PKG_PREFER_STABLE)
-		&& (bestStablePtr != NULL)) {
-	    bestPtr = bestStablePtr;
+	if (statePtr->reqc > 0) {
+	    /* Check satisfaction of requirements. */
+	    satisfies = SomeRequirementSatisfied(
+		statePtr->availVersion, statePtr->reqc, reqv);
+	    if (!satisfies) {
+		ckfree(statePtr->availVersion);
+		statePtr->availVersion = NULL;
+		continue;
+	    }
 	}
 
-	if (bestPtr != NULL) {
-	    /*
-	     * We found an ifneeded script for the package. Be careful while
-	     * executing it: this could cause reentrancy, so (a) protect the
-	     * script itself from deletion and (b) don't assume that bestPtr
-	     * will still exist when the script completes.
-	     */
+	statePtr->bestPtr = statePtr->availPtr;
 
-	    char *versionToProvide = bestPtr->version;
-	    script = bestPtr->script;
-
-	    pkgPtr->clientData = versionToProvide;
-	    Tcl_Preserve(script);
-	    Tcl_Preserve(versionToProvide);
-	    code = Tcl_EvalEx(interp, script, -1, TCL_EVAL_GLOBAL);
-	    Tcl_Release(script);
-
-	    pkgPtr = FindPackage(interp, name);
-	    if (code == TCL_OK) {
-		Tcl_ResetResult(interp);
-		if (pkgPtr->version == NULL) {
-		    code = TCL_ERROR;
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "attempt to provide package %s %s failed:"
-			    " no version of package %s provided",
-			    name, versionToProvide, name));
-		    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNPROVIDED",
-			    NULL);
-		} else {
-		    char *pvi, *vi;
-
-		    if (CheckVersionAndConvert(interp, pkgPtr->version, &pvi,
-			    NULL) != TCL_OK) {
-			code = TCL_ERROR;
-		    } else if (CheckVersionAndConvert(interp,
-			    versionToProvide, &vi, NULL) != TCL_OK) {
-			ckfree(pvi);
-			code = TCL_ERROR;
-		    } else {
-			int res = CompareVersions(pvi, vi, NULL);
-
-			ckfree(pvi);
-			ckfree(vi);
-			if (res != 0) {
-			    code = TCL_ERROR;
-			    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-				    "attempt to provide package %s %s failed:"
-				    " package %s %s provided instead",
-				    name, versionToProvide,
-				    name, pkgPtr->version));
-			    Tcl_SetErrorCode(interp, "TCL", "PACKAGE",
-				    "WRONGPROVIDE", NULL);
-			}
-		    }
-		}
-	    } else if (code != TCL_ERROR) {
-		Tcl_Obj *codePtr = Tcl_NewIntObj(code);
-
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"attempt to provide package %s %s failed:"
-			" bad return code: %s",
-			name, versionToProvide, TclGetString(codePtr)));
-		Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT", NULL);
-		TclDecrRefCount(codePtr);
-		code = TCL_ERROR;
-	    }
-
-	    if (code == TCL_ERROR) {
-		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (\"package ifneeded %s %s\" script)",
-			name, versionToProvide));
-	    }
-	    Tcl_Release(versionToProvide);
-
-	    if (code != TCL_OK) {
-		/*
-		 * Take a non-TCL_OK code from the script as an indication the
-		 * package wasn't loaded properly, so the package system
-		 * should not remember an improper load.
-		 *
-		 * This is consistent with our returning NULL. If we're not
-		 * willing to tell our caller we got a particular version, we
-		 * shouldn't store that version for telling future callers
-		 * either.
-		 */
-
-		if (pkgPtr->version != NULL) {
-		    ckfree(pkgPtr->version);
-		    pkgPtr->version = NULL;
-		}
-		pkgPtr->clientData = NULL;
-		return NULL;
-	    }
-
-	    break;
+	if (statePtr->bestVersion != NULL) {
+	    ckfree(statePtr->bestVersion);
 	}
+	statePtr->bestVersion = statePtr->availVersion;
 
 	/*
-	 * The package is not in the database. If there is a "package unknown"
-	 * command, invoke it (but only on the first pass; after that, we
-	 * should not get here in the first place).
+	 * If this new best version is stable then it also has to be
+	 * better than the max stable version found so far.
 	 */
 
-	if (pass > 1) {
-	    break;
-	}
-
-	script = ((Interp *) interp)->packageUnknown;
-	if (script != NULL) {
-	    Tcl_DStringInit(&command);
-	    Tcl_DStringAppend(&command, script, -1);
-	    Tcl_DStringAppendElement(&command, name);
-	    AddRequirementsToDString(&command, reqc, reqv);
-
-	    code = Tcl_EvalEx(interp, Tcl_DStringValue(&command),
-		    Tcl_DStringLength(&command), TCL_EVAL_GLOBAL);
-	    Tcl_DStringFree(&command);
-
-	    if ((code != TCL_OK) && (code != TCL_ERROR)) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"bad return code: %d", code));
-		Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT", NULL);
-		code = TCL_ERROR;
-	    }
-	    if (code == TCL_ERROR) {
-		Tcl_AddErrorInfo(interp,
-			"\n    (\"package unknown\" script)");
-		return NULL;
-	    }
-	    Tcl_ResetResult(interp);
+	if (statePtr->availStable) {
+	    statePtr->bestStablePtr = statePtr->availPtr;
 	}
     }
 
+    if (statePtr->bestVersion != NULL) {
+	ckfree(statePtr->bestVersion);
+    }
+
+    /*
+     * Now choose a version among the two best. For 'latest' we simply
+     * take (actually keep) the best. For 'stable' we take the best
+     * stable, if there is any, or the best if there is nothing stable.
+     */
+
+    if ((iPtr->packagePrefer == PKG_PREFER_STABLE)
+	    && (statePtr->bestStablePtr != NULL)) {
+	statePtr->bestPtr = statePtr->bestStablePtr;
+    }
+
+    if (statePtr->bestPtr != NULL) {
+	TclNRAddCallback(
+	    interp, PkgRequireCoreBestFinish, statePtr, reqv, NULL, NULL);
+	TclNRAddCallback(
+	    interp, PkgRequireCoreBest, statePtr, NULL, NULL, NULL);
+	return TCL_OK;
+    }
+
+    /*
+     * The package is not in the database. If there is a "package unknown"
+     * command, invoke it (but only on the first pass; after that, we
+     * should not get here in the first place).
+     */
+
+    if (statePtr->pass > 1) {
+	Tcl_NRAddCallback(interp, PkgRequireCoreCheckFound,
+	    statePtr, (ClientData)reqv, NULL, NULL);
+	return TCL_OK;
+    }
+    TclNRAddCallback(
+	interp, PkgRequireCoreUnknownFinish, statePtr,reqv, NULL, NULL);
+    TclNRAddCallback(
+	interp, PkgRequireCoreUnknown, statePtr,reqv, NULL, NULL);
+    return TCL_OK;
+}
+
+int
+PkgRequireCoreUnknown(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result
+) {
+    Interp *iPtr = (Interp *) interp;
+    PkgRequireState *statePtr = data[0];
+    Tcl_Obj *const *reqv = data[1];
+    Tcl_DString command;
+    char *script;
+
+    script = ((Interp *) interp)->packageUnknown;
+    if (script != NULL) {
+	Tcl_DStringInit(&command);
+	Tcl_DStringAppend(&command, script, -1);
+	Tcl_DStringAppendElement(&command, statePtr->name);
+	AddRequirementsToDString(&command, statePtr->reqc, reqv);
+
+	statePtr->scriptObj = Tcl_NewStringObj(Tcl_DStringValue(&command), -1);
+	/* No need to increment of the ref count of scriptObj, because
+	 * TclNREvelObjEx does that.  right?
+	*/
+	Tcl_DStringFree(&command);
+	TclNRAddCallback(
+	    interp, PkgRequireCoreUnknownEvalFinish, statePtr, data[1], NULL, NULL);
+	statePtr->code = TclNREvalObjEx(
+	    interp, statePtr->scriptObj, TCL_EVAL_GLOBAL, iPtr->cmdFramePtr, 1);
+    }
+    return result;
+}
+int
+PkgRequireCoreUnknownEvalFinish(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result
+) {
+    PkgRequireState *statePtr = data[0];
+
+    /* Pick up the return code from TclNREvalObjEx */
+    statePtr->code = result;
+
+    if ((statePtr->code != TCL_OK) && (statePtr->code != TCL_ERROR)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad return code: %d", statePtr->code));
+	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT", NULL);
+	statePtr->code = TCL_ERROR;
+    }
+    if (statePtr->code == TCL_ERROR) {
+	Tcl_AddErrorInfo(interp,
+		"\n    (\"package unknown\" script)");
+	return TCL_ERROR;
+    }
+    Tcl_ResetResult(interp);
+    return TCL_OK;
+}
+
+int
+PkgRequireCoreUnknownFinish(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result
+) {
+    PkgRequireState *statePtr = data[0];
+    if (statePtr->code != TCL_OK) {
+	/* error message has been set */
+	TclNRAddCallback(
+	    interp, PkgRequireCoreFinish, statePtr, NULL, NULL, NULL);
+	return TCL_ERROR;
+    }
+    statePtr->pass++;
+    Tcl_NRAddCallback(interp, PkgRequireCore, statePtr, data[1], NULL, NULL);
+    return TCL_OK;
+}
+int
+PkgRequireCoreBest(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result
+) {
+    Interp *iPtr = (Interp *) interp;
+    PkgRequireState *statePtr = data[0];
+    char *script;
+
+    /*
+     * We found an ifneeded script for the package. Be careful while
+     * executing it: this could cause reentrancy, so (a) protect the
+     * script itself from deletion and (b) don't assume that bestPtr
+     * will still exist when the script completes.
+     */
+
+    statePtr->versionToProvide = statePtr->bestPtr->version;
+
+    script = statePtr->bestPtr->script;
+    statePtr->pkgPtr->clientData = statePtr->versionToProvide;
+    Tcl_Preserve(statePtr->versionToProvide);
+    statePtr->scriptObj = Tcl_NewStringObj(script, -1);
+    Tcl_IncrRefCount(statePtr->scriptObj);
+    TclNRAddCallback(
+	interp, PkgRequireCoreBestEvalFinish, statePtr, data[1], NULL, NULL);
+    TclNREvalObjEx(
+	interp, statePtr->scriptObj, TCL_EVAL_GLOBAL , iPtr->cmdFramePtr, 0);
+
+    return result;
+}
+
+int
+PkgRequireCoreBestEvalFinish(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result
+) {
+    PkgRequireState *statePtr = data[0];
+
+    /* Pick up the return code from TclNREvalObjEx */
+    statePtr->code = result;
+
+    Tcl_DecrRefCount(statePtr->scriptObj);
+
+    statePtr->pkgPtr = FindPackage(interp, statePtr->name);
+    if (statePtr->code == TCL_OK) {
+	Tcl_ResetResult(interp);
+	if (statePtr->pkgPtr->version == NULL) {
+	    statePtr->code = TCL_ERROR;
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "attempt to provide package %s %s failed:"
+		    " no version of package %s provided",
+		    statePtr->name, statePtr->versionToProvide, statePtr->name));
+	    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNPROVIDED",
+		    NULL);
+	} else {
+	    char *pvi, *vi;
+
+	    if (CheckVersionAndConvert(interp, statePtr->pkgPtr->version, &pvi,
+		    NULL) != TCL_OK) {
+		statePtr->code = TCL_ERROR;
+	    } else if (CheckVersionAndConvert(interp,
+		    statePtr->versionToProvide, &vi, NULL) != TCL_OK) {
+		ckfree(pvi);
+		statePtr->code = TCL_ERROR;
+	    } else {
+		int res = CompareVersions(pvi, vi, NULL);
+
+		ckfree(pvi);
+		ckfree(vi);
+		if (res != 0) {
+		    statePtr->code = TCL_ERROR;
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "attempt to provide package %s %s failed:"
+			    " package %s %s provided instead",
+			    statePtr->name, statePtr->versionToProvide,
+			    statePtr->name, statePtr->pkgPtr->version));
+		    Tcl_SetErrorCode(interp, "TCL", "PACKAGE",
+			    "WRONGPROVIDE", NULL);
+		}
+	    }
+	}
+    } else if (statePtr->code != TCL_ERROR) {
+	Tcl_Obj *codePtr = Tcl_NewIntObj(statePtr->code);
+
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"attempt to provide package %s %s failed:"
+		" bad return code: %s",
+		statePtr->name, statePtr->versionToProvide, TclGetString(codePtr)));
+	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT", NULL);
+	TclDecrRefCount(codePtr);
+	statePtr->code = TCL_ERROR;
+    }
+
+    if (statePtr->code == TCL_ERROR) {
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	    "\n    (\"package ifneeded %s %s\" script)",
+	    statePtr->name, statePtr->versionToProvide));
+    }
+    return result;
+}
+
+int
+PkgRequireCoreBestFinish(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result
+) {
+    PkgRequireState *statePtr = data[0];
+
+    if (statePtr->code == TCL_ERROR) {
+	/*
+	 * Take a non-TCL_OK code from the script as an indication the
+	 * package wasn't loaded properly, so the package system
+	 * should not remember an improper load.
+	 *
+	 * This is consistent with our returning NULL. If we're not
+	 * willing to tell our caller we got a particular version, we
+	 * shouldn't store that version for telling future callers
+	 * either.
+	 */
+
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"package ifneeded %s %s\" script)",
+		statePtr->name, statePtr->versionToProvide));
+
+	if (statePtr->pkgPtr->version != NULL) {
+	    ckfree(statePtr->pkgPtr->version);
+	    statePtr->pkgPtr->version = NULL;
+	}
+	statePtr->pkgPtr->clientData = NULL;
+	TclNRAddCallback(
+	    interp, PkgRequireCoreFinish, statePtr, NULL, NULL, NULL);
+    } else {
+	Tcl_NRAddCallback(interp, PkgRequireCoreCheckFound, statePtr, data[1], NULL, NULL);
+    }
+    Tcl_Release(statePtr->versionToProvide);
+    return result;
+}
+
+int
+PkgRequireCoreCheckFound(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result
+) {
+    PkgRequireState *statePtr = data[0];
+    Tcl_Obj *const *reqv = data[1];
+    Package *pkgPtr = statePtr->pkgPtr;
+    int satisfies;
+
+    Tcl_NRAddCallback(interp, PkgRequireCoreFinish, statePtr, NULL, NULL,NULL);
     if (pkgPtr->version == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't find package %s", name));
+		"can't find package %s", statePtr->name));
 	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNFOUND", NULL);
-	AddRequirementsToResult(interp, reqc, reqv);
-	return NULL;
+	AddRequirementsToResult(interp, statePtr->reqc, reqv);
+	return TCL_ERROR;
     }
 
     /*
@@ -626,30 +817,48 @@ PkgRequireCore(
      * provided version meets the current requirements.
      */
 
-    if (reqc != 0) {
-	CheckVersionAndConvert(interp, pkgPtr->version, &pkgVersionI, NULL);
-	satisfies = SomeRequirementSatisfied(pkgVersionI, reqc, reqv);
+    if (statePtr->reqc != 0) {
+	CheckVersionAndConvert(interp, pkgPtr->version, &statePtr->pkgVersionI, NULL);
+	satisfies = SomeRequirementSatisfied(statePtr->pkgVersionI, statePtr->reqc, reqv);
 
-	ckfree(pkgVersionI);
+	ckfree(statePtr->pkgVersionI);
 
 	if (!satisfies) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "version conflict for package \"%s\": have %s, need",
-		    name, pkgPtr->version));
+		    statePtr->name, pkgPtr->version));
 	    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "VERSIONCONFLICT",
 		    NULL);
-	    AddRequirementsToResult(interp, reqc, reqv);
-	    return NULL;
+	    AddRequirementsToResult(interp, statePtr->reqc, reqv);
+	    return TCL_ERROR;
 	}
     }
 
-    if (clientDataPtr) {
-	const void **ptr = (const void **) clientDataPtr;
-
+    if (statePtr->clientDataPtr) {
+	const void **ptr = (const void **) statePtr->clientDataPtr;
 	*ptr = pkgPtr->clientData;
     }
-    return pkgPtr->version;
+    statePtr->result = pkgPtr->version;
+    return TCL_OK;
 }
+
+int
+PkgRequireCoreFinish(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result
+) {
+    PkgRequireState *statePtr = data[0];
+    if (statePtr->result == NULL) {
+	result = TCL_ERROR;
+    } else {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(statePtr->result, -1));
+	result = TCL_OK;
+    }
+    ckfree(statePtr);
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -756,13 +965,24 @@ Tcl_PkgPresentEx(
  */
 
 	/* ARGSUSED */
+
 int
 Tcl_PackageObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
+    Tcl_Obj *const objv[]	/* Argument objects. */
+) {
+    return Tcl_NRCallObjProc(interp, TclNRPackageObjCmd, dummy, objc, objv);
+}
+
+int
+TclNRPackageObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[]	/* Argument objects. */
+) {
     static const char *const pkgOptions[] = {
 	"forget",  "ifneeded", "names",   "prefer",   "present",
 	"provide", "require",  "unknown", "vcompare", "versions",
@@ -976,7 +1196,7 @@ Tcl_PackageObjCmd(
 	}
 	return Tcl_PkgProvideEx(interp, argv2, argv3, NULL);
     case PKG_REQUIRE:
-    require:
+    require: {
 	if (objc < 3) {
 	requireSyntax:
 	    Tcl_WrongNumArgs(interp, 2, objv,
@@ -988,13 +1208,11 @@ Tcl_PackageObjCmd(
 
 	argv2 = TclGetString(objv[2]);
 	if ((argv2[0] == '-') && (strcmp(argv2, "-exact") == 0)) {
-	    Tcl_Obj *ov;
-	    int res;
-
+	    Tcl_Obj ** objv2;
 	    if (objc != 5) {
 		goto requireSyntax;
 	    }
-
+	    objv2 = ckalloc((sizeof(Tcl_Obj *)));
 	    version = TclGetString(objv[4]);
 	    if (CheckVersionAndConvert(interp, version, NULL,
 		    NULL) != TCL_OK) {
@@ -1005,22 +1223,34 @@ Tcl_PackageObjCmd(
 	     * Create a new-style requirement for the exact version.
 	     */
 
-	    ov = Tcl_NewStringObj(version, -1);
-	    Tcl_AppendStringsToObj(ov, "-", version, NULL);
-	    version = NULL;
+	    objv2[0] = Tcl_NewStringObj(version, -1);
+	    Tcl_IncrRefCount(objv2[0]);
+	    Tcl_AppendStringsToObj(objv2[0], "-", version, NULL);
 	    argv3 = TclGetString(objv[3]);
+	    Tcl_IncrRefCount(objv[3]);
 
-	    Tcl_IncrRefCount(ov);
-	    res = Tcl_PkgRequireProc(interp, argv3, 1, &ov, NULL);
-	    TclDecrRefCount(ov);
-	    return res;
+	    TclNRAddCallback(interp, TclPkgRequireProcFinish, 
+		INT2PTR(1), objv2, objv[3], NULL);
+	    TclNRAddCallback(interp, TclNRPkgRequireProc, argv3, 1, objv2, NULL);
+	    return TCL_OK;
 	} else {
+	    Tcl_Obj ** objv2;
 	    if (CheckAllRequirements(interp, objc-3, objv+3) != TCL_OK) {
 		return TCL_ERROR;
 	    }
+	    objv2 = ckalloc((objc-3)*(sizeof(Tcl_Obj *)));
+	    for (i = 3; i < objc; i++) {
+		objv2[i-3] = objv[i];
+		Tcl_IncrRefCount(objv[i]);
+	    }
 
-	    return Tcl_PkgRequireProc(interp, argv2, objc-3, objv+3, NULL);
+	    TclNRAddCallback(interp, TclPkgRequireProcFinish,
+		INT2PTR(objc-3), objv2, NULL, NULL);
+	    TclNRAddCallback(interp, TclNRPkgRequireProc, argv2,
+		INT2PTR(objc-3), objv2, NULL);
+	    return TCL_OK;
 	}
+    }
 	break;
     case PKG_UNKNOWN: {
 	int length;

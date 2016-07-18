@@ -605,6 +605,18 @@ test package-3.52 {Tcl_PkgRequire procedure, picking best stable version} -setup
     package require t
     return $x
 } -result {1.3}
+test package-3.53 {Tcl_PkgRequire procedure, coroutine support} -setup {
+    package forget t
+} -body {
+    coroutine coro1 apply {{} {
+	package ifneeded t 2.1 {
+	    yield 
+	    package provide t 2.1
+	}
+	package require t 2.1
+    }}
+    list [catch {coro1} msg] $msg
+} -match glob -result {0 2.1} 
 
 test package-4.1 {Tcl_PackageCmd procedure} -returnCodes error -body {
     package

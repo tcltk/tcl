@@ -212,8 +212,8 @@ test load-9.1 {Tcl_StaticPackage, load already-loaded package into another inter
 test load-10.1 {load from vfs} \
     -constraints [list $dll $loaded testsimplefilesystem] \
     -setup {set dir [pwd]; cd $testDir; testsimplefilesystem 1} \
-    -body {list [catch {load simplefs:/pkgd$ext pkgd} msg] $msg} \
-    -result {0 {}} \
+    -body {list [catch {load simplefs:/pkgd$ext pkgd} msg]} \
+    -result 0 \
     -cleanup {testsimplefilesystem 0; cd $dir; unset dir}
 
 test load-11.1 {Load TclOO extension using Stubs (Bug [f51efe99a7])} \
