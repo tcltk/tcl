@@ -4160,12 +4160,20 @@ test chan-io-33.4 {Tcl_Gets with long line} -setup {
 } -cleanup {
     chan close $f
 } -result {abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ}
-test chan-io-33.5 {Tcl_Gets with long line} {
+test chan-io-33.5 {Tcl_Gets with long line} -setup {
+    set f [open $path(test3) w]
+    puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    puts $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    close $f
+} -body {
     set f [open $path(test3)]
     set x [chan gets $f y]
     chan close $f
     list $x $y
-} {260 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ}
+} -result {260 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ}
 test chan-io-33.6 {Tcl_Gets and end of file} -setup {
     file delete $path(test3)
     set x {}
@@ -6765,7 +6773,12 @@ test chan-io-52.10 {TclCopyChannel & encodings} {fcopy} {
     chan close $out
     file size $path(utf8-fcopy.txt)
 } 5
-test chan-io-52.11 {TclCopyChannel & encodings} {fcopy} {
+test chan-io-52.11 {TclCopyChannel & encodings} -setup {
+    set f [open $path(utf8-fcopy.txt) w]
+    fconfigure $f -encoding utf-8
+    puts $f "\u0410\u0410"
+    close $f
+} -constraints {fcopy} -body {
     # binary to encoding => the input has to be in utf-8 to make sense to the
     # encoder
     set in  [open $path(utf8-fcopy.txt) r]
@@ -6777,7 +6790,9 @@ test chan-io-52.11 {TclCopyChannel & encodings} {fcopy} {
     chan close $in
     chan close $out
     file size $path(kyrillic.txt)
-} 3
+} -cleanup {
+    file delete $path(utf8-fcopy.txt)
+} -result 3
 
 test chan-io-53.1 {CopyData} -setup {
     file delete $path(test1)

@@ -26,6 +26,21 @@ testConstraint testupvar [llength [info commands testupvar]]
 testConstraint testgetvarfullname [llength [info commands testgetvarfullname]]
 testConstraint testsetnoerr [llength [info commands testsetnoerr]]
 testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc getbytes {} {
+        return [lindex [split [memory info] \n] 3 3]
+    }
+    proc leaktest {script {iterations 3}} {
+        set end [getbytes]
+        for {set i 0} {$i < $iterations} {incr i} {
+            uplevel 1 $script
+            set tmp $end
+            set end [getbytes]
+        }
+        return [expr {$end - $tmp}]
+    }
+}
+
 
 catch {rename p ""}
 catch {namespace delete test_ns_var}
@@ -44,10 +59,12 @@ test var-1.1 {TclLookupVar, Array handling} -setup {
     set arr(foo) 37
     list [$x i] $i [$x arr(foo)] $arr(foo)
 } -result {11 11 38 38}
+set ::x "global value"
+namespace eval test_ns_var {
+    variable x "namespace value"
+}
 test var-1.2 {TclLookupVar, TCL_GLOBAL_ONLY implies global namespace var} {
-    set x "global value"
     namespace eval test_ns_var {
-        variable x "namespace value"
         proc p {} {
             global x  ;# specifies TCL_GLOBAL_ONLY to get global x
             return $x
@@ -167,7 +184,9 @@ test var-1.17 {TclLookupVar, resurrect array element via upvar to deleted array:
 	set result
     }
 } {0 2 1 {can't set "foo": upvar refers to element in deleted array}}
-test var-1.18 {TclLookupVar, resurrect array element via upvar to deleted array: uncompiled code path} {
+test var-1.18 {TclLookupVar, resurrect array element via upvar to deleted array: uncompiled code path} -setup {
+    unset -nocomplain test_ns_var::x
+} -body {
     namespace eval test_ns_var {
 	variable result {}
 	variable x
@@ -179,7 +198,7 @@ test var-1.18 {TclLookupVar, resurrect array element via upvar to deleted array:
         namespace delete [namespace current]
 	set result
     }
-} {0 2 1 {can't set "foo": upvar refers to element in deleted array}}
+} -result {0 2 1 {can't set "foo": upvar refers to element in deleted array}}
 test var-1.19 {TclLookupVar, right error message when parsing variable name} -body {
     [format set] thisvar(doesntexist)
 } -returnCodes error -result {can't read "thisvar(doesntexist)": no such variable}
@@ -261,6 +280,7 @@ test var-3.7 {MakeUpvar, my var has ::s} -setup {
     }
 } -result {789789}
 test var-3.8 {MakeUpvar, my var already exists in global ns} -setup {
+    upvar #0 aaaaa xxxxx
     catch {unset aaaaa}
     catch {unset xxxxx}
 } -body {
@@ -274,6 +294,8 @@ test var-3.9 {MakeUpvar, my var has invalid ns name} -setup {
 } -returnCodes error -body {
     set aaaaa 789789
     upvar #0 aaaaa test_ns_fred::lnk
+} -cleanup {
+    unset ::aaaaa
 } -result {can't create "test_ns_fred::lnk": parent namespace doesn't exist}
 test var-3.10 {MakeUpvar, between namespaces} -body {
     namespace eval {} {
@@ -282,8 +304,6 @@ test var-3.10 {MakeUpvar, between namespaces} -body {
 	set foo::bar 1
 	list $bar $foo::bar
     }
-} -cleanup {
-    unset ::aaaaa
 } -result {1 1}
 test var-3.11 {MakeUpvar, my var looks like array elem} -setup {
     catch {unset aaaaa}
@@ -322,9 +342,11 @@ test var-5.2 {Tcl_GetVariableFullName, namespace variable} {
         namespace which -variable martha
     }
 } {::test_ns_var::martha}
-test var-5.3 {Tcl_GetVariableFullName, namespace variable} {
+test var-5.3 {Tcl_GetVariableFullName, namespace variable} -setup {
+    namespace eval test_ns_var {variable martha}
+} -body {
     namespace which -variable test_ns_var::martha
-} {::test_ns_var::martha}
+} -result {::test_ns_var::martha}
 
 test var-6.1 {Tcl_GlobalObjCmd, variable is qualified by a namespace name} {
     namespace eval test_ns_var {
@@ -348,6 +370,7 @@ test var-6.2 {Tcl_GlobalObjCmd, variable is qualified by a namespace name} {
     test_ns_var::p
 } {java}
 test var-6.3 {Tcl_GlobalObjCmd, variable named {} qualified by a namespace name} {
+    namespace eval ::test_ns_var::test_ns_nested {}
     set ::test_ns_var::test_ns_nested:: 24
     apply {{} {
         global ::test_ns_var::test_ns_nested::
@@ -389,20 +412,26 @@ test var-7.2 {Tcl_VariableObjCmd, if new and no value, leave undefined} {
     }
     list [info exists test_ns_var::two] [catch {set test_ns_var::two} msg] $msg
 } {0 1 {can't read "test_ns_var::two": no such variable}}
-test var-7.3 {Tcl_VariableObjCmd, "define" var already created above} {
+test var-7.3 {Tcl_VariableObjCmd, "define" var already created above} -setup {
+    catch {namespace delete test_ns_var}
+    namespace eval test_ns_var {variable one 1}
+} -body {
     namespace eval test_ns_var {
         variable two 2
     }
     list [lsort [info vars test_ns_var::*]] \
          [namespace eval test_ns_var {set two}]
-} [list [lsort {::test_ns_var::two ::test_ns_var::one}] 2]
-test var-7.4 {Tcl_VariableObjCmd, list of vars} {
+} -result [list [lsort {::test_ns_var::two ::test_ns_var::one}] 2]
+test var-7.4 {Tcl_VariableObjCmd, list of vars} -setup {
+    catch {namespace delete test_ns_var}
+    namespace eval test_ns_var {variable one 1; variable two 2}
+} -body {
     namespace eval test_ns_var {
         variable three 3 four 4
     }
     list [lsort [info vars test_ns_var::*]] \
          [namespace eval test_ns_var {expr $three+$four}]
-} [list [lsort {::test_ns_var::four ::test_ns_var::three ::test_ns_var::two ::test_ns_var::one}] 7]
+} -result [list [lsort {::test_ns_var::four ::test_ns_var::three ::test_ns_var::two ::test_ns_var::one}] 7]
 test var-7.5 {Tcl_VariableObjCmd, value for last var is optional} -setup {
     catch {unset a}
     catch {unset five}
@@ -476,7 +505,9 @@ test var-7.9 {Tcl_VariableObjCmd, mark as namespace var so var persists until na
 	[lsort {::test_ns_var2::x ::test_ns_var2::z}] 0 0\
 	{1 {can't unset "test_ns_var2::z": no such variable}}\
 	{}]
-test var-7.10 {Tcl_VariableObjCmd, variable cmd inside proc creates local link var} {
+test var-7.10 {Tcl_VariableObjCmd, variable cmd inside proc creates local link var} -setup {
+    namespace eval test_ns_var { variable eight 8 }
+} -body {
     namespace eval test_ns_var {
         proc p {} {
             variable eight
@@ -484,14 +515,16 @@ test var-7.10 {Tcl_VariableObjCmd, variable cmd inside proc creates local link v
         }
         p
     }
-} {8 eight}
-test var-7.11 {Tcl_VariableObjCmd, variable cmd inside proc creates local link var} {
+} -result {8 eight}
+test var-7.11 {Tcl_VariableObjCmd, variable cmd inside proc creates local link var} -setup {
+    namespace eval test_ns_var { variable eight 8 }
+} -body {
     proc p {} {   ;# note this proc is at global :: scope
         variable test_ns_var::eight
         list [set eight] [info vars]
     }
     p
-} {8 eight}
+} -result {8 eight}
 test var-7.12 {Tcl_VariableObjCmd, variable cmd inside proc creates local link var} {
     namespace eval test_ns_var {
         variable {} {My name is empty}
@@ -774,7 +807,7 @@ test var-17.1 {TclArraySet [Bug 1669489]} -setup {
 
 test var-18.1 {array unset and unset traces: Bug 2939073} -setup {
     set already 0
-    unset x
+    unset -nocomplain x
 } -body {
     array set x {e 1 i 1}
     trace add variable x unset {apply {args {
@@ -896,9 +929,6 @@ test var-21.0 {PushVarNameWord OBOE in compiled unset} -setup {
 } -result 1
 
 test var-22.0 {leak in array element unset: Bug a3309d01db} -setup {
-    proc getbytes {} {
-	lindex [split [memory info] \n] 3 3
-    }
     proc doit k {
 	variable A
 	set A($k) {}
@@ -918,13 +948,9 @@ test var-22.0 {leak in array element unset: Bug a3309d01db} -setup {
     set leakedBytes [expr {$end - $tmp}]
 } -cleanup {
     array unset A
-    rename getbytes {}
     rename doit {}
 } -result 0
 test var-22.1 {leak in localVarName intrep: Bug 80304238ac} -setup {
-    proc getbytes {} {
-	lindex [split [memory info] \n] 3 3
-    }
     proc doit {} {
 	interp create slave
 	slave eval {
@@ -946,8 +972,13 @@ test var-22.1 {leak in localVarName intrep: Bug 80304238ac} -setup {
     set leakedBytes [expr {$end - $tmp}]
 } -cleanup {
     array unset A
-    rename getbytes {}
     rename doit {}
+} -result 0
+test var-22.2 {leak in parsedVarName} -constraints memory -body {
+    set i 0
+    leaktest {lappend x($i)}
+} -cleanup {
+    unset -nocomplain i x
 } -result 0
 
 
@@ -955,6 +986,7 @@ catch {namespace delete ns}
 catch {unset arr}
 catch {unset v}
 
+catch {rename getbytes ""}
 catch {rename p ""}
 catch {namespace delete test_ns_var}
 catch {namespace delete test_ns_var2}
