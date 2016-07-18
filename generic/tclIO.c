@@ -337,6 +337,15 @@ static const Tcl_ObjType chanObjType = {
     NULL			/* setFromAnyProc */
 };
 
+#define ChanSetIntRep(objPtr, resPtr)					\
+    do {								\
+	Tcl_ObjIntRep ir;						\
+	(resPtr)->refCount++;						\
+	ir.twoPtrValue.ptr1 = (resPtr);					\
+	ir.twoPtrValue.ptr2 = NULL;					\
+	Tcl_StoreIntRep((objPtr), &chanObjType, &ir);			\
+    } while (0)
+
 #define ChanGetIntRep(objPtr, resPtr)					\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
@@ -1536,14 +1545,10 @@ TclGetChannelFromObj(
     if (resPtr && resPtr->refCount == 1) {
 	/* Re-use the ResolvedCmdName struct */
 	Tcl_Release((ClientData) resPtr->statePtr);
-
     } else {
-	TclFreeIntRep(objPtr);
-
 	resPtr = (ResolvedChanName *) ckalloc(sizeof(ResolvedChanName));
-	resPtr->refCount = 1;
-	objPtr->internalRep.twoPtrValue.ptr1 = (ClientData) resPtr;
-	objPtr->typePtr = &chanObjType;
+	resPtr->refCount = 0;
+	ChanSetIntRep(objPtr, resPtr);		/* Overwrites, if needed */
     }
     statePtr = ((Channel *)chan)->state;
     resPtr->statePtr = statePtr;
@@ -11175,10 +11180,7 @@ DupChannelIntRep(
 
     ChanGetIntRep(srcPtr, resPtr);
     assert(resPtr);
-
-    resPtr->refCount++;
-    copyPtr->internalRep.twoPtrValue.ptr1 = resPtr;
-    copyPtr->typePtr = srcPtr->typePtr;
+    ChanSetIntRep(copyPtr, resPtr);
 }
 
 /*
