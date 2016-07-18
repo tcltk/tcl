@@ -233,6 +233,7 @@ if {[testConstraint history]} {
 test history-8.1 {clear option} history {catch {history clear junk}} 1
 test history-8.2 {clear option} history {history clear} {}
 if {[testConstraint history]} {
+    history clear
     history add "Testing"
 }
 test history-8.3 {clear option} history {history} {     1  Testing}
@@ -248,3 +249,7 @@ test history-9.2 {miscellaneous} history {
 # cleanup
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:
