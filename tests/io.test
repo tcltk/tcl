@@ -44,6 +44,7 @@ testConstraint testfevent       [llength [info commands testfevent]]
 testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
+testConstraint testobj		[llength [info commands testobj]]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -8637,6 +8638,24 @@ test io-73.5 {effect of eof on encoding end flags} -setup {
     close $rfd
     removeFile io-73.5
 } -result [list 1 1 more\u00a0data 1]
+
+test io-74.1 {[104f2885bb] improper cache validity check} -setup {
+    set fn [makeFile {} io-74.1]
+    set rfd [open $fn r]
+    testobj freeallvars
+    interp create slave
+} -constraints testobj -body {
+    teststringobj set 1 [string range $rfd 0 end]
+    read [teststringobj get 1]		
+    testobj duplicate 1 2
+    interp transfer {} $rfd slave
+    catch {read [teststringobj get 1]}
+    read [teststringobj get 2]		
+} -cleanup {
+    interp delete slave
+    testobj freeallvars
+    removeFile io-74.1
+} -returnCodes error -match glob -result {can not find channel named "*"}
 
 # ### ### ### ######### ######### #########
 
