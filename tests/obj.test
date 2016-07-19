@@ -26,7 +26,6 @@ testConstraint wideBiggerThanInt [expr {wide(0x80000000) != int(0x80000000)}]
 test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} testobj {
     set r 1
     foreach {t} {
-	{array search}
 	bytearray
 	bytecode
 	cmdName
