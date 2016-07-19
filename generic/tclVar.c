@@ -213,10 +213,6 @@ static Tcl_DupInternalRepProc	DupParsedVarName;
  *			  or NULL if it is this same obj
  *   twoPtrValue.ptr2: index into locals table
  *
- * nsVarName - INTERNALREP DEFINITION:
- *   twoPtrValue.ptr1:	pointer to the namespace containing the reference
- *   twoPtrValue.ptr2:	pointer to the corresponding Var
- *
  * parsedVarName - INTERNALREP DEFINITION:
  *   twoPtrValue.ptr1:	pointer to the array name Tcl_Obj, or NULL if it is a
  *			scalar variable
