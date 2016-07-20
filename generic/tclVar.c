@@ -519,15 +519,13 @@ TclObjLookupVarEx(
 				 * is set to NULL. */
 {
     Interp *iPtr = (Interp *) interp;
+    CallFrame *varFramePtr = iPtr->varFramePtr;
     register Var *varPtr;	/* Points to the variable's in-frame Var
 				 * structure. */
-    const char *part1;
-    int index, len;
-    int parsed = 0;
-    const Tcl_ObjType *typePtr;
     const char *errMsg = NULL;
-    CallFrame *varFramePtr = iPtr->varFramePtr;
-    const char *part2 = part2Ptr? TclGetString(part2Ptr):NULL;
+    int index, parsed = 0;
+    const Tcl_ObjType *typePtr;
+
     int localIndex;
     Tcl_Obj *namePtr;
 
@@ -544,7 +542,7 @@ TclObjLookupVarEx(
 	     * Use the cached index if the names coincide.
 	     */
 
-	    Tcl_Obj *checkNamePtr = localName(iPtr->varFramePtr, localIndex);
+	    Tcl_Obj *checkNamePtr = localName(varFramePtr, localIndex);
 
 	    if ((!namePtr && (checkNamePtr == part1Ptr)) ||
 		    (namePtr && (checkNamePtr == namePtr))) {
@@ -581,15 +579,21 @@ TclObjLookupVarEx(
 	    goto restart;
 	}
     }
-    part1 = TclGetStringFromObj(part1Ptr, &len);
 
-    if (!parsed && len && (*(part1 + len - 1) == ')')) {
+    if (!parsed) {
+
 	/*
 	 * part1Ptr is possibly an unparsed array element.
 	 */
 
-	part2 = strchr(part1, '(');
-	if (part2) {
+	int len;
+	const char *part1 = TclGetStringFromObj(part1Ptr, &len);
+
+	if (len > 1 && (part1[len - 1] == ')')) {
+
+	  const char *part2 = strchr(part1, '(');
+
+	  if (part2) {
 	    Tcl_Obj *arrayPtr;
 
 		if (part2Ptr != NULL) {
@@ -614,6 +618,7 @@ TclObjLookupVarEx(
 	    part1Ptr->typePtr = &parsedVarNameType;
 
 	    part1Ptr = arrayPtr;
+	  }
 	}
     }
 
@@ -622,8 +627,6 @@ TclObjLookupVarEx(
      * part1Ptr is not an array element; look it up, and convert it to one of
      * the cached types if possible.
      */
-
-    TclFreeIntRep(part1Ptr);
 
     varPtr = TclLookupSimpleVar(interp, part1Ptr, flags, createPart1,
 	    &errMsg, &index);
@@ -640,11 +643,12 @@ TclObjLookupVarEx(
      * Cache the newly found variable if possible.
      */
 
+    TclFreeIntRep(part1Ptr);
     if (index >= 0) {
 	/*
 	 * An indexed local variable.
 	 */
-	Tcl_Obj *cachedNamePtr = localName(iPtr->varFramePtr, index);
+	Tcl_Obj *cachedNamePtr = localName(varFramePtr, index);
 
 	if (part1Ptr == cachedNamePtr) {
 	    cachedNamePtr = NULL;
