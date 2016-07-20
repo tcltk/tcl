@@ -577,23 +577,9 @@ TestindexobjCmd(
     }
     argv[objc-4] = NULL;
 
-    /*
-     * Tcl_GetIndexFromObj assumes that the table is statically-allocated so
-     * that its address is different for each index object. If we accidently
-     * allocate a table at the same address as that cached in the index
-     * object, clear out the object's cached state.
-     */
-
-    if (objv[3]->typePtr != NULL
-	    && !strcmp("index", objv[3]->typePtr->name)) {
-	indexRep = objv[3]->internalRep.twoPtrValue.ptr1;
-	if (indexRep->tablePtr == (void *) argv) {
-	    TclFreeIntRep(objv[3]);
-	}
-    }
-
     result = Tcl_GetIndexFromObj((setError? interp : NULL), objv[3],
-	    argv, "token", (allowAbbrev? 0 : TCL_EXACT), &index);
+	    argv, "token", INDEX_TEMP_TABLE|(allowAbbrev? 0 : TCL_EXACT),
+	    &index);
     ckfree(argv);
     if (result == TCL_OK) {
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), index);
