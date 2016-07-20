@@ -1,7 +1,7 @@
 # created by tools/tclZIC.tcl - do not edit
 
 set TZData(:Antarctica/Palmer) {
-    {-9223372036854775808 0 0 zzz}
+    {-9223372036854775808 0 0 -00}
     {-157766400 -14400 0 ART}
     {-152654400 -14400 0 ART}
     {-132955200 -10800 1 ARST}
