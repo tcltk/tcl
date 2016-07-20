@@ -249,6 +249,27 @@ static const Tcl_ObjType parsedVarNameType = {
     FreeParsedVarName, DupParsedVarName, NULL, NULL
 };
 
+#define ParsedSetIntRep(objPtr, arrayPtr, elem)				\
+    do {								\
+	Tcl_ObjIntRep ir;						\
+	Tcl_Obj *ptr1 = (arrayPtr);					\
+	Tcl_Obj *ptr2 = (elem);						\
+	if (ptr1) {Tcl_IncrRefCount(ptr1);}				\
+	if (ptr2) {Tcl_IncrRefCount(ptr2);}				\
+	ir.twoPtrValue.ptr1 = ptr1;					\
+	ir.twoPtrValue.ptr2 = ptr2;					\
+	Tcl_StoreIntRep((objPtr), &parsedVarNameType, &ir);		\
+    } while (0)
+
+#define ParsedGetIntRep(objPtr, parsed, array, elem)			\
+    do {								\
+	const Tcl_ObjIntRep *irPtr;					\
+	irPtr = Tcl_FetchIntRep((objPtr), &parsedVarNameType);		\
+	(parsed) = (irPtr != NULL);					\
+	(array) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(elem) = irPtr ? irPtr->twoPtrValue.ptr2 : NULL;		\
+    } while (0)
+
 
 Var *
 TclVarHashCreateVar(
@@ -435,9 +456,8 @@ TclLookupVar(
  *
  * Side effects:
  *	New hashtable entries may be created if createPart1 or createPart2
- *	are 1. The object part1Ptr is converted to one of localVarNameType,
- *	tclNsVarNameType or parsedVarNameType and caches as much of the
- *	lookup as it can.
+ *	are 1. The object part1Ptr is converted to one of localVarNameType
+ *	or parsedVarNameType and caches as much of the lookup as it can.
  *	When createPart1 is 1, callers must IncrRefCount part1Ptr if they
  *	plan to DecrRefCount it.
  *
@@ -524,15 +544,13 @@ TclObjLookupVarEx(
 				 * structure. */
     const char *errMsg = NULL;
     int index, parsed = 0;
-    const Tcl_ObjType *typePtr;
 
     int localIndex;
-    Tcl_Obj *namePtr;
+    Tcl_Obj *namePtr, *arrayPtr, *elem;
 
     *arrayPtrPtr = NULL;
 
   restart:
-    typePtr = part1Ptr->typePtr;
     LocalGetIntRep(part1Ptr, localIndex, namePtr);
     if (localIndex >= 0) {
 	if (HasLocalVars(varFramePtr)
@@ -554,13 +572,11 @@ TclObjLookupVarEx(
     }
 
     /*
-     * If part1Ptr is a parsedVarNameType, separate it into the pre-parsed
-     * parts.
+     * If part1Ptr is a parsedVarNameType, retrieve the pre-parsed parts.
      */
 
-    if (typePtr == &parsedVarNameType) {
-	parsed = 1;
-	if (part1Ptr->internalRep.twoPtrValue.ptr1 != NULL) {
+    ParsedGetIntRep(part1Ptr, parsed, arrayPtr, elem);
+    if (parsed && arrayPtr) {
 	    if (part2Ptr != NULL) {
 		/*
 		 * ERROR: part1Ptr is already an array element, cannot specify
@@ -574,10 +590,9 @@ TclObjLookupVarEx(
 		}
 		return NULL;
 	    }
-	    part2Ptr = part1Ptr->internalRep.twoPtrValue.ptr2;
-	    part1Ptr = part1Ptr->internalRep.twoPtrValue.ptr1;
+	    part2Ptr = elem;
+	    part1Ptr = arrayPtr;
 	    goto restart;
-	}
     }
 
     if (!parsed) {
@@ -594,8 +609,6 @@ TclObjLookupVarEx(
 	  const char *part2 = strchr(part1, '(');
 
 	  if (part2) {
-	    Tcl_Obj *arrayPtr;
-
 		if (part2Ptr != NULL) {
 		    if (flags & TCL_LEAVE_ERR_MSG) {
 			TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
@@ -609,13 +622,7 @@ TclObjLookupVarEx(
 	    arrayPtr = Tcl_NewStringObj(part1, (part2 - part1));
 	    part2Ptr = Tcl_NewStringObj(part2 + 1, len - (part2 - part1) - 2);
 
-	    TclFreeIntRep(part1Ptr);
-
-	    Tcl_IncrRefCount(arrayPtr);
-	    part1Ptr->internalRep.twoPtrValue.ptr1 = arrayPtr;
-	    Tcl_IncrRefCount(part2Ptr);
-	    part1Ptr->internalRep.twoPtrValue.ptr2 = part2Ptr;
-	    part1Ptr->typePtr = &parsedVarNameType;
+	    ParsedSetIntRep(part1Ptr, arrayPtr, part2Ptr);
 
 	    part1Ptr = arrayPtr;
 	  }
@@ -643,7 +650,6 @@ TclObjLookupVarEx(
      * Cache the newly found variable if possible.
      */
 
-    TclFreeIntRep(part1Ptr);
     if (index >= 0) {
 	/*
 	 * An indexed local variable.
@@ -679,9 +685,7 @@ TclObjLookupVarEx(
 	 * At least mark part1Ptr as already parsed.
 	 */
 
-	part1Ptr->typePtr = &parsedVarNameType;
-	part1Ptr->internalRep.twoPtrValue.ptr1 = NULL;
-	part1Ptr->internalRep.twoPtrValue.ptr2 = NULL;
+	ParsedSetIntRep(part1Ptr, NULL, NULL);
     }
 
   donePart1:
@@ -5342,14 +5346,16 @@ static void
 FreeParsedVarName(
     Tcl_Obj *objPtr)
 {
-    register Tcl_Obj *arrayPtr = objPtr->internalRep.twoPtrValue.ptr1;
-    register Tcl_Obj *elem = objPtr->internalRep.twoPtrValue.ptr2;
+    register Tcl_Obj *arrayPtr, *elem;
+    int parsed;
 
+    ParsedGetIntRep(objPtr, parsed, arrayPtr, elem);
+
+    parsed++;				/* Silence compiler. */
     if (arrayPtr != NULL) {
 	TclDecrRefCount(arrayPtr);
 	TclDecrRefCount(elem);
     }
-    objPtr->typePtr = NULL;
 }
 
 static void
@@ -5357,17 +5363,13 @@ DupParsedVarName(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    register Tcl_Obj *arrayPtr = srcPtr->internalRep.twoPtrValue.ptr1;
-    register Tcl_Obj *elem = srcPtr->internalRep.twoPtrValue.ptr2;
+    register Tcl_Obj *arrayPtr, *elem;
+    int parsed;
 
-    if (arrayPtr != NULL) {
-	Tcl_IncrRefCount(arrayPtr);
-	Tcl_IncrRefCount(elem);
-    }
+    ParsedGetIntRep(srcPtr, parsed, arrayPtr, elem);
 
-    dupPtr->internalRep.twoPtrValue.ptr1 = arrayPtr;
-    dupPtr->internalRep.twoPtrValue.ptr2 = elem;
-    dupPtr->typePtr = &parsedVarNameType;
+    parsed++;				/* Silence compiler. */
+    ParsedSetIntRep(dupPtr, arrayPtr, elem);
 }
 
 /*
