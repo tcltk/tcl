@@ -1,7 +1,7 @@
 # created by tools/tclZIC.tcl - do not edit
 
 set TZData(:Antarctica/Troll) {
-    {-9223372036854775808 0 0 zzz}
+    {-9223372036854775808 0 0 -00}
     {1108166400 0 0 UTC}
     {1111885200 7200 1 CEST}
     {1130634000 0 0 UTC}
