@@ -522,9 +522,8 @@ TclObjLookupVarEx(
     register Var *varPtr;	/* Points to the variable's in-frame Var
 				 * structure. */
     const char *part1;
-    int index, len1, len2;
+    int index, len;
     int parsed = 0;
-    Tcl_Obj *objPtr;
     const Tcl_ObjType *typePtr;
     const char *errMsg = NULL;
     CallFrame *varFramePtr = iPtr->varFramePtr;
@@ -582,18 +581,17 @@ TclObjLookupVarEx(
 	    goto restart;
 	}
     }
-    part1 = TclGetStringFromObj(part1Ptr, &len1);
+    part1 = TclGetStringFromObj(part1Ptr, &len);
 
-    if (!parsed && len1 && (*(part1 + len1 - 1) == ')')) {
+    if (!parsed && len && (*(part1 + len - 1) == ')')) {
 	/*
 	 * part1Ptr is possibly an unparsed array element.
 	 */
 
-	register int i;
+	part2 = strchr(part1, '(');
+	if (part2) {
+	    Tcl_Obj *arrayPtr;
 
-	len2 = -1;
-	for (i = 0; i < len1; i++) {
-	    if (*(part1 + i) == '(') {
 		if (part2Ptr != NULL) {
 		    if (flags & TCL_LEAVE_ERR_MSG) {
 			TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
@@ -604,44 +602,18 @@ TclObjLookupVarEx(
 		    return NULL;
 		}
 
-		/*
-		 * part1Ptr points to an array element; first copy the element
-		 * name to a new string part2.
-		 */
+	    arrayPtr = Tcl_NewStringObj(part1, (part2 - part1));
+	    part2Ptr = Tcl_NewStringObj(part2 + 1, len - (part2 - part1) - 2);
 
-		part2 = part1 + i + 1;
-		len2 = len1 - i - 2;
-		len1 = i;
+	    TclFreeIntRep(part1Ptr);
 
-		part2Ptr = Tcl_NewStringObj(part2, len2);
+	    Tcl_IncrRefCount(arrayPtr);
+	    part1Ptr->internalRep.twoPtrValue.ptr1 = arrayPtr;
+	    Tcl_IncrRefCount(part2Ptr);
+	    part1Ptr->internalRep.twoPtrValue.ptr2 = part2Ptr;
+	    part1Ptr->typePtr = &parsedVarNameType;
 
-		/*
-		 * Free the internal rep of the original part1Ptr, now renamed
-		 * objPtr, and set it to parsedVarNameType.
-		 */
-
-		objPtr = part1Ptr;
-		TclFreeIntRep(objPtr);
-		objPtr->typePtr = &parsedVarNameType;
-
-		/*
-		 * Define a new string object to hold the new part1Ptr, i.e.,
-		 * the array name. Set the internal rep of objPtr, reset
-		 * typePtr and part1 to contain the references to the array
-		 * name.
-		 */
-
-		TclNewStringObj(part1Ptr, part1, len1);
-		Tcl_IncrRefCount(part1Ptr);
-
-		objPtr->internalRep.twoPtrValue.ptr1 = part1Ptr;
-		Tcl_IncrRefCount(part2Ptr);
-		objPtr->internalRep.twoPtrValue.ptr2 = part2Ptr;
-
-		typePtr = part1Ptr->typePtr;
-		part1 = TclGetString(part1Ptr);
-		break;
-	    }
+	    part1Ptr = arrayPtr;
 	}
     }
 
@@ -5332,6 +5304,7 @@ FreeLocalVarName(
 
     LocalGetIntRep(objPtr, index, namePtr);
 
+    index++;	/* Compiler warning bait. */
     if (namePtr) {
 	Tcl_DecrRefCount(namePtr);
     }
