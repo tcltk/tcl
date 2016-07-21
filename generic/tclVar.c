@@ -521,16 +521,13 @@ TclObjLookupVarEx(
 				 * is set to NULL. */
 {
     Interp *iPtr = (Interp *) interp;
+    CallFrame *varFramePtr = iPtr->varFramePtr;
     register Var *varPtr;	/* Points to the variable's in-frame Var
 				 * structure. */
-    const char *part1;
-    int index, len1, len2;
-    int parsed = 0;
-    Tcl_Obj *objPtr;
-    const Tcl_ObjType *typePtr = part1Ptr->typePtr;
     const char *errMsg = NULL;
-    CallFrame *varFramePtr = iPtr->varFramePtr;
-    const char *part2 = part2Ptr? TclGetString(part2Ptr):NULL;
+    int index, parsed = 0;
+    const Tcl_ObjType *typePtr = part1Ptr->typePtr;
+
     *arrayPtrPtr = NULL;
 
     if (typePtr == &localVarNameType) {
@@ -546,7 +543,7 @@ TclObjLookupVarEx(
 	     */
 
 	    Tcl_Obj *namePtr = part1Ptr->internalRep.twoPtrValue.ptr1;
-	    Tcl_Obj *checkNamePtr = localName(iPtr->varFramePtr, localIndex);
+	    Tcl_Obj *checkNamePtr = localName(varFramePtr, localIndex);
 
 	    if ((!namePtr && (checkNamePtr == part1Ptr)) ||
 		    (namePtr && (checkNamePtr == namePtr))) {
@@ -586,18 +583,23 @@ TclObjLookupVarEx(
 	}
 	parsed = 1;
     }
-    part1 = TclGetStringFromObj(part1Ptr, &len1);
 
-    if (!parsed && len1 && (*(part1 + len1 - 1) == ')')) {
+    if (!parsed) {
+
 	/*
 	 * part1Ptr is possibly an unparsed array element.
 	 */
 
-	register int i;
+	int len;
+	const char *part1 = TclGetStringFromObj(part1Ptr, &len);
 
-	len2 = -1;
-	for (i = 0; i < len1; i++) {
-	    if (*(part1 + i) == '(') {
+	if (len > 1 && (part1[len - 1] == ')')) {
+
+	  const char *part2 = strchr(part1, '(');
+
+	  if (part2) {
+	    Tcl_Obj *arrayPtr;
+
 		if (part2Ptr != NULL) {
 		    if (flags & TCL_LEAVE_ERR_MSG) {
 			TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
@@ -608,44 +610,19 @@ TclObjLookupVarEx(
 		    return NULL;
 		}
 
-		/*
-		 * part1Ptr points to an array element; first copy the element
-		 * name to a new string part2.
-		 */
+	    arrayPtr = Tcl_NewStringObj(part1, (part2 - part1));
+	    part2Ptr = Tcl_NewStringObj(part2 + 1, len - (part2 - part1) - 2);
 
-		part2 = part1 + i + 1;
-		len2 = len1 - i - 2;
-		len1 = i;
+	    TclFreeIntRep(part1Ptr);
 
-		part2Ptr = Tcl_NewStringObj(part2, len2);
+	    Tcl_IncrRefCount(arrayPtr);
+	    part1Ptr->internalRep.twoPtrValue.ptr1 = arrayPtr;
+	    Tcl_IncrRefCount(part2Ptr);
+	    part1Ptr->internalRep.twoPtrValue.ptr2 = part2Ptr;
+	    part1Ptr->typePtr = &tclParsedVarNameType;
 
-		/*
-		 * Free the internal rep of the original part1Ptr, now renamed
-		 * objPtr, and set it to tclParsedVarNameType.
-		 */
-
-		objPtr = part1Ptr;
-		TclFreeIntRep(objPtr);
-		objPtr->typePtr = &tclParsedVarNameType;
-
-		/*
-		 * Define a new string object to hold the new part1Ptr, i.e.,
-		 * the array name. Set the internal rep of objPtr, reset
-		 * typePtr and part1 to contain the references to the array
-		 * name.
-		 */
-
-		TclNewStringObj(part1Ptr, part1, len1);
-		Tcl_IncrRefCount(part1Ptr);
-
-		objPtr->internalRep.twoPtrValue.ptr1 = part1Ptr;
-		Tcl_IncrRefCount(part2Ptr);
-		objPtr->internalRep.twoPtrValue.ptr2 = part2Ptr;
-
-		typePtr = part1Ptr->typePtr;
-		part1 = TclGetString(part1Ptr);
-		break;
-	    }
+	    part1Ptr = arrayPtr;
+	  }
 	}
     }
 
@@ -654,8 +631,6 @@ TclObjLookupVarEx(
      * part1Ptr is not an array element; look it up, and convert it to one of
      * the cached types if possible.
      */
-
-    TclFreeIntRep(part1Ptr);
 
     varPtr = TclLookupSimpleVar(interp, part1Ptr, flags, createPart1,
 	    &errMsg, &index);
@@ -672,11 +647,12 @@ TclObjLookupVarEx(
      * Cache the newly found variable if possible.
      */
 
+    TclFreeIntRep(part1Ptr);
     if (index >= 0) {
 	/*
 	 * An indexed local variable.
 	 */
-	Tcl_Obj *cachedNamePtr = localName(iPtr->varFramePtr, index);
+	Tcl_Obj *cachedNamePtr = localName(varFramePtr, index);
 
 	part1Ptr->typePtr = &localVarNameType;
 	if (part1Ptr != cachedNamePtr) {
