@@ -1841,7 +1841,7 @@ test info-30.48 {Bug 2850901} testevalex {
 # -------------------------------------------------------------------------
 # literal sharing 2, bug 2933089
 
-test info-39.1 {location information not confused by literal sharing, bug 2933089} -setup {
+test info-40.1 {location information not confused by literal sharing, bug 2933089} -setup {
     set result {}
 
     proc print_one {} {}
