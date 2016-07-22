@@ -883,6 +883,7 @@ typedef struct VarInHash {
     (TclIsVarDirectModifyable(varPtr) &&\
 	(!(arrayPtr) || !((arrayPtr)->flags & (VAR_TRACED_READ|VAR_TRACED_WRITE))))
 
+
 /*
  *----------------------------------------------------------------
  * Data structures related to procedures. These are used primarily in
@@ -2424,6 +2425,7 @@ typedef struct List {
 #define TclListObjIsCanonical(listPtr) \
     (((listPtr)->typePtr == &tclListType) ? ListObjIsCanonical((listPtr)) : 0)
 
+
 /*
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
  * TclNRLmapCmd and their compilations.
@@ -3016,6 +3018,7 @@ MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
 			    int *lines, Tcl_Obj *const *elems);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
+MODULE_SCOPE void	TclFreeListInternalRep(Tcl_Obj *listPtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
