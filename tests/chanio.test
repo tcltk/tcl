@@ -6790,8 +6790,6 @@ test chan-io-52.11 {TclCopyChannel & encodings} -setup {
     chan close $in
     chan close $out
     file size $path(kyrillic.txt)
-} -cleanup {
-    file delete $path(utf8-fcopy.txt)
 } -result 3
 
 test chan-io-53.1 {CopyData} -setup {
