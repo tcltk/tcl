@@ -547,6 +547,18 @@ this, spawn with "2>@" or
 ">@" redirection operators onto the write side of a pipe, and then
 immediately close it in the parent. This is necessary to get an EOF on
 the read side once the child has exited or otherwise closed its output.
+.RS
+.PP
+Note that the pipe buffering semantics can vary at the operating system level
+substantially; it is not safe to assume that a write performed on the output
+side of the pipe will appear instantly to the input side. This is a
+fundamental difference and Tcl cannot conceal it. The overall stream semantics
+\fIare\fR compatible, so blocking reads and writes will not see most of the
+differences, but the details of what exactly gets written when are not. This
+is most likely to show up when using pipelines for testing; care should be
+taken to ensure that deadlocks do not occur and that potential short reads are
+allowed for.
+.RE
 .VE 8.6
 .TP
 \fBchan pop \fIchannelId\fR
