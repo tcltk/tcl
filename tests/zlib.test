@@ -251,9 +251,10 @@ test zlib-8.8 {transformation and fconfigure} -setup {
 } -constraints zlib -body {
     zlib push compress $outSide -dictionary $spdyDict
     fconfigure $outSide -blocking 0 -translation binary -buffering none
-    fconfigure $inSide -blocking 0 -translation binary
+    fconfigure $inSide -blocking 1 -translation binary
     puts -nonewline $outSide $spdyHeaders
     chan pop $outSide
+    chan close $outSide
     set compressed [read $inSide]
     catch {zlib decompress $compressed} err opt
     list [string length [zlib compress $spdyHeaders]] \
@@ -269,10 +270,11 @@ test zlib-8.9 {transformation and fconfigure} -setup {
 } -constraints zlib -body {
     zlib push compress $outSide -dictionary $spdyDict
     fconfigure $outSide -blocking 0 -translation binary -buffering none
-    fconfigure $inSide -blocking 0 -translation binary
+    fconfigure $inSide -blocking 1 -translation binary
     puts -nonewline $outSide $spdyHeaders
     set result [fconfigure $outSide -checksum]
     chan pop $outSide
+    chan close $outSide
     $strm put -dictionary $spdyDict [read $inSide]
     lappend result [string length $spdyHeaders] [string length [$strm get]]
 } -cleanup {
@@ -285,9 +287,10 @@ test zlib-8.10 {transformation and fconfigure} -setup {
 } -constraints {zlib recentZlib} -body {
     zlib push deflate $outSide -dictionary $spdyDict
     fconfigure $outSide -blocking 0 -translation binary -buffering none
-    fconfigure $inSide -blocking 0 -translation binary
+    fconfigure $inSide -blocking 1 -translation binary
     puts -nonewline $outSide $spdyHeaders
     chan pop $outSide
+    chan close $outSide
     set compressed [read $inSide]
     catch {
 	zlib inflate $compressed
@@ -306,9 +309,10 @@ test zlib-8.11 {transformation and fconfigure} -setup {
 } -constraints zlib -body {
     zlib push deflate $outSide -dictionary $spdyDict
     fconfigure $outSide -blocking 0 -translation binary -buffering none
-    fconfigure $inSide -blocking 0 -translation binary
+    fconfigure $inSide -blocking 1 -translation binary
     puts -nonewline $outSide $spdyHeaders
     chan pop $outSide
+    chan close $outSide
     $strm put -dictionary $spdyDict [read $inSide]
     list [string length $spdyHeaders] [string length [$strm get]]
 } -cleanup {
