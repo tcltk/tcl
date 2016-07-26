@@ -734,7 +734,7 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
     AC_MSG_CHECKING([for build with symbols])
     AC_ARG_ENABLE(symbols,
 	AC_HELP_STRING([--enable-symbols],
-	    [build with debugging symbols (default: off)]),
+	    [build with debugging symbols (all, compile, or mem) (default: off)]),
 	[tcl_ok=$enableval], [tcl_ok=no])
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
     DBGX=""

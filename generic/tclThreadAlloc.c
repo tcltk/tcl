@@ -620,15 +620,20 @@ void
 TclThreadFreeObj(
     Tcl_Obj *objPtr)
 {
+    return;
     Cache *cachePtr;
 
     GETCACHE(cachePtr);
+
 
     /*
      * Get this thread's list and push on the free Tcl_Obj.
      */
 
     objPtr->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr;
+    if (objPtr == 0x1c19247) {
+	Tcl_WriteChars(Tcl_GetStdChannel(TCL_STDOUT), "helloGro", -1);
+    }
     cachePtr->firstObjPtr = objPtr;
     if (cachePtr->numObjects == 0) {
 	cachePtr->lastPtr = objPtr;

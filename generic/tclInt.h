@@ -2512,6 +2512,28 @@ typedef struct List {
 
 #define DICT_PATH_NON_EXISTENT	((Tcl_Obj *) (void *) 1)
 
+/* 
+ * Macros for tclStringType objects
+ */
+
+#define TclStringGetPrev(objPtr)					    \
+    ((Tcl_Obj *)((objPtr)->internalRep.twoPtrValue.ptr2))
+#define TclStringSetPrev(objPtr,prevPtr)				    \
+    do {								    \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = (void *) (prevPtr);   \
+    } while (0)
+#define TclStringInvalidatePrev(objPtr)				    \
+    do {								    \
+	if (TclStringGetPrev((objPtr)) != NULL) {			    \
+	    Tcl_DecrRefCount(TclStringGetPrev((objPtr)));		    \
+	}								    \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = NULL;		    \
+    } while (0)
+
+#define TclStringPrevIs(objPtr, checkTypePtr) \
+    (TclStringGetPrev((objPtr))->typePtr == &(checkTypePtr))
+
+
 /*
  *----------------------------------------------------------------
  * Data structures related to the filesystem internals
@@ -3018,7 +3040,6 @@ MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
 			    int *lines, Tcl_Obj *const *elems);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
-MODULE_SCOPE void	TclFreeListInternalRep(Tcl_Obj *listPtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
@@ -3040,6 +3061,7 @@ MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[],
 			    Tcl_Namespace *nsPtr, int flags);
+MODULE_SCOPE Tcl_Obj *	TclObjLookupTyped (Tcl_Obj * objPtr, Tcl_ObjType *typeptr);
 MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags);
 MODULE_SCOPE int	TclParseBackslash(const char *src,

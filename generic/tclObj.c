@@ -4492,6 +4492,46 @@ Tcl_RepresentationCmd(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclLookupObjTyped  --
+ *
+ *	Given a Tcl_Obj, find an corresponding object, if one exists, of a
+ *	given type.
+ *
+ * Results:
+ *	The found object, or, if no such corresponding object was found, NULL.
+ *	
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclObjLookupTyped (Tcl_Obj * objPtr, Tcl_ObjType *typePtr) {
+    Tcl_Obj *foundPtr;
+    if (typePtr == objPtr->typePtr) {
+	return objPtr;
+    }
+    if (objPtr->typePtr == &tclStringType) {
+	foundPtr = TclStringGetPrev(objPtr);
+	if (foundPtr == NULL) {
+	    return NULL;
+	}
+	return TclObjLookupTyped(foundPtr, typePtr);
+    }
+    if (typePtr == &tclListType) {
+	if (objPtr->typePtr == &tclDictType && objPtr->internalRep.twoPtrValue.ptr2 != NULL) {
+	    /* A usable list representation exists.  */
+	    return objPtr->internalRep.twoPtrValue.ptr2;
+	}
+    }
+    return NULL;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

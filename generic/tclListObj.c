@@ -21,6 +21,7 @@
 static List *		AttemptNewList(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static List *		NewListIntRep(int objc, Tcl_Obj *const objv[], int p);
+static void		FreeListInternalRep(Tcl_Obj *listPtr);
 static void		DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static int		SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfList(Tcl_Obj *listPtr);
@@ -40,7 +41,7 @@ static void		UpdateStringOfList(Tcl_Obj *listPtr);
 
 const Tcl_ObjType tclListType = {
     "list",			/* name */
-    TclFreeListInternalRep,	/* freeIntRepProc */
+    FreeListInternalRep,	/* freeIntRepProc */
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
     SetListFromAny		/* setFromAnyProc */
@@ -1736,7 +1737,7 @@ TclListObjSetElement(
 /*
  *----------------------------------------------------------------------
  *
- * TclFreeListInternalRep --
+ * FreeListInternalRep --
  *
  *	Deallocate the storage associated with a list object's internal
  *	representation.
@@ -1752,8 +1753,8 @@ TclListObjSetElement(
  *----------------------------------------------------------------------
  */
 
-void
-TclFreeListInternalRep(
+static void
+FreeListInternalRep(
     Tcl_Obj *listPtr)		/* List object with internal rep to free. */
 {
     List *listRepPtr = ListRepPtr(listPtr);
@@ -1822,15 +1823,26 @@ SetListFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
+    Tcl_Obj *listPtr;
     List *listRepPtr;
     Tcl_Obj **elemPtrs;
 
     /*
-     * Dictionaries are a special case; they have a string representation such
-     * that *all* valid dictionaries are valid lists. Hence we can convert
-     * more directly.
-     
+     * Dictionaries are a special case; they may have stored a previous list
+     * representation
      */
+
+     listPtr = TclObjLookupTyped(objPtr, &tclListType);
+     if (listPtr != NULL) {
+	Tcl_IncrRefCount(listPtr);
+	TclFreeIntRep(objPtr);
+	DupListInternalRep(listPtr, objPtr); 
+	Tcl_DecrRefCount(listPtr);
+	objPtr->typePtr = &tclListType;
+	/* To Do: Maybe keep the dict intrep around in case this object is
+	 * used as a dict again */
+	return TCL_OK;
+     }
 
     if (objPtr->typePtr == &tclDictType) {
 	Tcl_Obj *keyPtr, *valuePtr;
@@ -1846,33 +1858,25 @@ SetListFromAny(
 	 * dictionary or iterating over it will not fail.
 	 */
 
-	if (objPtr->internalRep.twoPtrValue.ptr2 != NULL) {
-	    /* A usable list representation exists.  */
-	    listRepPtr = objPtr->internalRep.twoPtrValue.ptr2;
-	    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-	    /* To Do: Maybe keep the dict intrep around in case this object is
-	     * used as a dict again */
-	} else {
-	    Tcl_DictObjSize(NULL, objPtr, &size);
-	    listRepPtr = AttemptNewList(interp, size > 0 ? 2*size : 1, NULL);
-	    if (!listRepPtr) {
-		return TCL_ERROR;
-	    }
-	    listRepPtr->elemCount = 2 * size;
+	Tcl_DictObjSize(NULL, objPtr, &size);
+	listRepPtr = AttemptNewList(interp, size > 0 ? 2*size : 1, NULL);
+	if (!listRepPtr) {
+	    return TCL_ERROR;
+	}
+	listRepPtr->elemCount = 2 * size;
 
-	    /*
-	     * Populate the list representation.
-	     */
+	/*
+	 * Populate the list representation.
+	 */
 
-	    elemPtrs = &listRepPtr->elements;
-	    Tcl_DictObjFirst(NULL, objPtr, &search, &keyPtr, &valuePtr, &done);
-	    while (!done) {
-		*elemPtrs++ = keyPtr;
-		*elemPtrs++ = valuePtr;
-		Tcl_IncrRefCount(keyPtr);
-		Tcl_IncrRefCount(valuePtr);
-		Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
-	    }
+	elemPtrs = &listRepPtr->elements;
+	Tcl_DictObjFirst(NULL, objPtr, &search, &keyPtr, &valuePtr, &done);
+	while (!done) {
+	    *elemPtrs++ = keyPtr;
+	    *elemPtrs++ = valuePtr;
+	    Tcl_IncrRefCount(keyPtr);
+	    Tcl_IncrRefCount(valuePtr);
+	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
     } else {
 	int estCount, length;

@@ -500,19 +500,15 @@ UpdateStringOfDict(
     const char *elem;
     char *dst;
     const int maxFlags = UINT_MAX / sizeof(int);
-    void *tmp;
+    Tcl_Obj *listObj;
     int numElems;
 
     if (dictPtr->internalRep.twoPtrValue.ptr2 != NULL) {
-	tmp = dictPtr->internalRep.twoPtrValue.ptr1;
-	dictPtr->internalRep.twoPtrValue.ptr1 = dictPtr->internalRep.twoPtrValue.ptr2;
-	dictPtr->typePtr = &tclListType ;
-	if (TclGetString(dictPtr) == NULL) {
-	    Tcl_Panic("Could not update dict string from internal list");
-	}
-	dictPtr->internalRep.twoPtrValue.ptr2 = dictPtr->internalRep.twoPtrValue.ptr1;
-	dictPtr->internalRep.twoPtrValue.ptr1 = tmp;
-	dictPtr->typePtr = &tclDictType;
+	listObj = dictPtr->internalRep.twoPtrValue.ptr2;
+	TclGetString(listObj);
+	dictPtr->bytes = listObj->bytes;
+	dictPtr->length = listObj->length;
+	listObj->bytes = NULL;
 	return;
     }
 
@@ -623,6 +619,7 @@ SetDictFromAny(
     Tcl_HashEntry *hPtr;
     int isNew, needlist = 0;
     Dict *dict = ckalloc(sizeof(Dict));
+    Tcl_Obj *listObj;
 
     InitChainTable(dict);
 
@@ -632,12 +629,14 @@ SetDictFromAny(
      * the conversion from lists to dictionaries.
      */
 
-    if (objPtr->typePtr == &tclListType) {
+
+    listObj = TclObjLookupTyped(objPtr, &tclListType);
+    if (listObj != NULL) {
 	int objc, i;
 	Tcl_Obj **objv;
 
 	/* Cannot fail, we already know the Tcl_ObjType is "list". */
-	TclListObjGetElements(NULL, objPtr, &objc, &objv);
+	TclListObjGetElements(NULL, listObj, &objc, &objv);
 	if (objc & 1) {
 	    goto missingValue;
 	}
@@ -647,8 +646,9 @@ SetDictFromAny(
 	    /* Store key and value in the hash table we're building. */
 	    hPtr = CreateChainEntry(dict, objv[i], &isNew);
 	    if (!isNew) {
+		Tcl_Obj *discardedValue = Tcl_GetHashValue(hPtr);
 		needlist = 1;
-		continue;
+		Tcl_DecrRefCount(discardedValue);
 	    }
 	    Tcl_SetHashValue(hPtr, objv[i+1]);
 	    Tcl_IncrRefCount(objv[i+1]); /* Since hash now holds ref to it */
@@ -724,9 +724,13 @@ SetDictFromAny(
     dict->refcount = 1;
     if (needlist) {
 	/* squirrel the list intrep away for use by SetListFromAny  */
-	objPtr->internalRep.twoPtrValue.ptr2 = objPtr->internalRep.twoPtrValue.ptr1;
+	listObj = Tcl_DuplicateObj(listObj);
+	Tcl_IncrRefCount(listObj);
+    }
+    TclFreeIntRep(objPtr);
+    if (needlist) {
+	objPtr->internalRep.twoPtrValue.ptr2 = listObj;
     } else {
-	TclFreeIntRep(objPtr);
 	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     }
     DICT(objPtr) = dict;
@@ -894,13 +898,11 @@ InvalidateDictChain(
 static void InvalidateListRep(
     Tcl_Obj *dictObj
 ) {
-    void *tmp;
+    Tcl_Obj *listObj;
 
     if (dictObj->internalRep.twoPtrValue.ptr2 != NULL) {
-	tmp = dictObj->internalRep.twoPtrValue.ptr1;
-	dictObj->internalRep.twoPtrValue.ptr1 = dictObj->internalRep.twoPtrValue.ptr2;
-	TclFreeListInternalRep(dictObj);
-	dictObj->internalRep.twoPtrValue.ptr1 = tmp;
+	listObj = dictObj->internalRep.twoPtrValue.ptr2;
+	Tcl_DecrRefCount(listObj);
 	dictObj->internalRep.twoPtrValue.ptr2 = NULL;
     }
 }
@@ -1464,7 +1466,7 @@ Tcl_DbNewDictObj(
     Dict *dict;
 
     TclDbNewObj(dictPtr, file, line);
-    InvalidateOtherReps(dictPtr);
+    TclInvalidateStringRep(dictPtr);
     dict = ckalloc(sizeof(Dict));
     InitChainTable(dict);
     dict->epoch = 0;
