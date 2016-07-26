@@ -25,12 +25,15 @@ network sockets.
 .PP
 The \fBfcopy\fR
 command transfers data from \fIinchan\fR until end of file
-or \fIsize\fR bytes have been
-transferred. If no \fB\-size\fR argument is given,
+or \fIsize\fR bytes or characters have been
+transferred; \fIsize\fR is in bytes if the two channels are using the
+same encoding, and is in characters otherwise.
+If no \fB\-size\fR argument is given,
 then the copy goes until end of file.
 All the data read from \fIinchan\fR is copied to \fIoutchan\fR.
 Without the \fB\-command\fR option, \fBfcopy\fR blocks until the copy is complete
-and returns the number of bytes written to \fIoutchan\fR.
+and returns the number of bytes or characters (using the same rules as
+for the \fB\-size\fR option) written to \fIoutchan\fR.
 .PP
 The \fB\-command\fR argument makes \fBfcopy\fR work in the background.
 In this case it returns immediately and the \fIcallback\fR is invoked
@@ -174,3 +177,6 @@ vwait done
 eof(n), fblocked(n), fconfigure(n), file(n)
 .SH KEYWORDS
 blocking, channel, end of line, end of file, nonblocking, read, translation
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
