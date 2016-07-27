@@ -8624,3 +8624,77 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2016-02-22 (bug)[9b4702] [info exists env(missing)] kills trace (nijtmans)
 
 --- Released 8.6.5, February 29, 2016 --- http://core.tcl.tk/tcl/ for details
+
+2016-03-01 (bug)[803042] mem leak due to reference cycle (porter)
+
+2016-03-08 (bug)[bbc304] reflected watch race condition (porter)
+
+2016-03-17 (bug)[fadc99] compile-5.3 (rodriguez,porter)
+
+2016-03-17 (enhancement)[1a25fd] compile [variable ${ns}::v] (porter)
+
+2016-03-20 (bug)[1af8de] crash in compiled [string replace] (harder,fellows)
+
+2016-03-21 (bug)[d30718] segv in notifier finalize (hirofumi,nijtmans)
+
+2016-03-23 (enhancement)[7d0db7] parallel make (yarda,nijtmans)
+
+2016-03-23 [f12535] enable test bindings customization (vogel,nijtmans)
+
+2016-04-04 (bug)[47ac84] compiled [lreplace] fixes (aspect,ferrieux,fellows)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-04-08 (bug)[866368] RE \w includes 'Punctuation Connector' (nijtmans)
+
+2016-04-08 (bug)[2538f3] Win crash Tcl_OpenTcpServer() (griffin)
+
+2016-04-10 [07d13d] Restore TclBlend support lost in 8.6.1 (buratti)
+
+2016-05-13 (bug)[3154ea] Mem corruption in assembler exceptions (tkob,kenny)
+
+2016-05-13 (bug) registry package support any Unicode env (nijtmans)
+=> registry 1.3.2
+
+2016-05-21 (bug)[f7d4e] [namespace delete] performance (fellows)
+
+2016-06-02 (TIP 447) execution time verbosity option (cerutti)
+=> tcltest 2.4.0
+
+2016-06-16 (bug)[16828b] crash due to [vwait] trace undo fail (dah,porter)
+
+2016-06-16 (enhancement)[4b61af] good [info frame] from more cases (beric)
+
+2016-06-21 (bug)[c383eb] crash in [glob -path a] (oehlmann,porter)
+
+2016-06-21 (update) Update Unicode data to 9.0 (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-06-22 (bug)[16896d] Tcl_DString tolerate append to self. (dah,porter)
+
+2016-06-23 (bug)[d55322] crash in [dict update] (yorick,fellows)
+
+2016-06-27 (bug)[dd260a] crash in [chan configure -dictionary] (madden,aspect)
+
+2016-07-02 (bug)[f961d7] usage message with parameters with spaces (porter)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-07-02 (enhancement)[09fabc] Sort order of -relateddir (lanam)
+
+2016-07-07 (bug)[5d7ca0] Win: [file executable] for .cmd and .ps1 (nadkarni)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-07-08 (bug)[a47641] [file normalize] & Windows junctions (nadkarni)
+
+2016-07-09 [ae61a6] [file] handling of Win hardcoded names (CON) (nadkarni)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-07-09 [3613671] [file owned] (more) useful on Win (nadkarni)
+
+2016-07-09 (bug)[1493a4] [namespace upvar] use of resolvers (beric,fellows)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-07-10 (bug)[da340d] integer division in clock math (nadkarni)
+
+2016-07-20 tzdata updated to Olson's tzdata2016f (venkat)
+
+--- Released 8.6.6, July 27, 2016 --- http://core.tcl.tk/tcl/ for details
