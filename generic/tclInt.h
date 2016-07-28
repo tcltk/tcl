@@ -883,6 +883,7 @@ typedef struct VarInHash {
     (TclIsVarDirectModifyable(varPtr) &&\
 	(!(arrayPtr) || !((arrayPtr)->flags & (VAR_TRACED_READ|VAR_TRACED_WRITE))))
 
+
 /*
  *----------------------------------------------------------------
  * Data structures related to procedures. These are used primarily in
@@ -2424,6 +2425,7 @@ typedef struct List {
 #define TclListObjIsCanonical(listPtr) \
     (((listPtr)->typePtr == &tclListType) ? ListObjIsCanonical((listPtr)) : 0)
 
+
 /*
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
  * TclNRLmapCmd and their compilations.
@@ -2509,6 +2511,28 @@ typedef struct List {
 #define DICT_PATH_CREATE	5
 
 #define DICT_PATH_NON_EXISTENT	((Tcl_Obj *) (void *) 1)
+
+/* 
+ * Macros for tclStringType objects
+ */
+
+#define TclStringGetPrev(objPtr)					    \
+    ((Tcl_Obj *)((objPtr)->internalRep.twoPtrValue.ptr2))
+#define TclStringSetPrev(objPtr,prevPtr)				    \
+    do {								    \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = (void *) (prevPtr);   \
+    } while (0)
+#define TclStringInvalidatePrev(objPtr)				    \
+    do {								    \
+	if (TclStringGetPrev((objPtr)) != NULL) {			    \
+	    Tcl_DecrRefCount(TclStringGetPrev((objPtr)));		    \
+	}								    \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = NULL;		    \
+    } while (0)
+
+#define TclStringPrevIs(objPtr, checkTypePtr) \
+    (TclStringGetPrev((objPtr))->typePtr == &(checkTypePtr))
+
 
 /*
  *----------------------------------------------------------------
@@ -3042,6 +3066,7 @@ MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[],
 			    Tcl_Namespace *nsPtr, int flags);
+MODULE_SCOPE Tcl_Obj *	TclObjLookupTyped (Tcl_Obj * objPtr, Tcl_ObjType *typeptr);
 MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags);
 MODULE_SCOPE int	TclParseBackslash(const char *src,

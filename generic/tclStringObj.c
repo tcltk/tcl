@@ -379,6 +379,7 @@ Tcl_NewUnicodeObj(
     Tcl_Obj *objPtr;
 
     TclNewObj(objPtr);
+    TclStringSetPrev(objPtr, NULL); 
     SetUnicodeObj(objPtr, unicode, numChars);
     return objPtr;
 }
@@ -987,11 +988,17 @@ Tcl_SetUnicodeObj(
     int numChars)		/* Number of characters in the unicode
 				 * string. */
 {
+    Tcl_Obj *prevPtr = NULL;
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetUnicodeObj");
     }
+    if (objPtr->typePtr != NULL && objPtr->typePtr != &tclStringType) {
+	prevPtr = Tcl_DuplicateObj(objPtr);
+	Tcl_IncrRefCount(prevPtr);
+    }
     TclFreeIntRep(objPtr);
     SetUnicodeObj(objPtr, unicode, numChars);
+    TclStringSetPrev(objPtr, prevPtr); 
 }
 
 static int
@@ -1037,7 +1044,6 @@ SetUnicodeObj(
     stringPtr->unicode[numChars] = 0;
     stringPtr->numChars = numChars;
     stringPtr->hasUnicode = 1;
-
     TclInvalidateStringRep(objPtr);
     stringPtr->allocated = 0;
 }
@@ -1373,6 +1379,9 @@ AppendUnicodeToUnicodeRep(
     }
 
     SetStringFromAny(NULL, objPtr);
+    if (appendNumChars > 0) {
+	TclStringInvalidatePrev(objPtr);
+    }
     stringPtr = GET_STRING(objPtr);
 
     /*
@@ -1526,6 +1535,7 @@ AppendUtfToUtfRep(
     if (numBytes == 0) {
 	return;
     }
+    TclStringInvalidatePrev(objPtr);
 
     /*
      * Copy the new string onto the end of the old string, then add the
@@ -2827,6 +2837,9 @@ ExtendUnicodeRepWithString(
     if (numAppendChars == -1) {
 	TclNumUtfChars(numAppendChars, bytes, numBytes);
     }
+    if (numAppendChars > 0) {
+	TclStringInvalidatePrev(objPtr);
+    }
     needed = numOrigChars + numAppendChars;
     stringCheckLimits(needed);
 
@@ -2874,6 +2887,7 @@ DupStringInternalRep(
 {
     String *srcStringPtr = GET_STRING(srcPtr);
     String *copyStringPtr = NULL;
+    Tcl_Obj *prevPtr;
 
     if (srcStringPtr->numChars == -1) {
 	/*
@@ -2915,10 +2929,15 @@ DupStringInternalRep(
      * code, so it doesn't contain any extra bytes that might exist in the
      * source object.
      */
-
     copyStringPtr->allocated = copyPtr->bytes ? copyPtr->length : 0;
 
     SET_STRING(copyPtr, copyStringPtr);
+    prevPtr = TclStringGetPrev(srcPtr);
+    if (prevPtr != NULL) {
+	prevPtr = Tcl_DuplicateObj(prevPtr);
+	Tcl_IncrRefCount(prevPtr);
+    }
+    TclStringSetPrev(copyPtr, prevPtr);
     copyPtr->typePtr = &tclStringType;
 }
 
@@ -2946,6 +2965,8 @@ SetStringFromAny(
 {
     if (objPtr->typePtr != &tclStringType) {
 	String *stringPtr = stringAlloc(0);
+	Tcl_Obj *prevPtr = Tcl_DuplicateObj(objPtr);
+	Tcl_IncrRefCount(prevPtr);
 
 	/*
 	 * Convert whatever we have into an untyped value. Just A String.
@@ -2964,6 +2985,7 @@ SetStringFromAny(
 	stringPtr->maxChars = 0;
 	stringPtr->hasUnicode = 0;
 	SET_STRING(objPtr, stringPtr);
+	TclStringSetPrev(objPtr, prevPtr);
 	objPtr->typePtr = &tclStringType;
     }
     return TCL_OK;
@@ -3022,6 +3044,7 @@ ExtendStringRepWithUnicode(
     if (numChars == 0) {
 	return 0;
     }
+    TclStringInvalidatePrev(objPtr);
 
     if (objPtr->bytes == NULL) {
 	objPtr->length = 0;
@@ -3083,8 +3106,21 @@ static void
 FreeStringInternalRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
+    Tcl_Obj * prevPtr = TclStringGetPrev(objPtr);
+    if (prevPtr != NULL) {
+	Tcl_DecrRefCount(prevPtr);
+    }
     ckfree(GET_STRING(objPtr));
     objPtr->typePtr = NULL;
+}
+
+static void InvalidateCachedReps(
+    Tcl_Obj *objPtr
+) {
+    Tcl_Obj * prevPtr = TclStringGetPrev(objPtr);
+    if (prevPtr != NULL) {
+	Tcl_DecrRefCount(TclStringGetPrev(objPtr));
+    }
 }
 
 /*

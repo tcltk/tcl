@@ -718,6 +718,7 @@ gdb-test: ${TCLTEST_EXE}
 	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}" > gdb.run
 	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
 	@echo "set args $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) -singleproc 1" >> gdb.run
+	@echo "$(GDBSCRIPT)" >> gdb.run
 	$(GDB) ./${TCLTEST_EXE} --command=gdb.run
 	rm gdb.run
 

@@ -13,6 +13,7 @@
 
 #include "tclInt.h"
 
+#define LIST(listObj)    ((List *)(listObj)->internalRep.twoPtrValue.ptr1)
 /*
  * Prototypes for functions defined later in this file:
  */
@@ -20,8 +21,8 @@
 static List *		AttemptNewList(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static List *		NewListIntRep(int objc, Tcl_Obj *const objv[], int p);
-static void		DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void		FreeListInternalRep(Tcl_Obj *listPtr);
+static void		DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static int		SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfList(Tcl_Obj *listPtr);
 
@@ -1822,18 +1823,28 @@ SetListFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
+    Tcl_Obj *listPtr;
     List *listRepPtr;
     Tcl_Obj **elemPtrs;
 
     /*
-     * Dictionaries are a special case; they have a string representation such
-     * that *all* valid dictionaries are valid lists. Hence we can convert
-     * more directly. Only do this when there's no existing string rep; if
-     * there is, it is the string rep that's authoritative (because it could
-     * describe duplicate keys).
+     * Dictionaries are a special case; they may have stored a previous list
+     * representation
      */
 
-    if (objPtr->typePtr == &tclDictType && !objPtr->bytes) {
+     listPtr = TclObjLookupTyped(objPtr, &tclListType);
+     if (listPtr != NULL) {
+	Tcl_IncrRefCount(listPtr);
+	TclFreeIntRep(objPtr);
+	DupListInternalRep(listPtr, objPtr); 
+	Tcl_DecrRefCount(listPtr);
+	objPtr->typePtr = &tclListType;
+	/* To Do: Maybe keep the dict intrep around in case this object is
+	 * used as a dict again */
+	return TCL_OK;
+     }
+
+    if (objPtr->typePtr == &tclDictType) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done, size;

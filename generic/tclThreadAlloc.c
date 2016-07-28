@@ -624,6 +624,7 @@ TclThreadFreeObj(
 
     GETCACHE(cachePtr);
 
+
     /*
      * Get this thread's list and push on the free Tcl_Obj.
      */
