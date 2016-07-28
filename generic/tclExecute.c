@@ -5437,22 +5437,58 @@ TEBCresume(
 		}
 	    } else {
 		/*
-		 * strcmp can't do a simple memcmp in order to handle the
-		 * special Tcl \xC0\x80 null encoding for utf-8.
+		 * In order to handle the special Tcl \xC0\x80 null encoding
+		 * for utf-8, strcmp can't do a simple memcmp.
 		 */
 
-		s1 = TclGetStringFromObj(valuePtr, &s1len);
-		s2 = TclGetStringFromObj(value2Ptr, &s2len);
+		if (TclCheckEmptyString(valuePtr) > 0) {
+		    s1 = "";
+		    s1len = 0;
+		    switch (TclCheckEmptyString(value2Ptr)) {
+			case -1:
+			    s2 = TclGetStringFromObj(value2Ptr, &s2len);
+			    break;
+			case 0:
+			    /* Synthesize a value for comparison */
+			    s2 = "1";
+			    s2len = 1;
+			    break;
+			case 1:
+			    s2 = "";
+			    s2len = 0;
+		    }
+		} else if (TclCheckEmptyString(value2Ptr) > 0) {
+		    s2 = "";
+		    s2len = 0;
+		    switch (TclCheckEmptyString(valuePtr)) {
+			case -1:
+			    s1 = TclGetStringFromObj(valuePtr, &s1len);
+			    break;
+			case 0:
+			    /* Synthesize a value for comparison */
+			    s1 = "1";
+			    s1len = 1;
+			    break;
+			case 1:
+			    s1 = "";
+			    s1len = 0;
+		    }
+		} else {
+		    s1 = TclGetStringFromObj(valuePtr, &s1len);
+		    s2 = TclGetStringFromObj(value2Ptr, &s2len);
+		}
+
 		if (checkEq) {
 		    memCmpFn = memcmp;
 		} else {
 		    memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
 		}
+
 	    }
 
 	    if (checkEq && (s1len != s2len)) {
 		match = 1;
-	    } else {
+	    }  else {
 		/*
 		 * The comparison function should compare up to the minimum
 		 * byte length only.
@@ -6162,6 +6198,14 @@ TEBCresume(
 
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
+
+	/*
+	    Try to determine, without triggering generation of a string
+	    representation, whether one value is not a number.
+	*/
+	if (TclCheckEmptyString(valuePtr) > 1 || TclCheckEmptyString(value2Ptr) > 1) {
+	    goto stringCompare;
+	}
 
 	if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK) {
 	    /*

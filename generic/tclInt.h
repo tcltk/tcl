@@ -2746,6 +2746,10 @@ MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
 MODULE_SCOPE char *	tclEmptyStringRep;
 MODULE_SCOPE char	tclEmptyString;
 
+enum CheckEmptyStringResult {
+	TCL_EMPTYSTRING_UNKNOWN = -1, TCL_EMPTYSTRING_NO, TCL_EMPTYSTRING_YES
+};
+
 /*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside world,
@@ -3934,6 +3938,7 @@ MODULE_SCOPE int	TclCompileStreqOpCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCheckEmptyString(Tcl_Obj *objPtr);
 
 /*
  * Functions defined in generic/tclVar.c and currenttly exported only for use
@@ -4418,6 +4423,12 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 #define TclIsPureByteArray(objPtr) \
 	(((objPtr)->typePtr==&tclByteArrayType) && ((objPtr)->bytes==NULL))
+
+#define TclIsPureDict(objPtr) \
+	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclDictType))
+
+#define TclIsPureList(objPtr) \
+	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclListType))
 
 /*
  *----------------------------------------------------------------
