@@ -2765,6 +2765,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRForObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRForeachCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRIfObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRLmapCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRPackageObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSourceObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSubstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSwitchObjCmd;

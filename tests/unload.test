@@ -86,7 +86,7 @@ test unload-2.1 {basic loading of non-unloadable package, with guess for package
 } {0 {pkga_eq pkga_quote}}
 test unload-2.2 {basic loading of unloadable package, with guess for package name} [list $dll $loaded] {
     list $pkgua_loaded $pkgua_detached $pkgua_unloaded \
-	    [load [file join $testDir pkgua$ext]] \
+	    [load [file join $testDir pkgua$ext]; list] \
 	    [pkgua_eq abc def] [lsort [info commands pkgua_*]] \
 	    $pkgua_loaded $pkgua_detached $pkgua_unloaded
 } {{} {} {} {} 0 {pkgua_eq pkgua_quote} . {} {}}
@@ -110,7 +110,7 @@ test unload-2.5 {reloading of unloaded package, with guess for package name} -se
     }
 } -constraints [list $dll $loaded] -body {
     list $pkgua_loaded $pkgua_detached $pkgua_unloaded \
-	    [load [file join $testDir pkgua$ext]] \
+	    [load [file join $testDir pkgua$ext]; list] \
 	    [pkgua_eq abc def] [lsort [info commands pkgua_*]] \
 	    $pkgua_loaded $pkgua_detached $pkgua_unloaded
 } -result {. . . {} 0 {pkgua_eq pkgua_quote} .. . .}
@@ -213,7 +213,7 @@ test unload-4.1 {loading of unloadable package in trusted interpreter, with gues
     incr load(M)
 } -constraints [list $dll $loaded] -body {
     list [list $pkgua_loaded $pkgua_detached $pkgua_unloaded] \
-	    [load [file join $testDir pkgua$ext]] \
+	    [load [file join $testDir pkgua$ext]; list] \
 	    [pkgua_eq abc def] [lsort [info commands pkgua_*]] \
 	    [list $pkgua_loaded $pkgua_detached $pkgua_unloaded]
 } -result {{{} {} {}} {} 0 {pkgua_eq pkgua_quote} {. {} {}}}
