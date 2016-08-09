@@ -747,7 +747,7 @@ htmlhelp: chmsetup $(CHMFILE)
 $(CHMFILE): $(DOCDIR)\*
 	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl
 	@echo Compiling HTML help project
-	@$(HHC) <<$(HHPFILE) >NUL
+	-$(HHC) <<$(HHPFILE) >NUL
 [OPTIONS]
 Compatibility=1.1 or later
 Compiled file=$(HTMLBASE).chm
@@ -758,12 +758,12 @@ Title=Tcl/Tk $(DOT_VERSION) Help
 [FILES]
 contents.htm
 docs.css
-Keywords
-TclCmd
-TclLib
-TkCmd
-TkLib
-UserCmd
+Keywords\*.htm
+TclCmd\*.htm
+TclLib\*.htm
+TkCmd\*.htm
+TkLib\*.htm
+UserCmd\*.htm
 <<
 
 chmsetup:
