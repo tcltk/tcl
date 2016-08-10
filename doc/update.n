@@ -12,20 +12,30 @@
 .SH NAME
 update \- Process pending events and idle callbacks
 .SH SYNOPSIS
-\fBupdate\fR ?\fBidletasks\fR?
+\fBupdate\fR ?\fIoption ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
 This command is used to bring the application
 .QW "up to date"
 by entering the event loop repeatedly until all pending events
-(including idle callbacks) have been processed.
+(including idle callbacks, if specified) have been processed.
 .PP
 If the \fBidletasks\fR keyword is specified as an argument to the
 command, then no new events or errors are processed;  only idle
 callbacks are invoked.
 This causes operations that are normally deferred, such as display
 updates and window layout calculations, to be performed immediately.
+.PP
+Options accepted are
+	\fBidletasks\fR - process any pending window events or idle events, do not wait
+	\fBwindow\fR - process window events
+	\fBfile\fR - process file events
+	\fBtimer\fR - process timer events
+	\fBonlyidle\fR - process only idle events
+	\fBall\fR - process all events
+	\fBwait\fR - wait until at least one event has been processed
+	\fBnowait\fR - return immediately if no events are pending.
 .PP
 The \fBupdate idletasks\fR command is useful in scripts where
 changes have been made to the application's state and you want those
@@ -60,6 +70,6 @@ while {!$done} {
 }
 .CE
 .SH "SEE ALSO"
-after(n), interp(n)
+after(n), interp(n), Tcl_DoOneEvent(3)
 .SH KEYWORDS
 asynchronous I/O, event, flush, handler, idle, update
