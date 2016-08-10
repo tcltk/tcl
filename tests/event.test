@@ -614,10 +614,10 @@ test event-11.8 {Bug 16828b3744} -setup {
 
 test event-12.1 {Tcl_UpdateCmd procedure} -returnCodes error -body {
     update a b
-} -result {wrong # args: should be "update ?idletasks?"}
+} -result {bad option "b": must be idletasks, window, file, timer, onlyidle, all, wait, or nowait}
 test event-12.2 {Tcl_UpdateCmd procedure} -returnCodes error -body {
     update bogus
-} -result {bad option "bogus": must be idletasks}
+} -result {bad option "bogus": must be idletasks, window, file, timer, onlyidle, all, wait, or nowait}
 test event-12.3 {Tcl_UpdateCmd procedure} -setup {
     foreach i [after info] {
 	after cancel $i

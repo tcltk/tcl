@@ -1497,26 +1497,49 @@ Tcl_UpdateObjCmd(
 {
     int optionIndex;
     int flags = 0;		/* Initialized to avoid compiler warning. */
-    static const char *const updateOptions[] = {"idletasks", NULL};
-    enum updateOptions {OPT_IDLETASKS};
+    int index;
+    static const char *const updateOptions[] = {"idletasks", "window", "file", "timer", "onlyidle", "all", "wait", "nowait", NULL};
+    enum updateOptions {OPT_IDLETASKS, OPT_WINDOW, OPT_FILE, OPT_TIMER, OPT_ONLYIDLE, OPT_ALL, OPT_WAIT, OPT_NOWAIT};
 
     if (objc == 1) {
 	flags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
-    } else if (objc == 2) {
-	if (Tcl_GetIndexFromObj(interp, objv[1], updateOptions,
-		"option", 0, &optionIndex) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	switch ((enum updateOptions) optionIndex) {
-	case OPT_IDLETASKS:
-	    flags = TCL_WINDOW_EVENTS|TCL_IDLE_EVENTS|TCL_DONT_WAIT;
-	    break;
-	default:
-	    Tcl_Panic("Tcl_UpdateObjCmd: bad option index to UpdateOptions");
-	}
     } else {
-	Tcl_WrongNumArgs(interp, 1, objv, "?idletasks?");
-	return TCL_ERROR;
+	flags = 0;
+	for (index = 1; index < objc; index++) {
+	    if (Tcl_GetIndexFromObj(interp, objv[index], updateOptions,
+				    "option", 0, &optionIndex) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+
+	    switch ((enum updateOptions) optionIndex) {
+	    case OPT_IDLETASKS:
+		flags = TCL_WINDOW_EVENTS|TCL_IDLE_EVENTS|TCL_DONT_WAIT;
+		break;
+	    case OPT_WINDOW:
+		flags |= TCL_WINDOW_EVENTS;	// Process window system events.
+		break;
+	    case OPT_FILE:
+		flags |= TCL_FILE_EVENTS; 	// Process file events.
+		break;
+	    case OPT_TIMER:
+		flags |= TCL_TIMER_EVENTS;	// Process timer events.
+		break;
+	    case OPT_ONLYIDLE:
+		flags |= TCL_IDLE_EVENTS;	// Process idle callbacks.
+		break;
+	    case OPT_ALL:
+		flags |= TCL_ALL_EVENTS;	// Process all kinds of events
+		break;
+	    case OPT_WAIT:
+		flags &= ~TCL_DONT_WAIT;	// Sleep until an event occurs
+		break;
+	    case OPT_NOWAIT:
+		flags |= TCL_DONT_WAIT;	// Do not sleep:  process only events that are ready at the time of the call.
+		break;
+	    default:
+		Tcl_Panic("Tcl_UpdateObjCmd: bad option index to UpdateOptions");
+	    }
+	}
     }
 
     while (Tcl_DoOneEvent(flags) != 0) {
