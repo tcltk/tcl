@@ -1827,11 +1827,6 @@ SetListFromAny(
     List *listRepPtr;
     Tcl_Obj **elemPtrs;
 
-    /*
-     * Dictionaries are a special case; they may have stored a previous list
-     * representation
-     */
-
      listPtr = TclObjLookupTyped(objPtr, &tclListType);
      if (listPtr != NULL) {
 	Tcl_IncrRefCount(listPtr);
@@ -1844,7 +1839,15 @@ SetListFromAny(
 	return TCL_OK;
      }
 
-    if (objPtr->typePtr == &tclDictType) {
+    /*
+     * Dictionaries are a special case; they have a string representation such
+     * that *all* valid dictionaries are valid lists. Hence we can convert
+     * more directly. Only do this when there's no existing string rep; if
+     * there is, it is the string rep that's authoritative (because it could
+     * describe duplicate keys).
+     */
+
+    if (objPtr->typePtr == &tclDictType && !objPtr->bytes) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done, size;

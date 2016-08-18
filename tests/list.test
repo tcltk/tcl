@@ -129,6 +129,13 @@ test list-4.1 {Bug 3173086} {
     string is list "{[list \\\\\}]}"
 } 1
 
+test list-5.1 {list/dict conversions without} {
+	 set a {a 1 a 2}
+	 dict get $a a
+	 lindex $a 1
+} 1
+	
+
 # cleanup
 ::tcltest::cleanupTests
 return
