@@ -413,8 +413,7 @@ static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
-static int              NREUnwind_callback(ClientData data[], Tcl_Interp *interp,
-                            int result);
+static Tcl_NRPostProc	NREUnwind_callback;
 static int		TestNREUnwind(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -6891,7 +6890,7 @@ TestNREUnwind(
      * Insure that callbacks effectively run at the proper level during the
      * unwinding of the NRE stack.
      */
-    
+
     Tcl_NRAddCallback(interp, NREUnwind_callback, INT2PTR(-1), INT2PTR(-1),
             INT2PTR(-1), NULL);
     return TCL_OK;

@@ -57,6 +57,12 @@ test namespace-old-1.9 {add elements to a namespace} {
         }
     }
 } {}
+namespace eval test_ns_simple {
+    variable test_ns_x 0
+    proc test {test_ns_x} {
+	return "test: $test_ns_x"
+    }
+}
 test namespace-old-1.10 {commands in a namespace} {
     namespace eval test_ns_simple { info commands [namespace current]::*}
 } {::test_ns_simple::test}
@@ -74,6 +80,12 @@ test namespace-old-1.13 {add to an existing namespace} {
         }
     }
 } ""
+namespace eval test_ns_simple {
+    variable test_ns_y 123
+    proc _backdoor {cmd} {
+	eval $cmd
+    }
+}
 test namespace-old-1.14 {commands in a namespace} {
     lsort [namespace eval test_ns_simple {info commands [namespace current]::*}]
 } {::test_ns_simple::_backdoor ::test_ns_simple::test}
@@ -128,6 +140,8 @@ test namespace-old-1.26 {namespace qualifiers are okay after $'s} {
 test namespace-old-1.27 {can create commands with null names} {
     proc test_ns_simple:: {args} {return $args}
 } {}
+# Redeclare; later tests depend on it
+proc test_ns_simple:: {args} {return $args}
 
 # -----------------------------------------------------------------------
 # TEST: using "info" in namespace contexts
@@ -212,6 +226,11 @@ test namespace-old-4.3 {command "namespace delete" doesn't support patterns} {
     }
     list [catch $cmd msg] $msg
 } {1 {unknown namespace "ns*" in namespace delete command}}
+namespace eval test_ns_delete {
+    namespace eval ns1 {}
+    namespace eval ns2 {}
+    namespace eval another {}
+}
 test namespace-old-4.4 {command "namespace delete" handles multiple args} {
     set cmd {
         namespace eval test_ns_delete {
@@ -256,6 +275,24 @@ test namespace-old-5.3 {namespace qualifiers work in namespace command} {
          [namespace eval test_ns_hier1::test_ns_hier2 {namespace current}] \
          [namespace eval ::test_ns_hier1::test_ns_hier2 {namespace current}]
 } {::test_ns_hier1 ::test_ns_hier1::test_ns_hier2 ::test_ns_hier1::test_ns_hier2}
+set ::test_ns_var_global "var in ::"
+proc test_ns_cmd_global {} {return "cmd in ::"}
+namespace eval test_ns_hier1 {
+    variable test_ns_var_hier1 "particular to hier1"
+    proc test_ns_cmd_hier1 {} {return "particular to hier1"}
+    variable test_ns_level 1
+    proc test_ns_show {} {return "[namespace current]: 1"}
+    namespace eval test_ns_hier2 {
+	variable test_ns_var_hier2 "particular to hier2"
+	proc test_ns_cmd_hier2 {} {return "particular to hier2"}
+	variable test_ns_level 2
+        proc test_ns_show {} {return "[namespace current]: 2"}
+	namespace eval test_ns_hier3a {}
+	namespace eval test_ns_hier3b {}
+    }
+    namespace eval test_ns_hier2a {}
+    namespace eval test_ns_hier2b {}
+}
 test namespace-old-5.4 {nested namespaces can access global namespace} {
     list [namespace eval test_ns_hier1 {set test_ns_var_global}] \
          [namespace eval test_ns_hier1 {test_ns_cmd_global}] \
@@ -331,16 +368,12 @@ test namespace-old-5.21 {querying namespace parent for explicit namespace} {
 # -----------------------------------------------------------------------
 # TEST: name resolution and caching
 # -----------------------------------------------------------------------
+set trigger {namespace eval test_ns_cache2 {namespace current}}
+set trigger2 {namespace eval test_ns_cache2::test_ns_cache3 {namespace current}}
 test namespace-old-6.1 {relative ns names only looked up in current ns} {
     namespace eval test_ns_cache1 {}
     namespace eval test_ns_cache2 {}
     namespace eval test_ns_cache2::test_ns_cache3 {}
-    set trigger {
-        namespace eval test_ns_cache2 {namespace current}
-    }
-    set trigger2 {
-        namespace eval test_ns_cache2::test_ns_cache3 {namespace current}
-    }
     list [namespace eval test_ns_cache1 $trigger] \
          [namespace eval test_ns_cache1 $trigger2]
 } {::test_ns_cache1::test_ns_cache2 ::test_ns_cache1::test_ns_cache2::test_ns_cache3}
@@ -354,19 +387,18 @@ test namespace-old-6.3 {relative ns names only looked up in current ns} {
     list [namespace eval test_ns_cache1 $trigger] \
          [namespace eval test_ns_cache1 $trigger2]
 } {::test_ns_cache1::test_ns_cache2 ::test_ns_cache1::test_ns_cache2::test_ns_cache3}
+namespace eval test_ns_cache1::test_ns_cache2 {}
 test namespace-old-6.4 {relative ns names only looked up in current ns} {
     namespace delete test_ns_cache1::test_ns_cache2
     list [namespace eval test_ns_cache1 $trigger] \
          [namespace eval test_ns_cache1 $trigger2]
 } {::test_ns_cache1::test_ns_cache2 ::test_ns_cache1::test_ns_cache2::test_ns_cache3}
+namespace eval test_ns_cache1 {
+    proc trigger {} {test_ns_cache_cmd}
+}
 test namespace-old-6.5 {define test commands} {
     proc test_ns_cache_cmd {} {
         return "global version"
-    }
-    namespace eval test_ns_cache1 {
-        proc trigger {} {
-            test_ns_cache_cmd
-        }
     }
     test_ns_cache1::trigger
 } {global version}
@@ -376,24 +408,36 @@ test namespace-old-6.6 {one-level check for command shadowing} {
     }
     test_ns_cache1::trigger
 } {cache1 version}
-test namespace-old-6.7 {renaming commands changes command epoch} {
-    namespace eval test_ns_cache1 {
-        rename test_ns_cache_cmd test_ns_new
+proc test_ns_cache_cmd {} {
+    return "global version"
+}
+test namespace-old-6.7 {renaming commands changes command epoch} -setup {
+    proc test_ns_cache1::test_ns_cache_cmd {} {
+        return "cache1 version"
     }
-    test_ns_cache1::trigger
-} {global version}
-test namespace-old-6.8 {renaming back handles shadowing} {
-    namespace eval test_ns_cache1 {
-        rename test_ns_new test_ns_cache_cmd
+} -body {
+    list [test_ns_cache1::trigger] \
+	[namespace eval test_ns_cache1 {rename test_ns_cache_cmd test_ns_new}]\
+	[test_ns_cache1::trigger]
+} -result {{cache1 version} {} {global version}}
+test namespace-old-6.8 {renaming back handles shadowing} -setup {
+    proc test_ns_cache1::test_ns_new {} {
+        return "cache1 version"
     }
-    test_ns_cache1::trigger
-} {cache1 version}
-test namespace-old-6.9 {deleting commands changes command epoch} {
-    namespace eval test_ns_cache1 {
-        rename test_ns_cache_cmd ""
+} -body {
+    list [test_ns_cache1::trigger] \
+	[namespace eval test_ns_cache1 {rename test_ns_new test_ns_cache_cmd}]\
+	[test_ns_cache1::trigger]
+} -result {{global version} {} {cache1 version}}
+test namespace-old-6.9 {deleting commands changes command epoch} -setup {
+    proc test_ns_cache1::test_ns_cache_cmd {} {
+        return "cache1 version"
     }
-    test_ns_cache1::trigger
-} {global version}
+} -body {
+    list [test_ns_cache1::trigger] \
+	[namespace eval test_ns_cache1 {rename test_ns_cache_cmd ""}] \
+	[test_ns_cache1::trigger]
+} -result {{cache1 version} {} {global version}}
 test namespace-old-6.10 {define test namespaces} {
     namespace eval test_ns_cache2 {
         proc test_ns_cache_cmd {} {
@@ -412,6 +456,12 @@ test namespace-old-6.10 {define test namespaces} {
     }
     list [test_ns_cache1::trigger] [test_ns_cache1::test_ns_cache2::trigger]
 } {{global cache2 version} {global version}}
+namespace eval test_ns_cache1 {
+    proc trigger {} { test_ns_cache2::test_ns_cache_cmd }
+    namespace eval test_ns_cache2 {
+	proc trigger {} { test_ns_cache_cmd }
+    }
+}
 test namespace-old-6.11 {commands affect all parent namespaces} {
     proc test_ns_cache1::test_ns_cache2::test_ns_cache_cmd {} {
         return "cache2 version"
@@ -423,18 +473,22 @@ test namespace-old-6.12 {define test variables} {
     set trigger {set test_ns_cache_var}
     namespace eval test_ns_cache1 $trigger
 } {global version}
+    set trigger {set test_ns_cache_var}
 test namespace-old-6.13 {one-level check for variable shadowing} {
     namespace eval test_ns_cache1 {
         variable test_ns_cache_var "cache1 version"
     }
     namespace eval test_ns_cache1 $trigger
 } {cache1 version}
+variable ::test_ns_cache_var "global version"
 test namespace-old-6.14 {deleting variables changes variable epoch} {
     namespace eval test_ns_cache1 {
-        unset test_ns_cache_var
+        variable test_ns_cache_var "cache1 version"
     }
-    namespace eval test_ns_cache1 $trigger
-} {global version}
+    list [namespace eval test_ns_cache1 $trigger] \
+	[namespace eval test_ns_cache1 {unset test_ns_cache_var}] \
+	[namespace eval test_ns_cache1 $trigger]
+} {{cache1 version} {} {global version}}
 test namespace-old-6.15 {define test namespaces} {
     namespace eval test_ns_cache2 {
         variable test_ns_cache_var "global cache2 version"
@@ -443,6 +497,7 @@ test namespace-old-6.15 {define test namespaces} {
     list [namespace eval test_ns_cache1 $trigger2] \
          [namespace eval test_ns_cache1::test_ns_cache2 $trigger]
 } {{global cache2 version} {global version}}
+set trigger2 {set test_ns_cache2::test_ns_cache_var}
 test namespace-old-6.16 {public variables affect all parent namespaces} {
     variable test_ns_cache1::test_ns_cache2::test_ns_cache_var "cache2 version"
     list [namespace eval test_ns_cache1 $trigger2] \
@@ -467,6 +522,7 @@ test namespace-old-6.19 {querying:  namespace which -command} {
 test namespace-old-6.20 {command "namespace which" may not find commands} {
     namespace eval test_ns_cache1 {namespace which -command xyzzy}
 } {}
+variable test_ns_cache1::test_ns_cache2::test_ns_cache_var "cache2 version"
 test namespace-old-6.21 {querying:  namespace which -variable} {
     namespace eval test_ns_cache1::test_ns_cache2 {
         namespace which -variable test_ns_cache_var
@@ -493,6 +549,18 @@ test namespace-old-7.1 {define test namespace} {
         }
     }
 } {}
+namespace eval test_ns_uplevel {
+    variable x 0
+    variable y 1
+    proc show_vars {num} {
+	return [uplevel $num {info vars}]
+    }
+    proc test_uplevel {num} {
+	set a 0
+	set b 1
+	namespace eval ::test_ns_uplevel " return \[show_vars $num\] "
+    }
+}
 test namespace-old-7.2 {uplevel can access namespace call frame} {
     list [expr {"x" in [test_ns_uplevel::test_uplevel 1]}] \
          [expr {"y" in [test_ns_uplevel::test_uplevel 1]}]
@@ -526,6 +594,17 @@ test namespace-old-7.8 {namespaces are included in the call stack} {
         }
     }
 } {}
+namespace eval test_ns_upvar {
+    variable scope "test_ns_upvar"
+    proc show_val {var num} {
+	upvar $num $var x
+	return $x
+    }
+    proc test_upvar {num} {
+	set scope "test_ns_upvar::test_upvar"
+	namespace eval ::test_ns_upvar " return \[show_val scope $num\] "
+    }
+}
 test namespace-old-7.9 {upvar can access namespace call frame} {
     test_ns_upvar::test_upvar 1
 } {test_ns_upvar}
@@ -581,6 +660,15 @@ test namespace-old-9.3 {define test namespaces for import} {
     }
     lsort [info commands test_ns_export::*]
 } {::test_ns_export::cmd1 ::test_ns_export::cmd2 ::test_ns_export::cmd3 ::test_ns_export::cmd4 ::test_ns_export::cmd5 ::test_ns_export::cmd6}
+namespace eval test_ns_export {
+    namespace export cmd1 cmd2 cmd3
+    proc cmd1 {args} {return "cmd1: $args"}
+    proc cmd2 {args} {return "cmd2: $args"}
+    proc cmd3 {args} {return "cmd3: $args"}
+    proc cmd4 {args} {return "cmd4: $args"}
+    proc cmd5 {args} {return "cmd5: $args"}
+    proc cmd6 {args} {return "cmd6: $args"}
+}
 test namespace-old-9.4 {check export status} {
     set x ""
     namespace eval test_ns_import {
@@ -592,6 +680,10 @@ test namespace-old-9.4 {check export status} {
     }
     set x
 } {::test_ns_import::cmd1 ::test_ns_import::cmd2 ::test_ns_import::cmd3}
+namespace eval test_ns_import {
+    namespace export cmd1 cmd2
+    namespace import ::test_ns_export::*
+}
 test namespace-old-9.5 {empty import list in "namespace import" command} {
     namespace eval test_ns_import_empty {
 	namespace import ::test_ns_export::*
@@ -615,6 +707,7 @@ test namespace-old-9.8 {only exported commands are imported} {
     namespace import test_ns_import::cmd*
     set x [lsort [info commands cmd*]]
 } {cmd1 cmd2}
+namespace import test_ns_import::cmd*
 test namespace-old-9.9 {imported commands work just the same as original} {
     list [cmd1 test 1 2 3] [test_ns_import::cmd1 test 4 5 6]
 } {{cmd1: test 1 2 3} {cmd1: test 4 5 6}}
@@ -629,10 +722,19 @@ test namespace-old-9.10 {commands can be imported from many namespaces} {
     namespace import test_ns_import2::*
     lsort [concat [info commands cmd*] [info commands ncmd*]]
 } {cmd1 cmd2 ncmd ncmd1 ncmd2}
+namespace eval test_ns_import2 {
+    namespace export ncmd ncmd1 ncmd2
+    proc ncmd  {args} {return "ncmd: $args"}
+    proc ncmd1 {args} {return "ncmd1: $args"}
+    proc ncmd2 {args} {return "ncmd2: $args"}
+    proc ncmd3 {args} {return "ncmd3: $args"}
+}
+namespace import test_ns_import2::*
 test namespace-old-9.11 {imported commands can be removed by deleting them} {
     rename cmd1 ""
     lsort [concat [info commands cmd*] [info commands ncmd*]]
 } {cmd2 ncmd ncmd1 ncmd2}
+catch { rename cmd1 "" }
 test namespace-old-9.12 {command "namespace forget" checks for valid namespaces} {
     list [catch {namespace forget xyzzy::*} msg] $msg
 } {1 {unknown namespace in namespace forget pattern "xyzzy::*"}}
@@ -653,6 +755,7 @@ test namespace-old-9.15 {existing commands can't be overwritten} {
          [cmd1 3 5]
 } {1 {can't import command "cmd1": already exists} 8}
 test namespace-old-9.16 {use "-force" option to override existing commands} {
+    proc cmd1 {x y} { return [expr $x+$y] }
     list [cmd1 3 5] \
          [namespace import -force test_ns_import::cmd?] \
          [cmd1 3 5]
@@ -711,10 +814,18 @@ test namespace-old-10.6 {with many args, each "scope" adds new args} {
     set sval [namespace eval test_ns_inscope {namespace code {one two}}]
     namespace code "$sval three"
 } {::namespace inscope ::test_ns_inscope {one two} three}
+namespace eval test_ns_inscope {
+    proc show {args} {
+	return "show: $args"
+    }
+}
 test namespace-old-10.7 {scoped commands work with eval} {
     set cref [namespace eval test_ns_inscope {namespace code show}]
     list [eval $cref "a" "b c" "d e f"]
 } {{show: a b c d e f}}
+namespace eval test_ns_inscope {
+    variable x "x-value"
+}
 test namespace-old-10.8 {scoped commands execute in namespace context} {
     set cref [namespace eval test_ns_inscope {
         namespace code {set x "some new value"}

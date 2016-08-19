@@ -728,6 +728,16 @@ test stringComp-14.3 {Bug 0dca3bfa8f} {
 	expr {$arg ne $argCopy}
     }} abcde
 } 1
+test stringComp-14.4 {Bug 1af8de570511} {
+    apply {{x y} {
+	# Generate an unshared string value
+	set val ""
+	for { set i 0 } { $i < $x } { incr i } {
+	    set val [format "0%s" $val]
+	}
+	string replace $val[unset val] 1 1 $y
+    }} 4 x
+} 0x00
 
 ## string tolower
 ## not yet bc
