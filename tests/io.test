@@ -44,6 +44,7 @@ testConstraint testfevent       [llength [info commands testfevent]]
 testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
+testConstraint testobj		[llength [info commands testobj]]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -4285,6 +4286,13 @@ test io-33.4 {Tcl_Gets with long line} {
     close $f
     set x
 } {abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ}
+set f [open $path(test3) w]
+puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+puts $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+close $f
 test io-33.5 {Tcl_Gets with long line} {
     set f [open $path(test3)]
     set x [gets $f y]
@@ -7141,7 +7149,12 @@ test io-52.10 {TclCopyChannel & encodings} {fcopy} {
 
     file size $path(utf8-fcopy.txt)
 } 5
-test io-52.11 {TclCopyChannel & encodings} {fcopy} {
+test io-52.11 {TclCopyChannel & encodings} -setup {
+    set out [open $path(utf8-fcopy.txt) w]
+    fconfigure $out -encoding utf-8 -translation lf
+    puts $out "\u0410\u0410"
+    close $out
+} -constraints {fcopy} -body {
     # binary to encoding => the input has to be
     # in utf-8 to make sense to the encoder
 
@@ -7157,7 +7170,7 @@ test io-52.11 {TclCopyChannel & encodings} {fcopy} {
     close $out
 
     file size $path(kyrillic.txt)
-} 3
+} -result 3
 
 test io-52.12 {coverage of -translation auto} {
     file delete $path(test1) $path(test2)
@@ -8625,6 +8638,24 @@ test io-73.5 {effect of eof on encoding end flags} -setup {
     close $rfd
     removeFile io-73.5
 } -result [list 1 1 more\u00a0data 1]
+
+test io-74.1 {[104f2885bb] improper cache validity check} -setup {
+    set fn [makeFile {} io-74.1]
+    set rfd [open $fn r]
+    testobj freeallvars
+    interp create slave
+} -constraints testobj -body {
+    teststringobj set 1 [string range $rfd 0 end]
+    read [teststringobj get 1]		
+    testobj duplicate 1 2
+    interp transfer {} $rfd slave
+    catch {read [teststringobj get 1]}
+    read [teststringobj get 2]		
+} -cleanup {
+    interp delete slave
+    testobj freeallvars
+    removeFile io-74.1
+} -returnCodes error -match glob -result {can not find channel named "*"}
 
 # ### ### ### ######### ######### #########
 

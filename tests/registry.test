@@ -283,7 +283,7 @@ test registry-4.7 {GetKeyNames: Unicode} {win reg english} {
     registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } "baz\u00c7bar blat"
-test registry-4.8 {GetKeyNames: Unicode} {win reg nt} {
+test registry-4.8 {GetKeyNames: Unicode} {win reg} {
     registry delete HKEY_CURRENT_USER\\TclFoobar
     registry set HKEY_CURRENT_USER\\TclFoobar\\baz\u30b7bar
     registry set HKEY_CURRENT_USER\\TclFoobar\\blat
@@ -487,7 +487,7 @@ test registry-6.17 {GetValue: Unicode value names} {win reg} {
     registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } foobar
-test registry-6.18 {GetValue: values with Unicode strings} {win reg nt} {
+test registry-6.18 {GetValue: values with Unicode strings} {win reg} {
     registry set HKEY_CURRENT_USER\\TclFoobar val1 {foo ba\u30b7r baz} multi_sz
     set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
     registry delete HKEY_CURRENT_USER\\TclFoobar
@@ -604,7 +604,7 @@ test registry-9.3 {ParseKeyName: bad keys} -constraints {win reg} -body {
 test registry-9.4 {ParseKeyName: bad keys} -constraints {win reg} -body {
     registry values \\\\\\
 } -returnCodes error -result {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
-test registry-9.5 {ParseKeyName: bad keys} -constraints {win reg english nt} -body {
+test registry-9.5 {ParseKeyName: bad keys} -constraints {win reg english} -body {
     registry values \\\\\\HKEY_CLASSES_ROOT
 } -returnCodes error -result {unable to open key: The network address is invalid.}
 test registry-9.6 {ParseKeyName: bad keys} -constraints {win reg} -body {

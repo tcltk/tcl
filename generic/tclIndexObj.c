@@ -114,14 +114,13 @@ Tcl_GetIndexFromObj(
     int flags,			/* 0 or TCL_EXACT */
     int *indexPtr)		/* Place to store resulting integer index. */
 {
-
     /*
      * See if there is a valid cached result from a previous lookup (doing the
      * check here saves the overhead of calling Tcl_GetIndexFromObjStruct in
      * the common case where the result is cached).
      */
 
-    if (objPtr->typePtr == &indexType) {
+    if (!(flags & INDEX_TEMP_TABLE) && objPtr->typePtr == &indexType) {
 	IndexRep *indexRep = objPtr->internalRep.twoPtrValue.ptr1;
 
 	/*
@@ -211,13 +210,8 @@ GetIndexFromObjList(
     tablePtr[objc] = NULL;
 
     result = Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr,
-	    sizeof(char *), msg, flags, indexPtr);
+	    sizeof(char *), msg, flags | INDEX_TEMP_TABLE, indexPtr);
 
-    /*
-     * The internal rep must be cleared since tablePtr will go away.
-     */
-
-    TclFreeIntRep(objPtr);
     ckfree(tablePtr);
 
     return result;
@@ -279,7 +273,7 @@ Tcl_GetIndexFromObjStruct(
      * See if there is a valid cached result from a previous lookup.
      */
 
-    if (objPtr->typePtr == &indexType) {
+    if (!(flags & INDEX_TEMP_TABLE) && objPtr->typePtr == &indexType) {
 	indexRep = objPtr->internalRep.twoPtrValue.ptr1;
 	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
 	    *indexPtr = indexRep->index;
@@ -340,17 +334,19 @@ Tcl_GetIndexFromObjStruct(
      * operation.
      */
 
-    if (objPtr->typePtr == &indexType) {
-	indexRep = objPtr->internalRep.twoPtrValue.ptr1;
-    } else {
-	TclFreeIntRep(objPtr);
-	indexRep = ckalloc(sizeof(IndexRep));
-	objPtr->internalRep.twoPtrValue.ptr1 = indexRep;
-	objPtr->typePtr = &indexType;
+    if (!(flags & INDEX_TEMP_TABLE)) {
+	if (objPtr->typePtr == &indexType) {
+	    indexRep = objPtr->internalRep.twoPtrValue.ptr1;
+	} else {
+	    TclFreeIntRep(objPtr);
+	    indexRep = ckalloc(sizeof(IndexRep));
+	    objPtr->internalRep.twoPtrValue.ptr1 = indexRep;
+	    objPtr->typePtr = &indexType;
+	}
+	indexRep->tablePtr = (void *) tablePtr;
+	indexRep->offset = offset;
+	indexRep->index = index;
     }
-    indexRep->tablePtr = (void *) tablePtr;
-    indexRep->offset = offset;
-    indexRep->index = index;
 
     *indexPtr = index;
     return TCL_OK;
@@ -712,10 +708,10 @@ PrefixAllObjCmd(
 	return result;
     }
     resultPtr = Tcl_NewListObj(0, NULL);
-    string = Tcl_GetStringFromObj(objv[2], &length);
+    string = TclGetStringFromObj(objv[2], &length);
 
     for (t = 0; t < tableObjc; t++) {
-	elemString = Tcl_GetStringFromObj(tableObjv[t], &elemLength);
+	elemString = TclGetStringFromObj(tableObjv[t], &elemLength);
 
 	/*
 	 * A prefix cannot match if it is longest.
@@ -768,13 +764,13 @@ PrefixLongestObjCmd(
     if (result != TCL_OK) {
 	return result;
     }
-    string = Tcl_GetStringFromObj(objv[2], &length);
+    string = TclGetStringFromObj(objv[2], &length);
 
     resultString = NULL;
     resultLength = 0;
 
     for (t = 0; t < tableObjc; t++) {
-	elemString = Tcl_GetStringFromObj(tableObjv[t], &elemLength);
+	elemString = TclGetStringFromObj(tableObjv[t], &elemLength);
 
 	/*
 	 * First check if the prefix string matches the element. A prefix
@@ -925,6 +921,14 @@ Tcl_WrongNumArgs(
 	Tcl_Obj *const *origObjv = iPtr->ensembleRewrite.sourceObjs;
 
 	/*
+	 * Check for spelling fixes, and substitute the fixed values.
+	 */
+
+	if (origObjv[0] == NULL) {
+	    origObjv = (Tcl_Obj *const *)origObjv[2];
+	}
+
+	/*
 	 * We only know how to do rewriting if all the replaced objects are
 	 * actually arguments (in objv) to this function. Otherwise it just
 	 * gets too complicated and we'd be better off just giving a slightly
@@ -956,12 +960,6 @@ Tcl_WrongNumArgs(
 			origObjv[i]->internalRep.twoPtrValue.ptr1;
 
 		elementStr = EXPAND_OF(indexRep);
-		elemLen = strlen(elementStr);
-	    } else if (origObjv[i]->typePtr == &tclEnsembleCmdType) {
-		register EnsembleCmdRep *ecrPtr =
-			origObjv[i]->internalRep.twoPtrValue.ptr1;
-
-		elementStr = ecrPtr->fullSubcmdName;
 		elemLen = strlen(elementStr);
 	    } else {
 		elementStr = TclGetStringFromObj(origObjv[i], &elemLen);
@@ -1011,11 +1009,6 @@ Tcl_WrongNumArgs(
 	    register IndexRep *indexRep = objv[i]->internalRep.twoPtrValue.ptr1;
 
 	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), NULL);
-	} else if (objv[i]->typePtr == &tclEnsembleCmdType) {
-	    register EnsembleCmdRep *ecrPtr =
-		    objv[i]->internalRep.twoPtrValue.ptr1;
-
-	    Tcl_AppendStringsToObj(objPtr, ecrPtr->fullSubcmdName, NULL);
 	} else {
 	    /*
 	     * Quote the argument if it contains spaces (Bug 942757).
@@ -1151,7 +1144,7 @@ Tcl_ParseArgsObjv(
 	curArg = objv[srcIndex];
 	srcIndex++;
 	objc--;
-	str = Tcl_GetStringFromObj(curArg, &length);
+	str = TclGetStringFromObj(curArg, &length);
 	if (length > 0) {
 	    c = str[1];
 	} else {

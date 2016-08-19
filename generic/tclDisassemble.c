@@ -6,7 +6,7 @@
  *
  * Copyright (c) 1996-1998 Sun Microsystems, Inc.
  * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
- * Copyright (c) 2013 Donal K. Fellows.
+ * Copyright (c) 2013-2016 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -193,7 +193,7 @@ TclPrintObject(
     char *bytes;
     int length;
 
-    bytes = Tcl_GetStringFromObj(objPtr, &length);
+    bytes = TclGetStringFromObj(objPtr, &length);
     TclPrintSource(outFile, bytes, TclMin(length, maxChars));
 }
 
@@ -650,7 +650,7 @@ FormatInstruction(
 	int length;
 
 	Tcl_AppendToObj(bufferObj, "\t# ", -1);
-	bytes = Tcl_GetStringFromObj(codePtr->objArrayPtr[opnd], &length);
+	bytes = TclGetStringFromObj(codePtr->objArrayPtr[opnd], &length);
 	PrintSourceToObj(bufferObj, bytes, TclMin(length, 40));
     } else if (suffixBuffer[0]) {
 	Tcl_AppendPrintfToObj(bufferObj, "\t# %s", suffixBuffer);
@@ -1279,9 +1279,11 @@ Tcl_DisassembleObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const types[] = {
+	"constructor", "destructor",
 	"lambda", "method", "objmethod", "proc", "script", NULL
     };
     enum Types {
+	DISAS_CLASS_CONSTRUCTOR, DISAS_CLASS_DESTRUCTOR,
 	DISAS_LAMBDA, DISAS_CLASS_METHOD, DISAS_OBJECT_METHOD, DISAS_PROC,
 	DISAS_SCRIPT
     };
@@ -1290,6 +1292,7 @@ Tcl_DisassembleObjCmd(
     Proc *procPtr = NULL;
     Tcl_HashEntry *hPtr;
     Object *oPtr;
+    Method *methodPtr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "type ...");
@@ -1382,6 +1385,136 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 	codeObjPtr = objv[2];
+	break;
+
+    case DISAS_CLASS_CONSTRUCTOR:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "className");
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Look up the body of a constructor.
+	 */
+
+	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
+	if (oPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	if (oPtr->classPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "\"%s\" is not a class", TclGetString(objv[2])));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
+		    TclGetString(objv[2]), NULL);
+	    return TCL_ERROR;
+	}
+
+	methodPtr = oPtr->classPtr->constructorPtr;
+	if (methodPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "\"%s\" has no defined constructor",
+		    TclGetString(objv[2])));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		    "CONSRUCTOR", NULL);
+	    return TCL_ERROR;
+	}
+	procPtr = TclOOGetProcFromMethod(methodPtr);
+	if (procPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "body not available for this kind of constructor", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		    "METHODTYPE", NULL);
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Compile if necessary.
+	 */
+
+	if (procPtr->bodyPtr->typePtr != &tclByteCodeType) {
+	    Command cmd;
+
+	    /*
+	     * Yes, this is ugly, but we need to pass the namespace in to the
+	     * compiler in two places.
+	     */
+
+	    cmd.nsPtr = (Namespace *) oPtr->namespacePtr;
+	    procPtr->cmdPtr = &cmd;
+	    result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr,
+		    (Namespace *) oPtr->namespacePtr, "body of constructor",
+		    TclGetString(objv[2]));
+	    procPtr->cmdPtr = NULL;
+	    if (result != TCL_OK) {
+		return result;
+	    }
+	}
+	codeObjPtr = procPtr->bodyPtr;
+	break;
+
+    case DISAS_CLASS_DESTRUCTOR:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "className");
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Look up the body of a destructor.
+	 */
+
+	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
+	if (oPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	if (oPtr->classPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "\"%s\" is not a class", TclGetString(objv[2])));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
+		    TclGetString(objv[2]), NULL);
+	    return TCL_ERROR;
+	}
+
+	methodPtr = oPtr->classPtr->destructorPtr;
+	if (methodPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "\"%s\" has no defined destructor",
+		    TclGetString(objv[2])));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		    "DESRUCTOR", NULL);
+	    return TCL_ERROR;
+	}
+	procPtr = TclOOGetProcFromMethod(methodPtr);
+	if (procPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "body not available for this kind of destructor", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		    "METHODTYPE", NULL);
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Compile if necessary.
+	 */
+
+	if (procPtr->bodyPtr->typePtr != &tclByteCodeType) {
+	    Command cmd;
+
+	    /*
+	     * Yes, this is ugly, but we need to pass the namespace in to the
+	     * compiler in two places.
+	     */
+
+	    cmd.nsPtr = (Namespace *) oPtr->namespacePtr;
+	    procPtr->cmdPtr = &cmd;
+	    result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr,
+		    (Namespace *) oPtr->namespacePtr, "body of destructor",
+		    TclGetString(objv[2]));
+	    procPtr->cmdPtr = NULL;
+	    if (result != TCL_OK) {
+		return result;
+	    }
+	}
+	codeObjPtr = procPtr->bodyPtr;
 	break;
 
     case DISAS_CLASS_METHOD:
