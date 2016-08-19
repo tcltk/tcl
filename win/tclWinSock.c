@@ -62,6 +62,15 @@
 #undef TCL_FEATURE_KEEPALIVE_NAGLE
 
 /*
+ * Make sure to remove the redirection defines set in tclWinPort.h that is in
+ * use in other sections of the core, except for us.
+ */
+
+#undef getservbyname
+#undef getsockopt
+#undef setsockopt
+
+/*
  * Helper macros to make parts of this file clearer. The macros do exactly
  * what they say on the tin. :-) They also only ever refer to their arguments
  * once, and so can be used without regard to side effects.
@@ -81,7 +90,7 @@
  */
 
 static int initialized = 0;
-static const TCHAR className[] = TEXT("TclSocket");
+static const TCHAR classname[] = TEXT("TclSocket");
 TCL_DECLARE_MUTEX(socketMutex)
 
 /*
@@ -2327,7 +2336,7 @@ InitSockets(void)
 	windowClass.hInstance = TclWinGetTclInstance();
 	windowClass.hbrBackground = NULL;
 	windowClass.lpszMenuName = NULL;
-	windowClass.lpszClassName = className;
+	windowClass.lpszClassName = classname;
 	windowClass.lpfnWndProc = SocketProc;
 	windowClass.hIcon = NULL;
 	windowClass.hCursor = NULL;
@@ -2457,7 +2466,7 @@ SocketExitHandler(
      */
 
     TclpFinalizeSockets();
-    UnregisterClass(className, TclWinGetTclInstance());
+    UnregisterClass(classname, TclWinGetTclInstance());
     initialized = 0;
     Tcl_MutexUnlock(&socketMutex);
 }
@@ -2983,7 +2992,7 @@ SocketThread(
      * Create a dummy window receiving socket events.
      */
 
-    tsdPtr->hwnd = CreateWindow(className, className, WS_TILED, 0, 0, 0, 0,
+    tsdPtr->hwnd = CreateWindow(classname, classname, WS_TILED, 0, 0, 0, 0,
 	    NULL, NULL, windowClass.hInstance, arg);
 
     /*

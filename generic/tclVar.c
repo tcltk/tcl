@@ -206,6 +206,7 @@ static Tcl_UpdateStringProc	PanicOnUpdateVarName;
 
 static Tcl_FreeInternalRepProc	FreeParsedVarName;
 static Tcl_DupInternalRepProc	DupParsedVarName;
+static Tcl_UpdateStringProc	UpdateParsedVarName;
 
 static Tcl_UpdateStringProc	PanicOnUpdateVarName;
 static Tcl_SetFromAnyProc	PanicOnSetVarName;
@@ -217,10 +218,6 @@ static Tcl_SetFromAnyProc	PanicOnSetVarName;
  *   twoPtrValue.ptr1:   pointer to name obj in varFramePtr->localCache
  *			  or NULL if it is this same obj
  *   twoPtrValue.ptr2: index into locals table
- *
- * nsVarName - INTERNALREP DEFINITION:
- *   twoPtrValue.ptr1:	pointer to the namespace containing the reference
- *   twoPtrValue.ptr2:	pointer to the corresponding Var
  *
  * parsedVarName - INTERNALREP DEFINITION:
  *   twoPtrValue.ptr1:	pointer to the array name Tcl_Obj, or NULL if it is a
@@ -236,7 +233,7 @@ static const Tcl_ObjType localVarNameType = {
 
 static const Tcl_ObjType tclParsedVarNameType = {
     "parsedVarName",
-    FreeParsedVarName, DupParsedVarName, PanicOnUpdateVarName, PanicOnSetVarName
+    FreeParsedVarName, DupParsedVarName, UpdateParsedVarName, PanicOnSetVarName
 };
 
 /*
@@ -535,6 +532,7 @@ TclObjLookupVarEx(
     const char *errMsg = NULL;
     CallFrame *varFramePtr = iPtr->varFramePtr;
     const char *part2 = part2Ptr? TclGetString(part2Ptr):NULL;
+    char *newPart2 = NULL;
     *arrayPtrPtr = NULL;
 
     if (typePtr == &localVarNameType) {
@@ -581,7 +579,9 @@ TclObjLookupVarEx(
 		}
 		return NULL;
 	    }
-	    if ((part2Ptr = part1Ptr->internalRep.twoPtrValue.ptr2)) {
+	    part2 = newPart2 = part1Ptr->internalRep.twoPtrValue.ptr2;
+	    if (newPart2) {
+		part2Ptr = Tcl_NewStringObj(newPart2, -1);
 		if (createPart2) {
 		    Tcl_IncrRefCount(part2Ptr);
 		}
@@ -625,7 +625,11 @@ TclObjLookupVarEx(
 		len2 = len1 - i - 2;
 		len1 = i;
 
-		part2Ptr = Tcl_NewStringObj(part2, len2);
+		newPart2 = ckalloc(len2 + 1);
+		memcpy(newPart2, part2, (unsigned) len2);
+		*(newPart2+len2) = '\0';
+		part2 = newPart2;
+		part2Ptr = Tcl_NewStringObj(newPart2, -1);
 		if (createPart2) {
 		    Tcl_IncrRefCount(part2Ptr);
 		}
@@ -650,8 +654,7 @@ TclObjLookupVarEx(
 		Tcl_IncrRefCount(part1Ptr);
 
 		objPtr->internalRep.twoPtrValue.ptr1 = part1Ptr;
-		Tcl_IncrRefCount(part2Ptr);
-		objPtr->internalRep.twoPtrValue.ptr2 = part2Ptr;
+		objPtr->internalRep.twoPtrValue.ptr2 = (void *) part2;
 
 		typePtr = part1Ptr->typePtr;
 		part1 = TclGetString(part1Ptr);
@@ -675,6 +678,9 @@ TclObjLookupVarEx(
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg, errMsg, -1);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
 		    TclGetString(part1Ptr), NULL);
+	}
+	if (newPart2) {
+	    Tcl_DecrRefCount(part2Ptr);
 	}
 	return NULL;
     }
@@ -724,25 +730,13 @@ TclObjLookupVarEx(
 	*arrayPtrPtr = varPtr;
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr, flags, msg,
 		createPart1, createPart2, varPtr, -1);
+	if (newPart2) {
+	    Tcl_DecrRefCount(part2Ptr);
+	}
     }
     return varPtr;
 }
 
-/*
- * This flag bit should not interfere with TCL_GLOBAL_ONLY,
- * TCL_NAMESPACE_ONLY, or TCL_LEAVE_ERR_MSG; it signals that the variable
- * lookup is performed for upvar (or similar) purposes, with slightly
- * different rules:
- *    - Bug #696893 - variable is either proc-local or in the current
- *	namespace; never follow the second (global) resolution path
- *    - Bug #631741 - do not use special namespace or interp resolvers
- *
- * It should also not collide with the (deprecated) TCL_PARSE_PART1 flag
- * (Bug #835020)
- */
-
-#define AVOID_RESOLVERS 0x40000
-
 /*
  *----------------------------------------------------------------------
  *
@@ -792,8 +786,8 @@ TclLookupSimpleVar(
     Tcl_Obj *varNamePtr,	/* This is a simple variable name that could
 				 * represent a scalar or an array. */
     int flags,			/* Only TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
-				 * AVOID_RESOLVERS and TCL_LEAVE_ERR_MSG bits
-				 * matter. */
+				 * TCL_AVOID_RESOLVERS and TCL_LEAVE_ERR_MSG
+				 * bits matter. */
     const int create,		/* If 1, create hash table entry for varname,
 				 * if it doesn't already exist. If 0, return
 				 * error if it doesn't exist. */
@@ -833,7 +827,7 @@ TclLookupSimpleVar(
      */
 
     if ((cxtNsPtr->varResProc != NULL || iPtr->resolverPtr != NULL)
-	    && !(flags & AVOID_RESOLVERS)) {
+	    && !(flags & TCL_AVOID_RESOLVERS)) {
 	resPtr = iPtr->resolverPtr;
 	if (cxtNsPtr->varResProc) {
 	    result = cxtNsPtr->varResProc(interp, varName,
@@ -886,7 +880,7 @@ TclLookupSimpleVar(
 	    *indexPtr = -1;
 	    flags = (flags | TCL_GLOBAL_ONLY) & ~TCL_NAMESPACE_ONLY;
 	} else {
-	    if (flags & AVOID_RESOLVERS) {
+	    if (flags & TCL_AVOID_RESOLVERS) {
 		flags = (flags | TCL_NAMESPACE_ONLY);
 	    }
 	    if (flags & TCL_NAMESPACE_ONLY) {
@@ -901,7 +895,7 @@ TclLookupSimpleVar(
 
 	varPtr = (Var *) ObjFindNamespaceVar(interp, varNamePtr,
 		(Tcl_Namespace *) cxtNsPtr,
-		(flags | AVOID_RESOLVERS) & ~TCL_LEAVE_ERR_MSG);
+		(flags | TCL_AVOID_RESOLVERS) & ~TCL_LEAVE_ERR_MSG);
 	if (varPtr == NULL) {
 	    Tcl_Obj *tailPtr;
 
@@ -4383,15 +4377,15 @@ TclPtrObjMakeUpvar(
 
 	/*
 	 * Lookup and eventually create the new variable. Set the flag bit
-	 * AVOID_RESOLVERS to indicate the special resolution rules for upvar
-	 * purposes:
+	 * TCL_AVOID_RESOLVERS to indicate the special resolution rules for
+	 * upvar purposes:
 	 *   - Bug #696893 - variable is either proc-local or in the current
 	 *     namespace; never follow the second (global) resolution path.
 	 *   - Bug #631741 - do not use special namespace or interp resolvers.
 	 */
 
 	varPtr = TclLookupSimpleVar(interp, myNamePtr,
-		myFlags|AVOID_RESOLVERS, /* create */ 1, &errMsg, &index);
+		myFlags|TCL_AVOID_RESOLVERS, /* create */ 1, &errMsg, &index);
 	if (varPtr == NULL) {
 	    TclObjVarErrMsg(interp, myNamePtr, NULL, "create", errMsg, -1);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
@@ -5580,11 +5574,11 @@ FreeParsedVarName(
     Tcl_Obj *objPtr)
 {
     register Tcl_Obj *arrayPtr = objPtr->internalRep.twoPtrValue.ptr1;
-    register Tcl_Obj *elem = objPtr->internalRep.twoPtrValue.ptr2;
+    register char *elem = objPtr->internalRep.twoPtrValue.ptr2;
 
     if (arrayPtr != NULL) {
 	TclDecrRefCount(arrayPtr);
-	TclDecrRefCount(elem);
+	ckfree(elem);
     }
     objPtr->typePtr = NULL;
 }
@@ -5595,16 +5589,57 @@ DupParsedVarName(
     Tcl_Obj *dupPtr)
 {
     register Tcl_Obj *arrayPtr = srcPtr->internalRep.twoPtrValue.ptr1;
-    register Tcl_Obj *elem = srcPtr->internalRep.twoPtrValue.ptr2;
+    register char *elem = srcPtr->internalRep.twoPtrValue.ptr2;
+    char *elemCopy;
+    unsigned elemLen;
 
     if (arrayPtr != NULL) {
 	Tcl_IncrRefCount(arrayPtr);
-	Tcl_IncrRefCount(elem);
+	elemLen = strlen(elem);
+	elemCopy = ckalloc(elemLen + 1);
+	memcpy(elemCopy, elem, elemLen);
+	*(elemCopy + elemLen) = '\0';
+	elem = elemCopy;
     }
 
     dupPtr->internalRep.twoPtrValue.ptr1 = arrayPtr;
     dupPtr->internalRep.twoPtrValue.ptr2 = elem;
     dupPtr->typePtr = &tclParsedVarNameType;
+}
+
+static void
+UpdateParsedVarName(
+    Tcl_Obj *objPtr)
+{
+    Tcl_Obj *arrayPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    char *part2 = objPtr->internalRep.twoPtrValue.ptr2;
+    const char *part1;
+    char *p;
+    int len1, len2, totalLen;
+
+    if (arrayPtr == NULL) {
+	/*
+	 * This is a parsed scalar name: what is it doing here?
+	 */
+
+	Tcl_Panic("scalar parsedVarName without a string rep");
+    }
+
+    part1 = TclGetStringFromObj(arrayPtr, &len1);
+    len2 = strlen(part2);
+
+    totalLen = len1 + len2 + 2;
+    p = ckalloc(totalLen + 1);
+    objPtr->bytes = p;
+    objPtr->length = totalLen;
+
+    memcpy(p, part1, (unsigned) len1);
+    p += len1;
+    *p++ = '(';
+    memcpy(p, part2, (unsigned) len2);
+    p += len2;
+    *p++ = ')';
+    *p = '\0';
 }
 
 /*
@@ -5641,11 +5676,12 @@ Tcl_FindNamespaceVar(
 				 * Otherwise, points to namespace in which to
 				 * resolve name. If NULL, look up name in the
 				 * current namespace. */
-    int flags)			/* An OR'd combination of: AVOID_RESOLVERS,
-				 * TCL_GLOBAL_ONLY (look up name only in
-				 * global namespace), TCL_NAMESPACE_ONLY (look
-				 * up only in contextNsPtr, or the current
-				 * namespace if contextNsPtr is NULL), and
+    int flags)			/* An OR'd combination of:
+				 * TCL_AVOID_RESOLVERS, TCL_GLOBAL_ONLY (look
+				 * up name only in global namespace),
+				 * TCL_NAMESPACE_ONLY (look up only in
+				 * contextNsPtr, or the current namespace if
+				 * contextNsPtr is NULL), and
 				 * TCL_LEAVE_ERR_MSG. If both TCL_GLOBAL_ONLY
 				 * and TCL_NAMESPACE_ONLY are given,
 				 * TCL_GLOBAL_ONLY is ignored. */
@@ -5671,11 +5707,12 @@ ObjFindNamespaceVar(
 				 * Otherwise, points to namespace in which to
 				 * resolve name. If NULL, look up name in the
 				 * current namespace. */
-    int flags)			/* An OR'd combination of: AVOID_RESOLVERS,
-				 * TCL_GLOBAL_ONLY (look up name only in
-				 * global namespace), TCL_NAMESPACE_ONLY (look
-				 * up only in contextNsPtr, or the current
-				 * namespace if contextNsPtr is NULL), and
+    int flags)			/* An OR'd combination of:
+				 * TCL_AVOID_RESOLVERS, TCL_GLOBAL_ONLY (look
+				 * up name only in global namespace),
+				 * TCL_NAMESPACE_ONLY (look up only in
+				 * contextNsPtr, or the current namespace if
+				 * contextNsPtr is NULL), and
 				 * TCL_LEAVE_ERR_MSG. If both TCL_GLOBAL_ONLY
 				 * and TCL_NAMESPACE_ONLY are given,
 				 * TCL_GLOBAL_ONLY is ignored. */
@@ -5705,7 +5742,7 @@ ObjFindNamespaceVar(
 	cxtNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     }
 
-    if (!(flags & AVOID_RESOLVERS) &&
+    if (!(flags & TCL_AVOID_RESOLVERS) &&
 	    (cxtNsPtr->varResProc != NULL || iPtr->resolverPtr != NULL)) {
 	resPtr = iPtr->resolverPtr;
 

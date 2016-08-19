@@ -35,14 +35,14 @@
 #endif
 
 /*
- * A counter that is used to work out when the bytecode engine should call
- * Tcl_AsyncReady() to see whether there is a signal that needs handling, and
- * other expensive periodic operations.
+ * A mask (should be 2**n-1) that is used to work out when the bytecode engine
+ * should call Tcl_AsyncReady() to see whether there is a signal that needs
+ * handling.
  */
 
-#ifndef ASYNC_CHECK_COUNT
-#   define ASYNC_CHECK_COUNT	64
-#endif /* !ASYNC_CHECK_COUNT */
+#ifndef ASYNC_CHECK_COUNT_MASK
+#   define ASYNC_CHECK_COUNT_MASK	63
+#endif /* !ASYNC_CHECK_COUNT_MASK */
 
 /*
  * Boolean flag indicating whether the Tcl bytecode interpreter has been
@@ -2078,6 +2078,13 @@ TclNRExecuteByteCode(
 #endif
 
     /*
+     * Test namespace-50.9 demonstrates the need for this call.
+     * Use a --enable-symbols=mem bug to see.
+     */
+
+    TclResetRewriteEnsemble(interp, 1);
+
+    /*
      * Push the callback for bytecode execution
      */
 
@@ -2115,14 +2122,8 @@ TEBCresume(
      * sporadically: no special need for speed.
      */
 
-    unsigned interruptCounter = 1;
-				/* Counter that is used to work out when to
-				 * call Tcl_AsyncReady(). This must be 1
-				 * initially so that we call the async-check
-				 * stanza early, otherwise there are command
-				 * sequences that can make the interpreter
-				 * busy-loop without an opportunity to
-				 * recognise an interrupt. */
+    int instructionCount = 0;	/* Counter that is used to work out when to
+				 * call Tcl_AsyncReady() */
     const char *curInstName;
 #ifdef TCL_COMPILE_DEBUG
     int traceInstructions;	/* Whether we are doing instruction-level
@@ -2320,11 +2321,10 @@ TEBCresume(
 
     /*
      * Check for asynchronous handlers [Bug 746722]; we do the check every
-     * ASYNC_CHECK_COUNT instructions.
+     * ASYNC_CHECK_COUNT_MASK instruction, of the form (2**n-1).
      */
 
-    if ((--interruptCounter) == 0) {
-	interruptCounter = ASYNC_CHECK_COUNT;
+    if ((instructionCount++ & ASYNC_CHECK_COUNT_MASK) == 0) {
 	DECACHE_STACK_INFO();
 	if (TclAsyncReady(iPtr)) {
 	    result = Tcl_AsyncInvoke(interp, result);
@@ -3160,35 +3160,34 @@ TEBCresume(
 	    fflush(stdout);
 	}
 #endif /*TCL_COMPILE_DEBUG*/
-	{
-	    Tcl_Obj *copyPtr = Tcl_NewListObj(objc - opnd + 1, NULL);
-	    register List *listRepPtr = copyPtr->internalRep.twoPtrValue.ptr1;
-	    Tcl_Obj **copyObjv = &listRepPtr->elements;
-	    int i;
 
-	    listRepPtr->elemCount = objc - opnd + 1;
-	    copyObjv[0] = objPtr;
-	    memcpy(copyObjv+1, objv+opnd, sizeof(Tcl_Obj *) * (objc - opnd));
-	    for (i=1 ; i<objc-opnd+1 ; i++) {
-		Tcl_IncrRefCount(copyObjv[i]);
-	    }
-	    objPtr = copyPtr;
-	}
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
 	    ArgumentBCEnter(interp, codePtr, TD, pc, objc, objv);
 	}
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = opnd;
-	iPtr->ensembleRewrite.numInsertedObjs = 1;
+
+	TclInitRewriteEnsemble(interp, opnd, 1, objv);
+
+	{
+	    Tcl_Obj *copyPtr = Tcl_NewListObj(objc - opnd + 1, NULL);
+
+	    Tcl_ListObjAppendElement(NULL, copyPtr, objPtr);
+	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0, 
+		    objc - opnd, objv + opnd);
+	    Tcl_DecrRefCount(objPtr);
+	    objPtr = copyPtr;
+	}
+
 	DECACHE_STACK_INFO();
 	pc += 6;
 	TEBC_YIELD();
 
 	TclMarkTailcall(interp);
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL,NULL,NULL,NULL);
-	return TclNREvalObjEx(interp, objPtr, TCL_EVAL_INVOKE, NULL, INT_MIN);
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv);
+	TclNRAddCallback(interp, TclNRReleaseValues, objPtr, NULL, NULL, NULL);
+	return TclNREvalObjv(interp, objc, objv, TCL_EVAL_INVOKE, NULL);
 
     /*
      * -----------------------------------------------------------------
@@ -4421,8 +4420,8 @@ TEBCresume(
 	savedNsPtr = iPtr->varFramePtr->nsPtr;
 	iPtr->varFramePtr->nsPtr = (Namespace *) nsPtr;
 	otherPtr = TclObjLookupVarEx(interp, OBJ_AT_TOS, NULL,
-		(TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
-		/*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
+		(TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG|TCL_AVOID_RESOLVERS),
+		"access", /*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
 	iPtr->varFramePtr->nsPtr = savedNsPtr;
 	if (!otherPtr) {
 	    TRACE_ERROR(interp);

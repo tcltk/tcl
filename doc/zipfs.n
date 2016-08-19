@@ -40,7 +40,7 @@ Return 1 if the given filename exists in the mounted zipfs and 0 if it does not.
 Recursively lists files including and below the directory \fIdir\fR.
 The result list consists of relative path names starting from the
 given directory. This command is also used by the \fB::zipfs::mkzip\fR
-and \fB::zipfs::mkimg\fR commands. 
+and \fB::zipfs::mkimg\fR commands.
 .TP
 \fB::zipfs::info\fR \fIfile\fR
 .
@@ -91,7 +91,7 @@ of the respective file name.
 .PP
 Caution: the choice of the \fIindir\fR parameter
 (less the optional stripped prefix) determines the later root name of the
-archive's content. 
+archive's content.
 .RE
 .TP
 \fB::zipfs::mount ?\fIzipfile\fR? ?\fImountpoint\fR?

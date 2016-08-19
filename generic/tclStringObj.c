@@ -39,6 +39,15 @@
 #include "tclStringRep.h"
 
 /*
+ * Set COMPAT to 1 to restore the shimmering patterns to those of Tcl 8.5.
+ * This is an escape hatch in case the changes have some unexpected unwelcome
+ * impact on performance. If things go well, this mechanism can go away when
+ * post-8.6 development begins.
+ */
+
+#define COMPAT 0
+
+/*
  * Prototypes for functions defined later in this file:
  */
 
@@ -436,6 +445,18 @@ Tcl_GetCharLength(
     if (numChars == -1) {
 	TclNumUtfChars(numChars, objPtr->bytes, objPtr->length);
 	stringPtr->numChars = numChars;
+
+#if COMPAT
+	if (numChars < objPtr->length) {
+	    /*
+	     * Since we've just computed the number of chars, and not all UTF
+	     * chars are 1-byte long, go ahead and populate the unicode
+	     * string.
+	     */
+
+	    FillUnicodeRep(objPtr);
+	}
+#endif
     }
     return numChars;
 }
@@ -1152,7 +1173,11 @@ Tcl_AppendUnicodeToObj(
      * objPtr's string rep.
      */
 
-    if (stringPtr->hasUnicode) {
+    if (stringPtr->hasUnicode
+#if COMPAT
+		&& stringPtr->numChars > 0
+#endif
+	    ) {
 	AppendUnicodeToUnicodeRep(objPtr, unicode, length);
     } else {
 	AppendUnicodeToUtfRep(objPtr, unicode, length);
@@ -1256,7 +1281,11 @@ Tcl_AppendObjToObj(
      * appendObjPtr and append it.
      */
 
-    if (stringPtr->hasUnicode) {
+    if (stringPtr->hasUnicode
+#if COMPAT
+		&& stringPtr->numChars > 0
+#endif
+	    ) {
 	/*
 	 * If appendObjPtr is not of the "String" type, don't convert it.
 	 */
@@ -1289,7 +1318,11 @@ Tcl_AppendObjToObj(
 
     AppendUtfToUtfRep(objPtr, bytes, length);
 
-    if (numChars >= 0 && appendNumChars >= 0) {
+    if (numChars >= 0 && appendNumChars >= 0
+#if COMPAT
+		&& appendNumChars == length
+#endif
+	    ) {
 	stringPtr->numChars = numChars + appendNumChars;
     }
 }
@@ -1413,6 +1446,14 @@ AppendUnicodeToUtfRep(
     if (stringPtr->numChars != -1) {
 	stringPtr->numChars += numChars;
     }
+
+#if COMPAT
+    /*
+     * Invalidate the unicode rep.
+     */
+
+    stringPtr->hasUnicode = 0;
+#endif
 }
 
 /*
@@ -2830,6 +2871,7 @@ DupStringInternalRep(
     String *srcStringPtr = GET_STRING(srcPtr);
     String *copyStringPtr = NULL;
 
+#if COMPAT==0
     if (srcStringPtr->numChars == -1) {
 	/*
 	 * The String struct in the source value holds zero useful data. Don't
@@ -2872,6 +2914,41 @@ DupStringInternalRep(
      */
 
     copyStringPtr->allocated = copyPtr->bytes ? copyPtr->length : 0;
+#else /* COMPAT!=0 */
+    /*
+     * If the src obj is a string of 1-byte Utf chars, then copy the string
+     * rep of the source object and create an "empty" Unicode internal rep for
+     * the new object. Otherwise, copy Unicode internal rep, and invalidate
+     * the string rep of the new object.
+     */
+
+    if (srcStringPtr->hasUnicode && srcStringPtr->numChars > 0) {
+	/*
+	 * Copy the full allocation for the Unicode buffer.
+	 */
+
+	copyStringPtr = stringAlloc(srcStringPtr->maxChars);
+	copyStringPtr->maxChars = srcStringPtr->maxChars;
+	memcpy(copyStringPtr->unicode, srcStringPtr->unicode,
+		srcStringPtr->numChars * sizeof(Tcl_UniChar));
+	copyStringPtr->unicode[srcStringPtr->numChars] = 0;
+	copyStringPtr->allocated = 0;
+    } else {
+	copyStringPtr = stringAlloc(0);
+	copyStringPtr->unicode[0] = 0;
+	copyStringPtr->maxChars = 0;
+
+	/*
+	 * Tricky point: the string value was copied by generic object
+	 * management code, so it doesn't contain any extra bytes that might
+	 * exist in the source object.
+	 */
+
+	copyStringPtr->allocated = copyPtr->length;
+    }
+    copyStringPtr->numChars = srcStringPtr->numChars;
+    copyStringPtr->hasUnicode = srcStringPtr->hasUnicode;
+#endif /* COMPAT==0 */
 
     SET_STRING(copyPtr, copyStringPtr);
     copyPtr->typePtr = &tclStringType;
@@ -2967,7 +3044,7 @@ ExtendStringRepWithUnicode(
      */
 
     int i, origLength, size = 0;
-    char *dst;
+    char *dst, buf[TCL_UTF_MAX];
     String *stringPtr = GET_STRING(objPtr);
 
     if (numChars < 0) {
@@ -2993,7 +3070,7 @@ ExtendStringRepWithUnicode(
     }
 
     for (i = 0; i < numChars && size >= 0; i++) {
-	size += TclUtfCount(unicode[i]);
+	size += Tcl_UniCharToUtf((int) unicode[i], buf);
     }
     if (size < 0) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);

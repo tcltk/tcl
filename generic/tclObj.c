@@ -4176,7 +4176,7 @@ Tcl_GetCommandFromObj(
      * had is invalid one way or another.
      */
 
-    /* See [07d13d99b0a9] why we cannot call SetCmdNameFromAny() directly here. */
+    /* See [] why we cannot call SetCmdNameFromAny() directly here. */
     if (tclCmdNameType.setFromAnyProc(interp, objPtr) != TCL_OK) {
         return NULL;
     }

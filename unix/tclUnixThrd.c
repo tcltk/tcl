@@ -44,6 +44,13 @@ static pthread_mutex_t initLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t allocLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t *allocLockPtr = &allocLock;
 
+/*
+ * These are for the critical sections inside this file.
+ */
+
+#define MASTER_LOCK	pthread_mutex_lock(&masterLock)
+#define MASTER_UNLOCK	pthread_mutex_unlock(&masterLock)
+
 #endif /* TCL_THREADS */
 
 /*
@@ -414,7 +421,7 @@ Tcl_MutexLock(
     pthread_mutex_t *pmutexPtr;
 
     if (*mutexPtr == NULL) {
-	pthread_mutex_lock(&masterLock);
+	MASTER_LOCK;
 	if (*mutexPtr == NULL) {
 	    /*
 	     * Double inside master lock check to avoid a race condition.
@@ -425,7 +432,7 @@ Tcl_MutexLock(
 	    *mutexPtr = (Tcl_Mutex)pmutexPtr;
 	    TclRememberMutex(mutexPtr);
 	}
-	pthread_mutex_unlock(&masterLock);
+	MASTER_UNLOCK;
     }
     pmutexPtr = *((pthread_mutex_t **)mutexPtr);
     pthread_mutex_lock(pmutexPtr);
@@ -522,7 +529,7 @@ Tcl_ConditionWait(
     struct timespec ptime;
 
     if (*condPtr == NULL) {
-	pthread_mutex_lock(&masterLock);
+	MASTER_LOCK;
 
 	/*
 	 * Double check inside mutex to avoid race, then initialize condition
@@ -535,7 +542,7 @@ Tcl_ConditionWait(
 	    *condPtr = (Tcl_Condition) pcondPtr;
 	    TclRememberCondition(condPtr);
 	}
-	pthread_mutex_unlock(&masterLock);
+	MASTER_UNLOCK;
     }
     pmutexPtr = *((pthread_mutex_t **)mutexPtr);
     pcondPtr = *((pthread_cond_t **)condPtr);

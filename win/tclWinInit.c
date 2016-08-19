@@ -448,14 +448,14 @@ ToUtf(
 		/* Low surrogate */
 		dst[3] = (char) ((ch | 0x80) & 0xBF);
 		dst[2] |= (char) (((ch >> 6) | 0x80) & 0x8F);
-		dst += 4; 
+		dst += 4;
 	    } else {
 		/* High surrogate */
 		ch += 0x40;
 		dst[2] = (char) (((ch << 4) | 0x80) & 0xB0);
 		dst[1] = (char) (((ch >> 2) | 0x80) & 0xBF);
 		dst[0] = (char) (((ch >> 8) | 0xF0) & 0xF7);
-		/* dst not incremented! */ 
+		/* dst not incremented! */
 	    }
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);

@@ -1841,7 +1841,7 @@ test info-30.48 {Bug 2850901} testevalex {
 # -------------------------------------------------------------------------
 # literal sharing 2, bug 2933089
 
-test info-39.1 {location information not confused by literal sharing, bug 2933089} -setup {
+test info-40.1 {location information not confused by literal sharing, bug 2933089} -setup {
     set result {}
 
     proc print_one {} {}
@@ -2099,7 +2099,7 @@ proc foo::bar {} {
     foreach {*}{
 	x y
 	{set res [info frame 0]}
-    }
+    } 
     return $res
 }
 test info-33.13 {{*}, literal, simple, bytecompiled} -body {
@@ -2114,7 +2114,7 @@ proc foo::bar {} {
     if {*}{
 	{[return [info frame 0]]}
 	{}
-    }
+    } 
 }
 test info-33.14 {{*}, literal, simple, bytecompiled} -body {
     reduce [foo::bar]
@@ -2128,7 +2128,7 @@ proc foo::bar {} {
     if 0 {*}{
 	{} else
 	{return [info frame 0]}
-    }
+    } 
 }
 test info-33.15 {{*}, literal, simple, bytecompiled} -body {
     reduce [foo::bar]
@@ -2229,7 +2229,7 @@ namespace eval foo {}
 proc foo::bar {} {
     try {*}{
 	{set res [info frame 0]}
-    }
+    } 
     return $res
 }
 test info-33.23 {{*}, literal, simple, bytecompiled} -body {
@@ -2398,7 +2398,7 @@ test info-33.35 {{*}, literal, simple, bytecompiled} -body {
 # -------------------------------------------------------------------------
 unset -nocomplain res
 
-test info-39.0 {Bug 4b61afd660} -setup {
+test info-39.1 {Bug 4b61afd660} -setup {
     proc probe {} {
 	return [dict get [info frame -1] line]
     }

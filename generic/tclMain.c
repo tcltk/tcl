@@ -335,6 +335,7 @@ Tcl_MainEx(
 #ifdef ZIPFS_IN_TCL
     const char *zipFile = NULL;
     Tcl_Obj *zipval = NULL;
+    Tcl_Obj *checkAppName = NULL;
     int autoRun = 1;
     int zipOk = TCL_ERROR;
 #ifndef ANDROID
@@ -410,6 +411,9 @@ Tcl_MainEx(
     if (path == NULL) {
 	appName = NewNativeObj(argv[0], -1);
     } else {
+#ifdef ZIPFS_IN_TCL
+	checkAppName = path;
+#endif
 	appName = path;
     }
     Tcl_SetVar2Ex(interp, "argv0", NULL, appName, TCL_GLOBAL_ONLY);
@@ -496,7 +500,7 @@ Tcl_MainEx(
 	zipval = NULL;
     }
 #endif
-	
+
     /*
      * Invoke application-specific initialization.
      */
@@ -565,18 +569,41 @@ Tcl_MainEx(
      */
 
     if ((zipOk == TCL_OK) && autoRun) {
-	char *filename;
+	int pushBack = 1;
+	char *filename = NULL;
 	Tcl_Channel chan;
-#ifdef ZIPFS_BOOTDIR
-	filename = ZIPFS_BOOTDIR "/app/main.tcl";
-#else
 	Tcl_DString dsFile;
 
 	Tcl_DStringInit(&dsFile);
+#ifdef ZIPFS_BOOTDIR
+	Tcl_DStringAppend(&dsFile, ZIPFS_BOOTDIR, -1);
+#else
 	Tcl_DStringAppend(&dsFile, Tcl_GetString(mntpt), -1);
-	Tcl_DStringAppend(&dsFile, "/app/main.tcl", -1);
-	filename = Tcl_DStringValue(&dsFile);
 #endif
+	if (checkAppName != NULL) {
+	    filename = Tcl_GetString(checkAppName);
+	    if ((strlen(filename) > 8) &&
+		(strncasecmp(filename, "builtin:", 8) == 0)) {
+		filename += 8;
+		while (filename[0] == '/') {
+		    ++filename;
+		}
+		if (filename[0] != '\0') {
+		    pushBack = 0;
+		} else {
+		    filename = NULL;
+		}
+	    } else {
+		filename = NULL;
+	    }
+	}
+	if (filename != NULL) {
+	    Tcl_DStringAppend(&dsFile, "/", 1);
+	    Tcl_DStringAppend(&dsFile, filename, -1);
+	} else {
+	    Tcl_DStringAppend(&dsFile, "/app/main.tcl", -1);
+	}
+	filename = Tcl_DStringValue(&dsFile);
 	chan = Tcl_OpenFileChannel(NULL, filename, "r", 0);
 	if (chan != (Tcl_Channel) NULL) {
 	    Tcl_Obj *arg;
@@ -586,7 +613,7 @@ Tcl_MainEx(
 	    /*
 	     * Push back script file to argv, if any.
 	     */
-	    if ((arg = Tcl_GetStartupScript(NULL)) != NULL) {
+	    if (pushBack && (arg = Tcl_GetStartupScript(NULL)) != NULL) {
 		Tcl_Obj *v, *no;
 
 		no = Tcl_NewStringObj("argv", 4);
@@ -605,18 +632,18 @@ Tcl_MainEx(
 		    if (Tcl_ObjSetVar2(interp, no, NULL, nv, TCL_GLOBAL_ONLY)
 			!= NULL) {
 			Tcl_GlobalEval(interp, "incr argc");
-		    } 
+		    }
 		    Tcl_DecrRefCount(nv);
 		}
 		Tcl_DecrRefCount(no);
 	    }
 	    Tcl_SetStartupScript(Tcl_NewStringObj(filename, -1), NULL);
-	    Tcl_SetVar(interp, "argv0", filename, TCL_GLOBAL_ONLY);
+	    if (pushBack) {
+		Tcl_SetVar(interp, "argv0", filename, TCL_GLOBAL_ONLY);
+	    }
 	    Tcl_SetVar(interp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
 	}
-#ifndef ANDROID
 	Tcl_DStringFree(&dsFile);
-#endif
     }
 #endif
 

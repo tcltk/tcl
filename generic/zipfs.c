@@ -575,7 +575,7 @@ CanonicalPath(const char *root, const char *tail, Tcl_DString *dsPtr)
 	path[j++] = c;
     }
     if (j == 0) {
-       path[j++] = '/';
+	path[j++] = '/';
     }
     path[j] = 0;
     Tcl_DStringSetLength(dsPtr, j);
@@ -4075,35 +4075,45 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
 	Tcl_InitHashTable(&ZipFS.zipHash, TCL_STRING_KEYS);
 	ZipFS.initialized = ZipFS.idCount = 1;
 #if defined(ZIPFS_IN_TCL) || defined(ZIPFS_IN_TK)
-	Tcl_StaticPackage(interp, "zipfs", Zipfs_Init, Zipfs_SafeInit);
+	if (interp != NULL) {
+	    Tcl_StaticPackage(interp, "zipfs", Zipfs_Init, Zipfs_SafeInit);
+	}
 #endif
     }
     Unlock();
-    if (!safe) {
-	Tcl_CreateObjCommand(interp, "::zipfs::mount", ZipFSMountObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::unmount",
-			     ZipFSUnmountObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::mkkey", ZipFSMkKeyObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::mkimg", ZipFSMkImgObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::mkzip", ZipFSMkZipObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::lmkimg",
-			     ZipFSLMkImgObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::lmkzip",
-			     ZipFSLMkZipObjCmd, 0, 0);
-	Tcl_EvalEx(interp, findproc, -1, TCL_EVAL_GLOBAL);
+    if (interp != NULL) {
+	if (!safe) {
+	    Tcl_CreateObjCommand(interp, "::zipfs::mount",
+				 ZipFSMountObjCmd, 0, 0);
+	    Tcl_CreateObjCommand(interp, "::zipfs::unmount",
+				 ZipFSUnmountObjCmd, 0, 0);
+	    Tcl_CreateObjCommand(interp, "::zipfs::mkkey",
+				 ZipFSMkKeyObjCmd, 0, 0);
+	    Tcl_CreateObjCommand(interp, "::zipfs::mkimg",
+				 ZipFSMkImgObjCmd, 0, 0);
+	    Tcl_CreateObjCommand(interp, "::zipfs::mkzip",
+				 ZipFSMkZipObjCmd, 0, 0);
+	    Tcl_CreateObjCommand(interp, "::zipfs::lmkimg",
+				 ZipFSLMkImgObjCmd, 0, 0);
+	    Tcl_CreateObjCommand(interp, "::zipfs::lmkzip",
+				 ZipFSLMkZipObjCmd, 0, 0);
+	    Tcl_EvalEx(interp, findproc, -1, TCL_EVAL_GLOBAL);
+	}
+	Tcl_CreateObjCommand(interp, "::zipfs::exists",
+			     ZipFSExistsObjCmd, 0, 0);
+	Tcl_CreateObjCommand(interp, "::zipfs::info",
+			     ZipFSInfoObjCmd, 0, 0);
+	Tcl_CreateObjCommand(interp, "::zipfs::list",
+			     ZipFSListObjCmd, 0, 0);
+	if (!safe) {
+	    Tcl_LinkVar(interp, "::zipfs::wrmax", (char *) &ZipFS.wrmax,
+			TCL_LINK_INT);
+	}
+
+	TclMakeEnsemble(interp, "zipfs", safe ? initSafeMap : initMap);
+
+	Tcl_PkgProvide(interp, "zipfs", "1.0");
     }
-    Tcl_CreateObjCommand(interp, "::zipfs::exists", ZipFSExistsObjCmd, 0, 0);
-    Tcl_CreateObjCommand(interp, "::zipfs::info", ZipFSInfoObjCmd, 0, 0);
-    Tcl_CreateObjCommand(interp, "::zipfs::list", ZipFSListObjCmd, 0, 0);
-    if (!safe) {
-	Tcl_LinkVar(interp, "::zipfs::wrmax", (char *) &ZipFS.wrmax,
-		    TCL_LINK_INT);
-    }
-
-    TclMakeEnsemble(interp, "zipfs", safe ? initSafeMap : initMap);
-
-    Tcl_PkgProvide(interp, "zipfs", "1.0");
-
     return TCL_OK;
 #else
     if (interp != NULL) {

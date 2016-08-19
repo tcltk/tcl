@@ -252,7 +252,7 @@ extern unsigned char __stdcall	TranslateMessage(const MSG *);
  * Threaded-cygwin specific constants and functions in this file:
  */
 
-static const WCHAR className[] = L"TclNotifier";
+static const WCHAR NotfyClassName[] = L"TclNotifier";
 static DWORD __stdcall	NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
 #endif /* TCL_THREADS && __CYGWIN__ */
@@ -341,7 +341,7 @@ Tcl_InitNotifier(void)
 	    class.hInstance = TclWinGetTclInstance();
 	    class.hbrBackground = NULL;
 	    class.lpszMenuName = NULL;
-	    class.lpszClassName = className;
+	    class.lpszClassName = NotfyClassName;
 	    class.lpfnWndProc = NotifierProc;
 	    class.hIcon = NULL;
 	    class.hCursor = NULL;
@@ -1399,8 +1399,8 @@ AtForkChild(void)
 	     */
 #ifdef __CYGWIN__
 	    DestroyWindow(tsdPtr->hwnd);
-	    tsdPtr->hwnd = CreateWindowExW(NULL, className,
-		    className, 0, 0, 0, 0, 0, NULL, NULL,
+	    tsdPtr->hwnd = CreateWindowExW(NULL, NotfyClassName,
+		    NotfyClassName, 0, 0, 0, 0, 0, NULL, NULL,
 		    TclWinGetTclInstance(), NULL);
 	    ResetEvent(tsdPtr->event);
 #else

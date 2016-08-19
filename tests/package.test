@@ -17,11 +17,6 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
-
-testConstraint testpreferstable [llength [info commands testpreferstable]]
-
 # Do all this in a slave interp to avoid garbaging the package list
 set i [interp create]
 tcltest::loadIntoSlaveInterpreter $i {*}$argv
@@ -574,8 +569,7 @@ test package-3.44 {Tcl_PkgRequire: exact version matching (1578344)} -setup {
 } -returnCodes error -cleanup {
     package forget demo
 } -result {version conflict for package "demo": have 1.2.3, need exactly 1.2}
-test package-3.50 {Tcl_PkgRequire procedure, picking best stable version} -constraints testpreferstable -setup {
-    testpreferstable
+test package-3.50 {Tcl_PkgRequire procedure, picking best stable version} -setup {
     package forget t
     set x xxx
 } -body {
@@ -1239,11 +1233,9 @@ proc prefer {args} {
     }
 }
 
-test package-13.0 {package prefer defaults} -constraints testpreferstable -setup {
-    testpreferstable
-} -body {
+test package-13.0 {package prefer defaults} {
     prefer
-} -result stable
+} stable
 test package-13.1 {package prefer defaults} -body {
     set ::env(TCL_PKG_PREFER_LATEST) stable	;# value not relevant!
     prefer
@@ -1258,25 +1250,15 @@ test package-14.1 {bogus argument} -returnCodes error -body {
     package prefer foo
 } -result {bad preference "foo": must be latest or stable}
 
-test package-15.0 {set, keep} -constraints testpreferstable -setup {
-    testpreferstable
-} -body {package prefer stable} -result stable
-test package-15.1 {set stable, keep} -constraints testpreferstable -setup {
-    testpreferstable
-} -body {prefer stable} -result {stable stable}
-test package-15.2 {set latest, change} -constraints testpreferstable -setup {
-    testpreferstable
-} -body {prefer latest} -result {stable latest}
-test package-15.3 {set latest, keep} -constraints testpreferstable -setup {
-    testpreferstable
-} -body {
+test package-15.0 {set, keep} {package prefer stable} stable
+test package-15.1 {set stable, keep} {prefer stable} {stable stable}
+test package-15.2 {set latest, change} {prefer latest} {stable latest}
+test package-15.3 {set latest, keep} {
     prefer latest latest
-} -result {stable latest latest}
-test package-15.4 {set stable, rejected} -constraints testpreferstable -setup {
-    testpreferstable
-} -body {
+} {stable latest latest}
+test package-15.4 {set stable, rejected} {
     prefer latest stable
-} -result {stable latest latest}
+} {stable latest latest}
 
 rename prefer {}
 
