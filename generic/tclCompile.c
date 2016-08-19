@@ -3239,8 +3239,10 @@ EnterCmdWordData(
 	TclAdvanceLines(&wordLine, last, tokenPtr->start);
 	TclAdvanceContinuations(&wordLine, &wordNext,
 		tokenPtr->start - envPtr->source);
+	/* See Ticket 4b61afd660 */
 	wwlines[wordIdx] =
-		(TclWordKnownAtCompileTime(tokenPtr, NULL) ? wordLine : -1);
+		((wordIdx == 0) || TclWordKnownAtCompileTime(tokenPtr, NULL))
+		? wordLine : -1;
 	ePtr->line[wordIdx] = wordLine;
 	ePtr->next[wordIdx] = wordNext;
 	last = tokenPtr->start;
@@ -3360,26 +3362,25 @@ TclGetInnermostExceptionRange(
     int returnCode,
     ExceptionAux **auxPtrPtr)
 {
-    int exnIdx = -1, i;
+    int i = envPtr->exceptArrayNext;
+    ExceptionRange *rangePtr = envPtr->exceptArrayPtr + i;
 
-    for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
-	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[i];
+    while (i > 0) {
+	rangePtr--; i--;
 
 	if (CurrentOffset(envPtr) >= rangePtr->codeOffset &&
 		(rangePtr->numCodeBytes == -1 || CurrentOffset(envPtr) <
 			rangePtr->codeOffset+rangePtr->numCodeBytes) &&
 		(returnCode != TCL_CONTINUE ||
 			envPtr->exceptAuxArrayPtr[i].supportsContinue)) {
-	    exnIdx = i;
+
+	    if (auxPtrPtr) {
+		*auxPtrPtr = envPtr->exceptAuxArrayPtr + i;
+	    }
+	    return rangePtr;
 	}
     }
-    if (exnIdx == -1) {
-	return NULL;
-    }
-    if (auxPtrPtr) {
-	*auxPtrPtr = &envPtr->exceptAuxArrayPtr[exnIdx];
-    }
-    return &envPtr->exceptArrayPtr[exnIdx];
+    return NULL;
 }
 
 /*

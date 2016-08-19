@@ -19,6 +19,7 @@
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include "tommath.h"
+#include "tclStringRep.h"
 #include <math.h>
 #include <assert.h>
 
@@ -2077,6 +2078,13 @@ TclNRExecuteByteCode(
 #endif
 
     /*
+     * Test namespace-50.9 demonstrates the need for this call.
+     * Use a --enable-symbols=mem bug to see.
+     */
+
+    TclResetRewriteEnsemble(interp, 1);
+
+    /*
      * Push the callback for bytecode execution
      */
 
@@ -3152,35 +3160,34 @@ TEBCresume(
 	    fflush(stdout);
 	}
 #endif /*TCL_COMPILE_DEBUG*/
-	{
-	    Tcl_Obj *copyPtr = Tcl_NewListObj(objc - opnd + 1, NULL);
-	    register List *listRepPtr = copyPtr->internalRep.twoPtrValue.ptr1;
-	    Tcl_Obj **copyObjv = &listRepPtr->elements;
-	    int i;
 
-	    listRepPtr->elemCount = objc - opnd + 1;
-	    copyObjv[0] = objPtr;
-	    memcpy(copyObjv+1, objv+opnd, sizeof(Tcl_Obj *) * (objc - opnd));
-	    for (i=1 ; i<objc-opnd+1 ; i++) {
-		Tcl_IncrRefCount(copyObjv[i]);
-	    }
-	    objPtr = copyPtr;
-	}
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
 	    ArgumentBCEnter(interp, codePtr, TD, pc, objc, objv);
 	}
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = opnd;
-	iPtr->ensembleRewrite.numInsertedObjs = 1;
+
+	TclInitRewriteEnsemble(interp, opnd, 1, objv);
+
+	{
+	    Tcl_Obj *copyPtr = Tcl_NewListObj(objc - opnd + 1, NULL);
+
+	    Tcl_ListObjAppendElement(NULL, copyPtr, objPtr);
+	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0, 
+		    objc - opnd, objv + opnd);
+	    Tcl_DecrRefCount(objPtr);
+	    objPtr = copyPtr;
+	}
+
 	DECACHE_STACK_INFO();
 	pc += 6;
 	TEBC_YIELD();
 
 	TclMarkTailcall(interp);
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL,NULL,NULL,NULL);
-	return TclNREvalObjEx(interp, objPtr, TCL_EVAL_INVOKE, NULL, INT_MIN);
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv);
+	TclNRAddCallback(interp, TclNRReleaseValues, objPtr, NULL, NULL, NULL);
+	return TclNREvalObjv(interp, objc, objv, TCL_EVAL_INVOKE, NULL);
 
     /*
      * -----------------------------------------------------------------
@@ -4413,8 +4420,8 @@ TEBCresume(
 	savedNsPtr = iPtr->varFramePtr->nsPtr;
 	iPtr->varFramePtr->nsPtr = (Namespace *) nsPtr;
 	otherPtr = TclObjLookupVarEx(interp, OBJ_AT_TOS, NULL,
-		(TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
-		/*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
+		(TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG|TCL_AVOID_RESOLVERS),
+		"access", /*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
 	iPtr->varFramePtr->nsPtr = savedNsPtr;
 	if (!otherPtr) {
 	    TRACE_ERROR(interp);
@@ -5737,6 +5744,16 @@ TEBCresume(
 	if (length3 - 1 == toIdx - fromIdx) {
 	    unsigned char *bytes1, *bytes2;
 
+	    /*
+	     * Flush the info in the string internal rep that refers to the
+	     * about-to-be-invalidated UTF-8 rep. This indicates that a new
+	     * buffer needs to be allocated, and assumes that the value is
+	     * already of tclStringTypePtr type, which should be true provided
+	     * we call it after Tcl_GetUnicodeFromObj.
+	     */
+#define MarkStringInternalRepForFlush(objPtr) \
+	    (GET_STRING(objPtr)->allocated = 0)
+
 	    if (Tcl_IsShared(valuePtr)) {
 		objResultPtr = Tcl_DuplicateObj(valuePtr);
 		if (TclIsPureByteArray(objResultPtr)
@@ -5749,17 +5766,7 @@ TEBCresume(
 		    ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
 		    memcpy(ustring1 + fromIdx, ustring2,
 			    length3 * sizeof(Tcl_UniChar));
-
-		    /*
-		     * Magic! Flush the info in the string internal rep that
-		     * refers to the about-to-be-invalidated UTF-8 rep. This
-		     * sets the 'allocated' field of the String structure to 0
-		     * to indicate that a new buffer needs to be allocated.
-		     * This is safe; we know we've got a tclStringTypePtr set
-		     * at this point (post Tcl_GetUnicodeFromObj).
-		     */
-
-		    ((int *) objResultPtr->internalRep.twoPtrValue.ptr1)[1] = 0;
+		    MarkStringInternalRepForFlush(objResultPtr);
 		}
 		Tcl_InvalidateStringRep(objResultPtr);
 		TclDecrRefCount(value3Ptr);
@@ -5776,17 +5783,7 @@ TEBCresume(
 		    ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
 		    memcpy(ustring1 + fromIdx, ustring2,
 			    length3 * sizeof(Tcl_UniChar));
-
-		    /*
-		     * Magic! Flush the info in the string internal rep that
-		     * refers to the about-to-be-invalidated UTF-8 rep. This
-		     * sets the 'allocated' field of the String structure to 0
-		     * to indicate that a new buffer needs to be allocated.
-		     * This is safe; we know we've got a tclStringTypePtr set
-		     * at this point (post Tcl_GetUnicodeFromObj).
-		     */
-
-		    ((int *) objResultPtr->internalRep.twoPtrValue.ptr1)[1] = 0;
+		    MarkStringInternalRepForFlush(valuePtr);
 		}
 		Tcl_InvalidateStringRep(valuePtr);
 		TclDecrRefCount(value3Ptr);
@@ -7715,6 +7712,7 @@ TEBCresume(
 		goto gotError;
 	    }
 	}
+	Tcl_IncrRefCount(dictPtr);
 	if (TclListObjGetElements(interp, OBJ_AT_TOS, &length,
 		&keyPtrPtr) != TCL_OK) {
 	    TRACE_ERROR(interp);
@@ -7727,6 +7725,7 @@ TEBCresume(
 	    if (Tcl_DictObjGet(interp, dictPtr, keyPtrPtr[i],
 		    &valuePtr) != TCL_OK) {
 		TRACE_ERROR(interp);
+		Tcl_DecrRefCount(dictPtr);
 		goto gotError;
 	    }
 	    varPtr = LOCAL(duiPtr->varIndices[i]);
@@ -7743,10 +7742,12 @@ TEBCresume(
 		    duiPtr->varIndices[i]) == NULL) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
+		Tcl_DecrRefCount(dictPtr);
 		goto gotError;
 	    }
 	    CACHE_STACK_INFO();
 	}
+	TclDecrRefCount(dictPtr);
 	TRACE_APPEND(("OK\n"));
 	NEXT_INST_F(9, 0, 0);
 

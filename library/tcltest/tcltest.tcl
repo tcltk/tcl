@@ -22,7 +22,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.3.8
+    variable Version 2.4.0
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -611,16 +611,27 @@ namespace eval tcltest {
 
     proc AcceptVerbose { level } {
 	set level [AcceptList $level]
+	set levelMap {
+	    l list
+	    p pass
+	    b body
+	    s skip
+	    t start
+	    e error
+	    l line
+	    m msec
+	    u usec
+	}
+	set levelRegexp "^([join [dict values $levelMap] |])\$"
 	if {[llength $level] == 1} {
-	    if {![regexp {^(pass|body|skip|start|error|line)$} $level]} {
+	    if {![regexp $levelRegexp $level]} {
 		# translate single characters abbreviations to expanded list
-		set level [string map {p pass b body s skip t start e error l line} \
-			[split $level {}]]
+		set level [string map $levelMap [split $level {}]]
 	    }
 	}
 	set valid [list]
 	foreach v $level {
-	    if {[regexp {^(pass|body|skip|start|error|line)$} $v]} {
+	    if {[regexp $levelRegexp $v]} {
 		lappend valid $v
 	    }
 	}
@@ -1972,6 +1983,11 @@ proc tcltest::test {name description args} {
     # Only run the test body if the setup was successful
     if {!$setupFailure} {
 
+	# Register startup time
+	if {[IsVerbose msec] || [IsVerbose usec]} {
+	    set timeStart [clock microseconds]
+	}
+
 	# Verbose notification of $body start
 	if {[IsVerbose start]} {
 	    puts [outputChannel] "---- $name start"
@@ -2073,6 +2089,16 @@ proc tcltest::test {name description args} {
 			Problem renaming core file: $msg"
 		}
 	    }
+	}
+    }
+
+    if {[IsVerbose msec] || [IsVerbose usec]} {
+	set t [expr {[clock microseconds] - $timeStart}]
+	if {[IsVerbose usec]} {
+	    puts [outputChannel] "++++ $name took $t μs"
+	}
+	if {[IsVerbose msec]} {
+	    puts [outputChannel] "++++ $name took [expr {round($t/1000.)}] ms"
 	}
     }
 
@@ -2683,7 +2709,7 @@ proc tcltest::GetMatchingDirectories {rootdir} {
 	DebugPuts 1 "No test directories remain after applying match\
 		and skip patterns!"
     }
-    return $matchDirs
+    return [lsort $matchDirs]
 }
 
 # tcltest::runAllTests --
