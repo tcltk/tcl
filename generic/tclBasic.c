@@ -128,7 +128,7 @@ static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
-static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	NRCommand;
 
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
@@ -146,7 +146,6 @@ static int		TEOV_RunEnterTraces(Tcl_Interp *interp,
 			    Command **cmdPtrPtr, Tcl_Obj *commandPtr, int objc,
 			    Tcl_Obj *const objv[]);
 static Tcl_NRPostProc	RewindCoroutineCallback;
-static Tcl_NRPostProc	TailcallCleanup;
 static Tcl_NRPostProc	TEOEx_ByteCodeCallback;
 static Tcl_NRPostProc	TEOEx_ListCallback;
 static Tcl_NRPostProc	TEOV_Error;
@@ -723,9 +722,7 @@ Tcl_CreateInterp(void)
      * Initialize the ensemble error message rewriting support.
      */
 
-    iPtr->ensembleRewrite.sourceObjs = NULL;
-    iPtr->ensembleRewrite.numRemovedObjs = 0;
-    iPtr->ensembleRewrite.numInsertedObjs = 0;
+    TclResetRewriteEnsemble(interp, 1);
 
     /*
      * TIP#143: Initialise the resource limit support.
@@ -4220,7 +4217,7 @@ EvalObjvCore(
 	 * TCL_EVAL_INVOKE was not set: clear rewrite rules
 	 */
 
-	iPtr->ensembleRewrite.sourceObjs = NULL;
+	TclResetRewriteEnsemble(interp, 1);
 
 	if (flags & TCL_EVAL_GLOBAL) {
 	    TEOV_SwitchVarFrame(interp);
@@ -8373,7 +8370,7 @@ TclNRTailcallEval(
          * a now-gone namespace: cleanup and return.
          */
 
-        TailcallCleanup(data, interp, result);
+	Tcl_DecrRefCount(listPtr);
         return result;
     }
 
@@ -8382,18 +8379,26 @@ TclNRTailcallEval(
      */
 
     TclMarkTailcall(interp);
-    TclNRAddCallback(interp, TailcallCleanup, listPtr, NULL, NULL,NULL);
+    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
     return TclNREvalObjv(interp, objc-1, objv+1, 0, NULL);
 }
 
-static int
-TailcallCleanup(
+int
+TclNRReleaseValues(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_DecrRefCount((Tcl_Obj *) data[0]);
+    int i = 0;
+    while (i < 4) {
+	if (data[i]) {
+	    Tcl_DecrRefCount((Tcl_Obj *) data[i]);
+	} else {
+	    break;
+	}
+	i++;
+    }
     return result;
 }
 

@@ -105,8 +105,7 @@ typedef struct SortInfo {
  */
 
 static int		DictionaryCompare(const char *left, const char *right);
-static int		IfConditionCallback(ClientData data[],
-			    Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	IfConditionCallback;
 static int		InfoArgsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoBodyCmd(ClientData dummy, Tcl_Interp *interp,
@@ -1203,7 +1202,7 @@ InfoFrameCmd(
     levelError:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad level \"%s\"", TclGetString(objv[1])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_FRAME",
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 		TclGetString(objv[1]), NULL);
 	code = TCL_ERROR;
 	goto done;
@@ -1638,7 +1637,7 @@ InfoLevelCmd(
   levelError:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "bad level \"%s\"", TclGetString(objv[1])));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_LEVEL",
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 	    TclGetString(objv[1]), NULL);
     return TCL_ERROR;
 }
@@ -2755,7 +2754,7 @@ Tcl_LreplaceObjCmd(
      * (to allow for replacing the last elem).
      */
 
-    if ((first >= listLen) && (listLen > 0)) {
+    if ((first > listLen) && (listLen > 0)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"list doesn't contain element %s", TclGetString(objv[2])));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPLACE", "BADIDX",

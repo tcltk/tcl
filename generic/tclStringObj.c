@@ -36,6 +36,7 @@
 
 #include "tclInt.h"
 #include "tommath.h"
+#include "tclStringRep.h"
 
 /*
  * Set COMPAT to 1 to restore the shimmering patterns to those of Tcl 8.5.
@@ -89,60 +90,6 @@ const Tcl_ObjType tclStringType = {
     UpdateStringOfString,	/* updateStringProc */
     SetStringFromAny		/* setFromAnyProc */
 };
-
-/*
- * The following structure is the internal rep for a String object. It keeps
- * track of how much memory has been used and how much has been allocated for
- * the Unicode and UTF string to enable growing and shrinking of the UTF and
- * Unicode reps of the String object with fewer mallocs. To optimize string
- * length and indexing operations, this structure also stores the number of
- * characters (same of UTF and Unicode!) once that value has been computed.
- *
- * Under normal configurations, what Tcl calls "Unicode" is actually UTF-16
- * restricted to the Basic Multilingual Plane (i.e. U+00000 to U+0FFFF). This
- * can be officially modified by altering the definition of Tcl_UniChar in
- * tcl.h, but do not do that unless you are sure what you're doing!
- */
-
-typedef struct String {
-    int numChars;		/* The number of chars in the string. -1 means
-				 * this value has not been calculated. >= 0
-				 * means that there is a valid Unicode rep, or
-				 * that the number of UTF bytes == the number
-				 * of chars. */
-    int allocated;		/* The amount of space actually allocated for
-				 * the UTF string (minus 1 byte for the
-				 * termination char). */
-    int maxChars;		/* Max number of chars that can fit in the
-				 * space allocated for the unicode array. */
-    int hasUnicode;		/* Boolean determining whether the string has
-				 * a Unicode representation. */
-    Tcl_UniChar unicode[1];	/* The array of Unicode chars. The actual size
-				 * of this field depends on the 'maxChars'
-				 * field above. */
-} String;
-
-#define STRING_MAXCHARS \
-	(int)(((size_t)UINT_MAX - sizeof(String))/sizeof(Tcl_UniChar))
-#define STRING_SIZE(numChars) \
-	(sizeof(String) + ((numChars) * sizeof(Tcl_UniChar)))
-#define stringCheckLimits(numChars) \
-    if ((numChars) < 0 || (numChars) > STRING_MAXCHARS) { \
-	Tcl_Panic("max length for a Tcl unicode value (%d chars) exceeded", \
-		STRING_MAXCHARS); \
-    }
-#define stringAttemptAlloc(numChars) \
-	(String *) attemptckalloc((unsigned) STRING_SIZE(numChars) )
-#define stringAlloc(numChars) \
-	(String *) ckalloc((unsigned) STRING_SIZE(numChars) )
-#define stringRealloc(ptr, numChars) \
-    (String *) ckrealloc((ptr), (unsigned) STRING_SIZE(numChars) )
-#define stringAttemptRealloc(ptr, numChars) \
-    (String *) attemptckrealloc((ptr), (unsigned) STRING_SIZE(numChars) )
-#define GET_STRING(objPtr) \
-	((String *) (objPtr)->internalRep.twoPtrValue.ptr1)
-#define SET_STRING(objPtr, stringPtr) \
-	((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (stringPtr))
 
 /*
  * TCL STRING GROWTH ALGORITHM
