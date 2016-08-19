@@ -71,8 +71,7 @@ typedef struct ThreadSpecificData {
  * Prototypes for functions defined later in this file.
  */
 
-static int		EvalFileCallback(ClientData data[],
-			    Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	EvalFileCallback;
 static FilesystemRecord*FsGetFirstFilesystem(void);
 static void		FsThrExitProc(ClientData cd);
 static Tcl_Obj *	FsListMounts(Tcl_Obj *pathPtr, const char *pattern);

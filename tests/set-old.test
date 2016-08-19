@@ -14,7 +14,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -865,6 +865,8 @@ test set-old-10.13 {array enumeration errors} {
     list [catch {array done a b c} msg] $msg
 } {1 {wrong # args: should be "array donesearch arrayName searchId"}}
 test set-old-10.14 {array enumeration errors} {
+    catch {unset a}
+    set a(a) a
     list [catch {array done a b} msg] $msg
 } {1 {illegal search identifier "b"}}
 test set-old-10.15 {array enumeration errors} {
