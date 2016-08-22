@@ -6209,7 +6209,7 @@ TEBCresume(
 	    Try to determine, without triggering generation of a string
 	    representation, whether one value is not a number.
 	*/
-	if (TclCheckEmptyString(valuePtr) > 1 || TclCheckEmptyString(value2Ptr) > 1) {
+	if (TclCheckEmptyString(valuePtr) > 0 || TclCheckEmptyString(value2Ptr) > 0) {
 	    goto stringCompare;
 	}
 

@@ -478,7 +478,7 @@ TclCheckEmptyString (
 	Tcl_DictObjSize(NULL, objPtr, &length);
 	return length == 0;
     }
-
+    
     if (objPtr->bytes == NULL) {
 	return TCL_EMPTYSTRING_UNKNOWN;
     }
