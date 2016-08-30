@@ -2983,7 +2983,7 @@ ArrayAnyMoreCmd(
     if (varPtr == NULL) {
 	return TCL_ERROR;
     }
-    
+
     /*
      * Get the search.
      */
@@ -3056,7 +3056,7 @@ ArrayNextElementCmd(
     varPtr = VerifyArray(interp, varNameObj);
     if (varPtr == NULL) {
 	return TCL_ERROR;
-    } 
+    }
 
     /*
      * Get the search.
