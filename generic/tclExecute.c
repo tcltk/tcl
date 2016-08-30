@@ -1499,11 +1499,9 @@ ExprObjCallback(
  *
  * Results:
  *	A (ByteCode *) is returned pointing to the resulting ByteCode.
- *	The caller must manage its refCount and arrange for a call to
- *	TclCleanupByteCode() when the last reference disappears.
  *
  * Side effects:
- *	The Tcl_ObjType of objPtr is changed to the "bytecode" type,
+ *	The Tcl_ObjType of objPtr is changed to the "exprcode" type,
  *	and the ByteCode is kept in the internal rep (along with context
  *	data for checking validity) for faster operations the next time
  *	CompileExprObj is called on the same value.
@@ -1536,7 +1534,7 @@ CompileExprObj(
 		|| (codePtr->nsPtr != namespacePtr)
 		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)
 		|| (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)) {
-	    FreeExprCodeInternalRep(objPtr);
+	    TclFreeIntRep(objPtr);
 	}
     }
     if (objPtr->typePtr != &exprCodeType) {
@@ -1567,10 +1565,8 @@ CompileExprObj(
 	 */
 
 	TclEmitOpcode(INST_DONE, &compEnv);
-	TclInitByteCodeObj(objPtr, &compEnv);
-	objPtr->typePtr = &exprCodeType;
+	codePtr = TclInitByteCodeObj(objPtr, &exprCodeType, &compEnv);
 	TclFreeCompileEnv(&compEnv);
-	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
@@ -1644,10 +1640,7 @@ FreeExprCodeInternalRep(
 {
     ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    objPtr->typePtr = NULL;
-    if (codePtr->refCount-- <= 1) {
-	TclCleanupByteCode(codePtr);
-    }
+    TclReleaseByteCode(codePtr);
 }
 
 /*
@@ -2033,7 +2026,7 @@ TclNRExecuteByteCode(
 		* sizeof(void *);
     int numWords = (size + sizeof(Tcl_Obj *) - 1) / sizeof(Tcl_Obj *);
 
-    codePtr->refCount++;
+    TclPreserveByteCode(codePtr);
 
     /*
      * Reserve the stack, setup the TEBCdataPtr (TD) and CallFrame
@@ -2076,6 +2069,13 @@ TclNRExecuteByteCode(
 #ifdef TCL_COMPILE_STATS
     iPtr->stats.numExecutions++;
 #endif
+
+    /*
+     * Test namespace-50.9 demonstrates the need for this call.
+     * Use a --enable-symbols=mem bug to see.
+     */
+
+    TclResetRewriteEnsemble(interp, 1);
 
     /*
      * Push the callback for bytecode execution
@@ -3160,35 +3160,34 @@ TEBCresume(
 	    fflush(stdout);
 	}
 #endif /*TCL_COMPILE_DEBUG*/
-	{
-	    Tcl_Obj *copyPtr = Tcl_NewListObj(objc - opnd + 1, NULL);
-	    register List *listRepPtr = copyPtr->internalRep.twoPtrValue.ptr1;
-	    Tcl_Obj **copyObjv = &listRepPtr->elements;
-	    int i;
 
-	    listRepPtr->elemCount = objc - opnd + 1;
-	    copyObjv[0] = objPtr;
-	    memcpy(copyObjv+1, objv+opnd, sizeof(Tcl_Obj *) * (objc - opnd));
-	    for (i=1 ; i<objc-opnd+1 ; i++) {
-		Tcl_IncrRefCount(copyObjv[i]);
-	    }
-	    objPtr = copyPtr;
-	}
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
 	    ArgumentBCEnter(interp, codePtr, TD, pc, objc, objv);
 	}
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = opnd;
-	iPtr->ensembleRewrite.numInsertedObjs = 1;
+
+	TclInitRewriteEnsemble(interp, opnd, 1, objv);
+
+	{
+	    Tcl_Obj *copyPtr = Tcl_NewListObj(objc - opnd + 1, NULL);
+
+	    Tcl_ListObjAppendElement(NULL, copyPtr, objPtr);
+	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0,
+		    objc - opnd, objv + opnd);
+	    Tcl_DecrRefCount(objPtr);
+	    objPtr = copyPtr;
+	}
+
 	DECACHE_STACK_INFO();
 	pc += 6;
 	TEBC_YIELD();
 
 	TclMarkTailcall(interp);
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL,NULL,NULL,NULL);
-	return TclNREvalObjEx(interp, objPtr, TCL_EVAL_INVOKE, NULL, INT_MIN);
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv);
+	TclNRAddCallback(interp, TclNRReleaseValues, objPtr, NULL, NULL, NULL);
+	return TclNREvalObjv(interp, objc, objv, TCL_EVAL_INVOKE, NULL);
 
     /*
      * -----------------------------------------------------------------
@@ -4421,8 +4420,8 @@ TEBCresume(
 	savedNsPtr = iPtr->varFramePtr->nsPtr;
 	iPtr->varFramePtr->nsPtr = (Namespace *) nsPtr;
 	otherPtr = TclObjLookupVarEx(interp, OBJ_AT_TOS, NULL,
-		(TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
-		/*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
+		(TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG|TCL_AVOID_RESOLVERS),
+		"access", /*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
 	iPtr->varFramePtr->nsPtr = savedNsPtr;
 	if (!otherPtr) {
 	    TRACE_ERROR(interp);
@@ -5284,23 +5283,10 @@ TEBCresume(
 		toIdx = objc-1;
 	    }
 	    if (fromIdx == 0 && toIdx != objc-1 && !Tcl_IsShared(valuePtr)) {
-		/*
-		 * BEWARE! This is looking inside the implementation of the
-		 * list type.
-		 */
-
-		List *listPtr = valuePtr->internalRep.twoPtrValue.ptr1;
-
-		if (listPtr->refCount == 1) {
-		    for (index=toIdx+1; index<objc ; index++) {
-			TclDecrRefCount(objv[index]);
-		    }
-		    listPtr->elemCount = toIdx+1;
-		    listPtr->canonicalFlag = 1;
-		    TclInvalidateStringRep(valuePtr);
-		    TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
-		    NEXT_INST_F(9, 0, 0);
-		}
+		Tcl_ListObjReplace(interp, valuePtr,
+			toIdx + 1, LIST_MAX, 0, NULL);
+		TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
+		NEXT_INST_F(9, 0, 0);
 	    }
 	    objResultPtr = Tcl_NewListObj(toIdx-fromIdx+1, objv+fromIdx);
 	} else {
@@ -7713,6 +7699,7 @@ TEBCresume(
 		goto gotError;
 	    }
 	}
+	Tcl_IncrRefCount(dictPtr);
 	if (TclListObjGetElements(interp, OBJ_AT_TOS, &length,
 		&keyPtrPtr) != TCL_OK) {
 	    TRACE_ERROR(interp);
@@ -7725,6 +7712,7 @@ TEBCresume(
 	    if (Tcl_DictObjGet(interp, dictPtr, keyPtrPtr[i],
 		    &valuePtr) != TCL_OK) {
 		TRACE_ERROR(interp);
+		Tcl_DecrRefCount(dictPtr);
 		goto gotError;
 	    }
 	    varPtr = LOCAL(duiPtr->varIndices[i]);
@@ -7741,10 +7729,12 @@ TEBCresume(
 		    duiPtr->varIndices[i]) == NULL) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
+		Tcl_DecrRefCount(dictPtr);
 		goto gotError;
 	    }
 	    CACHE_STACK_INFO();
 	}
+	TclDecrRefCount(dictPtr);
 	TRACE_APPEND(("OK\n"));
 	NEXT_INST_F(9, 0, 0);
 
@@ -8189,9 +8179,7 @@ TEBCresume(
     }
 
     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
-    if (codePtr->refCount-- <= 1) {
-	TclCleanupByteCode(codePtr);
-    }
+    TclReleaseByteCode(codePtr);
     TclStackFree(interp, TD);	/* free my stack */
 
     return result;
@@ -9832,7 +9820,7 @@ IllegalExprOperandType(
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
 	int numBytes;
-	const char *bytes = Tcl_GetStringFromObj(opndPtr, &numBytes);
+	const char *bytes = TclGetStringFromObj(opndPtr, &numBytes);
 
 	if (numBytes == 0) {
 	    description = "empty string";
@@ -10461,7 +10449,7 @@ EvalStatsCmd(
 	    if (entryPtr->objPtr->typePtr == &tclByteCodeType) {
 		numByteCodeLits++;
 	    }
-	    (void) Tcl_GetStringFromObj(entryPtr->objPtr, &length);
+	    (void) TclGetStringFromObj(entryPtr->objPtr, &length);
 	    refCountSum += entryPtr->refCount;
 	    objBytesIfUnshared += (entryPtr->refCount * sizeof(Tcl_Obj));
 	    strBytesIfUnshared += (entryPtr->refCount * (length+1));
@@ -10683,7 +10671,7 @@ EvalStatsCmd(
 	Tcl_SetObjResult(interp, objPtr);
     } else {
 	Tcl_Channel outChan;
-	char *str = Tcl_GetStringFromObj(objv[1], &length);
+	char *str = TclGetStringFromObj(objv[1], &length);
 
 	if (length) {
 	    if (strcmp(str, "stdout") == 0) {

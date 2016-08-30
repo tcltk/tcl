@@ -438,7 +438,7 @@ GenerateHeader(
     if (GetValue(interp, dictObj, "comment", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL) {
-	valueStr = Tcl_GetStringFromObj(value, &len);
+	valueStr = TclGetStringFromObj(value, &len);
 	Tcl_UtfToExternal(NULL, latin1enc, valueStr, len, 0, NULL,
 		headerPtr->nativeCommentBuf, MAX_COMMENT_LEN-1, NULL, &len,
 		NULL);
@@ -459,7 +459,7 @@ GenerateHeader(
     if (GetValue(interp, dictObj, "filename", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL) {
-	valueStr = Tcl_GetStringFromObj(value, &len);
+	valueStr = TclGetStringFromObj(value, &len);
 	Tcl_UtfToExternal(NULL, latin1enc, valueStr, len, 0, NULL,
 		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len, NULL);
 	headerPtr->nativeFilenameBuf[len] = '\0';
@@ -2906,9 +2906,9 @@ ZlibTransformClose(
 		}
 	    }
 	} while (e != Z_STREAM_END);
-	e = deflateEnd(&cd->outStream);
+	(void) deflateEnd(&cd->outStream);
     } else {
-	e = inflateEnd(&cd->inStream);
+	(void) inflateEnd(&cd->inStream);
     }
 
     /*
@@ -3344,10 +3344,13 @@ ZlibTransformGetOption(
 		Tcl_DStringAppendElement(dsPtr, "");
 	    }
 	} else {
-	    int len;
-	    const char *str = Tcl_GetStringFromObj(cd->compDictObj, &len);
+	    if (cd->compDictObj) {
+		int len;
+		const char *str = TclGetStringFromObj(cd->compDictObj, &len);
 
-	    Tcl_DStringAppend(dsPtr, str, len);
+		Tcl_DStringAppend(dsPtr, str, len);
+	    }
+	    return TCL_OK;
 	}
     }
 
@@ -3549,7 +3552,6 @@ ZlibStackChannelTransform(
     ZlibChannelData *cd = ckalloc(sizeof(ZlibChannelData));
     Tcl_Channel chan;
     int wbits = 0;
-    int e;
 
     if (mode != TCL_ZLIB_STREAM_DEFLATE && mode != TCL_ZLIB_STREAM_INFLATE) {
 	Tcl_Panic("unknown mode: %d", mode);
@@ -3603,43 +3605,35 @@ ZlibStackChannelTransform(
      */
 
     if (mode == TCL_ZLIB_STREAM_INFLATE) {
-	e = inflateInit2(&cd->inStream, wbits);
-	if (e != Z_OK) {
+	if (inflateInit2(&cd->inStream, wbits) != Z_OK) {
 	    goto error;
 	}
 	cd->inAllocated = DEFAULT_BUFFER_SIZE;
 	cd->inBuffer = ckalloc(cd->inAllocated);
 	if (cd->flags & IN_HEADER) {
-	    e = inflateGetHeader(&cd->inStream, &cd->inHeader.header);
-	    if (e != Z_OK) {
+	    if (inflateGetHeader(&cd->inStream, &cd->inHeader.header) != Z_OK) {
 		goto error;
 	    }
 	}
 	if (cd->format == TCL_ZLIB_FORMAT_RAW && cd->compDictObj) {
-	    e = SetInflateDictionary(&cd->inStream, cd->compDictObj);
-	    if (e != Z_OK) {
+	    if (SetInflateDictionary(&cd->inStream, cd->compDictObj) != Z_OK) {
 		goto error;
 	    }
-	    TclDecrRefCount(cd->compDictObj);
-	    cd->compDictObj = NULL;
 	}
     } else {
-	e = deflateInit2(&cd->outStream, level, Z_DEFLATED, wbits,
-		MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY);
-	if (e != Z_OK) {
+	if (deflateInit2(&cd->outStream, level, Z_DEFLATED, wbits,
+		MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
 	    goto error;
 	}
 	cd->outAllocated = DEFAULT_BUFFER_SIZE;
 	cd->outBuffer = ckalloc(cd->outAllocated);
 	if (cd->flags & OUT_HEADER) {
-	    e = deflateSetHeader(&cd->outStream, &cd->outHeader.header);
-	    if (e != Z_OK) {
+	    if (deflateSetHeader(&cd->outStream, &cd->outHeader.header) != Z_OK) {
 		goto error;
 	    }
 	}
 	if (cd->compDictObj) {
-	    e = SetDeflateDictionary(&cd->outStream, cd->compDictObj);
-	    if (e != Z_OK) {
+	    if (SetDeflateDictionary(&cd->outStream, cd->compDictObj) != Z_OK) {
 		goto error;
 	    }
 	}

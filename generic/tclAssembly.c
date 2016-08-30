@@ -866,7 +866,7 @@ CompileAssembleObj(
 	 * Not valid, so free it and regenerate.
 	 */
 
-	FreeAssembleCodeInternalRep(objPtr);
+	TclFreeIntRep(objPtr);
     }
 
     /*
@@ -891,15 +891,13 @@ CompileAssembleObj(
      */
 
     TclEmitOpcode(INST_DONE, &compEnv);
-    TclInitByteCodeObj(objPtr, &compEnv);
-    objPtr->typePtr = &assembleCodeType;
+    codePtr = TclInitByteCodeObj(objPtr, &assembleCodeType, &compEnv);
     TclFreeCompileEnv(&compEnv);
 
     /*
      * Record the local variable context to which the bytecode pertains
      */
 
-    codePtr = objPtr->internalRep.twoPtrValue.ptr1;
     if (iPtr->varFramePtr->localCachePtr) {
 	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	codePtr->localCachePtr->refCount++;
@@ -1301,7 +1299,7 @@ AssembleOneLine(
 	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	}
-	operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
+	operand1 = TclGetStringFromObj(operand1Obj, &operand1Len);
 	litIndex = TclRegisterNewLiteral(envPtr, operand1, operand1Len);
 	BBEmitInst1or4(assemEnvPtr, tblIdx, litIndex, 0);
 	break;
@@ -1450,7 +1448,7 @@ AssembleOneLine(
 		&operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	} else {
-	    operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
+	    operand1 = TclGetStringFromObj(operand1Obj, &operand1Len);
 	    litIndex = TclRegisterNewLiteral(envPtr, operand1, operand1Len);
 
 	    /*
@@ -2290,7 +2288,7 @@ FindLocalVar(
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &varNameObj) != TCL_OK) {
 	return -1;
     }
-    varNameStr = Tcl_GetStringFromObj(varNameObj, &varNameLen);
+    varNameStr = TclGetStringFromObj(varNameObj, &varNameLen);
     if (CheckNamespaceQualifiers(interp, varNameStr, varNameLen)) {
 	Tcl_DecrRefCount(varNameObj);
 	return -1;
@@ -3984,10 +3982,12 @@ UnstackExpiredCatches(
 
     while (catchDepth > bbPtr->catchDepth) {
 	--catchDepth;
-	range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
-	range->numCodeBytes = bbPtr->startOffset - range->codeOffset;
-	catches[catchDepth] = NULL;
-	catchIndices[catchDepth] = -1;
+	if (catches[catchDepth] != NULL) {
+	    range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
+	    range->numCodeBytes = bbPtr->startOffset - range->codeOffset;
+	    catches[catchDepth] = NULL;
+	    catchIndices[catchDepth] = -1;
+	}
     }
 
     /*
@@ -4313,11 +4313,7 @@ FreeAssembleCodeInternalRep(
 {
     ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    codePtr->refCount--;
-    if (codePtr->refCount <= 0) {
-	TclCleanupByteCode(codePtr);
-    }
-    objPtr->typePtr = NULL;
+    TclReleaseByteCode(codePtr);
 }
 
 /*

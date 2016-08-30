@@ -73,16 +73,7 @@ static const unsigned char totalBytes[256] = {
 #else
     1,1,1,1,1,1,1,1,
 #endif
-#if TCL_UTF_MAX > 4
-    5,5,5,5,
-#else
-    1,1,1,1,
-#endif
-#if TCL_UTF_MAX > 5
-    6,6,6,6
-#else
-    1,1,1,1
-#endif
+    1,1,1,1,1,1,1,1
 };
 
 /*
@@ -105,14 +96,14 @@ int
 TclUtfCount(
     int ch)			/* The Tcl_UniChar whose size is returned. */
 {
-    if ((ch > 0) && (ch < UNICODE_SELF)) {
+    if ((unsigned)(ch - 1) < (UNICODE_SELF - 1)) {
 	return 1;
     }
     if (ch <= 0x7FF) {
 	return 2;
     }
 #if TCL_UTF_MAX > 3
-    if ((ch > 0xFFFF) && (ch <= 0x10FFFF)) {
+    if (((unsigned)(ch - 0x10000) <= 0xfffff)) {
 	return 4;
     }
 #endif
@@ -146,7 +137,7 @@ Tcl_UniCharToUtf(
 				 * large enough to hold the UTF-8 character
 				 * (at most TCL_UTF_MAX bytes). */
 {
-    if ((ch > 0) && (ch < UNICODE_SELF)) {
+    if ((unsigned)(ch - 1) < (UNICODE_SELF - 1)) {
 	buf[0] = (char) ch;
 	return 1;
     }
@@ -174,11 +165,7 @@ Tcl_UniCharToUtf(
 		}
 	    }
 #endif
-	three:
-	    buf[2] = (char) ((ch | 0x80) & 0xBF);
-	    buf[1] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 12) | 0xE0);
-	    return 3;
+	    goto three;
 	}
 
 #if TCL_UTF_MAX > 3
@@ -193,7 +180,11 @@ Tcl_UniCharToUtf(
     }
 
     ch = 0xFFFD;
-    goto three;
+three:
+    buf[2] = (char) ((ch | 0x80) & 0xBF);
+    buf[1] = (char) (((ch >> 6) | 0x80) & 0xBF);
+    buf[0] = (char) ((ch >> 12) | 0xE0);
+    return 3;
 }
 
 /*
@@ -318,9 +309,6 @@ Tcl_UtfToUniChar(
 	 * A two-byte-character lead-byte not followed by trail-byte
 	 * represents itself.
 	 */
-
-	*chPtr = (Tcl_UniChar) byte;
-	return 1;
     } else if (byte < 0xF0) {
 	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)) {
 	    /*
@@ -336,63 +324,23 @@ Tcl_UtfToUniChar(
 	 * A three-byte-character lead-byte not followed by two trail-bytes
 	 * represents itself.
 	 */
-
-	*chPtr = (Tcl_UniChar) byte;
-	return 1;
-#if TCL_UTF_MAX == 4
-    } else if (byte < 0xF8) {
+    }
+#if TCL_UTF_MAX > 3
+    else if (byte < 0xF8) {
 	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80) && ((src[3] & 0xC0) == 0x80)) {
-	    Tcl_UniChar surrogate;
 	    /*
 	     * Four-byte-character lead byte followed by three trail bytes.
 	     */
 
-	    byte = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
-		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F)) - 0x10000;
-	    surrogate = 0xD800 + (byte >> 10);
-	    if (byte & 0x100000) {
-		/* out of range, < 0x10000 or > 0x10ffff */
-	    } else if (*chPtr != surrogate) {
-		/* produce high surrogate, but don't advance source pointer */
-		*chPtr = surrogate;
-		return 0;
-	    } else {
-		/* produce low surrogate, and advance source pointer */
-		*chPtr = (Tcl_UniChar) (0xDC00 | (byte & 0x3FF));
-		return 4;
-	    }
+	    *chPtr = (Tcl_UniChar) (((byte & 0x0E) << 18) | ((src[1] & 0x3F) << 12)
+		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
+	    return 4;
 	}
 
 	/*
-	 * A four-byte-character lead-byte not followed by three trail-bytes
-	 * or representing a character < 0x10000 or > 0x10ffff represents itself.
+	 * A three-byte-character lead-byte not followed by two trail-bytes
+	 * represents itself.
 	 */
-
-	*chPtr = (Tcl_UniChar) byte;
-	return 1;
-#endif
-    }
-#if TCL_UTF_MAX > 4
-    {
-	int ch, total, trail;
-
-	total = totalBytes[byte];
-	trail = total - 1;
-	if (trail > 0) {
-	    ch = byte & (0x3F >> trail);
-	    do {
-		src++;
-		if ((*src & 0xC0) != 0x80) {
-		    *chPtr = byte;
-		    return 1;
-		}
-		ch <<= 6;
-		ch |= (*src & 0x3F);
-		trail--;
-	    } while (trail > 0);
-	    *chPtr = ch;
-	    return total;
-	}
     }
 #endif
 

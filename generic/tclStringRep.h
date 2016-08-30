@@ -48,7 +48,7 @@
 #define TCL_HAS_UNICODE 1      /* This string has Unicode representation   */
 #define TCL_HAS_BIGUNICODE 2   /* This string contains characters > \uffff */
 
-typedef struct String {
+typedef struct {
     int numChars;		/* The number of chars in the string. -1 means
 				 * this value has not been calculated. >= 0
 				 * means that there is a valid Unicode rep, or

@@ -163,7 +163,7 @@ Registry_Init(
     cmd = Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvide(interp, "registry", "1.3.1");
+    return Tcl_PkgProvide(interp, "registry", "1.3.2");
 }
 
 /*
@@ -803,17 +803,17 @@ GetValue(
 	 * we get bogus data.
 	 */
 
-	while ((p < end) && *((Tcl_UniChar *) p) != 0) {
-	    Tcl_UniChar *up;
+	while ((p < end) && *((WCHAR *) p) != 0) {
+	    WCHAR *wp;
 
 	    Tcl_WinTCharToUtf((TCHAR *) p, -1, &buf);
 	    Tcl_ListObjAppendElement(interp, resultPtr,
 		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf)));
-	    up = (Tcl_UniChar *) p;
+	    wp = (WCHAR *) p;
 
-	    while (*up++ != 0) {/* empty body */}
-	    p = (char *) up;
+	    while (*wp++ != 0) {/* empty body */}
+	    p = (char *) wp;
 	    Tcl_DStringFree(&buf);
 	}
 	Tcl_SetObjResult(interp, resultPtr);
@@ -1332,7 +1332,7 @@ SetValue(
 	data = (char *) Tcl_WinUtfToTChar(data, length, &buf);
 
 	/*
-	 * Include the null in the length, padding if needed for Unicode.
+	 * Include the null in the length, padding if needed for WCHAR.
 	 */
 
 	Tcl_DStringSetLength(&buf, Tcl_DStringLength(&buf)+1);
@@ -1393,9 +1393,10 @@ BroadcastValue(
     DWORD_PTR sendResult;
     int timeout = 3000;
     size_t len;
-    int unilen;
     const char *str;
     Tcl_Obj *objPtr;
+    WCHAR *wstr;
+    Tcl_DString ds;
 
     if (objc == 3) {
 	str = Tcl_GetString(objv[1]);
@@ -1408,9 +1409,11 @@ BroadcastValue(
 	}
     }
 
-    str = (char*)Tcl_GetUnicodeFromObj(objv[0], &unilen);
-    if (unilen == 0) {
-	str = NULL;
+    str = Tcl_GetString(objv[0]);
+    len = objv[0]->length;
+    wstr = (WCHAR *) Tcl_WinUtfToTChar(str, len, &ds);
+    if (Tcl_DStringLength(&ds) == 0) {
+	wstr = NULL;
     }
 
     /*
@@ -1418,11 +1421,12 @@ BroadcastValue(
      */
 
     result = SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE,
-	    (WPARAM) 0, (LPARAM) str, SMTO_ABORTIFHUNG, (UINT) timeout, &sendResult);
+	    (WPARAM) 0, (LPARAM) wstr, SMTO_ABORTIFHUNG, (UINT) timeout, &sendResult);
+    Tcl_DStringFree(&ds);
 
     objPtr = Tcl_NewObj();
-    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewLongObj((long) result));
-    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewLongObj((long) sendResult));
+    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewWideIntObj((Tcl_WideInt) result));
+    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewWideIntObj((Tcl_WideInt) sendResult));
     Tcl_SetObjResult(interp, objPtr);
 
     return TCL_OK;

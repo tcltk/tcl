@@ -1319,7 +1319,7 @@ TcpGetOptionProc(
         return TCL_OK;
     }
 
-    if (interp != NULL && Tcl_GetVar(interp, SUPPRESS_RDNS_VAR, 0) != NULL) {
+    if (interp != NULL && Tcl_GetVar2(interp, SUPPRESS_RDNS_VAR, NULL, 0) != NULL) {
 	reverseDNS = NI_NUMERICHOST;
     }
 
