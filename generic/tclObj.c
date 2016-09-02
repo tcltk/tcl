@@ -4219,7 +4219,10 @@ TclSetCmdNameObj(
     const char *name;
 
     if (objPtr->typePtr == &tclCmdNameType) {
-	return;
+        resPtr = objPtr->internalRep.twoPtrValue.ptr1;
+        if (resPtr->cmdPtr == cmdPtr) {
+            return;
+        }
     }
 
     cmdPtr->refCount++;
@@ -4397,7 +4400,9 @@ SetCmdNameFromAny(
 	cmdPtr->refCount++;
 	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if ((objPtr->typePtr == &tclCmdNameType)
-		&& resPtr && (resPtr->refCount == 1)) {
+            && resPtr != NULL
+            && (resPtr->refCount == 1)
+            ) {
 	    /*
 	     * Reuse the old ResolvedCmdName struct instead of freeing it
 	     */
