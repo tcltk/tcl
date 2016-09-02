@@ -1781,10 +1781,20 @@ CompileCmdLiteral(
     CompileEnv *envPtr)
 {
     int numBytes;
-    const char *bytes = Tcl_GetStringFromObj(cmdObj, &numBytes);
-    int cmdLitIdx = TclRegisterNewCmdLiteral(envPtr, bytes, numBytes);
-    Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
+    const char *bytes;
+    Command *cmdPtr;
+    int cmdLitIdx, extraLiteralFlags = 0;
 
+    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
+    if (cmdPtr != NULL) {
+	if ((cmdPtr->flags & CMD_VIA_RESOLVER)) {
+	    extraLiteralFlags = LITERAL_UNSHARED;
+	}
+    }
+
+    bytes = Tcl_GetStringFromObj(cmdObj, &numBytes);
+    cmdLitIdx = TclRegisterNewCmdLiteral(envPtr, bytes, numBytes, extraLiteralFlags);
+    
     if (cmdPtr) {
 	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLitIdx), cmdPtr);
     }
