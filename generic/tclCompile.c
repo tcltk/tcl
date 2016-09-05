@@ -1783,17 +1783,15 @@ CompileCmdLiteral(
     int numBytes;
     const char *bytes;
     Command *cmdPtr;
-    int cmdLitIdx, extraLiteralFlags = 0;
+    int cmdLitIdx, extraLiteralFlags = LITERAL_CMD_NAME;
 
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
-    if (cmdPtr != NULL) {
-	if ((cmdPtr->flags & CMD_VIA_RESOLVER)) {
-	    extraLiteralFlags = LITERAL_UNSHARED;
-	}
+    if ((cmdPtr != NULL) && (cmdPtr->flags & CMD_VIA_RESOLVER)) {
+	extraLiteralFlags |= LITERAL_UNSHARED;
     }
 
     bytes = Tcl_GetStringFromObj(cmdObj, &numBytes);
-    cmdLitIdx = TclRegisterLiteral(envPtr, (char *)bytes, numBytes, extraLiteralFlags|LITERAL_CMD_NAME);
+    cmdLitIdx = TclRegisterLiteral(envPtr, (char *)bytes, numBytes, extraLiteralFlags);
 
     if (cmdPtr) {
 	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLitIdx), cmdPtr);
