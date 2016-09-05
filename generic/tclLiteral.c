@@ -431,12 +431,13 @@ TclRegisterLiteral(
      * Is it in the interpreter's global literal table? If not, create it.
      */
 
+    globalPtr = NULL;
     objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &new, nsPtr, flags,
 	    &globalPtr);
     objIndex = AddLocalLiteralEntry(envPtr, objPtr, localHash);
 
 #ifdef TCL_COMPILE_DEBUG
-    if (globalPtr->refCount < 1) {
+    if (globalPtr != NULL && globalPtr->refCount < 1) {
 	Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
 		"TclRegisterLiteral", (length>60? 60 : length), bytes,
 		globalPtr->refCount);
