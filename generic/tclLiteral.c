@@ -249,7 +249,6 @@ TclCreateLiteral(
 	if (globalPtrPtr != NULL) {
 	    *globalPtrPtr = NULL;
 	}
-	/*fprintf(stderr, "UNSHARED LITERAL <%s>\n", bytes);*/
 	return objPtr;
     }
 
@@ -1167,6 +1166,9 @@ TclVerifyLocalLiteralTable(
 	    if (LookupLiteralEntry((Tcl_Interp *) envPtr->iPtr,
 		    localPtr->objPtr) == NULL) {
 		bytes = Tcl_GetStringFromObj(localPtr->objPtr, &length);
+		Tcl_Panic("%s: local literal \"%.*s\" is not global",
+			"TclVerifyLocalLiteralTable",
+			(length>60? 60 : length), bytes);
 	    }
 	    if (localPtr->objPtr->bytes == NULL) {
 		Tcl_Panic("%s: literal has NULL string rep",
