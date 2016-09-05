@@ -1230,8 +1230,8 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  *			       int length);
  */
 
-#define TclRegisterNewCmdLiteral(envPtr, bytes, length, extraLiteralFlags)		\
-    TclRegisterLiteral(envPtr, (char *)(bytes), length, ((extraLiteralFlags)|LITERAL_CMD_NAME))
+#define TclRegisterNewCmdLiteral(envPtr, bytes, length) \
+    TclRegisterLiteral(envPtr, (char *)(bytes), length, LITERAL_CMD_NAME)
 
 /*
  * Macro used to manually adjust the stack requirements; used in cases where
