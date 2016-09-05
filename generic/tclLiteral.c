@@ -214,16 +214,15 @@ TclCreateLiteral(
 	    if (globalPtrPtr) {
 		*globalPtrPtr = globalPtr;
 	    }
-	    if ((flags & LITERAL_ON_HEAP)) {
+	    if (flags & LITERAL_ON_HEAP) {
 		ckfree(bytes);
 	    }
 	    globalPtr->refCount++;
 	    return objPtr;
 	}
     }
-        
     if (!newPtr) {
-	if ((flags & LITERAL_ON_HEAP)) {
+	if (flags & LITERAL_ON_HEAP) {
 	    ckfree(bytes);
 	}
 	return NULL;
@@ -236,15 +235,15 @@ TclCreateLiteral(
 
     TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
-    if ((flags & LITERAL_ON_HEAP)) {
+    if (flags & LITERAL_ON_HEAP) {
 	objPtr->bytes = bytes;
 	objPtr->length = length;
     } else {
 	TclInitStringRep(objPtr, bytes, length);
     }
 
-    if ((flags & LITERAL_UNSHARED)) {
-	/* 
+    if (flags & LITERAL_UNSHARED) {
+	/*
 	 * Make clear, that no global value is returned
 	 */
 	if (globalPtrPtr != NULL) {
@@ -429,7 +428,7 @@ TclRegisterLiteral(
      * the namespace as the interp's global NS.
      */
 
-    if ((flags & LITERAL_CMD_NAME)) {
+    if (flags & LITERAL_CMD_NAME) {
 	if ((length >= 2) && (bytes[0] == ':') && (bytes[1] == ':')) {
 	    nsPtr = iPtr->globalNsPtr;
 	} else {
@@ -438,10 +437,11 @@ TclRegisterLiteral(
     } else {
 	nsPtr = NULL;
     }
-	    
+
     /*
      * Is it in the interpreter's global literal table? If not, create it.
      */
+
     globalPtr = NULL;
     objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &new, nsPtr, flags,
 	    &globalPtr);
@@ -1167,10 +1167,6 @@ TclVerifyLocalLiteralTable(
 	    if (LookupLiteralEntry((Tcl_Interp *) envPtr->iPtr,
 		    localPtr->objPtr) == NULL) {
 		bytes = Tcl_GetStringFromObj(localPtr->objPtr, &length);
-		//Tcl_Panic("%s: local literal \"%.*s\" is not global",
-		//	"TclVerifyLocalLiteralTable",
-		//	(length>60? 60 : length), bytes);
-		/*fprintf(stderr, "local literal \"%s\" is not global\n",bytes);*/
 	    }
 	    if (localPtr->objPtr->bytes == NULL) {
 		Tcl_Panic("%s: literal has NULL string rep",

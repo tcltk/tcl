@@ -7308,21 +7308,21 @@ InterpCmdResolver(
      */
     if ( (name[0] == 'z') && (name[1] == '\0') ) {
         Namespace *ns2NsPtr = (Namespace *) Tcl_FindNamespace(interp, "::ns2", NULL, 0);
-        
+
         if (procPtr != NULL
             && ((procPtr->cmdPtr->nsPtr == iPtr->globalNsPtr)
                 || (ns2NsPtr != NULL && procPtr->cmdPtr->nsPtr == ns2NsPtr)
                 )
             ) {
             /*
-             * Case A) 
+             * Case A)
              *
              *    - The context, in which this resolver becomes active, is
              *      determined by the name of the caller proc, which has to be
              *      named "x".
              *
              *    - To determine the name of the caller proc, the proc is taken
-             *      from the topmost stack frame. 
+             *      from the topmost stack frame.
              *
              *    - Note that the context is NOT provided during byte-code
              *      compilation (e.g. in TclProcCompileProc)
@@ -7331,23 +7331,23 @@ InterpCmdResolver(
              *   passed-in cmd literal into a cmd "y", which is taken from the
              *   the global namespace (for simplicity).
              */
-            
+
             const char *callingCmdName =
                 Tcl_GetCommandName(interp, (Tcl_Command) procPtr->cmdPtr);
-            
+
             if ( callingCmdName[0] == 'x' && callingCmdName[1] == '\0' ) {
                 resolvedCmdPtr = Tcl_FindCommand(interp, "y", NULL, TCL_GLOBAL_ONLY);
             }
         } else if (callerNsPtr != NULL) {
             /*
-             * Case B) 
+             * Case B)
              *
              *    - The context, in which this resolver becomes active, is
              *      determined by the name of the parent namespace, which has
              *      to be named "ctx1" or "ctx2".
              *
              *    - To determine the name of the parent namesace, it is taken
-             *      from the 2nd highest stack frame. 
+             *      from the 2nd highest stack frame.
              *
              *    - Note that the context can be provided during byte-code
              *      compilation (e.g. in TclProcCompileProc)
@@ -7364,13 +7364,13 @@ InterpCmdResolver(
             if (strcmp(context, "ctx1") == 0 && (name[0] == 'z') && (name[1] == '\0')) {
                 resolvedCmdPtr = Tcl_FindCommand(interp, "y", NULL, TCL_GLOBAL_ONLY);
                 /* fprintf(stderr, "... y ==> %p\n", resolvedCmdPtr);*/
-                
+
             } else if (strcmp(context, "ctx2") == 0 && (name[0] == 'z') && (name[1] == '\0')) {
                 resolvedCmdPtr = Tcl_FindCommand(interp, "Y", NULL, TCL_GLOBAL_ONLY);
                 /*fprintf(stderr, "... Y ==> %p\n", resolvedCmdPtr);*/
             }
         }
-        
+
         if (resolvedCmdPtr != NULL) {
             *rPtr = resolvedCmdPtr;
             return TCL_OK;

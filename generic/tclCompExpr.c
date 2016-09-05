@@ -2272,7 +2272,7 @@ CompileExprTree(
 		Tcl_DStringAppend(&cmdName, p, length);
 		TclEmitPush(TclRegisterNewCmdLiteral(envPtr,
 			Tcl_DStringValue(&cmdName),
-			Tcl_DStringLength(&cmdName), 0), envPtr);
+			Tcl_DStringLength(&cmdName)), envPtr);
 		Tcl_DStringFree(&cmdName);
 
 		/*

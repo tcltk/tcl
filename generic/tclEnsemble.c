@@ -3354,7 +3354,7 @@ CompileToInvokedCommand(
 	    extraLiteralFlags = LITERAL_UNSHARED;
 	}
     }
-    cmdLit = TclRegisterNewCmdLiteral(envPtr, bytes, length, extraLiteralFlags);
+    cmdLit = TclRegisterLiteral(envPtr, (char *)bytes, length, extraLiteralFlags|LITERAL_CMD_NAME);
     TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLit), cmdPtr);
     TclEmitPush(cmdLit, envPtr);
     TclDecrRefCount(objPtr);
