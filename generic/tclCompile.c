@@ -1793,8 +1793,8 @@ CompileCmdLiteral(
     }
 
     bytes = Tcl_GetStringFromObj(cmdObj, &numBytes);
-    cmdLitIdx = TclRegisterNewCmdLiteral(envPtr, bytes, numBytes, extraLiteralFlags);
-    
+    cmdLitIdx = TclRegisterLiteral(envPtr, (char *)bytes, numBytes, extraLiteralFlags|LITERAL_CMD_NAME);
+
     if (cmdPtr) {
 	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLitIdx), cmdPtr);
     }
