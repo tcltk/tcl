@@ -7476,9 +7476,16 @@ TestInterpResolverCmd(
     int idx;
 #define RESOLVER_KEY "testInterpResolver"
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "up|down");
- 	return TCL_ERROR;
+    if ((objc < 2) || (objc > 3)) {
+	Tcl_WrongNumArgs(interp, 1, objv, "up|down ?interp?");
+	return TCL_ERROR;
+    }
+    if (objc == 3) {
+	interp = Tcl_GetSlave(interp, Tcl_GetString(objv[2]));
+	if (interp == NULL) {
+	    Tcl_AppendResult(interp, "provided interpreter not found", NULL);
+	    return TCL_ERROR;
+	}
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], table, "operation", TCL_EXACT,
             &idx) != TCL_OK) {
