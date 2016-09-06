@@ -4498,7 +4498,6 @@ TclDeleteNamespaceVars(
 	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, objPtr);
 	UnsetVarStruct(varPtr, NULL, iPtr, /* part1 */ objPtr,
 		NULL, flags);
-	Tcl_DecrRefCount(objPtr); /* free no longer needed obj */
 
 	/*
 	 * Remove the variable from the table and force it undefined in case
@@ -4527,6 +4526,12 @@ TclDeleteNamespaceVars(
 		}
 	    }
 	}
+
+	if (!TclIsVarUndefined(varPtr)) {
+	    UnsetVarStruct(varPtr, NULL, iPtr, /* part1 */ objPtr,
+		    NULL, flags);
+	}
+	Tcl_DecrRefCount(objPtr); /* free no longer needed obj */
 	VarHashRefCount(varPtr)--;
 	VarHashDeleteEntry(varPtr);
     }
