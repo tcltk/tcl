@@ -4220,7 +4220,7 @@ TclSetCmdNameObj(
 
     if (objPtr->typePtr == &tclCmdNameType) {
 	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
-	if (resPtr->cmdPtr == cmdPtr) {
+	if (resPtr != NULL && resPtr->cmdPtr == cmdPtr) {
 	    return;
 	}
     }
