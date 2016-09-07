@@ -196,6 +196,121 @@ test resolver-2.1 {compiled var resolver: Bug #3383616} -setup {
 } -cleanup {
     testinterpresolver down
 } -result {}
+
+
+#
+# The test resolver-3.1* test bad interactions of resolvers on the "global"
+# (per interp) literal pools. A resolver might resolve a cmd literal depending
+# on a context differently, whereas the cmd literal sharing assumed that the
+# namespace containing the literal solely determines the resolved cmd (and is
+# resolver-agnostic).
+#
+# In order to make the test cases for the per-interpreter cmd literal pool
+# reproducable and to minimize interactions between test cases, we use a slave
+# interpreter per test-case.
+#
+#
+# Testing resolver in namespace-based context "ctx1"
+#
+test resolver-3.1a {
+    interp command resolver,
+    resolve literal "z" in proc "x1" in context "ctx1"
+} -setup {
+
+    interp create i0
+    testinterpresolver up i0
+    i0 eval {
+	proc y {} { return yy }
+	namespace eval ::ns {
+	    proc x1 {} { z }
+	}
+    }
+} -constraints testinterpresolver -body {
+
+    set r [i0 eval {namespace eval ::ctx1 {
+	::ns::x1
+    }}]
+
+    return $r
+} -cleanup {
+    testinterpresolver down i0
+    interp delete i0
+} -result {yy}
+
+#
+# Testing resolver in namespace-based context "ctx2"
+#
+test resolver-3.1b {
+    interp command resolver,
+    resolve literal "z" in proc "x2" in context "ctx2"
+} -setup {
+
+    interp create i0
+    testinterpresolver up i0
+    i0 eval {
+	proc Y {} { return YY }
+	namespace eval ::ns {
+	    proc x2 {} { z }
+	}
+    }
+} -constraints testinterpresolver -body {
+
+    set r [i0 eval {namespace eval ::ctx2 {
+	::ns::x2
+    }}]
+
+    return $r
+} -cleanup {
+    testinterpresolver down i0
+    interp delete i0
+} -result {YY}
+
+#
+# Testing resolver in namespace-based context "ctx1" and "ctx2" in the same
+# interpreter.
+#
+
+test resolver-3.1c {
+    interp command resolver,
+    resolve literal "z" in proc "x1" in context "ctx1",
+    resolve literal "z" in proc "x2" in context "ctx2"
+
+    Test, whether the shared cmd literal created by the first byte-code
+    compilation interacts with the second one.
+} -setup {
+
+    interp create i0
+    testinterpresolver up i0
+
+    i0 eval {
+	proc y {} { return yy }
+	proc Y {} { return YY }
+	namespace eval ::ns {
+	    proc x1 {} { z }
+	    proc x2 {} { z }
+	}
+    }
+
+} -constraints testinterpresolver -body {
+
+    set r1 [i0 eval {namespace eval ::ctx1 {
+	::ns::x1
+    }}]
+
+    set r2 [i0 eval {namespace eval ::ctx2 {
+	::ns::x2
+    }}]
+
+    set r3 [i0 eval {namespace eval ::ctx1 {
+	::ns::x1
+    }}]
+
+    return [list $r1 $r2 $r3]
+} -cleanup {
+    testinterpresolver down i0
+    interp delete i0
+} -result {yy YY yy}
+
 
 cleanupTests
 return
