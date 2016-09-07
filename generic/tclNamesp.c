@@ -2566,7 +2566,9 @@ Tcl_FindCommand(
 	}
 
 	if (result == TCL_OK) {
+	    ((Command *)cmd)->flags |= CMD_VIA_RESOLVER;
 	    return cmd;
+
 	} else if (result != TCL_CONTINUE) {
 	    return NULL;
 	}
@@ -2658,6 +2660,7 @@ Tcl_FindCommand(
     }
 
     if (cmdPtr != NULL) {
+	cmdPtr->flags  &= ~CMD_VIA_RESOLVER;
 	return (Tcl_Command) cmdPtr;
     }
 
