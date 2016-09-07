@@ -382,19 +382,6 @@ Tcl_PopCallFrame(
     register CallFrame *framePtr = iPtr->framePtr;
     Namespace *nsPtr;
 
-    /*
-     * It's important to remove the call frame from the interpreter's stack of
-     * call frames before deleting local variables, so that traces invoked by
-     * the variable deletion don't see the partially-deleted frame.
-     */
-
-    if (framePtr->callerPtr) {
-	iPtr->framePtr = framePtr->callerPtr;
-	iPtr->varFramePtr = framePtr->callerVarPtr;
-    } else {
-	/* Tcl_PopCallFrame: trying to pop rootCallFrame! */
-    }
-
     if (framePtr->varTablePtr != NULL) {
 	TclDeleteVars(iPtr, framePtr->varTablePtr);
 	ckfree(framePtr->varTablePtr);
@@ -421,6 +408,13 @@ Tcl_PopCallFrame(
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
     framePtr->nsPtr = NULL;
+
+    if (framePtr->callerPtr) {
+	iPtr->framePtr = framePtr->callerPtr;
+	iPtr->varFramePtr = framePtr->callerVarPtr;
+    } else {
+	/* Tcl_PopCallFrame: trying to pop rootCallFrame! */
+    }
 
     if (framePtr->tailcallPtr) {
 	TclSetTailcall(interp, framePtr->tailcallPtr);
