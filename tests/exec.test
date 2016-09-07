@@ -695,9 +695,6 @@ test exec-20.1 {exec .CMD file} -constraints {win} -body {
     exec [makeFile "echo %1> $log" exec201.CMD] "Testing exec-20.1"
     viewFile $log
 } -result "\"Testing exec-20.1\""
-    
-
-
 
 # ----------------------------------------------------------------------
 # cleanup
