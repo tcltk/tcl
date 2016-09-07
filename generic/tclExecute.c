@@ -1554,7 +1554,7 @@ CompileExprObj(
 	 */
 
 	if (compEnv.codeNext == compEnv.codeStart) {
-	    TclEmitPush(TclRegisterNewLiteral(&compEnv, "0", 1),
+	    TclEmitPush(TclRegisterLiteral(&compEnv, "0", 1, 0),
 		    &compEnv);
 	}
 
