@@ -4746,7 +4746,7 @@ Tcl_GetVariableFullName(
     } else if (iPtr->varFramePtr->procPtr) {
 	int index = varPtr - iPtr->varFramePtr->compiledLocals;
 
-	if (index < iPtr->varFramePtr->numCompiledLocals) {
+	if (index >= 0 && index < iPtr->varFramePtr->numCompiledLocals) {
 	    namePtr = localName(iPtr->varFramePtr, index);
 	    Tcl_AppendObjToObj(objPtr, namePtr);
 	}

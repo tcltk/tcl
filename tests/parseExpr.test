@@ -1064,6 +1064,15 @@ test parseExpr-22.18 {Bug 3401704} -constraints testexprparser -body {
     dict get $o -errorcode
 } -result {TCL PARSE EXPR BADNUMBER BINARY}
 
+test parseExpr-22.19 {Bug d2ffcca163} -constraints testexprparser -body {
+    testexprparser \u0433 -1
+} -returnCodes error -match glob -result {*invalid character*}
+test parseExpr-22.20 {Bug d2ffcca163} -constraints testexprparser -body {
+    testexprparser \u043f -1
+} -returnCodes error -match glob -result {*invalid character*}
+test parseExpr-22.21 {Bug d2ffcca163} -constraints testexprparser -body {
+    testexprparser in\u0433(0) -1
+} -returnCodes error -match glob -result {missing operand*}
 
 # cleanup
 cleanupTests

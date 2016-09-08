@@ -761,7 +761,7 @@ ConsoleInputProc(
 	 * by the caller.  In practice this is harmless, since all writes
 	 * are into ChannelBuffers, and those have padding, but still
 	 * ought to remove this, unless some Windows wizard can give
-	 * a reason not to.  
+	 * a reason not to.
 	 */
 	buf[count] = '\0';
 	return count;

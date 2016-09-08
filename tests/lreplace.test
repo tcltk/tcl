@@ -137,6 +137,15 @@ test lreplace-4.1 {Bug ccc2c2cc98: lreplace edge case} {
 test lreplace-4.2 {Bug ccc2c2cc98: lreplace edge case} {
     lreplace { } 1 1
 } {}
+test lreplace-4.3 {lreplace edge case} {
+    lreplace {1 2 3} 2 0
+} {1 2 3}
+test lreplace-4.4 {lreplace edge case} {
+    lreplace {1 2 3 4 5} 3 1
+} {1 2 3 4 5}
+test lreplace-4.5 {lreplace edge case} {
+    lreplace {1 2 3 4 5} 3 0 _
+} {1 2 3 _ 4 5}
 
 # cleanup
 catch {unset foo}

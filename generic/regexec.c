@@ -1122,7 +1122,7 @@ complicatedBackrefDissect(
      */
 
     i = 0;
-    for (p = begin; p <= stop && (i < max || max == INFINITY); p += len) {
+    for (p = begin; p <= stop && (i < max || max == DUPINF); p += len) {
 	if (v->g->compare(paren, p, len) != 0) {
 	    break;
 	}
@@ -1137,7 +1137,7 @@ complicatedBackrefDissect(
     if (p != end) {		/* didn't consume all of it */
 	return REG_NOMATCH;
     }
-    if (min <= i && (i <= max || max == INFINITY)) {
+    if (min <= i && (i <= max || max == DUPINF)) {
 	return REG_OKAY;
     }
     return REG_NOMATCH;		/* out of range */

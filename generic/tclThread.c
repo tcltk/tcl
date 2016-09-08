@@ -353,11 +353,11 @@ Tcl_ConditionFinalize(
  */
 
 void
-TclFinalizeThreadData(void)
+TclFinalizeThreadData(int quick)
 {
     TclFinalizeThreadDataThread();
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-    if ((!TclInExit())||TclFullFinalizationRequested()) {
+    if (!quick) {
 	/*
 	 * Quick exit principle makes it useless to terminate allocators
 	 */

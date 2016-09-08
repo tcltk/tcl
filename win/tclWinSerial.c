@@ -1415,7 +1415,7 @@ SerialWriterThread(
  *	Opens or Reopens the serial port with the OVERLAPPED FLAG set
  *
  * Results:
- *	Returns the new handle, or INVALID_HANDLE_VALUE. 
+ *	Returns the new handle, or INVALID_HANDLE_VALUE.
  *	If an existing channel is specified it is closed and reopened.
  *
  * Side effects:

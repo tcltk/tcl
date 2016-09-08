@@ -1314,14 +1314,14 @@ test winFCmd-18.1.2 {Windows reserved path names} -constraints win -body {
     file pathtype com4
 } -result "absolute"
 test winFCmd-18.1.3 {Windows reserved path names} -constraints win -body {
-    file pathtype com5
-} -result "relative"
+    file pathtype com9
+} -result "absolute"
 test winFCmd-18.1.4 {Windows reserved path names} -constraints win -body {
     file pathtype lpt3
 } -result "absolute"
 test winFCmd-18.1.5 {Windows reserved path names} -constraints win -body {
-    file pathtype lpt4
-} -result "relative"
+    file pathtype lpt9
+} -result "absolute"
 test winFCmd-18.1.6 {Windows reserved path names} -constraints win -body {
     file pathtype nul
 } -result "absolute"
@@ -1422,6 +1422,11 @@ test winFCmd-19.8 {Windows extended path names} -constraints nt -setup {
 } -cleanup {
     catch {file delete $tmpfile}
 } -result [list 0 {} [list "tcl[pid].tmp "]]
+
+test winFCmd-19.9 {Windows devices path names} -constraints nt -body {
+    file normalize //./com1
+} -result //./com1
+
 
 # This block of code used to occur after the "return" call, so I'm
 # commenting it out and assuming that this code is still under construction.

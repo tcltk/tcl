@@ -720,6 +720,14 @@ test stringComp-14.2 {Bug 82e7f67325} memory {
 	}} {a b}
     }
 } {0}
+test stringComp-14.3 {Bug 0dca3bfa8f} {
+    apply {arg {
+	set argCopy $arg
+	set arg [string replace $arg 1 2 aa]
+	# Crashes in comparison before fix
+	expr {$arg ne $argCopy}
+    }} abcde
+} 1
 
 ## string tolower
 ## not yet bc

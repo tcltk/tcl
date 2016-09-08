@@ -261,7 +261,7 @@ TclpTempFileName(void)
  *
  * On Unix, it works to load a shared object from a file of any name, so this
  * function is merely a thin wrapper around TclpTempFileName().
- *	
+ *
  *----------------------------------------------------------------------------
  */
 
@@ -969,7 +969,7 @@ PipeClose2Proc(
 	    pipePtr->outFile = NULL;
 	}
     }
-    
+
     /*
      * If half-closing, stop here.
      */
