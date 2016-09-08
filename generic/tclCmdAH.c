@@ -748,7 +748,7 @@ Tcl_EvalObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNREvalObjCmd, dummy, objc, objv);    
+    return Tcl_NRCallObjProc(interp, TclNREvalObjCmd, dummy, objc, objv);
 }
 
 int

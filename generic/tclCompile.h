@@ -995,12 +995,6 @@ typedef struct ForeachInfo {
 				 * LAST FIELD IN THE STRUCTURE! */
 } ForeachInfo;
 
-MODULE_SCOPE const AuxDataType tclForeachInfoType;
-MODULE_SCOPE const AuxDataType tclNewForeachInfoType;
-
-#define FOREACHINFO(envPtr, index) \
-    ((ForeachInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
-
 /*
  * Structure used to hold information about a switch command that is needed
  * during program execution. These structures are stored in CompileEnv and
@@ -1032,11 +1026,6 @@ typedef struct {
 				 * take account of this. MUST BE LAST FIELD IN
 				 * STRUCTURE. */
 } DictUpdateInfo;
-
-MODULE_SCOPE const AuxDataType tclDictUpdateInfoType;
-
-#define DICTUPDATEINFO(envPtr, index) \
-    ((DictUpdateInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
 
 /*
  * ClientData type used by the math operator commands.
@@ -1120,7 +1109,6 @@ MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, unsigned int index);
-MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
@@ -1128,7 +1116,6 @@ MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    int distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
-MODULE_SCOPE void	TclInitAuxDataTypeTable(void);
 MODULE_SCOPE void	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
@@ -1168,7 +1155,7 @@ MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    int flags, int *localIndexPtr,
 			    int *isScalarPtr);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
-MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp, 
+MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
 MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
@@ -1191,7 +1178,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
 			    const char *script, const char *command,
 			    int length, const unsigned char *pc,
-			    Tcl_Obj **tosPtr); 
+			    Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
@@ -1657,7 +1644,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define PushVarNameWord(i,v,e,f,l,sc,word) \
     SetLineInformation(word);						\
-    TclPushVarName(i,v,e,f,l,sc)					
+    TclPushVarName(i,v,e,f,l,sc)
 
 /*
  * Often want to issue one of two versions of an instruction based on whether

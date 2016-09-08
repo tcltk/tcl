@@ -35,7 +35,7 @@ proc main {} {
 
 if {[catch {main} msg options]} {
     puts stderr "unexpected script error: $msg"
-    if {[info exist env(DEBUG)]} {
+    if {[info exists env(DEBUG)]} {
         puts stderr "---- BEGIN TRACE ----"
         puts stderr [dict get $options -errorinfo]
         puts stderr "---- END TRACE ----"

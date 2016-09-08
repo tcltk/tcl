@@ -69,9 +69,9 @@ const Tcl_ObjType tclProcBodyType = {
 };
 
 /*
- * The [upvar]/[uplevel] level reference type. Uses the ptrAndLongRep field,
+ * The [upvar]/[uplevel] level reference type. Uses the twoPtrValue field,
  * encoding the type of level reference in ptr and the actual parsed out
- * offset in value.
+ * offset in ptr2.
  *
  * Uses the default behaviour throughout, and never disposes of the string
  * rep; it's just a cache type.
@@ -823,10 +823,10 @@ TclObjGetFrame(
 
     name = TclGetString(objPtr);
     if (objPtr->typePtr == &levelReferenceType) {
-	if (objPtr->internalRep.ptrAndLongRep.ptr != NULL) {
-	    level = curLevel - objPtr->internalRep.ptrAndLongRep.value;
+	if (objPtr->internalRep.twoPtrValue.ptr1) {
+	    level = curLevel - PTR2INT(objPtr->internalRep.twoPtrValue.ptr2);
 	} else {
-	    level = objPtr->internalRep.ptrAndLongRep.value;
+	    level = PTR2INT(objPtr->internalRep.twoPtrValue.ptr2);
 	}
 	if (level < 0) {
 	    goto levelError;
@@ -848,14 +848,12 @@ TclObjGetFrame(
 
 	/*
 	 * Cache for future reference.
-	 *
-	 * TODO: Use the new ptrAndLongRep intrep
 	 */
 
 	TclFreeIntRep(objPtr);
 	objPtr->typePtr = &levelReferenceType;
-	objPtr->internalRep.ptrAndLongRep.ptr = NULL;
-	objPtr->internalRep.ptrAndLongRep.value = level;
+	objPtr->internalRep.twoPtrValue.ptr1 = (void *) 0;
+	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(level);
     } else if (isdigit(UCHAR(*name))) { /* INTL: digit */
 	if (Tcl_GetInt(interp, name, &level) != TCL_OK) {
 	    return -1;
@@ -863,14 +861,12 @@ TclObjGetFrame(
 
 	/*
 	 * Cache for future reference.
-	 *
-	 * TODO: Use the new ptrAndLongRep intrep
 	 */
 
 	TclFreeIntRep(objPtr);
 	objPtr->typePtr = &levelReferenceType;
-	objPtr->internalRep.ptrAndLongRep.ptr = (void *) 1; /* non-NULL */
-	objPtr->internalRep.ptrAndLongRep.value = level;
+	objPtr->internalRep.twoPtrValue.ptr1 = (void *) 1;
+	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(level);
 	level = curLevel - level;
     } else {
 	/*
@@ -1644,12 +1640,9 @@ TclPushProcCallFrame(
      */
 
     framePtrPtr = &framePtr;
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    (Tcl_Namespace *) nsPtr,
 	    (isLambda? (FRAME_IS_PROC|FRAME_IS_LAMBDA) : FRAME_IS_PROC));
-    if (result != TCL_OK) {
-	return result;
-    }
 
     framePtr->objc = objc;
     framePtr->objv = objv;
@@ -1844,7 +1837,7 @@ InterpProcNR2(
 	TCL_DTRACE_PROC_RETURN(l < iPtr->varFramePtr->objc ?
 		TclGetString(iPtr->varFramePtr->objv[l]) : NULL, result);
     }
-    if (--procPtr->refCount <= 0) {
+    if (procPtr->refCount-- <= 1) {
 	TclProcCleanupProc(procPtr);
     }
 
@@ -1859,8 +1852,8 @@ InterpProcNR2(
     if (result != TCL_OK) {
 	goto process;
     }
-    
-    done: 
+
+    done:
     if (TCL_DTRACE_PROC_RESULT_ENABLED()) {
 	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 	Tcl_Obj *r = Tcl_GetObjResult(interp);
@@ -2057,7 +2050,7 @@ TclProcCompileProc(
 	    procPtr->numCompiledLocals = procPtr->numArgs;
 	}
 
-	TclPushStackFrame(interp, &framePtr, (Tcl_Namespace *) nsPtr,
+	(void) TclPushStackFrame(interp, &framePtr, (Tcl_Namespace *) nsPtr,
 		/* isProcCallFrame */ 0);
 
 	/*
@@ -2149,8 +2142,7 @@ TclProcDeleteProc(
 {
     Proc *procPtr = clientData;
 
-    procPtr->refCount--;
-    if (procPtr->refCount <= 0) {
+    if (procPtr->refCount-- <= 1) {
 	TclProcCleanupProc(procPtr);
     }
 }
@@ -2405,7 +2397,7 @@ ProcBodyFree(
 {
     Proc *procPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    if (procPtr->refCount-- < 2) {
+    if (procPtr->refCount-- <= 1) {
 	TclProcCleanupProc(procPtr);
     }
 }
@@ -2448,8 +2440,7 @@ FreeLambdaInternalRep(
     Proc *procPtr = objPtr->internalRep.twoPtrValue.ptr1;
     Tcl_Obj *nsObjPtr = objPtr->internalRep.twoPtrValue.ptr2;
 
-    procPtr->refCount--;
-    if (procPtr->refCount == 0) {
+    if (procPtr->refCount-- == 1) {
 	TclProcCleanupProc(procPtr);
     }
     TclDecrRefCount(nsObjPtr);

@@ -8455,6 +8455,7 @@ include ::oo::class (fellows)
 
 2014-08-28 (bug)[b9e1a3] Correct Method Search Order (nadkarni,fellows)
 => TclOO 1.0.3
+        *** POTENTIAL INCOMPATIBILITY ***
 
 2014-09-05 (bug)[ccc2c2] Regression [lreplace {} 1 1] (bron,fellows)
 
@@ -8527,3 +8528,99 @@ include ::oo::class (fellows)
         *** POTENTIAL INCOMPATIBILITY ***
 
 --- Released 8.6.4, March 12, 2015 --- http://core.tcl.tk/tcl/ for details
+
+2015-03-19 (bug)[e66e44] Win: Ctrl-C/Ctrl-Break in console not EOF (nadkarni)
+
+2015-03-21 (bug)[d87cb1] Proper tailcall from compiled ensembles (sofer)
+
+2015-04-23 (bug)[19ea02] Win: shared read from linked dirs (bogdan,oehhar)
+
+2015-04-24 (bug)[879a07] Incomplete chars @ buffer ends (leunissen,porter)
+
+2015-04-29 (bug)[894da1] Hang flushing blocking channels (yorick)
+
+2015-05-14 (enhance)[b9d043] Default use of gzip transfer encoding (fellows)
+=> http 2.8.9
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2015-05-15 (bug)[9dd1bd] destructor [self] after failed constructor (calvo,fellows)
+
+2015-05-15 (bug)[0f42ff] [tailcall] combined with [next] (aspect,fellows)
+
+2015-05-18 (bug)[c11a51] http: race condition in -accept option (fellows)
+
+2015-05-19 (enhance) More pure lists from compiled [list] (porter,fellows)
+
+2015-05-27 (enhancement) Relax memdebug constraint on extensions (kupries)
+
+2015-06-03 (bug)[268b23] crash in traced [expr] (execute-11.2)(tomkinson,porter)
+
+2015-06-11 (bug)[478c44] Memleak in zlib compresion errors (mistachkin)
+
+2015-06-16 (bug)[e770d9] Higher baud on serial channels (woods,nijtmans)
+
+2015-06-18 (update) Update Unicode data to 8.0 (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2015-06-18 (bug)[a4cb3f] compiled [lreplace] handling of end (bron,aspect)
+
+2015-06-23 (enhance) Use Unicode SendMessageTimeout() (nijtmans)
+=> registry 1.3.1
+
+2015-06-25 (TIP 412) msgcat dynamic locale change and package private locale (oehlmann)
+=> msgcat 1.6.0
+
+2015-07-05 (bug)[a0ece9] crash in traced [expr] (execute-11.3) (hans,porter)
+
+2015-07-10 (TIP 436) [info object isa] favors 'false' over error (fellows)
+=> TclOO 1.0.4
+
+2015-07-15 (bug)[b1534b][9bad63] writes beyond buffer bounds (hanno,porter)
+
+2015-07-18 (bug)[a3309d] Memleak in compiled [unset a($i)] (jeff,porter)
+
+2015-07-23 (bug)[57945b] lock in forking/multi-threading (neumann,mistachkin)
+
+2015-07-29 (bug)[3e7eca] Allocation overflow in expr parsing (rickyb,porter)
+
+2015-07-30 (bug)[f00009] Win: Memleak in [file] (rp,sebres)
+
+2015-07-31 (bug) Correct problems found in Coverity audit (sofer)
+
+2015-08-19 (bug)[00189c] MSVC 14: semi-static UCRT support (dower,nijtmans)
+
+2015-08-26 (bug)[0df7a1] Tolerate getcwd() failures (cato,nijtmans)
+
+2015-09-21 (bug)[1115587][a3c350][d7ea9f][0e0e15][187d7f] Many fixes and
+improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
+
+2015-09-23 (enhance) hash lookup microoptimization (hipp)
+
+2015-09-23 (bug)[e0a7b3] Input buffer draining & file events (griffin,porter)
+
+2015-09-29 (bug)[219866] Cygwin support error (yorick,nijtmans)
+=> platform 1.0.14
+
+2015-10-06 (bug)[b42a85] Win: [file normalize ~user] wrong dir (nadkarni)
+
+2015-10-21 (bug)[1080042][8f2450] More regexp from Postgres (lane,porter)
+
+2015-10-23 (bug)[4a0c16] [clock] react to msgcat locale change (oehlmann)
+
+2015-11-10 (bug)[261a8a] Overflow segfault in I/O translation (brooks,porter)
+
+2015-11-20 (bug)[40f628] ListObjReplace callers fail to detect max (porter)
+
+2015-11-30 (enhance)[32c574] Improve list growth performance (brooks,porter)
+
+2015-12-11 (bug)[c9eb6b] tolerate unset ::env(TZ) (gahr, nijtmans)
+
+2016-01-29 (TIP 440) tcl_platform(engine) -- Tcl implementation (mistachkin)
+
+2016-02-03 (bug)[25842c] stream [zlib deflate] fails with 0 input (ade,fellows)
+
+2016-02-04 (bug)[3d96b7][593baa][cf74de] crashes in OO teardown (porter,fellows)
+
+2016-02-22 (bug)[9b4702] [info exists env(missing)] kills trace (nijtmans)
+
+--- Released 8.6.5, February 29, 2016 --- http://core.tcl.tk/tcl/ for details

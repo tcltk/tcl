@@ -82,7 +82,7 @@ static ProcessGlobalValue executableName = {
  *			in other cases this means an overestimate of the
  *			required size.
  *
- * For more details, see the comments on the Tcl*Scan*Element and 
+ * For more details, see the comments on the Tcl*Scan*Element and
  * Tcl*Convert*Element routines.
  */
 
@@ -180,7 +180,7 @@ const Tcl_ObjType tclEndOffsetType = {
  *
  * NOTE: This means that if and when backslash substitution rules ever change
  * for command parsing, the interpretation of strings as lists also changes.
- * 
+ *
  * Backslash substitution replaces an "escape sequence" of one or more
  * characters starting with
  *		\u005c	\	BACKSLASH
@@ -193,7 +193,7 @@ const Tcl_ObjType tclEndOffsetType = {
  *
  * * If the first character of a formatted substring is
  *		\u007b	{	OPEN BRACE
- *   then the end of the substring is the matching 
+ *   then the end of the substring is the matching
  *		\u007d	}	CLOSE BRACE
  *   character, where matching is determined by counting nesting levels, and
  *   not including any brace characters that are contained within a backslash
@@ -215,7 +215,7 @@ const Tcl_ObjType tclEndOffsetType = {
  *   includes an unbalanced brace not in a backslash escape sequence, and any
  *   value that ends with a backslash not itself in a backslash escape
  *   sequence.
- * 
+ *
  * * If the first character of a formatted substring is
  *		\u0022	"	QUOTE
  *   then the end of the substring is the next QUOTE character, not counting
@@ -342,7 +342,7 @@ const Tcl_ObjType tclEndOffsetType = {
  * directives. This makes it easy to experiment with eliminating this
  * formatting mode simply with "#define COMPAT 0" above. I believe this is
  * worth considering.
- * 
+ *
  * Another consideration is the treatment of QUOTE characters in list
  * elements. TclConvertElement() must have the ability to produce the escape
  * sequence \" so that when a list element begins with a QUOTE we do not
@@ -402,7 +402,7 @@ TclMaxListLength(
      * No list element before leading white space.
      */
 
-    count += 1 - TclIsSpaceProc(*bytes); 
+    count += 1 - TclIsSpaceProc(*bytes);
 
     /*
      * Count white space runs as potential element separators.
@@ -438,7 +438,7 @@ TclMaxListLength(
      * No list element following trailing white space.
      */
 
-    count -= TclIsSpaceProc(bytes[-1]); 
+    count -= TclIsSpaceProc(bytes[-1]);
 
   done:
     if (endPtr) {
@@ -506,7 +506,7 @@ TclFindElement(
 				 * indicate that the substring of *sizePtr
 				 * bytes starting at **elementPtr is/is not
 				 * the literal list element and therefore
-				 * does not/does require a call to 
+				 * does not/does require a call to
 				 * TclCopyAndCollapse() by the caller. */
 {
     return FindElement(interp, list, listLength, "list", "LIST", elementPtr,
@@ -535,7 +535,7 @@ TclFindDictElement(
 				 * indicate that the substring of *sizePtr
 				 * bytes starting at **elementPtr is/is not
 				 * the literal key or value and therefore
-				 * does not/does require a call to 
+				 * does not/does require a call to
 				 * TclCopyAndCollapse() by the caller. */
 {
     return FindElement(interp, dict, dictLength, "dict", "DICTIONARY",
@@ -567,7 +567,7 @@ FindElement(
 				 * indicate that the substring of *sizePtr
 				 * bytes starting at **elementPtr is/is not
 				 * the literal list/dict element and therefore
-				 * does not/does require a call to 
+				 * does not/does require a call to
 				 * TclCopyAndCollapse() by the caller. */
 {
     const char *p = string;
@@ -582,7 +582,7 @@ FindElement(
 
     /*
      * Skim off leading white space and check for an opening brace or quote.
-     * We treat embedded NULLs in the list/dict as bytes belonging to a list 
+     * We treat embedded NULLs in the list/dict as bytes belonging to a list
      * element (or dictionary key or value).
      */
 
@@ -1034,7 +1034,7 @@ TclScanElement(
     int preferBrace = 0;	/* CONVERT_MASK mode. */
     int braceCount = 0;		/* Count of all braces '{' '}' seen. */
 #endif /* COMPAT */
-    
+
     if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == -1))) {
 	/*
 	 * Empty string element must be brace quoted.
@@ -1112,7 +1112,7 @@ TclScanElement(
 		 * Final backslash. Cannot format with brace quoting.
 		 */
 
-		requireEscape = 1;		
+		requireEscape = 1;
 		break;
 	    }
 	    if (p[1] == '\n') {
@@ -1506,7 +1506,7 @@ TclConvertElement(
 		return p - dst;
 	    }
 
-	    /* 
+	    /*
 	     * If we reach this point, there's an embedded NULL in the string
 	     * range being processed, which should not happen when the
 	     * encoding rules for Tcl strings are properly followed.  If the
@@ -1882,7 +1882,7 @@ Tcl_Concat(
     for (p = result, i = 0;  i < argc;  i++) {
 	int trim, elemLength;
 	const char *element;
-	
+
 	element = argv[i];
 	elemLength = strlen(argv[i]);
 
@@ -1981,7 +1981,11 @@ Tcl_ConcatObj(
 		continue;
 	    }
 	    if (resPtr) {
-		Tcl_ListObjAppendList(NULL, resPtr, objPtr);
+		if (TCL_OK != Tcl_ListObjAppendList(NULL, resPtr, objPtr)) {
+		    /* Abandon ship! */
+		    Tcl_DecrRefCount(resPtr);
+		    goto slow;
+		}
 	    } else {
 		resPtr = TclListObjCopy(NULL, objPtr);
 	    }
@@ -1992,6 +1996,7 @@ Tcl_ConcatObj(
 	return resPtr;
     }
 
+  slow:
     /*
      * Something cannot be determined to be safe, so build the concatenation
      * the slow way, using the string representations.
@@ -2014,12 +2019,12 @@ Tcl_ConcatObj(
      */
 
     TclNewObj(resPtr);
-    Tcl_AttemptSetObjLength(resPtr, bytesNeeded + objc - 1);
+    (void) Tcl_AttemptSetObjLength(resPtr, bytesNeeded + objc - 1);
     Tcl_SetObjLength(resPtr, 0);
 
     for (i = 0;  i < objc;  i++) {
 	int trim;
-	
+
 	element = TclGetStringFromObj(objv[i], &elemLength);
 
 	/*
@@ -3003,7 +3008,7 @@ TclDStringToObj(
 	    /*
 	     * Static buffer, so must copy.
 	     */
-	    
+
 	    TclNewStringObj(result, dsPtr->string, dsPtr->length);
 	}
     } else {
@@ -3121,7 +3126,7 @@ Tcl_PrintDouble(
     /*
      * Handle NaN.
      */
-    
+
     if (TclIsNaN(value)) {
 	TclFormatNaN(value, dst);
 	return;
@@ -3130,12 +3135,12 @@ Tcl_PrintDouble(
     /*
      * Handle infinities.
      */
-    
+
     if (TclIsInfinite(value)) {
 	/*
 	 * Remember to copy the terminating NUL too.
 	 */
-	
+
 	if (value < 0) {
 	    memcpy(dst, "-Inf", 5);
 	} else {
@@ -3147,7 +3152,7 @@ Tcl_PrintDouble(
     /*
      * Ordinary (normal and denormal) values.
      */
-    
+
     if (*precisionPtr == 0) {
 	digits = TclDoubleDigits(value, -1, TCL_DD_SHORTEST,
 		&exponent, &signum, &end);
@@ -3192,7 +3197,7 @@ Tcl_PrintDouble(
 	 */
 
 	digits = TclDoubleDigits(value, *precisionPtr,
-		TCL_DD_E_FORMAT /* | TCL_DD_SHORTEN_FLAG */, 
+		TCL_DD_E_FORMAT /* | TCL_DD_SHORTEN_FLAG */,
 		&exponent, &signum, &end);
     }
     if (signum) {
@@ -3203,7 +3208,7 @@ Tcl_PrintDouble(
 	/*
 	 * E format for numbers < 1e-3 or >= 1e17.
 	 */
-	
+
 	*dst++ = *p++;
 	c = *p;
 	if (c != '\0') {
@@ -3228,7 +3233,7 @@ Tcl_PrintDouble(
 	/*
 	 * F format for others.
 	 */
-	
+
 	if (exponent < 0) {
 	    *dst++ = '0';
 	}

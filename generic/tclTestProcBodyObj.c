@@ -143,7 +143,7 @@ RegisterCommand(
     if (cmdTablePtr->exportIt) {
 	sprintf(buf, "namespace eval %s { namespace export %s }",
 		namespace, cmdTablePtr->cmdName);
-	if (Tcl_Eval(interp, buf) != TCL_OK) {
+	if (Tcl_EvalEx(interp, buf, -1, 0) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
@@ -245,7 +245,7 @@ ProcBodyTestProcObjCmd(
      * Find the Command pointer to this procedure
      */
 
-    fullName = Tcl_GetStringFromObj(objv[3], NULL);
+    fullName = Tcl_GetString(objv[3]);
     procCmd = Tcl_FindCommand(interp, fullName, NULL, TCL_LEAVE_ERR_MSG);
     if (procCmd == NULL) {
 	return TCL_ERROR;

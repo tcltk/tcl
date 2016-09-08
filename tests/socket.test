@@ -1794,7 +1794,7 @@ test socket_$af-13.1 {Testing use of shared socket between two threads} -body {
     close $s
     thread::release $serverthread
     append result " " [llength [thread::names]]
-} -result {hello 1} -constraints [list socket supported_$af thread] 
+} -result {hello 1} -constraints [list socket supported_$af thread]
 
 # ----------------------------------------------------------------------
 
@@ -2249,7 +2249,7 @@ test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener
         unset x
     } -result {socket is not connected} -returnCodes 1
 test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener, flush} \
-    -constraints {socket nonportable} \
+    -constraints {socket nonPortable} \
     -body {
         set sock [socket -async localhost [randport]]
         fconfigure $sock -blocking 0
@@ -2281,10 +2281,10 @@ test socket-14.13 {testing writable event when quick failure} \
     -constraints {socket win supported_inet} \
     -body {
     # Test for bug 336441ed59 where a quick background fail was ignored
-    
+
     # Test only for windows as socket -async 255.255.255.255 fails
     # directly on unix
-    
+
     # The following connect should fail very quickly
     set a1 [after 2000 {set x timeout}]
     set s [socket -async 255.255.255.255 43434]
@@ -2299,7 +2299,7 @@ test socket-14.13 {testing writable event when quick failure} \
 test socket-14.14 {testing fileevent readable on failed async socket connect} \
     -constraints {socket} -body {
     # Test for bug 581937ab1e
-    
+
     set a1 [after 5000 {set x timeout}]
     # This connect should fail
     set s [socket -async localhost [randport]]

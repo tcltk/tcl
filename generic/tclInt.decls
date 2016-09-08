@@ -2,9 +2,8 @@
 #
 #	This file contains the declarations for all unsupported
 #	functions that are exported by the Tcl library.  This file
-#	is used to generate the tclIntDecls.h, tclIntPlatDecls.h,
-#	tclIntStub.c, tclPlatStub.c, tclCompileDecls.h and tclCompileStub.c
-#	files
+#	is used to generate the tclIntDecls.h, tclIntPlatDecls.h
+#	and tclStubInit.c files
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
