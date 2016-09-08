@@ -617,6 +617,28 @@ EXTERN void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
 /* 251 */
 EXTERN int		TclRegisterLiteral(void *envPtr, const char *bytes,
 				int length, int flags);
+/* 252 */
+EXTERN Tcl_Obj *	TclPtrGetVar(Tcl_Interp *interp, Tcl_Var varPtr,
+				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
+				Tcl_Obj *part2Ptr, const int flags);
+/* 253 */
+EXTERN Tcl_Obj *	TclPtrSetVar(Tcl_Interp *interp, Tcl_Var varPtr,
+				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
+				Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr,
+				const int flags);
+/* 254 */
+EXTERN Tcl_Obj *	TclPtrIncrObjVar(Tcl_Interp *interp, Tcl_Var varPtr,
+				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
+				Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr,
+				const int flags);
+/* 255 */
+EXTERN int		TclPtrObjMakeUpvar(Tcl_Interp *interp,
+				Tcl_Var otherPtr, Tcl_Obj *myNamePtr,
+				int myFlags);
+/* 256 */
+EXTERN int		TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr,
+				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
+				Tcl_Obj *part2Ptr, const int flags);
 
 typedef struct TclIntStubs {
     int magic;
@@ -874,6 +896,11 @@ typedef struct TclIntStubs {
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
     void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
     int (*tclRegisterLiteral) (void *envPtr, const char *bytes, int length, int flags); /* 251 */
+    Tcl_Obj * (*tclPtrGetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 252 */
+    Tcl_Obj * (*tclPtrSetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, const int flags); /* 253 */
+    Tcl_Obj * (*tclPtrIncrObjVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, const int flags); /* 254 */
+    int (*tclPtrObjMakeUpvar) (Tcl_Interp *interp, Tcl_Var otherPtr, Tcl_Obj *myNamePtr, int myFlags); /* 255 */
+    int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 256 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1305,6 +1332,16 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclSetSlaveCancelFlags) /* 250 */
 #define TclRegisterLiteral \
 	(tclIntStubsPtr->tclRegisterLiteral) /* 251 */
+#define TclPtrGetVar \
+	(tclIntStubsPtr->tclPtrGetVar) /* 252 */
+#define TclPtrSetVar \
+	(tclIntStubsPtr->tclPtrSetVar) /* 253 */
+#define TclPtrIncrObjVar \
+	(tclIntStubsPtr->tclPtrIncrObjVar) /* 254 */
+#define TclPtrObjMakeUpvar \
+	(tclIntStubsPtr->tclPtrObjMakeUpvar) /* 255 */
+#define TclPtrUnsetVar \
+	(tclIntStubsPtr->tclPtrUnsetVar) /* 256 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

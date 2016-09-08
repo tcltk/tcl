@@ -3537,7 +3537,7 @@ TclDictWithFinish(
      * If the dictionary variable doesn't exist, drop everything silently.
      */
 
-    dictPtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
+    dictPtr = TclPtrGetVarIdx(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
 	    TCL_LEAVE_ERR_MSG, index);
     if (dictPtr == NULL) {
 	return TCL_OK;
@@ -3620,8 +3620,8 @@ TclDictWithFinish(
      * Write back the outermost dictionary to the variable.
      */
 
-    if (TclPtrSetVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr, dictPtr,
-	    TCL_LEAVE_ERR_MSG, index) == NULL) {
+    if (TclPtrSetVarIdx(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
+	    dictPtr, TCL_LEAVE_ERR_MSG, index) == NULL) {
 	if (allocdict) {
 	    TclDecrRefCount(dictPtr);
 	}
