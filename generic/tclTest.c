@@ -7260,7 +7260,7 @@ InterpCmdResolver(
              */
 
             CallFrame *parentFramePtr = varFramePtr->callerPtr;
-            char *context = parentFramePtr != NULL ? parentFramePtr->nsPtr->name : "(NULL)";
+            const char *context = parentFramePtr != NULL ? parentFramePtr->nsPtr->name : "(NULL)";
 
             if (strcmp(context, "ctx1") == 0 && (name[0] == 'z') && (name[1] == '\0')) {
                 resolvedCmdPtr = Tcl_FindCommand(interp, "y", NULL, TCL_GLOBAL_ONLY);
