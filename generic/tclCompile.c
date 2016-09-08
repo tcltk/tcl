@@ -993,7 +993,7 @@ FreeByteCodeInternalRep(
 
 void
 TclPreserveByteCode(
-    register ByteCode *codePtr)	
+    register ByteCode *codePtr)
 {
     codePtr->refCount++;
 }
@@ -1317,7 +1317,7 @@ CompileSubstObj(
     if (objPtr->typePtr != &substCodeType) {
 	CompileEnv compEnv;
 	int numBytes;
-	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+	const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
 
 	/* TODO: Check for more TIP 280 */
 	TclInitCompileEnv(interp, &compEnv, bytes, numBytes, NULL, 0);
@@ -1791,7 +1791,7 @@ CompileCmdLiteral(
     CompileEnv *envPtr)
 {
     int numBytes;
-    const char *bytes = Tcl_GetStringFromObj(cmdObj, &numBytes);
+    const char *bytes = TclGetStringFromObj(cmdObj, &numBytes);
     int cmdLitIdx = TclRegisterNewCmdLiteral(envPtr, bytes, numBytes);
     Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
 
@@ -2727,7 +2727,7 @@ PreventCycle(
 	 */
 
 	int numBytes, i = PTR2INT(Tcl_GetHashValue(hePtr));
-	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+	const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
 
 	envPtr->literalArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
 	Tcl_IncrRefCount(envPtr->literalArrayPtr[i]);
@@ -2751,7 +2751,6 @@ TclInitByteCode(
     Namespace *namespacePtr;
     int isNew;
     Interp *iPtr;
-    Tcl_HashEntry *hePtr = NULL;
 
     if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclInitByteCodeObj() called on uninitialized CompileEnv");
@@ -2968,7 +2967,7 @@ TclFindCompiledLocal(
 	varNamePtr = &cachePtr->varName0;
 	for (i=0; i < cachePtr->numVars; varNamePtr++, i++) {
 	    if (*varNamePtr) {
-		localName = Tcl_GetStringFromObj(*varNamePtr, &len);
+		localName = TclGetStringFromObj(*varNamePtr, &len);
 		if ((len == nameBytes) && !strncmp(name, localName, len)) {
 		    return i;
 		}
@@ -3276,8 +3275,10 @@ EnterCmdWordData(
 	TclAdvanceLines(&wordLine, last, tokenPtr->start);
 	TclAdvanceContinuations(&wordLine, &wordNext,
 		tokenPtr->start - envPtr->source);
+	/* See Ticket 4b61afd660 */
 	wwlines[wordIdx] =
-		(TclWordKnownAtCompileTime(tokenPtr, NULL) ? wordLine : -1);
+		((wordIdx == 0) || TclWordKnownAtCompileTime(tokenPtr, NULL))
+		? wordLine : -1;
 	ePtr->line[wordIdx] = wordLine;
 	ePtr->next[wordIdx] = wordNext;
 	last = tokenPtr->start;

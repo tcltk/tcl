@@ -935,7 +935,7 @@ TclpMatchInDirectory(
 	    int len;
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
-	    const char *str = Tcl_GetStringFromObj(norm,&len);
+	    const char *str = TclGetStringFromObj(norm,&len);
 
 	    native = Tcl_FSGetNativePath(pathPtr);
 
@@ -995,7 +995,7 @@ TclpMatchInDirectory(
 	 */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = Tcl_GetStringFromObj(fileNamePtr, &dirLength);
+	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	lastChar = dirName[dirLength -1];
@@ -1769,7 +1769,7 @@ NativeAccess(
  * NativeIsExec --
  *
  *	Determines if a path is executable. On windows this is simply defined
- *	by whether the path ends in any of ".exe", ".com", or ".bat"
+ *	by whether the path ends in a standard executable extension.
  *
  * Results:
  *	1 = executable, 0 = not.
@@ -1793,6 +1793,8 @@ NativeIsExec(
 
     if ((_tcsicmp(path+len-3, TEXT("exe")) == 0)
 	    || (_tcsicmp(path+len-3, TEXT("com")) == 0)
+	    || (_tcsicmp(path+len-3, TEXT("cmd")) == 0)
+	    || (_tcsicmp(path+len-3, TEXT("ps1")) == 0)
 	    || (_tcsicmp(path+len-3, TEXT("bat")) == 0)) {
 	return 1;
     }
@@ -2687,7 +2689,7 @@ TclpObjNormalizePath(
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
 	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, -1);
-	    path = Tcl_GetStringFromObj(tmpPathPtr, &len);
+	    path = TclGetStringFromObj(tmpPathPtr, &len);
 	    Tcl_SetStringObj(pathPtr, path, len);
 	    Tcl_DecrRefCount(tmpPathPtr);
 	} else {
@@ -2773,7 +2775,7 @@ TclWinVolumeRelativeNormalize(
 
 	int cwdLen;
 	const char *drive =
-		Tcl_GetStringFromObj(useThisCwd, &cwdLen);
+		TclGetStringFromObj(useThisCwd, &cwdLen);
 	char drive_cur = path[0];
 
 	if (drive_cur >= 'a') {

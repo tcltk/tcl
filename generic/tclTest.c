@@ -42,16 +42,8 @@
  * Declare external functions used in Windows tests.
  */
 
-/*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Tcltest_Init declaration is in the source file itself, which is only
- * accessed when we are building a library.
- */
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-EXTERN int		Tcltest_Init(Tcl_Interp *interp);
-EXTERN int		Tcltest_SafeInit(Tcl_Interp *interp);
+DLLEXPORT int		Tcltest_Init(Tcl_Interp *interp);
+DLLEXPORT int		Tcltest_SafeInit(Tcl_Interp *interp);
 
 /*
  * Dynamic string shared by TestdcallCmd and DelCallbackProc; used to collect
@@ -416,8 +408,7 @@ static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
-static int              NREUnwind_callback(ClientData data[], Tcl_Interp *interp,
-                            int result);
+static Tcl_NRPostProc	NREUnwind_callback;
 static int		TestNREUnwind(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -1294,7 +1285,7 @@ TestcmdtraceCmd(
 	cmdTrace = Tcl_CreateObjTrace(interp, 50000,
 		TCL_ALLOW_INLINE_COMPILATION, ObjTraceProc,
 		(ClientData) &deleteCalled, ObjTraceDeleteProc);
-	result = Tcl_Eval(interp, argv[2]);
+	result = Tcl_EvalEx(interp, argv[2], -1, 0);
 	Tcl_DeleteTrace(interp, cmdTrace);
 	if (!deleteCalled) {
 	    Tcl_SetResult(interp, "Delete wasn't called", TCL_STATIC);
@@ -1308,7 +1299,7 @@ TestcmdtraceCmd(
 	Tcl_DStringInit(&buffer);
 	t1 = Tcl_CreateTrace(interp, 1, CmdTraceProc, &buffer);
 	t2 = Tcl_CreateTrace(interp, 50000, CmdTraceProc, &buffer);
-	result = Tcl_Eval(interp, argv[2]);
+	result = Tcl_EvalEx(interp, argv[2], -1, 0);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, Tcl_DStringValue(&buffer), NULL);
@@ -1637,7 +1628,7 @@ DelDeleteProc(
 {
     DelCmd *dPtr = clientData;
 
-    Tcl_Eval(dPtr->interp, dPtr->deleteCmd);
+    Tcl_EvalEx(dPtr->interp, dPtr->deleteCmd, -1, 0);
     Tcl_ResetResult(dPtr->interp);
     ckfree(dPtr->deleteCmd);
     ckfree(dPtr);
@@ -3972,7 +3963,7 @@ TestregexpObjCmd(
 	    varName = Tcl_GetString(objv[2]);
 	    TclRegExpRangeUniChar(regExpr, -1, &start, &end);
 	    sprintf(resinfo, "%d %d", start, end-1);
-	    value = Tcl_SetVar(interp, varName, resinfo, 0);
+	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
 			varName, "\"", NULL);
@@ -3986,7 +3977,7 @@ TestregexpObjCmd(
 	    Tcl_RegExpGetInfo(regExpr, &info);
 	    varName = Tcl_GetString(objv[2]);
 	    sprintf(resinfo, "%ld", info.extendStart);
-	    value = Tcl_SetVar(interp, varName, resinfo, 0);
+	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
 			varName, "\"", NULL);
@@ -4329,7 +4320,7 @@ StaticInitProc(
     Tcl_Interp *interp)		/* Interpreter in which package is supposedly
 				 * being loaded. */
 {
-    Tcl_SetVar(interp, "x", "loaded", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "x", NULL, "loaded", TCL_GLOBAL_ONLY);
     return TCL_OK;
 }
 
@@ -4413,7 +4404,7 @@ TestupvarCmd(
 	} else if (strcmp(argv[4], "namespace") == 0) {
 	    flags = TCL_NAMESPACE_ONLY;
 	}
-	return Tcl_UpVar(interp, argv[1], argv[2], argv[3], flags);
+	return Tcl_UpVar2(interp, argv[1], argv[2], NULL, argv[3], flags);
     } else {
 	if (strcmp(argv[5], "global") == 0) {
 	    flags = TCL_GLOBAL_ONLY;
@@ -4907,10 +4898,10 @@ GetTimesObjCmd(
 	    timePer/100000);
 
     /* Tcl_SetVar 100000 times */
-    fprintf(stderr, "Tcl_SetVar of \"12345\" 100000 times\n");
+    fprintf(stderr, "Tcl_SetVar2 of \"12345\" 100000 times\n");
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
-	s = Tcl_SetVar(interp, "a", "12345", TCL_LEAVE_ERR_MSG);
+	s = Tcl_SetVar2(interp, "a", NULL, "12345", TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
@@ -4924,7 +4915,7 @@ GetTimesObjCmd(
     fprintf(stderr, "Tcl_GetVar of a==\"12345\" 100000 times\n");
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
-	s = Tcl_GetVar(interp, "a", TCL_LEAVE_ERR_MSG);
+	s = Tcl_GetVar2(interp, "a", NULL, TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
@@ -5194,7 +5185,7 @@ TestsaveresultCmd(
     if (((enum options) index) == RESULT_OBJECT) {
 	result = Tcl_EvalObjEx(interp, objv[2], 0);
     } else {
-	result = Tcl_Eval(interp, Tcl_GetString(objv[2]));
+	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), -1, 0);
     }
 
     if (discard) {
@@ -6297,7 +6288,7 @@ TestReport(
 	savedResult = Tcl_GetObjResult(interp);
 	Tcl_IncrRefCount(savedResult);
 	Tcl_SetObjResult(interp, Tcl_NewObj());
-	Tcl_Eval(interp, Tcl_DStringValue(&ds));
+	Tcl_EvalEx(interp, Tcl_DStringValue(&ds), -1, 0);
 	Tcl_DStringFree(&ds);
 	Tcl_ResetResult(interp);
 	Tcl_SetObjResult(interp, savedResult);

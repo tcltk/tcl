@@ -26,6 +26,19 @@
 #undef ACCEPT_NAN
 
 /*
+ * In Tcl 8.7, stop supporting special hacks for legacy Itcl 3.
+ * Itcl 4 doesn't need them. Itcl 3 can be updated to not need them
+ * using the Tcl(Init|Reset)RewriteEnsemble() routines in all Tcl 8.6+
+ * releases.  Perhaps Tcl 8.7 will add even better public interfaces
+ * supporting all the re-invocation mechanisms extensions like Itcl 3
+ * need.  As an absolute last resort, folks who must make Itcl 3 work
+ * unchanged with Tcl 8.7 can remove this line to regain the migration
+ * support.  Tcl 9 will no longer offer even that option.
+ */
+
+#define AVOID_HACKS_FOR_ITCL 1
+
+/*
  * Common include files needed by most of the Tcl source files are included
  * here, so that system-dependent personalizations for the include files only
  * have to be made in once place. This results in a few extra includes, but
@@ -48,7 +61,8 @@
 #else
 #include <string.h>
 #endif
-#ifdef STDC_HEADERS
+#if defined(STDC_HEADERS) || defined(__STDC__) || defined(__C99__FUNC__) \
+     || defined(__cplusplus) || defined(_MSC_VER)
 #include <stddef.h>
 #else
 typedef int ptrdiff_t;
@@ -387,27 +401,6 @@ struct NamespacePathEntry {
 
 #define TCL_CREATE_NS_IF_UNKNOWN	0x800
 #define TCL_FIND_ONLY_NS		0x1000
-
-/*
- * The data cached in an ensemble subcommand's Tcl_Obj rep (reference in
- * twoPtrValue.ptr1 field). This structure is not shared between Tcl_Objs
- * referring to the same subcommand, even where one is a duplicate of another.
- */
-
-typedef struct {
-    Namespace *nsPtr;		/* The namespace backing the ensemble which
-				 * this is a subcommand of. */
-    int epoch;			/* Used to confirm when the data in this
-				 * really structure matches up with the
-				 * ensemble. */
-    Tcl_Command token;		/* Reference to the comamnd for which this
-				 * structure is a cache of the resolution. */
-    char *fullSubcmdName;	/* The full (local) name of the subcommand,
-				 * allocated with ckalloc(). */
-    Tcl_Obj *realPrefixObj;	/* Object containing the prefix words of the
-				 * command that implements this ensemble
-				 * subcommand. */
-} EnsembleCmdRep;
 
 /*
  * The client data for an ensemble command. This consists of the table of
@@ -2761,6 +2754,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRInvoke;
+MODULE_SCOPE Tcl_NRPostProc TclNRReleaseValues;
 
 MODULE_SCOPE void  TclSetTailcall(Tcl_Interp *interp, Tcl_Obj *tailcallPtr);
 MODULE_SCOPE void  TclPushTailcallPoint(Tcl_Interp *interp);
@@ -2871,8 +2865,7 @@ MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp,
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
-MODULE_SCOPE int	TclClearRootEnsemble(ClientData data[],
-			    Tcl_Interp *interp, int result);
+MODULE_SCOPE Tcl_NRPostProc TclClearRootEnsemble;
 MODULE_SCOPE ContLineLoc *TclContinuationsEnter(Tcl_Obj *objPtr, int num,
 			    int *loc);
 MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
@@ -2908,6 +2901,8 @@ MODULE_SCOPE char *	TclDStringAppendObj(Tcl_DString *dsPtr,
 MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 			    Tcl_DString *toAppendPtr);
 MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
+MODULE_SCOPE Tcl_Obj *const *	TclFetchEnsembleRoot(Tcl_Interp *interp,
+			    Tcl_Obj *const *objv, int objc, int *objcPtr);
 MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
 MODULE_SCOPE void	TclFinalizeAsync(void);
 MODULE_SCOPE void	TclFinalizeDoubleConversion(void);
@@ -3110,6 +3105,9 @@ MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
 			    Tcl_Obj *newValue, Tcl_Encoding encoding);
 MODULE_SCOPE void	TclSignalExitThread(Tcl_ThreadId id, int result);
+MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
+			    Tcl_Obj *const *objv, int objc, int subIdx,
+			    Tcl_Obj *bad, Tcl_Obj *fix);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 			    int numBytes);
 MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,

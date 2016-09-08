@@ -107,7 +107,7 @@ static Tcl_ThreadDataKey dataKey;
  * the queue.
  */
 
-typedef struct WinCondition {
+typedef struct {
     CRITICAL_SECTION condLock;	/* Lock to serialize queuing on the
 				 * condition. */
     struct ThreadSpecificData *firstPtr;	/* Queue pointers */
@@ -121,7 +121,7 @@ typedef struct WinCondition {
 #ifdef USE_THREAD_ALLOC
 static DWORD tlsKey;
 
-typedef struct allocMutex {
+typedef struct {
     Tcl_Mutex	     tlock;
     CRITICAL_SECTION wlock;
 } allocMutex;
@@ -132,7 +132,7 @@ typedef struct allocMutex {
  * to TclWinThreadStart.
  */
 
-typedef struct WinThread {
+typedef struct {
   LPTHREAD_START_ROUTINE lpStartAddress; /* Original startup routine */
   LPVOID lpParameter;		/* Original startup data */
   unsigned int fpControl;	/* Floating point control word from the
@@ -164,7 +164,6 @@ TclWinThreadStart(
 				 * from TclpThreadCreate */
 {
     WinThread *winThreadPtr = (WinThread *) lpParameter;
-    unsigned int fpmask;
     LPTHREAD_START_ROUTINE lpOrigStartAddress;
     LPVOID lpOrigParameter;
 
@@ -172,13 +171,11 @@ TclWinThreadStart(
 	return TCL_ERROR;
     }
 
-    fpmask = _MCW_EM | _MCW_RC | _MCW_PC;
-
-#if defined(_MSC_VER) && _MSC_VER >= 1200
-    fpmask |= _MCW_DN;
+    _controlfp(winThreadPtr->fpControl, _MCW_EM | _MCW_RC | 0x03000000 /* _MCW_DN */
+#if !defined(_WIN64)
+	    | _MCW_PC
 #endif
-
-    _controlfp(winThreadPtr->fpControl, fpmask);
+    );
 
     lpOrigStartAddress = winThreadPtr->lpStartAddress;
     lpOrigParameter = winThreadPtr->lpParameter;
@@ -943,9 +940,9 @@ TclpFinalizeCondition(
 Tcl_Mutex *
 TclpNewAllocMutex(void)
 {
-    struct allocMutex *lockPtr;
+    allocMutex *lockPtr;
 
-    lockPtr = malloc(sizeof(struct allocMutex));
+    lockPtr = malloc(sizeof(allocMutex));
     if (lockPtr == NULL) {
 	Tcl_Panic("could not allocate lock");
     }

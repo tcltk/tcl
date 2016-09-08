@@ -2107,6 +2107,61 @@ test namespace-50.4 {chained ensembles affect error messages} -body {
     rename a {}
     rename c {}
 }
+test namespace-50.5 {[4402cfa58c]} -setup {
+    proc bar {ev} {}
+    proc bingo {xx} {}
+    namespace ensemble create -command launch -map {foo bar event bingo}
+    set result {}
+} -body {
+    catch {launch foo} m; lappend result $m
+    catch {launch ev} m; lappend result $m
+    catch {launch foo} m; lappend result $m
+} -cleanup {
+    rename launch {}
+    rename bingo {}
+    rename bar {}
+} -result {{wrong # args: should be "launch foo ev"} {wrong # args: should be "launch event xx"} {wrong # args: should be "launch foo ev"}}
+test namespace-50.6 {[4402cfa58c]} -setup {
+    proc target {x y} {}
+    namespace ensemble create -command e2 -map {s2 target}
+    namespace ensemble create -command e1 -map {s1 e2}
+    set result {}
+} -body {
+    set s s
+    catch {e1 s1 s2 a} m; lappend result $m
+    catch {e1 $s s2 a} m; lappend result $m
+    catch {e1 s1 $s a} m; lappend result $m
+    catch {e1 $s $s a} m; lappend result $m
+} -cleanup {
+    rename e1 {}
+    rename e2 {}
+    rename target {}
+} -result {{wrong # args: should be "e1 s1 s2 x y"} {wrong # args: should be "e1 s1 s2 x y"} {wrong # args: should be "e1 s1 s2 x y"} {wrong # args: should be "e1 s1 s2 x y"}}
+test namespace-50.7 {[4402cfa58c]} -setup {
+    proc target {x y} {}
+    namespace ensemble create -command e2 -map {s2 target}
+    namespace ensemble create -command e1 -map {s1 e2} -parameters foo
+    set result {}
+} -body {
+    set s s
+    catch {e1 s2 s1 a} m; lappend result $m
+    catch {e1 $s s1 a} m; lappend result $m
+    catch {e1 s2 $s a} m; lappend result $m
+    catch {e1 $s $s a} m; lappend result $m
+} -cleanup {
+    rename e1 {}
+    rename e2 {}
+    rename target {}
+} -result {{wrong # args: should be "e1 s2 s1 x y"} {wrong # args: should be "e1 s2 s1 x y"} {wrong # args: should be "e1 s2 s1 x y"} {wrong # args: should be "e1 s2 s1 x y"}}
+test namespace-50.8 {[f961d7d1dd]} -setup {
+    proc target {} {}
+    namespace ensemble create -command e -map {s target} -parameters {{a b}}
+} -body {
+    e
+} -returnCodes error -result {wrong # args: should be "e {a b} subcommand ?arg ...?"} -cleanup {
+    rename e {}
+    rename target {}
+}
 
 test namespace-51.1 {name resolution path control} -body {
     namespace eval ::test_ns_1 {
@@ -2928,6 +2983,22 @@ test namespace-53.10 {ensembles: nested rewrite} -setup {
     0 {1 v}\
     1 {wrong # args: should be "ns v x z2 a2"}\
     0 {2 v v2}}
+test namespace-53.11 {ensembles: nested rewrite} -setup {
+    namespace eval ns {
+	namespace export x
+	namespace eval x {
+	    proc z2 {a1 a2} {list 2 $a1 $a2}
+	    namespace export z*
+	    namespace ensemble create -parameter p
+	}
+	namespace ensemble create
+    }
+} -body {
+    list [catch {ns x 1 z2} msg] $msg
+} -cleanup {
+    namespace delete ns
+    unset -nocomplain msg
+} -result {1 {wrong # args: should be "ns x 1 z2 a2"}}
 
 test namespace-54.1 {leak on namespace deletion} -constraints {memory} \
 -setup {
@@ -2953,6 +3024,45 @@ test namespace-54.1 {leak on namespace deletion} -constraints {memory} \
 test namespace-55.1 {compiled ensembles inside compiled ensembles: Bug 6d2f249a01} {
     info class [format %s constructor] oo::object
 } ""
+
+test namespace-56.1 {bug f97d4ee020: mutually-entangled deletion} {
+    namespace eval ::testing {
+	proc abc {} {}
+	proc def {} {}
+	trace add command abc delete "rename ::testing::def {}; #"
+	trace add command def delete "rename ::testing::abc {}; #"
+    }
+    namespace delete ::testing
+} {}
+test namespace-56.2 {bug f97d4ee020: mutually-entangled deletion} {
+    namespace eval ::testing {
+	namespace eval abc {proc xyz {} {}}
+	namespace eval def {proc xyz {} {}}
+	trace add command abc::xyz delete "namespace delete ::testing::def {}; #"
+	trace add command def::xyz delete "namespace delete ::testing::abc {}; #"
+    }
+    namespace delete ::testing
+} {}
+test namespace-56.3 {bug f97d4ee020: mutually-entangled deletion} {
+    namespace eval ::testing {
+	variable gone {}
+	oo::class create CB {
+	    variable cmd
+	    constructor other {set cmd $other}
+	    destructor {rename $cmd {}; lappend ::testing::gone $cmd}
+	}
+	namespace eval abc {
+	    ::testing::CB create def ::testing::abc::ghi
+	    ::testing::CB create ghi ::testing::abc::def
+	}
+	namespace delete abc
+	try {
+	    return [lsort $gone]
+	} finally {
+	    namespace delete ::testing
+	}
+    }
+} {::testing::abc::def ::testing::abc::ghi}
 
 # cleanup
 catch {rename cmd1 {}}
