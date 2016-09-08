@@ -61,7 +61,7 @@
  * This structure describes per-instance state of a file based channel.
  */
 
-typedef struct FileState {
+typedef struct {
     Tcl_Channel channel;	/* Channel associated with this file. */
     int fd;			/* File handle. */
     int validMask;		/* OR'ed combination of TCL_READABLE,
@@ -76,7 +76,7 @@ typedef struct FileState {
  * a platform-independant manner.
  */
 
-typedef struct TtyAttrs {
+typedef struct {
     int baud;
     int parity;
     int data;

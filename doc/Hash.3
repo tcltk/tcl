@@ -281,7 +281,7 @@ The \fIhashKeyProc\fR member contains the address of a function called to
 calculate a hash value for the key.
 .PP
 .CS
-typedef unsigned int \fBTcl_HashKeyProc\fR(
+typedef TCL_HASH_TYPE \fBTcl_HashKeyProc\fR(
         Tcl_HashTable *\fItablePtr\fR,
         void *\fIkeyPtr\fR);
 .CE

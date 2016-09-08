@@ -115,7 +115,7 @@ static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
  * first list checked for a mapping from env encoding to Tcl encoding name.
  */
 
-typedef struct LocaleTable {
+typedef struct {
     const char *lang;
     const char *encoding;
 } LocaleTable;
@@ -550,7 +550,7 @@ TclpInitLibraryPath(
     Tcl_DStringFree(&buffer);
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    str = Tcl_GetStringFromObj(pathPtr, lengthPtr);
+    str = TclGetStringFromObj(pathPtr, lengthPtr);
     *valuePtr = ckalloc((*lengthPtr) + 1);
     memcpy(*valuePtr, str, (size_t)(*lengthPtr)+1);
     Tcl_DecrRefCount(pathPtr);
@@ -780,7 +780,7 @@ TclpSetVariables(
 		if (!Tcl_CreateNamespace(interp, "::tcl::mac", NULL, NULL)) {
 		    Tcl_ResetResult(interp);
 		}
-		Tcl_SetVar(interp, "::tcl::mac::locale", loc, TCL_GLOBAL_ONLY);
+		Tcl_SetVar2(interp, "::tcl::mac::locale", NULL, loc, TCL_GLOBAL_ONLY);
 	    }
 	}
 	CFRelease(localeRef);
@@ -791,9 +791,9 @@ TclpSetVariables(
 	const char *str;
 	CFBundleRef bundleRef;
 
-	Tcl_SetVar(interp, "tclDefaultLibrary", tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_SetVar(interp, "tcl_pkgPath", " ",
+	Tcl_SetVar2(interp, "tclDefaultLibrary", NULL, tclLibPath, TCL_GLOBAL_ONLY);
+	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath, TCL_GLOBAL_ONLY);
+	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
 		TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
 
 	str = TclGetEnv("DYLD_FRAMEWORK_PATH", &ds);
@@ -809,9 +809,9 @@ TclpSetVariables(
 		    *p = ' ';
 		}
 	    } while (*p++);
-	    Tcl_SetVar(interp, "tcl_pkgPath", Tcl_DStringValue(&ds),
+	    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, Tcl_DStringValue(&ds),
 		    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-	    Tcl_SetVar(interp, "tcl_pkgPath", " ",
+	    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
 		    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
 	    Tcl_DStringFree(&ds);
 	}
@@ -826,9 +826,9 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath,
+		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath,
 			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-		    Tcl_SetVar(interp, "tcl_pkgPath", " ",
+		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
 			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
 		}
 		CFRelease(frameworksURL);
@@ -839,20 +839,20 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath,
+		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath,
 			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-		    Tcl_SetVar(interp, "tcl_pkgPath", " ",
+		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
 			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
 		}
 		CFRelease(frameworksURL);
 	    }
 	}
-	Tcl_SetVar(interp, "tcl_pkgPath", pkgPath,
+	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath,
 		TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
     } else
 #endif /* HAVE_COREFOUNDATION */
     {
-	Tcl_SetVar(interp, "tcl_pkgPath", pkgPath, TCL_GLOBAL_ONLY);
+	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath, TCL_GLOBAL_ONLY);
     }
 
 #ifdef DJGPP
