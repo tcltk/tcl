@@ -4219,7 +4219,10 @@ TclSetCmdNameObj(
     const char *name;
 
     if (objPtr->typePtr == &tclCmdNameType) {
-	return;
+	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
+	if (resPtr != NULL && resPtr->cmdPtr == cmdPtr) {
+	    return;
+	}
     }
 
     cmdPtr->refCount++;
