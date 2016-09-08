@@ -191,7 +191,7 @@ TrimUnreachable(
  * ConvertZeroEffectToNOP --
  *
  *	Replace PUSH/POP sequences (when non-hazardous) with NOPs. Also
- *	replace PUSH empty/CONCAT and TRY_CVT_NUMERIC (when followed by an
+ *	replace PUSH empty/STR_CONCAT and TRY_CVT_NUMERIC (when followed by an
  *	operation that guarantees the check for arithmeticity) and eliminate
  *	LNOT when we can invert the following JUMP condition.
  *
@@ -227,7 +227,7 @@ ConvertZeroEffectToNOP(
 	case INST_PUSH1:
 	    if (nextInst == INST_POP) {
 		blank = size + InstLength(nextInst);
-	    } else if (nextInst == INST_CONCAT1
+	    } else if (nextInst == INST_STR_CONCAT1
 		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
 			TclGetUInt1AtPtr(currentInstPtr + 1));
@@ -242,7 +242,7 @@ ConvertZeroEffectToNOP(
 	case INST_PUSH4:
 	    if (nextInst == INST_POP) {
 		blank = size + 1;
-	    } else if (nextInst == INST_CONCAT1
+	    } else if (nextInst == INST_STR_CONCAT1
 		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
 			TclGetUInt4AtPtr(currentInstPtr + 1));
@@ -344,19 +344,26 @@ AdvanceJumps(
     CompileEnv *envPtr)
 {
     unsigned char *currentInstPtr;
+    Tcl_HashTable jumps;
 
     for (currentInstPtr = envPtr->codeStart ;
 	    currentInstPtr < envPtr->codeNext-1 ;
 	    currentInstPtr += AddrLength(currentInstPtr)) {
-	int offset, delta;
+	int offset, delta, isNew;
 
 	switch (*currentInstPtr) {
 	case INST_JUMP1:
 	case INST_JUMP_TRUE1:
 	case INST_JUMP_FALSE1:
 	    offset = TclGetInt1AtPtr(currentInstPtr + 1);
+	    Tcl_InitHashTable(&jumps, TCL_ONE_WORD_KEYS);
 	    for (delta=0 ; offset+delta != 0 ;) {
 		if (offset + delta < -128 || offset + delta > 127) {
+		    break;
+		}
+		Tcl_CreateHashEntry(&jumps, INT2PTR(offset), &isNew);
+		if (!isNew) {
+		    offset = TclGetInt1AtPtr(currentInstPtr + 1);
 		    break;
 		}
 		offset += delta;
@@ -373,13 +380,21 @@ AdvanceJumps(
 		}
 		break;
 	    }
+	    Tcl_DeleteHashTable(&jumps);
 	    TclStoreInt1AtPtr(offset, currentInstPtr + 1);
 	    continue;
 
 	case INST_JUMP4:
 	case INST_JUMP_TRUE4:
 	case INST_JUMP_FALSE4:
+	    Tcl_InitHashTable(&jumps, TCL_ONE_WORD_KEYS);
+	    Tcl_CreateHashEntry(&jumps, INT2PTR(0), &isNew);
 	    for (offset = TclGetInt4AtPtr(currentInstPtr + 1); offset!=0 ;) {
+		Tcl_CreateHashEntry(&jumps, INT2PTR(offset), &isNew);
+		if (!isNew) {
+		    offset = TclGetInt4AtPtr(currentInstPtr + 1);
+		    break;
+		}
 		switch (*(currentInstPtr + offset)) {
 		case INST_NOP:
 		    offset += InstLength(INST_NOP);
@@ -393,6 +408,7 @@ AdvanceJumps(
 		}
 		break;
 	    }
+	    Tcl_DeleteHashTable(&jumps);
 	    TclStoreInt4AtPtr(offset, currentInstPtr + 1);
 	    continue;
 	}
@@ -411,7 +427,7 @@ AdvanceJumps(
 
 void
 TclOptimizeBytecode(
-    CompileEnv *envPtr)
+    void *envPtr)
 {
     ConvertZeroEffectToNOP(envPtr);
     AdvanceJumps(envPtr);

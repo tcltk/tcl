@@ -375,7 +375,7 @@ TclFetchLiteral(
 
 int
 TclRegisterLiteral(
-    CompileEnv *envPtr,		/* Points to the CompileEnv in whose object
+    void *ePtr,		/* Points to the CompileEnv in whose object
 				 * array an object is found or created. */
     register char *bytes,	/* Points to string for which to find or
 				 * create an object in CompileEnv's object
@@ -389,6 +389,7 @@ TclRegisterLiteral(
 				 * the literal should not be shared accross
 				 * namespaces. */
 {
+    CompileEnv *envPtr = ePtr;
     Interp *iPtr = envPtr->iPtr;
     Namespace *nsPtr = NULL;
     Tcl_Obj *objPtr;

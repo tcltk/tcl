@@ -82,6 +82,12 @@ static ProcInfo *procList;
 #define PIPE_EXTRABYTE	(1<<3)	/* The reader thread has consumed one byte. */
 
 /*
+ * TODO: It appears the whole EXTRABYTE machinery is in place to support
+ * outdated Win 95 systems.  If this can be confirmed, much code can be
+ * deleted.
+ */
+
+/*
  * This structure describes per-instance data for a pipe based channel.
  */
 
@@ -1884,7 +1890,7 @@ PipeClose2Proc(
 		SetEvent(pipePtr->stopWriter);
 
 		if (WaitForSingleObject(pipePtr->writable, 0) == WAIT_TIMEOUT) {
-		    return EAGAIN;
+		    return EWOULDBLOCK;
 		}
 
 	    } else {
@@ -2161,7 +2167,7 @@ PipeOutputProc(
 	 * the channel is in non-blocking mode.
 	 */
 
-	errno = EAGAIN;
+	errno = EWOULDBLOCK;
 	goto error;
     }
 
@@ -2712,7 +2718,7 @@ WaitForRead(
 	     * is in non-blocking mode.
 	     */
 
-	    errno = EAGAIN;
+	    errno = EWOULDBLOCK;
 	    return -1;
 	}
 

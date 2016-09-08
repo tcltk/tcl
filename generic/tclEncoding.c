@@ -182,6 +182,7 @@ TCL_DECLARE_MUTEX(encodingMutex)
 
 static Tcl_Encoding defaultEncoding;
 static Tcl_Encoding systemEncoding;
+Tcl_Encoding tclIdentityEncoding;
 
 /*
  * The following variable is used in the sparse matrix code for a
@@ -567,7 +568,7 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 1;
     type.clientData	= NULL;
-    Tcl_CreateEncoding(&type);
+    tclIdentityEncoding = Tcl_CreateEncoding(&type);
 
     type.encodingName	= "utf-8";
     type.toUtfProc	= UtfExtToUtfIntProc;
@@ -651,6 +652,7 @@ TclFinalizeEncodingSubsystem(void)
     Tcl_MutexLock(&encodingMutex);
     encodingsInitialized = 0;
     FreeEncoding(systemEncoding);
+    FreeEncoding(tclIdentityEncoding);
 
     hPtr = Tcl_FirstHashEntry(&encodingTable, &search);
     while (hPtr != NULL) {

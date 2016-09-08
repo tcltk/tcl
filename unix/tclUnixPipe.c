@@ -229,7 +229,7 @@ TclpCreateTempFile(
 Tcl_Obj *
 TclpTempFileName(void)
 {
-    Tcl_Obj *nameObj = Tcl_NewObj();
+    Tcl_Obj *retVal, *nameObj = Tcl_NewObj();
     int fd;
 
     Tcl_IncrRefCount(nameObj);
@@ -242,7 +242,9 @@ TclpTempFileName(void)
     fcntl(fd, F_SETFD, FD_CLOEXEC);
     TclpObjDeleteFile(nameObj);
     close(fd);
-    return nameObj;
+    retVal = Tcl_DuplicateObj(nameObj);
+    Tcl_DecrRefCount(nameObj);
+    return retVal;
 }
 
 /*
@@ -1143,7 +1145,7 @@ PipeWatchProc(
     if (psPtr->inFile) {
 	newmask = mask & (TCL_READABLE | TCL_EXCEPTION);
 	if (newmask) {
-	    Tcl_CreateFileHandler(GetFd(psPtr->inFile), mask,
+	    Tcl_CreateFileHandler(GetFd(psPtr->inFile), newmask,
 		    (Tcl_FileProc *) Tcl_NotifyChannel, psPtr->channel);
 	} else {
 	    Tcl_DeleteFileHandler(GetFd(psPtr->inFile));
@@ -1152,7 +1154,7 @@ PipeWatchProc(
     if (psPtr->outFile) {
 	newmask = mask & (TCL_WRITABLE | TCL_EXCEPTION);
 	if (newmask) {
-	    Tcl_CreateFileHandler(GetFd(psPtr->outFile), mask,
+	    Tcl_CreateFileHandler(GetFd(psPtr->outFile), newmask,
 		    (Tcl_FileProc *) Tcl_NotifyChannel, psPtr->channel);
 	} else {
 	    Tcl_DeleteFileHandler(GetFd(psPtr->outFile));

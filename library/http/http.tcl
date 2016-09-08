@@ -11,7 +11,7 @@
 package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.7
+package provide http 2.8.8
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -113,7 +113,7 @@ if {[info command http::Log] eq {}} {proc http::Log {args} {}}
 
 proc http::register {proto port command} {
     variable urlTypes
-    set urlTypes($proto) [list $port $command]
+    set urlTypes([string tolower $proto]) [list $port $command]
 }
 
 # http::unregister --
@@ -127,11 +127,12 @@ proc http::register {proto port command} {
 
 proc http::unregister {proto} {
     variable urlTypes
-    if {![info exists urlTypes($proto)]} {
+    set lower [string tolower $proto]
+    if {![info exists urlTypes($lower)]} {
 	return -code error "unsupported url type \"$proto\""
     }
-    set old $urlTypes($proto)
-    unset urlTypes($proto)
+    set old $urlTypes($lower)
+    unset urlTypes($lower)
     return $old
 }
 
@@ -514,12 +515,13 @@ proc http::geturl {url args} {
     if {$proto eq ""} {
 	set proto http
     }
-    if {![info exists urlTypes($proto)]} {
+    set lower [string tolower $proto]
+    if {![info exists urlTypes($lower)]} {
 	unset $token
 	return -code error "Unsupported URL type \"$proto\""
     }
-    set defport [lindex $urlTypes($proto) 0]
-    set defcmd [lindex $urlTypes($proto) 1]
+    set defport [lindex $urlTypes($lower) 0]
+    set defcmd [lindex $urlTypes($lower) 1]
 
     if {$port eq ""} {
 	set port $defport
@@ -650,7 +652,8 @@ proc http::Connected { token proto phost srvurl} {
     set host [lindex [split $state(socketinfo) :] 0]
     set port [lindex [split $state(socketinfo) :] 1]
 
-    set defport [lindex $urlTypes($proto) 0]
+    set lower [string tolower $proto]
+    set defport [lindex $urlTypes($lower) 0]
 
     # Send data in cr-lf format, but accept any line terminators
 

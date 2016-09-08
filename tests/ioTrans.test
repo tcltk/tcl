@@ -539,7 +539,46 @@ test iortrans-4.8 {chan read, read, bug 2921116} -setup {
     tempdone
     rename foo {}
 } -result {{read rt* {test data
-}} file*}
+}} {}}
+test iortrans-4.8.1 {chan read, bug 721ec69271} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {fd args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	# Kill and recreate transform while it is operating
+	chan pop $fd
+	chan push $fd [list foo $fd]
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+    chan configure $c -buffersize 2
+    lappend res [read $c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* te} {read rt* st} {read rt* { d}} {read rt* at} {read rt* {a
+}} {}}
+test iortrans-4.8.2 {chan read, bug 721ec69271} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {fd args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	# Kill and recreate transform while it is operating
+	chan pop $fd
+	chan push $fd [list foo $fd]
+	return x
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+    chan configure $c -buffersize 1
+    lappend res [read $c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* t} {read rt* e} {read rt* s} {read rt* t} {read rt* { }} {read rt* d} {read rt* a} {read rt* t} {read rt* a} {read rt* {
+}} {}}
 test iortrans-4.9 {chan read, gets, bug 2921116} -setup {
     set res {}
 } -match glob -body {
@@ -557,7 +596,7 @@ test iortrans-4.9 {chan read, gets, bug 2921116} -setup {
     tempdone
     rename foo {}
 } -result {{read rt* {test data
-}} file*}
+}} {}}
 
 # --- === *** ###########################
 # method write (via puts)
@@ -995,22 +1034,24 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
     # Magic to get the test* commands in the slaves
     load {} Tcltest $ida
     load {} Tcltest $idb
-} -constraints {testchannel impossible} -match glob -body {
+} -constraints {testchannel} -match glob -body {
     # Set up channel in thread
     set chan [interp eval $ida $helperscript]
+    interp eval $ida [list ::variable tempchan [tempchan]]
+    interp transfer {} $::tempchan $ida
     set chan [interp eval $ida {
 	proc foo {args} {
 	    handle.initialize clear drain flush limit? read write
 	    handle.finalize
 	    lappend ::res $args
-	    # Destroy interpreter during channel access.  Actually not
-	    # possible for an interp to destroy itself.
-	    interp delete {}
-	    return}
-	set chan [chan push [tempchan] foo]
+	    # Destroy interpreter during channel access.
+	    suicide
+	}
+	set chan [chan push $tempchan foo]
 	fconfigure $chan -buffering none
 	set chan
     }]
+    interp alias $ida suicide {} interp delete $ida
     # Move channel to 2nd thread, transform goes with it.
     interp eval $ida [list testchannel cut $chan]
     interp eval $idb [list testchannel splice $chan]

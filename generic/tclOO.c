@@ -271,7 +271,7 @@ TclOOInit(
 	return TCL_ERROR;
     }
 
-    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION,
+    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
 	    (ClientData) &tclOOStubs);
 }
 
@@ -394,6 +394,7 @@ InitFoundation(
     fPtr->classCls->flags |= ROOT_CLASS;
     TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
     TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
+    TclOOAddToSubclasses(fPtr->classCls, fPtr->objectCls);
     AddRef(fPtr->objectCls->thisPtr);
     AddRef(fPtr->objectCls);
 
@@ -437,10 +438,12 @@ InitFoundation(
      * ensemble.
      */
 
-    Tcl_CreateObjCommand(interp, "::oo::Helpers::next", TclOONextObjCmd, NULL,
-	    NULL);
-    Tcl_CreateObjCommand(interp, "::oo::Helpers::nextto", TclOONextToObjCmd,
-	    NULL, NULL);
+    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, "::oo::Helpers::next",
+	    NULL, TclOONextObjCmd, NULL, NULL);
+    cmdPtr->compileProc = TclCompileObjectNextCmd;
+    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, "::oo::Helpers::nextto",
+	    NULL, TclOONextToObjCmd, NULL, NULL);
+    cmdPtr->compileProc = TclCompileObjectNextToCmd;
     cmdPtr = (Command *) Tcl_CreateObjCommand(interp, "::oo::Helpers::self",
 	    TclOOSelfObjCmd, NULL, NULL);
     cmdPtr->compileProc = TclCompileObjectSelfCmd;
@@ -1006,6 +1009,12 @@ ReleaseClassContents(
 	    }
 	    if (!Deleted(instancePtr)) {
 		Tcl_DeleteCommandFromToken(interp, instancePtr->command);
+		/*
+		 * Tcl_DeleteCommandFromToken() may have done to whole
+		 * job for us.  Roll back and check again.
+		 */
+		i--;
+		continue;
 	    }
 	    DelRef(instancePtr);
 	}
@@ -1278,6 +1287,7 @@ TclOORemoveFromInstances(
 
   removeInstance:
     if (Deleted(clsPtr->thisPtr)) {
+	DelRef(clsPtr->instances.list[i]);
 	clsPtr->instances.list[i] = NULL;
     } else {
 	clsPtr->instances.num--;

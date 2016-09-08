@@ -15,13 +15,17 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testbytestring [llength [info commands testbytestring]]
 
 test subst-1.1 {basics} -returnCodes error -body {
     subst
 } -result {wrong # args: should be "subst ?-nobackslashes? ?-nocommands? ?-novariables? string"}
 test subst-1.2 {basics} -returnCodes error -body {
     subst a b c
-} -result {bad switch "a": must be -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "a": must be -nobackslashes, -nocommands, or -novariables}
 
 test subst-2.1 {simple strings} {
     subst {}
@@ -32,16 +36,16 @@ test subst-2.2 {simple strings} {
 test subst-2.3 {simple strings} {
     subst abcdefg
 } abcdefg
-test subst-2.4 {simple strings} {
+test subst-2.4 {simple strings} testbytestring {
     # Tcl Bug 685106
-    subst [bytestring bar\x00soom]
-} [bytestring bar\x00soom]
+    subst [testbytestring bar\x00soom]
+} [testbytestring bar\x00soom]
 
 test subst-3.1 {backslash substitutions} {
     subst {\x\$x\[foo bar]\\}
 } "x\$x\[foo bar]\\"
 test subst-3.2 {backslash substitutions with utf chars} {
-    # 'j' is just a char that doesn't mean anything, and \344 is 'ä'
+    # 'j' is just a char that doesn't mean anything, and \344 is 'Ã¤'
     # that also doesn't mean anything, but is multi-byte in UTF-8.
     list [subst \j] [subst \\j] [subst \\344] [subst \\\344]
 } "j j \344 \344"
@@ -119,13 +123,13 @@ test subst-6.1 {clear the result after command substitution} -body {
 
 test subst-7.1 {switches} -returnCodes error -body {
     subst foo bar
-} -result {bad switch "foo": must be -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "foo": must be -nobackslashes, -nocommands, or -novariables}
 test subst-7.2 {switches} -returnCodes error -body {
     subst -no bar
-} -result {ambiguous switch "-no": must be -nobackslashes, -nocommands, or -novariables}
+} -result {ambiguous option "-no": must be -nobackslashes, -nocommands, or -novariables}
 test subst-7.3 {switches} -returnCodes error -body {
     subst -bogus bar
-} -result {bad switch "-bogus": must be -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "-bogus": must be -nobackslashes, -nocommands, or -novariables}
 test subst-7.4 {switches} {
     set x 123
     subst -nobackslashes {abc $x [expr 1+2] \\\x41}

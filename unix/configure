@@ -1335,8 +1335,11 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".1"
+TCL_PATCH_LEVEL=".2"
 VERSION=${TCL_VERSION}
+
+EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
+EXTRA_BUILD_HTML=${EXTRA_BUILD_HTML:-"@:"}
 
 #------------------------------------------------------------------------
 # Setup configure arguments for bundled packages
@@ -6490,80 +6493,6 @@ if test "${tcl_cv_cc_visibility_hidden+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
-	    if test "$SHARED_BUILD" = 1; then
-
-		hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fvisibility=hidden -Werror"
-		cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-int
-main ()
-{
-#if !defined(__GNUC__) || __GNUC__ < 4
-#error visibility hidden is not supported for this compiler
-#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  tcl_cv_cc_visibility_hidden=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-tcl_cv_cc_visibility_hidden=no
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-		CFLAGS=$hold_cflags
-
-else
-
-		tcl_cv_cc_visibility_hidden=no
-
-fi
-
-
-fi
-echo "$as_me:$LINENO: result: $tcl_cv_cc_visibility_hidden" >&5
-echo "${ECHO_T}$tcl_cv_cc_visibility_hidden" >&6
-    if test $tcl_cv_cc_visibility_hidden = yes; then
-
-	CFLAGS="$CFLAGS -fvisibility=hidden"
-
-cat >>confdefs.h <<\_ACEOF
-#define MODULE_SCOPE extern
-_ACEOF
-
-
-else
-
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
 	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -6614,7 +6543,10 @@ fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 	CFLAGS=$hold_cflags
-	if test $tcl_cv_cc_visibility_hidden = yes; then
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_cc_visibility_hidden" >&5
+echo "${ECHO_T}$tcl_cv_cc_visibility_hidden" >&6
+    if test $tcl_cv_cc_visibility_hidden = yes; then
 
 
 cat >>confdefs.h <<\_ACEOF
@@ -6625,9 +6557,6 @@ _ACEOF
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_HIDDEN 1
 _ACEOF
-
-
-fi
 
 
 fi
@@ -7082,6 +7011,7 @@ fi
 	    TCL_NEEDS_EXP_FILE=1
 	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.dll.a'
 	    TCL_SHLIB_LD_EXTRAS='-Wl,--out-implib,$@.a'
+	    TK_SHLIB_LD_EXTRAS='-Wl,--out-implib,$@.a'
 	    echo "$as_me:$LINENO: checking for Cygwin version of gcc" >&5
 echo $ECHO_N "checking for Cygwin version of gcc... $ECHO_C" >&6
 if test "${ac_cv_cygwin+set}" = set; then
@@ -7150,10 +7080,15 @@ echo "$as_me: error: ${CC} is not a cygwin compiler." >&2;}
 echo "$as_me: error: CYGWIN compile is only supported with --enable-threads" >&2;}
    { (exit 1); exit 1; }; }
 	    fi
-	    if test "x${SHARED_BUILD}" = "x1" -a ! -f "../win/tcldde14.dll" -a ! -f "../win/tk86.dll"; then
-		{ { echo "$as_me:$LINENO: error: Please configure and make the ../win directory first." >&5
-echo "$as_me: error: Please configure and make the ../win directory first." >&2;}
-   { (exit 1); exit 1; }; }
+	    do64bit_ok=yes
+	    if test "x${SHARED_BUILD}" = "x1"; then
+		echo "running cd ${TCL_SRC_DIR}/win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
+		# The eval makes quoting arguments work.
+		if cd ${TCL_SRC_DIR}/win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
+		then :
+		else
+		    { echo "configure: error: configure failed for ../win" 1>&2; exit 1; }
+		fi
 	    fi
 	    ;;
 	dgux*)
@@ -7810,6 +7745,7 @@ fi
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
 	    TCL_SHLIB_LD_EXTRAS="-Wl,-soname=\$@"
+	    TK_SHLIB_LD_EXTRAS="-Wl,-soname,\$@"
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -7828,11 +7764,15 @@ fi
 		LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
 fi
 
-	    # Version numbers are dot-stripped by system policy.
-	    TCL_TRIM_DOTS=`echo ${VERSION} | tr -d .`
-	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1'
-	    TCL_LIB_VERSIONS_OK=nodots
+	    case $system in
+	    FreeBSD-3.*)
+		# Version numbers are dot-stripped by system policy.
+		TCL_TRIM_DOTS=`echo ${VERSION} | tr -d .`
+		UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so'
+		TCL_LIB_VERSIONS_OK=nodots
+		;;
+	    esac
 	    ;;
 	Darwin-*)
 	    CFLAGS_OPTIMIZE="-Os"
@@ -8145,7 +8085,6 @@ cat >>confdefs.h <<\_ACEOF
 #define MODULE_SCOPE __private_extern__
 _ACEOF
 
-		tcl_cv_cc_visibility_hidden=yes
 
 fi
 

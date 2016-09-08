@@ -220,6 +220,36 @@ proc id_fulltrail {var op data} {
     return $res
 }
 
+proc id_torture {chan op data} {
+    switch -- $op {
+	create/write -
+	create/read  -
+	delete/write -
+	delete/read  -
+	clear_read   {;#ignore}
+	flush/write -
+	flush/read  {}
+	write       {
+	    global level
+	    if {$level} {
+		return
+	    }
+	    incr level
+	    testchannel unstack $chan
+	    testchannel transform $chan \
+		-command [namespace code [list id_torture $chan]]
+	    return $data
+	}
+	read        {
+	    testchannel unstack $chan
+	    testchannel transform $chan \
+		-command [namespace code [list id_torture $chan]]
+	    return $data
+	}
+	query/maxRead {return -1}
+    }
+}
+
 proc counter {var op data} {
     namespace upvar [namespace current] $var n
 
@@ -280,7 +310,7 @@ proc counter_audit {var vtrail op data} {
 }
 
 proc rblocks {var vtrail n op data} {
-    namespace upvar [namespace current] $var n $vtrail trail
+    namespace upvar [namespace current] $var buf $vtrail trail
 
     set res {}
 
@@ -326,6 +356,11 @@ proc audit_ops {var -attach channel} {
 proc audit_flow {var -attach channel} {
     testchannel transform $channel -command [namespace code [list id_fulltrail $var]]
 }
+
+proc torture {-attach channel} {
+    testchannel transform $channel -command [namespace code [list id_torture $channel]]
+}
+
 proc stopafter {var n -attach channel} {
     namespace upvar [namespace current] $var vn
     set vn $n
@@ -445,6 +480,7 @@ query/maxRead
 read
 query/maxRead
 flush/read
+query/maxRead
 delete/read
 --------
 create/write
@@ -491,6 +527,7 @@ read {
 }
 query/maxRead {} -1
 flush/read {} {}
+query/maxRead {} -1
 delete/read {} *ignored*
 --------
 create/write {} *ignored*
@@ -542,15 +579,35 @@ write %^&*()_+-= %^&*()_+-=
 write {
 } {
 }
+query/maxRead {} -1
 delete/read {} *ignored*
 flush/write {} {}
 delete/write {} *ignored*}
+
+test iogt-2.4 {basic I/O, mixed trail} {testchannel} {
+    set fh [open $path(dummy) r]
+    torture -attach $fh
+    chan configure $fh -buffersize 2
+    set x [read $fh]
+    testchannel unstack $fh
+    close   $fh
+    set x
+} {}
+test iogt-2.5 {basic I/O, mixed trail} {testchannel} {
+    set ::level 0
+    set fh [open $path(dummyout) w]
+    torture -attach $fh
+    puts -nonewline $fh abcdef
+    flush $fh
+    testchannel unstack $fh
+    close   $fh
+} {}
 
 test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} -setup {
     proc DoneCopy {n {err {}}} {
 	variable copy 1
     }
-} -constraints {testchannel hangs} -body {
+} -constraints {testchannel knownBug} -body {
     # This test to check the validity of aquired Tcl_Channel references is not
     # possible because even a backgrounded fcopy will immediately start to
     # copy data, without waiting for the event loop. This is done only in case
@@ -561,6 +618,7 @@ test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} -setup {
     # delay, causing the fcopy to underflow immediately.
     set fin [open $path(dummy) r]
     fevent 1000 500 {20 20 20 10 1 1} {
+	variable copy
 	close $fin
 	set fout [open dummyout w]
 	flush $sock;	# now, or fcopy will error us out
@@ -594,23 +652,30 @@ test iogt-4.0 {fileevent readable, after transform} -setup {
     proc Done {args} {
 	variable stop 1
     }
-} -constraints {testchannel hangs} -body {
+    proc Get {sock} {
+        variable trail
+        variable got
+        if {[eof $sock]} {
+            Done
+            lappend trail "xxxxxxxxxxxxx"
+            close $sock
+            return
+        }
+        lappend trail "vvvvvvvvvvvvv"
+        lappend trail "\tgot: [lappend got "\[\[[read $sock]\]\]"]"
+        lappend trail "============="
+        #puts stdout $__ ; flush stdout
+        #read $sock
+    }
+
+} -constraints {testchannel knownBug} -body {
     fevent 1000 500 {20 20 20 10 1} {
+	variable stop
 	audit_flow trail -attach $sock
 	rblocks_t rbuf trail 23 -attach $sock
-	fileevent $sock readable [namespace code {
-	    if {[eof $sock]} {
-		Done
-		lappend trail "xxxxxxxxxxxxx"
-		close $sock
-	    } else {
-		lappend trail "vvvvvvvvvvvvv"
-		lappend trail "\tgot: [lappend got "\[\[[read $sock]\]\]"]"
-		lappend trail "============="
-		#puts stdout $__; flush stdout
-		#read $sock
-	    }
-	}]
+
+	fileevent $sock readable [namespace code [list Get $sock]]
+
 	flush $sock;		# Now, or fcopy will error us out
 	# But the 1 second delay should be enough to initialize everything
 	# else here.
@@ -619,6 +684,7 @@ test iogt-4.0 {fileevent readable, after transform} -setup {
     join [list [join $got \n] ~~~~~~~~ [join $trail \n]] \n
 } -cleanup {
     rename Done {}
+    rename Get {}
 } -result {[[]]
 [[abcdefghijklmnopqrstuvw]]
 [[xyz0123456789,./?><;'\|]]
@@ -706,7 +772,7 @@ test iogt-5.0 {EOF simulation} -setup {
     set fin [open $path(dummy) r]
     set fout [open $path(dummyout) w]
     set trail [list]
-} -constraints {testchannel unknownFailure} -result {
+} -constraints {testchannel knownBug} -result {
     audit_flow trail -attach $fin
     stopafter_audit d trail 20 -attach $fin
     audit_flow trail -attach $fout
@@ -785,6 +851,15 @@ test iogt-6.0 {Push back} -constraints testchannel -body {
     close $f
 } -result {xxx}
 test iogt-6.1 {Push back and up} -constraints {testchannel knownBug} -body {
+
+    # This test demonstrates the bug/misfeature in the stacked
+    # channel implementation that data can be discarded if it is
+    # read into the buffers of one channel in the stack, and then
+    # that channel is popped before anything above it reads.
+    #
+    # This bug can be worked around by always setting -buffersize
+    # to 1, but who wants to do that?
+
     set f [open $path(dummy) r]
     # contents of dummy = "abcdefghi..."
     read $f 3;		# skip behind "abc"

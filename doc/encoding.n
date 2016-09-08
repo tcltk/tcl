@@ -4,8 +4,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH encoding n "8.1" Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 .SH NAME
 encoding \- Manipulate encodings
@@ -14,10 +14,21 @@ encoding \- Manipulate encodings
 .BE
 .SH INTRODUCTION
 .PP
-Strings in Tcl are encoded using 16-bit Unicode characters.  Different
-operating system interfaces or applications may generate strings in
-other encodings such as Shift-JIS.  The \fBencoding\fR command helps
-to bridge the gap between Unicode and these other formats.
+Strings in Tcl are logically a sequence of 16-bit Unicode characters.
+These strings are represented in memory as a sequence of bytes that
+may be in one of several encodings: modified UTF\-8 (which uses 1 to 3
+bytes per character), 16-bit
+.QW Unicode
+(which uses 2 bytes per character, with an endianness that is
+dependent on the host architecture), and binary (which uses a single
+byte per character but only handles a restricted range of characters).
+Tcl does not guarantee to always use the same encoding for the same
+string.
+.PP
+Different operating system interfaces or applications may generate
+strings in other encodings such as Shift\-JIS.  The \fBencoding\fR
+command helps to bridge the gap between Unicode and these other
+formats.
 .SH DESCRIPTION
 .PP
 Performs one of several encoding related operations, depending on
@@ -37,8 +48,9 @@ system encoding is used.
 Convert \fIstring\fR from Unicode to the specified \fIencoding\fR.
 The result is a sequence of bytes that represents the converted
 string.  Each byte is stored in the lower 8-bits of a Unicode
-character.  If \fIencoding\fR is not specified, the current
-system encoding is used.
+character (indeed, the resulting string is a binary string as far as
+Tcl is concerned, at least initially).  If \fIencoding\fR is not
+specified, the current system encoding is used.
 .TP
 \fBencoding dirs\fR ?\fIdirectoryList\fR?
 .
@@ -56,6 +68,11 @@ searchable directory, that element is ignored.
 .
 Returns a list containing the names of all of the encodings that are
 currently available. 
+The encodings
+.QW utf-8
+and
+.QW iso8859-1
+are guaranteed to be present in the list.
 .TP
 \fBencoding system\fR ?\fIencoding\fR?
 .
@@ -73,7 +90,7 @@ However, because the \fBsource\fR command always reads files using the
 current system encoding, Tcl will only source such files correctly
 when the encoding used to write the file is the same.  This tends not
 to be true in an internationalized setting.  For example, if such a
-file was sourced in North America (where the ISO8859-1 is normally
+file was sourced in North America (where the ISO8859\-1 is normally
 used), each byte in the file would be treated as a separate character
 that maps to the 00 page in Unicode.  The resulting Tcl strings will
 not contain the expected Japanese characters.  Instead, they will
@@ -93,3 +110,6 @@ which is the Hiragana letter HA.
 Tcl_GetEncoding(3)
 .SH KEYWORDS
 encoding, unicode
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

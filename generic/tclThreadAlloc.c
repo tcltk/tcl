@@ -1023,6 +1023,33 @@ TclFinalizeThreadAlloc(void)
     TclpFreeAllocCache(NULL);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFinalizeThreadAllocThread --
+ *
+ *	This procedure is used to destroy single thread private resources used
+ *	in this file. 
+ * Called in TclpFinalizeThreadData when a thread exits (Tcl_FinalizeThread).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclFinalizeThreadAllocThread(void)
+{
+    Cache *cachePtr = TclpGetAllocCache();
+    if (cachePtr != NULL) {
+	TclpFreeAllocCache(cachePtr);
+    }
+}
+
 #else /* !(TCL_THREADS && USE_THREAD_ALLOC) */
 /*
  *----------------------------------------------------------------------

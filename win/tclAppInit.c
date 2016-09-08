@@ -34,6 +34,7 @@ extern Tcl_PackageInitProc Dde_SafeInit;
 #endif
 
 #ifdef TCL_BROKEN_MAINARGS
+int _CRT_glob = 0;
 static void setargv(int *argcPtr, TCHAR ***argvPtr);
 #endif /* TCL_BROKEN_MAINARGS */
 

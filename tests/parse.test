@@ -20,6 +20,7 @@ namespace eval ::tcl::test::parse {
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testparser [llength [info commands testparser]]
+testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testevalobjv [llength [info commands testevalobjv]]
 testConstraint testevalex [llength [info commands testevalex]]
 testConstraint testparsevarname [llength [info commands testparsevarname]]
@@ -29,8 +30,8 @@ testConstraint testcmdtrace [llength [info commands testcmdtrace]]
 testConstraint testevent [llength [info commands testevent]]
 testConstraint memory [llength [info commands memory]]
 
-test parse-1.1 {Tcl_ParseCommand procedure, computing string length} testparser {
-    testparser [bytestring "foo\0 bar"] -1
+test parse-1.1 {Tcl_ParseCommand procedure, computing string length} {testparser testbytestring} {
+    testparser [testbytestring "foo\0 bar"] -1
 } {- foo 1 simple foo 1 text foo 0 {}}
 test parse-1.2 {Tcl_ParseCommand procedure, computing string length} testparser {
     testparser "foo bar" -1
@@ -301,9 +302,9 @@ test parse-6.15 {ParseTokens procedure, backslash-newline} testparser {
 test parse-6.16 {ParseTokens procedure, backslash substitution} testparser {
     testparser {\n\a\x7f} 0
 } {- {\n\a\x7f} 1 word {\n\a\x7f} 3 backslash {\n} 0 backslash {\a} 0 backslash {\x7f} 0 {}}
-test parse-6.17 {ParseTokens procedure, null characters} testparser {
-    testparser [bytestring "foo\0zz"] 0
-} "- [bytestring foo\0zz] 1 word [bytestring foo\0zz] 3 text foo 0 text [bytestring \0] 0 text zz 0 {}"
+test parse-6.17 {ParseTokens procedure, null characters} {testparser testbytestring} {
+    testparser [testbytestring "foo\0zz"] 0
+} "- [testbytestring foo\0zz] 1 word [testbytestring foo\0zz] 3 text foo 0 text [testbytestring \0] 0 text zz 0 {}"
 test parse-6.18 {ParseTokens procedure, seek past numBytes for close-bracket} testparser {
     # Test for Bug 681841
     list [catch {testparser {[a]} 2} msg] $msg
@@ -700,8 +701,8 @@ test parse-13.6 {Tcl_ParseVar memory leak} -constraints memory -setup {
     rename getbytes {}
 } -result 0
 
-test parse-14.1 {Tcl_ParseBraces procedure, computing string length} testparser {
-    testparser [bytestring "foo\0 bar"] -1
+test parse-14.1 {Tcl_ParseBraces procedure, computing string length} {testparser testbytestring} {
+    testparser [testbytestring "foo\0 bar"] -1
 } {- foo 1 simple foo 1 text foo 0 {}}
 test parse-14.2 {Tcl_ParseBraces procedure, computing string length} testparser {
     testparser "foo bar" -1
@@ -737,8 +738,8 @@ test parse-14.12 {Tcl_ParseBraces procedure, missing close brace} testparser {
     list [catch {testparser "foo \{xy\\\nz" 0} msg] $msg $::errorInfo
 } {1 {missing close-brace} missing\ close-brace\n\ \ \ \ (remainder\ of\ script:\ \"\{xy\\\nz\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"foo\ \\\{xy\\\\\\nz\"\ 0\"}
 
-test parse-15.1 {Tcl_ParseQuotedString procedure, computing string length} testparser {
-    testparser [bytestring "foo\0 bar"] -1
+test parse-15.1 {Tcl_ParseQuotedString procedure, computing string length} {testparser testbytestring} {
+    testparser [testbytestring "foo\0 bar"] -1
 } {- foo 1 simple foo 1 text foo 0 {}}
 test parse-15.2 {Tcl_ParseQuotedString procedure, computing string length} testparser {
     testparser "foo bar" -1
@@ -903,11 +904,11 @@ test parse-15.53 {CommandComplete procedure} "
 test parse-15.54 {CommandComplete procedure} "
     info complete \"foo bar;# \{\"
 " 1
-test parse-15.55 {CommandComplete procedure} {
-    info complete "set x [bytestring \0]; puts hi"
+test parse-15.55 {CommandComplete procedure} testbytestring {
+    info complete "set x [testbytestring \0]; puts hi"
 } 1
-test parse-15.56 {CommandComplete procedure} {
-    info complete "set x [bytestring \0]; \{"
+test parse-15.56 {CommandComplete procedure} testbytestring {
+    info complete "set x [testbytestring \0]; \{"
 } 0
 test parse-15.57 {CommandComplete procedure} {
     info complete "# Comment should be complete command"
@@ -917,7 +918,7 @@ test parse-15.58 {CommandComplete procedure, memory leaks} {
 } 1
 test parse-15.59 {CommandComplete procedure} {
     # Test for Tcl Bug 684744
-    info complete [encoding convertfrom identity "\x00;if 1 \{"]
+    info complete [testbytestring "\x00;if 1 \{"]
 } 0
 test parse-15.60 {CommandComplete procedure} {
     # Test for Tcl Bug 1968882
