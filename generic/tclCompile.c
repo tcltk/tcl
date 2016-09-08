@@ -1791,9 +1791,17 @@ CompileCmdLiteral(
     CompileEnv *envPtr)
 {
     int numBytes;
-    const char *bytes = TclGetStringFromObj(cmdObj, &numBytes);
-    int cmdLitIdx = TclRegisterNewCmdLiteral(envPtr, bytes, numBytes);
-    Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
+    const char *bytes;
+    Command *cmdPtr;
+    int cmdLitIdx, extraLiteralFlags = LITERAL_CMD_NAME;
+
+    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
+    if ((cmdPtr != NULL) && (cmdPtr->flags & CMD_VIA_RESOLVER)) {
+	extraLiteralFlags |= LITERAL_UNSHARED;
+    }
+
+    bytes = Tcl_GetStringFromObj(cmdObj, &numBytes);
+    cmdLitIdx = TclRegisterLiteral(envPtr, bytes, numBytes, extraLiteralFlags);
 
     if (cmdPtr) {
 	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLitIdx), cmdPtr);
@@ -1828,8 +1836,8 @@ TclCompileInvocation(
 	    continue;
 	}
 
-	objIdx = TclRegisterNewLiteral(envPtr,
-		tokenPtr[1].start, tokenPtr[1].size);
+	objIdx = TclRegisterLiteral(envPtr,
+		tokenPtr[1].start, tokenPtr[1].size, 0);
 	if (envPtr->clNext) {
 	    TclContinuationsEnterDerived(TclFetchLiteral(envPtr, objIdx),
 		    tokenPtr[1].start - envPtr->source, envPtr->clNext);
@@ -1878,8 +1886,8 @@ CompileExpanded(
 	    continue;
 	}
 
-	objIdx = TclRegisterNewLiteral(envPtr,
-		tokenPtr[1].start, tokenPtr[1].size);
+	objIdx = TclRegisterLiteral(envPtr,
+		tokenPtr[1].start, tokenPtr[1].size, 0);
 	if (envPtr->clNext) {
 	    TclContinuationsEnterDerived(TclFetchLiteral(envPtr, objIdx),
 		    tokenPtr[1].start - envPtr->source, envPtr->clNext);

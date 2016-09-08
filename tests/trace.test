@@ -1227,7 +1227,7 @@ test trace-17.3 {traced variables must survive procedure exits} {
 
 test trace-18.1 {unset traces on procedure returns} {
     proc p1 {x y} {set a 44; p2 14}
-    proc p2 {z} {trace add variable z unset {traceCheck {lsort [uplevel 1 {info vars}]}}}
+    proc p2 {z} {trace add variable z unset {traceCheck {lsort [uplevel 2 {info vars}]}}}
     set info {}
     p1 foo bar
     set info
@@ -1263,6 +1263,27 @@ test trace-18.4 {namespace delete / trace vdelete combo, Bug \#1338280} {
     rename doTrace {}
     set info
 } 1110
+test trace-18.5 {Bug 7f02ff1efa} -setup {
+    proc constant {name value} {
+        upvar 1 $name c  
+        set c $value
+        trace variable c wu [list reset $value]
+    }
+    proc reset {v a i o} {
+        uplevel 1 [list constant $a $v]
+    }
+    proc demo {} {
+	constant pi 3.14
+    }
+} -body {
+    unset -nocomplain pi
+    demo
+    info exists pi
+} -cleanup {
+    rename demo {}
+    rename reset {}
+    rename constant {}
+} -result 0
 
 # Delete arrays when done, so they can be re-used as scalars
 # elsewhere.

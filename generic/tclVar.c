@@ -4956,13 +4956,16 @@ TclDeleteNamespaceVars(
 	VarHashRefCount(varPtr)++;	/* Make sure we get to remove from
 					 * hash. */
 	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, objPtr);
-	UnsetVarStruct(varPtr, NULL, iPtr, /* part1 */ objPtr, NULL, flags,
-		-1);
-	Tcl_DecrRefCount(objPtr);	/* Free no longer needed obj */
+	UnsetVarStruct(varPtr, NULL, iPtr, /* part1 */ objPtr,
+		NULL, flags, -1);
 
 	/*
-	 * Remove the variable from the table and force it undefined in case
-	 * an unset trace brought it back from the dead.
+	 * We just unset the variable. However, an unset trace might
+	 * have re-set it, or might have re-established traces on it.
+	 * This namespace and its vartable are going away unconditionally,
+	 * so we cannot let such things linger. That would be a leak.
+	 *
+	 * First we destroy all traces. ...
 	 */
 
 	if (TclIsVarTraced(varPtr)) {
@@ -4986,6 +4989,17 @@ TclDeleteNamespaceVars(
 		}
 	    }
 	}
+
+	/*
+	 * ...and then, if the variable still holds a value, we unset it
+	 * again. This time with no traces left, we're sure it goes away.
+	 */
+
+	if (!TclIsVarUndefined(varPtr)) {
+	    UnsetVarStruct(varPtr, NULL, iPtr, /* part1 */ objPtr,
+		    NULL, flags, -1);
+	}
+	Tcl_DecrRefCount(objPtr); /* free no longer needed obj */
 	VarHashRefCount(varPtr)--;
 	VarHashDeleteEntry(varPtr);
     }
@@ -5018,27 +5032,44 @@ TclDeleteVars(
     TclVarHashTable *tablePtr)	/* Hash table containing variables to
 				 * delete. */
 {
-    Tcl_Interp *interp = (Tcl_Interp *) iPtr;
     Tcl_HashSearch search;
     register Var *varPtr;
-    int flags;
-    Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-
-    /*
-     * Determine what flags to pass to the trace callback functions.
-     */
-
-    flags = TCL_TRACE_UNSETS;
-    if (tablePtr == &iPtr->globalNsPtr->varTable) {
-	flags |= TCL_GLOBAL_ONLY;
-    } else if (tablePtr == &currNsPtr->varTable) {
-	flags |= TCL_NAMESPACE_ONLY;
-    }
 
     for (varPtr = VarHashFirstVar(tablePtr, &search); varPtr != NULL;
 	 varPtr = VarHashFirstVar(tablePtr, &search)) {
-	UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr), NULL, flags,
-		-1);
+	VarHashRefCount(varPtr)++;
+
+	UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr),
+		NULL, TCL_TRACE_UNSETS, -1);
+
+        if (TclIsVarTraced(varPtr)) {
+            Tcl_HashEntry *tPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
+            VarTrace *tracePtr = Tcl_GetHashValue(tPtr);
+            ActiveVarTrace *activePtr;
+
+            while (tracePtr) {
+                VarTrace *prevPtr = tracePtr;
+
+                tracePtr = tracePtr->nextPtr;
+                prevPtr->nextPtr = NULL;
+                Tcl_EventuallyFree(prevPtr, TCL_DYNAMIC);
+            }
+            Tcl_DeleteHashEntry(tPtr);
+            varPtr->flags &= ~VAR_ALL_TRACES;
+            for (activePtr = iPtr->activeVarTracePtr; activePtr != NULL;
+                    activePtr = activePtr->nextPtr) {
+                if (activePtr->varPtr == varPtr) {
+                    activePtr->nextTracePtr = NULL;
+                }
+            }
+        }
+
+	if (!TclIsVarUndefined(varPtr)) {
+	    UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr),
+		    NULL, TCL_TRACE_UNSETS, -1);
+	}
+
+	VarHashRefCount(varPtr)--;
 	VarHashDeleteEntry(varPtr);
     }
     VarHashDeleteTable(tablePtr);
