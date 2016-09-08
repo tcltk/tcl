@@ -1,14 +1,333 @@
+A NOTE ON THE CHANGELOG:
+Starting in early 2011, Tcl source code has been under the management of
+fossil, hosted at http://core.tcl.tk/tcl/ .  Fossil presents a "Timeline"
+view of changes made that is superior in every way to a hand edited log file.
+Because of this, many Tcl developers are now out of the habit of maintaining
+this log file.  You may still find useful things in it, but the Timeline is
+a better first place to look now.
+============================================================================
+
+2013-09-19  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.6.1 TAGGED FOR RELEASE ***
+
+	* generic/tcl.h:	Bump version number to 8.6.1.
+	* library/init.tcl:
+	* unix/configure.in:
+	* win/configure.in:
+	* unix/tcl.spec:
+	* README:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
+2013-09-19  Donal Fellows  <dkf@users.sf.net>
+
+	* doc/next.n (METHOD SEARCH ORDER): Bug [3606943]: Corrected
+	description of method search order.
+
+2013-09-18  Donal Fellows  <dkf@users.sf.net>
+
+	Bump TclOO version to 1.0.1 for release.
+
+2013-09-17  Donal Fellows  <dkf@users.sf.net>
+
+	* generic/tclBinary.c (BinaryEncodeUu, BinaryDecodeUu): [Bug 2152292]:
+	Corrected implementation of the core of uuencode handling so that the
+	line length processing is correctly applied.
+	***POTENTIAL INCOMPATIBILITY***
+	Existing code that was using the old versions and working around the
+	limitations will now need to do far less. The -maxlen option now has
+	strict limits on the range of supported lengths; this is a limitation
+	of the format itself.
+
+2013-09-09  Donal Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (CloneProcedureMethod): [Bug 3609693]: Strip
+	the internal representation of method bodies during cloning in order
+	to ensure that any bound references to instance variables are removed.
+
+2013-09-01  Donal Fellows  <dkf@users.sf.net>
+
+	* generic/tclBinary.c (BinaryDecodeHex): [Bug b98fa55285]: Ensure that
+	whitespace at the end of a string don't cause the decoder to drop the
+	last decoded byte.
+
+2013-08-03  Donal Fellows  <dkf@users.sf.net>
+
+	* library/auto.tcl: [Patch 3611643]: Allow TclOO classes to be found
+	by the autoloading mechanism.
+
+2013-08-02  Donal Fellows  <dkf@users.sf.net>
+
+	* generic/tclOODefineCmds.c (ClassSuperSet): Bug [9d61624b3d]: Stop
+	crashes when emptying the superclass slot, even when doing elaborate
+	things with metaclasses.
+
+2013-08-01  Harald Oehlmann  <oehhar@users.sf.net>
+
+	* tclUnixNotify.c (Tcl_InitNotifier): Bug [a0bc856dcd]: Start notifier
+	thread again if we were forked, to solve Rivet bug 55153.
+
+2013-07-05  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Africa/Casablanca:
+	* library/tzdata/America/Asuncion:
+	* library/tzdata/Antarctica/Macquarie:
+	* library/tzdata/Asia/Gaza:
+	* library/tzdata/Asia/Hebron:
+	* library/tzdata/Asia/Jerusalem:
+	http://www.iana.org/time-zones/repository/releases/tzdata2013d.tar.gz
+
+2013-07-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclXtNotify.c: Bug [817249]: bring tclXtNotify.c up to date with
+	Tcl_SetNotifier() change.
+
+2013-07-02  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4:  Bug [32afa6e256]: dirent64 check is incorrect in tcl.m4
+	* unix/configure: (thanks to Brian Griffin)
+
+2013-06-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclConfig.c: Bug [9b2e636361]: Tcl_CreateInterp() needs
+	* generic/tclMain.c:   initialized encodings.
+
+2013-06-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclEvent.c: Bug [3611974]: InitSubsystems multiple thread
+	issue.
+
+2013-06-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/regc_locale.c: Bug [a876646efe]: re_expr character class
+	[:cntrl:] should contain \u0000 - \u001f
+
+2013-06-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmdsSZ.c (TclCompileTryCmd): [Bug 779d38b996]:
+	Rewrote the [try] compiler to generate better code in some cases and
+	to behave correctly in others; when an error happens during the
+	processing of an exception-trap clause or a finally clause, the
+	*original* return options are now captured in a -during option, even
+	when fully compiled.
+
+2013-06-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (INST_EXPAND_DROP): [Bugs 2835313, 3614226]:
+	New opcode to allow resetting the stack to get rid of an expansion,
+	restoring the stack to a known state in the process.
+	* generic/tclCompile.c, generic/tclCompCmds.c: Adjusted the compilers
+	for [break] and [continue] to get stack cleanup right in the majority
+	of cases.
+	* tests/for.test (for-7.*): Set of tests for these evil cases.
+
+2013-06-04  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4: Eliminate NO_VIZ macro as current zlib uses HAVE_HIDDEN
+	instead. One more last-moment fix for FreeBSD by Pietro Cerutti
+
+2013-06-03  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: fix for perf bug detected by Kieran
+	(https://groups.google.com/forum/?fromgroups#!topic/comp.lang.tcl/vfpI3bc-DkQ),
+	diagnosed by dgp to be a close relative of [Bug 781585], which was
+	fixed by commit	[f46fb50cb3]. This bug was introduced by myself in
+	commit [cbfe055d8c].
+
+2013-06-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileBreakCmd, TclCompileContinueCmd):
+	Added code to allow [break] and [continue] to be issued as a jump (in
+	the most common cases) rather than using the more expensive exception
+	processing path in the bytecode engine. [Bug 3614226]: Partial fix for
+	the issues relating to cleaning up the stack when dealing with [break]
+	and [continue].
+
+2013-05-27 Harald Oehlmann  <oehhar@users.sf.net>
+
+	* library/msgcat/msgcat.tcl: [Bug 3036566]: Also get locale from
+	registry key HCU\Control Panel\Desktop : PreferredUILanguages to honor
+	installed language packs on Vista+.
+	Bumped msgcat version to 1.5.2
+
+2013-05-22  Andreas Kupries  <andreask@activestate.com>
+
+	* tclCompile.c: Removed duplicate const qualifier causing the HP
+	native cc to error out.
+
+2013-05-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclUtf.c (TclUtfCasecmp): [Bug 3613609]: Replace problematic
+	uses of strcasecmp with a proper UTF-8-aware version. Affects both
+	[lsearch -nocase] and [lsort -nocase].
+
+2013-05-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/file.n: [Bug 3613671]: Added note to portability section on the
+	fact that [file owned] does not produce useful results on Windows.
+
+2013-05-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixFCmd.c (DefaultTempDir): [Bug 3613567]: Corrected logic
+	for checking return code of access() system call, which was inverted.
+
+2013-05-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4:     Fix for FreeBSD, and remove support for older
+	* unix/configure:  FreeBSD versions. Patch by Pietro Cerutti.
+
+2013-05-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmdsGR.c: Split tclCompCmds.c again to keep size of
+	code down.
+
+2013-05-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c: Add panic in order to detect incompatible
+	mingw32 sys/stat.h and sys/time.h headers.
+
+2013-05-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* compat/zlib/*: Upgrade to zlib 1.2.8
+
+2013-05-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	Optimizations and general bytecode generation improvements.
+	* generic/tclCompCmds.c (TclCompileAppendCmd, TclCompileLappendCmd):
+	(TclCompileReturnCmd): Make these generate bytecode in more cases.
+	(TclCompileListCmd): Make this able to push a literal when it can.
+	* generic/tclCompile.c (TclSetByteCodeFromAny, PeepholeOptimize):
+	Added checks to see if we can apply some simple cross-command-boundary
+	optimizations, and defined a small number of such optimizations.
+	(TclCompileScript): Added the special ability to compile the list
+	command with expansion ([list {*}blah]) into bytecode that does not
+	call an external command.
+
+2013-05-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclStubInit.c: Add support for Cygwin64, which has a 64-bit
+	* generic/tclDecls.h: "long" type. Binary compatibility with win64
+	requires that all stub entries use 32-bit long's, therefore the need
+	for various wrapper functions/macros. For Tcl 9 a better solution is
+	needed, but that cannot be done without introducing binary
+	incompatibility.
+
+2013-04-30  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl (::platform::LibcVersion):
+	* library/platform/pkgIndex.tcl: Followup to the 2013-01-30 change.
+	The RE become too restrictive again. SuSe added a timestamp after the
+	version. Loosened up a bit. Bumped package to version 1.0.12.
+
+2013-04-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileArraySetCmd): Generate better code
+	when the list of things to set is a literal.
+
+2013-04-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Implement Tcl_NewBooleanObj, Tcl_DbNewBooleanObj
+	and Tcl_SetBooleanObj as macros using Tcl_NewIntObj, Tcl_DbNewLongObj
+	and Tcl_SetIntObj. Starting with Tcl 8.5, this is exactly the same, it
+	only eliminates code duplication.
+	* generic/tclInt.h: Eliminate use of NO_WIDE_TYPE everywhere: It's
+	exactly the same as TCL_WIDE_INT_IS_LONG
+
+2013-04-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Implement many Tcl_*Var* functions and
+	Tcl_GetIndexFromObj as (faster/stack-saving) macros around resp their
+	Tcl_*Var*2 equivalent and Tcl_GetIndexFromObjStruct.
+
+2013-04-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Implement Tcl_Pkg* functions as
+	(faster/stack-saving) macros around Tcl_Pkg*Ex functions.
+
+2013-04-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/regc_color.c:	[Bug 3610026]: Stop crash when the number of
+	* generic/regerrs.h:	"colors" in a regular expression overflows a
+	* generic/regex.h:	short int.  Thanks to Heikki Linnakangas for
+	* generic/regguts.h:	the report and the patch.
+	* tests/regexp.test:
+
+2013-04-04  Reinhard Max  <max@suse.de>
+
+	* library/http/http.tcl (http::geturl): Allow URLs that don't have a
+	path, but a query query, e.g. http://example.com?foo=bar
+	* Bump the http package to 2.8.7.
+
+2013-03-22  Venkat Iyer <venkat@comit.com>
+	* library/tzdata/Africa/Cairo: Update to tzdata2013b.
+	* library/tzdata/Africa/Casablanca:
+	* library/tzdata/Africa/Gaborone:
+	* library/tzdata/Africa/Tripoli:
+	* library/tzdata/America/Asuncion:
+	* library/tzdata/America/Barbados:
+	* library/tzdata/America/Bogota:
+	* library/tzdata/America/Costa_Rica:
+	* library/tzdata/America/Curacao:
+	* library/tzdata/America/Nassau:
+	* library/tzdata/America/Port-au-Prince:
+	* library/tzdata/America/Santiago:
+	* library/tzdata/Antarctica/Palmer:
+	* library/tzdata/Asia/Aden:
+	* library/tzdata/Asia/Hong_Kong:
+	* library/tzdata/Asia/Muscat:
+	* library/tzdata/Asia/Rangoon:
+	* library/tzdata/Asia/Shanghai:
+	* library/tzdata/Atlantic/Bermuda:
+	* library/tzdata/Europe/Vienna:
+	* library/tzdata/Pacific/Easter:
+	* library/tzdata/Pacific/Fiji:
+	* library/tzdata/Asia/Khandyga: (new)
+	* library/tzdata/Asia/Ust-Nera: (new)
+	* library/tzdata/Europe/Busingen: (new)
+
+2013-03-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/auto.tcl: [Bug 2102614]: Add ensemble indexing support to
+	* tests/autoMkindex.test: [auto_mkindex].  Thanks Brian Griffin.
+
+2013-03-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclFCmd.c: [Bug 3597000]: Consistent [file copy] result.
+	* tests/fileSystem.test:
+
+2013-03-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c: [Bug 3608360]: Incompatible behaviour of "file
+	exists".
+
+2013-03-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/cmdAH.test (cmdAH-19.12): [Bug 3608360]: Added test to ensure
+	that we never ever allow [file exists] to do globbing.
+
+2013-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4: Patch by Andrew Shadura, providing better support for
+	three architectures they have in Debian.
+
+2013-03-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c:	[Bugs 3607246,3607372]: Unbalanced refcounts
+	* generic/tclLiteral.c:	of literals in the global literal table.
+
 2013-03-06  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/regc_nfa.c:	[Bugs 3604074,3606683] Rewrite of the
-	* generic/regcomp.c:	fixempties() routine (and supporting
-	routines) to completely eliminate the infinite loop hazard.
-	Thanks to Tom Lane for the much improved solution.
+	* generic/regc_nfa.c:	[Bugs 3604074,3606683]: Rewrite of the
+	* generic/regcomp.c:	fixempties() routine (and supporting routines)
+	to completely eliminate the infinite loop hazard. Thanks to Tom Lane
+	for the much improved solution.
 
 2013-02-28  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclLiteral.c:	Revise TclReleaseLiteral() to tolerate a
-	NULL interp argument.
+	* generic/tclLiteral.c:	Revise TclReleaseLiteral() to tolerate a NULL
+	interp argument.
 
 	* generic/tclCompile.c:	Update callers and revise mistaken comments.
 	* generic/tclProc.c:
@@ -4703,8 +5022,7 @@
 2010-05-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* tests/dict.test: Add missing tests for [Bug 3004007], fixed under
-	                   the radar on 2010-02-24 (dkf): EIAS violation in
-	                   list-dict conversions.
+	the radar on 2010-02-24 (dkf): EIAS violation in list-dict conversions
 
 2010-05-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -6558,10 +6876,9 @@
 
 2009-11-11  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* generic/tclIO.c: Fix [Bug 2888099] (close discards ENOSPC error)
-	                   by saving the errno from the first of two
-	                   FlushChannel()s. Uneasy to test; might need
-	                   specific channel drivers. Four-hands with aku.
+	* generic/tclIO.c: Fix [Bug 2888099] (close discards ENOSPC error) by
+	saving the errno from the first of two FlushChannel()s. Uneasy to
+	test; might need specific channel drivers. Four-hands with aku.
 
 2009-11-10  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
@@ -8518,15 +8835,14 @@
 	implementation of the mkstemp() function, which is apparently needed
 	on some platforms.
 
-        ******************************************************************
-        *** CHANGELOG ENTRIES FOR 2008 IN "ChangeLog.2008"             ***
-        *** CHANGELOG ENTRIES FOR 2006-2007 IN "ChangeLog.2007"        ***
-        *** CHANGELOG ENTRIES FOR 2005 IN "ChangeLog.2005"             ***
-        *** CHANGELOG ENTRIES FOR 2004 IN "ChangeLog.2004"             ***
-        *** CHANGELOG ENTRIES FOR 2003 IN "ChangeLog.2003"             ***
-        *** CHANGELOG ENTRIES FOR 2002 IN "ChangeLog.2002"             ***
-        *** CHANGELOG ENTRIES FOR 2001 IN "ChangeLog.2001"             ***
-        *** CHANGELOG ENTRIES FOR 2000 IN "ChangeLog.2000"             ***
-        *** CHANGELOG ENTRIES FOR 1999 AND EARLIER IN "ChangeLog.1999" ***
-        ******************************************************************
-
+	******************************************************************
+	*** CHANGELOG ENTRIES FOR 2008 IN "ChangeLog.2008"             ***
+	*** CHANGELOG ENTRIES FOR 2006-2007 IN "ChangeLog.2007"        ***
+	*** CHANGELOG ENTRIES FOR 2005 IN "ChangeLog.2005"             ***
+	*** CHANGELOG ENTRIES FOR 2004 IN "ChangeLog.2004"             ***
+	*** CHANGELOG ENTRIES FOR 2003 IN "ChangeLog.2003"             ***
+	*** CHANGELOG ENTRIES FOR 2002 IN "ChangeLog.2002"             ***
+	*** CHANGELOG ENTRIES FOR 2001 IN "ChangeLog.2001"             ***
+	*** CHANGELOG ENTRIES FOR 2000 IN "ChangeLog.2000"             ***
+	*** CHANGELOG ENTRIES FOR 1999 AND EARLIER IN "ChangeLog.1999" ***
+	******************************************************************

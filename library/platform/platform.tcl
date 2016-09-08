@@ -256,7 +256,7 @@ proc ::platform::LibcVersion {base _->_ vv} {
     if {![catch {
 	set vdata [lindex [split [exec $libc] \n] 0]
     }]} {
-	regexp {version ([0-9]+(\.[0-9]+)*), by} $vdata -> v
+	regexp {version ([0-9]+(\.[0-9]+)*)} $vdata -> v
 	foreach {major minor} [split $v .] break
 	set v glibc${major}.${minor}
 	return 1
@@ -368,7 +368,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.11
+package provide platform 1.0.12
 
 # ### ### ### ######### ######### #########
 ## Demo application

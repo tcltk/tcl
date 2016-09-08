@@ -1302,28 +1302,12 @@ TclInfoFrame(
 	 */
 
 	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
-	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd.str.cmd,
-		framePtr->cmd.str.len));
-	break;
-
-    case TCL_LOCATION_EVAL_LIST:
-	/*
-	 * List optimized evaluation. Type, line, cmd, the latter through
-	 * listPtr, possibly a frame.
-	 */
-
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(1));
-
-	/*
-	 * We put a duplicate of the command list obj into the result to
-	 * ensure that the 'pure List'-property of the command itself is not
-	 * destroyed. Otherwise the query here would disable the list
-	 * optimization path in Tcl_EvalObjEx.
-	 */
-
-	ADD_PAIR("cmd", Tcl_DuplicateObj(framePtr->cmd.listPtr));
+	if (framePtr->line) {
+	    ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
+	} else {
+	    ADD_PAIR("line", Tcl_NewIntObj(1));
+	}
+	ADD_PAIR("cmd", TclGetSourceFromFrame(framePtr, 0, NULL));
 	break;
 
     case TCL_LOCATION_PREBC:
@@ -1371,8 +1355,7 @@ TclInfoFrame(
 	    Tcl_DecrRefCount(fPtr->data.eval.path);
 	}
 
-	ADD_PAIR("cmd",
-		Tcl_NewStringObj(fPtr->cmd.str.cmd, fPtr->cmd.str.len));
+	ADD_PAIR("cmd", TclGetSourceFromFrame(fPtr, 0, NULL));
 	TclStackFree(interp, fPtr);
 	break;
     }
@@ -1391,8 +1374,7 @@ TclInfoFrame(
 	 * the result list object.
 	 */
 
-	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd.str.cmd,
-		framePtr->cmd.str.len));
+	ADD_PAIR("cmd", TclGetSourceFromFrame(framePtr, 0, NULL));
 	break;
 
     case TCL_LOCATION_PROC:
@@ -3005,7 +2987,7 @@ Tcl_LsearchObjCmd(
 	    dataType = INTEGER;
 	    break;
 	case LSEARCH_NOCASE:		/* -nocase */
-	    strCmpFn = strcasecmp;
+	    strCmpFn = TclUtfCasecmp;
 	    noCase = 1;
 	    break;
 	case LSEARCH_NOT:		/* -not */
@@ -3400,7 +3382,7 @@ Tcl_LsearchObjCmd(
 			 */
 
 			if (noCase) {
-			    match = (strcasecmp(bytes, patternBytes) == 0);
+			    match = (TclUtfCasecmp(bytes, patternBytes) == 0);
 			} else {
 			    match = (memcmp(bytes, patternBytes,
 				    (size_t) length) == 0);
@@ -3645,7 +3627,8 @@ Tcl_LsortObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
-    int i, j, index, indices, length, nocase = 0, sortMode, indexc;
+    int i, j, index, indices, length, nocase = 0, indexc;
+    int sortMode = SORTMODE_ASCII;
     int group, groupSize, groupOffset, idx, allocatedIndexVector = 0;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
     SortElement *elementArray, *elementPtr;
@@ -3991,7 +3974,7 @@ Tcl_LsortObjCmd(
 		goto done1;
 	    }
 	    elementArray[i].collationKey.intValue = a;
-	} else if (sortInfo.sortMode == SORTMODE_REAL) {
+	} else if (sortMode == SORTMODE_REAL) {
 	    double a;
 
 	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr,
@@ -4088,7 +4071,7 @@ Tcl_LsortObjCmd(
     TclStackFree(interp, elementArray);
 
   done:
-    if (sortInfo.sortMode == SORTMODE_COMMAND) {
+    if (sortMode == SORTMODE_COMMAND) {
 	TclDecrRefCount(sortInfo.compareCmdPtr);
 	TclDecrRefCount(listObj);
 	sortInfo.compareCmdPtr = NULL;
@@ -4233,7 +4216,7 @@ SortCompare(
 	order = strcmp(elemPtr1->collationKey.strValuePtr,
 		elemPtr2->collationKey.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_ASCII_NC) {
-	order = strcasecmp(elemPtr1->collationKey.strValuePtr,
+	order = TclUtfCasecmp(elemPtr1->collationKey.strValuePtr,
 		elemPtr2->collationKey.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_DICTIONARY) {
 	order = DictionaryCompare(elemPtr1->collationKey.strValuePtr,

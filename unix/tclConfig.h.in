@@ -115,6 +115,9 @@
 /* Define to 1 if you have the `gmtime_r' function. */
 #undef HAVE_GMTIME_R
 
+/* Compiler support for module scope symbols */
+#undef HAVE_HIDDEN
+
 /* Do we have the intptr_t type? */
 #undef HAVE_INTPTR_T
 
@@ -241,6 +244,9 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
+/* Define to 1 if you have the <termios.h> header file. */
+#undef HAVE_TERMIOS_H
+
 /* Should we use the global timezone variable? */
 #undef HAVE_TIMEZONE_VAR
 
@@ -339,9 +345,6 @@
 
 /* Do we have <values.h>? */
 #undef NO_VALUES_H
-
-/* No visibility attribute */
-#undef NO_VIZ
 
 /* Do we have wait3() */
 #undef NO_WAIT3

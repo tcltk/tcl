@@ -39,7 +39,7 @@ needs to conform to the following conventions.
     distclean:	Delete all generated files. 
 
     dist:	Produce a copy of the package's source code distribution.
-		Must respect the DIST_ROOT variable determing where to
+		Must respect the DIST_ROOT variable determining where to
 		write the generated directory.
 
 Packages that are written to make use of the Tcl Extension Architecture (TEA)

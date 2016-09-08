@@ -2,12 +2,12 @@
 # Sourcing this file into Tcl runs the tests and generates output for errors.
 # No output means no errors were found.
 #
-# Copyright (c) 2006-2012 Donal K. Fellows
+# Copyright (c) 2006-2013 Donal K. Fellows
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require TclOO 1.0
+package require TclOO 1.0.1
 package require tcltest 2
 if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
@@ -936,6 +936,69 @@ test oo-6.18 {Bug 3408830: more forwarding cases} -setup {
 } -returnCodes error -cleanup {
     fooClass destroy
 } -result {wrong # args: should be "::foo len string"}
+test oo-6.19 {Bug 3610404: forwarding resolution + traces} -setup {
+    oo::object create foo
+    unset -nocomplain ::result
+    set ::result {}
+} -body {
+    proc ::my {method} {lappend ::result global}
+    oo::objdefine foo {
+	method target {} {lappend ::result instance}
+	forward bar my target
+	method bump {} {
+	    set ns [info object namespace ::foo]
+	    rename ${ns}::my ${ns}::
+	    rename ${ns}:: ${ns}::my
+	}
+    }
+    proc harness {} {
+	foo target
+	foo bar
+	foo target
+    }
+    trace add execution harness enterstep {apply {{cmd args} {foo bump}}}
+    foo target
+    foo bar
+    foo bump
+    foo bar
+    harness
+} -cleanup {
+    catch {rename harness {}}
+    catch {rename ::my {}}
+    foo destroy
+} -result {instance instance instance instance instance instance}
+test oo-6.20 {Bug 3610404: forwarding resolution + traces} -setup {
+    oo::class create fooClass
+    fooClass create foo
+    unset -nocomplain ::result
+    set ::result {}
+} -body {
+    proc ::my {method} {lappend ::result global}
+    oo::define fooClass {
+	method target {} {lappend ::result class}
+	forward bar my target
+	method bump {} {
+	    set ns [info object namespace [self]]
+	    rename ${ns}::my ${ns}::
+	    rename ${ns}:: ${ns}::my
+	}
+    }
+    proc harness {} {
+	foo target
+	foo bar
+	foo target
+    }
+    trace add execution harness enterstep {apply {{cmd args} {foo bump}}}
+    foo target
+    foo bar
+    foo bump
+    foo bar
+    harness
+} -cleanup {
+    catch {rename harness {}}
+    catch {rename ::my {}}
+    fooClass destroy
+} -result {class class class class class class}
 
 test oo-7.1 {OO: inheritance 101} -setup {
     oo::class create superClass
@@ -1776,6 +1839,36 @@ test oo-15.9 {ensemble rewriting must not bleed through oo::copy} -setup {
 } -returnCodes error -cleanup {
     Foo destroy
 } -result {wrong # args: should be "::bar <cloned> a b"}
+test oo-15.10 {variable binding must not bleed through oo::copy} -setup {
+    oo::class create FooClass
+    set result {}
+} -body {
+    set obj1 [FooClass new]
+    oo::objdefine $obj1 {
+	variable var 
+	method m {} {
+	    set var foo
+	}
+	method get {} {
+	    return $var
+	}
+	export eval
+    }
+
+    $obj1 m
+    lappend result [$obj1 get]
+    set obj2 [oo::copy $obj1]
+    $obj2 eval {
+	set var bar
+    }
+    lappend result [$obj2 get]
+    $obj1 eval {
+	set var grill
+    }
+    lappend result [$obj1 get] [$obj2 get]
+} -cleanup {
+    FooClass destroy
+} -result {foo bar grill bar}
 
 test oo-16.1 {OO: object introspection} -body {
     info object
@@ -3374,6 +3467,42 @@ test oo-34.8 {TIP 380: slots - presence} {
 test oo-34.9 {TIP 380: slots - presence} {
     getMethods oo::objdefine::variable
 } {{-append -clear -set} {Get Set}}
+
+test oo-35.1 {Bug 9d61624b3d: Empty superclass must not cause crash} -setup {
+    oo::class create fruit {
+	method eat {} {}
+    }
+    set result {}
+} -body {
+    lappend result [fruit create ::apple] [info class superclasses fruit]
+    oo::define fruit superclass
+    lappend result [info class superclasses fruit] \
+	[info object class apple oo::object] \
+	[info class call fruit destroy] \
+	[catch { apple }]
+} -cleanup {
+    unset -nocomplain result
+    fruit destroy
+} -result {::apple ::oo::object ::oo::object 1 {{method destroy ::oo::object {core method: "destroy"}}} 1}
+test oo-35.2 {Bug 9d61624b3d: Empty superclass must not cause crash} -setup {
+    oo::class create fruitMetaclass {
+	superclass oo::class
+	method eat {} {}
+    }
+    set result {}
+} -body {
+    lappend result [fruitMetaclass create ::appleClass] \
+	[appleClass create orange] \
+	[info class superclasses fruitMetaclass]
+    oo::define fruitMetaclass superclass
+    lappend result [info class superclasses fruitMetaclass] \
+	[info object class appleClass oo::class] \
+	[catch { orange }] [info object class orange] \
+	[appleClass create pear]
+} -cleanup {
+    unset -nocomplain result
+    fruitMetaclass destroy
+} -result {::appleClass ::orange ::oo::class ::oo::class 1 1 ::appleClass ::pear}
 
 cleanupTests
 return

@@ -1112,6 +1112,7 @@ Tcl_SetObjErrorCode(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetErrorLine
 int
 Tcl_GetErrorLine(
     Tcl_Interp *interp)
@@ -1129,6 +1130,7 @@ Tcl_GetErrorLine(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetErrorLine
 void
 Tcl_SetErrorLine(
     Tcl_Interp *interp,

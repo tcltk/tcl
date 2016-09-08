@@ -877,8 +877,13 @@ TclInvalidateCmdLiteral(
     Tcl_Obj *literalObjPtr = CreateLiteral(iPtr, (char *) name, -1,
 	    NULL, nsPtr, 0, &globalPtr);
 
-    if (literalObjPtr && (literalObjPtr->typePtr == &tclCmdNameType)) {
-	TclFreeIntRep(literalObjPtr);
+    if (literalObjPtr != NULL) {
+	if (literalObjPtr->typePtr == &tclCmdNameType) {
+	    TclFreeIntRep(literalObjPtr);
+	}
+	/* Balance the refcount effects of TclCreateLiteral() above */
+	Tcl_IncrRefCount(literalObjPtr);
+	TclReleaseLiteral(interp, literalObjPtr);
     }
 }
 

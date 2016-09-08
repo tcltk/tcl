@@ -91,9 +91,9 @@ Note: Tcl no longer provides support for Win32s.
 This distribution contains an extensive test suite for Tcl.  Some of the
 tests are timing dependent and will fail from time to time.  If a test is
 failing consistently, please send us a bug report with as much detail as
-you can manage.  Please use the online database at
+you can manage to our tracker:
 
-	http://tcl.sourceforge.net/
+	http://core.tcl.tk/tcl/reportlist
 
 In order to run the test suite, you build the "test" target using the
 appropriate makefile for your compiler.

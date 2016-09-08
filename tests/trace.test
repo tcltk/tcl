@@ -1309,6 +1309,7 @@ test trace-19.3 {command rename traces don't fire on command deletion} {
 test trace-19.4 {trace add command rename doesn't trace recreated commands} {
     proc foo {} {}
     catch {rename bar {}}
+    set info {}
     trace add command foo rename traceCommand
     proc foo {} {}
     rename foo bar
@@ -1321,25 +1322,49 @@ test trace-19.5 {trace add command deleted removes traces} {
     trace info command foo
 } {}
 
-namespace eval tc {}
-proc tc::tcfoo {} {}
-test trace-19.6 {trace add command rename in namespace} {
+test trace-19.6 {trace add command rename in namespace} -setup {
+    namespace eval tc {}
+    proc tc::tcfoo {} {}
+} -body {
     trace add command tc::tcfoo rename traceCommand
     rename tc::tcfoo tc::tcbar
     set info
-} {::tc::tcfoo ::tc::tcbar rename}
-test trace-19.7 {trace add command rename in namespace back again} {
+} -cleanup {
+    namespace delete tc
+} -result {::tc::tcfoo ::tc::tcbar rename}
+test trace-19.7 {trace add command rename in namespace back again} -setup {
+    namespace eval tc {}
+    proc tc::tcfoo {} {}
+} -body {
+    trace add command tc::tcfoo rename traceCommand
+    rename tc::tcfoo tc::tcbar
     rename tc::tcbar tc::tcfoo
     set info
-} {::tc::tcbar ::tc::tcfoo rename}
-test trace-19.8 {trace add command rename in namespace to out of namespace} {
+} -cleanup {
+    namespace delete tc
+} -result {::tc::tcbar ::tc::tcfoo rename}
+test trace-19.8 {trace add command rename in namespace to out of namespace} -setup {
+    namespace eval tc {}
+    proc tc::tcfoo {} {}
+} -body {
+    trace add command tc::tcfoo rename traceCommand
     rename tc::tcfoo tcbar
     set info
-} {::tc::tcfoo ::tcbar rename}
-test trace-19.9 {trace add command rename back into namespace} {
+} -cleanup {
+    catch {rename tcbar {}}
+    namespace delete tc
+} -result {::tc::tcfoo ::tcbar rename}
+test trace-19.9 {trace add command rename back into namespace} -setup {
+    namespace eval tc {}
+    proc tc::tcfoo {} {}
+} -body {
+    trace add command tc::tcfoo rename traceCommand
+    rename tc::tcfoo tcbar
     rename tcbar tc::tcfoo
     set info
-} {::tcbar ::tc::tcfoo rename}
+} -cleanup {
+    namespace delete tc
+} -result {::tcbar ::tc::tcfoo rename}
 test trace-19.10 {trace add command failed rename doesn't trigger trace} {
     set info {}
     proc foo {} {}
@@ -1350,11 +1375,18 @@ test trace-19.10 {trace add command failed rename doesn't trigger trace} {
 } {}
 catch {rename foo {}}
 catch {rename bar {}}
-test trace-19.11 {trace add command qualifies when renamed in namespace} {
+
+test trace-19.11 {trace add command qualifies when renamed in namespace} -setup {
+    namespace eval tc {}
+    proc tc::tcfoo {} {}
+} -body {
     set info {}
+    trace add command tc::tcfoo {rename delete} traceCommand
     namespace eval tc {rename tcfoo tcbar}
     set info
-} {::tc::tcfoo ::tc::tcbar rename}
+} -cleanup {
+    namespace delete tc
+} -result {::tc::tcfoo ::tc::tcbar rename}
 
 # Make sure it exists again
 proc foo {} {}
@@ -2629,6 +2661,13 @@ test trace-39.1 {bug #3485022: tracing Bc'ed commands} -setup {
     rename dotrace {}
     rename foo {}
 } -result {3 | 0 1 1}
+
+test trace-40.1 {execution trace errors become command errors} {
+    proc foo args {}
+    trace add execution foo enter {rename foo {}; error bar;#}
+    catch foo m
+    return -level 0 $m[unset m]
+} bar
     
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).

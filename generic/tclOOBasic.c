@@ -4,7 +4,7 @@
  *	This file contains implementations of the "simple" commands and
  *	methods from the object-system core.
  *
- * Copyright (c) 2005-2012 by Donal K. Fellows
+ * Copyright (c) 2005-2013 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -88,7 +88,7 @@ TclOO_Class_Constructor(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    Tcl_Obj *invoke[3];
+    Tcl_Obj **invoke;
 
     if (objc-1 > Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -102,6 +102,7 @@ TclOO_Class_Constructor(
      * Delegate to [oo::define] to do the work.
      */
 
+    invoke = ckalloc(3 * sizeof(Tcl_Obj *));
     invoke[0] = oPtr->fPtr->defineName;
     invoke[1] = TclOOObjectName(interp, oPtr);
     invoke[2] = objv[objc-1];
@@ -115,7 +116,7 @@ TclOO_Class_Constructor(
     Tcl_IncrRefCount(invoke[1]);
     Tcl_IncrRefCount(invoke[2]);
     TclNRAddCallback(interp, DecrRefsPostClassConstructor,
-	    invoke[0], invoke[1], invoke[2], NULL);
+	    invoke, NULL, NULL, NULL);
 
     /*
      * Tricky point: do not want the extra reported level in the Tcl stack
@@ -131,9 +132,12 @@ DecrRefsPostClassConstructor(
     Tcl_Interp *interp,
     int result)
 {
-    TclDecrRefCount((Tcl_Obj *) data[0]);
-    TclDecrRefCount((Tcl_Obj *) data[1]);
-    TclDecrRefCount((Tcl_Obj *) data[2]);
+    Tcl_Obj **invoke = data[0];
+
+    TclDecrRefCount(invoke[0]);
+    TclDecrRefCount(invoke[1]);
+    TclDecrRefCount(invoke[2]);
+    ckfree(invoke);
     return result;
 }
 

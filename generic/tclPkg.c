@@ -949,7 +949,7 @@ Tcl_PackageObjCmd(
 		version = TclGetString(objv[3]);
 	    }
 	}
-	Tcl_PkgPresent(interp, name, version, exact);
+	Tcl_PkgPresentEx(interp, name, version, exact, NULL);
 	return TCL_ERROR;
 	break;
     }
@@ -974,7 +974,7 @@ Tcl_PackageObjCmd(
 	if (CheckVersionAndConvert(interp, argv3, NULL, NULL) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	return Tcl_PkgProvide(interp, argv2, argv3);
+	return Tcl_PkgProvideEx(interp, argv2, argv3, NULL);
     case PKG_REQUIRE:
     require:
 	if (objc < 3) {

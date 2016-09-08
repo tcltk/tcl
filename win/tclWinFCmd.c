@@ -1105,49 +1105,6 @@ DoRemoveJustDirectory(
 		SetFileAttributes(nativePath,
 			attr | FILE_ATTRIBUTE_READONLY);
 	    }
-
-	    /*
-	     * Windows 95 reports removing a non-empty directory as
-	     * EACCES, not EEXIST. If the directory is not empty, change errno
-	     * so caller knows what's going on.
-	     */
-
-	    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_WINDOWS) {
-		const char *path, *find;
-		HANDLE handle;
-		WIN32_FIND_DATAA data;
-		Tcl_DString buffer;
-		int len;
-
-		path = (const char *) nativePath;
-
-		Tcl_DStringInit(&buffer);
-		len = strlen(path);
-		find = Tcl_DStringAppend(&buffer, path, len);
-		if ((len > 0) && (find[len - 1] != '\\')) {
-		    TclDStringAppendLiteral(&buffer, "\\");
-		}
-		find = TclDStringAppendLiteral(&buffer, "*.*");
-		handle = FindFirstFileA(find, &data);
-		if (handle != INVALID_HANDLE_VALUE) {
-		    while (1) {
-			if ((strcmp(data.cFileName, ".") != 0)
-				&& (strcmp(data.cFileName, "..") != 0)) {
-			    /*
-			     * Found something in this directory.
-			     */
-
-			    Tcl_SetErrno(EEXIST);
-			    break;
-			}
-			if (FindNextFileA(handle, &data) == FALSE) {
-			    break;
-			}
-		    }
-		    FindClose(handle);
-		}
-		Tcl_DStringFree(&buffer);
-	    }
 	}
     }
 

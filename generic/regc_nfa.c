@@ -824,7 +824,7 @@ duptraverse(
      * make all normal tests (not reg-33.14) pass.
      */
 #ifndef DUPTRAVERSE_MAX_DEPTH
-#define DUPTRAVERSE_MAX_DEPTH 700
+#define DUPTRAVERSE_MAX_DEPTH 15000
 #endif
 
     if (depth++ > DUPTRAVERSE_MAX_DEPTH) {
