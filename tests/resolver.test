@@ -135,6 +135,9 @@ test resolver-1.5 {cmdNameObj sharing vs. cmd resolver: other than global NS} -s
 	    z
 	}
     }
+    namespace eval :: {
+	variable r2 ""
+    }
 } -constraints testinterpresolver -body {
     set r0 [namespace eval ::ns2 {x}]
     set r1 [namespace eval ::ns2 {z}]
@@ -184,7 +187,7 @@ test resolver-2.1 {compiled var resolver: Bug #3383616} -setup {
     # During the compilation the compiled var resolver, the resolve-specific
     # var info is allocated, during the execution of the body, the variable is
     # fetched and cached.
-    x;
+    x
     # During later calls, the cached variable is reused.
     x
     # When the proc is freed, the resolver-specific resolver var info is

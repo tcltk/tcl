@@ -12,6 +12,9 @@
  */
 
 #include "tclInt.h"
+#ifdef _WIN32
+#   include "tclWinInt.h"
+#endif
 #include <locale.h>
 
 /*
@@ -1157,6 +1160,16 @@ FileAttrAccessTimeCmd(
     if (GetStatBuf(interp, objv[1], Tcl_FSStat, &buf) != TCL_OK) {
 	return TCL_ERROR;
     }
+#if defined(_WIN32)
+    /* We use a value of 0 to indicate the access time not available */
+    if (buf.st_atime == 0) {
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                             "could not get access time for file \"%s\"",
+                             TclGetString(objv[1])));
+        return TCL_ERROR;
+    }
+#endif
+
     if (objc == 3) {
 	/*
 	 * Need separate variable for reading longs from an object on 64-bit
@@ -1229,6 +1242,15 @@ FileAttrModifyTimeCmd(
     if (GetStatBuf(interp, objv[1], Tcl_FSStat, &buf) != TCL_OK) {
 	return TCL_ERROR;
     }
+#if defined(_WIN32)
+    /* We use a value of 0 to indicate the modification time not available */
+    if (buf.st_mtime == 0) {
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                             "could not get modification time for file \"%s\"",
+                             TclGetString(objv[1])));
+        return TCL_ERROR;
+    }
+#endif
     if (objc == 3) {
 	/*
 	 * Need separate variable for reading longs from an object on 64-bit
@@ -1574,28 +1596,25 @@ FileAttrIsOwnedCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+#ifdef __CYGWIN__
+#define geteuid() (short)(geteuid)()
+#endif
+#if !defined(_WIN32)
     Tcl_StatBuf buf;
+#endif
     int value = 0;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    if (GetStatBuf(NULL, objv[1], Tcl_FSStat, &buf) == TCL_OK) {
-	/*
-	 * For Windows, there are no user ids associated with a file, so we
-	 * always return 1.
-	 *
-	 * TODO: use GetSecurityInfo to get the real owner of the file and
-	 * test for equivalence to the current user.
-	 */
-
-#if defined(_WIN32) || defined(__CYGWIN__)
-	value = 1;
+#if defined(_WIN32)
+    value = TclWinFileOwned(objv[1]);
 #else
+    if (GetStatBuf(NULL, objv[1], Tcl_FSStat, &buf) == TCL_OK) {
 	value = (geteuid() == buf.st_uid);
-#endif
     }
+#endif
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
     return TCL_OK;
 }

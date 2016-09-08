@@ -141,9 +141,13 @@ test cmdAH-2.6.2 {cd} -constraints {unix nonPortable} -setup {
 } -cleanup {
     cd $dir
 } -result {/}
-test cmdAH-2.6.3 {Tcl_CdObjCmd, bug #3118489} -returnCodes error -body {
+test cmdAH-2.6.3 {Tcl_CdObjCmd, bug #3118489} -setup {
+    set dir [pwd]
+} -returnCodes error -body {
     cd .\0
-} -result "couldn't change working directory to \".\0\": no such file or directory"
+} -cleanup {
+    cd $dir
+} -match glob -result "couldn't change working directory to \".\0\": *"
 test cmdAH-2.7 {Tcl_ConcatObjCmd} {
     concat
 } {}
@@ -878,9 +882,10 @@ test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unix testchmod} {
 } 1
 test cmdAH-18.5 {Tcl_FileObjCmd: executable} -constraints {win} -body {
     # On pc, must be a .exe, .com, etc.
-    set x [file exe $gorpfile]
+    set x {}
     set gorpexes {}
-    foreach ext {exe com cmd bat ps1} {
+    foreach ext {exe com cmd bat} {
+        lappend x [file exe nosuchfile.$ext]
         set gorpexe [makeFile foo gorp.$ext]
         lappend gorpexes $gorpexe
         lappend x [file exe $gorpexe] [file exe [string toupper $gorpexe]]
@@ -890,7 +895,7 @@ test cmdAH-18.5 {Tcl_FileObjCmd: executable} -constraints {win} -body {
     foreach gorpexe $gorpexes {
         removeFile $gorpexe
     }
-} -result {0 1 1 1 1 1 1 1 1 1 1}
+} -result {0 1 1 0 1 1 0 1 1 0 1 1}
 test cmdAH-18.6 {Tcl_FileObjCmd: executable} {} {
     # Directories are always executable.
     file exe $dirfile
@@ -1026,6 +1031,16 @@ test cmdAH-20.6 {Tcl_FileObjCmd: atime touch} -setup {
     set modatime [file atime $file $newatime]
     expr {$newatime == $modatime ? 1 : "$newatime != $modatime"}
 } -result 1
+test cmdAH-20.7 {
+    Tcl_FileObjCmd: atime (built-in Windows names)
+} -constraints {win} -body {
+    file atime con
+} -result "could not get access time for file \"con\"" -returnCodes error
+test cmdAH-20.7.1 {
+    Tcl_FileObjCmd: atime (built-in Windows names with dir path and extension)
+} -constraints {win} -body {
+    file atime [file join [temporaryDirectory] CON.txt]
+} -result "could not get access time for file \"[file join [temporaryDirectory] CON.txt]\"" -returnCodes error
 
 if {[testConstraint unix] && [file exists /tmp]} {
     removeFile touch.me /tmp
@@ -1257,6 +1272,16 @@ test cmdAH-24.13 {Tcl_FileObjCmd: directory mtime} -setup {
 } -cleanup {
     file delete -force $dirname
 } -result {0 1}
+test cmdAH-24.14 {
+    Tcl_FileObjCmd: mtime (built-in Windows names)
+} -constraints {win} -body {
+    file mtime con
+} -result "could not get modification time for file \"con\"" -returnCodes error
+test cmdAH-24.14.1 {
+    Tcl_FileObjCmd: mtime (built-in Windows names with dir path and extension)
+} -constraints {win} -body {
+    file mtime [file join [temporaryDirectory] CON.txt]
+} -result "could not get modification time for file \"[file join [temporaryDirectory] CON.txt]\"" -returnCodes error
 
 # owned
 test cmdAH-25.1 {Tcl_FileObjCmd: owned} -returnCodes error -body {
@@ -1276,6 +1301,12 @@ test cmdAH-25.2.1 {Tcl_FileObjCmd: owned} -constraints unix -setup {
 test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unix notRoot} {
     file owned /
 } 0
+test cmdAH-25.3.1 {Tcl_FileObjCmd: owned} -constraints win -body {
+    file owned $env(windir)
+} -result 0
+test cmdAH-25.4 {Tcl_FileObjCmd: owned} -body {
+    file owned nosuchfile
+} -result 0
 
 # readlink
 test cmdAH-26.1 {Tcl_FileObjCmd: readlink} -returnCodes error -body {
@@ -1306,6 +1337,16 @@ test cmdAH-27.2 {Tcl_FileObjCmd: size} {
 test cmdAH-27.3 {Tcl_FileObjCmd: size} {
     list [catch {file size _bogus_} msg] [string tolower $msg] $errorCode
 } {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
+test cmdAH-27.4 {
+    Tcl_FileObjCmd: size (built-in Windows names)
+} -constraints {win} -body {
+    file size con
+} -result 0
+test cmdAH-27.4.1 {
+    Tcl_FileObjCmd: size (built-in Windows names with dir path and extension)
+} -constraints {win} -body {
+    file size [file join [temporaryDirectory] con.txt]
+} -result 0
 
 catch {testsetplatform $platform}
 removeFile $gorpfile
@@ -1397,12 +1438,24 @@ test cmdAH-28.12 {Tcl_FileObjCmd: stat} -setup {
 } -cleanup {
     removeFile $filename
 } -result 1
+test cmdAH-28.13 {Tcl_FileObjCmd: stat (built-in Windows names)} -constraints {win} -setup {
+    unset -nocomplain stat
+} -body {
+    file stat con stat
+    lmap elem {atime ctime dev gid ino mode mtime nlink size type uid} {set stat($elem)}
+} -result {0 0 -1 0 0 8630 0 0 0 characterSpecial 0}
+test cmdAH-28.13.1 {Tcl_FileObjCmd: stat (built-in Windows names)} -constraints {win} -setup {
+    unset -nocomplain stat
+} -body {
+    file stat [file join [temporaryDirectory] CON.txt] stat
+    lmap elem {atime ctime dev gid ino mode mtime nlink size type uid} {set stat($elem)}
+} -result {0 0 -1 0 0 8630 0 0 0 characterSpecial 0}
 unset -nocomplain stat
 
 # type
 test cmdAH-29.1 {Tcl_FileObjCmd: type} -returnCodes error -body {
-    file size a b
-} -result {wrong # args: should be "file size name"}
+    file type a b
+} -result {wrong # args: should be "file type name"}
 test cmdAH-29.2 {Tcl_FileObjCmd: type} {
     file type $dirfile
 } directory
@@ -1437,6 +1490,16 @@ test cmdAH-29.4.1 {Tcl_FileObjCmd: type} -constraints {linkDirectory} -setup {
 test cmdAH-29.5 {Tcl_FileObjCmd: type} {
     list [catch {file type _bogus_} msg] [string tolower $msg] $errorCode
 } {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
+test cmdAH-29.6 {
+    Tcl_FileObjCmd: type (built-in Windows names)
+} -constraints {win} -body {
+    file type con
+} -result "characterSpecial"
+test cmdAH-29.6.1 {
+    Tcl_FileObjCmd: type (built-in Windows names, with dir path and extension)
+} -constraints {win} -body {
+    file type [file join [temporaryDirectory] CON.txt]
+} -result "characterSpecial"
 
 # Error conditions
 test cmdAH-30.1 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
