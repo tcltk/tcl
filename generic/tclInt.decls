@@ -1024,7 +1024,7 @@ declare 250 {
 # Allow extensions for optimization
 declare 251 {
     int TclRegisterLiteral(void *envPtr,
-	    char *bytes, int length, int flags)
+	    const char *bytes, int length, int flags)
 }
 
 ##############################################################################

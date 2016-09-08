@@ -28,7 +28,7 @@
  * Function prototypes for static functions in this file:
  */
 
-static Tcl_Obj *	CreateLiteral(Interp *iPtr, char *bytes, int length,
+static Tcl_Obj *	CreateLiteral(Interp *iPtr, const char *bytes, int length,
 			    int *newPtr, Namespace *nsPtr, int flags,
 			    LiteralEntry **globalPtrPtr);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
@@ -174,7 +174,7 @@ TclDeleteLiteralTable(
 Tcl_Obj *
 TclCreateLiteral(
     Interp *iPtr,
-    char *bytes,		/* The start of the string. Note that this is
+    const char *bytes,	/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
     int length)			/* Number of bytes in the string. */
 {
@@ -185,7 +185,7 @@ TclCreateLiteral(
 static Tcl_Obj *
 CreateLiteral(
     Interp *iPtr,
-    char *bytes,		/* The start of the string. Note that this is
+    const char *bytes,		/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
     int length,			/* Number of bytes in the string. */
     int *newPtr,
@@ -220,7 +220,7 @@ CreateLiteral(
 	    if (newPtr) {
 		*newPtr = 0;
 	    }
-	    if (flags & LITERAL_ON_HEAP) {
+	    if ((flags & LITERAL_ON_HEAP)) {
 		ckfree(bytes);
 	    }
 	    if (globalPtrPtr) {
@@ -239,7 +239,7 @@ CreateLiteral(
 	}
     }
     if (newPtr == NULL) {
-	if (flags & LITERAL_ON_HEAP) {
+	if ((flags & LITERAL_ON_HEAP)) {
 	    ckfree(bytes);
 	}
 	return NULL;
@@ -252,11 +252,21 @@ CreateLiteral(
 
     TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
-    if (flags & LITERAL_ON_HEAP) {
-	objPtr->bytes = bytes;
+    if ((flags & LITERAL_ON_HEAP)) {
+	objPtr->bytes = (char *) bytes;
 	objPtr->length = length;
     } else {
 	TclInitStringRep(objPtr, bytes, length);
+    }
+
+    if ((flags & LITERAL_UNSHARED)) {
+	/*
+	 * Make clear, that no global value is returned
+	 */
+	if (globalPtrPtr != NULL) {
+	    *globalPtrPtr = NULL;
+	}
+	return objPtr;
     }
 
 #ifdef TCL_COMPILE_DEBUG
@@ -377,7 +387,7 @@ int
 TclRegisterLiteral(
     void *ePtr,		/* Points to the CompileEnv in whose object
 				 * array an object is found or created. */
-    register char *bytes,	/* Points to string for which to find or
+    register const char *bytes,	/* Points to string for which to find or
 				 * create an object in CompileEnv's object
 				 * array. */
     int length,			/* Number of bytes in the string. If < 0, the
@@ -404,7 +414,7 @@ TclRegisterLiteral(
      * interp's global NS.
      */
 
-    if (flags & LITERAL_CMD_NAME) {
+    if ((flags & LITERAL_CMD_NAME)) {
 	if ((length >= 2) && (bytes[0] == ':') && (bytes[1] == ':')) {
 	    nsPtr = iPtr->globalNsPtr;
 	} else {
@@ -419,7 +429,7 @@ TclRegisterLiteral(
     if (new) {
 	objIndex = TclAddLiteralObj(envPtr, objPtr, NULL);
 	Tcl_SetHashValue(hePtr, INT2PTR(objIndex));
-	if (!globalNew) {
+	if (!globalNew && globalPtr) {
 	    globalPtr->refCount++;
 	}
     } else {
@@ -891,9 +901,8 @@ TclInvalidateCmdLiteral(
 				 * invalidate a cmd literal. */
 {
     Interp *iPtr = (Interp *) interp;
-    LiteralEntry *globalPtr;
-    Tcl_Obj *literalObjPtr = CreateLiteral(iPtr, (char *) name, -1,
-	    NULL, nsPtr, 0, &globalPtr);
+    Tcl_Obj *literalObjPtr = CreateLiteral(iPtr, name, strlen(name),
+	    NULL, nsPtr, 0, NULL);
 
     if (literalObjPtr && (literalObjPtr->typePtr == &tclCmdNameType)) {
 	TclFreeIntRep(literalObjPtr);
@@ -1007,13 +1016,6 @@ TclVerifyLocalLiteralTable(
 	if (objPtr->bytes == NULL) {
 	    Tcl_Panic("%s: literal has NULL string rep",
 		    "TclVerifyLocalLiteralTable");
-	}
-	if (LookupLiteralEntry((Tcl_Interp *) envPtr->iPtr, objPtr) == NULL) {
-	    int length;
-	    const char *bytes = TclGetStringFromObj(objPtr, &length);
-	    Tcl_Panic("%s: local literal \"%.*s\" is not global",
-			"TclVerifyLocalLiteralTable",
-			(length>60? 60 : length), bytes);
 	}
 	hePtr = Tcl_NextHashEntry(&search);
     }

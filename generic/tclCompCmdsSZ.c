@@ -1453,8 +1453,8 @@ TclSubstCompile(
 
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_TEXT:
-	    literal = TclRegisterNewLiteral(envPtr,
-		    tokenPtr->start, tokenPtr->size);
+	    literal = TclRegisterLiteral(envPtr,
+		    tokenPtr->start, tokenPtr->size, 0);
 	    TclEmitPush(literal, envPtr);
 	    TclAdvanceLines(&bline, tokenPtr->start,
 		    tokenPtr->start + tokenPtr->size);
@@ -1463,7 +1463,7 @@ TclSubstCompile(
 	case TCL_TOKEN_BS:
 	    length = TclParseBackslash(tokenPtr->start, tokenPtr->size,
 		    NULL, buf);
-	    literal = TclRegisterNewLiteral(envPtr, buf, length);
+	    literal = TclRegisterLiteral(envPtr, buf, length, 0);
 	    TclEmitPush(literal, envPtr);
 	    count++;
 	    continue;
