@@ -917,6 +917,29 @@ test zlib-12.1 {Tk Bug 9eb55debc5} -constraints zlib -setup {
 } -cleanup {
     $stream close
 } -result {12026 18000}
+test zlib-12.2 {Patrick Dunnigan's issue} -constraints zlib -setup {
+    set filesrc [makeFile {} test.input]
+    set filedst [makeFile {} test.output]
+    set f [open $filesrc "wb"]
+    for {set i 0} {$i < 10000} {incr i} {
+	puts -nonewline $f "x"
+    }
+    close $f
+} -body {
+    set fin [open $filesrc "rb"]
+    set fout [open $filedst "wb"]
+    set header [dict create filename "test.input" time 0]
+    try {
+	fcopy $fin [zlib push gzip $fout -header $header]
+    } finally {
+	close $fin
+	close $fout
+    }
+    file size $filedst
+} -cleanup {
+    removeFile $filesrc
+    removeFile $filedst
+} -result 4152
 
 ::tcltest::cleanupTests
 return

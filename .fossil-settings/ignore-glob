@@ -17,8 +17,10 @@
 */tclsh*
 */tcltest*
 */versions.vc
+unix/autoMkindex.tcl
 unix/dltest.marker
 unix/tcl.pc
+unix/tclIndex
 unix/pkgs/*
 win/pkgs/*
 win/tcl.hpj

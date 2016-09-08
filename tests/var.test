@@ -26,6 +26,21 @@ testConstraint testupvar [llength [info commands testupvar]]
 testConstraint testgetvarfullname [llength [info commands testgetvarfullname]]
 testConstraint testsetnoerr [llength [info commands testsetnoerr]]
 testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc getbytes {} {
+        return [lindex [split [memory info] \n] 3 3]
+    }
+    proc leaktest {script {iterations 3}} {
+        set end [getbytes]
+        for {set i 0} {$i < $iterations} {incr i} {
+            uplevel 1 $script
+            set tmp $end
+            set end [getbytes]
+        }
+        return [expr {$end - $tmp}]
+    }
+}
+
 
 catch {rename p ""}
 catch {namespace delete test_ns_var}
@@ -39,7 +54,7 @@ catch {unset arr}
 test var-1.1 {TclLookupVar, Array handling} -setup {
     catch {unset a}
 } -body {
-    set x "incr"  ;# force no compilation and runtime call to Tcl_IncrCmd 
+    set x "incr"  ;# force no compilation and runtime call to Tcl_IncrCmd
     set i 10
     set arr(foo) 37
     list [$x i] $i [$x arr(foo)] $arr(foo)
@@ -220,7 +235,7 @@ test var-3.3 {MakeUpvar, my var has TCL_GLOBAL_ONLY specified} -setup {
     set a 123321
     proc p {} {
 	# create global xx linked to global a
-	testupvar 1 a {} xx global 
+	testupvar 1 a {} xx global
     }
     list [p] $xx [set xx 789] $a
 } -result {{} 123321 789 789}
@@ -232,7 +247,7 @@ test var-3.4 {MakeUpvar, my var has TCL_NAMESPACE_ONLY specified} -setup {
 	catch {unset ::test_ns_var::vv}
 	proc p {} {
 	    # create namespace var vv linked to global a
-	    testupvar 1 a {} vv namespace 
+	    testupvar 1 a {} vv namespace
 	}
 	p
     }
@@ -534,11 +549,11 @@ test var-7.14 {Tcl_VariableObjCmd, array element parameter} -body {
     namespace eval test_ns_var { variable arrayvar(1) }
 } -returnCodes error -result "can't define \"arrayvar(1)\": name refers to an element in an array"
 test var-7.15 {Tcl_VariableObjCmd, array element parameter} -body {
-    namespace eval test_ns_var { 
+    namespace eval test_ns_var {
 	variable arrayvar
 	set arrayvar(1) x
 	variable arrayvar(1) y
-    }   
+    }
 } -returnCodes error -result "can't define \"arrayvar(1)\": name refers to an element in an array"
 test var-7.16 {Tcl_VariableObjCmd, no args (TIP 323)} {
     variable
@@ -578,6 +593,22 @@ test var-8.2 {TclDeleteNamespaceVars, "unset" traces on ns delete are called wit
     }
     list [namespace delete test_ns_var] $::info
 } -result {{} {::test_ns_var::v {} u}}
+
+test var-8.3 {TclDeleteNamespaceVars, mem leak} -constraints memory -setup {
+    proc ::t {a i o} {
+	set $a 321
+    }
+} -body {
+    leaktest {
+	namespace eval n {
+	    variable v 123
+	    trace variable v u ::t
+	}
+	namespace delete n
+    }
+} -cleanup {
+    rename ::t {}
+} -result 0
 
 test var-9.1 {behaviour of TclGet/SetVar simple get/set} -setup {
     catch {unset u}
@@ -760,7 +791,7 @@ test var-15.1 {segfault in [unset], [Bug 735335]} {
 	set var $name
     }
     #
-    # Note that the variable name has to be 
+    # Note that the variable name has to be
     # unused previously for the segfault to
     # be triggered.
     #
@@ -914,9 +945,6 @@ test var-21.0 {PushVarNameWord OBOE in compiled unset} -setup {
 } -result 1
 
 test var-22.0 {leak in array element unset: Bug a3309d01db} -setup {
-    proc getbytes {} {
-	lindex [split [memory info] \n] 3 3
-    }
     proc doit k {
 	variable A
 	set A($k) {}
@@ -936,13 +964,9 @@ test var-22.0 {leak in array element unset: Bug a3309d01db} -setup {
     set leakedBytes [expr {$end - $tmp}]
 } -cleanup {
     array unset A
-    rename getbytes {}
     rename doit {}
 } -result 0
 test var-22.1 {leak in localVarName intrep: Bug 80304238ac} -setup {
-    proc getbytes {} {
-	lindex [split [memory info] \n] 3 3
-    }
     proc doit {} {
 	interp create slave
 	slave eval {
@@ -964,8 +988,13 @@ test var-22.1 {leak in localVarName intrep: Bug 80304238ac} -setup {
     set leakedBytes [expr {$end - $tmp}]
 } -cleanup {
     array unset A
-    rename getbytes {}
     rename doit {}
+} -result 0
+test var-22.2 {leak in parsedVarName} -constraints memory -body {
+    set i 0
+    leaktest {lappend x($i)}
+} -cleanup {
+    unset -nocomplain i x
 } -result 0
 
 
@@ -973,6 +1002,7 @@ catch {namespace delete ns}
 catch {unset arr}
 catch {unset v}
 
+catch {rename getbytes ""}
 catch {rename p ""}
 catch {namespace delete test_ns_var}
 catch {namespace delete test_ns_var2}
