@@ -281,7 +281,6 @@ TclCompileIfCmd(
 		SetLineInformation(wordIdx);
 		Tcl_ResetResult(interp);
 		TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-		TclClearNumConversion(envPtr);
 		if (jumpFalseFixupArray.next >= jumpFalseFixupArray.end) {
 		    TclExpandJumpFixupArray(&jumpFalseFixupArray);
 		}
@@ -531,7 +530,6 @@ TclCompileIncrCmd(
 	} else {
 	    SetLineInformation(2);
 	    CompileTokens(envPtr, incrTokenPtr, interp);
-	    TclClearNumConversion(envPtr);
 	}
     } else {			/* No incr amount given so use 1. */
 	haveImmValue = 1;
@@ -873,7 +871,7 @@ TclCompileLappendCmd(
 
     /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
-    if (numWords == 1) {
+    if (numWords < 3) {
 	return TCL_ERROR;
     }
 
@@ -1480,7 +1478,7 @@ TclCompileLreplaceCmd(
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *tmpObj;
-    int idx1, idx2, i, offset;
+    int idx1, idx2, i, offset, offset2;
 
     if (parsePtr->numWords < 4) {
 	return TCL_ERROR;
@@ -1586,12 +1584,18 @@ TclCompileLreplaceCmd(
 	TclEmitOpcode(		INST_GT,			envPtr);
 	offset = CurrentOffset(envPtr);
 	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+	offset2 = CurrentOffset(envPtr);
+	TclEmitInstInt1(	INST_JUMP_FALSE1, 0,		envPtr);
 	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
 		"list doesn't contain element %d", idx1), NULL), envPtr);
 	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
 		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
 	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
 		envPtr->codeStart + offset + 1);
+	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset2,
+		envPtr->codeStart + offset2 + 1);
 	TclAdjustStackDepth(-1, envPtr);
     }
     TclEmitOpcode(		INST_DUP,			envPtr);
@@ -1636,12 +1640,18 @@ TclCompileLreplaceCmd(
 	TclEmitOpcode(		INST_GT,			envPtr);
 	offset = CurrentOffset(envPtr);
 	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+	offset2 = CurrentOffset(envPtr);
+	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
 	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
 		"list doesn't contain element %d", idx1), NULL), envPtr);
 	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
 		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
 	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
 		envPtr->codeStart + offset + 1);
+	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset2,
+		envPtr->codeStart + offset2 + 1);
 	TclAdjustStackDepth(-1, envPtr);
     }
     TclEmitOpcode(		INST_DUP,			envPtr);
@@ -2258,7 +2268,7 @@ TclCompileRegexpCmd(
 	 * converted pattern as a literal.
 	 */
 
-	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact)
+	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact, NULL)
 		== TCL_OK) {
 	    simple = 1;
 	    PushLiteral(envPtr, Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
@@ -2350,7 +2360,7 @@ TclCompileRegsubCmd(
     Tcl_Obj *patternObj = NULL, *replacementObj = NULL;
     Tcl_DString pattern;
     const char *bytes;
-    int len, exact, result = TCL_ERROR;
+    int len, exact, quantified, result = TCL_ERROR;
 
     if (parsePtr->numWords < 5 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
@@ -2410,7 +2420,8 @@ TclCompileRegsubCmd(
      */
 
     bytes = Tcl_GetStringFromObj(patternObj, &len);
-    if (TclReToGlob(NULL, bytes, len, &pattern, &exact) != TCL_OK || exact) {
+    if (TclReToGlob(NULL, bytes, len, &pattern, &exact, &quantified)
+	    != TCL_OK || exact || quantified) {
 	goto done;
     }
     bytes = Tcl_DStringValue(&pattern);

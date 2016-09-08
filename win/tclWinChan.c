@@ -843,6 +843,11 @@ TclpOpenFileChannel(
 
     nativeName = Tcl_FSGetNativePath(pathPtr);
     if (nativeName == NULL) {
+	if (interp != (Tcl_Interp *) NULL) {
+	    Tcl_AppendResult(interp, "couldn't open \"",
+	    TclGetString(pathPtr), "\": filename is invalid on this platform",
+	    NULL);
+	}
 	return NULL;
     }
 

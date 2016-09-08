@@ -840,7 +840,9 @@ Tcl_CreateInterp(void)
      */
 
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::disassemble",
-	    Tcl_DisassembleObjCmd, NULL, NULL);
+	    Tcl_DisassembleObjCmd, INT2PTR(0), NULL);
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::getbytecode",
+	    Tcl_DisassembleObjCmd, INT2PTR(1), NULL);
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
 	    Tcl_RepresentationCmd, NULL, NULL);
 

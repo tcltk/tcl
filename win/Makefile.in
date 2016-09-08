@@ -232,6 +232,7 @@ GENERIC_OBJS = \
 	tclConfig.$(OBJEXT) \
 	tclDate.$(OBJEXT) \
 	tclDictObj.$(OBJEXT) \
+	tclDisassemble.$(OBJEXT) \
 	tclEncoding.$(OBJEXT) \
 	tclEnsemble.$(OBJEXT) \
 	tclEnv.$(OBJEXT) \

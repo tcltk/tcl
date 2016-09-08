@@ -526,6 +526,11 @@ test regexpComp-9.6 {-all option to regsub} {
 	list [regsub -all ^ xxx 123 foo] $foo
     }
 } {1 123xxx}
+test regexpComp-9.7 {Bug 84af1192f5: -all option to regsub} {
+    evalInProc {
+	regsub -all {\(.*} 123(qwe) ""
+    }
+} 123
 
 test regexpComp-10.1 {expanded syntax in regsub} {
     evalInProc {

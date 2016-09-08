@@ -871,6 +871,80 @@ test iogt-6.1 {Push back and up} -constraints {testchannel knownBug} -body {
     close $f
 } -result {xxxghi}
 
+
+# Driver for a base channel that emits several short "files"
+# with each terminated by a fleeting EOF
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) .....
+                return {initialize finalize watch read}
+            }
+            finalize {
+                if {![info exists index($chan)]} {return}
+                unset index($chan) buffer($chan)
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+                if {![info exists index($chan)]} {
+                    driver initialize $chan
+                }
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                if {[string length $result] == 0} {
+                    driver finalize $chan
+                }
+                return $result
+            }
+        }
+    }
+
+test iogt-7.0 {Handle fleeting EOF} -constraints {testchannel} -body {
+    set chan [chan create read [namespace which driver]]
+    identity -attach $chan
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+
+proc delay {op data} {
+    variable store
+    switch -- $op {
+	create/write -	create/read  -
+	delete/write -	delete/read  -
+	flush/write -	write -
+	clear_read   {;#ignore}
+	flush/read  -
+	read        {
+	    if {![info exists store]} {set store {}}
+	    set reply $store
+	    set store $data
+	    return $reply
+	}
+	query/maxRead {return -1}
+    }
+}
+
+test iogt-7.1 {Handle fleeting EOF} -constraints {testchannel} -body {
+    set chan [chan create read [namespace which driver]]
+    testchannel transform $chan -command [namespace code delay]
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+
+rename delay {}
+rename driver {}
+
 # cleanup
 foreach file [list dummy dummyout __echo_srv__.tcl] {
     removeFile $file

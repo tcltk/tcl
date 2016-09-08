@@ -1309,7 +1309,6 @@ Tcl_FinalizeThread(void)
      *
      * Fix [Bug #571002]
      */
-
     TclFinalizeThreadData();
 }
 

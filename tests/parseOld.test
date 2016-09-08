@@ -263,14 +263,14 @@ test parseOld-7.11 {backslash substitution} {
     eval "list a \"b c\"\\\nd e"
 } {a {b c} d e}
 test parseOld-7.12 {backslash substitution} testbytestring {
-    list \ua2
-} [testbytestring "\xc2\xa2"]
+    expr {[list \ua2] eq [testbytestring "\xc2\xa2"]}
+} 1
 test parseOld-7.13 {backslash substitution} testbytestring {
-    list \u4e21
-} [testbytestring "\xe4\xb8\xa1"]
+    expr {[list \u4e21] eq [testbytestring "\xe4\xb8\xa1"]}
+} 1
 test parseOld-7.14 {backslash substitution} testbytestring {
-    list \u4e2k
-} [testbytestring "\xd3\xa2k"]
+    expr {[list \u4e2k] eq [testbytestring "\xd3\xa2k"]}
+} 1
 
 # Semi-colon.
 

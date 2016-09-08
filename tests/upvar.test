@@ -339,7 +339,7 @@ test upvar-8.9 {upvar won't create namespace variable that refers to procedure v
 	unset ::test_ns_1::a
     }
     MakeLink 1
-} -result {bad variable name "a": upvar won't create namespace variable that refers to procedure variable}
+} -result {bad variable name "a": can't create namespace variable that refers to procedure variable}
 test upvar-8.10 {upvar will create element alias for new array element} -setup {
     catch {unset upvarArray}
 } -body {
@@ -578,7 +578,6 @@ test upvar-NS-3.3 {CompileWord OBOE} -setup {
 } -cleanup {
     rename linenumber {}
 } -result 1
-
 
 # cleanup
 ::tcltest::cleanupTests

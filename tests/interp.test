@@ -3615,10 +3615,10 @@ test interp-38.3 {interp debug wrong args} -body {
 } -returnCodes {
     error
 } -result {wrong # args: should be "interp debug path ?-frame ?bool??"}
-test interp-38.4 {interp debug basic setup} -body {
+test interp-38.4 {interp debug basic setup} -constraints {!singleTestInterp} -body {
     interp debug {}
 } -result {-frame 0}
-test interp-38.5 {interp debug basic setup} -body {
+test interp-38.5 {interp debug basic setup} -constraints {!singleTestInterp} -body {
     interp debug {} -f
 } -result {0}
 test interp-38.6 {interp debug basic setup} -body {

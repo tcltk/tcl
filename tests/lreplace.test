@@ -15,7 +15,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
-
+
 test lreplace-1.1 {lreplace command} {
     lreplace {1 2 3 4 5} 0 0 a
 } {a 2 3 4 5}
@@ -130,7 +130,19 @@ test lreplace-3.1 {lreplace won't modify shared argument objects} {
     p
 } "a b c"
 
+test lreplace-4.1 {Bug ccc2c2cc98: lreplace edge case} {
+    lreplace {} 1 1
+} {}
+# Note that this test will fail in 8.5
+test lreplace-4.2 {Bug ccc2c2cc98: lreplace edge case} {
+    lreplace { } 1 1
+} {}
+
 # cleanup
 catch {unset foo}
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:
