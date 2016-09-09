@@ -1554,7 +1554,7 @@ CompileExprObj(
 	 */
 
 	if (compEnv.codeNext == compEnv.codeStart) {
-	    TclEmitPush(TclRegisterNewLiteral(&compEnv, "0", 1),
+	    TclEmitPush(TclRegisterLiteral(&compEnv, "0", 1, 0),
 		    &compEnv);
 	}
 
@@ -3173,7 +3173,7 @@ TEBCresume(
 	    Tcl_Obj *copyPtr = Tcl_NewListObj(objc - opnd + 1, NULL);
 
 	    Tcl_ListObjAppendElement(NULL, copyPtr, objPtr);
-	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0, 
+	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0,
 		    objc - opnd, objv + opnd);
 	    Tcl_DecrRefCount(objPtr);
 	    objPtr = copyPtr;

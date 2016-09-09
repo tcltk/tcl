@@ -4268,8 +4268,13 @@ TclSetCmdNameObj(
     Command *cmdPtr)		/* Points to Command structure that the
 				 * CmdName object should refer to. */
 {
+    register ResolvedCmdName *resPtr;
+
     if (objPtr->typePtr == &tclCmdNameType) {
-	return;
+	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
+	if (resPtr != NULL && resPtr->cmdPtr == cmdPtr) {
+	    return;
+	}
     }
     return;
 
