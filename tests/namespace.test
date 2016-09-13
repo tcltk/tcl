@@ -56,7 +56,7 @@ test namespace-2.2 {Tcl_GetCurrentNamespace} {
 
 test namespace-3.1 {Tcl_GetGlobalNamespace} {
     namespace eval test_ns_1 {namespace eval foo {namespace eval bar {} } }
-    # namespace children uses Tcl_GetGlobalNamespace
+    # namespace children uses Tcl_GetGlobalNamespace 
     namespace eval test_ns_1 {namespace children foo b*}
 } {::test_ns_1::foo::bar}
 
@@ -108,7 +108,7 @@ test namespace-6.2 {Tcl_CreateNamespace, odd number of :'s in name is okay} {
          [namespace eval test_ns_2:::::foo {namespace current}]
 } {::test_ns_1::foo ::test_ns_2::foo}
 test namespace-6.3 {Tcl_CreateNamespace, trailing ::s in ns name are ignored} {
-    list [catch {namespace eval test_ns_7::: {namespace current}} msg] $msg
+    list [catch {namespace eval test_ns_7::: {namespace current}} msg] $msg 
 } {0 ::test_ns_7}
 test namespace-6.4 {Tcl_CreateNamespace, trailing ::s in ns name are ignored} {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -195,6 +195,7 @@ test namespace-7.7 {Bug 1655305} -setup {
 } -cleanup {
     interp delete slave
 } -result {}
+
 test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
     catch {interp delete test_interp}
     interp create test_interp
@@ -264,7 +265,7 @@ test namespace-8.5 {TclTeardownNamespace: preserve errorInfo; errorCode values} 
     invoked from within
 "slave eval error foo bar baz"}
 test namespace-8.6 {TclTeardownNamespace: preserve errorInfo; errorCode values} {
-    interp create slave
+    interp create slave 
     slave eval {trace add variable errorCode write {namespace delete :: ;#}}
     catch {slave eval error foo bar baz}
     interp delete slave
@@ -1084,17 +1085,17 @@ test namespace-22.5 {NamespaceCodeCmd, in other namespace} {
         namespace code cmd
     }
 } {::namespace inscope ::test_ns_1 cmd}
-test namespace-22.6 {NamespaceCodeCmd, in other namespace} {
-    namespace eval test_ns_1 {
-	variable v 42
-    }
-    namespace eval test_ns_2 {
-	proc namespace args {}
-    }
-    namespace eval test_ns_2 [namespace eval test_ns_1 {
-	namespace code {set v}
-    }]
-} {42}
+test namespace-22.6 {NamespaceCodeCmd, in other namespace} { 
+    namespace eval test_ns_1 { 
+	variable v 42 
+    } 
+    namespace eval test_ns_2 { 
+	proc namespace args {} 
+    } 
+    namespace eval test_ns_2 [namespace eval test_ns_1 { 
+	namespace code {set v} 
+    }] 
+} {42} 
 test namespace-22.7 {NamespaceCodeCmd, Bug 3202171} {
     namespace eval demo {
 	proc namespace args {puts $args}
@@ -1645,7 +1646,7 @@ test namespace-40.1 {Ignoring namespace proc "unknown"} -setup {
     namespace eval ns {proc unknown args {return local}}
     list [namespace eval ns aaa bbb] [namespace eval ns aaa]
 } -cleanup {
-    rename unknown {}
+    rename unknown {}   
     rename _unknown unknown
     namespace delete ns
 } -result {global global}
@@ -1656,7 +1657,7 @@ test namespace-41.1 {Shadowing byte-compiled commands, Bug: 231259} {
 	set res {}
 	proc test {} {
 	    set ::g 0
-	}
+	}  
 	lappend ::res [test]
 	proc set {a b} {
 	    ::set a [incr b]

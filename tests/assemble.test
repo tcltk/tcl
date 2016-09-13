@@ -301,12 +301,12 @@ test assemble-7.1 {add, wrong # args} {
     -result {wrong # args*}
 }
 test assemble-7.2 {add} {
-    -body {
+    -body { 
 	assemble {
 	    push 2
 	    push 2
 	    add
-	}
+	} 
     }
     -result {4}
 }
@@ -349,7 +349,7 @@ test assemble-7.5 {bitwise ops} {
 }
 test assemble-7.6 {div} {
     -body {
-	assemble {push 999999; push 7; div}
+	assemble {push 999999; push 7; div} 
     }
     -result 142857
 }
@@ -360,7 +360,7 @@ test assemble-7.7 {dup} {
 	}
     }
     -result 9
-}
+}	
 test assemble-7.8 {eq} {
     -body {
 	list \
@@ -638,7 +638,7 @@ test assemble-7.24 {lsetList} {
 test assemble-7.25 {lshift} {
     -body {
 	assemble {push 16; push 4; lshift}
-    }
+    } 
     -result 256
 }
 test assemble-7.26 {mod} {
@@ -678,7 +678,7 @@ test assemble-7.30 {pop} {
 test assemble-7.31 {rshift} {
     -body {
 	assemble {push 257; push 4; rshift}
-    }
+    } 
     -result 16
 }
 test assemble-7.32 {storeArrayStk} {
@@ -1201,7 +1201,7 @@ test assemble-10.7 {expr - noncompilable} {
 
 # assemble-11 - ASSEM_LVT4 (exist, existArray, dictAppend, dictLappend,
 #			    nsupvar, variable, upvar)
-
+		
 test assemble-11.1 {exist - wrong # args} {
     -body {
 	assemble {exist}
@@ -1310,7 +1310,7 @@ test assemble-11.10 {variable} {
 }
 
 # assemble-12 - ASSEM_LVT1 (incr and incrArray)
-
+		
 test assemble-12.1 {incr - wrong # args} {
     -body {
 	assemble {incr}
@@ -1743,16 +1743,16 @@ test assemble-17.9 {jump - resolve a label multiple times} {
 	    set result {}
 	    assemble {
 		jump common
-
+		
 		label zero
-		pop
+		pop		
 		incrImm case 1
 		pop
 		push a
 		append result
 		pop
 		jump common
-
+		
 		label one
 		pop
 		incrImm case 1
@@ -1761,7 +1761,7 @@ test assemble-17.9 {jump - resolve a label multiple times} {
 		append result
 		pop
 		jump common
-
+		
 		label common
 		load case
 		dup
@@ -1780,7 +1780,7 @@ test assemble-17.9 {jump - resolve a label multiple times} {
 		push 3
 		eq
 		jumpTrue three
-
+		
 		label two
 		pop
 		incrImm case 1
@@ -1789,7 +1789,7 @@ test assemble-17.9 {jump - resolve a label multiple times} {
 		append result
 		pop
 		jump common
-
+		
 		label three
 		pop
 		incrImm case 1
@@ -1887,7 +1887,7 @@ test assemble-17.15 {multiple passes of code resizing} {
 	append body {label b15; push b; concat 2; nop; nop; jump c} \n
 	append body {label d}
 	proc x {} [list assemble $body]
-    }
+    }	
     -body {
 	x
     }
@@ -2080,7 +2080,7 @@ test assemble-20.5 {lsetFlat - negative operand count} {
 test assemble-20.6 {lsetFlat} {
     -body {
 	assemble {push b; push a; lsetFlat 2}
-    }
+    } 
     -result b
 }
 test assemble-20.7 {lsetFlat} {
@@ -3066,12 +3066,12 @@ test assemble-40.1 {unbalanced stack} {
 	    [catch {
 		assemble {
 		    push 3
-		    dup
-		    mult
+		    dup 
+		    mult 
 		    push 4
-		    dup
-		    mult
-		    pop
+		    dup 
+		    mult 
+		    pop 
 		    expon
 		}
 	    } result] $result $::errorInfo
@@ -3170,7 +3170,7 @@ test assemble-50.1 {Ulam's 3n+1 problem, TAL implementation} {
 		load n;		# max
 		dup;		# max n
 		jump start;     # max n
-
+	    
 		label loop;	# max n
 		over 1;         # max n max
 		over 1;		# max in max n
@@ -3180,29 +3180,29 @@ test assemble-50.1 {Ulam's 3n+1 problem, TAL implementation} {
 		reverse 2;      # n max
 		pop;            # n
 		dup;            # n n
-
+	    
 		label skip;	# max n
 		dup;            # max n n
 		push 2;         # max n n 2
 		mod;            # max n n%2
 		jumpTrue odd;   # max n
-
+	    
 		push 2;         # max n 2
 		div;            # max n/2 -> max n
 		jump start;     # max n
-
+	     
 		label odd;	# max n
 		push 3;         # max n 3
 		mult;           # max 3*n
 		push 1;         # max 3*n 1
 		add;            # max 3*n+1
-
+	    
 		label start;	# max n
 		dup;		# max n n
 		push 1;		# max n n 1
 		neq;		# max n n>1
 		jumpTrue loop;	# max n
-
+	    
 		pop;		# max
 	    }
 	}
@@ -3232,7 +3232,7 @@ test assemble-51.3 {memory leak testing} memory {
 		load n;		# max
 		dup;		# max n
 		jump start;     # max n
-
+	    
 		label loop;	# max n
 		over 1;         # max n max
 		over 1;		# max in max n
@@ -3242,29 +3242,29 @@ test assemble-51.3 {memory leak testing} memory {
 		reverse 2;      # n max
 		pop;            # n
 		dup;            # n n
-
+	    
 		label skip;	# max n
 		dup;            # max n n
 		push 2;         # max n n 2
 		mod;            # max n n%2
 		jumpTrue odd;   # max n
-
+	    
 		push 2;         # max n 2
 		div;            # max n/2 -> max n
 		jump start;     # max n
-
+	     
 		label odd;	# max n
 		push 3;         # max n 3
 		mult;           # max 3*n
 		push 1;         # max 3*n 1
 		add;            # max 3*n+1
-
+	    
 		label start;	# max n
 		dup;		# max n n
 		push 1;		# max n n 1
 		neq;		# max n n>1
 		jumpTrue loop;	# max n
-
+	    
 		pop;		# max
 	    }
 	}} 1

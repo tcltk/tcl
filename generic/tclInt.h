@@ -168,20 +168,6 @@ typedef struct Tcl_ResolverInfo {
 				/* Procedure handling variable name resolution
 				 * at compile time. */
 } Tcl_ResolverInfo;
-/*
- * This flag bit should not interfere with TCL_GLOBAL_ONLY,
- * TCL_NAMESPACE_ONLY, or TCL_LEAVE_ERR_MSG; it signals that the variable
- * lookup is performed for upvar (or similar) purposes, with slightly
- * different rules:
- *    - Bug #696893 - variable is either proc-local or in the current
- *	namespace; never follow the second (global) resolution path
- *    - Bug #631741 - do not use special namespace or interp resolvers
- *
- * It should also not collide with the (deprecated) TCL_PARSE_PART1 flag
- * (Bug #835020)
- */
-
-#define TCL_AVOID_RESOLVERS 0x40000
 
 /*
  * This flag bit should not interfere with TCL_GLOBAL_ONLY,
@@ -1691,11 +1677,13 @@ typedef struct Command {
  * (these last two flags are defined in tcl.h)
  */
 
-#define CMD_IS_DELETED		    0x1
-#define CMD_TRACE_ACTIVE	    0x2
-#define CMD_HAS_EXEC_TRACES	    0x4
-#define CMD_COMPILES_EXPANDED	    0x8
+#define CMD_IS_DELETED		    0x01
+#define CMD_TRACE_ACTIVE	    0x02
+#define CMD_HAS_EXEC_TRACES	    0x04
+#define CMD_COMPILES_EXPANDED	    0x08
 #define CMD_REDEF_IN_PROGRESS	    0x10
+#define CMD_VIA_RESOLVER	    0x20
+
 
 /*
  *----------------------------------------------------------------
