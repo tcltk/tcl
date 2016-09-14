@@ -3177,6 +3177,10 @@ MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
 #endif
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
+MODULE_SCOPE int	TclZipfsInit(Tcl_Interp *interp);
+MODULE_SCOPE int        TclZipfsMount(Tcl_Interp *interp, const char *zipname,
+			 const char *mntpt, const char *passwd);
+MODULE_SCOPE int 	TclZipfsUnmount(Tcl_Interp *interp, const char *zipname);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void	TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);

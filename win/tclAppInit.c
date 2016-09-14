@@ -25,12 +25,9 @@
 #include <tchar.h>
 
 #ifdef TCL_TEST
-#include "tclZipfs.h"
 extern Tcl_PackageInitProc Tcltest_Init;
 extern Tcl_PackageInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
-
-MODULE_SCOPE int Tcl_Zvfs_Boot(const char *,const char *,const char *);
 
 #if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
 extern Tcl_PackageInitProc Registry_Init;
@@ -128,13 +125,7 @@ _tmain(
 #ifdef TCL_LOCAL_MAIN_HOOK
     TCL_LOCAL_MAIN_HOOK(&argc, &argv);
 #endif
-#ifdef TCL_ZIPVFS
-    #define TCLKIT_INIT     "main.tcl"
-    #define TCLKIT_VFSMOUNT "/zvfs"
-    Tcl_FindExecutable(argv[0]);
-    CONST char *cp=Tcl_GetNameOfExecutable();
-    Tcl_Zvfs_Boot(cp,TCLKIT_VFSMOUNT,TCLKIT_INIT);
-#endif
+
     Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
     return 0;			/* Needed only to prevent compiler warning. */
 }
@@ -165,9 +156,6 @@ Tcl_AppInit(
     if ((Tcl_Init)(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    if(Tcl_StaticPackage(interp, "zipfs", Tclzipfs_Init, Tclzipfs_SafeInit) == TCL_ERROR ) {
-	return TCL_ERROR;
-    }
 
 #if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
     if (Registry_Init(interp) == TCL_ERROR) {
@@ -186,9 +174,6 @@ Tcl_AppInit(
 	return TCL_ERROR;
     }
     Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
-    if (Tclzipfs_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
 #endif /* TCL_TEST */
 
     /*
