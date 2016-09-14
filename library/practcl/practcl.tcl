@@ -1121,11 +1121,16 @@ proc ::practcl::build::DEFS {PROJECT DEFS namevar versionvar defsvar} {
     set field [string range $item 0 [expr {$eqidx-1}]]
     set value [string range $item [expr {$eqidx+1}] end]
     set emap {}
-    lappend emap \x5c \x5c\x5c \x20 \x5c\x20 \x22 \x5c\x22 \x28 \x5c\x28 \x29 \x5c\x29
-    if {[string is integer -strict $value]} {
-      append defs " -D${field}=$value"
+    # On Windows we need to do some munging of escape characters
+    if {[practcl::os]=="windows"} {
+      lappend emap \x5c \x5c\x5c \x20 \x5c\x20 \x22 \x5c\x22 \x28 \x5c\x28 \x29 \x5c\x29
+      if {[string is integer -strict $value]} {
+        append defs " -D${field}=$value"
+      } else {
+        append defs " -D${field}=[string map $emap $value]"
+      }
     } else {
-      append defs " -D${field}=[string map $emap $value]"
+      append defs " -D${field}=$value"
     }
     set idx $ndx
   }
@@ -1229,13 +1234,18 @@ if {[file exists {%vfs_tk_library%}]} {
   CONST char *archive;
   Tcl_FindExecutable(*argv[0]);
   archive=Tcl_GetNameOfExecutable();
-
+}
+  if {![$PROJECT define get CORE_ZIPFS 0]} {
+    ::practcl::cputs zvfsboot {
+  /*
+  ** We have to initialize the virtual filesystem before calling
+  ** Tcl_Init().  Otherwise, Tcl_Init() will not be able to find
+  ** its startup script files.
+  */
   Tclzipfs_Init(NULL);
+}
+    $PROJECT include {"tclZipfs.h"}
   }
-  # We have to initialize the virtual filesystem before calling
-  # Tcl_Init().  Otherwise, Tcl_Init() will not be able to find
-  # its startup script files.
-  $PROJECT include {"tclZipfs.h"}
   
   ::practcl::cputs zvfsboot "  if(!TclZipfsMount(NULL, archive, \"%vfsroot%\", NULL)) \x7B "
   ::practcl::cputs zvfsboot {
@@ -1656,6 +1666,7 @@ proc ::practcl::build::static-tclsh {outfile PROJECT} {
   # with the internals of a staticly linked Tcl
   ###
   ::practcl::build::DEFS $PROJECT $TCL(defs) name version defs
+  
   set debug [$PROJECT define get debug 0]
   set NAME [string toupper $name]
   set result {}
@@ -3481,27 +3492,30 @@ char *
       set PLATFORM_SRC_DIR unix
       my add class csource ofile [my define get name]_appinit.o filename [file join $TCLSRCDIR unix tclAppInit.c] extra [list -DTCL_LOCAL_MAIN_HOOK=[my define get TCL_LOCAL_MAIN_HOOK Tclkit_MainHook] -DTCL_LOCAL_APPINIT=[my define get TCL_LOCAL_APPINIT Tclkit_AppInit]]
     }
-    ###
-    # Add local static Zlib implementation
-    ###
-    set cdir [file join $TCLSRCDIR compat zlib]
-    foreach file {
-      adler32.c compress.c crc32.c
-      deflate.c infback.c inffast.c
-      inflate.c inftrees.c trees.c
-      uncompr.c zutil.c
-    } {
-      my add [file join $cdir $file]
-    }
 
     ###
     # Pre 8.7, Tcl doesn't include a Zipfs implementation
     # in the core. Grab the one from odielib
     ###
-    set zipfs [file join $TCLSRCDIR generic zvfs.c]
-    if {![file exists $zipfs]} {
+    set zipfs [file join $TCLSRCDIR generic tclZipfs.c]
+    if {[file exists $zipfs]} {
+      my define set CORE_ZIPFS 1
+    } else {
+      ###
+      # Add local static Zlib implementation
+      ###
+      set cdir [file join $TCLSRCDIR compat zlib]
+      foreach file {
+        adler32.c compress.c crc32.c
+        deflate.c infback.c inffast.c
+        inflate.c inftrees.c trees.c
+        uncompr.c zutil.c
+      } {
+        my add [file join $cdir $file]
+      }
       # The Odie project maintains a mirror of the version
       # released with the Tcl core
+      my define set CORE_ZIPFS 0
       my add_project odie {
         tag trunk
         class subproject
@@ -3512,9 +3526,9 @@ char *
       set cdir [file join $ODIESRCROOT compat zipfs]
       my define add include_dir $cdir
       set zipfs [file join $cdir zvfs.c]
+      my add class csource filename $zipfs initfunc Tclzipfs_Init pkg_name zipfs pkg_vers 1.0 autoload 1
     }
     
-    my add class csource filename $zipfs initfunc Tclzipfs_Init pkg_name zipfs pkg_vers 1.0 autoload 1
 
     my define add include_dir [file join $TKSRCDIR generic]
     my define add include_dir [file join $TKSRCDIR $PLATFORM_SRC_DIR]
