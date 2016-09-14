@@ -345,7 +345,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclUtil.obj \
 	$(TMP_DIR)\tclVar.obj \
 	$(TMP_DIR)\tclZlib.obj \
-	$(TMP_DIR)\zipfs.obj
+	$(TMP_DIR)\tclZipfs.obj
 
 ZLIBOBJS = \
 	$(TMP_DIR)\adler32.obj \
