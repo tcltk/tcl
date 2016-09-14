@@ -982,6 +982,9 @@ Tcl_CreateInterp(void)
     if (TclZlibInit(interp) != TCL_OK) {
 	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
     }
+    if (TclZipfsInit(interp) != TCL_OK) {
+	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+    }
 #endif
 
     TOP_CB(iPtr) = NULL;

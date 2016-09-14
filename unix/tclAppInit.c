@@ -15,9 +15,7 @@
 #undef BUILD_tcl
 #undef STATIC_BUILD
 #include "tcl.h"
-#ifdef HAVE_ZLIB
-#include "tclZipfs.h"
-#endif
+
 #ifdef TCL_TEST
 extern Tcl_PackageInitProc Tcltest_Init;
 extern Tcl_PackageInitProc Tcltest_SafeInit;
@@ -42,7 +40,6 @@ extern Tcl_PackageInitProc Tclxttest_Init;
 #endif
 MODULE_SCOPE int TCL_LOCAL_APPINIT(Tcl_Interp *);
 MODULE_SCOPE int main(int, char **);
-MODULE_SCOPE int Tcl_Zvfs_Boot(const char *,const char *,const char *,const char *);
 
 /*
  * The following #if block allows you to change how Tcl finds the startup
@@ -83,12 +80,7 @@ main(
 #ifdef TCL_LOCAL_MAIN_HOOK
     TCL_LOCAL_MAIN_HOOK(&argc, &argv);
 #endif
-    #define TCLKIT_INIT     "main.tcl"
-    #define TCLKIT_VFSMOUNT "/zvfs"
-    #define TCLKIT_PASSWD   NULL
-    Tcl_FindExecutable(argv[0]);
-    CONST char *cp=Tcl_GetNameOfExecutable();
-    Tcl_Zvfs_Boot(cp,TCLKIT_VFSMOUNT,TCLKIT_INIT,TCLKIT_PASSWD);
+
     Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
     return 0;			/* Needed only to prevent compiler warning. */
 }
@@ -119,11 +111,7 @@ Tcl_AppInit(
     if ((Tcl_Init)(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    /* Load the zipfs package */
-    if (Tclzipfs_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    Tcl_StaticPackage(interp, "zipfs", Tclzipfs_Init, Tclzipfs_SafeInit);
+
 #ifdef TCL_XT_TEST
     if (Tclxttest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
