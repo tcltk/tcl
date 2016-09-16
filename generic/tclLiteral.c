@@ -234,7 +234,6 @@ TclCreateLiteral(
      */
 
     TclNewObj(objPtr);
-    Tcl_IncrRefCount(objPtr);
     if ((flags & LITERAL_ON_HEAP)) {
 	objPtr->bytes = (char *) bytes;
 	objPtr->length = length;
@@ -261,6 +260,7 @@ TclCreateLiteral(
 
     globalPtr = ckalloc(sizeof(LiteralEntry));
     globalPtr->objPtr = objPtr;
+    Tcl_IncrRefCount(objPtr);
     globalPtr->refCount = 1;
     globalPtr->nsPtr = nsPtr;
     globalPtr->nextPtr = globalTablePtr->buckets[globalHash];
