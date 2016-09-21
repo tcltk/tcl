@@ -229,8 +229,7 @@ TclCreateLiteral(
     }
 
     /*
-     * The literal is new to the interpreter. Add it to the global literal
-     * table.
+     * The literal is new to the interpreter.
      */
 
     TclNewObj(objPtr);
@@ -241,8 +240,11 @@ TclCreateLiteral(
 	TclInitStringRep(objPtr, bytes, length);
     }
 
+    /* Should the new literal be shared globally? */
+
     if ((flags & LITERAL_UNSHARED)) {
 	/*
+	 * No, do *not* add it the global literal table
 	 * Make clear, that no global value is returned
 	 */
 	if (globalPtrPtr != NULL) {
@@ -251,6 +253,9 @@ TclCreateLiteral(
 	return objPtr;
     }
 
+    /*
+     * Yes, add it to the global literal table.
+     */
 #ifdef TCL_COMPILE_DEBUG
     if (LookupLiteralEntry((Tcl_Interp *) iPtr, objPtr) != NULL) {
 	Tcl_Panic("%s: literal \"%.*s\" found globally but shouldn't be",
