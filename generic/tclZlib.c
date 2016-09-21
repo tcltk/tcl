@@ -2864,7 +2864,7 @@ ZlibTransformClose(
     Tcl_Interp *interp)
 {
     ZlibChannelData *cd = instanceData;
-    int e, result = TCL_OK;
+    int e, written, result = TCL_OK;
 
     /*
      * Delete the support timer.
@@ -2882,6 +2882,17 @@ ZlibTransformClose(
 	    cd->outStream.next_out = (Bytef *) cd->outBuffer;
 	    cd->outStream.avail_out = (unsigned) cd->outAllocated;
 	    e = deflate(&cd->outStream, Z_FINISH);
+	    written = cd->outAllocated - cd->outStream.avail_out;
+
+	    /*
+	     * Can't be sure that deflate() won't declare the buffer to be
+	     * full (with Z_BUF_ERROR) so handle that case.
+	     */
+
+	    if (e == Z_BUF_ERROR) {
+		e = Z_OK;
+		written = cd->outAllocated;
+	    }
 	    if (e != Z_OK && e != Z_STREAM_END) {
 		/* TODO: is this the right way to do errors on close? */
 		if (!TclInThreadExit()) {
@@ -2890,20 +2901,17 @@ ZlibTransformClose(
 		result = TCL_ERROR;
 		break;
 	    }
-	    if (cd->outStream.avail_out != (unsigned) cd->outAllocated) {
-		if (Tcl_WriteRaw(cd->parent, cd->outBuffer,
-			cd->outAllocated - cd->outStream.avail_out) < 0) {
-		    /* TODO: is this the right way to do errors on close?
-		     * Note: when close is called from FinalizeIOSubsystem
-		     * then interp may be NULL */
-		    if (!TclInThreadExit() && interp) {
-			Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-				"error while finalizing file: %s",
-				Tcl_PosixError(interp)));
-		    }
-		    result = TCL_ERROR;
-		    break;
+	    if (written && Tcl_WriteRaw(cd->parent, cd->outBuffer, written) < 0) {
+		/* TODO: is this the right way to do errors on close?
+		 * Note: when close is called from FinalizeIOSubsystem then
+		 * interp may be NULL */
+		if (!TclInThreadExit() && interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "error while finalizing file: %s",
+			    Tcl_PosixError(interp)));
 		}
+		result = TCL_ERROR;
+		break;
 	    }
 	} while (e != Z_STREAM_END);
 	(void) deflateEnd(&cd->outStream);
@@ -3084,7 +3092,17 @@ ZlibTransformOutput(
 	e = deflate(&cd->outStream, Z_NO_FLUSH);
 	produced = cd->outAllocated - cd->outStream.avail_out;
 
-	if (e == Z_OK && produced > 0) {
+	if ((e == Z_OK && produced > 0) || e == Z_BUF_ERROR) {
+	    /*
+	     * deflate() indicates that it is out of space by returning
+	     * Z_BUF_ERROR; in that case, we must write the whole buffer out
+	     * and retry to compress what is left.
+	     */
+
+	    if (e == Z_BUF_ERROR) {
+		produced = cd->outAllocated;
+		e = Z_OK;
+	    }
 	    if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) < 0) {
 		*errorCodePtr = Tcl_GetErrno();
 		return -1;
