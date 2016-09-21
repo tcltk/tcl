@@ -1208,6 +1208,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define LITERAL_ON_HEAP		0x01
 #define LITERAL_CMD_NAME	0x02
+#define LITERAL_UNSHARED	0x04
 
 /*
  * Form of TclRegisterLiteral with flags == 0. In that case, it is safe to
