@@ -81,7 +81,7 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 #CFLAGS = 		$(CFLAGS_DEBUG)
 #CFLAGS = 		$(CFLAGS_OPTIMIZE)
 #CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@
+CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -D_ATL_XP_TARGETING
 
 # To enable compilation debugging reverse the comment characters on one of the
 # following lines.
