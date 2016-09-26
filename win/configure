@@ -854,6 +854,7 @@ Optional Packages:
   --with-encoding         encoding for configuration values
   --with-celib=DIR        use Windows/CE support library from DIR
   --with-zipfs            include ZIP filesystem
+  --with-tickcount        use GetTickCount for timers, turns off TIP #233
 
 Some influential environment variables:
   CC          C compiler command
@@ -4426,6 +4427,23 @@ _ACEOF
 
 fi
 
+
+# Check whether --with-tickcount or --without-tickcount was given.
+if test "${with_tickcount+set}" = set; then
+  withval="$with_tickcount"
+  tcl_ok=$withval
+else
+  tcl_ok=no
+fi;
+echo "$as_me:$LINENO: result: $tcl_ok" >&5
+echo "${ECHO_T}$tcl_ok" >&6
+if test $tcl_ok = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define WIN32_USE_TICKCOUNT 1
+_ACEOF
+
+fi
 
 echo "$as_me:$LINENO: checking for intptr_t" >&5
 echo $ECHO_N "checking for intptr_t... $ECHO_C" >&6

@@ -445,6 +445,12 @@ Tcl_WaitForEvent(
 	 */
 
 	if (timePtr) {
+#ifdef WIN32_USE_TICKCOUNT
+	    timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
+	    if (timeout == INFINITE) {
+		timeout--;
+	    } 
+#else
 	    /*
 	     * TIP #233 (Virtualized Time). Convert virtual domain delay to
 	     * real-time.
@@ -460,6 +466,7 @@ Tcl_WaitForEvent(
 	    }
 
 	    timeout = myTime.sec * 1000 + myTime.usec / 1000;
+#endif
 	} else {
 	    timeout = INFINITE;
 	}
@@ -567,7 +574,7 @@ Tcl_Sleep(
     vdelay.sec  = ms / 1000;
     vdelay.usec = (ms % 1000) * 1000;
 
-    Tcl_GetTime(&now);
+    TclpGetMonotonicTime(&now);
     desired.sec  = now.sec  + vdelay.sec;
     desired.usec = now.usec + vdelay.usec;
     if (desired.usec > 1000000) {
@@ -581,10 +588,13 @@ Tcl_Sleep(
 
     tclScaleTimeProcPtr(&vdelay, tclTimeClientData);
     sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
+    if (sleepTime == INFINITE) {
+	--sleepTime;
+    }
 
     for (;;) {
 	SleepEx(sleepTime, TRUE);
-	Tcl_GetTime(&now);
+	TclpGetMonotonicTime(&now);
 	if (now.sec > desired.sec) {
 	    break;
 	} else if ((now.sec == desired.sec) && (now.usec >= desired.usec)) {
@@ -596,6 +606,9 @@ Tcl_Sleep(
 
 	tclScaleTimeProcPtr(&vdelay, tclTimeClientData);
 	sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
+	if (sleepTime == INFINITE) {
+	    --sleepTime;
+	}
     }
 }
 

@@ -105,6 +105,12 @@ TclpGetClicks(void)
 {
     unsigned long now;
 
+#ifdef HAVE_CLOCK_GETTIME
+    Tcl_Time time;
+
+    TclpGetMonotonicTime(&time);
+    now = time.sec*1000000 + time.usec;
+#else
 #ifdef NO_GETTOD
     if (tclGetTimeProcPtr != NativeGetTime) {
 	Tcl_Time time;
@@ -124,6 +130,7 @@ TclpGetClicks(void)
 
     tclGetTimeProcPtr(&time, tclTimeClientData);
     now = time.sec*1000000 + time.usec;
+#endif
 #endif
 
     return now;
@@ -376,9 +383,11 @@ Tcl_SetTimeProc(
     Tcl_ScaleTimeProc *scaleProc,
     ClientData clientData)
 {
+#ifndef HAVE_CLOCK_GETTIME
     tclGetTimeProcPtr = getProc;
     tclScaleTimeProcPtr = scaleProc;
     tclTimeClientData = clientData;
+#endif
 }
 
 /*
@@ -530,6 +539,58 @@ CleanupMemory(
     ClientData ignored)
 {
     ckfree(lastTZ);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetMononoticTime --
+ *
+ *	Like Tcl_GetTime() but return a monotonic clock source,
+ *	if possible. Otherwise fall back to real (wall clock) time.
+ *
+ * Results:
+ *	1 if monotonic, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpGetMonotonicTime(Tcl_Time *timePtr)
+{
+#ifdef HAVE_CLOCK_GETTIME
+    int ret;
+    struct timespec ts;
+    static int useMonoClock = -1;
+
+    if (useMonoClock) {
+	ret = (clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
+	if (useMonoClock < 0) {
+	    useMonoClock = ret;
+	    if (!ret) {
+		(void) clock_gettime(CLOCK_REALTIME, &ts);
+	    }
+	} else if (!ret) {
+	    Tcl_Panic("clock_gettime(CLOCK_MONOTONIC) failed");
+	}
+    } else {
+	(void) clock_gettime(CLOCK_REALTIME, &ts);
+	ret = 0;
+    }
+    timePtr->sec = ts.tv_sec;
+    timePtr->usec = ts.tv_nsec / 1000;
+    return ret;
+#else
+    struct timeval tv;
+
+    (void) gettimeofday(&tv, NULL);
+    timePtr->sec = tv.tv_sec;
+    timePtr->usec = tv.tv_usec;
+    return 0;
+#endif
 }
 
 /*

@@ -4141,7 +4141,7 @@ Tcl_TimeObjCmd(
     objPtr = objv[1];
     i = count;
 #ifndef TCL_WIDE_CLICKS
-    Tcl_GetTime(&start);
+    TclpGetMonotonicTime(&start);
 #else
     start = TclpGetWideClicks();
 #endif
@@ -4152,7 +4152,7 @@ Tcl_TimeObjCmd(
 	}
     }
 #ifndef TCL_WIDE_CLICKS
-    Tcl_GetTime(&stop);
+    TclpGetMonotonicTime(&stop);
     totalMicroSec = ((double) (stop.sec - start.sec)) * 1.0e6
 	    + (stop.usec - start.usec);
 #else

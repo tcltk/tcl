@@ -527,6 +527,9 @@ Tcl_ConditionWait(
     pthread_cond_t *pcondPtr;
     pthread_mutex_t *pmutexPtr;
     struct timespec ptime;
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
+    int *monoFlagPtr;
+#endif
 
     if (*condPtr == NULL) {
 	MASTER_LOCK;
@@ -537,8 +540,26 @@ Tcl_ConditionWait(
 	 */
 
 	if (*condPtr == NULL) {
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
+	    pthread_condattr_t attr;
+
+	    pcondPtr = ckalloc(sizeof(pthread_cond_t) + sizeof(int));
+	    monoFlagPtr = (int *) (pcondPtr + 1);
+	    pthread_condattr_init(&attr);
+	    *monoFlagPtr = (pthread_condattr_setclock(&attr, CLOCK_MONOTONIC) == 0);
+	    if (*monoFlagPtr) {
+		if (pthread_cond_init(pcondPtr, &attr)) {
+		    *monoFlagPtr = 0;
+		    pthread_cond_init(pcondPtr, NULL);
+		}
+	    } else {
+		pthread_cond_init(pcondPtr, NULL);
+	    }
+	    pthread_condattr_destroy(&attr);
+#else
 	    pcondPtr = ckalloc(sizeof(pthread_cond_t));
 	    pthread_cond_init(pcondPtr, NULL);
+#endif
 	    *condPtr = (Tcl_Condition) pcondPtr;
 	    TclRememberCondition(condPtr);
 	}
@@ -549,6 +570,13 @@ Tcl_ConditionWait(
     if (timePtr == NULL) {
 	pthread_cond_wait(pcondPtr, pmutexPtr);
     } else {
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
+	monoFlagPtr = (int *) (pcondPtr + 1);
+	clock_gettime(*monoFlagPtr ? CLOCK_MONOTONIC : CLOCK_REALTIME, &ptime);
+	ptime.tv_sec += timePtr->sec +
+	    (timePtr->usec * 1000 + ptime.tv_nsec) / 1000000000;
+	ptime.tv_nsec = (timePtr->usec * 1000 + ptime.tv_nsec) % 1000000000;
+#else
 	Tcl_Time now;
 
 	/*
@@ -560,6 +588,7 @@ Tcl_ConditionWait(
 	ptime.tv_sec = timePtr->sec + now.sec +
 	    (timePtr->usec + now.usec) / 1000000;
 	ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
+#endif
 	pthread_cond_timedwait(pcondPtr, pmutexPtr, &ptime);
     }
 }
@@ -813,6 +842,96 @@ TclpThreadGetMasterTSD(
 }
 
 #endif /* TCL_THREADS */
+
+
+#ifdef ANDROID
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpCondattrSetClock, TclpCondTimedwait --
+ *
+ *	Replacements for pthread_condattr_setclock() and
+ *	pthread_cond_timedwait() on Android due to varying support
+ *	depending on API level. Deals with the cases:
+ *
+ *	- API<21 has no pthread_condattr_setclock() but could have support
+ *	  for pthread_cond_timedwait_monotonic_np().
+ *
+ *	- API>=21 has pthread_condattr_setclock() and doesn't require to
+ *	  use pthread_cond_timedwait_monotonic_np() since
+ *	  pthread_cond_timedwait() should deal with CLOCK_MONOTONIC cleanly.
+ *
+ *	This can be resolved only by runtime linking libc.so and
+ *	using dlsym() to find out which pthread functions are available.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#include <dlfcn.h>
+
+typedef int (CondattrSetclockProc)(
+    const pthread_condattr_t *attrPtr,
+    clockid_t clkid);
+
+typedef int (CondTimedwaitProc)(
+    pthread_cond_t *condPtr,
+    pthread_mutex_t *mutexPtr,
+    struct timespec *tsPtr);
+
+static CondattrSetclockProc *condattrSetclockProc = NULL;
+static CondTimedwaitProc *condTimedwaitMonotonicNpProc = NULL;
+static CondTimedwaitProc *condTimedwaitProc = NULL;
+
+int TclpCondattrSetclock(
+    const pthread_condattr_t *attrPtr,
+    clockid_t clkid)
+{
+    if (condattrSetclockProc == NULL) {
+	void *libc = dlopen("libc.so", RTLD_NOW | RTLD_GLOBAL);
+
+	if (libc == NULL) {
+	    /* no way to continue, thus ... */
+	    Tcl_Panic("could not dlopen libc.so");
+	}
+	condTimedwaitProc = (CondTimedwaitProc *)
+		dlsym(libc, "pthread_cond_timedwait");
+	condattrSetclockProc = (CondattrSetclockProc *)
+		dlsym(libc, "pthread_condattr_setclock");
+	if (condattrSetclockProc != NULL) {
+	    condTimedwaitMonotonicNpProc = (CondTimedwaitProc *) -1;
+	} else {
+	    condTimedwaitMonotonicNpProc = (CondTimedwaitProc *)
+		    dlsym(libc, "pthread_cond_timedwait_monotonic_np");
+	    if (condTimedwaitMonotonicNpProc == NULL) {
+		condTimedwaitMonotonicNpProc = (CondTimedwaitProc *) -1;
+	    }
+	    condattrSetclockProc = (CondattrSetclockProc *) -1;
+	}
+	dlclose(libc);
+    }
+    if (condattrSetclockProc != (CondattrSetclockProc *) -1) {
+	return condattrSetclockProc(attrPtr, clkid);
+    }
+    if (condTimedwaitMonotonicNpProc != (CondTimedwaitProc *) -1) {
+	return 0;
+    }
+    return EINVAL;
+}
+
+int TclpCondTimedwait(
+    pthread_cond_t *condPtr,
+    pthread_mutex_t *mutexPtr,
+    struct timespec *tsPtr)
+{
+    if ((condTimedwaitMonotonicNpProc != NULL) &&
+	(condTimedwaitMonotonicNpProc != (CondTimedwaitProc *) -1)) {
+	return condTimedwaitMonotonicNpProc(condPtr, mutexPtr, tsPtr);
+    }
+    return condTimedwaitProc(condPtr, mutexPtr, tsPtr);
+}
+
+#endif
+
 
 /*
  * Local Variables:
