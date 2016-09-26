@@ -737,7 +737,7 @@ gentommath_h:
 !ifndef HHC
 HHC=""%ProgramFiles%\HTML Help Workshop\hhc.exe""
 !endif
-HTMLDIR=$(ROOT)\html
+HTMLDIR=$(OUT_DIR)\html
 HTMLBASE=TclTk$(VERSION)
 HHPFILE=$(HTMLDIR)\$(HTMLBASE).hhp
 CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
@@ -745,25 +745,27 @@ CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
 htmlhelp: chmsetup $(CHMFILE)
 
 $(CHMFILE): $(DOCDIR)\*
-	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl
+	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
 	@echo Compiling HTML help project
-	@$(HHC) <<$(HHPFILE) >NUL
+	-$(HHC) <<$(HHPFILE) >NUL
 [OPTIONS]
 Compatibility=1.1 or later
 Compiled file=$(HTMLBASE).chm
+Default topic=contents.htm
 Display compile progress=no
 Error log file=$(HTMLBASE).log
+Full-text search=Yes
 Language=0x409 English (United States)
 Title=Tcl/Tk $(DOT_VERSION) Help
 [FILES]
 contents.htm
 docs.css
-Keywords
-TclCmd
-TclLib
-TkCmd
-TkLib
-UserCmd
+Keywords\*.htm
+TclCmd\*.htm
+TclLib\*.htm
+TkCmd\*.htm
+TkLib\*.htm
+UserCmd\*.htm
 <<
 
 chmsetup:
