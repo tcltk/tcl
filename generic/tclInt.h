@@ -3183,6 +3183,7 @@ MODULE_SCOPE void	TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
 MODULE_SCOPE void *	TclpThreadGetMasterTSD(void *tsdKeyPtr);
 
 MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp, const char *msg, int length);
+MODULE_SCOPE int	TclpGetMonotonicTime(Tcl_Time *timePtr);
 
 /*
  *----------------------------------------------------------------

@@ -520,6 +520,9 @@ Tcl_ConditionWait(
     pthread_cond_t *pcondPtr;
     pthread_mutex_t *pmutexPtr;
     struct timespec ptime;
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
+    int *monoFlagPtr;
+#endif
 
     if (*condPtr == NULL) {
 	pthread_mutex_lock(&masterLock);
@@ -530,8 +533,26 @@ Tcl_ConditionWait(
 	 */
 
 	if (*condPtr == NULL) {
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
+	    pthread_condattr_t attr;
+
+	    pcondPtr = ckalloc(sizeof(pthread_cond_t) + sizeof(int));
+	    monoFlagPtr = (int *) (pcondPtr + 1);
+	    pthread_condattr_init(&attr);
+	    *monoFlagPtr = (pthread_condattr_setclock(&attr, CLOCK_MONOTONIC) == 0);
+	    if (*monoFlagPtr) {
+		if (pthread_cond_init(pcondPtr, &attr)) {
+		    *monoFlagPtr = 0;
+		    pthread_cond_init(pcondPtr, NULL);
+		}
+	    } else {
+		pthread_cond_init(pcondPtr, NULL);
+	    }
+	    pthread_condattr_destroy(&attr);
+#else
 	    pcondPtr = ckalloc(sizeof(pthread_cond_t));
 	    pthread_cond_init(pcondPtr, NULL);
+#endif
 	    *condPtr = (Tcl_Condition) pcondPtr;
 	    TclRememberCondition(condPtr);
 	}
@@ -542,6 +563,13 @@ Tcl_ConditionWait(
     if (timePtr == NULL) {
 	pthread_cond_wait(pcondPtr, pmutexPtr);
     } else {
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
+	monoFlagPtr = (int *) (pcondPtr + 1);
+	clock_gettime(*monoFlagPtr ? CLOCK_MONOTONIC : CLOCK_REALTIME, &ptime);
+	ptime.tv_sec += timePtr->sec +
+	    (timePtr->usec * 1000 + ptime.tv_nsec) / 1000000000;
+	ptime.tv_nsec = (timePtr->usec * 1000 + ptime.tv_nsec) % 1000000000;
+#else
 	Tcl_Time now;
 
 	/*
@@ -553,6 +581,7 @@ Tcl_ConditionWait(
 	ptime.tv_sec = timePtr->sec + now.sec +
 	    (timePtr->usec + now.usec) / 1000000;
 	ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
+#endif
 	pthread_cond_timedwait(pcondPtr, pmutexPtr, &ptime);
     }
 }

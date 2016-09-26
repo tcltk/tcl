@@ -107,6 +107,15 @@ static ProcessGlobalValue sourceLibraryDir =
 
 static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
 static int		ToUtf(const WCHAR *wSrc, char *dst);
+
+#ifdef WIN32_USE_TICKCOUNT
+typedef ULONGLONG WINAPI (GetTickCount64Proc)(void);
+static GetTickCount64Proc *GetTickCount64ProcPtr = NULL;
+static CRITICAL_SECTION TickMutex;
+static DWORD TickOffset, LastTick;
+static ULONGLONG TickUpper;
+#endif
+
 
 /*
  *---------------------------------------------------------------------------
@@ -132,6 +141,9 @@ TclpInitPlatform(void)
 {
     WSADATA wsaData;
     WORD wVersionRequested = MAKEWORD(2, 2);
+#ifdef WIN32_USE_TICKCOUNT
+    HMODULE handle;
+#endif
 
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
@@ -140,6 +152,29 @@ TclpInitPlatform(void)
      * can never fail.
      */
     WSAStartup(wVersionRequested, &wsaData);
+
+#ifdef WIN32_USE_TICKCOUNT
+    /*
+     * Check for availability of the GetTickCount64() API.
+     */
+
+    handle = GetModuleHandleA("KERNEL32");
+    if (handle != NULL) {
+	GetTickCount64ProcPtr = (GetTickCount64Proc *)
+		GetProcAddress(handle, "GetTickCount64");
+    }
+
+    InitializeCriticalSection(&TickMutex);
+
+    /*
+     * Force a wrap around within the first few seconds when
+     * we need to fall back to GetTickCount(), e.g. on XP.
+     */
+
+    TickOffset = 0xffffe000 - GetTickCount();
+    LastTick = TickOffset;
+    TickUpper = 0;
+#endif
 
 #ifdef STATIC_BUILD
     /*
@@ -710,6 +745,55 @@ TclpFindVariable(
     Tcl_DStringFree(&envString);
     ckfree(nameUpper);
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetMononoticTime --
+ *
+ *	Like Tcl_GetTime() but return a monotonic clock source,
+ *	if possible. Otherwise fall back to real (wall clock) time.
+ *
+ * Results:
+ *	1 if monotonic, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpGetMonotonicTime(Tcl_Time *timePtr)
+{
+#ifdef WIN32_USE_TICKCOUNT
+    ULONGLONG ms;
+    DWORD tick;
+
+    if (GetTickCount64ProcPtr != NULL) {
+	ms = GetTickCount64ProcPtr();
+    } else {
+	/*
+	 * Emulate 64 bit wide tick counter, e.g. on XP.
+	 */
+
+	EnterCriticalSection(&TickMutex);
+	tick = GetTickCount() + TickOffset;
+	if ((LastTick & 0x80000000) && !(tick & 0x80000000)) {
+	    TickUpper += 0x100000000ULL;
+	}
+	LastTick = tick;
+	ms = TickUpper | LastTick;
+	LeaveCriticalSection(&TickMutex);
+    }
+    timePtr->sec = (long)(ms/1000);
+    timePtr->usec = ((long)(ms%1000))*1000;
+    return 1;
+#else
+    Tcl_GetTime(timePtr);
+    return 0;
+#endif
 }
 
 /*

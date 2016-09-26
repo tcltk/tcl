@@ -3393,7 +3393,7 @@ Tcl_LimitCheck(
 		(ticker % iPtr->limit.timeGranularity == 0))) {
 	Tcl_Time now;
 
-	Tcl_GetTime(&now);
+	TclpGetMonotonicTime(&now);
 	if (iPtr->limit.time.sec < now.sec ||
 		(iPtr->limit.time.sec == now.sec &&
 		iPtr->limit.time.usec < now.usec)) {
@@ -3948,7 +3948,25 @@ Tcl_LimitSetTime(
     Tcl_Time *timeLimitPtr)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Time nextMoment;
+    Tcl_Time nextMoment, mono, real, limit;
+
+    if (TclpGetMonotonicTime(&mono)) {
+	Tcl_GetTime(&real);
+	limit = *timeLimitPtr;
+	limit.sec -= real.sec;
+	limit.usec -= real.usec;
+	if (limit.usec < 0) {
+	    limit.sec -= 1;
+	    limit.usec += 1000000;
+	}
+	limit.sec += mono.sec;
+	limit.usec += mono.usec;
+	if (limit.usec >= 1000000) {
+	    limit.sec += 1;
+	    limit.usec -= 1000000;
+	}
+	timeLimitPtr = &limit;
+    }
 
     memcpy(&iPtr->limit.time, timeLimitPtr, sizeof(Tcl_Time));
     if (iPtr->limit.timeEvent != NULL) {
@@ -4033,7 +4051,26 @@ Tcl_LimitGetTime(
     Tcl_Time *timeLimitPtr)
 {
     Interp *iPtr = (Interp *) interp;
+    Tcl_Time mono, real, limit;
 
+    if (TclpGetMonotonicTime(&mono)) {
+	Tcl_GetTime(&real);
+	limit = iPtr->limit.time;
+	limit.sec -= mono.sec;
+	limit.usec -= mono.usec;
+	if (limit.usec < 0) {
+	    limit.sec -= 1;
+	    limit.usec += 1000000;
+	}
+	limit.sec += real.sec;
+	limit.usec += real.usec;
+	if (limit.usec >= 1000000) {
+	    limit.sec += 1;
+	    limit.usec -= 1000000;
+	}
+	memcpy(timeLimitPtr, &limit, sizeof(Tcl_Time));
+	return;
+    }
     memcpy(timeLimitPtr, &iPtr->limit.time, sizeof(Tcl_Time));
 }
 

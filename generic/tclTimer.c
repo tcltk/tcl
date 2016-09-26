@@ -259,7 +259,7 @@ Tcl_CreateTimerHandler(
      * Compute when the event should fire.
      */
 
-    Tcl_GetTime(&time);
+    TclpGetMonotonicTime(&time);
     time.sec += milliseconds/1000;
     time.usec += (milliseconds%1000)*1000;
     if (time.usec >= 1000000) {
@@ -417,7 +417,7 @@ TimerSetupProc(
 	 * Compute the timeout for the next timer on the list.
 	 */
 
-	Tcl_GetTime(&blockTime);
+	TclpGetMonotonicTime(&blockTime);
 	blockTime.sec = tsdPtr->firstTimerHandlerPtr->time.sec - blockTime.sec;
 	blockTime.usec = tsdPtr->firstTimerHandlerPtr->time.usec -
 		blockTime.usec;
@@ -468,7 +468,7 @@ TimerCheckProc(
 	 * Compute the timeout for the next timer on the list.
 	 */
 
-	Tcl_GetTime(&blockTime);
+	TclpGetMonotonicTime(&blockTime);
 	blockTime.sec = tsdPtr->firstTimerHandlerPtr->time.sec - blockTime.sec;
 	blockTime.usec = tsdPtr->firstTimerHandlerPtr->time.usec -
 		blockTime.usec;
@@ -564,7 +564,7 @@ TimerHandlerEventProc(
 
     tsdPtr->timerPending = 0;
     currentTimerId = tsdPtr->lastTimerId;
-    Tcl_GetTime(&time);
+    TclpGetMonotonicTime(&time);
     while (1) {
 	nextPtrPtr = &tsdPtr->firstTimerHandlerPtr;
 	timerHandlerPtr = tsdPtr->firstTimerHandlerPtr;
@@ -872,7 +872,7 @@ Tcl_AfterObjCmd(
 
 	afterPtr->id = tsdPtr->afterId;
 	tsdPtr->afterId += 1;
-	Tcl_GetTime(&wakeup);
+	TclpGetMonotonicTime(&wakeup);
 	wakeup.sec += (long)(ms / 1000);
 	wakeup.usec += ((long)(ms % 1000)) * 1000;
 	if (wakeup.usec > 1000000) {
@@ -1017,7 +1017,7 @@ AfterDelay(
     Tcl_Time endTime, now;
     Tcl_WideInt diff;
 
-    Tcl_GetTime(&now);
+    TclpGetMonotonicTime(&now);
     endTime = now;
     endTime.sec += (long)(ms/1000);
     endTime.usec += ((int)(ms%1000))*1000;
@@ -1083,7 +1083,7 @@ AfterDelay(
 		return TCL_ERROR;
 	    }
 	}
-        Tcl_GetTime(&now);
+        TclpGetMonotonicTime(&now);
     } while (TCL_TIME_BEFORE(now, endTime));
     return TCL_OK;
 }

@@ -769,6 +769,7 @@ enable_shared
 enable_64bit
 enable_wince
 with_celib
+with_tickcount
 enable_symbols
 enable_embedded_manifest
 '
@@ -1401,6 +1402,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-encoding         encoding for configuration values
   --with-celib=DIR        use Windows/CE support library from DIR
+  --with-tickcount        use GetTickCount for timers, turns off TIP #233
 
 Some influential environment variables:
   CC          C compiler command
@@ -4722,6 +4724,22 @@ fi
 
 $as_echo "#define HAVE_ZLIB 1" >>confdefs.h
 
+
+
+# Check whether --with-tickcount was given.
+if test "${with_tickcount+set}" = set; then :
+  withval=$with_tickcount; tcl_ok=$withval
+else
+  tcl_ok=no
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $tcl_ok" >&5
+$as_echo "$tcl_ok" >&6; }
+if test $tcl_ok = yes; then
+
+$as_echo "#define WIN32_USE_TICKCOUNT 1" >>confdefs.h
+
+fi
 
 ac_fn_c_check_type "$LINENO" "intptr_t" "ac_cv_type_intptr_t" "$ac_includes_default"
 if test "x$ac_cv_type_intptr_t" = xyes; then :
