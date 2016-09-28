@@ -24,7 +24,7 @@ BEGIN
         BLOCK "040904b0" /* LANG_ENGLISH/SUBLANG_ENGLISH_US, Unicode CP */
         BEGIN
             VALUE "FileDescription", "Tcl DLL\0"
-            VALUE "OriginalFilename", "tcl" STRINGIFY(TCL_MAJOR_VERSION) STRINGIFY(TCL_MINOR_VERSION) ".dll\0"
+            VALUE "OriginalFilename", "tcl" STRINGIFY(TCL_MAJOR_VERSION) ".dll\0"
             VALUE "CompanyName", "ActiveState Corporation\0"
             VALUE "FileVersion", TCL_PATCH_LEVEL
             VALUE "LegalCopyright", "Copyright \251 2001 by ActiveState Corporation, et al\0"
