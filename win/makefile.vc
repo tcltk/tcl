@@ -190,11 +190,9 @@ STUBPREFIX      = $(PROJECT)stub
 DOTVERSION      = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
 VERSION         = $(TCL_MAJOR_VERSION)
 
-DDEDOTVERSION = 1.4
-DDEVERSION = $(DDEDOTVERSION:.=)
+DDEVERSION = 1
 
-REGDOTVERSION = 1.3
-REGVERSION = $(REGDOTVERSION:.=)
+REGVERSION = 1
 
 BINROOT		= $(MAKEDIR)     # originally .
 ROOT		= $(MAKEDIR)\..  # originally ..
@@ -737,7 +735,7 @@ gentommath_h:
 !ifndef HHC
 HHC=""%ProgramFiles%\HTML Help Workshop\hhc.exe""
 !endif
-HTMLDIR=$(ROOT)\html
+HTMLDIR=$(OUT_DIR)\html
 HTMLBASE=TclTk$(VERSION)
 HHPFILE=$(HTMLDIR)\$(HTMLBASE).hhp
 CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
@@ -745,25 +743,27 @@ CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
 htmlhelp: chmsetup $(CHMFILE)
 
 $(CHMFILE): $(DOCDIR)\*
-	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl
+	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
 	@echo Compiling HTML help project
-	@$(HHC) <<$(HHPFILE) >NUL
+	-$(HHC) <<$(HHPFILE) >NUL
 [OPTIONS]
 Compatibility=1.1 or later
 Compiled file=$(HTMLBASE).chm
+Default topic=contents.htm
 Display compile progress=no
 Error log file=$(HTMLBASE).log
+Full-text search=Yes
 Language=0x409 English (United States)
 Title=Tcl/Tk $(DOT_VERSION) Help
 [FILES]
 contents.htm
 docs.css
-Keywords
-TclCmd
-TclLib
-TkCmd
-TkLib
-UserCmd
+Keywords\*.htm
+TclCmd\*.htm
+TclLib\*.htm
+TkCmd\*.htm
+TkLib\*.htm
+UserCmd\*.htm
 <<
 
 chmsetup:
@@ -1150,9 +1150,9 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\"
 !endif
 !else
-	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\tcl8\dde$(DDEDOTVERSION)\"
+	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\tcl8\dde$(DDEVERSION)\"
 	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\tcl8\dde$(DDEDOTVERSION)\"
+	    "$(LIB_INSTALL_DIR)\tcl8\dde$(DDEVERSION)\"
 !endif
 	@echo Installing $(TCLREGLIBNAME)
 !if $(STATIC_BUILD)
@@ -1160,9 +1160,9 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\"
 !endif
 !else
-	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\tcl8\reg$(REGDOTVERSION)\"
+	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\tcl8\reg$(REGVERSION)\"
 	@$(CPY) "$(ROOT)\library\reg\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\tcl8\reg$(REGDOTVERSION)\"
+	    "$(LIB_INSTALL_DIR)\tcl8\reg$(REGVERSION)\"
 !endif
 	@echo Installing encodings
 	@$(CPY) "$(ROOT)\library\encoding\*.enc" \

@@ -78,7 +78,7 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 #CFLAGS = 		$(CFLAGS_DEBUG)
 #CFLAGS = 		$(CFLAGS_OPTIMIZE)
 #CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -DUNICODE -D_UNICODE
+CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -DUNICODE -D_UNICODE -D_ATL_XP_TARGETING
 
 # To compile without backward compatibility and deprecated code uncomment the
 # following
@@ -128,10 +128,8 @@ LIBSUFFIX		= @LIBSUFFIX@
 EXESUFFIX		= @EXESUFFIX@
 
 VER				= @TCL_MAJOR_VERSION@
-DDEVER			= @TCL_DDE_MAJOR_VERSION@@TCL_DDE_MINOR_VERSION@
-DDEDOTVER		= @TCL_DDE_MAJOR_VERSION@.@TCL_DDE_MINOR_VERSION@
-REGVER			= @TCL_REG_MAJOR_VERSION@@TCL_REG_MINOR_VERSION@
-REGDOTVER		= @TCL_REG_MAJOR_VERSION@.@TCL_REG_MINOR_VERSION@
+DDEVER			= @TCL_DDE_MAJOR_VERSION@
+REGVER			= @TCL_REG_MAJOR_VERSION@
 
 TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 TCL_DLL_FILE		= @TCL_DLL_FILE@
@@ -567,7 +565,7 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@for i in tcl8 tcl8/dde${DDEDOTVER} tcl8/reg${REGDOTVER}; \
+	@for i in tcl8 tcl8/dde${DDEVER} tcl8/reg${REGVER}; \
 	    do \
 	    if [ ! -d $(LIB_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(LIB_INSTALL_DIR)/$$i"; \
@@ -591,23 +589,23 @@ install-binaries: binaries
 	    done
 	@if [ -f $(DDE_DLL_FILE) ]; then \
 	    echo Installing $(DDE_DLL_FILE); \
-	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/tcl8/dde${DDEDOTVER}; \
+	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/tcl8/dde${DDEVER}; \
 	    $(COPY) $(ROOT_DIR)/library/dde/pkgIndex.tcl \
-		$(LIB_INSTALL_DIR)/tcl8/dde${DDEDOTVER}; \
+		$(LIB_INSTALL_DIR)/tcl8/dde${DDEVER}; \
 	    fi
 	@if [ -f $(DDE_LIB_FILE) ]; then \
 	    echo Installing $(DDE_LIB_FILE); \
-	    $(COPY) $(DDE_LIB_FILE) $(LIB_INSTALL_DIR)/tcl8/dde${DDEDOTVER}; \
+	    $(COPY) $(DDE_LIB_FILE) $(LIB_INSTALL_DIR)/tcl8/dde${DDEVER}; \
 	    fi
 	@if [ -f $(REG_DLL_FILE) ]; then \
 	    echo Installing $(REG_DLL_FILE); \
-	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/tcl8/reg${REGDOTVER}; \
+	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/tcl8/reg${REGVER}; \
 	    $(COPY) $(ROOT_DIR)/library/reg/pkgIndex.tcl \
-		$(LIB_INSTALL_DIR)/tcl8/reg${REGDOTVER}; \
+		$(LIB_INSTALL_DIR)/tcl8/reg${REGVER}; \
 	    fi
 	@if [ -f $(REG_LIB_FILE) ]; then \
 	    echo Installing $(REG_LIB_FILE); \
-	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/tcl8/reg${REGDOTVER}; \
+	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/tcl8/reg${REGVER}; \
 	    fi
 
 install-libraries: libraries install-tzdata install-msgs
