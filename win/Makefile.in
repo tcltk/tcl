@@ -152,7 +152,6 @@ SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@
 STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
-TCLKIT			= tclkit$(VER)${EXESUFFIX}
 CAT32			= cat32$(EXEEXT)
 MAN2TCL			= man2tcl$(EXEEXT)
 
@@ -303,8 +302,8 @@ GENERIC_OBJS = \
 	tclUtf.$(OBJEXT) \
 	tclUtil.$(OBJEXT) \
 	tclVar.$(OBJEXT) \
-	tclZlib.$(OBJEXT) \
-	tclZipfs.$(OBJEXT)
+	tclZipfs.$(OBJEXT) \
+	tclZlib.$(OBJEXT)
 
 TOMMATH_OBJS = \
 	bncore.${OBJEXT} \
@@ -400,8 +399,6 @@ STUB_OBJS = \
 
 TCLSH_OBJS = tclAppInit.$(OBJEXT)
 
-TCLKIT_OBJS = tclkitMain.${OBJEXT} tclkit.${OBJEXT}
-
 ZLIB_OBJS = \
 	adler32.$(OBJEXT) \
 	compress.$(OBJEXT) \
@@ -423,7 +420,7 @@ all: binaries libraries doc packages
 
 tcltest: $(TCLSH) $(TEST_DLL_FILE)
 
-binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions $(TCLSH) $(TCLKIT)
+binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions $(TCLSH)
 
 winextensions: ${DDE_DLL_FILE} ${REG_DLL_FILE}
 
@@ -433,11 +430,6 @@ doc:
 
 $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
-        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
-	@VC_MANIFEST_EMBED_EXE@
-
-$(TCLKIT): $(TCLKIT_OBJ) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
-	$(CC) $(CFLAGS) $(TCLKIT_OBJ) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
         tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
 
@@ -503,9 +495,6 @@ testMain.${OBJEXT}: tclAppInit.c
 
 tclMain2.${OBJEXT}: tclMain.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DTCL_ASCII_MAIN @DEPARG@ $(CC_OBJNAME)
-
-tclkitMain.${OBJEXT}: tclAppInit.c
-	$(CC) -c $(CC_SWITCHES) -DTCL_LOCAL_MAIN_HOOK="Tclkit_MainHook" -DTCL_LOCAL_APPINIT="Tclkit_AppInit" @DEPARG@ $(CC_OBJNAME)
 
 # TIP #59, embedding of configuration information into the binary library.
 #
@@ -647,7 +636,6 @@ install-libraries: libraries install-tzdata install-msgs
 	@echo "Installing header files";
 	@for i in "$(GENERIC_DIR)/tcl.h" "$(GENERIC_DIR)/tclDecls.h" \
 		"$(GENERIC_DIR)/tclOO.h" "$(GENERIC_DIR)/tclOODecls.h" \
-		"$(GENERIC_DIR)/tclZipfs.h" \
 		"$(GENERIC_DIR)/tclPlatDecls.h" \
 		"$(GENERIC_DIR)/tclTomMath.h" \
 		"$(GENERIC_DIR)/tclTomMathDecls.h"; \
@@ -762,7 +750,7 @@ clean: cleanhelp clean-packages
 
 distclean: distclean-packages clean
 	$(RM) Makefile config.status config.cache config.log tclConfig.sh \
-		tcl.hpj config.status.lineno tclsh.exe.manifest
+		tcl.hpj config.status.lineno
 
 #
 # Bundled package targets
