@@ -464,7 +464,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclVar.c \
 	$(GENERIC_DIR)/tclAssembly.c \
 	$(GENERIC_DIR)/tclZlib.c \
-	$(GENERIC_DIR)/zipfs.c
+	$(GENERIC_DIR)/tclZipfs.c
 
 OO_SRCS = \
 	$(GENERIC_DIR)/tclOO.c \
