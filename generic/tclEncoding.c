@@ -234,6 +234,9 @@ static int		TableToUtfProc(ClientData clientData, const char *src,
 			    char *dst, int dstLen, int *srcReadPtr,
 			    int *dstWrotePtr, int *dstCharsPtr);
 static size_t		unilen(const char *src);
+#if TCL_UTF_MAX > 4
+static size_t		unilen4(const char *src);
+#endif
 static int		UnicodeToUtfProc(ClientData clientData,
 			    const char *src, int srcLen, int flags,
 			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
@@ -1100,6 +1103,10 @@ Tcl_CreateEncoding(
     encodingPtr->clientData	= typePtr->clientData;
     if (typePtr->nullSize == 1) {
 	encodingPtr->lengthProc = (LengthProc *) strlen;
+#if TCL_UTF_MAX > 4
+    } else if (typePtr->nullSize == 4) {
+	encodingPtr->lengthProc = (LengthProc *) unilen4;
+#endif
     } else {
 	encodingPtr->lengthProc = (LengthProc *) unilen;
     }
@@ -3797,7 +3804,7 @@ GetTableEncoding(
 /*
  *---------------------------------------------------------------------------
  *
- * unilen --
+ * unilen, unilen4 --
  *
  *	A helper function for the Tcl_ExternalToUtf functions. This function
  *	is similar to strlen for double-byte characters: it returns the number
@@ -3824,6 +3831,21 @@ unilen(
     }
     return (char *) p - src;
 }
+
+#if TCL_UTF_MAX > 4
+static size_t
+unilen4(
+    const char *src)
+{
+    unsigned int *p;
+
+    p = (unsigned int *) src;
+    while (*p != 0x00000000) {
+	p++;
+    }
+    return (char *) p - src;
+}
+#endif
 
 /*
  *-------------------------------------------------------------------------
