@@ -660,14 +660,9 @@ NRInterpCmd(
 	    if (masterInterp == NULL) {
 		return TCL_ERROR;
 	    }
-	    if (TclGetString(objv[5])[0] == '\0') {
-		if (objc == 6) {
-		    return AliasDelete(interp, slaveInterp, objv[3]);
-		}
-	    } else {
-		return AliasCreate(interp, slaveInterp, masterInterp, objv[3],
-			objv[5], objc - 6, objv + 6);
-	    }
+
+	    return AliasCreate(interp, slaveInterp, masterInterp, objv[3],
+		    objv[5], objc - 6, objv + 6);
 	}
 	goto aliasArgs;
     }

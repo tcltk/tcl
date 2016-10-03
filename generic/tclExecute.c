@@ -1554,7 +1554,7 @@ CompileExprObj(
 	 */
 
 	if (compEnv.codeNext == compEnv.codeStart) {
-	    TclEmitPush(TclRegisterNewLiteral(&compEnv, "0", 1),
+	    TclEmitPush(TclRegisterLiteral(&compEnv, "0", 1, 0),
 		    &compEnv);
 	}
 
@@ -2069,6 +2069,13 @@ TclNRExecuteByteCode(
 #ifdef TCL_COMPILE_STATS
     iPtr->stats.numExecutions++;
 #endif
+
+    /*
+     * Test namespace-50.9 demonstrates the need for this call.
+     * Use a --enable-symbols=mem bug to see.
+     */
+
+    TclResetRewriteEnsemble(interp, 1);
 
     /*
      * Push the callback for bytecode execution
@@ -3166,7 +3173,7 @@ TEBCresume(
 	    Tcl_Obj *copyPtr = Tcl_NewListObj(objc - opnd + 1, NULL);
 
 	    Tcl_ListObjAppendElement(NULL, copyPtr, objPtr);
-	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0, 
+	    Tcl_ListObjReplace(NULL, copyPtr, LIST_MAX, 0,
 		    objc - opnd, objv + opnd);
 	    Tcl_DecrRefCount(objPtr);
 	    objPtr = copyPtr;
@@ -5276,23 +5283,10 @@ TEBCresume(
 		toIdx = objc-1;
 	    }
 	    if (fromIdx == 0 && toIdx != objc-1 && !Tcl_IsShared(valuePtr)) {
-		/*
-		 * BEWARE! This is looking inside the implementation of the
-		 * list type.
-		 */
-
-		List *listPtr = valuePtr->internalRep.twoPtrValue.ptr1;
-
-		if (listPtr->refCount == 1) {
-		    for (index=toIdx+1; index<objc ; index++) {
-			TclDecrRefCount(objv[index]);
-		    }
-		    listPtr->elemCount = toIdx+1;
-		    listPtr->canonicalFlag = 1;
-		    TclInvalidateStringRep(valuePtr);
-		    TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
-		    NEXT_INST_F(9, 0, 0);
-		}
+		Tcl_ListObjReplace(interp, valuePtr,
+			toIdx + 1, LIST_MAX, 0, NULL);
+		TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
+		NEXT_INST_F(9, 0, 0);
 	    }
 	    objResultPtr = Tcl_NewListObj(toIdx-fromIdx+1, objv+fromIdx);
 	} else {

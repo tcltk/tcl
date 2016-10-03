@@ -2566,7 +2566,9 @@ Tcl_FindCommand(
 	}
 
 	if (result == TCL_OK) {
+	    ((Command *)cmd)->flags |= CMD_VIA_RESOLVER;
 	    return cmd;
+
 	} else if (result != TCL_CONTINUE) {
 	    return NULL;
 	}
@@ -2658,6 +2660,7 @@ Tcl_FindCommand(
     }
 
     if (cmdPtr != NULL) {
+	cmdPtr->flags  &= ~CMD_VIA_RESOLVER;
 	return (Tcl_Command) cmdPtr;
     }
 
@@ -2883,9 +2886,9 @@ GetNamespaceFromObj(
 	resNamePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	nsPtr = resNamePtr->nsPtr;
 	refNsPtr = resNamePtr->refNsPtr;
-	if (!(nsPtr->flags & NS_DYING) && (interp == nsPtr->interp) &&
-		(!refNsPtr || ((interp == refNsPtr->interp) &&
-		(refNsPtr== (Namespace *) Tcl_GetCurrentNamespace(interp))))){
+	if (!(nsPtr->flags & NS_DYING) && (interp == nsPtr->interp)
+		&& (!refNsPtr || (refNsPtr ==
+		(Namespace *) TclGetCurrentNamespace(interp)))) {
 	    *nsPtrPtr = (Tcl_Namespace *) nsPtr;
 	    return TCL_OK;
 	}
@@ -4779,7 +4782,7 @@ SetNsNameFromAny(
     if ((name[0] == ':') && (name[1] == ':')) {
 	resNamePtr->refNsPtr = NULL;
     } else {
-	resNamePtr->refNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
+	resNamePtr->refNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     }
     resNamePtr->refCount = 1;
     TclFreeIntRep(objPtr);

@@ -846,6 +846,7 @@ test namespace-17.1 {Tcl_FindNamespaceVar, absolute name found} -setup {
         set ::x
     }
 } -result {314159}
+variable ::x 314159
 test namespace-17.2 {Tcl_FindNamespaceVar, absolute name found} {
     namespace eval test_ns_1 {
         variable x 777
@@ -889,23 +890,25 @@ test namespace-17.6 {Tcl_FindNamespaceVar, relative name found} -setup {
 } -result {777}
 test namespace-17.7 {Tcl_FindNamespaceVar, relative name found} {
     namespace eval test_ns_1 {
+	variable x 777
         unset x
         set x  ;# must be global x now
     }
 } {314159}
-test namespace-17.8 {Tcl_FindNamespaceVar, relative name not found} {
+test namespace-17.8 {Tcl_FindNamespaceVar, relative name not found} -body {
     namespace eval test_ns_1 {
-        list [catch {set wuzzat} msg] $msg
+        set wuzzat
     }
-} {1 {can't read "wuzzat": no such variable}}
+} -returnCodes error -result {can't read "wuzzat": no such variable}
 test namespace-17.9 {Tcl_FindNamespaceVar, relative name and TCL_GLOBAL_ONLY} {
     namespace eval test_ns_1 {
         variable a hello
     }
     set test_ns_1::a
 } {hello}
-test namespace-17.10 {Tcl_FindNamespaceVar, interference with cached varNames} {
+test namespace-17.10 {Tcl_FindNamespaceVar, interference with cached varNames} -setup {
     namespace eval test_ns_1 {}
+} -body {
     proc test_ns {} {
 	set ::test_ns_1::a 0
     }
@@ -916,7 +919,7 @@ test namespace-17.10 {Tcl_FindNamespaceVar, interference with cached varNames} {
     namespace eval test_ns_1 set a 1
     namespace delete test_ns_1
     return $a
-} 1
+} -result 1
 catch {unset a}
 catch {unset x}
 
@@ -2356,6 +2359,13 @@ test namespace-50.8 {[f961d7d1dd]} -setup {
     rename e {}
     rename target {}
 }
+test namespace-50.9 {[cea0344a51]} -body {
+    namespace eval foo {
+	namespace eval bar {
+	    namespace delete foo
+	}
+    }
+} -returnCodes error -result {unknown namespace "foo" in namespace delete command}
 
 test namespace-51.1 {name resolution path control} -body {
     namespace eval ::test_ns_1 {
