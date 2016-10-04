@@ -341,7 +341,8 @@ test expr-7.20 {CompileBitAndExpr: error in equality expr} -body {
 test expr-8.1 {CompileEqualityExpr: just relational expr} {expr 3>=2} 1
 test expr-8.2 {CompileEqualityExpr: just relational expr} {expr 2<=2.1} 1
 test expr-8.3 {CompileEqualityExpr: just relational expr} {expr 3.2>"2.2"} 1
-test expr-8.4 {CompileEqualityExpr: just relational expr} {expr {"0y"<"0x12"}} 0
+test expr-8.4 {CompileEqualityExpr: just relational expr} {expr {"0y"<"0x12"}} 1
+test expr-8.4a {CompileEqualityExpr: just relational expr} {expr {"0y"<0x12}} 1
 test expr-8.5 {CompileEqualityExpr: error in relational expr} -body {
     expr x>3
 } -returnCodes error -match glob -result *
@@ -360,7 +361,7 @@ test expr-8.13 {CompileBitAndExpr: equality expr} {expr {"\374" eq [set s \u00fc
 test expr-8.14 {CompileBitAndExpr: equality expr} {expr 3eq2} 0
 test expr-8.15 {CompileBitAndExpr: equality expr} {expr 2.0eq2} 0
 test expr-8.16 {CompileBitAndExpr: equality expr} {expr 3.2ne2.2} 1
-test expr-8.17 {CompileBitAndExpr: equality expr} {expr 01eq1} 0
+test expr-8.17 {CompileBitAndExpr: equality expr} {expr 01eq1} 1
 test expr-8.18 {CompileBitAndExpr: equality expr} {expr {"abc" eq "abd"}} 0
 test expr-8.19 {CompileBitAndExpr: equality expr} {expr {"abc" ne "abd"}} 1
 test expr-8.20 {CompileBitAndExpr: error in equality expr} -body {
@@ -385,7 +386,7 @@ test expr-8.25 {CompileEqualityExpr: simple equality exprs} {
 } 1
 test expr-8.26 {CompileEqualityExpr: simple equality exprs} {
     expr {"0x12 " eq "0x12"}
-} 0
+} 1
 test expr-8.27 {CompileEqualityExpr: simple equality exprs} {
     expr {"1.0e100000000" == "0.0"}
 } 0
@@ -397,7 +398,7 @@ test expr-8.29 {CompileEqualityExpr: just relational expr} {
     set v1 "0y"
     set v2 "0x12"
     expr {$v1 < $v2}
-} 0
+} 1
 test expr-8.30 {CompileEqualityExpr: simple equality exprs} {
     expr {"fake" != "bob"}
 } 1

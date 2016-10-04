@@ -244,7 +244,7 @@ test expr-old-4.13 {string operators} {expr {"abc" == "abd"}} 0
 test expr-old-4.14 {string operators} {expr {"abd" == "abd"}} 1
 test expr-old-4.15 {string operators} {expr {"abc" != "abd"}} 1
 test expr-old-4.16 {string operators} {expr {"abd" != "abd"}} 0
-test expr-old-4.17 {string operators} {expr {"0y" < "0x12"}} 0
+test expr-old-4.17 {string operators} {expr {"0y" < "0x12"}} 1
 test expr-old-4.18 {string operators} {expr {"." < " "}} 0
 test expr-old-4.19 {string operators} {expr {"abc" eq "abd"}} 0
 test expr-old-4.20 {string operators} {expr {"abd" eq "abd"}} 1

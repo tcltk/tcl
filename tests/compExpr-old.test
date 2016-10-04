@@ -317,7 +317,7 @@ test compExpr-old-7.13 {CompileBitAndExpr: runtime error in bitand arm} {
 test compExpr-old-8.1 {CompileEqualityExpr: just relational expr} {expr 3>=2} 1
 test compExpr-old-8.2 {CompileEqualityExpr: just relational expr} {expr 2<=2.1} 1
 test compExpr-old-8.3 {CompileEqualityExpr: just relational expr} {expr 3.2>"2.2"} 1
-test compExpr-old-8.4 {CompileEqualityExpr: just relational expr} {expr {"0y"<"0x12"}} 0
+test compExpr-old-8.4 {CompileEqualityExpr: just relational expr} {expr {"0y"<"0x12"}} 1
 test compExpr-old-8.5 {CompileEqualityExpr: error in relational expr} -body {
     expr x>3
 } -returnCodes error -match glob -result *
