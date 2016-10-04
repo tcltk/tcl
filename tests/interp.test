@@ -606,6 +606,17 @@ test interp-14.10 {testing interp-alias: error messages} -setup {
     invoked from within
 "a 1"}
 
+test interp-14.11 {{interp alias} {target named the empty string} {bug 2bf56185}} -setup {
+    set interp [interp create [info cmdcount]]
+    interp eval $interp {
+	proc {} args {return $args}
+    }
+
+} -body {
+    interp alias {} p1 $interp {}
+    p1 one two three
+} -result {one two three}
+
 # part 15: testing file sharing
 test interp-15.1 {testing file sharing} {
     catch {interp delete z}
