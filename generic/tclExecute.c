@@ -5378,8 +5378,41 @@ TEBCresume(
     case INST_STR_NEQ:		/* String (in)equality check */
     case INST_STR_CMP:		/* String compare. */
     stringCompare:
+	{
+	ClientData ptr1;
+	int type1;
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
+
+	GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
+	GetNumberFromObj(NULL, value2Ptr, &ptr1, &type1);
+
+	if (valuePtr->typePtr == &tclDoubleType
+	    || valuePtr->typePtr == &tclIntType
+#ifndef TCL_WIDE_INT_IS_LONG
+	    || valuePtr->typePtr == &tclWideIntType
+#endif
+	    || valuePtr->typePtr == &tclBignumType
+	) {
+	    valuePtr = Tcl_DuplicateObj(valuePtr);
+	    TclInvalidateStringRep(valuePtr);
+	    TclGetString(valuePtr);
+	}
+
+	if (value2Ptr->typePtr == &tclDoubleType
+	    || value2Ptr->typePtr == &tclIntType
+#ifndef TCL_WIDE_INT_IS_LONG
+	    || value2Ptr->typePtr == &tclWideIntType
+#endif
+	    || value2Ptr->typePtr == &tclBignumType
+	) {
+	    value2Ptr = Tcl_DuplicateObj(value2Ptr);
+	    TclInvalidateStringRep(value2Ptr);
+	    TclGetString(value2Ptr);
+	}
+
+	Tcl_IncrRefCount(valuePtr);
+	Tcl_IncrRefCount(value2Ptr);
 
 	if (valuePtr == value2Ptr) {
 	    match = 0;
@@ -5501,7 +5534,10 @@ TEBCresume(
 
 	TRACE(("\"%.20s\" \"%.20s\" => %d\n", O2S(valuePtr), O2S(value2Ptr),
 		(match < 0 ? -1 : match > 0 ? 1 : 0)));
+	Tcl_DecrRefCount(valuePtr);
+	Tcl_DecrRefCount(value2Ptr);
 	JUMP_PEEPHOLE_F(match, 1, 2);
+	}
 
     case INST_STR_LEN:
 	valuePtr = OBJ_AT_TOS;
