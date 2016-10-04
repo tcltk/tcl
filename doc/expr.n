@@ -133,15 +133,15 @@ Exponentiation.  Valid for any numeric operands.
 Multiply, divide, remainder.  None of these operators may be
 applied to string operands, and remainder may be applied only
 to integers.
-The remainder will always have the same sign as the divisor and
+The remainder always has the same sign as the divisor and
 an absolute value smaller than the absolute value of the divisor.
 .RS
 .PP
 When applied to integers, the division and remainder operators can be
 considered to partition the number line into a sequence of equal-sized
 adjacent non-overlapping pieces where each piece is the size of the divisor;
-the division result identifies which piece the divisor lay within, and the
-remainder result identifies where within that piece the divisor lay. A
+the division result identifies which piece the dividend lies within, and the
+remainder result identifies where within that piece the dividend lies. A
 consequence of this is that the result of
 .QW "-57 \fB/\fR 10"
 is always -6, and the result of
