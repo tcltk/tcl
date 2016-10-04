@@ -159,7 +159,7 @@ DEBUGFLAGS     = $(DEBUGFLAGS) -RTC1
 DEBUGFLAGS     = $(DEBUGFLAGS) -GZ
 !endif
 
-COMPILERFLAGS  =-W3 -DUNICODE -D_UNICODE
+COMPILERFLAGS  =-W3 /DUNICODE /D_UNICODE /D_ATL_XP_TARGETING
 
 # In v13 -GL and -YX are incompatible.
 !if [nmakehlp -c -YX]
@@ -230,6 +230,10 @@ STATIC_BUILD	= 1
 !else
 STATIC_BUILD	= 0
 !endif
+!if [nmakehlp -f $(OPTS) "nomsvcrt"]
+!message *** Doing nomsvcrt
+MSVCRT		= 0
+!else
 !if [nmakehlp -f $(OPTS) "msvcrt"]
 !message *** Doing msvcrt
 MSVCRT		= 1
@@ -238,6 +242,7 @@ MSVCRT		= 1
 MSVCRT		= 1
 !else
 MSVCRT		= 0
+!endif
 !endif
 !endif
 !if [nmakehlp -f $(OPTS) "staticpkg"] && $(STATIC_BUILD)
