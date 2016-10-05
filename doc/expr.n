@@ -17,13 +17,13 @@ expr \- Evaluate an expression
 .BE
 .SH DESCRIPTION
 .PP
-Concatenates \fIarg\fRs, separated by a space, into an expresion, and evaluates
+Concatenates \fIarg\fRs, separated by a space, into an expression, and evaluates
 that expression, returning its value.
 The operators permitted in an expression include a subset of
 the operators permitted in C expressions.  For those operators
 common to both Tcl and C, Tcl applies the same meaning and precedence
 as the corresponding C operators.
-The value of an expressions is often a numeric result, either an integer or a
+The value of an expression is often a numeric result, either an integer or a
 floating-point value, but may also be a non-numeric value.
 For example, the expression
 .PP
@@ -33,7 +33,7 @@ For example, the expression
 .PP
 evaluates to 14.2.
 Expressions differ from C expressions in the way that
-operands are specified.  Also, expressions support
+operands are specified.  Expressions also support
 non-numeric operands, string comparisons, and some
 additional operators not found in C.
 .PP
@@ -199,10 +199,10 @@ Logical OR.  If both operands are false, the result is 0, or 1 otherwise.
 If-then-else, as in C.  If \fIx\fR is false , the result is the value of
 \fIy\fR.  Otherwise the result is the value of \fIz\fR.
 .PP
-The exponentiation operator promotes types in the same way as the multiply 
-and divide operators, and the result is is the same as the result of 
+The exponentiation operator promotes types in the same way that the multiply 
+and divide operators do, and the result is is the same as the result of 
 \fBpow\fR.
-exponentiation groups right-to-left within a precedence level. Other binary 
+Exponentiation groups right-to-left within a precedence level. Other binary 
 operators group left-to-right.  For example, the value of
 .PP
 .CS
@@ -217,9 +217,9 @@ is 0, while the value of
 .PP
 is 512.
 .PP
-\fB&&\fR, \fB||\fR, and \fB?:\fR feature 
+As in C, \fB&&\fR, \fB||\fR, and \fB?:\fR feature 
 .QW "lazy evaluation" ,
-just as in C, which means that operands are not evaluated if they are
+which means that operands are not evaluated if they are
 not needed to determine the outcome.  For example, in
 .PP
 .CS
@@ -258,7 +258,7 @@ tcl::mathfunc::sin [\fBexpr\fR {$x+$y}]
 .CE
 .PP
 \fBtcl::mathfunc::sin\fR is resolved as described in
-\fBNAMESPACE RESOLUTION\fR in the \fBnamespace\fR documentation.   Given the
+\fBNAMESPACE RESOLUTION\fR in the \fBnamespace\fR(n) documentation.   Given the
 default value of \fBnamespace path\fR, \fB[namespace
 current]::tcl::mathfunc::sin\fR or \fB::tcl::mathfunc::sin\fR are the typical
 resolutions.
@@ -288,8 +288,8 @@ Any code that relied on these implicit truncations should instead call
 \fBint()\fR or \fBwide()\fR, which do truncate.
 .PP
 Internal floating-point computations are
-performed using the C type \fIdouble\fR.
-When converting a string to floating-point, exponent overflow is
+performed using the \fIdouble\fR C type.
+When converting a string to floating-point value, exponent overflow is
 detected and results in the \fIdouble\fR value of \fBInf\fR or
 \fB\-Inf\fR as appropriate.  Floating-point overflow and underflow
 are detected to the degree supported by the hardware, which is generally
