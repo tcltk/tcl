@@ -1873,7 +1873,7 @@ StringMapCmd(
 
     /*
      * This test is tricky, but has to be that way or you get other strange
-     * inconsistencies (see test string-10.20 for illustration why!)
+     * inconsistencies (see test string-10.20.1 for illustration why!)
      */
 
     if (objv[objc-2]->typePtr == &tclDictType && objv[objc-2]->bytes == NULL){
