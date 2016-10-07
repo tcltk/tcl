@@ -1876,7 +1876,8 @@ StringMapCmd(
      * inconsistencies (see test string-10.20.1 for illustration why!)
      */
 
-    if (Tcl_FetchIntRep(objv[objc-2], &tclDictType) && objv[objc-2]->bytes == NULL){
+    if (!TclHasStringRep(objv[objc-2]) 
+	    && Tcl_FetchIntRep(objv[objc-2], &tclDictType)){
 	int i, done;
 	Tcl_DictSearch search;
 
