@@ -815,9 +815,7 @@ TclNewInstNameObj(
 {
     Tcl_Obj *objPtr = Tcl_NewObj();
 
-    /* Optimized Tcl_InvalidateStringRep */
-    objPtr->bytes = NULL;
-
+    TclInvalidateStringRep(objPtr);
     InstNameSetIntRep(objPtr, (long) inst);
 
     return objPtr;
