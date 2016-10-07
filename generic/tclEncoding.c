@@ -370,7 +370,7 @@ DupEncodingIntRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    Tcl_Encoding encoding = Tcl_GetEncoding(NULL, srcPtr->bytes);
+    Tcl_Encoding encoding = Tcl_GetEncoding(NULL, TclGetString(srcPtr));
     EncodingSetIntRep(dupPtr, encoding);
 }
 
