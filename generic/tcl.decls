@@ -2341,6 +2341,9 @@ declare 634 {
     void Tcl_StoreIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr,
 	    const Tcl_ObjIntRep *irPtr)
 }
+declare 635 {
+    int Tcl_HasStringRep(Tcl_Obj *objPtr)
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
