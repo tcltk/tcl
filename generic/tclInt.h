@@ -4295,6 +4295,18 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 /*
  *----------------------------------------------------------------
+ * Macro used by the Tcl core to test whether an object has a
+ * string representation (or is a 'pure' internal value).
+ * The ANSI C "prototype" for this macro is:
+ *
+ * MODULE_SCOPE int	TclHasStringRep(Tcl_Obj *objPtr);
+ *----------------------------------------------------------------
+ */
+
+#define TclHasStringRep(objPtr) ((objPtr)->bytes != NULL)
+
+/*
+ *----------------------------------------------------------------
  * Macros used by the Tcl core to grow Tcl_Token arrays. They use the same
  * growth algorithm as used in tclStringObj.c for growing strings. The ANSI C
  * "prototype" for this macro is:

@@ -5791,7 +5791,7 @@ TclArgumentGet(
      * up by the caller. It knows better than us.
      */
 
-    if ((obj->bytes == NULL) || TclListObjIsCanonical(obj)) {
+    if (!TclHasStringRep(obj) || TclListObjIsCanonical(obj)) {
 	return;
     }
 
@@ -7413,14 +7413,16 @@ ExprAbsFunc(
 	if (l > (long)0) {
 	    goto unChanged;
 	} else if (l == (long)0) {
-	    const char *string = objv[1]->bytes;
-	    if (string) {
-		while (*string != '0') {
-		    if (*string == '-') {
+	    if (TclHasStringRep(objv[1])) {
+		int numBytes;
+		const char *bytes = TclGetStringFromObj(objv[1], &numBytes);
+
+		while (numBytes) {
+		    if (*bytes == '-') {
 			Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
 			return TCL_OK;
 		    }
-		    string++;
+		    bytes++; numBytes--;
 		}
 	    }
 	    goto unChanged;

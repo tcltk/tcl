@@ -1419,6 +1419,7 @@ const TclStubs tclStubs = {
     Tcl_InitStringRep, /* 632 */
     Tcl_FetchIntRep, /* 633 */
     Tcl_StoreIntRep, /* 634 */
+    Tcl_HasStringRep, /* 635 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -1810,6 +1810,25 @@ Tcl_InvalidateStringRep(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_HasStringRep --
+ *
+ *	This function reports whether object has a string representation.
+ *
+ * Results:
+ *	Boolean.
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_HasStringRep(
+    Tcl_Obj *objPtr)	/* Object to test */
+{
+    return TclHasStringRep(objPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_StoreIntRep --
  *
  *	This function is called to set the object's internal

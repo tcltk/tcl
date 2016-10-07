@@ -1828,6 +1828,8 @@ EXTERN Tcl_ObjIntRep *	Tcl_FetchIntRep(Tcl_Obj *objPtr,
 EXTERN void		Tcl_StoreIntRep(Tcl_Obj *objPtr,
 				const Tcl_ObjType *typePtr,
 				const Tcl_ObjIntRep *irPtr);
+/* 635 */
+EXTERN int		Tcl_HasStringRep(Tcl_Obj *objPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2498,6 +2500,7 @@ typedef struct TclStubs {
     char * (*tcl_InitStringRep) (Tcl_Obj *objPtr, const char *bytes, unsigned int numBytes); /* 632 */
     Tcl_ObjIntRep * (*tcl_FetchIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 633 */
     void (*tcl_StoreIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr, const Tcl_ObjIntRep *irPtr); /* 634 */
+    int (*tcl_HasStringRep) (Tcl_Obj *objPtr); /* 635 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3798,6 +3801,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FetchIntRep) /* 633 */
 #define Tcl_StoreIntRep \
 	(tclStubsPtr->tcl_StoreIntRep) /* 634 */
+#define Tcl_HasStringRep \
+	(tclStubsPtr->tcl_HasStringRep) /* 635 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
