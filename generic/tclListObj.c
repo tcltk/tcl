@@ -1877,7 +1877,7 @@ SetListFromAny(
      * describe duplicate keys).
      */
 
-    if (Tcl_FetchIntRep(objPtr, &tclDictType) && !objPtr->bytes) {
+    if (!TclHasStringRep(objPtr) && Tcl_FetchIntRep(objPtr, &tclDictType)) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done, size;
