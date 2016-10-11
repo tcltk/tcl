@@ -833,7 +833,7 @@ TclpSetVariables(
 
     CFLocaleRef localeRef;
     
-    if (CFLocaleCopyCurrent != NULL && CFLocaleGetIdentifier != NULL &&
+    if (&CFLocaleCopyCurrent != NULL && &CFLocaleGetIdentifier != NULL &&
 	    (localeRef = CFLocaleCopyCurrent())) {
 	CFStringRef locale = CFLocaleGetIdentifier(localeRef);
 
