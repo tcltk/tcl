@@ -1474,7 +1474,7 @@ Tcl_OpenTcpServer(
     }
     retry++;
     chosenport = 0;
-    
+
     if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, 1, &errorMsg)) {
 	my_errno = errno;
 	goto error;
