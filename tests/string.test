@@ -901,6 +901,10 @@ test string-10.20 {string map, dictionaries don't alter map ordering} {
     set map {aa X a Y}
     list [string map [dict create aa X a Y] aaa] [string map $map aaa] [dict size $map] [string map $map aaa]
 } {XY XY 2 XY}
+test string-10.20.1 {string map, dictionaries don't alter map ordering} {
+    set map {a X b Y a Z}
+    list [string map [dict create a X b Y a Z] aaa] [string map $map aaa] [dict size $map] [string map $map aaa]
+} {ZZZ XXX 2 XXX}
 test string-10.21 {string map, ABR checks} {
     string map {longstring foob} long
 } long
