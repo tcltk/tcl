@@ -1047,7 +1047,7 @@ proc http::Event {sock token} {
 	    fconfigure $sock -translation binary
 
 	    if {
-		$state(-binary) || ![string match -nocase text* $state(type)]
+		$state(-binary) || [IsBinaryContentType $state(type)]
 	    } {
 		# Turn off conversions for non-text data
 		set state(binary) 1
@@ -1181,6 +1181,38 @@ proc http::Event {sock token} {
 	}
 	return
     }
+}
+
+# http::IsBinaryContentType --
+#
+#	Determine if the content-type means that we should definitely transfer
+#	the data as binary. [Bug 838e99a76d]
+#
+# Arguments
+#	type	The content-type of the data.
+#
+# Results:
+#	Boolean, true if we definitely should be binary.
+
+proc http::IsBinaryContentType {type} {
+    lassign [split [string tolower $type] "/;"] major minor
+    if {$major eq "text"} {
+	return false
+    }
+    # There's a bunch of XML-as-application-format things about. See RFC 3023
+    # and so on.
+    if {$major eq "application"} {
+	set minor [string trimright $minor]
+	if {$minor in {"xml" "xml-external-parsed-entity" "xml-dtd"}} {
+	    return false
+	}
+    }
+    # Not just application/foobar+xml but also image/svg+xml, so let us not
+    # restrict things for now...
+    if {[string match "*+xml" $minor]} {
+	return false
+    }
+    return true
 }
 
 # http::getTextLine --
