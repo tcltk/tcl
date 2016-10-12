@@ -389,6 +389,9 @@ static Tcl_WideUInt	Nokia770Twiddle(Tcl_WideUInt w);
  *	- TCL_PARSE_SCAN_PREFIXES:	ignore the prefixes 0b and 0o that are
  *		not part of the [scan] command's vocabulary. Use only in
  *		combination with TCL_PARSE_INTEGER_ONLY.
+ *	- TCL_PARSE_BINARY_ONLY:	parse only in the binary format, whether
+ *		or not a prefix is present that would lead to binary parsing.
+ *		Use only in combination with TCL_PARSE_INTEGER_ONLY.
  *	- TCL_PARSE_OCTAL_ONLY:		parse only in the octal format, whether
  *		or not a prefix is present that would lead to octal parsing.
  *		Use only in combination with TCL_PARSE_INTEGER_ONLY.
@@ -619,6 +622,9 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    if (c == 'x' || c == 'X') {
+		if (flags & (TCL_PARSE_OCTAL_ONLY|TCL_PARSE_BINARY_ONLY)) {
+		    goto endgame;
+		}
 		state = ZERO_X;
 		break;
 	    }
@@ -629,6 +635,9 @@ TclParseNumber(
 		goto zeroo;
 	    }
 	    if (c == 'b' || c == 'B') {
+		if (flags & TCL_PARSE_OCTAL_ONLY) {
+		    goto endgame;
+		}
 		state = ZERO_B;
 		break;
 	    }
