@@ -538,6 +538,9 @@ test scan-5.14 {integer scanning} {
 test scan-5.15 {Bug be003d570f} {
     scan 0x40 %o
 } 0
+test scan-5.16 {Bug be003d570f} {
+    scan 0x40 %b
+} 0
 
 test scan-6.1 {floating-point scanning} -setup {
     set a {}; set b {}; set c {}; set d {}
