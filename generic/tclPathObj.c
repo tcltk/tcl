@@ -2608,8 +2608,7 @@ UpdateStringOfFsPath(
 
     pathPtr->bytes = TclGetStringFromObj(copy, &cwdLen);
     pathPtr->length = cwdLen;
-    copy->bytes = tclEmptyStringRep;
-    copy->length = 0;
+    TclInitStringRep(copy, NULL, 0);
     TclDecrRefCount(copy);
 }
 

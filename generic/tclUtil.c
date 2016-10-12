@@ -1383,9 +1383,9 @@ TclConvertElement(
      */
 
     if ((src == NULL) || (length == 0) || (*src == '\0' && length == -1)) {
-	src = tclEmptyStringRep;
-	length = 0;
-	conversion = CONVERT_BRACE;
+	p[0] = '{';
+	p[1] = '}';
+	return 2;
     }
 
     /*
