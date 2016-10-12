@@ -630,7 +630,7 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    if (c == 'x' || c == 'X') {
-		if (flags & TCL_PARSE_OCTAL_ONLY) {
+		if (flags & (TCL_PARSE_OCTAL_ONLY|TCL_PARSE_BINARY_ONLY)) {
 		    goto endgame;
 		}
 		state = ZERO_X;
