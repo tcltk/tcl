@@ -1766,8 +1766,7 @@ Tcl_InitStringRep(
 		objPtr->length = (int) numBytes;
 	    }
 	} else {
-	    objPtr->bytes = tclEmptyStringRep;
-	    return NULL;
+	    TclInitStringRep(objPtr, NULL, 0);
 	}
     } else {
 	/* objPtr->bytes != NULL bytes == NULL - Truncate */
