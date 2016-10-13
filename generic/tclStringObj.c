@@ -2948,6 +2948,16 @@ UpdateStringOfString(
 {
     String *stringPtr = GET_STRING(objPtr);
 
+    /*
+     * This routine is only called when we need to generate the
+     * string rep objPtr->bytes because it does not exist -- it is NULL.
+     * In that circumstance, any lingering claim about the size of
+     * memory pointed to by that NULL pointer is clearly bogus, and
+     * needs a reset.
+     */
+
+    stringPtr->allocated = 0;
+
     if (stringPtr->numChars == 0) {
 	TclInitStringRep(objPtr, NULL, 0);
     } else {
