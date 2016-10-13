@@ -19,7 +19,6 @@
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include "tommath.h"
-#include "tclStringRep.h"
 #include <math.h>
 #include <assert.h>
 
@@ -5599,51 +5598,29 @@ TEBCresume(
 	if (length3 - 1 == toIdx - fromIdx) {
 	    unsigned char *bytes1, *bytes2;
 
-	    /*
-	     * Flush the info in the string internal rep that refers to the
-	     * about-to-be-invalidated UTF-8 rep. This indicates that a new
-	     * buffer needs to be allocated, and assumes that the value is
-	     * already of tclStringTypePtr type, which should be true provided
-	     * we call it after Tcl_GetUnicodeFromObj.
-	     */
-#define MarkStringInternalRepForFlush(objPtr) \
-	    (GET_STRING(objPtr)->allocated = 0)
-
 	    if (Tcl_IsShared(valuePtr)) {
 		objResultPtr = Tcl_DuplicateObj(valuePtr);
-		if (TclIsPureByteArray(objResultPtr)
-			&& TclIsPureByteArray(value3Ptr)) {
-		    bytes1 = Tcl_GetByteArrayFromObj(objResultPtr, NULL);
-		    bytes2 = Tcl_GetByteArrayFromObj(value3Ptr, NULL);
-		    memcpy(bytes1 + fromIdx, bytes2, length3);
-		} else {
-		    ustring1 = Tcl_GetUnicodeFromObj(objResultPtr, NULL);
-		    ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
-		    memcpy(ustring1 + fromIdx, ustring2,
-			    length3 * sizeof(Tcl_UniChar));
-		    MarkStringInternalRepForFlush(objResultPtr);
-		}
-		Tcl_InvalidateStringRep(objResultPtr);
-		TclDecrRefCount(value3Ptr);
-		TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
-		NEXT_INST_F(1, 1, 1);
 	    } else {
-		if (TclIsPureByteArray(valuePtr)
-			&& TclIsPureByteArray(value3Ptr)) {
-		    bytes1 = Tcl_GetByteArrayFromObj(valuePtr, NULL);
-		    bytes2 = Tcl_GetByteArrayFromObj(value3Ptr, NULL);
-		    memcpy(bytes1 + fromIdx, bytes2, length3);
-		} else {
-		    ustring1 = Tcl_GetUnicodeFromObj(valuePtr, NULL);
-		    ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
-		    memcpy(ustring1 + fromIdx, ustring2,
-			    length3 * sizeof(Tcl_UniChar));
-		    MarkStringInternalRepForFlush(valuePtr);
-		}
-		Tcl_InvalidateStringRep(valuePtr);
-		TclDecrRefCount(value3Ptr);
-		TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
+		objResultPtr = valuePtr;
+	    }
+	    if (TclIsPureByteArray(objResultPtr)
+		    && TclIsPureByteArray(value3Ptr)) {
+		bytes1 = Tcl_GetByteArrayFromObj(objResultPtr, NULL);
+		bytes2 = Tcl_GetByteArrayFromObj(value3Ptr, NULL);
+		memcpy(bytes1 + fromIdx, bytes2, length3);
+	    } else {
+		ustring1 = Tcl_GetUnicodeFromObj(objResultPtr, NULL);
+		ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
+		memcpy(ustring1 + fromIdx, ustring2,
+			length3 * sizeof(Tcl_UniChar));
+	    }
+	    Tcl_InvalidateStringRep(objResultPtr);
+	    TclDecrRefCount(value3Ptr);
+	    TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
+	    if (objResultPtr == valuePtr) {
 		NEXT_INST_F(1, 0, 0);
+	    } else {
+		NEXT_INST_F(1, 1, 1);
 	    }
 	}
 
@@ -5659,57 +5636,37 @@ TEBCresume(
 	 * Remove substring using copying.
 	 */
 
-	if (length3 == 0) {
-	    if (fromIdx > 0) {
-		objResultPtr = Tcl_NewUnicodeObj(ustring1, fromIdx);
-		if (toIdx < length) {
-		    Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
-			    length - toIdx);
-		}
+	objResultPtr = NULL;
+	if (fromIdx > 0) {
+	    objResultPtr = Tcl_NewUnicodeObj(ustring1, fromIdx);
+	}
+	if (length3 > 0) {
+	    if (objResultPtr) {
+		Tcl_AppendObjToObj(objResultPtr, value3Ptr);
+	    } else if (Tcl_IsShared(value3Ptr)) {
+		objResultPtr = Tcl_DuplicateObj(value3Ptr);
+	    } else {
+		objResultPtr = value3Ptr;
+	    }
+	}
+	if (toIdx < length) {
+	    if (objResultPtr) {
+		Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
+			length - toIdx);
 	    } else {
 		objResultPtr = Tcl_NewUnicodeObj(ustring1 + toIdx + 1,
 			length - toIdx);
 	    }
+	}
+	if (objResultPtr == NULL) {
+	    /* This has to be the case [string replace $s 0 end {}] */
+	    /* which has result {} which is same as value3Ptr. */
+	    objResultPtr = value3Ptr;
+	}
+	if (objResultPtr != value3Ptr) {
+	    /* See [Bug 82e7f67325] */
 	    TclDecrRefCount(value3Ptr);
-	    TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
-	    NEXT_INST_F(1, 1, 1);
 	}
-
-	/*
-	 * Splice string pieces by full copying.
-	 */
-
-	if (fromIdx > 0) {
-	    objResultPtr = Tcl_NewUnicodeObj(ustring1, fromIdx);
-	    Tcl_AppendObjToObj(objResultPtr, value3Ptr);
-	    if (toIdx < length) {
-		Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
-			length - toIdx);
-	    }
-	} else if (Tcl_IsShared(value3Ptr)) {
-	    objResultPtr = Tcl_DuplicateObj(value3Ptr);
-	    if (toIdx < length) {
-		Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
-			length - toIdx);
-	    }
-	} else {
-	    /*
-	     * Be careful with splicing the stack in this case; we have a
-	     * refCount:1 object in value3Ptr and we want to append to it and
-	     * make it be the refCount:1 object at the top of the stack
-	     * afterwards. [Bug 82e7f67325]
-	     */
-
-	    if (toIdx < length) {
-		Tcl_AppendUnicodeToObj(value3Ptr, ustring1 + toIdx + 1,
-			length - toIdx);
-	    }
-	    TRACE_APPEND(("\"%.30s\"\n", O2S(value3Ptr)));
-	    TclDecrRefCount(valuePtr);
-	    OBJ_AT_TOS = value3Ptr;	/* Tricky! */
-	    NEXT_INST_F(1, 0, 0);
-	}
-	TclDecrRefCount(value3Ptr);
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 1, 1);
 
