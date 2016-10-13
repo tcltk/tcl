@@ -5745,37 +5745,27 @@ TEBCresume(
 
 	    if (Tcl_IsShared(valuePtr)) {
 		objResultPtr = Tcl_DuplicateObj(valuePtr);
-		if (TclIsPureByteArray(objResultPtr)
-			&& TclIsPureByteArray(value3Ptr)) {
-		    bytes1 = Tcl_GetByteArrayFromObj(objResultPtr, NULL);
-		    bytes2 = Tcl_GetByteArrayFromObj(value3Ptr, NULL);
-		    memcpy(bytes1 + fromIdx, bytes2, length3);
-		} else {
-		    ustring1 = Tcl_GetUnicodeFromObj(objResultPtr, NULL);
-		    ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
-		    memcpy(ustring1 + fromIdx, ustring2,
-			    length3 * sizeof(Tcl_UniChar));
-		}
-		Tcl_InvalidateStringRep(objResultPtr);
-		TclDecrRefCount(value3Ptr);
-		TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
-		NEXT_INST_F(1, 1, 1);
 	    } else {
-		if (TclIsPureByteArray(valuePtr)
-			&& TclIsPureByteArray(value3Ptr)) {
-		    bytes1 = Tcl_GetByteArrayFromObj(valuePtr, NULL);
-		    bytes2 = Tcl_GetByteArrayFromObj(value3Ptr, NULL);
-		    memcpy(bytes1 + fromIdx, bytes2, length3);
-		} else {
-		    ustring1 = Tcl_GetUnicodeFromObj(valuePtr, NULL);
-		    ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
-		    memcpy(ustring1 + fromIdx, ustring2,
-			    length3 * sizeof(Tcl_UniChar));
-		}
-		Tcl_InvalidateStringRep(valuePtr);
-		TclDecrRefCount(value3Ptr);
-		TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
+		objResultPtr = valuePtr;
+	    }
+	    if (TclIsPureByteArray(objResultPtr)
+		    && TclIsPureByteArray(value3Ptr)) {
+		bytes1 = Tcl_GetByteArrayFromObj(objResultPtr, NULL);
+		bytes2 = Tcl_GetByteArrayFromObj(value3Ptr, NULL);
+		memcpy(bytes1 + fromIdx, bytes2, length3);
+	    } else {
+		ustring1 = Tcl_GetUnicodeFromObj(objResultPtr, NULL);
+		ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
+		memcpy(ustring1 + fromIdx, ustring2,
+			length3 * sizeof(Tcl_UniChar));
+	    }
+	    Tcl_InvalidateStringRep(objResultPtr);
+	    TclDecrRefCount(value3Ptr);
+	    TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
+	    if (objResultPtr == valuePtr) {
 		NEXT_INST_F(1, 0, 0);
+	    } else {
+		NEXT_INST_F(1, 1, 1);
 	    }
 	}
 
