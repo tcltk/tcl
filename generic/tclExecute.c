@@ -5719,17 +5719,6 @@ TEBCresume(
 	length3 = Tcl_GetCharLength(value3Ptr);
 
 	/*
-	 * Remove substring. In-place.
-	 */
-
-	if (length3 == 0 && !Tcl_IsShared(valuePtr) && toIdx == length) {
-	    TclDecrRefCount(value3Ptr);
-	    Tcl_SetObjLength(valuePtr, fromIdx);
-	    TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
-	    NEXT_INST_F(1, 0, 0);
-	}
-
-	/*
 	 * See if we can splice in place. This happens when the number of
 	 * characters being replaced is the same as the number of characters
 	 * in the string to be inserted.
