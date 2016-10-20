@@ -1242,8 +1242,8 @@ StringFirstCmd(
 	     * Scan forward to find the first character.
 	     */
 
-	    if ((*p == *needleStr) && (TclUniCharNcmp(needleStr, p,
-		    (unsigned long) needleLen) == 0)) {
+	    if ((*p == *needleStr) && (memcmp(needleStr, p,
+		    sizeof(Tcl_UniChar) * (size_t)needleLen) == 0)) {
 		match = p - haystackStr;
 		break;
 	    }
