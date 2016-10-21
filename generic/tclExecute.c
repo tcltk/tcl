@@ -5784,10 +5784,14 @@ TEBCresume(
 	    /* which has result {} which is same as value3Ptr. */
 	    objResultPtr = value3Ptr;
 	}
-	if (objResultPtr != value3Ptr) {
+	if (objResultPtr == value3Ptr) {
 	    /* See [Bug 82e7f67325] */
-	    TclDecrRefCount(value3Ptr);
+	    TclDecrRefCount(OBJ_AT_TOS);
+	    OBJ_AT_TOS = value3Ptr;
+	    TRACE_APPEND(("\"%.30s\"\n", O2S(value3Ptr)));
+	    NEXT_INST_F(1, 0, 0);
 	}
+	TclDecrRefCount(value3Ptr);
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 1, 1);
 
