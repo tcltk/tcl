@@ -3206,17 +3206,6 @@ TclCompileFormatCmd(
 	 */
 
 	TclEmitInstInt1(INST_STR_CONCAT1, i, envPtr);
-    } else {
-	/*
-	 * EVIL HACK! Force there to be a string representation in the case
-	 * where there's just a "%s" in the format; case covered by the test
-	 * format-20.1 (and it is horrible...)
-	 */
-
-	TclEmitOpcode(INST_DUP, envPtr);
-	PushStringLiteral(envPtr, "");
-	TclEmitOpcode(INST_STR_EQ, envPtr);
-	TclEmitOpcode(INST_POP, envPtr);
     }
     return TCL_OK;
 }
