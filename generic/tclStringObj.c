@@ -2598,6 +2598,46 @@ TclGetStringStorage(
     *sizePtr = stringPtr->allocated;
     return objPtr->bytes;
 }
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclStringCatObjv --
+ *
+ *	Performs the [string cat] function.
+ *
+ * Results:
+ * 	A standard Tcl result.
+ *
+ * Side effects:
+ * 	Writes to *objPtrPtr the address of Tcl_Obj that is concatenation
+ * 	of all objc values in objv.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclStringCatObjv(
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj * const objv[],
+    Tcl_Obj **objPtrPtr)
+{
+    Tcl_Obj *objResultPtr;
+
+    /* assert (objc >= 2) */
+
+    objResultPtr = *objv++; objc--;
+    if (Tcl_IsShared(objResultPtr)) {
+	objResultPtr = Tcl_DuplicateObj(objResultPtr);
+    }
+    while (objc--) {
+	Tcl_AppendObjToObj(objResultPtr, *objv++);
+    }
+    *objPtrPtr = objResultPtr;
+    return TCL_OK;
+}
+
 /*
  *---------------------------------------------------------------------------
  *
