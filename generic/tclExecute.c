@@ -2692,6 +2692,13 @@ TEBCresume(
 
 	opnd = TclGetUInt1AtPtr(pc+1);
 
+#if 1
+	if (TCL_OK != TclStringCatObjv(interp, opnd, &OBJ_AT_DEPTH(opnd-1),
+		&objResultPtr)) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+#else
 	/*
 	 * Detect only-bytearray-or-null case.
 	 */
@@ -2828,6 +2835,7 @@ TEBCresume(
 		}
 	    }
 	}
+#endif
 
 	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	NEXT_INST_V(2, opnd, 1);
