@@ -2873,7 +2873,8 @@ StringCatCmd(
 	return TCL_OK;
     }
 
-    code = TclStringCatObjv(interp, objc-1, objv+1, &objResultPtr);
+    code = TclStringCatObjv(interp, /* inPlace */ 1, objc-1, objv+1,
+	    &objResultPtr);
 
     if (code == TCL_OK) {
 	Tcl_SetObjResult(interp, objResultPtr);

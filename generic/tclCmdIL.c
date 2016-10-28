@@ -2187,9 +2187,8 @@ Tcl_JoinObjCmd(
     Tcl_IncrRefCount(joinObjPtr);
 
     if (Tcl_GetCharLength(joinObjPtr) == 0) {
-	Tcl_IncrRefCount(elemPtrs[0]);
-	TclStringCatObjv(interp, listLen, elemPtrs, &resObjPtr);
-	Tcl_DecrRefCount(elemPtrs[0]);
+	TclStringCatObjv(interp, /* inPlace */ 0, listLen, elemPtrs,
+		&resObjPtr);
     } else {
 	int i;
 
