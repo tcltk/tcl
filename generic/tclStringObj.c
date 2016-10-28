@@ -409,6 +409,15 @@ Tcl_GetCharLength(
     int numChars;
 
     /*
+     * Quick, no-shimmer return for short string reps.
+     */
+
+    if ((objPtr->bytes) && (objPtr->length < 2)) {
+	/* 0 bytes -> 0 chars; 1 byte -> 1 char */
+	return objPtr->length;
+    }
+
+    /*
      * Optimize the case where we're really dealing with a bytearray object
      * without string representation; we don't need to convert to a string to
      * perform the get-length operation.
