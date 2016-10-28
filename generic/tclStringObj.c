@@ -2630,18 +2630,74 @@ TclGetStringStorage(
 int
 TclStringCatObjv(
     Tcl_Interp *interp,
+    int inPlace,
     int objc,
     Tcl_Obj * const objv[],
     Tcl_Obj **objPtrPtr)
 {
     Tcl_Obj *objResultPtr;
+    int i, length = 0, binary = 1, first = 0;
 
     /* assert (objc >= 2) */
 
+    /*
+     * GOALS:	Avoid shimmering & string rep generation.
+     * 		Produce pure bytearray when possible.
+     * 		Error on overflow.
+     */
+
+    for (i = 0; i < objc && binary; i++) {
+	Tcl_Obj *objPtr = objv[i];
+
+	if (objPtr->bytes) {
+	    if (objPtr->length == 0) {
+		continue;
+	    }
+	    binary = 0;
+	} else if (!TclIsPureByteArray(objPtr)) {
+	    binary = 0;
+	}
+    }
+
+    if (binary) {
+        for (i = 0; i < objc && length >= 0; i++) {
+	    if (objv[i]->bytes == NULL) {
+		int numBytes;
+
+		Tcl_GetByteArrayFromObj(objv[i], &numBytes);
+		if (length == 0) {
+		    first = i;
+		}
+		length += numBytes;
+	    }
+	}
+	if (length < 0) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"max size for a Tcl value (%d bytes) exceeded",
+			INT_MAX));
+		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	if (length == 0) {
+	    /* Total length of zero means every value has length zero */
+	    *objPtrPtr = objv[0];
+	    return TCL_OK;
+	}
+    } 
+
+    objv += first; objc -= first;
     objResultPtr = *objv++; objc--;
-    if (Tcl_IsShared(objResultPtr)) {
+    if (!inPlace || Tcl_IsShared(objResultPtr)) {
 	objResultPtr = Tcl_DuplicateObj(objResultPtr);
     }
+
+    if (binary) {
+	Tcl_SetByteArrayLength(objResultPtr, length);
+    }
+
+
     while (objc--) {
 	Tcl_AppendObjToObj(objResultPtr, *objv++);
     }
