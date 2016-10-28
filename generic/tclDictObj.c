@@ -2305,17 +2305,26 @@ DictAppendCmd(
 	return TCL_ERROR;
     }
 
-    if (valuePtr == NULL) {
-	TclNewObj(valuePtr);
-    } else if (Tcl_IsShared(valuePtr)) {
-	valuePtr = Tcl_DuplicateObj(valuePtr);
+    if ((objc > 3) || (valuePtr == NULL)) {
+	/* Only go through append activites when something will change. */
+
+	if (valuePtr == NULL) {
+	    TclNewObj(valuePtr);
+	} else if (Tcl_IsShared(valuePtr)) {
+	    valuePtr = Tcl_DuplicateObj(valuePtr);
+	}
+
+	for (i=3 ; i<objc ; i++) {
+	    Tcl_AppendObjToObj(valuePtr, objv[i]);
+	}
+
+	Tcl_DictObjPut(NULL, dictPtr, objv[2], valuePtr);
     }
 
-    for (i=3 ; i<objc ; i++) {
-	Tcl_AppendObjToObj(valuePtr, objv[i]);
-    }
-
-    Tcl_DictObjPut(NULL, dictPtr, objv[2], valuePtr);
+    /*
+     * Even if nothing changed, we still overwrite so that variable
+     * trace expectations are met.
+     */
 
     resultPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, dictPtr,
 	    TCL_LEAVE_ERR_MSG);
