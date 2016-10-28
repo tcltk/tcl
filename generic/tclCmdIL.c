@@ -2173,6 +2173,16 @@ Tcl_JoinObjCmd(
 	return TCL_ERROR;
     }
 
+    if (listLen == 0) {
+	/* No elements to join; default empty result is correct. */
+	return TCL_OK;
+    }
+    if (listLen == 1) {
+	/* One element; return it */
+	Tcl_SetObjResult(interp, elemPtrs[0]);
+	return TCL_OK;
+    }
+
     joinObjPtr = (objc == 2) ? Tcl_NewStringObj(" ", 1) : objv[2];
     Tcl_IncrRefCount(joinObjPtr);
 
