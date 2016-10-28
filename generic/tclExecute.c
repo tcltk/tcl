@@ -2693,8 +2693,8 @@ TEBCresume(
 	opnd = TclGetUInt1AtPtr(pc+1);
 
 #if 1
-	if (TCL_OK != TclStringCatObjv(interp, opnd, &OBJ_AT_DEPTH(opnd-1),
-		&objResultPtr)) {
+	if (TCL_OK != TclStringCatObjv(interp, /* inPlace */ 1,
+		opnd, &OBJ_AT_DEPTH(opnd-1), &objResultPtr)) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
