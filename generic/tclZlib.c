@@ -3177,10 +3177,8 @@ ZlibTransformFlush(
 	 * Get the bytes to go out of the compression engine.
 	 */
 
-	cd->outStream.next_out = (Bytef *) cd->outBuffer;
-	cd->outStream.avail_out = cd->outAllocated;
-
-	e = deflate(&cd->outStream, flushType);
+	e = Deflate(&cd->outStream, cd->outBuffer, cd->outAllocated,
+		flushType, &len);
 	if (e != Z_OK && e != Z_BUF_ERROR) {
 	    ConvertError(interp, e, cd->outStream.adler);
 	    return TCL_ERROR;
@@ -3190,7 +3188,6 @@ ZlibTransformFlush(
 	 * Write the bytes we've received to the next layer.
 	 */
 
-	len = cd->outStream.next_out - (Bytef *) cd->outBuffer;
 	if (len > 0 && Tcl_WriteRaw(cd->parent, cd->outBuffer, len) < 0) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "problem flushing channel: %s",
