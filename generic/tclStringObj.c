@@ -2694,12 +2694,26 @@ TclStringCatObjv(
     }
 
     if (binary) {
-	Tcl_SetByteArrayLength(objResultPtr, length);
-    }
+	/* Efficiently produce a pure binary result */
+	unsigned char *dst;
+	int start;
 
+	Tcl_GetByteArrayFromObj(objResultPtr, &start);
+	dst = Tcl_SetByteArrayLength(objResultPtr, length) + start;
+	while (objc--) {
+	    Tcl_Obj *objPtr = *objv++;
 
-    while (objc--) {
-	Tcl_AppendObjToObj(objResultPtr, *objv++);
+	    if (objPtr->bytes == NULL) {
+		int more;
+		unsigned char *src = Tcl_GetByteArrayFromObj(objPtr, &more);
+		memcpy(dst, src, (size_t) more);
+		dst += more;
+	    }
+	}
+    } else {
+	while (objc--) {
+	    Tcl_AppendObjToObj(objResultPtr, *objv++);
+	}
     }
     *objPtrPtr = objResultPtr;
     return TCL_OK;
