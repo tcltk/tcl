@@ -2688,18 +2688,21 @@ TclStringCatObjv(
     } 
 
     objv += first; objc -= first;
-    objResultPtr = *objv++; objc--;
-    if (!inPlace || Tcl_IsShared(objResultPtr)) {
-	objResultPtr = Tcl_DuplicateObj(objResultPtr);
-    }
 
     if (binary) {
 	/* Efficiently produce a pure binary result */
 	unsigned char *dst;
-	int start;
 
-	Tcl_GetByteArrayFromObj(objResultPtr, &start);
-	dst = Tcl_SetByteArrayLength(objResultPtr, length) + start;
+	if (inPlace && !Tcl_IsShared(*objv)) {
+	    int start;
+	
+	    objResultPtr = *objv++; objc--;
+	    Tcl_GetByteArrayFromObj(objResultPtr, &start);
+	    dst = Tcl_SetByteArrayLength(objResultPtr, length) + start;
+	} else {
+	    objResultPtr = Tcl_NewByteArrayObj(NULL, length);
+	    dst = Tcl_SetByteArrayLength(objResultPtr, length);
+	}
 	while (objc--) {
 	    Tcl_Obj *objPtr = *objv++;
 
@@ -2711,6 +2714,15 @@ TclStringCatObjv(
 	    }
 	}
     } else {
+
+
+    objResultPtr = *objv++; objc--;
+    if (!inPlace || Tcl_IsShared(objResultPtr)) {
+	objResultPtr = Tcl_DuplicateObj(objResultPtr);
+    }
+
+
+
 	while (objc--) {
 	    Tcl_AppendObjToObj(objResultPtr, *objv++);
 	}
