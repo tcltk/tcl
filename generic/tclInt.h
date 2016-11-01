@@ -3179,6 +3179,9 @@ MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
 			    Tcl_Obj *bad, Tcl_Obj *fix);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 			    int numBytes);
+MODULE_SCOPE int	TclStringCatObjv(Tcl_Interp *interp, int inPlace,
+			    int objc, Tcl_Obj *const objv[],
+			    Tcl_Obj **objPtrPtr);
 MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
 			    const char *pattern, int ptnLen, int flags);
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
