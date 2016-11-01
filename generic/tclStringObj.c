@@ -2637,60 +2637,113 @@ TclStringCatObjv(
 {
     Tcl_Obj *objResultPtr;
     int i, length = 0, binary = 1, first = 0;
+    int allowUniChar = 1, requestUniChar = 0;
 
     /* assert (objc >= 2) */
 
     /*
+     * Analyze to determine what representation result should be.
      * GOALS:	Avoid shimmering & string rep generation.
      * 		Produce pure bytearray when possible.
      * 		Error on overflow.
      */
 
-    for (i = 0; i < objc && binary; i++) {
+    for (i = 0; i < objc && (binary || allowUniChar); i++) {
 	Tcl_Obj *objPtr = objv[i];
 
 	if (objPtr->bytes) {
-	    if (objPtr->length == 0) {
-		continue;
+	    /* Value has a string rep. */
+	    if (objPtr->length) {
+		/*
+		 * Non-empty string rep. Not a pure bytearray, so we 
+		 * won't create a pure bytearray
+		 */
+	 	binary = 0;
+		if ((objPtr->typePtr) && (objPtr->typePtr != &tclStringType)) {
+		    /* Prevent shimmer of non-string types. */
+		    allowUniChar = 0;
+		}
 	    }
-	    binary = 0;
-	} else if (!TclIsPureByteArray(objPtr)) {
-	    binary = 0;
+	} else {
+	    /* assert (objPtr->typePtr != NULL) -- stork! */
+	    if (TclIsPureByteArray(objPtr)) {
+		allowUniChar = 0;
+	    } else {
+		binary = 0;
+		if (objPtr->typePtr == &tclStringType) {
+		    /* Have a pure Unicode value; ask to preserve it */
+		    requestUniChar = 1;
+		} else {
+		    /* Have another type; prevent shimmer */
+		    allowUniChar = 0;
+		}
+	    }
 	}
     }
 
     if (binary) {
+	/* Result will be pure byte array. Pre-size it */
         for (i = 0; i < objc && length >= 0; i++) {
-	    if (objv[i]->bytes == NULL) {
+	    Tcl_Obj *objPtr = objv[i];
+
+	    if (objPtr->bytes == NULL) {
 		int numBytes;
 
-		Tcl_GetByteArrayFromObj(objv[i], &numBytes);
+		Tcl_GetByteArrayFromObj(objPtr, &numBytes);
 		if (length == 0) {
 		    first = i;
 		}
 		length += numBytes;
 	    }
 	}
-	if (length < 0) {
-	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"max size for a Tcl value (%d bytes) exceeded",
-			INT_MAX));
-		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+    } else if (allowUniChar && requestUniChar) {
+	/* Result will be pure Tcl_UniChar array. Pre-size it. */
+        for (i = 0; i < objc && length >= 0; i++) {
+	    Tcl_Obj *objPtr = objv[i];
+
+	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
+		int numChars;
+
+		Tcl_GetUnicodeFromObj(objPtr, &numChars);
+		if (length == 0) {
+		    first = i;
+		}
+		length += numChars;
 	    }
-	    return TCL_ERROR;
 	}
-	if (length == 0) {
-	    /* Total length of zero means every value has length zero */
-	    *objPtrPtr = objv[0];
-	    return TCL_OK;
+    } else {
+	/* Result will be concat of string reps. Pre-size it. */
+        for (i = 0; i < objc && length >= 0; i++) {
+	    Tcl_Obj *objPtr = objv[i];
+	    int numBytes;
+
+	    Tcl_GetStringFromObj(objPtr, &numBytes);
+	    if ((length == 0) && numBytes) {
+		first = i;
+	    }
+	    length += numBytes;
 	}
-    } 
+    }
+
+    if (length < 0) {
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	}
+	return TCL_ERROR;
+    }
+
+    if (length == 0) {
+	/* Total length of zero means every value has length zero */
+	*objPtrPtr = objv[0];
+	return TCL_OK;
+    }
 
     objv += first; objc -= first;
 
     if (binary) {
-	/* Efficiently produce a pure binary result */
+	/* Efficiently produce a pure byte array result */
 	unsigned char *dst;
 
 	if (inPlace && !Tcl_IsShared(*objv)) {
@@ -2713,18 +2766,67 @@ TclStringCatObjv(
 		dst += more;
 	    }
 	}
-    } else {
+    } else if (allowUniChar && requestUniChar) {
+	/* Efficiently produce a pure Tcl_UniChar array result */
+	Tcl_UniChar *dst;
 
+	if (inPlace && !Tcl_IsShared(*objv)) {
+	    int start;
 
-    objResultPtr = *objv++; objc--;
-    if (!inPlace || Tcl_IsShared(objResultPtr)) {
-	objResultPtr = Tcl_DuplicateObj(objResultPtr);
-    }
+	    objResultPtr = *objv++; objc--;
 
+	    /* Ugly interface! Force resize of the unicode array. */
+	    Tcl_GetUnicodeFromObj(objResultPtr, &start);
+	    Tcl_InvalidateStringRep(objResultPtr);
+	    Tcl_SetObjLength(objResultPtr, length);
+	    dst = Tcl_GetUnicode(objResultPtr) + start;
+	} else {
+	    Tcl_UniChar ch = 0;
 
-
+	    /* Ugly interface! No scheme to init array size. */
+	    objResultPtr = Tcl_NewUnicodeObj(&ch, 0);
+	    Tcl_SetObjLength(objResultPtr, length);
+	    dst = Tcl_GetUnicode(objResultPtr);
+	}
 	while (objc--) {
-	    Tcl_AppendObjToObj(objResultPtr, *objv++);
+	    Tcl_Obj *objPtr = *objv++;
+
+	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
+		int more;
+		Tcl_UniChar *src = Tcl_GetUnicodeFromObj(objPtr, &more);
+		memcpy(dst, src, more * sizeof(Tcl_UniChar));
+		dst += more;
+	    }
+	}
+    } else {
+	/* Efficiently concatenate string reps */
+	char *dst;
+
+	if (inPlace && !Tcl_IsShared(*objv)) {
+	    int start;
+
+	    objResultPtr = *objv++; objc--;
+
+	    Tcl_GetStringFromObj(objResultPtr, &start);
+	    Tcl_SetObjLength(objResultPtr, length);
+	    dst = Tcl_GetString(objResultPtr) + start;
+	    if (length > start) {
+		TclFreeIntRep(objResultPtr);
+	    }
+	} else {
+	    objResultPtr = Tcl_NewObj();
+	    Tcl_SetObjLength(objResultPtr, length);
+	    dst = Tcl_GetString(objResultPtr);
+	}
+	while (objc--) {
+	    Tcl_Obj *objPtr = *objv++;
+
+	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
+		int more;
+		char *src = Tcl_GetStringFromObj(objPtr, &more);
+		memcpy(dst, src, (size_t) more);
+		dst += more;
+	    }
 	}
     }
     *objPtrPtr = objResultPtr;
