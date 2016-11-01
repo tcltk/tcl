@@ -2855,7 +2855,7 @@ StringCatCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i;
+    int code;
     Tcl_Obj *objResultPtr;
 
     if (objc < 2) {
@@ -2872,16 +2872,16 @@ StringCatCmd(
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
     }
-    objResultPtr = objv[1];
-    if (Tcl_IsShared(objResultPtr)) {
-	objResultPtr = Tcl_DuplicateObj(objResultPtr);
-    }
-    for(i = 2;i < objc;i++) {
-	Tcl_AppendObjToObj(objResultPtr, objv[i]);
-    }
-    Tcl_SetObjResult(interp, objResultPtr);
 
-    return TCL_OK;
+    code = TclStringCatObjv(interp, /* inPlace */ 1, objc-1, objv+1,
+	    &objResultPtr);
+
+    if (code == TCL_OK) {
+	Tcl_SetObjResult(interp, objResultPtr);
+	return TCL_OK;
+    }
+
+    return code;
 }
 
 /*

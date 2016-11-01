@@ -2627,154 +2627,18 @@ TEBCresume(
 	NEXT_INST_F(5, 0, 0);
     }
 
-    case INST_STR_CONCAT1: {
-	int appendLen = 0;
-	char *bytes, *p;
-	Tcl_Obj **currPtr;
-	int onlyb = 1;
+    case INST_STR_CONCAT1:
 
 	opnd = TclGetUInt1AtPtr(pc+1);
 
-	/*
-	 * Detect only-bytearray-or-null case.
-	 */
-
-	for (currPtr=&OBJ_AT_DEPTH(opnd-1); currPtr<=&OBJ_AT_TOS; currPtr++) {
-	    if (((*currPtr)->typePtr != &tclByteArrayType)
-		    && ((*currPtr)->bytes != tclEmptyStringRep)) {
-		onlyb = 0;
-		break;
-	    } else if (((*currPtr)->typePtr == &tclByteArrayType) &&
-		    ((*currPtr)->bytes != NULL)) {
-		onlyb = 0;
-		break;
-	    }
-	}
-
-	/*
-	 * Compute the length to be appended.
-	 */
-
-	if (onlyb) {
-	    for (currPtr = &OBJ_AT_DEPTH(opnd-2);
-		    appendLen >= 0 && currPtr <= &OBJ_AT_TOS; currPtr++) {
-		if ((*currPtr)->bytes != tclEmptyStringRep) {
-		    Tcl_GetByteArrayFromObj(*currPtr, &length);
-		    appendLen += length;
-		}
-	    }
-	} else {
-	    for (currPtr = &OBJ_AT_DEPTH(opnd-2);
-		    appendLen >= 0 && currPtr <= &OBJ_AT_TOS; currPtr++) {
-		bytes = TclGetStringFromObj(*currPtr, &length);
-		if (bytes != NULL) {
-		    appendLen += length;
-		}
-	    }
-	}
-
-	if (appendLen < 0) {
-	    /* TODO: convert panic to error ? */
-	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-	}
-
-	/*
-	 * If nothing is to be appended, just return the first object by
-	 * dropping all the others from the stack; this saves both the
-	 * computation and copy of the string rep of the first object,
-	 * enabling the fast '$x[set x {}]' idiom for 'K $x [set x {}]'.
-	 */
-
-	if (appendLen == 0) {
-	    TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
-	    NEXT_INST_V(2, (opnd-1), 0);
-	}
-
-	/*
-	 * If the first object is shared, we need a new obj for the result;
-	 * otherwise, we can reuse the first object. In any case, make sure it
-	 * has enough room to accomodate all the concatenated bytes. Note that
-	 * if it is unshared its bytes are copied by ckrealloc, so that we set
-	 * the loop parameters to avoid copying them again: p points to the
-	 * end of the already copied bytes, currPtr to the second object.
-	 */
-
-	objResultPtr = OBJ_AT_DEPTH(opnd-1);
-	if (!onlyb) {
-	    bytes = TclGetStringFromObj(objResultPtr, &length);
-	    if (length + appendLen < 0) {
-		/* TODO: convert panic to error ? */
-		Tcl_Panic("max size for a Tcl value (%d bytes) exceeded",
-			INT_MAX);
-	    }
-#ifndef TCL_COMPILE_DEBUG
-	    if (bytes != tclEmptyStringRep && !Tcl_IsShared(objResultPtr)) {
-		TclFreeIntRep(objResultPtr);
-		objResultPtr->bytes = ckrealloc(bytes, length+appendLen+1);
-		objResultPtr->length = length + appendLen;
-		p = TclGetString(objResultPtr) + length;
-		currPtr = &OBJ_AT_DEPTH(opnd - 2);
-	    } else
-#endif
-	    {
-		p = ckalloc(length + appendLen + 1);
-		TclNewObj(objResultPtr);
-		objResultPtr->bytes = p;
-		objResultPtr->length = length + appendLen;
-		currPtr = &OBJ_AT_DEPTH(opnd - 1);
-	    }
-
-	    /*
-	     * Append the remaining characters.
-	     */
-
-	    for (; currPtr <= &OBJ_AT_TOS; currPtr++) {
-		bytes = TclGetStringFromObj(*currPtr, &length);
-		if (bytes != NULL) {
-		    memcpy(p, bytes, (size_t) length);
-		    p += length;
-		}
-	    }
-	    *p = '\0';
-	} else {
-	    bytes = (char *) Tcl_GetByteArrayFromObj(objResultPtr, &length);
-	    if (length + appendLen < 0) {
-		/* TODO: convert panic to error ? */
-		Tcl_Panic("max size for a Tcl value (%d bytes) exceeded",
-			INT_MAX);
-	    }
-#ifndef TCL_COMPILE_DEBUG
-	    if (!Tcl_IsShared(objResultPtr)) {
-		bytes = (char *) Tcl_SetByteArrayLength(objResultPtr,
-			length + appendLen);
-		p = bytes + length;
-		currPtr = &OBJ_AT_DEPTH(opnd - 2);
-	    } else
-#endif
-	    {
-		TclNewObj(objResultPtr);
-		bytes = (char *) Tcl_SetByteArrayLength(objResultPtr,
-			length + appendLen);
-		p = bytes;
-		currPtr = &OBJ_AT_DEPTH(opnd - 1);
-	    }
-
-	    /*
-	     * Append the remaining characters.
-	     */
-
-	    for (; currPtr <= &OBJ_AT_TOS; currPtr++) {
-		if ((*currPtr)->bytes != tclEmptyStringRep) {
-		    bytes = (char *) Tcl_GetByteArrayFromObj(*currPtr,&length);
-		    memcpy(p, bytes, (size_t) length);
-		    p += length;
-		}
-	    }
+	if (TCL_OK != TclStringCatObjv(interp, /* inPlace */ 1,
+		opnd, &OBJ_AT_DEPTH(opnd-1), &objResultPtr)) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
 	}
 
 	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	NEXT_INST_V(2, opnd, 1);
-    }
 
     case INST_CONCAT_STK:
 	/*
