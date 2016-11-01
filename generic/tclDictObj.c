@@ -2279,7 +2279,7 @@ DictAppendCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
-    int i, allocatedDict = 0;
+    int allocatedDict = 0;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
@@ -2302,17 +2302,44 @@ DictAppendCmd(
 	return TCL_ERROR;
     }
 
-    if (valuePtr == NULL) {
-	TclNewObj(valuePtr);
-    } else if (Tcl_IsShared(valuePtr)) {
-	valuePtr = Tcl_DuplicateObj(valuePtr);
+    if ((objc > 3) || (valuePtr == NULL)) {
+	/* Only go through append activites when something will change. */
+	Tcl_Obj *appendObjPtr = NULL;
+
+	if (objc > 3) {
+	    /* Something to append */
+
+	    if (objc == 4) {
+		appendObjPtr = objv[3];
+	    } else if (TCL_OK != TclStringCatObjv(interp, /* inPlace */ 1,
+		    objc-3, objv+3, &appendObjPtr)) {
+		return TCL_ERROR;
+	    }
+	}
+
+	if (appendObjPtr == NULL) {
+	    /* => (objc == 3) => (valuePtr == NULL) */
+	    TclNewObj(valuePtr);
+	} else if (valuePtr == NULL) {
+	    valuePtr = appendObjPtr;
+	    appendObjPtr = NULL;
+	}
+
+	if (appendObjPtr) {
+	    if (Tcl_IsShared(valuePtr)) {
+		valuePtr = Tcl_DuplicateObj(valuePtr);
+	    }
+
+	    Tcl_AppendObjToObj(valuePtr, appendObjPtr);
+	}
+
+	Tcl_DictObjPut(NULL, dictPtr, objv[2], valuePtr);
     }
 
-    for (i=3 ; i<objc ; i++) {
-	Tcl_AppendObjToObj(valuePtr, objv[i]);
-    }
-
-    Tcl_DictObjPut(NULL, dictPtr, objv[2], valuePtr);
+    /*
+     * Even if nothing changed, we still overwrite so that variable
+     * trace expectations are met.
+     */
 
     resultPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, dictPtr,
 	    TCL_LEAVE_ERR_MSG);
