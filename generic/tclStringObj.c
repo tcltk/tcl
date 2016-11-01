@@ -2635,8 +2635,8 @@ TclStringCatObjv(
     Tcl_Obj * const objv[],
     Tcl_Obj **objPtrPtr)
 {
-    Tcl_Obj *objResultPtr;
-    int i, length = 0, binary = 1, first = 0;
+    Tcl_Obj *objPtr, *objResultPtr, * const *ov;
+    int oc, length = 0, binary = 1, first = 0;
     int allowUniChar = 1, requestUniChar = 0;
 
     /* assert (objc >= 2) */
@@ -2648,8 +2648,9 @@ TclStringCatObjv(
      * 		Error on overflow.
      */
 
-    for (i = 0; i < objc && (binary || allowUniChar); i++) {
-	Tcl_Obj *objPtr = objv[i];
+    ov = objv, oc = objc;
+    while (oc-- && (binary || allowUniChar)) {
+	objPtr = *ov++;
 
 	if (objPtr->bytes) {
 	    /* Value has a string rep. */
@@ -2683,43 +2684,47 @@ TclStringCatObjv(
 
     if (binary) {
 	/* Result will be pure byte array. Pre-size it */
-        for (i = 0; i < objc && length >= 0; i++) {
-	    Tcl_Obj *objPtr = objv[i];
+	ov = objv; oc = objc;
+	while (oc-- && (length >= 0)) {
+	    objPtr = *ov++;
 
 	    if (objPtr->bytes == NULL) {
 		int numBytes;
 
 		Tcl_GetByteArrayFromObj(objPtr, &numBytes);
 		if (length == 0) {
-		    first = i;
+		    first = objc - oc - 1;
 		}
 		length += numBytes;
 	    }
 	}
     } else if (allowUniChar && requestUniChar) {
 	/* Result will be pure Tcl_UniChar array. Pre-size it. */
-        for (i = 0; i < objc && length >= 0; i++) {
-	    Tcl_Obj *objPtr = objv[i];
+	ov = objv; oc = objc;
+	while (oc-- && (length >= 0)) {
+	    objPtr = *ov++;
 
 	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
 		int numChars;
 
 		Tcl_GetUnicodeFromObj(objPtr, &numChars);
 		if (length == 0) {
-		    first = i;
+		    first = objc - oc - 1;
 		}
 		length += numChars;
 	    }
 	}
     } else {
 	/* Result will be concat of string reps. Pre-size it. */
-        for (i = 0; i < objc && length >= 0; i++) {
-	    Tcl_Obj *objPtr = objv[i];
+	ov = objv; oc = objc;
+	while (oc-- && (length >= 0)) {
 	    int numBytes;
+
+	    objPtr = *ov++;
 
 	    Tcl_GetStringFromObj(objPtr, &numBytes);
 	    if ((length == 0) && numBytes) {
-		first = i;
+		first = objc - oc - 1;
 	    }
 	    length += numBytes;
 	}
