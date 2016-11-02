@@ -138,6 +138,25 @@ test zlib-7.7 {zlib stream: Bug 25842c161} -constraints zlib -body {
 } -cleanup {
     catch {$s close}
 } -result ""
+# Also causes Tk Bug 10f2e7872b
+test zlib-7.8 {zlib stream: Bug b26e38a3e4} -constraints zlib -setup {
+    expr srand(12345)
+    set randdata {}
+    for {set i 0} {$i<6001} {incr i} {
+	append randdata [binary format c [expr {int(256*rand())}]]
+    }
+} -body {
+    set strm [zlib stream compress]
+    for {set i 1} {$i<3000} {incr i} {
+	$strm put $randdata
+    }
+    $strm put -finalize $randdata
+    set data [$strm get]
+    list [string length $data] [string length [zlib decompress $data]]
+} -cleanup {
+    catch {$strm close}
+    unset -nocomplain randdata data
+} -result {120185 18003000}
 
 test zlib-8.1 {zlib transformation} -constraints zlib -setup {
     set file [makeFile {} test.gz]
