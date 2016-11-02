@@ -564,9 +564,12 @@ test format-19.3 {Bug 2830354} {
 test format-20.1 {Bug 2932421: plain %s caused intrep change of args} -body {
     set x [dict create a b c d]
     format %s $x
-    # After this, obj in $x should be a dict with a non-NULL bytes field
+    # After this, obj in $x should be a dict
+    # We are testing to make sure it has not been shimmered to a
+    # different intrep when that is not necessary.
+    # Whether or not there is a string rep - we should not care!
     tcl::unsupported::representation $x
-} -match glob -result {value is a dict with *, string representation "*"}
+} -match glob -result {value is a dict *}
 
 # cleanup
 catch {unset a}
