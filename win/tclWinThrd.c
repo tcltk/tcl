@@ -1012,8 +1012,10 @@ TclpFreeAllocCache(
 
     if (ptr != NULL) {
 	/*
-	 * Called by us in TclpFinalizeThreadData when a thread exits and
-	 * destroys the tsd key which stores allocator caches.
+	 * Called by TclFinalizeThreadAlloc() and
+	 * TclFinalizeThreadAllocThread() during Tcl_Finalize() or
+	 * Tcl_FinalizeThread(). This function destroys the tsd key which
+	 * stores allocator caches in thread local storage.
 	 */
 
 	TclFreeAllocCache(ptr);

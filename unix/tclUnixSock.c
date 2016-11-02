@@ -1098,7 +1098,7 @@ TcpConnect(
 {
     socklen_t optlen;
     int async_callback = statePtr->flags & TCP_ASYNC_PENDING;
-    int ret = -1, error = errno;
+    int ret = -1, error = EHOSTUNREACH;
     int async = statePtr->flags & TCP_ASYNC_CONNECT;
 
     if (async_callback) {
