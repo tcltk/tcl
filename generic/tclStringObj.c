@@ -2657,7 +2657,7 @@ TclStringCatObjv(
 	    /* Value has a string rep. */
 	    if (objPtr->length) {
 		/*
-		 * Non-empty string rep. Not a pure bytearray, so we 
+		 * Non-empty string rep. Not a pure bytearray, so we
 		 * won't create a pure bytearray
 		 */
 	 	binary = 0;
@@ -2754,7 +2754,7 @@ TclStringCatObjv(
 
 	if (inPlace && !Tcl_IsShared(*objv)) {
 	    int start;
-	
+
 	    objResultPtr = *objv++; objc--;
 	    Tcl_GetByteArrayFromObj(objResultPtr, &start);
 	    dst = Tcl_SetByteArrayLength(objResultPtr, length) + start;
