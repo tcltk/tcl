@@ -135,7 +135,7 @@ absolute value of the divisor, has the same sign as the divisor.
 .RS
 .PP
 When applied to integers, division and remainder can be
-considered to partition the number line into a sequence of 
+considered to partition the number line into a sequence of
 adjacent non-overlapping pieces, where each piece is the size of the divisor;
 the quotient identifies which piece the dividend lies within, and the
 remainder identifies where within that piece the dividend lies. A
@@ -199,10 +199,10 @@ Logical OR.  If both operands are false, the result is 0, or 1 otherwise.
 If-then-else, as in C.  If \fIx\fR is false , the result is the value of
 \fIy\fR.  Otherwise the result is the value of \fIz\fR.
 .PP
-The exponentiation operator promotes types in the same way that the multiply 
-and divide operators do, and the result is is the same as the result of 
+The exponentiation operator promotes types in the same way that the multiply
+and divide operators do, and the result is is the same as the result of
 \fBpow\fR.
-Exponentiation groups right-to-left within a precedence level. Other binary 
+Exponentiation groups right-to-left within a precedence level. Other binary
 operators group left-to-right.  For example, the value of
 .PP
 .CS
@@ -217,7 +217,7 @@ is 0, while the value of
 .PP
 is 512.
 .PP
-As in C, \fB&&\fR, \fB||\fR, and \fB?:\fR feature 
+As in C, \fB&&\fR, \fB||\fR, and \fB?:\fR feature
 .QW "lazy evaluation" ,
 which means that operands are not evaluated if they are
 not needed to determine the outcome.  For example, in
