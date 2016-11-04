@@ -5720,6 +5720,9 @@ TEBCresume(
 	NEXT_INST_V(1, 3, 1);
 
     case INST_STR_FIND:
+#if 1
+	match = TclStringFind(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
+#else
 	ustring1 = Tcl_GetUnicodeFromObj(OBJ_AT_TOS, &length);	/* Haystack */
 	ustring2 = Tcl_GetUnicodeFromObj(OBJ_UNDER_TOS, &length2);/* Needle */
 
@@ -5734,6 +5737,7 @@ TEBCresume(
 		}
 	    }
 	}
+#endif
 
 	TRACE(("%.20s %.20s => %d\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
