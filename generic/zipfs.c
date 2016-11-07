@@ -2042,6 +2042,10 @@ ZipFSMkZipOrImgObjCmd(ClientData clientData, Tcl_Interp *interp,
 	Tcl_Close(interp, out);
 	return TCL_ERROR;
     }
+    if (pwlen <= 0) {
+	pw = NULL;
+	pwlen = 0;
+    }
     if (isImg) {
 	ZipFile zf0;
 	const char *imgName;
@@ -2053,12 +2057,7 @@ ZipFSMkZipOrImgObjCmd(ClientData clientData, Tcl_Interp *interp,
 	    imgName = (objc > 5) ? Tcl_GetString(objv[5]) :
 		Tcl_GetNameOfExecutable();
 	}
-	if (ZipFSOpenArchive(interp, imgName, 0, &zf0) != TCL_OK) {
-	    Tcl_DecrRefCount(list);
-	    Tcl_Close(interp, out);
-	    return TCL_ERROR;
-	}
-	if ((pw != NULL) && pwlen) {
+	if (pwlen) {
 	    i = 0;
 	    len = pwlen;
 	    while (len > 0) {
@@ -2076,15 +2075,70 @@ ZipFSMkZipOrImgObjCmd(ClientData clientData, Tcl_Interp *interp,
 	    pwbuf[i++] = (char) (ZIP_PASSWORD_END_SIG >> 24);
 	    pwbuf[i] = '\0';
 	}
-	i = Tcl_Write(out, (char *) zf0.data, zf0.baseoffsp);
-	if (i != zf0.baseoffsp) {
-	    Tcl_DecrRefCount(list);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("write error", -1));
-	    Tcl_Close(interp, out);
+	if (ZipFSOpenArchive(interp, imgName, 0, &zf0) == TCL_OK) {
+	    i = Tcl_Write(out, (char *) zf0.data, zf0.baseoffsp);
+	    if (i != zf0.baseoffsp) {
+		memset(pwbuf, 0, sizeof (pwbuf));
+		Tcl_DecrRefCount(list);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("write error", -1));
+		Tcl_Close(interp, out);
+		ZipFSCloseArchive(interp, &zf0);
+		return TCL_ERROR;
+	    }
 	    ZipFSCloseArchive(interp, &zf0);
-	    return TCL_ERROR;
+	} else {
+	    int k, n, m;
+	    Tcl_Channel in;
+	    const char *errMsg = "seek error";
+
+	    /*
+	     * Fall back to read it as plain file which
+	     * hopefully is a static tclsh or wish binary
+	     * with proper zipfs infrastructure built in.
+	     */
+	    Tcl_ResetResult(interp);
+	    in = Tcl_OpenFileChannel(interp, imgName, "r", 0644);
+	    if (in == NULL) {
+		memset(pwbuf, 0, sizeof (pwbuf));
+		Tcl_DecrRefCount(list);
+		Tcl_Close(interp, out);
+		return TCL_ERROR;
+	    }
+	    Tcl_SetChannelOption(interp, in, "-translation", "binary");
+	    Tcl_SetChannelOption(interp, in, "-encoding", "binary");
+	    i = Tcl_Seek(in, 0, SEEK_END);
+	    if (i == -1) {
+cperr:
+		memset(pwbuf, 0, sizeof (pwbuf));
+		Tcl_DecrRefCount(list);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, -1));
+		Tcl_Close(interp, out);
+		Tcl_Close(interp, in);
+		return TCL_ERROR;
+	    }
+	    Tcl_Seek(in, 0, SEEK_SET);
+	    k = 0;
+	    while (k < i) {
+		m = i - k;
+		if (m > sizeof (buf)) {
+		    m = sizeof (buf);
+		}
+		n = Tcl_Read(in, buf, m);
+		if (n == -1) {
+		    errMsg = "read error";
+		    goto cperr;
+		} else if (n == 0) {
+		    break;
+		}
+		m = Tcl_Write(out, buf, n);
+		if (m != n) {
+		    errMsg = "write error";
+		    goto cperr;
+		}
+		k += m;
+	    }
+	    Tcl_Close(interp, in);
 	}
-	ZipFSCloseArchive(interp, &zf0);
 	len = strlen(pwbuf);
 	if (len > 0) {
 	    i = Tcl_Write(out, pwbuf, len);
@@ -2214,7 +2268,7 @@ done:
 	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
 	Tcl_Free((char *) z);
 	Tcl_DeleteHashEntry(hPtr);
-	hPtr = Tcl_FirstHashEntry(&fileHash, &search);
+	hPtr = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(&fileHash);
     return ret;
