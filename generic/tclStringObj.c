@@ -2896,9 +2896,27 @@ TclStringFind(
 	return -1;
     }
 
-    /* TODO: Detect and optimize case with single byte chars only */
+    lh = Tcl_GetCharLength(haystack);
+    if (haystack->bytes && (lh == haystack->length)) {
+	/* haystack is all single-byte chars */
 
-    {
+	if (needle->bytes && (ln == needle->length)) {
+	    /* needle is also all single-byte chars */
+	    char *found = strstr(haystack->bytes + start, needle->bytes);
+
+	    if (found) {
+		return (found - haystack->bytes);
+	    } else {
+		return -1;
+	    }
+	} else {
+	    /*
+	     * Cannot find substring with a multi-byte char inside
+	     * a string with no multi-byte chars.
+	     */
+	    return -1;
+	}
+    } else {
 	Tcl_UniChar *try, *end, *uh;
 	Tcl_UniChar *un = Tcl_GetUnicodeFromObj(needle, &ln);
 
