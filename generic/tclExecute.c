@@ -5720,24 +5720,7 @@ TEBCresume(
 	NEXT_INST_V(1, 3, 1);
 
     case INST_STR_FIND:
-#if 1
 	match = TclStringFind(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
-#else
-	ustring1 = Tcl_GetUnicodeFromObj(OBJ_AT_TOS, &length);	/* Haystack */
-	ustring2 = Tcl_GetUnicodeFromObj(OBJ_UNDER_TOS, &length2);/* Needle */
-
-	match = -1;
-	if (length2 > 0 && length2 <= length) {
-	    end = ustring1 + length - length2 + 1;
-	    for (p=ustring1 ; p<end ; p++) {
-		if ((*p == *ustring2) &&
-			memcmp(ustring2,p,sizeof(Tcl_UniChar)*length2) == 0) {
-		    match = p - ustring1;
-		    break;
-		}
-	    }
-	}
-#endif
 
 	TRACE(("%.20s %.20s => %d\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
