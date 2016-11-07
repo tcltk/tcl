@@ -2841,6 +2841,103 @@ TclStringCatObjv(
 /*
  *---------------------------------------------------------------------------
  *
+ * TclStringFind --
+ *
+ *	Implements the [string first] operation.
+ *
+ * Results:
+ *	If needle is found as a substring of haystack, the index of the
+ *	first instance of such a find is returned.  If needle is not present
+ *	as a substring of haystack, -1 is returned.
+ *
+ * Side effects:
+ *	needle and haystack may have their Tcl_ObjType changed.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclStringFind(
+    Tcl_Obj *needle,
+    Tcl_Obj *haystack,
+    unsigned int start)
+{
+    int lh, ln = Tcl_GetCharLength(needle);
+
+    if (ln == 0) {
+	/*
+	 * 	We don't find empty substrings.  Bizarre!
+	 *
+	 * 	TODO: When we one day make this a true substring
+	 * 	finder, change this to "return 0"
+	 */
+	return -1;
+    }
+
+    if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
+	unsigned char *end, *try, *bh;
+	unsigned char *bn = Tcl_GetByteArrayFromObj(needle, &ln);
+
+	bh = Tcl_GetByteArrayFromObj(haystack, &lh);
+	end = bh + lh;
+
+	try = bh + start;
+	while (try + ln <= end) {
+	    try = memchr(try, bn[0], end - try);
+
+	    if (try == NULL) {
+		return -1;
+	    }
+	    if (0 == memcmp(try+1, bn+1, ln-1)) {
+		return (try - bh);
+	    }
+	    try++;
+	}
+	return -1;
+    }
+
+    lh = Tcl_GetCharLength(haystack);
+    if (haystack->bytes && (lh == haystack->length)) {
+	/* haystack is all single-byte chars */
+
+	if (needle->bytes && (ln == needle->length)) {
+	    /* needle is also all single-byte chars */
+	    char *found = strstr(haystack->bytes + start, needle->bytes);
+
+	    if (found) {
+		return (found - haystack->bytes);
+	    } else {
+		return -1;
+	    }
+	} else {
+	    /*
+	     * Cannot find substring with a multi-byte char inside
+	     * a string with no multi-byte chars.
+	     */
+	    return -1;
+	}
+    } else {
+	Tcl_UniChar *try, *end, *uh;
+	Tcl_UniChar *un = Tcl_GetUnicodeFromObj(needle, &ln);
+
+	uh = Tcl_GetUnicodeFromObj(haystack, &lh);
+	end = uh + lh;
+
+	try = uh + start;
+	while (try + ln <= end) {
+	    if ((*try == *un)
+		    && (0 == memcmp(try+1, un+1, (ln-1)*sizeof(Tcl_UniChar)))) {
+		return (try - uh);
+	    }
+	    try++;
+	}
+	return -1;
+    }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * TclStringObjReverse --
  *
  *	Implements the [string reverse] operation.
