@@ -2862,21 +2862,21 @@ TclStringFind(
     Tcl_Obj *haystack,
     unsigned int start)
 {
-    int ln, lh;
+    int lh, ln = Tcl_GetCharLength(needle);
+
+    if (ln == 0) {
+	/*
+	 * 	We don't find empty substrings.  Bizarre!
+	 *
+	 * 	TODO: When we one day make this a true substring
+	 * 	finder, change this to "return 0"
+	 */
+	return -1;
+    }
 
     if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
 	unsigned char *end, *try, *bh;
 	unsigned char *bn = Tcl_GetByteArrayFromObj(needle, &ln);
-
-	if (ln == 0) {
-	    /*
-	     * 	We don't find empty substrings.  Bizarre!
-	     *
-	     * 	TODO: When we one day make this a true substring
-	     * 	finder, change this to "return 0"
-	     */
-	    return -1;
-	}
 
 	bh = Tcl_GetByteArrayFromObj(haystack, &lh);
 	end = bh + lh;
@@ -2901,11 +2901,6 @@ TclStringFind(
     {
 	Tcl_UniChar *try, *end, *uh;
 	Tcl_UniChar *un = Tcl_GetUnicodeFromObj(needle, &ln);
-
-	if (ln == 0) {
-	    /* See above */
-	    return -1;
-	}
 
 	uh = Tcl_GetUnicodeFromObj(haystack, &lh);
 	end = uh + lh;
