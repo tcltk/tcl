@@ -3078,6 +3078,10 @@ MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 MODULE_SCOPE int	TclStringCatObjv(Tcl_Interp *interp, int inPlace,
 			    int objc, Tcl_Obj *const objv[],
 			    Tcl_Obj **objPtrPtr);
+MODULE_SCOPE int	TclStringFind(Tcl_Obj *needle, Tcl_Obj *haystack,
+			    int start);
+MODULE_SCOPE int	TclStringLast(Tcl_Obj *needle, Tcl_Obj *haystack,
+			    int last);
 MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
 			    const char *pattern, int ptnLen, int flags);
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
