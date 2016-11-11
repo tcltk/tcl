@@ -1246,7 +1246,7 @@ declare 19 macosx {
 }
 
 declare 29 {win unix} {
-    int TclWinCPUID(unsigned int index, unsigned int *regs)
+    int TclWinCPUID(int index, int *regs)
 }
 # Added in 8.6; core of TclpOpenTemporaryFile
 declare 30 {win unix} {
