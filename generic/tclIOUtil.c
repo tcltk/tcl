@@ -638,8 +638,8 @@ FsGetFirstFilesystem(void)
 }
 
 /*
- * The epoch can be changed both by filesystems being added or removed and by
- * env(HOME) changing.
+ * The epoch can be changed by filesystems being added or removed, by changing
+ * the "system encoding" and by env(HOME) changing.
  */
 
 int
