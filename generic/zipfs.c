@@ -2765,7 +2765,6 @@ ZipChannelGetFile(ClientData instanceData, int direction,
 
 static Tcl_ChannelType ZipChannelType = {
     "zip",                  /* Type name. */
-#ifdef TCL_CHANNEL_VERSION_4
     TCL_CHANNEL_VERSION_4,
     ZipChannelClose,        /* Close channel, clean instance data */
     ZipChannelRead,         /* Handle read request */
@@ -2780,18 +2779,7 @@ static Tcl_ChannelType ZipChannelType = {
     NULL,                   /* Function to flush channel, NULL'able */
     NULL,                   /* Function to handle event, NULL'able */
     NULL,                   /* Wide seek function, NULL'able */
-    NULL,                   /* Thread action function, NULL'able */
-#else
-    NULL,                   /* Set blocking/nonblocking behaviour, NULL'able */
-    ZipChannelClose,        /* Close channel, clean instance data */
-    ZipChannelRead,         /* Handle read request */
-    ZipChannelWrite,        /* Handle write request */
-    ZipChannelSeek,         /* Move location of access point, NULL'able */
-    NULL,                   /* Set options, NULL'able */
-    NULL,                   /* Get options, NULL'able */
-    ZipChannelWatchChannel, /* Initialize notifier */
-    ZipChannelGetFile,      /* Get OS handle from the channel */
-#endif
+    NULL                    /* Thread action function, NULL'able */
 };
 
 /*
