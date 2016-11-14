@@ -2619,7 +2619,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #   define Tcl_Ckrealloc	Tcl_Realloc
 #   define Tcl_Return		Tcl_SetResult
 #   define Tcl_TildeSubst	Tcl_TranslateFileName
-#ifndef MAC_OSX_TCL /* On OSX, there is a conflict with "mach.h" */
+#if !defined(__APPLE__) /* On OSX, there is a conflict with "mach/mach.h" */
 #   define panic		Tcl_Panic
 #endif
 #   define panicVA		Tcl_PanicVA
