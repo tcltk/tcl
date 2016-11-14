@@ -341,7 +341,7 @@ NativeGetTime(
 		 */
 
 		SYSTEM_INFO systemInfo;
-		unsigned int regs[4];
+		int regs[4];
 
 		GetSystemInfo(&systemInfo);
 		if (TclWinCPUID(0, regs) == TCL_OK

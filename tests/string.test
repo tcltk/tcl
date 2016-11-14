@@ -756,13 +756,13 @@ catch {rename largest_int {}}
 
 test string-7.1 {string last, too few args} {
     list [catch {string last a} msg] $msg
-} {1 {wrong # args: should be "string last needleString haystackString ?startIndex?"}}
+} {1 {wrong # args: should be "string last needleString haystackString ?lastIndex?"}}
 test string-7.2 {string last, bad args} {
     list [catch {string last a b c} msg] $msg
 } {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
 test string-7.3 {string last, too many args} {
     list [catch {string last a b c d} msg] $msg
-} {1 {wrong # args: should be "string last needleString haystackString ?startIndex?"}}
+} {1 {wrong # args: should be "string last needleString haystackString ?lastIndex?"}}
 test string-7.4 {string last} {
     string la xxx xxxx123xx345x678
 } 1
