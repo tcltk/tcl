@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.9
+package provide http 2.8.10
 
 namespace eval http {
     # Allow resourcing to not clobber existing data

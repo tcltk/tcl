@@ -3089,7 +3089,7 @@ TclCompileEnsemble(
 	 * any extra elements that might have been appended by failing
 	 * pathways above.
 	 */
-	(void) Tcl_ListObjReplace(NULL, replaced, depth-1, INT_MAX, 0, NULL);
+	(void) Tcl_ListObjReplace(NULL, replaced, depth-1, LIST_MAX, 0, NULL);
 
 	/*
 	 * TODO: Reconsider whether we ought to call CompileToInvokedCommand()
