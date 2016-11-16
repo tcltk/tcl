@@ -678,7 +678,7 @@ test compile-17.2 {Command interpretation binding for non-compiled code} -setup 
 # change without warning.
 
 set disassemblables [linsert [join {
-    lambda method objmethod proc script
+    constructor destructor lambda method objmethod proc script
 } ", "] end-1 or]
 test compile-18.1 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::disassemble
@@ -872,6 +872,103 @@ test compile-18.39 {disassembler - basics} -setup {
 } -cleanup {
     foo destroy
 } -result "$bytecodekeys initiallinenumber sourcefile"
+test compile-18.40 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::disassemble constructor
+} -match glob -result {wrong # args: should be "* constructor className"}
+test compile-18.41 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::disassemble constructor nosuchclass
+} -result {nosuchclass does not refer to an object}
+test compile-18.42 {disassembler - basics} -returnCodes error -setup {
+    oo::object create justanobject
+} -body {
+    tcl::unsupported::disassemble constructor justanobject
+} -cleanup {
+    justanobject destroy
+} -result {"justanobject" is not a class}
+test compile-18.43 {disassembler - basics} -returnCodes error -setup {
+    oo::class create constructorless
+} -body {
+    tcl::unsupported::disassemble constructor constructorless
+} -cleanup {
+    constructorless destroy
+} -result {"constructorless" has no defined constructor}
+test compile-18.44 {disassembler - basics} -setup {
+    oo::class create foo {constructor {} {set x 1}}
+} -body {
+    # Allow any string: the result format is not defined anywhere!
+    tcl::unsupported::disassemble constructor foo
+} -cleanup {
+    foo destroy
+} -match glob -result *
+test compile-18.45 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode constructor
+} -match glob -result {wrong # args: should be "* constructor className"}
+test compile-18.46 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode constructor nosuchobject
+} -result {nosuchobject does not refer to an object}
+test compile-18.47 {disassembler - basics} -returnCodes error -setup {
+    oo::class create constructorless
+} -body {
+    tcl::unsupported::getbytecode constructor constructorless
+} -cleanup {
+    constructorless destroy
+} -result {"constructorless" has no defined constructor}
+test compile-18.48 {disassembler - basics} -setup {
+    oo::class create foo {constructor {} {set x 1}}
+} -body {
+    dict keys [tcl::unsupported::getbytecode constructor foo]
+} -cleanup {
+    foo destroy
+} -result "$bytecodekeys"
+# There is no compile-18.49
+test compile-18.50 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::disassemble destructor
+} -match glob -result {wrong # args: should be "* destructor className"}
+test compile-18.51 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::disassemble destructor nosuchclass
+} -result {nosuchclass does not refer to an object}
+test compile-18.52 {disassembler - basics} -returnCodes error -setup {
+    oo::object create justanobject
+} -body {
+    tcl::unsupported::disassemble destructor justanobject
+} -cleanup {
+    justanobject destroy
+} -result {"justanobject" is not a class}
+test compile-18.53 {disassembler - basics} -returnCodes error -setup {
+    oo::class create constructorless
+} -body {
+    tcl::unsupported::disassemble destructor constructorless
+} -cleanup {
+    constructorless destroy
+} -result {"constructorless" has no defined destructor}
+test compile-18.54 {disassembler - basics} -setup {
+    oo::class create foo {destructor {set x 1}}
+} -body {
+    # Allow any string: the result format is not defined anywhere!
+    tcl::unsupported::disassemble destructor foo
+} -cleanup {
+    foo destroy
+} -match glob -result *
+test compile-18.55 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode destructor
+} -match glob -result {wrong # args: should be "* destructor className"}
+test compile-18.56 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode destructor nosuchobject
+} -result {nosuchobject does not refer to an object}
+test compile-18.57 {disassembler - basics} -returnCodes error -setup {
+    oo::class create constructorless
+} -body {
+    tcl::unsupported::getbytecode destructor constructorless
+} -cleanup {
+    constructorless destroy
+} -result {"constructorless" has no defined destructor}
+test compile-18.58 {disassembler - basics} -setup {
+    oo::class create foo {destructor {set x 1}}
+} -body {
+    dict keys [tcl::unsupported::getbytecode destructor foo]
+} -cleanup {
+    foo destroy
+} -result "$bytecodekeys"
 
 test compile-19.0 {Bug 3614102: reset stack housekeeping} -body {
     # This will panic in a --enable-symbols=compile build, unless bug is fixed.

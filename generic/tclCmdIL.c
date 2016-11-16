@@ -105,8 +105,7 @@ typedef struct SortInfo {
  */
 
 static int		DictionaryCompare(const char *left, const char *right);
-static int		IfConditionCallback(ClientData data[],
-			    Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	IfConditionCallback;
 static int		InfoArgsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoBodyCmd(ClientData dummy, Tcl_Interp *interp,
@@ -1203,7 +1202,7 @@ InfoFrameCmd(
     levelError:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad level \"%s\"", TclGetString(objv[1])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_FRAME",
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 		TclGetString(objv[1]), NULL);
 	code = TCL_ERROR;
 	goto done;
@@ -1638,7 +1637,7 @@ InfoLevelCmd(
   levelError:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "bad level \"%s\"", TclGetString(objv[1])));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_LEVEL",
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 	    TclGetString(objv[1]), NULL);
     return TCL_ERROR;
 }
@@ -1678,7 +1677,7 @@ InfoLibraryCmd(
 	return TCL_ERROR;
     }
 
-    libDirName = Tcl_GetVar(interp, "tcl_library", TCL_GLOBAL_ONLY);
+    libDirName = Tcl_GetVar2(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
     if (libDirName != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(libDirName, -1));
 	return TCL_OK;
@@ -1804,7 +1803,7 @@ InfoPatchLevelCmd(
 	return TCL_ERROR;
     }
 
-    patchlevel = Tcl_GetVar(interp, "tcl_patchLevel",
+    patchlevel = Tcl_GetVar2(interp, "tcl_patchLevel", NULL,
 	    (TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG));
     if (patchlevel != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(patchlevel, -1));
@@ -2156,8 +2155,8 @@ Tcl_JoinObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int listLen, i;
-    Tcl_Obj *resObjPtr, *joinObjPtr, **elemPtrs;
+    int listLen;
+    Tcl_Obj *resObjPtr = NULL, *joinObjPtr, **elemPtrs;
 
     if ((objc < 2) || (objc > 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list ?joinString?");
@@ -2174,19 +2173,47 @@ Tcl_JoinObjCmd(
 	return TCL_ERROR;
     }
 
+    if (listLen == 0) {
+	/* No elements to join; default empty result is correct. */
+	return TCL_OK;
+    }
+    if (listLen == 1) {
+	/* One element; return it */
+	Tcl_SetObjResult(interp, elemPtrs[0]);
+	return TCL_OK;
+    }
+
     joinObjPtr = (objc == 2) ? Tcl_NewStringObj(" ", 1) : objv[2];
     Tcl_IncrRefCount(joinObjPtr);
 
-    resObjPtr = Tcl_NewObj();
-    for (i = 0;  i < listLen;  i++) {
-	if (i > 0) {
-	    Tcl_AppendObjToObj(resObjPtr, joinObjPtr);
+    if (Tcl_GetCharLength(joinObjPtr) == 0) {
+	TclStringCatObjv(interp, /* inPlace */ 0, listLen, elemPtrs,
+		&resObjPtr);
+    } else {
+	int i;
+
+	resObjPtr = Tcl_NewObj();
+	for (i = 0;  i < listLen;  i++) {
+	    if (i > 0) {
+
+		/*
+		 * NOTE: This code is relying on Tcl_AppendObjToObj() **NOT**
+		 * to shimmer joinObjPtr.  If it did, then the case where
+		 * objv[1] and objv[2] are the same value would not be safe.
+		 * Accessing elemPtrs would crash.
+		 */
+
+		Tcl_AppendObjToObj(resObjPtr, joinObjPtr);
+	    }
+	    Tcl_AppendObjToObj(resObjPtr, elemPtrs[i]);
 	}
-	Tcl_AppendObjToObj(resObjPtr, elemPtrs[i]);
     }
     Tcl_DecrRefCount(joinObjPtr);
-    Tcl_SetObjResult(interp, resObjPtr);
-    return TCL_OK;
+    if (resObjPtr) {
+	Tcl_SetObjResult(interp, resObjPtr);
+	return TCL_OK;
+    }
+    return TCL_ERROR;
 }
 
 /*

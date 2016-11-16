@@ -19,6 +19,7 @@
 #endif
 #include "tclInt.h"
 #include "tommath.h"
+#include "tclStringRep.h"
 
 
 /*
@@ -46,13 +47,6 @@ static int		TestobjCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		TeststringobjCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-
-typedef struct TestString {
-    int numChars;
-    int allocated;
-    int maxChars;
-    Tcl_UniChar unicode[2];
-} TestString;
 
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
@@ -583,23 +577,9 @@ TestindexobjCmd(
     }
     argv[objc-4] = NULL;
 
-    /*
-     * Tcl_GetIndexFromObj assumes that the table is statically-allocated so
-     * that its address is different for each index object. If we accidently
-     * allocate a table at the same address as that cached in the index
-     * object, clear out the object's cached state.
-     */
-
-    if (objv[3]->typePtr != NULL
-	    && !strcmp("index", objv[3]->typePtr->name)) {
-	indexRep = objv[3]->internalRep.twoPtrValue.ptr1;
-	if (indexRep->tablePtr == (void *) argv) {
-	    TclFreeIntRep(objv[3]);
-	}
-    }
-
     result = Tcl_GetIndexFromObj((setError? interp : NULL), objv[3],
-	    argv, "token", (allowAbbrev? 0 : TCL_EXACT), &index);
+	    argv, "token", INDEX_TEMP_TABLE|(allowAbbrev? 0 : TCL_EXACT),
+	    &index);
     ckfree(argv);
     if (result == TCL_OK) {
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), index);
@@ -1141,7 +1121,7 @@ TeststringobjCmd(
     int varIndex, option, i, length;
 #define MAX_STRINGS 11
     const char *index, *string, *strings[MAX_STRINGS+1];
-    TestString *strPtr;
+    String *strPtr;
     Tcl_Obj **varPtr;
     static const char *const options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
