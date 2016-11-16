@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_SHRINK_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /* shrink a bignum */
@@ -21,8 +21,9 @@ int mp_shrink (mp_int * a)
   mp_digit *tmp;
   int used = 1;
   
-  if(a->used > 0)
+  if(a->used > 0) {
     used = a->used;
+  }
   
   if (a->alloc != used) {
     if ((tmp = OPT_CAST(mp_digit) XREALLOC (a->dp, sizeof (mp_digit) * used)) == NULL) {
@@ -36,5 +37,5 @@ int mp_shrink (mp_int * a)
 #endif
 
 /* $Source$ */
-/* $Revision: v0.42.0 $ */
-/* $Date: 2010-06-02 15:09:36 +0200 $ */
+/* $Revision$ */
+/* $Date$ */

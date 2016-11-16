@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_CNT_LSB_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 static const int lnz[16] = { 
@@ -26,12 +26,12 @@ int mp_cnt_lsb(mp_int *a)
    mp_digit q, qq;
 
    /* easy out */
-   if (mp_iszero(a) == 1) {
+   if (mp_iszero(a) == MP_YES) {
       return 0;
    }
 
    /* scan lower digits until non-zero */
-   for (x = 0; x < a->used && a->dp[x] == 0; x++);
+   for (x = 0; (x < a->used) && (a->dp[x] == 0); x++) {}
    q = a->dp[x];
    x *= DIGIT_BIT;
 
@@ -49,5 +49,5 @@ int mp_cnt_lsb(mp_int *a)
 #endif
 
 /* $Source$ */
-/* $Revision: 0.41 $ */
-/* $Date: 2007-04-18 09:58:18 +0000 $ */
+/* $Revision$ */
+/* $Date$ */

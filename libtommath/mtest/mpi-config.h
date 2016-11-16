@@ -1,5 +1,5 @@
 /* Default configuration for MPI library */
-/* $ID$ */
+/* $Id$ */
 
 #ifndef MPI_CONFIG_H_
 #define MPI_CONFIG_H_
@@ -86,5 +86,5 @@
 /* crc==3287762869, version==2, Sat Feb 02 06:43:53 2002 */
 
 /* $Source$ */
-/* $Revision: 0.36 $ */
-/* $Date: 2005-08-01 16:37:28 +0000 $ */
+/* $Revision$ */
+/* $Date$ */

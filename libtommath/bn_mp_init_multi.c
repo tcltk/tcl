@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_INIT_MULTI_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 #include <stdarg.h>
 
@@ -37,7 +37,7 @@ int mp_init_multi(mp_int *mp, ...)
             /* now start cleaning up */            
             cur_arg = mp;
             va_start(clean_args, mp);
-            while (n--) {
+            while (n-- != 0) {
                 mp_clear(cur_arg);
                 cur_arg = va_arg(clean_args, mp_int*);
             }
@@ -55,5 +55,5 @@ int mp_init_multi(mp_int *mp, ...)
 #endif
 
 /* $Source$ */
-/* $Revision: 0.41 $ */
-/* $Date: 2007-04-18 09:58:18 +0000 $ */
+/* $Revision$ */
+/* $Date$ */
