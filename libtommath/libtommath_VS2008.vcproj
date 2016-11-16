@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="libtommath"
 	ProjectGUID="{42109FEE-B0B9-4FCD-9E56-2863BF8C55D2}"
 	RootNamespace="libtommath"
@@ -830,6 +830,10 @@
 			</FileConfiguration>
 		</File>
 		<File
+			RelativePath=".\bn_mp_export.c"
+			>
+		</File>
+		<File
 			RelativePath="bn_mp_expt_d.c"
 			>
 			<FileConfiguration
@@ -1026,6 +1030,10 @@
 					PreprocessorDefinitions=""
 				/>
 			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\bn_mp_import.c"
+			>
 		</File>
 		<File
 			RelativePath="bn_mp_init.c"

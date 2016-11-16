@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_REVERSE_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /* reverse an array, used for radix code */
@@ -35,5 +35,5 @@ bn_reverse (unsigned char *s, int len)
 #endif
 
 /* $Source$ */
-/* $Revision: 0.41 $ */
-/* $Date: 2007-04-18 09:58:18 +0000 $ */
+/* $Revision$ */
+/* $Date$ */

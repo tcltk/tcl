@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_TO_UNSIGNED_BIN_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /* store in unsigned [big endian] format */
@@ -26,7 +26,7 @@ int mp_to_unsigned_bin (mp_int * a, unsigned char *b)
   }
 
   x = 0;
-  while (mp_iszero (&t) == 0) {
+  while (mp_iszero (&t) == MP_NO) {
 #ifndef MP_8BIT
       b[x++] = (unsigned char) (t.dp[0] & 255);
 #else
@@ -44,5 +44,5 @@ int mp_to_unsigned_bin (mp_int * a, unsigned char *b)
 #endif
 
 /* $Source$ */
-/* $Revision: 0.41 $ */
-/* $Date: 2007-04-18 09:58:18 +0000 $ */
+/* $Revision$ */
+/* $Date$ */

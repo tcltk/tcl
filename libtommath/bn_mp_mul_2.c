@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_MUL_2_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /* b = a*2 */
@@ -21,7 +21,7 @@ int mp_mul_2(mp_int * a, mp_int * b)
   int     x, res, oldused;
 
   /* grow to accomodate result */
-  if (b->alloc < a->used + 1) {
+  if (b->alloc < (a->used + 1)) {
     if ((res = mp_grow (b, a->used + 1)) != MP_OKAY) {
       return res;
     }
@@ -31,7 +31,7 @@ int mp_mul_2(mp_int * a, mp_int * b)
   b->used = a->used;
 
   {
-    register mp_digit r, rr, *tmpa, *tmpb;
+    mp_digit r, rr, *tmpa, *tmpb;
 
     /* alias for source */
     tmpa = a->dp;
@@ -78,5 +78,5 @@ int mp_mul_2(mp_int * a, mp_int * b)
 #endif
 
 /* $Source$ */
-/* $Revision: 0.41 $ */
-/* $Date: 2007-04-18 09:58:18 +0000 $ */
+/* $Revision$ */
+/* $Date$ */

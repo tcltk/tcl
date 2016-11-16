@@ -20,5 +20,5 @@ const float s_logv_2[] = {
 
 
 /* $Source$ */
-/* $Revision: 0.36 $ */
-/* $Date: 2005-08-01 16:37:28 +0000 $ */
+/* $Revision$ */
+/* $Date$ */
