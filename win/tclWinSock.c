@@ -331,7 +331,7 @@ void printaddrinfolist(struct addrinfo *addrlist, char *prefix)
 void
 InitializeHostName(
     char **valuePtr,
-    int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     TCHAR tbuf[MAX_COMPUTERNAME_LENGTH + 1];
@@ -368,8 +368,8 @@ InitializeHostName(
 
     *encodingPtr = Tcl_GetEncoding(NULL, "utf-8");
     *lengthPtr = Tcl_DStringLength(&ds);
-    *valuePtr = ckalloc((*lengthPtr) + 1);
-    memcpy(*valuePtr, Tcl_DStringValue(&ds), (size_t)(*lengthPtr)+1);
+    *valuePtr = ckalloc(*lengthPtr + 1);
+    memcpy(*valuePtr, Tcl_DStringValue(&ds), *lengthPtr + 1);
     Tcl_DStringFree(&ds);
 }
 
