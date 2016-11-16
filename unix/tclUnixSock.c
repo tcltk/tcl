@@ -203,7 +203,7 @@ void printaddrinfo(struct addrinfo *addrlist, char *prefix)
 static void
 InitializeHostName(
     char **valuePtr,
-    int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     const char *native = NULL;
@@ -269,8 +269,8 @@ InitializeHostName(
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     if (native) {
 	*lengthPtr = strlen(native);
-	*valuePtr = ckalloc((*lengthPtr) + 1);
-	memcpy(*valuePtr, native, (size_t)(*lengthPtr)+1);
+	*valuePtr = ckalloc(*lengthPtr + 1);
+	memcpy(*valuePtr, native, *lengthPtr + 1);
     } else {
 	*lengthPtr = 0;
 	*valuePtr = ckalloc(1);

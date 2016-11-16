@@ -180,7 +180,7 @@ TclWinThreadStart(
     lpOrigStartAddress = winThreadPtr->lpStartAddress;
     lpOrigParameter = winThreadPtr->lpParameter;
 
-    ckfree((char *)winThreadPtr);
+    ckfree(winThreadPtr);
     return lpOrigStartAddress(lpOrigParameter);
 }
 

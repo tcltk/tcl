@@ -183,6 +183,7 @@ StashCallChain(
     Tcl_ObjIntRep ir;
 
     callPtr->refCount++;
+    TclGetString(objPtr);
     ir.twoPtrValue.ptr1 = callPtr;
     Tcl_StoreIntRep(objPtr, &methodNameType, &ir);
 }
