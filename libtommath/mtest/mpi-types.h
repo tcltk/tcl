@@ -13,3 +13,8 @@ typedef int                mp_err;
 #define MP_DIGIT_SIZE      2
 #define DIGIT_FMT          "%04X"
 #define RADIX              (MP_DIGIT_MAX+1)
+
+
+/* $Source$ */
+/* $Revision$ */
+/* $Date$ */
