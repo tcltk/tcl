@@ -232,7 +232,7 @@ QueryConfigObjCmd(
 
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("package not known", -1));
 	Tcl_SetErrorCode(interp, "TCL", "FATAL", "PKGCFG_BASE",
-		Tcl_GetString(pkgName), NULL);
+		TclGetString(pkgName), NULL);
 	return TCL_ERROR;
     }
 
@@ -247,7 +247,7 @@ QueryConfigObjCmd(
 		|| val == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("key not known", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONFIG",
-		    Tcl_GetString(objv[2]), NULL);
+		    TclGetString(objv[2]), NULL);
 	    return TCL_ERROR;
 	}
 
@@ -333,9 +333,9 @@ QueryConfigDelete(
     Tcl_DictObjRemove(NULL, pDB, pkgName);
     Tcl_DecrRefCount(pkgName);
     if (cdPtr->encoding) {
-	ckfree((char *)cdPtr->encoding);
+	ckfree(cdPtr->encoding);
     }
-    ckfree((char *)cdPtr);
+    ckfree(cdPtr);
 }
 
 /*
