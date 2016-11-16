@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_MONTGOMERY_CALC_NORMALIZATION_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /*
@@ -29,7 +29,7 @@ int mp_montgomery_calc_normalization (mp_int * a, mp_int * b)
   bits = mp_count_bits (b) % DIGIT_BIT;
 
   if (b->used > 1) {
-     if ((res = mp_2expt (a, (b->used - 1) * DIGIT_BIT + bits - 1)) != MP_OKAY) {
+     if ((res = mp_2expt (a, ((b->used - 1) * DIGIT_BIT) + bits - 1)) != MP_OKAY) {
         return res;
      }
   } else {
@@ -55,5 +55,5 @@ int mp_montgomery_calc_normalization (mp_int * a, mp_int * b)
 #endif
 
 /* $Source$ */
-/* $Revision: 0.41 $ */
-/* $Date: 2007-04-18 09:58:18 +0000 $ */
+/* $Revision$ */
+/* $Date$ */

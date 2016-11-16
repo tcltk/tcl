@@ -1,26 +1,29 @@
 \begin{theindex}
 
-  \item mp\_add, \hyperpage{23}
+  \item mp\_add, \hyperpage{24}
   \item mp\_add\_d, \hyperpage{44}
-  \item mp\_and, \hyperpage{23}
+  \item mp\_and, \hyperpage{24}
   \item mp\_clear, \hyperpage{9}
   \item mp\_clear\_multi, \hyperpage{10}
   \item mp\_cmp, \hyperpage{19}
   \item mp\_cmp\_d, \hyperpage{20}
   \item mp\_cmp\_mag, \hyperpage{18}
   \item mp\_div, \hyperpage{24}
-  \item mp\_div\_2, \hyperpage{21}
-  \item mp\_div\_2d, \hyperpage{22}
+  \item mp\_div\_2, \hyperpage{22}
+  \item mp\_div\_2d, \hyperpage{23}
   \item mp\_div\_d, \hyperpage{44}
   \item mp\_dr\_reduce, \hyperpage{33}
   \item mp\_dr\_setup, \hyperpage{33}
   \item MP\_EQ, \hyperpage{18}
   \item mp\_error\_to\_string, \hyperpage{7}
   \item mp\_expt\_d, \hyperpage{35}
+  \item mp\_expt\_d\_ex, \hyperpage{35}
   \item mp\_exptmod, \hyperpage{35}
   \item mp\_exteuclid, \hyperpage{43}
   \item mp\_gcd, \hyperpage{43}
   \item mp\_get\_int, \hyperpage{16}
+  \item mp\_get\_long, \hyperpage{17}
+  \item mp\_get\_long\_long, \hyperpage{17}
   \item mp\_grow, \hyperpage{13}
   \item MP\_GT, \hyperpage{18}
   \item mp\_init, \hyperpage{8}
@@ -42,14 +45,14 @@
   \item mp\_montgomery\_reduce, \hyperpage{31}
   \item mp\_montgomery\_setup, \hyperpage{31}
   \item mp\_mul, \hyperpage{25}
-  \item mp\_mul\_2, \hyperpage{21}
-  \item mp\_mul\_2d, \hyperpage{22}
+  \item mp\_mul\_2, \hyperpage{22}
+  \item mp\_mul\_2d, \hyperpage{23}
   \item mp\_mul\_d, \hyperpage{44}
-  \item mp\_n\_root, \hyperpage{35}
+  \item mp\_n\_root, \hyperpage{36}
   \item mp\_neg, \hyperpage{24}
   \item MP\_NO, \hyperpage{7}
   \item MP\_OKAY, \hyperpage{7}
-  \item mp\_or, \hyperpage{23}
+  \item mp\_or, \hyperpage{24}
   \item mp\_prime\_fermat, \hyperpage{37}
   \item mp\_prime\_is\_divisible, \hyperpage{37}
   \item mp\_prime\_is\_prime, \hyperpage{38}
@@ -68,15 +71,18 @@
   \item mp\_rshd, \hyperpage{23}
   \item mp\_set, \hyperpage{15}
   \item mp\_set\_int, \hyperpage{16}
+  \item mp\_set\_long, \hyperpage{17}
+  \item mp\_set\_long\_long, \hyperpage{17}
   \item mp\_shrink, \hyperpage{12}
   \item mp\_sqr, \hyperpage{26}
-  \item mp\_sub, \hyperpage{23}
+  \item mp\_sqrtmod\_prime, \hyperpage{44}
+  \item mp\_sub, \hyperpage{24}
   \item mp\_sub\_d, \hyperpage{44}
   \item mp\_to\_unsigned\_bin, \hyperpage{42}
   \item mp\_toradix, \hyperpage{41}
   \item mp\_unsigned\_bin\_size, \hyperpage{41}
   \item MP\_VAL, \hyperpage{7}
-  \item mp\_xor, \hyperpage{23}
+  \item mp\_xor, \hyperpage{24}
   \item MP\_YES, \hyperpage{7}
 
 \end{theindex}

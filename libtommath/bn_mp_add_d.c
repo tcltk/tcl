@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_ADD_D_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /* single digit addition */
@@ -23,14 +23,14 @@ mp_add_d (mp_int * a, mp_digit b, mp_int * c)
   mp_digit *tmpa, *tmpc, mu;
 
   /* grow c as required */
-  if (c->alloc < a->used + 1) {
+  if (c->alloc < (a->used + 1)) {
      if ((res = mp_grow(c, a->used + 1)) != MP_OKAY) {
         return res;
      }
   }
 
   /* if a is negative and |a| >= b, call c = |a| - b */
-  if (a->sign == MP_NEG && (a->used > 1 || a->dp[0] >= b)) {
+  if ((a->sign == MP_NEG) && ((a->used > 1) || (a->dp[0] >= b))) {
      /* temporarily fix sign of a */
      a->sign = MP_ZPOS;
 
@@ -108,5 +108,5 @@ mp_add_d (mp_int * a, mp_digit b, mp_int * c)
 #endif
 
 /* $Source$ */
-/* $Revision: 0.41 $ */
-/* $Date: 2007-04-18 09:58:18 +0000 $ */
+/* $Revision$ */
+/* $Date$ */

@@ -140,5 +140,5 @@ main (void)
 }
 
 /* $Source$ */
-/* $Revision: 0.39 $ */
-/* $Date: 2006-04-06 19:49:59 +0000 $ */
+/* $Revision$ */
+/* $Date$ */
