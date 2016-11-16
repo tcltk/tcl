@@ -15,7 +15,7 @@
 
 #ifdef TCL_THREADS
 
-typedef struct ThreadSpecificData {
+typedef struct {
     char nabuf[16];
 } ThreadSpecificData;
 
@@ -675,7 +675,7 @@ TclpInetNtoa(
 #ifdef USE_THREAD_ALLOC
 static pthread_key_t key;
 
-typedef struct allocMutex {
+typedef struct {
     Tcl_Mutex tlock;
     pthread_mutex_t plock;
 } allocMutex;
@@ -683,10 +683,10 @@ typedef struct allocMutex {
 Tcl_Mutex *
 TclpNewAllocMutex(void)
 {
-    struct allocMutex *lockPtr;
+    allocMutex *lockPtr;
     register pthread_mutex_t *plockPtr;
 
-    lockPtr = malloc(sizeof(struct allocMutex));
+    lockPtr = malloc(sizeof(allocMutex));
     if (lockPtr == NULL) {
 	Tcl_Panic("could not allocate lock");
     }
@@ -712,7 +712,7 @@ void
 TclpInitAllocCache(void)
 {
     pthread_mutex_lock(allocLockPtr);
-    pthread_key_create(&key, TclpFreeAllocCache);
+    pthread_key_create(&key, NULL);
     pthread_mutex_unlock(allocLockPtr);
 }
 
@@ -722,13 +722,19 @@ TclpFreeAllocCache(
 {
     if (ptr != NULL) {
 	/*
-	 * Called by the pthread lib when a thread exits
+	 * Called by TclFinalizeThreadAllocThread() during the thread
+	 * finalization initiated from Tcl_FinalizeThread()
 	 */
 
 	TclFreeAllocCache(ptr);
 	pthread_setspecific(key, NULL);
 
     } else {
+	/*
+	 * Called by TclFinalizeThreadAlloc() during the process
+	 * finalization initiated from Tcl_Finalize()
+	 */
+
 	pthread_key_delete(key);
     }
 }

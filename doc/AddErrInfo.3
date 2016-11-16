@@ -119,7 +119,7 @@ retrieve the stack trace when script evaluation returns
 \fBTCL_ERROR\fR, like so:
 .PP
 .CS
-int code = Tcl_Eval(interp, script);
+int code = Tcl_EvalEx(interp, script, -1, 0);
 if (code == TCL_ERROR) {
     Tcl_Obj *options = \fBTcl_GetReturnOptions\fR(interp, code);
     Tcl_Obj *key = Tcl_NewStringObj("-errorinfo", -1);

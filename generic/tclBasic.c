@@ -128,7 +128,7 @@ static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
-static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	NRCommand;
 
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
@@ -146,7 +146,6 @@ static int		TEOV_RunEnterTraces(Tcl_Interp *interp,
 			    Command **cmdPtrPtr, Tcl_Obj *commandPtr, int objc,
 			    Tcl_Obj *const objv[]);
 static Tcl_NRPostProc	RewindCoroutineCallback;
-static Tcl_NRPostProc	TailcallCleanup;
 static Tcl_NRPostProc	TEOEx_ByteCodeCallback;
 static Tcl_NRPostProc	TEOEx_ListCallback;
 static Tcl_NRPostProc	TEOV_Error;
@@ -724,9 +723,7 @@ Tcl_CreateInterp(void)
      * Initialize the ensemble error message rewriting support.
      */
 
-    iPtr->ensembleRewrite.sourceObjs = NULL;
-    iPtr->ensembleRewrite.numRemovedObjs = 0;
-    iPtr->ensembleRewrite.numInsertedObjs = 0;
+    TclResetRewriteEnsemble(interp, 1);
 
     /*
      * TIP#143: Initialise the resource limit support.
@@ -943,8 +940,8 @@ Tcl_CreateInterp(void)
      * Set up other variables such as tcl_version and tcl_library
      */
 
-    Tcl_SetVar(interp, "tcl_patchLevel", TCL_PATCH_LEVEL, TCL_GLOBAL_ONLY);
-    Tcl_SetVar(interp, "tcl_version", TCL_VERSION, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_patchLevel", NULL, TCL_PATCH_LEVEL, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_version", NULL, TCL_VERSION, TCL_GLOBAL_ONLY);
     Tcl_TraceVar2(interp, "tcl_precision", NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    TclPrecTraceProc, NULL);
@@ -969,11 +966,11 @@ Tcl_CreateInterp(void)
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
-	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
     }
 
     if (TclOOInit(interp) != TCL_OK) {
-	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
     }
 
     /*
@@ -983,7 +980,7 @@ Tcl_CreateInterp(void)
 
 #ifdef HAVE_ZLIB
     if (TclZlibInit(interp) != TCL_OK) {
-	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
     }
 #endif
 
@@ -1638,7 +1635,7 @@ DeleteInterpProc(
     }
 
     Tcl_DeleteHashTable(iPtr->lineLAPtr);
-    ckfree((char *) iPtr->lineLAPtr);
+    ckfree(iPtr->lineLAPtr);
     iPtr->lineLAPtr = NULL;
 
     if (iPtr->lineLABCPtr->numEntries && !TclInExit()) {
@@ -2406,7 +2403,7 @@ TclInvokeStringCommand(
 	    TclStackAlloc(interp, (unsigned)(objc + 1) * sizeof(char *));
 
     for (i = 0; i < objc; i++) {
-	argv[i] = Tcl_GetString(objv[i]);
+	argv[i] = TclGetString(objv[i]);
     }
     argv[objc] = 0;
 
@@ -2660,7 +2657,7 @@ TclRenameCommand(
     }
     Tcl_DStringAppend(&newFullName, newTail, -1);
     cmdPtr->refCount++;
-    CallCommandTraces(iPtr, cmdPtr, Tcl_GetString(oldFullName),
+    CallCommandTraces(iPtr, cmdPtr, TclGetString(oldFullName),
 	    Tcl_DStringValue(&newFullName), TCL_TRACE_RENAME);
     Tcl_DStringFree(&newFullName);
 
@@ -3526,7 +3523,7 @@ OldMathFuncProc(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument to math function didn't have numeric value",
 		    -1));
-	    TclCheckBadOctal(interp, Tcl_GetString(valuePtr));
+	    TclCheckBadOctal(interp, TclGetString(valuePtr));
 	    ckfree(args);
 	    return TCL_ERROR;
 	}
@@ -3946,7 +3943,7 @@ Tcl_Canceled(
          */
 
         if (iPtr->asyncCancelMsg != NULL) {
-            message = Tcl_GetStringFromObj(iPtr->asyncCancelMsg, &length);
+            message = TclGetStringFromObj(iPtr->asyncCancelMsg, &length);
         } else {
             length = 0;
         }
@@ -4045,7 +4042,7 @@ Tcl_CancelEval(
      */
 
     if (resultObjPtr != NULL) {
-	result = Tcl_GetStringFromObj(resultObjPtr, &cancelInfo->length);
+	result = TclGetStringFromObj(resultObjPtr, &cancelInfo->length);
 	cancelInfo->result = ckrealloc(cancelInfo->result,cancelInfo->length);
 	memcpy(cancelInfo->result, result, (size_t) cancelInfo->length);
 	TclDecrRefCount(resultObjPtr);	/* Discard their result object. */
@@ -4221,7 +4218,7 @@ EvalObjvCore(
 	 * TCL_EVAL_INVOKE was not set: clear rewrite rules
 	 */
 
-	iPtr->ensembleRewrite.sourceObjs = NULL;
+	TclResetRewriteEnsemble(interp, 1);
 
 	if (flags & TCL_EVAL_GLOBAL) {
 	    TEOV_SwitchVarFrame(interp);
@@ -4557,7 +4554,7 @@ TEOV_Error(
 	 */
 
 	listPtr = Tcl_NewListObj(objc, objv);
-	cmdString = Tcl_GetStringFromObj(listPtr, &cmdLen);
+	cmdString = TclGetStringFromObj(listPtr, &cmdLen);
 	Tcl_LogCommandInfo(interp, cmdString, cmdString, cmdLen);
 	Tcl_DecrRefCount(listPtr);
     }
@@ -4703,7 +4700,7 @@ TEOV_RunEnterTraces(
     Command *cmdPtr = *cmdPtrPtr;
     int newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
     int length, traceCode = TCL_OK;
-    const char *command = Tcl_GetStringFromObj(commandPtr, &length);
+    const char *command = TclGetStringFromObj(commandPtr, &length);
 
     /*
      * Call trace functions.
@@ -4755,7 +4752,7 @@ TEOV_RunLeaveTraces(
     Command *cmdPtr = data[2];
     Tcl_Obj **objv = data[3];
     int length;
-    const char *command = Tcl_GetStringFromObj(commandPtr, &length);
+    const char *command = TclGetStringFromObj(commandPtr, &length);
 
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
 	if (cmdPtr->flags & CMD_HAS_EXEC_TRACES){
@@ -6120,7 +6117,7 @@ TclNREvalObjEx(
 
 	Tcl_IncrRefCount(objPtr);
 
-	script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+	script = TclGetStringFromObj(objPtr, &numSrcBytes);
 	result = Tcl_EvalEx(interp, script, numSrcBytes, flags);
 
 	TclDecrRefCount(objPtr);
@@ -6151,7 +6148,7 @@ TEOEx_ByteCodeCallback(
 
 	    ProcessUnexpectedResult(interp, result);
 	    result = TCL_ERROR;
-	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+	    script = TclGetStringFromObj(objPtr, &numSrcBytes);
 	    Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
 	}
 
@@ -6850,7 +6847,7 @@ Tcl_VarEvalVA(
 	Tcl_DStringAppend(&buf, string, -1);
     }
 
-    result = Tcl_Eval(interp, Tcl_DStringValue(&buf));
+    result = Tcl_EvalEx(interp, Tcl_DStringValue(&buf), -1, 0);
     Tcl_DStringFree(&buf);
     return result;
 }
@@ -6920,7 +6917,7 @@ Tcl_GlobalEval(
 
     savedVarFramePtr = iPtr->varFramePtr;
     iPtr->varFramePtr = iPtr->rootFramePtr;
-    result = Tcl_Eval(interp, command);
+    result = Tcl_EvalEx(interp, command, -1, 0);
     iPtr->varFramePtr = savedVarFramePtr;
     return result;
 }
@@ -7887,7 +7884,7 @@ MathFuncWrongNumArgs(
     int found,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
-    const char *name = Tcl_GetString(objv[0]);
+    const char *name = TclGetString(objv[0]);
     const char *tail = name + strlen(name);
 
     while (tail > name+1) {
@@ -8374,7 +8371,7 @@ TclNRTailcallEval(
          * a now-gone namespace: cleanup and return.
          */
 
-        TailcallCleanup(data, interp, result);
+	Tcl_DecrRefCount(listPtr);
         return result;
     }
 
@@ -8383,18 +8380,26 @@ TclNRTailcallEval(
      */
 
     TclMarkTailcall(interp);
-    TclNRAddCallback(interp, TailcallCleanup, listPtr, NULL, NULL,NULL);
+    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
     return TclNREvalObjv(interp, objc-1, objv+1, 0, NULL);
 }
 
-static int
-TailcallCleanup(
+int
+TclNRReleaseValues(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_DecrRefCount((Tcl_Obj *) data[0]);
+    int i = 0;
+    while (i < 4) {
+	if (data[i]) {
+	    Tcl_DecrRefCount((Tcl_Obj *) data[i]);
+	} else {
+	    break;
+	}
+	i++;
+    }
     return result;
 }
 
@@ -8812,7 +8817,7 @@ TclNRInterpCoroutine(
     if (!COR_IS_SUSPENDED(corPtr)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "coroutine \"%s\" is already running",
-                Tcl_GetString(objv[0])));
+                TclGetString(objv[0])));
 	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "BUSY", NULL);
 	return TCL_ERROR;
     }

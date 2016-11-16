@@ -1465,6 +1465,8 @@ VwaitVarProc(
     int *donePtr = clientData;
 
     *donePtr = 1;
+    Tcl_UntraceVar(interp, name1, TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+	    VwaitVarProc, clientData);
     return NULL;
 }
 
