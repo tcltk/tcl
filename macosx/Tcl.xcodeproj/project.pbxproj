@@ -165,7 +165,8 @@
 		F9E61D29090A486C002B3151 /* bn_mp_neg.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42A208F272B3004A47F5 /* bn_mp_neg.c */; };
 		F9E61D2A090A4891002B3151 /* bn_mp_sqrt.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42C008F272B3004A47F5 /* bn_mp_sqrt.c */; };
 		F9E61D2B090A48A4002B3151 /* bn_mp_and.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D426C08F272B3004A47F5 /* bn_mp_and.c */; };
-		F9E61D2C090A48AC002B3151 /* bn_mp_expt_d.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D427F08F272B3004A47F5 /* bn_mp_expt_d.c */; };
+		F9E61D2C090A48AC002B3151 /* bn_mp_expt_d.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D427F08F272B3004A47F5 /* bn_mp_expt_d_ex.c */; };
+		F9E61D2C090A48AC002B3151 /* bn_mp_expt_d_ex.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D427F08F272B3004A47F5 /* bn_mp_expt_d.c */; };
 		F9E61D2D090A48BB002B3151 /* bn_mp_xor.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42CD08F272B3004A47F5 /* bn_mp_xor.c */; };
 		F9E61D2E090A48BF002B3151 /* bn_mp_or.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42A308F272B3004A47F5 /* bn_mp_or.c */; };
 		F9E61D2F090A48C7002B3151 /* bn_mp_shrink.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42BC08F272B3004A47F5 /* bn_mp_shrink.c */; };
@@ -579,6 +580,7 @@
 		F96D427A08F272B3004A47F5 /* bn_mp_div_d.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_div_d.c; sourceTree = "<group>"; };
 		F96D427E08F272B3004A47F5 /* bn_mp_exch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_exch.c; sourceTree = "<group>"; };
 		F96D427F08F272B3004A47F5 /* bn_mp_expt_d.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_expt_d.c; sourceTree = "<group>"; };
+		F96D427F08F272B3004A47F5 /* bn_mp_expt_d_ex.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_expt_d_ex.c; sourceTree = "<group>"; };
 		F96D428708F272B3004A47F5 /* bn_mp_grow.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_grow.c; sourceTree = "<group>"; };
 		F96D428808F272B3004A47F5 /* bn_mp_init.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_init.c; sourceTree = "<group>"; };
 		F96D428908F272B3004A47F5 /* bn_mp_init_copy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_init_copy.c; sourceTree = "<group>"; };
@@ -1442,6 +1444,7 @@
 				F96D427A08F272B3004A47F5 /* bn_mp_div_d.c */,
 				F96D427E08F272B3004A47F5 /* bn_mp_exch.c */,
 				F96D427F08F272B3004A47F5 /* bn_mp_expt_d.c */,
+				F96D427F08F272B3004A47F5 /* bn_mp_expt_d_ex.c */,
 				F96D428708F272B3004A47F5 /* bn_mp_grow.c */,
 				F96D428808F272B3004A47F5 /* bn_mp_init.c */,
 				F96D428908F272B3004A47F5 /* bn_mp_init_copy.c */,
@@ -2075,6 +2078,7 @@
 				F96D48F808F272C3004A47F5 /* bn_mp_div_d.c in Sources */,
 				F96D48FC08F272C3004A47F5 /* bn_mp_exch.c in Sources */,
 				F9E61D2C090A48AC002B3151 /* bn_mp_expt_d.c in Sources */,
+				F9E61D2C090A48AC002B3151 /* bn_mp_expt_d_ex.c in Sources */,
 				F96D490508F272C3004A47F5 /* bn_mp_grow.c in Sources */,
 				F96D490608F272C3004A47F5 /* bn_mp_init.c in Sources */,
 				F96D490708F272C3004A47F5 /* bn_mp_init_copy.c in Sources */,

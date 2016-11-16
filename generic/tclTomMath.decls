@@ -233,6 +233,11 @@ declare 66 {
     void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
 }
 
+# Added in libtommath 1.0
+declare 67 {
+    int TclBN_mp_expt_d_ex(mp_int *a, mp_digit b, mp_int *c, int fast)
+}
+
 # Local Variables:
 # mode: tcl
 # End:

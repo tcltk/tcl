@@ -5,6 +5,8 @@
     Copyright (C) 1998 Michael J. Fromberger, All Rights Reserved
 
     Arbitrary precision integer arithmetic library
+
+    $Id$
  */
 
 #ifndef _H_MPI_
@@ -208,7 +210,7 @@ int    mp_count_bits(mp_int *mp);
 mp_err mp_read_radix(mp_int *mp, unsigned char *str, int radix);
 int    mp_radix_size(mp_int *mp, int radix);
 int    mp_value_radix_size(int num, int qty, int radix);
-mp_err mp_toradix(mp_int *mp, unsigned char *str, int radix);
+mp_err mp_toradix(mp_int *mp, char *str, int radix);
 
 int    mp_char2value(char ch, int r);
 
@@ -223,3 +225,7 @@ int    mp_char2value(char ch, int r);
 const  char  *mp_strerror(mp_err ec);
 
 #endif /* end _H_MPI_ */
+
+/* $Source$ */
+/* $Revision$ */
+/* $Date$ */

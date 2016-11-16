@@ -328,6 +328,7 @@ TOMMATH_OBJS = \
 	bn_mp_div_3.${OBJEXT} \
 	bn_mp_exch.${OBJEXT} \
 	bn_mp_expt_d.${OBJEXT} \
+	bn_mp_expt_d_ex.${OBJEXT} \
 	bn_mp_grow.${OBJEXT} \
 	bn_mp_init.${OBJEXT} \
 	bn_mp_init_copy.${OBJEXT} \
