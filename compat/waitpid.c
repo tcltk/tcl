@@ -100,7 +100,7 @@ waitpid(
 	} else {
 	    prevPtr->nextPtr = waitPtr->nextPtr;
 	}
-	ckfree((char *) waitPtr);
+	ckfree(waitPtr);
 	return result;
     }
 

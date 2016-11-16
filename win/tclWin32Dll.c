@@ -49,7 +49,7 @@ BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
  */
 
 typedef struct MountPointMap {
-    const TCHAR *volumeName;	/* Native wide string volume name. */
+    TCHAR *volumeName;		/* Native wide string volume name. */
     TCHAR driveLetter;		/* Drive letter corresponding to the volume
 				 * name. */
     struct MountPointMap *nextPtr;
