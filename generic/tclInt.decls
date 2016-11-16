@@ -1009,7 +1009,7 @@ declare 250 {
 # Allow extensions for optimization
 declare 251 {
     int TclRegisterLiteral(void *envPtr,
-	    char *bytes, int length, int flags)
+	    const char *bytes, int length, int flags)
 }
 
 ##############################################################################
@@ -1246,7 +1246,7 @@ declare 19 macosx {
 }
 
 declare 29 {win unix} {
-    int TclWinCPUID(unsigned int index, unsigned int *regs)
+    int TclWinCPUID(int index, int *regs)
 }
 # Added in 8.6; core of TclpOpenTemporaryFile
 declare 30 {win unix} {
