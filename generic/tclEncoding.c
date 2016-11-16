@@ -305,7 +305,7 @@ Tcl_GetEncodingFromObj(
     Tcl_Obj *objPtr,
     Tcl_Encoding *encodingPtr)
 {
-    const char *name = Tcl_GetString(objPtr);
+    const char *name = TclGetString(objPtr);
 
     if (objPtr->typePtr != &encodingType) {
 	Tcl_Encoding encoding = Tcl_GetEncoding(interp, name);
@@ -705,7 +705,7 @@ Tcl_GetDefaultEncodingDir(void)
     }
     Tcl_ListObjIndex(NULL, searchPath, 0, &first);
 
-    return Tcl_GetString(first);
+    return TclGetString(first);
 }
 
 /*
@@ -1519,10 +1519,10 @@ OpenEncodingFileChannel(
 	    }
 	}
 	if (!verified) {
-	    const char *dirString = Tcl_GetString(directory);
+	    const char *dirString = TclGetString(directory);
 
 	    for (i=0; i<numDirs && !verified; i++) {
-		if (strcmp(dirString, Tcl_GetString(dir[i])) == 0) {
+		if (strcmp(dirString, TclGetString(dir[i])) == 0) {
 		    verified = 1;
 		}
 	    }
@@ -1763,7 +1763,7 @@ LoadTableEncoding(
 	const char *p;
 
 	Tcl_ReadChars(chan, objPtr, 3 + 16 * (16 * 4 + 1), 0);
-	p = Tcl_GetString(objPtr);
+	p = TclGetString(objPtr);
 	hi = (staticHex[UCHAR(p[0])] << 4) + staticHex[UCHAR(p[1])];
 	dataPtr->toUnicode[hi] = pageMemPtr;
 	p += 2;
@@ -3600,11 +3600,11 @@ unilen(
 static void
 InitializeEncodingSearchPath(
     char **valuePtr,
-    int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     const char *bytes;
-    int i, numDirs, numBytes;
+    int i, numDirs;
     Tcl_Obj *libPathObj, *encodingObj, *searchPathObj;
 
     TclNewLiteralStringObj(encodingObj, "encoding");
@@ -3634,11 +3634,11 @@ InitializeEncodingSearchPath(
     if (*encodingPtr) {
 	((Encoding *)(*encodingPtr))->refCount++;
     }
-    bytes = TclGetStringFromObj(searchPathObj, &numBytes);
+    bytes = TclGetString(searchPathObj);
 
-    *lengthPtr = numBytes;
-    *valuePtr = ckalloc(numBytes + 1);
-    memcpy(*valuePtr, bytes, (size_t) numBytes + 1);
+    *lengthPtr = searchPathObj->length;
+    *valuePtr = ckalloc(*lengthPtr + 1);
+    memcpy(*valuePtr, bytes, *lengthPtr + 1);
     Tcl_DecrRefCount(searchPathObj);
 }
 
