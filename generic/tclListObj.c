@@ -1898,7 +1898,7 @@ SetListFromAny(
 		while (--elemPtrs >= &listRepPtr->elements) {
 		    Tcl_DecrRefCount(*elemPtrs);
 		}
-		ckfree((char *) listRepPtr);
+		ckfree(listRepPtr);
 		return TCL_ERROR;
 	    }
 	    if (elemStart == limit) {
