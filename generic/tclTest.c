@@ -42,16 +42,8 @@
  * Declare external functions used in Windows tests.
  */
 
-/*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Tcltest_Init declaration is in the source file itself, which is only
- * accessed when we are building a library.
- */
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-EXTERN int		Tcltest_Init(Tcl_Interp *interp);
-EXTERN int		Tcltest_SafeInit(Tcl_Interp *interp);
+DLLEXPORT int		Tcltest_Init(Tcl_Interp *interp);
+DLLEXPORT int		Tcltest_SafeInit(Tcl_Interp *interp);
 
 /*
  * Dynamic string shared by TestdcallCmd and DelCallbackProc; used to collect
@@ -416,8 +408,7 @@ static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
-static int              NREUnwind_callback(ClientData data[], Tcl_Interp *interp,
-                            int result);
+static Tcl_NRPostProc	NREUnwind_callback;
 static int		TestNREUnwind(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -1294,7 +1285,7 @@ TestcmdtraceCmd(
 	cmdTrace = Tcl_CreateObjTrace(interp, 50000,
 		TCL_ALLOW_INLINE_COMPILATION, ObjTraceProc,
 		(ClientData) &deleteCalled, ObjTraceDeleteProc);
-	result = Tcl_Eval(interp, argv[2]);
+	result = Tcl_EvalEx(interp, argv[2], -1, 0);
 	Tcl_DeleteTrace(interp, cmdTrace);
 	if (!deleteCalled) {
 	    Tcl_SetResult(interp, "Delete wasn't called", TCL_STATIC);
@@ -1308,7 +1299,7 @@ TestcmdtraceCmd(
 	Tcl_DStringInit(&buffer);
 	t1 = Tcl_CreateTrace(interp, 1, CmdTraceProc, &buffer);
 	t2 = Tcl_CreateTrace(interp, 50000, CmdTraceProc, &buffer);
-	result = Tcl_Eval(interp, argv[2]);
+	result = Tcl_EvalEx(interp, argv[2], -1, 0);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, Tcl_DStringValue(&buffer), NULL);
@@ -1637,7 +1628,7 @@ DelDeleteProc(
 {
     DelCmd *dPtr = clientData;
 
-    Tcl_Eval(dPtr->interp, dPtr->deleteCmd);
+    Tcl_EvalEx(dPtr->interp, dPtr->deleteCmd, -1, 0);
     Tcl_ResetResult(dPtr->interp);
     ckfree(dPtr->deleteCmd);
     ckfree(dPtr);
@@ -3972,7 +3963,7 @@ TestregexpObjCmd(
 	    varName = Tcl_GetString(objv[2]);
 	    TclRegExpRangeUniChar(regExpr, -1, &start, &end);
 	    sprintf(resinfo, "%d %d", start, end-1);
-	    value = Tcl_SetVar(interp, varName, resinfo, 0);
+	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
 			varName, "\"", NULL);
@@ -3986,7 +3977,7 @@ TestregexpObjCmd(
 	    Tcl_RegExpGetInfo(regExpr, &info);
 	    varName = Tcl_GetString(objv[2]);
 	    sprintf(resinfo, "%ld", info.extendStart);
-	    value = Tcl_SetVar(interp, varName, resinfo, 0);
+	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
 			varName, "\"", NULL);
@@ -4329,7 +4320,7 @@ StaticInitProc(
     Tcl_Interp *interp)		/* Interpreter in which package is supposedly
 				 * being loaded. */
 {
-    Tcl_SetVar(interp, "x", "loaded", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "x", NULL, "loaded", TCL_GLOBAL_ONLY);
     return TCL_OK;
 }
 
@@ -4413,7 +4404,7 @@ TestupvarCmd(
 	} else if (strcmp(argv[4], "namespace") == 0) {
 	    flags = TCL_NAMESPACE_ONLY;
 	}
-	return Tcl_UpVar(interp, argv[1], argv[2], argv[3], flags);
+	return Tcl_UpVar2(interp, argv[1], argv[2], NULL, argv[3], flags);
     } else {
 	if (strcmp(argv[5], "global") == 0) {
 	    flags = TCL_GLOBAL_ONLY;
@@ -4907,10 +4898,10 @@ GetTimesObjCmd(
 	    timePer/100000);
 
     /* Tcl_SetVar 100000 times */
-    fprintf(stderr, "Tcl_SetVar of \"12345\" 100000 times\n");
+    fprintf(stderr, "Tcl_SetVar2 of \"12345\" 100000 times\n");
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
-	s = Tcl_SetVar(interp, "a", "12345", TCL_LEAVE_ERR_MSG);
+	s = Tcl_SetVar2(interp, "a", NULL, "12345", TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
@@ -4924,7 +4915,7 @@ GetTimesObjCmd(
     fprintf(stderr, "Tcl_GetVar of a==\"12345\" 100000 times\n");
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
-	s = Tcl_GetVar(interp, "a", TCL_LEAVE_ERR_MSG);
+	s = Tcl_GetVar2(interp, "a", NULL, TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
@@ -5194,7 +5185,7 @@ TestsaveresultCmd(
     if (((enum options) index) == RESULT_OBJECT) {
 	result = Tcl_EvalObjEx(interp, objv[2], 0);
     } else {
-	result = Tcl_Eval(interp, Tcl_GetString(objv[2]));
+	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), -1, 0);
     }
 
     if (discard) {
@@ -6297,7 +6288,7 @@ TestReport(
 	savedResult = Tcl_GetObjResult(interp);
 	Tcl_IncrRefCount(savedResult);
 	Tcl_SetObjResult(interp, Tcl_NewObj());
-	Tcl_Eval(interp, Tcl_DStringValue(&ds));
+	Tcl_EvalEx(interp, Tcl_DStringValue(&ds), -1, 0);
 	Tcl_DStringFree(&ds);
 	Tcl_ResetResult(interp);
 	Tcl_SetObjResult(interp, savedResult);
@@ -6760,7 +6751,7 @@ TestcpuidCmd(
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int status, index, i;
-    unsigned int regs[4];
+    int regs[4];
     Tcl_Obj *regsObjs[4];
 
     if (objc != 2) {
@@ -6770,14 +6761,14 @@ TestcpuidCmd(
     if (Tcl_GetIntFromObj(interp, objv[1], &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    status = TclWinCPUID((unsigned) index, regs);
+    status = TclWinCPUID(index, regs);
     if (status != TCL_OK) {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("operation not available", -1));
 	return status;
     }
     for (i=0 ; i<4 ; ++i) {
-	regsObjs[i] = Tcl_NewIntObj((int) regs[i]);
+	regsObjs[i] = Tcl_NewIntObj(regs[i]);
     }
     Tcl_SetObjResult(interp, Tcl_NewListObj(4, regsObjs));
     return TCL_OK;
@@ -7335,23 +7326,82 @@ InterpCmdResolver(
     CallFrame *varFramePtr = iPtr->varFramePtr;
     Proc *procPtr = (varFramePtr->isProcCallFrame & FRAME_IS_PROC) ?
             varFramePtr->procPtr : NULL;
-    Namespace *ns2NsPtr = (Namespace *)
-            Tcl_FindNamespace(interp, "::ns2", NULL, 0);
+    Namespace *callerNsPtr = varFramePtr->nsPtr;
+    Tcl_Command resolvedCmdPtr = NULL;
 
-    if (procPtr && (procPtr->cmdPtr->nsPtr == iPtr->globalNsPtr
-            || (ns2NsPtr && procPtr->cmdPtr->nsPtr == ns2NsPtr))) {
-        const char *callingCmdName =
+    /*
+     * Just do something special on a cmd literal "z" in two cases:
+     *  A)  when the caller is a proc "x", and the proc is either in "::" or in "::ns2".
+     *  B) the caller's namespace is "ctx1" or "ctx2"
+     */
+    if ( (name[0] == 'z') && (name[1] == '\0') ) {
+        Namespace *ns2NsPtr = (Namespace *) Tcl_FindNamespace(interp, "::ns2", NULL, 0);
+
+        if (procPtr != NULL
+            && ((procPtr->cmdPtr->nsPtr == iPtr->globalNsPtr)
+                || (ns2NsPtr != NULL && procPtr->cmdPtr->nsPtr == ns2NsPtr)
+                )
+            ) {
+            /*
+             * Case A)
+             *
+             *    - The context, in which this resolver becomes active, is
+             *      determined by the name of the caller proc, which has to be
+             *      named "x".
+             *
+             *    - To determine the name of the caller proc, the proc is taken
+             *      from the topmost stack frame.
+             *
+             *    - Note that the context is NOT provided during byte-code
+             *      compilation (e.g. in TclProcCompileProc)
+             *
+             *   When these conditions hold, this function resolves the
+             *   passed-in cmd literal into a cmd "y", which is taken from the
+             *   the global namespace (for simplicity).
+             */
+
+            const char *callingCmdName =
                 Tcl_GetCommandName(interp, (Tcl_Command) procPtr->cmdPtr);
 
-        if ((callingCmdName[0] == 'x') && (callingCmdName[1] == '\0')
-                && (name[0] == 'z') && (name[1] == '\0')) {
-            Tcl_Command sourceCmdPtr = Tcl_FindCommand(interp, "y", NULL,
-                    TCL_GLOBAL_ONLY);
-
-            if (sourceCmdPtr != NULL) {
-                *rPtr = sourceCmdPtr;
-                return TCL_OK;
+            if ( callingCmdName[0] == 'x' && callingCmdName[1] == '\0' ) {
+                resolvedCmdPtr = Tcl_FindCommand(interp, "y", NULL, TCL_GLOBAL_ONLY);
             }
+        } else if (callerNsPtr != NULL) {
+            /*
+             * Case B)
+             *
+             *    - The context, in which this resolver becomes active, is
+             *      determined by the name of the parent namespace, which has
+             *      to be named "ctx1" or "ctx2".
+             *
+             *    - To determine the name of the parent namesace, it is taken
+             *      from the 2nd highest stack frame.
+             *
+             *    - Note that the context can be provided during byte-code
+             *      compilation (e.g. in TclProcCompileProc)
+             *
+             *   When these conditions hold, this function resolves the
+             *   passed-in cmd literal into a cmd "y" or "Y" depending on the
+             *   context. The resolved procs are taken from the the global
+             *   namespace (for simplicity).
+             */
+
+            CallFrame *parentFramePtr = varFramePtr->callerPtr;
+            char *context = parentFramePtr != NULL ? parentFramePtr->nsPtr->name : "(NULL)";
+
+            if (strcmp(context, "ctx1") == 0 && (name[0] == 'z') && (name[1] == '\0')) {
+                resolvedCmdPtr = Tcl_FindCommand(interp, "y", NULL, TCL_GLOBAL_ONLY);
+                /* fprintf(stderr, "... y ==> %p\n", resolvedCmdPtr);*/
+
+            } else if (strcmp(context, "ctx2") == 0 && (name[0] == 'z') && (name[1] == '\0')) {
+                resolvedCmdPtr = Tcl_FindCommand(interp, "Y", NULL, TCL_GLOBAL_ONLY);
+                /*fprintf(stderr, "... Y ==> %p\n", resolvedCmdPtr);*/
+            }
+        }
+
+        if (resolvedCmdPtr != NULL) {
+            *rPtr = resolvedCmdPtr;
+            return TCL_OK;
         }
     }
     return TCL_CONTINUE;
@@ -7485,9 +7535,16 @@ TestInterpResolverCmd(
     int idx;
 #define RESOLVER_KEY "testInterpResolver"
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "up|down");
- 	return TCL_ERROR;
+    if ((objc < 2) || (objc > 3)) {
+	Tcl_WrongNumArgs(interp, 1, objv, "up|down ?interp?");
+	return TCL_ERROR;
+    }
+    if (objc == 3) {
+	interp = Tcl_GetSlave(interp, Tcl_GetString(objv[2]));
+	if (interp == NULL) {
+	    Tcl_AppendResult(interp, "provided interpreter not found", NULL);
+	    return TCL_ERROR;
+	}
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], table, "operation", TCL_EXACT,
             &idx) != TCL_OK) {

@@ -756,13 +756,13 @@ catch {rename largest_int {}}
 
 test string-7.1 {string last, too few args} {
     list [catch {string last a} msg] $msg
-} {1 {wrong # args: should be "string last needleString haystackString ?startIndex?"}}
+} {1 {wrong # args: should be "string last needleString haystackString ?lastIndex?"}}
 test string-7.2 {string last, bad args} {
     list [catch {string last a b c} msg] $msg
 } {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
 test string-7.3 {string last, too many args} {
     list [catch {string last a b c d} msg] $msg
-} {1 {wrong # args: should be "string last needleString haystackString ?startIndex?"}}
+} {1 {wrong # args: should be "string last needleString haystackString ?lastIndex?"}}
 test string-7.4 {string last} {
     string la xxx xxxx123xx345x678
 } 1
@@ -901,6 +901,10 @@ test string-10.20 {string map, dictionaries don't alter map ordering} {
     set map {aa X a Y}
     list [string map [dict create aa X a Y] aaa] [string map $map aaa] [dict size $map] [string map $map aaa]
 } {XY XY 2 XY}
+test string-10.20.1 {string map, dictionaries don't alter map ordering} {
+    set map {a X b Y a Z}
+    list [string map [dict create a X b Y a Z] aaa] [string map $map aaa] [dict size $map] [string map $map aaa]
+} {ZZZ XXX 2 XXX}
 test string-10.21 {string map, ABR checks} {
     string map {longstring foob} long
 } long

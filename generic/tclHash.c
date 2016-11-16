@@ -43,7 +43,7 @@
 
 static Tcl_HashEntry *	AllocArrayEntry(Tcl_HashTable *tablePtr, void *keyPtr);
 static int		CompareArrayKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static unsigned int	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
+static TCL_HASH_TYPE	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Prototypes for the one word hash key methods. Not actually declared because
@@ -65,7 +65,7 @@ static unsigned int	HashOneWordKey(Tcl_HashTable *tablePtr, void *keyPtr);
 static Tcl_HashEntry *	AllocStringEntry(Tcl_HashTable *tablePtr,
 			    void *keyPtr);
 static int		CompareStringKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static unsigned int	HashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
+static TCL_HASH_TYPE	HashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Function prototypes for static functions in this file:
@@ -774,7 +774,7 @@ CompareArrayKeys(
  *----------------------------------------------------------------------
  */
 
-static unsigned int
+static TCL_HASH_TYPE
 HashArrayKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
@@ -787,7 +787,7 @@ HashArrayKey(
 	    count--, array++) {
 	result += *array;
     }
-    return result;
+    return (TCL_HASH_TYPE) result;
 }
 
 /*
@@ -870,7 +870,7 @@ CompareStringKeys(
  *----------------------------------------------------------------------
  */
 
-static unsigned
+static TCL_HASH_TYPE
 HashStringKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
@@ -916,7 +916,7 @@ HashStringKey(
 	    result += (result << 3) + UCHAR(c);
 	}
     }
-    return result;
+    return (TCL_HASH_TYPE) result;
 }
 
 /*

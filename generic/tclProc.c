@@ -22,7 +22,6 @@
  */
 
 typedef struct {
-    int isRootEnsemble;
     Command cmd;
     ExtraFrameInfo efi;
 } ApplyExtraData;
@@ -344,7 +343,7 @@ Tcl_ProcObjCmd(
 	 * The argument list is just "args"; check the body
 	 */
 
-	procBody = Tcl_GetStringFromObj(objv[3], &numBytes);
+	procBody = TclGetStringFromObj(objv[3], &numBytes);
 	if (TclParseAllWhiteSpace(procBody, numBytes) < numBytes) {
 	    goto done;
 	}
@@ -870,7 +869,7 @@ TclObjGetFrame(
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad level \"%s\"", name));
-    Tcl_SetErrorCode(interp, "TCL", "VALUE", "STACKLEVEL", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL", name, NULL);
     return -1;
 }
 
@@ -1088,12 +1087,10 @@ ProcWrongNumArgs(
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
     } else {
-	((Interp *) interp)->ensembleRewrite.numInsertedObjs -= skip - 1;
-
 #ifdef AVOID_HACKS_FOR_ITCL
 	desiredObjs[0] = framePtr->objv[skip-1];
 #else
-	desiredObjs[0] = Tcl_NewListObj(skip, framePtr->objv);
+	desiredObjs[0] = Tcl_NewListObj(1, framePtr->objv + skip - 1);
 #endif /* AVOID_HACKS_FOR_ITCL */
     }
     Tcl_IncrRefCount(desiredObjs[0]);
@@ -1528,6 +1525,10 @@ InitArgsAndLocals(
      */
 
   incorrectArgs:
+    if ((skip != 1) &&
+	    TclInitRewriteEnsemble(interp, skip-1, 0, framePtr->objv)) {
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+    }
     memset(varPtr, 0,
 	    ((framePtr->compiledLocals + localCt)-varPtr) * sizeof(Var));
     return ProcWrongNumArgs(interp, skip);
@@ -2082,7 +2083,7 @@ MakeProcError(
 				 * messages and trace information. */
 {
     int overflow, limit = 60, nameLen;
-    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
+    const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
@@ -2634,7 +2635,7 @@ TclNRApplyObjCmd(
     Interp *iPtr = (Interp *) interp;
     Proc *procPtr = NULL;
     Tcl_Obj *lambdaPtr, *nsObjPtr;
-    int result, isRootEnsemble;
+    int result;
     Tcl_Namespace *nsPtr;
     ApplyExtraData *extraPtr;
 
@@ -2652,30 +2653,6 @@ TclNRApplyObjCmd(
     if (lambdaPtr->typePtr == &tclLambdaType) {
 	procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
     }
-
-#define JOE_EXTENSION 0
-/*
- * Note: this code is NOT FUNCTIONAL due to the NR implementation; DO NOT
- * ENABLE! Leaving here as reminder to (a) TIP the suggestion, and (b) adapt
- * the code. (MS)
- */
-
-#if JOE_EXTENSION
-    else {
-	/*
-	 * Joe English's suggestion to allow cmdNames to function as lambdas.
-	 */
-
-	Tcl_Obj *elemPtr;
-	int numElem;
-
-	if ((lambdaPtr->typePtr == &tclCmdNameType) ||
-		(TclListObjGetElements(interp, lambdaPtr, &numElem,
-		&elemPtr) == TCL_OK && numElem == 1)) {
-	    return Tcl_EvalObjv(interp, objc-1, objv+1, 0);
-	}
-    }
-#endif
 
     if ((procPtr == NULL) || (procPtr->iPtr != iPtr)) {
 	result = SetLambdaFromAny(interp, lambdaPtr);
@@ -2717,16 +2694,6 @@ TclNRApplyObjCmd(
     extraPtr->efi.fields[0].clientData = lambdaPtr;
     extraPtr->cmd.clientData = &extraPtr->efi;
 
-    isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
-    if (isRootEnsemble) {
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = 1;
-	iPtr->ensembleRewrite.numInsertedObjs = 0;
-    } else {
-	iPtr->ensembleRewrite.numInsertedObjs -= 1;
-    }
-    extraPtr->isRootEnsemble = isRootEnsemble;
-
     result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
     if (result == TCL_OK) {
 	TclNRAddCallback(interp, ApplyNR2, extraPtr, NULL, NULL, NULL);
@@ -2742,10 +2709,6 @@ ApplyNR2(
     int result)
 {
     ApplyExtraData *extraPtr = data[0];
-
-    if (extraPtr->isRootEnsemble) {
-	((Interp *) interp)->ensembleRewrite.sourceObjs = NULL;
-    }
 
     TclStackFree(interp, extraPtr);
     return result;
@@ -2777,7 +2740,7 @@ MakeLambdaError(
 				 * messages and trace information. */
 {
     int overflow, limit = 60, nameLen;
-    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
+    const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(

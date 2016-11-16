@@ -1095,7 +1095,7 @@ MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
-MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, char *bytes,
+MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, const char *bytes,
 			    int length, unsigned int hash, int *newPtr,
 			    Namespace *nsPtr, int flags,
 			    LiteralEntry **globalPtrPtr);
@@ -1210,29 +1210,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define LITERAL_ON_HEAP		0x01
 #define LITERAL_CMD_NAME	0x02
-
-/*
- * Form of TclRegisterLiteral with flags == 0. In that case, it is safe to
- * cast away constness, and it is cleanest to do that here, all in one place.
- *
- * int TclRegisterNewLiteral(CompileEnv *envPtr, const char *bytes,
- *			     int length);
- */
-
-#define TclRegisterNewLiteral(envPtr, bytes, length) \
-    TclRegisterLiteral(envPtr, (char *)(bytes), length, /*flags*/ 0)
-
-/*
- * Form of TclRegisterLiteral with flags == LITERAL_CMD_NAME. In that case, it
- * is safe to cast away constness, and it is cleanest to do that here, all in
- * one place.
- *
- * int TclRegisterNewNSLiteral(CompileEnv *envPtr, const char *bytes,
- *			       int length);
- */
-
-#define TclRegisterNewCmdLiteral(envPtr, bytes, length) \
-    TclRegisterLiteral(envPtr, (char *)(bytes), length, LITERAL_CMD_NAME)
+#define LITERAL_UNSHARED	0x04
 
 /*
  * Macro used to manually adjust the stack requirements; used in cases where
@@ -1549,9 +1527,9 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  */
 
 #define PushLiteral(envPtr, string, length) \
-    TclEmitPush(TclRegisterNewLiteral((envPtr), (string), (length)), (envPtr))
+    TclEmitPush(TclRegisterLiteral(envPtr, string, length, 0), (envPtr))
 #define PushStringLiteral(envPtr, string) \
-    PushLiteral((envPtr), (string), (int) (sizeof(string "") - 1))
+    PushLiteral(envPtr, string, (int) (sizeof(string "") - 1))
 
 /*
  * Macro to advance to the next token; it is more mnemonic than the address

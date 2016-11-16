@@ -271,8 +271,9 @@ limitation as \fBexec\fR wants to communicate over pipes.  The Expect
 extension addresses this issue when communicating with a TUI application.
 .PP
 When attempting to execute an application, \fBexec\fR first searches for
-the name as it was specified.  Then, in order, \fB.com\fR, \fB.exe\fR, and
-\fB.bat\fR are appended to the end of the specified name and it searches
+the name as it was specified.  Then, in order,
+\fB.com\fR, \fB.exe\fR, \fB.bat\fR and \fB.cmd\fR
+are appended to the end of the specified name and it searches
 for the longer name.  If a directory name was not specified as part of the
 application name, the following directories are automatically searched in
 order when attempting to locate the application:
