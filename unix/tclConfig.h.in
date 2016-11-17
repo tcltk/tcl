@@ -394,9 +394,6 @@
 /* Are we building with threads enabled? */
 #undef TCL_THREADS
 
-/* Build libtommath? */
-#undef TCL_TOMMATH
-
 /* Do we allow unloading of shared libraries? */
 #undef TCL_UNLOAD_DLLS
 
