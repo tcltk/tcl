@@ -18,11 +18,13 @@
 #include <tommath.h>
 #include <ctype.h>
 
-#if 0
-
+#ifndef MIN
 #define MIN(x,y) (((x) < (y)) ? (x) : (y))
+#endif
 
+#ifndef MAX
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,8 +39,8 @@ extern "C" {
 
 #endif
 
-
 /* define heap macros */
+#if 0
 #ifndef XMALLOC
    /* default to libc stuff */
    #define XMALLOC  malloc
@@ -51,6 +53,7 @@ extern "C" {
    extern void *XREALLOC(void *p, size_t n);
    extern void *XCALLOC(size_t n, size_t s);
    extern void XFREE(void *p);
+#endif
 #endif
 
 /* lowlevel functions, do not call! */
@@ -109,7 +112,6 @@ int func_name (mp_int * a, type b)                       \
   mp_clamp (a);                                          \
   return MP_OKAY;                                        \
 }
-#endif
 
 #ifdef __cplusplus
    }
