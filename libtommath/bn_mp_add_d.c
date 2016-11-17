@@ -37,9 +37,8 @@ mp_add_d (mp_int * a, mp_digit b, mp_int * c)
      /* c = |a| - b */
      res = mp_sub_d(a, b, c);
 
-     /* fix signs  */
-     a->sign = MP_NEG;
-     c->sign = (c->used) ? MP_NEG : MP_ZPOS;
+     /* fix sign  */
+     a->sign = c->sign = MP_NEG;
 
      /* clamp */
      mp_clamp(c);
