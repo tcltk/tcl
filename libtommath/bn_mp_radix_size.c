@@ -66,17 +66,8 @@ int mp_radix_size (mp_int * a, int radix, int *size)
   }
   mp_clear (&t);
 
-  /* 
-   * return digs + 1, the 1 is for the NULL byte that would be required.
-   * mp_toradix_n requires a minimum of 3 bytes, so never report less than
-   * that.
-   */
-
-  if ( digs >= 2 ) {
-      *size = digs + 1;
-  } else {
-      *size = 3;
-  }
+  /* return digs + 1, the 1 is for the NULL byte that would be required. */
+  *size = digs + 1;
   return MP_OKAY;
 }
 

@@ -631,6 +631,12 @@ test obj-34.1 {mp_iseven} testobj {
     lappend result [testbignumobj iseven 1]    ;
     lappend result [testobj type 1]
 } {0 1 int}
+test obj-34.2 {mp_radix_size} testobj {
+    set result ""
+    lappend result [testbignumobj set 1 9]
+    lappend result [testbignumobj radixsize 1]    ;
+    lappend result [testobj type 1]
+} {9 2 int}
 
 if {[testConstraint testobj]} {
     testobj freeallvars
