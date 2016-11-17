@@ -1,5 +1,4 @@
 #include <tommath_private.h>
-
 #ifdef BN_MP_SQRT_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *

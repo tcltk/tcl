@@ -62,7 +62,7 @@ extern "C" {
    typedef signed long long     long64;
 #endif
 
-   typedef uint64_t mp_digit;
+   typedef ulong64 mp_digit;
 #if defined(_WIN32)
    typedef unsigned __int128    mp_word;
 #elif defined(__GNUC__)
@@ -84,7 +84,7 @@ extern "C" {
 #endif
 
    typedef uint32_t             mp_digit;
-   typedef uint64_t             mp_word;
+   typedef ulong64              mp_word;
 
 #ifdef MP_31BIT
    /* this is an extension that uses 31-bit digits */
@@ -564,7 +564,7 @@ int mp_fwrite(mp_int *a, int radix, FILE *stream);
 #define mp_tohex(M, S)     mp_toradix((M), (S), 16)
 
 #ifdef __cplusplus
-}
+   }
 #endif
 
 #endif
