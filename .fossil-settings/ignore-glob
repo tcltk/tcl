@@ -19,7 +19,11 @@
 */versions.vc
 libtommath/bn.ilg
 libtommath/bn.ind
+libtommath/pretty.build
+libtommath/tommath.src
 libtommath/*.pdf
+libtommath/*.pl
+libtommath/*.sh
 libtommath/tombc/*
 libtommath/pre_gen/*
 libtommath/pics/*

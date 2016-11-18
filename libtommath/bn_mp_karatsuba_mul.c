@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_KARATSUBA_MUL_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /* c = |a| * |b| using Karatsuba Multiplication using 
@@ -82,8 +82,8 @@ int mp_karatsuba_mul (mp_int * a, mp_int * b, mp_int * c)
   y1.used = b->used - B;
 
   {
-    register int x;
-    register mp_digit *tmpa, *tmpb, *tmpx, *tmpy;
+    int x;
+    mp_digit *tmpa, *tmpb, *tmpx, *tmpy;
 
     /* we copy the digits directly instead of using higher level functions
      * since we also need to shift the digits
@@ -161,3 +161,7 @@ ERR:
   return err;
 }
 #endif
+
+/* $Source$ */
+/* $Revision$ */
+/* $Date$ */
