@@ -390,7 +390,7 @@ that use the third component do not attempt to perform tilde
 substitution.
 .RE
 .TP
-\fBfile stat  \fIname varName\fR
+\fBfile stat \fIname varName\fR
 .
 Invokes the \fBstat\fR kernel call on \fIname\fR, and uses the variable
 given by \fIvarName\fR to hold information returned from the kernel call.
