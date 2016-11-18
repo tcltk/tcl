@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_SUBMOD_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /* d = a - b (mod c) */
@@ -36,3 +36,7 @@ mp_submod (mp_int * a, mp_int * b, mp_int * c, mp_int * d)
   return res;
 }
 #endif
+
+/* $Source$ */
+/* $Revision$ */
+/* $Date$ */

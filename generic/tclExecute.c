@@ -8793,7 +8793,7 @@ ExecuteExtendedBinaryMathOp(
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
 	mp_init(&bigResult);
-	mp_expt_d(&big1, big2.dp[0], &bigResult);
+	mp_expt_d_ex(&big1, big2.dp[0], &bigResult, 1);
 	mp_clear(&big1);
 	mp_clear(&big2);
 	BIG_RESULT(&bigResult);
