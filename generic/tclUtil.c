@@ -1920,7 +1920,7 @@ Tcl_ConcatObj(
 	if (TclListObjIsCanonical(objPtr)) {
 	    continue;
 	}
-	Tcl_GetString(objPtr);
+	TclGetString(objPtr);
 	length = objPtr->length;
 	if (length > 0) {
 	    break;
@@ -2628,7 +2628,7 @@ TclDStringAppendObj(
     Tcl_DString *dsPtr,
     Tcl_Obj *objPtr)
 {
-    char *bytes = Tcl_GetString(objPtr);
+    char *bytes = TclGetString(objPtr);
 
     return Tcl_DStringAppend(dsPtr, bytes, objPtr->length);
 }
@@ -2875,7 +2875,7 @@ Tcl_DStringGetResult(
 				 * of interp. */
 {
     Tcl_Obj *obj = Tcl_GetObjResult(interp);
-    char *bytes = Tcl_GetString(obj);
+    char *bytes = TclGetString(obj);
 
     Tcl_DStringFree(dsPtr);
     Tcl_DStringAppend(dsPtr, bytes, obj->length);
@@ -3524,7 +3524,7 @@ TclGetIntForIndex(
 
   parseError:
     if (interp != NULL) {
-	bytes = Tcl_GetString(objPtr);
+	bytes = TclGetString(objPtr);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad index \"%s\": must be integer?[+-]integer? or"
 		" end?[+-]integer?", bytes));
@@ -3817,10 +3817,10 @@ TclSetProcessGlobalValue(
     } else {
 	Tcl_CreateExitHandler(FreeProcessGlobalValue, pgvPtr);
     }
-    bytes = Tcl_GetString(newValue);
+    bytes = TclGetString(newValue);
     pgvPtr->numBytes = newValue->length;
     pgvPtr->value = ckalloc(pgvPtr->numBytes + 1);
-    memcpy(pgvPtr->value, bytes, (unsigned) pgvPtr->numBytes + 1);
+    memcpy(pgvPtr->value, bytes, pgvPtr->numBytes + 1);
     if (pgvPtr->encoding) {
 	Tcl_FreeEncoding(pgvPtr->encoding);
     }
@@ -3895,7 +3895,7 @@ TclGetProcessGlobalValue(
 	}
     }
     cacheMap = GetThreadHash(&pgvPtr->key);
-    hPtr = Tcl_FindHashEntry(cacheMap, (char *) INT2PTR(epoch));
+    hPtr = Tcl_FindHashEntry(cacheMap, (void *) (epoch));
     if (NULL == hPtr) {
 	int dummy;
 
@@ -4012,7 +4012,7 @@ const char *
 Tcl_GetNameOfExecutable(void)
 {
     Tcl_Obj *obj = TclGetObjNameOfExecutable();
-    const char *bytes = Tcl_GetString(obj);
+    const char *bytes = TclGetString(obj);
 
     if (obj->length == 0) {
 	return NULL;

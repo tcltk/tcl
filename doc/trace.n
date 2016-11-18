@@ -277,10 +277,7 @@ writes invoked by \fIcommandPrefix\fR will occur directly, without invoking
 \fIcommandPrefix\fR unsets the variable then unset traces will be invoked.
 .PP
 When an unset trace is invoked, the variable has already been deleted:
-it will appear to be undefined with no traces.  If an unset occurs
-because of a procedure return, then the trace will be invoked in the
-variable context of the procedure being returned to:  the stack frame
-of the returning procedure will no longer exist.  Traces are not
+it will appear to be undefined with no traces.  Traces are not
 disabled during unset traces, so if an unset trace command creates a
 new trace and accesses the variable, the trace will be invoked.  Any
 errors in unset traces are ignored.

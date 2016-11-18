@@ -382,19 +382,6 @@ Tcl_PopCallFrame(
     register CallFrame *framePtr = iPtr->framePtr;
     Namespace *nsPtr;
 
-    /*
-     * It's important to remove the call frame from the interpreter's stack of
-     * call frames before deleting local variables, so that traces invoked by
-     * the variable deletion don't see the partially-deleted frame.
-     */
-
-    if (framePtr->callerPtr) {
-	iPtr->framePtr = framePtr->callerPtr;
-	iPtr->varFramePtr = framePtr->callerVarPtr;
-    } else {
-	/* Tcl_PopCallFrame: trying to pop rootCallFrame! */
-    }
-
     if (framePtr->varTablePtr != NULL) {
 	TclDeleteVars(iPtr, framePtr->varTablePtr);
 	ckfree(framePtr->varTablePtr);
@@ -421,6 +408,13 @@ Tcl_PopCallFrame(
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
     framePtr->nsPtr = NULL;
+
+    if (framePtr->callerPtr) {
+	iPtr->framePtr = framePtr->callerPtr;
+	iPtr->varFramePtr = framePtr->callerVarPtr;
+    } else {
+	/* Tcl_PopCallFrame: trying to pop rootCallFrame! */
+    }
 
     if (framePtr->tailcallPtr) {
 	TclSetTailcall(interp, framePtr->tailcallPtr);
@@ -2566,7 +2560,9 @@ Tcl_FindCommand(
 	}
 
 	if (result == TCL_OK) {
+	    ((Command *)cmd)->flags |= CMD_VIA_RESOLVER;
 	    return cmd;
+
 	} else if (result != TCL_CONTINUE) {
 	    return NULL;
 	}
@@ -2658,6 +2654,7 @@ Tcl_FindCommand(
     }
 
     if (cmdPtr != NULL) {
+	cmdPtr->flags  &= ~CMD_VIA_RESOLVER;
 	return (Tcl_Command) cmdPtr;
     }
 
@@ -2883,9 +2880,9 @@ GetNamespaceFromObj(
 	resNamePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	nsPtr = resNamePtr->nsPtr;
 	refNsPtr = resNamePtr->refNsPtr;
-	if (!(nsPtr->flags & NS_DYING) && (interp == nsPtr->interp) &&
-		(!refNsPtr || ((interp == refNsPtr->interp) &&
-		(refNsPtr== (Namespace *) Tcl_GetCurrentNamespace(interp))))){
+	if (!(nsPtr->flags & NS_DYING) && (interp == nsPtr->interp)
+		&& (!refNsPtr || (refNsPtr ==
+		(Namespace *) TclGetCurrentNamespace(interp)))) {
 	    *nsPtrPtr = (Tcl_Namespace *) nsPtr;
 	    return TCL_OK;
 	}
@@ -4538,8 +4535,8 @@ NamespaceUpvarCmd(
 	savedNsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
 	iPtr->varFramePtr->nsPtr = (Namespace *) nsPtr;
 	otherPtr = TclObjLookupVarEx(interp, objv[0], NULL,
-		(TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
-		/*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+		(TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG|TCL_AVOID_RESOLVERS),
+		"access", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
 	iPtr->varFramePtr->nsPtr = (Namespace *) savedNsPtr;
 	if (otherPtr == NULL) {
 	    return TCL_ERROR;
@@ -4779,7 +4776,7 @@ SetNsNameFromAny(
     if ((name[0] == ':') && (name[1] == ':')) {
 	resNamePtr->refNsPtr = NULL;
     } else {
-	resNamePtr->refNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
+	resNamePtr->refNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     }
     resNamePtr->refCount = 1;
     TclFreeIntRep(objPtr);
