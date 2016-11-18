@@ -897,18 +897,18 @@ Tcl_ListObjReplace(
     }
     if (count < 0) {
 	count = 0;
-    } else if (numElems < first+count || first+count < 0) {
-	/*
-	 * The 'first+count < 0' condition here guards agains integer
-	 * overflow in determining 'first+count'.
-	 */
+    } else if (first > INT_MAX - count /* Handle integer overflow */
+	    || numElems < first+count) {
 
 	count = numElems - first;
     }
 
     if (objc > LIST_MAX - (numElems - count)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"max length of a Tcl list (%d elements) exceeded", LIST_MAX));
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "max length of a Tcl list (%d elements) exceeded",
+		    LIST_MAX));
+	}
 	return TCL_ERROR;
     }
     isShared = (listRepPtr->refCount > 1);
@@ -1894,7 +1894,7 @@ SetListFromAny(
 		while (--elemPtrs >= &listRepPtr->elements) {
 		    Tcl_DecrRefCount(*elemPtrs);
 		}
-		ckfree((char *) listRepPtr);
+		ckfree(listRepPtr);
 		return TCL_ERROR;
 	    }
 	    if (elemStart == limit) {

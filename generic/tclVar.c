@@ -521,16 +521,13 @@ TclObjLookupVarEx(
 				 * is set to NULL. */
 {
     Interp *iPtr = (Interp *) interp;
+    CallFrame *varFramePtr = iPtr->varFramePtr;
     register Var *varPtr;	/* Points to the variable's in-frame Var
 				 * structure. */
-    const char *part1;
-    int index, len1, len2;
-    int parsed = 0;
-    Tcl_Obj *objPtr;
-    const Tcl_ObjType *typePtr = part1Ptr->typePtr;
     const char *errMsg = NULL;
-    CallFrame *varFramePtr = iPtr->varFramePtr;
-    const char *part2 = part2Ptr? TclGetString(part2Ptr):NULL;
+    int index, parsed = 0;
+    const Tcl_ObjType *typePtr = part1Ptr->typePtr;
+
     *arrayPtrPtr = NULL;
 
     if (typePtr == &localVarNameType) {
@@ -546,7 +543,7 @@ TclObjLookupVarEx(
 	     */
 
 	    Tcl_Obj *namePtr = part1Ptr->internalRep.twoPtrValue.ptr1;
-	    Tcl_Obj *checkNamePtr = localName(iPtr->varFramePtr, localIndex);
+	    Tcl_Obj *checkNamePtr = localName(varFramePtr, localIndex);
 
 	    if ((!namePtr && (checkNamePtr == part1Ptr)) ||
 		    (namePtr && (checkNamePtr == namePtr))) {
@@ -577,11 +574,7 @@ TclObjLookupVarEx(
 		}
 		return NULL;
 	    }
-	    if ((part2Ptr = part1Ptr->internalRep.twoPtrValue.ptr2)) {
-		if (createPart2) {
-		    Tcl_IncrRefCount(part2Ptr);
-		}
-	    }
+	    part2Ptr = part1Ptr->internalRep.twoPtrValue.ptr2;
 	    part1Ptr = part1Ptr->internalRep.twoPtrValue.ptr1;
 	    typePtr = part1Ptr->typePtr;
 	    if (typePtr == &localVarNameType) {
@@ -590,18 +583,23 @@ TclObjLookupVarEx(
 	}
 	parsed = 1;
     }
-    part1 = TclGetStringFromObj(part1Ptr, &len1);
 
-    if (!parsed && len1 && (*(part1 + len1 - 1) == ')')) {
+    if (!parsed) {
+
 	/*
 	 * part1Ptr is possibly an unparsed array element.
 	 */
 
-	register int i;
+	int len;
+	const char *part1 = TclGetStringFromObj(part1Ptr, &len);
 
-	len2 = -1;
-	for (i = 0; i < len1; i++) {
-	    if (*(part1 + i) == '(') {
+	if (len > 1 && (part1[len - 1] == ')')) {
+
+	  const char *part2 = strchr(part1, '(');
+
+	  if (part2) {
+	    Tcl_Obj *arrayPtr;
+
 		if (part2Ptr != NULL) {
 		    if (flags & TCL_LEAVE_ERR_MSG) {
 			TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
@@ -612,47 +610,19 @@ TclObjLookupVarEx(
 		    return NULL;
 		}
 
-		/*
-		 * part1Ptr points to an array element; first copy the element
-		 * name to a new string part2.
-		 */
+	    arrayPtr = Tcl_NewStringObj(part1, (part2 - part1));
+	    part2Ptr = Tcl_NewStringObj(part2 + 1, len - (part2 - part1) - 2);
 
-		part2 = part1 + i + 1;
-		len2 = len1 - i - 2;
-		len1 = i;
+	    TclFreeIntRep(part1Ptr);
 
-		part2Ptr = Tcl_NewStringObj(part2, len2);
-		if (createPart2) {
-		    Tcl_IncrRefCount(part2Ptr);
-		}
+	    Tcl_IncrRefCount(arrayPtr);
+	    part1Ptr->internalRep.twoPtrValue.ptr1 = arrayPtr;
+	    Tcl_IncrRefCount(part2Ptr);
+	    part1Ptr->internalRep.twoPtrValue.ptr2 = part2Ptr;
+	    part1Ptr->typePtr = &tclParsedVarNameType;
 
-		/*
-		 * Free the internal rep of the original part1Ptr, now renamed
-		 * objPtr, and set it to tclParsedVarNameType.
-		 */
-
-		objPtr = part1Ptr;
-		TclFreeIntRep(objPtr);
-		objPtr->typePtr = &tclParsedVarNameType;
-
-		/*
-		 * Define a new string object to hold the new part1Ptr, i.e.,
-		 * the array name. Set the internal rep of objPtr, reset
-		 * typePtr and part1 to contain the references to the array
-		 * name.
-		 */
-
-		TclNewStringObj(part1Ptr, part1, len1);
-		Tcl_IncrRefCount(part1Ptr);
-
-		objPtr->internalRep.twoPtrValue.ptr1 = part1Ptr;
-		Tcl_IncrRefCount(part2Ptr);
-		objPtr->internalRep.twoPtrValue.ptr2 = part2Ptr;
-
-		typePtr = part1Ptr->typePtr;
-		part1 = TclGetString(part1Ptr);
-		break;
-	    }
+	    part1Ptr = arrayPtr;
+	  }
 	}
     }
 
@@ -661,8 +631,6 @@ TclObjLookupVarEx(
      * part1Ptr is not an array element; look it up, and convert it to one of
      * the cached types if possible.
      */
-
-    TclFreeIntRep(part1Ptr);
 
     varPtr = TclLookupSimpleVar(interp, part1Ptr, flags, createPart1,
 	    &errMsg, &index);
@@ -679,11 +647,12 @@ TclObjLookupVarEx(
      * Cache the newly found variable if possible.
      */
 
+    TclFreeIntRep(part1Ptr);
     if (index >= 0) {
 	/*
 	 * An indexed local variable.
 	 */
-	Tcl_Obj *cachedNamePtr = localName(iPtr->varFramePtr, index);
+	Tcl_Obj *cachedNamePtr = localName(varFramePtr, index);
 
 	part1Ptr->typePtr = &localVarNameType;
 	if (part1Ptr != cachedNamePtr) {
@@ -724,18 +693,6 @@ TclObjLookupVarEx(
     return varPtr;
 }
 
-/*
- * This flag bit should not interfere with TCL_GLOBAL_ONLY,
- * TCL_NAMESPACE_ONLY, or TCL_LEAVE_ERR_MSG; it signals that the variable
- * lookup is performed for upvar (or similar) purposes, with slightly
- * different rules:
- *    - Bug #696893 - variable is either proc-local or in the current
- *	namespace; never follow the second (global) resolution path
- *    - Bug #631741 - do not use special namespace or interp resolvers
- */
-
-#define AVOID_RESOLVERS 0x40000
-
 /*
  *----------------------------------------------------------------------
  *
@@ -785,8 +742,8 @@ TclLookupSimpleVar(
     Tcl_Obj *varNamePtr,	/* This is a simple variable name that could
 				 * represent a scalar or an array. */
     int flags,			/* Only TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
-				 * AVOID_RESOLVERS and TCL_LEAVE_ERR_MSG bits
-				 * matter. */
+				 * TCL_AVOID_RESOLVERS and TCL_LEAVE_ERR_MSG
+				 * bits matter. */
     const int create,		/* If 1, create hash table entry for varname,
 				 * if it doesn't already exist. If 0, return
 				 * error if it doesn't exist. */
@@ -826,7 +783,7 @@ TclLookupSimpleVar(
      */
 
     if ((cxtNsPtr->varResProc != NULL || iPtr->resolverPtr != NULL)
-	    && !(flags & AVOID_RESOLVERS)) {
+	    && !(flags & TCL_AVOID_RESOLVERS)) {
 	resPtr = iPtr->resolverPtr;
 	if (cxtNsPtr->varResProc) {
 	    result = cxtNsPtr->varResProc(interp, varName,
@@ -879,7 +836,7 @@ TclLookupSimpleVar(
 	    *indexPtr = -1;
 	    flags = (flags | TCL_GLOBAL_ONLY) & ~TCL_NAMESPACE_ONLY;
 	} else {
-	    if (flags & AVOID_RESOLVERS) {
+	    if (flags & TCL_AVOID_RESOLVERS) {
 		flags = (flags | TCL_NAMESPACE_ONLY);
 	    }
 	    if (flags & TCL_NAMESPACE_ONLY) {
@@ -894,7 +851,7 @@ TclLookupSimpleVar(
 
 	varPtr = (Var *) ObjFindNamespaceVar(interp, varNamePtr,
 		(Tcl_Namespace *) cxtNsPtr,
-		(flags | AVOID_RESOLVERS) & ~TCL_LEAVE_ERR_MSG);
+		(flags | TCL_AVOID_RESOLVERS) & ~TCL_LEAVE_ERR_MSG);
 	if (varPtr == NULL) {
 	    Tcl_Obj *tailPtr;
 
@@ -4235,15 +4192,15 @@ TclPtrObjMakeUpvar(
 
 	/*
 	 * Lookup and eventually create the new variable. Set the flag bit
-	 * AVOID_RESOLVERS to indicate the special resolution rules for upvar
-	 * purposes:
+	 * TCL_AVOID_RESOLVERS to indicate the special resolution rules for
+	 * upvar purposes:
 	 *   - Bug #696893 - variable is either proc-local or in the current
 	 *     namespace; never follow the second (global) resolution path.
 	 *   - Bug #631741 - do not use special namespace or interp resolvers.
 	 */
 
 	varPtr = TclLookupSimpleVar(interp, myNamePtr,
-		myFlags|AVOID_RESOLVERS, /* create */ 1, &errMsg, &index);
+		myFlags|TCL_AVOID_RESOLVERS, /* create */ 1, &errMsg, &index);
 	if (varPtr == NULL) {
 	    TclObjVarErrMsg(interp, myNamePtr, NULL, "create", errMsg, -1);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
@@ -4996,13 +4953,16 @@ TclDeleteNamespaceVars(
 	VarHashRefCount(varPtr)++;	/* Make sure we get to remove from
 					 * hash. */
 	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, objPtr);
-	UnsetVarStruct(varPtr, NULL, iPtr, /* part1 */ objPtr, NULL, flags,
-		-1);
-	Tcl_DecrRefCount(objPtr);	/* Free no longer needed obj */
+	UnsetVarStruct(varPtr, NULL, iPtr, /* part1 */ objPtr,
+		NULL, flags, -1);
 
 	/*
-	 * Remove the variable from the table and force it undefined in case
-	 * an unset trace brought it back from the dead.
+	 * We just unset the variable. However, an unset trace might
+	 * have re-set it, or might have re-established traces on it.
+	 * This namespace and its vartable are going away unconditionally,
+	 * so we cannot let such things linger. That would be a leak.
+	 *
+	 * First we destroy all traces. ...
 	 */
 
 	if (TclIsVarTraced(varPtr)) {
@@ -5026,6 +4986,17 @@ TclDeleteNamespaceVars(
 		}
 	    }
 	}
+
+	/*
+	 * ...and then, if the variable still holds a value, we unset it
+	 * again. This time with no traces left, we're sure it goes away.
+	 */
+
+	if (!TclIsVarUndefined(varPtr)) {
+	    UnsetVarStruct(varPtr, NULL, iPtr, /* part1 */ objPtr,
+		    NULL, flags, -1);
+	}
+	Tcl_DecrRefCount(objPtr); /* free no longer needed obj */
 	VarHashRefCount(varPtr)--;
 	VarHashDeleteEntry(varPtr);
     }
@@ -5058,27 +5029,44 @@ TclDeleteVars(
     TclVarHashTable *tablePtr)	/* Hash table containing variables to
 				 * delete. */
 {
-    Tcl_Interp *interp = (Tcl_Interp *) iPtr;
     Tcl_HashSearch search;
     register Var *varPtr;
-    int flags;
-    Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-
-    /*
-     * Determine what flags to pass to the trace callback functions.
-     */
-
-    flags = TCL_TRACE_UNSETS;
-    if (tablePtr == &iPtr->globalNsPtr->varTable) {
-	flags |= TCL_GLOBAL_ONLY;
-    } else if (tablePtr == &currNsPtr->varTable) {
-	flags |= TCL_NAMESPACE_ONLY;
-    }
 
     for (varPtr = VarHashFirstVar(tablePtr, &search); varPtr != NULL;
 	 varPtr = VarHashFirstVar(tablePtr, &search)) {
-	UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr), NULL, flags,
-		-1);
+	VarHashRefCount(varPtr)++;
+
+	UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr),
+		NULL, TCL_TRACE_UNSETS, -1);
+
+        if (TclIsVarTraced(varPtr)) {
+            Tcl_HashEntry *tPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
+            VarTrace *tracePtr = Tcl_GetHashValue(tPtr);
+            ActiveVarTrace *activePtr;
+
+            while (tracePtr) {
+                VarTrace *prevPtr = tracePtr;
+
+                tracePtr = tracePtr->nextPtr;
+                prevPtr->nextPtr = NULL;
+                Tcl_EventuallyFree(prevPtr, TCL_DYNAMIC);
+            }
+            Tcl_DeleteHashEntry(tPtr);
+            varPtr->flags &= ~VAR_ALL_TRACES;
+            for (activePtr = iPtr->activeVarTracePtr; activePtr != NULL;
+                    activePtr = activePtr->nextPtr) {
+                if (activePtr->varPtr == varPtr) {
+                    activePtr->nextTracePtr = NULL;
+                }
+            }
+        }
+
+	if (!TclIsVarUndefined(varPtr)) {
+	    UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr),
+		    NULL, TCL_TRACE_UNSETS, -1);
+	}
+
+	VarHashRefCount(varPtr)--;
 	VarHashDeleteEntry(varPtr);
     }
     VarHashDeleteTable(tablePtr);
@@ -5416,11 +5404,12 @@ Tcl_FindNamespaceVar(
 				 * Otherwise, points to namespace in which to
 				 * resolve name. If NULL, look up name in the
 				 * current namespace. */
-    int flags)			/* An OR'd combination of: AVOID_RESOLVERS,
-				 * TCL_GLOBAL_ONLY (look up name only in
-				 * global namespace), TCL_NAMESPACE_ONLY (look
-				 * up only in contextNsPtr, or the current
-				 * namespace if contextNsPtr is NULL), and
+    int flags)			/* An OR'd combination of:
+				 * TCL_AVOID_RESOLVERS, TCL_GLOBAL_ONLY (look
+				 * up name only in global namespace),
+				 * TCL_NAMESPACE_ONLY (look up only in
+				 * contextNsPtr, or the current namespace if
+				 * contextNsPtr is NULL), and
 				 * TCL_LEAVE_ERR_MSG. If both TCL_GLOBAL_ONLY
 				 * and TCL_NAMESPACE_ONLY are given,
 				 * TCL_GLOBAL_ONLY is ignored. */
@@ -5446,11 +5435,12 @@ ObjFindNamespaceVar(
 				 * Otherwise, points to namespace in which to
 				 * resolve name. If NULL, look up name in the
 				 * current namespace. */
-    int flags)			/* An OR'd combination of: AVOID_RESOLVERS,
-				 * TCL_GLOBAL_ONLY (look up name only in
-				 * global namespace), TCL_NAMESPACE_ONLY (look
-				 * up only in contextNsPtr, or the current
-				 * namespace if contextNsPtr is NULL), and
+    int flags)			/* An OR'd combination of:
+				 * TCL_AVOID_RESOLVERS, TCL_GLOBAL_ONLY (look
+				 * up name only in global namespace),
+				 * TCL_NAMESPACE_ONLY (look up only in
+				 * contextNsPtr, or the current namespace if
+				 * contextNsPtr is NULL), and
 				 * TCL_LEAVE_ERR_MSG. If both TCL_GLOBAL_ONLY
 				 * and TCL_NAMESPACE_ONLY are given,
 				 * TCL_GLOBAL_ONLY is ignored. */
@@ -5480,7 +5470,7 @@ ObjFindNamespaceVar(
 	cxtNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     }
 
-    if (!(flags & AVOID_RESOLVERS) &&
+    if (!(flags & TCL_AVOID_RESOLVERS) &&
 	    (cxtNsPtr->varResProc != NULL || iPtr->resolverPtr != NULL)) {
 	resPtr = iPtr->resolverPtr;
 

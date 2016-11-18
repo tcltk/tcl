@@ -71,9 +71,11 @@ test interp-2.2 {basic interpreter creation} {
 test interp-2.3 {basic interpreter creation} {
     catch {interp create -safe}
 } 0
-test interp-2.4 {basic interpreter creation} {
-    list [catch {interp create a} msg] $msg
-} {1 {interpreter named "a" already exists, cannot create}}
+test interp-2.4 {basic interpreter creation} -setup {
+    catch {interp create a}
+} -returnCodes error -body {
+    interp create a
+} -result {interpreter named "a" already exists, cannot create}
 test interp-2.5 {basic interpreter creation} {
     interp create b -safe
 } b
@@ -89,11 +91,13 @@ test interp-2.8 {basic interpreter creation} {
 test interp-2.9 {basic interpreter creation} {
     interp create -safe -- -froboz1
 } -froboz1
-test interp-2.10 {basic interpreter creation} {
+test interp-2.10 {basic interpreter creation} -setup {
+    catch {interp create a}
+} -body {
     interp create {a x1}
     interp create {a x2}
     interp create {a x3} -safe
-} {a x3}
+} -result {a x3}
 test interp-2.11 {anonymous interps vs existing procs} {
     set x [interp create]
     regexp "interp(\[0-9]+)" $x dummy thenum
@@ -140,19 +144,26 @@ test interp-3.5 {testing interp exists and interp slaves} -body {
 test interp-3.6 {testing interp exists and interp slaves} {
     interp exists
 } 1
-test interp-3.7 {testing interp exists and interp slaves} {
+test interp-3.7 {testing interp exists and interp slaves} -setup {
+    catch {interp create a}
+} -body {
     interp slaves
-} a
+} -result a
 test interp-3.8 {testing interp exists and interp slaves} -body {
     interp slaves a b c
 } -returnCodes error -result {wrong # args: should be "interp slaves ?path?"}
-test interp-3.9 {testing interp exists and interp slaves} {
+test interp-3.9 {testing interp exists and interp slaves} -setup {
+    catch {interp create a}
+} -body {
     interp create {a a2} -safe
     expr {"a2" in [interp slaves a]}
-} 1
-test interp-3.10 {testing interp exists and interp slaves} {
+} -result 1
+test interp-3.10 {testing interp exists and interp slaves} -setup {
+    catch {interp create a}
+    catch {interp create {a a2}}
+} -body {
     interp exists {a a2}
-} 1
+} -result 1
 
 # Part 3: Testing "interp delete"
 test interp-3.11 {testing interp delete} {
@@ -222,6 +233,7 @@ test interp-6.3 {testing eval} {
     a eval {proc foo {} {expr 3 + 5}}
     a eval foo
 } 8
+catch {a eval {proc foo {} {expr 3 + 5}}}
 test interp-6.4 {testing eval} {
     interp eval a foo
 } 8
@@ -230,6 +242,7 @@ test interp-6.5 {testing eval} {
     interp eval {a x2} {proc frob {} {expr 4 * 9}}
     interp eval {a x2} frob
 } 36
+catch {interp create {a x2}}
 test interp-6.6 {testing eval} -returnCodes error -body {
     interp eval {a x2} foo
 } -result {invalid command name "foo"}
@@ -243,9 +256,11 @@ proc in_master {args} {
 test interp-7.1 {testing basic alias creation} {
     a alias foo in_master
 } foo
+catch {a alias foo in_master}
 test interp-7.2 {testing basic alias creation} {
     a alias bar in_master a1 a2 a3
 } bar
+catch {a alias bar in_master a1 a2 a3}
 # Test 6.3 has been deleted.
 test interp-7.3 {testing basic alias creation} {
     a alias foo
@@ -476,9 +491,13 @@ test interp-13.4 {testing issafe arg checking} {
 } {1 {wrong # args: should be "a issafe"}}
 
 # part 14: testing interp aliases
-test interp-14.1 {testing interp aliases} {
-    interp aliases
-} ""
+test interp-14.1 {testing interp aliases} -setup {
+    interp create abc
+} -body {
+    interp eval abc {interp aliases}
+} -cleanup {
+    interp delete abc
+} -result ""
 test interp-14.2 {testing interp aliases} {
     catch {interp delete a}
     interp create a
@@ -586,6 +605,17 @@ test interp-14.10 {testing interp-alias: error messages} -setup {
 } -result {x
     invoked from within
 "a 1"}
+
+test interp-14.11 {{interp alias} {target named the empty string} {bug 2bf56185}} -setup {
+    set interp [interp create [info cmdcount]]
+    interp eval $interp {
+	proc {} args {return $args}
+    }
+
+} -body {
+    interp alias {} p1 $interp {}
+    p1 one two three
+} -result {one two three}
 
 # part 15: testing file sharing
 test interp-15.1 {testing file sharing} {

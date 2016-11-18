@@ -197,7 +197,7 @@ RM		= rm -f
 COPY		= cp
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} \
--I"${ZLIB_DIR_NATIVE}" -I"${GENERIC_DIR_NATIVE}" -DTCL_TOMMATH \
+-I"${ZLIB_DIR_NATIVE}" -I"${GENERIC_DIR_NATIVE}" \
 -DMP_PREC=4 -I"${TOMMATH_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" \
 ${AC_FLAGS} ${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS}
 
@@ -205,7 +205,7 @@ CC_OBJNAME = @CC_OBJNAME@
 CC_EXENAME = @CC_EXENAME@
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I"${GENERIC_DIR_NATIVE}" -DTCL_TOMMATH -DMP_PREC=4 -I"${TOMMATH_DIR_NATIVE}" \
+-I"${GENERIC_DIR_NATIVE}" -DMP_PREC=4 -I"${TOMMATH_DIR_NATIVE}" \
 -I"${WIN_DIR_NATIVE}" ${AC_FLAGS} \
 ${COMPILE_DEBUG_FLAGS}
 
@@ -328,6 +328,7 @@ TOMMATH_OBJS = \
 	bn_mp_div_3.${OBJEXT} \
 	bn_mp_exch.${OBJEXT} \
 	bn_mp_expt_d.${OBJEXT} \
+	bn_mp_expt_d_ex.${OBJEXT} \
 	bn_mp_grow.${OBJEXT} \
 	bn_mp_init.${OBJEXT} \
 	bn_mp_init_copy.${OBJEXT} \
@@ -647,8 +648,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http1.0"; \
 	    done;
-	@echo "Installing package http 2.8.9 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl9/9.0/http-2.8.9.tm;
+	@echo "Installing package http 2.8.10 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl9/9.0/http-2.8.10.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \

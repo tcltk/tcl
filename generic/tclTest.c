@@ -393,8 +393,7 @@ static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
-static int              NREUnwind_callback(ClientData data[], Tcl_Interp *interp,
-                            int result);
+static Tcl_NRPostProc	NREUnwind_callback;
 static int		TestNREUnwind(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -6577,7 +6576,7 @@ TestcpuidCmd(
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int status, index, i;
-    unsigned int regs[4];
+    int regs[4];
     Tcl_Obj *regsObjs[4];
 
     if (objc != 2) {
@@ -6587,14 +6586,14 @@ TestcpuidCmd(
     if (Tcl_GetIntFromObj(interp, objv[1], &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    status = TclWinCPUID((unsigned) index, regs);
+    status = TclWinCPUID(index, regs);
     if (status != TCL_OK) {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("operation not available", -1));
 	return status;
     }
     for (i=0 ; i<4 ; ++i) {
-	regsObjs[i] = Tcl_NewLongObj((int) regs[i]);
+	regsObjs[i] = Tcl_NewLongObj(regs[i]);
     }
     Tcl_SetObjResult(interp, Tcl_NewListObj(4, regsObjs));
     return TCL_OK;
@@ -7152,23 +7151,82 @@ InterpCmdResolver(
     CallFrame *varFramePtr = iPtr->varFramePtr;
     Proc *procPtr = (varFramePtr->isProcCallFrame & FRAME_IS_PROC) ?
             varFramePtr->procPtr : NULL;
-    Namespace *ns2NsPtr = (Namespace *)
-            Tcl_FindNamespace(interp, "::ns2", NULL, 0);
+    Namespace *callerNsPtr = varFramePtr->nsPtr;
+    Tcl_Command resolvedCmdPtr = NULL;
 
-    if (procPtr && (procPtr->cmdPtr->nsPtr == iPtr->globalNsPtr
-            || (ns2NsPtr && procPtr->cmdPtr->nsPtr == ns2NsPtr))) {
-        const char *callingCmdName =
+    /*
+     * Just do something special on a cmd literal "z" in two cases:
+     *  A)  when the caller is a proc "x", and the proc is either in "::" or in "::ns2".
+     *  B) the caller's namespace is "ctx1" or "ctx2"
+     */
+    if ( (name[0] == 'z') && (name[1] == '\0') ) {
+        Namespace *ns2NsPtr = (Namespace *) Tcl_FindNamespace(interp, "::ns2", NULL, 0);
+
+        if (procPtr != NULL
+            && ((procPtr->cmdPtr->nsPtr == iPtr->globalNsPtr)
+                || (ns2NsPtr != NULL && procPtr->cmdPtr->nsPtr == ns2NsPtr)
+                )
+            ) {
+            /*
+             * Case A)
+             *
+             *    - The context, in which this resolver becomes active, is
+             *      determined by the name of the caller proc, which has to be
+             *      named "x".
+             *
+             *    - To determine the name of the caller proc, the proc is taken
+             *      from the topmost stack frame.
+             *
+             *    - Note that the context is NOT provided during byte-code
+             *      compilation (e.g. in TclProcCompileProc)
+             *
+             *   When these conditions hold, this function resolves the
+             *   passed-in cmd literal into a cmd "y", which is taken from the
+             *   the global namespace (for simplicity).
+             */
+
+            const char *callingCmdName =
                 Tcl_GetCommandName(interp, (Tcl_Command) procPtr->cmdPtr);
 
-        if ((callingCmdName[0] == 'x') && (callingCmdName[1] == '\0')
-                && (name[0] == 'z') && (name[1] == '\0')) {
-            Tcl_Command sourceCmdPtr = Tcl_FindCommand(interp, "y", NULL,
-                    TCL_GLOBAL_ONLY);
-
-            if (sourceCmdPtr != NULL) {
-                *rPtr = sourceCmdPtr;
-                return TCL_OK;
+            if ( callingCmdName[0] == 'x' && callingCmdName[1] == '\0' ) {
+                resolvedCmdPtr = Tcl_FindCommand(interp, "y", NULL, TCL_GLOBAL_ONLY);
             }
+        } else if (callerNsPtr != NULL) {
+            /*
+             * Case B)
+             *
+             *    - The context, in which this resolver becomes active, is
+             *      determined by the name of the parent namespace, which has
+             *      to be named "ctx1" or "ctx2".
+             *
+             *    - To determine the name of the parent namesace, it is taken
+             *      from the 2nd highest stack frame.
+             *
+             *    - Note that the context can be provided during byte-code
+             *      compilation (e.g. in TclProcCompileProc)
+             *
+             *   When these conditions hold, this function resolves the
+             *   passed-in cmd literal into a cmd "y" or "Y" depending on the
+             *   context. The resolved procs are taken from the the global
+             *   namespace (for simplicity).
+             */
+
+            CallFrame *parentFramePtr = varFramePtr->callerPtr;
+            const char *context = parentFramePtr != NULL ? parentFramePtr->nsPtr->name : "(NULL)";
+
+            if (strcmp(context, "ctx1") == 0 && (name[0] == 'z') && (name[1] == '\0')) {
+                resolvedCmdPtr = Tcl_FindCommand(interp, "y", NULL, TCL_GLOBAL_ONLY);
+                /* fprintf(stderr, "... y ==> %p\n", resolvedCmdPtr);*/
+
+            } else if (strcmp(context, "ctx2") == 0 && (name[0] == 'z') && (name[1] == '\0')) {
+                resolvedCmdPtr = Tcl_FindCommand(interp, "Y", NULL, TCL_GLOBAL_ONLY);
+                /*fprintf(stderr, "... Y ==> %p\n", resolvedCmdPtr);*/
+            }
+        }
+
+        if (resolvedCmdPtr != NULL) {
+            *rPtr = resolvedCmdPtr;
+            return TCL_OK;
         }
     }
     return TCL_CONTINUE;
@@ -7302,9 +7360,16 @@ TestInterpResolverCmd(
     int idx;
 #define RESOLVER_KEY "testInterpResolver"
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "up|down");
- 	return TCL_ERROR;
+    if ((objc < 2) || (objc > 3)) {
+	Tcl_WrongNumArgs(interp, 1, objv, "up|down ?interp?");
+	return TCL_ERROR;
+    }
+    if (objc == 3) {
+	interp = Tcl_GetSlave(interp, Tcl_GetString(objv[2]));
+	if (interp == NULL) {
+	    Tcl_AppendResult(interp, "provided interpreter not found", NULL);
+	    return TCL_ERROR;
+	}
     }
     if (Tcl_GetIndexFromObjStruct(interp, objv[1], table,
 	    sizeof(char *), "operation", TCL_EXACT, &idx) != TCL_OK) {

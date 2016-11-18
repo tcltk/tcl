@@ -68,6 +68,7 @@ namespace eval ::msgcat::test {
 		set result c
 	    }
 	}
+
 	test msgcat-0.$count [list \
 	    locale initialization from environment variables $setVars \
 	] -setup {
@@ -974,6 +975,9 @@ namespace eval ::msgcat::test {
     set bgerrorsaved [interp bgerror {}]
     interp bgerror {} [namespace code callbackproc]
 
+    variable locale
+    if {![info exist locale]} { set locale [mclocale] }
+
 	test msgcat-14.1 {invokation loadcmd} -setup {
 	    mcforgetpackage
     	    mclocale $locale
@@ -1068,7 +1072,7 @@ namespace eval ::msgcat::test {
 	    mc k1
 	} -returnCodes 1\
 	-result {fail}
-
+
     interp bgerror {} $bgerrorsaved
 
     cleanupTests
@@ -1076,3 +1080,6 @@ namespace eval ::msgcat::test {
 namespace delete ::msgcat::test
 return
 
+# Local Variables:
+# mode: tcl
+# End:

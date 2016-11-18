@@ -640,7 +640,7 @@ SetOSTypeFromAny(
     Tcl_DString ds;
     Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
 
-    string = Tcl_GetString(objPtr);
+    string = TclGetString(objPtr);
     Tcl_UtfToExternalDString(encoding, string, objPtr->length, &ds);
 
     if (Tcl_DStringLength(&ds) > 4) {

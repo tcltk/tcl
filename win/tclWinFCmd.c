@@ -1525,7 +1525,7 @@ GetWinFileAttributes(
 	 * We test for, and fix that case, here.
 	 */
 
-	const char *str = Tcl_GetString(fileName);
+	const char *str = TclGetString(fileName);
 	size_t len = fileName->length;
 
 	if (len < 4) {
@@ -1614,7 +1614,7 @@ ConvertFileNameFormat(
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
-	pathv = Tcl_GetString(elt);
+	pathv = TclGetString(elt);
 	if ((pathv[0] == '/') || ((elt->length == 3) && (pathv[1] == ':'))
 		|| (strcmp(pathv, ".") == 0) || (strcmp(pathv, "..") == 0)) {
 	    /*
@@ -1651,7 +1651,7 @@ ConvertFileNameFormat(
 	     */
 
 	    Tcl_DStringInit(&ds);
-	    tempString = Tcl_GetString(tempPath);
+	    tempString = TclGetString(tempPath);
 	    nativeName = Tcl_WinUtfToTChar(tempString, tempPath->length, &ds);
 	    Tcl_DecrRefCount(tempPath);
 	    handle = FindFirstFile(nativeName, &data);

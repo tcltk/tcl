@@ -1299,8 +1299,8 @@ AssembleOneLine(
 	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	}
-	operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
-	litIndex = TclRegisterNewLiteral(envPtr, operand1, operand1Len);
+	operand1 = TclGetStringFromObj(operand1Obj, &operand1Len);
+	litIndex = TclRegisterLiteral(envPtr, operand1, operand1Len, 0);
 	BBEmitInst1or4(assemEnvPtr, tblIdx, litIndex, 0);
 	break;
 
@@ -1448,8 +1448,8 @@ AssembleOneLine(
 		&operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	} else {
-	    operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
-	    litIndex = TclRegisterNewLiteral(envPtr, operand1, operand1Len);
+	    operand1 = TclGetStringFromObj(operand1Obj, &operand1Len);
+	    litIndex = TclRegisterLiteral(envPtr, operand1, operand1Len, 0);
 
 	    /*
 	     * Assumes that PUSH is the first slot!
@@ -2288,7 +2288,7 @@ FindLocalVar(
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &varNameObj) != TCL_OK) {
 	return -1;
     }
-    varNameStr = Tcl_GetStringFromObj(varNameObj, &varNameLen);
+    varNameStr = TclGetStringFromObj(varNameObj, &varNameLen);
     if (CheckNamespaceQualifiers(interp, varNameStr, varNameLen)) {
 	Tcl_DecrRefCount(varNameObj);
 	return -1;
@@ -3541,7 +3541,7 @@ StackCheckExit(
 	     * Emit a 'push' of the empty literal.
 	     */
 
-	    litIndex = TclRegisterNewLiteral(envPtr, "", 0);
+	    litIndex = TclRegisterLiteral(envPtr, "", 0, 0);
 
 	    /*
 	     * Assumes that 'push' is at slot 0 in TalInstructionTable.

@@ -49,7 +49,7 @@ BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
  */
 
 typedef struct MountPointMap {
-    TCHAR *volumeName;	/* Native wide string volume name. */
+    TCHAR *volumeName;		/* Native wide string volume name. */
     TCHAR driveLetter;		/* Drive letter corresponding to the volume
 				 * name. */
     struct MountPointMap *nextPtr;
@@ -603,8 +603,8 @@ Tcl_WinTCharToUtf(
 
 int
 TclWinCPUID(
-    unsigned int index,		/* Which CPUID value to retrieve. */
-    unsigned int *regsPtr)	/* Registers after the CPUID. */
+    int index,		/* Which CPUID value to retrieve. */
+    int *regsPtr)	/* Registers after the CPUID. */
 {
     int status = TCL_ERROR;
 

@@ -170,6 +170,21 @@ typedef struct Tcl_ResolverInfo {
 } Tcl_ResolverInfo;
 
 /*
+ * This flag bit should not interfere with TCL_GLOBAL_ONLY,
+ * TCL_NAMESPACE_ONLY, or TCL_LEAVE_ERR_MSG; it signals that the variable
+ * lookup is performed for upvar (or similar) purposes, with slightly
+ * different rules:
+ *    - Bug #696893 - variable is either proc-local or in the current
+ *	namespace; never follow the second (global) resolution path
+ *    - Bug #631741 - do not use special namespace or interp resolvers
+ *
+ * It should also not collide with the (deprecated) TCL_PARSE_PART1 flag
+ * (Bug #835020)
+ */
+
+#define TCL_AVOID_RESOLVERS 0x40000
+
+/*
  *----------------------------------------------------------------
  * Data structures related to namespaces.
  *----------------------------------------------------------------
@@ -1662,11 +1677,13 @@ typedef struct Command {
  * (these last two flags are defined in tcl.h)
  */
 
-#define CMD_IS_DELETED		    0x1
-#define CMD_TRACE_ACTIVE	    0x2
-#define CMD_HAS_EXEC_TRACES	    0x4
-#define CMD_COMPILES_EXPANDED	    0x8
+#define CMD_IS_DELETED		    0x01
+#define CMD_TRACE_ACTIVE	    0x02
+#define CMD_HAS_EXEC_TRACES	    0x04
+#define CMD_COMPILES_EXPANDED	    0x08
 #define CMD_REDEF_IN_PROGRESS	    0x10
+#define CMD_VIA_RESOLVER	    0x20
+
 
 /*
  *----------------------------------------------------------------
@@ -2487,6 +2504,15 @@ typedef struct TclFileAttrProcs {
 } TclFileAttrProcs;
 
 /*
+ * Private flag value which controls Tcl_GetIndexFromObj*() routines
+ * to instruct them not to cache lookups because the table will not
+ * live long enough to make it worthwhile.  Must not clash with public
+ * flag value TCL_EXACT.
+ */
+
+#define INDEX_TEMP_TABLE 2
+
+/*
  * Opaque handle used in pipeline routines to encapsulate platform-dependent
  * state.
  */
@@ -2538,7 +2564,7 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, size_t *lengthPtr,
  */
 
 typedef struct ProcessGlobalValue {
-    size_t epoch;		/* Epoch counter to detect changes in the
+    size_t epoch;			/* Epoch counter to detect changes in the
 				 * master value. */
     size_t numBytes;		/* Length of the master string. */
     char *value;		/* The master string value. */
@@ -2698,6 +2724,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRInvoke;
+MODULE_SCOPE Tcl_NRPostProc TclNRReleaseValues;
 
 MODULE_SCOPE void  TclSetTailcall(Tcl_Interp *interp, Tcl_Obj *tailcallPtr);
 MODULE_SCOPE void  TclPushTailcallPoint(Tcl_Interp *interp);
@@ -2806,8 +2833,7 @@ MODULE_SCOPE void	TclChannelRelease(Tcl_Channel chan);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
-MODULE_SCOPE int	TclClearRootEnsemble(ClientData data[],
-			    Tcl_Interp *interp, int result);
+MODULE_SCOPE Tcl_NRPostProc TclClearRootEnsemble;
 MODULE_SCOPE ContLineLoc *TclContinuationsEnter(Tcl_Obj *objPtr, int num,
 			    int *loc);
 MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
@@ -3049,6 +3075,13 @@ MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
 			    Tcl_Obj *bad, Tcl_Obj *fix);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 			    int numBytes);
+MODULE_SCOPE int	TclStringCatObjv(Tcl_Interp *interp, int inPlace,
+			    int objc, Tcl_Obj *const objv[],
+			    Tcl_Obj **objPtrPtr);
+MODULE_SCOPE int	TclStringFind(Tcl_Obj *needle, Tcl_Obj *haystack,
+			    int start);
+MODULE_SCOPE int	TclStringLast(Tcl_Obj *needle, Tcl_Obj *haystack,
+			    int last);
 MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
 			    const char *pattern, int ptnLen, int flags);
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
@@ -3898,7 +3931,7 @@ MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
 
 MODULE_SCOPE int	TclCompareObjKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 MODULE_SCOPE void	TclFreeObjEntry(Tcl_HashEntry *hPtr);
-MODULE_SCOPE unsigned	TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
+MODULE_SCOPE TCL_HASH_TYPE TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 MODULE_SCOPE int	TclFullFinalizationRequested(void);
 
@@ -3972,10 +4005,6 @@ typedef const char *TclDTraceStr;
  *
  * Use do/while0 idiom for optimum correctness without compiler warnings.
  * http://c2.com/cgi/wiki?TrivialDoWhileLoop
- *
- * Decrement refCount AFTER checking it for 0 or 1 (<2), because
- * we cannot assume anymore that refCount is a signed type; In
- * Tcl8 it was but in Tcl9 it is subject to change.
  */
 
 # define TclDecrRefCount(objPtr) \
@@ -3986,7 +4015,7 @@ typedef const char *TclDTraceStr;
 		TCL_DTRACE_OBJ_FREE(_objPtr); \
 		if (_objPtr->bytes \
 			&& (_objPtr->bytes != tclEmptyStringRep)) { \
-		    ckfree((char *) _objPtr->bytes); \
+		    ckfree(_objPtr->bytes); \
 		} \
 		_objPtr->length = -1; \
 		TclFreeObjStorage(_objPtr); \
@@ -4010,7 +4039,7 @@ typedef const char *TclDTraceStr;
 	(objPtr) = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj))
 
 #  define TclFreeObjStorageEx(interp, objPtr) \
-	ckfree((char *) (objPtr))
+	ckfree(objPtr)
 
 #undef USE_THREAD_ALLOC
 #undef USE_TCLALLOC
@@ -4169,7 +4198,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclGetString(objPtr) \
-    ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString((objPtr)))
+    ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString(objPtr))
 
 #define TclGetStringFromObj(objPtr, lenPtr) \
     ((objPtr)->bytes \
@@ -4204,11 +4233,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInvalidateStringRep(objPtr) \
-    if (objPtr->bytes != NULL) { \
-	if (objPtr->bytes != tclEmptyStringRep) { \
-	    ckfree((char *) objPtr->bytes); \
+    if ((objPtr)->bytes != NULL) { \
+	if ((objPtr)->bytes != tclEmptyStringRep) { \
+	    ckfree((objPtr)->bytes); \
 	} \
-	objPtr->bytes = NULL; \
+	(objPtr)->bytes = NULL; \
     }
 
 /*
@@ -4593,7 +4622,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 #define TclCleanupCommandMacro(cmdPtr) \
     if ((cmdPtr)->refCount-- <= 1) { \
-	ckfree((char *) (cmdPtr));\
+	ckfree(cmdPtr);\
     }
 
 /*
