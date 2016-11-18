@@ -19,7 +19,11 @@
 */versions.vc
 libtommath/bn.ilg
 libtommath/bn.ind
+libtommath/pretty.build
+libtommath/tommath.src
 libtommath/*.pdf
+libtommath/*.pl
+libtommath/*.sh
 libtommath/tombc/*
 libtommath/pre_gen/*
 libtommath/pics/*
@@ -29,8 +33,10 @@ libtommath/etc/*
 libtommath/demo/*
 libtommath/*.out
 libtommath/*.tex
+unix/autoMkindex.tcl
 unix/dltest.marker
 unix/tcl.pc
+unix/tclIndex
 unix/pkgs/*
 win/pkgs/*
 win/tcl.hpj
