@@ -1908,10 +1908,10 @@ TclCompileSwitchCmd(
 	}
 	if (numWords % 2) {
 	abort:
-	    ckfree((char *) bodyToken);
-	    ckfree((char *) bodyTokenArray);
-	    ckfree((char *) bodyLines);
-	    ckfree((char *) bodyContLines);
+	    ckfree(bodyToken);
+	    ckfree(bodyTokenArray);
+	    ckfree(bodyLines);
+	    ckfree(bodyContLines);
 	    return TCL_ERROR;
 	}
     } else if (numWords % 2 || numWords == 0) {
