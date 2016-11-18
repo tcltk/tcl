@@ -56,8 +56,8 @@ static const char *gai_strerror(int code) {
 int
 TclSockGetPort(
     Tcl_Interp *interp,
-    const char *string, /* Integer or service name */
-    const char *proto, /* "tcp" or "udp", typically */
+    const char *string,		/* Integer or service name */
+    const char *proto,		/* "tcp" or "udp", typically */
     int *portPtr)		/* Return port number */
 {
     struct servent *sp;		/* Protocol info for named services */
@@ -154,15 +154,15 @@ TclSockMinimumBuffers(
 
 int
 TclCreateSocketAddress(
-    Tcl_Interp *interp,                 /* Interpreter for querying
-					 * the desired socket family */
-    struct addrinfo **addrlist,		/* Socket address list */
-    const char *host,			/* Host. NULL implies INADDR_ANY */
-    int port,				/* Port number */
-    int willBind,			/* Is this an address to bind() to or
-					 * to connect() to? */
-    const char **errorMsgPtr)		/* Place to store the error message
-					 * detail, if available. */
+    Tcl_Interp *interp,		/* Interpreter for querying the desired socket
+				 * family */
+    struct addrinfo **addrlist,	/* Socket address list */
+    const char *host,		/* Host. NULL implies INADDR_ANY */
+    int port,			/* Port number */
+    int willBind,		/* Is this an address to bind() to or to
+				 * connect() to? */
+    const char **errorMsgPtr)	/* Place to store the error message detail, if
+				 * available. */
 {
     struct addrinfo hints;
     struct addrinfo *p;
@@ -181,30 +181,31 @@ TclCreateSocketAddress(
      * Workaround for OSX's apparent inability to resolve "localhost", "0"
      * when the loopback device is the only available network interface.
      */
+
     if (host != NULL && port == 0) {
-        portstring = NULL;
+	portstring = NULL;
     } else {
-        TclFormatInt(portbuf, port);
-        portstring = portbuf;
+	TclFormatInt(portbuf, port);
+	portstring = portbuf;
     }
 
     (void) memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
 
     /*
-     * Magic variable to enforce a certain address family - to be superseded
-     * by a TIP that adds explicit switches to [socket]
+     * Magic variable to enforce a certain address family; to be superseded
+     * by a TIP that adds explicit switches to [socket].
      */
 
     if (interp != NULL) {
-        family = Tcl_GetVar2(interp, "::tcl::unsupported::socketAF", NULL, 0);
-        if (family != NULL) {
-            if (strcmp(family, "inet") == 0) {
-                hints.ai_family = AF_INET;
-            } else if (strcmp(family, "inet6") == 0) {
-                hints.ai_family = AF_INET6;
-            }
-        }
+	family = Tcl_GetVar2(interp, "::tcl::unsupported::socketAF", NULL, 0);
+	if (family != NULL) {
+	    if (strcmp(family, "inet") == 0) {
+		hints.ai_family = AF_INET;
+	    } else if (strcmp(family, "inet6") == 0) {
+		hints.ai_family = AF_INET6;
+	    }
+	}
     }
 
     hints.ai_socktype = SOCK_STREAM;
@@ -251,6 +252,7 @@ TclCreateSocketAddress(
      *
      * There might be more elegant/efficient ways to do this.
      */
+
     if (willBind) {
 	for (p = *addrlist; p != NULL; p = p->ai_next) {
 	    if (p->ai_family == AF_INET) {
