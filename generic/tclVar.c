@@ -1070,32 +1070,34 @@ Tcl_ArraySize(
 				 * be looked up. */
     Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY or TCL_LEAVE_ERR_MSG
+				 * TCL_NAMESPACE_ONLY and/or TCL_LEAVE_ERR_MSG
 				 * bits. */
 {
     Interp *iPtr = (Interp *) interp;
     Var *varPtr, *arrayPtr;
     Tcl_HashSearch search;
     Var *varPtr2;
-    int leaveErrMsg = flags & TCL_LEAVE_ERR_MSG ? 1 : 0;
-    int size = 0;
+    int size;
 
     /*
      * Locate the array variable.
      */
 
-    varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, /*flags*/ 0,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
+    if (!(varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, flags, "read",
+	    /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr))) {
+	return -1;
+    }
 
     /*
      * Special array trace used to keep the env array in sync for array names,
      * array get, etc.
      */
 
-    if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
+    if ((varPtr->flags & VAR_TRACED_ARRAY)
 	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
-	if (TclObjCallVarTraces(iPtr, arrayPtr, varPtr, part1Ptr, NULL,
-		flags|TCL_TRACE_ARRAY, leaveErrMsg, -1) == TCL_ERROR) {
+	if (TclObjCallVarTraces(iPtr, arrayPtr, varPtr,
+		part1Ptr, NULL, flags|TCL_TRACE_ARRAY,
+		!!(flags & TCL_LEAVE_ERR_MSG, -1) == TCL_ERROR)) {
 	    return -1;
 	}
     }
@@ -1106,17 +1108,18 @@ Tcl_ArraySize(
      * traces. We can only iterate over the array if it exists...
      */
 
-    if (varPtr && TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
-	/*
-	 * Must iterate in order to get chance to check for present but
-	 * "undefined" entries.
-	 */
+    if (TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
+	return -1;
+    }
 
-	for (varPtr2=VarHashFirstVar(varPtr->value.tablePtr, &search);
-		varPtr2!=NULL ; varPtr2=VarHashNextVar(&search)) {
-	    if (!TclIsVarUndefined(varPtr2)) {
-		size++;
-	    }
+    /*
+     * Must iterate to get chance to check for present but "undefined" entries.
+     */
+
+    for (varPtr2=VarHashFirstVar(varPtr->value.tablePtr, &search);
+	    varPtr2!=NULL ; varPtr2=VarHashNextVar(&search)) {
+	if (!TclIsVarUndefined(varPtr2)) {
+	    size++;
 	}
     }
 
@@ -3799,8 +3802,18 @@ ArraySizeCmd(
 	return TCL_ERROR;
     }
 
-    if ((size = Tcl_ArraySize(interp, objv[1], TCL_LEAVE_ERR_MSG)) < 0) {
-	return TCL_ERROR;
+    size = Tcl_ArraySize(interp, objv[1], 0);
+
+    /*
+     * The [array size] command reports nonexistent and non-array variables as
+     * having zero size.
+     *
+     * XXX: Distinguish between existence errors and trace errors.  Hide the
+     * former and report the latter for compatibility with [array size].
+     */
+
+    if (size < 0) {
+	size = 0;
     }
 
     Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
