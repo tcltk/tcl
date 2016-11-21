@@ -532,6 +532,7 @@ typedef struct Tcl_Interp
 #endif /* TCL_NO_DEPRECATED */
 Tcl_Interp;
 
+typedef struct Tcl_ArraySearch_ *Tcl_ArraySearch;
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
 typedef struct Tcl_Channel_ *Tcl_Channel;
 typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;

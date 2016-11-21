@@ -148,7 +148,7 @@ static const char *isArrayElement =
  * array variable; this are invoked with options to the "array" command.
  */
 
-typedef struct ArraySearch {
+typedef struct Tcl_ArraySearch_ {
     Tcl_Obj *name;		/* Name of this search */
     int id;			/* Integer id used to distinguish among
 				 * multiple concurrent searches for the same
@@ -163,7 +163,8 @@ typedef struct ArraySearch {
 				 * anymore" command). NULL means must call
 				 * Tcl_NextHashEntry to get value to
 				 * return. */
-    struct ArraySearch *nextPtr;/* Next in list of all active searches for
+    struct Tcl_ArraySearch_ *nextPtr;
+				/* Next in list of all active searches for
 				 * this variable, or NULL if this is the last
 				 * one. */
 } ArraySearch;
@@ -1043,6 +1044,100 @@ TclLookupArrayElement(
 	}
     }
     return varPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ArraySize --
+ *
+ *	This function returns the number of elements in an array variable.
+ *
+ * Results:
+ *	The return value is normally the integer count of array elements. If
+ *	part1Ptr does not name an array, -1 is returned and (if flags contains
+ *	TCL_LEAVE_ERR_MSG) an error message is placed in interp's result.
+ *
+ * Side effects:
+ *	None.
+ *	
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_ArraySize(
+    Tcl_Interp *interp,		/* Command interpreter in which part1Ptr is to
+				 * be looked up. */
+    Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY or TCL_LEAVE_ERR_MSG
+				 * bits. */
+{
+    Interp *iPtr = (Interp *) interp;
+    Var *varPtr, *arrayPtr;
+    Tcl_HashSearch search;
+    Var *varPtr2;
+    int leaveErrMsg = flags & TCL_LEAVE_ERR_MSG ? 1 : 0;
+    int size = 0;
+
+    /*
+     * Locate the array variable.
+     */
+
+    varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, /*flags*/ 0,
+	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
+
+    /*
+     * Special array trace used to keep the env array in sync for array names,
+     * array get, etc.
+     */
+
+    if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
+	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
+	if (TclObjCallVarTraces(iPtr, arrayPtr, varPtr, part1Ptr, NULL,
+		flags|TCL_TRACE_ARRAY, leaveErrMsg, -1) == TCL_ERROR) {
+	    return -1;
+	}
+    }
+
+    /*
+     * Verify that it is indeed an array variable. This test comes after the
+     * traces - the variable may actually become an array as an effect of said
+     * traces. We can only iterate over the array if it exists...
+     */
+
+    if (varPtr && TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
+	/*
+	 * Must iterate in order to get chance to check for present but
+	 * "undefined" entries.
+	 */
+
+	for (varPtr2=VarHashFirstVar(varPtr->value.tablePtr, &search);
+		varPtr2!=NULL ; varPtr2=VarHashNextVar(&search)) {
+	    if (!TclIsVarUndefined(varPtr2)) {
+		size++;
+	    }
+	}
+    }
+
+    return size;
+}
+
+/*
+ *----------------------------------------------------------------------
+ * 
+ *----------------------------------------------------------------------
+ */
+Tcl_ArraySearch
+Tcl_ArraySearchStart(
+    Tcl_Interp *interp,		/* Command interpreter in which part1Ptr is to
+				 * be looked up. */
+    Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY or TCL_LEAVE_ERR_MSG
+				 * bits. */
+{
+    return NULL;
 }
 
 /*
@@ -3697,58 +3792,15 @@ ArraySizeCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Interp *iPtr = (Interp *) interp;
-    Var *varPtr, *arrayPtr;
-    Tcl_Obj *varNameObj;
-    Tcl_HashSearch search;
-    Var *varPtr2;
-    int size = 0;
+    int size;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
 	return TCL_ERROR;
     }
-    varNameObj = objv[1];
 
-    /*
-     * Locate the array variable.
-     */
-
-    varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, /*flags*/ 0,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-
-    /*
-     * Special array trace used to keep the env array in sync for array names,
-     * array get, etc.
-     */
-
-    if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
-	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
-	if (TclObjCallVarTraces(iPtr, arrayPtr, varPtr, varNameObj, NULL,
-		(TCL_LEAVE_ERR_MSG|TCL_NAMESPACE_ONLY|TCL_GLOBAL_ONLY|
-		TCL_TRACE_ARRAY), /* leaveErrMsg */ 1, -1) == TCL_ERROR) {
-	    return TCL_ERROR;
-	}
-    }
-
-    /*
-     * Verify that it is indeed an array variable. This test comes after the
-     * traces - the variable may actually become an array as an effect of said
-     * traces. We can only iterate over the array if it exists...
-     */
-
-    if (varPtr && TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
-	/*
-	 * Must iterate in order to get chance to check for present but
-	 * "undefined" entries.
-	 */
-
-	for (varPtr2=VarHashFirstVar(varPtr->value.tablePtr, &search);
-		varPtr2!=NULL ; varPtr2=VarHashNextVar(&search)) {
-	    if (!TclIsVarUndefined(varPtr2)) {
-		size++;
-	    }
-	}
+    if ((size = Tcl_ArraySize(interp, objv[1], TCL_LEAVE_ERR_MSG)) < 0) {
+	return TCL_ERROR;
     }
 
     Tcl_SetObjResult(interp, Tcl_NewIntObj(size));

@@ -2326,6 +2326,25 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
+# TIP #XXX
+declare 631 {
+    int Tcl_ArraySize(Tcl_Interp *interp, Tcl_Obj *part1Ptr, int flags)
+}
+declare 632 {
+    Tcl_ArraySearch Tcl_ArraySearchStart(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+	int flags)
+}
+declare 633 {
+    Tcl_Obj *Tcl_ArraySearchNext(Tcl_ArraySearch search)
+}
+declare 634 {
+    void Tcl_ArraySeachDone(Tcl_ArraySearch search)
+}
+declare 635 {
+    int Tcl_ArrayNames(Tcl_Interp *interp, Tcl_Obj *part1Ptr, int *objcPtr,
+	Tcl_Obj ***objvPtr, int flags)
+}
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only
