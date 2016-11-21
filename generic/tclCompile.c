@@ -1002,7 +1002,7 @@ void
 TclReleaseByteCode(
     register ByteCode *codePtr)
 {
-    if (--codePtr->refCount) {
+    if (codePtr->refCount-- > 1) {
 	return;
     }
 
