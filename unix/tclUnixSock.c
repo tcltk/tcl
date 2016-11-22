@@ -115,7 +115,7 @@ struct TcpState {
 
 #ifdef SO_REUSEPORT
 /* Bitmask to check if the setting of SO_REUSEPORT was requested by the caller. */
-#define USE_SOCK_REUSEPORT (1 << 16)
+#define USE_SOCK_REUSEPORT 1
 #endif
 
 /*
@@ -1410,7 +1410,7 @@ TclpMakeTcpClientChannelMode(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_OpenTcpServer --
+ * Tcl_OpenTcpServerEx --
  *
  *	Opens a TCP server socket and creates a channel around it.
  *
@@ -1425,10 +1425,11 @@ TclpMakeTcpClientChannelMode(
  */
 
 Tcl_Channel
-Tcl_OpenTcpServer(
+Tcl_OpenTcpServerEx(
     Tcl_Interp *interp,		/* For error reporting - may be NULL. */
     int port,			/* Port number to open. */
     const char *myHost,		/* Name of local host. */
+    int flags,			/* Flags. */
     Tcl_TcpAcceptProc *acceptProc,
 				/* Callback for accepting connections from new
 				 * clients. */
@@ -1440,10 +1441,6 @@ Tcl_OpenTcpServer(
     char channelName[SOCK_CHAN_LENGTH];
     const char *errorMsg = NULL;
     TcpFdList *fds = NULL, *newfds;
-#ifdef SO_REUSEPORT
-    int reuseport = port & USE_SOCK_REUSEPORT;
-    CLEAR_BITS(port, USE_SOCK_REUSEPORT);
-#endif
 
     /*
      * Try to record and return the most meaningful error message, i.e. the
@@ -1526,7 +1523,8 @@ Tcl_OpenTcpServer(
      * Set up to allows multiple sockets on the same host to bind to the same port.
      * The flag can be switched on by setting the lowest bit above the valid maximum port (0xffff).
      */
-    if(reuseport) {
+    if (flags & USE_SOCK_REUSEPORT) {
+	int reuseport = 1;
         (void) setsockopt(sock, SOL_SOCKET, SO_REUSEPORT,
             (char *) &reuseport, sizeof(reuseport));
     }
