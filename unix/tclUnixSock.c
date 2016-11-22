@@ -1519,15 +1519,15 @@ Tcl_OpenTcpServerEx(
 		(char *) &reuseaddr, sizeof(reuseaddr));
 
 #ifdef SO_REUSEPORT
-    /*
-     * Set up to allows multiple sockets on the same host to bind to the same port.
-     * The flag can be switched on by setting the lowest bit above the valid maximum port (0xffff).
-     */
-    if (flags & USE_SOCK_REUSEPORT) {
+	/*
+	 * Set up to allows multiple sockets on the same host to bind to the same port.
+	 * The flag can be switched on by setting the lowest bit above the valid maximum port (0xffff).
+	 */
+	if (flags & USE_SOCK_REUSEPORT) {
 	int reuseport = 1;
-        (void) setsockopt(sock, SOL_SOCKET, SO_REUSEPORT,
-            (char *) &reuseport, sizeof(reuseport));
-    }
+	(void) setsockopt(sock, SOL_SOCKET, SO_REUSEPORT,
+		(char *) &reuseport, sizeof(reuseport));
+	}
 #endif
 
         /*
