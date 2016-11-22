@@ -2111,8 +2111,8 @@ Tcl_OpenTcpServer(
 
 	/*
 	 * Bind to the specified port. Note that we must not call
-	 * setsockopt with SO_REUSEADDR because Microsoft allows addresses
-	 * to be reused even if they are still in use.
+	 * setsockopt with SO_REUSEADDR or SO_REUSEPORT because Microsoft
+	 * allows addresses and ports to be reused even if they are still in use.
 	 *
 	 * Bind should not be affected by the socket having already been
 	 * set into nonblocking mode. If there is trouble, this is one
