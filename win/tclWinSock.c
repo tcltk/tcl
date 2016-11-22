@@ -2020,7 +2020,7 @@ Tcl_MakeTcpClientChannel(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_OpenTcpServer --
+ * Tcl_OpenTcpServerEx --
  *
  *	Opens a TCP server socket and creates a channel around it.
  *
@@ -2035,10 +2035,11 @@ Tcl_MakeTcpClientChannel(
  */
 
 Tcl_Channel
-Tcl_OpenTcpServer(
+Tcl_OpenTcpServerEx(
     Tcl_Interp *interp,		/* For error reporting - may be NULL. */
     int port,			/* Port number to open. */
     const char *myHost,		/* Name of local host. */
+    int flags,			/* Flags (not used) */
     Tcl_TcpAcceptProc *acceptProc,
 				/* Callback for accepting connections from new
 				 * clients. */

@@ -283,6 +283,30 @@ TclCreateSocketAddress(
     }
     return 1;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_OpenTcpServer --
+ *
+ *	Opens a TCP server socket and creates a channel around it.
+ *
+ * Results:
+ *	The channel or NULL if failed. If an error occurred, an error message
+ *	is left in the interp's result if interp is not NULL.
+ *
+ * Side effects:
+ *	Opens a server socket and creates a new channel.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Channel Tcl_OpenTcpServer(Tcl_Interp *interp, int port,
+	    const char *host, Tcl_TcpAcceptProc *acceptProc,
+	    ClientData callbackData)
+{
+    return Tcl_OpenTcpServerEx(interp, port, host, 0, acceptProc, callbackData);
+}
+
 
 /*
  * Local Variables:

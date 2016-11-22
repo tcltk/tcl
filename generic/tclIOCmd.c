@@ -1490,7 +1490,7 @@ Tcl_SocketObjCmd(
     enum socketOptions {
 	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_SERVER, SKT_REUSEPORT
     };
-    int optionIndex, a, server = 0, port, myport = 0, async = 0, reuseport = 0;
+    int optionIndex, a, server = 0, port, myport = 0, async = 0, flags = 0;
     const char *host, *myaddr = NULL;
     Tcl_Obj *script = NULL;
     Tcl_Channel chan;
@@ -1557,9 +1557,9 @@ Tcl_SocketObjCmd(
 	    }
 	    script = objv[a];
 	    break;
-    case SKT_REUSEPORT:
-        reuseport = 1;
-        break;
+	case SKT_REUSEPORT:
+	    flags |= 1;
+	    break;
 	default:
 	    Tcl_Panic("Tcl_SocketObjCmd: bad option index to SocketOptions");
 	}
@@ -1604,12 +1604,7 @@ Tcl_SocketObjCmd(
 	acceptCallbackPtr->script = script;
 	acceptCallbackPtr->interp = interp;
 
-    /* Hint for Tcl_OpenTcpServer to set socket option REUSEPORT */
-    if(reuseport) {
-        port |= (1 << 16);
-    }
-
-	chan = Tcl_OpenTcpServer(interp, port, host, AcceptCallbackProc,
+	chan = Tcl_OpenTcpServerEx(interp, port, host, flags, AcceptCallbackProc,
 		acceptCallbackPtr);
 	if (chan == NULL) {
 	    Tcl_DecrRefCount(script);
