@@ -113,6 +113,11 @@ struct TcpState {
 
 #define SOCKET_BUFSIZE	4096
 
+#ifdef SO_REUSEPORT
+/* Bitmask to check if the setting of SO_REUSEPORT was requested by the caller. */
+#define USE_SOCK_REUSEPORT (1 << 16)
+#endif
+
 /*
  * Static routines for this file:
  */
@@ -1435,6 +1440,10 @@ Tcl_OpenTcpServer(
     char channelName[SOCK_CHAN_LENGTH];
     const char *errorMsg = NULL;
     TcpFdList *fds = NULL, *newfds;
+#ifdef SO_REUSEPORT
+    int reuseport = port & USE_SOCK_REUSEPORT;
+    CLEAR_BITS(port, USE_SOCK_REUSEPORT);
+#endif
 
     /*
      * Try to record and return the most meaningful error message, i.e. the
@@ -1511,6 +1520,17 @@ Tcl_OpenTcpServer(
 
 	(void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 		(char *) &reuseaddr, sizeof(reuseaddr));
+
+#ifdef SO_REUSEPORT
+    /*
+     * Set up to allows multiple sockets on the same host to bind to the same port.
+     * The flag can be switched on by setting the lowest bit above the valid maximum port (0xffff).
+     */
+    if(reuseport) {
+        (void) setsockopt(sock, SOL_SOCKET, SO_REUSEPORT,
+            (char *) &reuseport, sizeof(reuseport));
+    }
+#endif
 
         /*
          * Make sure we use the same port number when opening two server
