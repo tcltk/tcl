@@ -1219,14 +1219,54 @@ Tcl_ArraySearchStart(
     Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
     Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, TCL_LEAVE_ERR_MSG,
-				 * TCL_MATCH_GLOB, TCL_MATCH_REGEXP bits. */
+				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
+				 * also at most one of TCL_MATCH_EXACT,
+				 * TCL_MATCH_GLOB, and TCL_MATCH_REGEXP. */
 {
-    return NULL;
+    Interp *iPtr = (Interp *)interp;
+    Var *varPtr;
+    Tcl_HashEntry *hPtr;
+    int isNew;
+    ArraySearch *searchPtr;
+
+    if (!(varPtr = LookupArrayVar(interp, part1Ptr, NULL, flags))) {
+	return NULL;
+    }
+
+    /*
+     * Make a new array search with a free name.
+     */
+
+    searchPtr = ckalloc(sizeof(ArraySearch));
+    hPtr = Tcl_CreateHashEntry(&iPtr->varSearches, varPtr, &isNew);
+    if (isNew) {
+	searchPtr->id = 1;
+	varPtr->flags |= VAR_SEARCH_ACTIVE;
+	searchPtr->nextPtr = NULL;
+    } else {
+	searchPtr->id = ((ArraySearch *)Tcl_GetHashValue(hPtr))->id + 1;
+	searchPtr->nextPtr = Tcl_GetHashValue(hPtr);
+    }
+    searchPtr->varPtr = varPtr;
+    searchPtr->nextEntry = VarHashFirstEntry(varPtr->value.tablePtr,
+	    &searchPtr->search);
+    Tcl_SetHashValue(hPtr, searchPtr);
+    searchPtr->name = Tcl_ObjPrintf("s-%d-%s", searchPtr->id,
+	    TclGetString(part1Ptr));
+    Tcl_IncrRefCount(searchPtr->name);
+    searchPtr->filterObj = part2Ptr;
+    searchPtr->filterType = flags & TCL_MATCH;
+    if (part2Ptr) {
+	Tcl_IncrRefCount(part2Ptr);
+    }
+
+    return searchPtr;
 }
 
 /*
  *----------------------------------------------------------------------
+ *
+ * Tcl_ArraySearchNext --
  *
  *----------------------------------------------------------------------
  */
@@ -1241,6 +1281,8 @@ Tcl_ArraySearchNext(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_ArraySearchDone --
+ *
  *----------------------------------------------------------------------
  */
 
@@ -1252,16 +1294,22 @@ Tcl_ArraySearchDone(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_ArrayNames --
+ *
  *----------------------------------------------------------------------
  */
 
 int
 Tcl_ArrayNames(
-    Tcl_Interp *interp,
-    Tcl_Obj *part1Ptr,
-    Tcl_Obj *part2Ptr,
+    Tcl_Interp *interp,		/* Command interpreter in which part1Ptr is to
+				 * be looked up. */
+    Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
+    Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
     Tcl_Obj *listPtr,
-    int flags)
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
+				 * also at most one of TCL_MATCH_EXACT,
+				 * TCL_MATCH_GLOB, and TCL_MATCH_REGEXP. */
 {
     return 0;
 }
@@ -3155,10 +3203,6 @@ ArrayStartSearchCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Interp *iPtr = (Interp *) interp;
-    Var *varPtr;
-    Tcl_HashEntry *hPtr;
-    int isNew;
     ArraySearch *searchPtr;
 
     if (objc != 2) {
@@ -3166,31 +3210,11 @@ ArrayStartSearchCmd(
 	return TCL_ERROR;
     }
 
-    varPtr = LookupArrayVar(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG);
-    if (varPtr == NULL) {
+    searchPtr = Tcl_ArraySearchStart(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG);
+    if (!searchPtr) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Make a new array search with a free name.
-     */
-
-    searchPtr = ckalloc(sizeof(ArraySearch));
-    hPtr = Tcl_CreateHashEntry(&iPtr->varSearches, varPtr, &isNew);
-    if (isNew) {
-	searchPtr->id = 1;
-	varPtr->flags |= VAR_SEARCH_ACTIVE;
-	searchPtr->nextPtr = NULL;
-    } else {
-	searchPtr->id = ((ArraySearch *) Tcl_GetHashValue(hPtr))->id + 1;
-	searchPtr->nextPtr = Tcl_GetHashValue(hPtr);
-    }
-    searchPtr->varPtr = varPtr;
-    searchPtr->nextEntry = VarHashFirstEntry(varPtr->value.tablePtr,
-	    &searchPtr->search);
-    Tcl_SetHashValue(hPtr, searchPtr);
-    searchPtr->name = Tcl_ObjPrintf("s-%d-%s", searchPtr->id, TclGetString(objv[1]));
-    Tcl_IncrRefCount(searchPtr->name);
     Tcl_SetObjResult(interp, searchPtr->name);
     return TCL_OK;
 }
