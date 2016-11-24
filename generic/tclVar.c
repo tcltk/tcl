@@ -148,7 +148,8 @@ static const char *isArrayElement =
  * array variable; this are invoked with options to the "array" command.
  */
 
-typedef struct Tcl_ArraySearch_ {
+typedef struct Tcl_ArraySearch_ ArraySearch;
+struct Tcl_ArraySearch_ {
     Tcl_Obj *name;		/* Name of this search */
     int id;			/* Integer id used to distinguish among
 				 * multiple concurrent searches for the same
@@ -163,11 +164,13 @@ typedef struct Tcl_ArraySearch_ {
 				 * anymore" command). NULL means must call
 				 * Tcl_NextHashEntry to get value to
 				 * return. */
-    struct Tcl_ArraySearch_ *nextPtr;
-				/* Next in list of all active searches for
+    ArraySearch *nextPtr;	/* Next in list of all active searches for
 				 * this variable, or NULL if this is the last
 				 * one. */
-} ArraySearch;
+    Tcl_Obj *filterObj;		/* Search filter pattern, or NULL if none. */
+    int filterType;		/* Filter type: TCL_MATCH_EXACT, TCL_MATCH_GLOB,
+				 * or TCL_MATCH_REGEXP. */
+};
 
 /*
  * Forward references to functions defined later in this file:
@@ -190,7 +193,6 @@ static ArraySearch *	ParseSearchId(Tcl_Interp *interp, const Var *varPtr,
 static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr,
 			    Interp *iPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, int flags, int index);
-static Var *		VerifyArray(Tcl_Interp *interp, Tcl_Obj *varNameObj);
 
 /*
  * Functions defined in this file that may be exported in the future for use
@@ -1074,19 +1076,21 @@ static enum LookupArrayVarCode {
 LookupArrayVar(
     Tcl_Interp *interp,		/* Command interpreter in which varNamePtr is to
 				 * be looked up. */
-    Tcl_Obj *varNamePtr,	/* Name of array variable in interp. */
+    Tcl_Obj *varNameObj,	/* Name of array variable in interp. */
     Var **varPtrPtr,		/* Location where output Var * is written. */
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
 				 * TCL_NAMESPACE_ONLY and/or TCL_LEAVE_ERR_MSG
 				 * bits. */
 {
     Var *varPtr, *arrayPtr;
+    const char *varName;
+    enum LookupArrayVarCode code;
 
     /*
      * Locate the array variable.
      */
 
-    if (!(varPtr = TclObjLookupVarEx(interp, varNamePtr, NULL, flags, "read",
+    if (!(varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, flags, "access",
 	    /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr))) {
 	return LAV_ERR_LOOKUP;
     }
@@ -1099,7 +1103,7 @@ LookupArrayVar(
     if ((varPtr->flags & VAR_TRACED_ARRAY)
 	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
 	if (TclObjCallVarTraces((Interp *)interp, arrayPtr, varPtr,
-		varNamePtr, NULL, flags|TCL_TRACE_ARRAY,
+		varNameObj, NULL, flags | TCL_TRACE_ARRAY,
 		!!(flags & TCL_LEAVE_ERR_MSG), -1) == TCL_ERROR) {
 	    return LAV_ERR_TRACE;
 	}
@@ -1108,13 +1112,23 @@ LookupArrayVar(
     /*
      * Verify that it is indeed an array variable. This test comes after the
      * traces - the variable may actually become an array as an effect of said
-     * traces. We can only iterate over the array if it exists...
+     * traces.
      */
 
+    code = LAV_OK;
     if (!TclIsVarArray(varPtr)) {
-	return LAV_ERR_SCALAR;
+	code = LAV_ERR_SCALAR;
     } else if (TclIsVarUndefined(varPtr)) {
-	return LAV_ERR_UNDEFINED;
+	code = LAV_ERR_UNDEFINED;
+    }
+    if (code != LAV_OK) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
+	    varName = TclGetString(varNameObj);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "\"%s\" isn't an array", varName));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", varName, NULL);
+	}
+	return code;
     }
 
     /*
@@ -1122,7 +1136,6 @@ LookupArrayVar(
      */
 
     *varPtrPtr = varPtr;
-
     return LAV_OK;
 }
 
@@ -1148,7 +1161,7 @@ static int
 ArraySize(
     Tcl_Interp *interp,		/* Interpreter, used to report regexp errors. */
     Var *varPtr,		/* Array variable. */
-    Tcl_Obj *filterPtr,		/* Element filter or NULL to accept all. */
+    Tcl_Obj *filterObj,		/* Element filter or NULL to accept all. */
     int filterType)		/* Filter type: TCL_MATCH_EXACT, TCL_MATCH_GLOB,
 				 * or TCL_MATCH_REGEXP. */
 {
@@ -1161,13 +1174,13 @@ ArraySize(
      * Directly handle exact matches and prepare to handle glob matches.
      */
 
-    if (filterPtr && filterType != TCL_MATCH_REGEXP) {
+    if (filterObj && filterType != TCL_MATCH_REGEXP) {
 	/*
 	 * Convert trivial glob matches to exact matches.
 	 */
 
 	if (filterType == TCL_MATCH_GLOB) {
-	    filterStr = TclGetString(filterPtr);
+	    filterStr = TclGetString(filterObj);
 	    if (TclMatchIsTrivial(filterStr)) {
 		filterType = TCL_MATCH_EXACT;
 	    }
@@ -1179,7 +1192,7 @@ ArraySize(
 	 */
 
 	if (filterType == TCL_MATCH_EXACT) {
-	    varPtr = VarHashFindVar(varPtr->value.tablePtr, filterPtr);
+	    varPtr = VarHashFindVar(varPtr->value.tablePtr, filterObj);
 	    return varPtr && !TclIsVarUndefined(varPtr);
 	}
     }
@@ -1202,7 +1215,7 @@ ArraySize(
 	 * If no filter, count each defined element regardless of name.
 	 */
 
-	if (!filterPtr) {
+	if (!filterObj) {
 	    ++size;
 	    continue;
 	}
@@ -1217,7 +1230,7 @@ ArraySize(
 		++size;
 	    }
 	} else if (filterType == TCL_MATCH_REGEXP) {
-	    matched = Tcl_RegExpMatchObj(interp, nameObj, filterPtr);
+	    matched = Tcl_RegExpMatchObj(interp, nameObj, filterObj);
 	    if (matched < 0) {
 		return -1;
 	    } else if (matched) {
@@ -3142,53 +3155,6 @@ TclArraySet(
  */
 
 	/* ARGSUSED */
-
-static Var *
-VerifyArray(
-    Tcl_Interp *interp,
-    Tcl_Obj *varNameObj)
-{
-    Interp *iPtr = (Interp *) interp;
-    const char *varName = TclGetString(varNameObj);
-    Var *arrayPtr;
-
-    /*
-     * Locate the array variable.
-     */
-
-    Var *varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, /*flags*/ 0,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-
-    /*
-     * Special array trace used to keep the env array in sync for array names,
-     * array get, etc.
-     */
-
-    if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
-	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
-	if (TclObjCallVarTraces(iPtr, arrayPtr, varPtr, varNameObj, NULL,
-		(TCL_LEAVE_ERR_MSG|TCL_NAMESPACE_ONLY|TCL_GLOBAL_ONLY|
-		TCL_TRACE_ARRAY), /* leaveErrMsg */ 1, -1) == TCL_ERROR) {
-	    return NULL;
-	}
-    }
-
-    /*
-     * Verify that it is indeed an array variable. This test comes after the
-     * traces - the variable may actually become an array as an effect of said
-     * traces.
-     */
-
-    if ((varPtr == NULL) || !TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"\"%s\" isn't an array", varName));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", varName, NULL);
-	return NULL;
-    }
-
-    return varPtr;
-}
-
 static int
 ArrayStartSearchCmd(
     ClientData clientData,
@@ -3207,8 +3173,7 @@ ArrayStartSearchCmd(
 	return TCL_ERROR;
     }
 
-    varPtr = VerifyArray(interp, objv[1]);
-    if (varPtr == NULL) {
+    if (LookupArrayVar(interp, objv[1], &varPtr, TCL_LEAVE_ERR_MSG) != LAV_OK) {
 	return TCL_ERROR;
     }
 
@@ -3274,8 +3239,8 @@ ArrayAnyMoreCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    varPtr = VerifyArray(interp, varNameObj);
-    if (varPtr == NULL) {
+    if (LookupArrayVar(interp, varNameObj, &varPtr,
+	    TCL_LEAVE_ERR_MSG) != LAV_OK) {
 	return TCL_ERROR;
     }
 
@@ -3348,8 +3313,8 @@ ArrayNextElementCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    varPtr = VerifyArray(interp, varNameObj);
-    if (varPtr == NULL) {
+    if (LookupArrayVar(interp, varNameObj, &varPtr,
+	    TCL_LEAVE_ERR_MSG) != LAV_OK) {
 	return TCL_ERROR;
     }
 
@@ -3427,8 +3392,8 @@ ArrayDoneSearchCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    varPtr = VerifyArray(interp, varNameObj);
-    if (varPtr == NULL) {
+    if (LookupArrayVar(interp, varNameObj, &varPtr,
+	    TCL_LEAVE_ERR_MSG) != LAV_OK) {
 	return TCL_ERROR;
     }
 
