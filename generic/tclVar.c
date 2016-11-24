@@ -1111,7 +1111,7 @@ LookupArrayVar(
      * traces. We can only iterate over the array if it exists...
      */
 
-    if (TclIsVarArray(varPtr)) {
+    if (!TclIsVarArray(varPtr)) {
 	return LAV_ERR_SCALAR;
     } else if (TclIsVarUndefined(varPtr)) {
 	return LAV_ERR_UNDEFINED;
