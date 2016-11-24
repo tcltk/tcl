@@ -2328,11 +2328,11 @@ declare 630 {
 
 # TIP #XXX
 declare 631 {
-    int Tcl_ArraySize(Tcl_Interp *interp, Tcl_Obj *part1Ptr, int flags)
+    int Tcl_ArraySize(Tcl_Interp *interp, Tcl_Obj *varNamePtr, int flags)
 }
 declare 632 {
-    Tcl_ArraySearch Tcl_ArraySearchStart(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
-	int flags)
+    Tcl_ArraySearch Tcl_ArraySearchStart(Tcl_Interp *interp,
+	Tcl_Obj *varNamePtr, int flags)
 }
 declare 633 {
     Tcl_Obj *Tcl_ArraySearchNext(Tcl_ArraySearch search)
@@ -2341,7 +2341,7 @@ declare 634 {
     void Tcl_ArraySeachDone(Tcl_ArraySearch search)
 }
 declare 635 {
-    int Tcl_ArrayNames(Tcl_Interp *interp, Tcl_Obj *part1Ptr, int *objcPtr,
+    int Tcl_ArrayNames(Tcl_Interp *interp, Tcl_Obj *varNamePtr, int *objcPtr,
 	Tcl_Obj ***objvPtr, int flags)
 }
 
