@@ -1485,14 +1485,14 @@ Tcl_SocketObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const socketOptions[] = {
-	"-async", "-myaddr", "-myport", "-server", "-reuseaddr", "-reuseport",
+	"-async", "-myaddr", "-myport", "-reuseaddr", "-reuseport", "server",
 	NULL
     };
     enum socketOptions {
-	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_SERVER, SKT_REUSEADDR,
-	SKT_REUSEPORT
+	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_REUSEADDR, SKT_REUSEPORT,
+	SKT_SERVER
     };
-    int optionIndex, a, server = 0, port, myport = 0, async = 0;
+    int optionIndex, a, server = 0, port, myport = 0, async = 0, boolTmp;
     unsigned int flags = 0;
     const char *host, *myaddr = NULL;
     Tcl_Obj *script = NULL;
@@ -1552,6 +1552,7 @@ Tcl_SocketObjCmd(
 		return TCL_ERROR;
 	    }
 	    server = 1;
+	    flags = TCL_TCPSERVER_REUSEADDR;
 	    a++;
 	    if (a >= objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -1561,10 +1562,36 @@ Tcl_SocketObjCmd(
 	    script = objv[a];
 	    break;
 	case SKT_REUSEADDR:
-	    flags |= TCL_TCPSERVER_REUSEADDR;
+	    a++;
+	    if (a >= objc) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"no argument given for -reuseaddr option", -1));
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetBooleanFromObj(interp, objv[a], &boolTmp) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (boolTmp) {
+		flags |= TCL_TCPSERVER_REUSEADDR;
+	    } else {
+		flags &= ~TCL_TCPSERVER_REUSEADDR;
+	    }
 	    break;
 	case SKT_REUSEPORT:
-	    flags |= TCL_TCPSERVER_REUSEPORT;
+	    a++;
+	    if (a >= objc) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"no argument given for -reuseport option", -1));
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetBooleanFromObj(interp, objv[a], &boolTmp) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (boolTmp) {
+		flags |= TCL_TCPSERVER_REUSEPORT;
+	    } else {
+		flags &= ~TCL_TCPSERVER_REUSEPORT;
+	    }
 	    break;
 	default:
 	    Tcl_Panic("Tcl_SocketObjCmd: bad option index to SocketOptions");
@@ -1589,7 +1616,8 @@ Tcl_SocketObjCmd(
 		"?-myaddr addr? ?-myport myport? ?-async? host port");
 	iPtr->flags |= INTERP_ALTERNATE_WRONG_ARGS;
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"-server command ?-reuseaddr? ?-reuseport? ?-myaddr addr? port");
+		"-server command ?-reuseaddr boolean? ?-reuseport boolean? "
+		"?-myaddr addr? port");
 	return TCL_ERROR;
     }
 
