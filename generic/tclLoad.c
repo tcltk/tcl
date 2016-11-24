@@ -397,6 +397,12 @@ Tcl_LoadObjCmd(
 	    goto done;
 	}
 
+	if (target == interp) {
+	    /* Only register the file if the load is done in the
+	     * current interpreter */
+	    TclPkgFileSeen(target, Tcl_GetString(objv[1]));
+	}
+
 	/*
 	 * Create a new record to describe this package.
 	 */
@@ -998,7 +1004,7 @@ Tcl_StaticPackage(
 	}
 
 	/*
-	 * Package isn't loade in the current interp yet. Mark it as now being
+	 * Package isn't loaded in the current interp yet. Mark it as now being
 	 * loaded.
 	 */
 
