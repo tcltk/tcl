@@ -1055,8 +1055,8 @@ TclLookupArrayElement(
  *
  * Results:
  *	If successful, *varPtr is set to point to the requested variable, and
- *	the return value is LAV_OK.  See the definition of LookupArrayVarCode
- *	for the possible error return values.
+ *	the return value is LAV_OK. See the definition of LookupArrayVarCode for
+ *	the possible error return values.
  *
  * Side effects:
  *	Array traces, if any, are executed.
@@ -3924,7 +3924,7 @@ ArraySizeCmd(
      * report are argument count and array trace errors.
      */
 
-    switch (LookupArrayVar(interp, objv[1], &varPtr, 0)) {
+    switch (LookupArrayVar(interp, objv[1], &varPtr, TCL_LEAVE_ERR_MSG)) {
 	case LAV_OK	  : size = ArraySize(varPtr); break;
 	default		  : size = 0; break;
 	case LAV_ERR_TRACE: return TCL_ERROR;
