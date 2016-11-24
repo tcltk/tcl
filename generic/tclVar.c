@@ -918,7 +918,7 @@ TclLookupSimpleVar(
  *	element's name.
  *
  * Results:
- *	The return value is a pointer to the variable structure , or NULL if
+ *	The return value is a pointer to the variable structure, or NULL if
  *	the variable couldn't be found.
  *
  *	If arrayPtr points to a variable that isn't an array and createPart1
@@ -1049,6 +1049,124 @@ TclLookupArrayElement(
 /*
  *----------------------------------------------------------------------
  *
+ * LookupArrayVar --
+ *
+ *	This function looks up an existing array variable.
+ *
+ * Results:
+ *	If successful, *varPtr is set to point to the requested variable, and
+ *	the return value is LAV_OK.  See the definition of LookupArrayVarCode
+ *	for the possible error return values.
+ *
+ * Side effects:
+ *	Array traces, if any, are executed.
+ *	
+ *----------------------------------------------------------------------
+ */
+
+static enum LookupArrayVarCode {
+    LAV_OK,			/* Success. */
+    LAV_ERR_LOOKUP,		/* Failed to look up variable. */
+    LAV_ERR_TRACE,		/* Array is traced but trace failed. */
+    LAV_ERR_SCALAR,		/* Variable is a scalar, not an array. */
+    LAV_ERR_UNDEFINED		/* Array is undefined. */
+}
+LookupArrayVar(
+    Tcl_Interp *interp,		/* Command interpreter in which varNamePtr is to
+				 * be looked up. */
+    Tcl_Obj *varNamePtr,	/* Name of array variable in interp. */
+    Var **varPtrPtr,		/* Location where output Var * is written. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY and/or TCL_LEAVE_ERR_MSG
+				 * bits. */
+{
+    Var *varPtr, *arrayPtr;
+
+    /*
+     * Locate the array variable.
+     */
+
+    if (!(varPtr = TclObjLookupVarEx(interp, varNamePtr, NULL, flags, "read",
+	    /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr))) {
+	return LAV_ERR_LOOKUP;
+    }
+
+    /*
+     * Special array trace used to keep the env array in sync for array names,
+     * array get, etc.
+     */
+
+    if ((varPtr->flags & VAR_TRACED_ARRAY)
+	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
+	if (TclObjCallVarTraces((Interp *)interp, arrayPtr, varPtr,
+		varNamePtr, NULL, flags|TCL_TRACE_ARRAY,
+		!!(flags & TCL_LEAVE_ERR_MSG), -1) == TCL_ERROR) {
+	    return LAV_ERR_TRACE;
+	}
+    }
+
+    /*
+     * Verify that it is indeed an array variable. This test comes after the
+     * traces - the variable may actually become an array as an effect of said
+     * traces. We can only iterate over the array if it exists...
+     */
+
+    if (TclIsVarArray(varPtr)) {
+	return LAV_ERR_SCALAR;
+    } else if (TclIsVarUndefined(varPtr)) {
+	return LAV_ERR_UNDEFINED;
+    }
+
+    /*
+     * On success, give the caller the address of the variable object.
+     */
+
+    *varPtrPtr = varPtr;
+
+    return LAV_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ArraySize --
+ *
+ *	This function returns the number of elements in an array variable.
+ *
+ * Results:
+ *	The return value is the integer count of array elements.
+ *
+ * Side effects:
+ *	None.
+ *	
+ *----------------------------------------------------------------------
+ */
+
+static int
+ArraySize(
+    Var *varPtr)
+{
+    Tcl_HashSearch search;
+    Var *varPtr2;
+    int size = 0;
+
+    /*
+     * Must iterate to get chance to check for present but "undefined" entries.
+     */
+
+    for (varPtr2=VarHashFirstVar(varPtr->value.tablePtr, &search);
+	    varPtr2!=NULL ; varPtr2=VarHashNextVar(&search)) {
+	if (!TclIsVarUndefined(varPtr2)) {
+	    size++;
+	}
+    }
+
+    return size;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_ArraySize --
  *
  *	This function returns the number of elements in an array variable.
@@ -1068,62 +1186,18 @@ int
 Tcl_ArraySize(
     Tcl_Interp *interp,		/* Command interpreter in which part1Ptr is to
 				 * be looked up. */
-    Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
+    Tcl_Obj *varNamePtr,	/* Name of array variable in interp. */
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
 				 * TCL_NAMESPACE_ONLY and/or TCL_LEAVE_ERR_MSG
 				 * bits. */
 {
-    Interp *iPtr = (Interp *) interp;
-    Var *varPtr, *arrayPtr;
-    Tcl_HashSearch search;
-    Var *varPtr2;
-    int size;
+    Var *varPtr;
 
-    /*
-     * Locate the array variable.
-     */
-
-    if (!(varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, flags, "read",
-	    /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr))) {
+    if (LookupArrayVar(interp, varNamePtr, &varPtr, flags) != LAV_OK) {
 	return -1;
     }
 
-    /*
-     * Special array trace used to keep the env array in sync for array names,
-     * array get, etc.
-     */
-
-    if ((varPtr->flags & VAR_TRACED_ARRAY)
-	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
-	if (TclObjCallVarTraces(iPtr, arrayPtr, varPtr,
-		part1Ptr, NULL, flags|TCL_TRACE_ARRAY,
-		!!(flags & TCL_LEAVE_ERR_MSG, -1) == TCL_ERROR)) {
-	    return -1;
-	}
-    }
-
-    /*
-     * Verify that it is indeed an array variable. This test comes after the
-     * traces - the variable may actually become an array as an effect of said
-     * traces. We can only iterate over the array if it exists...
-     */
-
-    if (TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
-	return -1;
-    }
-
-    /*
-     * Must iterate to get chance to check for present but "undefined" entries.
-     */
-
-    for (varPtr2=VarHashFirstVar(varPtr->value.tablePtr, &search);
-	    varPtr2!=NULL ; varPtr2=VarHashNextVar(&search)) {
-	if (!TclIsVarUndefined(varPtr2)) {
-	    size++;
-	}
-    }
-
-    return size;
+    return ArraySize(varPtr);
 }
 
 /*
@@ -3795,6 +3869,7 @@ ArraySizeCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    Var *varPtr;
     int size;
 
     if (objc != 2) {
@@ -3802,18 +3877,16 @@ ArraySizeCmd(
 	return TCL_ERROR;
     }
 
-    size = Tcl_ArraySize(interp, objv[1], 0);
-
     /*
-     * The [array size] command reports nonexistent and non-array variables as
-     * having zero size.
-     *
-     * XXX: Distinguish between existence errors and trace errors.  Hide the
-     * former and report the latter for compatibility with [array size].
+     * Unlike Tcl_ArraySize(), the [array size] command reports nonexistent and
+     * non-array variables as having zero size. The only errors [array size] can
+     * report are argument count and array trace errors.
      */
 
-    if (size < 0) {
-	size = 0;
+    switch (LookupArrayVar(interp, objv[1], &varPtr, 0)) {
+	case LAV_OK	  : size = ArraySize(varPtr); break;
+	default		  : size = 0; break;
+	case LAV_ERR_TRACE: return TCL_ERROR;
     }
 
     Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
