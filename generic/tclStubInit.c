@@ -1416,6 +1416,11 @@ const TclStubs tclStubs = {
     Tcl_FindSymbol, /* 628 */
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
+    Tcl_ArraySize, /* 631 */
+    Tcl_ArraySearchStart, /* 632 */
+    Tcl_ArraySearchNext, /* 633 */
+    Tcl_ArraySeachDone, /* 634 */
+    Tcl_ArrayNames, /* 635 */
 };
 
 /* !END!: Do not edit above this line. */
