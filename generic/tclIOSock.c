@@ -283,7 +283,7 @@ TclCreateSocketAddress(
     }
     return 1;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -304,9 +304,9 @@ Tcl_Channel Tcl_OpenTcpServer(Tcl_Interp *interp, int port,
 	    const char *host, Tcl_TcpAcceptProc *acceptProc,
 	    ClientData callbackData)
 {
-    return Tcl_OpenTcpServerEx(interp, port, host, 0, acceptProc, callbackData);
+    return Tcl_OpenTcpServerEx(interp, port, host, TCL_TCPSERVER_REUSEADDR,
+			       acceptProc, callbackData);
 }
-
 
 /*
  * Local Variables:
