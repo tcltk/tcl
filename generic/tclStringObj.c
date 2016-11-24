@@ -3444,7 +3444,7 @@ ExtendStringRepWithUnicode(
 	goto copyBytes;
     }
 
-    for (i = 0; i < numChars && size >= 0; i++) {
+    for (i = 0; i < numChars; i++) {
 	size += TclUtfCount(unicode[i]);
     }
     if ((int)size < 0) {
