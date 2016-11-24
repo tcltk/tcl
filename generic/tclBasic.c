@@ -588,7 +588,7 @@ Tcl_CreateInterp(void)
 
     iPtr->cmdCount = 0;
     TclInitLiteralTable(&iPtr->literalTable);
-    iPtr->compileEpoch = 0;
+    iPtr->compileEpoch = 1;
     iPtr->compiledProcPtr = NULL;
     iPtr->resolverPtr = NULL;
     iPtr->evalFlags = 0;
