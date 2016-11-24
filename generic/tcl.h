@@ -631,19 +631,20 @@ typedef struct Tcl_Obj {
     union {			/* The internal representation: */
 	long longValue;		/*   - an long integer value. */
 	double doubleValue;	/*   - a double-precision floating value. */
-	void *otherValuePtr;	/*   - another, type-specific value,
-	                       not used internally any more. */
+	void *otherValuePtr;	/*   - another, type-specific value, not used
+				 *     internally any more. */
 	Tcl_WideInt wideValue;	/*   - a long long value. */
 	struct {		/*   - internal rep as two pointers.
-				 *     the main use of which is a bignum's
+				 *     Many uses in Tcl, including a bignum's
 				 *     tightly packed fields, where the alloc,
 				 *     used and signum flags are packed into
-				 *     ptr2 with everything else hung off ptr1. */
+				 *     ptr2 with everything else hung off
+				 *     ptr1. */
 	    void *ptr1;
 	    void *ptr2;
 	} twoPtrValue;
 	struct {		/*   - internal rep as a pointer and a long,
-	                       not used internally any more. */
+				 *     not used internally any more. */
 	    void *ptr;
 	    unsigned long value;
 	} ptrAndLongRep;
@@ -1121,8 +1122,8 @@ typedef struct Tcl_HashSearch {
 typedef struct {
     void *next;			/* Search position for underlying hash
 				 * table. */
-    int epoch;			/* Epoch marker for dictionary being searched,
-				 * or -1 if search has terminated. */
+    size_t epoch;		/* Epoch marker for dictionary being searched,
+				 * or 0 if search has terminated. */
     Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
 } Tcl_DictSearch;
 

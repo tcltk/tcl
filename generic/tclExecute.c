@@ -4746,8 +4746,7 @@ TEBCresume(
 
     {
 	int index, numIndices, fromIdx, toIdx;
-	int nocase, match, length2, cflags;
-	int s1len, s2len;
+	int nocase, match, length2, cflags, s1len, s2len;
 	const char *s1, *s2;
 
     case INST_LIST:

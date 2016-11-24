@@ -345,23 +345,23 @@ typedef struct ResolvedCmdName {
 				 * reference (not the namespace that contains
 				 * the referenced command). NULL if the name
 				 * is fully qualified.*/
-    long refNsId;		/* refNsPtr's unique namespace id. Used to
+    size_t refNsId;		/* refNsPtr's unique namespace id. Used to
 				 * verify that refNsPtr is still valid (e.g.,
 				 * it's possible that the cmd's containing
 				 * namespace was deleted and a new one created
 				 * at the same address). */
-    int refNsCmdEpoch;		/* Value of the referencing namespace's
+    size_t refNsCmdEpoch;		/* Value of the referencing namespace's
 				 * cmdRefEpoch when the pointer was cached.
 				 * Before using the cached pointer, we check
 				 * if the namespace's epoch was incremented;
 				 * if so, this cached pointer is invalid. */
-    int cmdEpoch;		/* Value of the command's cmdEpoch when this
+    size_t cmdEpoch;		/* Value of the command's cmdEpoch when this
 				 * pointer was cached. Before using the cached
 				 * pointer, we check if the cmd's epoch was
 				 * incremented; if so, the cmd was renamed,
 				 * deleted, hidden, or exposed, and so the
 				 * pointer is invalid. */
-    int refCount;		/* Reference count: 1 for each cmdName object
+    size_t refCount;		/* Reference count: 1 for each cmdName object
 				 * that has a pointer to this ResolvedCmdName
 				 * structure as its internal rep. This
 				 * structure can be freed when refCount
@@ -4309,7 +4309,7 @@ FreeCmdNameInternalRep(
 	 * there are no more uses, free the ResolvedCmdName structure.
 	 */
 
-	if (resPtr->refCount-- == 1) {
+	if (resPtr->refCount-- <= 1) {
 	    /*
 	     * Now free the cached command, unless it is still in its hash
 	     * table or if there are other references to it from other cmdName
@@ -4421,7 +4421,7 @@ SetCmdNameFromAny(
 
 	Command *oldCmdPtr = resPtr->cmdPtr;
 
-	if (--oldCmdPtr->refCount == 0) {
+	if (oldCmdPtr->refCount-- <= 1) {
 	    TclCleanupCommandMacro(oldCmdPtr);
 	}
     } else {

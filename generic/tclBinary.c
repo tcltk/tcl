@@ -649,7 +649,7 @@ TclAppendBytesToByteArray(
     byteArrayPtr = GET_BYTEARRAY(objPtr);
 
     if (len + byteArrayPtr->used > UINT_MAX) {
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+	Tcl_Panic("max size for a Tcl value (%u bytes) exceeded", UINT_MAX);
     }
 
     needed = byteArrayPtr->used + len;

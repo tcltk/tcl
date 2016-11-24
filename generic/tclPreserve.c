@@ -22,7 +22,7 @@
 
 typedef struct {
     ClientData clientData;	/* Address of preserved block. */
-    int refCount;		/* Number of Tcl_Preserve calls in effect for
+    size_t refCount;		/* Number of Tcl_Preserve calls in effect for
 				 * block. */
     int mustFree;		/* Non-zero means Tcl_EventuallyFree was
 				 * called while a Tcl_Preserve call was in
@@ -63,7 +63,7 @@ typedef struct {
 				 * ensure that the contents of the handle are
 				 * not changed by anyone else. */
 #endif
-    int refCount;		/* Number of TclHandlePreserve() calls in
+    size_t refCount;		/* Number of TclHandlePreserve() calls in
 				 * effect on this handle. */
 } HandleStruct;
 
@@ -195,7 +195,7 @@ Tcl_Release(
 	    continue;
 	}
 
-	if (--refPtr->refCount != 0) {
+	if (refPtr->refCount-- > 1) {
 	    Tcl_MutexUnlock(&preserveMutex);
 	    return;
 	}
@@ -459,7 +459,7 @@ TclHandleRelease(
 		handlePtr, handlePtr->ptr2, handlePtr->ptr);
     }
 #endif
-    if ((--handlePtr->refCount == 0) && (handlePtr->ptr == NULL)) {
+    if ((handlePtr->refCount-- <= 1) && (handlePtr->ptr == NULL)) {
 	ckfree(handlePtr);
     }
 }
