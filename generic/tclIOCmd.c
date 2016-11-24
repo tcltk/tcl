@@ -1485,12 +1485,12 @@ Tcl_SocketObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const socketOptions[] = {
-	"-async", "-myaddr", "-myport", "-server", "-reuseaddr", "-reuseport",
+	"-async", "-myaddr", "-myport", "-reuseaddr", "-reuseport", "-server",
 	NULL
     };
     enum socketOptions {
-	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_SERVER, SKT_REUSEADDR,
-	SKT_REUSEPORT
+	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_REUSEADDR, SKT_REUSEPORT,
+	SKT_SERVER
     };
     int optionIndex, a, server = 0, port, myport = 0, async = 0;
     unsigned int flags = 0;
