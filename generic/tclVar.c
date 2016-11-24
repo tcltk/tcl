@@ -158,6 +158,7 @@ static const char *isArrayElement =
 
 typedef struct Tcl_ArraySearch_ ArraySearch;
 struct Tcl_ArraySearch_ {
+    Tcl_Interp *interp;		/* Tcl interpreter in which search is run. */
     Tcl_Obj *name;		/* Name of this search */
     int id;			/* Integer id used to distinguish among
 				 * multiple concurrent searches for the same
@@ -1205,9 +1206,23 @@ Tcl_ArraySize(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ArraySearch --
+ * Tcl_ArraySearchStart --
  *
- *	This function initiates an array search.
+ *	This function initiates an array search, i.e. step-by-step array element
+ *	enumeration. It provides C-level access to [array startsearch]. The
+ *	returned value is used to obtain one array element name at a time.  If
+ *	part2Ptr is not NULL, only array elements whose names match part2Ptr are
+ *	returned by future calls to Tcl_ArraySearchNext(). The interpretation of
+ *	part2Ptr is controlled by TCL_MATCH_* being set within flags.
+ *
+ * Results:
+ *	A new array search is created, a pointer to which is returned. If the
+ *	variable does not exist or is not an array, NULL is returned, and no
+ *	search is created.
+ *
+ * Side effects:
+ *	On success, the search is allocated on the heap and will need to be
+ *	deallocated by a future call to Tcl_ArraySearchDone().
  *
  *----------------------------------------------------------------------
  */
@@ -1247,6 +1262,7 @@ Tcl_ArraySearchStart(
 	searchPtr->id = ((ArraySearch *)Tcl_GetHashValue(hPtr))->id + 1;
 	searchPtr->nextPtr = Tcl_GetHashValue(hPtr);
     }
+    searchPtr->interp = interp;
     searchPtr->varPtr = varPtr;
     searchPtr->nextEntry = VarHashFirstEntry(varPtr->value.tablePtr,
 	    &searchPtr->search);
