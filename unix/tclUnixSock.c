@@ -1523,10 +1523,11 @@ Tcl_OpenTcpServerEx(
 	     */
 	    errorMsg = "SO_REUSEPORT isn't supported by this platform";
 	    goto error;
-#endif
+#else
 	    optvalue = 1;
 	    (void) setsockopt(sock, SOL_SOCKET, SO_REUSEPORT,
 			      (char *) &optvalue, sizeof(optvalue));
+#endif
 	}
 
         /*
