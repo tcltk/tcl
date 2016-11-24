@@ -1817,19 +1817,20 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 				Tcl_ZlibStream zhandle,
 				Tcl_Obj *compressionDictionaryObj);
 /* 631 */
-EXTERN int		Tcl_ArraySize(Tcl_Interp *interp,
-				Tcl_Obj *varNamePtr, int flags);
+EXTERN int		Tcl_ArraySize(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+				Tcl_Obj *part2Ptr, int flags);
 /* 632 */
 EXTERN Tcl_ArraySearch	Tcl_ArraySearchStart(Tcl_Interp *interp,
-				Tcl_Obj *varNamePtr, int flags);
+				Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+				int flags);
 /* 633 */
 EXTERN Tcl_Obj *	Tcl_ArraySearchNext(Tcl_ArraySearch search);
 /* 634 */
-EXTERN void		Tcl_ArraySeachDone(Tcl_ArraySearch search);
+EXTERN void		Tcl_ArraySearchDone(Tcl_ArraySearch search);
 /* 635 */
-EXTERN int		Tcl_ArrayNames(Tcl_Interp *interp,
-				Tcl_Obj *varNamePtr, int *objcPtr,
-				Tcl_Obj ***objvPtr, int flags);
+EXTERN int		Tcl_ArrayNames(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+				Tcl_Obj *part2Ptr, Tcl_Obj *listPtr,
+				int flags);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2496,11 +2497,11 @@ typedef struct TclStubs {
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
-    int (*tcl_ArraySize) (Tcl_Interp *interp, Tcl_Obj *varNamePtr, int flags); /* 631 */
-    Tcl_ArraySearch (*tcl_ArraySearchStart) (Tcl_Interp *interp, Tcl_Obj *varNamePtr, int flags); /* 632 */
+    int (*tcl_ArraySize) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 631 */
+    Tcl_ArraySearch (*tcl_ArraySearchStart) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 632 */
     Tcl_Obj * (*tcl_ArraySearchNext) (Tcl_ArraySearch search); /* 633 */
-    void (*tcl_ArraySeachDone) (Tcl_ArraySearch search); /* 634 */
-    int (*tcl_ArrayNames) (Tcl_Interp *interp, Tcl_Obj *varNamePtr, int *objcPtr, Tcl_Obj ***objvPtr, int flags); /* 635 */
+    void (*tcl_ArraySearchDone) (Tcl_ArraySearch search); /* 634 */
+    int (*tcl_ArrayNames) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *listPtr, int flags); /* 635 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3799,8 +3800,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ArraySearchStart) /* 632 */
 #define Tcl_ArraySearchNext \
 	(tclStubsPtr->tcl_ArraySearchNext) /* 633 */
-#define Tcl_ArraySeachDone \
-	(tclStubsPtr->tcl_ArraySeachDone) /* 634 */
+#define Tcl_ArraySearchDone \
+	(tclStubsPtr->tcl_ArraySearchDone) /* 634 */
 #define Tcl_ArrayNames \
 	(tclStubsPtr->tcl_ArrayNames) /* 635 */
 

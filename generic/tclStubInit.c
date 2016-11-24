@@ -1419,7 +1419,7 @@ const TclStubs tclStubs = {
     Tcl_ArraySize, /* 631 */
     Tcl_ArraySearchStart, /* 632 */
     Tcl_ArraySearchNext, /* 633 */
-    Tcl_ArraySeachDone, /* 634 */
+    Tcl_ArraySearchDone, /* 634 */
     Tcl_ArrayNames, /* 635 */
 };
 

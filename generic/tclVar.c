@@ -1134,7 +1134,9 @@ LookupArrayVar(
  *	This function returns the number of elements in an array variable.
  *
  * Results:
- *	The return value is the integer count of array elements.
+ *	The return value is the integer count of array elements. The only
+ *	possible error is a regular expression error, in which case -1 is
+ *	returned and the error information is loaded into the interp result.
  *
  * Side effects:
  *	None.
@@ -1144,19 +1146,85 @@ LookupArrayVar(
 
 static int
 ArraySize(
-    Var *varPtr)
+    Tcl_Interp *interp,		/* Interpreter, used to report regexp errors. */
+    Var *varPtr,		/* Array variable. */
+    Tcl_Obj *filterPtr,		/* Element filter or NULL to accept all. */
+    int filterType)		/* Filter type: TCL_MATCH_EXACT, TCL_MATCH_GLOB,
+				 * or TCL_MATCH_REGEXP. */
 {
     Tcl_HashSearch search;
-    int size = 0;
+    Tcl_Obj *nameObj;
+    const char *filterStr;
+    int matched, size = 0;
 
     /*
-     * Must iterate to get chance to check for present but "undefined" entries.
+     * Directly handle exact matches and prepare to handle glob matches.
+     */
+
+    if (filterPtr && filterType != TCL_MATCH_REGEXP) {
+	/*
+	 * Convert trivial glob matches to exact matches.
+	 */
+
+	if (filterType == TCL_MATCH_GLOB) {
+	    filterStr = TclGetString(filterPtr);
+	    if (TclMatchIsTrivial(filterStr)) {
+		filterType = TCL_MATCH_EXACT;
+	    }
+	}
+
+	/*
+	 * For exact matches (including trivial glob matches), the return value
+	 * is always 1 or 0 if the match succeeds or fails, respectively.
+	 */
+
+	if (filterType == TCL_MATCH_EXACT) {
+	    varPtr = VarHashFindVar(varPtr->value.tablePtr, filterPtr);
+	    return varPtr && !TclIsVarUndefined(varPtr);
+	}
+    }
+
+    /*
+     * Count array elements matching the supplied filter.
      */
 
     for (varPtr = VarHashFirstVar(varPtr->value.tablePtr, &search); varPtr;
 	    varPtr = VarHashNextVar(&search)) {
-	if (!TclIsVarUndefined(varPtr)) {
-	    size++;
+	/*
+	 * Skip present but undefined elements.
+	 */
+
+	if (TclIsVarUndefined(varPtr)) {
+	    continue;
+	}
+
+	/*
+	 * If no filter, count each defined element regardless of name.
+	 */
+
+	if (!filterPtr) {
+	    ++size;
+	    continue;
+	}
+
+	/*
+	 * Conditionally increment the count if the name matches the filter.
+	 */
+
+	nameObj = VarHashGetKey(varPtr);
+	if (filterType == TCL_MATCH_GLOB) {
+	    if (Tcl_StringMatch(TclGetString(nameObj), filterStr)) {
+		++size;
+	    }
+	} else if (filterType == TCL_MATCH_REGEXP) {
+	    matched = Tcl_RegExpMatchObj(interp, nameObj, filterPtr);
+	    if (matched < 0) {
+		return -1;
+	    } else if (matched) {
+		++size;
+	    }
+	} else {
+	    Tcl_Panic("invalid filter type %u", filterType);
 	}
     }
 
@@ -1171,12 +1239,15 @@ ArraySize(
  *	This function returns the number of elements in an array variable. It
  *	provides C-level access to [array size] functionality, except this
  *	function does not treat scalar and nonexistent variable as if they were
- *	empty arrays.
+ *	empty arrays. If part2Ptr is not NULL, only array elements whose names
+ *	match part2Ptr are counted toward the return value. The interpretation
+ *	of part2Ptr is controlled by TCL_MATCH_* being set within flags.
  *
  * Results:
- *	The return value is normally the integer count of array elements. If
- *	varNamePtr does not name an array, -1 is returned and (if flags contains
- *	TCL_LEAVE_ERR_MSG) an error message is placed in interp's result.
+ *	The return value is normally the integer count of array elements whose
+ *	names match the given filter. If varNamePtr does not name an array, -1
+ *	is returned and (if flags contains TCL_LEAVE_ERR_MSG) an error message
+ *	is placed in interp's result.
  *
  * Side effects:
  *	None.
@@ -1188,18 +1259,21 @@ int
 Tcl_ArraySize(
     Tcl_Interp *interp,		/* Command interpreter in which part1Ptr is to
 				 * be looked up. */
-    Tcl_Obj *varNamePtr,	/* Name of array variable in interp. */
+    Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
+    Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY and/or TCL_LEAVE_ERR_MSG
-				 * bits. */
+				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
+				 * also at most one of TCL_MATCH_EXACT,
+				 * TCL_MATCH_GLOB, and TCL_MATCH_REGEXP. */
 {
     Var *varPtr;
 
-    if (LookupArrayVar(interp, varNamePtr, &varPtr, flags) != LAV_OK) {
+    if (LookupArrayVar(interp, part1Ptr, &varPtr, flags) != LAV_OK) {
 	return -1;
     }
 
-    return ArraySize(varPtr);
+    return ArraySize(interp, varPtr, part2Ptr,
+	    flags & (TCL_MATCH_EXACT | TCL_MATCH_GLOB | TCL_MATCH_REGEXP));
 }
 
 /*
@@ -1217,9 +1291,10 @@ Tcl_ArraySearchStart(
     Tcl_Interp *interp,		/* Command interpreter in which part1Ptr is to
 				 * be looked up. */
     Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
+    Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY or TCL_LEAVE_ERR_MSG
-				 * bits. */
+				 * TCL_NAMESPACE_ONLY, TCL_LEAVE_ERR_MSG,
+				 * TCL_MATCH_GLOB, TCL_MATCH_REGEXP bits. */
 {
     return NULL;
 }
@@ -1244,7 +1319,7 @@ Tcl_ArraySearchNext(
  */
 
 void
-Tcl_ArraySeachDone(
+Tcl_ArraySearchDone(
     Tcl_ArraySearch search)
 {}
 
@@ -1257,9 +1332,9 @@ Tcl_ArraySeachDone(
 int
 Tcl_ArrayNames(
     Tcl_Interp *interp,
-    Tcl_Obj *varNamePtr,
-    int *objcPtr,
-    Tcl_Obj ***objvPtr,
+    Tcl_Obj *part1Ptr,
+    Tcl_Obj *part2Ptr,
+    Tcl_Obj *listPtr,
     int flags)
 {
     return 0;
@@ -3932,7 +4007,7 @@ ArraySizeCmd(
      */
 
     switch (LookupArrayVar(interp, objv[1], &varPtr, TCL_LEAVE_ERR_MSG)) {
-	case LAV_OK	  : size = ArraySize(varPtr); break;
+	case LAV_OK	  : size = ArraySize(interp, varPtr, NULL, 0); break;
 	default		  : size = 0; break;
 	case LAV_ERR_TRACE: return TCL_ERROR;
     }

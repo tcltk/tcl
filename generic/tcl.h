@@ -1087,6 +1087,7 @@ typedef struct Tcl_DString {
  * TCL_CANCEL_UNWIND, above.
  */
 
+#define TCL_MATCH_EXACT		 0
 #define TCL_GLOBAL_ONLY		 1
 #define TCL_NAMESPACE_ONLY	 2
 #define TCL_APPEND_VALUE	 4
@@ -1097,11 +1098,13 @@ typedef struct Tcl_DString {
 #define TCL_TRACE_DESTROYED	 0x80
 #define TCL_INTERP_DESTROYED	 0x100
 #define TCL_LEAVE_ERR_MSG	 0x200
+#define TCL_MATCH_GLOB		 0x400
 #define TCL_TRACE_ARRAY		 0x800
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
 /* Required to support old variable/vdelete/vinfo traces. */
 #define TCL_TRACE_OLD_STYLE	 0x1000
 #endif
+#define TCL_MATCH_REGEXP	 0x2000
 /* Indicate the semantics of the result of a trace. */
 #define TCL_TRACE_RESULT_DYNAMIC 0x8000
 #define TCL_TRACE_RESULT_OBJECT  0x10000
