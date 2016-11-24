@@ -1168,11 +1168,14 @@ ArraySize(
  *
  * Tcl_ArraySize --
  *
- *	This function returns the number of elements in an array variable.
+ *	This function returns the number of elements in an array variable. It
+ *	provides C-level access to [array size] functionality, except this
+ *	function does not treat scalar and nonexistent variable as if they were
+ *	empty arrays.
  *
  * Results:
  *	The return value is normally the integer count of array elements. If
- *	part1Ptr does not name an array, -1 is returned and (if flags contains
+ *	varNamePtr does not name an array, -1 is returned and (if flags contains
  *	TCL_LEAVE_ERR_MSG) an error message is placed in interp's result.
  *
  * Side effects:
@@ -1201,7 +1204,11 @@ Tcl_ArraySize(
 
 /*
  *----------------------------------------------------------------------
- * 
+ *
+ * Tcl_ArraySearch --
+ *
+ *	This function initiates an array search.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -1219,7 +1226,7 @@ Tcl_ArraySearchStart(
 
 /*
  *----------------------------------------------------------------------
- * 
+ *
  *----------------------------------------------------------------------
  */
 
@@ -1232,7 +1239,7 @@ Tcl_ArraySearchNext(
 
 /*
  *----------------------------------------------------------------------
- * 
+ *
  *----------------------------------------------------------------------
  */
 
@@ -1243,7 +1250,7 @@ Tcl_ArraySeachDone(
 
 /*
  *----------------------------------------------------------------------
- * 
+ *
  *----------------------------------------------------------------------
  */
 
