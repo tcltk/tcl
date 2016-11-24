@@ -48,7 +48,7 @@ Pkga_EqObjCmd(
 {
     int result;
     const char *str1, *str2;
-    size_t len1, len2;
+    int len1, len2;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,  "string1 string2");
