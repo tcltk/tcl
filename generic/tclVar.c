@@ -1147,16 +1147,15 @@ ArraySize(
     Var *varPtr)
 {
     Tcl_HashSearch search;
-    Var *varPtr2;
     int size = 0;
 
     /*
      * Must iterate to get chance to check for present but "undefined" entries.
      */
 
-    for (varPtr2=VarHashFirstVar(varPtr->value.tablePtr, &search);
-	    varPtr2!=NULL ; varPtr2=VarHashNextVar(&search)) {
-	if (!TclIsVarUndefined(varPtr2)) {
+    for (varPtr = VarHashFirstVar(varPtr->value.tablePtr, &search); varPtr;
+	    varPtr = VarHashNextVar(&search)) {
+	if (!TclIsVarUndefined(varPtr)) {
 	    size++;
 	}
     }
@@ -1205,6 +1204,7 @@ Tcl_ArraySize(
  * 
  *----------------------------------------------------------------------
  */
+
 Tcl_ArraySearch
 Tcl_ArraySearchStart(
     Tcl_Interp *interp,		/* Command interpreter in which part1Ptr is to
@@ -1215,6 +1215,47 @@ Tcl_ArraySearchStart(
 				 * bits. */
 {
     return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ * 
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Tcl_ArraySearchNext(
+    Tcl_ArraySearch search)
+{
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ * 
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_ArraySeachDone(
+    Tcl_ArraySearch search)
+{}
+
+/*
+ *----------------------------------------------------------------------
+ * 
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_ArrayNames(
+    Tcl_Interp *interp,
+    Tcl_Obj *varNamePtr,
+    int *objcPtr,
+    Tcl_Obj ***objvPtr,
+    int flags)
+{
+    return 0;
 }
 
 /*
@@ -3878,7 +3919,7 @@ ArraySizeCmd(
     }
 
     /*
-     * Unlike Tcl_ArraySize(), the [array size] command reports nonexistent and
+     * Unlike Tcl_ArraySize(), the [array size] command treats nonexistent and
      * non-array variables as having zero size. The only errors [array size] can
      * report are argument count and array trace errors.
      */
