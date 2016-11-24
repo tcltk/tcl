@@ -2329,7 +2329,7 @@ declare 630 {
 # TIP #456
 declare 631 {
     Tcl_Channel Tcl_OpenTcpServerEx(Tcl_Interp *interp, int port,
-	    const char *host, int flags, Tcl_TcpAcceptProc *acceptProc,
+	    const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc,
 	    ClientData callbackData)
 }
 
