@@ -323,7 +323,7 @@ Tcl_RegexpObjCmd(
 
 	if (match == 0) {
 	    /*
-	     * We want to set the value of the intepreter result only when
+	     * We want to set the value of the interpreter result only when
 	     * this is the first time through the loop.
 	     */
 
