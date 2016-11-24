@@ -155,6 +155,9 @@ typedef struct ArraySearch {
 				 * array. */
     struct Var *varPtr;		/* Pointer to array variable that's being
 				 * searched. */
+    Tcl_Obj *arrayNameObj;	/* Name of the array variable in the current
+				 * resolution context. Usually NULL except for
+				 * in "array for". */
     Tcl_HashSearch search;	/* Info kept by the hash module about progress
 				 * through the array. */
     Tcl_HashEntry *nextEntry;	/* Non-null means this is the next element to
@@ -174,6 +177,7 @@ typedef struct ArraySearch {
 
 static void		AppendLocals(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *patternPtr, int includeLinks);
+static Tcl_NRPostProc	ArrayForLoopCallback;
 static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
 			    Var *varPtr, int flags, int index);
@@ -2831,6 +2835,260 @@ TclArraySet(
 /*
  *----------------------------------------------------------------------
  *
+ * ArrayForNRCmd --
+ *
+ *	These functions implement the "array for" Tcl command.  See the user
+ *	documentation for details on what it does.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ArrayForNRCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
+    Tcl_Obj **varv;
+    Tcl_Obj *varNameObj;
+    ArraySearch *searchPtr = NULL;
+    Var *varPtr;
+    Var *arrayPtr;
+    int varc;
+
+    /*
+     * array for {k} a body
+     * array for {k v} a body
+     */
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"{keyVarName ?valueVarName?} array script");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Parse arguments.
+     */
+
+    if (TclListObjGetElements(interp, objv[1], &varc, &varv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (varc < 1 || varc > 2) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"must have one or two variable names", -1));
+	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "array", "for", NULL);
+	return TCL_ERROR;
+    }
+
+    varNameObj = objv[2];
+    keyVarObj = varv[0];
+    valueVarObj = (varc < 2 ? NULL : varv[1]);
+    scriptObj = objv[3];
+
+    /*
+     * Locate the array variable.
+     */
+
+    varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, /*flags*/ 0,
+	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
+
+    /*
+     * Special array trace used to keep the env array in sync for array names,
+     * array get, etc.
+     */
+
+    if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
+	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
+	if (TclObjCallVarTraces(iPtr, arrayPtr, varPtr, varNameObj, NULL,
+		(TCL_LEAVE_ERR_MSG|TCL_NAMESPACE_ONLY|TCL_GLOBAL_ONLY|
+		TCL_TRACE_ARRAY), /* leaveErrMsg */ 1, -1) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+    }
+
+    /*
+     * Verify that it is indeed an array variable. This test comes after the
+     * traces; the variable may actually become an array as an effect of said
+     * traces.
+     */
+
+    if ((varPtr == NULL) || !TclIsVarArray(varPtr)
+	    || TclIsVarUndefined(varPtr)) {
+	const char *varName = Tcl_GetString(varNameObj);
+
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"\"%s\" isn't an array", varName));
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", varName, NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Make a new array search, put it on the stack.
+     */
+
+    searchPtr = TclStackAlloc(interp, sizeof(ArraySearch));
+    searchPtr->id = 1;
+
+    /*
+     * Do not turn on VAR_SEARCH_ACTIVE in varPtr->flags. This search is not
+     * stored in the search list.
+     */
+
+    searchPtr->nextPtr = NULL;
+    searchPtr->varPtr = varPtr;
+    searchPtr->arrayNameObj = varNameObj;
+    searchPtr->nextEntry = VarHashFirstEntry(varPtr->value.tablePtr,
+	    &searchPtr->search);
+
+    /*
+     * Make sure that these objects (which we need throughout the body of the
+     * loop) don't vanish.
+     */
+
+    Tcl_IncrRefCount(keyVarObj);
+    if (valueVarObj != NULL) {
+	Tcl_IncrRefCount(valueVarObj);
+    }
+    Tcl_IncrRefCount(scriptObj);
+    Tcl_IncrRefCount(varNameObj);
+
+    /*
+     * Run the script.
+     */
+
+    TclNRAddCallback(interp, ArrayForLoopCallback, searchPtr, keyVarObj,
+	    valueVarObj, scriptObj);
+    return TCL_OK;
+}
+
+static int
+ArrayForLoopCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    ArraySearch *searchPtr = data[0];
+    Tcl_Obj *keyVarObj = data[1];
+    Tcl_Obj *valueVarObj = data[2];
+    Tcl_Obj *scriptObj = data[3];
+    Tcl_Obj *arrayNameObj = searchPtr->arrayNameObj;
+    Tcl_Obj *keyObj;
+    Tcl_Obj *valueObj = NULL;
+    Var *varPtr;
+    int gotValue;
+
+    /*
+     * Process the result from the previous execution of the script body.
+     */
+
+    if (result == TCL_CONTINUE) {
+	result = TCL_OK;
+    } else if (result != TCL_OK) {
+	if (result == TCL_BREAK) {
+	    Tcl_ResetResult(interp);
+	    result = TCL_OK;
+	} else if (result == TCL_ERROR) {
+	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    "\n    (\"array for\" body line %d)",
+		    Tcl_GetErrorLine(interp)));
+	}
+	goto done;
+    }
+
+    /*
+     * Get the next mapping from the array.
+     */
+
+    while (1) {
+	Tcl_HashEntry *hPtr = searchPtr->nextEntry;
+
+	/*
+	 * The only time hPtr will be non-NULL is when first started.
+	 * nextEntry is set by the Tcl_FirstHashEntry call in the
+	 * ArrayForNRCmd
+	 */
+
+	if (hPtr != NULL) {
+	    searchPtr->nextEntry = NULL;
+	    varPtr = VarHashGetValue(hPtr);
+	    if (!TclIsVarUndefined(varPtr)) {
+		gotValue = 1;
+		break;
+	    }
+	}
+	if (hPtr == NULL) {
+	    hPtr = Tcl_NextHashEntry(&searchPtr->search);
+	    if (hPtr == NULL) {
+		gotValue = 0;
+		break;
+	    }
+	}
+	varPtr = VarHashGetValue(hPtr);
+	if (!TclIsVarUndefined(varPtr)) {
+	    gotValue = 1;
+	    break;
+	}
+    }
+
+    if (!gotValue) {
+	Tcl_ResetResult(interp);
+	goto done;
+    }
+
+    keyObj = VarHashGetKey(varPtr);
+    if (valueVarObj != NULL) {
+	valueObj = Tcl_ObjGetVar2(interp, arrayNameObj, keyObj,
+		TCL_LEAVE_ERR_MSG);
+    }
+
+    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
+	    TCL_LEAVE_ERR_MSG) == NULL) {
+	result = TCL_ERROR;
+	goto done;
+    }
+    if (valueVarObj != NULL) {
+	if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
+		TCL_LEAVE_ERR_MSG) == NULL) {
+	    result = TCL_ERROR;
+	    goto done;
+	}
+    }
+
+    /*
+     * Run the script.
+     */
+
+    TclNRAddCallback(interp, ArrayForLoopCallback, searchPtr, keyVarObj,
+	    valueVarObj, scriptObj);
+    return TclNREvalObjEx(interp, scriptObj, 0, iPtr->cmdFramePtr, 3);
+
+    /*
+     * For unwinding everything once the iterating is done.
+     */
+
+  done:
+    TclDecrRefCount(keyVarObj);
+    if (valueVarObj != NULL) {
+	TclDecrRefCount(valueVarObj);
+    }
+    TclDecrRefCount(scriptObj);
+    TclDecrRefCount(arrayNameObj);
+    TclStackFree(interp, searchPtr);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ArrayStartSearchCmd --
  *
  *	This object-based function is invoked to process the "array
@@ -2932,6 +3190,7 @@ ArrayStartSearchCmd(
 	searchPtr->nextPtr = Tcl_GetHashValue(hPtr);
     }
     searchPtr->varPtr = varPtr;
+    searchPtr->arrayNameObj = NULL;
     searchPtr->nextEntry = VarHashFirstEntry(varPtr->value.tablePtr,
 	    &searchPtr->search);
     Tcl_SetHashValue(hPtr, searchPtr);
@@ -4026,6 +4285,7 @@ TclInitArrayCmd(
 	{"anymore",	ArrayAnyMoreCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{"donesearch",	ArrayDoneSearchCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{"exists",	ArrayExistsCmd,		TclCompileArrayExistsCmd, NULL, NULL, 0},
+	{"for",		NULL,			TclCompileBasic3ArgCmd, ArrayForNRCmd, NULL, 0},
 	{"get",		ArrayGetCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
 	{"names",	ArrayNamesCmd,		TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
 	{"nextelement",	ArrayNextElementCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},

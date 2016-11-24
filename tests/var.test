@@ -997,6 +997,81 @@ test var-22.2 {leak in parsedVarName} -constraints memory -body {
     unset -nocomplain i x
 } -result 0
 
+unset -nocomplain a k v
+test var-23.1 {array command, for loop} -returnCodes error -body {
+    array for {k v} c d e {}
+} -result {wrong # args: should be "array for {keyVarName ?valueVarName?} array script"}
+test var-23.2 {array command, for loop} -returnCodes error -body {
+    array for d {}
+} -result {wrong # args: should be "array for {keyVarName ?valueVarName?} array script"}
+test var-23.3 {array command, for loop, wrong # of list args} -setup {
+    unset -nocomplain a
+} -returnCodes error -body {
+    array for {k v w} a {}
+} -result {must have one or two variable names}
+test var-23.4 {array command, for loop, no array} -setup {
+    unset -nocomplain a
+} -returnCodes error -body {
+    array for {k v} a {}
+} -result {"a" isn't an array}
+test var-23.5 {array command, for loop, array doesn't exist yet but has compiler-allocated procedure slot} -setup {
+    catch {rename p ""}
+} -returnCodes error -body {
+    apply {{x} {
+        if {$x==1} {
+            return [array for {k v} a {}]
+        }
+        set a(x) 123
+    }} 1
+} -result {"a" isn't an array}
+test var-23.6 {array enumeration} -setup {
+    catch {unset a}
+    catch {unset reslist}
+    catch {unset res}
+    set reslist [list]
+} -body {
+    array set a {a 1 b 2 c 3}
+    array for {k v} a {
+	lappend reslist $k $v
+    }
+    # if someone turns on varPtr->flags |= VAR_SEARCH_ACTIVE
+    # a segmentation violation will result.
+    unset a;		# this should not cause a segmentation violation.
+    # there is no guarantee in which order the array contents will be
+    # returned.
+    lsort -stride 2 -index 0 $reslist
+} -cleanup {
+    unset -nocomplain a
+} -result {a 1 b 2 c 3}
+test var-23.7 {array enumeration, without value} -setup {
+    catch {unset a}
+    set reslist [list]
+} -body {
+    array set a {a 1 b 2 c 3}
+    array for {k} a {
+	lappend reslist $k
+    }
+    # there is no guarantee in which order the array contents will be
+    # returned.
+    lsort $reslist
+} -result {a b c}
+test var-23.8 {array enumeration, nested} -setup {
+    catch {unset a}
+    set reslist [list]
+} -body {
+    array set a {a 1 b 2 c 3}
+    array for {k1 v1} a {
+	lappend reslist $k1 $v1
+	set r2 {}
+	array for {k2 v2} a {
+	    lappend r2 $k2 $v2
+	}
+	lappend reslist [lsort -stride 2 -index 0 $r2]
+    }
+    # there is no guarantee in which order the array contents will be
+    # returned.
+    lsort -stride 3 -index 0 $reslist
+} -result {a 1 {a 1 b 2 c 3} b 2 {a 1 b 2 c 3} c 3 {a 1 b 2 c 3}}
 
 catch {namespace delete ns}
 catch {unset arr}

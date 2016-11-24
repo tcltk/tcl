@@ -340,7 +340,7 @@ test set-old-8.6 {array command} {
     catch {unset a}
     set a(22) 3
     list [catch {array gorp a} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be anymore, donesearch, exists, get, names, nextelement, set, size, startsearch, statistics, or unset}}
+} {1 {unknown or ambiguous subcommand "gorp": must be anymore, donesearch, exists, for, get, names, nextelement, set, size, startsearch, statistics, or unset}}
 test set-old-8.7 {array command, anymore option} {
     catch {unset a}
     list [catch {array anymore a x} msg] $msg
