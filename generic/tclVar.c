@@ -1473,7 +1473,8 @@ Tcl_ArraySearchStart(
  *	Finds the next element of an array for a given search query.
  *
  * Preconditions:
- *	The search argument must be the return value of Tcl_ArraySearchStart().
+ *	The search argument must be the return value of Tcl_ArraySearchStart()
+ *	and must not have been passed to Tcl_ArraySearchDone().
  *
  * Results:
  *	The return value is the name of the next array element. If there are no
@@ -1483,7 +1484,7 @@ Tcl_ArraySearchStart(
  *	The search data structure is updated such that successive invocations of
  *	this function will return successive array element names.
  *
- * Limitation:
+ * Limitations:
  *	It is not possible to distinguish between reaching the end of the array
  *	and experiencing a regular expression error. This is unlikely to be an
  *	actual problem because Tcl_ArraySearchStart() already checks for regular
@@ -1497,7 +1498,7 @@ Tcl_ArraySearchStart(
 
 Tcl_Obj *
 Tcl_ArraySearchNext(
-    Tcl_ArraySearch search)
+    Tcl_ArraySearch search)	/* Return value of Tcl_ArraySearchStart(). */
 {
     Var *varPtr = ArrayNext(search, NULL);
     return varPtr ? VarHashGetKey(varPtr) : NULL;
@@ -1508,13 +1509,56 @@ Tcl_ArraySearchNext(
  *
  * Tcl_ArraySearchDone --
  *
+ *	Terminates and cleans up an array search query.
+ *
+ * Preconditions:
+ *	The search argument must be the return value of Tcl_ArraySearchStart()
+ *	and must not have been passed to Tcl_ArraySearchDone().
+ *
+ * Results:
+ *	The search query is completed.
+ *
+ * Side effects:
+ *	Resources associated with the search are deallocated.
+ *
  *----------------------------------------------------------------------
  */
 
 void
 Tcl_ArraySearchDone(
-    Tcl_ArraySearch search)
-{}
+    Tcl_ArraySearch search)	/* Return value of Tcl_ArraySearchStart(). */
+{
+    Interp *iPtr = (Interp *)search->interp;
+    Var *varPtr = search->varPtr;
+    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&iPtr->varSearches, varPtr);
+    ArraySearch *prevPtr;
+
+    /*
+     * Unhook the search from the list of searches associated with the
+     * variable.
+     */
+
+    if (search == Tcl_GetHashValue(hPtr)) {
+	if (search->nextPtr) {
+	    Tcl_SetHashValue(hPtr, search->nextPtr);
+	} else {
+	    varPtr->flags &= ~VAR_SEARCH_ACTIVE;
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+    } else {
+	for (prevPtr = Tcl_GetHashValue(hPtr);; prevPtr = prevPtr->nextPtr) {
+	    if (prevPtr->nextPtr == search) {
+		prevPtr->nextPtr = search->nextPtr;
+		break;
+	    }
+	}
+    }
+    Tcl_DecrRefCount(search->name);
+    if (search->filterObj) {
+	Tcl_DecrRefCount(search->filterObj);
+    }
+    ckfree(search);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -3519,11 +3563,9 @@ ArrayDoneSearchCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Interp *iPtr = (Interp *) interp;
     Var *varPtr;
-    Tcl_HashEntry *hPtr;
     Tcl_Obj *varNameObj, *searchObj;
-    ArraySearch *searchPtr, *prevPtr;
+    ArraySearch *searchPtr;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName searchId");
@@ -3550,24 +3592,7 @@ ArrayDoneSearchCmd(
      * variable.
      */
 
-    hPtr = Tcl_FindHashEntry(&iPtr->varSearches, varPtr);
-    if (searchPtr == Tcl_GetHashValue(hPtr)) {
-	if (searchPtr->nextPtr) {
-	    Tcl_SetHashValue(hPtr, searchPtr->nextPtr);
-	} else {
-	    varPtr->flags &= ~VAR_SEARCH_ACTIVE;
-	    Tcl_DeleteHashEntry(hPtr);
-	}
-    } else {
-	for (prevPtr=Tcl_GetHashValue(hPtr) ;; prevPtr=prevPtr->nextPtr) {
-	    if (prevPtr->nextPtr == searchPtr) {
-		prevPtr->nextPtr = searchPtr->nextPtr;
-		break;
-	    }
-	}
-    }
-    Tcl_DecrRefCount(searchPtr->name);
-    ckfree(searchPtr);
+    Tcl_ArraySearchDone(searchPtr);
     return TCL_OK;
 }
 
