@@ -1071,8 +1071,9 @@ TclLookupArrayElement(
  *
  * Results:
  *	If successful, the requested variable is returned. On failure, NULL is
- *	returned. If the error occurred within a trace and traceFailPtr is not
- *	NULL, *traceFailPtr is set to 1.
+ *	returned, and error information is placed in the interpreter result. If
+ *	the error occurred within an array trace and traceFailPtr is not NULL,
+ *	*traceFailPtr is set to 1.
  *
  * Side effects:
  *	Array traces, if any, are executed.
@@ -1086,19 +1087,25 @@ ArrayVar(
 				 * be looked up. */
     Tcl_Obj *varNameObj,	/* Name of array variable in interp. */
     int *traceFailPtr,		/* Unless NULL, set to 1 on trace failure. */
-    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY and/or TCL_LEAVE_ERR_MSG
-				 * bits. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
+				 * TCL_NAMESPACE_ONLY bits. */
 {
     Var *varPtr, *arrayPtr;
     const char *varName;
 
     /*
+     * Avoid a possible SIGSEGV by ensuring TCL_LEAVE_ERR_MSG is not in flags.
+     * Otherwise TclObjLookupVarEx() will dereference NULL (its msg argument) if
+     * it encounters a lookup failure.
+     */
+
+    flags &= ~TCL_LEAVE_ERR_MSG;
+
+    /*
      * Locate the array variable.
      */
 
-    varPtr = TclObjLookupVarEx(interp, varNameObj, NULL,
-	    flags & ~TCL_LEAVE_ERR_MSG, /*msg*/ NULL,
+    varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, flags, /*msg*/ NULL,
 	    /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
 
     /*
@@ -1108,9 +1115,9 @@ ArrayVar(
 
     if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
 	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
-	if (TclObjCallVarTraces((Interp *)interp, arrayPtr, varPtr,
-		varNameObj, NULL, flags | TCL_TRACE_ARRAY,
-		!!(flags & TCL_LEAVE_ERR_MSG), -1) == TCL_ERROR) {
+	if (TclObjCallVarTraces((Interp *)interp, arrayPtr, varPtr, varNameObj,
+		NULL, flags | TCL_LEAVE_ERR_MSG | TCL_TRACE_ARRAY,
+		/*leaveErrMsg*/ 1, -1) == TCL_ERROR) {
 	    if (traceFailPtr) {
 		*traceFailPtr = 1;
 	    }
@@ -1125,12 +1132,10 @@ ArrayVar(
      */
 
     if (!varPtr || !TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr)) {
-	if (flags & TCL_LEAVE_ERR_MSG) {
-	    varName = TclGetString(varNameObj);
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" isn't an array", varName));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", varName, NULL);
-	}
+	varName = TclGetString(varNameObj);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"\"%s\" isn't an array", varName));
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", varName, NULL);
 	return NULL;
     }
 
@@ -1353,8 +1358,7 @@ ArraySize(
  * Results:
  *	The return value is normally the integer count of array elements whose
  *	names match the given filter. If varNamePtr does not name an array, -1
- *	is returned and (if flags contains TCL_LEAVE_ERR_MSG) an error message
- *	is placed in interp's result.
+ *	is returned and an error message is placed in interp's result.
  *
  * Side effects:
  *	None.
@@ -1368,10 +1372,9 @@ Tcl_ArraySize(
 				 * be looked up. */
     Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
     Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
-    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
-				 * also at most one of TCL_MATCH_EXACT,
-				 * TCL_MATCH_GLOB, and TCL_MATCH_REGEXP. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
+				 * TCL_NAMESPACE_ONLY, also at most one of
+				 * TCL_MATCH_EXACT, _GLOB, and _REGEXP. */
 {
     Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
     return varPtr ? ArraySize(interp, varPtr, part2Ptr, flags & TCL_MATCH) : -1;
@@ -1407,10 +1410,9 @@ Tcl_ArraySearchStart(
 				 * be looked up. */
     Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
     Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
-    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
-				 * also at most one of TCL_MATCH_EXACT,
-				 * TCL_MATCH_GLOB, and TCL_MATCH_REGEXP. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
+				 * TCL_NAMESPACE_ONLY, also at most one of
+				 * TCL_MATCH_EXACT, _GLOB, and _REGEXP. */
 {
     Interp *iPtr = (Interp *)interp;
     Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
@@ -1503,10 +1505,9 @@ Tcl_ArrayNames(
     Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
     Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
     Tcl_Obj *listPtr,
-    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
-				 * also at most one of TCL_MATCH_EXACT,
-				 * TCL_MATCH_GLOB, and TCL_MATCH_REGEXP. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
+				 * TCL_NAMESPACE_ONLY, also at most one of
+				 * TCL_MATCH_EXACT, _GLOB, and _REGEXP. */
 {
     return 0;
 }
@@ -3327,8 +3328,7 @@ ArrayStartSearchCmd(
 	return TCL_ERROR;
     }
 
-    searchPtr = Tcl_ArraySearchStart(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG);
-    if (!searchPtr) {
+    if (!(searchPtr = Tcl_ArraySearchStart(interp, objv[1], NULL, 0))) {
 	return TCL_ERROR;
     }
 
@@ -3374,8 +3374,7 @@ ArrayAnyMoreCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    varPtr = ArrayVar(interp, varNameObj, NULL, TCL_LEAVE_ERR_MSG);
-    if (varPtr == NULL) {
+    if (!(varPtr = ArrayVar(interp, varNameObj, NULL, 0))) {
 	return TCL_ERROR;
     }
 
@@ -3444,8 +3443,7 @@ ArrayNextElementCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    varPtr = ArrayVar(interp, varNameObj, NULL, TCL_LEAVE_ERR_MSG);
-    if (varPtr == NULL) {
+    if (!(varPtr = ArrayVar(interp, varNameObj, NULL, 0))) {
 	return TCL_ERROR;
     }
 
@@ -3511,8 +3509,7 @@ ArrayDoneSearchCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    varPtr = ArrayVar(interp, varNameObj, NULL, TCL_LEAVE_ERR_MSG);
-    if (varPtr == NULL) {
+    if (!(varPtr = ArrayVar(interp, varNameObj, NULL, 0))) {
 	return TCL_ERROR;
     }
 
@@ -4090,7 +4087,7 @@ ArraySizeCmd(
      * report are argument count (handled above) and array trace (handled here).
      */
 
-    varPtr = ArrayVar(interp, objv[1], &traceFail, TCL_LEAVE_ERR_MSG);
+    varPtr = ArrayVar(interp, objv[1], &traceFail, 0);
 
     if (varPtr) {
 	size = ArraySize(interp, varPtr, NULL, 0);
