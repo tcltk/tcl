@@ -1632,17 +1632,11 @@ Tcl_ArraySearchStart(
  *	Tcl_ArraySearchNext(), there are no side effects, so the search query
  *	state is not advanced and the element is not consumed.
  *
- * Preconditions:
- *	Same as Tcl_ArraySearchNext().
- *
- * Results:
+ * Preconditions, results, limitations:
  *	Same as Tcl_ArraySearchNext().
  *
  * Side effects:
  *	None.
- *
- * Limitations:
- *	Same as Tcl_ArraySearchNext().
  *
  *----------------------------------------------------------------------
  */
