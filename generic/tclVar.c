@@ -207,6 +207,9 @@ static Var *		ArrayFirst(ArraySearch *searchPtr, int *failPtr);
 static Var *		ArrayNext(ArraySearch *searchPtr, int *failPtr);
 static int		ArraySize(Tcl_Interp *interp, Var *varPtr,
 			    Tcl_Obj *filterObj, int filterType);
+static int		ArrayNames(Tcl_Interp *interp, Var *varPtr,
+			    Tcl_Obj *filterObj, int filterType,
+			    Tcl_Obj *listObj);
 
 /*
  * Functions defined in this file that may be exported in the future for use
@@ -247,7 +250,6 @@ static const Tcl_ObjType tclParsedVarNameType = {
     "parsedVarName",
     FreeParsedVarName, DupParsedVarName, NULL, NULL
 };
-
 
 Var *
 TclVarHashCreateVar(
@@ -1184,8 +1186,9 @@ ArrayFirst(
       || (searchPtr->filterType == TCL_MATCH_GLOB
        && TclMatchIsTrivial(TclGetString(searchPtr->filterObj))))) {
 	varPtr = VarHashFindVar(tablePtr, searchPtr->filterObj);
-	searchPtr->search.nextEntryPtr = NULL;
+	searchPtr->search.tablePtr = &tablePtr->table;
 	searchPtr->search.nextIndex = tablePtr->table.numBuckets;
+	searchPtr->search.nextEntryPtr = NULL;
 	searchPtr->nextEntry = NULL;
 
 	if (!varPtr || TclIsVarUndefined(varPtr)) {
@@ -1231,16 +1234,17 @@ ArrayNext(
     ArraySearch *searchPtr,	/* Array enumeration state structure. */
     int *failPtr)		/* Set to 1 on error. */
 {
-    Var *varPtr = searchPtr->nextEntry;
+    Var *varPtr;
     Tcl_Obj *nameObj;
     int matched;
 
     /*
-     * If there is no cached nextEntry left over from ArrayFirst() or [array
-     * anymore], get the next one from the hash table.
+     * Use the cached nextEntry left over from ArrayFirst() or [array anymore],
+     * or else get the next one from the hash table.
      */
 
-    if (varPtr) {
+    if (searchPtr->nextEntry) {
+	varPtr = searchPtr->nextEntry;
 	searchPtr->nextEntry = NULL;
     } else {
 	varPtr = VarHashNextVar(&searchPtr->search);
@@ -1344,6 +1348,79 @@ ArraySize(
     } else {
 	return size;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ArrayNames --
+ *
+ *	Obtains a list of array element names, optionally limited by a filter.
+ *
+ * Results:
+ *	Normally, TCL_OK is returned, and the list of matching array element
+ *	names is appended to listObj. On error, TCL_ERROR is returned, and the
+ *	error information is placed in the interpreter's result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ArrayNames(
+    Tcl_Interp *interp,		/* Interpreter, used to report regexp errors. */
+    Var *varPtr,		/* Array variable. */
+    Tcl_Obj *filterObj,		/* Element filter or NULL to accept all. */
+    int filterType,		/* TCL_MATCH_EXACT, _GLOB, or _REGEXP. */
+    Tcl_Obj *listObj)		/* List to which array names are appended. */
+{
+    ArraySearch search;
+    int fail = 0, oldLen, newLen;
+
+    /*
+     * Ensure output object is a list. Also get its length in case there is
+     * trouble and changes need to be rolled back. Such a failure should never
+     * occur because it requires a regular expression to initially succeed then
+     * return error on a subsequent evaluation, but handle it anyway because
+     * it's easy to do.
+     */
+
+    if (Tcl_ListObjLength(interp, listObj, &oldLen) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Begin the search.
+     */
+
+    search.interp = interp;
+    search.varPtr = varPtr;
+    search.filterObj = filterObj;
+    search.filterType = filterType;
+    search.nextEntry = NULL;
+    varPtr = ArrayFirst(&search, &fail);
+
+    /*
+     * Enumerate the array.
+     */
+
+    for (; varPtr; varPtr = ArrayNext(&search, &fail)) {
+	Tcl_ListObjAppendElement(interp, listObj, VarHashGetKey(varPtr));
+    }
+
+    /*
+     * On failure, roll back changes to output list.
+     */
+
+    if (fail) {
+	Tcl_ListObjLength(interp, listObj, &newLen);
+	Tcl_ListObjReplace(interp, listObj, oldLen, newLen - oldLen, 0, NULL);
+	return TCL_ERROR;
+    }
+
+    return TCL_OK;
 }
 
 /*
@@ -1500,7 +1577,7 @@ Tcl_ArraySearchStart(
 
 Tcl_Obj *
 Tcl_ArraySearchNext(
-    Tcl_ArraySearch search)	/* Return value of Tcl_ArraySearchStart(). */
+    Tcl_ArraySearch search)	/* Prior return from Tcl_ArraySearchStart(). */
 {
     Var *varPtr = ArrayNext(search, NULL);
     return varPtr ? VarHashGetKey(varPtr) : NULL;
@@ -1528,7 +1605,7 @@ Tcl_ArraySearchNext(
 
 void
 Tcl_ArraySearchDone(
-    Tcl_ArraySearch search)	/* Return value of Tcl_ArraySearchStart(). */
+    Tcl_ArraySearch search)	/* Prior return from Tcl_ArraySearchStart(). */
 {
     Interp *iPtr = (Interp *)search->interp;
     Var *varPtr = search->varPtr;
@@ -1567,6 +1644,16 @@ Tcl_ArraySearchDone(
  *
  * Tcl_ArrayNames --
  *
+ *	Obtains a list of array element names, optionally limited by a filter.
+ *
+ * Results:
+ *	Normally, TCL_OK is returned, and the list of matching array element
+ *	names is appended to listObj. On error, TCL_ERROR is returned, and the
+ *	error information is placed in the interpreter's result.
+ *
+ * Side effects:
+ *	None.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -1583,59 +1670,12 @@ Tcl_ArrayNames(
 				 * and _REGEXP. */
 {
     Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
-    ArraySearch search;
-    int fail = 0, oldLen, newLen;
 
-    /*
-     * Ensure array variable lookup succeeded.
-     */
-
-    if (!varPtr) {
+    if (varPtr) {
+	return ArrayNames(interp, varPtr, part2Ptr, flags & TCL_MATCH, listPtr);
+    } else {
 	return TCL_ERROR;
     }
-
-    /*
-     * Ensure output object is a list. Also get its length in case there is
-     * trouble and changes need to be rolled back. Such a failure should never
-     * occur because it requires a regular expression to initially succeed then
-     * return error on a subsequent evaluation, but handle it anyway because
-     * it's easy to do.
-     */
-
-    if (Tcl_ListObjLength(interp, listPtr, &oldLen) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Begin the search.
-     */
-
-    search.interp = interp;
-    search.varPtr = varPtr;
-    search.filterObj = part2Ptr;
-    search.filterType = flags & TCL_MATCH;
-    search.nextEntry = NULL;
-    varPtr = ArrayFirst(&search, &fail);
-
-    /*
-     * Enumerate the array.
-     */
-
-    for (; varPtr; varPtr = ArrayNext(&search, &fail)) {
-	Tcl_ListObjAppendElement(interp, listPtr, VarHashGetKey(varPtr));
-    }
-
-    /*
-     * On failure, roll back changes to output list.
-     */
-
-    if (fail) {
-	Tcl_ListObjLength(interp, listPtr, &newLen);
-	Tcl_ListObjReplace(interp, listPtr, oldLen, newLen - oldLen, 0, NULL);
-	return TCL_ERROR;
-    }
-
-    return TCL_OK;
 }
 
 /*
@@ -3909,7 +3949,8 @@ ArrayNamesCmd(
     };
     enum options { OPT_EXACT, OPT_GLOB, OPT_REGEXP };
     Tcl_Obj *varNameObj, *resultObj, *patternObj;
-    int mode = OPT_GLOB;
+    Var *varPtr;
+    int traceFail = 0, mode = OPT_GLOB;
 
     if ((objc < 2) || (objc > 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName ?mode? ?pattern?");
@@ -3927,16 +3968,28 @@ ArrayNamesCmd(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
-    if (Tcl_ArrayNames(interp, varNameObj, patternObj, resultObj,
-	    flags[mode]) != TCL_OK) {
-	return TCL_ERROR;
+    /*
+     * Find the variable. Report trace failures as errors. If the variable is a
+     * scalar or does not exist, treat it like an empty array.
+     */
+
+    if (!(varPtr = ArrayVar(interp, varNameObj, &traceFail, 0))) {
+	if (!traceFail) {
+	    return TCL_OK;
+	} else {
+	    return TCL_ERROR;
+	}
     }
 
     /*
-     * TODO: Report trace failures as errors. If the variable is a scalar or
-     * does not exist, treat it like an empty array.
+     * Generate the result list.
      */
+
+    resultObj = Tcl_NewObj();
+    if (ArrayNames(interp, varPtr, patternObj, flags[mode],
+	    resultObj) != TCL_OK) {
+	return TCL_ERROR;
+    }
 
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
