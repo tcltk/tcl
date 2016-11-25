@@ -2336,12 +2336,15 @@ declare 632 {
 	Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags)
 }
 declare 633 {
-    Tcl_Obj *Tcl_ArraySearchNext(Tcl_ArraySearch search)
+    Tcl_Obj *Tcl_ArraySearchPeek(Tcl_ArraySearch search)
 }
 declare 634 {
-    void Tcl_ArraySearchDone(Tcl_ArraySearch search)
+    Tcl_Obj *Tcl_ArraySearchNext(Tcl_ArraySearch search)
 }
 declare 635 {
+    void Tcl_ArraySearchDone(Tcl_ArraySearch search)
+}
+declare 636 {
     int Tcl_ArrayNames(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
 	Tcl_Obj *listPtr, int flags)
 }

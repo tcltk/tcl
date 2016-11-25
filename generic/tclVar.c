@@ -1610,6 +1610,38 @@ Tcl_ArraySearchStart(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_ArraySearchPeek --
+ *
+ *	Finds the next element of an array for a given search query. Unlike
+ *	Tcl_ArraySearchNext(), there are no side effects, so the search query
+ *	state is not advanced and the element is not consumed.
+ *
+ * Preconditions:
+ *	Same as Tcl_ArraySearchNext().
+ *
+ * Results:
+ *	Same as Tcl_ArraySearchNext().
+ *
+ * Side effects:
+ *	None.
+ *
+ * Limitations:
+ *	Same as Tcl_ArraySearchNext().
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Tcl_ArraySearchPeek(
+    Tcl_ArraySearch search)	/* Prior return from Tcl_ArraySearchStart(). */
+{
+    search->nextEntry = ArrayNext(search, NULL);
+    return search->nextEntry ? VarHashGetKey(search->nextEntry) : NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_ArraySearchNext --
  *
  *	Finds the next element of an array for a given search query.

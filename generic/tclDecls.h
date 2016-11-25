@@ -1824,10 +1824,12 @@ EXTERN Tcl_ArraySearch	Tcl_ArraySearchStart(Tcl_Interp *interp,
 				Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
 				int flags);
 /* 633 */
-EXTERN Tcl_Obj *	Tcl_ArraySearchNext(Tcl_ArraySearch search);
+EXTERN Tcl_Obj *	Tcl_ArraySearchPeek(Tcl_ArraySearch search);
 /* 634 */
-EXTERN void		Tcl_ArraySearchDone(Tcl_ArraySearch search);
+EXTERN Tcl_Obj *	Tcl_ArraySearchNext(Tcl_ArraySearch search);
 /* 635 */
+EXTERN void		Tcl_ArraySearchDone(Tcl_ArraySearch search);
+/* 636 */
 EXTERN int		Tcl_ArrayNames(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 				Tcl_Obj *part2Ptr, Tcl_Obj *listPtr,
 				int flags);
@@ -2499,9 +2501,10 @@ typedef struct TclStubs {
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
     int (*tcl_ArraySize) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 631 */
     Tcl_ArraySearch (*tcl_ArraySearchStart) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 632 */
-    Tcl_Obj * (*tcl_ArraySearchNext) (Tcl_ArraySearch search); /* 633 */
-    void (*tcl_ArraySearchDone) (Tcl_ArraySearch search); /* 634 */
-    int (*tcl_ArrayNames) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *listPtr, int flags); /* 635 */
+    Tcl_Obj * (*tcl_ArraySearchPeek) (Tcl_ArraySearch search); /* 633 */
+    Tcl_Obj * (*tcl_ArraySearchNext) (Tcl_ArraySearch search); /* 634 */
+    void (*tcl_ArraySearchDone) (Tcl_ArraySearch search); /* 635 */
+    int (*tcl_ArrayNames) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *listPtr, int flags); /* 636 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3798,12 +3801,14 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ArraySize) /* 631 */
 #define Tcl_ArraySearchStart \
 	(tclStubsPtr->tcl_ArraySearchStart) /* 632 */
+#define Tcl_ArraySearchPeek \
+	(tclStubsPtr->tcl_ArraySearchPeek) /* 633 */
 #define Tcl_ArraySearchNext \
-	(tclStubsPtr->tcl_ArraySearchNext) /* 633 */
+	(tclStubsPtr->tcl_ArraySearchNext) /* 634 */
 #define Tcl_ArraySearchDone \
-	(tclStubsPtr->tcl_ArraySearchDone) /* 634 */
+	(tclStubsPtr->tcl_ArraySearchDone) /* 635 */
 #define Tcl_ArrayNames \
-	(tclStubsPtr->tcl_ArrayNames) /* 635 */
+	(tclStubsPtr->tcl_ArrayNames) /* 636 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

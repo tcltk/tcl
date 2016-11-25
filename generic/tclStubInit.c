@@ -1418,9 +1418,10 @@ const TclStubs tclStubs = {
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
     Tcl_ArraySize, /* 631 */
     Tcl_ArraySearchStart, /* 632 */
-    Tcl_ArraySearchNext, /* 633 */
-    Tcl_ArraySearchDone, /* 634 */
-    Tcl_ArrayNames, /* 635 */
+    Tcl_ArraySearchPeek, /* 633 */
+    Tcl_ArraySearchNext, /* 634 */
+    Tcl_ArraySearchDone, /* 635 */
+    Tcl_ArrayNames, /* 636 */
 };
 
 /* !END!: Do not edit above this line. */
