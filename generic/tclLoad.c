@@ -397,12 +397,6 @@ Tcl_LoadObjCmd(
 	    goto done;
 	}
 
-	if (target == interp) {
-	    /* Only register the file if the load is done in the
-	     * current interpreter */
-	    TclPkgFileSeen(target, Tcl_GetString(objv[1]));
-	}
-
 	/*
 	 * Create a new record to describe this package.
 	 */
@@ -1040,10 +1034,13 @@ int
 TclGetLoadedPackages(
     Tcl_Interp *interp,		/* Interpreter in which to return information
 				 * or error message. */
-    const char *targetName)	/* Name of target interpreter or NULL. If
+    const char *targetName,	/* Name of target interpreter or NULL. If
 				 * NULL, return info about all interps;
 				 * otherwise, just return info about this
 				 * interpreter. */
+    const char *packageName)	/* Package name or NULL. If NULL, return info
+				 * all packages.
+				 */
 {
     Tcl_Interp *target;
     LoadedPackage *pkgPtr;
@@ -1054,6 +1051,22 @@ TclGetLoadedPackages(
 	/*
 	 * Return information about all of the available packages.
 	 */
+	if (packageName) {
+	    resultObj = NULL;
+	    Tcl_MutexLock(&packageMutex);
+	    for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
+		    pkgPtr = pkgPtr->nextPtr) {
+		if (!strcmp(packageName, pkgPtr->packageName)) {
+		    resultObj = Tcl_NewStringObj(pkgPtr->fileName, -1);
+		    break;
+		}
+	    }
+	    Tcl_MutexUnlock(&packageMutex);
+	    if (resultObj) {
+		Tcl_SetObjResult(interp, resultObj);
+	    }
+	    return TCL_OK;
+	}
 
 	resultObj = Tcl_NewObj();
 	Tcl_MutexLock(&packageMutex);
