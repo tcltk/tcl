@@ -1218,7 +1218,8 @@ ArrayFirst(
  *
  * Results:
  *	The next array element is returned, or NULL if there are no matching
- *	elements remaining or on error, in which case *failPtr is set to 1.
+ *	elements remaining or on error, in which case *failPtr is set to 1 if
+ *	failPtr is not NULL.
  *
  * Side effects:
  *	*searchPtr is updated to track the progress of the enumeration.  On
@@ -1276,7 +1277,9 @@ ArrayNext(
 		matched = Tcl_RegExpMatchObj(searchPtr->interp, nameObj,
 			searchPtr->filterObj);
 		if (matched < 0) {
-		    *failPtr = 1;
+		    if (failPtr) {
+			*failPtr = 1;
+		    }
 		    return NULL;
 		} else if (matched) {
 		    return varPtr;
@@ -1467,6 +1470,28 @@ Tcl_ArraySearchStart(
  *
  * Tcl_ArraySearchNext --
  *
+ *	Finds the next element of an array for a given search query.
+ *
+ * Preconditions:
+ *	The search argument must be the return value of Tcl_ArraySearchStart().
+ *
+ * Results:
+ *	The return value is the name of the next array element. If there are no
+ *	more array elements, NULL is returned.
+ *
+ * Side effects:
+ *	The search data structure is updated such that successive invocations of
+ *	this function will return successive array element names.
+ *
+ * Limitation:
+ *	It is not possible to distinguish between reaching the end of the array
+ *	and experiencing a regular expression error. This is unlikely to be an
+ *	actual problem because Tcl_ArraySearchStart() already checks for regular
+ *	expression errors and returns NULL if found. If the regular expression
+ *	engine has a bug whereby a given query can initially succeed yet return
+ *	error depending on the string it is matched against, the caller of this
+ *	function will perceive it as prematurely hitting the end of the array.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -1474,7 +1499,8 @@ Tcl_Obj *
 Tcl_ArraySearchNext(
     Tcl_ArraySearch search)
 {
-    return NULL;
+    Var *varPtr = ArrayNext(search, NULL);
+    return varPtr ? VarHashGetKey(varPtr) : NULL;
 }
 
 /*
@@ -3432,9 +3458,8 @@ ArrayNextElementCmd(
     Tcl_Obj *const objv[])
 {
     Var *varPtr;
-    Tcl_Obj *varNameObj, *searchObj;
+    Tcl_Obj *varNameObj, *searchObj, *resultObj;
     ArraySearch *searchPtr;
-    int fail = 0;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName searchId");
@@ -3461,10 +3486,8 @@ ArrayNextElementCmd(
      * exhaustion.
      */
 
-    if ((varPtr = ArrayNext(searchPtr, &fail))) {
-	Tcl_SetObjResult(interp, VarHashGetKey(varPtr));
-    } else if (fail) {
-	return TCL_ERROR;
+    if ((resultObj = Tcl_ArraySearchNext(searchPtr))) {
+	Tcl_SetObjResult(interp, resultObj);
     }
 
     return TCL_OK;
