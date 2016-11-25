@@ -165,7 +165,7 @@ declare 34 {
 #    int TclGetLong(Tcl_Interp *interp, const char *str, long *longPtr)
 #}
 declare 37 {
-    int TclGetLoadedPackages(Tcl_Interp *interp, const char *targetName)
+    int TclGetLoadedPackages(Tcl_Interp *interp, const char *targetName, const char *packageName)
 }
 declare 38 {
     int TclGetNamespaceForQualName(Tcl_Interp *interp, const char *qualName,
