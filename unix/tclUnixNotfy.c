@@ -1,9 +1,10 @@
 /*
  * tclUnixNotfy.c --
  *
- *	This file contains the implementation of the select()-based
- *	Unix-specific notifier, which is the lowest-level part of the Tcl
- *	event loop. This file works together with generic/tclNotify.c.
+ *	This file contains the implementation of the Unix-specific notifier,
+ *	based on select()/epoll()/kqueue() depending on platform, which is the
+ *	lowest-level part of the Tcl event loop. This file works together with
+ *	generic/tclNotify.c.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
@@ -15,12 +16,25 @@
 #ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
 				 * in tclMacOSXNotify.c */
 #include <signal.h>
+#if defined(HAVE_EPOLL)
+#   include <sys/epoll.h>
+#elif defined(HAVE_KQUEUE)
+#   include <sys/types.h>
+#   include <sys/event.h>
+#   include <sys/time.h>
+#endif
 
 /*
  * This structure is used to keep track of the notifier info for a registered
  * file.
  */
 
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+struct PlatformEventData;
+#undef USE_SELECT_FOR_NOTIFIER
+#else
+#define USE_SELECT_FOR_NOTIFIER	1
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 typedef struct FileHandler {
     int fd;
     int mask;			/* Mask of desired events: TCL_READABLE,
@@ -32,7 +46,40 @@ typedef struct FileHandler {
 				 * Tcl_CreateFileHandler. */
     ClientData clientData;	/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+    struct PlatformEventData *platformEventData;
+				/* Pointer associating the platform-specific
+				 * event structures with {file,tsd}Ptrs. */
+    int platformReadyMask;	/* Platform-specific mask of ready events. */
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 } FileHandler;
+
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+/*
+ * The following structure is associated with a FileHandler through platform-
+ * specific event structures (currently either struct epoll_event or kevent)
+ * whenever Tcl_CreateFileHandler or Tcl_DeleteFileHandler are called.
+ * It contains a FileHandler and a ThreadSpecificData pointer in order to
+ * update readyMask and to alert waiting threads.
+ */
+
+struct ThreadSpecificData;
+struct PlatformEventData {
+    FileHandler *filePtr;
+    struct ThreadSpecificData *tsdPtr;
+};
+#else /* !(HAVE_EPOLL || HAVE_KQUEUE) */
+/*
+ * The following structure contains a set of select() masks to track readable,
+ * writable, and exception conditions.
+ */
+
+typedef struct {
+    fd_set readable;
+    fd_set writable;
+    fd_set exception;
+} SelectMasks;
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 
 /*
  * The following structure is what is added to the Tcl event queue when file
@@ -50,17 +97,6 @@ typedef struct {
 } FileHandlerEvent;
 
 /*
- * The following structure contains a set of select() masks to track readable,
- * writable, and exception conditions.
- */
-
-typedef struct {
-    fd_set readable;
-    fd_set writable;
-    fd_set exception;
-} SelectMasks;
-
-/*
  * The following static structure contains the state information for the
  * select based implementation of the Tcl notifier. One of these structures is
  * created for each thread that is using the notifier.
@@ -69,6 +105,7 @@ typedef struct {
 typedef struct ThreadSpecificData {
     FileHandler *firstFileHandlerPtr;
 				/* Pointer to head of file handler list. */
+#ifdef USE_SELECT_FOR_NOTIFIER
     SelectMasks checkMasks;	/* This structure is used to build up the
 				 * masks to be used in the next call to
 				 * select. Bits are set in response to calls
@@ -79,6 +116,7 @@ typedef struct ThreadSpecificData {
     int numFdBits;		/* Number of valid bits in checkMasks (one
 				 * more than highest fd for which
 				 * Tcl_WatchFile has been called). */
+#endif /* USE_SELECT_FOR_NOTIFIER */
 #ifdef TCL_THREADS
     int onList;			/* True if it is in this list */
     unsigned int pollState;	/* pollState is used to implement a polling
@@ -169,10 +207,11 @@ static int notifierThreadRunning = 0;
 static pthread_cond_t notifierCV = PTHREAD_COND_INITIALIZER;
 
 /*
- * The pollState bits
- *	POLL_WANT is set by each thread before it waits on its condition
- *		variable. It is checked by the notifier before it does select.
- *	POLL_DONE is set by the notifier if it goes into select after seeing
+ * The pollState bits.
+ *
+ * POLL_WANT:	Set by each thread before it waits on its condition variable.
+ *		It is checked by the notifier before it does select.
+ * POLL_DONE:	Set by the notifier if it goes into select after seeing
  *		POLL_WANT. The idea is to ensure it tries a select with the
  *		same bits the initial thread had set.
  */
@@ -185,8 +224,29 @@ static pthread_cond_t notifierCV = PTHREAD_COND_INITIALIZER;
  */
 
 static Tcl_ThreadId notifierThread;
-
 #endif /* TCL_THREADS */
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+/*
+ * This is the file descriptor for the platform-specific events mechanism
+ * (currently either epoll_{ctl,wait} or kevent).
+ */
+
+static int eventsFd;
+
+/*
+ * This array reflects the readable/writable/error event conditions that
+ * were found to exist by the last call to the platform-specific events
+ * mechanism (currently either epoll_wait or kevent) in NotifierThreadProc.
+ * maxReadyEvents specifies the maximum number of epoll_events in readyEvents.
+ */
+
+#if defined(HAVE_EPOLL)
+static struct epoll_event *readyEvents;
+#elif defined(HAVE_KQUEUE)
+static struct kevent *readyEvents;
+#endif /* HAVE_EPOLL */
+static int maxReadyEvents;
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 
 /*
  * Static routines defined in this file.
@@ -256,6 +316,28 @@ static const WCHAR className[] = L"TclNotifier";
 static DWORD __stdcall	NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
 #endif /* TCL_THREADS && __CYGWIN__ */
+
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+#define PLATFORMEVENTSCONTROL_ADD	0x01
+#define PLATFORMEVENTSCONTROL_DEL	0x02
+#define PLATFORMEVENTSCONTROL_MOD	0x04
+#define PLATFORMEVENTSCONTROL_AUTO_MASK	0x10
+static void		PlatformEventsControl(FileHandler *filePtr,
+			    ThreadSpecificData *tsdPtr, int op, int mask);
+static void		PlatformEventsFinalize(void);
+static int		PlatformEventsGet(int numEvent_last,
+			    int numReadyEvents, int skipFd, int wantFd,
+			    int onList);
+static void		PlatformEventsInit(void);
+static int		PlatformEventsTranslate(FileHandler *filePtr);
+#if defined(HAVE_EPOLL)
+static int		PlatformEventsWait(struct epoll_event *events,
+			    int numEvents, struct timeval *timePtr);
+#elif defined(HAVE_KQUEUE)
+static int		PlatformEventsWait(struct kevent *events,
+			    int numEvents, struct timeval *timePtr);
+#endif /* HAVE_EPOLL */
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 
 #if TCL_THREADS
 /*
@@ -273,8 +355,10 @@ static DWORD __stdcall	NotifierProc(void *hwnd, unsigned int message,
  *
  *----------------------------------------------------------------------
  */
+
 static void
-StartNotifierThread(const char *proc)
+StartNotifierThread(
+    const char *proc)
 {
     if (!notifierThreadRunning) {
 	pthread_mutex_lock(&notifierInitMutex);
@@ -285,6 +369,7 @@ StartNotifierThread(const char *proc)
 	    }
 
 	    pthread_mutex_lock(&notifierMutex);
+
 	    /*
 	     * Wait for the notifier pipe to be created.
 	     */
@@ -325,6 +410,9 @@ Tcl_InitNotifier(void)
     } else {
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+	PlatformEventsInit();
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 #ifdef TCL_THREADS
 	tsdPtr->eventReady = 0;
 
@@ -443,6 +531,9 @@ Tcl_FinalizeNotifier(
 		    }
 		    notifierThreadRunning = 0;
 		}
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+		PlatformEventsFinalize();
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 	    }
 	}
 
@@ -571,6 +662,360 @@ Tcl_ServiceModeHook(
     }
 }
 
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+/*
+ *----------------------------------------------------------------------
+ *
+ * PlatformEventsControl --
+ *
+ *	This function abstracts adding, modifying, or deleting a file
+ *	descriptor and its associated FileHandler and ThreadSpecificData
+ *	pointers from an epoll or kqueue fd via either epoll_ctl or kevent.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If successful, a file descriptor is added, deleted, or modified from
+ *	the epoll on Linux and kqueue on FreeBSD fd.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+PlatformEventsControl(
+    FileHandler *filePtr,
+    ThreadSpecificData *tsdPtr,
+    int op,
+    int mask)
+{
+#if defined(HAVE_EPOLL)
+    struct epoll_event event;
+    int epollOp;
+#elif defined(HAVE_KQUEUE)
+    int numEvents;
+    struct kevent event[2];
+    int keventOp;
+#endif /* HAVE_EPOLL */
+    struct PlatformEventData *platformEventData;
+
+    if (op & PLATFORMEVENTSCONTROL_AUTO_MASK) {
+	mask = filePtr->mask;
+	op &= ~PLATFORMEVENTSCONTROL_AUTO_MASK;
+    }
+    if (op == PLATFORMEVENTSCONTROL_ADD) {
+	platformEventData = ckalloc(sizeof(*platformEventData));
+	platformEventData->filePtr = filePtr;
+	platformEventData->tsdPtr = tsdPtr;
+	filePtr->platformEventData = platformEventData;
+    } else {
+	platformEventData = filePtr->platformEventData;
+    }
+    filePtr->platformReadyMask = 0;
+
+#if defined(HAVE_EPOLL)
+    event.events = EPOLLET;
+    if (mask & TCL_READABLE) {
+	event.events |= EPOLLIN;
+    }
+    if (mask & TCL_WRITABLE) {
+	event.events |= EPOLLOUT;
+    }
+    if (mask & TCL_EXCEPTION) {
+	event.events |= EPOLLERR;
+    }
+    event.data.ptr = platformEventData;
+    if (op == PLATFORMEVENTSCONTROL_ADD) {
+	epollOp = EPOLL_CTL_ADD;
+    } else if (op == PLATFORMEVENTSCONTROL_DEL) {
+	epollOp = EPOLL_CTL_DEL;
+    } else if (op == PLATFORMEVENTSCONTROL_MOD) {
+	epollOp = EPOLL_CTL_MOD;
+    }
+    if (epoll_ctl(eventsFd, epollOp, filePtr->fd, &event) == -1) {
+	Tcl_Panic("epoll_ctl: %s", strerror(errno));
+    }
+#elif defined(HAVE_KQUEUE)
+
+    numEvents = 0;
+    keventOp = 0;
+    if (op == PLATFORMEVENTSCONTROL_ADD) {
+	keventOp = EV_ADD;
+    } else if (op == PLATFORMEVENTSCONTROL_DEL) {
+	keventOp = EV_DELETE;
+    } else if (op == PLATFORMEVENTSCONTROL_MOD) {
+	keventOp = EV_ADD;
+    }
+    keventOp |= EV_CLEAR;
+    if ((mask & TCL_READABLE) || (mask & TCL_EXCEPTION)) {
+	EV_SET(&event[numEvents], filePtr->fd, EVFILT_READ, keventOp, 0, 0,
+		platformEventData);
+	numEvents++;
+    }
+    if (mask & TCL_WRITABLE) {
+	EV_SET(&event[numEvents], filePtr->fd, EVFILT_WRITE, keventOp, 0, 0,
+		platformEventData);
+	numEvents++;
+    }
+    if (kevent(eventsFd, event, numEvents, NULL, 0, NULL) == -1) {
+	Tcl_Panic("kevent: %s", strerror(errno));
+    }
+#endif /* HAVE_EPOLL */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PlatformEventsFinalize --
+ *
+ *	This function abstracts closing the epoll on Linux and kqueue on
+ *	FreeBSD file descriptor and freeing its associated array of returned
+ *	events.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The epoll or kqueue fd is closed if non-zero. The array of returned
+ *	events is freed if non_NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+PlatformEventsFinalize(void)
+{
+    if (eventsFd > 0) {
+	close(eventsFd);
+	eventsFd = 0;
+    }
+    if (readyEvents) {
+	ckfree(readyEvents);
+	maxReadyEvents = 0;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PlatformEventsGet --
+ *
+ *	This function abstracts iterating over the array of returned events
+ *	since the last call to PlatformEventsWait(). If skipFd and/or wantFd
+ *	are non-zero, the specified file descriptor will be skipped or hunted
+ *	for respectively. If onList is non-zero, the ThreadSpecificData asso-
+ *	ciated with the current event must specify a non-zero onList flag.
+ *
+ * Results:
+ *	Returns -1 if there were no or no eligible events. Returns the index
+ *	of the event in the array of returned events in all other cases.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+PlatformEventsGet(
+    int numEvent_last,
+    int numReadyEvents,
+    int skipFd,
+    int wantFd,
+    int onList)
+{
+    int numEvent;
+    struct PlatformEventData *platformEventData;
+
+    for (numEvent = numEvent_last; numEvent < numReadyEvents; numEvent++) {
+#if defined(HAVE_EPOLL)
+	platformEventData = readyEvents[numEvent].data.ptr;
+#elif defined(HAVE_KQUEUE)
+	platformEventData = readyEvents[numEvent].udata;
+#endif /* HAVE_EPOLL */
+	if (!platformEventData) {
+	    continue;
+	} else if (!platformEventData->filePtr) {
+	    continue;
+	} else if (!platformEventData->tsdPtr) {
+	    continue;
+	} else if (skipFd && (platformEventData->filePtr->fd == skipFd)) {
+	    continue;
+	} else if (wantFd && (platformEventData->filePtr->fd != wantFd)) {
+	    continue;
+	} else if (onList && !platformEventData->tsdPtr->onList) {
+	    continue;
+	} else {
+	    return numEvent;
+	}
+    }
+    return -1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PlatformEventsInit --
+ *	This function abstracts creating an epoll fd on Linux and a kqueue
+ *	fd on FreeBSD via epoll_create and kqueue system calls respectively.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The epoll or kqueue fd is created if zero. The array of returned
+ *	events is allocated and initialised with space for 128 events if zero.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+PlatformEventsInit(void)
+{
+#if defined(HAVE_EPOLL)
+    if (eventsFd <= 0) {
+	eventsFd = epoll_create1(EPOLL_CLOEXEC);
+	if (eventsFd == -1) {
+	    Tcl_Panic("epoll_create1: %s", strerror(errno));
+	}
+    }
+#elif defined(HAVE_KQUEUE)
+    if (eventsFd <= 0) {
+	eventsFd = kqueue();
+	if (eventsFd == -1) {
+	    Tcl_Panic("kqueue: %s", strerror(errno));
+	}
+    }
+#endif /* HAVE_EPOLL */
+    if (!readyEvents) {
+	maxReadyEvents = 128;
+	readyEvents = ckalloc(maxReadyEvents * sizeof(readyEvents[0]));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PlatformEventsTranslate --
+ *	This function translates the platform-specific mask of returned events
+ *	in and specific to a FileHandler to TCL_{READABLE,WRITABLE,EXCEPTION}
+ *	bits.
+ *
+ * Results:
+ *	Returns the translated and thus platform-independent mask.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+PlatformEventsTranslate(
+    FileHandler *filePtr)
+{
+    int mask;
+
+    mask = 0;
+#if defined(HAVE_EPOLL)
+    if (filePtr->platformReadyMask & EPOLLIN) {
+	mask |= TCL_READABLE;
+    }
+    if (filePtr->platformReadyMask & EPOLLOUT) {
+	mask |= TCL_WRITABLE;
+    }
+    if (filePtr->platformReadyMask & EPOLLERR) {
+	mask |= TCL_EXCEPTION;
+    }
+#elif defined(HAVE_KQUEUE)
+    if (filePtr->platformReadyMask & EVFILT_READ) {
+	mask |= TCL_READABLE;
+    }
+    if (filePtr->platformReadyMask & EVFILT_WRITE) {
+	mask |= TCL_WRITABLE;
+    }
+#endif /* HAVE_EPOLL */
+    return mask;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PlatformEventsWait --
+ *	This function abstracts waiting for I/O events via either epoll_ctl(2)
+ *	on Linux or kevent(2) on FreeBSD.
+ *
+ * Results:
+ *	Returns -1 if epoll_ctl(2)/kevent(2) failed. Returns 0 if polling
+ *	and if no events became available whilst polling. Returns a pointer
+ *	to and the count of all returned events in all other cases.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+PlatformEventsWait(
+#if defined(HAVE_EPOLL)
+    struct epoll_event *events,
+#elif defined(HAVE_KQUEUE)
+    struct kevent *events,
+#endif /* HAVE_EPOLL */
+    int numEvents,
+    struct timeval *timePtr)
+{
+    int numFound;
+    struct timeval tv0, tv1, tv_delta;
+#if defined(HAVE_EPOLL)
+    int timeout;
+#elif defined(HAVE_KQUEUE)
+    struct timespec timeout, *timeoutPtr;
+#endif /* HAVE_EPOLL */
+
+    bzero(events, numEvents * sizeof(events[0]));
+#if defined(HAVE_EPOLL)
+    if (!timePtr) {
+	timeout = -1;
+    } else if (!timePtr->tv_sec && !timePtr->tv_usec) {
+	timeout = 0;
+    } else {
+	timeout = timePtr->tv_sec;
+    }
+    gettimeofday(&tv0, NULL);
+    numFound = epoll_wait(eventsFd, events, numEvents, timeout);
+    gettimeofday(&tv1, NULL);
+
+#elif defined(HAVE_KQUEUE)
+    if (!timePtr) {
+	timeoutPtr = NULL;
+    } else if (!timePtr->tv_sec && !timePtr->tv_usec) {
+	timeout.tv_sec = 0;
+	timeout.tv_nsec = 0;
+	timeoutPtr = &timeout;
+    } else {
+	timeout.tv_sec = timePtr->tv_sec;
+	timeout.tv_nsec = timePtr->tv_usec * 1000;
+	timeoutPtr = &timeout;
+    }
+    gettimeofday(&tv0, NULL);
+    numFound = kevent(eventsFd, NULL, 0, events, numEvents, timeoutPtr);
+    gettimeofday(&tv1, NULL);
+#endif /* HAVE_EPOLL */
+
+    if (timePtr) {
+	timersub(&tv1, &tv0, &tv_delta);
+	timersub(&tv_delta, timePtr, timePtr);
+    }
+    if (numFound == -1) {
+	bzero(events, numEvents * sizeof(events[0]));
+	return -1;
+    }
+    return numFound;
+}
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
+
 /*
  *----------------------------------------------------------------------
  *
@@ -598,6 +1043,10 @@ Tcl_CreateFileHandler(
 				 * event. */
     ClientData clientData)	/* Arbitrary data to pass to proc. */
 {
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+    int is_new;
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
+
     if (tclNotifierHooks.createFileHandlerProc) {
 	tclNotifierHooks.createFileHandlerProc(fd, mask, proc, clientData);
 	return;
@@ -617,11 +1066,29 @@ Tcl_CreateFileHandler(
 	    filePtr->readyMask = 0;
 	    filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
 	    tsdPtr->firstFileHandlerPtr = filePtr;
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+	    is_new = 1;
+	} else {
+	    is_new = 0;
+#endif /* HAVE_EPOLL */
 	}
 	filePtr->proc = proc;
 	filePtr->clientData = clientData;
 	filePtr->mask = mask;
 
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+	if (eventsFd) {
+	    if (is_new) {
+		PlatformEventsControl(filePtr, tsdPtr,
+			PLATFORMEVENTSCONTROL_ADD
+			| PLATFORMEVENTSCONTROL_AUTO_MASK, 0);
+	    } else {
+		PlatformEventsControl(filePtr, tsdPtr,
+			PLATFORMEVENTSCONTROL_MOD
+			| PLATFORMEVENTSCONTROL_AUTO_MASK, 0);
+	    }
+	}
+#else
 	/*
 	 * Update the check masks for this file.
 	 */
@@ -644,6 +1111,7 @@ Tcl_CreateFileHandler(
 	if (tsdPtr->numFdBits <= fd) {
 	    tsdPtr->numFdBits = fd+1;
 	}
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
     }
 }
 
@@ -673,7 +1141,9 @@ Tcl_DeleteFileHandler(
 	return;
     } else {
 	FileHandler *filePtr, *prevPtr;
+#ifdef USE_SELECT_FOR_NOTIFIER
 	int i;
+#endif /* USE_SELECT_FOR_NOTIFIER */
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	/*
@@ -694,6 +1164,15 @@ Tcl_DeleteFileHandler(
 	 * Update the check masks for this file.
 	 */
 
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+	if (eventsFd) {
+	    PlatformEventsControl(filePtr, tsdPtr, PLATFORMEVENTSCONTROL_DEL
+		    | PLATFORMEVENTSCONTROL_AUTO_MASK, 0);
+	}
+	if (filePtr->platformEventData) {
+	    ckfree(filePtr->platformEventData);
+	}
+#else
 	if (filePtr->mask & TCL_READABLE) {
 	    FD_CLR(fd, &tsdPtr->checkMasks.readable);
 	}
@@ -721,6 +1200,7 @@ Tcl_DeleteFileHandler(
 	    }
 	    tsdPtr->numFdBits = numFdBits;
 	}
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 
 	/*
 	 * Clean up information in the callback record.
@@ -950,7 +1430,11 @@ Tcl_WaitForEvent(
 	    tsdPtr->pollState = POLL_WANT;
 	    timePtr = NULL;
 	} else {
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+	    waitForFiles = 1;
+#else
 	    waitForFiles = (tsdPtr->numFdBits > 0);
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 	    tsdPtr->pollState = 0;
 	}
 
@@ -975,9 +1459,11 @@ Tcl_WaitForEvent(
 	    }
 	}
 
+#ifdef USE_SELECT_FOR_NOTIFIER
 	FD_ZERO(&tsdPtr->readyMasks.readable);
 	FD_ZERO(&tsdPtr->readyMasks.writable);
 	FD_ZERO(&tsdPtr->readyMasks.exception);
+#endif /* USE_SELECT_FOR_NOTIFIER */
 
 	if (!tsdPtr->eventReady) {
 #ifdef __CYGWIN__
@@ -993,7 +1479,7 @@ Tcl_WaitForEvent(
 		MsgWaitForMultipleObjects(1, &tsdPtr->event, 0, timeout, 1279);
 		pthread_mutex_lock(&notifierMutex);
 	    }
-#else
+#else /* !__CYGWIN__ */
 	    if (timePtr != NULL) {
 	       Tcl_Time now;
 	       struct timespec ptime;
@@ -1054,6 +1540,10 @@ Tcl_WaitForEvent(
 	}
 
 #else
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+	tsdPtr->numReadyEvents = PlatformEventsWait(readyEvents,
+		maxReadyEvents, timeoutPtr);
+#else
 	tsdPtr->readyMasks = tsdPtr->checkMasks;
 	numFound = select(tsdPtr->numFdBits, &tsdPtr->readyMasks.readable,
 		&tsdPtr->readyMasks.writable, &tsdPtr->readyMasks.exception,
@@ -1069,6 +1559,7 @@ Tcl_WaitForEvent(
 	    FD_ZERO(&tsdPtr->readyMasks.writable);
 	    FD_ZERO(&tsdPtr->readyMasks.exception);
 	}
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 #endif /* TCL_THREADS */
 
 	/*
@@ -1077,6 +1568,9 @@ Tcl_WaitForEvent(
 
 	for (filePtr = tsdPtr->firstFileHandlerPtr; (filePtr != NULL);
 		filePtr = filePtr->nextPtr) {
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+	    mask = PlatformEventsTranslate(filePtr);
+#else
 	    mask = 0;
 	    if (FD_ISSET(filePtr->fd, &tsdPtr->readyMasks.readable)) {
 		mask |= TCL_READABLE;
@@ -1087,6 +1581,7 @@ Tcl_WaitForEvent(
 	    if (FD_ISSET(filePtr->fd, &tsdPtr->readyMasks.exception)) {
 		mask |= TCL_EXCEPTION;
 	    }
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 
 	    if (!mask) {
 		continue;
@@ -1106,6 +1601,9 @@ Tcl_WaitForEvent(
 		Tcl_QueueEvent((Tcl_Event *) fileEvPtr, TCL_QUEUE_TAIL);
 	    }
 	    filePtr->readyMask = mask;
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+	    filePtr->platformReadyMask = 0;
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 	}
 #ifdef TCL_THREADS
 	pthread_mutex_unlock(&notifierMutex);
@@ -1115,6 +1613,56 @@ Tcl_WaitForEvent(
 }
 
 #ifdef TCL_THREADS
+/*
+ *----------------------------------------------------------------------
+ *
+ * AlertSingleThread --
+ *
+ *	Notify a single thread that is waiting on a file descriptor to become
+ *	readable or writable or to have an exception condition.
+ *	notifierMutex must be held.
+ *
+ * Result:
+ *	None.
+ *
+ * Side effects:
+ *	The condition variable associated with the thread is broadcasted.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AlertSingleThread(
+    ThreadSpecificData *tsdPtr)
+{
+    tsdPtr->eventReady = 1;
+    if (tsdPtr->onList) {
+        /*
+         * Remove the ThreadSpecificData structure of this thread
+         * from the waiting list. This prevents us from
+         * continuously spining on select until the other threads
+         * runs and services the file event.
+         */
+    
+        if (tsdPtr->prevPtr) {
+    	    tsdPtr->prevPtr->nextPtr = tsdPtr->nextPtr;
+        } else {
+    	    waitingListPtr = tsdPtr->nextPtr;
+        }
+        if (tsdPtr->nextPtr) {
+    	    tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
+        }
+        tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
+        tsdPtr->onList = 0;
+        tsdPtr->pollState = 0;
+    }
+#ifdef __CYGWIN__
+    PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
+#else /* __CYGWIN__ */
+    pthread_cond_broadcast(&tsdPtr->waitCV);
+#endif /* __CYGWIN__ */
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1144,14 +1692,23 @@ NotifierThreadProc(
     ClientData clientData)	/* Not used. */
 {
     ThreadSpecificData *tsdPtr;
+#ifdef USE_SELECT_FOR_NOTIFIER
     fd_set readableMask;
     fd_set writableMask;
     fd_set exceptionMask;
-    int fds[2];
-    int i, numFdBits = 0, receivePipe;
+#endif /* USE_SELECT_FOR_NOTIFIER */
+    int i;
+    int fds[2], receivePipe;
     long found;
     struct timeval poll = {0., 0.}, *timePtr;
     char buf[2];
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+    int numReadyEvents, numEvent;
+    FileHandler *filePtr_rP;
+    struct PlatformEventData *eventDataPtr;
+#else
+    int numFdBits = 0;
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 
     if (pipe(fds) != 0) {
 	Tcl_Panic("NotifierThreadProc: %s", "could not create trigger pipe");
@@ -1183,6 +1740,19 @@ NotifierThreadProc(
     pthread_mutex_lock(&notifierMutex);
     triggerPipe = fds[1];
 
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+    /*
+     * Set up the epoll/kqueue fd to include the receive pipe.
+     */
+
+    filePtr_rP = ckalloc(sizeof(*filePtr_rP));
+    filePtr_rP->fd = receivePipe;
+    tsdPtr = TCL_TSD_INIT(&dataKey);
+    PlatformEventsControl(filePtr_rP, tsdPtr, PLATFORMEVENTSCONTROL_ADD,
+	    TCL_READABLE);
+    tsdPtr = NULL;
+#endif /* HAVE_EPOLL || HAVE_KQUEUE*/
+
     /*
      * Signal any threads that are waiting.
      */
@@ -1195,12 +1765,28 @@ NotifierThreadProc(
      */
 
     while (1) {
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+	pthread_mutex_lock(&notifierMutex);
+	timePtr = NULL;
+	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
+	    if (tsdPtr->pollState & POLL_WANT) {
+		/*
+		 * Here we make sure we go through select() with the same mask
+		 * bits that were present when the thread tried to poll.
+		 */
+
+		tsdPtr->pollState |= POLL_DONE;
+		timePtr = &poll;
+	    }
+	}
+	pthread_mutex_unlock(&notifierMutex);
+#else
 	FD_ZERO(&readableMask);
 	FD_ZERO(&writableMask);
 	FD_ZERO(&exceptionMask);
 
 	/*
-	 * Compute the logical OR of the select masks from all the waiting
+	 * Compute the logical OR of the masks from all the waiting
 	 * notifiers.
 	 */
 
@@ -1232,16 +1818,29 @@ NotifierThreadProc(
 	    }
 	}
 	pthread_mutex_unlock(&notifierMutex);
-
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
+#ifdef USE_SELECT_FOR_NOTIFIER
 	/*
-	 * Set up the select mask to include the receive pipe.
+	 * Set up the mask to include the receive pipe.
 	 */
 
 	if (receivePipe >= numFdBits) {
 	    numFdBits = receivePipe + 1;
 	}
 	FD_SET(receivePipe, &readableMask);
+#endif /* USE_SELECT_FOR_NOTIFIER */
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+	numReadyEvents = PlatformEventsWait(readyEvents, maxReadyEvents,
+		timePtr);
+	if (numReadyEvents == -1) {
+	    /*
+	     * Try again immediately on an error.
+	     */
 
+	    numReadyEvents = 0;
+	    continue;
+	}
+#else
 	if (select(numFdBits, &readableMask, &writableMask, &exceptionMask,
 		timePtr) == -1) {
 	    /*
@@ -1250,12 +1849,53 @@ NotifierThreadProc(
 
 	    continue;
 	}
+#endif /* HAVE_EPOLL || HAVE_KQUEUE*/
 
 	/*
 	 * Alert any threads that are waiting on a ready file descriptor.
 	 */
 
 	pthread_mutex_lock(&notifierMutex);
+	numEvent = 0;
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
+	    if (tsdPtr->pollState & POLL_DONE) {
+		AlertSingleThread(tsdPtr);
+	    }
+	}
+	while (1) {
+	    numEvent = PlatformEventsGet(numEvent, numReadyEvents,
+		    receivePipe, 0, 1);
+	    if (numEvent == -1) {
+		break;
+	    }
+#if defined(HAVE_EPOLL)
+	    eventDataPtr = readyEvents[numEvent].data.ptr;
+	    eventDataPtr->filePtr->platformReadyMask =
+		    readyEvents[numEvent].events;
+#elif defined(HAVE_KQUEUE)
+	    eventDataPtr = readyEvents[numEvent].udata;
+	    if (readyEvents[numEvent].filter == EVFILT_READ) {
+		if (readyEvents[numEvent].flags & (EV_EOF | EV_ERROR)) {
+		    eventDataPtr->filePtr->platformReadyMask |= EV_ERROR;
+		} else {
+		    eventDataPtr->filePtr->platformReadyMask
+			    |= EVFILT_READ;
+		}
+	    }
+	    if (readyEvents[numEvent].filter == EVFILT_WRITE) {
+		if (readyEvents[numEvent].flags & (EV_EOF | EV_ERROR)) {
+		    eventDataPtr->filePtr->platformReadyMask |= EV_ERROR;
+		} else {
+		    eventDataPtr->filePtr->platformReadyMask
+			    |= EVFILT_WRITE;
+		}
+	    }
+#endif /* HAVE_EPOLL */
+	    numEvent++;
+	    found = 1;
+	    tsdPtr = eventDataPtr->tsdPtr;
+#else
 	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
 	    found = 0;
 
@@ -1276,34 +1916,10 @@ NotifierThreadProc(
 		    found = 1;
 		}
 	    }
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 
 	    if (found || (tsdPtr->pollState & POLL_DONE)) {
-		tsdPtr->eventReady = 1;
-		if (tsdPtr->onList) {
-		    /*
-		     * Remove the ThreadSpecificData structure of this thread
-		     * from the waiting list. This prevents us from
-		     * continuously spining on select until the other threads
-		     * runs and services the file event.
-		     */
-
-		    if (tsdPtr->prevPtr) {
-			tsdPtr->prevPtr->nextPtr = tsdPtr->nextPtr;
-		    } else {
-			waitingListPtr = tsdPtr->nextPtr;
-		    }
-		    if (tsdPtr->nextPtr) {
-			tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
-		    }
-		    tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
-		    tsdPtr->onList = 0;
-		    tsdPtr->pollState = 0;
-		}
-#ifdef __CYGWIN__
-		PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
-#else /* __CYGWIN__ */
-		pthread_cond_broadcast(&tsdPtr->waitCV);
-#endif /* __CYGWIN__ */
+		AlertSingleThread(tsdPtr);
 	    }
 	}
 	pthread_mutex_unlock(&notifierMutex);
@@ -1314,7 +1930,40 @@ NotifierThreadProc(
 	 * avoid a race condition we only read one at a time.
 	 */
 
-	if (FD_ISSET(receivePipe, &readableMask)) {
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+	found = 0;
+	numEvent = 0;
+	while (1) {
+	    numEvent = PlatformEventsGet(numEvent, numReadyEvents, 0,
+		    receivePipe, 0);
+	    if (numEvent == -1) {
+		break;
+	    }
+#if defined(HAVE_EPOLL)
+	    eventDataPtr = readyEvents[numEvent].data.ptr;
+	    eventDataPtr->filePtr->platformReadyMask =
+		    readyEvents[numEvent].events;
+#elif defined(HAVE_KQUEUE)
+	    eventDataPtr = readyEvents[numEvent].udata;
+	    eventDataPtr->filePtr->platformReadyMask =
+		    readyEvents[numEvent].filter;
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
+	    if (eventDataPtr->filePtr->fd == receivePipe) {
+		found = 1;
+		break;
+	    }
+	    numEvent++;
+	}
+#if defined(HAVE_EPOLL)
+	if (found && readyEvents[numEvent].events & EPOLLIN)
+#elif defined(HAVE_KQUEUE)
+	if (found && (readyEvents[numEvent].filter == EVFILT_READ)
+		&& !(readyEvents[numEvent].flags & (EV_EOF | EV_ERROR)))
+#else
+	if (FD_ISSET(receivePipe, &readableMask))
+#endif /* HAVE_EPOLL */
+	{
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
 	    i = read(receivePipe, buf, 1);
 
 	    if ((i == 0) || ((i == 1) && (buf[0] == 'q'))) {
@@ -1334,6 +1983,10 @@ NotifierThreadProc(
      * termination of the notifier thread.
      */
 
+#if defined(HAVE_EPOLL) || defined(HAVE_KQUEUE)
+    PlatformEventsControl(filePtr_rP, tsdPtr, PLATFORMEVENTSCONTROL_DEL,
+	    TCL_READABLE);
+#endif /* HAVE_EPOLL || HAVE_KQUEUE */
     close(receivePipe);
     pthread_mutex_lock(&notifierMutex);
     triggerPipe = -1;
@@ -1371,32 +2024,35 @@ AtForkChild(void)
     pthread_cond_init(&notifierCV, NULL);
 
     /*
-     * notifierThreadRunning == 1: thread is running, (there might be data in notifier lists)
+     * notifierThreadRunning == 1: thread is running, (there might be data in
+     *				   notifier lists)
      * atForkInit == 0: InitNotifier was never called
      * notifierCount != 0: unbalanced  InitNotifier() / FinalizeNotifier calls
      * waitingListPtr != 0: there are threads currently waiting for events.
      */
 
     if (atForkInit == 1) {
-
 	notifierCount = 0;
 	if (notifierThreadRunning == 1) {
 	    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-	    notifierThreadRunning = 0;
 
+	    notifierThreadRunning = 0;
 	    close(triggerPipe);
 	    triggerPipe = -1;
+
 	    /*
 	     * The waitingListPtr might contain event info from multiple
 	     * threads, which are invalid here, so setting it to NULL is not
 	     * unreasonable.
 	     */
+
 	    waitingListPtr = NULL;
 
 	    /*
 	     * The tsdPtr from before the fork is copied as well.  But since
 	     * we are paranoic, we don't trust its condvar and reset it.
 	     */
+
 #ifdef __CYGWIN__
 	    DestroyWindow(tsdPtr->hwnd);
 	    tsdPtr->hwnd = CreateWindowExW(NULL, className,

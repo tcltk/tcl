@@ -300,6 +300,34 @@ if test $tcl_ok = no; then
     AC_DEFINE(NO_FD_SET, 1, [Do we have fd_set?])
 fi
 
+#-----------------------------------------------------------------------------
+#	Options for the notifier. Checks for epoll(7) on Linux, and kqueue(2)
+#	on FreeBSD.
+#-----------------------------------------------------------------------------
+
+AC_MSG_CHECKING([for advanced notifier support])
+case x`uname -s` in
+  xLinux)
+    AC_MSG_RESULT([epoll(7)])
+    AC_CHECK_HEADERS([sys/epoll.h],
+	[AC_DEFINE(HAVE_EPOLL, [1], [Is epoll(7) supported?])]);;
+  xFreeBSD)
+    AC_MSG_RESULT([kqueue(2)])
+    # Messy because we want to check if *all* the headers are present, and not
+    # just *any*
+    tcl_kqueue_headers=x
+    AC_CHECK_HEADERS([sys/types.h sys/event.h sys/time.h],
+	[tcl_kqueue_headers=${tcl_kqueue_headers}y])
+    AS_IF([test $tcl_kqueue_headers = xyyy], [
+	AC_DEFINE(HAVE_KQUEUE, [1], [Is kqueue(2) supported?])]);;
+  xDarwin)
+    # Assume that we've got CoreFoundation present (checked elsewhere because
+    # of wider impact).
+    AC_MSG_RESULT([OSX]);;
+  *)
+    AC_MSG_RESULT([none]);;
+esac
+
 #------------------------------------------------------------------------------
 #       Find out all about time handling differences.
 #------------------------------------------------------------------------------
