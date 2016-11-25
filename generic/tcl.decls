@@ -2348,6 +2348,10 @@ declare 636 {
     int Tcl_ArrayNames(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
 	Tcl_Obj *listPtr, int flags)
 }
+declare 637 {
+    int Tcl_ArraySet(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *dictPtr,
+	int flags)
+}
 
 ##############################################################################
 
