@@ -153,7 +153,9 @@ static const char *isArrayElement =
 
 /*
  * The following structure describes an enumerative search in progress on an
- * array variable; this are invoked with options to the "array" command.
+ * array variable. It is used by Tcl_ArraySize(), Tcl_ArraySearchStart(),
+ * Tcl_ArraySearchNext(), Tcl_ArraySearchDone(), Tcl_ArrayNames(), and their
+ * respective [array] script interface commands.
  */
 
 typedef struct Tcl_ArraySearch_ ArraySearch;
@@ -163,22 +165,19 @@ struct Tcl_ArraySearch_ {
     int id;			/* Integer id used to distinguish among
 				 * multiple concurrent searches for the same
 				 * array. */
-    struct Var *varPtr;		/* Pointer to array variable that's being
+    Var *varPtr;		/* Pointer to array variable that's being
 				 * searched. */
     Tcl_HashSearch search;	/* Info kept by the hash module about progress
 				 * through the array. */
-    Tcl_HashEntry *nextEntry;	/* Non-null means this is the next element to
-				 * be enumerated (it's leftover from the
-				 * Tcl_FirstHashEntry call or from an "array
-				 * anymore" command). NULL means must call
-				 * Tcl_NextHashEntry to get value to
-				 * return. */
+    Var *nextEntry;		/* Non-NULL means this is the next element to
+				 * be enumerated (left over from ArrayFirst()
+				 * or [array anymore]).  NULL means must call
+				 * ArrayNext() to get value to return. */
     ArraySearch *nextPtr;	/* Next in list of all active searches for
 				 * this variable, or NULL if this is the last
 				 * one. */
     Tcl_Obj *filterObj;		/* Search filter pattern, or NULL if none. */
-    int filterType;		/* Filter type: TCL_MATCH_EXACT, TCL_MATCH_GLOB,
-				 * or TCL_MATCH_REGEXP. */
+    int filterType;		/* TCL_MATCH_EXACT, _GLOB, or _REGEXP. */
 };
 
 /*
@@ -204,9 +203,8 @@ static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr,
 			    Tcl_Obj *part2Ptr, int flags, int index);
 static Var *		ArrayVar(Tcl_Interp *interp, Tcl_Obj *varNameObj,
 			    int *traceFailPtr, int flags);
-static Var *		ArrayNext(Tcl_Interp *interp, Tcl_HashSearch *searchPtr,
-			    Var *varPtr, Tcl_Obj *filterObj, int filterType,
-			    int *failPtr);
+static Var *		ArrayFirst(ArraySearch *searchPtr, int *failPtr);
+static Var *		ArrayNext(ArraySearch *searchPtr, int *failPtr);
 static int		ArraySize(Tcl_Interp *interp, Var *varPtr,
 			    Tcl_Obj *filterObj, int filterType);
 
@@ -1147,71 +1145,102 @@ ArrayVar(
 /*
  *----------------------------------------------------------------------
  *
- * ArrayNext --
+ * ArrayFirst --
  *
- *	Finds the first or next element of an array. If a filter is specified,
- *	only elements matching the filter are found. To start the enumeration,
- *	call this function with the array variable as its argument, and it will
- *	return the first matching element. To continue the enumeration, call
- *	this function with varPtr set to its last return value.
+ *	Finds the first element of an array. If a filter is specified, only
+ *	elements matching the filter are found.
+ *
+ * Preconditions:
+ *	The interp, varPtr, filterObj, and filterType fields of *searchPtr must
+ *	have been initialized.
  *
  * Results:
- *	The first or next array element is returned, or NULL if there are no
- *	matching elements remaining or in case of error. If failPtr is not NULL,
- *	*failPtr is set to 1 to distinguish the error case.
+ *	The first array element is returned, or NULL if there are no matching
+ *	elements or on error, in which case *failPtr is set to 1.
  *
  * Side effects:
- *	The Tcl_HashSearch is updated to track the progress of the enumeration.
- *	On error, error information is placed into the interpreter result.
+ *	*searchPtr is updated to track the progress of the enumeration.  On
+ *	error, detailed error information is placed into the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Var *
+ArrayFirst(
+    ArraySearch *searchPtr,	/* Array enumeration state structure. */
+    int *failPtr)		/* Set to 1 on error. */
+{
+    TclVarHashTable *tablePtr = searchPtr->varPtr->value.tablePtr;
+    Var *varPtr;
+
+    /*
+     * Exact matches and trivial glob matches can be completed immediately since
+     * they will only ever match one or zero elements.  No need to iterate, just
+     * do a direct lookup, then fast-forward to the end of the hash table.
+     */
+
+    if (searchPtr->filterObj
+     && (searchPtr->filterType == TCL_MATCH_EXACT
+      || (searchPtr->filterType == TCL_MATCH_GLOB
+       && TclMatchIsTrivial(TclGetString(searchPtr->filterObj))))) {
+	varPtr = VarHashFindVar(tablePtr, searchPtr->filterObj);
+	searchPtr->search.nextIndex = tablePtr->table.numBuckets;
+
+	if (!varPtr || TclIsVarUndefined(varPtr)) {
+	    return NULL;
+	} else {
+	    return varPtr;
+	}
+    }
+
+    /*
+     * For all other match types, find the first item (which may or may not
+     * match the filter) then chain to ArrayNext() to get the real first item.
+     */
+
+    searchPtr->nextEntry = VarHashFirstVar(tablePtr, &searchPtr->search);
+    return ArrayNext(searchPtr, failPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ArrayNext --
+ *
+ *	Finds the next element of an array for a given search query.
+ *
+ * Preconditions:
+ *	ArrayFirst() must have been called on searchPtr.
+ *
+ * Results:
+ *	The next array element is returned, or NULL if there are no matching
+ *	elements remaining or on error, in which case *failPtr is set to 1.
+ *
+ * Side effects:
+ *	*searchPtr is updated to track the progress of the enumeration.  On
+ *	error, detailed error information is placed into the interpreter result.
  *
  *----------------------------------------------------------------------
  */
 
 static Var *
 ArrayNext(
-    Tcl_Interp *interp,		/* Interpreter used to report error messages. */
-    Tcl_HashSearch *searchPtr,	/* Enumeration progress structure. */
-    Var *varPtr,		/* Array variable or previous return value. */
-    Tcl_Obj *filterObj,		/* Element filter or NULL to accept all. */
-    int filterType,		/* TCL_MATCH_EXACT, _GLOB, or _REGEXP. */
-    int *failPtr)		/* Unless NULL, set to 1 on error. */
+    ArraySearch *searchPtr,	/* Array enumeration state structure. */
+    int *failPtr)		/* Set to 1 on error. */
 {
-    TclVarHashTable *tablePtr;
+    Var *varPtr = searchPtr->nextEntry;
     Tcl_Obj *nameObj;
     int matched;
 
     /*
-     * Initialize or continue the search depending on whether the prior variable
-     * is an array or an element thereof.
+     * If there is no cached nextEntry left over from ArrayFirst() or [array
+     * anymore], get the next one from the hash table.
      */
 
-    if (TclIsVarArray(varPtr)) {
-	tablePtr = varPtr->value.tablePtr;
-
-	/*
-	 * Exact matches and trivial glob matches can be completed immediately
-	 * since they will only ever match one or zero elements.  No need to
-	 * iterate, just do a direct lookup, then fast-forward the search object
-	 * to the end of the hash table.
-	 */
-
-	if (filterObj
-	 && (filterType == TCL_MATCH_EXACT
-	  || (filterType == TCL_MATCH_GLOB
-	   && TclMatchIsTrivial(TclGetString(filterObj))))) {
-	    varPtr = VarHashFindVar(tablePtr, filterObj);
-	    searchPtr->nextIndex = tablePtr->table.numBuckets;
-
-	    if (varPtr && TclIsVarUndefined(varPtr)) {
-		return NULL;
-	    } else {
-		return varPtr;
-	    }
-	}
-
-	varPtr = VarHashFirstVar(tablePtr, searchPtr);
+    if (varPtr) {
+	searchPtr->nextEntry = NULL;
     } else {
-	varPtr = VarHashNextVar(searchPtr);
+	varPtr = VarHashNextVar(&searchPtr->search);
     }
 
     /*
@@ -1219,13 +1248,13 @@ ArrayNext(
      * end is reached.
      */
 
-    for (; varPtr; varPtr = VarHashNextVar(searchPtr)) {
+    for (; varPtr; varPtr = VarHashNextVar(&searchPtr->search)) {
 	if (!TclIsVarUndefined(varPtr)) {
 	    /*
 	     * If no filter, accept each defined element regardless of name.
 	     */
 
-	    if (!filterObj) {
+	    if (!searchPtr->filterObj) {
 		return varPtr;
 	    }
 
@@ -1234,23 +1263,22 @@ ArrayNext(
 	     */
 
 	    nameObj = VarHashGetKey(varPtr);
-	    if (filterType == TCL_MATCH_GLOB) {
+	    if (searchPtr->filterType == TCL_MATCH_GLOB) {
 		if (Tcl_StringMatch(TclGetString(nameObj),
-			TclGetString(filterObj))) {
+			TclGetString(searchPtr->filterObj))) {
 		    return varPtr;
 		}
-	    } else if (filterType == TCL_MATCH_REGEXP) {
-		matched = Tcl_RegExpMatchObj(interp, nameObj, filterObj);
+	    } else if (searchPtr->filterType == TCL_MATCH_REGEXP) {
+		matched = Tcl_RegExpMatchObj(searchPtr->interp, nameObj,
+			searchPtr->filterObj);
 		if (matched < 0) {
-		    if (failPtr) {
-			*failPtr = 1;
-		    }
+		    *failPtr = 1;
 		    return NULL;
 		} else if (matched) {
 		    return varPtr;
 		}
 	    } else {
-		Tcl_Panic("invalid filter type: %u", filterType);
+		Tcl_Panic("invalid filter type: %u", searchPtr->filterType);
 	    }
 	}
     }
@@ -1283,23 +1311,32 @@ ArraySize(
     Tcl_Obj *filterObj,		/* Element filter or NULL to accept all. */
     int filterType)		/* TCL_MATCH_EXACT, _GLOB, or _REGEXP. */
 {
-    Tcl_HashSearch search;
+    ArraySearch search;
     int fail = 0, size = 0;
 
     /*
-     * Count the number of times ArrayNext() returns non-NULL.
+     * Count the number of times ArrayFirst() or ArrayNext() returns non-NULL.
      */
 
-    while ((varPtr = ArrayNext(interp, &search, varPtr, filterObj, filterType,
-	    &fail))) {
+    search.interp = interp;
+    search.varPtr = varPtr;
+    search.filterObj = filterObj;
+    search.filterType = filterType;
+    search.nextEntry = NULL;
+    varPtr = ArrayFirst(&search, &fail);
+    for (; varPtr; varPtr = ArrayNext(&search, &fail)) {
 	++size;
     }
 
+    /*
+     * Return -1 on error or the number of matching elements on success.
+     */
+
     if (fail) {
 	return -1;
+    } else {
+	return size;
     }
-
-    return size;
 }
 
 /*
@@ -1377,12 +1414,25 @@ Tcl_ArraySearchStart(
 				 * TCL_MATCH_GLOB, and TCL_MATCH_REGEXP. */
 {
     Interp *iPtr = (Interp *)interp;
-    Var *varPtr;
+    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
     Tcl_HashEntry *hPtr;
-    int isNew;
-    ArraySearch *searchPtr;
+    int isNew, fail = 0;
+    ArraySearch search, *searchPtr;
 
-    if (!(varPtr = ArrayVar(interp, part1Ptr, NULL, flags))) {
+    /*
+     * Handle the possible error cases before performing any allocations.
+     */
+
+    if (!varPtr) {
+	return NULL;
+    }
+
+    search.interp = interp;
+    search.varPtr = varPtr;
+    search.filterObj = part2Ptr;
+    search.filterType = flags & TCL_MATCH;
+    search.nextEntry = ArrayFirst(&search, &fail);
+    if (!search.nextEntry && fail) {
 	return NULL;
     }
 
@@ -1390,29 +1440,23 @@ Tcl_ArraySearchStart(
      * Make a new array search with a free name.
      */
 
-    searchPtr = ckalloc(sizeof(ArraySearch));
     hPtr = Tcl_CreateHashEntry(&iPtr->varSearches, varPtr, &isNew);
     if (isNew) {
-	searchPtr->id = 1;
+	search.id = 1;
 	varPtr->flags |= VAR_SEARCH_ACTIVE;
-	searchPtr->nextPtr = NULL;
+	search.nextPtr = NULL;
     } else {
-	searchPtr->id = ((ArraySearch *)Tcl_GetHashValue(hPtr))->id + 1;
-	searchPtr->nextPtr = Tcl_GetHashValue(hPtr);
+	search.id = ((ArraySearch *)Tcl_GetHashValue(hPtr))->id + 1;
+	search.nextPtr = Tcl_GetHashValue(hPtr);
     }
-    searchPtr->interp = interp;
-    searchPtr->varPtr = varPtr;
-    searchPtr->nextEntry = VarHashFirstEntry(varPtr->value.tablePtr,
-	    &searchPtr->search);
-    Tcl_SetHashValue(hPtr, searchPtr);
-    searchPtr->name = Tcl_ObjPrintf("s-%d-%s", searchPtr->id,
-	    TclGetString(part1Ptr));
-    Tcl_IncrRefCount(searchPtr->name);
-    searchPtr->filterObj = part2Ptr;
-    searchPtr->filterType = flags & TCL_MATCH;
+    search.name = Tcl_ObjPrintf("s-%d-%s", search.id, TclGetString(part1Ptr));
+    Tcl_IncrRefCount(search.name);
     if (part2Ptr) {
 	Tcl_IncrRefCount(part2Ptr);
     }
+    searchPtr = ckalloc(sizeof(*searchPtr));
+    *searchPtr = search;
+    Tcl_SetHashValue(hPtr, searchPtr);
 
     return searchPtr;
 }
@@ -3321,8 +3365,8 @@ ArrayAnyMoreCmd(
     Interp *iPtr = (Interp *) interp;
     Var *varPtr;
     Tcl_Obj *varNameObj, *searchObj;
-    int gotValue;
     ArraySearch *searchPtr;
+    int gotValue, fail = 0;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName searchId");
@@ -3346,24 +3390,19 @@ ArrayAnyMoreCmd(
     }
 
     /*
-     * Scan forward to find if there are any further elements in the array
-     * that are defined.
+     * Scan forward to find if there are any further matching elements in the
+     * array.  Put the found element (if any) into searchPtr->nextEntry so that
+     * it is not consumed and is available for the next call.
      */
 
-    while (1) {
-	if (searchPtr->nextEntry != NULL) {
-	    varPtr = VarHashGetValue(searchPtr->nextEntry);
-	    if (!TclIsVarUndefined(varPtr)) {
-		gotValue = 1;
-		break;
-	    }
-	}
-	searchPtr->nextEntry = Tcl_NextHashEntry(&searchPtr->search);
-	if (searchPtr->nextEntry == NULL) {
-	    gotValue = 0;
-	    break;
-	}
+    if ((searchPtr->nextEntry = ArrayNext(searchPtr, &fail))) {
+	gotValue = 1;
+    } else if (fail) {
+	return TCL_ERROR;
+    } else {
+	gotValue = 0;
     }
+
     Tcl_SetObjResult(interp, iPtr->execEnvPtr->constants[gotValue]);
     return TCL_OK;
 }
@@ -3397,6 +3436,7 @@ ArrayNextElementCmd(
     Var *varPtr;
     Tcl_Obj *varNameObj, *searchObj;
     ArraySearch *searchPtr;
+    int fail;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName searchId");
@@ -3421,28 +3461,16 @@ ArrayNextElementCmd(
 
     /*
      * Get the next element from the search, or the empty string on
-     * exhaustion. Note that the [array anymore] command may well have already
-     * pulled a value from the hash enumeration, so we have to check the cache
-     * there first.
+     * exhaustion.
      */
 
-    while (1) {
-	Tcl_HashEntry *hPtr = searchPtr->nextEntry;
-
-	if (hPtr == NULL) {
-	    hPtr = Tcl_NextHashEntry(&searchPtr->search);
-	    if (hPtr == NULL) {
-		return TCL_OK;
-	    }
-	} else {
-	    searchPtr->nextEntry = NULL;
-	}
-	varPtr = VarHashGetValue(hPtr);
-	if (!TclIsVarUndefined(varPtr)) {
-	    Tcl_SetObjResult(interp, VarHashGetKey(varPtr));
-	    return TCL_OK;
-	}
+    if ((varPtr = ArrayNext(searchPtr, &fail))) {
+	Tcl_SetObjResult(interp, VarHashGetKey(varPtr));
+    } else if (fail) {
+	return TCL_ERROR;
     }
+
+    return TCL_OK;
 }
 
 /*
