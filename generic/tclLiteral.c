@@ -215,7 +215,7 @@ TclCreateLiteral(
 		*globalPtrPtr = globalPtr;
 	    }
 	    if ((flags & LITERAL_ON_HEAP)) {
-		ckfree(bytes);
+		ckfree((char *)bytes);
 	    }
 	    globalPtr->refCount++;
 	    return objPtr;
@@ -223,7 +223,7 @@ TclCreateLiteral(
     }
     if (!newPtr) {
 	if ((flags & LITERAL_ON_HEAP)) {
-	    ckfree(bytes);
+	    ckfree((char *)bytes);
 	}
 	return NULL;
     }
@@ -412,9 +412,9 @@ TclRegisterLiteral(
 	objPtr = localPtr->objPtr;
 	if ((objPtr->length == length) && ((length == 0)
 		|| ((objPtr->bytes[0] == bytes[0])
-		&& (memcmp(objPtr->bytes, bytes, (unsigned) length) == 0)))) {
+		&& (memcmp(objPtr->bytes, bytes, length) == 0)))) {
 	    if ((flags & LITERAL_ON_HEAP)) {
-		ckfree(bytes);
+		ckfree((char *)bytes);
 	    }
 	    objIndex = (localPtr - envPtr->literalArrayPtr);
 #ifdef TCL_COMPILE_DEBUG

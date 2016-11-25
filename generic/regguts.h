@@ -54,10 +54,10 @@
 #define	MALLOC(n)	malloc(n)
 #endif
 #ifndef REALLOC
-#define	REALLOC(p, n)	realloc((void*)(p), n)
+#define	REALLOC(p, n)	realloc(p, n)
 #endif
 #ifndef FREE
-#define	FREE(p)		free((void*)(p))
+#define	FREE(p)		free(p)
 #endif
 
 /* want size of a char in bits, and max value in bounded quantifiers */
@@ -70,7 +70,6 @@
  */
 
 #define	NOTREACHED	0
-#define	xxx		1
 
 #define	DUPMAX	_POSIX2_RE_DUP_MAX
 #define	DUPINF	(DUPMAX+1)
