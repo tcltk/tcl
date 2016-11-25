@@ -140,7 +140,7 @@ actively listening on it. This is the default on Windows.
 \fB\-reuseport\fI boolean\fR
 .
 Tells the kernel whether to allow the binding of multiple sockets to the same
-address and port as long as all of them specify the \fB-reuseport\fR option.
+address and port.
 .PP
 Server channels cannot be used for input or output; their sole use is to
 accept new client connections. The channels created for each incoming
