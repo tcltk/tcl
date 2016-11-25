@@ -1009,7 +1009,6 @@ TclNRSourceObjCmd(
 	}
 	encodingName = TclGetString(objv[2]);
     }
-
     return TclNREvalFile(interp, fileName, encodingName);
 }
 

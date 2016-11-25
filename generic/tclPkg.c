@@ -204,11 +204,19 @@ static void PkgFilesCleanupProc(ClientData clientData,
     			    Tcl_Interp *interp)
 {
     PkgFiles *pkgFiles = (PkgFiles *) clientData;
+    Tcl_HashSearch search;
+    Tcl_HashEntry *entry;
 
     while (pkgFiles->names) {
 	PkgName *name = pkgFiles->names;
 	pkgFiles->names = name->nextPtr;
 	ckfree(name);
+    }
+    entry = Tcl_FirstHashEntry(&pkgFiles->table, &search);
+    while (entry) {
+	Tcl_Obj *obj = (Tcl_Obj *)Tcl_GetHashValue(entry);
+	Tcl_DecrRefCount(obj);
+	entry = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(&pkgFiles->table);
     return;
@@ -217,9 +225,20 @@ static void PkgFilesCleanupProc(ClientData clientData,
 void TclPkgFileSeen(Tcl_Interp *interp, const char *fileName)
 {
     PkgFiles *pkgFiles = (PkgFiles *) Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
-    if (pkgFiles) {
+    if (pkgFiles && pkgFiles->names) {
 	const char *name = pkgFiles->names->name;
-	printf("Seen %s for package %s\n", fileName, name);
+	Tcl_HashTable *table = &pkgFiles->table;
+	int new;
+	Tcl_HashEntry *entry = Tcl_CreateHashEntry(table, name, &new);
+	Tcl_Obj *obj = Tcl_NewStringObj(fileName, -1);
+
+	if (new) {
+	    Tcl_SetHashValue(entry, obj);
+	    Tcl_IncrRefCount(obj);
+	} else {
+	    Tcl_Obj *list = Tcl_GetHashValue(entry);
+	    Tcl_ListObjAppendElement(interp, list, obj);
+	}
     }
 }
 
@@ -848,24 +867,19 @@ Tcl_PackageObjCmd(
     }
     switch ((enum pkgOptions) optionIndex) {
     case PKG_FILES: {
-	const char *keyString;
-	Tcl_Obj *result = Tcl_NewObj();
+	PkgFiles *pkgFiles;
 
-	for (i = 2; i < objc; i++) {
-	    keyString = TclGetString(objv[i]);
-	    hPtr = Tcl_FindHashEntry(&iPtr->packageTable, keyString);
-	    if (hPtr == NULL) {
-		continue;
-	    }
-	    pkgPtr = Tcl_GetHashValue(hPtr);
-	    availPtr = pkgPtr->availPtr;
-	    while (availPtr != NULL) {
-		Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj(availPtr->script, -1));
-		availPtr = availPtr->nextPtr;
-	    }
-	    ckfree(pkgPtr);
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "package");
+	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, result);
+	pkgFiles = (PkgFiles *) Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+	if (pkgFiles) {
+	    Tcl_HashEntry *entry = Tcl_FindHashEntry(&pkgFiles->table, Tcl_GetString(objv[2]));
+	    if (entry) {
+		Tcl_SetObjResult(interp, (Tcl_Obj *)Tcl_GetHashValue(entry));
+	    }
+	}
 	break;
     }
     case PKG_FORGET: {
