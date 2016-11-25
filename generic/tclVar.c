@@ -210,6 +210,9 @@ static int		ArraySize(Tcl_Interp *interp, Var *varPtr,
 static int		ArrayNames(Tcl_Interp *interp, Var *varPtr,
 			    Tcl_Obj *filterObj, int filterType,
 			    Tcl_Obj *listObj);
+static int		ArrayArgs(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[], Tcl_Obj **varNameObjPtr,
+			    Tcl_Obj **patternObjPtr, int *patternTypePtr);
 
 /*
  * Functions defined in this file that may be exported in the future for use
@@ -1420,6 +1423,66 @@ ArrayNames(
 	return TCL_ERROR;
     }
 
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ArrayArgs --
+ *
+ *	Common argument parser for several [array] commands.
+ *
+ * Compatibility:
+ *	Supports [array startsearch], [array names], and [array size].
+ *
+ * Future expansion:
+ *	Also support [array get] and [array unset].
+ *
+ * Results:
+ *	Arguments are parsed, results are written to caller variables, and
+ *	TCL_OK is returned. On failure, TCL_ERROR is returned, and error
+ *	information is logged to the interpreter.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ArrayArgs(
+    Tcl_Interp *interp,		/* Interpreter into which errors are logged. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[],	/* Argument vector. */
+    Tcl_Obj **varNameObjPtr,	/* Location to write variable name. */
+    Tcl_Obj **filterObjPtr,	/* Location to write filter pattern. */
+    int *filterTypePtr)		/* Location to write filter type code. */
+{
+    static const struct {
+	const char *name;
+	int type;
+    } options[] = {
+	{"-exact"   , TCL_MATCH_EXACT	},
+	{"-glob"    , TCL_MATCH_GLOB	},
+	{"-regexp"  , TCL_MATCH_REGEXP	},
+	{NULL	    , 0			},
+    };
+    enum {OPT_EXACT, OPT_GLOB, OPT_REGEXP} mode = OPT_GLOB;
+
+    if (objc < 2 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "arrayName ?mode? ?pattern?");
+	return TCL_ERROR;
+    }
+
+    if (objc == 4 && Tcl_GetIndexFromObjStruct(interp, objv[2], options,
+	    sizeof(*options), "option", 0, (int *)&mode) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    *varNameObjPtr = objv[1];
+    *filterObjPtr = objc > 2 ? objv[objc - 1] : NULL;
+    *filterTypePtr = options[mode].type;
     return TCL_OK;
 }
 
@@ -3487,15 +3550,17 @@ ArrayStartSearchCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    Tcl_Obj *varNameObj, *filterObj;
     ArraySearch *searchPtr;
+    int filterType;
 
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
+    if (ArrayArgs(interp, objc, objv, &varNameObj,
+	    &filterObj, &filterType) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    searchPtr = Tcl_ArraySearchStart(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG);
-    if (!searchPtr) {
+    if (!(searchPtr = Tcl_ArraySearchStart(interp, varNameObj, filterObj,
+	    TCL_LEAVE_ERR_MSG | filterType))) {
 	return TCL_ERROR;
     }
 
@@ -3941,29 +4006,12 @@ ArrayNamesCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    static struct {
-	const char *name;
-	int type;
-    } options[] = {
-	{"-exact"   , TCL_MATCH_EXACT	},
-	{"-glob"    , TCL_MATCH_GLOB	},
-	{"-regexp"  , TCL_MATCH_REGEXP	},
-	{NULL	    , 0			},
-    };
-    enum {OPT_EXACT, OPT_GLOB, OPT_REGEXP};
-    Tcl_Obj *varNameObj, *patternObj, *resultObj;
+    Tcl_Obj *varNameObj, *filterObj, *resultObj;
     Var *varPtr;
-    int traceFail = 0, mode = OPT_GLOB;
+    int traceFail = 0, filterType;
 
-    if ((objc < 2) || (objc > 4)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "arrayName ?mode? ?pattern?");
-	return TCL_ERROR;
-    }
-    varNameObj = objv[1];
-    patternObj = (objc > 2 ? objv[objc-1] : NULL);
-
-    if (objc == 4 && Tcl_GetIndexFromObjStruct(interp, objv[2], options,
-	    sizeof(*options), "option", 0, &mode) != TCL_OK) {
+    if (ArrayArgs(interp, objc, objv, &varNameObj,
+	    &filterObj, &filterType) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3985,7 +4033,7 @@ ArrayNamesCmd(
      */
 
     resultObj = Tcl_NewObj();
-    if (ArrayNames(interp, varPtr, patternObj, options[mode].type,
+    if (ArrayNames(interp, varPtr, filterObj, filterType,
 	    resultObj) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -4110,29 +4158,12 @@ ArraySizeCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    static struct {
-	const char *name;
-	int type;
-    } options[] = {
-	{"-exact"   , TCL_MATCH_EXACT	},
-	{"-glob"    , TCL_MATCH_GLOB	},
-	{"-regexp"  , TCL_MATCH_REGEXP	},
-	{NULL	    , 0			},
-    };
-    enum {OPT_EXACT, OPT_GLOB, OPT_REGEXP};
-    Tcl_Obj *varNameObj, *patternObj;
+    Tcl_Obj *varNameObj, *filterObj;
     Var *varPtr;
-    int traceFail = 0, mode = OPT_GLOB, size;
+    int traceFail = 0, filterType, size;
 
-    if (objc < 2 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "arrayName ?mode? ?pattern?");
-	return TCL_ERROR;
-    }
-    varNameObj = objv[1];
-    patternObj = objc > 2 ? objv[objc - 1] : NULL;
-
-    if (objc == 4 && Tcl_GetIndexFromObjStruct(interp, objv[2], options,
-	    sizeof(*options), "option", 0, &mode) != TCL_OK) {
+    if (ArrayArgs(interp, objc, objv, &varNameObj,
+	    &filterObj, &filterType) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -4142,10 +4173,10 @@ ArraySizeCmd(
      * report are argument count (handled above) and array trace (handled here).
      */
 
-    varPtr = ArrayVar(interp, objv[1], &traceFail, 0);
+    varPtr = ArrayVar(interp, varNameObj, &traceFail, 0);
 
     if (varPtr) {
-	size = ArraySize(interp, varPtr, patternObj, options[mode].type);
+	size = ArraySize(interp, varPtr, filterObj, filterType);
 	if (size < 0) {
 	    return TCL_ERROR;
 	}
