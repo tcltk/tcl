@@ -56,7 +56,7 @@ static inline void	CleanupVar(Var *varPtr, Var *arrayPtr);
 #define TCL_MATCH (TCL_MATCH_EXACT | TCL_MATCH_GLOB | TCL_MATCH_REGEXP)
 
 /*
- * NOTE: VarHashCreateVar increments the recount of its key argument.
+ * NOTE: VarHashCreateVar increments the refcount of its key argument.
  * All callers that will call Tcl_DecrRefCount on that argument must
  * call Tcl_IncrRefCount on it before passing it in.  This requirement
  * can bubble up to callers of callers .... etc.
@@ -202,8 +202,13 @@ static ArraySearch *	ParseSearchId(Tcl_Interp *interp, const Var *varPtr,
 static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr,
 			    Interp *iPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, int flags, int index);
-static Var *		LookupArrayVar(Tcl_Interp *interp, Tcl_Obj *varNameObj,
+static Var *		ArrayVar(Tcl_Interp *interp, Tcl_Obj *varNameObj,
 			    int *traceFailPtr, int flags);
+static Var *		ArrayNext(Tcl_Interp *interp, Tcl_HashSearch *searchPtr,
+			    Var *varPtr, Tcl_Obj *filterObj, int filterType,
+			    int *failPtr);
+static int		ArraySize(Tcl_Interp *interp, Var *varPtr,
+			    Tcl_Obj *filterObj, int filterType);
 
 /*
  * Functions defined in this file that may be exported in the future for use
@@ -1062,6 +1067,200 @@ TclLookupArrayElement(
 /*
  *----------------------------------------------------------------------
  *
+ * ArrayVar --
+ *
+ *	This function looks up an existing array variable.
+ *
+ * Results:
+ *	If successful, the requested variable is returned. On failure, NULL is
+ *	returned. If the error occurred within a trace and traceFailPtr is not
+ *	NULL, *traceFailPtr is set to 1.
+ *
+ * Side effects:
+ *	Array traces, if any, are executed.
+ *	
+ *----------------------------------------------------------------------
+ */
+
+static Var *
+ArrayVar(
+    Tcl_Interp *interp,		/* Command interpreter in which varNamePtr is to
+				 * be looked up. */
+    Tcl_Obj *varNameObj,	/* Name of array variable in interp. */
+    int *traceFailPtr,		/* Unless NULL, set to 1 on trace failure. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY and/or TCL_LEAVE_ERR_MSG
+				 * bits. */
+{
+    Var *varPtr, *arrayPtr;
+    const char *varName;
+
+    /*
+     * Locate the array variable.
+     */
+
+    if (!(varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, flags, "access",
+	    /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr))) {
+	return NULL;
+    }
+
+    /*
+     * Special array trace used to keep the env array in sync for array names,
+     * array get, etc.
+     */
+
+    if ((varPtr->flags & VAR_TRACED_ARRAY)
+	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
+	if (TclObjCallVarTraces((Interp *)interp, arrayPtr, varPtr,
+		varNameObj, NULL, flags | TCL_TRACE_ARRAY,
+		!!(flags & TCL_LEAVE_ERR_MSG), -1) == TCL_ERROR) {
+	    if (traceFailPtr) {
+		*traceFailPtr = 1;
+	    }
+	    return NULL;
+	}
+    }
+
+    /*
+     * Verify that it is indeed an array variable. This test comes after the
+     * traces - the variable may actually become an array as an effect of said
+     * traces.
+     */
+
+    if (!TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr)) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
+	    varName = TclGetString(varNameObj);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "\"%s\" isn't an array", varName));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", varName, NULL);
+	}
+	return NULL;
+    }
+
+    /*
+     * On success, give the caller the address of the variable object.
+     */
+
+    return varPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ArrayNext --
+ *
+ *	Finds the first or next element of an array. If a filter is specified,
+ *	only elements matching the filter are found. To start the enumeration,
+ *	call this function with the array variable as its argument, and it will
+ *	return the first matching element. To continue the enumeration, call
+ *	this function with varPtr set to its last return value.
+ *
+ * Results:
+ *	The first or next array element is returned, or NULL if there are no
+ *	matching elements remaining or in case of error. If failPtr is not NULL,
+ *	*failPtr is set to 1 to distinguish the error case.
+ *
+ * Side effects:
+ *	The Tcl_HashSearch is updated to track the progress of the enumeration.
+ *	On error, error information is placed into the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Var *
+ArrayNext(
+    Tcl_Interp *interp,		/* Interpreter used to report error messages. */
+    Tcl_HashSearch *searchPtr,	/* Enumeration progress structure. */
+    Var *varPtr,		/* Array variable or previous return value. */
+    Tcl_Obj *filterObj,		/* Element filter or NULL to accept all. */
+    int filterType,		/* TCL_MATCH_EXACT, _GLOB, or _REGEXP. */
+    int *failPtr)		/* Unless NULL, set to 1 on error. */
+{
+    TclVarHashTable *tablePtr;
+    Tcl_Obj *nameObj;
+    int matched;
+
+    /*
+     * Initialize or continue the search depending on whether the prior variable
+     * is an array or an element thereof.
+     */
+
+    if (TclIsVarArray(varPtr)) {
+	tablePtr = varPtr->value.tablePtr;
+
+	/*
+	 * Exact matches and trivial glob matches can be completed immediately
+	 * since they will only ever match one or zero elements.  No need to
+	 * iterate, just do a direct lookup, then fast-forward the search object
+	 * to the end of the hash table.
+	 */
+
+	if (filterObj
+	 && (filterType == TCL_MATCH_EXACT
+	  || (filterType == TCL_MATCH_GLOB
+	   && TclMatchIsTrivial(TclGetString(filterObj))))) {
+	    varPtr = VarHashFindVar(tablePtr, filterObj);
+	    searchPtr->nextIndex = tablePtr->table.numBuckets;
+
+	    if (varPtr && TclIsVarUndefined(varPtr)) {
+		return NULL;
+	    } else {
+		return varPtr;
+	    }
+	}
+
+	varPtr = VarHashFirstVar(tablePtr, searchPtr);
+    } else {
+	varPtr = VarHashNextVar(searchPtr);
+    }
+
+    /*
+     * Iterate through the hash table until an element matches the filter or the
+     * end is reached.
+     */
+
+    for (; varPtr; varPtr = VarHashNextVar(searchPtr)) {
+	if (!TclIsVarUndefined(varPtr)) {
+	    /*
+	     * If no filter, accept each defined element regardless of name.
+	     */
+
+	    if (!filterObj) {
+		return varPtr;
+	    }
+
+	    /*
+	     * Conditionally accept elements whose names match the filter.
+	     */
+
+	    nameObj = VarHashGetKey(varPtr);
+	    if (filterType == TCL_MATCH_GLOB) {
+		if (Tcl_StringMatch(TclGetString(nameObj),
+			TclGetString(filterObj))) {
+		    return varPtr;
+		}
+	    } else if (filterType == TCL_MATCH_REGEXP) {
+		matched = Tcl_RegExpMatchObj(interp, nameObj, filterObj);
+		if (matched < 0) {
+		    if (failPtr) {
+			*failPtr = 1;
+		    }
+		    return NULL;
+		} else if (matched) {
+		    return varPtr;
+		}
+	    } else {
+		Tcl_Panic("invalid filter type: %u", filterType);
+	    }
+	}
+    }
+
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ArraySize --
  *
  *	This function returns the number of elements in an array variable.
@@ -1082,83 +1281,22 @@ ArraySize(
     Tcl_Interp *interp,		/* Interpreter, used to report regexp errors. */
     Var *varPtr,		/* Array variable. */
     Tcl_Obj *filterObj,		/* Element filter or NULL to accept all. */
-    int filterType)		/* Filter type: TCL_MATCH_EXACT, TCL_MATCH_GLOB,
-				 * or TCL_MATCH_REGEXP. */
+    int filterType)		/* TCL_MATCH_EXACT, _GLOB, or _REGEXP. */
 {
     Tcl_HashSearch search;
-    Tcl_Obj *nameObj;
-    const char *filterStr;
-    int matched, size = 0;
+    int fail = 0, size = 0;
 
     /*
-     * Directly handle exact matches and prepare to handle glob matches.
+     * Count the number of times ArrayNext() returns non-NULL.
      */
 
-    if (filterObj && filterType != TCL_MATCH_REGEXP) {
-	/*
-	 * Convert trivial glob matches to exact matches.
-	 */
-
-	if (filterType == TCL_MATCH_GLOB) {
-	    filterStr = TclGetString(filterObj);
-	    if (TclMatchIsTrivial(filterStr)) {
-		filterType = TCL_MATCH_EXACT;
-	    }
-	}
-
-	/*
-	 * For exact matches (including trivial glob matches), the return value
-	 * is always 1 or 0 if the match succeeds or fails, respectively.
-	 */
-
-	if (filterType == TCL_MATCH_EXACT) {
-	    varPtr = VarHashFindVar(varPtr->value.tablePtr, filterObj);
-	    return varPtr && !TclIsVarUndefined(varPtr);
-	}
+    while ((varPtr = ArrayNext(interp, &search, varPtr, filterObj, filterType,
+	    &fail))) {
+	++size;
     }
 
-    /*
-     * Count array elements matching the supplied filter.
-     */
-
-    for (varPtr = VarHashFirstVar(varPtr->value.tablePtr, &search); varPtr;
-	    varPtr = VarHashNextVar(&search)) {
-	/*
-	 * Skip present but undefined elements.
-	 */
-
-	if (TclIsVarUndefined(varPtr)) {
-	    continue;
-	}
-
-	/*
-	 * If no filter, count each defined element regardless of name.
-	 */
-
-	if (!filterObj) {
-	    ++size;
-	    continue;
-	}
-
-	/*
-	 * Conditionally increment the count if the name matches the filter.
-	 */
-
-	nameObj = VarHashGetKey(varPtr);
-	if (filterType == TCL_MATCH_GLOB) {
-	    if (Tcl_StringMatch(TclGetString(nameObj), filterStr)) {
-		++size;
-	    }
-	} else if (filterType == TCL_MATCH_REGEXP) {
-	    matched = Tcl_RegExpMatchObj(interp, nameObj, filterObj);
-	    if (matched < 0) {
-		return -1;
-	    } else if (matched) {
-		++size;
-	    }
-	} else {
-	    Tcl_Panic("invalid filter type %u", filterType);
-	}
+    if (fail) {
+	return -1;
     }
 
     return size;
@@ -1199,7 +1337,7 @@ Tcl_ArraySize(
 				 * also at most one of TCL_MATCH_EXACT,
 				 * TCL_MATCH_GLOB, and TCL_MATCH_REGEXP. */
 {
-    Var *varPtr = LookupArrayVar(interp, part1Ptr, NULL, flags);
+    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
     return varPtr ? ArraySize(interp, varPtr, part2Ptr, flags & TCL_MATCH) : -1;
 }
 
@@ -1244,7 +1382,7 @@ Tcl_ArraySearchStart(
     int isNew;
     ArraySearch *searchPtr;
 
-    if (!(varPtr = LookupArrayVar(interp, part1Ptr, NULL, flags))) {
+    if (!(varPtr = ArrayVar(interp, part1Ptr, NULL, flags))) {
 	return NULL;
     }
 
@@ -2672,86 +2810,6 @@ UnsetVarStruct(
 /*
  *----------------------------------------------------------------------
  *
- * LookupArrayVar --
- *
- *	This function looks up an existing array variable.
- *
- * Results:
- *	If successful, *varPtr is set to point to the requested variable, and
- *	the return value is LAV_OK. See the definition of LookupArrayVarCode for
- *	the possible error return values.
- *
- * Side effects:
- *	Array traces, if any, are executed.
- *	
- *----------------------------------------------------------------------
- */
-
-static Var *
-LookupArrayVar(
-    Tcl_Interp *interp,		/* Command interpreter in which varNamePtr is to
-				 * be looked up. */
-    Tcl_Obj *varNameObj,	/* Name of array variable in interp. */
-    int *traceFailPtr,		/* Unless NULL, set to 1 on trace failure. */
-    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY and/or TCL_LEAVE_ERR_MSG
-				 * bits. */
-{
-    Var *varPtr, *arrayPtr;
-    const char *varName;
-
-    /*
-     * Locate the array variable.
-     */
-
-    if (!(varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, flags, "access",
-	    /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr))) {
-	return NULL;
-    }
-
-    /*
-     * Special array trace used to keep the env array in sync for array names,
-     * array get, etc.
-     */
-
-    if ((varPtr->flags & VAR_TRACED_ARRAY)
-	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
-	if (TclObjCallVarTraces((Interp *)interp, arrayPtr, varPtr,
-		varNameObj, NULL, flags | TCL_TRACE_ARRAY,
-		!!(flags & TCL_LEAVE_ERR_MSG), -1) == TCL_ERROR) {
-	    if (traceFailPtr) {
-		*traceFailPtr = 1;
-	    }
-	    return NULL;
-	}
-    }
-
-    /*
-     * Verify that it is indeed an array variable. This test comes after the
-     * traces - the variable may actually become an array as an effect of said
-     * traces.
-     */
-
-    if (!TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr)) {
-	if (flags & TCL_LEAVE_ERR_MSG) {
-	    varName = TclGetString(varNameObj);
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" isn't an array", varName));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", varName, NULL);
-	}
-	return NULL;
-    }
-
-    /*
-     * On success, give the caller the address of the variable object.
-     */
-
-    return varPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_UnsetObjCmd --
  *
  *	This object-based function is invoked to process the "unset" Tcl
@@ -3273,7 +3331,7 @@ ArrayAnyMoreCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    varPtr = LookupArrayVar(interp, varNameObj, NULL, TCL_LEAVE_ERR_MSG);
+    varPtr = ArrayVar(interp, varNameObj, NULL, TCL_LEAVE_ERR_MSG);
     if (varPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -3347,7 +3405,7 @@ ArrayNextElementCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    varPtr = LookupArrayVar(interp, varNameObj, NULL, TCL_LEAVE_ERR_MSG);
+    varPtr = ArrayVar(interp, varNameObj, NULL, TCL_LEAVE_ERR_MSG);
     if (varPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -3426,7 +3484,7 @@ ArrayDoneSearchCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    varPtr = LookupArrayVar(interp, varNameObj, NULL, TCL_LEAVE_ERR_MSG);
+    varPtr = ArrayVar(interp, varNameObj, NULL, TCL_LEAVE_ERR_MSG);
     if (varPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -4005,7 +4063,7 @@ ArraySizeCmd(
      * report are argument count (handled above) and array trace (handled here).
      */
 
-    varPtr = LookupArrayVar(interp, objv[1], &traceFail, TCL_LEAVE_ERR_MSG);
+    varPtr = ArrayVar(interp, objv[1], &traceFail, TCL_LEAVE_ERR_MSG);
 
     if (varPtr) {
 	size = ArraySize(interp, varPtr, NULL, 0);
