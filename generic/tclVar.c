@@ -1097,17 +1097,16 @@ ArrayVar(
      * Locate the array variable.
      */
 
-    if (!(varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, flags, "access",
-	    /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr))) {
-	return NULL;
-    }
+    varPtr = TclObjLookupVarEx(interp, varNameObj, NULL,
+	    flags & ~TCL_LEAVE_ERR_MSG, /*msg*/ NULL,
+	    /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
 
     /*
      * Special array trace used to keep the env array in sync for array names,
      * array get, etc.
      */
 
-    if ((varPtr->flags & VAR_TRACED_ARRAY)
+    if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
 	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
 	if (TclObjCallVarTraces((Interp *)interp, arrayPtr, varPtr,
 		varNameObj, NULL, flags | TCL_TRACE_ARRAY,
@@ -1125,7 +1124,7 @@ ArrayVar(
      * traces.
      */
 
-    if (!TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr)) {
+    if (!varPtr || !TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr)) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    varName = TclGetString(varNameObj);
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3436,7 +3435,7 @@ ArrayNextElementCmd(
     Var *varPtr;
     Tcl_Obj *varNameObj, *searchObj;
     ArraySearch *searchPtr;
-    int fail;
+    int fail = 0;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName searchId");
