@@ -560,7 +560,7 @@ test set-old-8.39 {array command, size option} {
 } {0}
 test set-old-8.40 {array command, size option} {
     list [catch {array size a 4} msg] $msg
-} {1 {wrong # args: should be "array size arrayName"}}
+} {0 0}
 test set-old-8.41 {array command, size option} {
     catch {unset a}
     array size a

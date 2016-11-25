@@ -3941,14 +3941,17 @@ ArrayNamesCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    static const char *const options[] = {
-	"-exact", "-glob", "-regexp", NULL
+    static struct {
+	const char *name;
+	int type;
+    } options[] = {
+	{"-exact"   , TCL_MATCH_EXACT	},
+	{"-glob"    , TCL_MATCH_GLOB	},
+	{"-regexp"  , TCL_MATCH_REGEXP	},
+	{NULL	    , 0			},
     };
-    static const int flags[] = {
-	TCL_MATCH_EXACT, TCL_MATCH_GLOB, TCL_MATCH_REGEXP
-    };
-    enum options { OPT_EXACT, OPT_GLOB, OPT_REGEXP };
-    Tcl_Obj *varNameObj, *resultObj, *patternObj;
+    enum {OPT_EXACT, OPT_GLOB, OPT_REGEXP};
+    Tcl_Obj *varNameObj, *patternObj, *resultObj;
     Var *varPtr;
     int traceFail = 0, mode = OPT_GLOB;
 
@@ -3959,12 +3962,8 @@ ArrayNamesCmd(
     varNameObj = objv[1];
     patternObj = (objc > 2 ? objv[objc-1] : NULL);
 
-    /*
-     * Finish parsing the arguments.
-     */
-
-    if ((objc == 4) && Tcl_GetIndexFromObj(interp, objv[2], options, "option",
-	    0, &mode) != TCL_OK) {
+    if (objc == 4 && Tcl_GetIndexFromObjStruct(interp, objv[2], options,
+	    sizeof(*options), "option", 0, &mode) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3986,7 +3985,7 @@ ArrayNamesCmd(
      */
 
     resultObj = Tcl_NewObj();
-    if (ArrayNames(interp, varPtr, patternObj, flags[mode],
+    if (ArrayNames(interp, varPtr, patternObj, options[mode].type,
 	    resultObj) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -4111,11 +4110,29 @@ ArraySizeCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    static struct {
+	const char *name;
+	int type;
+    } options[] = {
+	{"-exact"   , TCL_MATCH_EXACT	},
+	{"-glob"    , TCL_MATCH_GLOB	},
+	{"-regexp"  , TCL_MATCH_REGEXP	},
+	{NULL	    , 0			},
+    };
+    enum {OPT_EXACT, OPT_GLOB, OPT_REGEXP};
+    Tcl_Obj *varNameObj, *patternObj;
     Var *varPtr;
-    int traceFail = 0, size;
+    int traceFail = 0, mode = OPT_GLOB, size;
 
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
+    if (objc < 2 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "arrayName ?mode? ?pattern?");
+	return TCL_ERROR;
+    }
+    varNameObj = objv[1];
+    patternObj = objc > 2 ? objv[objc - 1] : NULL;
+
+    if (objc == 4 && Tcl_GetIndexFromObjStruct(interp, objv[2], options,
+	    sizeof(*options), "option", 0, &mode) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -4128,7 +4145,10 @@ ArraySizeCmd(
     varPtr = ArrayVar(interp, objv[1], &traceFail, 0);
 
     if (varPtr) {
-	size = ArraySize(interp, varPtr, NULL, 0);
+	size = ArraySize(interp, varPtr, patternObj, options[mode].type);
+	if (size < 0) {
+	    return TCL_ERROR;
+	}
     } else if (!traceFail) {
 	size = 0;
     } else {
