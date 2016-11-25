@@ -49,23 +49,6 @@
 #include <assert.h>
 #endif
 
-/* voids */
-#ifndef VOID
-#define	VOID	void		/* for function return values */
-#endif
-#ifndef DISCARD
-#define	DISCARD	void		/* for throwing values away */
-#endif
-#ifndef PVOID
-#define	PVOID	void *		/* generic pointer */
-#endif
-#ifndef VS
-#define	VS(x)	((void*)(x))	/* cast something to generic ptr */
-#endif
-#ifndef NOPARMS
-#define	NOPARMS	void		/* for empty parm lists */
-#endif
-
 /* function-pointer declarator */
 #ifndef FUNCPTR
 #if __STDC__ >= 1
@@ -80,10 +63,10 @@
 #define	MALLOC(n)	malloc(n)
 #endif
 #ifndef REALLOC
-#define	REALLOC(p, n)	realloc(VS(p), n)
+#define	REALLOC(p, n)	realloc(p, n)
 #endif
 #ifndef FREE
-#define	FREE(p)		free(VS(p))
+#define	FREE(p)		free(p)
 #endif
 
 /* want size of a char in bits, and max value in bounded quantifiers */
