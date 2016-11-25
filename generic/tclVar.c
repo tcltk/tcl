@@ -1184,7 +1184,9 @@ ArrayFirst(
       || (searchPtr->filterType == TCL_MATCH_GLOB
        && TclMatchIsTrivial(TclGetString(searchPtr->filterObj))))) {
 	varPtr = VarHashFindVar(tablePtr, searchPtr->filterObj);
+	searchPtr->search.nextEntryPtr = NULL;
 	searchPtr->search.nextIndex = tablePtr->table.numBuckets;
+	searchPtr->nextEntry = NULL;
 
 	if (!varPtr || TclIsVarUndefined(varPtr)) {
 	    return NULL;
@@ -1280,6 +1282,8 @@ ArrayNext(
 		} else if (matched) {
 		    return varPtr;
 		}
+	    } else if (searchPtr->filterType == TCL_MATCH_EXACT) {
+		Tcl_Panic("exact matching shouldn't get here");
 	    } else {
 		Tcl_Panic("invalid filter type: %u", searchPtr->filterType);
 	    }
@@ -1572,12 +1576,66 @@ Tcl_ArrayNames(
 				 * be looked up. */
     Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
     Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
-    Tcl_Obj *listPtr,
-    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
-				 * TCL_NAMESPACE_ONLY, also at most one of
-				 * TCL_MATCH_EXACT, _GLOB, and _REGEXP. */
+    Tcl_Obj *listPtr,		/* List to which array names are appended. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
+				 * also at most one of TCL_MATCH_EXACT, _GLOB,
+				 * and _REGEXP. */
 {
-    return 0;
+    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
+    ArraySearch search;
+    int fail = 0, oldLen, newLen;
+
+    /*
+     * Ensure array variable lookup succeeded.
+     */
+
+    if (!varPtr) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Ensure output object is a list. Also get its length in case there is
+     * trouble and changes need to be rolled back. Such a failure should never
+     * occur because it requires a regular expression to initially succeed then
+     * return error on a subsequent evaluation, but handle it anyway because
+     * it's easy to do.
+     */
+
+    if (Tcl_ListObjLength(interp, listPtr, &oldLen) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Begin the search.
+     */
+
+    search.interp = interp;
+    search.varPtr = varPtr;
+    search.filterObj = part2Ptr;
+    search.filterType = flags & TCL_MATCH;
+    search.nextEntry = NULL;
+    varPtr = ArrayFirst(&search, &fail);
+
+    /*
+     * Enumerate the array.
+     */
+
+    for (; varPtr; varPtr = ArrayNext(&search, &fail)) {
+	Tcl_ListObjAppendElement(interp, listPtr, VarHashGetKey(varPtr));
+    }
+
+    /*
+     * On failure, roll back changes to output list.
+     */
+
+    if (fail) {
+	Tcl_ListObjLength(interp, listPtr, &newLen);
+	Tcl_ListObjReplace(interp, listPtr, oldLen, newLen - oldLen, 0, NULL);
+	return TCL_ERROR;
+    }
+
+    return TCL_OK;
 }
 
 /*
@@ -3846,12 +3904,12 @@ ArrayNamesCmd(
     static const char *const options[] = {
 	"-exact", "-glob", "-regexp", NULL
     };
+    static const int flags[] = {
+	TCL_MATCH_EXACT, TCL_MATCH_GLOB, TCL_MATCH_REGEXP
+    };
     enum options { OPT_EXACT, OPT_GLOB, OPT_REGEXP };
-    Var *varPtr, *varPtr2;
-    Tcl_Obj *varNameObj, *nameObj, *resultObj, *patternObj;
-    Tcl_HashSearch search;
-    const char *pattern = NULL;
-    int traceFail = 0, mode = OPT_GLOB;
+    Tcl_Obj *varNameObj, *resultObj, *patternObj;
+    int mode = OPT_GLOB;
 
     if ((objc < 2) || (objc > 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName ?mode? ?pattern?");
@@ -3859,12 +3917,6 @@ ArrayNamesCmd(
     }
     varNameObj = objv[1];
     patternObj = (objc > 2 ? objv[objc-1] : NULL);
-
-    /*
-     * Locate the array variable.
-     */
-
-    varPtr = ArrayVar(interp, varNameObj, &traceFail, 0);
 
     /*
      * Finish parsing the arguments.
@@ -3875,76 +3927,17 @@ ArrayNamesCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * Report trace failures as errors. If the variable is a scalar or does not
-     * exist, treat it like an empty array.
-     */
-
-    if (!varPtr) {
-	if (traceFail) {
-	    return TCL_ERROR;
-	} else {
-	    return TCL_OK;
-	}
+    resultObj = Tcl_NewObj();
+    if (Tcl_ArrayNames(interp, varNameObj, patternObj, resultObj,
+	    flags[mode]) != TCL_OK) {
+	return TCL_ERROR;
     }
 
     /*
-     * Check for the trivial cases where we can use a direct lookup.
+     * TODO: Report trace failures as errors. If the variable is a scalar or
+     * does not exist, treat it like an empty array.
      */
 
-    TclNewObj(resultObj);
-    if (patternObj) {
-	pattern = TclGetString(patternObj);
-    }
-    if ((mode==OPT_GLOB && patternObj && TclMatchIsTrivial(pattern))
-	    || (mode==OPT_EXACT)) {
-	varPtr2 = VarHashFindVar(varPtr->value.tablePtr, patternObj);
-	if ((varPtr2 != NULL) && !TclIsVarUndefined(varPtr2)) {
-	    /*
-	     * This can't fail; lappending to an empty object always works.
-	     */
-
-	    Tcl_ListObjAppendElement(NULL, resultObj, VarHashGetKey(varPtr2));
-	}
-	Tcl_SetObjResult(interp, resultObj);
-	return TCL_OK;
-    }
-
-    /*
-     * Must scan the array to select the elements.
-     */
-
-    for (varPtr2=VarHashFirstVar(varPtr->value.tablePtr, &search);
-	    varPtr2!=NULL ; varPtr2=VarHashNextVar(&search)) {
-	if (TclIsVarUndefined(varPtr2)) {
-	    continue;
-	}
-	nameObj = VarHashGetKey(varPtr2);
-	if (patternObj) {
-	    const char *name = TclGetString(nameObj);
-	    int matched = 0;
-
-	    switch ((enum options) mode) {
-	    case OPT_EXACT:
-		Tcl_Panic("exact matching shouldn't get here");
-	    case OPT_GLOB:
-		matched = Tcl_StringMatch(name, pattern);
-		break;
-	    case OPT_REGEXP:
-		matched = Tcl_RegExpMatchObj(interp, nameObj, patternObj);
-		if (matched < 0) {
-		    TclDecrRefCount(resultObj);
-		    return TCL_ERROR;
-		}
-		break;
-	    }
-	    if (matched == 0) {
-		continue;
-	    }
-	}
-
-	Tcl_ListObjAppendElement(NULL, resultObj, nameObj);
-    }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
