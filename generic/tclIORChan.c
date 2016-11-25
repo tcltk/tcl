@@ -1152,7 +1152,7 @@ ReflectClose(
 
 	tctPtr = ((Channel *)rcPtr->chan)->typePtr;
 	if (tctPtr && tctPtr != &tclRChannelType) {
-	    ckfree(tctPtr);
+	    ckfree((char *)tctPtr);
 	    ((Channel *)rcPtr->chan)->typePtr = NULL;
 	}
         Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
@@ -1221,7 +1221,7 @@ ReflectClose(
 #endif
     tctPtr = ((Channel *)rcPtr->chan)->typePtr;
     if (tctPtr && tctPtr != &tclRChannelType) {
-	    ckfree(tctPtr);
+	    ckfree((char *)tctPtr);
 	    ((Channel *)rcPtr->chan)->typePtr = NULL;
     }
     Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
