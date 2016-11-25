@@ -60,7 +60,7 @@ static TclFile		FileForRedirect(Tcl_Interp *interp, const char *spec,
 
 static TclFile
 FileForRedirect(
-    Tcl_Interp *interp,		/* Intepreter to use for error reporting. */
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
     const char *spec,		/* Points to character just after redirection
 				 * character. */
     int atOK,			/* Non-zero means that '@' notation can be
