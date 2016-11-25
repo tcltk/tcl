@@ -42,7 +42,6 @@ static inline Var *	VarHashCreateVar(TclVarHashTable *tablePtr,
 static inline Var *	VarHashFirstVar(TclVarHashTable *tablePtr,
 			    Tcl_HashSearch *searchPtr);
 static inline Var *	VarHashNextVar(Tcl_HashSearch *searchPtr);
-static inline void	CleanupVar(Var *varPtr, Var *arrayPtr);
 
 #define VarHashGetValue(hPtr) \
     ((Var *) ((char *)hPtr - TclOffset(VarInHash, entry)))
@@ -293,8 +292,8 @@ TclVarHashCreateVar(
  *----------------------------------------------------------------------
  */
 
-static inline void
-CleanupVar(
+void
+TclCleanupVar(
     Var *varPtr,		/* Pointer to variable that may be a candidate
 				 * for being expunged. */
     Var *arrayPtr)		/* Array that contains the variable, or NULL
@@ -318,16 +317,6 @@ CleanupVar(
 	    VarHashDeleteEntry(arrayPtr);
 	}
     }
-}
-
-void
-TclCleanupVar(
-    Var *varPtr,		/* Pointer to variable that may be a candidate
-				 * for being expunged. */
-    Var *arrayPtr)		/* Array that contains the variable, or NULL
-				 * if this variable isn't an array element. */
-{
-    CleanupVar(varPtr, arrayPtr);
 }
 
 /*
@@ -1121,7 +1110,7 @@ ArrayVar(
 	if (!varPtr && (flags & TCL_LEAVE_ERR_MSG)) {
 	    return NULL;
 	} else if (arrayPtr) {
-	    CleanupVar(varPtr, arrayPtr);
+	    TclCleanupVar(varPtr, arrayPtr);
 	    varPtr = NULL;
 	}
     }
@@ -3121,7 +3110,7 @@ TclPtrUnsetVar(
 
     if (TclIsVarInHash(varPtr)) {
 	VarHashRefCount(varPtr)--;
-	CleanupVar(varPtr, arrayPtr);
+	TclCleanupVar(varPtr, arrayPtr);
     }
     return result;
 }
@@ -3288,7 +3277,7 @@ UnsetVarStruct(
 
 	if (TclIsVarInHash(linkPtr)) {
 	    VarHashRefCount(linkPtr)--;
-	    CleanupVar(linkPtr, NULL);
+	    TclCleanupVar(linkPtr, NULL);
 	}
     }
 
@@ -4408,7 +4397,7 @@ ArrayUnsetCmd(
 	 */
 
 	if (TclIsVarUndefined(varPtr2)) {
-	    CleanupVar(varPtr2, varPtr);
+	    TclCleanupVar(varPtr2, varPtr);
 	    continue;
 	}
 
@@ -4423,7 +4412,7 @@ ArrayUnsetCmd(
 
 	    if (protectedVarPtr) {
 		VarHashRefCount(protectedVarPtr)--;
-		CleanupVar(protectedVarPtr, varPtr);
+		TclCleanupVar(protectedVarPtr, varPtr);
 	    }
 	    return TCL_ERROR;
 	}
@@ -4717,7 +4706,7 @@ TclPtrObjMakeUpvar(
 	if (TclIsVarInHash(linkPtr)) {
 	    VarHashRefCount(linkPtr)--;
 	    if (TclIsVarUndefined(linkPtr)) {
-		CleanupVar(linkPtr, NULL);
+		TclCleanupVar(linkPtr, NULL);
 	    }
 	}
     }
