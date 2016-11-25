@@ -1822,7 +1822,7 @@ int
 Tcl_ArraySet(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Obj *part1Ptr,		/* The array name. */
-    Tcl_Obj *dictObj,		/* The array elements list or dict. If this is
+    Tcl_Obj *dictPtr,		/* The array elements list or dict. If this is
 				 * NULL, create an empty array. */
     int flags)			/* 0 or TCL_LEAVE_ERR_MSG. */
 {
@@ -1833,7 +1833,7 @@ Tcl_ArraySet(
 	return TCL_ERROR;
     }
 
-    if (dictObj == NULL) {
+    if (dictPtr == NULL) {
 	goto ensureArray;
     }
 
@@ -1841,12 +1841,12 @@ Tcl_ArraySet(
      * Install the contents of the dictionary or list into the array.
      */
 
-    if (dictObj->typePtr == &tclDictType) {
+    if (dictPtr->typePtr == &tclDictType) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done;
 
-	if (Tcl_DictObjSize(interp, dictObj, &done) != TCL_OK) {
+	if (Tcl_DictObjSize(interp, dictPtr, &done) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (done == 0) {
@@ -1863,7 +1863,7 @@ Tcl_ArraySet(
 	 * successfully used a dictionary operation on the same object.
 	 */
 
-	for (Tcl_DictObjFirst(interp, dictObj, &search,
+	for (Tcl_DictObjFirst(interp, dictPtr, &search,
 		&keyPtr, &valuePtr, &done) ; !done ;
 		Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done)) {
 	    /*
@@ -1891,7 +1891,7 @@ Tcl_ArraySet(
 	int elemLen;
 	Tcl_Obj **elemPtrs, *copyListObj;
 
-	result = TclListObjGetElements(interp, dictObj,
+	result = TclListObjGetElements(interp, dictPtr,
 		&elemLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
@@ -1912,7 +1912,7 @@ Tcl_ArraySet(
 	 * loop and return an error.
 	 */
 
-	copyListObj = TclListObjCopy(NULL, dictObj);
+	copyListObj = TclListObjCopy(NULL, dictPtr);
 	for (i=0 ; i<elemLen ; i+=2) {
 	    Var *elemVarPtr = TclLookupArrayElement(interp, part1Ptr,
 		    elemPtrs[i], flags, "set", 1, 1, varPtr, -1);
