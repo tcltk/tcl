@@ -2039,7 +2039,7 @@ Tcl_OpenTcpServerEx(
     Tcl_Interp *interp,		/* For error reporting - may be NULL. */
     int port,			/* Port number to open. */
     const char *myHost,		/* Name of local host. */
-    unsigned int flags,		/* Flags (not used) */
+    unsigned int flags,		/* Flags. */
     Tcl_TcpAcceptProc *acceptProc,
 				/* Callback for accepting connections from new
 				 * clients. */
@@ -2053,6 +2053,7 @@ Tcl_OpenTcpServerEx(
     char channelName[SOCK_CHAN_LENGTH];
     u_long flag = 1;		/* Indicates nonblocking mode. */
     const char *errorMsg = NULL;
+    int optvalue;
 
     if (TclpHasSockets(interp) != TCL_OK) {
 	return NULL;
@@ -2111,9 +2112,17 @@ Tcl_OpenTcpServerEx(
 	}
 
 	/*
-	 * Bind to the specified port. Note that we must not call
-	 * setsockopt with SO_REUSEADDR or SO_REUSEPORT because Microsoft
-	 * allows addresses and ports to be reused even if they are still in use.
+	 * The SO_REUSEADDR option on Windows behaves like SO_REUSEPORT on unix
+	 * systems.
+	 */
+	if (flags & TCL_TCPSERVER_REUSEPORT) {
+	    optvalue = 1;
+	    (void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+			      (char *) &optvalue, sizeof(optvalue));
+	}
+
+	/*
+	 * Bind to the specified port.
 	 *
 	 * Bind should not be affected by the socket having already been
 	 * set into nonblocking mode. If there is trouble, this is one
