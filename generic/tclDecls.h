@@ -1842,6 +1842,10 @@ EXTERN int		Tcl_ArrayUnset(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 /* 639 */
 EXTERN int		Tcl_ArrayExists(Tcl_Interp *interp,
 				Tcl_Obj *part1Ptr, int *existsPtr, int flags);
+/* 640 */
+EXTERN int		Tcl_ArrayGet(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+				Tcl_Obj *part2Ptr, Tcl_Obj *dictPtr,
+				int flags);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2517,6 +2521,7 @@ typedef struct TclStubs {
     int (*tcl_ArraySet) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *dictPtr, int flags); /* 637 */
     int (*tcl_ArrayUnset) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 638 */
     int (*tcl_ArrayExists) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, int *existsPtr, int flags); /* 639 */
+    int (*tcl_ArrayGet) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *dictPtr, int flags); /* 640 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3827,6 +3832,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ArrayUnset) /* 638 */
 #define Tcl_ArrayExists \
 	(tclStubsPtr->tcl_ArrayExists) /* 639 */
+#define Tcl_ArrayGet \
+	(tclStubsPtr->tcl_ArrayGet) /* 640 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

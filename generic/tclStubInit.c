@@ -1425,6 +1425,7 @@ const TclStubs tclStubs = {
     Tcl_ArraySet, /* 637 */
     Tcl_ArrayUnset, /* 638 */
     Tcl_ArrayExists, /* 639 */
+    Tcl_ArrayGet, /* 640 */
 };
 
 /* !END!: Do not edit above this line. */

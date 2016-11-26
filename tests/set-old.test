@@ -390,10 +390,10 @@ test set-old-8.14 {array command, exists option, array doesn't exist yet but has
 } {0 0}
 test set-old-8.15 {array command, get option} {
     list [catch {array get} msg] $msg
-} {1 {wrong # args: should be "array get arrayName ?pattern?"}}
+} {1 {wrong # args: should be "array get arrayName ?mode? ?pattern?"}}
 test set-old-8.16 {array command, get option} {
     list [catch {array get a b c} msg] $msg
-} {1 {wrong # args: should be "array get arrayName ?pattern?"}}
+} {1 {bad option "b": must be -exact, -glob, or -regexp}}
 test set-old-8.17 {array command, get option} {
     catch {unset a}
     array get a

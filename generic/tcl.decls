@@ -2360,6 +2360,10 @@ declare 639 {
     int Tcl_ArrayExists(Tcl_Interp *interp, Tcl_Obj *part1Ptr, int *existsPtr,
 	int flags)
 }
+declare 640 {
+    int Tcl_ArrayGet(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+	Tcl_Obj *dictPtr, int flags)
+}
 
 ##############################################################################
 

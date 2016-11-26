@@ -2139,6 +2139,175 @@ Tcl_ArrayExists(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_ArrayGet --
+ *
+ *	This function loads the contents of an array into a dict.
+ *
+ * Results:
+ *	The array is loaded into the specified dict. The array element names and
+ *	values become the dict keys and values, respectively. If a filter is
+ *	supplied, only the elements whose names match the filter are loaded.
+ *
+ *	If the output dict isn't initially empty, the new keys and values take
+ *	precedence over its initial contents. This can be used to mere multiple
+ *	arrays into a single dict, or multiple collections of elements from a
+ *	single array obtained by different filters. There is a mild performance
+ *	penalty when the output dict isn't initially empty due to the need to
+ *	maintain a rollback dict in case an array trace unsets the array in the
+ *	middle of this function's execution.
+ *
+ * Side effects:
+ *	Array traces, if any, are executed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_ArrayGet(
+    Tcl_Interp *interp,		/* Interpreter in which to look up variable. */
+    Tcl_Obj *part1Ptr,		/* Name of array variable. */
+    Tcl_Obj *part2Ptr,		/* Element filter or NULL to read all. */
+    Tcl_Obj *dictPtr,		/* Dict object to load array data into. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
+				 * TCL_NAMESPACE_ONLY, also at most one of
+				 * TCL_MATCH_EXACT, _GLOB, and _REGEXP. */
+{
+    Tcl_Obj *nameListObj, *rollbackObj, **nameObjPtr, *valueObj;
+    Var *varPtr;
+    int fail = 0, filterType = flags & TCL_MATCH, i, count, result;
+
+    /*
+     * Locate the array variable. Report trace failures as errors. If the
+     * variable is a scalar or does not exist, treat it like an empty array.
+     */
+
+    if (!(varPtr = ArrayVar(interp, part1Ptr, &fail, flags))) {
+	return fail ? TCL_ERROR : TCL_OK;
+    }
+
+    /*
+     * Confirm the output structure forms a valid dict. It's also important to
+     * check whether it's initially empty or not.
+     */
+
+    if (Tcl_DictObjSize(interp, dictPtr, &count) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Get the list of element names matching the filter.
+     */
+
+    TclNewObj(nameListObj);
+    Tcl_IncrRefCount(nameListObj);
+    if (ArrayNames(interp, varPtr, part2Ptr, filterType,
+	    nameListObj) != TCL_OK) {
+	Tcl_DecrRefCount(nameListObj);
+	return TCL_ERROR;
+    }
+
+    /*
+     * If the output dict wasn't initially empty, prepare to undo any changes
+     * made to it in case an error occurs.
+     */
+
+    if (count) {
+	TclNewObj(rollbackObj);
+	Tcl_IncrRefCount(rollbackObj);
+    } else {
+	rollbackObj = NULL;
+    }
+
+    /*
+     * Make sure the Var structure of the array is not removed by a trace while
+     * we're working.
+     */
+
+    if (TclIsVarInHash(varPtr)) {
+	VarHashRefCount(varPtr)++;
+    }
+
+    /*
+     * Load the array keys and values into the output dict.
+     */
+
+    Tcl_ListObjGetElements(interp, nameListObj, &count, &nameObjPtr);
+    result = TCL_OK;
+    for (i = 0; i < count; ++i, ++nameObjPtr) {
+	/*
+	 * If rollback is enabled, before loading each new value, remember the
+	 * old value already present in the output dict.
+	 */
+
+	if (rollbackObj) {
+	    Tcl_DictObjGet(interp, dictPtr, *nameObjPtr, &valueObj);
+	    if (valueObj) {
+		Tcl_DictObjPut(interp, rollbackObj, *nameObjPtr, valueObj);
+	    }
+	}
+
+	/*
+	 * Try to get the array element value, but beware of traces.
+	 */
+
+	valueObj = Tcl_ObjGetVar2(interp, part1Ptr, *nameObjPtr,
+		TCL_LEAVE_ERR_MSG);
+
+	if (valueObj) {
+	    /*
+	     * If the array element was found, load it into the output dict, an
+	     * operation which cannot fail since the output was already
+	     * confirmed to be a valid dict.
+	     */
+
+	    Tcl_DictObjPut(interp, dictPtr, *nameObjPtr, valueObj);
+	} else if (!TclIsVarArray(varPtr)) {
+	    /*
+	     * On error (specifically, if a trace deleted the array), restore
+	     * the output dict to the way it was when this function was called.
+	     *
+	     * If the element was unset by a trace, proceed as if it never
+	     * existed in the first place, provided the array still exists.
+	     */
+
+	    if (rollbackObj) {
+		count = i;
+		nameObjPtr -= i;
+		for (i = 0; i < count; ++i, ++nameObjPtr) {
+		    Tcl_DictObjGet(interp, rollbackObj, *nameObjPtr, &valueObj);
+		    if (valueObj) {
+			Tcl_DictObjPut(interp, dictPtr, *nameObjPtr, valueObj);
+		    } else {
+			Tcl_DictObjRemove(interp, dictPtr, *nameObjPtr);
+		    }
+		}
+	    } else {
+		Tcl_SetStringObj(dictPtr, NULL, 0);
+	    }
+
+	    result = TCL_ERROR;
+	    break;
+	}
+    }
+
+    /*
+     * Clean up internal data structures, then report success or failure.
+     */
+
+    if (TclIsVarInHash(varPtr)) {
+	VarHashRefCount(varPtr)--;
+    }
+    if (rollbackObj) {
+	Tcl_DecrRefCount(rollbackObj);
+    }
+    Tcl_DecrRefCount(nameListObj);
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetVar --
  *
  *	Return the value of a Tcl variable as a string.
@@ -4050,139 +4219,25 @@ ArrayGetCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Var *varPtr, *varPtr2;
-    Tcl_Obj *varNameObj, *nameObj, *valueObj, *nameLstObj, *tmpResObj;
-    Tcl_Obj **nameObjPtr, *patternObj;
-    Tcl_HashSearch search;
-    const char *pattern;
-    int traceFail = 0, i, count, result;
+    Tcl_Obj *varNameObj, *filterObj, *resultObj;
+    int filterType;
 
-    switch (objc) {
-    case 2:
-	varNameObj = objv[1];
-	patternObj = NULL;
-	break;
-    case 3:
-	varNameObj = objv[1];
-	patternObj = objv[2];
-	break;
-    default:
-	Tcl_WrongNumArgs(interp, 1, objv, "arrayName ?pattern?");
+    if (ArrayArgs(interp, objc, objv, &varNameObj,
+	    &filterObj, &filterType) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Locate the array variable. Report trace failures as errors. If the
-     * variable is a scalar or does not exist, treat it like an empty array.
-     */
-
-    if (!(varPtr = ArrayVar(interp, varNameObj, &traceFail, 0))) {
-	return traceFail ? TCL_ERROR : TCL_OK;
+    TclNewObj(resultObj);
+    Tcl_IncrRefCount(resultObj);
+    if (Tcl_ArrayGet(interp, varNameObj, filterObj, resultObj,
+	    filterType) != TCL_OK) {
+	Tcl_DecrRefCount(resultObj);
+	return TCL_ERROR;
     }
 
-    pattern = (patternObj ? TclGetString(patternObj) : NULL);
-
-    /*
-     * Store the array names in a new object.
-     */
-
-    TclNewObj(nameLstObj);
-    Tcl_IncrRefCount(nameLstObj);
-    if ((patternObj != NULL) && TclMatchIsTrivial(pattern)) {
-	varPtr2 = VarHashFindVar(varPtr->value.tablePtr, patternObj);
-	if (varPtr2 == NULL) {
-	    goto searchDone;
-	}
-	if (TclIsVarUndefined(varPtr2)) {
-	    goto searchDone;
-	}
-	result = Tcl_ListObjAppendElement(interp, nameLstObj,
-		VarHashGetKey(varPtr2));
-	if (result != TCL_OK) {
-	    TclDecrRefCount(nameLstObj);
-	    return result;
-	}
-	goto searchDone;
-    }
-
-    for (varPtr2 = VarHashFirstVar(varPtr->value.tablePtr, &search);
-	    varPtr2; varPtr2 = VarHashNextVar(&search)) {
-	if (TclIsVarUndefined(varPtr2)) {
-	    continue;
-	}
-	nameObj = VarHashGetKey(varPtr2);
-	if (patternObj && !Tcl_StringMatch(TclGetString(nameObj), pattern)) {
-	    continue;		/* Element name doesn't match pattern. */
-	}
-
-	result = Tcl_ListObjAppendElement(interp, nameLstObj, nameObj);
-	if (result != TCL_OK) {
-	    TclDecrRefCount(nameLstObj);
-	    return result;
-	}
-    }
-
-    /*
-     * Make sure the Var structure of the array is not removed by a trace
-     * while we're working.
-     */
-
-  searchDone:
-    if (TclIsVarInHash(varPtr)) {
-	VarHashRefCount(varPtr)++;
-    }
-
-    /*
-     * Get the array values corresponding to each element name.
-     */
-
-    TclNewObj(tmpResObj);
-    result = Tcl_ListObjGetElements(interp, nameLstObj, &count, &nameObjPtr);
-    if (result != TCL_OK) {
-	goto errorInArrayGet;
-    }
-
-    for (i=0 ; i<count ; i++) {
-	nameObj = *nameObjPtr++;
-	valueObj = Tcl_ObjGetVar2(interp, varNameObj, nameObj,
-		TCL_LEAVE_ERR_MSG);
-	if (valueObj == NULL) {
-	    /*
-	     * Some trace played a trick on us; we need to diagnose to adapt
-	     * our behaviour: was the array element unset, or did the
-	     * modification modify the complete array?
-	     */
-
-	    if (TclIsVarArray(varPtr)) {
-		/*
-		 * The array itself looks OK, the variable was undefined:
-		 * forget it.
-		 */
-
-		continue;
-	    }
-	    result = TCL_ERROR;
-	    goto errorInArrayGet;
-	}
-	result = Tcl_DictObjPut(interp, tmpResObj, nameObj, valueObj);
-	if (result != TCL_OK) {
-	    goto errorInArrayGet;
-	}
-    }
-    if (TclIsVarInHash(varPtr)) {
-	VarHashRefCount(varPtr)--;
-    }
-    Tcl_SetObjResult(interp, tmpResObj);
-    TclDecrRefCount(nameLstObj);
+    Tcl_SetObjResult(interp, resultObj);
+    Tcl_DecrRefCount(resultObj);
     return TCL_OK;
-
-  errorInArrayGet:
-    if (TclIsVarInHash(varPtr)) {
-	VarHashRefCount(varPtr)--;
-    }
-    TclDecrRefCount(nameLstObj);
-    TclDecrRefCount(tmpResObj);	/* Free unneeded temp result. */
-    return result;
 }
 
 /*
@@ -4232,13 +4287,16 @@ ArrayNamesCmd(
      * Generate the result list.
      */
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
+    Tcl_IncrRefCount(resultObj);
     if (ArrayNames(interp, varPtr, filterObj, filterType,
 	    resultObj) != TCL_OK) {
+	Tcl_DecrRefCount(resultObj);
 	return TCL_ERROR;
     }
 
     Tcl_SetObjResult(interp, resultObj);
+    Tcl_DecrRefCount(resultObj);
     return TCL_OK;
 }
 
