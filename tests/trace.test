@@ -2669,45 +2669,6 @@ test trace-40.1 {execution trace errors become command errors} {
     return -level 0 $m[unset m]
 } bar
 
-# This test is special. Even when it's failing, it is likely to appear to pass.
-# One way to trigger the failure is to add code to FreeVarEntry() to force a
-# freed variable to have an invalid (though non-NULL) objPtr, after which a
-# failure is manifested as SIGSEGV due to dereferencing said pointer despite the
-# fact that said variable has been freed. Another way is to compile with
-# TCL_MEM_DEBUG (e.g. --enable-symbols=mem). In the default configuration,
-# Valgrind 3.8.1 doesn't detect this problem, possibly because it doesn't
-# understand Tcl's custom allocator and doesn't realize memory is being freed.
-#
-# The memory constraint causes this test to be skipped unless TCL_MEM_DEBUG.
-#
-# Here's a patch for tclVar.c, thanks to Alex Ferrieux, who also wrote the test:
-#
-# static void FreeVarEntry(Tcl_HashEntry *hPtr)
-# {
-#   ...
-# +	varPtr->value.objPtr = (void *)0xdeadbeef;
-#	ckfree(varPtr);
-#   ...
-# }
-test trace-41.1 {bug #2939073: traces and [array unset]} -constraints memory\
--setup {
-    array set x {e 1 i 1}
-    trace add variable x unset rem
-    proc rem args {
-	lappend ::traces $args
-	if {![info exists ::already]} {
-	    set ::already 1
-	    unset ::x(e)
-	}
-    }
-} -body {
-    array unset x ?
-    set traces
-} -cleanup {
-    unset x traces already
-    rename rem {}
-} -result {{x i unset} {::x e unset}}
-
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).
 catch {rename foobar {}}
