@@ -2106,6 +2106,47 @@ Tcl_ArrayUnset(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_ArrayExists --
+ *
+ *	This function checks if an array exists.
+ *
+ * Results:
+ *	*existsPtr is set to 1 or 0 if the array does or does not exist, and
+ *	TCL_OK is returned. *existPtr is also set to 0 if a variable with the
+ *	given name exists but is not an array, as well as in event of lookup
+ *	error such as nonexistent namespace. If an array trace error occurs,
+ *	TCL_ERROR is returned and *existsPtr is not modified.
+ *
+ * Side effects:
+ *	Array traces, if any, are executed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_ArrayExists(
+    Tcl_Interp *interp,		/* Interpreter in which to look up variable. */
+    Tcl_Obj *part1Ptr,		/* Name of array variable. */
+    int *existsPtr,		/* Set to 1 if exists, 0 otherwise. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
+				 * TCL_NAMESPACE_ONLY. */
+{
+    int traceFail = 0;
+
+    if (ArrayVar(interp, part1Ptr, &traceFail, flags)) {
+	*existsPtr = 1;
+    } else if (traceFail) {
+	return TCL_ERROR;
+    } else {
+	*existsPtr = 0;
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetVar --
  *
  *	Return the value of a Tcl variable as a string.
@@ -3977,26 +4018,15 @@ ArrayExistsCmd(
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
-    Var *varPtr;
-    Tcl_Obj *arrayNameObj;
-    int traceFail = 0, exists;
+    int exists;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
 	return TCL_ERROR;
     }
-    arrayNameObj = objv[1];
 
-    /*
-     * Locate the array variable.
-     */
-
-    if ((varPtr = ArrayVar(interp, arrayNameObj, &traceFail, 0))) {
-	exists = 1;
-    } else if (traceFail) {
+    if (Tcl_ArrayExists(interp, objv[1], &exists, 0) != TCL_OK) {
 	return TCL_ERROR;
-    } else {
-	exists = 0;
     }
 
     Tcl_SetObjResult(interp, iPtr->execEnvPtr->constants[exists]);

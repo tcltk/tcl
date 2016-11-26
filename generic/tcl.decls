@@ -2356,6 +2356,10 @@ declare 638 {
     int Tcl_ArrayUnset(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
 	int flags)
 }
+declare 639 {
+    int Tcl_ArrayExists(Tcl_Interp *interp, Tcl_Obj *part1Ptr, int *existsPtr,
+	int flags)
+}
 
 ##############################################################################
 
