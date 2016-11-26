@@ -1993,7 +1993,6 @@ Tcl_ArrayUnset(
 {
     ArraySearch search;
     int fail = 0, filterType = flags & TCL_MATCH;
-    const char *filterStr, *p;
     Var *varPtr, *elemPtr, *protectedElemPtr;
 
     /*
@@ -2006,26 +2005,19 @@ Tcl_ArrayUnset(
     }
 
     /*
-     * When no filter is given, or the filter is a glob pattern consisting of
-     * nothing but asterisks, unset the whole array.
+     * When no filter is given, unset the whole array.
      */
 
     if (!part2Ptr) {
 	return TclObjUnsetVar2(interp, part1Ptr, NULL, flags);
-    } else if (filterType == TCL_MATCH_GLOB) {
-	filterStr = TclGetString(part2Ptr);
-	for (p = filterStr; *p && *p == '*'; ++p);
-	if (*filterStr && !*p) {
-	    return TclObjUnsetVar2(interp, part1Ptr, NULL, flags);
-	}
     }
 
     /*
      * With an exact match or trivial pattern, unset the single element.
      */
 
-    if (filterType == TCL_MATCH_EXACT
-     || (filterType == TCL_MATCH_GLOB && TclMatchIsTrivial(filterStr))) {
+    if (filterType == TCL_MATCH_EXACT || (filterType == TCL_MATCH_GLOB
+     && TclMatchIsTrivial(TclGetString(part2Ptr)))) {
 	elemPtr = VarHashFindVar(varPtr->value.tablePtr, part2Ptr);
 	if (!elemPtr || TclIsVarUndefined(elemPtr)) {
 	    return TCL_OK;
