@@ -197,14 +197,14 @@ test load-8.2 {TclGetLoadedPackages procedure} -body {
 } -returnCodes error -result {could not find interpreter "gorp"}
 test load-8.3a {TclGetLoadedPackages procedure} [list teststaticpkg $dll $loaded] {
     lsort -index 1 [info loaded {}]
-} [lsort -index 1 [list {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga] [list [file join $testDir pkgb$ext] Pkgb] {*}$alreadyLoaded]]
+} [lsort -index 1 [list {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga] [list [file join $testDir pkgb$ext] Pkgb] [list [file join $testDir pkge$ext] Pkge] {*}$alreadyLoaded]]
 test load-8.3b {TclGetLoadedPackages procedure} [list teststaticpkg $dll $loaded] {
     lsort -index 1 [info loaded child]
 } [lsort -index 1 [list {{} Test} [list [file join $testDir pkgb$ext] Pkgb]]]
 test load-8.4 {TclGetLoadedPackages procedure} [list $dll $loaded teststaticpkg] {
     load [file join $testDir pkgb$ext] pkgb
     list [lsort -index 1 [info loaded {}]] [lsort [info commands pkgb_*]]
-} [list [lsort -index 1 [concat [list [list [file join $testDir pkgb$ext] Pkgb] {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga]] $alreadyLoaded]] {pkgb_demo pkgb_sub pkgb_unsafe}]
+} [list [lsort -index 1 [concat [list [list [file join $testDir pkgb$ext] Pkgb] [list [file join $testDir pkge$ext] Pkge] {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga]] $alreadyLoaded]] {pkgb_demo pkgb_sub pkgb_unsafe}]
 interp delete child
 
 test load-9.1 {Tcl_StaticPackage, load already-loaded package into another interp} \
