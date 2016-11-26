@@ -2328,41 +2328,41 @@ declare 630 {
 
 # TIP #XXX
 declare 631 {
-    int Tcl_ArraySize(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
-	Tcl_Obj *part2Ptr, int flags)
-}
-declare 632 {
-    Tcl_ArraySearch Tcl_ArraySearchStart(Tcl_Interp *interp,
-	Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags)
-}
-declare 633 {
-    Tcl_Obj *Tcl_ArraySearchPeek(Tcl_ArraySearch search)
-}
-declare 634 {
-    Tcl_Obj *Tcl_ArraySearchNext(Tcl_ArraySearch search)
-}
-declare 635 {
-    void Tcl_ArraySearchDone(Tcl_ArraySearch search)
-}
-declare 636 {
-    int Tcl_ArrayNames(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
-	Tcl_Obj *listPtr, int flags)
-}
-declare 637 {
     int Tcl_ArraySet(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *dictPtr,
 	int flags)
 }
-declare 638 {
+declare 632 {
     int Tcl_ArrayUnset(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
 	int flags)
 }
-declare 639 {
+declare 633 {
+    int Tcl_ArrayGet(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+	Tcl_Obj *dictPtr, int flags)
+}
+declare 634 {
+    int Tcl_ArrayNames(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+	Tcl_Obj *listPtr, int flags)
+}
+declare 635 {
+    int Tcl_ArraySize(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+	Tcl_Obj *part2Ptr, int flags)
+}
+declare 636 {
     int Tcl_ArrayExists(Tcl_Interp *interp, Tcl_Obj *part1Ptr, int *existsPtr,
 	int flags)
 }
+declare 637 {
+    Tcl_ArraySearch Tcl_ArraySearchStart(Tcl_Interp *interp,
+	Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags)
+}
+declare 638 {
+    Tcl_Obj *Tcl_ArraySearchPeek(Tcl_ArraySearch search)
+}
+declare 639 {
+    Tcl_Obj *Tcl_ArraySearchNext(Tcl_ArraySearch search)
+}
 declare 640 {
-    int Tcl_ArrayGet(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
-	Tcl_Obj *dictPtr, int flags)
+    void Tcl_ArraySearchDone(Tcl_ArraySearch search)
 }
 
 ##############################################################################

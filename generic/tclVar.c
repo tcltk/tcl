@@ -1522,287 +1522,6 @@ ArrayArgs(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ArraySize --
- *
- *	This function returns the number of elements in an array variable. It
- *	provides C-level access to [array size] functionality, except this
- *	function does not treat scalar and nonexistent variable as if they were
- *	empty arrays. If part2Ptr is not NULL, only array elements whose names
- *	match part2Ptr are counted toward the return value. The interpretation
- *	of part2Ptr is controlled by TCL_MATCH_* being set within flags.
- *
- * Results:
- *	The return value is normally the integer count of array elements whose
- *	names match the given filter. If varNamePtr does not name an array, -1
- *	is returned and an error message is placed in interp's result.
- *
- * Side effects:
- *	None.
- *	
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_ArraySize(
-    Tcl_Interp *interp,		/* Command interpreter in which part1Ptr is to
-				 * be looked up. */
-    Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
-    Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
-    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
-				 * also at most one of TCL_MATCH_EXACT, _GLOB,
-				 * and _REGEXP. */
-{
-    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
-    return varPtr ? ArraySize(interp, varPtr, part2Ptr, flags & TCL_MATCH) : -1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_ArraySearchStart --
- *
- *	This function initiates an array search, i.e. step-by-step array element
- *	enumeration. It provides C-level access to [array startsearch]. The
- *	returned value is used to obtain one array element name at a time. If
- *	part2Ptr is not NULL, only array elements whose names match part2Ptr are
- *	returned by future calls to Tcl_ArraySearchNext(). The interpretation of
- *	part2Ptr is controlled by TCL_MATCH_* being set within flags.
- *
- * Results:
- *	A new array search is created, a pointer to which is returned. If the
- *	variable does not exist or is not an array, NULL is returned, and no
- *	search is created.
- *
- * Side effects:
- *	On success, the search is allocated on the heap and will need to be
- *	deallocated by a future call to Tcl_ArraySearchDone().
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_ArraySearch
-Tcl_ArraySearchStart(
-    Tcl_Interp *interp,		/* Command interpreter in which part1Ptr is to
-				 * be looked up. */
-    Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
-    Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
-    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
-				 * also at most one of TCL_MATCH_EXACT, _GLOB,
-				 * and _REGEXP. */
-{
-    Interp *iPtr = (Interp *)interp;
-    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
-    Tcl_HashEntry *hPtr;
-    int isNew, fail = 0;
-    ArraySearch search, *searchPtr;
-
-    /*
-     * Handle the possible error cases before performing any allocations.
-     */
-
-    if (!varPtr) {
-	return NULL;
-    }
-
-    search.interp = interp;
-    search.varPtr = varPtr;
-    search.filterObj = part2Ptr;
-    search.filterType = flags & TCL_MATCH;
-    search.nextEntry = ArrayFirst(&search, &fail);
-    if (!search.nextEntry && fail) {
-	return NULL;
-    }
-
-    /*
-     * Make a new array search with a free name.
-     */
-
-    hPtr = Tcl_CreateHashEntry(&iPtr->varSearches, varPtr, &isNew);
-    if (isNew) {
-	search.id = 1;
-	varPtr->flags |= VAR_SEARCH_ACTIVE;
-	search.nextPtr = NULL;
-    } else {
-	search.id = ((ArraySearch *)Tcl_GetHashValue(hPtr))->id + 1;
-	search.nextPtr = Tcl_GetHashValue(hPtr);
-    }
-    search.name = Tcl_ObjPrintf("s-%d-%s", search.id, TclGetString(part1Ptr));
-    Tcl_IncrRefCount(search.name);
-    if (part2Ptr) {
-	Tcl_IncrRefCount(part2Ptr);
-    }
-    searchPtr = ckalloc(sizeof(*searchPtr));
-    *searchPtr = search;
-    Tcl_SetHashValue(hPtr, searchPtr);
-
-    return searchPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_ArraySearchPeek --
- *
- *	Finds the next element of an array for a given search query. Unlike
- *	Tcl_ArraySearchNext(), there are no side effects, so the search query
- *	state is not advanced and the element is not consumed.
- *
- * Preconditions, results, limitations:
- *	Same as Tcl_ArraySearchNext().
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-Tcl_ArraySearchPeek(
-    Tcl_ArraySearch search)	/* Prior return from Tcl_ArraySearchStart(). */
-{
-    search->nextEntry = ArrayNext(search, NULL);
-    return search->nextEntry ? VarHashGetKey(search->nextEntry) : NULL;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_ArraySearchNext --
- *
- *	Finds the next element of an array for a given search query.
- *
- * Preconditions:
- *	The search argument must be the return value of Tcl_ArraySearchStart()
- *	and must not have been passed to Tcl_ArraySearchDone().
- *
- * Results:
- *	The return value is the name of the next array element. If there are no
- *	more array elements, NULL is returned.
- *
- * Side effects:
- *	The search data structure is updated such that successive invocations of
- *	this function will return successive array element names.
- *
- * Limitations:
- *	It is not possible to distinguish between reaching the end of the array
- *	and experiencing a regular expression error. This is unlikely to be an
- *	actual problem because Tcl_ArraySearchStart() already checks for regular
- *	expression errors and returns NULL if found. If the regular expression
- *	engine has a bug whereby a given query can initially succeed yet return
- *	error depending on the string it is matched against, the caller of this
- *	function will perceive it as prematurely hitting the end of the array.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-Tcl_ArraySearchNext(
-    Tcl_ArraySearch search)	/* Prior return from Tcl_ArraySearchStart(). */
-{
-    Var *varPtr = ArrayNext(search, NULL);
-    return varPtr ? VarHashGetKey(varPtr) : NULL;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_ArraySearchDone --
- *
- *	Terminates and cleans up an array search query.
- *
- * Preconditions:
- *	The search argument must be the return value of Tcl_ArraySearchStart()
- *	and must not have been passed to Tcl_ArraySearchDone().
- *
- * Results:
- *	The search query is completed.
- *
- * Side effects:
- *	Resources associated with the search are deallocated.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_ArraySearchDone(
-    Tcl_ArraySearch search)	/* Prior return from Tcl_ArraySearchStart(). */
-{
-    Interp *iPtr = (Interp *)search->interp;
-    Var *varPtr = search->varPtr;
-    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&iPtr->varSearches, varPtr);
-    ArraySearch *prevPtr;
-
-    /*
-     * Unhook the search from the list of searches associated with the
-     * variable.
-     */
-
-    if (search == Tcl_GetHashValue(hPtr)) {
-	if (search->nextPtr) {
-	    Tcl_SetHashValue(hPtr, search->nextPtr);
-	} else {
-	    varPtr->flags &= ~VAR_SEARCH_ACTIVE;
-	    Tcl_DeleteHashEntry(hPtr);
-	}
-    } else {
-	for (prevPtr = Tcl_GetHashValue(hPtr);; prevPtr = prevPtr->nextPtr) {
-	    if (prevPtr->nextPtr == search) {
-		prevPtr->nextPtr = search->nextPtr;
-		break;
-	    }
-	}
-    }
-    Tcl_DecrRefCount(search->name);
-    if (search->filterObj) {
-	Tcl_DecrRefCount(search->filterObj);
-    }
-    ckfree(search);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_ArrayNames --
- *
- *	Obtains a list of array element names, optionally limited by a filter.
- *
- * Results:
- *	Normally, TCL_OK is returned, and the list of matching array element
- *	names is appended to listObj. On error, TCL_ERROR is returned, and the
- *	error information is placed in the interpreter's result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_ArrayNames(
-    Tcl_Interp *interp,		/* Command interpreter in which part1Ptr is to
-				 * be looked up. */
-    Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
-    Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
-    Tcl_Obj *listPtr,		/* List to which array names are appended. */
-    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
-				 * also at most one of TCL_MATCH_EXACT, _GLOB,
-				 * and _REGEXP. */
-{
-    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
-
-    if (varPtr) {
-	return ArrayNames(interp, varPtr, part2Ptr, flags & TCL_MATCH, listPtr);
-    } else {
-	return TCL_ERROR;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_ArraySet --
  *
  *	Set the elements of an array. If there are no elements to set, create
@@ -2098,47 +1817,6 @@ Tcl_ArrayUnset(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ArrayExists --
- *
- *	This function checks if an array exists.
- *
- * Results:
- *	*existsPtr is set to 1 or 0 if the array does or does not exist, and
- *	TCL_OK is returned. *existPtr is also set to 0 if a variable with the
- *	given name exists but is not an array, as well as in event of lookup
- *	error such as nonexistent namespace. If an array trace error occurs,
- *	TCL_ERROR is returned and *existsPtr is not modified.
- *
- * Side effects:
- *	Array traces, if any, are executed.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_ArrayExists(
-    Tcl_Interp *interp,		/* Interpreter in which to look up variable. */
-    Tcl_Obj *part1Ptr,		/* Name of array variable. */
-    int *existsPtr,		/* Set to 1 if exists, 0 otherwise. */
-    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
-				 * TCL_NAMESPACE_ONLY. */
-{
-    int traceFail = 0;
-
-    if (ArrayVar(interp, part1Ptr, &traceFail, flags)) {
-	*existsPtr = 1;
-    } else if (traceFail) {
-	return TCL_ERROR;
-    } else {
-	*existsPtr = 0;
-    }
-
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_ArrayGet --
  *
  *	This function loads the contents of an array into a dict.
@@ -2303,6 +1981,328 @@ Tcl_ArrayGet(
     Tcl_DecrRefCount(nameListObj);
 
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ArrayNames --
+ *
+ *	Obtains a list of array element names, optionally limited by a filter.
+ *
+ * Results:
+ *	Normally, TCL_OK is returned, and the list of matching array element
+ *	names is appended to listObj. On error, TCL_ERROR is returned, and the
+ *	error information is placed in the interpreter's result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_ArrayNames(
+    Tcl_Interp *interp,		/* Command interpreter in which part1Ptr is to
+				 * be looked up. */
+    Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
+    Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
+    Tcl_Obj *listPtr,		/* List to which array names are appended. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
+				 * also at most one of TCL_MATCH_EXACT, _GLOB,
+				 * and _REGEXP. */
+{
+    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
+
+    if (varPtr) {
+	return ArrayNames(interp, varPtr, part2Ptr, flags & TCL_MATCH, listPtr);
+    } else {
+	return TCL_ERROR;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ArraySize --
+ *
+ *	This function returns the number of elements in an array variable. It
+ *	provides C-level access to [array size] functionality, except this
+ *	function does not treat scalar and nonexistent variable as if they were
+ *	empty arrays. If part2Ptr is not NULL, only array elements whose names
+ *	match part2Ptr are counted toward the return value. The interpretation
+ *	of part2Ptr is controlled by TCL_MATCH_* being set within flags.
+ *
+ * Results:
+ *	The return value is normally the integer count of array elements whose
+ *	names match the given filter. If varNamePtr does not name an array, -1
+ *	is returned and an error message is placed in interp's result.
+ *
+ * Side effects:
+ *	None.
+ *	
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_ArraySize(
+    Tcl_Interp *interp,		/* Command interpreter in which part1Ptr is to
+				 * be looked up. */
+    Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
+    Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
+				 * also at most one of TCL_MATCH_EXACT, _GLOB,
+				 * and _REGEXP. */
+{
+    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
+    return varPtr ? ArraySize(interp, varPtr, part2Ptr, flags & TCL_MATCH) : -1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ArrayExists --
+ *
+ *	This function checks if an array exists.
+ *
+ * Results:
+ *	*existsPtr is set to 1 or 0 if the array does or does not exist, and
+ *	TCL_OK is returned. *existPtr is also set to 0 if a variable with the
+ *	given name exists but is not an array, as well as in event of lookup
+ *	error such as nonexistent namespace. If an array trace error occurs,
+ *	TCL_ERROR is returned and *existsPtr is not modified.
+ *
+ * Side effects:
+ *	Array traces, if any, are executed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_ArrayExists(
+    Tcl_Interp *interp,		/* Interpreter in which to look up variable. */
+    Tcl_Obj *part1Ptr,		/* Name of array variable. */
+    int *existsPtr,		/* Set to 1 if exists, 0 otherwise. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
+				 * TCL_NAMESPACE_ONLY. */
+{
+    int traceFail = 0;
+
+    if (ArrayVar(interp, part1Ptr, &traceFail, flags)) {
+	*existsPtr = 1;
+    } else if (traceFail) {
+	return TCL_ERROR;
+    } else {
+	*existsPtr = 0;
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ArraySearchStart --
+ *
+ *	This function initiates an array search, i.e. step-by-step array element
+ *	enumeration. It provides C-level access to [array startsearch]. The
+ *	returned value is used to obtain one array element name at a time. If
+ *	part2Ptr is not NULL, only array elements whose names match part2Ptr are
+ *	returned by future calls to Tcl_ArraySearchNext(). The interpretation of
+ *	part2Ptr is controlled by TCL_MATCH_* being set within flags.
+ *
+ * Results:
+ *	A new array search is created, a pointer to which is returned. If the
+ *	variable does not exist or is not an array, NULL is returned, and no
+ *	search is created.
+ *
+ * Side effects:
+ *	On success, the search is allocated on the heap and will need to be
+ *	deallocated by a future call to Tcl_ArraySearchDone().
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_ArraySearch
+Tcl_ArraySearchStart(
+    Tcl_Interp *interp,		/* Command interpreter in which part1Ptr is to
+				 * be looked up. */
+    Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
+    Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
+				 * also at most one of TCL_MATCH_EXACT, _GLOB,
+				 * and _REGEXP. */
+{
+    Interp *iPtr = (Interp *)interp;
+    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
+    Tcl_HashEntry *hPtr;
+    int isNew, fail = 0;
+    ArraySearch search, *searchPtr;
+
+    /*
+     * Handle the possible error cases before performing any allocations.
+     */
+
+    if (!varPtr) {
+	return NULL;
+    }
+
+    search.interp = interp;
+    search.varPtr = varPtr;
+    search.filterObj = part2Ptr;
+    search.filterType = flags & TCL_MATCH;
+    search.nextEntry = ArrayFirst(&search, &fail);
+    if (!search.nextEntry && fail) {
+	return NULL;
+    }
+
+    /*
+     * Make a new array search with a free name.
+     */
+
+    hPtr = Tcl_CreateHashEntry(&iPtr->varSearches, varPtr, &isNew);
+    if (isNew) {
+	search.id = 1;
+	varPtr->flags |= VAR_SEARCH_ACTIVE;
+	search.nextPtr = NULL;
+    } else {
+	search.id = ((ArraySearch *)Tcl_GetHashValue(hPtr))->id + 1;
+	search.nextPtr = Tcl_GetHashValue(hPtr);
+    }
+    search.name = Tcl_ObjPrintf("s-%d-%s", search.id, TclGetString(part1Ptr));
+    Tcl_IncrRefCount(search.name);
+    if (part2Ptr) {
+	Tcl_IncrRefCount(part2Ptr);
+    }
+    searchPtr = ckalloc(sizeof(*searchPtr));
+    *searchPtr = search;
+    Tcl_SetHashValue(hPtr, searchPtr);
+
+    return searchPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ArraySearchPeek --
+ *
+ *	Finds the next element of an array for a given search query. Unlike
+ *	Tcl_ArraySearchNext(), there are no side effects, so the search query
+ *	state is not advanced and the element is not consumed.
+ *
+ * Preconditions, results, limitations:
+ *	Same as Tcl_ArraySearchNext().
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Tcl_ArraySearchPeek(
+    Tcl_ArraySearch search)	/* Prior return from Tcl_ArraySearchStart(). */
+{
+    search->nextEntry = ArrayNext(search, NULL);
+    return search->nextEntry ? VarHashGetKey(search->nextEntry) : NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ArraySearchNext --
+ *
+ *	Finds the next element of an array for a given search query.
+ *
+ * Preconditions:
+ *	The search argument must be the return value of Tcl_ArraySearchStart()
+ *	and must not have been passed to Tcl_ArraySearchDone().
+ *
+ * Results:
+ *	The return value is the name of the next array element. If there are no
+ *	more array elements, NULL is returned.
+ *
+ * Side effects:
+ *	The search data structure is updated such that successive invocations of
+ *	this function will return successive array element names.
+ *
+ * Limitations:
+ *	It is not possible to distinguish between reaching the end of the array
+ *	and experiencing a regular expression error. This is unlikely to be an
+ *	actual problem because Tcl_ArraySearchStart() already checks for regular
+ *	expression errors and returns NULL if found. If the regular expression
+ *	engine has a bug whereby a given query can initially succeed yet return
+ *	error depending on the string it is matched against, the caller of this
+ *	function will perceive it as prematurely hitting the end of the array.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Tcl_ArraySearchNext(
+    Tcl_ArraySearch search)	/* Prior return from Tcl_ArraySearchStart(). */
+{
+    Var *varPtr = ArrayNext(search, NULL);
+    return varPtr ? VarHashGetKey(varPtr) : NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ArraySearchDone --
+ *
+ *	Terminates and cleans up an array search query.
+ *
+ * Preconditions:
+ *	The search argument must be the return value of Tcl_ArraySearchStart()
+ *	and must not have been passed to Tcl_ArraySearchDone().
+ *
+ * Results:
+ *	The search query is completed.
+ *
+ * Side effects:
+ *	Resources associated with the search are deallocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_ArraySearchDone(
+    Tcl_ArraySearch search)	/* Prior return from Tcl_ArraySearchStart(). */
+{
+    Interp *iPtr = (Interp *)search->interp;
+    Var *varPtr = search->varPtr;
+    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&iPtr->varSearches, varPtr);
+    ArraySearch *prevPtr;
+
+    /*
+     * Unhook the search from the list of searches associated with the
+     * variable.
+     */
+
+    if (search == Tcl_GetHashValue(hPtr)) {
+	if (search->nextPtr) {
+	    Tcl_SetHashValue(hPtr, search->nextPtr);
+	} else {
+	    varPtr->flags &= ~VAR_SEARCH_ACTIVE;
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+    } else {
+	for (prevPtr = Tcl_GetHashValue(hPtr);; prevPtr = prevPtr->nextPtr) {
+	    if (prevPtr->nextPtr == search) {
+		prevPtr->nextPtr = search->nextPtr;
+		break;
+	    }
+	}
+    }
+    Tcl_DecrRefCount(search->name);
+    if (search->filterObj) {
+	Tcl_DecrRefCount(search->filterObj);
+    }
+    ckfree(search);
 }
 
 /*

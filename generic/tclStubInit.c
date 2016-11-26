@@ -1416,16 +1416,16 @@ const TclStubs tclStubs = {
     Tcl_FindSymbol, /* 628 */
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
-    Tcl_ArraySize, /* 631 */
-    Tcl_ArraySearchStart, /* 632 */
-    Tcl_ArraySearchPeek, /* 633 */
-    Tcl_ArraySearchNext, /* 634 */
-    Tcl_ArraySearchDone, /* 635 */
-    Tcl_ArrayNames, /* 636 */
-    Tcl_ArraySet, /* 637 */
-    Tcl_ArrayUnset, /* 638 */
-    Tcl_ArrayExists, /* 639 */
-    Tcl_ArrayGet, /* 640 */
+    Tcl_ArraySet, /* 631 */
+    Tcl_ArrayUnset, /* 632 */
+    Tcl_ArrayGet, /* 633 */
+    Tcl_ArrayNames, /* 634 */
+    Tcl_ArraySize, /* 635 */
+    Tcl_ArrayExists, /* 636 */
+    Tcl_ArraySearchStart, /* 637 */
+    Tcl_ArraySearchPeek, /* 638 */
+    Tcl_ArraySearchNext, /* 639 */
+    Tcl_ArraySearchDone, /* 640 */
 };
 
 /* !END!: Do not edit above this line. */
