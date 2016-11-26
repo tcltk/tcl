@@ -746,7 +746,7 @@ test var-11.3 {array unset errors} -setup {
 } -returnCodes error -body {
     array set a { 1,1 a 1,2 b }
     array unset a pattern too
-} -result {wrong # args: should be "array unset arrayName ?pattern?"}
+} -result {bad option "pattern": must be -exact, -glob, or -regexp}
 
 test var-12.1 {TclFindCompiledLocals, {} array name} {
     namespace eval n {
