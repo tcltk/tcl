@@ -2352,6 +2352,10 @@ declare 637 {
     int Tcl_ArraySet(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *dictPtr,
 	int flags)
 }
+declare 638 {
+    int Tcl_ArrayUnset(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+	int flags)
+}
 
 ##############################################################################
 

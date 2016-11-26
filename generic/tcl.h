@@ -1084,7 +1084,7 @@ typedef struct Tcl_DString {
 /*
  * Flag values passed to variable-related functions.
  * WARNING: these bit choices must not conflict with the bit choice for
- * TCL_CANCEL_UNWIND, above.
+ * TCL_CANCEL_UNWIND, above, or TCL_VAR_CREATE (0x4000) in tclVar.c.
  */
 
 #define TCL_MATCH_EXACT		 0

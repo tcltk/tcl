@@ -1836,6 +1836,9 @@ EXTERN int		Tcl_ArrayNames(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 /* 637 */
 EXTERN int		Tcl_ArraySet(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 				Tcl_Obj *dictPtr, int flags);
+/* 638 */
+EXTERN int		Tcl_ArrayUnset(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+				Tcl_Obj *part2Ptr, int flags);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2509,6 +2512,7 @@ typedef struct TclStubs {
     void (*tcl_ArraySearchDone) (Tcl_ArraySearch search); /* 635 */
     int (*tcl_ArrayNames) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *listPtr, int flags); /* 636 */
     int (*tcl_ArraySet) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *dictPtr, int flags); /* 637 */
+    int (*tcl_ArrayUnset) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 638 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3815,6 +3819,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ArrayNames) /* 636 */
 #define Tcl_ArraySet \
 	(tclStubsPtr->tcl_ArraySet) /* 637 */
+#define Tcl_ArrayUnset \
+	(tclStubsPtr->tcl_ArrayUnset) /* 638 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

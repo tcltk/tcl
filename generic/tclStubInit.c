@@ -1423,6 +1423,7 @@ const TclStubs tclStubs = {
     Tcl_ArraySearchDone, /* 635 */
     Tcl_ArrayNames, /* 636 */
     Tcl_ArraySet, /* 637 */
+    Tcl_ArrayUnset, /* 638 */
 };
 
 /* !END!: Do not edit above this line. */

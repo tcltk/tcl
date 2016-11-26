@@ -55,6 +55,12 @@ static inline Var *	VarHashNextVar(Tcl_HashSearch *searchPtr);
 #define TCL_MATCH (TCL_MATCH_EXACT | TCL_MATCH_GLOB | TCL_MATCH_REGEXP)
 
 /*
+ * ArrayVar()-specific flag to enable array variable creation.
+ */
+
+#define TCL_VAR_CREATE 0x4000
+
+/*
  * NOTE: VarHashCreateVar increments the refcount of its key argument.
  * All callers that will call Tcl_DecrRefCount on that argument must
  * call Tcl_IncrRefCount on it before passing it in. This requirement
@@ -201,7 +207,7 @@ static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr,
 			    Interp *iPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, int flags, int index);
 static Var *		ArrayVar(Tcl_Interp *interp, Tcl_Obj *varNameObj,
-			    int *traceFailPtr, int create, int flags);
+			    int *traceFailPtr, int flags);
 static Var *		ArrayFirst(ArraySearch *searchPtr, int *failPtr);
 static Var *		ArrayNext(ArraySearch *searchPtr, int *failPtr);
 static int		ArraySize(Tcl_Interp *interp, Var *varPtr,
@@ -1061,7 +1067,8 @@ TclLookupArrayElement(
  *
  * ArrayVar --
  *
- *	This function looks up or creates an array variable.
+ *	This function looks up or creates an array variable. The TCL_VAR_CREATE
+ *	flag is used to enable creation mode.
  *
  * Results:
  *	If successful, the requested variable is returned. On failure, NULL is
@@ -1083,12 +1090,19 @@ ArrayVar(
 				 * be looked up. */
     Tcl_Obj *varNameObj,	/* Name of array variable in interp. */
     int *traceFailPtr,		/* Unless NULL, set to 1 on trace failure. */
-    int create,			/* If nonzero, create array if nonexistent. */
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG. */
+				 * TCL_NAMESPACE_ONLY, TCL_LEAVE_ERR_MSG, and
+				 * TCL_VAR_CREATE. */
 {
     Var *varPtr, *arrayPtr;
     const char *varName;
+    int create = !!(flags & TCL_VAR_CREATE);
+
+    /*
+     * Strip TCL_VAR_CREATE from flags because no other function recognizes it.
+     */
+
+    flags &= ~TCL_VAR_CREATE;
 
     /*
      * Locate the array variable. Unless in create mode, inhibit the normal
@@ -1233,6 +1247,10 @@ ArrayFirst(
  *
  *	Finds the next element of an array for a given search query.
  *
+ *	To peek at the next element without consuming it, copy the returned
+ *	element to searchPtr->nextEntry. This causes the next invocation of
+ *	ArrayNext() to return the same element again.
+ *
  * Preconditions:
  *	ArrayFirst() must have been called on searchPtr.
  *
@@ -1352,7 +1370,6 @@ ArraySize(
     search.varPtr = varPtr;
     search.filterObj = filterObj;
     search.filterType = filterType;
-    search.nextEntry = NULL;
     varPtr = ArrayFirst(&search, &fail);
     for (; varPtr; varPtr = ArrayNext(&search, &fail)) {
 	++size;
@@ -1536,7 +1553,7 @@ Tcl_ArraySize(
 				 * also at most one of TCL_MATCH_EXACT, _GLOB,
 				 * and _REGEXP. */
 {
-    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, 0, flags);
+    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
     return varPtr ? ArraySize(interp, varPtr, part2Ptr, flags & TCL_MATCH) : -1;
 }
 
@@ -1576,7 +1593,7 @@ Tcl_ArraySearchStart(
 				 * and _REGEXP. */
 {
     Interp *iPtr = (Interp *)interp;
-    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, 0, flags);
+    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
     Tcl_HashEntry *hPtr;
     int isNew, fail = 0;
     ArraySearch search, *searchPtr;
@@ -1774,7 +1791,7 @@ Tcl_ArrayNames(
 				 * also at most one of TCL_MATCH_EXACT, _GLOB,
 				 * and _REGEXP. */
 {
-    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, 0, flags);
+    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
 
     if (varPtr) {
 	return ArrayNames(interp, varPtr, part2Ptr, flags & TCL_MATCH, listPtr);
@@ -1812,7 +1829,7 @@ Tcl_ArraySet(
     Var *varPtr;
     int result, i;
 
-    if (!(varPtr = ArrayVar(interp, part1Ptr, NULL, 1, flags))) {
+    if (!(varPtr = ArrayVar(interp, part1Ptr, NULL, flags | TCL_VAR_CREATE))) {
 	return TCL_ERROR;
     }
 
@@ -1942,6 +1959,148 @@ Tcl_ArraySet(
     varPtr->value.tablePtr = ckalloc(sizeof(TclVarHashTable));
     TclInitVarHashTable(varPtr->value.tablePtr, TclGetVarNsPtr(varPtr));
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ArrayUnset --
+ *
+ *	Unsets array elements, optionally limited by a filter. Even with exact
+ *	matching, it is not an error for the filter to not match any elements.
+ *	It is also not an error for the variable to not exist.
+ *
+ * Results:
+ *	The requested array elements are unset. On error, if flags contains
+ *	TCL_LEAVE_ERR_MSG (or if the error is a trace error), error information
+ *	is placed in the interpreter result.
+ *
+ * Side effects:
+ *	Array and unset traces are executed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_ArrayUnset(
+    Tcl_Interp *interp,		/* Interpreter containing the variable. */
+    Tcl_Obj *part1Ptr,		/* Name of the array variable. */
+    Tcl_Obj *part2Ptr,		/* Element filter or NULL to unset all. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
+				 * also at most one of TCL_MATCH_EXACT, _GLOB,
+				 * and _REGEXP. */
+{
+    ArraySearch search;
+    int fail = 0, filterType = flags & TCL_MATCH;
+    const char *filterStr, *p;
+    Var *varPtr, *elemPtr, *protectedElemPtr;
+
+    /*
+     * Locate the array variable. This has the side effect of executing any
+     * array traces. If the variable does not exist, exit successfully.
+     */
+
+    if (!(varPtr = ArrayVar(interp, part1Ptr, &fail, 0))) {
+	return fail ? TCL_ERROR : TCL_OK;
+    }
+
+    /*
+     * When no filter is given, or the filter is a glob pattern consisting of
+     * nothing but asterisks, unset the whole array.
+     */
+
+    if (!part2Ptr) {
+	return TclObjUnsetVar2(interp, part1Ptr, NULL, flags);
+    } else if (filterType == TCL_MATCH_GLOB) {
+	filterStr = TclGetString(part2Ptr);
+	for (p = filterStr; *p && *p == '*'; ++p);
+	if (*filterStr && !*p) {
+	    return TclObjUnsetVar2(interp, part1Ptr, NULL, flags);
+	}
+    }
+
+    /*
+     * With an exact match or trivial pattern, unset the single element.
+     */
+
+    if (filterType == TCL_MATCH_EXACT
+     || (filterType == TCL_MATCH_GLOB && TclMatchIsTrivial(filterStr))) {
+	elemPtr = VarHashFindVar(varPtr->value.tablePtr, part2Ptr);
+	if (!elemPtr || TclIsVarUndefined(elemPtr)) {
+	    return TCL_OK;
+	} else {
+	    return TclPtrUnsetVar(interp, elemPtr, varPtr,
+		    part1Ptr, part2Ptr, 0, -1);
+	}
+    }
+
+    /*
+     * Prepare to iterate through all elements of the array.
+     */
+
+    search.interp = interp;
+    search.varPtr = varPtr;
+    search.filterObj = part2Ptr;
+    search.filterType = filterType;
+    elemPtr = ArrayFirst(&search, &fail);
+
+    /*
+     * Non-trivial case (well, deeply tricky really). We peek inside the hash
+     * iterator in order to allow us to guarantee that the following element
+     * in the array will not be scrubbed until we have dealt with it. This
+     * stops the overall iterator from ending up pointing into deallocated
+     * memory. [Bug 2939073]
+     */
+
+    protectedElemPtr = NULL;
+    for (; elemPtr; elemPtr = ArrayNext(&search, &fail)) {
+	/*
+	 * Drop the extra ref immediately. We don't need to free it at this
+	 * point though; we'll be unsetting it if necessary soon.
+	 */
+
+	if (protectedElemPtr == elemPtr) {
+	    VarHashRefCount(protectedElemPtr)--;
+	}
+
+	/*
+	 * Peek ahead at the next item in the search and guard it against being
+	 * deallocated in the scenario where the unset trace on the current
+	 * element causes the next element to be unset as well.
+	 *
+	 * Curiosity: each hash table bucket is a linked list to which new items
+	 * are prepended, so "next" usually means the latest element in the same
+	 * bucket that was set before the current element.
+	 */
+
+	if ((protectedElemPtr = search.nextEntry = ArrayNext(&search, &fail))) {
+	    VarHashRefCount(protectedElemPtr)++;
+	}
+
+	/*
+	 * If the variable is undefined, clean it out as it has been hit by
+	 * something else (i.e., an unset trace).
+	 */
+
+	if (TclIsVarUndefined(elemPtr)) {
+	    TclCleanupVar(elemPtr, varPtr);
+	} else if (TclPtrUnsetVar(interp, elemPtr, varPtr, part1Ptr,
+		VarHashGetKey(elemPtr), 0, -1) != TCL_OK) {
+	    /*
+	     * If we incremented a refcount, we must decrement it here as we
+	     * will not be coming back properly due to the error.
+	     */
+
+	    if (protectedElemPtr) {
+		VarHashRefCount(protectedElemPtr)--;
+		TclCleanupVar(protectedElemPtr, varPtr);
+	    }
+	    return TCL_ERROR;
+	}
+    }
+
+    return fail ? TCL_ERROR : TCL_OK;
 }
 
 /*
@@ -3640,7 +3799,7 @@ ArrayAnyMoreCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    if (!(varPtr = ArrayVar(interp, varNameObj, NULL, 0, TCL_LEAVE_ERR_MSG))) {
+    if (!(varPtr = ArrayVar(interp, varNameObj, NULL, TCL_LEAVE_ERR_MSG))) {
 	return TCL_ERROR;
     }
 
@@ -3708,7 +3867,7 @@ ArrayNextElementCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    if (!(varPtr = ArrayVar(interp, varNameObj, NULL, 0, TCL_LEAVE_ERR_MSG))) {
+    if (!(varPtr = ArrayVar(interp, varNameObj, NULL, TCL_LEAVE_ERR_MSG))) {
 	return TCL_ERROR;
     }
 
@@ -3770,7 +3929,7 @@ ArrayDoneSearchCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    if (!(varPtr = ArrayVar(interp, varNameObj, NULL, 0, TCL_LEAVE_ERR_MSG))) {
+    if (!(varPtr = ArrayVar(interp, varNameObj, NULL, TCL_LEAVE_ERR_MSG))) {
 	return TCL_ERROR;
     }
 
@@ -3832,8 +3991,7 @@ ArrayExistsCmd(
      * Locate the array variable.
      */
 
-    varPtr = ArrayVar(interp, arrayNameObj, &traceFail, 0, 0);
-    if (varPtr) {
+    if ((varPtr = ArrayVar(interp, arrayNameObj, &traceFail, 0))) {
 	exists = 1;
     } else if (traceFail) {
 	return TCL_ERROR;
@@ -3892,22 +4050,12 @@ ArrayGetCmd(
     }
 
     /*
-     * Locate the array variable.
+     * Locate the array variable. Report trace failures as errors. If the
+     * variable is a scalar or does not exist, treat it like an empty array.
      */
 
-    varPtr = ArrayVar(interp, varNameObj, &traceFail, 0, 0);
-
-    /*
-     * Report trace failures as errors. If the variable is a scalar or does not
-     * exist, treat it like an empty array.
-     */
-
-    if (!varPtr) {
-	if (traceFail) {
-	    return TCL_ERROR;
-	} else {
-	    return TCL_OK;
-	}
+    if (!(varPtr = ArrayVar(interp, varNameObj, &traceFail, 0))) {
+	return traceFail ? TCL_ERROR : TCL_OK;
     }
 
     pattern = (patternObj ? TclGetString(patternObj) : NULL);
@@ -4054,12 +4202,8 @@ ArrayNamesCmd(
      * scalar or does not exist, treat it like an empty array.
      */
 
-    if (!(varPtr = ArrayVar(interp, varNameObj, &traceFail, 0, 0))) {
-	if (!traceFail) {
-	    return TCL_OK;
-	} else {
-	    return TCL_ERROR;
-	}
+    if (!(varPtr = ArrayVar(interp, varNameObj, &traceFail, 0))) {
+	return traceFail ? TCL_ERROR : TCL_OK;
     }
 
     /*
@@ -4196,9 +4340,7 @@ ArraySizeCmd(
      * report are argument count (handled above) and array trace (handled here).
      */
 
-    varPtr = ArrayVar(interp, varNameObj, &traceFail, 0, 0);
-
-    if (varPtr) {
+    if ((varPtr = ArrayVar(interp, varNameObj, &traceFail, 0))) {
 	size = ArraySize(interp, varPtr, filterObj, filterType);
 	if (size < 0) {
 	    return TCL_ERROR;
@@ -4254,7 +4396,7 @@ ArrayStatsCmd(
      * Locate the array variable.
      */
 
-    varPtr = ArrayVar(interp, varNameObj, &traceFail, 0, TCL_LEAVE_ERR_MSG);
+    varPtr = ArrayVar(interp, varNameObj, &traceFail, TCL_LEAVE_ERR_MSG);
     if (!varPtr) {
 	return TCL_ERROR;
     }
@@ -4295,123 +4437,15 @@ ArrayUnsetCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Var *varPtr, *varPtr2, *protectedVarPtr;
-    Tcl_Obj *varNameObj, *patternObj, *nameObj;
-    Tcl_HashSearch search;
-    const char *pattern;
-    int traceFail = 0;
-    const int unsetFlags = 0;	/* Should this be TCL_LEAVE_ERR_MSG? */
+    Tcl_Obj *varNameObj, *filterObj;
+    int filterType;
 
-    switch (objc) {
-    case 2:
-	varNameObj = objv[1];
-	patternObj = NULL;
-	break;
-    case 3:
-	varNameObj = objv[1];
-	patternObj = objv[2];
-	break;
-    default:
-	Tcl_WrongNumArgs(interp, 1, objv, "arrayName ?pattern?");
+    if (ArrayArgs(interp, objc, objv, &varNameObj,
+	    &filterObj, &filterType) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Locate the array variable
-     */
-
-    varPtr = ArrayVar(interp, varNameObj, &traceFail, 0, 0);
-
-    if (!varPtr) {
-	if (traceFail) {
-	    return TCL_ERROR;
-	} else {
-	    return TCL_OK;
-	}
-    }
-
-    if (!patternObj) {
-	/*
-	 * When no pattern is given, just unset the whole array.
-	 */
-
-	return TclObjUnsetVar2(interp, varNameObj, NULL, 0);
-    }
-
-    /*
-     * With a trivial pattern, we can just unset.
-     */
-
-    pattern = TclGetString(patternObj);
-    if (TclMatchIsTrivial(pattern)) {
-	varPtr2 = VarHashFindVar(varPtr->value.tablePtr, patternObj);
-	if (!varPtr2 || TclIsVarUndefined(varPtr2)) {
-	    return TCL_OK;
-	}
-	return TclPtrUnsetVar(interp, varPtr2, varPtr, varNameObj, patternObj,
-		unsetFlags, -1);
-    }
-
-    /*
-     * Non-trivial case (well, deeply tricky really). We peek inside the hash
-     * iterator in order to allow us to guarantee that the following element
-     * in the array will not be scrubbed until we have dealt with it. This
-     * stops the overall iterator from ending up pointing into deallocated
-     * memory. [Bug 2939073]
-     */
-
-    protectedVarPtr = NULL;
-    for (varPtr2=VarHashFirstVar(varPtr->value.tablePtr, &search);
-	    varPtr2!=NULL ; varPtr2=VarHashNextVar(&search)) {
-	/*
-	 * Drop the extra ref immediately. We don't need to free it at this
-	 * point though; we'll be unsetting it if necessary soon.
-	 */
-
-	if (varPtr2 == protectedVarPtr) {
-	    VarHashRefCount(varPtr2)--;
-	}
-
-	/*
-	 * Guard the next (peeked) item in the search chain by incrementing
-	 * its refcount. This guarantees that the hash table iterator won't be
-	 * dangling on the next time through the loop.
-	 */
-
-	if (search.nextEntryPtr != NULL) {
-	    protectedVarPtr = VarHashGetValue(search.nextEntryPtr);
-	    VarHashRefCount(protectedVarPtr)++;
-	} else {
-	    protectedVarPtr = NULL;
-	}
-
-	/*
-	 * If the variable is undefined, clean it out as it has been hit by
-	 * something else (i.e., an unset trace).
-	 */
-
-	if (TclIsVarUndefined(varPtr2)) {
-	    TclCleanupVar(varPtr2, varPtr);
-	    continue;
-	}
-
-	nameObj = VarHashGetKey(varPtr2);
-	if (Tcl_StringMatch(TclGetString(nameObj), pattern)
-		&& TclPtrUnsetVar(interp, varPtr2, varPtr, varNameObj,
-			nameObj, unsetFlags, -1) != TCL_OK) {
-	    /*
-	     * If we incremented a refcount, we must decrement it here as we
-	     * will not be coming back properly due to the error.
-	     */
-
-	    if (protectedVarPtr) {
-		VarHashRefCount(protectedVarPtr)--;
-		TclCleanupVar(protectedVarPtr, varPtr);
-	    }
-	    return TCL_ERROR;
-	}
-    }
-    return TCL_OK;
+    return Tcl_ArrayUnset(interp, varNameObj, filterObj, filterType);
 }
 
 /*
