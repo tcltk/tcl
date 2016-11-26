@@ -55,8 +55,8 @@ test package-1.7 {pkg::create gives correct output for 1 direct source} {
     ::pkg::create -name foo -version 1.0 -source test.tcl
 } {package ifneeded foo 1.0 [list source [file join $dir test.tcl]]}
 test package-1.8 {pkg::create gives correct output for 2 direct sources} {
-    ::pkg::create -name foo -version 1.0 -source test.tcl -source test2.tcl
-} {package ifneeded foo 1.0 [list source [file join $dir test.tcl]]\n[list source [file join $dir test2.tcl]]}
+    list [::pkg::create -name foo -version 1.0 -source test.tcl -source test2.tcl] [package files foo]
+} {{package ifneeded foo 1.0 [list source [file join $dir test.tcl]]\n[list source [file join $dir test2.tcl]]} {}}
 test package-1.9 {pkg::create gives correct output for 1 direct load} {
     ::pkg::create -name foo -version 1.0 -load test.so
 } {package ifneeded foo 1.0 [list load [file join $dir test.so]]}
@@ -870,6 +870,14 @@ test package-5.2 {TclFreePackageInfo procedure} -body {
     }
     foo eval package require x 3.1
 } -returnCodes error -match glob -result *
+test package-5.3 {package files} -body {
+    interp create foo
+    foo eval {
+	package ifneeded t 2.4 {package provide t 2.4;package require http}
+    }
+    foo eval package require t 2.4
+    foo eval {list [package files http] [package files t]}
+} -result "[list {}] [file join $tcl_library http http.tcl]"
 
 test package-6.1 {CheckVersion procedure} {
     package vcompare 1 2.1
