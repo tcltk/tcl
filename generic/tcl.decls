@@ -2257,7 +2257,7 @@ declare 613 {
 }
 declare 614 {
     int Tcl_ZlibStreamInit(Tcl_Interp *interp, int mode, int format,
-	    int level, Tcl_Obj *dictPtr, Tcl_ZlibStream *zshandle)
+	    int level, Tcl_Obj *dictObj, Tcl_ZlibStream *zshandle)
 }
 declare 615 {
     Tcl_Obj *Tcl_ZlibStreamGetCommandName(Tcl_ZlibStream zshandle)

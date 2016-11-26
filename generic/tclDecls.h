@@ -1770,7 +1770,7 @@ EXTERN unsigned int	Tcl_ZlibAdler32(unsigned int adler,
 				const unsigned char *buf, int len);
 /* 614 */
 EXTERN int		Tcl_ZlibStreamInit(Tcl_Interp *interp, int mode,
-				int format, int level, Tcl_Obj *dictPtr,
+				int format, int level, Tcl_Obj *dictObj,
 				Tcl_ZlibStream *zshandle);
 /* 615 */
 EXTERN Tcl_Obj *	Tcl_ZlibStreamGetCommandName(Tcl_ZlibStream zshandle);
@@ -2495,7 +2495,7 @@ typedef struct TclStubs {
     int (*tcl_ZlibInflate) (Tcl_Interp *interp, int format, Tcl_Obj *data, int buffersize, Tcl_Obj *gzipHeaderDictObj); /* 611 */
     unsigned int (*tcl_ZlibCRC32) (unsigned int crc, const unsigned char *buf, int len); /* 612 */
     unsigned int (*tcl_ZlibAdler32) (unsigned int adler, const unsigned char *buf, int len); /* 613 */
-    int (*tcl_ZlibStreamInit) (Tcl_Interp *interp, int mode, int format, int level, Tcl_Obj *dictPtr, Tcl_ZlibStream *zshandle); /* 614 */
+    int (*tcl_ZlibStreamInit) (Tcl_Interp *interp, int mode, int format, int level, Tcl_Obj *dictObj, Tcl_ZlibStream *zshandle); /* 614 */
     Tcl_Obj * (*tcl_ZlibStreamGetCommandName) (Tcl_ZlibStream zshandle); /* 615 */
     int (*tcl_ZlibStreamEof) (Tcl_ZlibStream zshandle); /* 616 */
     int (*tcl_ZlibStreamChecksum) (Tcl_ZlibStream zshandle); /* 617 */
