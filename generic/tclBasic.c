@@ -569,7 +569,7 @@ Tcl_CreateInterp(void)
 
     iPtr->cmdCount = 0;
     TclInitLiteralTable(&iPtr->literalTable);
-    iPtr->compileEpoch = 0;
+    iPtr->compileEpoch = 1;
     iPtr->compiledProcPtr = NULL;
     iPtr->resolverPtr = NULL;
     iPtr->evalFlags = 0;
@@ -3345,8 +3345,7 @@ TclCleanupCommand(
     register Command *cmdPtr)	/* Points to the Command structure to
 				 * be freed. */
 {
-    cmdPtr->refCount--;
-    if (cmdPtr->refCount <= 0) {
+    if (cmdPtr->refCount-- <= 1) {
 	ckfree(cmdPtr);
     }
 }
@@ -4274,7 +4273,7 @@ TEOV_RunEnterTraces(
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr = *cmdPtrPtr;
-    int newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
+    size_t newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
     int length, traceCode = TCL_OK;
     const char *command = TclGetStringFromObj(commandPtr, &length);
 
@@ -5088,8 +5087,7 @@ TclArgumentRelease(
 	}
 	cfwPtr = Tcl_GetHashValue(hPtr);
 
-	cfwPtr->refCount--;
-	if (cfwPtr->refCount > 0) {
+	if (cfwPtr->refCount-- > 1) {
 	    continue;
 	}
 

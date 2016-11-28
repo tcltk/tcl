@@ -254,7 +254,7 @@ DisassembleByteCodeObj(
     int codeOffset, codeLen, srcOffset, srcLen, numCmds, delta, i, line;
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
     Tcl_Obj *bufferObj, *fileObj;
-    char ptrBuf1[20], ptrBuf2[20];
+    char buf[128];
 
     TclNewObj(bufferObj);
     if (codePtr->refCount <= 0) {
@@ -269,12 +269,12 @@ DisassembleByteCodeObj(
      * Print header lines describing the ByteCode.
      */
 
-    sprintf(ptrBuf1, "%p", codePtr);
-    sprintf(ptrBuf2, "%p", iPtr);
-    Tcl_AppendPrintfToObj(bufferObj,
-	    "ByteCode 0x%s, refCt %u, epoch %u, interp 0x%s (epoch %u)\n",
-	    ptrBuf1, codePtr->refCount, codePtr->compileEpoch, ptrBuf2,
-	    iPtr->compileEpoch);
+    sprintf(buf,
+	    "%p, refCt %" TCL_LL_MODIFIER "u, epoch %" TCL_LL_MODIFIER "u, "
+	    "interp 0x%p (epoch %" TCL_LL_MODIFIER "u",
+	    codePtr, (Tcl_WideInt)codePtr->refCount, (Tcl_WideInt)codePtr->compileEpoch, iPtr,
+	    (Tcl_WideInt)iPtr->compileEpoch);
+    Tcl_AppendPrintfToObj(bufferObj, "ByteCode 0x%s)\n", buf);
     Tcl_AppendToObj(bufferObj, "  Source ", -1);
     PrintSourceToObj(bufferObj, codePtr->source,
 	    TclMin(codePtr->numSrcBytes, 55));
@@ -316,10 +316,10 @@ DisassembleByteCodeObj(
 	Proc *procPtr = codePtr->procPtr;
 	int numCompiledLocals = procPtr->numCompiledLocals;
 
-	sprintf(ptrBuf1, "%p", procPtr);
+	sprintf(buf, "%p, refCt %" TCL_LL_MODIFIER "u", procPtr, (Tcl_WideInt) procPtr->refCount);
 	Tcl_AppendPrintfToObj(bufferObj,
-		"  Proc 0x%s, refCt %d, args %d, compiled locals %d\n",
-		ptrBuf1, procPtr->refCount, procPtr->numArgs,
+		"  Proc 0x%s, args %d, compiled locals %d\n",
+		buf, procPtr->numArgs,
 		numCompiledLocals);
 	if (numCompiledLocals > 0) {
 	    CompiledLocal *localPtr = procPtr->firstLocalPtr;

@@ -261,8 +261,8 @@ typedef struct Namespace {
 				 * strings; values have type (Namespace *). If
 				 * NULL, there are no children. */
 #endif
-    long nsId;			/* Unique id for the namespace. */
-    Tcl_Interp *interp;		/* The interpreter containing this
+    size_t nsId;		/* Unique id for the namespace. */
+    Tcl_Interp *interp;	/* The interpreter containing this
 				 * namespace. */
     int flags;			/* OR-ed combination of the namespace status
 				 * flags NS_DYING and NS_DEAD listed below. */
@@ -270,7 +270,7 @@ typedef struct Namespace {
 				 * frames for this namespace that are on the
 				 * Tcl call stack. The namespace won't be
 				 * freed until activationCount becomes zero. */
-    int refCount;		/* Count of references by namespaceName
+    size_t refCount;		/* Count of references by namespaceName
 				 * objects. The namespace can't be freed until
 				 * refCount becomes zero. */
     Tcl_HashTable cmdTable;	/* Contains all the commands currently
@@ -288,12 +288,12 @@ typedef struct Namespace {
 				/* Set of "string match" style patterns that
 				 * specify which commands are exported. 
 				 * No namespace qualifiers are allowed. */
-    int cmdRefEpoch;		/* Incremented if a newly added command
+    size_t cmdRefEpoch;	/* Incremented if a newly added command
 				 * shadows a command for which this namespace
 				 * has already cached a Command* pointer; this
 				 * causes all its cached Command* pointers to
 				 * be invalidated. */
-    int resolverEpoch;		/* Incremented whenever (a) the name
+    size_t resolverEpoch;	/* Incremented whenever (a) the name
 				 * resolution rules change for this namespace
 				 * or (b) a newly added command shadows a
 				 * command that is compiled to bytecodes. This
@@ -320,7 +320,7 @@ typedef struct Namespace {
 				 * LookupCompiledLocal to resolve variable
 				 * references within the namespace at compile
 				 * time. */
-    int exportLookupEpoch;	/* Incremented whenever a command is added to
+    size_t exportLookupEpoch;	/* Incremented whenever a command is added to
 				 * a namespace, removed from a namespace or
 				 * the exports of a namespace are changed.
 				 * Allows TIP#112-driven command lists to be
@@ -421,7 +421,7 @@ typedef struct EnsembleConfig {
 				 * if the command has been deleted (or never
 				 * existed; the global namespace never has an
 				 * ensemble command.) */
-    int epoch;			/* The epoch at which this ensemble's table of
+    size_t epoch;		/* The epoch at which this ensemble's table of
 				 * exported commands is valid. */
     char **subcommandArrayPtr;	/* Array of ensemble subcommand names. At all
 				 * consistent points, this will have the same
@@ -1623,12 +1623,12 @@ typedef struct Command {
 				 * recreated). */
     Namespace *nsPtr;		/* Points to the namespace containing this
 				 * command. */
-    int refCount;		/* 1 if in command hashtable plus 1 for each
+    size_t refCount;		/* 1 if in command hashtable plus 1 for each
 				 * reference from a CmdName Tcl object
 				 * representing a command's name in a ByteCode
 				 * instruction sequence. This structure can be
 				 * freed when refCount becomes zero. */
-    int cmdEpoch;		/* Incremented to invalidate any references
+    size_t cmdEpoch;		/* Incremented to invalidate any references
 				 * that point to this command when it is
 				 * renamed, deleted, hidden, or exposed. */
     CompileProc *compileProc;	/* Procedure called to compile command. NULL
@@ -1856,7 +1856,7 @@ typedef struct Interp {
 				 * compiled by the interpreter. Indexed by the
 				 * string representations of literals. Used to
 				 * avoid creating duplicate objects. */
-    int compileEpoch;		/* Holds the current "compilation epoch" for
+    size_t compileEpoch;	/* Holds the current "compilation epoch" for
 				 * this interpreter. This is incremented to
 				 * invalidate existing ByteCodes when, e.g., a
 				 * command with a compile procedure is

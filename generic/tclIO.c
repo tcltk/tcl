@@ -3044,7 +3044,7 @@ CloseChannel(
 
     if (chanPtr == statePtr->bottomChanPtr) {
 	if (statePtr->channelName != NULL) {
-	    ckfree((char *)statePtr->channelName);
+	    ckfree(statePtr->channelName);
 	    statePtr->channelName = NULL;
 	}
 
