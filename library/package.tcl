@@ -488,7 +488,7 @@ proc tclPkgUnknown {name args} {
 		set dir [file dirname $file]
 		if {![info exists procdDirs($dir)]} {
 		    try {
-			source $file
+			source -nopkg $file
 		    } trap {POSIX EACCES} {} {
 			# $file was not readable; silently ignore
 			continue
