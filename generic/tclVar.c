@@ -1490,12 +1490,14 @@ Tcl_ArraySet(
     Tcl_Obj *part1Ptr,		/* The array name. */
     Tcl_Obj *dictPtr,		/* The array elements list or dict. If this is
 				 * NULL, create an empty array. */
-    int flags)			/* 0 or TCL_LEAVE_ERR_MSG. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
+				 * TCL_NAMESPACE_ONLY. */
 {
     Var *varPtr;
     int result, i;
 
-    if (!(varPtr = ArrayVar(interp, part1Ptr, NULL, flags | TCL_VAR_CREATE))) {
+    if (!(varPtr = ArrayVar(interp, part1Ptr, NULL,
+	    flags | TCL_LEAVE_ERR_MSG | TCL_VAR_CREATE))) {
 	return TCL_ERROR;
     }
 
@@ -1613,11 +1615,8 @@ Tcl_ArraySet(
 	     * Either an array element, or a scalar: lose!
 	     */
 
-	    if (flags & TCL_LEAVE_ERR_MSG) {
-		TclObjVarErrMsg(interp, part1Ptr, NULL, "array set",
-			needArray, -1);
-		Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", NULL);
-	    }
+	    TclObjVarErrMsg(interp, part1Ptr, NULL, "array set", needArray, -1);
+	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -4359,7 +4358,7 @@ ArraySetCmd(
 	return TCL_ERROR;
     }
 
-    return Tcl_ArraySet(interp, objv[1], objv[2], TCL_LEAVE_ERR_MSG);
+    return Tcl_ArraySet(interp, objv[1], objv[2], 0);
 }
 
 /*
