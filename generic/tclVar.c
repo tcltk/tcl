@@ -1114,8 +1114,8 @@ ArrayVar(
 
     /*
      * In create mode with TCL_LEAVE_ERR_MSG set, keep any error messages that
-     * were generated. Furthermore, if the variable turned out to itself be an
-     * array element, delete it and proceed to the common error routine below.
+     * were generated. Furthermore, if the variable turned out be an array
+     * element, delete it and proceed to the common error routine below.
      */
 
     if (create) {
@@ -1540,11 +1540,11 @@ Tcl_ArraySet(
 	     */
 
 	    Var *elemVarPtr = TclLookupArrayElement(interp, part1Ptr,
-		    keyPtr, flags, "set", 1, 1, varPtr, -1);
+		    keyPtr, flags | TCL_LEAVE_ERR_MSG, "set", 1, 1, varPtr, -1);
 
 	    if ((elemVarPtr == NULL) ||
 		    (TclPtrSetVar(interp, elemVarPtr, varPtr, part1Ptr,
-		    keyPtr, valuePtr, flags, -1) == NULL)) {
+		    keyPtr, valuePtr, flags | TCL_LEAVE_ERR_MSG, -1) == NULL)) {
 		Tcl_DictObjDone(&search);
 		return TCL_ERROR;
 	    }
@@ -1583,11 +1583,13 @@ Tcl_ArraySet(
 	copyListObj = TclListObjCopy(NULL, dictPtr);
 	for (i=0 ; i<elemLen ; i+=2) {
 	    Var *elemVarPtr = TclLookupArrayElement(interp, part1Ptr,
-		    elemPtrs[i], flags, "set", 1, 1, varPtr, -1);
+		    elemPtrs[i], flags | TCL_LEAVE_ERR_MSG, "set",
+		    1, 1, varPtr, -1);
 
 	    if ((elemVarPtr == NULL) ||
 		    (TclPtrSetVar(interp, elemVarPtr, varPtr, part1Ptr,
-		    elemPtrs[i],elemPtrs[i + 1], flags, -1) == NULL)){
+		    elemPtrs[i],elemPtrs[i + 1],
+		    flags | TCL_LEAVE_ERR_MSG, -1) == NULL)) {
 		result = TCL_ERROR;
 		break;
 	    }
