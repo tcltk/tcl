@@ -570,8 +570,7 @@ PkgRequireCore(
 	    pkgFiles->names = pkgName;
 	    code = Tcl_EvalEx(interp, script, -1, TCL_EVAL_GLOBAL);
 	    /* Pop the "ifneeded" package name from "tclPkgFiles" assocdata*/
-	    pkgName = pkgFiles->names;
-	    pkgFiles->names = pkgFiles->names->nextPtr;
+	    pkgFiles->names = pkgName->nextPtr;
 	    ckfree(pkgName);
 	    Tcl_Release(script);
 
