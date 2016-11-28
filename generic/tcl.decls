@@ -2344,11 +2344,11 @@ declare 634 {
 	Tcl_Obj *listPtr, int flags)
 }
 declare 635 {
-    int Tcl_ArraySize(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
-	Tcl_Obj *part2Ptr, int flags)
+    int Tcl_ArraySize(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+	int *intPtr, int flags)
 }
 declare 636 {
-    int Tcl_ArrayExists(Tcl_Interp *interp, Tcl_Obj *part1Ptr, int *existsPtr,
+    int Tcl_ArrayExists(Tcl_Interp *interp, Tcl_Obj *part1Ptr, int *intPtr,
 	int flags)
 }
 declare 637 {

@@ -210,8 +210,6 @@ static Var *		ArrayVar(Tcl_Interp *interp, Tcl_Obj *varNameObj,
 			    int *traceFailPtr, int flags);
 static Var *		ArrayFirst(ArraySearch *searchPtr, int *failPtr);
 static Var *		ArrayNext(ArraySearch *searchPtr, int *failPtr);
-static int		ArraySize(Tcl_Interp *interp, Var *varPtr,
-			    Tcl_Obj *filterObj, int filterType);
 static int		ArrayNames(Tcl_Interp *interp, Var *varPtr,
 			    Tcl_Obj *filterObj, int filterType,
 			    Tcl_Obj *listObj);
@@ -1337,58 +1335,6 @@ ArrayNext(
 /*
  *----------------------------------------------------------------------
  *
- * ArraySize --
- *
- *	This function returns the number of elements in an array variable.
- *
- * Results:
- *	The return value is the integer count of array elements. The only
- *	possible error is a regular expression error, in which case -1 is
- *	returned and the error information is loaded into the interp result.
- *
- * Side effects:
- *	None.
- *	
- *----------------------------------------------------------------------
- */
-
-static int
-ArraySize(
-    Tcl_Interp *interp,		/* Interpreter, used to report regexp errors. */
-    Var *varPtr,		/* Array variable. */
-    Tcl_Obj *filterObj,		/* Element filter or NULL to accept all. */
-    int filterType)		/* TCL_MATCH_EXACT, _GLOB, or _REGEXP. */
-{
-    ArraySearch search;
-    int fail = 0, size = 0;
-
-    /*
-     * Count the number of times ArrayFirst() or ArrayNext() returns non-NULL.
-     */
-
-    search.interp = interp;
-    search.varPtr = varPtr;
-    search.filterObj = filterObj;
-    search.filterType = filterType;
-    varPtr = ArrayFirst(&search, &fail);
-    for (; varPtr; varPtr = ArrayNext(&search, &fail)) {
-	++size;
-    }
-
-    /*
-     * Return -1 on error or the number of matching elements on success.
-     */
-
-    if (fail) {
-	return -1;
-    } else {
-	return size;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * ArrayNames --
  *
  *	Obtains a list of array element names, optionally limited by a filter.
@@ -1533,6 +1479,7 @@ ArrayArgs(
  * Side effects:
  *	A variable will be created if one does not already exist.
  *	Callers must Incr part1Ptr if they plan to Decr it.
+ *	Array and variable set traces are executed.
  *
  *----------------------------------------------------------------------
  */
@@ -1685,14 +1632,14 @@ Tcl_ArraySet(
  *
  * Tcl_ArrayUnset --
  *
- *	Unsets array elements, optionally limited by a filter. Even with exact
- *	matching, it is not an error for the filter to not match any elements.
- *	It is also not an error for the variable to not exist.
+ *	Unsets array elements, optionally limited by a filter. It is not an
+ *	error for the filter to not match any elements or for the variable to
+ *	not exist or not be an array.
  *
  * Results:
- *	The requested array elements are unset. On error, if flags contains
- *	TCL_LEAVE_ERR_MSG (or if the error is a trace error), error information
- *	is placed in the interpreter result.
+ *	The requested array elements are unset, and TCL_OK is returned. On trace
+ *	or filter match error, TCL_ERROR is returned and error information is
+ *	placed in the interpreter result.
  *
  * Side effects:
  *	Array and unset traces are executed.
@@ -1706,9 +1653,8 @@ Tcl_ArrayUnset(
     Tcl_Obj *part1Ptr,		/* Name of the array variable. */
     Tcl_Obj *part2Ptr,		/* Element filter or NULL to unset all. */
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
-				 * also at most one of TCL_MATCH_EXACT, _GLOB,
-				 * and _REGEXP. */
+				 * TCL_NAMESPACE_ONLY, and at most one of
+				 * TCL_MATCH_EXACT, _GLOB, and _REGEXP. */
 {
     ArraySearch search;
     int fail = 0, filterType = flags & TCL_MATCH;
@@ -1819,7 +1765,9 @@ Tcl_ArrayUnset(
  *
  * Tcl_ArrayGet --
  *
- *	This function loads the contents of an array into a dict.
+ *	This function loads the contents of an array into a dict. It is not an
+ *	error for the variable to not exist or not be an array; in this case,
+ *	the dict is not modified, as if the variable were an empty array.
  *
  * Results:
  *	The array is loaded into the specified dict. The array element names and
@@ -1827,15 +1775,18 @@ Tcl_ArrayUnset(
  *	supplied, only the elements whose names match the filter are loaded.
  *
  *	If the output dict isn't initially empty, the new keys and values take
- *	precedence over its initial contents. This can be used to mere multiple
- *	arrays into a single dict, or multiple collections of elements from a
- *	single array obtained by different filters. There is a mild performance
+ *	precedence over its initial contents. This can be used to merge multiple
+ *	arrays, or multiple collections of elements from a single array obtained
+ *	by different filters, into a single dict. There is a mild performance
  *	penalty when the output dict isn't initially empty due to the need to
- *	maintain a rollback dict in case an array trace unsets the array in the
- *	middle of this function's execution.
+ *	maintain a rollback dict in case an array trace or read trace unsets the
+ *	array during the execution of this function.
+ *
+ *	The return value is TCL_OK on success and TCL_ERROR on trace or filter
+ *	match error.
  *
  * Side effects:
- *	Array traces, if any, are executed.
+ *	Array and variable read traces, if any, are executed.
  *
  *----------------------------------------------------------------------
  */
@@ -1847,7 +1798,7 @@ Tcl_ArrayGet(
     Tcl_Obj *part2Ptr,		/* Element filter or NULL to read all. */
     Tcl_Obj *dictPtr,		/* Dict object to load array data into. */
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
-				 * TCL_NAMESPACE_ONLY, also at most one of
+				 * TCL_NAMESPACE_ONLY, and at most one of
 				 * TCL_MATCH_EXACT, _GLOB, and _REGEXP. */
 {
     Tcl_Obj *nameListObj, *rollbackObj, **nameObjPtr, *valueObj;
@@ -2008,10 +1959,9 @@ Tcl_ArrayNames(
     Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
     Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
     Tcl_Obj *listPtr,		/* List to which array names are appended. */
-    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
-				 * also at most one of TCL_MATCH_EXACT, _GLOB,
-				 * and _REGEXP. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
+				 * TCL_NAMESPACE_ONLY, and at most one of
+				 * TCL_MATCH_EXACT, _GLOB, and _REGEXP. */
 {
     Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
 
@@ -2027,20 +1977,22 @@ Tcl_ArrayNames(
  *
  * Tcl_ArraySize --
  *
- *	This function returns the number of elements in an array variable. It
- *	provides C-level access to [array size] functionality, except this
- *	function does not treat scalar and nonexistent variable as if they were
- *	empty arrays. If part2Ptr is not NULL, only array elements whose names
- *	match part2Ptr are counted toward the return value. The interpretation
- *	of part2Ptr is controlled by TCL_MATCH_* being set within flags.
+ *	This function reports the number of elements in an array variable. It
+ *	provides C-level access to [array size] functionality. If part2Ptr is
+ *	not NULL, only array elements whose names match part2Ptr are counted
+ *	toward the return value. The interpretation of part2Ptr is controlled by
+ *	the TCL_MATCH_* bits within flags.
  *
  * Results:
- *	The return value is normally the integer count of array elements whose
- *	names match the given filter. If varNamePtr does not name an array, -1
- *	is returned and an error message is placed in interp's result.
+ *	The return value is normally TCL_OK; in this case *intPtr will be set to
+ *	the integer count of array elements whose names match the given filter.
+ *	If varNamePtr does not name an array, TCL_OK is returned and *intPtr is
+ *	set to 0. If an array trace error occurs, or if there is an error in the
+ *	filter (e.g. bad regular expression), TCL_ERROR is returned and an error
+ *	message is left in the interpreter's result.
  *
  * Side effects:
- *	None.
+ *	Array traces, if any, are executed.
  *	
  *----------------------------------------------------------------------
  */
@@ -2051,13 +2003,37 @@ Tcl_ArraySize(
 				 * be looked up. */
     Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
     Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
-    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
-				 * also at most one of TCL_MATCH_EXACT, _GLOB,
-				 * and _REGEXP. */
+    int *intPtr,		/* Location to which size is written. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
+				 * TCL_NAMESPACE_ONLY, and at most one of
+				 * TCL_MATCH_EXACT, _GLOB, and _REGEXP. */
 {
-    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
-    return varPtr ? ArraySize(interp, varPtr, part2Ptr, flags & TCL_MATCH) : -1;
+    Var *varPtr;
+    ArraySearch search;
+    int fail = 0, size = 0;
+
+    if ((varPtr = ArrayVar(interp, part1Ptr, &fail, flags))) {
+	/*
+	 * Determine the size by counting the number of times ArrayFirst() or
+	 * ArrayNext() returns non-NULL.
+	 */
+
+	search.interp = interp;
+	search.varPtr = varPtr;
+	search.filterObj = part2Ptr;
+	search.filterType = flags & TCL_MATCH;
+	for (varPtr = ArrayFirst(&search, &fail); varPtr;
+		varPtr = ArrayNext(&search, &fail)) {
+	    ++size;
+	}
+    }
+	
+    if (fail) {
+	return TCL_ERROR;
+    }
+
+    *intPtr = size;
+    return TCL_OK;
 }
 
 /*
@@ -2068,11 +2044,11 @@ Tcl_ArraySize(
  *	This function checks if an array exists.
  *
  * Results:
- *	*existsPtr is set to 1 or 0 if the array does or does not exist, and
- *	TCL_OK is returned. *existPtr is also set to 0 if a variable with the
- *	given name exists but is not an array, as well as in event of lookup
- *	error such as nonexistent namespace. If an array trace error occurs,
- *	TCL_ERROR is returned and *existsPtr is not modified.
+ *	*intPtr is set to 1 or 0 if the array does or does not exist, and TCL_OK
+ *	is returned. *intPtr is also set to 0 if a variable with the given name
+ *	exists but is not an array, as well as in event of lookup error such as
+ *	nonexistent namespace. If an array trace error occurs, TCL_ERROR is
+ *	returned and *intPtr is not modified.
  *
  * Side effects:
  *	Array traces, if any, are executed.
@@ -2084,18 +2060,18 @@ int
 Tcl_ArrayExists(
     Tcl_Interp *interp,		/* Interpreter in which to look up variable. */
     Tcl_Obj *part1Ptr,		/* Name of array variable. */
-    int *existsPtr,		/* Set to 1 if exists, 0 otherwise. */
+    int *intPtr,		/* Set to 1 if array exists, 0 if not. */
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
 				 * TCL_NAMESPACE_ONLY. */
 {
     int traceFail = 0;
 
     if (ArrayVar(interp, part1Ptr, &traceFail, flags)) {
-	*existsPtr = 1;
+	*intPtr = 1;
     } else if (traceFail) {
 	return TCL_ERROR;
     } else {
-	*existsPtr = 0;
+	*intPtr = 0;
     }
 
     return TCL_OK;
@@ -2111,16 +2087,23 @@ Tcl_ArrayExists(
  *	returned value is used to obtain one array element name at a time. If
  *	part2Ptr is not NULL, only array elements whose names match part2Ptr are
  *	returned by future calls to Tcl_ArraySearchNext(). The interpretation of
- *	part2Ptr is controlled by TCL_MATCH_* being set within flags.
+ *	part2Ptr is controlled by the TCL_MATCH_* bits within flags.
+ *
+ * Important note:
+ *	Unlike all the other Tcl_Array*() functions, this function reports array
+ *	existence errors rather than treating nonexistent and scalar variables
+ *	as if they were empty arrays.
  *
  * Results:
- *	A new array search is created, a pointer to which is returned. If the
- *	variable does not exist or is not an array, NULL is returned, and no
- *	search is created.
+ *	A new array search is created and returned. If part1Ptr does not name an
+ *	array, if there is a problem with the filter, or if an array trace error
+ *	occurred, no search is created, NULL is returned, and error information
+ *	is placed in the interpreter.
  *
  * Side effects:
- *	On success, the search is allocated on the heap and will need to be
- *	deallocated by a future call to Tcl_ArraySearchDone().
+ *	On success, the search is allocated on the heap. To avoid a memory leak,
+ *	the search must be deallocated by Tcl_ArraySearchDone() when complete.
+ *	Array traces, if any, are executed.
  *
  *----------------------------------------------------------------------
  */
@@ -2131,13 +2114,12 @@ Tcl_ArraySearchStart(
 				 * be looked up. */
     Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
     Tcl_Obj *part2Ptr,		/* Element filter or NULL to accept all. */
-    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, and TCL_LEAVE_ERR_MSG,
-				 * also at most one of TCL_MATCH_EXACT, _GLOB,
-				 * and _REGEXP. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
+                                 * TCL_NAMESPACE_ONLY, and at most one of
+                                 * TCL_MATCH_EXACT, _GLOB, and _REGEXP. */
 {
     Interp *iPtr = (Interp *)interp;
-    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
+    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags | TCL_LEAVE_ERR_MSG);
     Tcl_HashEntry *hPtr;
     int isNew, fail = 0;
     ArraySearch search, *searchPtr;
@@ -2235,8 +2217,8 @@ Tcl_ArraySearchPeek(
  *	actual problem because Tcl_ArraySearchStart() already checks for regular
  *	expression errors and returns NULL if found. If the regular expression
  *	engine has a bug whereby a given query can initially succeed yet return
- *	error depending on the string it is matched against, the caller of this
- *	function will perceive it as prematurely hitting the end of the array.
+ *	error depending on the string it is matched against, it will appear to
+ *	the caller of this function as prematurely hitting the end of the array.
  *
  *----------------------------------------------------------------------
  */
@@ -4406,28 +4388,15 @@ ArraySizeCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *varNameObj, *filterObj;
-    Var *varPtr;
-    int traceFail = 0, filterType, size;
+    int filterType, size;
 
     if (ArrayArgs(interp, objc, objv, &varNameObj,
 	    &filterObj, &filterType) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Unlike Tcl_ArraySize(), the [array size] command treats nonexistent and
-     * non-array variables as having zero size. The only errors [array size] can
-     * report are argument count (handled above) and array trace (handled here).
-     */
-
-    if ((varPtr = ArrayVar(interp, varNameObj, &traceFail, 0))) {
-	size = ArraySize(interp, varPtr, filterObj, filterType);
-	if (size < 0) {
-	    return TCL_ERROR;
-	}
-    } else if (!traceFail) {
-	size = 0;
-    } else {
+    if (Tcl_ArraySize(interp, varNameObj, filterObj, &size,
+	    filterType) != TCL_OK) {
 	return TCL_ERROR;
     }
 
