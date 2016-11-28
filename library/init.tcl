@@ -483,7 +483,7 @@ proc auto_load_index {} {
 	set dir [lindex $auto_path $i]
 	set f ""
 	if {$issafe} {
-	    catch {source [file join $dir tclIndex]}
+	    catch {source -nopkg [file join $dir tclIndex]}
 	} elseif {[catch {set f [open [file join $dir tclIndex]]}]} {
 	    continue
 	} else {

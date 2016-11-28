@@ -38,7 +38,7 @@ typedef struct PkgName {
 } PkgName;
 
 typedef struct PkgFiles {
-    PkgName *names;		/* Package names being initialized. */
+    PkgName *names;		/* Package names being initialized. Must be first field*/
     Tcl_HashTable table;	/* Table which contains files for each package */
 } PkgFiles;
 
@@ -220,6 +220,19 @@ static void PkgFilesCleanupProc(ClientData clientData,
     }
     Tcl_DeleteHashTable(&pkgFiles->table);
     return;
+}
+
+void *TclInitPkgFiles(Tcl_Interp *interp)
+{
+    /* If assocdata "tclPkgFiles" doesn't exist yet, create it */
+    PkgFiles *pkgFiles = Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+    if (!pkgFiles) {
+	pkgFiles = ckalloc(sizeof(PkgFiles));
+	pkgFiles->names = NULL;
+	Tcl_InitHashTable(&pkgFiles->table, TCL_STRING_KEYS);
+	Tcl_SetAssocData(interp, "tclPkgFiles", PkgFilesCleanupProc, pkgFiles);
+    }
+    return pkgFiles;
 }
 
 void TclPkgFileSeen(Tcl_Interp *interp, const char *fileName)
@@ -549,14 +562,7 @@ PkgRequireCore(
 	    pkgPtr->clientData = versionToProvide;
 	    Tcl_Preserve(versionToProvide);
 	    Tcl_Preserve(script);
-	    /* If assocdata "tclPkgFiles" doesn't exist yet, create it */
-	    pkgFiles = Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
-	    if (!pkgFiles) {
-		pkgFiles = ckalloc(sizeof(PkgFiles));
-		pkgFiles->names = NULL;
-		Tcl_InitHashTable(&pkgFiles->table, TCL_STRING_KEYS);
-		Tcl_SetAssocData(interp, "tclPkgFiles", PkgFilesCleanupProc, pkgFiles);
-	    }
+	    pkgFiles = TclInitPkgFiles(interp);
 	    /* Push "ifneeded" package name in "tclPkgFiles" assocdata. */
 	    pkgName = ckalloc(sizeof(PkgName) + strlen(name));
 	    pkgName->nextPtr = pkgFiles->names;
