@@ -4481,9 +4481,14 @@ ArrayStatsCmd(
     }
 
     TclNewObj(resultObj);
-    Tcl_ArrayStatistics(interp, objv[1], resultObj, 0);
-    Tcl_SetObjResult(interp, resultObj);
+    Tcl_IncrRefCount(resultObj);
+    if (Tcl_ArrayStatistics(interp, objv[1], resultObj, 0) != TCL_OK) {
+	Tcl_DecrRefCount(resultObj);
+	return TCL_ERROR;
+    }
 
+    Tcl_SetObjResult(interp, resultObj);
+    Tcl_DecrRefCount(resultObj);
     return TCL_OK;
 }
 
