@@ -269,7 +269,7 @@ for (i = 0; i < size; i += 2, objPtr += 2) {
     Tcl_WriteObj(outChan, objPtr[0]);
     Tcl_WriteChars(outChan, " Count: ", -1);
     Tcl_WriteObj(outChan, objPtr[1]);
-    Tcl_WriteChars(outChan, "\n", -1);
+    Tcl_WriteChars(outChan, "\\n", -1);
 }
   \fB\(->\fR Color: blue Count: 4
     Color: white Count: 9
@@ -289,7 +289,7 @@ for (i = 0; i < size; ++i, ++objPtr) {
     Tcl_WriteChars(outChan, " Count: ", -1);
     Tcl_WriteObj(outChan, Tcl_ObjGetVar2(
             interp, varNameObj, *objPtr, 0));
-    Tcl_WriteChars(outChan, "\n", -1);
+    Tcl_WriteChars(outChan, "\\n", -1);
 }
   \fB\(->\fR Color: blue Count: 4
     Color: white Count: 9
@@ -303,7 +303,7 @@ Get array hash table statistics:
 Tcl_SetStringObj(obj, NULL, 0);
 \fBTcl_ArrayStatistics\fR(interp, varNameObj, obj, 0);
 Tcl_WriteObj(outChan, obj);
-Tcl_WriteChars(outChan, "\n", -1);
+Tcl_WriteChars(outChan, "\\n", -1);
   \fB\(->\fR 4 entries in table, 4 buckets
     number of buckets with 0 entries: 1
     number of buckets with 1 entries: 2
