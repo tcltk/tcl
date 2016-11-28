@@ -877,7 +877,7 @@ test package-5.3 {package files} -body {
     }
     foo eval package require t 2.4
     foo eval {list [package files http] [package files t]}
-} -result "[list {}] [file join $tcl_library http http.tcl]"
+} -result {{} {}}
 
 test package-6.1 {CheckVersion procedure} {
     package vcompare 1 2.1
