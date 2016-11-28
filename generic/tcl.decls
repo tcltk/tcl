@@ -2364,6 +2364,10 @@ declare 639 {
 declare 640 {
     void Tcl_ArraySearchDone(Tcl_ArraySearch search)
 }
+declare 641 {
+   int Tcl_ArrayStatistics(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+         Tcl_Obj *stringPtr, int flags)
+}
 
 ##############################################################################
 

@@ -1942,7 +1942,7 @@ Tcl_ArrayGet(
  *
  * Results:
  *	Normally, TCL_OK is returned, and the list of matching array element
- *	names is appended to listObj. On error, TCL_ERROR is returned, and the
+ *	names is appended to listPtr. On error, TCL_ERROR is returned, and the
  *	error information is placed in the interpreter's result.
  *
  * Side effects:
@@ -2284,6 +2284,50 @@ Tcl_ArraySearchDone(
 	Tcl_DecrRefCount(search->filterObj);
     }
     ckfree(search);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ArrayStatistics --
+ *
+ *	Returns statistics about the distribution of data within the hash table
+ *	that represents the array. This information includes the number of
+ *	entries in the table, the number of buckets, and the utilization of the
+ *	buckets.
+ *
+ * Results:
+ *	Normally, TCL_OK is returned, and the statistics information is appended
+ *	to stringPtr.  If part1Ptr does not name an array, or if an array trace
+ *	error occurs, TCL_ERROR is returned and error information is left in the
+ *	interpreter result.
+ *
+ * Side effects:
+ *	Array traces, if any, are executed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_ArrayStatistics(
+    Tcl_Interp *interp,		/* Interpreter containing the variable. */
+    Tcl_Obj *part1Ptr,		/* Name of the array variable. */
+    Tcl_Obj *stringPtr,		/* String to which statistics is appended. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
+				 * TCL_NAMESPACE_ONLY. */
+{
+    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags | TCL_LEAVE_ERR_MSG);
+    char *stats;
+
+    if (!varPtr) {
+	return TCL_ERROR;
+    }
+
+    stats = Tcl_HashStats((Tcl_HashTable *)varPtr->value.tablePtr);
+    Tcl_AppendToObj(stringPtr, stats, -1);
+    ckfree(stats);
+
+    return TCL_OK;
 }
 
 /*
@@ -4429,34 +4473,17 @@ ArrayStatsCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Var *varPtr;
-    Tcl_Obj *varNameObj;
-    char *stats;
-    int traceFail = 0;
+    Tcl_Obj *resultObj;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
 	return TCL_ERROR;
     }
-    varNameObj = objv[1];
 
-    /*
-     * Locate the array variable.
-     */
+    TclNewObj(resultObj);
+    Tcl_ArrayStatistics(interp, objv[1], resultObj, 0);
+    Tcl_SetObjResult(interp, resultObj);
 
-    varPtr = ArrayVar(interp, varNameObj, &traceFail, TCL_LEAVE_ERR_MSG);
-    if (!varPtr) {
-	return TCL_ERROR;
-    }
-
-    stats = Tcl_HashStats((Tcl_HashTable *) varPtr->value.tablePtr);
-    if (stats == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"error reading array statistics", -1));
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, -1));
-    ckfree(stats);
     return TCL_OK;
 }
 

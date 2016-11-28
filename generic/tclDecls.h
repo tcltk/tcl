@@ -1846,6 +1846,10 @@ EXTERN Tcl_Obj *	Tcl_ArraySearchPeek(Tcl_ArraySearch search);
 EXTERN Tcl_Obj *	Tcl_ArraySearchNext(Tcl_ArraySearch search);
 /* 640 */
 EXTERN void		Tcl_ArraySearchDone(Tcl_ArraySearch search);
+/* 641 */
+EXTERN int		Tcl_ArrayStatistics(Tcl_Interp *interp,
+				Tcl_Obj *part1Ptr, Tcl_Obj *stringPtr,
+				int flags);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2522,6 +2526,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_ArraySearchPeek) (Tcl_ArraySearch search); /* 638 */
     Tcl_Obj * (*tcl_ArraySearchNext) (Tcl_ArraySearch search); /* 639 */
     void (*tcl_ArraySearchDone) (Tcl_ArraySearch search); /* 640 */
+    int (*tcl_ArrayStatistics) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *stringPtr, int flags); /* 641 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3834,6 +3839,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ArraySearchNext) /* 639 */
 #define Tcl_ArraySearchDone \
 	(tclStubsPtr->tcl_ArraySearchDone) /* 640 */
+#define Tcl_ArrayStatistics \
+	(tclStubsPtr->tcl_ArrayStatistics) /* 641 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
