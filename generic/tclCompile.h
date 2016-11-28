@@ -417,7 +417,7 @@ typedef struct ByteCode {
 				 * procs are specific to an interpreter so the
 				 * code emitted will depend on the
 				 * interpreter. */
-    int compileEpoch;		/* Value of iPtr->compileEpoch when this
+    unsigned int compileEpoch;	/* Value of iPtr->compileEpoch when this
 				 * ByteCode was compiled. Used to invalidate
 				 * code when, e.g., commands with compile
 				 * procs are redefined. */
