@@ -1,0 +1,326 @@
+'\"
+'\" Copyright (c) 2016 Andy Goth
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_ArraySet 3 8.7 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+'\" Note: do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_ArraySet, Tcl_ArrayUnset, Tcl_ArrayGet, Tcl_ArrayNames, Tcl_ArraySize, Tcl_ArrayExists, Tcl_ArraySearchStart, Tcl_ArraySearchPeek, Tcl_ArraySearchNext, Tcl_ArraySearchDone, Tcl_ArrayStatistics \- manipulate Tcl array variables
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_ArraySet\fR(\fIinterp, part1Ptr, dictPtr, flags\fR)
+.sp
+int
+\fBTcl_ArrayUnset\fR(\fIinterp, part1Ptr, part2Ptr, flags\fR)
+.sp
+int
+\fBTcl_ArrayGet\fR(\fIinterp, part1Ptr, part2Ptr, dictPtr, flags\fR)
+.sp
+int
+\fBTcl_ArrayNames\fR(\fIinterp, part1Ptr, part2Ptr, listPtr, flags\fR)
+.sp
+int
+\fBTcl_ArraySize\fR(\fIinterp, part1Ptr, part2Ptr, intPtr, flags\fR)
+.sp
+int
+\fBTcl_ArrayExists\fR(\fIinterp, part1Ptr, intPtr, flags\fR)
+.sp
+Tcl_ArraySearch
+\fBTcl_ArraySearchStart\fR(\fIinterp, part1Ptr, part2Ptr, flags\fR)
+.sp
+Tcl_Obj *
+\fBTcl_ArraySearchPeek\fR(\fIsearch\fR)
+.sp
+Tcl_Obj *
+\fBTcl_ArraySearchNext\fR(\fIsearch\fR)
+.sp
+void
+\fBTcl_ArraySearchDone\fR(\fIsearch\fR)
+.sp
+int
+\fBTcl_ArrayStatistics\fR(\fIinterp, part1Ptr, stringPtr, flags\fR)
+.SH ARGUMENTS
+.AS Tcl_ArraySearch search
+.AP Tcl_Interp *interp in
+Interpreter containing the variable.  If an error occurs, an error message is
+left in the interpreter's result.
+.AP Tcl_Obj *part1Ptr in
+Points to a Tcl value containing the array variable's name.  The name may
+include a series of \fB::\fR namespace qualifiers to specify a variable in a
+particular namespace.
+.AP Tcl_Obj *part2Ptr in
+If non-NULL, points to a Tcl value containing an array element name filter
+specification.  The format and interpretation of \fIpart2Ptr\fR are determined
+by the \fIflags\fR argument.
+.AP int flags in
+OR-ed combination of bits providing additional information.  See below for valid
+values.
+.AP Tcl_Obj *dictPtr in/out
+Points to the dictionary value to be read or manipulated.  If \fIdictPtr\fR does
+not already point to a dictionary value, an attempt will be made to convert it
+to one.  \fBTcl_ArraySet\fR allows \fIdictPtr\fR to be NULL, in which case it
+creates an empty array if the array does not already exist.
+.AP Tcl_Obj *listPtr in/out
+Points to the list value to be manipulated.  If \fIlistPtr\fR does not already
+point to a list value, an attempt will be made to convert it to one.
+.AP Tcl_Obj *stringPtr in/out
+Points to the string value to be manipulated.
+.AP int *intPtr out
+Points to location where \fBTcl_ArrayExists\fR stores the array existence flag
+or \fBTcl_ArraySize\fR stores the number of matching array elements.
+.AP Tcl_ArraySearch search in/out
+Token for tracking the progress of enumerating array elements.
+.BE
+.SH DESCRIPTION
+.PP
+These functions are used to create, modify, enumerate, analyze, read, and delete
+Tcl array variables from C code.
+.PP
+The \fBTcl_ArraySet\fR, \fBTcl_ArrayUnset\fR, \fBTcl_ArrayGet\fR,
+\fBTcl_ArrayNames\fR, \fBTcl_ArraySize\fR, \fBTcl_ArrayExists\fR, and
+\fBTcl_ArrayStatistics\fR functions return \fBTCL_OK\fR on success and
+\fBTCL_ERROR\fR on error.  If an error occurs, an error message is left in the
+interpreter's result.  The possible errors are caused by format (invalid list,
+dictionary, or regular expression) and traces (array, read, write, or unset).
+Except for \fBTcl_ArraySet\fR, \fBTcl_ArraySearchStart\fR (not listed above),
+and \fBTcl_ArrayStatistics\fR, the array functions do not consider it an error
+for a namespace or variable to not exist or a variable to be a scalar or array
+element instead of an array.
+.PP
+Array functions trigger array traces in the same manner as the \fBarray\fR
+command.  After the completion of any array traces, for each accessed array
+element, \fBTcl_ArraySet\fR triggers write traces, \fBTcl_ArrayUnset\fR triggers
+unset traces, and \fBTcl_ArrayGet\fR triggers read traces.  As discussed above,
+an error encountered during the execution of a trace causes the function to
+place error information in the interpreter's result and return \fBTCL_ERROR\fR.
+.PP
+The \fBTcl_ArraySet\fR, \fBTcl_ArrayUnset\fR, \fBTcl_ArrayGet\fR,
+\fBTcl_ArrayNames\fR, \fBTcl_ArraySize\fR, \fBTcl_ArrayExists\fR,
+\fBTcl_ArraySearchStart\fR, and \fBTcl_ArrayStatistics\fR functions accept a
+\fIflags\fR argument to control the scope of the variable lookup and to specify
+the interpretation of \fIpart2Ptr\fR.  It consists of an OR-ed combination of
+zero or more of the following bits.
+.TP
+\fBTCL_GLOBAL_ONLY\fR
+Under normal circumstances the functions look up variables as follows.  If a
+procedure call is active in \fIinterp\fR, the array variable is looked up at the
+current level of procedure call.  Otherwise, the array variable is looked up
+first in the current namespace, then in the global namespace.  However, if this
+bit is set in \fIflags\fR then the array variable is looked up only in the
+global namespace even if there is a procedure call active.  If both
+\fBTCL_GLOBAL_ONLY\fR and \fBTCL_NAMESPACE_ONLY\fR are given,
+\fBTCL_GLOBAL_ONLY\fR is ignored.
+.TP
+\fBTCL_NAMESPACE_ONLY\fR
+If this bit is set in \fIflags\fR then the array variable is looked up only in
+the current namespace.  If a procedure is active, its variables are ignored, and
+the global namespace is also ignored unless it is the current namespace.
+.PP
+With the exception of \fBTcl_ArraySet\fR and \fBTcl_ArrayStatistics\fR which do
+not support filtering, the \fIflags\fR argument is also OR-ed with zero or one
+of the following values to select the type of filtering applied by
+\fIpart2Ptr\fR.  Setting more than one filter type may cause \fBTcl_Panic\fR to
+be called.  The filter type is ignored if \fIpart2Ptr\fR is NULL, in which case
+no filtering is applied and all array elements are matched.
+.TP
+\fBTCL_MATCH_EXACT\fR
+\fBpart2Ptr\fR is an array element name.  The filter matches at most a single
+array element whose name is exactly equal to the value of \fBpart2Ptr\fR.  If no
+filter type is explicitly specified in \fIflags\fR, \fBTCL_MATCH_EXACT\fR is
+used by default.  This differs from the \fBarray\fR commands which default to
+\fB-glob\fR.
+.TP
+\fBTCL_MATCH_GLOB\fR
+\fBpart2Ptr\fR is a glob pattern, and it matches array element names according
+to the rules of \fBstring match\fR.  \fIpart2Ptr\fR must match the entire array
+element name from beginning to end.  To match substrings, place \fB*\fR at
+either end of \fIpart2Ptr\fR.
+.TP
+\fBTCL_MATCH_REGEXP\fR
+\fBpart2Ptr\fR is a regular expression, and it matches array element names
+according to the rules of \fBregexp\fR.  Unless anchored by the \fB^\fR and
+\fB$\fR constraints, \fIpart2Ptr\fR matches substrings.  Thus, an empty
+\fIpart2Ptr\fR matches every possible array element name.  It is an error for
+\fBpart2Ptr\fR to not be a valid regular expression.
+.PP
+The \fBTcl_ArraySet\fR, \fBTcl_ArrayGet\fR, and \fBTcl_ArrayNames\fR functions
+accept \fIdictPtr\fR and \fIlistPtr\fR arguments referencing dictionary and list
+values, respectively.  If these values are not already dictionary and list
+values, an attempt will be made to convert them.  If the conversion fails,
+\fBTCL_ERROR\fR will be returned and an error message will be left in the
+interpreter's result.
+.PP
+\fBTcl_ArraySet\fR sets the values of zero or more elements in the array named
+by \fIpart1Ptr\fR.  If not NULL, \fIdictPtr\fR must be a valid dictionary, i.e.
+it must be a list consisting of an even number of elements alternating between
+key and value.  Each key in \fIdictPtr\fR is treated as an element name within
+the array, and its associated value is used as the new value for that array
+element.  If the variable named by \fIpart1Ptr\fR does not already exist and
+\fIdictPtr\fR is empty or NULL, the variable is created as an empty array.  It
+is an error for \fIpart1Ptr\fR to name a scalar (non-array) variable or an array
+element, or for it to reference a nonexistent namespace.
+.PP
+\fBTcl_ArrayUnset\fR unsets all elements in the array named by \fIpart1Ptr\fR
+that match the filter specified by \fIpart2Ptr\fR and \fIflags\fR.  It is not an
+error for \fIpart1Ptr\fR to not name an array or for there to be no matching
+elements in the array.  If \fIpart2Ptr\fR is NULL and \fIpart1Ptr\fR names an
+array, the entire array is unset, and future calls to \fBTcl_ArrayExists\fR will
+report it as not existing.  This is distinct from unsetting each element of the
+array (e.g. if \fIpart2Ptr\fR is \fB*\fR and \fIflags\fR is
+\fBTCL_MATCH_GLOB\fR), which does not cause future calls to
+\fBTcl_ArrayExists\fR to report the array as not existing.
+.PP
+\fBTcl_ArrayGet\fR loads the contents of the array named by \fIpart1Ptr\fR into
+the \fIdictPtr\fR dictionary object.  The array element names and values are
+used as the dictionary keys and values, respectively.  If \fIpart2Ptr\fR is not
+NULL, \fIpart2Ptr\fR and \fIflags\fR specify a filter used to limit which array
+elements are loaded into \fIdictPtr\fR.  If \fIpart1Ptr\fR does not name an
+array or if there are no matching elements, \fIdictPtr\fR is not modified.
+If \fIdictPtr\fR is not empty prior to calling \fBTcl_ArrayGet\fR, the array
+data is merged into \fIdictPtr\fR.  If an array element has the same name as an
+existing dictionary key, the array element value replaces the existing
+dictionary value.
+.PP
+\fBTcl_ArrayNames\fR loads the element names of the array named by
+\fIpart1Ptr\fR into the \fIlistPtr\fR list object.  If \fIpart2Ptr\fR is not
+NULL, \fIpart2Ptr\fR and \fIflags\fR specify a filter used to limit which array
+element names are loaded into \fIlistPtr\fR.  If \fIpart1Ptr\fR does not name an
+array or if there are no matching elements, \fIlistPtr\fR is not modified.  If
+\fIlistPtr\fR is not empty prior to calling \fBTcl_ArrayNames\fR, the array
+element names are appended to \fIlistPtr\fR.
+.PP
+\fBTcl_ArraySize\fR stores the number of elements in the array named by
+\fIpart1Ptr\fR into the address \fIintPtr\fR.  If \fIpart2Ptr\fR is not NULL,
+\fIpart2Ptr\fR and \fIflags\fR specify a filter used to limit which array
+elements count toward the total number of elements.  
+.PP
+\fBTcl_ArrayExists\fR checks for the existence of an array variable named
+\fIpart1Ptr\fR.  If the array variable exists, the value \fB1\fR is stored into
+the location \fIintPtr\fR, even if the array is empty.  If \fIpart1Ptr\fR does
+not name an array variable (the variable does not exist, it is a scalar variable
+or array element, or it references a nonexistent namespace), the value \fB0\fR
+is stored into the location \fIintPtr\fR.
+.PP
+\fBTcl_ArraySearchStart\fR initiates an array search, i.e. an array element
+enumeration yielding one element at a time.  \fIpart1Ptr\fR must name an array.
+If \fIpart2Ptr\fR is not NULL, \fIpart2Ptr\fR and \fIflags\fR specify a filter
+used to limit which array elements are included in the enumeration.  The return
+value is a token used to track the progress of the search, and it is to be
+passed to the \fBTcl_ArraySearchPeek\fR, \fBTcl_ArraySearchNext\fR, and
+\fBTcl_ArraySearchDone\fR functions.  If there is an error looking up the
+variable, executing an array trace, or validating a regular expression filter,
+NULL is returned and error information is placed in the interpreter result.
+.PP
+\fBTcl_ArraySearchPeek\fR and \fBTcl_ArraySearchNext\fR return the next array
+element name in the search identified by the \fIsearch\fR argument.  If there
+are no remaining element names, NULL is returned.  \fBTcl_ArraySearchPeek\fR
+does not advance the enumeration, whereas \fBTcl_ArraySearchNext\fR does, so
+\fBTcl_ArraySearchPeek\fR will return the same value each time it is called if
+there are no intervening calls to \fBTcl_ArraySearchNext\fR with the same
+\fIsearch\fR argument.
+.PP
+\fBTcl_ArraySearchDone\fR completes the search identified by the \fIsearch\fR
+argument and deallocates associated resources.  To avoid memory leaks,
+\fBTcl_ArraySearchDone\fR must be called once for each search token returned by
+\fBTcl_ArraySearchStart\fR.
+.PP
+\fBTcl_ArrayStatistics\fR produces statistics about the distribution of data
+within the hash table underlying the array named by \fIpart1Ptr\fR.  This
+information includes the number of entries in the table, the number of buckets,
+and the utilization of the buckets.  The statistics information is appended to
+the string value \fIstringPtr\fR.
+.SH EXAMPLES
+.PP
+Common initialization used for subsequent examples:
+.PP
+.CS
+int size, i;
+Tcl_Obj *obj, **objPtr;
+Tcl_Obj *varNameObj = Tcl_NewStringObj("colorcount", -1);
+Tcl_Channel outChan = Tcl_GetChannel(interp, "stdout", NULL);
+.CE
+.PP
+Create an array:
+.PP
+.CS
+obj = Tcl_NewStringObj(
+        " red   1"
+        " green 5"
+        " blue  4"
+        " white 9", -1);
+\fBTcl_ArraySet\fR(interp, varNameObj, obj, 0);
+.CE
+.PP
+Get the full contents of an array into a single object:
+.PP
+.CS
+Tcl_SetStringObj(obj, NULL, 0);
+\fBTcl_ArrayGet\fR(interp, varNameObj, NULL, obj, 0);
+Tcl_ListObjGetElements(interp, obj, &size, &objPtr);
+for (i = 0; i < size; i += 2, objPtr += 2) {
+    Tcl_WriteChars(outChan, "Color: ", -1);
+    Tcl_WriteObj(outChan, objPtr[0]);
+    Tcl_WriteChars(outChan, " Count: ", -1);
+    Tcl_WriteObj(outChan, objPtr[1]);
+    Tcl_WriteChars(outChan, "\n", -1);
+}
+  \fB\(->\fR Color: blue Count: 4
+    Color: white Count: 9
+    Color: green Count: 5
+    Color: red Count: 1
+.CE
+.PP
+Get an array element name list then individually look up each element value:
+.PP
+.CS
+Tcl_SetStringObj(obj, NULL, 0);
+\fBTcl_ArrayNames\fR(interp, varNameObj, NULL, obj, 0);
+Tcl_ListObjGetElements(interp, obj, &size, &objPtr);
+for (i = 0; i < size; ++i, ++objPtr) {
+    Tcl_WriteChars(outChan, "Color: ", -1);
+    Tcl_WriteObj(outChan, *objPtr);
+    Tcl_WriteChars(outChan, " Count: ", -1);
+    Tcl_WriteObj(outChan, Tcl_ObjGetVar2(
+            interp, varNameObj, *objPtr, 0));
+    Tcl_WriteChars(outChan, "\n", -1);
+}
+  \fB\(->\fR Color: blue Count: 4
+    Color: white Count: 9
+    Color: green Count: 5
+    Color: red Count: 1
+.CE
+.PP
+Get array hash table statistics:
+.PP
+.CS
+Tcl_SetStringObj(obj, NULL, 0);
+\fBTcl_ArrayStatistics\fR(interp, varNameObj, obj, 0);
+Tcl_WriteObj(outChan, obj);
+Tcl_WriteChars(outChan, "\n", -1);
+  \fB\(->\fR 4 entries in table, 4 buckets
+    number of buckets with 0 entries: 1
+    number of buckets with 1 entries: 2
+    number of buckets with 2 entries: 1
+    number of buckets with 3 entries: 0
+    number of buckets with 4 entries: 0
+    number of buckets with 5 entries: 0
+    number of buckets with 6 entries: 0
+    number of buckets with 7 entries: 0
+    number of buckets with 8 entries: 0
+    number of buckets with 9 entries: 0
+    number of buckets with 10 or more entries: 0
+    average search distance for entry: 1.2
+.CE
+.SH "SEE ALSO"
+array(n), Tcl_NewObj(3), Tcl_NewListObj(3), Tcl_NewDictObj(3),
+Tcl_ObjGetVar2(3), Tcl_GetObjResult(3), Tcl_TraceVar2(3)
+.SH KEYWORDS
+array, dict, dict value, dictionary, get variable, hash table, iteration,
+interpreter, set, unset, value, variable
