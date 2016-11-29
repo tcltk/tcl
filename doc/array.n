@@ -22,6 +22,38 @@ Unless otherwise specified for individual commands below,
 \fIarrayName\fR must be the name of an existing array variable.
 The \fIoption\fR argument determines what action is carried
 out by the command.
+.PP
+Many array commands accept \fImode\fR and \fIpattern\fR arguments.  These
+arguments specify a filter to limit which array elements are included in the
+operation.  If neither argument is specified, no filtering is applied, and the
+entire array is processed.  If only one argument is specified, it is used as the
+\fIpattern\fR argument, and \fB\-glob\fR is used as the default value for
+\fImode\fR.  If both arguments are specified, the first is used as \fImode\fR
+and the second as \fIpattern\fR.  The \fImode\fR argument designates which
+matching rules to use to match \fIpattern\fR against the names of the elements
+in the array.  The legal \fImode\fR values are:
+.TP
+\fB\-exact\fR
+.
+\fIPattern\fR is a literal string that is compared for exact equality against
+each array element name.
+.TP
+\fB\-glob\fR
+.
+\fIPattern\fR is a glob-style pattern which is matched against each array
+element name using the same rules as the \fBstring match\fR command.
+\fIPattern\fR must match the entire array element name from beginning to end.
+To match substrings, place \fB*\fR at either end of \fIpattern\fR.  This mode is
+the default if no \fImode\fR is specified.
+.TP
+\fB\-regexp\fR
+.
+\fIPattern\fR is treated as a regular expression and matched against each array
+element name using the rules described in the \fBre_syntax\fR reference page.
+Unless anchored by the \fB^\fR and \fB$\fR constraints, \fIpattern\fR matches
+substrings.  Thus, an empty \fIpattern\fR matches every possible array element
+name.  It is an error for \fIpattern\fR to not be a valid regular expression.
+.PP
 The legal \fIoptions\fR (which may be abbreviated) are:
 .TP
 \fBarray anymore \fIarrayName searchId\fR
@@ -47,16 +79,13 @@ been the return value from a previous invocation of
 Returns 1 if \fIarrayName\fR is an array variable, 0 if there
 is no variable by that name or if it is a scalar variable.
 .TP
-\fBarray get \fIarrayName\fR ?\fIpattern\fR?
+\fBarray get \fIarrayName\fR ?\fImode\fR? ?\fIpattern\fR?
 Returns a list containing pairs of elements.  The first
 element in each pair is the name of an element in \fIarrayName\fR
 and the second element of each pair is the value of the
 array element.  The order of the pairs is undefined.
-If \fIpattern\fR is not specified, then all of the elements of the
-array are included in the result.
-If \fIpattern\fR is specified, then only those elements whose names
-match \fIpattern\fR (using the matching rules of
-\fBstring match\fR) are included.
+The \fImode\fR and \fIpattern\fR arguments can be used to limit which array
+elements are included in the result.
 If \fIarrayName\fR is not the name of an array variable, or if
 the array contains no elements, then an empty list is returned.
 If traces on the array modify the list of elements, the elements
@@ -65,15 +94,10 @@ returned are those that exist both before and after the call to
 .TP
 \fBarray names \fIarrayName\fR ?\fImode\fR? ?\fIpattern\fR?
 Returns a list containing the names of all of the elements in
-the array that match \fIpattern\fR.  \fIMode\fR may be one of
-\fB\-exact\fR, \fB\-glob\fR, or \fB\-regexp\fR.  If specified, \fImode\fR
-designates which matching rules to use to match \fIpattern\fR against
-the names of the elements in the array.  If not specified, \fImode\fR
-defaults to \fB\-glob\fR.  See the documentation for \fBstring match\fR
-for information on glob style matching, and the documentation for
-\fBregexp\fR for information on regexp matching.
-If \fIpattern\fR is omitted then the command returns all of
-the element names in the array.  If there are no (matching) elements
+the array.
+The \fImode\fR and \fIpattern\fR arguments can be used to limit which array
+element names are included in the result.
+If there are no (matching) elements
 in the array, or if \fIarrayName\fR is not the name of an array
 variable, then an empty string is returned.
 .TP
@@ -99,16 +123,20 @@ If the variable \fIarrayName\fR does not already exist
 and \fIlist\fR is empty,
 \fIarrayName\fR is created with an empty array value.
 .TP
-\fBarray size \fIarrayName\fR
-Returns a decimal string giving the number of elements in the
+\fBarray size \fIarrayName\fR ?\fImode\fR? ?\fIpattern\fR?
+Returns an integer giving the number of elements in the
 array.
+The \fImode\fR and \fIpattern\fR arguments can be used to limit which array
+elements are counted toward the result.
 If \fIarrayName\fR is not the name of an array then 0 is returned.
 .TP
-\fBarray startsearch \fIarrayName\fR
+\fBarray startsearch \fIarrayName\fR ?\fImode\fR? ?\fIpattern\fR?
 This command initializes an element-by-element search through the
 array given by \fIarrayName\fR, such that invocations of the
 \fBarray nextelement\fR command will return the names of the
 individual elements in the array.
+The \fImode\fR and \fIpattern\fR arguments can be used to limit which array
+element names are returned by future invocations of \fBarray nextelement\fR.
 When the search has been completed, the \fBarray donesearch\fR
 command should be invoked.
 The return value is a
@@ -126,9 +154,10 @@ that represents the array.  This information includes the number of
 entries in the table, the number of buckets, and the utilization of
 the buckets.
 .TP
-\fBarray unset \fIarrayName\fR ?\fIpattern\fR?
-Unsets all of the elements in the array that match \fIpattern\fR (using the
-matching rules of \fBstring match\fR).  If \fIarrayName\fR is not the name
+\fBarray unset \fIarrayName\fR ?\fImode\fR? ?\fIpattern\fR?
+Unsets all of the elements in the array that match the filter specified by the
+\fImode\fR and \fIpattern\fR arguments.
+If \fIarrayName\fR is not the name
 of an array variable or there are no matching elements in the array, no
 error will be raised.  If \fIpattern\fR is omitted and \fIarrayName\fR is
 an array variable, then the command unsets the entire array.
