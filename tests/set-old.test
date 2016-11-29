@@ -591,6 +591,10 @@ test set-old-8.45 {array command, size option, array doesn't exist yet but has c
     }
     list [catch {foo 1} msg] $msg
 } {0 0}
+test set-old-8.46 {array command, startsearch option} {
+    catch {unset a}
+    list [catch {array startsearch a b} msg] $msg
+} {1 {"a" isn't an array}}
 test set-old-8.47 {array command, startsearch option} {
     catch {unset a}
     list [catch {array startsearch a} msg] $msg
@@ -807,6 +811,11 @@ test set-old-9.12 {array enumeration with traced undefined elements} {
 test set-old-10.1 {array enumeration errors} {
     list [catch {array start} msg] $msg
 } {1 {wrong # args: should be "array startsearch arrayName ?mode? ?pattern?"}}
+test set-old-10.2 {array command, startsearch option} {
+    # Note: appears to be almost identical to set-old-8.47
+    catch {unset a}
+    list [catch {array start a} msg] $msg
+} {1 {"a" isn't an array}}
 test set-old-10.3 {array enumeration errors} {
     catch {unset a}
     list [catch {array start a} msg] $msg
