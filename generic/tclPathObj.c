@@ -90,7 +90,7 @@ typedef struct {
 				 * below. */
     ClientData nativePathPtr;	/* Native representation of this path, which
 				 * is filesystem dependent. */
-    int filesystemEpoch;	/* Used to ensure the path representation was
+    size_t filesystemEpoch;	/* Used to ensure the path representation was
 				 * generated during the correct filesystem
 				 * epoch. The epoch changes when
 				 * filesystem-mounts are changed. */
