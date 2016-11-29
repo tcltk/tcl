@@ -381,7 +381,7 @@ struct subre {
  */
 
 struct fns {
-    void (*free)(regex_t *);
+    void (*free) (regex_t *);
 };
 
 /*
