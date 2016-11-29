@@ -1227,7 +1227,7 @@ cmp(
     const chr *x, const chr *y,	/* strings to compare */
     size_t len)			/* exact length of comparison */
 {
-    return memcmp(VS(x), VS(y), len*sizeof(chr));
+    return memcmp((void*)(x), (void*)(y), len*sizeof(chr));
 }
 
 /*
