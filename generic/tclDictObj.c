@@ -1382,7 +1382,7 @@ Tcl_NewDictObj(void)
     InitChainTable(dict);
     dict->epoch = 0;
     dict->chain = NULL;
-    dict->refcount = 1;
+    dict->refCount = 1;
     DICT(dictPtr) = dict;
     dictPtr->internalRep.twoPtrValue.ptr2 = NULL;
     dictPtr->typePtr = &tclDictType;

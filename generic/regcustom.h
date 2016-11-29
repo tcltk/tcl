@@ -36,7 +36,6 @@
  * Overrides for regguts.h definitions, if any.
  */
 
-#define	FUNCPTR(name, args)	(*name)args
 #define	MALLOC(n)		(void*)(attemptckalloc(n))
 #define	FREE(p)			ckfree((void*)(p))
 #define	REALLOC(p,n)		(void*)(attemptckrealloc((void*)(p),n))
