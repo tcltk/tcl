@@ -9318,9 +9318,9 @@ PrintByteCodeInfo(
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
     int numAuxDataItems = codePtr->auxData?BA_AuxData_Size(codePtr->auxData):0;
 
-    fprintf(stdout, "\nExecuting ByteCode 0x%p, refCt %u, epoch %u, interp 0x%p (epoch %u)\n",
-	    codePtr, codePtr->refCount, codePtr->compileEpoch, iPtr,
-	    iPtr->compileEpoch);
+    fprintf(stdout, "\nExecuting ByteCode 0x%p, refCt %" TCL_LL_MODIFIER "u, epoch %" TCL_LL_MODIFIER "u, interp 0x%p (epoch %" TCL_LL_MODIFIER "u)\n",
+	    codePtr, (Tcl_WideInt)codePtr->refCount, (Tcl_WideInt)codePtr->compileEpoch, iPtr,
+	    (Tcl_WideInt)iPtr->compileEpoch);
 
     fprintf(stdout, "  Source: ");
     TclPrintSource(stdout, codePtr->source, 60);
