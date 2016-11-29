@@ -1098,16 +1098,19 @@ typedef struct Tcl_DString {
 #define TCL_TRACE_DESTROYED	 0x80
 #define TCL_INTERP_DESTROYED	 0x100
 #define TCL_LEAVE_ERR_MSG	 0x200
+/* Value 0x400 is reserved for TCL_PARSE_PART1, conditionally defined below. */
 #define TCL_TRACE_ARRAY		 0x800
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
 /* Required to support old variable/vdelete/vinfo traces. */
 #define TCL_TRACE_OLD_STYLE	 0x1000
 #endif
 #define TCL_MATCH_REGEXP	 0x2000
+/* Value 0x4000 is reserved for TCL_VAR_CREATE, defined in tclVar.c. */
 /* Indicate the semantics of the result of a trace. */
 #define TCL_TRACE_RESULT_DYNAMIC 0x8000
 #define TCL_TRACE_RESULT_OBJECT  0x10000
 #define TCL_MATCH_GLOB		 0x20000
+/* Value 0x100000 is reserved for TCL_CANCEL_UNWIND, defined above. */
 
 /*
  * Flag values for ensemble commands.
