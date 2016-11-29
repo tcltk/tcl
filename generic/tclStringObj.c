@@ -2691,7 +2691,7 @@ TclStringCatObjv(
 	    if (objPtr->bytes == NULL) {
 		int numBytes;
 
-		Tcl_GetByteArrayFromObj(objPtr, &numBytes);
+		Tcl_GetByteArrayFromObj(objPtr, &numBytes); /* PANIC? */
 		if (length == 0) {
 		    first = objc - oc - 1;
 		}
@@ -2707,7 +2707,7 @@ TclStringCatObjv(
 	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
 		int numChars;
 
-		Tcl_GetUnicodeFromObj(objPtr, &numChars);
+		Tcl_GetUnicodeFromObj(objPtr, &numChars); /* PANIC? */
 		if (length == 0) {
 		    first = objc - oc - 1;
 		}
@@ -2722,7 +2722,7 @@ TclStringCatObjv(
 
 	    objPtr = *ov++;
 
-	    Tcl_GetStringFromObj(objPtr, &numBytes);
+	    Tcl_GetStringFromObj(objPtr, &numBytes);	/* PANIC? */
 	    if ((length == 0) && numBytes) {
 		first = objc - oc - 1;
 	    }
@@ -2751,6 +2751,11 @@ TclStringCatObjv(
 	/* Efficiently produce a pure byte array result */
 	unsigned char *dst;
 
+	/*
+	 * Broken interface! Byte array value routines offer no way
+	 * to handle failure to allocate enough space. Following
+	 * stanza may panic.
+	 */ 
 	if (inPlace && !Tcl_IsShared(*objv)) {
 	    int start;
 
@@ -2783,14 +2788,30 @@ TclStringCatObjv(
 	    /* Ugly interface! Force resize of the unicode array. */
 	    Tcl_GetUnicodeFromObj(objResultPtr, &start);
 	    Tcl_InvalidateStringRep(objResultPtr);
-	    Tcl_SetObjLength(objResultPtr, length);
+	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    	"concatenation failed: unable to alloc %lu bytes",
+			STRING_SIZE(length)));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		}
+		return TCL_ERROR;
+	    }
 	    dst = Tcl_GetUnicode(objResultPtr) + start;
 	} else {
 	    Tcl_UniChar ch = 0;
 
 	    /* Ugly interface! No scheme to init array size. */
-	    objResultPtr = Tcl_NewUnicodeObj(&ch, 0);
-	    Tcl_SetObjLength(objResultPtr, length);
+	    objResultPtr = Tcl_NewUnicodeObj(&ch, 0);	/* PANIC? */
+	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    	"concatenation failed: unable to alloc %lu bytes",
+			STRING_SIZE(length)));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		}
+		return TCL_ERROR;
+	    }
 	    dst = Tcl_GetUnicode(objResultPtr);
 	}
 	while (objc--) {
@@ -2813,14 +2834,30 @@ TclStringCatObjv(
 	    objResultPtr = *objv++; objc--;
 
 	    Tcl_GetStringFromObj(objResultPtr, &start);
-	    Tcl_SetObjLength(objResultPtr, length);
+	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    	"concatenation failed: unable to alloc %u bytes",
+			length));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		}
+		return TCL_ERROR;
+	    }
 	    dst = Tcl_GetString(objResultPtr) + start;
 	    if (length > start) {
 		TclFreeIntRep(objResultPtr);
 	    }
 	} else {
-	    objResultPtr = Tcl_NewObj();
-	    Tcl_SetObjLength(objResultPtr, length);
+	    objResultPtr = Tcl_NewObj();	/* PANIC? */
+	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    	"concatenation failed: unable to alloc %u bytes",
+			length));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		}
+		return TCL_ERROR;
+	    }
 	    dst = Tcl_GetString(objResultPtr);
 	}
 	while (objc--) {
