@@ -243,15 +243,16 @@ void TclPkgFileSeen(Tcl_Interp *interp, const char *fileName)
 	Tcl_HashTable *table = &pkgFiles->table;
 	int new;
 	Tcl_HashEntry *entry = Tcl_CreateHashEntry(table, name, &new);
-	Tcl_Obj *obj = Tcl_NewStringObj(fileName, -1);
+	Tcl_Obj *list;
 
 	if (new) {
-	    Tcl_SetHashValue(entry, obj);
-	    Tcl_IncrRefCount(obj);
+	    list = Tcl_NewObj();
+	    Tcl_SetHashValue(entry, list);
+	    Tcl_IncrRefCount(list);
 	} else {
-	    Tcl_Obj *list = Tcl_GetHashValue(entry);
-	    Tcl_ListObjAppendElement(interp, list, obj);
+	    list = Tcl_GetHashValue(entry);
 	}
+	Tcl_ListObjAppendElement(interp, list, Tcl_NewStringObj(fileName, -1));
     }
 }
 
@@ -889,9 +890,19 @@ Tcl_PackageObjCmd(
     }
     case PKG_FORGET: {
 	const char *keyString;
+	PkgFiles *pkgFiles = (PkgFiles *) Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
 
 	for (i = 2; i < objc; i++) {
 	    keyString = TclGetString(objv[i]);
+	    if (pkgFiles) {
+		hPtr = Tcl_FindHashEntry(&pkgFiles->table, keyString);
+		if (hPtr) {
+		    Tcl_Obj *obj = Tcl_GetHashValue(hPtr);
+		    Tcl_DeleteHashEntry(hPtr);
+		    Tcl_DecrRefCount(obj);
+		}
+	    }
+
 	    hPtr = Tcl_FindHashEntry(&iPtr->packageTable, keyString);
 	    if (hPtr == NULL) {
 		continue;
