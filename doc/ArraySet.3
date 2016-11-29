@@ -30,7 +30,7 @@ int
 \fBTcl_ArraySize\fR(\fIinterp, part1Ptr, part2Ptr, intPtr, flags\fR)
 .sp
 int
-\fBTcl_ArrayExists\fR(\fIinterp, part1Ptr, intPtr, flags\fR)
+\fBTcl_ArrayExists\fR(\fIinterp, part1Ptr, part2ptr, intPtr, flags\fR)
 .sp
 Tcl_ArraySearch
 \fBTcl_ArraySearchStart\fR(\fIinterp, part1Ptr, part2Ptr, flags\fR)
@@ -202,11 +202,14 @@ element names are appended to \fIlistPtr\fR.
 elements count toward the total number of elements.  
 .PP
 \fBTcl_ArrayExists\fR checks for the existence of an array variable named
-\fIpart1Ptr\fR.  If the array variable exists, the value \fB1\fR is stored into
-the location \fIintPtr\fR, even if the array is empty.  If \fIpart1Ptr\fR does
-not name an array variable (the variable does not exist, it is a scalar variable
-or array element, or it references a nonexistent namespace), the value \fB0\fR
-is stored into the location \fIintPtr\fR.
+\fIpart1Ptr\fR or (if \fIpart2Ptr\fR is not NULL) an array element within
+matching the filter specified by \fIpart2Ptr\fR and \fIflags\fR.  If the array
+variable or array element exists, the value \fB1\fR is stored into the location
+\fIintPtr\fR, even if the array is empty.  If \fIpart1Ptr\fR does not name an
+array variable (the variable does not exist, it is a scalar variable or array
+element, or it references a nonexistent namespace), or if \fIpart2Ptr\fR is not
+NULL and no elements match the filter, the value \fB0\fR is stored into the
+location \fIintPtr\fR.
 .PP
 \fBTcl_ArraySearchStart\fR initiates an array search, i.e. an array element
 enumeration yielding one element at a time.  \fIpart1Ptr\fR must name an array.

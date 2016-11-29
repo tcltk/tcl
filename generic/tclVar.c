@@ -2042,14 +2042,17 @@ Tcl_ArraySize(
  *
  * Tcl_ArrayExists --
  *
- *	This function checks if an array exists.
+ *	This function checks if an array or array element exists. If part2Ptr is
+ *	NULL, the existence of the array is checked. If part2Ptr is not NULL,
+ *	this function instead checks if at least one array element name matches
+ *	the filter specified by part2Ptr and the TCL_MATCH_* bits within flags.
  *
  * Results:
- *	*intPtr is set to 1 or 0 if the array does or does not exist, and TCL_OK
- *	is returned. *intPtr is also set to 0 if a variable with the given name
- *	exists but is not an array, as well as in event of lookup error such as
- *	nonexistent namespace. If an array trace error occurs, TCL_ERROR is
- *	returned and *intPtr is not modified.
+ *	*intPtr is set to 1 or 0 if the array or array element does or does not
+ *	exist, and TCL_OK is returned. *intPtr is also set to 0 if a variable
+ *	with the given name exists but is not an array, as well as in event of
+ *	lookup error such as nonexistent namespace. If an array trace error
+ *	occurs, TCL_ERROR is returned and *intPtr is not modified.
  *
  * Side effects:
  *	Array traces, if any, are executed.
@@ -2060,16 +2063,33 @@ Tcl_ArraySize(
 int
 Tcl_ArrayExists(
     Tcl_Interp *interp,		/* Interpreter in which to look up variable. */
-    Tcl_Obj *part1Ptr,		/* Name of array variable. */
+    Tcl_Obj *part1Ptr,		/* Name of array variable in interp. */
+    Tcl_Obj *part2Ptr,		/* Element to check or NULL to check array. */
     int *intPtr,		/* Set to 1 if array exists, 0 if not. */
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
-				 * TCL_NAMESPACE_ONLY. */
+				 * TCL_NAMESPACE_ONLY, and at most one of
+				 * TCL_MATCH_EXACT, _GLOB, and _REGEXP. */
 {
-    int traceFail = 0;
+    ArraySearch search;
+    int fail = 0;
+    Var *varPtr = ArrayVar(interp, part1Ptr, &fail, flags);
 
-    if (ArrayVar(interp, part1Ptr, &traceFail, flags)) {
+    /*
+     * If the array lookup succeeded and a filter was specified, attempt to find
+     * the first element which matches the filter.
+     */
+
+    if (varPtr && part2Ptr) {
+	search.interp = interp;
+	search.varPtr = varPtr;
+	search.filterObj = part2Ptr;
+	search.filterType = flags & TCL_MATCH;
+	varPtr = ArrayFirst(&search, &fail);
+    }
+
+    if (varPtr) {
 	*intPtr = 1;
-    } else if (traceFail) {
+    } else if (fail) {
 	return TCL_ERROR;
     } else {
 	*intPtr = 0;
@@ -2300,7 +2320,7 @@ Tcl_ArraySearchDone(
  *
  * Results:
  *	Normally, TCL_OK is returned, and the statistics information is appended
- *	to stringPtr.  If part1Ptr does not name an array, or if an array trace
+ *	to stringPtr. If part1Ptr does not name an array, or if an array trace
  *	error occurs, TCL_ERROR is returned and error information is left in the
  *	interpreter result.
  *
@@ -4206,14 +4226,16 @@ ArrayExistsCmd(
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
-    int exists;
+    Tcl_Obj *varNameObj, *filterObj;
+    int exists, filterType;
 
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
+    if (ArrayArgs(interp, objc, objv, &varNameObj,
+	    &filterObj, &filterType) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    if (Tcl_ArrayExists(interp, objv[1], &exists, 0) != TCL_OK) {
+    if (Tcl_ArrayExists(interp, varNameObj, filterObj, &exists,
+	    filterType) != TCL_OK) {
 	return TCL_ERROR;
     }
 

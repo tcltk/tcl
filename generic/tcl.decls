@@ -2348,8 +2348,8 @@ declare 635 {
 	int *intPtr, int flags)
 }
 declare 636 {
-    int Tcl_ArrayExists(Tcl_Interp *interp, Tcl_Obj *part1Ptr, int *intPtr,
-	int flags)
+    int Tcl_ArrayExists(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+	Tcl_Obj *part2Ptr, int *intPtr, int flags)
 }
 declare 637 {
     Tcl_ArraySearch Tcl_ArraySearchStart(Tcl_Interp *interp,

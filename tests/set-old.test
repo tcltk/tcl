@@ -369,7 +369,7 @@ test set-old-8.10 {array command, donesearch option, array doesn't exist yet but
 } {1 {"a" isn't an array}}
 test set-old-8.11 {array command, exists option} {
     list [catch {array exists a b} msg] $msg
-} {1 {wrong # args: should be "array exists arrayName"}}
+} {0 0}
 test set-old-8.12 {array command, exists option} {
     catch {unset a}
     array exists a
