@@ -75,9 +75,12 @@ which search on \fIarrayName\fR to destroy, and must have
 been the return value from a previous invocation of
 \fBarray startsearch\fR.  Returns an empty string.
 .TP
-\fBarray exists \fIarrayName\fR
+\fBarray exists \fIarrayName\fR ?\fImode\fR? ?\fIpattern\fR?
 Returns 1 if \fIarrayName\fR is an array variable, 0 if there
 is no variable by that name or if it is a scalar variable.
+If \fIpattern\fR is specified, this command instead checks if one or more
+elements of \fIarrayName\fR match the filter defined by \fImode\fR and
+\fIpattern\fR, returning 1 or 0 if the match succeeds or fails, respectively.
 .TP
 \fBarray get \fIarrayName\fR ?\fImode\fR? ?\fIpattern\fR?
 Returns a list containing pairs of elements.  The first
