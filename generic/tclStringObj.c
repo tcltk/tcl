@@ -2613,6 +2613,146 @@ TclGetStringStorage(
 /*
  *---------------------------------------------------------------------------
  *
+ * TclStringRepeat --
+ *
+ *	Performs the [string repeat] function.
+ *
+ * Results:
+ * 	A standard Tcl result.
+ *
+ * Side effects:
+ * 	Writes to *objPtrPtr the address of Tcl_Obj that is concatenation
+ * 	of count copies of the value in objPtr.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclStringRepeat(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    int count,
+    Tcl_Obj **objPtrPtr)
+{
+    Tcl_Obj *objResultPtr;
+    int length = 0, unichar = 0, done = 1;
+    int binary = TclIsPureByteArray(objPtr);
+
+    /* assert (count >= 2) */
+
+    /*
+     * Analyze to determine what representation result should be.
+     * GOALS:	Avoid shimmering & string rep generation.
+     * 		Produce pure bytearray when possible.
+     * 		Error on overflow.
+     */
+
+    if (!binary) {
+	if (objPtr->typePtr == &tclStringType) {
+	    String *stringPtr = GET_STRING(objPtr);
+	    if (stringPtr->hasUnicode) {
+		unichar = 1;
+	    }
+	}
+    }
+
+    if (binary) {
+	/* Result will be pure byte array. Pre-size it */
+	Tcl_GetByteArrayFromObj(objPtr, &length);
+    } else if (unichar) {
+	/* Result will be pure Tcl_UniChar array. Pre-size it. */
+	Tcl_GetUnicodeFromObj(objPtr, &length);
+    } else {
+	/* Result will be concat of string reps. Pre-size it. */
+	Tcl_GetStringFromObj(objPtr, &length);
+    }
+
+    if (length == 0) {
+	/* Any repeats of empty is empty. */
+	*objPtrPtr = objPtr;
+	return TCL_OK;
+    }
+
+    if (count > INT_MAX/length) {
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	}
+	return TCL_ERROR;
+    }
+
+    if (binary) {
+	/* Efficiently produce a pure byte array result */
+	objResultPtr = Tcl_IsShared(objPtr) ? Tcl_DuplicateObj(objPtr)
+		: objPtr;
+
+	Tcl_SetByteArrayLength(objResultPtr, count*length); /* PANIC? */
+	Tcl_SetByteArrayLength(objResultPtr, length);
+	while (count - done > done) {
+	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
+	    done *= 2;
+	}
+	TclAppendBytesToByteArray(objResultPtr,
+		Tcl_GetByteArrayFromObj(objResultPtr, NULL),
+		(count - done) * length);
+    } else if (unichar) {
+	/* Efficiently produce a pure Tcl_UniChar array result */
+	if (Tcl_IsShared(objPtr)) {
+	    objResultPtr = Tcl_NewUnicodeObj(Tcl_GetUnicode(objPtr), length);
+	} else {
+	    TclInvalidateStringRep(objPtr);
+	    objResultPtr = objPtr;
+	}
+
+        if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"string size overflow: unable to alloc %lu bytes",
+			STRING_SIZE(count*length)));
+		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjLength(objResultPtr, length);
+	while (count - done > done) {
+	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
+	    done *= 2;
+	}
+	Tcl_AppendUnicodeToObj(objResultPtr, Tcl_GetUnicode(objResultPtr),
+		(count - done) * length);
+    } else {
+	/* Efficiently concatenate string reps */
+	if (Tcl_IsShared(objPtr)) {
+	    objResultPtr = Tcl_NewStringObj(Tcl_GetString(objPtr), length);
+	} else {
+	    TclFreeIntRep(objPtr);
+	    objResultPtr = objPtr;
+	}
+        if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"string size overflow: unable to alloc %u bytes",
+			count*length));
+		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjLength(objResultPtr, length);
+	while (count - done > done) {
+	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
+	    done *= 2;
+	}
+	Tcl_AppendToObj(objResultPtr, Tcl_GetString(objResultPtr),
+		(count - done) * length);
+    }
+    *objPtrPtr = objResultPtr;
+    return TCL_OK;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * TclStringCatObjv --
  *
  *	Performs the [string cat] function.
