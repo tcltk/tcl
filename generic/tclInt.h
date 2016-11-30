@@ -3087,6 +3087,8 @@ MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
 			    Tcl_Obj *patternObj, int flags);
 MODULE_SCOPE Tcl_Obj *	TclStringObjReverse(Tcl_Obj *objPtr);
+MODULE_SCOPE int	TclStringRepeat(Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    int count, Tcl_Obj **objPtrPtr);
 MODULE_SCOPE void	TclSubstCompile(Tcl_Interp *interp, const char *bytes,
 			    int numBytes, int flags, int line,
 			    struct CompileEnv *envPtr);
