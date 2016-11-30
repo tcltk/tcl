@@ -1,0 +1,157 @@
+# Commands covered:  array
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 2016 Andy Goth
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] < 0} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+# Get list of variables and procs to facilitate cleanup later.
+set vars [info vars]
+set procs [info procs]
+
+# commaList --
+# Joins a list by commas, the word "or", or both, using Oxford comma rules,
+# matching Tcl's internal algorithm for displaying lists in error messages.
+proc commaList {list} {
+	if {[llength $list] > 1} {
+		lset list end "or [lindex $list end]"
+	}
+	if {[llength $list] < 3} {
+		join $list " "
+	} else {
+		join $list ", "
+	}
+}
+
+# [array] subcommand  arrayName             mode and filter
+# ------------------  --------------------  ---------------
+# anymore             array required        not allowed
+# donesearch          array required        not allowed
+# exists              anything              optional
+# get                 anything              optional
+# names               anything              optional
+# nextelement         array required        not allowed
+# set                 array or nonexistent  not allowed
+# size                anything              optional
+# startsearch         array required        optional
+# statistics          array required        not allowed
+# unset               anything              optional
+# (unique abbrev)     (see above)           (see above)
+# (ambiguous abbrev)  (error)               (error)
+# (invalid)           (error)               (error)
+
+# Possible arrayName values:
+# - empty array
+# - non-empty array
+# - nonexistent
+# - proc slot only
+# - scalar variable
+# - element of empty array
+# - element of nonexistent array
+# - element of proc-slot-only array
+# - element of scalar variable
+# - existing element of array
+# - nonexistent element of array
+# - bad namespace
+# - (omitted)
+
+# Possible mode and pattern arguments:
+# - (no filter)
+# - (default)
+# - -exact
+# - -glob
+# - -regexp
+# - -regexp (with invalid regexp pattern)
+
+# Formal parameters for each command.
+set params {
+	anymore		{arrayName searchId}
+	donesearch	{arrayName searchId}
+	exists		{arrayName ?mode? ?pattern?}
+	get			{arrayName ?mode? ?pattern?}
+	names		{arrayName ?mode? ?pattern?}
+	nextelement	{arrayName searchId}
+	set			{arrayName list}
+	size		{arrayName ?mode? ?pattern?}
+	startsearch	{arrayName ?mode? ?pattern?}
+	statistics	{arrayName}
+	unset		{arrayName ?mode? ?pattern?}
+}
+
+# List of commands.
+set cmds [lsort [dict keys $params]]
+
+# List of commands with interstitial commas.
+set cmdDisplay [commaList $cmds]
+
+# Ambiguous and unambiguous abbreviations.
+foreach cmd $cmds {
+	for {set i 0} {$i < [string length $cmd] - 1} {incr i} {
+		set abbrev [string range $cmd 0 $i]
+		if {$abbrev in $cmds || [llength [lsearch -all $cmds $abbrev*]] == 1} {
+			dict lappend abbrevs $cmd $abbrev
+		} else {
+			dict set ambig $abbrev {}
+		}
+	}
+}
+set ambig [lsort [dict keys $ambig]]
+unset i cmd abbrev
+
+
+# array-1.*: subcommand dispatch
+test array-1.1 {no subcommand} -body {
+	list [catch array msg] $msg
+} -result {1 {wrong # args: should be "array subcommand ?arg ...?"}}
+test array-1.2 {invalid subcommand} -body {
+	list [catch {array {}} msg] $msg
+} -result [list 1\
+	"unknown or ambiguous subcommand \"\": must be $cmdDisplay"]
+test array-1.3 {ambiguous subcommands} -body {
+	lmap i $ambig {
+		list [catch {array $i} msg] $msg
+	}
+} -result [lmap i $ambig {
+	list 1 "unknown or ambiguous subcommand \"$i\": must be $cmdDisplay"
+}]
+foreach i $cmds {
+	test array-1.4.$i "formal parameter lists: \[array $i\]"\
+	-setup [list set i $i] -body {
+		list [catch {array $i} msg] $msg
+	} -result [list 1\
+		"wrong # args: should be \"array $i [dict get $params $i]\""]
+}
+
+# array-2.*: common argument parsing
+
+# Cleanup
+foreach proc [info procs] {
+	if {$proc ni $procs} {
+		rename $proc {}
+	}
+}
+foreach var [info vars] {
+	if {$var ne "vars" && $var ni $vars} {
+		unset $var
+	}
+}
+unset -nocomplain var
+::tcltest::cleanupTests
+return
+
+# vim: set ts=4 sts=4 sw=4 noet tw=80 ft=tcl:
+# Local Variables:
+# mode: tcl
+# End:
