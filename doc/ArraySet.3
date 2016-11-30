@@ -89,10 +89,13 @@ The \fBTcl_ArraySet\fR, \fBTcl_ArrayUnset\fR, \fBTcl_ArrayGet\fR,
 \fBTCL_ERROR\fR on error.  If an error occurs, an error message is left in the
 interpreter's result.  The possible errors are caused by format (invalid list,
 dictionary, or regular expression) and traces (array, read, write, or unset).
+.PP
 Except for \fBTcl_ArraySet\fR, \fBTcl_ArraySearchStart\fR (not listed above),
 and \fBTcl_ArrayStatistics\fR, the array functions do not consider it an error
 for a namespace or variable to not exist or a variable to be a scalar or array
-element instead of an array.
+element instead of an array.  \fBTcl_ArraySet\fR allows the array variable to
+not exist, in which case it creates it, but it returns \fBTCL_ERROR\fR in all
+the other situations listed in the previous sentence.
 .PP
 Array functions trigger array traces in the same manner as the \fBarray\fR
 command.  After the completion of any array traces, for each accessed array
@@ -135,7 +138,7 @@ no filtering is applied and all array elements are matched.
 array element whose name is exactly equal to the value of \fBpart2Ptr\fR.  If no
 filter type is explicitly specified in \fIflags\fR, \fBTCL_MATCH_EXACT\fR is
 used by default.  This differs from the \fBarray\fR commands which default to
-\fB-glob\fR.
+\fB\-glob\fR.
 .TP
 \fBTCL_MATCH_GLOB\fR
 \fBpart2Ptr\fR is a glob pattern, and it matches array element names according
