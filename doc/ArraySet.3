@@ -134,24 +134,24 @@ be called.  The filter type is ignored if \fIpart2Ptr\fR is NULL, in which case
 no filtering is applied and all array elements are matched.
 .TP
 \fBTCL_MATCH_EXACT\fR
-\fBpart2Ptr\fR is an array element name.  The filter matches at most a single
-array element whose name is exactly equal to the value of \fBpart2Ptr\fR.  If no
+\fIpart2Ptr\fR is an array element name.  The filter matches at most a single
+array element whose name is exactly equal to the value of \fIpart2Ptr\fR.  If no
 filter type is explicitly specified in \fIflags\fR, \fBTCL_MATCH_EXACT\fR is
 used by default.  This differs from the \fBarray\fR commands which default to
 \fB\-glob\fR.
 .TP
 \fBTCL_MATCH_GLOB\fR
-\fBpart2Ptr\fR is a glob pattern, and it matches array element names according
+\fIpart2Ptr\fR is a glob pattern, and it matches array element names according
 to the rules of \fBstring match\fR.  \fIpart2Ptr\fR must match the entire array
 element name from beginning to end.  To match substrings, place \fB*\fR at
 either end of \fIpart2Ptr\fR.
 .TP
 \fBTCL_MATCH_REGEXP\fR
-\fBpart2Ptr\fR is a regular expression, and it matches array element names
+\fIpart2Ptr\fR is a regular expression, and it matches array element names
 according to the rules of \fBregexp\fR.  Unless anchored by the \fB^\fR and
 \fB$\fR constraints, \fIpart2Ptr\fR matches substrings.  Thus, an empty
 \fIpart2Ptr\fR matches every possible array element name.  It is an error for
-\fBpart2Ptr\fR to not be a valid regular expression.
+\fIpart2Ptr\fR to not be a valid regular expression.
 .PP
 The \fBTcl_ArraySet\fR, \fBTcl_ArrayGet\fR, and \fBTcl_ArrayNames\fR functions
 accept \fIdictPtr\fR and \fIlistPtr\fR arguments referencing dictionary and list
