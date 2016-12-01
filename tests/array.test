@@ -21,10 +21,10 @@ catch [list package require -exact Tcltest [info patchlevel]]
 set vars [info vars]
 set procs [info procs]
 
-# commaList --
+# comma --
 # Joins a list by commas, the word "or", or both, using Oxford comma rules,
 # matching Tcl's internal algorithm for displaying lists in error messages.
-proc commaList {list} {
+proc comma {list} {
     if {[llength $list] > 1} {
 	lset list end "or [lindex $list end]"
     }
@@ -52,7 +52,7 @@ proc commaList {list} {
 # (ambiguous abbrev)  (error)               (error)
 # (invalid)           (error)               (error)
 
-# Possible arrayName values:
+# Possible arrayName arguments:
 # - empty array
 # - non-empty array
 # - nonexistent
@@ -91,52 +91,99 @@ set params {
 }
 
 # List of commands.
-set cmds [lsort [dict keys $params]]
-
-# List of commands with interstitial commas.
-set cmdDisplay [commaList $cmds]
+set commands [lsort [dict keys $params]]
 
 # Ambiguous and unambiguous abbreviations.
-foreach cmd $cmds {
-    for {set i 0} {$i < [string length $cmd] - 1} {incr i} {
-	set abbrev [string range $cmd 0 $i]
-	if {$abbrev in $cmds || [llength [lsearch -all $cmds $abbrev*]] == 1} {
-	    dict lappend abbrevs $cmd $abbrev
+foreach command $commands {
+    for {set i 0} {$i < [string length $command] - 1} {incr i} {
+	set abbrev [string range $command 0 $i]
+	if {$abbrev in $commands
+	 || [llength [lsearch -all $commands $abbrev*]] == 1} {
+	    dict lappend abbrevs $command $abbrev
 	} else {
 	    dict set ambig $abbrev {}
 	}
     }
 }
 set ambig [lsort [dict keys $ambig]]
-unset i cmd abbrev
+unset i command abbrev
 
+# List of valid mode options.
+set modes [lsort {-exact -glob -regexp}]
+
+# List of valid mode options with interstitial commas.
+set modeDisplay [comma $modes]
 
 # array-1.*: subcommand dispatch
 test array-1.1 {no subcommand} -body {
     list [catch array msg] $msg
 } -result {1 {wrong # args: should be "array subcommand ?arg ...?"}}
-test array-1.2 {invalid subcommand} -body {
+test array-1.2 {empty subcommand} -body {
     list [catch {array {}} msg] $msg
 } -result [list 1\
-    "unknown or ambiguous subcommand \"\": must be $cmdDisplay"]
-test array-1.3 {ambiguous subcommands} -body {
-    lmap i $ambig {
-	list [catch {array $i} msg] $msg
+    "unknown or ambiguous subcommand \"\": must be [comma $commands]"]
+test array-1.3 {invalid subcommand} -body {
+    list [catch {array BAD&CMD} msg] $msg
+} -result [list 1\
+    "unknown or ambiguous subcommand \"BAD&CMD\": must be [comma $commands]"]
+test array-1.4 {ambiguous subcommands (exhaustive)} -body {
+    lmap cmd $ambig {
+	list [catch {array $cmd} msg] $msg
     }
-} -result [lmap i $ambig {
-    list 1 "unknown or ambiguous subcommand \"$i\": must be $cmdDisplay"
+} -result [lmap cmd $ambig {
+    list 1 "unknown or ambiguous subcommand \"$cmd\": must be [comma $commands]"
 }]
-foreach i $cmds {
-    test array-1.4.$i "formal parameter lists: \[array $i\]"\
-    -setup [list set i $i] -body {
-	list [catch {array $i} msg] $msg
-    } -result [list 1\
-	"wrong # args: should be \"array $i [dict get $params $i]\""]
+foreach cmd $commands {
+    test array-1.5.$cmd "formal parameter lists: \[array $cmd\]"\
+    -body [list apply {{cmd} {
+	list [catch {array $cmd} msg] $msg
+    }} $cmd] -result [list 1\
+	"wrong # args: should be \"array $cmd [dict get $params $cmd]\""]
 }
 
 # array-2.*: common argument parsing
+foreach cmd $commands {
+    test array-2.1.$cmd "too many arguments: \[array $cmd\]"\
+    -body [list apply {{cmd params} {
+	list [catch {array $cmd {*}$params extra} msg] $msg
+    }} $cmd [dict get $params $cmd]] -result [list 1\
+	"wrong # args: should be \"array $cmd [dict get $params $cmd]\""]
+    if {"?mode?" in [dict get $params $cmd]} {
+	test array-2.2.$cmd "ambiguous mode: \[array $cmd\]"\
+	-body [list apply {{cmd} {
+	    array set a {}
+	    list [catch {array $cmd a {} {}} msg] $msg
+	}} $cmd] -result [list 1\
+	    "ambiguous option \"\": must be $modeDisplay"]
+	test array-2.3.$cmd "invalid mode: \[array $cmd\]"\
+	-body [list apply {{cmd} {
+	    array set a {}
+	    list [catch {array $cmd a INVALID {}} msg] $msg
+	}} $cmd] -result [list 1\
+	    "bad option \"INVALID\": must be $modeDisplay"]
+	test array-2.4.$cmd "invalid regexp: \[array $cmd\]"\
+	-body [list apply {{cmd} {
+	    array set a {e 1}
+	    list [catch {array $cmd a -regexp **} msg] $msg
+	}} $cmd] -result [list 1 "couldn't compile regular expression pattern:\
+	    quantifier operand invalid"]
+    }
+    test array-2.5.$cmd "array trace error during variable lookup:\
+    \[array $cmd\]" -body [list apply {{cmd params} {
+	trace add variable a array {apply {{args} {error $args}}}
+	set params [lmap elem $params {dict get {
+	    arrayName	a
+	    searchId	s-1-a
+	    ?mode?	-exact
+	    ?pattern?	hello
+	    list	{hello world}
+	} $elem}]
+	list [catch {array $cmd {*}$params} msg] $msg
+    }} $cmd [dict get $params $cmd]] -result\
+	{1 {can't trace array "a": a {} array}}
+}
 
-# Cleanup
+# Cleanup.
 foreach proc [info procs] {
     if {$proc ni $procs} {
 	rename $proc {}
