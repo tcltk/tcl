@@ -404,7 +404,7 @@ Tcl_PopCallFrame(
     nsPtr = framePtr->nsPtr;
     nsPtr->activationCount--;
     if ((nsPtr->flags & NS_DYING)
-	    && (nsPtr->activationCount - (nsPtr == iPtr->globalNsPtr) == 0)) {
+	    && (nsPtr->activationCount == (nsPtr == iPtr->globalNsPtr))) {
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
     framePtr->nsPtr = NULL;
@@ -997,7 +997,7 @@ Tcl_DeleteNamespace(
      * refCount reaches 0.
      */
 
-    if (nsPtr->activationCount - (nsPtr == globalNsPtr) > 0) {
+    if (nsPtr->activationCount  > (nsPtr == globalNsPtr)) {
 	nsPtr->flags |= NS_DYING;
 	if (nsPtr->parentPtr != NULL) {
 	    entryPtr = Tcl_FindHashEntry(
@@ -1099,7 +1099,7 @@ TclTeardownNamespace(
     Interp *iPtr = (Interp *) nsPtr->interp;
     register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
-    int i;
+    size_t i;
 
     /*
      * Start by destroying the namespace's variable table, since variables
@@ -1120,7 +1120,7 @@ TclTeardownNamespace(
      */
 
     while (nsPtr->cmdTable.numEntries > 0) {
-	int length = nsPtr->cmdTable.numEntries;
+	size_t length = nsPtr->cmdTable.numEntries;
 	Command **cmds = TclStackAlloc((Tcl_Interp *) iPtr,
 		sizeof(Command *) * length);
 
@@ -1192,7 +1192,7 @@ TclTeardownNamespace(
 
 #ifndef BREAK_NAMESPACE_COMPAT
     while (nsPtr->childTable.numEntries > 0) {
-	int length = nsPtr->childTable.numEntries;
+	size_t length = nsPtr->childTable.numEntries;
 	Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
 		sizeof(Namespace *) * length);
 
@@ -1365,7 +1365,7 @@ Tcl_Export(
     Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     const char *simplePattern;
     char *patternCpy;
-    int neededElems, len, i;
+    size_t neededElems, len, i;
 
     /*
      * If the specified namespace is NULL, use the current namespace.
@@ -1492,7 +1492,8 @@ Tcl_AppendExportList(
 				 * export pattern list is appended. */
 {
     Namespace *nsPtr;
-    int i, result;
+    size_t i;
+    int result;
 
     /*
      * If the specified namespace is NULL, use the current namespace.
@@ -1694,7 +1695,7 @@ DoImport(
     Namespace *importNsPtr,
     int allowOverwrite)
 {
-    int i = 0, exported = 0;
+    size_t i = 0, exported = 0;
     Tcl_HashEntry *found;
 
     /*

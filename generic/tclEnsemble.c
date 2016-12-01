@@ -1661,7 +1661,7 @@ NsEnsembleImplementationCmdNR(
     int reparseCount = 0;	/* Number of reparses. */
     Tcl_Obj *errorObj;		/* Used for building error messages. */
     Tcl_Obj *subObj;
-    int subIdx;
+    size_t subIdx;
 
     /*
      * Must recheck objc, since numParameters might have changed. Cf. test
@@ -1670,7 +1670,7 @@ NsEnsembleImplementationCmdNR(
 
   restartEnsembleParse:
     subIdx = 1 + ensemblePtr->numParameters;
-    if (objc < subIdx + 1) {
+    if ((size_t)objc < subIdx + 1) {
 	/*
 	 * We don't have a subcommand argument. Make error message.
 	 */
@@ -1767,15 +1767,16 @@ NsEnsembleImplementationCmdNR(
 				 * it (will be an error for a non-unique
 				 * prefix). */
 	char *fullName = NULL;	/* Full name of the subcommand. */
-	int stringLength, i;
-	int tableLength = ensemblePtr->subcommandTable.numEntries;
+	size_t stringLength, i;
+	size_t tableLength = ensemblePtr->subcommandTable.numEntries;
 	Tcl_Obj *fix;
 
-	subcmdName = TclGetStringFromObj(subObj, &stringLength);
+	subcmdName = TclGetString(subObj);
+	stringLength = subObj->length;
 	for (i=0 ; i<tableLength ; i++) {
 	    register int cmp = strncmp(subcmdName,
 		    ensemblePtr->subcommandArrayPtr[i],
-		    (unsigned) stringLength);
+		    stringLength);
 
 	    if (cmp == 0) {
 		if (fullName != NULL) {
@@ -1931,7 +1932,7 @@ NsEnsembleImplementationCmdNR(
     if (ensemblePtr->subcommandTable.numEntries == 1) {
 	Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[0], -1);
     } else {
-	int i;
+	size_t i;
 
 	for (i=0 ; i<ensemblePtr->subcommandTable.numEntries-1 ; i++) {
 	    Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[i], -1);
@@ -1976,8 +1977,8 @@ TclClearRootEnsemble(
 int
 TclInitRewriteEnsemble(
     Tcl_Interp *interp,
-    int numRemoved,
-    int numInserted,
+    size_t numRemoved,
+    size_t numInserted,
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
@@ -1986,16 +1987,16 @@ TclInitRewriteEnsemble(
 
     if (isRootEnsemble) {
 	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = numRemoved;
-	iPtr->ensembleRewrite.numInsertedObjs = numInserted;
+	iPtr->ensembleRewrite.numRemovedObjs1 = numRemoved;
+	iPtr->ensembleRewrite.numInsertedObjs1 = numInserted;
     } else {
-	int numIns = iPtr->ensembleRewrite.numInsertedObjs;
+	size_t numIns = iPtr->ensembleRewrite.numInsertedObjs1;
 
 	if (numIns < numRemoved) {
-	    iPtr->ensembleRewrite.numRemovedObjs += numRemoved - numIns;
-	    iPtr->ensembleRewrite.numInsertedObjs = numInserted;
+	    iPtr->ensembleRewrite.numRemovedObjs1 += numRemoved - numIns;
+	    iPtr->ensembleRewrite.numInsertedObjs1 = numInserted;
 	} else {
-	    iPtr->ensembleRewrite.numInsertedObjs += numInserted - numRemoved;
+	    iPtr->ensembleRewrite.numInsertedObjs1 += numInserted - numRemoved;
 	}
     }
     return isRootEnsemble;
@@ -2028,8 +2029,8 @@ TclResetRewriteEnsemble(
 
     if (isRootEnsemble) {
 	iPtr->ensembleRewrite.sourceObjs = NULL;
-	iPtr->ensembleRewrite.numRemovedObjs = 0;
-	iPtr->ensembleRewrite.numInsertedObjs = 0;
+	iPtr->ensembleRewrite.numRemovedObjs1 = 0;
+	iPtr->ensembleRewrite.numInsertedObjs1 = 0;
     }
 }
 
@@ -2068,7 +2069,7 @@ TclSpellFix(
     Tcl_Interp *interp,
     Tcl_Obj *const *objv,
     int objc,
-    int badIdx,
+    size_t badIdx,
     Tcl_Obj *bad,
     Tcl_Obj *fix)
 {
@@ -2080,14 +2081,14 @@ TclSpellFix(
 
     if (iPtr->ensembleRewrite.sourceObjs == NULL) {
 	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = 0;
-	iPtr->ensembleRewrite.numInsertedObjs = 0;
+	iPtr->ensembleRewrite.numRemovedObjs1 = 0;
+	iPtr->ensembleRewrite.numInsertedObjs1 = 0;
     }
 
     /* Compute the valid length of the ensemble root */
 
-    size = iPtr->ensembleRewrite.numRemovedObjs + objc
-		- iPtr->ensembleRewrite.numInsertedObjs;
+    size = iPtr->ensembleRewrite.numRemovedObjs1 + objc
+		- iPtr->ensembleRewrite.numInsertedObjs1;
 
     search = iPtr->ensembleRewrite.sourceObjs;
     if (search[0] == NULL) {
@@ -2095,7 +2096,7 @@ TclSpellFix(
 	search = (Tcl_Obj *const *) search[1];
     }
 
-    if (badIdx < iPtr->ensembleRewrite.numInsertedObjs) {
+    if (badIdx < iPtr->ensembleRewrite.numInsertedObjs1) {
 	/*
 	 * Misspelled value was inserted. We cannot directly jump
 	 * to the bad value, but have to search.
@@ -2112,8 +2113,8 @@ TclSpellFix(
 	}
     } else {
 	/* Jump to the misspelled value. */
-	idx = iPtr->ensembleRewrite.numRemovedObjs + badIdx
-		- iPtr->ensembleRewrite.numInsertedObjs;
+	idx = iPtr->ensembleRewrite.numRemovedObjs1 + badIdx
+		- iPtr->ensembleRewrite.numInsertedObjs1;
 
 	/* Verify */
 	if (search[idx] != bad) {
@@ -2168,8 +2169,8 @@ TclFetchEnsembleRoot(
     Interp *iPtr = (Interp *) interp;
 
     if (iPtr->ensembleRewrite.sourceObjs) {
-	*objcPtr = objc + iPtr->ensembleRewrite.numRemovedObjs
-		- iPtr->ensembleRewrite.numInsertedObjs;
+	*objcPtr = objc + iPtr->ensembleRewrite.numRemovedObjs1
+		- iPtr->ensembleRewrite.numInsertedObjs1;
 	return iPtr->ensembleRewrite.sourceObjs;
     }
     *objcPtr = objc;
@@ -2502,7 +2503,8 @@ BuildEnsembleConfig(
     Tcl_HashSearch search;	/* Used for scanning the set of commands in
 				 * the namespace that backs up this
 				 * ensemble. */
-    int i, j, isNew;
+    size_t i, j;
+    int isNew;
     Tcl_HashTable *hash = &ensemblePtr->subcommandTable;
     Tcl_HashEntry *hPtr;
 
@@ -2535,7 +2537,7 @@ BuildEnsembleConfig(
 
 	TclListObjGetElements(NULL, ensemblePtr->subcmdList, &subcmdc,
 		&subcmdv);
-	for (i=0 ; i<subcmdc ; i++) {
+	for (i=0 ; (int)i<subcmdc ; i++) {
 	    const char *name = TclGetString(subcmdv[i]);
 
 	    hPtr = Tcl_CreateHashEntry(hash, name, &isNew);
@@ -2700,7 +2702,7 @@ BuildEnsembleConfig(
 	hPtr = Tcl_NextHashEntry(&search);
     }
     if (hash->numEntries > 1) {
-	qsort(ensemblePtr->subcommandArrayPtr, (unsigned) hash->numEntries,
+	qsort(ensemblePtr->subcommandArrayPtr, hash->numEntries,
 		sizeof(char *), NsEnsembleStringOrder);
     }
 }

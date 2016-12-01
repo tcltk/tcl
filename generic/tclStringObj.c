@@ -2708,9 +2708,11 @@ TclStringRepeat(
 
         if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
 	    if (interp) {
+		char buf[TCL_INTEGER_SPACE];
+		sprintf(buf, "%" TCL_LL_MODIFIER "u", (Tcl_WideInt)STRING_SIZE(count*length));
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"string size overflow: unable to alloc %lu bytes",
-			STRING_SIZE(count*length)));
+			"string size overflow: unable to alloc %s bytes",
+			buf));
 		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	    }
 	    return TCL_ERROR;
@@ -2931,9 +2933,11 @@ TclStringCatObjv(
 	    Tcl_InvalidateStringRep(objResultPtr);
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
+		    char buf[TCL_INTEGER_SPACE];
+		    sprintf(buf, "%" TCL_LL_MODIFIER "u", (Tcl_WideInt)STRING_SIZE(length));
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    	"concatenation failed: unable to alloc %lu bytes",
-			STRING_SIZE(length)));
+		    	"concatenation failed: unable to alloc %s bytes",
+			buf));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
 		return TCL_ERROR;
@@ -2946,9 +2950,11 @@ TclStringCatObjv(
 	    objResultPtr = Tcl_NewUnicodeObj(&ch, 0);	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
+		    char buf[TCL_INTEGER_SPACE];
+		    sprintf(buf, "%" TCL_LL_MODIFIER "u", (Tcl_WideInt)STRING_SIZE(length));
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    	"concatenation failed: unable to alloc %lu bytes",
-			STRING_SIZE(length)));
+		    	"concatenation failed: unable to alloc %s bytes",
+			buf));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
 		return TCL_ERROR;
