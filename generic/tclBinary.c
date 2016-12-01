@@ -180,7 +180,7 @@ static const EnsembleImplMap decodeMap[] = {
  */
 
 static const Tcl_ObjType properByteArrayType = {
-    "proper bytearray",
+    "bytearray",
     FreeByteArrayInternalRep,
     DupByteArrayInternalRep,
     UpdateStringOfByteArray,
