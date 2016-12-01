@@ -1987,16 +1987,16 @@ TclInitRewriteEnsemble(
 
     if (isRootEnsemble) {
 	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs1 = numRemoved;
-	iPtr->ensembleRewrite.numInsertedObjs1 = numInserted;
+	iPtr->ensembleRewrite.numRemovedObjs = numRemoved;
+	iPtr->ensembleRewrite.numInsertedObjs = numInserted;
     } else {
-	size_t numIns = iPtr->ensembleRewrite.numInsertedObjs1;
+	size_t numIns = iPtr->ensembleRewrite.numInsertedObjs;
 
 	if (numIns < numRemoved) {
-	    iPtr->ensembleRewrite.numRemovedObjs1 += numRemoved - numIns;
-	    iPtr->ensembleRewrite.numInsertedObjs1 = numInserted;
+	    iPtr->ensembleRewrite.numRemovedObjs += numRemoved - numIns;
+	    iPtr->ensembleRewrite.numInsertedObjs = numInserted;
 	} else {
-	    iPtr->ensembleRewrite.numInsertedObjs1 += numInserted - numRemoved;
+	    iPtr->ensembleRewrite.numInsertedObjs += numInserted - numRemoved;
 	}
     }
     return isRootEnsemble;
@@ -2029,8 +2029,8 @@ TclResetRewriteEnsemble(
 
     if (isRootEnsemble) {
 	iPtr->ensembleRewrite.sourceObjs = NULL;
-	iPtr->ensembleRewrite.numRemovedObjs1 = 0;
-	iPtr->ensembleRewrite.numInsertedObjs1 = 0;
+	iPtr->ensembleRewrite.numRemovedObjs = 0;
+	iPtr->ensembleRewrite.numInsertedObjs = 0;
     }
 }
 
@@ -2081,14 +2081,14 @@ TclSpellFix(
 
     if (iPtr->ensembleRewrite.sourceObjs == NULL) {
 	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs1 = 0;
-	iPtr->ensembleRewrite.numInsertedObjs1 = 0;
+	iPtr->ensembleRewrite.numRemovedObjs = 0;
+	iPtr->ensembleRewrite.numInsertedObjs = 0;
     }
 
     /* Compute the valid length of the ensemble root */
 
-    size = iPtr->ensembleRewrite.numRemovedObjs1 + objc
-		- iPtr->ensembleRewrite.numInsertedObjs1;
+    size = iPtr->ensembleRewrite.numRemovedObjs + objc
+		- iPtr->ensembleRewrite.numInsertedObjs;
 
     search = iPtr->ensembleRewrite.sourceObjs;
     if (search[0] == NULL) {
@@ -2096,7 +2096,7 @@ TclSpellFix(
 	search = (Tcl_Obj *const *) search[1];
     }
 
-    if (badIdx < iPtr->ensembleRewrite.numInsertedObjs1) {
+    if (badIdx < iPtr->ensembleRewrite.numInsertedObjs) {
 	/*
 	 * Misspelled value was inserted. We cannot directly jump
 	 * to the bad value, but have to search.
@@ -2113,8 +2113,8 @@ TclSpellFix(
 	}
     } else {
 	/* Jump to the misspelled value. */
-	idx = iPtr->ensembleRewrite.numRemovedObjs1 + badIdx
-		- iPtr->ensembleRewrite.numInsertedObjs1;
+	idx = iPtr->ensembleRewrite.numRemovedObjs + badIdx
+		- iPtr->ensembleRewrite.numInsertedObjs;
 
 	/* Verify */
 	if (search[idx] != bad) {
@@ -2169,8 +2169,8 @@ TclFetchEnsembleRoot(
     Interp *iPtr = (Interp *) interp;
 
     if (iPtr->ensembleRewrite.sourceObjs) {
-	*objcPtr = objc + iPtr->ensembleRewrite.numRemovedObjs1
-		- iPtr->ensembleRewrite.numInsertedObjs1;
+	*objcPtr = objc + iPtr->ensembleRewrite.numRemovedObjs
+		- iPtr->ensembleRewrite.numInsertedObjs;
 	return iPtr->ensembleRewrite.sourceObjs;
     }
     *objcPtr = objc;
