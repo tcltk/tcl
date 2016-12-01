@@ -25,14 +25,14 @@ set procs [info procs]
 # Joins a list by commas, the word "or", or both, using Oxford comma rules,
 # matching Tcl's internal algorithm for displaying lists in error messages.
 proc commaList {list} {
-	if {[llength $list] > 1} {
-		lset list end "or [lindex $list end]"
-	}
-	if {[llength $list] < 3} {
-		join $list " "
-	} else {
-		join $list ", "
-	}
+    if {[llength $list] > 1} {
+	lset list end "or [lindex $list end]"
+    }
+    if {[llength $list] < 3} {
+	join $list " "
+    } else {
+	join $list ", "
+    }
 }
 
 # [array] subcommand  arrayName             mode and filter
@@ -77,17 +77,17 @@ proc commaList {list} {
 
 # Formal parameters for each command.
 set params {
-	anymore		{arrayName searchId}
-	donesearch	{arrayName searchId}
-	exists		{arrayName ?mode? ?pattern?}
-	get			{arrayName ?mode? ?pattern?}
-	names		{arrayName ?mode? ?pattern?}
-	nextelement	{arrayName searchId}
-	set			{arrayName list}
-	size		{arrayName ?mode? ?pattern?}
-	startsearch	{arrayName ?mode? ?pattern?}
-	statistics	{arrayName}
-	unset		{arrayName ?mode? ?pattern?}
+    anymore	{arrayName searchId}
+    donesearch	{arrayName searchId}
+    exists	{arrayName ?mode? ?pattern?}
+    get		{arrayName ?mode? ?pattern?}
+    names	{arrayName ?mode? ?pattern?}
+    nextelement	{arrayName searchId}
+    set		{arrayName list}
+    size	{arrayName ?mode? ?pattern?}
+    startsearch	{arrayName ?mode? ?pattern?}
+    statistics	{arrayName}
+    unset	{arrayName ?mode? ?pattern?}
 }
 
 # List of commands.
@@ -98,14 +98,14 @@ set cmdDisplay [commaList $cmds]
 
 # Ambiguous and unambiguous abbreviations.
 foreach cmd $cmds {
-	for {set i 0} {$i < [string length $cmd] - 1} {incr i} {
-		set abbrev [string range $cmd 0 $i]
-		if {$abbrev in $cmds || [llength [lsearch -all $cmds $abbrev*]] == 1} {
-			dict lappend abbrevs $cmd $abbrev
-		} else {
-			dict set ambig $abbrev {}
-		}
+    for {set i 0} {$i < [string length $cmd] - 1} {incr i} {
+	set abbrev [string range $cmd 0 $i]
+	if {$abbrev in $cmds || [llength [lsearch -all $cmds $abbrev*]] == 1} {
+	    dict lappend abbrevs $cmd $abbrev
+	} else {
+	    dict set ambig $abbrev {}
 	}
+    }
 }
 set ambig [lsort [dict keys $ambig]]
 unset i cmd abbrev
@@ -113,45 +113,45 @@ unset i cmd abbrev
 
 # array-1.*: subcommand dispatch
 test array-1.1 {no subcommand} -body {
-	list [catch array msg] $msg
+    list [catch array msg] $msg
 } -result {1 {wrong # args: should be "array subcommand ?arg ...?"}}
 test array-1.2 {invalid subcommand} -body {
-	list [catch {array {}} msg] $msg
+    list [catch {array {}} msg] $msg
 } -result [list 1\
-	"unknown or ambiguous subcommand \"\": must be $cmdDisplay"]
+    "unknown or ambiguous subcommand \"\": must be $cmdDisplay"]
 test array-1.3 {ambiguous subcommands} -body {
-	lmap i $ambig {
-		list [catch {array $i} msg] $msg
-	}
+    lmap i $ambig {
+	list [catch {array $i} msg] $msg
+    }
 } -result [lmap i $ambig {
-	list 1 "unknown or ambiguous subcommand \"$i\": must be $cmdDisplay"
+    list 1 "unknown or ambiguous subcommand \"$i\": must be $cmdDisplay"
 }]
 foreach i $cmds {
-	test array-1.4.$i "formal parameter lists: \[array $i\]"\
-	-setup [list set i $i] -body {
-		list [catch {array $i} msg] $msg
-	} -result [list 1\
-		"wrong # args: should be \"array $i [dict get $params $i]\""]
+    test array-1.4.$i "formal parameter lists: \[array $i\]"\
+    -setup [list set i $i] -body {
+	list [catch {array $i} msg] $msg
+    } -result [list 1\
+	"wrong # args: should be \"array $i [dict get $params $i]\""]
 }
 
 # array-2.*: common argument parsing
 
 # Cleanup
 foreach proc [info procs] {
-	if {$proc ni $procs} {
-		rename $proc {}
-	}
+    if {$proc ni $procs} {
+	rename $proc {}
+    }
 }
 foreach var [info vars] {
-	if {$var ne "vars" && $var ni $vars} {
-		unset $var
-	}
+    if {$var ne "vars" && $var ni $vars} {
+	unset $var
+    }
 }
 unset -nocomplain var
 ::tcltest::cleanupTests
 return
 
-# vim: set ts=4 sts=4 sw=4 noet tw=80 ft=tcl:
+# vim: set sts=4 sw=4 noet tw=80 ft=tcl:
 # Local Variables:
 # mode: tcl
 # End:
