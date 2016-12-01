@@ -621,7 +621,7 @@ install-libraries: libraries install-tzdata install-msgs
 		else true; \
 		fi; \
 	    done;
-	@for i in http1.0 opt0.4 encoding ../tcl9 ../tcl9/9.0; \
+	@for i in http1.0 opt0.4 encoding ../tcl9 ../tcl9/9.0 ../tcl9/9.0/platform; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
