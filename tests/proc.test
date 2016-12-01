@@ -383,6 +383,31 @@ test proc-7.4 {Proc struct outlives its interp: Bug 3532959} {
     interp delete slave
     unset lambda
 } {}
+
+test proc-8.1 {Argument linking} -body {
+    proc P {*a} {
+	set a 1
+	return
+    }
+    apply {{} {
+	set a {}
+	P a
+	set a
+    }}
+} -cleanup {
+    rename P {}
+} -result 1
+test proc-8.2 {Argument linking, and defaults} -body {
+    proc P {*a {foo bar} args} {
+	return $foo
+    }
+    apply {{} {
+	set a {}
+	P a
+    }}
+} -cleanup {
+    rename P {}
+} -result {bar}
 
 # cleanup
 catch {rename p ""}

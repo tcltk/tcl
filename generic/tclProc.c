@@ -627,6 +627,8 @@ TclCreateProc(
 
 	    localPtr = localPtr->nextPtr;
 	} else {
+	    char *varName = fieldValues[0];
+
 	    /*
 	     * Allocate an entry in the runtime procedure frame's array of
 	     * local variables for the argument.
@@ -639,10 +641,39 @@ TclCreateProc(
 		procPtr->lastLocalPtr->nextPtr = localPtr;
 		procPtr->lastLocalPtr = localPtr;
 	    }
+
+	    localPtr->flags = 0;
+
+	    /*
+	     * Names that begin with an asterisk shall be handled as a link
+	     * var to be linked at some point in the future.
+	     */
+
+	    if (*varName == '*' && nameLength > 1) {
+		if (fieldCount == 2) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "procedure \"%s\": formal parameter \"%s\" "
+			    " is to be a link and can't have a default value",
+			    procName, fieldValues[0]));
+		    ckfree(fieldValues);
+		    /* TODO: SET SOME ERROR CODE */
+		    goto procError;
+		}
+		varName++;
+		nameLength--;
+
+		/*
+		 * Indicate this argument is to be a future link var. Does
+		 * there need to be a new VAR_FUTURE_LINK flag?
+		 */
+
+		localPtr->flags = VAR_LINK;
+	    }
+
 	    localPtr->nextPtr = NULL;
 	    localPtr->nameLength = nameLength;
 	    localPtr->frameIndex = i;
-	    localPtr->flags = VAR_ARGUMENT;
+	    localPtr->flags |= VAR_ARGUMENT;
 	    localPtr->resolveInfo = NULL;
 
 	    if (fieldCount == 2) {
@@ -652,7 +683,7 @@ TclCreateProc(
 	    } else {
 		localPtr->defValuePtr = NULL;
 	    }
-	    memcpy(localPtr->name, fieldValues[0], nameLength + 1);
+	    memcpy(localPtr->name, varName, nameLength + 1);
 	    if ((i == numArgs - 1)
 		    && (localPtr->nameLength == 4)
 		    && (localPtr->name[0] == 'a')
@@ -1330,6 +1361,7 @@ InitLocalCache(
     Var *varPtr;
     LocalCache *localCachePtr;
     CompiledLocal *localPtr;
+    int hasArgLinks = 0;
     int new;
 
     /*
@@ -1361,6 +1393,12 @@ InitLocalCache(
 	    varPtr++;
 	    i++;
 	}
+
+	if (!hasArgLinks && (localPtr->flags & VAR_LINK)) {
+	    hasArgLinks = 1;
+	    procPtr->cmdPtr->flags |= CMD_HAS_ARG_LINKS;
+	}
+
 	namePtr++;
 	localPtr = localPtr->nextPtr;
     }
@@ -1448,19 +1486,76 @@ InitArgsAndLocals(
 	    goto correctArgs;
 	}
     }
-    imax = ((argCt < numArgs-1) ? argCt : numArgs-1);
-    for (i = 0; i < imax; i++, varPtr++, defPtr ? defPtr++ : defPtr) {
-	/*
-	 * "Normal" arguments; last formal is special, depends on it being
-	 * 'args'.
-	 */
 
-	Tcl_Obj *objPtr = argObjs[i];
+    /* TODO need sane error handling */
+    if (procPtr->cmdPtr->flags & CMD_HAS_ARG_LINKS) {
+	CallFrame *upFramePtr = NULL;
+	Var *otherPtr, *aPtr;
+	CompiledLocal *localPtr = procPtr->firstLocalPtr;
+	char done = 1;  
 
-	varPtr->flags = 0;
-	varPtr->value.objPtr = objPtr;
-	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
+	imax = ((argCt < numArgs) ? argCt : numArgs);
+	for (i = 0; i < imax; i++, localPtr = localPtr->nextPtr,
+		varPtr++, defPtr ? defPtr++ : defPtr) {
+	    Tcl_Obj *objPtr = argObjs[i];
+
+	    if (TclIsVarLink(localPtr) && objPtr) {
+		if (upFramePtr == NULL) {
+		    if (TclObjGetFrame(interp, NULL, &upFramePtr) == -1) {
+			goto incorrectArgs;
+		    }
+		}
+
+		/*
+		 * Locate the other variable.
+		 */
+
+		((Interp *)interp)->varFramePtr = upFramePtr;
+		otherPtr = TclObjLookupVarEx(interp, objPtr, NULL,
+			TCL_LEAVE_ERR_MSG, "access", /*createPart1*/ 1,
+			/*createPart2*/ 1, &aPtr);
+		((Interp *)interp)->varFramePtr = framePtr;
+		if (otherPtr == NULL) {
+		    goto incorrectArgs;
+		}
+
+		varPtr->flags = VAR_LINK;
+		varPtr->value.linkPtr = otherPtr;
+		if (TclIsVarInHash(otherPtr)) {
+		    VarHashRefCount(otherPtr)++;
+		}
+	    } else if (i != numArgs-1) {
+		varPtr->flags = 0;
+		varPtr->value.objPtr = objPtr;
+		Tcl_IncrRefCount(objPtr);	/* Local var is a reference */
+	    } else {
+		/*
+		 * The last non-linked arg is special.
+		 */
+
+		done = 0;
+		break;
+	    }
+	}
+	if (done && argCt == numArgs) {
+	    goto correctArgs;
+	}
+    } else {
+	imax = ((argCt < numArgs-1) ? argCt : numArgs-1);
+	for (i = 0; i < imax; i++, varPtr++, defPtr ? defPtr++ : defPtr) {
+	    /*
+	     * "Normal" arguments; last formal is special, depends on it being
+	     * 'args'.
+	     */
+
+	    Tcl_Obj *objPtr = argObjs[i];
+
+	    varPtr->flags = 0;
+	    varPtr->value.objPtr = objPtr;
+	    Tcl_IncrRefCount(objPtr);		/* Local var is a reference */
+	}
     }
+
     for (; i < numArgs-1; i++, varPtr++, defPtr ? defPtr++ : defPtr) {
 	/*
 	 * This loop is entered if argCt < (numArgs-1). Set default values;

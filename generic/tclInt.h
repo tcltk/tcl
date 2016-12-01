@@ -1696,7 +1696,7 @@ typedef struct Command {
 #define CMD_COMPILES_EXPANDED	    0x08
 #define CMD_REDEF_IN_PROGRESS	    0x10
 #define CMD_VIA_RESOLVER	    0x20
-
+#define CMD_HAS_ARG_LINKS	    0x40
 
 /*
  *----------------------------------------------------------------
