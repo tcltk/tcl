@@ -26,12 +26,12 @@ set procs [info procs]
 # matching Tcl's internal algorithm for displaying lists in error messages.
 proc comma {list} {
     if {[llength $list] > 1} {
-	lset list end "or [lindex $list end]"
+        lset list end "or [lindex $list end]"
     }
     if {[llength $list] < 3} {
-	join $list " "
+        join $list " "
     } else {
-	join $list ", "
+        join $list ", "
     }
 }
 
@@ -77,17 +77,17 @@ proc comma {list} {
 
 # Formal parameters for each command.
 set params {
-    anymore	{arrayName searchId}
-    donesearch	{arrayName searchId}
-    exists	{arrayName ?mode? ?pattern?}
-    get		{arrayName ?mode? ?pattern?}
-    names	{arrayName ?mode? ?pattern?}
-    nextelement	{arrayName searchId}
-    set		{arrayName list}
-    size	{arrayName ?mode? ?pattern?}
-    startsearch	{arrayName ?mode? ?pattern?}
-    statistics	{arrayName}
-    unset	{arrayName ?mode? ?pattern?}
+    anymore     {arrayName searchId}
+    donesearch  {arrayName searchId}
+    exists      {arrayName ?mode? ?pattern?}
+    get         {arrayName ?mode? ?pattern?}
+    names       {arrayName ?mode? ?pattern?}
+    nextelement {arrayName searchId}
+    set         {arrayName list}
+    size        {arrayName ?mode? ?pattern?}
+    startsearch {arrayName ?mode? ?pattern?}
+    statistics  {arrayName}
+    unset       {arrayName ?mode? ?pattern?}
 }
 
 # List of commands.
@@ -96,13 +96,13 @@ set commands [lsort [dict keys $params]]
 # Ambiguous and unambiguous abbreviations.
 foreach command $commands {
     for {set i 0} {$i < [string length $command] - 1} {incr i} {
-	set abbrev [string range $command 0 $i]
-	if {$abbrev in $commands
-	 || [llength [lsearch -all $commands $abbrev*]] == 1} {
-	    dict lappend abbrevs $command $abbrev
-	} else {
-	    dict set ambig $abbrev {}
-	}
+        set abbrev [string range $command 0 $i]
+        if {$abbrev in $commands
+         || [llength [lsearch -all $commands $abbrev*]] == 1} {
+            dict lappend abbrevs $command $abbrev
+        } else {
+            dict set ambig $abbrev {}
+        }
     }
 }
 set ambig [lsort [dict keys $ambig]]
@@ -128,7 +128,7 @@ test array-1.3 {invalid subcommand} -body {
     "unknown or ambiguous subcommand \"BAD&CMD\": must be [comma $commands]"]
 test array-1.4 {ambiguous subcommands (exhaustive)} -body {
     lmap cmd $ambig {
-	list [catch {array $cmd} msg] $msg
+        list [catch {array $cmd} msg] $msg
     }
 } -result [lmap cmd $ambig {
     list 1 "unknown or ambiguous subcommand \"$cmd\": must be [comma $commands]"
@@ -136,69 +136,69 @@ test array-1.4 {ambiguous subcommands (exhaustive)} -body {
 foreach cmd $commands {
     test array-1.5.$cmd "formal parameter lists: \[array $cmd\]"\
     -body [list apply {{cmd} {
-	list [catch {array $cmd} msg] $msg
+        list [catch {array $cmd} msg] $msg
     }} $cmd] -result [list 1\
-	"wrong # args: should be \"array $cmd [dict get $params $cmd]\""]
+        "wrong # args: should be \"array $cmd [dict get $params $cmd]\""]
 }
 
 # array-2.*: common argument parsing
 foreach cmd $commands {
     test array-2.1.$cmd "too many arguments: \[array $cmd\]"\
     -body [list apply {{cmd params} {
-	list [catch {array $cmd {*}$params extra} msg] $msg
+        list [catch {array $cmd {*}$params extra} msg] $msg
     }} $cmd [dict get $params $cmd]] -result [list 1\
-	"wrong # args: should be \"array $cmd [dict get $params $cmd]\""]
+        "wrong # args: should be \"array $cmd [dict get $params $cmd]\""]
     if {"?mode?" in [dict get $params $cmd]} {
-	test array-2.2.$cmd "ambiguous mode: \[array $cmd\]"\
-	-body [list apply {{cmd} {
-	    array set a {}
-	    list [catch {array $cmd a {} {}} msg] $msg
-	}} $cmd] -result [list 1\
-	    "ambiguous option \"\": must be $modeDisplay"]
-	test array-2.3.$cmd "invalid mode: \[array $cmd\]"\
-	-body [list apply {{cmd} {
-	    array set a {}
-	    list [catch {array $cmd a INVALID {}} msg] $msg
-	}} $cmd] -result [list 1\
-	    "bad option \"INVALID\": must be $modeDisplay"]
-	test array-2.4.$cmd "invalid regexp: \[array $cmd\]"\
-	-body [list apply {{cmd} {
-	    array set a {e 1}
-	    list [catch {array $cmd a -regexp **} msg] $msg
-	}} $cmd] -result [list 1 "couldn't compile regular expression pattern:\
-	    quantifier operand invalid"]
+        test array-2.2.$cmd "ambiguous mode: \[array $cmd\]"\
+        -body [list apply {{cmd} {
+            array set a {}
+            list [catch {array $cmd a {} {}} msg] $msg
+        }} $cmd] -result [list 1\
+            "ambiguous option \"\": must be $modeDisplay"]
+        test array-2.3.$cmd "invalid mode: \[array $cmd\]"\
+        -body [list apply {{cmd} {
+            array set a {}
+            list [catch {array $cmd a INVALID {}} msg] $msg
+        }} $cmd] -result [list 1\
+            "bad option \"INVALID\": must be $modeDisplay"]
+        test array-2.4.$cmd "invalid regexp: \[array $cmd\]"\
+        -body [list apply {{cmd} {
+            array set a {e 1}
+            list [catch {array $cmd a -regexp **} msg] $msg
+        }} $cmd] -result [list 1 "couldn't compile regular expression pattern:\
+            quantifier operand invalid"]
     }
     test array-2.5.$cmd "array trace error during variable lookup:\
     \[array $cmd\]" -body [list apply {{cmd params} {
-	trace add variable a array {apply {{args} {error $args}}}
-	set params [lmap elem $params {dict get {
-	    arrayName	a
-	    searchId	s-1-a
-	    ?mode?	-exact
-	    ?pattern?	hello
-	    list	{hello world}
-	} $elem}]
-	list [catch {array $cmd {*}$params} msg] $msg
+        trace add variable a array {apply {{args} {error $args}}}
+        set params [lmap elem $params {dict get {
+            arrayName   a
+            searchId    s-1-a
+            ?mode?      -exact
+            ?pattern?   hello
+            list        {hello world}
+        } $elem}]
+        list [catch {array $cmd {*}$params} msg] $msg
     }} $cmd [dict get $params $cmd]] -result\
-	{1 {can't trace array "a": a {} array}}
+        {1 {can't trace array "a": a {} array}}
 }
 
 # Cleanup.
 foreach proc [info procs] {
     if {$proc ni $procs} {
-	rename $proc {}
+        rename $proc {}
     }
 }
 foreach var [info vars] {
     if {$var ne "vars" && $var ni $vars} {
-	unset $var
+        unset $var
     }
 }
 unset -nocomplain var
 ::tcltest::cleanupTests
 return
 
-# vim: set sts=4 sw=4 noet tw=80 ft=tcl:
+# vim: set sts=4 sw=4 tw=80 et ft=tcl:
 # Local Variables:
 # mode: tcl
 # End:
