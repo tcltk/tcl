@@ -151,7 +151,8 @@ either end of \fIpart2Ptr\fR.
 according to the rules of \fBregexp\fR.  Unless anchored by the \fB^\fR and
 \fB$\fR constraints, \fIpart2Ptr\fR matches substrings.  Thus, an empty
 \fIpart2Ptr\fR matches every possible array element name.  It is an error for
-\fIpart2Ptr\fR to not be a valid regular expression.
+\fIpart2Ptr\fR to not be a valid regular expression, but this error is only
+detected and reported when \fIpart1Ptr\fR names a non-empty array.
 .PP
 The \fBTcl_ArraySet\fR, \fBTcl_ArrayGet\fR, and \fBTcl_ArrayNames\fR functions
 accept \fIdictPtr\fR and \fIlistPtr\fR arguments referencing dictionary and list

@@ -52,7 +52,9 @@ the default if no \fImode\fR is specified.
 element name using the rules described in the \fBre_syntax\fR reference page.
 Unless anchored by the \fB^\fR and \fB$\fR constraints, \fIpattern\fR matches
 substrings.  Thus, an empty \fIpattern\fR matches every possible array element
-name.  It is an error for \fIpattern\fR to not be a valid regular expression.
+name.  It is an error for \fIpattern\fR to not be a valid regular expression,
+but this error condition is only detected and reported when \fIarrayName\fR is a
+non-empty array.
 .PP
 The legal \fIoptions\fR (which may be abbreviated) are:
 .TP
