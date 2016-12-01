@@ -142,7 +142,7 @@ typedef struct Dict {
 				 * the entries in the order that they are
 				 * created. */
     int epoch;			/* Epoch counter */
-    int refcount;		/* Reference counter (see above) */
+    size_t refCount;		/* Reference counter (see above) */
     Tcl_Obj *chain;		/* Linked list used for invalidating the
 				 * string representations of updated nested
 				 * dictionaries. */
@@ -392,7 +392,7 @@ DupDictInternalRep(
 
     newDict->epoch = 0;
     newDict->chain = NULL;
-    newDict->refcount = 1;
+    newDict->refCount = 1;
 
     /*
      * Store in the object.
@@ -427,8 +427,7 @@ FreeDictInternalRep(
 {
     Dict *dict = DICT(dictPtr);
 
-    dict->refcount--;
-    if (dict->refcount <= 0) {
+    if (dict->refCount-- <= 1) {
 	DeleteDict(dict);
     }
     dictPtr->typePtr = NULL;
@@ -713,7 +712,7 @@ SetDictFromAny(
     TclFreeIntRep(objPtr);
     dict->epoch = 0;
     dict->chain = NULL;
-    dict->refcount = 1;
+    dict->refCount = 1;
     DICT(objPtr) = dict;
     objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &tclDictType;
@@ -1117,7 +1116,7 @@ Tcl_DictObjFirst(
 	searchPtr->dictionaryPtr = (Tcl_Dict) dict;
 	searchPtr->epoch = dict->epoch;
 	searchPtr->next = cPtr->nextPtr;
-	dict->refcount++;
+	dict->refCount++;
 	if (keyPtrPtr != NULL) {
 	    *keyPtrPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
 	}
@@ -1231,8 +1230,7 @@ Tcl_DictObjDone(
     if (searchPtr->epoch != -1) {
 	searchPtr->epoch = -1;
 	dict = (Dict *) searchPtr->dictionaryPtr;
-	dict->refcount--;
-	if (dict->refcount <= 0) {
+	if (dict->refCount-- <= 1) {
 	    DeleteDict(dict);
 	}
     }
@@ -1384,7 +1382,7 @@ Tcl_NewDictObj(void)
     InitChainTable(dict);
     dict->epoch = 0;
     dict->chain = NULL;
-    dict->refcount = 1;
+    dict->refCount = 1;
     DICT(dictPtr) = dict;
     dictPtr->internalRep.twoPtrValue.ptr2 = NULL;
     dictPtr->typePtr = &tclDictType;
@@ -1434,7 +1432,7 @@ Tcl_DbNewDictObj(
     InitChainTable(dict);
     dict->epoch = 0;
     dict->chain = NULL;
-    dict->refcount = 1;
+    dict->refCount = 1;
     DICT(dictPtr) = dict;
     dictPtr->internalRep.twoPtrValue.ptr2 = NULL;
     dictPtr->typePtr = &tclDictType;
