@@ -1037,7 +1037,7 @@ TclpThreadCreateKey(void)
 {
     DWORD *key;
 
-    key = TclpSysAlloc(sizeof *key, 0);
+    key = TclpSysAlloc(sizeof *key);
     if (key == NULL) {
 	Tcl_Panic("unable to allocate thread key!");
     }

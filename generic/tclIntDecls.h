@@ -531,7 +531,7 @@ TCLAPI Tcl_HashTable *	TclGetNamespaceChildTable(Tcl_Namespace *nsPtr);
 TCLAPI Tcl_HashTable *	TclGetNamespaceCommandTable(Tcl_Namespace *nsPtr);
 /* 246 */
 TCLAPI int		TclInitRewriteEnsemble(Tcl_Interp *interp,
-				int numRemoved, int numInserted,
+				size_t numRemoved, size_t numInserted,
 				Tcl_Obj *const *objv);
 /* 247 */
 TCLAPI void		TclResetRewriteEnsemble(Tcl_Interp *interp,
@@ -548,7 +548,7 @@ TCLAPI void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
 				int force);
 /* 251 */
 TCLAPI int		TclRegisterLiteral(void *envPtr, const char *bytes,
-				int length, int flags);
+				size_t length, int flags);
 
 typedef struct TclIntStubs {
     int magic;
@@ -800,12 +800,12 @@ typedef struct TclIntStubs {
     void (*tclDbDumpActiveObjects) (FILE *outFile); /* 243 */
     Tcl_HashTable * (*tclGetNamespaceChildTable) (Tcl_Namespace *nsPtr); /* 244 */
     Tcl_HashTable * (*tclGetNamespaceCommandTable) (Tcl_Namespace *nsPtr); /* 245 */
-    int (*tclInitRewriteEnsemble) (Tcl_Interp *interp, int numRemoved, int numInserted, Tcl_Obj *const *objv); /* 246 */
+    int (*tclInitRewriteEnsemble) (Tcl_Interp *interp, size_t numRemoved, size_t numInserted, Tcl_Obj *const *objv); /* 246 */
     void (*tclResetRewriteEnsemble) (Tcl_Interp *interp, int isRootEnsemble); /* 247 */
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
     void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
-    int (*tclRegisterLiteral) (void *envPtr, const char *bytes, int length, int flags); /* 251 */
+    int (*tclRegisterLiteral) (void *envPtr, const char *bytes, size_t length, int flags); /* 251 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
