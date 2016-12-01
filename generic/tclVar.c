@@ -1945,7 +1945,8 @@ Tcl_ArrayGet(
  * Results:
  *	Normally, TCL_OK is returned, and the list of matching array element
  *	names is appended to listPtr. On error, TCL_ERROR is returned, and the
- *	error information is placed in the interpreter's result.
+ *	error information is placed in the interpreter's result. If part1Ptr
+ *	does not name an array, TCL_OK is returned and listPtr is unmodified.
  *
  * Side effects:
  *	None.
@@ -1964,12 +1965,15 @@ Tcl_ArrayNames(
 				 * TCL_NAMESPACE_ONLY, and at most one of
 				 * TCL_MATCH_EXACT, _GLOB, and _REGEXP. */
 {
-    Var *varPtr = ArrayVar(interp, part1Ptr, NULL, flags);
+    int traceFail = 0;
+    Var *varPtr = ArrayVar(interp, part1Ptr, &traceFail, flags);
 
     if (varPtr) {
 	return ArrayNames(interp, varPtr, part2Ptr, flags & TCL_MATCH, listPtr);
-    } else {
+    } else if (traceFail) {
 	return TCL_ERROR;
+    } else {
+	return TCL_OK;
     }
 }
 
@@ -4315,31 +4319,17 @@ ArrayNamesCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *varNameObj, *filterObj, *resultObj;
-    Var *varPtr;
-    int traceFail = 0, filterType;
+    int filterType;
 
     if (ArrayArgs(interp, objc, objv, &varNameObj,
 	    &filterObj, &filterType) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Find the variable. Report trace failures as errors. If the variable is a
-     * scalar or does not exist, treat it like an empty array.
-     */
-
-    if (!(varPtr = ArrayVar(interp, varNameObj, &traceFail, 0))) {
-	return traceFail ? TCL_ERROR : TCL_OK;
-    }
-
-    /*
-     * Generate the result list.
-     */
-
     TclNewObj(resultObj);
     Tcl_IncrRefCount(resultObj);
-    if (ArrayNames(interp, varPtr, filterObj, filterType,
-	    resultObj) != TCL_OK) {
+    if (Tcl_ArrayNames(interp, varNameObj, filterObj, resultObj,
+	    filterType) != TCL_OK) {
 	Tcl_DecrRefCount(resultObj);
 	return TCL_ERROR;
     }
