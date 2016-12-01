@@ -1320,9 +1320,9 @@ typedef struct Tcl_HashSearch {
  * TCL_CUSTOM_PTR_KEYS:		The keys are pointers to arbitrary types, the
  *				pointer is stored in the entry.
  *
- * While maintaining binary compatability the above have to be distinct values
+ * While maintaining binary compatibility the above have to be distinct values
  * as they are used to differentiate between old versions of the hash table
- * which don't have a typePtr and new ones which do. Once binary compatability
+ * which don't have a typePtr and new ones which do. Once binary compatibility
  * is discarded in favour of making more wide spread changes TCL_STRING_KEYS
  * can be the same as TCL_CUSTOM_TYPE_KEYS, and TCL_ONE_WORD_KEYS can be the
  * same as TCL_CUSTOM_PTR_KEYS because they simply determine how the key is
