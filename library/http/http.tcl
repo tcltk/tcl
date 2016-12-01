@@ -1447,7 +1447,7 @@ proc http::mapReply {string} {
     set converted [string map $formMap $string]
     if {[string match "*\[\u0100-\uffff\]*" $converted]} {
 	regexp "\[\u0100-\uffff\]" $converted badChar
-	# Return this error message for maximum compatability... :^/
+	# Return this error message for maximum compatibility... :^/
 	return -code error \
 	    "can't read \"formMap($badChar)\": no such element in array"
     }

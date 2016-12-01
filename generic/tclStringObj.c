@@ -2898,7 +2898,7 @@ TclStringCatObjv(
 	 * Broken interface! Byte array value routines offer no way
 	 * to handle failure to allocate enough space. Following
 	 * stanza may panic.
-	 */ 
+	 */
 	if (inPlace && !Tcl_IsShared(*objv)) {
 	    int start;
 

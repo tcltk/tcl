@@ -832,8 +832,8 @@ Tcl_WrongNumArgs(
      */
 
     if (iPtr->ensembleRewrite.sourceObjs != NULL) {
-	size_t toSkip = iPtr->ensembleRewrite.numInsertedObjs1;
-	size_t toPrint = iPtr->ensembleRewrite.numRemovedObjs1;
+	size_t toSkip = iPtr->ensembleRewrite.numInsertedObjs;
+	size_t toPrint = iPtr->ensembleRewrite.numRemovedObjs;
 	Tcl_Obj *const *origObjv = iPtr->ensembleRewrite.sourceObjs;
 
 	/*

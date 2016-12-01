@@ -1964,9 +1964,9 @@ typedef struct Interp {
 				 * *root* ensemble command? (Nested ensembles
 				 * don't rewrite this.) NULL if we're not
 				 * processing an ensemble. */
-	size_t numRemovedObjs1;	/* How many arguments have been stripped off
+	size_t numRemovedObjs;	/* How many arguments have been stripped off
 				 * because of ensemble processing. */
-	size_t numInsertedObjs1;	/* How many of the current arguments were
+	size_t numInsertedObjs;	/* How many of the current arguments were
 				 * inserted by an ensemble. */
     } ensembleRewrite;
 

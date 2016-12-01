@@ -698,8 +698,8 @@ Tcl_CreateInterp(void)
      */
 
     iPtr->ensembleRewrite.sourceObjs = NULL;
-    iPtr->ensembleRewrite.numRemovedObjs1 = 0;
-    iPtr->ensembleRewrite.numInsertedObjs1 = 0;
+    iPtr->ensembleRewrite.numRemovedObjs = 0;
+    iPtr->ensembleRewrite.numInsertedObjs = 0;
 
     /*
      * TIP#143: Initialise the resource limit support.
