@@ -60,14 +60,14 @@ set vars [info vars]
 # - -regexp
 # - -regexp (with invalid regexp pattern)
 
-# oxjoin --
-# oxand --
-# oxor --
-# Joins a list by commas, a connector word, or both, using Oxford comma rules,
+# oxfordJoin --
+# and --
+# or --
+# Joins a list by commas, a conjunction, or both, using Oxford comma rules,
 # matching Tcl's internal algorithm for displaying lists in error messages.
-proc oxjoin {connector list} {
+proc oxfordJoin {conjunction list} {
     if {[llength $list] > 1} {
-        lset list end "$connector [lindex $list end]"
+        lset list end "$conjunction [lindex $list end]"
     }
     if {[llength $list] < 3} {
         join $list " "
@@ -75,8 +75,8 @@ proc oxjoin {connector list} {
         join $list ", "
     }
 }
-interp alias {} oxand {} oxjoin and
-interp alias {} oxor {} oxjoin or
+interp alias {} and {} oxfordJoin and
+interp alias {} or {} oxfordJoin or
 
 # samples --
 # Produces a list of sample arguments, given a list of parameters.
@@ -93,7 +93,7 @@ proc samples {params} {
 # test --
 # Wrapper around [::tcltest::test] with additional features:
 #
-# - Single-argument design gives a cleaner visual presentation.
+# - Single-argument block design gives a cleaner visual presentation.
 # - All script execution is performed in a new stack frame.
 # - Script variables are shared across scripts via a temporary namespace.
 # - All definition values (except scripts) are [subst]'ed.
@@ -181,7 +181,7 @@ proc test {def} {
 
     # Complain if there are any invalid test definition keys.
     if {[dict size $def]} {
-        error "bad test definition key(s): [oxand [dict keys $def]]"
+        error "bad test definition key(s): [and [dict keys $def]]"
     }
 
     # Run the Tcltest command.
@@ -236,14 +236,14 @@ test {
     desc {empty subcommand}
     body {array {}}
     returnCodes error
-    result {unknown or ambiguous subcommand "": must be [oxor $commands]}
+    result {unknown or ambiguous subcommand "": must be [or $commands]}
 }
 test {
     name array-1.3
     desc {invalid subcommand}
     body {array BAD&CMD}
     returnCodes error
-    result {unknown or ambiguous subcommand "BAD&CMD": must be [oxor $commands]}
+    result {unknown or ambiguous subcommand "BAD&CMD": must be [or $commands]}
 }
 foreach cmd $ambig {
     test {
@@ -252,8 +252,7 @@ foreach cmd $ambig {
         {scalar cmd} $cmd
         body {array $cmd}
         returnCodes error
-        result {unknown or ambiguous subcommand "$cmd":\
-            must be [oxor $commands]}
+        result {unknown or ambiguous subcommand "$cmd": must be [or $commands]}
     }
 }
 foreach cmd $commands {
@@ -286,7 +285,7 @@ foreach cmd $commands {
             {array a} {}
             body {array $cmd a {} {}}
             returnCodes error
-            result {ambiguous option "": must be [oxor $modes]}
+            result {ambiguous option "": must be [or $modes]}
         }
         test {
             name array-2.3.$cmd
@@ -295,7 +294,7 @@ foreach cmd $commands {
             {array a} {}
             body {array $cmd a INVALID {}}
             returnCodes error
-            result {bad option "INVALID": must be [oxor $modes]}
+            result {bad option "INVALID": must be [or $modes]}
         }
         test {
             name array-2.4.$cmd
