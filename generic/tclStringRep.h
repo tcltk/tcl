@@ -76,13 +76,13 @@ typedef struct {
 	}								\
     } while (0)
 #define stringAttemptAlloc(numChars) \
-    (String *) attemptckalloc((unsigned) STRING_SIZE(numChars))
+    (String *) attemptckalloc(STRING_SIZE(numChars))
 #define stringAlloc(numChars) \
-    (String *) ckalloc((unsigned) STRING_SIZE(numChars))
+    (String *) ckalloc(STRING_SIZE(numChars))
 #define stringRealloc(ptr, numChars) \
-    (String *) ckrealloc((ptr), (unsigned) STRING_SIZE(numChars))
+    (String *) ckrealloc((ptr), STRING_SIZE(numChars))
 #define stringAttemptRealloc(ptr, numChars) \
-    (String *) attemptckrealloc((ptr), (unsigned) STRING_SIZE(numChars))
+    (String *) attemptckrealloc((ptr), STRING_SIZE(numChars))
 #define GET_STRING(objPtr) \
     ((String *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_STRING(objPtr, stringPtr) \
