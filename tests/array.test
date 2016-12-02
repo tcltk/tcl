@@ -11,29 +11,12 @@
 
 if {[lsearch [namespace children] ::tcltest] < 0} {
     package require tcltest 2
-    namespace import -force ::tcltest::test
 }
-
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
-
-# Get list of variables and procs to facilitate cleanup later.
-set vars [info vars]
+catch {package require -exact Tcltest [info patchlevel]}
+set namespaces [namespace children]
 set procs [info procs]
-
-# commas --
-# Joins a list by commas, the word "or", or both, using Oxford comma rules,
-# matching Tcl's internal algorithm for displaying lists in error messages.
-proc commas {list} {
-    if {[llength $list] > 1} {
-        lset list end "or [lindex $list end]"
-    }
-    if {[llength $list] < 3} {
-        join $list " "
-    } else {
-        join $list ", "
-    }
-}
+set vars [info vars]
 
 # [array] subcommand  arrayName             mode and filter
 # ------------------  --------------------  ---------------
@@ -77,7 +60,135 @@ proc commas {list} {
 # - -regexp
 # - -regexp (with invalid regexp pattern)
 
-# Formal parameters for each command.
+# oxjoin --
+# oxand --
+# oxor --
+# Joins a list by commas, a connector word, or both, using Oxford comma rules,
+# matching Tcl's internal algorithm for displaying lists in error messages.
+proc oxjoin {connector list} {
+    if {[llength $list] > 1} {
+        lset list end "$connector [lindex $list end]"
+    }
+    if {[llength $list] < 3} {
+        join $list " "
+    } else {
+        join $list ", "
+    }
+}
+interp alias {} oxand {} oxjoin and
+interp alias {} oxor {} oxjoin or
+
+# samples --
+# Produces a list of sample arguments, given a list of parameters.
+proc samples {params} {
+    lmap param $params {dict get {
+        arrayName   a
+        searchId    s-1-a
+        ?mode?      -exact
+        ?pattern?   hello
+        list        {hello world}
+    } $param}
+}
+
+# test --
+# Wrapper around [::tcltest::test] with additional features:
+#
+# - Single-argument design gives a cleaner visual presentation.
+# - All script execution is performed in a new stack frame.
+# - Script variables are shared across scripts via a temporary namespace.
+# - All definition values (except scripts) are [subst]'ed.
+#
+# The $def argument is a dict which defines the test.  Its possible keys are:
+#
+# - name | desc
+#   Test name and description.
+#
+# - {scalar name} | {array name}
+#   The name component of the key is the name of a scalar or array variable, and
+#   the value is the initial scalar value or array dictionary value.  These
+#   variables are shared across the setup, body, and cleanup scripts.
+#
+# - link
+#   Uninitialized variables shared across the setup, body, and cleanup scripts.
+#
+# - setup | body | cleanup
+#   The scripts are modified to include variable initialization, linkage, and
+#   finalization and to be executed inside new stack frames.
+#
+# - constraints | result | output | errorOutput | returnCodes | match
+#   See tcltest(n) for the purpose of these keys.
+proc test {def} {
+    # Perform uplevel substitutions, and process scalar and array arguments.
+    set scalars {}
+    set arrays {}
+    dict for {key val} $def {
+        if {$key ni {setup body cleanup}} {
+            dict set def $key [set val [uplevel [list subst $val]]]
+        }
+        if {[llength $key] == 2} {
+            if {[lindex $key 0] eq "scalar"} {
+                dict set scalars [lindex $key 1] $val
+                dict unset def $key
+            } elseif {[lindex $key 0] eq "array"} {
+                dict set arrays [lindex $key 1] $val
+                dict unset def $key
+            }
+        }
+    }
+
+    # Augment scripts with variable initialization, linkage, and finalization.
+    dict lappend def link {*}[dict keys $scalars] {*}[dict keys $arrays]
+    if {[llength [dict get $def link]]} {
+        # Ensure all three scripts exist, even if empty.
+        foreach key {setup body cleanup} {
+            dict append def $key
+        }
+
+        # Build variable initialization, linkage, and finalization snippets.
+        set initial [list namespace eval ::TestVar [join [list\
+            [list variable {*}$scalars]\
+            {*}[lmap {var val} $arrays {list variable $var}]\
+            {*}[lmap {var val} $arrays {list array set $var $val}]] \n]]
+        set linkage [join [lmap var [dict get $def link]\
+            {list variable ::TestVar::$var}] \n]
+        set final [list namespace delete ::TestVar]
+
+        # Update scripts.
+        dict set def setup $initial\n$linkage\n[dict get $def setup]
+        dict set def body $linkage\n[dict get $def body]
+        dict set def cleanup $linkage\n[dict get $def cleanup]\n$final
+    }
+    dict unset def link
+
+    # Convert scripts to zero-argument lambda invocations.
+    foreach key {setup body cleanup} {
+        if {[dict exists $def $key]} {
+            dict set def $key [list apply [list {} [dict get $def $key]]]
+        }
+    }
+
+    # Assemble the Tcltest command.
+    set command [list ::tcltest::test [dict get $def name] [dict get $def desc]]
+    dict unset def name
+    dict unset def desc
+    foreach key {constraints setup body cleanup result output errorOutput
+            returnCodes match} {
+        if {[dict exists $def $key]} {
+            lappend command -$key [dict get $def $key]
+            dict unset def $key
+        }
+    }
+
+    # Complain if there are any invalid test definition keys.
+    if {[dict size $def]} {
+        error "bad test definition key(s): [oxand [dict keys $def]]"
+    }
+
+    # Run the Tcltest command.
+    tailcall {*}$command
+}
+
+# Formal parameters for each array subcommand.
 set params {
     anymore     {arrayName searchId}
     donesearch  {arrayName searchId}
@@ -92,114 +203,141 @@ set params {
     unset       {arrayName ?mode? ?pattern?}
 }
 
-# Produces a list of sample arguments, given a list of parameters.
-proc samples {params} {
-    lmap elem $params {dict get {
-        arrayName   a
-        searchId    s-1-a
-        ?mode?      -exact
-        ?pattern?   hello
-        list        {hello world}
-    } $elem}
-}
-
-# List of commands.
+# List of array subcommands.
 set commands [lsort [dict keys $params]]
 
-# Ambiguous and unambiguous abbreviations.
-foreach command $commands {
-    for {set i 0} {$i < [string length $command] - 1} {incr i} {
-        set abbrev [string range $command 0 $i]
+# Ambiguous and unambiguous abbreviations of array subcommands.
+foreach cmd $commands {
+    for {set i 0} {$i < [string length $cmd] - 1} {incr i} {
+        set abbrev [string range $cmd 0 $i]
         if {$abbrev in $commands
          || [llength [lsearch -all $commands $abbrev*]] == 1} {
-            dict lappend abbrevs $command $abbrev
+            dict lappend abbrevs $cmd $abbrev
         } else {
             dict set ambig $abbrev {}
         }
     }
 }
 set ambig [lsort [dict keys $ambig]]
-unset i command abbrev
 
-# List of valid mode options.
+# List of valid array filter mode options.
 set modes [lsort {-exact -glob -regexp}]
-
-# array-1.*: subcommand dispatch
-test array-1.1 {no subcommand} -body {
-    list [catch array msg] $msg
-} -result {1 {wrong # args: should be "array subcommand ?arg ...?"}}
-test array-1.2 {empty subcommand} -body {
-    list [catch {array {}} msg] $msg
-} -result [list 1\
-    "unknown or ambiguous subcommand \"\": must be [commas $commands]"]
-test array-1.3 {invalid subcommand} -body {
-    list [catch {array BAD&CMD} msg] $msg
-} -result [list 1\
-    "unknown or ambiguous subcommand \"BAD&CMD\": must be [commas $commands]"]
+
+# array-1.*: subcommand dispatch.
+test {
+    name array-1.1
+    desc {no subcommand}
+    body {array}
+    returnCodes error
+    result {wrong # args: should be "array subcommand ?arg ...?"}
+}
+test {
+    name array-1.2
+    desc {empty subcommand}
+    body {array {}}
+    returnCodes error
+    result {unknown or ambiguous subcommand "": must be [oxor $commands]}
+}
+test {
+    name array-1.3
+    desc {invalid subcommand}
+    body {array BAD&CMD}
+    returnCodes error
+    result {unknown or ambiguous subcommand "BAD&CMD": must be [oxor $commands]}
+}
 foreach cmd $ambig {
-    test array-1.4 {ambiguous subcommand: \[array $cmd\]} -body {
-        list [catch {array $cmd} msg] $msg
-    } -result [list 1\
-        "unknown or ambiguous subcommand \"$cmd\": must be [commas $commands]"]
-}
-foreach cmd $commands {
-    test array-1.5.$cmd "formal parameter lists: \[array $cmd\]"\
-    -body [list apply {{cmd} {
-        list [catch {array $cmd} msg] $msg
-    }} $cmd] -result [list 1\
-        "wrong # args: should be \"array $cmd [dict get $params $cmd]\""]
-}
-
-# array-2.*: common argument parsing
-foreach cmd $commands {
-    test array-2.1.$cmd "too many arguments: \[array $cmd\]"\
-    -body [list apply {{cmd params} {
-        list [catch {array $cmd {*}$params extra} msg] $msg
-    }} $cmd [dict get $params $cmd]] -result [list 1\
-        "wrong # args: should be \"array $cmd [dict get $params $cmd]\""]
-    if {"?mode?" in [dict get $params $cmd]} {
-        test array-2.2.$cmd "ambiguous mode: \[array $cmd\]"\
-        -body [list apply {{cmd} {
-            array set a {}
-            list [catch {array $cmd a {} {}} msg] $msg
-        }} $cmd] -result [list 1\
-            "ambiguous option \"\": must be [commas $modes]"]
-        test array-2.3.$cmd "invalid mode: \[array $cmd\]"\
-        -body [list apply {{cmd} {
-            array set a {}
-            list [catch {array $cmd a INVALID {}} msg] $msg
-        }} $cmd] -result [list 1\
-            "bad option \"INVALID\": must be [commas $modes]"]
-        test array-2.4.$cmd "invalid regexp: \[array $cmd\]"\
-        -body [list apply {{cmd} {
-            array set a {e 1}
-            list [catch {array $cmd a -regexp **} msg] $msg
-        }} $cmd] -result [list 1 "couldn't compile regular expression pattern:\
-            quantifier operand invalid"]
+    test {
+        name array-1.4.$cmd
+        desc {ambiguous subcommand: \[array $cmd\]}
+        {scalar cmd} $cmd
+        body {array $cmd}
+        returnCodes error
+        result {unknown or ambiguous subcommand "$cmd":\
+            must be [oxor $commands]}
     }
-    test array-2.5.$cmd "array trace error during variable lookup:\
-    \[array $cmd\]" -body [list apply {{cmd params} {
-        trace add variable a array {apply {{args} {error $args}}}
-        set params [lmap elem $params {dict get {
-            arrayName   a
-            searchId    s-1-a
-            ?mode?      -exact
-            ?pattern?   hello
-            list        {hello world}
-        } $elem}]
-        list [catch {array $cmd {*}$params} msg] $msg
-    }} $cmd [dict get $params $cmd]] -result\
-        {1 {can't trace array "a": a {} array}}
+}
+foreach cmd $commands {
+    test {
+        name array-1.5.$cmd
+        desc {formal parameter lists: \[array $cmd\]}
+        {scalar cmd} $cmd
+        body {array $cmd}
+        returnCodes error
+        result {wrong # args: should be "array $cmd [dict get $params $cmd]"}
+    }
+}
+
+# array-2.*: common argument parsing.
+foreach cmd $commands {
+    test {
+        name array-2.1.$cmd
+        desc {too many arguments: \[array $cmd\]}
+        {scalar cmd} $cmd
+        {scalar args} {[lmap param [dict get $params $cmd] {samples $param}]}
+        body {array $cmd {*}$args extra}
+        returnCodes error
+        result {wrong # args: should be "array $cmd [dict get $params $cmd]"}
+    }
+    if {"?mode?" in [dict get $params $cmd]} {
+        test {
+            name array-2.2.$cmd
+            desc {ambiguous mode: \[array $cmd\]"}
+            {scalar cmd} $cmd
+            {array a} {}
+            body {array $cmd a {} {}}
+            returnCodes error
+            result {ambiguous option "": must be [oxor $modes]}
+        }
+        test {
+            name array-2.3.$cmd
+            desc {invalid mode: \[array $cmd\]}
+            {scalar cmd} $cmd
+            {array a} {}
+            body {array $cmd a INVALID {}}
+            returnCodes error
+            result {bad option "INVALID": must be [oxor $modes]}
+        }
+        test {
+            name array-2.4.$cmd
+            desc {invalid regexp: \[array $cmd\]}
+            {scalar cmd} $cmd
+            {array a} {e 1}
+            body {array $cmd a -regexp *}
+            returnCodes error
+            result {couldn't compile regular expression pattern:\
+                quantifier operand invalid}
+        }
+    }
+    test {
+        name array-2.5.$cmd
+        desc {array trace error during variable lookup: \[array $cmd\]}
+        {scalar cmd} $cmd
+        {scalar args} {[lmap param [dict get $params $cmd] {samples $param}]}
+        link a
+        setup {trace add variable a array {apply {{args} {error $args}}}}
+        body {array $cmd {*}$args}
+        returnCodes error
+        result {can't trace array "a": a {} array}
+    }
 }
 foreach cmd {anymore donesearch nextelement startsearch statistics} {
-    ::tcltest::test array-2.6.$cmd {nonexistent array: \[array $cmd\]}\
-    -body [list apply {{args} {
-        list [catch $args msg] $msg
-    }} array $cmd {*}[samples [dict get $params $cmd]]] -result\
-        {1 {"a" isn't an array}}
+    test {
+        name array-2.6.$cmd
+        desc {nonexistent array: \[array $cmd\]}
+        {scalar cmd} $cmd
+        {scalar args} {[samples [dict get $params $cmd]]}
+        body {array $cmd {*}$args}
+        returnCodes error
+        result {"a" isn't an array}
+    }
 }
-
+
 # Cleanup.
+foreach namespace [namespace children] {
+    if {$namespace ni $namespaces} {
+        namespace delete $namespace
+    }
+}
 foreach proc [info procs] {
     if {$proc ni $procs} {
         rename $proc {}
@@ -210,7 +348,7 @@ foreach var [info vars] {
         unset $var
     }
 }
-unset -nocomplain var
+unset -nocomplain var vars
 ::tcltest::cleanupTests
 return
 
