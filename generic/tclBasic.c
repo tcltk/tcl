@@ -3155,14 +3155,13 @@ Tcl_DeleteCommandFromToken(
     if (cmdPtr->hPtr != NULL) {
 	Tcl_DeleteHashEntry(cmdPtr->hPtr);
 	cmdPtr->hPtr = NULL;
-    /*
-     * Bump the command epoch counter. This will invalidate all cached
-     * references that point to this command.
-     */
 
-    cmdPtr->cmdEpoch++;
+	/*
+	 * Bump the command epoch counter. This will invalidate all cached
+	 * references that point to this command.
+	 */
 
-    cmdPtr->cmdEpoch++;
+	cmdPtr->cmdEpoch++;
     }
 
     /*
