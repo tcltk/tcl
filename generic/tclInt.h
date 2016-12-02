@@ -4369,8 +4369,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  *----------------------------------------------------------------
  */
 
-#define TclIsPureByteArray(objPtr) \
-	(((objPtr)->typePtr==&tclByteArrayType) && ((objPtr)->bytes==NULL))
+MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 
 /*
  *----------------------------------------------------------------

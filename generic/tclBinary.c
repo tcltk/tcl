@@ -179,11 +179,19 @@ static const EnsembleImplMap decodeMap[] = {
  * converting an arbitrary String to a ByteArray may be.
  */
 
-const Tcl_ObjType tclByteArrayType = {
+static const Tcl_ObjType properByteArrayType = {
     "bytearray",
     FreeByteArrayInternalRep,
     DupByteArrayInternalRep,
     UpdateStringOfByteArray,
+    NULL
+};
+
+const Tcl_ObjType tclByteArrayType = {
+    "bytearray",
+    FreeByteArrayInternalRep,
+    DupByteArrayInternalRep,
+    NULL,
     SetByteArrayFromAny
 };
 
@@ -211,6 +219,12 @@ typedef struct {
 #define SET_BYTEARRAY(objPtr, baPtr) \
 		(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (baPtr)
 
+int
+TclIsPureByteArray(
+    Tcl_Obj * objPtr)
+{
+    return (objPtr->typePtr == &properByteArrayType);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -341,7 +355,7 @@ Tcl_SetByteArrayObj(
     if ((bytes != NULL) && (length > 0)) {
 	memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
     }
-    objPtr->typePtr = &tclByteArrayType;
+    objPtr->typePtr = &properByteArrayType;
     SET_BYTEARRAY(objPtr, byteArrayPtr);
 }
 
@@ -371,7 +385,8 @@ Tcl_GetByteArrayFromObj(
 {
     ByteArray *baPtr;
 
-    if (objPtr->typePtr != &tclByteArrayType) {
+    if ((objPtr->typePtr != &properByteArrayType)
+	    && (objPtr->typePtr != &tclByteArrayType)) {
 	SetByteArrayFromAny(NULL, objPtr);
     }
     baPtr = GET_BYTEARRAY(objPtr);
@@ -414,7 +429,8 @@ Tcl_SetByteArrayLength(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetByteArrayLength");
     }
-    if (objPtr->typePtr != &tclByteArrayType) {
+    if ((objPtr->typePtr != &properByteArrayType)
+	    && (objPtr->typePtr != &tclByteArrayType)) {
 	SetByteArrayFromAny(NULL, objPtr);
     }
 
@@ -450,29 +466,35 @@ SetByteArrayFromAny(
     Tcl_Interp *interp,		/* Not used. */
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
-    int length;
+    int length, improper = 0;
     const char *src, *srcEnd;
     unsigned char *dst;
     ByteArray *byteArrayPtr;
     Tcl_UniChar ch;
 
-    if (objPtr->typePtr != &tclByteArrayType) {
-	src = TclGetStringFromObj(objPtr, &length);
-	srcEnd = src + length;
-
-	byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
-	for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
-	    src += Tcl_UtfToUniChar(src, &ch);
-	    *dst++ = UCHAR(ch);
-	}
-
-	byteArrayPtr->used = dst - byteArrayPtr->bytes;
-	byteArrayPtr->allocated = length;
-
-	TclFreeIntRep(objPtr);
-	objPtr->typePtr = &tclByteArrayType;
-	SET_BYTEARRAY(objPtr, byteArrayPtr);
+    if (objPtr->typePtr == &properByteArrayType) {
+	return TCL_OK;
     }
+    if (objPtr->typePtr == &tclByteArrayType) {
+	return TCL_OK;
+    }
+
+    src = TclGetStringFromObj(objPtr, &length);
+    srcEnd = src + length;
+
+    byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
+	src += Tcl_UtfToUniChar(src, &ch);
+	improper = improper || (ch > 255);
+	*dst++ = UCHAR(ch);
+    }
+
+    byteArrayPtr->used = dst - byteArrayPtr->bytes;
+    byteArrayPtr->allocated = length;
+
+    TclFreeIntRep(objPtr);
+    objPtr->typePtr = improper ? &tclByteArrayType : &properByteArrayType;
+    SET_BYTEARRAY(objPtr, byteArrayPtr);
     return TCL_OK;
 }
 
@@ -535,7 +557,7 @@ DupByteArrayInternalRep(
     memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
     SET_BYTEARRAY(copyPtr, copyArrayPtr);
 
-    copyPtr->typePtr = &tclByteArrayType;
+    copyPtr->typePtr = srcPtr->typePtr;
 }
 
 /*
@@ -642,7 +664,8 @@ TclAppendBytesToByteArray(
 	/* Append zero bytes is a no-op. */
 	return;
     }
-    if (objPtr->typePtr != &tclByteArrayType) {
+    if ((objPtr->typePtr != &properByteArrayType)
+	    && (objPtr->typePtr != &tclByteArrayType)) {
 	SetByteArrayFromAny(NULL, objPtr);
     }
     byteArrayPtr = GET_BYTEARRAY(objPtr);
