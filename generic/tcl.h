@@ -417,7 +417,7 @@ typedef long LONG;
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
 #ifdef TCL_WIDE_INT_IS_LONG
 #   undef TCL_WIDE_INT_TYPE
-#   define cd	long long
+#   define TCL_WIDE_INT_TYPE long
 #endif /* TCL_WIDE_INT_IS_LONG */
 
 typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
