@@ -1265,7 +1265,7 @@ test trace-18.4 {namespace delete / trace vdelete combo, Bug \#1338280} {
 } 1110
 test trace-18.5 {Bug 7f02ff1efa} -setup {
     proc constant {name value} {
-        upvar 1 $name c  
+        upvar 1 $name c
         set c $value
         trace variable c wu [list reset $value]
     }

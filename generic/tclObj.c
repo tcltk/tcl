@@ -3936,7 +3936,7 @@ AllocObjEntry(
 
     hPtr->key.objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
-    hPtr->clientData = NULL;
+    Tcl_SetHashValue(hPtr, NULL);
 
     return hPtr;
 }

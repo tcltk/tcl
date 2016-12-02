@@ -404,7 +404,7 @@ Tcl_PopCallFrame(
     nsPtr = framePtr->nsPtr;
     nsPtr->activationCount--;
     if ((nsPtr->flags & NS_DYING)
-	    && (nsPtr->activationCount - (nsPtr == iPtr->globalNsPtr) == 0)) {
+	    && (nsPtr->activationCount == (nsPtr == iPtr->globalNsPtr))) {
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
     framePtr->nsPtr = NULL;
@@ -995,7 +995,7 @@ Tcl_DeleteNamespace(
      * refCount reaches 0.
      */
 
-    if (nsPtr->activationCount - (nsPtr == globalNsPtr) > 0) {
+    if (nsPtr->activationCount  > (nsPtr == globalNsPtr)) {
 	nsPtr->flags |= NS_DYING;
 	if (nsPtr->parentPtr != NULL) {
 	    entryPtr = Tcl_FindHashEntry(
@@ -1097,7 +1097,7 @@ TclTeardownNamespace(
     Interp *iPtr = (Interp *) nsPtr->interp;
     register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
-    int i;
+    size_t i;
 
     /*
      * Start by destroying the namespace's variable table, since variables
@@ -1118,7 +1118,7 @@ TclTeardownNamespace(
      */
 
     while (nsPtr->cmdTable.numEntries > 0) {
-	int length = nsPtr->cmdTable.numEntries;
+	size_t length = nsPtr->cmdTable.numEntries;
 	Command **cmds = TclStackAlloc((Tcl_Interp *) iPtr,
 		sizeof(Command *) * length);
 
@@ -1190,7 +1190,7 @@ TclTeardownNamespace(
 
 #ifndef BREAK_NAMESPACE_COMPAT
     while (nsPtr->childTable.numEntries > 0) {
-	int length = nsPtr->childTable.numEntries;
+	size_t length = nsPtr->childTable.numEntries;
 	Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
 		sizeof(Namespace *) * length);
 
@@ -1731,7 +1731,8 @@ DoImport(
     Namespace *importNsPtr,
     int allowOverwrite)
 {
-    int objc, exported = 0;
+    int objc;
+    size_t exported = 0;
     Tcl_Obj **objv;
     Tcl_HashEntry *found;
 

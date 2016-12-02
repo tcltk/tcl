@@ -2969,13 +2969,6 @@ Tcl_DeleteCommandFromToken(
     Tcl_Command importCmd;
 
     /*
-     * Bump the command epoch counter. This will invalidate all cached
-     * references that point to this command.
-     */
-
-    cmdPtr->cmdEpoch++;
-
-    /*
      * The code here is tricky. We can't delete the hash table entry before
      * invoking the deletion callback because there are cases where the
      * deletion callback needs to invoke the command (e.g. object systems such
@@ -2997,6 +2990,14 @@ Tcl_DeleteCommandFromToken(
 	    Tcl_DeleteHashEntry(cmdPtr->hPtr);
 	    cmdPtr->hPtr = NULL;
 	}
+
+	/*
+	 * Bump the command epoch counter. This will invalidate all cached
+	 * references that point to this command.
+	 */
+
+	cmdPtr->cmdEpoch++;
+
 	return 0;
     }
 
@@ -3099,6 +3100,13 @@ Tcl_DeleteCommandFromToken(
     if (cmdPtr->hPtr != NULL) {
 	Tcl_DeleteHashEntry(cmdPtr->hPtr);
 	cmdPtr->hPtr = NULL;
+
+	/*
+	 * Bump the command epoch counter. This will invalidate all cached
+	 * references that point to this command.
+	 */
+
+	cmdPtr->cmdEpoch++;
     }
 
     /*
