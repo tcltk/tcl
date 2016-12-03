@@ -80,14 +80,16 @@ interp alias {} or {} oxfordJoin or
 
 # samples --
 # Produces a list of sample arguments, given a list of parameters.
-proc samples {params} {
-    lmap param $params {dict get {
+# Customizations can be applied via $args.
+proc samples {params args} {
+    set map [dict merge {
         arrayName   a
         searchId    s-1-a
         ?mode?      -exact
         ?pattern?   hello
         list        {hello world}
-    } $param}
+    } $args]
+    lmap param $params {dict get $map $param}
 }
 
 # test --
@@ -328,6 +330,92 @@ foreach cmd {anymore donesearch nextelement startsearch statistics} {
         body {array $cmd {*}$args}
         returnCodes error
         result {"a" isn't an array}
+    }
+    test {
+        name array-2.7.$cmd
+        desc {element of proc-slot-only array: \[array $cmd\]}
+        {scalar cmd} $cmd
+        {scalar args} {[samples [dict get $params $cmd]]}
+        body {array $cmd {*}$args; set a(hello) 123}
+        returnCodes error
+        result {"a" isn't an array}
+    }
+}
+foreach cmd {anymore donesearch nextelement set startsearch statistics} {
+    test {
+        name array-2.8.$cmd
+        desc {scalar variable: \[array $cmd\]}
+        {scalar cmd} $cmd
+        {scalar args} {[samples [dict get $params $cmd]]}
+        {scalar a} {}
+        body {array $cmd {*}$args}
+        returnCodes error
+        result {[expr {$cmd ne "set" ? "\"a\" isn't an array"
+                     : "can't set \"a(hello)\": variable isn't array"}]}
+    }
+    test {
+        name array-2.9.$cmd
+        desc {element of empty array: \[array $cmd\]}
+        {scalar cmd} $cmd
+        {scalar args} {[samples [dict get $params $cmd] arrayName a(x)]}
+        {array a} {}
+        body {array $cmd {*}$args}
+        returnCodes error
+        result {[expr {$cmd ne "set" ? "\"a(x)\" isn't an array"
+                     : "can't set \"a(x)\": variable isn't array"}]}
+    }
+    test {
+        name array-2.10.$cmd
+        desc {element of nonexistent array: \[array $cmd\]}
+        {scalar cmd} $cmd
+        {scalar args} {[samples [dict get $params $cmd] arrayName a(x)]}
+        body {array $cmd {*}$args}
+        returnCodes error
+        result {[expr {$cmd ne "set" ? "\"a(x)\" isn't an array"
+                     : "can't set \"a(x)\": variable isn't array"}]}
+    }
+    test {
+        name array-2.11.$cmd
+        desc {element of scalar variable: \[array $cmd\]}
+        {scalar cmd} $cmd
+        {scalar args} {[samples [dict get $params $cmd] arrayName a(x)]}
+        {scalar a} {}
+        body {array $cmd {*}$args}
+        returnCodes error
+        result {[expr {$cmd ne "set" ? "\"a(x)\" isn't an array"
+                     : "can't set \"a(x)\": variable isn't array"}]}
+    }
+    test {
+        name array-2.12.$cmd
+        desc {existing element of array: \[array $cmd\]}
+        {scalar cmd} $cmd
+        {scalar args} {[samples [dict get $params $cmd] arrayName a(x)]}
+        {scalar a} {x 123}
+        body {array $cmd {*}$args}
+        returnCodes error
+        result {[expr {$cmd ne "set" ? "\"a(x)\" isn't an array"
+                     : "can't set \"a(x)\": variable isn't array"}]}
+    }
+    test {
+        name array-2.13.$cmd
+        desc {nonexistent element of array: \[array $cmd\]}
+        {scalar cmd} $cmd
+        {scalar args} {[samples [dict get $params $cmd] arrayName a(x)]}
+        {array a} {}
+        body {array $cmd {*}$args}
+        returnCodes error
+        result {[expr {$cmd ne "set" ? "\"a(x)\" isn't an array"
+                     : "can't set \"a(x)\": variable isn't array"}]}
+    }
+    test {
+        name array-2.14.$cmd
+        desc {bad namespace: \[array $cmd\]}
+        {scalar cmd} $cmd
+        {scalar args} {[samples [dict get $params $cmd] arrayName ::X::a]}
+        body {array $cmd {*}$args}
+        returnCodes error
+        result {[expr {$cmd ne "set" ? "\"::X::a\" isn't an array"
+                     : "can't set \"::X::a\": parent namespace doesn't exist"}]}
     }
 }
 
