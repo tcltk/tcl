@@ -19,7 +19,6 @@
 #ifndef _TCLINT
 #define _TCLINT
 
-#define _POSIX_C_SOURCE 199506L
 /*
  * Some numerics configuration options.
  */
