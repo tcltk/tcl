@@ -491,7 +491,12 @@ Tcl_AlertNotifier(
 	return;
     } else {
 #ifdef TCL_THREADS
+	sigset_t sigset, oldset;
 	ThreadSpecificData *tsdPtr = clientData;
+
+	/* block signals while we're holding the mutex */
+	sigfillset(&sigset);
+	pthread_sigmask(SIG_BLOCK, &sigset, &oldset);
 
 	pthread_mutex_lock(&notifierMutex);
 	tsdPtr->eventReady = 1;
@@ -502,6 +507,10 @@ Tcl_AlertNotifier(
 	pthread_cond_broadcast(&tsdPtr->waitCV);
 #   endif /* __CYGWIN__ */
 	pthread_mutex_unlock(&notifierMutex);
+
+	/* unblock signals */
+	pthread_sigmask(SIG_BLOCK, &oldset, NULL);
+
 #endif /* TCL_THREADS */
     }
 }
@@ -1152,6 +1161,14 @@ NotifierThreadProc(
     long found;
     struct timeval poll = {0., 0.}, *timePtr;
     char buf[2];
+    sigset_t sigset;
+
+    /*
+     * Ensure the notifier thread doesn't receive any signals
+     */
+
+    sigfillset(&sigset);
+    pthread_sigmask(SIG_BLOCK, &sigset, NULL);
 
     if (pipe(fds) != 0) {
 	Tcl_Panic("NotifierThreadProc: %s", "could not create trigger pipe");
