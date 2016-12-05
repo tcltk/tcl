@@ -452,7 +452,9 @@ Tcl_GetByteArrayFromObj(
 
     if ((objPtr->typePtr != &properByteArrayType)
 	    && (objPtr->typePtr != &tclByteArrayType)) {
-	SetByteArrayFromAny(NULL, objPtr);
+	if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
+	    return NULL;
+	}
     }
     baPtr = GET_BYTEARRAY(objPtr);
 
@@ -496,7 +498,9 @@ Tcl_SetByteArrayLength(
     }
     if ((objPtr->typePtr != &properByteArrayType)
 	    && (objPtr->typePtr != &tclByteArrayType)) {
-	SetByteArrayFromAny(NULL, objPtr);
+	if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
+	    return NULL;
+	}
     }
 
     byteArrayPtr = GET_BYTEARRAY(objPtr);
@@ -531,7 +535,7 @@ SetByteArrayFromAny(
     Tcl_Interp *interp,		/* Not used. */
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
-    int length, improper = 0;
+    int length;
     const char *src, *srcEnd;
     unsigned char *dst;
     ByteArray *byteArrayPtr;
@@ -550,7 +554,10 @@ SetByteArrayFromAny(
     byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
 	src += Tcl_UtfToUniChar(src, &ch);
-	improper = improper || (ch > 255);
+	if (ch > 255) {
+	    ckfree(byteArrayPtr);
+	    return TCL_ERROR;
+	}
 	*dst++ = UCHAR(ch);
     }
 
@@ -558,7 +565,7 @@ SetByteArrayFromAny(
     byteArrayPtr->allocated = length;
 
     TclFreeIntRep(objPtr);
-    objPtr->typePtr = improper ? &tclByteArrayType : &properByteArrayType;
+    objPtr->typePtr = &properByteArrayType;
     SET_BYTEARRAY(objPtr, byteArrayPtr);
     return TCL_OK;
 }
@@ -731,7 +738,9 @@ TclAppendBytesToByteArray(
     }
     if ((objPtr->typePtr != &properByteArrayType)
 	    && (objPtr->typePtr != &tclByteArrayType)) {
-	SetByteArrayFromAny(NULL, objPtr);
+	if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
+	    Tcl_Panic("attempt to append bytes to non-bytearray");
+	}
     }
     byteArrayPtr = GET_BYTEARRAY(objPtr);
 
