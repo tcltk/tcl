@@ -160,10 +160,6 @@ static const EnsembleImplMap decodeMap[] = {
  * without loss or damage. Such values are useful for things like
  * encoded strings or Tk images to name just two.
  *
- * It's strange to have two Tcl_ObjTypes in place for this task when
- * one would do, so a bit of detail and history how we got to this point
- * and where we might go from here.
- *
  * A bytearray is an ordered sequence of bytes. Each byte is an integer
  * value in the range [0-255].  To be a Tcl value type, we need a way to
  * encode each value in the value set as a Tcl string.  The simplest
@@ -173,75 +169,8 @@ static const EnsembleImplMap decodeMap[] = {
  * This approach creates a one-to-one map between all bytearray values
  * and a subset of Tcl string values.
  * 
- * When converting a Tcl string value to the bytearray internal rep, the
- * question arises what to do with strings outside that subset?  That is,
- * those Tcl strings containing at least one codepoint greater than 255?
- * The obviously correct answer is to raise an error!  That string value
- * does not represent any valid bytearray value. Full Stop.  The
- * setFromAnyProc signature has a completion code return value for just
- * this reason, to reject invalid inputs.
- * 
- * Unfortunately this was not the path taken by the authors of the
- * original tclByteArrayType.  They chose to accept all Tcl string values
- * as acceptable string encodings of the bytearray values that result
- * from masking away the high bits of any codepoint value at all. This
- * meant that every bytearray value had multiple accepted string
- * representations.
- *
- * The implications of this choice are truly ugly.  When a Tcl value has
- * a string representation, we are required to accept that as the true
- * value.  Bytearray values that possess a string representation cannot
- * be processed as bytearrays because we cannot know which true value
- * that bytearray represents.  The consequence is that we drag around
- * an internal rep that we cannot make any use of.  This painful price
- * is extracted at any point after a string rep happens to be generated
- * for the value.  This happens even when the troublesome codepoints
- * outside the byte range never show up.  This happens rather routinely
- * in normal Tcl operations unless we burden the script writer with the
- * cognitive burden of avoiding it.  The price is also paid by callers
- * of the C interface.  The routine
- *
- *	unsigned char *Tcl_GetByteArrayFromObj(objPtr, lenPtr)
- *
- * has a guarantee to always return a non-NULL value, but that value
- * points to a byte sequence that cannot be used by the caller to  
- * process the Tcl value absent some sideband testing that objPtr
- * is "pure".  Tcl offers no public interface to perform this test,
- * so callers either break encapsulation or are unavoidably buggy.  Tcl
- * has defined a public interface that cannot be used correctly. The
- * Tcl source code itself suffers the same problem, and has been buggy,
- * but progressively less so as more and more portions of the code have
- * been retrofitted with the required "purity testing".  The set of values
- * able to pass the purity test can be increased via the introduction of
- * a "canonical" flag marker, but the only way the broken interface itself
- * can be discarded is to start over and define the Tcl_ObjType properly.
- * Bytearrays should simply be usable as bytearrays without a kabuki
- * dance of testing.
- *
- * The Tcl_ObjType "properByteArrayType" is (nearly) a correct 
- * implementation of bytearrays.  Any Tcl value with the type
- * properByteArrayType can have its bytearray value fetched and
- * used with confidence that acting on that value is equivalent to
- * acting on the true Tcl string value.  This still implies a side
- * testing burden -- past mistakes will not let us avoid that
- * immediately, but it is at least a conventional test of type, and
- * can be implemented entirely by examining the objPtr fields, with
- * no need to query the intrep, as a canonical flag would require.
- *
- * Until Tcl_GetByteArrayFromObj() and Tcl_SetByteArrayLength() can
- * be revised to admit the possibility of returning NULL when the true
- * value is not a valid bytearray, we need a mechanism to retain
- * compatibility with the deployed callers of the broken interface.
- * That's what the retained "tclByteArrayType" provides.  In those
- * unusual circumstances where we convert an invalid bytearray value
- * to a bytearray type, it is to this legacy type.  Essentially any
- * time this legacy type gets used, it's a signal of a bug being ignored.
- * A TIP should be drafted to remove this connection to the broken past
- * so that Tcl 9 will no longer have any trace of it.  Prescribing a
- * migration path will be the key element of that work.  The internal
- * changes now in place are the limit of what can be done short of
- * interface repair.  They provide a great expansion of the histories
- * over which bytearray values can be useful in the meanwhile.
+ * When converting a Tcl string value to the bytearray internal rep, and
+ * the string value is outside that subset, an error is raised.
  */
 
 static const Tcl_ObjType properByteArrayType = {
@@ -250,14 +179,6 @@ static const Tcl_ObjType properByteArrayType = {
     DupByteArrayInternalRep,
     UpdateStringOfByteArray,
     NULL
-};
-
-const Tcl_ObjType tclByteArrayType = {
-    "bytearray",
-    FreeByteArrayInternalRep,
-    DupByteArrayInternalRep,
-    NULL,
-    SetByteArrayFromAny
 };
 
 /*
@@ -450,8 +371,7 @@ Tcl_GetByteArrayFromObj(
 {
     ByteArray *baPtr;
 
-    if ((objPtr->typePtr != &properByteArrayType)
-	    && (objPtr->typePtr != &tclByteArrayType)) {
+    if (objPtr->typePtr != &properByteArrayType) {
 	if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
 	    if (lengthPtr != NULL) {
 		*lengthPtr = 0;
@@ -499,8 +419,7 @@ Tcl_SetByteArrayLength(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetByteArrayLength");
     }
-    if ((objPtr->typePtr != &properByteArrayType)
-	    && (objPtr->typePtr != &tclByteArrayType)) {
+    if (objPtr->typePtr != &properByteArrayType) {
 	if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
 	    return NULL;
 	}
@@ -545,9 +464,6 @@ SetByteArrayFromAny(
     Tcl_UniChar ch;
 
     if (objPtr->typePtr == &properByteArrayType) {
-	return TCL_OK;
-    }
-    if (objPtr->typePtr == &tclByteArrayType) {
 	return TCL_OK;
     }
 
@@ -739,8 +655,7 @@ TclAppendBytesToByteArray(
 	/* Append zero bytes is a no-op. */
 	return;
     }
-    if ((objPtr->typePtr != &properByteArrayType)
-	    && (objPtr->typePtr != &tclByteArrayType)) {
+    if (objPtr->typePtr != &properByteArrayType) {
 	if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
 	    Tcl_Panic("attempt to append bytes to non-bytearray");
 	}

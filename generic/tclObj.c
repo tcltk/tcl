@@ -394,7 +394,6 @@ TclInitObjSubsystem(void)
     Tcl_InitHashTable(&typeTable, TCL_STRING_KEYS);
     Tcl_MutexUnlock(&tableMutex);
 
-    Tcl_RegisterObjType(&tclByteArrayType);
     Tcl_RegisterObjType(&tclDoubleType);
     Tcl_RegisterObjType(&tclEndOffsetType);
     Tcl_RegisterObjType(&tclIntType);

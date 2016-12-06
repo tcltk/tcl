@@ -27,7 +27,6 @@ test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} tes
     set r 1
     foreach {t} {
 	{array search}
-	bytearray
 	bytecode
 	cmdName
 	dict
@@ -48,10 +47,10 @@ test obj-2.2 {Tcl_GetObjType and Tcl_ConvertToType} testobj {
     set result ""
     lappend result [testobj freeallvars]
     lappend result [testintobj set 1 12]
-    lappend result [testobj convert 1 bytearray]
+    lappend result [testobj convert 1 string]
     lappend result [testobj type 1]
     lappend result [testobj refcount 1]
-} {{} 12 12 bytearray 3}
+} {{} 12 12 string 3}
 
 test obj-3.1 {Tcl_ConvertToType error} testobj {
     list [testdoubleobj set 1 12.34] \
