@@ -509,7 +509,7 @@ Tcl_AlertNotifier(
 	pthread_mutex_unlock(&notifierMutex);
 
 	/* unblock signals */
-	pthread_sigmask(SIG_BLOCK, &oldset, NULL);
+	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 
 #endif /* TCL_THREADS */
     }
