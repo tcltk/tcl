@@ -3728,6 +3728,27 @@ test oo-35.4 {Bug 593baa032c: mixins list teardown} {
     namespace eval [info object namespace D] [list [namespace which B] destroy]
 } {}
 
+test oo-36.1 {OO: Auto linking} -setup {
+    oo::class create C
+} -body {
+    oo::define C {
+        constructor {*a} {
+            incr a
+            lappend ::result $a
+        }
+        method m {*a} {
+            incr a
+            lappend ::result $a
+        }
+    }
+    set a 0
+    set c [C new a]
+    $c m a
+    return $result
+} -cleanup {
+    C destroy
+} -result {1 2}
+
 
 cleanupTests
 return

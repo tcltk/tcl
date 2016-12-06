@@ -384,30 +384,123 @@ test proc-7.4 {Proc struct outlives its interp: Bug 3532959} {
     unset lambda
 } {}
 
-test proc-8.1 {Argument linking} -body {
+test proc-8.1 {Auto argument linking} -body {
     proc P {*a} {
-	set a 1
-	return
+        set a 1
+        return
     }
     apply {{} {
-	set a {}
-	P a
-	set a
+        set a {}
+        P a
+        set a
     }}
 } -cleanup {
     rename P {}
 } -result 1
-test proc-8.2 {Argument linking, and defaults} -body {
-    proc P {*a {foo bar} args} {
-	return $foo
+
+test proc-8.2 {Auto argument linking, multiple} -body {
+    proc P {*a *b} {
+        set a 1
+        set b 2
+        return
     }
     apply {{} {
-	set a {}
-	P a
+        set a {}
+        set b {}
+        P a b
+        set b
+    }}
+} -cleanup {
+    rename P {}
+} -result 2
+
+test proc-8.3 {Auto argument linking, multiple of same} -body {
+    proc P {*a *a} {
+        set a 1
+        return
+    }
+    apply {{} {
+        set a {}
+        P a a
+        set a
+    }}
+} -cleanup {
+    rename P {}
+} -result 1
+
+test proc-8.4 {Auto argument linking, and defaults} -body {
+    proc P {*a {foo bar} args} {
+        return $foo
+    }
+    apply {{} {
+        set a {}
+        P a
     }}
 } -cleanup {
     rename P {}
 } -result {bar}
+
+test proc-8.5 {Auto argument linking, and args} -body {
+    proc P {*a args} {
+        return [lindex $args 0]
+    }
+    apply {{} {
+        set a {}
+        P a foo
+    }}
+} -cleanup {
+    rename P {}
+} -result {foo}
+
+test proc-8.6 {Auto argument linking, chain linking} -body {
+    proc P {*a} {
+        P2 a
+    }
+    proc P2 {*a} {
+        incr a
+    }
+    apply {{} {
+        P a
+        set a
+    }}
+} -cleanup {
+    rename P {}
+    rename P2 {}
+} -result {1}
+
+test proc-8.7 {Auto argument linking, create var in caller} -body {
+    proc P {*a} {
+        incr a
+    }
+    apply {{} {
+        P a
+        set a
+    }}
+} -cleanup {
+    rename P {}
+} -result {1}
+
+test proc-8.8 {Auto argument linking, default for auto-link formal} -body {
+    proc P {{*a b}} {
+        incr a
+    }
+    apply {{} {
+        set a 0
+        P a
+    }}
+} -constraints procbodytest -returnCodes error -cleanup {
+    catch {rename P {}}
+} -result {procedure "P": formal parameter "*a"  is to be a link and can't have a default value}
+
+test proc-8.9 {Auto argument linking, bad variable} -body {
+    proc P {*a} {
+        incr a
+    }
+    P mumbo::jumbo
+} -constraints procbodytest -returnCodes error -cleanup {
+    catch {rename P {}}
+} -result {can't access "mumbo::jumbo": parent namespace doesn't exist}
+
 
 # cleanup
 catch {rename p ""}
