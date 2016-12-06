@@ -75,7 +75,7 @@ test utf-4.2 {Tcl_NumUtfChars: length 1} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xC2\xA2"]
 } {1}
 test utf-4.3 {Tcl_NumUtfChars: long string} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "abc\xC2\xA2\xe4\xb9\x8e\uA2\u4e4e"]
+    testnumutfchars [testbytestring "abc\xC2\xA2\xe4\xb9\x8e\uA2\u4e"]
 } {7}
 test utf-4.4 {Tcl_NumUtfChars: #u0000} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xC0\x80"]
@@ -87,7 +87,7 @@ test utf-4.6 {Tcl_NumUtfChars: length 1, calc len} {testnumutfchars testbytestri
     testnumutfchars [testbytestring "\xC2\xA2"] 1
 } {1}
 test utf-4.7 {Tcl_NumUtfChars: long string, calc len} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "abc\xC2\xA2\xe4\xb9\x8e\uA2\u4e4e"] 1
+    testnumutfchars [testbytestring "abc\xC2\xA2\xe4\xb9\x8e\uA2\u4e"] 1
 } {7}
 test utf-4.8 {Tcl_NumUtfChars: #u0000, calc len} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xC0\x80"] 1

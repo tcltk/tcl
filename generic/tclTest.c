@@ -4847,6 +4847,10 @@ TestbytestringObjCmd(
 	return TCL_ERROR;
     }
     p = (const char *)Tcl_GetByteArrayFromObj(objv[1], &n);
+    if (p == NULL) {
+	Tcl_AppendResult(interp, "testbytestring expects bytes", NULL);
+	return TCL_ERROR;
+    }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));
     return TCL_OK;
 }
