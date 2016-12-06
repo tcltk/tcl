@@ -491,12 +491,7 @@ Tcl_AlertNotifier(
 	return;
     } else {
 #ifdef TCL_THREADS
-	sigset_t sigset, oldset;
 	ThreadSpecificData *tsdPtr = clientData;
-
-	/* block signals while we're holding the mutex */
-	sigfillset(&sigset);
-	pthread_sigmask(SIG_BLOCK, &sigset, &oldset);
 
 	pthread_mutex_lock(&notifierMutex);
 	tsdPtr->eventReady = 1;
@@ -507,9 +502,6 @@ Tcl_AlertNotifier(
 	pthread_cond_broadcast(&tsdPtr->waitCV);
 #   endif /* __CYGWIN__ */
 	pthread_mutex_unlock(&notifierMutex);
-
-	/* unblock signals */
-	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 
 #endif /* TCL_THREADS */
     }
@@ -873,6 +865,7 @@ Tcl_WaitForEvent(
 	Tcl_Time vTime;
 #ifdef TCL_THREADS
 	int waitForFiles;
+	sigset_t sigset, oldset;
 #   ifdef __CYGWIN__
 	MSG msg;
 #   endif /* __CYGWIN__ */
@@ -933,6 +926,9 @@ Tcl_WaitForEvent(
 	 */
 	StartNotifierThread("Tcl_WaitForEvent");
 
+	/* block signals while we're holding the mutex */
+	sigfillset(&sigset);
+	pthread_sigmask(SIG_BLOCK, &sigset, &oldset);
 	pthread_mutex_lock(&notifierMutex);
 
 	if (timePtr != NULL && timePtr->sec == 0 && (timePtr->usec == 0
@@ -1118,6 +1114,8 @@ Tcl_WaitForEvent(
 	}
 #ifdef TCL_THREADS
 	pthread_mutex_unlock(&notifierMutex);
+	/* unblock signals */
+ 	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 #endif /* TCL_THREADS */
 	return 0;
     }
