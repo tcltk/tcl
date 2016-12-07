@@ -492,7 +492,8 @@ UpdateStringOfDict(
     Dict *dict = DICT(dictPtr);
     ChainEntry *cPtr;
     Tcl_Obj *keyPtr, *valuePtr;
-    size_t i, length, bytesNeeded = 0;
+    size_t i, length;
+    int bytesNeeded = 0;
     const char *elem;
     char *dst;
 

@@ -453,35 +453,69 @@ Tcl_SetByteArrayLength(
  */
 
 static int
+MakeByteArray(
+    Tcl_Obj *objPtr,
+    int earlyOut,
+    ByteArray **byteArrayPtrPtr) 
+{
+    int length, proper = 1;
+    unsigned char *dst;
+    const char *src = TclGetStringFromObj(objPtr, &length);
+    ByteArray *byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    const char *srcEnd = src + length;
+
+    for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
+	Tcl_UniChar ch;
+
+	src += Tcl_UtfToUniChar(src, &ch);
+	if (ch > 255) {
+	  proper = 0;
+	  if (earlyOut) {
+	    ckfree(byteArrayPtr);
+	    *byteArrayPtrPtr = NULL;
+	    return proper;
+	  }
+	}
+	*dst++ = UCHAR(ch);
+    }
+    byteArrayPtr->used = dst - byteArrayPtr->bytes;
+    byteArrayPtr->allocated = length;
+
+    *byteArrayPtrPtr = byteArrayPtr;
+    return proper;
+}
+
+Tcl_Obj *
+TclNarrowToBytes(
+    Tcl_Obj *objPtr)
+{
+    ByteArray *byteArrayPtr;
+
+    if (0 == MakeByteArray(objPtr, 0, &byteArrayPtr)) {
+	objPtr = Tcl_NewObj();
+	TclInvalidateStringRep(objPtr);
+    }
+    TclFreeIntRep(objPtr);
+    objPtr->typePtr = &properByteArrayType;
+    SET_BYTEARRAY(objPtr, byteArrayPtr);
+    Tcl_IncrRefCount(objPtr);
+    return objPtr;
+}
+
+static int
 SetByteArrayFromAny(
     Tcl_Interp *interp,		/* Not used. */
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
-    int length;
-    const char *src, *srcEnd;
-    unsigned char *dst;
     ByteArray *byteArrayPtr;
-    Tcl_UniChar ch;
 
     if (objPtr->typePtr == &properByteArrayType) {
 	return TCL_OK;
     }
 
-    src = TclGetStringFromObj(objPtr, &length);
-    srcEnd = src + length;
-
-    byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
-    for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
-	src += Tcl_UtfToUniChar(src, &ch);
-	if (ch > 255) {
-	    ckfree(byteArrayPtr);
-	    return TCL_ERROR;
-	}
-	*dst++ = UCHAR(ch);
+    if (0 == MakeByteArray(objPtr, 1, &byteArrayPtr)) {
+	return TCL_ERROR;
     }
-
-    byteArrayPtr->used = dst - byteArrayPtr->bytes;
-    byteArrayPtr->allocated = length;
 
     TclFreeIntRep(objPtr);
     objPtr->typePtr = &properByteArrayType;
