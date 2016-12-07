@@ -489,15 +489,17 @@ Tcl_Obj *
 TclNarrowToBytes(
     Tcl_Obj *objPtr)
 {
-    ByteArray *byteArrayPtr;
+    if (objPtr->typePtr != &properByteArrayType) {
+	ByteArray *byteArrayPtr;
 
-    if (0 == MakeByteArray(objPtr, 0, &byteArrayPtr)) {
-	objPtr = Tcl_NewObj();
-	TclInvalidateStringRep(objPtr);
+	if (0 == MakeByteArray(objPtr, 0, &byteArrayPtr)) {
+	    objPtr = Tcl_NewObj();
+	    TclInvalidateStringRep(objPtr);
+	}
+	TclFreeIntRep(objPtr);
+	objPtr->typePtr = &properByteArrayType;
+	SET_BYTEARRAY(objPtr, byteArrayPtr);
     }
-    TclFreeIntRep(objPtr);
-    objPtr->typePtr = &properByteArrayType;
-    SET_BYTEARRAY(objPtr, byteArrayPtr);
     Tcl_IncrRefCount(objPtr);
     return objPtr;
 }
