@@ -2690,13 +2690,13 @@ BinaryEncodeUu(
      * enough".
      */
 
-    resultObj = Tcl_NewObj();
     offset = 0;
     data = Tcl_GetByteArrayFromObj(objv[objc-1], &count);
     if (data == NULL) {
 	Tcl_AppendResult(interp, "binary encode expects bytes", NULL);
 	return TCL_ERROR;
     }
+    resultObj = Tcl_NewObj();
     rawLength = (lineLength - 1) * 3 / 4;
     start = cursor = Tcl_SetByteArrayLength(resultObj,
 	    (lineLength + wrapcharlen) *
