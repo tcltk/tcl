@@ -847,7 +847,9 @@ BinaryFormatCmd(
 		goto badIndex;
 	    }
 	    if (count == BINARY_ALL) {
-		Tcl_GetByteArrayFromObj(objv[arg], &count);
+		Tcl_Obj *copy = TclNarrowToBytes(objv[arg]);
+		Tcl_GetByteArrayFromObj(copy, &count);
+		Tcl_DecrRefCount(copy);
 	    } else if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
@@ -1010,8 +1012,9 @@ BinaryFormatCmd(
 	case 'A': {
 	    char pad = (char) (cmd == 'a' ? '\0' : ' ');
 	    unsigned char *bytes;
+	    Tcl_Obj *copy = TclNarrowToBytes(objv[arg++]);
 
-	    bytes = Tcl_GetByteArrayFromObj(objv[arg++], &length);
+	    bytes = Tcl_GetByteArrayFromObj(copy, &length);
 
 	    if (count == BINARY_ALL) {
 		count = length;
@@ -1025,6 +1028,7 @@ BinaryFormatCmd(
 		memset(cursor + length, pad, (size_t) (count - length));
 	    }
 	    cursor += count;
+	    Tcl_DecrRefCount(copy);
 	    break;
 	}
 	case 'b':
