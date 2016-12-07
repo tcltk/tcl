@@ -4078,7 +4078,7 @@ Tcl_WriteChars(
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;	/* State info for channel */
     int result;
-    Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr, *copy;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
 	return -1;
@@ -4105,9 +4105,11 @@ Tcl_WriteChars(
     }
 
     objPtr = Tcl_NewStringObj(src, len);
-    src = (char *) Tcl_GetByteArrayFromObj(objPtr, &len);
-    result = WriteBytes(chanPtr, src, len);
+    copy = TclNarrowToBytes(objPtr);
+    src = (char *) Tcl_GetByteArrayFromObj(copy, &len);
     TclDecrRefCount(objPtr);
+    result = WriteBytes(chanPtr, src, len);
+    TclDecrRefCount(copy);
     return result;
 }
 
@@ -4157,8 +4159,13 @@ Tcl_WriteObj(
 	return -1;
     }
     if (statePtr->encoding == NULL) {
-	src = (char *) Tcl_GetByteArrayFromObj(objPtr, &srcLen);
-	return WriteBytes(chanPtr, src, srcLen);
+	int result;
+	Tcl_Obj *copy = TclNarrowToBytes(objPtr);
+
+	src = (char *) Tcl_GetByteArrayFromObj(copy, &srcLen);
+	result = WriteBytes(chanPtr, src, srcLen);
+	Tcl_DecrRefCount(copy);
+	return result;
     } else {
 	src = TclGetStringFromObj(objPtr, &srcLen);
 	return WriteChars(chanPtr, src, srcLen);
