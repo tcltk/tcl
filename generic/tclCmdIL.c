@@ -1737,7 +1737,7 @@ InfoLoadedCmd(
     } else {			/* Get pkgs just in specified interp. */
 	packageName = TclGetString(objv[2]);
     }
-    return TclGetLoadedPackages(interp, interpName, packageName);
+    return TclGetLoadedPackagesEx(interp, interpName, packageName);
 }
 
 /*

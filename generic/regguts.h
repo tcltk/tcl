@@ -49,15 +49,6 @@
 #include <assert.h>
 #endif
 
-/* function-pointer declarator */
-#ifndef FUNCPTR
-#if __STDC__ >= 1
-#define	FUNCPTR(name, args)	(*name)args
-#else
-#define	FUNCPTR(name, args)	(*name)()
-#endif
-#endif
-
 /* memory allocation */
 #ifndef MALLOC
 #define	MALLOC(n)	malloc(n)
@@ -391,7 +382,7 @@ struct subre {
  */
 
 struct fns {
-    void FUNCPTR(free, (regex_t *));
+    void (*free) (regex_t *);
 };
 
 /*
@@ -408,7 +399,7 @@ struct guts {
     struct cnfa search;		/* for fast preliminary search */
     int ntree;			/* number of subre's, plus one */
     struct colormap cmap;
-    int FUNCPTR(compare, (const chr *, const chr *, size_t));
+    int (*compare) (const chr *, const chr *, size_t);
     struct subre *lacons;	/* lookahead-constraint vector */
     int nlacons;		/* size of lacons */
 };

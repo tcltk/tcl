@@ -1101,7 +1101,7 @@ TestobjCmd(
 	if (CheckIfVarUnset(interp, varPtr,varIndex)) {
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(varPtr[varIndex]->refCount));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(varPtr[varIndex]->refCount));
     } else if (strcmp(subCmd, "type") == 0) {
 	if (objc != 3) {
 	    goto wrongNumArgs;
