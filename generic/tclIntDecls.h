@@ -135,8 +135,7 @@ EXTERN int		TclGetIntForIndex(Tcl_Interp *interp,
 /* Slot 36 is reserved */
 /* 37 */
 EXTERN int		TclGetLoadedPackages(Tcl_Interp *interp,
-				const char *targetName,
-				const char *packageName);
+				const char *targetName);
 /* 38 */
 EXTERN int		TclGetNamespaceForQualName(Tcl_Interp *interp,
 				const char *qualName, Namespace *cxtNsPtr,
@@ -660,7 +659,7 @@ typedef struct TclIntStubs {
     int (*tclGetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, int endValue, int *indexPtr); /* 34 */
     void (*reserved35)(void);
     void (*reserved36)(void);
-    int (*tclGetLoadedPackages) (Tcl_Interp *interp, const char *targetName, const char *packageName); /* 37 */
+    int (*tclGetLoadedPackages) (Tcl_Interp *interp, const char *targetName); /* 37 */
     int (*tclGetNamespaceForQualName) (Tcl_Interp *interp, const char *qualName, Namespace *cxtNsPtr, int flags, Namespace **nsPtrPtr, Namespace **altNsPtrPtr, Namespace **actualCxtPtrPtr, const char **simpleNamePtr); /* 38 */
     TclObjCmdProcType (*tclGetObjInterpProc) (void); /* 39 */
     int (*tclGetOpenMode) (Tcl_Interp *interp, const char *str, int *seekFlagPtr); /* 40 */
