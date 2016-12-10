@@ -147,13 +147,13 @@ proc test {def} {
         }
 
         # Build variable initialization, linkage, and finalization snippets.
-        set initial [list namespace eval ::TestVar [join [list\
+        set initial [list namespace eval ::TestVars [join [list\
             [list variable {*}$scalars]\
             {*}[lmap {var val} $arrays {list variable $var}]\
             {*}[lmap {var val} $arrays {list array set $var $val}]] \n]]
         set linkage [join [lmap var [dict get $def link]\
-            {list variable ::TestVar::$var}] \n]
-        set final [list namespace delete ::TestVar]
+            {list variable ::TestVars::$var}] \n]
+        set final [list namespace delete ::TestVars]
 
         # Update scripts.
         dict set def setup $initial\n$linkage\n[dict get $def setup]
@@ -482,6 +482,42 @@ test {
     desc {weird names}
     body {array set a {{ a  b } 1 ) 2 ( 3 )( 4 () 5 {} 6}; array get a}
     result {{} 6 ( 3 () 5 )( 4 ) 2 { a  b } 1}
+}
+
+# array-4.*: array size.
+test {
+    name array-4.1
+    desc {empty array}
+    {array a} {}
+    body {array size a}
+    result 0
+}
+test {
+    name array-4.2
+    desc {single-element array}
+    {array a} {e 1}
+    body {array size a}
+    result 1
+}
+test {
+    name array-4.3
+    desc {thousand-element array}
+    body {for {set i 0} {$i < 1000} {incr i} {set a($i) $i}; array size a}
+    result 1000
+}
+test {
+    name array-4.4
+    desc {increasing array size}
+    {array a} {e 1}
+    body {list [array size a] [set a(f) {}] [array size a]}
+    result {1 {} 2}
+}
+test {
+    name array-4.5
+    desc {decrasing array size}
+    {array a} {e 1 f 2}
+    body {list [array size a] [unset a(f)] [array size a]}
+    result {2 {} 1}
 }
 
 # Cleanup.
