@@ -243,9 +243,9 @@ test {
 test {
     name array-1.3
     desc {invalid subcommand}
-    body {array BAD&CMD}
+    body {array gorp}
     returnCodes error
-    result {unknown or ambiguous subcommand "BAD&CMD": must be [or $commands]}
+    result {unknown or ambiguous subcommand "gorp": must be [or $commands]}
 }
 foreach cmd $ambig {
     test {
@@ -321,27 +321,27 @@ foreach cmd $commands {
         result {can't trace array "a": a {} array}
     }
 }
-foreach cmd {anymore donesearch nextelement startsearch statistics} {
-    test {
-        name array-2.6.$cmd
-        desc {nonexistent array: \[array $cmd\]}
-        {scalar cmd} $cmd
-        {scalar args} {[samples [dict get $params $cmd]]}
-        body {array $cmd {*}$args}
-        returnCodes error
-        result {"a" isn't an array}
-    }
-    test {
-        name array-2.7.$cmd
-        desc {element of proc-slot-only array: \[array $cmd\]}
-        {scalar cmd} $cmd
-        {scalar args} {[samples [dict get $params $cmd]]}
-        body {array $cmd {*}$args; set a(hello) 123}
-        returnCodes error
-        result {"a" isn't an array}
-    }
-}
 foreach cmd {anymore donesearch nextelement set startsearch statistics} {
+    if {$cmd ne "set"} {
+        test {
+            name array-2.6.$cmd
+            desc {nonexistent array: \[array $cmd\]}
+            {scalar cmd} $cmd
+            {scalar args} {[samples [dict get $params $cmd]]}
+            body {array $cmd {*}$args}
+            returnCodes error
+            result {"a" isn't an array}
+        }
+        test {
+            name array-2.7.$cmd
+            desc {element of proc-slot-only array: \[array $cmd\]}
+            {scalar cmd} $cmd
+            {scalar args} {[samples [dict get $params $cmd]]}
+            body {array $cmd {*}$args; set a(hello) 123}
+            returnCodes error
+            result {"a" isn't an array}
+        }
+    }
     test {
         name array-2.8.$cmd
         desc {scalar variable: \[array $cmd\]}
@@ -417,6 +417,104 @@ foreach cmd {anymore donesearch nextelement set startsearch statistics} {
         result {[expr {$cmd ne "set" ? "\"::X::a\" isn't an array"
                      : "can't set \"::X::a\": parent namespace doesn't exist"}]}
     }
+}
+
+# array-3.*: array set.
+test {
+    name array-3.1
+    desc {empty}
+    body {array set a {}; list [array exists a] [array get a]}
+    result {1 {}}
+}
+test {
+    name array-3.2
+    desc {one array element}
+    body {array set a {e 1}; array get a}
+    result {e 1}
+}
+test {
+    name array-3.3
+    desc {missing value}
+    body {array set a e}
+    returnCodes error
+    result {list must have an even number of elements}
+}
+test {
+    name array-3.4
+    desc {duplicate key}
+    body {array set a {e 0 e 1}; array get a}
+    result {e 1}
+}
+test {
+    name array-3.5
+    desc {invalid list}
+    body {array set a \{\}x}
+    returnCodes error
+    result {list element in braces followed by "x" instead of space}
+}
+test {
+    name array-3.6
+    desc {invalid list part 2}
+    body {array set a \"\"x}
+    returnCodes error
+    result {list element in quotes followed by "x" instead of space}
+}
+test {
+    name array-3.7
+    desc {invalid list part 3}
+    body {array set a \{}
+    returnCodes error
+    result {unmatched open brace in list}
+}
+test {
+    name array-3.8
+    desc {invalid list part 4}
+    body {array set a \"}
+    returnCodes error
+    result {unmatched open quote in list}
+}
+test {
+    name array-3.9
+    desc {hash order}
+    body {array set a {f 2 e 1}; array get a}
+    result {e 1 f 2}
+}
+test {
+    name array-3.10
+    desc {adding elements}
+    body {array set a {f 2}; array set a {e 1}; array get a}
+    result {e 1 f 2}
+}
+test {
+    name array-3.11
+    desc {adding elements, hash order}
+    body {array set a {e 1}; array set a {f 2}; array get a}
+    result {e 1 f 2}
+}
+test {
+    name array-3.12
+    desc {replacing elements}
+    body {array set a {e 1}; array set a {e 2}; array get a}
+    result {e 2}
+}
+test {
+    name array-3.13
+    desc {adding and replacing elements}
+    body {array set a {e 1}; array set a {f 3 e 2}; array get a}
+    result {e 2 f 3}
+}
+test {
+    name array-3.14
+    desc {former scalar}
+    {scalar a} xxx
+    body {unset a; array set a {e 1}; array get a}
+    result {e 1}
+}
+test {
+    name array-3.15
+    desc {weird names}
+    body {array set a {{ a  b } 1 ) 2 ( 3 )( 4 () 5 {} 6}; array get a}
+    result {{} 6 ( 3 () 5 )( 4 ) 2 { a  b } 1}
 }
 
 # Cleanup.
