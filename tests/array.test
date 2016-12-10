@@ -332,7 +332,6 @@ foreach {cmd    code    result} {
         returnCodes error
         result {can't trace array "a": a {} array}
     }
-
     if {$cmd eq "set"} {
         set nonArray "variable isn't array"
         set nonNamespace "parent namespace doesn't exist"
@@ -340,34 +339,33 @@ foreach {cmd    code    result} {
         set nonArray "isn't an array"
         set nonNamespace "isn't an array"
     }
-
     foreach {
-        desc                                skip    extra
-        name        msg             var     elem    setup
+        desc                                skip    setup
+        name        msg             var     elem    extra
     } {
         "nonexistent array"                 set     {}
         array-2.6   nonArray        a       {}      {}
 
-        "element of proc-slot-only array"   set     {set a(hello) 123}
-        array-2.7   nonArray        a       {}      {}
+        "element of proc-slot-only array"   set     {}
+        array-2.7   nonArray        a       {}      {set a(hello) 123}
 
-        "scalar variable"                   {}      {}
-        array-2.8   nonArray        a       (hello) {{scalar a} {}}
+        "scalar variable"                   {}      {{scalar a} {}}
+        array-2.8   nonArray        a       (hello) {}
 
-        "element of empty array"            {}      {}
-        array-2.9   nonArray        a(x)    {}      {{array a} {}}
+        "element of empty array"            {}      {{array a} {}}
+        array-2.9   nonArray        a(x)    {}      {}
 
         "element of nonexistent array"      {}      {}
         array-2.10  nonArray        a(x)    {}      {}
 
-        "element of scalar variable"        {}      {}
-        array-2.11  nonArray        a(x)    {}      {{scalar a} {}}
+        "element of scalar variable"        {}      {{scalar a} {}}
+        array-2.11  nonArray        a(x)    {}      {}
 
-        "existing element of array"         {}      {}
-        array-2.12  nonArray        a(x)    {}      {{scalar a} {x 123}}
+        "existing element of array"         {}      {{scalar a} {x 123}}
+        array-2.12  nonArray        a(x)    {}      {}
 
-        "nonexistent element of array"      {}      {}
-        array-2.13  nonArray        a(x)    {}      {{array a} {}}
+        "nonexistent element of array"      {}      {{array a} {}}
+        array-2.13  nonArray        a(x)    {}      {}
 
         "bad namespace"                     {}      {}
         array-2.14  nonNamespace    ::X::a  {}      {}
