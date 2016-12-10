@@ -18,30 +18,35 @@ set namespaces [namespace children]
 set procs [info procs]
 set vars [info vars]
 
-# test set   chapter title
-# ---------  -----------------------
-# array-1.*  subcommand dispatch
-# array-2.*  common argument parsing
-# array-3.*  array set
-# array-4.*  array size
-# array-5.*  array unset
+# test set    chapter title
+# ----------  -----------------------
+# array-1.*   subcommand dispatch
+# array-2.*   common argument parsing
+# array-3.*   array set
+# array-4.*   array size
+# array-5.*   array unset
+# array-6.*   array exists
+# array-7.*   array get
+# array-8.*   array names
+# array-9.*   array statistics
+# array-10.*  array search commands
 
-# [array] subcommand  arrayName             mode and filter
-# ------------------  --------------------  ---------------
-# anymore             array required        not allowed
-# donesearch          array required        not allowed
-# exists              anything              optional
-# get                 anything              optional
-# names               anything              optional
-# nextelement         array required        not allowed
-# set                 array or nonexistent  not allowed
-# size                anything              optional
-# startsearch         array required        optional
-# statistics          array required        not allowed
-# unset               anything              optional
-# (unique abbrev)     (see above)           (see above)
-# (ambiguous abbrev)  (error)               (error)
-# (invalid)           (error)               (error)
+# test set    [array] subcommand  arrayName             mode and filter
+# ----------  ------------------  --------------------  ---------------
+# array-10.*  anymore             array required        not allowed
+# array-10.*  donesearch          array required        not allowed
+# array-6.*   exists              anything              optional
+# array-7.*   get                 anything              optional
+# array-8.*   names               anything              optional
+# array-10.*  nextelement         array required        not allowed
+# array-3.*   set                 array or nonexistent  not allowed
+# array-4.*   size                anything              optional
+# array-10.*  startsearch         array required        optional
+# array-9.*   statistics          array required        not allowed
+# array-5.*   unset               anything              optional
+# array-1.*   (unique abbrev)     (see above)           (see above)
+# array-1.*   (ambiguous abbrev)  (error)               (error)
+# array-1.*   (invalid)           (error)               (error)
 
 # oxfordJoin --
 # and --
@@ -623,6 +628,12 @@ test {
     body {array unset a -regexp b; array get a}
     result {}
 }
+
+########################### array-6.*: array exists ############################
+############################# array-7.*: array get #############################
+############################ array-8.*: array names ############################
+######################### array-9.*: array statistics ##########################
+###################### array-10.*: array search commands #######################
 
 # Cleanup.
 foreach namespace [namespace children] {
