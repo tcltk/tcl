@@ -723,6 +723,98 @@ test {
 }
 
 ############################# array-7.*: array get #############################
+test {
+    name array-7.1
+    desc {empty array}
+    {array a} {}
+    body {array get a}
+    result {}
+}
+test {
+    name array-7.2
+    desc {non-empty array}
+    {array a} {e 1}
+    body {array get a}
+    result {e 1}
+}
+test {
+    name array-7.3
+    desc {nonexistent element using default mode}
+    {array a} {e 1}
+    body {array get a {[d]}}
+    result {}
+}
+test {
+    name array-7.4
+    desc {existing element using default mode}
+    {array a} {e 1}
+    body {array get a {[e]}}
+    result {e 1}
+}
+test {
+    name array-7.5
+    desc {multiple elements using default mode}
+    {array a} {e 1 f 2}
+    body {array get a {[ef]}}
+    result {e 1 f 2}
+}
+test {
+    name array-7.6
+    desc {nonexistent element using -glob}
+    {array a} {e 1}
+    body {array get a -glob {[d]}}
+    result {}
+}
+test {
+    name array-7.7
+    desc {existing element using -glob}
+    {array a} {e 1}
+    body {array get a -glob {[e]}}
+    result {e 1}
+}
+test {
+    name array-7.8
+    desc {multiple elements using -glob}
+    {array a} {e 1 f 2}
+    body {array get a -glob {[ef]}}
+    result {e 1 f 2}
+}
+test {
+    name array-7.9
+    desc {nonexistent element using -exact}
+    {array a} {e 1}
+    body {array get a -exact d}
+    result {}
+}
+test {
+    name array-7.10
+    desc {existing element using -exact}
+    {array a} {e 1}
+    body {array get a -exact e}
+    result {e 1}
+}
+test {
+    name array-7.11
+    desc {nonexistent element using -regexp}
+    {array a} {e 1}
+    body {array get a -regexp {^[d]}}
+    result {}
+}
+test {
+    name array-7.12
+    desc {existing element using -regexp}
+    {array a} {e 1}
+    body {array get a -regexp {^[e]}}
+    result {e 1}
+}
+test {
+    name array-7.13
+    desc {multiple elements using -regexp}
+    {array a} {e 1 f 2}
+    body {array get a -regexp {^[ef]}}
+    result {e 1 f 2}
+}
+
 ############################ array-8.*: array names ############################
 ######################### array-9.*: array statistics ##########################
 ###################### array-10.*: array search commands #######################
