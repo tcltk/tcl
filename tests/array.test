@@ -520,6 +520,15 @@ test {
     result {2 {} 1}
 }
 
+# array-5.*: array unset.
+test {
+    name array-5.1
+    desc {unset non-empty array}
+    {array a} {e 1}
+    body {array unset a; info exists a}
+    result 0
+}
+
 # Cleanup.
 foreach namespace [namespace children] {
     if {$namespace ni $namespaces} {
