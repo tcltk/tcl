@@ -514,7 +514,7 @@ test {
 }
 test {
     name array-4.5
-    desc {decrasing array size}
+    desc {decreasing array size}
     {array a} {e 1 f 2}
     body {list [array size a] [unset a(f)] [array size a]}
     result {2 {} 1}
