@@ -18,6 +18,14 @@ set namespaces [namespace children]
 set procs [info procs]
 set vars [info vars]
 
+# test set   chapter title
+# ---------  -----------------------
+# array-1.*  subcommand dispatch
+# array-2.*  common argument parsing
+# array-3.*  array set
+# array-4.*  array size
+# array-5.*  array unset
+
 # [array] subcommand  arrayName             mode and filter
 # ------------------  --------------------  ---------------
 # anymore             array required        not allowed
@@ -34,31 +42,6 @@ set vars [info vars]
 # (unique abbrev)     (see above)           (see above)
 # (ambiguous abbrev)  (error)               (error)
 # (invalid)           (error)               (error)
-
-# Possible arrayName arguments:
-# - empty array
-# - non-empty array
-# - nonexistent
-# - proc slot only
-# - scalar variable
-# - element of empty array
-# - element of nonexistent array
-# - element of proc-slot-only array
-# - element of scalar variable
-# - existing element of array
-# - nonexistent element of array
-# - bad namespace
-# - array with array trace that causes error
-# - array with array trace that does not cause error
-# - (omitted)
-
-# Possible mode and pattern arguments:
-# - (no filter)
-# - (default)
-# - -exact
-# - -glob
-# - -regexp
-# - -regexp (with invalid regexp pattern)
 
 # oxfordJoin --
 # and --
@@ -225,7 +208,7 @@ set ambig [lsort [dict keys $ambig]]
 # List of valid array filter mode options.
 set modes [lsort {-exact -glob -regexp}]
 
-# array-1.*: subcommand dispatch.
+######################## array-1.*: subcommand dispatch ########################
 test {
     name array-1.1
     desc {no subcommand}
@@ -268,7 +251,7 @@ foreach cmd $commands {
     }
 }
 
-# array-2.*: common argument parsing.
+###################### array-2.*: common argument parsing ######################
 foreach {cmd    code    resultPattern} {
     anymore     error   "\"%VAR%\" %MSG%"
     donesearch  error   "\"%VAR%\" %MSG%"
@@ -386,7 +369,7 @@ foreach {cmd    code    resultPattern} {
     }
 }
 
-# array-3.*: array set.
+############################# array-3.*: array set #############################
 test {
     name array-3.1
     desc {empty}
@@ -484,7 +467,7 @@ test {
     result {{} 6 ( 3 () 5 )( 4 ) 2 { a  b } 1}
 }
 
-# array-4.*: array size.
+############################ array-4.*: array size #############################
 test {
     name array-4.1
     desc {empty array}
@@ -520,7 +503,7 @@ test {
     result {2 {} 1}
 }
 
-# array-5.*: array unset.
+############################ array-5.*: array unset ############################
 test {
     name array-5.1
     desc {unset empty array}
