@@ -269,7 +269,7 @@ foreach cmd $commands {
 }
 
 # array-2.*: common argument parsing.
-foreach {cmd    code    result} {
+foreach {cmd    code    resultPattern} {
     anymore     error   "\"%VAR%\" %MSG%"
     donesearch  error   "\"%VAR%\" %MSG%"
     exists      ok      0
@@ -380,7 +380,7 @@ foreach {cmd    code    result} {
                 %SETUP%
                 body {set result [array $cmd {*}$args]; %EXTRA%; return $result}
                 returnCodes $code
-                result {[string map $map $result]}
+                result {[string map $map $resultPattern]}
             }]
         }
     }
