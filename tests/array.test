@@ -523,10 +523,122 @@ test {
 # array-5.*: array unset.
 test {
     name array-5.1
+    desc {unset empty array}
+    {array a} {}
+    body {array unset a; info exists a}
+    result 0
+}
+test {
+    name array-5.2
     desc {unset non-empty array}
     {array a} {e 1}
     body {array unset a; info exists a}
     result 0
+}
+test {
+    name array-5.3
+    desc {unset scalar}
+    {scalar a} x
+    body {array unset a; return $a}
+    result x
+}
+test {
+    name array-5.4
+    desc {unset all elements of empty array}
+    {array a} {}
+    body {array unset a *; list [info exists a] [array size a]}
+    result {1 0}
+}
+test {
+    name array-5.5
+    desc {unset all elements of non-empty array}
+    {array a} {e 1}
+    body {array unset a *; list [info exists a] [array size a]}
+    result {1 0}
+}
+test {
+    name array-5.6
+    desc {unset all elements of scalar array}
+    {scalar a} x
+    body {array unset a *; return $a}
+    result x
+}
+test {
+    name array-5.7
+    desc {unset single existing element using -exact}
+    {array a} {f 2 e 1}
+    body {array unset a -exact e; array get a}
+    result {f 2}
+}
+test {
+    name array-5.8
+    desc {unset single nonexistent element using -exact}
+    {array a} {f 2 e 1}
+    body {array unset a -exact d; array get a}
+    result {e 1 f 2}
+}
+test {
+    name array-5.9
+    desc {unset single existing element using default mode}
+    {array a} {f 2 e 1}
+    body {array unset a e; array get a}
+    result {f 2}
+}
+test {
+    name array-5.10
+    desc {unset single nonexistent element using default mode}
+    {array a} {f 2 e 1}
+    body {array unset a d; array get a}
+    result {e 1 f 2}
+}
+test {
+    name array-5.11
+    desc {unset single existing element using -glob}
+    {array a} {f 2 e 1}
+    body {array unset a -glob {[e]}; array get a}
+    result {f 2}
+}
+test {
+    name array-5.12
+    desc {unset single nonexistent element using -glob}
+    {array a} {f 2 e 1}
+    body {array unset a -glob {[d]}; array get a}
+    result {e 1 f 2}
+}
+test {
+    name array-5.13
+    desc {unset single existing element using -regexp}
+    {array a} {f 2 e 1}
+    body {array unset a -regexp {^[e]}; array get a}
+    result {f 2}
+}
+test {
+    name array-5.14
+    desc {unset single nonexistent element using -regexp}
+    {array a} {f 2 e 1}
+    body {array unset a -regexp {^[d]}; array get a}
+    result {e 1 f 2}
+}
+test {
+    name array-5.15
+    desc {confirm unset -exact does not match substrings}
+    {array a} {abc 1}
+    body {array unset a -exact b; array get a}
+    result {abc 1}
+}
+test {
+    name array-5.16
+    desc {confirm unset -glob does not match substrings}
+    {array a} {abc 1}
+    body {array unset a -glob b; array get a}
+    result {abc 1}
+}
+test {
+    name array-5.17
+    desc {confirm unset -regexp does match substrings}
+    {array a} {abc 1}
+    body {array unset a -regexp b; array get a}
+    result {}
 }
 
 # Cleanup.
