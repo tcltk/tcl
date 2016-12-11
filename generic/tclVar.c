@@ -1322,7 +1322,10 @@ ArrayNext(
 		    return varPtr;
 		}
 	    } else if (searchPtr->filterType == TCL_MATCH_EXACT) {
-		Tcl_Panic("exact matching shouldn't get here");
+		if (strcmp(TclGetString(nameObj),
+			TclGetString(searchPtr->filterObj)) == 0) {
+		    return varPtr;
+		}
 	    } else {
 		Tcl_Panic("invalid filter type: %u", searchPtr->filterType);
 	    }
