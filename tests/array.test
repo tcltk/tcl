@@ -777,13 +777,13 @@ foreach {
     desc
     name        dict        args            result
 } {
-    "empty array"
+    "no filter, empty array"
     array-7.2   {}          {}              {}
 
-    "single element"
+    "no filter, single element"
     array-7.3   {e 1}       {}              {e}
 
-    "two elements"
+    "no filter, two elements"
     array-7.4   {f 2 e 1}   {}              {e f}
 
     "default filter, matches nothing"
@@ -809,6 +809,15 @@ foreach {
 
     "-exact filter, matches one item"
     array-7.12  {f 2 e 1}   {-exact f}      {f}
+
+    "-regexp filter, matches nothing"
+    array-7.13  {f 2 e 1}   {-regexp ^[g]}  {}
+
+    "-regexp filter, matches one item"
+    array-7.14  {f 2 e 1}   {-regexp ^[f]}  {f}
+
+    "-regexp filter, matches two items"
+    array-7.15  {f 2 e 1}   {-regexp ^[ef]} {e f}
 } {
     test {
         name $name
