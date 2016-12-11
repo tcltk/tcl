@@ -909,6 +909,91 @@ test {
 }
 
 ######################### array-9.*: array statistics ##########################
+# Note: array-9.3 expected results obtained from Tcl version 8.5.7
+test {
+    name array-9.1
+    desc {empty array}
+    {array a} {}
+    body {array statistics a}
+    result
+{0 entries in table, 4 buckets
+number of buckets with 0 entries: 4
+number of buckets with 1 entries: 0
+number of buckets with 2 entries: 0
+number of buckets with 3 entries: 0
+number of buckets with 4 entries: 0
+number of buckets with 5 entries: 0
+number of buckets with 6 entries: 0
+number of buckets with 7 entries: 0
+number of buckets with 8 entries: 0
+number of buckets with 9 entries: 0
+number of buckets with 10 or more entries: 0
+average search distance for entry: 0.0}
+}
+test {
+    name array-9.2
+    desc {single-element array}
+    {array a} {e 1}
+    body {array statistics a}
+    result
+{1 entries in table, 4 buckets
+number of buckets with 0 entries: 3
+number of buckets with 1 entries: 1
+number of buckets with 2 entries: 0
+number of buckets with 3 entries: 0
+number of buckets with 4 entries: 0
+number of buckets with 5 entries: 0
+number of buckets with 6 entries: 0
+number of buckets with 7 entries: 0
+number of buckets with 8 entries: 0
+number of buckets with 9 entries: 0
+number of buckets with 10 or more entries: 0
+average search distance for entry: 1.0}
+}
+test {
+    name array-9.3
+    desc {thousand-element array}
+    body {for {set i 0} {$i < 1000} {incr i} {set a($i) $i}; array statistics a}
+    result
+{1000 entries in table, 1024 buckets
+number of buckets with 0 entries: 285
+number of buckets with 1 entries: 520
+number of buckets with 2 entries: 180
+number of buckets with 3 entries: 36
+number of buckets with 4 entries: 3
+number of buckets with 5 entries: 0
+number of buckets with 6 entries: 0
+number of buckets with 7 entries: 0
+number of buckets with 8 entries: 0
+number of buckets with 9 entries: 0
+number of buckets with 10 or more entries: 0
+average search distance for entry: 1.3}
+}
+test {
+    name array-9.4
+    desc {collision attack}
+    body {
+        for {set i 16} {$i < 29} {incr i} {
+            lappend list [binary format cc $i [expr {-$i * 9}]] $i
+        }
+        array set a $list
+        array statistics a
+    } result
+{13 entries in table, 16 buckets
+number of buckets with 0 entries: 15
+number of buckets with 1 entries: 0
+number of buckets with 2 entries: 0
+number of buckets with 3 entries: 0
+number of buckets with 4 entries: 0
+number of buckets with 5 entries: 0
+number of buckets with 6 entries: 0
+number of buckets with 7 entries: 0
+number of buckets with 8 entries: 0
+number of buckets with 9 entries: 0
+number of buckets with 10 or more entries: 1
+average search distance for entry: 7.0}
+}
+
 ###################### array-10.*: array search commands #######################
 
 # Cleanup.
