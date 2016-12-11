@@ -656,9 +656,8 @@ test {
     desc {collision attack}
     body {
         for {set i 16} {$i < 29} {incr i} {
-            lappend list [binary format cc $i [expr {-$i * 9}]] $i
+            set a([binary format cc $i [expr {-$i * 9}]]) $i
         }
-        array set a $list
         array statistics a
     } result
 {13 entries in table, 16 buckets
