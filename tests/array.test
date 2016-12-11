@@ -18,35 +18,32 @@ set namespaces [namespace children]
 set procs [info procs]
 set vars [info vars]
 
-# test set    chapter title
-# ----------  -----------------------
-# array-1.*   subcommand dispatch
-# array-2.*   common argument parsing
-# array-3.*   array set
-# array-4.*   array size
-# array-5.*   array unset
-# array-6.*   array exists
-# array-7.*   array get
-# array-8.*   array names
-# array-9.*   array statistics
-# array-10.*  array search commands
+# test set   chapter title
+# ---------  -----------------------
+# array-1.*  subcommand dispatch
+# array-2.*  common argument parsing
+# array-3.*  array set
+# array-4.*  array unset
+# array-5.*  array statistics
+# array-6.*  array exists|size|names|get
+# array-7.*  array anymore|donesearch|nextelement|startsearch
 
-# test set    [array] subcommand  arrayName             mode and filter
-# ----------  ------------------  --------------------  ---------------
-# array-10.*  anymore             array required        not allowed
-# array-10.*  donesearch          array required        not allowed
-# array-6.*   exists              anything              optional
-# array-7.*   get                 anything              optional
-# array-8.*   names               anything              optional
-# array-10.*  nextelement         array required        not allowed
-# array-3.*   set                 array or nonexistent  not allowed
-# array-4.*   size                anything              optional
-# array-10.*  startsearch         array required        optional
-# array-9.*   statistics          array required        not allowed
-# array-5.*   unset               anything              optional
-# array-1.*   (unique abbrev)     (see above)           (see above)
-# array-1.*   (ambiguous abbrev)  (error)               (error)
-# array-1.*   (invalid)           (error)               (error)
+# test set   [array] subcommand  arrayName             mode and filter
+# ---------  ------------------  --------------------  ---------------
+# array-7.*  anymore             array required        not allowed
+# array-7.*  donesearch          array required        not allowed
+# array-6.*  exists              anything              optional
+# array-6.*  get                 anything              optional
+# array-6.*  names               anything              optional
+# array-7.*  nextelement         array required        not allowed
+# array-3.*  set                 array or nonexistent  not allowed
+# array-6.*  size                anything              optional
+# array-7.*  startsearch         array required        optional
+# array-5.*  statistics          array required        not allowed
+# array-4.*  unset               anything              optional
+# array-1.*  (unique abbrev)     (see above)           (see above)
+# array-1.*  (ambiguous abbrev)  (error)               (error)
+# array-1.*  (invalid)           (error)               (error)
 
 # oxfordJoin --
 # and --
@@ -472,446 +469,131 @@ test {
     result {{} 6 ( 3 () 5 )( 4 ) 2 { a  b } 1}
 }
 
-############################ array-4.*: array size #############################
+############################ array-4.*: array unset ############################
 test {
     name array-4.1
-    desc {empty array}
-    {array a} {}
-    body {array size a}
-    result 0
-}
-test {
-    name array-4.2
-    desc {single-element array}
-    {array a} {e 1}
-    body {array size a}
-    result 1
-}
-test {
-    name array-4.3
-    desc {thousand-element array}
-    body {for {set i 0} {$i < 1000} {incr i} {set a($i) $i}; array size a}
-    result 1000
-}
-test {
-    name array-4.4
-    desc {increasing array size}
-    {array a} {e 1}
-    body {list [array size a] [set a(f) {}] [array size a]}
-    result {1 {} 2}
-}
-test {
-    name array-4.5
-    desc {decreasing array size}
-    {array a} {e 1 f 2}
-    body {list [array size a] [unset a(f)] [array size a]}
-    result {2 {} 1}
-}
-
-############################ array-5.*: array unset ############################
-test {
-    name array-5.1
     desc {unset empty array}
     {array a} {}
     body {array unset a; info exists a}
     result 0
 }
 test {
-    name array-5.2
+    name array-4.2
     desc {unset non-empty array}
     {array a} {e 1}
     body {array unset a; info exists a}
     result 0
 }
 test {
-    name array-5.3
+    name array-4.3
     desc {unset scalar}
     {scalar a} x
     body {array unset a; return $a}
     result x
 }
 test {
-    name array-5.4
+    name array-4.4
     desc {unset all elements of empty array}
     {array a} {}
     body {array unset a *; list [info exists a] [array size a]}
     result {1 0}
 }
 test {
-    name array-5.5
+    name array-4.5
     desc {unset all elements of non-empty array}
     {array a} {e 1}
     body {array unset a *; list [info exists a] [array size a]}
     result {1 0}
 }
 test {
-    name array-5.6
+    name array-4.6
     desc {unset all elements of scalar array}
     {scalar a} x
     body {array unset a *; return $a}
     result x
 }
 test {
-    name array-5.7
+    name array-4.7
     desc {unset single existing element using -exact}
     {array a} {f 2 e 1}
     body {array unset a -exact e; array get a}
     result {f 2}
 }
 test {
-    name array-5.8
+    name array-4.8
     desc {unset single nonexistent element using -exact}
     {array a} {f 2 e 1}
     body {array unset a -exact d; array get a}
     result {e 1 f 2}
 }
 test {
-    name array-5.9
+    name array-4.9
     desc {unset single existing element using default mode}
     {array a} {f 2 e 1}
     body {array unset a e; array get a}
     result {f 2}
 }
 test {
-    name array-5.10
+    name array-4.10
     desc {unset single nonexistent element using default mode}
     {array a} {f 2 e 1}
     body {array unset a d; array get a}
     result {e 1 f 2}
 }
 test {
-    name array-5.11
+    name array-4.11
     desc {unset single existing element using -glob}
     {array a} {f 2 e 1}
     body {array unset a -glob {[e]}; array get a}
     result {f 2}
 }
 test {
-    name array-5.12
+    name array-4.12
     desc {unset single nonexistent element using -glob}
     {array a} {f 2 e 1}
     body {array unset a -glob {[d]}; array get a}
     result {e 1 f 2}
 }
 test {
-    name array-5.13
+    name array-4.13
     desc {unset single existing element using -regexp}
     {array a} {f 2 e 1}
     body {array unset a -regexp {^[e]}; array get a}
     result {f 2}
 }
 test {
-    name array-5.14
+    name array-4.14
     desc {unset single nonexistent element using -regexp}
     {array a} {f 2 e 1}
     body {array unset a -regexp {^[d]}; array get a}
     result {e 1 f 2}
 }
 test {
-    name array-5.15
+    name array-4.15
     desc {confirm unset -exact does not match substrings}
     {array a} {abc 1}
     body {array unset a -exact b; array get a}
     result {abc 1}
 }
 test {
-    name array-5.16
+    name array-4.16
     desc {confirm unset -glob does not match substrings}
     {array a} {abc 1}
     body {array unset a -glob b; array get a}
     result {abc 1}
 }
 test {
-    name array-5.17
+    name array-4.17
     desc {confirm unset -regexp does match substrings}
     {array a} {abc 1}
     body {array unset a -regexp b; array get a}
     result {}
 }
 
-########################### array-6.*: array exists ############################
+######################### array-5.*: array statistics ##########################
+# Note: array-5.3 expected results obtained from Tcl version 8.5.7
 test {
-    name array-6.1
-    desc {empty array}
-    {array a} {}
-    body {array exists a}
-    result 1
-}
-test {
-    name array-6.2
-    desc {non-empty array}
-    {array a} {e 1}
-    body {array exists a}
-    result 1
-}
-test {
-    name array-6.3
-    desc {nonexistent element using default mode}
-    {array a} {e 1}
-    body {array exists a {[d]}}
-    result 0
-}
-test {
-    name array-6.4
-    desc {existing element using default mode}
-    {array a} {e 1}
-    body {array exists a {[e]}}
-    result 1
-}
-test {
-    name array-6.5
-    desc {multiple elements using default mode}
-    {array a} {e 1 f 2}
-    body {array exists a {[ef]}}
-    result 1
-}
-test {
-    name array-6.6
-    desc {nonexistent element using -glob}
-    {array a} {e 1}
-    body {array exists a -glob {[d]}}
-    result 0
-}
-test {
-    name array-6.7
-    desc {existing element using -glob}
-    {array a} {e 1}
-    body {array exists a -glob {[e]}}
-    result 1
-}
-test {
-    name array-6.8
-    desc {multiple elements using -glob}
-    {array a} {e 1 f 2}
-    body {array exists a -glob {[ef]}}
-    result 1
-}
-test {
-    name array-6.9
-    desc {nonexistent element using -exact}
-    {array a} {e 1}
-    body {array exists a -exact d}
-    result 0
-}
-test {
-    name array-6.10
-    desc {existing element using -exact}
-    {array a} {e 1}
-    body {array exists a -exact e}
-    result 1
-}
-test {
-    name array-6.11
-    desc {nonexistent element using -regexp}
-    {array a} {e 1}
-    body {array exists a -regexp {^[d]}}
-    result 0
-}
-test {
-    name array-6.12
-    desc {existing element using -regexp}
-    {array a} {e 1}
-    body {array exists a -regexp {^[e]}}
-    result 1
-}
-test {
-    name array-6.13
-    desc {multiple elements using -regexp}
-    {array a} {e 1 f 2}
-    body {array exists a -regexp {^[ef]}}
-    result 1
-}
-
-############################# array-7.*: array get #############################
-test {
-    name array-7.1
-    desc {empty array}
-    {array a} {}
-    body {array get a}
-    result {}
-}
-test {
-    name array-7.2
-    desc {non-empty array}
-    {array a} {e 1}
-    body {array get a}
-    result {e 1}
-}
-test {
-    name array-7.3
-    desc {nonexistent element using default mode}
-    {array a} {e 1}
-    body {array get a {[d]}}
-    result {}
-}
-test {
-    name array-7.4
-    desc {existing element using default mode}
-    {array a} {e 1}
-    body {array get a {[e]}}
-    result {e 1}
-}
-test {
-    name array-7.5
-    desc {multiple elements using default mode}
-    {array a} {e 1 f 2}
-    body {array get a {[ef]}}
-    result {e 1 f 2}
-}
-test {
-    name array-7.6
-    desc {nonexistent element using -glob}
-    {array a} {e 1}
-    body {array get a -glob {[d]}}
-    result {}
-}
-test {
-    name array-7.7
-    desc {existing element using -glob}
-    {array a} {e 1}
-    body {array get a -glob {[e]}}
-    result {e 1}
-}
-test {
-    name array-7.8
-    desc {multiple elements using -glob}
-    {array a} {e 1 f 2}
-    body {array get a -glob {[ef]}}
-    result {e 1 f 2}
-}
-test {
-    name array-7.9
-    desc {nonexistent element using -exact}
-    {array a} {e 1}
-    body {array get a -exact d}
-    result {}
-}
-test {
-    name array-7.10
-    desc {existing element using -exact}
-    {array a} {e 1}
-    body {array get a -exact e}
-    result {e 1}
-}
-test {
-    name array-7.11
-    desc {nonexistent element using -regexp}
-    {array a} {e 1}
-    body {array get a -regexp {^[d]}}
-    result {}
-}
-test {
-    name array-7.12
-    desc {existing element using -regexp}
-    {array a} {e 1}
-    body {array get a -regexp {^[e]}}
-    result {e 1}
-}
-test {
-    name array-7.13
-    desc {multiple elements using -regexp}
-    {array a} {e 1 f 2}
-    body {array get a -regexp {^[ef]}}
-    result {e 1 f 2}
-}
-
-############################ array-8.*: array names ############################
-test {
-    name array-8.1
-    desc {empty array}
-    {array a} {}
-    body {array names a}
-    result {}
-}
-test {
-    name array-8.2
-    desc {non-empty array}
-    {array a} {e 1}
-    body {array names a}
-    result {e}
-}
-test {
-    name array-8.3
-    desc {nonexistent element using default mode}
-    {array a} {e 1}
-    body {array names a {[d]}}
-    result {}
-}
-test {
-    name array-8.4
-    desc {existing element using default mode}
-    {array a} {e 1}
-    body {array names a {[e]}}
-    result {e}
-}
-test {
-    name array-8.5
-    desc {multiple elements using default mode}
-    {array a} {e 1 f 2}
-    body {array names a {[ef]}}
-    result {e f}
-}
-test {
-    name array-8.6
-    desc {nonexistent element using -glob}
-    {array a} {e 1}
-    body {array names a -glob {[d]}}
-    result {}
-}
-test {
-    name array-8.7
-    desc {existing element using -glob}
-    {array a} {e 1}
-    body {array names a -glob {[e]}}
-    result {e}
-}
-test {
-    name array-8.8
-    desc {multiple elements using -glob}
-    {array a} {e 1 f 2}
-    body {array names a -glob {[ef]}}
-    result {e f}
-}
-test {
-    name array-8.9
-    desc {nonexistent element using -exact}
-    {array a} {e 1}
-    body {array names a -exact d}
-    result {}
-}
-test {
-    name array-8.10
-    desc {existing element using -exact}
-    {array a} {e 1}
-    body {array names a -exact e}
-    result {e}
-}
-test {
-    name array-8.11
-    desc {nonexistent element using -regexp}
-    {array a} {e 1}
-    body {array names a -regexp {^[d]}}
-    result {}
-}
-test {
-    name array-8.12
-    desc {existing element using -regexp}
-    {array a} {e 1}
-    body {array names a -regexp {^[e]}}
-    result {e}
-}
-test {
-    name array-8.13
-    desc {multiple elements using -regexp}
-    {array a} {e 1 f 2}
-    body {array names a -regexp {^[ef]}}
-    result {e f}
-}
-
-######################### array-9.*: array statistics ##########################
-# Note: array-9.3 expected results obtained from Tcl version 8.5.7
-test {
-    name array-9.1
+    name array-5.1
     desc {empty array}
     {array a} {}
     body {array statistics a}
@@ -931,7 +613,7 @@ number of buckets with 10 or more entries: 0
 average search distance for entry: 0.0}
 }
 test {
-    name array-9.2
+    name array-5.2
     desc {single-element array}
     {array a} {e 1}
     body {array statistics a}
@@ -951,7 +633,7 @@ number of buckets with 10 or more entries: 0
 average search distance for entry: 1.0}
 }
 test {
-    name array-9.3
+    name array-5.3
     desc {thousand-element array}
     body {for {set i 0} {$i < 1000} {incr i} {set a($i) $i}; array statistics a}
     result
@@ -970,7 +652,7 @@ number of buckets with 10 or more entries: 0
 average search distance for entry: 1.3}
 }
 test {
-    name array-9.4
+    name array-5.4
     desc {collision attack}
     body {
         for {set i 16} {$i < 29} {incr i} {
@@ -994,7 +676,89 @@ number of buckets with 10 or more entries: 1
 average search distance for entry: 7.0}
 }
 
-###################### array-10.*: array search commands #######################
+################### array-6.*: array exists|size|names|get #####################
+foreach {
+    desc
+    name        dict        args            exists  size    names   get
+} {
+    "empty array"
+    array-6.1   {}          {}              1       0       {}      {}
+
+    "non-empty array"
+    array-6.2   {e 1}       {}              1       1       {e}     {e 1}
+
+    "nonexistent element using default mode"
+    array-6.3   {e 1}       {[d]}           0       0       {}      {}
+
+    "existing element using default mode"
+    array-6.4   {e 1}       {[e]}           1       1       {e}     {e 1}
+
+    "multiple elements using default mode"
+    array-6.5   {e 1 f 2}   {[ef]}          1       2       {e f}   {e 1 f 2}
+
+    "nonexistent element using -glob"
+    array-6.6   {e 1}       {-glob [d]}     0       0       {}      {}
+
+    "existing element using -glob"
+    array-6.7   {e 1}       {-glob [e]}     1       1       {e}     {e 1}
+
+    "multiple elements using -glob"
+    array-6.8   {e 1 f 2}   {-glob [ef]}    1       2       {e f}   {e 1 f 2}
+
+    "nonexistent element using -exact"
+    array-6.9   {e 1}       {-exact d}      0       0       {}      {}
+
+    "existing element using -exact"
+    array-6.10  {e 1}       {-exact e}      1       1       {e}     {e 1}
+
+    "nonexistent element using -regexp"
+    array-6.11  {e 1}       {-regexp ^[d]}  0       0       {}      {}
+
+    "existing element using -regexp"
+    array-6.12  {e 1}       {-regexp ^[e]}  1       1       {e}     {e 1}
+
+    "multiple elements using -regexp"
+    array-6.13  {e 1 f 2}   {-regexp ^[ef]} 1       2       {e f}   {e 1 f 2}
+} {
+    foreach cmd {exists size names get} {
+        test [string map [list %RESULT% [set $cmd]] {
+            name $name.$cmd
+            desc {$desc: \[array $cmd\]}
+            {scalar cmd} $cmd
+            {scalar args} $args
+            {array a} $dict
+            body {array $cmd a {*}$args}
+            result {%RESULT%}
+        }]
+    }
+}
+foreach {
+    cmd     small   large
+} {
+    exists  1       1
+    size    1       2
+    names   {e}     {e f}
+    get     {e 1}   {e 1 f {}}
+} {
+    test {
+        name array-6.14.$cmd
+        desc {increasing array size: \[array $cmd\]}
+        {scalar cmd} $cmd
+        {array a} {e 1}
+        body {list [array $cmd a] [set a(f) {}] [array $cmd a]}
+        result {[list $small {} $large]}
+    }
+    test {
+        name array-6.15.$cmd
+        desc {decreasing array size: \[array $cmd\]}
+        {scalar cmd} $cmd
+        {array a} {e 1 f {}}
+        body {list [array $cmd a] [unset a(f)] [array $cmd a]}
+        result {[list $large {} $small]}
+    }
+}
+
+######### array-7.*: array anymore|donesearch|nextelement|startsearch ##########
 
 # Cleanup.
 foreach namespace [namespace children] {
