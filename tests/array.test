@@ -758,6 +758,17 @@ foreach {
 }
 
 ######### array-7.*: array anymore|donesearch|nextelement|startsearch ##########
+foreach cmd {anymore donesearch nextelement} {
+    test {
+        name array-7.1.$cmd
+        desc {nonexistent search token}
+        {scalar cmd} $cmd
+        {array a} {}
+        body {array $cmd a s-1-a}
+        returnCodes error
+        result {couldn't find search "s-1-a"}
+    }
+}
 
 # Cleanup.
 foreach namespace [namespace children] {
