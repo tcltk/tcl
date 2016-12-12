@@ -1413,13 +1413,10 @@ ArrayNames(
  *
  * ArrayArgs --
  *
- *	Common argument parser for several [array] commands.
+ *	Common argument parser for numerous [array] commands.
  *
  * Compatibility:
- *	Supports [array startsearch], [array names], and [array size].
- *
- * Future expansion:
- *	Also support [array get] and [array unset].
+ *	Supports [array startsearch|exists|get|names|size|unset].
  *
  * Results:
  *	Arguments are parsed, results are written to caller variables, and
