@@ -1816,6 +1816,15 @@ EXTERN int		Tcl_FSUnloadFile(Tcl_Interp *interp,
 EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 				Tcl_ZlibStream zhandle,
 				Tcl_Obj *compressionDictionaryObj);
+/* Slot 631 is reserved */
+/* 632 */
+EXTERN void		Tcl_ArrayObjFirst(Tcl_Interp *interp,
+				Tcl_Obj *arrayObj,
+				Tcl_ArraySearch *searchPtr);
+/* 633 */
+EXTERN int		Tcl_ArrayObjNext(Tcl_Interp *interp,
+				Tcl_ArraySearch *searchPtr,
+				Tcl_Obj **keyPtrPtr, Tcl_Obj **valuePtrPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2482,6 +2491,9 @@ typedef struct TclStubs {
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
+    void (*reserved631)(void);
+    void (*tcl_ArrayObjFirst) (Tcl_Interp *interp, Tcl_Obj *arrayObj, Tcl_ArraySearch *searchPtr); /* 632 */
+    int (*tcl_ArrayObjNext) (Tcl_Interp *interp, Tcl_ArraySearch *searchPtr, Tcl_Obj **keyPtrPtr, Tcl_Obj **valuePtrPtr); /* 633 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3774,6 +3786,11 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FSUnloadFile) /* 629 */
 #define Tcl_ZlibStreamSetCompressionDictionary \
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
+/* Slot 631 is reserved */
+#define Tcl_ArrayObjFirst \
+	(tclStubsPtr->tcl_ArrayObjFirst) /* 632 */
+#define Tcl_ArrayObjNext \
+	(tclStubsPtr->tcl_ArrayObjNext) /* 633 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

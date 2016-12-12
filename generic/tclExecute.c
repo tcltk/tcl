@@ -766,6 +766,7 @@ static void		IllegalExprOperandType(Tcl_Interp *interp,
 static void		InitByteCodeExecution(Tcl_Interp *interp);
 static inline int	wordSkip(void *ptr);
 static void		ReleaseDictIterator(Tcl_Obj *objPtr);
+static void		ReleaseArrayIterator(Tcl_Obj *objPtr);
 /* Useful elsewhere, make available in tclInt.h or stubs? */
 static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, int numWords);
 static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, int numWords);
@@ -796,6 +797,11 @@ static const Tcl_ObjType exprCodeType = {
 static const Tcl_ObjType dictIteratorType = {
     "dictIterator",
     ReleaseDictIterator,
+    NULL, NULL, NULL
+};
+static const Tcl_ObjType arrayIteratorType = {
+    "arrayIterator",
+    ReleaseArrayIterator,
     NULL, NULL, NULL
 };
 
@@ -834,6 +840,45 @@ ReleaseDictIterator(
 
     dictPtr = objPtr->internalRep.twoPtrValue.ptr2;
     TclDecrRefCount(dictPtr);
+
+    objPtr->typePtr = NULL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReleaseArrayIterator --
+ *
+ *	This takes apart an array iterator that is stored in the given Tcl
+ *	object.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Deallocates memory, marks the object as being untyped.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ReleaseArrayIterator(
+    Tcl_Obj *objPtr)
+{
+    Tcl_ArraySearch *searchPtr;
+    Tcl_Obj *arrayPtr;
+
+    /*
+     * First kill the search, and then release the reference to the dictionary
+     * that we were holding.
+     */
+
+    searchPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    ckfree(searchPtr);
+
+    arrayPtr = objPtr->internalRep.twoPtrValue.ptr2;
+    TclDecrRefCount(arrayPtr);
 
     objPtr->typePtr = NULL;
 }
@@ -4179,6 +4224,60 @@ TEBCresume(
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_V(pcAdjustment, cleanup, 1);
+
+    {
+	int done;
+	Tcl_Obj *arrayObj, *statePtr, *keyPtr, *valuePtr;
+	Tcl_Obj *emptyPtr;
+	Tcl_ArraySearch *searchPtr;
+
+    case INST_ARRAY_FIRST:
+        pcAdjustment = 1;
+	opnd = TclGetUInt4AtPtr(pc+1);
+	TRACE(("%u => ", opnd));
+	arrayObj = POP_OBJECT();
+	searchPtr = ckalloc(sizeof(Tcl_ArraySearch));
+	Tcl_ArrayObjFirst(interp, arrayObj, searchPtr);
+	TclNewObj(statePtr);
+	statePtr->typePtr = &arrayIteratorType;
+	statePtr->internalRep.twoPtrValue.ptr1 = searchPtr;
+	statePtr->internalRep.twoPtrValue.ptr2 = arrayObj;
+	varPtr = LOCAL(opnd);
+	if (varPtr->value.objPtr) {
+	    if (varPtr->value.objPtr->typePtr == &arrayIteratorType) {
+		Tcl_Panic("mis-issued arrayFirst!");
+	    }
+	    TclDecrRefCount(varPtr->value.objPtr);
+	}
+	varPtr->value.objPtr = statePtr;
+	Tcl_IncrRefCount(statePtr);
+	NEXT_INST_F(1, 0, 0); /*### ??? */
+
+    case INST_ARRAY_NEXT:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	TRACE(("%u => ", opnd));
+	statePtr = (*LOCAL(opnd)).value.objPtr;
+	if (statePtr == NULL || statePtr->typePtr != &arrayIteratorType) {
+	    Tcl_Panic("mis-issued dictNext!");
+	}
+	searchPtr = statePtr->internalRep.twoPtrValue.ptr1;
+	done = Tcl_ArrayObjNext(interp, searchPtr, &keyPtr, &valuePtr);
+	if (done) {
+	    TclNewObj(emptyPtr);
+	    PUSH_OBJECT(emptyPtr);
+	    PUSH_OBJECT(emptyPtr);
+	} else {
+	    if (valuePtr != NULL) {
+		PUSH_OBJECT(valuePtr);
+	    } else {
+		PUSH_OBJECT(emptyPtr);
+	    }
+	    PUSH_OBJECT(keyPtr);
+	}
+	TRACE_APPEND(("\"%.30s\" \"%.30s\" %d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), done));
+	JUMP_PEEPHOLE_F(done, 5, 0); /* ### ??? */
+    }
 
     case INST_ARRAY_MAKE_IMM:
 	opnd = TclGetUInt4AtPtr(pc+1);

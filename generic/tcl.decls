@@ -2324,6 +2324,19 @@ declare 630 {
 	    Tcl_Obj *compressionDictionaryObj)
 }
 
+# TIP #421
+declare 632 {
+    void Tcl_ArrayObjFirst(Tcl_Interp *interp,
+	Tcl_Obj *arrayObj,
+	Tcl_ArraySearch *searchPtr)
+}
+declare 633 {
+    int Tcl_ArrayObjNext(Tcl_Interp *interp,
+	Tcl_ArraySearch *searchPtr,
+	Tcl_Obj **keyPtrPtr,
+	Tcl_Obj **valuePtrPtr)
+}
+
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
 ##############################################################################

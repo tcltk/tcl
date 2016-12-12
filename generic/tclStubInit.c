@@ -1416,6 +1416,9 @@ const TclStubs tclStubs = {
     Tcl_FindSymbol, /* 628 */
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
+    0, /* 631 */
+    Tcl_ArrayObjFirst, /* 632 */
+    Tcl_ArrayObjNext, /* 633 */
 };
 
 /* !END!: Do not edit above this line. */

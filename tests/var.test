@@ -22,6 +22,8 @@ if {"::tcltest" ni [namespace children]} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
+verbose [list line error skip start]
+
 testConstraint testupvar [llength [info commands testupvar]]
 testConstraint testgetvarfullname [llength [info commands testgetvarfullname]]
 testConstraint testsetnoerr [llength [info commands testsetnoerr]]
@@ -1025,9 +1027,8 @@ test var-23.5 {array command, for loop, array doesn't exist yet but has compiler
     }} 1
 } -result {"a" isn't an array}
 test var-23.6 {array enumeration} -setup {
-    catch {unset a}
-    catch {unset reslist}
-    catch {unset res}
+    unset -nocomplain a
+    unset -nocomplain reslist
     set reslist [list]
 } -body {
     array set a {a 1 b 2 c 3}
@@ -1042,9 +1043,10 @@ test var-23.6 {array enumeration} -setup {
     lsort -stride 2 -index 0 $reslist
 } -cleanup {
     unset -nocomplain a
+    unset -nocomplain reslist
 } -result {a 1 b 2 c 3}
 test var-23.7 {array enumeration, without value} -setup {
-    catch {unset a}
+    unset -nocomplain a
     set reslist [list]
 } -body {
     array set a {a 1 b 2 c 3}
@@ -1056,7 +1058,8 @@ test var-23.7 {array enumeration, without value} -setup {
     lsort $reslist
 } -result {a b c}
 test var-23.8 {array enumeration, nested} -setup {
-    catch {unset a}
+    unset -nocomplain a
+    unset -nocomplain reslist
     set reslist [list]
 } -body {
     array set a {a 1 b 2 c 3}
@@ -1072,6 +1075,44 @@ test var-23.8 {array enumeration, nested} -setup {
     # returned.
     lsort -stride 3 -index 0 $reslist
 } -result {a 1 {a 1 b 2 c 3} b 2 {a 1 b 2 c 3} c 3 {a 1 b 2 c 3}}
+test var-23.9 {array enumeration, continue} -setup {
+    unset -nocomplain a
+    unset -nocomplain reslist
+    set reslist [list]
+} -body {
+    array set a {a 1 b 2 c 3}
+    array for {k v} a {
+	if { $k eq {b} } {
+	    continue
+	}
+	lappend reslist $k $v
+    }
+    # there is no guarantee in which order the array contents will be
+    # returned.
+    lsort -stride 2 -index 0 $reslist
+} -cleanup {
+    unset -nocomplain a
+    unset -nocomplain reslist
+} -result {a 1 c 3}
+test var-23.10 {array enumeration, break} -setup {
+    unset -nocomplain a
+    unset -nocomplain reslist
+    set reslist [list]
+} -body {
+    array set a {a 1 b 2 c 3}
+    array for {k v} a {
+	if { $k eq {b} } {
+	    break
+	}
+	lappend reslist $k $v
+    }
+    # there is no guarantee in which order the array contents will be
+    # returned.
+    lsort -stride 2 -index 0 $reslist
+} -cleanup {
+    unset -nocomplain a
+    unset -nocomplain reslist
+} -result {a 1}
 
 catch {namespace delete ns}
 catch {unset arr}
@@ -1086,6 +1127,7 @@ catch {unset x}
 catch {unset y}
 catch {unset i}
 catch {unset a}
+catch {unset reslist}
 catch {unset xxxxx}
 catch {unset aaaaa}
 

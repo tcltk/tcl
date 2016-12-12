@@ -1335,6 +1335,37 @@ typedef struct Tcl_HashSearch {
 #define TCL_CUSTOM_PTR_KEYS	(-1)
 
 /*
+ * The following structure describes an enumerative search in progress on an
+ * array variable; this are invoked with options to the "array" command.
+ */
+
+# define TCL_ARRAYSEARCH_FOR_VALUE 0x0001
+typedef struct ArraySearch {
+    Tcl_Obj *name;		/* Name of this search */
+    int id;			/* Integer id used to distinguish among
+				 * multiple concurrent searches for the same
+				 * array. */
+    struct Var *varPtr;		/* Pointer to array variable that's being
+				 * searched. */
+    Tcl_Obj *arrayNameObj; 	/* Name of the array variable in the current
+                         	 * resolution context. Usually NULL except for
+				 * in "array for". */
+    int flags;                  /* Used by 'array for' to check if the
+                                 * value is wanted. */
+    Tcl_HashSearch search;	/* Info kept by the hash module about progress
+				 * through the array. */
+    Tcl_HashEntry *nextEntry;	/* Non-null means this is the next element to
+				 * be enumerated (it's leftover from the
+				 * Tcl_FirstHashEntry call or from an "array
+				 * anymore" command). NULL means must call
+				 * Tcl_NextHashEntry to get value to
+				 * return. */
+    struct ArraySearch *nextPtr;/* Next in list of all active searches for
+				 * this variable, or NULL if this is the last
+				 * one. */
+} Tcl_ArraySearch;
+
+/*
  * Structure definition for information used to keep track of searches through
  * dictionaries. These fields should not be accessed by code outside
  * tclDictObj.c

@@ -49,6 +49,9 @@ static int		CompileEachloopCmd(Tcl_Interp *interp,
 static int		CompileDictEachCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr, int collect);
+static int		CompileArrayEachCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 
 /*
  * The structures below define the AuxData types defined in this file.
@@ -286,6 +289,221 @@ TclCompileArrayExistsCmd(
     }
     return TCL_OK;
 }
+
+int
+TclCompileArrayForCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    return CompileArrayEachCmd(interp, parsePtr, cmdPtr, envPtr);
+}
+
+int
+CompileArrayEachCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr		/* Holds resulting instructions. */
+    )
+{
+    DefineLineInformation;
+    Tcl_Token *varsTokenPtr, *arrayTokenPtr, *bodyTokenPtr;
+    int keyVarIndex, valueVarIndex, nameChars, loopRange, catchRange;
+    int infoIndex, jumpDisplacement, bodyTargetOffset, emptyTargetOffset;
+    int numVars, endTargetOffset;
+    const char **argv;
+    Tcl_DString buffer;
+
+    /*
+     * There must be three arguments after the command.
+     */
+
+    if (parsePtr->numWords != 4) {
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    }
+
+    varsTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    arrayTokenPtr = TokenAfter(varsTokenPtr);
+    bodyTokenPtr = TokenAfter(arrayTokenPtr);
+    if (varsTokenPtr->type != TCL_TOKEN_SIMPLE_WORD ||
+            arrayTokenPtr->type != TCL_TOKEN_SIMPLE_WORD ||
+	    bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    }
+
+    /*
+     * Check we've got one or two variables and that they are local variables.
+     * Then extract their indices in the LVT.
+     */
+
+    Tcl_DStringInit(&buffer);
+    TclDStringAppendToken(&buffer, &varsTokenPtr[1]);
+    if (Tcl_SplitList(NULL, Tcl_DStringValue(&buffer), &numVars,
+	    &argv) != TCL_OK) {
+	Tcl_DStringFree(&buffer);
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    }
+    Tcl_DStringFree(&buffer);
+    /*
+     * both
+     *   array for {k} a {}
+     *   array for {k v} a {}
+     * are supported.
+     */
+    if (numVars != 1 && numVars != 2) {
+	ckfree(argv);
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    }
+
+    nameChars = strlen(argv[0]);
+    keyVarIndex = LocalScalar(argv[0], nameChars, envPtr);
+    valueVarIndex = -1;
+    if (numVars == 2) {
+    nameChars = strlen(argv[1]);
+    valueVarIndex = LocalScalar(argv[1], nameChars, envPtr);
+    }
+    ckfree(argv);
+
+    if ((keyVarIndex < 0) || (numVars == 2 && valueVarIndex < 0)) {
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    }
+
+    /*
+     * Allocate a temporary variable to store the iterator reference. The
+     * variable will contain a Tcl_ArraySearch reference which will be
+     * allocated by INST_ARRAY_FIRST and disposed when the variable is unset
+     * (at which point it should also have been finished with).
+     */
+
+    infoIndex = AnonymousLocal(envPtr);
+    if (infoIndex < 0) {
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    }
+
+    /*
+     * Preparation complete; issue instructions. Note that this code issues
+     * fixed-sized jumps. That simplifies things a lot!
+     */
+
+    /*
+     * Get the array and start the iteration. No catching of errors at
+     * this point.
+     */
+
+    CompileWord(envPtr, arrayTokenPtr, interp, 2);
+
+    /*
+     * Now we catch errors from here on
+     */
+
+    TclEmitInstInt4(	INST_ARRAY_FIRST, infoIndex,		envPtr);
+
+    catchRange = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
+    TclEmitInstInt4(	INST_BEGIN_CATCH4, catchRange,		envPtr);
+    ExceptionRangeStarts(envPtr, catchRange);
+
+    /*
+     * Set up the loop exception targets.
+     */
+
+    loopRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
+    ExceptionRangeStarts(envPtr, loopRange);
+
+    /*
+     * Inside the iteration, fetch and write the loop variables.
+     */
+
+    bodyTargetOffset = CurrentOffset(envPtr);
+
+    TclEmitInstInt4(	INST_ARRAY_NEXT, infoIndex,		envPtr);
+    emptyTargetOffset = CurrentOffset(envPtr);
+
+    Emit14Inst(		INST_STORE_SCALAR, keyVarIndex,		envPtr);
+    TclEmitOpcode(	INST_POP,				envPtr);
+    if (valueVarIndex != -1) {
+	Emit14Inst(		INST_STORE_SCALAR, valueVarIndex,	envPtr);
+    }
+    TclEmitOpcode(	INST_POP,				envPtr);
+
+    /*
+     * Compile the loop body itself. It should be stack-neutral.
+     */
+
+    BODY(bodyTokenPtr, 3);
+    TclEmitOpcode(	INST_POP, 				envPtr);
+
+    /*
+     * Both exception target ranges (error and loop) end here.
+     */
+
+    ExceptionRangeEnds(envPtr, loopRange);
+    ExceptionRangeEnds(envPtr, catchRange);
+
+    /*
+     * Continue (or just normally process) by getting the next pair of items
+     * from the dictionary and jumping back to the code to write them into
+     * variables if there is another pair.
+     */
+
+    TclAdjustStackDepth(-1, envPtr);
+    ExceptionRangeTarget(envPtr, loopRange, continueOffset);
+    TclEmitInstInt4(	INST_ARRAY_NEXT, infoIndex,		envPtr);
+    jumpDisplacement = bodyTargetOffset - CurrentOffset(envPtr);
+    /*
+     * checks the 'done' boolean on the stack and if false,
+     * goes back to the top of the loop
+     */
+    TclEmitInstInt4(	INST_JUMP_FALSE4, jumpDisplacement,	envPtr);
+    endTargetOffset = CurrentOffset(envPtr);
+    TclEmitInstInt1(	INST_JUMP1, 0,				envPtr);
+
+    /*
+     * Error handler "finally" clause, which force-terminates the iteration
+     * and rethrows the error.
+     */
+
+    ExceptionRangeTarget(envPtr, catchRange, catchOffset);
+    TclEmitOpcode(	INST_END_CATCH,				envPtr);
+    TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
+    TclEmitInt4(		infoIndex,			envPtr);
+    TclEmitOpcode(	INST_RETURN_STK,			envPtr);
+
+    /*
+     * Otherwise we're done and we
+     * need to pop the bogus key/value pair (pushed to keep stack calculations
+     * easy!) Note that we skip the END_CATCH. [Bug 1382528]
+     */
+
+    jumpDisplacement = CurrentOffset(envPtr) - emptyTargetOffset;
+    TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDisplacement,
+	    envPtr->codeStart + emptyTargetOffset);
+    jumpDisplacement = CurrentOffset(envPtr) - endTargetOffset;
+    TclUpdateInstInt1AtPc(INST_JUMP1, jumpDisplacement,
+	    envPtr->codeStart + endTargetOffset);
+    TclEmitOpcode(	INST_POP,				envPtr);
+    TclEmitOpcode(	INST_POP,				envPtr);
+    ExceptionRangeTarget(envPtr, loopRange, breakOffset);
+    TclFinalizeLoopExceptionRange(envPtr, loopRange);
+    TclEmitOpcode(	INST_END_CATCH,				envPtr);
+
+    /*
+     * Final stage of the command (normal case) is that we push an empty
+     * object (or push the accumulator as the result object). This is done
+     * last to promote peephole optimization when it's dropped immediately.
+     */
+
+    TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
+    TclEmitInt4(		infoIndex,			envPtr);
+    PushStringLiteral(envPtr, "");
+    return TCL_OK;
+}
+
 
 int
 TclCompileArraySetCmd(

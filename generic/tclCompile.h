@@ -821,8 +821,11 @@ typedef struct ByteCode {
 #define INST_LAPPEND_LIST_ARRAY_STK	187
 #define INST_LAPPEND_LIST_STK		188
 
+#define INST_ARRAY_FIRST		189
+#define INST_ARRAY_NEXT			190
+
 /* The last opcode */
-#define LAST_INST_OPCODE		188
+#define LAST_INST_OPCODE		190
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -1241,7 +1244,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 	int dd = (depth);						\
 	if (dd != (envPtr)->currStackDepth) {				\
 	    Tcl_Panic("bad stack depth computations: is %i, should be %i", \
-		    (envPtr)->currStackDepth, dd);		\
+		    (envPtr)->currStackDepth, dd); \
 	}								\
     } while (0)
 
