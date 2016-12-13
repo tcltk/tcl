@@ -741,23 +741,23 @@ foreach {
     exists  1       1
     size    1       2
     names   {e}     {e f}
-    get     {e 1}   {e 1 f {}}
+    get     {e 1}   {e 1 f 2}
 } {
     test {
         name array-6.14.$cmd
         desc {increasing array size: \[array $cmd\]}
         {scalar cmd} $cmd
         {array a} {e 1}
-        body {list [array $cmd a] [set a(f) {}] [array $cmd a]}
-        result {[list $small {} $large]}
+        body {list [array $cmd a][set a(f) 2; list] [array $cmd a]}
+        result {[list $small $large]}
     }
     test {
         name array-6.15.$cmd
         desc {decreasing array size: \[array $cmd\]}
         {scalar cmd} $cmd
-        {array a} {e 1 f {}}
-        body {list [array $cmd a] [unset a(f)] [array $cmd a]}
-        result {[list $large {} $small]}
+        {array a} {e 1 f 2}
+        body {list [array $cmd a][unset a(f)] [array $cmd a]}
+        result {[list $large $small]}
     }
 }
 
