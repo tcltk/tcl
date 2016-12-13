@@ -446,6 +446,7 @@ static void		MarkDead(ReflectedChannel *rcPtr);
  */
 
 static const char *msg_read_toomuch = "{read delivered more than requested}";
+static const char *msg_read_nonbyte = "{read delivered nonbyte result}";
 static const char *msg_write_toomuch = "{write wrote more than requested}";
 static const char *msg_write_nothing = "{write wrote nothing}";
 static const char *msg_seek_beforestart = "{Tried to seek before origin}";
@@ -1309,7 +1310,10 @@ ReflectInput(
 
     bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 
-    if (toRead < bytec) {
+    if (bytev == NULL) {
+	SetChannelErrorStr(rcPtr->chan, msg_read_nonbyte);
+        goto invalid;
+    } else if (toRead < bytec) {
 	SetChannelErrorStr(rcPtr->chan, msg_read_toomuch);
         goto invalid;
     }
@@ -2982,7 +2986,10 @@ ForwardProc(
 
 	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 
-	    if (paramPtr->input.toRead < bytec) {
+	    if (bytev == NULL) {
+		ForwardSetStaticError(paramPtr, msg_read_nonbyte);
+		paramPtr->input.toRead = -1;
+	    } else if (paramPtr->input.toRead < bytec) {
 		ForwardSetStaticError(paramPtr, msg_read_toomuch);
 		paramPtr->input.toRead = -1;
 	    } else {
