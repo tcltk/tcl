@@ -4515,7 +4515,8 @@ Tcl_GetsObj(
 
     if ((statePtr->encoding == NULL)
 	    && ((statePtr->inputTranslation == TCL_TRANSLATE_LF)
-		    || (statePtr->inputTranslation == TCL_TRANSLATE_CR))) {
+		    || (statePtr->inputTranslation == TCL_TRANSLATE_CR))
+	    && Tcl_GetByteArrayFromObj(objPtr, NULL) != NULL) {
 	return TclGetsObjBinary(chan, objPtr);
     }
 

@@ -420,7 +420,9 @@ Tcl_SetByteArrayLength(
 	Tcl_Panic("%s called with shared object", "Tcl_SetByteArrayLength");
     }
     if (objPtr->typePtr != &properByteArrayType) {
-	if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
+	if (length == 0) {
+	    Tcl_SetByteArrayObj(objPtr, NULL, 0);
+	} else if (TCL_ERROR == SetByteArrayFromAny(NULL, objPtr)) {
 	    return NULL;
 	}
     }
