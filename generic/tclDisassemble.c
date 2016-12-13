@@ -272,8 +272,8 @@ DisassembleByteCodeObj(
     sprintf(ptrBuf1, "%p", codePtr);
     sprintf(ptrBuf2, "%p", iPtr);
     Tcl_AppendPrintfToObj(bufferObj,
-	    "ByteCode 0x%s, refCt %" TCL_LL_MODIFIER "u, epoch %u, interp 0x%s (epoch %u)\n",
-	    ptrBuf1, (Tcl_WideInt)codePtr->refCount, codePtr->compileEpoch, ptrBuf2,
+	    "ByteCode 0x%s, refCt %u, epoch %u, interp 0x%s (epoch %u)\n",
+	    ptrBuf1, codePtr->refCount, codePtr->compileEpoch, ptrBuf2,
 	    iPtr->compileEpoch);
     Tcl_AppendToObj(bufferObj, "  Source ", -1);
     PrintSourceToObj(bufferObj, codePtr->source,
