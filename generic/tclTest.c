@@ -318,6 +318,9 @@ static int		TestparsevarnameObjCmd(ClientData dummy,
 static int		TestpreferstableObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+static int		TestprintObjCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestregexpObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -648,6 +651,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testparsevarname", TestparsevarnameObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testpreferstable", TestpreferstableObjCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testprint", TestprintObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testregexp", TestregexpObjCmd,
 	    NULL, NULL);
@@ -3814,6 +3819,43 @@ TestpreferstableObjCmd(
 {
     Interp *iPtr = (Interp *) interp;
     iPtr->packagePrefer = PKG_PREFER_STABLE;
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestprintObjCmd --
+ *
+ *	This procedure implements the "testprint" command.  It is
+ *	used for being able to test the Tcl_ObjPrintf() function.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestprintObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    Tcl_WideInt argv1 = 0;
+
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "format wideint");   
+    }
+
+    if (objc > 1) {
+	Tcl_GetWideIntFromObj(interp, objv[2], &argv1);
+    }
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv1));
     return TCL_OK;
 }
 
