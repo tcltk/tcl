@@ -1422,7 +1422,7 @@ TclpMakeTcpClientChannelMode(
 Tcl_Channel
 Tcl_OpenTcpServerEx(
     Tcl_Interp *interp,		/* For error reporting - may be NULL. */
-    int port,			/* Port number to open. */
+    const char *service,	/* Port number to open. */
     const char *myHost,		/* Name of local host. */
     unsigned int flags,		/* Flags. */
     Tcl_TcpAcceptProc *acceptProc,
@@ -1430,7 +1430,7 @@ Tcl_OpenTcpServerEx(
 				 * clients. */
     ClientData acceptProcData)	/* Data for the callback. */
 {
-    int status = 0, sock = -1, optvalue, chosenport;
+    int status = 0, sock = -1, optvalue, port, chosenport;
     struct addrinfo *addrlist = NULL, *addrPtr;	/* socket address */
     TcpState *statePtr = NULL;
     char channelName[SOCK_CHAN_LENGTH];
@@ -1475,6 +1475,11 @@ Tcl_OpenTcpServerEx(
     }
     retry++;
     chosenport = 0;
+
+    if (TclSockGetPort(interp, service, "tcp", &port) != TCL_OK) {
+	errorMsg = "invalid port number";
+	goto error;
+    }
 
     if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, 1, &errorMsg)) {
 	my_errno = errno;
