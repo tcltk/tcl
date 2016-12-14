@@ -2037,7 +2037,7 @@ Tcl_MakeTcpClientChannel(
 Tcl_Channel
 Tcl_OpenTcpServerEx(
     Tcl_Interp *interp,		/* For error reporting - may be NULL. */
-    int port,			/* Port number to open. */
+    const char *service,	/* Port number to open. */
     const char *myHost,		/* Name of local host. */
     unsigned int flags,		/* Flags. */
     Tcl_TcpAcceptProc *acceptProc,
@@ -2053,7 +2053,7 @@ Tcl_OpenTcpServerEx(
     char channelName[SOCK_CHAN_LENGTH];
     u_long flag = 1;		/* Indicates nonblocking mode. */
     const char *errorMsg = NULL;
-    int optvalue;
+    int optvalue, port;
 
     if (TclpHasSockets(interp) != TCL_OK) {
 	return NULL;
@@ -2072,6 +2072,11 @@ Tcl_OpenTcpServerEx(
     /*
      * Construct the addresses for each end of the socket.
      */
+
+    if (TclSockGetPort(interp, service, "tcp", &port) != TCL_OK) {
+	errorMsg = "invalid port number";
+	goto error;
+    }
 
     if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, 1, &errorMsg)) {
 	goto error;
