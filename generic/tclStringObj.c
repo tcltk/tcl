@@ -1866,7 +1866,12 @@ Tcl_AppendFormatToObj(
 #endif
 	    }
 	} else if ((ch == 'I') && (format[1] == '6') && (format[2] == '4')) {
-	    step += 2;
+	    format += (step + 2);
+	    step = Tcl_UtfToUniChar(format, &ch);
+	    useBig = 1;
+	} else if (ch == 'L') {
+	    format += step;
+	    step = Tcl_UtfToUniChar(format, &ch);
 	    useBig = 1;
 	}
 
@@ -2510,6 +2515,10 @@ AppendPrintfToObjVA(
 	    /* TODO: support for bignum arguments */
 	    case 'l':
 		++size;
+		p++;
+		break;
+	    case 'L':
+		size = 2;
 		p++;
 		break;
 	    case 'I':
