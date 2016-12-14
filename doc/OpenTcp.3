@@ -24,7 +24,7 @@ Tcl_Channel
 \fBTcl_OpenTcpServer\fR(\fIinterp, port, myaddr, proc, clientData\fR)
 .sp
 Tcl_Channel
-\fBTcl_OpenTcpServerEx\fR(\fIinterp, port, myaddr, flags, proc, clientData\fR)
+\fBTcl_OpenTcpServerEx\fR(\fIinterp, service, myaddr, flags, proc, clientData\fR)
 .sp
 .SH ARGUMENTS
 .AS Tcl_TcpAcceptProc clientData
@@ -33,6 +33,9 @@ Tcl interpreter to use for error reporting.  If non-NULL and an
 error occurs, an error message is left in the interpreter's result.
 .AP int port in
 A port number to connect to as a client or to listen on as a server.
+.AP "const char" *service in
+A string specifying the port number to connect to as a client or to listen on as
+ a server.
 .AP "const char" *host in
 A string specifying a host name or address for the remote end of the connection.
 .AP int myport in
