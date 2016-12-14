@@ -20,6 +20,7 @@ testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testdstring [llength [info commands testdstring]]
 testConstraint testconcatobj [llength [info commands testconcatobj]]
 testConstraint testdoubledigits [llength [info commands testdoubledigits]]
+testConstraint testprint [llength [info commands testprint]]
 
 # Big test for correct ordering of data in [expr]
 
@@ -4016,6 +4017,30 @@ test util-17.1 {bankers' rounding [Bug 3349507]} {ieeeFloatingPoint} {
     0x43ffffffffffffff 0xc3ffffffffffffff
     0x4400000000000000 0xc400000000000000
 }]
+
+test util-18.1 {Tcl_ObjPrintf} {testprint} {
+    testprint %lld [expr 2**63-1]
+} {9223372036854775807}
+
+test util-18.2 {Tcl_ObjPrintf} {testprint} {
+    testprint %I64d [expr 2**63-1]
+} {9223372036854775807}
+
+test util-18.3 {Tcl_ObjPrintf} {testprint} {
+    testprint %Ld [expr 2**63-1]
+} {9223372036854775807}
+
+test util-18.4 {Tcl_ObjPrintf} {testprint} {
+    testprint %lld [expr -2**63]
+} {-9223372036854775808}
+
+test util-18.5 {Tcl_ObjPrintf} {testprint} {
+    testprint %I64d [expr -2**63]
+} {-9223372036854775808}
+
+test util-18.6 {Tcl_ObjPrintf} {testprint} {
+    testprint %Ld [expr -2**63]
+} {-9223372036854775808}
 
 set ::tcl_precision $saved_precision
 
