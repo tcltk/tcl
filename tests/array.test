@@ -836,6 +836,57 @@ foreach {
         result $result
     }
 }
+test {
+    name array-7.16
+    desc "unset visited element during search"
+    {array a} {aa 11 bb 22 cc 33 dd 44 ee 55 ff 66}
+    body {
+        set result {}
+        set s [array startsearch a]
+        while {[array anymore a $s]} {
+            set elem [array nextelement a $s]
+            unset a($elem)
+            lappend result $elem
+        }
+        array donesearch a $s
+        list $result [array size a]
+    }
+    result {{ff dd bb ee cc aa} 0}
+}
+test {
+    name array-7.17
+    desc "unset future element during search"
+    {array a} {aa 11 bb 22 cc 33 dd 44 ee 55 ff 66}
+    body {
+        set result {}
+        set s [array startsearch a]
+        while {[array anymore a $s]} {
+            set elem [array nextelement a $s]
+            if {$elem eq "bb"} {
+                unset a(ee)
+            }
+            lappend result $elem
+        }
+        array donesearch a $s
+        return $result
+    }
+    result {ff dd bb cc aa}
+}
+test {
+    name array-7.18
+    desc "unset before nextelement"
+    {array a} {aa 11 bb 22 cc 33 dd 44 ee 55 ff 66}
+    body {
+        set result {}
+        set s [array startsearch a]
+        array anymore a $s
+        unset a(ff)
+        array nextelement a $s
+        array donesearch a $s
+        array names $result
+    }
+    result {dd bb ee cc aa}
+}
 
 # Cleanup.
 foreach namespace [namespace children] {
