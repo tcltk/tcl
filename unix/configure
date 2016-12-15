@@ -6859,9 +6859,6 @@ $as_echo "enabled $tcl_ok debugging" >&6; }
 
 
 
-$as_echo "#define TCL_TOMMATH 1" >>confdefs.h
-
-
 $as_echo "#define MP_PREC 4" >>confdefs.h
 
 

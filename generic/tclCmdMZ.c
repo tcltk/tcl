@@ -323,7 +323,7 @@ Tcl_RegexpObjCmd(
 
 	if (match == 0) {
 	    /*
-	     * We want to set the value of the intepreter result only when
+	     * We want to set the value of the interpreter result only when
 	     * this is the first time through the loop.
 	     */
 
@@ -1176,8 +1176,7 @@ StringFirstCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *needleStr, *haystackStr;
-    int match, start, needleLen, haystackLen;
+    int start = 0;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1185,82 +1184,23 @@ StringFirstCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * We are searching haystackStr for the sequence needleStr.
-     */
-
-    match = -1;
-    start = 0;
-    haystackLen = -1;
-
-    needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
-    haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
-
     if (objc == 4) {
-	/*
-	 * If a startIndex is specified, we will need to fast forward to that
-	 * point in the string before we think about a match.
-	 */
+	int size = Tcl_GetCharLength(objv[2]);
 
-	if (TclGetIntForIndexM(interp, objv[3], haystackLen-1,
-		&start) != TCL_OK){
+	if (TCL_OK != TclGetIntForIndexM(interp, objv[3], size - 1, &start)) {
 	    return TCL_ERROR;
 	}
 
-	/*
-	 * Reread to prevent shimmering problems.
-	 */
-
-	needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
-	haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
-
-	if (start >= haystackLen) {
-	    goto str_first_done;
-	} else if (start > 0) {
-	    haystackStr += start;
-	    haystackLen -= start;
-	} else if (start < 0) {
-	    /*
-	     * Invalid start index mapped to string start; Bug #423581
-	     */
-
+	if (start < 0) {
 	    start = 0;
 	}
-    }
-
-    /*
-     * If the length of the needle is more than the length of the haystack, it
-     * cannot be contained in there so we can avoid searching. [Bug 2960021]
-     */
-
-    if (needleLen > 0 && needleLen <= haystackLen) {
-	register Tcl_UniChar *p, *end;
-
-	end = haystackStr + haystackLen - needleLen + 1;
-	for (p = haystackStr;  p < end;  p++) {
-	    /*
-	     * Scan forward to find the first character.
-	     */
-
-	    if ((*p == *needleStr) && (memcmp(needleStr, p,
-		    sizeof(Tcl_UniChar) * (size_t)needleLen) == 0)) {
-		match = p - haystackStr;
-		break;
-	    }
+	if (start >= size) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+	    return TCL_OK;
 	}
     }
-
-    /*
-     * Compute the character index of the matching string by counting the
-     * number of characters before the match.
-     */
-
-    if ((match != -1) && (objc == 4)) {
-	match += start;
-    }
-
-  str_first_done:
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringFind(objv[1],
+	    objv[2], start)));
     return TCL_OK;
 }
 
@@ -1289,76 +1229,31 @@ StringLastCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *needleStr, *haystackStr, *p;
-    int match, start, needleLen, haystackLen;
+    int last = INT_MAX - 1;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"needleString haystackString ?startIndex?");
+		"needleString haystackString ?lastIndex?");
 	return TCL_ERROR;
     }
 
-    /*
-     * We are searching haystackString for the sequence needleString.
-     */
-
-    match = -1;
-    start = 0;
-    haystackLen = -1;
-
-    needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
-    haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
-
     if (objc == 4) {
-	/*
-	 * If a startIndex is specified, we will need to restrict the string
-	 * range to that char index in the string
-	 */
+	int size = Tcl_GetCharLength(objv[2]);
 
-	if (TclGetIntForIndexM(interp, objv[3], haystackLen-1,
-		&start) != TCL_OK){
+	if (TCL_OK != TclGetIntForIndexM(interp, objv[3], size - 1, &last)) {
 	    return TCL_ERROR;
 	}
 
-	/*
-	 * Reread to prevent shimmering problems.
-	 */
-
-	needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
-	haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
-
-	if (start < 0) {
-	    goto str_last_done;
-	} else if (start < haystackLen) {
-	    p = haystackStr + start + 1 - needleLen;
-	} else {
-	    p = haystackStr + haystackLen - needleLen;
+	if (last < 0) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+	    return TCL_OK;
 	}
-    } else {
-	p = haystackStr + haystackLen - needleLen;
-    }
-
-    /*
-     * If the length of the needle is more than the length of the haystack, it
-     * cannot be contained in there so we can avoid searching. [Bug 2960021]
-     */
-
-    if (needleLen > 0 && needleLen <= haystackLen) {
-	for (; p >= haystackStr; p--) {
-	    /*
-	     * Scan backwards to find the first character.
-	     */
-
-	    if ((*p == *needleStr) && !memcmp(needleStr, p,
-		    sizeof(Tcl_UniChar) * (size_t)needleLen)) {
-		match = p - haystackStr;
-		break;
-	    }
+	if (last >= size) {
+	    last = size - 1;
 	}
     }
-
-  str_last_done:
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringLast(objv[1],
+	    objv[2], last)));
     return TCL_OK;
 }
 
@@ -2223,9 +2118,7 @@ StringReptCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *string1;
-    char *string2;
-    int count, index, length1, length2;
+    int count;
     Tcl_Obj *resultPtr;
 
     if (objc != 3) {
@@ -2243,70 +2136,15 @@ StringReptCmd(
 
     if (count == 1) {
 	Tcl_SetObjResult(interp, objv[1]);
-	goto done;
+	return TCL_OK;
     } else if (count < 1) {
-	goto done;
-    }
-    string1 = TclGetStringFromObj(objv[1], &length1);
-    if (length1 <= 0) {
-	goto done;
+	return TCL_OK;
     }
 
-    /*
-     * Only build up a string that has data. Instead of building it up with
-     * repeated appends, we just allocate the necessary space once and copy
-     * the string value in.
-     *
-     * We have to worry about overflow [Bugs 714106, 2561746].
-     * At this point we know 1 <= length1 <= INT_MAX and 2 <= count <= INT_MAX.
-     * We need to keep 2 <= length2 <= INT_MAX.
-     */
-
-    if (count > INT_MAX/length1) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"result exceeds max size for a Tcl value (%d bytes)",
-		INT_MAX));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+    if (TCL_OK != TclStringRepeat(interp, objv[1], count, &resultPtr)) {
 	return TCL_ERROR;
     }
-    length2 = length1 * count;
-
-    /*
-     * Include space for the NUL.
-     */
-
-    string2 = attemptckalloc((unsigned) length2 + 1);
-    if (string2 == NULL) {
-	/*
-	 * Alloc failed. Note that in this case we try to do an error message
-	 * since this is a case that's most likely when the alloc is large and
-	 * that's easy to do with this API. Note that if we fail allocating a
-	 * short string, this will likely keel over too (and fatally).
-	 */
-
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"string size overflow, out of memory allocating %u bytes",
-		length2 + 1));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
-	return TCL_ERROR;
-    }
-    for (index = 0; index < count; index++) {
-	memcpy(string2 + (length1 * index), string1, (size_t) length1);
-    }
-    string2[length2] = '\0';
-
-    /*
-     * We have to directly assign this instead of using Tcl_SetStringObj (and
-     * indirectly TclInitStringRep) because that makes another copy of the
-     * data.
-     */
-
-    TclNewObj(resultPtr);
-    resultPtr->bytes = string2;
-    resultPtr->length = length2;
     Tcl_SetObjResult(interp, resultPtr);
-
-  done:
     return TCL_OK;
 }
 
