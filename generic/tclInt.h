@@ -962,6 +962,10 @@ typedef struct Proc {
     Tcl_Obj *bodyPtr;		/* Points to the ByteCode object for
 				 * procedure's body command. */
     int numArgs;		/* Number of formal parameters. */
+    int numPreCompiledLocals;	/* TIP #460: Count of locals recognized by
+				 * the compiler including arguments and
+				 * other locals, but not including
+				 * variables that need resolvers. */
     int numCompiledLocals;	/* Count of local variables recognized by the
 				 * compiler including arguments and
 				 * temporaries. */

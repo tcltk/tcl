@@ -400,7 +400,7 @@ TclCreateProc(
     const char *args, *bytes, *p;
     register CompiledLocal *localPtr = NULL;
     Tcl_Obj *defPtr;
-    int precompiled = 0;
+    int precompiled = 0, frameIndex = 0;
 
     if (bodyPtr->typePtr == &tclProcBodyType) {
 	/*
@@ -463,6 +463,7 @@ TclCreateProc(
 	procPtr->refCount = 1;
 	procPtr->bodyPtr = bodyPtr;
 	procPtr->numArgs = 0;	/* Actual argument count is set below. */
+	procPtr->numPreCompiledLocals = 0;
 	procPtr->numCompiledLocals = 0;
 	procPtr->firstLocalPtr = NULL;
 	procPtr->lastLocalPtr = NULL;
@@ -496,10 +497,11 @@ TclCreateProc(
 	localPtr = procPtr->firstLocalPtr;
     } else {
 	procPtr->numArgs = numArgs;
+	procPtr->numPreCompiledLocals = numArgs;
 	procPtr->numCompiledLocals = numArgs;
     }
 
-    for (i = 0; i < numArgs; i++) {
+    for (i = 0; i < numArgs; i++, frameIndex++) {
 	int fieldCount, nameLength, valueLength, varFlags = 0;
 	const char **fieldValues, *varName;
 
@@ -522,7 +524,7 @@ TclCreateProc(
 		    "FORMALARGUMENTFORMAT", NULL);
 	    goto procError;
 	}
-	if ((fieldCount == 0) || (*varName == 0)) {
+	if ((fieldCount == 0) || (*varName == '\0')) {
 	    ckfree(fieldValues);
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument with no name", -1));
@@ -571,38 +573,18 @@ TclCreateProc(
 	    p++;
 	}
 
-        if ((i == numArgs - 1)
-                && (nameLength == 4)
+	if (*varName == '*' && nameLength > 1) {
+            /*
+             * TIP #460: Indicate this argument is to be a future link var.
+             */
+
+            varFlags |= VAR_LINK;
+        } else if ((i == numArgs - 1)
+        	&& (nameLength == 4)
                 && (*varName == 'a')
                 && (strcmp(varName, "args") == 0)) {
             varFlags |= VAR_IS_ARGS;
-        } else if (*varName == '*' && nameLength > 1) {
-            /*
-             * Names that begin with an asterisk shall be handled as a link
-             * var to be linked at some point in the future.
-             */
-
-            if (fieldCount == 2) {
-                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                        "procedure \"%s\": formal parameter \"%s\" "
-                        " is to be a link and can't have a default value",
-                        procName, fieldValues[0]));
-                ckfree(fieldValues);
-                Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-                        "FORMALARGUMENTFORMAT", NULL);
-                goto procError;
-            } else {
-                varName++;
-                nameLength--;
-
-                /*
-                 * Indicate this argument is to be a future link var. Does
-                 * there need to be a new VAR_FUTURE_LINK flag?
-                 */
-
-                varFlags |= VAR_LINK;
-            }
-        }
+        } 
 
 	if (precompiled) {
 	    /*
@@ -654,11 +636,11 @@ TclCreateProc(
 	    }
 
             /*
-             * Set the VAR_IS_ARGS flag, etc, if needed.
+             * Set the VAR_IS_ARGS flag, if needed.
              */
              
-            if (varFlags) {
-                localPtr->flags |= varFlags;
+            if (varFlags & VAR_IS_ARGS) {
+                localPtr->flags |= VAR_IS_ARGS;
             }
 	    localPtr = localPtr->nextPtr;
 	} else {
@@ -667,16 +649,47 @@ TclCreateProc(
              * local variables for the argument.
              */
 
-            localPtr = ckalloc(TclOffset(CompiledLocal, name) + nameLength+1);
-            if (procPtr->firstLocalPtr == NULL) {
+	    localPtr = ckalloc(TclOffset(CompiledLocal, name) + nameLength+1);
+	    if (procPtr->firstLocalPtr == NULL) {
                 procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
             } else {
                 procPtr->lastLocalPtr->nextPtr = localPtr;
                 procPtr->lastLocalPtr = localPtr;
             }
+	    /* 
+	     * TIP #460: If this parameter is to be a link then add a new 
+	     * local variable for the link and adjust the 
+	     * frameIndex and the Proc's numCompiledLocals to reflect it. 
+	     * For locality, we keep the link adjacent to the variable's
+             * value it'll be linking to.
+	     */
+
+	    if (varFlags & VAR_LINK) {
+		varFlags &= ~VAR_LINK;
+
+                localPtr->nameLength = nameLength - 1;
+                localPtr->frameIndex = frameIndex++;
+                localPtr->flags = VAR_LINK;
+                localPtr->resolveInfo = NULL;
+		localPtr->defValuePtr = NULL;
+
+		/*
+		 * Here, varName length is always > 1.
+		 */
+
+		memcpy(localPtr->name, varName + 1, localPtr->nameLength + 1);
+		localPtr = ckalloc(TclOffset(CompiledLocal, name) 
+			+ nameLength + 1);
+
+		procPtr->numPreCompiledLocals++;
+		procPtr->numCompiledLocals++;
+		procPtr->lastLocalPtr->nextPtr = localPtr;
+                procPtr->lastLocalPtr = localPtr;
+            }
+
             localPtr->nextPtr = NULL;
             localPtr->nameLength = nameLength;
-            localPtr->frameIndex = i;
+            localPtr->frameIndex = frameIndex;
 	    localPtr->flags = (varFlags | VAR_ARGUMENT);
             localPtr->resolveInfo = NULL;
 
@@ -1353,7 +1366,7 @@ InitLocalCache(
     Interp *iPtr = procPtr->iPtr;
     ByteCode *codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
     int localCt = procPtr->numCompiledLocals;
-    int numArgs = procPtr->numArgs, i = 0;
+    int numVars = procPtr->numPreCompiledLocals, i = 0;
 
     Tcl_Obj **namePtr;
     Var *varPtr;
@@ -1370,7 +1383,7 @@ InitLocalCache(
 
     localCachePtr = ckalloc(sizeof(LocalCache)
 	    + (localCt - 1) * sizeof(Tcl_Obj *)
-	    + numArgs * sizeof(Var));
+	    + numVars * sizeof(Var));
 
     namePtr = &localCachePtr->varName0;
     varPtr = (Var *) (namePtr + localCt);
@@ -1385,16 +1398,17 @@ InitLocalCache(
 	    Tcl_IncrRefCount(*namePtr);
 	}
 
-	if (i < numArgs) {
-	    varPtr->flags = (localPtr->flags & VAR_IS_ARGS);
+	if (i < numVars) {
+	    varPtr->flags = (localPtr->flags & ~VAR_ARGUMENT);
 	    varPtr->value.objPtr = localPtr->defValuePtr;
+
+	    if (!hasArgLinks && TclIsVarLink(varPtr)) {
+                hasArgLinks = 1;
+                procPtr->cmdPtr->flags |= CMD_HAS_ARG_LINKS;
+            }
+
 	    varPtr++;
 	    i++;
-	}
-
-	if (!hasArgLinks && (localPtr->flags & VAR_LINK)) {
-	    hasArgLinks = 1;
-	    procPtr->cmdPtr->flags |= CMD_HAS_ARG_LINKS;
 	}
 
 	namePtr++;
@@ -1487,7 +1501,7 @@ InitArgsAndLocals(
     }
 
     /*
-     * If the command has any formals with the VAR_LINK flag then
+     * TIP #460: If the command has any formals with the VAR_LINK flag then
      * cmdPtr->flags will have CMD_HAS_ARG_LINKS. Walk through the
      * the proc's local variable list and set things up as needed.
      */
@@ -1495,13 +1509,11 @@ InitArgsAndLocals(
     if (procPtr->cmdPtr->flags & CMD_HAS_ARG_LINKS) {
 	CallFrame *upFramePtr = NULL;
 	Var *otherPtr, *arrayPtr;
-	CompiledLocal *localPtr = procPtr->firstLocalPtr;
-	int done = 1;  
+	int done = 1;
 
 	imax = ((argCt < numArgs) ? argCt : numArgs);
-	for (; i < imax; i++, localPtr = localPtr->nextPtr,
-		varPtr++, defPtr ? defPtr++ : defPtr) {
-	    Tcl_Obj *objPtr = argObjs[i];
+	for (; i < numArgs; i++, varPtr++, defPtr++) {
+	    Tcl_Obj *objPtr = i < argCt ? argObjs[i] : defPtr->value.objPtr;
 
             /*
              * Now check if this formal was defined to be linked to its
@@ -1509,7 +1521,17 @@ InitArgsAndLocals(
              * any linking itself.
              */
 
-	    if (TclIsVarLink(localPtr)) {
+	    if (TclIsVarLink(defPtr)) {
+		defPtr++;
+
+		if (!objPtr) {
+		    if (defPtr->value.objPtr) {
+		        objPtr = defPtr->value.objPtr;
+		    } else {
+			goto incorrectArgs;
+		    }
+		}
+
 		if (upFramePtr == NULL) {
 		    if (TclObjGetFrame(interp, NULL, &upFramePtr) == -1) {
                         i = -1;    /* Tell incorrectArgs we set the error */
@@ -1536,7 +1558,15 @@ InitArgsAndLocals(
 		if (TclIsVarInHash(otherPtr)) {
 		    VarHashRefCount(otherPtr)++;
 		}
+
+		varPtr++;
+		varPtr->flags = 0;
+		varPtr->value.objPtr = objPtr;
+		Tcl_IncrRefCount(objPtr);       /* Local var is a reference */
 	    } else if (i != numArgs-1) {
+		if (!objPtr) {
+                    goto incorrectArgs;
+            	}
 		varPtr->flags = 0;
 		varPtr->value.objPtr = objPtr;
 		Tcl_IncrRefCount(objPtr);	/* Local var is a reference */
@@ -1553,11 +1583,12 @@ InitArgsAndLocals(
 	}
 
         /*
-         * These tests are true only when all arguments are provided by the
-         * caller and there is no formal 'args'.
+         * Jumps to correctArgs only when there's no formal 'args'
+	 * as the last parameter or when the last parameter isn't
+	 * a link.
          */
 
-	if (done && argCt == numArgs) {
+	if (done) {
 	    goto correctArgs;
 	}
     } else {
@@ -1624,7 +1655,7 @@ InitArgsAndLocals(
      */
 
   correctArgs:
-    if (numArgs < localCt) {
+    if (procPtr->numPreCompiledLocals < localCt) {
 	if (!framePtr->nsPtr->compiledVarResProc
 		&& !((Interp *)interp)->resolverPtr) {
 	    memset(varPtr, 0, (localCt - numArgs)*sizeof(Var));
@@ -2109,12 +2140,17 @@ TclProcCompileProc(
 
 	iPtr->compiledProcPtr = procPtr;
 
-	if (procPtr->numCompiledLocals > procPtr->numArgs) {
+	/*
+	 * TIP #460: We may need to hang on to more locals than just the
+         * Proc's formals.
+	 */
+
+	if (procPtr->numCompiledLocals > procPtr->numPreCompiledLocals) {
 	    CompiledLocal *clPtr = procPtr->firstLocalPtr;
 	    CompiledLocal *lastPtr = NULL;
-	    int i, numArgs = procPtr->numArgs;
+	    int i, numVars = procPtr->numPreCompiledLocals;
 
-	    for (i = 0; i < numArgs; i++) {
+	    for (i = 0; i < numVars; i++) {
 		lastPtr = clPtr;
 		clPtr = clPtr->nextPtr;
 	    }
@@ -2138,7 +2174,7 @@ TclProcCompileProc(
 		}
 		ckfree(toFree);
 	    }
-	    procPtr->numCompiledLocals = procPtr->numArgs;
+	    procPtr->numCompiledLocals = procPtr->numPreCompiledLocals;
 	}
 
 	(void) TclPushStackFrame(interp, &framePtr, (Tcl_Namespace *) nsPtr,
