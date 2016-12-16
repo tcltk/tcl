@@ -147,6 +147,21 @@ if {[testConstraint win]} {
     close [open $fname w]
 }
 
+test winFile-4.0 {
+    Enhanced NTFS user/group permissions: test no acccess
+} -constraints {
+    win notNTFS
+} -setup {
+    set owner [getuser $fname]
+    set user $::env(USERDOMAIN)\\$::env(USERNAME)
+} -body {
+    # Clean out all well-known ACLs
+    catch {cacls $fname /E /R "Everyone"} result
+    catch {cacls $fname /E /R $user} result
+    catch {cacls $fname /E /R $owner} result
+    cacls $fname /E /P $user:N
+    test_access $fname 0 0
+} -result {}
 test winFile-4.1 {
     Enhanced NTFS user/group permissions: test readable only
 } -constraints {

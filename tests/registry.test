@@ -505,7 +505,7 @@ test registry-6.20 {GetValue: values with Unicode strings with embedded nulls} {
     registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } "foo ba r baz"
-test registry-6.21 {GetValue: very long value names and values} {pcOnly reg} {
+test registry-6.21 {GetValue: very long value names and values} {win reg} {
     registry set HKEY_CURRENT_USER\\TclFoobar [string repeat k 16383] [string repeat x 16383] multi_sz
     set result [registry get HKEY_CURRENT_USER\\TclFoobar [string repeat k 16383]]
     registry delete HKEY_CURRENT_USER\\TclFoobar
