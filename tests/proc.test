@@ -490,7 +490,7 @@ test proc-8.8 {Auto argument linking, default for auto-link formal} -body {
     }}
 } -constraints procbodytest -returnCodes error -cleanup {
     catch {rename P {}}
-} -result {procedure "P": formal parameter "*a"  is to be a link and can't have a default value}
+} -result {procedure "P": formal parameter "*a"  is to be linked and must not have a default value}
 
 test proc-8.9 {Auto argument linking, bad variable} -body {
     proc P {*a} {
@@ -500,6 +500,52 @@ test proc-8.9 {Auto argument linking, bad variable} -body {
 } -constraints procbodytest -returnCodes error -cleanup {
     catch {rename P {}}
 } -result {can't access "mumbo::jumbo": parent namespace doesn't exist}
+
+test proc-8.10 {Auto argument linking, empty link name} -body {
+    proc P {*} {
+        incr {}
+    }
+    apply {{} {
+        P a
+        set a
+    }}
+} -cleanup {
+    rename P {}
+} -result {1}
+
+test proc-8.11 {Auto argument linking, link name consistency} -body {
+    proc P {**a} {
+        incr *a
+    }
+    apply {{} {
+        P a
+        set a
+    }}
+} -cleanup {
+    rename P {}
+} -result {1}
+
+test proc-8.12 {Auto argument linking, info args} -body {
+    proc P {*a b *c} {}
+    info args P
+} -cleanup {
+    rename P {}
+} -result {*a b *c}
+
+test proc-8.13 {Auto argument linking, info locals} -body {
+    proc P {*a b *c} {info locals}
+    P a b c
+} -cleanup {
+    rename P {}
+} -result {*a b *c}
+
+test proc-8.14 {Auto argument linking, linked arg retains value} -body {
+    proc P {*a} {set *a}
+    P a
+} -cleanup {
+    rename P {}
+} -result {a}
+
 
 
 # cleanup

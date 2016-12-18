@@ -1596,15 +1596,22 @@ InitArgsAndLocals(
 
     int numArgVars = procPtr->numArgsCompiledLocals;
     if (numArgVars > numArgs) {
-        CallFrame *upFramePtr = NULL;
+        CallFrame *upFramePtr;
         Var *otherPtr, *arrayPtr;
+
+	/*
+         * If we got here, assume we'll be resolving links.
+         */
+
+	if (TclObjGetFrame(interp, NULL, &upFramePtr) == -1) {
+            i = -1;    /* Tell incorrectArgs we set the error */
+            goto incorrectArgs;
+        }
 
 	defPtr++;	/* Here, defPtr cannot be NULL */
 	for(i = numArgs; i < numArgVars; i++, varPtr++, defPtr++) {
-
             if (TclIsVarLink(defPtr)) {
 		int argIndex;
-		Tcl_Obj *objPtr;
 
 		/*
                  * Something went horribly wrong if this comes to a Panic.
@@ -1614,35 +1621,29 @@ InitArgsAndLocals(
 			&argIndex)) 
 			|| (argIndex < 0 || argIndex > numArgs - 1)) {
 		    Tcl_Panic("Link variable points to an invalid local index.");
-		}
+		} else {
+		    Tcl_Obj *objPtr = argObjs[argIndex];	
 
-		objPtr = argObjs[argIndex];	
-                if (upFramePtr == NULL) {
-                    if (TclObjGetFrame(interp, NULL, &upFramePtr) == -1) {
+                    /*
+                     * Locate the other variable.
+                     */
+
+                    ((Interp *)interp)->varFramePtr = upFramePtr;
+                    otherPtr = TclObjLookupVarEx(interp, objPtr, NULL,
+                            TCL_LEAVE_ERR_MSG, "access", /*createPart1*/ 1,
+                            /*createPart2*/ 1, &arrayPtr);
+                    ((Interp *)interp)->varFramePtr = framePtr;
+                    if (otherPtr == NULL) {
                         i = -1;    /* Tell incorrectArgs we set the error */
                         goto incorrectArgs;
                     }
-                }
 
-                /*
-                 * Locate the other variable.
-                 */
-
-                ((Interp *)interp)->varFramePtr = upFramePtr;
-                otherPtr = TclObjLookupVarEx(interp, objPtr, NULL,
-                        TCL_LEAVE_ERR_MSG, "access", /*createPart1*/ 1,
-                        /*createPart2*/ 1, &arrayPtr);
-                ((Interp *)interp)->varFramePtr = framePtr;
-                if (otherPtr == NULL) {
-                    i = -1;	/* Tell incorrectArgs we set the error */
-                    goto incorrectArgs;
-                }
-
-                varPtr->flags = VAR_LINK;
-                varPtr->value.linkPtr = otherPtr;
-                if (TclIsVarInHash(otherPtr)) {
-                    VarHashRefCount(otherPtr)++;
-                }
+                    varPtr->flags = VAR_LINK;
+                    varPtr->value.linkPtr = otherPtr;
+                    if (TclIsVarInHash(otherPtr)) {
+                        VarHashRefCount(otherPtr)++;
+                    }
+		}
             }
         }
     }
