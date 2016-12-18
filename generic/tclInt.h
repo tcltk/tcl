@@ -962,10 +962,9 @@ typedef struct Proc {
     Tcl_Obj *bodyPtr;		/* Points to the ByteCode object for
 				 * procedure's body command. */
     int numArgs;		/* Number of formal parameters. */
-    int numPreCompiledLocals;	/* TIP #460: Count of locals recognized by
-				 * the compiler including arguments and
-				 * other locals, but not including
-				 * variables that need resolvers. */
+
+    int numArgsCompiledLocals;	/* TIP #460: Count of locals recognized by
+				 * the compiler used in the arguments list. */
     int numCompiledLocals;	/* Count of local variables recognized by the
 				 * compiler including arguments and
 				 * temporaries. */
@@ -1700,7 +1699,6 @@ typedef struct Command {
 #define CMD_COMPILES_EXPANDED	    0x08
 #define CMD_REDEF_IN_PROGRESS	    0x10
 #define CMD_VIA_RESOLVER	    0x20
-#define CMD_HAS_ARG_LINKS	    0x40
 
 /*
  *----------------------------------------------------------------
