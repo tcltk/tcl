@@ -1613,15 +1613,21 @@ InitArgsAndLocals(
             if (TclIsVarLink(defPtr)) {
 		int argIndex;
 
-		/*
-                 * Something went horribly wrong if this comes to a Panic.
-                 */
-
 		if (TCL_OK != (TclGetIntFromObj(interp, defPtr->value.objPtr, 
 			&argIndex)) 
-			|| (argIndex < 0 || argIndex > numArgs - 1)) {
+			|| (argIndex < 0 || argIndex > argCt - 1)) {
+                    /*
+                     * Something went horribly wrong if this comes to a Panic.
+		     * Should not happen unless there's an internal bug.
+                     */
+
 		    Tcl_Panic("Link variable points to an invalid local index.");
 		} else {
+		    /*
+		     * Defaults are illegal for linked arguments, so argIndex
+		     * should be safe.
+		     */
+
 		    Tcl_Obj *objPtr = argObjs[argIndex];	
 
                     /*
