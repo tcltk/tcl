@@ -46,7 +46,7 @@ typedef struct {
 				 * nullSize is 2, this is a function that
 				 * returns the number of bytes in a 0x0000
 				 * terminated string. */
-    int refCount;		/* Number of uses of this structure. */
+    size_t refCount;		/* Number of uses of this structure. */
     Tcl_HashEntry *hPtr;	/* Hash table entry that owns this encoding. */
 } Encoding;
 
@@ -782,11 +782,7 @@ FreeEncoding(
     if (encodingPtr == NULL) {
 	return;
     }
-    if (encodingPtr->refCount<=0) {
-	Tcl_Panic("FreeEncoding: refcount problem !!!");
-    }
-    encodingPtr->refCount--;
-    if (encodingPtr->refCount == 0) {
+    if (encodingPtr->refCount-- <= 1) {
 	if (encodingPtr->freeProc != NULL) {
 	    encodingPtr->freeProc(encodingPtr->clientData);
 	}

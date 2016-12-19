@@ -410,6 +410,7 @@ Tcl_Init(
 "	{file join $grandParentDir lib tcl[info tclversion]} \\\n"
 "	{file join $parentDir library} \\\n"
 "	{file join $grandParentDir library} \\\n"
+"	{file join $grandParentDir tcl[info tclversion] library} \\\n"
 "	{file join $grandParentDir tcl[info patchlevel] library} \\\n"
 "	{\n"
 "file join [file dirname $grandParentDir] tcl[info patchlevel] library}\n"
