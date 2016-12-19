@@ -90,7 +90,7 @@ typedef struct {
 /*
  * The correct value for the version field of the Tcl_MethodType structure.
  * This allows new versions of the structure to be introduced without breaking
- * binary compatability.
+ * binary compatibility.
  */
 
 #define TCL_OO_METHOD_VERSION_CURRENT 1
@@ -117,7 +117,7 @@ typedef struct {
 /*
  * The correct value for the version field of the Tcl_ObjectMetadataType
  * structure. This allows new versions of the structure to be introduced
- * without breaking binary compatability.
+ * without breaking binary compatibility.
  */
 
 #define TCL_OO_METADATA_VERSION_CURRENT 1

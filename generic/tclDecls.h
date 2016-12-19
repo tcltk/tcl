@@ -3782,13 +3782,4 @@ extern const TclStubs *tclStubsPtr;
 	    Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
 #endif /* !TCL_NO_DEPRECATED */
 
-#if defined(USE_TCL_STUBS) && !defined(TCL_COMPAT_8)
-#   undef Tcl_GetString
-#   define Tcl_GetString(obj) \
-	((obj)?((obj)->bytes?(obj)->bytes:tclStubsPtr->tcl_GetString(obj)):(char *)(obj))
-#   undef Tcl_GetStringFromObj
-#   define Tcl_GetStringFromObj(obj, lengthPtr) \
-	((obj)?(Tcl_GetString(obj),(*(lengthPtr)=(obj)->length),(obj)->bytes):((*(lengthPtr)=0),(char *)(obj)))
-#endif
-
 #endif /* _TCLDECLS */

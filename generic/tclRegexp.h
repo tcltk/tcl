@@ -37,7 +37,7 @@ typedef struct TclRegexp {
 				 * of subexpressions. */
     rm_detail_t details;	/* Detailed information on match (currently
 				 * used only for REG_EXPECT). */
-    int refCount;		/* Count of number of references to this
+    size_t refCount;		/* Count of number of references to this
 				 * compiled regexp. */
 } TclRegexp;
 

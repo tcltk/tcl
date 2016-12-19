@@ -234,7 +234,7 @@ test cmdMZ-3.3 {Tcl_SourceObjCmd: error conditions} -constraints {
 test cmdMZ-3.4 {Tcl_SourceObjCmd: error conditions} -constraints {
     unixOrPc
 } -returnCodes error -body {
-    source a b
+    source a b c d e f
 } -match glob -result {wrong # args: should be "source*fileName"}
 test cmdMZ-3.5 {Tcl_SourceObjCmd: error in script} -body {
     set file [makeFile {

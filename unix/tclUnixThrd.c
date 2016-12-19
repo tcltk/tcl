@@ -708,7 +708,7 @@ TclpThreadCreateKey(void)
 {
     pthread_key_t *ptkeyPtr;
 
-    ptkeyPtr = TclpSysAlloc(sizeof *ptkeyPtr, 0);
+    ptkeyPtr = TclpSysAlloc(sizeof *ptkeyPtr);
     if (NULL == ptkeyPtr) {
 	Tcl_Panic("unable to allocate thread key!");
     }

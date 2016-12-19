@@ -273,8 +273,8 @@ DisassembleByteCodeObj(
     sprintf(ptrBuf2, "%p", iPtr);
     Tcl_AppendPrintfToObj(bufferObj,
 	    "ByteCode 0x%s, refCt %" TCL_LL_MODIFIER "u, epoch %" TCL_LL_MODIFIER "u, interp 0x%s (epoch %" TCL_LL_MODIFIER "u)\n",
-	    ptrBuf1, (Tcl_WideInt)codePtr->refCount, (Tcl_WideInt)codePtr->compileEpoch, ptrBuf2,
-	    (Tcl_WideInt)iPtr->compileEpoch);
+	    ptrBuf1, (Tcl_WideUInt)codePtr->refCount, (Tcl_WideUInt)codePtr->compileEpoch, ptrBuf2,
+	    (Tcl_WideUInt)iPtr->compileEpoch);
     Tcl_AppendToObj(bufferObj, "  Source ", -1);
     PrintSourceToObj(bufferObj, codePtr->source,
 	    TclMin(codePtr->numSrcBytes, 55));
@@ -318,8 +318,8 @@ DisassembleByteCodeObj(
 
 	sprintf(ptrBuf1, "%p", procPtr);
 	Tcl_AppendPrintfToObj(bufferObj,
-		"  Proc 0x%s, refCt %d, args %d, compiled locals %d\n",
-		ptrBuf1, procPtr->refCount, procPtr->numArgs,
+		"  Proc 0x%s, refCt %" TCL_LL_MODIFIER "d, args %d, compiled locals %d\n",
+		ptrBuf1, (Tcl_WideUInt)procPtr->refCount, procPtr->numArgs,
 		numCompiledLocals);
 	if (numCompiledLocals > 0) {
 	    CompiledLocal *localPtr = procPtr->firstLocalPtr;

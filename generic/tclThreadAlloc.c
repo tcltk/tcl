@@ -220,7 +220,7 @@ GetCache(void)
 
     cachePtr = TclpGetAllocCache();
     if (cachePtr == NULL) {
-	cachePtr = TclpSysAlloc(sizeof(Cache), 0);
+	cachePtr = TclpSysAlloc(sizeof(Cache));
 	if (cachePtr == NULL) {
 	    Tcl_Panic("alloc: could not allocate new cache");
 	}
@@ -346,7 +346,7 @@ TclpAlloc(
 #endif
     if (size > MAXALLOC) {
 	bucket = NBUCKETS;
-	blockPtr = TclpSysAlloc(size, 0);
+	blockPtr = TclpSysAlloc(size);
 	if (blockPtr != NULL) {
 	    cachePtr->totalAssigned += reqSize;
 	}
@@ -572,7 +572,7 @@ TclThreadAllocObj(void)
 	    Tcl_Obj *newObjsPtr;
 
 	    cachePtr->numObjects = numMove = NOBJALLOC;
-	    newObjsPtr = TclpSysAlloc(sizeof(Tcl_Obj) * numMove, 0);
+	    newObjsPtr = TclpSysAlloc(sizeof(Tcl_Obj) * numMove);
 	    if (newObjsPtr == NULL) {
 		Tcl_Panic("alloc: could not allocate %d new objects", numMove);
 	    }
@@ -1041,7 +1041,7 @@ GetBlocks(
 
 	if (blockPtr == NULL) {
 	    size = MAXALLOC;
-	    blockPtr = TclpSysAlloc(size, 0);
+	    blockPtr = TclpSysAlloc(size);
 	    if (blockPtr == NULL) {
 		return 0;
 	    }

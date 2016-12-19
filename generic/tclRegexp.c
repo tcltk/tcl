@@ -502,9 +502,16 @@ Tcl_RegExpMatchObj(
 {
     Tcl_RegExp re;
 
-    re = Tcl_GetRegExpFromObj(interp, patternObj,
-	    TCL_REG_ADVANCED | TCL_REG_NOSUB);
-    if (re == NULL) {
+    /*
+     * For performance reasons, first try compiling the RE without support for
+     * subexpressions. On failure, try again without TCL_REG_NOSUB in case the
+     * RE has backreferences in it. Closely related to [Bug 1366683]. If this
+     * still fails, an error message will be left in the interpreter.
+     */
+
+    if (!(re = Tcl_GetRegExpFromObj(interp, patternObj,
+	    TCL_REG_ADVANCED | TCL_REG_NOSUB))
+     && !(re = Tcl_GetRegExpFromObj(interp, patternObj, TCL_REG_ADVANCED))) {
 	return -1;
     }
     return Tcl_RegExpExecObj(interp, re, textObj, 0 /* offset */,

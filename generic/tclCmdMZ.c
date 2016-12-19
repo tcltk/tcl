@@ -1199,7 +1199,7 @@ StringFirstCmd(
 	    return TCL_OK;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringFind(objv[1],
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclStringFind(objv[1],
 	    objv[2], start)));
     return TCL_OK;
 }
@@ -2118,9 +2118,7 @@ StringReptCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *string1;
-    char *string2;
-    int count, index, length1, length2;
+    int count;
     Tcl_Obj *resultPtr;
 
     if (objc != 3) {
@@ -2138,70 +2136,15 @@ StringReptCmd(
 
     if (count == 1) {
 	Tcl_SetObjResult(interp, objv[1]);
-	goto done;
+	return TCL_OK;
     } else if (count < 1) {
-	goto done;
-    }
-    string1 = TclGetStringFromObj(objv[1], &length1);
-    if (length1 <= 0) {
-	goto done;
+	return TCL_OK;
     }
 
-    /*
-     * Only build up a string that has data. Instead of building it up with
-     * repeated appends, we just allocate the necessary space once and copy
-     * the string value in.
-     *
-     * We have to worry about overflow [Bugs 714106, 2561746].
-     * At this point we know 1 <= length1 <= INT_MAX and 2 <= count <= INT_MAX.
-     * We need to keep 2 <= length2 <= INT_MAX.
-     */
-
-    if (count > INT_MAX/length1) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"result exceeds max size for a Tcl value (%d bytes)",
-		INT_MAX));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+    if (TCL_OK != TclStringRepeat(interp, objv[1], count, &resultPtr)) {
 	return TCL_ERROR;
     }
-    length2 = length1 * count;
-
-    /*
-     * Include space for the NUL.
-     */
-
-    string2 = attemptckalloc((unsigned) length2 + 1);
-    if (string2 == NULL) {
-	/*
-	 * Alloc failed. Note that in this case we try to do an error message
-	 * since this is a case that's most likely when the alloc is large and
-	 * that's easy to do with this API. Note that if we fail allocating a
-	 * short string, this will likely keel over too (and fatally).
-	 */
-
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"string size overflow, out of memory allocating %u bytes",
-		length2 + 1));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
-	return TCL_ERROR;
-    }
-    for (index = 0; index < count; index++) {
-	memcpy(string2 + (length1 * index), string1, (size_t) length1);
-    }
-    string2[length2] = '\0';
-
-    /*
-     * We have to directly assign this instead of using Tcl_SetStringObj (and
-     * indirectly TclInitStringRep) because that makes another copy of the
-     * data.
-     */
-
-    TclNewObj(resultPtr);
-    resultPtr->bytes = string2;
-    resultPtr->length = length2;
     Tcl_SetObjResult(interp, resultPtr);
-
-  done:
     return TCL_OK;
 }
 
