@@ -92,7 +92,7 @@ static const char *const literals[] = {
  */
 
 typedef struct {
-    int refCount;		/* Number of live references. */
+    size_t refCount;		/* Number of live references. */
     Tcl_Obj **literals;		/* Pool of object literals. */
 } ClockClientData;
 
@@ -2060,8 +2060,7 @@ ClockDeleteCmdProc(
     ClockClientData *data = clientData;
     int i;
 
-    data->refCount--;
-    if (data->refCount == 0) {
+    if (data->refCount-- <= 1) {
 	for (i = 0; i < LIT__END; ++i) {
 	    Tcl_DecrRefCount(data->literals[i]);
 	}

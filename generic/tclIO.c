@@ -321,7 +321,7 @@ static int              WillRead(Channel *chanPtr);
 typedef struct ResolvedChanName {
     ChannelState *statePtr;	/* The saved lookup result */
     Tcl_Interp *interp;		/* The interp in which the lookup was done. */
-    int epoch;			/* The epoch of the channel when the lookup
+    size_t epoch;		/* The epoch of the channel when the lookup
 				 * was done. Use to verify validity. */
     int refCount;		/* Share this struct among many Tcl_Obj. */
 } ResolvedChanName;
@@ -3044,7 +3044,7 @@ CloseChannel(
 
     if (chanPtr == statePtr->bottomChanPtr) {
 	if (statePtr->channelName != NULL) {
-	    ckfree((char *)statePtr->channelName);
+	    ckfree(statePtr->channelName);
 	    statePtr->channelName = NULL;
 	}
 

@@ -169,7 +169,7 @@ static int		NativeWriteReparse(const TCHAR *LinkDirectory,
 			    REPARSE_DATA_BUFFER *buffer);
 static int		NativeMatchType(int isDrive, DWORD attr,
 			    const TCHAR *nativeName, Tcl_GlobTypeData *types);
-static int		WinIsDrive(const char *name, int nameLen);
+static int		WinIsDrive(const char *name, size_t nameLen);
 static int		WinIsReserved(const char *path);
 static Tcl_Obj *	WinReadLink(const TCHAR *LinkSource);
 static Tcl_Obj *	WinReadLinkDirectory(const TCHAR *LinkDirectory);
@@ -933,12 +933,10 @@ TclpMatchInDirectory(
 	     * Match a single file directly.
 	     */
 
-	    size_t len;
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
 	    const char *str = TclGetString(norm);
 
-	    len = norm->length;
 	    native = Tcl_FSGetNativePath(pathPtr);
 
 	    if (GetFileAttributesEx(native,
@@ -947,7 +945,7 @@ TclpMatchInDirectory(
 	    }
 	    attr = data.dwFileAttributes;
 
-	    if (NativeMatchType(WinIsDrive(str,len), attr, native, types)) {
+	    if (NativeMatchType(WinIsDrive(str,norm->length), attr, native, types)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	    }
 	}
@@ -1176,7 +1174,7 @@ TclpMatchInDirectory(
 static int
 WinIsDrive(
     const char *name,		/* Name (UTF-8) */
-    int len)			/* Length of name */
+    size_t len)			/* Length of name */
 {
     int remove = 0;
 
@@ -2797,9 +2795,8 @@ TclWinVolumeRelativeNormalize(
 	 * also on drive C.
 	 */
 
-	size_t cwdLen;
-	const char *drive =
-		TclGetString(useThisCwd);
+	const char *drive = TclGetString(useThisCwd);
+	size_t cwdLen = useThisCwd->length;
 	char drive_cur = path[0];
 
 	cwdLen = useThisCwd->length;

@@ -54,7 +54,7 @@ static void		AppendUtfToUtfRep(Tcl_Obj *objPtr,
 			    const char *bytes, size_t numBytes);
 static void		DupStringInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
-static int		ExtendStringRepWithUnicode(Tcl_Obj *objPtr,
+static size_t		ExtendStringRepWithUnicode(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, size_t numChars);
 static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
 			    const char *bytes, size_t numBytes,
@@ -141,7 +141,7 @@ GrowStringBuffer(
     }
     if (flag == 0 || stringPtr->allocated > 0) {
 	attempt = 2 * needed;
-	if ((int)attempt >= 0) {
+	if (attempt <= STRING_MAXCHARS) {
 	    ptr = attemptckrealloc(objPtr->bytes, attempt + 1);
 	}
 	if (ptr == NULL) {
@@ -314,9 +314,9 @@ Tcl_Obj *
 Tcl_DbNewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    size_t length,			/* The number of bytes to copy from "bytes"
+    size_t length,		/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
-				 * negative, use bytes up to the first NUL
+				 * (size_t)-1, use bytes up to the first NUL
 				 * byte. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
@@ -325,7 +325,7 @@ Tcl_DbNewStringObj(
 {
     Tcl_Obj *objPtr;
 
-    if (length != (size_t)-1) {
+    if (length == (size_t)-1) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclDbNewObj(objPtr, file, line);
@@ -337,9 +337,9 @@ Tcl_Obj *
 Tcl_DbNewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    size_t length,			/* The number of bytes to copy from "bytes"
+    size_t length,		/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
-				 * negative, use bytes up to the first NUL
+				 * (size_t)-1, use bytes up to the first NUL
 				 * byte. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
@@ -427,7 +427,7 @@ Tcl_GetCharLength(
 	int length;
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
-	return (size_t)length;
+	return length;
     }
 
     /*
@@ -501,7 +501,7 @@ Tcl_GetUniChar(
 	if (stringPtr->numChars == (size_t)-1) {
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
-	if (stringPtr->numChars == objPtr->length) {
+	if (stringPtr->numChars == (size_t)objPtr->length) {
 	    return (Tcl_UniChar) objPtr->bytes[index];
 	}
 	FillUnicodeRep(objPtr);
@@ -635,7 +635,7 @@ Tcl_GetRange(
 	if (stringPtr->numChars == (size_t)-1) {
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
-	if (stringPtr->numChars == objPtr->length) {
+	if (stringPtr->numChars == (size_t)objPtr->length) {
 	    newObjPtr = Tcl_NewStringObj(objPtr->bytes + first, last-first+1);
 
 	    /*
@@ -680,8 +680,8 @@ Tcl_SetStringObj(
     Tcl_Obj *objPtr,		/* Object whose internal rep to init. */
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the object. */
-    size_t length)			/* The number of bytes to copy from "bytes"
-				 * when initializing the object. If negative,
+    size_t length)		/* The number of bytes to copy from "bytes"
+				 * when initializing the object. If (size_t)-1,
 				 * use bytes up to the first NUL byte.*/
 {
     if (Tcl_IsShared(objPtr)) {
@@ -733,21 +733,12 @@ void
 Tcl_SetObjLength(
     Tcl_Obj *objPtr,		/* Pointer to object. This object must not
 				 * currently be shared. */
-    size_t length)			/* Number of bytes desired for string
+    size_t length)		/* Number of bytes desired for string
 				 * representation of object, not including
 				 * terminating null byte. */
 {
     String *stringPtr;
 
-    if (length == (size_t)-1) {
-	/*
-	 * Setting to a negative length is nonsense. This is probably the
-	 * result of overflowing the signed integer range.
-	 */
-
-	Tcl_Panic("Tcl_SetObjLength: negative length requested: "
-		"%d (integer overflow?)", (int)length);
-    }
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetObjLength");
     }
@@ -790,7 +781,7 @@ Tcl_SetObjLength(
 	 */
 
 	stringCheckLimits(length);
-	if (length > stringPtr->maxChars) {
+	if ((size_t)length > stringPtr->maxChars) {
 	    stringPtr = stringRealloc(stringPtr, length);
 	    SET_STRING(objPtr, stringPtr);
 	    stringPtr->maxChars = length;
@@ -838,20 +829,12 @@ int
 Tcl_AttemptSetObjLength(
     Tcl_Obj *objPtr,		/* Pointer to object. This object must not
 				 * currently be shared. */
-    size_t length)			/* Number of bytes desired for string
+    size_t length)		/* Number of bytes desired for string
 				 * representation of object, not including
 				 * terminating null byte. */
 {
     String *stringPtr;
 
-    if (length == (size_t)-1) {
-	/*
-	 * Setting to a negative length is nonsense. This is probably the
-	 * result of overflowing the signed integer range.
-	 */
-
-	return 0;
-    }
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_AttemptSetObjLength");
     }
@@ -965,7 +948,7 @@ UnicodeLength(
     size_t numChars = 0;
 
     if (unicode) {
-	while (numChars <= STRING_MAXCHARS && unicode[numChars] != 0) {
+	while (numChars != (size_t)-1 && unicode[numChars] != 0) {
 	    numChars++;
 	}
     }
@@ -1029,10 +1012,10 @@ Tcl_AppendLimitedToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const char *bytes,		/* Points to the bytes to append to the
 				 * object. */
-    size_t length,			/* The number of bytes available to be
-				 * appended from "bytes". If < 0, then all
-				 * bytes up to a NUL byte are available. */
-    size_t limit,			/* The maximum number of bytes to append to
+    size_t length,		/* The number of bytes available to be
+				 * appended from "bytes". If (size_t)-1, then
+				 * all bytes up to a NUL byte are available. */
+    size_t limit,		/* The maximum number of bytes to append to
 				 * the object. */
     const char *ellipsis)	/* Ellipsis marker string, appended to the
 				 * object to indicate not all available bytes
@@ -1045,7 +1028,7 @@ Tcl_AppendLimitedToObj(
 	Tcl_Panic("%s called with shared object", "Tcl_AppendLimitedToObj");
     }
 
-    if (length== (size_t)-1) {
+    if (length == (size_t)-1) {
 	length = (bytes ? strlen(bytes) : 0);
     }
     if (length == 0) {
@@ -1111,11 +1094,11 @@ Tcl_AppendToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const char *bytes,		/* Points to the bytes to append to the
 				 * object. */
-    size_t length)			/* The number of bytes to append from "bytes".
-				 * If < 0, then append all bytes up to NUL
+    size_t length)		/* The number of bytes to append from "bytes".
+				 * If (size_t)-1, then append all bytes up to NUL
 				 * byte. */
 {
-    Tcl_AppendLimitedToObj(objPtr, bytes, length, INT_MAX, NULL);
+    Tcl_AppendLimitedToObj(objPtr, bytes, length, (size_t)-1, NULL);
 }
 
 /*
@@ -1140,7 +1123,7 @@ Tcl_AppendUnicodeToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const Tcl_UniChar *unicode,	/* The unicode string to append to the
 				 * object. */
-    size_t length)			/* Number of chars in "unicode". */
+    size_t length)		/* Number of chars in "unicode". */
 {
     String *stringPtr;
 
@@ -1194,7 +1177,8 @@ Tcl_AppendObjToObj(
     Tcl_Obj *appendObjPtr)	/* Object to append. */
 {
     String *stringPtr;
-    int length, numChars, appendNumChars = -1;
+    int length, numChars;
+    size_t appendNumChars = (size_t)-1;
     const char *bytes;
 
     /*
@@ -1503,13 +1487,10 @@ AppendUtfToUtfRep(
     }
     oldLength = objPtr->length;
     newLength = numBytes + oldLength;
-    if ((int)newLength < 0) {
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-    }
 
     stringPtr = GET_STRING(objPtr);
     if (newLength > stringPtr->allocated) {
-	int offset = -1;
+	size_t offset = (size_t)-1;
 
 	/*
 	 * Protect against case where unicode points into the existing
@@ -1533,7 +1514,7 @@ AppendUtfToUtfRep(
 	 * Relocate bytes if needed; see above.
 	 */
 
-	if (offset >= 0) {
+	if (offset != (size_t)-1) {
 	    bytes = objPtr->bytes + offset;
 	}
     }
@@ -1865,6 +1846,14 @@ Tcl_AppendFormatToObj(
 		useWide = 1;
 #endif
 	    }
+	} else if ((ch == 'I') && (format[1] == '6') && (format[2] == '4')) {
+	    format += (step + 2);
+	    step = Tcl_UtfToUniChar(format, &ch);
+	    useBig = 1;
+	} else if (ch == 'L') {
+	    format += step;
+	    step = Tcl_UtfToUniChar(format, &ch);
+	    useBig = 1;
 	}
 
 	format += step;
@@ -2472,6 +2461,10 @@ AppendPrintfToObjVA(
 		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
 			    va_arg(argList, long)));
 		    break;
+		case 2:
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewWideIntObj(
+			    va_arg(argList, Tcl_WideInt)));
+		    break;
 		}
 		break;
 	    case 'e':
@@ -2500,9 +2493,20 @@ AppendPrintfToObjVA(
 		gotPrecision = 1;
 		p++;
 		break;
-	    /* TODO: support for wide (and bignum?) arguments */
+	    /* TODO: support for bignum arguments */
 	    case 'l':
-		size = 1;
+		++size;
+		p++;
+		break;
+	    case 'L':
+		size = 2;
+		p++;
+		break;
+	    case 'I':
+		if (p[1]=='6' && p[2]=='4') {
+		    p += 2;
+		    size = 2;
+		}
 		p++;
 		break;
 	    case 'h':
@@ -2613,6 +2617,147 @@ TclGetStringStorage(
 /*
  *---------------------------------------------------------------------------
  *
+ * TclStringRepeat --
+ *
+ *	Performs the [string repeat] function.
+ *
+ * Results:
+ * 	A standard Tcl result.
+ *
+ * Side effects:
+ * 	Writes to *objPtrPtr the address of Tcl_Obj that is concatenation
+ * 	of count copies of the value in objPtr.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclStringRepeat(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    int count,
+    Tcl_Obj **objPtrPtr)
+{
+    Tcl_Obj *objResultPtr;
+    int length = 0, unichar = 0, done = 1;
+    int binary = TclIsPureByteArray(objPtr);
+
+    /* assert (count >= 2) */
+
+    /*
+     * Analyze to determine what representation result should be.
+     * GOALS:	Avoid shimmering & string rep generation.
+     * 		Produce pure bytearray when possible.
+     * 		Error on overflow.
+     */
+
+    if (!binary) {
+	if (objPtr->typePtr == &tclStringType) {
+	    String *stringPtr = GET_STRING(objPtr);
+	    if (stringPtr->hasUnicode) {
+		unichar = 1;
+	    }
+	}
+    }
+
+    if (binary) {
+	/* Result will be pure byte array. Pre-size it */
+	Tcl_GetByteArrayFromObj(objPtr, &length);
+    } else if (unichar) {
+	/* Result will be pure Tcl_UniChar array. Pre-size it. */
+	Tcl_GetUnicodeFromObj(objPtr, &length);
+    } else {
+	/* Result will be concat of string reps. Pre-size it. */
+	Tcl_GetStringFromObj(objPtr, &length);
+    }
+
+    if (length == 0) {
+	/* Any repeats of empty is empty. */
+	*objPtrPtr = objPtr;
+	return TCL_OK;
+    }
+
+    if (count > INT_MAX/length) {
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	}
+	return TCL_ERROR;
+    }
+
+    if (binary) {
+	/* Efficiently produce a pure byte array result */
+	objResultPtr = Tcl_IsShared(objPtr) ? Tcl_DuplicateObj(objPtr)
+		: objPtr;
+
+	Tcl_SetByteArrayLength(objResultPtr, count*length); /* PANIC? */
+	Tcl_SetByteArrayLength(objResultPtr, length);
+	while (count - done > done) {
+	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
+	    done *= 2;
+	}
+	TclAppendBytesToByteArray(objResultPtr,
+		Tcl_GetByteArrayFromObj(objResultPtr, NULL),
+		(count - done) * length);
+    } else if (unichar) {
+	/* Efficiently produce a pure Tcl_UniChar array result */
+	if (Tcl_IsShared(objPtr)) {
+	    objResultPtr = Tcl_NewUnicodeObj(Tcl_GetUnicode(objPtr), length);
+	} else {
+	    TclInvalidateStringRep(objPtr);
+	    objResultPtr = objPtr;
+	}
+
+        if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"string size overflow: unable to alloc %"
+			TCL_LL_MODIFIER "u bytes",
+			(Tcl_WideUInt)STRING_SIZE(count*length)));
+		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjLength(objResultPtr, length);
+	while (count - done > done) {
+	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
+	    done *= 2;
+	}
+	Tcl_AppendUnicodeToObj(objResultPtr, Tcl_GetUnicode(objResultPtr),
+		(count - done) * length);
+    } else {
+	/* Efficiently concatenate string reps */
+	if (Tcl_IsShared(objPtr)) {
+	    objResultPtr = Tcl_NewStringObj(Tcl_GetString(objPtr), length);
+	} else {
+	    TclFreeIntRep(objPtr);
+	    objResultPtr = objPtr;
+	}
+        if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"string size overflow: unable to alloc %u bytes",
+			count*length));
+		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjLength(objResultPtr, length);
+	while (count - done > done) {
+	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
+	    done *= 2;
+	}
+	Tcl_AppendToObj(objResultPtr, Tcl_GetString(objResultPtr),
+		(count - done) * length);
+    }
+    *objPtrPtr = objResultPtr;
+    return TCL_OK;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * TclStringCatObjv --
  *
  *	Performs the [string cat] function.
@@ -2691,7 +2836,7 @@ TclStringCatObjv(
 	    if (objPtr->bytes == NULL) {
 		int numBytes;
 
-		Tcl_GetByteArrayFromObj(objPtr, &numBytes);
+		Tcl_GetByteArrayFromObj(objPtr, &numBytes); /* PANIC? */
 		if (length == 0) {
 		    first = objc - oc - 1;
 		}
@@ -2707,7 +2852,7 @@ TclStringCatObjv(
 	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
 		int numChars;
 
-		Tcl_GetUnicodeFromObj(objPtr, &numChars);
+		Tcl_GetUnicodeFromObj(objPtr, &numChars); /* PANIC? */
 		if (length == 0) {
 		    first = objc - oc - 1;
 		}
@@ -2722,7 +2867,7 @@ TclStringCatObjv(
 
 	    objPtr = *ov++;
 
-	    Tcl_GetStringFromObj(objPtr, &numBytes);
+	    Tcl_GetStringFromObj(objPtr, &numBytes);	/* PANIC? */
 	    if ((length == 0) && numBytes) {
 		first = objc - oc - 1;
 	    }
@@ -2751,6 +2896,11 @@ TclStringCatObjv(
 	/* Efficiently produce a pure byte array result */
 	unsigned char *dst;
 
+	/*
+	 * Broken interface! Byte array value routines offer no way
+	 * to handle failure to allocate enough space. Following
+	 * stanza may panic.
+	 */
 	if (inPlace && !Tcl_IsShared(*objv)) {
 	    int start;
 
@@ -2783,14 +2933,32 @@ TclStringCatObjv(
 	    /* Ugly interface! Force resize of the unicode array. */
 	    Tcl_GetUnicodeFromObj(objResultPtr, &start);
 	    Tcl_InvalidateStringRep(objResultPtr);
-	    Tcl_SetObjLength(objResultPtr, length);
+	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    	"concatenation failed: unable to alloc %"
+			TCL_LL_MODIFIER "u bytes",
+			(Tcl_WideUInt)STRING_SIZE(length)));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		}
+		return TCL_ERROR;
+	    }
 	    dst = Tcl_GetUnicode(objResultPtr) + start;
 	} else {
 	    Tcl_UniChar ch = 0;
 
 	    /* Ugly interface! No scheme to init array size. */
-	    objResultPtr = Tcl_NewUnicodeObj(&ch, 0);
-	    Tcl_SetObjLength(objResultPtr, length);
+	    objResultPtr = Tcl_NewUnicodeObj(&ch, 0);	/* PANIC? */
+	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    	"concatenation failed: unable to alloc %"
+			TCL_LL_MODIFIER "u bytes",
+			(Tcl_WideUInt)STRING_SIZE(length)));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		}
+		return TCL_ERROR;
+	    }
 	    dst = Tcl_GetUnicode(objResultPtr);
 	}
 	while (objc--) {
@@ -2813,14 +2981,30 @@ TclStringCatObjv(
 	    objResultPtr = *objv++; objc--;
 
 	    Tcl_GetStringFromObj(objResultPtr, &start);
-	    Tcl_SetObjLength(objResultPtr, length);
+	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    	"concatenation failed: unable to alloc %u bytes",
+			length));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		}
+		return TCL_ERROR;
+	    }
 	    dst = Tcl_GetString(objResultPtr) + start;
 	    if (length > start) {
 		TclFreeIntRep(objResultPtr);
 	    }
 	} else {
-	    objResultPtr = Tcl_NewObj();
-	    Tcl_SetObjLength(objResultPtr, length);
+	    objResultPtr = Tcl_NewObj();	/* PANIC? */
+	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    	"concatenation failed: unable to alloc %u bytes",
+			length));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		}
+		return TCL_ERROR;
+	    }
 	    dst = Tcl_GetString(objResultPtr);
 	}
 	while (objc--) {
@@ -3407,7 +3591,7 @@ UpdateStringOfString(
     }
 }
 
-static int
+static size_t
 ExtendStringRepWithUnicode(
     Tcl_Obj *objPtr,
     const Tcl_UniChar *unicode,
@@ -3438,16 +3622,13 @@ ExtendStringRepWithUnicode(
      * Quick cheap check in case we have more than enough room.
      */
 
-    if (numChars <= (size_t)((INT_MAX - size)/TCL_UTF_MAX)
+    if (numChars <= (INT_MAX - size)/TCL_UTF_MAX
 	    && stringPtr->allocated >= size + numChars * TCL_UTF_MAX) {
 	goto copyBytes;
     }
 
-    for (i = 0; i < numChars && size >= 0; i++) {
+    for (i = 0; i < numChars; i++) {
 	size += TclUtfCount(unicode[i]);
-    }
-    if ((int)size < 0) {
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
     /*

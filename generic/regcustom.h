@@ -36,9 +36,9 @@
  * Overrides for regguts.h definitions, if any.
  */
 
-#define	MALLOC(n)		((void*)(attemptckalloc(n)))
+#define	MALLOC(n)		(void*)(attemptckalloc(n))
 #define	FREE(p)			ckfree((void*)(p))
-#define	REALLOC(p,n)		((void*)(attemptckrealloc((void*)(p),n)))
+#define	REALLOC(p,n)		(void*)(attemptckrealloc((void*)(p),n))
 
 /*
  * Do not insert extras between the "begin" and "end" lines - this chunk is

@@ -531,7 +531,7 @@ TCLAPI Tcl_HashTable *	TclGetNamespaceChildTable(Tcl_Namespace *nsPtr);
 TCLAPI Tcl_HashTable *	TclGetNamespaceCommandTable(Tcl_Namespace *nsPtr);
 /* 246 */
 TCLAPI int		TclInitRewriteEnsemble(Tcl_Interp *interp,
-				int numRemoved, int numInserted,
+				size_t numRemoved, size_t numInserted,
 				Tcl_Obj *const *objv);
 /* 247 */
 TCLAPI void		TclResetRewriteEnsemble(Tcl_Interp *interp,
@@ -800,7 +800,7 @@ typedef struct TclIntStubs {
     void (*tclDbDumpActiveObjects) (FILE *outFile); /* 243 */
     Tcl_HashTable * (*tclGetNamespaceChildTable) (Tcl_Namespace *nsPtr); /* 244 */
     Tcl_HashTable * (*tclGetNamespaceCommandTable) (Tcl_Namespace *nsPtr); /* 245 */
-    int (*tclInitRewriteEnsemble) (Tcl_Interp *interp, int numRemoved, int numInserted, Tcl_Obj *const *objv); /* 246 */
+    int (*tclInitRewriteEnsemble) (Tcl_Interp *interp, size_t numRemoved, size_t numInserted, Tcl_Obj *const *objv); /* 246 */
     void (*tclResetRewriteEnsemble) (Tcl_Interp *interp, int isRootEnsemble); /* 247 */
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
