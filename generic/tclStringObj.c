@@ -1865,6 +1865,14 @@ Tcl_AppendFormatToObj(
 		useWide = 1;
 #endif
 	    }
+	} else if ((ch == 'I') && (format[1] == '6') && (format[2] == '4')) {
+	    format += (step + 2);
+	    step = Tcl_UtfToUniChar(format, &ch);
+	    useBig = 1;
+	} else if (ch == 'L') {
+	    format += step;
+	    step = Tcl_UtfToUniChar(format, &ch);
+	    useBig = 1;
 	}
 
 	format += step;
@@ -2509,6 +2517,17 @@ AppendPrintfToObjVA(
 		++size;
 		p++;
 		break;
+	    case 'L':
+		size = 2;
+		p++;
+		break;
+	    case 'I':
+		if (p[1]=='6' && p[2]=='4') {
+		    p += 2;
+		    size = 2;
+		}
+		p++;
+		break;
 	    case 'h':
 		size = -1;
 	    default:
@@ -2712,7 +2731,8 @@ TclStringRepeat(
         if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"string size overflow: unable to alloc %llu bytes",
+			"string size overflow: unable to alloc %"
+			TCL_LL_MODIFIER "u bytes",
 			(Tcl_WideUInt)STRING_SIZE(count*length)));
 		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	    }
@@ -2935,7 +2955,8 @@ TclStringCatObjv(
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    	"concatenation failed: unable to alloc %llu bytes",
+		    	"concatenation failed: unable to alloc %"
+			TCL_LL_MODIFIER "u bytes",
 			(Tcl_WideUInt)STRING_SIZE(length)));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
@@ -2950,7 +2971,8 @@ TclStringCatObjv(
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    	"concatenation failed: unable to alloc %llu bytes",
+		    	"concatenation failed: unable to alloc %"
+			TCL_LL_MODIFIER "u bytes",
 			(Tcl_WideUInt)STRING_SIZE(length)));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
