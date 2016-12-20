@@ -1842,11 +1842,16 @@ EXTERN Tcl_ArraySearch	Tcl_ArraySearchStart(Tcl_Interp *interp,
 				Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
 				int flags);
 /* 638 */
-EXTERN Tcl_Obj *	Tcl_ArraySearchPeek(Tcl_ArraySearch search);
+EXTERN int		Tcl_ArraySearchPeek(Tcl_Interp *interp,
+				Tcl_ArraySearch search, Tcl_Obj **keyPtrPtr,
+				Tcl_Obj **valuePtrPtr);
 /* 639 */
-EXTERN Tcl_Obj *	Tcl_ArraySearchNext(Tcl_ArraySearch search);
+EXTERN int		Tcl_ArraySearchNext(Tcl_Interp *interp,
+				Tcl_ArraySearch search, Tcl_Obj **keyPtrPtr,
+				Tcl_Obj **valuePtrPtr);
 /* 640 */
-EXTERN void		Tcl_ArraySearchDone(Tcl_ArraySearch search);
+EXTERN int		Tcl_ArraySearchDone(Tcl_Interp *interp,
+				Tcl_ArraySearch search);
 /* 641 */
 EXTERN int		Tcl_ArrayStatistics(Tcl_Interp *interp,
 				Tcl_Obj *part1Ptr, Tcl_Obj *stringPtr,
@@ -2524,9 +2529,9 @@ typedef struct TclStubs {
     int (*tcl_ArraySize) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int *intPtr, int flags); /* 635 */
     int (*tcl_ArrayExists) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int *intPtr, int flags); /* 636 */
     Tcl_ArraySearch (*tcl_ArraySearchStart) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 637 */
-    Tcl_Obj * (*tcl_ArraySearchPeek) (Tcl_ArraySearch search); /* 638 */
-    Tcl_Obj * (*tcl_ArraySearchNext) (Tcl_ArraySearch search); /* 639 */
-    void (*tcl_ArraySearchDone) (Tcl_ArraySearch search); /* 640 */
+    int (*tcl_ArraySearchPeek) (Tcl_Interp *interp, Tcl_ArraySearch search, Tcl_Obj **keyPtrPtr, Tcl_Obj **valuePtrPtr); /* 638 */
+    int (*tcl_ArraySearchNext) (Tcl_Interp *interp, Tcl_ArraySearch search, Tcl_Obj **keyPtrPtr, Tcl_Obj **valuePtrPtr); /* 639 */
+    int (*tcl_ArraySearchDone) (Tcl_Interp *interp, Tcl_ArraySearch search); /* 640 */
     int (*tcl_ArrayStatistics) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *stringPtr, int flags); /* 641 */
 } TclStubs;
 

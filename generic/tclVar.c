@@ -158,18 +158,17 @@ static const char *isArrayElement =
 
 /*
  * The following structure describes an enumerative search in progress on an
- * array variable. It is used by Tcl_ArraySize(), Tcl_ArraySearchStart(),
- * Tcl_ArraySearchNext(), Tcl_ArraySearchDone(), Tcl_ArrayNames(), and their
+ * array variable. It is used by various Tcl_Array*() functions and their
  * respective [array] script interface commands.
  */
 
 typedef struct Tcl_ArraySearch_ ArraySearch;
 struct Tcl_ArraySearch_ {
-    Tcl_Interp *interp;		/* Tcl interpreter in which search is run. */
     Tcl_Obj *name;		/* Name of this search */
     int id;			/* Integer id used to distinguish among
 				 * multiple concurrent searches for the same
 				 * array. */
+    Tcl_Obj *varNameObj;	/* Name of the array variable. */
     Var *varPtr;		/* Pointer to array variable that's being
 				 * searched. */
     Tcl_HashSearch search;	/* Info kept by the hash module about progress
@@ -208,8 +207,13 @@ static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr,
 			    Tcl_Obj *part2Ptr, int flags, int index);
 static Var *		ArrayVar(Tcl_Interp *interp, Tcl_Obj *varNameObj,
 			    int *traceFailPtr, int flags);
-static Var *		ArrayFirst(ArraySearch *searchPtr, int *failPtr);
-static Var *		ArrayNext(ArraySearch *searchPtr, int *failPtr);
+static int		ArrayVarTrace(Tcl_Interp *interp, Var *varPtr,
+			    Tcl_Obj *varNameObj);
+static Var *		ArrayFirst(Tcl_Interp *interp, ArraySearch *searchPtr,
+			    int *failPtr);
+static Var *		ArrayNext(Tcl_Interp *interp, ArraySearch *searchPtr,
+			    int *failPtr);
+static void		ArrayDone(Tcl_Interp *interp, ArraySearch *searchPtr);
 static int		ArrayNames(Tcl_Interp *interp, Var *varPtr,
 			    Tcl_Obj *filterObj, int filterType,
 			    Tcl_Obj *listObj);
@@ -1133,11 +1137,7 @@ ArrayVar(
 	 * names, array get, etc.
 	 */
 
-	if ((varPtr->flags & VAR_TRACED_ARRAY)
-	 && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))
-	 && TclObjCallVarTraces((Interp *)interp, arrayPtr, varPtr, varNameObj,
-		 NULL, flags | TCL_LEAVE_ERR_MSG | TCL_TRACE_ARRAY,
-		/*leaveErrMsg*/ 1, -1) == TCL_ERROR) {
+	if (ArrayVarTrace(interp, varPtr, varNameObj) != TCL_OK) {
 	    if (traceFailPtr) {
 		*traceFailPtr = 1;
 	    }
@@ -1157,7 +1157,7 @@ ArrayVar(
 
     /*
      * Common error generation routine. This handles everything but creation
-     * errors (e.g. bad namespace) and traces (look for "return NULL" above).
+     * errors (e.g. bad namespace) and traces (handled above).
      */
 
     if (!varPtr && (flags & TCL_LEAVE_ERR_MSG)) {
@@ -1173,6 +1173,41 @@ ArrayVar(
     }
 
     return varPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ArrayVarTrace --
+ *
+ *	Calls array traces on an array variable.
+ *
+ * Results:
+ *	Returns TCL_OK if the array variable's array traces complete without
+ *	error or if the array variable has no array traces. On error, returns
+ *	TCL_ERROR and places error information in the interpreter result.
+ *
+ * Side effects:
+ *	Array traces, if any, are executed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ArrayVarTrace(
+    Tcl_Interp *interp,		/* Interpreter containing the variable. */
+    Var *varPtr,		/* Array variable structure pointer. */
+    Tcl_Obj *varNameObj)	/* Name of array variable. */
+{
+    if ((varPtr->flags & VAR_TRACED_ARRAY)
+     && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))
+     && TclObjCallVarTraces((Interp *)interp, NULL, varPtr, varNameObj,
+	    NULL, TCL_LEAVE_ERR_MSG | TCL_TRACE_ARRAY,
+	    /*leaveErrMsg*/ 1, -1) != TCL_OK) {
+	return TCL_ERROR;
+    } else {
+	return TCL_OK;
+    }
 }
 
 /*
@@ -1200,6 +1235,8 @@ ArrayVar(
 
 static Var *
 ArrayFirst(
+    Tcl_Interp *interp,		/* Command interpreter in which the array
+				 * variable is located. */
     ArraySearch *searchPtr,	/* Array enumeration state structure. */
     int *failPtr)		/* Set to 1 on error. */
 {
@@ -1235,7 +1272,7 @@ ArrayFirst(
      */
 
     searchPtr->nextEntry = VarHashFirstVar(tablePtr, &searchPtr->search);
-    return ArrayNext(searchPtr, failPtr);
+    return ArrayNext(interp, searchPtr, failPtr);
 }
 
 /*
@@ -1266,6 +1303,8 @@ ArrayFirst(
 
 static Var *
 ArrayNext(
+    Tcl_Interp *interp,		/* Command interpreter in which the array
+				 * variable is located. */
     ArraySearch *searchPtr,	/* Array enumeration state structure. */
     int *failPtr)		/* Set to 1 on error. */
 {
@@ -1311,7 +1350,7 @@ ArrayNext(
 		    return varPtr;
 		}
 	    } else if (searchPtr->filterType == TCL_MATCH_REGEXP) {
-		matched = Tcl_RegExpMatchObj(searchPtr->interp, nameObj,
+		matched = Tcl_RegExpMatchObj(interp, nameObj,
 			searchPtr->filterObj);
 		if (matched < 0) {
 		    if (failPtr) {
@@ -1333,6 +1372,69 @@ ArrayNext(
     }
 
     return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ArrayDone --
+ *
+ *	Terminates and cleans up an array search query.
+ *
+ * Preconditions:
+ *	The search argument must be the return value of Tcl_ArraySearchStart()
+ *	and must not have been passed to Tcl_ArraySearchDone().
+ *
+ * Results:
+ *	The search query is completed.
+ *
+ * Side effects:
+ *	Resources associated with the search are deallocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ArrayDone(
+    Tcl_Interp *interp,		/* Command interpreter in which the array
+				 * variable is located. */
+    ArraySearch *searchPtr)	/* Array enumeration state structure. */
+{
+    ArraySearch *prevPtr;
+    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(
+	    &((Interp *)interp)->varSearches, searchPtr->varPtr);
+
+    /*
+     * Unhook the search from the list of searches associated with the
+     * variable.
+     */
+
+    if (searchPtr == Tcl_GetHashValue(hPtr)) {
+	if (searchPtr->nextPtr) {
+	    Tcl_SetHashValue(hPtr, searchPtr->nextPtr);
+	} else {
+	    searchPtr->varPtr->flags &= ~VAR_SEARCH_ACTIVE;
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+    } else {
+	for (prevPtr = Tcl_GetHashValue(hPtr);; prevPtr = prevPtr->nextPtr) {
+	    if (prevPtr->nextPtr == searchPtr) {
+		prevPtr->nextPtr = searchPtr->nextPtr;
+		break;
+	    }
+	}
+    }
+
+    /*
+     * Deallocate the search object.
+     */
+
+    Tcl_DecrRefCount(searchPtr->name);
+    Tcl_DecrRefCount(searchPtr->varNameObj);
+    if (searchPtr->filterObj) {
+	Tcl_DecrRefCount(searchPtr->filterObj);
+    }
+    ckfree(searchPtr);
 }
 
 /*
@@ -1380,18 +1482,17 @@ ArrayNames(
      * Begin the search.
      */
 
-    search.interp = interp;
     search.varPtr = varPtr;
     search.filterObj = filterObj;
     search.filterType = filterType;
     search.nextEntry = NULL;
-    varPtr = ArrayFirst(&search, &fail);
+    varPtr = ArrayFirst(interp, &search, &fail);
 
     /*
      * Enumerate the array.
      */
 
-    for (; varPtr; varPtr = ArrayNext(&search, &fail)) {
+    for (; varPtr; varPtr = ArrayNext(interp, &search, &fail)) {
 	Tcl_ListObjAppendElement(interp, listObj, VarHashGetKey(varPtr));
     }
 
@@ -1695,11 +1796,10 @@ Tcl_ArrayUnset(
      * Prepare to iterate through all elements of the array.
      */
 
-    search.interp = interp;
     search.varPtr = varPtr;
     search.filterObj = part2Ptr;
     search.filterType = filterType;
-    elemPtr = ArrayFirst(&search, &fail);
+    elemPtr = ArrayFirst(interp, &search, &fail);
 
     /*
      * Non-trivial case (well, deeply tricky really). We peek inside the hash
@@ -1710,7 +1810,7 @@ Tcl_ArrayUnset(
      */
 
     protectedElemPtr = NULL;
-    for (; elemPtr; elemPtr = ArrayNext(&search, &fail)) {
+    for (; elemPtr; elemPtr = ArrayNext(interp, &search, &fail)) {
 	/*
 	 * Drop the extra ref immediately. We don't need to free it at this
 	 * point though; we'll be unsetting it if necessary soon.
@@ -1730,9 +1830,10 @@ Tcl_ArrayUnset(
 	 * bucket that was set before the current element.
 	 */
 
-	if ((protectedElemPtr = search.nextEntry = ArrayNext(&search, &fail))) {
+	if ((search.nextEntry = ArrayNext(interp, &search, &fail))) {
 	    VarHashRefCount(protectedElemPtr)++;
 	}
+	protectedElemPtr = search.nextEntry;
 
 	/*
 	 * If the variable is undefined, clean it out as it has been hit by
@@ -2021,12 +2122,11 @@ Tcl_ArraySize(
 	 * ArrayNext() returns non-NULL.
 	 */
 
-	search.interp = interp;
 	search.varPtr = varPtr;
 	search.filterObj = part2Ptr;
 	search.filterType = flags & TCL_MATCH;
-	for (varPtr = ArrayFirst(&search, &fail); varPtr;
-		varPtr = ArrayNext(&search, &fail)) {
+	for (varPtr = ArrayFirst(interp, &search, &fail); varPtr;
+		varPtr = ArrayNext(interp, &search, &fail)) {
 	    ++size;
 	}
     }
@@ -2082,11 +2182,10 @@ Tcl_ArrayExists(
      */
 
     if (varPtr && part2Ptr) {
-	search.interp = interp;
 	search.varPtr = varPtr;
 	search.filterObj = part2Ptr;
 	search.filterType = flags & TCL_MATCH;
-	varPtr = ArrayFirst(&search, &fail);
+	varPtr = ArrayFirst(interp, &search, &fail);
     }
 
     if (varPtr) {
@@ -2155,11 +2254,11 @@ Tcl_ArraySearchStart(
 	return NULL;
     }
 
-    search.interp = interp;
+    search.varNameObj = part1Ptr;
     search.varPtr = varPtr;
     search.filterObj = part2Ptr;
     search.filterType = flags & TCL_MATCH;
-    search.nextEntry = ArrayFirst(&search, &fail);
+    search.nextEntry = ArrayFirst(interp, &search, &fail);
     if (!search.nextEntry && fail) {
 	return NULL;
     }
@@ -2179,6 +2278,7 @@ Tcl_ArraySearchStart(
     }
     search.name = Tcl_ObjPrintf("s-%d-%s", search.id, TclGetString(part1Ptr));
     Tcl_IncrRefCount(search.name);
+    Tcl_IncrRefCount(search.varNameObj);
     if (part2Ptr) {
 	Tcl_IncrRefCount(part2Ptr);
     }
@@ -2195,24 +2295,75 @@ Tcl_ArraySearchStart(
  * Tcl_ArraySearchPeek --
  *
  *	Finds the next element of an array for a given search query. Unlike
- *	Tcl_ArraySearchNext(), there are no side effects, so the search query
- *	state is not advanced and the element is not consumed.
+ *	Tcl_ArraySearchNext(), the only side effect is array traces, so the
+ *	search query state is not advanced and the element is not consumed.
  *
- * Preconditions, results, limitations:
+ * Preconditions, results:
  *	Same as Tcl_ArraySearchNext().
  *
  * Side effects:
- *	None.
+ *	Array traces, if any, are executed.
  *
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
+int
 Tcl_ArraySearchPeek(
-    Tcl_ArraySearch search)	/* Prior return from Tcl_ArraySearchStart(). */
+    Tcl_Interp *interp,		/* Command interpreter in which the array
+				 * variable is located. */
+    Tcl_ArraySearch search,	/* Prior return from Tcl_ArraySearchStart(). */
+    Tcl_Obj **keyPtrPtr,	/* Location to which pointer to next array
+				 * element name is written. NULL is written when
+				 * the end of the array has been encountered. */
+    Tcl_Obj **valuePtrPtr)	/* If not NULL, location to which pointer to
+				 * next array element value is written. NULL is
+				 * written when at the end of the array. */
 {
-    search->nextEntry = ArrayNext(search, NULL);
-    return search->nextEntry ? VarHashGetKey(search->nextEntry) : NULL;
+    Tcl_Obj *keyObj, *valueObj;
+
+    /*
+     * Execute array traces and report any errors that may arise.
+     */
+
+    if (ArrayVarTrace(interp, search->varPtr, search->varNameObj) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Get the next array element, but push it back into the nextEntry buffer so
+     * that it will be reused when ArrayNext() is called again.
+     */
+
+    if ((search->nextEntry = ArrayNext(interp, search, NULL))) {
+	/*
+	 * If not at the end of the array, get the element name and (if an
+	 * output location was given) element value. Report any errors that may
+	 * occur due to reading the element value if it is requested.
+	 */
+
+	keyObj = VarHashGetKey(search->nextEntry);
+	if (valuePtrPtr) {
+	    if ((valueObj = Tcl_ObjGetVar2(interp, search->varNameObj, keyObj,
+		    TCL_LEAVE_ERR_MSG))) {
+		*valuePtrPtr = valueObj;
+	    } else {
+		return TCL_ERROR;
+	    }
+	}
+	*keyPtrPtr = keyObj;
+    } else {
+	/*
+	 * At the end of the array, store NULL for the element name and (if an
+	 * output location was given) element value.
+	 */
+
+	*keyPtrPtr = NULL;
+	if (valuePtrPtr) {
+	    *valuePtrPtr = NULL;
+	}
+    }
+
+    return TCL_OK;
 }
 
 /*
@@ -2227,31 +2378,42 @@ Tcl_ArraySearchPeek(
  *	and must not have been passed to Tcl_ArraySearchDone().
  *
  * Results:
- *	The return value is the name of the next array element. If there are no
- *	more array elements, NULL is returned.
+ *	The next array element name is written to *keyPtrPtr. If valuePtrPtr is
+ *	not NULL, the array element value is written to *valuePtrPtr. If there
+ *	are no more array elements, NULL is written instead. If an array trace
+ *	or variable read trace error occurs, TCL_ERROR is returned and error
+ *	information is placed in the interpreter result.
  *
  * Side effects:
  *	The search data structure is updated such that successive invocations of
  *	this function will return successive array element names.
  *
- * Limitations:
- *	It is not possible to distinguish between reaching the end of the array
- *	and experiencing a regular expression error. This is unlikely to be an
- *	actual problem because Tcl_ArraySearchStart() already checks for regular
- *	expression errors and returns NULL if found. If the regular expression
- *	engine has a bug whereby a given query can initially succeed yet return
- *	error depending on the string it is matched against, it will appear to
- *	the caller of this function as prematurely hitting the end of the array.
- *
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
+int
 Tcl_ArraySearchNext(
-    Tcl_ArraySearch search)	/* Prior return from Tcl_ArraySearchStart(). */
+    Tcl_Interp *interp,		/* Command interpreter in which the array
+				 * variable is located. */
+    Tcl_ArraySearch search,	/* Prior return from Tcl_ArraySearchStart(). */
+    Tcl_Obj **keyPtrPtr,	/* Location to which pointer to next array
+				 * element name is written. NULL is written when
+				 * the end of the array has been encountered. */
+    Tcl_Obj **valuePtrPtr)	/* If not NULL, location to which pointer to
+				 * next array element value is written. NULL is
+				 * written when at the end of the array. */
 {
-    Var *varPtr = ArrayNext(search, NULL);
-    return varPtr ? VarHashGetKey(varPtr) : NULL;
+    /*
+     * Let Tcl_ArraySearchPeek() do all the work, then clear the search
+     * structure's nextEntry buffer so that the search will advance.
+     */
+
+    if (Tcl_ArraySearchPeek(interp, search, keyPtrPtr, valuePtrPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    search->nextEntry = NULL;
+    return TCL_OK;
 }
 
 /*
@@ -2266,48 +2428,33 @@ Tcl_ArraySearchNext(
  *	and must not have been passed to Tcl_ArraySearchDone().
  *
  * Results:
- *	The search query is completed.
+ *	Normally, the search query is completed, and TCL_OK is returned. If an
+ *	array trace has an error, TCL_ERROR is returned and error information is
+ *	placed in the interpreter result.
  *
  * Side effects:
- *	Resources associated with the search are deallocated.
+ *	Resources associated with the search are deallocated. Array traces, if
+ *	any, are executed.
  *
  *----------------------------------------------------------------------
  */
 
-void
+int
 Tcl_ArraySearchDone(
+    Tcl_Interp *interp,		/* Command interpreter in which the array
+				 * variable is located. */
     Tcl_ArraySearch search)	/* Prior return from Tcl_ArraySearchStart(). */
 {
-    Interp *iPtr = (Interp *)search->interp;
-    Var *varPtr = search->varPtr;
-    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&iPtr->varSearches, varPtr);
-    ArraySearch *prevPtr;
-
     /*
-     * Unhook the search from the list of searches associated with the
-     * variable.
+     * Execute array traces and report any errors that may arise.
      */
 
-    if (search == Tcl_GetHashValue(hPtr)) {
-	if (search->nextPtr) {
-	    Tcl_SetHashValue(hPtr, search->nextPtr);
-	} else {
-	    varPtr->flags &= ~VAR_SEARCH_ACTIVE;
-	    Tcl_DeleteHashEntry(hPtr);
-	}
-    } else {
-	for (prevPtr = Tcl_GetHashValue(hPtr);; prevPtr = prevPtr->nextPtr) {
-	    if (prevPtr->nextPtr == search) {
-		prevPtr->nextPtr = search->nextPtr;
-		break;
-	    }
-	}
+    if (ArrayVarTrace(interp, search->varPtr, search->varNameObj) != TCL_OK) {
+	return TCL_ERROR;
     }
-    Tcl_DecrRefCount(search->name);
-    if (search->filterObj) {
-	Tcl_DecrRefCount(search->filterObj);
-    }
-    ckfree(search);
+
+    ArrayDone(interp, search);
+    return TCL_OK;
 }
 
 /*
@@ -4069,7 +4216,7 @@ ArrayAnyMoreCmd(
      * it is not consumed and is available for the next call.
      */
 
-    if ((searchPtr->nextEntry = ArrayNext(searchPtr, &fail))) {
+    if ((searchPtr->nextEntry = ArrayNext(interp, searchPtr, &fail))) {
 	gotValue = 1;
     } else if (fail) {
 	return TCL_ERROR;
@@ -4107,8 +4254,8 @@ ArrayNextElementCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Var *varPtr;
-    Tcl_Obj *varNameObj, *searchObj, *resultObj;
+    Var *varPtr, *elemPtr;
+    Tcl_Obj *varNameObj, *searchObj;
     ArraySearch *searchPtr;
 
     if (objc != 3) {
@@ -4126,18 +4273,16 @@ ArrayNextElementCmd(
      * Get the search.
      */
 
-    searchPtr = ParseSearchId(interp, varPtr, varNameObj, searchObj);
-    if (searchPtr == NULL) {
+    if (!(searchPtr = ParseSearchId(interp, varPtr, varNameObj, searchObj))) {
 	return TCL_ERROR;
     }
 
     /*
-     * Get the next element from the search, or the empty string on
-     * exhaustion.
+     * Get the next element from the search, or the empty string on exhaustion.
      */
 
-    if ((resultObj = Tcl_ArraySearchNext(searchPtr))) {
-	Tcl_SetObjResult(interp, resultObj);
+    if ((elemPtr = ArrayNext(interp, searchPtr, NULL))) {
+	Tcl_SetObjResult(interp, VarHashGetKey(elemPtr));
     }
 
     return TCL_OK;
@@ -4198,7 +4343,7 @@ ArrayDoneSearchCmd(
      * variable.
      */
 
-    Tcl_ArraySearchDone(searchPtr);
+    ArrayDone(interp, searchPtr);
     return TCL_OK;
 }
 

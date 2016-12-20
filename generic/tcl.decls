@@ -2356,13 +2356,15 @@ declare 637 {
 	Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags)
 }
 declare 638 {
-    Tcl_Obj *Tcl_ArraySearchPeek(Tcl_ArraySearch search)
+    int Tcl_ArraySearchPeek(Tcl_Interp *interp, Tcl_ArraySearch search,
+	Tcl_Obj **keyPtrPtr, Tcl_Obj **valuePtrPtr)
 }
 declare 639 {
-    Tcl_Obj *Tcl_ArraySearchNext(Tcl_ArraySearch search)
+    int Tcl_ArraySearchNext(Tcl_Interp *interp, Tcl_ArraySearch search,
+	Tcl_Obj **keyPtrPtr, Tcl_Obj **valuePtrPtr)
 }
 declare 640 {
-    void Tcl_ArraySearchDone(Tcl_ArraySearch search)
+    int Tcl_ArraySearchDone(Tcl_Interp *interp, Tcl_ArraySearch search)
 }
 declare 641 {
    int Tcl_ArrayStatistics(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
