@@ -1493,7 +1493,7 @@ Tcl_SocketObjCmd(
 	SKT_SERVER
     };
     int optionIndex, a, server = 0, myport = 0, async = 0, boolTmp;
-    unsigned int flags = TCL_TCPSERVER_REUSEADDR;
+    unsigned int flags = 0;
     const char *host, *port, *myaddr = NULL;
     Tcl_Obj *script = NULL;
     Tcl_Channel chan;
@@ -1552,6 +1552,7 @@ Tcl_SocketObjCmd(
 		return TCL_ERROR;
 	    }
 	    server = 1;
+	    flags |= TCL_TCPSERVER_REUSEADDR;
 	    a++;
 	    if (a >= objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
