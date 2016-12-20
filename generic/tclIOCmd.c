@@ -1492,8 +1492,8 @@ Tcl_SocketObjCmd(
 	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_REUSEADDR, SKT_REUSEPORT,
 	SKT_SERVER
     };
-    int optionIndex, a, server = 0, myport = 0, async = 0, reusep = 0,
-	reusea = 0;
+    int optionIndex, a, server = 0, myport = 0, async = 0, reusep = -1,
+	reusea = -1;
     unsigned int flags = 0;
     const char *host, *port, *myaddr = NULL;
     Tcl_Obj *script = NULL;
@@ -1553,8 +1553,6 @@ Tcl_SocketObjCmd(
 		return TCL_ERROR;
 	    }
 	    server = 1;
-	    /* [TIP#456] Set for backward-compatibility. */
-	    reusea = 1;
 	    a++;
 	    if (a >= objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -1613,15 +1611,15 @@ Tcl_SocketObjCmd(
 	return TCL_ERROR;
     }
 
-    if (!server && (reusea != 0 || reusep != 0)) {
+    if (!server && (reusea != -1 || reusep != -1)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"options -reuseaddr and -reuseport are only valid for servers",
 		-1));
 	return TCL_ERROR;
     }
 
-    flags |= reusea ? TCL_TCPSERVER_REUSEADDR : 0;
-    flags |= reusep ? TCL_TCPSERVER_REUSEPORT : 0;
+    if (reusea!=0) flags |= TCL_TCPSERVER_REUSEADDR;
+    if (reusep==1) flags |= TCL_TCPSERVER_REUSEPORT;
 
     // All the arguments should have been parsed by now, 'a' points to the last
     // one, the port number.

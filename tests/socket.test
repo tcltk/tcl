@@ -306,8 +306,20 @@ test socket_$af-1.15 {arg parsing for socket command} -constraints [list socket 
     socket -reuseaddr yes 4242
 } -returnCodes error -result {options -reuseaddr and -reuseport are only valid for servers}
 test socket_$af-1.16 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
+    socket -reuseaddr no 4242
+} -returnCodes error -result {options -reuseaddr and -reuseport are only valid for servers}
+test socket_$af-1.17 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
+    socket -reuseaddr
+} -returnCodes error -result {no argument given for -reuseaddr option}
+test socket_$af-1.18 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -reuseport yes 4242
 } -returnCodes error -result {options -reuseaddr and -reuseport are only valid for servers}
+test socket_$af-1.19 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
+    socket -reuseport no 4242
+} -returnCodes error -result {options -reuseaddr and -reuseport are only valid for servers}
+test socket_$af-1.20 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
+    socket -reuseport
+} -returnCodes error -result {no argument given for -reuseport option}
 
 set path(script) [makeFile {} script]
 
