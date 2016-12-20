@@ -157,6 +157,33 @@ static const char *isArrayElement =
 #define HasLocalVars(framePtr) ((framePtr)->isProcCallFrame & FRAME_IS_PROC)
 
 /*
+ * Array search flags.
+ */
+
+enum {
+    KEEP_ON_ABORT_BIT,
+    SEARCH_ABORTED_BIT,
+
+    /*
+     * If set, the search structure is not automatically freed when the search
+     * terminates early due to an array element being added or removed or the
+     * array itself being deleted. In this case, the search structure is kept
+     * until the next time a search operation is performed, at which time it is
+     * deallocated and an error is reported.
+     */
+
+    KEEP_ON_ABORT = 1 << KEEP_ON_ABORT_BIT,
+
+    /*
+     * If KEEP_ON_ABORT is set and the search has terminated early, in lieu of
+     * immediately freeing the search structure, this bit is set so that it will
+     * be freed the next time a search operation is performed.
+     */
+
+    SEARCH_ABORTED = 1 << SEARCH_ABORTED_BIT,
+};
+
+/*
  * The following structure describes an enumerative search in progress on an
  * array variable. It is used by various Tcl_Array*() functions and their
  * respective [array] script interface commands.
@@ -182,6 +209,7 @@ struct Tcl_ArraySearch_ {
 				 * one. */
     Tcl_Obj *filterObj;		/* Search filter pattern, or NULL if none. */
     int filterType;		/* TCL_MATCH_EXACT, _GLOB, or _REGEXP. */
+    int flags;			/* Search status flags as defined above. */
 };
 
 /*
@@ -214,6 +242,9 @@ static Var *		ArrayFirst(Tcl_Interp *interp, ArraySearch *searchPtr,
 static Var *		ArrayNext(Tcl_Interp *interp, ArraySearch *searchPtr,
 			    int *failPtr);
 static void		ArrayDone(Tcl_Interp *interp, ArraySearch *searchPtr);
+static int  		ArrayAborted(Tcl_Interp *interp,
+			    ArraySearch *searchPtr);
+static void		ArraySearchFree(ArraySearch *searchPtr);
 static int		ArrayNames(Tcl_Interp *interp, Var *varPtr,
 			    Tcl_Obj *filterObj, int filterType,
 			    Tcl_Obj *listObj);
@@ -1429,6 +1460,64 @@ ArrayDone(
      * Deallocate the search object.
      */
 
+    ArraySearchFree(searchPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ArrayAborted --
+ *
+ *	Deallocates array searches if they aborted due to array elements being
+ *	added or removed or the array being unset.
+ *
+ * Results:
+ *	TCL_OK is returned if the array search did not abort. TCL_ERROR is
+ *	returned if the array search did abort, and a message to that effect is
+ *	placed in the interpreter result.
+ *
+ * Side effects:
+ *	Memory used by the search may be released to the storage allocator.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ArrayAborted(
+    Tcl_Interp *interp,		/* Command interpreter in which the array
+				 * variable is located. */
+    ArraySearch *searchPtr)	/* Array enumeration state structure. */
+{
+    if (searchPtr->flags & SEARCH_ABORTED_BIT) {
+	ArraySearchFree(searchPtr);
+	Tcl_SetResult(interp, "search aborted due to array change", TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAYSEARCH", "n/a", NULL);
+	return TCL_ERROR;
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ArraySearchFree --
+ *
+ *	Deallocates an array search structure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory used by the search is released to the storage allocator.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ArraySearchFree(
+    ArraySearch *searchPtr)	/* Array enumeration state structure. */
+{
     Tcl_DecrRefCount(searchPtr->name);
     Tcl_DecrRefCount(searchPtr->varNameObj);
     if (searchPtr->filterObj) {
@@ -1486,6 +1575,7 @@ ArrayNames(
     search.filterObj = filterObj;
     search.filterType = filterType;
     search.nextEntry = NULL;
+    search.flags = 0;
     varPtr = ArrayFirst(interp, &search, &fail);
 
     /*
@@ -1799,6 +1889,7 @@ Tcl_ArrayUnset(
     search.varPtr = varPtr;
     search.filterObj = part2Ptr;
     search.filterType = filterType;
+    search.flags = 0;
     elemPtr = ArrayFirst(interp, &search, &fail);
 
     /*
@@ -2125,6 +2216,7 @@ Tcl_ArraySize(
 	search.varPtr = varPtr;
 	search.filterObj = part2Ptr;
 	search.filterType = flags & TCL_MATCH;
+	search.flags = 0;
 	for (varPtr = ArrayFirst(interp, &search, &fail); varPtr;
 		varPtr = ArrayNext(interp, &search, &fail)) {
 	    ++size;
@@ -2185,6 +2277,7 @@ Tcl_ArrayExists(
 	search.varPtr = varPtr;
 	search.filterObj = part2Ptr;
 	search.filterType = flags & TCL_MATCH;
+	search.flags = 0;
 	varPtr = ArrayFirst(interp, &search, &fail);
     }
 
@@ -2259,6 +2352,7 @@ Tcl_ArraySearchStart(
     search.filterObj = part2Ptr;
     search.filterType = flags & TCL_MATCH;
     search.nextEntry = ArrayFirst(interp, &search, &fail);
+    search.flags = KEEP_ON_ABORT;
     if (!search.nextEntry && fail) {
 	return NULL;
     }
@@ -2320,6 +2414,14 @@ Tcl_ArraySearchPeek(
 				 * written when at the end of the array. */
 {
     Tcl_Obj *keyObj, *valueObj;
+
+    /*
+     * Deallocate aborted searches.
+     */
+
+    if (ArrayAborted(interp, search) != TCL_OK) {
+	return TCL_ERROR;
+    }
 
     /*
      * Execute array traces and report any errors that may arise.
@@ -2445,6 +2547,14 @@ Tcl_ArraySearchDone(
 				 * variable is located. */
     Tcl_ArraySearch search)	/* Prior return from Tcl_ArraySearchStart(). */
 {
+    /*
+     * Deallocate aborted searches.
+     */
+
+    if (ArrayAborted(interp, search) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
     /*
      * Execute array traces and report any errors that may arise.
      */
@@ -4155,6 +4265,15 @@ ArrayStartSearchCmd(
 	return TCL_ERROR;
     }
 
+    /*
+     * Clear the KEEP_ON_ABORT flag which was set by Tcl_ArraySearchStart() so
+     * the search structure will automatically be deallocated should the search
+     * terminate early due to array elements being added or removed or the array
+     * itself being unset.
+     */
+
+    searchPtr->flags = 0;
+
     Tcl_SetObjResult(interp, searchPtr->name);
     return TCL_OK;
 }
@@ -4333,8 +4452,7 @@ ArrayDoneSearchCmd(
      * Get the search.
      */
 
-    searchPtr = ParseSearchId(interp, varPtr, varNameObj, searchObj);
-    if (searchPtr == NULL) {
+    if (!(searchPtr = ParseSearchId(interp, varPtr, varNameObj, searchObj))) {
 	return TCL_ERROR;
     }
 
@@ -5561,8 +5679,10 @@ ParseSearchId(
  *
  * DeleteSearches --
  *
- *	This function is called to free up all of the searches associated
- *	with an array variable.
+ *	This function is called to free up all of the searches associated with
+ *	an array variable. Any searches with the KEEP_ON_ABORT flag set will not
+ *	immediately be freed but will have the SEARCH_ABORTED flag set so they
+ *	will be freed the next time a search operation is performed.
  *
  * Results:
  *	None.
@@ -5587,8 +5707,11 @@ DeleteSearches(
 	for (searchPtr = Tcl_GetHashValue(sPtr); searchPtr != NULL;
 		searchPtr = nextPtr) {
 	    nextPtr = searchPtr->nextPtr;
-	    Tcl_DecrRefCount(searchPtr->name);
-	    ckfree(searchPtr);
+	    if (searchPtr->flags & KEEP_ON_ABORT) {
+		searchPtr->flags |= SEARCH_ABORTED;
+	    } else {
+		ArraySearchFree(searchPtr);
+	    }
 	}
 	arrayVarPtr->flags &= ~VAR_SEARCH_ACTIVE;
 	Tcl_DeleteHashEntry(sPtr);
