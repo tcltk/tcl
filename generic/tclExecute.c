@@ -1484,11 +1484,10 @@ CompileExprObj(
 	 * TIP #280: No invoker (yet) - Expression compilation.
 	 */
 
-	int length;
-	const char *string = TclGetStringFromObj(objPtr, &length);
+	const char *string = TclGetString(objPtr);
 
-	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
-	TclCompileExpr(interp, string, length, &compEnv, 0);
+	TclInitCompileEnv(interp, &compEnv, string, objPtr->length, NULL, 0);
+	TclCompileExpr(interp, string, objPtr->length, &compEnv, 0);
 
 	/*
 	 * Successful compilation. If the expression yielded no instructions,
