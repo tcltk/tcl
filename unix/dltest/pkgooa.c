@@ -88,7 +88,7 @@ Pkgooa_Init(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     if (tclStubsPtr == NULL) {

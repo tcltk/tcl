@@ -531,7 +531,8 @@ SetByteArrayFromAny(
     Tcl_Interp *interp,		/* Not used. */
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
-    int length, improper = 0;
+    size_t length;
+    int improper = 0;
     const char *src, *srcEnd;
     unsigned char *dst;
     ByteArray *byteArrayPtr;
@@ -544,7 +545,8 @@ SetByteArrayFromAny(
 	return TCL_OK;
     }
 
-    src = TclGetStringFromObj(objPtr, &length);
+    src = TclGetString(objPtr);
+    length = objPtr->length;
     srcEnd = src + length;
 
     byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
