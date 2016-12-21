@@ -125,7 +125,7 @@ int
 Tcl_GetBoolean(
     Tcl_Interp *interp,		/* Interpreter used for error reporting. */
     const char *src,		/* String containing one of the boolean values
-				 * 1, 0, true, false, yes, no, on, off. */
+				 * 1, 0, +, -, true, false, yes, no, on, off. */
     int *boolPtr)		/* Place to store converted result, which will
 				 * be 0 or 1. */
 {
