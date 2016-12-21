@@ -67,14 +67,14 @@ test link-2.2 {writing bad values into variables} -setup {
     testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     list [catch {set int 09a} msg] $msg $int
-} -result {1 {can't set "int": variable must have integer value} 43}
+} -result {1 {can't set "int": variable must have integer or boolean value} 43}
 test link-2.3 {writing bad values into variables} -setup {
     testlink delete
 } -constraints {testlink} -body {
     testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     list [catch {set real 1.x3} msg] $msg $real
-} -result {1 {can't set "real": variable must have real value} 1.23}
+} -result {1 {can't set "real": variable must have real or boolean value} 1.23}
 test link-2.4 {writing bad values into variables} -setup {
     testlink delete
 } -constraints {testlink} -body {
@@ -88,7 +88,7 @@ test link-2.5 {writing bad values into variables} -setup {
     testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     list [catch {set wide gorp} msg] $msg $bool
-} -result {1 {can't set "wide": variable must have integer value} 1}
+} -result {1 {can't set "wide": variable must have integer or boolean value} 1}
 
 test link-3.1 {read-only variables} -constraints {testlink} -setup {
     testlink delete
@@ -225,7 +225,7 @@ test link-7.4 {access to linked variables via upvar} -setup {
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     testlink set -4 {} {} {} {} {} {} {} {} {} {} {} {} {}
     list [catch x msg] $msg $int
-} -result {1 {can't set "y": variable must have integer value} -4}
+} -result {1 {can't set "y": variable must have integer or boolean value} -4}
 test link-7.5 {access to linked variables via upvar} -setup {
     testlink delete
 } -constraints {testlink} -body {
@@ -236,7 +236,7 @@ test link-7.5 {access to linked variables via upvar} -setup {
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     testlink set -4 16.75 {} {} {} {} {} {} {} {} {} {} {} {}
     list [catch x msg] $msg $real
-} -result {1 {can't set "y": variable must have real value} 16.75}
+} -result {1 {can't set "y": variable must have real or boolean value} 16.75}
 test link-7.6 {access to linked variables via upvar} -setup {
     testlink delete
 } -constraints {testlink} -body {
@@ -258,7 +258,7 @@ test link-7.7 {access to linked variables via upvar} -setup {
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     testlink set -4 16.3 1 {} 778899 {} {} {} {} {} {} {} {} {}
     list [catch x msg] $msg $wide
-} -result {1 {can't set "y": variable must have integer value} 778899}
+} -result {1 {can't set "y": variable must have integer or boolean value} 778899}
 
 test link-8.1 {Tcl_UpdateLinkedVar procedure} {testlink} {
     proc x args {

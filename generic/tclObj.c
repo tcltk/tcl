@@ -2004,9 +2004,10 @@ static int
 ParseBoolean(
     register Tcl_Obj *objPtr)	/* The object to parse/convert. */
 {
-    int i, length, newBool;
+    int newBool;
     char lowerCase[6];
-    const char *str = TclGetStringFromObj(objPtr, &length);
+    const char *str = TclGetString(objPtr);
+    size_t i, length = objPtr->length;
 
     if ((length == 0) || (length > 5)) {
 	/*
@@ -2027,6 +2028,18 @@ ParseBoolean(
 	if (length == 1) {
 	    newBool = 1;
 	    goto numericBoolean;
+	}
+	return TCL_ERROR;
+    case '-':
+	if (length == 1) {
+	    newBool = 0;
+	    goto goodBoolean;
+	}
+	return TCL_ERROR;
+    case '+':
+	if (length == 1) {
+	    newBool = 1;
+	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     }
@@ -2082,14 +2095,11 @@ ParseBoolean(
 	}
 	return TCL_ERROR;
     case 'o':
-	if (length < 2) {
-	    return TCL_ERROR;
-	}
-	if (strncmp(lowerCase, "on", (size_t) length) == 0) {
-	    newBool = 1;
-	    goto goodBoolean;
-	} else if (strncmp(lowerCase, "off", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "off", (size_t) length) == 0) {
 	    newBool = 0;
+	    goto goodBoolean;
+	} else if (strncmp(lowerCase, "on", (size_t) length) == 0) {
+	    newBool = 1;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
