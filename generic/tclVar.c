@@ -1488,7 +1488,7 @@ ArrayAborted(
 				 * variable is located. */
     ArraySearch *searchPtr)	/* Array enumeration state structure. */
 {
-    if (searchPtr->flags & SEARCH_ABORTED_BIT) {
+    if (searchPtr->flags & SEARCH_ABORTED) {
 	ArraySearchFree(searchPtr);
 	Tcl_SetResult(interp, "search aborted due to array change", TCL_STATIC);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAYSEARCH", "n/a", NULL);
