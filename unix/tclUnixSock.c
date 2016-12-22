@@ -1162,7 +1162,7 @@ TcpConnect(
             error = 0;
 
             (void) setsockopt(statePtr->fds.fd, SOL_SOCKET, SO_REUSEADDR,
-                    (char *) &reuseaddr, sizeof(reuseaddr));
+                              &reuseaddr, sizeof(reuseaddr));
             ret = bind(statePtr->fds.fd, statePtr->myaddr->ai_addr,
                     statePtr->myaddr->ai_addrlen);
             if (ret < 0) {
@@ -1510,7 +1510,7 @@ Tcl_OpenTcpServer(
 	 */
 
 	(void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-		(char *) &reuseaddr, sizeof(reuseaddr));
+		              &reuseaddr, sizeof(reuseaddr));
 
         /*
          * Make sure we use the same port number when opening two server
