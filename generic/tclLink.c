@@ -678,10 +678,10 @@ ObjValue(
     }
 }
 /*
- * This function works almost the same as Tcl_GetBooleanFromObj(), only
- * it doesn't have an interpreter to report errors, and it considers
- * the character sequences "0x", "0b" and "0o" as valid, for purpose
- * of the link functionality in Tcl. See bug [39f6304c2e].
+ * This function checks for integer representations, which are valid
+ * when linking with C variables, but which are invalid in other
+ * contexts in Tcl. Handled are "+", "-", "0x", "0b" and "0o" (upper-
+ * and lowercase). See bug [39f6304c2e].
  */
 int
 GetInvalidIntFromObj(Tcl_Obj *objPtr,
@@ -697,15 +697,14 @@ GetInvalidIntFromObj(Tcl_Obj *objPtr,
 	*intPtr = 0;
 	return TCL_OK;
     }
-    return Tcl_GetBooleanFromObj(NULL, objPtr, intPtr);
+    return TCL_ERROR;
 }
 
 /*
- * This function works almost the same as Tcl_GetBooleanFromObj(), only
- * it returns a double in stead of an integer, it doesn't have an interpreter
- * to report errors, and it considers the character sequences ".", "0x", "0b"
- * and "0o" as valid, for purpose of the link functionality in Tcl.
- * See bug [39f6304c2e].
+ * This function checks for double representations, which are valid
+ * when linking with C variables, but which are invalid in other
+ * contexts in Tcl. Handled are ".", "+", "-", "0x", "0b" and "0o"
+ * (upper- and lowercase). See bug [39f6304c2e].
  */
 int
 GetInvalidDoubleFromObj(Tcl_Obj *objPtr,
