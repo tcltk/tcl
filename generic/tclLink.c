@@ -701,7 +701,7 @@ SetInvalidRealFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
 	return TCL_OK;
     }
     if (TclParseNumber(NULL, objPtr, NULL, str, length, &endPtr,
-	    TCL_PARSE_DECIMAL_ONLY|TCL_PARSE_INTEGER_ONLY) == TCL_OK) {
+	    TCL_PARSE_DECIMAL_ONLY) == TCL_OK) {
 	/* If number is followed by [eE][+-]?, then it is an invalid
 	 * double, but it could be the start of a valid double. */
 	if (*endPtr == 'e' || *endPtr == 'E') {
