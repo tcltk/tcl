@@ -158,10 +158,10 @@ test link-2.8 {writing C variables from Tcl} -constraints {testlink} -setup {
     set uint 0
     set long 0
     set ulong 0
-    set float -6000e+
+    set float -60.00e+
     set uwide 0
     concat [testlink get] | $int $real $bool $string $wide $char $uchar $short $ushort $uint $long $ulong $float $uwide
-} -result {0 5000.0 0 0 0 0 0 0 0 0 0 0 -6000.0 0 | 0 5000e 0 0 0 0 0 0 0 0 0 0 -6000e+ 0}
+} -result {0 5000.0 0 0 0 0 0 0 0 0 0 0 -60.0 0 | 0 5000e 0 0 0 0 0 0 0 0 0 0 -60.00e+ 0}
 
 test link-3.1 {read-only variables} {testlink} {
     testlink delete
