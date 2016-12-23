@@ -76,7 +76,7 @@ static void		RememberSyncObject(void *objPtr,
 void *
 Tcl_GetThreadData(
     Tcl_ThreadDataKey *keyPtr,	/* Identifier for the data chunk */
-    size_t size)			/* Size of storage block */
+    size_t size)		/* Size of storage block */
 {
     void *result;
 #ifdef TCL_THREADS

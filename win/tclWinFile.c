@@ -2799,7 +2799,6 @@ TclWinVolumeRelativeNormalize(
 	size_t cwdLen = useThisCwd->length;
 	char drive_cur = path[0];
 
-	cwdLen = useThisCwd->length;
 	if (drive_cur >= 'a') {
 	    drive_cur -= ('a' - 'A');
 	}

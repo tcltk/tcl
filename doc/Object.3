@@ -111,23 +111,18 @@ which is defined as follows.
 .PP
 .CS
 typedef struct Tcl_Obj {
-    int \fIrefCount\fR;
+    size_t \fIrefCount\fR;
     char *\fIbytes\fR;
-    int \fIlength\fR;
+    size_t \fIlength\fR;
     const Tcl_ObjType *\fItypePtr\fR;
     union {
         long \fIlongValue\fR;
         double \fIdoubleValue\fR;
-        void *\fIotherValuePtr\fR;
         Tcl_WideInt \fIwideValue\fR;
         struct {
             void *\fIptr1\fR;
             void *\fIptr2\fR;
         } \fItwoPtrValue\fR;
-        struct {
-            void *\fIptr\fR;
-            unsigned long \fIvalue\fR;
-        } \fIptrAndLongRep\fR;
     } \fIinternalRep\fR;
 } \fBTcl_Obj\fR;
 .CE

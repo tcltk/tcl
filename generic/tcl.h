@@ -610,7 +610,7 @@ typedef struct Tcl_ObjType {
  */
 
 typedef struct Tcl_Obj {
-    size_t refCount;	/* When 0 the object will be freed. */
+    size_t refCount;		/* When 0 the object will be freed. */
     char *bytes;		/* This points to the first byte of the
 				 * object's string representation. The array
 				 * must be followed by a null byte (i.e., at
@@ -631,8 +631,6 @@ typedef struct Tcl_Obj {
     union {			/* The internal representation: */
 	long longValue;		/*   - an long integer value. */
 	double doubleValue;	/*   - a double-precision floating value. */
-	void *otherValuePtr;	/*   - another, type-specific value, not used
-				 *     internally any more. */
 	Tcl_WideInt wideValue;	/*   - a long long value. */
 	struct {		/*   - internal rep as two pointers.
 				 *     Many uses in Tcl, including a bignum's
@@ -643,11 +641,6 @@ typedef struct Tcl_Obj {
 	    void *ptr1;
 	    void *ptr2;
 	} twoPtrValue;
-	struct {		/*   - internal rep as a pointer and a long,
-				 *     not used internally any more. */
-	    void *ptr;
-	    unsigned long value;
-	} ptrAndLongRep;
     } internalRep;
 } Tcl_Obj;
 

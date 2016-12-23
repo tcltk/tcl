@@ -309,11 +309,7 @@ const Tcl_HashKeyType tclObjHashKeyType = {
  * argument in a Tcl command.
  *
  * NOTE: the ResolvedCmdName that gets cached is stored in the
- * twoPtrValue.ptr1 field, and the twoPtrValue.ptr2 field is unused. You might
- * think you could use the simpler otherValuePtr field to store the single
- * ResolvedCmdName pointer, but DO NOT DO THIS. It seems that some extensions
- * use the second internal pointer field of the twoPtrValue field for their
- * own purposes.
+ * twoPtrValue.ptr1 field, and the twoPtrValue.ptr2 field is unused.
  *
  * TRICKY POINT! Some extensions update this structure! (Notably, these
  * include TclBlend and TCom). This is highly ill-advised on their part, but
