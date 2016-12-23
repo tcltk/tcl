@@ -32,7 +32,7 @@
  */
 
 #if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
-typedef unsigned long caddr_t;
+typedef size_t caddr_t;
 #endif
 
 /*
@@ -56,7 +56,7 @@ union overhead {
 	unsigned char magic1;		/* other magic number */
 #ifndef NDEBUG
 	unsigned short rmagic;		/* range magic number */
-	unsigned long size;		/* actual block size */
+	size_t size;		/* actual block size */
 	unsigned short unused2;		/* padding to 8-byte align */
 #endif
     } ovu;
@@ -133,7 +133,7 @@ static int allocInit = 0;
  * a given block size.
  */
 
-static	unsigned int numMallocs[NBUCKETS+1];
+static	size_t numMallocs[NBUCKETS+1];
 #endif
 
 #if !defined(NDEBUG)
@@ -148,7 +148,7 @@ static	unsigned int numMallocs[NBUCKETS+1];
  * Prototypes for functions used only in this file.
  */
 
-static void		MoreCore(int bucket);
+static void		MoreCore(size_t bucket);
 
 /*
  *-------------------------------------------------------------------------
@@ -254,7 +254,7 @@ TclpAlloc(
     unsigned int numBytes)	/* Number of bytes to allocate. */
 {
     register union overhead *overPtr;
-    register long bucket;
+    register size_t bucket;
     register unsigned amount;
     struct block *bigBlockPtr = NULL;
 
@@ -385,12 +385,12 @@ TclpAlloc(
 
 static void
 MoreCore(
-    int bucket)			/* What bucket to allocat to. */
+    size_t bucket)	/* What bucket to allocate to. */
 {
     register union overhead *overPtr;
-    register long size;		/* size of desired block */
-    long amount;		/* amount to allocate */
-    int numBlocks;		/* how many blocks we get */
+    register size_t size;	/* size of desired block */
+    size_t amount;		/* amount to allocate */
+    size_t numBlocks;		/* how many blocks we get */
     struct block *blockPtr;
 
     /*
@@ -398,14 +398,14 @@ MoreCore(
      * VAX, I think) or for a negative arg.
      */
 
-    size = 1 << (bucket + 3);
+    size = ((size_t)1) << (bucket + 3);
     ASSERT(size > 0);
 
     amount = MAXMALLOC;
     numBlocks = amount / size;
     ASSERT(numBlocks*size == amount);
 
-    blockPtr = (struct block *) TclpSysAlloc((unsigned)
+    blockPtr = (struct block *) TclpSysAlloc(
 	    (sizeof(struct block) + amount), 1);
     /* no more room! */
     if (blockPtr == NULL) {
@@ -448,7 +448,7 @@ void
 TclpFree(
     char *oldPtr)		/* Pointer to memory to free. */
 {
-    register long size;
+    register size_t size;
     register union overhead *overPtr;
     struct block *bigBlockPtr;
 
@@ -518,7 +518,7 @@ TclpRealloc(
     union overhead *overPtr;
     struct block *bigBlockPtr;
     int expensive;
-    unsigned long maxSize;
+    size_t maxSize;
 
     if (oldPtr == NULL) {
 	return TclpAlloc(numBytes);
@@ -645,30 +645,30 @@ void
 mstats(
     char *s)			/* Where to write info. */
 {
-    register int i, j;
+    register unsigned int i, j;
     register union overhead *overPtr;
-    int totalFree = 0, totalUsed = 0;
+    size_t totalFree = 0, totalUsed = 0;
 
     Tcl_MutexLock(allocMutexPtr);
 
     fprintf(stderr, "Memory allocation statistics %s\nTclpFree:\t", s);
     for (i = 0; i < NBUCKETS; i++) {
 	for (j=0, overPtr=nextf[i]; overPtr; overPtr=overPtr->next, j++) {
-	    fprintf(stderr, " %d", j);
+	    fprintf(stderr, " %u", j);
 	}
-	totalFree += j * (1 << (i + 3));
+	totalFree += ((size_t)j) * (1 << (i + 3));
     }
 
     fprintf(stderr, "\nused:\t");
     for (i = 0; i < NBUCKETS; i++) {
-	fprintf(stderr, " %d", numMallocs[i]);
+	fprintf(stderr, " %" TCL_LL_MODIFIER "d", (Tcl_WideInt)numMallocs[i]);
 	totalUsed += numMallocs[i] * (1 << (i + 3));
     }
 
-    fprintf(stderr, "\n\tTotal small in use: %d, total free: %d\n",
-	    totalUsed, totalFree);
-    fprintf(stderr, "\n\tNumber of big (>%d) blocks in use: %d\n",
-	    MAXMALLOC, numMallocs[NBUCKETS]);
+    fprintf(stderr, "\n\tTotal small in use: %" TCL_LL_MODIFIER "d, total free: %" TCL_LL_MODIFIER "d\n",
+	(Tcl_WideInt)totalUsed, (Tcl_WideInt)totalFree);
+    fprintf(stderr, "\n\tNumber of big (>%d) blocks in use: %" TCL_LL_MODIFIER "d\n",
+	    MAXMALLOC, (Tcl_WideInt)numMallocs[NBUCKETS]);
 
     Tcl_MutexUnlock(allocMutexPtr);
 }
