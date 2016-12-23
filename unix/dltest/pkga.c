@@ -122,7 +122,7 @@ Pkga_Init(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvideEx(interp, "Pkga", "1.0", NULL);
