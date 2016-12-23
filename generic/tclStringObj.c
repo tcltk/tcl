@@ -3081,10 +3081,10 @@ TclStringFind(
     }
 
     lh = Tcl_GetCharLength(haystack);
-    if (haystack->bytes && (lh == haystack->length)) {
+    if (haystack->bytes && ((size_t)lh == haystack->length)) {
 	/* haystack is all single-byte chars */
 
-	if (needle->bytes && (ln == needle->length)) {
+	if (needle->bytes && ((size_t)ln == needle->length)) {
 	    /* needle is also all single-byte chars */
 	    char *found = strstr(haystack->bytes + start, needle->bytes);
 
@@ -3183,10 +3183,10 @@ TclStringLast(
     if (last + 1 > lh) {
 	last = lh - 1;
     }
-    if (haystack->bytes && (lh == haystack->length)) {
+    if (haystack->bytes && ((size_t)lh == haystack->length)) {
 	/* haystack is all single-byte chars */
 
-	if (needle->bytes && (ln == needle->length)) {
+	if (needle->bytes && ((size_t)ln == needle->length)) {
 	    /* needle is also all single-byte chars */
 
 	    char *try = haystack->bytes + last + 1 - ln;
@@ -3245,7 +3245,7 @@ static void
 ReverseBytes(
     unsigned char *to,		/* Copy bytes into here... */
     unsigned char *from,	/* ...from here... */
-    int count)		/* Until this many are copied, */
+    size_t count)		/* Until this many are copied, */
 				/* reversing as you go. */
 {
     unsigned char *src = from + count;
@@ -3314,8 +3314,8 @@ TclStringObjReverse(
     }
 
     if (objPtr->bytes) {
-	int numChars = stringPtr->numChars;
-	int numBytes = objPtr->length;
+	size_t numChars = stringPtr->numChars;
+	size_t numBytes = objPtr->length;
 	char *to, *from = objPtr->bytes;
 
 	if (Tcl_IsShared(objPtr)) {
@@ -3333,8 +3333,8 @@ TclStringObjReverse(
 	     *
 	     * Pass 1. Reverse the bytes of each multi-byte character.
 	     */
-	    int charCount = 0;
-	    int bytesLeft = numBytes;
+	    size_t charCount = 0;
+	    size_t bytesLeft = numBytes;
 
 	    while (bytesLeft) {
 		/*
@@ -3342,7 +3342,7 @@ TclStringObjReverse(
 		 * It's part of the contract for objPtr->bytes values.
 		 * Thus, we can skip calling Tcl_UtfCharComplete() here.
 		 */
-		int bytesInChar = Tcl_UtfToUniChar(from, &ch);
+		size_t bytesInChar = Tcl_UtfToUniChar(from, &ch);
 
 		ReverseBytes((unsigned char *)to, (unsigned char *)from,
 			bytesInChar);
