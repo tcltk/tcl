@@ -1810,7 +1810,7 @@ Tcl_DbNewBooleanObj(
     TclDbNewObj(objPtr, file, line);
     objPtr->bytes = NULL;
 
-    objPtr->internalRep.longValue = (boolValue? 1 : 0);
+    objPtr->internalRep.longValue = (boolValue != 0);
     objPtr->typePtr = &tclIntType;
     return objPtr;
 }
