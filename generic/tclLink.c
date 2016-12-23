@@ -677,6 +677,50 @@ ObjValue(
 	return resultObj;
     }
 }
+
+static int SetInvalidRealFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+
+static Tcl_ObjType invalidRealType = {
+    "invalidReal",			/* name */
+    NULL,				/* freeIntRepProc */
+    NULL,				/* dupIntRepProc */
+    NULL,				/* updateStringProc */
+    SetInvalidRealFromAny		/* setFromAnyProc */
+};
+
+static int
+SetInvalidRealFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
+    int length;
+    const char *str;
+    const char *endPtr;
+
+    str = TclGetStringFromObj(objPtr, &length);
+    if ((length == 1) && (str[0] == '.')){
+	objPtr->typePtr = &invalidRealType;
+	objPtr->internalRep.doubleValue = 0.0;
+	return TCL_OK;
+    }
+    if (TclParseNumber(NULL, objPtr, NULL, str, length, &endPtr,
+	    TCL_PARSE_DECIMAL_ONLY|TCL_PARSE_INTEGER_ONLY) == TCL_OK) {
+	/* If number is followed by [eE][+-]?, then it is an invalid
+	 * double, but it could be the start of a valid double. */
+	if (*endPtr == 'e' || *endPtr == 'E') {
+	    ++endPtr;
+	    if (*endPtr == '+' || *endPtr == '-') ++endPtr;
+	    if (*endPtr == 0) {
+		double doubleValue = 0.0;
+		Tcl_GetDoubleFromObj(NULL, objPtr, &doubleValue);
+		if (objPtr->typePtr->freeIntRepProc) objPtr->typePtr->freeIntRepProc(objPtr);
+		objPtr->typePtr = &invalidRealType;
+		objPtr->internalRep.doubleValue = doubleValue;
+		return TCL_OK;
+	    }
+	}
+    }
+    return TCL_ERROR;
+}
+
+
 /*
  * This function checks for integer representations, which are valid
  * when linking with C variables, but which are invalid in other
@@ -704,17 +748,17 @@ GetInvalidIntFromObj(Tcl_Obj *objPtr,
  * This function checks for double representations, which are valid
  * when linking with C variables, but which are invalid in other
  * contexts in Tcl. Handled are ".", "+", "-", "0x", "0b" and "0o"
- * (upper- and lowercase). See bug [39f6304c2e].
+ * (upper- and lowercase) and sequences like "1e-". See bug [39f6304c2e].
  */
 int
 GetInvalidDoubleFromObj(Tcl_Obj *objPtr,
 				double *doublePtr)
 {
-    int length, intValue, result;
-    const char *str = TclGetStringFromObj(objPtr, &length);
+    int intValue, result;
 
-    if ((length == 1) && (str[0] == '.')){
-	*doublePtr = 0.0;
+    if ((objPtr->typePtr == &invalidRealType) ||
+	    (SetInvalidRealFromAny(NULL, objPtr) == TCL_OK)) {
+	*doublePtr = objPtr->internalRep.doubleValue;
 	return TCL_OK;
     }
     result = GetInvalidIntFromObj(objPtr, &intValue);
