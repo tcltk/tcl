@@ -182,23 +182,18 @@ typedef struct Tcl_ObjType {
 } Tcl_ObjType;
 
 struct Tcl_Obj {
-    int refCount;
+    size_t refCount;
     char *bytes;
-    int length;
+    size_t length;
     Tcl_ObjType *typePtr;
     union {
 	long longValue;
 	double doubleValue;
-	void *otherValuePtr;
 	int64_t wideValue;
 	struct {
 	    void *ptr1;
 	    void *ptr2;
 	} twoPtrValue;
-	struct {
-	    void *ptr;
-	    unsigned long value;
-	} ptrAndLongRep;
     } internalRep;
 };
 

@@ -289,7 +289,7 @@ declare 75 {
 declare 76 {
     void Tcl_BackgroundError(Tcl_Interp *interp)
 }
-# Removed in 9.0. Don't re-use it in any 9.x release, see TIP ???.
+# Removed in 9.0.
 #declare 77 {
 #    char Tcl_Backslash(const char *src, int *readPtr)
 #}
