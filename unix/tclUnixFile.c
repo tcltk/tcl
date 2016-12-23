@@ -938,7 +938,6 @@ TclpObjLink(
 	 */
 
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
-	    size_t targetLen;
 	    Tcl_DString ds;
 	    Tcl_Obj *transPtr;
 
@@ -953,8 +952,7 @@ TclpObjLink(
 		return NULL;
 	    }
 	    target = TclGetString(transPtr);
-	    targetLen = transPtr->length;
-	    target = Tcl_UtfToExternalDString(NULL, target, targetLen, &ds);
+	    target = Tcl_UtfToExternalDString(NULL, target, transPtr->length, &ds);
 	    Tcl_DecrRefCount(transPtr);
 
 	    if (symlink(target, src) != 0) {
