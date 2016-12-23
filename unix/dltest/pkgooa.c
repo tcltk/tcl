@@ -10,7 +10,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
 #include "tclOO.h"
 #include <string.h>
 
@@ -78,7 +77,7 @@ static TclOOStubs stubsCopy = {
     (Tcl_Object (*) (Tcl_Interp *, Tcl_Object, const char *,
 	    const char *t)) Pkgooa_StubsOKObjCmd
     /* More entries could be here, but those are not used
-     * needed for this test-case. So, being NULL is OK. */
+     * for this test-case. So, being NULL is OK. */
 };
 
 extern DLLEXPORT int
@@ -88,6 +87,14 @@ Pkgooa_Init(
 {
     int code;
 
+    /* Any TclOO extension which uses stubs, calls
+     * both Tcl_InitStubs and Tcl_OOInitStubs() and
+     * does not use any Tcl 8.6 features should be
+     * loadable in Tcl 8.5 as well, provided the
+     * TclOO extension (for Tcl 8.5) is installed.
+     * This worked in Tcl 8.6.0, and is expected
+     * to keep working in all future Tcl 8.x releases.
+     */
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
