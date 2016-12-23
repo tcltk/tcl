@@ -141,6 +141,27 @@ test link-2.8 {writing C variables from Tcl} -constraints {testlink} -setup {
     set uwide "0O"
     concat [testlink get] | $int $real $bool $string $wide $char $uchar $short $ushort $uint $long $ulong $float $uwide
 } -result {0 0.0 0 0 0 0 0 0 0 0 0 0 0.0 0 | 0x 0b 0 0 0O 0X 0B 0O 0x 0b 0o 0X 0B 0O}
+test link-2.8 {writing C variables from Tcl} -constraints {testlink} -setup {
+    testlink delete
+} -body {
+    testlink set 43 1.21 4 - 56785678 64 250 30000 60000 0xbaadbeef 12321 32123 3.25 1231231234
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    set int 0
+    set real 5000e
+    set bool 0
+    set string 0
+    set wide 0
+    set char 0
+    set uchar 0
+    set short 0
+    set ushort 0
+    set uint 0
+    set long 0
+    set ulong 0
+    set float -6000e+
+    set uwide 0
+    concat [testlink get] | $int $real $bool $string $wide $char $uchar $short $ushort $uint $long $ulong $float $uwide
+} -result {0 5000.0 0 0 0 0 0 0 0 0 0 0 -6000.0 0 | 0 5000e 0 0 0 0 0 0 0 0 0 0 -6000e+ 0}
 
 test link-3.1 {read-only variables} {testlink} {
     testlink delete
