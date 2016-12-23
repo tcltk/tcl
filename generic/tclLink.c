@@ -584,7 +584,7 @@ ObjValue(
 	return Tcl_NewDoubleObj(linkPtr->lastValue.d);
     case TCL_LINK_BOOLEAN:
 	linkPtr->lastValue.i = LinkedVar(int);
-	return Tcl_NewBooleanObj(linkPtr->lastValue.i != 0);
+	return Tcl_NewBooleanObj(linkPtr->lastValue.i);
     case TCL_LINK_CHAR:
 	linkPtr->lastValue.c = LinkedVar(char);
 	return Tcl_NewIntObj(linkPtr->lastValue.c);
