@@ -804,6 +804,7 @@ typedef struct VarInHash {
  * MODULE_SCOPE int	TclIsVarTemporary(Var *varPtr);
  * MODULE_SCOPE int	TclIsVarArgument(Var *varPtr);
  * MODULE_SCOPE int	TclIsVarResolved(Var *varPtr);
+ * MODULE_SCOPE int	TclIsVarArraySearched(Var *varPtr);
  */
 
 #define TclIsVarScalar(varPtr) \
@@ -844,6 +845,9 @@ typedef struct VarInHash {
 
 #define TclIsVarDeadHash(varPtr) \
     ((varPtr)->flags & VAR_DEAD_HASH)
+
+#define TclIsVarArraySearched(varPtr) \
+    ((varPtr)->flags & VAR_SEARCH_ACTIVE)
 
 #define TclGetVarNsPtr(varPtr) \
     (TclIsVarInHash(varPtr) \

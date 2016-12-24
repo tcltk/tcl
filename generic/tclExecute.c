@@ -4034,12 +4034,13 @@ TEBCresume(
 	}
 	TRACE(("%s %u \"%.30s\" => ",
 		(flags ? "normal" : "noerr"), opnd, O2S(part2Ptr)));
-	if (TclIsVarArray(arrayPtr) && !UnsetTraced(arrayPtr)) {
+	if (TclIsVarArray(arrayPtr) && !UnsetTraced(arrayPtr)
+		&& !TclIsVarArraySearched(arrayPtr)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
 	    if (varPtr && TclIsVarDirectUnsettable(varPtr)) {
 		/*
-		 * No nasty traces and element exists, so we can proceed to
-		 * unset it. Might still not exist though...
+		 * No nasty traces or searchesw and element exists, so we can
+		 * proceed to unset it. Might still not exist though...
 		 */
 
 		if (!TclIsVarUndefined(varPtr)) {
