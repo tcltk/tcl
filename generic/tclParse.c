@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
- 
+
 #include "tclInt.h"
 #include "tclParse.h"
 #include <assert.h>
@@ -167,6 +167,8 @@ static int		ParseTokens(const char *src, int numBytes, int mask,
 			    int flags, Tcl_Parse *parsePtr);
 static int		ParseWhiteSpace(const char *src, int numBytes,
 			    int *incompletePtr, char *typePtr);
+static int		ParseAllWhiteSpace(const char *src, int numBytes,
+			    int *incompletePtr);
 
 /*
  *----------------------------------------------------------------------
@@ -298,8 +300,42 @@ Tcl_ParseCommand(
      */
 
     parsePtr->commandStart = src;
+    type = CHAR_TYPE(*src);
+    scanned = 1;	/* Can't have missing whitepsace before first word. */
     while (1) {
 	int expandWord = 0;
+
+	/* Are we at command termination? */
+
+	if ((numBytes == 0) || (type & terminators) != 0) {
+	    parsePtr->term = src;
+	    parsePtr->commandSize = src + (numBytes != 0)
+		    - parsePtr->commandStart;
+	    return TCL_OK;
+	}
+
+	/* Are we missing white space after previous word? */
+
+	if (scanned == 0) {
+	    if (src[-1] == '"') {
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "extra characters after close-quote", -1));
+		}
+		parsePtr->errorType = TCL_PARSE_QUOTE_EXTRA;
+	    } else {
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "extra characters after close-brace", -1));
+		}
+		parsePtr->errorType = TCL_PARSE_BRACE_EXTRA;
+	    }
+	    parsePtr->term = src;
+	error:
+	    Tcl_FreeParse(parsePtr);
+	    parsePtr->commandSize = parsePtr->end - parsePtr->commandStart;
+	    return TCL_ERROR;
+	}
 
 	/*
 	 * Create the token for the word.
@@ -310,23 +346,6 @@ Tcl_ParseCommand(
 	tokenPtr = &parsePtr->tokenPtr[wordIndex];
 	tokenPtr->type = TCL_TOKEN_WORD;
 
-	/*
-	 * Skip white space before the word. Also skip a backslash-newline
-	 * sequence: it should be treated just like white space.
-	 */
-
-	scanned = ParseWhiteSpace(src,numBytes, &parsePtr->incomplete, &type);
-	src += scanned;
-	numBytes -= scanned;
-	if (numBytes == 0) {
-	    parsePtr->term = src;
-	    break;
-	}
-	if ((type & terminators) != 0) {
-	    parsePtr->term = src;
-	    src++;
-	    break;
-	}
 	tokenPtr->start = src;
 	parsePtr->numTokens++;
 	parsePtr->numWords++;
@@ -511,7 +530,7 @@ Tcl_ParseCommand(
 		    listStart = nextElem = tokenPtr[1].start;
 		    while (nextElem < listEnd) {
 			int quoted;
-	
+
 			tokenPtr->type = TCL_TOKEN_SIMPLE_WORD;
 			tokenPtr->numComponents = 1;
 
@@ -546,52 +565,12 @@ Tcl_ParseCommand(
 	    tokenPtr->type = TCL_TOKEN_SIMPLE_WORD;
 	}
 
-	/*
-	 * Do two additional checks: (a) make sure we're really at the end of
-	 * a word (there might have been garbage left after a quoted or braced
-	 * word), and (b) check for the end of the command.
-	 */
+	/* Parse the whitespace between words. */
 
 	scanned = ParseWhiteSpace(src,numBytes, &parsePtr->incomplete, &type);
-	if (scanned) {
-	    src += scanned;
-	    numBytes -= scanned;
-	    continue;
-	}
-
-	if (numBytes == 0) {
-	    parsePtr->term = src;
-	    break;
-	}
-	if ((type & terminators) != 0) {
-	    parsePtr->term = src;
-	    src++;
-	    break;
-	}
-	if (src[-1] == '"') {
-	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"extra characters after close-quote", -1));
-	    }
-	    parsePtr->errorType = TCL_PARSE_QUOTE_EXTRA;
-	} else {
-	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"extra characters after close-brace", -1));
-	    }
-	    parsePtr->errorType = TCL_PARSE_BRACE_EXTRA;
-	}
-	parsePtr->term = src;
-	goto error;
+	src += scanned;
+	numBytes -= scanned;
     }
-
-    parsePtr->commandSize = src - parsePtr->commandStart;
-    return TCL_OK;
-
-  error:
-    Tcl_FreeParse(parsePtr);
-    parsePtr->commandSize = parsePtr->end - parsePtr->commandStart;
-    return TCL_ERROR;
 }
 
 /*
@@ -616,6 +595,47 @@ TclIsSpaceProc(
     char byte)
 {
     return CHAR_TYPE(byte) & (TYPE_SPACE) || byte == '\n';
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIsBareword--
+ *
+ *	Report whether byte is one that can be part of a "bareword".
+ *	This concept is named in expression parsing, where it determines
+ *	what can be a legal function name, but is the same definition used
+ *	in determining what variable names can be parsed as variable
+ *	substitutions without the benefit of enclosing braces.  The set of
+ *	ASCII chars that are accepted are the numeric chars ('0'-'9'),
+ *	the alphabetic chars ('a'-'z', 'A'-'Z')	and underscore ('_').
+ *
+ * Results:
+ *	Returns 1, if byte is in the accepted set of chars, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclIsBareword(
+    char byte)
+{
+    if (byte < '0' || byte > 'z') {
+	return 0;
+    }
+    if (byte <= '9' || byte >= 'a') {
+	return 1;
+    }
+    if (byte == '_') {
+	return 1;
+    }
+    if (byte < 'A' || byte > 'Z') {
+	return 0;
+    }
+    return 1;
 }
 
 /*
@@ -692,22 +712,31 @@ ParseWhiteSpace(
  *----------------------------------------------------------------------
  */
 
+static int
+ParseAllWhiteSpace(
+    const char *src,		/* First character to parse. */
+    int numBytes,		/* Max number of byes to scan */
+    int *incompletePtr)		/* Set true if parse is incomplete. */
+{
+    char type;
+    const char *p = src;
+
+    do {
+	int scanned = ParseWhiteSpace(p, numBytes, incompletePtr, &type);
+
+	p += scanned;
+	numBytes -= scanned;
+    } while (numBytes && (*p == '\n') && (p++, --numBytes));
+    return (p-src);
+}
+
 int
 TclParseAllWhiteSpace(
     const char *src,		/* First character to parse. */
     int numBytes)		/* Max number of byes to scan */
 {
     int dummy;
-    char type;
-    const char *p = src;
-
-    do {
-	int scanned = ParseWhiteSpace(p, numBytes, &dummy, &type);
-
-	p += scanned;
-	numBytes -= scanned;
-    } while (numBytes && (*p == '\n') && (p++, --numBytes));
-    return (p-src);
+    return ParseAllWhiteSpace(src, numBytes, &dummy);
 }
 
 /*
@@ -980,17 +1009,12 @@ ParseComment(
 				 * command. */
 {
     register const char *p = src;
+    int incomplete = parsePtr->incomplete;
 
     while (numBytes) {
-	char type;
-	int scanned;
-
-	do {
-	    scanned = ParseWhiteSpace(p, numBytes,
-		    &parsePtr->incomplete, &type);
-	    p += scanned;
-	    numBytes -= scanned;
-	} while (numBytes && (*p == '\n') && (p++,numBytes--));
+	int scanned = ParseAllWhiteSpace(p, numBytes, &incomplete);
+	p += scanned;
+	numBytes -= scanned;
 
 	if ((numBytes == 0) || (*p != '#')) {
 	    break;
@@ -999,35 +1023,28 @@ ParseComment(
 	    parsePtr->commentStart = p;
 	}
 
+	p++;
+	numBytes--;
 	while (numBytes) {
-	    if (*p == '\\') {
-		scanned = ParseWhiteSpace(p, numBytes, &parsePtr->incomplete,
-			&type);
-		if (scanned) {
-		    p += scanned;
-		    numBytes -= scanned;
-		} else {
-		    /*
-		     * General backslash substitution in comments isn't part
-		     * of the formal spec, but test parse-15.47 and history
-		     * indicate that it has been the de facto rule. Don't
-		     * change it now.
-		     */
-
-		    TclParseBackslash(p, numBytes, &scanned, NULL);
-		    p += scanned;
-		    numBytes -= scanned;
-		}
-	    } else {
+	    if (*p == '\n') {
 		p++;
 		numBytes--;
-		if (p[-1] == '\n') {
+		break;
+	    }
+	    if (*p == '\\') {
+		p++;
+		numBytes--;
+		if (numBytes == 0) {
 		    break;
 		}
 	    }
+	    incomplete = (*p == '\n');
+	    p++;
+	    numBytes--;
 	}
 	parsePtr->commentSize = p - parsePtr->commentStart;
     }
+    parsePtr->incomplete = incomplete;
     return (p - src);
 }
 
@@ -1346,9 +1363,7 @@ Tcl_ParseVarName(
 {
     Tcl_Token *tokenPtr;
     register const char *src;
-    unsigned char c;
-    int varIndex, offset;
-    Tcl_UniChar ch;
+    int varIndex;
     unsigned array;
 
     if ((numBytes == 0) || (start == NULL)) {
@@ -1431,22 +1446,12 @@ Tcl_ParseVarName(
 	tokenPtr->numComponents = 0;
 
 	while (numBytes) {
-	    if (Tcl_UtfCharComplete(src, numBytes)) {
-		offset = Tcl_UtfToUniChar(src, &ch);
-	    } else {
-		char utfBytes[TCL_UTF_MAX];
-
-		memcpy(utfBytes, src, (size_t) numBytes);
-		utfBytes[numBytes] = '\0';
-		offset = Tcl_UtfToUniChar(utfBytes, &ch);
-	    }
-	    c = UCHAR(ch);
-	    if (isalnum(c) || (c == '_')) {	/* INTL: ISO only, UCHAR. */
-		src += offset;
-		numBytes -= offset;
+	    if (TclIsBareword(*src)) {
+		src += 1;
+		numBytes -= 1;
 		continue;
 	    }
-	    if ((c == ':') && (numBytes != 1) && (src[1] == ':')) {
+	    if ((src[0] == ':') && (numBytes != 1) && (src[1] == ':')) {
 		src += 2;
 		numBytes -= 2;
 		while (numBytes && (*src == ':')) {
@@ -1886,7 +1891,7 @@ Tcl_ParseQuotedString(
  *	flags argument to provide support for the -nobackslashes, -nocommands,
  *	and -novariables options, as represented by the flag values
  *	TCL_SUBST_BACKSLASHES, TCL_SUBST_COMMANDS, TCL_SUBST_VARIABLES.
- *	
+ *
  * Results:
  *	None.
  *
@@ -2215,7 +2220,7 @@ TclSubstTokens(
 		    if (result == 0) {
 			clPos = 0;
 		    } else {
-			Tcl_GetStringFromObj(result, &clPos);
+			TclGetStringFromObj(result, &clPos);
 		    }
 
 		    if (numCL >= maxNumCL) {
@@ -2491,59 +2496,9 @@ TclObjCommandComplete(
 				 * check. */
 {
     int length;
-    const char *script = Tcl_GetStringFromObj(objPtr, &length);
+    const char *script = TclGetStringFromObj(objPtr, &length);
 
     return CommandComplete(script, length);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclIsLocalScalar --
- *
- *	Check to see if a given string is a legal scalar variable name with no
- *	namespace qualifiers or substitutions.
- *
- * Results:
- *	Returns 1 if the variable is a local scalar.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclIsLocalScalar(
-    const char *src,
-    int len)
-{
-    const char *p;
-    const char *lastChar = src + (len - 1);
-
-    for (p=src ; p<=lastChar ; p++) {
-	if ((CHAR_TYPE(*p) != TYPE_NORMAL)
-		&& (CHAR_TYPE(*p) != TYPE_COMMAND_END)) {
-	    /*
-	     * TCL_COMMAND_END is returned for the last character of the
-	     * string. By this point we know it isn't an array or namespace
-	     * reference.
-	     */
-
-	    return 0;
-	}
-	if (*p == '(') {
-	    if (*lastChar == ')') {	/* We have an array element */
-		return 0;
-	    }
-	} else if (*p == ':') {
-	    if ((p != lastChar) && *(p+1) == ':') {	/* qualified name */
-		return 0;
-	    }
-	}
-    }
-
-    return 1;
 }
 
 /*

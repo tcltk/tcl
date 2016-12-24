@@ -502,9 +502,16 @@ Tcl_RegExpMatchObj(
 {
     Tcl_RegExp re;
 
-    re = Tcl_GetRegExpFromObj(interp, patternObj,
-	    TCL_REG_ADVANCED | TCL_REG_NOSUB);
-    if (re == NULL) {
+    /*
+     * For performance reasons, first try compiling the RE without support for
+     * subexpressions. On failure, try again without TCL_REG_NOSUB in case the
+     * RE has backreferences in it. Closely related to [Bug 1366683]. If this
+     * still fails, an error message will be left in the interpreter.
+     */
+
+    if (!(re = Tcl_GetRegExpFromObj(interp, patternObj,
+	    TCL_REG_ADVANCED | TCL_REG_NOSUB))
+     && !(re = Tcl_GetRegExpFromObj(interp, patternObj, TCL_REG_ADVANCED))) {
 	return -1;
     }
     return Tcl_RegExpExecObj(interp, re, textObj, 0 /* offset */,
@@ -755,7 +762,7 @@ FreeRegexpInternalRep(
      * If this is the last reference to the regexp, free it.
      */
 
-    if (--(regexpRepPtr->refCount) <= 0) {
+    if (regexpRepPtr->refCount-- <= 1) {
 	FreeRegexp(regexpRepPtr);
     }
     objPtr->typePtr = NULL;
@@ -946,7 +953,8 @@ CompileRegexp(
      * Tcl_RegExpExecObj to optionally do a fast match (avoids RE engine).
      */
 
-    if (TclReToGlob(NULL, string, length, &stringBuf, &exact) == TCL_OK) {
+    if (TclReToGlob(NULL, string, length, &stringBuf, &exact,
+	    NULL) == TCL_OK) {
 	regexpPtr->globObjPtr = TclDStringToObj(&stringBuf);
 	Tcl_IncrRefCount(regexpPtr->globObjPtr);
     } else {
@@ -975,7 +983,7 @@ CompileRegexp(
     if (tsdPtr->patterns[NUM_REGEXPS-1] != NULL) {
 	TclRegexp *oldRegexpPtr = tsdPtr->regexps[NUM_REGEXPS-1];
 
-	if (--(oldRegexpPtr->refCount) <= 0) {
+	if (oldRegexpPtr->refCount-- <= 1) {
 	    FreeRegexp(oldRegexpPtr);
 	}
 	ckfree(tsdPtr->patterns[NUM_REGEXPS-1]);
@@ -1049,7 +1057,7 @@ FinalizeRegexp(
 
     for (i = 0; (i < NUM_REGEXPS) && (tsdPtr->patterns[i] != NULL); i++) {
 	regexpPtr = tsdPtr->regexps[i];
-	if (--(regexpPtr->refCount) <= 0) {
+	if (regexpPtr->refCount-- <= 1) {
 	    FreeRegexp(regexpPtr);
 	}
 	ckfree(tsdPtr->patterns[i]);

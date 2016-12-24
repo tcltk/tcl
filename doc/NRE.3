@@ -3,9 +3,9 @@
 .\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH NRE 3 8.6 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_NRCreateCommand, Tcl_NRCallObjProc, Tcl_NREvalObj, Tcl_NREvalObjv, Tcl_NRCmdSwap, Tcl_NRExprObj, Tcl_NRAddCallback \- Non-Recursive (stackless) evaluation of Tcl scripts.
@@ -45,7 +45,7 @@ Name of a new command to create.
 Implementation of a command that will be called whenever \fIcmdName\fR
 is invoked as a command in the unoptimized way.
 .AP Tcl_ObjCmdProc *nreProc in
-Implementation of a command that will be called whenever \fIcmdName\fR 
+Implementation of a command that will be called whenever \fIcmdName\fR
 is invoked and requested to conserve the C stack.
 .AP ClientData clientData in
 Arbitrary one-word value that will be passed to \fIproc\fR, \fInreProc\fR,
@@ -83,13 +83,13 @@ executing in the interpreter designated by \fIinterp\fR completes.
 to the function designated by \fIpostProcPtr\fR when it is invoked.
 .BE
 .SH DESCRIPTION
-.PP 
+.PP
 This series of C functions provides an interface whereby commands that
 are implemented in C can be evaluated, and invoke Tcl commands scripts
 and scripts, without consuming space on the C stack. The non-recursive
 evaluation is done by installing a \fItrampoline\fR, a small piece of
 code that invokes a command or script, and then executes a series of
-callbacks when the command or script returns. 
+callbacks when the command or script returns.
 .PP
 The \fBTcl_NRCreateCommand\fR function creates a Tcl command in the
 interpreter designated by \fIinterp\fR that is prepared to handle
@@ -149,7 +149,7 @@ The remaining arguments are as for \fBTcl_NREvalObjv\fR.
 \fBTcl_NREvalObj\fR, \fBTcl_NREvalObjv\fR and \fBTcl_NRCmdSwap\fR
 all accept a \fIflags\fR parameter, which is an OR-ed-together set of
 bits to control evaluation. At the present time, the only supported flag
-available to callers is \fBTCL_EVAL_GLOBAL\fR. 
+available to callers is \fBTCL_EVAL_GLOBAL\fR.
 .\" TODO: Again, this is a lie. Do we want to explain TCL_EVAL_INVOKE
 .\"       and TCL_EVAL_NOERR?
 If the \fBTCL_EVAL_GLOBAL\fR flag is set, the script or command is
@@ -255,7 +255,7 @@ int
     int objc,
     Tcl_Obj *const objv[])
 {
-    return \fBTcl_NRCallObjProc\fR(interp, \fITheCmdNRObjProc\fR, 
+    return \fBTcl_NRCallObjProc\fR(interp, \fITheCmdNRObjProc\fR,
             clientData, objc, objv);
 }
 .CE

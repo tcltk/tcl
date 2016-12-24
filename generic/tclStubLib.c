@@ -24,13 +24,10 @@ const TclIntStubs *tclIntStubsPtr = NULL;
 const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
 /*
- * Use our own isDigit to avoid linking to libc on windows
+ * Use our own ISDIGIT to avoid linking to libc on windows
  */
 
-static int isDigit(const int c)
-{
-    return (c >= '0' && c <= '9');
-}
+#define ISDIGIT(c) (((unsigned)((c)-'0')) <= 9)
 
 /*
  *----------------------------------------------------------------------
@@ -54,7 +51,8 @@ MODULE_SCOPE const char *
 Tcl_InitStubs(
     Tcl_Interp *interp,
     const char *version,
-    int exact)
+    int exact,
+    int magic)
 {
     Interp *iPtr = (Interp *) interp;
     const char *actualVersion = NULL;
@@ -67,8 +65,8 @@ Tcl_InitStubs(
      * times. [Bug 615304]
      */
 
-    if (!stubsPtr || (stubsPtr->magic != TCL_STUB_MAGIC)) {
-	iPtr->result = "interpreter uses an incompatible stubs mechanism";
+    if (!stubsPtr || (stubsPtr->magic != (((exact&0xff00) >= 0x900) ? magic : TCL_STUB_MAGIC))) {
+	iPtr->result = (char *)"interpreter uses an incompatible stubs mechanism";
 	iPtr->freeProc = TCL_STATIC;
 	return NULL;
     }
@@ -77,12 +75,12 @@ Tcl_InitStubs(
     if (actualVersion == NULL) {
 	return NULL;
     }
-    if (exact) {
+    if (exact&1) {
 	const char *p = version;
 	int count = 0;
 
 	while (*p) {
-	    count += !isDigit(*p++);
+	    count += !ISDIGIT(*p++);
 	}
 	if (count == 1) {
 	    const char *q = actualVersion;
@@ -91,7 +89,7 @@ Tcl_InitStubs(
 	    while (*p && (*p == *q)) {
 		p++; q++;
 	    }
-	    if (*p || isDigit(*q)) {
+	    if (*p || ISDIGIT(*q)) {
 		/* Construct error message */
 		stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 		return NULL;
@@ -103,12 +101,16 @@ Tcl_InitStubs(
 	    }
 	}
     }
-    tclStubsPtr = (TclStubs *)pkgData;
+    if (((exact&0xff00) < 0x900)) {
+	/* We are running Tcl 8.x */
+	stubsPtr = (TclStubs *)pkgData;
+    }
+    tclStubsPtr = stubsPtr;
 
-    if (tclStubsPtr->hooks) {
-	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
-	tclIntStubsPtr = tclStubsPtr->hooks->tclIntStubs;
-	tclIntPlatStubsPtr = tclStubsPtr->hooks->tclIntPlatStubs;
+    if (stubsPtr->hooks) {
+	tclPlatStubsPtr = stubsPtr->hooks->tclPlatStubs;
+	tclIntStubsPtr = stubsPtr->hooks->tclIntStubs;
+	tclIntPlatStubsPtr = stubsPtr->hooks->tclIntPlatStubs;
     } else {
 	tclPlatStubsPtr = NULL;
 	tclIntStubsPtr = NULL;

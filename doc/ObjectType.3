@@ -3,9 +3,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH Tcl_ObjType 3 8.0 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_RegisterObjType, Tcl_GetObjType, Tcl_AppendAllObjTypes, Tcl_ConvertToType  \- manipulate Tcl value types
@@ -76,8 +76,8 @@ in that case \fBTCL_ERROR\fR is returned.
 if possible.
 It creates a new internal representation for \fIobjPtr\fR
 appropriate for the target type \fItypePtr\fR
-and sets its \fItypePtr\fR member as determined by calling the 
-\fItypePtr->setFromAnyProc\fR routine.  
+and sets its \fItypePtr\fR member as determined by calling the
+\fItypePtr->setFromAnyProc\fR routine.
 Any internal representation for \fIobjPtr\fR's old type is freed.
 If an error occurs during conversion, it returns \fBTCL_ERROR\fR
 and leaves an error message in the result value for \fIinterp\fR
@@ -181,7 +181,7 @@ typedef void \fBTcl_UpdateStringProc\fR(
 It must always set \fIbytes\fR non-NULL before returning.
 We require the string representation's byte array
 to have a null after the last byte, at offset \fIlength\fR,
-and to have no null bytes before that; this allows string representations 
+and to have no null bytes before that; this allows string representations
 to be treated as conventional null character-terminated C strings.
 These restrictions are easily met by using Tcl's internal UTF encoding
 for the string representation, same as one would do for other

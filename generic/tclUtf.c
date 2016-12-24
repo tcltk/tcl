@@ -73,28 +73,13 @@ static const unsigned char totalBytes[256] = {
 #else
     1,1,1,1,1,1,1,1,
 #endif
-#if TCL_UTF_MAX > 4
-    5,5,5,5,
-#else
-    1,1,1,1,
-#endif
-#if TCL_UTF_MAX > 5
-    6,6,6,6
-#else
-    1,1,1,1
-#endif
+    1,1,1,1,1,1,1,1
 };
-
-/*
- * Functions used only in this module.
- */
-
-static int		UtfCount(int ch);
 
 /*
  *---------------------------------------------------------------------------
  *
- * UtfCount --
+ * TclUtfCount --
  *
  *	Find the number of bytes in the Utf character "ch".
  *
@@ -107,28 +92,19 @@ static int		UtfCount(int ch);
  *---------------------------------------------------------------------------
  */
 
-INLINE static int
-UtfCount(
+int
+TclUtfCount(
     int ch)			/* The Tcl_UniChar whose size is returned. */
 {
-    if ((ch > 0) && (ch < UNICODE_SELF)) {
+    if ((unsigned)(ch - 1) < (UNICODE_SELF - 1)) {
 	return 1;
     }
     if (ch <= 0x7FF) {
 	return 2;
     }
-    if (ch <= 0xFFFF) {
-	return 3;
-    }
 #if TCL_UTF_MAX > 3
-    if (ch <= 0x1FFFFF) {
+    if (((unsigned)(ch - 0x10000) <= 0xfffff)) {
 	return 4;
-    }
-    if (ch <= 0x3FFFFFF) {
-	return 5;
-    }
-    if (ch <= 0x7FFFFFFF) {
-	return 6;
     }
 #endif
     return 3;
@@ -152,7 +128,7 @@ UtfCount(
  *---------------------------------------------------------------------------
  */
 
-INLINE int
+int
 Tcl_UniCharToUtf(
     int ch,			/* The Tcl_UniChar to be stored in the
 				 * buffer. */
@@ -161,7 +137,7 @@ Tcl_UniCharToUtf(
 				 * large enough to hold the UTF-8 character
 				 * (at most TCL_UTF_MAX bytes). */
 {
-    if ((ch > 0) && (ch < UNICODE_SELF)) {
+    if ((unsigned)(ch - 1) < (UNICODE_SELF - 1)) {
 	buf[0] = (char) ch;
 	return 1;
     }
@@ -172,43 +148,43 @@ Tcl_UniCharToUtf(
 	    return 2;
 	}
 	if (ch <= 0xFFFF) {
-	three:
-	    buf[2] = (char) ((ch | 0x80) & 0xBF);
-	    buf[1] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 12) | 0xE0);
-	    return 3;
+#if TCL_UTF_MAX == 4
+	    if ((ch & 0xF800) == 0xD800) {
+		if (ch & 0x0400) {
+		    /* Low surrogate */
+		    buf[3] = (char) ((ch | 0x80) & 0xBF);
+		    buf[2] |= (char) (((ch >> 6) | 0x80) & 0x8F);
+		    return 4;
+		} else {
+		    /* High surrogate */
+		    ch += 0x40;
+		    buf[2] = (char) (((ch << 4) | 0x80) & 0xB0);
+		    buf[1] = (char) (((ch >> 2) | 0x80) & 0xBF);
+		    buf[0] = (char) (((ch >> 8) | 0xF0) & 0xF7);
+		    return 0;
+		}
+	    }
+#endif
+	    goto three;
 	}
 
 #if TCL_UTF_MAX > 3
-	if (ch <= 0x1FFFFF) {
+	if (ch <= 0x10FFFF) {
 	    buf[3] = (char) ((ch | 0x80) & 0xBF);
 	    buf[2] = (char) (((ch >> 6) | 0x80) & 0xBF);
 	    buf[1] = (char) (((ch >> 12) | 0x80) & 0xBF);
 	    buf[0] = (char) ((ch >> 18) | 0xF0);
 	    return 4;
 	}
-	if (ch <= 0x3FFFFFF) {
-	    buf[4] = (char) ((ch | 0x80) & 0xBF);
-	    buf[3] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[2] = (char) (((ch >> 12) | 0x80) & 0xBF);
-	    buf[1] = (char) (((ch >> 18) | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 24) | 0xF8);
-	    return 5;
-	}
-	if (ch <= 0x7FFFFFFF) {
-	    buf[5] = (char) ((ch | 0x80) & 0xBF);
-	    buf[4] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[3] = (char) (((ch >> 12) | 0x80) & 0xBF);
-	    buf[2] = (char) (((ch >> 18) | 0x80) & 0xBF);
-	    buf[1] = (char) (((ch >> 24) | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 30) | 0xFC);
-	    return 6;
-	}
 #endif
     }
 
     ch = 0xFFFD;
-    goto three;
+three:
+    buf[2] = (char) ((ch | 0x80) & 0xBF);
+    buf[1] = (char) (((ch >> 6) | 0x80) & 0xBF);
+    buf[0] = (char) ((ch >> 12) | 0xE0);
+    return 3;
 }
 
 /*
@@ -323,9 +299,6 @@ Tcl_UtfToUniChar(
 	 * A two-byte-character lead-byte not followed by trail-byte
 	 * represents itself.
 	 */
-
-	*chPtr = (Tcl_UniChar) byte;
-	return 1;
     } else if (byte < 0xF0) {
 	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)) {
 	    /*
@@ -341,31 +314,23 @@ Tcl_UtfToUniChar(
 	 * A three-byte-character lead-byte not followed by two trail-bytes
 	 * represents itself.
 	 */
-
-	*chPtr = (Tcl_UniChar) byte;
-	return 1;
     }
 #if TCL_UTF_MAX > 3
-    {
-	int ch, total, trail;
+    else if (byte < 0xF8) {
+	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80) && ((src[3] & 0xC0) == 0x80)) {
+	    /*
+	     * Four-byte-character lead byte followed by three trail bytes.
+	     */
 
-	total = totalBytes[byte];
-	trail = total - 1;
-	if (trail > 0) {
-	    ch = byte & (0x3F >> trail);
-	    do {
-		src++;
-		if ((*src & 0xC0) != 0x80) {
-		    *chPtr = byte;
-		    return 1;
-		}
-		ch <<= 6;
-		ch |= (*src & 0x3F);
-		trail--;
-	    } while (trail > 0);
-	    *chPtr = ch;
-	    return total;
+	    *chPtr = (Tcl_UniChar) (((byte & 0x0E) << 18) | ((src[1] & 0x3F) << 12)
+		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
+	    return 4;
 	}
+
+	/*
+	 * A three-byte-character lead-byte not followed by two trail-bytes
+	 * represents itself.
+	 */
     }
 #endif
 
@@ -838,7 +803,7 @@ Tcl_UtfToUpper(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if (bytes < UtfCount(upChar)) {
+	if (bytes < TclUtfCount(upChar)) {
 	    memcpy(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {
@@ -891,7 +856,7 @@ Tcl_UtfToLower(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if (bytes < UtfCount(lowChar)) {
+	if (bytes < TclUtfCount(lowChar)) {
 	    memcpy(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {
@@ -941,7 +906,7 @@ Tcl_UtfToTitle(
 	bytes = TclUtfToUniChar(src, &ch);
 	titleChar = Tcl_UniCharToTitle(ch);
 
-	if (bytes < UtfCount(titleChar)) {
+	if (bytes < TclUtfCount(titleChar)) {
 	    memcpy(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {
@@ -953,7 +918,7 @@ Tcl_UtfToTitle(
 	bytes = TclUtfToUniChar(src, &ch);
 	lowChar = Tcl_UniCharToLower(ch);
 
-	if (bytes < UtfCount(lowChar)) {
+	if (bytes < TclUtfCount(lowChar)) {
 	    memcpy(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {
@@ -1365,6 +1330,11 @@ int
 Tcl_UniCharIsAlnum(
     int ch)			/* Unicode character to test. */
 {
+#if TCL_UTF_MAX > 3
+    if (UNICODE_OUT_OF_RANGE(ch)) {
+	return 0;
+    }
+#endif
     return (((ALPHA_BITS | DIGIT_BITS) >> GetCategory(ch)) & 1);
 }
 
@@ -1388,6 +1358,11 @@ int
 Tcl_UniCharIsAlpha(
     int ch)			/* Unicode character to test. */
 {
+#if TCL_UTF_MAX > 3
+    if (UNICODE_OUT_OF_RANGE(ch)) {
+	return 0;
+    }
+#endif
     return ((ALPHA_BITS >> GetCategory(ch)) & 1);
 }
 
@@ -1411,6 +1386,18 @@ int
 Tcl_UniCharIsControl(
     int ch)			/* Unicode character to test. */
 {
+#if TCL_UTF_MAX > 3
+    if (UNICODE_OUT_OF_RANGE(ch)) {
+	ch &= 0x1fffff;
+	if ((ch == 0xe0001) || ((ch >= 0xe0020) && (ch <= 0xe007f))) {
+	    return 1;
+	}
+	if ((ch >= 0xf0000) && ((ch & 0xffff) <= 0xfffd)) {
+	    return 1;
+	}
+	return 0;
+    }
+#endif
     return ((CONTROL_BITS >> GetCategory(ch)) & 1);
 }
 
@@ -1434,6 +1421,11 @@ int
 Tcl_UniCharIsDigit(
     int ch)			/* Unicode character to test. */
 {
+#if TCL_UTF_MAX > 3
+    if (UNICODE_OUT_OF_RANGE(ch)) {
+	return 0;
+    }
+#endif
     return (GetCategory(ch) == DECIMAL_DIGIT_NUMBER);
 }
 
@@ -1457,6 +1449,12 @@ int
 Tcl_UniCharIsGraph(
     int ch)			/* Unicode character to test. */
 {
+#if TCL_UTF_MAX > 3
+    if (UNICODE_OUT_OF_RANGE(ch)) {
+	ch &= 0x1fffff;
+	return (ch >= 0xe0100) && (ch <= 0xe01ef);
+    }
+#endif
     return ((GRAPH_BITS >> GetCategory(ch)) & 1);
 }
 
@@ -1480,6 +1478,11 @@ int
 Tcl_UniCharIsLower(
     int ch)			/* Unicode character to test. */
 {
+#if TCL_UTF_MAX > 3
+    if (UNICODE_OUT_OF_RANGE(ch)) {
+	return 0;
+    }
+#endif
     return (GetCategory(ch) == LOWERCASE_LETTER);
 }
 
@@ -1503,6 +1506,12 @@ int
 Tcl_UniCharIsPrint(
     int ch)			/* Unicode character to test. */
 {
+#if TCL_UTF_MAX > 3
+    if (UNICODE_OUT_OF_RANGE(ch)) {
+	ch &= 0x1fffff;
+	return (ch >= 0xe0100) && (ch <= 0xe01ef);
+    }
+#endif
     return (((GRAPH_BITS|SPACE_BITS) >> GetCategory(ch)) & 1);
 }
 
@@ -1526,6 +1535,11 @@ int
 Tcl_UniCharIsPunct(
     int ch)			/* Unicode character to test. */
 {
+#if TCL_UTF_MAX > 3
+    if (UNICODE_OUT_OF_RANGE(ch)) {
+	return 0;
+    }
+#endif
     return ((PUNCT_BITS >> GetCategory(ch)) & 1);
 }
 
@@ -1549,16 +1563,27 @@ int
 Tcl_UniCharIsSpace(
     int ch)			/* Unicode character to test. */
 {
+#if TCL_UTF_MAX > 3
+    /* Ignore upper 11 bits. */
+    ch &= 0x1fffff;
+#else
+    /* Ignore upper 16 bits. */
+    ch &= 0xffff;
+#endif
+
     /*
      * If the character is within the first 127 characters, just use the
      * standard C function, otherwise consult the Unicode table.
      */
 
-    if (((Tcl_UniChar) ch) < ((Tcl_UniChar) 0x80)) {
+    if (ch < 0x80) {
 	return TclIsSpaceProc((char) ch);
-    } else if ((Tcl_UniChar) ch == 0x0085 || (Tcl_UniChar) ch == 0x180e
-	    || (Tcl_UniChar) ch == 0x200b || (Tcl_UniChar) ch == 0x2060
-	    || (Tcl_UniChar) ch == 0x202f || (Tcl_UniChar) ch == 0xfeff) {
+#if TCL_UTF_MAX > 3
+    } else if (UNICODE_OUT_OF_RANGE(ch)) {
+	return 0;
+#endif
+    } else if (ch == 0x0085 || ch == 0x180e || ch == 0x200b
+	    || ch == 0x202f || ch == 0x2060 || ch == 0xfeff) {
 	return 1;
     } else {
 	return ((SPACE_BITS >> GetCategory(ch)) & 1);
@@ -1585,6 +1610,11 @@ int
 Tcl_UniCharIsUpper(
     int ch)			/* Unicode character to test. */
 {
+#if TCL_UTF_MAX > 3
+    if (UNICODE_OUT_OF_RANGE(ch)) {
+	return 0;
+    }
+#endif
     return (GetCategory(ch) == UPPERCASE_LETTER);
 }
 
@@ -1608,6 +1638,11 @@ int
 Tcl_UniCharIsWordChar(
     int ch)			/* Unicode character to test. */
 {
+#if TCL_UTF_MAX > 3
+    if (UNICODE_OUT_OF_RANGE(ch)) {
+	return 0;
+    }
+#endif
     return ((WORD_BITS >> GetCategory(ch)) & 1);
 }
 

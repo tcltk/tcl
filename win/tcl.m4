@@ -247,7 +247,7 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 #
 # Results:
 #
-#	Subst the following vars:
+#	Substitutes the following vars:
 #		TCL_BIN_DIR
 #		TCL_SRC_DIR
 #		TCL_LIB_FILE
@@ -523,6 +523,7 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 #		RES
 #
 #		MAKE_LIB
+#		MAKE_STUB_LIB
 #		MAKE_EXE
 #		MAKE_DLL
 #
@@ -558,7 +559,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     EXTRA_CFLAGS=""
 	AC_DEFINE(MODULE_SCOPE, [extern], [No need to mark inidividual symbols as hidden])
 
-    AC_CHECK_PROG(CYGPATH, cygpath, cygpath -w, echo)
+    AC_CHECK_PROG(CYGPATH, cygpath, cygpath -m, echo)
 
     SHLIB_SUFFIX=".dll"
 
@@ -571,7 +572,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
       AC_CACHE_CHECK(for cross-compile version of gcc,
 	ac_cv_cross,
 	AC_TRY_COMPILE([
-	    #ifndef __WIN32__
+	    #ifndef _WIN32
 		#error cross-compiler
 	    #endif
 	], [],
@@ -633,10 +634,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     # set various compiler flags depending on whether we are using gcc or cl
 
     if test "${GCC}" = "yes" ; then
+	extra_cflags="-pipe"
+	extra_ldflags="-pipe -static-libgcc"
 	AC_CACHE_CHECK(for mingw32 version of gcc,
 	    ac_cv_win32,
 	    AC_TRY_COMPILE([
-		#ifdef __WIN32__
+		#ifdef _WIN32
 		    #error win32
 		#endif
 	    ], [],
@@ -670,7 +673,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     if test "${GCC}" = "yes" ; then
 	SHLIB_LD=""
 	SHLIB_LD_LIBS='${LIBS}'
-	LIBS="-lnetapi32 -lkernel32 -luser32 -ladvapi32 -lws2_32"
+	LIBS="-lnetapi32 -lkernel32 -luser32 -ladvapi32 -luserenv -lws2_32"
 	# mingw needs to link ole32 and oleaut32 for [send], but MSVC doesn't
 	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -lole32 -loleaut32"
 	STLIB_LD='${AR} cr'
@@ -680,12 +683,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	RC_DEFINE=--define
 	RES=res.o
 	MAKE_LIB="\${STLIB_LD} \[$]@"
+	MAKE_STUB_LIB="\${STLIB_LD} \[$]@"
 	POST_MAKE_LIB="\${RANLIB} \[$]@"
 	MAKE_EXE="\${CC} -o \[$]@"
 	LIBPREFIX="lib"
-
-	extra_cflags="$extra_cflags -pipe"
-	extra_ldflags="$extra_ldflags -pipe"
 
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
@@ -710,9 +711,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	fi
 	# Link with gcc since ld does not link to default libs like
-	# -luser32 and -lmsvcrt by default. Make sure CFLAGS is
-	# included so -mno-cygwin passed the correct libs to the linker.
-	SHLIB_LD='${CC} -shared ${CFLAGS}'
+	# -luser32 and -lmsvcrt by default.
+	SHLIB_LD='${CC} -shared'
 	SHLIB_LD_LIBS='${LIBS}'
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags} \
 	    -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
@@ -727,7 +727,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wdeclaration-after-statement"
+	CFLAGS_WARNING="-Wall -Wsign-compare -Wdeclaration-after-statement"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
 
@@ -791,6 +791,13 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	    EXESUFFIX="\${DBGX}.exe"
+	    case "x`echo \${VisualStudioVersion}`" in
+		x1[[4-9]]*)
+		    lflags="${lflags} -nodefaultlib:libucrt.lib"
+		    ;;
+		*)
+		    ;;
+	    esac
 	fi
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -out:\[$]@"
 	# DLLSUFFIX is separate because it is the building block for
@@ -819,15 +826,21 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    ;;
 	    esac
 	    if test ! -d "${PATH64}" ; then
-		AC_MSG_WARN([Could not find 64-bit $MACHINE SDK to enable 64bit mode])
-		AC_MSG_WARN([Ensure latest Platform SDK is installed])
-		do64bit="no"
-	    else
-		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
+		AC_MSG_WARN([Could not find 64-bit $MACHINE SDK])
 	    fi
+	    AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 	fi
 
-	LIBS="netapi32.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib"
+	LIBS="netapi32.lib kernel32.lib user32.lib advapi32.lib userenv.lib ws2_32.lib"
+
+	case "x`echo \${VisualStudioVersion}`" in
+		x1[[4-9]]*)
+		    LIBS="$LIBS ucrt.lib"
+		    ;;
+		*)
+		    ;;
+	esac
+
 	if test "$do64bit" != "no" ; then
 	    # The space-based-path will work for the Makefile, but will
 	    # not work if AC_TRY_COMPILE is called.  TEA has the
@@ -842,7 +855,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
 	    # Do not use -O2 for Win64 - this has proved buggy in code gen.
 	    CFLAGS_OPTIMIZE="-nologo -O1 ${runtime}"
-	    lflags="-nologo -MACHINE:${MACHINE} -LIBPATH:\"${MSSDK}/Lib/${MACHINE}\""
+	    lflags="${lflags} -nologo -MACHINE:${MACHINE} -LIBPATH:\"${MSSDK}/Lib/${MACHINE}\""
 	    LINKBIN="\"${PATH64}/link.exe\""
 	    # Avoid 'unresolved external symbol __security_cookie' errors.
 	    # c.f. http://support.microsoft.com/?id=894573
@@ -854,7 +867,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    CFLAGS_DEBUG="-nologo -Z7 -Od -WX ${runtime}d"
 	    # -O2 - create fast code (/Og /Oi /Ot /Oy /Ob2 /Gs /GF /Gy)
 	    CFLAGS_OPTIMIZE="-nologo -O2 ${runtime}"
-	    lflags="-nologo"
+	    lflags="${lflags} -nologo"
 	    LINKBIN="link"
 	fi
 
@@ -961,6 +974,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	RC_DEFINE=-d
 	RES=res
 	MAKE_LIB="\${STLIB_LD} -out:\[$]@"
+	MAKE_STUB_LIB="\${STLIB_LD} -nodefaultlib -out:\[$]@"
 	POST_MAKE_LIB=
 	MAKE_EXE="\${CC} -Fe\[$]@"
 	LIBPREFIX=""
@@ -1112,13 +1126,13 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_WITH_TCL], [
-    if test -d ../../tcl8.6$1/win;  then
-	TCL_BIN_DEFAULT=../../tcl8.6$1/win
+    if test -d ../../tcl8.7$1/win;  then
+	TCL_BIN_DEFAULT=../../tcl8.7$1/win
     else
-	TCL_BIN_DEFAULT=../../tcl8.6/win
+	TCL_BIN_DEFAULT=../../tcl8.7/win
     fi
 
-    AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 8.6 binaries from DIR],
+    AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 8.7 binaries from DIR],
 	    TCL_BIN_DIR=$withval, TCL_BIN_DIR=`cd $TCL_BIN_DEFAULT; pwd`)
     if test ! -d $TCL_BIN_DIR; then
 	AC_MSG_ERROR(Tcl directory $TCL_BIN_DIR does not exist)

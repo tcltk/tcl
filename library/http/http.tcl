@@ -8,10 +8,10 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.6
+package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.7
+package provide http 2.8.10
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -113,7 +113,7 @@ if {[info command http::Log] eq {}} {proc http::Log {args} {}}
 
 proc http::register {proto port command} {
     variable urlTypes
-    set urlTypes($proto) [list $port $command]
+    set urlTypes([string tolower $proto]) [list $port $command]
 }
 
 # http::unregister --
@@ -127,11 +127,12 @@ proc http::register {proto port command} {
 
 proc http::unregister {proto} {
     variable urlTypes
-    if {![info exists urlTypes($proto)]} {
+    set lower [string tolower $proto]
+    if {![info exists urlTypes($lower)]} {
 	return -code error "unsupported url type \"$proto\""
     }
-    set old $urlTypes($proto)
-    unset urlTypes($proto)
+    set old $urlTypes($lower)
+    unset urlTypes($lower)
     return $old
 }
 
@@ -514,12 +515,13 @@ proc http::geturl {url args} {
     if {$proto eq ""} {
 	set proto http
     }
-    if {![info exists urlTypes($proto)]} {
+    set lower [string tolower $proto]
+    if {![info exists urlTypes($lower)]} {
 	unset $token
 	return -code error "Unsupported URL type \"$proto\""
     }
-    set defport [lindex $urlTypes($proto) 0]
-    set defcmd [lindex $urlTypes($proto) 1]
+    set defport [lindex $urlTypes($lower) 0]
+    set defcmd [lindex $urlTypes($lower) 1]
 
     if {$port eq ""} {
 	set port $defport
@@ -563,6 +565,10 @@ proc http::geturl {url args} {
     }
     # Proxy connections aren't shared among different hosts.
     set state(socketinfo) $host:$port
+
+    # Save the accept types at this point to prevent a race condition. [Bug
+    # c11a51c482]
+    set state(accept-types) $http(-accept)
 
     # See if we are supposed to use a previously opened channel.
     if {$state(-keepalive)} {
@@ -635,8 +641,20 @@ proc http::geturl {url args} {
     return $token
 }
 
+# http::Connected --
+#
+#	Callback used when the connection to the HTTP server is actually
+#	established.
+#
+# Arguments:
+#       token	State token.
+#       proto	What protocol (http, https, etc.) was used to connect.
+#	phost	Are we using keep-alive? Non-empty if yes.
+#	srvurl	Service-local URL that we're requesting
+# Results:
+#	None.
 
-proc http::Connected { token proto phost srvurl} {
+proc http::Connected {token proto phost srvurl} {
     variable http
     variable urlTypes
 
@@ -650,7 +668,8 @@ proc http::Connected { token proto phost srvurl} {
     set host [lindex [split $state(socketinfo) :] 0]
     set port [lindex [split $state(socketinfo) :] 1]
 
-    set defport [lindex $urlTypes($proto) 0]
+    set lower [string tolower $proto]
+    set defport [lindex $urlTypes($lower) 0]
 
     # Send data in cr-lf format, but accept any line terminators
 
@@ -688,13 +707,12 @@ proc http::Connected { token proto phost srvurl} {
     if {[info exists state(-handler)]} {
 	set state(-protocol) 1.0
     }
+    set accept_types_seen 0
     if {[catch {
 	puts $sock "$how $srvurl HTTP/$state(-protocol)"
-	puts $sock "Accept: $http(-accept)"
-	array set hdrs $state(-headers)
-	if {[info exists hdrs(Host)]} {
+	if {[dict exists $state(-headers) Host]} {
 	    # Allow Host spoofing. [Bug 928154]
-	    puts $sock "Host: $hdrs(Host)"
+	    puts $sock "Host: [dict get $state(-headers) Host]"
 	} elseif {$port == $defport} {
 	    # Don't add port in this case, to handle broken servers. [Bug
 	    # #504508]
@@ -702,7 +720,6 @@ proc http::Connected { token proto phost srvurl} {
 	} else {
 	    puts $sock "Host: $host:$port"
 	}
-	unset hdrs
 	puts $sock "User-Agent: $http(-useragent)"
         if {$state(-protocol) == 1.0 && $state(-keepalive)} {
 	    puts $sock "Connection: keep-alive"
@@ -715,18 +732,21 @@ proc http::Connected { token proto phost srvurl} {
         }
         set accept_encoding_seen 0
 	set content_type_seen 0
-	foreach {key value} $state(-headers) {
+	dict for {key value} $state(-headers) {
+	    set value [string map [list \n "" \r ""] $value]
+	    set key [string map {" " -} [string trim $key]]
 	    if {[string equal -nocase $key "host"]} {
 		continue
 	    }
 	    if {[string equal -nocase $key "accept-encoding"]} {
 		set accept_encoding_seen 1
 	    }
+	    if {[string equal -nocase $key "accept"]} {
+		set accept_types_seen 1
+	    }
 	    if {[string equal -nocase $key "content-type"]} {
 		set content_type_seen 1
 	    }
-	    set value [string map [list \n "" \r ""] $value]
-	    set key [string trim $key]
 	    if {[string equal -nocase $key "content-length"]} {
 		set contDone 1
 		set state(querylength) $value
@@ -735,8 +755,13 @@ proc http::Connected { token proto phost srvurl} {
 		puts $sock "$key: $value"
 	    }
 	}
+	# Allow overriding the Accept header on a per-connection basis. Useful
+	# for working with REST services. [Bug c11a51c482]
+	if {!$accept_types_seen} {
+	    puts $sock "Accept: $state(accept-types)"
+	}
         if {!$accept_encoding_seen && ![info exists state(-handler)]} {
-	    puts $sock "Accept-Encoding: deflate,gzip,compress"
+	    puts $sock "Accept-Encoding: gzip,deflate,compress"
         }
 	if {$isQueryChannel && $state(querylength) == 0} {
 	    # Try to determine size of data in channel. If we cannot seek, the
@@ -792,7 +817,6 @@ proc http::Connected { token proto phost srvurl} {
 	    Finish $token $err
 	}
     }
-
 }
 
 # Data access functions:
@@ -1023,7 +1047,7 @@ proc http::Event {sock token} {
 	    fconfigure $sock -translation binary
 
 	    if {
-		$state(-binary) || ![string match -nocase text* $state(type)]
+		$state(-binary) || [IsBinaryContentType $state(type)]
 	    } {
 		# Turn off conversions for non-text data
 		set state(binary) 1
@@ -1157,6 +1181,38 @@ proc http::Event {sock token} {
 	}
 	return
     }
+}
+
+# http::IsBinaryContentType --
+#
+#	Determine if the content-type means that we should definitely transfer
+#	the data as binary. [Bug 838e99a76d]
+#
+# Arguments
+#	type	The content-type of the data.
+#
+# Results:
+#	Boolean, true if we definitely should be binary.
+
+proc http::IsBinaryContentType {type} {
+    lassign [split [string tolower $type] "/;"] major minor
+    if {$major eq "text"} {
+	return false
+    }
+    # There's a bunch of XML-as-application-format things about. See RFC 3023
+    # and so on.
+    if {$major eq "application"} {
+	set minor [string trimright $minor]
+	if {$minor in {"xml" "xml-external-parsed-entity" "xml-dtd"}} {
+	    return false
+	}
+    }
+    # Not just application/foobar+xml but also image/svg+xml, so let us not
+    # restrict things for now...
+    if {[string match "*+xml" $minor]} {
+	return false
+    }
+    return true
 }
 
 # http::getTextLine --
@@ -1296,7 +1352,7 @@ proc http::Eof {token {force 0}} {
 		set state(body) [zlib $coding $state(body)]
 	    }
 	} err]} {
-	    Log "error doing $coding '$state(body)'"
+	    Log "error doing decompression: $err"
 	    return [Finish $token $err]
 	}
 
@@ -1391,7 +1447,7 @@ proc http::mapReply {string} {
     set converted [string map $formMap $string]
     if {[string match "*\[\u0100-\uffff\]*" $converted]} {
 	regexp "\[\u0100-\uffff\]" $converted badChar
-	# Return this error message for maximum compatability... :^/
+	# Return this error message for maximum compatibility... :^/
 	return -code error \
 	    "can't read \"formMap($badChar)\": no such element in array"
     }

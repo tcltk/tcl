@@ -113,8 +113,8 @@ static int		ToUtf(const WCHAR *wSrc, char *dst);
  *
  * TclpInitPlatform --
  *
- *	Initialize all the platform-dependant things like signals and
- *	floating-point error handling.
+ *	Initialize all the platform-dependant things like signals,
+ *	floating-point error handling and sockets.
  *
  *	Called at process initialization time.
  *
@@ -130,20 +130,16 @@ static int		ToUtf(const WCHAR *wSrc, char *dst);
 void
 TclpInitPlatform(void)
 {
+    WSADATA wsaData;
+    WORD wVersionRequested = MAKEWORD(2, 2);
+
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
     /*
-     * The following code stops Windows 3.X and Windows NT 3.51 from
-     * automatically putting up Sharing Violation dialogs, e.g, when someone
-     * tries to access a file that is locked or a drive with no disk in it.
-     * Tcl already returns the appropriate error to the caller, and they can
-     * decide to put up their own dialog in response to that failure.
-     *
-     * Under 95 and NT 4.0, this is a NOOP because the system doesn't
-     * automatically put up dialogs when the above operations fail.
+     * Initialize the winsock library. On Windows XP and higher this
+     * can never fail.
      */
-
-    SetErrorMode(SetErrorMode(0) | SEM_FAILCRITICALERRORS);
+    WSAStartup(wVersionRequested, &wsaData);
 
 #ifdef STATIC_BUILD
     /*
@@ -176,7 +172,7 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    64
@@ -218,9 +214,10 @@ TclpInitLibraryPath(
 	    TclGetProcessGlobalValue(&sourceLibraryDir));
 
     *encodingPtr = NULL;
-    bytes = Tcl_GetStringFromObj(pathPtr, lengthPtr);
-    *valuePtr = ckalloc((*lengthPtr) + 1);
-    memcpy(*valuePtr, bytes, (size_t)(*lengthPtr)+1);
+    bytes = TclGetString(pathPtr);
+    *lengthPtr = pathPtr->length;
+    *valuePtr = ckalloc(*lengthPtr + 1);
+    memcpy(*valuePtr, bytes, *lengthPtr + 1);
     Tcl_DecrRefCount(pathPtr);
 }
 
@@ -338,7 +335,7 @@ AppendEnvironment(
 static void
 InitializeDefaultLibraryDir(
     char **valuePtr,
-    int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     HMODULE hModule = TclWinGetTclInstance();
@@ -365,7 +362,7 @@ InitializeDefaultLibraryDir(
     *lengthPtr = strlen(name);
     *valuePtr = ckalloc(*lengthPtr + 1);
     *encodingPtr = NULL;
-    memcpy(*valuePtr, name, (size_t) *lengthPtr + 1);
+    memcpy(*valuePtr, name, *lengthPtr + 1);
 }
 
 /*
@@ -389,7 +386,7 @@ InitializeDefaultLibraryDir(
 static void
 InitializeSourceLibraryDir(
     char **valuePtr,
-    int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     HMODULE hModule = TclWinGetTclInstance();
@@ -416,7 +413,7 @@ InitializeSourceLibraryDir(
     *lengthPtr = strlen(name);
     *valuePtr = ckalloc(*lengthPtr + 1);
     *encodingPtr = NULL;
-    memcpy(*valuePtr, name, (size_t) *lengthPtr + 1);
+    memcpy(*valuePtr, name, *lengthPtr + 1);
 }
 
 /*
@@ -530,7 +527,8 @@ TclpSetVariables(
 	SYSTEM_INFO info;
 	OemId oemId;
     } sys;
-    OSVERSIONINFOA osInfo;
+    static OSVERSIONINFOW osInfo;
+    static int osInfoInitialized = 0;
     Tcl_DString ds;
     TCHAR szUserName[UNLEN+1];
     DWORD cchUserNameLen = UNLEN;
@@ -538,9 +536,19 @@ TclpSetVariables(
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
 
-    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
-    GetVersionExA(&osInfo);
-
+    if (!osInfoInitialized) {
+	HANDLE handle = LoadLibraryW(L"NTDLL");
+	int(__stdcall *getversion)(void *) =
+		(int(__stdcall *)(void *)) GetProcAddress(handle, "RtlGetVersion");
+	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+	if (!getversion || getversion(&osInfo)) {
+	    GetVersionExW(&osInfo);
+	}
+	if (handle) {
+		FreeLibrary(handle);
+	}
+	osInfoInitialized = 1;
+    }
     GetSystemInfo(&sys.info);
 
     /*

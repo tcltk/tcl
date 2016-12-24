@@ -698,7 +698,7 @@ test execute-6.12 {Tcl_ExprObj: exprcode interp validation} -setup {
     lappend result [e $e]
     interp delete slave
     interp create slave
-    interp alias {} e slave expr 
+    interp alias {} e slave expr
     lappend result [e $e]
 } -cleanup {
     interp delete slave
@@ -1013,8 +1013,8 @@ test execute-10.3 {Bug 3072640} -setup {
 	    yield $i
 	}
     }
-    proc t {args} { 
-	incr ::foo 
+    proc t {args} {
+	incr ::foo
     }
     trace add execution ::generate enterstep ::t
 } -body {
@@ -1043,6 +1043,29 @@ test execute-11.1 {Bug 3142026: GrowEvaluationStack off-by-one} -setup {
 } -cleanup {
     interp delete slave
 } -result ok
+
+test execute-11.2 {Bug 268b23df11} -setup {
+    proc zero {} {return 0}
+    proc crash {} {expr {abs([zero])}}
+    proc noop args {}
+    trace add execution crash enterstep noop
+} -body {
+    crash
+} -cleanup {
+    trace remove execution crash enterstep noop
+    rename noop {}
+    rename crash {}
+    rename zero {}
+} -result 0
+test execute-11.3 {Bug a0ece9d6d4} -setup {
+    proc crash {} {expr {rand()}}
+    trace add execution crash enterstep {apply {args {info frame -2}}}
+} -body {
+    string is double [crash]
+} -cleanup {
+    trace remove execution crash enterstep {apply {args {info frame -2}}}
+    rename crash {}
+} -result 1
 
 # cleanup
 if {[info commands testobj] != {}} {

@@ -830,7 +830,7 @@ Tcl_UnloadObjCmd(
 	 * Unload the shared library from the application memory...
 	 */
 
-#if defined(TCL_UNLOAD_DLLS) || defined(__WIN32__)
+#if defined(TCL_UNLOAD_DLLS) || defined(_WIN32)
 	/*
 	 * Some Unix dlls are poorly behaved - registering things like atexit
 	 * calls that can't be unregistered. If you unload such dlls, you get
@@ -1015,7 +1015,7 @@ Tcl_StaticPackage(
  * TclGetLoadedPackages --
  *
  *	This function returns information about all of the files that are
- *	loaded (either in a particular intepreter, or for all interpreters).
+ *	loaded (either in a particular interpreter, or for all interpreters).
  *
  * Results:
  *	The return value is a standard Tcl completion code. If successful, a
@@ -1151,7 +1151,7 @@ TclFinalizeLoad(void)
 	pkgPtr = firstPackagePtr;
 	firstPackagePtr = pkgPtr->nextPtr;
 
-#if defined(TCL_UNLOAD_DLLS) || defined(__WIN32__)
+#if defined(TCL_UNLOAD_DLLS) || defined(_WIN32)
 	/*
 	 * Some Unix dlls are poorly behaved - registering things like atexit
 	 * calls that can't be unregistered. If you unload such dlls, you get

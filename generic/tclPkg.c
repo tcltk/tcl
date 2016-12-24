@@ -383,7 +383,7 @@ PkgRequireCore(
 	if (pkgPtr->clientData != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "circular package dependency:"
-		    " attempt to provide %s %s requires %s", 
+		    " attempt to provide %s %s requires %s",
 		    name, (char *) pkgPtr->clientData, name));
 	    AddRequirementsToResult(interp, reqc, reqv);
 	    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "CIRCULARITY", NULL);
@@ -842,7 +842,7 @@ Tcl_PackageObjCmd(
 	} else {
 	    pkgPtr = FindPackage(interp, argv2);
 	}
-	argv3 = Tcl_GetStringFromObj(objv[3], &length);
+	argv3 = TclGetStringFromObj(objv[3], &length);
 
 	for (availPtr = pkgPtr->availPtr, prevPtr = NULL; availPtr != NULL;
 		prevPtr = availPtr, availPtr = availPtr->nextPtr) {
@@ -883,7 +883,7 @@ Tcl_PackageObjCmd(
 		prevPtr->nextPtr = availPtr;
 	    }
 	}
-	argv4 = Tcl_GetStringFromObj(objv[4], &length);
+	argv4 = TclGetStringFromObj(objv[4], &length);
 	DupBlock(availPtr->script, argv4, (unsigned) length + 1);
 	break;
     }
@@ -1034,7 +1034,7 @@ Tcl_PackageObjCmd(
 	    if (iPtr->packageUnknown != NULL) {
 		ckfree(iPtr->packageUnknown);
 	    }
-	    argv2 = Tcl_GetStringFromObj(objv[2], &length);
+	    argv2 = TclGetStringFromObj(objv[2], &length);
 	    if (argv2[0] == 0) {
 		iPtr->packageUnknown = NULL;
 	    } else {
@@ -1682,7 +1682,7 @@ AddRequirementsToResult(
     int i, length;
 
     for (i = 0; i < reqc; i++) {
-	const char *v = Tcl_GetStringFromObj(reqv[i], &length);
+	const char *v = TclGetStringFromObj(reqv[i], &length);
 
 	if ((length & 0x1) && (v[length/2] == '-')
 		&& (strncmp(v, v+((length+1)/2), length/2) == 0)) {
@@ -1895,7 +1895,7 @@ Tcl_PkgInitStubsCheck(
 {
     const char *actualVersion = Tcl_PkgPresent(interp, "Tcl", version, 0);
 
-    if (exact && actualVersion) {
+    if ((exact&1) && actualVersion) {
 	const char *p = version;
 	int count = 0;
 

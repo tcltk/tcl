@@ -120,7 +120,7 @@ typedef struct SerialInfo {
 				 * [fconfigure -queue] */
 } SerialInfo;
 
-typedef struct ThreadSpecificData {
+typedef struct {
     /*
      * The following pointer refers to the head of the list of serials that
      * are being watched for file events.
@@ -136,7 +136,7 @@ static Tcl_ThreadDataKey dataKey;
  * events are generated.
  */
 
-typedef struct SerialEvent {
+typedef struct {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     SerialInfo *infoPtr;	/* Pointer to serial info structure. Note that
@@ -932,7 +932,7 @@ SerialInputProc(
 		    bufSize = cStat.cbInQue;
 		}
 	    } else {
-		errno = *errorCode = EAGAIN;
+		errno = *errorCode = EWOULDBLOCK;
 		return -1;
 	    }
 	} else {
@@ -1034,7 +1034,7 @@ SerialOutputProc(
 	 * the channel is in non-blocking mode.
 	 */
 
-	errno = EAGAIN;
+	errno = EWOULDBLOCK;
 	goto error1;
     }
 
@@ -1410,23 +1410,22 @@ SerialWriterThread(
 /*
  *----------------------------------------------------------------------
  *
- * TclWinSerialReopen --
+ * TclWinSerialOpen --
  *
- *	Reopens the serial port with the OVERLAPPED FLAG set
+ *	Opens or Reopens the serial port with the OVERLAPPED FLAG set
  *
  * Results:
- *	Returns the new handle, or INVALID_HANDLE_VALUE. Normally there
- *	shouldn't be any error, because the same channel has previously been
- *	succeesfully opened.
+ *	Returns the new handle, or INVALID_HANDLE_VALUE.
+ *	If an existing channel is specified it is closed and reopened.
  *
  * Side effects:
- *	May close the original handle
+ *	May close/reopen the original handle
  *
  *----------------------------------------------------------------------
  */
 
 HANDLE
-TclWinSerialReopen(
+TclWinSerialOpen(
     HANDLE handle,
     const TCHAR *name,
     DWORD access)
@@ -1434,16 +1433,22 @@ TclWinSerialReopen(
     SerialInit();
 
     /*
+     * If an open channel is specified, close it
+     */
+
+    if ( handle != INVALID_HANDLE_VALUE && CloseHandle(handle) == FALSE) {
+	return INVALID_HANDLE_VALUE;
+    }
+
+    /*
      * Multithreaded I/O needs the overlapped flag set otherwise
      * ClearCommError blocks under Windows NT/2000 until serial output is
      * finished
      */
 
-    if (CloseHandle(handle) == FALSE) {
-	return INVALID_HANDLE_VALUE;
-    }
     handle = CreateFile(name, access, 0, 0, OPEN_EXISTING,
 	    FILE_FLAG_OVERLAPPED, 0);
+
     return handle;
 }
 

@@ -167,6 +167,51 @@ test dict-4.8 {dict replace command} -returnCodes error -body {
 } -result {missing value to go with key}
 test dict-4.9 {dict replace command} {dict replace [list a a] a b} {a b}
 test dict-4.10 {dict replace command} {dict replace [list a a] a b a c} {a c}
+test dict-4.11 {dict replace command: canonicality is forced} {
+    dict replace { a b  c d }
+} {a b c d}
+test dict-4.12 {dict replace command: canonicality is forced} {
+    dict replace {a b c d a e}
+} {a e c d}
+test dict-4.13 {dict replace command: type check is mandatory} -body {
+    dict replace { a b c d e }
+} -returnCodes error -result {missing value to go with key}
+test dict-4.13a {dict replace command: type check is mandatory} {
+    catch {dict replace { a b c d e }} -> opt
+    dict get $opt -errorcode
+} {TCL VALUE DICTIONARY}
+test dict-4.14 {dict replace command: type check is mandatory} -body {
+    dict replace { a b {}c d }
+} -returnCodes error -result {dict element in braces followed by "c" instead of space}
+test dict-4.14a {dict replace command: type check is mandatory} {
+    catch {dict replace { a b {}c d }} -> opt
+    dict get $opt -errorcode
+} {TCL VALUE DICTIONARY JUNK}
+test dict-4.15 {dict replace command: type check is mandatory} -body {
+    dict replace { a b ""c d }
+} -returnCodes error -result {dict element in quotes followed by "c" instead of space}
+test dict-4.15a {dict replace command: type check is mandatory} {
+    catch {dict replace { a b ""c d }} -> opt
+    dict get $opt -errorcode
+} {TCL VALUE DICTIONARY JUNK}
+test dict-4.16 {dict replace command: type check is mandatory} -body {
+    dict replace " a b \"c d "
+} -returnCodes error -result {unmatched open quote in dict}
+test dict-4.16a {dict replace command: type check is mandatory} {
+    catch {dict replace " a b \"c d "} -> opt
+    dict get $opt -errorcode
+} {TCL VALUE DICTIONARY QUOTE}
+test dict-4.17 {dict replace command: type check is mandatory} -body {
+    dict replace " a b \{c d "
+} -returnCodes error -result {unmatched open brace in dict}
+test dict-4.17a {dict replace command: type check is mandatory} {
+    catch {dict replace " a b \{c d "} -> opt
+    dict get $opt -errorcode
+} {TCL VALUE DICTIONARY BRACE}
+test dict-4.18 {dict replace command: canonicality forcing doesn't leak} {
+    set example { a b  c d }
+    list $example [dict replace $example]
+} {{ a b  c d } {a b c d}}
 
 test dict-5.1 {dict remove command} {dict remove {a b c d} a} {c d}
 test dict-5.2 {dict remove command} {dict remove {a b c d} c} {a b}
@@ -179,6 +224,25 @@ test dict-5.6 {dict remove command} {dict remove {a b} c} {a b}
 test dict-5.7 {dict remove command} -returnCodes error -body {
     dict remove
 } -result {wrong # args: should be "dict remove dictionary ?key ...?"}
+test dict-5.8 {dict remove command: canonicality is forced} {
+    dict remove { a b  c d }
+} {a b c d}
+test dict-5.9 {dict remove command: canonicality is forced} {
+    dict remove {a b c d a e}
+} {a e c d}
+test dict-5.10 {dict remove command: canonicality forced by update} {
+    dict remove { a b c d } c
+} {a b}
+test dict-5.11 {dict remove command: type check is mandatory} -body {
+    dict remove { a b c d e }
+} -returnCodes error -result {missing value to go with key}
+test dict-5.12 {dict remove command: type check is mandatory} -body {
+    dict remove { a b {}c d }
+} -returnCodes error -result {dict element in braces followed by "c" instead of space}
+test dict-5.13 {dict remove command: canonicality forcing doesn't leak} {
+    set example { a b  c d }
+    list $example [dict remove $example]
+} {{ a b  c d } {a b c d}}
 
 test dict-6.1 {dict keys command} {dict keys {a b}} a
 test dict-6.2 {dict keys command} {dict keys {c d}} c
@@ -345,13 +409,13 @@ test dict-11.13 {dict incr command} -returnCodes error -body {
     dict incr dictv a a a
 } -cleanup {
     unset dictv
-} -result {wrong # args: should be "dict incr varName key ?increment?"}
+} -result {wrong # args: should be "dict incr dictVarName key ?increment?"}
 test dict-11.14 {dict incr command} -returnCodes error -body {
     set dictv a
     dict incr dictv
 } -cleanup {
     unset dictv
-} -result {wrong # args: should be "dict incr varName key ?increment?"}
+} -result {wrong # args: should be "dict incr dictVarName key ?increment?"}
 test dict-11.15 {dict incr command: write failure} -setup {
     unset -nocomplain dictVar
 } -body {
@@ -422,10 +486,10 @@ test dict-12.6 {dict lappend command} -returnCodes error -body {
 } -result {missing value to go with key}
 test dict-12.7 {dict lappend command} -returnCodes error -body {
     dict lappend
-} -result {wrong # args: should be "dict lappend varName key ?value ...?"}
+} -result {wrong # args: should be "dict lappend dictVarName key ?value ...?"}
 test dict-12.8 {dict lappend command} -returnCodes error -body {
     dict lappend dictv
-} -result {wrong # args: should be "dict lappend varName key ?value ...?"}
+} -result {wrong # args: should be "dict lappend dictVarName key ?value ...?"}
 test dict-12.9 {dict lappend command} -returnCodes error -body {
     set dictv [dict create a "\{"]
     dict lappend dictv a a
@@ -489,10 +553,10 @@ test dict-13.6 {dict append command} -returnCodes error -body {
 } -result {missing value to go with key}
 test dict-13.7 {dict append command} -returnCodes error -body {
     dict append
-} -result {wrong # args: should be "dict append varName key ?value ...?"}
+} -result {wrong # args: should be "dict append dictVarName key ?value ...?"}
 test dict-13.8 {dict append command} -returnCodes error -body {
     dict append dictv
-} -result {wrong # args: should be "dict append varName key ?value ...?"}
+} -result {wrong # args: should be "dict append dictVarName key ?value ...?"}
 test dict-13.9 {dict append command: write failure} -setup {
     unset -nocomplain dictVar
 } -body {
@@ -510,16 +574,16 @@ test dict-13.11 {compiled dict append: invalidate string rep - Bug 3079830} {
 
 test dict-14.1 {dict for command: syntax} -returnCodes error -body {
     dict for
-} -result {wrong # args: should be "dict for {keyVar valueVar} dictionary script"}
+} -result {wrong # args: should be "dict for {keyVarName valueVarName} dictionary script"}
 test dict-14.2 {dict for command: syntax} -returnCodes error -body {
     dict for x
-} -result {wrong # args: should be "dict for {keyVar valueVar} dictionary script"}
+} -result {wrong # args: should be "dict for {keyVarName valueVarName} dictionary script"}
 test dict-14.3 {dict for command: syntax} -returnCodes error -body {
     dict for x x
-} -result {wrong # args: should be "dict for {keyVar valueVar} dictionary script"}
+} -result {wrong # args: should be "dict for {keyVarName valueVarName} dictionary script"}
 test dict-14.4 {dict for command: syntax} -returnCodes error -body {
     dict for x x x x
-} -result {wrong # args: should be "dict for {keyVar valueVar} dictionary script"}
+} -result {wrong # args: should be "dict for {keyVarName valueVarName} dictionary script"}
 test dict-14.5 {dict for command: syntax} -returnCodes error -body {
     dict for x x x
 } -result {must have exactly two variable names}
@@ -749,13 +813,13 @@ test dict-15.9 {dict set command: write failure} -setup {
 } -result {can't set "dictVar": variable is array}
 test dict-15.10 {dict set command: syntax} -returnCodes error -body {
     dict set
-} -result {wrong # args: should be "dict set varName key ?key ...? value"}
+} -result {wrong # args: should be "dict set dictVarName key ?key ...? value"}
 test dict-15.11 {dict set command: syntax} -returnCodes error -body {
     dict set a
-} -result {wrong # args: should be "dict set varName key ?key ...? value"}
+} -result {wrong # args: should be "dict set dictVarName key ?key ...? value"}
 test dict-15.12 {dict set command: syntax} -returnCodes error -body {
     dict set a a
-} -result {wrong # args: should be "dict set varName key ?key ...? value"}
+} -result {wrong # args: should be "dict set dictVarName key ?key ...? value"}
 test dict-15.13 {dict set command} -returnCodes error -body {
     set dictVar a
     dict set dictVar b c
@@ -808,7 +872,7 @@ test dict-16.7 {dict unset command} -setup {
 } -result {0 {} 1}
 test dict-16.8 {dict unset command} -returnCodes error -body {
     dict unset dictVar
-} -result {wrong # args: should be "dict unset varName key ?key ...?"}
+} -result {wrong # args: should be "dict unset dictVarName key ?key ...?"}
 test dict-16.9 {dict unset command: write failure} -setup {
     unset -nocomplain dictVar
 } -body {
@@ -859,7 +923,7 @@ test dict-16.16 {dict unset command} -body {
 } -result {0 {} 1}
 test dict-16.17 {dict unset command} -returnCodes error -body {
     apply {{} {dict unset dictVar}}
-} -result {wrong # args: should be "dict unset varName key ?key ...?"}
+} -result {wrong # args: should be "dict unset dictVarName key ?key ...?"}
 test dict-16.18 {dict unset command: write failure} -body {
     apply {{} {
 	set dictVar(block) {}
@@ -988,7 +1052,7 @@ test dict-17.17 {dict filter command: script} -body {
 } -result b
 test dict-17.18 {dict filter command: script} -returnCodes error -body {
     dict filter {a b} script {k k}
-} -result {wrong # args: should be "dict filter dictionary script {keyVar valueVar} filterScript"}
+} -result {wrong # args: should be "dict filter dictionary script {keyVarName valueVarName} filterScript"}
 test dict-17.19 {dict filter command: script} -returnCodes error -body {
     dict filter {a b} script k {continue}
 } -result {must have exactly two variable names}
@@ -1226,19 +1290,34 @@ test dict-20.19 {dict merge command} {
 test dict-20.20 {dict merge command} {
     apply {{} {dict merge {a b c d e f} {a x 1 2 3 4} {a - 1 -}}}
 } {a - c d e f 1 - 3 4}
+test dict-20.21 {dict merge command: canonicality not forced} {
+    dict merge { a b c d }
+} { a b c d }
+test dict-20.22 {dict merge command: canonicality not forced} {
+    dict merge { a b c d } {}
+} { a b c d }
+test dict-20.23 {dict merge command: canonicality forced by update} {
+    dict merge { a b c d } {a b}
+} {a b c d}
+test dict-20.24 {dict merge command: type check is mandatory} -body {
+    dict merge { a b c d e }
+} -returnCodes error -result {missing value to go with key}
+test dict-20.25 {dict merge command: type check is mandatory} -body {
+    dict merge { a b {}c d }
+} -returnCodes error -result {dict element in braces followed by "c" instead of space}
 
 test dict-21.1 {dict update command} -returnCodes 1 -body {
     dict update
-} -result {wrong # args: should be "dict update varName key varName ?key varName ...? script"}
+} -result {wrong # args: should be "dict update dictVarName key varName ?key varName ...? script"}
 test dict-21.2 {dict update command} -returnCodes 1 -body {
     dict update v
-} -result {wrong # args: should be "dict update varName key varName ?key varName ...? script"}
+} -result {wrong # args: should be "dict update dictVarName key varName ?key varName ...? script"}
 test dict-21.3 {dict update command} -returnCodes 1 -body {
     dict update v k
-} -result {wrong # args: should be "dict update varName key varName ?key varName ...? script"}
+} -result {wrong # args: should be "dict update dictVarName key varName ?key varName ...? script"}
 test dict-21.4 {dict update command} -returnCodes 1 -body {
     dict update v k v
-} -result {wrong # args: should be "dict update varName key varName ?key varName ...? script"}
+} -result {wrong # args: should be "dict update dictVarName key varName ?key varName ...? script"}
 test dict-21.5 {dict update command} -body {
     set a {b c}
     set result {}
@@ -1376,10 +1455,10 @@ test dict-21.17 {dict update command: no recursive structures [Bug 1786481]} {
 
 test dict-22.1 {dict with command} -body {
     dict with
-} -returnCodes 1 -result {wrong # args: should be "dict with dictVar ?key ...? script"}
+} -returnCodes 1 -result {wrong # args: should be "dict with dictVarName ?key ...? script"}
 test dict-22.2 {dict with command} -body {
     dict with v
-} -returnCodes 1 -result {wrong # args: should be "dict with dictVar ?key ...? script"}
+} -returnCodes 1 -result {wrong # args: should be "dict with dictVarName ?key ...? script"}
 test dict-22.3 {dict with command} -body {
     unset -nocomplain v
     dict with v {error "in body"}
@@ -1639,16 +1718,16 @@ rename linenumber {}
 
 test dict-24.1 {dict map command: syntax} -returnCodes error -body {
     dict map
-} -result {wrong # args: should be "dict map {keyVar valueVar} dictionary script"}
+} -result {wrong # args: should be "dict map {keyVarName valueVarName} dictionary script"}
 test dict-24.2 {dict map command: syntax} -returnCodes error -body {
     dict map x
-} -result {wrong # args: should be "dict map {keyVar valueVar} dictionary script"}
+} -result {wrong # args: should be "dict map {keyVarName valueVarName} dictionary script"}
 test dict-24.3 {dict map command: syntax} -returnCodes error -body {
     dict map x x
-} -result {wrong # args: should be "dict map {keyVar valueVar} dictionary script"}
+} -result {wrong # args: should be "dict map {keyVarName valueVarName} dictionary script"}
 test dict-24.4 {dict map command: syntax} -returnCodes error -body {
     dict map x x x x
-} -result {wrong # args: should be "dict map {keyVar valueVar} dictionary script"}
+} -result {wrong # args: should be "dict map {keyVarName valueVarName} dictionary script"}
 test dict-24.5 {dict map command: syntax} -returnCodes error -body {
     dict map x x x
 } -result {must have exactly two variable names}
@@ -1969,6 +2048,13 @@ test dict-24.25 {dict map with huge dict (compiled)} {
     }} 100000
 } 166666666600000
 
+test dict-25.1 {compiled dict update with low-refcount values [Bug d553228d9f]} {
+    # Test crashes on failure
+    apply {{} {
+	lassign {} item
+	dict update item item item two two {}
+    }}
+} {}
 
 # cleanup
 ::tcltest::cleanupTests

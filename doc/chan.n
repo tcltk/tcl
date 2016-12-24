@@ -1,10 +1,10 @@
-'\" 
+'\"
 '\" Copyright (c) 2005-2006 Donal K. Fellows
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-.so man.macros
 .TH chan n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -200,7 +200,7 @@ generate an error.
 .TP
 \fB\-translation\fR \fImode\fR
 .TP
-\fB\-translation\fR \fB{\fIinMode outMode\fB}\fR 
+\fB\-translation\fR \fB{\fIinMode outMode\fB}\fR
 .
 In Tcl scripts the end of a line is always represented using a single
 newline character (\en).  However, in actual files and devices the end
@@ -240,7 +240,7 @@ all platforms Tcl chooses \fBcrlf\fR, for all Unix flavors, it chooses
 \fBcrlf\fR.  The default setting for \fB\-translation\fR is \fBauto\fR
 for both input and output.
 .TP
-\fBbinary\fR 
+\fBbinary\fR
 .
 No end-of-line translations are performed.  This is nearly identical
 to \fBlf\fR mode, except that in addition \fBbinary\fR mode also sets
@@ -287,12 +287,14 @@ slow destinations like network sockets.
 .RS
 .PP
 The \fBchan copy\fR command transfers data from \fIinputChan\fR until
-end of file or \fIsize\fR bytes have been transferred. If no
-\fB\-size\fR argument is given, then the copy goes until end of file.
-All the data read from \fIinputChan\fR is copied to \fIoutputChan\fR.
-Without the \fB\-command\fR option, \fBchan copy\fR blocks until the
-copy is complete and returns the number of bytes written to
-\fIoutputChan\fR.
+end of file or \fIsize\fR bytes or characters have been transferred;
+\fIsize\fR is in bytes if the two channels are using the same encoding,
+and is in characters otherwise.  If no \fB\-size\fR argument is given,
+then the copy goes until end of file. All the data read from
+\fIinputChan\fR is copied to \fIoutputChan\fR.  Without the
+\fB\-command\fR option, \fBchan copy\fR blocks until the copy is
+complete and returns the number of bytes or characters (using the same
+rules as for the \fB\-size\fR option) written to \fIoutputChan\fR.
 .PP
 The \fB\-command\fR argument makes \fBchan copy\fR work in the
 background.  In this case it returns immediately and the
@@ -530,8 +532,8 @@ only those channel names that match it (according to the rules of
 .
 Depending on whether \fImode\fR is \fBinput\fR or \fBoutput\fR,
 returns the number of
-bytes of input or output (respectively) currently buffered 
-internally for \fIchannelId\fR (especially useful in a readable event 
+bytes of input or output (respectively) currently buffered
+internally for \fIchannelId\fR (especially useful in a readable event
 callback to impose application-specific limits on input line lengths to avoid
 a potential denial-of-service attack where a hostile user crafts
 an extremely long line that exceeds the available memory to buffer it).
@@ -546,7 +548,19 @@ separately \fBstderr\fR and \fBstdout\fR from a subprocess. To do
 this, spawn with "2>@" or
 ">@" redirection operators onto the write side of a pipe, and then
 immediately close it in the parent. This is necessary to get an EOF on
-the read side once the child has exited or otherwise closed its output. 
+the read side once the child has exited or otherwise closed its output.
+.RS
+.PP
+Note that the pipe buffering semantics can vary at the operating system level
+substantially; it is not safe to assume that a write performed on the output
+side of the pipe will appear instantly to the input side. This is a
+fundamental difference and Tcl cannot conceal it. The overall stream semantics
+\fIare\fR compatible, so blocking reads and writes will not see most of the
+differences, but the details of what exactly gets written when are not. This
+is most likely to show up when using pipelines for testing; care should be
+taken to ensure that deadlocks do not occur and that potential short reads are
+allowed for.
+.RE
 .VE 8.6
 .TP
 \fBchan pop \fIchannelId\fR

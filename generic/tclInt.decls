@@ -2,9 +2,8 @@
 #
 #	This file contains the declarations for all unsupported
 #	functions that are exported by the Tcl library.  This file
-#	is used to generate the tclIntDecls.h, tclIntPlatDecls.h,
-#	tclIntStub.c, tclPlatStub.c, tclCompileDecls.h and tclCompileStub.c
-#	files
+#	is used to generate the tclIntDecls.h, tclIntPlatDecls.h
+#	and tclStubInit.c files
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
@@ -1006,6 +1005,12 @@ declare 249 {
 declare 250 {
     void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
 }
+
+# Allow extensions for optimization
+declare 251 {
+    int TclRegisterLiteral(void *envPtr,
+	    const char *bytes, int length, int flags)
+}
 
 ##############################################################################
 
@@ -1241,7 +1246,7 @@ declare 19 macosx {
 }
 
 declare 29 {win unix} {
-    int TclWinCPUID(unsigned int index, unsigned int *regs)
+    int TclWinCPUID(int index, int *regs)
 }
 # Added in 8.6; core of TclpOpenTemporaryFile
 declare 30 {win unix} {

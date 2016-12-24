@@ -33,7 +33,10 @@
 #endif
 
 #ifdef __CYGWIN__
-DLLIMPORT extern __stdcall unsigned char GetVersionExA(void *);
+DLLIMPORT extern __stdcall unsigned char GetVersionExW(void *);
+DLLIMPORT extern __stdcall void *LoadLibraryW(const void *);
+DLLIMPORT extern __stdcall void FreeLibrary(void *);
+DLLIMPORT extern __stdcall void *GetProcAddress(void *, const char *);
 DLLIMPORT extern __stdcall void GetSystemInfo(void *);
 
 #define NUMPLATFORMS 4
@@ -66,14 +69,14 @@ typedef struct _SYSTEM_INFO {
   int      wProcessorRevision;
 } SYSTEM_INFO;
 
-typedef struct _OSVERSIONINFOA {
+typedef struct _OSVERSIONINFOW {
   DWORD dwOSVersionInfoSize;
   DWORD dwMajorVersion;
   DWORD dwMinorVersion;
   DWORD dwBuildNumber;
   DWORD dwPlatformId;
-  char szCSDVersion[128];
-} OSVERSIONINFOA;
+  wchar_t szCSDVersion[128];
+} OSVERSIONINFOW;
 #endif
 
 #ifdef HAVE_COREFOUNDATION
@@ -112,7 +115,7 @@ static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
  * first list checked for a mapping from env encoding to Tcl encoding name.
  */
 
-typedef struct LocaleTable {
+typedef struct {
     const char *lang;
     const char *encoding;
 } LocaleTable;
@@ -388,14 +391,6 @@ TclpInitPlatform(void)
 #endif /* SIGPIPE */
 
 #if defined(__FreeBSD__) && defined(__GNUC__)
-    /*
-     * Adjust the rounding mode to be more conventional. Note that FreeBSD
-     * only provides the __fpsetreg() used by the following two for the GNU
-     * Compiler. When using, say, Intel's icc they break. (Partially based on
-     * patch in BSD ports system from root@celsius.bychok.com)
-     */
-
-    fpsetround(FP_RN);
     (void) fpsetmask(0L);
 #endif
 
@@ -458,7 +453,7 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    32
@@ -547,9 +542,10 @@ TclpInitLibraryPath(
     Tcl_DStringFree(&buffer);
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    str = Tcl_GetStringFromObj(pathPtr, lengthPtr);
-    *valuePtr = ckalloc((*lengthPtr) + 1);
-    memcpy(*valuePtr, str, (size_t)(*lengthPtr)+1);
+    str = TclGetString(pathPtr);
+    *lengthPtr = pathPtr->length;
+    *valuePtr = ckalloc(*lengthPtr + 1);
+    memcpy(*valuePtr, str, *lengthPtr + 1);
     Tcl_DecrRefCount(pathPtr);
 }
 
@@ -599,7 +595,7 @@ SearchKnownEncodings(
     int left = 0;
     int right = sizeof(localeTable)/sizeof(LocaleTable);
 
-    while (left <= right) {
+    while (left < right) {
 	int test = (left + right)/2;
 	int code = strcmp(localeTable[test].lang, encoding);
 
@@ -747,7 +743,8 @@ TclpSetVariables(
 {
 #ifdef __CYGWIN__
     SYSTEM_INFO sysInfo;
-    OSVERSIONINFOA osInfo;
+    static OSVERSIONINFOW osInfo;
+    static int osInfoInitialized = 0;
     char buffer[TCL_INTEGER_SPACE * 2];
 #elif !defined(NO_UNAME)
     struct utsname name;
@@ -764,8 +761,8 @@ TclpSetVariables(
      */
 
     CFLocaleRef localeRef;
-    
-    if (CFLocaleCopyCurrent != NULL && CFLocaleGetIdentifier != NULL &&
+
+    if (&CFLocaleCopyCurrent != NULL && &CFLocaleGetIdentifier != NULL &&
 	    (localeRef = CFLocaleCopyCurrent())) {
 	CFStringRef locale = CFLocaleGetIdentifier(localeRef);
 
@@ -776,7 +773,7 @@ TclpSetVariables(
 		if (!Tcl_CreateNamespace(interp, "::tcl::mac", NULL, NULL)) {
 		    Tcl_ResetResult(interp);
 		}
-		Tcl_SetVar(interp, "::tcl::mac::locale", loc, TCL_GLOBAL_ONLY);
+		Tcl_SetVar2(interp, "::tcl::mac::locale", NULL, loc, TCL_GLOBAL_ONLY);
 	    }
 	}
 	CFRelease(localeRef);
@@ -787,9 +784,9 @@ TclpSetVariables(
 	const char *str;
 	CFBundleRef bundleRef;
 
-	Tcl_SetVar(interp, "tclDefaultLibrary", tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_SetVar(interp, "tcl_pkgPath", " ",
+	Tcl_SetVar2(interp, "tclDefaultLibrary", NULL, tclLibPath, TCL_GLOBAL_ONLY);
+	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath, TCL_GLOBAL_ONLY);
+	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
 		TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
 
 	str = TclGetEnv("DYLD_FRAMEWORK_PATH", &ds);
@@ -805,9 +802,9 @@ TclpSetVariables(
 		    *p = ' ';
 		}
 	    } while (*p++);
-	    Tcl_SetVar(interp, "tcl_pkgPath", Tcl_DStringValue(&ds),
+	    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, Tcl_DStringValue(&ds),
 		    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-	    Tcl_SetVar(interp, "tcl_pkgPath", " ",
+	    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
 		    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
 	    Tcl_DStringFree(&ds);
 	}
@@ -822,9 +819,9 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath,
+		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath,
 			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-		    Tcl_SetVar(interp, "tcl_pkgPath", " ",
+		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
 			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
 		}
 		CFRelease(frameworksURL);
@@ -835,20 +832,20 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath,
+		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath,
 			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-		    Tcl_SetVar(interp, "tcl_pkgPath", " ",
+		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
 			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
 		}
 		CFRelease(frameworksURL);
 	    }
 	}
-	Tcl_SetVar(interp, "tcl_pkgPath", pkgPath,
+	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath,
 		TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
     } else
 #endif /* HAVE_COREFOUNDATION */
     {
-	Tcl_SetVar(interp, "tcl_pkgPath", pkgPath, TCL_GLOBAL_ONLY);
+	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath, TCL_GLOBAL_ONLY);
     }
 
 #ifdef DJGPP
@@ -860,8 +857,20 @@ TclpSetVariables(
     unameOK = 0;
 #ifdef __CYGWIN__
 	unameOK = 1;
-    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
-    GetVersionExA(&osInfo);
+    if (!osInfoInitialized) {
+	HANDLE handle = LoadLibraryW(L"NTDLL");
+	int(__stdcall *getversion)(void *) =
+		(int(__stdcall *)(void *))GetProcAddress(handle, "RtlGetVersion");
+	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+	if (!getversion || getversion(&osInfo)) {
+	    GetVersionExW(&osInfo);
+	}
+	if (handle) {
+	    FreeLibrary(handle);
+	}
+	osInfoInitialized = 1;
+    }
+
     GetSystemInfo(&sysInfo);
 
     if (osInfo.dwPlatformId < NUMPLATFORMS) {

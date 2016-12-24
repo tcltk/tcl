@@ -43,7 +43,7 @@
 
 static Tcl_HashEntry *	AllocArrayEntry(Tcl_HashTable *tablePtr, void *keyPtr);
 static int		CompareArrayKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static unsigned int	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
+static TCL_HASH_TYPE	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Prototypes for the one word hash key methods. Not actually declared because
@@ -65,7 +65,7 @@ static unsigned int	HashOneWordKey(Tcl_HashTable *tablePtr, void *keyPtr);
 static Tcl_HashEntry *	AllocStringEntry(Tcl_HashTable *tablePtr,
 			    void *keyPtr);
 static int		CompareStringKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static unsigned int	HashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
+static TCL_HASH_TYPE	HashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Function prototypes for static functions in this file:
@@ -321,12 +321,10 @@ CreateHashEntry(
 
 	for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
 		hPtr = hPtr->nextPtr) {
-#if TCL_HASH_KEY_STORE_HASH
 	    if (hash != PTR2UINT(hPtr->hash)) {
 		continue;
 	    }
-#endif
-	    if (compareKeysProc((void *) key, hPtr)) {
+	    if (((void *) key == hPtr) || compareKeysProc((void *) key, hPtr)) {
 		if (newPtr) {
 		    *newPtr = 0;
 		}
@@ -336,11 +334,9 @@ CreateHashEntry(
     } else {
 	for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
 		hPtr = hPtr->nextPtr) {
-#if TCL_HASH_KEY_STORE_HASH
 	    if (hash != PTR2UINT(hPtr->hash)) {
 		continue;
 	    }
-#endif
 	    if (key == hPtr->key.oneWordValue) {
 		if (newPtr) {
 		    *newPtr = 0;
@@ -368,15 +364,9 @@ CreateHashEntry(
     }
 
     hPtr->tablePtr = tablePtr;
-#if TCL_HASH_KEY_STORE_HASH
     hPtr->hash = UINT2PTR(hash);
     hPtr->nextPtr = tablePtr->buckets[index];
     tablePtr->buckets[index] = hPtr;
-#else
-    hPtr->bucketPtr = &tablePtr->buckets[index];
-    hPtr->nextPtr = *hPtr->bucketPtr;
-    *hPtr->bucketPtr = hPtr;
-#endif
     tablePtr->numEntries++;
 
     /*
@@ -416,9 +406,7 @@ Tcl_DeleteHashEntry(
     const Tcl_HashKeyType *typePtr;
     Tcl_HashTable *tablePtr;
     Tcl_HashEntry **bucketPtr;
-#if TCL_HASH_KEY_STORE_HASH
     int index;
-#endif
 
     tablePtr = entryPtr->tablePtr;
 
@@ -433,7 +421,6 @@ Tcl_DeleteHashEntry(
 	typePtr = &tclArrayHashKeyType;
     }
 
-#if TCL_HASH_KEY_STORE_HASH
     if (typePtr->hashKeyProc == NULL
 	    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 	index = RANDOM_INDEX(tablePtr, PTR2INT(entryPtr->hash));
@@ -442,9 +429,6 @@ Tcl_DeleteHashEntry(
     }
 
     bucketPtr = &tablePtr->buckets[index];
-#else
-    bucketPtr = entryPtr->bucketPtr;
-#endif
 
     if (*bucketPtr == entryPtr) {
 	*bucketPtr = entryPtr->nextPtr;
@@ -790,7 +774,7 @@ CompareArrayKeys(
  *----------------------------------------------------------------------
  */
 
-static unsigned int
+static TCL_HASH_TYPE
 HashArrayKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
@@ -803,7 +787,7 @@ HashArrayKey(
 	    count--, array++) {
 	result += *array;
     }
-    return result;
+    return (TCL_HASH_TYPE) result;
 }
 
 /*
@@ -886,7 +870,7 @@ CompareStringKeys(
  *----------------------------------------------------------------------
  */
 
-static unsigned
+static TCL_HASH_TYPE
 HashStringKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
@@ -932,7 +916,7 @@ HashStringKey(
 	    result += (result << 3) + UCHAR(c);
 	}
     }
-    return result;
+    return (TCL_HASH_TYPE) result;
 }
 
 /*
@@ -940,7 +924,7 @@ HashStringKey(
  *
  * BogusFind --
  *
- *	This function is invoked when an Tcl_FindHashEntry is called on a
+ *	This function is invoked when Tcl_FindHashEntry is called on a
  *	table that has been deleted.
  *
  * Results:
@@ -967,7 +951,7 @@ BogusFind(
  *
  * BogusCreate --
  *
- *	This function is invoked when an Tcl_CreateHashEntry is called on a
+ *	This function is invoked when Tcl_CreateHashEntry is called on a
  *	table that has been deleted.
  *
  * Results:
@@ -1062,7 +1046,6 @@ RebuildTable(
     for (oldChainPtr = oldBuckets; oldSize > 0; oldSize--, oldChainPtr++) {
 	for (hPtr = *oldChainPtr; hPtr != NULL; hPtr = *oldChainPtr) {
 	    *oldChainPtr = hPtr->nextPtr;
-#if TCL_HASH_KEY_STORE_HASH
 	    if (typePtr->hashKeyProc == NULL
 		    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 		index = RANDOM_INDEX(tablePtr, PTR2INT(hPtr->hash));
@@ -1071,26 +1054,6 @@ RebuildTable(
 	    }
 	    hPtr->nextPtr = tablePtr->buckets[index];
 	    tablePtr->buckets[index] = hPtr;
-#else
-	    void *key = Tcl_GetHashKey(tablePtr, hPtr);
-
-	    if (typePtr->hashKeyProc) {
-		unsigned int hash;
-
-		hash = typePtr->hashKeyProc(tablePtr, key);
-		if (typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-		    index = RANDOM_INDEX(tablePtr, hash);
-		} else {
-		    index = hash & tablePtr->mask;
-		}
-	    } else {
-		index = RANDOM_INDEX(tablePtr, key);
-	    }
-
-	    hPtr->bucketPtr = &tablePtr->buckets[index];
-	    hPtr->nextPtr = *hPtr->bucketPtr;
-	    *hPtr->bucketPtr = hPtr;
-#endif
 	}
     }
 

@@ -360,6 +360,20 @@ typedef DWORD_PTR * PDWORD_PTR;
 #   define S_IFLNK        0120000  /* Symbolic Link */
 #endif
 
+/*
+ * Windows compilers do not define S_IFBLK. However, Tcl uses it in
+ * GetTypeFromMode to identify blockSpecial devices based on the
+ * value in the statsbuf st_mode field. We have no other way to pass this
+ * from NativeStat on Windows so are forced to define it here.
+ * The definition here is essentially what is seen on Linux and MingW.
+ * XXX - the root problem is Tcl using Unix definitions instead of
+ * abstracting the structure into a platform independent one. Sigh - perhaps
+ * Tcl 9
+ */
+#ifndef S_IFBLK
+#   define S_IFBLK (S_IFDIR | S_IFCHR)
+#endif
+
 #ifndef S_ISREG
 #   ifdef S_IFREG
 #       define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
@@ -433,17 +447,17 @@ typedef DWORD_PTR * PDWORD_PTR;
  * EDEADLK as the same value, which confuses Tcl_ErrnoId().
  */
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
 #   define environ _environ
 #   if defined(_MSC_VER) && (_MSC_VER < 1600)
 #	define hypot _hypot
 #   endif
 #   define exception _exception
 #   undef EDEADLOCK
-#   if defined(__MINGW32__) && !defined(__MSVCRT__)
+#   if defined(_MSC_VER) && (_MSC_VER >= 1700)
 #	define timezone _timezone
 #   endif
-#endif /* _MSC_VER || __MINGW32__ */
+#endif /* _MSC_VER || __MSVCRT__ */
 
 /*
  * Borland's timezone and environ functions.
@@ -505,7 +519,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * Msvcrt's putenv() copies the string rather than takes ownership of it.
  */
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
 #   define HAVE_PUTENV_THAT_COPIES 1
 #endif
 
@@ -528,15 +542,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
 					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
 
-/*
- * The following defines map from standard socket names to our internal
- * wrappers that redirect through the winSock function table (see the
- * file tclWinSock.c).
- */
-
-#define getservbyname	TclWinGetServByName
-#define getsockopt	TclWinGetSockOpt
-#define setsockopt	TclWinSetSockOpt
 /* This type is not defined in the Windows headers */
 #define socklen_t       int
 
@@ -546,7 +551,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * address platform-specific issues.
  */
 
-#define TclpReleaseFile(file)	ckfree((char *) file)
+#define TclpReleaseFile(file)	ckfree(file)
 
 /*
  * The following macros and declarations wrap the C runtime library

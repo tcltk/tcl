@@ -4,9 +4,6 @@
     #ifndef _TCLCONFIG
     #define _TCLCONFIG
 
-/* Define if building universal (internal helper macro) */
-#undef AC_APPLE_UNIVERSAL_BUILD
-
 /* Is gettimeofday() actually declared in <sys/time.h>? */
 #undef GETTOD_NOT_DECLARED
 
@@ -115,6 +112,9 @@
 /* Define to 1 if you have the `gmtime_r' function. */
 #undef HAVE_GMTIME_R
 
+/* Compiler support for module scope symbols */
+#undef HAVE_HIDDEN
+
 /* Do we have the intptr_t type? */
 #undef HAVE_INTPTR_T
 
@@ -126,9 +126,6 @@
 
 /* Define to 1 if you have the <libkern/OSAtomic.h> header file. */
 #undef HAVE_LIBKERN_OSATOMIC_H
-
-/* Do we have <limits.h>? */
-#undef HAVE_LIMITS_H
 
 /* Define to 1 if you have the `localtime_r' function. */
 #undef HAVE_LOCALTIME_R
@@ -211,10 +208,10 @@
 /* Is 'struct stat64' in <sys/stat.h>? */
 #undef HAVE_STRUCT_STAT64
 
-/* Define to 1 if `st_blksize' is a member of `struct stat'. */
+/* Define to 1 if `st_blksize' is member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
 
-/* Define to 1 if `st_blocks' is a member of `struct stat'. */
+/* Define to 1 if `st_blocks' is member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLOCKS
 
 /* Define to 1 if you have the <sys/filio.h> header file. */
@@ -313,9 +310,6 @@
 /* Do we have a usable 'isnan'? */
 #undef NO_ISNAN
 
-/* Do we have <limits.h>? */
-#undef NO_LIMITS_H
-
 /* Do we have memmove()? */
 #undef NO_MEMMOVE
 
@@ -343,9 +337,6 @@
 /* Do we have <values.h>? */
 #undef NO_VALUES_H
 
-/* Compiler support for module scope symbols */
-#undef HAVE_HIDDEN
-
 /* Do we have wait3() */
 #undef NO_WAIT3
 
@@ -360,9 +351,6 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
-
-/* Define to the home page for this package. */
-#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
@@ -406,9 +394,6 @@
 /* Are we building with threads enabled? */
 #undef TCL_THREADS
 
-/* Build libtommath? */
-#undef TCL_TOMMATH
-
 /* Do we allow unloading of shared libraries? */
 #undef TCL_UNLOAD_DLLS
 
@@ -442,17 +427,9 @@
 /* Should we use vfork() instead of fork()? */
 #undef USE_VFORK
 
-/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
-   significant byte first (like Motorola and SPARC, unlike Intel). */
-#if defined AC_APPLE_UNIVERSAL_BUILD
-# if defined __BIG_ENDIAN__
-#  define WORDS_BIGENDIAN 1
-# endif
-#else
-# ifndef WORDS_BIGENDIAN
-#  undef WORDS_BIGENDIAN
-# endif
-#endif
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+#undef WORDS_BIGENDIAN
 
 /* Are Darwin SUSv3 extensions available? */
 #undef _DARWIN_C_SOURCE
@@ -507,7 +484,7 @@
 /* Define to `int' if <sys/types.h> does not define. */
 #undef pid_t
 
-/* Define to `unsigned int' if <sys/types.h> does not define. */
+/* Define to `unsigned' if <sys/types.h> does not define. */
 #undef size_t
 
 /* Define as int if socklen_t is not available */

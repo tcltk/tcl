@@ -38,8 +38,8 @@ extern "C" {
  * update the version numbers:
  *
  * library/init.tcl	(1 LOC patch)
- * unix/configure.in	(2 LOC Major, 2 LOC minor, 1 LOC patch)
- * win/configure.in	(as above)
+ * unix/configure.ac	(2 LOC Major, 2 LOC minor, 1 LOC patch)
+ * win/configure.ac	(as above)
  * win/tcl.m4		(not patchlevel)
  * win/makefile.bc	(not patchlevel) 2 LOC
  * README		(sections 0 and 2, with and without separator)
@@ -54,12 +54,12 @@ extern "C" {
  */
 
 #define TCL_MAJOR_VERSION   8
-#define TCL_MINOR_VERSION   6
-#define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
+#define TCL_MINOR_VERSION   7
+#define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
 #define TCL_RELEASE_SERIAL  0
 
-#define TCL_VERSION	    "8.6"
-#define TCL_PATCH_LEVEL	    "8.6.0"
+#define TCL_VERSION	    "8.7"
+#define TCL_PATCH_LEVEL	    "8.7a0"
 
 /*
  *----------------------------------------------------------------------------
@@ -67,27 +67,14 @@ extern "C" {
  * We use this method because there is no autoconf equivalent.
  */
 
-#ifndef __WIN32__
-#   if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__) || defined(__BORLANDC__) || (defined(__WATCOMC__) && defined(__WINDOWS_386__))
+#ifdef _WIN32
+#   ifndef __WIN32__
 #	define __WIN32__
-#	ifndef WIN32
-#	    define WIN32
-#	endif
-#	ifndef _WIN32
-#	    define _WIN32
-#	endif
+#   endif
+#   ifndef WIN32
+#	define WIN32
 #   endif
 #endif
-
-/*
- * STRICT: See MSDN Article Q83456
- */
-
-#ifdef __WIN32__
-#   ifndef STRICT
-#	define STRICT
-#   endif
-#endif /* __WIN32__ */
 
 /*
  * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
@@ -156,8 +143,23 @@ extern "C" {
 #endif
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
+#   define TCL_NORETURN __attribute__ ((noreturn))
+#   define TCL_NOINLINE __attribute__ ((noinline))
+#   if defined(BUILD_tcl) || defined(BUILD_tk)
+#	define TCL_NORETURN1 __attribute__ ((noreturn))
+#   else
+#	define TCL_NORETURN1 /* nothing */
+#   endif
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
+#   if defined(_MSC_VER) && (_MSC_VER >= 1310)
+#	define TCL_NORETURN _declspec(noreturn)
+#	define TCL_NOINLINE __declspec(noinline)
+#   else
+#	define TCL_NORETURN /* nothing */
+#	define TCL_NOINLINE /* nothing */
+#   endif
+#   define TCL_NORETURN1 /* nothing */
 #endif
 
 /*
@@ -168,7 +170,7 @@ extern "C" {
  */
 
 #if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
-#   if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC__MINOR__ >= 5))
+#   if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 5))
 #	define TCL_DEPRECATED_API(msg)	__attribute__ ((__deprecated__ (msg)))
 #   else
 #	define TCL_DEPRECATED_API(msg)	__attribute__ ((__deprecated__))
@@ -191,7 +193,7 @@ extern "C" {
  *       MSVCRT.
  */
 
-#if (defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
+#if (defined(_WIN32) && (defined(_MSC_VER) || (defined(__BORLANDC__) && (__BORLANDC__ >= 0x0550)) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
 #   define HAVE_DECLSPEC 1
 #   ifdef STATIC_BUILD
 #       define DLLIMPORT
@@ -315,14 +317,14 @@ extern "C" {
  * VOID. This block is skipped under Cygwin and Mingw.
  */
 
-#if defined(__WIN32__) && !defined(HAVE_WINNT_IGNORE_VOID)
+#if defined(_WIN32) && !defined(HAVE_WINNT_IGNORE_VOID)
 #ifndef VOID
 #define VOID void
 typedef char CHAR;
 typedef short SHORT;
 typedef long LONG;
 #endif
-#endif /* __WIN32__ && !HAVE_WINNT_IGNORE_VOID */
+#endif /* _WIN32 && !HAVE_WINNT_IGNORE_VOID */
 
 /*
  * Macro to use instead of "void" for arguments that must have type "void *"
@@ -390,7 +392,7 @@ typedef long LONG;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(__WIN32__)
+#   if defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
 #      ifdef __BORLANDC__
 #         define TCL_LL_MODIFIER	"L"
@@ -400,22 +402,18 @@ typedef long LONG;
 #   elif defined(__GNUC__)
 #      define TCL_WIDE_INT_TYPE long long
 #      define TCL_LL_MODIFIER	"ll"
-#   else /* ! __WIN32__ && ! __GNUC__ */
+#   else /* ! _WIN32 && ! __GNUC__ */
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
  */
-#      ifdef NO_LIMITS_H
-#	  error please define either TCL_WIDE_INT_TYPE or TCL_WIDE_INT_IS_LONG
-#      else /* !NO_LIMITS_H */
-#	  include <limits.h>
-#	  if (INT_MAX < LONG_MAX)
-#	     define TCL_WIDE_INT_IS_LONG	1
-#	  else
-#	     define TCL_WIDE_INT_TYPE long long
-#         endif
-#      endif /* NO_LIMITS_H */
-#   endif /* __WIN32__ */
+#      include <limits.h>
+#      if (INT_MAX < LONG_MAX)
+#         define TCL_WIDE_INT_IS_LONG	1
+#      else
+#         define TCL_WIDE_INT_TYPE long long
+#      endif
+#   endif /* _WIN32 */
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
 #ifdef TCL_WIDE_INT_IS_LONG
 #   undef TCL_WIDE_INT_TYPE
@@ -447,7 +445,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 #endif /* TCL_WIDE_INT_IS_LONG */
 
-#if defined(__WIN32__)
+#if defined(_WIN32)
 #   ifdef __BORLANDC__
 	typedef struct stati64 Tcl_StatBuf;
 #   elif defined(_WIN64)
@@ -458,7 +456,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	typedef struct _stat32i64 Tcl_StatBuf;
 #   endif /* _MSC_VER < 1400 */
 #elif defined(__CYGWIN__)
-    typedef struct _stat32i64 {
+    typedef struct {
 	dev_t st_dev;
 	unsigned short st_ino;
 	unsigned short st_mode;
@@ -562,7 +560,7 @@ typedef struct Tcl_ZLibStream_ *Tcl_ZlibStream;
  * will be called as the main fuction of the new thread created by that call.
  */
 
-#if defined __WIN32__
+#if defined _WIN32
 typedef unsigned (__stdcall Tcl_ThreadCreateProc) (ClientData clientData);
 #else
 typedef void (Tcl_ThreadCreateProc) (ClientData clientData);
@@ -574,7 +572,7 @@ typedef void (Tcl_ThreadCreateProc) (ClientData clientData);
  * in generic/tclThreadTest.c for it's usage.
  */
 
-#if defined __WIN32__
+#if defined _WIN32
 #   define Tcl_ThreadCreateType		unsigned __stdcall
 #   define TCL_THREAD_CREATE_RETURN	return 0
 #else
@@ -833,18 +831,20 @@ typedef struct Tcl_Obj {
     union {			/* The internal representation: */
 	long longValue;		/*   - an long integer value. */
 	double doubleValue;	/*   - a double-precision floating value. */
-	void *otherValuePtr;	/*   - another, type-specific value. */
+	void *otherValuePtr;	/*   - another, type-specific value, not used
+				 *     internally any more. */
 	Tcl_WideInt wideValue;	/*   - a long long value. */
-	struct {		/*   - internal rep as two pointers. */
+	struct {		/*   - internal rep as two pointers.
+				 *     Many uses in Tcl, including a bignum's
+				 *     tightly packed fields, where the alloc,
+				 *     used and signum flags are packed into
+				 *     ptr2 with everything else hung off
+				 *     ptr1. */
 	    void *ptr1;
 	    void *ptr2;
 	} twoPtrValue;
 	struct {		/*   - internal rep as a pointer and a long,
-				 *     the main use of which is a bignum's
-				 *     tightly packed fields, where the alloc,
-				 *     used and signum flags are packed into a
-				 *     single word with everything else hung
-				 *     off the pointer. */
+				 *     not used internally any more. */
 	    void *ptr;
 	    unsigned long value;
 	} ptrAndLongRep;
@@ -1158,27 +1158,19 @@ typedef struct Tcl_DString {
  * Forward declarations of Tcl_HashTable and related types.
  */
 
+#ifndef TCL_HASH_TYPE
+#  define TCL_HASH_TYPE unsigned
+#endif
+
 typedef struct Tcl_HashKeyType Tcl_HashKeyType;
 typedef struct Tcl_HashTable Tcl_HashTable;
 typedef struct Tcl_HashEntry Tcl_HashEntry;
 
-typedef unsigned (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
+typedef TCL_HASH_TYPE (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
 typedef int (Tcl_CompareHashKeysProc) (void *keyPtr, Tcl_HashEntry *hPtr);
 typedef Tcl_HashEntry * (Tcl_AllocHashEntryProc) (Tcl_HashTable *tablePtr,
 	void *keyPtr);
 typedef void (Tcl_FreeHashEntryProc) (Tcl_HashEntry *hPtr);
-
-/*
- * This flag controls whether the hash table stores the hash of a key, or
- * recalculates it. There should be no reason for turning this flag off as it
- * is completely binary and source compatible unless you directly access the
- * bucketPtr member of the Tcl_HashTableEntry structure. This member has been
- * removed and the space used to store the hash value.
- */
-
-#ifndef TCL_HASH_KEY_STORE_HASH
-#   define TCL_HASH_KEY_STORE_HASH 1
-#endif
 
 /*
  * Structure definition for an entry in a hash table. No-one outside Tcl
@@ -1189,15 +1181,9 @@ struct Tcl_HashEntry {
     Tcl_HashEntry *nextPtr;	/* Pointer to next entry in this hash bucket,
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
-#if TCL_HASH_KEY_STORE_HASH
     void *hash;			/* Hash value, stored as pointer to ensure
 				 * that the offsets of the fields in this
 				 * structure are not changed. */
-#else
-    Tcl_HashEntry **bucketPtr;	/* Pointer to bucket that points to first
-				 * entry in this entry's chain: used for
-				 * deleting the entry. */
-#endif
     ClientData clientData;	/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */
@@ -1334,9 +1320,9 @@ typedef struct Tcl_HashSearch {
  * TCL_CUSTOM_PTR_KEYS:		The keys are pointers to arbitrary types, the
  *				pointer is stored in the entry.
  *
- * While maintaining binary compatability the above have to be distinct values
+ * While maintaining binary compatibility the above have to be distinct values
  * as they are used to differentiate between old versions of the hash table
- * which don't have a typePtr and new ones which do. Once binary compatability
+ * which don't have a typePtr and new ones which do. Once binary compatibility
  * is discarded in favour of making more wide spread changes TCL_STRING_KEYS
  * can be the same as TCL_CUSTOM_TYPE_KEYS, and TCL_ONE_WORD_KEYS can be the
  * same as TCL_CUSTOM_PTR_KEYS because they simply determine how the key is
@@ -2147,11 +2133,28 @@ typedef struct Tcl_EncodingType {
  *				substituting one or more "close" characters in
  *				the destination buffer and then continue to
  *				convert the source.
+ * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf will not append a
+ *				terminating NUL byte.  Knowing that it will
+ *				not need space to do so, it will fill all
+ *				dstLen bytes with encoded UTF-8 content, as
+ *				other circumstances permit.  If clear, the
+ *				default behavior is to reserve a byte in
+ *				the dst space for NUL termination, and to
+ *				append the NUL byte.
+ * TCL_ENCODING_CHAR_LIMIT -	If set and dstCharsPtr is not NULL, then
+ *				Tcl_ExternalToUtf takes the initial value
+ *				of *dstCharsPtr is taken as a limit of the
+ *				maximum number of chars to produce in the
+ *				encoded UTF-8 content.  Otherwise, the
+ *				number of chars produced is controlled only
+ *				by other limiting factors.
  */
 
 #define TCL_ENCODING_START		0x01
 #define TCL_ENCODING_END		0x02
 #define TCL_ENCODING_STOPONERROR	0x04
+#define TCL_ENCODING_NO_TERMINATE	0x08
+#define TCL_ENCODING_CHAR_LIMIT		0x10
 
 /*
  * The following definitions are the error codes returned by the conversion
@@ -2379,9 +2382,6 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  *----------------------------------------------------------------------------
  * The following constant is used to test for older versions of Tcl in the
  * stubs tables.
- *
- * Jan Nijtman's plus patch uses 0xFCA1BACF, so we need to pick a different
- * value since the stubs tables don't match.
  */
 
 #define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
@@ -2394,22 +2394,20 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  */
 
 const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
-			    int exact);
+			    int exact, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
-/*
- * When not using stubs, make it a macro.
- */
-
-#ifndef USE_TCL_STUBS
+#ifdef USE_TCL_STUBS
 #define Tcl_InitStubs(interp, version, exact) \
-    Tcl_PkgInitStubsCheck(interp, version, exact)
+    (Tcl_InitStubs)(interp, version, \
+	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
+	    TCL_STUB_MAGIC)
+#else
+#define Tcl_InitStubs(interp, version, exact) \
+    Tcl_PkgInitStubsCheck(interp, version, \
+	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
 #endif
-
-/*
- * TODO - tommath stubs export goes here!
- */
 
 /*
  * Public functions that are not accessible via the stubs table.
@@ -2422,9 +2420,7 @@ EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
-#endif
 
 /*
  *----------------------------------------------------------------------------
@@ -2436,8 +2432,14 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 
 /*
  * Include platform specific public function declarations that are accessible
- * via the stubs table.
+ * via the stubs table. Make all TclOO symbols MODULE_SCOPE (which only
+ * has effect on building it as a shared library). See ticket [3010352].
  */
+
+#if defined(BUILD_tcl)
+#   undef TCLAPI
+#   define TCLAPI MODULE_SCOPE
+#endif
 
 #include "tclPlatDecls.h"
 
@@ -2505,7 +2507,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #   define Tcl_DecrRefCount(objPtr) \
 	do { \
 	    Tcl_Obj *_objPtr = (objPtr); \
-	    if (--(_objPtr)->refCount <= 0) { \
+	    if ((_objPtr)->refCount-- <= 1) { \
 		TclFreeObj(_objPtr); \
 	    } \
 	} while(0)
@@ -2614,7 +2616,9 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #   define Tcl_Ckrealloc	Tcl_Realloc
 #   define Tcl_Return		Tcl_SetResult
 #   define Tcl_TildeSubst	Tcl_TranslateFileName
+#if !defined(__APPLE__) /* On OSX, there is a conflict with "mach/mach.h" */
 #   define panic		Tcl_Panic
+#endif
 #   define panicVA		Tcl_PanicVA
 #endif /* !TCL_NO_DEPRECATED */
 

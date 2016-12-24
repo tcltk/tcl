@@ -146,7 +146,7 @@ test filesystem-1.10 {link normalisation: double link} -constraints {
 	[file normalize [file join dir2.link inside.file foo]]
 } -cleanup {
     file delete dir2.link
-} -result ok 
+} -result ok
 makeDirectory dir2.file
 test filesystem-1.11 {link normalisation: double link, back in tree} {unix hasLinks} {
     file link dir2.link dir.link
@@ -513,6 +513,9 @@ test filesystem-6.32 {empty file name} -returnCodes error -body {
     file type ""
 } -result {could not read "": no such file or directory}
 test filesystem-6.33 {empty file name} {file writable ""} 0
+test filesystem-6.34 {file name with (invalid) nul character} {
+    list [catch "open foo\x00" msg] $msg
+} [list 1 "couldn't open \"foo\x00\": filename is invalid on this platform"]
 
 # Make sure the testfilesystem hasn't been registered.
 if {[testConstraint testfilesystem]} {
@@ -871,7 +874,7 @@ test filesystem-9.5 {path objects and file tail and object rep} -setup {
     }
     return $res
 } -cleanup {
-    file delete -force dgp 
+    file delete -force dgp
     cd $origdir
 } -result {test test}
 test filesystem-9.6 {path objects and file tail and object rep} win {

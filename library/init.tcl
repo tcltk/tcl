@@ -12,11 +12,11 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-# This test intentionally written in pre-7.5 Tcl 
+# This test intentionally written in pre-7.5 Tcl
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact Tcl 8.6.0
+package require -exact Tcl 8.7a0
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -130,9 +130,9 @@ if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
 		    switch -- $u {
 			COMSPEC -
 			PATH {
-			    if {![info exists env($u)]} {
-				set env($u) $env($p)
-			    }
+			    set temp $env($p)
+			    unset env($p)
+			    set env($u) $temp
 			    trace add variable env($p) write \
 				    [namespace code [list EnvTraceProc $p]]
 			    trace add variable env($u) write \
@@ -142,11 +142,7 @@ if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
 		}
 	    }
 	    if {![info exists env(COMSPEC)]} {
-		if {$tcl_platform(os) eq "Windows NT"} {
-		    set env(COMSPEC) cmd.exe
-		} else {
-		    set env(COMSPEC) command.com
-		}
+		set env(COMSPEC) cmd.exe
 	    }
 	}
 	InitWinEnv
@@ -336,7 +332,7 @@ proc unknown args {
 	}
     }
 
-    if {([info level] == 1) && ([info script] eq "") 
+    if {([info level] == 1) && ([info script] eq "")
 	    && [info exists tcl_interactive] && $tcl_interactive} {
 	if {![info exists auto_noexec]} {
 	    set new [auto_execok $name]
@@ -402,7 +398,8 @@ proc unknown args {
 	    return -code error "ambiguous command name \"$name\": [lsort $cmds]"
 	}
     }
-    return -code error "invalid command name \"$name\""
+    return -code error -errorcode [list TCL LOOKUP COMMAND $name] \
+	"invalid command name \"$name\""
 }
 
 # auto_load --
@@ -639,12 +636,8 @@ proc auto_execok name {
     }
     set auto_execs($name) ""
 
-    set shellBuiltins [list cls copy date del erase dir echo mkdir \
-	    md rename ren rmdir rd time type ver vol]
-    if {$tcl_platform(os) eq "Windows NT"} {
-	# NT includes the 'start' built-in
-	lappend shellBuiltins "start"
-    }
+    set shellBuiltins [list cls copy date del dir echo erase md mkdir \
+	    mklink rd ren rename rmdir start time type ver vol]
     if {[info exists env(PATHEXT)]} {
 	# Add an initial ; to have the {} extension check first.
 	set execExtensions [split ";$env(PATHEXT)" ";"]

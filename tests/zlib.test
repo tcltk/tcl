@@ -16,6 +16,13 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 testConstraint zlib [llength [info commands zlib]]
+testConstraint recentZlib 0
+catch {
+    # Work around a bug in some versions of zlib; known to manifest on at
+    # least Mac OS X Mountain Lion...
+    testConstraint recentZlib \
+	    [package vsatisfies [zlib::pkgconfig get zlibVersion] 1.2.6]
+}
 
 test zlib-1.1 {zlib basics} -constraints zlib -returnCodes error -body {
     zlib
@@ -28,7 +35,7 @@ test zlib-1.3 {zlib basics} -constraints zlib -body {
 } -result zlibVersion
 test zlib-1.4 {zlib basics} -constraints zlib -body {
     package present zlib
-} -result 2.0
+} -result 2.0.1
 
 test zlib-2.1 {zlib compress/decompress} zlib {
     zlib decompress [zlib compress abcdefghijklm]
@@ -125,6 +132,31 @@ test zlib-7.6 {zlib stream} zlib {
     $s close
     lappend result $data
 } {{} 69f34b6a abcdeEDCBA..}
+test zlib-7.7 {zlib stream: Bug 25842c161} -constraints zlib -body {
+    set s [zlib stream deflate]
+    $s put {}
+} -cleanup {
+    catch {$s close}
+} -result ""
+# Also causes Tk Bug 10f2e7872b
+test zlib-7.8 {zlib stream: Bug b26e38a3e4} -constraints zlib -setup {
+    expr srand(12345)
+    set randdata {}
+    for {set i 0} {$i<6001} {incr i} {
+	append randdata [binary format c [expr {int(256*rand())}]]
+    }
+} -body {
+    set strm [zlib stream compress]
+    for {set i 1} {$i<3000} {incr i} {
+	$strm put $randdata
+    }
+    $strm put -finalize $randdata
+    set data [$strm get]
+    list [string length $data] [string length [zlib decompress $data]]
+} -cleanup {
+    catch {$strm close}
+    unset -nocomplain randdata data
+} -result {120185 18003000}
 
 test zlib-8.1 {zlib transformation} -constraints zlib -setup {
     set file [makeFile {} test.gz]
@@ -208,7 +240,7 @@ test zlib-8.5 {transformation and flushing and fileevents: Bug 3525907} -setup {
     set ::res
 } -cleanup {
     catch {close $r}
-} -result {qwertyuiop MIDDLE asdfghjkl}
+} -result {qwertyuiop MIDDLE asdfghjkl {}}
 test zlib-8.6 {transformation and fconfigure} -setup {
     set file [makeFile {} test.z]
     set fd [open $file wb]
@@ -238,9 +270,10 @@ test zlib-8.8 {transformation and fconfigure} -setup {
 } -constraints zlib -body {
     zlib push compress $outSide -dictionary $spdyDict
     fconfigure $outSide -blocking 0 -translation binary -buffering none
-    fconfigure $inSide -blocking 0 -translation binary
+    fconfigure $inSide -blocking 1 -translation binary
     puts -nonewline $outSide $spdyHeaders
     chan pop $outSide
+    chan close $outSide
     set compressed [read $inSide]
     catch {zlib decompress $compressed} err opt
     list [string length [zlib compress $spdyHeaders]] \
@@ -256,10 +289,11 @@ test zlib-8.9 {transformation and fconfigure} -setup {
 } -constraints zlib -body {
     zlib push compress $outSide -dictionary $spdyDict
     fconfigure $outSide -blocking 0 -translation binary -buffering none
-    fconfigure $inSide -blocking 0 -translation binary
+    fconfigure $inSide -blocking 1 -translation binary
     puts -nonewline $outSide $spdyHeaders
     set result [fconfigure $outSide -checksum]
     chan pop $outSide
+    chan close $outSide
     $strm put -dictionary $spdyDict [read $inSide]
     lappend result [string length $spdyHeaders] [string length [$strm get]]
 } -cleanup {
@@ -269,12 +303,13 @@ test zlib-8.9 {transformation and fconfigure} -setup {
 } -result {3064818174 358 358}
 test zlib-8.10 {transformation and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
-} -constraints zlib -body {
+} -constraints {zlib recentZlib} -body {
     zlib push deflate $outSide -dictionary $spdyDict
     fconfigure $outSide -blocking 0 -translation binary -buffering none
-    fconfigure $inSide -blocking 0 -translation binary
+    fconfigure $inSide -blocking 1 -translation binary
     puts -nonewline $outSide $spdyHeaders
     chan pop $outSide
+    chan close $outSide
     set compressed [read $inSide]
     catch {
 	zlib inflate $compressed
@@ -293,9 +328,10 @@ test zlib-8.11 {transformation and fconfigure} -setup {
 } -constraints zlib -body {
     zlib push deflate $outSide -dictionary $spdyDict
     fconfigure $outSide -blocking 0 -translation binary -buffering none
-    fconfigure $inSide -blocking 0 -translation binary
+    fconfigure $inSide -blocking 1 -translation binary
     puts -nonewline $outSide $spdyHeaders
     chan pop $outSide
+    chan close $outSide
     $strm put -dictionary $spdyDict [read $inSide]
     list [string length $spdyHeaders] [string length [$strm get]]
 } -cleanup {
@@ -388,6 +424,26 @@ test zlib-8.16 {Bug 3603553: buffer transfer with large writes} -setup {
 } -cleanup {
     removeFile $file
 } -result 57647
+test zlib-8.17 {Bug dd260aaf: fconfigure} -setup {
+    lassign [chan pipe] inSide outSide
+} -constraints zlib -body {
+    zlib push inflate $inSide
+    zlib push deflate $outSide
+    list [chan configure $inSide -dictionary] [chan configure $outSide -dictionary]
+} -cleanup {
+    catch {close $inSide}
+    catch {close $outSide}
+} -result {{} {}}
+test zlib-8.18 {Bug dd260aaf: fconfigure} -setup {
+    lassign [chan pipe] inSide outSide
+} -constraints zlib -body {
+    zlib push inflate $inSide -dictionary "one two"
+    zlib push deflate $outSide -dictionary "one two"
+    list [chan configure $inSide -dictionary] [chan configure $outSide -dictionary]
+} -cleanup {
+    catch {close $inSide}
+    catch {close $outSide}
+} -result {{one two} {one two}}
 
 test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]
@@ -862,6 +918,47 @@ test zlib-11.3 {Bug 3595576 variant} -setup {
 } -cleanup {
     removeFile $file
 } -returnCodes error -result {can't set "noSuchNs::foo": parent namespace doesn't exist}
+
+test zlib-12.1 {Tk Bug 9eb55debc5} -constraints zlib -setup {
+    set stream [zlib stream compress]
+} -body {
+    for {set opts {};set y 0} {$y < 60} {incr y} {
+	for {set line {};set x 0} {$x < 100} {incr x} {
+	    append line [binary format ccc $x $y 128]
+	}
+	if {$y == 59} {
+	    set opts -finalize
+	}
+	$stream put {*}$opts $line
+    }
+    set data [$stream get]
+    list [string length $data] [string length [zlib decompress $data]]
+} -cleanup {
+    $stream close
+} -result {12026 18000}
+test zlib-12.2 {Patrick Dunnigan's issue} -constraints zlib -setup {
+    set filesrc [makeFile {} test.input]
+    set filedst [makeFile {} test.output]
+    set f [open $filesrc "wb"]
+    for {set i 0} {$i < 10000} {incr i} {
+	puts -nonewline $f "x"
+    }
+    close $f
+} -body {
+    set fin [open $filesrc "rb"]
+    set fout [open $filedst "wb"]
+    set header [dict create filename "test.input" time 0]
+    try {
+	fcopy $fin [zlib push gzip $fout -header $header]
+    } finally {
+	close $fin
+	close $fout
+    }
+    file size $filedst
+} -cleanup {
+    removeFile $filesrc
+    removeFile $filedst
+} -result 4152
 
 ::tcltest::cleanupTests
 return

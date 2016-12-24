@@ -3,9 +3,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH Tcl_InitStubs 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_InitStubs \- initialize the Tcl stubs mechanism
@@ -23,11 +23,11 @@ Tcl interpreter handle.
 A version string consisting of one or more decimal numbers
 separated by dots.
 .AP int exact in
-Non-zero means that only the particular version specified by
+1 means that only the particular version specified by
 \fIversion\fR is acceptable.
-Zero means that versions newer than \fIversion\fR are also
+0 means that versions newer than \fIversion\fR are also
 acceptable as long as they have the same major version number
-as \fIversion\fR.
+as \fIversion\fR. Other bits have no effect.
 .BE
 .SH INTRODUCTION
 .PP

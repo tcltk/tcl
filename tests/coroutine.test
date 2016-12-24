@@ -1,4 +1,4 @@
-# Commands covered:  coroutine, yield, [info coroutine]
+# Commands covered:  coroutine, yield, yieldto, [info coroutine]
 #
 # This file contains a collection of tests for experimental commands that are
 # found in ::tcl::unsupported. The tests will migrate to normal test files
@@ -66,7 +66,7 @@ test coroutine-1.3 {yield returns new arg} -setup {
 	    incr i
 	}
     }
-    coroutine foo ::apply [list {{start 2} {stop 10}} $body] 
+    coroutine foo ::apply [list {{start 2} {stop 10}} $body]
     set res {}
 } -body {
     for {set k 1} {$k < 4} {incr k} {
@@ -342,6 +342,9 @@ test coroutine-3.6 {info frame, bug #2910094} -setup {
     rename stack {}
     rename a {}
 } -result {}
+test coroutine-3.7 {bug 0b874c344d} {
+    dict get [coroutine X coroutine Y info frame 0] cmd
+} {coroutine X coroutine Y info frame 0}
 
 test coroutine-4.1 {bug #2093188} -setup {
     proc foo {} {
@@ -473,7 +476,7 @@ test coroutine-5.1 {right numLevels on coro return} -constraints {testnrelevels}
 	expr {[lindex [testnrelevels] 1] - 1}
     }
     proc relativeLevel base {
-	# remove the level for this proc's call	
+	# remove the level for this proc's call
 	expr {[getNumLevel] - $base - 1}
     }
     proc foo {} {
@@ -514,7 +517,7 @@ test coroutine-5.2 {right numLevels within coro} -constraints {testnrelevels} \
 	expr {[lindex [testnrelevels] 1] - 1}
     }
     proc relativeLevel base {
-	# remove the level for this proc's call	
+	# remove the level for this proc's call
 	expr {[getNumLevel] - $base - 1}
     }
     proc foo base {
@@ -585,7 +588,7 @@ test coroutine-7.2 {multi-argument yielding with yieldto} -body {
     coroutine a corobody
     coroutine b corobody
     list [a x] [a y z] [a \{p] [a \{q r] [a] [a] [rename a {}] \
-	[b ok] [rename b {}] 
+	[b ok] [rename b {}]
 } -cleanup {
     rename corobody {}
 } -result {x {y z 2} \{p {\{q r 2} {} 0 {} ok {}}
@@ -609,7 +612,6 @@ test coroutine-7.3 {yielding between coroutines} -body {
 } -cleanup {
     catch {rename juggler ""}
 } -result {{{a b c d e} ::j1 {a b c d} ::j2 {a b c} ::j3 {a b} ::j1 a ::j2} {} {} {}}
-
 test coroutine-7.4 {Bug 8ff0cb9fe1} -setup {
     proc foo {a b} {catch yield; return 1}
 } -cleanup {
@@ -617,7 +619,6 @@ test coroutine-7.4 {Bug 8ff0cb9fe1} -setup {
 } -body {
     coroutine demo lsort -command foo {a b}
 } -result {b a}
-
 test coroutine-7.5 {return codes} {
     set result {}
     foreach code {0 1 2 3 4 5} {
@@ -625,14 +626,12 @@ test coroutine-7.5 {return codes} {
     }
     set result
 } {0 1 2 3 4 5}
-
 test coroutine-7.6 {Early yield crashes} {
     proc foo args {}
     trace add execution foo enter {catch yield}
     coroutine demo foo
     rename foo {}
 } {}
-
 test coroutine-7.7 {Bug 2486550} -setup {
     interp hide {} yield
 } -body {
@@ -641,6 +640,106 @@ test coroutine-7.7 {Bug 2486550} -setup {
     demo
     interp expose {} yield
 } -result ok
+test coroutine-7.8 {yieldto context nuke: Bug a90d9331bc} -setup {
+    namespace eval cotest {}
+    set ::result ""
+} -body {
+    proc cotest::body {} {
+	lappend ::result a
+	yield OUT
+	lappend ::result b
+	yieldto ::return -level 0 123
+	lappend ::result c
+	return
+    }
+    lappend ::result [coroutine cotest cotest::body]
+    namespace delete cotest
+    namespace eval cotest {}
+    lappend ::result [cotest]
+    cotest
+    return $result
+} -returnCodes error -cleanup {
+    catch {namespace delete ::cotest}
+    catch {rename cotest ""}
+} -result {yieldto called in deleted namespace}
+test coroutine-7.9 {yieldto context nuke: Bug a90d9331bc} -setup {
+    namespace eval cotest {}
+    set ::result ""
+} -body {
+    proc cotest::body {} {
+	set y ::yieldto
+	lappend ::result a
+	yield OUT
+	lappend ::result b
+	$y ::return -level 0 123
+	lappend ::result c
+	return
+    }
+    lappend ::result [coroutine cotest cotest::body]
+    namespace delete cotest
+    namespace eval cotest {}
+    lappend ::result [cotest]
+    cotest
+    return $result
+} -returnCodes error -cleanup {
+    catch {namespace delete ::cotest}
+    catch {rename cotest ""}
+} -result {yieldto called in deleted namespace}
+test coroutine-7.10 {yieldto context nuke: Bug a90d9331bc} -setup {
+    namespace eval cotest {}
+    set ::result ""
+} -body {
+    proc cotest::body {} {
+	lappend ::result a
+	yield OUT
+	lappend ::result b
+	yieldto ::return -level 0 -cotest [namespace delete ::cotest] 123
+	lappend ::result c
+	return
+    }
+    lappend ::result [coroutine cotest cotest::body]
+    lappend ::result [cotest]
+    cotest
+    return $result
+} -returnCodes error -cleanup {
+    catch {namespace delete ::cotest}
+    catch {rename cotest ""}
+} -result {yieldto called in deleted namespace}
+test coroutine-7.11 {yieldto context nuke: Bug a90d9331bc} -setup {
+    namespace eval cotest {}
+    set ::result ""
+} -body {
+    proc cotest::body {} {
+	set y ::yieldto
+	lappend ::result a
+	yield OUT
+	lappend ::result b
+	$y ::return -level 0 -cotest [namespace delete ::cotest] 123
+	lappend ::result c
+	return
+    }
+    lappend ::result [coroutine cotest cotest::body]
+    lappend ::result [cotest]
+    cotest
+    return $result
+} -returnCodes error -cleanup {
+    catch {namespace delete ::cotest}
+    catch {rename cotest ""}
+} -result {yieldto called in deleted namespace}
+test coroutine-7.12 {coro floor above street level #3008307} -body {
+    proc c {} {
+	yield
+    }
+    proc cc {} {
+	coroutine C c
+    }
+    proc boom {} {
+	cc ; # coro created at level 2
+	C  ; # and called at level 1
+    }
+    boom   ; # does not crash: the coro floor is a good insulator
+    list
+} -result {}
 
 
 # cleanup

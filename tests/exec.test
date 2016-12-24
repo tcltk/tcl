@@ -370,7 +370,7 @@ err}
 
 test exec-10.1 {errors in exec invocation} -constraints {exec} -body {
     exec
-} -returnCodes error -result {wrong # args: should be "exec ?-switch ...? arg ?arg ...?"}
+} -returnCodes error -result {wrong # args: should be "exec ?-option ...? arg ?arg ...?"}
 test exec-10.2 {errors in exec invocation} -constraints {exec} -body {
     exec | cat
 } -returnCodes error -result {illegal use of | or |& in command}
@@ -545,10 +545,10 @@ test exec-14.1 {-keepnewline switch} {exec} {
 } "foo\n"
 test exec-14.2 {-keepnewline switch} -constraints {exec} -body {
     exec -keepnewline
-} -returnCodes error -result {wrong # args: should be "exec ?-switch ...? arg ?arg ...?"}
+} -returnCodes error -result {wrong # args: should be "exec ?-option ...? arg ?arg ...?"}
 test exec-14.3 {unknown switch} -constraints {exec} -body {
     exec -gorp
-} -returnCodes error -result {bad switch "-gorp": must be -ignorestderr, -keepnewline, or --}
+} -returnCodes error -result {bad option "-gorp": must be -ignorestderr, -keepnewline, or --}
 test exec-14.4 {-- switch} -constraints {exec} -body {
     exec -- -gorp
 } -returnCodes error -result {couldn't execute "-gorp": no such file or directory}
@@ -682,6 +682,19 @@ test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix} -setup {
 } -cleanup {
     removeFile $tmpfile
 } -result 14
+
+# Tests to ensure batch files and .CMD (Bug 9ece99d58b)
+# can be executed on Windows
+test exec-20.0 {exec .bat file} -constraints {win} -body {
+    set log [makeFile {} exec20.log]
+    exec [makeFile "echo %1> $log" exec20.bat] "Testing exec-20.0"
+    viewFile $log
+} -result "\"Testing exec-20.0\""
+test exec-20.1 {exec .CMD file} -constraints {win} -body {
+    set log [makeFile {} exec201.log]
+    exec [makeFile "echo %1> $log" exec201.CMD] "Testing exec-20.1"
+    viewFile $log
+} -result "\"Testing exec-20.1\""
 
 # ----------------------------------------------------------------------
 # cleanup

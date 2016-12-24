@@ -119,7 +119,7 @@ test http-3.2 {http::geturl} -returnCodes error -body {
     http::geturl http:junk
 } -result {Unsupported URL: http:junk}
 set url //[info hostname]:$port
-set badurl //[info hostname]:6666
+set badurl //[info hostname]:[expr $port+1]
 test http-3.3 {http::geturl} -body {
     set token [http::geturl $url]
     http::data $token
@@ -131,8 +131,9 @@ test http-3.3 {http::geturl} -body {
 </body></html>"
 set tail /a/b/c
 set url //[info hostname]:$port/a/b/c
-set fullurl http://user:pass@[info hostname]:$port/a/b/c
+set fullurl HTTP://user:pass@[info hostname]:$port/a/b/c
 set binurl //[info hostname]:$port/binary
+set xmlurl //[info hostname]:$port/xml
 set posturl //[info hostname]:$port/post
 set badposturl //[info hostname]:$port/droppost
 set authorityurl //[info hostname]:$port
@@ -306,7 +307,6 @@ test http-3.13 {http::geturl socket leak test} {
     for {set i 0} {$i < 3} {incr i} {
 	catch {http::geturl $badurl -timeout 5000}
     }
-
     # No extra channels should be taken
     expr {[llength [file channels]] == $chanCount}
 } 1
@@ -372,11 +372,11 @@ test http-3.27 {http::geturl: -headers override -type} -body {
     http::data $token
 } -cleanup {
     http::cleanup $token
-} -match regexp -result {(?n)Accept \*/\*
-Host .*
+} -match regexp -result {(?n)Host .*
 User-Agent .*
 Connection close
 Content-Type {text/plain;charset=utf-8}
+Accept \*/\*
 Accept-Encoding .*
 Content-Length 5}
 test http-3.28 {http::geturl: -headers override -type default} -body {
@@ -385,11 +385,11 @@ test http-3.28 {http::geturl: -headers override -type default} -body {
     http::data $token
 } -cleanup {
     http::cleanup $token
-} -match regexp -result {(?n)Accept \*/\*
-Host .*
+} -match regexp -result {(?n)Host .*
 User-Agent .*
 Connection close
 Content-Type {text/plain;charset=utf-8}
+Accept \*/\*
 Accept-Encoding .*
 Content-Length 5}
 test http-3.29 {http::geturl IPv6 address} -body {
@@ -418,6 +418,28 @@ test http-3.31 {http::geturl fragment without path} -body {
 } -cleanup {
     catch { http::cleanup $token }
 } -result 200
+# Bug c11a51c482
+test http-3.32 {http::geturl: -headers override -accept default} -body {
+    set token [http::geturl $url/headers -query dummy \
+	    -headers [list "Accept" "text/plain,application/tcl-test-value"]]
+    http::data $token
+} -cleanup {
+    http::cleanup $token
+} -match regexp -result {(?n)Host .*
+User-Agent .*
+Connection close
+Accept text/plain,application/tcl-test-value
+Accept-Encoding .*
+Content-Type application/x-www-form-urlencoded
+Content-Length 5}
+# Bug 838e99a76d
+test http-3.33 {http::geturl application/xml is text} -body {
+    set token [http::geturl "$xmlurl"]
+    scan [http::data $token] "<%\[^>]>%c<%\[^>]>"
+} -cleanup {
+    catch { http::cleanup $token }
+} -result {test 4660 /test}
+
 test http-4.1 {http::Event} -body {
     set token [http::geturl $url -keepalive 0]
     upvar #0 $token data
@@ -492,14 +514,10 @@ proc myProgress {token total current} {
     }
     set progress [list $total $current]
 }
-if 0 {
-    # This test hangs on Windows95 because the client never gets EOF
-    set httpLog 1
-    test http-4.6.1 {http::Event} knownBug {
-	set token [http::geturl $url -blocksize 50 -progress myProgress]
-	return $progress
-    } {111 111}
-}
+test http-4.6.1 {http::Event} knownBug {
+    set token [http::geturl $url -blocksize 50 -progress myProgress]
+    return $progress
+} {111 111}
 test http-4.7 {http::Event} -body {
     set token [http::geturl $url -keepalive 0 -progress myProgress]
     return $progress

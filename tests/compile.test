@@ -122,7 +122,7 @@ test compile-3.4 {TclCompileCatchCmd: bcc'ed [return] is caught} {
     proc foo {} {
 	set fail [catch {
 	    return 1
-	}] ; # {}	
+	}] ; # {}
 	return 2
     }
     foo
@@ -132,8 +132,8 @@ test compile-3.5 {TclCompileCatchCmd: recover from error, [Bug 705406]} {
 	catch {
 	    if {[a]} {
 		if b {}
-	    }   
-	}   
+	    }
+	}
     }
     list [catch foo msg] $msg
 } {0 1}
@@ -167,6 +167,36 @@ test compile-3.6 {TclCompileCatchCmd: error in storing result [Bug 3098302]} {*}
     -cleanup {namespace delete catchtest}
 }
 
+test compile-3.7 {TclCompileCatchCmd: error in storing options [Bug 3098302]} {*}{
+     -setup {
+	 namespace eval catchtest {
+	     variable options1 {}
+	 }
+	 trace add variable catchtest::options1 write catchtest::failtrace
+	 proc catchtest::failtrace {n1 n2 op} {
+	     return -code error "trace on $n1 fails by request"
+	 }
+     }
+    -body {
+	proc catchtest::x {} {
+	    variable options1
+	    set count 0
+	    for {set i 0} {$i < 10} {incr i} {
+		set status2 [catch {
+		    set status1 [catch {
+			return -code error -level 0 "original failure"
+		    } result1 options1]
+		} result2 options2]
+		incr count
+	    }
+	    list $count $result2
+	}
+	catchtest::x
+    }
+    -result {10 {can't set "options1": trace on options1 fails by request}}
+    -cleanup {namespace delete catchtest}
+}
+
 test compile-4.1 {TclCompileForCmd: command substituted test expression} {
     set i 0
     set j 0
@@ -194,6 +224,17 @@ test compile-5.2 {TclCompileForeachCmd: non-local variables} {
     foreach-test
     set ::foo
 } 3
+test compile-5.3 {TclCompileForeachCmd: [Bug b9b2079e6d]} -setup {
+    proc demo {} {
+	foreach x y {
+	    if 1 break else
+	}
+    }
+} -body {
+    demo
+} -cleanup {
+    rename demo {}
+} -returnCodes error -result {wrong # args: no script following "else" argument}
 
 test compile-6.1 {TclCompileSetCmd: global scalar names with ::s} -setup {
     catch {unset x}
@@ -303,13 +344,13 @@ test compile-11.9 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     list [catch {p} msg] $msg
 } -returnCodes error -result {unmatched open brace in list}
 
-# 
+#
 # Special section for tests of tclLiteral.c
 # The following tests check for incorrect memory handling in
 # TclReleaseLiteral. They are only effective when tcl is compiled with
 # TCL_MEM_DEBUG
 #
-# Special test for leak on interp delete [Bug 467523]. 
+# Special test for leak on interp delete [Bug 467523].
 test compile-12.1 {testing literal leak on interp delete} -setup {
     proc getbytes {} {
 	set lines [split [memory info] "\n"]
@@ -318,10 +359,10 @@ test compile-12.1 {testing literal leak on interp delete} -setup {
 } -constraints memory -body {
     set end [getbytes]
     for {set i 0} {$i < 5} {incr i} {
-	interp create foo 
-	foo eval { 
+	interp create foo
+	foo eval {
 	    namespace eval bar {}
-	} 
+	}
 	interp delete foo
 	set tmp $end
 	set end [getbytes]
@@ -342,7 +383,7 @@ test compile-12.2 {testing error on literal deletion} -constraints {memory exec}
 	}
 	puts 0
     } source.file]
-    exec [interpreter] $sourceFile 
+    exec [interpreter] $sourceFile
 } -cleanup {
     catch {removeFile $sourceFile}
 } -result 0
@@ -425,13 +466,21 @@ test compile-13.1 {testing underestimate of maxStackSize in list cmd} {exec} {
     list [catch {exec [interpreter] << $script} msg] $msg
 } {0 OK}
 
-# Special test for compiling tokens from a copy of the source string. [Bug
-# 599788]
+# Tests compile-14.* for [Bug 599788] [Bug 0c043a175a47da8c2342]
 test compile-14.1 {testing errors in element name; segfault?} {} {
      catch {set a([error])} msg1
      catch {set bubba([join $abba $jubba]) $vol} msg2
      list $msg1 $msg2
 } {{wrong # args: should be "error message ?errorInfo? ?errorCode?"} {can't read "abba": no such variable}}
+
+test compile-14.2 {testing element name "$"} -body {
+    unset -nocomplain a
+    set a() 1
+    set a(1) 2
+    set a($) 3
+    list [set a()] [set a(1)] [set a($)] [unset a() a(1); lindex [array names a] 0]
+} -cleanup {unset a} -result [list 1 2 3 {$}]
+
 
 # Tests compile-15.* cover Tcl Bug 633204
 test compile-15.1 {proper TCL_RETURN code from [return]} {
@@ -628,12 +677,15 @@ test compile-17.2 {Command interpretation binding for non-compiled code} -setup 
 # does not check the format of disassembled bytecode though; that's liable to
 # change without warning.
 
+set disassemblables [linsert [join {
+    constructor destructor lambda method objmethod proc script
+} ", "] end-1 or]
 test compile-18.1 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::disassemble
 } -match glob -result {wrong # args: should be "*"}
 test compile-18.2 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::disassemble ?
-} -match glob -result {bad type "?": must be *}
+} -result "bad type \"?\": must be $disassemblables"
 test compile-18.3 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::disassemble lambda
 } -match glob -result {wrong # args: should be "* lambda lambdaTerm"}
@@ -707,11 +759,285 @@ test compile-18.19 {disassembler - basics} -setup {
 } -cleanup {
     foo destroy
 } -match glob -result *
+# There never was a compile-18.20.
+# The keys of the dictionary produced by [getbytecode] are defined.
+set bytecodekeys {literals variables exception instructions auxiliary commands script namespace stackdepth exceptdepth}
+test compile-18.21 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode
+} -match glob -result {wrong # args: should be "*"}
+test compile-18.22 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode ?
+} -result "bad type \"?\": must be $disassemblables"
+test compile-18.23 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode lambda
+} -match glob -result {wrong # args: should be "* lambda lambdaTerm"}
+test compile-18.24 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode lambda \{
+} -result "can't interpret \"\{\" as a lambda expression"
+test compile-18.25 {disassembler - basics} -body {
+    dict keys [tcl::unsupported::getbytecode lambda {{} {}}]
+} -result "$bytecodekeys initiallinenumber sourcefile"
+test compile-18.26 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode proc
+} -match glob -result {wrong # args: should be "* proc procName"}
+test compile-18.27 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode proc nosuchproc
+} -result {"nosuchproc" isn't a procedure}
+test compile-18.28 {disassembler - basics} -setup {
+    proc chewonthis {} {}
+} -body {
+    dict keys [tcl::unsupported::getbytecode proc chewonthis]
+} -cleanup {
+    rename chewonthis {}
+} -result "$bytecodekeys initiallinenumber sourcefile"
+test compile-18.28.1 {disassembler - tricky bit} -setup {
+    eval [list proc chewonthis {} {}]
+} -body {
+    dict keys [tcl::unsupported::getbytecode proc chewonthis]
+} -cleanup {
+    rename chewonthis {}
+} -result $bytecodekeys
+test compile-18.28.2 {disassembler - tricky bit} -setup {
+    eval {proc chewonthis {} {}}
+} -body {
+    dict keys [tcl::unsupported::getbytecode proc chewonthis]
+} -cleanup {
+    rename chewonthis {}
+} -result "$bytecodekeys initiallinenumber sourcefile"
+test compile-18.28.3 {disassembler - tricky bit} -setup {
+    proc Proc {n a b} {
+	proc $n $a $b
+    }
+    Proc chewonthis {} {}
+} -body {
+    dict keys [tcl::unsupported::getbytecode proc chewonthis]
+} -cleanup {
+    rename Proc {}
+    rename chewonthis {}
+} -result $bytecodekeys
+test compile-18.28.4 {disassembler - tricky bit} -setup {
+    proc Proc {n a b} {
+	tailcall proc $n $a $b
+    }
+    Proc chewonthis {} {}
+} -body {
+    dict keys [tcl::unsupported::getbytecode proc chewonthis]
+} -cleanup {
+    rename Proc {}
+    rename chewonthis {}
+} -result "$bytecodekeys initiallinenumber sourcefile"
+test compile-18.29 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode script
+} -match glob -result {wrong # args: should be "* script script"}
+test compile-18.30 {disassembler - basics} -body {
+    dict keys [tcl::unsupported::getbytecode script {}]
+} -result $bytecodekeys
+test compile-18.31 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode method
+} -match glob -result {wrong # args: should be "* method className methodName"}
+test compile-18.32 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode method nosuchclass foo
+} -result {nosuchclass does not refer to an object}
+test compile-18.33 {disassembler - basics} -returnCodes error -setup {
+    oo::object create justanobject
+} -body {
+    tcl::unsupported::getbytecode method justanobject foo
+} -cleanup {
+    justanobject destroy
+} -result {"justanobject" is not a class}
+test compile-18.34 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode method oo::object nosuchmethod
+} -result {unknown method "nosuchmethod"}
+test compile-18.35 {disassembler - basics} -setup {
+    oo::class create foo {method bar {} {}}
+} -body {
+    dict keys [tcl::unsupported::getbytecode method foo bar]
+} -cleanup {
+    foo destroy
+} -result "$bytecodekeys initiallinenumber sourcefile"
+test compile-18.36 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode objmethod
+} -match glob -result {wrong # args: should be "* objmethod objectName methodName"}
+test compile-18.37 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode objmethod nosuchobject foo
+} -result {nosuchobject does not refer to an object}
+test compile-18.38 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode objmethod oo::object nosuchmethod
+} -result {unknown method "nosuchmethod"}
+test compile-18.39 {disassembler - basics} -setup {
+    oo::object create foo
+    oo::objdefine foo {method bar {} {}}
+} -body {
+    dict keys [tcl::unsupported::getbytecode objmethod foo bar]
+} -cleanup {
+    foo destroy
+} -result "$bytecodekeys initiallinenumber sourcefile"
+test compile-18.40 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::disassemble constructor
+} -match glob -result {wrong # args: should be "* constructor className"}
+test compile-18.41 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::disassemble constructor nosuchclass
+} -result {nosuchclass does not refer to an object}
+test compile-18.42 {disassembler - basics} -returnCodes error -setup {
+    oo::object create justanobject
+} -body {
+    tcl::unsupported::disassemble constructor justanobject
+} -cleanup {
+    justanobject destroy
+} -result {"justanobject" is not a class}
+test compile-18.43 {disassembler - basics} -returnCodes error -setup {
+    oo::class create constructorless
+} -body {
+    tcl::unsupported::disassemble constructor constructorless
+} -cleanup {
+    constructorless destroy
+} -result {"constructorless" has no defined constructor}
+test compile-18.44 {disassembler - basics} -setup {
+    oo::class create foo {constructor {} {set x 1}}
+} -body {
+    # Allow any string: the result format is not defined anywhere!
+    tcl::unsupported::disassemble constructor foo
+} -cleanup {
+    foo destroy
+} -match glob -result *
+test compile-18.45 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode constructor
+} -match glob -result {wrong # args: should be "* constructor className"}
+test compile-18.46 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode constructor nosuchobject
+} -result {nosuchobject does not refer to an object}
+test compile-18.47 {disassembler - basics} -returnCodes error -setup {
+    oo::class create constructorless
+} -body {
+    tcl::unsupported::getbytecode constructor constructorless
+} -cleanup {
+    constructorless destroy
+} -result {"constructorless" has no defined constructor}
+test compile-18.48 {disassembler - basics} -setup {
+    oo::class create foo {constructor {} {set x 1}}
+} -body {
+    dict keys [tcl::unsupported::getbytecode constructor foo]
+} -cleanup {
+    foo destroy
+} -result "$bytecodekeys"
+# There is no compile-18.49
+test compile-18.50 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::disassemble destructor
+} -match glob -result {wrong # args: should be "* destructor className"}
+test compile-18.51 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::disassemble destructor nosuchclass
+} -result {nosuchclass does not refer to an object}
+test compile-18.52 {disassembler - basics} -returnCodes error -setup {
+    oo::object create justanobject
+} -body {
+    tcl::unsupported::disassemble destructor justanobject
+} -cleanup {
+    justanobject destroy
+} -result {"justanobject" is not a class}
+test compile-18.53 {disassembler - basics} -returnCodes error -setup {
+    oo::class create constructorless
+} -body {
+    tcl::unsupported::disassemble destructor constructorless
+} -cleanup {
+    constructorless destroy
+} -result {"constructorless" has no defined destructor}
+test compile-18.54 {disassembler - basics} -setup {
+    oo::class create foo {destructor {set x 1}}
+} -body {
+    # Allow any string: the result format is not defined anywhere!
+    tcl::unsupported::disassemble destructor foo
+} -cleanup {
+    foo destroy
+} -match glob -result *
+test compile-18.55 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode destructor
+} -match glob -result {wrong # args: should be "* destructor className"}
+test compile-18.56 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode destructor nosuchobject
+} -result {nosuchobject does not refer to an object}
+test compile-18.57 {disassembler - basics} -returnCodes error -setup {
+    oo::class create constructorless
+} -body {
+    tcl::unsupported::getbytecode destructor constructorless
+} -cleanup {
+    constructorless destroy
+} -result {"constructorless" has no defined destructor}
+test compile-18.58 {disassembler - basics} -setup {
+    oo::class create foo {destructor {set x 1}}
+} -body {
+    dict keys [tcl::unsupported::getbytecode destructor foo]
+} -cleanup {
+    foo destroy
+} -result "$bytecodekeys"
 
 test compile-19.0 {Bug 3614102: reset stack housekeeping} -body {
     # This will panic in a --enable-symbols=compile build, unless bug is fixed.
     apply {{} {list [if 1]}}
 } -returnCodes error -match glob -result *
+
+test compile-20.1 {ensure there are no infinite loops in optimizing} {
+    tcl::unsupported::disassemble script {
+	while 1 {
+	    return -code continue -level 0
+	}
+    }
+    return
+} {}
+test compile-20.2 {ensure there are no infinite loops in optimizing} {
+    tcl::unsupported::disassemble script {
+	while 1 {
+	    while 1 {
+		return -code break -level 0
+	    }
+	}
+    }
+    return
+} {}
+
+test compile-21.1 {stack balance management} {
+    apply {{} {
+	set result {}
+	while 1 {
+	    lappend result a
+	    lappend result [list b [break]]
+	    lappend result c
+	}
+	return $result
+    }}
+} a
+test compile-21.2 {stack balance management} {
+    apply {{} {
+	set result {}
+	while {[incr i] <= 10} {
+	    lappend result $i
+	    lappend result [list b [continue] c]
+	    lappend result c
+	}
+	return $result
+    }}
+} {1 2 3 4 5 6 7 8 9 10}
+test compile-21.3 {stack balance management} {
+    apply {args {
+	set result {}
+	while 1 {
+	    lappend result a
+	    lappend result [concat {*}$args [break]]
+	    lappend result c
+	}
+	return $result
+    }} P Q R S T
+} a
+test compile-21.4 {stack balance management} {
+    apply {args {
+	set result {}
+	while {[incr i] <= 10} {
+	    lappend result $i
+	    lappend result [concat {*}$args [continue] c]
+	    lappend result c
+	}
+	return $result
+    }} P Q R S T
+} {1 2 3 4 5 6 7 8 9 10}
 
 # TODO sometime - check that bytecode from tbcload is *not* disassembled.
 

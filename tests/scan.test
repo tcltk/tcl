@@ -375,6 +375,12 @@ test scan-4.48 {Tcl_ScanObjCmd, float scanning} {
 test scan-4.49 {Tcl_ScanObjCmd, float scanning} {
     list [scan {.1 0.2 3.} {%e %f %g} x y z] $x $y $z
 } {3 0.1 0.2 3.0}
+test scan-4.49-uc-1 {Tcl_ScanObjCmd, float scanning} {
+    list [scan {0.5*0.75} {%E%c%G} x y z] $x $y $z
+} {3 0.5 42 0.75}
+test scan-4.49-uc-2 {Tcl_ScanObjCmd, float scanning} {
+    list [scan {5e-1*75E-2} {%E%c%G} x y z] $x $y $z
+} {3 0.5 42 0.75}
 test scan-4.50 {Tcl_ScanObjCmd, float scanning} {
     list [scan {1234567890a} %f x] $x
 } {1 1234567890.0}
@@ -450,6 +456,9 @@ test scan-4.63 {scanning of large and negative hex integers} {
     list [scan $scanstring {%x %x %x} a b c] \
 	[expr { $a == -1 }] [expr { $b == $MIN_INT }] [expr { $c == $MAX_INT }]
 } {3 1 1 1}
+test scan-4.64 {scanning of hex with %X} {
+    scan "123 abc f78" %X%X%X
+} {291 2748 3960}
 
 test scan-5.1 {integer scanning} -setup {
     set a {}; set b {}; set c {}; set d {}
@@ -525,6 +534,12 @@ test scan-5.13 {integer scanning and overflow} {
 
 test scan-5.14 {integer scanning} {
     scan 0xff %u
+} 0
+test scan-5.15 {Bug be003d570f} {
+    scan 0x40 %o
+} 0
+test scan-5.16 {Bug be003d570f} {
+    scan 0x40 %b
 } 0
 
 test scan-6.1 {floating-point scanning} -setup {
@@ -626,14 +641,14 @@ test scan-8.4 {error conditions} -returnCodes error -body {
     scan a %O x
 } -result {bad scan conversion character "O"}
 test scan-8.5 {error conditions} -returnCodes error -body {
-    scan a %X x
-} -result {bad scan conversion character "X"}
+    scan a %B x
+} -result {bad scan conversion character "B"}
 test scan-8.6 {error conditions} -returnCodes error -body {
     scan a %F x
 } -result {bad scan conversion character "F"}
 test scan-8.7 {error conditions} -returnCodes error -body {
-    scan a %E x
-} -result {bad scan conversion character "E"}
+    scan a %p x
+} -result {bad scan conversion character "p"}
 test scan-8.8 {error conditions} -returnCodes error -body {
     scan a "%d %d" a
 } -result {different numbers of variable names and field specifiers}

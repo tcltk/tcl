@@ -49,41 +49,15 @@
 #include <assert.h>
 #endif
 
-/* voids */
-#ifndef VOID
-#define	VOID	void		/* for function return values */
-#endif
-#ifndef DISCARD
-#define	DISCARD	void		/* for throwing values away */
-#endif
-#ifndef PVOID
-#define	PVOID	void *		/* generic pointer */
-#endif
-#ifndef VS
-#define	VS(x)	((void*)(x))	/* cast something to generic ptr */
-#endif
-#ifndef NOPARMS
-#define	NOPARMS	void		/* for empty parm lists */
-#endif
-
-/* function-pointer declarator */
-#ifndef FUNCPTR
-#if __STDC__ >= 1
-#define	FUNCPTR(name, args)	(*name)args
-#else
-#define	FUNCPTR(name, args)	(*name)()
-#endif
-#endif
-
 /* memory allocation */
 #ifndef MALLOC
 #define	MALLOC(n)	malloc(n)
 #endif
 #ifndef REALLOC
-#define	REALLOC(p, n)	realloc(VS(p), n)
+#define	REALLOC(p, n)	realloc(p, n)
 #endif
 #ifndef FREE
-#define	FREE(p)		free(VS(p))
+#define	FREE(p)		free(p)
 #endif
 
 /* want size of a char in bits, and max value in bounded quantifiers */
@@ -99,7 +73,7 @@
 #define	xxx		1
 
 #define	DUPMAX	_POSIX2_RE_DUP_MAX
-#define	INFINITY	(DUPMAX+1)
+#define	DUPINF	(DUPMAX+1)
 
 #define	REMAGIC	0xfed7		/* magic number for main struct */
 
@@ -186,7 +160,14 @@ struct colordesc {
     union tree *block;		/* block of solid color, if any */
 };
 
-/* the color map itself */
+/*
+ * The color map itself
+ *
+ * Much of the data in the colormap struct is only used at compile time.
+ * However, the bulk of the space usage is in the "tree" structure, so it's
+ * not clear that there's much point in converting the rest to a more compact
+ * form when compilation is finished.
+ */
 struct colormap {
     int magic;
 #define	CMMAGIC	0x876
@@ -242,14 +223,15 @@ struct cvec {
 struct state;
 
 struct arc {
-    int type;
-#define	ARCFREE	'\0'
+    int type;			/* 0 if free, else an NFA arc type code */
     color co;
     struct state *from;		/* where it's from (and contained within) */
     struct state *to;		/* where it's to */
-    struct arc *outchain;	/* *from's outs chain or free chain */
-#define	freechain	outchain
+    struct arc *outchain;	/* link in *from's outs chain or free chain */
+    struct arc *outchainRev;	/* back-link in *from's outs chain */
+#define	freechain outchain	/* we do not maintain "freechainRev" */
     struct arc *inchain;	/* *to's ins chain */
+    struct arc *inchainRev;	/* back-link in *to's ins chain */
     struct arc *colorchain;	/* color's arc chain */
     struct arc *colorchainRev;	/* back-link in color's arc chain */
 };
@@ -288,20 +270,28 @@ struct nfa {
     struct colormap *cm;	/* the color map */
     color bos[2];		/* colors, if any, assigned to BOS and BOL */
     color eos[2];		/* colors, if any, assigned to EOS and EOL */
-    size_t size;		/* Current NFA size; differs from nstates as
-				 * it also counts the number of states created
-				 * by children of this state. */
     struct vars *v;		/* simplifies compile error reporting */
     struct nfa *parent;		/* parent NFA, if any */
 };
 
 /*
  * definitions for compacted NFA
+ *
+ * The main space savings in a compacted NFA is from making the arcs as small
+ * as possible.  We store only the transition color and next-state number for
+ * each arc.  The list of out arcs for each state is an array beginning at
+ * cnfa.states[statenumber], and terminated by a dummy carc struct with
+ * co == COLORLESS.
+ *
+ * The non-dummy carc structs are of two types: plain arcs and LACON arcs.
+ * Plain arcs just store the transition color number as "co".  LACON arcs
+ * store the lookahead constraint number plus cnfa.ncolors as "co".  LACON
+ * arcs can be distinguished from plain by testing for co >= cnfa.ncolors.
  */
 
 struct carc {
     color co;			/* COLORLESS is list terminator */
-    int to;			/* state number */
+    int to;			/* next-state number */
 };
 
 struct cnfa {
@@ -313,27 +303,52 @@ struct cnfa {
     int post;			/* teardown state number */
     color bos[2];		/* colors, if any, assigned to BOS and BOL */
     color eos[2];		/* colors, if any, assigned to EOS and EOL */
+    char *stflags;		/* vector of per-state flags bytes */
+#define CNFA_NOPROGRESS	01	/* flag bit for a no-progress state */
     struct carc **states;	/* vector of pointers to outarc lists */
+    /* states[n] are pointers into a single malloc'd array of arcs */
     struct carc *arcs;		/* the area for the lists */
 };
 #define	ZAPCNFA(cnfa)	((cnfa).nstates = 0)
 #define	NULLCNFA(cnfa)	((cnfa).nstates == 0)
 
 /*
- * Used to limit the maximum NFA size to something sane. [Bug 1810264]
+ * This symbol limits the transient heap space used by the regex compiler,
+ * and thereby also the maximum complexity of NFAs that we'll deal with.
+ * Currently we only count NFA states and arcs against this; the other
+ * transient data is generally not large enough to notice compared to those.
+ * Note that we do not charge anything for the final output data structures
+ * (the compacted NFA and the colormap).
  */
-
-#ifndef REG_MAX_STATES
-#   define REG_MAX_STATES	100000
+#ifndef REG_MAX_COMPILE_SPACE
+#define REG_MAX_COMPILE_SPACE  \
+	(100000 * sizeof(struct state) + 100000 * sizeof(struct arcbatch))
 #endif
 
 /*
  * subexpression tree
+ *
+ * "op" is one of:
+ *	'='  plain regex without interesting substructure (implemented as DFA)
+ *	'b'  back-reference (has no substructure either)
+ *	'('  capture node: captures the match of its single child
+ *	'.'  concatenation: matches a match for left, then a match for right
+ *	'|'  alternation: matches a match for left or a match for right
+ *	'*'  iteration: matches some number of matches of its single child
+ *
+ * Note: the right child of an alternation must be another alternation or
+ * NULL; hence, an N-way branch requires N alternation nodes, not N-1 as you
+ * might expect.  This could stand to be changed.  Actually I'd rather see
+ * a single alternation node with N children, but that will take revising
+ * the representation of struct subre.
+ *
+ * Note: when a backref is directly quantified, we stick the min/max counts
+ * into the backref rather than plastering an iteration node on top.  This is
+ * for efficiency: there is no need to search for possible division points.
  */
 
 struct subre {
-    char op;			/* '|', '.' (concat), 'b' (backref), '(',
-				 * '=' */
+    char op;			/* see type codes above */
     char flags;
 #define	LONGER	01		/* prefers longer match */
 #define	SHORTER	02		/* prefers shorter match */
@@ -349,10 +364,10 @@ struct subre {
 #define	PREF(f)	((f)&NOPROP)
 #define	PREF2(f1, f2)	((PREF(f1) != 0) ? PREF(f1) : PREF(f2))
 #define	COMBINE(f1, f2)	(UP((f1)|(f2)) | PREF2(f1, f2))
-    short retry;		/* index into retry memory */
+    short id;			/* ID of subre (1..ntree-1) */
     int subno;			/* subexpression number (for 'b' and '(') */
-    short min;			/* min repetitions, for backref only */
-    short max;			/* max repetitions, for backref only */
+    short min;			/* min repetitions for iteration or backref */
+    short max;			/* max repetitions for iteration or backref */
     struct subre *left;		/* left child, if any (also freelist chain) */
     struct subre *right;	/* right child, if any */
     struct state *begin;	/* outarcs from here... */
@@ -367,7 +382,7 @@ struct subre {
  */
 
 struct fns {
-    void FUNCPTR(free, (regex_t *));
+    void (*free) (regex_t *);
 };
 
 /*
@@ -382,9 +397,9 @@ struct guts {
     size_t nsub;		/* copy of re_nsub */
     struct subre *tree;
     struct cnfa search;		/* for fast preliminary search */
-    int ntree;
+    int ntree;			/* number of subre's, plus one */
     struct colormap cmap;
-    int FUNCPTR(compare, (const chr *, const chr *, size_t));
+    int (*compare) (const chr *, const chr *, size_t);
     struct subre *lacons;	/* lookahead-constraint vector */
     int nlacons;		/* size of lacons */
 };

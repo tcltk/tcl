@@ -4,9 +4,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH Tcl_SetResult 3 8.0 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_SetObjResult, Tcl_GetObjResult, Tcl_SetResult, Tcl_GetStringResult, Tcl_AppendResult, Tcl_AppendResultVA, Tcl_AppendElement, Tcl_ResetResult, Tcl_TransferResult, Tcl_FreeResult \- manipulate Tcl result
@@ -164,7 +164,7 @@ The source interpreter will have its result reset by this operation.
 .SH "DEPRECATED INTERFACES"
 .SS "OLD STRING PROCEDURES"
 .PP
-Use of the following procedures (is deprecated
+Use of the following procedures is deprecated
 since they manipulate the Tcl result as a string.
 Procedures such as \fBTcl_SetObjResult\fR
 that manipulate the result as a value
@@ -212,7 +212,7 @@ As a migration aid, access can be restored with the compiler directive
 but this is meant only to offer life support to otherwise dead code.
 .SH "THE TCL_FREEPROC ARGUMENT TO TCL_SETRESULT"
 .PP
-\fBTcl_SetResult\fR's \fIfreeProc\fR argument specifies how 
+\fBTcl_SetResult\fR's \fIfreeProc\fR argument specifies how
 the Tcl system is to manage the storage for the \fIresult\fR argument.
 If \fBTcl_SetResult\fR or \fBTcl_SetObjResult\fR are called
 at a time when \fIinterp\fR holds a string result,

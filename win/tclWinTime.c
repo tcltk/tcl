@@ -35,7 +35,7 @@ static const int leapDays[] = {
     -1, 30, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
 };
 
-typedef struct ThreadSpecificData {
+typedef struct {
     char tzName[64];		/* Time zone name */
     struct tm tm;		/* time information */
 } ThreadSpecificData;
@@ -45,7 +45,7 @@ static Tcl_ThreadDataKey dataKey;
  * Data for managing high-resolution timers.
  */
 
-typedef struct TimeInfo {
+typedef struct {
     CRITICAL_SECTION cs;	/* Mutex guarding this structure. */
     int initialized;		/* Flag == 1 if this structure is
 				 * initialized. */
@@ -341,7 +341,7 @@ NativeGetTime(
 		 */
 
 		SYSTEM_INFO systemInfo;
-		unsigned int regs[4];
+		int regs[4];
 
 		GetSystemInfo(&systemInfo);
 		if (TclWinCPUID(0, regs) == TCL_OK
@@ -353,7 +353,7 @@ NativeGetTime(
 			|| ((regs[0] & 0x00F00000)	/* Extended family */
 			&& (regs[3] & 0x10000000)))	/* Hyperthread */
 			&& (((regs[1]&0x00FF0000) >> 16)/* CPU count */
-			    == systemInfo.dwNumberOfProcessors)) {
+			    == (int)systemInfo.dwNumberOfProcessors)) {
 		    timeInfo.perfCounterAvailable = TRUE;
 		} else {
 		    timeInfo.perfCounterAvailable = FALSE;

@@ -2837,6 +2837,19 @@ test binary-76.2 {binary string appending growth algorithm} win {
     # Append to it
     string length [append str [binary format a* foo]]
 } 3
+
+test binary-77.1 {string cat ops on all bytearrays} {
+    apply {{a b} {
+	return [binary format H* $a][binary format H* $b]
+    }} ab cd
+} [binary format H* abcd]
+test binary-77.2 {string cat ops on all bytearrays} {
+    apply {{a b} {
+	set one [binary format H* $a]
+	return $one[binary format H* $b]
+    }} ab cd
+} [binary format H* abcd]
+
 
 # ----------------------------------------------------------------------
 # cleanup

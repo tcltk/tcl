@@ -73,6 +73,7 @@
 #define mp_div_d TclBN_mp_div_d
 #define mp_exch TclBN_mp_exch
 #define mp_expt_d TclBN_mp_expt_d
+#define mp_expt_d_ex TclBN_mp_expt_d_ex
 #define mp_grow TclBN_mp_grow
 #define mp_init TclBN_mp_init
 #define mp_init_copy TclBN_mp_init_copy
@@ -134,6 +135,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -186,7 +191,7 @@ EXTERN int		TclBN_mp_grow(mp_int *a, int size);
 /* 21 */
 EXTERN int		TclBN_mp_init(mp_int *a);
 /* 22 */
-EXTERN int		TclBN_mp_init_copy(mp_int *a, mp_int *b);
+EXTERN int		TclBN_mp_init_copy(mp_int *a, const mp_int *b);
 /* 23 */
 EXTERN int		TclBN_mp_init_multi(mp_int *a, ...);
 /* 24 */
@@ -212,7 +217,8 @@ EXTERN int		TclBN_mp_neg(const mp_int *a, mp_int *b);
 /* 34 */
 EXTERN int		TclBN_mp_or(mp_int *a, mp_int *b, mp_int *c);
 /* 35 */
-EXTERN int		TclBN_mp_radix_size(mp_int *a, int radix, int *size);
+EXTERN int		TclBN_mp_radix_size(const mp_int *a, int radix,
+				int *size);
 /* 36 */
 EXTERN int		TclBN_mp_read_radix(mp_int *a, const char *str,
 				int radix);
@@ -275,6 +281,17 @@ EXTERN int		TclBN_mp_init_set_int(mp_int *a, unsigned long i);
 EXTERN int		TclBN_mp_set_int(mp_int *a, unsigned long i);
 /* 63 */
 EXTERN int		TclBN_mp_cnt_lsb(const mp_int *a);
+/* 64 */
+EXTERN void		TclBNInitBignumFromLong(mp_int *bignum, long initVal);
+/* 65 */
+EXTERN void		TclBNInitBignumFromWideInt(mp_int *bignum,
+				Tcl_WideInt initVal);
+/* 66 */
+EXTERN void		TclBNInitBignumFromWideUInt(mp_int *bignum,
+				Tcl_WideUInt initVal);
+/* 67 */
+EXTERN int		TclBN_mp_expt_d_ex(mp_int *a, mp_digit b, mp_int *c,
+				int fast);
 
 typedef struct TclTomMathStubs {
     int magic;
@@ -302,7 +319,7 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_expt_d) (mp_int *a, mp_digit b, mp_int *c); /* 19 */
     int (*tclBN_mp_grow) (mp_int *a, int size); /* 20 */
     int (*tclBN_mp_init) (mp_int *a); /* 21 */
-    int (*tclBN_mp_init_copy) (mp_int *a, mp_int *b); /* 22 */
+    int (*tclBN_mp_init_copy) (mp_int *a, const mp_int *b); /* 22 */
     int (*tclBN_mp_init_multi) (mp_int *a, ...); /* 23 */
     int (*tclBN_mp_init_set) (mp_int *a, mp_digit b); /* 24 */
     int (*tclBN_mp_init_size) (mp_int *a, int size); /* 25 */
@@ -315,7 +332,7 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_mul_2d) (const mp_int *a, int d, mp_int *p); /* 32 */
     int (*tclBN_mp_neg) (const mp_int *a, mp_int *b); /* 33 */
     int (*tclBN_mp_or) (mp_int *a, mp_int *b, mp_int *c); /* 34 */
-    int (*tclBN_mp_radix_size) (mp_int *a, int radix, int *size); /* 35 */
+    int (*tclBN_mp_radix_size) (const mp_int *a, int radix, int *size); /* 35 */
     int (*tclBN_mp_read_radix) (mp_int *a, const char *str, int radix); /* 36 */
     void (*tclBN_mp_rshd) (mp_int *a, int shift); /* 37 */
     int (*tclBN_mp_shrink) (mp_int *a); /* 38 */
@@ -344,12 +361,14 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_init_set_int) (mp_int *a, unsigned long i); /* 61 */
     int (*tclBN_mp_set_int) (mp_int *a, unsigned long i); /* 62 */
     int (*tclBN_mp_cnt_lsb) (const mp_int *a); /* 63 */
+    void (*tclBNInitBignumFromLong) (mp_int *bignum, long initVal); /* 64 */
+    void (*tclBNInitBignumFromWideInt) (mp_int *bignum, Tcl_WideInt initVal); /* 65 */
+    void (*tclBNInitBignumFromWideUInt) (mp_int *bignum, Tcl_WideUInt initVal); /* 66 */
+    int (*tclBN_mp_expt_d_ex) (mp_int *a, mp_digit b, mp_int *c, int fast); /* 67 */
 } TclTomMathStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern const TclTomMathStubs *tclTomMathStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
@@ -488,6 +507,14 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_set_int) /* 62 */
 #define TclBN_mp_cnt_lsb \
 	(tclTomMathStubsPtr->tclBN_mp_cnt_lsb) /* 63 */
+#define TclBNInitBignumFromLong \
+	(tclTomMathStubsPtr->tclBNInitBignumFromLong) /* 64 */
+#define TclBNInitBignumFromWideInt \
+	(tclTomMathStubsPtr->tclBNInitBignumFromWideInt) /* 65 */
+#define TclBNInitBignumFromWideUInt \
+	(tclTomMathStubsPtr->tclBNInitBignumFromWideUInt) /* 66 */
+#define TclBN_mp_expt_d_ex \
+	(tclTomMathStubsPtr->tclBN_mp_expt_d_ex) /* 67 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
