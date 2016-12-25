@@ -778,7 +778,7 @@ test var-13.1 {Tcl_UnsetVar2, unset array with trace set on element} -setup {
     set x "If you see this, it worked"
 } -result "If you see this, it worked"
 
-test var-13.2 {unset array with search} -body {
+test var-13.2 {unset array with search, bug 46a2410650} -body {
     apply {{} {
 	array set a {aa 11 bb 22 cc 33 dd 44 ee 55 ff 66}
 	set s [array startsearch a]
@@ -787,7 +787,7 @@ test var-13.2 {unset array with search} -body {
     }}
 } -returnCodes error -result {couldn't find search "s-1-a"}
 
-test var-13.3 {unset array with search, causes SIGSEGV unless fixed} -body {
+test var-13.3 {unset array with search, SIGSEGV, bug 46a2410650} -body {
     apply {{} {
 	array set a {aa 11 bb 22 cc 33 dd 44 ee 55 ff 66}
 	set s [array startsearch a]
