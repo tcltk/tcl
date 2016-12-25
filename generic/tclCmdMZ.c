@@ -4157,7 +4157,7 @@ TclNRTryObjCmd(
 	    }
 
 	    info[0] = objv[i];			/* type */
-	    TclNewIntObj(info[1], code);	/* returnCode */
+	    TclNewLongObj(info[1], code);	/* returnCode */
 	    if (info[2] == NULL) {		/* errorCodePrefix */
 		TclNewObj(info[2]);
 	    }

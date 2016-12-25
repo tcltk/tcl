@@ -2417,10 +2417,6 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 #endif
 
 /*
- * TODO - tommath stubs export goes here!
- */
-
-/*
  * Public functions that are not accessible via the stubs table.
  * Tcl_GetMemoryInfo is needed for AOLserver. [Bug 1868171]
  */

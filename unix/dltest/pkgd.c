@@ -113,7 +113,7 @@ Pkgd_Init(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvide(interp, "Pkgd", "7.3");
@@ -150,7 +150,7 @@ Pkgd_SafeInit(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvide(interp, "Pkgd", "7.3");
