@@ -838,54 +838,28 @@ foreach {
 }
 test {
     name array-7.16
-    desc "unset visited element during search"
+    desc {unset visited element during search, bug 46a2410650, s/a var-13.2}
     {array a} {aa 11 bb 22 cc 33 dd 44 ee 55 ff 66}
     body {
-        set result {}
         set s [array startsearch a]
-        while {[array anymore a $s]} {
-            set elem [array nextelement a $s]
-            unset a($elem)
-            lappend result $elem
-        }
-        array donesearch a $s
-        list $result [array size a]
+        unset a([array nextelement a $s])
+        array anymore a $s
     }
-    result {{ff dd bb ee cc aa} 0}
+    returnCodes error
+    result {couldn't find search "s-1-a"}
 }
 test {
     name array-7.17
-    desc "unset future element during search"
+    desc {unset future element during search, bug 46a2410650, s/a var-13.3}
     {array a} {aa 11 bb 22 cc 33 dd 44 ee 55 ff 66}
     body {
         set result {}
         set s [array startsearch a]
-        while {[array anymore a $s]} {
-            set elem [array nextelement a $s]
-            if {$elem eq "bb"} {
-                unset a(ee)
-            }
-            lappend result $elem
-        }
-        array donesearch a $s
-        return $result
-    }
-    result {ff dd bb cc aa}
-}
-test {
-    name array-7.18
-    desc "unset before nextelement"
-    {array a} {aa 11 bb 22 cc 33 dd 44 ee 55 ff 66}
-    body {
-        set result {}
-        set s [array startsearch a]
+        unset a(ee)
         array anymore a $s
-        unset a(ff)
-        array nextelement a $s
-        array donesearch a $s
-        array names $result
     }
-    result {dd bb ee cc aa}
+    returnCodes error
+    result {couldn't find search "s-1-a"}
 }
 
 # Cleanup.
