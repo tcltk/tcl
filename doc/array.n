@@ -36,7 +36,9 @@ in the array.  The legal \fImode\fR values are:
 \fB\-exact\fR
 .
 \fIPattern\fR is a literal string that is compared for exact equality against
-each array element name.
+each array element name.  This mode has limited utility because all uses of the
+\fBarray\fR command with \fB-exact\fR matching can be implemented by operating
+directly on the array element with standard \fIname\fB(\fIindex\fB)\fR notation.
 .TP
 \fB\-glob\fR
 .
