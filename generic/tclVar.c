@@ -243,7 +243,7 @@ static Var *		ArrayNext(Tcl_Interp *interp, ArraySearch *searchPtr,
 			    int *failPtr);
 static void		ArrayDone(Tcl_Interp *interp, ArraySearch *searchPtr);
 static int  		ArrayAborted(Tcl_Interp *interp,
-			    ArraySearch *searchPtr);
+			    ArraySearch *searchPtr, int dealloc);
 static void		ArraySearchFree(ArraySearch *searchPtr);
 static int		ArrayNames(Tcl_Interp *interp, Var *varPtr,
 			    Tcl_Obj *filterObj, int filterType,
@@ -1468,13 +1468,14 @@ ArrayDone(
  *
  * ArrayAborted --
  *
- *	Deallocates array searches if they aborted due to array elements being
- *	added or removed or the array being unset.
+ *	Checks if an array search was aborted due to array elements being added
+ *	or removed or the array being unsed. Optionally deallocates it if so.
  *
  * Results:
  *	TCL_OK is returned if the array search did not abort. TCL_ERROR is
  *	returned if the array search did abort, and a message to that effect is
- *	placed in the interpreter result.
+ *	placed in the interpreter result. If the dealloc argument is nonzero,
+ *	the array search is also deallocated if it aborted.
  *
  * Side effects:
  *	Memory used by the search may be released to the storage allocator.
@@ -1486,10 +1487,13 @@ int
 ArrayAborted(
     Tcl_Interp *interp,		/* Command interpreter in which the array
 				 * variable is located. */
-    ArraySearch *searchPtr)	/* Array enumeration state structure. */
+    ArraySearch *searchPtr,	/* Array enumeration state structure. */
+    int dealloc)		/* If nonzero, deallocate aborted searches. */
 {
     if (searchPtr->flags & SEARCH_ABORTED) {
-	ArraySearchFree(searchPtr);
+	if (dealloc) {
+	    ArraySearchFree(searchPtr);
+	}
 	Tcl_SetResult(interp, "search aborted due to array change", TCL_STATIC);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAYSEARCH", "n/a", NULL);
 	return TCL_ERROR;
@@ -2416,10 +2420,10 @@ Tcl_ArraySearchPeek(
     Tcl_Obj *keyObj, *valueObj;
 
     /*
-     * Deallocate aborted searches.
+     * Report aborted searches.
      */
 
-    if (ArrayAborted(interp, search) != TCL_OK) {
+    if (ArrayAborted(interp, search, 0) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2548,10 +2552,10 @@ Tcl_ArraySearchDone(
     Tcl_ArraySearch search)	/* Prior return from Tcl_ArraySearchStart(). */
 {
     /*
-     * Deallocate aborted searches.
+     * Report and deallocate aborted searches.
      */
 
-    if (ArrayAborted(interp, search) != TCL_OK) {
+    if (ArrayAborted(interp, search, 1) != TCL_OK) {
 	return TCL_ERROR;
     }
 
