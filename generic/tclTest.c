@@ -3849,7 +3849,7 @@ TestprintObjCmd(
     Tcl_WideInt argv1 = 0;
 
     if (objc < 2 || objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "format wideint");   
+	Tcl_WrongNumArgs(interp, 1, objv, "format wideint");
     }
 
     if (objc > 1) {
