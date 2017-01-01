@@ -1618,8 +1618,16 @@ Tcl_SocketObjCmd(
 	return TCL_ERROR;
     }
 
-    if (reusea!=0) flags |= TCL_TCPSERVER_REUSEADDR;
-    if (reusep==1) flags |= TCL_TCPSERVER_REUSEPORT;
+    // Set the options to their default value if the user didn't override their
+    // value.
+    if (reusep == -1) reusep = 0;
+    if (reusea == -1) reusea = 1;
+
+    // Build the bitset with the flags values.
+    if (reusea)
+	flags |= TCL_TCPSERVER_REUSEADDR;
+    if (reusep)
+	flags |= TCL_TCPSERVER_REUSEPORT;
 
     // All the arguments should have been parsed by now, 'a' points to the last
     // one, the port number.
