@@ -323,7 +323,7 @@ typedef struct ResolvedChanName {
     Tcl_Interp *interp;		/* The interp in which the lookup was done. */
     size_t epoch;		/* The epoch of the channel when the lookup
 				 * was done. Use to verify validity. */
-    int refCount;		/* Share this struct among many Tcl_Obj. */
+    size_t refCount;		/* Share this struct among many Tcl_Obj. */
 } ResolvedChanName;
 
 static void		DupChannelIntRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
@@ -11149,7 +11149,7 @@ FreeChannelIntRep(
     ResolvedChanName *resPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     objPtr->typePtr = NULL;
-    if (--resPtr->refCount) {
+    if (resPtr->refCount-- > 1) {
 	return;
     }
     Tcl_Release(resPtr->statePtr);
