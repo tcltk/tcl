@@ -1160,9 +1160,30 @@ TcpConnect(
             /* Gotta reset the error variable here, before we use it for the
              * first time in this iteration. */
             error = 0;
-
+            
+            /*Use REUSEPORT as default if it supports*/
+#ifdef SO_REUSEPORT 
+            int reuseport = 1;
+            ret = setsockopt(statePtr->fds.fd, SOL_SOCKET, SO_REUSEPORT,
+                             &reuseport, sizeof(reuseport));
+            //if this system not support this
+            if(ret == ENOPROTOOPT){
+            
             (void) setsockopt(statePtr->fds.fd, SOL_SOCKET, SO_REUSEADDR,
-                    (char *) &reuseaddr, sizeof(reuseaddr));
+                             &reuseaddr, sizeof(reuseaddr));
+                
+            }
+#endif/*SO_REUSEPORT*/
+
+#ifndef SO_REUSEPORT 
+
+             (void) setsockopt(statePtr->fds.fd, SOL_SOCKET, SO_REUSEADDR,
+                             &reuseaddr, sizeof(reuseaddr));
+
+#endif/*SO_REUSEPORT*/
+
+
+
             ret = bind(statePtr->fds.fd, statePtr->myaddr->ai_addr,
                     statePtr->myaddr->ai_addrlen);
             if (ret < 0) {
@@ -1509,8 +1530,28 @@ Tcl_OpenTcpServer(
 	 * specified port.
 	 */
 
-	(void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-		(char *) &reuseaddr, sizeof(reuseaddr));
+
+     /*Use REUSEPORT as default if it supports*/
+#ifdef SO_REUSEPORT 
+            int reuseport = 1;
+            ret = setsockopt(statePtr->fds.fd, SOL_SOCKET, SO_REUSEPORT,
+                             &reuseport, sizeof(reuseport));
+            //if this system not support this
+            if(ret == ENOPROTOOPT){
+            
+            (void) setsockopt(statePtr->fds.fd, SOL_SOCKET, SO_REUSEADDR,
+                             &reuseaddr, sizeof(reuseaddr));
+                
+            }
+#endif /*SO_REUSEPORT*/
+
+#ifndef SO_REUSEPORT 
+
+             (void) setsockopt(statePtr->fds.fd, SOL_SOCKET, SO_REUSEADDR,
+                             &reuseaddr, sizeof(reuseaddr));
+
+#endif /*SO_REUSEPORT*/
+
 
         /*
          * Make sure we use the same port number when opening two server
