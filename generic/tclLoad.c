@@ -998,7 +998,7 @@ Tcl_StaticPackage(
 	}
 
 	/*
-	 * Package isn't loade in the current interp yet. Mark it as now being
+	 * Package isn't loaded in the current interp yet. Mark it as now being
 	 * loaded.
 	 */
 
@@ -1012,7 +1012,7 @@ Tcl_StaticPackage(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetLoadedPackages --
+ * TclGetLoadedPackages, TclGetLoadedPackagesEx --
  *
  *	This function returns information about all of the files that are
  *	loaded (either in a particular interpreter, or for all interpreters).
@@ -1039,6 +1039,21 @@ TclGetLoadedPackages(
 				 * otherwise, just return info about this
 				 * interpreter. */
 {
+    return TclGetLoadedPackagesEx(interp, targetName, NULL);
+}
+
+int
+TclGetLoadedPackagesEx(
+    Tcl_Interp *interp,		/* Interpreter in which to return information
+				 * or error message. */
+    const char *targetName,	/* Name of target interpreter or NULL. If
+				 * NULL, return info about all interps;
+				 * otherwise, just return info about this
+				 * interpreter. */
+    const char *packageName)	/* Package name or NULL. If NULL, return info
+				 * all packages.
+				 */
+{
     Tcl_Interp *target;
     LoadedPackage *pkgPtr;
     InterpPackage *ipPtr;
@@ -1048,6 +1063,22 @@ TclGetLoadedPackages(
 	/*
 	 * Return information about all of the available packages.
 	 */
+	if (packageName) {
+	    resultObj = NULL;
+	    Tcl_MutexLock(&packageMutex);
+	    for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
+		    pkgPtr = pkgPtr->nextPtr) {
+		if (!strcmp(packageName, pkgPtr->packageName)) {
+		    resultObj = Tcl_NewStringObj(pkgPtr->fileName, -1);
+		    break;
+		}
+	    }
+	    Tcl_MutexUnlock(&packageMutex);
+	    if (resultObj) {
+		Tcl_SetObjResult(interp, resultObj);
+	    }
+	    return TCL_OK;
+	}
 
 	resultObj = Tcl_NewObj();
 	Tcl_MutexLock(&packageMutex);
