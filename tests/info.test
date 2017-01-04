@@ -397,8 +397,8 @@ test info-10.3 {info library option} -body {
 set tcl_library $savedLibrary; unset savedLibrary
 
 test info-11.1 {info loaded option} -body {
-    info loaded a b
-} -returnCodes error -result {wrong # args: should be "info loaded ?interp?"}
+    info loaded a b c
+} -returnCodes error -result {wrong # args: should be "info loaded ?interp? ?packageName?"}
 test info-11.2 {info loaded option} -body {
     info loaded {}; info loaded gorp
 } -returnCodes error -result {could not find interpreter "gorp"}
