@@ -531,9 +531,15 @@ Tcl_AsyncMark(
     packet.token = (AsyncHandler *) token;
 
     rc = TclChanWrite(sharedData.writeChan, (char *) &packet, sizeof(packet));
-    if (rc != sizeof(packet)) {
+    /*
+     * If write fails because the channel is full, simply drop the message.
+     * Something has to give under signal handler constraints!
+     * FIXME: windows?
+     */
+    if (rc == -1 && Tcl_GetErrno() == EAGAIN) {
+	DEBUG("Got EAGAIN - dropping packet!");
+    } else if (rc != sizeof(packet)) {
 	Tcl_Panic("Tcl_AsyncMark: write error or short write to async pipe rc = %d[%d], errno = %d", rc, sizeof(packet), errno);
-	return;
     }
 }
 
