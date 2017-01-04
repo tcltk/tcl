@@ -2149,6 +2149,13 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 
 /*
  *----------------------------------------------------------------------------
+ * Definitions needed for the Tcl_OpenTcpServerEx function. [TIP #456]
+ */
+#define TCL_TCPSERVER_REUSEADDR (1<<0)
+#define TCL_TCPSERVER_REUSEPORT (1<<1)
+
+/*
+ *----------------------------------------------------------------------------
  * Single public declaration for NRE.
  */
 

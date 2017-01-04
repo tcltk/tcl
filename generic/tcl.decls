@@ -2355,6 +2355,17 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
+# TIP #456
+declare 631 {
+    Tcl_Channel Tcl_OpenTcpServerEx(Tcl_Interp *interp, const char *service,
+	    const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc,
+	    ClientData callbackData)
+}
+
+# ----- BASELINE -- FOR -- 8.7.0 ----- #
+
+
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only
