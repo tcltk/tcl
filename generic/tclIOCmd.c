@@ -1458,13 +1458,17 @@ Tcl_SocketObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const socketOptions[] = {
-	"-async", "-myaddr", "-myport", "-server", NULL
+	"-async", "-myaddr", "-myport", "-reuseaddr", "-reuseport", "-server",
+	NULL
     };
     enum socketOptions {
-	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_SERVER
+	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_REUSEADDR, SKT_REUSEPORT,
+	SKT_SERVER
     };
-    int optionIndex, a, server = 0, port, myport = 0, async = 0;
-    const char *host, *myaddr = NULL;
+    int optionIndex, a, server = 0, myport = 0, async = 0, reusep = -1,
+	reusea = -1;
+    unsigned int flags = 0;
+    const char *host, *port, *myaddr = NULL;
     Tcl_Obj *script = NULL;
     Tcl_Channel chan;
 
@@ -1530,6 +1534,28 @@ Tcl_SocketObjCmd(
 	    }
 	    script = objv[a];
 	    break;
+	case SKT_REUSEADDR:
+	    a++;
+	    if (a >= objc) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"no argument given for -reuseaddr option", -1));
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetBooleanFromObj(interp, objv[a], &reusea) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
+	case SKT_REUSEPORT:
+	    a++;
+	    if (a >= objc) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"no argument given for -reuseport option", -1));
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetBooleanFromObj(interp, objv[a], &reusep) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
 	default:
 	    Tcl_Panic("Tcl_SocketObjCmd: bad option index to SocketOptions");
 	}
@@ -1553,18 +1579,36 @@ Tcl_SocketObjCmd(
 		"?-myaddr addr? ?-myport myport? ?-async? host port");
 	iPtr->flags |= INTERP_ALTERNATE_WRONG_ARGS;
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"-server command ?-myaddr addr? port");
+		"-server command ?-reuseaddr boolean? ?-reuseport boolean? "
+		"?-myaddr addr? port");
 	return TCL_ERROR;
     }
 
-    if (a == objc-1) {
-	if (TclSockGetPort(interp, TclGetString(objv[a]), "tcp",
-		&port) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-    } else {
+    if (!server && (reusea != -1 || reusep != -1)) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"options -reuseaddr and -reuseport are only valid for servers",
+		-1));
+	return TCL_ERROR;
+    }
+
+    // Set the options to their default value if the user didn't override their
+    // value.
+    if (reusep == -1) reusep = 0;
+    if (reusea == -1) reusea = 1;
+
+    // Build the bitset with the flags values.
+    if (reusea)
+	flags |= TCL_TCPSERVER_REUSEADDR;
+    if (reusep)
+	flags |= TCL_TCPSERVER_REUSEPORT;
+
+    // All the arguments should have been parsed by now, 'a' points to the last
+    // one, the port number.
+    if (a != objc-1) {
 	goto wrongNumArgs;
     }
+
+    port = TclGetString(objv[a]);
 
     if (server) {
 	AcceptCallback *acceptCallbackPtr =
@@ -1573,8 +1617,9 @@ Tcl_SocketObjCmd(
 	Tcl_IncrRefCount(script);
 	acceptCallbackPtr->script = script;
 	acceptCallbackPtr->interp = interp;
-	chan = Tcl_OpenTcpServer(interp, port, host, AcceptCallbackProc,
-		acceptCallbackPtr);
+
+	chan = Tcl_OpenTcpServerEx(interp, port, host, flags, AcceptCallbackProc,
+				   acceptCallbackPtr);
 	if (chan == NULL) {
 	    Tcl_DecrRefCount(script);
 	    ckfree(acceptCallbackPtr);
@@ -1598,7 +1643,13 @@ Tcl_SocketObjCmd(
 
 	Tcl_CreateCloseHandler(chan, TcpServerCloseProc, acceptCallbackPtr);
     } else {
-	chan = Tcl_OpenTcpClient(interp, port, host, myaddr, myport, async);
+	int portNum;
+
+	if (TclSockGetPort(interp, port, "tcp", &portNum) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+
+	chan = Tcl_OpenTcpClient(interp, portNum, host, myaddr, myport, async);
 	if (chan == NULL) {
 	    return TCL_ERROR;
 	}
