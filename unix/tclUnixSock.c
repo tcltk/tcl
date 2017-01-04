@@ -1405,7 +1405,7 @@ TclpMakeTcpClientChannelMode(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_OpenTcpServer --
+ * Tcl_OpenTcpServerEx --
  *
  *	Opens a TCP server socket and creates a channel around it.
  *
@@ -1420,16 +1420,17 @@ TclpMakeTcpClientChannelMode(
  */
 
 Tcl_Channel
-Tcl_OpenTcpServer(
+Tcl_OpenTcpServerEx(
     Tcl_Interp *interp,		/* For error reporting - may be NULL. */
-    int port,			/* Port number to open. */
+    const char *service,	/* Port number to open. */
     const char *myHost,		/* Name of local host. */
+    unsigned int flags,		/* Flags. */
     Tcl_TcpAcceptProc *acceptProc,
 				/* Callback for accepting connections from new
 				 * clients. */
     ClientData acceptProcData)	/* Data for the callback. */
 {
-    int status = 0, sock = -1, reuseaddr = 1, chosenport;
+    int status = 0, sock = -1, optvalue, port, chosenport;
     struct addrinfo *addrlist = NULL, *addrPtr;	/* socket address */
     TcpState *statePtr = NULL;
     char channelName[SOCK_CHAN_LENGTH];
@@ -1475,6 +1476,11 @@ Tcl_OpenTcpServer(
     retry++;
     chosenport = 0;
 
+    if (TclSockGetPort(interp, service, "tcp", &port) != TCL_OK) {
+	errorMsg = "invalid port number";
+	goto error;
+    }
+
     if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, 1, &errorMsg)) {
 	my_errno = errno;
 	goto error;
@@ -1505,12 +1511,29 @@ Tcl_OpenTcpServer(
 	TclSockMinimumBuffers(INT2PTR(sock), SOCKET_BUFSIZE);
 
 	/*
-	 * Set up to reuse server addresses automatically and bind to the
-	 * specified port.
+	 * Set up to reuse server addresses and/or ports if requested.
 	 */
 
-	(void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-		(char *) &reuseaddr, sizeof(reuseaddr));
+	if (flags & TCL_TCPSERVER_REUSEADDR) {
+	    optvalue = 1;
+	    (void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+			      (char *) &optvalue, sizeof(optvalue));
+	}
+
+	if (flags & TCL_TCPSERVER_REUSEPORT) {
+#ifndef SO_REUSEPORT
+	    /*
+	     * If the platform doesn't support the SO_REUSEPORT flag we can't do
+	     * much beside erroring out.
+	     */
+	    errorMsg = "SO_REUSEPORT isn't supported by this platform";
+	    goto error;
+#else
+	    optvalue = 1;
+	    (void) setsockopt(sock, SOL_SOCKET, SO_REUSEPORT,
+			      (char *) &optvalue, sizeof(optvalue));
+#endif
+	}
 
         /*
          * Make sure we use the same port number when opening two server
