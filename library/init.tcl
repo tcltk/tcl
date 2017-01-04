@@ -45,6 +45,9 @@ if {![info exists auto_path]} {
 	set auto_path ""
     }
 }
+
+source [file join $::tcl_library auto.tcl]
+
 namespace eval tcl {
     variable Dir
     foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
