@@ -4,12 +4,12 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH Tcl_OpenTcpClient 3 8.0 Tcl "Tcl Library Procedures"
+.TH Tcl_OpenTcpClient 3 8.7 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_OpenTcpClient, Tcl_MakeTcpClientChannel, Tcl_OpenTcpServer \- procedures to open channels using TCP sockets
+Tcl_OpenTcpClient, Tcl_MakeTcpClientChannel, Tcl_OpenTcpServer, Tcl_OpenTcpServerEx \- procedures to open channels using TCP sockets
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h> \fR
@@ -23,6 +23,9 @@ Tcl_Channel
 Tcl_Channel
 \fBTcl_OpenTcpServer\fR(\fIinterp, port, myaddr, proc, clientData\fR)
 .sp
+Tcl_Channel
+\fBTcl_OpenTcpServerEx\fR(\fIinterp, service, myaddr, flags, proc, clientData\fR)
+.sp
 .SH ARGUMENTS
 .AS Tcl_TcpAcceptProc clientData
 .AP Tcl_Interp *interp in
@@ -30,6 +33,9 @@ Tcl interpreter to use for error reporting.  If non-NULL and an
 error occurs, an error message is left in the interpreter's result.
 .AP int port in
 A port number to connect to as a client or to listen on as a server.
+.AP "const char" *service in
+A string specifying the port number to connect to as a client or to listen on as
+ a server.
 .AP "const char" *host in
 A string specifying a host name or address for the remote end of the connection.
 .AP int myport in
@@ -41,6 +47,9 @@ for the local end of the connection.  If NULL, a default interface is
 chosen.
 .AP int async in
 If nonzero, the client socket is connected asynchronously to the server.
+.AP "unsigned int" flags in
+ORed combination of \fBTCL_TCPSERVER\fR flags that specify additional
+informations about the socket being created.
 .AP ClientData sock in
 Platform-specific handle for client TCP socket.
 .AP Tcl_TcpAcceptProc *proc in
@@ -158,6 +167,11 @@ register it, use \fBTcl_RegisterChannel\fR.
 If one of the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
 previously closed, the act of creating the new channel also assigns it as a
 replacement for the standard channel.
+.SS TCL_OPENTCPSERVEREX
+.PP
+\fBTcl_OpenTcpServerEx\fR behaviour is identical to \fBTcl_OpenTcpServer\fR but
+gives more flexibility to the user by providing a mean to further customize some
+aspects of the socket via the \fIflags\fR parameter.
 .SH "PLATFORM ISSUES"
 .PP
 On Unix platforms, the socket handle is a Unix file descriptor as

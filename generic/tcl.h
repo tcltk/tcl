@@ -2372,6 +2372,13 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 
 /*
  *----------------------------------------------------------------------------
+ * Definitions needed for the Tcl_OpenTcpServerEx function. [TIP #456]
+ */
+#define TCL_TCPSERVER_REUSEADDR (1<<0)
+#define TCL_TCPSERVER_REUSEPORT (1<<1)
+
+/*
+ *----------------------------------------------------------------------------
  * Single public declaration for NRE.
  */
 
@@ -2408,10 +2415,6 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
     Tcl_PkgInitStubsCheck(interp, version, \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
 #endif
-
-/*
- * TODO - tommath stubs export goes here!
- */
 
 /*
  * Public functions that are not accessible via the stubs table.
