@@ -46,8 +46,6 @@ if {![info exists auto_path]} {
     }
 }
 
-source [file join $::tcl_library auto.tcl]
-
 namespace eval tcl {
     variable Dir
     foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
@@ -114,6 +112,8 @@ namespace eval tcl {
 	namespace export min max
     }
 }
+
+namespace eval tcl::Pkg {}
 
 # Windows specific end of initialization
 
@@ -458,6 +458,26 @@ proc auto_load {cmd {namespace {}}} {
 	}
     }
     return 0
+}
+
+# ::tcl::Pkg::source --
+# This procedure provides an alternative "source" command, which doesn't
+# register the file for the "package files" command. Safe interpreters
+# don't have to do anything special.
+#
+# Arguments:
+# filename
+
+proc ::tcl::Pkg::source {filename} {
+    if {[interp issafe]} {
+	uplevel 1 [list ::source $filename]    
+    } else {
+	set f [open $filename]
+	fconfigure $f -eofchar \032
+	set contents [read $f]
+	close $f
+	uplevel 1 [list eval $contents]
+    }
 }
 
 # auto_load_index --
