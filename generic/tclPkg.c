@@ -32,6 +32,17 @@ typedef struct PkgAvail {
 				 * same package. */
 } PkgAvail;
 
+typedef struct PkgName {
+    struct PkgName *nextPtr;	/* Next in list of package names being initialized. */
+    char name[1];
+} PkgName;
+
+typedef struct PkgFiles {
+    PkgName *names;		/* Package names being initialized. Must be first field*/
+    Tcl_HashTable table;	/* Table which contains files for each package */
+} PkgFiles;
+
+
 /*
  * For each package that is known in any way to an interpreter, there is one
  * record of the following type. These records are stored in the
@@ -81,7 +92,7 @@ static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
     ((v) = ckalloc(len), memcpy((v),(s),(len)))
 #define DupString(v,s) \
     do { \
-	unsigned local__len = (unsigned) (strlen(s) + 1); \
+	size_t local__len = strlen(s) + 1; \
 	DupBlock((v),(s),local__len); \
     } while (0)
 
@@ -177,6 +188,62 @@ Tcl_PkgProvideEx(
  *
  *----------------------------------------------------------------------
  */
+
+static void PkgFilesCleanupProc(ClientData clientData,
+    			    Tcl_Interp *interp)
+{
+    PkgFiles *pkgFiles = (PkgFiles *) clientData;
+    Tcl_HashSearch search;
+    Tcl_HashEntry *entry;
+
+    while (pkgFiles->names) {
+	PkgName *name = pkgFiles->names;
+	pkgFiles->names = name->nextPtr;
+	ckfree(name);
+    }
+    entry = Tcl_FirstHashEntry(&pkgFiles->table, &search);
+    while (entry) {
+	Tcl_Obj *obj = (Tcl_Obj *)Tcl_GetHashValue(entry);
+	Tcl_DecrRefCount(obj);
+	entry = Tcl_NextHashEntry(&search);
+    }
+    Tcl_DeleteHashTable(&pkgFiles->table);
+    return;
+}
+
+void *TclInitPkgFiles(Tcl_Interp *interp)
+{
+    /* If assocdata "tclPkgFiles" doesn't exist yet, create it */
+    PkgFiles *pkgFiles = Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+    if (!pkgFiles) {
+	pkgFiles = ckalloc(sizeof(PkgFiles));
+	pkgFiles->names = NULL;
+	Tcl_InitHashTable(&pkgFiles->table, TCL_STRING_KEYS);
+	Tcl_SetAssocData(interp, "tclPkgFiles", PkgFilesCleanupProc, pkgFiles);
+    }
+    return pkgFiles;
+}
+
+void TclPkgFileSeen(Tcl_Interp *interp, const char *fileName)
+{
+    PkgFiles *pkgFiles = (PkgFiles *) Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+    if (pkgFiles && pkgFiles->names) {
+	const char *name = pkgFiles->names->name;
+	Tcl_HashTable *table = &pkgFiles->table;
+	int new;
+	Tcl_HashEntry *entry = Tcl_CreateHashEntry(table, name, &new);
+	Tcl_Obj *list;
+
+	if (new) {
+	    list = Tcl_NewObj();
+	    Tcl_SetHashValue(entry, list);
+	    Tcl_IncrRefCount(list);
+	} else {
+	    list = Tcl_GetHashValue(entry);
+	}
+	Tcl_ListObjAppendElement(interp, list, Tcl_NewStringObj(fileName, -1));
+    }
+}
 
 const char *
 Tcl_PkgRequireEx(
@@ -463,12 +530,23 @@ PkgRequireCore(
 	     */
 
 	    char *versionToProvide = bestPtr->version;
+	    PkgFiles *pkgFiles;
+	    PkgName *pkgName;
 	    script = bestPtr->script;
 
 	    pkgPtr->clientData = versionToProvide;
-	    Tcl_Preserve(script);
 	    Tcl_Preserve(versionToProvide);
+	    Tcl_Preserve(script);
+	    pkgFiles = TclInitPkgFiles(interp);
+	    /* Push "ifneeded" package name in "tclPkgFiles" assocdata. */
+	    pkgName = ckalloc(sizeof(PkgName) + strlen(name));
+	    pkgName->nextPtr = pkgFiles->names;
+	    strcpy(pkgName->name, name);
+	    pkgFiles->names = pkgName;
 	    code = Tcl_EvalEx(interp, script, -1, TCL_EVAL_GLOBAL);
+	    /* Pop the "ifneeded" package name from "tclPkgFiles" assocdata*/
+	    pkgFiles->names = pkgName->nextPtr;
+	    ckfree(pkgName);
 	    Tcl_Release(script);
 
 	    pkgPtr = FindPackage(interp, name);
@@ -723,14 +801,14 @@ Tcl_PackageObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const pkgOptions[] = {
-	"forget",  "ifneeded", "names",   "prefer",   "present",
-	"provide", "require",  "unknown", "vcompare", "versions",
-	"vsatisfies", NULL
+	"files",  "forget",  "ifneeded", "names",   "prefer",
+	"present", "provide", "require",  "unknown", "vcompare",
+	"versions", "vsatisfies", NULL
     };
     enum pkgOptions {
-	PKG_FORGET,  PKG_IFNEEDED, PKG_NAMES,   PKG_PREFER,   PKG_PRESENT,
-	PKG_PROVIDE, PKG_REQUIRE,  PKG_UNKNOWN, PKG_VCOMPARE, PKG_VERSIONS,
-	PKG_VSATISFIES
+	PKG_FILES,  PKG_FORGET,  PKG_IFNEEDED, PKG_NAMES,   PKG_PREFER,
+	PKG_PRESENT, PKG_PROVIDE, PKG_REQUIRE,  PKG_UNKNOWN, PKG_VCOMPARE,
+	PKG_VERSIONS, PKG_VSATISFIES
     };
     Interp *iPtr = (Interp *) interp;
     int optionIndex, exact, i, satisfies;
@@ -753,11 +831,37 @@ Tcl_PackageObjCmd(
 	return TCL_ERROR;
     }
     switch ((enum pkgOptions) optionIndex) {
+    case PKG_FILES: {
+	PkgFiles *pkgFiles;
+
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "package");
+	    return TCL_ERROR;
+	}
+	pkgFiles = (PkgFiles *) Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+	if (pkgFiles) {
+	    Tcl_HashEntry *entry = Tcl_FindHashEntry(&pkgFiles->table, Tcl_GetString(objv[2]));
+	    if (entry) {
+		Tcl_SetObjResult(interp, (Tcl_Obj *)Tcl_GetHashValue(entry));
+	    }
+	}
+	break;
+    }
     case PKG_FORGET: {
 	const char *keyString;
+	PkgFiles *pkgFiles = (PkgFiles *) Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
 
 	for (i = 2; i < objc; i++) {
 	    keyString = TclGetString(objv[i]);
+	    if (pkgFiles) {
+		hPtr = Tcl_FindHashEntry(&pkgFiles->table, keyString);
+		if (hPtr) {
+		    Tcl_Obj *obj = Tcl_GetHashValue(hPtr);
+		    Tcl_DeleteHashEntry(hPtr);
+		    Tcl_DecrRefCount(obj);
+		}
+	    }
+
 	    hPtr = Tcl_FindHashEntry(&iPtr->packageTable, keyString);
 	    if (hPtr == NULL) {
 		continue;
@@ -1179,7 +1283,7 @@ FindPackage(
 
 void
 TclFreePackageInfo(
-    Interp *iPtr)		/* Interpereter that is being deleted. */
+    Interp *iPtr)		/* Interpreter that is being deleted. */
 {
     Package *pkgPtr;
     Tcl_HashSearch search;

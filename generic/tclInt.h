@@ -2917,6 +2917,9 @@ MODULE_SCOPE Tcl_Obj *	TclGetSourceFromFrame(CmdFrame *cfPtr, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
 			    unsigned int *sizePtr);
+MODULE_SCOPE int	TclGetLoadedPackagesEx(Tcl_Interp *interp,
+				const char *targetName,
+				const char *packageName);
 MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
 			    Tcl_Obj *incrPtr);
 MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
@@ -3040,6 +3043,8 @@ MODULE_SCOPE int	TclpObjChdir(Tcl_Obj *pathPtr);
 MODULE_SCOPE Tcl_Channel TclpOpenTemporaryFile(Tcl_Obj *dirObj,
 			    Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
 			    Tcl_Obj *resultingNameObj);
+MODULE_SCOPE void TclPkgFileSeen(Tcl_Interp *interp, const char *fileName);
+MODULE_SCOPE void *TclInitPkgFiles(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
 MODULE_SCOPE char *	TclpReadlink(const char *fileName,
