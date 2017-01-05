@@ -297,10 +297,11 @@ scripts are stored.
 This is actually the value of the \fBtcl_library\fR
 variable and may be changed by setting \fBtcl_library\fR.
 .TP
-\fBinfo loaded \fR?\fIinterp\fR?
+\fBinfo loaded \fR?\fIinterp\fR? \fR?\fIpackage\fR?
 .
-Returns a list describing all of the packages that have been loaded into
-\fIinterp\fR with the \fBload\fR command.
+Returns the filename loaded as part of \fIpackage\fR. If \fIpackage\fR
+is not specified, returns a list describing all of the packages
+that have been loaded into \fIinterp\fR with the \fBload\fR command.
 Each list element is a sub-list with two elements consisting of the
 name of the file from which the package was loaded and the name of
 the package.
