@@ -1051,7 +1051,7 @@ TclGetLoadedPackagesEx(
 				 * otherwise, just return info about this
 				 * interpreter. */
     const char *packageName)	/* Package name or NULL. If NULL, return info
-				 * all packages.
+				 * for all packages.
 				 */
 {
     Tcl_Interp *target;
@@ -1060,26 +1060,6 @@ TclGetLoadedPackagesEx(
     Tcl_Obj *resultObj, *pkgDesc[2];
 
     if (targetName == NULL) {
-	/*
-	 * Return information about all of the available packages.
-	 */
-	if (packageName) {
-	    resultObj = NULL;
-	    Tcl_MutexLock(&packageMutex);
-	    for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
-		    pkgPtr = pkgPtr->nextPtr) {
-		if (!strcmp(packageName, pkgPtr->packageName)) {
-		    resultObj = Tcl_NewStringObj(pkgPtr->fileName, -1);
-		    break;
-		}
-	    }
-	    Tcl_MutexUnlock(&packageMutex);
-	    if (resultObj) {
-		Tcl_SetObjResult(interp, resultObj);
-	    }
-	    return TCL_OK;
-	}
-
 	resultObj = Tcl_NewObj();
 	Tcl_MutexLock(&packageMutex);
 	for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
@@ -1091,6 +1071,26 @@ TclGetLoadedPackagesEx(
 	}
 	Tcl_MutexUnlock(&packageMutex);
 	Tcl_SetObjResult(interp, resultObj);
+	return TCL_OK;
+    }
+
+    /*
+     * Return information about all of the available packages.
+     */
+    if (packageName) {
+	resultObj = NULL;
+	Tcl_MutexLock(&packageMutex);
+	for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
+		pkgPtr = pkgPtr->nextPtr) {
+	    if (!strcmp(packageName, pkgPtr->packageName)) {
+		resultObj = Tcl_NewStringObj(pkgPtr->fileName, -1);
+		break;
+	    }
+	}
+	Tcl_MutexUnlock(&packageMutex);
+	if (resultObj) {
+	    Tcl_SetObjResult(interp, resultObj);
+	}
 	return TCL_OK;
     }
 
