@@ -590,7 +590,7 @@ proc tcl::MacOSXPkgUnknown {original name args} {
 	    set dir [file dirname $file]
 	    if {![info exists procdDirs($dir)]} {
 		try {
-		    source $file
+		    ::tcl::Pkg::source $file
 		} trap {POSIX EACCES} {} {
 		    # $file was not readable; silently ignore
 		    continue
