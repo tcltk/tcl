@@ -1728,9 +1728,6 @@ InfoLoadedCmd(
 	interpName = NULL;
     } else {			/* Get pkgs just in specified interp. */
 	interpName = TclGetString(objv[1]);
-	if (!interpName[0]) {
-	    interpName = NULL;
-	}
     }
     if (objc < 3) {		/* Get loaded files in all packages. */
 	packageName = NULL;
