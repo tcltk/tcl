@@ -873,11 +873,13 @@ test package-5.2 {TclFreePackageInfo procedure} -body {
 test package-5.3 {package files} -body {
     interp create foo
     foo eval {
-	package ifneeded t 2.4 {package provide t 2.4;package require http}
+	package require Tcl
+	catch {package require abcdef}
+	package ifneeded t 2.4 {package provide t 2.4;::tcl::HistAdd abc; package require http}
+	package require t 2.4
+	list [package files t] [package files Tcl]
     }
-    foo eval package require t 2.4
-    foo eval {list [package files http] [package files t]}
-} -result {{} {}}
+} -result [list {} [list [file join $tcl_library init.tcl]]]
 
 test package-6.1 {CheckVersion procedure} {
     package vcompare 1 2.1
