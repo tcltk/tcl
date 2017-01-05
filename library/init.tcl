@@ -472,11 +472,7 @@ proc ::tcl::Pkg::source {filename} {
     if {[interp issafe]} {
 	uplevel 1 [list ::source $filename]    
     } else {
-	set f [open $filename]
-	fconfigure $f -eofchar \032
-	set contents [read $f]
-	close $f
-	uplevel 1 [list eval $contents]
+	uplevel 1 [list ::source -nopkg $filename]    
     }
 }
 
@@ -522,7 +518,7 @@ proc auto_load_index {} {
 			}
 			set name [lindex $line 0]
 			set auto_index($name) \
-				"source [file join $dir [lindex $line 1]]"
+				"::tcl::Pkg::source [file join $dir [lindex $line 1]]"
 		    }
 		} else {
 		    error "[file join $dir tclIndex] isn't a proper Tcl index file"
