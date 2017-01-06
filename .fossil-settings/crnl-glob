@@ -1,3 +1,8 @@
+compat/zlib/contrib/dotzlib/DotZLib/UnitTests.cs
+compat/zlib/contrib/vstudio/readme.txt
+compat/zlib/contrib/vstudio/*/zlib.rc
+compat/zlib/win32/*.txt
+compat/zlib/win64/*.txt
 tools/tcl.hpj.in
 tools/tcl.wse.in
 win/buildall.vc.bat
