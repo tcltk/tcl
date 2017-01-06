@@ -1074,20 +1074,27 @@ TclGetLoadedPackagesEx(
 	return TCL_OK;
     }
 
+    target = Tcl_GetSlave(interp, targetName);
+    if (target == NULL) {
+	return TCL_ERROR;
+    }
+    ipPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
+
     /*
      * Return information about all of the available packages.
      */
     if (packageName) {
 	resultObj = NULL;
-	Tcl_MutexLock(&packageMutex);
-	for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
-		pkgPtr = pkgPtr->nextPtr) {
+
+	for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
+	    pkgPtr = ipPtr->pkgPtr;
+
 	    if (!strcmp(packageName, pkgPtr->packageName)) {
 		resultObj = Tcl_NewStringObj(pkgPtr->fileName, -1);
 		break;
 	    }
 	}
-	Tcl_MutexUnlock(&packageMutex);
+
 	if (resultObj) {
 	    Tcl_SetObjResult(interp, resultObj);
 	}
@@ -1099,11 +1106,6 @@ TclGetLoadedPackagesEx(
      * interpreter.
      */
 
-    target = Tcl_GetSlave(interp, targetName);
-    if (target == NULL) {
-	return TCL_ERROR;
-    }
-    ipPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
     resultObj = Tcl_NewObj();
     for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	pkgPtr = ipPtr->pkgPtr;
