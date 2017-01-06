@@ -6,7 +6,7 @@ What's here
 
 Source
 ======
-  zlib version 1.2.8
+  zlib version 1.2.10
   available at http://www.gzip.org/zlib/
 
 
@@ -25,9 +25,9 @@ Build info
   Contributed by Jan Nijtmans.
 
   Compiler:
-    i686-w64-mingw32-gcc (GCC) 4.5.3
+    i686-w64-mingw32-gcc (GCC) 5.4.0
   Library:
-    mingw64-i686-runtime/headers: 3.0b_svn5747-1
+    mingw64-i686-runtime/headers: 5.0.0
   Build commands:
     i686-w64-mingw32-gcc -c -DASMV contrib/asm686/match.S
     i686-w64-mingw32-gcc -c -DASMINF -I. -O3 contrib/inflate86/inffas86.c
