@@ -1631,7 +1631,7 @@ TclUnixWaitForFile(
      */
 
     if (timeout > 0) {
-	Tcl_GetTime(&now);
+	TclpGetMonotonicTime(&now);
 	abortTime.sec = now.sec + timeout/1000;
 	abortTime.usec = now.usec + (timeout%1000)*1000;
 	if (abortTime.usec >= 1000000) {
@@ -1720,7 +1720,7 @@ TclUnixWaitForFile(
 	 * The select returned early, so we need to recompute the timeout.
 	 */
 
-	Tcl_GetTime(&now);
+	TclpGetMonotonicTime(&now);
 	if ((abortTime.sec < now.sec)
 		|| (abortTime.sec==now.sec && abortTime.usec<=now.usec)) {
 	    break;

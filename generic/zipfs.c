@@ -3,7 +3,7 @@
  *
  *	Implementation of the ZIP filesystem used in AndroWish.
  *
- * Copyright (c) 2013-2015 Christian Werner <chw@ch-werner.de>
+ * Copyright (c) 2013-2016 Christian Werner <chw@ch-werner.de>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -165,7 +165,7 @@ typedef struct ZipEntry {
     int nbyte;                /* Uncompressed size of the virtual file */
     int nbytecompr;           /* Compressed size of the virtual file */
     int cmeth;                /* Compress method */
-    int isdir;	              /* Set to 1 if directory */
+    int isdir;	              /* Set to 1 if directory, -1 if root */
     int depth; 	              /* Number of slashes in path. */
     int crc32;                /* CRC-32 */
     int timestamp;            /* Modification time */
@@ -187,7 +187,7 @@ typedef struct ZipChannel {
     unsigned long nread;      /* Pos of next byte to be read from the channel */
     unsigned char *ubuf;      /* Pointer to the uncompressed data */
     int iscompr;              /* True if data is compressed */
-    int isdir;	              /* Set to 1 if directory */
+    int isdir;	              /* Set to 1 if directory, -1 if root */
     int isenc;                /* True if data is encrypted */
     int iswr;                 /* True if open for writing */
     unsigned long keys[3];    /* Key for decryption */
@@ -1229,7 +1229,7 @@ Zipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	z->tnext = NULL;
 	z->depth = CountSlashes(mntpt);
 	z->zipfile = zf;
-	z->isdir = 1;
+	z->isdir = (zf->baseoffs == 0) ? 1 : -1;	/* root marker */
 	z->isenc = 0;
 	z->offset = zf->baseoffs;
 	z->crc32 = 0;
@@ -2584,6 +2584,24 @@ ZipChannelRead(ClientData instanceData, char *buf, int toRead, int *errloc)
     ZipChannel *info = (ZipChannel *) instanceData;
     unsigned long nextpos;
 
+    if (info->isdir < 0) {
+	/*
+	 * Special case: when executable combined with ZIP archive file
+	 * read data in front of ZIP, i.e. the executable itself.
+	 */
+	nextpos = info->nread + toRead;
+	if (nextpos > info->zipfile->baseoffs) {
+	    toRead = info->zipfile->baseoffs - info->nread;
+	    nextpos = info->zipfile->baseoffs;
+	}
+	if (toRead == 0) {
+	    return 0;
+	}
+	memcpy(buf, info->zipfile->data, toRead);
+	info->nread = nextpos;
+	*errloc = 0;
+	return toRead;
+    }
     if (info->isdir) {
 	*errloc = EISDIR;
 	return -1;
@@ -2675,17 +2693,26 @@ static int
 ZipChannelSeek(ClientData instanceData, long offset, int mode, int *errloc)
 {
     ZipChannel *info = (ZipChannel *) instanceData;
+    unsigned long end;
 
-    if (info->isdir) {
+    if (!info->iswr && (info->isdir < 0)) {
+	/*
+	 * Special case: when executable combined with ZIP archive file,
+	 * seek within front of ZIP, i.e. the executable itself.
+	 */
+	end = info->zipfile->baseoffs;
+    } else if (info->isdir) {
 	*errloc = EINVAL;
 	return -1;
+    } else {
+	end = info->nbyte;
     }
     switch (mode) {
     case SEEK_CUR:
 	offset += info->nread;
 	break;
     case SEEK_END:
-	offset += info->nbyte;
+	offset += end;
 	break;
     case SEEK_SET:
 	break;
@@ -2705,7 +2732,7 @@ ZipChannelSeek(ClientData instanceData, long offset, int mode, int *errloc)
 	if ((unsigned long) offset > info->nbyte) {
 	    info->nbyte = offset;
 	}
-    } else if ((unsigned long) offset > info->nbyte) {
+    } else if ((unsigned long) offset > end) {
 	*errloc = EINVAL;
 	return -1;
     }

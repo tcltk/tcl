@@ -865,6 +865,8 @@ TclpThreadGetMasterTSD(
  *	This can be resolved only by runtime linking libc.so and
  *	using dlsym() to find out which pthread functions are available.
  *
+ *	See also tclUnixPort.h
+ *
  *----------------------------------------------------------------------
  */
 
@@ -883,7 +885,8 @@ static CondattrSetclockProc *condattrSetclockProc = NULL;
 static CondTimedwaitProc *condTimedwaitMonotonicNpProc = NULL;
 static CondTimedwaitProc *condTimedwaitProc = NULL;
 
-int TclpCondattrSetclock(
+int
+TclpCondattrSetclock(
     const pthread_condattr_t *attrPtr,
     clockid_t clkid)
 {
@@ -919,7 +922,8 @@ int TclpCondattrSetclock(
     return EINVAL;
 }
 
-int TclpCondTimedwait(
+int
+TclpCondTimedwait(
     pthread_cond_t *condPtr,
     pthread_mutex_t *mutexPtr,
     struct timespec *tsPtr)

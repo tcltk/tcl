@@ -374,7 +374,7 @@ SerialGetMilliseconds(void)
 {
     Tcl_Time time;
 
-    Tcl_GetTime(&time);
+    TclpGetMonotonicTime(&time);
 
     return (time.sec * 1000 + time.usec / 1000);
 }
@@ -1491,7 +1491,7 @@ TclWinOpenSerialChannel(
     infoPtr->writable = 1;
     infoPtr->toWrite = infoPtr->writeQueue = 0;
     infoPtr->blockTime = SERIAL_DEFAULT_BLOCKTIME;
-    infoPtr->lastEventTime = 0;
+    infoPtr->lastEventTime = SerialGetMilliseconds();
     infoPtr->lastError = infoPtr->error = 0;
     infoPtr->threadId = Tcl_GetCurrentThread();
     infoPtr->sysBufRead = 4096;

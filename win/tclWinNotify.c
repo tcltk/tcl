@@ -445,12 +445,6 @@ Tcl_WaitForEvent(
 	 */
 
 	if (timePtr) {
-#ifdef WIN32_USE_TICKCOUNT
-	    timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
-	    if (timeout == INFINITE) {
-		timeout--;
-	    } 
-#else
 	    /*
 	     * TIP #233 (Virtualized Time). Convert virtual domain delay to
 	     * real-time.
@@ -466,7 +460,9 @@ Tcl_WaitForEvent(
 	    }
 
 	    timeout = myTime.sec * 1000 + myTime.usec / 1000;
-#endif
+	    if (timeout == INFINITE) {
+		timeout--;
+	    } 
 	} else {
 	    timeout = INFINITE;
 	}

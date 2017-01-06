@@ -15,34 +15,36 @@ zipfs \- Mount and work with ZIP files within Tcl
 .nf
 \fBpackage require zipfs \fR?\fB1.0\fR?
 .sp
-\fB::zipfs::exists\fR \fIfilename\fR
-\fB::zipfs::find\fR \fIdir\fR
-\fB::zipfs::info\fR \fIfilename\fR
-\fB::zipfs::list\fR \fB?(-glob|-regexp)?\fR \fI?pattern?\fR
-\fB::zipfs::mkimg\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR \fI?infile?\fR
-\fB::zipfs::mkkey\fR \fIpassword\fR
-\fB::zipfs::mkzip\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR
-\fB::zipfs::mount\fR \fI?zipfile\fR \fI?mountpoint?\fR \fI?password?\fR
-\fB::zipfs::unmount\fR \fIzipfile\fR
+\fBzipfs::exists\fR \fIfilename\fR
+\fBzipfs::find\fR \fIdir\fR
+\fBzipfs::info\fR \fIfilename\fR
+\fBzipfs::list\fR \fB?(-glob|-regexp)?\fR \fI?pattern?\fR
+\fBzipfs::lmkimg\fR \fIoutfile\fR \fIinlist\fR \fI?strip?\fR \fI?password?\fR \fI?infile?\fR
+\fBzipfs::lmkzip\fR \fIoutfile\fR \fIinlist\fR \fI?strip?\fR \fI?password?\fR
+\fBzipfs::mkimg\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR \fI?infile?\fR
+\fBzipfs::mkkey\fR \fIpassword\fR
+\fBzipfs::mkzip\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR
+\fBzipfs::mount\fR \fI?zipfile\fR \fI?mountpoint?\fR \fI?password?\fR
+\fBzipfs::unmount\fR \fIzipfile\fR
 .fi
 .BE
 .SH DESCRIPTION
 .PP
 The \fBzipfs\fR package provides tcl with the ability to mount
-the contents of a zip file as a virtual file system.
+the contents of a ZIP file as a virtual file system.
 .TP
-\fB::zipfs::exists\fR \fIfilename\fR
+\fBzipfs::exists\fR \fIfilename\fR
 .
 Return 1 if the given filename exists in the mounted zipfs and 0 if it does not.
 .TP
-\fB::zipfs::find\fR \fIdir\fR
+\fBzipfs::find\fR \fIdir\fR
 .
 Recursively lists files including and below the directory \fIdir\fR.
 The result list consists of relative path names starting from the
-given directory. This command is also used by the \fB::zipfs::mkzip\fR
-and \fB::zipfs::mkimg\fR commands.
+given directory. This command is also used by the \fBzipfs::mkzip\fR
+and \fBzipfs::mkimg\fR commands.
 .TP
-\fB::zipfs::info\fR \fIfile\fR
+\fBzipfs::info\fR \fIfile\fR
 .
 Return information about the given file in the mounted zipfs.  The information
 consists of (1) the name of the ZIP archive file that contains the file,
@@ -50,19 +52,39 @@ consists of (1) the name of the ZIP archive file that contains the file,
 the file, and (4) the offset of the compressed data in the ZIP archive file.
 .RS
 .PP
-Note: querying the mount point gives the start of zip data offset in (4),
-which can be used to truncate the zip info off an executable.
+Note: querying the mount point gives the start of ZIP data offset in (4),
+which can be used to truncate the ZIP info off an executable.
+.PP
+Note: the file of a mounted ZIP archive appears as directory but can
+be opened and read like a regular file if the mount process detected a non
+archive area in front of the ZIP archive, e.g. when the ZIP archive was
+appended to an executable file. In this case that area can be read using
+the Tcl \fBopen\fR and \fBread\fR commands but \fBfile copy\fR treats
+the mounted archive as a directory.
 .RE
 .TP
-\fB::zipfs::list\fR \fB?(-glob|-regexp)?\fR \fI?pattern?\fR
+\fBzipfs::list\fR \fB?(-glob|-regexp)?\fR \fI?pattern?\fR
 .
 Return a list of all files in the mounted zipfs.  The order of the names
 in the list is arbitrary.
 .TP
-\fB::zipfs::mkimg\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR \fI?infile?\fR
+\fBzipfs::lmkimg\fR \fIoutfile\fR \fIinlist\fR \fI?strip?\fR \fI?password?\fR \fI?infile?\fR
+Like \fBzipfs::mkimg\fR but instead of an input directory \fIinlist\fR
+must be a list where the odd elements are the original input file names as
+copied into the archive and the even elements their respective names within
+the archive.
+.TP
+\fBzipfs::lmkzip\fR \fIoutfile\fR \fIinlist\fR \fI?strip?\fR \fI?password?\fR
+.
+Like \fBzipfs::mkzip\fR but instead of an input directory \fIinlist\fR
+must be a list where the odd elements are the original input file names as
+copied into the archive and the even elements their respective names within
+the archive.
+.TP
+\fBzipfs::mkimg\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR \fI?infile?\fR
 .
 Creates an image (potentially a new executable file) similar to
-\fB::zipfs::mkzip\fR. If the \fIinfile\fR parameter is specified,
+\fBzipfs::mkzip\fR. If the \fIinfile\fR parameter is specified,
 this file is prepended in front of the ZIP archive, otherwise the file
 returned by \fBTcl_NameOfExecutable(3)\fR (i.e. the executable file of
 the running process) is used. If the \fIpassword\fR parameter is not empty,
@@ -75,12 +97,12 @@ Caution: highly experimental, not usable on Android, only partially tested
 on Linux and Windows.
 .RE
 .TP
-\fB::zipfs::mkkey\fR \fIpassword\fR
+\fBzipfs::mkkey\fR \fIpassword\fR
 .
 For the clear text \fIpassword\fR argument an obfuscated string version
-is returned with the same format used in the \fB::zipfs::mkimg\fR command.
+is returned with the same format used in the \fBzipfs::mkimg\fR command.
 .TP
-\fB::zipfs::mkzip\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR
+\fBzipfs::mkzip\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR
 .
 Creates a ZIP archive file named \fIoutfile\fR from the contents of the input
 directory \fIindir\fR (contained regular files only) with optional ZIP
@@ -94,9 +116,9 @@ Caution: the choice of the \fIindir\fR parameter
 archive's content.
 .RE
 .TP
-\fB::zipfs::mount ?\fIzipfile\fR? ?\fImountpoint\fR?
+\fBzipfs::mount ?\fIzipfile\fR? ?\fImountpoint\fR?
 .
-The \fB::zipfs::mount\fR command mounts a ZIP archive file as a VFS.
+The \fBzipfs::mount\fR command mounts a ZIP archive file as a VFS.
 After this command executes, files contained in \fIzipfile\fR
 will appear to Tcl to be regular files at the mount point.
 .RS
@@ -106,9 +128,12 @@ With no \fIzipfile\fR, return all zipfile/mount pairs.
 If \fImountpoint\fR is specified as an empty string, mount on file path.
 .RE
 .TP
-\fB::zipfs::unmount \fIzipfile\fR
+\fBzipfs::unmount \fIzipfile\fR
 .
 Unmounts a previously mounted ZIP archive file \fIzipfile\fR.
+.PP
+The commands described above are available as subcommands in the \fBzipfs\fR
+ensemble, i.e. \fBzipfs list\fR is equivalent to \fBzipfs::list\fR.
 .SH "SEE ALSO"
 tclsh(1), file(n), zlib(n)
 .SH "KEYWORDS"
