@@ -218,7 +218,7 @@ static int		ClockScanObjCmd(
 			    int objc, Tcl_Obj *const objv[]);
 static int		ClockFreeScan(
 			    ClientData clientData, Tcl_Interp *interp,
-			    register TclDateFields *date, 
+			    register DateInfo *info, 
 			    Tcl_Obj *strObj, ClockFmtScnCmdArgs *opts);
 static struct tm *	ThreadSafeLocalTime(const time_t *);
 static unsigned long	TzsetGetEpoch(void);
@@ -2492,8 +2492,9 @@ ClockScanObjCmd(
 
     int ret;
     ClockFmtScnCmdArgs opts;	/* Format, locale, timezone and base */
-    Tcl_WideInt	  baseVal;	/* Base time, expressed in seconds from the Epoch */
-    TclDateFields date;		/* Date fields used for converting */
+    Tcl_WideInt	    baseVal;	/* Base time, expressed in seconds from the Epoch */
+    DateInfo	    yy;		/* Common structure used for parsing */
+    DateInfo	   *info = &yy;
 
     if ((objc & 1) == 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string "
@@ -2527,7 +2528,7 @@ ClockScanObjCmd(
 	baseVal = (Tcl_WideInt) now.sec;
     }
 
-    date.tzName = NULL;
+    yydate.tzName = NULL;
 
     /* If time zone not specified use system time zone */
     if ( opts.timezoneObj == NULL
@@ -2552,12 +2553,12 @@ ClockScanObjCmd(
      * defaults
      */
 
-    date.tzData = ClockGetTZData(clientData, interp, opts.timezoneObj);
-    if (date.tzData == NULL) {
+    yydate.tzData = ClockGetTZData(clientData, interp, opts.timezoneObj);
+    if (yydate.tzData == NULL) {
 	goto done;
     }
-    date.seconds = baseVal;
-    if (ClockGetDateFields(interp, &date, date.tzData, GREGORIAN_CHANGE_DATE)
+    yydate.seconds = baseVal;
+    if (ClockGetDateFields(interp, &yydate, yydate.tzData, GREGORIAN_CHANGE_DATE)
 	  != TCL_OK) {
 	goto done;
     }
@@ -2573,10 +2574,10 @@ ClockScanObjCmd(
 	    Tcl_SetErrorCode(interp, "CLOCK", "flagWithLegacyFormat", NULL);
 	    return TCL_ERROR;
 	}
-	ret = ClockFreeScan(clientData, interp, &date, objv[1], &opts);
+	ret = ClockFreeScan(clientData, interp, info, objv[1], &opts);
     } 
     else
-    if (0) {
+    if (1) {
 	/* TODO: Tcled Scan proc - */
 		int ret;
 	Tcl_Obj *callargs[10];
@@ -2585,12 +2586,12 @@ ClockScanObjCmd(
 				Tcl_IncrRefCount(callargs[0]);
 	ret = Tcl_EvalObjv(interp, objc, callargs, 0);
 				Tcl_DecrRefCount(callargs[0]);
-				return ret;
+		return ret;
     }
     else {
 	/* Use compiled version of Scan - */
 	
-	ret = ClockScan(clientData, interp, &date, objv[1], &opts);
+	ret = ClockScan(clientData, interp, &yydate, objv[1], &opts);
     }
 
     if (ret != TCL_OK) {
@@ -2599,18 +2600,18 @@ ClockScanObjCmd(
 
 
     /* If needed assemble julianDay using new year, month, etc. */
-    if (date.julianDay == CL_INVALIDATE) {
-	GetJulianDayFromEraYearMonthDay(&date, GREGORIAN_CHANGE_DATE);
+    if (yydate.julianDay == CL_INVALIDATE) {
+	GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
     }
     
-    /* Local seconds to UTC (stored in date.seconds) */
+    /* Local seconds to UTC (stored in yydate.seconds) */
 
-    date.localSeconds =
+    yydate.localSeconds =
 	-210866803200L
-	+ ( 86400 * (Tcl_WideInt)date.julianDay )
-	+ ( date.secondOfDay % 86400 );
+	+ ( 86400 * (Tcl_WideInt)yydate.julianDay )
+	+ ( yySeconds % 86400 );
 
-    if (ConvertLocalToUTC(interp, &date, date.tzData, GREGORIAN_CHANGE_DATE)
+    if (ConvertLocalToUTC(interp, &yydate, yydate.tzData, GREGORIAN_CHANGE_DATE)
 	  != TCL_OK) {
 	goto done;
     }
@@ -2619,13 +2620,13 @@ ClockScanObjCmd(
 
 done:
 
-    Tcl_UnsetObjRef(date.tzName);
+    Tcl_UnsetObjRef(yydate.tzName);
 
     if (ret != TCL_OK) {
 	return ret;
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(date.seconds));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(yydate.seconds));
     return TCL_OK;
 }
 
@@ -2636,28 +2637,28 @@ ClockFreeScan(
     ClientData clientData,	/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
     register
-    TclDateFields *date,	/* Date fields used for converting */
+    DateInfo	       *info,	/* Date fields used for parsing & converting
+				 * simultaneously a yy-parse structure of the 
+				 * TclClockFreeScan */	  
     Tcl_Obj *strObj,		/* String containing the time to scan */
     ClockFmtScnCmdArgs *opts)	/* Command options */
 {
-    ClockClientData *dataPtr = clientData;
-    Tcl_Obj **literals = dataPtr->literals;
+    // ClockClientData *dataPtr = clientData;
+    // Tcl_Obj **literals = dataPtr->literals;
 
-    DateInfo yy;		/* parse structure of TclClockFreeScan */
     int ret = TCL_ERROR;
 
-
     /*
-     * Parse the date.	The parser will fill a structure "yy" with date, time,
-     * time zone, relative month/day/seconds, relative weekday, ordinal month.
+     * Parse the date. The parser will fill a structure "info" with date,
+     * time, time zone, relative month/day/seconds, relative weekday, ordinal
+     * month.
+     * Notice that many yy-defines point to values in the "info" or "date" 
+     * structure, e. g. yySeconds -> info->date.secondOfDay or 
+     *			yySeconds -> info->date.month (same as yydate.month)
      */
-    yy.dateInput = Tcl_GetString(strObj);
+    yyInput = Tcl_GetString(strObj);
 
-    yy.dateYear = date->year;
-    yy.dateMonth = date->month;
-    yy.dateDay = date->dayOfMonth;
-
-    if (TclClockFreeScan(interp, &yy) != TCL_OK) {
+    if (TclClockFreeScan(interp, info) != TCL_OK) {
 	Tcl_Obj *msg = Tcl_NewObj();
 	Tcl_AppendPrintfToObj(msg, "unable to convert date-time string \"%s\": %s", 
 	    Tcl_GetString(strObj), TclGetString(Tcl_GetObjResult(interp)));
@@ -2671,19 +2672,16 @@ ClockFreeScan(
      * midnight.
      */
 
-    if (yy.dateHaveDate) {
-	if (yy.dateYear < 100) {
-	    if (yy.dateYear >= ClockGetYearOfCenturySwitch(clientData, interp)) {
-		yy.dateYear -= 100;
+    if (yyHaveDate) {
+	if (yyYear < 100) {
+	    if (yyYear >= ClockGetYearOfCenturySwitch(clientData, interp)) {
+		yyYear -= 100;
 	    }
-	    yy.dateYear += ClockCurrentYearCentury(clientData, interp);
+	    yyYear += ClockCurrentYearCentury(clientData, interp);
 	}
-	date->era = CE;
-	date->year = yy.dateYear;
-	date->month = yy.dateMonth;
-	date->dayOfMonth = yy.dateDay;
-	if (yy.dateHaveTime == 0) {
-	    yy.dateHaveTime = -1;
+	yydate.era = CE;
+	if (yyHaveTime == 0) {
+	    yyHaveTime = -1;
 	}
     }
 
@@ -2692,10 +2690,10 @@ ClockFreeScan(
      * zone indicator of +-hhmm and setup this time zone.
      */
 
-    if (yy.dateHaveZone) {
+    if (yyHaveZone) {
 	Tcl_Obj *tzObjStor = NULL;
-	int minEast = -yy.dateTimezone;
-	int dstFlag = 1 - yy.dateDSTmode;
+	int minEast = -yyTimezone;
+	int dstFlag = 1 - yyDSTmode;
 	tzObjStor = ClockFormatNumericTimeZone(
 			  60 * minEast + 3600 * dstFlag);
 	
@@ -2706,40 +2704,40 @@ ClockFreeScan(
 	if (opts->timezoneObj == NULL) {
 	    goto done;
 	}
-	date->tzData = ClockGetTZData(clientData, interp, opts->timezoneObj);
-	if (date->tzData == NULL) {
+	yydate.tzData = ClockGetTZData(clientData, interp, opts->timezoneObj);
+	if (yydate.tzData == NULL) {
 	    goto done;
 	}
     }
     
     /* on demand (lazy) assemble julianDay using new year, month, etc. */
-    date->julianDay = CL_INVALIDATE;
+    yydate.julianDay = CL_INVALIDATE;
 
     /* 
      * Assemble date, time, zone into seconds-from-epoch
      */
 
-    Tcl_SetObjRef(date->tzName, opts->timezoneObj);
+    Tcl_SetObjRef(yydate.tzName, opts->timezoneObj);
 
-    if (yy.dateHaveTime == -1) {
-	date->secondOfDay = 0;
+    if (yyHaveTime == -1) {
+	yySeconds = 0;
     }
     else
-    if (yy.dateHaveTime) {
-	date->secondOfDay = ToSeconds(yy.dateHour, yy.dateMinutes,
-			    yy.dateSeconds, yy.dateMeridian);
+    if (yyHaveTime) {
+	yySeconds = ToSeconds(yyHour, yyMinutes,
+			    yySeconds, yyMeridian);
     } 
     else 
-    if ( (yy.dateHaveDay && !yy.dateHaveDate)
-	    || yy.dateHaveOrdinalMonth
-	    || ( yy.dateHaveRel
-		&& ( yy.dateRelMonth != 0
-		     || yy.dateRelDay != 0 ) )
+    if ( (yyHaveDay && !yyHaveDate)
+	    || yyHaveOrdinalMonth
+	    || ( yyHaveRel
+		&& ( yyRelMonth != 0
+		     || yyRelDay != 0 ) )
     ) {
-	date->secondOfDay = 0;
+	yySeconds = 0;
     } 
     else {
-	date->secondOfDay = date->localSeconds % 86400;
+	yySeconds = yydate.localSeconds % 86400;
     }
 
     /*
@@ -2748,56 +2746,56 @@ ClockFreeScan(
 
 repeat_rel:
 
-    if (yy.dateHaveRel) {
+    if (yyHaveRel) {
 
 	/* add months (or years in months) */
 
-	if (yy.dateRelMonth != 0) {
+	if (yyRelMonth != 0) {
 	    int m, h;
 
 	    /* if needed extract year, month, etc. again */
-	    if (date->month == CL_INVALIDATE) {
-		GetGregorianEraYearDay(date, GREGORIAN_CHANGE_DATE);
-		GetMonthDay(date);
-		GetYearWeekDay(date, GREGORIAN_CHANGE_DATE);
+	    if (yyMonth == CL_INVALIDATE) {
+		GetGregorianEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
+		GetMonthDay(&yydate);
+		GetYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
 	    }
 
 	    /* add the requisite number of months */
-	    date->month += yy.dateRelMonth - 1;
-	    date->year += date->month / 12;
-	    m = date->month % 12;
-	    date->month = m + 1;
+	    yyMonth += yyRelMonth - 1;
+	    yyYear += yyMonth / 12;
+	    m = yyMonth % 12;
+	    yyMonth = m + 1;
 
 	    /* if the day doesn't exist in the current month, repair it */
-	    h = hath[IsGregorianLeapYear(date)][m];
-	    if (date->dayOfMonth > h) {
-		date->dayOfMonth = h;
+	    h = hath[IsGregorianLeapYear(&yydate)][m];
+	    if (yyDay > h) {
+		yyDay = h;
 	    }
 
 	    /* on demand (lazy) assemble julianDay using new year, month, etc. */
-	    date->julianDay = CL_INVALIDATE;
+	    yydate.julianDay = CL_INVALIDATE;
 
-	    yy.dateRelMonth = 0;
+	    yyRelMonth = 0;
 	}
 
 	/* add days (or other parts aligned to days) */
-	if (yy.dateRelDay) {
+	if (yyRelDay) {
 
 	    /* assemble julianDay using new year, month, etc. */
-	    if (date->julianDay == CL_INVALIDATE) {
-		GetJulianDayFromEraYearMonthDay(date, GREGORIAN_CHANGE_DATE);
+	    if (yydate.julianDay == CL_INVALIDATE) {
+		GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
 	    }
-	    date->julianDay += yy.dateRelDay;		
+	    yydate.julianDay += yyRelDay;	    
 	    
 	    /* julianDay was changed, on demand (lazy) extract year, month, etc. again */
-	    date->month = CL_INVALIDATE;
+	    yyMonth = CL_INVALIDATE;
 
-	    yy.dateRelDay = 0;
+	    yyRelDay = 0;
 	}
 
 	/* relative time (seconds) */
-	date->secondOfDay += yy.dateRelSeconds;
-	yy.dateRelSeconds = 0;
+	yySeconds += yyRelSeconds;
+	yyRelSeconds = 0;
 
     }
 
@@ -2805,35 +2803,35 @@ repeat_rel:
      * Do relative (ordinal) month
      */
 
-    if (yy.dateHaveOrdinalMonth) {
+    if (yyHaveOrdinalMonth) {
 	int monthDiff;
 
 	/* if needed extract year, month, etc. again */
-	if (date->month == CL_INVALIDATE) {
-	    GetGregorianEraYearDay(date, GREGORIAN_CHANGE_DATE);
-	    GetMonthDay(date);
-	    GetYearWeekDay(date, GREGORIAN_CHANGE_DATE);
+	if (yyMonth == CL_INVALIDATE) {
+	    GetGregorianEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
+	    GetMonthDay(&yydate);
+	    GetYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
 	}
 
-	if (yy.dateMonthOrdinal > 0) {
-	    monthDiff = yy.dateMonth - date->month;
+	if (yyMonthOrdinalIncr > 0) {
+	    monthDiff = yyMonthOrdinal - yyMonth;
 	    if (monthDiff <= 0) {
 		monthDiff += 12;
 	    }
-	    yy.dateMonthOrdinal--;
+	    yyMonthOrdinalIncr--;
 	} else {
-	    monthDiff = date->month - yy.dateMonth;
+	    monthDiff = yyMonth - yyMonthOrdinal;
 	    if (monthDiff >= 0) {
 		monthDiff -= 12;
 	    }
-	    yy.dateMonthOrdinal++;
+	    yyMonthOrdinalIncr++;
 	}
 
 	/* process it further via relative times */
-	yy.dateHaveRel++;
-	date->year += yy.dateMonthOrdinal;
-	yy.dateRelMonth += monthDiff;
-	yy.dateHaveOrdinalMonth = 0;
+	yyHaveRel++;
+	yyYear += yyMonthOrdinalIncr;
+	yyRelMonth += monthDiff;
+	yyHaveOrdinalMonth = 0;
 
 	goto repeat_rel;
     }
@@ -2842,18 +2840,18 @@ repeat_rel:
      * Do relative weekday
      */
 
-    if (yy.dateHaveDay && !yy.dateHaveDate) {
+    if (yyHaveDay && !yyHaveDate) {
 
 	/* if needed assemble julianDay now */
-	if (date->julianDay == CL_INVALIDATE) {
-	    GetJulianDayFromEraYearMonthDay(date, GREGORIAN_CHANGE_DATE);
+	if (yydate.julianDay == CL_INVALIDATE) {
+	    GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
 	}
 
-	date->era = CE;
-	date->julianDay = WeekdayOnOrBefore(yy.dateDayNumber, date->julianDay + 6)
-		    + 7 * yy.dateDayOrdinal;
-	if (yy.dateDayOrdinal > 0) {
-	    date->julianDay -= 7;
+	yydate.era = CE;
+	yydate.julianDay = WeekdayOnOrBefore(yyDayNumber, yydate.julianDay + 6)
+		    + 7 * yyDayOrdinal;
+	if (yyDayOrdinal > 0) {
+	    yydate.julianDay -= 7;
 	}
     }
 
@@ -2863,7 +2861,7 @@ repeat_rel:
 
 done:
 
-    return TCL_OK;
+    return ret;
 }
 
 /*----------------------------------------------------------------------
