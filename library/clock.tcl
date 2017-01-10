@@ -2365,16 +2365,21 @@ proc ::tcl::clock::LocalizeFormat { locale format {fmtkey {}} } {
 	    dict set LocaleFormats $locale MLST $mlst
 	}
 
-	# translate:
-	set locfmt [string map $mlst $format]
-
-	# Save original format as long as possible, because of internal representation (performance)
-	if {$locfmt eq $format} {
-	    set locfmt $format
-	}
+	# translate copy of format (don't use format object here, because otherwise 
+	# it can lose its internal representation (string map - convert to unicode)
+	set locfmt [string map $mlst [string range " $format" 1 end]]
 
 	# cache it:
 	dict set LocaleFormats $locale $fmtkey $locfmt
+    }
+
+    # Save original format as long as possible, because of internal 
+    # representation (performance).
+    # Note that in this case such format will be never localized (also
+    # using another locales). To prevent this return a duplicate (but 
+    # it may be slower).
+    if {$locfmt eq $format} {
+        set locfmt $format
     }
 
     return $locfmt

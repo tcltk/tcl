@@ -37,6 +37,53 @@
 
 
 /*
+ * Enumeration of the string literals used in [clock]
+ */
+
+typedef enum ClockLiteral {
+    LIT__NIL,
+    LIT__DEFAULT_FORMAT,
+    LIT_BCE,		LIT_C,
+    LIT_CANNOT_USE_GMT_AND_TIMEZONE,
+    LIT_CE,
+    LIT_DAYOFMONTH,	LIT_DAYOFWEEK,		LIT_DAYOFYEAR,
+    LIT_ERA,		LIT_GMT,		LIT_GREGORIAN,
+    LIT_INTEGER_VALUE_TOO_LARGE,
+    LIT_ISO8601WEEK,	LIT_ISO8601YEAR,
+    LIT_JULIANDAY,	LIT_LOCALSECONDS,
+    LIT_MONTH,
+    LIT_SECONDS,	LIT_TZNAME,		LIT_TZOFFSET,
+    LIT_YEAR,
+    LIT_TZDATA,
+    LIT_GETSYSTEMTIMEZONE,
+    LIT_SETUPTIMEZONE,
+    LIT_MCGET,		LIT_TCL_CLOCK,
+    LIT_LOCALIZE_FORMAT,
+    LIT__END
+} ClockLiteral;
+
+#define CLOCK_LITERAL_ARRAY(litarr) static const char *const litarr[] = { \
+    "", \
+    "%a %b %d %H:%M:%S %Z %Y", \
+    "BCE",		"C", \
+    "cannot use -gmt and -timezone in same call", \
+    "CE", \
+    "dayOfMonth",	"dayOfWeek",		"dayOfYear", \
+    "era",		":GMT",			"gregorian", \
+    "integer value too large to represent", \
+    "iso8601Week",	"iso8601Year", \
+    "julianDay",	"localSeconds", \
+    "month", \
+    "seconds",		"tzName",		"tzOffset", \
+    "year", \
+    "::tcl::clock::TZData", \
+    "::tcl::clock::GetSystemTimeZone", \
+    "::tcl::clock::SetupTimeZone", \
+    "::msgcat::mcget", "::tcl::clock", \
+    "::tcl::clock::LocalizeFormat" \
+}
+
+/*
  * Enumeration of the msgcat literals used in [clock]
  */
 
@@ -362,8 +409,6 @@ MODULE_SCOPE Tcl_Obj *
 		    ClockMCGet(ClockFmtScnCmdArgs *opts, int mcKey);
 MODULE_SCOPE Tcl_Obj *
 		    ClockMCGetListIdxDict(ClockFmtScnCmdArgs *opts, int mcKey);
-MODULE_SCOPE Tcl_Obj *
-		    ClockLocalizeFormat(ClockFmtScnCmdArgs *opts);
 
 /* tclClockFmt.c module declarations */
 
@@ -374,7 +419,8 @@ MODULE_SCOPE Tcl_Obj*
 MODULE_SCOPE ClockFmtScnStorage * 
 		    Tcl_GetClockFrmScnFromObj(Tcl_Interp *interp,
 			Tcl_Obj *objPtr);
-
+MODULE_SCOPE Tcl_Obj *
+		    ClockLocalizeFormat(ClockFmtScnCmdArgs *opts);
 MODULE_SCOPE int    ClockScan(ClientData clientData, Tcl_Interp *interp,
 			register DateInfo *info,
 			Tcl_Obj *strObj, ClockFmtScnCmdArgs *opts);

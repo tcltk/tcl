@@ -42,53 +42,7 @@ static const int daysInPriorMonths[2][13] = {
  * Enumeration of the string literals used in [clock]
  */
 
-typedef enum ClockLiteral {
-    LIT__NIL,
-    LIT__DEFAULT_FORMAT,
-    LIT_BCE,		LIT_C,
-    LIT_CANNOT_USE_GMT_AND_TIMEZONE,
-    LIT_CE,
-    LIT_DAYOFMONTH,	LIT_DAYOFWEEK,		LIT_DAYOFYEAR,
-    LIT_ERA,		LIT_GMT,		LIT_GREGORIAN,
-    LIT_INTEGER_VALUE_TOO_LARGE,
-    LIT_ISO8601WEEK,	LIT_ISO8601YEAR,
-    LIT_JULIANDAY,	LIT_LOCALSECONDS,
-    LIT_MONTH,
-    LIT_SECONDS,	LIT_TZNAME,		LIT_TZOFFSET,
-    LIT_YEAR,
-    LIT_TZDATA,
-    LIT_GETSYSTEMTIMEZONE,
-    LIT_SETUPTIMEZONE,
-    LIT_MCGET,		LIT_TCL_CLOCK,
-    LIT_LOCALIZE_FORMAT,
-#if 0
-    LIT_FREESCAN,
-#endif
-    LIT__END
-} ClockLiteral;
-static const char *const Literals[] = {
-    "",
-    "%a %b %d %H:%M:%S %Z %Y",
-    "BCE",		"C",
-    "cannot use -gmt and -timezone in same call",
-    "CE",
-    "dayOfMonth",	"dayOfWeek",		"dayOfYear",
-    "era",		":GMT",			"gregorian",
-    "integer value too large to represent",
-    "iso8601Week",	"iso8601Year",
-    "julianDay",	"localSeconds",
-    "month",
-    "seconds",		"tzName",		"tzOffset",
-    "year",
-    "::tcl::clock::TZData",
-    "::tcl::clock::GetSystemTimeZone",
-    "::tcl::clock::SetupTimeZone",
-    "::msgcat::mcget", "::tcl::clock",
-    "::tcl::clock::LocalizeFormat"
-#if 0
-    "::tcl::clock::FreeScan"
-#endif
-};
+CLOCK_LITERAL_ARRAY(Literals);
 
 /* Msgcat literals for exact match (mcKey) */
 CLOCK_LOCALE_LITERAL_ARRAY(MsgCtLiterals, "");
@@ -632,56 +586,6 @@ ClockMCGetListIdxDict(
     };
 
     return valObj;
-}
-
-MODULE_SCOPE Tcl_Obj *
-ClockLocalizeFormat(
-    ClockFmtScnCmdArgs *opts)
-{
-    ClockClientData *dataPtr = opts->clientData;
-    Tcl_Obj *valObj, *keyObj;
-
-    keyObj = ClockFrmObjGetLocFmtKey(opts->interp, opts->formatObj);
-
-    if (opts->mcDictObj == NULL) {
-	ClockMCDict(opts);
-	if (opts->mcDictObj == NULL)
-	    return NULL;
-    }
-
-    /* try to find in cache within mc-catalog */
-    if (Tcl_DictObjGet(NULL, opts->mcDictObj, 
-	    keyObj, &valObj) != TCL_OK) {
-	return NULL;
-    }
-    if (valObj == NULL) {
-	Tcl_Obj *callargs[4];
-	/* call LocalizeFormat locale format fmtkey */
-	callargs[0] = dataPtr->literals[LIT_LOCALIZE_FORMAT];
-	callargs[1] = opts->localeObj;
-	callargs[2] = opts->formatObj;
-	callargs[3] = keyObj;
-	Tcl_IncrRefCount(keyObj);
-	if (Tcl_EvalObjv(opts->interp, 4, callargs, 0) != TCL_OK
-	) {
-	    Tcl_DecrRefCount(keyObj);
-	    return NULL;
-	}
-
-	valObj = Tcl_GetObjResult(opts->interp);
-
-	if (Tcl_DictObjPut(opts->interp, opts->mcDictObj,
-		keyObj, valObj) != TCL_OK
-	) {
-	    Tcl_DecrRefCount(keyObj);
-	    return NULL;
-	}
-
-	Tcl_DecrRefCount(keyObj);
-	Tcl_ResetResult(opts->interp);
-    }
-
-    return (opts->formatObj = valObj);
 }
 
 /*
