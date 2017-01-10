@@ -33,9 +33,10 @@
 
 
 #define CLF_OPTIONAL	       (1 << 0) /* token is non mandatory */
+#define CLF_POSIXSEC	       (1 << 1)
+#define CLF_LOCALSEC	       (1 << 2)
 #define CLF_JULIANDAY	       (1 << 3)
 #define CLF_TIME	       (1 << 4)
-#define CLF_LOCALSEC	       (1 << 5)
 #define CLF_CENTURY	       (1 << 6)
 #define CLF_DAYOFMONTH	       (1 << 7)
 #define CLF_DAYOFYEAR	       (1 << 8)
@@ -355,8 +356,8 @@ typedef int ClockScanTokenProc(
 
 
 typedef enum _CLCKTOK_TYPE {
-   CTOKT_DIGIT = 1, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD,
-   CFMTT_INT, CFMTT_WIDE, CFMTT_CHAR, CFMTT_PROC
+   CTOKT_DIGIT = 1, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD, CTOKT_CHAR,
+   CFMTT_INT, CFMTT_WIDE, CFMTT_PROC
 } CLCKTOK_TYPE;
 
 typedef struct ClockScanTokenMap {
@@ -449,6 +450,15 @@ typedef struct ClockFmtScnStorage {
 MODULE_SCOPE time_t ToSeconds(time_t Hours, time_t Minutes,
 			    time_t Seconds, MERIDIAN Meridian);
 MODULE_SCOPE int    IsGregorianLeapYear(TclDateFields *);
+MODULE_SCOPE void
+		    GetJulianDayFromEraYearWeekDay(
+			    TclDateFields *fields, int changeover);
+MODULE_SCOPE void
+		    GetJulianDayFromEraYearMonthDay(
+			    TclDateFields *fields, int changeover);
+MODULE_SCOPE void
+		    GetJulianDayFromEraYearDay(
+			    TclDateFields *fields, int changeover);
 MODULE_SCOPE int    ConvertUTCToLocal(ClientData clientData, Tcl_Interp *,
 			    TclDateFields *, Tcl_Obj *timezoneObj, int);
 MODULE_SCOPE Tcl_Obj *
