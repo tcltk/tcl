@@ -8,6 +8,7 @@
  * Copyright 1991-1995 Karl Lehenbauer and Mark Diekhans.
  * Copyright (c) 1995 Sun Microsystems, Inc.
  * Copyright (c) 2004 by Kevin B. Kenny. All rights reserved.
+ * Copyright (c) 2015 by Sergey G. Brester aka sebres. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -2600,9 +2601,9 @@ ClockScanObjCmd(
 	}
     */
 
-    if (1) {
+    if (0) {
 	/* TODO: Tcled Scan proc - */
-			  int ret;
+		int ret;
 	Tcl_Obj *callargs[10];
 	memcpy(callargs, objv, objc * sizeof(*objv));
 				callargs[0] = Tcl_NewStringObj("::tcl::clock::__org_scan", -1);
@@ -2610,6 +2611,18 @@ ClockScanObjCmd(
 	ret = Tcl_EvalObjv(interp, objc, callargs, 0);
 				Tcl_DecrRefCount(callargs[0]);
 				return ret;
+    }
+
+    if (1) {
+
+	ClockFmtScnStorage * fss;
+
+	if ((fss = Tcl_GetClockFrmScnFromObj(interp, opts.formatObj)) == NULL) {
+	    return TCL_ERROR;
+	};
+
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)fss));
+
     }
     
     return TCL_OK;

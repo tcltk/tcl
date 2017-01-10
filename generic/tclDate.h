@@ -66,13 +66,55 @@ typedef enum _MERIDIAN {
 } MERIDIAN;
 
 /*
+ * Clock scan and format facilities.
+ */
+
+#define CLOCK_FMT_SCN_STORAGE_GC_SIZE 32
+
+
+typedef struct ClockFormatToken	  ClockFormatToken;
+typedef struct ClockScanToken	  ClockScanToken;
+typedef struct ClockFmtScnStorage ClockFmtScnStorage;
+
+typedef struct ClockFormatToken {
+    ClockFormatToken *nextTok;
+} ClockFormatToken;
+
+typedef struct ClockScanToken {
+    ClockScanToken   *nextTok;
+} ClockScanToken;
+
+typedef struct ClockFmtScnStorage {
+    int		      objRefCount;	/* Reference count shared across threads */
+    ClockScanToken   *firstScnTok;
+    ClockFormatToken *firstFmtTok;
+#if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
+    ClockFmtScnStorage	*nextPtr;
+    ClockFmtScnStorage	*prevPtr;
+#endif
+/*  +Tcl_HashEntry    hashEntry		/* ClockFmtScnStorage is a derivate of Tcl_HashEntry,
+					 * stored by offset +sizeof(self) */
+} ClockFmtScnStorage;
+
+typedef struct ClockLitStorage {
+    int		      dummy;
+} ClockLitStorage;
+
+/*
  * Prototypes of module functions.
  */
 
 MODULE_SCOPE time_t ToSeconds(time_t Hours, time_t Minutes,
 			    time_t Seconds, MERIDIAN Meridian);
 
-MODULE_SCOPE int TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
+MODULE_SCOPE int    TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
+
+/* tclClockFmt.c module declarations */
+
+MODULE_SCOPE ClockFmtScnStorage * 
+		    Tcl_GetClockFrmScnFromObj(Tcl_Interp *interp,
+			Tcl_Obj *objPtr);
+
 
 /*
  * Other externals.
