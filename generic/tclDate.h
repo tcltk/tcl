@@ -389,7 +389,8 @@ typedef struct ClockScanTokenMap {
 
 typedef struct ClockScanToken {
     ClockScanTokenMap  *map;
-    unsigned int	lookAhead;
+    unsigned short int	lookAhead;
+    unsigned short int	endDistance;
     struct {
 	const char *start;
 	const char *end;
