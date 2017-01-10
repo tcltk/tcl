@@ -19,9 +19,6 @@
 
 typedef struct DateInfo {
 
-    Tcl_Obj* messages;		/* Error messages */
-    const char* separatrix;	/* String separating messages */
-
     time_t dateYear;
     time_t dateMonth;
     time_t dateDay;
@@ -54,6 +51,9 @@ typedef struct DateInfo {
     time_t *dateRelPointer;
 
     int dateDigitCount;
+
+    Tcl_Obj* messages;	    /* Error messages */
+    const char* separatrix; /* String separating messages */
 } DateInfo;
 
 
@@ -73,5 +73,12 @@ MODULE_SCOPE time_t ToSeconds(time_t Hours, time_t Minutes,
 			    time_t Seconds, MERIDIAN Meridian);
 
 MODULE_SCOPE int TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
+
+/*
+ * Other externals.
+ */
+
+MODULE_SCOPE unsigned long TclEnvEpoch; /* Epoch of the tcl environment 
+					 * (if changed with tcl-env). */
 
 #endif /* _TCLCLOCK_H */

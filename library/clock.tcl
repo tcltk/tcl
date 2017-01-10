@@ -671,7 +671,9 @@ proc ::tcl::clock::format { args } {
     # Get the data for time changes in the given zone
 
     if {$timezone eq ""} {
-	set timezone [GetSystemTimeZone]
+	if {[set timezone [configure -system-tz]] eq ""} {
+	    set timezone [GetSystemTimeZone]
+	}
     }
     if {![info exists TZData($timezone)]} {
 	if {[catch {SetupTimeZone $timezone} retval opts]} {
@@ -1202,7 +1204,9 @@ proc ::tcl::clock::__org_scan { args } {
     set format {}
     set gmt 0
     set locale c
-    set timezone [GetSystemTimeZone]
+    if {[set timezone [configure -system-tz]] eq ""} {
+	set timezone [GetSystemTimeZone]
+    }
 
     # Pick up command line options.
 
@@ -4083,7 +4087,9 @@ proc ::tcl::clock::add { clockval args } {
     set offsets {}
     set gmt 0
     set locale c
-    set timezone [GetSystemTimeZone]
+    if {[set timezone [configure -system-tz]] eq ""} {
+	set timezone [GetSystemTimeZone]
+    }
 
     foreach { a b } $args {
 	if { [string is integer -strict $a] } {
