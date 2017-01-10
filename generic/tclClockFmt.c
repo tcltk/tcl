@@ -35,8 +35,6 @@ static void ClockFmtScnStorageDelete(ClockFmtScnStorage *fss);
  * Clock scan and format facilities.
  */
 
-#define TOK_CHAIN_BLOCK_SIZE 8
-
 /*
  *----------------------------------------------------------------------
  */
@@ -139,16 +137,16 @@ ClockFmtScnStorageFreeProc(
     Tcl_HashEntry *hPtr)
 {
     ClockFmtScnStorage *fss = FmtScn4HashEntry(hPtr);
-    ClockScanToken  *tok;
 
-    tok = fss->firstScnTok;
-    while (tok != NULL) {
-	if (tok->nextTok == tok + 1) {
-	    tok++;
-	    /*****************************/
-	} else {
-	    tok = tok->nextTok;
-	}
+    if (fss->scnTok != NULL) {
+	ckfree(fss->scnTok);
+	fss->scnTok = NULL;
+	fss->scnTokC = 0;
+    }
+    if (fss->fmtTok != NULL) {
+	ckfree(fss->fmtTok);
+	fss->fmtTok = NULL;
+	fss->fmtTokC = 0;
     }
 
     ckfree(fss);
@@ -391,6 +389,101 @@ Tcl_GetClockFrmScnFromObj(
     }
 
     return fss;
+}
+
+
+#define AllocTokenInChain(tok, chain, tokC) \
+    if ((tok) >= (chain) + (tokC)) { \
+	(char *)(chain) = ckrealloc((char *)(chain), \
+	    (tokC) + sizeof((**(tok))) * CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE); \
+	if ((chain) == NULL) { return NULL; }; \
+	(tok) = (chain) + (tokC); \
+	(tokC) += CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE; \
+    }
+
+const char *ScnSTokenChars = "dmyYHMS";
+static ClockScanToken ScnSTokens[] = {
+    {CTOKT_DIGIT,  1, 2, 0},
+};
+
+/*
+ *----------------------------------------------------------------------
+ */
+ClockScanToken **
+ClockGetOrParseScanFormat(
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    Tcl_Obj *formatObj)		/* Format container */
+{
+    ClockFmtScnStorage *fss;
+    ClockScanToken    **tok;
+
+    if (formatObj->typePtr != &ClockFmtObjType) {
+	if (ClockFmtObj_SetFromAny(interp, formatObj) != TCL_OK) {
+	    return NULL;
+	}
+    }
+
+    fss = ObjClockFmtScn(formatObj);
+
+    if (fss == NULL) {
+	fss = FindOrCreateFmtScnStorage(interp, TclGetString(formatObj));
+	if (fss == NULL) {
+	    return NULL;
+	}
+    }
+
+    /* if first time scanning - tokenize format */
+    if (fss->scnTok == NULL) {
+	const char *strFmt;
+	register const char *p, *e;
+
+	fss->scnTokC = CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE;
+	fss->scnTok =
+		tok = ckalloc(sizeof(**tok) * CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE);
+	(*tok)->type = CTOKT_EOB;
+	strFmt = TclGetString(formatObj);
+	for (e = p = strFmt, e += formatObj->length; p != e; p++) {
+	    switch (*p) {
+	    case '%':
+		if (p+1 >= e) 
+		    goto word_tok;
+		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
+		p++;
+		// *tok = 
+	    break;
+	    case ' ':
+		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
+		// *tok =
+	    break;
+	    default:
+word_tok:
+	    break;
+	    }
+	}
+    }
+
+    return fss->scnTok;
+}
+
+/*
+ *----------------------------------------------------------------------
+ */
+int
+ClockScan(
+    ClientData clientData,	/* Client data containing literal pool */
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    TclDateFields *date,	/* Date fields used for converting */
+    Tcl_Obj *strObj,		/* String containing the time to scan */
+    ClockFmtScnCmdArgs *opts)	/* Command options */
+{
+    ClockScanToken    **tok;
+
+    if (ClockGetOrParseScanFormat(interp, opts->formatObj) == NULL) {
+	return TCL_ERROR;
+    }
+    
+    // Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)fss));
+    return TCL_ERROR;
 }
 
 
