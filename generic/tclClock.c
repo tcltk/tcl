@@ -117,6 +117,8 @@ typedef struct ClockClientData {
     Tcl_Obj **literals;		/* Pool of object literals. */
     /* Cache for current clock parameters, imparted via "configure" */
     unsigned long LastTZEpoch;
+    int currentYearCentury;
+    int yearOfCenturySwitch;
     Tcl_Obj *SystemTimeZone;
     Tcl_Obj *SystemSetupTZData;
     Tcl_Obj *GMTSetupTimeZone;
@@ -126,6 +128,9 @@ typedef struct ClockClientData {
     Tcl_Obj *LastUnnormSetupTimeZone;
     Tcl_Obj *LastSetupTimeZone;
     Tcl_Obj *LastSetupTZData;
+    /* Cache for last base (fast convert if base/tz not changed) */
+    Tcl_Obj *lastBaseTimeZone;
+    TclDateFields lastBaseDate;
     /*
     /* [SB] TODO: back-port (from tclSE) the same date caching ...
      * Cache for last date (fast convert if date parsed was the same) * /
@@ -325,6 +330,8 @@ TclClockInit(
 	Tcl_IncrRefCount(data->literals[i]);
     }
     data->LastTZEpoch = 0;
+    data->currentYearCentury = -1;
+    data->yearOfCenturySwitch = -1;
     data->SystemTimeZone = NULL;
     data->SystemSetupTZData = NULL;
     data->GMTSetupTimeZone = NULL;
@@ -334,6 +341,8 @@ TclClockInit(
     data->LastUnnormSetupTimeZone = NULL;
     data->LastSetupTimeZone = NULL;
     data->LastSetupTZData = NULL;
+
+    data->lastBaseTimeZone = NULL;
 
     /*
      * Install the commands.
@@ -368,6 +377,8 @@ ClockConfigureClear(
     ClockClientData *data)
 {
     data->LastTZEpoch = 0;
+    data->currentYearCentury = -1;
+    data->yearOfCenturySwitch = -1;
     Tcl_UnsetObjRef(data->SystemTimeZone);
     Tcl_UnsetObjRef(data->SystemSetupTZData);
     Tcl_UnsetObjRef(data->GMTSetupTimeZone);
@@ -708,11 +719,16 @@ ClockCurrentYearCentury(
 {
     ClockClientData *dataPtr = clientData;
     Tcl_Obj **literals = dataPtr->literals;
-    int year = 2000;
+    int year = dataPtr->currentYearCentury;
 
-    Tcl_Obj * yearObj = Tcl_ObjGetVar2(interp, 
-	literals[LIT_CURRENTYEARCENTURY], NULL, TCL_LEAVE_ERR_MSG);
-    Tcl_GetIntFromObj(NULL, yearObj, &year);
+    if (year == -1) {
+	Tcl_Obj * yearObj;
+	year = 2000;
+	yearObj = Tcl_ObjGetVar2(interp, 
+	    literals[LIT_CURRENTYEARCENTURY], NULL, TCL_LEAVE_ERR_MSG);
+	Tcl_GetIntFromObj(NULL, yearObj, &year);
+	dataPtr->currentYearCentury = year;
+    }
     return year;
 }
 inline int
@@ -722,11 +738,16 @@ ClockGetYearOfCenturySwitch(
 {
     ClockClientData *dataPtr = clientData;
     Tcl_Obj **literals = dataPtr->literals;
-    int year = 37;
-
-    Tcl_Obj * yearObj = Tcl_ObjGetVar2(interp, 
-	literals[LIT_YEAROFCENTURYSWITCH], NULL, TCL_LEAVE_ERR_MSG);
-    Tcl_GetIntFromObj(NULL, yearObj, &year);
+    int year = dataPtr->yearOfCenturySwitch;
+    
+    if (year == -1) {
+	Tcl_Obj * yearObj;
+	year = 37;
+	yearObj = Tcl_ObjGetVar2(interp, 
+	    literals[LIT_YEAROFCENTURYSWITCH], NULL, TCL_LEAVE_ERR_MSG);
+	Tcl_GetIntFromObj(NULL, yearObj, &year);
+	dataPtr->yearOfCenturySwitch = year;
+    }
     return year;
 }
 
@@ -2557,11 +2578,26 @@ ClockScanObjCmd(
     if (yydate.tzData == NULL) {
 	goto done;
     }
-    yydate.seconds = baseVal;
-    if (ClockGetDateFields(interp, &yydate, yydate.tzData, GREGORIAN_CHANGE_DATE)
-	  != TCL_OK) {
-	goto done;
+    Tcl_SetObjRef(yydate.tzName, opts.timezoneObj);
+
+    /* check cached */
+    if ( dataPtr->lastBaseTimeZone == opts.timezoneObj
+      && dataPtr->lastBaseDate.seconds == baseVal) {
+	memcpy(&yydate, &dataPtr->lastBaseDate, ClockCacheableDateFieldsSize);
+    } else {
+	/* extact fields from base */
+	yydate.seconds = baseVal;
+	if (ClockGetDateFields(interp, &yydate, yydate.tzData, GREGORIAN_CHANGE_DATE)
+	      != TCL_OK) {
+	    goto done;
+	}
+	/* cache last base */
+	memcpy(&dataPtr->lastBaseDate, &yydate, ClockCacheableDateFieldsSize);
+	dataPtr->lastBaseTimeZone = opts.timezoneObj;
     }
+
+    /* seconds are in localSeconds (relative base date), so reset time here */
+    yyHour = 0; yyMinutes = 0; yySeconds = 0; yyMeridian = MER24;
 
     /* If free scan */
     if (opts.formatObj == NULL) {
@@ -2593,7 +2629,7 @@ ClockScanObjCmd(
     else {
 	/* Use compiled version of Scan - */
 	
-	ret = ClockScan(clientData, interp, &yydate, objv[1], &opts);
+	ret = ClockScan(clientData, interp, info, objv[1], &opts);
     }
 
     if (ret != TCL_OK) {
@@ -2710,6 +2746,9 @@ ClockFreeScan(
 	if (yydate.tzData == NULL) {
 	    goto done;
 	}
+
+	Tcl_SetObjRef(yydate.tzName, opts->timezoneObj);
+
     }
     
     /* on demand (lazy) assemble julianDay using new year, month, etc. */
@@ -2718,8 +2757,6 @@ ClockFreeScan(
     /* 
      * Assemble date, time, zone into seconds-from-epoch
      */
-
-    Tcl_SetObjRef(yydate.tzName, opts->timezoneObj);
 
     if (yyHaveTime == -1) {
 	yySeconds = 0;
