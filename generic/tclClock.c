@@ -70,8 +70,6 @@ TCL_DECLARE_MUTEX(clockMutex)
  * Function prototypes for local procedures in this file:
  */
 
-static int		ConvertUTCToLocal(ClientData clientData, Tcl_Interp *,
-			    TclDateFields *, Tcl_Obj *timezoneObj, int);
 static int		ConvertUTCToLocalUsingTable(Tcl_Interp *,
 			    TclDateFields *, int, Tcl_Obj *const[],
 			    Tcl_WideInt rangesVal[2]);
@@ -86,8 +84,6 @@ static int		ConvertLocalToUTCUsingC(Tcl_Interp *,
 			    TclDateFields *, int);
 static int		ClockConfigureObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static Tcl_Obj *	LookupLastTransition(Tcl_Interp *, Tcl_WideInt,
-			    int, Tcl_Obj *const *, Tcl_WideInt rangesVal[2]);
 static void		GetYearWeekDay(TclDateFields *, int);
 static void		GetGregorianEraYearDay(TclDateFields *, int);
 static void		GetMonthDay(TclDateFields *);
@@ -1730,7 +1726,7 @@ ConvertLocalToUTCUsingC(
  *----------------------------------------------------------------------
  */
 
-static int
+MODULE_SCOPE int
 ConvertUTCToLocal(
     ClientData clientData,	/* Client data of the interpreter */
     Tcl_Interp *interp,		/* Tcl interpreter */
@@ -1974,7 +1970,7 @@ ConvertUTCToLocalUsingC(
  *----------------------------------------------------------------------
  */
 
-static Tcl_Obj *
+MODULE_SCOPE Tcl_Obj *
 LookupLastTransition(
     Tcl_Interp *interp,		/* Interpreter for error messages */
     Tcl_WideInt tick,		/* Time from the epoch */
@@ -2950,7 +2946,7 @@ ClockFormatObjCmd(
     DateFormat	    dateFmt;	/* Common structure used for formatting */
 
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, "string "
+	Tcl_WrongNumArgs(interp, 1, objv, "clockval "
 	    "?-format string? "
 	    "?-gmt boolean? "
 	    "?-locale LOCALE? ?-timezone ZONE?");
@@ -2971,6 +2967,16 @@ ClockFormatObjCmd(
     ret = TCL_ERROR;
 
     if (Tcl_GetWideIntFromObj(interp, objv[1], &clockVal) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * seconds could be an unsigned number that overflowed. Make sure
+     * that it isn't.
+     */
+
+    if (objv[1]->typePtr == &tclBignumType) {
+	Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
 	return TCL_ERROR;
     }
 
@@ -3065,6 +3071,16 @@ ClockScanObjCmd(
 	if (Tcl_GetWideIntFromObj(interp, opts.baseObj, &baseVal) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+	/*
+	 * seconds could be an unsigned number that overflowed. Make sure
+	 * that it isn't.
+	 */
+
+	if (opts.baseObj->typePtr == &tclBignumType) {
+	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
+	    return TCL_ERROR;
+	}
+
     } else {
 	Tcl_Time now;
 	Tcl_GetTime(&now); 
