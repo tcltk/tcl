@@ -682,6 +682,7 @@ ClockMCGetMultiListIdxTree(
 	}
 
 	ClockMCSetIdx(opts, mcKey, objPtr);
+	objPtr = NULL;
     };
 
 done:
@@ -788,22 +789,24 @@ ClockScnToken_Month_Proc(ClockFmtScnCmdArgs *opts,
     return TCL_OK;
     */
 
+    static int monthsKeys[] = {MCLIT_MONTHS_FULL, MCLIT_MONTHS_ABBREV, 0};
+
     int ret, val;
     int minLen, maxLen;
+    TclStrIdxTree *idxTree;
 
     DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
 
-    ret = LocaleListSearch(opts, info, MCLIT_MONTHS_FULL, &val, 
-		minLen, maxLen);
+    /* get or create tree in msgcat dict */
+
+    idxTree = ClockMCGetMultiListIdxTree(opts, MCLIT_MONTHS_COMB, monthsKeys);
+    if (idxTree == NULL) {
+	return TCL_ERROR;
+    }
+
+    ret = ClockStrIdxTreeSearch(opts, info, idxTree, &val, minLen, maxLen);
     if (ret != TCL_OK) {
-	/* if not found */
-	if (ret == TCL_RETURN) {
-	    ret = LocaleListSearch(opts, info, MCLIT_MONTHS_ABBREV, &val,
-			minLen, maxLen);
-	}
-	if (ret != TCL_OK) {
-	    return ret;
-	}
+	return ret;
     }
 
     yyMonth = val + 1;
