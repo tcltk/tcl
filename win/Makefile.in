@@ -291,6 +291,7 @@ GENERIC_OBJS = \
 	tclResult.$(OBJEXT) \
 	tclScan.$(OBJEXT) \
 	tclStringObj.$(OBJEXT) \
+	tclStrIdxTree.$(OBJEXT) \
 	tclStrToD.$(OBJEXT) \
 	tclStubInit.$(OBJEXT) \
 	tclThread.$(OBJEXT) \
