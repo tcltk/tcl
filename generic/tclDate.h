@@ -58,9 +58,8 @@
 typedef enum ClockLiteral {
     LIT__NIL,
     LIT__DEFAULT_FORMAT,
-    LIT_BCE,		LIT_C,
-    LIT_CANNOT_USE_GMT_AND_TIMEZONE,
-    LIT_CE,
+    LIT_SYSTEM,		LIT_CURRENT,
+    LIT_BCE,		LIT_C,			LIT_CE,
     LIT_DAYOFMONTH,	LIT_DAYOFWEEK,		LIT_DAYOFYEAR,
     LIT_ERA,		LIT_GMT,		LIT_GREGORIAN,
     LIT_INTEGER_VALUE_TOO_LARGE,
@@ -72,7 +71,8 @@ typedef enum ClockLiteral {
     LIT_TZDATA,
     LIT_GETSYSTEMTIMEZONE,
     LIT_SETUPTIMEZONE,
-    LIT_MCGET,		LIT_TCL_CLOCK,
+    LIT_MCGET,
+    LIT_GETSYSTEMLOCALE, LIT_GETCURRENTLOCALE,
     LIT_LOCALIZE_FORMAT,
     LIT__END
 } ClockLiteral;
@@ -80,9 +80,8 @@ typedef enum ClockLiteral {
 #define CLOCK_LITERAL_ARRAY(litarr) static const char *const litarr[] = { \
     "", \
     "%a %b %d %H:%M:%S %Z %Y", \
-    "BCE",		"C", \
-    "cannot use -gmt and -timezone in same call", \
-    "CE", \
+    "system",		"current", \
+    "BCE",		"C",			"CE", \
     "dayOfMonth",	"dayOfWeek",		"dayOfYear", \
     "era",		":GMT",			"gregorian", \
     "integer value too large to represent", \
@@ -94,7 +93,8 @@ typedef enum ClockLiteral {
     "::tcl::clock::TZData", \
     "::tcl::clock::GetSystemTimeZone", \
     "::tcl::clock::SetupTimeZone", \
-    "::tcl::clock::mcget", "::tcl::clock", \
+    "::tcl::clock::mcget", \
+    "::tcl::clock::GetSystemLocale", "::tcl::clock::mclocale", \
     "::tcl::clock::LocalizeFormat" \
 }
 

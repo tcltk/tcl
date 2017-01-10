@@ -2352,7 +2352,7 @@ proc ::tcl::clock::LocalizeFormat { locale format {fmtkey {}} } {
 	}] } {
 	
 	    # message catalog dictionary:
-	    set mcd [::msgcat::mcget ::tcl::clock $locale]
+	    set mcd [mcget $locale]
 		
 	    # Handle locale-dependent format groups by mapping them out of the format
 	    # string.  Note that the order of the [string map] operations is
@@ -3021,21 +3021,23 @@ proc ::tcl::clock::SetupTimeZone { timezone {alias {}} } {
 
 	    variable LegacyTimeZone
 
-	    # Check may be a legacy zone:
-	    if { $alias eq {} && ![catch {
-	    	set tzname [dict get $LegacyTimeZone [string tolower $timezone]]
-	    }] } {
-	    	set tzname [::tcl::clock::SetupTimeZone $tzname $timezone]
-	    	set TZData($timezone) $TZData($tzname)
-		# tell backend - timezone is initialized and return shared timezone object:
-		return [configure -setup-tz $timezone]
-	    }
-
 	    # We couldn't parse this as a POSIX time zone.  Try again with a
 	    # time zone file - this time without a colon
 
 	    if { [catch { LoadTimeZoneFile $timezone }]
 		 && [catch { LoadZoneinfoFile $timezone } - opts] } {
+
+		# Check may be a legacy zone:
+		
+		if { $alias eq {} && ![catch {
+		    set tzname [dict get $LegacyTimeZone [string tolower $timezone]]
+		}] } {
+		    set tzname [::tcl::clock::SetupTimeZone $tzname $timezone]
+		    set TZData($timezone) $TZData($tzname)
+		    # tell backend - timezone is initialized and return shared timezone object:
+		    return [configure -setup-tz $timezone]
+		}
+
 		dict unset opts -errorinfo
 		dict set TimeZoneBad $timezone 1
 		return -options $opts "time zone $timezone not found"
