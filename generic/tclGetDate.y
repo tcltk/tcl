@@ -56,31 +56,6 @@
 #define YYMALLOC	ckalloc
 #define YYFREE(x)	(ckfree((void*) (x)))
 
-#define yyDSTmode	(info->dateDSTmode)
-#define yyDayOrdinal	(info->dateDayOrdinal)
-#define yyDayNumber	(info->dateDayNumber)
-#define yyMonthOrdinal	(info->dateMonthOrdinal)
-#define yyHaveDate	(info->dateHaveDate)
-#define yyHaveDay	(info->dateHaveDay)
-#define yyHaveOrdinalMonth (info->dateHaveOrdinalMonth)
-#define yyHaveRel	(info->dateHaveRel)
-#define yyHaveTime	(info->dateHaveTime)
-#define yyHaveZone	(info->dateHaveZone)
-#define yyTimezone	(info->dateTimezone)
-#define yyDay		(info->dateDay)
-#define yyMonth		(info->dateMonth)
-#define yyYear		(info->dateYear)
-#define yyHour		(info->dateHour)
-#define yyMinutes	(info->dateMinutes)
-#define yySeconds	(info->dateSeconds)
-#define yyMeridian	(info->dateMeridian)
-#define yyRelMonth	(info->dateRelMonth)
-#define yyRelDay	(info->dateRelDay)
-#define yyRelSeconds	(info->dateRelSeconds)
-#define yyRelPointer	(info->dateRelPointer)
-#define yyInput		(info->dateInput)
-#define yyDigitCount	(info->dateDigitCount)
-
 #define EPOCH		1970
 #define START_OF_TIME	1902
 #define END_OF_TIME	2037
@@ -331,12 +306,12 @@ date	: tUNUMBER '/' tUNUMBER {
 	;
 
 ordMonth: tNEXT tMONTH {
-	    yyMonthOrdinal = 1;
-	    yyMonth = $2;
+	    yyMonthOrdinalIncr = 1;
+	    yyMonthOrdinal = $2;
 	}
 	| tNEXT tUNUMBER tMONTH {
-	    yyMonthOrdinal = $2;
-	    yyMonth = $3;
+	    yyMonthOrdinalIncr = $2;
+	    yyMonthOrdinal = $3;
 	}
 	;
 
@@ -933,7 +908,7 @@ TclClockFreeScan(
     yyTimezone = 0; yyDSTmode = DSTmaybe;
 
     yyHaveOrdinalMonth = 0;
-    yyMonthOrdinal = 0;
+    yyMonthOrdinalIncr = 0;
 
     yyHaveDay = 0;
     yyDayOrdinal = 0; yyDayNumber = 0;
@@ -1084,9 +1059,9 @@ TclClockOldscanObjCmd(
     resultElement = Tcl_NewObj();
     if (yyHaveOrdinalMonth) {
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) yyMonthOrdinal));
+		Tcl_NewIntObj((int) yyMonthOrdinalIncr));
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) yyMonth));
+		Tcl_NewIntObj((int) yyMonthOrdinal));
     }
     Tcl_ListObjAppendElement(interp, result, resultElement);
 

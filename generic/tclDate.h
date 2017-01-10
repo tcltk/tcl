@@ -14,19 +14,43 @@
 #define _TCLCLOCK_H
 
 /*
+ * Structure containing the fields used in [clock format] and [clock scan]
+ */
+
+typedef struct TclDateFields {
+    Tcl_WideInt seconds;	/* Time expressed in seconds from the Posix
+				 * epoch */
+    Tcl_WideInt localSeconds;	/* Local time expressed in nominal seconds
+				 * from the Posix epoch */
+    int tzOffset;		/* Time zone offset in seconds east of
+				 * Greenwich */
+    Tcl_Obj *tzName;		/* Time zone name (if set the refCount is incremented) */
+    Tcl_Obj *tzData;		/* Time zone data object (internally referenced) */
+    int julianDay;		/* Julian Day Number in local time zone */
+    enum {BCE=1, CE=0} era;	/* Era */
+    int gregorian;		/* Flag == 1 if the date is Gregorian */
+    int year;			/* Year of the era */
+    int dayOfYear;		/* Day of the year (1 January == 1) */
+    int month;			/* Month number */
+    int dayOfMonth;		/* Day of the month */
+    int iso8601Year;		/* ISO8601 week-based year */
+    int iso8601Week;		/* ISO8601 week number */
+    int dayOfWeek;		/* Day of the week */
+    int hour;			/* Hours of day (in-between time only calculation) */
+    int minutes;		/* Minutes of day (in-between time only calculation) */
+    int secondOfDay;		/* Seconds of day (in-between time only calculation) */
+} TclDateFields;
+
+/*
  * Structure contains return parsed fields.
  */
 
 typedef struct DateInfo {
 
-    time_t dateYear;
-    time_t dateMonth;
-    time_t dateDay;
+    TclDateFields date;
+
     int dateHaveDate;
 
-    time_t dateHour;
-    time_t dateMinutes;
-    time_t dateSeconds;
     int dateMeridian;
     int dateHaveTime;
 
@@ -39,6 +63,7 @@ typedef struct DateInfo {
     time_t dateRelSeconds;
     int dateHaveRel;
 
+    time_t dateMonthOrdinalIncr;
     time_t dateMonthOrdinal;
     int dateHaveOrdinalMonth;
 
@@ -56,6 +81,36 @@ typedef struct DateInfo {
     const char* separatrix; /* String separating messages */
 } DateInfo;
 
+#define yydate	    (info->date)  /* Date fields used for converting */
+
+#define yyDay	    (info->date.dayOfMonth)
+#define yyMonth	    (info->date.month)
+#define yyYear	    (info->date.year)
+
+#define yyHour	    (info->date.hour)
+#define yyMinutes   (info->date.minutes)
+#define yySeconds   (info->date.secondOfDay)
+
+#define yyDSTmode   (info->dateDSTmode)
+#define yyDayOrdinal	(info->dateDayOrdinal)
+#define yyDayNumber (info->dateDayNumber)
+#define yyMonthOrdinalIncr  (info->dateMonthOrdinalIncr)
+#define yyMonthOrdinal	(info->dateMonthOrdinal)
+#define yyHaveDate  (info->dateHaveDate)
+#define yyHaveDay   (info->dateHaveDay)
+#define yyHaveOrdinalMonth (info->dateHaveOrdinalMonth)
+#define yyHaveRel   (info->dateHaveRel)
+#define yyHaveTime  (info->dateHaveTime)
+#define yyHaveZone  (info->dateHaveZone)
+#define yyTimezone  (info->dateTimezone)
+#define yyMeridian  (info->dateMeridian)
+#define yyRelMonth  (info->dateRelMonth)
+#define yyRelDay    (info->dateRelDay)
+#define yyRelSeconds	(info->dateRelSeconds)
+#define yyRelPointer	(info->dateRelPointer)
+#define yyInput	    (info->dateInput)
+#define yyDigitCount	(info->dateDigitCount)
+
 
 enum {CL_INVALIDATE = (signed int)0x80000000};
 /*
@@ -68,32 +123,6 @@ typedef struct ClockFmtScnCmdArgs {
     Tcl_Obj *timezoneObj;   /* Default time zone in which the time will be expressed */
     Tcl_Obj *baseObj;	    /* Base (scan only) */
 } ClockFmtScnCmdArgs;
-
-/*
- * Structure containing the fields used in [clock format] and [clock scan]
- */
-
-typedef struct TclDateFields {
-    Tcl_WideInt seconds;	/* Time expressed in seconds from the Posix
-				 * epoch */
-    Tcl_WideInt localSeconds;	/* Local time expressed in nominal seconds
-				 * from the Posix epoch */
-    int secondOfDay;		/* Seconds of day (in-between time only calculation) */
-    int tzOffset;		/* Time zone offset in seconds east of
-				 * Greenwich */
-    Tcl_Obj *tzName;		/* Time zone name (if set the refCount is incremented) */
-    Tcl_Obj *tzData;		/* Time zone data object (internally referenced) */
-    int julianDay;		/* Julian Day Number in local time zone */
-    enum {BCE=1, CE=0} era;	/* Era */
-    int gregorian;		/* Flag == 1 if the date is Gregorian */
-    int year;			/* Year of the era */
-    int dayOfYear;		/* Day of the year (1 January == 1) */
-    int month;			/* Month number */
-    int dayOfMonth;		/* Day of the month */
-    int iso8601Year;		/* ISO8601 week-based year */
-    int iso8601Week;		/* ISO8601 week number */
-    int dayOfWeek;		/* Day of the week */
-} TclDateFields;
 
 /*
  * Meridian: am, pm, or 24-hour style.

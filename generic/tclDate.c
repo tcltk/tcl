@@ -109,31 +109,6 @@
 #define YYMALLOC	ckalloc
 #define YYFREE(x)	(ckfree((void*) (x)))
 
-#define yyDSTmode	(info->dateDSTmode)
-#define yyDayOrdinal	(info->dateDayOrdinal)
-#define yyDayNumber	(info->dateDayNumber)
-#define yyMonthOrdinal	(info->dateMonthOrdinal)
-#define yyHaveDate	(info->dateHaveDate)
-#define yyHaveDay	(info->dateHaveDay)
-#define yyHaveOrdinalMonth (info->dateHaveOrdinalMonth)
-#define yyHaveRel	(info->dateHaveRel)
-#define yyHaveTime	(info->dateHaveTime)
-#define yyHaveZone	(info->dateHaveZone)
-#define yyTimezone	(info->dateTimezone)
-#define yyDay		(info->dateDay)
-#define yyMonth		(info->dateMonth)
-#define yyYear		(info->dateYear)
-#define yyHour		(info->dateHour)
-#define yyMinutes	(info->dateMinutes)
-#define yySeconds	(info->dateSeconds)
-#define yyMeridian	(info->dateMeridian)
-#define yyRelMonth	(info->dateRelMonth)
-#define yyRelDay	(info->dateRelDay)
-#define yyRelSeconds	(info->dateRelSeconds)
-#define yyRelPointer	(info->dateRelPointer)
-#define yyInput		(info->dateInput)
-#define yyDigitCount	(info->dateDigitCount)
-
 #define EPOCH		1970
 #define START_OF_TIME	1902
 #define END_OF_TIME	2037
@@ -570,12 +545,12 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   177,   177,   178,   181,   184,   187,   190,   193,   196,
-     199,   203,   208,   211,   217,   223,   231,   237,   248,   252,
-     256,   262,   266,   270,   274,   278,   284,   288,   293,   298,
-     303,   308,   312,   317,   321,   326,   333,   337,   343,   352,
-     361,   371,   385,   390,   393,   396,   399,   402,   405,   410,
-     413,   418,   422,   426,   432,   450,   453
+       0,   152,   152,   153,   156,   159,   162,   165,   168,   171,
+     174,   178,   183,   186,   192,   198,   206,   212,   223,   227,
+     231,   237,   241,   245,   249,   253,   259,   263,   268,   273,
+     278,   283,   287,   292,   296,   301,   308,   312,   318,   327,
+     336,   346,   360,   365,   368,   371,   374,   377,   380,   385,
+     388,   393,   397,   401,   407,   425,   428
 };
 #endif
 
@@ -1842,16 +1817,16 @@ yyreduce:
   case 36:
 
     {
-	    yyMonthOrdinal = 1;
-	    yyMonth = (yyvsp[(2) - (2)].Number);
+	    yyMonthOrdinalIncr = 1;
+	    yyMonthOrdinal = (yyvsp[(2) - (2)].Number);
 	;}
     break;
 
   case 37:
 
     {
-	    yyMonthOrdinal = (yyvsp[(2) - (3)].Number);
-	    yyMonth = (yyvsp[(3) - (3)].Number);
+	    yyMonthOrdinalIncr = (yyvsp[(2) - (3)].Number);
+	    yyMonthOrdinal = (yyvsp[(3) - (3)].Number);
 	;}
     break;
 
@@ -2722,7 +2697,7 @@ TclClockFreeScan(
     yyTimezone = 0; yyDSTmode = DSTmaybe;
 
     yyHaveOrdinalMonth = 0;
-    yyMonthOrdinal = 0;
+    yyMonthOrdinalIncr = 0;
 
     yyHaveDay = 0;
     yyDayOrdinal = 0; yyDayNumber = 0;
@@ -2873,9 +2848,9 @@ TclClockOldscanObjCmd(
     resultElement = Tcl_NewObj();
     if (yyHaveOrdinalMonth) {
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) yyMonthOrdinal));
+		Tcl_NewIntObj((int) yyMonthOrdinalIncr));
 	Tcl_ListObjAppendElement(interp, resultElement,
-		Tcl_NewIntObj((int) yyMonth));
+		Tcl_NewIntObj((int) yyMonthOrdinal));
     }
     Tcl_ListObjAppendElement(interp, result, resultElement);
 
