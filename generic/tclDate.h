@@ -355,7 +355,7 @@ typedef enum _MERIDIAN {
 
 #define CLOCK_FMT_SCN_STORAGE_GC_SIZE 32
 
-#define CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE 12
+#define CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE 2
 
 typedef struct ClockScanToken ClockScanToken;
 
