@@ -2576,6 +2576,7 @@ ClockScanObjCmd(
 	}
 	ret = ClockFreeScan(clientData, interp, info, objv[1], &opts);
     } 
+#if 0
     else
     if (1) {
 	/* TODO: Tcled Scan proc - */
@@ -2588,6 +2589,7 @@ ClockScanObjCmd(
 				Tcl_DecrRefCount(callargs[0]);
 		return ret;
     }
+#endif
     else {
 	/* Use compiled version of Scan - */
 	
