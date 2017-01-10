@@ -121,10 +121,17 @@ proc test-scan {{reptime 1000}} {
     # Scan : julian day with time (greedy match):
     {clock scan "2451545 102030" -format "%J%H%M%S"}
 
+    # Scan : century, lookup table month
+    {clock scan {1970 Jan 2} -format {%C%y %b %d} -locale en -gmt 1}
+    # Scan : century, lookup table month and day
+    {clock scan {1970 Jan 02} -format {%C%y %b %Od} -locale en -gmt 1}
+
+    break
+
     # Scan : zone only
     {clock scan "CET" -format "%z"}
     {clock scan "EST" -format "%z"}
-      #{**STOP** : Wed Nov 25 01:00:00 CET 2015}
+    {**STOP** : Wed Nov 25 01:00:00 CET 2015}
 
     # # Scan : long format test (allock chain)
     # {clock scan "25.11.2015" -format "%d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y" -base 0 -gmt 1}
@@ -194,8 +201,8 @@ proc test-other {{reptime 1000}} {
 
 proc test {{reptime 1000}} {
   puts ""
-  #test-scan $reptime
-  test-freescan $reptime
+  test-scan $reptime
+  #test-freescan $reptime
   test-other $reptime
 
   puts \n**OK**

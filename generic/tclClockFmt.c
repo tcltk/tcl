@@ -454,32 +454,170 @@ Tcl_GetClockFrmScnFromObj(
 
     return fss;
 }
+
 
+static int 
+LocaleListSearch(ClockFmtScnCmdArgs *opts, 
+    DateInfo *info, const char * mcKey, int *val)
+{
+    Tcl_Obj *callargs[4] = {NULL, NULL, NULL, NULL}, **lstv;
+    int	     i, lstc;
+    Tcl_Obj *valObj = NULL;
+    int ret = TCL_RETURN;
 
-#define AllocTokenInChain(tok, chain, tokCnt) \
-    if (++(tok) >= (chain) + (tokCnt)) { \
-	(char *)(chain) = ckrealloc((char *)(chain), \
-	    (tokCnt + CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE) * sizeof(*(tok))); \
-	if ((chain) == NULL) { goto done; }; \
-	(tok) = (chain) + (tokCnt); \
-	(tokCnt) += CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE; \
-    } \
-    memset(tok, 0, sizeof(*(tok)));
+    /* get msgcat value */
+    TclNewLiteralStringObj(callargs[0], "::msgcat::mcget");
+    TclNewLiteralStringObj(callargs[1], "::tcl::clock");
+    callargs[2] = opts->localeObj;
+    if (opts->localeObj == NULL) {
+	TclNewLiteralStringObj(callargs[1], "c");
+    }
+    callargs[3] = Tcl_NewStringObj(mcKey, -1);
 
-const char *ScnSTokenMapChars = 
-    "dmyYHMSJs";
+    for (i = 0; i < 4; i++) {
+	Tcl_IncrRefCount(callargs[i]);
+    }
+    if (Tcl_EvalObjv(opts->interp, 4, callargs, 0) != TCL_OK) {
+	goto done;
+    }
+
+    Tcl_InitObjRef(valObj, Tcl_GetObjResult(opts->interp));
+
+    /* is a list */
+    if (TclListObjGetElements(opts->interp, valObj, &lstc, &lstv) != TCL_OK) {
+	goto done;
+    }
+
+    /* search in list */
+    for (i = 0; i < lstc; i++) {
+	const char *s = TclGetString(lstv[i]);
+	int	    l = lstv[i]->length;
+	if ( l <= info->dateEnd - yyInput
+	  && strncasecmp(yyInput, s, l) == 0
+	) {
+	    *val = i;
+	    yyInput += l;
+	    break;
+	}
+    }
+
+    ret = TCL_OK;
+    /* if not found */
+    if (i >= lstc) {
+	ret = TCL_ERROR;
+    }
+
+done:
+
+    Tcl_UnsetObjRef(valObj);
+
+    for (i = 0; i < 4; i++) {
+	Tcl_UnsetObjRef(callargs[i]);
+    }
+
+    return ret;
+}
+
+static int 
+StaticListSearch(ClockFmtScnCmdArgs *opts, 
+    DateInfo *info, const char **lst, int *val)
+{
+    int len;
+    const char **s = lst;
+    while (*s != NULL) {
+	len = strlen(*s);
+	if ( len <= info->dateEnd - yyInput 
+	  && strncasecmp(yyInput, *s, len) == 0
+	) {
+	    *val = (s - lst);
+	    yyInput += len;
+	    break;
+	}
+	s++;
+    }
+    if (*s == NULL) {
+	return TCL_ERROR;
+    }
+
+    return TCL_OK;
+};
+
+static int 
+ClockScnToken_Month_Proc(ClockFmtScnCmdArgs *opts,
+    DateInfo *info, ClockScanToken *tok)
+{
+    /*
+    static const char * months[] = {
+	/* full * /
+	"January", "February", "March",
+	"April",   "May",      "June",
+	"July",	   "August",   "September",
+	"October", "November", "December",
+	/* abbr * /
+	"Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+	NULL
+    };
+    int val;
+    if (StaticListSearch(opts, info, months, &val) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    yyMonth = (val % 12) + 1;
+    return TCL_OK;
+    */
+
+    int val;
+    int ret = LocaleListSearch(opts, info, "MONTHS_FULL", &val);
+    if (ret != TCL_OK) {
+	if (ret == TCL_RETURN) {
+	    return ret;
+	}
+	ret = LocaleListSearch(opts, info, "MONTHS_ABBREV", &val);
+	if (ret != TCL_OK) {
+	    return ret;
+	}
+    }
+
+    yyMonth = val + 1;
+    return TCL_OK;
+
+}
+
+
+static int 
+ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts, 
+    DateInfo *info, ClockScanToken *tok)
+{
+    int	     val;
+
+    int ret = LocaleListSearch(opts, info, (char *)tok->map->data, &val);
+    if (ret != TCL_OK) {
+	return ret;
+    }
+
+    *(time_t *)(((char *)info) + tok->map->offs) = val;
+
+    return TCL_OK;
+}
+
+
+static const char *ScnSTokenMapIndex = 
+    "dmbyYHMSJCs";
 static ClockScanTokenMap ScnSTokenMap[] = {
-    /* %d */
+    /* %d %e */
     {CTOKT_DIGIT, CLF_DATE, 1, 2, TclOffset(DateInfo, date.dayOfMonth),
 	NULL},
     /* %m */
     {CTOKT_DIGIT, CLF_DATE, 1, 2, TclOffset(DateInfo, date.month),
 	NULL},
+    /* %b %B %h */
+    {CTOKT_PARSER, CLF_DATE, 0, 0, 0,
+	    ClockScnToken_Month_Proc},
     /* %y */
     {CTOKT_DIGIT, CLF_DATE, 1, 2, TclOffset(DateInfo, date.year),
 	NULL},
     /* %Y */
-    {CTOKT_DIGIT, CLF_DATE, 1, 4, TclOffset(DateInfo, date.year),
+    {CTOKT_DIGIT, CLF_DATE | CLF_CENTURY, 1, 4, TclOffset(DateInfo, date.year),
 	NULL},
     /* %H */
     {CTOKT_DIGIT, CLF_TIME, 1, 2, TclOffset(DateInfo, date.hour),
@@ -493,11 +631,41 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     /* %J */
     {CTOKT_DIGIT, CLF_DATE | CLF_JULIANDAY,  1, 0xffff, TclOffset(DateInfo, date.julianDay),
 	NULL},
+    /* %C */
+    {CTOKT_DIGIT, CLF_DATE | CLF_CENTURY,    1, 2, TclOffset(DateInfo, dateCentury),
+	NULL},
     /* %s */
     {CTOKT_DIGIT, CLF_LOCALSEC | CLF_SIGNED, 1, 0xffff, TclOffset(DateInfo, date.localSeconds),
 	NULL},
 };
-const char *ScnSpecTokenMapChars = 
+static const char *ScnSTokenWrapMapIndex[2] = {
+    "eBh",
+    "dbb"
+};
+
+static const char *ScnETokenMapIndex = 
+    "";
+static ClockScanTokenMap ScnETokenMap[] = {
+    {0, 0, 0}
+};
+static const char *ScnETokenWrapMapIndex[2] = {
+    "",
+    ""
+};
+
+static const char *ScnOTokenMapIndex = 
+    "d";
+static ClockScanTokenMap ScnOTokenMap[] = {
+    /* %Od %Oe */
+    {CTOKT_PARSER, CLF_DATE, 0, 0, TclOffset(DateInfo, date.dayOfMonth),
+	ClockScnToken_LocaleListMatcher_Proc, "LOCALE_NUMERALS"},
+};
+static const char *ScnOTokenWrapMapIndex[2] = {
+    "e",
+    "d"
+};
+
+static const char *ScnSpecTokenMapIndex = 
     " ";
 static ClockScanTokenMap ScnSpecTokenMap[] = {
     {CTOKT_SPACE,  0,	    1, 0xffff, 0, 
@@ -508,6 +676,17 @@ static ClockScanTokenMap ScnWordTokenMap = {
     CTOKT_WORD,	   0,	    1, 0, 0, 
 	NULL
 };
+
+
+#define AllocTokenInChain(tok, chain, tokCnt) \
+    if (++(tok) >= (chain) + (tokCnt)) { \
+	(char *)(chain) = ckrealloc((char *)(chain), \
+	    (tokCnt + CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE) * sizeof(*(tok))); \
+	if ((chain) == NULL) { goto done; }; \
+	(tok) = (chain) + (tokCnt); \
+	(tokCnt) += CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE; \
+    } \
+    memset(tok, 0, sizeof(*(tok)));
 
 /*
  *----------------------------------------------------------------------
@@ -546,10 +725,14 @@ ClockGetOrParseScanFormat(
 	fss->scnTok =
 		tok = ckalloc(sizeof(*tok) * CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE);
 	memset(tok, 0, sizeof(*(tok)));
-	strFmt = TclGetString(formatObj);
-	for (e = p = strFmt, e += formatObj->length; p != e; p++) {
+	strFmt = HashEntry4FmtScn(fss)->key.string;
+	for (e = p = strFmt, e += strlen(strFmt); p != e; p++) {
 	    switch (*p) {
 	    case '%':
+	    if (1) {
+		ClockScanTokenMap * maps = ScnSTokenMap;
+		const char *mapIndex =	ScnSTokenMapIndex,
+			  **wrapIndex = ScnSTokenWrapMapIndex;
 		if (p+1 >= e) {
 		    goto word_tok;
 		}
@@ -565,43 +748,62 @@ ClockGetOrParseScanFormat(
 		    continue;
 		break;
 		case 'E':
-		    goto ext_tok_E;
+		    maps = ScnETokenMap, 
+		    mapIndex =	ScnETokenMapIndex,
+		    wrapIndex = ScnETokenWrapMapIndex;
+		    p++;
 		break;
 		case 'O':
-		    goto ext_tok_O;
+		    maps = ScnOTokenMap,
+		    mapIndex = ScnOTokenMapIndex,
+		    wrapIndex = ScnOTokenWrapMapIndex;
+		    p++;
 		break;
-		default:
-		    cp = strchr(ScnSTokenMapChars, *p);
+		}
+		/* search direct index */
+		cp = strchr(mapIndex, *p);
+		if (!cp || *cp == '\0') {
+		    /* search wrapper index (multiple chars for same token) */
+		    cp = strchr(wrapIndex[0], *p);
 		    if (!cp || *cp == '\0') {
 			p--;
 			goto word_tok;
 		    }
-		    tok->map = &ScnSTokenMap[cp - ScnSTokenMapChars];
-		    /* calculate look ahead value by standing together tokens */
-		    if (tok > fss->scnTok) {
-			ClockScanToken	   *prevTok = tok - 1;
-			unsigned int	    lookAhead = tok->map->minSize;
-
-			while (prevTok >= fss->scnTok) {
-			    if (prevTok->map->type != tok->map->type) {
-				break;
-			    }
-			    prevTok->lookAhead += lookAhead;
-			    prevTok--;
-			}
+		    cp = strchr(mapIndex, wrapIndex[1][cp - wrapIndex[0]]);
+		    if (!cp || *cp == '\0') { /* unexpected, but ... */
+		    #ifdef DEBUG
+			Tcl_Panic("token \"%c\" has no map in wrapper resolver", *p);
+		    #endif
+			p--;
+			goto word_tok;
 		    }
-		    /* next token */
-		    AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
-		break;
 		}
+		tok->map = &ScnSTokenMap[cp - mapIndex];
+		tok->tokWord.start = p;
+		/* calculate look ahead value by standing together tokens */
+		if (tok > fss->scnTok) {
+		    ClockScanToken     *prevTok = tok - 1;
+		    unsigned int	lookAhead = tok->map->minSize;
+
+		    while (prevTok >= fss->scnTok) {
+			if (prevTok->map->type != tok->map->type) {
+			    break;
+			}
+			prevTok->lookAhead += lookAhead;
+			prevTok--;
+		    }
+		}
+		/* next token */
+		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
+	    }
 	    break;
 	    case ' ':
-		cp = strchr(ScnSpecTokenMapChars, *p);
+		cp = strchr(ScnSpecTokenMapIndex, *p);
 		if (!cp || *cp == '\0') {
 		    p--;
 		    goto word_tok;
 		}
-		tok->map = &ScnSpecTokenMap[cp - ScnSpecTokenMapChars];
+		tok->map = &ScnSpecTokenMap[cp - ScnSpecTokenMapIndex];
 		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
 	    break;
 	    default:
@@ -619,20 +821,10 @@ word_tok:
 		}
 		continue;
 	    }
+	    break;
 	    }
 
 	    continue;
-
-ext_tok_E:
-
-	    /*******************/
-	    continue;
-
-ext_tok_O:
-
-	    /*******************/
-	    continue;
-
 	}
 
 done:
@@ -677,17 +869,20 @@ ClockScan(
 	}
     }
     info->dateStart = yyInput = p;
+    info->dateEnd = end;
     
     /* parse string */
     for (; tok->map != NULL; tok++) {
 	map = tok->map;
 	/* bypass spaces at begin of input before parsing each token */
-	if (!(opts->flags & CLF_STRICT) && map->type != CTOKT_SPACE) {
+	if ( !(opts->flags & CLF_STRICT) 
+	  && (map->type != CTOKT_SPACE && map->type != CTOKT_WORD)
+	) {
 	    while (p < end && isspace(UCHAR(*p))) {
 		p++;
 	    }
-	    yyInput = p;
 	}
+	yyInput = p;
 	switch (map->type)
 	{
 	case CTOKT_DIGIT:
@@ -753,6 +948,20 @@ ClockScan(
 	    flags |= map->flags;
 	}
 	break;
+	case CTOKT_PARSER:
+	    switch (map->parser(opts, info, tok)) {
+		case TCL_OK:
+		break;
+		case TCL_RETURN:
+		    goto done;
+		break;
+		default:
+		    goto error;
+		break;
+	    };
+	    p = yyInput;
+	    flags |= map->flags;
+	break;
 	case CTOKT_SPACE:
 	    /* at least one space in strict mode */
 	    if (opts->flags & CLF_STRICT) {
@@ -803,10 +1012,14 @@ ClockScan(
 	    info->flags |= CLF_INVALIDATE_SECONDS|CLF_INVALIDATE_JULIANDAY;
 
 	    if (yyYear < 100) {
-		if (yyYear >= dataPtr->yearOfCenturySwitch) {
-		    yyYear -= 100;
+		if (!(flags & CLF_CENTURY)) {
+		    if (yyYear >= dataPtr->yearOfCenturySwitch) {
+			yyYear -= 100;
+		    }
+		    yyYear += dataPtr->currentYearCentury;
+		} else {
+		    yyYear += info->dateCentury * 100;
 		}
-		yyYear += dataPtr->currentYearCentury;
 	    }
 	    yydate.era = CE;
 	}
