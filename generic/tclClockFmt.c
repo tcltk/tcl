@@ -748,7 +748,7 @@ ClockScnToken_amPmInd_Proc(ClockFmtScnCmdArgs *opts,
     amPmObj[0] = ClockMCGet(opts, MCLIT_AM);
     amPmObj[1] = ClockMCGet(opts, MCLIT_PM);
 
-    if (amPmObj[0] == NULL || amPmObj == NULL) {
+    if (amPmObj[0] == NULL || amPmObj[1] == NULL) {
 	return TCL_ERROR;
     }
 
@@ -762,6 +762,44 @@ ClockScnToken_amPmInd_Proc(ClockFmtScnCmdArgs *opts,
 	yyMeridian = MERam;
     } else {
 	yyMeridian = MERpm;
+    }
+
+    return TCL_OK;
+}
+
+static int 
+ClockScnToken_LocaleERA_Proc(ClockFmtScnCmdArgs *opts, 
+    DateInfo *info, ClockScanToken *tok)
+{
+    ClockClientData *dataPtr = opts->clientData;
+
+    int ret, val;
+    int minLen, maxLen;
+    Tcl_Obj *eraObj[6];
+
+    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
+
+    eraObj[0] = ClockMCGet(opts, MCLIT_BCE);
+    eraObj[1] = ClockMCGet(opts, MCLIT_CE);
+    eraObj[2] = dataPtr->mcLiterals[MCLIT_BCE2];
+    eraObj[3] = dataPtr->mcLiterals[MCLIT_CE2];
+    eraObj[4] = dataPtr->mcLiterals[MCLIT_BCE3];
+    eraObj[5] = dataPtr->mcLiterals[MCLIT_CE3];
+
+    if (eraObj[0] == NULL || eraObj[1] == NULL) {
+	return TCL_ERROR;
+    }
+
+    ret = ObjListSearch(opts, info, &val, eraObj, 6,
+	minLen, maxLen);
+    if (ret != TCL_OK) {
+	return ret; 
+    }
+
+    if (val & 1) {
+	yydate.era = CE;
+    } else {
+	yydate.era = BCE;
     }
 
     return TCL_OK;
@@ -782,7 +820,9 @@ ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts,
 	return ret;
     }
 
-    *(time_t *)(((char *)info) + tok->map->offs) = val;
+    if (tok->map->offs > 0) {
+	*(time_t *)(((char *)info) + tok->map->offs) = val;
+    }
 
     return TCL_OK;
 }
@@ -931,9 +971,14 @@ static const char *ScnSTokenWrapMapIndex[2] = {
 };
 
 static const char *ScnETokenMapIndex = 
-    "";
+    "Ey";
 static ClockScanTokenMap ScnETokenMap[] = {
-    {0, 0, 0}
+    /* %EE */
+    {CTOKT_PARSER, 0, 0, 0, 0, TclOffset(DateInfo, date.year),
+	ClockScnToken_LocaleERA_Proc, (void *)MCLIT_LOCALE_NUMERALS},
+    /* %Ey */
+    {CTOKT_PARSER, 0, 0, 0, 0, 0, /* currently no capture, parse only token */
+	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
 };
 static const char *ScnETokenWrapMapIndex[2] = {
     "",
@@ -1450,7 +1495,6 @@ ClockScan(
 			}
 		    }
 		}
-		yydate.era = CE;
 	    }
 	}
 
