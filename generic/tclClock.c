@@ -3623,6 +3623,8 @@ repeat_rel:
 		goto repeat_rel;
 	    }
 	}
+
+	yyHaveRel = 0;
     }
 
     /*
