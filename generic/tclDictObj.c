@@ -145,7 +145,7 @@ typedef struct Dict {
 				 * the entries in the order that they are
 				 * created. */
     int epoch;			/* Epoch counter */
-    int refcount;		/* Reference counter (see above) */
+    size_t refCount;		/* Reference counter (see above) */
     Tcl_Obj *chain;		/* Linked list used for invalidating the
 				 * string representations of updated nested
 				 * dictionaries. */
@@ -395,7 +395,7 @@ DupDictInternalRep(
 
     newDict->epoch = 0;
     newDict->chain = NULL;
-    newDict->refcount = 1;
+    newDict->refCount = 1;
 
     /*
      * Store in the object.
@@ -430,8 +430,7 @@ FreeDictInternalRep(
 {
     Dict *dict = DICT(dictPtr);
 
-    dict->refcount--;
-    if (dict->refcount <= 0) {
+    if (dict->refCount-- <= 1) {
 	DeleteDict(dict);
     }
     dictPtr->typePtr = NULL;
@@ -716,7 +715,7 @@ SetDictFromAny(
     TclFreeIntRep(objPtr);
     dict->epoch = 0;
     dict->chain = NULL;
-    dict->refcount = 1;
+    dict->refCount = 1;
     DICT(objPtr) = dict;
     objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &tclDictType;
@@ -1120,7 +1119,7 @@ Tcl_DictObjFirst(
 	searchPtr->dictionaryPtr = (Tcl_Dict) dict;
 	searchPtr->epoch = dict->epoch;
 	searchPtr->next = cPtr->nextPtr;
-	dict->refcount++;
+	dict->refCount++;
 	if (keyPtrPtr != NULL) {
 	    *keyPtrPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
 	}
@@ -1234,8 +1233,7 @@ Tcl_DictObjDone(
     if (searchPtr->epoch != -1) {
 	searchPtr->epoch = -1;
 	dict = (Dict *) searchPtr->dictionaryPtr;
-	dict->refcount--;
-	if (dict->refcount <= 0) {
+	if (dict->refCount-- <= 1) {
 	    DeleteDict(dict);
 	}
     }
@@ -1387,7 +1385,7 @@ Tcl_NewDictObj(void)
     InitChainTable(dict);
     dict->epoch = 0;
     dict->chain = NULL;
-    dict->refcount = 1;
+    dict->refCount = 1;
     DICT(dictPtr) = dict;
     dictPtr->internalRep.twoPtrValue.ptr2 = NULL;
     dictPtr->typePtr = &tclDictType;
@@ -1437,7 +1435,7 @@ Tcl_DbNewDictObj(
     InitChainTable(dict);
     dict->epoch = 0;
     dict->chain = NULL;
-    dict->refcount = 1;
+    dict->refCount = 1;
     DICT(dictPtr) = dict;
     dictPtr->internalRep.twoPtrValue.ptr2 = NULL;
     dictPtr->typePtr = &tclDictType;
@@ -1981,7 +1979,7 @@ Tcl_DictObjSmartRef(
 
     result = Tcl_NewObj();
     DICT(result) = dict;
-    dict->refcount++;
+    dict->refCount++;
     result->internalRep.twoPtrValue.ptr2 = NULL;
     result->typePtr = &tclDictType;
 
@@ -2355,7 +2353,7 @@ DictAppendCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
-    int i, allocatedDict = 0;
+    int allocatedDict = 0;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
@@ -2380,15 +2378,33 @@ DictAppendCmd(
 
     if ((objc > 3) || (valuePtr == NULL)) {
 	/* Only go through append activites when something will change. */
+	Tcl_Obj *appendObjPtr = NULL;
 
-	if (valuePtr == NULL) {
-	    TclNewObj(valuePtr);
-	} else if (Tcl_IsShared(valuePtr)) {
-	    valuePtr = Tcl_DuplicateObj(valuePtr);
+	if (objc > 3) {
+	    /* Something to append */
+
+	    if (objc == 4) {
+		appendObjPtr = objv[3];
+	    } else if (TCL_OK != TclStringCatObjv(interp, /* inPlace */ 1,
+		    objc-3, objv+3, &appendObjPtr)) {
+		return TCL_ERROR;
+	    }
 	}
 
-	for (i=3 ; i<objc ; i++) {
-	    Tcl_AppendObjToObj(valuePtr, objv[i]);
+	if (appendObjPtr == NULL) {
+	    /* => (objc == 3) => (valuePtr == NULL) */
+	    TclNewObj(valuePtr);
+	} else if (valuePtr == NULL) {
+	    valuePtr = appendObjPtr;
+	    appendObjPtr = NULL;
+	}
+
+	if (appendObjPtr) {
+	    if (Tcl_IsShared(valuePtr)) {
+		valuePtr = Tcl_DuplicateObj(valuePtr);
+	    }
+
+	    Tcl_AppendObjToObj(valuePtr, appendObjPtr);
 	}
 
 	Tcl_DictObjPut(NULL, dictPtr, objv[2], valuePtr);
