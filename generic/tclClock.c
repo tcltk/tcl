@@ -122,6 +122,7 @@ typedef struct ClockClientData {
     Tcl_Obj *GMTSetupTZData;
     Tcl_Obj *LastSetupTimeZone;
     Tcl_Obj *LastSetupTZData;
+    Tcl_Obj *LastUsedSetupTimeZone;
 } ClockClientData;
 
 /*
@@ -324,6 +325,7 @@ TclClockInit(
     data->GMTSetupTZData = NULL;
     data->LastSetupTimeZone = NULL;
     data->LastSetupTZData = NULL;
+    data->LastUsedSetupTimeZone = NULL;
 
     /*
      * Install the commands.
@@ -477,6 +479,7 @@ ClockConfigureObjCmd(
 	    if (i+1 < objc) {
 		timezoneObj = NormTimezoneObj(dataPtr, objv[i+1]);
 		if (optionIndex == CLOCK_SETUP_TZ) {
+		    dataPtr->LastUsedSetupTimeZone = timezoneObj;
 		    if (timezoneObj == litPtr[LIT_GMT]) {
 			optionIndex = CLOCK_SETUP_GMT;
 		    } else if (timezoneObj == dataPtr->LastSystemTimeZone) {
@@ -510,14 +513,15 @@ ClockConfigureObjCmd(
 		    if (i+1 < objc) {
 			Tcl_IncrRefCount(
 			    dataPtr->LastSetupTimeZone = timezoneObj);
-		    } else if (dataPtr->LastSetupTimeZone) {
-			Tcl_SetObjResult(interp, dataPtr->LastSetupTimeZone);
+		    } else if (dataPtr->LastUsedSetupTimeZone) {
+			Tcl_SetObjResult(interp, dataPtr->LastUsedSetupTimeZone);
 		    }
 		}
 	    }
 	}
 	if (optionIndex == CLOCK_CLEAR_CACHE) {
 	    dataPtr->LastTZEpoch = 0;
+	    dataPtr->LastUsedSetupTimeZone = NULL;
 	}
     }
 
@@ -604,6 +608,11 @@ ClockSetupTimeZone(
     ClockClientData *dataPtr = clientData;
     Tcl_Obj **literals = dataPtr->literals;
     Tcl_Obj *callargs[2];
+
+    /* if cached (if already setup this one) */
+    if (timezoneObj == dataPtr->LastUsedSetupTimeZone) {
+	return timezoneObj;
+    }
 
     /* differentiate GMT and system zones, because used often and already set */
     timezoneObj = NormTimezoneObj(dataPtr, timezoneObj);
@@ -2546,6 +2555,15 @@ ClockScanObjCmd(
 	}
     */
 
+    if (1) {
+	/* TODO: Tcled Scan proc - */
+	Tcl_Obj *callargs[10];
+	memcpy(callargs, objv, objc * sizeof(*objv));
+				callargs[0] = Tcl_NewStringObj("::tcl::clock::__org_scan", -1);
+	return Tcl_EvalObjv(interp, objc, callargs, 0);
+    }
+    // Tcl_SetObjResult(interp, Tcl_NewWideIntObj(10000000));
+
     return TCL_OK;
 }
 
@@ -2635,10 +2653,10 @@ ClockFreeScan(
 
     if (yy.dateHaveDate) {
 	if (yy.dateYear < 100) {
-	    yy.dateYear += ClockCurrentYearCentury(clientData, interp);
-	    if (yy.dateYear > ClockGetYearOfCenturySwitch(clientData, interp)) {
+	    if (yy.dateYear >= ClockGetYearOfCenturySwitch(clientData, interp)) {
 		yy.dateYear -= 100;
 	    }
+	    yy.dateYear += ClockCurrentYearCentury(clientData, interp);
 	}
 	date.era = CE;
 	date.year = yy.dateYear;
