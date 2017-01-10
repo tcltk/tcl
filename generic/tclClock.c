@@ -93,7 +93,6 @@ static void		GetGregorianEraYearDay(TclDateFields *, int);
 static void		GetMonthDay(TclDateFields *);
 static void		GetJulianDayFromEraYearWeekDay(TclDateFields *, int);
 static void		GetJulianDayFromEraYearMonthDay(TclDateFields *, int);
-static int		IsGregorianLeapYear(TclDateFields *);
 static int		WeekdayOnOrBefore(int, int);
 static int		ClockClicksObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
@@ -2471,7 +2470,7 @@ GetJulianDayFromEraYearDay(
  *----------------------------------------------------------------------
  */
 
-static int
+MODULE_SCOPE int
 IsGregorianLeapYear(
     TclDateFields *fields)	/* Date to test */
 {

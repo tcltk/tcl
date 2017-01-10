@@ -1762,6 +1762,50 @@ done:
 }
 
 
+inline char *
+_itoaw(
+    char *buf,
+    register int val,
+    char  padchar,
+    unsigned short int width)
+{
+    register char *p;
+    static int wrange[] = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
+    unsigned short int sign = 0;
+
+    /* sign = 1 by negative number */
+    if (val < 0)
+    {
+	sign = 1;
+	val = -val;
+	if (!width) width++;
+    }
+    /* check resp. recalculate width (regarding sign) */
+    width -= sign;
+    while (width <= 9 && val >= wrange[width]) {
+	width++;
+    }
+    width += sign;
+    /* number to string backwards */
+    p = buf + width;
+    *p-- = '\0';
+    do {
+	*p-- = '0' + (val % 10);
+	val /= 10;
+    } while (val > 0);
+    /* sign by 0 padding */
+    if (sign && padchar != '0') { *p-- = '-'; sign = 0; }
+    /* fulling with pad-char */
+    while (p >= buf + sign) {
+	*p-- = padchar;
+    }
+    /* sign by non 0 padding */
+    if (sign) { *p = '-'; }
+
+    return buf + width;
+}
+
+
 inline int
 FrmResultAllocate(
     register DateFormat *dateFmt,
@@ -1789,8 +1833,8 @@ ClockFmtToken_HourAMPM_Proc(
     ClockFormatToken *tok,
     int *val)
 {
-   *val = ( ( ( *val % 86400 ) + 86400 - 3600 ) / 3600 ) % 12 + 1;
-   return TCL_OK;
+    *val = ( ( ( *val % 86400 ) + 86400 - 3600 ) / 3600 ) % 12 + 1;
+    return TCL_OK;
 }
 
 static int
@@ -1819,73 +1863,132 @@ ClockFmtToken_AMPM_Proc(
 	len = Tcl_UtfToUpper(dateFmt->output);
     }
     dateFmt->output += len;
-    *dateFmt->output = '\0';
 
+    return TCL_OK;
+}
+
+static int
+ClockFmtToken_StarDate_Proc(
+    ClockFmtScnCmdArgs *opts,
+    DateFormat *dateFmt,
+    ClockFormatToken *tok,
+    int *val)
+ {
+    int fractYear;
+    /* Get day of year, zero based */
+    int doy = dateFmt->date.dayOfYear - 1;
+
+    /* Convert day of year to a fractional year */
+    if (IsGregorianLeapYear(&dateFmt->date)) {
+	fractYear = 1000 * doy / 366;
+    } else {
+	fractYear = 1000 * doy / 365;
+    }
+
+    /* Put together the StarDate as "Stardate %02d%03d.%1d" */
+    if (FrmResultAllocate(dateFmt, 20) != TCL_OK) { return TCL_ERROR; };
+    memcpy(dateFmt->output, "Stardate ", 9);
+    dateFmt->output += 9;
+    dateFmt->output = _itoaw(dateFmt->output, 
+	dateFmt->date.year - RODDENBERRY, '0', 2);
+    dateFmt->output = _itoaw(dateFmt->output, 
+	fractYear, '0', 3);
+    *dateFmt->output++ = '.';
+    dateFmt->output = _itoaw(dateFmt->output,
+	dateFmt->date.localSeconds % 86400 / ( 86400 / 10 ), '0', 1);
+
+    return TCL_OK;
+}
+static int
+ClockFmtToken_WeekOfYear_Proc(
+    ClockFmtScnCmdArgs *opts,
+    DateFormat *dateFmt,
+    ClockFormatToken *tok,
+    int *val)
+{
+    int dow = dateFmt->date.dayOfWeek;
+    if (*tok->tokWord.start == 'U') {
+	if (dow == 7) {
+	    dow = 0;
+	}
+	dow++;
+    }
+    *val = ( dateFmt->date.dayOfYear - dow + 7 ) / 7;
     return TCL_OK;
 }
 
 static const char *FmtSTokenMapIndex = 
-    "demNbByYCHMSIklpaAugGjJsnt";
+    "demNbByYCHMSIklpaAuwUVgGjJsntQ";
 static ClockFormatTokenMap FmtSTokenMap[] = {
     /* %d */
-    {CFMTT_INT, "%02d", 0, 0, 0, TclOffset(DateFormat, date.dayOfMonth), NULL},
+    {CFMTT_INT, "0", 2, 0, 0, 0, TclOffset(DateFormat, date.dayOfMonth), NULL},
     /* %e */
-    {CFMTT_INT, "%2d",	0, 0, 0, TclOffset(DateFormat, date.dayOfMonth), NULL},
+    {CFMTT_INT, " ", 2, 0, 0, 0, TclOffset(DateFormat, date.dayOfMonth), NULL},
     /* %m */
-    {CFMTT_INT, "%02d", 0, 0, 0, TclOffset(DateFormat, date.month), NULL},
+    {CFMTT_INT, "0", 2, 0, 0, 0, TclOffset(DateFormat, date.month), NULL},
     /* %N */
-    {CFMTT_INT, "%2d", 0, 0, 0, TclOffset(DateFormat, date.month), NULL},
+    {CFMTT_INT, " ", 2, 0, 0, 0, TclOffset(DateFormat, date.month), NULL},
     /* %b %h */
-    {CFMTT_INT, NULL, CLFMT_LOCALE_INDX | CLFMT_DECR, 0, 12, TclOffset(DateFormat, date.month),
+    {CFMTT_INT, NULL, 0, CLFMT_LOCALE_INDX | CLFMT_DECR, 0, 12, TclOffset(DateFormat, date.month),
 	NULL, (void *)MCLIT_MONTHS_ABBREV},
     /* %B */
-    {CFMTT_INT, NULL, CLFMT_LOCALE_INDX | CLFMT_DECR, 0, 12, TclOffset(DateFormat, date.month),
+    {CFMTT_INT, NULL, 0, CLFMT_LOCALE_INDX | CLFMT_DECR, 0, 12, TclOffset(DateFormat, date.month),
 	NULL, (void *)MCLIT_MONTHS_FULL},
     /* %y */
-    {CFMTT_INT, "%02d", 0, 0, 100, TclOffset(DateFormat, date.year), NULL},
+    {CFMTT_INT, "0", 2, 0, 0, 100, TclOffset(DateFormat, date.year), NULL},
     /* %Y */
-    {CFMTT_INT, "%04d", 0, 0, 0, TclOffset(DateFormat, date.year), NULL},
+    {CFMTT_INT, "0", 4, 0, 0, 0, TclOffset(DateFormat, date.year), NULL},
     /* %C */
-    {CFMTT_INT, "%02d", 0, 100, 0, TclOffset(DateFormat, date.year), NULL},
+    {CFMTT_INT, "0", 2, 0, 100, 0, TclOffset(DateFormat, date.year), NULL},
     /* %H */
-    {CFMTT_INT, "%02d", 0, 3600, 24, TclOffset(DateFormat, date.localSeconds), NULL},
+    {CFMTT_INT, "0", 2, 0, 3600, 24, TclOffset(DateFormat, date.localSeconds), NULL},
     /* %M */
-    {CFMTT_INT, "%02d", 0, 60, 60, TclOffset(DateFormat, date.localSeconds), NULL},
+    {CFMTT_INT, "0", 2, 0, 60, 60, TclOffset(DateFormat, date.localSeconds), NULL},
     /* %S */
-    {CFMTT_INT, "%02d", 0, 0, 60, TclOffset(DateFormat, date.localSeconds), NULL},
+    {CFMTT_INT, "0", 2, 0, 0, 60, TclOffset(DateFormat, date.localSeconds), NULL},
     /* %I */
-    {CFMTT_INT, "%02d", CLFMT_CALC, 0, 0, TclOffset(DateFormat, date.localSeconds), 
+    {CFMTT_INT, "0", 2, CLFMT_CALC, 0, 0, TclOffset(DateFormat, date.localSeconds), 
 	ClockFmtToken_HourAMPM_Proc, NULL},
     /* %k */
-    {CFMTT_INT, "%2d", 0, 3600, 24, TclOffset(DateFormat, date.localSeconds), NULL},
+    {CFMTT_INT, " ", 2, 0, 3600, 24, TclOffset(DateFormat, date.localSeconds), NULL},
     /* %l */
-    {CFMTT_INT, "%2d", CLFMT_CALC, 0, 0, TclOffset(DateFormat, date.localSeconds), 
+    {CFMTT_INT, " ", 2, CLFMT_CALC, 0, 0, TclOffset(DateFormat, date.localSeconds), 
 	ClockFmtToken_HourAMPM_Proc, NULL},
     /* %p %P */
-    {CFMTT_INT, "%02d", 0, 0, 0, TclOffset(DateFormat, date.localSeconds), 
+    {CFMTT_INT, NULL, 0, 0, 0, 0, TclOffset(DateFormat, date.localSeconds), 
 	ClockFmtToken_AMPM_Proc, NULL},
     /* %a */
-    {CFMTT_INT, NULL, CLFMT_LOCALE_INDX, 0, 7, TclOffset(DateFormat, date.dayOfWeek),
+    {CFMTT_INT, NULL, 0, CLFMT_LOCALE_INDX, 0, 7, TclOffset(DateFormat, date.dayOfWeek),
 	NULL, (void *)MCLIT_DAYS_OF_WEEK_ABBREV},
     /* %A */
-    {CFMTT_INT, NULL, CLFMT_LOCALE_INDX, 0, 7, TclOffset(DateFormat, date.dayOfWeek),
+    {CFMTT_INT, NULL, 0, CLFMT_LOCALE_INDX, 0, 7, TclOffset(DateFormat, date.dayOfWeek),
 	NULL, (void *)MCLIT_DAYS_OF_WEEK_FULL},
     /* %u */
-    {CFMTT_INT, "%1d", 0, 0, 0, TclOffset(DateFormat, date.dayOfWeek), NULL},
+    {CFMTT_INT, " ", 1, 0, 0, 0, TclOffset(DateFormat, date.dayOfWeek), NULL},
+    /* %w */
+    {CFMTT_INT, " ", 1, 0, 0, 7, TclOffset(DateFormat, date.dayOfWeek), NULL},
+    /* %U %W */
+    {CFMTT_INT, "0", 2, CLFMT_CALC, 0, 0, TclOffset(DateFormat, date.dayOfYear), 
+	ClockFmtToken_WeekOfYear_Proc, NULL},
+    /* %V */
+    {CFMTT_INT, "0", 2, 0, 0, 0, TclOffset(DateFormat, date.iso8601Week), NULL},
     /* %g */
-    {CFMTT_INT, "%02d", 0, 0, 100, TclOffset(DateFormat, date.iso8601Year), NULL},
+    {CFMTT_INT, "0", 2, 0, 0, 100, TclOffset(DateFormat, date.iso8601Year), NULL},
     /* %G */
-    {CFMTT_INT, "%04d", 0, 0, 0, TclOffset(DateFormat, date.iso8601Year), NULL},
+    {CFMTT_INT, "0", 4, 0, 0, 0, TclOffset(DateFormat, date.iso8601Year), NULL},
     /* %j */
-    {CFMTT_INT, "%03d", 0, 0, 0, TclOffset(DateFormat, date.dayOfYear), NULL},
+    {CFMTT_INT, "0", 3, 0, 0, 0, TclOffset(DateFormat, date.dayOfYear), NULL},
     /* %J */
-    {CFMTT_INT, "%07d", 0, 0, 0, TclOffset(DateFormat, date.julianDay), NULL},
+    {CFMTT_INT, "0", 7, 0, 0, 0, TclOffset(DateFormat, date.julianDay), NULL},
     /* %s */
-    {CFMTT_WIDE, "%ld", 0, 0, 0, TclOffset(DateFormat, date.seconds), NULL},
+    {CFMTT_WIDE, "%ld", 0, 0, 0, 0, TclOffset(DateFormat, date.seconds), NULL},
     /* %n */
-    {CFMTT_CHAR, "\n", 0, 0, 0, 0, NULL},
+    {CFMTT_CHAR, "\n", 0, 0, 0, 0, 0, NULL},
     /* %t */
-    {CFMTT_CHAR, "\t", 0, 0, 0, 0, NULL},
+    {CFMTT_CHAR, "\t", 0, 0, 0, 0, 0, NULL},
+    /* %Q */
+    {CFMTT_INT, NULL, 0, 0, 0, 0, 0, 
+	ClockFmtToken_StarDate_Proc, NULL},
 
 #if 0
     /* %H %k %I %l */
@@ -1927,14 +2030,14 @@ static ClockFormatTokenMap FmtSTokenMap[] = {
 #endif
 };
 static const char *FmtSTokenMapAliasIndex[2] = {
-    "hP",
-    "bp"
+    "hPW",
+    "bpU"
 };
 
 static const char *FmtETokenMapIndex = 
 "";//	 "Ey";
 static ClockFormatTokenMap FmtETokenMap[] = {
-    {CFMTT_INT, "%02d", 0, 0, 0, 0, NULL},
+    {CFMTT_INT, "0", 2, 0, 0, 0, 0, NULL},
 #if 0
     /* %EE */
     {CTOKT_PARSER, 0, 0, 0, 0, TclOffset(DateFormat, date.year),
@@ -1952,7 +2055,7 @@ static const char *FmtETokenMapAliasIndex[2] = {
 static const char *FmtOTokenMapIndex = 
 "";//	 "dmyHMSu";
 static ClockFormatTokenMap FmtOTokenMap[] = {
-    {CFMTT_INT, "%02d", 0, 0, 0, 0, NULL},
+    {CFMTT_INT, "0", 2, 0, 0, 0, 0, NULL},
 #if 0
     /* %Od %Oe */
     {CTOKT_PARSER, CLF_DAYOFMONTH, 0, 0, 0, TclOffset(DateFormat, date.dayOfMonth),
@@ -1986,7 +2089,7 @@ static const char *FmtOTokenMapAliasIndex[2] = {
 };
 
 static ClockFormatTokenMap FmtWordTokenMap = {
-    CTOKT_WORD, NULL, 0, 0, 0, 0, NULL
+    CTOKT_WORD, NULL, 0, 0, 0, 0, 0, NULL
 };
 
 /*
@@ -2168,8 +2271,12 @@ ClockFormat(
 		}
 	    }
 	    if (!(map->flags & CLFMT_LOCALE_INDX)) {
-		if (FrmResultAllocate(dateFmt, 10) != TCL_OK) { goto error; };
-		dateFmt->output += sprintf(dateFmt->output, map->tostr, val);
+		if (FrmResultAllocate(dateFmt, 11) != TCL_OK) { goto error; };
+		if (map->width) {
+		    dateFmt->output = _itoaw(dateFmt->output, val, *map->tostr, map->width);
+		} else {
+		    dateFmt->output += sprintf(dateFmt->output, map->tostr, val);
+		}
 	    } else {
 		const char *s;
 		Tcl_Obj * mcObj = ClockMCGet(opts, (int)map->data /* mcKey */);
@@ -2189,14 +2296,13 @@ ClockFormat(
 	case CFMTT_WIDE:
 	if (1) {
 	    Tcl_WideInt val = *(Tcl_WideInt *)(((char *)dateFmt) + map->offs);
-	    if (FrmResultAllocate(dateFmt, 20) != TCL_OK) { goto error; };
+	    if (FrmResultAllocate(dateFmt, 21) != TCL_OK) { goto error; };
 	    dateFmt->output += sprintf(dateFmt->output, map->tostr, val);
 	}
 	break;
 	case CFMTT_CHAR:
 	    if (FrmResultAllocate(dateFmt, 1) != TCL_OK) { goto error; };
 	    *dateFmt->output++ = *map->tostr;
-	    *dateFmt->output = '\0';
 	break;
 	case CFMTT_PROC:
 	    if (map->fmtproc(opts, dateFmt, tok, NULL) != TCL_OK) {
@@ -2207,9 +2313,12 @@ ClockFormat(
 	    if (1) {
 		int len = tok->tokWord.end - tok->tokWord.start;
 		if (FrmResultAllocate(dateFmt, len) != TCL_OK) { goto error; };
-		memcpy(dateFmt->output, tok->tokWord.start, len);
-		dateFmt->output += len;
-		*dateFmt->output = '\0';
+		if (len == 1) {
+		    *dateFmt->output++ = *tok->tokWord.start;
+		} else {
+		    memcpy(dateFmt->output, tok->tokWord.start, len);
+		    dateFmt->output += len;
+		}
 	    }
 	break;
 	}
@@ -2232,6 +2341,7 @@ done:
 	if (result->bytes == NULL) {
 	    result->bytes = dateFmt->resMem;
 	}
+	result->bytes[result->length] = '\0';
 	Tcl_SetObjResult(opts->interp, result);
 	return TCL_OK;
     }
