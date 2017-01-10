@@ -30,6 +30,7 @@
 #define ONE_YEAR			365	/* days */
 
 
+#define CLF_OPTIONAL	       (1 << 0) /* token is non mandatory */
 #define CLF_JULIANDAY	       (1 << 3)
 #define CLF_TIME	       (1 << 4)
 #define CLF_LOCALSEC	       (1 << 5)
