@@ -678,40 +678,43 @@ ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts,
 
 
 static const char *ScnSTokenMapIndex = 
-    "dmbyYHMSJCs";
+    "dmbyYHMSJjCs";
 static ClockScanTokenMap ScnSTokenMap[] = {
     /* %d %e */
-    {CTOKT_DIGIT, CLF_DATE, 1, 2, TclOffset(DateInfo, date.dayOfMonth),
+    {CTOKT_DIGIT, CLF_DATE | CLF_DAYOFMONTH, CLF_DAYOFYEAR, 1, 2, TclOffset(DateInfo, date.dayOfMonth),
 	NULL},
     /* %m */
-    {CTOKT_DIGIT, CLF_DATE, 1, 2, TclOffset(DateInfo, date.month),
+    {CTOKT_DIGIT, CLF_DATE, CLF_DAYOFYEAR, 1, 2, TclOffset(DateInfo, date.month),
 	NULL},
     /* %b %B %h */
-    {CTOKT_PARSER, CLF_DATE, 0, 0, 0,
+    {CTOKT_PARSER, CLF_DATE, CLF_DAYOFYEAR, 0, 0, 0,
 	    ClockScnToken_Month_Proc},
     /* %y */
-    {CTOKT_DIGIT, CLF_DATE, 1, 2, TclOffset(DateInfo, date.year),
+    {CTOKT_DIGIT, CLF_DATE, 0, 1, 2, TclOffset(DateInfo, date.year),
 	NULL},
     /* %Y */
-    {CTOKT_DIGIT, CLF_DATE | CLF_CENTURY, 1, 4, TclOffset(DateInfo, date.year),
+    {CTOKT_DIGIT, CLF_DATE | CLF_CENTURY, 0, 1, 4, TclOffset(DateInfo, date.year),
 	NULL},
     /* %H */
-    {CTOKT_DIGIT, CLF_TIME, 1, 2, TclOffset(DateInfo, date.hour),
+    {CTOKT_DIGIT, CLF_TIME, 0, 1, 2, TclOffset(DateInfo, date.hour),
 	NULL},
     /* %M */
-    {CTOKT_DIGIT, CLF_TIME, 1, 2, TclOffset(DateInfo, date.minutes),
+    {CTOKT_DIGIT, CLF_TIME, 0, 1, 2, TclOffset(DateInfo, date.minutes),
 	NULL},
     /* %S */
-    {CTOKT_DIGIT, CLF_TIME, 1, 2, TclOffset(DateInfo, date.secondOfDay),
+    {CTOKT_DIGIT, CLF_TIME, 0, 1, 2, TclOffset(DateInfo, date.secondOfDay),
 	NULL},
     /* %J */
-    {CTOKT_DIGIT, CLF_DATE | CLF_JULIANDAY,  1, 0xffff, TclOffset(DateInfo, date.julianDay),
+    {CTOKT_DIGIT, CLF_DATE | CLF_JULIANDAY, 0, 1, 0xffff, TclOffset(DateInfo, date.julianDay),
+	NULL},
+    /* %j */
+    {CTOKT_DIGIT, CLF_DATE | CLF_DAYOFYEAR, CLF_DAYOFMONTH, 1, 3, TclOffset(DateInfo, date.dayOfYear),
 	NULL},
     /* %C */
-    {CTOKT_DIGIT, CLF_DATE | CLF_CENTURY,    1, 2, TclOffset(DateInfo, dateCentury),
+    {CTOKT_DIGIT, CLF_DATE | CLF_CENTURY, 0, 1, 2, TclOffset(DateInfo, dateCentury),
 	NULL},
     /* %s */
-    {CTOKT_DIGIT, CLF_LOCALSEC | CLF_SIGNED, 1, 0xffff, TclOffset(DateInfo, date.localSeconds),
+    {CTOKT_DIGIT, CLF_LOCALSEC | CLF_SIGNED, 0, 1, 0xffff, TclOffset(DateInfo, date.localSeconds),
 	NULL},
 };
 static const char *ScnSTokenWrapMapIndex[2] = {
@@ -733,10 +736,10 @@ static const char *ScnOTokenMapIndex =
     "dm";
 static ClockScanTokenMap ScnOTokenMap[] = {
     /* %Od %Oe */
-    {CTOKT_PARSER, CLF_DATE, 0, 0, TclOffset(DateInfo, date.dayOfMonth),
+    {CTOKT_PARSER, CLF_DATE | CLF_DAYOFMONTH, CLF_DAYOFYEAR, 0, 0, TclOffset(DateInfo, date.dayOfMonth),
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %Om */
-    {CTOKT_PARSER, CLF_DATE, 0, 0, TclOffset(DateInfo, date.month),
+    {CTOKT_PARSER, CLF_DATE, CLF_DAYOFYEAR, 0, 0, TclOffset(DateInfo, date.month),
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
 };
 static const char *ScnOTokenWrapMapIndex[2] = {
@@ -747,12 +750,12 @@ static const char *ScnOTokenWrapMapIndex[2] = {
 static const char *ScnSpecTokenMapIndex = 
     " ";
 static ClockScanTokenMap ScnSpecTokenMap[] = {
-    {CTOKT_SPACE,  0,	    1, 0xffff, 0, 
+    {CTOKT_SPACE,  0, 0, 1, 0xffff, 0, 
 	NULL},
 };
 
 static ClockScanTokenMap ScnWordTokenMap = {
-    CTOKT_WORD,	   0,	    1, 0, 0, 
+    CTOKT_WORD,	   0, 0, 1, 0, 0, 
 	NULL
 };
 
@@ -1095,7 +1098,7 @@ ClockScan(
 		}
 		p = x;
 	    }
-	    flags |= map->flags;
+	    flags = (flags & ~map->clearFlags) | map->flags;
 	}
 	break;
 	case CTOKT_PARSER:
@@ -1110,7 +1113,7 @@ ClockScan(
 		break;
 	    };
 	    p = yyInput;
-	    flags |= map->flags;
+	    flags = (flags & ~map->clearFlags) | map->flags;
 	break;
 	case CTOKT_SPACE:
 	    /* at least one space in strict mode */
@@ -1150,13 +1153,14 @@ ClockScan(
     /* 
      * Invalidate result 
      */
+    info->flags |= flags;
 
     /* seconds token (%s) take precedence over all other tokens */
     if ((opts->flags & CLF_EXTENDED) || !(flags & CLF_LOCALSEC)) {
 	if (flags & CLF_DATE) {
 
 	    if (!(flags & CLF_JULIANDAY)) {
-		info->flags |= CLF_INVALIDATE_SECONDS|CLF_INVALIDATE_JULIANDAY;
+		info->flags |= CLF_ASSEMBLE_SECONDS|CLF_ASSEMBLE_JULIANDAY;
 
 		if (yyYear < 100) {
 		    if (!(flags & CLF_CENTURY)) {
@@ -1172,18 +1176,18 @@ ClockScan(
 	    }
 	    /* if date but no time - reset time */
 	    if (!(flags & (CLF_TIME|CLF_LOCALSEC))) {
-		info->flags |= CLF_INVALIDATE_SECONDS;
+		info->flags |= CLF_ASSEMBLE_SECONDS;
 		yydate.localSeconds = 0;
 	    }
 	}
 
 	if (flags & CLF_TIME) {
-	    info->flags |= CLF_INVALIDATE_SECONDS;
+	    info->flags |= CLF_ASSEMBLE_SECONDS;
 	    yySeconds = ToSeconds(yyHour, yyMinutes,
 				yySeconds, yyMeridian);
 	} else
 	if (!(flags & CLF_LOCALSEC)) {
-	    info->flags |= CLF_INVALIDATE_SECONDS;
+	    info->flags |= CLF_ASSEMBLE_SECONDS;
 	    yySeconds = yydate.localSeconds % SECONDS_PER_DAY;
 	}
     }

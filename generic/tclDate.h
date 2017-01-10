@@ -30,10 +30,18 @@
 #define ONE_YEAR			365	/* days */
 
 
+#define CLF_DATE	       (1 << 2)
+#define CLF_JULIANDAY	       (1 << 3)
+#define CLF_TIME	       (1 << 4)
+#define CLF_LOCALSEC	       (1 << 5)
+#define CLF_CENTURY	       (1 << 6)
+#define CLF_DAYOFMONTH	       (1 << 7)
+#define CLF_DAYOFYEAR	       (1 << 8)
+#define CLF_SIGNED	       (1 << 15)
 /* On demand (lazy) assemble flags */
-#define CLF_INVALIDATE_DATE	 (1 << 6) /* assemble year, month, etc. using julianDay */
-#define CLF_INVALIDATE_JULIANDAY (1 << 7) /* assemble julianDay using year, month, etc. */
-#define CLF_INVALIDATE_SECONDS	 (1 << 8) /* assemble localSeconds (and seconds at end) */
+#define CLF_ASSEMBLE_DATE      (1 << 28) /* assemble year, month, etc. using julianDay */
+#define CLF_ASSEMBLE_JULIANDAY (1 << 29) /* assemble julianDay using year, month, etc. */
+#define CLF_ASSEMBLE_SECONDS   (1 << 30) /* assemble localSeconds (and seconds at end) */
 
 
 /*
@@ -339,13 +347,6 @@ typedef int ClockScanTokenProc(
 	ClockScanToken *tok);
 
 
-#define CLF_DATE      (1 << 2)
-#define CLF_JULIANDAY (1 << 3)
-#define CLF_TIME      (1 << 4)
-#define CLF_LOCALSEC  (1 << 5)
-#define CLF_CENTURY   (1 << 6)
-#define CLF_SIGNED    (1 << 8)
-
 typedef enum _CLCKTOK_TYPE {
    CTOKT_DIGIT = 1, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD
 } CLCKTOK_TYPE;
@@ -359,6 +360,7 @@ typedef struct ClockFormatToken {
 typedef struct ClockScanTokenMap {
     unsigned short int	type;
     unsigned short int	flags;
+    unsigned short int	clearFlags;
     unsigned short int	minSize;
     unsigned short int	maxSize;
     unsigned short int	offs;
