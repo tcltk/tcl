@@ -22,60 +22,64 @@ typedef struct TclDateFields {
 				 * epoch */
     Tcl_WideInt localSeconds;	/* Local time expressed in nominal seconds
 				 * from the Posix epoch */
-    int tzOffset;		/* Time zone offset in seconds east of
+    time_t tzOffset;		/* Time zone offset in seconds east of
 				 * Greenwich */
+    time_t julianDay;		/* Julian Day Number in local time zone */
+    enum {BCE=1, CE=0} era;	/* Era */
+    time_t gregorian;		/* Flag == 1 if the date is Gregorian */
+    time_t year;		/* Year of the era */
+    time_t dayOfYear;		/* Day of the year (1 January == 1) */
+    time_t month;		/* Month number */
+    time_t dayOfMonth;		/* Day of the month */
+    time_t iso8601Year;		/* ISO8601 week-based year */
+    time_t iso8601Week;		/* ISO8601 week number */
+    time_t dayOfWeek;		/* Day of the week */
+    time_t hour;		/* Hours of day (in-between time only calculation) */
+    time_t minutes;		/* Minutes of day (in-between time only calculation) */
+    time_t secondOfDay;		/* Seconds of day (in-between time only calculation) */
+
     Tcl_Obj *tzName;		/* Time zone name (if set the refCount is incremented) */
     Tcl_Obj *tzData;		/* Time zone data object (internally referenced) */
-    int julianDay;		/* Julian Day Number in local time zone */
-    enum {BCE=1, CE=0} era;	/* Era */
-    int gregorian;		/* Flag == 1 if the date is Gregorian */
-    int year;			/* Year of the era */
-    int dayOfYear;		/* Day of the year (1 January == 1) */
-    int month;			/* Month number */
-    int dayOfMonth;		/* Day of the month */
-    int iso8601Year;		/* ISO8601 week-based year */
-    int iso8601Week;		/* ISO8601 week number */
-    int dayOfWeek;		/* Day of the week */
-    int hour;			/* Hours of day (in-between time only calculation) */
-    int minutes;		/* Minutes of day (in-between time only calculation) */
-    int secondOfDay;		/* Seconds of day (in-between time only calculation) */
 } TclDateFields;
+
+#define ClockCacheableDateFieldsSize \
+    TclOffset(TclDateFields, tzName)
 
 /*
  * Structure contains return parsed fields.
  */
 
 typedef struct DateInfo {
+    const char *dateStart;
+    const char *dateInput;
 
     TclDateFields date;
 
-    int dateHaveDate;
+    time_t dateHaveDate;
 
-    int dateMeridian;
-    int dateHaveTime;
+    time_t dateMeridian;
+    time_t dateHaveTime;
 
     time_t dateTimezone;
-    int dateDSTmode;
-    int dateHaveZone;
+    time_t dateDSTmode;
+    time_t dateHaveZone;
 
     time_t dateRelMonth;
     time_t dateRelDay;
     time_t dateRelSeconds;
-    int dateHaveRel;
+    time_t dateHaveRel;
 
     time_t dateMonthOrdinalIncr;
     time_t dateMonthOrdinal;
-    int dateHaveOrdinalMonth;
+    time_t dateHaveOrdinalMonth;
 
     time_t dateDayOrdinal;
     time_t dateDayNumber;
-    int dateHaveDay;
+    time_t dateHaveDay;
 
-    const char *dateStart;
-    const char *dateInput;
     time_t *dateRelPointer;
 
-    int dateDigitCount;
+    time_t dateDigitCount;
 
     Tcl_Obj* messages;	    /* Error messages */
     const char* separatrix; /* String separating messages */
@@ -140,8 +144,19 @@ typedef enum _MERIDIAN {
 
 #define CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE 12
 
+typedef struct ClockScanToken ClockScanToken;
+
+
+typedef int ClockScanTokenProc(
+	DateInfo *info,
+	ClockScanToken *tok);
+
+
+#define CLF_DATE (1 << 2)
+#define CLF_TIME (1 << 3)
+
 typedef enum _CLCKTOK_TYPE {
-   CTOKT_EOB=0, CTOKT_DIGIT, CTOKT_SPACE
+   CTOKT_DIGIT = 1, CTOKT_SPACE, CTOKT_WORD
 } CLCKTOK_TYPE;
 
 typedef struct ClockFmtScnStorage ClockFmtScnStorage;
@@ -150,18 +165,29 @@ typedef struct ClockFormatToken {
     CLCKTOK_TYPE      type;
 } ClockFormatToken;
 
-typedef struct ClockScanToken {
+typedef struct ClockScanTokenMap {
     unsigned short int	type;
+    unsigned short int	flags;
     unsigned short int	minSize;
     unsigned short int	maxSize;
     unsigned short int	offs;
+    ClockScanTokenProc *parser;
+} ClockScanTokenMap;
+
+typedef struct ClockScanToken {
+    ClockScanTokenMap  *map;
+    unsigned int	lookAhead;
+    struct {
+	const char *start;
+	const char *end;
+    } tokWord;
 } ClockScanToken;
 
 typedef struct ClockFmtScnStorage {
     int			 objRefCount;	/* Reference count shared across threads */
-    ClockScanToken     **scnTok;
+    ClockScanToken	*scnTok;
     unsigned int	 scnTokC;
-    ClockFormatToken   **fmtTok;
+    ClockFormatToken	*fmtTok;
     unsigned int	 fmtTokC;
 #if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
     ClockFmtScnStorage	*nextPtr;
@@ -191,8 +217,8 @@ MODULE_SCOPE ClockFmtScnStorage *
 			Tcl_Obj *objPtr);
 
 MODULE_SCOPE int    ClockScan(ClientData clientData, Tcl_Interp *interp,
-			TclDateFields *date, Tcl_Obj *strObj, 
-			ClockFmtScnCmdArgs *opts);
+			register DateInfo *info,
+			Tcl_Obj *strObj, ClockFmtScnCmdArgs *opts);
 
 /*
  * Other externals.

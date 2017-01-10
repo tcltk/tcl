@@ -902,7 +902,6 @@ TclClockFreeScan(
     yyHaveDate = 0;
 
     yyHaveTime = 0;
-    yyHour = 0; yyMinutes = 0; yySeconds = 0; yyMeridian = MER24;
 
     yyHaveZone = 0;
     yyTimezone = 0; yyDSTmode = DSTmaybe;
