@@ -629,15 +629,17 @@ proc ::tcl::clock::Initialize {} {
 
     # Caches
 
-    variable LocaleFormats      {};	# Dictionary with localized formats
+    variable LocaleFormats \
+			[dict create];	# Dictionary with localized formats
 
-    variable LocaleNumeralCache {};	# Dictionary whose keys are locale
+    variable LocaleNumeralCache \
+			[dict create];	# Dictionary whose keys are locale
 					# names and whose values are pairs
 					# comprising regexes matching numerals
 					# in the given locales and dictionaries
 					# mapping the numerals to their numeric
 					# values.
-    variable TimeZoneBad {};	        # Dictionary whose keys are time zone
+    variable TimeZoneBad [dict create]; # Dictionary whose keys are time zone
     					# names and whose values are 1 if
 					# the time zone is unknown and 0
     					# if it is known.
@@ -651,6 +653,17 @@ proc ::tcl::clock::Initialize {} {
 					# that renders the given format
 }
 ::tcl::clock::Initialize
+
+#----------------------------------------------------------------------
+
+proc mcget {locale args} {
+    switch -- $locale system {
+    	set locale [GetSystemLocale]
+    } current {
+	set locale [mclocale]
+    }
+    msgcat::mcget ::tcl::clock $locale {*}$args
+}
 
 #----------------------------------------------------------------------
 #
@@ -2938,7 +2951,7 @@ proc ::tcl::clock::ConvertLegacyTimeZone { tzname } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::SetupTimeZone { timezone } {
+proc ::tcl::clock::SetupTimeZone { timezone {alias {}} } {
     variable TZData
 
     if {! [info exists TZData($timezone)] } {
@@ -3005,6 +3018,19 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 	    }
 
 	} else {
+
+	    variable LegacyTimeZone
+
+	    # Check may be a legacy zone:
+	    if { $alias eq {} && ![catch {
+	    	set tzname [dict get $LegacyTimeZone [string tolower $timezone]]
+	    }] } {
+	    	set tzname [::tcl::clock::SetupTimeZone $tzname $timezone]
+	    	set TZData($timezone) $TZData($tzname)
+		# tell backend - timezone is initialized and return shared timezone object:
+		return [configure -setup-tz $timezone]
+	    }
+
 	    # We couldn't parse this as a POSIX time zone.  Try again with a
 	    # time zone file - this time without a colon
 
@@ -4471,6 +4497,9 @@ proc ::tcl::clock::ClearCaches {} {
 
     # tell backend - should invalidate:
     configure -clear
+
+    # clear msgcat cache:
+    msgcat::ClearCaches ::tcl::clock
 
     foreach p [info procs [namespace current]::scanproc'*] {
 	rename $p {}

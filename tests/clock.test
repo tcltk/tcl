@@ -21070,78 +21070,78 @@ test clock-10.10 {julian day takes precedence over ccyyddd} {
 
 # BEGIN testcases11
 
-# Test precedence among yyyymmdd and yyyyddd
+# Test precedence yyyymmdd over yyyyddd
 
-test clock-11.1 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.1 {precedence of ccyymmdd over ccyyddd} {
     clock scan 19700101002 -format %Y%m%d%j -gmt 1
-} 86400
-test clock-11.2 {precedence of ccyyddd and ccyymmdd} {
+} 0
+test clock-11.2 {precedence of ccyymmdd over ccyyddd} {
     clock scan 01197001002 -format %m%Y%d%j -gmt 1
-} 86400
-test clock-11.3 {precedence of ccyyddd and ccyymmdd} {
+} 0
+test clock-11.3 {precedence of ccyymmdd over ccyyddd} {
     clock scan 01197001002 -format %d%Y%m%j -gmt 1
-} 86400
-test clock-11.4 {precedence of ccyyddd and ccyymmdd} {
+} 0
+test clock-11.4 {precedence of ccyymmdd over ccyyddd} {
     clock scan 00219700101 -format %j%Y%m%d -gmt 1
 } 0
-test clock-11.5 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.5 {precedence of ccyymmdd over ccyyddd} {
     clock scan 19700100201 -format %Y%m%j%d -gmt 1
 } 0
-test clock-11.6 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.6 {precedence of ccyymmdd over ccyyddd} {
     clock scan 01197000201 -format %m%Y%j%d -gmt 1
 } 0
-test clock-11.7 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.7 {precedence of ccyymmdd over ccyyddd} {
     clock scan 01197000201 -format %d%Y%j%m -gmt 1
 } 0
-test clock-11.8 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.8 {precedence of ccyymmdd over ccyyddd} {
     clock scan 00219700101 -format %j%Y%d%m -gmt 1
 } 0
-test clock-11.9 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.9 {precedence of ccyymmdd over ccyyddd} {
     clock scan 19700101002 -format %Y%d%m%j -gmt 1
-} 86400
-test clock-11.10 {precedence of ccyyddd and ccyymmdd} {
+} 0
+test clock-11.10 {precedence of ccyymmdd over ccyyddd} {
     clock scan 01011970002 -format %m%d%Y%j -gmt 1
-} 86400
-test clock-11.11 {precedence of ccyyddd and ccyymmdd} {
+} 0
+test clock-11.11 {precedence of ccyymmdd over ccyyddd} {
     clock scan 01011970002 -format %d%m%Y%j -gmt 1
-} 86400
-test clock-11.12 {precedence of ccyyddd and ccyymmdd} {
+} 0
+test clock-11.12 {precedence of ccyymmdd over ccyyddd} {
     clock scan 00201197001 -format %j%m%Y%d -gmt 1
 } 0
-test clock-11.13 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.13 {precedence of ccyymmdd over ccyyddd} {
     clock scan 19700100201 -format %Y%d%j%m -gmt 1
 } 0
-test clock-11.14 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.14 {precedence of ccyymmdd over ccyyddd} {
     clock scan 01010021970 -format %m%d%j%Y -gmt 1
-} 86400
-test clock-11.15 {precedence of ccyyddd and ccyymmdd} {
+} 0
+test clock-11.15 {precedence of ccyymmdd over ccyyddd} {
     clock scan 01010021970 -format %d%m%j%Y -gmt 1
-} 86400
-test clock-11.16 {precedence of ccyyddd and ccyymmdd} {
+} 0
+test clock-11.16 {precedence of ccyymmdd over ccyyddd} {
     clock scan 00201011970 -format %j%m%d%Y -gmt 1
 } 0
-test clock-11.17 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.17 {precedence of ccyymmdd over ccyyddd} {
     clock scan 19700020101 -format %Y%j%m%d -gmt 1
 } 0
-test clock-11.18 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.18 {precedence of ccyymmdd over ccyyddd} {
     clock scan 01002197001 -format %m%j%Y%d -gmt 1
 } 0
-test clock-11.19 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.19 {precedence of ccyymmdd over ccyyddd} {
     clock scan 01002197001 -format %d%j%Y%m -gmt 1
 } 0
-test clock-11.20 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.20 {precedence of ccyymmdd over ccyyddd} {
     clock scan 00201197001 -format %j%d%Y%m -gmt 1
 } 0
-test clock-11.21 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.21 {precedence of ccyymmdd over ccyyddd} {
     clock scan 19700020101 -format %Y%j%d%m -gmt 1
 } 0
-test clock-11.22 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.22 {precedence of ccyymmdd over ccyyddd} {
     clock scan 01002011970 -format %m%j%d%Y -gmt 1
 } 0
-test clock-11.23 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.23 {precedence of ccyymmdd over ccyyddd} {
     clock scan 01002011970 -format %d%j%m%Y -gmt 1
 } 0
-test clock-11.24 {precedence of ccyyddd and ccyymmdd} {
+test clock-11.24 {precedence of ccyymmdd over ccyyddd} {
     clock scan 00201011970 -format %j%d%m%Y -gmt 1
 } 0
 # END testcases11
