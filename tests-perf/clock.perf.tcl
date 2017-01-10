@@ -25,19 +25,82 @@ proc _test_get_commands {lst} {
   regsub -all {(?:^|\n)[ \t]*(\#[^\n]*)(?=\n\s*[\{\#])} $lst "\n{\\1}"
 }
 
-proc test-scan {{reptime 1000}} {
-  foreach _(c) [_test_get_commands {
-    # Scan : date
-    {clock scan "25.11.2015" -format "%d.%m.%Y" -base 0 -gmt 1}
-    {clock scan "1111" -format "%d%m%y" -base 0 -gmt 1}
-    {**STOP** : Wed Nov 25 01:00:00 CET 2015}
-    # Scan : long format test (allock chain)
-    {clock scan "25.11.2015" -format "%d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y" -base 0 -gmt 1}
-    # Scan : dynamic, very long format test (create obj representation, allock chain, GC, etc):
-    {clock scan "25.11.2015" -format [string repeat "[incr i] %d.%m.%Y %d.%m.%Y" 10] -base 0 -gmt 1}
-    # Scan : again:
-    {clock scan "25.11.2015" -format [string repeat "[incr i -1] %d.%m.%Y %d.%m.%Y" 10] -base 0 -gmt 1}
+proc _test_out_total {} {
+  upvar _ _
 
+  puts [string repeat ** 40]
+  puts [format "Total %d cases in %.2f sec.:" [llength $_(itcnt)] [expr {[llength $_(itcnt)] * $_(reptime) / 1000.0}]]
+  lset _(m) 0 [format %.6f [expr [join $_(ittm) +]]]
+  lset _(m) 2 [expr [join $_(itcnt) +]]
+  lset _(m) 4 [expr {[lindex $_(m) 2] / ([llength $_(itcnt)] * $_(reptime) / 1000.0)}]
+  puts $_(m)
+  puts "Average:"
+  lset _(m) 0 [format %.6f [expr {[lindex $_(m) 0] / [llength $_(itcnt)]}]]
+  lset _(m) 2 [expr {[lindex $_(m) 2] / [llength $_(itcnt)]}]
+  lset _(m) 4 [expr {[lindex $_(m) 2] * (1000 / $_(reptime))}]
+  puts $_(m)
+  puts [string repeat ** 40]
+  puts ""
+}
+
+proc _test_run {reptime lst {outcmd {puts {$_(r)}}}} {
+  upvar _ _
+  array set _ [list ittm {} itcnt {} itrate {} reptime $reptime]
+
+  foreach _(c) [_test_get_commands $lst] {
+    puts "% [regsub -all {\n[ \t]*} $_(c) {; }]"
+    if {[regexp {\s*\#} $_(c)]} continue
+    set _(r) [if 1 $_(c)]
+    if {$outcmd ne {}} $outcmd
+    puts [set _(m) [timerate $_(c) $reptime]]
+    lappend _(ittm) [lindex $_(m) 0]
+    lappend _(itcnt) [lindex $_(m) 2]
+    lappend _(itrate) [lindex $_(m) 4]
+    puts ""
+  }
+  _test_out_total
+}
+
+proc test-scan {{reptime 1000}} {
+  _test_run $reptime {
+    # Scan : date (in gmt)
+    {clock scan "25.11.2015" -format "%d.%m.%Y" -base 0 -gmt 1}
+    # Scan : date (system time zone, with base)
+    {clock scan "25.11.2015" -format "%d.%m.%Y" -base 0}
+    # Scan : date (system time zone, without base)
+    {clock scan "25.11.2015" -format "%d.%m.%Y"}
+    # Scan : greedy match
+    {clock scan "111" -format "%d%m%y" -base 0 -gmt 1}
+    {clock scan "1111" -format "%d%m%y" -base 0 -gmt 1}
+    {clock scan "11111" -format "%d%m%y" -base 0 -gmt 1}
+    {clock scan "111111" -format "%d%m%y" -base 0 -gmt 1}
+
+    # Scan : date-time (in gmt)
+    {clock scan "25.11.2015 10:35:55" -format "%d.%m.%Y %H:%M:%S" -base 0 -gmt 1}
+    # Scan : date-time (system time zone with base)
+    {clock scan "25.11.2015 10:35:55" -format "%d.%m.%Y %H:%M:%S" -base 0}
+    # Scan : date-time (system time zone without base)
+    {clock scan "25.11.2015 10:35:55" -format "%d.%m.%Y %H:%M:%S"}
+
+    # Scan : dynamic format (cacheable)
+    {clock scan "25.11.2015 10:35:55" -format [string trim "%d.%m.%Y %H:%M:%S "] -base 0 -gmt 1}
+
+    # Scan : zone only
+    {clock scan "CET" -format "%z"}
+    {clock scan "EST" -format "%z"}
+      #{**STOP** : Wed Nov 25 01:00:00 CET 2015}
+
+    # # Scan : long format test (allock chain)
+    # {clock scan "25.11.2015" -format "%d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y" -base 0 -gmt 1}
+    # # Scan : dynamic, very long format test (create obj representation, allock chain, GC, etc):
+    # {clock scan "25.11.2015" -format [string repeat "[incr i] %d.%m.%Y %d.%m.%Y" 10] -base 0 -gmt 1}
+    # # Scan : again:
+    # {clock scan "25.11.2015" -format [string repeat "[incr i -1] %d.%m.%Y %d.%m.%Y" 10] -base 0 -gmt 1}
+  } {puts [clock format $_(r) -locale en]}
+}
+
+proc test-freescan {{reptime 1000}} {
+  _test_run $reptime {
     # FreeScan : relative date
     {clock scan "5 years 18 months 385 days" -base 0 -gmt 1}
     # FreeScan : relative date with relative weekday
@@ -74,17 +137,11 @@ proc test-scan {{reptime 1000}} {
     {clock scan "19:18:30 MST" -base 148863600 -gmt 1
      clock scan "19:18:30 EST" -base 148863600
     }
-  }] {
-    puts "% [regsub -all {\n[ \t]*} $_(c) {; }]"
-    if {[regexp {\s*\#} $_(c)]} continue
-    puts [clock format [if 1 $_(c)] -locale en]
-    puts [timerate $_(c) $reptime]
-    puts ""
-  }
+  } {puts [clock format $_(r) -locale en]}
 }
 
 proc test-other {{reptime 1000}} {
-  foreach _(c) [_test_get_commands {
+  _test_run $reptime {
     # Bad zone
     {catch {clock scan "1 day" -timezone BAD_ZONE -locale en}}
     **STOP**
@@ -92,18 +149,13 @@ proc test-other {{reptime 1000}} {
     {set i 0; time { clock scan "[incr i] - 25.11.2015" -format "$i - %d.%m.%Y" -base 0 -gmt 1 } 50}
     # Scan : test reusability of GC objects (format is dynamic, so tcl-obj removed with last reference)
     {set i 50; time { clock scan "[incr i -1] - 25.11.2015" -format "$i - %d.%m.%Y" -base 0 -gmt 1 } 50}
-  }] {
-    puts "% [regsub -all {\n[ \t]*} $_(c) {; }]"
-    if {[regexp {\s*\#} $_(c)]} continue
-    puts [if 1 $_(c)]
-    puts [timerate $_(c) $reptime]
-    puts ""
   }
 }
 
 proc test {{reptime 1000}} {
   puts ""
   test-scan $reptime
+  #test-freescan $reptime
   test-other $reptime
 
   puts \n**OK**

@@ -400,35 +400,48 @@ Tcl_GetClockFrmScnFromObj(
 	(tok) = (chain) + (tokCnt); \
 	(tokCnt) += CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE; \
     } \
-    *(tok) = NULL;
+    memset(tok, 0, sizeof(*(tok)));
 
 const char *ScnSTokenMapChars = 
     "dmyYHMS";
-static ClockScanToken ScnSTokenMap[] = {
-    {CTOKT_DIGIT,  1, 2, 0},
-    {CTOKT_DIGIT,  1, 2, 0},
-    {CTOKT_DIGIT,  1, 2, 0},
-    {CTOKT_DIGIT,  1, 4, 0},
-    {CTOKT_DIGIT,  1, 2, 0},
-    {CTOKT_DIGIT,  1, 2, 0},
-    {CTOKT_DIGIT,  1, 2, 0},
+static ClockScanTokenMap ScnSTokenMap[] = {
+    {CTOKT_DIGIT, CLF_DATE, 1, 2, TclOffset(DateInfo, date.dayOfMonth), 
+	NULL},
+    {CTOKT_DIGIT, CLF_DATE, 1, 2, TclOffset(DateInfo, date.month),
+	NULL},
+    {CTOKT_DIGIT, CLF_DATE, 1, 2, TclOffset(DateInfo, date.year),
+	NULL},
+    {CTOKT_DIGIT, CLF_DATE, 1, 4, TclOffset(DateInfo, date.year),
+	NULL},
+    {CTOKT_DIGIT, CLF_TIME, 1, 2, TclOffset(DateInfo, date.hour),
+	NULL},
+    {CTOKT_DIGIT, CLF_TIME, 1, 2, TclOffset(DateInfo, date.minutes),
+	NULL},
+    {CTOKT_DIGIT, CLF_TIME, 1, 2, TclOffset(DateInfo, date.secondOfDay),
+	NULL},
 };
 const char *ScnSpecTokenMapChars = 
-    " %";
-static ClockScanToken ScnSpecTokenMap[] = {
-    {CTOKT_SPACE,  1, 0xffff, 0},
+    " ";
+static ClockScanTokenMap ScnSpecTokenMap[] = {
+    {CTOKT_SPACE,  0,	    1, 0xffff, 0, 
+	NULL},
+};
+
+static ClockScanTokenMap ScnWordTokenMap = {
+    CTOKT_WORD,	   0,	    1, 0, 0, 
+	NULL
 };
 
 /*
  *----------------------------------------------------------------------
  */
-ClockScanToken **
+ClockScanToken *
 ClockGetOrParseScanFormat(
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Obj *formatObj)		/* Format container */
 {
     ClockFmtScnStorage *fss;
-    ClockScanToken    **tok;
+    ClockScanToken     *tok;
 
     if (formatObj->typePtr != &ClockFmtObjType) {
 	if (ClockFmtObj_SetFromAny(interp, formatObj) != TCL_OK) {
@@ -448,27 +461,30 @@ ClockGetOrParseScanFormat(
     /* if first time scanning - tokenize format */
     if (fss->scnTok == NULL) {
 	const char *strFmt;
-	register const char *p, *e, *cp, *word_start = NULL;
+	register const char *p, *e, *cp;
 
 	Tcl_MutexLock(&ClockFmtMutex);
 
 	fss->scnTokC = CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE;
 	fss->scnTok =
 		tok = ckalloc(sizeof(*tok) * CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE);
-	*tok = NULL;
+	memset(tok, 0, sizeof(*(tok)));
 	strFmt = TclGetString(formatObj);
 	for (e = p = strFmt, e += formatObj->length; p != e; p++) {
 	    switch (*p) {
 	    case '%':
 		if (p+1 >= e) {
-		    word_start = p;
-		    continue;
+		    goto word_tok;
 		}
 		p++;
 		/* try to find modifier: */
 		switch (*p) {
 		case '%':
-		    word_start = p-1;
+		    /* begin new word token - don't join with previous word token, 
+		     * because current mapping should be "...%%..." -> "...%..." */
+		    tok->map = &ScnWordTokenMap;
+		    tok->tokWord.start = tok->tokWord.end = p;
+		    AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
 		    continue;
 		break;
 		case 'E':
@@ -480,10 +496,24 @@ ClockGetOrParseScanFormat(
 		default:
 		    cp = strchr(ScnSTokenMapChars, *p);
 		    if (!cp || *cp == '\0') {
-			word_start = p-1;
-			continue;
+			p--;
+			goto word_tok;
 		    }
-		    *tok = &ScnSTokenMap[cp - ScnSTokenMapChars];
+		    tok->map = &ScnSTokenMap[cp - ScnSTokenMapChars];
+		    /* calculate look ahead value by standing together tokens */
+		    if (tok > fss->scnTok) {
+			ClockScanToken	   *prevTok = tok - 1;
+			unsigned int	    lookAhead = tok->map->minSize;
+
+			while (prevTok >= fss->scnTok) {
+			    if (prevTok->map->type != tok->map->type) {
+				break;
+			    }
+			    prevTok->lookAhead += lookAhead;
+			    prevTok--;
+			}
+		    }
+		    /* next token */
 		    AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
 		break;
 		}
@@ -494,17 +524,32 @@ ClockGetOrParseScanFormat(
 		    p--;
 		    goto word_tok;
 		}
-		*tok = &ScnSpecTokenMap[cp - ScnSpecTokenMapChars];
+		tok->map = &ScnSpecTokenMap[cp - ScnSpecTokenMapChars];
 		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
 	    break;
 	    default:
 word_tok:
-
-	    continue;
+	    if (1) {
+		ClockScanToken	 *wordTok = tok;
+		if (tok > fss->scnTok && (tok-1)->map == &ScnWordTokenMap) {
+		    wordTok = tok-1;
+		}
+		wordTok->tokWord.end = p;
+		if (wordTok == tok) {
+		    wordTok->tokWord.start = p;
+		    wordTok->map = &ScnWordTokenMap;
+		    AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
+		}
+		continue;
+	    }
 	    }
 
 	    continue;
+
 ext_tok_E:
+
+	    /*******************/
+	    continue;
 
 ext_tok_O:
 
@@ -527,23 +572,134 @@ int
 ClockScan(
     ClientData clientData,	/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    TclDateFields *date,	/* Date fields used for converting */
+    register DateInfo *info,	/* Date fields used for parsing & converting */
     Tcl_Obj *strObj,		/* String containing the time to scan */
     ClockFmtScnCmdArgs *opts)	/* Command options */
 {
-    ClockScanToken    **tok;
+    ClockScanToken	*tok;
+    ClockScanTokenMap	*map;
+    register const char *p, *x, *end;
+    unsigned short int	 flags = 0;
+    int ret = TCL_ERROR;
 
     if ((tok = ClockGetOrParseScanFormat(interp, opts->formatObj)) == NULL) {
 	return TCL_ERROR;
     }
+
+    /* prepare parsing */
+
+    yyMeridian = MER24;
+
+    /* bypass spaces at begin of string */
+
+    p = TclGetString(strObj);
+    end = p + strObj->length;
+    while (p < end && isspace(UCHAR(*p))) {
+	p++;
+    }
+    info->dateStart = yyInput = p;
     
-    //***********************************
+    /* parse string */
+    for (; tok->map != NULL; yyInput = p, tok++) {
+	map = tok->map;
+	switch (map->type)
+	{
+	case CTOKT_DIGIT:
+	if (1) {
+	    unsigned int val = 0;
+	    int size = map->maxSize;
+	    /* greedy find digits (look forward), corresponding pre-calculated lookAhead */
+	    size += tok->lookAhead;
+	    x = yyInput + size;
+	    while (isdigit(UCHAR(*p)) && p < x) { p++; };
+	    /* consider reserved (lookAhead) for next tokens */
+	    p -= tok->lookAhead;
+	    size = p - yyInput;
+	    if (size < map->minSize) {
+		/* missing input -> error */
+		goto done;
+	    }
+	    /* string 2 number */
+	    p = yyInput; x = p + size;
+	    while (p < x) {
+		val = val * 10 + (*p++ - '0');
+	    }
+	    /* put number into info by offset */
+	    *(time_t *)(((char *)info) + map->offs) = val;
+	    flags |= map->flags;
+	}
+	break;
+	case CTOKT_SPACE:
+	    while (p < end && isspace(UCHAR(*p))) {
+		p++;
+	    }
+	break;
+	case CTOKT_WORD:
+	    x = tok->tokWord.start;
+	    if (x == tok->tokWord.end) { /* single char word */
+		if (*p != *x) {
+		    /* no match -> error */
+		    goto done;
+		}
+		p++;
+		continue;
+	    }
+	    /* multi-char word */
+	    while (p < end && x < tok->tokWord.end && *p++ == *x++) {};
+	    if (x < tok->tokWord.end) {
+		/* no match -> error */
+		goto done;
+	    }
+	break;
+	}
+    }
+    
+    /* ignore spaces at end */
+    while (p < end && isspace(UCHAR(*p))) {
+	p++;
+    }
+    /* check end was reached */
+    if (p < end) {
+	/* something after last token - wrong format */
+	goto done;
+    }
 
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)tok));
-    return TCL_OK;
+    /* invalidate result */
+    if (flags & CLF_DATE) {
 
+	yydate.julianDay = CL_INVALIDATE;
 
-    return TCL_ERROR;
+	if (yyYear < 100) {
+	    if (yyYear >= ClockGetYearOfCenturySwitch(clientData, interp)) {
+		yyYear -= 100;
+	    }
+	    yyYear += ClockCurrentYearCentury(clientData, interp);
+	}
+	yydate.era = CE;
+	if (!(flags & CLF_TIME)) {
+	    yydate.localSeconds = 0;
+	}
+    }
+
+    if (flags & CLF_TIME) {
+	yySeconds = ToSeconds(yyHour, yyMinutes,
+			    yySeconds, yyMeridian);
+    } else {
+	yySeconds = yydate.localSeconds % 86400;
+    }
+
+    ret = TCL_OK;
+
+done:
+
+    if (ret != TCL_OK) {
+	Tcl_SetResult(interp,
+	    "input string does not match supplied format", TCL_STATIC);
+	Tcl_SetErrorCode(interp, "CLOCK", "badInputString", NULL);
+	return ret;
+    }
+
+    return ret;
 }
 
 
