@@ -41,7 +41,7 @@ CLOCK_LOCALE_LITERAL_ARRAY(MsgCtLitIdxs, "_IDX_");
  * Clock scan and format facilities.
  */
 
-inline int
+static inline int
 _str2int(
     int	       *out,
     register 
@@ -71,7 +71,7 @@ _str2int(
     return TCL_OK;
 } 
 
-inline int
+static inline int
 _str2wideInt(
     Tcl_WideInt *out,
     register 
@@ -101,7 +101,7 @@ _str2wideInt(
     return TCL_OK;
 }
 
-inline char *
+static inline char *
 _itoaw(
     char *buf,
     register int val,
@@ -169,7 +169,7 @@ _itoaw(
     return buf + width;
 }
 
-inline char *
+static inline char *
 _witoaw(
     char *buf,
     register Tcl_WideInt val,
@@ -268,7 +268,7 @@ static struct {
     unsigned int	   count;
 } ClockFmtScnStorage_GC = {NULL, NULL, 0};
 
-inline void
+static inline void
 ClockFmtScnStorageGC_In(ClockFmtScnStorage *entry) 
 {
     /* add new entry */
@@ -291,7 +291,7 @@ ClockFmtScnStorageGC_In(ClockFmtScnStorage *entry)
 	ClockFmtScnStorageDelete(delEnt);
     }
 }
-inline void
+static inline void
 ClockFmtScnStorage_GC_Out(ClockFmtScnStorage *entry)
 {
     TclSpliceOut(entry, ClockFmtScnStorage_GC.stackPtr);
@@ -311,11 +311,11 @@ ClockFmtScnStorage_GC_Out(ClockFmtScnStorage *entry)
 static Tcl_HashTable FmtScnHashTable;
 static int	     initialized = 0;
 
-inline Tcl_HashEntry *
+static inline Tcl_HashEntry *
 HashEntry4FmtScn(ClockFmtScnStorage *fss) {
     return (Tcl_HashEntry*)(fss + 1);
 };
-inline ClockFmtScnStorage *
+static inline ClockFmtScnStorage *
 FmtScn4HashEntry(Tcl_HashEntry *hKeyPtr) {
     return (ClockFmtScnStorage*)(((char*)hKeyPtr) - sizeof(ClockFmtScnStorage));
 };
@@ -836,7 +836,7 @@ DetermineGreedySearchLen(ClockFmtScnCmdArgs *opts,
     *maxLenPtr = maxLen;
 }
 
-inline int 
+static inline int 
 ObjListSearch(ClockFmtScnCmdArgs *opts, 
     DateInfo *info, int *val, 
     Tcl_Obj **lstv, int lstc,
@@ -1015,7 +1015,7 @@ done:
     return idxTree;
 }
 
-inline int
+static inline int
 ClockStrIdxTreeSearch(ClockFmtScnCmdArgs *opts, 
     DateInfo *info, TclStrIdxTree *idxTree, int *val, 
     int minLen, int maxLen)
@@ -1067,7 +1067,7 @@ StaticListSearch(ClockFmtScnCmdArgs *opts,
 }
 #endif
 
-inline const char *
+static inline const char *
 FindWordEnd(
     ClockScanToken *tok, 
     register const char * p, const char * end)
@@ -1152,17 +1152,17 @@ ClockScnToken_DayOfWeek_Proc(ClockFmtScnCmdArgs *opts,
 
     /* %u %w %Ou %Ow */
     if ( curTok != 'a' && curTok != 'A'
-      && ((minLen <= 1 && maxLen >= 1) || (int)tok->map->data)
+      && ((minLen <= 1 && maxLen >= 1) || PTR2INT(tok->map->data))
     ) {
 	
 	val = -1;
 
-	if (!(int)tok->map->data) {
+	if (PTR2INT(tok->map->data) == 0) {
 	    if (*yyInput >= '0' && *yyInput <= '9') {
 		val = *yyInput - '0';
 	    }
 	} else {
-	    idxTree = ClockMCGetListIdxTree(opts, (int)tok->map->data /* mcKey */);
+	    idxTree = ClockMCGetListIdxTree(opts, PTR2INT(tok->map->data) /* mcKey */);
 	    if (idxTree == NULL) {
 		return TCL_ERROR;
 	    }
@@ -1293,7 +1293,7 @@ ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts,
 
     /* get or create tree in msgcat dict */
 
-    idxTree = ClockMCGetListIdxTree(opts, (int)tok->map->data /* mcKey */);
+    idxTree = ClockMCGetListIdxTree(opts, PTR2INT(tok->map->data) /* mcKey */);
     if (idxTree == NULL) {
 	return TCL_ERROR;
     }
@@ -1602,7 +1602,7 @@ static ClockScanTokenMap ScnWordTokenMap = {
 };
 
 
-inline unsigned int
+static inline unsigned int
 EstimateTokenCount(
     register const char *fmt,
     register const char *end)
@@ -2143,7 +2143,7 @@ done:
     return ret;
 }
 
-inline int
+static inline int
 FrmResultAllocate(
     register DateFormat *dateFmt,
     int len)
@@ -2751,7 +2751,7 @@ ClockFormat(
 		}
 	    } else {
 		const char *s;
-		Tcl_Obj * mcObj = ClockMCGet(opts, (int)map->data /* mcKey */);
+		Tcl_Obj * mcObj = ClockMCGet(opts, PTR2INT(map->data) /* mcKey */);
 		if (mcObj == NULL) {
 		    goto error;
 		}

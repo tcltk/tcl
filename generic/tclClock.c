@@ -336,7 +336,7 @@ ClockDeleteCmdProc(
 /*
  *----------------------------------------------------------------------
  */
-inline Tcl_Obj *
+static inline Tcl_Obj *
 NormTimezoneObj(
     ClockClientData *dataPtr,  /* Client data containing literal pool */
     Tcl_Obj *timezoneObj)
@@ -383,7 +383,7 @@ NormTimezoneObj(
 /*
  *----------------------------------------------------------------------
  */
-inline Tcl_Obj *
+static inline Tcl_Obj *
 ClockGetSystemLocale(
     ClockClientData *dataPtr,	/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp)		/* Tcl interpreter */
@@ -397,7 +397,7 @@ ClockGetSystemLocale(
 /*
  *----------------------------------------------------------------------
  */
-inline Tcl_Obj *
+static inline Tcl_Obj *
 ClockGetCurrentLocale(
     ClockClientData *dataPtr,	/* Client data containing literal pool */
     Tcl_Interp *interp)		/* Tcl interpreter */
@@ -782,7 +782,7 @@ ClockConfigureObjCmd(
 /*
  *----------------------------------------------------------------------
  */
-inline Tcl_Obj*
+static inline Tcl_Obj *
 ClockGetTZData(
     ClientData clientData,	/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
