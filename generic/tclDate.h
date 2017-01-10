@@ -57,6 +57,44 @@ typedef struct DateInfo {
 } DateInfo;
 
 
+enum {CL_INVALIDATE = (signed int)0x80000000};
+/*
+ * Structure containing the command arguments supplied to [clock format] and [clock scan]
+ */
+
+typedef struct ClockFmtScnCmdArgs {
+    Tcl_Obj *formatObj;	    /* Format */
+    Tcl_Obj *localeObj;	    /* Name of the locale where the time will be expressed. */
+    Tcl_Obj *timezoneObj;   /* Default time zone in which the time will be expressed */
+    Tcl_Obj *baseObj;	    /* Base (scan only) */
+} ClockFmtScnCmdArgs;
+
+/*
+ * Structure containing the fields used in [clock format] and [clock scan]
+ */
+
+typedef struct TclDateFields {
+    Tcl_WideInt seconds;	/* Time expressed in seconds from the Posix
+				 * epoch */
+    Tcl_WideInt localSeconds;	/* Local time expressed in nominal seconds
+				 * from the Posix epoch */
+    int secondOfDay;		/* Seconds of day (in-between time only calculation) */
+    int tzOffset;		/* Time zone offset in seconds east of
+				 * Greenwich */
+    Tcl_Obj *tzName;		/* Time zone name (if set the refCount is incremented) */
+    Tcl_Obj *tzData;		/* Time zone data object (internally referenced) */
+    int julianDay;		/* Julian Day Number in local time zone */
+    enum {BCE=1, CE=0} era;	/* Era */
+    int gregorian;		/* Flag == 1 if the date is Gregorian */
+    int year;			/* Year of the era */
+    int dayOfYear;		/* Day of the year (1 January == 1) */
+    int month;			/* Month number */
+    int dayOfMonth;		/* Day of the month */
+    int iso8601Year;		/* ISO8601 week-based year */
+    int iso8601Week;		/* ISO8601 week number */
+    int dayOfWeek;		/* Day of the week */
+} TclDateFields;
+
 /*
  * Meridian: am, pm, or 24-hour style.
  */
@@ -71,23 +109,31 @@ typedef enum _MERIDIAN {
 
 #define CLOCK_FMT_SCN_STORAGE_GC_SIZE 32
 
+#define CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE 12
 
-typedef struct ClockFormatToken	  ClockFormatToken;
-typedef struct ClockScanToken	  ClockScanToken;
+typedef enum _CLCKTOK_TYPE {
+   CTOKT_EOB=0, CTOKT_DIGIT, CTOKT_SPACE
+} CLCKTOK_TYPE;
+
 typedef struct ClockFmtScnStorage ClockFmtScnStorage;
 
 typedef struct ClockFormatToken {
-    ClockFormatToken *nextTok;
+    CLCKTOK_TYPE      type;
 } ClockFormatToken;
 
 typedef struct ClockScanToken {
-    ClockScanToken   *nextTok;
+    unsigned short int	type;
+    unsigned short int	minSize;
+    unsigned short int	maxSize;
+    unsigned short int	offs;
 } ClockScanToken;
 
 typedef struct ClockFmtScnStorage {
-    int		      objRefCount;	/* Reference count shared across threads */
-    ClockScanToken   *firstScnTok;
-    ClockFormatToken *firstFmtTok;
+    int			 objRefCount;	/* Reference count shared across threads */
+    ClockScanToken     **scnTok;
+    unsigned int	 scnTokC;
+    ClockFormatToken   **fmtTok;
+    unsigned int	 fmtTokC;
 #if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
     ClockFmtScnStorage	*nextPtr;
     ClockFmtScnStorage	*prevPtr;
@@ -115,6 +161,9 @@ MODULE_SCOPE ClockFmtScnStorage *
 		    Tcl_GetClockFrmScnFromObj(Tcl_Interp *interp,
 			Tcl_Obj *objPtr);
 
+MODULE_SCOPE int    ClockScan(ClientData clientData, Tcl_Interp *interp,
+			TclDateFields *date, Tcl_Obj *strObj, 
+			ClockFmtScnCmdArgs *opts);
 
 /*
  * Other externals.
