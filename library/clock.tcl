@@ -676,7 +676,7 @@ proc mcget {locale args} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::format { args } {
+proc ::tcl::clock::__org_format { args } {
 
     variable FormatProc
     variable TZData

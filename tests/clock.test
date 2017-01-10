@@ -18600,6 +18600,11 @@ test clock-6.18 {zone token (%z) is optional} {
 	 [clock scan "  2009-06-30T18:30:00  " -format "%Y-%m-%dT%H:%M:%S %z" -gmt 1] \
 } {1246390200 1246386600 1246386600}
 
+test clock-6.19 {no token parsing} {
+    list [catch { clock scan "%E%O%" -format "%E%O%" }] \
+         [catch { clock scan "...%..." -format "...%%..." }]
+} {0 0}
+
 test clock-7.1 {Julian Day} {
     clock scan 0 -format %J -gmt true
 } -210866803200
