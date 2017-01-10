@@ -105,8 +105,8 @@ typedef enum ClockLiteral {
 typedef enum ClockMsgCtLiteral {
     MCLIT__NIL, /* placeholder */
     MCLIT_MONTHS_FULL,	MCLIT_MONTHS_ABBREV,  MCLIT_MONTHS_COMB,
-    MCLIT_DAYS_OF_WEEK_FULL,  MCLIT_DAYS_OF_WEEK_ABBREV,
-    MCLIT_AM,  MCLIT_PM,
+    MCLIT_DAYS_OF_WEEK_FULL,  MCLIT_DAYS_OF_WEEK_ABBREV,  MCLIT_DAYS_OF_WEEK_COMB,
+    MCLIT_AM,  MCLIT_PM, 
     MCLIT_BCE,	 MCLIT_CE,
     MCLIT_BCE2,	 MCLIT_CE2,
     MCLIT_BCE3,	 MCLIT_CE3,
@@ -117,8 +117,8 @@ typedef enum ClockMsgCtLiteral {
 #define CLOCK_LOCALE_LITERAL_ARRAY(litarr, pref) static const char *const litarr[] = { \
     pref "", \
     pref "MONTHS_FULL", pref "MONTHS_ABBREV", pref "MONTHS_COMB", \
-    pref "DAYS_OF_WEEK_FULL", pref "DAYS_OF_WEEK_ABBREV", \
-    pref "AM",	   pref "PM", \
+    pref "DAYS_OF_WEEK_FULL", pref "DAYS_OF_WEEK_ABBREV", pref "DAYS_OF_WEEK_COMB", \
+    pref "AM", pref "PM", \
     pref "BCE",	   pref "CE", \
     pref "b.c.e.", pref "c.e.", \
     pref "b.c.",   pref "a.d.", \
