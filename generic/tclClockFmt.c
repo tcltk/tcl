@@ -31,6 +31,8 @@ TCL_DECLARE_MUTEX(ClockFmtMutex); /* Serializes access to common format list. */
 
 static void ClockFmtScnStorageDelete(ClockFmtScnStorage *fss);
 
+static void ClockFrmScnFinalize(ClientData clientData);
+
 /*
  * Clock scan and format facilities.
  */
@@ -148,7 +150,7 @@ ClockFmtScnStorage_GC_Out(ClockFmtScnStorage *entry)
  */
 
 static Tcl_HashTable FmtScnHashTable;
-static int	     initFmtScnHashTable = 0;
+static int	     initialized = 0;
 
 inline Tcl_HashEntry *
 HashEntry4FmtScn(ClockFmtScnStorage *fss) {
@@ -246,16 +248,18 @@ FindOrCreateFmtScnStorage(
     Tcl_MutexLock(&ClockFmtMutex);
 
     /* if not yet initialized */
-    if (!initFmtScnHashTable) {
+    if (!initialized) {
 	/* initialize type */
 	memcpy(&ClockFmtScnStorageHashKeyType, &tclStringHashKeyType, sizeof(tclStringHashKeyType));
 	ClockFmtScnStorageHashKeyType.allocEntryProc = ClockFmtScnStorageAllocProc;
 	ClockFmtScnStorageHashKeyType.freeEntryProc = ClockFmtScnStorageFreeProc;
-	initFmtScnHashTable = 1;
 
 	/* initialize hash table */
 	Tcl_InitCustomHashTable(&FmtScnHashTable, TCL_CUSTOM_TYPE_KEYS,
 	    &ClockFmtScnStorageHashKeyType);
+
+	initialized = 1;
+	Tcl_CreateExitHandler(ClockFrmScnFinalize, NULL);
     }
 
     /* get or create entry (and alocate storage) */
@@ -845,18 +849,30 @@ done:
 }
 
 
-static void
-Tcl_GetClockFrmScnFinalize() 
+MODULE_SCOPE void
+ClockFrmScnClearCaches(void)
 {
+    Tcl_MutexLock(&ClockFmtMutex);
+    /* clear caches ... */
+    Tcl_MutexUnlock(&ClockFmtMutex);
+}
+
+static void
+ClockFrmScnFinalize(
+    ClientData clientData)  /* Not used. */
+{
+    Tcl_MutexLock(&ClockFmtMutex);
 #if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
     /* clear GC */
     ClockFmtScnStorage_GC.stackPtr = NULL;
     ClockFmtScnStorage_GC.stackBound = NULL;
     ClockFmtScnStorage_GC.count = 0;
 #endif
-    if (initFmtScnHashTable) {
+    if (initialized) {
 	Tcl_DeleteHashTable(&FmtScnHashTable);
+	initialized = 0;
     }
+    Tcl_MutexUnlock(&ClockFmtMutex);
     Tcl_MutexFinalize(&ClockFmtMutex);
 }
 /*
