@@ -2560,12 +2560,13 @@ ClockFreeScan(
     Tcl_Obj *timezoneObj,	/* Default time zone in which the time will be expressed */
     Tcl_Obj *locale)		/* (Unused) Name of the locale where the time will be scanned. */
 {
+    enum Flags {CL_INVALIDATE = (signed int)0x80000000};
+
     ClockClientData *dataPtr = clientData;
     Tcl_Obj **literals = dataPtr->literals;
 
     DateInfo yy;		/* parse structure of TclClockFreeScan */
     TclDateFields date;		/* date fields used for converting from seconds */
-    TclDateFields date2;	/* date fields used for in-between calculation */
     Tcl_Obj *tzdata;
     int secondOfDay;		/* Seconds of day (time only calculation) */
     Tcl_WideInt seconds;
@@ -2573,7 +2574,6 @@ ClockFreeScan(
     // Tcl_Obj *cleanUpList = Tcl_NewObj();
 
     date.tzName = NULL;
-    date2.tzName = NULL;
 
     /* If time zone not specified use system time zone */
     if (timezoneObj == NULL || 
@@ -2670,11 +2670,14 @@ ClockFreeScan(
 	}
     }
     
+    /* on demand (lazy) assemble julianDay using new year, month, etc. */
+    date.julianDay = CL_INVALIDATE;
+
+    /* 
+     * Assemble date, time, zone into seconds-from-epoch
+     */
+
     SetDateFieldsTimeZone(&date, timezoneObj);
-
-    /* Assemble date, time, zone into seconds-from-epoch */
-
-    GetJulianDayFromEraYearMonthDay(&date, GREGORIAN_CHANGE_DATE);
 
     if (yy.dateHaveTime == -1) {
 	secondOfDay = 0;
@@ -2694,80 +2697,79 @@ ClockFreeScan(
 	secondOfDay = 0;
     }
 
-    date.localSeconds =
-	-210866803200L
-	+ ( 86400 * (Tcl_WideInt)date.julianDay )
-	+ secondOfDay;
-
-    SetDateFieldsTimeZone(&date, timezoneObj);
-    if (ConvertLocalToUTC(interp, &date, tzdata, GREGORIAN_CHANGE_DATE)
-	  != TCL_OK) {
-	goto done;
-    }
-
-    seconds = date.seconds;
-
     /*
      * Do relative times
      */
 
+repeat_rel:
+
     if (yy.dateHaveRel) {
 
-	/*
-	seconds = [add $seconds \
-			 yy.dateRelMonth months yy.dateRelDay days yy.dateRelMonthSecond seconds \
-			 -timezone $timezone -locale $locale]
-	*/
+	/* add months (or years in months) */
+
+	if (yy.dateRelMonth != 0) {
+	    int m, h;
+
+	    /* if needed extract year, month, etc. again */
+	    if (date.month == CL_INVALIDATE) {
+		GetGregorianEraYearDay(&date, GREGORIAN_CHANGE_DATE);
+		GetMonthDay(&date);
+		GetYearWeekDay(&date, GREGORIAN_CHANGE_DATE);
+	    }
+
+	    /* add the requisite number of months */
+	    date.month += yy.dateRelMonth - 1;
+	    date.year += date.month / 12;
+	    m = date.month % 12;
+	    date.month = m + 1;
+
+	    /* if the day doesn't exist in the current month, repair it */
+	    h = hath[IsGregorianLeapYear(&date)][m];
+	    if (date.dayOfMonth > h) {
+		date.dayOfMonth = h;
+	    }
+
+	    /* on demand (lazy) assemble julianDay using new year, month, etc. */
+	    date.julianDay = CL_INVALIDATE;
+
+	    yy.dateRelMonth = 0;
+	}
+
+	/* add days (or other parts aligned to days) */
+	if (yy.dateRelDay) {
+
+	    /* assemble julianDay using new year, month, etc. */
+	    if (date.julianDay == CL_INVALIDATE) {
+		GetJulianDayFromEraYearMonthDay(&date, GREGORIAN_CHANGE_DATE);
+	    }
+	    date.julianDay += yy.dateRelDay;	       
+	    
+	    /* julianDay was changed, on demand (lazy) extract year, month, etc. again */
+	    date.month = CL_INVALIDATE;
+
+	    yy.dateRelDay = 0;
+	}
+
+	/* relative time (seconds) */
+	secondOfDay += yy.dateRelSeconds;
+	yy.dateRelSeconds = 0;
+
     }
 
     /*
-     * Do relative weekday
-     */
-
-    if (yy.dateHaveDay && !yy.dateHaveDate) {
-
-	memcpy(&date2, &date, sizeof(date));
-	if (date2.tzName != NULL) {
-	    Tcl_IncrRefCount(date2.tzName);
-	}
-	/*
-	SetDateFieldsTimeZone(&date2, timezoneObj);
-
-	date2.seconds = date.seconds;
-	if (ClockGetDateFields(interp, &date2, tzdata, GREGORIAN_CHANGE_DATE)
-	      != TCL_OK) {
-	    goto done;
-	}
-	*/
-
-	date2.era = CE;
-	date2.julianDay = WeekdayOnOrBefore(yy.dateDayNumber, date2.julianDay + 6)
-		    + 7 * yy.dateDayOrdinal;
-	if (yy.dateDayOrdinal > 0) {
-	    date2.julianDay -= 7;
-	}
-	secondOfDay = date2.localSeconds % 86400;
-	date2.localSeconds = 
-	    -210866803200
-	    + ( 86400 * (Tcl_WideInt)date2.julianDay )
-	    + secondOfDay;
-	
-	// check set time zone again may be really necessary here:
-	// SetDateFieldsTimeZone(&date2, timezoneObj);
-	if (ConvertLocalToUTC(interp, &date2, tzdata, GREGORIAN_CHANGE_DATE)
-	      != TCL_OK) {
-	    goto done;
-	}
-
-	seconds = date2.seconds;
-    }
-
-    /*
-     * Do relative month
+     * Do relative (ordinal) month
      */
 
     if (yy.dateHaveOrdinalMonth) {
 	int monthDiff;
+
+	/* if needed extract year, month, etc. again */
+	if (date.month == CL_INVALIDATE) {
+	    GetGregorianEraYearDay(&date, GREGORIAN_CHANGE_DATE);
+	    GetMonthDay(&date);
+	    GetYearWeekDay(&date, GREGORIAN_CHANGE_DATE);
+	}
+
 	if (yy.dateMonthOrdinal > 0) {
 	    monthDiff = yy.dateMonth - date.month;
 	    if (monthDiff <= 0) {
@@ -2781,11 +2783,53 @@ ClockFreeScan(
 	    }
 	    yy.dateMonthOrdinal++;
 	}
-	/* [SB] TODO: rewrite it in C: * /
-	seconds = [add $seconds $yy.dateMonthOrdinal years $monthDiff months \
-			 -timezone $timezone -locale $locale]
-	*/
+
+	/* process it further via relative times */
+	yy.dateHaveRel++;
+	date.year += yy.dateMonthOrdinal;
+	yy.dateRelMonth += monthDiff;
+	yy.dateHaveOrdinalMonth = 0;
+
+	goto repeat_rel;
     }
+
+    /*
+     * Do relative weekday
+     */
+
+    if (yy.dateHaveDay && !yy.dateHaveDate) {
+
+	/* if needed assemble julianDay now */
+	if (date.julianDay == CL_INVALIDATE) {
+	    GetJulianDayFromEraYearMonthDay(&date, GREGORIAN_CHANGE_DATE);
+	}
+
+	date.era = CE;
+	date.julianDay = WeekdayOnOrBefore(yy.dateDayNumber, date.julianDay + 6)
+		    + 7 * yy.dateDayOrdinal;
+	if (yy.dateDayOrdinal > 0) {
+	    date.julianDay -= 7;
+	}
+    }
+
+    /* If needed assemble julianDay using new year, month, etc. */
+    if (date.julianDay == CL_INVALIDATE) {
+	GetJulianDayFromEraYearMonthDay(&date, GREGORIAN_CHANGE_DATE);
+    }
+    
+    /* Local seconds to UTC */
+
+    date.localSeconds =
+	-210866803200L
+	+ ( 86400 * (Tcl_WideInt)date.julianDay )
+	+ ( secondOfDay % 86400 );
+
+    if (ConvertLocalToUTC(interp, &date, tzdata, GREGORIAN_CHANGE_DATE)
+	  != TCL_OK) {
+	goto done;
+    }
+
+    seconds = date.seconds;
 
     ret = TCL_OK;
 
@@ -2793,9 +2837,6 @@ done:
 
     if (date.tzName != NULL) {
 	Tcl_DecrRefCount(date.tzName);
-    }
-    if (date2.tzName != NULL) {
-	Tcl_DecrRefCount(date2.tzName);
     }
     // Tcl_DecrRefCount(cleanUpList);
 
