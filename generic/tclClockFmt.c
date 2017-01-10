@@ -514,7 +514,7 @@ LocaleListSearch(ClockFmtScnCmdArgs *opts,
     int minLen, int maxLen)
 {
     Tcl_Obj **lstv;
-    int	      lstc, i, l;
+    int	      lstc, i, l, lf = -1;
     const char *s;
     Tcl_Obj *valObj;
 
@@ -536,14 +536,25 @@ LocaleListSearch(ClockFmtScnCmdArgs *opts,
 	if ( l >= minLen && l <= maxLen
 	  && strncasecmp(yyInput, s, l) == 0
 	) {
+	    /* found, try to find longest value (greedy search) */
+	    if (l < maxLen && minLen != maxLen) {
+		lf = i;
+		minLen = l + 1;
+		continue;
+	    }
 	    *val = i;
 	    yyInput += l;
 	    break;
 	}
     }
 
-    /* if not found */
+    /* if found */
     if (i < lstc) {
+	return TCL_OK;
+    }
+    if (lf >= 0) {
+	*val = lf;
+	yyInput += minLen - 1;
 	return TCL_OK;
     }
     return TCL_RETURN;
