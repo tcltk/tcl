@@ -383,16 +383,52 @@ NormTimezoneObj(
 /*
  *----------------------------------------------------------------------
  */
+inline Tcl_Obj *
+ClockGetSystemLocale(
+    ClockClientData *dataPtr,	/* Opaque pointer to literal pool, etc. */
+    Tcl_Interp *interp)		/* Tcl interpreter */
+{
+    if (Tcl_EvalObjv(interp, 1, &dataPtr->literals[LIT_GETSYSTEMLOCALE], 0) != TCL_OK) {
+	return NULL;
+    }
+
+    return Tcl_GetObjResult(interp);
+}
+/*
+ *----------------------------------------------------------------------
+ */
+inline Tcl_Obj *
+ClockGetCurrentLocale(
+    ClockClientData *dataPtr,	/* Client data containing literal pool */
+    Tcl_Interp *interp)		/* Tcl interpreter */
+{   
+    if (Tcl_EvalObjv(interp, 1, &dataPtr->literals[LIT_GETCURRENTLOCALE], 0) != TCL_OK) {
+	return NULL;
+    }
+
+    Tcl_SetObjRef(dataPtr->CurrentLocale, Tcl_GetObjResult(interp));
+    Tcl_UnsetObjRef(dataPtr->CurrentLocaleDict);
+
+    return dataPtr->CurrentLocale;
+}
+/*
+ *----------------------------------------------------------------------
+ */
 static Tcl_Obj *
 NormLocaleObj(
-    ClockClientData *dataPtr,  /* Client data containing literal pool */
+    ClockClientData *dataPtr,	/* Client data containing literal pool */
+    Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Obj    *localeObj,
     Tcl_Obj   **mcDictObj)
 {
     const char *loc;
     if ( localeObj == NULL || localeObj == dataPtr->CurrentLocale
-      || localeObj == dataPtr->literals[LIT_C]
+      || localeObj == dataPtr->literals[LIT_C] 
+      || localeObj == dataPtr->literals[LIT_CURRENT]
     ) {
+	if (dataPtr->CurrentLocale == NULL) {
+	    ClockGetCurrentLocale(dataPtr, interp);
+	}
 	*mcDictObj = dataPtr->CurrentLocaleDict;
 	return dataPtr->CurrentLocale;
     }
@@ -404,19 +440,23 @@ NormLocaleObj(
     }
 
     loc = TclGetString(localeObj);
-    if (dataPtr->CurrentLocale != NULL &&
-	(localeObj == dataPtr->CurrentLocale
-	   || strcmp(loc, TclGetString(dataPtr->CurrentLocale)) == 0
+    if ( dataPtr->CurrentLocale != NULL
+      && ( localeObj == dataPtr->CurrentLocale
+       || (localeObj->length == dataPtr->CurrentLocale->length
+	  && strcmp(loc, TclGetString(dataPtr->CurrentLocale)) == 0
 	)
+      )
     ) {
 	*mcDictObj = dataPtr->CurrentLocaleDict;
 	localeObj = dataPtr->CurrentLocale;
     }
     else
-    if (dataPtr->LastUsedLocale != NULL &&
-	(localeObj == dataPtr->LastUsedLocale
-	   || strcmp(loc, TclGetString(dataPtr->LastUsedLocale)) == 0
+    if ( dataPtr->LastUsedLocale != NULL
+      && ( localeObj == dataPtr->LastUsedLocale
+       || (localeObj->length == dataPtr->LastUsedLocale->length
+	  && strcmp(loc, TclGetString(dataPtr->LastUsedLocale)) == 0
 	)
+      )
     ) {
 	*mcDictObj = dataPtr->LastUsedLocaleDict;
 	Tcl_SetObjRef(dataPtr->LastUnnormUsedLocale, localeObj);
@@ -424,10 +464,26 @@ NormLocaleObj(
     }
     else
     if (
-	strcmp(loc, Literals[LIT_C]) == 0
+	 (localeObj->length == 1 /* C */
+	   && strncasecmp(loc, Literals[LIT_C], localeObj->length) == 0)
+      || (localeObj->length == 7 /* current */
+	   && strncasecmp(loc, Literals[LIT_CURRENT], localeObj->length) == 0)
     ) {
+	if (dataPtr->CurrentLocale == NULL) {
+	    ClockGetCurrentLocale(dataPtr, interp);
+	}
 	*mcDictObj = dataPtr->CurrentLocaleDict;
 	localeObj = dataPtr->CurrentLocale;
+    } 
+    else 
+    if (
+	 (localeObj->length == 6 /* system */
+	   && strncasecmp(loc, Literals[LIT_SYSTEM], localeObj->length) == 0)
+    ) {
+	Tcl_SetObjRef(dataPtr->LastUnnormUsedLocale, localeObj);
+	localeObj = ClockGetSystemLocale(dataPtr, interp);
+	Tcl_SetObjRef(dataPtr->LastUsedLocale, localeObj);
+	*mcDictObj = NULL;
     } 
     else 
     {
@@ -450,7 +506,7 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 	/* if locale was not yet used */
 	if ( !(opts->flags & CLF_LOCALE_USED) ) {
 	    
-	    opts->localeObj = NormLocaleObj(opts->clientData, 
+	    opts->localeObj = NormLocaleObj(opts->clientData, opts->interp,
 		opts->localeObj, &opts->mcDictObj);
 	    
 	    if (opts->localeObj == NULL) {
@@ -490,6 +546,8 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 	    }
 	    if ( opts->localeObj == dataPtr->CurrentLocale ) {
 		Tcl_SetObjRef(dataPtr->CurrentLocaleDict, opts->mcDictObj);
+	    } else if ( opts->localeObj == dataPtr->LastUsedLocale ) {
+		Tcl_SetObjRef(dataPtr->LastUsedLocaleDict, opts->mcDictObj);
 	    } else {
 		Tcl_SetObjRef(dataPtr->LastUsedLocale, opts->localeObj);
 		Tcl_UnsetObjRef(dataPtr->LastUnnormUsedLocale);
@@ -2717,7 +2775,7 @@ _ClockParseFmtScnArgs(
 
     if ((saw & (1 << CLOCK_FORMAT_GMT))
 	    && (saw & (1 << CLOCK_FORMAT_TIMEZONE))) {
-	Tcl_SetObjResult(interp, litPtr[LIT_CANNOT_USE_GMT_AND_TIMEZONE]);
+	Tcl_SetResult(interp, "cannot use -gmt and -timezone in same call", TCL_STATIC);
 	Tcl_SetErrorCode(interp, "CLOCK", "gmtWithTimezone", NULL);
 	return TCL_ERROR;
     }
