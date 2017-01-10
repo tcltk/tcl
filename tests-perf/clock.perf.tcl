@@ -150,6 +150,13 @@ proc test-scan {{reptime 1000}} {
     # Scan : century, lookup table month and day (list scan: entries with position 12 / 31)
     {clock scan {2016 Dec 31} -format {%C%y %b %Od} -locale en -gmt 1}
 
+    # Scan : ISO date-time (CEST)
+    {clock scan "2009-06-30T18:30:00+02:00" -format "%Y-%m-%dT%H:%M:%S%z"}
+    {clock scan "2009-06-30T18:30:00 CEST" -format "%Y-%m-%dT%H:%M:%S %z"}
+    # Scan : ISO date-time (UTC)
+    {clock scan "2009-06-30T18:30:00Z" -format "%Y-%m-%dT%H:%M:%S%z"}
+    {clock scan "2009-06-30T18:30:00 UTC" -format "%Y-%m-%dT%H:%M:%S %z"}
+
     # Scan : dynamic format (cacheable)
     {clock scan "25.11.2015 10:35:55" -format [string trim "%d.%m.%Y %H:%M:%S "] -base 0 -gmt 1}
 
