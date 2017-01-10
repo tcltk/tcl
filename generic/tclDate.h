@@ -509,11 +509,4 @@ MODULE_SCOPE int    ClockFormat(register DateFormat *dateFmt,
 
 MODULE_SCOPE void   ClockFrmScnClearCaches(void);
 
-/*
- * Other externals.
- */
-
-MODULE_SCOPE unsigned long TclEnvEpoch; /* Epoch of the tcl environment 
-					 * (if changed with tcl-env). */
-
 #endif /* _TCLCLOCK_H */

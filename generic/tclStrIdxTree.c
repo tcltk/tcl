@@ -418,7 +418,8 @@ TclStrIdxTreeGetFromObj(Tcl_Obj *objPtr) {
 /*
  * Several debug primitives
  */
-#if 1
+#if 0
+/* currently unused, debug resp. test purposes only */
 
 void 
 TclStrIdxTreePrint(
