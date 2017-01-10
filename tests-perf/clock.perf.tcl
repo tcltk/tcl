@@ -15,10 +15,19 @@
 # of this file.
 # 
 
+
+## set testing defaults:
 set ::env(TCL_TZ) :CET
 
+## warm-up (load clock.tcl, system zones, etc.):
+clock scan "" -gmt 1
+clock scan ""
+clock scan "" -timezone :CET
+
+## ------------------------------------------
+
 proc {**STOP**} {args} {
-  return -code error -level 2 "**STOP** in [info level [expr {[info level]-1}]] [join $args { }]" 
+  return -code error -level 4 "**STOP** in [info level [expr {[info level]-2}]] [join $args { }]" 
 }
 
 proc _test_get_commands {lst} {
@@ -43,7 +52,7 @@ proc _test_out_total {} {
   puts ""
 }
 
-proc _test_run {reptime lst {outcmd {puts {$_(r)}}}} {
+proc _test_run {reptime lst {outcmd {puts $_(r)}}} {
   upvar _ _
   array set _ [list ittm {} itcnt {} itrate {} reptime $reptime]
 
@@ -74,6 +83,22 @@ proc test-scan {{reptime 1000}} {
     {clock scan "1111" -format "%d%m%y" -base 0 -gmt 1}
     {clock scan "11111" -format "%d%m%y" -base 0 -gmt 1}
     {clock scan "111111" -format "%d%m%y" -base 0 -gmt 1}
+    # Scan : greedy match (space separated)
+    {clock scan "1 1 1" -format "%d%m%y" -base 0 -gmt 1}
+    {clock scan "111 1" -format "%d%m%y" -base 0 -gmt 1}
+    {clock scan "1 111" -format "%d%m%y" -base 0 -gmt 1}
+    {clock scan "1 11 1" -format "%d%m%y" -base 0 -gmt 1}
+    {clock scan "1 11 11" -format "%d%m%y" -base 0 -gmt 1}
+    {clock scan "11 11 11" -format "%d%m%y" -base 0 -gmt 1}
+
+    # Scan : time (in gmt)
+    {clock scan "10:35:55" -format "%H:%M:%S" -base 1000000000 -gmt 1}
+    # Scan : time (system time zone, with base)
+    {clock scan "10:35:55" -format "%H:%M:%S" -base 1000000000}
+    # Scan : time (gmt, without base)
+    {clock scan "10:35:55" -format "%H:%M:%S" -gmt 1}
+    # Scan : time (system time zone, without base)
+    {clock scan "10:35:55" -format "%H:%M:%S"}
 
     # Scan : date-time (in gmt)
     {clock scan "25.11.2015 10:35:55" -format "%d.%m.%Y %H:%M:%S" -base 0 -gmt 1}
@@ -84,6 +109,17 @@ proc test-scan {{reptime 1000}} {
 
     # Scan : dynamic format (cacheable)
     {clock scan "25.11.2015 10:35:55" -format [string trim "%d.%m.%Y %H:%M:%S "] -base 0 -gmt 1}
+
+    # Scan : julian day in gmt
+    {clock scan 2451545 -format %J -gmt 1}
+    # Scan : julian day in system TZ
+    {clock scan 2451545 -format %J}
+    # Scan : julian day in other TZ
+    {clock scan 2451545 -format %J -timezone +0200}
+    # Scan : julian day with time:
+    {clock scan "2451545 10:20:30" -format "%J %H:%M:%S"}
+    # Scan : julian day with time (greedy match):
+    {clock scan "2451545 102030" -format "%J%H%M%S"}
 
     # Scan : zone only
     {clock scan "CET" -format "%z"}
@@ -144,6 +180,10 @@ proc test-other {{reptime 1000}} {
   _test_run $reptime {
     # Bad zone
     {catch {clock scan "1 day" -timezone BAD_ZONE -locale en}}
+
+    # Scan : julian day (overflow)
+    {catch {clock scan 5373485 -format %J}}
+
     **STOP**
     # Scan : test rotate of GC objects (format is dynamic, so tcl-obj removed with last reference)
     {set i 0; time { clock scan "[incr i] - 25.11.2015" -format "$i - %d.%m.%Y" -base 0 -gmt 1 } 50}
@@ -154,11 +194,11 @@ proc test-other {{reptime 1000}} {
 
 proc test {{reptime 1000}} {
   puts ""
-  test-scan $reptime
-  #test-freescan $reptime
+  #test-scan $reptime
+  test-freescan $reptime
   test-other $reptime
 
   puts \n**OK**
 }
 
-test 250; # 250 ms
+test 100; # ms

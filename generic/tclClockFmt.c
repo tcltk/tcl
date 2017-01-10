@@ -35,6 +35,66 @@ static void ClockFmtScnStorageDelete(ClockFmtScnStorage *fss);
  * Clock scan and format facilities.
  */
 
+inline int
+_str2int(
+    time_t     *out,
+    register 
+    const char *p,
+    const char *e,
+    int sign)
+{
+    register time_t val = 0, prev = 0;
+    if (sign > 0) {
+	while (p < e) {
+	    val = val * 10 + (*p++ - '0');
+	    if (val < prev) {
+		return TCL_ERROR;
+	    }
+	    prev = val;
+	}
+    } else {
+	while (p < e) {
+	    val = val * 10 - (*p++ - '0');
+	    if (val > prev) {
+		return TCL_ERROR;
+	    }
+	    prev = val;
+	}
+    }
+    *out = val;
+    return TCL_OK;
+} 
+
+inline int
+_str2wideInt(
+    Tcl_WideInt *out,
+    register 
+    const char	*p,
+    const char	*e,
+    int sign)
+{
+    register Tcl_WideInt val = 0, prev = 0;
+    if (sign > 0) {
+	while (p < e) {
+	    val = val * 10 + (*p++ - '0');
+	    if (val < prev) {
+		return TCL_ERROR;
+	    }
+	    prev = val;
+	}
+    } else {
+	while (p < e) {
+	    val = val * 10 - (*p++ - '0');
+	    if (val > prev) {
+		return TCL_ERROR;
+	    }
+	    prev = val;
+	}
+    }
+    *out = val;
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  */
@@ -403,21 +463,34 @@ Tcl_GetClockFrmScnFromObj(
     memset(tok, 0, sizeof(*(tok)));
 
 const char *ScnSTokenMapChars = 
-    "dmyYHMS";
+    "dmyYHMSJs";
 static ClockScanTokenMap ScnSTokenMap[] = {
-    {CTOKT_DIGIT, CLF_DATE, 1, 2, TclOffset(DateInfo, date.dayOfMonth), 
+    /* %d */
+    {CTOKT_DIGIT, CLF_DATE, 1, 2, TclOffset(DateInfo, date.dayOfMonth),
 	NULL},
+    /* %m */
     {CTOKT_DIGIT, CLF_DATE, 1, 2, TclOffset(DateInfo, date.month),
 	NULL},
+    /* %y */
     {CTOKT_DIGIT, CLF_DATE, 1, 2, TclOffset(DateInfo, date.year),
 	NULL},
+    /* %Y */
     {CTOKT_DIGIT, CLF_DATE, 1, 4, TclOffset(DateInfo, date.year),
 	NULL},
+    /* %H */
     {CTOKT_DIGIT, CLF_TIME, 1, 2, TclOffset(DateInfo, date.hour),
 	NULL},
+    /* %M */
     {CTOKT_DIGIT, CLF_TIME, 1, 2, TclOffset(DateInfo, date.minutes),
 	NULL},
+    /* %S */
     {CTOKT_DIGIT, CLF_TIME, 1, 2, TclOffset(DateInfo, date.secondOfDay),
+	NULL},
+    /* %J */
+    {CTOKT_DIGIT, CLF_DATE | CLF_JULIANDAY,  1, 0xffff, TclOffset(DateInfo, date.julianDay),
+	NULL},
+    /* %s */
+    {CTOKT_DIGIT, CLF_LOCALSEC | CLF_SIGNED, 1, 0xffff, TclOffset(DateInfo, date.localSeconds),
 	NULL},
 };
 const char *ScnSpecTokenMapChars = 
@@ -576,6 +649,7 @@ ClockScan(
     Tcl_Obj *strObj,		/* String containing the time to scan */
     ClockFmtScnCmdArgs *opts)	/* Command options */
 {
+    ClockClientData *dataPtr = clientData;
     ClockScanToken	*tok;
     ClockScanTokenMap	*map;
     register const char *p, *x, *end;
@@ -590,46 +664,100 @@ ClockScan(
 
     yyMeridian = MER24;
 
-    /* bypass spaces at begin of string */
-
     p = TclGetString(strObj);
     end = p + strObj->length;
-    while (p < end && isspace(UCHAR(*p))) {
-	p++;
+    /* in strict mode - bypass spaces at begin / end only (not between tokens) */
+    if (opts->flags & CLF_STRICT) {
+	while (p < end && isspace(UCHAR(*p))) {
+	    p++;
+	}
     }
     info->dateStart = yyInput = p;
     
     /* parse string */
-    for (; tok->map != NULL; yyInput = p, tok++) {
+    for (; tok->map != NULL; tok++) {
 	map = tok->map;
+	/* bypass spaces at begin of input before parsing each token */
+	if (!(opts->flags & CLF_STRICT) && map->type != CTOKT_SPACE) {
+	    while (p < end && isspace(UCHAR(*p))) {
+		p++;
+	    }
+	    yyInput = p;
+	}
 	switch (map->type)
 	{
 	case CTOKT_DIGIT:
 	if (1) {
-	    unsigned int val = 0;
 	    int size = map->maxSize;
-	    /* greedy find digits (look forward), corresponding pre-calculated lookAhead */
-	    size += tok->lookAhead;
-	    x = yyInput + size;
-	    while (isdigit(UCHAR(*p)) && p < x) { p++; };
-	    /* consider reserved (lookAhead) for next tokens */
-	    p -= tok->lookAhead;
+	    int sign = 1;
+	    if (map->flags & CLF_SIGNED) {
+		if (*p == '+') { yyInput = ++p; }
+		else
+		if (*p == '-') { yyInput = ++p; sign = -1; };
+	    }
+	    /* greedy find digits (look for forward digits consider spaces), 
+	     * corresponding pre-calculated lookAhead */
+	    if (size != map->minSize && tok->lookAhead) {
+		int spcnt = 0;
+		const char *pe;
+		size += tok->lookAhead;
+		x = p + size; if (x > end) { x = end; };
+		pe = x;
+		while (p < x) {
+		    if (isspace(UCHAR(*p))) {
+			if (pe > p) { pe = p; };
+			if (x < end) x++;
+			p++;
+			spcnt++;
+			continue;
+		    }
+		    if (isdigit(UCHAR(*p))) {
+			p++;
+			continue;
+		    }
+		    break;
+		}
+		/* consider reserved (lookAhead) for next tokens */
+		p -= tok->lookAhead + spcnt;
+		if (p > pe) {
+		    p = pe;
+		}
+	    } else {
+		x = p + size; if (x > end) { x = end; };
+		while (isdigit(UCHAR(*p)) && p < x) { p++; };
+	    }
 	    size = p - yyInput;
 	    if (size < map->minSize) {
 		/* missing input -> error */
-		goto done;
+		goto error;
 	    }
-	    /* string 2 number */
+	    /* string 2 number, put number into info structure by offset */
 	    p = yyInput; x = p + size;
-	    while (p < x) {
-		val = val * 10 + (*p++ - '0');
+	    if (!(map->flags & CLF_LOCALSEC)) {
+		if (_str2int((time_t *)(((char *)info) + map->offs), 
+			p, x, sign) != TCL_OK) {
+		    goto overflow;
+		}
+		p = x;
+	    } else {
+		if (_str2wideInt((Tcl_WideInt *)(((char *)info) + map->offs), 
+			p, x, sign) != TCL_OK) {
+		    goto overflow;
+		}
+		p = x;
 	    }
-	    /* put number into info by offset */
-	    *(time_t *)(((char *)info) + map->offs) = val;
 	    flags |= map->flags;
 	}
 	break;
 	case CTOKT_SPACE:
+	    /* at least one space in strict mode */
+	    if (opts->flags & CLF_STRICT) {
+		if (!isspace(UCHAR(*p))) {
+		    /* unmatched -> error */
+		    goto error;
+		}
+		p++;
+	    }
 	    while (p < end && isspace(UCHAR(*p))) {
 		p++;
 	    }
@@ -639,7 +767,7 @@ ClockScan(
 	    if (x == tok->tokWord.end) { /* single char word */
 		if (*p != *x) {
 		    /* no match -> error */
-		    goto done;
+		    goto error;
 		}
 		p++;
 		continue;
@@ -648,7 +776,7 @@ ClockScan(
 	    while (p < end && x < tok->tokWord.end && *p++ == *x++) {};
 	    if (x < tok->tokWord.end) {
 		/* no match -> error */
-		goto done;
+		goto error;
 	    }
 	break;
 	}
@@ -661,43 +789,57 @@ ClockScan(
     /* check end was reached */
     if (p < end) {
 	/* something after last token - wrong format */
-	goto done;
+	goto error;
     }
 
     /* invalidate result */
     if (flags & CLF_DATE) {
 
-	yydate.julianDay = CL_INVALIDATE;
+	if (!(flags & CLF_JULIANDAY)) {
+	    info->flags |= CLF_INVALIDATE_SECONDS|CLF_INVALIDATE_JULIANDAY;
 
-	if (yyYear < 100) {
-	    if (yyYear >= ClockGetYearOfCenturySwitch(clientData, interp)) {
-		yyYear -= 100;
+	    if (yyYear < 100) {
+		if (yyYear >= dataPtr->yearOfCenturySwitch) {
+		    yyYear -= 100;
+		}
+		yyYear += dataPtr->currentYearCentury;
 	    }
-	    yyYear += ClockCurrentYearCentury(clientData, interp);
+	    yydate.era = CE;
 	}
-	yydate.era = CE;
-	if (!(flags & CLF_TIME)) {
+	/* if date but no time - reset time */
+	if (!(flags & (CLF_TIME|CLF_LOCALSEC))) {
+	    info->flags |= CLF_INVALIDATE_SECONDS;
 	    yydate.localSeconds = 0;
 	}
     }
 
     if (flags & CLF_TIME) {
+	info->flags |= CLF_INVALIDATE_SECONDS;
 	yySeconds = ToSeconds(yyHour, yyMinutes,
 			    yySeconds, yyMeridian);
-    } else {
-	yySeconds = yydate.localSeconds % 86400;
+    } else
+    if (!(flags & CLF_LOCALSEC)) {
+	info->flags |= CLF_INVALIDATE_SECONDS;
+	yySeconds = yydate.localSeconds % SECONDS_PER_DAY;
     }
 
     ret = TCL_OK;
+    goto done;
+
+overflow:
+
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	"integer value too large to represent", -1));
+    Tcl_SetErrorCode(interp, "CLOCK", "integervalueTooLarge", NULL);
+    goto done;
+
+error:
+
+    Tcl_SetResult(interp,
+	"input string does not match supplied format", TCL_STATIC);
+    Tcl_SetErrorCode(interp, "CLOCK", "badInputString", NULL);
 
 done:
-
-    if (ret != TCL_OK) {
-	Tcl_SetResult(interp,
-	    "input string does not match supplied format", TCL_STATIC);
-	Tcl_SetErrorCode(interp, "CLOCK", "badInputString", NULL);
-	return ret;
-    }
 
     return ret;
 }
