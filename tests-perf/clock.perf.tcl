@@ -25,8 +25,12 @@ proc _test_get_commands {lst} {
   regsub -all {(?:^|\n)[ \t]*(\#[^\n]*)(?=\n\s*[\{\#])} $lst "\n{\\1}"
 }
 
-proc test-scan {{rep 100000}} {
-  foreach c [_test_get_commands {
+proc test-scan {{reptime 1000}} {
+  foreach _(c) [_test_get_commands {
+    # Scan : date
+    {clock scan "25.11.2015" -format "%d.%m.%Y" -base 0 -gmt 1}
+    #return
+    #{**STOP** : Wed Nov 25 01:00:00 CET 2015}
     # FreeScan : relative date
     {clock scan "5 years 18 months 385 days" -base 0 -gmt 1}
     # FreeScan : relative date with relative weekday
@@ -64,33 +68,37 @@ proc test-scan {{rep 100000}} {
      clock scan "19:18:30 EST" -base 148863600
     }
   }] {
-    puts "% [regsub -all {\n[ \t]*} $c {; }]"
-    if {[regexp {\s*\#} $c]} continue
-    puts [clock format [if 1 $c] -locale en]
-    puts [time $c $rep]
+    puts "% [regsub -all {\n[ \t]*} $_(c) {; }]"
+    if {[regexp {\s*\#} $_(c)]} continue
+    puts [clock format [if 1 $_(c)] -locale en]
+    puts [timerate $_(c) $reptime]
     puts ""
   }
 }
 
-proc test-other {{rep 100000}} {
-  foreach c [_test_get_commands {
+proc test-other {{reptime 1000}} {
+  foreach _(c) [_test_get_commands {
     # Bad zone
     {catch {clock scan "1 day" -timezone BAD_ZONE -locale en}}
+    # Scan : test rotate of GC objects (format is dynamic, so tcl-obj removed with last reference)
+    {set i 0; time { clock scan "[incr i] - 25.11.2015" -format "$i - %d.%m.%Y" -base 0 -gmt 1 } 50}
+    # Scan : test reusability of GC objects (format is dynamic, so tcl-obj removed with last reference)
+    {set i 50; time { clock scan "[incr i -1] - 25.11.2015" -format "$i - %d.%m.%Y" -base 0 -gmt 1 } 50}
   }] {
-    puts "% [regsub -all {\n[ \t]*} $c {; }]"
-    if {[regexp {\s*\#} $c]} continue
-    puts [if 1 $c]
-    puts [time $c $rep]
+    puts "% [regsub -all {\n[ \t]*} $_(c) {; }]"
+    if {[regexp {\s*\#} $_(c)]} continue
+    puts [if 1 $_(c)]
+    puts [timerate $_(c) $reptime]
     puts ""
   }
 }
 
-proc test {factor} {
+proc test {{reptime 1000}} {
   puts ""
-  test-scan [expr 10000 * $factor]
-  test-other [expr 5000 * $factor]
+  test-scan $reptime
+  test-other $reptime
 
   puts \n**OK**
 }
 
-test 20; # 50
+test 250; # 250 ms

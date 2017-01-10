@@ -396,6 +396,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclBinary.c \
 	$(GENERIC_DIR)/tclCkalloc.c \
 	$(GENERIC_DIR)/tclClock.c \
+	$(GENERIC_DIR)/tclClockFmt.c \
 	$(GENERIC_DIR)/tclCmdAH.c \
 	$(GENERIC_DIR)/tclCmdIL.c \
 	$(GENERIC_DIR)/tclCmdMZ.c \
@@ -1072,6 +1073,9 @@ tclCkalloc.o: $(GENERIC_DIR)/tclCkalloc.c
 
 tclClock.o: $(GENERIC_DIR)/tclClock.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclClock.c
+
+tclClockFmt.o: $(GENERIC_DIR)/tclClockFmt.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclClockFmt.c
 
 tclCmdAH.o: $(GENERIC_DIR)/tclCmdAH.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCmdAH.c

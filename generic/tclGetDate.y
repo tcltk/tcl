@@ -9,6 +9,7 @@
  *
  * Copyright (c) 1992-1995 Karl Lehenbauer and Mark Diekhans.
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright (c) 2015 Sergey G. Brester aka sebres.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
