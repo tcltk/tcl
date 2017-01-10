@@ -142,21 +142,21 @@ typedef struct TclDateFields {
 				 * epoch */
     Tcl_WideInt localSeconds;	/* Local time expressed in nominal seconds
 				 * from the Posix epoch */
-    time_t tzOffset;		/* Time zone offset in seconds east of
+    int tzOffset;		/* Time zone offset in seconds east of
 				 * Greenwich */
-    time_t julianDay;		/* Julian Day Number in local time zone */
+    int julianDay;		/* Julian Day Number in local time zone */
     enum {BCE=1, CE=0} era;	/* Era */
-    time_t gregorian;		/* Flag == 1 if the date is Gregorian */
-    time_t year;		/* Year of the era */
-    time_t dayOfYear;		/* Day of the year (1 January == 1) */
-    time_t month;		/* Month number */
-    time_t dayOfMonth;		/* Day of the month */
-    time_t iso8601Year;		/* ISO8601 week-based year */
-    time_t iso8601Week;		/* ISO8601 week number */
-    time_t dayOfWeek;		/* Day of the week */
-    time_t hour;		/* Hours of day (in-between time only calculation) */
-    time_t minutes;		/* Minutes of day (in-between time only calculation) */
-    time_t secondOfDay;		/* Seconds of day (in-between time only calculation) */
+    int gregorian;		/* Flag == 1 if the date is Gregorian */
+    int year;			/* Year of the era */
+    int dayOfYear;		/* Day of the year (1 January == 1) */
+    int month;			/* Month number */
+    int dayOfMonth;		/* Day of the month */
+    int iso8601Year;		/* ISO8601 week-based year */
+    int iso8601Week;		/* ISO8601 week number */
+    int dayOfWeek;		/* Day of the week */
+    int hour;			/* Hours of day (in-between time only calculation) */
+    int minutes;		/* Minutes of day (in-between time only calculation) */
+    int secondOfDay;		/* Seconds of day (in-between time only calculation) */
 
     /* Non cacheable fields:	 */
 
@@ -180,34 +180,34 @@ typedef struct DateInfo {
 
     int		flags;
 
-    time_t dateHaveDate;
+    int dateHaveDate;
 
-    time_t dateMeridian;
-    time_t dateHaveTime;
+    int dateMeridian;
+    int dateHaveTime;
 
-    time_t dateTimezone;
-    time_t dateDSTmode;
-    time_t dateHaveZone;
+    int dateTimezone;
+    int dateDSTmode;
+    int dateHaveZone;
 
-    time_t dateRelMonth;
-    time_t dateRelDay;
-    time_t dateRelSeconds;
-    time_t dateHaveRel;
+    int dateRelMonth;
+    int dateRelDay;
+    int dateRelSeconds;
+    int dateHaveRel;
 
-    time_t dateMonthOrdinalIncr;
-    time_t dateMonthOrdinal;
-    time_t dateHaveOrdinalMonth;
+    int dateMonthOrdinalIncr;
+    int dateMonthOrdinal;
+    int dateHaveOrdinalMonth;
 
-    time_t dateDayOrdinal;
-    time_t dateDayNumber;
-    time_t dateHaveDay;
+    int dateDayOrdinal;
+    int dateDayNumber;
+    int dateHaveDay;
 
-    time_t *dateRelPointer;
+    int *dateRelPointer;
 
-    time_t dateSpaceCount;
-    time_t dateDigitCount;
+    int dateSpaceCount;
+    int dateDigitCount;
 
-    time_t dateCentury;
+    int dateCentury;
 
     Tcl_Obj* messages;	    /* Error messages */
     const char* separatrix; /* String separating messages */
@@ -244,7 +244,7 @@ typedef struct DateInfo {
 #define yyDigitCount	(info->dateDigitCount)
 #define yySpaceCount	(info->dateSpaceCount)
 
-inline void
+static inline void
 ClockInitDateInfo(DateInfo *info) {
     memset(info, 0, sizeof(DateInfo));
 }
@@ -314,7 +314,7 @@ typedef struct ClockClientData {
 	Tcl_WideInt seconds;
 	Tcl_WideInt rangesVal[2];   /* Bounds for cached time zone offset */
 	/* values */
-	time_t	    tzOffset;
+	int	    tzOffset;
 	Tcl_Obj	   *tzName;
     } UTC2Local;
     /* Las-period cache for fast Local2UTC conversion */
@@ -325,7 +325,7 @@ typedef struct ClockClientData {
 	Tcl_WideInt localSeconds;
 	Tcl_WideInt rangesVal[2];   /* Bounds for cached time zone offset */
 	/* values */
-	time_t	    tzOffset;
+	int	    tzOffset;
     } Local2UTC;
 } ClockClientData;
 
@@ -444,16 +444,18 @@ typedef struct ClockFmtScnStorage {
     ClockFmtScnStorage	*nextPtr;
     ClockFmtScnStorage	*prevPtr;
 #endif
-/*  +Tcl_HashEntry    hashEntry		/* ClockFmtScnStorage is a derivate of Tcl_HashEntry,
+#if 0
+   +Tcl_HashEntry    hashEntry		/* ClockFmtScnStorage is a derivate of Tcl_HashEntry,
 					 * stored by offset +sizeof(self) */
+#endif
 } ClockFmtScnStorage;
 
 /*
  * Prototypes of module functions.
  */
 
-MODULE_SCOPE time_t ToSeconds(time_t Hours, time_t Minutes,
-			    time_t Seconds, MERIDIAN Meridian);
+MODULE_SCOPE int    ToSeconds(int Hours, int Minutes,
+			    int Seconds, MERIDIAN Meridian);
 MODULE_SCOPE int    IsGregorianLeapYear(TclDateFields *);
 MODULE_SCOPE void
 		    GetJulianDayFromEraYearWeekDay(

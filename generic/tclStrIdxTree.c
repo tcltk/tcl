@@ -171,11 +171,11 @@ TclStrIdxTreeInsertBranch(
 	parent->firstPtr = item;
     if (parent->lastPtr == child)
 	parent->lastPtr = item;
-    if (item->nextPtr = child->nextPtr) {
+    if ( (item->nextPtr = child->nextPtr) ) {
 	item->nextPtr->prevPtr = item;
 	child->nextPtr = NULL;
     }
-    if (item->prevPtr = child->prevPtr) {
+    if ( (item->prevPtr = child->prevPtr) ) {
 	item->prevPtr->nextPtr = item;
 	child->prevPtr = NULL;
     }
@@ -365,7 +365,7 @@ StrIdxTreeObj_DupIntRepProc(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
 	srcPtr = (Tcl_Obj*)srcPtr->internalRep.twoPtrValue.ptr1;
     }
     /* create smart pointer to it (ptr1 != NULL, ptr2 = NULL) */
-    Tcl_InitObjRef(((Tcl_Obj *)copyPtr->internalRep.twoPtrValue.ptr1), 
+    Tcl_InitObjRef(*((Tcl_Obj **)&copyPtr->internalRep.twoPtrValue.ptr1), 
 	srcPtr);
     copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
     copyPtr->typePtr = &StrIdxTreeObjType;
@@ -379,7 +379,7 @@ StrIdxTreeObj_FreeIntRepProc(Tcl_Obj *objPtr)
       && objPtr->internalRep.twoPtrValue.ptr2 == NULL
     ) {
 	/* is a link */
-	Tcl_UnsetObjRef(((Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr1));
+	Tcl_UnsetObjRef(*((Tcl_Obj **)&objPtr->internalRep.twoPtrValue.ptr1));
     } else {
 	/* is a tree */
 	TclStrIdxTree *tree = (TclStrIdxTree*)&objPtr->internalRep.twoPtrValue.ptr1;

@@ -2448,11 +2448,11 @@ TclDateerror(
     infoPtr->separatrix = "\n";
 }
 
-time_t
+MODULE_SCOPE int
 ToSeconds(
-    time_t Hours,
-    time_t Minutes,
-    time_t Seconds,
+    int Hours,
+    int Minutes,
+    int Seconds,
     MERIDIAN Meridian)
 {
     if (Minutes < 0 || Minutes > 59 || Seconds < 0 || Seconds > 59) {

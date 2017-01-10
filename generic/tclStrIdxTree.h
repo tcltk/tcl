@@ -49,7 +49,7 @@ typedef struct TclStrIdx {
  *----------------------------------------------------------------------
  */
 
-inline const char *
+static inline const char *
 TclUtfFindEqual(
     register const char *cs,	/* UTF string to find in cin. */
     register const char *cse,	/* End of cs */
@@ -66,7 +66,7 @@ TclUtfFindEqual(
     return ret;
 }
 
-inline const char *
+static inline const char *
 TclUtfFindEqualNC(
     register const char *cs,	/* UTF string to find in cin. */
     register const char *cse,	/* End of cs */
@@ -89,7 +89,7 @@ TclUtfFindEqualNC(
     return ret;
 }
 
-inline const char *
+static inline const char *
 TclUtfFindEqualNCInLwr(
     register const char *cs,	/* UTF string (in anycase) to find in cin. */
     register const char *cse,	/* End of cs */
@@ -111,7 +111,7 @@ TclUtfFindEqualNCInLwr(
     return ret;
 }
 
-inline const char *
+static inline const char *
 TclUtfNext(
     register const char *src)	/* The current location in the string. */
 {
