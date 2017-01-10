@@ -18588,16 +18588,16 @@ test clock-6.16 {input of ambiguous short locale token (%b)} {
 } {1 {input string does not match supplied format} {CLOCK badInputString}}
 
 test clock-6.17 {spaces are always optional in non-strict mode (default)} {
-    list [clock scan "2009-06-30T18:30:00+02:00" -format "%Y-%m-%dT%H:%M:%S %z" -gmt 1] \
-	 [clock scan "2009-06-30T18:30:00  +02:00" -format "%Y-%m-%dT%H:%M:%S %z" -gmt 1] \
-	 [clock scan "2009-06-30T18:30:00Z" -format "%Y-%m-%dT%H:%M:%S %z" -timezone CET] \
-	 [clock scan "2009-06-30T18:30:00  Z" -format "%Y-%m-%dT%H:%M:%S %z" -timezone CET]
+    list [clock scan "2009-06-30T18:30:00+02:00" -format "%Y-%m-%dT%H:%M:%S%z" -gmt 1] \
+	 [clock scan "2009-06-30T18:30:00  +02:00" -format "%Y-%m-%dT%H:%M:%S%z" -gmt 1] \
+	 [clock scan "2009-06-30T18:30:00Z" -format "%Y-%m-%dT%H:%M:%S%z" -timezone CET] \
+	 [clock scan "2009-06-30T18:30:00  Z" -format "%Y-%m-%dT%H:%M:%S%z" -timezone CET]
 } {1246379400 1246379400 1246386600 1246386600}
 
 test clock-6.18 {zone token (%z) is optional} {
-    list [clock scan "2009-06-30T18:30:00 -01:00" -format "%Y-%m-%dT%H:%M:%S %z" -gmt 1] \
-         [clock scan "2009-06-30T18:30:00" -format "%Y-%m-%dT%H:%M:%S %z" -gmt 1] \
-	 [clock scan "  2009-06-30T18:30:00  " -format "%Y-%m-%dT%H:%M:%S %z" -gmt 1] \
+    list [clock scan "2009-06-30T18:30:00 -01:00" -format "%Y-%m-%dT%H:%M:%S%z" -gmt 1] \
+         [clock scan "2009-06-30T18:30:00" -format "%Y-%m-%dT%H:%M:%S%z" -gmt 1] \
+	 [clock scan "  2009-06-30T18:30:00  " -format "%Y-%m-%dT%H:%M:%S%z" -gmt 1] \
 } {1246390200 1246386600 1246386600}
 
 test clock-6.19 {no token parsing} {
@@ -18674,6 +18674,33 @@ test clock-6.22.11 {Greedy match} {
 test clock-6.22.12 {Greedy match} {
     clock format [clock scan "11 1 120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
 } {Mon Jan 01 01:02:00 GMT 2001}
+test clock-6.22.13 {Greedy match} {
+    clock format [clock scan "1 11 120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
+} {Mon Jan 01 01:02:00 GMT 2001}
+test clock-6.22.14 {Greedy match} {
+    clock format [clock scan "111120" -format "%y%m%d%H%M%S" -gmt 1] -locale en -gmt 1
+} {Mon Jan 01 01:02:00 GMT 2001}
+test clock-6.22.15 {Greedy match} {
+    clock format [clock scan "1111120" -format "%y%m%d%H%M%S" -gmt 1] -locale en -gmt 1
+} {Sat Jan 01 01:02:00 GMT 2011}
+test clock-6.22.16 {Greedy match} {
+    clock format [clock scan "11121120" -format "%y%m%d%H%M%S" -gmt 1] -locale en -gmt 1
+} {Thu Dec 01 01:02:00 GMT 2011}
+test clock-6.22.17 {Greedy match} {
+    clock format [clock scan "111213120" -format "%y%m%d%H%M%S" -gmt 1] -locale en -gmt 1
+} {Tue Dec 13 01:02:00 GMT 2011}
+test clock-6.22.17 {Greedy match (space wins as date-time separator)} {
+    clock format [clock scan "1112 13120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
+} {Sun Jan 02 13:12:00 GMT 2011}
+test clock-6.22.18 {Greedy match (second space wins as date-time separator)} {
+    clock format [clock scan "1112 13 120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
+} {Tue Dec 13 01:02:00 GMT 2011}
+test clock-6.22.19 {Greedy match (space wins as date-time separator)} {
+    clock format [clock scan "111 213120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
+} {Mon Jan 01 21:31:20 GMT 2001}
+test clock-6.22.20 {Greedy match (second space wins as date-time separator)} {
+    clock format [clock scan "111 2 13120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
+} {Sun Jan 02 13:12:00 GMT 2011}
 
 
 test clock-7.1 {Julian Day} {

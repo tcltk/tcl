@@ -713,49 +713,127 @@ clean:
     return (opts->formatObj = valObj);
 }
 
+static const char *
+FindTokenBegin(
+    register const char *p,
+    register const char *end,
+    ClockScanToken *tok)
+{
+    char c;
+    if (p < end) {
+	/* next token a known token type */
+	switch (tok->map->type) {
+	case CTOKT_DIGIT:
+	    /* should match at least one digit */
+	    while (!isdigit(UCHAR(*p)) && (p = TclUtfNext(p)) < end) {};
+	    return p;
+	break;
+	case CTOKT_WORD:
+	    c = *(tok->tokWord.start);
+	    /* should match at least to the first char of this word */
+	    while (*p != c && (p = TclUtfNext(p)) < end) {};
+	    return p;
+	break;
+	case CTOKT_SPACE:
+	    while (!isspace(UCHAR(*p)) && (p = TclUtfNext(p)) < end) {};
+	    return p;
+	break;
+	case CTOKT_CHAR:
+	    c = *((char *)tok->map->data);
+	    while (*p != c && (p = TclUtfNext(p)) < end) {};
+	    return p;
+	break;
+	}
+    }
+    return p;
+}
+
 /* 
  * DetermineGreedySearchLen --
  *
  * Determine min/max lengths as exact as possible (speed, greedy match) 
  *
  */
-inline
-void DetermineGreedySearchLen(ClockFmtScnCmdArgs *opts,
-    DateInfo *info, ClockScanToken *tok, int *minLen, int *maxLen)
+static void
+DetermineGreedySearchLen(ClockFmtScnCmdArgs *opts,
+    DateInfo *info, ClockScanToken *tok, 
+    int *minLenPtr, int *maxLenPtr)
 {
-    register const char *p = yyInput,
+    register int minLen = tok->map->minSize;
+    register int maxLen;
+    register const char *p = yyInput + minLen,
 			*end = info->dateEnd;
-    *minLen = 0;
 
-    /* if still tokens available */
+    /* if still tokens available, try to correct minimum length */
     if ((tok+1)->map) {
 	end -= tok->endDistance + yySpaceCount;
-	/* next token is a word */
-	switch ((tok+1)->map->type) {
-	case CTOKT_WORD:
-	    /* should match at least to the first char of this word */
-	    while (*p != *((tok+1)->tokWord.start) && ++p < end) {};
-	    *minLen = p - yyInput;
-	break;
-	case CTOKT_CHAR:
-	    while (*p != *((char *)(tok+1)->map->data) && ++p < end) {};
-	    *minLen = p - yyInput;
-	break;
+	/* find position of next known token */
+	p = FindTokenBegin(p, end, tok+1);
+	if (p < end) {
+	    minLen = p - yyInput;
 	}
     }
 
     /* max length to the end regarding distance to end (min-width of following tokens) */
-    *maxLen = end - p;
-    if (*maxLen > tok->map->maxSize) {
-	*maxLen = tok->map->maxSize;
+    maxLen = end - yyInput;
+    /* several amendments */
+    if (maxLen > tok->map->maxSize) {
+	maxLen = tok->map->maxSize;
     };
-
-    if (*minLen < tok->map->minSize) {
-	*minLen = tok->map->minSize;
+    if (minLen < tok->map->minSize) {
+	minLen = tok->map->minSize;
     } 
-    if (*minLen > *maxLen) {
-	*maxLen = *minLen;
+    if (minLen > maxLen) {
+	maxLen = minLen;
     }
+    if (maxLen > info->dateEnd - yyInput) {
+	maxLen = info->dateEnd - yyInput;
+    }
+
+    /* check digits rigth now */
+    if (tok->map->type == CTOKT_DIGIT) {
+	p = yyInput;
+	end = p + maxLen;
+	if (end > info->dateEnd) { end = info->dateEnd; };
+	while (isdigit(UCHAR(*p)) && p < end) { p++; };
+	maxLen = p - yyInput;
+    }
+
+    /* try to get max length more precise for greedy match,
+     * check the next ahead token available there */
+    if (minLen < maxLen && tok->lookAhTok) {
+	ClockScanToken *laTok = tok + tok->lookAhTok + 1;
+	p = yyInput + maxLen;
+	/* regards all possible spaces here (because they are optional) */
+	end = p + tok->lookAhMax + yySpaceCount + 1;
+	if (end > info->dateEnd) {
+	    end = info->dateEnd;
+	}
+	p += tok->lookAhMin;
+	if (laTok->map && p < end) {
+	    const char *f;
+	    /* try to find laTok between [lookAhMin, lookAhMax] */
+	    while (minLen < maxLen) {
+		f = FindTokenBegin(p, end, laTok);
+		/* if found (not below lookAhMax) */
+		if (f < end) {
+		    break;
+		}
+		/* try again with fewer length */
+		maxLen--;
+		p--;
+		end--;
+	    }
+	} else if (p > end) {
+	    maxLen -= (p - end);
+	    if (maxLen < minLen) {
+		maxLen = minLen;
+	    }
+	}
+    }
+
+    *minLenPtr = minLen;
+    *maxLenPtr = maxLen;
 }
 
 inline int 
@@ -1447,9 +1525,9 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     {CTOKT_DIGIT, CLF_POSIXSEC | CLF_SIGNED, 0, 1, 0xffff, TclOffset(DateInfo, date.seconds),
 	NULL},
     /* %n */
-    {CTOKT_CHAR, 0, 0, 0, 1, 0, NULL, "\n"}, /* min=0 - spaces are optional (in yySpaceCount) */
+    {CTOKT_CHAR, 0, 0, 1, 1, 0, NULL, "\n"},
     /* %t */
-    {CTOKT_CHAR, 0, 0, 0, 1, 0, NULL, "\t"}, /* min=0 - spaces are optional (in yySpaceCount) */
+    {CTOKT_CHAR, 0, 0, 1, 1, 0, NULL, "\t"},
     /* %Q */
     {CTOKT_PARSER, CLF_LOCALSEC, 0, 16, 30, 0,
 	ClockScnToken_StarDate_Proc, NULL},
@@ -1510,12 +1588,12 @@ static const char *ScnOTokenMapAliasIndex[2] = {
 static const char *ScnSpecTokenMapIndex = 
     " ";
 static ClockScanTokenMap ScnSpecTokenMap[] = {
-    {CTOKT_SPACE,  0, 0, 0, 0xffff, 0, /* min=0 - spaces are optional (in yySpaceCount) */
+    {CTOKT_SPACE,  0, 0, 1, 1, 0,
 	NULL},
 };
 
 static ClockScanTokenMap ScnWordTokenMap = {
-    CTOKT_WORD,	   0, 0, 1, 0xffff, 0, 
+    CTOKT_WORD,	   0, 0, 1, 1, 0, 
 	NULL
 };
 
@@ -1559,7 +1637,7 @@ EstimateTokenCount(
 /*
  *----------------------------------------------------------------------
  */
-ClockScanToken *
+ClockFmtScnStorage *
 ClockGetOrParseScanFormat(
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Obj    *formatObj)	/* Format container */
@@ -1574,6 +1652,7 @@ ClockGetOrParseScanFormat(
 
     /* if first time scanning - tokenize format */
     if (fss->scnTok == NULL) {
+	unsigned int tokCnt;
 	register const char *p, *e, *cp;
 
 	e = p = HashEntry4FmtScn(fss)->key.string;
@@ -1581,11 +1660,14 @@ ClockGetOrParseScanFormat(
 
 	/* estimate token count by % char and format length */
 	fss->scnTokC = EstimateTokenCount(p, e);
+	
+	fss->scnSpaceCount = 0;
 
 	Tcl_MutexLock(&ClockFmtMutex);
 
 	fss->scnTok = tok = ckalloc(sizeof(*tok) * fss->scnTokC);
 	memset(tok, 0, sizeof(*(tok)));
+	tokCnt = 1;
 	while (p < e) {
 	    switch (*p) {
 	    case '%':
@@ -1605,7 +1687,7 @@ ClockGetOrParseScanFormat(
 		    tok->map = &ScnWordTokenMap;
 		    tok->tokWord.start = p;
 		    tok->tokWord.end = p+1;
-		    AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
+		    AllocTokenInChain(tok, fss->scnTok, fss->scnTokC); tokCnt++;
 		    p++;
 		    continue;
 		break;
@@ -1642,21 +1724,31 @@ ClockGetOrParseScanFormat(
 		}
 		tok->map = &scnMap[cp - mapIndex];
 		tok->tokWord.start = p;
+
 		/* calculate look ahead value by standing together tokens */
-		if (tok > fss->scnTok && tok->map->minSize) {
-		    unsigned int	lookAhead = tok->map->minSize;
+		if (tok > fss->scnTok) {
 		    ClockScanToken     *prevTok = tok - 1;
 
 		    while (prevTok >= fss->scnTok) {
 			if (prevTok->map->type != tok->map->type) {
 			    break;
 			}
-			prevTok->lookAhead += lookAhead;
+			prevTok->lookAhMin += tok->map->minSize;
+			prevTok->lookAhMax += tok->map->maxSize;
+			prevTok->lookAhTok++;
 			prevTok--;
 		    }
 		}
+
+		/* increase space count used in format */
+		if ( tok->map->type == CTOKT_CHAR 
+		  && isspace(UCHAR(*((char *)tok->map->data)))
+		) {
+		    fss->scnSpaceCount++;
+		}
+
 		/* next token */
-		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
+		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC); tokCnt++;
 		p++;
 		continue;
 	    }
@@ -1668,7 +1760,10 @@ ClockGetOrParseScanFormat(
 		    goto word_tok;
 		}
 		tok->map = &ScnSpecTokenMap[cp - ScnSpecTokenMapIndex];
-		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
+		/* increase space count used in format */
+		fss->scnSpaceCount++;
+		/* next token */
+		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC); tokCnt++;
 		p++;
 		continue;
 	    break;
@@ -1679,10 +1774,14 @@ word_tok:
 		if (tok > fss->scnTok && (tok-1)->map == &ScnWordTokenMap) {
 		    wordTok = tok-1;
 		}
+		/* new word token */
 		if (wordTok == tok) {
 		    wordTok->tokWord.start = p;
 		    wordTok->map = &ScnWordTokenMap;
-		    AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
+		    AllocTokenInChain(tok, fss->scnTok, fss->scnTokC); tokCnt++;
+		}
+		if (isspace(UCHAR(*p))) {
+		    fss->scnSpaceCount++;
 		}
 		p = TclUtfNext(p);
 		wordTok->tokWord.end = p;
@@ -1705,12 +1804,22 @@ word_tok:
 		}
 		prevTok--;
 	    }
-	}	 
+	}
+
+	/* correct count of real used tokens and free mem if desired
+	 * (1 is acceptable delta to prevent memory fragmentation) */
+	if (fss->scnTokC > tokCnt + (CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE / 2)) {
+	    if ( (tok = ckrealloc(fss->scnTok, tokCnt * sizeof(*tok))) != NULL ) {
+		fss->scnTok = tok;
+	    }
+	}
+	fss->scnTokC = tokCnt;
+
 done:
 	Tcl_MutexUnlock(&ClockFmtMutex);
     }
 
-    return fss->scnTok;
+    return fss;
 }
 
 /*
@@ -1723,6 +1832,7 @@ ClockScan(
     ClockFmtScnCmdArgs *opts)	/* Command options */
 {
     ClockClientData *dataPtr = opts->clientData;
+    ClockFmtScnStorage	*fss;
     ClockScanToken	*tok;
     ClockScanTokenMap	*map;
     register const char *p, *x, *end;
@@ -1734,8 +1844,9 @@ ClockScan(
 	return TCL_ERROR;
     }
 
-    if ((tok = ClockGetOrParseScanFormat(opts->interp, 
-		    opts->formatObj)) == NULL) {
+    if ( !(fss = ClockGetOrParseScanFormat(opts->interp, opts->formatObj))
+      || !(tok = fss->scnTok)
+    ) {
 	return TCL_ERROR;
     }
 
@@ -1766,6 +1877,11 @@ ClockScan(
     /* ignore spaces at end */
     yySpaceCount -= (end - x);
     end = x;
+    /* ignore mandatory spaces used in format */
+    yySpaceCount -= fss->scnSpaceCount;
+    if (yySpaceCount < 0) {
+	yySpaceCount = 0;
+    }
     info->dateStart = p = yyInput;
     info->dateEnd = end;
     
@@ -1799,39 +1915,9 @@ ClockScan(
 		else
 		if (*p == '-') { yyInput = ++p; sign = -1; };
 	    }
+
 	    DetermineGreedySearchLen(opts, info, tok, &minLen, &size);
-	    /* greedy find digits (look for forward digits consider spaces), 
-	     * corresponding pre-calculated lookAhead */
-	    if (size != minLen && tok->lookAhead) {
-		int spcnt = 0;
-		const char *pe;
-		size += tok->lookAhead;
-		x = p + size; if (x > end) { x = end; };
-		pe = x;
-		while (p < x) {
-		    if (isspace(UCHAR(*p))) {
-			if (pe > p) { pe = p; };
-			if (x < end) x++;
-			p++;
-			spcnt++;
-			continue;
-		    }
-		    if (isdigit(UCHAR(*p))) {
-			p++;
-			continue;
-		    }
-		    break;
-		}
-		/* consider reserved (lookAhead) for next tokens */
-		p -= tok->lookAhead + spcnt;
-		if (p > pe) {
-		    p = pe;
-		}
-	    } else {
-		x = p + size; if (x > end) { x = end; };
-		while (isdigit(UCHAR(*p)) && p < x) { p++; };
-	    }
-	    size = p - yyInput;
+
 	    if (size < map->minSize) {
 		/* missing input -> error */
 		if ((map->flags & CLF_OPTIONAL)) {
@@ -1884,15 +1970,13 @@ ClockScan(
 	    flags = (flags & ~map->clearFlags) | map->flags;
 	break;
 	case CTOKT_SPACE:
-	    /* at least one space in strict mode */
-	    if (opts->flags & CLF_STRICT) {
-		if (!isspace(UCHAR(*p))) {
-		    /* unmatched -> error */
-		    goto not_match;
-		}
-		yySpaceCount--;
-		p++;
+	    /* at least one space */
+	    if (!isspace(UCHAR(*p))) {
+		/* unmatched -> error */
+		goto not_match;
 	    }
+	    yySpaceCount--;
+	    p++;
 	    while (p < end && isspace(UCHAR(*p))) {
 		yySpaceCount--;
 		p++;
@@ -2460,7 +2544,7 @@ static ClockFormatTokenMap FmtWordTokenMap = {
 /*
  *----------------------------------------------------------------------
  */
-ClockFormatToken *
+ClockFmtScnStorage *
 ClockGetOrParseFmtFormat(
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Obj    *formatObj)	/* Format container */
@@ -2475,6 +2559,7 @@ ClockGetOrParseFmtFormat(
 
     /* if first time scanning - tokenize format */
     if (fss->fmtTok == NULL) {
+	unsigned int tokCnt;
 	register const char *p, *e, *cp;
 
 	e = p = HashEntry4FmtScn(fss)->key.string;
@@ -2487,6 +2572,7 @@ ClockGetOrParseFmtFormat(
 
 	fss->fmtTok = tok = ckalloc(sizeof(*tok) * fss->fmtTokC);
 	memset(tok, 0, sizeof(*(tok)));
+	tokCnt = 1;
 	while (p < e) {
 	    switch (*p) {
 	    case '%':
@@ -2506,7 +2592,7 @@ ClockGetOrParseFmtFormat(
 		    tok->map = &FmtWordTokenMap;
 		    tok->tokWord.start = p;
 		    tok->tokWord.end = p+1;
-		    AllocTokenInChain(tok, fss->fmtTok, fss->fmtTokC);
+		    AllocTokenInChain(tok, fss->fmtTok, fss->fmtTokC); tokCnt++;
 		    p++;
 		    continue;
 		break;
@@ -2544,7 +2630,7 @@ ClockGetOrParseFmtFormat(
 		tok->map = &fmtMap[cp - mapIndex];
 		tok->tokWord.start = p;
 		/* next token */
-		AllocTokenInChain(tok, fss->fmtTok, fss->fmtTokC);
+		AllocTokenInChain(tok, fss->fmtTok, fss->fmtTokC); tokCnt++;
 		p++;
 		continue;
 	    }
@@ -2559,7 +2645,7 @@ word_tok:
 		if (wordTok == tok) {
 		    wordTok->tokWord.start = p;
 		    wordTok->map = &FmtWordTokenMap;
-		    AllocTokenInChain(tok, fss->fmtTok, fss->fmtTokC);
+		    AllocTokenInChain(tok, fss->fmtTok, fss->fmtTokC); tokCnt++;
 		}
 		p = TclUtfNext(p);
 		wordTok->tokWord.end = p;
@@ -2568,11 +2654,20 @@ word_tok:
 	    }
 	}
 
+	/* correct count of real used tokens and free mem if desired
+	 * (1 is acceptable delta to prevent memory fragmentation) */
+	if (fss->fmtTokC > tokCnt + (CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE / 2)) {
+	    if ( (tok = ckrealloc(fss->fmtTok, tokCnt * sizeof(*tok))) != NULL ) {
+		fss->fmtTok = tok;
+	    }
+	}
+	fss->fmtTokC = tokCnt;
+
 done:
 	Tcl_MutexUnlock(&ClockFmtMutex);
     }
 
-    return fss->fmtTok;
+    return fss;
 }
 
 /*
@@ -2584,6 +2679,7 @@ ClockFormat(
     ClockFmtScnCmdArgs *opts)	  /* Command options */
 {
     ClockClientData *dataPtr = opts->clientData;
+    ClockFmtScnStorage	*fss;
     ClockFormatToken	*tok;
     ClockFormatTokenMap *map;
 
@@ -2592,8 +2688,9 @@ ClockFormat(
 	return TCL_ERROR;
     }
 
-    if ((tok = ClockGetOrParseFmtFormat(opts->interp, 
-		    opts->formatObj)) == NULL) {
+    if ( !(fss = ClockGetOrParseFmtFormat(opts->interp, opts->formatObj))
+      || !(tok = fss->fmtTok)
+    ) {
 	return TCL_ERROR;
     }
 

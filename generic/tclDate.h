@@ -375,12 +375,14 @@ typedef struct ClockScanTokenMap {
 
 typedef struct ClockScanToken {
     ClockScanTokenMap  *map;
-    unsigned short int	lookAhead;
-    unsigned short int	endDistance;
     struct {
 	const char *start;
 	const char *end;
     } tokWord;
+    unsigned short int	endDistance;
+    unsigned short int	lookAhMin;
+    unsigned short int	lookAhMax;
+    unsigned short int	lookAhTok;
 } ClockScanToken;
 
 
@@ -435,6 +437,7 @@ typedef struct ClockFmtScnStorage {
     int			 objRefCount;	/* Reference count shared across threads */
     ClockScanToken	*scnTok;
     unsigned int	 scnTokC;
+    unsigned int	 scnSpaceCount; /* Count of mandatory spaces used in format */
     ClockFormatToken	*fmtTok;
     unsigned int	 fmtTokC;
 #if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
