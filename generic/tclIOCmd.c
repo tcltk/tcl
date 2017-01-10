@@ -1492,10 +1492,10 @@ Tcl_SocketObjCmd(
 	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_REUSEADDR, SKT_REUSEPORT,
 	SKT_SERVER
     };
-    int optionIndex, a, server = 0, myport = 0, async = 0, reusep = -1,
+    int optionIndex, a, server = 0, async = 0, reusep = -1,
 	reusea = -1;
     unsigned int flags = 0;
-    const char *host, *port, *myaddr = NULL;
+    const char *host, *port, *myaddr = NULL, *myport = NULL;
     Tcl_Obj *script = NULL;
     Tcl_Channel chan;
 
@@ -1532,18 +1532,13 @@ Tcl_SocketObjCmd(
 	    myaddr = TclGetString(objv[a]);
 	    break;
 	case SKT_MYPORT: {
-	    const char *myPortName;
-
 	    a++;
 	    if (a >= objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"no argument given for -myport option", -1));
 		return TCL_ERROR;
 	    }
-	    myPortName = TclGetString(objv[a]);
-	    if (TclSockGetPort(interp, myPortName, "tcp", &myport) != TCL_OK) {
-		return TCL_ERROR;
-	    }
+	    myport = TclGetString(objv[a]);
 	    break;
 	}
 	case SKT_SERVER:
@@ -1670,13 +1665,7 @@ Tcl_SocketObjCmd(
 
 	Tcl_CreateCloseHandler(chan, TcpServerCloseProc, acceptCallbackPtr);
     } else {
-	int portNum;
-
-	if (TclSockGetPort(interp, port, "tcp", &portNum) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-
-	chan = Tcl_OpenTcpClient(interp, portNum, host, myaddr, myport, async);
+	chan = TclOpenTcpClientEx(interp, port, host, myaddr, myport, async);
 	if (chan == NULL) {
 	    return TCL_ERROR;
 	}

@@ -3070,6 +3070,10 @@ MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
 			    struct addrinfo **addrlist,
 			    const char *host, const char *service, int willBind,
 			    const char **errorMsgPtr);
+Tcl_Channel		TclOpenTcpClientEx(Tcl_Interp *interp,
+			    const char *service, const char *host,
+			    const char *myaddr,	const char *myservice,
+			    unsigned int flags);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, ClientData clientData,
 			    int stackSize, int flags);

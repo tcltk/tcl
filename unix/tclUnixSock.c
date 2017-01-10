@@ -1283,18 +1283,29 @@ Tcl_OpenTcpClient(
 				 * connect. Otherwise we do a blocking
 				 * connect. */
 {
+    char service[TCL_INTEGER_SPACE], myservice[TCL_INTEGER_SPACE];
+
+    TclFormatInt(service, port);
+    TclFormatInt(myservice, myport);
+
+    return TclOpenTcpClientEx(interp, service, host, myaddr, myservice, async!=0);
+}
+
+Tcl_Channel
+TclOpenTcpClientEx(
+    Tcl_Interp *interp,		/* For error reporting; can be NULL. */
+    const char *service,	/* Port number to open. */
+    const char *host,		/* Host on which to open port. */
+    const char *myaddr,		/* Client-side address */
+    const char *myservice,	/* Client-side port */
+    unsigned int flags)		/* If nonzero, attempt to do an asynchronous
+				 * connect. Otherwise we do a blocking
+				 * connect. */
+{
     TcpState *statePtr;
     const char *errorMsg = NULL;
     struct addrinfo *addrlist = NULL, *myaddrlist = NULL;
     char channelName[SOCK_CHAN_LENGTH];
-    char service[TCL_INTEGER_SPACE], myservice[TCL_INTEGER_SPACE];
-
-    /*
-     * Do the name lookups for the local and remote addresses.
-     */
-
-    TclFormatInt(service, port);
-    TclFormatInt(myservice, myport);
 
     if (!TclCreateSocketAddress(interp, &addrlist, host, service, 0, &errorMsg)
             || !TclCreateSocketAddress(interp, &myaddrlist, myaddr, myservice, 1,
@@ -1314,7 +1325,7 @@ Tcl_OpenTcpClient(
      */
     statePtr = ckalloc(sizeof(TcpState));
     memset(statePtr, 0, sizeof(TcpState));
-    statePtr->flags = async ? TCP_ASYNC_CONNECT : 0;
+    statePtr->flags = (flags&1) ? TCP_ASYNC_CONNECT : 0;
     statePtr->cachedBlocking = TCL_MODE_BLOCKING;
     statePtr->addrlist = addrlist;
     statePtr->myaddrlist = myaddrlist;
