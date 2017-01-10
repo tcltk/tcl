@@ -345,10 +345,6 @@ typedef struct ClockFmtScnStorage {
 					 * stored by offset +sizeof(self) */
 } ClockFmtScnStorage;
 
-typedef struct ClockLitStorage {
-    int		      dummy;
-} ClockLitStorage;
-
 /*
  * Prototypes of module functions.
  */
@@ -366,8 +362,14 @@ MODULE_SCOPE Tcl_Obj *
 		    ClockMCGet(ClockFmtScnCmdArgs *opts, int mcKey);
 MODULE_SCOPE Tcl_Obj *
 		    ClockMCGetListIdxDict(ClockFmtScnCmdArgs *opts, int mcKey);
+MODULE_SCOPE Tcl_Obj *
+		    ClockLocalizeFormat(ClockFmtScnCmdArgs *opts);
 
 /* tclClockFmt.c module declarations */
+
+MODULE_SCOPE Tcl_Obj* 
+		    ClockFrmObjGetLocFmtKey(Tcl_Interp *interp,
+			Tcl_Obj *objPtr);
 
 MODULE_SCOPE ClockFmtScnStorage * 
 		    Tcl_GetClockFrmScnFromObj(Tcl_Interp *interp,

@@ -60,6 +60,7 @@ typedef enum ClockLiteral {
     LIT_GETSYSTEMTIMEZONE,
     LIT_SETUPTIMEZONE,
     LIT_MCGET,		LIT_TCL_CLOCK,
+    LIT_LOCALIZE_FORMAT,
 #if 0
     LIT_FREESCAN,
 #endif
@@ -82,7 +83,8 @@ static const char *const Literals[] = {
     "::tcl::clock::TZData",
     "::tcl::clock::GetSystemTimeZone",
     "::tcl::clock::SetupTimeZone",
-    "::msgcat::mcget", "::tcl::clock"
+    "::msgcat::mcget", "::tcl::clock",
+    "::tcl::clock::LocalizeFormat"
 #if 0
     "::tcl::clock::FreeScan"
 #endif
@@ -487,7 +489,6 @@ MODULE_SCOPE Tcl_Obj *
 ClockMCDict(ClockFmtScnCmdArgs *opts)
 {
     ClockClientData *dataPtr = opts->clientData;
-    Tcl_Obj *callargs[3];
 
     /* if dict not yet retrieved */
     if (opts->mcDictObj == NULL) {
@@ -518,6 +519,7 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 	}
 
 	if (opts->mcDictObj == NULL) {
+	    Tcl_Obj *callargs[3];
 	    /* get msgcat dictionary - ::msgcat::mcget ::tcl::clock locale */
 	    callargs[0] = dataPtr->literals[LIT_MCGET];
 	    callargs[1] = dataPtr->literals[LIT_TCL_CLOCK];
@@ -528,6 +530,11 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 	    }
 
 	    opts->mcDictObj = Tcl_GetObjResult(opts->interp);
+	    /* be sure that object reference not increases (dict changeable) */
+	    if (opts->mcDictObj->refCount > 0) {
+		/* smart reference (shared dict as object with no ref-counter) */
+		opts->mcDictObj = Tcl_DictObjSmartRef(opts->interp, opts->mcDictObj);
+	    }
 	    if ( opts->localeObj == dataPtr->CurrentLocale ) {
 		Tcl_SetObjRef(dataPtr->CurrentLocaleDict, opts->mcDictObj);
 	    } else {
@@ -535,6 +542,7 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 		Tcl_UnsetObjRef(dataPtr->LastUnnormUsedLocale);
 		Tcl_SetObjRef(dataPtr->LastUsedLocaleDict, opts->mcDictObj);
 	    }
+	    Tcl_ResetResult(opts->interp);
 	}
     }
 
@@ -624,6 +632,56 @@ ClockMCGetListIdxDict(
     };
 
     return valObj;
+}
+
+MODULE_SCOPE Tcl_Obj *
+ClockLocalizeFormat(
+    ClockFmtScnCmdArgs *opts)
+{
+    ClockClientData *dataPtr = opts->clientData;
+    Tcl_Obj *valObj, *keyObj;
+
+    keyObj = ClockFrmObjGetLocFmtKey(opts->interp, opts->formatObj);
+
+    if (opts->mcDictObj == NULL) {
+	ClockMCDict(opts);
+	if (opts->mcDictObj == NULL)
+	    return NULL;
+    }
+
+    /* try to find in cache within mc-catalog */
+    if (Tcl_DictObjGet(NULL, opts->mcDictObj, 
+	    keyObj, &valObj) != TCL_OK) {
+	return NULL;
+    }
+    if (valObj == NULL) {
+	Tcl_Obj *callargs[4];
+	/* call LocalizeFormat locale format fmtkey */
+	callargs[0] = dataPtr->literals[LIT_LOCALIZE_FORMAT];
+	callargs[1] = opts->localeObj;
+	callargs[2] = opts->formatObj;
+	callargs[3] = keyObj;
+	Tcl_IncrRefCount(keyObj);
+	if (Tcl_EvalObjv(opts->interp, 4, callargs, 0) != TCL_OK
+	) {
+	    Tcl_DecrRefCount(keyObj);
+	    return NULL;
+	}
+
+	valObj = Tcl_GetObjResult(opts->interp);
+
+	if (Tcl_DictObjPut(opts->interp, opts->mcDictObj,
+		keyObj, valObj) != TCL_OK
+	) {
+	    Tcl_DecrRefCount(keyObj);
+	    return NULL;
+	}
+
+	Tcl_DecrRefCount(keyObj);
+	Tcl_ResetResult(opts->interp);
+    }
+
+    return (opts->formatObj = valObj);
 }
 
 /*
@@ -2936,7 +2994,7 @@ ClockScanObjCmd(
 #endif
     else {
 	/* Use compiled version of Scan - */
-	
+
 	ret = ClockScan(clientData, interp, info, objv[1], &opts);
     }
 

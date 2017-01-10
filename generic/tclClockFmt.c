@@ -308,14 +308,14 @@ Tcl_ObjType ClockFmtObjType = {
 #define ObjClockFmtScn(objPtr) \
     (ClockFmtScnStorage *)objPtr->internalRep.twoPtrValue.ptr1;
 
-#define SetObjLitStorage(objPtr, lit) \
-    objPtr->internalRep.twoPtrValue.ptr2 = lit
-#define ObjLitStorage(objPtr) \
-    (ClockLitStorage *)objPtr->internalRep.twoPtrValue.ptr2;
+#define SetObjLocFmtKey(objPtr, key) \
+    Tcl_InitObjRef((Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr2, key)
+#define ObjLocFmtKey(objPtr) \
+    ((Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr2)
 
-#define ClockFmtObj_SetObjIntRep(objPtr, fss, lit) \
-    objPtr->internalRep.twoPtrValue.ptr1 = fss, \
-    objPtr->internalRep.twoPtrValue.ptr2 = lit, \
+#define ClockFmtObj_SetObjIntRep(objPtr, fss, key) \
+    objPtr->internalRep.twoPtrValue.ptr1 = fss; \
+    Tcl_InitObjRef((Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr2, key); \
     objPtr->typePtr = &ClockFmtObjType;
 
 /*
@@ -327,7 +327,6 @@ ClockFmtObj_DupInternalRep(srcPtr, copyPtr)
     Tcl_Obj *copyPtr;
 {
     ClockFmtScnStorage *fss = ObjClockFmtScn(srcPtr);
-    // ClockLitStorage	  *lit = ObjLitStorage(srcPtr);
 
     if (fss != NULL) {
 	Tcl_MutexLock(&ClockFmtMutex);
@@ -335,7 +334,7 @@ ClockFmtObj_DupInternalRep(srcPtr, copyPtr)
 	Tcl_MutexUnlock(&ClockFmtMutex);
     }
 
-    ClockFmtObj_SetObjIntRep(copyPtr, fss, NULL);
+    ClockFmtObj_SetObjIntRep(copyPtr, fss, ObjLocFmtKey(srcPtr));
 
     /* if no format representation, dup string representation */
     if (fss == NULL) {
@@ -352,7 +351,6 @@ ClockFmtObj_FreeInternalRep(objPtr)
     Tcl_Obj *objPtr;
 {
     ClockFmtScnStorage *fss = ObjClockFmtScn(objPtr);
-    // ClockLitStorage	  *lit = ObjLitStorage(objPtr);
     if (fss != NULL) {
 	Tcl_MutexLock(&ClockFmtMutex);
 	/* decrement object reference count of format/scan storage */
@@ -368,7 +366,7 @@ ClockFmtObj_FreeInternalRep(objPtr)
 	Tcl_MutexUnlock(&ClockFmtMutex);
     }
     SetObjClockFmtScn(objPtr, NULL);
-    SetObjLitStorage(objPtr, NULL);
+    Tcl_UnsetObjRef(ObjLocFmtKey(objPtr));
     objPtr->typePtr = NULL;
 };
 /*
@@ -379,16 +377,18 @@ ClockFmtObj_SetFromAny(interp, objPtr)
     Tcl_Interp *interp;
     Tcl_Obj    *objPtr;
 {
-    ClockFmtScnStorage *fss;
-    const char *strFmt = TclGetString(objPtr);
-    
-    if (!strFmt || (fss = FindOrCreateFmtScnStorage(interp, strFmt)) == NULL) {
-	return TCL_ERROR;
-    }
-    
+    /* validate string representation before free old internal represenation */
+    (void)TclGetString(objPtr);
+
+    /* free old internal represenation */
     if (objPtr->typePtr && objPtr->typePtr->freeIntRepProc)
 	objPtr->typePtr->freeIntRepProc(objPtr);
-    ClockFmtObj_SetObjIntRep(objPtr, fss, NULL);
+
+    /* initial state of format object */
+    objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    objPtr->typePtr = &ClockFmtObjType;
+
     return TCL_OK;
 };
 /*
@@ -411,6 +411,33 @@ ClockFmtObj_UpdateString(objPtr)
     objPtr->bytes = ckalloc((size_t)++len);
     if (objPtr->bytes)
 	memcpy(objPtr->bytes, name, len);
+}
+
+/*
+ *----------------------------------------------------------------------
+ */
+MODULE_SCOPE Tcl_Obj*
+ClockFrmObjGetLocFmtKey(
+    Tcl_Interp *interp,
+    Tcl_Obj    *objPtr)
+{
+    Tcl_Obj *keyObj;
+
+    if (objPtr->typePtr != &ClockFmtObjType) {
+	if (ClockFmtObj_SetFromAny(interp, objPtr) != TCL_OK) {
+	    return NULL;
+	}
+    }
+   
+    keyObj = ObjLocFmtKey(objPtr);
+    if (keyObj) {
+	return keyObj;
+    }
+
+    keyObj = Tcl_ObjPrintf("FMT_%s", TclGetString(objPtr));
+    SetObjLocFmtKey(objPtr, keyObj);
+
+    return keyObj;
 }
 
 /*
@@ -731,7 +758,7 @@ static ClockScanTokenMap ScnWordTokenMap = {
 ClockScanToken *
 ClockGetOrParseScanFormat(
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Obj *formatObj)		/* Format container */
+    Tcl_Obj    *formatObj)	/* Format container */
 {
     ClockFmtScnStorage *fss;
     ClockScanToken     *tok;
@@ -888,6 +915,12 @@ ClockScan(
     register const char *p, *x, *end;
     unsigned short int	 flags = 0;
     int ret = TCL_ERROR;
+
+    /* get localized format */
+
+    if (ClockLocalizeFormat(opts) == NULL) {
+	return TCL_ERROR;
+    }
 
     if ((tok = ClockGetOrParseScanFormat(interp, opts->formatObj)) == NULL) {
 	return TCL_ERROR;
