@@ -1178,7 +1178,7 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::scan { args } {
+proc ::tcl::clock::__org_scan { args } {
 
     set format {}
 
@@ -1300,7 +1300,9 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
     variable TZData
 
     # Get the data for time changes in the given zone
-
+    if {$timezone eq {}} {
+	set timezone [GetSystemTimeZone]
+    }
     try {
 	SetupTimeZone $timezone
     } on error {retval opts} {
