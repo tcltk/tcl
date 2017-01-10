@@ -19,11 +19,19 @@
 ## set testing defaults:
 set ::env(TCL_TZ) :CET
 
-## warm-up (load clock.tcl, system zones, locales, etc.):
+# warm-up interpeter compiler env, clock platform-related features,
+# calibrate timerate measurement functionality:
+puts -nonewline "Calibration ... "; flush stdout
+puts "done: [lrange \
+  [timerate -calibrate {}] \
+0 1]"
+
+## warm-up test-related features (load clock.tcl, system zones, locales, etc.):
 clock scan "" -gmt 1
 clock scan ""
 clock scan "" -timezone :CET
 clock scan "" -format "" -locale en
+clock scan "" -format "" -locale de
 
 ## ------------------------------------------
 
@@ -238,6 +246,11 @@ proc test-scan {{reptime 1000}} {
     # Scan : ISO date-time (UTC)
     {clock scan "2009-06-30T18:30:00Z" -format "%Y-%m-%dT%H:%M:%S%z"}
     {clock scan "2009-06-30T18:30:00 UTC" -format "%Y-%m-%dT%H:%M:%S %z"}
+
+    # Scan : locale date-time (en):
+    {clock scan "06/30/2009 18:30:15" -format "%x %X" -gmt 1 -locale en}
+    # Scan : locale date-time (de):
+    {clock scan "30.06.2009 18:30:15" -format "%x %X" -gmt 1 -locale de}
 
     # Scan : dynamic format (cacheable)
     {clock scan "25.11.2015 10:35:55" -format [string trim "%d.%m.%Y %H:%M:%S "] -base 0 -gmt 1}
