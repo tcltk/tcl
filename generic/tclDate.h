@@ -58,8 +58,8 @@
 typedef enum ClockLiteral {
     LIT__NIL,
     LIT__DEFAULT_FORMAT,
-    LIT_SYSTEM,		LIT_CURRENT,
-    LIT_BCE,		LIT_C,			LIT_CE,
+    LIT_SYSTEM,		LIT_CURRENT,		LIT_C,
+    LIT_BCE,		LIT_CE,
     LIT_DAYOFMONTH,	LIT_DAYOFWEEK,		LIT_DAYOFYEAR,
     LIT_ERA,		LIT_GMT,		LIT_GREGORIAN,
     LIT_INTEGER_VALUE_TOO_LARGE,
@@ -80,8 +80,8 @@ typedef enum ClockLiteral {
 #define CLOCK_LITERAL_ARRAY(litarr) static const char *const litarr[] = { \
     "", \
     "%a %b %d %H:%M:%S %Z %Y", \
-    "system",		"current", \
-    "BCE",		"C",			"CE", \
+    "system",		"current",		"C", \
+    "BCE",		"CE", \
     "dayOfMonth",	"dayOfWeek",		"dayOfYear", \
     "era",		":GMT",			"gregorian", \
     "integer value too large to represent", \
@@ -107,6 +107,9 @@ typedef enum ClockMsgCtLiteral {
     MCLIT_MONTHS_FULL,	MCLIT_MONTHS_ABBREV,
     MCLIT_DAYS_OF_WEEK_FULL,  MCLIT_DAYS_OF_WEEK_ABBREV,
     MCLIT_AM,  MCLIT_PM,
+    MCLIT_BCE,	 MCLIT_CE,
+    MCLIT_BCE2,	 MCLIT_CE2,
+    MCLIT_BCE3,	 MCLIT_CE3,
     MCLIT_LOCALE_NUMERALS,
     MCLIT__END
 } ClockMsgCtLiteral;
@@ -115,7 +118,10 @@ typedef enum ClockMsgCtLiteral {
     pref "", \
     pref "MONTHS_FULL", pref "MONTHS_ABBREV", \
     pref "DAYS_OF_WEEK_FULL", pref "DAYS_OF_WEEK_ABBREV", \
-    pref "AM", pref "PM", \
+    pref "AM",	   pref "PM", \
+    pref "BCE",	   pref "CE", \
+    pref "b.c.e.", pref "c.e.", \
+    pref "b.c.",   pref "a.d.", \
     pref "LOCALE_NUMERALS", \
 }
 
