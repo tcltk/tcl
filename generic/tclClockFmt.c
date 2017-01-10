@@ -454,45 +454,55 @@ Tcl_GetClockFrmScnFromObj(
 
     return fss;
 }
+
+/* 
+ * DetermineGreedySearchLen --
+ *
+ * Determine min/max lengths as exact as possible (speed, greedy match) 
+ *
+ */
+inline
+void DetermineGreedySearchLen(ClockFmtScnCmdArgs *opts,
+    DateInfo *info, ClockScanToken *tok, int *minLen, int *maxLen)
+{
+    register const char*p = yyInput;
+    *minLen = 0;
+    *maxLen = info->dateEnd - p;
 
+    /* if no tokens anymore */
+    if (!(tok+1)->map) {
+	/* should match to end or first space */
+	while (!isspace(UCHAR(*p)) && ++p < info->dateEnd) {};
+	*minLen = p - yyInput;
+    }
+}
 
 static int 
 LocaleListSearch(ClockFmtScnCmdArgs *opts, 
-    DateInfo *info, const char * mcKey, int *val)
+    DateInfo *info, int mcKey, int *val, 
+    int minLen, int maxLen)
 {
-    Tcl_Obj *callargs[4] = {NULL, NULL, NULL, NULL}, **lstv;
-    int	     i, lstc;
-    Tcl_Obj *valObj = NULL;
-    int ret = TCL_RETURN;
+    Tcl_Obj **lstv;
+    int	      lstc, i, l;
+    const char *s;
+    Tcl_Obj *valObj;
 
     /* get msgcat value */
-    TclNewLiteralStringObj(callargs[0], "::msgcat::mcget");
-    TclNewLiteralStringObj(callargs[1], "::tcl::clock");
-    callargs[2] = opts->localeObj;
-    if (opts->localeObj == NULL) {
-	TclNewLiteralStringObj(callargs[1], "c");
+    valObj = ClockMCGet(opts, mcKey);
+    if (valObj == NULL) {
+	return TCL_ERROR;
     }
-    callargs[3] = Tcl_NewStringObj(mcKey, -1);
-
-    for (i = 0; i < 4; i++) {
-	Tcl_IncrRefCount(callargs[i]);
-    }
-    if (Tcl_EvalObjv(opts->interp, 4, callargs, 0) != TCL_OK) {
-	goto done;
-    }
-
-    Tcl_InitObjRef(valObj, Tcl_GetObjResult(opts->interp));
 
     /* is a list */
     if (TclListObjGetElements(opts->interp, valObj, &lstc, &lstv) != TCL_OK) {
-	goto done;
+	return TCL_ERROR;
     }
 
     /* search in list */
     for (i = 0; i < lstc; i++) {
-	const char *s = TclGetString(lstv[i]);
-	int	    l = lstv[i]->length;
-	if ( l <= info->dateEnd - yyInput
+	s = TclGetString(lstv[i]);
+	l = lstv[i]->length;
+	if ( l >= minLen && l <= maxLen
 	  && strncasecmp(yyInput, s, l) == 0
 	) {
 	    *val = i;
@@ -501,21 +511,11 @@ LocaleListSearch(ClockFmtScnCmdArgs *opts,
 	}
     }
 
-    ret = TCL_OK;
     /* if not found */
-    if (i >= lstc) {
-	ret = TCL_ERROR;
+    if (i < lstc) {
+	return TCL_OK;
     }
-
-done:
-
-    Tcl_UnsetObjRef(valObj);
-
-    for (i = 0; i < 4; i++) {
-	Tcl_UnsetObjRef(callargs[i]);
-    }
-
-    return ret;
+    return TCL_RETURN;
 }
 
 static int 
@@ -535,12 +535,34 @@ StaticListSearch(ClockFmtScnCmdArgs *opts,
 	}
 	s++;
     }
-    if (*s == NULL) {
-	return TCL_ERROR;
+    if (*s != NULL) {
+	return TCL_OK;
     }
-
-    return TCL_OK;
-};
+    return TCL_RETURN;
+}
+
+inline const char *
+FindWordEnd(
+    ClockScanToken *tok, 
+    register const char * p, const char * end)
+{
+    register const char *x = tok->tokWord.start;
+    if (x == tok->tokWord.end) { /* single char word */
+	if (*p != *x) {
+	    /* no match -> error */
+	    return NULL;
+	}
+	return ++p;
+    }
+    /* multi-char word */
+    while (*p++ == *x++) {
+	if (x >= tok->tokWord.end || p >= end) {
+	    /* no match -> error */
+	    return NULL;
+	}
+    };
+    return p;
+}
 
 static int 
 ClockScnToken_Month_Proc(ClockFmtScnCmdArgs *opts,
@@ -560,19 +582,26 @@ ClockScnToken_Month_Proc(ClockFmtScnCmdArgs *opts,
     };
     int val;
     if (StaticListSearch(opts, info, months, &val) != TCL_OK) {
-	return TCL_ERROR;
+	return TCL_RETURN;
     }
     yyMonth = (val % 12) + 1;
     return TCL_OK;
     */
 
-    int val;
-    int ret = LocaleListSearch(opts, info, "MONTHS_FULL", &val);
+    int ret, val;
+    int minLen;
+    int maxLen;
+
+    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
+
+    ret = LocaleListSearch(opts, info, MCLIT_MONTHS_FULL, &val, 
+		minLen, maxLen);
     if (ret != TCL_OK) {
+	/* if not found */
 	if (ret == TCL_RETURN) {
-	    return ret;
+	    ret = LocaleListSearch(opts, info, MCLIT_MONTHS_ABBREV, &val,
+			minLen, maxLen);
 	}
-	ret = LocaleListSearch(opts, info, "MONTHS_ABBREV", &val);
 	if (ret != TCL_OK) {
 	    return ret;
 	}
@@ -588,9 +617,14 @@ static int
 ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts, 
     DateInfo *info, ClockScanToken *tok)
 {
-    int	     val;
+    int ret, val;
+    int minLen;
+    int maxLen;
 
-    int ret = LocaleListSearch(opts, info, (char *)tok->map->data, &val);
+    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
+
+    ret = LocaleListSearch(opts, info, (int)tok->map->data, &val, 
+		minLen, maxLen);
     if (ret != TCL_OK) {
 	return ret;
     }
@@ -639,8 +673,8 @@ static ClockScanTokenMap ScnSTokenMap[] = {
 	NULL},
 };
 static const char *ScnSTokenWrapMapIndex[2] = {
-    "eBh",
-    "dbb"
+    "eNBh",
+    "dmbb"
 };
 
 static const char *ScnETokenMapIndex = 
@@ -654,11 +688,14 @@ static const char *ScnETokenWrapMapIndex[2] = {
 };
 
 static const char *ScnOTokenMapIndex = 
-    "d";
+    "dm";
 static ClockScanTokenMap ScnOTokenMap[] = {
     /* %Od %Oe */
     {CTOKT_PARSER, CLF_DATE, 0, 0, TclOffset(DateInfo, date.dayOfMonth),
-	ClockScnToken_LocaleListMatcher_Proc, "LOCALE_NUMERALS"},
+	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
+    /* %Om */
+    {CTOKT_PARSER, CLF_DATE, 0, 0, TclOffset(DateInfo, date.month),
+	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
 };
 static const char *ScnOTokenWrapMapIndex[2] = {
     "e",
@@ -730,7 +767,7 @@ ClockGetOrParseScanFormat(
 	    switch (*p) {
 	    case '%':
 	    if (1) {
-		ClockScanTokenMap * maps = ScnSTokenMap;
+		ClockScanTokenMap * scnMap = ScnSTokenMap;
 		const char *mapIndex =	ScnSTokenMapIndex,
 			  **wrapIndex = ScnSTokenWrapMapIndex;
 		if (p+1 >= e) {
@@ -748,13 +785,13 @@ ClockGetOrParseScanFormat(
 		    continue;
 		break;
 		case 'E':
-		    maps = ScnETokenMap, 
+		    scnMap = ScnETokenMap, 
 		    mapIndex =	ScnETokenMapIndex,
 		    wrapIndex = ScnETokenWrapMapIndex;
 		    p++;
 		break;
 		case 'O':
-		    maps = ScnOTokenMap,
+		    scnMap = ScnOTokenMap,
 		    mapIndex = ScnOTokenMapIndex,
 		    wrapIndex = ScnOTokenWrapMapIndex;
 		    p++;
@@ -778,7 +815,7 @@ ClockGetOrParseScanFormat(
 			goto word_tok;
 		    }
 		}
-		tok->map = &ScnSTokenMap[cp - mapIndex];
+		tok->map = &scnMap[cp - mapIndex];
 		tok->tokWord.start = p;
 		/* calculate look ahead value by standing together tokens */
 		if (tok > fss->scnTok) {
@@ -928,7 +965,7 @@ ClockScan(
 	    size = p - yyInput;
 	    if (size < map->minSize) {
 		/* missing input -> error */
-		goto error;
+		goto not_match;
 	    }
 	    /* string 2 number, put number into info structure by offset */
 	    p = yyInput; x = p + size;
@@ -953,10 +990,10 @@ ClockScan(
 		case TCL_OK:
 		break;
 		case TCL_RETURN:
-		    goto done;
+		    goto not_match;
 		break;
 		default:
-		    goto error;
+		    goto done;
 		break;
 	    };
 	    p = yyInput;
@@ -967,7 +1004,7 @@ ClockScan(
 	    if (opts->flags & CLF_STRICT) {
 		if (!isspace(UCHAR(*p))) {
 		    /* unmatched -> error */
-		    goto error;
+		    goto not_match;
 		}
 		p++;
 	    }
@@ -976,21 +1013,13 @@ ClockScan(
 	    }
 	break;
 	case CTOKT_WORD:
-	    x = tok->tokWord.start;
-	    if (x == tok->tokWord.end) { /* single char word */
-		if (*p != *x) {
-		    /* no match -> error */
-		    goto error;
-		}
-		p++;
-		continue;
-	    }
-	    /* multi-char word */
-	    while (p < end && x < tok->tokWord.end && *p++ == *x++) {};
-	    if (x < tok->tokWord.end) {
+	    x = FindWordEnd(tok, p, end);
+	    if (!x) {
 		/* no match -> error */
-		goto error;
+		goto not_match;
 	    }
+	    p = x;
+	    continue;
 	break;
 	}
     }
@@ -1002,7 +1031,7 @@ ClockScan(
     /* check end was reached */
     if (p < end) {
 	/* something after last token - wrong format */
-	goto error;
+	goto not_match;
     }
 
     /* invalidate result */
@@ -1045,15 +1074,15 @@ ClockScan(
 
 overflow:
 
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	"integer value too large to represent", -1));
-    Tcl_SetErrorCode(interp, "CLOCK", "integervalueTooLarge", NULL);
+    Tcl_SetResult(interp, "requested date too large to represent", 
+	TCL_STATIC);
+    Tcl_SetErrorCode(interp, "CLOCK", "dateTooLarge", NULL);
     goto done;
 
-error:
+not_match:
 
-    Tcl_SetResult(interp,
-	"input string does not match supplied format", TCL_STATIC);
+    Tcl_SetResult(interp, "input string does not match supplied format",
+	TCL_STATIC);
     Tcl_SetErrorCode(interp, "CLOCK", "badInputString", NULL);
 
 done:

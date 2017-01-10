@@ -19,10 +19,11 @@
 ## set testing defaults:
 set ::env(TCL_TZ) :CET
 
-## warm-up (load clock.tcl, system zones, etc.):
+## warm-up (load clock.tcl, system zones, locales, etc.):
 clock scan "" -gmt 1
 clock scan ""
 clock scan "" -timezone :CET
+clock scan "" -format "" -locale en
 
 ## ------------------------------------------
 
@@ -37,6 +38,20 @@ proc _test_get_commands {lst} {
 proc _test_out_total {} {
   upvar _ _
 
+  if {![llength $_(ittm)]} {
+    puts ""
+    return
+  }
+
+  set mintm 0x7fffffff
+  set maxtm 0
+  set i 0
+  foreach tm $_(ittm) {
+    if {$tm > $maxtm} {set maxtm $tm; set maxi $i}
+    if {$tm < $mintm} {set mintm $tm; set mini $i}
+    incr i
+  }
+
   puts [string repeat ** 40]
   puts [format "Total %d cases in %.2f sec.:" [llength $_(itcnt)] [expr {[llength $_(itcnt)] * $_(reptime) / 1000.0}]]
   lset _(m) 0 [format %.6f [expr [join $_(ittm) +]]]
@@ -47,6 +62,16 @@ proc _test_out_total {} {
   lset _(m) 0 [format %.6f [expr {[lindex $_(m) 0] / [llength $_(itcnt)]}]]
   lset _(m) 2 [expr {[lindex $_(m) 2] / [llength $_(itcnt)]}]
   lset _(m) 4 [expr {[lindex $_(m) 2] * (1000 / $_(reptime))}]
+  puts $_(m)
+  puts "Min:"
+  lset _(m) 0 [lindex $_(ittm) $mini]
+  lset _(m) 2 [lindex $_(itcnt) $mini]
+  lset _(m) 2 [lindex $_(itrate) $mini]
+  puts $_(m)
+  puts "Max:"
+  lset _(m) 0 [lindex $_(ittm) $maxi]
+  lset _(m) 2 [lindex $_(itcnt) $maxi]
+  lset _(m) 2 [lindex $_(itrate) $maxi]
   puts $_(m)
   puts [string repeat ** 40]
   puts ""
@@ -123,8 +148,10 @@ proc test-scan {{reptime 1000}} {
 
     # Scan : century, lookup table month
     {clock scan {1970 Jan 2} -format {%C%y %b %d} -locale en -gmt 1}
-    # Scan : century, lookup table month and day
+    # Scan : century, lookup table month and day (both entries are first)
     {clock scan {1970 Jan 02} -format {%C%y %b %Od} -locale en -gmt 1}
+    # Scan : century, lookup table month and day (list scan: entries with position 12 / 31)
+    {clock scan {2016 Dec 31} -format {%C%y %b %Od} -locale en -gmt 1}
 
     break
 
