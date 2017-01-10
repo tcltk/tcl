@@ -178,7 +178,7 @@ if {[interp issafe]} {
 
 	# Auto-loading stubs for 'clock.tcl'
 
-	foreach cmd {add format LocalizeFormat SetupTimeZone GetSystemTimeZone __org_scan} {
+	foreach cmd {add LocalizeFormat SetupTimeZone GetSystemTimeZone} {
 	    proc ::tcl::clock::$cmd args {
 		variable TclLibDir
 		source -encoding utf-8 [file join $TclLibDir clock.tcl]
