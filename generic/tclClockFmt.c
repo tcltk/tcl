@@ -530,20 +530,26 @@ ObjListSearch(ClockFmtScnCmdArgs *opts,
     int minLen, int maxLen)
 {
     int	       i, l, lf = -1;
-    const char *s;
+    const char *s, *f, *sf;
     /* search in list */
     for (i = 0; i < lstc; i++) {
 	s = TclGetString(lstv[i]);
 	l = lstv[i]->length;
-	if ( l >= minLen && l <= maxLen
-	  && strncasecmp(yyInput, s, l) == 0
+
+	if ( l >= minLen
+	  && (f = TclUtfFindEqualNC(yyInput, yyInput + maxLen, s, s + l, &sf)) > yyInput
 	) {
+	    l = f - yyInput;
+	    if (l < minLen) {
+		continue;
+	    }
 	    /* found, try to find longest value (greedy search) */
 	    if (l < maxLen && minLen != maxLen) {
 		lf = i;
 		minLen = l + 1;
 		continue;
 	    }
+	    /* max possible - end of search */
 	    *val = i;
 	    yyInput += l;
 	    break;
@@ -818,9 +824,12 @@ static int
 ClockScnToken_DayOfWeek_Proc(ClockFmtScnCmdArgs *opts,
     DateInfo *info, ClockScanToken *tok)
 {
+    static int dowKeys[] = {MCLIT_DAYS_OF_WEEK_ABBREV, MCLIT_DAYS_OF_WEEK_FULL, 0};
+
     int ret, val;
     int minLen, maxLen;
     char curTok = *tok->tokWord.start;
+    TclStrIdxTree *idxTree;
 
     DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
 
@@ -836,9 +845,13 @@ ClockScnToken_DayOfWeek_Proc(ClockFmtScnCmdArgs *opts,
 		val = *yyInput - '0';
 	    }
 	} else {
-	    int ret = LocaleListSearch(opts, info, (int)tok->map->data, &val, 
-			minLen, maxLen);
-	    if (ret == TCL_ERROR) {
+	    idxTree = ClockMCGetListIdxTree(opts, (int)tok->map->data /* mcKey */);
+	    if (idxTree == NULL) {
+		return TCL_ERROR;
+	    }
+
+	    ret = ClockStrIdxTreeSearch(opts, info, idxTree, &val, minLen, maxLen);
+	    if (ret != TCL_OK) {
 		return ret;
 	    }
 	}
@@ -847,7 +860,7 @@ ClockScnToken_DayOfWeek_Proc(ClockFmtScnCmdArgs *opts,
 	    if (val == 0) {
 		val = 7;
 	    }
-	    if (val > 7 && curTok != 'a' && curTok != 'A') {
+	    if (val > 7) {
 		Tcl_SetResult(opts->interp, "day of week is greater than 7",
 		    TCL_STATIC);
 		Tcl_SetErrorCode(opts->interp, "CLOCK", "badDayOfWeek", NULL);
@@ -863,17 +876,14 @@ ClockScnToken_DayOfWeek_Proc(ClockFmtScnCmdArgs *opts,
     }
 
     /* %a %A */
-    ret = LocaleListSearch(opts, info, MCLIT_DAYS_OF_WEEK_FULL, &val, 
-		minLen, maxLen);
+    idxTree = ClockMCGetMultiListIdxTree(opts, MCLIT_DAYS_OF_WEEK_COMB, dowKeys);
+    if (idxTree == NULL) {
+	return TCL_ERROR;
+    }
+
+    ret = ClockStrIdxTreeSearch(opts, info, idxTree, &val, minLen, maxLen);
     if (ret != TCL_OK) {
-	/* if not found */
-	if (ret == TCL_RETURN) {
-	    ret = LocaleListSearch(opts, info, MCLIT_DAYS_OF_WEEK_ABBREV, &val,
-			minLen, maxLen);
-	}
-	if (ret != TCL_OK) {
-	    return ret;
-	}
+	return ret;
     }
 
     if (val == 0) {
