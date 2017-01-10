@@ -233,65 +233,6 @@ static Tcl_HashKeyType ClockFmtScnStorageHashKeyType;
 
 
 /*
- *----------------------------------------------------------------------
- */
-
-static ClockFmtScnStorage *
-FindOrCreateFmtScnStorage(
-    Tcl_Interp *interp, 
-    const char *strFmt)
-{
-    ClockFmtScnStorage *fss = NULL;
-    int new;
-    Tcl_HashEntry *hPtr;
-
-    Tcl_MutexLock(&ClockFmtMutex);
-
-    /* if not yet initialized */
-    if (!initialized) {
-	/* initialize type */
-	memcpy(&ClockFmtScnStorageHashKeyType, &tclStringHashKeyType, sizeof(tclStringHashKeyType));
-	ClockFmtScnStorageHashKeyType.allocEntryProc = ClockFmtScnStorageAllocProc;
-	ClockFmtScnStorageHashKeyType.freeEntryProc = ClockFmtScnStorageFreeProc;
-
-	/* initialize hash table */
-	Tcl_InitCustomHashTable(&FmtScnHashTable, TCL_CUSTOM_TYPE_KEYS,
-	    &ClockFmtScnStorageHashKeyType);
-
-	initialized = 1;
-	Tcl_CreateExitHandler(ClockFrmScnFinalize, NULL);
-    }
-
-    /* get or create entry (and alocate storage) */
-    hPtr = Tcl_CreateHashEntry(&FmtScnHashTable, strFmt, &new);
-    if (hPtr != NULL) {
-	
-	fss = FmtScn4HashEntry(hPtr);
-
-	#if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
-	  /* unlink if it is currently in GC */
-	  if (new == 0 && fss->objRefCount == 0) {
-	      ClockFmtScnStorage_GC_Out(fss);
-	  }
-	#endif
-
-	/* new reference, so increment in lock right now */
-	fss->objRefCount++;
-    }
-
-    Tcl_MutexUnlock(&ClockFmtMutex);
-
-    if (fss == NULL && interp != NULL) {
-	Tcl_AppendResult(interp, "retrieve clock format failed \"",
-	    strFmt ? strFmt : "", "\"", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "EINVAL", NULL);
-    }
-
-    return fss;
-}
-
-
-/*
  * Type definition.
  */
 
@@ -303,20 +244,11 @@ Tcl_ObjType ClockFmtObjType = {
     ClockFmtObj_SetFromAny	 /* setFromAnyProc */
 };
 
-#define SetObjClockFmtScn(objPtr, fss) \
-    objPtr->internalRep.twoPtrValue.ptr1 = fss
 #define ObjClockFmtScn(objPtr) \
-    (ClockFmtScnStorage *)objPtr->internalRep.twoPtrValue.ptr1;
+    (*((ClockFmtScnStorage **)&(objPtr)->internalRep.twoPtrValue.ptr1))
 
-#define SetObjLocFmtKey(objPtr, key) \
-    Tcl_InitObjRef((Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr2, key)
 #define ObjLocFmtKey(objPtr) \
-    ((Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr2)
-
-#define ClockFmtObj_SetObjIntRep(objPtr, fss, key) \
-    objPtr->internalRep.twoPtrValue.ptr1 = fss; \
-    Tcl_InitObjRef((Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr2, key); \
-    objPtr->typePtr = &ClockFmtObjType;
+    (*((Tcl_Obj **)&(objPtr)->internalRep.twoPtrValue.ptr2))
 
 /*
  *----------------------------------------------------------------------
@@ -334,7 +266,15 @@ ClockFmtObj_DupInternalRep(srcPtr, copyPtr)
 	Tcl_MutexUnlock(&ClockFmtMutex);
     }
 
-    ClockFmtObj_SetObjIntRep(copyPtr, fss, ObjLocFmtKey(srcPtr));
+    ObjClockFmtScn(copyPtr) = fss;
+    /* regards special case - format not localizable */
+    if (ObjLocFmtKey(srcPtr) != srcPtr) {
+	Tcl_InitObjRef(ObjLocFmtKey(copyPtr), ObjLocFmtKey(srcPtr));
+    } else {
+	ObjLocFmtKey(copyPtr) = copyPtr;
+    }
+    copyPtr->typePtr = &ClockFmtObjType;
+
 
     /* if no format representation, dup string representation */
     if (fss == NULL) {
@@ -365,8 +305,12 @@ ClockFmtObj_FreeInternalRep(objPtr)
 	}
 	Tcl_MutexUnlock(&ClockFmtMutex);
     }
-    SetObjClockFmtScn(objPtr, NULL);
-    Tcl_UnsetObjRef(ObjLocFmtKey(objPtr));
+    ObjClockFmtScn(objPtr) = NULL;
+    if (ObjLocFmtKey(objPtr) != objPtr) {
+	Tcl_UnsetObjRef(ObjLocFmtKey(objPtr));
+    } else {
+	ObjLocFmtKey(objPtr) = NULL;
+    }
     objPtr->typePtr = NULL;
 };
 /*
@@ -385,8 +329,8 @@ ClockFmtObj_SetFromAny(interp, objPtr)
 	objPtr->typePtr->freeIntRepProc(objPtr);
 
     /* initial state of format object */
-    objPtr->internalRep.twoPtrValue.ptr1 = NULL;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    ObjClockFmtScn(objPtr) = NULL;
+    ObjLocFmtKey(objPtr) = NULL;
     objPtr->typePtr = &ClockFmtObjType;
 
     return TCL_OK;
@@ -435,9 +379,70 @@ ClockFrmObjGetLocFmtKey(
     }
 
     keyObj = Tcl_ObjPrintf("FMT_%s", TclGetString(objPtr));
-    SetObjLocFmtKey(objPtr, keyObj);
+    Tcl_InitObjRef(ObjLocFmtKey(objPtr), keyObj);
 
     return keyObj;
+}
+
+/*
+ *----------------------------------------------------------------------
+ */
+
+static ClockFmtScnStorage *
+FindOrCreateFmtScnStorage(
+    Tcl_Interp *interp, 
+    Tcl_Obj    *objPtr)
+{
+    const char *strFmt = TclGetString(objPtr);
+    ClockFmtScnStorage *fss = NULL;
+    int new;
+    Tcl_HashEntry *hPtr;
+
+    Tcl_MutexLock(&ClockFmtMutex);
+
+    /* if not yet initialized */
+    if (!initialized) {
+	/* initialize type */
+	memcpy(&ClockFmtScnStorageHashKeyType, &tclStringHashKeyType, sizeof(tclStringHashKeyType));
+	ClockFmtScnStorageHashKeyType.allocEntryProc = ClockFmtScnStorageAllocProc;
+	ClockFmtScnStorageHashKeyType.freeEntryProc = ClockFmtScnStorageFreeProc;
+
+	/* initialize hash table */
+	Tcl_InitCustomHashTable(&FmtScnHashTable, TCL_CUSTOM_TYPE_KEYS,
+	    &ClockFmtScnStorageHashKeyType);
+
+	initialized = 1;
+	Tcl_CreateExitHandler(ClockFrmScnFinalize, NULL);
+    }
+
+    /* get or create entry (and alocate storage) */
+    hPtr = Tcl_CreateHashEntry(&FmtScnHashTable, strFmt, &new);
+    if (hPtr != NULL) {
+	
+	fss = FmtScn4HashEntry(hPtr);
+
+	#if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
+	  /* unlink if it is currently in GC */
+	  if (new == 0 && fss->objRefCount == 0) {
+	      ClockFmtScnStorage_GC_Out(fss);
+	  }
+	#endif
+
+	/* new reference, so increment in lock right now */
+	fss->objRefCount++;
+
+	ObjClockFmtScn(objPtr) = fss;
+    }
+
+    Tcl_MutexUnlock(&ClockFmtMutex);
+
+    if (fss == NULL && interp != NULL) {
+	Tcl_AppendResult(interp, "retrieve clock format failed \"",
+	    strFmt ? strFmt : "", "\"", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "EINVAL", NULL);
+    }
+
+    return fss;
 }
 
 /*
@@ -475,8 +480,7 @@ Tcl_GetClockFrmScnFromObj(
     fss = ObjClockFmtScn(objPtr);
 
     if (fss == NULL) {
-	const char *strFmt = TclGetString(objPtr);
-	fss = FindOrCreateFmtScnStorage(interp, strFmt);
+	fss = FindOrCreateFmtScnStorage(interp, objPtr);
     }
 
     return fss;
@@ -772,7 +776,7 @@ ClockGetOrParseScanFormat(
     fss = ObjClockFmtScn(formatObj);
 
     if (fss == NULL) {
-	fss = FindOrCreateFmtScnStorage(interp, TclGetString(formatObj));
+	fss = FindOrCreateFmtScnStorage(interp, formatObj);
 	if (fss == NULL) {
 	    return NULL;
 	}
@@ -898,6 +902,72 @@ done:
     return fss->scnTok;
 }
 
+MODULE_SCOPE Tcl_Obj *
+ClockLocalizeFormat(
+    ClockFmtScnCmdArgs *opts)
+{
+    ClockClientData *dataPtr = opts->clientData;
+    Tcl_Obj *valObj = NULL, *keyObj;
+
+    keyObj = ClockFrmObjGetLocFmtKey(opts->interp, opts->formatObj);
+
+    /* special case - format object is not localizable */
+    if (keyObj == opts->formatObj) {
+	return opts->formatObj;
+    }
+
+    if (opts->mcDictObj == NULL) {
+	ClockMCDict(opts);
+	if (opts->mcDictObj == NULL)
+	    return NULL;
+    }
+
+    /* try to find in cache within locale mc-catalog */
+    if (Tcl_DictObjGet(NULL, opts->mcDictObj, 
+	    keyObj, &valObj) != TCL_OK) {
+	return NULL;
+    }
+
+    /* call LocalizeFormat locale format fmtkey */
+    if (valObj == NULL) {
+	Tcl_Obj *callargs[4];
+	callargs[0] = dataPtr->literals[LIT_LOCALIZE_FORMAT];
+	callargs[1] = opts->localeObj;
+	callargs[2] = opts->formatObj;
+	callargs[3] = keyObj;
+	Tcl_IncrRefCount(keyObj);
+	if (Tcl_EvalObjv(opts->interp, 4, callargs, 0) != TCL_OK
+	) {
+	    goto clean;
+	}
+
+	valObj = Tcl_GetObjResult(opts->interp);
+
+	/* cache it inside mc-dictionary (this incr. ref count of keyObj/valObj) */
+	if (Tcl_DictObjPut(opts->interp, opts->mcDictObj,
+		keyObj, valObj) != TCL_OK
+	) {
+	    valObj = NULL;
+	    goto clean;
+	}
+
+	/* check special case - format object is not localizable */
+	if (valObj == opts->formatObj) {
+	    /* mark it as unlocalizable, by setting self as key (without refcount incr) */
+	    if (opts->formatObj->typePtr == &ClockFmtObjType) {
+		Tcl_UnsetObjRef(ObjLocFmtKey(opts->formatObj));
+		ObjLocFmtKey(opts->formatObj) = opts->formatObj;
+	    }
+	}
+clean:
+
+	Tcl_UnsetObjRef(keyObj);
+	Tcl_ResetResult(opts->interp);
+    }
+
+    return (opts->formatObj = valObj);
+}
+
 /*
  *----------------------------------------------------------------------
  */
@@ -917,7 +987,6 @@ ClockScan(
     int ret = TCL_ERROR;
 
     /* get localized format */
-
     if (ClockLocalizeFormat(opts) == NULL) {
 	return TCL_ERROR;
     }

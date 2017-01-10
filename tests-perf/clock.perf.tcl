@@ -132,9 +132,6 @@ proc test-scan {{reptime 1000}} {
     # Scan : date-time (system time zone without base)
     {clock scan "25.11.2015 10:35:55" -format "%d.%m.%Y %H:%M:%S"}
 
-    # Scan : dynamic format (cacheable)
-    {clock scan "25.11.2015 10:35:55" -format [string trim "%d.%m.%Y %H:%M:%S "] -base 0 -gmt 1}
-
     # Scan : julian day in gmt
     {clock scan 2451545 -format %J -gmt 1}
     # Scan : julian day in system TZ
@@ -152,6 +149,9 @@ proc test-scan {{reptime 1000}} {
     {clock scan {1970 Jan 02} -format {%C%y %b %Od} -locale en -gmt 1}
     # Scan : century, lookup table month and day (list scan: entries with position 12 / 31)
     {clock scan {2016 Dec 31} -format {%C%y %b %Od} -locale en -gmt 1}
+
+    # Scan : dynamic format (cacheable)
+    {clock scan "25.11.2015 10:35:55" -format [string trim "%d.%m.%Y %H:%M:%S "] -base 0 -gmt 1}
 
     break
 
