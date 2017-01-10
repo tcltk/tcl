@@ -289,7 +289,7 @@ proc ::tcl::clock::Initialize {} {
 
     # Current year century and year of century switch
     variable CurrentYearCentury  2000
-    variable YearOfCenturySwitch 37
+    variable YearOfCenturySwitch 38
 
     # Translation table to map Windows TZI onto cities, so that the Olson
     # rules can apply.  In some cases the mapping is ambiguous, so it's wise
@@ -1249,18 +1249,6 @@ proc ::tcl::clock::__org_scan { args } {
 	set timezone :GMT
     }
 
-    if { ![info exists saw(-format)] } {
-	# Perhaps someday we'll localize the legacy code. Right now, it's not
-	# localized.
-	if { [info exists saw(-locale)] } {
-	    return -code error \
-		-errorcode [list CLOCK flagWithLegacyFormat] \
-		"legacy \[clock scan\] does not support -locale"
-
-	}
-	return [FreeScan $string $base $timezone $locale]
-    }
-
     # Change locale if a fresh locale has been given on the command line.
 
     EnterLocale $locale
@@ -1276,184 +1264,6 @@ proc ::tcl::clock::__org_scan { args } {
 	return -options $opts $result
     }
 }
-
-#----------------------------------------------------------------------
-#
-# FreeScan --
-#
-#	Scans a time in free format
-#
-# Parameters:
-#	string - String containing the time to scan
-#	base - Base time, expressed in seconds from the Epoch
-#	timezone - Default time zone in which the time will be expressed
-#	locale - (Unused) Name of the locale where the time will be scanned.
-#
-# Results:
-#	Returns the date and time extracted from the string in seconds from
-#	the epoch
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::__org_FreeScan { string base timezone locale } {
-
-    variable TZData
-
-    # Get the data for time changes in the given zone
-    if {$timezone eq {}} {
-	set timezone [GetSystemTimeZone]
-    }
-    try {
-	SetupTimeZone $timezone
-    } on error {retval opts} {
-	dict unset opts -errorinfo
-	return -options $opts $retval
-    }
-
-    # Extract year, month and day from the base time for the parser to use as
-    # defaults
-
-    set date [GetDateFields $base $TZData($timezone) 2361222]
-    dict set date secondOfDay [expr {
-	[dict get $date localSeconds] % 86400
-    }]
-
-    # Parse the date.  The parser will return a list comprising date, time,
-    # time zone, relative month/day/seconds, relative weekday, ordinal month.
-
-    try {
-	set scanned [Oldscan $string \
-		     [dict get $date year] \
-		     [dict get $date month] \
-		     [dict get $date dayOfMonth]]
-	lassign $scanned \
-	    parseDate parseTime parseZone parseRel \
-	    parseWeekday parseOrdinalMonth
-    } on error message {
-	return -code error \
-	    "unable to convert date-time string \"$string\": $message"
-    }
-
-    # If the caller supplied a date in the string, update the 'date' dict with
-    # the value. If the caller didn't specify a time with the date, default to
-    # midnight.
-
-    if { [llength $parseDate] > 0 } {
-	lassign $parseDate y m d
-	if { $y < 100 } {
-	    variable YearOfCenturySwitch
-	    if { $y > $YearOfCenturySwitch } {
-		incr y 1900
-	    } else {
-		incr y 2000
-	    }
-	}
-	dict set date era CE
-	dict set date year $y
-	dict set date month $m
-	dict set date dayOfMonth $d
-	if { $parseTime eq {} } {
-	    set parseTime 0
-	}
-    }
-
-    # If the caller supplied a time zone in the string, it comes back as a
-    # two-element list; the first element is the number of minutes east of
-    # Greenwich, and the second is a Daylight Saving Time indicator (1 == yes,
-    # 0 == no, -1 == unknown). We make it into a time zone indicator of
-    # +-hhmm.
-
-    if { [llength $parseZone] > 0 } {
-	lassign $parseZone minEast dstFlag
-	set timezone [FormatNumericTimeZone \
-			  [expr { 60 * $minEast + 3600 * $dstFlag }]]
-	SetupTimeZone $timezone
-    }
-    dict set date tzName $timezone
-
-    # Assemble date, time, zone into seconds-from-epoch
-
-    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] 2361222]
-    if { $parseTime ne {} } {
-	dict set date secondOfDay $parseTime
-    } elseif { [llength $parseWeekday] != 0
-	       || [llength $parseOrdinalMonth] != 0
-	       || ( [llength $parseRel] != 0
-		    && ( [lindex $parseRel 0] != 0
-			 || [lindex $parseRel 1] != 0 ) ) } {
-	dict set date secondOfDay 0
-    }
-
-    dict set date localSeconds [expr {
-	-210866803200
-	+ ( 86400 * wide([dict get $date julianDay]) )
-	+ [dict get $date secondOfDay]
-    }]
-    dict set date tzName $timezone
-    set date [ConvertLocalToUTC $date[set date {}] $TZData($timezone) 2361222]
-    set seconds [dict get $date seconds]
-
-    # Do relative times
-
-    if { [llength $parseRel] > 0 } {
-	lassign $parseRel relMonth relDay relSecond
-	set seconds [add $seconds \
-			 $relMonth months $relDay days $relSecond seconds \
-			 -timezone $timezone -locale $locale]
-    }
-
-    # Do relative weekday
-
-    if { [llength $parseWeekday] > 0 } {
-	lassign $parseWeekday dayOrdinal dayOfWeek
-	set date2 [GetDateFields $seconds $TZData($timezone) 2361222]
-	dict set date2 era CE
-	set jdwkday [WeekdayOnOrBefore $dayOfWeek [expr {
-	    [dict get $date2 julianDay] + 6
-	}]]
-	incr jdwkday [expr { 7 * $dayOrdinal }]
-	if { $dayOrdinal > 0 } {
-	    incr jdwkday -7
-	}
-	dict set date2 secondOfDay \
-	    [expr { [dict get $date2 localSeconds] % 86400 }]
-	dict set date2 julianDay $jdwkday
-	dict set date2 localSeconds [expr {
-	    -210866803200
-	    + ( 86400 * wide([dict get $date2 julianDay]) )
-	    + [dict get $date secondOfDay]
-	}]
-	dict set date2 tzName $timezone
-	set date2 [ConvertLocalToUTC $date2[set date2 {}] $TZData($timezone) \
-		       2361222]
-	set seconds [dict get $date2 seconds]
-
-    }
-
-    # Do relative month
-
-    if { [llength $parseOrdinalMonth] > 0 } {
-	lassign $parseOrdinalMonth monthOrdinal monthNumber
-	if { $monthOrdinal > 0 } {
-	    set monthDiff [expr { $monthNumber - [dict get $date month] }]
-	    if { $monthDiff <= 0 } {
-		incr monthDiff 12
-	    }
-	    incr monthOrdinal -1
-	} else {
-	    set monthDiff [expr { [dict get $date month] - $monthNumber }]
-	    if { $monthDiff >= 0 } {
-		incr monthDiff -12
-	    }
-	    incr monthOrdinal
-	}
-	set seconds [add $seconds $monthOrdinal years $monthDiff months \
-			 -timezone $timezone -locale $locale]
-    }
-
-    return $seconds
-}
-
 
 #----------------------------------------------------------------------
 #
@@ -2723,10 +2533,10 @@ proc ::tcl::clock::InterpretTwoDigitYear { date baseTime
     variable CurrentYearCentury
     variable YearOfCenturySwitch
     set yr [dict get $date $twoDigitField]
-    incr yr $CurrentYearCentury
-    if { $yr <= $YearOfCenturySwitch } {
+    if { $yr >= $YearOfCenturySwitch } {
 	incr yr -100
     }
+    incr yr $CurrentYearCentury
     dict set date $fourDigitField $yr
     return $date
 }
@@ -3120,7 +2930,7 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 		    LoadZoneinfoFile [string range $timezone 1 end]
 		}]
 	    } then {
-		dict set TimeZoneBad $timezone 1
+	    	dict set TimeZoneBad $timezone 1
 		return -code error \
 		    -errorcode [list CLOCK badTimeZone $timezone] \
 		    "time zone \"$timezone\" not found"
