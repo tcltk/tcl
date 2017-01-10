@@ -318,6 +318,44 @@ proc test-freescan {{reptime 1000}} {
   } {puts [clock format $_(r) -locale en]}
 }
 
+proc test-add {{reptime 1000}} {
+  _test_run $reptime {
+    # Add : years
+    {clock add 1246379415 5 years -gmt 1}
+    # Add : months
+    {clock add 1246379415 18 months -gmt 1}
+    # Add : weeks
+    {clock add 1246379415 20 weeks -gmt 1}
+    # Add : days
+    {clock add 1246379415 385 days -gmt 1}
+    # Add : weekdays
+    {clock add 1246379415 3 weekdays -gmt 1}
+
+    # Add : hours
+    {clock add 1246379415 5 hours -gmt 1}
+    # Add : minutes
+    {clock add 1246379415 55 minutes -gmt 1}
+    # Add : seconds
+    {clock add 1246379415 100 seconds -gmt 1}
+
+    # Add : +/- in gmt
+    {clock add 1246379415 -5 years +21 months -20 weeks +386 days -19 hours +30 minutes -10 seconds -gmt 1}
+    # Add : +/- in system timezone
+    {clock add 1246379415 -5 years +21 months -20 weeks +386 days -19 hours +30 minutes -10 seconds -timezone :CET}
+
+    # Add : gmt
+    {clock add 1246379415 -5 years 18 months 366 days 5 hours 30 minutes 10 seconds -gmt 1}
+    # Add : system timezone
+    {clock add 1246379415 -5 years 18 months 366 days 5 hours 30 minutes 10 seconds -timezone :CET}
+
+    # Add : all in gmt
+    {clock add 1246379415 4 years 18 months 50 weeks 378 days 3 weekdays 5 hours 30 minutes 10 seconds -gmt 1}
+    # Add : all in system timezone
+    {clock add 1246379415 4 years 18 months 50 weeks 378 days 3 weekdays 5 hours 30 minutes 10 seconds -timezone :CET}
+
+  } {puts [clock format $_(r) -locale en]}
+}
+
 proc test-other {{reptime 1000}} {
   _test_run $reptime {
     # Bad zone
@@ -338,6 +376,7 @@ proc test {{reptime 1000}} {
   test-format $reptime
   test-scan $reptime
   test-freescan $reptime
+  test-add $reptime
   test-other $reptime
 
   puts \n**OK**
