@@ -50,44 +50,7 @@
  * parsed fields will be returned.
  */
 
-typedef struct DateInfo {
-
-    Tcl_Obj* messages;		/* Error messages */
-    const char* separatrix;	/* String separating messages */
-
-    time_t dateYear;
-    time_t dateMonth;
-    time_t dateDay;
-    int dateHaveDate;
-
-    time_t dateHour;
-    time_t dateMinutes;
-    time_t dateSeconds;
-    int dateMeridian;
-    int dateHaveTime;
-
-    time_t dateTimezone;
-    int dateDSTmode;
-    int dateHaveZone;
-
-    time_t dateRelMonth;
-    time_t dateRelDay;
-    time_t dateRelSeconds;
-    int dateHaveRel;
-
-    time_t dateMonthOrdinal;
-    int dateHaveOrdinalMonth;
-
-    time_t dateDayOrdinal;
-    time_t dateDayNumber;
-    int dateHaveDay;
-
-    const char *dateStart;
-    const char *dateInput;
-    time_t *dateRelPointer;
-
-    int dateDigitCount;
-} DateInfo;
+#include "tclDate.h"
 
 #define YYMALLOC	ckalloc
 #define YYFREE(x)	(ckfree((void*) (x)))
@@ -150,14 +113,6 @@ typedef enum _DSTMODE {
     DSTon, DSToff, DSTmaybe
 } DSTMODE;
 
-/*
- * Meridian: am, pm, or 24-hour style.
- */
-
-typedef enum _MERIDIAN {
-    MERam, MERpm, MER24
-} MERIDIAN;
-
 %}
 
 %union {
@@ -176,8 +131,6 @@ static int		LookupWord(YYSTYPE* yylvalPtr, char *buff);
 				     DateInfo* info, const char *s);
  static int		TclDatelex(YYSTYPE* yylvalPtr, YYLTYPE* location,
 				   DateInfo* info);
-static time_t		ToSeconds(time_t Hours, time_t Minutes,
-			    time_t Seconds, MERIDIAN Meridian);
 MODULE_SCOPE int	yyparse(DateInfo*);
 
 %}
@@ -730,7 +683,7 @@ TclDateerror(
     infoPtr->separatrix = "\n";
 }
 
-static time_t
+time_t
 ToSeconds(
     time_t Hours,
     time_t Minutes,
@@ -957,36 +910,20 @@ TclDatelex(
 	} while (Count > 0);
     }
 }
-
+
 int
-TclClockOldscanObjCmd(
-    ClientData clientData,	/* Unused */
+TclClockFreeScan(
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Count of paraneters */
-    Tcl_Obj *const *objv)	/* Parameters */
+    DateInfo *info)		/* Input and result parameters */
 {
-    Tcl_Obj *result, *resultElement;
-    int yr, mo, da;
-    DateInfo dateInfo;
-    DateInfo* info = &dateInfo;
     int status;
 
-    if (objc != 5) {
-	Tcl_WrongNumArgs(interp, 1, objv,
-		"stringToParse baseYear baseMonth baseDay" );
-	return TCL_ERROR;
-    }
-
-    yyInput = Tcl_GetString( objv[1] );
-    dateInfo.dateStart = yyInput;
+    /*
+     * yyInput = stringToParse;
+     * yyYear = baseYear; yyMonth = baseMonth; yyDay = baseDay;
+     */
 
     yyHaveDate = 0;
-    if (Tcl_GetIntFromObj(interp, objv[2], &yr) != TCL_OK
-	    || Tcl_GetIntFromObj(interp, objv[3], &mo) != TCL_OK
-	    || Tcl_GetIntFromObj(interp, objv[4], &da) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    yyYear = yr; yyMonth = mo; yyDay = da;
 
     yyHaveTime = 0;
     yyHour = 0; yyMinutes = 0; yySeconds = 0; yyMeridian = MER24;
@@ -1003,19 +940,20 @@ TclClockOldscanObjCmd(
     yyHaveRel = 0;
     yyRelMonth = 0; yyRelDay = 0; yyRelSeconds = 0; yyRelPointer = NULL;
 
-    dateInfo.messages = Tcl_NewObj();
-    dateInfo.separatrix = "";
-    Tcl_IncrRefCount(dateInfo.messages);
+    info->messages = Tcl_NewObj();
+    info->separatrix = "";
+    Tcl_IncrRefCount(info->messages);
 
-    status = yyparse(&dateInfo);
+    info->dateStart = yyInput;
+    status = yyparse(info);
     if (status == 1) {
-	Tcl_SetObjResult(interp, dateInfo.messages);
-	Tcl_DecrRefCount(dateInfo.messages);
+	Tcl_SetObjResult(interp, info->messages);
+	Tcl_DecrRefCount(info->messages);
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "PARSE", NULL);
 	return TCL_ERROR;
     } else if (status == 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("memory exhausted", -1));
-	Tcl_DecrRefCount(dateInfo.messages);
+	Tcl_DecrRefCount(info->messages);
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	return TCL_ERROR;
     } else if (status != 0) {
@@ -1023,11 +961,11 @@ TclClockOldscanObjCmd(
 						  "from date parser. Please "
 						  "report this error as a "
 						  "bug in Tcl.", -1));
-	Tcl_DecrRefCount(dateInfo.messages);
+	Tcl_DecrRefCount(info->messages);
 	Tcl_SetErrorCode(interp, "TCL", "BUG", NULL);
 	return TCL_ERROR;
     }
-    Tcl_DecrRefCount(dateInfo.messages);
+    Tcl_DecrRefCount(info->messages);
 
     if (yyHaveDate > 1) {
 	Tcl_SetObjResult(interp,
@@ -1058,6 +996,40 @@ TclClockOldscanObjCmd(
 		Tcl_NewStringObj("more than one ordinal month in string", -1));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
 	return TCL_ERROR;
+    }
+
+    return TCL_OK;
+}
+
+int
+TclClockOldscanObjCmd(
+    ClientData clientData,	/* Unused */
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int objc,			/* Count of paraneters */
+    Tcl_Obj *const *objv)	/* Parameters */
+{
+    Tcl_Obj *result, *resultElement;
+    int yr, mo, da;
+    DateInfo dateInfo;
+    DateInfo* info = &dateInfo;
+
+    if (objc != 5) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"stringToParse baseYear baseMonth baseDay" );
+	return TCL_ERROR;
+    }
+
+    yyInput = Tcl_GetString( objv[1] );
+
+    if (Tcl_GetIntFromObj(interp, objv[2], &yr) != TCL_OK
+	    || Tcl_GetIntFromObj(interp, objv[3], &mo) != TCL_OK
+	    || Tcl_GetIntFromObj(interp, objv[4], &da) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    yyYear = yr; yyMonth = mo; yyDay = da;
+
+    if (TclClockFreeScan(interp, info) != TCL_OK) {
+    	return TCL_ERROR;
     }
 
     result = Tcl_NewObj();

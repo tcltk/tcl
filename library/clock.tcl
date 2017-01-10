@@ -287,6 +287,10 @@ proc ::tcl::clock::Initialize {} {
 
     variable FEB_28	       58
 
+    # Current year century and year of century switch
+    variable CurrentYearCentury  2000
+    variable YearOfCenturySwitch 37
+
     # Translation table to map Windows TZI onto cities, so that the Olson
     # rules can apply.  In some cases the mapping is ambiguous, so it's wise
     # to specify $::env(TCL_TZ) rather than simply depending on the system
@@ -1295,7 +1299,7 @@ proc ::tcl::clock::__org_scan { args } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::FreeScan { string base timezone locale } {
+proc ::tcl::clock::__org_FreeScan { string base timezone locale } {
 
     variable TZData
 
@@ -1341,7 +1345,8 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
     if { [llength $parseDate] > 0 } {
 	lassign $parseDate y m d
 	if { $y < 100 } {
-	    if { $y >= 39 } {
+	    variable YearOfCenturySwitch
+	    if { $y > $YearOfCenturySwitch } {
 		incr y 1900
 	    } else {
 		incr y 2000
@@ -2719,12 +2724,14 @@ proc ::tcl::clock::ScanWide { str } {
 proc ::tcl::clock::InterpretTwoDigitYear { date baseTime
 					   { twoDigitField yearOfCentury }
 					   { fourDigitField year } } {
+    variable CurrentYearCentury
+    variable YearOfCenturySwitch
     set yr [dict get $date $twoDigitField]
-    if { $yr <= 37 } {
-	dict set date $fourDigitField [expr { $yr + 2000 }]
-    } else {
-	dict set date $fourDigitField [expr { $yr + 1900 }]
+    incr yr $CurrentYearCentury
+    if { $yr <= $YearOfCenturySwitch } {
+	incr yr -100
     }
+    dict set date $fourDigitField $yr
     return $date
 }
 
