@@ -324,6 +324,8 @@ static void
 ClockConfigureClear(
     ClockClientData *data)
 {
+    ClockFrmScnClearCaches();
+
     data->LastTZEpoch = 0;
     Tcl_UnsetObjRef(data->SystemTimeZone);
     Tcl_UnsetObjRef(data->SystemSetupTZData);
@@ -2609,8 +2611,6 @@ ClockScanObjCmd(
 
     ret = TCL_ERROR;
 
-    info->flags = 0;
-
     if (opts.baseObj != NULL) {
 	if (Tcl_GetWideIntFromObj(interp, opts.baseObj, &baseVal) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2621,8 +2621,6 @@ ClockScanObjCmd(
 	baseVal = (Tcl_WideInt) now.sec;
     }
 
-    yydate.tzName = NULL;
-
     /* If time zone not specified use system time zone */
     if ( opts.timezoneObj == NULL
       || TclGetString(opts.timezoneObj) == NULL 
@@ -2630,7 +2628,7 @@ ClockScanObjCmd(
     ) {
 	opts.timezoneObj = ClockGetSystemTimeZone(clientData, interp);
 	if (opts.timezoneObj == NULL) {
-	    goto done;
+	    return TCL_ERROR;
 	}
     }
 
@@ -2638,8 +2636,12 @@ ClockScanObjCmd(
 
     opts.timezoneObj = ClockSetupTimeZone(clientData, interp, opts.timezoneObj);
     if (opts.timezoneObj == NULL) {
-	goto done;
+	return TCL_ERROR;
     }
+
+    ClockInitDateInfo(info);
+    yydate.tzName = NULL;
+
     // Tcl_SetObjRef(yydate.tzName, opts.timezoneObj);
 
     /*
@@ -2679,7 +2681,7 @@ ClockScanObjCmd(
 	}
 	ret = ClockFreeScan(clientData, interp, info, objv[1], &opts);
     } 
-#if 1
+#if 0
     else
     if (1) {
 	/* TODO: Tcled Scan proc - */

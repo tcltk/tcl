@@ -896,24 +896,11 @@ TclClockFreeScan(
 
     /*
      * yyInput = stringToParse;
-     * yyYear = baseYear; yyMonth = baseMonth; yyDay = baseDay;
+     * 
+     * ClockInitDateInfo(info) should be executed to pre-init info;
      */
 
-    yyHaveDate = 0;
-
-    yyHaveTime = 0;
-
-    yyHaveZone = 0;
-    yyTimezone = 0; yyDSTmode = DSTmaybe;
-
-    yyHaveOrdinalMonth = 0;
-    yyMonthOrdinalIncr = 0;
-
-    yyHaveDay = 0;
-    yyDayOrdinal = 0; yyDayNumber = 0;
-
-    yyHaveRel = 0;
-    yyRelMonth = 0; yyRelDay = 0; yyRelSeconds = 0; yyRelPointer = NULL;
+    yyDSTmode = DSTmaybe;
 
     info->messages = Tcl_NewObj();
     info->separatrix = "";
