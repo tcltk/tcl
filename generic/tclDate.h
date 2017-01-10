@@ -14,6 +14,28 @@
 #define _TCLCLOCK_H
 
 /*
+ * Constants
+ */
+
+#define JULIAN_DAY_POSIX_EPOCH		2440588
+#define GREGORIAN_CHANGE_DATE		2361222
+#define SECONDS_PER_DAY			86400
+#define JULIAN_SEC_POSIX_EPOCH	      (((Tcl_WideInt) JULIAN_DAY_POSIX_EPOCH) \
+					* SECONDS_PER_DAY)
+#define FOUR_CENTURIES			146097	/* days */
+#define JDAY_1_JAN_1_CE_JULIAN		1721424
+#define JDAY_1_JAN_1_CE_GREGORIAN	1721426
+#define ONE_CENTURY_GREGORIAN		36524	/* days */
+#define FOUR_YEARS			1461	/* days */
+#define ONE_YEAR			365	/* days */
+
+
+/* On demand (lazy) assemble flags */
+#define CLF_INVALIDATE_DATE	 (1 << 6) /* assemble year, month, etc. using julianDay */
+#define CLF_INVALIDATE_JULIANDAY (1 << 7) /* assemble julianDay using year, month, etc. */
+#define CLF_INVALIDATE_SECONDS	 (1 << 8) /* assemble localSeconds (and seconds at end) */
+
+/*
  * Structure containing the fields used in [clock format] and [clock scan]
  */
 
@@ -52,6 +74,7 @@ typedef struct TclDateFields {
 typedef struct DateInfo {
     const char *dateStart;
     const char *dateInput;
+    int		flags;
 
     TclDateFields date;
 
@@ -116,17 +139,69 @@ typedef struct DateInfo {
 #define yyDigitCount	(info->dateDigitCount)
 
 
-enum {CL_INVALIDATE = (signed int)0x80000000};
 /*
  * Structure containing the command arguments supplied to [clock format] and [clock scan]
  */
+
+#define CLF_EXTENDED	(1 << 4)
+#define CLF_STRICT	(1 << 8)
 
 typedef struct ClockFmtScnCmdArgs {
     Tcl_Obj *formatObj;	    /* Format */
     Tcl_Obj *localeObj;	    /* Name of the locale where the time will be expressed. */
     Tcl_Obj *timezoneObj;   /* Default time zone in which the time will be expressed */
     Tcl_Obj *baseObj;	    /* Base (scan only) */
+    int	     flags;	    /* Flags control scanning */
 } ClockFmtScnCmdArgs;
+
+/*
+ * Structure containing the client data for [clock]
+ */
+
+typedef struct ClockClientData {
+    int refCount;		/* Number of live references. */
+    Tcl_Obj **literals;		/* Pool of object literals. */
+    /* Cache for current clock parameters, imparted via "configure" */
+    unsigned long LastTZEpoch;
+    int currentYearCentury;
+    int yearOfCenturySwitch;
+    Tcl_Obj *SystemTimeZone;
+    Tcl_Obj *SystemSetupTZData;
+    Tcl_Obj *GMTSetupTimeZone;
+    Tcl_Obj *GMTSetupTZData;
+    Tcl_Obj *AnySetupTimeZone;
+    Tcl_Obj *AnySetupTZData;
+    Tcl_Obj *LastUnnormSetupTimeZone;
+    Tcl_Obj *LastSetupTimeZone;
+    Tcl_Obj *LastSetupTZData;
+    /* Cache for last base (last-second fast convert if base/tz not changed) */
+    struct {
+	Tcl_Obj *TimeZone;
+	TclDateFields Date;
+    } lastBase;
+    /* Las-minute cache for fast UTC2Local conversion */
+    struct {
+	/* keys */
+	Tcl_Obj *tzData;
+	int  changeover;
+	Tcl_WideInt seconds;
+	/* values */
+	time_t	    tzOffset;
+	Tcl_Obj	   *tzName;
+    } UTC2Local;
+    /* Las-minute cache for fast Local2UTC conversion */
+    struct {
+	/* keys */
+	Tcl_Obj *tzData;
+	int  changeover;
+	Tcl_WideInt localSeconds;
+	/* values */
+	time_t	    tzOffset;
+    } Local2UTC;
+} ClockClientData;
+
+#define ClockDefaultYearCentury 2000
+#define ClockDefaultCenturySwitch 38
 
 /*
  * Meridian: am, pm, or 24-hour style.
@@ -152,8 +227,11 @@ typedef int ClockScanTokenProc(
 	ClockScanToken *tok);
 
 
-#define CLF_DATE (1 << 2)
-#define CLF_TIME (1 << 3)
+#define CLF_DATE      (1 << 2)
+#define CLF_JULIANDAY (1 << 3)
+#define CLF_TIME      (1 << 4)
+#define CLF_LOCALSEC  (1 << 5)
+#define CLF_SIGNED    (1 << 8)
 
 typedef enum _CLCKTOK_TYPE {
    CTOKT_DIGIT = 1, CTOKT_SPACE, CTOKT_WORD
