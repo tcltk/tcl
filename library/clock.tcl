@@ -289,8 +289,9 @@ proc ::tcl::clock::Initialize {} {
 
     # Default configuration
 
-    # configure -year-century    2000 \
-    #           -century-switch  38
+    configure -default-locale  [mclocale]
+    #configure -year-century    2000 \
+    #          -century-switch  38
 
     # Translation table to map Windows TZI onto cities, so that the Olson
     # rules can apply.  In some cases the mapping is ambiguous, so it's wise
@@ -2105,6 +2106,51 @@ proc ::tcl::clock::MakeParseCodeFromFields { dateFields parseActions } {
 
 #----------------------------------------------------------------------
 #
+# GetSystemTimeZone --
+#
+#	Determines the system time zone, which is the default for the
+#	'clock' command if no other zone is supplied.
+#
+# Parameters:
+#	None.
+#
+# Results:
+#	Returns the system time zone.
+#
+# Side effects:
+#	Stores the sustem time zone in engine configuration, since
+#	determining it may be an expensive process.
+#
+#----------------------------------------------------------------------
+
+proc ::tcl::clock::GetSystemLocale {} {
+    if { $::tcl_platform(platform) ne {windows} } {
+	# On a non-windows platform, the 'system' locale is the same as
+	# the 'current' locale
+
+	return [mclocale]
+    }
+
+    # On a windows platform, the 'system' locale is adapted from the
+    # 'current' locale by applying the date and time formats from the
+    # Control Panel.  First, load the 'current' locale if it's not yet
+    # loaded
+
+    mcpackagelocale set [mclocale]
+
+    # Make a new locale string for the system locale, and get the
+    # Control Panel information
+
+    set locale [mclocale]_windows
+    if { ! [mcpackagelocale present $locale] } {
+	LoadWindowsDateTimeFormats $locale
+    }
+
+    return $locale
+}
+
+#----------------------------------------------------------------------
+#
 # EnterLocale --
 #
 #	Switch [mclocale] to a given locale if necessary
@@ -2121,33 +2167,12 @@ proc ::tcl::clock::MakeParseCodeFromFields { dateFields parseActions } {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::EnterLocale { locale } {
-    if { $locale eq {system} } {
-	if { $::tcl_platform(platform) ne {windows} } {
-	    # On a non-windows platform, the 'system' locale is the same as
-	    # the 'current' locale
-
-	    set locale current
-	} else {
-	    # On a windows platform, the 'system' locale is adapted from the
-	    # 'current' locale by applying the date and time formats from the
-	    # Control Panel.  First, load the 'current' locale if it's not yet
-	    # loaded
-
-	    mcpackagelocale set [mclocale]
-
-	    # Make a new locale string for the system locale, and get the
-	    # Control Panel information
-
-	    set locale [mclocale]_windows
-	    if { ! [mcpackagelocale present $locale] } {
-		LoadWindowsDateTimeFormats $locale
-	    }
-	}
-    }
-    if { $locale eq {current}} {
+    switch -- $locale system {
+    	set locale [GetSystemLocale]
+    } current {
 	set locale [mclocale]
     }
-    # Eventually load the locale
+    # Select the locale, eventually load it
     mcpackagelocale set $locale
 }
 

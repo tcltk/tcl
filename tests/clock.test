@@ -18553,12 +18553,12 @@ test clock-6.8 {input of seconds} {
 } 9223372036854775807
 
 test clock-6.9 {input of seconds - overflow} {
-    list [catch {clock scan -9223372036854775809 -format %s -gmt true} result] $result
-} {1 {integer value too large to represent}}
+    list [catch {clock scan -9223372036854775809 -format %s -gmt true} result] $result $::errorCode
+} {1 {requested date too large to represent} {CLOCK dateTooLarge}}
 
 test clock-6.10 {input of seconds - overflow} {
-    list [catch {clock scan 9223372036854775808 -format %s -gmt true} result] $result
-} {1 {integer value too large to represent}}
+    list [catch {clock scan 9223372036854775808 -format %s -gmt true} result] $result $::errorCode
+} {1 {requested date too large to represent} {CLOCK dateTooLarge}}
 
 test clock-6.11 {input of seconds - two values} {
     clock scan {1 2} -format {%s %s} -gmt true
