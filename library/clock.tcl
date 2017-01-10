@@ -629,6 +629,8 @@ proc ::tcl::clock::Initialize {} {
 
     # Caches
 
+    variable LocaleFormats      {};	# Dictionary with localized formats
+
     variable LocaleNumeralCache {};	# Dictionary whose keys are locale
 					# names and whose values are pairs
 					# comprising regexes matching numerals
@@ -2323,38 +2325,59 @@ proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::LocalizeFormat { locale format } {
+proc ::tcl::clock::LocalizeFormat { locale format {fmtkey {}} } {
+    variable LocaleFormats
+    
+    if { $fmtkey eq {} } { set fmtkey FMT_$format }
+    if { [catch {
+    	set locfmt [dict get $LocaleFormats $locale $fmtkey]
+    }] } {
 
-    # message catalog key to cache this format
-    set key FORMAT_$format
+    	# get map list cached or build it:
+	if { [catch {
+	    set mlst [dict get $LocaleFormats $locale MLST]
+	}] } {
+	
+	    # message catalog dictionary:
+	    set mcd [::msgcat::mcget ::tcl::clock $locale]
+		
+	    # Handle locale-dependent format groups by mapping them out of the format
+	    # string.  Note that the order of the [string map] operations is
+	    # significant because later formats can refer to later ones; for example
+	    # %c can refer to %X, which in turn can refer to %T.
 
-    if { [::msgcat::mcexists -exactlocale -exactnamespace $key] } {
-	return [mc $key]
+	    set mlst {
+		%% %%
+		%D %m/%d/%Y
+		%+ {%a %b %e %H:%M:%S %Z %Y}
+	    }
+	    lappend mlst %EY [string map $mlst [dict get $mcd LOCALE_YEAR_FORMAT]]
+	    lappend mlst %T  [string map $mlst [dict get $mcd TIME_FORMAT_24_SECS]]
+	    lappend mlst %R  [string map $mlst [dict get $mcd TIME_FORMAT_24]]
+	    lappend mlst %r  [string map $mlst [dict get $mcd TIME_FORMAT_12]]
+	    lappend mlst %X  [string map $mlst [dict get $mcd TIME_FORMAT]]
+	    lappend mlst %EX [string map $mlst [dict get $mcd LOCALE_TIME_FORMAT]]
+	    lappend mlst %x  [string map $mlst [dict get $mcd DATE_FORMAT]]
+	    lappend mlst %Ex [string map $mlst [dict get $mcd LOCALE_DATE_FORMAT]]
+	    lappend mlst %c  [string map $mlst [dict get $mcd DATE_TIME_FORMAT]]
+	    lappend mlst %Ec [string map $mlst [dict get $mcd LOCALE_DATE_TIME_FORMAT]]
+
+	    dict set LocaleFormats $locale MLST $mlst
+	}
+
+	# translate:
+	set locfmt [string map $mlst $format]
+
+	# Save original format as long as possible, because of internal representation (performance)
+	if {$locfmt eq $format} {
+	    set locfmt $format
+	}
+
+	# cache it:
+	dict set LocaleFormats $locale $fmtkey $locfmt
     }
-    # Handle locale-dependent format groups by mapping them out of the format
-    # string.  Note that the order of the [string map] operations is
-    # significant because later formats can refer to later ones; for example
-    # %c can refer to %X, which in turn can refer to %T.
 
-    set list {
-	%% %%
-	%D %m/%d/%Y
-	%+ {%a %b %e %H:%M:%S %Z %Y}
-    }
-    lappend list %EY [string map $list [mc LOCALE_YEAR_FORMAT]]
-    lappend list %T  [string map $list [mc TIME_FORMAT_24_SECS]]
-    lappend list %R  [string map $list [mc TIME_FORMAT_24]]
-    lappend list %r  [string map $list [mc TIME_FORMAT_12]]
-    lappend list %X  [string map $list [mc TIME_FORMAT]]
-    lappend list %EX [string map $list [mc LOCALE_TIME_FORMAT]]
-    lappend list %x  [string map $list [mc DATE_FORMAT]]
-    lappend list %Ex [string map $list [mc LOCALE_DATE_FORMAT]]
-    lappend list %c  [string map $list [mc DATE_TIME_FORMAT]]
-    lappend list %Ec [string map $list [mc LOCALE_DATE_TIME_FORMAT]]
-    set format [string map $list $format]
-
-    ::msgcat::mcset $locale $key $format
-    return $format
+    return $locfmt
 }
 
 #----------------------------------------------------------------------
@@ -4437,6 +4460,7 @@ proc ::tcl::clock::ChangeCurrentLocale {args} {
 
 proc ::tcl::clock::ClearCaches {} {
     variable FormatProc
+    variable LocaleFormats
     variable LocaleNumeralCache
     variable TimeZoneBad
 
@@ -4451,6 +4475,7 @@ proc ::tcl::clock::ClearCaches {} {
     }
 
     unset -nocomplain FormatProc
+    set LocaleFormats {}
     set LocaleNumeralCache {}
     set TimeZoneBad {}
     InitTZData

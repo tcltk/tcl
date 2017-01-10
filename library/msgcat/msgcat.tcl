@@ -947,7 +947,8 @@ proc msgcat::Merge {ns locales} {
 	}
     }
     dict set Merged $ns $loc $mrgcat
-    return $mrgcat
+    # return smart reference (shared dict as object with exact one ref-counter)
+    return [dict smartref $mrgcat]
 }
 
 # msgcat::Invoke --
