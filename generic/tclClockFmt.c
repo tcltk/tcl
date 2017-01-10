@@ -1080,14 +1080,30 @@ ClockGetOrParseScanFormat(
 	const char *strFmt;
 	register const char *p, *e, *cp;
 
+	e = strFmt = HashEntry4FmtScn(fss)->key.string;
+	e += strlen(strFmt);
+
+	/* estimate token count by % char and format length */
+	fss->scnTokC = 0;
+	p = strFmt;
+	while (p != e) {
+	    if (*p++ == '%') fss->scnTokC++;
+	}
+	p = strFmt + fss->scnTokC * 2;
+	if (p < e) {
+	    if ((e - p) < fss->scnTokC) {
+		fss->scnTokC += (e - p);
+	    } else {
+		fss->scnTokC += fss->scnTokC;
+	    }
+	}
+	fss->scnTokC++;
+
 	Tcl_MutexLock(&ClockFmtMutex);
 
-	fss->scnTokC = CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE;
-	fss->scnTok =
-		tok = ckalloc(sizeof(*tok) * CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE);
+	fss->scnTok = tok = ckalloc(sizeof(*tok) * fss->scnTokC);
 	memset(tok, 0, sizeof(*(tok)));
-	strFmt = HashEntry4FmtScn(fss)->key.string;
-	for (e = p = strFmt, e += strlen(strFmt); p != e; p++) {
+	for (p = strFmt; p != e; p++) {
 	    switch (*p) {
 	    case '%':
 	    if (1) {
