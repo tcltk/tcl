@@ -116,9 +116,6 @@ static int		ClockMicrosecondsObjCmd(
 static int		ClockMillisecondsObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		ClockParseformatargsObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
 static int		ClockSecondsObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -128,10 +125,17 @@ static int		ClockFormatObjCmd(
 static int		ClockScanObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		ClockScanCommit(
+			    ClientData clientData, register DateInfo *info,
+			    register ClockFmtScnCmdArgs *opts);
 static int		ClockFreeScan(
-			    ClientData clientData, Tcl_Interp *interp,
 			    register DateInfo *info, 
 			    Tcl_Obj *strObj, ClockFmtScnCmdArgs *opts);
+static int		ClockCalcRelTime(
+			    register DateInfo *info, ClockFmtScnCmdArgs *opts);
+static int		ClockAddObjCmd(
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 static struct tm *	ThreadSafeLocalTime(const time_t *);
 static unsigned long	TzsetGetEpoch(void);
 static void		TzsetIfNecessary(void);
@@ -151,6 +155,7 @@ struct ClockCommand {
 };
 
 static const struct ClockCommand clockCommands[] = {
+    { "add",			ClockAddObjCmd },
     { "clicks",			ClockClicksObjCmd },
     { "getenv",			ClockGetenvObjCmd },
     { "microseconds",		ClockMicrosecondsObjCmd },
@@ -166,7 +171,6 @@ static const struct ClockCommand clockCommands[] = {
 		ClockGetjuliandayfromerayearmonthdayObjCmd },
     { "GetJulianDayFromEraYearWeekDay",
 		ClockGetjuliandayfromerayearweekdayObjCmd },
-    { "ParseFormatArgs",	ClockParseformatargsObjCmd },
     { NULL, NULL }
 };
 
@@ -763,7 +767,6 @@ ClockConfigureObjCmd(
     Tcl_Obj *const objv[])  /* Parameter vector */
 {
     ClockClientData *dataPtr = clientData;
-    Tcl_Obj **litPtr = dataPtr->literals;
     
     static const char *const options[] = {
 	"-system-tz",	  "-setup-tz",	  "-default-locale",
@@ -814,7 +817,7 @@ ClockConfigureObjCmd(
 		    Tcl_SetObjRef(dataPtr->LastSetupTimeZone, timezoneObj);
 		    Tcl_UnsetObjRef(dataPtr->LastSetupTZData);
 		}
-		if (timezoneObj == litPtr[LIT_GMT]) {
+		if (timezoneObj == dataPtr->literals[LIT_GMT]) {
 		    optionIndex = CLOCK_SETUP_GMT;
 		} else if (timezoneObj == dataPtr->SystemTimeZone) {
 		    optionIndex = CLOCK_SETUP_NOP;
@@ -1158,7 +1161,7 @@ ClockConvertlocaltoutcObjCmd(
 		"found in dictionary", -1));
 	return TCL_ERROR;
     }
-    if ((Tcl_GetWideIntFromObj(interp, secondsObj,
+    if ((TclGetWideIntFromObj(interp, secondsObj,
 	    &fields.localSeconds) != TCL_OK)
 	|| (TclGetIntFromObj(interp, objv[3], &changeover) != TCL_OK)
 	|| ConvertLocalToUTC(clientData, interp, &fields, objv[2], changeover)) {
@@ -1238,7 +1241,7 @@ ClockGetdatefieldsObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "seconds timezone changeover");
 	return TCL_ERROR;
     }
-    if (Tcl_GetWideIntFromObj(interp, objv[1], &fields.seconds) != TCL_OK
+    if (TclGetWideIntFromObj(interp, objv[1], &fields.seconds) != TCL_OK
 	    || TclGetIntFromObj(interp, objv[3], &changeover) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1762,7 +1765,7 @@ ConvertLocalToUTCUsingTable(
 	int corrOffset;
 	Tcl_WideInt backCompVal;
 	/* check DST-hole interval contains UTC time */
-	Tcl_GetWideIntFromObj(NULL, cellv[0], &backCompVal);
+	TclGetWideIntFromObj(NULL, cellv[0], &backCompVal);
 	if ( fields->seconds >= backCompVal - fields->tzOffset 
 	  && fields->seconds <= backCompVal + fields->tzOffset
 	) {
@@ -2148,7 +2151,7 @@ LookupLastTransition(
      */
 
     if (Tcl_ListObjIndex(interp, rowv[0], 0, &compObj) != TCL_OK
-	    || Tcl_GetWideIntFromObj(interp, compObj, &compVal) != TCL_OK) {
+	    || TclGetWideIntFromObj(interp, compObj, &compVal) != TCL_OK) {
 	return NULL;
     }
 
@@ -2170,7 +2173,7 @@ LookupLastTransition(
 	int m = (l + u + 1) / 2;
 
 	if (Tcl_ListObjIndex(interp, rowv[m], 0, &compObj) != TCL_OK ||
-		Tcl_GetWideIntFromObj(interp, compObj, &compVal) != TCL_OK) {
+		TclGetWideIntFromObj(interp, compObj, &compVal) != TCL_OK) {
 	    return NULL;
 	}
 	if (tick >= compVal) {
@@ -2922,10 +2925,21 @@ ClockMicrosecondsObjCmd(
     return TCL_OK;
 }
 
+static inline void
+ClockInitFmtScnArgs(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    ClockFmtScnCmdArgs *opts)
+{
+    memset(opts, 0, sizeof(*opts));
+    opts->clientData = clientData;
+    opts->interp = interp;
+}
+
 /*
  *-----------------------------------------------------------------------------
  *
- * _ClockParseFmtScnArgs --
+ * ClockParseFmtScnArgs --
  *
  *	Parses the arguments for [clock scan] and [clock format].
  *
@@ -2936,84 +2950,108 @@ ClockMicrosecondsObjCmd(
  *-----------------------------------------------------------------------------
  */
 
+#define CLC_FMT_ARGS	(0)
+#define CLC_SCN_ARGS	(1 << 0)
+#define CLC_ADD_ARGS	(1 << 1)
+
 static int
-_ClockParseFmtScnArgs(
-    ClientData clientData,  /* Client data containing literal pool */
-    Tcl_Interp *interp,	    /* Tcl interpreter */
+ClockParseFmtScnArgs(
+    register
+    ClockFmtScnCmdArgs *opts, /* Result vector: format, locale, timezone... */
+    TclDateFields      *date, /* Extracted date-time corresponding base 
+			       * (by scan or add) resp. clockval (by format) */
     int objc,		    /* Parameter count */
     Tcl_Obj *const objv[],  /* Parameter vector */
-    ClockFmtScnCmdArgs *opts, /* Result vector: format, locale, timezone... */
-    int	     forScan	    /* Flag to differentiate between format and scan */
+    int		flags	    /* Flags, differentiates between format, scan, add */
 ) {
-    ClockClientData *dataPtr = clientData;
-    Tcl_Obj **litPtr = dataPtr->literals;
+    Tcl_Interp	    *interp =  opts->interp;
+    ClockClientData *dataPtr = opts->clientData;
     int gmtFlag = 0;
-    static const char *const options[2][6] = {
-	{ /* Format command line options */
+    static const char *const options[] = {
 	"-format",	"-gmt",		"-locale",
-	"-timezone",	NULL },
-	{ /* Scan command line options */
-	"-format",	"-gmt",		"-locale",
-	"-timezone",	"-base",	NULL }
+	"-timezone",	"-base",	NULL
     };
     enum optionInd {
-	CLOCK_FORMAT_FORMAT,	CLOCK_FORMAT_GMT,	CLOCK_FORMAT_LOCALE,
-	CLOCK_FORMAT_TIMEZONE,	CLOCK_FORMAT_BASE
+	CLC_ARGS_FORMAT,    CLC_ARGS_GMT,	CLC_ARGS_LOCALE,
+	CLC_ARGS_TIMEZONE,  CLC_ARGS_BASE
     };
     int optionIndex;		/* Index of an option. */
     int saw = 0;		/* Flag == 1 if option was seen already. */
     int i;
+    Tcl_WideInt baseVal;	/* Base time, expressed in seconds from the Epoch */
+
+    /* clock value (as current base) */
+    if ( !(flags & (CLC_SCN_ARGS)) ) {
+	opts->baseObj = objv[1];
+	saw |= (1 << CLC_ARGS_BASE);
+    }
 
     /*
      * Extract values for the keywords.
      */
 
-    memset(opts, 0, sizeof(*opts));
     for (i = 2; i < objc; i+=2) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], options[forScan], 
+	/* bypass integers (offsets) by "clock add" */
+	if (flags & CLC_ADD_ARGS) {
+	    Tcl_WideInt num;
+	    if (TclGetWideIntFromObj(NULL, objv[i], &num) == TCL_OK) {
+		continue;
+	    }
+	}
+	/* get option */
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, 
 	    "option", 0, &optionIndex) != TCL_OK) {
-	    Tcl_SetErrorCode(interp, "CLOCK", "badOption",
-		    Tcl_GetString(objv[i]), NULL);
-	    return TCL_ERROR;
+	    goto badOption;
+	}
+	/* if already specified */
+	if (saw & (1 << optionIndex)) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad option \"%s\": doubly present", 
+		TclGetString(objv[i]))
+	    );
+	    goto badOption;
 	}
 	switch (optionIndex) {
-	case CLOCK_FORMAT_FORMAT:
+	case CLC_ARGS_FORMAT:
+	    if (flags & CLC_ADD_ARGS) {
+		goto badOptionMsg;
+	    }
 	    opts->formatObj = objv[i+1];
 	    break;
-	case CLOCK_FORMAT_GMT:
+	case CLC_ARGS_GMT:
 	    if (Tcl_GetBooleanFromObj(interp, objv[i+1], &gmtFlag) != TCL_OK){
 		return TCL_ERROR;
 	    }
 	    break;
-	case CLOCK_FORMAT_LOCALE:
+	case CLC_ARGS_LOCALE:
 	    opts->localeObj = objv[i+1];
 	    break;
-	case CLOCK_FORMAT_TIMEZONE:
+	case CLC_ARGS_TIMEZONE:
 	    opts->timezoneObj = objv[i+1];
 	    break;
-	case CLOCK_FORMAT_BASE:
+	case CLC_ARGS_BASE:
+	    if ( !(flags & (CLC_SCN_ARGS)) ) {
+		goto badOptionMsg;
+	    }
 	    opts->baseObj = objv[i+1];
 	    break;
 	}
-	saw |= 1 << optionIndex;
+	saw |= (1 << optionIndex);
     }
 
     /*
      * Check options.
      */
 
-    if ((saw & (1 << CLOCK_FORMAT_GMT))
-	    && (saw & (1 << CLOCK_FORMAT_TIMEZONE))) {
+    if ((saw & (1 << CLC_ARGS_GMT))
+	    && (saw & (1 << CLC_ARGS_TIMEZONE))) {
 	Tcl_SetResult(interp, "cannot use -gmt and -timezone in same call", TCL_STATIC);
 	Tcl_SetErrorCode(interp, "CLOCK", "gmtWithTimezone", NULL);
 	return TCL_ERROR;
     }
     if (gmtFlag) {
-	opts->timezoneObj = litPtr[LIT_GMT];
+	opts->timezoneObj = dataPtr->literals[LIT_GMT];
     }
-
-    opts->clientData = clientData;
-    opts->interp = interp;
 
     /* If time zone not specified use system time zone */
 
@@ -3021,7 +3059,7 @@ _ClockParseFmtScnArgs(
       || TclGetString(opts->timezoneObj) == NULL 
       || opts->timezoneObj->length == 0
     ) {
-	opts->timezoneObj = ClockGetSystemTimeZone(clientData, interp);
+	opts->timezoneObj = ClockGetSystemTimeZone(opts->clientData, interp);
 	if (opts->timezoneObj == NULL) {
 	    return TCL_ERROR;
 	}
@@ -3029,85 +3067,90 @@ _ClockParseFmtScnArgs(
 
     /* Setup timezone (normalize object if needed and load TZ on demand) */
 
-    opts->timezoneObj = ClockSetupTimeZone(clientData, interp, opts->timezoneObj);
+    opts->timezoneObj = ClockSetupTimeZone(opts->clientData, interp, opts->timezoneObj);
     if (opts->timezoneObj == NULL) {
 	return TCL_ERROR;
     }
 
+    /* Base (by scan or add) or clock value (by format) */
+
+    if (opts->baseObj != NULL) {
+	if (TclGetWideIntFromObj(NULL, opts->baseObj, &baseVal) != TCL_OK) {
+
+	    /* we accept "-now" as current date-time */
+	    const char *const nowOpts[] = {
+		"-now", NULL
+	    };
+	    int idx;
+	    if (Tcl_GetIndexFromObj(NULL, opts->baseObj, nowOpts, "seconds or -now",
+		    TCL_EXACT, &idx) == TCL_OK
+	    ) {
+		goto baseNow;
+	    }
+
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected integer but got \"%s\"",
+		    Tcl_GetString(opts->baseObj)));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	    i = 1;
+	    goto badOption;
+	}
+	/*
+	 * seconds could be an unsigned number that overflowed. Make sure
+	 * that it isn't.
+	 */
+
+	if (opts->baseObj->typePtr == &tclBignumType) {
+	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
+	    return TCL_ERROR;
+	}
+
+    } else {
+
+baseNow:
+	{
+	    Tcl_Time now;
+	    Tcl_GetTime(&now);
+	    baseVal = (Tcl_WideInt) now.sec;
+	}
+    }
+
+    /*
+     * Extract year, month and day from the base time for the parser to use as
+     * defaults
+     */
+
+    /* check base fields already cached (by TZ, last-second cache) */
+    if ( dataPtr->lastBase.timezoneObj == opts->timezoneObj
+      && dataPtr->lastBase.Date.seconds == baseVal) {
+	memcpy(date, &dataPtr->lastBase.Date, ClockCacheableDateFieldsSize);
+    } else {
+	/* extact fields from base */
+	date->seconds = baseVal;
+	if (ClockGetDateFields(opts->clientData, interp, date, opts->timezoneObj,
+	      GREGORIAN_CHANGE_DATE) != TCL_OK) { /* TODO - GREGORIAN_CHANGE_DATE should be locale-dependent */
+	    return TCL_ERROR;
+	}
+	/* cache last base */
+	memcpy(&dataPtr->lastBase.Date, date, ClockCacheableDateFieldsSize);
+	Tcl_SetObjRef(dataPtr->lastBase.timezoneObj, opts->timezoneObj);
+    }
+
     return TCL_OK;
-}
-
-/*
- *-----------------------------------------------------------------------------
- *
- * ClockParseformatargsObjCmd --
- *
- *	Parses the arguments for [clock format].
- *
- * Results:
- *	Returns a standard Tcl result, whose value is a four-element list
- *	comprising the time format, the locale, and the timezone.
- *
- * This function exists for backward compatibility purposes.
- *
- *-----------------------------------------------------------------------------
- */
 
-static int
-ClockParseformatargsObjCmd(
-    ClientData clientData,	/* Client data containing literal pool */
-    Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
-    Tcl_Obj *const objv[])	/* Parameter vector */
-{
-    ClockClientData *dataPtr = clientData;
-    Tcl_Obj **literals = dataPtr->literals;
-    ClockFmtScnCmdArgs opts;	/* Format, locale and timezone */
-    Tcl_WideInt clockVal;	/* Clock value - just used to parse. */
-    int ret;
+badOptionMsg: 
 
-    /*
-     * Args consist of a time followed by keyword-value pairs.
-     */
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	"bad option \"%s\": unexpected for command \"%s\"",
+	TclGetString(objv[i]), TclGetString(objv[0]))
+    );
 
-    if (objc < 2 || (objc % 2) != 0) {
-	Tcl_WrongNumArgs(interp, 0, objv,
-		"clock format clockval ?-format string? "
-		"?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?");
-	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
-	return TCL_ERROR;
-    }
+badOption:
 
-    /*
-     * Extract values for the keywords.
-     */
-
-    ret = _ClockParseFmtScnArgs(clientData, interp, objc, objv,
-	&opts, 0);
-    if (ret != TCL_OK) {
-	return ret;
-    }
-
-    /*
-     * Check options.
-     */
-
-    if (Tcl_GetWideIntFromObj(interp, objv[1], &clockVal) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (opts.formatObj == NULL)
-	opts.formatObj = literals[LIT__DEFAULT_FORMAT];
-    if (opts.localeObj == NULL)
-	opts.localeObj = literals[LIT_C];
-    if (opts.timezoneObj == NULL)
-	opts.timezoneObj = literals[LIT__NIL];
-
-    /*
-     * Return options as a list.
-     */
-
-    Tcl_SetObjResult(interp, Tcl_NewListObj(3, (Tcl_Obj**)&opts.formatObj));
-    return TCL_OK;
+    Tcl_SetErrorCode(interp, "CLOCK", "badOption",
+	    i < objc ? Tcl_GetString(objv[i]) : NULL, NULL);
+    
+    return TCL_ERROR;
 }
 
 /*----------------------------------------------------------------------
@@ -3141,11 +3184,11 @@ ClockFormatObjCmd(
 
     int ret;
     ClockFmtScnCmdArgs opts;	/* Format, locale, timezone and base */
-    Tcl_WideInt	    clockVal;	/* Time, expressed in seconds from the Epoch */
     DateFormat	    dateFmt;	/* Common structure used for formatting */
 
+    /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, "clockval "
+	Tcl_WrongNumArgs(interp, 1, objv, "clockval|-now "
 	    "?-format string? "
 	    "?-gmt boolean? "
 	    "?-locale LOCALE? ?-timezone ZONE?");
@@ -3153,53 +3196,17 @@ ClockFormatObjCmd(
 	return TCL_ERROR;
     }
 
+    memset(&dateFmt, 0, sizeof(dateFmt));
+
     /*
      * Extract values for the keywords.
      */
 
-    ret = _ClockParseFmtScnArgs(clientData, interp, objc, objv,
-	&opts, 0);
+    ClockInitFmtScnArgs(clientData, interp, &opts);
+    ret = ClockParseFmtScnArgs(&opts, &dateFmt.date, objc, objv,
+	    CLC_FMT_ARGS);
     if (ret != TCL_OK) {
-	return ret;
-    }
-
-    ret = TCL_ERROR;
-
-    if (Tcl_GetWideIntFromObj(interp, objv[1], &clockVal) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * seconds could be an unsigned number that overflowed. Make sure
-     * that it isn't.
-     */
-
-    if (objv[1]->typePtr == &tclBignumType) {
-	Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
-	return TCL_ERROR;
-    }
-
-    memset(&dateFmt, 0, sizeof(dateFmt));
-
-    /*
-     * Extract year, month and day from the base time for the parser to use as
-     * defaults
-     */
-
-    /* check base fields already cached (by TZ, last-second cache) */
-    if ( dataPtr->lastBase.timezoneObj == opts.timezoneObj
-      && dataPtr->lastBase.Date.seconds == clockVal) {
-	memcpy(&dateFmt.date, &dataPtr->lastBase.Date, ClockCacheableDateFieldsSize);
-    } else {
-	/* extact fields from base */
-	dateFmt.date.seconds = clockVal;
-	if (ClockGetDateFields(clientData, interp, &dateFmt.date, opts.timezoneObj,
-	      GREGORIAN_CHANGE_DATE) != TCL_OK) {
-	    goto done;
-	}
-	/* cache last base */
-	memcpy(&dataPtr->lastBase.Date, &dateFmt.date, ClockCacheableDateFieldsSize);
-	Tcl_SetObjRef(dataPtr->lastBase.timezoneObj, opts.timezoneObj);
+	goto done;
     }
 
     /* Default format */
@@ -3249,14 +3256,12 @@ ClockScanObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
-    ClockClientData *dataPtr = clientData;
-
     int ret;
     ClockFmtScnCmdArgs opts;	/* Format, locale, timezone and base */
-    Tcl_WideInt	    baseVal;	/* Base time, expressed in seconds from the Epoch */
     DateInfo	    yy;		/* Common structure used for parsing */
     DateInfo	   *info = &yy;
 
+    /* even number of arguments */
     if ((objc & 1) == 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string "
 	    "?-base seconds? "
@@ -3267,59 +3272,17 @@ ClockScanObjCmd(
 	return TCL_ERROR;
     }
 
+    ClockInitDateInfo(&yy);
+    
     /*
      * Extract values for the keywords.
      */
 
-    ret = _ClockParseFmtScnArgs(clientData, interp, objc, objv,
-	&opts, 1);
+    ClockInitFmtScnArgs(clientData, interp, &opts);
+    ret = ClockParseFmtScnArgs(&opts, &yy.date, objc, objv,
+	    CLC_SCN_ARGS);
     if (ret != TCL_OK) {
-	return ret;
-    }
-
-    ret = TCL_ERROR;
-
-    if (opts.baseObj != NULL) {
-	if (Tcl_GetWideIntFromObj(interp, opts.baseObj, &baseVal) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	/*
-	 * seconds could be an unsigned number that overflowed. Make sure
-	 * that it isn't.
-	 */
-
-	if (opts.baseObj->typePtr == &tclBignumType) {
-	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
-	    return TCL_ERROR;
-	}
-
-    } else {
-	Tcl_Time now;
-	Tcl_GetTime(&now); 
-	baseVal = (Tcl_WideInt) now.sec;
-    }
-
-    ClockInitDateInfo(info);
-    
-    /*
-     * Extract year, month and day from the base time for the parser to use as
-     * defaults
-     */
-
-    /* check base fields already cached (by TZ, last-second cache) */
-    if ( dataPtr->lastBase.timezoneObj == opts.timezoneObj
-      && dataPtr->lastBase.Date.seconds == baseVal) {
-	memcpy(&yydate, &dataPtr->lastBase.Date, ClockCacheableDateFieldsSize);
-    } else {
-	/* extact fields from base */
-	yydate.seconds = baseVal;
-	if (ClockGetDateFields(clientData, interp, &yydate, opts.timezoneObj,
-	      GREGORIAN_CHANGE_DATE) != TCL_OK) {
-	    goto done;
-	}
-	/* cache last base */
-	memcpy(&dataPtr->lastBase.Date, &yydate, ClockCacheableDateFieldsSize);
-	Tcl_SetObjRef(dataPtr->lastBase.timezoneObj, opts.timezoneObj);
+	goto done;
     }
 
     /* seconds are in localSeconds (relative base date), so reset time here */
@@ -3336,18 +3299,54 @@ ClockScanObjCmd(
 	    Tcl_SetErrorCode(interp, "CLOCK", "flagWithLegacyFormat", NULL);
 	    return TCL_ERROR;
 	}
-	ret = ClockFreeScan(clientData, interp, info, objv[1], &opts);
+	ret = ClockFreeScan(&yy, objv[1], &opts);
     } 
     else {
 	/* Use compiled version of Scan - */
 
-	ret = ClockScan(info, objv[1], &opts);
+	ret = ClockScan(&yy, objv[1], &opts);
     }
+
+    /* Convert date info structure into UTC seconds */
+
+    if (ret == TCL_OK) {
+	ret = ClockScanCommit(clientData, &yy, &opts);
+    }
+
+done:
+
+    Tcl_UnsetObjRef(yy.date.tzName);
 
     if (ret != TCL_OK) {
-	goto done;
+	return ret;
     }
 
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(yy.date.seconds));
+    return TCL_OK;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * ClockScanCommit --
+ *
+ *	Converts date info structure into UTC seconds.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ClockScanCommit(
+    ClientData clientData,	/* Client data containing literal pool */
+    register DateInfo  *info,	/* Clock scan info structure */
+    register
+    ClockFmtScnCmdArgs *opts)	/* Format, locale, timezone and base */
+{
     /* If needed assemble julianDay using year, month, etc. */
     if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
 	if ((info->flags & CLF_ISO8601)) {
@@ -3362,13 +3361,12 @@ ClockScanObjCmd(
     }
 
     /* some overflow checks, if not extended */
-    if (!(opts.flags & CLF_EXTENDED)) {
+    if (!(opts->flags & CLF_EXTENDED)) {
 	if (yydate.julianDay > 5373484) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    Tcl_SetObjResult(opts->interp, Tcl_NewStringObj(
 		"requested date too large to represent", -1));
-	    Tcl_SetErrorCode(interp, "CLOCK", "dateTooLarge", NULL);
-	    ret = TCL_ERROR;
-	    goto done;
+	    Tcl_SetErrorCode(opts->interp, "CLOCK", "dateTooLarge", NULL);
+	    return TCL_ERROR;
 	}
     }
 
@@ -3382,9 +3380,9 @@ ClockScanObjCmd(
     }
 
     if (info->flags & (CLF_ASSEMBLE_SECONDS|CLF_ASSEMBLE_JULIANDAY|CLF_LOCALSEC)) {
-	if (ConvertLocalToUTC(clientData, interp, &yydate, opts.timezoneObj, 
+	if (ConvertLocalToUTC(clientData, opts->interp, &yydate, opts->timezoneObj, 
 	      GREGORIAN_CHANGE_DATE) != TCL_OK) {
-	    goto done;
+	    return TCL_ERROR;
 	}
     }
 
@@ -3392,17 +3390,6 @@ ClockScanObjCmd(
     
     yydate.seconds += yyRelSeconds;
 
-    ret = TCL_OK;
-
-done:
-
-    Tcl_UnsetObjRef(yydate.tzName);
-
-    if (ret != TCL_OK) {
-	return ret;
-    }
-
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(yydate.seconds));
     return TCL_OK;
 }
 
@@ -3423,8 +3410,6 @@ done:
 
 int
 ClockFreeScan(
-    ClientData clientData,	/* Client data containing literal pool */
-    Tcl_Interp *interp,		/* Tcl interpreter */
     register
     DateInfo	       *info,	/* Date fields used for parsing & converting
 				 * simultaneously a yy-parse structure of the 
@@ -3432,7 +3417,8 @@ ClockFreeScan(
     Tcl_Obj *strObj,		/* String containing the time to scan */
     ClockFmtScnCmdArgs *opts)	/* Command options */
 {
-    ClockClientData *dataPtr = clientData;
+    Tcl_Interp	    *interp =  opts->interp;
+    ClockClientData *dataPtr = opts->clientData;
 
     int ret = TCL_ERROR;
 
@@ -3487,7 +3473,7 @@ ClockFreeScan(
 			  60 * minEast + 3600 * dstFlag);
 	Tcl_IncrRefCount(tzObjStor);
 
-	opts->timezoneObj = ClockSetupTimeZone(clientData, interp, tzObjStor);
+	opts->timezoneObj = ClockSetupTimeZone(dataPtr, interp, tzObjStor);
 
 	Tcl_DecrRefCount(tzObjStor);
 	if (opts->timezoneObj == NULL) {
@@ -3531,6 +3517,39 @@ ClockFreeScan(
      * Do relative times
      */
 
+    ret = ClockCalcRelTime(info, opts);
+
+    /* Free scanning completed - date ready */
+
+done:
+
+    return ret;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * ClockCalcRelTime --
+ *
+ *	Used for calculating of relative times.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+ClockCalcRelTime(
+    register
+    DateInfo	       *info,	/* Date fields used for converting */
+    ClockFmtScnCmdArgs *opts)	/* Command options */
+{
+    /*
+     * Because some calculations require in-between conversion of the
+     * julian day, we can repeat this processing multiple times 
+     */
 repeat_rel:
 
     if (yyHaveRel) {
@@ -3667,13 +3686,267 @@ repeat_rel:
 	info->flags |= CLF_ASSEMBLE_DATE|CLF_ASSEMBLE_SECONDS;
     }
 
-    /* Free scanning completed - date ready */
+    return TCL_OK;
+}
 
-    ret = TCL_OK;
+
+/*----------------------------------------------------------------------
+ *
+ * ClockWeekdaysOffs --
+ *
+ *	Get offset in days for the number of week days corresponding the
+ *	given day of week (skipping Saturdays and Sundays).
+ *	
+ *
+ * Results:
+ *	Returns a day increment adjusted the given weekdays
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline int
+ClockWeekdaysOffs(
+    register int dayOfWeek,
+    register int offs)
+{
+    register int weeks, resDayOfWeek;
+
+    /* offset in days */
+    weeks = offs / 5;
+    offs = offs % 5;
+    /* compiler fix for negative offs - wrap (0, -1) -> (-1, 4) */
+    if (offs < 0) {
+	weeks--;
+	offs = 5 + offs;
+    }
+    offs += 7 * weeks;
+
+    /* resulting day of week */
+    {
+	register int day = (offs % 7);
+	/* compiler fix for negative offs - wrap (0, -1) -> (-1, 6) */
+	if (day < 0) {
+	    day = 7 + day;
+	}
+	resDayOfWeek = dayOfWeek + day;
+    }
+
+    /* adjust if we start from a weekend */
+    if (dayOfWeek > 5) {
+	int adj = 5 - dayOfWeek;
+	offs += adj;
+	resDayOfWeek += adj;
+    }
+
+    /* adjust if we end up on a weekend */
+    if (resDayOfWeek > 5) {
+       offs += 2;
+    }
+
+    return offs;
+}
+
+
+
+/*----------------------------------------------------------------------
+ *
+ * ClockAddObjCmd -- , clock add --
+ *
+ *	Adds an offset to a given time.
+ *
+ *	Refer to the user documentation to see what it exactly does.
+ *
+ * Syntax:
+ *   clock add clockval ?count unit?... ?-option value?
+ *
+ * Parameters:
+ *   clockval -- Starting time value
+ *   count -- Amount of a unit of time to add
+ *   unit -- Unit of time to add, must be one of:
+ *	     years year months month weeks week
+ *	     days day hours hour minutes minute
+ *	     seconds second
+ *
+ * Options:
+ *   -gmt BOOLEAN
+ *	 Flag synonymous with '-timezone :GMT'
+ *   -timezone ZONE
+ *	 Name of the time zone in which calculations are to be done.
+ *   -locale NAME
+ *	 Name of the locale in which calculations are to be done.
+ *	 Used to determine the Gregorian change date.
+ *
+ * Results:
+ *	Returns a standard Tcl result with the given time adjusted 
+ *	by the given offset(s) in order.
+ *
+ * Notes:
+ *   It is possible that adding a number of months or years will adjust the
+ *   day of the month as well.	For instance, the time at one month after
+ *   31 January is either 28 or 29 February, because February has fewer
+ *   than 31 days.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ClockAddObjCmd(
+    ClientData clientData,	/* Client data containing literal pool */
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj *const objv[])	/* Parameter values */
+{
+    ClockClientData *dataPtr = clientData;
+    int ret;
+    ClockFmtScnCmdArgs opts;	/* Format, locale, timezone and base */
+    DateInfo	    yy;		/* Common structure used for parsing */
+    DateInfo	   *info = &yy;
+
+    /* add "week" to units also (because otherwise ambiguous) */
+    static const char *const units[] = {
+	"years",	"months",	    "week",	    "weeks",
+	"days",		"weekdays",
+	"hours",	"minutes",	    "seconds",
+	NULL
+    };
+    enum unitInd {
+	CLC_ADD_YEARS,	CLC_ADD_MONTHS,	    CLC_ADD_WEEK,   CLC_ADD_WEEKS,
+	CLC_ADD_DAYS,	CLC_ADD_WEEKDAYS,
+	CLC_ADD_HOURS,	CLC_ADD_MINUTES,    CLC_ADD_SECONDS
+    };
+    int unitIndex;		/* Index of an option. */
+    int i;
+    Tcl_WideInt offs;
+
+    /* even number of arguments */
+    if ((objc & 1) == 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "clockval|-now ?number units?..."
+	    "?-gmt boolean? "
+	    "?-locale LOCALE? ?-timezone ZONE?");
+	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
+	return TCL_ERROR;
+    }
+
+    ClockInitDateInfo(&yy);
+    
+    /*
+     * Extract values for the keywords.
+     */
+
+    ClockInitFmtScnArgs(clientData, interp, &opts);
+    ret = ClockParseFmtScnArgs(&opts, &yy.date, objc, objv,
+	    CLC_ADD_ARGS);
+    if (ret != TCL_OK) {
+	goto done;
+    }
+
+    /* time together as seconds of the day */
+    yySeconds = yydate.localSeconds % SECONDS_PER_DAY;	 
+    /* seconds are in localSeconds (relative base date), so reset time here */
+    yyHour = 0; yyMinutes = 0; yyMeridian = MER24;
+
+    ret = TCL_ERROR;
+
+    /*
+     * Find each offset and process date increment
+     */
+
+    for (i = 2; i < objc; i+=2) {
+	/* bypass not integers (options, allready processed above) */
+	if (TclGetWideIntFromObj(NULL, objv[i], &offs) != TCL_OK) {
+	    continue;
+	}
+	if (objv[i]->typePtr == &tclBignumType) {
+	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
+	    goto done;
+	}
+	/* get unit */
+	if (Tcl_GetIndexFromObj(interp, objv[i+1], units, "unit", 0,
+		&unitIndex) != TCL_OK) {
+	    goto done;
+	}
+
+	/* nothing to do if zero quantity */
+	if (!offs) {
+	    continue;
+	}
+
+	/* if in-between conversion needed (already have relative date/time), 
+	 * correct date info, because the date may be changed, 
+	 * so refresh it now */
+
+	if ( yyHaveRel
+	  && ( unitIndex == CLC_ADD_WEEKDAYS 
+	    /* some months can be shorter as another */
+	    || yyRelMonth || yyRelDay
+	    /* day changed */
+	    || yySeconds + yyRelSeconds > SECONDS_PER_DAY
+	    || yySeconds + yyRelSeconds < 0
+	  )
+	) {
+	    if (ClockCalcRelTime(info, &opts) != TCL_OK) {
+		goto done;
+	    }
+	}
+
+	/* process increment by offset + unit */
+	yyHaveRel++;
+	switch (unitIndex) {
+	case CLC_ADD_YEARS:
+	    yyRelMonth += offs * 12;
+	    break;
+	case CLC_ADD_MONTHS:
+	    yyRelMonth += offs;
+	    break;
+	case CLC_ADD_WEEK:
+	case CLC_ADD_WEEKS:
+	    yyRelDay += offs * 7;
+	    break;
+	case CLC_ADD_DAYS:
+	    yyRelDay += offs;
+	    break;
+	case CLC_ADD_WEEKDAYS:
+	    /* add number of week days (skipping Saturdays and Sundays)
+	     * to a relative days value. */
+	    offs = ClockWeekdaysOffs(yy.date.dayOfWeek, offs);
+	    yyRelDay += offs;
+	    break;
+	case CLC_ADD_HOURS:
+	    yyRelSeconds += offs * 60 * 60;
+	    break;
+	case CLC_ADD_MINUTES:
+	    yyRelSeconds += offs * 60;
+	    break;
+	case CLC_ADD_SECONDS:
+	    yyRelSeconds += offs;
+	    break;
+	}
+    }
+
+    /*
+     * Do relative times (if not yet already processed interim):
+     */
+
+    if (yyHaveRel) {
+	if (ClockCalcRelTime(info, &opts) != TCL_OK) {
+	    goto done;
+	}
+    }
+
+    /* Convert date info structure into UTC seconds */
+
+    ret = ClockScanCommit(clientData, &yy, &opts);
 
 done:
 
-    return ret;
+    Tcl_UnsetObjRef(yy.date.tzName);
+
+    if (ret != TCL_OK) {
+	return ret;
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(yy.date.seconds));
+    return TCL_OK;
 }
 
 /*----------------------------------------------------------------------
