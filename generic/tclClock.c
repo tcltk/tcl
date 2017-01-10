@@ -59,6 +59,8 @@ typedef enum ClockLiteral {
     LIT_TZDATA,
     LIT_GETSYSTEMTIMEZONE,
     LIT_SETUPTIMEZONE,
+    LIT_GETSYSTEMLOCALE,
+    LIT_SETUPLOCALE,
 #if 0
     LIT_FREESCAN,
 #endif
@@ -81,6 +83,8 @@ static const char *const Literals[] = {
     "::tcl::clock::TZData",
     "::tcl::clock::GetSystemTimeZone",
     "::tcl::clock::SetupTimeZone",
+    "::tcl::clock::mclocale",
+    "::tcl::clock::EnterLocale",
 #if 0
     "::tcl::clock::FreeScan"
 #endif
@@ -174,24 +178,6 @@ static struct tm *	ThreadSafeLocalTime(const time_t *);
 static unsigned long	TzsetGetEpoch(void);
 static void		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(ClientData);
-
-/*
- * Primitives to safe set, reset and free references.
- */
-
-#define Tcl_UnsetObjRef(obj) \
-  if (obj != NULL) { Tcl_DecrRefCount(obj); obj = NULL; }
-#define Tcl_InitObjRef(obj, val) \
-  obj = val; if (obj) { Tcl_IncrRefCount(obj); }
-#define Tcl_SetObjRef(obj, val) \
-if (1) { \
-  Tcl_Obj *nval = val; \
-  if (obj != nval) { \
-    Tcl_Obj *prev = obj; \
-    Tcl_InitObjRef(obj, nval); \
-    if (prev != NULL) { Tcl_DecrRefCount(prev); }; \
-  } \
-}
 
 /*
  * Structure containing description of "native" clock commands to create.
@@ -610,12 +596,18 @@ ClockGetSystemTimeZone(
 	return dataPtr->SystemTimeZone;
     }
 
+    Tcl_UnsetObjRef(dataPtr->SystemTimeZone);
+    Tcl_UnsetObjRef(data->SystemSetupTZData);
+
     literals = dataPtr->literals;
 
     if (Tcl_EvalObjv(interp, 1, &literals[LIT_GETSYSTEMTIMEZONE], 0) != TCL_OK) {
 	return NULL;
     }
-    return Tcl_GetObjResult(interp);
+    if (dataPtr->SystemTimeZone == NULL) {
+	Tcl_SetObjRef(dataPtr->SystemTimeZone, Tcl_GetObjResult(interp));
+    }
+    return dataPtr->SystemTimeZone;
 }
 /*
  *----------------------------------------------------------------------
@@ -692,6 +684,124 @@ ClockFormatNumericTimeZone(int z) {
     return Tcl_ObjPrintf("%c%02d%02d", sign, h, m);
 }
 
+/*
+ *----------------------------------------------------------------------
+ */
+inline Tcl_Obj *
+NormLocaleObj(
+    ClockClientData *dataPtr,  /* Client data containing literal pool */
+    Tcl_Obj *localeObj)
+{
+    const char * tz;
+    if ( localeObj == dataPtr->LastUnnormSetupLocale
+      && dataPtr->LastSetupLocale != NULL 
+    ) {
+	return dataPtr->LastSetupLocale;
+    }
+    if ( localeObj == dataPtr->LastSetupLocale
+      || localeObj == dataPtr->literals[LIT_CLOCALE]
+      || localeObj == dataPtr->SystemLocale
+      || localeObj == dataPtr->AnySetupLocale
+    ) {
+	return localeObj;
+    }
+
+    tz = TclGetString(localeObj);
+    if (dataPtr->AnySetupLocale != NULL &&
+	(localeObj == dataPtr->AnySetupLocale
+	   || strcmp(tz, TclGetString(dataPtr->AnySetupLocale)) == 0
+	)
+    ) {
+	localeObj = dataPtr->AnySetupLocale;
+    }
+    else
+    if (dataPtr->SystemLocale != NULL &&
+	(localeObj == dataPtr->SystemLocale
+	   || strcmp(tz, TclGetString(dataPtr->SystemLocale)) == 0
+	)
+    ) {
+	localeObj = dataPtr->SystemLocale;
+    }
+    else
+    if (
+	strcmp(tz, Literals[LIT_GMT]) == 0
+    ) {
+	localeObj = dataPtr->literals[LIT_GMT];
+    }
+    return localeObj;
+}
+/*
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+ClockGetSystemLocale(
+    ClientData clientData,	/* Opaque pointer to literal pool, etc. */
+    Tcl_Interp *interp)		/* Tcl interpreter */
+{
+    ClockClientData *dataPtr = clientData;
+    Tcl_Obj **literals;
+
+    /* if known (cached) - return now */
+    if (dataPtr->SystemLocale != NULL) {
+	return dataPtr->SystemLocale;
+    }
+
+    literals = dataPtr->literals;
+
+    if (Tcl_EvalObjv(interp, 1, &literals[LIT_GETSYSTEMLOCALE], 0) != TCL_OK) {
+	return NULL;
+    }
+    Tcl_SetObjRef(dataPtr->SystemLocale, Tcl_GetObjResult(interp));
+    return dataPtr->SystemLocale;
+}
+/*
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+ClockSetupLocale(
+    ClientData clientData,	/* Opaque pointer to literal pool, etc. */
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    Tcl_Obj    *localeObj)
+{
+    ClockClientData *dataPtr = clientData;
+    Tcl_Obj **literals = dataPtr->literals;
+    Tcl_Obj *callargs[2];
+
+    if (localeObj == NULL || localeObj == dataPtr->SystemLocale) {
+	if (dataPtr->SystemLocale == NULL) {
+	    return ClockGetSystemLocale(clientData, interp);
+	}
+	return dataPtr->SystemLocale;
+    }
+
+#if 0
+    /* if cached (if already setup this one) */
+    if ( dataPtr->LastSetupTimeZone != NULL
+      && ( localeObj == dataPtr->LastSetupTimeZone
+	|| timezoneObj == dataPtr->LastUnnormSetupTimeZone
+      )
+    ) {
+	return dataPtr->LastSetupTimeZone;
+    }
+
+    /* differentiate GMT and system zones, because used often and already set */
+    timezoneObj = NormTimezoneObj(dataPtr, timezoneObj);
+    if (   timezoneObj == dataPtr->GMTSetupTimeZone
+	|| timezoneObj == dataPtr->SystemTimeZone
+	|| timezoneObj == dataPtr->AnySetupTimeZone
+    ) {
+	return timezoneObj;
+    }
+
+#endif
+    callargs[0] = literals[LIT_SETUPLOCALE];
+    callargs[1] = localeObj;
+
+    if (Tcl_EvalObjv(interp, 2, callargs, 0) == TCL_OK) {
+	return localeObj; // dataPtr->CurrentLocale;
+    }
+    return NULL;
+}
 /*
  *----------------------------------------------------------------------
  *
@@ -2440,11 +2550,7 @@ _ClockParseFmtScnArgs(
      * Extract values for the keywords.
      */
 
-    resOpts->formatObj = NULL;
-    resOpts->localeObj = NULL;
-    resOpts->timezoneObj = NULL;
-    resOpts->baseObj = NULL;
-    resOpts->flags = 0;
+    memset(resOpts, 0, sizeof(*resOpts));
     for (i = 2; i < objc; i+=2) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], options[forScan], 
 	    "option", 0, &optionIndex) != TCL_OK) {
@@ -2487,6 +2593,9 @@ _ClockParseFmtScnArgs(
     if (gmtFlag) {
 	resOpts->timezoneObj = litPtr[LIT_GMT];
     }
+
+    resOpts->clientData = clientData;
+    resOpts->interp = interp;
 
     return TCL_OK;
 }
@@ -2562,7 +2671,7 @@ ClockParseformatargsObjCmd(
      * Return options as a list.
      */
 
-    Tcl_SetObjResult(interp, Tcl_NewListObj(3, (Tcl_Obj**)&resOpts));
+    Tcl_SetObjResult(interp, Tcl_NewListObj(3, (Tcl_Obj**)&resOpts.formatObj));
     return TCL_OK;
 }
 
@@ -2632,12 +2741,18 @@ ClockScanObjCmd(
 	}
     }
 
-    /* Get the data for time changes in the given zone */
+    /* Setup timezone and locale */
 
     opts.timezoneObj = ClockSetupTimeZone(clientData, interp, opts.timezoneObj);
     if (opts.timezoneObj == NULL) {
 	return TCL_ERROR;
     }
+
+    opts.localeObj = ClockSetupLocale(clientData, interp, opts.localeObj);
+    if (opts.localeObj == NULL) {
+	return TCL_ERROR;
+    }
+    
 
     ClockInitDateInfo(info);
     yydate.tzName = NULL;

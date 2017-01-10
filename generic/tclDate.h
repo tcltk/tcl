@@ -36,6 +36,24 @@
 #define CLF_INVALIDATE_SECONDS	 (1 << 8) /* assemble localSeconds (and seconds at end) */
 
 /*
+ * Primitives to safe set, reset and free references.
+ */
+
+#define Tcl_UnsetObjRef(obj) \
+  if (obj != NULL) { Tcl_DecrRefCount(obj); obj = NULL; }
+#define Tcl_InitObjRef(obj, val) \
+  obj = val; if (obj) { Tcl_IncrRefCount(obj); }
+#define Tcl_SetObjRef(obj, val) \
+if (1) { \
+  Tcl_Obj *nval = val; \
+  if (obj != nval) { \
+    Tcl_Obj *prev = obj; \
+    Tcl_InitObjRef(obj, nval); \
+    if (prev != NULL) { Tcl_DecrRefCount(prev); }; \
+  } \
+}
+
+/*
  * Structure containing the fields used in [clock format] and [clock scan]
  */
 
@@ -79,6 +97,7 @@ typedef struct TclDateFields {
 typedef struct DateInfo {
     const char *dateStart;
     const char *dateInput;
+    const char *dateEnd;
 
     TclDateFields date;
 
@@ -109,6 +128,8 @@ typedef struct DateInfo {
     time_t *dateRelPointer;
 
     time_t dateDigitCount;
+
+    time_t dateCentury;
 
     Tcl_Obj* messages;	    /* Error messages */
     const char* separatrix; /* String separating messages */
@@ -157,6 +178,9 @@ ClockInitDateInfo(DateInfo *info) {
 #define CLF_STRICT	(1 << 8)
 
 typedef struct ClockFmtScnCmdArgs {
+    ClientData clientData,  /* Opaque pointer to literal pool, etc. */
+    Tcl_Interp *interp,	    /* Tcl interpreter */
+
     Tcl_Obj *formatObj;	    /* Format */
     Tcl_Obj *localeObj;	    /* Name of the locale where the time will be expressed. */
     Tcl_Obj *timezoneObj;   /* Default time zone in which the time will be expressed */
@@ -233,6 +257,7 @@ typedef struct ClockScanToken ClockScanToken;
 
 
 typedef int ClockScanTokenProc(
+	ClockFmtScnCmdArgs *opts,
 	DateInfo *info,
 	ClockScanToken *tok);
 
@@ -241,10 +266,11 @@ typedef int ClockScanTokenProc(
 #define CLF_JULIANDAY (1 << 3)
 #define CLF_TIME      (1 << 4)
 #define CLF_LOCALSEC  (1 << 5)
+#define CLF_CENTURY   (1 << 6)
 #define CLF_SIGNED    (1 << 8)
 
 typedef enum _CLCKTOK_TYPE {
-   CTOKT_DIGIT = 1, CTOKT_SPACE, CTOKT_WORD
+   CTOKT_DIGIT = 1, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD
 } CLCKTOK_TYPE;
 
 typedef struct ClockFmtScnStorage ClockFmtScnStorage;
@@ -260,6 +286,7 @@ typedef struct ClockScanTokenMap {
     unsigned short int	maxSize;
     unsigned short int	offs;
     ClockScanTokenProc *parser;
+    void	       *data;
 } ClockScanTokenMap;
 
 typedef struct ClockScanToken {
@@ -270,6 +297,9 @@ typedef struct ClockScanToken {
 	const char *end;
     } tokWord;
 } ClockScanToken;
+
+#define ClockScnTokenChar(tok) \
+    *tok->tokWord.start;
 
 typedef struct ClockFmtScnStorage {
     int			 objRefCount;	/* Reference count shared across threads */
