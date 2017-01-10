@@ -15,6 +15,7 @@
  */
 
 #include "tclInt.h"
+#include "tclStrIdxTree.h"
 #include "tclDate.h"
 
 /*
@@ -140,6 +141,10 @@ static unsigned long	TzsetGetEpoch(void);
 static void		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(ClientData);
 
+static int		ClockTestObjCmd(
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
+
 /*
  * Structure containing description of "native" clock commands to create.
  */
@@ -169,6 +174,7 @@ static const struct ClockCommand clockCommands[] = {
     { "GetJulianDayFromEraYearWeekDay",
 		ClockGetjuliandayfromerayearweekdayObjCmd },
     { "ParseFormatArgs",	ClockParseformatargsObjCmd },
+    { "_test",			TclStrIdxTreeTestObjCmd },
     { NULL, NULL }
 };
 
@@ -584,7 +590,7 @@ ClockMCGet(
 }
 
 MODULE_SCOPE Tcl_Obj *
-ClockMCGetListIdxDict(
+ClockMCGetIdx(
     ClockFmtScnCmdArgs *opts, 
     int mcKey)
 {
@@ -598,53 +604,45 @@ ClockMCGetListIdxDict(
 	    return NULL;
     }
 
-    /* try to get indices dictionray, 
-     * if not available - create from list */
+    /* try to get indices object */
+    if (dataPtr->mcLitIdxs == NULL) {
+	return NULL;
+    }
     
     if (Tcl_DictObjGet(NULL, opts->mcDictObj, 
 	dataPtr->mcLitIdxs[mcKey], &valObj) != TCL_OK
     ) {
-	Tcl_Obj **lstv, *intObj;
-	int	 i, lstc;
-
-	if (dataPtr->mcLitIdxs == NULL) {
-	    dataPtr->mcLitIdxs = ckalloc(MCLIT__END * sizeof(Tcl_Obj*));
-	    for (i = 0; i < MCLIT__END; ++i) {
-		Tcl_InitObjRef(dataPtr->mcLitIdxs[i], 
-		    Tcl_NewStringObj(MsgCtLitIdxs[i], -1));
-	    }
-	}
-
-	if (Tcl_DictObjGet(opts->interp, opts->mcDictObj, 
-	    dataPtr->mcLiterals[mcKey], &valObj) != TCL_OK) {
-	    return NULL;
-	};
-	if (TclListObjGetElements(opts->interp, valObj, 
-		&lstc, &lstv) != TCL_OK) {
-	    return NULL;
-	};
-
-	valObj = Tcl_NewDictObj();
-	for (i = 0; i < lstc; i++) {
-	    intObj = Tcl_NewIntObj(i);
-	    if (Tcl_DictObjPut(opts->interp, valObj, 
-		    lstv[i], intObj) != TCL_OK
-	    ) {
-		Tcl_DecrRefCount(valObj);
-		Tcl_DecrRefCount(intObj);
-		return NULL;
-	    }
-	};
-
-	if (Tcl_DictObjPut(opts->interp, opts->mcDictObj, 
-		dataPtr->mcLitIdxs[mcKey], valObj) != TCL_OK
-	) {
-	    Tcl_DecrRefCount(valObj);
-	    return NULL;
-	}
-    };
+	return NULL;
+    }
 
     return valObj;
+}
+
+MODULE_SCOPE int
+ClockMCSetIdx(
+    ClockFmtScnCmdArgs *opts, 
+    int mcKey, Tcl_Obj *valObj)
+{
+    ClockClientData *dataPtr = opts->clientData;
+
+    if (opts->mcDictObj == NULL) {
+	ClockMCDict(opts);
+	if (opts->mcDictObj == NULL)
+	    return TCL_ERROR;
+    }
+
+    /* if literal storage for indices not yet created */
+    if (dataPtr->mcLitIdxs == NULL) {
+	int i;
+	dataPtr->mcLitIdxs = ckalloc(MCLIT__END * sizeof(Tcl_Obj*));
+	for (i = 0; i < MCLIT__END; ++i) {
+	    Tcl_InitObjRef(dataPtr->mcLitIdxs[i], 
+		Tcl_NewStringObj(MsgCtLitIdxs[i], -1));
+	}
+    }
+
+    return Tcl_DictObjPut(opts->interp, opts->mcDictObj, 
+	    dataPtr->mcLitIdxs[mcKey], valObj);
 }
 
 /*

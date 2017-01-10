@@ -126,24 +126,6 @@ typedef enum ClockMsgCtLiteral {
 }
 
 /*
- * Primitives to safe set, reset and free references.
- */
-
-#define Tcl_UnsetObjRef(obj) \
-  if (obj != NULL) { Tcl_DecrRefCount(obj); obj = NULL; }
-#define Tcl_InitObjRef(obj, val) \
-  obj = val; if (obj) { Tcl_IncrRefCount(obj); }
-#define Tcl_SetObjRef(obj, val) \
-if (1) { \
-  Tcl_Obj *nval = val; \
-  if (obj != nval) { \
-    Tcl_Obj *prev = obj; \
-    Tcl_InitObjRef(obj, nval); \
-    if (prev != NULL) { Tcl_DecrRefCount(prev); }; \
-  } \
-}
-
-/*
  * Structure containing the fields used in [clock format] and [clock scan]
  */
 
@@ -450,7 +432,9 @@ MODULE_SCOPE Tcl_Obj *
 MODULE_SCOPE Tcl_Obj *
 		    ClockMCGet(ClockFmtScnCmdArgs *opts, int mcKey);
 MODULE_SCOPE Tcl_Obj *
-		    ClockMCGetListIdxDict(ClockFmtScnCmdArgs *opts, int mcKey);
+		    ClockMCGetIdx(ClockFmtScnCmdArgs *opts, int mcKey);
+MODULE_SCOPE int    ClockMCSetIdx(ClockFmtScnCmdArgs *opts, int mcKey, 
+			Tcl_Obj *valObj);
 
 /* tclClockFmt.c module declarations */
 

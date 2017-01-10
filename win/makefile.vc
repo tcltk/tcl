@@ -333,6 +333,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclResult.obj \
 	$(TMP_DIR)\tclScan.obj \
 	$(TMP_DIR)\tclStringObj.obj \
+	$(TMP_DIR)\tclStrIdxTree.obj \
 	$(TMP_DIR)\tclStrToD.obj \
 	$(TMP_DIR)\tclStubInit.obj \
 	$(TMP_DIR)\tclThread.obj \

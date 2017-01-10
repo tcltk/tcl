@@ -451,6 +451,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclScan.c \
 	$(GENERIC_DIR)/tclStubInit.c \
 	$(GENERIC_DIR)/tclStringObj.c \
+	$(GENERIC_DIR)/tclStrIdxTree.c \
 	$(GENERIC_DIR)/tclStrToD.c \
 	$(GENERIC_DIR)/tclTest.c \
 	$(GENERIC_DIR)/tclTestObj.c \
@@ -1304,6 +1305,9 @@ tclScan.o: $(GENERIC_DIR)/tclScan.c
 
 tclStringObj.o: $(GENERIC_DIR)/tclStringObj.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStringObj.c
+
+tclStrIdxTree.o: $(GENERIC_DIR)/tclStrIdxTree.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStrIdxTree.c
 
 tclStrToD.o: $(GENERIC_DIR)/tclStrToD.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStrToD.c

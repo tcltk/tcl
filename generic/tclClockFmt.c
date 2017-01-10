@@ -11,6 +11,7 @@
  */
 
 #include "tclInt.h"
+#include "tclStrIdxTree.h"
 #include "tclDate.h"
 
 /*
@@ -32,6 +33,9 @@ TCL_DECLARE_MUTEX(ClockFmtMutex); /* Serializes access to common format list. */
 static void ClockFmtScnStorageDelete(ClockFmtScnStorage *fss);
 
 static void ClockFrmScnFinalize(ClientData clientData);
+
+/* Msgcat index literals prefixed with _IDX_, used for quick dictionary search */
+CLOCK_LOCALE_LITERAL_ARRAY(MsgCtLitIdxs, "_IDX_");
 
 /*
  * Clock scan and format facilities.
@@ -583,6 +587,139 @@ LocaleListSearch(ClockFmtScnCmdArgs *opts,
 	minLen, maxLen);
 }
 
+static TclStrIdxTree *
+ClockMCGetListIdxTree(
+    ClockFmtScnCmdArgs *opts, 
+    int	 mcKey)
+{
+    TclStrIdxTree * idxTree;
+    Tcl_Obj *objPtr = ClockMCGetIdx(opts, mcKey);
+    if ( objPtr != NULL
+      && (idxTree = TclStrIdxTreeGetFromObj(objPtr)) != NULL
+    ) {
+	return idxTree;
+
+    } else {
+	/* build new index */
+
+	Tcl_Obj **lstv;
+	int	  lstc;
+	Tcl_Obj *valObj;
+
+	objPtr = TclStrIdxTreeNewObj();
+	if ((idxTree = TclStrIdxTreeGetFromObj(objPtr)) == NULL) {
+	    goto done; /* unexpected, but ...*/
+	}
+
+	valObj = ClockMCGet(opts, mcKey);
+	if (valObj == NULL) {
+	    goto done;
+	}
+
+	if (TclListObjGetElements(opts->interp, valObj, 
+		&lstc, &lstv) != TCL_OK) {
+	    goto done;
+	};
+
+	if (TclStrIdxTreeBuildFromList(idxTree, lstc, lstv) != TCL_OK) {
+	    goto done;
+	}
+
+	ClockMCSetIdx(opts, mcKey, objPtr);
+	objPtr = NULL;
+    };
+
+done:
+    if (objPtr) {
+	Tcl_DecrRefCount(objPtr);
+	idxTree = NULL;
+    }
+
+    return idxTree;
+}
+
+static TclStrIdxTree *
+ClockMCGetMultiListIdxTree(
+    ClockFmtScnCmdArgs *opts, 
+    int	 mcKey, 
+    int *mcKeys)
+{
+    TclStrIdxTree * idxTree;
+    Tcl_Obj *objPtr = ClockMCGetIdx(opts, mcKey);
+    if ( objPtr != NULL
+      && (idxTree = TclStrIdxTreeGetFromObj(objPtr)) != NULL
+    ) {
+	return idxTree;
+
+    } else {
+	/* build new index */
+
+	Tcl_Obj **lstv;
+	int	  lstc;
+	Tcl_Obj *valObj;
+
+	objPtr = TclStrIdxTreeNewObj();
+	if ((idxTree = TclStrIdxTreeGetFromObj(objPtr)) == NULL) {
+	    goto done; /* unexpected, but ...*/
+	}
+
+	while (*mcKeys) {
+
+	    valObj = ClockMCGet(opts, *mcKeys);
+	    if (valObj == NULL) {
+		goto done;
+	    }
+
+	    if (TclListObjGetElements(opts->interp, valObj, 
+		    &lstc, &lstv) != TCL_OK) {
+		goto done;
+	    };
+
+	    if (TclStrIdxTreeBuildFromList(idxTree, lstc, lstv) != TCL_OK) {
+		goto done;
+	    }
+	    mcKeys++;
+	}
+
+	ClockMCSetIdx(opts, mcKey, objPtr);
+    };
+
+done:
+    if (objPtr) {
+	Tcl_DecrRefCount(objPtr);
+	idxTree = NULL;
+    }
+
+    return idxTree;
+}
+
+inline int
+ClockStrIdxTreeSearch(ClockFmtScnCmdArgs *opts, 
+    DateInfo *info, TclStrIdxTree *idxTree, int *val, 
+    int minLen, int maxLen)
+{
+    const char *f;
+    TclStrIdx  *foundItem;
+    f = TclStrIdxTreeSearch(NULL, &foundItem, idxTree, 
+	    yyInput, yyInput + maxLen);
+ 
+    if (f <= yyInput || (f - yyInput) < minLen) {
+	/* not found */
+	return TCL_RETURN;
+    }
+    if (foundItem->value == -1) {
+	/* ambigous */
+	return TCL_RETURN;
+    }
+
+    *val = foundItem->value;
+
+    /* shift input pointer */
+    yyInput = f;
+
+    return TCL_OK;
+}
+
 static int 
 StaticListSearch(ClockFmtScnCmdArgs *opts, 
     DateInfo *info, const char **lst, int *val)
@@ -612,21 +749,19 @@ FindWordEnd(
     register const char * p, const char * end)
 {
     register const char *x = tok->tokWord.start;
-    if (x == tok->tokWord.end) { /* single char word */
-	if (*p != *x) {
-	    /* no match -> error */
-	    return NULL;
+    const char *pfnd;
+    if (x == tok->tokWord.end - 1) { /* fast phase-out for single char word */
+	if (*p == *x) {
+	    return ++p;
 	}
-	return ++p;
     }
     /* multi-char word */
-    do 
-	if (*p++ != *x++) {
-	    /* no match -> error */
-	    return NULL;
-	}
-    while (x <= tok->tokWord.end && p < end);
-    return p;
+    x = TclUtfFindEqualNC(x, tok->tokWord.end, p, end, &pfnd);
+    if (x < tok->tokWord.end) {
+	/* no match -> error */
+	return NULL;
+    }
+    return pfnd;
 }
 
 static int 
@@ -822,11 +957,18 @@ ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts,
 {
     int ret, val;
     int minLen, maxLen;
+    TclStrIdxTree *idxTree;
 
     DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
 
-    ret = LocaleListSearch(opts, info, (int)tok->map->data, &val, 
-		minLen, maxLen);
+    /* get or create tree in msgcat dict */
+
+    idxTree = ClockMCGetListIdxTree(opts, (int)tok->map->data /* mcKey */);
+    if (idxTree == NULL) {
+	return TCL_ERROR;
+    }
+
+    ret = ClockStrIdxTreeSearch(opts, info, idxTree, &val, minLen, maxLen);
     if (ret != TCL_OK) {
 	return ret;
     }
@@ -1120,7 +1262,8 @@ ClockGetOrParseScanFormat(
 		    /* begin new word token - don't join with previous word token, 
 		     * because current mapping should be "...%%..." -> "...%..." */
 		    tok->map = &ScnWordTokenMap;
-		    tok->tokWord.start = tok->tokWord.end = p;
+		    tok->tokWord.start = p;
+		    tok->tokWord.end = p+1;
 		    AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
 		    continue;
 		break;
@@ -1190,7 +1333,7 @@ word_tok:
 		if (tok > fss->scnTok && (tok-1)->map == &ScnWordTokenMap) {
 		    wordTok = tok-1;
 		}
-		wordTok->tokWord.end = p;
+		wordTok->tokWord.end = p+1;
 		if (wordTok == tok) {
 		    wordTok->tokWord.start = p;
 		    wordTok->map = &ScnWordTokenMap;
@@ -1214,7 +1357,7 @@ word_tok:
 		if (prevTok->map->type != CTOKT_WORD) {
 		    endDist += prevTok->map->minSize;
 		} else {
-		    endDist += prevTok->tokWord.end - prevTok->tokWord.start + 1;
+		    endDist += prevTok->tokWord.end - prevTok->tokWord.start;
 		}
 		prevTok--;
 	    }
@@ -1325,6 +1468,11 @@ ClockScan(
 
     yyMeridian = MER24;
 
+    /* lower case given string into new object */
+    strObj = Tcl_NewStringObj(TclGetString(strObj), strObj->length);
+    Tcl_IncrRefCount(strObj);
+    strObj->length = Tcl_UtfToLower(TclGetString(strObj));
+
     p = TclGetString(strObj);
     end = p + strObj->length;
     /* in strict mode - bypass spaces at begin / end only (not between tokens) */
@@ -1577,6 +1725,8 @@ not_match:
     Tcl_SetErrorCode(interp, "CLOCK", "badInputString", NULL);
 
 done:
+
+    Tcl_DecrRefCount(strObj);
 
     return ret;
 }
@@ -1604,266 +1754,6 @@ ClockFormat(
 	return TCL_ERROR;
     }
 */
-#if 0
-    /* prepare parsing */
-
-    yyMeridian = MER24;
-
-    p = TclGetString(strObj);
-    end = p + strObj->length;
-    /* in strict mode - bypass spaces at begin / end only (not between tokens) */
-    if (opts->flags & CLF_STRICT) {
-	while (p < end && isspace(UCHAR(*p))) {
-	    p++;
-	}
-    }
-    info->dateStart = yyInput = p;
-    info->dateEnd = end;
-    
-    /* parse string */
-    for (; tok->map != NULL; tok++) {
-	map = tok->map;
-	/* bypass spaces at begin of input before parsing each token */
-	if ( !(opts->flags & CLF_STRICT) 
-	  && (map->type != CTOKT_SPACE && map->type != CTOKT_WORD)
-	) {
-	    while (p < end && isspace(UCHAR(*p))) {
-		p++;
-	    }
-	}
-	yyInput = p;
-	switch (map->type)
-	{
-	case CTOKT_DIGIT:
-	if (1) {
-	    int size = map->maxSize;
-	    int sign = 1;
-	    if (map->flags & CLF_SIGNED) {
-		if (*p == '+') { yyInput = ++p; }
-		else
-		if (*p == '-') { yyInput = ++p; sign = -1; };
-	    }
-	    /* greedy find digits (look for forward digits consider spaces), 
-	     * corresponding pre-calculated lookAhead */
-	    if (size != map->minSize && tok->lookAhead) {
-		int spcnt = 0;
-		const char *pe;
-		size += tok->lookAhead;
-		x = p + size; if (x > end) { x = end; };
-		pe = x;
-		while (p < x) {
-		    if (isspace(UCHAR(*p))) {
-			if (pe > p) { pe = p; };
-			if (x < end) x++;
-			p++;
-			spcnt++;
-			continue;
-		    }
-		    if (isdigit(UCHAR(*p))) {
-			p++;
-			continue;
-		    }
-		    break;
-		}
-		/* consider reserved (lookAhead) for next tokens */
-		p -= tok->lookAhead + spcnt;
-		if (p > pe) {
-		    p = pe;
-		}
-	    } else {
-		x = p + size; if (x > end) { x = end; };
-		while (isdigit(UCHAR(*p)) && p < x) { p++; };
-	    }
-	    size = p - yyInput;
-	    if (size < map->minSize) {
-		/* missing input -> error */
-		goto not_match;
-	    }
-	    /* string 2 number, put number into info structure by offset */
-	    p = yyInput; x = p + size;
-	    if (!(map->flags & CLF_LOCALSEC)) {
-		if (_str2int((time_t *)(((char *)info) + map->offs), 
-			p, x, sign) != TCL_OK) {
-		    goto overflow;
-		}
-		p = x;
-	    } else {
-		if (_str2wideInt((Tcl_WideInt *)(((char *)info) + map->offs), 
-			p, x, sign) != TCL_OK) {
-		    goto overflow;
-		}
-		p = x;
-	    }
-	    flags = (flags & ~map->clearFlags) | map->flags;
-	}
-	break;
-	case CTOKT_PARSER:
-	    switch (map->parser(opts, info, tok)) {
-		case TCL_OK:
-		break;
-		case TCL_RETURN:
-		    goto not_match;
-		break;
-		default:
-		    goto done;
-		break;
-	    };
-	    p = yyInput;
-	    flags = (flags & ~map->clearFlags) | map->flags;
-	break;
-	case CTOKT_SPACE:
-	    /* at least one space in strict mode */
-	    if (opts->flags & CLF_STRICT) {
-		if (!isspace(UCHAR(*p))) {
-		    /* unmatched -> error */
-		    goto not_match;
-		}
-		p++;
-	    }
-	    while (p < end && isspace(UCHAR(*p))) {
-		p++;
-	    }
-	break;
-	case CTOKT_WORD:
-	    x = FindWordEnd(tok, p, end);
-	    if (!x) {
-		/* no match -> error */
-		goto not_match;
-	    }
-	    p = x;
-	    continue;
-	break;
-	}
-    }
-    
-    /* ignore spaces at end */
-    while (p < end && isspace(UCHAR(*p))) {
-	p++;
-    }
-    /* check end was reached */
-    if (p < end) {
-	/* something after last token - wrong format */
-	goto not_match;
-    }
-
-    /* 
-     * Invalidate result 
-     */
-
-    /* seconds token (%s) take precedence over all other tokens */
-    if ((opts->flags & CLF_EXTENDED) || !(flags & CLF_LOCALSEC)) {
-	if (flags & CLF_DATE) {
-
-	    if (!(flags & CLF_JULIANDAY)) {
-		info->flags |= CLF_ASSEMBLE_SECONDS|CLF_ASSEMBLE_JULIANDAY;
-
-		/* dd precedence below ddd */
-		switch (flags & (CLF_MONTH|CLF_DAYOFYEAR|CLF_DAYOFMONTH)) {
-		    case (CLF_DAYOFYEAR|CLF_DAYOFMONTH):
-		    /* miss month: ddd over dd (without month) */
-		    flags &= ~CLF_DAYOFMONTH;
-		    case (CLF_DAYOFYEAR):
-		    /* ddd over naked weekday */
-		    if (!(flags & CLF_ISO8601YEAR)) {
-			flags &= ~CLF_ISO8601;
-		    }
-		    break;
-		    case (CLF_MONTH|CLF_DAYOFYEAR|CLF_DAYOFMONTH):
-		    /* both available: mmdd over ddd */
-		    flags &= ~CLF_DAYOFYEAR;
-		    case (CLF_MONTH|CLF_DAYOFMONTH):
-		    case (CLF_DAYOFMONTH):
-		    /* mmdd / dd over naked weekday */
-		    if (!(flags & CLF_ISO8601YEAR)) {
-			flags &= ~CLF_ISO8601;
-		    }
-		    break;
-		}
-
-		/* YearWeekDay below YearMonthDay */
-		if ( (flags & CLF_ISO8601) 
-		  && ( (flags & (CLF_YEAR|CLF_DAYOFYEAR)) == (CLF_YEAR|CLF_DAYOFYEAR)
-		    || (flags & (CLF_YEAR|CLF_DAYOFMONTH|CLF_MONTH)) == (CLF_YEAR|CLF_DAYOFMONTH|CLF_MONTH)
-		  ) 
-		) {
-		    /* yy precedence below yyyy */
-		    if (!(flags & CLF_ISO8601CENTURY) && (flags & CLF_CENTURY)) {
-			/* normally precedence of ISO is higher, but no century - so put it down */
-			flags &= ~CLF_ISO8601;
-		    } 
-		    else 
-		    /* yymmdd or yyddd over naked weekday */
-		    if (!(flags & CLF_ISO8601YEAR)) {
-			flags &= ~CLF_ISO8601;
-		    }
-		}
-
-		if (!(flags & CLF_ISO8601)) {
-		    if (yyYear < 100) {
-			if (!(flags & CLF_CENTURY)) {
-			    if (yyYear >= dataPtr->yearOfCenturySwitch) {
-				yyYear -= 100;
-			    }
-			    yyYear += dataPtr->currentYearCentury;
-			} else {
-			    yyYear += info->dateCentury * 100;
-			}
-		    }
-		} else {
-		    if (info->date.iso8601Year < 100) {
-			if (!(flags & CLF_ISO8601CENTURY)) {
-			    if (info->date.iso8601Year >= dataPtr->yearOfCenturySwitch) {
-				info->date.iso8601Year -= 100;
-			    }
-			    info->date.iso8601Year += dataPtr->currentYearCentury;
-			} else {
-			    info->date.iso8601Year += info->dateCentury * 100;
-			}
-		    }
-		}
-	    }
-	}
-
-	/* if no time - reset time */
-	if (!(flags & (CLF_TIME|CLF_LOCALSEC))) {
-	    info->flags |= CLF_ASSEMBLE_SECONDS;
-	    yydate.localSeconds = 0;
-	}
-
-	if (flags & CLF_TIME) {
-	    info->flags |= CLF_ASSEMBLE_SECONDS;
-	    yySeconds = ToSeconds(yyHour, yyMinutes,
-				yySeconds, yyMeridian);
-	} else
-	if (!(flags & CLF_LOCALSEC)) {
-	    info->flags |= CLF_ASSEMBLE_SECONDS;
-	    yySeconds = yydate.localSeconds % SECONDS_PER_DAY;
-	}
-    }
-
-    /* tell caller which flags were set */
-    info->flags |= flags;
-
-    ret = TCL_OK;
-    goto done;
-
-overflow:
-
-    Tcl_SetResult(interp, "requested date too large to represent", 
-	TCL_STATIC);
-    Tcl_SetErrorCode(interp, "CLOCK", "dateTooLarge", NULL);
-    goto done;
-
-not_match:
-
-    Tcl_SetResult(interp, "input string does not match supplied format",
-	TCL_STATIC);
-    Tcl_SetErrorCode(interp, "CLOCK", "badInputString", NULL);
-
-done:
-
-    return ret;
-#endif
 }
 
 
