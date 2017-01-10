@@ -40,6 +40,9 @@
  */
 
 typedef struct TclDateFields {
+
+    /* Cacheable fields:	 */
+
     Tcl_WideInt seconds;	/* Time expressed in seconds from the Posix
 				 * epoch */
     Tcl_WideInt localSeconds;	/* Local time expressed in nominal seconds
@@ -60,6 +63,8 @@ typedef struct TclDateFields {
     time_t minutes;		/* Minutes of day (in-between time only calculation) */
     time_t secondOfDay;		/* Seconds of day (in-between time only calculation) */
 
+    /* Non cacheable fields:	 */
+
     Tcl_Obj *tzName;		/* Name (or corresponding DST-abbreviation) of the
 				 * time zone, if set the refCount is incremented */
 } TclDateFields;
@@ -74,9 +79,10 @@ typedef struct TclDateFields {
 typedef struct DateInfo {
     const char *dateStart;
     const char *dateInput;
-    int		flags;
 
     TclDateFields date;
+
+    int		flags;
 
     time_t dateHaveDate;
 
@@ -138,6 +144,10 @@ typedef struct DateInfo {
 #define yyInput	    (info->dateInput)
 #define yyDigitCount	(info->dateDigitCount)
 
+inline void
+ClockInitDateInfo(DateInfo *info) {
+    memset(info, 0, sizeof(DateInfo));
+}
 
 /*
  * Structure containing the command arguments supplied to [clock format] and [clock scan]
@@ -297,6 +307,8 @@ MODULE_SCOPE ClockFmtScnStorage *
 MODULE_SCOPE int    ClockScan(ClientData clientData, Tcl_Interp *interp,
 			register DateInfo *info,
 			Tcl_Obj *strObj, ClockFmtScnCmdArgs *opts);
+
+MODULE_SCOPE void   ClockFrmScnClearCaches(void);
 
 /*
  * Other externals.
