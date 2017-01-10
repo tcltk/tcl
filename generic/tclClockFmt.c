@@ -392,18 +392,31 @@ Tcl_GetClockFrmScnFromObj(
 }
 
 
-#define AllocTokenInChain(tok, chain, tokC) \
-    if ((tok) >= (chain) + (tokC)) { \
+#define AllocTokenInChain(tok, chain, tokCnt) \
+    if (++(tok) >= (chain) + (tokCnt)) { \
 	(char *)(chain) = ckrealloc((char *)(chain), \
-	    (tokC) + sizeof((**(tok))) * CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE); \
-	if ((chain) == NULL) { return NULL; }; \
-	(tok) = (chain) + (tokC); \
-	(tokC) += CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE; \
-    }
+	    (tokCnt + CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE) * sizeof(*(tok))); \
+	if ((chain) == NULL) { goto done; }; \
+	(tok) = (chain) + (tokCnt); \
+	(tokCnt) += CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE; \
+    } \
+    *(tok) = NULL;
 
-const char *ScnSTokenChars = "dmyYHMS";
-static ClockScanToken ScnSTokens[] = {
+const char *ScnSTokenMapChars = 
+    "dmyYHMS";
+static ClockScanToken ScnSTokenMap[] = {
     {CTOKT_DIGIT,  1, 2, 0},
+    {CTOKT_DIGIT,  1, 2, 0},
+    {CTOKT_DIGIT,  1, 2, 0},
+    {CTOKT_DIGIT,  1, 4, 0},
+    {CTOKT_DIGIT,  1, 2, 0},
+    {CTOKT_DIGIT,  1, 2, 0},
+    {CTOKT_DIGIT,  1, 2, 0},
+};
+const char *ScnSpecTokenMapChars = 
+    " %";
+static ClockScanToken ScnSpecTokenMap[] = {
+    {CTOKT_SPACE,  1, 0xffff, 0},
 };
 
 /*
@@ -435,31 +448,73 @@ ClockGetOrParseScanFormat(
     /* if first time scanning - tokenize format */
     if (fss->scnTok == NULL) {
 	const char *strFmt;
-	register const char *p, *e;
+	register const char *p, *e, *cp, *word_start = NULL;
+
+	Tcl_MutexLock(&ClockFmtMutex);
 
 	fss->scnTokC = CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE;
 	fss->scnTok =
-		tok = ckalloc(sizeof(**tok) * CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE);
-	(*tok)->type = CTOKT_EOB;
+		tok = ckalloc(sizeof(*tok) * CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE);
+	*tok = NULL;
 	strFmt = TclGetString(formatObj);
 	for (e = p = strFmt, e += formatObj->length; p != e; p++) {
 	    switch (*p) {
 	    case '%':
-		if (p+1 >= e) 
-		    goto word_tok;
-		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
+		if (p+1 >= e) {
+		    word_start = p;
+		    continue;
+		}
 		p++;
-		// *tok = 
+		/* try to find modifier: */
+		switch (*p) {
+		case '%':
+		    word_start = p-1;
+		    continue;
+		break;
+		case 'E':
+		    goto ext_tok_E;
+		break;
+		case 'O':
+		    goto ext_tok_O;
+		break;
+		default:
+		    cp = strchr(ScnSTokenMapChars, *p);
+		    if (!cp || *cp == '\0') {
+			word_start = p-1;
+			continue;
+		    }
+		    *tok = &ScnSTokenMap[cp - ScnSTokenMapChars];
+		    AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
+		break;
+		}
 	    break;
 	    case ' ':
+		cp = strchr(ScnSpecTokenMapChars, *p);
+		if (!cp || *cp == '\0') {
+		    p--;
+		    goto word_tok;
+		}
+		*tok = &ScnSpecTokenMap[cp - ScnSpecTokenMapChars];
 		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
-		// *tok =
 	    break;
 	    default:
 word_tok:
-	    break;
+
+	    continue;
 	    }
+
+	    continue;
+ext_tok_E:
+
+ext_tok_O:
+
+	    /*******************/
+	    continue;
+
 	}
+
+done:
+	Tcl_MutexUnlock(&ClockFmtMutex);
     }
 
     return fss->scnTok;
@@ -478,11 +533,16 @@ ClockScan(
 {
     ClockScanToken    **tok;
 
-    if (ClockGetOrParseScanFormat(interp, opts->formatObj) == NULL) {
+    if ((tok = ClockGetOrParseScanFormat(interp, opts->formatObj)) == NULL) {
 	return TCL_ERROR;
     }
     
-    // Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)fss));
+    //***********************************
+
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)tok));
+    return TCL_OK;
+
+
     return TCL_ERROR;
 }
 
