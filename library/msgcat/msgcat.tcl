@@ -951,6 +951,11 @@ proc msgcat::Merge {ns locales} {
     return [dict smartref $mrgcat]
 }
 
+proc msgcat::ClearCaches {ns} {
+    variable Merged
+    dict unset Merged $ns
+}
+
 # msgcat::Invoke --
 #
 #	Invoke a set of registered callbacks.

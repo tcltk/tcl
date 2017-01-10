@@ -30,18 +30,25 @@
 #define ONE_YEAR			365	/* days */
 
 
-#define CLF_DATE	       (1 << 2)
 #define CLF_JULIANDAY	       (1 << 3)
 #define CLF_TIME	       (1 << 4)
 #define CLF_LOCALSEC	       (1 << 5)
 #define CLF_CENTURY	       (1 << 6)
 #define CLF_DAYOFMONTH	       (1 << 7)
 #define CLF_DAYOFYEAR	       (1 << 8)
+#define CLF_MONTH	       (1 << 9)
+#define CLF_YEAR	       (1 << 10)
+#define CLF_ISO8601YEAR	       (1 << 12)
+#define CLF_ISO8601	       (1 << 13)
+#define CLF_ISO8601CENTURY     (1 << 14)
 #define CLF_SIGNED	       (1 << 15)
 /* On demand (lazy) assemble flags */
 #define CLF_ASSEMBLE_DATE      (1 << 28) /* assemble year, month, etc. using julianDay */
 #define CLF_ASSEMBLE_JULIANDAY (1 << 29) /* assemble julianDay using year, month, etc. */
 #define CLF_ASSEMBLE_SECONDS   (1 << 30) /* assemble localSeconds (and seconds at end) */
+
+#define CLF_DATE	       (CLF_JULIANDAY | CLF_DAYOFMONTH | CLF_DAYOFYEAR | \
+				CLF_MONTH | CLF_YEAR | CLF_ISO8601YEAR | CLF_ISO8601)
 
 
 /*
@@ -87,7 +94,7 @@ typedef enum ClockLiteral {
     "::tcl::clock::TZData", \
     "::tcl::clock::GetSystemTimeZone", \
     "::tcl::clock::SetupTimeZone", \
-    "::msgcat::mcget", "::tcl::clock", \
+    "::tcl::clock::mcget", "::tcl::clock", \
     "::tcl::clock::LocalizeFormat" \
 }
 
@@ -96,13 +103,19 @@ typedef enum ClockLiteral {
  */
 
 typedef enum ClockMsgCtLiteral {
+    MCLIT__NIL, /* placeholder */
     MCLIT_MONTHS_FULL,	MCLIT_MONTHS_ABBREV,
+    MCLIT_DAYS_OF_WEEK_FULL,  MCLIT_DAYS_OF_WEEK_ABBREV,
+    MCLIT_AM,  MCLIT_PM,
     MCLIT_LOCALE_NUMERALS,
     MCLIT__END
 } ClockMsgCtLiteral;
 
 #define CLOCK_LOCALE_LITERAL_ARRAY(litarr, pref) static const char *const litarr[] = { \
+    pref "", \
     pref "MONTHS_FULL", pref "MONTHS_ABBREV", \
+    pref "DAYS_OF_WEEK_FULL", pref "DAYS_OF_WEEK_ABBREV", \
+    pref "AM", pref "PM", \
     pref "LOCALE_NUMERALS", \
 }
 
@@ -404,6 +417,10 @@ MODULE_SCOPE time_t ToSeconds(time_t Hours, time_t Minutes,
 MODULE_SCOPE int    TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
 
 /* tclClock.c module declarations */
+
+MODULE_SCOPE Tcl_Obj *
+		    ClockSetupTimeZone(ClientData clientData,
+		Tcl_Interp *interp, Tcl_Obj *timezoneObj);
 
 MODULE_SCOPE Tcl_Obj *
 		    ClockMCDict(ClockFmtScnCmdArgs *opts);

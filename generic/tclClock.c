@@ -473,13 +473,12 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 	}
 
 	if (opts->mcDictObj == NULL) {
-	    Tcl_Obj *callargs[3];
-	    /* get msgcat dictionary - ::msgcat::mcget ::tcl::clock locale */
+	    Tcl_Obj *callargs[2];
+	    /* get msgcat dictionary - ::tcl::clock::mcget locale */
 	    callargs[0] = dataPtr->literals[LIT_MCGET];
-	    callargs[1] = dataPtr->literals[LIT_TCL_CLOCK];
-	    callargs[2] = opts->localeObj;
+	    callargs[1] = opts->localeObj;
 
-	    if (Tcl_EvalObjv(opts->interp, 3, callargs, 0) != TCL_OK) {
+	    if (Tcl_EvalObjv(opts->interp, 2, callargs, 0) != TCL_OK) {
 		return NULL;
 	    }
 
@@ -823,7 +822,7 @@ ClockGetSystemTimeZone(
 /*
  *----------------------------------------------------------------------
  */
-static Tcl_Obj *
+MODULE_SCOPE Tcl_Obj *
 ClockSetupTimeZone(
     ClientData clientData,	/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
@@ -2948,7 +2947,11 @@ ClockScanObjCmd(
 
     /* If needed assemble julianDay using year, month, etc. */
     if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
-	if ((info->flags & CLF_DAYOFMONTH) || !(info->flags & CLF_DAYOFYEAR)) {
+	if ((info->flags & CLF_ISO8601)) {
+	    GetJulianDayFromEraYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
+	}
+	else
+	if (!(info->flags & CLF_DAYOFYEAR)) {
 	    GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
 	} else {
 	    GetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
@@ -3065,11 +3068,11 @@ ClockFreeScan(
 	int dstFlag = 1 - yyDSTmode;
 	tzObjStor = ClockFormatNumericTimeZone(
 			  60 * minEast + 3600 * dstFlag);
-	
+	Tcl_IncrRefCount(tzObjStor);
+
 	opts->timezoneObj = ClockSetupTimeZone(clientData, interp, tzObjStor);
-	if (tzObjStor != opts->timezoneObj) {
-	    Tcl_DecrRefCount(tzObjStor);
-	}
+
+	Tcl_DecrRefCount(tzObjStor);
 	if (opts->timezoneObj == NULL) {
 	    goto done;
 	}
