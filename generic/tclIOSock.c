@@ -158,7 +158,7 @@ TclCreateSocketAddress(
 				 * family */
     struct addrinfo **addrlist,	/* Socket address list */
     const char *host,		/* Host. NULL implies INADDR_ANY */
-    int port,			/* Port number */
+    const char *service,	/* Service */
     int willBind,		/* Is this an address to bind() to or to
 				 * connect() to? */
     const char **errorMsgPtr)	/* Place to store the error message detail, if
@@ -168,7 +168,7 @@ TclCreateSocketAddress(
     struct addrinfo *p;
     struct addrinfo *v4head = NULL, *v4ptr = NULL;
     struct addrinfo *v6head = NULL, *v6ptr = NULL;
-    char *native = NULL, portbuf[TCL_INTEGER_SPACE], *portstring;
+    char *native = NULL;
     const char *family = NULL;
     Tcl_DString ds;
     int result;
@@ -182,11 +182,8 @@ TclCreateSocketAddress(
      * when the loopback device is the only available network interface.
      */
 
-    if (host != NULL && port == 0) {
-	portstring = NULL;
-    } else {
-	TclFormatInt(portbuf, port);
-	portstring = portbuf;
+    if (host != NULL && service != NULL && !strcmp(service, "0")) {
+       service = NULL;
     }
 
     (void) memset(&hints, 0, sizeof(hints));
@@ -231,7 +228,7 @@ TclCreateSocketAddress(
 	hints.ai_flags |= AI_PASSIVE;
     }
 
-    result = getaddrinfo(native, portstring, &hints, addrlist);
+    result = getaddrinfo(native, service, &hints, addrlist);
 
     if (host != NULL) {
 	Tcl_DStringFree(&ds);

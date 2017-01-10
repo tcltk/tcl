@@ -3068,7 +3068,7 @@ MODULE_SCOPE void	TclpFinalizePipes(void);
 MODULE_SCOPE void	TclpFinalizeSockets(void);
 MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
 			    struct addrinfo **addrlist,
-			    const char *host, int port, int willBind,
+			    const char *host, const char *service, int willBind,
 			    const char **errorMsgPtr);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, ClientData clientData,

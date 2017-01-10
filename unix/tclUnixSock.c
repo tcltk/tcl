@@ -1287,13 +1287,17 @@ Tcl_OpenTcpClient(
     const char *errorMsg = NULL;
     struct addrinfo *addrlist = NULL, *myaddrlist = NULL;
     char channelName[SOCK_CHAN_LENGTH];
+    char service[TCL_INTEGER_SPACE], myservice[TCL_INTEGER_SPACE];
 
     /*
      * Do the name lookups for the local and remote addresses.
      */
 
-    if (!TclCreateSocketAddress(interp, &addrlist, host, port, 0, &errorMsg)
-            || !TclCreateSocketAddress(interp, &myaddrlist, myaddr, myport, 1,
+    TclFormatInt(service, port);
+    TclFormatInt(myservice, myport);
+
+    if (!TclCreateSocketAddress(interp, &addrlist, host, service, 0, &errorMsg)
+            || !TclCreateSocketAddress(interp, &myaddrlist, myaddr, myservice, 1,
                     &errorMsg)) {
         if (addrlist != NULL) {
             freeaddrinfo(addrlist);
@@ -1481,7 +1485,7 @@ Tcl_OpenTcpServerEx(
 	goto error;
     }
 
-    if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, 1, &errorMsg)) {
+    if (!TclCreateSocketAddress(interp, &addrlist, myHost, service, 1, &errorMsg)) {
 	my_errno = errno;
 	goto error;
     }
