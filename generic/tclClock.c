@@ -87,8 +87,6 @@ static int		ClockConfigureObjCmd(ClientData clientData,
 static void		GetYearWeekDay(TclDateFields *, int);
 static void		GetGregorianEraYearDay(TclDateFields *, int);
 static void		GetMonthDay(TclDateFields *);
-static void		GetJulianDayFromEraYearWeekDay(TclDateFields *, int);
-static void		GetJulianDayFromEraYearMonthDay(TclDateFields *, int);
 static int		WeekdayOnOrBefore(int, int);
 static int		ClockClicksObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
@@ -2266,7 +2264,7 @@ GetMonthDay(
  *----------------------------------------------------------------------
  */
 
-static void
+MODULE_SCOPE void
 GetJulianDayFromEraYearWeekDay(
     TclDateFields *fields,	/* Date to convert */
     int changeover)		/* Julian Day Number of the Gregorian
@@ -2319,7 +2317,7 @@ GetJulianDayFromEraYearWeekDay(
  *----------------------------------------------------------------------
  */
 
-static void
+MODULE_SCOPE void
 GetJulianDayFromEraYearMonthDay(
     TclDateFields *fields,	/* Date to convert */
     int changeover)		/* Gregorian transition date as a Julian Day */
@@ -2415,7 +2413,7 @@ GetJulianDayFromEraYearMonthDay(
  *----------------------------------------------------------------------
  */
 
-static void
+MODULE_SCOPE void
 GetJulianDayFromEraYearDay(
     TclDateFields *fields,	/* Date to convert */
     int changeover)		/* Gregorian transition date as a Julian Day */
@@ -3169,9 +3167,11 @@ ClockScanObjCmd(
 	    + ( yySeconds % SECONDS_PER_DAY );
     }
 
-    if (ConvertLocalToUTC(clientData, interp, &yydate, opts.timezoneObj, 
-	  GREGORIAN_CHANGE_DATE) != TCL_OK) {
-	goto done;
+    if (info->flags & (CLF_ASSEMBLE_SECONDS|CLF_ASSEMBLE_JULIANDAY|CLF_LOCALSEC)) {
+	if (ConvertLocalToUTC(clientData, interp, &yydate, opts.timezoneObj, 
+	      GREGORIAN_CHANGE_DATE) != TCL_OK) {
+	    goto done;
+	}
     }
 
     /* Increment UTC seconds with relative time */
