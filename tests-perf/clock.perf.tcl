@@ -97,6 +97,12 @@ proc _test_run {reptime lst {outcmd {puts $_(r)}}} {
 
 proc test-format {{reptime 1000}} {
   _test_run $reptime {
+    # Format : short, week only (in gmt)
+    {clock format 1482525936 -format "%u" -gmt 1}
+    # Format : short, week only (system zone)
+    {clock format 1482525936 -format "%u"}
+    # Format : short, week only (CEST)
+    {clock format 1482525936 -format "%u" -timezone :CET}
     # Format : date only (in gmt)
     {clock format 1482525936 -format "%Y-%m-%d" -gmt 1}
     # Format : date only (system zone)
@@ -229,12 +235,6 @@ proc test-scan {{reptime 1000}} {
     {clock scan "25.11.2015 10:35:55" -format [string trim "%d.%m.%Y %H:%M:%S "] -base 0 -gmt 1}
 
     break
-
-    # Scan : zone only
-    {clock scan "CET" -format "%z"}
-    {clock scan "EST" -format "%z"}
-    {**STOP** : Wed Nov 25 01:00:00 CET 2015}
-
     # # Scan : long format test (allock chain)
     # {clock scan "25.11.2015" -format "%d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y" -base 0 -gmt 1}
     # # Scan : dynamic, very long format test (create obj representation, allock chain, GC, etc):
@@ -293,7 +293,6 @@ proc test-other {{reptime 1000}} {
     # Scan : julian day (overflow)
     {catch {clock scan 5373485 -format %J}}
 
-    **STOP**
     # Scan : test rotate of GC objects (format is dynamic, so tcl-obj removed with last reference)
     {set i 0; time { clock scan "[incr i] - 25.11.2015" -format "$i - %d.%m.%Y" -base 0 -gmt 1 } 50}
     # Scan : test reusability of GC objects (format is dynamic, so tcl-obj removed with last reference)
