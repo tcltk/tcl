@@ -167,7 +167,6 @@ static const struct ClockCommand clockCommands[] = {
     { "GetJulianDayFromEraYearWeekDay",
 		ClockGetjuliandayfromerayearweekdayObjCmd },
     { "ParseFormatArgs",	ClockParseformatargsObjCmd },
-    { "_test",			TclStrIdxTreeTestObjCmd },
     { NULL, NULL }
 };
 
@@ -262,10 +261,11 @@ TclClockInit(
 /*
  *----------------------------------------------------------------------
  *
- * ClockDeleteCmdProc --
+ * ClockConfigureClear --
  *
- *	Remove a reference to the clock client data, and clean up memory
- *	when it's all gone.
+ *	Clean up cached resp. run-time storages used in clock commands.
+ *
+ *	Shared usage for clean-up (ClockDeleteCmdProc) and "configure -clear".
  *
  * Results:
  *	None.
@@ -301,7 +301,20 @@ ClockConfigureClear(
     Tcl_UnsetObjRef(data->UTC2Local.tzName);
     Tcl_UnsetObjRef(data->Local2UTC.timezoneObj);
 }
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockDeleteCmdProc --
+ *
+ *	Remove a reference to the clock client data, and clean up memory
+ *	when it's all gone.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 static void
 ClockDeleteCmdProc(
     ClientData clientData)	/* Opaque pointer to the client data */
@@ -335,7 +348,20 @@ ClockDeleteCmdProc(
 
 /*
  *----------------------------------------------------------------------
+ *
+ * NormTimezoneObj --
+ *
+ *	Normalizes the timezone object (used for caching puposes).
+ *
+ *	If already cached time zone could be found, returns this
+ *	object (last setup or last used, system (current) or gmt).
+ *
+ * Results:
+ *	Normalized tcl object pointer.
+ *
+ *----------------------------------------------------------------------
  */
+
 static inline Tcl_Obj *
 NormTimezoneObj(
     ClockClientData *dataPtr,  /* Client data containing literal pool */
@@ -411,9 +437,23 @@ ClockGetCurrentLocale(
 
     return dataPtr->CurrentLocale;
 }
+
 /*
  *----------------------------------------------------------------------
+ *
+ * NormLocaleObj --
+ *
+ *	Normalizes the locale object (used for caching puposes).
+ *
+ *	If already cached locale could be found, returns this
+ *	object (current, system (OS) or last used locales).
+ *
+ * Results:
+ *	Normalized tcl object pointer.
+ *
+ *----------------------------------------------------------------------
  */
+
 static Tcl_Obj *
 NormLocaleObj(
     ClockClientData *dataPtr,	/* Client data containing literal pool */
@@ -494,7 +534,21 @@ NormLocaleObj(
 
 /*
  *----------------------------------------------------------------------
+ *
+ * ClockMCDict --
+ *
+ *	Retrieves a localized storage dictionary object for the given 
+ *	locale object.
+ *
+ *	This corresponds with call `::tcl::clock::mcget locale`.
+ *	Cached representation stored in options (for further access).
+ *
+ * Results:
+ *	Tcl-object contains smart reference to msgcat dictionary.
+ *
+ *----------------------------------------------------------------------
  */
+
 MODULE_SCOPE Tcl_Obj *
 ClockMCDict(ClockFmtScnCmdArgs *opts)
 {
@@ -560,6 +614,21 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
     return opts->mcDictObj;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockMCGet --
+ *
+ *	Retrieves a msgcat value for the given literal integer mcKey
+ *	from localized storage (corresponding given locale object)
+ *	by mcLiterals[mcKey] (e. g. MONTHS_FULL).
+ *
+ * Results:
+ *	Tcl-object contains localized value.
+ *
+ *----------------------------------------------------------------------
+ */
+
 MODULE_SCOPE Tcl_Obj *
 ClockMCGet(
     ClockFmtScnCmdArgs *opts, 
@@ -581,6 +650,21 @@ ClockMCGet(
     return valObj; /* or NULL in obscure case if Tcl_DictObjGet failed */
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockMCGetIdx --
+ *
+ *	Retrieves an indexed msgcat value for the given literal integer mcKey
+ *	from localized storage (corresponding given locale object)
+ *	by mcLitIdxs[mcKey] (e. g. _IDX_MONTHS_FULL).
+ *
+ * Results:
+ *	Tcl-object contains localized indexed value.
+ *
+ *----------------------------------------------------------------------
+ */
+
 MODULE_SCOPE Tcl_Obj *
 ClockMCGetIdx(
     ClockFmtScnCmdArgs *opts, 
@@ -609,6 +693,21 @@ ClockMCGetIdx(
 
     return valObj;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockMCSetIdx --
+ *
+ *	Sets an indexed msgcat value for the given literal integer mcKey
+ *	in localized storage (corresponding given locale object)
+ *	by mcLitIdxs[mcKey] (e. g. _IDX_MONTHS_FULL).
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ *----------------------------------------------------------------------
+ */
 
 MODULE_SCOPE int
 ClockMCSetIdx(
@@ -639,7 +738,23 @@ ClockMCSetIdx(
 
 /*
  *----------------------------------------------------------------------
+ *
+ * ClockConfigureObjCmd --
+ *
+ *	This function is invoked to process the Tcl "clock configure" command.
+ *
+ * Usage:
+ *	::tcl::clock::configure ?-option ?value??
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
  */
+
 static int
 ClockConfigureObjCmd(
     ClientData clientData,  /* Client data containing literal pool */
@@ -781,7 +896,20 @@ ClockConfigureObjCmd(
 
 /*
  *----------------------------------------------------------------------
+ *
+ * ClockGetTZData --
+ *
+ *	Retrieves tzdata table for given normalized timezone.
+ *
+ * Results:
+ *	Returns a tcl object with tzdata.
+ *
+ * Side effects:
+ *	The tzdata can be cached in ClockClientData structure.
+ *
+ *----------------------------------------------------------------------
  */
+
 static inline Tcl_Obj *
 ClockGetTZData(
     ClientData clientData,	/* Opaque pointer to literal pool, etc. */
@@ -839,9 +967,20 @@ ClockGetTZData(
     }
     return ret;
 }
+
 /*
  *----------------------------------------------------------------------
+ *
+ * ClockGetSystemTimeZone --
+ *
+ *	Returns system (current) timezone.
+ *
+ * Results:
+ *	Returns normalized timezone object.
+ *
+ *----------------------------------------------------------------------
  */
+
 static Tcl_Obj *
 ClockGetSystemTimeZone(
     ClientData clientData,	/* Opaque pointer to literal pool, etc. */
@@ -869,9 +1008,20 @@ ClockGetSystemTimeZone(
     }
     return dataPtr->SystemTimeZone;
 }
+
 /*
  *----------------------------------------------------------------------
+ *
+ * ClockSetupTimeZone --
+ *
+ *	Sets up the timezone. Loads tzdata, etc.
+ *
+ * Results:
+ *	Returns normalized timezone object.
+ *
+ *----------------------------------------------------------------------
  */
+
 MODULE_SCOPE Tcl_Obj *
 ClockSetupTimeZone(
     ClientData clientData,	/* Opaque pointer to literal pool, etc. */
@@ -908,20 +1058,22 @@ ClockSetupTimeZone(
     }
     return NULL;
 }
+
 /*
  *----------------------------------------------------------------------
- * ClockFormatNumericTimeZone -
  *
- *   Formats a time zone as +hhmmss
+ * ClockFormatNumericTimeZone --
+ *
+ *	Formats a time zone as +hhmmss
  *
  * Parameters:
- *   z - Time zone in seconds east of Greenwich
+ *	z - Time zone in seconds east of Greenwich
  *
  * Results:
- *   Returns the time zone object (formatted in a numeric form)
+ *	Returns the time zone object (formatted in a numeric form)
  *
  * Side effects:
- *   None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -943,6 +1095,7 @@ ClockFormatNumericTimeZone(int z) {
     }
     return Tcl_ObjPrintf("%c%02d%02d", sign, h, m);
 }
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1145,7 +1298,20 @@ ClockGetdatefieldsObjCmd(
 
 /*
  *----------------------------------------------------------------------
+ *
+ * ClockGetDateFields --
+ *
+ *	Converts given UTC time (seconds in a TclDateFields structure) 
+ *	to local time and determines the values that clock routines will 
+ *	use in scanning or formatting a date.
+ *
+ * Results:
+ *	Date-time values are stored in structure "fields".
+ *	Returns a standard Tcl result.
+ *
+ *----------------------------------------------------------------------
  */
+
 int
 ClockGetDateFields(
     ClientData clientData,	/* Client data of the interpreter */
@@ -1586,6 +1752,7 @@ ConvertLocalToUTCUsingTable(
     fields->seconds = fields->localSeconds - fields->tzOffset;
 
 #if 0
+    /* currently unused, test purposes only */
     /*
      * Convert back from UTC, if local times are different - wrong local time
      * (local time seems to be in between DST-hole).
@@ -2404,9 +2571,24 @@ GetJulianDayFromEraYearMonthDay(
 		+ ym1o4;
     }
 }
+
 /*
  *----------------------------------------------------------------------
+ *
+ * GetJulianDayFromEraYearDay --
+ *
+ *	Given era, year, and dayOfYear (in TclDateFields), and the
+ *	Gregorian transition date, computes the Julian Day Number.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stores day number in 'julianDay'
+ *
+ *----------------------------------------------------------------------
  */
+
 
 MODULE_SCOPE void
 GetJulianDayFromEraYearDay(
@@ -2740,6 +2922,19 @@ ClockMicrosecondsObjCmd(
     return TCL_OK;
 }
 
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * _ClockParseFmtScnArgs --
+ *
+ *	Parses the arguments for [clock scan] and [clock format].
+ *
+ * Results:
+ *	Returns a standard Tcl result, and stores parsed options
+ *	(format, the locale, timezone and base) in structure "opts".
+ *
+ *-----------------------------------------------------------------------------
+ */
 
 static int
 _ClockParseFmtScnArgs(
@@ -2853,9 +3048,7 @@ _ClockParseFmtScnArgs(
  *	Returns a standard Tcl result, whose value is a four-element list
  *	comprising the time format, the locale, and the timezone.
  *
- * This function exists because the loop that parses the [clock format]
- * options is a known performance "hot spot", and is implemented in an effort
- * to speed that particular code up.
+ * This function exists for backward compatibility purposes.
  *
  *-----------------------------------------------------------------------------
  */
@@ -2919,7 +3112,20 @@ ClockParseformatargsObjCmd(
 
 /*----------------------------------------------------------------------
  *
- * ClockFormatObjCmd -
+ * ClockFormatObjCmd -- , clock format --
+ *
+ *	This function is invoked to process the Tcl "clock format" command.
+ *
+ *	Formats a count of seconds since the Posix Epoch as a time of day.
+ *
+ *	The 'clock format' command formats times of day for output.  Refer 
+ *	to the user documentation to see what it does.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -3018,7 +3224,20 @@ done:
 
 /*----------------------------------------------------------------------
  *
- * ClockScanObjCmd -
+ * ClockScanObjCmd -- , clock scan --
+ *
+ *	This function is invoked to process the Tcl "clock scan" command.
+ *
+ *	Inputs a count of seconds since the Posix Epoch as a time of day.
+ *
+ *	The 'clock scan' command scans times of day on input. Refer to the
+ *	user documentation to see what it does.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -3188,7 +3407,20 @@ done:
 }
 
 /*----------------------------------------------------------------------
+ *
+ * ClockFreeScan --
+ *
+ *	Used by ClockScanObjCmd for free scanning without format.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
  */
+
 int
 ClockFreeScan(
     ClientData clientData,	/* Client data containing literal pool */
