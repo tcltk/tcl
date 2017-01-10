@@ -28,8 +28,16 @@ proc _test_get_commands {lst} {
 proc test-scan {{reptime 1000}} {
   foreach _(c) [_test_get_commands {
     # Scan : date
-    #{clock scan "25.11.2015" -format "%d.%m.%Y" -base 0 -gmt 1}
-    #{**STOP** : Wed Nov 25 01:00:00 CET 2015}
+    {clock scan "25.11.2015" -format "%d.%m.%Y" -base 0 -gmt 1}
+    {clock scan "1111" -format "%d%m%y" -base 0 -gmt 1}
+    {**STOP** : Wed Nov 25 01:00:00 CET 2015}
+    # Scan : long format test (allock chain)
+    {clock scan "25.11.2015" -format "%d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y %d.%m.%Y" -base 0 -gmt 1}
+    # Scan : dynamic, very long format test (create obj representation, allock chain, GC, etc):
+    {clock scan "25.11.2015" -format [string repeat "[incr i] %d.%m.%Y %d.%m.%Y" 10] -base 0 -gmt 1}
+    # Scan : again:
+    {clock scan "25.11.2015" -format [string repeat "[incr i -1] %d.%m.%Y %d.%m.%Y" 10] -base 0 -gmt 1}
+
     # FreeScan : relative date
     {clock scan "5 years 18 months 385 days" -base 0 -gmt 1}
     # FreeScan : relative date with relative weekday
