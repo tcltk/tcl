@@ -275,7 +275,7 @@ typedef struct ClockFmtScnCmdArgs {
  */
 
 typedef struct ClockClientData {
-    int refCount;		/* Number of live references. */
+    size_t    refCount;		/* Number of live references. */
     Tcl_Obj **literals;		/* Pool of object literals (common, locale independent). */
     Tcl_Obj **mcLiterals;	/* Msgcat object literals with mc-keys for search with locale. */
     Tcl_Obj **mcLitIdxs;	/* Msgcat object indices prefixed with _IDX_,

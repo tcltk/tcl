@@ -484,9 +484,7 @@ cdebug	= $(cdebug) -Zi
 ### Warnings are too many, can't support warnings into errors.
 cdebug	= -Zi -Od $(DEBUGFLAGS)
 !else
-# no -WX option here (error C2220: warning treated as error):
-#cdebug	= -Zi -WX $(DEBUGFLAGS)
-cdebug	= -Zi $(DEBUGFLAGS)
+cdebug	= -Zi -WX $(DEBUGFLAGS)
 !endif
 
 ### Declarations common to all compiler options
