@@ -2313,7 +2313,47 @@ GetJulianDayFromEraYearMonthDay(
 		+ ym1o4;
     }
 }
+/*
+ *----------------------------------------------------------------------
+ */
 
+static void
+GetJulianDayFromEraYearDay(
+    TclDateFields *fields,	/* Date to convert */
+    int changeover)		/* Gregorian transition date as a Julian Day */
+{
+    int year, ym1;
+
+    /* Get absolute year number from the civil year */
+    if (fields->era == BCE) {
+	year = 1 - fields->year;
+    } else {
+	year = fields->year;
+    }
+
+    ym1 = year - 1;
+
+    /* Try the Gregorian calendar first. */
+    fields->gregorian = 1;
+    fields->julianDay =
+	1721425
+	+ fields->dayOfYear
+	+ ( 365 * ym1 )
+	+ ( ym1 / 4 )
+	- ( ym1 / 100 )
+	+ ( ym1 / 400 );
+
+    /* If the date is before the Gregorian change, use the Julian calendar. */
+
+    if ( fields->julianDay < changeover ) {
+	fields->gregorian = 0;
+	fields->julianDay =
+	    1721423
+	    + fields->dayOfYear
+	    + ( 365 * ym1 )
+	    + ( ym1 / 4 );
+    }
+}
 /*
  *----------------------------------------------------------------------
  *
@@ -2906,9 +2946,13 @@ ClockScanObjCmd(
 	goto done;
     }
 
-    /* If needed assemble julianDay using new year, month, etc. */
-    if (info->flags & CLF_INVALIDATE_JULIANDAY) {
-	GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
+    /* If needed assemble julianDay using year, month, etc. */
+    if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
+	if ((info->flags & CLF_DAYOFMONTH) || !(info->flags & CLF_DAYOFYEAR)) {
+	    GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
+	} else {
+	    GetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
+	}
     }
 
     /* some overflow checks, if not extended */
@@ -2924,7 +2968,7 @@ ClockScanObjCmd(
 
     /* Local seconds to UTC (stored in yydate.seconds) */
 
-    if (info->flags & (CLF_INVALIDATE_SECONDS|CLF_INVALIDATE_JULIANDAY)) {
+    if (info->flags & (CLF_ASSEMBLE_SECONDS|CLF_ASSEMBLE_JULIANDAY)) {
 	yydate.localSeconds =
 	    -210866803200L
 	    + ( SECONDS_PER_DAY * (Tcl_WideInt)yydate.julianDay )
@@ -3007,7 +3051,7 @@ ClockFreeScan(
 	if (yyHaveTime == 0) {
 	    yyHaveTime = -1;
 	}
-	info->flags |= CLF_INVALIDATE_JULIANDAY|CLF_INVALIDATE_SECONDS;
+	info->flags |= CLF_ASSEMBLE_JULIANDAY|CLF_ASSEMBLE_SECONDS;
     }
 
     /*
@@ -3032,7 +3076,7 @@ ClockFreeScan(
 
 	// Tcl_SetObjRef(yydate.tzName, opts->timezoneObj);
 
-	info->flags |= CLF_INVALIDATE_SECONDS;
+	info->flags |= CLF_ASSEMBLE_SECONDS;
     }
     
     /* 
@@ -3041,13 +3085,13 @@ ClockFreeScan(
 
     if (yyHaveTime == -1) {
 	yySeconds = 0;
-	info->flags |= CLF_INVALIDATE_SECONDS;
+	info->flags |= CLF_ASSEMBLE_SECONDS;
     }
     else
     if (yyHaveTime) {
 	yySeconds = ToSeconds(yyHour, yyMinutes,
 			    yySeconds, yyMeridian);
-	info->flags |= CLF_INVALIDATE_SECONDS;
+	info->flags |= CLF_ASSEMBLE_SECONDS;
     } 
     else 
     if ( (yyHaveDay && !yyHaveDate)
@@ -3057,7 +3101,7 @@ ClockFreeScan(
 		     || yyRelDay != 0 ) )
     ) {
 	yySeconds = 0;
-	info->flags |= CLF_INVALIDATE_SECONDS;
+	info->flags |= CLF_ASSEMBLE_SECONDS;
     } 
     else {
 	yySeconds = yydate.localSeconds % SECONDS_PER_DAY;
@@ -3084,11 +3128,11 @@ repeat_rel:
 	    int m, h;
 
 	    /* if needed extract year, month, etc. again */
-	    if (info->flags & CLF_INVALIDATE_DATE) {
+	    if (info->flags & CLF_ASSEMBLE_DATE) {
 		GetGregorianEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
 		GetMonthDay(&yydate);
 		GetYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
-		info->flags &= ~CLF_INVALIDATE_DATE;
+		info->flags &= ~CLF_ASSEMBLE_DATE;
 	    }
 
 	    /* add the requisite number of months */
@@ -3104,7 +3148,7 @@ repeat_rel:
 	    }
 
 	    /* on demand (lazy) assemble julianDay using new year, month, etc. */
-	    info->flags |= CLF_INVALIDATE_JULIANDAY|CLF_INVALIDATE_SECONDS;
+	    info->flags |= CLF_ASSEMBLE_JULIANDAY|CLF_ASSEMBLE_SECONDS;
 
 	    yyRelMonth = 0;
 	}
@@ -3113,14 +3157,14 @@ repeat_rel:
 	if (yyRelDay) {
 
 	    /* assemble julianDay using new year, month, etc. */
-	    if (info->flags & CLF_INVALIDATE_JULIANDAY) {
+	    if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
 		GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
-		info->flags &= ~CLF_INVALIDATE_JULIANDAY;
+		info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
 	    }
 	    yydate.julianDay += yyRelDay;
 	    
 	    /* julianDay was changed, on demand (lazy) extract year, month, etc. again */
-	    info->flags |= CLF_INVALIDATE_DATE|CLF_INVALIDATE_SECONDS;
+	    info->flags |= CLF_ASSEMBLE_DATE|CLF_ASSEMBLE_SECONDS;
 
 	    yyRelDay = 0;
 	}
@@ -3150,11 +3194,11 @@ repeat_rel:
 	int monthDiff;
 
 	/* if needed extract year, month, etc. again */
-	if (info->flags & CLF_INVALIDATE_DATE) {
+	if (info->flags & CLF_ASSEMBLE_DATE) {
 	    GetGregorianEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
 	    GetMonthDay(&yydate);
 	    GetYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
-	    info->flags &= ~CLF_INVALIDATE_DATE;
+	    info->flags &= ~CLF_ASSEMBLE_DATE;
 	}
 
 	if (yyMonthOrdinalIncr > 0) {
@@ -3177,7 +3221,7 @@ repeat_rel:
 	yyRelMonth += monthDiff;
 	yyHaveOrdinalMonth = 0;
 
-	info->flags |= CLF_INVALIDATE_JULIANDAY|CLF_INVALIDATE_SECONDS;
+	info->flags |= CLF_ASSEMBLE_JULIANDAY|CLF_ASSEMBLE_SECONDS;
 
 	goto repeat_rel;
     }
@@ -3189,9 +3233,9 @@ repeat_rel:
     if (yyHaveDay && !yyHaveDate) {
 
 	/* if needed assemble julianDay now */
-	if (info->flags & CLF_INVALIDATE_JULIANDAY) {
+	if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
 	    GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
-	    info->flags &= ~CLF_INVALIDATE_JULIANDAY;
+	    info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
 	}
 
 	yydate.era = CE;
@@ -3200,7 +3244,7 @@ repeat_rel:
 	if (yyDayOrdinal > 0) {
 	    yydate.julianDay -= 7;
 	}
-	info->flags |= CLF_INVALIDATE_DATE|CLF_INVALIDATE_SECONDS;
+	info->flags |= CLF_ASSEMBLE_DATE|CLF_ASSEMBLE_SECONDS;
     }
 
     /* Free scanning completed - date ready */
