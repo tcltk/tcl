@@ -2,7 +2,7 @@
  * tclDate.h --
  *
  *	This header file handles common usage of clock primitives
- *	between tclDate.c (yacc) and tclClock.c.
+ *	between tclDate.c (yacc), tclClock.c and tclClockFmt.c.
  *
  * Copyright (c) 2014 Serg G. Brester (aka sebres)
  *
@@ -317,22 +317,24 @@ typedef struct ClockClientData {
 	Tcl_Obj *timezoneObj;
 	TclDateFields Date;
     } lastBase;
-    /* Las-minute cache for fast UTC2Local conversion */
+    /* Las-period cache for fast UTC2Local conversion */
     struct {
 	/* keys */
 	Tcl_Obj	   *timezoneObj;
 	int	    changeover;
 	Tcl_WideInt seconds;
+	Tcl_WideInt rangesVal[2];   /* Bounds for cached time zone offset */
 	/* values */
 	time_t	    tzOffset;
 	Tcl_Obj	   *tzName;
     } UTC2Local;
-    /* Las-minute cache for fast Local2UTC conversion */
+    /* Las-period cache for fast Local2UTC conversion */
     struct {
 	/* keys */
 	Tcl_Obj	   *timezoneObj;
 	int	    changeover;
 	Tcl_WideInt localSeconds;
+	Tcl_WideInt rangesVal[2];   /* Bounds for cached time zone offset */
 	/* values */
 	time_t	    tzOffset;
     } Local2UTC;
@@ -372,8 +374,22 @@ typedef enum _CLCKTOK_TYPE {
 
 typedef struct ClockFmtScnStorage ClockFmtScnStorage;
 
+typedef struct ClockFormatTokenMap {
+    unsigned short int	type;
+    unsigned short int	flags;
+    unsigned short int	clearFlags;
+    unsigned short int	minSize;
+    unsigned short int	maxSize;
+    unsigned short int	offs;
+    ClockScanTokenProc *parser;
+    void	       *data;
+} ClockFormatTokenMap;
 typedef struct ClockFormatToken {
-    CLCKTOK_TYPE      type;
+    ClockFormatTokenMap *map;
+    struct {
+	const char *start;
+	const char *end;
+    } tokWord;
 } ClockFormatToken;
 
 typedef struct ClockScanTokenMap {
@@ -447,9 +463,13 @@ MODULE_SCOPE ClockFmtScnStorage *
 			Tcl_Obj *objPtr);
 MODULE_SCOPE Tcl_Obj *
 		    ClockLocalizeFormat(ClockFmtScnCmdArgs *opts);
+
 MODULE_SCOPE int    ClockScan(ClientData clientData, Tcl_Interp *interp,
 			register DateInfo *info,
 			Tcl_Obj *strObj, ClockFmtScnCmdArgs *opts);
+
+MODULE_SCOPE int    ClockFormat(ClientData clientData, Tcl_Interp *interp,
+			register DateInfo *info, ClockFmtScnCmdArgs *opts);
 
 MODULE_SCOPE void   ClockFrmScnClearCaches(void);
 

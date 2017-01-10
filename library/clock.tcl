@@ -685,20 +685,6 @@ proc ::tcl::clock::format { args } {
     set locale [string tolower $locale]
     set clockval [lindex $args 0]
 
-    # Get the data for time changes in the given zone
-
-    if {$timezone eq ""} {
-	if {[set timezone [configure -system-tz]] eq ""} {
-	    set timezone [GetSystemTimeZone]
-	}
-    }
-    if {![info exists TZData($timezone)]} {
-	if {[catch {set timezone [SetupTimeZone $timezone]} retval opts]} {
-	    dict unset opts -errorinfo
-	    return -options $opts $retval
-	}
-    }
-
     # Build a procedure to format the result. Cache the built procedure's name
     # in the 'FormatProc' array to avoid losing its internal representation,
     # which contains the name resolution.
