@@ -115,14 +115,24 @@ typedef struct ClockClientData {
     size_t refCount;		/* Number of live references. */
     Tcl_Obj **literals;		/* Pool of object literals. */
     /* Cache for current clock parameters, imparted via "configure" */
-    unsigned int LastTZEpoch;
-    Tcl_Obj *LastSystemTimeZone;
+    unsigned long LastTZEpoch;
+    Tcl_Obj *SystemTimeZone;
     Tcl_Obj *SystemSetupTZData;
     Tcl_Obj *GMTSetupTimeZone;
     Tcl_Obj *GMTSetupTZData;
+    Tcl_Obj *AnySetupTimeZone;
+    Tcl_Obj *AnySetupTZData;
+    Tcl_Obj *LastUnnormSetupTimeZone;
     Tcl_Obj *LastSetupTimeZone;
     Tcl_Obj *LastSetupTZData;
-    Tcl_Obj *LastUsedSetupTimeZone;
+    /*
+    /* [SB] TODO: back-port (from tclSE) the same date caching ...
+     * Cache for last date (fast convert if date parsed was the same) * /
+    struct {
+      DateInfo	    yy;
+      TclDateFields date;
+    } lastDate;
+    */
 } ClockClientData;
 
 /*
@@ -233,9 +243,27 @@ static int		ClockFreeScan(
 			    Tcl_Obj *strObj, Tcl_WideInt baseVal, 
 			    Tcl_Obj *timezoneObj, Tcl_Obj *locale);
 static struct tm *	ThreadSafeLocalTime(const time_t *);
-static unsigned int	TzsetGetEpoch(void);
+static unsigned long	TzsetGetEpoch(void);
 static void		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(ClientData);
+
+/*
+ * Primitives to safe set, reset and free references.
+ */
+
+#define Tcl_UnsetObjRef(obj) \
+  if (obj != NULL) { Tcl_DecrRefCount(obj); obj = NULL; }
+#define Tcl_InitObjRef(obj, val) \
+  obj = val; if (obj) { Tcl_IncrRefCount(obj); }
+#define Tcl_SetObjRef(obj, val) \
+if (1) { \
+  Tcl_Obj *nval = val; \
+  if (obj != nval) { \
+    Tcl_Obj *prev = obj; \
+    Tcl_InitObjRef(obj, nval); \
+    if (prev != NULL) { Tcl_DecrRefCount(prev); }; \
+  } \
+}
 
 /*
  * Structure containing description of "native" clock commands to create.
@@ -319,13 +347,15 @@ TclClockInit(
 	Tcl_IncrRefCount(data->literals[i]);
     }
     data->LastTZEpoch = 0;
-    data->LastSystemTimeZone = NULL;
+    data->SystemTimeZone = NULL;
     data->SystemSetupTZData = NULL;
     data->GMTSetupTimeZone = NULL;
     data->GMTSetupTZData = NULL;
+    data->AnySetupTimeZone = NULL;
+    data->AnySetupTZData = NULL;
+    data->LastUnnormSetupTimeZone = NULL;
     data->LastSetupTimeZone = NULL;
     data->LastSetupTZData = NULL;
-    data->LastUsedSetupTimeZone = NULL;
 
     /*
      * Install the commands.
@@ -356,6 +386,22 @@ TclClockInit(
  */
 
 static void
+ClockConfigureClear(
+    ClockClientData *data)
+{
+    data->LastTZEpoch = 0;
+    Tcl_UnsetObjRef(data->SystemTimeZone);
+    Tcl_UnsetObjRef(data->SystemSetupTZData);
+    Tcl_UnsetObjRef(data->GMTSetupTimeZone);
+    Tcl_UnsetObjRef(data->GMTSetupTZData);
+    Tcl_UnsetObjRef(data->AnySetupTimeZone);
+    Tcl_UnsetObjRef(data->AnySetupTZData);
+    Tcl_UnsetObjRef(data->LastUnnormSetupTimeZone);
+    Tcl_UnsetObjRef(data->LastSetupTimeZone);
+    Tcl_UnsetObjRef(data->LastSetupTZData);
+}
+
+static void
 ClockDeleteCmdProc(
     ClientData clientData)	/* Opaque pointer to the client data */
 {
@@ -367,15 +413,7 @@ ClockDeleteCmdProc(
 	    Tcl_DecrRefCount(data->literals[i]);
 	}
 
-	if (data->LastSystemTimeZone) {
-	    Tcl_DecrRefCount(data->LastSystemTimeZone);
-	}
-	if (data->GMTSetupTimeZone) {
-	    Tcl_DecrRefCount(data->GMTSetupTimeZone);
-	}
-	if (data->LastSetupTimeZone) {
-	    Tcl_DecrRefCount(data->LastSetupTimeZone);
-	}
+	ClockConfigureClear(data);
 
 	ckfree(data->literals);
 	ckfree(data);
@@ -391,34 +429,40 @@ NormTimezoneObj(
     Tcl_Obj * timezoneObj)
 {
     const char * tz;
-    if (   timezoneObj == dataPtr->literals[LIT_GMT]
-	|| timezoneObj == dataPtr->LastSystemTimeZone
-	|| timezoneObj == dataPtr->LastSetupTimeZone
+    if ( timezoneObj == dataPtr->LastUnnormSetupTimeZone
+      && dataPtr->LastSetupTimeZone != NULL 
+    ) {
+	return dataPtr->LastSetupTimeZone;
+    }
+    if ( timezoneObj == dataPtr->LastSetupTimeZone
+      || timezoneObj == dataPtr->literals[LIT_GMT]
+      || timezoneObj == dataPtr->SystemTimeZone
+      || timezoneObj == dataPtr->AnySetupTimeZone
     ) {
 	return timezoneObj;
     }
 
     tz = TclGetString(timezoneObj);
+    if (dataPtr->AnySetupTimeZone != NULL &&
+	(timezoneObj == dataPtr->AnySetupTimeZone
+	   || strcmp(tz, TclGetString(dataPtr->AnySetupTimeZone)) == 0
+	)
+    ) {
+	timezoneObj = dataPtr->AnySetupTimeZone;
+    }
+    else
+    if (dataPtr->SystemTimeZone != NULL &&
+	(timezoneObj == dataPtr->SystemTimeZone
+	   || strcmp(tz, TclGetString(dataPtr->SystemTimeZone)) == 0
+	)
+    ) {
+	timezoneObj = dataPtr->SystemTimeZone;
+    }
+    else
     if (
 	strcmp(tz, Literals[LIT_GMT]) == 0
     ) {
 	timezoneObj = dataPtr->literals[LIT_GMT];
-    }
-    else
-    if (dataPtr->LastSystemTimeZone != NULL &&
-	(timezoneObj == dataPtr->LastSystemTimeZone
-	   || strcmp(tz, TclGetString(dataPtr->LastSystemTimeZone)) == 0
-	)
-    ) {
-	timezoneObj = dataPtr->LastSystemTimeZone;
-    }
-    else
-    if (dataPtr->LastSetupTimeZone != NULL &&
-	(timezoneObj == dataPtr->LastSetupTimeZone
-	   || strcmp(tz, TclGetString(dataPtr->LastSetupTimeZone)) == 0
-	)
-    ) {
-	timezoneObj = dataPtr->LastSetupTimeZone;
     }
     return timezoneObj;
 }
@@ -454,74 +498,64 @@ ClockConfigureObjCmd(
 		    Tcl_GetString(objv[i]), NULL);
 	    return TCL_ERROR;
 	}
-	if (optionIndex == CLOCK_SYSTEM_TZ || optionIndex == CLOCK_CLEAR_CACHE) {
-	    if (dataPtr->LastSystemTimeZone) {
-		Tcl_DecrRefCount(dataPtr->LastSystemTimeZone);
-		dataPtr->LastSystemTimeZone = NULL;
-		dataPtr->SystemSetupTZData = NULL;
-	    }
-	    if (optionIndex != CLOCK_CLEAR_CACHE) {
-		/* validate current tz-epoch */
-		unsigned int lastTZEpoch = TzsetGetEpoch();
-		if (i+1 < objc) {
-		    Tcl_IncrRefCount(
-			dataPtr->LastSystemTimeZone = objv[i+1]);
-		    dataPtr->LastTZEpoch = lastTZEpoch;
-		} else if (dataPtr->LastSystemTimeZone 
-			     && dataPtr->LastTZEpoch == lastTZEpoch) {
-		    Tcl_SetObjResult(interp, dataPtr->LastSystemTimeZone);
-		}
-	    }
-	}
-	if (optionIndex == CLOCK_SETUP_TZ || optionIndex == CLOCK_CLEAR_CACHE) {
-	    Tcl_Obj *timezoneObj = NULL;
-	    /* differentiate GMT and system zones, because used often */
+	switch (optionIndex) {
+	case CLOCK_SYSTEM_TZ:
+	if (1) {
+	    /* validate current tz-epoch */
+	    unsigned long lastTZEpoch = TzsetGetEpoch();
 	    if (i+1 < objc) {
-		timezoneObj = NormTimezoneObj(dataPtr, objv[i+1]);
-		if (optionIndex == CLOCK_SETUP_TZ) {
-		    dataPtr->LastUsedSetupTimeZone = timezoneObj;
-		    if (timezoneObj == litPtr[LIT_GMT]) {
-			optionIndex = CLOCK_SETUP_GMT;
-		    } else if (timezoneObj == dataPtr->LastSystemTimeZone) {
-			optionIndex = CLOCK_SETUP_NOP;
-		    }
+		if (dataPtr->SystemTimeZone != objv[i+1]) {
+		    Tcl_SetObjRef(dataPtr->SystemTimeZone, objv[i+1]);
+		    Tcl_UnsetObjRef(dataPtr->SystemSetupTZData);
 		}
-	    }
-
-	    if (optionIndex == CLOCK_SETUP_GMT || optionIndex == CLOCK_CLEAR_CACHE) {
-		if (dataPtr->GMTSetupTimeZone) {
-		    Tcl_DecrRefCount(dataPtr->GMTSetupTimeZone);
-		    dataPtr->GMTSetupTimeZone = NULL;
-		    dataPtr->GMTSetupTZData = NULL;
-		}
-		if (optionIndex != CLOCK_CLEAR_CACHE) {
-		    if (i+1 < objc) {
-			Tcl_IncrRefCount(
-			    dataPtr->GMTSetupTimeZone = timezoneObj);
-		    } else if (dataPtr->GMTSetupTimeZone) {
-			Tcl_SetObjResult(interp, dataPtr->GMTSetupTimeZone);
-		    }
-		}
-	    }
-	    if (optionIndex == CLOCK_SETUP_TZ || optionIndex == CLOCK_CLEAR_CACHE) {
-		if (dataPtr->LastSetupTimeZone) {
-		    Tcl_DecrRefCount(dataPtr->LastSetupTimeZone);
-		    dataPtr->LastSetupTimeZone = NULL;
-		    dataPtr->LastSetupTZData = NULL;
-		}
-		if (optionIndex != CLOCK_CLEAR_CACHE) {
-		    if (i+1 < objc) {
-			Tcl_IncrRefCount(
-			    dataPtr->LastSetupTimeZone = timezoneObj);
-		    } else if (dataPtr->LastUsedSetupTimeZone) {
-			Tcl_SetObjResult(interp, dataPtr->LastUsedSetupTimeZone);
-		    }
-		}
+		dataPtr->LastTZEpoch = lastTZEpoch;
+	    } 
+	    if (dataPtr->SystemTimeZone != NULL 
+			 && dataPtr->LastTZEpoch == lastTZEpoch) {
+		Tcl_SetObjResult(interp, dataPtr->SystemTimeZone);
 	    }
 	}
-	if (optionIndex == CLOCK_CLEAR_CACHE) {
-	    dataPtr->LastTZEpoch = 0;
-	    dataPtr->LastUsedSetupTimeZone = NULL;
+	break;
+	case CLOCK_SETUP_TZ:
+	    if (i+1 < objc) {
+		/* differentiate GMT and system zones, because used often */
+		Tcl_Obj *timezoneObj = NormTimezoneObj(dataPtr, objv[i+1]);
+		Tcl_SetObjRef(dataPtr->LastUnnormSetupTimeZone, objv[i+1]);
+		if (dataPtr->LastSetupTimeZone != timezoneObj) {
+		    Tcl_SetObjRef(dataPtr->LastSetupTimeZone, timezoneObj);
+		    Tcl_UnsetObjRef(dataPtr->LastSetupTZData);
+		}
+		if (timezoneObj == litPtr[LIT_GMT]) {
+		    optionIndex = CLOCK_SETUP_GMT;
+		} else if (timezoneObj == dataPtr->SystemTimeZone) {
+		    optionIndex = CLOCK_SETUP_NOP;
+		}
+		switch (optionIndex) {
+		case CLOCK_SETUP_GMT:
+		    if (i+1 < objc) {
+			if (dataPtr->GMTSetupTimeZone != timezoneObj) {
+			    Tcl_SetObjRef(dataPtr->GMTSetupTimeZone, timezoneObj);
+			    Tcl_UnsetObjRef(dataPtr->GMTSetupTZData);
+			}
+		    }
+		break;
+		case CLOCK_SETUP_TZ:
+		    if (i+1 < objc) {
+			if (dataPtr->AnySetupTimeZone != timezoneObj) {
+			    Tcl_SetObjRef(dataPtr->AnySetupTimeZone, timezoneObj);
+			    Tcl_UnsetObjRef(dataPtr->AnySetupTZData);
+			}
+		    } 
+		break;
+		}
+	    }
+	    if (dataPtr->LastSetupTimeZone != NULL) {
+		Tcl_SetObjResult(interp, dataPtr->LastSetupTimeZone);
+	    }
+	break;
+	case CLOCK_CLEAR_CACHE:
+	    ClockConfigureClear(dataPtr);
+	break;
 	}
     }
 
@@ -541,11 +575,19 @@ ClockGetTZData(
     Tcl_Obj **literals = dataPtr->literals;
     Tcl_Obj *ret, **out = NULL;
 
+    /* if cached (if already setup this one) */
+    if ( dataPtr->LastSetupTZData != NULL
+      && ( timezoneObj == dataPtr->LastSetupTimeZone
+	|| timezoneObj == dataPtr->LastUnnormSetupTimeZone
+      )
+    ) {
+	return dataPtr->LastSetupTZData;
+    }
+
     /* differentiate GMT and system zones, because used often */
-    /* simple caching, because almost used the tz-data of last timezone, (unnecessary to
-     * touch the refCount of it, because it is always referenced in TZData array)
+    /* simple caching, because almost used the tz-data of last timezone
      */
-    if (timezoneObj == dataPtr->LastSystemTimeZone) {
+    if (timezoneObj == dataPtr->SystemTimeZone) {
 	if (dataPtr->SystemSetupTZData != NULL)
 	    return dataPtr->SystemSetupTZData;
 	out = &dataPtr->SystemSetupTZData;
@@ -557,19 +599,25 @@ ClockGetTZData(
 	out = &dataPtr->GMTSetupTZData;
     }
     else
-    if (timezoneObj == dataPtr->LastSetupTimeZone) {
-	if (dataPtr->LastSetupTZData != NULL) {
-	    return dataPtr->LastSetupTZData;
+    if (timezoneObj == dataPtr->AnySetupTimeZone) {
+	if (dataPtr->AnySetupTZData != NULL) {
+	    return dataPtr->AnySetupTZData;
 	}
-	out = &dataPtr->LastSetupTZData;
+	out = &dataPtr->AnySetupTZData;
     }
 
     ret = Tcl_ObjGetVar2(interp, literals[LIT_TZDATA],
 	timezoneObj, TCL_LEAVE_ERR_MSG);
 
-    /* cache using corresponding slot */
-    if (ret != NULL && out != NULL)
-	*out = ret;
+    /* cache using corresponding slot and as last used */
+    if (out != NULL) {
+	Tcl_SetObjRef(*out, ret);
+    }
+		Tcl_SetObjRef(dataPtr->LastSetupTZData, ret);
+    if (dataPtr->LastSetupTimeZone != timezoneObj) {
+	Tcl_SetObjRef(dataPtr->LastSetupTimeZone, timezoneObj);
+	Tcl_UnsetObjRef(dataPtr->LastUnnormSetupTimeZone);
+		}
     return ret;
 }
 /*
@@ -584,9 +632,9 @@ ClockGetSystemTimeZone(
     Tcl_Obj **literals;
 
     /* if known (cached and same epoch) - return now */
-    if (dataPtr->LastSystemTimeZone != NULL 
+    if (dataPtr->SystemTimeZone != NULL 
 	  && dataPtr->LastTZEpoch == TzsetGetEpoch()) {
-	return dataPtr->LastSystemTimeZone;
+	return dataPtr->SystemTimeZone;
     }
 
     literals = dataPtr->literals;
@@ -610,15 +658,19 @@ ClockSetupTimeZone(
     Tcl_Obj *callargs[2];
 
     /* if cached (if already setup this one) */
-    if (timezoneObj == dataPtr->LastUsedSetupTimeZone) {
-	return timezoneObj;
+    if ( dataPtr->LastSetupTimeZone != NULL
+      && ( timezoneObj == dataPtr->LastSetupTimeZone
+	|| timezoneObj == dataPtr->LastUnnormSetupTimeZone
+      )
+    ) {
+	return dataPtr->LastSetupTimeZone;
     }
 
     /* differentiate GMT and system zones, because used often and already set */
     timezoneObj = NormTimezoneObj(dataPtr, timezoneObj);
     if (   timezoneObj == dataPtr->GMTSetupTimeZone
-	|| timezoneObj == dataPtr->LastSystemTimeZone
-	|| timezoneObj == dataPtr->LastSetupTimeZone
+	|| timezoneObj == dataPtr->SystemTimeZone
+	|| timezoneObj == dataPtr->AnySetupTimeZone
     ) {
 	return timezoneObj;
     }
@@ -627,7 +679,7 @@ ClockSetupTimeZone(
     callargs[1] = timezoneObj;
 
     if (Tcl_EvalObjv(interp, 2, callargs, 0) == TCL_OK) {
-	return NormTimezoneObj(dataPtr, timezoneObj);
+	return dataPtr->LastSetupTimeZone;
     }
     return NULL;
 }
@@ -743,6 +795,7 @@ ClockConvertlocaltoutcObjCmd(
     int created = 0;
     int status;
 
+    fields.tzName = NULL;
     /*
      * Check params and convert time.
      */
@@ -936,22 +989,6 @@ ClockGetDateFields(
 
     return TCL_OK;
 }
-
-inline
-SetDateFieldsTimeZone(
-    TclDateFields *fields,
-    Tcl_Obj *timezoneObj)
-{
-    if (fields->tzName != timezoneObj) {
-	if (timezoneObj) {
-	    Tcl_IncrRefCount(timezoneObj);
-	}
-	if (fields->tzName != NULL) {
-	    Tcl_DecrRefCount(fields->tzName);
-	}
-	fields->tzName = timezoneObj;
-    }
-}
 
 /*
  *----------------------------------------------------------------------
@@ -1029,6 +1066,8 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
     int copied = 0;
     int status;
     int era = 0;
+
+    fields.tzName = NULL;
 
     /*
      * Check params.
@@ -1113,6 +1152,8 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     int copied = 0;
     int status;
     int era = 0;
+
+    fields.tzName = NULL;
 
     /*
      * Check params.
@@ -1457,7 +1498,7 @@ ConvertUTCToLocalUsingTable(
      * Convert the time.
      */
 
-    SetDateFieldsTimeZone(fields, cellv[3]);
+    Tcl_SetObjRef(fields->tzName, cellv[3]);
     fields->localSeconds = fields->seconds + fields->tzOffset;
     return TCL_OK;
 }
@@ -1550,7 +1591,7 @@ ConvertUTCToLocalUsingC(
     if (diff > 0) {
 	sprintf(buffer+5, "%02d", diff);
     }
-    SetDateFieldsTimeZone(fields, Tcl_NewStringObj(buffer, -1));
+    Tcl_SetObjRef(fields->tzName, Tcl_NewStringObj(buffer, -1));
     return TCL_OK;
 }
 
@@ -1646,6 +1687,8 @@ GetYearWeekDay(
 {
     TclDateFields temp;
     int dayOfFiscalYear;
+
+    temp.tzName = NULL;
 
     /*
      * Find the given date, minus three days, plus one year. That date's
@@ -1862,6 +1905,8 @@ GetJulianDayFromEraYearWeekDay(
     int firstMonday;		/* Julian day number of week 1, day 1 in the
 				 * given year */
     TclDateFields firstWeek;
+
+    firstWeek.tzName = NULL;
 
     /*
      * Find January 4 in the ISO8601 year, which will always be in week 1.
@@ -2557,13 +2602,16 @@ ClockScanObjCmd(
 
     if (1) {
 	/* TODO: Tcled Scan proc - */
+			  int ret;
 	Tcl_Obj *callargs[10];
 	memcpy(callargs, objv, objc * sizeof(*objv));
 				callargs[0] = Tcl_NewStringObj("::tcl::clock::__org_scan", -1);
-	return Tcl_EvalObjv(interp, objc, callargs, 0);
+				Tcl_IncrRefCount(callargs[0]);
+	ret = Tcl_EvalObjv(interp, objc, callargs, 0);
+				Tcl_DecrRefCount(callargs[0]);
+				return ret;
     }
-    // Tcl_SetObjResult(interp, Tcl_NewWideIntObj(10000000));
-
+    
     return TCL_OK;
 }
 
@@ -2589,7 +2637,6 @@ ClockFreeScan(
     int secondOfDay;		/* Seconds of day (time only calculation) */
     Tcl_WideInt seconds;
     int ret = TCL_ERROR;
-    // Tcl_Obj *cleanUpList = Tcl_NewObj();
 
     date.tzName = NULL;
 
@@ -2600,7 +2647,6 @@ ClockFreeScan(
 	if (timezoneObj == NULL) {
 	    goto done;
 	}
-	// Tcl_ListObjAppendElement(NULL, cleanUpList, timezoneObj);
     }
 
     /* Get the data for time changes in the given zone */
@@ -2673,12 +2719,16 @@ ClockFreeScan(
      */
 
     if (yy.dateHaveZone) {
+	Tcl_Obj *tzObjStor = NULL;
 	int minEast = -yy.dateTimezone;
 	int dstFlag = 1 - yy.dateDSTmode;
-	timezoneObj = ClockFormatNumericTimeZone(
+	tzObjStor = ClockFormatNumericTimeZone(
 			  60 * minEast + 3600 * dstFlag);
-	// Tcl_ListObjAppendElement(NULL, cleanUpList, timezoneObj);
-	timezoneObj = ClockSetupTimeZone(clientData, interp, timezoneObj);
+	
+	timezoneObj = ClockSetupTimeZone(clientData, interp, tzObjStor);
+	if (tzObjStor != timezoneObj) {
+	    Tcl_DecrRefCount(tzObjStor);
+	}
 	if (timezoneObj == NULL) {
 	    goto done;
 	}
@@ -2695,7 +2745,7 @@ ClockFreeScan(
      * Assemble date, time, zone into seconds-from-epoch
      */
 
-    SetDateFieldsTimeZone(&date, timezoneObj);
+    Tcl_SetObjRef(date.tzName, timezoneObj);
 
     if (yy.dateHaveTime == -1) {
 	secondOfDay = 0;
@@ -2853,10 +2903,7 @@ repeat_rel:
 
 done:
 
-    if (date.tzName != NULL) {
-	Tcl_DecrRefCount(date.tzName);
-    }
-    // Tcl_DecrRefCount(cleanUpList);
+    Tcl_UnsetObjRef(date.tzName);
 
     if (ret != TCL_OK) {
 	return ret;
@@ -2919,23 +2966,30 @@ ClockSecondsObjCmd(
  *----------------------------------------------------------------------
  */
 
-static unsigned int
+static unsigned long
 TzsetGetEpoch(void)
 {
-    static char* tzWas = INT2PTR(-1);	/* Previous value of TZ, protected by
-					 * clockMutex. */
-    static long tzNextRefresh = 0;	/* Latence before next refresh */
-    static unsigned int tzWasEpoch = 1; /* Epoch, signals that TZ changed */
+    static char* tzWas = INT2PTR(-1);	 /* Previous value of TZ, protected by
+					  * clockMutex. */
+    static long	 tzLastRefresh = 0;	 /* Used for latency before next refresh */
+    static unsigned long tzWasEpoch = 0; /* Epoch, signals that TZ changed */
+    static unsigned long tzEnvEpoch = 0; /* Last env epoch, for faster signaling, 
+					    that TZ changed via TCL */
     
-    const char *tzIsNow;		/* Current value of TZ */
+    const char *tzIsNow;		 /* Current value of TZ */
     
-    /* fast check whether environment was changed (once per second) */
+    /* 
+     * Prevent performance regression on some platforms by resolving of system time zone:
+     * small latency for check whether environment was changed (once per second)
+     * no latency if environment was chaned with tcl-env (compare both epoch values)
+     */
     Tcl_Time now;
     Tcl_GetTime(&now);
-    if (now.sec < tzNextRefresh) {
+    if (now.sec == tzLastRefresh && tzEnvEpoch == TclEnvEpoch) {
 	return tzWasEpoch;
     }
-    tzNextRefresh = now.sec + 1;
+    tzEnvEpoch = TclEnvEpoch;
+    tzLastRefresh = now.sec;
 
     /* check in lock */
     Tcl_MutexLock(&clockMutex);
