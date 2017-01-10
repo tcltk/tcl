@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.5-
+package require Tcl 8.5
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
 package provide msgcat 1.6.0
@@ -222,6 +222,56 @@ proc msgcat::mc {src args} {
 	0 { return [uplevel 1 [linsert $args 0 [namespace origin mcunknown]]] }
 	1 { return [DefaultUnknown {*}$args] }
 	default { return $result }
+    }
+}
+
+# msgcat::mcget --
+#
+#	Find the translation for the given string based on the given
+#	locale setting. Check the given namespace first, then look in each
+#	parent namespace until the source is found. If additional args are
+#	specified, use the format command to work them into the traslated
+#	string.
+#	If no catalog item is found, mcunknown is called in the caller frame
+#	and its result is returned.
+#
+# Arguments:
+#	src	The string to translate.
+#	args	Args to pass to the format command
+#
+# Results:
+#	Returns the translated string.  Propagates errors thrown by the
+#	format command.
+
+proc msgcat::mcget {ns loc src args} {
+    variable Msgs
+
+    if {$loc eq {C}} {
+	set loclist [PackagePreferences $ns]
+    } else {
+	variable PackageConfig
+	# if {![dict exists $PackageConfig $ns $loc]} {
+	#     set loc [mclocale]
+	# }
+	set loclist [dict get $PackageConfig locales $ns $loc]
+    }
+    for {set nscur $ns} {$nscur != ""} {set nscur [namespace parent $nscur]} {
+	foreach loc $loclist {
+	    if {[dict exists $Msgs $nscur $loc $src]} {
+		if {[llength $args]} {
+		    return [format [dict get $Msgs $nscur $loc $src] {*}$args]
+		} else {
+		    return [dict get $Msgs $nscur $loc $src]
+		}
+	    }
+	}
+    }
+    # call package local or default unknown command
+    set args [linsert $args 0 $loclist $src]
+    switch -exact -- [Invoke unknowncmd $args $ns result 1] {
+        0 { return [uplevel 1 [linsert $args 0 [namespace origin mcunknown]]] }
+        1 { return [DefaultUnknown {*}$args] }
+        default { return $result }
     }
 }
 
@@ -488,6 +538,7 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
 	    set loclist [GetPreferences $locale]
 	    set locale [lindex $loclist 0]
 	    dict set PackageConfig loclist $ns $loclist
+	    dict set PackageConfig locales $ns $locale $loclist
 
 	    # load eventual missing locales
 	    set loadedLocales [dict get $PackageConfig loadedlocales $ns]
@@ -521,6 +572,7 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
 		    [dict get $PackageConfig loadedlocales $ns] $LoadedLocales]
 	    dict unset PackageConfig loadedlocales $ns
 	    dict unset PackageConfig loclist $ns
+	    dict unset PackageConfig locales $ns
 
 	    # unset keys not in global loaded locales
 	    if {[dict exists $Msgs $ns]} {
