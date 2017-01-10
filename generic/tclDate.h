@@ -60,8 +60,8 @@ typedef struct TclDateFields {
     time_t minutes;		/* Minutes of day (in-between time only calculation) */
     time_t secondOfDay;		/* Seconds of day (in-between time only calculation) */
 
-    Tcl_Obj *tzName;		/* Time zone name (if set the refCount is incremented) */
-    Tcl_Obj *tzData;		/* Time zone data object (internally referenced) */
+    Tcl_Obj *tzName;		/* Name (or corresponding DST-abbreviation) of the
+				 * time zone, if set the refCount is incremented */
 } TclDateFields;
 
 #define ClockCacheableDateFieldsSize \
@@ -176,14 +176,14 @@ typedef struct ClockClientData {
     Tcl_Obj *LastSetupTZData;
     /* Cache for last base (last-second fast convert if base/tz not changed) */
     struct {
-	Tcl_Obj *TimeZone;
+	Tcl_Obj *timezoneObj;
 	TclDateFields Date;
     } lastBase;
     /* Las-minute cache for fast UTC2Local conversion */
     struct {
 	/* keys */
-	Tcl_Obj *tzData;
-	int  changeover;
+	Tcl_Obj	   *timezoneObj;
+	int	    changeover;
 	Tcl_WideInt seconds;
 	/* values */
 	time_t	    tzOffset;
@@ -192,8 +192,8 @@ typedef struct ClockClientData {
     /* Las-minute cache for fast Local2UTC conversion */
     struct {
 	/* keys */
-	Tcl_Obj *tzData;
-	int  changeover;
+	Tcl_Obj	   *timezoneObj;
+	int	    changeover;
 	Tcl_WideInt localSeconds;
 	/* values */
 	time_t	    tzOffset;
