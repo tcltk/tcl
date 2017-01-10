@@ -739,7 +739,7 @@ proc ::tcl::clock::ParseClockFormatFormat {procName format locale} {
 
     # Map away the locale-dependent composite format groups
 
-    EnterLocale $locale
+    set locale [EnterLocale $locale]
 
     # Change locale if a fresh locale has been given on the command line.
 
@@ -2189,6 +2189,7 @@ proc ::tcl::clock::EnterLocale { locale } {
     }
     # Select the locale, eventually load it
     mcpackagelocale set $locale
+    return $locale
 }
 
 #----------------------------------------------------------------------
@@ -3028,7 +3029,7 @@ proc ::tcl::clock::SetupTimeZone { timezone {alias {}} } {
 		 && [catch { LoadZoneinfoFile $timezone } - opts] } {
 
 		# Check may be a legacy zone:
-		
+
 		if { $alias eq {} && ![catch {
 		    set tzname [dict get $LegacyTimeZone [string tolower $timezone]]
 		}] } {
@@ -4460,6 +4461,9 @@ proc ::tcl::clock::AddDays { days clockval timezone changeover } {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::ChangeCurrentLocale {args} {
+
+    configure -default-locale [lindex $args 0]
+
     variable FormatProc
     variable LocaleNumeralCache
 
