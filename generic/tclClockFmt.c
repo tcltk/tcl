@@ -498,13 +498,24 @@ void DetermineGreedySearchLen(ClockFmtScnCmdArgs *opts,
 {
     register const char*p = yyInput;
     *minLen = 0;
-    *maxLen = info->dateEnd - p;
+    /* max length to the end regarding distance to end (min-width of following tokens) */
+    *maxLen = info->dateEnd - p - tok->endDistance;
 
     /* if no tokens anymore */
     if (!(tok+1)->map) {
 	/* should match to end or first space */
 	while (!isspace(UCHAR(*p)) && ++p < info->dateEnd) {};
 	*minLen = p - yyInput;
+    } else 
+    /* next token is a word */
+    if ((tok+1)->map->type == CTOKT_WORD) {
+	/* should match at least to the first char of this word */
+	while (*p != *((tok+1)->tokWord.start) && ++p < info->dateEnd) {};
+	*minLen = p - yyInput;
+    }
+
+    if (*minLen > *maxLen) {
+	*maxLen = *minLen;
     }
 }
 
@@ -1018,7 +1029,7 @@ static const char *ScnOTokenWrapMapIndex[2] = {
 static const char *ScnSpecTokenMapIndex = 
     " ";
 static ClockScanTokenMap ScnSpecTokenMap[] = {
-    {CTOKT_SPACE,  0, 0, 1, 0xffff, 0, 
+    {CTOKT_SPACE,  0, 0, 0, 0xffff, 0, 
 	NULL},
 };
 
@@ -1131,9 +1142,9 @@ ClockGetOrParseScanFormat(
 		tok->map = &scnMap[cp - mapIndex];
 		tok->tokWord.start = p;
 		/* calculate look ahead value by standing together tokens */
-		if (tok > fss->scnTok) {
-		    ClockScanToken     *prevTok = tok - 1;
+		if (tok > fss->scnTok && tok->map->minSize) {
 		    unsigned int	lookAhead = tok->map->minSize;
+		    ClockScanToken     *prevTok = tok - 1;
 
 		    while (prevTok >= fss->scnTok) {
 			if (prevTok->map->type != tok->map->type) {
@@ -1177,6 +1188,21 @@ word_tok:
 	    continue;
 	}
 
+	/* calculate end distance value for each tokens */
+	if (tok > fss->scnTok) {
+	    unsigned int	endDist = 0;
+	    ClockScanToken     *prevTok = tok-1;
+
+	    while (prevTok >= fss->scnTok) {
+		prevTok->endDistance = endDist;
+		if (prevTok->map->type != CTOKT_WORD) {
+		    endDist += prevTok->map->minSize;
+		} else {
+		    endDist += prevTok->tokWord.end - prevTok->tokWord.start + 1;
+		}
+		prevTok--;
+	    }
+	}	 
 done:
 	Tcl_MutexUnlock(&ClockFmtMutex);
     }
