@@ -84,7 +84,7 @@ TclStrIdxTreeSearch(
 {
     TclStrIdxTree *parent = tree, *prevParent = tree;
     TclStrIdx  *item = tree->firstPtr, *prevItem = NULL;
-    const char *s = start, *e, *cin, *preve;
+    const char *s = start, *f, *cin, *cinf, *prevf;
     int offs = 0;
 
     if (item == NULL) {
@@ -94,23 +94,23 @@ TclStrIdxTreeSearch(
     /* search in tree */
     do {
 	cin = TclGetString(item->key) + offs;
-	e = TclUtfFindEqual(s, end, cin, cin + item->length);
+	f = TclUtfFindEqualNCInLwr(s, end, cin, cin + item->length, &cinf);
 	/* if something was found */
-	if (e > s) {
+	if (f > s) {
 	    /* if whole string was found */
-	    if (e >= end) {
-		start = e;
+	    if (f >= end) {
+		start = f;
 		goto done;
 	    };
 	    /* set new offset and shift start string */
-	    offs += (e - s);
-	    s = e;
+	    offs += cinf - cin;
+	    s = f;
 	    /* if match item, go deeper as long as possible */
 	    if (offs >= item->length && item->childTree.firstPtr) {
 		/* save previuosly found item (if not ambigous) for 
 		 * possible fallback (few greedy match) */
 		if (item->value != -1) {
-		    preve = e;
+		    prevf = f;
 		    prevItem = item;
 		    prevParent = parent;
 		}
@@ -119,7 +119,7 @@ TclStrIdxTreeSearch(
 		continue;
 	    }
 	    /* no children - return this item and current chars found */
-	    start = e;
+	    start = f;
 	    goto done;
 	}
 
@@ -131,7 +131,7 @@ TclStrIdxTreeSearch(
     if (prevItem != NULL) {
 	item = prevItem;
 	parent = prevParent;
-	start = preve;
+	start = prevf;
     }
 
 done:

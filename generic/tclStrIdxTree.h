@@ -89,6 +89,41 @@ TclUtfFindEqualNC(
     return ret;
 }
 
+inline const char *
+TclUtfFindEqualNCInLwr(
+    register const char *cs,	/* UTF string (in anycase) to find in cin. */
+    register const char *cse,	/* End of cs */
+    register const char *cin,	/* UTF string (in lowercase) will be browsed. */
+    register const char *cine,	/* End of cin */
+    const char	     **cinfnd)	/* Return position in cin */
+{
+    register const char *ret = cs;
+    Tcl_UniChar ch1, ch2;
+    do {
+	cs += TclUtfToUniChar(cs, &ch1);
+	cin += TclUtfToUniChar(cin, &ch2);
+	if (ch1 != ch2) {
+	    ch1 = Tcl_UniCharToLower(ch1);
+	    if (ch1 != ch2) break;
+	}
+	*cinfnd = cin;
+    } while ((ret = cs) < cse && cin < cine);
+    return ret;
+}
+
+inline char *
+TclUtfNext(
+    register const char *src)	/* The current location in the string. */
+{
+    if (((unsigned char) *(src)) < 0xC0) {
+	return ++src;
+    } else {
+	Tcl_UniChar ch;
+	return src + TclUtfToUniChar(src, &ch);
+    }
+}
+
+
 /*
  * Primitives to safe set, reset and free references.
  */
