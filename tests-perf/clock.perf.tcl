@@ -32,7 +32,7 @@ proc {**STOP**} {args} {
 }
 
 proc _test_get_commands {lst} {
-  regsub -all {(?:^|\n)[ \t]*(\#[^\n]*)(?=\n\s*[\{\#])} $lst "\n{\\1}"
+  regsub -all {(?:^|\n)[ \t]*(\#[^\n]*|\msetup\M[^\n]*|\mcleanup\M[^\n]*)(?=\n\s*(?:[\{\#]|setup|cleanup))} $lst "\n{\\1}"
 }
 
 proc _test_out_total {} {
@@ -83,7 +83,11 @@ proc _test_run {reptime lst {outcmd {puts $_(r)}}} {
 
   foreach _(c) [_test_get_commands $lst] {
     puts "% [regsub -all {\n[ \t]*} $_(c) {; }]"
-    if {[regexp {\s*\#} $_(c)]} continue
+    if {[regexp {^\s*\#} $_(c)]} continue
+    if {[regexp {^\s*(?:setup|cleanup)\s+} $_(c)]} {
+      puts [if 1 [lindex $_(c) 1]]
+      continue
+    }
     set _(r) [if 1 $_(c)]
     if {$outcmd ne {}} $outcmd
     puts [set _(m) [timerate $_(c) $reptime]]
@@ -122,11 +126,11 @@ proc test-format {{reptime 1000}} {
     # Format : time only (CEST)
     {clock format 1482525936 -format "%H:%M:%S" -timezone :CET}
     # Format : default (in gmt)
-    {clock format 1482525936 -gmt 1}
+    {clock format 1482525936 -gmt 1 -locale en}
     # Format : default (system zone)
-    {clock format 1482525936}
+    {clock format 1482525936 -locale en}
     # Format : default (CEST)
-    {clock format 1482525936 -timezone :CET}
+    {clock format 1482525936 -timezone :CET -locale en}
     # Format : ISO date-time (in gmt, numeric zone)
     {clock format 1246379400 -format "%Y-%m-%dT%H:%M:%S %z" -gmt 1}
     # Format : ISO date-time (system zone, CEST, numeric zone)
@@ -149,15 +153,19 @@ proc test-format {{reptime 1000}} {
     {clock format 1246379400 -format "%b" -locale en -gmt 1}
     # Format : locale lookup 2 tables - month and day:
     {clock format 1246379400 -format "%b %Od" -locale en -gmt 1}
+    # Format : locale lookup 3 tables - week, month and day:
+    {clock format 1246379400 -format "%a %b %Od" -locale en -gmt 1}
+    # Format : locale lookup 4 tables - week, month, day and year:
+    {clock format 1246379400 -format "%a %b %Od %Oy" -locale en -gmt 1}
 
     # Format : dynamic clock value (without converter caches):
-    {set i 0; continue}
-    {clock format [incr i] -format "%Y-%m-%dT%H:%M:%S" -locale en -gmt 1}
-    {puts [clock format $i -format "%Y-%m-%dT%H:%M:%S" -locale en -gmt 1]\n; continue}
+    setup {set i 0}
+    {clock format [incr i] -format "%Y-%m-%dT%H:%M:%S" -locale en -timezone :CET}
+    cleanup {puts [clock format $i -format "%Y-%m-%dT%H:%M:%S" -locale en -timezone :CET]}
     # Format : dynamic clock value (without any converter caches, zone range overflow):
-    {set i 0; continue}
-    {clock format [incr i 86400] -format "%Y-%m-%dT%H:%M:%S" -locale en -gmt 1}
-    {puts [clock format $i -format "%Y-%m-%dT%H:%M:%S" -locale en -gmt 1]\n; continue}
+    setup {set i 0}
+    {clock format [incr i 86400] -format "%Y-%m-%dT%H:%M:%S" -locale en -timezone :CET}
+    cleanup {puts [clock format $i -format "%Y-%m-%dT%H:%M:%S" -locale en -timezone :CET]}
 
     # Format : dynamic format (cacheable)
     {clock format 1246379415 -format [string trim "%d.%m.%Y %H:%M:%S "] -gmt 1}
@@ -310,4 +318,4 @@ proc test {{reptime 1000}} {
   puts \n**OK**
 }
 
-test 100; # ms
+test 500; # ms

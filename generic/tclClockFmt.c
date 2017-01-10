@@ -1366,7 +1366,7 @@ ClockScnToken_StarDate_Proc(ClockFmtScnCmdArgs *opts,
 
     GetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
 
-    yydate.seconds =
+    yydate.localSeconds =
 	-210866803200L
 	+ ( SECONDS_PER_DAY * (Tcl_WideInt)yydate.julianDay )
 	+ ( SECONDS_PER_DAY * fractDay / fractDayDiv );
@@ -1439,7 +1439,7 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     /* %t */
     {CTOKT_CHAR, 0, 0, 1, 1, 0, NULL, "\t"},
     /* %Q */
-    {CTOKT_PARSER, CLF_POSIXSEC, 0, 16, 30, 0,
+    {CTOKT_PARSER, CLF_LOCALSEC, 0, 16, 30, 0,
 	ClockScnToken_StarDate_Proc, NULL},
 };
 static const char *ScnSTokenMapAliasIndex[2] = {
@@ -2109,7 +2109,7 @@ ClockFmtToken_StarDate_Proc(
 	fractYear, '0', 3);
     *dateFmt->output++ = '.';
     dateFmt->output = _itoaw(dateFmt->output,
-	dateFmt->date.seconds % SECONDS_PER_DAY / ( SECONDS_PER_DAY / 10 ), '0', 1);
+	dateFmt->date.localSeconds % SECONDS_PER_DAY / ( SECONDS_PER_DAY / 10 ), '0', 1);
 
     return TCL_OK;
 }

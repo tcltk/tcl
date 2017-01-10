@@ -3488,7 +3488,7 @@ ClockSecondsObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TzsetIfNecessary --
+ * TzsetGetEpoch --, TzsetIfNecessary --
  *
  *	Calls the tzset() library function if the contents of the TZ
  *	environment variable has changed.
