@@ -107,13 +107,13 @@ TCL_DECLARE_MUTEX(clockMutex)
  */
 
 static int		ConvertUTCToLocal(ClientData clientData, Tcl_Interp *,
-			    TclDateFields *, Tcl_Obj *, int);
+			    TclDateFields *, Tcl_Obj *timezoneObj, int);
 static int		ConvertUTCToLocalUsingTable(Tcl_Interp *,
 			    TclDateFields *, int, Tcl_Obj *const[]);
 static int		ConvertUTCToLocalUsingC(Tcl_Interp *,
 			    TclDateFields *, int);
 static int		ConvertLocalToUTC(ClientData clientData, Tcl_Interp *,
-			    TclDateFields *, Tcl_Obj *, int);
+			    TclDateFields *, Tcl_Obj *timezoneObj, int);
 static int		ConvertLocalToUTCUsingTable(Tcl_Interp *,
 			    TclDateFields *, int, Tcl_Obj *const[]);
 static int		ConvertLocalToUTCUsingC(Tcl_Interp *,
@@ -138,7 +138,7 @@ static int		ClockConvertlocaltoutcObjCmd(
 
 static int		ClockGetDateFields(ClientData clientData, 
 			    Tcl_Interp *interp, TclDateFields *fields, 
-			    Tcl_Obj *tzdata, int changeover);
+			    Tcl_Obj *timezoneObj, int changeover);
 static int		ClockGetdatefieldsObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -287,10 +287,10 @@ TclClockInit(
     data->LastSetupTimeZone = NULL;
     data->LastSetupTZData = NULL;
 
-    data->lastBase.TimeZone = NULL;
-    data->UTC2Local.tzData = NULL;
+    data->lastBase.timezoneObj = NULL;
+    data->UTC2Local.timezoneObj = NULL;
     data->UTC2Local.tzName = NULL;
-    data->Local2UTC.tzData = NULL;
+    data->Local2UTC.timezoneObj = NULL;
 
     /*
      * Install the commands.
@@ -335,10 +335,10 @@ ClockConfigureClear(
     Tcl_UnsetObjRef(data->LastSetupTimeZone);
     Tcl_UnsetObjRef(data->LastSetupTZData);
 
-    Tcl_UnsetObjRef(data->lastBase.TimeZone);
-    Tcl_UnsetObjRef(data->UTC2Local.tzData);
+    Tcl_UnsetObjRef(data->lastBase.timezoneObj);
+    Tcl_UnsetObjRef(data->UTC2Local.timezoneObj);
     Tcl_UnsetObjRef(data->UTC2Local.tzName);
-    Tcl_UnsetObjRef(data->Local2UTC.tzData);
+    Tcl_UnsetObjRef(data->Local2UTC.timezoneObj);
 }
 
 static void
@@ -699,11 +699,11 @@ ClockFormatNumericTimeZone(int z) {
  *	is available.
  *
  * Usage:
- *	::tcl::clock::ConvertUTCToLocal dictionary tzdata changeover
+ *	::tcl::clock::ConvertUTCToLocal dictionary timezone changeover
  *
  * Parameters:
  *	dict - Dictionary containing a 'localSeconds' entry.
- *	tzdata - Time zone data
+ *	timezone - Time zone
  *	changeover - Julian Day of the adoption of the Gregorian calendar.
  *
  * Results:
@@ -739,7 +739,7 @@ ClockConvertlocaltoutcObjCmd(
      */
 
     if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dict tzdata changeover");
+	Tcl_WrongNumArgs(interp, 1, objv, "dict timezone changeover");
 	return TCL_ERROR;
     }
     dict = objv[1];
@@ -789,12 +789,11 @@ ClockConvertlocaltoutcObjCmd(
  *	formatting a date, and populates a dictionary with them.
  *
  * Usage:
- *	::tcl::clock::GetDateFields seconds tzdata changeover
+ *	::tcl::clock::GetDateFields seconds timezone changeover
  *
  * Parameters:
  *	seconds - Time expressed in seconds from the Posix epoch.
- *	tzdata - Time zone data of the time zone in which time is to be
- *		 expressed.
+ *	timezone - Time zone in which time is to be expressed.
  *	changeover - Julian Day Number at which the current locale adopted
  *		     the Gregorian calendar
  *
@@ -830,7 +829,7 @@ ClockGetdatefieldsObjCmd(
      */
 
     if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "seconds tzdata changeover");
+	Tcl_WrongNumArgs(interp, 1, objv, "seconds timezone changeover");
 	return TCL_ERROR;
     }
     if (Tcl_GetWideIntFromObj(interp, objv[1], &fields.seconds) != TCL_OK
@@ -900,14 +899,14 @@ ClockGetDateFields(
     Tcl_Interp *interp,		/* Tcl interpreter */
     TclDateFields *fields,	/* Pointer to result fields, where
 				 * fields->seconds contains date to extract */
-    Tcl_Obj *tzdata,		/* Time zone data object or NULL for gmt */
+    Tcl_Obj *timezoneObj,	/* Time zone object or NULL for gmt */
     int changeover)		/* Julian Day Number */
 {
     /*
      * Convert UTC time to local.
      */
 
-    if (ConvertUTCToLocal(clientData, interp, fields, tzdata, 
+    if (ConvertUTCToLocal(clientData, interp, fields, timezoneObj,
 	    changeover) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1165,18 +1164,26 @@ ConvertLocalToUTC(
     ClientData clientData,	/* Client data of the interpreter */
     Tcl_Interp *interp,		/* Tcl interpreter */
     TclDateFields *fields,	/* Fields of the time */
-    Tcl_Obj *tzdata,		/* Time zone data */
+    Tcl_Obj *timezoneObj,	/* Time zone */
     int changeover)		/* Julian Day of the Gregorian transition */
 {
     ClockClientData *dataPtr = clientData;
+    Tcl_Obj *tzdata;		/* Time zone data */
     int rowc;			/* Number of rows in tzdata */
     Tcl_Obj **rowv;		/* Pointers to the rows */
+
+    /* fast phase-out for shared GMT-object (don't need to convert UTC 2 UTC) */
+    if (timezoneObj == dataPtr->GMTSetupTimeZone && dataPtr->GMTSetupTimeZone != NULL) {
+	fields->seconds = fields->localSeconds;
+	fields->tzOffset = 0;
+	return TCL_OK;
+    }
 
     /*
      * Check cacheable conversion could be used
      * (last-minute Local2UTC cache with the same TZ)
      */
-    if ( tzdata == dataPtr->Local2UTC.tzData
+    if ( timezoneObj == dataPtr->Local2UTC.timezoneObj
       && ( fields->localSeconds == dataPtr->Local2UTC.localSeconds
 	|| fields->localSeconds / 60 == dataPtr->Local2UTC.localSeconds / 60
       )
@@ -1191,6 +1198,11 @@ ConvertLocalToUTC(
     /*
      * Unpack the tz data.
      */
+
+    tzdata = ClockGetTZData(clientData, interp, timezoneObj);
+    if (tzdata == NULL) {
+	return TCL_ERROR;
+    }
 
     if (TclListObjGetElements(interp, tzdata, &rowc, &rowv) != TCL_OK) {
 	return TCL_ERROR;
@@ -1212,7 +1224,7 @@ ConvertLocalToUTC(
     }
 
     /* Cache the last conversion */
-    Tcl_SetObjRef(dataPtr->Local2UTC.tzData, tzdata);
+    Tcl_SetObjRef(dataPtr->Local2UTC.timezoneObj, timezoneObj);
     dataPtr->Local2UTC.localSeconds = fields->localSeconds;
     dataPtr->Local2UTC.changeover = changeover;
     dataPtr->Local2UTC.tzOffset = fields->tzOffset;
@@ -1432,18 +1444,34 @@ ConvertUTCToLocal(
     ClientData clientData,	/* Client data of the interpreter */
     Tcl_Interp *interp,		/* Tcl interpreter */
     TclDateFields *fields,	/* Fields of the time */
-    Tcl_Obj *tzdata,		/* Time zone data */
+    Tcl_Obj *timezoneObj,	/* Time zone */
     int changeover)		/* Julian Day of the Gregorian transition */
 {
     ClockClientData *dataPtr = clientData;
+    Tcl_Obj *tzdata;		/* Time zone data */
     int rowc;			/* Number of rows in tzdata */
     Tcl_Obj **rowv;		/* Pointers to the rows */
+
+    /* fast phase-out for shared GMT-object (don't need to convert UTC 2 UTC) */
+    if (timezoneObj == dataPtr->GMTSetupTimeZone 
+	&& dataPtr->GMTSetupTimeZone != NULL 
+	&& dataPtr->GMTSetupTZData != NULL
+    ) {
+	fields->localSeconds = fields->seconds;
+	fields->tzOffset = 0;
+	if ( TclListObjGetElements(interp, dataPtr->GMTSetupTZData, &rowc, &rowv) != TCL_OK
+	  || Tcl_ListObjIndex(interp, rowv[0], 3, &fields->tzName) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	Tcl_IncrRefCount(fields->tzName);
+	return TCL_OK;
+    }
 
     /*
      * Check cacheable conversion could be used
      * (last-minute UTC2Local cache with the same TZ)
      */
-    if ( tzdata == dataPtr->UTC2Local.tzData
+    if ( timezoneObj == dataPtr->UTC2Local.timezoneObj
       && ( fields->seconds == dataPtr->UTC2Local.seconds
 	|| fields->seconds / 60 == dataPtr->UTC2Local.seconds / 60
       )
@@ -1459,6 +1487,11 @@ ConvertUTCToLocal(
     /*
      * Unpack the tz data.
      */
+
+    tzdata = ClockGetTZData(clientData, interp, timezoneObj);
+    if (tzdata == NULL) {
+	return TCL_ERROR;
+    }
 
     if (TclListObjGetElements(interp, tzdata, &rowc, &rowv) != TCL_OK) {
 	return TCL_ERROR;
@@ -1480,7 +1513,7 @@ ConvertUTCToLocal(
     }
 
     /* Cache the last conversion */
-    Tcl_SetObjRef(dataPtr->UTC2Local.tzData, tzdata);
+    Tcl_SetObjRef(dataPtr->UTC2Local.timezoneObj, timezoneObj);
     dataPtr->UTC2Local.seconds = fields->seconds;
     dataPtr->UTC2Local.changeover = changeover;
     dataPtr->UTC2Local.tzOffset = fields->tzOffset;
@@ -2607,32 +2640,27 @@ ClockScanObjCmd(
     if (opts.timezoneObj == NULL) {
 	goto done;
     }
+    // Tcl_SetObjRef(yydate.tzName, opts.timezoneObj);
 
     /*
      * Extract year, month and day from the base time for the parser to use as
      * defaults
      */
 
-    yydate.tzData = ClockGetTZData(clientData, interp, opts.timezoneObj);
-    if (yydate.tzData == NULL) {
-	goto done;
-    }
-    Tcl_SetObjRef(yydate.tzName, opts.timezoneObj);
-
     /* check base fields already cached (by TZ, last-second cache) */
-    if ( dataPtr->lastBase.TimeZone == opts.timezoneObj
+    if ( dataPtr->lastBase.timezoneObj == opts.timezoneObj
       && dataPtr->lastBase.Date.seconds == baseVal) {
 	memcpy(&yydate, &dataPtr->lastBase.Date, ClockCacheableDateFieldsSize);
     } else {
 	/* extact fields from base */
 	yydate.seconds = baseVal;
-	if (ClockGetDateFields(clientData, interp, &yydate, yydate.tzData,
+	if (ClockGetDateFields(clientData, interp, &yydate, opts.timezoneObj,
 	      GREGORIAN_CHANGE_DATE) != TCL_OK) {
 	    goto done;
 	}
 	/* cache last base */
 	memcpy(&dataPtr->lastBase.Date, &yydate, ClockCacheableDateFieldsSize);
-	Tcl_SetObjRef(dataPtr->lastBase.TimeZone, opts.timezoneObj);
+	Tcl_SetObjRef(dataPtr->lastBase.timezoneObj, opts.timezoneObj);
     }
 
     /* seconds are in localSeconds (relative base date), so reset time here */
@@ -2700,8 +2728,8 @@ ClockScanObjCmd(
 	    + ( yySeconds % SECONDS_PER_DAY );
     }
 
-    if (ConvertLocalToUTC(clientData, interp, &yydate, yydate.tzData, GREGORIAN_CHANGE_DATE)
-	  != TCL_OK) {
+    if (ConvertLocalToUTC(clientData, interp, &yydate, opts.timezoneObj, 
+	  GREGORIAN_CHANGE_DATE) != TCL_OK) {
 	goto done;
     }
 
@@ -2798,12 +2826,8 @@ ClockFreeScan(
 	if (opts->timezoneObj == NULL) {
 	    goto done;
 	}
-	yydate.tzData = ClockGetTZData(clientData, interp, opts->timezoneObj);
-	if (yydate.tzData == NULL) {
-	    goto done;
-	}
 
-	Tcl_SetObjRef(yydate.tzName, opts->timezoneObj);
+	// Tcl_SetObjRef(yydate.tzName, opts->timezoneObj);
 
 	info->flags |= CLF_INVALIDATE_SECONDS;
     }
