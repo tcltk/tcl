@@ -15,60 +15,82 @@
 # of this file.
 # 
 
+set ::env(TCL_TZ) :CET
+
+proc {**STOP**} {args} {
+  return -code error -level 2 "**STOP** in [info level [expr {[info level]-1}]] [join $args { }]" 
+}
+
+proc _test_get_commands {lst} {
+  regsub -all {(?:^|\n)[ \t]*(\#[^\n]*)(?=\n\s*[\{\#])} $lst "\n{\\1}"
+}
+
 proc test-scan {{rep 100000}} {
-  foreach {comment c} {
-    "# FreeScan : relative date"
+  foreach c [_test_get_commands {
+    # FreeScan : relative date
     {clock scan "5 years 18 months 385 days" -base 0 -gmt 1}
-    "# FreeScan : relative date with relative weekday"
+    # FreeScan : relative date with relative weekday
     {clock scan "5 years 18 months 385 days Fri" -base 0 -gmt 1}
-    "# FreeScan : relative date with ordinal month"
+    # FreeScan : relative date with ordinal month
     {clock scan "5 years 18 months 385 days next 1 January" -base 0 -gmt 1}
-    "# FreeScan : relative date with ordinal month and relative weekday"
+    # FreeScan : relative date with ordinal month and relative weekday
     {clock scan "5 years 18 months 385 days next January Fri" -base 0 -gmt 1}
-    "# FreeScan : ordinal month"
+    # FreeScan : ordinal month
     {clock scan "next January" -base 0 -gmt 1}
-    "# FreeScan : relative week"
+    # FreeScan : relative week
     {clock scan "next Fri" -base 0 -gmt 1}
-    "# FreeScan : relative weekday and week offset "
+    # FreeScan : relative weekday and week offset 
     {clock scan "next January + 2 week" -base 0 -gmt 1}
-    "# FreeScan : time only with base"
+    # FreeScan : time only with base
     {clock scan "19:18:30" -base 148863600 -gmt 1}
-    "# FreeScan : time only without base"
+    # FreeScan : time only without base, gmt
     {clock scan "19:18:30" -gmt 1}
-    "# FreeScan : date, system time zone"
+    # FreeScan : time only without base, system
+    {clock scan "19:18:30"}
+    # FreeScan : date, system time zone
     {clock scan "05/08/2016 20:18:30"}
-    "# FreeScan : date, supplied time zone"
+    # FreeScan : date, supplied time zone
     {clock scan "05/08/2016 20:18:30" -timezone :CET}
-    "# FreeScan : date, supplied gmt (equivalent -timezone :GMT)"
+    # FreeScan : date, supplied gmt (equivalent -timezone :GMT)
     {clock scan "05/08/2016 20:18:30" -gmt 1}
-    "# FreeScan : time only, numeric zone in string, base time gmt (exchange zones between gmt / -0500)"
+    # FreeScan : date, supplied time zone gmt
+    {clock scan "05/08/2016 20:18:30" -timezone :GMT}
+    # FreeScan : time only, numeric zone in string, base time gmt (exchange zones between gmt / -0500)
     {clock scan "20:18:30 -0500" -base 148863600 -gmt 1}
-    "# FreeScan : time only, zone in string (exchange zones between system / gmt)"
+    # FreeScan : time only, zone in string (exchange zones between system / gmt)
     {clock scan "19:18:30 GMT" -base 148863600}
-  } {
-    if {[string first "**STOP**" $comment] != -1} { return -code error "**STOP**" }
-    puts "\n% $comment\n% $c"
-    puts [clock format [{*}$c] -locale en]
+    # FreeScan : fast switch of zones in cycle - GMT, MST, CET (system) and EST
+    {clock scan "19:18:30 MST" -base 148863600 -gmt 1
+     clock scan "19:18:30 EST" -base 148863600
+    }
+  }] {
+    puts "% [regsub -all {\n[ \t]*} $c {; }]"
+    if {[regexp {\s*\#} $c]} continue
+    puts [clock format [if 1 $c] -locale en]
     puts [time $c $rep]
+    puts ""
   }
 }
 
 proc test-other {{rep 100000}} {
-  foreach {comment c} {
-    "# Bad zone"
-    {catch {clock scan "1 day" -timezone BAD_ZONE}}
-  } {
-    if {[string first "**STOP**" $comment] != -1} { return -code error "**STOP**" }
-    puts "\n% $comment\n% $c"
+  foreach c [_test_get_commands {
+    # Bad zone
+    {catch {clock scan "1 day" -timezone BAD_ZONE -locale en}}
+  }] {
+    puts "% [regsub -all {\n[ \t]*} $c {; }]"
+    if {[regexp {\s*\#} $c]} continue
     puts [if 1 $c]
     puts [time $c $rep]
+    puts ""
   }
 }
 
-set factor 10; # 50
-if 1 {;#
+proc test {factor} {
+  puts ""
   test-scan [expr 10000 * $factor]
   test-other [expr 5000 * $factor]
 
   puts \n**OK**
-};#
+}
+
+test 20; # 50

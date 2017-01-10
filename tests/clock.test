@@ -35803,6 +35803,27 @@ test clock-34.40 {clock scan, next day of week} {
     clock format [clock scan "next thursday" -base [clock scan 20000112]] \
 	    -format {%b %d, %Y}
 } "Jan 20, 2000"
+test clock-34.40.1 {clock scan, ordinal month after relative date} {
+    # This will fail without the bug fix (clock.tcl), as still missing
+    # month/julian day conversion before ordinal month increment
+    clock format [ \
+        clock scan "5 years 18 months 387 days" -base 0 -gmt 1
+    ] -format {%a, %b %d, %Y} -gmt 1 -locale en_US_roman
+} "Sat, Jul 23, 1977"
+test clock-34.40.2 {clock scan, ordinal month after relative date} {
+    # This will fail without the bug fix (clock.tcl), as still missing
+    # month/julian day conversion before ordinal month increment
+    clock format [ \
+        clock scan "5 years 18 months 387 days next Jan" -base 0 -gmt 1
+    ] -format {%a, %b %d, %Y} -gmt 1 -locale en_US_roman
+} "Mon, Jan 23, 1978"
+test clock-34.40.3 {clock scan, day of week after ordinal date} {
+    # This will fail without the bug fix (clock.tcl), because the relative
+    # week day should be applied after whole date conversion
+    clock format [ \
+        clock scan "5 years 18 months 387 days next January Fri" -base 0 -gmt 1
+    ] -format {%a, %b %d, %Y} -gmt 1 -locale en_US_roman
+} "Fri, Jan 27, 1978"
 
 # weekday specification and base.
 test clock-34.41 {2nd monday in november} {
