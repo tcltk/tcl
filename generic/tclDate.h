@@ -204,6 +204,7 @@ typedef struct DateInfo {
 
     time_t *dateRelPointer;
 
+    time_t dateSpaceCount;
     time_t dateDigitCount;
 
     time_t dateCentury;
@@ -241,6 +242,7 @@ typedef struct DateInfo {
 #define yyRelPointer	(info->dateRelPointer)
 #define yyInput	    (info->dateInput)
 #define yyDigitCount	(info->dateDigitCount)
+#define yySpaceCount	(info->dateSpaceCount)
 
 inline void
 ClockInitDateInfo(DateInfo *info) {
