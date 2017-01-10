@@ -4886,6 +4886,13 @@ typedef struct NRE_callback {
 #define Tcl_Free(ptr)                 TclpFree(ptr)
 #endif
 
+/*
+ * Other externals.
+ */
+
+MODULE_SCOPE unsigned long TclEnvEpoch; /* Epoch of the tcl environment 
+                                         * (if changed with tcl-env). */
+
 #endif /* _TCLINT */
 
 /*

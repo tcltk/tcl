@@ -881,6 +881,7 @@ ObjListSearch(ClockFmtScnCmdArgs *opts,
     return TCL_RETURN;
 }
 #if 0
+/* currently unused */
 
 static int 
 LocaleListSearch(ClockFmtScnCmdArgs *opts, 
@@ -1042,6 +1043,7 @@ ClockStrIdxTreeSearch(ClockFmtScnCmdArgs *opts,
     return TCL_OK;
 }
 #if 0
+/* currently unused */
 
 static int 
 StaticListSearch(ClockFmtScnCmdArgs *opts, 
@@ -1093,6 +1095,7 @@ ClockScnToken_Month_Proc(ClockFmtScnCmdArgs *opts,
     DateInfo *info, ClockScanToken *tok)
 {
 #if 0
+/* currently unused, test purposes only */
     static const char * months[] = {
 	/* full */
 	"January", "February", "March",

@@ -1960,6 +1960,32 @@ DictSizeCmd(
 
 /*
  *----------------------------------------------------------------------
+ *
+ * Tcl_DictObjSmartRef --
+ *
+ *	This function returns new tcl-object with the smart reference to
+ *	dictionary object.
+ *
+ *	Object returned with this function is a smart reference (pointer),
+ *	so new object of type tclDictType, that directly references given
+ *	dictionary object (with internally increased refCount).
+ *
+ *	The usage of such pointer objects allows to hold more as one
+ *	reference to the same real dictionary object, allows to make a pointer
+ *	to part of another dictionary, allows to change the dictionary without
+ *	regarding of the "shared" state of the dictionary object.
+ *
+ *	Prevents "called with shared object" exception if object is multiple
+ *	referenced.
+ *
+ * Results:
+ *	The newly create object (contains smart reference) is returned.
+ *	The returned object has a ref count of 0.
+ *
+ * Side effects:
+ *	Increases ref count of the referenced dictionary.
+ *
+ *----------------------------------------------------------------------
  */
 
 Tcl_Obj *
@@ -1991,9 +2017,9 @@ Tcl_DictObjSmartRef(
  *
  * DictSmartRefCmd --
  *
- *	This function implements the "dict smartref" Tcl command. See the user
- *	documentation for details on what it does, and TIP#111 for the formal
- *	specification.
+ *	This function implements the "dict smartref" Tcl command.
+ *
+ *	See description of Tcl_DictObjSmartRef for details.
  *
  * Results:
  *	A standard Tcl result.
