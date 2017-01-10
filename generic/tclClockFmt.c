@@ -723,24 +723,36 @@ inline
 void DetermineGreedySearchLen(ClockFmtScnCmdArgs *opts,
     DateInfo *info, ClockScanToken *tok, int *minLen, int *maxLen)
 {
-    register const char*p = yyInput;
+    register const char *p = yyInput,
+			*end = info->dateEnd;
     *minLen = 0;
-    /* max length to the end regarding distance to end (min-width of following tokens) */
-    *maxLen = info->dateEnd - p - tok->endDistance;
 
-    /* if no tokens anymore */
-    if (!(tok+1)->map) {
-	/* should match to end or first space */
-	while (!isspace(UCHAR(*p)) && ++p < info->dateEnd) {};
-	*minLen = p - yyInput;
-    } else 
-    /* next token is a word */
-    if ((tok+1)->map->type == CTOKT_WORD) {
-	/* should match at least to the first char of this word */
-	while (*p != *((tok+1)->tokWord.start) && ++p < info->dateEnd) {};
-	*minLen = p - yyInput;
+    /* if still tokens available */
+    if ((tok+1)->map) {
+	end -= tok->endDistance + yySpaceCount;
+	/* next token is a word */
+	switch ((tok+1)->map->type) {
+	case CTOKT_WORD:
+	    /* should match at least to the first char of this word */
+	    while (*p != *((tok+1)->tokWord.start) && ++p < end) {};
+	    *minLen = p - yyInput;
+	break;
+	case CTOKT_CHAR:
+	    while (*p != *((char *)(tok+1)->map->data) && ++p < end) {};
+	    *minLen = p - yyInput;
+	break;
+	}
     }
 
+    /* max length to the end regarding distance to end (min-width of following tokens) */
+    *maxLen = end - p;
+    if (*maxLen > tok->map->maxSize) {
+	*maxLen = tok->map->maxSize;
+    };
+
+    if (*minLen < tok->map->minSize) {
+	*minLen = tok->map->minSize;
+    } 
     if (*minLen > *maxLen) {
 	*maxLen = *minLen;
     }
@@ -1384,7 +1396,7 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     {CTOKT_DIGIT, CLF_MONTH, 0, 1, 2, TclOffset(DateInfo, date.month),
 	NULL},
     /* %b %B %h */
-    {CTOKT_PARSER, CLF_MONTH, 0, 0, 0, 0,
+    {CTOKT_PARSER, CLF_MONTH, 0, 0, 0xffff, 0,
 	    ClockScnToken_Month_Proc},
     /* %y */
     {CTOKT_DIGIT, CLF_YEAR, 0, 1, 2, TclOffset(DateInfo, date.year),
@@ -1402,7 +1414,7 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     {CTOKT_DIGIT, CLF_TIME, 0, 1, 2, TclOffset(DateInfo, date.secondOfDay),
 	NULL},
     /* %p %P */
-    {CTOKT_PARSER, CLF_ISO8601, 0, 0, 0, 0,
+    {CTOKT_PARSER, CLF_ISO8601, 0, 0, 0xffff, 0,
 	ClockScnToken_amPmInd_Proc, NULL},
     /* %J */
     {CTOKT_DIGIT, CLF_JULIANDAY, 0, 1, 0xffff, TclOffset(DateInfo, date.julianDay),
@@ -1423,10 +1435,10 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     {CTOKT_DIGIT, CLF_ISO8601, 0, 1, 2, TclOffset(DateInfo, date.iso8601Week),
 	NULL},
     /* %a %A %u %w */
-    {CTOKT_PARSER, CLF_ISO8601, 0, 0, 0, 0,
+    {CTOKT_PARSER, CLF_ISO8601, 0, 0, 0xffff, 0,
 	ClockScnToken_DayOfWeek_Proc, NULL},
     /* %z %Z */
-    {CTOKT_PARSER, CLF_OPTIONAL, 0, 0, 0, 0,
+    {CTOKT_PARSER, CLF_OPTIONAL, 0, 0, 0xffff, 0,
 	ClockScnToken_TimeZone_Proc, NULL},
     /* %U %W */
     {CTOKT_DIGIT, CLF_OPTIONAL, 0, 1, 2, 0, /* currently no capture, parse only token */
@@ -1435,9 +1447,9 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     {CTOKT_DIGIT, CLF_POSIXSEC | CLF_SIGNED, 0, 1, 0xffff, TclOffset(DateInfo, date.seconds),
 	NULL},
     /* %n */
-    {CTOKT_CHAR, 0, 0, 1, 1, 0, NULL, "\n"},
+    {CTOKT_CHAR, 0, 0, 0, 1, 0, NULL, "\n"}, /* min=0 - spaces are optional (in yySpaceCount) */
     /* %t */
-    {CTOKT_CHAR, 0, 0, 1, 1, 0, NULL, "\t"},
+    {CTOKT_CHAR, 0, 0, 0, 1, 0, NULL, "\t"}, /* min=0 - spaces are optional (in yySpaceCount) */
     /* %Q */
     {CTOKT_PARSER, CLF_LOCALSEC, 0, 16, 30, 0,
 	ClockScnToken_StarDate_Proc, NULL},
@@ -1451,10 +1463,10 @@ static const char *ScnETokenMapIndex =
     "Eys";
 static ClockScanTokenMap ScnETokenMap[] = {
     /* %EE */
-    {CTOKT_PARSER, 0, 0, 0, 0, TclOffset(DateInfo, date.year),
+    {CTOKT_PARSER, 0, 0, 0, 0xffff, TclOffset(DateInfo, date.year),
 	ClockScnToken_LocaleERA_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %Ey */
-    {CTOKT_PARSER, 0, 0, 0, 0, 0, /* currently no capture, parse only token */
+    {CTOKT_PARSER, 0, 0, 0, 0xffff, 0, /* currently no capture, parse only token */
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %Es */
     {CTOKT_DIGIT, CLF_LOCALSEC | CLF_SIGNED, 0, 1, 0xffff, TclOffset(DateInfo, date.localSeconds),
@@ -1469,25 +1481,25 @@ static const char *ScnOTokenMapIndex =
     "dmyHMSu";
 static ClockScanTokenMap ScnOTokenMap[] = {
     /* %Od %Oe */
-    {CTOKT_PARSER, CLF_DAYOFMONTH, 0, 0, 0, TclOffset(DateInfo, date.dayOfMonth),
+    {CTOKT_PARSER, CLF_DAYOFMONTH, 0, 0, 0xffff, TclOffset(DateInfo, date.dayOfMonth),
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %Om */
-    {CTOKT_PARSER, CLF_MONTH, 0, 0, 0, TclOffset(DateInfo, date.month),
+    {CTOKT_PARSER, CLF_MONTH, 0, 0, 0xffff, TclOffset(DateInfo, date.month),
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %Oy */
-    {CTOKT_PARSER, CLF_YEAR, 0, 0, 0, TclOffset(DateInfo, date.year),
+    {CTOKT_PARSER, CLF_YEAR, 0, 0, 0xffff, TclOffset(DateInfo, date.year),
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %OH %Ok %OI %Ol */
-    {CTOKT_PARSER, CLF_TIME, 0, 0, 0, TclOffset(DateInfo, date.hour),
+    {CTOKT_PARSER, CLF_TIME, 0, 0, 0xffff, TclOffset(DateInfo, date.hour),
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %OM */
-    {CTOKT_PARSER, CLF_TIME, 0, 0, 0, TclOffset(DateInfo, date.minutes),
+    {CTOKT_PARSER, CLF_TIME, 0, 0, 0xffff, TclOffset(DateInfo, date.minutes),
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %OS */
-    {CTOKT_PARSER, CLF_TIME, 0, 0, 0, TclOffset(DateInfo, date.secondOfDay),
+    {CTOKT_PARSER, CLF_TIME, 0, 0, 0xffff, TclOffset(DateInfo, date.secondOfDay),
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %Ou Ow */
-    {CTOKT_PARSER, CLF_ISO8601, 0, 0, 0, 0,
+    {CTOKT_PARSER, CLF_ISO8601, 0, 0, 0xffff, 0,
 	ClockScnToken_DayOfWeek_Proc, (void *)MCLIT_LOCALE_NUMERALS},
 };
 static const char *ScnOTokenMapAliasIndex[2] = {
@@ -1498,12 +1510,12 @@ static const char *ScnOTokenMapAliasIndex[2] = {
 static const char *ScnSpecTokenMapIndex = 
     " ";
 static ClockScanTokenMap ScnSpecTokenMap[] = {
-    {CTOKT_SPACE,  0, 0, 0, 0xffff, 0, 
+    {CTOKT_SPACE,  0, 0, 0, 0xffff, 0, /* min=0 - spaces are optional (in yySpaceCount) */
 	NULL},
 };
 
 static ClockScanTokenMap ScnWordTokenMap = {
-    CTOKT_WORD,	   0, 0, 1, 0, 0, 
+    CTOKT_WORD,	   0, 0, 1, 0xffff, 0, 
 	NULL
 };
 
@@ -1739,7 +1751,22 @@ ClockScan(
 	    p++;
 	}
     }
-    info->dateStart = yyInput = p;
+    yyInput = p;
+    /* look ahead to count spaces (bypass it by count length and distances) */
+    x = end;
+    while (p < end) {
+	if (isspace(UCHAR(*p))) {
+	    x = p++;
+	    yySpaceCount++;
+	    continue;
+	}
+	x = end;
+	p++;
+    }
+    /* ignore spaces at end */
+    yySpaceCount -= (end - x);
+    end = x;
+    info->dateStart = p = yyInput;
     info->dateEnd = end;
     
     /* parse string */
@@ -1752,6 +1779,7 @@ ClockScan(
 	    && map->type != CTOKT_CHAR )
 	) {
 	    while (p < end && isspace(UCHAR(*p))) {
+		yySpaceCount--;
 		p++;
 	    }
 	}
@@ -1764,16 +1792,17 @@ ClockScan(
 	{
 	case CTOKT_DIGIT:
 	if (1) {
-	    int size = map->maxSize;
+	    int minLen, size;
 	    int sign = 1;
 	    if (map->flags & CLF_SIGNED) {
 		if (*p == '+') { yyInput = ++p; }
 		else
 		if (*p == '-') { yyInput = ++p; sign = -1; };
 	    }
+	    DetermineGreedySearchLen(opts, info, tok, &minLen, &size);
 	    /* greedy find digits (look for forward digits consider spaces), 
 	     * corresponding pre-calculated lookAhead */
-	    if (size != map->minSize && tok->lookAhead) {
+	    if (size != minLen && tok->lookAhead) {
 		int spcnt = 0;
 		const char *pe;
 		size += tok->lookAhead;
@@ -1845,6 +1874,12 @@ ClockScan(
 		    goto done;
 		break;
 	    };
+	    /* decrement count for possible spaces in match */
+	    while (p < yyInput) {
+		if (isspace(UCHAR(*p++))) {
+		    yySpaceCount--;
+		}
+	    }
 	    p = yyInput;
 	    flags = (flags & ~map->clearFlags) | map->flags;
 	break;
@@ -1855,9 +1890,11 @@ ClockScan(
 		    /* unmatched -> error */
 		    goto not_match;
 		}
+		yySpaceCount--;
 		p++;
 	    }
 	    while (p < end && isspace(UCHAR(*p))) {
+		yySpaceCount--;
 		p++;
 	    }
 	break;
@@ -1875,27 +1912,25 @@ ClockScan(
 		/* no match -> error */
 		goto not_match;
 	    }
+	    if (isspace(UCHAR(*x))) {
+		yySpaceCount--;
+	    }
 	    p++;
 	break;
 	}
     }
     /* check end was reached */
     if (p < end) {
-	/* ignore spaces at end */
-	while (p < end && isspace(UCHAR(*p))) {
-	    p++;
-	}
-	if (p < end) {
-	    /* something after last token - wrong format */
-	    goto not_match;
-	}
+	/* something after last token - wrong format */
+	goto not_match;
     }
     /* end of string, check only optional tokens at end, otherwise - not match */
     while (tok->map != NULL) {
 	if (!(opts->flags & CLF_STRICT) && (tok->map->type == CTOKT_SPACE)) {
 	    tok++;
+	    if (tok->map == NULL) break;
 	}
-	if (tok->map != NULL && !(tok->map->flags & CLF_OPTIONAL)) {
+	if (!(tok->map->flags & CLF_OPTIONAL)) {
 	    goto not_match;
 	}
 	tok++;

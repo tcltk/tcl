@@ -18638,6 +18638,43 @@ test clock-6.21.3 {Stardate correct scan over year (leap year, begin, middle and
     unset -nocomplain wrong i i2 s d
 }
 
+test clock-6.22.1 {Greedy match} {
+    clock format [clock scan "111" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Mon Jan 01 00:00:00 GMT 2001}
+test clock-6.22.2 {Greedy match} {
+    clock format [clock scan "1111" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Thu Jan 11 00:00:00 GMT 2001}
+test clock-6.22.3 {Greedy match} {
+    clock format [clock scan "11111" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Sun Nov 11 00:00:00 GMT 2001}
+test clock-6.22.4 {Greedy match} {
+    clock format [clock scan "111111" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Fri Nov 11 00:00:00 GMT 2011}
+test clock-6.22.5 {Greedy match} {
+    clock format [clock scan "1 1 1" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Mon Jan 01 00:00:00 GMT 2001}
+test clock-6.22.6 {Greedy match} {
+    clock format [clock scan "111 1" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Thu Jan 11 00:00:00 GMT 2001}
+test clock-6.22.7 {Greedy match} {
+    clock format [clock scan "1 111" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Thu Nov 01 00:00:00 GMT 2001}
+test clock-6.22.8 {Greedy match} {
+    clock format [clock scan "1 11 1" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Thu Nov 01 00:00:00 GMT 2001}
+test clock-6.22.9 {Greedy match} {
+    clock format [clock scan "1 11 11" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Tue Nov 01 00:00:00 GMT 2011}
+test clock-6.22.10 {Greedy match} {
+    clock format [clock scan "11 11 11" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Fri Nov 11 00:00:00 GMT 2011}
+test clock-6.22.11 {Greedy match} {
+    clock format [clock scan "1111 120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
+} {Sat Jan 01 01:02:00 GMT 2011}
+test clock-6.22.12 {Greedy match} {
+    clock format [clock scan "11 1 120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
+} {Mon Jan 01 01:02:00 GMT 2001}
+
 
 test clock-7.1 {Julian Day} {
     clock scan 0 -format %J -gmt true
