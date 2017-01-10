@@ -1089,7 +1089,7 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     {CTOKT_DIGIT, CLF_YEAR, 0, 1, 2, TclOffset(DateInfo, date.year),
 	NULL},
     /* %Y */
-    {CTOKT_DIGIT, CLF_YEAR | CLF_CENTURY, 0, 1, 4, TclOffset(DateInfo, date.year),
+    {CTOKT_DIGIT, CLF_YEAR | CLF_CENTURY, 0, 4, 4, TclOffset(DateInfo, date.year),
 	NULL},
     /* %H %k %I %l */
     {CTOKT_DIGIT, CLF_TIME, 0, 1, 2, TclOffset(DateInfo, date.hour),
@@ -1116,7 +1116,7 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     {CTOKT_DIGIT, CLF_ISO8601YEAR | CLF_ISO8601, 0, 2, 2, TclOffset(DateInfo, date.iso8601Year),
 	NULL},
     /* %G */
-    {CTOKT_DIGIT, CLF_ISO8601YEAR | CLF_ISO8601 | CLF_ISO8601CENTURY, 0, 1, 4, TclOffset(DateInfo, date.iso8601Year),
+    {CTOKT_DIGIT, CLF_ISO8601YEAR | CLF_ISO8601 | CLF_ISO8601CENTURY, 0, 4, 4, TclOffset(DateInfo, date.iso8601Year),
 	NULL},
     /* %V */
     {CTOKT_DIGIT, CLF_ISO8601, 0, 1, 2, TclOffset(DateInfo, date.iso8601Week),
@@ -1125,7 +1125,7 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     {CTOKT_PARSER, CLF_ISO8601, 0, 0, 0, 0,
 	ClockScnToken_DayOfWeek_Proc, NULL},
     /* %z %Z */
-    {CTOKT_PARSER, 0, 0, 0, 0, 0,
+    {CTOKT_PARSER, CLF_OPTIONAL, 0, 0, 0, 0,
 	ClockScnToken_TimeZone_Proc, NULL},
     /* %s */
     {CTOKT_DIGIT, CLF_LOCALSEC | CLF_SIGNED, 0, 1, 0xffff, TclOffset(DateInfo, date.localSeconds),
@@ -1508,6 +1508,10 @@ ClockScan(
 	    }
 	}
 	yyInput = p;
+	/* end of input string */
+	if (p >= end) {
+	    break;
+	}
 	switch (map->type)
 	{
 	case CTOKT_DIGIT:
@@ -1553,6 +1557,10 @@ ClockScan(
 	    size = p - yyInput;
 	    if (size < map->minSize) {
 		/* missing input -> error */
+		if ((map->flags & CLF_OPTIONAL)) {
+		    yyInput = p;
+		    continue;
+		}
 		goto not_match;
 	    }
 	    /* string 2 number, put number into info structure by offset */
@@ -1578,6 +1586,10 @@ ClockScan(
 		case TCL_OK:
 		break;
 		case TCL_RETURN:
+		    if ((map->flags & CLF_OPTIONAL)) {
+			yyInput = p;
+			continue;
+		    }
 		    goto not_match;
 		break;
 		default:
@@ -1611,15 +1623,23 @@ ClockScan(
 	break;
 	}
     }
-    
-    /* ignore spaces at end */
-    while (p < end && isspace(UCHAR(*p))) {
-	p++;
-    }
     /* check end was reached */
     if (p < end) {
-	/* something after last token - wrong format */
-	goto not_match;
+	/* ignore spaces at end */
+	while (p < end && isspace(UCHAR(*p))) {
+	    p++;
+	}
+	if (p < end) {
+	    /* something after last token - wrong format */
+	    goto not_match;
+	}
+    }
+    /* end of string, check only optional tokens at end, otherwise - not match */
+    if (tok->map != NULL) {
+	if ( !(opts->flags & CLF_STRICT) && (tok->map->type == CTOKT_SPACE)
+	  || (tok->map->flags & CLF_OPTIONAL)) {
+	    goto not_match;
+	}
     }
 
     /* 

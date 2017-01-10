@@ -18587,6 +18587,18 @@ test clock-6.16 {input of ambiguous short locale token (%b)} {
     } result] $result $errorCode
 } {1 {input string does not match supplied format} {CLOCK badInputString}}
 
+test clock-6.17 {spaces are always optional in non-strict mode (default)} {
+    list [clock scan "2009-06-30T18:30:00+02:00" -format "%Y-%m-%dT%H:%M:%S %z" -gmt 1] \
+	 [clock scan "2009-06-30T18:30:00  +02:00" -format "%Y-%m-%dT%H:%M:%S %z" -gmt 1] \
+	 [clock scan "2009-06-30T18:30:00Z" -format "%Y-%m-%dT%H:%M:%S %z" -timezone CET] \
+	 [clock scan "2009-06-30T18:30:00  Z" -format "%Y-%m-%dT%H:%M:%S %z" -timezone CET]
+} {1246379400 1246379400 1246386600 1246386600}
+
+test clock-6.18 {zone token (%z) is optional} {
+    list [clock scan "2009-06-30T18:30:00 -01:00" -format "%Y-%m-%dT%H:%M:%S %z" -gmt 1] \
+         [clock scan "2009-06-30T18:30:00" -format "%Y-%m-%dT%H:%M:%S %z" -gmt 1] \
+	 [clock scan "  2009-06-30T18:30:00  " -format "%Y-%m-%dT%H:%M:%S %z" -gmt 1] \
+} {1246390200 1246386600 1246386600}
 
 test clock-7.1 {Julian Day} {
     clock scan 0 -format %J -gmt true
