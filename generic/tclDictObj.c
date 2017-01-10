@@ -2014,7 +2014,6 @@ DictSmartRefCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *result;
-    Dict    *dict;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
