@@ -28,8 +28,7 @@ proc _test_get_commands {lst} {
 proc test-scan {{reptime 1000}} {
   foreach _(c) [_test_get_commands {
     # Scan : date
-    {clock scan "25.11.2015" -format "%d.%m.%Y" -base 0 -gmt 1}
-    #return
+    #{clock scan "25.11.2015" -format "%d.%m.%Y" -base 0 -gmt 1}
     #{**STOP** : Wed Nov 25 01:00:00 CET 2015}
     # FreeScan : relative date
     {clock scan "5 years 18 months 385 days" -base 0 -gmt 1}
@@ -80,6 +79,7 @@ proc test-other {{reptime 1000}} {
   foreach _(c) [_test_get_commands {
     # Bad zone
     {catch {clock scan "1 day" -timezone BAD_ZONE -locale en}}
+    **STOP**
     # Scan : test rotate of GC objects (format is dynamic, so tcl-obj removed with last reference)
     {set i 0; time { clock scan "[incr i] - 25.11.2015" -format "$i - %d.%m.%Y" -base 0 -gmt 1 } 50}
     # Scan : test reusability of GC objects (format is dynamic, so tcl-obj removed with last reference)
