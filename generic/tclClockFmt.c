@@ -43,13 +43,13 @@ CLOCK_LOCALE_LITERAL_ARRAY(MsgCtLitIdxs, "_IDX_");
 
 inline int
 _str2int(
-    time_t     *out,
+    int	       *out,
     register 
     const char *p,
     const char *e,
     int sign)
 {
-    register time_t val = 0, prev = 0;
+    register int val = 0, prev = 0;
     if (sign >= 0) {
 	while (p < e) {
 	    val = val * 10 + (*p++ - '0');
@@ -880,6 +880,7 @@ ObjListSearch(ClockFmtScnCmdArgs *opts,
     }
     return TCL_RETURN;
 }
+#if 0
 
 static int 
 LocaleListSearch(ClockFmtScnCmdArgs *opts, 
@@ -905,6 +906,7 @@ LocaleListSearch(ClockFmtScnCmdArgs *opts,
     return ObjListSearch(opts, info, val, lstv, lstc,
 	minLen, maxLen);
 }
+#endif
 
 static TclStrIdxTree *
 ClockMCGetListIdxTree(
@@ -1039,6 +1041,7 @@ ClockStrIdxTreeSearch(ClockFmtScnCmdArgs *opts,
 
     return TCL_OK;
 }
+#if 0
 
 static int 
 StaticListSearch(ClockFmtScnCmdArgs *opts, 
@@ -1062,6 +1065,7 @@ StaticListSearch(ClockFmtScnCmdArgs *opts,
     }
     return TCL_RETURN;
 }
+#endif
 
 inline const char *
 FindWordEnd(
@@ -1069,7 +1073,7 @@ FindWordEnd(
     register const char * p, const char * end)
 {
     register const char *x = tok->tokWord.start;
-    const char *pfnd;
+    const char *pfnd = p;
     if (x == tok->tokWord.end - 1) { /* fast phase-out for single char word */
 	if (*p == *x) {
 	    return ++p;
@@ -1088,14 +1092,14 @@ static int
 ClockScnToken_Month_Proc(ClockFmtScnCmdArgs *opts,
     DateInfo *info, ClockScanToken *tok)
 {
-    /*
+#if 0
     static const char * months[] = {
-	/* full * /
+	/* full */
 	"January", "February", "March",
 	"April",   "May",      "June",
 	"July",	   "August",   "September",
 	"October", "November", "December",
-	/* abbr * /
+	/* abbr */
 	"Jan", "Feb", "Mar", "Apr", "May", "Jun", 
 	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 	NULL
@@ -1106,7 +1110,7 @@ ClockScnToken_Month_Proc(ClockFmtScnCmdArgs *opts,
     }
     yyMonth = (val % 12) + 1;
     return TCL_OK;
-    */
+#endif
 
     static int monthsKeys[] = {MCLIT_MONTHS_FULL, MCLIT_MONTHS_ABBREV, 0};
 
@@ -1300,7 +1304,7 @@ ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts,
     }
 
     if (tok->map->offs > 0) {
-	*(time_t *)(((char *)info) + tok->map->offs) = val;
+	*(int *)(((char *)info) + tok->map->offs) = val;
     }
 
     return TCL_OK;
@@ -1334,7 +1338,7 @@ ClockScnToken_TimeZone_Proc(ClockFmtScnCmdArgs *opts,
 	    *bp++ = *p++; len++;
 	    if (len + 2 < maxLen) {
 		if (*p == ':') {
-		    *p++; len++;
+		    p++; len++;
 		}
 	    }
 	}
@@ -1392,7 +1396,7 @@ ClockScnToken_StarDate_Proc(ClockFmtScnCmdArgs *opts,
 {
     int minLen, maxLen;
     register const char *p = yyInput, *end; const char *s;
-    time_t year, fractYear, fractDayDiv, fractDay;
+    int year, fractYear, fractDayDiv, fractDay;
     static const char *stardatePref = "stardate ";
 
     DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
@@ -1626,7 +1630,7 @@ EstimateTokenCount(
 
 #define AllocTokenInChain(tok, chain, tokCnt) \
     if (++(tok) >= (chain) + (tokCnt)) { \
-	(char *)(chain) = ckrealloc((char *)(chain), \
+	*((char **)&chain) = ckrealloc((char *)(chain), \
 	    (tokCnt + CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE) * sizeof(*(tok))); \
 	if ((chain) == NULL) { goto done; }; \
 	(tok) = (chain) + (tokCnt); \
@@ -1929,7 +1933,7 @@ ClockScan(
 	    if (map->offs) {
 		p = yyInput; x = p + size;
 		if (!(map->flags & (CLF_LOCALSEC|CLF_POSIXSEC))) {
-		    if (_str2int((time_t *)(((char *)info) + map->offs), 
+		    if (_str2int((int *)(((char *)info) + map->offs), 
 			    p, x, sign) != TCL_OK) {
 			goto overflow;
 		    }
@@ -2678,7 +2682,6 @@ ClockFormat(
     register DateFormat *dateFmt, /* Date fields used for parsing & converting */
     ClockFmtScnCmdArgs *opts)	  /* Command options */
 {
-    ClockClientData *dataPtr = opts->clientData;
     ClockFmtScnStorage	*fss;
     ClockFormatToken	*tok;
     ClockFormatTokenMap *map;
@@ -2716,7 +2719,7 @@ ClockFormat(
 	{
 	case CFMTT_INT:
 	if (1) {
-	    int val = (int)*(time_t *)(((char *)dateFmt) + map->offs);
+	    int val = (int)*(int *)(((char *)dateFmt) + map->offs);
 	    if (map->fmtproc == NULL) {
 		if (map->flags & CLFMT_DECR) {
 		    val--;

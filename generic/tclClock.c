@@ -137,10 +137,6 @@ static unsigned long	TzsetGetEpoch(void);
 static void		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(ClientData);
 
-static int		ClockTestObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-
 /*
  * Structure containing description of "native" clock commands to create.
  */
@@ -3365,7 +3361,7 @@ repeat_rel:
 	/* relative time (seconds), if exceeds current date, do the day conversion and
 	 * leave rest of the increment in yyRelSeconds to add it hereafter in UTC seconds */
 	if (yyRelSeconds) {
-	    time_t newSecs = yySeconds + yyRelSeconds;
+	    int newSecs = yySeconds + yyRelSeconds;
 	       
 	    /* if seconds increment outside of current date, increment day */
 	    if (newSecs / SECONDS_PER_DAY != yySeconds / SECONDS_PER_DAY) {
