@@ -50,7 +50,7 @@ _str2int(
     int sign)
 {
     register time_t val = 0, prev = 0;
-    if (sign > 0) {
+    if (sign >= 0) {
 	while (p < e) {
 	    val = val * 10 + (*p++ - '0');
 	    if (val < prev) {
@@ -80,7 +80,7 @@ _str2wideInt(
     int sign)
 {
     register Tcl_WideInt val = 0, prev = 0;
-    if (sign > 0) {
+    if (sign >= 0) {
 	while (p < e) {
 	    val = val * 10 + (*p++ - '0');
 	    if (val < prev) {
@@ -1296,13 +1296,91 @@ ClockScnToken_TimeZone_Proc(ClockFmtScnCmdArgs *opts,
     return TCL_OK;
 }
 
+static int 
+ClockScnToken_StarDate_Proc(ClockFmtScnCmdArgs *opts, 
+    DateInfo *info, ClockScanToken *tok)
+{
+    int minLen, maxLen;
+    register const char *p = yyInput, *end; const char *s;
+    time_t year, fractYear, fractDayDiv, fractDay;
+    static const char *stardatePref = "stardate ";
+
+    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
+
+    end = yyInput + maxLen;
+
+    /* stardate string */
+    p = TclUtfFindEqualNCInLwr(p, end, stardatePref, stardatePref + 9, &s);
+    if (p >= end || p - yyInput < 9) {
+	return TCL_RETURN;
+    }
+    /* bypass spaces */
+    while (p < end && isspace(UCHAR(*p))) {
+	p++;
+    }
+    if (p >= end) {
+	return TCL_RETURN;
+    }
+    /* currently positive stardate only */
+    if (*p == '+') { p++; };
+    s = p;
+    while (p < end && isdigit(UCHAR(*p))) {
+	p++;
+    }
+    if (p >= end || p - s < 4) {
+	return TCL_RETURN;
+    }
+    if ( _str2int(&year, s, p-3, 1) != TCL_OK
+      || _str2int(&fractYear, p-3, p, 1) != TCL_OK) {
+	return TCL_RETURN;
+    };
+    if (*p++ != '.') {
+	return TCL_RETURN;
+    }
+    s = p;
+    fractDayDiv = 1;
+    while (p < end && isdigit(UCHAR(*p))) {
+	fractDayDiv *= 10;
+	p++;
+    }
+    if ( _str2int(&fractDay, s, p, 1) != TCL_OK) {
+	return TCL_RETURN;
+    };
+    yyInput = p;
+
+    /* Build a date from year and fraction. */
+
+    yydate.year = year + RODDENBERRY;
+    yydate.era = CE;
+    yydate.gregorian = 1;
+
+    if (IsGregorianLeapYear(&yydate)) {
+	fractYear *= 366;
+    } else {
+	fractYear *= 365;
+    }
+    yydate.dayOfYear = fractYear / 1000 + 1;
+    if (fractYear % 1000 >= 500) {
+	yydate.dayOfYear++;
+    }
+
+    GetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
+
+    yydate.seconds =
+	-210866803200L
+	+ ( SECONDS_PER_DAY * (Tcl_WideInt)yydate.julianDay )
+	+ ( SECONDS_PER_DAY * fractDay / fractDayDiv );
+
+    return TCL_OK;
+}
+
 static const char *ScnSTokenMapIndex = 
-    "dmbyYHMSpJjCgGVazs";
+    "dmbyYHMSpJjCgGVazUsntQ";
 static ClockScanTokenMap ScnSTokenMap[] = {
     /* %d %e */
     {CTOKT_DIGIT, CLF_DAYOFMONTH, 0, 1, 2, TclOffset(DateInfo, date.dayOfMonth),
 	NULL},
-    /* %m */
+    /* %m %N */
     {CTOKT_DIGIT, CLF_MONTH, 0, 1, 2, TclOffset(DateInfo, date.month),
 	NULL},
     /* %b %B %h */
@@ -1350,17 +1428,27 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     /* %z %Z */
     {CTOKT_PARSER, CLF_OPTIONAL, 0, 0, 0, 0,
 	ClockScnToken_TimeZone_Proc, NULL},
-    /* %s */
-    {CTOKT_DIGIT, CLF_LOCALSEC | CLF_SIGNED, 0, 1, 0xffff, TclOffset(DateInfo, date.localSeconds),
+    /* %U %W */
+    {CTOKT_DIGIT, CLF_OPTIONAL, 0, 1, 2, 0, /* currently no capture, parse only token */
 	NULL},
+    /* %s */
+    {CTOKT_DIGIT, CLF_POSIXSEC | CLF_SIGNED, 0, 1, 0xffff, TclOffset(DateInfo, date.seconds),
+	NULL},
+    /* %n */
+    {CTOKT_CHAR, 0, 0, 1, 1, 0, NULL, "\n"},
+    /* %t */
+    {CTOKT_CHAR, 0, 0, 1, 1, 0, NULL, "\t"},
+    /* %Q */
+    {CTOKT_PARSER, CLF_POSIXSEC, 0, 16, 30, 0,
+	ClockScnToken_StarDate_Proc, NULL},
 };
 static const char *ScnSTokenMapAliasIndex[2] = {
-    "eNBhkIlPAuwZ",
-    "dmbbHHHpaaaz"
+    "eNBhkIlPAuwZW",
+    "dmbbHHHpaaazU"
 };
 
 static const char *ScnETokenMapIndex = 
-    "Ey";
+    "Eys";
 static ClockScanTokenMap ScnETokenMap[] = {
     /* %EE */
     {CTOKT_PARSER, 0, 0, 0, 0, TclOffset(DateInfo, date.year),
@@ -1368,6 +1456,9 @@ static ClockScanTokenMap ScnETokenMap[] = {
     /* %Ey */
     {CTOKT_PARSER, 0, 0, 0, 0, 0, /* currently no capture, parse only token */
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
+    /* %Es */
+    {CTOKT_DIGIT, CLF_LOCALSEC | CLF_SIGNED, 0, 1, 0xffff, TclOffset(DateInfo, date.localSeconds),
+	NULL},
 };
 static const char *ScnETokenMapAliasIndex[2] = {
     "",
@@ -1427,7 +1518,10 @@ EstimateTokenCount(
     /* estimate token count by % char and format length */
     tokcnt = 0;
     while (p <= end) {
-	if (*p++ == '%') tokcnt++;
+	if (*p++ == '%') {
+	    tokcnt++;
+	    p++;
+	}
     }
     p = fmt + tokcnt * 2;
     if (p < end) {
@@ -1653,7 +1747,9 @@ ClockScan(
 	map = tok->map;
 	/* bypass spaces at begin of input before parsing each token */
 	if ( !(opts->flags & CLF_STRICT) 
-	  && (map->type != CTOKT_SPACE && map->type != CTOKT_WORD)
+	  && ( map->type != CTOKT_SPACE 
+	    && map->type != CTOKT_WORD
+	    && map->type != CTOKT_CHAR )
 	) {
 	    while (p < end && isspace(UCHAR(*p))) {
 		p++;
@@ -1710,27 +1806,28 @@ ClockScan(
 	    if (size < map->minSize) {
 		/* missing input -> error */
 		if ((map->flags & CLF_OPTIONAL)) {
-		    yyInput = p;
 		    continue;
 		}
 		goto not_match;
 	    }
 	    /* string 2 number, put number into info structure by offset */
-	    p = yyInput; x = p + size;
-	    if (!(map->flags & CLF_LOCALSEC)) {
-		if (_str2int((time_t *)(((char *)info) + map->offs), 
-			p, x, sign) != TCL_OK) {
-		    goto overflow;
+	    if (map->offs) {
+		p = yyInput; x = p + size;
+		if (!(map->flags & (CLF_LOCALSEC|CLF_POSIXSEC))) {
+		    if (_str2int((time_t *)(((char *)info) + map->offs), 
+			    p, x, sign) != TCL_OK) {
+			goto overflow;
+		    }
+		    p = x;
+		} else {
+		    if (_str2wideInt((Tcl_WideInt *)(((char *)info) + map->offs), 
+			    p, x, sign) != TCL_OK) {
+			goto overflow;
+		    }
+		    p = x;
 		}
-		p = x;
-	    } else {
-		if (_str2wideInt((Tcl_WideInt *)(((char *)info) + map->offs), 
-			p, x, sign) != TCL_OK) {
-		    goto overflow;
-		}
-		p = x;
+		flags = (flags & ~map->clearFlags) | map->flags;
 	    }
-	    flags = (flags & ~map->clearFlags) | map->flags;
 	}
 	break;
 	case CTOKT_PARSER:
@@ -1771,7 +1868,14 @@ ClockScan(
 		goto not_match;
 	    }
 	    p = x;
-	    continue;
+	break;
+	case CTOKT_CHAR:
+	    x = (char *)map->data;
+	    if (*x != *p) {
+		/* no match -> error */
+		goto not_match;
+	    }
+	    p++;
 	break;
 	}
     }
@@ -1802,7 +1906,7 @@ ClockScan(
      */
 
     /* seconds token (%s) take precedence over all other tokens */
-    if ((opts->flags & CLF_EXTENDED) || !(flags & CLF_LOCALSEC)) {
+    if ((opts->flags & CLF_EXTENDED) || !(flags & CLF_POSIXSEC)) {
 	if (flags & CLF_DATE) {
 
 	    if (!(flags & CLF_JULIANDAY)) {
@@ -1876,7 +1980,7 @@ ClockScan(
 	}
 
 	/* if no time - reset time */
-	if (!(flags & (CLF_TIME|CLF_LOCALSEC))) {
+	if (!(flags & (CLF_TIME|CLF_LOCALSEC|CLF_POSIXSEC))) {
 	    info->flags |= CLF_ASSEMBLE_SECONDS;
 	    yydate.localSeconds = 0;
 	}
@@ -1886,7 +1990,7 @@ ClockScan(
 	    yySeconds = ToSeconds(yyHour, yyMinutes,
 				yySeconds, yyMeridian);
 	} else
-	if (!(flags & CLF_LOCALSEC)) {
+	if (!(flags & (CLF_LOCALSEC|CLF_POSIXSEC))) {
 	    info->flags |= CLF_ASSEMBLE_SECONDS;
 	    yySeconds = yydate.localSeconds % SECONDS_PER_DAY;
 	}
@@ -1996,7 +2100,7 @@ ClockFmtToken_StarDate_Proc(
     }
 
     /* Put together the StarDate as "Stardate %02d%03d.%1d" */
-    if (FrmResultAllocate(dateFmt, 20) != TCL_OK) { return TCL_ERROR; };
+    if (FrmResultAllocate(dateFmt, 30) != TCL_OK) { return TCL_ERROR; };
     memcpy(dateFmt->output, "Stardate ", 9);
     dateFmt->output += 9;
     dateFmt->output = _itoaw(dateFmt->output, 
@@ -2005,7 +2109,7 @@ ClockFmtToken_StarDate_Proc(
 	fractYear, '0', 3);
     *dateFmt->output++ = '.';
     dateFmt->output = _itoaw(dateFmt->output,
-	dateFmt->date.localSeconds % SECONDS_PER_DAY / ( SECONDS_PER_DAY / 10 ), '0', 1);
+	dateFmt->date.seconds % SECONDS_PER_DAY / ( SECONDS_PER_DAY / 10 ), '0', 1);
 
     return TCL_OK;
 }
@@ -2249,9 +2353,9 @@ static ClockFormatTokenMap FmtSTokenMap[] = {
     /* %s */
     {CFMTT_WIDE, "0", 1, 0, 0, 0, TclOffset(DateFormat, date.seconds), NULL},
     /* %n */
-    {CFMTT_CHAR, "\n", 0, 0, 0, 0, 0, NULL},
+    {CTOKT_CHAR, "\n", 0, 0, 0, 0, 0, NULL},
     /* %t */
-    {CFMTT_CHAR, "\t", 0, 0, 0, 0, 0, NULL},
+    {CTOKT_CHAR, "\t", 0, 0, 0, 0, 0, NULL},
     /* %Q */
     {CFMTT_INT, NULL, 0, 0, 0, 0, 0, 
 	ClockFmtToken_StarDate_Proc, NULL},
@@ -2262,7 +2366,7 @@ static const char *FmtSTokenMapAliasIndex[2] = {
 };
 
 static const char *FmtETokenMapIndex = 
-    "Ey";
+    "Eys";
 static ClockFormatTokenMap FmtETokenMap[] = {
     /* %EE */
     {CFMTT_INT, NULL, 0, 0, 0, 0, TclOffset(DateFormat, date.era), 
@@ -2270,6 +2374,8 @@ static ClockFormatTokenMap FmtETokenMap[] = {
     /* %Ey %EC */
     {CFMTT_INT, NULL, 0, 0, 0, 0, TclOffset(DateFormat, date.year),
 	ClockFmtToken_LocaleERAYear_Proc, NULL},
+    /* %Es */
+    {CFMTT_WIDE, "0", 1, 0, 0, 0, TclOffset(DateFormat, date.localSeconds), NULL},
 };
 static const char *FmtETokenMapAliasIndex[2] = {
     "C",
@@ -2537,7 +2643,7 @@ ClockFormat(
 	    }
 	}
 	break;
-	case CFMTT_CHAR:
+	case CTOKT_CHAR:
 	    if (FrmResultAllocate(dateFmt, 1) != TCL_OK) { goto error; };
 	    *dateFmt->output++ = *map->tostr;
 	break;

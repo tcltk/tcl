@@ -18605,6 +18605,40 @@ test clock-6.19 {no token parsing} {
          [catch { clock scan "...%..." -format "...%%..." }]
 } {0 0}
 
+test clock-6.20 {special char tokens %n, %t} {
+    clock scan "30\t06\t2009\n18\t30" -format "%d%t%m%t%Y%n%H%t%M" -gmt 1
+} 1246386600
+
+# Hi, Jeff!
+test clock-6.21.0 {Stardate 0 day} {
+    list [set d [clock format -757382400 -format "%Q" -gmt 1]] \
+         [clock scan $d -format "%Q" -gmt 1]
+} [list "Stardate 00000.0" -757382400]
+test clock-6.21.1 {Stardate} {
+    list [set d [clock format 1482857280 -format "%Q" -gmt 1]] \
+         [clock scan $d -format "%Q" -gmt 1]
+} [list "Stardate 70986.7" 1482857280]
+test clock-6.21.2 {Stardate next time} {
+    list [set d [clock format 1482865920 -format "%Q" -gmt 1]] \
+         [clock scan $d -format "%Q" -gmt 1]
+} [list "Stardate 70986.8" 1482865920]
+test clock-6.21.3 {Stardate correct scan over year (leap year, begin, middle and end of the year)} -body {
+    set s [clock scan "01.01.2016" -f "%d.%m.%Y" -g 1]
+    set s [set i [clock scan [clock format $s -f "%Q" -g 1] -g 1]]
+    set wrong {}
+    while {[incr i 86400] < $s + 86400*366*2} {
+	set d [clock format $i -f "%Q" -g 1]
+	set i2 [clock scan $d -f "%Q" -g 1]
+	if {$i != $i2} {
+	    lappend wrong "$d -- ($i != $i2) -- [clock format $i -g 1]"
+	}
+    }
+    join $wrong \n
+} -result {} -cleanup {
+    unset -nocomplain wrong i i2 s d
+}
+
+
 test clock-7.1 {Julian Day} {
     clock scan 0 -format %J -gmt true
 } -210866803200
@@ -36080,10 +36114,21 @@ test clock-37.1 {%s gmt testing} {
     set s [clock seconds]
     set a [clock format $s -format %s -gmt 0]
     set b [clock format $s -format %s -gmt 1]
+    set c [clock scan $s -format %s -gmt 0]
+    set d [clock scan $s -format %s -gmt 1]
     # %s, being the difference between local and Greenwich, does not
     # depend on the time zone.
-    set c [expr {$b-$a}]
-} {0}
+    list [expr {$b-$a}] [expr {$d-$c}]
+} {0 0}
+test clock-37.2 {%Es gmt testing} {
+    set s [clock seconds]
+    set a [clock format $s -format %Es -timezone CET]
+    set b [clock format $s -format %Es -gmt 1]
+    set c [clock scan $s -format %Es -timezone CET]
+    set d [clock scan $s -format %Es -gmt 1]
+    # %Es depend on the time zone (local seconds instead of posix seconds).
+    list [expr {$b-$a}] [expr {$d-$c}]
+} {-3600 3600}
 
 test clock-38.1 {regression - convertUTCToLocalViaC - east of Greenwich} \
     -setup {
