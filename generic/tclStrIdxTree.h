@@ -111,7 +111,7 @@ TclUtfFindEqualNCInLwr(
     return ret;
 }
 
-inline char *
+inline const char *
 TclUtfNext(
     register const char *src)	/* The current location in the string. */
 {

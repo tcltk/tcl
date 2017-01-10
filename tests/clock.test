@@ -18564,6 +18564,30 @@ test clock-6.11 {input of seconds - two values} {
     clock scan {1 2} -format {%s %s} -gmt true
 } 2
 
+test clock-6.12 {input of unambiguous short locale token (%b)} {
+    list [clock scan "12 Ja 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1] \
+	 [clock scan "12 Au 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1]
+} {979257600 997574400}
+test clock-6.13 {input of lowercase locale token (%b)} {
+    list [clock scan "12 ja 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1] \
+	 [clock scan "12 au 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1]
+} {979257600 997574400}
+test clock-6.14 {input of uppercase locale token (%b)} {
+    list [clock scan "12 JA 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1] \
+	 [clock scan "12 AU 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1]
+} {979257600 997574400}
+test clock-6.15 {input of ambiguous short locale token (%b)} {
+    list [catch {
+	clock scan "12 J 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1
+    } result] $result $errorCode
+} {1 {input string does not match supplied format} {CLOCK badInputString}}
+test clock-6.16 {input of ambiguous short locale token (%b)} {
+    list [catch {
+	clock scan "12 Ju 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1
+    } result] $result $errorCode
+} {1 {input string does not match supplied format} {CLOCK badInputString}}
+
+
 test clock-7.1 {Julian Day} {
     clock scan 0 -format %J -gmt true
 } -210866803200
