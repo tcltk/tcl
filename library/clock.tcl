@@ -633,10 +633,6 @@ proc ::tcl::clock::Initialize {} {
 					# in the given locales and dictionaries
 					# mapping the numerals to their numeric
 					# values.
-    # variable CachedSystemTimeZone;    # If 'CachedSystemTimeZone' exists,
-					# it contains the value of the
-					# system time zone, as determined from
-					# the environment.
     variable TimeZoneBad {};	        # Dictionary whose keys are time zone
     					# names and whose values are 1 if
 					# the time zone is unknown and 0
@@ -2984,13 +2980,12 @@ proc ::tcl::clock::InterpretHMS { date } {
 #	Returns the system time zone.
 #
 # Side effects:
-#	Stores the sustem time zone in the 'CachedSystemTimeZone'
-#	variable, since determining it may be an expensive process.
+#	Stores the sustem time zone in engine configuration, since
+#	determining it may be an expensive process.
 #
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::GetSystemTimeZone {} {
-    variable CachedSystemTimeZone
     variable TimeZoneBad
 
     if {[set result [getenv TCL_TZ]] ne {}} {
@@ -2999,29 +2994,33 @@ proc ::tcl::clock::GetSystemTimeZone {} {
 	set timezone $result
     }
     if {![info exists timezone]} {
-        # Cache the time zone only if it was detected by one of the
-        # expensive methods.
-        if { [info exists CachedSystemTimeZone] } {
-            set timezone $CachedSystemTimeZone
-        } elseif { $::tcl_platform(platform) eq {windows} } {
-            set timezone [GuessWindowsTimeZone]
-        } elseif { [file exists /etc/localtime]
-                   && ![catch {ReadZoneinfoFile \
-                                   Tcl/Localtime /etc/localtime}] } {
-            set timezone :Tcl/Localtime
-        } else {
-            set timezone :localtime
+        # ask engine for the cached timezone:
+        set timezone [configure -system-tz]
+        if { $timezone ne "" } {
+            return $timezone
         }
-	set CachedSystemTimeZone $timezone
+	if { $::tcl_platform(platform) eq {windows} } {
+	    set timezone [GuessWindowsTimeZone]
+	} elseif { [file exists /etc/localtime]
+	           && ![catch {ReadZoneinfoFile \
+	                           Tcl/Localtime /etc/localtime}] } {
+	    set timezone :Tcl/Localtime
+	} else {
+	    set timezone :localtime
+	}
     }
     if { ![dict exists $TimeZoneBad $timezone] } {
-	dict set TimeZoneBad $timezone [catch {SetupTimeZone $timezone}]
+	catch {SetupTimeZone $timezone}
     }
-    if { [dict get $TimeZoneBad $timezone] } {
-	return :localtime
-    } else {
-	return $timezone
+
+    if { [dict exists $TimeZoneBad $timezone] } {
+	set timezone :localtime
     }
+    
+    # tell backend - current system timezone:
+    configure -system-tz $timezone
+
+    return $timezone
 }
 
 #----------------------------------------------------------------------
@@ -3077,6 +3076,13 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
     variable TZData
 
     if {! [info exists TZData($timezone)] } {
+
+    	variable TimeZoneBad
+	if { [dict exists $TimeZoneBad $timezone] } {
+	    return -code error \
+		-errorcode [list CLOCK badTimeZone $timezone] \
+		"time zone \"$timezone\" not found"
+	}
 	variable MINWIDE
 	if { $timezone eq {:localtime} } {
 	    # Nothing to do, we'll convert using the localtime function
@@ -3114,6 +3120,7 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 		    LoadZoneinfoFile [string range $timezone 1 end]
 		}]
 	    } then {
+		dict set TimeZoneBad $timezone 1
 		return -code error \
 		    -errorcode [list CLOCK badTimeZone $timezone] \
 		    "time zone \"$timezone\" not found"
@@ -3125,6 +3132,7 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 		if { [lindex [dict get $opts -errorcode] 0] eq {CLOCK} } {
 		    dict unset opts -errorinfo
 		}
+		dict set TimeZoneBad $timezone 1
 		return -options $opts $data
 	    } else {
 		set TZData($timezone) $data
@@ -3137,13 +3145,15 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 	    if { [catch { LoadTimeZoneFile $timezone }]
 		 && [catch { LoadZoneinfoFile $timezone } - opts] } {
 		dict unset opts -errorinfo
+		dict set TimeZoneBad $timezone 1
 		return -options $opts "time zone $timezone not found"
 	    }
 	    set TZData($timezone) $TZData(:$timezone)
 	}
     }
 
-    return
+    # tell backend - timezone is initialized:
+    configure -setup-tz $timezone
 }
 
 #----------------------------------------------------------------------
@@ -3214,12 +3224,12 @@ proc ::tcl::clock::GuessWindowsTimeZone {} {
     if { [dict exists $WinZoneInfo $data] } {
 	set tzname [dict get $WinZoneInfo $data]
 	if { ! [dict exists $TimeZoneBad $tzname] } {
-	    dict set TimeZoneBad $tzname [catch {SetupTimeZone $tzname}]
+	    catch {SetupTimeZone $tzname}
 	}
     } else {
 	set tzname {}
     }
-    if { $tzname eq {} || [dict get $TimeZoneBad $tzname] } {
+    if { $tzname eq {} || [dict exists $TimeZoneBad $tzname] } {
 	lassign $data \
 	    bias stdBias dstBias \
 	    stdYear stdMonth stdDayOfWeek stdDayOfMonth \
@@ -4556,8 +4566,6 @@ proc ::tcl::clock::AddDays { days clockval timezone changeover } {
 proc ::tcl::clock::ChangeCurrentLocale {args} {
     variable FormatProc
     variable LocaleNumeralCache
-    variable CachedSystemTimeZone
-    variable TimeZoneBad
 
     foreach p [info procs [namespace current]::scanproc'*'current] {
         rename $p {}
@@ -4590,8 +4598,10 @@ proc ::tcl::clock::ChangeCurrentLocale {args} {
 proc ::tcl::clock::ClearCaches {} {
     variable FormatProc
     variable LocaleNumeralCache
-    variable CachedSystemTimeZone
     variable TimeZoneBad
+
+    # tell backend - should invalidate:
+    configure -clear
 
     foreach p [info procs [namespace current]::scanproc'*] {
 	rename $p {}
@@ -4600,9 +4610,8 @@ proc ::tcl::clock::ClearCaches {} {
 	rename $p {}
     }
 
-    catch {unset FormatProc}
+    unset -nocomplain FormatProc
     set LocaleNumeralCache {}
-    catch {unset CachedSystemTimeZone}
     set TimeZoneBad {}
     InitTZData
 }
