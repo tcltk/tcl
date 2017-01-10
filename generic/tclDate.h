@@ -109,6 +109,7 @@ typedef enum ClockMsgCtLiteral {
     MCLIT_MONTHS_FULL,	MCLIT_MONTHS_ABBREV,  MCLIT_MONTHS_COMB,
     MCLIT_DAYS_OF_WEEK_FULL,  MCLIT_DAYS_OF_WEEK_ABBREV,  MCLIT_DAYS_OF_WEEK_COMB,
     MCLIT_AM,  MCLIT_PM, 
+    MCLIT_LOCALE_ERAS,
     MCLIT_BCE,	 MCLIT_CE,
     MCLIT_BCE2,	 MCLIT_CE2,
     MCLIT_BCE3,	 MCLIT_CE3,
@@ -121,6 +122,7 @@ typedef enum ClockMsgCtLiteral {
     pref "MONTHS_FULL", pref "MONTHS_ABBREV", pref "MONTHS_COMB", \
     pref "DAYS_OF_WEEK_FULL", pref "DAYS_OF_WEEK_ABBREV", pref "DAYS_OF_WEEK_COMB", \
     pref "AM", pref "PM", \
+    pref "LOCALE_ERAS", \
     pref "BCE",	   pref "CE", \
     pref "b.c.e.", pref "c.e.", \
     pref "b.c.",   pref "a.d.", \
@@ -387,6 +389,8 @@ typedef struct DateFormat {
     char *output;
 
     TclDateFields date;
+
+    Tcl_Obj *localeEra;
 } DateFormat;
 
 #define CLFMT_INCR	    (1 << 3)
@@ -445,6 +449,11 @@ typedef struct ClockFmtScnStorage {
 MODULE_SCOPE time_t ToSeconds(time_t Hours, time_t Minutes,
 			    time_t Seconds, MERIDIAN Meridian);
 MODULE_SCOPE int    IsGregorianLeapYear(TclDateFields *);
+MODULE_SCOPE int    ConvertUTCToLocal(ClientData clientData, Tcl_Interp *,
+			    TclDateFields *, Tcl_Obj *timezoneObj, int);
+MODULE_SCOPE Tcl_Obj *
+		    LookupLastTransition(Tcl_Interp *, Tcl_WideInt,
+			    int, Tcl_Obj *const *, Tcl_WideInt rangesVal[2]);
 
 MODULE_SCOPE int    TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
 

@@ -56,7 +56,7 @@ proc _test_out_total {} {
   puts [format "Total %d cases in %.2f sec.:" [llength $_(itcnt)] [expr {[llength $_(itcnt)] * $_(reptime) / 1000.0}]]
   lset _(m) 0 [format %.6f [expr [join $_(ittm) +]]]
   lset _(m) 2 [expr [join $_(itcnt) +]]
-  lset _(m) 4 [expr {[lindex $_(m) 2] / ([llength $_(itcnt)] * $_(reptime) / 1000.0)}]
+  lset _(m) 4 [format %.3f [expr {[lindex $_(m) 2] / ([llength $_(itcnt)] * $_(reptime) / 1000.0)}]]
   puts $_(m)
   puts "Average:"
   lset _(m) 0 [format %.6f [expr {[lindex $_(m) 0] / [llength $_(itcnt)]}]]
@@ -93,6 +93,74 @@ proc _test_run {reptime lst {outcmd {puts $_(r)}}} {
     puts ""
   }
   _test_out_total
+}
+
+proc test-format {{reptime 1000}} {
+  _test_run $reptime {
+    # Format : date only (in gmt)
+    {clock format 1482525936 -format "%Y-%m-%d" -gmt 1}
+    # Format : date only (system zone)
+    {clock format 1482525936 -format "%Y-%m-%d"}
+    # Format : date only (CEST)
+    {clock format 1482525936 -format "%Y-%m-%d" -timezone :CET}
+    # Format : time only (in gmt)
+    {clock format 1482525936 -format "%H:%M" -gmt 1}
+    # Format : time only (system zone)
+    {clock format 1482525936 -format "%H:%M"}
+    # Format : time only (CEST)
+    {clock format 1482525936 -format "%H:%M" -timezone :CET}
+    # Format : time only (in gmt)
+    {clock format 1482525936 -format "%H:%M:%S" -gmt 1}
+    # Format : time only (system zone)
+    {clock format 1482525936 -format "%H:%M:%S"}
+    # Format : time only (CEST)
+    {clock format 1482525936 -format "%H:%M:%S" -timezone :CET}
+    # Format : default (in gmt)
+    {clock format 1482525936 -gmt 1}
+    # Format : default (system zone)
+    {clock format 1482525936}
+    # Format : default (CEST)
+    {clock format 1482525936 -timezone :CET}
+    # Format : ISO date-time (in gmt, numeric zone)
+    {clock format 1246379400 -format "%Y-%m-%dT%H:%M:%S %z" -gmt 1}
+    # Format : ISO date-time (system zone, CEST, numeric zone)
+    {clock format 1246379400 -format "%Y-%m-%dT%H:%M:%S %z"}
+    # Format : ISO date-time (CEST, numeric zone)
+    {clock format 1246379400 -format "%Y-%m-%dT%H:%M:%S %z" -timezone :CET}
+    # Format : ISO date-time (system zone, CEST)
+    {clock format 1246379400 -format "%Y-%m-%dT%H:%M:%S %Z"}
+    # Format : julian day with time (in gmt):
+    {clock format 1246379415 -format "%J %H:%M:%S" -gmt 1}
+    # Format : julian day with time (system zone):
+    {clock format 1246379415 -format "%J %H:%M:%S"}
+
+    # Format : locale date-time (en):
+    {clock format 1246379415 -format "%x %X" -locale en}
+    # Format : locale date-time (de):
+    {clock format 1246379415 -format "%x %X" -locale de}
+
+    # Format : locale lookup table month:
+    {clock format 1246379400 -format "%b" -locale en -gmt 1}
+    # Format : locale lookup 2 tables - month and day:
+    {clock format 1246379400 -format "%b %Od" -locale en -gmt 1}
+
+    # Format : dynamic clock value (without converter caches):
+    {set i 0; continue}
+    {clock format [incr i] -format "%Y-%m-%dT%H:%M:%S" -locale en -gmt 1}
+    {puts [clock format $i -format "%Y-%m-%dT%H:%M:%S" -locale en -gmt 1]\n; continue}
+    # Format : dynamic clock value (without any converter caches, zone range overflow):
+    {set i 0; continue}
+    {clock format [incr i 86400] -format "%Y-%m-%dT%H:%M:%S" -locale en -gmt 1}
+    {puts [clock format $i -format "%Y-%m-%dT%H:%M:%S" -locale en -gmt 1]\n; continue}
+
+    # Format : dynamic format (cacheable)
+    {clock format 1246379415 -format [string trim "%d.%m.%Y %H:%M:%S "] -gmt 1}
+
+    # Format : all (in gmt, locale en)
+    {clock format 1482525936 -format "%%a = %a | %%A = %A | %%b = %b | %%h = %h | %%B = %B | %%C = %C | %%d = %d | %%e = %e | %%g = %g | %%G = %G | %%H = %H | %%I = %I | %%j = %j | %%J = %J | %%k = %k | %%l = %l | %%m = %m | %%M = %M | %%N = %N | %%p = %p | %%P = %P | %%Q = %Q | %%s = %s | %%S = %S | %%t = %t | %%u = %u | %%U = %U | %%V = %V | %%w = %w | %%W = %W | %%y = %y | %%Y = %Y | %%z = %z | %%Z = %Z | %%n = %n | %%EE = %EE | %%EC = %EC | %%Ey = %Ey | %%n = %n | %%Od = %Od | %%Oe = %Oe | %%OH = %OH | %%Ok = %Ok | %%OI = %OI | %%Ol = %Ol | %%Om = %Om | %%OM = %OM | %%OS = %OS | %%Ou = %Ou | %%Ow = %Ow | %%Oy = %Oy" -gmt 1 -locale en}
+    # Format : all (in CET, locale de)
+    {clock format 1482525936 -format "%%a = %a | %%A = %A | %%b = %b | %%h = %h | %%B = %B | %%C = %C | %%d = %d | %%e = %e | %%g = %g | %%G = %G | %%H = %H | %%I = %I | %%j = %j | %%J = %J | %%k = %k | %%l = %l | %%m = %m | %%M = %M | %%N = %N | %%p = %p | %%P = %P | %%Q = %Q | %%s = %s | %%S = %S | %%t = %t | %%u = %u | %%U = %U | %%V = %V | %%w = %w | %%W = %W | %%y = %y | %%Y = %Y | %%z = %z | %%Z = %Z | %%n = %n | %%EE = %EE | %%EC = %EC | %%Ey = %Ey | %%n = %n | %%Od = %Od | %%Oe = %Oe | %%OH = %OH | %%Ok = %Ok | %%OI = %OI | %%Ol = %Ol | %%Om = %Om | %%OM = %OM | %%OS = %OS | %%Ou = %Ou | %%Ow = %Ow | %%Oy = %Oy" -timezone :CET -locale de}
+  }
 }
 
 proc test-scan {{reptime 1000}} {
@@ -146,7 +214,7 @@ proc test-scan {{reptime 1000}} {
     # Scan : century, lookup table month
     {clock scan {1970 Jan 2} -format {%C%y %b %d} -locale en -gmt 1}
     # Scan : century, lookup table month and day (both entries are first)
-    {clock scan {1970 Jan 02} -format {%C%y %b %Od} -locale en -gmt 1}
+    {clock scan {1970 Jan 01} -format {%C%y %b %Od} -locale en -gmt 1}
     # Scan : century, lookup table month and day (list scan: entries with position 12 / 31)
     {clock scan {2016 Dec 31} -format {%C%y %b %Od} -locale en -gmt 1}
 
@@ -235,8 +303,9 @@ proc test-other {{reptime 1000}} {
 
 proc test {{reptime 1000}} {
   puts ""
+  test-format $reptime
   test-scan $reptime
-  #test-freescan $reptime
+  test-freescan $reptime
   test-other $reptime
 
   puts \n**OK**

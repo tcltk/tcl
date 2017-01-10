@@ -101,6 +101,161 @@ _str2wideInt(
     return TCL_OK;
 }
 
+inline char *
+_itoaw(
+    char *buf,
+    register int val,
+    char  padchar,
+    unsigned short int width)
+{
+    register char *p;
+    static int wrange[] = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
+
+    /* positive integer */
+
+    if (val >= 0)
+    {
+	/* check resp. recalculate width */
+	while (width <= 9 && val >= wrange[width]) {
+	    width++;
+	}
+	/* number to string backwards */
+	p = buf + width;
+	*p-- = '\0';
+	do {
+	    register char c = (val % 10); val /= 10;
+	    *p-- = '0' + c;
+	} while (val > 0);
+	/* fulling with pad-char */
+	while (p >= buf) {
+	    *p-- = padchar;
+	}
+
+	return buf + width;
+    }
+    /* negative integer */
+
+    if (!width) width++;
+    /* check resp. recalculate width (regarding sign) */
+    width--;
+    while (width <= 9 && val <= -wrange[width]) {
+	width++;
+    }
+    width++;
+    /* number to string backwards */
+    p = buf + width;
+    *p-- = '\0';
+    /* differentiate platforms with -1 % 10 == 1 and -1 % 10 == -1 */
+    if (-1 % 10 == -1) {
+	do {
+	    register char c = (val % 10); val /= 10;
+	    *p-- = '0' - c;
+	} while (val < 0);
+    } else {
+	do {
+	    register char c = (val % 10); val /= 10;
+	    *p-- = '0' + c;
+	} while (val < 0);
+    }
+    /* sign by 0 padding */
+    if (padchar != '0') { *p-- = '-'; }
+    /* fulling with pad-char */
+    while (p >= buf + 1) {
+	*p-- = padchar;
+    }
+    /* sign by non 0 padding */
+    if (padchar == '0') { *p = '-'; }
+
+    return buf + width;
+}
+
+inline char *
+_witoaw(
+    char *buf,
+    register Tcl_WideInt val,
+    char  padchar,
+    unsigned short int width)
+{
+    register char *p;
+    static int wrange[] = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
+
+    /* positive integer */
+
+    if (val >= 0)
+    {
+	/* check resp. recalculate width */
+	if (val >= 10000000000L) {
+	    Tcl_WideInt val2;
+	    val2 = val / 10000000000L;
+	    while (width <= 9 && val2 >= wrange[width]) {
+		width++;
+	    }
+	    width += 10;
+	} else {
+	    while (width <= 9 && val >= wrange[width]) {
+		width++;
+	    }
+	}
+	/* number to string backwards */
+	p = buf + width;
+	*p-- = '\0';
+	do {
+	    register char c = (val % 10); val /= 10;
+	    *p-- = '0' + c;
+	} while (val > 0);
+	/* fulling with pad-char */
+	while (p >= buf) {
+	    *p-- = padchar;
+	}
+
+	return buf + width;
+    }
+
+    /* negative integer */
+
+    if (!width) width++;
+    /* check resp. recalculate width (regarding sign) */
+    width--;
+    if (val <= 10000000000L) {
+	Tcl_WideInt val2;
+	val2 = val / 10000000000L;
+	while (width <= 9 && val2 <= -wrange[width]) {
+	    width++;
+	}
+	width += 10;
+    } else {
+	while (width <= 9 && val <= -wrange[width]) {
+	    width++;
+	}
+    }
+    width++;
+    /* number to string backwards */
+    p = buf + width;
+    *p-- = '\0';
+    /* differentiate platforms with -1 % 10 == 1 and -1 % 10 == -1 */
+    if (-1 % 10 == -1) {
+	do {
+	    register char c = (val % 10); val /= 10;
+	    *p-- = '0' - c;
+	} while (val < 0);
+    } else {
+	do {
+	    register char c = (val % 10); val /= 10;
+	    *p-- = '0' + c;
+	} while (val < 0);
+    }
+    /* sign by 0 padding */
+    if (padchar != '0') { *p-- = '-'; }
+    /* fulling with pad-char */
+    while (p >= buf + 1) {
+	*p-- = padchar;
+    }
+    /* sign by non 0 padding */
+    if (padchar == '0') { *p = '-'; }
+
+    return buf + width;
+}
+
 /*
  *----------------------------------------------------------------------
  */
@@ -1760,51 +1915,6 @@ done:
 
     return ret;
 }
-
-
-inline char *
-_itoaw(
-    char *buf,
-    register int val,
-    char  padchar,
-    unsigned short int width)
-{
-    register char *p;
-    static int wrange[] = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
-    unsigned short int sign = 0;
-
-    /* sign = 1 by negative number */
-    if (val < 0)
-    {
-	sign = 1;
-	val = -val;
-	if (!width) width++;
-    }
-    /* check resp. recalculate width (regarding sign) */
-    width -= sign;
-    while (width <= 9 && val >= wrange[width]) {
-	width++;
-    }
-    width += sign;
-    /* number to string backwards */
-    p = buf + width;
-    *p-- = '\0';
-    do {
-	*p-- = '0' + (val % 10);
-	val /= 10;
-    } while (val > 0);
-    /* sign by 0 padding */
-    if (sign && padchar != '0') { *p-- = '-'; sign = 0; }
-    /* fulling with pad-char */
-    while (p >= buf + sign) {
-	*p-- = padchar;
-    }
-    /* sign by non 0 padding */
-    if (sign) { *p = '-'; }
-
-    return buf + width;
-}
-
 
 inline int
 FrmResultAllocate(
@@ -1833,7 +1943,7 @@ ClockFmtToken_HourAMPM_Proc(
     ClockFormatToken *tok,
     int *val)
 {
-    *val = ( ( ( *val % 86400 ) + 86400 - 3600 ) / 3600 ) % 12 + 1;
+    *val = ( ( ( *val % SECONDS_PER_DAY ) + SECONDS_PER_DAY - 3600 ) / 3600 ) % 12 + 1;
     return TCL_OK;
 }
 
@@ -1848,7 +1958,7 @@ ClockFmtToken_AMPM_Proc(
     const char *s;
     int len;
 
-    if ((*val % 84600) < (84600 / 2)) {
+    if ((*val % SECONDS_PER_DAY) < (SECONDS_PER_DAY / 2)) {
 	mcObj = ClockMCGet(opts, MCLIT_AM);
     } else {
 	mcObj = ClockMCGet(opts, MCLIT_PM);
@@ -1895,7 +2005,7 @@ ClockFmtToken_StarDate_Proc(
 	fractYear, '0', 3);
     *dateFmt->output++ = '.';
     dateFmt->output = _itoaw(dateFmt->output,
-	dateFmt->date.localSeconds % 86400 / ( 86400 / 10 ), '0', 1);
+	dateFmt->date.localSeconds % SECONDS_PER_DAY / ( SECONDS_PER_DAY / 10 ), '0', 1);
 
     return TCL_OK;
 }
@@ -1916,9 +2026,162 @@ ClockFmtToken_WeekOfYear_Proc(
     *val = ( dateFmt->date.dayOfYear - dow + 7 ) / 7;
     return TCL_OK;
 }
+static int
+ClockFmtToken_TimeZone_Proc(
+    ClockFmtScnCmdArgs *opts,
+    DateFormat *dateFmt,
+    ClockFormatToken *tok,
+    int *val)
+{
+    if (*tok->tokWord.start == 'z') {
+	int z = dateFmt->date.tzOffset;
+	char sign = '+';
+	if ( z < 0 ) {
+	    z = -z;
+	    sign = '-';
+	}
+	if (FrmResultAllocate(dateFmt, 7) != TCL_OK) { return TCL_ERROR; };
+	*dateFmt->output++ = sign;
+	dateFmt->output = _itoaw(dateFmt->output, z / 3600, '0', 2);
+	z %= 3600;
+	dateFmt->output = _itoaw(dateFmt->output, z / 60, '0', 2);
+	z %= 60;
+	if (z != 0) {
+	    dateFmt->output = _itoaw(dateFmt->output, z, '0', 2);
+	}
+    } else {
+	Tcl_Obj * objPtr;
+	const char *s; int len;
+	/* convert seconds to local seconds to obtain tzName object */
+	if (ConvertUTCToLocal(opts->clientData, opts->interp,
+		&dateFmt->date, opts->timezoneObj, 
+		GREGORIAN_CHANGE_DATE) != TCL_OK) {
+	    return TCL_ERROR;
+	};
+	objPtr = dateFmt->date.tzName;
+	s = TclGetString(objPtr);
+	len = objPtr->length;
+	if (FrmResultAllocate(dateFmt, len) != TCL_OK) { return TCL_ERROR; };
+	memcpy(dateFmt->output, s, len + 1);
+	dateFmt->output += len;
+    }
+    return TCL_OK;
+}
+
+static int
+ClockFmtToken_LocaleERA_Proc(
+    ClockFmtScnCmdArgs *opts,
+    DateFormat *dateFmt,
+    ClockFormatToken *tok,
+    int *val)
+{
+    Tcl_Obj *mcObj;
+    const char *s;
+    int len;
+
+    if (dateFmt->date.era == BCE) {
+	mcObj = ClockMCGet(opts, MCLIT_BCE);
+    } else {
+	mcObj = ClockMCGet(opts, MCLIT_CE);
+    }
+    if (mcObj == NULL) {
+	return TCL_ERROR;
+    }
+    s = TclGetString(mcObj); len = mcObj->length;
+    if (FrmResultAllocate(dateFmt, len) != TCL_OK) { return TCL_ERROR; };
+    memcpy(dateFmt->output, s, len + 1);
+    dateFmt->output += len;
+
+    return TCL_OK;
+}
+
+static int
+ClockFmtToken_LocaleERAYear_Proc(
+    ClockFmtScnCmdArgs *opts,
+    DateFormat *dateFmt,
+    ClockFormatToken *tok,
+    int *val)
+{
+    int rowc;
+    Tcl_Obj **rowv;
+
+    if (dateFmt->localeEra == NULL) {
+	Tcl_Obj *mcObj = ClockMCGet(opts, MCLIT_LOCALE_ERAS);
+	if (mcObj == NULL) {
+	    return TCL_ERROR;
+	}
+	if (TclListObjGetElements(opts->interp, mcObj, &rowc, &rowv) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (rowc != 0) {
+	    dateFmt->localeEra = LookupLastTransition(opts->interp, 
+		dateFmt->date.localSeconds, rowc, rowv, NULL);
+	}
+	if (dateFmt->localeEra == NULL) {
+	    dateFmt->localeEra = (Tcl_Obj*)1;
+	}
+    }
+
+    /* if no LOCALE_ERAS in catalog or era not found */
+    if (dateFmt->localeEra == (Tcl_Obj*)1) {
+	if (FrmResultAllocate(dateFmt, 11) != TCL_OK) { return TCL_ERROR; };
+	if (*tok->tokWord.start == 'C') { /* %EC */
+	    *val = dateFmt->date.year / 100;
+	    dateFmt->output = _itoaw(dateFmt->output, 
+		*val, '0', 2);
+	} else {			  /* %Ey */
+	    *val = dateFmt->date.year % 100;
+	    dateFmt->output = _itoaw(dateFmt->output, 
+		*val, '0', 2);
+	}
+    } else {
+	Tcl_Obj *objPtr;
+	const char *s;
+	int len;
+	if (*tok->tokWord.start == 'C') { /* %EC */
+	    if (Tcl_ListObjIndex(opts->interp, dateFmt->localeEra, 1,
+			&objPtr) != TCL_OK ) {
+		return TCL_ERROR;
+	    }
+	} else {			  /* %Ey */
+	    if (Tcl_ListObjIndex(opts->interp, dateFmt->localeEra, 2,
+			&objPtr) != TCL_OK ) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetIntFromObj(opts->interp, objPtr, val) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    *val = dateFmt->date.year - *val;
+	    /* if year in locale numerals */
+	    if (*val >= 0 && *val < 100) {
+		/* year as integer */
+		Tcl_Obj * mcObj = ClockMCGet(opts, MCLIT_LOCALE_NUMERALS);
+		if (mcObj == NULL) {
+		    return TCL_ERROR;
+		}
+		if (Tcl_ListObjIndex(opts->interp, mcObj, *val, &objPtr) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    } else {
+		/* year as integer */
+		if (FrmResultAllocate(dateFmt, 11) != TCL_OK) { return TCL_ERROR; };
+		dateFmt->output = _itoaw(dateFmt->output, 
+		    *val, '0', 2);
+		return TCL_OK;
+	    }
+	}
+	s = TclGetString(objPtr);
+	len = objPtr->length;
+	if (FrmResultAllocate(dateFmt, len) != TCL_OK) { return TCL_ERROR; };
+	memcpy(dateFmt->output, s, len + 1);
+	dateFmt->output += len;
+    }
+    return TCL_OK;
+}
+
 
 static const char *FmtSTokenMapIndex = 
-    "demNbByYCHMSIklpaAuwUVgGjJsntQ";
+    "demNbByYCHMSIklpaAuwUVzgGjJsntQ";
 static ClockFormatTokenMap FmtSTokenMap[] = {
     /* %d */
     {CFMTT_INT, "0", 2, 0, 0, 0, TclOffset(DateFormat, date.dayOfMonth), NULL},
@@ -1941,21 +2204,21 @@ static ClockFormatTokenMap FmtSTokenMap[] = {
     /* %C */
     {CFMTT_INT, "0", 2, 0, 100, 0, TclOffset(DateFormat, date.year), NULL},
     /* %H */
-    {CFMTT_INT, "0", 2, 0, 3600, 24, TclOffset(DateFormat, date.localSeconds), NULL},
+    {CFMTT_INT, "0", 2, 0, 3600, 24, TclOffset(DateFormat, date.secondOfDay), NULL},
     /* %M */
-    {CFMTT_INT, "0", 2, 0, 60, 60, TclOffset(DateFormat, date.localSeconds), NULL},
+    {CFMTT_INT, "0", 2, 0, 60, 60, TclOffset(DateFormat, date.secondOfDay), NULL},
     /* %S */
-    {CFMTT_INT, "0", 2, 0, 0, 60, TclOffset(DateFormat, date.localSeconds), NULL},
+    {CFMTT_INT, "0", 2, 0, 0, 60, TclOffset(DateFormat, date.secondOfDay), NULL},
     /* %I */
-    {CFMTT_INT, "0", 2, CLFMT_CALC, 0, 0, TclOffset(DateFormat, date.localSeconds), 
+    {CFMTT_INT, "0", 2, CLFMT_CALC, 0, 0, TclOffset(DateFormat, date.secondOfDay), 
 	ClockFmtToken_HourAMPM_Proc, NULL},
     /* %k */
-    {CFMTT_INT, " ", 2, 0, 3600, 24, TclOffset(DateFormat, date.localSeconds), NULL},
+    {CFMTT_INT, " ", 2, 0, 3600, 24, TclOffset(DateFormat, date.secondOfDay), NULL},
     /* %l */
-    {CFMTT_INT, " ", 2, CLFMT_CALC, 0, 0, TclOffset(DateFormat, date.localSeconds), 
+    {CFMTT_INT, " ", 2, CLFMT_CALC, 0, 0, TclOffset(DateFormat, date.secondOfDay), 
 	ClockFmtToken_HourAMPM_Proc, NULL},
     /* %p %P */
-    {CFMTT_INT, NULL, 0, 0, 0, 0, TclOffset(DateFormat, date.localSeconds), 
+    {CFMTT_INT, NULL, 0, 0, 0, 0, TclOffset(DateFormat, date.secondOfDay), 
 	ClockFmtToken_AMPM_Proc, NULL},
     /* %a */
     {CFMTT_INT, NULL, 0, CLFMT_LOCALE_INDX, 0, 7, TclOffset(DateFormat, date.dayOfWeek),
@@ -1972,6 +2235,9 @@ static ClockFormatTokenMap FmtSTokenMap[] = {
 	ClockFmtToken_WeekOfYear_Proc, NULL},
     /* %V */
     {CFMTT_INT, "0", 2, 0, 0, 0, TclOffset(DateFormat, date.iso8601Week), NULL},
+    /* %z %Z */
+    {CFMTT_INT, NULL, 0, 0, 0, 0, 0, 
+	ClockFmtToken_TimeZone_Proc, NULL},
     /* %g */
     {CFMTT_INT, "0", 2, 0, 0, 100, TclOffset(DateFormat, date.iso8601Year), NULL},
     /* %G */
@@ -1981,7 +2247,7 @@ static ClockFormatTokenMap FmtSTokenMap[] = {
     /* %J */
     {CFMTT_INT, "0", 7, 0, 0, 0, TclOffset(DateFormat, date.julianDay), NULL},
     /* %s */
-    {CFMTT_WIDE, "%ld", 0, 0, 0, 0, TclOffset(DateFormat, date.seconds), NULL},
+    {CFMTT_WIDE, "0", 1, 0, 0, 0, TclOffset(DateFormat, date.seconds), NULL},
     /* %n */
     {CFMTT_CHAR, "\n", 0, 0, 0, 0, 0, NULL},
     /* %t */
@@ -1989,103 +2255,61 @@ static ClockFormatTokenMap FmtSTokenMap[] = {
     /* %Q */
     {CFMTT_INT, NULL, 0, 0, 0, 0, 0, 
 	ClockFmtToken_StarDate_Proc, NULL},
-
-#if 0
-    /* %H %k %I %l */
-    {CFMTT_INT, CLF_TIME, 1, 2, TclOffset(DateFormat, date.hour),
-	NULL},
-    /* %M */
-    {CFMTT_INT, CLF_TIME, 1, 2, TclOffset(DateFormat, date.minutes),
-	NULL},
-    /* %S */
-    {CFMTT_INT, CLF_TIME, 1, 2, TclOffset(DateFormat, date.secondOfDay),
-	NULL},
-    /* %p %P */
-    {CTOKT_PARSER, CLF_ISO8601, 0, 0, 0,
-	ClockFmtToken_amPmInd_Proc, NULL},
-    /* %J */
-    {CFMTT_INT, CLF_JULIANDAY, 1, 0xffff, TclOffset(DateFormat, date.julianDay),
-	NULL},
-    /* %j */
-    {CFMTT_INT, CLF_DAYOFYEAR, 1, 3, TclOffset(DateFormat, date.dayOfYear),
-	NULL},
-    /* %g */
-    {CFMTT_INT, CLF_ISO8601YEAR | CLF_ISO8601, 2, 2, TclOffset(DateFormat, date.iso8601Year),
-	NULL},
-    /* %G */
-    {CFMTT_INT, CLF_ISO8601YEAR | CLF_ISO8601 | CLF_ISO8601CENTURY, 4, 4, TclOffset(DateFormat, date.iso8601Year),
-	NULL},
-    /* %V */
-    {CFMTT_INT, CLF_ISO8601, 1, 2, TclOffset(DateFormat, date.iso8601Week),
-	NULL},
-    /* %a %A %u %w */
-    {CTOKT_PARSER, CLF_ISO8601, 0, 0, 0,
-	ClockFmtToken_DayOfWeek_Proc, NULL},
-    /* %z %Z */
-    {CTOKT_PARSER, CLF_OPTIONAL, 0, 0, 0,
-	ClockFmtToken_TimeZone_Proc, NULL},
-    /* %s */
-    {CFMTT_INT, CLF_LOCALSEC | CLF_SIGNED, 0, 1, 0xffff, TclOffset(DateFormat, date.localSeconds),
-	NULL},
-#endif
 };
 static const char *FmtSTokenMapAliasIndex[2] = {
-    "hPW",
-    "bpU"
+    "hPWZ",
+    "bpUz"
 };
 
 static const char *FmtETokenMapIndex = 
-"";//	 "Ey";
+    "Ey";
 static ClockFormatTokenMap FmtETokenMap[] = {
-    {CFMTT_INT, "0", 2, 0, 0, 0, 0, NULL},
-#if 0
     /* %EE */
-    {CTOKT_PARSER, 0, 0, 0, 0, TclOffset(DateFormat, date.year),
-	ClockFmtToken_LocaleERA_Proc, (void *)MCLIT_LOCALE_NUMERALS},
-    /* %Ey */
-    {CTOKT_PARSER, 0, 0, 0, 0, 0, /* currently no capture, parse only token */
-	ClockFmtToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
-#endif
+    {CFMTT_INT, NULL, 0, 0, 0, 0, TclOffset(DateFormat, date.era), 
+	ClockFmtToken_LocaleERA_Proc, NULL},
+    /* %Ey %EC */
+    {CFMTT_INT, NULL, 0, 0, 0, 0, TclOffset(DateFormat, date.year),
+	ClockFmtToken_LocaleERAYear_Proc, NULL},
 };
 static const char *FmtETokenMapAliasIndex[2] = {
-    "",
-    ""
+    "C",
+    "y"
 };
 
 static const char *FmtOTokenMapIndex = 
-"";//	 "dmyHMSu";
+    "dmyHIMSuw";
 static ClockFormatTokenMap FmtOTokenMap[] = {
-    {CFMTT_INT, "0", 2, 0, 0, 0, 0, NULL},
-#if 0
     /* %Od %Oe */
-    {CTOKT_PARSER, CLF_DAYOFMONTH, 0, 0, 0, TclOffset(DateFormat, date.dayOfMonth),
-	ClockFmtToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
+    {CFMTT_INT, NULL, 0, CLFMT_LOCALE_INDX, 0, 100, TclOffset(DateFormat, date.dayOfMonth),
+	NULL, (void *)MCLIT_LOCALE_NUMERALS},
     /* %Om */
-    {CTOKT_PARSER, CLF_MONTH, 0, 0, 0, TclOffset(DateFormat, date.month),
-	ClockFmtToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
+    {CFMTT_INT, NULL, 0, CLFMT_LOCALE_INDX, 0, 100, TclOffset(DateFormat, date.month),
+	NULL, (void *)MCLIT_LOCALE_NUMERALS},
     /* %Oy */
-    {CTOKT_PARSER, CLF_YEAR, 0, 0, 0, TclOffset(DateFormat, date.year),
-	ClockFmtToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
-    /* %OH %Ok %OI %Ol */
-    {CTOKT_PARSER, CLF_TIME, 0, 0, 0, TclOffset(DateFormat, date.hour),
-	ClockFmtToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
+    {CFMTT_INT, NULL, 0, CLFMT_LOCALE_INDX, 0, 100, TclOffset(DateFormat, date.year),
+	NULL, (void *)MCLIT_LOCALE_NUMERALS},
+    /* %OH %Ok */
+    {CFMTT_INT, NULL, 0, CLFMT_LOCALE_INDX, 3600, 24, TclOffset(DateFormat, date.secondOfDay), 
+	NULL, (void *)MCLIT_LOCALE_NUMERALS},
+    /* %OI %Ol */
+    {CFMTT_INT, NULL, 0, CLFMT_CALC | CLFMT_LOCALE_INDX, 0, 0, TclOffset(DateFormat, date.secondOfDay), 
+	ClockFmtToken_HourAMPM_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %OM */
-    {CTOKT_PARSER, CLF_TIME, 0, 0, 0, TclOffset(DateFormat, date.minutes),
-	ClockFmtToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
+    {CFMTT_INT, NULL, 0, CLFMT_LOCALE_INDX, 60, 60, TclOffset(DateFormat, date.secondOfDay), 
+	NULL, (void *)MCLIT_LOCALE_NUMERALS},
     /* %OS */
-    {CTOKT_PARSER, CLF_TIME, 0, 0, 0, TclOffset(DateFormat, date.secondOfDay),
-	ClockFmtToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
-    /* %Ou Ow */
-    {CTOKT_PARSER, CLF_ISO8601, 0, 0, 0, 0,
-	ClockFmtToken_DayOfWeek_Proc, (void *)MCLIT_LOCALE_NUMERALS},
-#endif
+    {CFMTT_INT, NULL, 0, CLFMT_LOCALE_INDX, 0, 60, TclOffset(DateFormat, date.secondOfDay), 
+	NULL, (void *)MCLIT_LOCALE_NUMERALS},
+    /* %Ou */
+    {CFMTT_INT, NULL, 0, CLFMT_LOCALE_INDX, 0, 100, TclOffset(DateFormat, date.dayOfWeek),
+	NULL, (void *)MCLIT_LOCALE_NUMERALS},
+    /* %Ow */
+    {CFMTT_INT, NULL, 0, CLFMT_LOCALE_INDX, 0, 7, TclOffset(DateFormat, date.dayOfWeek), 
+	NULL, (void *)MCLIT_LOCALE_NUMERALS},
 };
 static const char *FmtOTokenMapAliasIndex[2] = {
-"", ""
-#if 0
-    "ekIlw",
-    "dHHHu"
-#endif
+    "ekl",
+    "dHI"
 };
 
 static ClockFormatTokenMap FmtWordTokenMap = {
@@ -2232,7 +2456,14 @@ ClockFormat(
 	return TCL_ERROR;
     }
 
-    dateFmt->resMem = ckalloc(MIN_FMT_RESULT_BLOCK_ALLOC); /* result container object */
+    /* prepare formatting */
+    dateFmt->date.secondOfDay = (int)(dateFmt->date.localSeconds % SECONDS_PER_DAY);
+    if (dateFmt->date.secondOfDay < 0) {
+	dateFmt->date.secondOfDay += SECONDS_PER_DAY;
+    }
+    
+    /* result container object */
+    dateFmt->resMem = ckalloc(MIN_FMT_RESULT_BLOCK_ALLOC);
     if (dateFmt->resMem == NULL) {
 	return TCL_ERROR;
     }
@@ -2283,7 +2514,9 @@ ClockFormat(
 		if (mcObj == NULL) {
 		    goto error;
 		}
-		if (Tcl_ListObjIndex(opts->interp, mcObj, val, &mcObj) != TCL_OK) {
+		if ( Tcl_ListObjIndex(opts->interp, mcObj, val, &mcObj) != TCL_OK
+		  || mcObj == NULL
+		) {
 		    goto error;
 		}
 		s = TclGetString(mcObj);
@@ -2297,7 +2530,11 @@ ClockFormat(
 	if (1) {
 	    Tcl_WideInt val = *(Tcl_WideInt *)(((char *)dateFmt) + map->offs);
 	    if (FrmResultAllocate(dateFmt, 21) != TCL_OK) { goto error; };
-	    dateFmt->output += sprintf(dateFmt->output, map->tostr, val);
+	    if (map->width) {
+		dateFmt->output = _witoaw(dateFmt->output, val, *map->tostr, map->width);
+	    } else {
+		dateFmt->output += sprintf(dateFmt->output, map->tostr, val);
+	    }
 	}
 	break;
 	case CFMTT_CHAR:
