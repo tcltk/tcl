@@ -35,6 +35,22 @@
 #define CLF_INVALIDATE_JULIANDAY (1 << 7) /* assemble julianDay using year, month, etc. */
 #define CLF_INVALIDATE_SECONDS	 (1 << 8) /* assemble localSeconds (and seconds at end) */
 
+
+/*
+ * Enumeration of the msgcat literals used in [clock]
+ */
+
+typedef enum ClockMsgCtLiteral {
+    MCLIT_MONTHS_FULL,	MCLIT_MONTHS_ABBREV,
+    MCLIT_LOCALE_NUMERALS,
+    MCLIT__END
+} ClockMsgCtLiteral;
+
+#define CLOCK_LOCALE_LITERAL_ARRAY(litarr, pref) static const char *const litarr[] = { \
+    pref "MONTHS_FULL", pref "MONTHS_ABBREV", \
+    pref "LOCALE_NUMERALS", \
+}
+
 /*
  * Primitives to safe set, reset and free references.
  */
@@ -176,16 +192,19 @@ ClockInitDateInfo(DateInfo *info) {
 
 #define CLF_EXTENDED	(1 << 4)
 #define CLF_STRICT	(1 << 8)
+#define CLF_LOCALE_USED (1 << 15)
 
 typedef struct ClockFmtScnCmdArgs {
-    ClientData clientData,  /* Opaque pointer to literal pool, etc. */
-    Tcl_Interp *interp,	    /* Tcl interpreter */
+    ClientData clientData;  /* Opaque pointer to literal pool, etc. */
+    Tcl_Interp *interp;	    /* Tcl interpreter */
 
     Tcl_Obj *formatObj;	    /* Format */
     Tcl_Obj *localeObj;	    /* Name of the locale where the time will be expressed. */
     Tcl_Obj *timezoneObj;   /* Default time zone in which the time will be expressed */
     Tcl_Obj *baseObj;	    /* Base (scan only) */
     int	     flags;	    /* Flags control scanning */
+
+    Tcl_Obj *mcDictObj;	    /* Current dictionary of tcl::clock package for given localeObj*/
 } ClockFmtScnCmdArgs;
 
 /*
@@ -194,7 +213,11 @@ typedef struct ClockFmtScnCmdArgs {
 
 typedef struct ClockClientData {
     int refCount;		/* Number of live references. */
-    Tcl_Obj **literals;		/* Pool of object literals. */
+    Tcl_Obj **literals;		/* Pool of object literals (common, locale independent). */
+    Tcl_Obj **mcLiterals;	/* Msgcat object literals with mc-keys for search with locale. */
+    Tcl_Obj **mcLitIdxs;	/* Msgcat object indices prefixed with _IDX_,
+				 * used for quick dictionary search */
+
     /* Cache for current clock parameters, imparted via "configure" */
     unsigned long LastTZEpoch;
     int currentYearCentury;
@@ -208,6 +231,13 @@ typedef struct ClockClientData {
     Tcl_Obj *LastUnnormSetupTimeZone;
     Tcl_Obj *LastSetupTimeZone;
     Tcl_Obj *LastSetupTZData;
+
+    Tcl_Obj *CurrentLocale;
+    Tcl_Obj *CurrentLocaleDict;
+    Tcl_Obj *LastUnnormUsedLocale;
+    Tcl_Obj *LastUsedLocale;
+    Tcl_Obj *LastUsedLocaleDict;
+
     /* Cache for last base (last-second fast convert if base/tz not changed) */
     struct {
 	Tcl_Obj *timezoneObj;
@@ -327,6 +357,15 @@ MODULE_SCOPE time_t ToSeconds(time_t Hours, time_t Minutes,
 			    time_t Seconds, MERIDIAN Meridian);
 
 MODULE_SCOPE int    TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
+
+/* tclClock.c module declarations */
+
+MODULE_SCOPE Tcl_Obj *
+		    ClockMCDict(ClockFmtScnCmdArgs *opts);
+MODULE_SCOPE Tcl_Obj *
+		    ClockMCGet(ClockFmtScnCmdArgs *opts, int mcKey);
+MODULE_SCOPE Tcl_Obj *
+		    ClockMCGetListIdxDict(ClockFmtScnCmdArgs *opts, int mcKey);
 
 /* tclClockFmt.c module declarations */
 
