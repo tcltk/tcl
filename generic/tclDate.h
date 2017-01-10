@@ -29,6 +29,8 @@
 #define FOUR_YEARS			1461	/* days */
 #define ONE_YEAR			365	/* days */
 
+#define RODDENBERRY			1946	/* Another epoch (Hi, Jeff!) */
+
 
 #define CLF_OPTIONAL	       (1 << 0) /* token is non mandatory */
 #define CLF_JULIANDAY	       (1 << 3)
@@ -403,6 +405,7 @@ typedef int ClockFormatTokenProc(
 typedef struct ClockFormatTokenMap {
     unsigned short int	type;
     const char	       *tostr;
+    unsigned short int	width;
     unsigned short int	flags;
     unsigned short int	divider;
     unsigned short int	divmod;
@@ -441,6 +444,7 @@ typedef struct ClockFmtScnStorage {
 
 MODULE_SCOPE time_t ToSeconds(time_t Hours, time_t Minutes,
 			    time_t Seconds, MERIDIAN Meridian);
+MODULE_SCOPE int    IsGregorianLeapYear(TclDateFields *);
 
 MODULE_SCOPE int    TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
 
