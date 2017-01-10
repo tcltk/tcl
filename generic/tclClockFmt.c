@@ -609,12 +609,12 @@ FindWordEnd(
 	return ++p;
     }
     /* multi-char word */
-    while (*p++ == *x++) {
-	if (x >= tok->tokWord.end || p >= end) {
+    do 
+	if (*p++ != *x++) {
 	    /* no match -> error */
 	    return NULL;
 	}
-    };
+    while (x <= tok->tokWord.end && p < end);
     return p;
 }
 
