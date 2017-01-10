@@ -287,9 +287,10 @@ proc ::tcl::clock::Initialize {} {
 
     variable FEB_28	       58
 
-    # Current year century and year of century switch
-    variable CurrentYearCentury  2000
-    variable YearOfCenturySwitch 38
+    # Default configuration
+
+    # configure -year-century    2000 \
+    #           -century-switch  38
 
     # Translation table to map Windows TZI onto cities, so that the Olson
     # rules can apply.  In some cases the mapping is ambiguous, so it's wise
@@ -2534,13 +2535,11 @@ proc ::tcl::clock::ScanWide { str } {
 proc ::tcl::clock::InterpretTwoDigitYear { date baseTime
 					   { twoDigitField yearOfCentury }
 					   { fourDigitField year } } {
-    variable CurrentYearCentury
-    variable YearOfCenturySwitch
     set yr [dict get $date $twoDigitField]
-    if { $yr >= $YearOfCenturySwitch } {
+    if { $yr >= [configure -century-switch] } {
 	incr yr -100
     }
-    incr yr $CurrentYearCentury
+    incr yr [configure -year-century]
     dict set date $fourDigitField $yr
     return $date
 }

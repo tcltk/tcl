@@ -35917,7 +35917,94 @@ test clock-34.52 {more than one ordinal month} {*}{
     -result {unable to convert date-time string "next January next March": more than one ordinal month in string}
 }
 
+test clock-34.53.1 {relative from base, date switch} {
+    set base [clock scan "12/31/2016 23:59:59" -gmt 1]
+    clock format [clock scan "+1 second" \
+       -base $base -gmt 1] -gmt 1 -format {%Y-%m-%d %H:%M:%S}
+} {2017-01-01 00:00:00}
 
+test clock-34.53.2 {relative time, daylight switch} {
+    set base [clock scan "03/27/2016" -timezone CET]
+    set res {}
+    lappend res [clock format [clock scan "+1 hour" \
+       -base $base -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+    lappend res [clock format [clock scan "+2 hour" \
+       -base $base -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+} {{2016-03-27 01:00:00 CET} {2016-03-27 03:00:00 CEST}}
+
+test clock-34.53.3 {relative time with day increment / daylight switch} {
+    set base [clock scan "03/27/2016" -timezone CET]
+    set res {}
+    lappend res [clock format [clock scan "+5 day +25 hour" \
+       -base [expr {$base - 6*24*60*60}] -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+    lappend res [clock format [clock scan "+5 day +26 hour" \
+       -base [expr {$base - 6*24*60*60}] -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+} {{2016-03-27 01:00:00 CET} {2016-03-27 03:00:00 CEST}}
+
+test clock-34.53.4 {relative time with month & day increment / daylight switch} {
+    set base [clock scan "03/27/2016" -timezone CET]
+    set res {}
+    lappend res [clock format [clock scan "next Mar +5 day +25 hour" \
+       -base [expr {$base - 35*24*60*60}] -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+    lappend res [clock format [clock scan "next Mar +5 day +26 hour" \
+       -base [expr {$base - 35*24*60*60}] -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+} {{2016-03-27 01:00:00 CET} {2016-03-27 03:00:00 CEST}}
+
+test clock-34.54.1 {check date in DST-hole: daylight switch CET -> CEST} {
+    set res {}
+    # forwards
+    set base 1459033200
+    for {set i 0} {$i <= 3} {incr i} {
+    	set d [clock scan "+$i hour" -base $base -timezone CET]
+    	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+    }
+    lappend res "#--"
+    # backwards
+    set base 1459044000
+    for {set i 0} {$i <= 3} {incr i} {
+    	set d [clock scan "-$i hour" -base $base -timezone CET]
+    	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+    }
+    set res
+} [split [regsub -all {^\n|\n$} {
+1459033200 = 2016-03-27 00:00:00 CET
+1459036800 = 2016-03-27 01:00:00 CET
+1459040400 = 2016-03-27 03:00:00 CEST
+1459044000 = 2016-03-27 04:00:00 CEST
+#--
+1459044000 = 2016-03-27 04:00:00 CEST
+1459040400 = 2016-03-27 03:00:00 CEST
+1459036800 = 2016-03-27 01:00:00 CET
+1459033200 = 2016-03-27 00:00:00 CET
+} {}] \n]
+
+test clock-34.54.2 {check date in DST-hole: daylight switch CEST -> CET} {
+    set res {}
+    # forwards
+    set base 1477782000
+    for {set i 0} {$i <= 3} {incr i} {
+    	set d [clock scan "+$i hour" -base $base -timezone CET]
+    	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+    }
+    lappend res "#--"
+    # backwards
+    set base 1477792800
+    for {set i 0} {$i <= 3} {incr i} {
+    	set d [clock scan "-$i hour" -base $base -timezone CET]
+    	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+    }
+    set res
+} [split [regsub -all {^\n|\n$} {
+1477782000 = 2016-10-30 01:00:00 CEST
+1477785600 = 2016-10-30 02:00:00 CEST
+1477789200 = 2016-10-30 02:00:00 CET
+1477792800 = 2016-10-30 03:00:00 CET
+#--
+1477792800 = 2016-10-30 03:00:00 CET
+1477789200 = 2016-10-30 02:00:00 CET
+1477785600 = 2016-10-30 02:00:00 CEST
+1477782000 = 2016-10-30 01:00:00 CEST
+} {}] \n]
 
 # clock seconds
 test clock-35.1 {clock seconds tests} {
