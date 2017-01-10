@@ -51,7 +51,6 @@
 #define CLF_DATE	       (CLF_JULIANDAY | CLF_DAYOFMONTH | CLF_DAYOFYEAR | \
 				CLF_MONTH | CLF_YEAR | CLF_ISO8601YEAR | CLF_ISO8601)
 
-
 /*
  * Enumeration of the string literals used in [clock]
  */
@@ -352,28 +351,9 @@ typedef int ClockScanTokenProc(
 
 
 typedef enum _CLCKTOK_TYPE {
-   CTOKT_DIGIT = 1, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD
+   CTOKT_DIGIT = 1, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD,
+   CFMTT_INT, CFMTT_WIDE, CFMTT_CHAR, CFMTT_PROC
 } CLCKTOK_TYPE;
-
-typedef struct ClockFmtScnStorage ClockFmtScnStorage;
-
-typedef struct ClockFormatTokenMap {
-    unsigned short int	type;
-    unsigned short int	flags;
-    unsigned short int	clearFlags;
-    unsigned short int	minSize;
-    unsigned short int	maxSize;
-    unsigned short int	offs;
-    ClockScanTokenProc *parser;
-    void	       *data;
-} ClockFormatTokenMap;
-typedef struct ClockFormatToken {
-    ClockFormatTokenMap *map;
-    struct {
-	const char *start;
-	const char *end;
-    } tokWord;
-} ClockFormatToken;
 
 typedef struct ClockScanTokenMap {
     unsigned short int	type;
@@ -396,8 +376,50 @@ typedef struct ClockScanToken {
     } tokWord;
 } ClockScanToken;
 
-#define ClockScnTokenChar(tok) \
-    *tok->tokWord.start;
+
+#define MIN_FMT_RESULT_BLOCK_ALLOC 200
+
+typedef struct DateFormat {
+    char *resMem;
+    char *resEnd;
+    char *output;
+
+    TclDateFields date;
+} DateFormat;
+
+#define CLFMT_INCR	    (1 << 3)
+#define CLFMT_DECR	    (1 << 4)
+#define CLFMT_CALC	    (1 << 5)
+#define CLFMT_LOCALE_INDX   (1 << 8)
+
+typedef struct ClockFormatToken ClockFormatToken;
+
+typedef int ClockFormatTokenProc(
+	ClockFmtScnCmdArgs *opts,
+	DateFormat *dateFmt,
+	ClockFormatToken *tok,
+	int *val);
+
+typedef struct ClockFormatTokenMap {
+    unsigned short int	type;
+    const char	       *tostr;
+    unsigned short int	flags;
+    unsigned short int	divider;
+    unsigned short int	divmod;
+    unsigned short int	offs;
+    ClockFormatTokenProc *fmtproc;
+    void	       *data;
+} ClockFormatTokenMap;
+typedef struct ClockFormatToken {
+    ClockFormatTokenMap *map;
+    struct {
+	const char *start;
+	const char *end;
+    } tokWord;
+} ClockFormatToken;
+
+
+typedef struct ClockFmtScnStorage ClockFmtScnStorage;
 
 typedef struct ClockFmtScnStorage {
     int			 objRefCount;	/* Reference count shared across threads */
@@ -449,12 +471,11 @@ MODULE_SCOPE ClockFmtScnStorage *
 MODULE_SCOPE Tcl_Obj *
 		    ClockLocalizeFormat(ClockFmtScnCmdArgs *opts);
 
-MODULE_SCOPE int    ClockScan(ClientData clientData, Tcl_Interp *interp,
-			register DateInfo *info,
+MODULE_SCOPE int    ClockScan(register DateInfo *info,
 			Tcl_Obj *strObj, ClockFmtScnCmdArgs *opts);
 
-MODULE_SCOPE int    ClockFormat(ClientData clientData, Tcl_Interp *interp,
-			register DateInfo *info, ClockFmtScnCmdArgs *opts);
+MODULE_SCOPE int    ClockFormat(register DateFormat *dateFmt, 
+			ClockFmtScnCmdArgs *opts);
 
 MODULE_SCOPE void   ClockFrmScnClearCaches(void);
 

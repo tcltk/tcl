@@ -129,6 +129,9 @@ static int		ClockParseformatargsObjCmd(
 static int		ClockSecondsObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		ClockFormatObjCmd(
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 static int		ClockScanObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -164,6 +167,7 @@ static const struct ClockCommand clockCommands[] = {
     { "microseconds",		ClockMicrosecondsObjCmd },
     { "milliseconds",		ClockMillisecondsObjCmd },
     { "seconds",		ClockSecondsObjCmd },
+    { "format",			ClockFormatObjCmd },
     { "scan",			ClockScanObjCmd },
     { "configure",		ClockConfigureObjCmd },
     { "Oldscan",		TclClockOldscanObjCmd },
@@ -2944,8 +2948,7 @@ ClockFormatObjCmd(
     int ret;
     ClockFmtScnCmdArgs opts;	/* Format, locale, timezone and base */
     Tcl_WideInt	    clockVal;	/* Time, expressed in seconds from the Epoch */
-    DateInfo	    yy;		/* Common structure used for parsing */
-    DateInfo	   *info = &yy;
+    DateFormat	    dateFmt;	/* Common structure used for formatting */
 
     if ((objc & 1) == 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string "
@@ -2972,9 +2975,7 @@ ClockFormatObjCmd(
 	return TCL_ERROR;
     }
 
-
-    ClockInitDateInfo(info);
-    yydate.tzName = NULL;
+    memset(&dateFmt, 0, sizeof(dateFmt));
 
     /*
      * Extract year, month and day from the base time for the parser to use as
@@ -2984,16 +2985,16 @@ ClockFormatObjCmd(
     /* check base fields already cached (by TZ, last-second cache) */
     if ( dataPtr->lastBase.timezoneObj == opts.timezoneObj
       && dataPtr->lastBase.Date.seconds == clockVal) {
-	memcpy(&yydate, &dataPtr->lastBase.Date, ClockCacheableDateFieldsSize);
+	memcpy(&dateFmt.date, &dataPtr->lastBase.Date, ClockCacheableDateFieldsSize);
     } else {
 	/* extact fields from base */
-	yydate.seconds = clockVal;
-	if (ClockGetDateFields(clientData, interp, &yydate, opts.timezoneObj,
+	dateFmt.date.seconds = clockVal;
+	if (ClockGetDateFields(clientData, interp, &dateFmt.date, opts.timezoneObj,
 	      GREGORIAN_CHANGE_DATE) != TCL_OK) {
 	    goto done;
 	}
 	/* cache last base */
-	memcpy(&dataPtr->lastBase.Date, &yydate, ClockCacheableDateFieldsSize);
+	memcpy(&dataPtr->lastBase.Date, &dateFmt.date, ClockCacheableDateFieldsSize);
 	Tcl_SetObjRef(dataPtr->lastBase.timezoneObj, opts.timezoneObj);
     }
 
@@ -3004,11 +3005,11 @@ ClockFormatObjCmd(
 
     /* Use compiled version of Format - */
 
-    ret = ClockFormat(clientData, interp, info, &opts);
+    ret = ClockFormat(&dateFmt, &opts);
 
 done:
 
-    Tcl_UnsetObjRef(yydate.tzName);
+    Tcl_UnsetObjRef(dateFmt.date.tzName);
 
     if (ret != TCL_OK) {
 	return ret;
@@ -3072,8 +3073,7 @@ ClockScanObjCmd(
     }
 
     ClockInitDateInfo(info);
-    yydate.tzName = NULL;
-
+    
     /*
      * Extract year, month and day from the base time for the parser to use as
      * defaults
@@ -3114,7 +3114,7 @@ ClockScanObjCmd(
     else {
 	/* Use compiled version of Scan - */
 
-	ret = ClockScan(clientData, interp, info, objv[1], &opts);
+	ret = ClockScan(info, objv[1], &opts);
     }
 
     if (ret != TCL_OK) {
