@@ -264,7 +264,7 @@ typedef struct ClockFmtScnCmdArgs {
     Tcl_Obj *formatObj;	    /* Format */
     Tcl_Obj *localeObj;	    /* Name of the locale where the time will be expressed. */
     Tcl_Obj *timezoneObj;   /* Default time zone in which the time will be expressed */
-    Tcl_Obj *baseObj;	    /* Base (scan only) */
+    Tcl_Obj *baseObj;	    /* Base (scan and add) or clockValue (format) */
     int	     flags;	    /* Flags control scanning */
 
     Tcl_Obj *mcDictObj;	    /* Current dictionary of tcl::clock package for given localeObj*/
