@@ -10,6 +10,7 @@
 #----------------------------------------------------------------------
 #
 # Copyright (c) 2004,2005,2006,2007 by Kevin B. Kenny
+# Copyright (c) 2015 by Sergey G. Brester aka sebres.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
