@@ -66,12 +66,12 @@ namespace eval tcl {
     }
 
     if {![interp issafe]} {
-        variable Path [encoding dirs]
-        set Dir [file join $::tcl_library encoding]
-        if {$Dir ni $Path} {
+	variable Path [encoding dirs]
+	set Dir [file join $::tcl_library encoding]
+	if {$Dir ni $Path} {
 	    lappend Path $Dir
 	    encoding dirs $Path
-        }
+	}
     }
 
     # TIP #255 min and max functions
@@ -171,14 +171,14 @@ if {[interp issafe]} {
 
     proc clock args {
 	namespace eval ::tcl::clock [list namespace ensemble create -command \
-		[uplevel 1 [list namespace origin [lindex [info level 0] 0]]] \
-		-subcommands {
-		    add clicks format microseconds milliseconds scan seconds
-		}]
+	    [uplevel 1 [list namespace origin [lindex [info level 0] 0]]] \
+	    -subcommands {
+		add clicks format microseconds milliseconds scan seconds
+	    }]
 
 	# Auto-loading stubs for 'clock.tcl'
 
-	foreach cmd {add format scan} {
+	foreach cmd {add format FreeScan} {
 	    proc ::tcl::clock::$cmd args {
 		variable TclLibDir
 		source -encoding utf-8 [file join $TclLibDir clock.tcl]
@@ -600,12 +600,12 @@ proc auto_import {pattern} {
     auto_load_index
 
     foreach pattern $patternList {
-        foreach name [array names auto_index $pattern] {
-            if {([namespace which -command $name] eq "")
+	foreach name [array names auto_index $pattern] {
+	    if {([namespace which -command $name] eq "")
 		    && ([namespace qualifiers $pattern] eq [namespace qualifiers $name])} {
-                namespace eval :: $auto_index($name)
-            }
-        }
+		namespace eval :: $auto_index($name)
+	    }
+	}
     }
 }
 

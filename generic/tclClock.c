@@ -69,6 +69,7 @@ typedef enum ClockLiteral {
     LIT_MONTH,
     LIT_SECONDS,	LIT_TZNAME,		LIT_TZOFFSET,
     LIT_YEAR,
+    LIT_FREESCAN,
     LIT__END
 } ClockLiteral;
 static const char *const literals[] = {
@@ -84,7 +85,8 @@ static const char *const literals[] = {
     "julianDay",	"localSeconds",
     "month",
     "seconds",		"tzName",		"tzOffset",
-    "year"
+    "year",
+    "::tcl::clock::FreeScan"
 };
 
 /*
@@ -190,6 +192,9 @@ static int		ClockParseformatargsObjCmd(
 static int		ClockSecondsObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		ClockScanObjCmd(
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 static struct tm *	ThreadSafeLocalTime(const time_t *);
 static void		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(ClientData);
@@ -202,7 +207,7 @@ struct ClockCommand {
     const char *name;		/* The tail of the command name. The full name
 				 * is "::tcl::clock::<name>". When NULL marks
 				 * the end of the table. */
-    Tcl_ObjCmdProc *objCmdProc;	/* Function that implements the command. This
+    Tcl_ObjCmdProc *objCmdProc; /* Function that implements the command. This
 				 * will always have the ClockClientData sent
 				 * to it, but may well ignore this data. */
 };
@@ -213,6 +218,7 @@ static const struct ClockCommand clockCommands[] = {
     { "microseconds",		ClockMicrosecondsObjCmd },
     { "milliseconds",		ClockMillisecondsObjCmd },
     { "seconds",		ClockSecondsObjCmd },
+    { "scan",			ClockScanObjCmd },
     { "Oldscan",		TclClockOldscanObjCmd },
     { "ConvertLocalToUTC",	ClockConvertlocaltoutcObjCmd },
     { "GetDateFields",		ClockGetdatefieldsObjCmd },
@@ -465,6 +471,9 @@ ClockGetdatefieldsObjCmd(
     GetGregorianEraYearDay(&fields, changeover);
     GetMonthDay(&fields);
     GetYearWeekDay(&fields, changeover);
+
+
+/************* split to use structured version from here ************/
 
     dict = Tcl_NewDictObj();
     Tcl_DictObjPut(NULL, dict, literals[LIT_LOCALSECONDS],
@@ -1507,9 +1516,9 @@ GetJulianDayFromEraYearMonthDay(
      * See above bug for details. The casts are necessary.
      */
     if (ym1 >= 0)
-        ym1o4 = ym1 / 4;
+	ym1o4 = ym1 / 4;
     else {
-        ym1o4 = - (int) (((unsigned int) -ym1) / 4);
+	ym1o4 = - (int) (((unsigned int) -ym1) / 4);
     }
 #endif
     if (ym1 % 4 < 0) {
@@ -1843,6 +1852,96 @@ ClockMicrosecondsObjCmd(
     return TCL_OK;
 }
 
+
+typedef struct _ClockFmtScnArgs {
+    Tcl_Obj *formatObj;	    /* Format */
+    Tcl_Obj *localeObj;	    /* Locale */
+    Tcl_Obj *timezoneObj;   /* Timezone */
+    Tcl_Obj *baseObj;	    /* Base (scan only) */
+} _ClockFmtScnArgs;
+
+static int
+_ClockParseFmtScnArgs(
+    ClientData clientData,  /* Client data containing literal pool */
+    Tcl_Interp *interp,	    /* Tcl interpreter */
+    int objc,		    /* Parameter count */
+    Tcl_Obj *const objv[],  /* Parameter vector */
+    _ClockFmtScnArgs *resOpts, /* Result vector: format, locale, timezone... */
+    int	     forScan	    /* Flag to differentiate between format and scan */
+) {
+    ClockClientData *dataPtr = clientData;
+    Tcl_Obj **litPtr = dataPtr->literals;
+    int gmtFlag = 0;
+    static const char *const options[2][6] = {
+	{ /* Format command line options */
+	"-format",	"-gmt",		"-locale",
+	"-timezone",	NULL },
+	{ /* Scan command line options */
+	"-format",	"-gmt",		"-locale",
+	"-timezone",	"-base",	NULL }
+    };
+    enum optionInd {
+	CLOCK_FORMAT_FORMAT,	CLOCK_FORMAT_GMT,	CLOCK_FORMAT_LOCALE,
+	CLOCK_FORMAT_TIMEZONE,	CLOCK_FORMAT_BASE
+    };
+    int optionIndex;		/* Index of an option. */
+    int saw = 0;		/* Flag == 1 if option was seen already. */
+    int i;
+
+    /*
+     * Extract values for the keywords.
+     */
+
+    resOpts->formatObj = NULL;
+    resOpts->localeObj = NULL;
+    resOpts->timezoneObj = NULL;
+    resOpts->baseObj = NULL;
+    for (i = 2; i < objc; i+=2) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], options[forScan], 
+	    "option", 0, &optionIndex) != TCL_OK) {
+	    Tcl_SetErrorCode(interp, "CLOCK", "badOption",
+		    Tcl_GetString(objv[i]), NULL);
+	    return TCL_ERROR;
+	}
+	switch (optionIndex) {
+	case CLOCK_FORMAT_FORMAT:
+	    resOpts->formatObj = objv[i+1];
+	    break;
+	case CLOCK_FORMAT_GMT:
+	    if (Tcl_GetBooleanFromObj(interp, objv[i+1], &gmtFlag) != TCL_OK){
+		return TCL_ERROR;
+	    }
+	    break;
+	case CLOCK_FORMAT_LOCALE:
+	    resOpts->localeObj = objv[i+1];
+	    break;
+	case CLOCK_FORMAT_TIMEZONE:
+	    resOpts->timezoneObj = objv[i+1];
+	    break;
+	case CLOCK_FORMAT_BASE:
+	    resOpts->baseObj = objv[i+1];
+	    break;
+	}
+	saw |= 1 << optionIndex;
+    }
+
+    /*
+     * Check options.
+     */
+
+    if ((saw & (1 << CLOCK_FORMAT_GMT))
+	    && (saw & (1 << CLOCK_FORMAT_TIMEZONE))) {
+	Tcl_SetObjResult(interp, litPtr[LIT_CANNOT_USE_GMT_AND_TIMEZONE]);
+	Tcl_SetErrorCode(interp, "CLOCK", "gmtWithTimezone", NULL);
+	return TCL_ERROR;
+    }
+    if (gmtFlag) {
+	resOpts->timezoneObj = litPtr[LIT_GMT];
+    }
+
+    return TCL_OK;
+}
+
 /*
  *-----------------------------------------------------------------------------
  *
@@ -1870,22 +1969,9 @@ ClockParseformatargsObjCmd(
 {
     ClockClientData *dataPtr = clientData;
     Tcl_Obj **litPtr = dataPtr->literals;
-    Tcl_Obj *results[3];	/* Format, locale and timezone */
-#define formatObj results[0]
-#define localeObj results[1]
-#define timezoneObj results[2]
-    int gmtFlag = 0;
-    static const char *const options[] = { /* Command line options expected */
-	"-format",	"-gmt",		"-locale",
-	"-timezone",	NULL };
-    enum optionInd {
-	CLOCK_FORMAT_FORMAT,	CLOCK_FORMAT_GMT,	CLOCK_FORMAT_LOCALE,
-	CLOCK_FORMAT_TIMEZONE
-    };
-    int optionIndex;		/* Index of an option. */
-    int saw = 0;		/* Flag == 1 if option was seen already. */
+    _ClockFmtScnArgs resOpts;	/* Format, locale and timezone */
     Tcl_WideInt clockVal;	/* Clock value - just used to parse. */
-    int i;
+    int ret;
 
     /*
      * Args consist of a time followed by keyword-value pairs.
@@ -1903,33 +1989,10 @@ ClockParseformatargsObjCmd(
      * Extract values for the keywords.
      */
 
-    formatObj = litPtr[LIT__DEFAULT_FORMAT];
-    localeObj = litPtr[LIT_C];
-    timezoneObj = litPtr[LIT__NIL];
-    for (i = 2; i < objc; i+=2) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-		&optionIndex) != TCL_OK) {
-	    Tcl_SetErrorCode(interp, "CLOCK", "badOption",
-		    Tcl_GetString(objv[i]), NULL);
-	    return TCL_ERROR;
-	}
-	switch (optionIndex) {
-	case CLOCK_FORMAT_FORMAT:
-	    formatObj = objv[i+1];
-	    break;
-	case CLOCK_FORMAT_GMT:
-	    if (Tcl_GetBooleanFromObj(interp, objv[i+1], &gmtFlag) != TCL_OK){
-		return TCL_ERROR;
-	    }
-	    break;
-	case CLOCK_FORMAT_LOCALE:
-	    localeObj = objv[i+1];
-	    break;
-	case CLOCK_FORMAT_TIMEZONE:
-	    timezoneObj = objv[i+1];
-	    break;
-	}
-	saw |= 1 << optionIndex;
+    ret = _ClockParseFmtScnArgs(clientData, interp, objc, objv,
+	&resOpts, 0);
+    if (ret != TCL_OK) {
+	return ret;
     }
 
     /*
@@ -1939,26 +2002,98 @@ ClockParseformatargsObjCmd(
     if (Tcl_GetWideIntFromObj(interp, objv[1], &clockVal) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if ((saw & (1 << CLOCK_FORMAT_GMT))
-	    && (saw & (1 << CLOCK_FORMAT_TIMEZONE))) {
-	Tcl_SetObjResult(interp, litPtr[LIT_CANNOT_USE_GMT_AND_TIMEZONE]);
-	Tcl_SetErrorCode(interp, "CLOCK", "gmtWithTimezone", NULL);
-	return TCL_ERROR;
-    }
-    if (gmtFlag) {
-	timezoneObj = litPtr[LIT_GMT];
-    }
+    if (resOpts.formatObj == NULL)
+	resOpts.formatObj = litPtr[LIT__DEFAULT_FORMAT];
+    if (resOpts.localeObj == NULL)
+	resOpts.localeObj = litPtr[LIT_C];
+    if (resOpts.timezoneObj == NULL)
+	resOpts.timezoneObj = litPtr[LIT__NIL];
 
     /*
      * Return options as a list.
      */
 
-    Tcl_SetObjResult(interp, Tcl_NewListObj(3, results));
+    Tcl_SetObjResult(interp, Tcl_NewListObj(3, (Tcl_Obj**)&resOpts));
     return TCL_OK;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * ClockScanObjCmd -
+ *
+ *----------------------------------------------------------------------
+ */
 
-#undef timezoneObj
-#undef localeObj
-#undef formatObj
+int
+ClockScanObjCmd(
+    ClientData clientData,	/* Client data containing literal pool */
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj *const objv[])	/* Parameter values */
+{
+    ClockClientData *dataPtr = clientData;
+    Tcl_Obj **litPtr = dataPtr->literals;
+
+    Tcl_Time retClock;
+    char *string, *format = NULL;
+    int gmt, ret = 0;
+    char *locale;
+    _ClockFmtScnArgs opts;	/* Format, locale, timezone and base */
+    Tcl_WideInt baseVal;	/* Base value */
+
+    if ((objc & 1) == 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string "
+	    "?-base seconds? "
+	    "?-format string? "
+	    "?-gmt boolean? "
+	    "?-locale LOCALE? ?-timezone ZONE?");
+	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Extract values for the keywords.
+     */
+
+    ret = _ClockParseFmtScnArgs(clientData, interp, objc, objv,
+	&opts, 1);
+    if (ret != TCL_OK) {
+	return ret;
+    }
+
+    if (opts.baseObj != NULL) {
+	if (Tcl_GetWideIntFromObj(interp, opts.baseObj, &baseVal) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    } else {
+	Tcl_Time now;
+	Tcl_GetTime(&now); 
+	baseVal = (Tcl_WideInt) now.sec;
+    }
+
+    /* if free scan */
+    if (opts.formatObj == NULL) {
+	Tcl_Obj *callargs[5];
+	/* [SB] TODO: Perhaps someday we'll localize the legacy code. Right now, it's not localized. */
+	if (opts.localeObj != NULL) {
+	    Tcl_SetResult(interp,
+		"legacy [clock scan] does not support -locale", TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "CLOCK", "flagWithLegacyFormat", NULL);
+	    return TCL_ERROR;
+	}
+	callargs[0] = litPtr[LIT_FREESCAN];
+	callargs[1] = objv[1];
+	callargs[2] = opts.baseObj != NULL ? opts.baseObj : Tcl_NewWideIntObj(baseVal);
+	callargs[3] = opts.timezoneObj != NULL ? opts.timezoneObj : litPtr[LIT__NIL];
+	callargs[4] = opts.localeObj != NULL ? opts.localeObj : litPtr[LIT_C];
+	return Tcl_EvalObjv(interp, 5, callargs, 0);
+    }
+
+    // **** 
+    string = TclGetString(objv[1]);
+    // **** timezone = GetSystemTimeZone()
+
+    return TCL_OK;
 }
 
 /*----------------------------------------------------------------------
