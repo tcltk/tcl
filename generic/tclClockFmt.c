@@ -1147,39 +1147,45 @@ ClockScan(
 	goto not_match;
     }
 
-    /* invalidate result */
-    if (flags & CLF_DATE) {
+    /* 
+     * Invalidate result 
+     */
 
-	if (!(flags & CLF_JULIANDAY)) {
-	    info->flags |= CLF_INVALIDATE_SECONDS|CLF_INVALIDATE_JULIANDAY;
+    /* seconds token (%s) take precedence over all other tokens */
+    if ((opts->flags & CLF_EXTENDED) || !(flags & CLF_LOCALSEC)) {
+	if (flags & CLF_DATE) {
 
-	    if (yyYear < 100) {
-		if (!(flags & CLF_CENTURY)) {
-		    if (yyYear >= dataPtr->yearOfCenturySwitch) {
-			yyYear -= 100;
+	    if (!(flags & CLF_JULIANDAY)) {
+		info->flags |= CLF_INVALIDATE_SECONDS|CLF_INVALIDATE_JULIANDAY;
+
+		if (yyYear < 100) {
+		    if (!(flags & CLF_CENTURY)) {
+			if (yyYear >= dataPtr->yearOfCenturySwitch) {
+			    yyYear -= 100;
+			}
+			yyYear += dataPtr->currentYearCentury;
+		    } else {
+			yyYear += info->dateCentury * 100;
 		    }
-		    yyYear += dataPtr->currentYearCentury;
-		} else {
-		    yyYear += info->dateCentury * 100;
 		}
+		yydate.era = CE;
 	    }
-	    yydate.era = CE;
+	    /* if date but no time - reset time */
+	    if (!(flags & (CLF_TIME|CLF_LOCALSEC))) {
+		info->flags |= CLF_INVALIDATE_SECONDS;
+		yydate.localSeconds = 0;
+	    }
 	}
-	/* if date but no time - reset time */
-	if (!(flags & (CLF_TIME|CLF_LOCALSEC))) {
-	    info->flags |= CLF_INVALIDATE_SECONDS;
-	    yydate.localSeconds = 0;
-	}
-    }
 
-    if (flags & CLF_TIME) {
-	info->flags |= CLF_INVALIDATE_SECONDS;
-	yySeconds = ToSeconds(yyHour, yyMinutes,
-			    yySeconds, yyMeridian);
-    } else
-    if (!(flags & CLF_LOCALSEC)) {
-	info->flags |= CLF_INVALIDATE_SECONDS;
-	yySeconds = yydate.localSeconds % SECONDS_PER_DAY;
+	if (flags & CLF_TIME) {
+	    info->flags |= CLF_INVALIDATE_SECONDS;
+	    yySeconds = ToSeconds(yyHour, yyMinutes,
+				yySeconds, yyMeridian);
+	} else
+	if (!(flags & CLF_LOCALSEC)) {
+	    info->flags |= CLF_INVALIDATE_SECONDS;
+	    yySeconds = yydate.localSeconds % SECONDS_PER_DAY;
+	}
     }
 
     ret = TCL_OK;
