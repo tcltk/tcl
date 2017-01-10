@@ -1245,7 +1245,7 @@ ClockGetOrParseScanFormat(
 
 	fss->scnTok = tok = ckalloc(sizeof(*tok) * fss->scnTokC);
 	memset(tok, 0, sizeof(*(tok)));
-	for (p = strFmt; p != e; p++) {
+	for (p = strFmt; p < e;) {
 	    switch (*p) {
 	    case '%':
 	    if (1) {
@@ -1265,6 +1265,7 @@ ClockGetOrParseScanFormat(
 		    tok->tokWord.start = p;
 		    tok->tokWord.end = p+1;
 		    AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
+		    p++;
 		    continue;
 		break;
 		case 'E':
@@ -1315,6 +1316,8 @@ ClockGetOrParseScanFormat(
 		}
 		/* next token */
 		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
+		p++;
+		continue;
 	    }
 	    break;
 	    case ' ':
@@ -1325,6 +1328,8 @@ ClockGetOrParseScanFormat(
 		}
 		tok->map = &ScnSpecTokenMap[cp - ScnSpecTokenMapIndex];
 		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
+		p++;
+		continue;
 	    break;
 	    default:
 word_tok:
@@ -1339,12 +1344,11 @@ word_tok:
 		    wordTok->map = &ScnWordTokenMap;
 		    AllocTokenInChain(tok, fss->scnTok, fss->scnTokC);
 		}
-		continue;
 	    }
 	    break;
 	    }
 
-	    continue;
+	    p = TclUtfNext(p);
 	}
 
 	/* calculate end distance value for each tokens */
@@ -1467,11 +1471,6 @@ ClockScan(
     /* prepare parsing */
 
     yyMeridian = MER24;
-
-    /* lower case given string into new object */
-    strObj = Tcl_NewStringObj(TclGetString(strObj), strObj->length);
-    Tcl_IncrRefCount(strObj);
-    strObj->length = Tcl_UtfToLower(TclGetString(strObj));
 
     p = TclGetString(strObj);
     end = p + strObj->length;
@@ -1725,8 +1724,6 @@ not_match:
     Tcl_SetErrorCode(interp, "CLOCK", "badInputString", NULL);
 
 done:
-
-    Tcl_DecrRefCount(strObj);
 
     return ret;
 }
