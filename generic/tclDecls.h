@@ -3797,7 +3797,6 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_SetVar
 #   undef Tcl_ObjSetVar2
 #   undef Tcl_StaticPackage
-#   undef TclFSGetNativePath
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
 #   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
@@ -3864,6 +3863,12 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_UpVar
 #define Tcl_UpVar(interp, frameName, varName, localName, flags) \
 	Tcl_UpVar2(interp, frameName, varName, NULL, localName, flags)
+#undef Tcl_AddErrorInfo
+#define Tcl_AddErrorInfo(interp, message) \
+	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, -1))
+#undef Tcl_AddObjErrorInfo
+#define Tcl_AddObjErrorInfo(interp, message, length) \
+	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, length))
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
 #   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)
