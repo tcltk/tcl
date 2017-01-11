@@ -245,8 +245,6 @@ proc msgcat::mc {src args} {
 #	format command.
 
 proc msgcat::mcget {ns loc args} {
-    variable Msgs
-
     if {$loc eq {C}} {
 	set loclist [PackagePreferences $ns]
 	set loc [lindex $loclist 0]
@@ -270,18 +268,20 @@ proc msgcat::mcget {ns loc args} {
     # search translation for each locale (regarding parent namespaces)
     for {set nscur $ns} {$nscur != ""} {set nscur [namespace parent $nscur]} {
 	foreach loc $loclist {
-	    if {[dict exists $Msgs $nscur $loc $src]} {
-		if {[llength $args] > 1} {
-		    return [format [dict get $Msgs $nscur $loc $src] \
-				{*}[lrange $args 1 end]]
-		} else {
-		    return [dict get $Msgs $nscur $loc $src]
+	    set msgs [mcget $nscur $loc]
+	    if {![catch { set val [dict get $msgs $src] }]} {
+		if {[llength $args] == 1} {
+		    return $val
 		}
+		return [format $val {*}[lrange $args 1 end]]
 	    }
 	}
     }
-    # get with package default locale
-    mcget $ns [lindex $loclist 0] {*}$args
+    # no translation :
+    if {[llength $args] == 1} {
+	return $src
+    }
+    return [format $src {*}[lrange $args 1 end]]
 }
 
 # msgcat::mcexists --
@@ -942,8 +942,10 @@ proc msgcat::Merge {ns locales} {
 	    set mrgcat [dict merge $mrgcat [dict get $Msgs $ns $loc]]
 	}
     } else {
-	catch {
+	if {[catch {
 	    set mrgcat [dict get $Msgs $ns $loc]
+	}]} {
+	    set mrgcat [dict create]
 	}
     }
     dict set Merged $ns $loc $mrgcat
