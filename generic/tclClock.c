@@ -412,7 +412,19 @@ NormTimezoneObj(
 
 /*
  *----------------------------------------------------------------------
+ *
+ * ClockGetSystemLocale --
+ *
+ *	Returns system locale.
+ *
+ *	Executes ::tcl::clock::GetSystemLocale in given interpreter.
+ *
+ * Results:
+ *	Returns system locale tcl object.
+ *
+ *----------------------------------------------------------------------
  */
+
 static inline Tcl_Obj *
 ClockGetSystemLocale(
     ClockClientData *dataPtr,	/* Opaque pointer to literal pool, etc. */
@@ -426,7 +438,19 @@ ClockGetSystemLocale(
 }
 /*
  *----------------------------------------------------------------------
+ *
+ * ClockGetCurrentLocale --
+ *
+ *	Returns current locale.
+ *
+ *	Executes ::tcl::clock::mclocale in given interpreter.
+ *
+ * Results:
+ *	Returns current locale tcl object.
+ *
+ *----------------------------------------------------------------------
  */
+
 static inline Tcl_Obj *
 ClockGetCurrentLocale(
     ClockClientData *dataPtr,	/* Client data containing literal pool */
@@ -977,6 +1001,9 @@ ClockGetTZData(
  * ClockGetSystemTimeZone --
  *
  *	Returns system (current) timezone.
+ *
+ *	If system zone not yet cached, it executes ::tcl::clock::GetSystemTimeZone
+ *	in given interpreter and caches its result.
  *
  * Results:
  *	Returns normalized timezone object.

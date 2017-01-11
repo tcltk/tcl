@@ -41,6 +41,24 @@ CLOCK_LOCALE_LITERAL_ARRAY(MsgCtLitIdxs, "_IDX_");
  * Clock scan and format facilities.
  */
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * _str2int -- , _str2wideInt --
+ *
+ *	Fast inline-convertion of string to signed int or wide int by given
+ *	start/end.
+ *
+ *	The given string should contain numbers chars only (because already
+ *	pre-validated within parsing routines)
+ *
+ * Results:
+ *	Returns a standard Tcl result. 
+ *	TCL_OK - by successful conversion, TCL_ERROR by (wide) int overflow
+ *
+ *----------------------------------------------------------------------
+ */
+
 static inline int
 _str2int(
     int	       *out,
@@ -101,6 +119,22 @@ _str2wideInt(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * _itoaw -- , _witoaw --
+ *
+ *	Fast inline-convertion of signed int or wide int to string, using
+ *	given padding with specified padchar and width (or without padding).
+ *
+ *	This is a very fast replacement for sprintf("%02d").
+ *
+ * Results:
+ *	Returns position in buffer after end of conversion result.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static inline char *
 _itoaw(
     char *buf,
@@ -257,7 +291,15 @@ _witoaw(
 }
 
 /*
- *----------------------------------------------------------------------
+ * Global GC as LIFO for released scan/format object storages.
+ * 
+ * Used to holds last released CLOCK_FMT_SCN_STORAGE_GC_SIZE formats
+ * (after last reference from Tcl-object will be removed). This is helpful
+ * to avoid continuous (re)creation and compiling by some dynamically resp.
+ * variable format objects, that could be often reused.
+ * 
+ * As long as format storage is used resp. belongs to GC, it takes place in 
+ * FmtScnHashTable also.
  */
 
 #if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
@@ -267,6 +309,24 @@ static struct {
     ClockFmtScnStorage	  *stackBound;
     unsigned int	   count;
 } ClockFmtScnStorage_GC = {NULL, NULL, 0};
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockFmtScnStorageGC_In --
+ *
+ *	Adds an format storage object to GC.
+ *
+ *	If current GC is full (size larger as CLOCK_FMT_SCN_STORAGE_GC_SIZE)
+ *	this removes last unused storage at begin of GC stack (LIFO).
+ *
+ *	Assumes caller holds the ClockFmtMutex.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static inline void
 ClockFmtScnStorageGC_In(ClockFmtScnStorage *entry) 
@@ -291,6 +351,22 @@ ClockFmtScnStorageGC_In(ClockFmtScnStorage *entry)
 	ClockFmtScnStorageDelete(delEnt);
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockFmtScnStorage_GC_Out --
+ *
+ *	Restores (for reusing) given format storage object from GC.
+ *
+ *	Assumes caller holds the ClockFmtMutex.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static inline void
 ClockFmtScnStorage_GC_Out(ClockFmtScnStorage *entry)
 {
@@ -304,13 +380,19 @@ ClockFmtScnStorage_GC_Out(ClockFmtScnStorage *entry)
 
 #endif
 
-/*
- *----------------------------------------------------------------------
- */
 
+/*
+ * Global format storage hash table of type ClockFmtScnStorageHashKeyType
+ * (contains list of scan/format object storages, shared across all threads).
+ *
+ * Used for fast searching by format string. 
+ */
 static Tcl_HashTable FmtScnHashTable;
 static int	     initialized = 0;
 
+/*
+ * Wrappers between pointers to hash entry and format storage object
+ */
 static inline Tcl_HashEntry *
 HashEntry4FmtScn(ClockFmtScnStorage *fss) {
     return (Tcl_HashEntry*)(fss + 1);
@@ -320,8 +402,18 @@ FmtScn4HashEntry(Tcl_HashEntry *hKeyPtr) {
     return (ClockFmtScnStorage*)(((char*)hKeyPtr) - sizeof(ClockFmtScnStorage));
 };
 
-/* 
- * Format storage hash (list of formats shared across all threads).
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockFmtScnStorageAllocProc --
+ *
+ *	Allocate space for a hash entry containing format storage together
+ *	with the string key.
+ *
+ * Results:
+ *	The return value is a pointer to the created entry.
+ *
+ *----------------------------------------------------------------------
  */
 
 static Tcl_HashEntry *
@@ -353,6 +445,19 @@ ClockFmtScnStorageAllocProc(
     return hPtr;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockFmtScnStorageFreeProc --
+ *
+ *	Free format storage object and space of given hash entry.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static void 
 ClockFmtScnStorageFreeProc(
     Tcl_HashEntry *hPtr)
@@ -373,6 +478,19 @@ ClockFmtScnStorageFreeProc(
     ckfree(fss);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockFmtScnStorageDelete --
+ *
+ *	Delete format storage object.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static void 
 ClockFmtScnStorageDelete(ClockFmtScnStorage *fss) {
     Tcl_HashEntry   *hPtr = HashEntry4FmtScn(fss);
@@ -392,7 +510,7 @@ static Tcl_HashKeyType ClockFmtScnStorageHashKeyType;
 
 
 /*
- * Type definition.
+ * Type definition of clock-format tcl object type.
  */
 
 Tcl_ObjType ClockFmtObjType = {
@@ -409,9 +527,6 @@ Tcl_ObjType ClockFmtObjType = {
 #define ObjLocFmtKey(objPtr) \
     (*((Tcl_Obj **)&(objPtr)->internalRep.twoPtrValue.ptr2))
 
-/*
- *----------------------------------------------------------------------
- */
 static void
 ClockFmtObj_DupInternalRep(srcPtr, copyPtr)
     Tcl_Obj *srcPtr;
@@ -442,9 +557,7 @@ ClockFmtObj_DupInternalRep(srcPtr, copyPtr)
 	copyPtr->length = srcPtr->length;
     }
 }
-/*
- *----------------------------------------------------------------------
- */
+
 static void
 ClockFmtObj_FreeInternalRep(objPtr)
     Tcl_Obj *objPtr;
@@ -472,9 +585,7 @@ ClockFmtObj_FreeInternalRep(objPtr)
     }
     objPtr->typePtr = NULL;
 };
-/*
- *----------------------------------------------------------------------
- */
+
 static int
 ClockFmtObj_SetFromAny(interp, objPtr)
     Tcl_Interp *interp;
@@ -494,9 +605,7 @@ ClockFmtObj_SetFromAny(interp, objPtr)
 
     return TCL_OK;
 };
-/*
- *----------------------------------------------------------------------
- */
+
 static void
 ClockFmtObj_UpdateString(objPtr)
     Tcl_Obj  *objPtr;
@@ -518,7 +627,25 @@ ClockFmtObj_UpdateString(objPtr)
 
 /*
  *----------------------------------------------------------------------
+ *
+ * ClockFrmObjGetLocFmtKey --
+ *
+ *	Retrieves format key object used to search localized format.
+ *
+ *	This is normally stored in second pointer of internal representation.
+ *	If format object is not localizable, it is equal the given format 
+ *	pointer and the first pointer of internal representation may be NULL.
+ *
+ * Results:
+ *	Returns tcl object with key or format object if not localizable.
+ *
+ * Side effects:
+ * 	Converts given format object to ClockFmtObjType on demand for caching
+ *	the key inside its internal representation.
+ *
+ *----------------------------------------------------------------------
  */
+
 MODULE_SCOPE Tcl_Obj*
 ClockFrmObjGetLocFmtKey(
     Tcl_Interp *interp,
@@ -544,6 +671,25 @@ ClockFrmObjGetLocFmtKey(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * FindOrCreateFmtScnStorage --
+ *
+ *	Retrieves format storage for given string format.
+ *
+ *	This will find the given format in the global storage hash table
+ *	or create a format storage object on demaind and save the
+ *	reference in the first pointer of internal representation of given
+ *	object.
+ *
+ * Results:
+ *	Returns scan/format storage pointer to ClockFmtScnStorage.
+ *
+ * Side effects:
+ * 	Converts given format object to ClockFmtObjType on demand for caching
+ *	the format storage reference inside its internal representation.
+ *	Increments objRefCount of the ClockFmtScnStorage reference.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -609,16 +755,16 @@ FindOrCreateFmtScnStorage(
  *
  * Tcl_GetClockFrmScnFromObj --
  *
- *  Returns a clock format/scan representation of (*objPtr), if possible.
- *  If something goes wrong, NULL is returned, and if interp is non-NULL,
- *  an error message is written there.
+ *	Returns a clock format/scan representation of (*objPtr), if possible.
+ *	If something goes wrong, NULL is returned, and if interp is non-NULL,
+ *	an error message is written there.
  *
  * Results:
- *  Valid representation of type ClockFmtScnStorage.
+ *	Valid representation of type ClockFmtScnStorage.
  *
  * Side effects:
- *  Caches the ClockFmtScnStorage reference as the internal rep of (*objPtr)
- *  and in global hash table, shared across all threads.
+ *	Caches the ClockFmtScnStorage reference as the internal rep of (*objPtr)
+ *	and in global hash table, shared across all threads.
  *
  *----------------------------------------------------------------------
  */
@@ -644,7 +790,27 @@ Tcl_GetClockFrmScnFromObj(
 
     return fss;
 }
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockLocalizeFormat --
+ *
+ *	Wrap the format object in options to the localized format,
+ *	corresponding given locale.
+ *
+ *	This searches localized format in locale catalog, and if not yet
+ *	exists, it executes ::tcl::clock::LocalizeFormat in given interpreter
+ *	and caches its result in the locale catalog.
+ *
+ * Results:
+ *	Localized format object.
+ *
+ * Side effects:
+ *	Caches the localized format inside locale catalog.
+ *
+ *----------------------------------------------------------------------
+ */
+
 MODULE_SCOPE Tcl_Obj *
 ClockLocalizeFormat(
     ClockFmtScnCmdArgs *opts)
@@ -713,6 +879,22 @@ clean:
     return (opts->formatObj = valObj);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindTokenBegin --
+ *
+ *	Find begin of given scan token in string, corresponding token type.
+ *
+ * Results:
+ *	Position of token inside string if found. Otherwise - end of string.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static const char *
 FindTokenBegin(
     register const char *p,
@@ -748,12 +930,22 @@ FindTokenBegin(
     return p;
 }
 
-/* 
+/*
+ *----------------------------------------------------------------------
+ *
  * DetermineGreedySearchLen --
  *
- * Determine min/max lengths as exact as possible (speed, greedy match) 
+ *	Determine min/max lengths as exact as possible (speed, greedy match).
  *
+ * Results:
+ *	None. Lengths are stored in *minLenPtr, *maxLenPtr.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
  */
+
 static void
 DetermineGreedySearchLen(ClockFmtScnCmdArgs *opts,
     DateInfo *info, ClockScanToken *tok, 
@@ -836,6 +1028,23 @@ DetermineGreedySearchLen(ClockFmtScnCmdArgs *opts,
     *maxLenPtr = maxLen;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjListSearch --
+ *
+ *	Find largest part of the input string from start regarding min and 
+ *	max lengths in the given list (utf-8, case sensitive).
+ *
+ * Results:
+ *	TCL_OK - match found, TCL_RETURN - not matched, TCL_ERROR in error case.
+ *
+ * Side effects:
+ *	Input points to end of the found token in string.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static inline int 
 ObjListSearch(ClockFmtScnCmdArgs *opts, 
     DateInfo *info, int *val, 
@@ -909,6 +1118,26 @@ LocaleListSearch(ClockFmtScnCmdArgs *opts,
 }
 #endif
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockMCGetListIdxTree --
+ *
+ *	Retrieves localized string indexed tree in the locale catalog for
+ *	given literal index mcKey (and builds it on demand).
+ *
+ *	Searches localized index in locale catalog, and if not yet exists,
+ *	creates string indexed tree and stores it in the locale catalog.
+ *
+ * Results:
+ *	Localized string index tree.
+ *
+ * Side effects:
+ *	Caches the localized string index tree inside locale catalog.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static TclStrIdxTree *
 ClockMCGetListIdxTree(
     ClockFmtScnCmdArgs *opts, 
@@ -960,6 +1189,27 @@ done:
     return idxTree;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockMCGetMultiListIdxTree --
+ *
+ *	Retrieves localized string indexed tree in the locale catalog for
+ *	multiple lists by literal indices mcKeys (and builds it on demand).
+ *
+ *	Searches localized index in locale catalog for mcKey, and if not 
+ *	yet exists, creates string indexed tree and stores it in the 
+ *	locale catalog.
+ *
+ * Results:
+ *	Localized string index tree.
+ *
+ * Side effects:
+ *	Caches the localized string index tree inside locale catalog.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static TclStrIdxTree *
 ClockMCGetMultiListIdxTree(
     ClockFmtScnCmdArgs *opts, 
@@ -1016,6 +1266,25 @@ done:
     return idxTree;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockStrIdxTreeSearch --
+ *
+ *	Find largest part of the input string from start regarding lengths
+ *	in the given localized string indexed tree (utf-8, case sensitive).
+ *
+ * Results:
+ *	TCL_OK - match found and the index stored in *val,
+ *	TCL_RETURN - not matched or ambigous, 
+ * 	TCL_ERROR - in error case.
+ *
+ * Side effects:
+ *	Input points to end of the found token in string.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static inline int
 ClockStrIdxTreeSearch(ClockFmtScnCmdArgs *opts, 
     DateInfo *info, TclStrIdxTree *idxTree, int *val, 
