@@ -823,7 +823,7 @@ TestasyncCmd(
 
     if (argc < 2) {
 	wrongNumArgs:
-	Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
+	Tcl_SetResult(interp, (char *)"wrong # args", TCL_STATIC);
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "create") == 0) {
@@ -913,7 +913,7 @@ TestasyncCmd(
 		if (Tcl_CreateThread(&threadID, AsyncThreadProc,
 			INT2PTR(id), TCL_THREAD_STACK_DEFAULT,
 			TCL_THREAD_NOFLAGS) != TCL_OK) {
-		    Tcl_SetResult(interp, "can't create thread", TCL_STATIC);
+		    Tcl_SetResult(interp, (char *)"can't create thread", TCL_STATIC);
 		    Tcl_MutexUnlock(&asyncTestMutex);
 		    return TCL_ERROR;
 		}
@@ -1060,7 +1060,7 @@ TestcmdinfoCmd(
 	Tcl_DStringResult(interp, &delString);
     } else if (strcmp(argv[1], "get") == 0) {
 	if (Tcl_GetCommandInfo(interp, argv[2], &info) ==0) {
-	    Tcl_SetResult(interp, "??", TCL_STATIC);
+	    Tcl_SetResult(interp, (char *)"??", TCL_STATIC);
 	    return TCL_OK;
 	}
 	if (info.proc == CmdProc1) {
@@ -1293,7 +1293,7 @@ TestcmdtraceCmd(
 	result = Tcl_EvalEx(interp, argv[2], -1, 0);
 	Tcl_DeleteTrace(interp, cmdTrace);
 	if (!deleteCalled) {
-	    Tcl_SetResult(interp, "Delete wasn't called", TCL_STATIC);
+	    Tcl_SetResult(interp, (char *)"Delete wasn't called", TCL_STATIC);
 	    return TCL_ERROR;
 	} else {
 	    return result;
@@ -1593,7 +1593,7 @@ TestdelCmd(
     Tcl_Interp *slave;
 
     if (argc != 4) {
-	Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
+	Tcl_SetResult(interp, (char *)"wrong # args", TCL_STATIC);
 	return TCL_ERROR;
     }
 
@@ -1798,7 +1798,7 @@ TestdstringCmd(
 
     if (argc < 2) {
 	wrongNumArgs:
-	Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
+	Tcl_SetResult(interp, (char *)"wrong # args", TCL_STATIC);
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "append") == 0) {
@@ -1834,9 +1834,9 @@ TestdstringCmd(
 	    goto wrongNumArgs;
 	}
 	if (strcmp(argv[2], "staticsmall") == 0) {
-	    Tcl_SetResult(interp, "short", TCL_STATIC);
+	    Tcl_SetResult(interp, (char *)"short", TCL_STATIC);
 	} else if (strcmp(argv[2], "staticlarge") == 0) {
-	    Tcl_SetResult(interp, "first0 first1 first2 first3 first4 first5 first6 first7 first8 first9\nsecond0 second1 second2 second3 second4 second5 second6 second7 second8 second9\nthird0 third1 third2 third3 third4 third5 third6 third7 third8 third9\nfourth0 fourth1 fourth2 fourth3 fourth4 fourth5 fourth6 fourth7 fourth8 fourth9\nfifth0 fifth1 fifth2 fifth3 fifth4 fifth5 fifth6 fifth7 fifth8 fifth9\nsixth0 sixth1 sixth2 sixth3 sixth4 sixth5 sixth6 sixth7 sixth8 sixth9\nseventh0 seventh1 seventh2 seventh3 seventh4 seventh5 seventh6 seventh7 seventh8 seventh9\n", TCL_STATIC);
+	    Tcl_SetResult(interp, (char *)"first0 first1 first2 first3 first4 first5 first6 first7 first8 first9\nsecond0 second1 second2 second3 second4 second5 second6 second7 second8 second9\nthird0 third1 third2 third3 third4 third5 third6 third7 third8 third9\nfourth0 fourth1 fourth2 fourth3 fourth4 fourth5 fourth6 fourth7 fourth8 fourth9\nfifth0 fifth1 fifth2 fifth3 fifth4 fifth5 fifth6 fifth7 fifth8 fifth9\nsixth0 sixth1 sixth2 sixth3 sixth4 sixth5 sixth6 sixth7 sixth8 sixth9\nseventh0 seventh1 seventh2 seventh3 seventh4 seventh5 seventh6 seventh7 seventh8 seventh9\n", TCL_STATIC);
 	} else if (strcmp(argv[2], "free") == 0) {
 	    char *s = ckalloc(100);
 	    strcpy(s, "This is a malloc-ed string");
@@ -2436,7 +2436,7 @@ TestexprlongCmd(
 		" expression\"", NULL);
 	return TCL_ERROR;
     }
-    Tcl_SetResult(interp, "This is a result", TCL_STATIC);
+    Tcl_SetResult(interp, (char *)"This is a result", TCL_STATIC);
     result = Tcl_ExprLong(interp, argv[1], &exprResult);
     if (result != TCL_OK) {
 	return result;
@@ -2478,7 +2478,7 @@ TestexprlongobjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "expression");
 	return TCL_ERROR;
     }
-    Tcl_SetResult(interp, "This is a result", TCL_STATIC);
+    Tcl_SetResult(interp, (char *)"This is a result", TCL_STATIC);
     result = Tcl_ExprLongObj(interp, objv[1], &exprResult);
     if (result != TCL_OK) {
 	return result;
@@ -2521,7 +2521,7 @@ TestexprdoubleCmd(
 		" expression\"", NULL);
 	return TCL_ERROR;
     }
-    Tcl_SetResult(interp, "This is a result", TCL_STATIC);
+    Tcl_SetResult(interp, (char *)"This is a result", TCL_STATIC);
     result = Tcl_ExprDouble(interp, argv[1], &exprResult);
     if (result != TCL_OK) {
 	return result;
@@ -2564,7 +2564,7 @@ TestexprdoubleobjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "expression");
 	return TCL_ERROR;
     }
-    Tcl_SetResult(interp, "This is a result", TCL_STATIC);
+    Tcl_SetResult(interp, (char *)"This is a result", TCL_STATIC);
     result = Tcl_ExprDoubleObj(interp, objv[1], &exprResult);
     if (result != TCL_OK) {
 	return result;
@@ -3406,7 +3406,7 @@ TestMathFunc2(
 	    resultPtr->type = TCL_WIDE_INT;
 	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
 	} else {
-	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
+	    Tcl_SetResult(interp, (char *)"T3: wrong type for arg 2", TCL_STATIC);
 	    result = TCL_ERROR;
 	}
     } else if (args[0].type == TCL_DOUBLE) {
@@ -3428,7 +3428,7 @@ TestMathFunc2(
 	    resultPtr->type = TCL_DOUBLE;
 	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
 	} else {
-	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
+	    Tcl_SetResult(interp, (char *)"T3: wrong type for arg 2", TCL_STATIC);
 	    result = TCL_ERROR;
 	}
     } else if (args[0].type == TCL_WIDE_INT) {
@@ -3451,11 +3451,11 @@ TestMathFunc2(
 	    resultPtr->type = TCL_WIDE_INT;
 	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
 	} else {
-	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
+	    Tcl_SetResult(interp, (char *)"T3: wrong type for arg 2", TCL_STATIC);
 	    result = TCL_ERROR;
 	}
     } else {
-	Tcl_SetResult(interp, "T3: wrong type for arg 1", TCL_STATIC);
+	Tcl_SetResult(interp, (char *)"T3: wrong type for arg 1", TCL_STATIC);
 	result = TCL_ERROR;
     }
     return result;
@@ -4486,7 +4486,7 @@ TestseterrorcodeCmd(
     const char **argv)		/* Argument strings. */
 {
     if (argc > 6) {
-	Tcl_SetResult(interp, "too many args", TCL_STATIC);
+	Tcl_SetResult(interp, (char *)"too many args", TCL_STATIC);
 	return TCL_ERROR;
     }
     switch (argc) {
@@ -5090,7 +5090,7 @@ TestsetCmd(
     const char *value;
 
     if (argc == 2) {
-	Tcl_SetResult(interp, "before get", TCL_STATIC);
+	Tcl_SetResult(interp, (char *)"before get", TCL_STATIC);
 	value = Tcl_GetVar2(interp, argv[1], NULL, flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
@@ -5098,7 +5098,7 @@ TestsetCmd(
 	Tcl_AppendElement(interp, value);
 	return TCL_OK;
     } else if (argc == 3) {
-	Tcl_SetResult(interp, "before set", TCL_STATIC);
+	Tcl_SetResult(interp, (char *)"before set", TCL_STATIC);
 	value = Tcl_SetVar2(interp, argv[1], NULL, argv[2], flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
@@ -5122,7 +5122,7 @@ Testset2Cmd(
     const char *value;
 
     if (argc == 3) {
-	Tcl_SetResult(interp, "before get", TCL_STATIC);
+	Tcl_SetResult(interp, (char *)"before get", TCL_STATIC);
 	value = Tcl_GetVar2(interp, argv[1], argv[2], flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
@@ -5130,7 +5130,7 @@ Testset2Cmd(
 	Tcl_AppendElement(interp, value);
 	return TCL_OK;
     } else if (argc == 4) {
-	Tcl_SetResult(interp, "before set", TCL_STATIC);
+	Tcl_SetResult(interp, (char *)"before set", TCL_STATIC);
 	value = Tcl_SetVar2(interp, argv[1], argv[2], argv[3], flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
@@ -5200,7 +5200,7 @@ TestsaveresultCmd(
     objPtr = NULL;		/* Lint. */
     switch ((enum options) index) {
     case RESULT_SMALL:
-	Tcl_SetResult(interp, "small result", TCL_VOLATILE);
+	Tcl_SetResult(interp, (char *)"small result", TCL_VOLATILE);
 	break;
     case RESULT_APPEND:
 	Tcl_AppendResult(interp, "append result", NULL);
@@ -5310,7 +5310,7 @@ TestmainthreadCmd(
 	Tcl_SetObjResult(interp, idObj);
 	return TCL_OK;
     } else {
-	Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
+	Tcl_SetResult(interp, (char *)"wrong # args", TCL_STATIC);
 	return TCL_ERROR;
     }
 }
@@ -6111,7 +6111,7 @@ TestWrongNumArgsObjCmd(
 	 * Don't use Tcl_WrongNumArgs here, as that is the function
 	 * we want to test!
 	 */
-	Tcl_SetResult(interp, "insufficient arguments", TCL_STATIC);
+	Tcl_SetResult(interp, (char *)"insufficient arguments", TCL_STATIC);
 	return TCL_ERROR;
     }
 
@@ -6128,7 +6128,7 @@ TestWrongNumArgsObjCmd(
 	/*
 	 * Asked for more arguments than were given.
 	 */
-	Tcl_SetResult(interp, "insufficient arguments", TCL_STATIC);
+	Tcl_SetResult(interp, (char *)"insufficient arguments", TCL_STATIC);
 	return TCL_ERROR;
     }
 
@@ -6905,7 +6905,7 @@ TestgetintCmd(
     const char **argv)
 {
     if (argc < 2) {
-	Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
+	Tcl_SetResult(interp, (char *)"wrong # args", TCL_STATIC);
 	return TCL_ERROR;
     } else {
 	int val, i, total=0;
@@ -7429,7 +7429,7 @@ InterpCmdResolver(
              */
 
             CallFrame *parentFramePtr = varFramePtr->callerPtr;
-            char *context = parentFramePtr != NULL ? parentFramePtr->nsPtr->name : "(NULL)";
+            const char *context = parentFramePtr != NULL ? parentFramePtr->nsPtr->name : "(NULL)";
 
             if (strcmp(context, "ctx1") == 0 && (name[0] == 'z') && (name[1] == '\0')) {
                 resolvedCmdPtr = Tcl_FindCommand(interp, "y", NULL, TCL_GLOBAL_ONLY);
