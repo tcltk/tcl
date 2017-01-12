@@ -1416,11 +1416,12 @@ const TclStubs tclStubs = {
     Tcl_FindSymbol, /* 628 */
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
-    Tcl_FreeIntRep, /* 631 */
-    Tcl_InitStringRep, /* 632 */
-    Tcl_FetchIntRep, /* 633 */
-    Tcl_StoreIntRep, /* 634 */
-    Tcl_HasStringRep, /* 635 */
+    Tcl_OpenTcpServerEx, /* 631 */
+    Tcl_FreeIntRep, /* 632 */
+    Tcl_InitStringRep, /* 633 */
+    Tcl_FetchIntRep, /* 634 */
+    Tcl_StoreIntRep, /* 635 */
+    Tcl_HasStringRep, /* 636 */
 };
 
 /* !END!: Do not edit above this line. */

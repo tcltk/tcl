@@ -2326,22 +2326,29 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
-# TIP #445
+# TIP #456
 declare 631 {
+    Tcl_Channel Tcl_OpenTcpServerEx(Tcl_Interp *interp, const char *service,
+	    const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc,
+	    ClientData callbackData)
+}
+
+# TIP #445
+declare 632 {
     void Tcl_FreeIntRep(Tcl_Obj *objPtr)
 }
-declare 632 {
+declare 633 {
     char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
 	    unsigned int numBytes)
 }
-declare 633 {
+declare 634 {
     Tcl_ObjIntRep *Tcl_FetchIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr)
 }
-declare 634 {
+declare 635 {
     void Tcl_StoreIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr,
 	    const Tcl_ObjIntRep *irPtr)
 }
-declare 635 {
+declare 636 {
     int Tcl_HasStringRep(Tcl_Obj *objPtr)
 }
 
