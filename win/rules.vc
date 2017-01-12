@@ -190,7 +190,7 @@ COMPILERFLAGS   = $(COMPILERFLAGS) -QIA64_Bx
 
 # Prevents "LNK1561: entry point must be defined" error compiling from VS-IDE:
 !ifndef LINKER_TESTFLAGS
-LINKER_TESTFLAGS = -entry:_DllMainCRTStartup@12
+LINKER_TESTFLAGS = /DLL /NOENTRY /OUT:nmhlp-out.txt
 !endif
 
 !if "$(MACHINE)" == "IX86"
