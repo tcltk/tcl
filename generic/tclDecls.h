@@ -1817,18 +1817,24 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 				Tcl_ZlibStream zhandle,
 				Tcl_Obj *compressionDictionaryObj);
 /* 631 */
-EXTERN void		Tcl_FreeIntRep(Tcl_Obj *objPtr);
+EXTERN Tcl_Channel	Tcl_OpenTcpServerEx(Tcl_Interp *interp,
+				const char *service, const char *host,
+				unsigned int flags,
+				Tcl_TcpAcceptProc *acceptProc,
+				ClientData callbackData);
 /* 632 */
+EXTERN void		Tcl_FreeIntRep(Tcl_Obj *objPtr);
+/* 633 */
 EXTERN char *		Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
 				unsigned int numBytes);
-/* 633 */
+/* 634 */
 EXTERN Tcl_ObjIntRep *	Tcl_FetchIntRep(Tcl_Obj *objPtr,
 				const Tcl_ObjType *typePtr);
-/* 634 */
+/* 635 */
 EXTERN void		Tcl_StoreIntRep(Tcl_Obj *objPtr,
 				const Tcl_ObjType *typePtr,
 				const Tcl_ObjIntRep *irPtr);
-/* 635 */
+/* 636 */
 EXTERN int		Tcl_HasStringRep(Tcl_Obj *objPtr);
 
 typedef struct {
@@ -2496,11 +2502,12 @@ typedef struct TclStubs {
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
-    void (*tcl_FreeIntRep) (Tcl_Obj *objPtr); /* 631 */
-    char * (*tcl_InitStringRep) (Tcl_Obj *objPtr, const char *bytes, unsigned int numBytes); /* 632 */
-    Tcl_ObjIntRep * (*tcl_FetchIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 633 */
-    void (*tcl_StoreIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr, const Tcl_ObjIntRep *irPtr); /* 634 */
-    int (*tcl_HasStringRep) (Tcl_Obj *objPtr); /* 635 */
+    Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc, ClientData callbackData); /* 631 */
+    void (*tcl_FreeIntRep) (Tcl_Obj *objPtr); /* 632 */
+    char * (*tcl_InitStringRep) (Tcl_Obj *objPtr, const char *bytes, unsigned int numBytes); /* 633 */
+    Tcl_ObjIntRep * (*tcl_FetchIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 634 */
+    void (*tcl_StoreIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr, const Tcl_ObjIntRep *irPtr); /* 635 */
+    int (*tcl_HasStringRep) (Tcl_Obj *objPtr); /* 636 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3793,16 +3800,18 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FSUnloadFile) /* 629 */
 #define Tcl_ZlibStreamSetCompressionDictionary \
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
+#define Tcl_OpenTcpServerEx \
+	(tclStubsPtr->tcl_OpenTcpServerEx) /* 631 */
 #define Tcl_FreeIntRep \
-	(tclStubsPtr->tcl_FreeIntRep) /* 631 */
+	(tclStubsPtr->tcl_FreeIntRep) /* 632 */
 #define Tcl_InitStringRep \
-	(tclStubsPtr->tcl_InitStringRep) /* 632 */
+	(tclStubsPtr->tcl_InitStringRep) /* 633 */
 #define Tcl_FetchIntRep \
-	(tclStubsPtr->tcl_FetchIntRep) /* 633 */
+	(tclStubsPtr->tcl_FetchIntRep) /* 634 */
 #define Tcl_StoreIntRep \
-	(tclStubsPtr->tcl_StoreIntRep) /* 634 */
+	(tclStubsPtr->tcl_StoreIntRep) /* 635 */
 #define Tcl_HasStringRep \
-	(tclStubsPtr->tcl_HasStringRep) /* 635 */
+	(tclStubsPtr->tcl_HasStringRep) /* 636 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3817,7 +3826,6 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_SetVar
 #   undef Tcl_ObjSetVar2
 #   undef Tcl_StaticPackage
-#   undef TclFSGetNativePath
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
 #   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
@@ -3884,6 +3892,12 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_UpVar
 #define Tcl_UpVar(interp, frameName, varName, localName, flags) \
 	Tcl_UpVar2(interp, frameName, varName, NULL, localName, flags)
+#undef Tcl_AddErrorInfo
+#define Tcl_AddErrorInfo(interp, message) \
+	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, -1))
+#undef Tcl_AddObjErrorInfo
+#define Tcl_AddObjErrorInfo(interp, message, length) \
+	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, length))
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
 #   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)
