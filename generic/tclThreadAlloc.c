@@ -210,6 +210,7 @@ GetCache(void)
 			1 << (NBUCKETS - 2 - i) : 1;
 		bucketInfo[i].lockPtr = TclpNewAllocMutex();
 	    }
+	    TclpInitAllocCache();
 	}
 	Tcl_MutexUnlock(initLockPtr);
     }
