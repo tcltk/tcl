@@ -253,10 +253,10 @@ declare 64 {
 declare 65 {
     void Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes, int length)
 }
-declare 66 {
-    void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
-}
 # Removed in 9.0:
+#declare 66 {
+#    void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
+#}
 #declare 67 {
 #    void Tcl_AddObjErrorInfo(Tcl_Interp *interp, const char *message,
 #	    int length)
@@ -2354,6 +2354,17 @@ declare 630 {
 }
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
+
+# TIP #456
+declare 631 {
+    Tcl_Channel Tcl_OpenTcpServerEx(Tcl_Interp *interp, const char *service,
+	    const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc,
+	    ClientData callbackData)
+}
+
+# ----- BASELINE -- FOR -- 8.7.0 ----- #
+
+
 
 ##############################################################################
 
