@@ -777,7 +777,7 @@ const TclStubs tclStubs = {
     Tcl_SetLongObj, /* 63 */
     Tcl_SetObjLength, /* 64 */
     Tcl_SetStringObj, /* 65 */
-    Tcl_AddErrorInfo, /* 66 */
+    0, /* 66 */
     0, /* 67 */
     Tcl_AllowExceptions, /* 68 */
     Tcl_AppendElement, /* 69 */
@@ -1350,6 +1350,7 @@ const TclStubs tclStubs = {
     Tcl_FindSymbol, /* 628 */
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
+    Tcl_OpenTcpServerEx, /* 631 */
 };
 
 /* !END!: Do not edit above this line. */

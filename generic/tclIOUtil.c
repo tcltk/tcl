@@ -1874,6 +1874,7 @@ TclNREvalFile(
 		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
+    TclPkgFileSeen(interp, Tcl_GetString(pathPtr));
 
     /*
      * The eofchar is \32 (^Z). This is the usual on Windows, but we effect

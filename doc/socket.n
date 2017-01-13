@@ -131,6 +131,16 @@ wildcard address so that it can accept connections from any
 interface. If \fIaddr\fR is a domain name that resolves to multiple IP
 addresses that are available on the local machine, the socket will
 listen on all of them.
+.TP
+\fB\-reuseaddr\fI boolean\fR
+.
+Tells the kernel whether to reuse the local address if there is no socket
+actively listening on it. This is the default on Windows.
+.TP
+\fB\-reuseport\fI boolean\fR
+.
+Tells the kernel whether to allow the binding of multiple sockets to the same
+address and port.
 .PP
 Server channels cannot be used for input or output; their sole use is to
 accept new client connections. The channels created for each incoming
