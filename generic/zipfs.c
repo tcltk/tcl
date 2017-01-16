@@ -2473,8 +2473,8 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int scnt, len, l, dirOnly = -1, prefixLen, strip = 0;
-    char *pat, *prefix, *path;
+    int scnt, len, l, dirOnly = -1, prefixLen, strip = 0, matchHidden = 0;
+    char *pat, *prefix, *path, *p;
 #if HAS_DRIVES
     char drivePrefix[3];
 #endif
@@ -2534,6 +2534,10 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 	prefix = Tcl_DStringValue(&dsPref);
 #endif
     }
+    if ((pattern != NULL) && ((pattern[0] == '.') ||
+	      ((pattern[0] == '\\') && (pattern[1] == '.')))) {
+	matchHidden = 1;
+    }
     ReadLock();
     if ((types != NULL) && (types->type == TCL_GLOB_TYPE_MOUNT)) {
 	l = CountSlashes(path);
@@ -2560,6 +2564,12 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 			(z->name[len] == '/') &&
 			(CountSlashes(z->name) == l) &&
 			Tcl_StringCaseMatch(z->name + len + 1, pattern, 0)) {
+			if (!matchHidden) {
+			    p = strrchr(z->name, '/');
+			    if ((p != NULL) && (p[1] == '.')) {
+				goto nextent;
+			    }
+			}
 			if (prefix != NULL) {
 			    Tcl_DStringAppend(&dsPref, z->name, lenz);
 			    Tcl_ListObjAppendElement(NULL, result,
@@ -2571,6 +2581,7 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 				Tcl_NewStringObj(z->name, lenz));
 			}
 		    }
+nextent:
 		    z = z->tnext;
 		}
 	    } else if ((zf->mntptlen > len + 1) &&
@@ -2578,6 +2589,12 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 		       (zf->mntpt[len] == '/') &&
 		       (CountSlashes(zf->mntpt) == l) &&
 		       Tcl_StringCaseMatch(zf->mntpt + len + 1, pattern, 0)) {
+		if (!matchHidden) {
+		    p = strrchr(zf->mntpt, '/');
+		    if ((p != NULL) && (p[1] == '.')) {
+			goto end;
+		    }
+		}
 		if (prefix != NULL) {
 		    Tcl_DStringAppend(&dsPref, zf->mntpt, zf->mntptlen);
 		    Tcl_ListObjAppendElement(NULL, result,
@@ -2636,6 +2653,12 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 	    continue;
 	}
 	if ((z->depth == scnt) && Tcl_StringCaseMatch(z->name, pat, 0)) {
+	    if (!matchHidden) {
+		p = strrchr(z->name, '/');
+		if ((p != NULL) && (p[1] == '.')) {
+		    continue;
+		}
+	    }
 	    if (prefix != NULL) {
 		Tcl_DStringAppend(&dsPref, z->name + strip, -1);
 		Tcl_ListObjAppendElement(NULL, result,
@@ -2815,17 +2838,20 @@ Zip_FSListVolumesProc(void)
     hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
     while (hPtr != NULL) {
 	zf = (ZipFile *) Tcl_GetHashValue(hPtr);
+	/*
+	 * Volumes which overlay root are hidden.
+	 */
 #if HAS_DRIVES
-	vol = Tcl_ObjPrintf("%c:%s", zf->mntdrv,
-			    zf->mntpt[0] ? zf->mntpt : "/");
+	if (zf->mntpt[0]) {
+	    vol = Tcl_ObjPrintf("%c:%s", zf->mntdrv, zf->mtntp);
+	    Tcl_ListObjAppendElement(NULL, vols, vol);
+	}
 #else
 	if (zf->mntpt[0]) {
 	    vol = Tcl_NewStringObj(zf->mntpt, zf->mntptlen);
-	} else {
-	    vol = Tcl_NewStringObj("/", 1);
+	    Tcl_ListObjAppendElement(NULL, vols, vol);
 	}
 #endif
-	Tcl_ListObjAppendElement(NULL, vols, vol);
 	hPtr = Tcl_NextHashEntry(&search);
     }
     Unlock();
