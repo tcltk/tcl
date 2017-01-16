@@ -36954,10 +36954,10 @@ test clock-67.5 {Change scan %x output on global locale change [Bug 4a0c163d24]}
     set current [msgcat::mclocale]
 } -body {
     msgcat::mclocale de_de
-    set res [clock scan "01.01.1970" -locale current -format %x]
+    set res [clock scan "01.01.1970" -locale current -format %x -gmt 1]
     msgcat::mclocale en_uk
     # This will fail without the bug fix, as still de_de is active
-    expr {$res == [clock scan "01/01/1970" -locale current -format %x]}
+    expr {$res == [clock scan "01/01/1970" -locale current -format %x -gmt 1]}
 } -cleanup {
     msgcat::mclocale $current
 } -result {1}
