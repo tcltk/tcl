@@ -3402,10 +3402,6 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 	      ((pattern[0] == '\\') && (pattern[1] == '.')))) {
 	matchHidden = 1;
     }
-    if ((pattern != NULL) && ((pattern[0] == '.') ||
-	      ((pattern[0] == '\\') && (pattern[1] == '.')))) {
-	matchHidden = 1;
-    }
     ReadLock();
     if ((types != NULL) && (types->type == TCL_GLOB_TYPE_MOUNT)) {
 	l = CountSlashes(path);
