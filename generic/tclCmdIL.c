@@ -1717,19 +1717,24 @@ InfoLoadedCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *interpName;
+    const char *interpName, *packageName;
 
-    if ((objc != 1) && (objc != 2)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?interp?");
+    if (objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?interp? ?packageName?");
 	return TCL_ERROR;
     }
 
-    if (objc == 1) {		/* Get loaded pkgs in all interpreters. */
+    if (objc < 2) {		/* Get loaded pkgs in all interpreters. */
 	interpName = NULL;
     } else {			/* Get pkgs just in specified interp. */
 	interpName = TclGetString(objv[1]);
     }
-    return TclGetLoadedPackages(interp, interpName);
+    if (objc < 3) {		/* Get loaded files in all packages. */
+	packageName = NULL;
+    } else {			/* Get pkgs just in specified interp. */
+	packageName = TclGetString(objv[2]);
+    }
+    return TclGetLoadedPackagesEx(interp, interpName, packageName);
 }
 
 /*

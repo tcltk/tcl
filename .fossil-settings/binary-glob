@@ -1,3 +1,9 @@
+compat/zlib/win32/zdll.lib
+compat/zlib/win32/zlib1.dll
+compat/zlib/win64/zdll.lib
+compat/zlib/win64/zlib1.dll
+compat/zlib/win64/libz.dll.a
+compat/zlib/zlib.3.pdf
 *.bmp
 *.gif
 *.png

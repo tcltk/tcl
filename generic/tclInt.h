@@ -2945,6 +2945,7 @@ MODULE_SCOPE void	TclFinalizeNotifier(void);
 MODULE_SCOPE void	TclFinalizeObjects(void);
 MODULE_SCOPE void	TclFinalizePreserve(void);
 MODULE_SCOPE void	TclFinalizeSynchronization(void);
+MODULE_SCOPE void	TclInitThreadAlloc(void);
 MODULE_SCOPE void	TclFinalizeThreadAlloc(void);
 MODULE_SCOPE void	TclFinalizeThreadAllocThread(void);
 MODULE_SCOPE void	TclFinalizeThreadData(int quick);
@@ -2974,6 +2975,9 @@ MODULE_SCOPE Tcl_Obj *	TclGetSourceFromFrame(CmdFrame *cfPtr, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
 			    unsigned int *sizePtr);
+MODULE_SCOPE int	TclGetLoadedPackagesEx(Tcl_Interp *interp,
+				const char *targetName,
+				const char *packageName);
 MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
 			    Tcl_Obj *unquotedPrefix, int globFlags,
 			    Tcl_GlobTypeData *types);
@@ -3100,6 +3104,8 @@ MODULE_SCOPE int	TclpObjChdir(Tcl_Obj *pathPtr);
 MODULE_SCOPE Tcl_Channel TclpOpenTemporaryFile(Tcl_Obj *dirObj,
 			    Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
 			    Tcl_Obj *resultingNameObj);
+MODULE_SCOPE void TclPkgFileSeen(Tcl_Interp *interp, const char *fileName);
+MODULE_SCOPE void *TclInitPkgFiles(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
 MODULE_SCOPE char *	TclpReadlink(const char *fileName,
@@ -4562,13 +4568,12 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  * types, avoiding the corresponding function calls in time critical parts of
  * the core. The ANSI C "prototypes" for these macros are:
  *
- * MODULE_SCOPE void	TclNewIntObj(Tcl_Obj *objPtr, int i);
  * MODULE_SCOPE void	TclNewLongObj(Tcl_Obj *objPtr, long l);
  * MODULE_SCOPE void	TclNewBooleanObj(Tcl_Obj *objPtr, int b);
  * MODULE_SCOPE void	TclNewWideObj(Tcl_Obj *objPtr, Tcl_WideInt w);
  * MODULE_SCOPE void	TclNewDoubleObj(Tcl_Obj *objPtr, double d);
- * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, char *s, int len);
- * MODULE_SCOPE void	TclNewLiteralStringObj(Tcl_Obj*objPtr, char*sLiteral);
+ * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, int len);
+ * MODULE_SCOPE void	TclNewLiteralStringObj(Tcl_Obj*objPtr, const char *sLiteral);
  *
  *----------------------------------------------------------------
  */
@@ -4584,9 +4589,6 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	(objPtr)->typePtr = &tclIntType;		\
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
-
-#define TclNewIntObj(objPtr, l) \
-    TclNewLongObj(objPtr, l)
 
 /*
  * NOTE: There is to be no such thing as a "pure" boolean.
@@ -4617,9 +4619,6 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     } while (0)
 
 #else /* TCL_MEM_DEBUG */
-#define TclNewIntObj(objPtr, i) \
-    (objPtr) = Tcl_NewIntObj(i)
-
 #define TclNewLongObj(objPtr, l) \
     (objPtr) = Tcl_NewLongObj(l)
 
