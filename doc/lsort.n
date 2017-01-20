@@ -40,7 +40,8 @@ except (a) case is ignored except as a tie-breaker and (b) if two
 strings contain embedded numbers, the numbers compare as integers,
 not characters.  For example, in \fB\-dictionary\fR mode, \fBbigBoy\fR
 sorts between \fBbigbang\fR and \fBbigboy\fR, and \fBx10y\fR
-sorts between \fBx9y\fR and \fBx11y\fR.
+sorts between \fBx9y\fR and \fBx11y\fR. Overrides the \fB\-nocase\fR
+option.
 .TP
 \fB\-integer\fR
 .
