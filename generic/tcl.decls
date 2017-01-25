@@ -832,10 +832,11 @@ declare 229 {
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
 }
-declare 232 {
-    void Tcl_SetResult(Tcl_Interp *interp, char *result,
-	    Tcl_FreeProc *freeProc)
-}
+# Removed (from stubtable only) in 9.0:
+#declare 232 {
+#    void Tcl_SetResult(Tcl_Interp *interp, char *result,
+#	    Tcl_FreeProc *freeProc)
+#}
 declare 233 {
     int Tcl_SetServiceMode(int mode)
 }
