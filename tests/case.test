@@ -11,6 +11,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
+if {![llength [info commands case]]} {
+    # No "case" command? So no need to test
+    return
+}
+
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*

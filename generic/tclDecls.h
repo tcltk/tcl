@@ -3869,6 +3869,22 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_AddObjErrorInfo
 #define Tcl_AddObjErrorInfo(interp, message, length) \
 	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, length))
+#ifdef TCL_NO_DEPRECATED
+#undef Tcl_SetResult
+#define Tcl_SetResult(interp, result, freeProc) \
+	do { \
+	    char *__result = result; \
+	    Tcl_FreeProc *__freeProc = freeProc; \
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(__result, -1)); \
+	    if (__result != NULL && __freeProc != NULL && __freeProc != TCL_VOLATILE) { \
+		if (__freeProc == TCL_DYNAMIC) { \
+		    ckfree(__result); \
+		} else { \
+		    (*__freeProc)(__result); \
+		} \
+	    } \
+	} while(0)
+#endif /* TCL_NO_DEPRECATED */
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
 #   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)
