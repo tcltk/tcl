@@ -89,10 +89,10 @@ as a decimal point is not supported nor should any other sort of
 inter-digit separator be present.
 .PP
 \fBTcl_GetBoolean\fR expects \fIsrc\fR to specify a boolean
-value.  If \fIsrc\fR is any of \fB0\fR, \fBfalse\fR,
+value.  If \fIsrc\fR is any of \fB0\fR, \fB-\fR, \fBfalse\fR,
 \fBno\fR, or \fBoff\fR, then \fBTcl_GetBoolean\fR stores a zero
 value at \fI*boolPtr\fR.
-If \fIsrc\fR is any of \fB1\fR, \fBtrue\fR, \fByes\fR, or \fBon\fR,
+If \fIsrc\fR is any of \fB1\fR, \fB+\fR, \fBtrue\fR, \fByes\fR, or \fBon\fR,
 then 1 is stored at \fI*boolPtr\fR.
 Any of these values may be abbreviated, and upper-case spellings
 are also acceptable.
