@@ -67,10 +67,8 @@ typedef struct Link {
 static char *		LinkTraceProc(ClientData clientData,Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
 static Tcl_Obj *	ObjValue(Link *linkPtr);
-static int		GetInvalidIntOrBooleanFromObj(Tcl_Obj *objPtr,
-				int *intPtr);
-static int		GetInvalidDoubleFromObj(Tcl_Obj *objPtr,
-				double *doublePtr);
+static int		GetInvalidIntFromObj(Tcl_Obj *objPtr, int *intPtr);
+static int		GetInvalidDoubleFromObj(Tcl_Obj *objPtr, double *doublePtr);
 
 /*
  * Convenience macro for accessing the value of the C variable pointed to by a
@@ -384,8 +382,7 @@ LinkTraceProc(
     case TCL_LINK_INT:
 	if (Tcl_GetIntFromObj(NULL, valueObj, &linkPtr->lastValue.i)
 		!= TCL_OK) {
-	    if (GetInvalidIntOrBooleanFromObj(valueObj, &linkPtr->lastValue.i)
-		    != TCL_OK) {
+	    if (GetInvalidIntFromObj(valueObj, &linkPtr->lastValue.i) != TCL_OK) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);
 		return (char *) "variable must have integer or boolean value";
@@ -397,8 +394,7 @@ LinkTraceProc(
     case TCL_LINK_WIDE_INT:
 	if (Tcl_GetWideIntFromObj(NULL, valueObj, &linkPtr->lastValue.w)
 		!= TCL_OK) {
-	    if (GetInvalidIntOrBooleanFromObj(valueObj, &valueInt)
-		    != TCL_OK) {
+	    if (GetInvalidIntFromObj(valueObj, &valueInt) != TCL_OK) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);
 		return (char *) "variable must have integer or boolean value";
@@ -441,8 +437,7 @@ LinkTraceProc(
     case TCL_LINK_CHAR:
 	if (Tcl_GetIntFromObj(NULL, valueObj, &valueInt) != TCL_OK
 		|| valueInt < SCHAR_MIN || valueInt > SCHAR_MAX) {
-	    if (GetInvalidIntOrBooleanFromObj(valueObj, &valueInt)
-		    != TCL_OK) {
+	    if (GetInvalidIntFromObj(valueObj, &valueInt) != TCL_OK) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 			TCL_GLOBAL_ONLY);
 		return (char *) "variable must have char or boolean value";
@@ -455,8 +450,7 @@ LinkTraceProc(
     case TCL_LINK_UCHAR:
 	if (Tcl_GetIntFromObj(NULL, valueObj, &valueInt) != TCL_OK
 		|| valueInt < 0 || valueInt > UCHAR_MAX) {
-	    if (GetInvalidIntOrBooleanFromObj(valueObj, &valueInt)
-		    != TCL_OK) {
+	    if (GetInvalidIntFromObj(valueObj, &valueInt) != TCL_OK) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 			TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned char or boolean value";
@@ -469,8 +463,7 @@ LinkTraceProc(
     case TCL_LINK_SHORT:
 	if (Tcl_GetIntFromObj(NULL, valueObj, &valueInt) != TCL_OK
 		|| valueInt < SHRT_MIN || valueInt > SHRT_MAX) {
-	    if (GetInvalidIntOrBooleanFromObj(valueObj, &valueInt)
-		    != TCL_OK) {
+	    if (GetInvalidIntFromObj(valueObj, &valueInt) != TCL_OK) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 			TCL_GLOBAL_ONLY);
 		return (char *) "variable must have short or boolean value";
@@ -483,8 +476,7 @@ LinkTraceProc(
     case TCL_LINK_USHORT:
 	if (Tcl_GetIntFromObj(NULL, valueObj, &valueInt) != TCL_OK
 		|| valueInt < 0 || valueInt > USHRT_MAX) {
-	    if (GetInvalidIntOrBooleanFromObj(valueObj, &valueInt)
-		    != TCL_OK) {
+	    if (GetInvalidIntFromObj(valueObj, &valueInt) != TCL_OK) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 			TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned short or boolean value";
@@ -497,8 +489,7 @@ LinkTraceProc(
     case TCL_LINK_UINT:
 	if (Tcl_GetWideIntFromObj(NULL, valueObj, &valueWide) != TCL_OK
 		|| valueWide < 0 || valueWide > UINT_MAX) {
-	    if (GetInvalidIntOrBooleanFromObj(valueObj, &valueInt)
-		    != TCL_OK) {
+	    if (GetInvalidIntFromObj(valueObj, &valueInt) != TCL_OK) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 			TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned int or boolean value";
@@ -513,8 +504,7 @@ LinkTraceProc(
     case TCL_LINK_LONG:
 	if (Tcl_GetWideIntFromObj(NULL, valueObj, &valueWide) != TCL_OK
 		|| valueWide < LONG_MIN || valueWide > LONG_MAX) {
-	    if (GetInvalidIntOrBooleanFromObj(valueObj, &valueInt)
-		    != TCL_OK) {
+	    if (GetInvalidIntFromObj(valueObj, &valueInt) != TCL_OK) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 			TCL_GLOBAL_ONLY);
 		return (char *) "variable must have long or boolean value";
@@ -529,8 +519,7 @@ LinkTraceProc(
     case TCL_LINK_ULONG:
 	if (Tcl_GetWideIntFromObj(NULL, valueObj, &valueWide) != TCL_OK
 		|| valueWide < 0 || (Tcl_WideUInt) valueWide > ULONG_MAX) {
-	    if (GetInvalidIntOrBooleanFromObj(valueObj, &valueInt)
-		    != TCL_OK) {
+	    if (GetInvalidIntFromObj(valueObj, &valueInt) != TCL_OK) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 			TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned long or boolean value";
@@ -547,8 +536,7 @@ LinkTraceProc(
 	 * FIXME: represent as a bignum.
 	 */
 	if (Tcl_GetWideIntFromObj(NULL, valueObj, &valueWide) != TCL_OK) {
-	    if (GetInvalidIntOrBooleanFromObj(valueObj, &valueInt)
-		    != TCL_OK) {
+	    if (GetInvalidIntFromObj(valueObj, &valueInt) != TCL_OK) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 			TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned wide int or boolean value";
@@ -725,8 +713,7 @@ SetInvalidRealFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
  * and "0o" (upperand lowercase). See bug [39f6304c2e].
  */
 int
-GetInvalidIntOrBooleanFromObj(Tcl_Obj *objPtr,
-				int *intPtr)
+GetInvalidIntFromObj(Tcl_Obj *objPtr, int *intPtr)
 {
     const char *str = TclGetString(objPtr);
 
@@ -741,28 +728,26 @@ GetInvalidIntOrBooleanFromObj(Tcl_Obj *objPtr,
 /*
  * This function checks for double representations, which are valid
  * when linking with C variables, but which are invalid in other
- * contexts in Tcl. Handled are ".", "+", "-", "0x", "0b" and "0o"
+ * contexts in Tcl. Handled are booleans, ".", "0x", "0b" and "0o"
  * (upper- and lowercase) and sequences like "1e-". See bug [39f6304c2e].
  */
 int
 GetInvalidDoubleFromObj(Tcl_Obj *objPtr,
 				double *doublePtr)
 {
-    const char *str;
+    int intValue;
 
-    if ((objPtr->typePtr == &invalidRealType) ||
-	    (SetInvalidRealFromAny(NULL, objPtr) == TCL_OK)) {
+    if (objPtr->typePtr == &invalidRealType) {
 	*doublePtr = objPtr->internalRep.doubleValue;
 	return TCL_OK;
     }
-    str = TclGetString(objPtr);
-    if ((objPtr->length == 1) && strchr("+-", str[0])) {
-       *doublePtr = (double)(str[0] == '+');
-       return TCL_OK;
-    } else if ((objPtr->length == 0) ||
-           ((objPtr->length == 2) && (str[0] == '0') && strchr("xXbBoO", str[1]))) {
-       *doublePtr = 0.0;
-       return TCL_OK;
+    if (GetInvalidIntFromObj(objPtr, &intValue) == TCL_OK) {
+	*doublePtr = (double) intValue;
+	return TCL_OK;
+    }
+    if (SetInvalidRealFromAny(NULL, objPtr) == TCL_OK) {
+	*doublePtr = objPtr->internalRep.doubleValue;
+	return TCL_OK;
     }
     return TCL_ERROR;
 }
