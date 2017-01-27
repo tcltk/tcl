@@ -210,44 +210,6 @@ Tcl_DiscardInterpState(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_SetResult --
- *
- *	Arrange for "result" to be the Tcl return value.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	interp->result is left pointing either to "result" or to a copy of it.
- *	Also, the object result is reset.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_SetResult(
-    Tcl_Interp *interp,		/* Interpreter with which to associate the
-				 * return value. */
-    register char *result,	/* Value to be returned. If NULL, the result
-				 * is set to an empty string. */
-    Tcl_FreeProc *freeProc)	/* Gives information about the string:
-				 * TCL_STATIC, TCL_VOLATILE, or the address of
-				 * a Tcl_FreeProc such as free. */
-{
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(result, -1));
-    if (result == NULL || freeProc == NULL || freeProc == TCL_VOLATILE) {
-	return;
-    }
-    if (freeProc == TCL_DYNAMIC) {
-	ckfree(result);
-    } else {
-	(*freeProc)(result);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_GetStringResult --
  *
  *	Returns an interpreter's result value as a string.
@@ -441,14 +403,13 @@ Tcl_AppendElement(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *elementPtr = Tcl_NewStringObj(element, -1);
     Tcl_Obj *listPtr = Tcl_NewListObj(1, &elementPtr);
-    int length;
     const char *bytes;
 
     if (Tcl_IsShared(iPtr->objResultPtr)) {
 	Tcl_SetObjResult(interp, Tcl_DuplicateObj(iPtr->objResultPtr));
     }
-    bytes = TclGetStringFromObj(iPtr->objResultPtr, &length);
-    if (TclNeedSpace(bytes, bytes+length)) {
+    bytes = TclGetString(iPtr->objResultPtr);
+    if (TclNeedSpace(bytes, bytes+iPtr->objResultPtr->length)) {
 	Tcl_AppendToObj(iPtr->objResultPtr, " ", 1);
     }
     Tcl_AppendObjToObj(iPtr->objResultPtr, listPtr);
@@ -862,10 +823,8 @@ TclProcessReturn(
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORINFO],
                 &valuePtr);
 	if (valuePtr != NULL) {
-	    int infoLen;
-
-	    (void) TclGetStringFromObj(valuePtr, &infoLen);
-	    if (infoLen) {
+	    (void) TclGetString(valuePtr);
+	    if (valuePtr->length) {
 		iPtr->errorInfo = valuePtr;
 		Tcl_IncrRefCount(iPtr->errorInfo);
 		iPtr->flags |= ERR_ALREADY_LOGGED;
@@ -968,13 +927,11 @@ TclMergeReturnOptions(
     Tcl_Obj **keys = GetKeys();
 
     for (;  objc > 1;  objv += 2, objc -= 2) {
-	int optLen;
-	const char *opt = TclGetStringFromObj(objv[0], &optLen);
-	int compareLen;
-	const char *compare =
-		TclGetStringFromObj(keys[KEY_OPTIONS], &compareLen);
+	const char *opt = TclGetString(objv[0]);
+	const char *compare = TclGetString(keys[KEY_OPTIONS]);
 
-	if ((optLen == compareLen) && (memcmp(opt, compare, optLen) == 0)) {
+	if ((objv[0]->length == keys[KEY_OPTIONS]->length)
+		&& (memcmp(opt, compare, objv[0]->length) == 0)) {
 	    Tcl_DictSearch search;
 	    int done = 0;
 	    Tcl_Obj *keyPtr;
