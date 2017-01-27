@@ -36,8 +36,6 @@ typedef struct Link {
 	unsigned int ui;
 	short s;
 	unsigned short us;
-	long l;
-	unsigned long ul;
 	Tcl_WideInt w;
 	Tcl_WideUInt uw;
 	float f;
@@ -128,6 +126,31 @@ Tcl_LinkVar(
     Tcl_IncrRefCount(linkPtr->varName);
     linkPtr->addr = addr;
     linkPtr->type = type & ~TCL_LINK_READ_ONLY;
+    if (linkPtr->type == TCL_LINK_LONG) {
+#ifdef TCL_WIDE_INT_IS_LONG
+	linkPtr->type = TCL_LINK_WIDE_INT;
+#else
+	linkPtr->type = TCL_LINK_INT;
+#endif
+    } else if (linkPtr->type == TCL_LINK_ULONG) {
+#if TCL_WIDE_INT_IS_LONG
+	linkPtr->type = TCL_LINK_WIDE_UINT;
+#else
+	linkPtr->type = TCL_LINK_UINT;
+#endif
+    } else if (linkPtr->type == TCL_LINK_SIZE) {
+	if (sizeof(size_t) != sizeof(int)) {
+	    linkPtr->type = TCL_LINK_WIDE_UINT;
+	} else {
+	    linkPtr->type = TCL_LINK_UINT;
+	}
+    } else if (linkPtr->type == TCL_LINK_SSIZE) {
+	if (sizeof(size_t) != sizeof(int)) {
+	    linkPtr->type = TCL_LINK_WIDE_INT;
+	} else {
+	    linkPtr->type = TCL_LINK_INT;
+	}
+    }
     if (type & TCL_LINK_READ_ONLY) {
 	linkPtr->flags = LINK_READ_ONLY;
     } else {
@@ -261,7 +284,8 @@ LinkTraceProc(
     int flags)			/* Miscellaneous additional information. */
 {
     Link *linkPtr = clientData;
-    int changed, valueLength;
+    int changed;
+    size_t valueLength;
     const char *value;
     char **pp;
     Tcl_Obj *valueObj;
@@ -332,12 +356,6 @@ LinkTraceProc(
 	    break;
 	case TCL_LINK_UINT:
 	    changed = (LinkedVar(unsigned int) != linkPtr->lastValue.ui);
-	    break;
-	case TCL_LINK_LONG:
-	    changed = (LinkedVar(long) != linkPtr->lastValue.l);
-	    break;
-	case TCL_LINK_ULONG:
-	    changed = (LinkedVar(unsigned long) != linkPtr->lastValue.ul);
 	    break;
 	case TCL_LINK_FLOAT:
 	    changed = (LinkedVar(float) != linkPtr->lastValue.f);
@@ -501,36 +519,6 @@ LinkTraceProc(
 	LinkedVar(unsigned int) = linkPtr->lastValue.ui;
 	break;
 
-    case TCL_LINK_LONG:
-	if (Tcl_GetWideIntFromObj(NULL, valueObj, &valueWide) != TCL_OK
-		|| valueWide < LONG_MIN || valueWide > LONG_MAX) {
-	    if (GetInvalidIntFromObj(valueObj, &valueInt) != TCL_OK) {
-		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
-			TCL_GLOBAL_ONLY);
-		return (char *) "variable must have long or boolean value";
-	    }
-	    linkPtr->lastValue.l = (long)valueInt;
-	} else {
-	    linkPtr->lastValue.l = (long)valueWide;
-	}
-	LinkedVar(long) = linkPtr->lastValue.l;
-	break;
-
-    case TCL_LINK_ULONG:
-	if (Tcl_GetWideIntFromObj(NULL, valueObj, &valueWide) != TCL_OK
-		|| valueWide < 0 || (Tcl_WideUInt) valueWide > ULONG_MAX) {
-	    if (GetInvalidIntFromObj(valueObj, &valueInt) != TCL_OK) {
-		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
-			TCL_GLOBAL_ONLY);
-		return (char *) "variable must have unsigned long or boolean value";
-	    }
-	    linkPtr->lastValue.ul = (unsigned long)valueInt;
-	} else {
-	    linkPtr->lastValue.ul = (unsigned long)valueWide;
-	}
-	LinkedVar(unsigned long) = linkPtr->lastValue.ul;
-	break;
-
     case TCL_LINK_WIDE_UINT:
 	/*
 	 * FIXME: represent as a bignum.
@@ -563,12 +551,12 @@ LinkTraceProc(
 	break;
 
     case TCL_LINK_STRING:
-	value = TclGetStringFromObj(valueObj, &valueLength);
-	valueLength++;
+	value = TclGetString(valueObj);
+	valueLength = valueObj->length + 1;
 	pp = (char **) linkPtr->addr;
 
 	*pp = ckrealloc(*pp, valueLength);
-	memcpy(*pp, value, (unsigned) valueLength);
+	memcpy(*pp, value, valueLength);
 	break;
 
     default:
@@ -630,12 +618,6 @@ ObjValue(
     case TCL_LINK_UINT:
 	linkPtr->lastValue.ui = LinkedVar(unsigned int);
 	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.ui);
-    case TCL_LINK_LONG:
-	linkPtr->lastValue.l = LinkedVar(long);
-	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.l);
-    case TCL_LINK_ULONG:
-	linkPtr->lastValue.ul = LinkedVar(unsigned long);
-	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.ul);
     case TCL_LINK_FLOAT:
 	linkPtr->lastValue.f = LinkedVar(float);
 	return Tcl_NewDoubleObj(linkPtr->lastValue.f);
@@ -695,7 +677,7 @@ SetInvalidRealFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
 	    if (*endPtr == 0) {
 		double doubleValue = 0.0;
 		Tcl_GetDoubleFromObj(NULL, objPtr, &doubleValue);
-		if (objPtr->typePtr->freeIntRepProc) objPtr->typePtr->freeIntRepProc(objPtr);
+		TclFreeIntRep(objPtr);
 		objPtr->typePtr = &invalidRealType;
 		objPtr->internalRep.doubleValue = doubleValue;
 		return TCL_OK;

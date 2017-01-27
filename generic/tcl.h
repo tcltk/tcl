@@ -1151,6 +1151,8 @@ typedef struct Tcl_DString {
 #define TCL_LINK_ULONG		12
 #define TCL_LINK_FLOAT		13
 #define TCL_LINK_WIDE_UINT	14
+#define TCL_LINK_SIZE		15
+#define TCL_LINK_SSIZE		16
 #define TCL_LINK_READ_ONLY	0x80
 
 /*
