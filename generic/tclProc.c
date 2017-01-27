@@ -535,7 +535,8 @@ TclCreateProc(
     }
 
     for (i = 0; i < numArgs; i++) {
-	int fieldCount, nameLength, valueLength;
+	int fieldCount, nameLength;
+	size_t valueLength;
 	const char **fieldValues;
 
 	/*
@@ -637,12 +638,11 @@ TclCreateProc(
 	     */
 
 	    if (localPtr->defValuePtr != NULL) {
-		int tmpLength;
-		const char *tmpPtr = TclGetStringFromObj(localPtr->defValuePtr,
-			&tmpLength);
+		const char *tmpPtr = TclGetString(localPtr->defValuePtr);
+		size_t tmpLength = localPtr->defValuePtr->length;
 
 		if ((valueLength != tmpLength) ||
-			strncmp(fieldValues[1], tmpPtr, (size_t) tmpLength)) {
+			strncmp(fieldValues[1], tmpPtr, tmpLength)) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "procedure \"%s\": formal parameter \"%s\" has "
 			    "default value inconsistent with precompiled body",
