@@ -150,6 +150,22 @@ cast to unsigned);
 attempts to write non-integer values into \fIvarName\fR will be
 rejected with Tcl errors.
 .TP
+\fBTCL_LINK_SIZE\fR
+The C variable is of type \fBsize_t\fR.
+Any value written into the Tcl variable must have a proper unsigned
+integer form acceptable to \fBTcl_GetWideIntFromObj\fR and in the
+platform's defined range for the \fBsize_t\fR type; attempts to
+write non-integer values (or values outside the range) into
+\fIvarName\fR will be rejected with Tcl errors.
+.TP
+\fBTCL_LINK_SSIZE\fR
+The C variable is of type \fBssize_t\fR.
+Any value written into the Tcl variable must have a proper
+integer form acceptable to \fBTcl_GetWideIntFromObj\fR and in the
+platform's defined range for the \fBssize_t\fR type; attempts to
+write non-integer values (or values outside the range) into
+\fIvarName\fR will be rejected with Tcl errors.
+.TP
 \fBTCL_LINK_BOOLEAN\fR
 The C variable is of type \fBint\fR.
 If its value is zero then it will read from Tcl as
