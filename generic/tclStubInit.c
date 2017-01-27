@@ -951,7 +951,7 @@ const TclStubs tclStubs = {
     Tcl_SetMaxBlockTime, /* 229 */
     0, /* 230 */
     Tcl_SetRecursionLimit, /* 231 */
-    Tcl_SetResult, /* 232 */
+    0, /* 232 */
     Tcl_SetServiceMode, /* 233 */
     Tcl_SetObjErrorCode, /* 234 */
     Tcl_SetObjResult, /* 235 */

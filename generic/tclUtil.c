@@ -3461,7 +3461,7 @@ TclGetIntForIndex(
     int *indexPtr)		/* Location filled in with an integer
 				 * representing an index. */
 {
-    int length;
+    size_t length;
     char *opPtr;
     const char *bytes;
 
@@ -3479,7 +3479,8 @@ TclGetIntForIndex(
 	return TCL_OK;
     }
 
-    bytes = TclGetStringFromObj(objPtr, &length);
+    bytes = TclGetString(objPtr);
+    length = objPtr->length;
 
     /*
      * Leading whitespace is acceptable in an index.

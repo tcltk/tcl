@@ -108,6 +108,13 @@ typedef struct {
 } TclEncoding;
 
 /*
+ * The counter below is used to determine if the TestsaveresultFree routine
+ * was called for a result.
+ */
+
+static int freeCount;
+
+/*
  * Boolean flag used by the "testsetmainloop" and "testexitmainloop" commands.
  */
 
@@ -5031,6 +5038,7 @@ TestsaveresultCmd(
 	return TCL_ERROR;
     }
 
+    freeCount = 0;
     objPtr = NULL;		/* Lint. */
     switch ((enum options) index) {
     case RESULT_SMALL:
@@ -5072,8 +5080,7 @@ TestsaveresultCmd(
 
     switch ((enum options) index) {
     case RESULT_DYNAMIC:
-	Tcl_AppendElement(interp, discard ? "called" : "notCalled");
-	Tcl_AppendElement(interp, !discard ? "present" : "missing");
+	Tcl_AppendElement(interp, freeCount ? "freed" : "leak");
 	break;
     case RESULT_OBJECT:
 	Tcl_AppendElement(interp, Tcl_GetObjResult(interp) == objPtr
@@ -5105,7 +5112,7 @@ static void
 TestsaveresultFree(
     char *blockPtr)
 {
-    /* empty... */
+    freeCount++;
 }
 
 /*

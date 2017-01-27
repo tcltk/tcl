@@ -650,9 +650,7 @@ TCLAPI void		Tcl_SetMaxBlockTime(const Tcl_Time *timePtr);
 /* Slot 230 is reserved */
 /* 231 */
 TCLAPI int		Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth);
-/* 232 */
-TCLAPI void		Tcl_SetResult(Tcl_Interp *interp, char *result,
-				Tcl_FreeProc *freeProc);
+/* Slot 232 is reserved */
 /* 233 */
 TCLAPI int		Tcl_SetServiceMode(int mode);
 /* 234 */
@@ -1999,7 +1997,7 @@ typedef struct TclStubs {
     void (*tcl_SetMaxBlockTime) (const Tcl_Time *timePtr); /* 229 */
     void (*reserved230)(void);
     int (*tcl_SetRecursionLimit) (Tcl_Interp *interp, int depth); /* 231 */
-    void (*tcl_SetResult) (Tcl_Interp *interp, char *result, Tcl_FreeProc *freeProc); /* 232 */
+    void (*reserved232)(void);
     int (*tcl_SetServiceMode) (int mode); /* 233 */
     void (*tcl_SetObjErrorCode) (Tcl_Interp *interp, Tcl_Obj *errorObjPtr); /* 234 */
     void (*tcl_SetObjResult) (Tcl_Interp *interp, Tcl_Obj *resultObjPtr); /* 235 */
@@ -2880,8 +2878,7 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 230 is reserved */
 #define Tcl_SetRecursionLimit \
 	(tclStubsPtr->tcl_SetRecursionLimit) /* 231 */
-#define Tcl_SetResult \
-	(tclStubsPtr->tcl_SetResult) /* 232 */
+/* Slot 232 is reserved */
 #define Tcl_SetServiceMode \
 	(tclStubsPtr->tcl_SetServiceMode) /* 233 */
 #define Tcl_SetObjErrorCode \
@@ -3736,6 +3733,19 @@ extern const TclStubs *tclStubsPtr;
 	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, -1))
 #define Tcl_AddObjErrorInfo(interp, message, length) \
 	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, length))
+#define Tcl_SetResult(interp, result, freeProc) \
+	do { \
+	    char *__result = result; \
+	    Tcl_FreeProc *__freeProc = freeProc; \
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(__result, -1)); \
+	    if (__result != NULL && __freeProc != NULL && __freeProc != TCL_VOLATILE) { \
+		if (__freeProc == TCL_DYNAMIC) { \
+		    ckfree(__result); \
+		} else { \
+		    (*__freeProc)(__result); \
+		} \
+	    } \
+	} while(0)
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
 #   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)
