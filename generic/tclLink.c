@@ -58,6 +58,14 @@ typedef struct Link {
 #define LINK_READ_ONLY		1
 #define LINK_BEING_UPDATED	2
 
+#ifndef TCL_NO_DEPRECATED
+/* Within tclLink.c, we need legacy values for those two. Can be removed in Tcl 9 */
+#undef TCL_LINK_LONG
+#define TCL_LINK_LONG		11
+#undef TCL_LINK_ULONG
+#define TCL_LINK_ULONG		12
+#endif /* TCL_NO_DEPRECATED */
+
 /*
  * Forward references to functions defined later in this file:
  */
@@ -126,31 +134,13 @@ Tcl_LinkVar(
     Tcl_IncrRefCount(linkPtr->varName);
     linkPtr->addr = addr;
     linkPtr->type = type & ~TCL_LINK_READ_ONLY;
+#ifndef TCL_NO_DEPRECATED
     if (linkPtr->type == TCL_LINK_LONG) {
-#ifdef TCL_WIDE_INT_IS_LONG
-	linkPtr->type = TCL_LINK_WIDE_INT;
-#else
-	linkPtr->type = TCL_LINK_INT;
-#endif
+	linkPtr->type = ((sizeof(long) != sizeof(int)) : TCL_LINK_WIDE_INT : TCL_LINK_INT)
     } else if (linkPtr->type == TCL_LINK_ULONG) {
-#if TCL_WIDE_INT_IS_LONG
-	linkPtr->type = TCL_LINK_WIDE_UINT;
-#else
-	linkPtr->type = TCL_LINK_UINT;
-#endif
-    } else if (linkPtr->type == TCL_LINK_SIZE) {
-	if (sizeof(size_t) != sizeof(int)) {
-	    linkPtr->type = TCL_LINK_WIDE_UINT;
-	} else {
-	    linkPtr->type = TCL_LINK_UINT;
-	}
-    } else if (linkPtr->type == TCL_LINK_SSIZE) {
-	if (sizeof(size_t) != sizeof(int)) {
-	    linkPtr->type = TCL_LINK_WIDE_INT;
-	} else {
-	    linkPtr->type = TCL_LINK_INT;
-	}
+	linkPtr->type = ((sizeof(long) != sizeof(int)) : TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
     }
+#endif /* TCL_NO_DEPRECATED */
     if (type & TCL_LINK_READ_ONLY) {
 	linkPtr->flags = LINK_READ_ONLY;
     } else {
