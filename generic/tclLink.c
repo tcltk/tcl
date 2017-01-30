@@ -136,9 +136,9 @@ Tcl_LinkVar(
     linkPtr->type = type & ~TCL_LINK_READ_ONLY;
 #ifndef TCL_NO_DEPRECATED
     if (linkPtr->type == TCL_LINK_LONG) {
-	linkPtr->type = ((sizeof(long) != sizeof(int)) : TCL_LINK_WIDE_INT : TCL_LINK_INT)
+	linkPtr->type = ((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT);
     } else if (linkPtr->type == TCL_LINK_ULONG) {
-	linkPtr->type = ((sizeof(long) != sizeof(int)) : TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
+	linkPtr->type = ((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT);
     }
 #endif /* TCL_NO_DEPRECATED */
     if (type & TCL_LINK_READ_ONLY) {

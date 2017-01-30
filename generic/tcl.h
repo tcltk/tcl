@@ -1147,12 +1147,12 @@ typedef struct Tcl_DString {
 #define TCL_LINK_SHORT		8
 #define TCL_LINK_USHORT		9
 #define TCL_LINK_UINT		10
-#define TCL_LINK_LONG		((sizeof(long) != sizeof(int)) : TCL_LINK_WIDE_INT : TCL_LINK_INT)
-#define TCL_LINK_ULONG		((sizeof(long) != sizeof(int)) : TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
+#define TCL_LINK_LONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT)
+#define TCL_LINK_ULONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
 #define TCL_LINK_FLOAT		13
 #define TCL_LINK_WIDE_UINT	14
-#define TCL_LINK_SIZE		((sizeof(size_t) != sizeof(int)) : TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
-#define TCL_LINK_SSIZE		((sizeof(size_t) != sizeof(int)) : TCL_LINK_WIDE_INT : TCL_LINK_INT)
+#define TCL_LINK_SIZE		((sizeof(size_t) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
+#define TCL_LINK_SSIZE		((sizeof(size_t) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT)
 
 /* The following defines assume the <stdint.h> types */
 #define TCL_LINK_INT8	TCL_LINK_CHAR
