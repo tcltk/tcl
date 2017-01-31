@@ -636,8 +636,9 @@ proc auto_execok name {
     }
     set auto_execs($name) ""
 
-    set shellBuiltins [list cls copy date del dir echo erase md mkdir \
-	    mklink rd ren rename rmdir start time type ver vol]
+    set shellBuiltins [list assoc cls copy date del dir echo erase ftype \
+                           md mkdir mklink move rd ren rename rmdir start \
+                           time type ver vol]
     if {[info exists env(PATHEXT)]} {
 	# Add an initial ; to have the {} extension check first.
 	set execExtensions [split ";$env(PATHEXT)" ";"]
