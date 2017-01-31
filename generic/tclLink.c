@@ -320,7 +320,9 @@ LinkTraceProc(
     if (flags & TCL_TRACE_READS) {
 	switch (linkPtr->type) {
 	case TCL_LINK_INT:
+#ifndef TCL_NO_DEPRECATED
 	case TCL_LINK_BOOLEAN:
+#endif
 	    changed = (LinkedVar(int) != linkPtr->lastValue.i);
 	    break;
 	case TCL_LINK_DOUBLE:
@@ -432,6 +434,7 @@ LinkTraceProc(
 	LinkedVar(double) = linkPtr->lastValue.d;
 	break;
 
+#ifndef TCL_NO_DEPRECATED
     case TCL_LINK_BOOLEAN:
 	if (Tcl_GetBooleanFromObj(NULL, valueObj, &linkPtr->lastValue.i)
 		!= TCL_OK) {
@@ -441,6 +444,7 @@ LinkTraceProc(
 	}
 	LinkedVar(int) = linkPtr->lastValue.i;
 	break;
+#endif
 
     case TCL_LINK_CHAR:
 	if (Tcl_GetIntFromObj(NULL, valueObj, &valueInt) != TCL_OK
@@ -590,9 +594,11 @@ ObjValue(
     case TCL_LINK_DOUBLE:
 	linkPtr->lastValue.d = LinkedVar(double);
 	return Tcl_NewDoubleObj(linkPtr->lastValue.d);
+#ifndef TCL_NO_DEPRECATED
     case TCL_LINK_BOOLEAN:
 	linkPtr->lastValue.i = LinkedVar(int);
 	return Tcl_NewBooleanObj(linkPtr->lastValue.i);
+#endif
     case TCL_LINK_CHAR:
 	linkPtr->lastValue.c = LinkedVar(char);
 	return Tcl_NewIntObj(linkPtr->lastValue.c);
