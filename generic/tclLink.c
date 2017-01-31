@@ -710,7 +710,7 @@ SetInvalidRealFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
 /*
  * This function checks for integer representations, which are valid
  * when linking with C variables, but which are invalid in other
- * contexts in Tcl. Handled are "", "+", "-", "0x", "0b" and "0o"
+ * contexts in Tcl. Handled are "+", "-", "", "0x", "0b" and "0o"
  * (upperand lowercase). See bug [39f6304c2e].
  */
 int
@@ -718,12 +718,12 @@ GetInvalidIntFromObj(Tcl_Obj *objPtr, int *intPtr)
 {
     const char *str = TclGetString(objPtr);
 
-    if ((objPtr->length == 1) && strchr("+-", str[0])) {
-	*intPtr = (str[0] == '+');
-	return TCL_OK;
-    } else if ((objPtr->length == 0) ||
+    if ((objPtr->length == 0) ||
 	    ((objPtr->length == 2) && (str[0] == '0') && strchr("xXbBoO", str[1]))) {
 	*intPtr = 0;
+	return TCL_OK;
+    } else if ((objPtr->length == 1) && strchr("+-", str[0])) {
+	*intPtr = (str[0] == '+');
 	return TCL_OK;
     }
     return TCL_ERROR;
@@ -732,25 +732,28 @@ GetInvalidIntFromObj(Tcl_Obj *objPtr, int *intPtr)
 /*
  * This function checks for double representations, which are valid
  * when linking with C variables, but which are invalid in other
- * contexts in Tcl. Handled are ".", "+", "-", "0x", "0b" and "0o"
+ * contexts in Tcl. Handled are "+", "-", "", ".", "0x", "0b" and "0o"
  * (upper- and lowercase) and sequences like "1e-". See bug [39f6304c2e].
  */
 int
 GetInvalidDoubleFromObj(Tcl_Obj *objPtr,
 				double *doublePtr)
 {
-    int intValue, result;
+    int intValue;
 
-    if ((objPtr->typePtr == &invalidRealType) ||
-	    (SetInvalidRealFromAny(NULL, objPtr) == TCL_OK)) {
+    if (objPtr->typePtr == &invalidRealType) {
+	goto gotdouble;
+    }
+    if (GetInvalidIntFromObj(objPtr, &intValue) == TCL_OK) {
+	*doublePtr = (double) intValue;
+	return TCL_OK;
+    }
+    if (SetInvalidRealFromAny(NULL, objPtr) == TCL_OK) {
+    gotdouble:
 	*doublePtr = objPtr->internalRep.doubleValue;
 	return TCL_OK;
     }
-    result = GetInvalidIntFromObj(objPtr, &intValue);
-    if (result == TCL_OK) {
-	*doublePtr = (double) intValue;
-    }
-    return result;
+    return TCL_ERROR;
 }
 
 /*
