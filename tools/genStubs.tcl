@@ -463,11 +463,12 @@ proc genStubs::parseArg {arg} {
 proc genStubs::makeDecl {name decl index} {
     variable scspec
     variable stubs
+    variable libraryName
     lassign $decl rtype fname args
 
     append text "/* $index */\n"
     if {[info exists stubs($name,deprecated,$index)]} {
-    set line "TCL_DEPRECATED $rtype"
+    set line "[string toupper $libraryName]_DEPRECATED $rtype"
     } else {
     set line "$scspec $rtype"
     }
