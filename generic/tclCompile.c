@@ -765,7 +765,8 @@ TclSetByteCodeFromAny(
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
 				 * in frame. */
-    int length, result = TCL_OK;
+    size_t length;
+    int result = TCL_OK;
     const char *stringPtr;
     Proc *procPtr = iPtr->compiledProcPtr;
     ContLineLoc *clLocPtr;
@@ -780,7 +781,8 @@ TclSetByteCodeFromAny(
     }
 #endif
 
-    stringPtr = TclGetStringFromObj(objPtr, &length);
+    stringPtr = TclGetString(objPtr);
+    length = objPtr->length;
 
     /*
      * TIP #280: Pick up the CmdFrame in which the BC compiler was invoked and
@@ -1002,7 +1004,7 @@ void
 TclReleaseByteCode(
     register ByteCode *codePtr)
 {
-    if (--codePtr->refCount) {
+    if (codePtr->refCount-- > 1) {
 	return;
     }
 
@@ -1380,14 +1382,14 @@ ReleaseCmdWordData(
 	Tcl_DecrRefCount(eclPtr->path);
     }
     for (i=0 ; i<eclPtr->nuloc ; i++) {
-	ckfree((char *) eclPtr->loc[i].line);
+	ckfree(eclPtr->loc[i].line);
     }
 
     if (eclPtr->loc != NULL) {
-	ckfree((char *) eclPtr->loc);
+	ckfree(eclPtr->loc);
     }
 
-    ckfree((char *) eclPtr);
+    ckfree(eclPtr);
 }
 
 /*
@@ -1801,7 +1803,7 @@ CompileCmdLiteral(
 	extraLiteralFlags |= LITERAL_UNSHARED;
     }
 
-    bytes = Tcl_GetStringFromObj(cmdObj, &numBytes);
+    bytes = TclGetStringFromObj(cmdObj, &numBytes);
     cmdLitIdx = TclRegisterLiteral(envPtr, bytes, numBytes, extraLiteralFlags);
 
     if (cmdPtr) {
@@ -2976,7 +2978,8 @@ TclFindCompiledLocal(
 	varNamePtr = &cachePtr->varName0;
 	for (i=0; i < cachePtr->numVars; varNamePtr++, i++) {
 	    if (*varNamePtr) {
-		localName = TclGetStringFromObj(*varNamePtr, &len);
+		localName = TclGetString(*varNamePtr);
+		len = (*varNamePtr)->length;
 		if ((len == nameBytes) && !strncmp(name, localName, len)) {
 		    return i;
 		}

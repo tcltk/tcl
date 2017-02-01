@@ -711,9 +711,7 @@ TclpFreeAllocMutex(
 void
 TclpInitAllocCache(void)
 {
-    pthread_mutex_lock(allocLockPtr);
-    pthread_key_create(&key, TclpFreeAllocCache);
-    pthread_mutex_unlock(allocLockPtr);
+    pthread_key_create(&key, NULL);
 }
 
 void
@@ -722,13 +720,19 @@ TclpFreeAllocCache(
 {
     if (ptr != NULL) {
 	/*
-	 * Called by the pthread lib when a thread exits
+	 * Called by TclFinalizeThreadAllocThread() during the thread
+	 * finalization initiated from Tcl_FinalizeThread()
 	 */
 
 	TclFreeAllocCache(ptr);
 	pthread_setspecific(key, NULL);
 
     } else {
+	/*
+	 * Called by TclFinalizeThreadAlloc() during the process
+	 * finalization initiated from Tcl_Finalize()
+	 */
+
 	pthread_key_delete(key);
     }
 }

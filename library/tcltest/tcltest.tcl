@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 
-package require Tcl 8.5		;# -verbose line uses [info frame]
+package require Tcl 8.5-		;# -verbose line uses [info frame]
 namespace eval tcltest {
 
     # When the version number changes, be sure to update the pkgIndex.tcl file,

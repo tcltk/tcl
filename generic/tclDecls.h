@@ -1816,6 +1816,12 @@ EXTERN int		Tcl_FSUnloadFile(Tcl_Interp *interp,
 EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 				Tcl_ZlibStream zhandle,
 				Tcl_Obj *compressionDictionaryObj);
+/* 631 */
+EXTERN Tcl_Channel	Tcl_OpenTcpServerEx(Tcl_Interp *interp,
+				const char *service, const char *host,
+				unsigned int flags,
+				Tcl_TcpAcceptProc *acceptProc,
+				ClientData callbackData);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2482,6 +2488,7 @@ typedef struct TclStubs {
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
+    Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc, ClientData callbackData); /* 631 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3774,6 +3781,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FSUnloadFile) /* 629 */
 #define Tcl_ZlibStreamSetCompressionDictionary \
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
+#define Tcl_OpenTcpServerEx \
+	(tclStubsPtr->tcl_OpenTcpServerEx) /* 631 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3788,7 +3797,6 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_SetVar
 #   undef Tcl_ObjSetVar2
 #   undef Tcl_StaticPackage
-#   undef TclFSGetNativePath
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
 #   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
@@ -3855,6 +3863,28 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_UpVar
 #define Tcl_UpVar(interp, frameName, varName, localName, flags) \
 	Tcl_UpVar2(interp, frameName, varName, NULL, localName, flags)
+#undef Tcl_AddErrorInfo
+#define Tcl_AddErrorInfo(interp, message) \
+	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, -1))
+#undef Tcl_AddObjErrorInfo
+#define Tcl_AddObjErrorInfo(interp, message, length) \
+	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, length))
+#ifdef TCL_NO_DEPRECATED
+#undef Tcl_SetResult
+#define Tcl_SetResult(interp, result, freeProc) \
+	do { \
+	    char *__result = result; \
+	    Tcl_FreeProc *__freeProc = freeProc; \
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(__result, -1)); \
+	    if (__result != NULL && __freeProc != NULL && __freeProc != TCL_VOLATILE) { \
+		if (__freeProc == TCL_DYNAMIC) { \
+		    ckfree(__result); \
+		} else { \
+		    (*__freeProc)(__result); \
+		} \
+	    } \
+	} while(0)
+#endif /* TCL_NO_DEPRECATED */
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
 #   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)

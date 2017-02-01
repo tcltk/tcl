@@ -638,8 +638,8 @@ FsGetFirstFilesystem(void)
 }
 
 /*
- * The epoch can be changed both by filesystems being added or removed and by
- * env(HOME) changing.
+ * The epoch can be changed by filesystems being added or removed, by changing
+ * the "system encoding" and by env(HOME) changing.
  */
 
 int
@@ -1890,6 +1890,7 @@ TclNREvalFile(
 		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
+    TclPkgFileSeen(interp, Tcl_GetString(pathPtr));
 
     /*
      * The eofchar is \32 (^Z). This is the usual on Windows, but we effect

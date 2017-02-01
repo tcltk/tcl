@@ -203,7 +203,7 @@ static const CmdInfo builtInCmds[] = {
     {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	NULL,	CMD_IS_SAFE},
     {"apply",		Tcl_ApplyObjCmd,	NULL,			TclNRApplyObjCmd,	CMD_IS_SAFE},
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	NULL,	CMD_IS_SAFE},
-#ifndef EXCLUDE_OBSOLETE_COMMANDS
+#ifndef TCL_NO_DEPRECATED
     {"case",		Tcl_CaseObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
 #endif
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	CMD_IS_SAFE},
@@ -588,7 +588,7 @@ Tcl_CreateInterp(void)
 
     iPtr->cmdCount = 0;
     TclInitLiteralTable(&iPtr->literalTable);
-    iPtr->compileEpoch = 0;
+    iPtr->compileEpoch = 1;
     iPtr->compiledProcPtr = NULL;
     iPtr->resolverPtr = NULL;
     iPtr->evalFlags = 0;
@@ -966,11 +966,11 @@ Tcl_CreateInterp(void)
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
-	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
     }
 
     if (TclOOInit(interp) != TCL_OK) {
-	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
     }
 
     /*
@@ -980,7 +980,7 @@ Tcl_CreateInterp(void)
 
 #ifdef HAVE_ZLIB
     if (TclZlibInit(interp) != TCL_OK) {
-	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
     }
 #endif
 
@@ -1635,7 +1635,7 @@ DeleteInterpProc(
     }
 
     Tcl_DeleteHashTable(iPtr->lineLAPtr);
-    ckfree((char *) iPtr->lineLAPtr);
+    ckfree(iPtr->lineLAPtr);
     iPtr->lineLAPtr = NULL;
 
     if (iPtr->lineLABCPtr->numEntries && !TclInExit()) {
@@ -2403,7 +2403,7 @@ TclInvokeStringCommand(
 	    TclStackAlloc(interp, (unsigned)(objc + 1) * sizeof(char *));
 
     for (i = 0; i < objc; i++) {
-	argv[i] = Tcl_GetString(objv[i]);
+	argv[i] = TclGetString(objv[i]);
     }
     argv[objc] = 0;
 
@@ -2657,7 +2657,7 @@ TclRenameCommand(
     }
     Tcl_DStringAppend(&newFullName, newTail, -1);
     cmdPtr->refCount++;
-    CallCommandTraces(iPtr, cmdPtr, Tcl_GetString(oldFullName),
+    CallCommandTraces(iPtr, cmdPtr, TclGetString(oldFullName),
 	    Tcl_DStringValue(&newFullName), TCL_TRACE_RENAME);
     Tcl_DStringFree(&newFullName);
 
@@ -3024,13 +3024,6 @@ Tcl_DeleteCommandFromToken(
     Tcl_Command importCmd;
 
     /*
-     * Bump the command epoch counter. This will invalidate all cached
-     * references that point to this command.
-     */
-
-    cmdPtr->cmdEpoch++;
-
-    /*
      * The code here is tricky. We can't delete the hash table entry before
      * invoking the deletion callback because there are cases where the
      * deletion callback needs to invoke the command (e.g. object systems such
@@ -3052,6 +3045,14 @@ Tcl_DeleteCommandFromToken(
 	    Tcl_DeleteHashEntry(cmdPtr->hPtr);
 	    cmdPtr->hPtr = NULL;
 	}
+
+	/*
+	 * Bump the command epoch counter. This will invalidate all cached
+	 * references that point to this command.
+	 */
+
+	cmdPtr->cmdEpoch++;
+
 	return 0;
     }
 
@@ -3154,6 +3155,13 @@ Tcl_DeleteCommandFromToken(
     if (cmdPtr->hPtr != NULL) {
 	Tcl_DeleteHashEntry(cmdPtr->hPtr);
 	cmdPtr->hPtr = NULL;
+
+	/*
+	 * Bump the command epoch counter. This will invalidate all cached
+	 * references that point to this command.
+	 */
+
+	cmdPtr->cmdEpoch++;
     }
 
     /*
@@ -3400,8 +3408,7 @@ TclCleanupCommand(
     register Command *cmdPtr)	/* Points to the Command structure to
 				 * be freed. */
 {
-    cmdPtr->refCount--;
-    if (cmdPtr->refCount <= 0) {
+    if (cmdPtr->refCount-- <= 1) {
 	ckfree(cmdPtr);
     }
 }
@@ -3523,7 +3530,7 @@ OldMathFuncProc(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument to math function didn't have numeric value",
 		    -1));
-	    TclCheckBadOctal(interp, Tcl_GetString(valuePtr));
+	    TclCheckBadOctal(interp, TclGetString(valuePtr));
 	    ckfree(args);
 	    return TCL_ERROR;
 	}
@@ -5578,8 +5585,7 @@ TclArgumentRelease(
 	}
 	cfwPtr = Tcl_GetHashValue(hPtr);
 
-	cfwPtr->refCount--;
-	if (cfwPtr->refCount > 0) {
+	if (cfwPtr->refCount-- > 1) {
 	    continue;
 	}
 
@@ -6696,11 +6702,10 @@ Tcl_AppendObjToErrorInfo(
 				 * pertains. */
     Tcl_Obj *objPtr)		/* Message to record. */
 {
-    int length;
-    const char *message = TclGetStringFromObj(objPtr, &length);
+    const char *message = TclGetString(objPtr);
 
     Tcl_IncrRefCount(objPtr);
-    Tcl_AddObjErrorInfo(interp, message, length);
+    Tcl_AddObjErrorInfo(interp, message, objPtr->length);
     Tcl_DecrRefCount(objPtr);
 }
 
@@ -7884,7 +7889,7 @@ MathFuncWrongNumArgs(
     int found,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
-    const char *name = Tcl_GetString(objv[0]);
+    const char *name = TclGetString(objv[0]);
     const char *tail = name + strlen(name);
 
     while (tail > name+1) {
@@ -8817,7 +8822,7 @@ TclNRInterpCoroutine(
     if (!COR_IS_SUSPENDED(corPtr)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "coroutine \"%s\" is already running",
-                Tcl_GetString(objv[0])));
+                TclGetString(objv[0])));
 	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "BUSY", NULL);
 	return TCL_ERROR;
     }

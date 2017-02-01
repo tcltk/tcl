@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_REDUCE_IS_2K_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /* determines if mp_reduce_2k can be used */
@@ -46,3 +46,7 @@ int mp_reduce_is_2k(mp_int *a)
 }
 
 #endif
+
+/* $Source$ */
+/* $Revision$ */
+/* $Date$ */

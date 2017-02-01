@@ -152,10 +152,11 @@ TestbignumobjCmd(
     Tcl_Obj *const objv[])	/* Argument vector */
 {
     const char *const subcmds[] = {
-	"set",	    "get",	"mult10",	"div10", NULL
+	"set", "get", "mult10", "div10", "iseven", "radixsize", NULL
     };
     enum options {
-	BIGNUM_SET, BIGNUM_GET,	BIGNUM_MULT10,	BIGNUM_DIV10
+	BIGNUM_SET, BIGNUM_GET, BIGNUM_MULT10, BIGNUM_DIV10, BIGNUM_ISEVEN,
+	BIGNUM_RADIXSIZE
     };
     int index, varIndex;
     const char *string;
@@ -274,6 +275,50 @@ TestbignumobjCmd(
 	} else {
 	    SetVarToObj(varPtr, varIndex, Tcl_NewBignumObj(&newValue));
 	}
+	break;
+
+    case BIGNUM_ISEVEN:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "varIndex");
+	    return TCL_ERROR;
+	}
+	if (CheckIfVarUnset(interp, varPtr,varIndex)) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetBignumFromObj(interp, varPtr[varIndex],
+		&bignumValue) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (!Tcl_IsShared(varPtr[varIndex])) {
+	    Tcl_SetIntObj(varPtr[varIndex], mp_iseven(&bignumValue));
+	} else {
+	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(mp_iseven(&bignumValue)));
+	}
+	mp_clear(&bignumValue);
+	break;
+
+    case BIGNUM_RADIXSIZE:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "varIndex");
+	    return TCL_ERROR;
+	}
+	if (CheckIfVarUnset(interp, varPtr,varIndex)) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetBignumFromObj(interp, varPtr[varIndex],
+		&bignumValue) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (mp_radix_size(&bignumValue, 10, &index) != MP_OKAY) {
+	    return TCL_ERROR;
+	}
+	if (!Tcl_IsShared(varPtr[varIndex])) {
+	    Tcl_SetIntObj(varPtr[varIndex], index);
+	} else {
+	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(index));
+	}
+	mp_clear(&bignumValue);
+	break;
     }
 
     Tcl_SetObjResult(interp, varPtr[varIndex]);
@@ -1056,7 +1101,7 @@ TestobjCmd(
 	if (CheckIfVarUnset(interp, varPtr,varIndex)) {
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(varPtr[varIndex]->refCount));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(varPtr[varIndex]->refCount));
     } else if (strcmp(subCmd, "type") == 0) {
 	if (objc != 3) {
 	    goto wrongNumArgs;

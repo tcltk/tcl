@@ -38,7 +38,7 @@ Pkge_Init(
 {
     static const char script[] = "if 44 {open non_existent}";
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     return Tcl_EvalEx(interp, script, -1, 0);

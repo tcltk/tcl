@@ -361,7 +361,7 @@ typedef struct ResolvedCmdName {
 				 * incremented; if so, the cmd was renamed,
 				 * deleted, hidden, or exposed, and so the
 				 * pointer is invalid. */
-    int refCount;		/* Reference count: 1 for each cmdName object
+    size_t refCount;		/* Reference count: 1 for each cmdName object
 				 * that has a pointer to this ResolvedCmdName
 				 * structure as its internal rep. This
 				 * structure can be freed when refCount
@@ -1810,7 +1810,7 @@ Tcl_DbNewBooleanObj(
     TclDbNewObj(objPtr, file, line);
     objPtr->bytes = NULL;
 
-    objPtr->internalRep.longValue = (boolValue? 1 : 0);
+    objPtr->internalRep.longValue = (boolValue != 0);
     objPtr->typePtr = &tclIntType;
     return objPtr;
 }
@@ -2004,9 +2004,10 @@ static int
 ParseBoolean(
     register Tcl_Obj *objPtr)	/* The object to parse/convert. */
 {
-    int i, length, newBool;
+    int newBool;
     char lowerCase[6];
-    const char *str = TclGetStringFromObj(objPtr, &length);
+    const char *str = TclGetString(objPtr);
+    size_t i, length = objPtr->length;
 
     if ((length == 0) || (length > 5)) {
 	/*
@@ -2058,25 +2059,25 @@ ParseBoolean(
 	/*
 	 * Checking the 'y' is redundant, but makes the code clearer.
 	 */
-	if (strncmp(lowerCase, "yes", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "yes", length) == 0) {
 	    newBool = 1;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 'n':
-	if (strncmp(lowerCase, "no", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "no", length) == 0) {
 	    newBool = 0;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 't':
-	if (strncmp(lowerCase, "true", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "true", length) == 0) {
 	    newBool = 1;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 'f':
-	if (strncmp(lowerCase, "false", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "false", length) == 0) {
 	    newBool = 0;
 	    goto goodBoolean;
 	}
@@ -2085,10 +2086,10 @@ ParseBoolean(
 	if (length < 2) {
 	    return TCL_ERROR;
 	}
-	if (strncmp(lowerCase, "on", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "on", length) == 0) {
 	    newBool = 1;
 	    goto goodBoolean;
-	} else if (strncmp(lowerCase, "off", (size_t) length) == 0) {
+	} else if (strncmp(lowerCase, "off", length) == 0) {
 	    newBool = 0;
 	    goto goodBoolean;
 	}
@@ -2425,7 +2426,7 @@ Tcl_NewIntObj(
 {
     register Tcl_Obj *objPtr;
 
-    TclNewIntObj(objPtr, intValue);
+    TclNewLongObj(objPtr, intValue);
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -2784,7 +2785,7 @@ Tcl_GetLongFromObj(
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
-                        Tcl_GetString(objPtr)));
+                        TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3085,7 +3086,7 @@ Tcl_GetWideIntFromObj(
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
-                        Tcl_GetString(objPtr)));
+                        TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3252,13 +3253,11 @@ UpdateStringOfBignum(
     if (status != MP_OKAY) {
 	Tcl_Panic("radix size failure in UpdateStringOfBignum");
     }
-    if (size == 3) {
+    if (size < 2) {
 	/*
-	 * mp_radix_size() returns 3 when more than INT_MAX bytes would be
+	 * mp_radix_size() returns < 2 when more than INT_MAX bytes would be
 	 * needed to hold the string rep (because mp_radix_size ignores
-	 * integer overflow issues). When we know the string rep will be more
-	 * than 3, we can conclude the string rep would overflow our string
-	 * length limits.
+	 * integer overflow issues).
 	 *
 	 * Note that so long as we enforce our bignums to the size that fits
 	 * in a packed bignum, this branch will never be taken.
@@ -3416,7 +3415,7 @@ GetBignumFromObj(
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
-                        Tcl_GetString(objPtr)));
+                        TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3966,7 +3965,7 @@ TclCompareObjKeys(
     Tcl_Obj *objPtr1 = keyPtr;
     Tcl_Obj *objPtr2 = (Tcl_Obj *) hPtr->key.oneWordValue;
     register const char *p1, *p2;
-    register int l1, l2;
+    register size_t l1, l2;
 
     /*
      * If the object pointers are the same then they match.
@@ -4309,7 +4308,7 @@ FreeCmdNameInternalRep(
 	 * there are no more uses, free the ResolvedCmdName structure.
 	 */
 
-	if (resPtr->refCount-- == 1) {
+	if (resPtr->refCount-- <= 1) {
 	    /*
 	     * Now free the cached command, unless it is still in its hash
 	     * table or if there are other references to it from other cmdName
@@ -4421,7 +4420,7 @@ SetCmdNameFromAny(
 
 	Command *oldCmdPtr = resPtr->cmdPtr;
 
-	if (--oldCmdPtr->refCount == 0) {
+	if (oldCmdPtr->refCount-- <= 1) {
 	    TclCleanupCommandMacro(oldCmdPtr);
 	}
     } else {

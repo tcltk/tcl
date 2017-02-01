@@ -1605,7 +1605,7 @@ TclMakeEnsemble(
     Tcl_DStringFree(&buf);
     Tcl_DStringFree(&hiddenBuf);
     if (nameParts != NULL) {
-	ckfree((char *) nameParts);
+	ckfree(nameParts);
     }
     return ensemble;
 }
@@ -3135,7 +3135,7 @@ TclCompileEnsemble(
 	 * any extra elements that might have been appended by failing
 	 * pathways above.
 	 */
-	(void) Tcl_ListObjReplace(NULL, replaced, depth-1, INT_MAX, 0, NULL);
+	(void) Tcl_ListObjReplace(NULL, replaced, depth-1, LIST_MAX, 0, NULL);
 
 	/*
 	 * TODO: Reconsider whether we ought to call CompileToInvokedCommand()
@@ -3306,7 +3306,7 @@ CompileToInvokedCommand(
     Tcl_Token *tokPtr;
     Tcl_Obj *objPtr, **words;
     char *bytes;
-    int length, i, numWords, cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
+    int i, numWords, cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
     DefineLineInformation;
 
     /*
@@ -3319,8 +3319,8 @@ CompileToInvokedCommand(
     for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
 	    i++, tokPtr = TokenAfter(tokPtr)) {
 	if (i > 0 && i < numWords+1) {
-	    bytes = TclGetStringFromObj(words[i-1], &length);
-	    PushLiteral(envPtr, bytes, length);
+	    bytes = TclGetString(words[i-1]);
+	    PushLiteral(envPtr, bytes, words[i-1]->length);
 	    continue;
 	}
 
@@ -3348,11 +3348,11 @@ CompileToInvokedCommand(
 
     objPtr = Tcl_NewObj();
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
-    bytes = Tcl_GetStringFromObj(objPtr, &length);
+    bytes = TclGetString(objPtr);
     if ((cmdPtr != NULL) && (cmdPtr->flags & CMD_VIA_RESOLVER)) {
 	extraLiteralFlags |= LITERAL_UNSHARED;
     }
-    cmdLit = TclRegisterLiteral(envPtr, bytes, length, extraLiteralFlags);
+    cmdLit = TclRegisterLiteral(envPtr, bytes, objPtr->length, extraLiteralFlags);
     TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLit), cmdPtr);
     TclEmitPush(cmdLit, envPtr);
     TclDecrRefCount(objPtr);

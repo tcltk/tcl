@@ -331,13 +331,24 @@ TclSetPreInitScript(
  *----------------------------------------------------------------------
  */
 
+typedef struct PkgName {
+    struct PkgName *nextPtr;	/* Next in list of package names being initialized. */
+    char name[4];
+} PkgName;
+
 int
 Tcl_Init(
     Tcl_Interp *interp)		/* Interpreter to initialize. */
 {
+    PkgName pkgName = {NULL, "Tcl"};
+    PkgName **names = TclInitPkgFiles(interp);
+    int result = TCL_ERROR;
+
+    pkgName.nextPtr = *names;
+    *names = &pkgName;
     if (tclPreInitScript != NULL) {
 	if (Tcl_EvalEx(interp, tclPreInitScript, -1, 0) == TCL_ERROR) {
-	    return TCL_ERROR;
+	    goto end;
 	}
     }
 
@@ -382,7 +393,7 @@ Tcl_Init(
      * alternate tclInit command before calling Tcl_Init().
      */
 
-    return Tcl_EvalEx(interp,
+    result = Tcl_EvalEx(interp,
 "if {[namespace which -command tclInit] eq \"\"} {\n"
 "  proc tclInit {} {\n"
 "    global tcl_libPath tcl_library env tclDefaultLibrary\n"
@@ -410,6 +421,7 @@ Tcl_Init(
 "	{file join $grandParentDir lib tcl[info tclversion]} \\\n"
 "	{file join $parentDir library} \\\n"
 "	{file join $grandParentDir library} \\\n"
+"	{file join $grandParentDir tcl[info tclversion] library} \\\n"
 "	{file join $grandParentDir tcl[info patchlevel] library} \\\n"
 "	{\n"
 "file join [file dirname $grandParentDir] tcl[info patchlevel] library}\n"
@@ -445,6 +457,10 @@ Tcl_Init(
 "  }\n"
 "}\n"
 "tclInit", -1, 0);
+
+end:
+    *names = (*names)->nextPtr;
+    return result;
 }
 
 /*

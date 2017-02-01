@@ -74,11 +74,11 @@ test winpipe-1.2 {32 bit comprehensive tests: from big file} {win exec cat32} {
     exec $cat32 < $path(big) > $path(stdout) 2> $path(stderr)
     list [contents $path(stdout)] [contents $path(stderr)]
 } "{$big} stderr32"
-test winpipe-1.3 {32 bit comprehensive tests: a little from pipe} {win nt exec cat32} {
+test winpipe-1.3 {32 bit comprehensive tests: a little from pipe} {win exec cat32} {
     exec [interpreter] $path(more) < $path(little) | $cat32 > $path(stdout) 2> $path(stderr)
     list [contents $path(stdout)] [contents $path(stderr)]
 } {little stderr32}
-test winpipe-1.4 {32 bit comprehensive tests: a lot from pipe} {win nt exec cat32} {
+test winpipe-1.4 {32 bit comprehensive tests: a lot from pipe} {win exec cat32} {
     exec [interpreter] $path(more) < $path(big) | $cat32 > $path(stdout) 2> $path(stderr)
     list [contents $path(stdout)] [contents $path(stderr)]
 } "{$big} stderr32"
@@ -171,7 +171,7 @@ test winpipe-1.21 {32 bit comprehensive tests: read/write application} \
     set r
 } "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 
-test winpipe-4.1 {Tcl_WaitPid} {win nt exec cat32} {
+test winpipe-4.1 {Tcl_WaitPid} {win exec cat32} {
     proc readResults {f} {
 	global x result
 	if { [eof $f] } {

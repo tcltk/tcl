@@ -203,7 +203,7 @@ void printaddrinfo(struct addrinfo *addrlist, char *prefix)
 static void
 InitializeHostName(
     char **valuePtr,
-    int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     const char *native = NULL;
@@ -271,8 +271,8 @@ InitializeHostName(
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     *lengthPtr = strlen(native);
-    *valuePtr = ckalloc((*lengthPtr) + 1);
-    memcpy(*valuePtr, native, (size_t)(*lengthPtr)+1);
+    *valuePtr = ckalloc(*lengthPtr + 1);
+    memcpy(*valuePtr, native, *lengthPtr + 1);
 }
 
 /*
@@ -1098,7 +1098,7 @@ TcpConnect(
 {
     socklen_t optlen;
     int async_callback = statePtr->flags & TCP_ASYNC_PENDING;
-    int ret = -1, error = errno;
+    int ret = -1, error = EHOSTUNREACH;
     int async = statePtr->flags & TCP_ASYNC_CONNECT;
 
     if (async_callback) {
@@ -1405,7 +1405,7 @@ TclpMakeTcpClientChannelMode(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_OpenTcpServer --
+ * Tcl_OpenTcpServerEx --
  *
  *	Opens a TCP server socket and creates a channel around it.
  *
@@ -1420,16 +1420,17 @@ TclpMakeTcpClientChannelMode(
  */
 
 Tcl_Channel
-Tcl_OpenTcpServer(
+Tcl_OpenTcpServerEx(
     Tcl_Interp *interp,		/* For error reporting - may be NULL. */
-    int port,			/* Port number to open. */
+    const char *service,	/* Port number to open. */
     const char *myHost,		/* Name of local host. */
+    unsigned int flags,		/* Flags. */
     Tcl_TcpAcceptProc *acceptProc,
 				/* Callback for accepting connections from new
 				 * clients. */
     ClientData acceptProcData)	/* Data for the callback. */
 {
-    int status = 0, sock = -1, reuseaddr = 1, chosenport = 0;
+    int status = 0, sock = -1, optvalue, port, chosenport;
     struct addrinfo *addrlist = NULL, *addrPtr;	/* socket address */
     TcpState *statePtr = NULL;
     char channelName[SOCK_CHAN_LENGTH];
@@ -1443,6 +1444,42 @@ Tcl_OpenTcpServer(
 
     enum { LOOKUP, SOCKET, BIND, LISTEN } howfar = LOOKUP;
     int my_errno = 0;
+
+    /*
+     * If we were called with port 0 to listen on a random port number, we
+     * copy the port number from the first member of the addrinfo list to all
+     * subsequent members, so that IPv4 and IPv6 listen on the same port. This
+     * might fail to bind() with EADDRINUSE if a port is free on the first
+     * address family in the list but already used on the other. In this case
+     * we revert everything we've done so far and start from scratch hoping
+     * that next time we'll find a port number that is usable on all address
+     * families. We try this at most MAXRETRY times to avoid an endless loop
+     * if all ports are taken.
+     */
+    int retry = 0;
+#define MAXRETRY 10
+
+ repeat:
+    if (retry > 0) {
+        if (statePtr != NULL) {
+            TcpCloseProc(statePtr, NULL);
+            statePtr = NULL;
+        }
+        if (addrlist != NULL) {
+            freeaddrinfo(addrlist);
+            addrlist = NULL;
+        }
+        if (retry >= MAXRETRY) {
+            goto error;
+        }
+    }
+    retry++;
+    chosenport = 0;
+
+    if (TclSockGetPort(interp, service, "tcp", &port) != TCL_OK) {
+	errorMsg = "invalid port number";
+	goto error;
+    }
 
     if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, 1, &errorMsg)) {
 	my_errno = errno;
@@ -1474,12 +1511,29 @@ Tcl_OpenTcpServer(
 	TclSockMinimumBuffers(INT2PTR(sock), SOCKET_BUFSIZE);
 
 	/*
-	 * Set up to reuse server addresses automatically and bind to the
-	 * specified port.
+	 * Set up to reuse server addresses and/or ports if requested.
 	 */
 
-	(void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-		(char *) &reuseaddr, sizeof(reuseaddr));
+	if (flags & TCL_TCPSERVER_REUSEADDR) {
+	    optvalue = 1;
+	    (void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+			      (char *) &optvalue, sizeof(optvalue));
+	}
+
+	if (flags & TCL_TCPSERVER_REUSEPORT) {
+#ifndef SO_REUSEPORT
+	    /*
+	     * If the platform doesn't support the SO_REUSEPORT flag we can't do
+	     * much beside erroring out.
+	     */
+	    errorMsg = "SO_REUSEPORT isn't supported by this platform";
+	    goto error;
+#else
+	    optvalue = 1;
+	    (void) setsockopt(sock, SOL_SOCKET, SO_REUSEPORT,
+			      (char *) &optvalue, sizeof(optvalue));
+#endif
+	}
 
         /*
          * Make sure we use the same port number when opening two server
@@ -1512,6 +1566,9 @@ Tcl_OpenTcpServer(
 	    }
             close(sock);
             sock = -1;
+            if (port == 0 && errno == EADDRINUSE) {
+                goto repeat;
+            }
             continue;
         }
         if (port == 0 && chosenport == 0) {
@@ -1535,6 +1592,9 @@ Tcl_OpenTcpServer(
 	    }
             close(sock);
             sock = -1;
+            if (port == 0 && errno == EADDRINUSE) {
+                goto repeat;
+            }
             continue;
         }
         if (statePtr == NULL) {
