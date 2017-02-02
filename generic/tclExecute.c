@@ -5958,16 +5958,17 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 
-	if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK) {
+	if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK
+		|| GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2) != TCL_OK) {
 	    /*
 	     * At least one non-numeric argument - compare as strings.
 	     */
 
 	    goto stringCompare;
 	}
-	if (type1 == TCL_NUMBER_NAN) {
+	if (type1 == TCL_NUMBER_NAN || type2 == TCL_NUMBER_NAN) {
 	    /*
-	     * NaN first arg: NaN != to everything, other compares are false.
+	     * NaN arg: NaN != to everything, other compares are false.
 	     */
 
 	    iResult = (*pc == INST_NEQ);
@@ -5976,21 +5977,6 @@ TEBCresume(
 	if (valuePtr == value2Ptr) {
 	    compare = MP_EQ;
 	    goto convertComparison;
-	}
-	if (GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2) != TCL_OK) {
-	    /*
-	     * At least one non-numeric argument - compare as strings.
-	     */
-
-	    goto stringCompare;
-	}
-	if (type2 == TCL_NUMBER_NAN) {
-	    /*
-	     * NaN 2nd arg: NaN != to everything, other compares are false.
-	     */
-
-	    iResult = (*pc == INST_NEQ);
-	    goto foundResult;
 	}
 	if ((type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
 	    l1 = *((const long *)ptr1);
