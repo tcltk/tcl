@@ -415,7 +415,9 @@ TclListObjCopy(
     }
 
     TclNewObj(copyPtr);
-    TclInvalidateStringRep(copyPtr);
+    if (ListRepPtr(listPtr)->elemCount > 0) {
+	TclInvalidateStringRep(copyPtr);
+    }
     DupListInternalRep(listPtr, copyPtr);
     return copyPtr;
 }
