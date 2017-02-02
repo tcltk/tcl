@@ -1202,7 +1202,7 @@ Tcl_AppendObjToObj(
      * that appending nothing to anything leaves that starting anything...
      */
 
-    if (appendObjPtr->bytes == tclEmptyStringRep) {
+    if (appendObjPtr->bytes && !appendObjPtr->bytes[0]) {
 	return;
     }
 
@@ -1213,7 +1213,7 @@ Tcl_AppendObjToObj(
      * information; this is a special-case optimization only.
      */
 
-    if ((TclIsPureByteArray(objPtr) || objPtr->bytes == tclEmptyStringRep)
+    if ((TclIsPureByteArray(objPtr) || (objPtr->bytes && !objPtr->bytes[0]))
 	    && TclIsPureByteArray(appendObjPtr)) {
 
 	/*

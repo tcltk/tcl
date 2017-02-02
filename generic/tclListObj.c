@@ -467,7 +467,7 @@ Tcl_ListObjGetElements(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes == tclEmptyStringRep) {
+	if (listPtr->bytes && !listPtr->bytes[0]) {
 	    *objcPtr = 0;
 	    *objvPtr = NULL;
 	    return TCL_OK;
@@ -577,7 +577,7 @@ Tcl_ListObjAppendElement(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes == tclEmptyStringRep) {
+	if (listPtr->bytes && !listPtr->bytes[0]) {
 	    Tcl_SetListObj(listPtr, 1, &objPtr);
 	    return TCL_OK;
 	}
@@ -741,7 +741,7 @@ Tcl_ListObjIndex(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes == tclEmptyStringRep) {
+	if (listPtr->bytes && !listPtr->bytes[0]) {
 	    *objPtrPtr = NULL;
 	    return TCL_OK;
 	}
@@ -794,7 +794,7 @@ Tcl_ListObjLength(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes == tclEmptyStringRep) {
+	if (listPtr->bytes && !listPtr->bytes[0]) {
 	    *intPtr = 0;
 	    return TCL_OK;
 	}
@@ -865,7 +865,7 @@ Tcl_ListObjReplace(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
     }
     if (listPtr->typePtr != &tclListType) {
-	if (listPtr->bytes == tclEmptyStringRep) {
+	if (listPtr->bytes && !listPtr->bytes[0]) {
 	    if (!objc) {
 		return TCL_OK;
 	    }
@@ -1652,7 +1652,7 @@ TclListObjSetElement(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes == tclEmptyStringRep) {
+	if (listPtr->bytes && !listPtr->bytes[0]) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
 			Tcl_NewStringObj("list index out of range", -1));
