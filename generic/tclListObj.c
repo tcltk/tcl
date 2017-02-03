@@ -374,7 +374,7 @@ Tcl_SetListObj(
 	listRepPtr = NewListIntRep(objc, objv, 1);
 	ListSetIntRep(objPtr, listRepPtr);
     } else {
-	objPtr->bytes = tclEmptyStringRep;
+	objPtr->bytes = &tclEmptyString;
 	objPtr->length = 0;
     }
 }
@@ -407,6 +407,7 @@ TclListObjCopy(
 				 * to be returned. */
 {
     Tcl_Obj *copyPtr;
+    int length;
 
     if (listPtr->typePtr != &tclListType) {
 	if (SetListFromAny(interp, listPtr) != TCL_OK) {
@@ -415,10 +416,11 @@ TclListObjCopy(
     }
 
     TclNewObj(copyPtr);
-    if (ListRepPtr(listPtr)->elemCount > 0) {
+    TclListObjLength(NULL, listPtr, &length);
+    if (length > 0) {
 	TclInvalidateStringRep(copyPtr);
+	DupListInternalRep(listPtr, copyPtr);
     }
-    DupListInternalRep(listPtr, copyPtr);
     return copyPtr;
 }
 
@@ -467,14 +469,14 @@ Tcl_ListObjGetElements(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes && !listPtr->bytes[0]) {
-	    *objcPtr = 0;
-	    *objvPtr = NULL;
-	    return TCL_OK;
-	}
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
+	}
+	if (listPtr->bytes == &tclEmptyString) {
+	    *objcPtr = 0;
+	    *objvPtr = NULL;
+	    return TCL_OK;
 	}
     }
     listRepPtr = ListRepPtr(listPtr);
@@ -577,7 +579,7 @@ Tcl_ListObjAppendElement(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes && !listPtr->bytes[0]) {
+	if (listPtr->bytes == &tclEmptyString) {
 	    Tcl_SetListObj(listPtr, 1, &objPtr);
 	    return TCL_OK;
 	}
@@ -741,7 +743,7 @@ Tcl_ListObjIndex(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes && !listPtr->bytes[0]) {
+	if (listPtr->bytes == &tclEmptyString) {
 	    *objPtrPtr = NULL;
 	    return TCL_OK;
 	}
@@ -794,7 +796,7 @@ Tcl_ListObjLength(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes && !listPtr->bytes[0]) {
+	if (listPtr->bytes == &tclEmptyString) {
 	    *intPtr = 0;
 	    return TCL_OK;
 	}
@@ -865,7 +867,7 @@ Tcl_ListObjReplace(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
     }
     if (listPtr->typePtr != &tclListType) {
-	if (listPtr->bytes && !listPtr->bytes[0]) {
+	if (listPtr->bytes == &tclEmptyString) {
 	    if (!objc) {
 		return TCL_OK;
 	    }
@@ -1652,7 +1654,7 @@ TclListObjSetElement(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes && !listPtr->bytes[0]) {
+	if (listPtr->bytes == &tclEmptyString) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
 			Tcl_NewStringObj("list index out of range", -1));
@@ -1873,6 +1875,7 @@ SetListFromAny(
 	int estCount, length;
 	const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);
 
+	if (length == 0) return TCL_OK;
 	/*
 	 * Allocate enough space to hold a (Tcl_Obj *) for each
 	 * (possible) list element.
@@ -1981,7 +1984,7 @@ UpdateStringOfList(
      */
 
     if (numElems == 0) {
-	listPtr->bytes = tclEmptyStringRep;
+	listPtr->bytes = &tclEmptyString;
 	listPtr->length = 0;
 	return;
     }
