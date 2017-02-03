@@ -49,7 +49,6 @@ Tcl_Mutex tclObjMutex;
  */
 
 char tclEmptyString = '\0';
-char *tclEmptyStringRep = &tclEmptyString;
 
 #if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
 /*
@@ -1060,7 +1059,7 @@ TclDbInitNewObj(
 				 * debugging. */
 {
     objPtr->refCount = 0;
-    objPtr->bytes = tclEmptyStringRep;
+    objPtr->bytes = &tclEmptyString;
     objPtr->length = 0;
     objPtr->typePtr = NULL;
 
@@ -3396,7 +3395,7 @@ GetBignumFromObj(
 		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 		objPtr->typePtr = NULL;
 		if (objPtr->bytes == NULL) {
-		    TclInitStringRep(objPtr, tclEmptyStringRep, 0);
+		    TclInitStringRep(objPtr, &tclEmptyString, 0);
 		}
 	    }
 	    return TCL_OK;
