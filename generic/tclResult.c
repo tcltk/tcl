@@ -1015,11 +1015,11 @@ ResetObjResult(
 	Tcl_IncrRefCount(objResultPtr);
 	iPtr->objResultPtr = objResultPtr;
     } else {
-	if (objResultPtr->bytes != tclEmptyStringRep) {
+	if (objResultPtr->bytes != &tclEmptyString) {
 	    if (objResultPtr->bytes) {
 		ckfree(objResultPtr->bytes);
 	    }
-	    objResultPtr->bytes = tclEmptyStringRep;
+	    objResultPtr->bytes = &tclEmptyString;
 	    objResultPtr->length = 0;
 	}
 	TclFreeIntRep(objResultPtr);
