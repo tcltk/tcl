@@ -50,7 +50,6 @@ Tcl_Mutex tclObjMutex;
  */
 
 char tclEmptyString = '\0';
-char *tclEmptyStringRep = &tclEmptyString;
 
 #if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
 /*
