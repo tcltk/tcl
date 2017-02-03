@@ -17,7 +17,9 @@
 
 #include "tclInt.h"
 
-MODULE_SCOPE char *tclEmptyStringRep = &tclEmptyString;
+MODULE_SCOPE char *tclEmptyStringRep;
+
+char *tclEmptyStringRep = &tclEmptyString;
 
 /*
  * Each invocation of the "package ifneeded" command creates a structure of
