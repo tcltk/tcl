@@ -136,7 +136,7 @@ GrowStringBuffer(
     char *ptr = NULL;
     int attempt;
 
-    if (objPtr->bytes == tclEmptyStringRep) {
+    if (objPtr->bytes == &tclEmptyString) {
 	objPtr->bytes = NULL;
     }
     if (flag == 0 || stringPtr->allocated > 0) {
@@ -767,7 +767,7 @@ Tcl_SetObjLength(
 	    /*
 	     * Need to enlarge the buffer.
 	     */
-	    if (objPtr->bytes == tclEmptyStringRep) {
+	    if (objPtr->bytes == &tclEmptyString) {
 		objPtr->bytes = ckalloc(length + 1);
 	    } else {
 		objPtr->bytes = ckrealloc(objPtr->bytes, length + 1);
@@ -873,7 +873,7 @@ Tcl_AttemptSetObjLength(
 
 	    char *newBytes;
 
-	    if (objPtr->bytes == tclEmptyStringRep) {
+	    if (objPtr->bytes == &tclEmptyString) {
 		newBytes = attemptckalloc(length + 1);
 	    } else {
 		newBytes = attemptckrealloc(objPtr->bytes, length + 1);
@@ -1202,7 +1202,7 @@ Tcl_AppendObjToObj(
      * that appending nothing to anything leaves that starting anything...
      */
 
-    if (appendObjPtr->bytes == tclEmptyStringRep) {
+    if (appendObjPtr->bytes == &tclEmptyString) {
 	return;
     }
 
@@ -1213,7 +1213,7 @@ Tcl_AppendObjToObj(
      * information; this is a special-case optimization only.
      */
 
-    if ((TclIsPureByteArray(objPtr) || objPtr->bytes == tclEmptyStringRep)
+    if ((TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)
 	    && TclIsPureByteArray(appendObjPtr)) {
 
 	/*
