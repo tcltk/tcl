@@ -240,7 +240,7 @@ InitializeHostName(
         }
     }
     if (native == NULL) {
-	native = tclEmptyStringRep;
+	native = &tclEmptyString;
     }
 #else /* !NO_UNAME */
     /*

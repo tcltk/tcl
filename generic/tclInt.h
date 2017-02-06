@@ -2745,7 +2745,6 @@ MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
  * shared by all new objects allocated by Tcl_NewObj.
  */
 
-MODULE_SCOPE char *	tclEmptyStringRep;
 MODULE_SCOPE char	tclEmptyString;
 
 /*
@@ -4066,7 +4065,7 @@ typedef const char *TclDTraceStr;
     TclIncrObjsAllocated(); \
     TclAllocObjStorage(objPtr); \
     (objPtr)->refCount = 0; \
-    (objPtr)->bytes    = tclEmptyStringRep; \
+    (objPtr)->bytes    = &tclEmptyString; \
     (objPtr)->length   = 0; \
     (objPtr)->typePtr  = NULL; \
     TCL_DTRACE_OBJ_CREATE(objPtr)
@@ -4083,7 +4082,7 @@ typedef const char *TclDTraceStr;
 	if (!(objPtr)->typePtr || !(objPtr)->typePtr->freeIntRepProc) { \
 	    TCL_DTRACE_OBJ_FREE(objPtr); \
 	    if ((objPtr)->bytes \
-		    && ((objPtr)->bytes != tclEmptyStringRep)) { \
+		    && ((objPtr)->bytes != &tclEmptyString)) { \
 		ckfree((objPtr)->bytes); \
 	    } \
 	    (objPtr)->length = -1; \
@@ -4244,7 +4243,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 #define TclInitStringRep(objPtr, bytePtr, len) \
     if ((len) == 0) { \
-	(objPtr)->bytes	 = tclEmptyStringRep; \
+	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
 	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1)); \
@@ -4302,7 +4301,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 #define TclInvalidateStringRep(objPtr) \
     if ((objPtr)->bytes != NULL) { \
-	if ((objPtr)->bytes != tclEmptyStringRep) { \
+	if ((objPtr)->bytes != &tclEmptyString) { \
 	    ckfree((objPtr)->bytes); \
 	} \
 	(objPtr)->bytes = NULL; \

@@ -17,6 +17,10 @@
 
 #include "tclInt.h"
 
+MODULE_SCOPE char *tclEmptyStringRep;
+
+char *tclEmptyStringRep = &tclEmptyString;
+
 /*
  * Each invocation of the "package ifneeded" command creates a structure of
  * the following type, which is used to load the package into the interpreter

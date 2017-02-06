@@ -706,7 +706,7 @@ GetInvalidIntFromObj(Tcl_Obj *objPtr, int *intPtr)
 /*
  * This function checks for double representations, which are valid
  * when linking with C variables, but which are invalid in other
- * contexts in Tcl. Handled are booleans, ".", "0x", "0b" and "0o"
+ * contexts in Tcl. Handled are booleans, "", ".", "0x", "0b" and "0o"
  * (upper- and lowercase) and sequences like "1e-". See bug [39f6304c2e].
  */
 int
@@ -716,14 +716,14 @@ GetInvalidDoubleFromObj(Tcl_Obj *objPtr,
     int intValue;
 
     if (objPtr->typePtr == &invalidRealType) {
-	*doublePtr = objPtr->internalRep.doubleValue;
-	return TCL_OK;
+	goto gotdouble;
     }
     if (GetInvalidIntFromObj(objPtr, &intValue) == TCL_OK) {
 	*doublePtr = (double) intValue;
 	return TCL_OK;
     }
     if (SetInvalidRealFromAny(NULL, objPtr) == TCL_OK) {
+    gotdouble:
 	*doublePtr = objPtr->internalRep.doubleValue;
 	return TCL_OK;
     }
