@@ -288,6 +288,11 @@ enum Marks {
 				 * the CLOSE_PAREN lexeme and END pairs with
 				 * START, in the same way that CLOSE_PAREN
 				 * pairs with OPEN_PAREN. */
+#define SEPARATOR      ( BINARY | 29)
+#define ASSIGN         ( BINARY | 30)
+				/* ASSIGN, like EXPON, is right associative,
+ 				 * and this distinction is coded directly in
+				 * ParseExpr() */
 
 /*
  * When ParseExpr() builds the parse tree it must choose which operands to
@@ -304,6 +309,8 @@ enum Precedence {
     PREC_CLOSE_PAREN,	/* ")" */
     PREC_OPEN_PAREN,	/* "(" */
     PREC_COMMA,		/* "," */
+    PREC_SEPARATOR,	/* ";" */
+    PREC_ASSIGN,	/* "=" */
     PREC_CONDITIONAL,	/* "?", ":" */
     PREC_OR,		/* "||" */
     PREC_AND,		/* "&&" */
@@ -361,8 +368,10 @@ static const unsigned char prec[] = {
     PREC_EQUAL,		/* NOT_IN_LIST */
     PREC_CLOSE_PAREN,	/* CLOSE_PAREN */
     PREC_END,		/* END */
+    PREC_SEPARATOR,	/* SEPARATOR */
+    PREC_ASSIGN,	/* ASSIGN */
     /* Expansion room for more binary operators */
-    0,  0,  0,
+    0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,
@@ -416,8 +425,10 @@ static const unsigned char instruction[] = {
     INST_LIST_NOT_IN,	/* NOT_IN_LIST */
     0,			/* CLOSE_PAREN */
     0,			/* END */
+    0,			/* SEPARATOR */
+    0,			/* ASSIGN */
     /* Expansion room for more binary operators */
-    0,  0,  0,
+    0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,
@@ -462,9 +473,9 @@ static const unsigned char Lexeme[] = {
 	COMMA		/* , */,	MINUS		/* - */,
 	0		/* . */,	DIVIDE		/* / */,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			/* 0-9 */
-	COLON		/* : */,	INVALID		/* ; */,
+	COLON		/* : */,	SEPARATOR	/* ; */,
 	0		/* < or << or <= */,
-	0		/* == or INVALID */,
+	0		/* = or == */,
 	0		/* > or >> or >= */,
 	QUESTION	/* ? */,	INVALID		/* @ */,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		/* A-M */
@@ -1174,6 +1185,11 @@ ParseExpr(
 			break;
 		    }
 
+		    /* Right association rules for assignment. */
+		    if (lexeme == ASSIGN) {
+			break;
+		    }
+
 		    /*
 		     * Special association rules for the conditional
 		     * operators. The "?" and ":" operators have equal
@@ -1250,6 +1266,16 @@ ParseExpr(
 		if ((incompletePtr->lexeme == QUESTION)
 			|| (incompletePtr->lexeme == FUNCTION)) {
 		    nodes[complete].constant = incompletePtr->constant;
+		}
+
+		/*
+		 * We declare all ASSIGN operators to be non-constant
+		 * expressions because we do not want to optimize their
+		 * variable-setting side effects out of existence.
+		 */
+
+		if (incompletePtr->lexeme == ASSIGN) {
+		    incompletePtr->constant = 0;
 		}
 
 		if (incompletePtr->lexeme == START) {
@@ -1912,7 +1938,7 @@ ParseLexeme(
 	    *lexemePtr = EQUAL;
 	    return 2;
 	}
-	*lexemePtr = INCOMPLETE;
+	*lexemePtr = ASSIGN;
 	return 1;
 
     case '!':
@@ -2282,6 +2308,9 @@ CompileExprTree(
 		nodePtr->left = numWords;
 		numWords = 2;	/* Command plus one argument */
 		break;
+	    case SEPARATOR:
+		TclEmitOpcode(INST_POP, envPtr);
+		break;
 	    }
 	    case QUESTION:
 		newJump = TclStackAlloc(interp, sizeof(JumpList));
@@ -2320,7 +2349,18 @@ CompileExprTree(
 		    TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
 		}
 		break;
+	    case ASSIGN:
+		if (convert) {
+		    /*
+		     * Make sure we assign to a variable only values that
+		     * have been numerically normalized in the expr way.
+		     */
+		    TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
+		}
+		TclEmitOpcode(INST_STORE_STK, envPtr);
+		break;
 	    case OPEN_PAREN:
+	    case SEPARATOR:
 
 		/* do nothing */
 		break;
