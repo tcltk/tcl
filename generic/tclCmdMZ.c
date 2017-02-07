@@ -4215,16 +4215,19 @@ usage:
     }
 
     /* get start and stop time */
-#ifndef TCL_WIDE_CLICKS
+#ifdef TCL_WIDE_CLICKS
+    start = middle = TclpGetWideClicks();
+    /* time to stop execution (in wide clicks) */
+    stop = start + (maxms * 1000 / TclpWideClickInMicrosec());
+#else
     Tcl_GetTime(&now);
     start = now.sec; start *= 1000000; start += now.usec;
-#else
-    start = TclpGetWideClicks();
+    middle = start;
+    /* time to stop execution (in microsecs) */
+    stop = start + maxms * 1000;
 #endif
 
     /* start measurement */
-    stop = start + maxms * 1000;
-    middle = start;
     while (1) {
     	/* eval single iteration */
     	count++;
@@ -4246,11 +4249,11 @@ usage:
 	if (--threshold > 0) continue;
 
 	/* check stop time reached, estimate new threshold */
-    #ifndef TCL_WIDE_CLICKS
+    #ifdef TCL_WIDE_CLICKS
+	middle = TclpGetWideClicks();
+    #else
 	Tcl_GetTime(&now);
 	middle = now.sec; middle *= 1000000; middle += now.usec;
-    #else
-	middle = TclpGetWideClicks();
     #endif
 	if (middle >= stop) {
 	    break;
@@ -4273,6 +4276,11 @@ usage:
 	const char *fmt;
 
 	middle -= start;		     /* execution time in microsecs */
+
+    #ifdef TCL_WIDE_CLICKS
+	/* convert execution time in wide clicks to microsecs */
+	middle *= TclpWideClickInMicrosec();
+    #endif
 
 	/* if not calibrate */
 	if (!calibrate) {
