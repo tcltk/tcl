@@ -32,6 +32,7 @@ typedef struct PkgAvail {
     char *script;		/* Script to invoke to provide this version of
 				 * the package. Malloc'ed and protected by
 				 * Tcl_Preserve and Tcl_Release. */
+    char *pkgIndex;		/* Full file name of pkgIndex file */
     struct PkgAvail *nextPtr;	/* Next in list of available versions of the
 				 * same package. */
 } PkgAvail;
@@ -547,6 +548,9 @@ PkgRequireCore(
 	    pkgName->nextPtr = pkgFiles->names;
 	    strcpy(pkgName->name, name);
 	    pkgFiles->names = pkgName;
+	    if (bestPtr->pkgIndex) {
+		TclPkgFileSeen(interp, bestPtr->pkgIndex);
+	    }
 	    code = Tcl_EvalEx(interp, script, -1, TCL_EVAL_GLOBAL);
 	    /* Pop the "ifneeded" package name from "tclPkgFiles" assocdata*/
 	    pkgFiles->names = pkgName->nextPtr;
@@ -880,6 +884,9 @@ Tcl_PackageObjCmd(
 		pkgPtr->availPtr = availPtr->nextPtr;
 		Tcl_EventuallyFree(availPtr->version, TCL_DYNAMIC);
 		Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
+		if (availPtr->pkgIndex) {
+		    Tcl_EventuallyFree(availPtr->pkgIndex, TCL_DYNAMIC);
+		}
 		ckfree(availPtr);
 	    }
 	    ckfree(pkgPtr);
@@ -930,6 +937,9 @@ Tcl_PackageObjCmd(
 		    return TCL_OK;
 		}
 		Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
+		if (availPtr->pkgIndex) {
+		    Tcl_EventuallyFree(availPtr->pkgIndex, TCL_DYNAMIC);
+		}
 		break;
 	    }
 	}
@@ -940,6 +950,7 @@ Tcl_PackageObjCmd(
 	}
 	if (availPtr == NULL) {
 	    availPtr = ckalloc(sizeof(PkgAvail));
+	    availPtr->pkgIndex = 0;
 	    DupBlock(availPtr->version, argv3, (unsigned) length + 1);
 
 	    if (prevPtr == NULL) {
@@ -949,6 +960,10 @@ Tcl_PackageObjCmd(
 		availPtr->nextPtr = prevPtr->nextPtr;
 		prevPtr->nextPtr = availPtr;
 	    }
+	}
+	if (iPtr->scriptFile) {
+	    argv4 = TclGetStringFromObj(iPtr->scriptFile, &length);
+	    DupBlock(availPtr->pkgIndex, argv4, (unsigned) length + 1);
 	}
 	argv4 = TclGetStringFromObj(objv[4], &length);
 	DupBlock(availPtr->script, argv4, (unsigned) length + 1);
@@ -1305,6 +1320,9 @@ TclFreePackageInfo(
 	    pkgPtr->availPtr = availPtr->nextPtr;
 	    Tcl_EventuallyFree(availPtr->version, TCL_DYNAMIC);
 	    Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
+	    if (availPtr->pkgIndex) {
+		Tcl_EventuallyFree(availPtr->pkgIndex, TCL_DYNAMIC);
+	    }
 	    ckfree(availPtr);
 	}
 	ckfree(pkgPtr);
