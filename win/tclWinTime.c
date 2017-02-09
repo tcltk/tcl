@@ -110,6 +110,17 @@ static TimeInfo timeInfo = {
 };
 
 /*
+ * Scale to convert wide click values from the TclpGetWideClicks native
+ * resolution to microsecond resolution and back.
+ */
+static struct {
+    int initialized;		/* 1 if initialized, 0 otherwise */
+    int perfCounter;		/* 1 if performance counter usable for wide clicks */
+    double microsecsScale;	/* Denominator scale between clock / microsecs */
+} wideClick = {0, 0.0};
+
+
+/*
  * Declarations for functions defined later in this file.
  */
 
@@ -221,7 +232,7 @@ TclpGetClicks(void)
  *	resolution clock in microseconds available on the system.
  *
  * Results:
- *	Number of microseconds (from the epoch).
+ *	Number of microseconds (from some start time).
  *
  * Side effects:
  *	This should be used for time-delta resp. for measurement purposes
@@ -233,6 +244,87 @@ TclpGetClicks(void)
 
 Tcl_WideInt
 TclpGetWideClicks(void)
+{
+    LARGE_INTEGER curCounter;
+
+    if (!wideClick.initialized) {
+	LARGE_INTEGER perfCounterFreq;
+
+	/*
+	 * The frequency of the performance counter is fixed at system boot and
+	 * is consistent across all processors. Therefore, the frequency need 
+	 * only be queried upon application initialization.
+	 */
+	if (QueryPerformanceFrequency(&perfCounterFreq)) {
+	    wideClick.perfCounter = 1;
+	    wideClick.microsecsScale = 1000000.0 / perfCounterFreq.QuadPart;
+	} else {
+	    /* fallback using microseconds */
+	    wideClick.perfCounter = 0;
+	    wideClick.microsecsScale = 1;
+	}
+	
+	wideClick.initialized = 1;
+    }
+    if (wideClick.perfCounter) {
+	if (QueryPerformanceCounter(&curCounter)) {
+	    return (Tcl_WideInt)curCounter.QuadPart;
+	}
+	/* fallback using microseconds */
+	wideClick.perfCounter = 0;
+	wideClick.microsecsScale = 1;
+	return TclpGetMicroseconds();
+    } else {
+    	return TclpGetMicroseconds();
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpWideClickInMicrosec --
+ *
+ *	This procedure return scale to convert wide click values from the 
+ *	TclpGetWideClicks native resolution to microsecond resolution
+ *	and back.
+ *
+ * Results:
+ * 	1 click in microseconds as double.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+double
+TclpWideClickInMicrosec(void)
+{
+    if (!wideClick.initialized) {
+    	(void)TclpGetWideClicks();	/* initialize */
+    }
+    return wideClick.microsecsScale;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetMicroseconds --
+ *
+ *	This procedure returns a WideInt value that represents the highest
+ *	resolution clock in microseconds available on the system.
+ *
+ * Results:
+ *	Number of microseconds (from the epoch).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_WideInt 
+TclpGetMicroseconds(void)
 {
     Tcl_WideInt usecSincePosixEpoch;
 
@@ -346,6 +438,9 @@ NativeScaleTime(
 static Tcl_WideInt
 NativeGetMicroseconds(void)
 {
+    static LARGE_INTEGER posixEpoch;
+				/* Posix epoch expressed as 100-ns ticks since
+				 * the windows epoch. */
     /*
      * Initialize static storage on the first trip through.
      *
@@ -356,6 +451,10 @@ NativeGetMicroseconds(void)
     if (!timeInfo.initialized) {
 	TclpInitLock();
 	if (!timeInfo.initialized) {
+
+	    posixEpoch.LowPart = 0xD53E8000;
+	    posixEpoch.HighPart = 0x019DB1DE;
+
 	    timeInfo.perfCounterAvailable =
 		    QueryPerformanceFrequency(&timeInfo.nominalFreq);
 
@@ -468,14 +567,8 @@ NativeGetMicroseconds(void)
 				/* Current performance counter. */
 	Tcl_WideInt curFileTime;/* Current estimated time, expressed as 100-ns
 				 * ticks since the Windows epoch. */
-	static LARGE_INTEGER posixEpoch;
-				/* Posix epoch expressed as 100-ns ticks since
-				 * the windows epoch. */
 	Tcl_WideInt usecSincePosixEpoch;
 				/* Current microseconds since Posix epoch. */
-
-	posixEpoch.LowPart = 0xD53E8000;
-	posixEpoch.HighPart = 0x019DB1DE;
 
 	QueryPerformanceCounter(&curCounter);
 
