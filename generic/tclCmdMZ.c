@@ -4089,7 +4089,7 @@ Tcl_TimeRateObjCmd(
 	    i++;
 	    break;
 	}
-	switch ((enum options) index) {
+	switch (index) {
 	case TMRT_EV_DIRECT:
 	    direct = objv[i];
 	    break;
