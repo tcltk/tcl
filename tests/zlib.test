@@ -157,6 +157,18 @@ test zlib-7.8 {zlib stream: Bug b26e38a3e4} -constraints zlib -setup {
     catch {$strm close}
     unset -nocomplain randdata data
 } -result {120185 18003000}
+test zlib-7.9 {zlib stream finalize (bug 25842c161)} -constraints zlib -setup {
+    set z1 [zlib stream gzip]
+    set z2 [zlib stream gzip]
+} -body {
+    $z1 put ABCDEedbca..
+    $z1 finalize
+    $z2 put -finalize ABCDEedbca..
+    expr {[$z1 get] eq [$z2 get]}
+} -cleanup {
+    $z1 close
+    $z2 close
+} -result 1
 
 test zlib-8.1 {zlib transformation} -constraints zlib -setup {
     set file [makeFile {} test.gz]
