@@ -1665,6 +1665,32 @@ DupListInternalRep(
     ListSetIntRep(copyPtr, listRepPtr);
 }
 
+
+static Tcl_Obj *
+TclDupShaved(
+	     Tcl_Obj *objPtr)		/* The object to duplicate. */
+{
+    Tcl_Obj *dupPtr;
+    const Tcl_ObjType *typePtr = objPtr->typePtr;
+    
+    TclNewObj(dupPtr);
+    dupPtr->bytes = NULL;
+    if (typePtr) {						       
+	if (typePtr->dupIntRepProc) {
+	    typePtr->dupIntRepProc((objPtr), (dupPtr));
+	} else {
+	    (dupPtr)->internalRep = (objPtr)->internalRep;
+	    (dupPtr)->typePtr = typePtr;
+	}
+    } else {
+	Tcl_Panic("Attempting to shave a pure string: %p", objPtr);
+    }
+    
+    return dupPtr;
+}
+			      
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1734,6 +1760,34 @@ SetListFromAny(
 	    Tcl_IncrRefCount(valuePtr);
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
+
+    } else if ((objPtr->typePtr == &tclIntType)
+#ifndef TCL_WIDE_INT_IS_LONG
+	    || (objPtr->typePtr == &tclWideIntType)
+#endif
+	    || (objPtr->typePtr == &tclBooleanType)
+	    || (objPtr->typePtr == &tclDoubleType)
+	    || (objPtr->typePtr == &tclBignumType)
+	    || (objPtr->typePtr == &tclEndOffsetType)
+/*	    || (objPtr->typePtr == &tclOneWordHashKeyType)	?? */
+	    ) {
+
+	Tcl_Obj *newElem;
+	/*
+	 * create a new list consisting of only one element,
+	 * which is the original object
+	 */
+
+	listRepPtr = AttemptNewList(interp, 1, NULL);
+	if (listRepPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	listRepPtr->elemCount = 1;
+	newElem = TclDupShaved(objPtr);
+	elemPtrs = &listRepPtr->elements;
+	elemPtrs[0] = newElem;
+	Tcl_IncrRefCount(newElem);
+
     } else {
 	int estCount, length;
 	const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);
