@@ -487,26 +487,28 @@ Tcl_RegsubObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int idx, result, cflags, all, wlen, wsublen, numMatches, offset;
-    int start, end, subStart, subEnd, match;
+    int start, end, subStart, subEnd, match, command;
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
     Tcl_Obj *resultPtr, *subPtr, *objPtr, *startIndex = NULL;
+    Tcl_Obj **args = NULL, *parts[2], *cmdObj;
     Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
 
     static const char *const options[] = {
-	"-all",		"-nocase",	"-expanded",
-	"-line",	"-linestop",	"-lineanchor",	"-start",
+	"-all",		"-command",	"-expanded",	"-line",
+	"-linestop",	"-lineanchor",	"-nocase",	"-start",
 	"--",		NULL
     };
     enum options {
-	REGSUB_ALL,	REGSUB_NOCASE,	REGSUB_EXPANDED,
-	REGSUB_LINE,	REGSUB_LINESTOP, REGSUB_LINEANCHOR,	REGSUB_START,
+	REGSUB_ALL, REGSUB_COMMAND, REGSUB_EXPANDED, REGSUB_LINE,
+	REGSUB_LINESTOP, REGSUB_LINEANCHOR, REGSUB_NOCASE, REGSUB_START,
 	REGSUB_LAST
     };
 
     cflags = TCL_REG_ADVANCED;
     all = 0;
     offset = 0;
+    command = 0;
     resultPtr = NULL;
 
     for (idx = 1; idx < objc; idx++) {
@@ -527,6 +529,9 @@ Tcl_RegsubObjCmd(
 	    break;
 	case REGSUB_NOCASE:
 	    cflags |= TCL_REG_NOCASE;
+	    break;
+	case REGSUB_COMMAND:
+	    command = 1;
 	    break;
 	case REGSUB_EXPANDED:
 	    cflags |= TCL_REG_EXPANDED;
@@ -585,7 +590,7 @@ Tcl_RegsubObjCmd(
 	}
     }
 
-    if (all && (offset == 0)
+    if (all && (offset == 0) && (command == 0)
 	    && (strpbrk(TclGetString(objv[2]), "&\\") == NULL)
 	    && (strpbrk(TclGetString(objv[0]), "*+?{}()[].\\|^$") == NULL)) {
 	/*
@@ -737,6 +742,68 @@ Tcl_RegsubObjCmd(
 	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, start);
 
 	/*
+	 * In -command mode, the substitutions are added as quoted arguments
+	 * to the subSpec to form a command, that is then executed and the
+	 * result used as the string to substitute in.
+	 */
+
+	if (command) {
+	    if (args == NULL) {
+		args = ckalloc(sizeof(Tcl_Obj*) * (info.nsubs + 1));
+	    }
+
+	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
+		subStart = info.matches[idx].start;
+		subEnd = info.matches[idx].end;
+		if ((subStart >= 0) && (subEnd >= 0)) {
+		    args[idx] = Tcl_NewUnicodeObj(
+			    wstring + offset + subStart, subEnd - subStart);
+		} else {
+		    args[idx] = Tcl_NewObj();
+		}
+	    }
+	    parts[0] = subPtr;
+	    parts[1] = Tcl_NewListObj(info.nsubs+1, args);
+	    cmdObj = Tcl_ConcatObj(2, parts);
+	    Tcl_IncrRefCount(cmdObj);
+	    Tcl_DecrRefCount(parts[1]);
+
+	    result = Tcl_EvalObjEx(interp, cmdObj, TCL_EVAL_DIRECT);
+	    Tcl_DecrRefCount(cmdObj);
+	    if (result != TCL_OK) {
+		if (result == TCL_ERROR) {
+		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+			    "\n    (%s substitution computation script)",
+			    options[REGSUB_COMMAND]));
+		}
+		goto done;
+	    }
+
+	    Tcl_AppendObjToObj(resultPtr, Tcl_GetObjResult(interp));
+	    Tcl_ResetResult(interp);
+
+	    offset += end;
+	    if (end == 0 || start == end) {
+		/*
+		 * Always consume at least one character of the input string
+		 * in order to prevent infinite loops, even when we
+		 * technically matched the empty string; we must not match
+		 * again at the same spot.
+		 */
+
+		if (offset < wlen) {
+		    Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
+		}
+		offset++;
+	    }
+	    if (all) {
+		continue;
+	    } else {
+		break;
+	    }
+	}
+
+	/*
 	 * Append the subSpec argument to the variable, making appropriate
 	 * substitutions. This code is a bit hairy because of the backslash
 	 * conventions and because the code saves up ranges of characters in
@@ -863,6 +930,9 @@ Tcl_RegsubObjCmd(
     }
     if (subPtr && (objv[2] == objv[0])) {
 	Tcl_DecrRefCount(subPtr);
+    }
+    if (args) {
+	ckfree(args);
     }
     if (resultPtr) {
 	Tcl_DecrRefCount(resultPtr);
