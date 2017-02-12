@@ -170,6 +170,19 @@ test listobj-7.13 {Tcl_ListObjReplace, grow array, insert at end} {
 test listobj-8.1 {SetListFromAny} {
     lindex {0 foo\x00help 2} 1
 } "foo\x00help"
+test listobj-8.2 {SetListFromAny with singleton optimisation: preserve string rep of float} {
+    set x "   1.3   ";llength $x;set x
+} "   1.3   "
+test listobj-8.3 {SetListFromAny with singleton optimisation: don't copy string rep of non-canonical float to new list} {
+    set x "   1.3   ";expr {log($x)};lindex $x 0
+} "1.3"
+test listobj-8.4 {SetListFromAny with singleton optimisation: preserve string rep of index} {
+    set x "  end-1  ";lindex {a b c} $x;set x
+} "  end-1  "
+test listobj-8.5 {SetListFromAny with singleton optimisation: don't copy string rep of non-canonical index to new list} {
+    set x "  end-1  ";lindex {a b c} $x;lindex $x 0
+} "end-1"
+
 
 test listobj-9.1 {UpdateStringOfList} {
     string length [list foo\x00help]
