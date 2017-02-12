@@ -670,7 +670,7 @@ InfoCommandsCmd(
 	    Tcl_SetObjResult(interp, listPtr);
 	    return TCL_OK;
 	}
-	if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
+	if (!specificNsInPattern) {
 	    Tcl_HashTable *tablePtr = NULL;	/* Quell warning. */
 
 	    for (i=0 ; i<nsPtr->commandPathLength ; i++) {

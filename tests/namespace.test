@@ -2462,6 +2462,14 @@ test namespace-51.14 {name resolution path control} -body {
     catch {namespace delete ::test_ns_2}
     catch {namespace delete ::test_ns_3}
 }
+test namespace-51.14.1 {info commands follows path from global namespace (bug [58b96f6744])} -setup {
+    set p [namespace path]
+    namespace path ::tcl::mathfunc
+} -body {
+    info commands sin
+} -cleanup {
+    namespace path $p
+} -result sin
 test namespace-51.15 {namespace resolution path control} -body {
     namespace eval ::test_ns_2 {
 	proc foo {} {return 2}
