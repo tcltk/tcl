@@ -3089,12 +3089,16 @@ Tcl_GetWideIntFromObj(
 		    while (numBytes-- > 0) {
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
-		    if (big.sign) {
-			*wideIntPtr = - (Tcl_WideInt) value;
+		    if ( (!big.sign) && ((Tcl_WideInt)value < 0) ) {
+			/* signed overflow - fall through to produce an error */
 		    } else {
-			*wideIntPtr = (Tcl_WideInt) value;
+			if (big.sign) {
+			    *wideIntPtr = - (Tcl_WideInt) value;
+			} else {
+			    *wideIntPtr = (Tcl_WideInt) value;
+			}
+			return TCL_OK;
 		    }
-		    return TCL_OK;
 		}
 	    }
 	    if (interp != NULL) {
