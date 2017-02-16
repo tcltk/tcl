@@ -283,20 +283,18 @@ enum Marks {
 				 * parse tree. The sub-expression between
 				 * parens becomes the single argument of the
 				 * matching OPEN_PAREN unary operator. */
-
-#define SEPARATOR	( BINARY | 29)
-#define ASSIGN		( BINARY | 30)
-				/* ASSIGN, like EXPON, is right
-				 * associative, and this distinction
-				 * is coded directly in ParseExpr() */
-
-#define END		(BINARY | 31)
+#define END		(BINARY | 28)
 				/* This lexeme represents the end of the
 				 * string being parsed. Treating it as a
 				 * binary operator follows the same logic as
 				 * the CLOSE_PAREN lexeme and END pairs with
 				 * START, in the same way that CLOSE_PAREN
 				 * pairs with OPEN_PAREN. */
+#define SEPARATOR      ( BINARY | 29)
+#define ASSIGN         ( BINARY | 30)
+				/* ASSIGN, like EXPON, is right associative,
+ 				 * and this distinction is coded directly in
+				 * ParseExpr() */
 
 /*
  * When ParseExpr() builds the parse tree it must choose which operands to
