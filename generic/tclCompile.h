@@ -425,7 +425,7 @@ typedef struct ByteCode {
 				 * compiled. If the code is executed if a
 				 * different namespace, it must be
 				 * recompiled. */
-    int nsEpoch;		/* Value of nsPtr->resolverEpoch when this
+    size_t nsEpoch;		/* Value of nsPtr->resolverEpoch when this
 				 * ByteCode was compiled. Used to invalidate
 				 * code when new namespace resolution rules
 				 * are put into effect. */
