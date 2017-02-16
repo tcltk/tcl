@@ -36,8 +36,10 @@ typedef struct Link {
 	unsigned int ui;
 	short s;
 	unsigned short us;
+#if !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__CYGWIN__)
 	long l;
 	unsigned long ul;
+#endif
 	Tcl_WideInt w;
 	Tcl_WideUInt uw;
 	float f;
@@ -129,6 +131,14 @@ Tcl_LinkVar(
     Tcl_IncrRefCount(linkPtr->varName);
     linkPtr->addr = addr;
     linkPtr->type = type & ~TCL_LINK_READ_ONLY;
+#if !defined(TCL_NO_DEPRECATED) && (defined(TCL_WIDE_INT_IS_LONG) \
+	|| defined(_WIN32) || defined(__CYGWIN__))
+    if (linkPtr->type == 11 /* legacy TCL_LINK_LONG */) {
+	linkPtr->type = TCL_LINK_LONG;
+    } else if (linkPtr->type == 12 /* legacy TCL_LINK_ULONG */) {
+	linkPtr->type = TCL_LINK_ULONG;
+    }
+#endif
     if (type & TCL_LINK_READ_ONLY) {
 	linkPtr->flags = LINK_READ_ONLY;
     } else {
@@ -335,12 +345,14 @@ LinkTraceProc(
 	case TCL_LINK_UINT:
 	    changed = (LinkedVar(unsigned int) != linkPtr->lastValue.ui);
 	    break;
+#if !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__CYGWIN__)
 	case TCL_LINK_LONG:
 	    changed = (LinkedVar(long) != linkPtr->lastValue.l);
 	    break;
 	case TCL_LINK_ULONG:
 	    changed = (LinkedVar(unsigned long) != linkPtr->lastValue.ul);
 	    break;
+#endif
 	case TCL_LINK_FLOAT:
 	    changed = (LinkedVar(float) != linkPtr->lastValue.f);
 	    break;
@@ -484,6 +496,7 @@ LinkTraceProc(
 	LinkedVar(unsigned int) = linkPtr->lastValue.ui = (unsigned int)valueWide;
 	break;
 
+#if !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__CYGWIN__)
     case TCL_LINK_LONG:
 	if ((Tcl_GetWideIntFromObj(NULL, valueObj, &valueWide) != TCL_OK
 		&& GetInvalidWideFromObj(valueObj, &valueWide) != TCL_OK)
@@ -505,6 +518,7 @@ LinkTraceProc(
 	}
 	LinkedVar(unsigned long) = linkPtr->lastValue.ul = (unsigned long)valueWide;
 	break;
+#endif
 
     case TCL_LINK_WIDE_UINT:
 	/*
@@ -598,12 +612,14 @@ ObjValue(
     case TCL_LINK_UINT:
 	linkPtr->lastValue.ui = LinkedVar(unsigned int);
 	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.ui);
+#if !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__CYGWIN__)
     case TCL_LINK_LONG:
 	linkPtr->lastValue.l = LinkedVar(long);
 	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.l);
     case TCL_LINK_ULONG:
 	linkPtr->lastValue.ul = LinkedVar(unsigned long);
 	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.ul);
+#endif
     case TCL_LINK_FLOAT:
 	linkPtr->lastValue.f = LinkedVar(float);
 	return Tcl_NewDoubleObj(linkPtr->lastValue.f);
