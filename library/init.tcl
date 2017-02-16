@@ -470,9 +470,9 @@ proc auto_load {cmd {namespace {}}} {
 
 proc ::tcl::Pkg::source {filename} {
     if {[interp issafe]} {
-	uplevel 1 [list ::source $filename]    
+	uplevel 1 [list ::source $filename]
     } else {
-	uplevel 1 [list ::source -nopkg $filename]    
+	uplevel 1 [list ::source -nopkg $filename]
     }
 }
 
