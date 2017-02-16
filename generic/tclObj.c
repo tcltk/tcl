@@ -49,7 +49,6 @@ Tcl_Mutex tclObjMutex;
  */
 
 char tclEmptyString = '\0';
-char *tclEmptyStringRep = &tclEmptyString;
 
 #if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
 /*
@@ -345,17 +344,17 @@ typedef struct ResolvedCmdName {
 				 * reference (not the namespace that contains
 				 * the referenced command). NULL if the name
 				 * is fully qualified.*/
-    long refNsId;		/* refNsPtr's unique namespace id. Used to
+    size_t refNsId;		/* refNsPtr's unique namespace id. Used to
 				 * verify that refNsPtr is still valid (e.g.,
 				 * it's possible that the cmd's containing
 				 * namespace was deleted and a new one created
 				 * at the same address). */
-    int refNsCmdEpoch;		/* Value of the referencing namespace's
+    size_t refNsCmdEpoch;	/* Value of the referencing namespace's
 				 * cmdRefEpoch when the pointer was cached.
 				 * Before using the cached pointer, we check
 				 * if the namespace's epoch was incremented;
 				 * if so, this cached pointer is invalid. */
-    int cmdEpoch;		/* Value of the command's cmdEpoch when this
+    size_t cmdEpoch;		/* Value of the command's cmdEpoch when this
 				 * pointer was cached. Before using the cached
 				 * pointer, we check if the cmd's epoch was
 				 * incremented; if so, the cmd was renamed,
@@ -1060,7 +1059,7 @@ TclDbInitNewObj(
 				 * debugging. */
 {
     objPtr->refCount = 0;
-    objPtr->bytes = tclEmptyStringRep;
+    objPtr->bytes = &tclEmptyString;
     objPtr->length = 0;
     objPtr->typePtr = NULL;
 
@@ -3395,7 +3394,7 @@ GetBignumFromObj(
 		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 		objPtr->typePtr = NULL;
 		if (objPtr->bytes == NULL) {
-		    TclInitStringRep(objPtr, tclEmptyStringRep, 0);
+		    TclInitStringRep(objPtr, &tclEmptyString, 0);
 		}
 	    }
 	    return TCL_OK;
