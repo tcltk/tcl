@@ -312,7 +312,7 @@ enum Precedence {
     PREC_OPEN_PAREN,	/* "(" */
     PREC_COMMA,		/* "," */
     PREC_SEPARATOR,	/* ";" */
-    PREC_ASSIGN,	/* "=" */
+    PREC_ASSIGN,	/* ":=" */
     PREC_CONDITIONAL,	/* "?", ":" */
     PREC_OR,		/* "||" */
     PREC_AND,		/* "&&" */
@@ -475,9 +475,9 @@ static const unsigned char Lexeme[] = {
 	COMMA		/* , */,	MINUS		/* - */,
 	0		/* . */,	DIVIDE		/* / */,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			/* 0-9 */
-	/*COLON*/0	/* : */,	SEPARATOR	/* ; */,
+	0		/* : or := */,	SEPARATOR	/* ; */,
 	0		/* < or << or <= */,
-	0		/* = or == */,
+	0		/* == or INCOMPLETE */,
 	0		/* > or >> or >= */,
 	QUESTION	/* ? */,	INVALID		/* @ */,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		/* A-M */
@@ -750,14 +750,7 @@ ParseExpr(
 			start+scanned, numBytes-scanned)+1] == '=') {
 		    lexeme = VARNAME;
 
-		    /*
-		     * When we compile the expression we'll need the function
-		     * name, and there's no place in the parse tree to store
-		     * it, so we keep a separate list of all the function
-		     * names we've parsed in the order we found them.
-		     */
-
-		    //		    Tcl_ListObjAppendElement(NULL, funcList, literal);
+		    /* The variable name is stored as an OT_LITERAL below */
 
 		} else if (Tcl_GetBooleanFromObj(NULL,literal,&b) == TCL_OK) {
 		    lexeme = BOOLEAN;
@@ -1965,7 +1958,7 @@ ParseLexeme(
 	    *lexemePtr = EQUAL;
 	    return 2;
 	}
-	*lexemePtr = ASSIGN;
+	*lexemePtr = INCOMPLETE;
 	return 1;
 
     case '!':
