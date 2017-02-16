@@ -349,7 +349,7 @@ typedef struct ResolvedCmdName {
 				 * it's possible that the cmd's containing
 				 * namespace was deleted and a new one created
 				 * at the same address). */
-    size_t refNsCmdEpoch;		/* Value of the referencing namespace's
+    size_t refNsCmdEpoch;	/* Value of the referencing namespace's
 				 * cmdRefEpoch when the pointer was cached.
 				 * Before using the cached pointer, we check
 				 * if the namespace's epoch was incremented;
