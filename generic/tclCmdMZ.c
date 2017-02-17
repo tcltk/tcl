@@ -811,6 +811,13 @@ Tcl_RegsubObjCmd(
 	    Tcl_AppendObjToObj(resultPtr, Tcl_GetObjResult(interp));
 	    Tcl_ResetResult(interp);
 
+	    /*
+	     * Refetch the unicode, in case the representation was smashed by
+	     * the user code.
+	     */
+
+	    wstring = Tcl_GetUnicodeFromObj(objPtr, &wlen);
+
 	    offset += end;
 	    if (end == 0 || start == end) {
 		/*
