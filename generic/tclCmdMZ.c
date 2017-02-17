@@ -487,11 +487,11 @@ Tcl_RegsubObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int idx, result, cflags, all, wlen, wsublen, numMatches, offset;
-    int start, end, subStart, subEnd, match, command;
+    int start, end, subStart, subEnd, match, command, numParts, numArgs;
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
     Tcl_Obj *resultPtr, *subPtr, *objPtr, *startIndex = NULL;
-    Tcl_Obj **args = NULL, *parts[2], *cmdObj;
+    Tcl_Obj **args = NULL, **parts;
     Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
 
     static const char *const options[] = {
@@ -666,6 +666,20 @@ Tcl_RegsubObjCmd(
 	return TCL_ERROR;
     }
 
+    if (command) {
+	/*
+	 * In command-prefix mode, we require that the third non-option
+	 * argument be a list, so we enforce that here. Afterwards, we fetch
+	 * the RE compilation again in case objv[0] and objv[2] are the same
+	 * object. (If they aren't, that's cheap to do.)
+	 */
+
+	if (Tcl_ListObjLength(interp, objv[2], &numParts) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
+    }
+
     /*
      * Make sure to avoid problems where the objects are shared. This can
      * cause RegExpObj <> UnicodeObj shimmering that causes data corruption.
@@ -683,7 +697,9 @@ Tcl_RegsubObjCmd(
     } else {
 	subPtr = objv[2];
     }
-    wsubspec = Tcl_GetUnicodeFromObj(subPtr, &wsublen);
+    if (!command) {
+	wsubspec = Tcl_GetUnicodeFromObj(subPtr, &wsublen);
+    }
 
     result = TCL_OK;
 
@@ -742,34 +758,47 @@ Tcl_RegsubObjCmd(
 	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, start);
 
 	/*
-	 * In -command mode, the substitutions are added as quoted arguments
-	 * to the subSpec to form a command, that is then executed and the
-	 * result used as the string to substitute in.
+	 * In command-prefix mode, the substitutions are added as quoted
+	 * arguments to the subSpec to form a command, that is then executed
+	 * and the result used as the string to substitute in. Actually,
+	 * everything is passed through Tcl_EvalObjv, as that's much faster.
 	 */
 
 	if (command) {
 	    if (args == NULL) {
-		args = ckalloc(sizeof(Tcl_Obj*) * (info.nsubs + 1));
+		Tcl_ListObjGetElements(interp, subPtr, &numParts, &parts);
+		numArgs = numParts + info.nsubs + 1;
+		args = ckalloc(sizeof(Tcl_Obj*) * numArgs);
+		memcpy(args, parts, sizeof(Tcl_Obj*) * numParts);
 	    }
 
 	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
 		subStart = info.matches[idx].start;
 		subEnd = info.matches[idx].end;
 		if ((subStart >= 0) && (subEnd >= 0)) {
-		    args[idx] = Tcl_NewUnicodeObj(
+		    args[idx + numParts] = Tcl_NewUnicodeObj(
 			    wstring + offset + subStart, subEnd - subStart);
 		} else {
-		    args[idx] = Tcl_NewObj();
+		    args[idx + numParts] = Tcl_NewObj();
 		}
+		Tcl_IncrRefCount(args[idx + numParts]);
 	    }
-	    parts[0] = subPtr;
-	    parts[1] = Tcl_NewListObj(info.nsubs+1, args);
-	    cmdObj = Tcl_ConcatObj(2, parts);
-	    Tcl_IncrRefCount(cmdObj);
-	    Tcl_DecrRefCount(parts[1]);
 
-	    result = Tcl_EvalObjEx(interp, cmdObj, TCL_EVAL_DIRECT);
-	    Tcl_DecrRefCount(cmdObj);
+	    /*
+	     * At this point, we're locally holding the references to the
+	     * argument words we added for this time round the loop, and the
+	     * subPtr is holding the references to the words that the user
+	     * supplied directly. None are zero-refcount, which is important
+	     * because Tcl_EvalObjv is "hairy monster" in terms of refcount
+	     * handling, being able to optionally add references to any of its
+	     * argument words. We'll drop the local refs immediately
+	     * afterwarsds; subPtr is handled in the main exit stanza.
+	     */
+
+	    result = Tcl_EvalObjv(interp, numArgs, args, 0);
+	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
+		TclDecrRefCount(args[idx + numParts]);
+	    }
 	    if (result != TCL_OK) {
 		if (result == TCL_ERROR) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
