@@ -1132,7 +1132,7 @@ test regexp-27.2 {regsub -command} {
 } ab3efxghi
 test regexp-27.3 {regsub -command} {
     set x 0
-    regsub -all -command {(?=.)} abcde "incr x;#"
+    regsub -all -command {(?=.)} abcde {apply {args {incr ::x}}}
 } 1a2b3c4d5e
 test regexp-27.4 {regsub -command} -body {
     regsub -command {.x.} {abcxdef} error
