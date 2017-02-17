@@ -2376,6 +2376,8 @@ CompileExprTree(
 		     * have been numerically normalized in the expr way.
 		     */
 		    TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
+		    /* already converted */
+		    convert = 0;
 		}
 		TclEmitOpcode(INST_STORE_STK, envPtr);
 		break;
