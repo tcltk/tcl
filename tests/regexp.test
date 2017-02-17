@@ -1143,6 +1143,12 @@ test regexp-27.5 {regsub -command} {
 test regexp-27.6 {regsub -command} {
     regsub -command -all {(.)(.)} {abcdef} {list ,}
 } {, ab a b, cd c d, ef e f}
+test regexp-27.7 {regsub -command representation smash} {
+    set ::s {123=456 789}
+    regsub -command -all {\d+} $::s {apply {n {
+	expr {[llength $::s] + $n}
+    }}}
+} {125=458 791}
 
 # cleanup
 ::tcltest::cleanupTests
