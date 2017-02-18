@@ -677,6 +677,14 @@ Tcl_RegsubObjCmd(
 	if (Tcl_ListObjLength(interp, objv[2], &numParts) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+	if (numParts < 1) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "command prefix must be a list of at least one element",
+		    -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "REGSUB",
+		    "CMDEMPTY", NULL);
+	    return TCL_ERROR;
+	}
 	regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
     }
 
