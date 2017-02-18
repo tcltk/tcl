@@ -19,6 +19,20 @@ if {"::tcltest" ni [namespace children]} {
 unset -nocomplain foo
 
 testConstraint exec [llength [info commands exec]]
+
+# Used for constraining memory leak tests
+testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc memtest script {
+	set end [lindex [split [memory info] \n] 3 3]
+	for {set i 0} {$i < 5} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [lindex [split [memory info] \n] 3 3]
+	}
+	expr {$end - $tmp}
+    }
+}
 
 test regexp-1.1 {basic regexp operation} {
     regexp ab*c abbbc
@@ -1149,6 +1163,21 @@ test regexp-27.7 {regsub -command representation smash} {
 	expr {[llength $::s] + $n}
     }}}
 } {125=458 791}
+test regexp-27.8 {regsub -command representation smash} {
+    set ::t {apply {n {
+	expr {[llength [lindex $::t 1 1 1]] + $n}
+    }}}
+    regsub -command -all {\d+} "123=456 789" $::t
+} {131=464 797}
+test regexp-27.9 {regsub -command memory leak testing} memory {
+    set ::s "123=456 789"
+    set ::t {apply {n {
+	expr {[llength [lindex $::t 1 1 1]] + [llength $::s] + $n}
+    }}}
+    memtest {
+	regsub -command -all {\d+} $::s $::t
+    }
+} 0
 
 # cleanup
 ::tcltest::cleanupTests
