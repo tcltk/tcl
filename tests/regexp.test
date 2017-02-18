@@ -1178,6 +1178,12 @@ test regexp-27.9 {regsub -command memory leak testing} memory {
 	regsub -command -all {\d+} $::s $::t
     }
 } 0
+test regexp-27.10 {regsub -command error cases} -returnCodes error -body {
+    regsub -command . abc "def \{ghi"
+} -result {unmatched open brace in list}
+test regexp-27.11 {regsub -command error cases} -returnCodes error -body {
+    regsub -command . abc {}
+} -result {command prefix must be a list of at least one element}
 
 # cleanup
 ::tcltest::cleanupTests
