@@ -1327,6 +1327,20 @@ ParseExpr(
 		}
 	    }
 
+	    /* Enfocre LHS is literal, bareword, function
+	     * TODO: If function, convert to array reference
+	     */
+	    if (lexeme == ASSIGN) {
+		if (complete != OT_LITERAL &&
+		    complete != OT_TOKENS &&
+		    complete != FUNCTION) {
+
+		    TclNewLiteralStringObj(msg, "Target of assignment must be string");
+		    errCode = "SURPRISE";
+		    goto error;		    
+		}
+	    }
+
 	    /* Commas must appear only in function argument lists. */
 	    if (lexeme == COMMA) {
 		if  ((incompletePtr->lexeme != OPEN_PAREN)
@@ -1945,9 +1959,13 @@ ParseLexeme(
 	return 1;
 
     case ':':
-	if ((numBytes > 1) && (start[1] == '=')) {
-	    *lexemePtr = ASSIGN;
-	    return 2;
+	if (numBytes > 1) {
+	    if (start[1] == '=') {
+		*lexemePtr = ASSIGN;
+		return 2;
+	    } else if (start[1] == ':') {
+		break; // bareword
+	    }
 	}
 	*lexemePtr = COLON;
 	return 1;
@@ -2108,7 +2126,7 @@ ParseLexeme(
      * have no direct relevance here.
      */
 
-    if (!TclIsBareword(*start) || *start == '_') {
+    if ((!TclIsBareword(*start) && strncmp("::",start,2)) || *start == '_') {
 	if (Tcl_UtfCharComplete(start, numBytes)) {
 	    scanned = Tcl_UtfToUniChar(start, &ch);
 	} else {
@@ -2123,9 +2141,14 @@ ParseLexeme(
 	return scanned;
     }
     end = start;
-    while (numBytes && TclIsBareword(*end)) {
-	end += 1;
-	numBytes -= 1;
+    while (numBytes && (TclIsBareword(*end) || !strncmp("::",end,2))) {
+	if (*end==':') {
+	    end += 2;
+	    numBytes -= 2;
+	} else {
+	    end += 1;
+	    numBytes -= 1;
+	}
     }
     *lexemePtr = BAREWORD;
     if (literalPtr) {
@@ -2370,15 +2393,10 @@ CompileExprTree(
 		}
 		break;
 	    case ASSIGN:
-		if (convert) {
-		    /*
-		     * Make sure we assign to a variable only values that
-		     * have been numerically normalized in the expr way.
-		     */
-		    TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
-		    /* already converted */
-		    convert = 0;
-		}
+		/* No need to convert, value should aready be 
+		 * numeric result of expression.
+		 * A non-numeric result is probably intentional.
+		 */
 		TclEmitOpcode(INST_STORE_STK, envPtr);
 		break;
 	    case OPEN_PAREN:

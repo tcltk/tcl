@@ -7187,7 +7187,51 @@ test expr-51.1 {test round-to-even on input} {
     expr 6.9294956446009195e15
 } 6929495644600920.0
 
+# Check "expr" assignment operator
 
+test expr-52.1 {expr assignment and separator operators} {
+    set ans [expr  {
+		    t  := 10.0;
+		    x  := 2.0;
+		    dx := 0.2;
+		    f  := ($dx-$x/10);
+		    fs := {$dx-$x/10};
+		    g  := (-$x/5);
+		    center := 1.0;
+		    x  := $x-$center;
+		    dx := $dx+$g;
+		    x  := $x+$f+$center;
+		    x  := $x+$f+$center;
+		    y  := round($x)
+		}]
+    list $ans $t $x $dx $f $fs $g $center $dx $y
+} {3 10.0 3.0 -0.2 0.0 {$dx-$x/10} -0.4 1.0 -0.2 3}
+
+test expr-52.2 {expr assignment with literal names} {
+    set ans [expr  { "-8-"  := 10.0;
+		     "ary(fred)"  := 2.0;
+		     {ary(" ")}  := sqrt(17)
+		 }]
+    list $ans [set "-8-"] [set "ary(fred)"] [set {ary(" ")}]
+} {4.123105625617661 10.0 2.0 4.123105625617661}
+
+test expr-52.3 {expr assignment error} -body {
+    expr  { ary(0) := 500 }
+} -returnCodes error -result {Target of assignment must be string
+in expression " ary(0) := 500 "}
+
+test expr-52.4 {expr assignment variables with qualifiers} {
+    namespace eval n1 {}
+    set ans [expr  {
+		    ::t  := 10.0;
+		    n1::x  := 2.0;
+		    ::n1::dx := 0.2;
+		    n1::f  := ($n1::dx-$n1::x/10);
+		    fs := {$n1::dx-$n1::x/10};
+		    y := -1
+		}]
+    list $ans $::t $n1::x $::n1::dx $n1::f $fs $y
+} {-1 10.0 2.0 0.2 0.0 {$n1::dx-$n1::x/10} -1}
 
 # cleanup
 if {[info exists a]} {
@@ -7195,6 +7239,8 @@ if {[info exists a]} {
 }
 catch {unset min}
 catch {unset max}
+apply {args {foreach v $args {if {[info exists $v]} {unset $v} }}} \
+    ans t x dx f fs g center dx y "-8-" "ary(fred)" {ary(" ")}
 ::tcltest::cleanupTests
 return
 
