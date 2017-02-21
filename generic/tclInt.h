@@ -3269,6 +3269,9 @@ MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_ParseAndDumpExprObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 
 /* Assemble command function */
 MODULE_SCOPE int	Tcl_AssembleObjCmd(ClientData clientData,
