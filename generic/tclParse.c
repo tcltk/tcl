@@ -2502,6 +2502,82 @@ TclObjCommandComplete(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclParseTokens --
+ *
+ *	Token parser used by ParseExpr. Parses the string made up of
+ *	'numBytes' bytes starting at 'bytes'. Parsing is controlled by the
+ *	flags argument to limit which substitutions to apply, as 
+ *	represented by the flag values TCL_SUBST_BACKSLASHES, 
+ *	TCL_SUBST_COMMANDS, TCL_SUBST_VARIABLES.
+ *
+ * Results:
+ *	Tokens are added to parsePtr and parsePtr->term is filled in with the
+ *	address of the character that terminated the parse (the character at 
+ *	parsePtr->end). The return value is TCL_OK if the parse completed 
+ *	successfully and TCL_ERROR otherwise. If a parse error occurs and 
+ *	parsePtr->interp is not NULL, then an error message is left in the 
+ *	interpreter's result.
+ *
+ * Side effects:
+ *	The Tcl_Parse struct '*parsePtr' is filled with parse results.
+ *	The caller is expected to eventually call Tcl_FreeParse() to properly
+ *	cleanup the value written there.
+ *
+ *	If a parse error occurs, the Tcl_InterpState value '*statePtr' is
+ *	filled with the state created by that error. When *statePtr is written
+ *	to, the caller is expected to make the required calls to either
+ *	Tcl_RestoreInterpState() or Tcl_DiscardInterpState() to dispose of the
+ *	value written there.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclParseTokens(
+    Tcl_Interp *interp,
+    const char *bytes,
+    int numBytes,
+    int flags,
+    int append,
+    Tcl_Parse *parsePtr)
+{
+    int length = numBytes;
+    const char *p = bytes;
+    int code, offset, i;
+    int startToken;
+
+    if (!append) {
+	TclParseInit(interp, p, length, parsePtr);
+    }
+
+    startToken = parsePtr->numTokens;
+
+    /*
+     * First parse the string rep of objPtr, as if it were enclosed as a
+     * "-quoted word in a normal Tcl command. Honor flags that selectively
+     * inhibit types of substitution.
+     */
+
+    code = ParseTokens(p, length, /* mask */ 0, flags, parsePtr);
+    /* Truncate last token to length */
+    /* Hack?  Why does ParseTokens not stop at numBytes? */
+    for (i=startToken; i<parsePtr->numTokens; i++) {
+	offset = parsePtr->tokenPtr[i].start - p + parsePtr->tokenPtr[i].size;
+	if (offset >= length) break;
+    }
+    if (offset > length) {
+	parsePtr->tokenPtr[i].size = length - (parsePtr->tokenPtr[i].start - p);
+	/* Truncate tokens */
+	if (i < parsePtr->numTokens) 
+	    parsePtr->numTokens = i + 1;
+    }
+    return code;
+}
+
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

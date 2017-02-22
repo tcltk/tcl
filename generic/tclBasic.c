@@ -836,6 +836,9 @@ Tcl_CreateInterp(void)
 	    Tcl_DisassembleObjCmd, INT2PTR(1), NULL);
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
 	    Tcl_RepresentationCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::parseexpr",
+	    Tcl_ParseAndDumpExprObjCmd, NULL, NULL);
+    
 
     /* Adding the bytecode assembler command */
     cmdPtr = (Command *) Tcl_NRCreateCommand(interp,

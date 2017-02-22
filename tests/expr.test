@@ -7208,6 +7208,7 @@ test expr-52.1 {expr assignment and separator operators} {
 } {3 10.0 3.0 -0.2 0.0 {$dx-$x/10} -0.4 1.0 -0.2 3}
 
 test expr-52.2 {expr assignment with literal names} {
+    array unset ary
     set ans [expr  { "-8-"  := 10.0;
 		     "ary(fred)"  := 2.0;
 		     {ary(" ")}  := sqrt(17)
@@ -7215,10 +7216,11 @@ test expr-52.2 {expr assignment with literal names} {
     list $ans [set "-8-"] [set "ary(fred)"] [set {ary(" ")}]
 } {4.123105625617661 10.0 2.0 4.123105625617661}
 
-test expr-52.3 {expr assignment error} -body {
-    expr  { ary(0) := 500 }
-} -returnCodes error -result {Target of assignment must be string
-in expression " ary(0) := 500 "}
+# Not anymore
+#test expr-52.3 {expr assignment error} -body {
+#    expr  { ary(0) := 500 }
+#} -returnCodes error -result {Target of assignment must be string
+#in expression " ary(0) := 500 "}
 
 test expr-52.4 {expr assignment variables with qualifiers} {
     namespace eval n1 {}
@@ -7232,6 +7234,33 @@ test expr-52.4 {expr assignment variables with qualifiers} {
 		}]
     list $ans $::t $n1::x $::n1::dx $n1::f $fs $y
 } {-1 10.0 2.0 0.2 0.0 {$n1::dx-$n1::x/10} -1}
+
+
+test expr-52.5 {expr assignment array variables} {
+    array unset ary
+    set ans [expr {
+		    i:=1;
+		    jkl := 2;
+		    ary($i) :=$i*$jkl;
+		    ary( $jkl ):= double(int(sqrt($jkl) * 1000))/1000.0;
+		    bsg(oh):= round($ary( $jkl ) * $ary( $jkl ))
+		}]
+    list $ans $i $jkl [array get ary] [array get bsg]
+} {2 1 2 {1 2 { 2 } 1.414} {oh 2}}
+
+test expr-52.6 {expr assignment odd cases} {
+    set ans1 [expr { sin( 0 + [puts foobar; # will it be an array access?
+			       string cat 0]) := sin( 0 + [puts foobar; # or will it be a function call?
+							   string cat 0]) }]
+    set arr(\ \}\ ) hello
+    set ans2 [expr { arr( { ) := $arr( } ) }]
+    set ans3 [catch {expr { arr( { ) + $arr( } ) }} err]
+    set l1 [list $ans1 [array get sin]]
+    set l2 [list $ans2 [array get arr]]
+    set l3 [list $ans3 $err]
+    list $l1 $l2 $l3
+
+} {{0.0 {{ 0 + 0} 0.0}} {hello {\ \}\  hello \ \{\  hello}} {1 {invalid command name "tcl::mathfunc::arr"}}}
 
 # cleanup
 if {[info exists a]} {

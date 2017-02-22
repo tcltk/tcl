@@ -3054,6 +3054,8 @@ MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 			    int numBytes, Tcl_Parse *parsePtr);
 MODULE_SCOPE int	TclParseAllWhiteSpace(const char *src, int numBytes);
+MODULE_SCOPE int	TclParseTokens(Tcl_Interp *interp, const char *bytes,
+			    int numBytes, int flags, int append, Tcl_Parse *parsePtr);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
@@ -3267,6 +3269,9 @@ MODULE_SCOPE int	TclDictWithFinish(Tcl_Interp *interp, Var *varPtr,
 MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 			    int pathc, Tcl_Obj *const pathv[]);
 MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_ParseAndDumpExprObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 

@@ -734,20 +734,58 @@ ParseExpr(
 
 		if (start[scanned+TclParseAllWhiteSpace(
 			start+scanned, numBytes-scanned)] == '(') {
-		    lexeme = FUNCTION;
 
-		    /*
-		     * When we compile the expression we'll need the function
-		     * name, and there's no place in the parse tree to store
-		     * it, so we keep a separate list of all the function
-		     * names we've parsed in the order we found them.
+		    /* Look ahead for assignment operator */
+
+		    /* 
+		     * TODO: this can probably be simplified.  
+		     * For now, it is working. 
 		     */
 
-		    Tcl_ListObjAppendElement(NULL, funcList, literal);
+		    Tcl_Parse vparse;
+		    const char *varend, *varstart = &start[TclParseAllWhiteSpace(start, numBytes)];
+		    int code, len;
+		    TclParseInit(interp, varstart, numBytes, &vparse);
+		    code = Tcl_ParseVarName(NULL, varstart, numBytes, &vparse, 0);
+		    if (code != TCL_OK) {
+			//fprintf(stderr, "Replace me with proper error!\n");
+		    }
+		    len = vparse.tokenPtr[0].size;
+		    varend = varstart+len;
+		    Tcl_FreeParse(&vparse);
+
+		    /* Look ahead for Assignment operator ':=' */
+		    if (code == TCL_OK &&
+			varend[TclParseAllWhiteSpace(varend,numBytes-len)] == ':' && 
+			varend[TclParseAllWhiteSpace(varend,numBytes-len)+1] == '=') {
+
+			lexeme = VARNAME;
+
+			/* Adjust scanned bytes */
+			scanned = varend-start;
+
+			/* The variable name is tokenized below as a quoted string */
+
+		    } else {
+
+			lexeme = FUNCTION;
+
+			/*
+			 * When we compile the expression we'll need the function
+			 * name, and there's no place in the parse tree to store
+			 * it, so we keep a separate list of all the function
+			 * names we've parsed in the order we found them.
+			 */
+
+			Tcl_ListObjAppendElement(NULL, funcList, literal);
+		    }
+
 		} else if (start[scanned+TclParseAllWhiteSpace(
 			start+scanned, numBytes-scanned)] == ':' &&
 			   start[scanned+TclParseAllWhiteSpace(
 			start+scanned, numBytes-scanned)+1] == '=') {
+
+		    /* Simple bareword */
 		    lexeme = VARNAME;
 
 		    /* The variable name is stored as an OT_LITERAL below */
@@ -862,7 +900,6 @@ ParseExpr(
 	    switch (lexeme) {
 	    case NUMBER:
 	    case BOOLEAN:
-	    case VARNAME:
 		/*
 		 * TODO: Consider using a dict or hash to collapse all
 		 * duplicate literals into a single representative value.
@@ -885,6 +922,21 @@ ParseExpr(
 		start += scanned;
 		numBytes -= scanned;
 		continue;
+
+	    case VARNAME: {
+		int length;
+		TclGetStringFromObj(literal, &length);
+		if (length < scanned) {
+		    // Go tokenize the literal...
+		    break;
+		} else {
+		    Tcl_ListObjAppendElement(NULL, litList, literal);
+		    complete = lastParsed = OT_LITERAL;
+		    start += scanned;
+		    numBytes -= scanned;
+		    continue;
+		}
+	    } /* VARNAME case */
 
 	    default:
 		break;
@@ -930,6 +982,13 @@ ParseExpr(
 		    goto error;
 		}
 		scanned = tokenPtr->size;
+		break;
+
+	    case VARNAME:
+		code = TclParseTokens(NULL, start, scanned, TCL_SUBST_ALL, 1, 
+				      parsePtr);
+
+		// scanned already adjusted...
 		break;
 
 	    case SCRIPT: {
@@ -1495,6 +1554,287 @@ ParseExpr(
 
     return TCL_ERROR;
 }
+
+
+/*
+ * Tree Dump Utilities
+ */
+
+static int
+MeasureTree(
+	     OpNode *nodes,
+	     int index)
+{
+    switch(nodes[index].lexeme&NODE_TYPE) {
+    case UNARY:
+	return 1+((nodes[index].right>=0)?MeasureTree(nodes,nodes[index].right):0);
+    case BINARY:
+	return 1+((nodes[index].left>=0)?MeasureTree(nodes,nodes[index].left):0)
+	    +((nodes[index].right>=0)?MeasureTree(nodes,nodes[index].right):0);
+    }
+    return 1;
+}
+
+struct OpExtra {
+    void *leftThing;
+    void *rightThing;
+    void *middleThing;
+};
+
+static void
+AdornTreeRec(OpNode *nodes,int index,struct OpExtra *extra,Tcl_Obj ***litObjvPtr,Tcl_Obj ***funcObjvPtr,Tcl_Token **tokensPtr)
+{
+    int ty,x;
+    
+    ty=nodes[index].lexeme;
+    switch(ty&NODE_TYPE) {
+    case BINARY:
+	x=nodes[index].left;
+	if (x>=0) {
+	    AdornTreeRec(nodes,x,extra,litObjvPtr,funcObjvPtr,tokensPtr);
+	} else {
+	    switch(x) {
+	    case OT_LITERAL:
+		extra[index].leftThing=(void *)**litObjvPtr;
+		(*litObjvPtr)++;
+		break;
+	    case OT_TOKENS:
+		extra[index].leftThing=(void *)*tokensPtr;
+		(*tokensPtr)+=(*tokensPtr)->numComponents+1;
+		break;
+	    }
+	}
+    }
+    if (ty==FUNCTION) {
+	extra[index].middleThing=(void *)**funcObjvPtr;
+	(*funcObjvPtr)++;
+    }
+    switch(ty&NODE_TYPE) {
+    case UNARY:
+    case BINARY:
+	x=nodes[index].right;
+	if (x>=0) {
+	    AdornTreeRec(nodes,x,extra,litObjvPtr,funcObjvPtr,tokensPtr);
+	} else {
+	    switch(x) {
+	    case OT_LITERAL:
+		extra[index].rightThing=(void *)**litObjvPtr;
+		(*litObjvPtr)++;
+		break;
+	    case OT_TOKENS:
+		extra[index].rightThing=(void *)*tokensPtr;
+		(*tokensPtr)+=(*tokensPtr)->numComponents+1;
+		break;
+	    }
+	}
+    }
+}
+
+static struct OpExtra *
+AdornTree(OpNode *nodes,Tcl_Obj **litObjv,Tcl_Obj **funcObjv,Tcl_Token *tokens)
+{
+    int n;
+    struct OpExtra *extra;
+
+    n=MeasureTree(nodes,0);
+    extra=(struct OpExtra *)ckalloc(n*sizeof(struct OpExtra));
+    AdornTreeRec(nodes,0,extra,&litObjv,&funcObjv,&tokens);
+
+    return extra;
+}
+
+static void DecodeNonOps(int x,void *thing,char *dst)
+{
+    switch(x) {
+    case OT_EMPTY:
+	strcpy(dst,"()");
+	return;
+    case OT_TOKENS:
+	{
+	    int n;
+	    #define MAXTOKS 1023
+	    char toks[MAXTOKS+1];
+
+	    n=((Tcl_Token *)thing)->size;
+	    if (n>=MAXTOKS) n=MAXTOKS;
+	    memcpy(toks,((Tcl_Token *)thing)->start,n);
+	    toks[n]=0;
+	    sprintf(dst,"TOKENS: %s",toks);
+	}
+	return;
+    case OT_LITERAL:
+	sprintf(dst,"LITERAL: %s",TclGetString((Tcl_Obj *)thing));
+	return;
+    default:
+	strcpy(dst,"N/A");
+	return;
+    }
+}
+
+static void
+DumpExprTreeIndent(
+	     OpNode *nodes,
+	     int index,
+	     const char *indent,
+	     struct OpExtra *extra)
+{
+    #define INDENTMAX 1024
+    char indent2[INDENTMAX];
+    int ty;
+    static const char *types[]={"AMBIG","BINARY","UNARY","LEAF"};
+    static const char *lexemes[256];
+    static const struct {int pos;const char *lex;} lexdesc[]={
+	{1,"+"},{2,"-"},{3,"bareword"},{4,"incompatible"},{5,"invalid"},
+	{0xc1,"number"},{0xc2,"[command]"},{0xc3,"boolean"},{0xc4,"{string}"},{0xc5,"$var"},{0xc6,"\"string\""},{0xc7,"()"},
+	{0x81,"+"},{0x82,"-"},{0x83,"function"},{0x84,"start"},{0x85,"("},{0x86,"!"},{0x87,"~"},
+	{0x41,"+"},{0x42,"-"},{0x43,","},{0x44,"*"},{0x45,"/"},{0x46,"%"},{0x47,","},{0x48,">"},
+	{0x49,"&"},{0x4a,"^"},{0x4b,"|"},
+	{0x4c,"?"},{0x4d,":"},
+	{0x5B,")"},{0x5c,"end"},{0x5d,";"},{0x5e,":="}
+    };
+    static int lexdone=0;
+
+    if (!lexdone) {
+	int i;
+	
+	lexdone=1;
+	for(i=0;i<256;i++) lexemes[i]="???";
+	for(i=0;i<(int)(sizeof(lexdesc)/sizeof(lexdesc[0]));i++) {
+	    lexemes[lexdesc[i].pos]=lexdesc[i].lex;
+	}
+    }
+
+    ty=nodes[index].lexeme;
+    fprintf(stderr,"--%s(%02X): %s %s\n",types[(ty&NODE_TYPE)>>6],ty,lexemes[ty],(ty==FUNCTION)?TclGetString((Tcl_Obj *)extra[index].middleThing):"");
+    switch(ty&NODE_TYPE) {
+    case UNARY:
+	fprintf(stderr,"%s   |\n%s   `",indent,indent);
+	snprintf(indent2,INDENTMAX,"%s    ",indent);
+	if (nodes[index].right<0) {
+	    char buf[1024];
+	    DecodeNonOps(nodes[index].right,extra[index].rightThing,buf);
+	    fprintf(stderr,"--%s\n",buf);
+	} else {
+	    DumpExprTreeIndent(nodes,nodes[index].right,indent2,extra);
+	}
+	break;
+    case BINARY:
+	fprintf(stderr,"%s   |\n%s   |",indent,indent);
+	snprintf(indent2,INDENTMAX,"%s   |",indent);
+	if (nodes[index].left<0) {
+	    char buf[1024];
+	    DecodeNonOps(nodes[index].left,extra[index].leftThing,buf);
+	    fprintf(stderr,"--%s\n",buf);
+	} else {
+	    DumpExprTreeIndent(nodes,nodes[index].left,indent2,extra);
+	}
+	fprintf(stderr,"%s   |\n%s   `",indent,indent);
+	snprintf(indent2,INDENTMAX,"%s    ",indent);
+	if (nodes[index].right<0) {
+	    char buf[1024];
+	    DecodeNonOps(nodes[index].right,extra[index].rightThing,buf);
+	    fprintf(stderr,"--%s\n",buf);
+	} else {
+	    DumpExprTreeIndent(nodes,nodes[index].right,indent2,extra);
+	}
+	break;
+    }
+}
+
+static void
+DumpExprTree(
+	     OpNode *nodes,
+	     int index,
+	     const char *script,
+	     int len,
+	     Tcl_Obj **litObjv,
+	     Tcl_Obj **funcObjv,
+	     Tcl_Token *tokens)
+{
+    #define MAXSCR 1024
+    char scr[MAXSCR];
+    struct OpExtra *extra;
+
+    if (len>=(MAXSCR-1)) len=MAXSCR-1;
+    memcpy(scr,script,len);
+    scr[len]=0;
+    fprintf(stderr,"=== EXPR TREE FOR {%s} ===\n\n",scr);
+    extra=AdornTree(nodes,litObjv,funcObjv,tokens);
+    DumpExprTreeIndent(nodes,index,"",extra);
+    fprintf(stderr,"\n=================\n");
+    ckfree(extra);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseAndDumpExpr, Tcl_ParseAndDumpExprObjCmd --
+ *
+ *	These procedures parse a string containing a Tcl expression and
+ *      dump the resulting parse tree to stderr in a readable layout.
+ *
+ * Results:
+ *	A standard Tcl return code and result left in interp.
+ *
+ * Side effects:
+ *	Output to stderr
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseAndDumpExpr(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    const char *script,		/* The source script to compile. */
+    int numBytes)		/* Number of bytes in script. */
+{
+    OpNode *opTree = NULL;	/* Will point to the tree of operators */
+    Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals */
+    Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names*/
+    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+				/* Holds the Tcl_Tokens of substitutions */
+
+    int code = ParseExpr(interp, script, numBytes, &opTree, litList,
+	    funcList, parsePtr, 0 /* parseOnly */);
+
+    if (code == TCL_OK) {
+	/*
+	 * Valid parse; dump the tree.
+	 */
+
+	int objc;
+	Tcl_Obj **litObjv;
+	Tcl_Obj **funcObjv;
+
+	TclListObjGetElements(NULL, litList, &objc, (Tcl_Obj ***)&litObjv);
+	TclListObjGetElements(NULL, funcList, &objc, &funcObjv);
+	DumpExprTree(opTree,0,script,numBytes,litObjv,funcObjv,parsePtr->tokenPtr);
+    }
+
+    Tcl_FreeParse(parsePtr);
+    TclStackFree(interp, parsePtr);
+    Tcl_DecrRefCount(funcList);
+    Tcl_DecrRefCount(litList);
+    ckfree(opTree);
+
+    return code;
+}
+
+int Tcl_ParseAndDumpExprObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[])
+{
+    char *s;
+    
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "expression");
+	return TCL_ERROR;
+    }
+    s=TclGetString(objv[1]);
+    
+    return ParseAndDumpExpr(interp,s,strlen(s));
+}
+
 
 /*
  *----------------------------------------------------------------------
