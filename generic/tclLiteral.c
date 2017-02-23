@@ -228,7 +228,7 @@ CreateLiteral(
 	    } else {
 		globalPtr->refCount++;
 #ifdef TCL_COMPILE_DEBUG
-    if (globalPtr->refCount < 1) {
+    if (globalPtr->refCount < 1 || globalPtr->refCount == (size_t)-1) {
 	Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
 		"TclRegisterLiteral", (length>60? 60 : length), bytes,
 		globalPtr->refCount);
@@ -695,15 +695,13 @@ TclReleaseLiteral(
     for (prevPtr=NULL, entryPtr=globalTablePtr->buckets[index];
 	    entryPtr!=NULL ; prevPtr=entryPtr, entryPtr=entryPtr->nextPtr) {
 	if (entryPtr->objPtr == objPtr) {
-	    entryPtr->refCount--;
-
 	    /*
 	     * If the literal is no longer being used by any ByteCode, delete
 	     * the entry then remove the reference corresponding to the global
 	     * literal table entry (decrement the ref count of the object).
 	     */
 
-	    if (entryPtr->refCount == 0) {
+	    if (entryPtr->refCount-- <= 1) {
 		if (prevPtr == NULL) {
 		    globalTablePtr->buckets[index] = entryPtr->nextPtr;
 		} else {

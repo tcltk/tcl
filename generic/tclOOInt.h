@@ -170,9 +170,9 @@ typedef struct Object {
 				 * references; this mechanism is there to
 				 * avoid Tcl_Preserve. */
     int flags;
-    int creationEpoch;		/* Unique value to make comparisons of objects
+    size_t creationEpoch;	/* Unique value to make comparisons of objects
 				 * easier. */
-    int epoch;			/* Per-object epoch, incremented when the way
+    size_t epoch;		/* Per-object epoch, incremented when the way
 				 * an object should resolve call chains is
 				 * changed. */
     Tcl_HashTable *metadataPtr;	/* Mapping from pointers to metadata type to
@@ -282,7 +282,7 @@ typedef struct Class {
  */
 
 typedef struct ThreadLocalData {
-    int nsCount;		/* Master epoch counter is used for keeping
+    size_t nsCount;		/* Master epoch counter is used for keeping
 				 * the values used in Tcl_Obj internal
 				 * representations sane. Must be thread-local
 				 * because Tcl_Objs can cross interpreter
@@ -306,7 +306,7 @@ typedef struct Foundation {
     Tcl_Namespace *helpersNs;	/* Namespace containing the commands that are
 				 * only valid when executing inside a
 				 * procedural method. */
-    int epoch;			/* Used to invalidate method chains when the
+    size_t epoch;		/* Used to invalidate method chains when the
 				 * class structure changes. */
     ThreadLocalData *tsdPtr;	/* Counter so we can allocate a unique
 				 * namespace to each object. */
@@ -340,12 +340,12 @@ struct MInvoke {
 };
 
 typedef struct CallChain {
-    int objectCreationEpoch;	/* The object's creation epoch. Note that the
+    size_t objectCreationEpoch;	/* The object's creation epoch. Note that the
 				 * object reference is not stored in the call
 				 * chain; it is in the call context. */
-    int objectEpoch;		/* Local (object structure) epoch counter
+    size_t objectEpoch;		/* Local (object structure) epoch counter
 				 * snapshot. */
-    int epoch;			/* Global (class structure) epoch counter
+    size_t epoch;		/* Global (class structure) epoch counter
 				 * snapshot. */
     int flags;			/* Assorted flags, see below. */
     int refCount;		/* Reference count. */
