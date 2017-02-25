@@ -142,7 +142,7 @@ TclpInitPlatform(void)
     WSADATA wsaData;
     WORD wVersionRequested = MAKEWORD(2, 2);
 #ifdef WIN32_USE_TICKCOUNT
-    HMODULE handle;
+    HMODULE dllH;
 #endif
 
     tclPlatform = TCL_PLATFORM_WINDOWS;
@@ -158,10 +158,10 @@ TclpInitPlatform(void)
      * Check for availability of the GetTickCount64() API.
      */
 
-    handle = GetModuleHandleA("KERNEL32");
-    if (handle != NULL) {
+    dllH = GetModuleHandle(TEXT("KERNEL32"));
+    if (dllH != NULL) {
 	GetTickCount64ProcPtr = (GetTickCount64Proc *)
-		GetProcAddress(handle, "GetTickCount64");
+		GetProcAddress(dllH, "GetTickCount64");
     }
 
     InitializeCriticalSection(&TickMutex);

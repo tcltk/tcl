@@ -149,6 +149,8 @@ typedef struct {
  * Other typedefs required by this code.
  */
 
+typedef BOOL WINAPI	(CreateHardLinkProc)(const TCHAR *,
+			    const TCHAR *, LPSECURITY_ATTRIBUTES);
 static time_t		ToCTime(FILETIME fileTime);
 static void		FromCTime(time_t posixTime, FILETIME *fileTime);
 
@@ -254,7 +256,23 @@ WinLink(
 	 */
 
 	if (linkAction & TCL_CREATE_HARD_LINK) {
-	    if (CreateHardLink(linkSourcePath, linkTargetPath, NULL)) {
+	    static int initialized = 0;
+	    static CreateHardLinkProc *pCreateHardLink = NULL;
+
+	    if (!initialized) {
+		HMODULE dllH = GetModuleHandle(TEXT("KERNEL32"));
+
+		initialized = 1;
+		if (dllH != NULL) {
+		    pCreateHardLink = (CreateHardLinkProc *)
+			    GetProcAddress(dllH, "CreateHardLinkW");
+		}
+	    }
+	    if (pCreateHardLink == NULL) {
+		SetLastError(ERROR_NOT_SUPPORTED);
+	    }
+	    if ((pCreateHardLink != NULL) &&
+		pCreateHardLink(linkSourcePath, linkTargetPath, NULL)) {
 		/*
 		 * Success!
 		 */
@@ -1980,21 +1998,21 @@ NativeStat(
 
 	if (GetFileInformationByHandle(fileHandle,&data) != TRUE) {
             fileType = GetFileType(fileHandle);
-            CloseHandle(fileHandle);
+	    CloseHandle(fileHandle);
             if (fileType != FILE_TYPE_CHAR && fileType != FILE_TYPE_DISK) {
-                Tcl_SetErrno(ENOENT);
-                return -1;
-            }
+		Tcl_SetErrno(ENOENT);
+		return -1;
+	    }
             /* Mock up the expected structure */
             memset(&data, 0, sizeof(data));
             statPtr->st_atime = 0;
             statPtr->st_mtime = 0;
             statPtr->st_ctime = 0;
         } else {
-            CloseHandle(fileHandle);
-            statPtr->st_atime = ToCTime(data.ftLastAccessTime);
-            statPtr->st_mtime = ToCTime(data.ftLastWriteTime);
-            statPtr->st_ctime = ToCTime(data.ftCreationTime);
+	    CloseHandle(fileHandle);
+	    statPtr->st_atime = ToCTime(data.ftLastAccessTime);
+	    statPtr->st_mtime = ToCTime(data.ftLastWriteTime);
+	    statPtr->st_ctime = ToCTime(data.ftCreationTime);
         }
 	attr = data.dwFileAttributes;
 	statPtr->st_size = ((Tcl_WideInt) data.nFileSizeLow) |
@@ -2975,7 +2993,13 @@ TclNativeCreateNativeRep(
 	 * 0xC0 0x80 (== overlong NUL). See bug [3118489]: NUL in filenames */
 	len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, 0, 0);
 	if (len==0) {
-	    goto done;
+	    if (GetLastError() == ERROR_INVALID_FLAGS) {
+		/* Win NT/2000? */
+		len = MultiByteToWideChar(CP_UTF8, 0, str, -1, 0, 0);
+	    }
+	    if (len==0) {
+	        goto done;
+	    }
 	}
     }
     /* Overallocate 6 chars, making some room for extended paths */
@@ -2983,7 +3007,12 @@ TclNativeCreateNativeRep(
     if (nativePathPtr==0) {
       goto done;
     }
-    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr, len+1);
+    if ((MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1,
+		nativePathPtr, len+1) == 0) &&
+	(GetLastError() == ERROR_INVALID_FLAGS)) {
+	/* Win NT/2000? */
+	MultiByteToWideChar(CP_UTF8, 0, str, -1, nativePathPtr, len+1);
+    }
     /*
     ** If path starts with "//?/" or "\\?\" (extended path), translate
     ** any slashes to backslashes but leave the '?' intact

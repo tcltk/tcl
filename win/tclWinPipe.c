@@ -949,6 +949,8 @@ TclpCreateProcess(
     SECURITY_ATTRIBUTES secAtts;
     HANDLE hProcess, h, inputHandle, outputHandle, errorHandle;
     char execPath[MAX_PATH * TCL_UTF_MAX];
+    const char *valPtr;
+    int waitMS = 5000;
     WinFile *filePtr;
 
     PipeInit();
@@ -1182,9 +1184,24 @@ TclpCreateProcess(
      * the process is spawned. If there is a WaitForInputIdle() call between
      * CreateProcess() and CloseHandle(), the problem does not occur." PSS ID
      * Number: Q124121
+     *
+     * Value of tcl_platform(WaitForInputIdle) if present allows to fine tune
+     * the maximum wait time here, since processes which don't deal with the
+     * message queue otherwise get always the default 5 second penalty.
      */
 
-    WaitForInputIdle(procInfo.hProcess, 5000);
+    valPtr = Tcl_GetVar2(interp, "tcl_platform", "WaitForInputIdle",
+		    TCL_GLOBAL_ONLY);
+    if (valPtr != NULL) {
+    	int ms;
+
+	if (Tcl_GetInt(NULL, valPtr, &ms) == TCL_OK) {
+	    waitMS = ms;
+	}
+    }
+    if (waitMS > 0) {
+	WaitForInputIdle(procInfo.hProcess, waitMS);
+    }
     CloseHandle(procInfo.hThread);
 
     *pidPtr = (Tcl_Pid) procInfo.hProcess;

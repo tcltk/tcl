@@ -372,6 +372,8 @@ TclWinResetInterfaces(void)
  *--------------------------------------------------------------------
  */
 
+typedef BOOL WINAPI (GetVolumeNameForVMProc)(TCHAR *, TCHAR *, DWORD);
+
 char
 TclWinDriveLetterForVolMountPoint(
     const TCHAR *mountPoint)
@@ -379,6 +381,8 @@ TclWinDriveLetterForVolMountPoint(
     MountPointMap *dlIter, *dlPtr2;
     TCHAR Target[55];		/* Target of mount at mount point */
     TCHAR drive[4] = TEXT("A:\\");
+    static int initialized = 0;
+    static GetVolumeNameForVMProc *pGetVolumeNameForVM = NULL;
 
     /*
      * Detect the volume mounted there. Unfortunately, there is no simple way
@@ -387,6 +391,15 @@ TclWinDriveLetterForVolMountPoint(
      */
 
     Tcl_MutexLock(&mountPointMap);
+    if (!initialized) {
+	HMODULE dllH = GetModuleHandle(TEXT("KERNEL32"));
+
+	initialized = 1;
+	if (dllH != NULL) {
+	    pGetVolumeNameForVM = (GetVolumeNameForVMProc *)
+		GetProcAddress(dllH, "GetVolumeNameForVolumeMountPointW");
+	}
+    }
     dlIter = driveLetterLookup;
     while (dlIter != NULL) {
 	if (_tcscmp(dlIter->volumeName, mountPoint) == 0) {
@@ -402,8 +415,8 @@ TclWinDriveLetterForVolMountPoint(
 	     * Try to read the volume mount point and see where it points.
 	     */
 
-	    if (GetVolumeNameForVolumeMountPoint(drive,
-		    Target, 55) != 0) {
+	    if ((pGetVolumeNameForVM != NULL) &&
+		(pGetVolumeNameForVM(drive, Target, 55) != 0)) {
 		if (_tcscmp(dlIter->volumeName, Target) == 0) {
 		    /*
 		     * Nothing has changed.
@@ -461,8 +474,8 @@ TclWinDriveLetterForVolMountPoint(
 	 * Try to read the volume mount point and see where it points.
 	 */
 
-	if (GetVolumeNameForVolumeMountPoint(drive,
-		Target, 55) != 0) {
+	if ((pGetVolumeNameForVM != NULL) &&
+	    (pGetVolumeNameForVM(drive, Target, 55) != 0)) {
 	    int alreadyStored = 0;
 
 	    for (dlIter = driveLetterLookup; dlIter != NULL;
