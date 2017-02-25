@@ -743,16 +743,18 @@ ParseExpr(
 		     */
 
 		    Tcl_Parse vparse;
-		    const char *varend, *varstart = &start[TclParseAllWhiteSpace(start, numBytes)];
+		    const char *varend;
+		    const char *varstart = &start[TclParseAllWhiteSpace(start, numBytes)];
 		    int code, len;
-		    TclParseInit(interp, varstart, numBytes, &vparse);
 		    code = Tcl_ParseVarName(NULL, varstart, numBytes, &vparse, 0);
-		    if (code != TCL_OK) {
-			//fprintf(stderr, "Replace me with proper error!\n");
-		    }
 		    len = vparse.tokenPtr[0].size;
 		    varend = varstart+len;
 		    Tcl_FreeParse(&vparse);
+
+		    /* 
+		     * An error here just means it's not a valid variable name,
+		     * so continue on to treat as a function 
+		     */
 
 		    /* Look ahead for Assignment operator ':=' */
 		    if (code == TCL_OK &&
