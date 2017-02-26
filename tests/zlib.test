@@ -167,7 +167,7 @@ test zlib-7.9 {zlib stream finalize (bug 25842c161)} -constraints zlib -setup {
 } -cleanup {
     $z1 close
 } -result ABCDEedbca..
-test zlib-7.9.1 {zlib stream finalize (bug 25842c161)} -constraints zlib -setup {
+test zlib-7.10 {zlib stream finalize (bug 25842c161)} -constraints zlib -setup {
     set z2 [zlib stream gzip]
 } -body {
     $z2 put -finalize ABCDEedbca..
@@ -175,7 +175,7 @@ test zlib-7.9.1 {zlib stream finalize (bug 25842c161)} -constraints zlib -setup 
 } -cleanup {
     $z2 close
 } -result ABCDEedbca..
-test zlib-7.9.2 {zlib stream put -finalize (bug 25842c161)} -constraints zlib -setup {
+test zlib-7.11 {zlib stream put -finalize (bug 25842c161)} -constraints zlib -setup {
     set c [zlib stream gzip]
     set d [zlib stream gunzip]
 } -body {
@@ -188,7 +188,7 @@ test zlib-7.9.2 {zlib stream put -finalize (bug 25842c161)} -constraints zlib -s
     $c close
     $d close
 } -result abcdeEDCBA..
-test zlib-7.9.3 {zlib stream put; zlib stream finalize (bug 25842c161)} -constraints zlib -setup {
+test zlib-7.12 {zlib stream put; zlib stream finalize (bug 25842c161)} -constraints zlib -setup {
     set c [zlib stream gzip]
     set d [zlib stream gunzip]
 } -body {
