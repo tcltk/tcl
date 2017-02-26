@@ -987,8 +987,7 @@ ParseExpr(
 		break;
 
 	    case VARNAME:
-		code = TclParseTokens(NULL, start, scanned, TCL_SUBST_ALL, 1, 
-				      parsePtr);
+		code = TclParseTokens(start, scanned, /* mask */ 0, TCL_SUBST_ALL,  parsePtr);
 
 		// scanned already adjusted...
 		break;

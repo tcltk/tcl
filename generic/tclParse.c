@@ -35,7 +35,7 @@
  *			newline.
  * TYPE_COMMAND_END -	Character is newline or semicolon.
  * TYPE_SUBS -		Character begins a substitution or has other special
- *			meaning in ParseTokens: backslash, dollar sign, or
+ *			meaning in TclParseTokens: backslash, dollar sign, or
  *			open bracket.
  * TYPE_QUOTE -		Character is a double quote.
  * TYPE_CLOSE_PAREN -	Character is a right parenthesis.
@@ -163,8 +163,6 @@ const char tclCharTypeTable[] = {
 static inline int	CommandComplete(const char *script, int numBytes);
 static int		ParseComment(const char *src, int numBytes,
 			    Tcl_Parse *parsePtr);
-static int		ParseTokens(const char *src, int numBytes, int mask,
-			    int flags, Tcl_Parse *parsePtr);
 static int		ParseWhiteSpace(const char *src, int numBytes,
 			    int *incompletePtr, char *typePtr);
 static int		ParseAllWhiteSpace(const char *src, int numBytes,
@@ -399,11 +397,11 @@ Tcl_ParseCommand(
 	    }
 	} else {
 	    /*
-	     * This is an unquoted word. Call ParseTokens and let it do all of
+	     * This is an unquoted word. Call TclParseTokens and let it do all of
 	     * the work.
 	     */
 
-	    if (ParseTokens(src, numBytes, TYPE_SPACE|terminators,
+	    if (TclParseTokens(src, numBytes, TYPE_SPACE|terminators,
 		    TCL_SUBST_ALL, parsePtr) != TCL_OK) {
 		goto error;
 	    }
@@ -1051,7 +1049,7 @@ ParseComment(
 /*
  *----------------------------------------------------------------------
  *
- * ParseTokens --
+ * TclParseTokens --
  *
  *	This function forms the heart of the Tcl parser. It parses one or more
  *	tokens from a string, up to a termination point specified by the
@@ -1073,8 +1071,8 @@ ParseComment(
  *----------------------------------------------------------------------
  */
 
-static int
-ParseTokens(
+int
+TclParseTokens(
     register const char *src,	/* First character to parse. */
     register int numBytes,	/* Max number of bytes to scan. */
     int mask,			/* Specifies when to stop parsing. The parse
@@ -1269,7 +1267,7 @@ ParseTokens(
 	    src++;
 	    numBytes--;
 	} else {
-	    Tcl_Panic("ParseTokens encountered unknown character");
+	    Tcl_Panic("TclParseTokens encountered unknown character");
 	}
     }
     if (parsePtr->numTokens == originalTokens) {
@@ -1478,12 +1476,12 @@ Tcl_ParseVarName(
 	parsePtr->numTokens++;
 	if (array) {
 	    /*
-	     * This is a reference to an array element. Call ParseTokens
+	     * This is a reference to an array element. Call TclParseTokens
 	     * recursively to parse the element name, since it could contain
 	     * any number of substitutions.
 	     */
 
-	    if (TCL_OK != ParseTokens(src+1, numBytes-1, TYPE_CLOSE_PAREN,
+	    if (TCL_OK != TclParseTokens(src+1, numBytes-1, TYPE_CLOSE_PAREN,
 		    TCL_SUBST_ALL, parsePtr)) {
 		goto error;
 	    }
@@ -1860,7 +1858,7 @@ Tcl_ParseQuotedString(
 	TclParseInit(interp, start, numBytes, parsePtr);
     }
 
-    if (TCL_OK != ParseTokens(start+1, numBytes-1, TYPE_QUOTE, TCL_SUBST_ALL,
+    if (TCL_OK != TclParseTokens(start+1, numBytes-1, TYPE_QUOTE, TCL_SUBST_ALL,
 	    parsePtr)) {
 	goto error;
     }
@@ -1932,7 +1930,7 @@ TclSubstParse(
      * inhibit types of substitution.
      */
 
-    if (TCL_OK != ParseTokens(p, length, /* mask */ 0, flags, parsePtr)) {
+    if (TCL_OK != TclParseTokens(p, length, /* mask */ 0, flags, parsePtr)) {
 	/*
 	 * There was a parse error. Save the interpreter state for possible
 	 * error reporting later.
@@ -1948,7 +1946,7 @@ TclSubstParse(
 	 * which points to either the unmatched opener, or to characters that
 	 * follow a close brace or close quote.
 	 *
-	 * Call ParseTokens again, working on the string up to parse.term.
+	 * Call TclParseTokens again, working on the string up to parse.term.
 	 * Keep repeating until we get a good parse on a prefix.
 	 */
 
@@ -1959,7 +1957,7 @@ TclSubstParse(
 	    parsePtr->incomplete = 0;
 	    parsePtr->errorType = TCL_PARSE_SUCCESS;
 	} while (TCL_OK !=
-		ParseTokens(p, parsePtr->end - p, 0, flags, parsePtr));
+		TclParseTokens(p, parsePtr->end - p, 0, flags, parsePtr));
 
 	/*
 	 * The good parse will have to be followed by {, (, or [.
@@ -2503,82 +2501,6 @@ TclObjCommandComplete(
 
     return CommandComplete(script, length);
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclParseTokens --
- *
- *	Token parser used by ParseExpr. Parses the string made up of
- *	'numBytes' bytes starting at 'bytes'. Parsing is controlled by the
- *	flags argument to limit which substitutions to apply, as 
- *	represented by the flag values TCL_SUBST_BACKSLASHES, 
- *	TCL_SUBST_COMMANDS, TCL_SUBST_VARIABLES.
- *
- * Results:
- *	Tokens are added to parsePtr and parsePtr->term is filled in with the
- *	address of the character that terminated the parse (the character at 
- *	parsePtr->end). The return value is TCL_OK if the parse completed 
- *	successfully and TCL_ERROR otherwise. If a parse error occurs and 
- *	parsePtr->interp is not NULL, then an error message is left in the 
- *	interpreter's result.
- *
- * Side effects:
- *	The Tcl_Parse struct '*parsePtr' is filled with parse results.
- *	The caller is expected to eventually call Tcl_FreeParse() to properly
- *	cleanup the value written there.
- *
- *	If a parse error occurs, the Tcl_InterpState value '*statePtr' is
- *	filled with the state created by that error. When *statePtr is written
- *	to, the caller is expected to make the required calls to either
- *	Tcl_RestoreInterpState() or Tcl_DiscardInterpState() to dispose of the
- *	value written there.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclParseTokens(
-    Tcl_Interp *interp,
-    const char *bytes,
-    int numBytes,
-    int flags,
-    int append,
-    Tcl_Parse *parsePtr)
-{
-    int length = numBytes;
-    const char *p = bytes;
-    int code, offset, i;
-    int startToken;
-
-    if (!append) {
-	TclParseInit(interp, p, length, parsePtr);
-    }
-
-    startToken = parsePtr->numTokens;
-
-    /*
-     * First parse the string rep of objPtr, as if it were enclosed as a
-     * "-quoted word in a normal Tcl command. Honor flags that selectively
-     * inhibit types of substitution.
-     */
-
-    code = ParseTokens(p, length, /* mask */ 0, flags, parsePtr);
-    /* Truncate last token to length */
-    /* Hack?  Why does ParseTokens not stop at numBytes? */
-    for (i=startToken; i<parsePtr->numTokens; i++) {
-	offset = parsePtr->tokenPtr[i].start - p + parsePtr->tokenPtr[i].size;
-	if (offset >= length) break;
-    }
-    if (offset > length) {
-	parsePtr->tokenPtr[i].size = length - (parsePtr->tokenPtr[i].start - p);
-	/* Truncate tokens */
-	if (i < parsePtr->numTokens) 
-	    parsePtr->numTokens = i + 1;
-    }
-    return code;
-}
-
 
 /*
  * Local Variables:
