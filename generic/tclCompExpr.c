@@ -891,7 +891,6 @@ ParseExpr(
 
 	    case VARNAME: {
                 Tcl_Parse vparse;  int vcode, length;
-                TclParseInit(NULL, start, numBytes, &vparse);
                 vcode = Tcl_ParseVarName(NULL, start, numBytes, &vparse, 0);
                 length = vparse.tokenPtr[0].size;
                 Tcl_FreeParse(&vparse);
@@ -954,8 +953,7 @@ ParseExpr(
 		break;
 
 	    case VARNAME:
-		code = TclParseTokens(NULL, start, scanned, TCL_SUBST_ALL, 1, 
-				      parsePtr);
+		code = TclParseTokens(start, scanned, /* mask */ 0, TCL_SUBST_ALL, parsePtr);
 
 		// scanned already adjusted...
 		break;
