@@ -469,7 +469,7 @@ static const unsigned char Lexeme[] = {
 	INVALID		/* SPACE */,	0		/* ! or != */,
 	QUOTED		/* " */,	INVALID		/* # */,
 	VARIABLE	/* $ */,	MOD		/* % */,
-	0		/* & or && */,	INVALID		/* ' */,
+	0		/* & or && */,	VARNAME		/* ' */,
 	OPEN_PAREN	/* ( */,	CLOSE_PAREN	/* ) */,
 	0		/* * or ** */,	PLUS		/* + */,
 	COMMA		/* , */,	MINUS		/* - */,
@@ -734,61 +734,27 @@ ParseExpr(
 
 		if (start[scanned+TclParseAllWhiteSpace(
 			start+scanned, numBytes-scanned)] == '(') {
+		    lexeme = FUNCTION;
 
-		    /* Look ahead for assignment operator */
-
-		    /* 
-		     * TODO: this can probably be simplified.  
-		     * For now, it is working. 
+		    /*
+		     * When we compile the expression we'll need the function
+		     * name, and there's no place in the parse tree to store
+		     * it, so we keep a separate list of all the function
+		     * names we've parsed in the order we found them.
 		     */
 
-		    Tcl_Parse vparse;
-		    const char *varend, *varstart = &start[TclParseAllWhiteSpace(start, numBytes)];
-		    int code, len;
-		    TclParseInit(interp, varstart, numBytes, &vparse);
-		    code = Tcl_ParseVarName(NULL, varstart, numBytes, &vparse, 0);
-		    if (code != TCL_OK) {
-			//fprintf(stderr, "Replace me with proper error!\n");
-		    }
-		    len = vparse.tokenPtr[0].size;
-		    varend = varstart+len;
-		    Tcl_FreeParse(&vparse);
-
-		    /* Look ahead for Assignment operator ':=' */
-		    if (code == TCL_OK &&
-			varend[TclParseAllWhiteSpace(varend,numBytes-len)] == ':' && 
-			varend[TclParseAllWhiteSpace(varend,numBytes-len)+1] == '=') {
-
-			lexeme = VARNAME;
-
-			/* Adjust scanned bytes */
-			scanned = varend-start;
-
-			/* The variable name is tokenized below as a quoted string */
-
-		    } else {
-
-			lexeme = FUNCTION;
-
-			/*
-			 * When we compile the expression we'll need the function
-			 * name, and there's no place in the parse tree to store
-			 * it, so we keep a separate list of all the function
-			 * names we've parsed in the order we found them.
-			 */
-
-			Tcl_ListObjAppendElement(NULL, funcList, literal);
-		    }
+		    Tcl_ListObjAppendElement(NULL, funcList, literal);
 
 		} else if (start[scanned+TclParseAllWhiteSpace(
 			start+scanned, numBytes-scanned)] == ':' &&
 			   start[scanned+TclParseAllWhiteSpace(
 			start+scanned, numBytes-scanned)+1] == '=') {
 
-		    /* Simple bareword */
-		    lexeme = VARNAME;
-
-		    /* The variable name is stored as an OT_LITERAL below */
+		    Tcl_ListObjAppendElement(NULL, litList, literal);
+		    complete = lastParsed = OT_LITERAL;
+		    start += scanned;
+		    numBytes -= scanned;
+		    continue;
 
 		} else if (Tcl_GetBooleanFromObj(NULL,literal,&b) == TCL_OK) {
 		    lexeme = BOOLEAN;
@@ -924,18 +890,21 @@ ParseExpr(
 		continue;
 
 	    case VARNAME: {
-		int length;
-		TclGetStringFromObj(literal, &length);
-		if (length < scanned) {
-		    // Go tokenize the literal...
-		    break;
-		} else {
-		    Tcl_ListObjAppendElement(NULL, litList, literal);
-		    complete = lastParsed = OT_LITERAL;
-		    start += scanned;
-		    numBytes -= scanned;
-		    continue;
-		}
+                Tcl_Parse vparse;  int vcode, length;
+                TclParseInit(NULL, start, numBytes, &vparse);
+                vcode = Tcl_ParseVarName(NULL, start, numBytes, &vparse, 0);
+                length = vparse.tokenPtr[0].size;
+                Tcl_FreeParse(&vparse);
+
+                if (vcode == TCL_OK && length > 1) {
+                   start++; length--; numBytes--;
+                   scanned = length;
+                   break;
+                } else {
+                   //fprintf(stderr, "VARNAME-1: code=%d,len=%d, \"%s\"\n",vcode,length,start);
+                   start++; scanned = 1; numBytes--;
+                   continue;
+                }
 	    } /* VARNAME case */
 
 	    default:
@@ -1386,13 +1355,11 @@ ParseExpr(
 		}
 	    }
 
-	    /* Enfocre LHS is literal, bareword, function
-	     * TODO: If function, convert to array reference
+	    /* Enforce LHS is literal or bareword
 	     */
 	    if (lexeme == ASSIGN) {
 		if (complete != OT_LITERAL &&
-		    complete != OT_TOKENS &&
-		    complete != FUNCTION) {
+		    complete != OT_TOKENS) {
 
 		    TclNewLiteralStringObj(msg, "Target of assignment must be string");
 		    errCode = "SURPRISE";
