@@ -163,13 +163,19 @@ test zlib-7.9 {zlib stream finalize (bug 25842c161)} -constraints zlib -setup {
 } -body {
     $z1 put ABCDEedbca..
     $z1 finalize
-    $z2 put -finalize ABCDEedbca..
-    expr {[$z1 get] eq [$z2 get]}
+    zlib gunzip [$z1 get]
 } -cleanup {
     $z1 close
+} -result ABCDEedbca..
+test zlib-7.9.1 {zlib stream finalize (bug 25842c161)} -constraints zlib -setup {
+    set z2 [zlib stream gzip]
+} -body {
+    $z2 put -finalize ABCDEedbca..
+    zlib gunzip [$z2 get]
+} -cleanup {
     $z2 close
-} -result 1
-test zlib-7.9.1 {zlib stream put -finalize (bug 25842c161)} -constraints zlib -setup {
+} -result ABCDEedbca..
+test zlib-7.9.2 {zlib stream put -finalize (bug 25842c161)} -constraints zlib -setup {
     set c [zlib stream gzip]
     set d [zlib stream gunzip]
 } -body {
@@ -182,7 +188,7 @@ test zlib-7.9.1 {zlib stream put -finalize (bug 25842c161)} -constraints zlib -s
     $c close
     $d close
 } -result abcdeEDCBA..
-test zlib-7.9.2 {zlib stream put; zlib stream finalize (bug 25842c161)} -constraints zlib -setup {
+test zlib-7.9.3 {zlib stream put; zlib stream finalize (bug 25842c161)} -constraints zlib -setup {
     set c [zlib stream gzip]
     set d [zlib stream gunzip]
 } -body {
