@@ -1204,10 +1204,10 @@ Tcl_ZlibStreamPut(
 	zshPtr->stream.avail_in = size;
 
 	/*
-	 * Must not do a zero-length compress. [Bug 25842c161]
+	 * Must not do a zero-length compress unless finalizing. [Bug 25842c161]
 	 */
 
-	if (size == 0) {
+	if (size == 0 && flush != Z_FINISH) {
 	    return TCL_OK;
 	}
 
