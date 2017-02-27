@@ -1681,11 +1681,14 @@ ThreadSafeLocalTime(
      */
 
     struct tm *tmPtr = Tcl_GetThreadData(&tmKey, (int) sizeof(struct tm));
-#ifdef HAVE_LOCALTIME_R
-    localtime_r(timePtr, tmPtr);
-#else
     struct tm *sysTmPtr;
 
+#ifdef HAVE_LOCALTIME_R
+    sysTmPtr = localtime_r(timePtr, tmPtr);
+    if (sysTmPtr == NULL) {
+	return NULL;
+    }
+#else
     Tcl_MutexLock(&clockMutex);
     sysTmPtr = localtime(timePtr);
     if (sysTmPtr == NULL) {

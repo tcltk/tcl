@@ -121,7 +121,8 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 #define TCL_TIME_BEFORE(t1, t2) \
-    (((t1).sec<(t2).sec) || ((t1).sec==(t2).sec && (t1).usec<(t2).usec))
+    ((((t1).sec - (t2).sec) < 0) || \
+	    ((t1).sec == (t2).sec && ((t1).usec - (t2).usec) < 0))
 
 #define TCL_TIME_DIFF_MS(t1, t2) \
     (1000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
@@ -259,6 +260,9 @@ Tcl_CreateTimerHandler(
      * Compute when the event should fire.
      */
 
+    if (milliseconds < 0) {
+	milliseconds = 0;
+    }
     TclpGetMonotonicTime(&time);
     time.sec += milliseconds/1000;
     time.usec += (milliseconds%1000)*1000;
@@ -873,11 +877,16 @@ Tcl_AfterObjCmd(
 	afterPtr->id = tsdPtr->afterId;
 	tsdPtr->afterId += 1;
 	TclpGetMonotonicTime(&wakeup);
-	wakeup.sec += (long)(ms / 1000);
-	wakeup.usec += ((long)(ms % 1000)) * 1000;
-	if (wakeup.usec > 1000000) {
-	    wakeup.sec++;
-	    wakeup.usec -= 1000000;
+	if (((wakeup.sec + (long)(ms / 1000)) - (wakeup.sec)) < 0) {
+	    wakeup.sec += LONG_MAX - 1;
+	    /* Don't consider fractional part. */
+	} else {
+	    wakeup.sec += (long)(ms / 1000);
+	    wakeup.usec += ((long)(ms % 1000)) * 1000;
+	    if (wakeup.usec > 1000000) {
+		wakeup.sec++;
+		wakeup.usec -= 1000000;
+	    }
 	}
 	afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup,
 		AfterProc, afterPtr);
