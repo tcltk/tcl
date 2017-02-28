@@ -1822,6 +1822,11 @@ EXTERN Tcl_Channel	Tcl_OpenTcpServerEx(Tcl_Interp *interp,
 				unsigned int flags,
 				Tcl_TcpAcceptProc *acceptProc,
 				ClientData callbackData);
+/* Slot 632 is reserved */
+/* 633 */
+EXTERN int		Tcl_LinkArray(Tcl_Interp *interp,
+				const char *varName, char *addr, int type,
+				size_t size);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2489,6 +2494,8 @@ typedef struct TclStubs {
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
     Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc, ClientData callbackData); /* 631 */
+    void (*reserved632)(void);
+    int (*tcl_LinkArray) (Tcl_Interp *interp, const char *varName, char *addr, int type, size_t size); /* 633 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3783,6 +3790,9 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
 #define Tcl_OpenTcpServerEx \
 	(tclStubsPtr->tcl_OpenTcpServerEx) /* 631 */
+/* Slot 632 is reserved */
+#define Tcl_LinkArray \
+	(tclStubsPtr->tcl_LinkArray) /* 633 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

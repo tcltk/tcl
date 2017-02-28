@@ -287,6 +287,9 @@ static int		TestinterpdeleteCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestlinkCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestlinkarrayCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestlocaleCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -640,6 +643,7 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testinterpdelete", TestinterpdeleteCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testlink", TestlinkCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testlinkarray", TestlinkarrayCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testpanic", TestpanicCmd, NULL, NULL);
@@ -3257,6 +3261,154 @@ TestlinkCmd(
 	return TCL_ERROR;
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestlinkarrayCmd --
+ *	This procedure implements the "testlinkarray" command.  It is used
+ *	to test Tcl_LinkArray and related library procedures.
+ *	Additionally it can be used as an example on how to implement
+ *	a script link command with access to internal TCL_Link* functions.
+ *	It is not a global tcl command because of security reasons.
+ *	Use it in your extension on your own risk.
+ *
+ * Usage:
+ * 	testlinkobj update <name> ..
+ * 	  Update given Tcl-variables with content from C-address
+ * 	testlinkobj remove <name> ..
+ * 	  Remove link to C-variable. Free C-variable if it was created in
+ * 	  "create" command.
+ * 	testlinkobj create ?-readonly? <type> <size> <name> ?address?
+ * 	  Create new linked variable. If "-readonly" is given variable can
+ * 	  only be read from tcl side. If address is given use it as address of
+ * 	  C-variable. Otherwise create a new C-variable of needed size.
+ * 	testlinkobj types
+ * 	  Return list of available types.
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Creates and deletes various variable links, plus returns
+ *	values of the linked variables.
+ *----------------------------------------------------------------------
+ */
+static int
+TestlinkarrayCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj * const objv[])	/* Argument strings. */
+{
+ static const char *LinkOption[] = {
+    "update", "remove", "create", "types", NULL
+  };
+  enum LinkOption
+  { LINK_UPDATE, LINK_REMOVE, LINK_CREATE, LINK_TYPES };
+  static const char *LinkType[] = {
+    "int", "double", "bool", "string",
+    "wideint", "char", "uchar",
+    "short", "ushort", "uint",
+    "long", "ulong", "float",
+    "uint", "chars",
+    "complex32", "complex64", "binary"
+    "hex8", "hex16", "hex32", "hex64",
+    "bitarray8", "bitarray16", "bitarray32", "bitarray64",
+    "bool8", "bool16", "bool32", "bool64",
+    "bit8", "bit16", "bit32", "bit64",
+    "s5float", "s5time", NULL
+  };
+  static int      LinkTypes[] = {
+	TCL_LINK_INT, TCL_LINK_DOUBLE, TCL_LINK_BOOLEAN, TCL_LINK_STRING,
+	TCL_LINK_WIDE_INT, TCL_LINK_CHAR, TCL_LINK_UCHAR,
+       	TCL_LINK_SHORT, TCL_LINK_USHORT, TCL_LINK_UINT,
+	TCL_LINK_LONG, TCL_LINK_ULONG, TCL_LINK_FLOAT,
+	TCL_LINK_WIDE_UINT, TCL_LINK_CHARS,
+       	TCL_LINK_COMPLEX32, TCL_LINK_COMPLEX64, TCL_LINK_BINARY	,
+	TCL_LINK_HEX8, TCL_LINK_HEX16, TCL_LINK_HEX32, TCL_LINK_HEX64,
+	TCL_LINK_BITARRAY8, TCL_LINK_BITARRAY16,
+	TCL_LINK_BITARRAY32, TCL_LINK_BITARRAY64,
+	TCL_LINK_BOOL8, TCL_LINK_BOOL16, TCL_LINK_BOOL32, TCL_LINK_BOOL64,
+	TCL_LINK_BIT8, TCL_LINK_BIT16, TCL_LINK_BIT32, TCL_LINK_BIT64,
+	TCL_LINK_S5FLOAT, TCL_LINK_S5TIME
+  };
+  int             optionIndex;
+  int             typeIndex;
+  int             readonly;
+  int             i;
+  char           *name;
+  Tcl_WideInt     addr;
+  int             size;
+  char           *arg;
+  int             length;
+
+  if (objc < 2) {
+    Tcl_WrongNumArgs(interp, 1, objv, "option args");
+    return TCL_ERROR;
+  }
+  if (Tcl_GetIndexFromObj(interp, objv[1], LinkOption, "option", 0,
+      &optionIndex) != TCL_OK) {
+    return TCL_ERROR;
+  }
+  switch ((enum LinkOption) optionIndex) {
+  case LINK_UPDATE:
+    for (i = 2; i < objc; i++) {
+      Tcl_UpdateLinkedVar(interp, Tcl_GetString(objv[i]));
+    }
+    return TCL_OK;
+  case LINK_REMOVE:
+    for (i = 2; i < objc; i++) {
+      Tcl_UnlinkVar(interp, Tcl_GetString(objv[i]));
+    }
+    return TCL_OK;
+  case LINK_TYPES:
+    Tcl_AppendResult(interp, "int double bool string wideint char uchar short ushort uint long ulong float uint chars complex32 complex64 binary hex8 hex16 hex32 hex64 bitarray8 bitarray16 bitarray32 bitarray64 bool8 bool16 bool32 bool64 bit8 bit16 bit32 bit64 s5float s5time", NULL);
+    return TCL_OK;
+  case LINK_CREATE:
+    if (objc < 4) {
+      goto wrongArgs;
+    }
+    readonly = 0;
+    i = 2;
+    /* test on switch -r... */
+    arg = Tcl_GetStringFromObj(objv[i], &length);
+    if (length < 2) {
+      goto wrongArgs;
+    }
+    if (arg[0] == '-') {
+      if (arg[1] != 'r') {
+        goto wrongArgs;
+      }
+      readonly = TCL_LINK_READ_ONLY;
+      i++;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[i++], LinkType, "type", 0,
+        &typeIndex) != TCL_OK) {
+      return TCL_ERROR;
+    }
+    if (Tcl_GetIntFromObj(interp, objv[i++], &size) == TCL_ERROR) {
+      Tcl_AppendResult(interp, "wrong size value", NULL);
+      return TCL_ERROR;
+    }
+    name = Tcl_GetString(objv[i++]);
+    /* if no address is given request one in the underlying function */
+    if (i < objc) {
+      if (Tcl_GetWideIntFromObj(interp, objv[i], &addr) == TCL_ERROR) {
+        Tcl_AppendResult(interp, "wrong address value", NULL);
+        return TCL_ERROR;
+      }
+    } else {
+      addr = 0;
+    }
+    return Tcl_LinkArray(interp, name, (char *) addr,
+      LinkTypes[typeIndex] | readonly, size);
+  }
+  return TCL_OK;
+
+wrongArgs:
+  Tcl_WrongNumArgs(interp, 2, objv, "?-readonly? type size name ?address?");
+  return TCL_ERROR;
 }
 
 /*

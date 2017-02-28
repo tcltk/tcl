@@ -1137,26 +1137,49 @@ typedef struct Tcl_DString {
  * Types for linked variables:
  */
 
-#define TCL_LINK_INT		1
-#define TCL_LINK_DOUBLE		2
-#define TCL_LINK_BOOLEAN	3
-#define TCL_LINK_STRING		4
-#define TCL_LINK_WIDE_INT	5
-#define TCL_LINK_CHAR		6
-#define TCL_LINK_UCHAR		7
-#define TCL_LINK_SHORT		8
-#define TCL_LINK_USHORT		9
-#define TCL_LINK_UINT		10
+#define TCL_LINK_INT          1 /* 32bit int -> int */
+#define TCL_LINK_DOUBLE       2 /* 64bit double -> double */
+#define TCL_LINK_BOOLEAN      3 /* tcl boolean -> int */
+#define TCL_LINK_STRING       4 /* 8bit chars -> ckalloc'd string */
+#define TCL_LINK_WIDE_INT     5 /* 64bit int -> Tcl_WideInt */
+#define TCL_LINK_CHAR         6 /* 8bit int -> char */
+#define TCL_LINK_UCHAR        7 /* 8bit uint -> unsigned char */
+#define TCL_LINK_SHORT        8 /* 16bit int -> short */
+#define TCL_LINK_USHORT       9 /* 16bit int -> unsigned short */
+#define TCL_LINK_UINT        10 /* 32bit uint -> int */
 #if defined(TCL_WIDE_INT_IS_LONG) || defined(_WIN32) || defined(__CYGWIN__)
-#define TCL_LINK_LONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT)
-#define TCL_LINK_ULONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
+#define TCL_LINK_LONG        ((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT)
+#define TCL_LINK_ULONG       ((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
 #else
-#define TCL_LINK_LONG		11
-#define TCL_LINK_ULONG		12
+#define TCL_LINK_LONG        11 /* long -> long */
+#define TCL_LINK_ULONG       12 /* unsigned long -> unsigned long */
 #endif
-#define TCL_LINK_FLOAT		13
-#define TCL_LINK_WIDE_UINT	14
-#define TCL_LINK_READ_ONLY	0x80
+#define TCL_LINK_FLOAT       13 /* 32bit float -> double */
+#define TCL_LINK_WIDE_UINT   14 /* 64bit uint -> wide TODO bignum */
+#define TCL_LINK_CHARS       15 /* 8bit chars -> null terminated string
+                                     last char will always set to \0 */
+#define TCL_LINK_COMPLEX32   16 /* 32bit complex -> double+double */
+#define TCL_LINK_COMPLEX64   17 /* 64bit complex -> double+double */
+#define TCL_LINK_BINARY      18 /* fixed size binary byte array */
+#define TCL_LINK_HEX8        19 /* 8bit uint -> string, 2 hex chars */
+#define TCL_LINK_HEX16       20 /* 16bit uint -> string, 4 hex chars */
+#define TCL_LINK_HEX32       21 /* 32bit uint -> string, 8 hex chars */
+#define TCL_LINK_HEX64       22 /* 64bit uint -> string, 16 hex chars */
+#define TCL_LINK_BITARRAY8   23 /* 8bit uint -> string, 8 chars 0|1 */
+#define TCL_LINK_BITARRAY16  24 /* 16bit uint -> string, 16 chars 0|1 */
+#define TCL_LINK_BITARRAY32  25 /* 32bit uint -> string, 32 chars 0|1 */
+#define TCL_LINK_BITARRAY64  26 /* 64bit uint -> string, 64 chars 0|1 */
+#define TCL_LINK_BOOL8       27 /* 8bit uint -> int (0|1) */
+#define TCL_LINK_BOOL16      28 /* 16bit uint -> int (0|1) */
+#define TCL_LINK_BOOL32      29 /* 32bit uint -> int (0|1) */
+#define TCL_LINK_BOOL64      30 /* 64bit uint -> int (0|1) */
+#define TCL_LINK_BIT8        31 /* bit in 8bit uint -> int (0|1) */
+#define TCL_LINK_BIT16       32 /* bit in 16bit uint -> int (0|1) */
+#define TCL_LINK_BIT32       33 /* bit in 32bit uint -> int (0|1) */
+#define TCL_LINK_BIT64       34 /* bit in 64bit uint -> int (0|1) */
+#define TCL_LINK_S5FLOAT     35 /* Siemens S5 32bit uint -> double */
+#define TCL_LINK_S5TIME      36 /* Siemens S5 16bit uint -> double */
+#define TCL_LINK_READ_ONLY 0x80
 
 /*
  *----------------------------------------------------------------------------

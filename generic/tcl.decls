@@ -2333,6 +2333,12 @@ declare 631 {
 	    ClientData callbackData)
 }
 
+# TIP #312
+declare 633 {
+    int Tcl_LinkArray(Tcl_Interp *interp, const char *varName, char *addr,
+	    int type, size_t size)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 
