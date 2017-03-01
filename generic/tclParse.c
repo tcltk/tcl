@@ -95,7 +95,7 @@ const char tclCharTypeTable[] = {
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_SPACE,       TYPE_NORMAL,      TYPE_QUOTE,       TYPE_NORMAL,
     TYPE_SUBS,        TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_CLOSE_PAREN, TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_OPEN_PAREN,  TYPE_CLOSE_PAREN, TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
@@ -1364,7 +1364,7 @@ Tcl_ParseVarName(
 {
     Tcl_Token *tokenPtr;
     register const char *src;
-    int varIndex;
+    int varIndex, braceCount = 0;
     unsigned array;
 
     if ((numBytes == 0) || (start == NULL)) {
@@ -1417,15 +1417,20 @@ Tcl_ParseVarName(
      */
 
     if (*src == '{') {
+        char ch;
 	src++;
 	numBytes--;
 	tokenPtr->type = TCL_TOKEN_TEXT;
 	tokenPtr->start = src;
 	tokenPtr->numComponents = 0;
 
-	while (numBytes && (*src != '}')) {
+	ch = *src;
+	while (numBytes && (braceCount>0 || ch != '}')) {
+	    if (ch == '{') { braceCount++; }
+	    else if (ch == '}') { braceCount--; }
 	    numBytes--;
 	    src++;
+	    ch= *src;
 	}
 	if (numBytes == 0) {
 	    if (parsePtr->interp != NULL) {
@@ -1481,11 +1486,11 @@ Tcl_ParseVarName(
 	     * any number of substitutions.
 	     */
 
-	    if (TCL_OK != TclParseTokens(src+1, numBytes-1, TYPE_CLOSE_PAREN,
+	    if (TCL_OK != TclParseTokens(src+1, numBytes-1, TYPE_BAD_ARRAY_INDEX,
 		    TCL_SUBST_ALL, parsePtr)) {
 		goto error;
 	    }
-	    if ((parsePtr->term == src+numBytes) || (*parsePtr->term != ')')){
+	    if ((parsePtr->term == src+numBytes)){
 		if (parsePtr->interp != NULL) {
 		    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
 			    "missing )", -1));
@@ -1493,6 +1498,14 @@ Tcl_ParseVarName(
 		parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
 		parsePtr->term = src;
 		parsePtr->incomplete = 1;
+		goto error;
+	    } else if ((*parsePtr->term != ')')){
+		if (parsePtr->interp != NULL) {
+		    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
+			    "invalid char in array index", -1));
+		}
+		parsePtr->errorType = TCL_PARSE_SYNTAX;
+		parsePtr->term = src;
 		goto error;
 	    }
 	    src = parsePtr->term + 1;
