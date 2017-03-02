@@ -746,7 +746,7 @@ ParseExpr(
 		    const char *varend;
 		    const char *varstart = &start[TclParseAllWhiteSpace(start, numBytes)];
 		    int code, len;
-		    code = Tcl_ParseVarName(NULL, varstart, numBytes, &vparse, 0);
+		    code = Tcl_ParseVarName(NULL, varstart, numBytes, &vparse, -1);
 		    len = vparse.tokenPtr[0].size;
 		    varend = varstart+len;
 		    Tcl_FreeParse(&vparse);

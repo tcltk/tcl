@@ -1357,10 +1357,11 @@ Tcl_ParseVarName(
 				 * first null character. */
     Tcl_Parse *parsePtr,	/* Structure to fill in with information about
 				 * the variable name. */
-    int append)			/* Non-zero means append tokens to existing
+    int append)			/* greater-zero means append tokens to existing
 				 * information in parsePtr; zero means ignore
-				 * existing tokens in parsePtr and
-				 * reinitialize it. */
+				 * existing tokens in parsePtr and reinitialize
+				 * it. less-zero means being strict and disallow
+				 * un-escaped quotes, braces or open parens. */
 {
     Tcl_Token *tokenPtr;
     register const char *src;
@@ -1374,7 +1375,7 @@ Tcl_ParseVarName(
 	numBytes = strlen(start);
     }
 
-    if (!append) {
+    if (append <= 0) {
 	TclParseInit(interp, start, numBytes, parsePtr);
     }
 
@@ -1486,7 +1487,8 @@ Tcl_ParseVarName(
 	     * any number of substitutions.
 	     */
 
-	    if (TCL_OK != TclParseTokens(src+1, numBytes-1, TYPE_BAD_ARRAY_INDEX,
+            int endFlag = (append<0) ? TYPE_BAD_ARRAY_INDEX : TYPE_CLOSE_PAREN;
+	    if (TCL_OK != TclParseTokens(src+1, numBytes-1, endFlag,
 		    TCL_SUBST_ALL, parsePtr)) {
 		goto error;
 	    }
