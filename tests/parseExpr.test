@@ -917,8 +917,8 @@ test parseExpr-21.43 {error message} -body {
 in expression \"...8901234567890*\"foobar\$\{abcdefghijklmnopqrstuv...\""
 test parseExpr-21.44 {error message} -body {
     expr {123456789012345678901234567890*"foo$bar(abcdefghijklmnopqrstuvwxyz"}
-} -returnCodes error -result {missing )
-in expression "...8901234567890*"foo$bar(abcdefghijklmnopqrstuv..."}
+} -returnCodes error -result {invalid character in array index
+in expression "...8901234567890*"foo$bar(abcdefghijklmnopqrstu..."}
 test parseExpr-21.45 {error message} -body {
     expr {123456789012345678901234567890*"foo$bar([{}abcdefghijklmnopqrstuvwxyz])"}
 } -returnCodes error -result {extra characters after close-brace

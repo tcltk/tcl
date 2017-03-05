@@ -1366,7 +1366,7 @@ Tcl_ParseVarName(
 {
     Tcl_Token *tokenPtr;
     register const char *src;
-    int varIndex, braceCount = 0;
+    int varIndex;
     unsigned array;
 
     if ((numBytes == 0) || (start == NULL)) {
@@ -1419,7 +1419,7 @@ Tcl_ParseVarName(
      */
 
     if (*src == '{') {
-        char ch;
+	char ch; int braceCount = 0;
 	src++;
 	numBytes--;
 	tokenPtr->type = TCL_TOKEN_TEXT;
@@ -1428,8 +1428,16 @@ Tcl_ParseVarName(
 
 	ch = *src;
 	while (numBytes && (braceCount>0 || ch != '}')) {
-	    if (ch == '{') { braceCount++; }
-	    else if (ch == '}') { braceCount--; }
+	    switch (ch) {
+	    case '{': braceCount++; break;
+	    case '}': braceCount--; break;
+	    case '\\':
+		/* if 2 or more left, consume 2, else consume
+		   just the \ and let it run into the end */ 
+		if (numBytes > 1) {
+		   src++; numBytes--;
+		}
+	    }
 	    numBytes--;
 	    src++;
 	    ch= *src;
@@ -1504,7 +1512,7 @@ Tcl_ParseVarName(
 	    } else if ((*parsePtr->term != ')')){
 		if (parsePtr->interp != NULL) {
 		    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-			    "invalid char in array index", -1));
+			    "invalid character in array index", -1));
 		}
 		parsePtr->errorType = TCL_PARSE_SYNTAX;
 		parsePtr->term = src;
