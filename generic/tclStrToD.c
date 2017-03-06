@@ -539,7 +539,7 @@ TclParseNumber(
      */
 
     if (bytes == NULL) {
-	if (endPtrPtr == NULL) {
+	if (interp == NULL && endPtrPtr == NULL) {
 	    if (objPtr->typePtr == &tclDictType) {
 		/* A dict can never be a (single) number */
 		return TCL_ERROR;
