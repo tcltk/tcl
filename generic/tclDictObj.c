@@ -506,7 +506,7 @@ UpdateStringOfDict(
 
     /* Handle empty list case first, simplifies what follows */
     if (numElems == 0) {
-	dictPtr->bytes = tclEmptyStringRep;
+	dictPtr->bytes = &tclEmptyString;
 	dictPtr->length = 0;
 	return;
     }

@@ -45,6 +45,7 @@ if {![info exists auto_path]} {
 	set auto_path ""
     }
 }
+
 namespace eval tcl {
     variable Dir
     foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
@@ -111,6 +112,8 @@ namespace eval tcl {
 	namespace export min max
     }
 }
+
+namespace eval tcl::Pkg {}
 
 # Windows specific end of initialization
 
@@ -457,6 +460,22 @@ proc auto_load {cmd {namespace {}}} {
     return 0
 }
 
+# ::tcl::Pkg::source --
+# This procedure provides an alternative "source" command, which doesn't
+# register the file for the "package files" command. Safe interpreters
+# don't have to do anything special.
+#
+# Arguments:
+# filename
+
+proc ::tcl::Pkg::source {filename} {
+    if {[interp issafe]} {
+	uplevel 1 [list ::source $filename]
+    } else {
+	uplevel 1 [list ::source -nopkg $filename]
+    }
+}
+
 # auto_load_index --
 # Loads the contents of tclIndex files on the auto_path directory
 # list.  This is usually invoked within auto_load to load the index
@@ -499,7 +518,7 @@ proc auto_load_index {} {
 			}
 			set name [lindex $line 0]
 			set auto_index($name) \
-				"source [file join $dir [lindex $line 1]]"
+				"::tcl::Pkg::source [file join $dir [lindex $line 1]]"
 		    }
 		} else {
 		    error "[file join $dir tclIndex] isn't a proper Tcl index file"
@@ -636,8 +655,9 @@ proc auto_execok name {
     }
     set auto_execs($name) ""
 
-    set shellBuiltins [list cls copy date del dir echo erase md mkdir \
-	    mklink rd ren rename rmdir start time type ver vol]
+    set shellBuiltins [list assoc cls copy date del dir echo erase ftype \
+                           md mkdir mklink move rd ren rename rmdir start \
+                           time type ver vol]
     if {[info exists env(PATHEXT)]} {
 	# Add an initial ; to have the {} extension check first.
 	set execExtensions [split ";$env(PATHEXT)" ";"]
