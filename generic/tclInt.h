@@ -265,7 +265,7 @@ typedef struct Namespace {
 				 * strings; values have type (Namespace *). If
 				 * NULL, there are no children. */
 #endif
-    long nsId;			/* Unique id for the namespace. */
+    size_t nsId;		/* Unique id for the namespace. */
     Tcl_Interp *interp;		/* The interpreter containing this
 				 * namespace. */
     int flags;			/* OR-ed combination of the namespace status
@@ -299,12 +299,12 @@ typedef struct Namespace {
 				 * registered using "namespace export". */
     int maxExportPatterns;	/* Mumber of export patterns for which space
 				 * is currently allocated. */
-    int cmdRefEpoch;		/* Incremented if a newly added command
+    size_t cmdRefEpoch;		/* Incremented if a newly added command
 				 * shadows a command for which this namespace
 				 * has already cached a Command* pointer; this
 				 * causes all its cached Command* pointers to
 				 * be invalidated. */
-    int resolverEpoch;		/* Incremented whenever (a) the name
+    size_t resolverEpoch;	/* Incremented whenever (a) the name
 				 * resolution rules change for this namespace
 				 * or (b) a newly added command shadows a
 				 * command that is compiled to bytecodes. This
@@ -331,7 +331,7 @@ typedef struct Namespace {
 				 * LookupCompiledLocal to resolve variable
 				 * references within the namespace at compile
 				 * time. */
-    int exportLookupEpoch;	/* Incremented whenever a command is added to
+    size_t exportLookupEpoch;	/* Incremented whenever a command is added to
 				 * a namespace, removed from a namespace or
 				 * the exports of a namespace are changed.
 				 * Allows TIP#112-driven command lists to be
@@ -432,7 +432,7 @@ typedef struct EnsembleConfig {
 				 * if the command has been deleted (or never
 				 * existed; the global namespace never has an
 				 * ensemble command.) */
-    int epoch;			/* The epoch at which this ensemble's table of
+    size_t epoch;		/* The epoch at which this ensemble's table of
 				 * exported commands is valid. */
     char **subcommandArrayPtr;	/* Array of ensemble subcommand names. At all
 				 * consistent points, this will have the same
@@ -1639,7 +1639,7 @@ typedef struct Command {
 				 * representing a command's name in a ByteCode
 				 * instruction sequence. This structure can be
 				 * freed when refCount becomes zero. */
-    int cmdEpoch;		/* Incremented to invalidate any references
+    size_t cmdEpoch;		/* Incremented to invalidate any references
 				 * that point to this command when it is
 				 * renamed, deleted, hidden, or exposed. */
     CompileProc *compileProc;	/* Procedure called to compile command. NULL
@@ -2745,7 +2745,6 @@ MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
  * shared by all new objects allocated by Tcl_NewObj.
  */
 
-MODULE_SCOPE char *	tclEmptyStringRep;
 MODULE_SCOPE char	tclEmptyString;
 
 /*
@@ -2946,6 +2945,7 @@ MODULE_SCOPE void	TclFinalizeNotifier(void);
 MODULE_SCOPE void	TclFinalizeObjects(void);
 MODULE_SCOPE void	TclFinalizePreserve(void);
 MODULE_SCOPE void	TclFinalizeSynchronization(void);
+MODULE_SCOPE void	TclInitThreadAlloc(void);
 MODULE_SCOPE void	TclFinalizeThreadAlloc(void);
 MODULE_SCOPE void	TclFinalizeThreadAllocThread(void);
 MODULE_SCOPE void	TclFinalizeThreadData(int quick);
@@ -3231,9 +3231,11 @@ MODULE_SCOPE Tcl_Command TclInitBinaryCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_BreakObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+#ifndef TCL_NO_DEPRECATED
 MODULE_SCOPE int	Tcl_CaseObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+#endif
 MODULE_SCOPE int	Tcl_CatchObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -4079,7 +4081,7 @@ typedef const char *TclDTraceStr;
     TclIncrObjsAllocated(); \
     TclAllocObjStorage(objPtr); \
     (objPtr)->refCount = 0; \
-    (objPtr)->bytes    = tclEmptyStringRep; \
+    (objPtr)->bytes    = &tclEmptyString; \
     (objPtr)->length   = 0; \
     (objPtr)->typePtr  = NULL; \
     TCL_DTRACE_OBJ_CREATE(objPtr)
@@ -4096,7 +4098,7 @@ typedef const char *TclDTraceStr;
 	if (!(objPtr)->typePtr || !(objPtr)->typePtr->freeIntRepProc) { \
 	    TCL_DTRACE_OBJ_FREE(objPtr); \
 	    if ((objPtr)->bytes \
-		    && ((objPtr)->bytes != tclEmptyStringRep)) { \
+		    && ((objPtr)->bytes != &tclEmptyString)) { \
 		ckfree((objPtr)->bytes); \
 	    } \
 	    (objPtr)->length = -1; \
@@ -4257,7 +4259,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 #define TclInitStringRep(objPtr, bytePtr, len) \
     if ((len) == 0) { \
-	(objPtr)->bytes	 = tclEmptyStringRep; \
+	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
 	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1)); \
@@ -4315,7 +4317,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 #define TclInvalidateStringRep(objPtr) \
     if ((objPtr)->bytes != NULL) { \
-	if ((objPtr)->bytes != tclEmptyStringRep) { \
+	if ((objPtr)->bytes != &tclEmptyString) { \
 	    ckfree((objPtr)->bytes); \
 	} \
 	(objPtr)->bytes = NULL; \
