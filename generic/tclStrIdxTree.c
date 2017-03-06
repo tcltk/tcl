@@ -397,7 +397,7 @@ StrIdxTreeObj_UpdateStringProc(Tcl_Obj *objPtr)
 {
     /* currently only dummy empty string possible */
     objPtr->length = 0;
-    objPtr->bytes = tclEmptyStringRep;
+    objPtr->bytes = &tclEmptyString;
 };
 
 MODULE_SCOPE TclStrIdxTree *
