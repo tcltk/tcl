@@ -6,7 +6,7 @@ What's here
 
 Source
 ======
-  zlib version 1.2.10
+  zlib version 1.2.11
   available at http://www.gzip.org/zlib/
 
 
@@ -37,7 +37,7 @@ Build info
 
 Copyright notice
 ================
-  Copyright (C) 1995-2010 Jean-loup Gailly and Mark Adler
+  Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
