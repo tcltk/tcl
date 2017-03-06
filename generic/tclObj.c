@@ -49,7 +49,6 @@ Tcl_Mutex tclObjMutex;
  */
 
 char tclEmptyString = '\0';
-char *tclEmptyStringRep = &tclEmptyString;
 
 #if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
 /*
@@ -345,17 +344,17 @@ typedef struct ResolvedCmdName {
 				 * reference (not the namespace that contains
 				 * the referenced command). NULL if the name
 				 * is fully qualified.*/
-    long refNsId;		/* refNsPtr's unique namespace id. Used to
+    size_t refNsId;		/* refNsPtr's unique namespace id. Used to
 				 * verify that refNsPtr is still valid (e.g.,
 				 * it's possible that the cmd's containing
 				 * namespace was deleted and a new one created
 				 * at the same address). */
-    int refNsCmdEpoch;		/* Value of the referencing namespace's
+    size_t refNsCmdEpoch;	/* Value of the referencing namespace's
 				 * cmdRefEpoch when the pointer was cached.
 				 * Before using the cached pointer, we check
 				 * if the namespace's epoch was incremented;
 				 * if so, this cached pointer is invalid. */
-    int cmdEpoch;		/* Value of the command's cmdEpoch when this
+    size_t cmdEpoch;		/* Value of the command's cmdEpoch when this
 				 * pointer was cached. Before using the cached
 				 * pointer, we check if the cmd's epoch was
 				 * incremented; if so, the cmd was renamed,
@@ -1060,7 +1059,7 @@ TclDbInitNewObj(
 				 * debugging. */
 {
     objPtr->refCount = 0;
-    objPtr->bytes = tclEmptyStringRep;
+    objPtr->bytes = &tclEmptyString;
     objPtr->length = 0;
     objPtr->typePtr = NULL;
 
@@ -2004,9 +2003,10 @@ static int
 ParseBoolean(
     register Tcl_Obj *objPtr)	/* The object to parse/convert. */
 {
-    int i, length, newBool;
+    int newBool;
     char lowerCase[6];
-    const char *str = TclGetStringFromObj(objPtr, &length);
+    const char *str = TclGetString(objPtr);
+    size_t i, length = objPtr->length;
 
     if ((length == 0) || (length > 5)) {
 	/*
@@ -2058,25 +2058,25 @@ ParseBoolean(
 	/*
 	 * Checking the 'y' is redundant, but makes the code clearer.
 	 */
-	if (strncmp(lowerCase, "yes", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "yes", length) == 0) {
 	    newBool = 1;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 'n':
-	if (strncmp(lowerCase, "no", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "no", length) == 0) {
 	    newBool = 0;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 't':
-	if (strncmp(lowerCase, "true", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "true", length) == 0) {
 	    newBool = 1;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 'f':
-	if (strncmp(lowerCase, "false", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "false", length) == 0) {
 	    newBool = 0;
 	    goto goodBoolean;
 	}
@@ -2085,10 +2085,10 @@ ParseBoolean(
 	if (length < 2) {
 	    return TCL_ERROR;
 	}
-	if (strncmp(lowerCase, "on", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "on", length) == 0) {
 	    newBool = 1;
 	    goto goodBoolean;
-	} else if (strncmp(lowerCase, "off", (size_t) length) == 0) {
+	} else if (strncmp(lowerCase, "off", length) == 0) {
 	    newBool = 0;
 	    goto goodBoolean;
 	}
@@ -2784,7 +2784,7 @@ Tcl_GetLongFromObj(
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
-                        Tcl_GetString(objPtr)));
+                        TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3085,7 +3085,7 @@ Tcl_GetWideIntFromObj(
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
-                        Tcl_GetString(objPtr)));
+                        TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3394,7 +3394,7 @@ GetBignumFromObj(
 		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 		objPtr->typePtr = NULL;
 		if (objPtr->bytes == NULL) {
-		    TclInitStringRep(objPtr, tclEmptyStringRep, 0);
+		    TclInitStringRep(objPtr, &tclEmptyString, 0);
 		}
 	    }
 	    return TCL_OK;
@@ -3414,7 +3414,7 @@ GetBignumFromObj(
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
-                        Tcl_GetString(objPtr)));
+                        TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3964,7 +3964,7 @@ TclCompareObjKeys(
     Tcl_Obj *objPtr1 = keyPtr;
     Tcl_Obj *objPtr2 = (Tcl_Obj *) hPtr->key.oneWordValue;
     register const char *p1, *p2;
-    register int l1, l2;
+    register size_t l1, l2;
 
     /*
      * If the object pointers are the same then they match.
