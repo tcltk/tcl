@@ -4282,6 +4282,13 @@ usage:
 	if (middle >= stop) {
 	    break;
 	}
+
+	/* don't calculate threshold by few iterations, because sometimes
+	 * first iteration(s) can be too fast (cached, delayed clean up, etc) */
+	if (count < 10) {
+	   threshold = 1; continue;
+	}
+
 	/* average iteration time in microsecs */
 	threshold = (middle - start) / count;
 	if (threshold > maxIterTm) {
