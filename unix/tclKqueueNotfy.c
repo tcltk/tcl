@@ -387,7 +387,7 @@ PlatformEventsInit(
 	    Tcl_Panic("fcntl: %s", strerror(errno));
 	} else {
 	    fdFl = fcntl(tsdPtr->triggerPipe[i], F_GETFL);
-	    fdFl |= O_NONBLOCK; 
+	    fdFl |= O_NONBLOCK;
 	}
 	if (fcntl(tsdPtr->triggerPipe[i], F_SETFL, fdFl) == -1) {
 	    Tcl_Panic("fcntl: %s", strerror(errno));
@@ -780,7 +780,7 @@ Tcl_WaitForEvent(
 	 * Wait or poll for new events, queue Tcl events for the FileHandlers
 	 * corresponding to them, and update the FileHandlers' mask of events
 	 * of interest registered by the last call to Tcl_CreateFileHandler().
-	 * 
+	 *
 	 * Events for the trigger pipe are processed here in order to facilitate
 	 * inter-thread IPC. If another thread intends to wake up this thread
 	 * whilst it's blocking on PlatformEventsWait(), it write(2)s to the
