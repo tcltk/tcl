@@ -745,7 +745,7 @@ Tcl_WaitForEvent(
 	 * Wait or poll for new events, queue Tcl events for the FileHandlers
 	 * corresponding to them, and update the FileHandlers' mask of events
 	 * of interest registered by the last call to Tcl_CreateFileHandler().
-	 * 
+	 *
 	 * Events for the eventfd(2)/trigger pipe are processed here in order
 	 * to facilitate inter-thread IPC. If another thread intends to wake
 	 * up this thread whilst it's blocking on PlatformEventsWait(), it
