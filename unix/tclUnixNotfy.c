@@ -127,8 +127,7 @@ Tcl_AlertNotifier(
 #endif /* TCL_THREADS */
 #else
 	ThreadSpecificData *tsdPtr = clientData;
-#ifdef NOTIFIER_EPOLL
-#ifdef HAVE_EVENTFD
+#if defined(NOTIFIER_EPOLL) && defined(HAVE_EVENTFD)
 	eventFdVal = 1;
 	if (write(tsdPtr->triggerEventFd, &eventFdVal,
 		sizeof(eventFdVal)) != sizeof(eventFdVal)) {
@@ -136,14 +135,9 @@ Tcl_AlertNotifier(
 		(void *)tsdPtr);
 #else
 	if (write(tsdPtr->triggerPipe[1], "", 1) != 1) {
-	    Tcl_Panic("Tcl_AlertNotifier: unable to write to %p->triggerEventFd",
-		(void *)tsdPtr);
-#endif
-#else
-	if (write(tsdPtr->triggerPipe[1], "", 1) != 1) {
 	    Tcl_Panic("Tcl_AlertNotifier: unable to write to %p->triggerPipe",
 		(void *)tsdPtr);
-#endif /* NOTIFIER_EPOLL */
+#endif /* NOTIFIER_EPOLL && HAVE_EVENTFD */
 	}
 #endif /* NOTIFIER_SELECT */
     }
