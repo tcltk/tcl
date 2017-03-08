@@ -1428,10 +1428,6 @@ SOURCE=.\configure.ac
 # End Source File
 # Begin Source File
 
-SOURCE=.\makefile.bc
-# End Source File
-# Begin Source File
-
 SOURCE=.\Makefile.in
 # End Source File
 # Begin Source File
