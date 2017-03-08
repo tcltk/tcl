@@ -322,7 +322,7 @@ AlertSingleThread(
          * continuously spinning on epoll_wait until the other
          * threads runs and services the file event.
          */
-    
+
         if (tsdPtr->prevPtr) {
     	    tsdPtr->prevPtr->nextPtr = tsdPtr->nextPtr;
         } else {
@@ -396,8 +396,6 @@ AtForkChild(void)
 	     * The tsdPtr from before the fork is copied as well.  But since
 	     * we are paranoic, we don't trust its condvar and reset it.
 	     */
-	    pthread_cond_destroy(&tsdPtr->waitCV);
-	    pthread_cond_init(&tsdPtr->waitCV, NULL);
 #ifdef __CYGWIN__
 	    DestroyWindow(tsdPtr->hwnd);
 	    tsdPtr->hwnd = CreateWindowExW(NULL, className,
