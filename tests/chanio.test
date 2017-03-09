@@ -6775,7 +6775,7 @@ test chan-io-52.10 {TclCopyChannel & encodings} {fcopy} {
 } 5
 test chan-io-52.11 {TclCopyChannel & encodings} -setup {
     set f [open $path(utf8-fcopy.txt) w]
-    fconfigure $f -encoding utf-8
+    fconfigure $f -encoding utf-8 -translation lf
     puts $f "\u0410\u0410"
     close $f
 } -constraints {fcopy} -body {
