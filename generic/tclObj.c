@@ -2203,6 +2203,7 @@ Tcl_DbNewDoubleObj(
     TclDbNewObj(objPtr, file, line);
     objPtr->bytes = NULL;
 
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL; /* valgrind */
     objPtr->internalRep.doubleValue = dblValue;
     objPtr->typePtr = &tclDoubleType;
     return objPtr;
