@@ -237,7 +237,7 @@ test uplevel-7.1 {var access, no LVT in either level} -setup {
     unset -nocomplain y z
 } -body {
     namespace eval foo {
-	set x 2
+	set x 2 
 	set y 2
 	uplevel 1 {
 	    set x 3
@@ -256,7 +256,7 @@ test uplevel-7.2 {var access, no LVT in upper level} -setup {
     unset -nocomplain y z
 } -body {
     proc foo {} {
-	set x 2
+	set x 2 
 	set y 2
 	uplevel 1 {
 	    set x 3
@@ -280,7 +280,7 @@ test uplevel-7.3 {var access, LVT in upper level} -setup {
     }
 } -body {
     proc foo {} {
-	set x 2
+	set x 2 
 	set y 2
 	uplevel 1 {
 	    set x 3

@@ -7129,7 +7129,7 @@ Tcl_Tell(
  *
  * Tcl_SeekOld, Tcl_TellOld --
  *
- *	Backward-compatability versions of the seek/tell interface that do not
+ *	Backward-compatibility versions of the seek/tell interface that do not
  *	support 64-bit offsets. This interface is not documented or expected
  *	to be supported indefinitely.
  *

@@ -49,7 +49,7 @@
 
 #ifdef TCL_THREADS
 
-typedef struct {
+typedef struct ThreadSpecificData {
     struct passwd pwd;
 #if defined(HAVE_GETPWNAM_R_5) || defined(HAVE_GETPWUID_R_5)
 #define NEED_PW_CLEANER 1

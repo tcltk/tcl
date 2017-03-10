@@ -1771,7 +1771,7 @@ NsEnsembleImplementationCmdNR(
 	int tableLength = ensemblePtr->subcommandTable.numEntries;
 	Tcl_Obj *fix;
 
-	subcmdName = TclGetStringFromObj(subObj, &stringLength);
+	subcmdName = Tcl_GetStringFromObj(subObj, &stringLength);
 	for (i=0 ; i<tableLength ; i++) {
 	    register int cmp = strncmp(subcmdName,
 		    ensemblePtr->subcommandArrayPtr[i],
@@ -2917,7 +2917,7 @@ TclCompileEnsemble(
 	    goto failed;
 	}
 	for (i=0 ; i<len ; i++) {
-	    str = TclGetStringFromObj(elems[i], &sclen);
+	    str = Tcl_GetStringFromObj(elems[i], &sclen);
 	    if ((sclen == (int) numBytes) && !memcmp(word, str, numBytes)) {
 		/*
 		 * Exact match! Excellent!
@@ -3135,7 +3135,7 @@ TclCompileEnsemble(
 	 * any extra elements that might have been appended by failing
 	 * pathways above.
 	 */
-	(void) Tcl_ListObjReplace(NULL, replaced, depth-1, INT_MAX, 0, NULL);
+	(void) Tcl_ListObjReplace(NULL, replaced, depth-1, LIST_MAX, 0, NULL);
 
 	/*
 	 * TODO: Reconsider whether we ought to call CompileToInvokedCommand()
@@ -3319,15 +3319,15 @@ CompileToInvokedCommand(
     for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
 	    i++, tokPtr = TokenAfter(tokPtr)) {
 	if (i > 0 && i < numWords+1) {
-	    bytes = TclGetStringFromObj(words[i-1], &length);
+	    bytes = Tcl_GetStringFromObj(words[i-1], &length);
 	    PushLiteral(envPtr, bytes, length);
 	    continue;
 	}
 
 	SetLineInformation(i);
 	if (tokPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    int literal = TclRegisterLiteral(envPtr,
-		    tokPtr[1].start, tokPtr[1].size, 0);
+	    int literal = TclRegisterNewLiteral(envPtr,
+		    tokPtr[1].start, tokPtr[1].size);
 
 	    if (envPtr->clNext) {
 		TclContinuationsEnterDerived(
@@ -3352,7 +3352,7 @@ CompileToInvokedCommand(
     if ((cmdPtr != NULL) && (cmdPtr->flags & CMD_VIA_RESOLVER)) {
 	extraLiteralFlags |= LITERAL_UNSHARED;
     }
-    cmdLit = TclRegisterLiteral(envPtr, bytes, length, extraLiteralFlags);
+    cmdLit = TclRegisterLiteral(envPtr, (char *)bytes, length, extraLiteralFlags);
     TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLit), cmdPtr);
     TclEmitPush(cmdLit, envPtr);
     TclDecrRefCount(objPtr);

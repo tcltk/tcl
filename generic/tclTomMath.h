@@ -346,7 +346,7 @@ int mp_2expt(mp_int *a, int b);
 
 /* Counts the number of lsbs which are zero before the first zero bit */
 /*
-int mp_cnt_lsb(mp_int *a);
+int mp_cnt_lsb(const mp_int *a);
 */
 
 /* I Love Earth! */

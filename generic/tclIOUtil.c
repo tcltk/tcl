@@ -190,6 +190,8 @@ const Tcl_Filesystem tclNativeFilesystem = {
     TclpObjChdir
 };
 
+MODULE_SCOPE Tcl_Filesystem zipfsFilesystem;
+
 /*
  * Define the tail of the linked list. Note that for unconventional uses of
  * Tcl without a native filesystem, we may in the future wish to modify the
@@ -544,8 +546,8 @@ TclFSCwdPointerEquals(
 	int len1, len2;
 	const char *str1, *str2;
 
-	str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
-	str2 = TclGetStringFromObj(*pathPtrPtr, &len2);
+	str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+	str2 = Tcl_GetStringFromObj(*pathPtrPtr, &len2);
 	if ((len1 == len2) && !memcmp(str1, str2, len1)) {
 	    /*
 	     * They are equal, but different objects. Update so they will be
@@ -638,8 +640,8 @@ FsGetFirstFilesystem(void)
 }
 
 /*
- * The epoch can be changed both by filesystems being added or removed and by
- * env(HOME) changing.
+ * The epoch can be changed by filesystems being added or removed, by changing
+ * the "system encoding" and by env(HOME) changing.
  */
 
 int
@@ -688,7 +690,7 @@ FsUpdateCwd(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 
     if (cwdObj != NULL) {
-	str = TclGetStringFromObj(cwdObj, &len);
+	str = Tcl_GetStringFromObj(cwdObj, &len);
     }
 
     Tcl_MutexLock(&cwdMutex);
@@ -1224,8 +1226,8 @@ FsAddMountsToGlobResult(
 	    if (norm != NULL) {
 		const char *path, *mount;
 
-		mount = TclGetStringFromObj(mElt, &mlen);
-		path = TclGetStringFromObj(norm, &len);
+		mount = Tcl_GetStringFromObj(mElt, &mlen);
+		path = Tcl_GetStringFromObj(norm, &len);
 		if (path[len-1] == '/') {
 		    /*
 		     * Deal with the root of the volume.
@@ -1410,6 +1412,22 @@ TclFSNormalizeToUniquePath(
 
     Claim();
     for (fsRecPtr=firstFsRecPtr; fsRecPtr!=NULL; fsRecPtr=fsRecPtr->nextPtr) {
+	if (fsRecPtr->fsPtr == &zipfsFilesystem) {
+	    ClientData clientData = NULL;
+	    /*
+	     * Allow mounted zipfs filesystem to overtake entire normalisation.
+	     * This is needed on unix for mounts on symlinks right below root.
+	     */
+
+	    if (fsRecPtr->fsPtr->pathInFilesystemProc != NULL) {
+		if (fsRecPtr->fsPtr->pathInFilesystemProc(pathPtr,
+			&clientData)!=-1) {
+		    TclFSSetPathDetails(pathPtr, fsRecPtr->fsPtr, clientData);
+		    break;
+		}
+	    }
+	    continue;
+	}
 	if (fsRecPtr->fsPtr != &tclNativeFilesystem) {
 	    continue;
 	}
@@ -1432,6 +1450,9 @@ TclFSNormalizeToUniquePath(
 	 */
 
 	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
+	    continue;
+	}
+	if (fsRecPtr->fsPtr == &zipfsFilesystem) {
 	    continue;
 	}
 
@@ -1816,7 +1837,7 @@ Tcl_FSEvalFileEx(
     oldScriptFile = iPtr->scriptFile;
     iPtr->scriptFile = pathPtr;
     Tcl_IncrRefCount(iPtr->scriptFile);
-    string = TclGetStringFromObj(objPtr, &length);
+    string = Tcl_GetStringFromObj(objPtr, &length);
 
     /*
      * TIP #280 Force the evaluator to open a frame for a sourced file.
@@ -1843,7 +1864,7 @@ Tcl_FSEvalFileEx(
 	 * Record information telling where the error occurred.
 	 */
 
-	const char *pathString = TclGetStringFromObj(pathPtr, &length);
+	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
 	int limit = 150;
 	int overflow = (length > limit);
 
@@ -1994,7 +2015,7 @@ EvalFileCallback(
 	 */
 
 	int length;
-	const char *pathString = TclGetStringFromObj(pathPtr, &length);
+	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
 	const int limit = 150;
 	int overflow = (length > limit);
 
@@ -2846,8 +2867,8 @@ Tcl_FSGetCwd(
 	    int len1, len2;
 	    const char *str1, *str2;
 
-	    str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
-	    str2 = TclGetStringFromObj(norm, &len2);
+	    str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+	    str2 = Tcl_GetStringFromObj(norm, &len2);
 	    if ((len1 == len2) && (strcmp(str1, str2) == 0)) {
 		/*
 		 * If the paths were equal, we can be more efficient and
@@ -2914,6 +2935,19 @@ Tcl_FSChdir(
     }
 
     fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
+
+    if ((fsPtr != NULL) && (fsPtr != &tclNativeFilesystem)) {
+	/*
+	 * Watch out for tilde substitution.
+	 * Only valid in native filesystem.
+	 */
+	char *name = Tcl_GetString(pathPtr);
+
+	if ((name != NULL) && (*name == '~')) {
+	    fsPtr = &tclNativeFilesystem;
+	}
+    }
+
     if (fsPtr != NULL) {
 	if (fsPtr->chdirProc != NULL) {
 	    /*
@@ -4115,7 +4149,7 @@ TclGetPathType(
 				 * caller. */
 {
     int pathLen;
-    const char *path = TclGetStringFromObj(pathPtr, &pathLen);
+    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
     Tcl_PathType type;
 
     type = TclFSNonnativePathType(path, pathLen, filesystemPtrPtr,
@@ -4227,7 +4261,7 @@ TclFSNonnativePathType(
 
 		    numVolumes--;
 		    Tcl_ListObjIndex(NULL, thisFsVolumes, numVolumes, &vol);
-		    strVol = TclGetStringFromObj(vol,&len);
+		    strVol = Tcl_GetStringFromObj(vol,&len);
 		    if (pathLen < len) {
 			continue;
 		    }
@@ -4574,8 +4608,8 @@ Tcl_FSRemoveDirectory(
 	    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 
 	    if (normPath != NULL) {
-		normPathStr = TclGetStringFromObj(normPath, &normLen);
-		cwdStr = TclGetStringFromObj(cwdPtr, &cwdLen);
+		normPathStr = Tcl_GetStringFromObj(normPath, &normLen);
+		cwdStr = Tcl_GetStringFromObj(cwdPtr, &cwdLen);
 		if ((cwdLen >= normLen) && (strncmp(normPathStr, cwdStr,
 			(size_t) normLen) == 0)) {
 		    /*

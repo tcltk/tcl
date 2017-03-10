@@ -42,8 +42,16 @@
  * Declare external functions used in Windows tests.
  */
 
-DLLEXPORT int		Tcltest_Init(Tcl_Interp *interp);
-DLLEXPORT int		Tcltest_SafeInit(Tcl_Interp *interp);
+/*
+ * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
+ * Tcltest_Init declaration is in the source file itself, which is only
+ * accessed when we are building a library.
+ */
+
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLEXPORT
+EXTERN int		Tcltest_Init(Tcl_Interp *interp);
+EXTERN int		Tcltest_SafeInit(Tcl_Interp *interp);
 
 /*
  * Dynamic string shared by TestdcallCmd and DelCallbackProc; used to collect
@@ -315,9 +323,6 @@ static int		TestparsevarObjCmd(ClientData dummy,
 static int		TestparsevarnameObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestpreferstableObjCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
 static int		TestregexpObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -326,12 +331,10 @@ static int		TestreturnObjCmd(ClientData dummy,
 			    Tcl_Obj *const objv[]);
 static void		TestregexpXflags(const char *string,
 			    int length, int *cflagsPtr, int *eflagsPtr);
-#ifndef TCL_NO_DEPRECATED
 static int		TestsaveresultCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static void		TestsaveresultFree(char *blockPtr);
-#endif /* TCL_NO_DEPRECATED */
 static int		TestsetassocdataCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestsetCmd(ClientData dummy,
@@ -529,9 +532,7 @@ int
 Tcltest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-#ifndef TCL_NO_DEPRECATED
     Tcl_ValueType t3ArgTypes[2];
-#endif /* TCL_NO_DEPRECATED */
 
     Tcl_Obj *listPtr;
     Tcl_Obj **objv;
@@ -647,16 +648,12 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testparsevarname", TestparsevarnameObjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testpreferstable", TestpreferstableObjCmd,
-	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testregexp", TestregexpObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testreturn", TestreturnObjCmd,
 	    NULL, NULL);
-#ifndef TCL_NO_DEPRECATED
     Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
 	    NULL, NULL);
-#endif /* TCL_NO_DEPRECATED */
     Tcl_CreateCommand(interp, "testsetassocdata", TestsetassocdataCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsetnoerr", TestsetCmd,
@@ -678,10 +675,8 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testtranslatefilename",
 	    TesttranslatefilenameCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testupvar", TestupvarCmd, NULL, NULL);
-#ifndef TCL_NO_DEPRECATED
     Tcl_CreateMathFunc(interp, "T1", 0, NULL, TestMathFunc, (ClientData) 123);
     Tcl_CreateMathFunc(interp, "T2", 0, NULL, TestMathFunc, (ClientData) 345);
-#endif /* TCL_NO_DEPRECATED */
     Tcl_CreateCommand(interp, "testmainthread", TestmainthreadCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testsetmainloop", TestsetmainloopCmd,
@@ -692,12 +687,10 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testcpuid", TestcpuidCmd,
 	    (ClientData) 0, NULL);
 #endif
-#ifndef TCL_NO_DEPRECATED
     t3ArgTypes[0] = TCL_EITHER;
     t3ArgTypes[1] = TCL_EITHER;
     Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
 	    NULL);
-#endif /* TCL_NO_DEPRECATED */
 
     Tcl_CreateObjCommand(interp, "testnreunwind", TestNREUnwind,
 	    NULL, NULL);
@@ -1285,7 +1278,7 @@ TestcmdtraceCmd(
 	cmdTrace = Tcl_CreateObjTrace(interp, 50000,
 		TCL_ALLOW_INLINE_COMPILATION, ObjTraceProc,
 		(ClientData) &deleteCalled, ObjTraceDeleteProc);
-	result = Tcl_EvalEx(interp, argv[2], -1, 0);
+	result = Tcl_Eval(interp, argv[2]);
 	Tcl_DeleteTrace(interp, cmdTrace);
 	if (!deleteCalled) {
 	    Tcl_SetResult(interp, "Delete wasn't called", TCL_STATIC);
@@ -1299,7 +1292,7 @@ TestcmdtraceCmd(
 	Tcl_DStringInit(&buffer);
 	t1 = Tcl_CreateTrace(interp, 1, CmdTraceProc, &buffer);
 	t2 = Tcl_CreateTrace(interp, 50000, CmdTraceProc, &buffer);
-	result = Tcl_EvalEx(interp, argv[2], -1, 0);
+	result = Tcl_Eval(interp, argv[2]);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, Tcl_DStringValue(&buffer), NULL);
@@ -1628,7 +1621,7 @@ DelDeleteProc(
 {
     DelCmd *dPtr = clientData;
 
-    Tcl_EvalEx(dPtr->interp, dPtr->deleteCmd, -1, 0);
+    Tcl_Eval(dPtr->interp, dPtr->deleteCmd);
     Tcl_ResetResult(dPtr->interp);
     ckfree(dPtr->deleteCmd);
     ckfree(dPtr);
@@ -3790,36 +3783,6 @@ TestparsevarnameObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestpreferstableObjCmd --
- *
- *	This procedure implements the "testpreferstable" command.  It is
- *	used for being able to test the "package" command even when the
- *  environment variable TCL_PKG_PREFER_LATEST is set in your environment.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestpreferstableObjCmd(
-    ClientData clientData,	/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* The argument objects. */
-{
-    Interp *iPtr = (Interp *) interp;
-    iPtr->packagePrefer = PKG_PREFER_STABLE;
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TestregexpObjCmd --
  *
  *	This procedure implements the "testregexp" command. It is used to give
@@ -3963,7 +3926,7 @@ TestregexpObjCmd(
 	    varName = Tcl_GetString(objv[2]);
 	    TclRegExpRangeUniChar(regExpr, -1, &start, &end);
 	    sprintf(resinfo, "%d %d", start, end-1);
-	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
+	    value = Tcl_SetVar(interp, varName, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
 			varName, "\"", NULL);
@@ -3977,7 +3940,7 @@ TestregexpObjCmd(
 	    Tcl_RegExpGetInfo(regExpr, &info);
 	    varName = Tcl_GetString(objv[2]);
 	    sprintf(resinfo, "%ld", info.extendStart);
-	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
+	    value = Tcl_SetVar(interp, varName, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
 			varName, "\"", NULL);
@@ -4320,7 +4283,7 @@ StaticInitProc(
     Tcl_Interp *interp)		/* Interpreter in which package is supposedly
 				 * being loaded. */
 {
-    Tcl_SetVar2(interp, "x", NULL, "loaded", TCL_GLOBAL_ONLY);
+    Tcl_SetVar(interp, "x", "loaded", TCL_GLOBAL_ONLY);
     return TCL_OK;
 }
 
@@ -4404,7 +4367,7 @@ TestupvarCmd(
 	} else if (strcmp(argv[4], "namespace") == 0) {
 	    flags = TCL_NAMESPACE_ONLY;
 	}
-	return Tcl_UpVar2(interp, argv[1], argv[2], NULL, argv[3], flags);
+	return Tcl_UpVar(interp, argv[1], argv[2], argv[3], flags);
     } else {
 	if (strcmp(argv[5], "global") == 0) {
 	    flags = TCL_GLOBAL_ONLY;
@@ -4597,7 +4560,7 @@ TestpanicCmd(
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
-    const char *argString;
+    char *argString;
 
     /*
      *  Put the arguments into a var args structure
@@ -4898,10 +4861,10 @@ GetTimesObjCmd(
 	    timePer/100000);
 
     /* Tcl_SetVar 100000 times */
-    fprintf(stderr, "Tcl_SetVar2 of \"12345\" 100000 times\n");
+    fprintf(stderr, "Tcl_SetVar of \"12345\" 100000 times\n");
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
-	s = Tcl_SetVar2(interp, "a", NULL, "12345", TCL_LEAVE_ERR_MSG);
+	s = Tcl_SetVar(interp, "a", "12345", TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
@@ -4915,7 +4878,7 @@ GetTimesObjCmd(
     fprintf(stderr, "Tcl_GetVar of a==\"12345\" 100000 times\n");
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
-	s = Tcl_GetVar2(interp, "a", NULL, TCL_LEAVE_ERR_MSG);
+	s = Tcl_GetVar(interp, "a", TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
@@ -5102,7 +5065,6 @@ Testset2Cmd(
     }
 }
 
-#ifndef TCL_NO_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -5185,7 +5147,7 @@ TestsaveresultCmd(
     if (((enum options) index) == RESULT_OBJECT) {
 	result = Tcl_EvalObjEx(interp, objv[2], 0);
     } else {
-	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), -1, 0);
+	result = Tcl_Eval(interp, Tcl_GetString(objv[2]));
     }
 
     if (discard) {
@@ -5236,7 +5198,6 @@ TestsaveresultFree(
 {
     freeCount++;
 }
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -6288,7 +6249,7 @@ TestReport(
 	savedResult = Tcl_GetObjResult(interp);
 	Tcl_IncrRefCount(savedResult);
 	Tcl_SetObjResult(interp, Tcl_NewObj());
-	Tcl_EvalEx(interp, Tcl_DStringValue(&ds), -1, 0);
+	Tcl_Eval(interp, Tcl_DStringValue(&ds));
 	Tcl_DStringFree(&ds);
 	Tcl_ResetResult(interp);
 	Tcl_SetObjResult(interp, savedResult);

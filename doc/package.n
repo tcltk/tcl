@@ -283,8 +283,8 @@ error.
 .PP
 When an interpreter is created, its initial selection mode value is set to
 .QW stable
-unless the environment variable \fBTCL_PKG_PREFER_LATEST\fR is set
-(to any value) or the Tcl package itself is unstable. Otherwise
+unless the environment variable \fBTCL_PKG_PREFER_LATEST\fR
+is set.  If that environment variable is defined (with any value) then
 the initial (and permanent) selection mode value is set to
 .QW latest .
 .RE

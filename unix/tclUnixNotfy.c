@@ -1,5 +1,7 @@
+#define AT_FORK_INIT_VALUE 0
+#define RESET_ATFORK_MUTEX 1
 /*
- * tclUnixNotfy.c --
+ * tclUnixNotify.c --
  *
  *	This file contains the implementation of the select()-based
  *	Unix-specific notifier, which is the lowest-level part of the Tcl
@@ -39,7 +41,7 @@ typedef struct FileHandler {
  * handlers are ready to fire.
  */
 
-typedef struct {
+typedef struct FileHandlerEvent {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     int fd;			/* File descriptor that is ready. Used to find
@@ -54,7 +56,7 @@ typedef struct {
  * writable, and exception conditions.
  */
 
-typedef struct {
+typedef struct SelectMasks {
     fd_set readable;
     fd_set writable;
     fd_set exception;
@@ -150,8 +152,8 @@ static int triggerPipe = -1;
  * The notifierMutex locks access to all of the global notifier state.
  */
 
-pthread_mutex_t notifierInitMutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t notifierMutex     = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t notifierInitMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t notifierMutex     = PTHREAD_MUTEX_INITIALIZER;
 /*
  * The following static indicates if the notifier thread is running.
  *
@@ -195,7 +197,9 @@ static Tcl_ThreadId notifierThread;
 #ifdef TCL_THREADS
 static void	NotifierThreadProc(ClientData clientData);
 #if defined(HAVE_PTHREAD_ATFORK)
-static int	atForkInit = 0;
+static int	atForkInit = AT_FORK_INIT_VALUE;
+static void	AtForkPrepare(void);
+static void	AtForkParent(void);
 static void	AtForkChild(void);
 #endif /* HAVE_PTHREAD_ATFORK */
 #endif /* TCL_THREADS */
@@ -252,7 +256,7 @@ extern unsigned char __stdcall	TranslateMessage(const MSG *);
  * Threaded-cygwin specific constants and functions in this file:
  */
 
-static const WCHAR className[] = L"TclNotifier";
+static const WCHAR NotfyClassName[] = L"TclNotifier";
 static DWORD __stdcall	NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
 #endif /* TCL_THREADS && __CYGWIN__ */
@@ -341,7 +345,7 @@ Tcl_InitNotifier(void)
 	    class.hInstance = TclWinGetTclInstance();
 	    class.hbrBackground = NULL;
 	    class.lpszMenuName = NULL;
-	    class.lpszClassName = className;
+	    class.lpszClassName = NotfyClassName;
 	    class.lpfnWndProc = NotifierProc;
 	    class.hIcon = NULL;
 	    class.hCursor = NULL;
@@ -366,7 +370,7 @@ Tcl_InitNotifier(void)
 	 */
 
 	if (!atForkInit) {
-	    int result = pthread_atfork(NULL, NULL, AtForkChild);
+	    int result = pthread_atfork(AtForkPrepare, AtForkParent, AtForkChild);
 
 	    if (result) {
 		Tcl_Panic("Tcl_InitNotifier: pthread_atfork failed");
@@ -1347,6 +1351,54 @@ NotifierThreadProc(
 /*
  *----------------------------------------------------------------------
  *
+ * AtForkPrepare --
+ *
+ *	Lock the notifier in preparation for a fork.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AtForkPrepare(void)
+{
+#if RESET_ATFORK_MUTEX == 0
+    pthread_mutex_lock(&notifierInitMutex);
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AtForkParent --
+ *
+ *	Unlock the notifier in the parent after a fork.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AtForkParent(void)
+{
+#if RESET_ATFORK_MUTEX == 0
+    pthread_mutex_unlock(&notifierInitMutex);
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * AtForkChild --
  *
  *	Unlock and reinstall the notifier in the child after a fork.
@@ -1366,8 +1418,12 @@ AtForkChild(void)
     if (notifierThreadRunning == 1) {
 	pthread_cond_destroy(&notifierCV);
     }
+#if RESET_ATFORK_MUTEX == 0
+    pthread_mutex_unlock(&notifierInitMutex);
+#else
     pthread_mutex_init(&notifierInitMutex, NULL);
     pthread_mutex_init(&notifierMutex, NULL);
+#endif
     pthread_cond_init(&notifierCV, NULL);
 
     /*
@@ -1399,8 +1455,8 @@ AtForkChild(void)
 	     */
 #ifdef __CYGWIN__
 	    DestroyWindow(tsdPtr->hwnd);
-	    tsdPtr->hwnd = CreateWindowExW(NULL, className,
-		    className, 0, 0, 0, 0, 0, NULL, NULL,
+	    tsdPtr->hwnd = CreateWindowExW(NULL, NotfyClassName,
+		    NotfyClassName, 0, 0, 0, 0, 0, NULL, NULL,
 		    TclWinGetTclInstance(), NULL);
 	    ResetEvent(tsdPtr->event);
 #else

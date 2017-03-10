@@ -735,7 +735,7 @@ TcpHostPortList(
 #endif /* NEED_FAKE_RFC2553 */
     }
     /* Check if reverse DNS has been switched off globally */
-    if (interp != NULL && Tcl_GetVar2(interp, SUPPRESS_RDNS_VAR, NULL, 0) != NULL) {
+    if (interp != NULL && Tcl_GetVar(interp, SUPPRESS_RDNS_VAR, 0) != NULL) {
         flags |= NI_NUMERICHOST;
     }
     if (getnameinfo(&addr.sa, salen, host, sizeof(host), NULL, 0, flags) == 0) {
@@ -1098,7 +1098,7 @@ TcpConnect(
 {
     socklen_t optlen;
     int async_callback = statePtr->flags & TCP_ASYNC_PENDING;
-    int ret = -1, error = errno;
+    int ret = -1, error = EHOSTUNREACH;
     int async = statePtr->flags & TCP_ASYNC_CONNECT;
 
     if (async_callback) {
