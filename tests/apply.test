@@ -49,7 +49,7 @@ test apply-2.2 {malformed lambda} {
 test apply-2.3 {malformed lambda} {
     set lambda [list {{a b c}} boo]
     list [catch {apply $lambda} msg] $msg $::errorInfo
-} {1 {too many fields in argument specifier "a b c"} {too many fields in argument specifier "a b c"
+} {1 {unknown argument option "b" or too many fields in argument specifier "a b c"} {unknown argument option "b" or too many fields in argument specifier "a b c"
     (parsing lambda expression "{{a b c}} boo")
     invoked from within
 "apply $lambda"}}

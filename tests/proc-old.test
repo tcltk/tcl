@@ -278,7 +278,7 @@ test proc-old-5.6 {error conditions} {
 } {1 {argument with no name}}
 test proc-old-5.7 {error conditions} {
     list [catch {proc tproc {{x 1 2} y} {return foo}} msg] $msg
-} {1 {too many fields in argument specifier "x 1 2"}}
+} {1 {unknown argument option "1" or too many fields in argument specifier "x 1 2"}}
 test proc-old-5.8 {error conditions} {
     catch {return}
 } 2

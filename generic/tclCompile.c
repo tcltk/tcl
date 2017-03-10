@@ -3027,6 +3027,7 @@ TclFindCompiledLocal(
 	}
 	localPtr->defValuePtr = NULL;
 	localPtr->resolveInfo = NULL;
+	localPtr->argSpecPtr = NULL;
 
 	if (name != NULL) {
 	    memcpy(localPtr->name, name, (size_t) nameBytes);

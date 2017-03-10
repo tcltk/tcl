@@ -264,7 +264,7 @@ test proc-4.5 {TclCreateProc, procbody obj, inconsistent arg default type} -body
 } -constraints procbodytest -returnCodes error -cleanup {
     catch {rename p ""}
     catch {rename t ""}
-} -result {procedure "t": formal parameter 2 is inconsistent with precompiled body}
+} -result {procedure "t": formal parameter "z" has argument spec inconsistent with precompiled body}
 test proc-4.6 {TclCreateProc, procbody obj, inconsistent arg default type} -body {
     proc p {x y z} {
 	set v [join [list $x $y $z]]
@@ -277,7 +277,7 @@ test proc-4.6 {TclCreateProc, procbody obj, inconsistent arg default type} -body
 } -returnCodes error -constraints procbodytest -cleanup {
     catch {rename p ""}
     catch {rename t ""}
-} -result {procedure "t": formal parameter 2 is inconsistent with precompiled body}
+} -result {procedure "t": formal parameter "z" has argument spec inconsistent with precompiled body}
 test proc-4.7 {TclCreateProc, procbody obj, inconsistent arg default value} -body {
     proc p {x y {z Z}} {
 	set v [join [list $x $y $z]]
@@ -290,7 +290,7 @@ test proc-4.7 {TclCreateProc, procbody obj, inconsistent arg default value} -bod
 } -constraints procbodytest -returnCodes error -cleanup {
     catch {rename p ""}
     catch {rename t ""}
-} -result {procedure "t": formal parameter "z" has default value inconsistent with precompiled body}
+} -result {procedure "t": formal parameter "z" has argument spec inconsistent with precompiled body}
 test proc-4.8 {TclCreateProc, procbody obj, no leak on multiple iterations} -setup {
     proc getbytes {} {
 	set lines [split [memory info] "\n"]

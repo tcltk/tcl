@@ -697,7 +697,18 @@ typedef struct VarInHash {
  * VAR_RESOLVED -		1 if name resolution has been done for this
  *				variable.
  * VAR_IS_ARGS			1 if this variable is the last argument and is
- *				named "args".
+ * VAR_NAMED_GROUP		1 means that this argument is part of a named
+ *				group defined using an extended argument
+ *				specification.
+ * VAR_UPVAR_NAME		1 means that this variable has been added to
+ *				store the name of a passed-by-name argument,
+ *				defined using an extended arg specification.
+ *
+ * The following additional flags are used with the ExtendedArgSpec type
+ * defined below:
+ *
+ * VAR_UPVAR_ARG		1 means that this argument has been defined
+ *				using the -upvar extended arg specification.
  */
 
 /*
@@ -739,6 +750,9 @@ typedef struct VarInHash {
 #define VAR_TEMPORARY		0x200	/* KEEP OLD VALUE! See tclProc.c */
 #define VAR_IS_ARGS		0x400
 #define VAR_RESOLVED		0x8000
+#define VAR_NAMED_GROUP		0x10000
+#define VAR_UPVAR_ARG		0x20000
+#define VAR_UPVAR_NAME		0x40000
 
 /*
  * Macros to ensure that various flag bits are set properly for variables.
@@ -898,6 +912,34 @@ typedef struct VarInHash {
 struct Command;
 
 /*
+ * The variable-length structure below describes an extended argument
+ * specification applied on a proc argument (see TIP#457).
+ */
+
+typedef struct ExtendedArgSpec {
+    struct ExtendedArgSpec *nextPtr;
+				/* Next arg specification defined on the same
+				 * argument (most probably a named group). */
+    int flags;			/* Flag bits for the argument specification.
+				 * Only VAR_UPVAR_ARG is currently used.*/
+    int localIndex;		/* Index of the related argument in the array
+				 * of compiler-assigned variables in the
+				 * procedure call frame. */
+    Tcl_Obj *valuePtr;		/* Pointer to the -value argument used in a
+				 * named group to define a flag option. */
+    int upvarNameIndex;		/* If >= 0 and VAR_UPVAR_ARG set, index of the
+				 * added variable to store the name of the
+				 * passed-by-name (-upvar arg) argument. */
+    int nameLength;		/* The number of characters in option name
+				 * Used to speed up name lookups. */
+    char name[1];		/* Name of the named-group starts here. If
+				 * there is no name, this will just be '\0'.
+				 * The actual size of this field will be large
+				 * enough to hold the name. MUST BE THE LAST
+				 * FIELD IN THE STRUCTURE! */
+} ExtendedArgSpec;
+
+/*
  * The variable-length structure below describes a local variable of a
  * procedure that was recognized by the compiler. These variables have a name,
  * an element in the array of compiler-assigned local variables in the
@@ -923,7 +965,8 @@ typedef struct CompiledLocal {
     int flags;			/* Flag bits for the local variable. Same as
 				 * the flags for the Var structure above,
 				 * although only VAR_ARGUMENT, VAR_TEMPORARY,
-				 * and VAR_RESOLVED make sense. */
+				 * and VAR_RESOLVED, VAR_NAMED_GROUP and
+				 * VAR_UPVAR_NAME make sense. */
     Tcl_Obj *defValuePtr;	/* Pointer to the default value of an
 				 * argument, if any. NULL if not an argument
 				 * or, if an argument, no default value. */
@@ -934,6 +977,9 @@ typedef struct CompiledLocal {
 				 * is marked by a unique ClientData tag during
 				 * compilation, and that same tag is used to
 				 * find the variable at runtime. */
+    ExtendedArgSpec *argSpecPtr;
+				/* Extended argument specification if this is
+				 * a proc argument defined using a one. */
     char name[1];		/* Name of the local variable starts here. If
 				 * the name is NULL, this will just be '\0'.
 				 * The actual size of this field will be large
@@ -965,6 +1011,7 @@ typedef struct Proc {
     int numCompiledLocals;	/* Count of local variables recognized by the
 				 * compiler including arguments and
 				 * temporaries. */
+    int flags;			/* Various flag bits. See below. */
     CompiledLocal *firstLocalPtr;
 				/* Pointer to first of the procedure's
 				 * compiler-allocated local variables, or NULL
@@ -975,6 +1022,16 @@ typedef struct Proc {
 				 * variable or NULL if none. This has frame
 				 * index (numCompiledLocals-1). */
 } Proc;
+
+/*
+ * Flag bits for procedures.
+ *
+ * PROC_HAS_EXT_ARG_SPEC	1 means that the procedure has at least one
+ *				argument defined using an extended argument
+ *				specification.
+ */
+
+#define PROC_HAS_EXT_ARG_SPEC   0x01
 
 /*
  * The type of functions called to process errors found during the execution
@@ -2850,6 +2907,15 @@ struct Tcl_LoadHandle_ {
 #define TCL_DD_SHORTEST0		0x0
 				/* 'Shortest possible' after masking */
 
+/* Flags for TclProcGetArgSpec */
+
+#define TCL_GETARGSPEC_WITH_NAME	0x01
+				/* Include arg name before specification */
+#define TCL_GETARGSPEC_TRY_OLDSTYLE	0x02
+				/* Return argument spec using old-style
+				 * specification if there is no other options
+				 * set on argument */
+
 /*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside world:
@@ -3056,6 +3122,8 @@ MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 MODULE_SCOPE int	TclParseAllWhiteSpace(const char *src, int numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
+MODULE_SCOPE Tcl_Obj *	TclProcGetArgSpec(Tcl_Interp *interp,
+			    CompiledLocal *argPtr, int flags);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
 MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp, Tcl_Obj* pathPtr);

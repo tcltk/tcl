@@ -1297,13 +1297,9 @@ CloneProcedureMethod(
     for (localPtr=pmPtr->procPtr->firstLocalPtr; localPtr!=NULL;
 	    localPtr=localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)) {
-	    Tcl_Obj *argObj = Tcl_NewObj();
+	    Tcl_Obj *argObj = TclProcGetArgSpec(interp, localPtr,
+		    TCL_GETARGSPEC_WITH_NAME|TCL_GETARGSPEC_TRY_OLDSTYLE);
 
-	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, -1));
-	    if (localPtr->defValuePtr != NULL) {
-		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
-	    }
 	    Tcl_ListObjAppendElement(NULL, argsObj, argObj);
 	}
     }
