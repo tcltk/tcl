@@ -75,11 +75,17 @@ static const unsigned char totalBytes[256] = {
 #endif
     1,1,1,1,1,1,1,1
 };
+
+/*
+ * Functions used only in this module.
+ */
+
+static int		UtfCount(int ch);
 
 /*
  *---------------------------------------------------------------------------
  *
- * TclUtfCount --
+ * UtfCount --
  *
  *	Find the number of bytes in the Utf character "ch".
  *
@@ -92,8 +98,8 @@ static const unsigned char totalBytes[256] = {
  *---------------------------------------------------------------------------
  */
 
-int
-TclUtfCount(
+INLINE static int
+UtfCount(
     int ch)			/* The Tcl_UniChar whose size is returned. */
 {
     if ((unsigned)(ch - 1) < (UNICODE_SELF - 1)) {
@@ -128,7 +134,7 @@ TclUtfCount(
  *---------------------------------------------------------------------------
  */
 
-int
+INLINE int
 Tcl_UniCharToUtf(
     int ch,			/* The Tcl_UniChar to be stored in the
 				 * buffer. */
@@ -803,7 +809,7 @@ Tcl_UtfToUpper(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if (bytes < TclUtfCount(upChar)) {
+	if (bytes < UtfCount(upChar)) {
 	    memcpy(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {
@@ -856,7 +862,7 @@ Tcl_UtfToLower(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if (bytes < TclUtfCount(lowChar)) {
+	if (bytes < UtfCount(lowChar)) {
 	    memcpy(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {
@@ -906,7 +912,7 @@ Tcl_UtfToTitle(
 	bytes = TclUtfToUniChar(src, &ch);
 	titleChar = Tcl_UniCharToTitle(ch);
 
-	if (bytes < TclUtfCount(titleChar)) {
+	if (bytes < UtfCount(titleChar)) {
 	    memcpy(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {
@@ -918,7 +924,7 @@ Tcl_UtfToTitle(
 	bytes = TclUtfToUniChar(src, &ch);
 	lowChar = Tcl_UniCharToLower(ch);
 
-	if (bytes < TclUtfCount(lowChar)) {
+	if (bytes < UtfCount(lowChar)) {
 	    memcpy(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {

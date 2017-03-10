@@ -402,6 +402,7 @@ TclInitObjSubsystem(void)
     Tcl_RegisterObjType(&tclListType);
     Tcl_RegisterObjType(&tclDictType);
     Tcl_RegisterObjType(&tclByteCodeType);
+    Tcl_RegisterObjType(&tclArraySearchType);
     Tcl_RegisterObjType(&tclCmdNameType);
     Tcl_RegisterObjType(&tclRegexpType);
     Tcl_RegisterObjType(&tclProcBodyType);
@@ -2784,7 +2785,7 @@ Tcl_GetLongFromObj(
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
-                        Tcl_GetString(objPtr)));
+                        TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3085,7 +3086,7 @@ Tcl_GetWideIntFromObj(
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
-                        Tcl_GetString(objPtr)));
+                        TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3252,13 +3253,11 @@ UpdateStringOfBignum(
     if (status != MP_OKAY) {
 	Tcl_Panic("radix size failure in UpdateStringOfBignum");
     }
-    if (size == 3) {
+    if (size < 2) {
 	/*
-	 * mp_radix_size() returns 3 when more than INT_MAX bytes would be
+	 * mp_radix_size() returns < 2 when more than INT_MAX bytes would be
 	 * needed to hold the string rep (because mp_radix_size ignores
-	 * integer overflow issues). When we know the string rep will be more
-	 * than 3, we can conclude the string rep would overflow our string
-	 * length limits.
+	 * integer overflow issues).
 	 *
 	 * Note that so long as we enforce our bignums to the size that fits
 	 * in a packed bignum, this branch will never be taken.
@@ -3416,7 +3415,7 @@ GetBignumFromObj(
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
-                        Tcl_GetString(objPtr)));
+                        TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3966,7 +3965,7 @@ TclCompareObjKeys(
     Tcl_Obj *objPtr1 = keyPtr;
     Tcl_Obj *objPtr2 = (Tcl_Obj *) hPtr->key.oneWordValue;
     register const char *p1, *p2;
-    register int l1, l2;
+    register size_t l1, l2;
 
     /*
      * If the object pointers are the same then they match.
@@ -4047,7 +4046,7 @@ TclFreeObjEntry(
  *----------------------------------------------------------------------
  */
 
-TCL_HASH_TYPE
+unsigned int
 TclHashObjKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
@@ -4097,7 +4096,7 @@ TclHashObjKey(
 	    result += (result << 3) + UCHAR(*++string);
 	}
     }
-    return (TCL_HASH_TYPE) result;
+    return result;
 }
 
 /*
@@ -4151,10 +4150,11 @@ Tcl_GetCommandFromObj(
      */
 
     resPtr = objPtr->internalRep.twoPtrValue.ptr1;
-    if (objPtr->typePtr == &tclCmdNameType) {
+    if ((objPtr->typePtr == &tclCmdNameType) && (resPtr != NULL)) {
         register Command *cmdPtr = resPtr->cmdPtr;
 
         if ((cmdPtr->cmdEpoch == resPtr->cmdEpoch)
+                && !(cmdPtr->flags & CMD_IS_DELETED)
                 && (interp == cmdPtr->nsPtr->interp)
                 && !(cmdPtr->nsPtr->flags & NS_DYING)) {
             register Namespace *refNsPtr = (Namespace *)
@@ -4174,7 +4174,7 @@ Tcl_GetCommandFromObj(
      * had is invalid one way or another.
      */
 
-    /* See [07d13d99b0a9] why we cannot call SetCmdNameFromAny() directly here. */
+    /* See [] why we cannot call SetCmdNameFromAny() directly here. */
     if (tclCmdNameType.setFromAnyProc(interp, objPtr) != TCL_OK) {
         return NULL;
     }
@@ -4202,59 +4202,6 @@ Tcl_GetCommandFromObj(
  *----------------------------------------------------------------------
  */
 
-static void
-SetCmdNameObj(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr,
-    Command *cmdPtr,
-    ResolvedCmdName *resPtr)
-{
-    Interp *iPtr = (Interp *) interp;
-    ResolvedCmdName *fillPtr;
-    const char *name = TclGetString(objPtr);
-
-    if (resPtr) {
-	fillPtr = resPtr;
-    } else {
-	fillPtr = ckalloc(sizeof(ResolvedCmdName));
-	fillPtr->refCount = 1;
-    }
-
-    fillPtr->cmdPtr = cmdPtr;
-    cmdPtr->refCount++;
-    fillPtr->cmdEpoch = cmdPtr->cmdEpoch;
-
-    /* NOTE: relying on NULL termination here. */
-    if ((name[0] == ':') && (name[1] == ':')) {
-	/*
-	 * Fully qualified names always resolve to same thing. No need
-	 * to record resolution context information.
-	 */
-
-	fillPtr->refNsPtr = NULL;
-	fillPtr->refNsId = 0;		/* Will not be read */
-	fillPtr->refNsCmdEpoch = 0;	/* Will not be read */
-    } else {
-	/*
-	 * Record current state of current namespace as the resolution
-	 * context of this command name lookup.
-	 */
-	Namespace *currNsPtr = iPtr->varFramePtr->nsPtr;
-
-	fillPtr->refNsPtr = currNsPtr;
-	fillPtr->refNsId = currNsPtr->nsId;
-	fillPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
-    }
-
-    if (resPtr == NULL) {
-	TclFreeIntRep(objPtr);
-
-	objPtr->internalRep.twoPtrValue.ptr1 = fillPtr;
-	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-	objPtr->typePtr = &tclCmdNameType;
-    }
-}
-
 void
 TclSetCmdNameObj(
     Tcl_Interp *interp,		/* Points to interpreter containing command
@@ -4264,7 +4211,10 @@ TclSetCmdNameObj(
     Command *cmdPtr)		/* Points to Command structure that the
 				 * CmdName object should refer to. */
 {
+    Interp *iPtr = (Interp *) interp;
     register ResolvedCmdName *resPtr;
+    register Namespace *currNsPtr;
+    const char *name;
 
     if (objPtr->typePtr == &tclCmdNameType) {
 	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
@@ -4273,7 +4223,36 @@ TclSetCmdNameObj(
 	}
     }
 
-    SetCmdNameObj(interp, objPtr, cmdPtr, NULL);
+    cmdPtr->refCount++;
+    resPtr = ckalloc(sizeof(ResolvedCmdName));
+    resPtr->cmdPtr = cmdPtr;
+    resPtr->cmdEpoch = cmdPtr->cmdEpoch;
+    resPtr->refCount = 1;
+
+    name = TclGetString(objPtr);
+    if ((*name++ == ':') && (*name == ':')) {
+	/*
+	 * The name is fully qualified: set the referring namespace to
+	 * NULL.
+	 */
+
+	resPtr->refNsPtr = NULL;
+    } else {
+	/*
+	 * Get the current namespace.
+	 */
+
+	currNsPtr = iPtr->varFramePtr->nsPtr;
+
+	resPtr->refNsPtr = currNsPtr;
+	resPtr->refNsId = currNsPtr->nsId;
+	resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
+    }
+
+    TclFreeIntRep(objPtr);
+    objPtr->internalRep.twoPtrValue.ptr1 = resPtr;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    objPtr->typePtr = &tclCmdNameType;
 }
 
 /*
@@ -4304,6 +4283,7 @@ FreeCmdNameInternalRep(
 {
     register ResolvedCmdName *resPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
+    if (resPtr != NULL) {
 	/*
 	 * Decrement the reference count of the ResolvedCmdName structure. If
 	 * there are no more uses, free the ResolvedCmdName structure.
@@ -4321,6 +4301,7 @@ FreeCmdNameInternalRep(
 	    TclCleanupCommandMacro(cmdPtr);
 	    ckfree(resPtr);
 	}
+    }
     objPtr->typePtr = NULL;
 }
 
@@ -4353,7 +4334,9 @@ DupCmdNameInternalRep(
 
     copyPtr->internalRep.twoPtrValue.ptr1 = resPtr;
     copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    if (resPtr != NULL) {
 	resPtr->refCount++;
+    }
     copyPtr->typePtr = &tclCmdNameType;
 }
 
@@ -4383,8 +4366,10 @@ SetCmdNameFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
+    Interp *iPtr = (Interp *) interp;
     const char *name;
     register Command *cmdPtr;
+    Namespace *currNsPtr;
     register ResolvedCmdName *resPtr;
 
     if (interp == NULL) {
@@ -4404,31 +4389,59 @@ SetCmdNameFromAny(
 	    Tcl_FindCommand(interp, name, /*ns*/ NULL, /*flags*/ 0);
 
     /*
-     * Stop shimmering and caching nothing when we found nothing.  Just
-     * report the failure to find the command as an error.
+     * Free the old internalRep before setting the new one. Do this after
+     * getting the string rep to allow the conversion code (in particular,
+     * Tcl_GetStringFromObj) to use that old internalRep.
      */
 
-    if (cmdPtr == NULL) {
-	return TCL_ERROR;
-    }
+    if (cmdPtr) {
+	cmdPtr->refCount++;
+	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
+	if ((objPtr->typePtr == &tclCmdNameType)
+		&& resPtr && (resPtr->refCount == 1)) {
+	    /*
+	     * Reuse the old ResolvedCmdName struct instead of freeing it
+	     */
 
-    resPtr = objPtr->internalRep.twoPtrValue.ptr1;
-    if ((objPtr->typePtr == &tclCmdNameType) && (resPtr->refCount == 1)) {
-	/*
-	 * Re-use existing ResolvedCmdName struct when possible.
-	 * Cleanup the old fields that need it.
-	 */
+	    Command *oldCmdPtr = resPtr->cmdPtr;
 
-	Command *oldCmdPtr = resPtr->cmdPtr;
+	    if (--oldCmdPtr->refCount == 0) {
+		TclCleanupCommandMacro(oldCmdPtr);
+	    }
+	} else {
+	    TclFreeIntRep(objPtr);
+	    resPtr = ckalloc(sizeof(ResolvedCmdName));
+	    resPtr->refCount = 1;
+	    objPtr->internalRep.twoPtrValue.ptr1 = resPtr;
+	    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	    objPtr->typePtr = &tclCmdNameType;
+	}
+	resPtr->cmdPtr = cmdPtr;
+	resPtr->cmdEpoch = cmdPtr->cmdEpoch;
+	if ((*name++ == ':') && (*name == ':')) {
+	    /*
+	     * The name is fully qualified: set the referring namespace to
+	     * NULL.
+	     */
 
-	if (--oldCmdPtr->refCount == 0) {
-	    TclCleanupCommandMacro(oldCmdPtr);
+	    resPtr->refNsPtr = NULL;
+	} else {
+	    /*
+	     * Get the current namespace.
+	     */
+
+	    currNsPtr = iPtr->varFramePtr->nsPtr;
+
+	    resPtr->refNsPtr = currNsPtr;
+	    resPtr->refNsId = currNsPtr->nsId;
+	    resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
 	}
     } else {
-	resPtr = NULL;
+	TclFreeIntRep(objPtr);
+	objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	objPtr->typePtr = &tclCmdNameType;
     }
-
-    SetCmdNameObj(interp, objPtr, cmdPtr, resPtr);
     return TCL_OK;
 }
 

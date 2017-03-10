@@ -269,7 +269,7 @@ TclpMatchInDirectory(
 	Tcl_DString dsOrig;	/* utf-8 encoding of dir */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
+	dirName = Tcl_GetStringFromObj(fileNamePtr, &dirLength);
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	/*
@@ -951,7 +951,7 @@ TclpObjLink(
 	    if (transPtr == NULL) {
 		return NULL;
 	    }
-	    target = TclGetStringFromObj(transPtr, &targetLen);
+	    target = Tcl_GetStringFromObj(transPtr, &targetLen);
 	    target = Tcl_UtfToExternalDString(NULL, target, targetLen, &ds);
 	    Tcl_DecrRefCount(transPtr);
 
@@ -1105,7 +1105,7 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = TclGetStringFromObj(validPathPtr, &len);
+    str = Tcl_GetStringFromObj(validPathPtr, &len);
     Tcl_UtfToExternalDString(NULL, str, len, &ds);
     len = Tcl_DStringLength(&ds) + sizeof(char);
     if (strlen(Tcl_DStringValue(&ds)) < len - sizeof(char)) {

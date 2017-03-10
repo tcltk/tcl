@@ -26,19 +26,6 @@
 #undef ACCEPT_NAN
 
 /*
- * In Tcl 8.7, stop supporting special hacks for legacy Itcl 3.
- * Itcl 4 doesn't need them. Itcl 3 can be updated to not need them
- * using the Tcl(Init|Reset)RewriteEnsemble() routines in all Tcl 8.6+
- * releases.  Perhaps Tcl 8.7 will add even better public interfaces
- * supporting all the re-invocation mechanisms extensions like Itcl 3
- * need.  As an absolute last resort, folks who must make Itcl 3 work
- * unchanged with Tcl 8.7 can remove this line to regain the migration
- * support.  Tcl 9 will no longer offer even that option.
- */
-
-#define AVOID_HACKS_FOR_ITCL 1
-
-/*
  * Common include files needed by most of the Tcl source files are included
  * here, so that system-dependent personalizations for the include files only
  * have to be made in once place. This results in a few extra includes, but
@@ -2550,15 +2537,6 @@ typedef struct TclFileAttrProcs {
 } TclFileAttrProcs;
 
 /*
- * Private flag value which controls Tcl_GetIndexFromObj*() routines
- * to instruct them not to cache lookups because the table will not
- * live long enough to make it worthwhile.  Must not clash with public
- * flag value TCL_EXACT.
- */
-
-#define INDEX_TEMP_TABLE 2
-
-/*
  * Opaque handle used in pipeline routines to encapsulate platform-dependent
  * state.
  */
@@ -2709,6 +2687,7 @@ MODULE_SCOPE const Tcl_ObjType tclListType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
+MODULE_SCOPE const Tcl_ObjType tclArraySearchType;
 MODULE_SCOPE const Tcl_ObjType tclEnsembleCmdType;
 #ifndef TCL_WIDE_INT_IS_LONG
 MODULE_SCOPE const Tcl_ObjType tclWideIntType;
@@ -3156,7 +3135,6 @@ MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
-MODULE_SCOPE int	TclUtfCount(int ch);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
@@ -3991,7 +3969,7 @@ MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
 
 MODULE_SCOPE int	TclCompareObjKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 MODULE_SCOPE void	TclFreeObjEntry(Tcl_HashEntry *hPtr);
-MODULE_SCOPE TCL_HASH_TYPE TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
+MODULE_SCOPE unsigned	TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 MODULE_SCOPE int	TclFullFinalizationRequested(void);
 
@@ -4112,7 +4090,6 @@ MODULE_SCOPE void	TclFreeAllocCache(void *);
 MODULE_SCOPE void *	TclpGetAllocCache(void);
 MODULE_SCOPE void	TclpSetAllocCache(void *);
 MODULE_SCOPE void	TclpFreeAllocMutex(Tcl_Mutex *mutex);
-MODULE_SCOPE void	TclpInitAllocCache(void);
 MODULE_SCOPE void	TclpFreeAllocCache(void *);
 
 /*

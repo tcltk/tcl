@@ -29,7 +29,10 @@ _CRTIMP unsigned int __cdecl _controlfp (unsigned int unNew, unsigned int unMask
  */
 
 static CRITICAL_SECTION masterLock;
-static int initialized = 0;
+static int init = 0;
+#define MASTER_LOCK TclpMasterLock()
+#define MASTER_UNLOCK TclpMasterUnlock()
+
 
 /*
  * This is the master lock used to serialize initialization and finalization
@@ -107,7 +110,7 @@ static Tcl_ThreadDataKey dataKey;
  * the queue.
  */
 
-typedef struct {
+typedef struct WinCondition {
     CRITICAL_SECTION condLock;	/* Lock to serialize queuing on the
 				 * condition. */
     struct ThreadSpecificData *firstPtr;	/* Queue pointers */
@@ -119,9 +122,10 @@ typedef struct {
  */
 
 #ifdef USE_THREAD_ALLOC
+static int once;
 static DWORD tlsKey;
 
-typedef struct {
+typedef struct allocMutex {
     Tcl_Mutex	     tlock;
     CRITICAL_SECTION wlock;
 } allocMutex;
@@ -132,7 +136,7 @@ typedef struct {
  * to TclWinThreadStart.
  */
 
-typedef struct {
+typedef struct WinThread {
   LPTHREAD_START_ROUTINE lpStartAddress; /* Original startup routine */
   LPVOID lpParameter;		/* Original startup data */
   unsigned int fpControl;	/* Floating point control word from the
@@ -353,7 +357,7 @@ Tcl_GetCurrentThread(void)
 void
 TclpInitLock(void)
 {
-    if (!initialized) {
+    if (!init) {
 	/*
 	 * There is a fundamental race here that is solved by creating the
 	 * first Tcl interpreter in a single threaded environment. Once the
@@ -361,7 +365,7 @@ TclpInitLock(void)
 	 * that create interpreters in parallel.
 	 */
 
-	initialized = 1;
+	init = 1;
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&masterLock);
@@ -415,7 +419,7 @@ TclpInitUnlock(void)
 void
 TclpMasterLock(void)
 {
-    if (!initialized) {
+    if (!init) {
 	/*
 	 * There is a fundamental race here that is solved by creating the
 	 * first Tcl interpreter in a single threaded environment. Once the
@@ -423,7 +427,7 @@ TclpMasterLock(void)
 	 * that create interpreters in parallel.
 	 */
 
-	initialized = 1;
+	init = 1;
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&masterLock);
@@ -490,7 +494,7 @@ Tcl_GetAllocMutex(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclFinalizeLock
+ * TclpFinalizeLock
  *
  *	This procedure is used to destroy all private resources used in this
  *	file.
@@ -508,7 +512,7 @@ Tcl_GetAllocMutex(void)
 void
 TclFinalizeLock(void)
 {
-    TclpMasterLock();
+    MASTER_LOCK;
     DeleteCriticalSection(&joinLock);
 
     /*
@@ -516,7 +520,7 @@ TclFinalizeLock(void)
      */
 
     DeleteCriticalSection(&masterLock);
-    initialized = 0;
+    init = 0;
 
 #ifdef TCL_THREADS
     if (allocOnce) {
@@ -563,7 +567,7 @@ Tcl_MutexLock(
     CRITICAL_SECTION *csPtr;
 
     if (*mutexPtr == NULL) {
-	TclpMasterLock();
+	MASTER_LOCK;
 
 	/*
 	 * Double inside master lock check to avoid a race.
@@ -575,7 +579,7 @@ Tcl_MutexLock(
 	    *mutexPtr = (Tcl_Mutex)csPtr;
 	    TclRememberMutex(mutexPtr);
 	}
-	TclpMasterUnlock();
+	MASTER_UNLOCK;
     }
     csPtr = *((CRITICAL_SECTION **)mutexPtr);
     EnterCriticalSection(csPtr);
@@ -677,7 +681,7 @@ Tcl_ConditionWait(
      */
 
     if (tsdPtr->flags == WIN_THREAD_UNINIT) {
-	TclpMasterLock();
+	MASTER_LOCK;
 
 	/*
 	 * Create the per-thread event and queue pointers.
@@ -691,7 +695,7 @@ Tcl_ConditionWait(
 	    tsdPtr->flags = WIN_THREAD_RUNNING;
 	    doExit = 1;
 	}
-	TclpMasterUnlock();
+	MASTER_UNLOCK;
 
 	if (doExit) {
 	    /*
@@ -706,7 +710,7 @@ Tcl_ConditionWait(
     }
 
     if (*condPtr == NULL) {
-	TclpMasterLock();
+	MASTER_LOCK;
 
 	/*
 	 * Initialize the per-condition queue pointers and Mutex.
@@ -720,7 +724,7 @@ Tcl_ConditionWait(
 	    *condPtr = (Tcl_Condition) winCondPtr;
 	    TclRememberCondition(condPtr);
 	}
-	TclpMasterUnlock();
+	MASTER_UNLOCK;
     }
     csPtr = *((CRITICAL_SECTION **)mutexPtr);
     winCondPtr = *((WinCondition **)condPtr);
@@ -940,9 +944,9 @@ TclpFinalizeCondition(
 Tcl_Mutex *
 TclpNewAllocMutex(void)
 {
-    allocMutex *lockPtr;
+    struct allocMutex *lockPtr;
 
-    lockPtr = malloc(sizeof(allocMutex));
+    lockPtr = malloc(sizeof(struct allocMutex));
     if (lockPtr == NULL) {
 	Tcl_Panic("could not allocate lock");
     }
@@ -964,24 +968,24 @@ TclpFreeAllocMutex(
     free(lockPtr);
 }
 
-void
-TclpInitAllocCache(void)
-{
-    /*
-     * We need to make sure that TclpFreeAllocCache is called on each
-     * thread that calls this, but only on threads that call this.
-     */
-
-    tlsKey = TlsAlloc();
-    if (tlsKey == TLS_OUT_OF_INDEXES) {
-	Tcl_Panic("could not allocate thread local storage");
-    }
-}
-
 void *
 TclpGetAllocCache(void)
 {
     void *result;
+
+    if (!once) {
+	/*
+	 * We need to make sure that TclpFreeAllocCache is called on each
+	 * thread that calls this, but only on threads that call this.
+	 */
+
+	tlsKey = TlsAlloc();
+	once = 1;
+	if (tlsKey == TLS_OUT_OF_INDEXES) {
+	    Tcl_Panic("could not allocate thread local storage");
+	}
+    }
+
     result = TlsGetValue(tlsKey);
     if ((result == NULL) && (GetLastError() != NO_ERROR)) {
 	Tcl_Panic("TlsGetValue failed from TclpGetAllocCache");
@@ -1008,8 +1012,10 @@ TclpFreeAllocCache(
 
     if (ptr != NULL) {
 	/*
-	 * Called by us in TclpFinalizeThreadData when a thread exits and
-	 * destroys the tsd key which stores allocator caches.
+	 * Called by TclFinalizeThreadAlloc() and
+	 * TclFinalizeThreadAllocThread() during Tcl_Finalize() or
+	 * Tcl_FinalizeThread(). This function destroys the tsd key which
+	 * stores allocator caches in thread local storage.
 	 */
 
 	TclFreeAllocCache(ptr);
@@ -1017,7 +1023,7 @@ TclpFreeAllocCache(
 	if (!success) {
 	    Tcl_Panic("TlsSetValue failed from TclpFreeAllocCache");
 	}
-    } else {
+    } else if (once) {
 	/*
 	 * Called by us in TclFinalizeThreadAlloc() during the library
 	 * finalization initiated from Tcl_Finalize()
@@ -1027,7 +1033,9 @@ TclpFreeAllocCache(
 	if (!success) {
 	    Tcl_Panic("TlsFree failed from TclpFreeAllocCache");
 	}
+	once = 0; /* reset for next time. */
     }
+
 }
 #endif /* USE_THREAD_ALLOC */
 

@@ -8,4 +8,4 @@ dnl	include the configure sources from ../unix:
 
 m4_include(../unix/aclocal.m4)
 m4_define(SC_USE_CONFIG_HEADERS)
-m4_include(../unix/configure.ac)
+m4_include(../unix/configure.in)

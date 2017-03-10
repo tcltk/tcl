@@ -174,7 +174,7 @@ TclDeleteLiteralTable(
 Tcl_Obj *
 TclCreateLiteral(
     Interp *iPtr,
-    const char *bytes,	/* The start of the string. Note that this is
+    char *bytes,		/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
     int length,			/* Number of bytes in the string. */
     unsigned hash,		/* The string's hash. If -1, it will be
@@ -229,22 +229,20 @@ TclCreateLiteral(
     }
 
     /*
-     * The literal is new to the interpreter.
+     * The literal is new to the interpreter. Add it to the global literal
+     * table.
      */
 
     TclNewObj(objPtr);
     if ((flags & LITERAL_ON_HEAP)) {
-	objPtr->bytes = (char *) bytes;
+	objPtr->bytes = bytes;
 	objPtr->length = length;
     } else {
 	TclInitStringRep(objPtr, bytes, length);
     }
 
-    /* Should the new literal be shared globally? */
-
     if ((flags & LITERAL_UNSHARED)) {
 	/*
-	 * No, do *not* add it the global literal table
 	 * Make clear, that no global value is returned
 	 */
 	if (globalPtrPtr != NULL) {
@@ -253,9 +251,6 @@ TclCreateLiteral(
 	return objPtr;
     }
 
-    /*
-     * Yes, add it to the global literal table.
-     */
 #ifdef TCL_COMPILE_DEBUG
     if (LookupLiteralEntry((Tcl_Interp *) iPtr, objPtr) != NULL) {
 	Tcl_Panic("%s: literal \"%.*s\" found globally but shouldn't be",
@@ -375,7 +370,7 @@ int
 TclRegisterLiteral(
     void *ePtr,		/* Points to the CompileEnv in whose object
 				 * array an object is found or created. */
-    register const char *bytes,	/* Points to string for which to find or
+    register char *bytes,	/* Points to string for which to find or
 				 * create an object in CompileEnv's object
 				 * array. */
     int length,			/* Number of bytes in the string. If < 0, the
@@ -687,7 +682,7 @@ AddLocalLiteralEntry(
 	}
 
 	if (!found) {
-	    bytes = TclGetStringFromObj(objPtr, &length);
+	    bytes = Tcl_GetStringFromObj(objPtr, &length);
 	    Tcl_Panic("%s: literal \"%.*s\" wasn't found locally",
 		    "AddLocalLiteralEntry", (length>60? 60 : length), bytes);
 	}
@@ -1041,7 +1036,7 @@ TclInvalidateCmdLiteral(
 				 * invalidate a cmd literal. */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *literalObjPtr = TclCreateLiteral(iPtr, name,
+    Tcl_Obj *literalObjPtr = TclCreateLiteral(iPtr, (char *) name,
 	    strlen(name), -1, NULL, nsPtr, 0, NULL);
 
     if (literalObjPtr != NULL) {
@@ -1163,7 +1158,7 @@ TclVerifyLocalLiteralTable(
 		localPtr=localPtr->nextPtr) {
 	    count++;
 	    if (localPtr->refCount != -1) {
-		bytes = TclGetStringFromObj(localPtr->objPtr, &length);
+		bytes = Tcl_GetStringFromObj(localPtr->objPtr, &length);
 		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %d",
 			"TclVerifyLocalLiteralTable",
 			(length>60? 60 : length), bytes, localPtr->refCount);
@@ -1214,7 +1209,7 @@ TclVerifyGlobalLiteralTable(
 		globalPtr=globalPtr->nextPtr) {
 	    count++;
 	    if (globalPtr->refCount < 1) {
-		bytes = TclGetStringFromObj(globalPtr->objPtr, &length);
+		bytes = Tcl_GetStringFromObj(globalPtr->objPtr, &length);
 		Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
 			"TclVerifyGlobalLiteralTable",
 			(length>60? 60 : length), bytes, globalPtr->refCount);

@@ -1677,7 +1677,7 @@ InfoLibraryCmd(
 	return TCL_ERROR;
     }
 
-    libDirName = Tcl_GetVar2(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
+    libDirName = Tcl_GetVar(interp, "tcl_library", TCL_GLOBAL_ONLY);
     if (libDirName != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(libDirName, -1));
 	return TCL_OK;
@@ -1803,7 +1803,7 @@ InfoPatchLevelCmd(
 	return TCL_ERROR;
     }
 
-    patchlevel = Tcl_GetVar2(interp, "tcl_patchLevel", NULL,
+    patchlevel = Tcl_GetVar(interp, "tcl_patchLevel",
 	    (TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG));
     if (patchlevel != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(patchlevel, -1));
@@ -2179,6 +2179,14 @@ Tcl_JoinObjCmd(
     resObjPtr = Tcl_NewObj();
     for (i = 0;  i < listLen;  i++) {
 	if (i > 0) {
+
+	    /*
+	     * NOTE: This code is relying on Tcl_AppendObjToObj() **NOT**
+	     * to shimmer joinObjPtr.  If it did, then the case where
+	     * objv[1] and objv[2] are the same value would not be safe.
+	     * Accessing elemPtrs would crash.
+	     */
+
 	    Tcl_AppendObjToObj(resObjPtr, joinObjPtr);
 	}
 	Tcl_AppendObjToObj(resObjPtr, elemPtrs[i]);

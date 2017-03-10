@@ -45,7 +45,8 @@ linked to the corresponding namespace variables (and therefore these
 variables are listed by \fBinfo vars\fR.)
 In this way the \fBvariable\fR command resembles the \fBglobal\fR command,
 although the \fBglobal\fR command
-only links to variables in the global namespace.
+resolves variable names with respect to the global namespace instead
+of the current namespace of the procedure.
 If any \fIvalue\fRs are given,
 they are used to modify the values of the associated namespace variables.
 If a namespace variable does not exist,
@@ -98,3 +99,7 @@ namespace eval foo {
 global(n), namespace(n), upvar(n)
 .SH KEYWORDS
 global, namespace, procedure, variable
+.\" Local variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:

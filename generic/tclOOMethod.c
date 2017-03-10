@@ -1166,7 +1166,7 @@ MethodErrorHandler(
     CallContext *contextPtr = ((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     const char *objectName, *kindName, *methodName =
-	    TclGetStringFromObj(mPtr->namePtr, &nameLen);
+	    Tcl_GetStringFromObj(mPtr->namePtr, &nameLen);
     Object *declarerPtr;
 
     if (mPtr->declaringObjectPtr != NULL) {

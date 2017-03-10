@@ -113,12 +113,12 @@ the build instructions.
 #		memdbg   = Enables the debugging memory allocator.
 #
 #	CHECKS=64bit,fullwarn,nodep,none
-#		Sets special macros for checking compatability.
+#		Sets special macros for checking compatibility.
 #
 #		64bit    = Enable 64bit portability warnings (if available)
 #		fullwarn = Builds with full compiler and link warnings enabled.
 #			    Very verbose.
-#		nodep	 = Turns off compatability macros to ensure the core
+#		nodep	 = Turns off compatibility macros to ensure the core
 #			    isn't being built with deprecated functions.
 #
 #	MACHINE=(ALPHA|AMD64|IA64|IX86)
@@ -945,6 +945,9 @@ $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 $(TMP_DIR)\tclZlib.obj: $(GENERICDIR)\tclZlib.c
 	$(cc32) $(TCL_CFLAGS) -I$(COMPATDIR)\zlib -DBUILD_tcl -Fo$@ $?
 
+$(TMP_DIR)\zipfs.obj: $(GENERICDIR)\zipfs.c
+	$(cc32) $(TCL_CFLAGS) -I$(COMPATDIR)\zlib -DBUILD_tcl -Fo$@ $?
+
 $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) \
 	-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR:\=\\)\"" \
@@ -1118,6 +1121,7 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@$(CPY) "$(GENERICDIR)\tclDecls.h"        "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclOO.h"           "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclOODecls.h"      "$(INCLUDE_INSTALL_DIR)\"
+	@$(CPY) "$(GENERICDIR)\tclZipfs.h"        "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclPlatDecls.h"    "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMath.h"      "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMathDecls.h" "$(INCLUDE_INSTALL_DIR)\"

@@ -38,10 +38,9 @@ extern "C" {
  * update the version numbers:
  *
  * library/init.tcl	(1 LOC patch)
- * unix/configure.ac	(2 LOC Major, 2 LOC minor, 1 LOC patch)
- * win/configure.ac	(as above)
+ * unix/configure.in	(2 LOC Major, 2 LOC minor, 1 LOC patch)
+ * win/configure.in	(as above)
  * win/tcl.m4		(not patchlevel)
- * win/makefile.bc	(not patchlevel) 2 LOC
  * README		(sections 0 and 2, with and without separator)
  * macosx/Tcl.pbproj/project.pbxproj (not patchlevel) 1 LOC
  * macosx/Tcl.pbproj/default.pbxuser (not patchlevel) 1 LOC
@@ -54,12 +53,12 @@ extern "C" {
  */
 
 #define TCL_MAJOR_VERSION   8
-#define TCL_MINOR_VERSION   7
-#define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  0
+#define TCL_MINOR_VERSION   6
+#define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
+#define TCL_RELEASE_SERIAL  6
 
-#define TCL_VERSION	    "8.7"
-#define TCL_PATCH_LEVEL	    "8.7a0"
+#define TCL_VERSION	    "8.6"
+#define TCL_PATCH_LEVEL	    "8.6.6"
 
 /*
  *----------------------------------------------------------------------------
@@ -144,7 +143,6 @@ extern "C" {
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #   define TCL_NORETURN __attribute__ ((noreturn))
-#   define TCL_NOINLINE __attribute__ ((noinline))
 #   if defined(BUILD_tcl) || defined(BUILD_tk)
 #	define TCL_NORETURN1 __attribute__ ((noreturn))
 #   else
@@ -154,10 +152,8 @@ extern "C" {
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER) && (_MSC_VER >= 1310)
 #	define TCL_NORETURN _declspec(noreturn)
-#	define TCL_NOINLINE __declspec(noinline)
 #   else
 #	define TCL_NORETURN /* nothing */
-#	define TCL_NOINLINE /* nothing */
 #   endif
 #   define TCL_NORETURN1 /* nothing */
 #endif
@@ -1157,19 +1153,27 @@ typedef struct Tcl_DString {
  * Forward declarations of Tcl_HashTable and related types.
  */
 
-#ifndef TCL_HASH_TYPE
-#  define TCL_HASH_TYPE unsigned
-#endif
-
 typedef struct Tcl_HashKeyType Tcl_HashKeyType;
 typedef struct Tcl_HashTable Tcl_HashTable;
 typedef struct Tcl_HashEntry Tcl_HashEntry;
 
-typedef TCL_HASH_TYPE (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
+typedef unsigned (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
 typedef int (Tcl_CompareHashKeysProc) (void *keyPtr, Tcl_HashEntry *hPtr);
 typedef Tcl_HashEntry * (Tcl_AllocHashEntryProc) (Tcl_HashTable *tablePtr,
 	void *keyPtr);
 typedef void (Tcl_FreeHashEntryProc) (Tcl_HashEntry *hPtr);
+
+/*
+ * This flag controls whether the hash table stores the hash of a key, or
+ * recalculates it. There should be no reason for turning this flag off as it
+ * is completely binary and source compatible unless you directly access the
+ * bucketPtr member of the Tcl_HashTableEntry structure. This member has been
+ * removed and the space used to store the hash value.
+ */
+
+#ifndef TCL_HASH_KEY_STORE_HASH
+#   define TCL_HASH_KEY_STORE_HASH 1
+#endif
 
 /*
  * Structure definition for an entry in a hash table. No-one outside Tcl
@@ -1180,9 +1184,15 @@ struct Tcl_HashEntry {
     Tcl_HashEntry *nextPtr;	/* Pointer to next entry in this hash bucket,
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
+#if TCL_HASH_KEY_STORE_HASH
     void *hash;			/* Hash value, stored as pointer to ensure
 				 * that the offsets of the fields in this
 				 * structure are not changed. */
+#else
+    Tcl_HashEntry **bucketPtr;	/* Pointer to bucket that points to first
+				 * entry in this entry's chain: used for
+				 * deleting the entry. */
+#endif
     ClientData clientData;	/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */
@@ -1319,9 +1329,9 @@ typedef struct Tcl_HashSearch {
  * TCL_CUSTOM_PTR_KEYS:		The keys are pointers to arbitrary types, the
  *				pointer is stored in the entry.
  *
- * While maintaining binary compatability the above have to be distinct values
+ * While maintaining binary compatibility the above have to be distinct values
  * as they are used to differentiate between old versions of the hash table
- * which don't have a typePtr and new ones which do. Once binary compatability
+ * which don't have a typePtr and new ones which do. Once binary compatibility
  * is discarded in favour of making more wide spread changes TCL_STRING_KEYS
  * can be the same as TCL_CUSTOM_TYPE_KEYS, and TCL_ONE_WORD_KEYS can be the
  * same as TCL_CUSTOM_PTR_KEYS because they simply determine how the key is
@@ -2381,6 +2391,9 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  *----------------------------------------------------------------------------
  * The following constant is used to test for older versions of Tcl in the
  * stubs tables.
+ *
+ * Jan Nijtman's plus patch uses 0xFCA1BACF, so we need to pick a different
+ * value since the stubs tables don't match.
  */
 
 #define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
@@ -2393,19 +2406,17 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  */
 
 const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
-			    int exact, int magic);
+			    int exact);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
-#ifdef USE_TCL_STUBS
+/*
+ * When not using stubs, make it a macro.
+ */
+
+#ifndef USE_TCL_STUBS
 #define Tcl_InitStubs(interp, version, exact) \
-    (Tcl_InitStubs)(interp, version, \
-	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
-	    TCL_STUB_MAGIC)
-#else
-#define Tcl_InitStubs(interp, version, exact) \
-    Tcl_PkgInitStubsCheck(interp, version, \
-	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
+    Tcl_PkgInitStubsCheck(interp, version, exact)
 #endif
 
 /*
@@ -2619,7 +2630,9 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #   define Tcl_Ckrealloc	Tcl_Realloc
 #   define Tcl_Return		Tcl_SetResult
 #   define Tcl_TildeSubst	Tcl_TranslateFileName
+#if !defined(__APPLE__) /* On OSX, there is a conflict with "mach/mach.h" */
 #   define panic		Tcl_Panic
+#endif
 #   define panicVA		Tcl_PanicVA
 #endif /* !TCL_NO_DEPRECATED */
 
