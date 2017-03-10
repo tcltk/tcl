@@ -266,7 +266,7 @@ TclOOInit(
      * to be fully provided.
      */
 
-    if (Tcl_EvalEx(interp, initScript, -1, 0) != TCL_OK) {
+    if (Tcl_Eval(interp, initScript) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -460,7 +460,7 @@ InitFoundation(
     if (TclOODefineSlots(fPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
-    return Tcl_EvalEx(interp, slotScript, -1, 0);
+    return Tcl_Eval(interp, slotScript);
 }
 
 /*

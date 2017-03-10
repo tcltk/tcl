@@ -1526,7 +1526,7 @@ GetWinFileAttributes(
 	 */
 
 	int len;
-	const char *str = TclGetStringFromObj(fileName,&len);
+	const char *str = Tcl_GetStringFromObj(fileName,&len);
 
 	if (len < 4) {
 	    if (len == 0) {
@@ -1615,7 +1615,7 @@ ConvertFileNameFormat(
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
-	pathv = TclGetStringFromObj(elt, &pathLen);
+	pathv = Tcl_GetStringFromObj(elt, &pathLen);
 	if ((pathv[0] == '/') || ((pathLen == 3) && (pathv[1] == ':'))
 		|| (strcmp(pathv, ".") == 0) || (strcmp(pathv, "..") == 0)) {
 	    /*
@@ -1653,7 +1653,7 @@ ConvertFileNameFormat(
 	     */
 
 	    Tcl_DStringInit(&ds);
-	    tempString = TclGetStringFromObj(tempPath,&tempLen);
+	    tempString = Tcl_GetStringFromObj(tempPath,&tempLen);
 	    nativeName = Tcl_WinUtfToTChar(tempString, tempLen, &ds);
 	    Tcl_DecrRefCount(tempPath);
 	    handle = FindFirstFile(nativeName, &data);

@@ -866,7 +866,7 @@ CompileAssembleObj(
 	 * Not valid, so free it and regenerate.
 	 */
 
-	TclFreeIntRep(objPtr);
+	FreeAssembleCodeInternalRep(objPtr);
     }
 
     /*
@@ -891,13 +891,15 @@ CompileAssembleObj(
      */
 
     TclEmitOpcode(INST_DONE, &compEnv);
-    codePtr = TclInitByteCodeObj(objPtr, &assembleCodeType, &compEnv);
+    TclInitByteCodeObj(objPtr, &compEnv);
+    objPtr->typePtr = &assembleCodeType;
     TclFreeCompileEnv(&compEnv);
 
     /*
      * Record the local variable context to which the bytecode pertains
      */
 
+    codePtr = objPtr->internalRep.twoPtrValue.ptr1;
     if (iPtr->varFramePtr->localCachePtr) {
 	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	codePtr->localCachePtr->refCount++;
@@ -1299,8 +1301,8 @@ AssembleOneLine(
 	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	}
-	operand1 = TclGetStringFromObj(operand1Obj, &operand1Len);
-	litIndex = TclRegisterLiteral(envPtr, operand1, operand1Len, 0);
+	operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
+	litIndex = TclRegisterNewLiteral(envPtr, operand1, operand1Len);
 	BBEmitInst1or4(assemEnvPtr, tblIdx, litIndex, 0);
 	break;
 
@@ -1448,8 +1450,8 @@ AssembleOneLine(
 		&operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	} else {
-	    operand1 = TclGetStringFromObj(operand1Obj, &operand1Len);
-	    litIndex = TclRegisterLiteral(envPtr, operand1, operand1Len, 0);
+	    operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
+	    litIndex = TclRegisterNewLiteral(envPtr, operand1, operand1Len);
 
 	    /*
 	     * Assumes that PUSH is the first slot!
@@ -2288,7 +2290,7 @@ FindLocalVar(
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &varNameObj) != TCL_OK) {
 	return -1;
     }
-    varNameStr = TclGetStringFromObj(varNameObj, &varNameLen);
+    varNameStr = Tcl_GetStringFromObj(varNameObj, &varNameLen);
     if (CheckNamespaceQualifiers(interp, varNameStr, varNameLen)) {
 	Tcl_DecrRefCount(varNameObj);
 	return -1;
@@ -3541,7 +3543,7 @@ StackCheckExit(
 	     * Emit a 'push' of the empty literal.
 	     */
 
-	    litIndex = TclRegisterLiteral(envPtr, "", 0, 0);
+	    litIndex = TclRegisterNewLiteral(envPtr, "", 0);
 
 	    /*
 	     * Assumes that 'push' is at slot 0 in TalInstructionTable.
@@ -4313,7 +4315,11 @@ FreeAssembleCodeInternalRep(
 {
     ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    TclReleaseByteCode(codePtr);
+    codePtr->refCount--;
+    if (codePtr->refCount <= 0) {
+	TclCleanupByteCode(codePtr);
+    }
+    objPtr->typePtr = NULL;
 }
 
 /*

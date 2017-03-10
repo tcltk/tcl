@@ -57,9 +57,14 @@ proc copyright {copyright {level {}}} {
 }
 
 proc copyout {copyrights {level {}}} {
+    set count 0
     set out "<div class=\"copy\">"
     foreach c $copyrights {
+	if {$count > 0} {
+	    append out <BR>
+	}
 	append out "[copyright $c $level]\n"
+	incr count
     }
     append out "</div>"
     return $out

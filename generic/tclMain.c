@@ -112,7 +112,7 @@ typedef enum {
     PROMPT_CONTINUE		/* Print prompt for command continuation */
 } PromptType;
 
-typedef struct {
+typedef struct InteractiveState {
     Tcl_Channel input;		/* The standard input channel from which lines
 				 * are read. */
     int tty;			/* Non-zero means standard input is a
@@ -246,7 +246,7 @@ Tcl_SourceRCFile(
     const char *fileName;
     Tcl_Channel chan;
 
-    fileName = Tcl_GetVar2(interp, "tcl_rcFileName", NULL, TCL_GLOBAL_ONLY);
+    fileName = Tcl_GetVar(interp, "tcl_rcFileName", TCL_GLOBAL_ONLY);
     if (fileName != NULL) {
 	Tcl_Channel c;
 	const char *fullName;
@@ -266,18 +266,14 @@ Tcl_SourceRCFile(
 
 	    c = Tcl_OpenFileChannel(NULL, fullName, "r", 0);
 	    if (c != NULL) {
-		Tcl_Obj *fullNameObj = Tcl_NewStringObj(fullName, -1);
-
 		Tcl_Close(NULL, c);
-		Tcl_IncrRefCount(fullNameObj);
-		if (Tcl_FSEvalFileEx(interp, fullNameObj, NULL) != TCL_OK) {
+		if (Tcl_EvalFile(interp, fullName) != TCL_OK) {
 		    chan = Tcl_GetStdChannel(TCL_STDERR);
 		    if (chan) {
 			Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
 			Tcl_WriteChars(chan, "\n", 1);
 		    }
 		}
-		Tcl_DecrRefCount(fullNameObj);
 	    }
 	}
 	Tcl_DStringFree(&temp);
@@ -287,7 +283,7 @@ Tcl_SourceRCFile(
 
 /*----------------------------------------------------------------------
  *
- * Tcl_MainEx --
+ * Tcl_Main, Tcl_MainEx --
  *
  *	Main program for tclsh and most other Tcl-based applications.
  *
@@ -536,7 +532,7 @@ Tcl_MainEx(
 	     * error messages troubles deeper in, so lop it back off.
 	     */
 
-	    TclGetStringFromObj(is.commandPtr, &length);
+	    Tcl_GetStringFromObj(is.commandPtr, &length);
 	    Tcl_SetObjLength(is.commandPtr, --length);
 	    code = Tcl_RecordAndEvalObj(interp, is.commandPtr,
 		    TCL_EVAL_GLOBAL);
@@ -553,7 +549,7 @@ Tcl_MainEx(
 	    } else if (is.tty) {
 		resultPtr = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(resultPtr);
-		TclGetStringFromObj(resultPtr, &length);
+		Tcl_GetStringFromObj(resultPtr, &length);
 		chan = Tcl_GetStdChannel(TCL_STDOUT);
 		if ((length > 0) && chan) {
 		    Tcl_WriteObj(chan, resultPtr);
@@ -638,6 +634,21 @@ Tcl_MainEx(
 
     Tcl_Exit(exitCode);
 }
+
+#if (TCL_MAJOR_VERSION == 8) && !defined(UNICODE)
+#undef Tcl_Main
+extern DLLEXPORT void
+Tcl_Main(
+    int argc,			/* Number of arguments. */
+    char **argv,		/* Array of argument strings. */
+    Tcl_AppInitProc *appInitProc)
+				/* Application-specific initialization
+				 * function to call after most initialization
+				 * but before starting to execute commands. */
+{
+    Tcl_MainEx(argc, argv, appInitProc, Tcl_CreateInterp());
+}
+#endif /* TCL_MAJOR_VERSION == 8 && !UNICODE */
 
 #ifndef TCL_ASCII_MAIN
 
@@ -797,7 +808,7 @@ StdinProc(
 	goto prompt;
     }
     isPtr->prompt = PROMPT_START;
-    TclGetStringFromObj(commandPtr, &length);
+    Tcl_GetStringFromObj(commandPtr, &length);
     Tcl_SetObjLength(commandPtr, --length);
 
     /*
@@ -828,7 +839,7 @@ StdinProc(
 	chan = Tcl_GetStdChannel(TCL_STDOUT);
 
 	Tcl_IncrRefCount(resultPtr);
-	TclGetStringFromObj(resultPtr, &length);
+	Tcl_GetStringFromObj(resultPtr, &length);
 	if ((length > 0) && (chan != NULL)) {
 	    Tcl_WriteObj(chan, resultPtr);
 	    Tcl_WriteChars(chan, "\n", 1);

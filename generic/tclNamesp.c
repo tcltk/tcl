@@ -2886,9 +2886,9 @@ GetNamespaceFromObj(
 	resNamePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	nsPtr = resNamePtr->nsPtr;
 	refNsPtr = resNamePtr->refNsPtr;
-	if (!(nsPtr->flags & NS_DYING) && (interp == nsPtr->interp)
-		&& (!refNsPtr || (refNsPtr ==
-		(Namespace *) TclGetCurrentNamespace(interp)))) {
+	if (!(nsPtr->flags & NS_DYING) && (interp == nsPtr->interp) &&
+		(!refNsPtr || ((interp == refNsPtr->interp) &&
+		(refNsPtr== (Namespace *) Tcl_GetCurrentNamespace(interp))))){
 	    *nsPtrPtr = (Tcl_Namespace *) nsPtr;
 	    return TCL_OK;
 	}
@@ -4782,7 +4782,7 @@ SetNsNameFromAny(
     if ((name[0] == ':') && (name[1] == ':')) {
 	resNamePtr->refNsPtr = NULL;
     } else {
-	resNamePtr->refNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
+	resNamePtr->refNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     }
     resNamePtr->refCount = 1;
     TclFreeIntRep(objPtr);

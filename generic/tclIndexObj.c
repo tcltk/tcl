@@ -114,13 +114,14 @@ Tcl_GetIndexFromObj(
     int flags,			/* 0 or TCL_EXACT */
     int *indexPtr)		/* Place to store resulting integer index. */
 {
+
     /*
      * See if there is a valid cached result from a previous lookup (doing the
      * check here saves the overhead of calling Tcl_GetIndexFromObjStruct in
      * the common case where the result is cached).
      */
 
-    if (!(flags & INDEX_TEMP_TABLE) && objPtr->typePtr == &indexType) {
+    if (objPtr->typePtr == &indexType) {
 	IndexRep *indexRep = objPtr->internalRep.twoPtrValue.ptr1;
 
 	/*
@@ -210,8 +211,13 @@ GetIndexFromObjList(
     tablePtr[objc] = NULL;
 
     result = Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr,
-	    sizeof(char *), msg, flags | INDEX_TEMP_TABLE, indexPtr);
+	    sizeof(char *), msg, flags, indexPtr);
 
+    /*
+     * The internal rep must be cleared since tablePtr will go away.
+     */
+
+    TclFreeIntRep(objPtr);
     ckfree(tablePtr);
 
     return result;
@@ -273,7 +279,7 @@ Tcl_GetIndexFromObjStruct(
      * See if there is a valid cached result from a previous lookup.
      */
 
-    if (!(flags & INDEX_TEMP_TABLE) && objPtr->typePtr == &indexType) {
+    if (objPtr->typePtr == &indexType) {
 	indexRep = objPtr->internalRep.twoPtrValue.ptr1;
 	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
 	    *indexPtr = indexRep->index;
@@ -334,19 +340,17 @@ Tcl_GetIndexFromObjStruct(
      * operation.
      */
 
-    if (!(flags & INDEX_TEMP_TABLE)) {
-	if (objPtr->typePtr == &indexType) {
-	    indexRep = objPtr->internalRep.twoPtrValue.ptr1;
-	} else {
-	    TclFreeIntRep(objPtr);
-	    indexRep = ckalloc(sizeof(IndexRep));
-	    objPtr->internalRep.twoPtrValue.ptr1 = indexRep;
-	    objPtr->typePtr = &indexType;
-	}
-	indexRep->tablePtr = (void *) tablePtr;
-	indexRep->offset = offset;
-	indexRep->index = index;
+    if (objPtr->typePtr == &indexType) {
+	indexRep = objPtr->internalRep.twoPtrValue.ptr1;
+    } else {
+	TclFreeIntRep(objPtr);
+	indexRep = ckalloc(sizeof(IndexRep));
+	objPtr->internalRep.twoPtrValue.ptr1 = indexRep;
+	objPtr->typePtr = &indexType;
     }
+    indexRep->tablePtr = (void *) tablePtr;
+    indexRep->offset = offset;
+    indexRep->index = index;
 
     *indexPtr = index;
     return TCL_OK;
@@ -708,10 +712,10 @@ PrefixAllObjCmd(
 	return result;
     }
     resultPtr = Tcl_NewListObj(0, NULL);
-    string = TclGetStringFromObj(objv[2], &length);
+    string = Tcl_GetStringFromObj(objv[2], &length);
 
     for (t = 0; t < tableObjc; t++) {
-	elemString = TclGetStringFromObj(tableObjv[t], &elemLength);
+	elemString = Tcl_GetStringFromObj(tableObjv[t], &elemLength);
 
 	/*
 	 * A prefix cannot match if it is longest.
@@ -764,13 +768,13 @@ PrefixLongestObjCmd(
     if (result != TCL_OK) {
 	return result;
     }
-    string = TclGetStringFromObj(objv[2], &length);
+    string = Tcl_GetStringFromObj(objv[2], &length);
 
     resultString = NULL;
     resultLength = 0;
 
     for (t = 0; t < tableObjc; t++) {
-	elemString = TclGetStringFromObj(tableObjv[t], &elemLength);
+	elemString = Tcl_GetStringFromObj(tableObjv[t], &elemLength);
 
 	/*
 	 * First check if the prefix string matches the element. A prefix
@@ -1144,7 +1148,7 @@ Tcl_ParseArgsObjv(
 	curArg = objv[srcIndex];
 	srcIndex++;
 	objc--;
-	str = TclGetStringFromObj(curArg, &length);
+	str = Tcl_GetStringFromObj(curArg, &length);
 	if (length > 0) {
 	    c = str[1];
 	} else {

@@ -34,6 +34,16 @@
 #endif
 
 /*
+ * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the Dde_Init
+ * declaration is in the source file itself, which is only accessed when we
+ * are building a library. DO NOT MOVE BEFORE ANY #include LINES. ONLY USE
+ * EXTERN TO INDICATE EXPORTED FUNCTIONS FROM NOW ON.
+ */
+
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLEXPORT
+
+/*
  * The following structure is used to keep track of the interpreters
  * registered by this process.
  */
@@ -59,15 +69,15 @@ typedef struct Conversation {
     Tcl_Obj *returnPackagePtr;	/* The result package for this conversation. */
 } Conversation;
 
-struct DdeEnumServices {
+typedef struct DdeEnumServices {
     Tcl_Interp *interp;
     int result;
     ATOM service;
     ATOM topic;
     HWND hwnd;
-};
+} DdeEnumServices;
 
-typedef struct {
+typedef struct ThreadSpecificData {
     Conversation *currentConversations;
 				/* A list of conversations currently being
 				 * processed. */
@@ -125,8 +135,8 @@ static int		DdeObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
-DLLEXPORT int	Dde_Init(Tcl_Interp *interp);
-DLLEXPORT int	Dde_SafeInit(Tcl_Interp *interp);
+EXTERN int		Dde_Init(Tcl_Interp *interp);
+EXTERN int		Dde_SafeInit(Tcl_Interp *interp);
 
 /*
  *----------------------------------------------------------------------
@@ -389,7 +399,7 @@ DdeSetServerName(
 		Tcl_DString ds;
 
 		Tcl_ListObjIndex(interp, srvPtrPtr[n], 1, &namePtr);
-		Tcl_WinUtfToTChar(Tcl_GetString(namePtr), -1, &ds);
+	    Tcl_WinUtfToTChar(Tcl_GetString(namePtr), -1, &ds);
 		if (_tcscmp(actualName, (TCHAR *)Tcl_DStringValue(&ds)) == 0) {
 		    suffix++;
 		    Tcl_DStringFree(&ds);
@@ -1747,7 +1757,8 @@ DdeObjCmd(
 		    objPtr = Tcl_GetVar2Ex(sendInterp, "errorInfo", NULL,
 			    TCL_GLOBAL_ONLY);
 		    if (objPtr) {
-			Tcl_AppendObjToErrorInfo(interp, objPtr);
+			string = Tcl_GetStringFromObj(objPtr, &length);
+			Tcl_AddObjErrorInfo(interp, string, length);
 		    }
 
 		    objPtr = Tcl_GetVar2Ex(sendInterp, "errorCode", NULL,
@@ -1842,7 +1853,9 @@ DdeObjCmd(
 			Tcl_DecrRefCount(resultPtr);
 			goto invalidServerResponse;
 		    }
-		    Tcl_AppendObjToErrorInfo(interp, objPtr);
+		    length = -1;
+		    string = Tcl_GetStringFromObj(objPtr, &length);
+		    Tcl_AddObjErrorInfo(interp, string, length);
 
 		    Tcl_ListObjIndex(NULL, resultPtr, 2, &objPtr);
 		    Tcl_SetObjErrorCode(interp, objPtr);

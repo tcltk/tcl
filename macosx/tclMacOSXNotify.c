@@ -217,7 +217,7 @@ typedef struct FileHandler {
  * handlers are ready to fire.
  */
 
-typedef struct {
+typedef struct FileHandlerEvent {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     int fd;			/* File descriptor that is ready. Used to find
@@ -232,7 +232,7 @@ typedef struct {
  * writable, and exceptional conditions.
  */
 
-typedef struct {
+typedef struct SelectMasks {
     fd_set readable;
     fd_set writable;
     fd_set exceptional;
