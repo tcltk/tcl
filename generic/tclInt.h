@@ -4521,6 +4521,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     do {							\
 	TclInvalidateStringRep(objPtr);				\
 	TclFreeIntRep(objPtr);					\
+	(objPtr)->internalRep.twoPtrValue.ptr2 = NULL;		\
 	(objPtr)->internalRep.doubleValue = (double)(d);	\
 	(objPtr)->typePtr = &tclDoubleType;			\
     } while (0)
@@ -4570,6 +4571,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	TclAllocObjStorage(objPtr);				\
 	(objPtr)->refCount = 0;					\
 	(objPtr)->bytes = NULL;					\
+	(objPtr)->internalRep.twoPtrValue.ptr2 = NULL;		\
 	(objPtr)->internalRep.doubleValue = (double)(d);	\
 	(objPtr)->typePtr = &tclDoubleType;			\
 	TCL_DTRACE_OBJ_CREATE(objPtr);				\
