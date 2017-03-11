@@ -830,15 +830,9 @@ ProcParseArgSpec(
 
 	    /*
 	     * Handle '-value value'. Must only be specified inside
-	     * a name group and if a default option has already been
-	     * set.
+	     * a name group.
 	     */
 
-	    if (localPtr->defValuePtr == NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"-default required for -value", -1));
-		goto parseError;
-	    }
 	    if (lastArgSpecPtr == NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"-name required for -value", -1));
@@ -1867,7 +1861,7 @@ InitArgsWithOptions(
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     register Proc *procPtr = framePtr->procPtr;
     register Var *varPtr = framePtr->compiledLocals;
-    int numArgs = procPtr->numArgs, i, iLocal, iArg;
+    int numArgs = procPtr->numArgs, iLocal, iArg;
     Tcl_Obj *objPtr;
     CompiledLocal *localPtr, *namedLocalPtr;
     ExtendedArgSpec *argSpecPtr;
@@ -1900,7 +1894,8 @@ InitArgsWithOptions(
 		optStr = TclGetString(argObjs[iArg]);
 
 		if (*optStr != '-') {
-		    return TCL_ERROR;
+		    /* argument without leading dash, end named group */
+		    break;
 		}
 
 		optStr++;
@@ -2787,7 +2782,6 @@ void
 TclProcCleanupProc(
     register Proc *procPtr)	/* Procedure to be deleted. */
 {
-    register CompiledLocal *localPtr;
     Tcl_Obj *bodyPtr = procPtr->bodyPtr;
     Tcl_HashEntry *hePtr = NULL;
     CmdFrame *cfPtr = NULL;

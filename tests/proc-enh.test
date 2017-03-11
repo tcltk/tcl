@@ -39,8 +39,9 @@ test proc-enh-1.6 {-value without -name} {
 test proc-enh-1.7 {-value without -default} {
     list [catch {
 	proc p { { a -name foo -value 1 } } { }
+	p
     } msg] $msg $errorCode
-} {1 {-default required for -value} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+} {1 {wrong # args: should be "p |-foo|"} {TCL WRONGARGS}}
 test proc-enh-1.8 {switch test} {
     proc p { { a -default 3 -name zero -value 0 -name ten -value 10 } } { list $a }
     list [p] [p -zero] [p -ten]
@@ -59,11 +60,17 @@ test proc-enh-1.10 {multiple name test} {
     proc p { { a -default 3 -name zero -value 0 -name ten -value 10 -name value } } { list $a }
     list [p] [p -zero] [p -ten] [p -value 5]
 } {3 0 10 5}
-test proc-enh-1.10 {namearg group} {
+test proc-enh-1.10b {namearg group} {
     proc p1 { { a -name a } { b -name b } { c 0 } } { list $a $b $c }
     proc p2 { { a -default Z -name a } { b -name b } { c 0 } } { list $a $b $c }
-    list [p1 -a 1 -b 2] [p1 -b B -a A] [p2 -b Y] [p2 -b Z -- 5] [p2 -b B --]
-} {{1 2 0} {A B 0} {Z Y 0} {Z Z 5} {Z B 0}}
+    list [p1 -a 1 -b 2] [p1 -b B -a A] [p2 -b Y] [p2 -b Z -- -5] [p2 -b B --] [p2 -b 1 6]
+} {{1 2 0} {A B 0} {Z Y 0} {Z Z -5} {Z B 0} {Z 1 6}}
+test proc-enh-1.10c {namearg group followed by a pos arg with leading dash} {
+    list [catch {
+	proc p { { a -name a } { b -name b } { c 0 } } { list $a $b $c }
+	list [p2 -b Z -5]
+    } msg] $msg $errorCode
+} {1 {wrong # args: should be "p2 ?|-a a|? |-b b| ?c?"} {TCL WRONGARGS}}
 test proc-enh-1.11 {upvar group} {
     proc p { { a -upvar up1 } { b -name b -upvar up2 } } {
 	incr a; list $up1 $a $up2 $b
