@@ -304,6 +304,8 @@ static int formatInt(char *buffer, int n){
 #   define Tcl_TellOld 0
 #   undef Tcl_SetResult
 #   define Tcl_SetResult 0
+#   undef Tcl_DbNewBooleanObj
+#   define Tcl_DbNewBooleanObj 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
