@@ -37,10 +37,11 @@ static int		InitArgsAndLocals(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj, int skip);
 static int		InitArgsWithOptions(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj, Tcl_Obj *const *argObjs,
-			    int numArgs);
+			    int numArgs, int *errorSet);
 static int		InitArgWithUpvarSpec(Tcl_Interp *interp,
 			    Var *varArrayPtr, CompiledLocal *localPtr,
-			    ExtendedArgSpec *argSpecPtr, Tcl_Obj *objPtr);
+			    ExtendedArgSpec *argSpecPtr, Tcl_Obj *objPtr,
+			    int *errorSet);
 static void		InitResolvedLocals(Tcl_Interp *interp,
 			    ByteCode *codePtr, Var *defPtr,
 			    Namespace *nsPtr);
@@ -801,6 +802,7 @@ ProcParseArgSpec(
 	     */
 
 	    if ((localPtr->argSpecPtr != NULL)
+		    && (localPtr->argSpecPtr->nameLength == 0)
 		    && (localPtr->argSpecPtr->flags & VAR_UPVAR_ARG)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"-upvar is not allowed before first -name", -1));
@@ -838,6 +840,11 @@ ProcParseArgSpec(
 			"-name required for -value", -1));
 		goto parseError;
 	    }
+	    if (lastArgSpecPtr->flags & VAR_UPVAR_ARG) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"-upvar and -value are not allowed together", -1));
+		goto parseError;
+	    }
 	    if (lastArgSpecPtr->valuePtr != NULL) {
 		Tcl_DecrRefCount(lastArgSpecPtr->valuePtr);
 	    }
@@ -871,6 +878,11 @@ ProcParseArgSpec(
 		if (lastArgSpecPtr->flags & VAR_UPVAR_ARG) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "-upvar has already been set", -1));
+		    goto parseError;
+		}
+		if (lastArgSpecPtr->valuePtr != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "-upvar and -value are not allowed together", -1));
 		    goto parseError;
 		}
 		lastArgSpecPtr->flags |= VAR_UPVAR_ARG;
@@ -1684,6 +1696,7 @@ InitArgsAndLocals(
     register Var *varPtr, *defPtr;
     int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
     Tcl_Obj *const *argObjs;
+    int errorSet = 0;
 
     /*
      * Make sure that the local cache of variable names and initial values has
@@ -1734,7 +1747,8 @@ InitArgsAndLocals(
 	int result;
 
 	memset(varPtr, 0, numArgs*sizeof(Var));
-	result = InitArgsWithOptions(interp, procNameObj, argObjs, argCt);
+	result = InitArgsWithOptions(interp, procNameObj, argObjs, argCt,
+		&errorSet);
 	varPtr += numArgs;
 	if (result != TCL_OK) {
 	    goto incorrectArgs;
@@ -1826,6 +1840,9 @@ InitArgsAndLocals(
     }
     memset(varPtr, 0,
 	    ((framePtr->compiledLocals + localCt)-varPtr) * sizeof(Var));
+    if (errorSet != 0) {
+	return TCL_ERROR;
+    }
     return ProcWrongNumArgs(interp, skip);
 }
 
@@ -1856,7 +1873,8 @@ InitArgsWithOptions(
 				 * invoked. */
     Tcl_Obj *procNameObj,	/* Procedure name for error reporting. */
     Tcl_Obj *const *argObjs,	/* Array of input arguments */
-    int argCt)			/* Number of input arguments */
+    int argCt,			/* Number of input arguments */
+    int *errorSet)		/* Set to 1 if error is set here */
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     register Proc *procPtr = framePtr->procPtr;
@@ -1937,7 +1955,7 @@ InitArgsWithOptions(
 		    objPtr = argObjs[++iArg];
 		    if (argSpecPtr->flags & VAR_UPVAR_ARG) {
 			result = InitArgWithUpvarSpec(interp, varPtr,
-				localPtr, argSpecPtr, objPtr);
+				localPtr, argSpecPtr, objPtr, errorSet);
 			if (result != TCL_OK) {
 			    return result;
 			}
@@ -1987,7 +2005,7 @@ InitArgsWithOptions(
 	    if ((localPtr->argSpecPtr != NULL)
 		    && (localPtr->argSpecPtr->flags & VAR_UPVAR_ARG)) {
 		result = InitArgWithUpvarSpec(interp, varPtr, localPtr,
-			argSpecPtr, objPtr);
+			argSpecPtr, objPtr, errorSet);
 		if (result != TCL_OK) {
 		    return result;
 		}
@@ -2055,7 +2073,8 @@ InitArgWithUpvarSpec(
     CompiledLocal *localPtr,	/* related variable */
     ExtendedArgSpec *argSpecPtr,
 				/* related argument specification */
-    Tcl_Obj *objPtr)		/* input object */
+    Tcl_Obj *objPtr,		/* input object */
+    int *errorSet)		/* Set to 1 if error is set here */
 {
     register Var *varPtr = &(varArrayPtr[localPtr->frameIndex]);
     int result;
@@ -2072,6 +2091,11 @@ InitArgWithUpvarSpec(
 
     if ((varPtr->value.linkPtr == NULL)
 	    || (varPtr->value.linkPtr->value.objPtr == NULL)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"wrong args: pass-by-name variable \"%s\" does not exist",
+		TclGetString(objPtr)));
+	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
+	*errorSet = 1;
 	return TCL_ERROR;
     }
 

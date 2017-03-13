@@ -78,6 +78,13 @@ test proc-enh-1.11 {upvar group} {
     set i 5; set j 42
     list [p i -b j] [p j -b i]
 } {{i 6 j 42} {j 43 i 6}}
+test proc-enh-1.11b {upvar group} {
+    proc p { { a -upvar up1 } { b -name b -upvar up2 -name b2 } } {
+	incr a; list $up1 $a [if {[info exist up2]} {list $up2} {list ?}] $b
+    }
+    set i 5; set j 42
+    list [p i -b j] [p j -b2 i]
+} {{i 6 j 42} {j 43 ? i}}
 test proc-enh-1.12 {wrong num args with named arguments group} {
     proc p { { a -name A -name U -upvar {} } { c -default 0 -name C -value 2 } } { }
     list [catch {
@@ -95,7 +102,22 @@ test proc-enh-1.14 {upvar arg: proc call with non-existing arg} {
     list [catch {
 	p _non_exist_
     } msg] $msg $errorCode
-} {1 {wrong # args: should be "p &a&"} {TCL WRONGARGS}}
+} {1 {wrong args: pass-by-name variable "_non_exist_" does not exist} {TCL WRONGARGS}}
+test proc-enh-1.15 {upvar before first name} {
+    list [catch {
+	proc p { { a -upvar {} -name A } } { }
+    } msg] $msg $errorCode
+} {1 {-upvar is not allowed before first -name} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.16 {both upvar and value are invalid} {
+    list [catch {
+	proc p { { a -name A -upvar {} -value 1 } } { }
+    } msg] $msg $errorCode
+} {1 {-upvar and -value are not allowed together} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.16b {both upvar and value are invalid} {
+    list [catch {
+	proc p { { a -name A -value 1 -upvar {} } } { }
+    } msg] $msg $errorCode
+} {1 {-upvar and -value are not allowed together} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
 
 test proc-enh-2.1 {precompiled, inconsistent arg default value} -body {
     proc p {x y {z -default 2}} { }
