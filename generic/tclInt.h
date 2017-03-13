@@ -4575,13 +4575,6 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	(objPtr)->typePtr = &tclIntType;		\
     } while (0)
 
-/*
- * NOTE: There is to be no such thing as a "pure" boolean. Boolean values set
- * programmatically go straight to being "int" Tcl_Obj's, with value 0 or 1.
- * The only "boolean" Tcl_Obj's shall be those holding the cached boolean
- * value of strings like: "yes", "no", "true", "false", "on", "off".
- */
-
 #ifndef TCL_WIDE_INT_IS_LONG
 #define TclSetWideIntObj(objPtr, w) \
     do {							\

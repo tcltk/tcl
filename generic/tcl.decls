@@ -106,9 +106,10 @@ declare 20 {
 declare 21 {
     int Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file, int line)
 }
-declare 22 {
-    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
-}
+# Removed in 9.0
+#declare 22 {
+#    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
+#}
 declare 23 {
     Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, int length,
 	    const char *file, int line)
@@ -201,9 +202,10 @@ declare 48 {
     int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, int first,
 	    int count, int objc, Tcl_Obj *const objv[])
 }
-declare 49 {
-    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
-}
+# Removed in 9.0:
+#declare 49 {
+#    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
+#}
 declare 50 {
     Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int length)
 }
@@ -225,9 +227,10 @@ declare 55 {
 declare 56 {
     Tcl_Obj *Tcl_NewStringObj(const char *bytes, int length)
 }
-declare 57 {
-    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
-}
+# Removed in 9.0:
+#declare 57 {
+#    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
+#}
 declare 58 {
     unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int length)
 }
