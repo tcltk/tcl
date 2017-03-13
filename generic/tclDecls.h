@@ -238,7 +238,7 @@ EXTERN void		Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes,
 EXTERN void		Tcl_AddErrorInfo(Tcl_Interp *interp,
 				const char *message);
 /* 67 */
-TCL_DEPRECATED void	Tcl_AddObjErrorInfo(Tcl_Interp *interp,
+EXTERN void		Tcl_AddObjErrorInfo(Tcl_Interp *interp,
 				const char *message, int length);
 /* 68 */
 EXTERN void		Tcl_AllowExceptions(Tcl_Interp *interp);
@@ -414,12 +414,12 @@ EXTERN CONST84_RETURN char * Tcl_ErrnoId(void);
 /* 128 */
 EXTERN CONST84_RETURN char * Tcl_ErrnoMsg(int err);
 /* 129 */
-TCL_DEPRECATED int	Tcl_Eval(Tcl_Interp *interp, const char *script);
+EXTERN int		Tcl_Eval(Tcl_Interp *interp, const char *script);
 /* 130 */
 TCL_DEPRECATED int	Tcl_EvalFile(Tcl_Interp *interp,
 				const char *fileName);
 /* 131 */
-TCL_DEPRECATED int	Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
+EXTERN int		Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 /* 132 */
 EXTERN void		Tcl_EventuallyFree(ClientData clientData,
 				Tcl_FreeProc *freeProc);
@@ -546,17 +546,17 @@ EXTERN Tcl_Channel	Tcl_GetStdChannel(int type);
 /* 174 */
 EXTERN CONST84_RETURN char * Tcl_GetStringResult(Tcl_Interp *interp);
 /* 175 */
-TCL_DEPRECATED CONST84_RETURN char * Tcl_GetVar(Tcl_Interp *interp,
+EXTERN CONST84_RETURN char * Tcl_GetVar(Tcl_Interp *interp,
 				const char *varName, int flags);
 /* 176 */
 EXTERN CONST84_RETURN char * Tcl_GetVar2(Tcl_Interp *interp,
 				const char *part1, const char *part2,
 				int flags);
 /* 177 */
-TCL_DEPRECATED int	Tcl_GlobalEval(Tcl_Interp *interp,
+EXTERN int		Tcl_GlobalEval(Tcl_Interp *interp,
 				const char *command);
 /* 178 */
-TCL_DEPRECATED int	Tcl_GlobalEvalObj(Tcl_Interp *interp,
+EXTERN int		Tcl_GlobalEvalObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr);
 /* 179 */
 EXTERN int		Tcl_HideCommand(Tcl_Interp *interp,
@@ -711,7 +711,7 @@ EXTERN void		Tcl_SetObjResult(Tcl_Interp *interp,
 /* 236 */
 EXTERN void		Tcl_SetStdChannel(Tcl_Channel channel, int type);
 /* 237 */
-TCL_DEPRECATED CONST84_RETURN char * Tcl_SetVar(Tcl_Interp *interp,
+EXTERN CONST84_RETURN char * Tcl_SetVar(Tcl_Interp *interp,
 				const char *varName, const char *newValue,
 				int flags);
 /* 238 */
@@ -741,7 +741,7 @@ EXTERN int		Tcl_StringMatch(const char *str, const char *pattern);
 /* 246 */
 TCL_DEPRECATED int	Tcl_TellOld(Tcl_Channel chan);
 /* 247 */
-TCL_DEPRECATED int	Tcl_TraceVar(Tcl_Interp *interp, const char *varName,
+EXTERN int		Tcl_TraceVar(Tcl_Interp *interp, const char *varName,
 				int flags, Tcl_VarTraceProc *proc,
 				ClientData clientData);
 /* 248 */
@@ -762,13 +762,13 @@ EXTERN void		Tcl_UnlinkVar(Tcl_Interp *interp,
 EXTERN int		Tcl_UnregisterChannel(Tcl_Interp *interp,
 				Tcl_Channel chan);
 /* 253 */
-TCL_DEPRECATED int	Tcl_UnsetVar(Tcl_Interp *interp, const char *varName,
+EXTERN int		Tcl_UnsetVar(Tcl_Interp *interp, const char *varName,
 				int flags);
 /* 254 */
 EXTERN int		Tcl_UnsetVar2(Tcl_Interp *interp, const char *part1,
 				const char *part2, int flags);
 /* 255 */
-TCL_DEPRECATED void	Tcl_UntraceVar(Tcl_Interp *interp,
+EXTERN void		Tcl_UntraceVar(Tcl_Interp *interp,
 				const char *varName, int flags,
 				Tcl_VarTraceProc *proc,
 				ClientData clientData);
@@ -781,7 +781,7 @@ EXTERN void		Tcl_UntraceVar2(Tcl_Interp *interp,
 EXTERN void		Tcl_UpdateLinkedVar(Tcl_Interp *interp,
 				const char *varName);
 /* 258 */
-TCL_DEPRECATED int	Tcl_UpVar(Tcl_Interp *interp, const char *frameName,
+EXTERN int		Tcl_UpVar(Tcl_Interp *interp, const char *frameName,
 				const char *varName, const char *localName,
 				int flags);
 /* 259 */
@@ -789,9 +789,9 @@ EXTERN int		Tcl_UpVar2(Tcl_Interp *interp, const char *frameName,
 				const char *part1, const char *part2,
 				const char *localName, int flags);
 /* 260 */
-TCL_DEPRECATED int	Tcl_VarEval(Tcl_Interp *interp, ...);
+EXTERN int		Tcl_VarEval(Tcl_Interp *interp, ...);
 /* 261 */
-TCL_DEPRECATED ClientData Tcl_VarTraceInfo(Tcl_Interp *interp,
+EXTERN ClientData	Tcl_VarTraceInfo(Tcl_Interp *interp,
 				const char *varName, int flags,
 				Tcl_VarTraceProc *procPtr,
 				ClientData prevClientData);
@@ -839,7 +839,7 @@ EXTERN CONST84_RETURN char * Tcl_PkgRequire(Tcl_Interp *interp,
 EXTERN void		Tcl_SetErrorCodeVA(Tcl_Interp *interp,
 				va_list argList);
 /* 276 */
-TCL_DEPRECATED int	Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList);
+EXTERN int		Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList);
 /* 277 */
 EXTERN Tcl_Pid		Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options);
 /* 278 */
@@ -874,7 +874,7 @@ EXTERN void		Tcl_CreateThreadExitHandler(Tcl_ExitProc *proc,
 EXTERN void		Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc,
 				ClientData clientData);
 /* 290 */
-TCL_DEPRECATED void	Tcl_DiscardResult(Tcl_SavedResult *statePtr);
+EXTERN void		Tcl_DiscardResult(Tcl_SavedResult *statePtr);
 /* 291 */
 EXTERN int		Tcl_EvalEx(Tcl_Interp *interp, const char *script,
 				int numBytes, int flags);
@@ -939,10 +939,10 @@ EXTERN int		Tcl_NumUtfChars(const char *src, int length);
 EXTERN int		Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
 				int charsToRead, int appendFlag);
 /* 314 */
-TCL_DEPRECATED void	Tcl_RestoreResult(Tcl_Interp *interp,
+EXTERN void		Tcl_RestoreResult(Tcl_Interp *interp,
 				Tcl_SavedResult *statePtr);
 /* 315 */
-TCL_DEPRECATED void	Tcl_SaveResult(Tcl_Interp *interp,
+EXTERN void		Tcl_SaveResult(Tcl_Interp *interp,
 				Tcl_SavedResult *statePtr);
 /* 316 */
 EXTERN int		Tcl_SetSystemEncoding(Tcl_Interp *interp,
@@ -3842,13 +3842,13 @@ extern const TclStubs *tclStubsPtr;
 	sizeof(char *), msg, flags, indexPtr)
 #undef Tcl_NewBooleanObj
 #define Tcl_NewBooleanObj(boolValue) \
-	Tcl_NewIntObj((boolValue)!=0)
+	Tcl_NewLongObj((boolValue)!=0)
 #undef Tcl_DbNewBooleanObj
 #define Tcl_DbNewBooleanObj(boolValue, file, line) \
 	Tcl_DbNewLongObj((boolValue)!=0, file, line)
 #undef Tcl_SetBooleanObj
 #define Tcl_SetBooleanObj(objPtr, boolValue) \
-	Tcl_SetIntObj((objPtr), (boolValue)!=0)
+	Tcl_SetLongObj((objPtr), (boolValue)!=0)
 #undef Tcl_SetVar
 #define Tcl_SetVar(interp, varName, newValue, flags) \
 	Tcl_SetVar2(interp, varName, NULL, newValue, flags)

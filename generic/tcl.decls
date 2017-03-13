@@ -253,7 +253,7 @@ declare 65 {
 declare 66 {
     void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
 }
-declare 67 deprecated {
+declare 67 {
     void Tcl_AddObjErrorInfo(Tcl_Interp *interp, const char *message,
 	    int length)
 }
@@ -466,14 +466,14 @@ declare 127 {
 declare 128 {
     CONST84_RETURN char *Tcl_ErrnoMsg(int err)
 }
-declare 129 deprecated {
+declare 129 {
     int Tcl_Eval(Tcl_Interp *interp, const char *script)
 }
 # This is obsolete, use Tcl_FSEvalFile
 declare 130 deprecated {
     int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
 }
-declare 131 deprecated {
+declare 131 {
     int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
 declare 132 {
@@ -625,7 +625,7 @@ declare 173 {
 declare 174 {
     CONST84_RETURN char *Tcl_GetStringResult(Tcl_Interp *interp)
 }
-declare 175 deprecated {
+declare 175 {
     CONST84_RETURN char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,
 	    int flags)
 }
@@ -633,10 +633,10 @@ declare 176 {
     CONST84_RETURN char *Tcl_GetVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, int flags)
 }
-declare 177 deprecated {
+declare 177 {
     int Tcl_GlobalEval(Tcl_Interp *interp, const char *command)
 }
-declare 178 deprecated {
+declare 178 {
     int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
 declare 179 {
@@ -836,7 +836,7 @@ declare 235 {
 declare 236 {
     void Tcl_SetStdChannel(Tcl_Channel channel, int type)
 }
-declare 237 deprecated {
+declare 237 {
     CONST84_RETURN char *Tcl_SetVar(Tcl_Interp *interp, const char *varName,
 	    const char *newValue, int flags)
 }
@@ -872,7 +872,7 @@ declare 245 {
 declare 246 deprecated {
     int Tcl_TellOld(Tcl_Channel chan)
 }
-declare 247 deprecated {
+declare 247 {
     int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
 	    Tcl_VarTraceProc *proc, ClientData clientData)
 }
@@ -893,14 +893,14 @@ declare 251 {
 declare 252 {
     int Tcl_UnregisterChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
-declare 253 deprecated {
+declare 253 {
     int Tcl_UnsetVar(Tcl_Interp *interp, const char *varName, int flags)
 }
 declare 254 {
     int Tcl_UnsetVar2(Tcl_Interp *interp, const char *part1, const char *part2,
 	    int flags)
 }
-declare 255 deprecated {
+declare 255 {
     void Tcl_UntraceVar(Tcl_Interp *interp, const char *varName, int flags,
 	    Tcl_VarTraceProc *proc, ClientData clientData)
 }
@@ -912,7 +912,7 @@ declare 256 {
 declare 257 {
     void Tcl_UpdateLinkedVar(Tcl_Interp *interp, const char *varName)
 }
-declare 258 deprecated {
+declare 258 {
     int Tcl_UpVar(Tcl_Interp *interp, const char *frameName,
 	    const char *varName, const char *localName, int flags)
 }
@@ -920,10 +920,10 @@ declare 259 {
     int Tcl_UpVar2(Tcl_Interp *interp, const char *frameName, const char *part1,
 	    const char *part2, const char *localName, int flags)
 }
-declare 260 deprecated {
+declare 260 {
     int Tcl_VarEval(Tcl_Interp *interp, ...)
 }
-declare 261 deprecated {
+declare 261 {
     ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
 	    int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData)
 }
@@ -979,7 +979,7 @@ declare 274 {
 declare 275 {
     void Tcl_SetErrorCodeVA(Tcl_Interp *interp, va_list argList)
 }
-declare 276 deprecated {
+declare 276 {
     int  Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList)
 }
 declare 277 {
@@ -1044,7 +1044,7 @@ declare 288 {
 declare 289 {
     void Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc, ClientData clientData)
 }
-declare 290 deprecated {
+declare 290 {
     void Tcl_DiscardResult(Tcl_SavedResult *statePtr)
 }
 declare 291 {
@@ -1127,10 +1127,10 @@ declare 313 {
     int Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr, int charsToRead,
 	    int appendFlag)
 }
-declare 314 deprecated {
+declare 314 {
     void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
 }
-declare 315 deprecated {
+declare 315 {
     void Tcl_SaveResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
 }
 declare 316 {
