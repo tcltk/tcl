@@ -1933,7 +1933,7 @@ Tcl_FreeIntRep(
  *	is coerced to 1.
  *
  *	When TCL_MEM_DEBUG is defined, this function just returns the result
- *	of calling the debugging version Tcl_DbNewBooleanObj.
+ *	of calling the debugging version Tcl_DbNewLongObj.
  *
  * Results:
  *	The newly created object is returned. This object will have an invalid
@@ -1952,7 +1952,7 @@ Tcl_Obj *
 Tcl_NewBooleanObj(
     register int boolValue)	/* Boolean used to initialize new object. */
 {
-    return Tcl_DbNewBooleanObj(boolValue, "unknown", 0);
+    return Tcl_DbNewLongObj(boolValue!=0, "unknown", 0);
 }
 
 #else /* if not TCL_MEM_DEBUG */
@@ -1963,7 +1963,7 @@ Tcl_NewBooleanObj(
 {
     register Tcl_Obj *objPtr;
 
-    TclNewBooleanObj(objPtr, boolValue);
+    TclNewLongObj(objPtr, boolValue!=0);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -1994,6 +1994,7 @@ Tcl_NewBooleanObj(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_DbNewBooleanObj
 #ifdef TCL_MEM_DEBUG
 
@@ -2029,6 +2030,7 @@ Tcl_DbNewBooleanObj(
     return Tcl_NewBooleanObj(boolValue);
 }
 #endif /* TCL_MEM_DEBUG */
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2058,7 +2060,7 @@ Tcl_SetBooleanObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetBooleanObj");
     }
 
-    TclSetBooleanObj(objPtr, boolValue);
+    TclSetLongObj(objPtr, boolValue!=0);
 }
 
 /*
@@ -2658,7 +2660,7 @@ Tcl_SetIntObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetIntObj");
     }
 
-    TclSetIntObj(objPtr, intValue);
+    TclSetLongObj(objPtr, intValue);
 }
 
 /*
