@@ -33,32 +33,14 @@ typedef struct Link {
                                  * >0 used for array variables */
     int type;			/* Type of link (TCL_LINK_INT, etc.). */
     union {
-	char c;
-	unsigned char uc;
 	int i;
 	unsigned int ui;
-	short s;
-	unsigned short us;
-#if !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__CYGWIN__)
-	long l;
-	unsigned long ul;
-#endif
 	Tcl_WideInt w;
 	Tcl_WideUInt uw;
 	float f;
 	double d;
-	char *pc;
-	unsigned char *puc;
-	short *ps;
-	unsigned short *pus;
-	int *pi;
-	unsigned int *pui;
-	long *pl;
-	unsigned long *pul;
-	float *pf;
-	double *pd;
-	Tcl_WideInt *pw;
-	Tcl_WideUInt *puw;
+	long double ld;
+	void *p;
     } lastValue;		/* Last known value of C variable; used to
 				 * avoid string conversions. Pointer values
 				 * will be used for array links. */
@@ -243,9 +225,9 @@ Tcl_LinkArray(
 	/* if no address is given create one and use as address the
 	 * not needed linkPtr->last */
 	if (addr == NULL) {
-	    linkPtr->lastValue.pc = ckalloc(linkPtr->bytes);
+	    linkPtr->lastValue.p = ckalloc(linkPtr->bytes);
 	    linkPtr->flags |= LINK_ALLOC_LAST;
-	    addr = (char *) &linkPtr->lastValue.pc;
+	    addr = (char *) &linkPtr->lastValue.p;
 	}
 	break;
     case TCL_LINK_BIT8:
@@ -294,7 +276,7 @@ Tcl_LinkArray(
     }
     /* if necessary create space for last used value */
     if (size > 1) {
-	linkPtr->lastValue.pc = ckalloc(linkPtr->bytes);
+	linkPtr->lastValue.p = ckalloc(linkPtr->bytes);
 	linkPtr->flags |= LINK_ALLOC_LAST;
     }
     /* set common structure values */
@@ -424,7 +406,7 @@ LinkFree(
 	ckfree(linkPtr->addr);
     }
     if (linkPtr->flags & LINK_ALLOC_LAST) {
-	ckfree(linkPtr->lastValue.pc);
+	ckfree(linkPtr->lastValue.p);
     }
     ckfree((char *) linkPtr);
 }
@@ -463,35 +445,38 @@ ObjValue(
     switch (linkPtr->type) {
     case TCL_LINK_CHAR:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    char *pc = linkPtr->lastValue.p;
+	    memcpy(pc, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(char);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.pc[i]);
+		objv[i] = Tcl_NewIntObj(pc[i]);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
-	linkPtr->lastValue.c = LinkedVar(char);
-	return Tcl_NewIntObj(linkPtr->lastValue.c);
+	linkPtr->lastValue.i = LinkedVar(char);
+	return Tcl_NewIntObj(linkPtr->lastValue.i);
     case TCL_LINK_SHORT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    short *ps = linkPtr->lastValue.p;
+	    memcpy(ps, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(short);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.ps[i]);
+		objv[i] = Tcl_NewIntObj(ps[i]);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
-	linkPtr->lastValue.s = LinkedVar(short);
-	return Tcl_NewIntObj(linkPtr->lastValue.s);
+	linkPtr->lastValue.i = LinkedVar(short);
+	return Tcl_NewIntObj(linkPtr->lastValue.i);
     case TCL_LINK_INT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    int *pi = linkPtr->lastValue.p;
+	    memcpy(pi, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(int);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.pi[i]);
+		objv[i] = Tcl_NewIntObj(pi[i]);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
@@ -499,11 +484,12 @@ ObjValue(
 	return Tcl_NewIntObj(linkPtr->lastValue.i);
     case TCL_LINK_WIDE_INT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    Tcl_WideInt *pw = linkPtr->lastValue.p;
+	    memcpy(pw, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(Tcl_WideInt);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewWideIntObj(linkPtr->lastValue.pw[i]);
+		objv[i] = Tcl_NewWideIntObj(pw[i]);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
@@ -511,35 +497,38 @@ ObjValue(
 	return Tcl_NewWideIntObj(linkPtr->lastValue.w);
     case TCL_LINK_UCHAR:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    unsigned char *puc = linkPtr->lastValue.p;
+	    memcpy(puc, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(unsigned char);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.puc[i]);
+		objv[i] = Tcl_NewIntObj(puc[i]);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
-	linkPtr->lastValue.uc = LinkedVar(unsigned char);
-	return Tcl_NewIntObj(linkPtr->lastValue.uc);
+	linkPtr->lastValue.i = LinkedVar(unsigned char);
+	return Tcl_NewIntObj(linkPtr->lastValue.i);
     case TCL_LINK_USHORT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    unsigned short *pus = linkPtr->lastValue.p;
+	    memcpy(pus, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(unsigned short);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.pus[i]);
+		objv[i] = Tcl_NewIntObj(pus[i]);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
-	linkPtr->lastValue.us = LinkedVar(unsigned short);
-	return Tcl_NewIntObj(linkPtr->lastValue.us);
+	linkPtr->lastValue.ui = LinkedVar(unsigned short);
+	return Tcl_NewIntObj((int)linkPtr->lastValue.ui);
     case TCL_LINK_UINT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    unsigned int *pui = linkPtr->lastValue.p;
+	    memcpy(pui, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(unsigned int);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewWideIntObj(linkPtr->lastValue.pui[i]);
+		objv[i] = Tcl_NewWideIntObj(pui[i]);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
@@ -547,11 +536,12 @@ ObjValue(
 	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.ui);
     case TCL_LINK_WIDE_UINT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    Tcl_WideUInt *puw = linkPtr->lastValue.p;
+	    memcpy(puw, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(Tcl_WideUInt);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewWideIntObj((Tcl_WideUInt) linkPtr->lastValue.puw[i]);
+		objv[i] = Tcl_NewWideIntObj(puw[i]);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
@@ -559,11 +549,12 @@ ObjValue(
 	return Tcl_NewWideIntObj((Tcl_WideUInt) linkPtr->lastValue.uw);
     case TCL_LINK_FLOAT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    float *pf = linkPtr->lastValue.p;
+	    memcpy(pf, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(float);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewDoubleObj(linkPtr->lastValue.pf[i]);
+		objv[i] = Tcl_NewDoubleObj(pf[i]);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
@@ -571,32 +562,51 @@ ObjValue(
 	return Tcl_NewDoubleObj(linkPtr->lastValue.f);
     case TCL_LINK_DOUBLE:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    double *pd = linkPtr->lastValue.p;
+	    memcpy(pd, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(double);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewDoubleObj(linkPtr->lastValue.pd[i]);
+		objv[i] = Tcl_NewDoubleObj(pd[i]);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
 	linkPtr->lastValue.d = LinkedVar(double);
 	return Tcl_NewDoubleObj(linkPtr->lastValue.d);
-    case TCL_LINK_COMPLEX32:
-	memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
-	objc = linkPtr->bytes / sizeof(float);
-	objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
-	for (i = 0; i < objc; i++) {
-	    objv[i] = Tcl_NewDoubleObj((double) linkPtr->lastValue.pf[i]);
+    case TCL_LINK_DOUBLE+2:
+    case TCL_LINK_DOUBLE+8:
+	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    long double *pld = linkPtr->lastValue.p;
+	    memcpy(pld, linkPtr->addr, linkPtr->bytes);
+	    objc = linkPtr->bytes / sizeof(long double);
+	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
+	    for (i = 0; i < objc; i++) {
+		objv[i] = Tcl_NewDoubleObj((double)pld[i]);
+	    }
+	    return Tcl_NewListObj(objc, objv);
 	}
-	return Tcl_NewListObj(objc, objv);
-    case TCL_LINK_COMPLEX64:
-	memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
-	objc = linkPtr->bytes / sizeof(double);
-	objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
-	for (i = 0; i < objc; i++) {
-	    objv[i] = Tcl_NewDoubleObj(linkPtr->lastValue.pd[i]);
+	linkPtr->lastValue.ld = LinkedVar(long double);
+	return Tcl_NewDoubleObj(linkPtr->lastValue.d);
+    case TCL_LINK_COMPLEX32: {
+	    float *pf = linkPtr->lastValue.p;
+	    memcpy(pf, linkPtr->addr, linkPtr->bytes);
+	    objc = linkPtr->bytes / sizeof(float);
+	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
+	    for (i = 0; i < objc; i++) {
+		objv[i] = Tcl_NewDoubleObj((double) pf[i]);
+	    }
+	    return Tcl_NewListObj(objc, objv);
 	}
-	return Tcl_NewListObj(objc, objv);
+    case TCL_LINK_COMPLEX64: {
+	    double *pd = linkPtr->lastValue.p;
+	    memcpy(pd, linkPtr->addr, linkPtr->bytes);
+	    objc = linkPtr->bytes / sizeof(double);
+	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
+	    for (i = 0; i < objc; i++) {
+		objv[i] = Tcl_NewDoubleObj(pd[i]);
+	    }
+	    return Tcl_NewListObj(objc, objv);
+	}
     case TCL_LINK_STRING:
 	p = (*(char **) linkPtr->addr);
 	if (p == NULL) {
@@ -606,80 +616,87 @@ ObjValue(
 	return Tcl_NewStringObj(p, -1);
     case TCL_LINK_CHARS:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
-	    linkPtr->lastValue.pc[linkPtr->bytes - 1] = '\0';      /* take care of proper string end */
-	    return Tcl_NewStringObj(linkPtr->lastValue.pc, linkPtr->bytes);
+	    char *pc = linkPtr->lastValue.p;
+	    memcpy(pc, linkPtr->addr, linkPtr->bytes);
+	    pc[linkPtr->bytes - 1] = '\0';      /* take care of proper string end */
+	    return Tcl_NewStringObj(pc, linkPtr->bytes);
 	}
-	linkPtr->lastValue.c = '\0';
-	return Tcl_NewStringObj(&linkPtr->lastValue.c, 1);
-    case TCL_LINK_BINARY:
-	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
-	    return Tcl_NewByteArrayObj((unsigned char *) linkPtr->addr,
-		    linkPtr->bytes);
+	linkPtr->lastValue.i = '\0';
+	return Tcl_NewStringObj("", 1);
+    case TCL_LINK_BINARY: {
+	    unsigned char uc;
+	    if (linkPtr->flags & LINK_ALLOC_LAST) {
+		memcpy(linkPtr->lastValue.p, linkPtr->addr, linkPtr->bytes);
+		return Tcl_NewByteArrayObj((unsigned char *) linkPtr->addr,
+			linkPtr->bytes);
+	    }
+	    linkPtr->lastValue.i = LinkedVar(unsigned char);
+	    uc = (unsigned char) linkPtr->lastValue.i;
+	    return Tcl_NewByteArrayObj(&uc, 1);
 	}
-	linkPtr->lastValue.uc = LinkedVar(unsigned char);
-	return Tcl_NewByteArrayObj(&linkPtr->lastValue.uc, 1);
     case TCL_LINK_HEX8:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    unsigned char *puc = linkPtr->lastValue.p;
+	    memcpy(puc, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(unsigned char);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    c[0] = '0';
 	    c[1] = 'x';
 	    for (i = 0; i < objc; i++) {
-		c[3] = hexdigit[linkPtr->lastValue.puc[i] & 0xf];
-		c[2] = hexdigit[(linkPtr->lastValue.puc[i] >> 4) & 0xf];
+		c[3] = hexdigit[puc[i] & 0xf];
+		c[2] = hexdigit[(puc[i] >> 4) & 0xf];
 		objv[i] = Tcl_NewStringObj(c, 4);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
-	linkPtr->lastValue.uc = LinkedVar(unsigned char);
+	linkPtr->lastValue.i = LinkedVar(unsigned char);
 	c[0] = '0';
 	c[1] = 'x';
-	c[3] = hexdigit[linkPtr->lastValue.uc & 0xf];
-	c[2] = hexdigit[(linkPtr->lastValue.uc >> 4) & 0xf];
+	c[3] = hexdigit[linkPtr->lastValue.i & 0xf];
+	c[2] = hexdigit[(linkPtr->lastValue.i >> 4) & 0xf];
 	return Tcl_NewStringObj(c, 4);
     case TCL_LINK_HEX16:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    unsigned short *pus = linkPtr->lastValue.p;
+	    memcpy(pus, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(unsigned short);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    c[0] = '0';
 	    c[1] = 'x';
 	    for (i = 0; i < objc; i++) {
-		c[5] = hexdigit[linkPtr->lastValue.pus[i] & 0xf];
-		c[4] = hexdigit[(linkPtr->lastValue.pus[i] >> 4) & 0xf];
-		c[3] = hexdigit[(linkPtr->lastValue.pus[i] >> 8) & 0xf];
-		c[2] = hexdigit[(linkPtr->lastValue.pus[i] >> 12) & 0xf];
+		c[5] = hexdigit[pus[i] & 0xf];
+		c[4] = hexdigit[(pus[i] >> 4) & 0xf];
+		c[3] = hexdigit[(pus[i] >> 8) & 0xf];
+		c[2] = hexdigit[(pus[i] >> 12) & 0xf];
 		objv[i] = Tcl_NewStringObj(c, 6);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
-	linkPtr->lastValue.us = LinkedVar(unsigned short);
+	linkPtr->lastValue.ui = LinkedVar(unsigned short);
 	c[0] = '0';
 	c[1] = 'x';
-	c[5] = hexdigit[linkPtr->lastValue.us & 0xf];
-	c[4] = hexdigit[(linkPtr->lastValue.us >> 4) & 0xf];
-	c[3] = hexdigit[(linkPtr->lastValue.us >> 8) & 0xf];
-	c[2] = hexdigit[(linkPtr->lastValue.us >> 12) & 0xf];
+	c[5] = hexdigit[linkPtr->lastValue.ui & 0xf];
+	c[4] = hexdigit[(linkPtr->lastValue.ui >> 4) & 0xf];
+	c[3] = hexdigit[(linkPtr->lastValue.ui >> 8) & 0xf];
+	c[2] = hexdigit[(linkPtr->lastValue.ui >> 12) & 0xf];
 	return Tcl_NewStringObj(c, 6);
     case TCL_LINK_HEX32:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    unsigned int *pui = linkPtr->lastValue.p;
+	    memcpy(pui, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(unsigned int);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    c[0] = '0';
 	    c[1] = 'x';
 	    for (i = 0; i < objc; i++) {
-		c[9] = hexdigit[linkPtr->lastValue.pui[i] & 0xf];
-		c[8] = hexdigit[(linkPtr->lastValue.pui[i] >> 4) & 0xf];
-		c[7] = hexdigit[(linkPtr->lastValue.pui[i] >> 8) & 0xf];
-		c[6] = hexdigit[(linkPtr->lastValue.pui[i] >> 12) & 0xf];
-		c[5] = hexdigit[(linkPtr->lastValue.pui[i] >> 16) & 0xf];
-		c[4] = hexdigit[(linkPtr->lastValue.pui[i] >> 20) & 0xf];
-		c[3] = hexdigit[(linkPtr->lastValue.pui[i] >> 24) & 0xf];
-		c[2] = hexdigit[(linkPtr->lastValue.pui[i] >> 28) & 0xf];
+		c[9] = hexdigit[pui[i] & 0xf];
+		c[8] = hexdigit[(pui[i] >> 4) & 0xf];
+		c[7] = hexdigit[(pui[i] >> 8) & 0xf];
+		c[6] = hexdigit[(pui[i] >> 12) & 0xf];
+		c[5] = hexdigit[(pui[i] >> 16) & 0xf];
+		c[4] = hexdigit[(pui[i] >> 20) & 0xf];
+		c[3] = hexdigit[(pui[i] >> 24) & 0xf];
+		c[2] = hexdigit[(pui[i] >> 28) & 0xf];
 		objv[i] = Tcl_NewStringObj(c, 10);
 	    }
 	    return Tcl_NewListObj(objc, objv);
@@ -698,28 +715,29 @@ ObjValue(
 	return Tcl_NewStringObj(c, 10);
     case TCL_LINK_HEX64:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    Tcl_WideUInt *puw = linkPtr->lastValue.p;
+	    memcpy(puw, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(Tcl_WideUInt);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    c[0] = '0';
 	    c[1] = 'x';
 	    for (i = 0; i < objc; i++) {
-		c[17] = hexdigit[linkPtr->lastValue.puw[i] & 0xf];
-		c[16] = hexdigit[(linkPtr->lastValue.puw[i] >> 4) & 0xf];
-		c[15] = hexdigit[(linkPtr->lastValue.puw[i] >> 8) & 0xf];
-		c[14] = hexdigit[(linkPtr->lastValue.puw[i] >> 12) & 0xf];
-		c[13] = hexdigit[(linkPtr->lastValue.puw[i] >> 16) & 0xf];
-		c[12] = hexdigit[(linkPtr->lastValue.puw[i] >> 20) & 0xf];
-		c[11] = hexdigit[(linkPtr->lastValue.puw[i] >> 24) & 0xf];
-		c[10] = hexdigit[(linkPtr->lastValue.puw[i] >> 28) & 0xf];
-		c[9] = hexdigit[(linkPtr->lastValue.puw[i] >> 32) & 0xf];
-		c[8] = hexdigit[(linkPtr->lastValue.puw[i] >> 36) & 0xf];
-		c[7] = hexdigit[(linkPtr->lastValue.puw[i] >> 40) & 0xf];
-		c[6] = hexdigit[(linkPtr->lastValue.puw[i] >> 44) & 0xf];
-		c[5] = hexdigit[(linkPtr->lastValue.puw[i] >> 48) & 0xf];
-		c[4] = hexdigit[(linkPtr->lastValue.puw[i] >> 52) & 0xf];
-		c[3] = hexdigit[(linkPtr->lastValue.puw[i] >> 56) & 0xf];
-		c[2] = hexdigit[(linkPtr->lastValue.puw[i] >> 60) & 0xf];
+		c[17] = hexdigit[puw[i] & 0xf];
+		c[16] = hexdigit[(puw[i] >> 4) & 0xf];
+		c[15] = hexdigit[(puw[i] >> 8) & 0xf];
+		c[14] = hexdigit[(puw[i] >> 12) & 0xf];
+		c[13] = hexdigit[(puw[i] >> 16) & 0xf];
+		c[12] = hexdigit[(puw[i] >> 20) & 0xf];
+		c[11] = hexdigit[(puw[i] >> 24) & 0xf];
+		c[10] = hexdigit[(puw[i] >> 28) & 0xf];
+		c[9] = hexdigit[(puw[i] >> 32) & 0xf];
+		c[8] = hexdigit[(puw[i] >> 36) & 0xf];
+		c[7] = hexdigit[(puw[i] >> 40) & 0xf];
+		c[6] = hexdigit[(puw[i] >> 44) & 0xf];
+		c[5] = hexdigit[(puw[i] >> 48) & 0xf];
+		c[4] = hexdigit[(puw[i] >> 52) & 0xf];
+		c[3] = hexdigit[(puw[i] >> 56) & 0xf];
+		c[2] = hexdigit[(puw[i] >> 60) & 0xf];
 		objv[i] = Tcl_NewStringObj(c, 18);
 	    }
 	    return Tcl_NewListObj(objc, objv);
@@ -746,48 +764,51 @@ ObjValue(
 	return Tcl_NewStringObj(c, 18);
     case TCL_LINK_BITARRAY8:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    unsigned char *puc = linkPtr->lastValue.p;
+	    memcpy(puc, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(unsigned char);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
 		for (j = 0; j < 8; j++) {
-		    c[j] = (linkPtr->lastValue.puc[i] & (1 << (7 - j))) ? '1' : '0';
+		    c[j] = (puc[i] & (1 << (7 - j))) ? '1' : '0';
 		}
 		objv[i] = Tcl_NewStringObj(c, 8);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
-	linkPtr->lastValue.uc = LinkedVar(unsigned char);
+	linkPtr->lastValue.i = LinkedVar(unsigned char);
 	for (j = 0; j < 8; j++) {
-	    c[j] = (linkPtr->lastValue.uc & (1 << (7 - j))) ? '1' : '0';
+	    c[j] = (linkPtr->lastValue.i & (1 << (7 - j))) ? '1' : '0';
 	}
 	return Tcl_NewStringObj(c, 8);
     case TCL_LINK_BITARRAY16:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    unsigned short *pus = linkPtr->lastValue.p;
+	    memcpy(pus, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(unsigned short);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
 		for (j = 0; j < 16; j++) {
-		    c[j] = (linkPtr->lastValue.pus[i] & (1 << (15 - j))) ? '1' : '0';
+		    c[j] = (pus[i] & (1 << (15 - j))) ? '1' : '0';
 		}
 		objv[i] = Tcl_NewStringObj(c, 16);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
-	linkPtr->lastValue.us = LinkedVar(unsigned short);
+	linkPtr->lastValue.ui = LinkedVar(unsigned short);
 	for (j = 0; j < 16; j++) {
-	    c[j] = (linkPtr->lastValue.us & (1 << (15 - j))) ? '1' : '0';
+	    c[j] = (linkPtr->lastValue.ui & (1 << (15 - j))) ? '1' : '0';
 	}
 	return Tcl_NewStringObj(c, 16);
     case TCL_LINK_BITARRAY32:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    unsigned int *pui = linkPtr->lastValue.p;
+	    memcpy(pui, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(unsigned int);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
 		for (j = 0; j < 32; j++) {
-		    c[j] = (linkPtr->lastValue.pui[i] & (1 << (31 - j))) ? '1' : '0';
+		    c[j] = (pui[i] & (1 << (31 - j))) ? '1' : '0';
 		}
 		objv[i] = Tcl_NewStringObj(c, 32);
 	    }
@@ -800,12 +821,13 @@ ObjValue(
 	return Tcl_NewStringObj(c, 32);
     case TCL_LINK_BITARRAY64:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    Tcl_WideUInt *puw = linkPtr->lastValue.p;
+	    memcpy(puw, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(Tcl_WideUInt);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
 		for (j = 0; j < 64; j++) {
-		    c[j] = (linkPtr->lastValue.puw[i] & (1 << (63 - j))) ? '1' : '0';
+		    c[j] = (puw[i] & (1 << (63 - j))) ? '1' : '0';
 		}
 		objv[i] = Tcl_NewStringObj(c, 64);
 	    }
@@ -818,58 +840,62 @@ ObjValue(
 	return Tcl_NewStringObj(c, 64);
     case TCL_LINK_BOOL8:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    unsigned char *puc = linkPtr->lastValue.p;
+	    memcpy(puc, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(unsigned char);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewBooleanObj(linkPtr->lastValue.puc[i] != 0);
+		objv[i] = Tcl_NewBooleanObj(puc[i]);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
-	linkPtr->lastValue.uc = LinkedVar(unsigned char);
-	return Tcl_NewBooleanObj(linkPtr->lastValue.uc != 0);
+	linkPtr->lastValue.i = LinkedVar(unsigned char);
+	return Tcl_NewBooleanObj(linkPtr->lastValue.i);
     case TCL_LINK_BOOL16:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    unsigned short *pus = linkPtr->lastValue.p;
+	    memcpy(pus, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(unsigned short);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewBooleanObj(linkPtr->lastValue.pus[i] != 0);
+		objv[i] = Tcl_NewBooleanObj(pus[i]);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
-	linkPtr->lastValue.us = LinkedVar(unsigned short);
-	return Tcl_NewBooleanObj(linkPtr->lastValue.us != 0);
+	linkPtr->lastValue.ui = LinkedVar(unsigned short);
+	return Tcl_NewBooleanObj(linkPtr->lastValue.ui);
     case TCL_LINK_BOOL32:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    unsigned int *pui = linkPtr->lastValue.p;
+	    memcpy(pui, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(unsigned int);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewBooleanObj(linkPtr->lastValue.pui[i] != 0);
+		objv[i] = Tcl_NewBooleanObj(pui[i]);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
 	linkPtr->lastValue.ui = LinkedVar(unsigned int);
-	return Tcl_NewBooleanObj(linkPtr->lastValue.ui != 0);
+	return Tcl_NewBooleanObj(linkPtr->lastValue.ui);
     case TCL_LINK_BOOL64:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    Tcl_WideUInt *puw = linkPtr->lastValue.p;
+	    memcpy(puw, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(Tcl_WideUInt);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewBooleanObj(linkPtr->lastValue.puw[i] != 0);
+		objv[i] = Tcl_NewBooleanObj(puw[i]);
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
 	linkPtr->lastValue.uw = LinkedVar(Tcl_WideUInt);
-	return Tcl_NewBooleanObj(linkPtr->lastValue.uw != 0);
+	return Tcl_NewBooleanObj(linkPtr->lastValue.uw);
     case TCL_LINK_BIT8:
-	linkPtr->lastValue.uc = LinkedVar(unsigned char);
-	return Tcl_NewIntObj((linkPtr->lastValue.uc & (1 << linkPtr->bytes)) ? 1 : 0);
+	linkPtr->lastValue.i = LinkedVar(unsigned char);
+	return Tcl_NewIntObj((linkPtr->lastValue.i & (1 << linkPtr->bytes)) ? 1 : 0);
     case TCL_LINK_BIT16:
-	linkPtr->lastValue.us = LinkedVar(unsigned short);
-	return Tcl_NewIntObj((linkPtr->lastValue.us & (1 << linkPtr->bytes)) ? 1 : 0);
+	linkPtr->lastValue.ui = LinkedVar(unsigned short);
+	return Tcl_NewIntObj((linkPtr->lastValue.ui & (1 << linkPtr->bytes)) ? 1 : 0);
     case TCL_LINK_BIT32:
 	linkPtr->lastValue.ui = LinkedVar(unsigned int);
 	return Tcl_NewIntObj((linkPtr->lastValue.ui & (1 << linkPtr->bytes)) ? 1 : 0);
@@ -878,11 +904,12 @@ ObjValue(
 	return Tcl_NewIntObj((linkPtr->lastValue.uw & (1 << linkPtr->bytes)) ? 1 : 0);
     case TCL_LINK_S5FLOAT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    unsigned int *pui = linkPtr->lastValue.p;
+	    memcpy(pui, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(unsigned int);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewDoubleObj(S5ToFloat(linkPtr->lastValue.pui[i]));
+		objv[i] = Tcl_NewDoubleObj(S5ToFloat(pui[i]));
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
@@ -890,16 +917,17 @@ ObjValue(
 	return Tcl_NewDoubleObj(S5ToFloat(linkPtr->lastValue.ui));
     case TCL_LINK_S5TIME:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, linkPtr->addr, linkPtr->bytes);
+	    unsigned short *pus = linkPtr->lastValue.p;
+	    memcpy(pus, linkPtr->addr, linkPtr->bytes);
 	    objc = linkPtr->bytes / sizeof(unsigned short);
 	    objv = (Tcl_Obj **) ckrealloc((char *) objv, objc * sizeof(Tcl_Obj *));
 	    for (i = 0; i < objc; i++) {
-		objv[i] = Tcl_NewDoubleObj(S5timeToFloat(linkPtr->lastValue.pus[i]));
+		objv[i] = Tcl_NewDoubleObj(S5timeToFloat(pus[i]));
 	    }
 	    return Tcl_NewListObj(objc, objv);
 	}
-	linkPtr->lastValue.us = LinkedVar(unsigned short);
-	return Tcl_NewDoubleObj(S5timeToFloat(linkPtr->lastValue.us));
+	linkPtr->lastValue.ui = LinkedVar(unsigned short);
+	return Tcl_NewDoubleObj(S5timeToFloat((unsigned short)linkPtr->lastValue.ui));
 	/*
 	 * This code only gets executed if the link type is unknown (shouldn't
 	 * ever happen).
@@ -990,7 +1018,7 @@ LinkTraceProc(
     if (flags & TCL_TRACE_READS) {
 	/* variable arrays and TCL_LINK_COMPLEX32 and TCL_LINK_COMPLEX64 */
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    changed = memcmp(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    changed = memcmp(linkPtr->addr, linkPtr->lastValue.p, linkPtr->bytes);
 	    /* single variables */
 	} else {
 	    switch (linkPtr->type) {
@@ -1000,23 +1028,23 @@ LinkTraceProc(
 		changed = 1;
 		break;
 	    case TCL_LINK_CHAR:
-		changed = (LinkedVar(char) != linkPtr->lastValue.c);
+		changed = (LinkedVar(char) != (char)linkPtr->lastValue.i);
 		break;
 	    case TCL_LINK_UCHAR:
 	    case TCL_LINK_HEX8:
 	    case TCL_LINK_BITARRAY8:
 	    case TCL_LINK_BOOL8:
-		changed = (LinkedVar(unsigned char) != linkPtr->lastValue.uc);
+		changed = (LinkedVar(unsigned char) != (unsigned char)linkPtr->lastValue.i);
 		break;
 	    case TCL_LINK_SHORT:
-		changed = (LinkedVar(short) != linkPtr->lastValue.s);
+		changed = (LinkedVar(short) != (short)linkPtr->lastValue.i);
 		break;
 	    case TCL_LINK_USHORT:
 	    case TCL_LINK_HEX16:
 	    case TCL_LINK_BITARRAY16:
 	    case TCL_LINK_BOOL16:
 	    case TCL_LINK_S5TIME:
-		changed = (LinkedVar(unsigned short) != linkPtr->lastValue.us);
+		changed = (LinkedVar(unsigned short) != (unsigned short)linkPtr->lastValue.ui);
 		break;
 	    case TCL_LINK_INT:
 		changed = (LinkedVar(int) != linkPtr->lastValue.i);
@@ -1043,13 +1071,17 @@ LinkTraceProc(
 	    case TCL_LINK_DOUBLE:
 		changed = (LinkedVar(double) != linkPtr->lastValue.d);
 		break;
+	    case TCL_LINK_DOUBLE+2:
+	    case TCL_LINK_DOUBLE+8:
+		changed = (LinkedVar(long double) != linkPtr->lastValue.ld);
+		break;
 	    case TCL_LINK_BIT8:
 		changed = (LinkedVar(unsigned char) | (1 << linkPtr->bytes)) !=
-			(linkPtr->lastValue.uc | (1 << linkPtr->bytes));
+			((unsigned char)linkPtr->lastValue.i | (1 << linkPtr->bytes));
 		break;
 	    case TCL_LINK_BIT16:
 		changed = (LinkedVar(unsigned short) | (1 << linkPtr->bytes)) !=
-			(linkPtr->lastValue.us | (1 << linkPtr->bytes));
+			((unsigned short)linkPtr->lastValue.ui | (1 << linkPtr->bytes));
 		break;
 	    case TCL_LINK_BIT32:
 		changed = (LinkedVar(unsigned int) | (1 << linkPtr->bytes)) !=
@@ -1095,6 +1127,7 @@ LinkTraceProc(
     switch (linkPtr->type) {
     case TCL_LINK_CHAR:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    char *pc = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(char)) {
 		return (char *)"wrong dimension";
@@ -1107,9 +1140,9 @@ LinkTraceProc(
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have char value";
 		}
-		linkPtr->lastValue.pc[i] = (char) valueInt;
+		pc[i] = (char) valueInt;
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, pc, linkPtr->bytes);
 	    break;
 	}
 	if ((Tcl_GetIntFromObj(interp, valueObj, &valueInt) != TCL_OK
@@ -1119,11 +1152,11 @@ LinkTraceProc(
 		    TCL_GLOBAL_ONLY);
 	    return (char *)"variable must have char value";
 	}
-	linkPtr->lastValue.c = (char) valueInt;
-	LinkedVar(char) = linkPtr->lastValue.c;
+	LinkedVar(char) = linkPtr->lastValue.i = valueInt;
 	break;
     case TCL_LINK_UCHAR:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    unsigned char *puc = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned char)) {
 		return (char *)"wrong dimension";
@@ -1136,9 +1169,9 @@ LinkTraceProc(
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have unsigned char value";
 		}
-		linkPtr->lastValue.puc[i] = (unsigned char) valueInt;
+		puc[i] = (unsigned char) valueInt;
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, puc, linkPtr->bytes);
 	    break;
 	}
 	if ((Tcl_GetIntFromObj(interp, valueObj, &valueInt) != TCL_OK
@@ -1148,11 +1181,12 @@ LinkTraceProc(
 		    TCL_GLOBAL_ONLY);
 	    return (char *)"variable must have unsigned char value";
 	}
-	linkPtr->lastValue.uc = (unsigned char) valueInt;
-	LinkedVar(unsigned char) = linkPtr->lastValue.uc;
+	linkPtr->lastValue.i = valueInt;
+	LinkedVar(unsigned char) = (unsigned char)linkPtr->lastValue.i;
 	break;
     case TCL_LINK_SHORT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    short *ps = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(short)) {
 		return (char *)"wrong dimension";
@@ -1165,9 +1199,9 @@ LinkTraceProc(
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have short value";
 		}
-		linkPtr->lastValue.ps[i] = (short) valueInt;
+		ps[i] = (short) valueInt;
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, ps, linkPtr->bytes);
 	    break;
 	}
 	if ((Tcl_GetIntFromObj(interp, valueObj, &valueInt) != TCL_OK
@@ -1177,11 +1211,12 @@ LinkTraceProc(
 		    TCL_GLOBAL_ONLY);
 	    return (char *)"variable must have short value";
 	}
-	linkPtr->lastValue.s = (short) valueInt;
-	LinkedVar(short) = linkPtr->lastValue.s;
+	linkPtr->lastValue.i = valueInt;
+	LinkedVar(short) = (short) linkPtr->lastValue.i;
 	break;
     case TCL_LINK_USHORT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    unsigned short *pus = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned short)) {
 		return (char *)"wrong dimension";
@@ -1194,9 +1229,9 @@ LinkTraceProc(
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have unsigned short value";
 		}
-		linkPtr->lastValue.pus[i] = (unsigned short) valueInt;
+		pus[i] = (unsigned short) valueInt;
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, pus, linkPtr->bytes);
 	    break;
 	}
 	if ((Tcl_GetIntFromObj(interp, valueObj, &valueInt) != TCL_OK
@@ -1206,24 +1241,25 @@ LinkTraceProc(
 		    TCL_GLOBAL_ONLY);
 	    return (char *)"variable must have unsigned short value";
 	}
-	linkPtr->lastValue.us = (unsigned short) valueInt;
-	LinkedVar(unsigned short) = linkPtr->lastValue.us;
+	linkPtr->lastValue.ui = valueInt;
+	LinkedVar(unsigned short) = (unsigned short) linkPtr->lastValue.ui;
 	break;
     case TCL_LINK_INT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    int *pi = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(int)) {
 		return (char *)"wrong dimension";
 	    }
 	    for (i = 0; i < objc; i++) {
-		if (Tcl_GetIntFromObj(NULL, objv[i], &linkPtr->lastValue.pi[i]) != TCL_OK
-			&& GetInvalidIntFromObj(objv[i], &linkPtr->lastValue.pi[i]) != TCL_OK) {
+		if (Tcl_GetIntFromObj(NULL, objv[i], &pi[i]) != TCL_OK
+			&& GetInvalidIntFromObj(objv[i], &pi[i]) != TCL_OK) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have integer value";
 		}
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, pi, linkPtr->bytes);
 	    break;
 	}
 	if (Tcl_GetIntFromObj(NULL, valueObj, &linkPtr->lastValue.i) != TCL_OK
@@ -1236,6 +1272,7 @@ LinkTraceProc(
 	break;
     case TCL_LINK_UINT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    unsigned int *pui = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned int)) {
 		return (char *)"wrong dimension";
@@ -1248,9 +1285,9 @@ LinkTraceProc(
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have unsigned integer value";
 		}
-		linkPtr->lastValue.pui[i] = (unsigned int) valueWide;
+		pui[i] = (unsigned int) valueWide;
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, pui, linkPtr->bytes);
 	    break;
 	}
 	if ((Tcl_GetWideIntFromObj(interp, valueObj, &valueWide) != TCL_OK
@@ -1265,19 +1302,20 @@ LinkTraceProc(
 	break;
     case TCL_LINK_WIDE_INT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    Tcl_WideInt *pw = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(Tcl_WideInt)) {
 		return (char *)"wrong dimension";
 	    }
 	    for (i = 0; i < objc; i++) {
-		if (Tcl_GetWideIntFromObj(NULL, objv[i], &linkPtr->lastValue.pw[i]) != TCL_OK
-			&& GetInvalidWideFromObj(objv[i], &linkPtr->lastValue.pw[i]) != TCL_OK) {
+		if (Tcl_GetWideIntFromObj(NULL, objv[i], &pw[i]) != TCL_OK
+			&& GetInvalidWideFromObj(objv[i], &pw[i]) != TCL_OK) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have integer value";
 		}
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, pw, linkPtr->bytes);
 	    break;
 	}
 	if (Tcl_GetWideIntFromObj(NULL, valueObj, &linkPtr->lastValue.w)
@@ -1290,6 +1328,7 @@ LinkTraceProc(
 	break;
     case TCL_LINK_WIDE_UINT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    Tcl_WideUInt *puw = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(Tcl_WideUInt)) {
 		return (char *)"wrong dimension";
@@ -1302,9 +1341,9 @@ LinkTraceProc(
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have Tcl_WideUInt value";
 		}
-		linkPtr->lastValue.puw[i] = (Tcl_WideUInt) valueWide;
+		puw[i] = (Tcl_WideUInt) valueWide;
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, linkPtr->lastValue.p, linkPtr->bytes);
 	    break;
 	}
 	if ((Tcl_GetWideIntFromObj(interp, valueObj, &valueWide) != TCL_OK
@@ -1319,6 +1358,7 @@ LinkTraceProc(
 	break;
     case TCL_LINK_FLOAT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    float *pf = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(float)) {
 		return (char *)"wrong dimension";
@@ -1331,9 +1371,9 @@ LinkTraceProc(
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have float value";
 		}
-		linkPtr->lastValue.pf[i] = (float) valueDouble;
+		pf[i] = (float) valueDouble;
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, linkPtr->lastValue.p, linkPtr->bytes);
 	    break;
 	}
 	if ((Tcl_GetDoubleFromObj(interp, valueObj, &valueDouble) != TCL_OK
@@ -1348,19 +1388,20 @@ LinkTraceProc(
 	break;
     case TCL_LINK_DOUBLE:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    double *pd = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(double)) {
 		return (char *)"wrong dimension";
 	    }
 	    for (i = 0; i < objc; i++) {
-		if (Tcl_GetDoubleFromObj(NULL, objv[i], &linkPtr->lastValue.pd[i]) != TCL_OK
-			&& GetInvalidDoubleFromObj(objv[i], &linkPtr->lastValue.pd[i]) != TCL_OK) {
+		if (Tcl_GetDoubleFromObj(NULL, objv[i], &pd[i]) != TCL_OK
+			&& GetInvalidDoubleFromObj(objv[i], &pd[i]) != TCL_OK) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have real value";
 		}
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, pd, linkPtr->bytes);
 	    break;
 	}
 	if (Tcl_GetDoubleFromObj(NULL, valueObj, &linkPtr->lastValue.d) != TCL_OK
@@ -1371,37 +1412,70 @@ LinkTraceProc(
 	}
 	LinkedVar(double) = linkPtr->lastValue.d;
 	break;
-    case TCL_LINK_COMPLEX32:
-	if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
-		|| (size_t)objc != linkPtr->bytes / sizeof(float)) {
-	    return (char *)"wrong dimension";
-	}
-	for (i = 0; i < objc; i++) {
-	    if (Tcl_GetDoubleFromObj(interp, objv[i], &valueDouble) != TCL_OK
-		    || valueDouble < -FLT_MAX || valueDouble > FLT_MAX) {
-		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
-			TCL_GLOBAL_ONLY);
-		return (char *)"variable array must have float value";
+    case TCL_LINK_DOUBLE+2:
+    case TCL_LINK_DOUBLE+8:
+	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    long double *pld = linkPtr->lastValue.p;
+	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
+		    || (size_t)objc != linkPtr->bytes / sizeof(float)) {
+		return (char *)"wrong dimension";
 	    }
-	    linkPtr->lastValue.pf[i] = (float) valueDouble;
-	}
-	memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
-	break;
-    case TCL_LINK_COMPLEX64:
-	if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
-		|| (size_t)objc != linkPtr->bytes / sizeof(double)) {
-	    return (char *)"wrong dimension";
-	}
-	for (i = 0; i < objc; i++) {
-	    if (Tcl_GetDoubleFromObj(interp, objv[i], &valueDouble) != TCL_OK) {
-		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
-			TCL_GLOBAL_ONLY);
-		return (char *)"variable array must have double value";
+	    for (i = 0; i < objc; i++) {
+		if ((Tcl_GetDoubleFromObj(interp, objv[i], &valueDouble) != TCL_OK)
+			&& GetInvalidDoubleFromObj(objv[i], &valueDouble) != TCL_OK) {
+		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
+			    TCL_GLOBAL_ONLY);
+		    return (char *)"variable array must have long double value";
+		}
+		pld[i] = (long double) valueDouble;
 	    }
-	    linkPtr->lastValue.pd[i] = valueDouble;
+	    memcpy(linkPtr->addr, pld, linkPtr->bytes);
+	    break;
 	}
-	memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	if ((Tcl_GetDoubleFromObj(interp, valueObj, &valueDouble) != TCL_OK)
+		&& GetInvalidDoubleFromObj(valueObj, &valueDouble) != TCL_OK) {
+	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
+		    TCL_GLOBAL_ONLY);
+	    return (char *)"variable must have long double value";
+	}
+	linkPtr->lastValue.d = valueDouble;
+	LinkedVar(long double) = linkPtr->lastValue.ld;
 	break;
+    case TCL_LINK_COMPLEX32: {
+	    float *pf = linkPtr->lastValue.p;
+	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
+		    || (size_t)objc != linkPtr->bytes / sizeof(float)) {
+		return (char *)"wrong dimension";
+	    }
+	    for (i = 0; i < objc; i++) {
+		if (Tcl_GetDoubleFromObj(interp, objv[i], &valueDouble) != TCL_OK
+			|| valueDouble < -FLT_MAX || valueDouble > FLT_MAX) {
+		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
+			    TCL_GLOBAL_ONLY);
+		    return (char *)"variable array must have float value";
+		}
+		pf[i] = (float) valueDouble;
+	    }
+	    memcpy(linkPtr->addr, pf, linkPtr->bytes);
+	    break;
+	}
+    case TCL_LINK_COMPLEX64: {
+	    double *pd = linkPtr->lastValue.p;
+	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
+		    || (size_t)objc != linkPtr->bytes / sizeof(double)) {
+		return (char *)"wrong dimension";
+	    }
+	    for (i = 0; i < objc; i++) {
+		if (Tcl_GetDoubleFromObj(interp, objv[i], &valueDouble) != TCL_OK) {
+		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
+			    TCL_GLOBAL_ONLY);
+		    return (char *)"variable array must have double value";
+		}
+		pd[i] = valueDouble;
+	    }
+	    memcpy(linkPtr->addr, pd, linkPtr->bytes);
+	    break;
+	}
     case TCL_LINK_STRING:
 	value = TclGetString(valueObj);
 	valueLength = valueObj->length + 1;
@@ -1416,11 +1490,10 @@ LinkTraceProc(
 	    return (char *)"wrong size of char* value";
 	}
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, value, valueLength);
+	    memcpy(linkPtr->lastValue.p, value, valueLength);
 	    memcpy(linkPtr->addr, value, valueLength);
 	} else {
-	    linkPtr->lastValue.c = '\0';
-	    LinkedVar(char) = linkPtr->lastValue.c;
+	    LinkedVar(char) = linkPtr->lastValue.i = '\0';
 	}
 	break;
     case TCL_LINK_BINARY:
@@ -1429,15 +1502,17 @@ LinkTraceProc(
 	    return (char *)"wrong size of binary value";
 	}
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.pc, value, (unsigned) i);
-	    memcpy(linkPtr->addr, value, (unsigned) i);
+	    memcpy(linkPtr->lastValue.p, value, (size_t) i);
+	    memcpy(linkPtr->addr, value, (size_t) i);
 	} else {
-	    linkPtr->lastValue.uc = (unsigned char) *value;
-	    LinkedVar(unsigned char) = linkPtr->lastValue.uc;
+	    linkPtr->lastValue.i = (unsigned char) *value;
+	    LinkedVar(unsigned char) = (unsigned char) linkPtr->lastValue.i;
 	}
 	break;
-    case TCL_LINK_HEX8:
+    case TCL_LINK_HEX8: {
+        unsigned char uc;
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    unsigned char *puc = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned char)) {
 		return (char *)"wrong dimension";
@@ -1446,23 +1521,27 @@ LinkTraceProc(
 		value = TclGetString(objv[i]);
 		valueLength = objv[i]->length;
 		if (valueLength != 4 || value[0]!='0' || value[1]!='x'
-			|| (HexTo8bit(value+2, &linkPtr->lastValue.puc[i])) < 0) {
+			|| (HexTo8bit(value+2, &puc[i])) < 0) {
 		    return (char *)"variable array must have '0x' and 2 hex chars";
 		}
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, puc, linkPtr->bytes);
 	    break;
 	}
 	value = TclGetString(valueObj);
 	valueLength = valueObj->length;
 	if (valueLength != 4 || value[0]!='0' || value[1]!='x'
-		|| HexTo8bit(value+2, &linkPtr->lastValue.uc) < 0) {
+		|| HexTo8bit(value+2, &uc) < 0) {
 	      return (char *)"variable must have '0x' and 2 hex chars";
 	}
-	LinkedVar(unsigned char) = linkPtr->lastValue.uc;
+	linkPtr->lastValue.i = uc;
+	LinkedVar(unsigned char) = (unsigned char)linkPtr->lastValue.i;
 	break;
-    case TCL_LINK_HEX16:
+	}
+    case TCL_LINK_HEX16: {
+        unsigned short us;
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    unsigned short *pus = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned short)) {
 		return (char *)"wrong dimension";
@@ -1471,23 +1550,26 @@ LinkTraceProc(
 		value = TclGetString(objv[i]);
 		valueLength = objv[i]->length;
 		if (valueLength != 6 || value[0]!='0' || value[1]!='x'
-			|| (HexTo16bit(value+2, &linkPtr->lastValue.pus[i])) < 0) {
+			|| (HexTo16bit(value+2, &pus[i])) < 0) {
 		    return (char *)"variable array must have '0x' and 4 hex chars";
 		}
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, pus, linkPtr->bytes);
 	    break;
 	}
 	value = TclGetString(valueObj);
 	valueLength = valueObj->length;
 	if (valueLength != 6 || value[0]!='0' || value[1]!='x'
-		|| HexTo16bit(value+2, &linkPtr->lastValue.us) < 0) {
+		|| HexTo16bit(value+2, &us) < 0) {
 	    return (char *)"variable must have '0x' and 4 hex chars";
 	}
-	LinkedVar(unsigned short) = linkPtr->lastValue.us;
+	linkPtr->lastValue.ui = us;
+	LinkedVar(unsigned short) = (unsigned short)linkPtr->lastValue.ui;
 	break;
+	}
     case TCL_LINK_HEX32:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    unsigned int *pui = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned int)) {
 		return (char *)"wrong dimension";
@@ -1496,11 +1578,11 @@ LinkTraceProc(
 		value = TclGetString(objv[i]);
 		valueLength = objv[i]->length;
 		if (valueLength != 10 || value[0]!='0' || value[1]!='x'
-			|| (HexTo32bit(value+2, &linkPtr->lastValue.pui[i])) < 0) {
+			|| (HexTo32bit(value+2, &pui[i])) < 0) {
 		    return (char *)"variable array must have '0x' and 8 hex chars";
 		}
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, pui, linkPtr->bytes);
 	    break;
 	}
 	value = TclGetString(valueObj);
@@ -1513,6 +1595,7 @@ LinkTraceProc(
 	break;
     case TCL_LINK_HEX64:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    Tcl_WideUInt *puw = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(Tcl_WideUInt)) {
 		return (char *)"wrong dimension";
@@ -1521,11 +1604,11 @@ LinkTraceProc(
 		value = TclGetString(objv[i]);
 		valueLength = objv[i]->length;
 		if (valueLength != 18 || value[0]!='0' || value[1]!='x'
-			|| (HexTo64bit(value+2, &linkPtr->lastValue.puw[i])) < 0) {
+			|| (HexTo64bit(value+2, &puw[i])) < 0) {
 		    return (char *)"variable array must have '0x' and 16 hex chars";
 		}
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, puw, linkPtr->bytes);
 	    break;
 	}
 	value = TclGetString(valueObj);
@@ -1538,6 +1621,7 @@ LinkTraceProc(
 	break;
     case TCL_LINK_BITARRAY8:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    unsigned char *puc = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned char)) {
 		return (char *)"wrong dimension";
@@ -1550,13 +1634,13 @@ LinkTraceProc(
 		}
 		for (j = 0; j < 8; j++) {
 		    if (value[j] == '0' || value[j] == 'f' || value[j] == 'F') {
-			linkPtr->lastValue.puc[i] &= ~(1 << (7 - j));
+			puc[i] &= ~(1 << (7 - j));
 		    } else {
-			linkPtr->lastValue.puc[i] |= (1 << (7 - j));
+			puc[i] |= (1 << (7 - j));
 		    }
 		}
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, puc, linkPtr->bytes);
 	    break;
 	}
 	value = Tcl_GetString(valueObj);
@@ -1566,15 +1650,16 @@ LinkTraceProc(
 	}
 	for (j = 0; j < 8; j++) {
 	    if (value[j] == '0' || value[j] == 'f' || value[j] == 'F') {
-		linkPtr->lastValue.uc &= ~(1 << (7 - j));
+		linkPtr->lastValue.i &= ~(1 << (7 - j));
 	    } else {
-		linkPtr->lastValue.uc |= (1 << (7 - j));
+		linkPtr->lastValue.i |= (1 << (7 - j));
 	    }
 	}
-	LinkedVar(unsigned char) = linkPtr->lastValue.uc;
+	LinkedVar(unsigned char) = (unsigned char)linkPtr->lastValue.i;
 	break;
     case TCL_LINK_BITARRAY16:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    unsigned short *pus = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned short)) {
 		return (char *)"wrong dimension";
@@ -1587,13 +1672,13 @@ LinkTraceProc(
 		}
 		for (j = 0; j < 16; j++) {
 		    if (value[j] == '0' || value[j] == 'f' || value[j] == 'F') {
-			linkPtr->lastValue.pus[i] &= ~(1 << (15 - j));
+			pus[i] &= ~(1 << (15 - j));
 		    } else {
-			linkPtr->lastValue.pus[i] |= (1 << (15 - j));
+			pus[i] |= (1 << (15 - j));
 		    }
 		}
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, pus, linkPtr->bytes);
 	    break;
 	}
 	value = Tcl_GetString(valueObj);
@@ -1603,15 +1688,16 @@ LinkTraceProc(
 	}
 	for (j = 0; j < 16; j++) {
 	    if (value[j] == '0' || value[j] == 'f' || value[j] == 'F') {
-		linkPtr->lastValue.us &= ~(1 << (15 - j));
+		linkPtr->lastValue.ui &= ~(1 << (15 - j));
 	    } else {
-		linkPtr->lastValue.us |= (1 << (15 - j));
+		linkPtr->lastValue.ui |= (1 << (15 - j));
 	    }
 	}
-	LinkedVar(unsigned short) = linkPtr->lastValue.us;
+	LinkedVar(unsigned short) = (unsigned short)linkPtr->lastValue.ui;
 	break;
     case TCL_LINK_BITARRAY32:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    unsigned int *pui = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned int)) {
 		return (char *)"wrong dimension";
@@ -1624,13 +1710,13 @@ LinkTraceProc(
 		}
 		for (j = 0; j < 32; j++) {
 		    if (value[j] == '0' || value[j] == 'f' || value[j] == 'F') {
-			linkPtr->lastValue.pui[i] &= ~(1 << (31 - j));
+			pui[i] &= ~(1 << (31 - j));
 		    } else {
-			linkPtr->lastValue.pui[i] |= (1 << (31 - j));
+			pui[i] |= (1 << (31 - j));
 		    }
 		}
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, pui, linkPtr->bytes);
 	    break;
 	}
 	value = Tcl_GetString(valueObj);
@@ -1649,6 +1735,7 @@ LinkTraceProc(
 	break;
     case TCL_LINK_BITARRAY64:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    Tcl_WideUInt *puw = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned int)) {
 		return (char *)"wrong dimension";
@@ -1661,13 +1748,13 @@ LinkTraceProc(
 		}
 		for (j = 0; j < 64; j++) {
 		    if (value[j] == '0' || value[j] == 'f' || value[j] == 'F') {
-			linkPtr->lastValue.puw[i] &= ~(1 << (63 - j));
+			puw[i] &= ~(1 << (63 - j));
 		    } else {
-			linkPtr->lastValue.puw[i] |= (1 << (63 - j));
+			puw[i] |= (1 << (63 - j));
 		    }
 		}
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, puw, linkPtr->bytes);
 	    break;
 	}
 	value = Tcl_GetString(valueObj);
@@ -1686,6 +1773,7 @@ LinkTraceProc(
 	break;
     case TCL_LINK_BOOL8:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    unsigned char *puc = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned char)) {
 		return (char *)"wrong dimension";
@@ -1696,9 +1784,9 @@ LinkTraceProc(
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have boolean value";
 		}
-		linkPtr->lastValue.puc[i] = (unsigned char) valueInt;
+		puc[i] = (unsigned char) valueInt;
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, puc, linkPtr->bytes);
 	    break;
 	}
 	if (Tcl_GetBooleanFromObj(NULL, valueObj, &valueInt) != TCL_OK) {
@@ -1706,11 +1794,12 @@ LinkTraceProc(
 		    TCL_GLOBAL_ONLY);
 	    return (char *)"variable must have boolean value";
 	}
-	linkPtr->lastValue.uc = (unsigned char) valueInt;
-	LinkedVar(unsigned char) = linkPtr->lastValue.uc;
+	linkPtr->lastValue.i =  valueInt;
+	LinkedVar(unsigned char) = (unsigned char)linkPtr->lastValue.i;
 	break;
     case TCL_LINK_BOOL16:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    unsigned short *pus = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned short)) {
 		return (char *)"wrong dimension";
@@ -1721,9 +1810,9 @@ LinkTraceProc(
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have boolean value";
 		}
-		linkPtr->lastValue.pus[i] = (unsigned short) valueInt;
+		pus[i] = (unsigned short) valueInt;
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, pus, linkPtr->bytes);
 	    break;
 	}
 	if (Tcl_GetBooleanFromObj(NULL, valueObj, &valueInt) != TCL_OK) {
@@ -1731,11 +1820,12 @@ LinkTraceProc(
 		    TCL_GLOBAL_ONLY);
 	    return (char *)"variable must have boolean value";
 	}
-	linkPtr->lastValue.us = (unsigned short) valueInt;
-	LinkedVar(unsigned short) = linkPtr->lastValue.us;
+	linkPtr->lastValue.ui = valueInt;
+	LinkedVar(unsigned short) = (unsigned short) linkPtr->lastValue.ui;
 	break;
     case TCL_LINK_BOOL32:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    unsigned int *pui = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned int)) {
 		return (char *)"wrong dimension";
@@ -1746,9 +1836,9 @@ LinkTraceProc(
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have boolean value";
 		}
-		linkPtr->lastValue.pui[i] = (unsigned int) valueInt;
+		pui[i] = (unsigned int) valueInt;
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, pui, linkPtr->bytes);
 	    break;
 	}
 	if (Tcl_GetBooleanFromObj(NULL, valueObj, &valueInt) != TCL_OK) {
@@ -1761,6 +1851,7 @@ LinkTraceProc(
 	break;
     case TCL_LINK_BOOL64:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    Tcl_WideUInt *puw = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(Tcl_WideUInt)) {
 		return (char *)"wrong dimension";
@@ -1771,9 +1862,9 @@ LinkTraceProc(
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have boolean value";
 		}
-		linkPtr->lastValue.puw[i] = (Tcl_WideUInt) valueInt;
+		puw[i] = (Tcl_WideUInt) valueInt;
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, puw, linkPtr->bytes);
 	    break;
 	}
 	if (Tcl_GetBooleanFromObj(NULL, valueObj, &valueInt) != TCL_OK) {
@@ -1790,11 +1881,11 @@ LinkTraceProc(
 	    return (char *)"variable must have boolean value";
 	}
 	if (changed) {
-	    linkPtr->lastValue.uc |= (1 << linkPtr->bytes);
+	    linkPtr->lastValue.i |= (1 << linkPtr->bytes);
 	} else {
-	    linkPtr->lastValue.uc &= ~(1 << linkPtr->bytes);
+	    linkPtr->lastValue.i &= ~(1 << linkPtr->bytes);
 	}
-	LinkedVar(unsigned char) = linkPtr->lastValue.uc;
+	LinkedVar(unsigned char) = (unsigned char)linkPtr->lastValue.i;
 	break;
     case TCL_LINK_BIT16:
 	if (Tcl_GetBooleanFromObj(NULL, valueObj, &changed)
@@ -1802,11 +1893,11 @@ LinkTraceProc(
 	    return (char *)"variable must have boolean value";
 	}
 	if (changed) {
-	    linkPtr->lastValue.us |= (1 << linkPtr->bytes);
+	    linkPtr->lastValue.ui |= (1 << linkPtr->bytes);
 	} else {
-	    linkPtr->lastValue.us &= ~(1 << linkPtr->bytes);
+	    linkPtr->lastValue.ui &= ~(1 << linkPtr->bytes);
 	}
-	LinkedVar(unsigned short) = linkPtr->lastValue.us;
+	LinkedVar(unsigned short) = (unsigned short)linkPtr->lastValue.ui;
 	break;
     case TCL_LINK_BIT32:
 	if (Tcl_GetBooleanFromObj(NULL, valueObj, &changed)
@@ -1834,6 +1925,7 @@ LinkTraceProc(
 	break;
     case TCL_LINK_S5FLOAT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    unsigned int *pui = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned int)) {
 		return (char *)"wrong dimension";
@@ -1845,9 +1937,9 @@ LinkTraceProc(
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have float value";
 		}
-		linkPtr->lastValue.pui[i] = FloatToS5((float) valueDouble);
+		pui[i] = FloatToS5((float) valueDouble);
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, pui, linkPtr->bytes);
 	    break;
 	}
 	if (Tcl_GetDoubleFromObj(interp, valueObj, &valueDouble) != TCL_OK
@@ -1861,6 +1953,7 @@ LinkTraceProc(
 	break;
     case TCL_LINK_S5TIME:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
+	    unsigned short *pus = linkPtr->lastValue.p;
 	    if (Tcl_ListObjGetElements(interp, valueObj, &objc, &objv) == TCL_ERROR
 		    || (size_t)objc != linkPtr->bytes / sizeof(unsigned short)) {
 		return (char *)"wrong dimension";
@@ -1872,10 +1965,9 @@ LinkTraceProc(
 			    TCL_GLOBAL_ONLY);
 		    return (char *)"variable array must have float value";
 		}
-		linkPtr->lastValue.pus[i] =
-			FloatToS5time(linkPtr->lastValue.pus[i], (float) valueDouble);
+		pus[i] = FloatToS5time(pus[i], (float) valueDouble);
 	    }
-	    memcpy(linkPtr->addr, linkPtr->lastValue.pc, linkPtr->bytes);
+	    memcpy(linkPtr->addr, pus, linkPtr->bytes);
 	    break;
 	}
 	if (Tcl_GetDoubleFromObj(interp, valueObj, &valueDouble) != TCL_OK
@@ -1884,9 +1976,9 @@ LinkTraceProc(
 		    TCL_GLOBAL_ONLY);
 	    return (char *)"variable must have float value";
 	}
-	linkPtr->lastValue.us =
-		FloatToS5time(linkPtr->lastValue.us, (float) valueDouble);
-	LinkedVar(unsigned short) = linkPtr->lastValue.us;
+	linkPtr->lastValue.ui =
+		FloatToS5time((unsigned short)linkPtr->lastValue.ui, (float) valueDouble);
+	LinkedVar(unsigned short) = (unsigned short) linkPtr->lastValue.ui;
 	break;
     default:
 	    return (char *)"internal error: bad linked variable type";

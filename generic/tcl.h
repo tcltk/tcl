@@ -1160,9 +1160,9 @@ typedef struct Tcl_DString {
 #else
 
 /* These are the new values, available starting with Tcl 8.7 */
-#define TCL_LINK_I(type) (0x100 | (int)sizeof(type)) /* Signed integer */
-#define TCL_LINK_U(type) (0x200 | (int)sizeof(type)) /* Unsigned integer */
-#define TCL_LINK_D(type) (0x300 | (int)sizeof(type)) /* Double/float */
+#define TCL_LINK_I(type) (0x100 | (int)sizeof(type)) /* signed integer */
+#define TCL_LINK_U(type) (0x200 | (int)sizeof(type)) /* unsigned integer */
+#define TCL_LINK_D(type) (0x300 | (int)sizeof(type)) /* float/double/long double */
 #define TCL_LINK_X(type) (0x400 | (int)sizeof(type)) /* Hexadecimal */
 #define TCL_LINK_B(type) (0x500 | (int)sizeof(type)) /* Boolean */
 
@@ -2588,7 +2588,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
      Tcl_DbNewBignumObj(val, __FILE__, __LINE__)
 #  undef  Tcl_NewBooleanObj
 #  define Tcl_NewBooleanObj(val) \
-     Tcl_DbNewBooleanObj(val, __FILE__, __LINE__)
+     Tcl_DbNewLongObj((val)!=0, __FILE__, __LINE__)
 #  undef  Tcl_NewByteArrayObj
 #  define Tcl_NewByteArrayObj(bytes, len) \
      Tcl_DbNewByteArrayObj(bytes, len, __FILE__, __LINE__)
