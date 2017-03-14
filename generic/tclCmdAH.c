@@ -46,6 +46,9 @@ struct ForeachState {
 
 static int		CheckAccess(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    int mode);
+static int		BadEncodingSubcommand(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		EncodingConvertfromObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -579,7 +582,7 @@ Tcl_EncodingObjCmd(
  * Side effects:
  *	The ensemble is initialized.
  *
- * This command is not installed in a safe interpreter.
+ * This command is hidden in a safe interpreter.
  */
 
 Tcl_Command
@@ -596,6 +599,113 @@ TclInitEncodingCmd(
     };
 
     return TclMakeEnsemble(interp, "encoding", encodingImplMap);
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * TclMakeEncodingCommandSafe --
+ *
+ *	This function hides the unsafe 'dirs' and 'system' subcommands of
+ *	the "encoding" Tcl command ensemble. It must be called only from
+ *	TclHideUnsafeCommands.
+ *
+ * Results:
+ *	A standard Tcl result
+ *
+ * Side effects:
+ *	Adds commands to the table of hidden commands.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+int
+TclMakeEncodingCommandSafe(
+    Tcl_Interp* interp)		/* Tcl interpreter */
+{
+    static const struct {
+	const char *cmdName;
+	int unsafe;
+    } unsafeInfo[] = {
+	{"convertfrom", 0},
+	{"convertto",   0},
+	{"dirs",        1},
+	{"names",       0},
+	{"system",      0},
+	{NULL,          0}
+    };
+
+    int i;
+    Tcl_DString oldBuf, newBuf;
+
+    Tcl_DStringInit(&oldBuf);
+    TclDStringAppendLiteral(&oldBuf, "::tcl::encoding::");
+    Tcl_DStringInit(&newBuf);
+    TclDStringAppendLiteral(&newBuf, "tcl:encoding:");
+    for (i=0 ; unsafeInfo[i].cmdName != NULL ; i++) {
+	if (unsafeInfo[i].unsafe) {
+	    const char *oldName, *newName;
+
+	    Tcl_DStringSetLength(&oldBuf, 17);
+	    oldName = Tcl_DStringAppend(&oldBuf, unsafeInfo[i].cmdName, -1);
+	    Tcl_DStringSetLength(&newBuf, 13);
+	    newName = Tcl_DStringAppend(&newBuf, unsafeInfo[i].cmdName, -1);
+	    if (TclRenameCommand(interp, oldName, "___tmp") != TCL_OK
+		    || Tcl_HideCommand(interp, "___tmp", newName) != TCL_OK) {
+		Tcl_Panic("problem making 'encoding %s' safe: %s",
+			unsafeInfo[i].cmdName,
+			Tcl_GetString(Tcl_GetObjResult(interp)));
+	    }
+	    Tcl_CreateObjCommand(interp, oldName, BadEncodingSubcommand,
+		    (ClientData) unsafeInfo[i].cmdName, NULL);
+	}
+    }
+    Tcl_DStringFree(&oldBuf);
+    Tcl_DStringFree(&newBuf);
+
+    /*
+     * Ugh. The [encoding] command is now actually safe, but it is assumed by
+     * scripts that it is not, which messes up security policies.
+     */
+
+    if (Tcl_HideCommand(interp, "encoding", "encoding") != TCL_OK) {
+	Tcl_Panic("problem making 'encoding' safe: %s",
+		Tcl_GetString(Tcl_GetObjResult(interp)));
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BadEncodingSubcommand --
+ *
+ *	Command used to act as a backstop implementation when subcommands of
+ *	"encoding" are unsafe (the real implementations of the subcommands are
+ *	hidden). The clientData is always the full official subcommand name.
+ *
+ * Results:
+ *	A standard Tcl result (always a TCL_ERROR).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BadEncodingSubcommand(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    const char *subcommandName = (const char *) clientData;
+
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "not allowed to invoke subcommand %s of encoding", subcommandName));
+    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", NULL);
+    return TCL_ERROR;
 }
 
 /*
