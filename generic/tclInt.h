@@ -3239,10 +3239,8 @@ MODULE_SCOPE int	Tcl_AssembleObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclNRAssembleObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-
-MODULE_SCOPE int	Tcl_EncodingObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_Command TclInitEncodingCmd(Tcl_Interp *interp);
+MODULE_SCOPE int	TclMakeEncodingCommandSafe(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_EofObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
