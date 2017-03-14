@@ -1026,6 +1026,7 @@ TclHideUnsafeCommands(
 	    Tcl_HideCommand(interp, cmdInfoPtr->name, cmdInfoPtr->name);
 	}
     }
+    TclMakeEncodingCommandSafe(interp); /* Ugh! */
     TclMakeFileCommandSafe(interp);     /* Ugh! */
     return TCL_OK;
 }
