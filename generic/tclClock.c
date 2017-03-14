@@ -253,6 +253,19 @@ TclClockInit(
     ClockClientData *data;
     int i;
 
+    /* Structure of the 'clock' ensemble */
+
+    static const EnsembleImplMap clockImplMap[] = {
+	{"add",          NULL, TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
+	{"clicks",       NULL, TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
+	{"format",       NULL, TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
+	{"microseconds", NULL, TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
+	{"milliseconds", NULL, TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
+	{"scan",         NULL, TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
+	{"seconds",      NULL, TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
+	{NULL,           NULL, NULL,                      NULL, NULL, 0}
+    };
+
     /*
      * Safe interps get [::clock] as alias to a master, so do not need their
      * own copies of the support routines.
@@ -276,6 +289,7 @@ TclClockInit(
 
     /*
      * Install the commands.
+     * TODO - Let Tcl_MakeEnsemble do this?
      */
 
 #define TCL_CLOCK_PREFIX_LEN 14 /* == strlen("::tcl::clock::") */
@@ -286,6 +300,10 @@ TclClockInit(
 	Tcl_CreateObjCommand(interp, cmdName, clockCmdPtr->objCmdProc, data,
 		ClockDeleteCmdProc);
     }
+
+    /* Make the clock ensemble */
+
+    TclMakeEnsemble(interp, "clock", clockImplMap);
 }
 
 /*
