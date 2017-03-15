@@ -58,6 +58,7 @@ static int		ProcParseArgSpec(Tcl_Interp *interp,
 			    const char *argSpec, int argIdx, int isLastArg,
 			    CompiledLocal **localPtrPtr,
 			    CompiledLocal **lastLocalPtrPtr);
+static inline int	ProcCheckScalarArg(const char *arg, const char **err);
 static void		ProcCompiledLocalsFree(CompiledLocal *localPtr);
 
 static Tcl_NRPostProc ApplyNR2;
@@ -639,6 +640,55 @@ TclCreateProc(
 /*
  *----------------------------------------------------------------------
  *
+ * ProcCheckScalarArg --
+ *
+ *	Check that the argument name is a scalar.
+ *
+ * Results:
+ *	Returns TCL_OK if argument is a scalar. Returns TCL_ERROR and
+ *	set |err| with an error description if it is not a scalar.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline int
+ProcCheckScalarArg(
+    const char *arg,		/* Argument name. */
+    const char **err)		/* Error description (output) */
+{
+    const char *p = arg;
+
+    /*
+     * Check that the formal parameter name is a scalar.
+     */
+
+    while (*p != '\0') {
+	if (*p == '(') {
+	    const char *q = p;
+	    do {
+		q++;
+	    } while (*q != '\0');
+	    q--;
+	    if (*q == ')') {	/* We have an array element. */
+		*err = "is an array element";
+		return TCL_ERROR;
+	    }
+	} else if ((*p == ':') && (*(p+1) == ':')) {
+	    *err = "is not a simple name";
+	    return TCL_ERROR;
+	}
+	p++;
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ProcParseArgSpec --
  *
  *	Given an argument specification defined either using old-style
@@ -662,7 +712,7 @@ static int
 ProcParseArgSpec(
     Tcl_Interp *interp,		/* Interpreter containing proc. */
     const char *argSpec,	/* Argument specification. */
-    int argIdx,                 /* Argument index in the array of variables
+    int argIdx,			/* Argument index in the array of variables
 				 * in the procedure call frame. */
     int isLastArg,		/* != 0 means this is the last argument. */
     CompiledLocal **localPtrPtr,
@@ -676,7 +726,7 @@ ProcParseArgSpec(
     ExtendedArgSpec *argSpecPtr, *lastArgSpecPtr = NULL;
     const char **fieldValues = NULL;
     int fieldCount, length, df=0;
-    const char *p;
+    const char *err;
     int result, i;
 
     /*
@@ -703,27 +753,10 @@ ProcParseArgSpec(
      * Check that the formal parameter name is a scalar.
      */
 
-    p = fieldValues[0];
-    while (*p != '\0') {
-	if (*p == '(') {
-	    const char *q = p;
-	    do {
-		q++;
-	    } while (*q != '\0');
-	    q--;
-	    if (*q == ')') {	/* We have an array element. */
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"formal parameter \"%s\" is an array element",
-			fieldValues[0]));
-		goto parseError;
-	    }
-	} else if ((*p == ':') && (*(p+1) == ':')) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "formal parameter \"%s\" is not a simple name",
-		    fieldValues[0]));
-	    goto parseError;
-	}
-	p++;
+    if (ProcCheckScalarArg(fieldValues[0], &err) != TCL_OK) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"formal parameter \"%s\" %s", fieldValues[0], err));
+	goto parseError;
     }
 
     length = strlen(fieldValues[0]);
@@ -890,6 +923,14 @@ ProcParseArgSpec(
 
 	    length = strlen(fieldValues[i+1]);
 	    if (length > 0) {
+		const char *err;
+		if (ProcCheckScalarArg(fieldValues[i+1], &err) != TCL_OK) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "upvar parameter \"%s\" %s", fieldValues[i+1],
+			    err));
+		    goto parseError;
+		}
+
 		upLocalPtr = ckalloc(TclOffset(CompiledLocal, name) + length+1);
 		upLocalPtr->nextPtr = NULL;
 		upLocalPtr->nameLength = length;

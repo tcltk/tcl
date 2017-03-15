@@ -67,10 +67,16 @@ test proc-enh-1.10b {namearg group} {
 } {{1 2 0} {A B 0} {Z Y 0} {Z Z -5} {Z B 0} {Z 1 6}}
 test proc-enh-1.10c {namearg group followed by a pos arg with leading dash} {
     list [catch {
-	proc p { { a -name a } { b -name b } { c 0 } } { list $a $b $c }
-	list [p2 -b Z -5]
+	proc p { { a -default Z -name a } { b -name b } { c 0 } } { list $a $b $c }
+	list [p -b Z -5]
     } msg] $msg $errorCode
-} {1 {wrong # args: should be "p2 ?|-a a|? |-b b| ?c?"} {TCL WRONGARGS}}
+} {1 {wrong # args: should be "p ?|-a a|? |-b b| ?c?"} {TCL WRONGARGS}}
+test proc-enh-1.10d {namearg group followed by more options than allowed} {
+    list [catch {
+	proc p { { a -default Z -name a } b } { list $a $b $c }
+	list [p -- 5 6]
+    } msg] $msg $errorCode
+} {1 {wrong # args: should be "p ?|-a a|? b"} {TCL WRONGARGS}}
 test proc-enh-1.11 {upvar group} {
     proc p { { a -upvar up1 } { b -name b -upvar up2 } } {
 	incr a; list $up1 $a $up2 $b
@@ -103,6 +109,12 @@ test proc-enh-1.14 {upvar arg: proc call with non-existing arg} {
 	p _non_exist_
     } msg] $msg $errorCode
 } {1 {wrong args: pass-by-name variable "_non_exist_" does not exist} {TCL WRONGARGS}}
+test proc-enh-1.14b {upvar arg: proc call with non-existing arg} {
+    proc p { { a -name A -upvar up } } { list $up $a }
+    list [catch {
+	p -A _non_exist_
+    } msg] $msg $errorCode
+} {1 {wrong args: pass-by-name variable "_non_exist_" does not exist} {TCL WRONGARGS}}
 test proc-enh-1.15 {upvar before first name} {
     list [catch {
 	proc p { { a -upvar {} -name A } } { }
@@ -118,6 +130,31 @@ test proc-enh-1.16b {both upvar and value are invalid} {
 	proc p { { a -name A -value 1 -upvar {} } } { }
     } msg] $msg $errorCode
 } {1 {-upvar and -value are not allowed together} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.17 {-default after -name} {
+    list [catch {
+	proc p { { a -name A -default 1} } { }
+    } msg] $msg $errorCode
+} {1 {-default is not allowed after -name} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.18 {-upvar set twice} {
+    list [catch {
+	proc p { { a -upvar up1 -upvar up2 } } { }
+    } msg] $msg $errorCode
+} {1 {-upvar has already been set} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.18b {-upvar set twice} {
+    list [catch {
+	proc p { { a -name U -upvar up1 -upvar up2 } } { }
+    } msg] $msg $errorCode
+} {1 {-upvar has already been set} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.19 {-upvar with non scalar arg} {
+    list [catch {
+	proc p { { a -upvar a(1) } } { list $a(1) $a }
+    } msg] $msg $errorCode
+} {1 {upvar parameter "a(1)" is an array element} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.19b {-upvar with non scalar arg} {
+    list [catch {
+	proc p { { a -upvar b::c } } { list $b::c $a }
+    } msg] $msg $errorCode
+} {1 {upvar parameter "b::c" is not a simple name} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
 
 test proc-enh-2.1 {precompiled, inconsistent arg default value} -body {
     proc p {x y {z -default 2}} { }
@@ -137,6 +174,17 @@ test proc-enh-2.3 {precompiled with upvar arg} -body {
     proc p {x {y -upvar up} z} { }
     procbodytest::proc t {x {y -upvar up} z} p
 } -constraints procbodytest -result {}
+
+test proc-enh-3.1 {apply/lambda - wrong args} {
+    list [catch {
+	set lambda [list {{a -name A -name A1 -value 1} {b -default B0 -name B}} {list $a $b}]
+	apply $lambda
+    } msg] $msg $errorCode
+} {1 {wrong # args: should be "apply lambdaExpr |-A a|-A1| ?|-B b|?"} {TCL WRONGARGS}}
+test proc-enh-3.1 {apply/lambda - correct usage} {
+    set lambda [list {{a -name A -name A1 -value 1} {b -default B0 -name B}} {list $a $b}]
+    list [apply $lambda -A1] [apply $lambda -B 4 -A 8]
+} {{1 B0} {8 4}}
 
 # cleanup
 ::tcltest::cleanupTests
