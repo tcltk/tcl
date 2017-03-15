@@ -1165,6 +1165,7 @@ typedef struct Tcl_DString {
 #define TCL_LINK_D(type) (0x300 | (int)sizeof(type)) /* float/double/long double */
 #define TCL_LINK_X(type) (0x400 | (int)sizeof(type)) /* Hexadecimal */
 #define TCL_LINK_B(type) (0x500 | (int)sizeof(type)) /* Boolean */
+#define TCL_LINK_C(type) (0xa00 | (int)sizeof(type)) /* Complex */
 
 #define TCL_LINK_INT         TCL_LINK_I(int)         /* 32bit int -> int */
 #define TCL_LINK_DOUBLE      TCL_LINK_D(double)      /* 64bit double -> double */
@@ -1184,21 +1185,11 @@ typedef struct Tcl_DString {
 
 #define TCL_LINK_CHARS       0x901                   /* 8bit chars -> null terminated string
                                                         last char will always set to \0 */
-#define TCL_LINK_COMPLEX32   16                      /* 32bit complex -> double+double */
-#define TCL_LINK_COMPLEX64   17                      /* 64bit complex -> double+double */
 #define TCL_LINK_BINARY      0x601                   /* fixed size binary byte array */
-#define TCL_LINK_HEX8        TCL_LINK_X(char)        /* 8bit uint -> string, 2 hex chars */
-#define TCL_LINK_HEX16       TCL_LINK_X(short)       /* 16bit uint -> string, 4 hex chars */
-#define TCL_LINK_HEX32       TCL_LINK_X(int)         /* 32bit uint -> string, 8 hex chars */
-#define TCL_LINK_HEX64       TCL_LINK_X(Tcl_WideInt) /* 64bit uint -> string, 16 hex chars */
 #define TCL_LINK_BITARRAY8   0x701                   /* 8bit uint -> string, 8 chars 0|1 */
 #define TCL_LINK_BITARRAY16  0x702                   /* 16bit uint -> string, 16 chars 0|1 */
 #define TCL_LINK_BITARRAY32  0x704                   /* 32bit uint -> string, 32 chars 0|1 */
 #define TCL_LINK_BITARRAY64  0x708                   /* 64bit uint -> string, 64 chars 0|1 */
-#define TCL_LINK_BOOL8       TCL_LINK_B(char)        /* 8bit uint -> int (0|1) */
-#define TCL_LINK_BOOL16      TCL_LINK_B(short)       /* 16bit uint -> int (0|1) */
-#define TCL_LINK_BOOL32      TCL_LINK_B(int)         /* 32bit uint -> int (0|1) */
-#define TCL_LINK_BOOL64      TCL_LINK_B(Tcl_WideInt) /* 64bit uint -> int (0|1) */
 #define TCL_LINK_BIT8        0x801                   /* bit in 8bit uint -> int (0|1) */
 #define TCL_LINK_BIT16       0x802                   /* bit in 16bit uint -> int (0|1) */
 #define TCL_LINK_BIT32       0x804                   /* bit in 32bit uint -> int (0|1) */
