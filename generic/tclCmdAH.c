@@ -748,8 +748,8 @@ EncodingConvertfromObjCmd(
 	return TCL_ERROR;
     }
 
-    /* 
-     * Convert the string into a byte array in 'ds' 
+    /*
+     * Convert the string into a byte array in 'ds'
      */
     bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
     Tcl_ExternalToUtfDString(encoding, bytesPtr, length, &ds);
@@ -811,18 +811,18 @@ EncodingConverttoObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "?encoding? data");
 	return TCL_ERROR;
     }
-    
+
     /*
      * Convert the string to a byte array in 'ds'
      */
-    
+
     stringPtr = TclGetStringFromObj(data, &length);
     Tcl_UtfToExternalDString(encoding, stringPtr, length, &ds);
-    Tcl_SetObjResult(interp, 
+    Tcl_SetObjResult(interp,
 		     Tcl_NewByteArrayObj((unsigned char*) Tcl_DStringValue(&ds),
 					 Tcl_DStringLength(&ds)));
     Tcl_DStringFree(&ds);
-    
+
     /*
      * We're done with the encoding
      */
@@ -933,7 +933,7 @@ EncodingSystemObjCmd(ClientData dummy,      /* Unused */
 	return TCL_ERROR;
     }
     if (objc == 1) {
-	Tcl_SetObjResult(interp, 
+	Tcl_SetObjResult(interp,
 			 Tcl_NewStringObj(Tcl_GetEncodingName(NULL), -1));
     } else {
 	return Tcl_SetSystemEncoding(interp, TclGetString(objv[1]));
