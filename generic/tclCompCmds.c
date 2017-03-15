@@ -778,11 +778,11 @@ TclCompileClockClicksCmd(
 	    || tokenPtr[1].size < 4
 	    || tokenPtr[1].size > 13) {
 	    return TCL_ERROR;
-	} else if (!strncmp(tokenPtr[1].start, "-microseconds", 
+	} else if (!strncmp(tokenPtr[1].start, "-microseconds",
 			    tokenPtr[1].size)) {
 	    TclEmitInstInt1(INST_CLOCK_READ, 1, envPtr);
 	    break;
-	} else if (!strncmp(tokenPtr[1].start, "-milliseconds", 
+	} else if (!strncmp(tokenPtr[1].start, "-milliseconds",
 			    tokenPtr[1].size)) {
 	    TclEmitInstInt1(INST_CLOCK_READ, 2, envPtr);
 	    break;
