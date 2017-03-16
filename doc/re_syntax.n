@@ -293,12 +293,12 @@ treatment is as if the enclosing delimiters were
 .QW \fB[.\fR \&
 and
 .QW \fB.]\fR .)
-For example, if \fBo\fR and \fB\*(qo\fR are the members of an
+For example, if \fBo\fR and \fB\[^o]\fR are the members of an
 equivalence class, then
 .QW \fB[[=o=]]\fR ,
-.QW \fB[[=\*(qo=]]\fR ,
+.QW \fB[[=\[^o]=]]\fR ,
 and
-.QW \fB[o\*(qo]\fR \&
+.QW \fB[o\[^o]]\fR \&
 are all synonymous. An equivalence class may not be an endpoint of a range.
 .RS
 .PP
