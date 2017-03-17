@@ -155,12 +155,11 @@ proc process-text {text} {
 	    {\fP}	{\fR} \
 	    {\.}	. \
 	    {\(bu}	"&#8226;" \
-	    "\\*(qo"	"&ocirc;" \
 	    ]
     # This might make a few invalid mappings, but we don't use them
     foreach c {a e i o u y A E I O U Y} {
 	foreach {prefix suffix} {
-	    o circ / slash : uml ' acute ^ circ ` grave
+	    o ring / slash : uml ' acute ^ circ ` grave
 	} {
 	    lappend charmap "\\\[${prefix}${c}\]" "&${c}${suffix};"
 	}
