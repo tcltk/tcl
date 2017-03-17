@@ -169,13 +169,7 @@ if {[interp issafe]} {
 
     namespace eval ::tcl::clock [list variable TclLibDir $::tcl_library]
 
-    proc clock args {
-	namespace eval ::tcl::clock [list namespace ensemble create -command \
-		[uplevel 1 [list namespace origin [lindex [info level 0] 0]]] \
-		-subcommands {
-		    add clicks format microseconds milliseconds scan seconds
-		}]
-
+    proc ::tcl::initClock {} {
 	# Auto-loading stubs for 'clock.tcl'
 
 	foreach cmd {add format scan} {
@@ -186,8 +180,9 @@ if {[interp issafe]} {
 	    }
 	}
 
-	return [uplevel 1 [info level 0]]
+	rename ::tcl::initClock {}
     }
+    ::tcl::initClock
 }
 
 # Conditionalize for presence of exec.
