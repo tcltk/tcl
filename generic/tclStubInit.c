@@ -306,6 +306,25 @@ static int formatInt(char *buffer, int n){
 #   define Tcl_SetResult 0
 #   undef Tcl_DbNewBooleanObj
 #   define Tcl_DbNewBooleanObj 0
+#   undef Tcl_EvalObj
+#   define Tcl_EvalObj 0
+#   undef Tcl_GlobalEvalObj
+#   define Tcl_GlobalEvalObj 0
+#   define Tcl_NewBooleanObj 0
+#   undef Tcl_SetBooleanObj
+#   define Tcl_SetBooleanObj 0
+#   undef Tcl_PkgPresent
+#   define Tcl_PkgPresent 0
+#   undef Tcl_PkgProvide
+#   define Tcl_PkgProvide 0
+#   undef Tcl_PkgRequire
+#   define Tcl_PkgRequire 0
+#   undef Tcl_DiscardResult
+#   define Tcl_DiscardResult 0
+#   undef Tcl_RestoreResult
+#   define Tcl_RestoreResult 0
+#   undef Tcl_SaveResult
+#   define Tcl_SaveResult 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
