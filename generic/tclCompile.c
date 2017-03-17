@@ -672,6 +672,11 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Lappend list to general variable.
 	 * Stack:  ... varName list => ... listVarContents */
 
+    {"clockRead",	 2,	+1,	1,	{OPERAND_UINT1}},
+        /* Read clock out to the stack. Operand is which clock to read
+	 * 0=clicks, 1=microseconds, 2=milliseconds, 3=seconds.
+	 * Stack: ... => ... time */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 

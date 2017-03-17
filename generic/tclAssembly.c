@@ -137,6 +137,8 @@ typedef enum TalInstType {
 				 * ranges */
     ASSEM_BOOL,			/* One Boolean operand */
     ASSEM_BOOL_LVT4,		/* One Boolean, one 4-byte LVT ref. */
+    ASSEM_CLOCK_READ,		/* 1-byte unsigned-integer case number, in the
+				 * range 0-3 */
     ASSEM_CONCAT1,		/* 1-byte unsigned-integer operand count, must
 				 * be strictly positive, consumes N, produces
 				 * 1 */
@@ -350,6 +352,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"bitnot",		ASSEM_1BYTE,	INST_BITNOT,		1,	1},
     {"bitor",		ASSEM_1BYTE,	INST_BITOR,		2,	1},
     {"bitxor",		ASSEM_1BYTE,	INST_BITXOR,		2,	1},
+    {"clockRead",	ASSEM_CLOCK_READ, INST_CLOCK_READ,	0,	1},
     {"concat",		ASSEM_CONCAT1,	INST_STR_CONCAT1,	INT_MIN,1},
     {"concatStk",	ASSEM_LIST,	INST_CONCAT_STK,	INT_MIN,1},
     {"coroName",	ASSEM_1BYTE,	INST_COROUTINE_NAME,	0,	1},
@@ -1360,6 +1363,23 @@ AssembleOneLine(
 	}
 	BBEmitInstInt1(assemEnvPtr, tblIdx, opnd, 0);
 	TclEmitInt4(localVar, envPtr);
+	break;
+
+    case ASSEM_CLOCK_READ:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "imm8");
+	    goto cleanup;
+	}
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	if (opnd < 0 || opnd > 3) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_NewStringObj("operand must be [0..3]", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "OPERAND<0,>3", NULL);
+	    goto cleanup;
+	}
+	BBEmitInstInt1(assemEnvPtr, tblIdx, opnd, opnd);
 	break;
 
     case ASSEM_CONCAT1:
