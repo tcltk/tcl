@@ -7527,7 +7527,7 @@ TEBCresume(
 	    Tcl_WideInt wval;
 	    Tcl_Time now;
 	    switch(TclGetUInt1AtPtr(pc+1)) {
-	    case 0:		/* clicks */ 
+	    case 0:		/* clicks */
 #ifdef TCL_WIDE_CLICKS
 		wval = TclpGetWideClicks();
 #else
