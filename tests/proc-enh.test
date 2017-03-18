@@ -103,18 +103,30 @@ test proc-enh-1.13 {wrong num args with upvar arg} {
 	p
     } msg] $msg $errorCode
 } {1 {wrong # args: should be "p &a&"} {TCL WRONGARGS}}
-test proc-enh-1.14 {upvar arg: proc call with non-existing arg} {
+test proc-enh-1.14 {upvar arg: proc call with non-existing arg (read)} {
     proc p { { a -upvar up } } { list $up $a }
+    if [info exists v] { unset v}
     list [catch {
-	p _non_exist_
+	p v
     } msg] $msg $errorCode
-} {1 {wrong args: pass-by-name variable "_non_exist_" does not exist} {TCL WRONGARGS}}
-test proc-enh-1.14b {upvar arg: proc call with non-existing arg} {
+} {1 {can't read "a": no such variable} {TCL READ VARNAME}}
+test proc-enh-1.14b {upvar arg: proc call with non-existing arg (name+read)} {
     proc p { { a -name A -upvar up } } { list $up $a }
+    if [info exists v] { unset v}
     list [catch {
-	p -A _non_exist_
+	p -A v
     } msg] $msg $errorCode
-} {1 {wrong args: pass-by-name variable "_non_exist_" does not exist} {TCL WRONGARGS}}
+} {1 {can't read "a": no such variable} {TCL READ VARNAME}}
+test proc-enh-1.14c {upvar arg: proc call with non-existing arg (write)} {
+    proc p { { a -upvar up } } { set a ini }
+    if [info exists v] { unset v}
+    list [info exists v] [p v] [info exists v] $v
+} {0 ini 1 ini}
+test proc-enh-1.14d {upvar arg: proc call with non-existing arg (name+write)} {
+    proc p { { a -name A -upvar up } } { set a ini }
+    if [info exists v] { unset v}
+    list [info exists v] [p -A v] [info exists v] $v
+} {0 ini 1 ini}
 test proc-enh-1.15 {upvar before first name} {
     list [catch {
 	proc p { { a -upvar {} -name A } } { }
