@@ -167,6 +167,13 @@ test proc-enh-1.19b {-upvar with non scalar arg} {
 	proc p { { a -upvar b::c } } { list $b::c $a }
     } msg] $msg $errorCode
 } {1 {upvar parameter "b::c" is not a simple name} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.20 {-upvar inside a named group (not last one)} {
+    proc p {{v -name var -upvar nm} {i -default 1 -name incr}} {
+	incr v $i
+    }
+    if [info exists i] {unset i}
+    list [p -var i -incr 2] [p -incr 3 -var i] [p -var i]
+} {2 5 6}
 
 test proc-enh-2.1 {precompiled, inconsistent arg default value} -body {
     proc p {x y {z -default 2}} { }

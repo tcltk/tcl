@@ -1965,9 +1965,20 @@ InitArgsWithOptions(
 		 */
 
 		for (argSpecPtr = NULL, namedLocalPtr = localPtr;
-			(namedLocalPtr != NULL)
-				&& (namedLocalPtr->flags & VAR_NAMED_GROUP);
+			(namedLocalPtr != NULL);
 			namedLocalPtr = namedLocalPtr->nextPtr) {
+		    if (!(namedLocalPtr->flags & VAR_NAMED_GROUP)) {
+			/*
+			 * Loop over all arguments within the same named group
+			 * but handle any VAR_UPVAR_NAME argument that may be
+			 * present.
+			 */
+			if (namedLocalPtr->flags & VAR_UPVAR_NAME) {
+			    continue;
+			}
+			break;
+		    }
+
 		    for (argSpecPtr = namedLocalPtr->argSpecPtr;
 			    argSpecPtr;
 			    argSpecPtr = argSpecPtr->nextPtr) {
