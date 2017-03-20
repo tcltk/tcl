@@ -1099,6 +1099,7 @@ TclLookupArrayElement(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_GetVar
 const char *
 Tcl_GetVar(
@@ -1119,6 +1120,7 @@ Tcl_GetVar(
     }
     return TclGetString(resultPtr);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -1442,6 +1444,7 @@ Tcl_SetObjCmd(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_SetVar
 const char *
 Tcl_SetVar(
@@ -1454,18 +1457,15 @@ Tcl_SetVar(
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
 				 * TCL_LEAVE_ERR_MSG. */
 {
-    Tcl_Obj *varValuePtr, *varNamePtr = Tcl_NewStringObj(varName, -1);
-
-    Tcl_IncrRefCount(varNamePtr);
-    varValuePtr = Tcl_ObjSetVar2(interp, varNamePtr, NULL,
+    Tcl_Obj *varValuePtr = Tcl_SetVar2Ex(interp, varName, NULL,
 	    Tcl_NewStringObj(newValue, -1), flags);
-    Tcl_DecrRefCount(varNamePtr);
 
     if (varValuePtr == NULL) {
 	return NULL;
     }
     return TclGetString(varValuePtr);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2037,6 +2037,7 @@ TclPtrIncrObjVar(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_UnsetVar
 int
 Tcl_UnsetVar(
@@ -2065,6 +2066,7 @@ Tcl_UnsetVar(
     Tcl_DecrRefCount(varNamePtr);
     return result;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -4082,7 +4084,7 @@ TclInitArrayCmd(
  *
  * Results:
  *	A standard Tcl completion code. If an error occurs then an error
- *	message is left in iPtr->result.
+ *	message is left in interp.
  *
  * Side effects:
  *	The variable given by myName is linked to the variable in framePtr
@@ -4176,7 +4178,7 @@ ObjMakeUpvar(
  *
  * Results:
  *	A standard Tcl completion code. If an error occurs then an error
- *	message is left in iPtr->result.
+ *	message is left in interp.
  *
  * Side effects:
  *	The variable given by myName is linked to the variable in framePtr
