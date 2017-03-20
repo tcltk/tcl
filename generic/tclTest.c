@@ -3405,7 +3405,7 @@ TestMathFunc2(
 	    resultPtr->type = TCL_WIDE_INT;
 	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
 	} else {
-	    Tcl_SetResult(interp, (char *)"T3: wrong type for arg 2", TCL_STATIC);
+	    Tcl_AppendResult(interp, "T3: wrong type for arg 2", NULL);
 	    result = TCL_ERROR;
 	}
     } else if (args[0].type == TCL_DOUBLE) {
@@ -3427,7 +3427,7 @@ TestMathFunc2(
 	    resultPtr->type = TCL_DOUBLE;
 	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
 	} else {
-	    Tcl_SetResult(interp, (char *)"T3: wrong type for arg 2", TCL_STATIC);
+	    Tcl_AppendResult(interp, "T3: wrong type for arg 2", NULL);
 	    result = TCL_ERROR;
 	}
     } else if (args[0].type == TCL_WIDE_INT) {
@@ -3450,11 +3450,11 @@ TestMathFunc2(
 	    resultPtr->type = TCL_WIDE_INT;
 	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
 	} else {
-	    Tcl_SetResult(interp, (char *)"T3: wrong type for arg 2", TCL_STATIC);
+	    Tcl_AppendResult(interp, "T3: wrong type for arg 2", NULL);
 	    result = TCL_ERROR;
 	}
     } else {
-	Tcl_SetResult(interp, (char *)"T3: wrong type for arg 1", TCL_STATIC);
+	Tcl_AppendResult(interp, "T3: wrong type for arg 1", NULL);
 	result = TCL_ERROR;
     }
     return result;
