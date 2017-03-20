@@ -5861,6 +5861,7 @@ TclArgumentGet(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_Eval
 int
 Tcl_Eval(
@@ -5879,6 +5880,7 @@ Tcl_Eval(
     (void) Tcl_GetStringResult(interp);
     return code;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -6739,6 +6741,7 @@ Tcl_AppendObjToErrorInfo(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_AddErrorInfo
 void
 Tcl_AddErrorInfo(
@@ -6748,6 +6751,7 @@ Tcl_AddErrorInfo(
 {
     Tcl_AddObjErrorInfo(interp, message, -1);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -6920,6 +6924,7 @@ Tcl_VarEval(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_GlobalEval
 int
 Tcl_GlobalEval(
@@ -6937,6 +6942,7 @@ Tcl_GlobalEval(
     iPtr->varFramePtr = savedVarFramePtr;
     return result;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
