@@ -3841,7 +3841,7 @@ extern const TclStubs *tclStubsPtr;
 	Tcl_DbNewLongObj((boolValue)!=0, file, line)
 #undef Tcl_SetBooleanObj
 #define Tcl_SetBooleanObj(objPtr, boolValue) \
-	Tcl_SetLongObj((objPtr), (boolValue)!=0)
+	Tcl_SetLongObj(objPtr, (boolValue)!=0)
 #undef Tcl_SetVar
 #define Tcl_SetVar(interp, varName, newValue, flags) \
 	Tcl_SetVar2(interp, varName, NULL, newValue, flags)
@@ -3870,6 +3870,29 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_AddObjErrorInfo(interp, message, length) \
 	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, length))
 #ifdef TCL_NO_DEPRECATED
+#undef Tcl_Eval
+#define Tcl_Eval(interp, objPtr) \
+	Tcl_EvalEx(interp, objPtr, -1, 0)
+#undef Tcl_GlobalEval
+#define Tcl_GlobalEval(interp, objPtr) \
+	Tcl_EvalEx(interp, objPtr, -1, TCL_EVAL_GLOBAL)
+#undef Tcl_SaveResult
+#define Tcl_SaveResult(interp, statePtr) \
+	do { \
+	    (statePtr)->objResultPtr = Tcl_GetObjResult(interp); \
+	    Tcl_IncrRefCount((statePtr)->objResultPtr); \
+	    Tcl_SetObjResult(interp, Tcl_NewObj()); \
+	} while(0)
+#undef Tcl_RestoreResult
+#define Tcl_RestoreResult(interp, statePtr) \
+	do { \
+	    Tcl_ResetResult(interp); \
+   	    Tcl_SetObjResult(interp, (statePtr)->objResultPtr); \
+   	    Tcl_DecrRefCount((statePtr)->objResultPtr); \
+	} while(0)
+#undef Tcl_DiscardResult
+#define Tcl_DiscardResult(statePtr) \
+	Tcl_DecrRefCount((statePtr)->objResultPtr)
 #undef Tcl_SetResult
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
@@ -3939,10 +3962,10 @@ extern const TclStubs *tclStubsPtr;
  */
 
 #undef Tcl_EvalObj
-#define Tcl_EvalObj(interp,objPtr) \
-    Tcl_EvalObjEx((interp),(objPtr),0)
+#define Tcl_EvalObj(interp, objPtr) \
+    Tcl_EvalObjEx(interp, objPtr, 0)
 #undef Tcl_GlobalEvalObj
-#define Tcl_GlobalEvalObj(interp,objPtr) \
-    Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+#define Tcl_GlobalEvalObj(interp, objPtr) \
+    Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
 
 #endif /* _TCLDECLS */
