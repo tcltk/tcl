@@ -3765,7 +3765,7 @@ test oo-36.3 {"info object definition" with extended argspec} -setup {
 } -cleanup {
     foo destroy
 } -result {{a {b B} {c -default 0 -name C -value 1} {d -upvar up} args} body}
-test oo-36.4 {"info class definition" with extended argspect} -setup {
+test oo-36.4 {"info class definition" with extended argspec} -setup {
     oo::class create foo
 } -body {
     oo::define foo method bar {a {b 8} {c -name C} {d -name D -upvar {}}
@@ -3774,6 +3774,19 @@ test oo-36.4 {"info class definition" with extended argspect} -setup {
 } -cleanup {
     foo destroy
 } -result {{a {b 8} {c -name C} {d -name D -upvar {}} args} body}
+test oo-36.5 {OO constructor with extended argspec} {
+    oo::class create testClass {
+	constructor {{a -default 0 -name A}} {
+	    global result
+	    lappend result [self object] $a
+	}
+    }
+    set result {}
+    testClass create foo1
+    testClass create foo2 -A 5
+    testClass destroy
+    return $result
+} {::foo1 0 ::foo2 5}
 
 
 cleanupTests

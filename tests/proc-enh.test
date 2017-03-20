@@ -174,6 +174,28 @@ test proc-enh-1.20 {-upvar inside a named group (not last one)} {
     if [info exists i] {unset i}
     list [p -var i -incr 2] [p -incr 3 -var i] [p -var i]
 } {2 5 6}
+test proc-enh-1.20b {-upvar inside a named group + end-of-option marker} {
+    proc p {{v -name var -upvar nm} {i -default 1 -name incr} args} {
+	incr v $i; list $nm $v $args
+    }
+    set i 0
+    list [p -var i] [p -var i -- -incr 3] [p -var i -- a b c] [p -var i -- -- abc]
+} {{i 1 {}} {i 2 {-incr 3}} {i 3 {a b c}} {i 4 {-- abc}}}
+test proc-enh-1.21 {-upvar followed with args} {
+    proc p {{v -upvar nm} args} {
+	list v $v nm $nm args $args
+    }
+    set i 0
+    list [p i] [p i 1 2 3]
+} {{v 0 nm i args {}} {v 0 nm i args {1 2 3}}}
+test proc-enh-1.21b {-upvar followed with args: wrong # args} {
+    proc p {{v -upvar nm} args} {
+	list v $v nm $nm args $args
+    }
+    list [catch {
+	p
+    } msg] $msg $errorCode
+} {1 {wrong # args: should be "p &v& ?arg ...?"} {TCL WRONGARGS}}
 
 test proc-enh-2.1 {precompiled, inconsistent arg default value} -body {
     proc p {x y {z -default 2}} { }

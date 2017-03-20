@@ -513,9 +513,8 @@ TclCreateProc(
 
     for (i = 0; i < numArgs; i++) {
 
-	result = ProcParseArgSpec(interp, argArray[i],
-	    i + numLocalsDiff, (i + numLocalsDiff == numArgs - 1),
-	    &newLocalPtr, &lastLocalPtr);
+	result = ProcParseArgSpec(interp, argArray[i], i + numLocalsDiff,
+		(i == numArgs - 1), &newLocalPtr, &lastLocalPtr);
 	if (result != TCL_OK) {
 	    goto procError;
 	}
@@ -2020,11 +2019,16 @@ InitArgsWithOptions(
 
 	    /*
 	     * Ensure that all variables in the named group have been
-	     * set or have a default value.
+	     * set or have a default value. localPtr is set to the last
+	     * argument of the named group so that the loop will continue
+	     * with the next argument. iLocal is updated in the same way.
+	     * A special attention is made on any related upvar name
+	     * (VAR_UPVAR_NAME) inside the named group.
 	     */
 
 	    for (; ; localPtr=localPtr->nextPtr, iLocal++) {
-		if (!varPtr[iLocal].value.objPtr) {
+		if (!varPtr[iLocal].value.objPtr
+			&& !(localPtr->flags & VAR_UPVAR_NAME)) {
 		    if (localPtr->defValuePtr) {
 			objPtr = localPtr->defValuePtr;
 			varPtr[iLocal].value.objPtr = objPtr;
@@ -2036,7 +2040,7 @@ InitArgsWithOptions(
 
 		/* stop on the last argument of the named group */
 		if ((localPtr->nextPtr == NULL)
-			|| !(localPtr->nextPtr->flags & VAR_NAMED_GROUP)) {
+			|| !(localPtr->nextPtr->flags & (VAR_NAMED_GROUP|VAR_UPVAR_NAME))) {
 		    break;
 		}
 	    }
