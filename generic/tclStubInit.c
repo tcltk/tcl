@@ -323,6 +323,14 @@ static int formatInt(char *buffer, int n){
 #   define Tcl_UnsetVar 0
 #   undef Tcl_GetVar
 #   define Tcl_GetVar 0
+#   undef Tcl_TraceVar
+#   define Tcl_TraceVar 0
+#   undef Tcl_UntraceVar
+#   define Tcl_UntraceVar 0
+#   undef Tcl_VarTraceInfo
+#   define Tcl_VarTraceInfo 0
+#   undef Tcl_UpVar
+#   define Tcl_UpVar 0
 #   undef Tcl_AddErrorInfo
 #   define Tcl_AddErrorInfo 0
 #   undef Tcl_AddObjErrorInfo
