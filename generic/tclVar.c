@@ -4322,6 +4322,7 @@ TclPtrObjMakeUpvar(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_UpVar
 int
 Tcl_UpVar(
@@ -4355,6 +4356,7 @@ Tcl_UpVar(
     Tcl_DecrRefCount(localNamePtr);
     return result;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
