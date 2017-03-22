@@ -8698,3 +8698,21 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2016-07-20 tzdata updated to Olson's tzdata2016f (venkat)
 
 --- Released 8.6.6, July 27, 2016 --- http://core.tcl.tk/tcl/ for details
+
+2016-09-07 (bug)[c09edf] Bad caching with  custom resolver (neumann,nijtmans)
+
+2016-09-07 (bug)[4dbdd9] Memleak in test var-8.3 (mr_calvin,porter)
+
+2016-10-03 (bug)[2bf561] Allow empty command as alias target (yorick,nijtmans)
+
+
+
+
+
+
+
+
+
+
+
+--- Released 8.6.7, March 31, 2016 --- http://core.tcl.tk/tcl/ for details

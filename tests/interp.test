@@ -615,6 +615,8 @@ test interp-14.11 {{interp alias} {target named the empty string} {bug 2bf56185}
 } -body {
     interp alias {} p1 $interp {}
     p1 one two three
+} -cleanup {
+    interp delete $interp
 } -result {one two three}
 
 # part 15: testing file sharing
