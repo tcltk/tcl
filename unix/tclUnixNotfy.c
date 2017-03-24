@@ -193,7 +193,7 @@ static Tcl_ThreadId notifierThread;
  */
 
 #ifdef TCL_THREADS
-static void	NotifierThreadProc(ClientData clientData);
+static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
 #if defined(HAVE_PTHREAD_ATFORK)
 static int	atForkInit = 0;
 static void	AtForkChild(void);
@@ -1139,7 +1139,7 @@ Tcl_WaitForEvent(
  *----------------------------------------------------------------------
  */
 
-static void
+static TCL_NORETURN void
 NotifierThreadProc(
     ClientData clientData)	/* Not used. */
 {
