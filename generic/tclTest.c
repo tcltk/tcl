@@ -3847,6 +3847,7 @@ TestprintObjCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Tcl_WideInt argv1 = 0;
+    size_t argv2;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "format wideint");
@@ -3855,7 +3856,8 @@ TestprintObjCmd(
     if (objc > 1) {
 	Tcl_GetWideIntFromObj(interp, objv[2], &argv1);
     }
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv1));
+    argv2 = (size_t)argv1;
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv1, argv2, argv2));
     return TCL_OK;
 }
 
