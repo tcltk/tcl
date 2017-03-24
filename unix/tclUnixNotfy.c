@@ -19,7 +19,7 @@
 
 #ifdef NOTIFIER_SELECT
 #ifdef TCL_THREADS
-static void	NotifierThreadProc(ClientData clientData);
+static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
 #if defined(HAVE_PTHREAD_ATFORK)
 static void	AtForkChild(void);
 #endif /* HAVE_PTHREAD_ATFORK */
