@@ -385,8 +385,7 @@ static CFStringRef tclEventsOnlyRunLoopMode = NULL;
  */
 
 static void		StartNotifierThread(void);
-static void		NotifierThreadProc(ClientData clientData)
-			    __attribute__ ((__noreturn__));
+static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
 static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 static void		TimerWakeUp(CFRunLoopTimerRef timer, void *info);
 static void		QueueFileEvents(void *info);
@@ -1753,7 +1752,7 @@ TclUnixWaitForFile(
  *----------------------------------------------------------------------
  */
 
-static void
+static TCL_NORETURN void
 NotifierThreadProc(
     ClientData clientData)	/* Not used. */
 {

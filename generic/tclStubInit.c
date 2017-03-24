@@ -302,8 +302,55 @@ static int formatInt(char *buffer, int n){
 #ifdef TCL_NO_DEPRECATED
 #   define Tcl_SeekOld 0
 #   define Tcl_TellOld 0
+#   undef Tcl_SetBooleanObj
+#   define Tcl_SetBooleanObj 0
+#   undef Tcl_PkgPresent
+#   define Tcl_PkgPresent 0
+#   undef Tcl_PkgProvide
+#   define Tcl_PkgProvide 0
+#   undef Tcl_PkgRequire
+#   define Tcl_PkgRequire 0
+#   undef Tcl_GetIndexFromObj
+#   define Tcl_GetIndexFromObj 0
+#   define Tcl_NewBooleanObj 0
+#   undef Tcl_DbNewBooleanObj
+#   define Tcl_DbNewBooleanObj 0
+#   undef Tcl_SetBooleanObj
+#   define Tcl_SetBooleanObj 0
+#   undef Tcl_SetVar
+#   define Tcl_SetVar 0
+#   undef Tcl_UnsetVar
+#   define Tcl_UnsetVar 0
+#   undef Tcl_GetVar
+#   define Tcl_GetVar 0
+#   undef Tcl_TraceVar
+#   define Tcl_TraceVar 0
+#   undef Tcl_UntraceVar
+#   define Tcl_UntraceVar 0
+#   undef Tcl_VarTraceInfo
+#   define Tcl_VarTraceInfo 0
+#   undef Tcl_UpVar
+#   define Tcl_UpVar 0
+#   undef Tcl_AddErrorInfo
+#   define Tcl_AddErrorInfo 0
+#   undef Tcl_AddObjErrorInfo
+#   define Tcl_AddObjErrorInfo 0
+#   undef Tcl_Eval
+#   define Tcl_Eval 0
+#   undef Tcl_GlobalEval
+#   define Tcl_GlobalEval 0
+#   undef Tcl_SaveResult
+#   define Tcl_SaveResult 0
+#   undef Tcl_RestoreResult
+#   define Tcl_RestoreResult 0
+#   undef Tcl_DiscardResult
+#   define Tcl_DiscardResult 0
 #   undef Tcl_SetResult
 #   define Tcl_SetResult 0
+#   undef Tcl_EvalObj
+#   define Tcl_EvalObj 0
+#   undef Tcl_GlobalEvalObj
+#   define Tcl_GlobalEvalObj 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
