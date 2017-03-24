@@ -803,7 +803,7 @@ TCLAPI int		Tcl_EvalObjv(Tcl_Interp *interp, int objc,
 TCLAPI int		Tcl_EvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
 				int flags);
 /* 294 */
-TCLAPI void		Tcl_ExitThread(int status);
+TCLAPI TCL_NORETURN void Tcl_ExitThread(int status);
 /* 295 */
 TCLAPI int		Tcl_ExternalToUtf(Tcl_Interp *interp,
 				Tcl_Encoding encoding, const char *src,
@@ -2055,7 +2055,7 @@ typedef struct TclStubs {
     int (*tcl_EvalEx) (Tcl_Interp *interp, const char *script, int numBytes, int flags); /* 291 */
     int (*tcl_EvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 292 */
     int (*tcl_EvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 293 */
-    void (*tcl_ExitThread) (int status); /* 294 */
+    TCL_NORETURN1 void (*tcl_ExitThread) (int status); /* 294 */
     int (*tcl_ExternalToUtf) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, int dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr); /* 295 */
     char * (*tcl_ExternalToUtfDString) (Tcl_Encoding encoding, const char *src, int srcLen, Tcl_DString *dsPtr); /* 296 */
     void (*tcl_FinalizeThread) (void); /* 297 */

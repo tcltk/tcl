@@ -655,7 +655,7 @@ ThreadErrorProc(
     char *script;
     char buf[TCL_DOUBLE_SPACE+1];
 
-    sprintf(buf, "%" TCL_LL_MODIFIER "d", (Tcl_WideInt)(size_t)Tcl_GetCurrentThread());
+    sprintf(buf, "%p", Tcl_GetCurrentThread());
 
     errorInfo = Tcl_GetVar2(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY);
     if (errorProcString == NULL) {
