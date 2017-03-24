@@ -393,11 +393,7 @@ typedef long LONG;
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
 #   if defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
-#      ifdef __BORLANDC__
-#         define TCL_LL_MODIFIER	"L"
-#      else /* __BORLANDC__ */
-#         define TCL_LL_MODIFIER	"I64"
-#      endif /* __BORLANDC__ */
+#      define TCL_LL_MODIFIER	"I64"
 #   elif defined(__GNUC__)
 #      define TCL_WIDE_INT_TYPE long long
 #      define TCL_LL_MODIFIER	"ll"
