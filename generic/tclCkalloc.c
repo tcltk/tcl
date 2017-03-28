@@ -254,7 +254,7 @@ ValidateMemory(
 	fprintf(stderr, "low guard failed at %p, %s %d\n",
 		memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
-	fprintf(stderr, "%" TCL_LL_MODIFIER "d bytes allocated at (%s %d)\n", (Tcl_WideInt) memHeaderP->length,
+	fprintf(stderr, "%" TCL_Z_MODIFIER "d bytes allocated at (%s %d)\n", memHeaderP->length,
 		memHeaderP->file, memHeaderP->line);
 	Tcl_Panic("Memory validation failure");
     }
@@ -276,8 +276,8 @@ ValidateMemory(
 	fprintf(stderr, "high guard failed at %p, %s %d\n",
 		memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
-	fprintf(stderr, "%" TCL_LL_MODIFIER "d bytes allocated at (%s %d)\n",
-		(Tcl_WideInt)memHeaderP->length, memHeaderP->file,
+	fprintf(stderr, "%" TCL_Z_MODIFIER "d bytes allocated at (%s %d)\n",
+		memHeaderP->length, memHeaderP->file,
 		memHeaderP->line);
 	Tcl_Panic("Memory validation failure");
     }
@@ -359,10 +359,10 @@ Tcl_DumpActiveMemory(
     Tcl_MutexLock(ckallocMutexPtr);
     for (memScanP = allocHead; memScanP != NULL; memScanP = memScanP->flink) {
 	address = &memScanP->body[0];
-	fprintf(fileP, "%8" TCL_LL_MODIFIER "x - %8" TCL_LL_MODIFIER "x  %7" TCL_LL_MODIFIER "d @ %s %d %s",
-		(Tcl_WideInt)(size_t)address,
-		(Tcl_WideInt)((size_t)address + memScanP->length - 1),
-		(Tcl_WideInt)memScanP->length, memScanP->file, memScanP->line,
+	fprintf(fileP, "%8" TCL_Z_MODIFIER "x - %8" TCL_Z_MODIFIER "x  %7" TCL_Z_MODIFIER "d @ %s %d %s",
+		(size_t)address,
+		((size_t)address + memScanP->length - 1),
+		memScanP->length, memScanP->file, memScanP->line,
 		(memScanP->tagPtr == NULL) ? "" : memScanP->tagPtr->string);
 	(void) fputc('\n', fileP);
     }
