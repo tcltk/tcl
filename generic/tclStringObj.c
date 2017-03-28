@@ -2759,8 +2759,8 @@ TclStringRepeat(
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"string size overflow: unable to alloc %"
-			TCL_LL_MODIFIER "u bytes",
-			(Tcl_WideUInt)STRING_SIZE(count*length)));
+			TCL_Z_MODIFIER "u bytes",
+			STRING_SIZE(count*length)));
 		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	    }
 	    return TCL_ERROR;
@@ -2983,8 +2983,8 @@ TclStringCatObjv(
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    	"concatenation failed: unable to alloc %"
-			TCL_LL_MODIFIER "u bytes",
-			(Tcl_WideUInt)STRING_SIZE(length)));
+			TCL_Z_MODIFIER "u bytes",
+			STRING_SIZE(length)));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
 		return TCL_ERROR;
@@ -2999,8 +2999,8 @@ TclStringCatObjv(
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    	"concatenation failed: unable to alloc %"
-			TCL_LL_MODIFIER "u bytes",
-			(Tcl_WideUInt)STRING_SIZE(length)));
+			TCL_Z_MODIFIER "u bytes",
+			STRING_SIZE(length)));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
 		return TCL_ERROR;
