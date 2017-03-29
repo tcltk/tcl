@@ -341,7 +341,7 @@ ThreadObjCmd(
 	    } else if (objc == 3
 		    && strcmp("-main", Tcl_GetString(objv[2])) == 0) {
 		Tcl_MutexLock(&threadMutex);
-		idObj = Tcl_NewLongObj((long)(size_t)mainThreadId);
+		idObj = Tcl_NewWideIntObj((Tcl_WideInt)(size_t)mainThreadId);
 		Tcl_MutexUnlock(&threadMutex);
 	    } else {
 		Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -655,7 +655,7 @@ ThreadErrorProc(
     char *script;
     char buf[TCL_DOUBLE_SPACE+1];
 
-    sprintf(buf, "%" TCL_LL_MODIFIER "d", (Tcl_WideInt)(size_t)Tcl_GetCurrentThread());
+    sprintf(buf, "%p", Tcl_GetCurrentThread());
 
     errorInfo = Tcl_GetVar2(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY);
     if (errorProcString == NULL) {
