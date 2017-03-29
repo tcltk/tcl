@@ -412,21 +412,17 @@ typedef long LONG;
 #      endif
 #   endif /* _WIN32 */
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
-#ifdef TCL_WIDE_INT_IS_LONG
-#   undef TCL_WIDE_INT_TYPE
-#   define TCL_WIDE_INT_TYPE	long
-#endif /* TCL_WIDE_INT_IS_LONG */
-
-typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
-typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #ifdef TCL_WIDE_INT_IS_LONG
 #   define Tcl_WideAsLong(val)		((long)(val))
 #   define Tcl_LongAsWide(val)		((long)(val))
 #   define Tcl_WideAsDouble(val)	((double)((long)(val)))
 #   define Tcl_DoubleAsWide(val)	((long)((double)(val)))
+#   ifndef TCL_WIDE_INT_TYPE
+#      define TCL_WIDE_INT_TYPE		long long
+#   endif /* !TCL_WIDE_INT_TYPE */
 #   ifndef TCL_LL_MODIFIER
-#      define TCL_LL_MODIFIER		"l"
+#      define TCL_LL_MODIFIER		"ll"
 #   endif /* !TCL_LL_MODIFIER */
 #   ifndef TCL_Z_MODIFIER
 #      define TCL_Z_MODIFIER		"l"
@@ -447,6 +443,9 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 #endif /* TCL_WIDE_INT_IS_LONG */
+
+typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
+typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #if defined(_WIN32)
 #   ifdef __BORLANDC__
