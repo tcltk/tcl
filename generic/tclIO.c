@@ -9317,7 +9317,7 @@ MBWrite(
          * then the calculations involving extra must be made wide too.
          *
          * Noted with Win32/MSVC debug build treating the warning (possible of
-         * data in int64 to int conversion) as error.
+         * data in __int64 to int conversion) as error.
          */
 
 	bufPtr = AllocChannelBuffer(extra);
