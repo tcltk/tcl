@@ -3557,7 +3557,7 @@ TestMathFunc2(
 	    resultPtr->type = TCL_WIDE_INT;
 	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
 	} else {
-	    Tcl_SetResult(interp, (char *)"T3: wrong type for arg 2", TCL_STATIC);
+	    Tcl_AppendResult(interp, "T3: wrong type for arg 2", NULL);
 	    result = TCL_ERROR;
 	}
     } else if (args[0].type == TCL_DOUBLE) {
@@ -3579,7 +3579,7 @@ TestMathFunc2(
 	    resultPtr->type = TCL_DOUBLE;
 	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
 	} else {
-	    Tcl_SetResult(interp, (char *)"T3: wrong type for arg 2", TCL_STATIC);
+	    Tcl_AppendResult(interp, "T3: wrong type for arg 2", NULL);
 	    result = TCL_ERROR;
 	}
     } else if (args[0].type == TCL_WIDE_INT) {
@@ -3602,11 +3602,11 @@ TestMathFunc2(
 	    resultPtr->type = TCL_WIDE_INT;
 	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
 	} else {
-	    Tcl_SetResult(interp, (char *)"T3: wrong type for arg 2", TCL_STATIC);
+	    Tcl_AppendResult(interp, "T3: wrong type for arg 2", NULL);
 	    result = TCL_ERROR;
 	}
     } else {
-	Tcl_SetResult(interp, (char *)"T3: wrong type for arg 1", TCL_STATIC);
+	Tcl_AppendResult(interp, "T3: wrong type for arg 1", NULL);
 	result = TCL_ERROR;
     }
     return result;
@@ -3999,6 +3999,7 @@ TestprintObjCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Tcl_WideInt argv1 = 0;
+    size_t argv2;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "format wideint");
@@ -4007,7 +4008,8 @@ TestprintObjCmd(
     if (objc > 1) {
 	Tcl_GetWideIntFromObj(interp, objv[2], &argv1);
     }
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv1));
+    argv2 = (size_t)argv1;
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv1, argv2, argv2));
     return TCL_OK;
 }
 

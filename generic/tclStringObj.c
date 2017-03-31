@@ -1865,11 +1865,22 @@ Tcl_AppendFormatToObj(
 		useWide = 1;
 #endif
 	    }
-	} else if ((ch == 'I') && (format[1] == '6') && (format[2] == '4')) {
-	    format += (step + 2);
+	} else if (ch == 'I') {
+	    if ((format[1] == '6') && (format[2] == '4')) {
+		format += (step + 2);
+		step = Tcl_UtfToUniChar(format, &ch);
+		useBig = 1;
+	    } else if ((format[1] == '3') && (format[2] == '2')) {
+		format += (step + 2);
+		step = Tcl_UtfToUniChar(format, &ch);
+	    } else {
+		format += step;
+		step = Tcl_UtfToUniChar(format, &ch);
+	    }
+	} else if ((ch == 't') || (ch == 'z')) {
+	    format += step;
 	    step = Tcl_UtfToUniChar(format, &ch);
-	    useBig = 1;
-	} else if (ch == 'L') {
+	} else if ((ch == 'q') ||(ch == 'j')) {
 	    format += step;
 	    step = Tcl_UtfToUniChar(format, &ch);
 	    useBig = 1;
@@ -1925,6 +1936,7 @@ Tcl_AppendFormatToObj(
 	    }
 	case 'd':
 	case 'o':
+	case 'p':
 	case 'x':
 	case 'X':
 	case 'b': {
@@ -1993,13 +2005,14 @@ Tcl_AppendFormatToObj(
 		segmentLimit -= 1;
 	    }
 
-	    if (gotHash) {
+	    if (gotHash || (ch == 'p')) {
 		switch (ch) {
 		case 'o':
 		    Tcl_AppendToObj(segment, "0", 1);
 		    segmentLimit -= 1;
 		    precision--;
 		    break;
+		case 'p':
 		case 'x':
 		case 'X':
 		    Tcl_AppendToObj(segment, "0x", 2);
@@ -2078,6 +2091,7 @@ Tcl_AppendFormatToObj(
 
 	    case 'u':
 	    case 'o':
+	    case 'p':
 	    case 'x':
 	    case 'X':
 	    case 'b': {
@@ -2467,6 +2481,7 @@ AppendPrintfToObjVA(
 	    case 'u':
 	    case 'd':
 	    case 'o':
+	    case 'p':
 	    case 'x':
 	    case 'X':
 		seekingConversion = 0;
@@ -2517,13 +2532,25 @@ AppendPrintfToObjVA(
 		++size;
 		p++;
 		break;
-	    case 'L':
+	    case 't':
+	    case 'z':
+		if (sizeof(size_t) == sizeof(Tcl_WideInt)) {
+		    size = 2;
+		}
+		p++;
+		break;
+	    case 'j':
+	    case 'q':
 		size = 2;
 		p++;
 		break;
 	    case 'I':
 		if (p[1]=='6' && p[2]=='4') {
 		    p += 2;
+		    size = 2;
+		} else if (p[1]=='3' && p[2]=='2') {
+		    p += 2;
+		} else if (sizeof(size_t) == sizeof(Tcl_WideInt)) {
 		    size = 2;
 		}
 		p++;

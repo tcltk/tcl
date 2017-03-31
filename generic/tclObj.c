@@ -1828,7 +1828,6 @@ Tcl_DbNewBooleanObj(
     return Tcl_NewBooleanObj(boolValue);
 }
 #endif /* TCL_MEM_DEBUG */
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -1860,6 +1859,7 @@ Tcl_SetBooleanObj(
 
     TclSetLongObj(objPtr, boolValue!=0);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
