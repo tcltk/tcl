@@ -349,9 +349,9 @@ test format-8.19 {error conditions} {
     catch {format %q x}
 } 1
 test format-8.20 {error conditions} {
-    catch {format %q x} msg
+    catch {format %r x} msg
     set msg
-} {bad field specifier "q"}
+} {bad field specifier "r"}
 test format-8.21 {error conditions} {
     catch {format %d}
 } 1
