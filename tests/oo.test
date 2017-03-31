@@ -2241,6 +2241,44 @@ test oo-17.10 {OO: class introspection} -setup {
     oo::define foo unexport {*}[info class methods foo -all]
     info class methods foo -all
 } -result {}
+set stdmethods {<cloned> destroy eval unknown variable varname}
+test oo-17.11 {OO: object method unexport (bug 900cb0284bc)} -setup {
+    oo::object create o
+    oo::objdefine o unexport m
+} -body {
+    lsort [info object methods o -all -private]
+} -cleanup {
+    o destroy
+} -result $stdmethods
+test oo-17.12 {OO: instance method unexport (bug 900cb0284bc)} -setup {
+    oo::class create c
+    c create o
+    oo::objdefine o unexport m
+} -body {
+    lsort [info object methods o -all -private]
+} -cleanup {
+    o destroy
+    c destroy
+} -result $stdmethods
+test oo-17.13 {OO: class method unexport (bug 900cb0284bc)} -setup {
+    oo::class create c
+    oo::define c unexport m
+} -body {
+    lsort [info class methods c -all -private]
+} -cleanup {
+    c destroy
+} -result $stdmethods
+test oo-17.14 {OO: instance method unexport (bug 900cb0284bc)} -setup {
+    oo::class create c
+    oo::define c unexport m
+    c create o
+} -body {
+    lsort [info object methods o -all -private]
+} -cleanup {
+    o destroy
+    c destroy
+} -result $stdmethods
+
 
 test oo-18.1 {OO: define command support} {
     list [catch {oo::define oo::object {error foo}} msg] $msg $errorInfo
