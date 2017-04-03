@@ -597,6 +597,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 28 */
     TclWinCPUID, /* 29 */
     TclUnixOpenTemporaryFile, /* 30 */
+    TclpGetMonotonicTime, /* 31 */
 #endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     TclWinConvertError, /* 0 */
@@ -630,6 +631,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinResetInterfaces, /* 28 */
     TclWinCPUID, /* 29 */
     TclUnixOpenTemporaryFile, /* 30 */
+    TclpGetMonotonicTime, /* 31 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     TclGetAndDetachPids, /* 0 */
@@ -663,6 +665,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 28 */
     TclWinCPUID, /* 29 */
     TclUnixOpenTemporaryFile, /* 30 */
+    TclpGetMonotonicTime, /* 31 */
 #endif /* MACOSX */
 };
 

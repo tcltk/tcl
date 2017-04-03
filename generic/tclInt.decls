@@ -1253,7 +1253,10 @@ declare 30 {win unix} {
     int TclUnixOpenTemporaryFile(Tcl_Obj *dirObj, Tcl_Obj *basenameObj,
 	    Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj)
 }
-
+# TIP#302 ???
+declare 31 {win unix macosx} {
+    int TclpGetMonotonicTime(Tcl_Time *timePtr)
+}
 
 
 # Local Variables:

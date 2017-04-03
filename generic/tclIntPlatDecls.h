@@ -103,6 +103,8 @@ EXTERN int		TclWinCPUID(unsigned int index, unsigned int *regs);
 EXTERN int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
 				Tcl_Obj *resultingNameObj);
+/* 31 */
+EXTERN int		TclpGetMonotonicTime(Tcl_Time *timePtr);
 #endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
 /* 0 */
@@ -178,6 +180,8 @@ EXTERN int		TclWinCPUID(unsigned int index, unsigned int *regs);
 EXTERN int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
 				Tcl_Obj *resultingNameObj);
+/* 31 */
+EXTERN int		TclpGetMonotonicTime(Tcl_Time *timePtr);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
 /* 0 */
@@ -252,6 +256,8 @@ EXTERN int		TclWinCPUID(unsigned int index, unsigned int *regs);
 EXTERN int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
 				Tcl_Obj *resultingNameObj);
+/* 31 */
+EXTERN int		TclpGetMonotonicTime(Tcl_Time *timePtr);
 #endif /* MACOSX */
 
 typedef struct TclIntPlatStubs {
@@ -290,6 +296,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved28)(void);
     int (*tclWinCPUID) (unsigned int index, unsigned int *regs); /* 29 */
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
+    int (*tclpGetMonotonicTime) (Tcl_Time *timePtr); /* 31 */
 #endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     void (*tclWinConvertError) (DWORD errCode); /* 0 */
@@ -323,6 +330,7 @@ typedef struct TclIntPlatStubs {
     void (*tclWinResetInterfaces) (void); /* 28 */
     int (*tclWinCPUID) (unsigned int index, unsigned int *regs); /* 29 */
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
+    int (*tclpGetMonotonicTime) (Tcl_Time *timePtr); /* 31 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     void (*tclGetAndDetachPids) (Tcl_Interp *interp, Tcl_Channel chan); /* 0 */
@@ -356,6 +364,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved28)(void);
     int (*tclWinCPUID) (unsigned int index, unsigned int *regs); /* 29 */
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
+    int (*tclpGetMonotonicTime) (Tcl_Time *timePtr); /* 31 */
 #endif /* MACOSX */
 } TclIntPlatStubs;
 
@@ -419,6 +428,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
 #define TclUnixOpenTemporaryFile \
 	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 30 */
+#define TclpGetMonotonicTime \
+	(tclIntPlatStubsPtr->tclpGetMonotonicTime) /* 31 */
 #endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
 #define TclWinConvertError \
@@ -481,6 +492,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
 #define TclUnixOpenTemporaryFile \
 	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 30 */
+#define TclpGetMonotonicTime \
+	(tclIntPlatStubsPtr->tclpGetMonotonicTime) /* 31 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
 #define TclGetAndDetachPids \
@@ -535,6 +548,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
 #define TclUnixOpenTemporaryFile \
 	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 30 */
+#define TclpGetMonotonicTime \
+	(tclIntPlatStubsPtr->tclpGetMonotonicTime) /* 31 */
 #endif /* MACOSX */
 
 #endif /* defined(USE_TCL_STUBS) */
