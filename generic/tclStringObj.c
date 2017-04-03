@@ -1702,8 +1702,11 @@ Tcl_AppendFormatToObj(
 
     while (*format != '\0') {
 	char *end;
-	int gotMinus, gotHash, gotZero, gotSpace, gotPlus, sawFlag;
-	int width, gotPrecision, precision, useShort, useWide, useBig;
+	int gotMinus = 0, gotHash = 0, gotZero = 0, gotSpace = 0, gotPlus = 0;
+	int width, gotPrecision, precision, sawFlag, useShort = 0, useBig = 0;
+#ifndef TCL_WIDE_INT_IS_LONG
+	int useWide = 0;
+#endif
 	int newXpg, numChars, allocSegment = 0, segmentLimit, segmentNumBytes;
 	Tcl_Obj *segment;
 	Tcl_UniChar ch;
@@ -1779,7 +1782,6 @@ Tcl_AppendFormatToObj(
 	 * Step 2. Set of flags.
 	 */
 
-	gotMinus = gotHash = gotZero = gotSpace = gotPlus = 0;
 	sawFlag = 1;
 	do {
 	    switch (ch) {
@@ -1880,7 +1882,6 @@ Tcl_AppendFormatToObj(
 	 * Step 5. Length modifier.
 	 */
 
-	useShort = useWide = useBig = 0;
 	if (ch == 'h') {
 	    useShort = 1;
 	    format += step;
@@ -1964,6 +1965,7 @@ Tcl_AppendFormatToObj(
 		    goto error;
 		}
 		isNegative = (mp_cmp_d(&big, 0) == MP_LT);
+#ifndef TCL_WIDE_INT_IS_LONG
 	    } else if (useWide) {
 		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
 		    Tcl_Obj *objPtr;
@@ -1978,6 +1980,7 @@ Tcl_AppendFormatToObj(
 		    Tcl_DecrRefCount(objPtr);
 		}
 		isNegative = (w < (Tcl_WideInt) 0);
+#endif
 	    } else if (TclGetLongFromObj(NULL, segment, &l) != TCL_OK) {
 		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
 		    Tcl_Obj *objPtr;
@@ -2044,8 +2047,10 @@ Tcl_AppendFormatToObj(
 
 		if (useShort) {
 		    pure = Tcl_NewIntObj((int) s);
+#ifndef TCL_WIDE_INT_IS_LONG
 		} else if (useWide) {
 		    pure = Tcl_NewWideIntObj(w);
+#endif
 		} else if (useBig) {
 		    pure = Tcl_NewBignumObj(&big);
 		} else {
@@ -2128,6 +2133,7 @@ Tcl_AppendFormatToObj(
 			numDigits++;
 			us /= base;
 		    }
+#ifndef TCL_WIDE_INT_IS_LONG
 		} else if (useWide) {
 		    Tcl_WideUInt uw = (Tcl_WideUInt) w;
 
@@ -2136,6 +2142,7 @@ Tcl_AppendFormatToObj(
 			numDigits++;
 			uw /= base;
 		    }
+#endif
 		} else if (useBig && big.used) {
 		    int leftover = (big.used * DIGIT_BIT) % numBits;
 		    mp_digit mask = (~(mp_digit)0) << (DIGIT_BIT-leftover);
@@ -2328,7 +2335,7 @@ Tcl_AppendFormatToObj(
 	    }
 	}
 
-	Tcl_GetStringFromObj(segment, &segmentNumBytes);
+	TclGetStringFromObj(segment, &segmentNumBytes);
 	if (segmentNumBytes > limit) {
 	    if (allocSegment) {
 		Tcl_DecrRefCount(segment);
