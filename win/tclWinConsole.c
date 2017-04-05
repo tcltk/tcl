@@ -1208,8 +1208,7 @@ ConsoleReaderThread(
     /*
      * Notify caller (using startEvent) that this thread is initialized
      */
-    SetEvent(threadInfo->startEvent);
-    SuspendThread(threadInfo->thread); /* until main thread get an event */
+    SignalObjectAndWait(threadInfo->startEvent, threadInfo->stopEvent, INFINITE, FALSE);
 
     /*
      * The first event takes precedence.
@@ -1321,8 +1320,7 @@ ConsoleWriterThread(
     /*
      * Notify caller (using startEvent) that this thread is initialized
      */
-    SetEvent(threadInfo->startEvent);
-    SuspendThread(threadInfo->thread); /* until main thread get an event */
+    SignalObjectAndWait(threadInfo->startEvent, threadInfo->stopEvent, INFINITE, FALSE);
 
     /*
      * The first event takes precedence.
@@ -1480,11 +1478,11 @@ TclWinOpenConsoleChannel(
      */
     if (wEventsCnt) {
 	WaitForMultipleObjects(wEventsCnt, wEvents, TRUE, 5000);
-	/* Resume both waiting threads */
+	/* Resume both waiting threads, we've get the events */
 	if (infoPtr->reader.thread)
-	    ResumeThread(infoPtr->reader.thread);
+	    SetEvent(infoPtr->reader.stopEvent);
 	if (infoPtr->writer.thread)
-	    ResumeThread(infoPtr->writer.thread);
+	    SetEvent(infoPtr->writer.stopEvent);
     }
     /*
      * Files have default translation of AUTO and ^Z eof char, which means
