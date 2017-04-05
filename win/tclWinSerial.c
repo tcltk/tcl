@@ -94,6 +94,8 @@ typedef struct SerialInfo {
     OVERLAPPED osRead;		/* OVERLAPPED structure for read operations. */
     OVERLAPPED osWrite;		/* OVERLAPPED structure for write operations */
     HANDLE writeThread;		/* Handle to writer thread. */
+    HANDLE writeThreadInitialized;	/* Manual-reset event to signal that thread has been initialized. */
+    int writeThreadExiting;		/* Boolean indicating that thread is exiting. */
     CRITICAL_SECTION csWrite;	/* Writer thread synchronisation. */
     HANDLE evWritable;		/* Manual-reset event to signal when the
 				 * writer thread has finished waiting for the
@@ -643,18 +645,35 @@ SerialCloseProc(
 		 * Note that we need to guard against terminating the thread
 		 * while it is in the middle of Tcl_ThreadAlert because it
 		 * won't be able to release the notifier lock.
+		 *
+		 * Also note that terminating threads during their initialization or teardown phase
+		 * may result in ntdll.dll's LoaderLock to remain locked indefinitely.
+		 * This causes ntdll.dll's LdrpInitializeThread() to deadlock trying to acquire LoaderLock.
+		 * LdrpInitializeThread() is executed within new threads to perform
+		 * initialization and to execute DllMain() of all loaded dlls.
+		 * As a result, all new threads are deadlocked in their initialization phase and never execute,
+		 * even though CreateThread() reports successful thread creation.
+		 * This results in a very weird process-wide behavior, which is extremely hard to debug.
+		 * 
+		 * THREADS SHOULD NEVER BE TERMINATED. Period.
+		 * 
+		 * But for now, check if thread is exiting, and if so, let it die peacefully.
 		 */
 
 		Tcl_MutexLock(&serialMutex);
 
-		/* BUG: this leaks memory */
-		TerminateThread(serialPtr->writeThread, 0);
-
+		if ( serialPtr->writeThreadExiting ) {
+			WaitForSingleObject(serialPtr->writeThread, INFINITE);
+		} else {
+			/* BUG: this leaks memory. */
+			TerminateThread(serialPtr->writeThread, 0);
+		}
 		Tcl_MutexUnlock(&serialMutex);
 	    }
 	}
 
 	CloseHandle(serialPtr->writeThread);
+	CloseHandle(serialPtr->writeThreadInitialized);
 	CloseHandle(serialPtr->osWrite.hEvent);
 	CloseHandle(serialPtr->evWritable);
 	CloseHandle(serialPtr->evStartWriter);
@@ -1320,6 +1339,11 @@ SerialWriterThread(
     HANDLE wEvents[2];
 
     /*
+     * Notify TclWinOpenSerialChannel() that this thread is initialized
+     */
+    SetEvent(infoPtr->writeThreadInitialized);
+
+    /*
      * The stop event takes precedence by being first in the list.
      */
 
@@ -1403,6 +1427,14 @@ SerialWriterThread(
 	}
 	Tcl_MutexUnlock(&serialMutex);
     }
+
+    /*
+     * Inform SerialCloseProc() that this thread should not be terminated, since it is about to exit.
+     * See comment in SerialCloseProc() for reasons.
+     */
+    Tcl_MutexLock(&serialMutex);
+    infoPtr->writeThreadExiting = TRUE;
+    Tcl_MutexUnlock(&serialMutex);
 
     return 0;
 }
@@ -1531,8 +1563,11 @@ TclWinOpenSerialChannel(
 	infoPtr->evWritable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->evStartWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
 	infoPtr->evStopWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
+	infoPtr->writeThreadInitialized = CreateEvent(NULL, TRUE, FALSE, NULL);
+	infoPtr->writeThreadExiting = FALSE;
 	infoPtr->writeThread = CreateThread(NULL, 256, SerialWriterThread,
 		infoPtr, 0, &id);
+	WaitForSingleObject(infoPtr->writeThreadInitialized, INFINITE); /* wait for thread to initialize */
     }
 
     /*
