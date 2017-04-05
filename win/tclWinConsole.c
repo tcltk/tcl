@@ -51,14 +51,14 @@ TCL_DECLARE_MUTEX(consoleMutex)
 
 typedef struct ConsoleThreadInfo {
     HANDLE thread;		/* Handle to reader or writer thread. */
-    HANDLE threadInitialized;	/* Manual-reset event to signal that thread has been initialized. */
     int threadExiting;		/* Boolean indicating that thread is exiting. */
     HANDLE readyEvent;		/* Manual-reset event to signal _to_ the main
 				 * thread when the worker thread has finished
 				 * waiting for its normal work to happen. */
     HANDLE startEvent;		/* Auto-reset event used by the main thread to
 				 * signal when the thread should attempt to do
-				 * its normal work. */
+				 * its normal work. Additionally this event
+				 * used as wait for thread event (init phase). */
     HANDLE stopEvent;		/* Auto-reset event used by the main thread to
 				 * signal when the thread should exit. */
 } ConsoleThreadInfo;
@@ -538,12 +538,10 @@ StartChannelThread(
 
     threadInfoPtr->readyEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
     threadInfoPtr->startEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    threadInfoPtr->threadInitialized = CreateEvent(NULL, TRUE, FALSE, NULL);
     threadInfoPtr->threadExiting = FALSE;
     threadInfoPtr->stopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     threadInfoPtr->thread = CreateThread(NULL, 256, threadProc, infoPtr, 0,
 	    &id);
-    WaitForSingleObject(threadInfoPtr->threadInitialized, INFINITE); /* wait for thread to initialize */
     SetThreadPriority(threadInfoPtr->thread, THREAD_PRIORITY_HIGHEST);
 }
 
@@ -592,14 +590,14 @@ StopChannelThread(
 	     * But for now, check if thread is exiting, and if so, let it die peacefully.
 	     */
 
-	    Tcl_MutexLock(&consoleMutex);
-	    if ( threadInfoPtr->threadExiting ) {
-		    WaitForSingleObject(threadInfoPtr->thread, INFINITE);
-	    } else {
-		    /* BUG: this leaks memory. */
-		    TerminateThread(threadInfoPtr->thread, 0);
+	    if ( !threadInfoPtr->threadExiting
+	      || WaitForSingleObject(threadInfoPtr->thread, 5000) != WAIT_OBJECT_0
+	    ) {
+		Tcl_MutexLock(&consoleMutex);
+		/* BUG: this leaks memory. */
+		TerminateThread(threadInfoPtr->thread, 0);
+		Tcl_MutexUnlock(&consoleMutex);
 	    }
-	    Tcl_MutexUnlock(&consoleMutex);
 	}
     }
 
@@ -609,7 +607,6 @@ StopChannelThread(
      */
 
     CloseHandle(threadInfoPtr->thread);
-    CloseHandle(threadInfoPtr->threadInitialized);
     CloseHandle(threadInfoPtr->readyEvent);
     CloseHandle(threadInfoPtr->startEvent);
     CloseHandle(threadInfoPtr->stopEvent);
@@ -1209,9 +1206,10 @@ ConsoleReaderThread(
     HANDLE wEvents[2];
 
     /*
-     * Notify StartChannelThread() that this thread is initialized
+     * Notify caller (using startEvent) that this thread is initialized
      */
-    SetEvent(threadInfo->threadInitialized);
+    SetEvent(threadInfo->startEvent);
+    SuspendThread(threadInfo->thread); /* until main thread get an event */
 
     /*
      * The first event takes precedence.
@@ -1282,12 +1280,10 @@ ConsoleReaderThread(
     }
 
     /*
-     * Inform StopChannelThread() that this thread should not be terminated, since it is about to exit.
+     * Inform caller that this thread should not be terminated, since it is about to exit.
      * See comment in StopChannelThread() for reasons.
     */
-    Tcl_MutexLock(&consoleMutex);
     threadInfo->threadExiting = TRUE;
-    Tcl_MutexUnlock(&consoleMutex);
 
     return 0;
 }
@@ -1323,9 +1319,10 @@ ConsoleWriterThread(
     HANDLE wEvents[2];
 
     /*
-     * Notify StartChannelThread() that this thread is initialized
+     * Notify caller (using startEvent) that this thread is initialized
      */
-    SetEvent(threadInfo->threadInitialized);
+    SetEvent(threadInfo->startEvent);
+    SuspendThread(threadInfo->thread); /* until main thread get an event */
 
     /*
      * The first event takes precedence.
@@ -1393,12 +1390,10 @@ ConsoleWriterThread(
     }
 
     /*
-     * Inform StopChannelThread() that this thread should not be terminated, since it is about to exit.
+     * Inform caller that this thread should not be terminated, since it is about to exit.
      * See comment in StopChannelThread() for reasons.
     */
-    Tcl_MutexLock(&consoleMutex);
     threadInfo->threadExiting = TRUE;
-    Tcl_MutexUnlock(&consoleMutex);
 
     return 0;
 }
@@ -1429,7 +1424,8 @@ TclWinOpenConsoleChannel(
 {
     char encoding[4 + TCL_INTEGER_SPACE];
     ConsoleInfo *infoPtr;
-    DWORD modes;
+    DWORD modes, wEventsCnt = 0;
+    HANDLE wEvents[2], wEventsPtr = wEvents;
 
     ConsoleInit();
 
@@ -1471,12 +1467,25 @@ TclWinOpenConsoleChannel(
 	modes |= ENABLE_LINE_INPUT;
 	SetConsoleMode(infoPtr->handle, modes);
 	StartChannelThread(infoPtr, &infoPtr->reader, ConsoleReaderThread);
+	wEvents[wEventsCnt++] = infoPtr->reader.startEvent;
     }
 
     if (permissions & TCL_WRITABLE) {
 	StartChannelThread(infoPtr, &infoPtr->writer, ConsoleWriterThread);
+	wEvents[wEventsCnt++] = infoPtr->writer.startEvent;
     }
 
+    /* 
+     * Wait for both threads to initialize (using theirs startEvent)
+     */
+    if (wEventsCnt) {
+	WaitForMultipleObjects(wEventsCnt, wEvents, TRUE, 5000);
+	/* Resume both waiting threads */
+	if (infoPtr->reader.thread)
+	    ResumeThread(infoPtr->reader.thread);
+	if (infoPtr->writer.thread)
+	    ResumeThread(infoPtr->writer.thread);
+    }
     /*
      * Files have default translation of AUTO and ^Z eof char, which means
      * that a ^Z will be accepted as EOF when reading.

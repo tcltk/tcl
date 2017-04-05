@@ -94,15 +94,15 @@ typedef struct SerialInfo {
     OVERLAPPED osRead;		/* OVERLAPPED structure for read operations. */
     OVERLAPPED osWrite;		/* OVERLAPPED structure for write operations */
     HANDLE writeThread;		/* Handle to writer thread. */
-    HANDLE writeThreadInitialized;	/* Manual-reset event to signal that thread has been initialized. */
-    int writeThreadExiting;		/* Boolean indicating that thread is exiting. */
+    int writeThreadExiting;	/* Boolean indicating that thread is exiting. */
     CRITICAL_SECTION csWrite;	/* Writer thread synchronisation. */
     HANDLE evWritable;		/* Manual-reset event to signal when the
 				 * writer thread has finished waiting for the
 				 * current buffer to be written. */
     HANDLE evStartWriter;	/* Auto-reset event used by the main thread to
 				 * signal when the writer thread should
-				 * attempt to write to the serial. */
+				 * attempt to write to the serial. Additionally
+				 * this event used as wait for thread event (init). */
     HANDLE evStopWriter;	/* Auto-reset event used by the main thread to
 				 * signal when the writer thread should close.
 				 */
@@ -660,20 +660,18 @@ SerialCloseProc(
 		 * But for now, check if thread is exiting, and if so, let it die peacefully.
 		 */
 
-		Tcl_MutexLock(&serialMutex);
-
-		if ( serialPtr->writeThreadExiting ) {
-			WaitForSingleObject(serialPtr->writeThread, INFINITE);
-		} else {
-			/* BUG: this leaks memory. */
-			TerminateThread(serialPtr->writeThread, 0);
+		if ( !serialPtr->writeThreadExiting
+		  || WaitForSingleObject(serialPtr->writeThread, 5000) != WAIT_OBJECT_0
+		) {
+		    Tcl_MutexLock(&serialMutex);
+		    /* BUG: this leaks memory. */
+		    TerminateThread(serialPtr->writeThread, 0);
+		    Tcl_MutexUnlock(&serialMutex);
 		}
-		Tcl_MutexUnlock(&serialMutex);
 	    }
 	}
 
 	CloseHandle(serialPtr->writeThread);
-	CloseHandle(serialPtr->writeThreadInitialized);
 	CloseHandle(serialPtr->osWrite.hEvent);
 	CloseHandle(serialPtr->evWritable);
 	CloseHandle(serialPtr->evStartWriter);
@@ -1341,7 +1339,8 @@ SerialWriterThread(
     /*
      * Notify TclWinOpenSerialChannel() that this thread is initialized
      */
-    SetEvent(infoPtr->writeThreadInitialized);
+    SetEvent(infoPtr->evStartWriter);
+    SuspendThread(infoPtr->writeThread); /* until main thread get an event */
 
     /*
      * The stop event takes precedence by being first in the list.
@@ -1429,12 +1428,10 @@ SerialWriterThread(
     }
 
     /*
-     * Inform SerialCloseProc() that this thread should not be terminated, since it is about to exit.
+     * Inform caller that this thread should not be terminated, since it is about to exit.
      * See comment in SerialCloseProc() for reasons.
      */
-    Tcl_MutexLock(&serialMutex);
     infoPtr->writeThreadExiting = TRUE;
-    Tcl_MutexUnlock(&serialMutex);
 
     return 0;
 }
@@ -1563,11 +1560,12 @@ TclWinOpenSerialChannel(
 	infoPtr->evWritable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->evStartWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
 	infoPtr->evStopWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
-	infoPtr->writeThreadInitialized = CreateEvent(NULL, TRUE, FALSE, NULL);
 	infoPtr->writeThreadExiting = FALSE;
 	infoPtr->writeThread = CreateThread(NULL, 256, SerialWriterThread,
 		infoPtr, 0, &id);
-	WaitForSingleObject(infoPtr->writeThreadInitialized, INFINITE); /* wait for thread to initialize */
+	/* Wait for thread to initialize (using evStartWriter) */
+	WaitForSingleObject(infoPtr->evStartWriter, 5000);
+	ResumeThread(infoPtr->writeThread);
     }
 
     /*
