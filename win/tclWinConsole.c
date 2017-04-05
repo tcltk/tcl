@@ -51,6 +51,8 @@ TCL_DECLARE_MUTEX(consoleMutex)
 
 typedef struct ConsoleThreadInfo {
     HANDLE thread;		/* Handle to reader or writer thread. */
+    HANDLE threadInitialized;	/* Manual-reset event to signal that thread has been initialized. */
+    int threadExiting;		/* Boolean indicating that thread is exiting. */
     HANDLE readyEvent;		/* Manual-reset event to signal _to_ the main
 				 * thread when the worker thread has finished
 				 * waiting for its normal work to happen. */
@@ -537,8 +539,11 @@ StartChannelThread(
     threadInfoPtr->readyEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
     threadInfoPtr->startEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     threadInfoPtr->stopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    threadInfoPtr->threadInitialized = CreateEvent(NULL, TRUE, FALSE, NULL);
+    threadInfoPtr->threadExiting = FALSE;
     threadInfoPtr->thread = CreateThread(NULL, 256, threadProc, infoPtr, 0,
 	    &id);
+    WaitForSingleObject(threadInfoPtr->threadInitialized, INFINITE); /* wait for thread to initialize */
     SetThreadPriority(threadInfoPtr->thread, THREAD_PRIORITY_HIGHEST);
 }
 
@@ -572,11 +577,28 @@ StopChannelThread(
 	     * Note that we need to guard against terminating the thread while
 	     * it is in the middle of Tcl_ThreadAlert because it won't be able
 	     * to release the notifier lock.
+	     *
+	     * Also note that terminating threads during their initialization or teardown phase
+	     * may result in ntdll.dll's LoaderLock to remain locked indefinitely.
+	     * This causes ntdll.dll's LdrpInitializeThread() to deadlock trying to acquire LoaderLock.
+	     * LdrpInitializeThread() is executed within new threads to perform
+	     * initialization and to execute DllMain() of all loaded dlls.
+	     * As a result, all new threads are deadlocked in their initialization phase and never execute,
+	     * even though CreateThread() reports successful thread creation.
+	     * This results in a very weird process-wide behavior, which is extremely hard to debug.
+	     *
+	     * THREADS SHOULD NEVER BE TERMINATED. Period.
+	     *
+	     * But for now, check if thread is exiting, and if so, let it die peacefully.
 	     */
 
 	    Tcl_MutexLock(&consoleMutex);
-	    /* BUG: this leaks memory. */
-	    TerminateThread(threadInfoPtr->thread, 0);
+	    if (threadInfoPtr->threadExiting) {
+		    WaitForSingleObject(threadInfoPtr->thread, INFINITE);
+	    } else {
+		    /* BUG: this leaks memory. */
+		    TerminateThread(threadInfoPtr->thread, 0);
+	    }
 	    Tcl_MutexUnlock(&consoleMutex);
 	}
     }
@@ -587,6 +609,7 @@ StopChannelThread(
      */
 
     CloseHandle(threadInfoPtr->thread);
+    CloseHandle(threadInfoPtr->threadInitialized);
     CloseHandle(threadInfoPtr->readyEvent);
     CloseHandle(threadInfoPtr->startEvent);
     CloseHandle(threadInfoPtr->stopEvent);
@@ -1186,6 +1209,11 @@ ConsoleReaderThread(
     HANDLE wEvents[2];
 
     /*
+     * Notify StartChannelThread() that this thread is initialized
+     */
+    SetEvent(threadInfo->threadInitialized);
+
+    /*
      * The first event takes precedence.
      */
 
@@ -1253,6 +1281,14 @@ ConsoleReaderThread(
 	Tcl_MutexUnlock(&consoleMutex);
     }
 
+    /*
+     * Inform StopChannelThread() that this thread should not be terminated, since it is about to exit.
+     * See comment in StopChannelThread() for reasons.
+    */
+    Tcl_MutexLock(&consoleMutex);
+    threadInfo->threadExiting = TRUE;
+    Tcl_MutexUnlock(&consoleMutex);
+
     return 0;
 }
 
@@ -1285,6 +1321,11 @@ ConsoleWriterThread(
     DWORD count, toWrite, waitResult;
     char *buf;
     HANDLE wEvents[2];
+
+    /*
+     * Notify StartChannelThread() that this thread is initialized
+     */
+    SetEvent(threadInfo->threadInitialized);
 
     /*
      * The first event takes precedence.
@@ -1350,6 +1391,14 @@ ConsoleWriterThread(
 	}
 	Tcl_MutexUnlock(&consoleMutex);
     }
+
+    /*
+     * Inform StopChannelThread() that this thread should not be terminated, since it is about to exit.
+     * See comment in StopChannelThread() for reasons.
+    */
+    Tcl_MutexLock(&consoleMutex);
+    threadInfo->threadExiting = TRUE;
+    Tcl_MutexUnlock(&consoleMutex);
 
     return 0;
 }

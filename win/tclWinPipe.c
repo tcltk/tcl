@@ -111,6 +111,10 @@ typedef struct PipeInfo {
 				 * threads. */
     HANDLE writeThread;		/* Handle to writer thread. */
     HANDLE readThread;		/* Handle to reader thread. */
+    HANDLE writeThreadInitialized;	/* Manual-reset event to signal that writer thread has been initialized */
+    HANDLE readThreadInitialized;	/* Manual-reset event to signal that reader thread has been initialized */
+    int writeThreadExiting;	/* Boolean indicating that write thread is exiting */
+    int readThreadExiting;	/* Boolean indicating that read thread is exiting */
     HANDLE writable;		/* Manual-reset event to signal when the
 				 * writer thread has finished waiting for the
 				 * current buffer to be written. */
@@ -1601,8 +1605,11 @@ TclpCreateCommandChannel(
 	infoPtr->readable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->startReader = CreateEvent(NULL, FALSE, FALSE, NULL);
 	infoPtr->stopReader = CreateEvent(NULL, TRUE, FALSE, NULL);
+	infoPtr->readThreadInitialized = CreateEvent(NULL, TRUE, FALSE, NULL);
+	infoPtr->readThreadExiting = FALSE;
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
 		infoPtr, 0, &id);
+	WaitForSingleObject(infoPtr->readThreadInitialized, INFINITE); /* wait for thread to initialize */
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
@@ -1616,8 +1623,11 @@ TclpCreateCommandChannel(
 	infoPtr->writable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->startWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
 	infoPtr->stopWriter = CreateEvent(NULL, TRUE, FALSE, NULL);
+	infoPtr->writeThreadInitialized = CreateEvent(NULL, TRUE, FALSE, NULL);
+	infoPtr->writeThreadExiting = FALSE;
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
 		infoPtr, 0, &id);
+	WaitForSingleObject(infoPtr->writeThreadInitialized, INFINITE); /* wait for thread to initialize */
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     }
@@ -1853,17 +1863,34 @@ PipeClose2Proc(
 		     * Note that we need to guard against terminating the
 		     * thread while it is in the middle of Tcl_ThreadAlert
 		     * because it won't be able to release the notifier lock.
+		     *
+		     * Also note that terminating threads during their initialization or teardown phase
+		     * may result in ntdll.dll's LoaderLock to remain locked indefinitely.
+		     * This causes ntdll.dll's LdrpInitializeThread() to deadlock trying to acquire LoaderLock.
+		     * LdrpInitializeThread() is executed within new threads to perform
+		     * initialization and to execute DllMain() of all loaded dlls.
+		     * As a result, all new threads are deadlocked in their initialization phase and never execute,
+		     * even though CreateThread() reports successful thread creation.
+		     * This results in a very weird process-wide behavior, which is extremely hard to debug.
+		     *
+		     * THREADS SHOULD NEVER BE TERMINATED. Period.
+		     *
+		     * But for now, check if thread is exiting, and if so, let it die peacefully.
 		     */
 
 		    Tcl_MutexLock(&pipeMutex);
-
-		    /* BUG: this leaks memory */
-		    TerminateThread(pipePtr->readThread, 0);
+		    if (pipePtr->readThreadExiting) {
+			    WaitForSingleObject(pipePtr->readThread, INFINITE);
+		    } else {
+			    /* BUG: this leaks memory */
+			    TerminateThread(pipePtr->readThread, 0);
+		    }
 		    Tcl_MutexUnlock(&pipeMutex);
 		}
 	    }
 
 	    CloseHandle(pipePtr->readThread);
+	    CloseHandle(pipePtr->readThreadInitialized);
 	    CloseHandle(pipePtr->readable);
 	    CloseHandle(pipePtr->startReader);
 	    CloseHandle(pipePtr->stopReader);
@@ -1909,8 +1936,8 @@ PipeClose2Proc(
 
 	    if (exitCode == STILL_ACTIVE) {
 		/*
-		 * Set the stop event so that if the reader thread is blocked
-		 * in PipeReaderThread on WaitForMultipleEvents, it will exit
+		 * Set the stop event so that if the writer thread is blocked
+		 * in PipeWriterThread on WaitForMultipleEvents, it will exit
 		 * cleanly.
 		 */
 
@@ -1935,17 +1962,34 @@ PipeClose2Proc(
 		     * Note that we need to guard against terminating the
 		     * thread while it is in the middle of Tcl_ThreadAlert
 		     * because it won't be able to release the notifier lock.
+		     *
+		     * Also note that terminating threads during their initialization or teardown phase
+		     * may result in ntdll.dll's LoaderLock to remain locked indefinitely.
+		     * This causes ntdll.dll's LdrpInitializeThread() to deadlock trying to acquire LoaderLock.
+		     * LdrpInitializeThread() is executed within new threads to perform
+		     * initialization and to execute DllMain() of all loaded dlls.
+		     * As a result, all new threads are deadlocked in their initialization phase and never execute,
+		     * even though CreateThread() reports successful thread creation.
+		     * This results in a very weird process-wide behavior, which is extremely hard to debug.
+		     *
+		     * THREADS SHOULD NEVER BE TERMINATED. Period.
+		     *
+		     * But for now, check if thread is exiting, and if so, let it die peacefully.
 		     */
 
 		    Tcl_MutexLock(&pipeMutex);
-
-		    /* BUG: this leaks memory */
-		    TerminateThread(pipePtr->writeThread, 0);
+		    if (pipePtr->writeThreadExiting) {
+			    WaitForSingleObject(pipePtr->writeThread, INFINITE);
+		    } else {
+			    /* BUG: this leaks memory */
+			    TerminateThread(pipePtr->writeThread, 0);
+		    }
 		    Tcl_MutexUnlock(&pipeMutex);
 		}
 	    }
 
 	    CloseHandle(pipePtr->writeThread);
+	    CloseHandle(pipePtr->writeThreadInitialized);
 	    CloseHandle(pipePtr->writable);
 	    CloseHandle(pipePtr->startWriter);
 	    CloseHandle(pipePtr->stopWriter);
@@ -2821,6 +2865,11 @@ PipeReaderThread(
     HANDLE wEvents[2];
     DWORD waitResult;
 
+    /*
+     * Let TclpCreateCommandChannel() know that this thread has been initialized
+     */
+    SetEvent(infoPtr->readThreadInitialized);
+
     wEvents[0] = infoPtr->stopReader;
     wEvents[1] = infoPtr->startReader;
 
@@ -2913,6 +2962,14 @@ PipeReaderThread(
 	Tcl_MutexUnlock(&pipeMutex);
     }
 
+    /*
+     * Inform PipeClose2Proc() that this thread should not be terminated, since it is about to exit.
+     * See comment in PipeClose2Proc() for reasons.
+    */
+    Tcl_MutexLock(&pipeMutex);
+    infoPtr->readThreadExiting = TRUE;
+    Tcl_MutexUnlock(&pipeMutex);
+
     return 0;
 }
 
@@ -2944,6 +3001,11 @@ PipeWriterThread(
     int done = 0;
     HANDLE wEvents[2];
     DWORD waitResult;
+
+    /*
+     * Let TclpCreateCommandChannel() know that this thread has been initialized
+     */
+    SetEvent(infoPtr->writeThreadInitialized);
 
     wEvents[0] = infoPtr->stopWriter;
     wEvents[1] = infoPtr->startWriter;
@@ -3010,6 +3072,14 @@ PipeWriterThread(
 	}
 	Tcl_MutexUnlock(&pipeMutex);
     }
+
+    /*
+     * Inform PipeClose2Proc() that this thread should not be terminated, since it is about to exit.
+     * See comment in PipeClose2Proc() for reasons.
+    */
+    Tcl_MutexLock(&pipeMutex);
+    infoPtr->writeThreadExiting = TRUE;
+    Tcl_MutexUnlock(&pipeMutex);
 
     return 0;
 }
