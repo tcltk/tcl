@@ -111,10 +111,8 @@ typedef struct PipeInfo {
 				 * threads. */
     HANDLE writeThread;		/* Handle to writer thread. */
     HANDLE readThread;		/* Handle to reader thread. */
-    HANDLE writeThreadInitialized; /* Manual-reset event to signal that writer thread has been initialized */
-    HANDLE readThreadInitialized;  /* Manual-reset event to signal that reader thread has been initialized */
-    int writeThreadExiting;    /* Boolean indicating that write thread is exiting */
-    int readThreadExiting; /* Boolean indicating that read thread is exiting */
+    int writeThreadExiting;	/* Boolean indicating that write thread is exiting */
+    int readThreadExiting;	/* Boolean indicating that read thread is exiting */
     HANDLE writable;		/* Manual-reset event to signal when the
 				 * writer thread has finished waiting for the
 				 * current buffer to be written. */
@@ -123,12 +121,14 @@ typedef struct PipeInfo {
 				 * input. */
     HANDLE startWriter;		/* Auto-reset event used by the main thread to
 				 * signal when the writer thread should
-				 * attempt to write to the pipe. */
+				 * attempt to write to the pipe. Additionally
+				 * this event used as wait for thread event (init). */
     HANDLE stopWriter;		/* Manual-reset event used to alert the reader
 				 * thread to fall-out and exit */
     HANDLE startReader;		/* Auto-reset event used by the main thread to
 				 * signal when the reader thread should
-				 * attempt to read from the pipe. */
+				 * attempt to read from the pipe. Additionally
+				 * this event used as wait for thread event (init). */
     HANDLE stopReader;		/* Manual-reset event used to alert the reader
 				 * thread to fall-out and exit */
     DWORD writeError;		/* An error caused by the last background
@@ -1575,7 +1575,8 @@ TclpCreateCommandChannel(
     Tcl_Pid *pidPtr)		/* An array of process identifiers. */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
-    DWORD id;
+    DWORD id, wEventsCnt = 0;
+    HANDLE wEvents[2];
     PipeInfo *infoPtr = ckalloc(sizeof(PipeInfo));
 
     PipeInit();
@@ -1605,13 +1606,12 @@ TclpCreateCommandChannel(
 	infoPtr->readable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->startReader = CreateEvent(NULL, FALSE, FALSE, NULL);
 	infoPtr->stopReader = CreateEvent(NULL, TRUE, FALSE, NULL);
-	infoPtr->readThreadInitialized = CreateEvent(NULL, TRUE, FALSE, NULL);
 	infoPtr->readThreadExiting = FALSE;
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
 		infoPtr, 0, &id);
-	WaitForSingleObject(infoPtr->readThreadInitialized, INFINITE); /* wait for thread to initialize */
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
+	wEvents[wEventsCnt++] = infoPtr->startReader;
     } else {
 	infoPtr->readThread = 0;
     }
@@ -1623,13 +1623,26 @@ TclpCreateCommandChannel(
 	infoPtr->writable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->startWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
 	infoPtr->stopWriter = CreateEvent(NULL, TRUE, FALSE, NULL);
-	infoPtr->writeThreadInitialized = CreateEvent(NULL, TRUE, FALSE, NULL);
 	infoPtr->writeThreadExiting = FALSE;
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
 		infoPtr, 0, &id);
-	WaitForSingleObject(infoPtr->writeThreadInitialized, INFINITE); /* wait for thread to initialize */
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
+	wEvents[wEventsCnt++] = infoPtr->startWriter;
+    } else {
+    	infoPtr->writeThread = 0;
+    }
+
+    /* 
+     * Wait for both threads to initialize (using theirs start-events)
+     */
+    if (wEventsCnt) {
+	WaitForMultipleObjects(wEventsCnt, wEvents, TRUE, 5000);
+	/* Resume both waiting threads */
+	if (infoPtr->readThread)
+	    ResumeThread(infoPtr->readThread);
+	if (infoPtr->writeThread)
+	    ResumeThread(infoPtr->writeThread);
     }
 
     /*
@@ -1878,20 +1891,18 @@ PipeClose2Proc(
 		     * But for now, check if thread is exiting, and if so, let it die peacefully.
 		     */
 
-		    Tcl_MutexLock(&pipeMutex);
-
-		    if ( pipePtr->readThreadExiting ) {
-			    WaitForSingleObject(pipePtr->readThread, INFINITE);
-		    } else {
-			    /* BUG: this leaks memory */
-			    TerminateThread(pipePtr->readThread, 0);
+		    if ( !pipePtr->readThreadExiting
+		      || WaitForSingleObject(pipePtr->readThread, 5000) != WAIT_OBJECT_0
+		    ) {
+			Tcl_MutexLock(&pipeMutex);
+			/* BUG: this leaks memory */
+			TerminateThread(pipePtr->readThread, 0);
+			Tcl_MutexUnlock(&pipeMutex);
 		    }
-		    Tcl_MutexUnlock(&pipeMutex);
 		}
 	    }
 
 	    CloseHandle(pipePtr->readThread);
-	    CloseHandle(pipePtr->readThreadInitialized);
 	    CloseHandle(pipePtr->readable);
 	    CloseHandle(pipePtr->startReader);
 	    CloseHandle(pipePtr->stopReader);
@@ -1978,20 +1989,18 @@ PipeClose2Proc(
 		     * But for now, check if thread is exiting, and if so, let it die peacefully.
 		     */
 
-		    Tcl_MutexLock(&pipeMutex);
-
-		    if ( pipePtr->writeThreadExiting ) {
-			    WaitForSingleObject(pipePtr->writeThread, INFINITE);
-		    } else {
-			    /* BUG: this leaks memory */
-			    TerminateThread(pipePtr->writeThread, 0);
+		    if ( !pipePtr->writeThreadExiting
+		      || WaitForSingleObject(pipePtr->writeThread, 5000) != WAIT_OBJECT_0
+		    ) {
+			Tcl_MutexLock(&pipeMutex);
+			/* BUG: this leaks memory */
+			TerminateThread(pipePtr->writeThread, 0);
+			Tcl_MutexUnlock(&pipeMutex);
 		    }
-		    Tcl_MutexUnlock(&pipeMutex);
 		}
 	    }
 
 	    CloseHandle(pipePtr->writeThread);
-	    CloseHandle(pipePtr->writeThreadInitialized);
 	    CloseHandle(pipePtr->writable);
 	    CloseHandle(pipePtr->startWriter);
 	    CloseHandle(pipePtr->stopWriter);
@@ -2868,9 +2877,10 @@ PipeReaderThread(
     DWORD waitResult;
 
     /*
-     * Let TclpCreateCommandChannel() know that this thread has been initialized
+     * Notify caller that this thread has been initialized
      */
-    SetEvent(infoPtr->readThreadInitialized);
+    SetEvent(infoPtr->startReader);
+    SuspendThread(infoPtr->readThread); /* until main thread get an event */
     
     wEvents[0] = infoPtr->stopReader;
     wEvents[1] = infoPtr->startReader;
@@ -2965,12 +2975,10 @@ PipeReaderThread(
     }
 
     /*
-     * Inform PipeClose2Proc() that this thread should not be terminated, since it is about to exit.
+     * Inform caller that this thread should not be terminated, since it is about to exit.
      * See comment in PipeClose2Proc() for reasons.
     */
-    Tcl_MutexLock(&pipeMutex);
     infoPtr->readThreadExiting = TRUE;
-    Tcl_MutexUnlock(&pipeMutex);
 
     return 0;
 }
@@ -3005,9 +3013,10 @@ PipeWriterThread(
     DWORD waitResult;
 
     /*
-     * Let TclpCreateCommandChannel() know that this thread has been initialized
+     * Notify caller that this thread has been initialized
      */
-    SetEvent(infoPtr->writeThreadInitialized);
+    SetEvent(infoPtr->startWriter);
+    SuspendThread(infoPtr->writeThread); /* until main thread get an event */
 
     wEvents[0] = infoPtr->stopWriter;
     wEvents[1] = infoPtr->startWriter;
@@ -3076,12 +3085,10 @@ PipeWriterThread(
     }
 
     /*
-     * Inform PipeClose2Proc() that this thread should not be terminated, since it is about to exit.
+     * Inform caller that this thread should not be terminated, since it is about to exit.
      * See comment in PipeClose2Proc() for reasons.
      */
-    Tcl_MutexLock(&pipeMutex);
     infoPtr->writeThreadExiting = TRUE;
-    Tcl_MutexUnlock(&pipeMutex);
 
     return 0;
 }
