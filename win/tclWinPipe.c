@@ -1626,7 +1626,7 @@ TclpCreateCommandChannel(
 	infoPtr->writeThreadExiting = FALSE;
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
 		infoPtr, 0, &id);
-	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
+	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
 	wEvents[wEventsCnt++] = infoPtr->startWriter;
     } else {
