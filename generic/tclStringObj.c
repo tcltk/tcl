@@ -1943,11 +1943,6 @@ Tcl_AppendFormatToObj(
 	}
 
 	case 'u':
-	    if (useBig) {
-		msg = "unsigned bignum format is invalid";
-		errCode = "BADUNSIGNED";
-		goto errorMsg;
-	    }
 	case 'd':
 	case 'o':
 	case 'x':
@@ -1965,6 +1960,15 @@ Tcl_AppendFormatToObj(
 		    goto error;
 		}
 		isNegative = (mp_cmp_d(&big, 0) == MP_LT);
+		if (ch == 'u') {
+		    if (isNegative) {
+			msg = "unsigned bignum format is invalid";
+			errCode = "BADUNSIGNED";
+			goto errorMsg;
+		    } else {
+			ch = 'd';
+		    }
+		}
 #ifndef TCL_WIDE_INT_IS_LONG
 	    } else if (useWide) {
 		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
