@@ -1339,8 +1339,7 @@ SerialWriterThread(
     /*
      * Notify TclWinOpenSerialChannel() that this thread is initialized
      */
-    SetEvent(infoPtr->evStartWriter);
-    SuspendThread(infoPtr->writeThread); /* until main thread get an event */
+    SignalObjectAndWait(infoPtr->evStartWriter, infoPtr->evStopWriter, INFINITE, FALSE);
 
     /*
      * The stop event takes precedence by being first in the list.
@@ -1565,7 +1564,8 @@ TclWinOpenSerialChannel(
 		infoPtr, 0, &id);
 	/* Wait for thread to initialize (using evStartWriter) */
 	WaitForSingleObject(infoPtr->evStartWriter, 5000);
-	ResumeThread(infoPtr->writeThread);
+	/* Wake-up it to signal we've get an event */
+	SetEvent(infoPtr->evStopWriter);
     }
 
     /*

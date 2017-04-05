@@ -1638,11 +1638,11 @@ TclpCreateCommandChannel(
      */
     if (wEventsCnt) {
 	WaitForMultipleObjects(wEventsCnt, wEvents, TRUE, 5000);
-	/* Resume both waiting threads */
+	/* Resume both waiting threads, we've get the events */
 	if (infoPtr->readThread)
-	    ResumeThread(infoPtr->readThread);
+	    SetEvent(infoPtr->stopReader);
 	if (infoPtr->writeThread)
-	    ResumeThread(infoPtr->writeThread);
+	    SetEvent(infoPtr->stopWriter);
     }
 
     /*
@@ -2879,8 +2879,8 @@ PipeReaderThread(
     /*
      * Notify caller that this thread has been initialized
      */
-    SetEvent(infoPtr->startReader);
-    SuspendThread(infoPtr->readThread); /* until main thread get an event */
+    SignalObjectAndWait(infoPtr->startReader, infoPtr->stopReader, INFINITE, FALSE);
+    ResetEvent(infoPtr->stopReader); /* not auto-reset */
     
     wEvents[0] = infoPtr->stopReader;
     wEvents[1] = infoPtr->startReader;
@@ -3015,8 +3015,8 @@ PipeWriterThread(
     /*
      * Notify caller that this thread has been initialized
      */
-    SetEvent(infoPtr->startWriter);
-    SuspendThread(infoPtr->writeThread); /* until main thread get an event */
+    SignalObjectAndWait(infoPtr->startWriter, infoPtr->stopWriter, INFINITE, FALSE);
+    ResetEvent(infoPtr->stopWriter); /* not auto-reset */
 
     wEvents[0] = infoPtr->stopWriter;
     wEvents[1] = infoPtr->startWriter;
