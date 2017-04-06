@@ -130,10 +130,8 @@ static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRCommand;
 
-#ifndef TCL_NO_DEPRECATED
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
-#endif
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
 			    int returnCode);
 static int		RewindCoroutine(CoroutineData *corPtr, int result);
@@ -3448,7 +3446,6 @@ TclCleanupCommand(
  *----------------------------------------------------------------------
  */
 
-#ifndef TCL_NO_DEPRECATED
 void
 Tcl_CreateMathFunc(
     Tcl_Interp *interp,		/* Interpreter in which function is to be
@@ -3780,7 +3777,6 @@ Tcl_ListMathFuncs(
 
     return result;
 }
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -4890,7 +4886,6 @@ Tcl_EvalTokensStandard(
  * in the core any longer. It is only kept for backward compatibility.
  */
 
-#ifndef TCL_NO_DEPRECATED
 Tcl_Obj *
 Tcl_EvalTokens(
     Tcl_Interp *interp,		/* Interpreter in which to lookup variables,
@@ -4911,7 +4906,6 @@ Tcl_EvalTokens(
     Tcl_ResetResult(interp);
     return resPtr;
 }
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -5886,7 +5880,6 @@ Tcl_Eval(
     (void) Tcl_GetStringResult(interp);
     return code;
 }
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -6850,7 +6843,6 @@ Tcl_AddObjErrorInfo(
  *---------------------------------------------------------------------------
  */
 
-#ifndef TCL_NO_DEPRECATED
 int
 Tcl_VarEvalVA(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate command */

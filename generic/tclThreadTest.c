@@ -341,7 +341,7 @@ ThreadObjCmd(
 	    } else if (objc == 3
 		    && strcmp("-main", Tcl_GetString(objv[2])) == 0) {
 		Tcl_MutexLock(&threadMutex);
-		idObj = Tcl_NewLongObj((long)(size_t)mainThreadId);
+		idObj = Tcl_NewWideIntObj((Tcl_WideInt)(size_t)mainThreadId);
 		Tcl_MutexUnlock(&threadMutex);
 	    } else {
 		Tcl_WrongNumArgs(interp, 2, objv, NULL);
