@@ -4656,7 +4656,6 @@ Tcl_RepresentationCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    char ptrBuffer[2*TCL_INTEGER_SPACE+6];
     Tcl_Obj *descObj;
 
     if (objc != 2) {
@@ -4670,18 +4669,20 @@ Tcl_RepresentationCmd(
      * "1872361827361287"
      */
 
-    sprintf(ptrBuffer, "%p", (void *) objv[1]);
     descObj = Tcl_ObjPrintf("value is a %s with a refcount of %d,"
-            " object pointer at %s",
-            objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
-	    objv[1]->refCount, ptrBuffer);
+	    " object pointer at %p",
+	    objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
+	    objv[1]->refCount, objv[1]);
 
     if (objv[1]->typePtr) {
-	sprintf(ptrBuffer, "%p:%p",
-		(void *) objv[1]->internalRep.twoPtrValue.ptr1,
-		(void *) objv[1]->internalRep.twoPtrValue.ptr2);
-	Tcl_AppendPrintfToObj(descObj, ", internal representation %s",
-		ptrBuffer);
+	if (objv[1]->typePtr == &tclDoubleType) {
+	    Tcl_AppendPrintfToObj(descObj, ", internal representation %g",
+		    objv[1]->internalRep.doubleValue);
+	} else {
+	    Tcl_AppendPrintfToObj(descObj, ", internal representation %p:%p",
+		    (void *) objv[1]->internalRep.twoPtrValue.ptr1,
+		    (void *) objv[1]->internalRep.twoPtrValue.ptr2);
+	}
     }
 
     if (objv[1]->bytes) {
