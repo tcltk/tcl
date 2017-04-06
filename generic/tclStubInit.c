@@ -287,17 +287,9 @@ static int formatInt(char *buffer, int n){
 }
 #define TclFormatInt (int(*)(char *, long))formatInt
 
-#endif
+#endif /* TCL_WIDE_INT_IS_LONG */
 
-#else /* UNIX and MAC */
-#   ifdef TCL_NO_DEPRECATED
-#	define TclpLocaltime_unix 0
-#	define TclpGmtime_unix 0
-#   else
-#	define TclpLocaltime_unix TclpLocaltime
-#	define TclpGmtime_unix TclpGmtime
-#   endif
-#endif
+#endif /* __CYGWIN__ */
 
 #ifdef TCL_NO_DEPRECATED
 #   define Tcl_SeekOld 0
@@ -351,9 +343,19 @@ static int formatInt(char *buffer, int n){
 #   define Tcl_EvalObj 0
 #   undef Tcl_GlobalEvalObj
 #   define Tcl_GlobalEvalObj 0
+#   undef TclpGetDate
+#   define TclpGetDate 0
+#   undef TclpLocaltime
+#   define TclpLocaltime 0
+#   undef TclpGmtime
+#   define TclpGmtime 0
+#   define TclpLocaltime_unix 0
+#   define TclpGmtime_unix 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
+#   define TclpLocaltime_unix TclpLocaltime
+#   define TclpGmtime_unix TclpGmtime
 
 static int
 seekOld(
