@@ -1880,20 +1880,10 @@ Tcl_AppendFormatToObj(
 		format += step;
 		step = Tcl_UtfToUniChar(format, &ch);
 	    }
-	} else if ((ch == 't') || (ch == 'z')) {
+	} else if ((ch == 't') || (ch == 'z') || (ch == 'q') || (ch == 'j') || (ch == 'L')) {
 	    format += step;
 	    step = Tcl_UtfToUniChar(format, &ch);
-#ifndef TCL_WIDE_INT_IS_LONG
-	    if (sizeof(size_t) > sizeof(int)) {
-		useWide = 1;
-	    }
-#endif
-	} else if ((ch == 'q') ||(ch == 'j')) {
-	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
-#ifndef TCL_WIDE_INT_IS_LONG
-	    useWide = 1;
-#endif
+	    useBig = 1;
 	}
 
 	format += step;
@@ -2035,9 +2025,8 @@ Tcl_AppendFormatToObj(
 	    if (gotHash || (ch == 'p')) {
 		switch (ch) {
 		case 'o':
-		    Tcl_AppendToObj(segment, "0", 1);
-		    segmentLimit -= 1;
-		    precision--;
+		    Tcl_AppendToObj(segment, "0o", 2);
+		    segmentLimit -= 2;
 		    break;
 		case 'p':
 		case 'x':
@@ -2186,7 +2175,7 @@ Tcl_AppendFormatToObj(
 		 * Need to be sure zero becomes "0", not "".
 		 */
 
-		if ((numDigits == 0) && !((ch == 'o') && gotHash)) {
+		if (numDigits == 0) {
 		    numDigits = 1;
 		}
 		pure = Tcl_NewObj();
