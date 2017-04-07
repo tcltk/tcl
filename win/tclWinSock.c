@@ -3239,6 +3239,7 @@ FindFDInList(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef TclWinGetSockOpt
 int
 TclWinGetSockOpt(
@@ -3278,6 +3279,7 @@ TclWinGetServByName(
 {
     return getservbyname(name, proto);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
