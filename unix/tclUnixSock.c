@@ -1425,6 +1425,7 @@ Tcl_OpenTcpServerEx(
     const char *service,	/* Port number to open. */
     const char *myHost,		/* Name of local host. */
     unsigned int flags,		/* Flags. */
+    int backlog,                /* Length of OS listen backlog queue. */
     Tcl_TcpAcceptProc *acceptProc,
 				/* Callback for accepting connections from new
 				 * clients. */
@@ -1584,7 +1585,10 @@ Tcl_OpenTcpServerEx(
                 chosenport = ntohs(sockname.sa4.sin_port);
             }
         }
-        status = listen(sock, SOMAXCONN);
+        if (backlog < 0) {
+            backlog = SOMAXCONN;
+        }
+        status = listen(sock, backlog);
         if (status < 0) {
 	    if (howfar < LISTEN) {
 		howfar = LISTEN;

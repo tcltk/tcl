@@ -2040,6 +2040,8 @@ Tcl_OpenTcpServerEx(
     const char *service,	/* Port number to open. */
     const char *myHost,		/* Name of local host. */
     unsigned int flags,		/* Flags. */
+    int backlog,                /* Length of OS listen backlog queue, or -1
+                                 * for default. */
     Tcl_TcpAcceptProc *acceptProc,
 				/* Callback for accepting connections from new
 				 * clients. */
@@ -2160,7 +2162,10 @@ Tcl_OpenTcpServerEx(
 	 * different, and there may be differences between TCP/IP stacks).
 	 */
 
-	if (listen(sock, SOMAXCONN) == SOCKET_ERROR) {
+        if (backlog < 0) {
+            backlog = SOMAXCONN;
+        }
+	if (listen(sock, backlog) == SOCKET_ERROR) {
 	    TclWinConvertError((DWORD) WSAGetLastError());
 	    closesocket(sock);
 	    continue;
