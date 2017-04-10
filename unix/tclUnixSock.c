@@ -19,6 +19,7 @@
 
 #define SET_BITS(var, bits)	((var) |= (bits))
 #define CLEAR_BITS(var, bits)	((var) &= ~(bits))
+#define GOT_BITS(var, bits)     (((var) & (bits)) != 0)
 
 /* "sock" + a pointer in hex + \0 */
 #define SOCK_CHAN_LENGTH        (4 + sizeof(void *) * 2 + 1)
@@ -99,9 +100,9 @@ struct TcpState {
  * structure.
  */
 
-#define TCP_ASYNC_TEST_MODE	(1<<0)	/* Async testing activated
-					 * Do not automatically continue connection
-					 * process */
+#define TCP_ASYNC_TEST_MODE	(1<<0)	/* Async testing activated.  Do not
+					 * automatically continue connection
+					 * process. */
 
 /*
  * The following defines the maximum length of the listen queue. This is the
@@ -389,7 +390,7 @@ TcpBlockModeProc(
     } else {
 	SET_BITS(statePtr->flags, TCP_NONBLOCKING);
     }
-    if (statePtr->flags & TCP_ASYNC_CONNECT) {
+    if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
         statePtr->cachedBlocking = mode;
         return 0;
     }
@@ -442,7 +443,7 @@ WaitForConnect(
      * demanded, return the error ENOTCONN
      */
 
-    if (errorCodePtr != NULL && (statePtr->flags & TCP_ASYNC_FAILED)) {
+    if (errorCodePtr != NULL && GOT_BITS(statePtr->flags, TCP_ASYNC_FAILED)) {
 	*errorCodePtr = ENOTCONN;
 	return -1;
     }
@@ -451,24 +452,25 @@ WaitForConnect(
      * Check if an async connect is running. If not return ok
      */
 
-    if (!(statePtr->flags & TCP_ASYNC_PENDING)) {
+    if (!GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {
 	return 0;
     }
 
     /*
-     * In socket test mode do not continue with the connect
+     * In socket test mode do not continue with the connect.
      * Exceptions are:
      * - Call by recv/send and blocking socket
-     *   (errorCodePtr != NULL && ! flags & TCP_NONBLOCKING)
+     *   (errorCodePtr != NULL && !GOT_BITS(flags, TCP_NONBLOCKING))
      */
 
-    if ( (statePtr->testFlags & TCP_ASYNC_TEST_MODE)
-	    && ! (errorCodePtr != NULL && ! (statePtr->flags & TCP_NONBLOCKING))) {
+    if (GOT_BITS(statePtr->testFlags, TCP_ASYNC_TEST_MODE)
+            && !(errorCodePtr != NULL
+                    && !GOT_BITS(statePtr->flags, TCP_NONBLOCKING))) {
 	*errorCodePtr = EWOULDBLOCK;
 	return -1;
     }
 
-    if (errorCodePtr == NULL || (statePtr->flags & TCP_NONBLOCKING)) {
+    if (errorCodePtr == NULL || GOT_BITS(statePtr->flags, TCP_NONBLOCKING)) {
         timeout = 0;
     } else {
         timeout = -1;
@@ -483,10 +485,10 @@ WaitForConnect(
          * Do this only once in the nonblocking case and repeat it until the
          * socket is final when blocking.
          */
-    } while (timeout == -1 && statePtr->flags & TCP_ASYNC_CONNECT);
+    } while (timeout == -1 && GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT));
 
     if (errorCodePtr != NULL) {
-        if (statePtr->flags & TCP_ASYNC_PENDING) {
+        if (GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {
             *errorCodePtr = EAGAIN;
             return -1;
         } else if (statePtr->connectError != 0) {
@@ -832,7 +834,7 @@ TcpGetOptionProc(
 	    (strncmp(optionName, "-error", len) == 0)) {
 	socklen_t optlen = sizeof(int);
 
-        if (statePtr->flags & TCP_ASYNC_CONNECT) {
+        if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
             /*
              * Suppress errors as long as we are not done.
              */
@@ -856,9 +858,8 @@ TcpGetOptionProc(
 
     if ((len > 1) && (optionName[1] == 'c') &&
 	    (strncmp(optionName, "-connecting", len) == 0)) {
-
         Tcl_DStringAppend(dsPtr,
-                (statePtr->flags & TCP_ASYNC_CONNECT) ? "1" : "0", -1);
+                GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT) ? "1" : "0", -1);
         return TCL_OK;
     }
 
@@ -867,7 +868,7 @@ TcpGetOptionProc(
         address peername;
         socklen_t size = sizeof(peername);
 
-	if (statePtr->flags & TCP_ASYNC_CONNECT) {
+	if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
 	    /*
 	     * In async connect output an empty string
 	     */
@@ -922,7 +923,7 @@ TcpGetOptionProc(
 	    Tcl_DStringAppendElement(dsPtr, "-sockname");
 	    Tcl_DStringStartSublist(dsPtr);
 	}
-	if (statePtr->flags & TCP_ASYNC_CONNECT) {
+	if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
 	    /*
 	     * In async connect output an empty string
 	     */
@@ -1024,7 +1025,7 @@ TcpWatchProc(
     	return;
     }
 
-    if (statePtr->flags & TCP_ASYNC_PENDING) {
+    if (GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {
         /*
          * Async sockets use a FileHandler internally while connecting, so we
          * need to cache this request until the connection has succeeded.
@@ -1149,9 +1150,9 @@ TcpConnect(
     TcpState *statePtr)
 {
     socklen_t optlen;
-    int async_callback = statePtr->flags & TCP_ASYNC_PENDING;
+    int async_callback = GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING);
     int ret = -1, error = EHOSTUNREACH;
-    int async = statePtr->flags & TCP_ASYNC_CONNECT;
+    int async = GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT);
 
     if (async_callback) {
         goto reenter;
@@ -1159,7 +1160,6 @@ TcpConnect(
 
     for (statePtr->addr = statePtr->addrlist; statePtr->addr != NULL;
             statePtr->addr = statePtr->addr->ai_next) {
-
         for (statePtr->myaddr = statePtr->myaddrlist;
                 statePtr->myaddr != NULL;
                 statePtr->myaddr = statePtr->myaddr->ai_next) {
@@ -1580,13 +1580,13 @@ Tcl_OpenTcpServerEx(
 	 * Set up to reuse server addresses and/or ports if requested.
 	 */
 
-	if (flags & TCL_TCPSERVER_REUSEADDR) {
+	if (GOT_BITS(flags, TCL_TCPSERVER_REUSEADDR)) {
 	    optvalue = 1;
 	    (void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 		    (char *) &optvalue, sizeof(optvalue));
 	}
 
-	if (flags & TCL_TCPSERVER_REUSEPORT) {
+	if (GOT_BITS(flags, TCL_TCPSERVER_REUSEPORT)) {
 #ifndef SO_REUSEPORT
 	    /*
 	     * If the platform doesn't support the SO_REUSEPORT flag we can't
