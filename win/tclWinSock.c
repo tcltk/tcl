@@ -69,6 +69,7 @@
 
 #define SET_BITS(var, bits)	((var) |= (bits))
 #define CLEAR_BITS(var, bits)	((var) &= ~(bits))
+#define GOT_BITS(var, bits)     (((var) & (bits)) != 0)
 
 /* "sock" + a pointer in hex + \0 */
 #define SOCK_CHAN_LENGTH        (4 + sizeof(void *) * 2 + 1)
@@ -190,8 +191,8 @@ struct TcpState {
  * structure.
  */
 
-#define TCP_ASYNC_TEST_MODE	(1<<0)	/* Async testing activated
-					 * Do not automatically continue connection
+#define TCP_ASYNC_TEST_MODE	(1<<0)	/* Async testing activated.  Do not
+					 * automatically continue connection
 					 * process */
 
 /*
@@ -303,6 +304,15 @@ static const Tcl_ChannelType tcpChannelType = {
 static TclInitProcessGlobalValueProc InitializeHostName;
 static ProcessGlobalValue hostName =
 	{0, 0, NULL, NULL, InitializeHostName, NULL, NULL};
+
+/*
+ * Simple wrapper round the SendMessage syscall.
+ */
+
+#define SendSelectMessage(tsdPtr, message, payload)     \
+    SendMessage((tsdPtr)->hwnd, SOCKET_SELECT,          \
+                (WPARAM) (message), (LPARAM) (payload))
+
 
 /*
  * Address print debug functions
@@ -596,7 +606,7 @@ WaitForConnect(
      * demanded, return the error ENOTCONN.
      */
 
-    if (errorCodePtr != NULL && (statePtr->flags & TCP_ASYNC_FAILED)) {
+    if (errorCodePtr != NULL && GOT_BITS(statePtr->flags, TCP_ASYNC_FAILED)) {
 	*errorCodePtr = ENOTCONN;
 	return -1;
     }
@@ -605,7 +615,7 @@ WaitForConnect(
      * Check if an async connect is running. If not return ok
      */
 
-    if (!(statePtr->flags & TCP_ASYNC_CONNECT)) {
+    if (!GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
 	return 0;
     }
 
@@ -613,12 +623,13 @@ WaitForConnect(
      * In socket test mode do not continue with the connect
      * Exceptions are:
      * - Call by recv/send and blocking socket
-     *   (errorCodePtr != NULL && ! flags & TCP_NONBLOCKING)
+     *   (errorCodePtr != NULL && !GOT_BITS(flags, TCP_NONBLOCKING))
      * - Call by the event queue (errorCodePtr == NULL)
      */
 
-    if ( (statePtr->testFlags & TCP_ASYNC_TEST_MODE)
-	    && errorCodePtr != NULL && (statePtr->flags & TCP_NONBLOCKING)) {
+    if (GOT_BITS(statePtr->testFlags, TCP_ASYNC_TEST_MODE)
+	    && errorCodePtr != NULL
+            && GOT_BITS(statePtr->flags, TCP_NONBLOCKING)) {
 	*errorCodePtr = EWOULDBLOCK;
 	return -1;
     }
@@ -645,7 +656,7 @@ WaitForConnect(
          * Check for connect event.
          */
 
-	if (statePtr->readyEvents & FD_CONNECT) {
+	if (GOT_BITS(statePtr->readyEvents, FD_CONNECT)) {
 	    /*
              * Consume the connect event.
              */
@@ -658,7 +669,7 @@ WaitForConnect(
 	     */
 
 	    if (errorCodePtr != NULL &&
-		    !(statePtr->flags & TCP_NONBLOCKING)) {
+		    !GOT_BITS(statePtr->flags, TCP_NONBLOCKING)) {
 		CLEAR_BITS(statePtr->flags, TCP_ASYNC_CONNECT);
 	    }
 
@@ -691,7 +702,7 @@ WaitForConnect(
 		 * foreground blocking operation)
 		 */
 
-		if (statePtr->flags & TCP_ASYNC_PENDING) {
+		if (GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {
 		    if (errorCodePtr != NULL) {
 			*errorCodePtr = EWOULDBLOCK;
 		    }
@@ -731,7 +742,7 @@ WaitForConnect(
 	 * directly the error EWOULDBLOCK.
 	 */
 
-	if (statePtr->flags & TCP_NONBLOCKING) {
+	if (GOT_BITS(statePtr->flags, TCP_NONBLOCKING)) {
 	    *errorCodePtr = EWOULDBLOCK;
 	    return -1;
 	}
@@ -795,7 +806,7 @@ TcpInputProc(
      * socket stack after the first time EOF is detected.
      */
 
-    if (statePtr->flags & SOCKET_EOF) {
+    if (GOT_BITS(statePtr->flags, SOCKET_EOF)) {
 	return 0;
     }
 
@@ -818,8 +829,8 @@ TcpInputProc(
      */
 
     while (1) {
-	SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
-		(WPARAM) UNSELECT, (LPARAM) statePtr);
+	SendSelectMessage(tsdPtr, UNSELECT, statePtr);
+
 	/*
          * Single fd operation: this proc is only called for a connected
          * socket.
@@ -844,7 +855,7 @@ TcpInputProc(
 	 * error and report an EOF.
 	 */
 
-	if (statePtr->readyEvents & FD_CLOSE) {
+	if (GOT_BITS(statePtr->readyEvents, FD_CLOSE)) {
 	    SET_BITS(statePtr->flags, SOCKET_EOF);
 	    bytesRead = 0;
 	    break;
@@ -867,7 +878,8 @@ TcpInputProc(
 	 * Check for error condition or underflow in non-blocking case.
 	 */
 
-	if ((statePtr->flags & TCP_NONBLOCKING) || (error != WSAEWOULDBLOCK)) {
+	if (GOT_BITS(statePtr->flags, TCP_NONBLOCKING)
+                || (error != WSAEWOULDBLOCK)) {
 	    TclWinConvertError(error);
 	    *errorCodePtr = Tcl_GetErrno();
 	    bytesRead = -1;
@@ -885,7 +897,7 @@ TcpInputProc(
 	}
     }
 
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM)SELECT, (LPARAM)statePtr);
+    SendSelectMessage(tsdPtr, SELECT, statePtr);
 
     return bytesRead;
 }
@@ -943,8 +955,7 @@ TcpOutputProc(
     }
 
     while (1) {
-	SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
-		(WPARAM) UNSELECT, (LPARAM) statePtr);
+	SendSelectMessage(tsdPtr, UNSELECT, statePtr);
 
 	/*
          * Single fd operation: this proc is only called for a connected
@@ -959,8 +970,9 @@ TcpOutputProc(
 	     * until the condition changes.
 	     */
 
-	    if (statePtr->watchEvents & FD_WRITE) {
+	    if (GOT_BITS(statePtr->watchEvents, FD_WRITE)) {
 		Tcl_Time blockTime = { 0, 0 };
+
 		Tcl_SetMaxBlockTime(&blockTime);
 	    }
 	    break;
@@ -976,7 +988,7 @@ TcpOutputProc(
 	error = WSAGetLastError();
 	if (error == WSAEWOULDBLOCK) {
 	    CLEAR_BITS(statePtr->readyEvents, FD_WRITE);
-	    if (statePtr->flags & TCP_NONBLOCKING) {
+	    if (GOT_BITS(statePtr->flags, TCP_NONBLOCKING)) {
 		*errorCodePtr = EWOULDBLOCK;
 		written = -1;
 		break;
@@ -999,8 +1011,7 @@ TcpOutputProc(
 	}
     }
 
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM)SELECT,
-            (LPARAM)statePtr);
+    SendSelectMessage(tsdPtr, SELECT, statePtr);
 
     return written;
 }
@@ -1317,7 +1328,7 @@ TcpGetOptionProc(
      * below.
      */
 
-    if (! (statePtr->testFlags & TCP_ASYNC_TEST_MODE) ) {
+    if (!GOT_BITS(statePtr->testFlags, TCP_ASYNC_TEST_MODE)) {
 	WaitForConnect(statePtr, NULL);
     }
 
@@ -1332,8 +1343,8 @@ TcpGetOptionProc(
          * Do not return any errors if async connect is running.
          */
 
-	if (!(statePtr->flags & TCP_ASYNC_PENDING)) {
-	    if (statePtr->flags & TCP_ASYNC_FAILED) {
+	if (!GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {
+	    if (GOT_BITS(statePtr->flags, TCP_ASYNC_FAILED)) {
 		/*
 		 * In case of a failed async connect, eventually report the
 		 * connect error only once.  Do not report the system error,
@@ -1388,7 +1399,7 @@ TcpGetOptionProc(
     if ((len > 1) && (optionName[1] == 'c') &&
 	    (strncmp(optionName, "-connecting", len) == 0)) {
 	Tcl_DStringAppend(dsPtr,
-		(statePtr->flags & TCP_ASYNC_PENDING)
+		GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)
 		? "1" : "0", -1);
         return TCL_OK;
     }
@@ -1403,7 +1414,7 @@ TcpGetOptionProc(
 	address peername;
 	socklen_t size = sizeof(peername);
 
-	if (statePtr->flags & TCP_ASYNC_PENDING) {
+	if (GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {
 	    /*
 	     * In async connect output an empty string
 	     */
@@ -1468,7 +1479,7 @@ TcpGetOptionProc(
 	    Tcl_DStringAppendElement(dsPtr, "-sockname");
 	    Tcl_DStringStartSublist(dsPtr);
 	}
-	if (statePtr->flags & TCP_ASYNC_PENDING) {
+	if (GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {
 	    /*
 	     * In async connect output an empty string
 	     */
@@ -1617,10 +1628,10 @@ TcpWatchProc(
 
     if (!statePtr->acceptProc) {
 	statePtr->watchEvents = 0;
-	if (mask & TCL_READABLE) {
+	if (GOT_BITS(mask, TCL_READABLE)) {
 	    SET_BITS(statePtr->watchEvents, FD_READ | FD_CLOSE);
 	}
-	if (mask & TCL_WRITABLE) {
+	if (GOT_BITS(mask, TCL_WRITABLE)) {
 	    SET_BITS(statePtr->watchEvents, FD_WRITE | FD_CLOSE);
 	}
 
@@ -1712,11 +1723,11 @@ TcpConnect(
     TcpState *statePtr)
 {
     DWORD error;
-    int async_connect = statePtr->flags & TCP_ASYNC_CONNECT;
+    int async_connect = GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT);
                                 /* We are started with async connect and the
                                  * connect notification was not yet
                                  * received. */
-    int async_callback = statePtr->flags & TCP_ASYNC_PENDING;
+    int async_callback = GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING);
                                 /* We were called by the event procedure and
                                  * continue our loop. */
     ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
@@ -1860,8 +1871,7 @@ TcpConnect(
                  * Activate accept notification.
                  */
 
-		SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
-			(LPARAM) statePtr);
+		SendSelectMessage(tsdPtr, SELECT, statePtr);
 	    }
 
 	    /*
@@ -1957,8 +1967,7 @@ TcpConnect(
 	 * automatically places the socket into non-blocking mode.
 	 */
 
-	SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
-		    (LPARAM) statePtr);
+	SendSelectMessage(tsdPtr, SELECT, statePtr);
     } else {
 	/*
 	 * Connect failed
@@ -2155,8 +2164,7 @@ Tcl_MakeTcpClientChannel(
      */
 
     statePtr->selectEvents = FD_READ | FD_CLOSE | FD_WRITE;
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM)SELECT,
-            (LPARAM)statePtr);
+    SendSelectMessage(tsdPtr, SELECT, statePtr);
 
     sprintf(channelName, SOCK_TEMPLATE, statePtr);
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
@@ -2270,7 +2278,7 @@ Tcl_OpenTcpServerEx(
 	 * unix systems.
 	 */
 
-	if (flags & TCL_TCPSERVER_REUSEPORT) {
+	if (GOT_BITS(flags, TCL_TCPSERVER_REUSEPORT)) {
 	    optvalue = 1;
 	    (void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 		    (char *) &optvalue, sizeof(optvalue));
@@ -2352,8 +2360,7 @@ Tcl_OpenTcpServerEx(
 	 */
 
 	ioctlsocket(sock, (long) FIONBIO, &flag);
-	SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
-		(LPARAM) statePtr);
+	SendSelectMessage(tsdPtr, SELECT, statePtr);
 	if (Tcl_SetChannelOption(interp, statePtr->channel, "-eofchar", "")
 	    == TCL_ERROR) {
 	    Tcl_Close(NULL, statePtr->channel);
@@ -2422,8 +2429,7 @@ TcpAccept(
      */
 
     newInfoPtr->selectEvents = (FD_READ | FD_WRITE | FD_CLOSE);
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
-	    (LPARAM) newInfoPtr);
+    SendSelectMessage(tsdPtr, SELECT, newInfoPtr);
 
     sprintf(channelName, SOCK_TEMPLATE, newInfoPtr);
     newInfoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
@@ -2654,7 +2660,7 @@ SocketSetupProc(
     Tcl_Time blockTime = { 0, 0 };
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (!(flags & TCL_FILE_EVENTS)) {
+    if (!GET_BITS(flags, TCL_FILE_EVENTS)) {
 	return;
     }
 
@@ -2664,9 +2670,8 @@ SocketSetupProc(
     WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
     for (statePtr = tsdPtr->socketList; statePtr != NULL;
 	    statePtr = statePtr->nextPtr) {
-	if (statePtr->readyEvents &
-	    (statePtr->watchEvents | FD_CONNECT | FD_ACCEPT)
-	) {
+	if (GOT_BITS(statePtr->readyEvents,
+                statePtr->watchEvents | FD_CONNECT | FD_ACCEPT)) {
 	    Tcl_SetMaxBlockTime(&blockTime);
 	    break;
 	}
@@ -2700,7 +2705,7 @@ SocketCheckProc(
     SocketEvent *evPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (!(flags & TCL_FILE_EVENTS)) {
+    if (!GOT_BITS(flags, TCL_FILE_EVENTS)) {
 	return;
     }
 
@@ -2713,9 +2718,9 @@ SocketCheckProc(
     WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
     for (statePtr = tsdPtr->socketList; statePtr != NULL;
 	    statePtr = statePtr->nextPtr) {
-	if ((statePtr->readyEvents &
-		(statePtr->watchEvents | FD_CONNECT | FD_ACCEPT))
-                && !(statePtr->flags & SOCKET_PENDING)) {
+	if (GOT_BITS(statePtr->readyEvents,
+		statePtr->watchEvents | FD_CONNECT | FD_ACCEPT)
+                && !GOT_BITS(statePtr->flags, SOCKET_PENDING)) {
 	    SET_BITS(statePtr->flags, SOCKET_PENDING);
 	    evPtr = ckalloc(sizeof(SocketEvent));
 	    evPtr->header.proc = SocketEventProc;
@@ -2762,7 +2767,7 @@ SocketEventProc(
     address addr;
     int len;
 
-    if (!(flags & TCL_FILE_EVENTS)) {
+    if (!GOT_BITS(flags, TCL_FILE_EVENTS)) {
 	return 0;
     }
 
@@ -2797,8 +2802,8 @@ SocketEventProc(
      * Continue async connect if pending and ready
      */
 
-    if (statePtr->readyEvents & FD_CONNECT) {
-	if (statePtr->flags & TCP_ASYNC_PENDING) {
+    if (GOT_BITS(statePtr->readyEvents, FD_CONNECT)) {
+	if (GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {
 	    /*
 	     * Do one step and save eventual connect error
 	     */
@@ -2820,7 +2825,7 @@ SocketEventProc(
      * Handle connection requests directly.
      */
 
-    if (statePtr->readyEvents & FD_ACCEPT) {
+    if (GOT_BITS(statePtr->readyEvents, FD_ACCEPT)) {
 	for (fds = statePtr->sockets; fds != NULL; fds = fds->next) {
 	    /*
              * Accept the incoming connection request.
@@ -2895,7 +2900,7 @@ SocketEventProc(
 
     events = statePtr->readyEvents & statePtr->watchEvents;
 
-    if (events & FD_CLOSE) {
+    if (GOT_BITS(events, FD_CLOSE)) {
 	/*
 	 * If the socket was closed and the channel is still interested in
 	 * read events, then we need to ensure that we keep polling for this
@@ -2910,15 +2915,13 @@ SocketEventProc(
 
 	Tcl_SetMaxBlockTime(&blockTime);
 	SET_BITS(mask, TCL_READABLE | TCL_WRITABLE);
-    } else if (events & FD_READ) {
-
+    } else if (GOT_BITS(events, FD_READ)) {
 	/*
 	 * Throw the readable event if an async connect failed.
 	 */
 
-	if (statePtr->flags & TCP_ASYNC_FAILED) {
+	if (GOT_BITS(statePtr->flags, TCP_ASYNC_FAILED)) {
 	    SET_BITS(mask, TCL_READABLE);
-
 	} else {
 	    fd_set readFds;
 	    struct timeval timeout;
@@ -2931,8 +2934,7 @@ SocketEventProc(
 	     * async select handler and keep waiting.
 	     */
 
-	    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
-		    (WPARAM) UNSELECT, (LPARAM) statePtr);
+	    SendSelectMessage(tsdPtr, UNSELECT, statePtr);
 
 	    FD_ZERO(&readFds);
 	    FD_SET(statePtr->sockets->fd, &readFds);
@@ -2943,8 +2945,7 @@ SocketEventProc(
 		SET_BITS(mask, TCL_READABLE);
 	    } else {
 		CLEAR_BITS(statePtr->readyEvents, FD_READ);
-		SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
-			(WPARAM) SELECT, (LPARAM) statePtr);
+		SendSelectMessage(tsdPtr, SELECT, statePtr);
 	    }
 	}
     }
@@ -2953,7 +2954,7 @@ SocketEventProc(
      * writable event
      */
 
-    if (events & FD_WRITE) {
+    if (GOT_BITS(events, FD_WRITE)) {
 	SET_BITS(mask, TCL_WRITABLE);
     }
 
@@ -3095,10 +3096,8 @@ WaitForSocketEvent(
      * Reset WSAAsyncSelect so we have a fresh set of events pending.
      */
 
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) UNSELECT,
-	    (LPARAM) statePtr);
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
-	    (LPARAM) statePtr);
+    SendSelectMessage(tsdPtr, UNSELECT, statePtr);
+    SendSelectMessage(tsdPtr, SELECT, statePtr);
 
     while (1) {
 	int event_found;
@@ -3113,7 +3112,7 @@ WaitForSocketEvent(
          * Check if event occured.
          */
 
-	event_found = (statePtr->readyEvents & events);
+	event_found = GOT_BITS(statePtr->readyEvents, events);
 
 	/*
          * Free list lock.
@@ -3314,14 +3313,14 @@ SocketProc(
 	     * the count if the current event is an FD_ACCEPT.
 	     */
 
-	    if (event & FD_CLOSE) {
+	    if (GOT_BITS(event, FD_CLOSE)) {
 		statePtr->acceptEventCount = 0;
 		CLEAR_BITS(statePtr->readyEvents, FD_WRITE | FD_ACCEPT);
-	    } else if (event & FD_ACCEPT) {
+	    } else if (GOT_BITS(event, FD_ACCEPT)) {
 		statePtr->acceptEventCount++;
 	    }
 
-	    if (event & FD_CONNECT) {
+	    if (GOT_BITS(event, FD_CONNECT)) {
 		/*
 		 * Remember any error that occurred so we can report
 		 * connection failures.
@@ -3552,8 +3551,7 @@ TcpThreadActionProc(
      * thread.
      */
 
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
-	    (WPARAM) notifyCmd, (LPARAM) statePtr);
+    SendSelectMessage(tsdPtr, notifyCmd, statePtr);
 }
 
 /*
