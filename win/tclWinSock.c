@@ -124,6 +124,8 @@ typedef struct TcpFdList {
 
 struct TcpState {
     Tcl_Channel channel;	/* Channel associated with this socket. */
+    int testFlags;              /* bit field for tests. Is set by testsocket
+                                 * test procedure */
     struct TcpFdList *sockets;	/* Windows SOCKET handle. */
     int flags;			/* Bit field comprised of the flags described
 				 * below. */
@@ -182,6 +184,15 @@ struct TcpState {
 					 * flag indicates that reentry is
 					 * still pending */
 #define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
+
+/*
+ * These bits may be ORed together into the "testFlags" field of a TcpState
+ * structure.
+ */
+
+#define TCP_ASYNC_TEST_MODE	(1<<0)	/* Async testing activated
+					 * Do not automatically continue connection
+					 * process */
 
 /*
  * The following structure is what is added to the Tcl event queue when a
@@ -596,6 +607,20 @@ WaitForConnect(
 
     if (!(statePtr->flags & TCP_ASYNC_CONNECT)) {
 	return 0;
+    }
+
+    /*
+     * In socket test mode do not continue with the connect
+     * Exceptions are:
+     * - Call by recv/send and blocking socket
+     *   (errorCodePtr != NULL && ! flags & TCP_NONBLOCKING)
+     * - Call by the event queue (errorCodePtr == NULL)
+     */
+
+    if ( (statePtr->testFlags & TCP_ASYNC_TEST_MODE)
+	    && errorCodePtr != NULL && (statePtr->flags & TCP_NONBLOCKING)) {
+	*errorCodePtr = EWOULDBLOCK;
+	return -1;
     }
 
     /*
@@ -1292,7 +1317,9 @@ TcpGetOptionProc(
      * below.
      */
 
-    WaitForConnect(statePtr, NULL);
+    if (! (statePtr->testFlags & TCP_ASYNC_TEST_MODE) ) {
+	WaitForConnect(statePtr, NULL);
+    }
 
     sock = statePtr->sockets->fd;
     if (optionName != NULL) {

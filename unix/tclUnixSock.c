@@ -52,6 +52,8 @@ typedef struct TcpFdList {
 
 struct TcpState {
     Tcl_Channel channel;	/* Channel associated with this file. */
+    int testFlags;              /* bit field for tests. Is set by testsocket
+                                 * test procedure */
     TcpFdList fds;		/* The file descriptors of the sockets. */
     int flags;			/* ORed combination of the bitfields defined
 				 * below. */
@@ -91,6 +93,15 @@ struct TcpState {
 					 * flag indicates that reentry is
 					 * still pending */
 #define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
+
+/*
+ * These bits may be ORed together into the "testFlags" field of a TcpState
+ * structure.
+ */
+
+#define TCP_ASYNC_TEST_MODE	(1<<0)	/* Async testing activated
+					 * Do not automatically continue connection
+					 * process */
 
 /*
  * The following defines the maximum length of the listen queue. This is the
@@ -442,6 +453,19 @@ WaitForConnect(
 
     if (!(statePtr->flags & TCP_ASYNC_PENDING)) {
 	return 0;
+    }
+
+    /*
+     * In socket test mode do not continue with the connect
+     * Exceptions are:
+     * - Call by recv/send and blocking socket
+     *   (errorCodePtr != NULL && ! flags & TCP_NONBLOCKING)
+     */
+
+    if ( (statePtr->testFlags & TCP_ASYNC_TEST_MODE)
+	    && ! (errorCodePtr != NULL && ! (statePtr->flags & TCP_NONBLOCKING))) {
+	*errorCodePtr = EWOULDBLOCK;
+	return -1;
     }
 
     if (errorCodePtr == NULL || (statePtr->flags & TCP_NONBLOCKING)) {
