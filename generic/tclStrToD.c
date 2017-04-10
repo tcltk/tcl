@@ -18,13 +18,6 @@
 #include <math.h>
 
 /*
- * Define KILL_OCTAL to suppress interpretation of numbers with leading zero
- * as octal. (Ceterum censeo: numeros octonarios delendos esse.)
- */
-
-#undef	KILL_OCTAL
-
-/*
  * This code supports (at least hypothetically), IBM, Cray, VAX and IEEE-754
  * floating point; of these, only IEEE-754 can represent NaN. IEEE-754 can be
  * uniquely determined by radix and by the widths of significand and exponent.
@@ -546,6 +539,20 @@ TclParseNumber(
      */
 
     if (bytes == NULL) {
+	if (interp == NULL && endPtrPtr == NULL) {
+	    if (objPtr->typePtr == &tclDictType) {
+		/* A dict can never be a (single) number */
+		return TCL_ERROR;
+	    }
+	    if (objPtr->typePtr == &tclListType) {
+		int length;
+		/* A list can only be a (single) number if its length == 1 */
+		TclListObjLength(NULL, objPtr, &length);
+		if (length != 1) {
+		    return TCL_ERROR;
+		}
+	    }
+	}
 	bytes = TclGetString(objPtr);
     }
 
@@ -657,7 +664,7 @@ TclParseNumber(
 		state = ZERO_O;
 		break;
 	    }
-#ifdef KILL_OCTAL
+#ifdef TCL_NO_DEPRECATED
 	    goto decimal;
 #endif
 	    /* FALLTHROUGH */
@@ -740,7 +747,7 @@ TclParseNumber(
 
 		goto endgame;
 	    }
-#ifndef KILL_OCTAL
+#ifndef TCL_NO_DEPRECATED
 
 	    /*
 	     * Scanned a number with a leading zero that contains an 8, 9,
@@ -879,7 +886,7 @@ TclParseNumber(
 	     * digits.
 	     */
 
-#ifdef KILL_OCTAL
+#ifdef TCL_NO_DEPRECATED
 	decimal:
 #endif
 	    acceptState = state;
@@ -3798,7 +3805,7 @@ ShorteningBignumConversion(
 	    --s5;
 
 	    /*
-	     * IDEA: It might possibly be a win to fall back to int64
+	     * IDEA: It might possibly be a win to fall back to int64_t
 	     *       arithmetic here if S < 2**64/10. But it's a win only for
 	     *       a fairly narrow range of magnitudes so perhaps not worth
 	     *       bothering.  We already know that we shorten the
@@ -3963,7 +3970,7 @@ StrictBignumConversion(
 	     * As with the shortening bignum conversion, it's possible at this
 	     * point that we will have reduced the denominator to less than
 	     * 2**64/10, at which point it would be possible to fall back to
-	     * to int64 arithmetic. But the potential payoff is tremendously
+	     * to int64_t arithmetic. But the potential payoff is tremendously
 	     * less - unless we're working in F format - because we know that
 	     * three groups of digits will always suffice for %#.17e, the
 	     * longest format that doesn't introduce empty precision.

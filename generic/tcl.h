@@ -41,7 +41,6 @@ extern "C" {
  * unix/configure.ac	(2 LOC Major, 2 LOC minor, 1 LOC patch)
  * win/configure.ac	(as above)
  * win/tcl.m4		(not patchlevel)
- * win/makefile.bc	(not patchlevel) 2 LOC
  * README		(sections 0 and 2, with and without separator)
  * macosx/Tcl.pbproj/project.pbxproj (not patchlevel) 1 LOC
  * macosx/Tcl.pbproj/default.pbxuser (not patchlevel) 1 LOC
@@ -376,8 +375,8 @@ typedef long LONG;
  * we have one, we can have the other.)
  *
  * Also defines the following macros:
- * TCL_WIDE_INT_IS_LONG - if wide ints are really longs (i.e. we're on a real
- *	64-bit system.)
+ * TCL_WIDE_INT_IS_LONG - if wide ints are really longs (i.e. we're on a
+ *	LP64 system such as modern Solaris or Linux ... not including Win64)
  * Tcl_WideAsLong - forgetful converter from wideInt to long.
  * Tcl_LongAsWide - sign-extending converter from long to wideInt.
  * Tcl_WideAsDouble - converter from wideInt to double.
@@ -394,11 +393,7 @@ typedef long LONG;
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
 #   if defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
-#      ifdef __BORLANDC__
-#         define TCL_LL_MODIFIER	"L"
-#      else /* __BORLANDC__ */
-#         define TCL_LL_MODIFIER	"I64"
-#      endif /* __BORLANDC__ */
+#      define TCL_LL_MODIFIER	"I64"
 #   elif defined(__GNUC__)
 #      define TCL_WIDE_INT_TYPE long long
 #      define TCL_LL_MODIFIER	"ll"
@@ -424,10 +419,6 @@ typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
 typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #ifdef TCL_WIDE_INT_IS_LONG
-#   define Tcl_WideAsLong(val)		((long)(val))
-#   define Tcl_LongAsWide(val)		((long)(val))
-#   define Tcl_WideAsDouble(val)	((double)((long)(val)))
-#   define Tcl_DoubleAsWide(val)	((long)((double)(val)))
 #   ifndef TCL_LL_MODIFIER
 #      define TCL_LL_MODIFIER		"l"
 #   endif /* !TCL_LL_MODIFIER */
@@ -439,11 +430,12 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #   ifndef TCL_LL_MODIFIER
 #      define TCL_LL_MODIFIER		"ll"
 #   endif /* !TCL_LL_MODIFIER */
-#   define Tcl_WideAsLong(val)		((long)((Tcl_WideInt)(val)))
-#   define Tcl_LongAsWide(val)		((Tcl_WideInt)((long)(val)))
-#   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
-#   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 #endif /* TCL_WIDE_INT_IS_LONG */
+
+#define Tcl_WideAsLong(val)	((long)((Tcl_WideInt)(val)))
+#define Tcl_LongAsWide(val)	((Tcl_WideInt)((long)(val)))
+#define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
+#define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
 #if defined(_WIN32)
 #   ifdef __BORLANDC__
@@ -1147,8 +1139,13 @@ typedef struct Tcl_DString {
 #define TCL_LINK_SHORT		8
 #define TCL_LINK_USHORT		9
 #define TCL_LINK_UINT		10
+#if defined(TCL_WIDE_INT_IS_LONG) || defined(_WIN32) || defined(__CYGWIN__)
+#define TCL_LINK_LONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT)
+#define TCL_LINK_ULONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
+#else
 #define TCL_LINK_LONG		11
 #define TCL_LINK_ULONG		12
+#endif
 #define TCL_LINK_FLOAT		13
 #define TCL_LINK_WIDE_UINT	14
 #define TCL_LINK_READ_ONLY	0x80
@@ -2534,7 +2531,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
      Tcl_DbNewBignumObj(val, __FILE__, __LINE__)
 #  undef  Tcl_NewBooleanObj
 #  define Tcl_NewBooleanObj(val) \
-     Tcl_DbNewBooleanObj(val, __FILE__, __LINE__)
+     Tcl_DbNewLongObj((val)!=0, __FILE__, __LINE__)
 #  undef  Tcl_NewByteArrayObj
 #  define Tcl_NewByteArrayObj(bytes, len) \
      Tcl_DbNewByteArrayObj(bytes, len, __FILE__, __LINE__)

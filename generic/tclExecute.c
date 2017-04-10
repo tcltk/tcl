@@ -512,7 +512,7 @@ VarHashCreateVar(
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
     ((((objPtr)->typePtr == NULL) && ((objPtr)->bytes == NULL)) ||	\
     (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
-	? (*(tPtr) = TCL_NUMBER_LONG),TCL_ERROR :			\
+	? TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 #else /* !TCL_WIDE_INT_IS_LONG */
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
@@ -532,7 +532,7 @@ VarHashCreateVar(
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
     ((((objPtr)->typePtr == NULL) && ((objPtr)->bytes == NULL)) ||	\
     (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
-	? (*(tPtr) = TCL_NUMBER_LONG),TCL_ERROR :			\
+	? TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 #endif /* TCL_WIDE_INT_IS_LONG */
 
@@ -910,9 +910,9 @@ TclCreateExecEnv(
 	    + (size_t) (size-1) * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
-    TclNewBooleanObj(eePtr->constants[0], 0);
+    TclNewLongObj(eePtr->constants[0], 0);
     Tcl_IncrRefCount(eePtr->constants[0]);
-    TclNewBooleanObj(eePtr->constants[1], 1);
+    TclNewLongObj(eePtr->constants[1], 1);
     Tcl_IncrRefCount(eePtr->constants[1]);
     eePtr->interp = interp;
     eePtr->callbackPtr = NULL;
@@ -5950,16 +5950,17 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 
-	if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK) {
+	if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK
+		|| GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2) != TCL_OK) {
 	    /*
 	     * At least one non-numeric argument - compare as strings.
 	     */
 
 	    goto stringCompare;
 	}
-	if (type1 == TCL_NUMBER_NAN) {
+	if (type1 == TCL_NUMBER_NAN || type2 == TCL_NUMBER_NAN) {
 	    /*
-	     * NaN first arg: NaN != to everything, other compares are false.
+	     * NaN arg: NaN != to everything, other compares are false.
 	     */
 
 	    iResult = (*pc == INST_NEQ);
@@ -5968,21 +5969,6 @@ TEBCresume(
 	if (valuePtr == value2Ptr) {
 	    compare = MP_EQ;
 	    goto convertComparison;
-	}
-	if (GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2) != TCL_OK) {
-	    /*
-	     * At least one non-numeric argument - compare as strings.
-	     */
-
-	    goto stringCompare;
-	}
-	if (type2 == TCL_NUMBER_NAN) {
-	    /*
-	     * NaN 2nd arg: NaN != to everything, other compares are false.
-	     */
-
-	    iResult = (*pc == INST_NEQ);
-	    goto foundResult;
 	}
 	if ((type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
 	    l1 = *((const long *)ptr1);
@@ -7677,6 +7663,39 @@ TEBCresume(
      *	   End of dictionary-related instructions.
      * -----------------------------------------------------------------
      */
+
+    case INST_CLOCK_READ:
+	{			/* Read the wall clock */
+	    Tcl_WideInt wval;
+	    Tcl_Time now;
+	    switch(TclGetUInt1AtPtr(pc+1)) {
+	    case 0:		/* clicks */
+#ifdef TCL_WIDE_CLICKS
+		wval = TclpGetWideClicks();
+#else
+		wval = (Tcl_WideInt) TclpGetClicks();
+#endif
+		break;
+	    case 1:		/* microseconds */
+		Tcl_GetTime(&now);
+		wval = (Tcl_WideInt) now.sec * 1000000 + now.usec;
+		break;
+	    case 2:		/* milliseconds */
+		Tcl_GetTime(&now);
+		wval = (Tcl_WideInt) now.sec * 1000 + now.usec / 1000;
+		break;
+	    case 3:		/* seconds */
+		Tcl_GetTime(&now);
+		wval = (Tcl_WideInt) now.sec;
+		break;
+	    default:
+		Tcl_Panic("clockRead instruction with unknown clock#");
+	    }
+	    /* TclNewWideObj(objResultPtr, wval); doesn't exist */
+	    objResultPtr = Tcl_NewWideIntObj(wval);
+	    TRACE_WITH_OBJ(("=> "), objResultPtr);
+	    NEXT_INST_F(2, 0, 1);
+	}
 
     default:
 	Tcl_Panic("TclNRExecuteByteCode: unrecognized opCode %u", *pc);

@@ -1059,7 +1059,7 @@ declare 293 {
     int Tcl_EvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 declare 294 {
-    void Tcl_ExitThread(int status)
+    TCL_NORETURN void Tcl_ExitThread(int status)
 }
 declare 295 {
     int Tcl_ExternalToUtf(Tcl_Interp *interp, Tcl_Encoding encoding,
@@ -2329,8 +2329,13 @@ declare 630 {
 # TIP #456
 declare 631 {
     Tcl_Channel Tcl_OpenTcpServerEx(Tcl_Interp *interp, const char *service,
-	    const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc,
-	    ClientData callbackData)
+	    const char *host, unsigned int flags, int backlog,
+	    Tcl_TcpAcceptProc *acceptProc, ClientData callbackData)
+}
+declare 632 {
+    Tcl_Channel Tcl_OpenTcpClientEx(Tcl_Interp *interp, const char *service,
+	    const char *host, const char *myaddr, const char *myservice,
+	    unsigned int flags)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
