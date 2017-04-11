@@ -16,7 +16,7 @@
  * On Windows, we need to do proper Unicode->UTF-8 conversion.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     int initialized;
     Tcl_DString errorMsg; /* UTF-8 encoded error-message */
 } ThreadSpecificData;
