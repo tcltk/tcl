@@ -828,7 +828,7 @@ ConsoleOutputProc(
     int *errorCode)		/* Where to store error code. */
 {
     ConsoleInfo *infoPtr = instanceData;
-    ConsoleThreadInfo *threadInfo = &infoPtr->reader;
+    ConsoleThreadInfo *threadInfo = &infoPtr->writer;
     DWORD bytesWritten, timeout;
 
     *errorCode = 0;
