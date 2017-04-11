@@ -91,325 +91,6 @@ static ProcInfo *procList;
  * This structure describes per-instance data for a pipe based channel.
  */
 
-typedef struct PipeThreadInfo {
-    HANDLE evControl;		/* Auto-reset event used by the main thread to
-				 * signal when the pipe thread should attempt 
-				 * to do read/write operation. Additionally
-				 * used as signal to stop (state set to -1) */
-    volatile LONG state;	/* Indicates current state of the thread */
-    ClientData clientData;	/* Referenced data of the main thread */
-} PipeThreadInfo;
-
-
-/* If pipe-workers will use some tcl subsystem, we can use ckalloc without
- * more overhead for finalize thread (should be executed anyway)
- *
- * #define _PTI_USE_CKALLOC 1
- */
-
-/*
- * State of the pipe-worker.
- * 
- * State PTI_STATE_STOP possible from idle state only, worker owns TI structure.
- * Otherwise PTI_STATE_END used (main thread hold ownership of the TI).
- */
-
-#define PTI_STATE_IDLE	0	/* idle or not yet initialzed */
-#define PTI_STATE_WORK	1	/* in work */
-#define PTI_STATE_STOP	2	/* thread should stop work (owns TI structure) */
-#define PTI_STATE_END	4	/* thread should stop work (worker is busy) */
-#define PTI_STATE_DOWN  8	/* worker is down */
-
-
-PipeThreadInfo *
-PipeThreadCreateTI(
-    PipeThreadInfo **pipeTIPtr,
-    ClientData clientData)
-{
-    PipeThreadInfo *pipeTI;
-#ifndef _PTI_USE_CKALLOC
-    pipeTI = malloc(sizeof(PipeThreadInfo));
-#else
-    pipeTI = ckalloc(sizeof(PipeThreadInfo));
-#endif
-    pipeTI->evControl = CreateEvent(NULL, FALSE, FALSE, NULL);
-    pipeTI->state = PTI_STATE_IDLE;
-    pipeTI->clientData = clientData;
-    return (*pipeTIPtr = pipeTI);
-}
-
-int
-PipeThreadWaitForSignal(
-    PipeThreadInfo **pipeTIPtr)
-{
-    PipeThreadInfo *pipeTI = *pipeTIPtr;
-    LONG state;
-    DWORD waitResult;
-
-    if (!pipeTI) {
-	return 0;
-    }
-    /*
-     * Wait for the main thread to signal before attempting to do the work.
-     */
-
-    /* reset work state of thread (idle/waiting) */
-    if ((state = InterlockedCompareExchange(&pipeTI->state,
-	    PTI_STATE_IDLE, PTI_STATE_WORK)) & (PTI_STATE_STOP|PTI_STATE_END)) {
-	/* end of work, check the owner of structure */
-	goto end;
-    }
-    /* entering wait */
-    waitResult = WaitForSingleObject(pipeTI->evControl, INFINITE);
-
-    if (waitResult != WAIT_OBJECT_0) {
-
-	/*
-	 * The control event was not signaled, so end of work (unexpected
-	 * behaviour, main thread can be dead?).
-	 */
-	goto end;
-    }
-
-    /* try to set work state of thread */
-    if ((state = InterlockedCompareExchange(&pipeTI->state,
-	    PTI_STATE_WORK, PTI_STATE_IDLE)) & (PTI_STATE_STOP|PTI_STATE_END)) {
-	/* end of work */
-	goto end;
-    }
-
-    /* signaled to work */
-    return 1;   
-
-end:
-    /* end of work, check the owner of the TI structure */
-    if (state != PTI_STATE_STOP) {
-	*pipeTIPtr = NULL;
-    }
-    return 0;
-}
-
-static inline void
-PipeThreadSignal(
-    PipeThreadInfo **pipeTIPtr)
-{
-    PipeThreadInfo *pipeTI = *pipeTIPtr;
-    if (pipeTI) {
-	SetEvent(pipeTI->evControl);
-    }
-}
-
-int
-PipeThreadStopSignal(
-    PipeThreadInfo **pipeTIPtr)
-{
-    PipeThreadInfo *pipeTI = *pipeTIPtr;
-    HANDLE evControl;
-    int state;
-
-    if (!pipeTI) {
-	return 1;
-    }
-    evControl = pipeTI->evControl;
-    switch (
-	(state = InterlockedCompareExchange(&pipeTI->state,
-	    PTI_STATE_STOP, PTI_STATE_IDLE))
-    ) {
-
-	case PTI_STATE_IDLE:
-
-	    /* Thread was idle/waiting, notify it goes teardown */
-	    SetEvent(evControl);
-
-	    *pipeTIPtr = NULL;
-
-	case PTI_STATE_DOWN:
-	
-	return 1;
-
-	default:
-	    /*
-	     * Thread works currently, we should try to end it, own the TI structure
-	     * (because of possible sharing the joint structures with thread)
-	     */
-	    InterlockedExchange(&pipeTI->state, PTI_STATE_END);
-	break;
-    }
-
-    return 0;
-}
-
-void
-PipeThreadStop(
-    PipeThreadInfo **pipeTIPtr,
-    HANDLE hThread)
-{
-    PipeThreadInfo *pipeTI = *pipeTIPtr;
-    HANDLE evControl;
-    int state;
-
-    if (!pipeTI) {
-	return;
-    }
-    pipeTI = *pipeTIPtr;
-    evControl = pipeTI->evControl;
-    /*
-     * Try to sane stop the pipe worker, corresponding its current state
-     */
-    switch (
-	(state = InterlockedCompareExchange(&pipeTI->state,
-	    PTI_STATE_STOP, PTI_STATE_IDLE))
-    ) {
-
-	case PTI_STATE_IDLE:
-
-	    /* Thread was idle/waiting, notify it goes teardown */
-	    SetEvent(evControl);
-
-	    /* we don't need to wait for it at all, thread frees himself (owns the TI structure) */
-	    pipeTI = NULL;
-	break;
-
-	case PTI_STATE_STOP:
-	    /* already stopped, thread frees himself (owns the TI structure) */
-	    pipeTI = NULL;
-	break;
-	case PTI_STATE_DOWN:
-	    /* Thread already down (?), do nothing */
-
-	    /* we don't need to wait for it, but we should free pipeTI */
-	    hThread = NULL;
-	break;
-
-	/* case PTI_STATE_WORK: */
-	default:
-	    /*
-	     * Thread works currently, we should try to end it, own the TI structure
-	     * (because of possible sharing the joint structures with thread)
-	     */
-	    InterlockedExchange(&pipeTI->state, PTI_STATE_END);
-	break;
-    }
-
-    if (pipeTI && hThread) {
-	DWORD exitCode;
-    
-	/*
-	 * The thread may already have closed on its own. Check its exit
-	 * code.
-	 */
-
-	GetExitCodeThread(hThread, &exitCode);
-
-	if (exitCode == STILL_ACTIVE) {
-	    /*
-	     * Set the stop event so that if the pipe thread is blocked
-	     * somewhere, it may hereafter sane exit cleanly.
-	     */
-
-	    SetEvent(evControl);
-
-	    /*
-	     * Cancel all sync-IO of this thread (may be blocked there).
-	     */
-	    if (tclWinProcs->cancelSynchronousIo) {
-		tclWinProcs->cancelSynchronousIo(hThread);
-	    }
-
-	    /*
-	     * Wait at most 20 milliseconds for the reader thread to
-	     * close (regarding TIP#398-fast-exit).
-	     */
-
-	    /* if we want TIP#398-fast-exit. */
-	    if (WaitForSingleObject(hThread,
-		    TclInExit() ? 0 : 20) == WAIT_TIMEOUT) {
-
-		/*
-		 * The thread must be blocked waiting for the pipe to
-		 * become readable in ReadFile(). There isn't a clean way
-		 * to exit the thread from this condition. We should
-		 * terminate the child process instead to get the reader
-		 * thread to fall out of ReadFile with a FALSE. (below) is
-		 * not the correct way to do this, but will stay here
-		 * until a better solution is found.
-		 *
-		 * Note that we need to guard against terminating the
-		 * thread while it is in the middle of Tcl_ThreadAlert
-		 * because it won't be able to release the notifier lock.
-		 *
-		 * Also note that terminating threads during their initialization or teardown phase
-		 * may result in ntdll.dll's LoaderLock to remain locked indefinitely.
-		 * This causes ntdll.dll's LdrpInitializeThread() to deadlock trying to acquire LoaderLock.
-		 * LdrpInitializeThread() is executed within new threads to perform
-		 * initialization and to execute DllMain() of all loaded dlls.
-		 * As a result, all new threads are deadlocked in their initialization phase and never execute,
-		 * even though CreateThread() reports successful thread creation.
-		 * This results in a very weird process-wide behavior, which is extremely hard to debug.
-		 * 
-		 * THREADS SHOULD NEVER BE TERMINATED. Period.
-		 * 
-		 * But for now, check if thread is exiting, and if so, let it die peacefully.
-		 */
-
-		if ( pipeTI->state != PTI_STATE_DOWN
-		  && WaitForSingleObject(hThread, 
-			    TclInExit() ? 0 : 5000) != WAIT_OBJECT_0 
-		) {
-		    Tcl_MutexLock(&pipeMutex);
-		    /* BUG: this leaks memory */
-		    if (!TerminateThread(hThread, 0)) {
-			/* terminate fails, just give thread a chance to exit */
-			if (InterlockedExchange(&pipeTI->state, 
-				PTI_STATE_STOP) != PTI_STATE_DOWN) {
-			    pipeTI = NULL;
-			}
-		    };
-		    Tcl_MutexUnlock(&pipeMutex);
-		}
-	    }
-	}
-    }
-
-    *pipeTIPtr = NULL;
-    if (pipeTI) {
-	CloseHandle(pipeTI->evControl);
-    #ifndef _PTI_USE_CKALLOC
-	free(pipeTI);
-    #else
-	ckfree(pipeTI);
-    #endif
-    }
-}
-
-void
-PipeThreadExit(
-    PipeThreadInfo **pipeTIPtr)
-{
-    LONG state;
-    PipeThreadInfo *pipeTI = *pipeTIPtr;
-    /*
-     * If state of thread was set to stop (exactly), we can sane free its info
-     * structure, otherwise it is shared with main thread, so main thread will
-     * own it.
-     */
-    if (!pipeTI) {
-	return;
-    }
-    *pipeTIPtr = NULL;
-    if ((state = InterlockedExchange(&pipeTI->state,
-	    PTI_STATE_DOWN)) == PTI_STATE_STOP) {
-	CloseHandle(pipeTI->evControl);
-    #ifndef _PTI_USE_CKALLOC
-	free(pipeTI);
-    #else
-	ckfree(pipeTI);
-	/* be sure all subsystems used are finalized */
-	Tcl_FinalizeThread();
-    #endif
-    }
-}
-
 typedef struct PipeInfo {
     struct PipeInfo *nextPtr;	/* Pointer to next registered pipe. */
     Tcl_Channel channel;	/* Pointer to channel structure. */
@@ -428,8 +109,8 @@ typedef struct PipeInfo {
     Tcl_ThreadId threadId;	/* Thread to which events should be reported.
 				 * This value is used by the reader/writer
 				 * threads. */
-    PipeThreadInfo *writeTI;	/* Thread info of writer and reader, this */
-    PipeThreadInfo *readTI;	/* structure owned by corresponding thread. */
+    TclPipeThreadInfo *writeTI;	/* Thread info of writer and reader, this */
+    TclPipeThreadInfo *readTI;	/* structure owned by corresponding thread. */
     HANDLE writeThread;		/* Handle to writer thread. */
     HANDLE readThread;		/* Handle to reader thread. */
 
@@ -1912,7 +1593,7 @@ TclpCreateCommandChannel(
 
 	infoPtr->readable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
-		PipeThreadCreateTI(&infoPtr->readTI, infoPtr), 0, &id);
+		TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr), 0, &id);
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
@@ -1926,7 +1607,7 @@ TclpCreateCommandChannel(
 
 	infoPtr->writable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
-		PipeThreadCreateTI(&infoPtr->writeTI, infoPtr), 0, &id);
+		TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr), 0, &id);
 	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     } else {
@@ -2130,7 +1811,7 @@ PipeClose2Proc(
 
 	if (pipePtr->readThread) {
 
-	    PipeThreadStop(&pipePtr->readTI, pipePtr->readThread);
+	    TclPipeThreadStop(&pipePtr->readTI, pipePtr->readThread);
 	    CloseHandle(pipePtr->readThread);
 	    CloseHandle(pipePtr->readable);
 	    pipePtr->readThread = NULL;
@@ -2154,7 +1835,7 @@ PipeClose2Proc(
 	    if ((pipePtr->flags & PIPE_ASYNC) && TclInExit()) {
 
 		/* give it a chance to leave honorably */
-		PipeThreadStopSignal(&pipePtr->writeTI);
+		TclPipeThreadStopSignal(&pipePtr->writeTI);
 
 		if (WaitForSingleObject(pipePtr->writable, 20) == WAIT_TIMEOUT) {
 		    return EWOULDBLOCK;
@@ -2166,7 +1847,7 @@ PipeClose2Proc(
 
 	    }
 
-	    PipeThreadStop(&pipePtr->writeTI, pipePtr->writeThread);
+	    TclPipeThreadStop(&pipePtr->writeTI, pipePtr->writeThread);
 
 	    CloseHandle(pipePtr->writable);
 	    CloseHandle(pipePtr->writeThread);
@@ -2423,7 +2104,7 @@ PipeOutputProc(
 	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
 	infoPtr->toWrite = toWrite;
 	ResetEvent(infoPtr->writable);
-	PipeThreadSignal(&infoPtr->writeTI);
+	TclPipeThreadSignal(&infoPtr->writeTI);
 	bytesWritten = toWrite;
     } else {
 	/*
@@ -3007,7 +2688,7 @@ WaitForRead(
 	 */
 
 	ResetEvent(infoPtr->readable);
-	PipeThreadSignal(&infoPtr->readTI);
+	TclPipeThreadSignal(&infoPtr->readTI);
     }
 }
 
@@ -3035,7 +2716,7 @@ static DWORD WINAPI
 PipeReaderThread(
     LPVOID arg)
 {
-    PipeThreadInfo *pipeTI = (PipeThreadInfo *)arg;
+    TclPipeThreadInfo *pipeTI = (TclPipeThreadInfo *)arg;
     PipeInfo *infoPtr = NULL; /* access info only after success init/wait */
     HANDLE handle = NULL;
     DWORD count, err;
@@ -3046,7 +2727,7 @@ PipeReaderThread(
 	 * Wait for the main thread to signal before attempting to wait on the
 	 * pipe becoming readable.
 	 */
-	if (!PipeThreadWaitForSignal(&pipeTI)) {
+	if (!TclPipeThreadWaitForSignal(&pipeTI)) {
 	    /* exit */
 	    break;
 	}
@@ -3131,7 +2812,7 @@ PipeReaderThread(
      * If state of thread was set to stop, we can sane free info structure,
      * otherwise it is shared with main thread, so main thread will own it
      */
-    PipeThreadExit(&pipeTI);
+    TclPipeThreadExit(&pipeTI);
 
     return 0;
 }
@@ -3157,7 +2838,7 @@ static DWORD WINAPI
 PipeWriterThread(
     LPVOID arg)
 {
-    PipeThreadInfo *pipeTI = (PipeThreadInfo *)arg;
+    TclPipeThreadInfo *pipeTI = (TclPipeThreadInfo *)arg;
     PipeInfo *infoPtr = NULL; /* access info only after success init/wait */
     HANDLE handle = NULL, writable = NULL;
     DWORD count, toWrite;
@@ -3168,7 +2849,7 @@ PipeWriterThread(
 	/*
 	 * Wait for the main thread to signal before attempting to write.
 	 */
-	if (!PipeThreadWaitForSignal(&pipeTI)) {
+	if (!TclPipeThreadWaitForSignal(&pipeTI)) {
 	    /* exit */
 	    if (writable) {
 		SetEvent(writable);
@@ -3229,7 +2910,7 @@ PipeWriterThread(
      * If state of thread was set to stop, we can sane free info structure,
      * otherwise it is shared with main thread, so main thread will own it.
      */
-    PipeThreadExit(&pipeTI);
+    TclPipeThreadExit(&pipeTI);
 
     return 0;
 }
@@ -3376,6 +3057,371 @@ TclpOpenTemporaryFile(
   gotError:
     TclWinConvertError(GetLastError());
     return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPipeThreadCreateTI --
+ *
+ *	Creates a thread info structure, can be owned by worker.
+ *
+ * Results:
+ *	Pointer to created TI structure.
+ *
+ *----------------------------------------------------------------------
+ */
+
+TclPipeThreadInfo *
+TclPipeThreadCreateTI(
+    TclPipeThreadInfo **pipeTIPtr,
+    ClientData clientData)
+{
+    TclPipeThreadInfo *pipeTI;
+#ifndef _PTI_USE_CKALLOC
+    pipeTI = malloc(sizeof(TclPipeThreadInfo));
+#else
+    pipeTI = ckalloc(sizeof(TclPipeThreadInfo));
+#endif
+    pipeTI->evControl = CreateEvent(NULL, FALSE, FALSE, NULL);
+    pipeTI->state = PTI_STATE_IDLE;
+    pipeTI->clientData = clientData;
+    return (*pipeTIPtr = pipeTI);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPipeThreadWaitForSignal --
+ *
+ *	Wait for work/stop signals inside pipe worker.
+ *
+ * Results:
+ *	1 if signaled to work, 0 if signaled to stop.
+ *
+ * Side effects:
+ *	If this function returns 0, TI-structure pointer given via pipeTIPtr
+ *	may be NULL, so not accessible (can be owned by main thread).
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclPipeThreadWaitForSignal(
+    TclPipeThreadInfo **pipeTIPtr)
+{
+    TclPipeThreadInfo *pipeTI = *pipeTIPtr;
+    LONG state;
+    DWORD waitResult;
+
+    if (!pipeTI) {
+	return 0;
+    }
+    /*
+     * Wait for the main thread to signal before attempting to do the work.
+     */
+
+    /* reset work state of thread (idle/waiting) */
+    if ((state = InterlockedCompareExchange(&pipeTI->state,
+	    PTI_STATE_IDLE, PTI_STATE_WORK)) & (PTI_STATE_STOP|PTI_STATE_END)) {
+	/* end of work, check the owner of structure */
+	goto end;
+    }
+    /* entering wait */
+    waitResult = WaitForSingleObject(pipeTI->evControl, INFINITE);
+
+    if (waitResult != WAIT_OBJECT_0) {
+
+	/*
+	 * The control event was not signaled, so end of work (unexpected
+	 * behaviour, main thread can be dead?).
+	 */
+	goto end;
+    }
+
+    /* try to set work state of thread */
+    if ((state = InterlockedCompareExchange(&pipeTI->state,
+	    PTI_STATE_WORK, PTI_STATE_IDLE)) & (PTI_STATE_STOP|PTI_STATE_END)) {
+	/* end of work */
+	goto end;
+    }
+
+    /* signaled to work */
+    return 1;   
+
+end:
+    /* end of work, check the owner of the TI structure */
+    if (state != PTI_STATE_STOP) {
+	*pipeTIPtr = NULL;
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPipeThreadStopSignal --
+ *
+ *	Send stop signal to the pipe worker (without waiting).
+ *
+ *	After calling of this function, TI-structure pointer given via pipeTIPtr
+ *	may be NULL.
+ *
+ * Results:
+ *	1 if signaled (or pipe-thread is down), 0 if pipe thread still working.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclPipeThreadStopSignal(
+    TclPipeThreadInfo **pipeTIPtr)
+{
+    TclPipeThreadInfo *pipeTI = *pipeTIPtr;
+    HANDLE evControl;
+    int state;
+
+    if (!pipeTI) {
+	return 1;
+    }
+    evControl = pipeTI->evControl;
+    switch (
+	(state = InterlockedCompareExchange(&pipeTI->state,
+	    PTI_STATE_STOP, PTI_STATE_IDLE))
+    ) {
+
+	case PTI_STATE_IDLE:
+
+	    /* Thread was idle/waiting, notify it goes teardown */
+	    SetEvent(evControl);
+
+	    *pipeTIPtr = NULL;
+
+	case PTI_STATE_DOWN:
+	
+	return 1;
+
+	default:
+	    /*
+	     * Thread works currently, we should try to end it, own the TI structure
+	     * (because of possible sharing the joint structures with thread)
+	     */
+	    InterlockedExchange(&pipeTI->state, PTI_STATE_END);
+	break;
+    }
+
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPipeThreadStop --
+ *
+ *	Send stop signal to the pipe worker and wait for thread completion.
+ *
+ *	May be combined with TclPipeThreadStopSignal.
+ *
+ *	After calling of this function, TI-structure pointer given via pipeTIPtr
+ *	is not accessible (owned by pipe worker or released here).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Can terminate pipe worker (and / or stop its synchronous operations).
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclPipeThreadStop(
+    TclPipeThreadInfo **pipeTIPtr,
+    HANDLE hThread)
+{
+    TclPipeThreadInfo *pipeTI = *pipeTIPtr;
+    HANDLE evControl;
+    int state;
+
+    if (!pipeTI) {
+	return;
+    }
+    pipeTI = *pipeTIPtr;
+    evControl = pipeTI->evControl;
+    /*
+     * Try to sane stop the pipe worker, corresponding its current state
+     */
+    switch (
+	(state = InterlockedCompareExchange(&pipeTI->state,
+	    PTI_STATE_STOP, PTI_STATE_IDLE))
+    ) {
+
+	case PTI_STATE_IDLE:
+
+	    /* Thread was idle/waiting, notify it goes teardown */
+	    SetEvent(evControl);
+
+	    /* we don't need to wait for it at all, thread frees himself (owns the TI structure) */
+	    pipeTI = NULL;
+	break;
+
+	case PTI_STATE_STOP:
+	    /* already stopped, thread frees himself (owns the TI structure) */
+	    pipeTI = NULL;
+	break;
+	case PTI_STATE_DOWN:
+	    /* Thread already down (?), do nothing */
+
+	    /* we don't need to wait for it, but we should free pipeTI */
+	    hThread = NULL;
+	break;
+
+	/* case PTI_STATE_WORK: */
+	default:
+	    /*
+	     * Thread works currently, we should try to end it, own the TI structure
+	     * (because of possible sharing the joint structures with thread)
+	     */
+	    InterlockedExchange(&pipeTI->state, PTI_STATE_END);
+	break;
+    }
+
+    if (pipeTI && hThread) {
+	DWORD exitCode;
+    
+	/*
+	 * The thread may already have closed on its own. Check its exit
+	 * code.
+	 */
+
+	GetExitCodeThread(hThread, &exitCode);
+
+	if (exitCode == STILL_ACTIVE) {
+	    /*
+	     * Set the stop event so that if the pipe thread is blocked
+	     * somewhere, it may hereafter sane exit cleanly.
+	     */
+
+	    SetEvent(evControl);
+
+	    /*
+	     * Cancel all sync-IO of this thread (may be blocked there).
+	     */
+	    if (tclWinProcs->cancelSynchronousIo) {
+		tclWinProcs->cancelSynchronousIo(hThread);
+	    }
+
+	    /*
+	     * Wait at most 20 milliseconds for the reader thread to
+	     * close (regarding TIP#398-fast-exit).
+	     */
+
+	    /* if we want TIP#398-fast-exit. */
+	    if (WaitForSingleObject(hThread,
+		    TclInExit() ? 0 : 20) == WAIT_TIMEOUT) {
+
+		/*
+		 * The thread must be blocked waiting for the pipe to
+		 * become readable in ReadFile(). There isn't a clean way
+		 * to exit the thread from this condition. We should
+		 * terminate the child process instead to get the reader
+		 * thread to fall out of ReadFile with a FALSE. (below) is
+		 * not the correct way to do this, but will stay here
+		 * until a better solution is found.
+		 *
+		 * Note that we need to guard against terminating the
+		 * thread while it is in the middle of Tcl_ThreadAlert
+		 * because it won't be able to release the notifier lock.
+		 *
+		 * Also note that terminating threads during their initialization or teardown phase
+		 * may result in ntdll.dll's LoaderLock to remain locked indefinitely.
+		 * This causes ntdll.dll's LdrpInitializeThread() to deadlock trying to acquire LoaderLock.
+		 * LdrpInitializeThread() is executed within new threads to perform
+		 * initialization and to execute DllMain() of all loaded dlls.
+		 * As a result, all new threads are deadlocked in their initialization phase and never execute,
+		 * even though CreateThread() reports successful thread creation.
+		 * This results in a very weird process-wide behavior, which is extremely hard to debug.
+		 * 
+		 * THREADS SHOULD NEVER BE TERMINATED. Period.
+		 * 
+		 * But for now, check if thread is exiting, and if so, let it die peacefully.
+		 */
+
+		if ( pipeTI->state != PTI_STATE_DOWN
+		  && WaitForSingleObject(hThread, 
+			    TclInExit() ? 0 : 5000) != WAIT_OBJECT_0 
+		) {
+		    Tcl_MutexLock(&pipeMutex);
+		    /* BUG: this leaks memory */
+		    if (!TerminateThread(hThread, 0)) {
+			/* terminate fails, just give thread a chance to exit */
+			if (InterlockedExchange(&pipeTI->state, 
+				PTI_STATE_STOP) != PTI_STATE_DOWN) {
+			    pipeTI = NULL;
+			}
+		    };
+		    Tcl_MutexUnlock(&pipeMutex);
+		}
+	    }
+	}
+    }
+
+    *pipeTIPtr = NULL;
+    if (pipeTI) {
+	CloseHandle(pipeTI->evControl);
+    #ifndef _PTI_USE_CKALLOC
+	free(pipeTI);
+    #else
+	ckfree(pipeTI);
+    #endif
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPipeThreadExit --
+ *
+ *	Clean-up for the pipe thread (removes owned TI-structure in worker).
+ *
+ *	Should be executed on worker exit, to inform the main thread or 
+ *	free TI-structure (if owned).
+ *
+ *	After calling of this function, TI-structure pointer given via pipeTIPtr
+ *	is not accessible (owned by main thread or released here).
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclPipeThreadExit(
+    TclPipeThreadInfo **pipeTIPtr)
+{
+    LONG state;
+    TclPipeThreadInfo *pipeTI = *pipeTIPtr;
+    /*
+     * If state of thread was set to stop (exactly), we can sane free its info
+     * structure, otherwise it is shared with main thread, so main thread will
+     * own it.
+     */
+    if (!pipeTI) {
+	return;
+    }
+    *pipeTIPtr = NULL;
+    if ((state = InterlockedExchange(&pipeTI->state,
+	    PTI_STATE_DOWN)) == PTI_STATE_STOP) {
+	CloseHandle(pipeTI->evControl);
+    #ifndef _PTI_USE_CKALLOC
+	free(pipeTI);
+    #else
+	ckfree(pipeTI);
+	/* be sure all subsystems used are finalized */
+	Tcl_FinalizeThread();
+    #endif
+    }
 }
 
 /*
