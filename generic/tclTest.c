@@ -67,6 +67,18 @@ typedef struct TestAsyncHandler {
 				/* Next is list of handlers. */
 } TestAsyncHandler;
 
+/*
+ * Start of the socket driver state structure to acces field testFlags
+ */
+
+typedef struct TcpState TcpState;
+
+struct TcpState {
+    Tcl_Channel channel;	/* Channel associated with this socket. */
+    int testFlags;              /* bit field for tests. Is set by testsocket
+                                 * test procedure */
+};
+
 TCL_DECLARE_MUTEX(asyncTestMutex)
 
 static TestAsyncHandler *firstHandler = NULL;
@@ -355,6 +367,8 @@ static int		TestGetIndexFromObjStructObjCmd(
 static int		TestChannelCmd(ClientData clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestChannelEventCmd(ClientData clientData,
+			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestSocketCmd(ClientData clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestFilesystemObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
@@ -663,6 +677,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testnumutfchars",
 	    TestNumUtfCharsCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testsetplatform", TestsetplatformCmd,
+	    NULL, NULL);
+    Tcl_CreateCommand(interp, "testsocket", TestSocketCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "teststaticpkg", TeststaticpkgCmd,
 	    NULL, NULL);
@@ -5914,6 +5930,75 @@ TestChannelEventCmd(
     }
     Tcl_AppendResult(interp, "bad command ", cmd, ", must be one of "
 	    "add, delete, list, set, or removeall", NULL);
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestSocketCmd --
+ *
+ *	Implements the Tcl "testsocket" debugging command and its
+ *	subcommands. This is part of the testing environment.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+static int
+TestSocketCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Interpreter for result. */
+    int argc,			/* Count of additional args. */
+    const char **argv)		/* Additional arg strings. */
+{
+    const char *cmdName;	/* Sub command. */
+    size_t len;			/* Length of subcommand string. */
+
+    if (argc < 2) {
+	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+		" subcommand ?additional args..?\"", NULL);
+	return TCL_ERROR;
+    }
+    cmdName = argv[1];
+    len = strlen(cmdName);
+
+    if ((cmdName[0] == 't') && (strncmp(cmdName, "testflags", len) == 0)) {
+        Tcl_Channel hChannel;
+        int modePtr;
+        TcpState *statePtr;
+        /* Set test value in the socket driver
+         */
+        /* Check for argument "channel name"
+         */
+        if (argc < 4) {
+            Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                    " testflags channel flags\"", NULL);
+            return TCL_ERROR;
+        }
+        hChannel = Tcl_GetChannel(interp, argv[2], &modePtr);
+        if ( NULL == hChannel ) {
+            Tcl_AppendResult(interp, "unknown channel:", argv[2], NULL);
+            return TCL_ERROR;
+        }
+        statePtr = (TcpState *)Tcl_GetChannelInstanceData(hChannel);
+        if ( NULL == statePtr) {
+            Tcl_AppendResult(interp, "No channel instance data:", argv[2],
+                    NULL);
+            return TCL_ERROR;
+        }
+        statePtr->testFlags = atoi(argv[3]);
+        return TCL_OK;
+    }
+
+    Tcl_AppendResult(interp, "bad option \"", cmdName, "\": should be "
+	    "testflags", NULL);
     return TCL_ERROR;
 }
 
