@@ -22,7 +22,7 @@ if {[catch {package require Tcl 8.6-} msg]} {
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 
-set ::Version "50/8.6"
+set ::Version "50/8.7"
 set ::CSSFILE "docs.css"
 
 ##
