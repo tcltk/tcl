@@ -2660,7 +2660,7 @@ SocketSetupProc(
     Tcl_Time blockTime = { 0, 0 };
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (!GET_BITS(flags, TCL_FILE_EVENTS)) {
+    if (!GOT_BITS(flags, TCL_FILE_EVENTS)) {
 	return;
     }
 
