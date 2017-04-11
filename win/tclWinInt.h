@@ -32,6 +32,15 @@ typedef struct TCLEXCEPTION_REGISTRATION {
 #endif
 
 /*
+ * Windows version dependend functions
+ */
+typedef struct TclWinProcs {
+    BOOL (WINAPI *cancelSynchronousIo)(HANDLE);
+} TclWinProcs;
+
+MODULE_SCOPE TclWinProcs *tclWinProcs;
+
+/*
  * Some versions of Borland C have a define for the OSVERSIONINFO for
  * Win32s and for NT, but not for Windows 95.
  * Define VER_PLATFORM_WIN32_CE for those without newer headers.
