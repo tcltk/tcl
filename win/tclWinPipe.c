@@ -91,6 +91,284 @@ static ProcInfo *procList;
  * This structure describes per-instance data for a pipe based channel.
  */
 
+typedef struct PipeThreadInfo {
+    HANDLE evControl;		/* Auto-reset event used by the main thread to
+				 * signal when the pipe thread should attempt 
+				 * to do read/write operation. Additionally
+				 * used as signal to stop (state set to -1) */
+    volatile LONG state;	/* Indicates current state of the thread */
+    ClientData clientData;	/* Referenced data of the main thread */
+} PipeThreadInfo;
+
+
+#define PTI_STATE_IDLE	0
+#define PTI_STATE_WORK	1
+#define PTI_STATE_STOP	2
+#define PTI_STATE_END	4
+#define PTI_STATE_DOWN  8
+
+int
+PipeThreadWaitForSignal(
+    PipeThreadInfo **pipeTIPtr)
+{
+    PipeThreadInfo *pipeTI = *pipeTIPtr;
+    LONG state;
+    DWORD waitResult;
+
+    if (!pipeTI) {
+	return 0;
+    }
+    /*
+     * Wait for the main thread to signal before attempting to do the work.
+     */
+
+    /* reset work state of thread (idle/waiting) */
+    if ((state = InterlockedCompareExchange(&pipeTI->state,
+	    PTI_STATE_IDLE, PTI_STATE_WORK)) & (PTI_STATE_STOP|PTI_STATE_END)) {
+	/* end of work, check the owner of structure */
+	goto end;
+    }
+    /* entering wait */
+    waitResult = WaitForSingleObject(pipeTI->evControl, INFINITE);
+
+    if (waitResult != WAIT_OBJECT_0) {
+
+	/*
+	 * The control event was not signaled, so end of work (unexpected
+	 * behaviour, main thread can be dead?).
+	 */
+	goto end;
+    }
+
+    /* try to set work state of thread */
+    if ((state = InterlockedCompareExchange(&pipeTI->state,
+	    PTI_STATE_WORK, PTI_STATE_IDLE)) & (PTI_STATE_STOP|PTI_STATE_END)) {
+	/* end of work */
+	goto end;
+    }
+
+    /* signaled to work */
+    return 1;   
+
+end:
+    /* end of work, check the owner of the TI structure */
+    if (state != PTI_STATE_STOP) {
+	*pipeTIPtr = NULL;
+    }
+    return 0;
+}
+
+static inline void
+PipeThreadSignal(
+    PipeThreadInfo **pipeTIPtr)
+{
+    PipeThreadInfo *pipeTI = *pipeTIPtr;
+    if (pipeTI) {
+	SetEvent(pipeTI->evControl);
+    }
+}
+
+int
+PipeThreadStopSignal(
+    PipeThreadInfo **pipeTIPtr)
+{
+    PipeThreadInfo *pipeTI = *pipeTIPtr;
+    HANDLE evControl;
+    int state;
+
+    if (!pipeTI) {
+	return 1;
+    }
+    evControl = pipeTI->evControl;
+    switch (
+	(state = InterlockedCompareExchange(&pipeTI->state,
+	    PTI_STATE_STOP, PTI_STATE_IDLE))
+    ) {
+
+	case PTI_STATE_IDLE:
+
+	    /* Thread was idle/waiting, notify it goes teardown */
+	    SetEvent(evControl);
+
+	    *pipeTIPtr = NULL;
+
+	case PTI_STATE_DOWN:
+	
+	return 1;
+
+	default:
+	    /*
+	     * Thread works currently, we should try to end it, own the TI structure
+	     * (because of possible sharing the joint structures with thread)
+	     */
+	    InterlockedExchange(&pipeTI->state, PTI_STATE_END);
+	break;
+    }
+
+    return 0;
+}
+
+void
+PipeThreadStop(
+    PipeThreadInfo **pipeTIPtr,
+    HANDLE hThread)
+{
+    PipeThreadInfo *pipeTI = *pipeTIPtr;
+    HANDLE evControl;
+    int state;
+
+    if (!pipeTI) {
+	return;
+    }
+    pipeTI = *pipeTIPtr;
+    evControl = pipeTI->evControl;
+    /*
+     * Try to sane stop the pipe worker, corresponding its current state
+     */
+    switch (
+	(state = InterlockedCompareExchange(&pipeTI->state,
+	    PTI_STATE_STOP, PTI_STATE_IDLE))
+    ) {
+
+	case PTI_STATE_IDLE:
+
+	    /* Thread was idle/waiting, notify it goes teardown */
+	    SetEvent(evControl);
+
+	    /* we don't need to wait for it at all, thread frees himself (owns the TI structure) */
+	    pipeTI = NULL;
+	break;
+
+	case PTI_STATE_STOP:
+	    /* already stopped, thread frees himself (owns the TI structure) */
+	    pipeTI = NULL;
+	break;
+	case PTI_STATE_DOWN:
+	    /* Thread already down (?), do nothing */
+
+	    /* we don't need to wait for it, but we should free pipeTI */
+	    hThread = NULL;
+	break;
+
+	/* case PTI_STATE_WORK: */
+	default:
+	    /*
+	     * Thread works currently, we should try to end it, own the TI structure
+	     * (because of possible sharing the joint structures with thread)
+	     */
+	    InterlockedExchange(&pipeTI->state, PTI_STATE_END);
+	break;
+    }
+
+    if (pipeTI && hThread) {
+	DWORD exitCode;
+    
+	/*
+	 * The thread may already have closed on its own. Check its exit
+	 * code.
+	 */
+
+	GetExitCodeThread(hThread, &exitCode);
+
+	if (exitCode == STILL_ACTIVE) {
+	    /*
+	     * Set the stop event so that if the pipe thread is blocked
+	     * somewhere, it may hereafter sane exit cleanly.
+	     */
+
+	    SetEvent(evControl);
+
+	    /*
+	     * Cancel all sync-IO of this thread (may be blocked there).
+	     */
+	    if (tclWinProcs->cancelSynchronousIo) {
+		tclWinProcs->cancelSynchronousIo(hThread);
+	    }
+
+	    /*
+	     * Wait at most 20 milliseconds for the reader thread to
+	     * close (regarding TIP#398-fast-exit).
+	     */
+
+	    /* if we want TIP#398-fast-exit. */
+	    if (WaitForSingleObject(hThread,
+		    TclInExit() ? 0 : 0) == WAIT_TIMEOUT) {
+
+		/*
+		 * The thread must be blocked waiting for the pipe to
+		 * become readable in ReadFile(). There isn't a clean way
+		 * to exit the thread from this condition. We should
+		 * terminate the child process instead to get the reader
+		 * thread to fall out of ReadFile with a FALSE. (below) is
+		 * not the correct way to do this, but will stay here
+		 * until a better solution is found.
+		 *
+		 * Note that we need to guard against terminating the
+		 * thread while it is in the middle of Tcl_ThreadAlert
+		 * because it won't be able to release the notifier lock.
+		 *
+		 * Also note that terminating threads during their initialization or teardown phase
+		 * may result in ntdll.dll's LoaderLock to remain locked indefinitely.
+		 * This causes ntdll.dll's LdrpInitializeThread() to deadlock trying to acquire LoaderLock.
+		 * LdrpInitializeThread() is executed within new threads to perform
+		 * initialization and to execute DllMain() of all loaded dlls.
+		 * As a result, all new threads are deadlocked in their initialization phase and never execute,
+		 * even though CreateThread() reports successful thread creation.
+		 * This results in a very weird process-wide behavior, which is extremely hard to debug.
+		 * 
+		 * THREADS SHOULD NEVER BE TERMINATED. Period.
+		 * 
+		 * But for now, check if thread is exiting, and if so, let it die peacefully.
+		 */
+
+		if ( pipeTI->state != PTI_STATE_DOWN
+		  && WaitForSingleObject(hThread, 
+			    TclInExit() ? 0 : 5000) != WAIT_OBJECT_0 
+		) {
+		    Tcl_MutexLock(&pipeMutex);
+		    /* BUG: this leaks memory */
+		    if (!TerminateThread(hThread, 0)) {
+			/* terminate fails, just give thread a chance to exit */
+			if (InterlockedExchange(&pipeTI->state, 
+				PTI_STATE_STOP) != PTI_STATE_DOWN) {
+			    pipeTI = NULL;
+			}
+		    };
+		    Tcl_MutexUnlock(&pipeMutex);
+		}
+	    }
+	}
+    }
+
+    *pipeTIPtr = NULL;
+    if (pipeTI) {
+	CloseHandle(pipeTI->evControl);
+	ckfree(pipeTI);
+    }
+}
+
+void
+PipeThreadExit(
+    PipeThreadInfo **pipeTIPtr)
+{
+    LONG state;
+    PipeThreadInfo *pipeTI = *pipeTIPtr;
+    /*
+     * If state of thread was set to stop (exactly), we can sane free its info
+     * structure, otherwise it is shared with main thread, so main thread will
+     * own it.
+     */
+    if (!pipeTI) {
+	return;
+    }
+    *pipeTIPtr = NULL;
+    if ((state = InterlockedExchange(&pipeTI->state,
+	    PTI_STATE_DOWN)) == PTI_STATE_STOP) {
+	CloseHandle(pipeTI->evControl);
+	ckfree(pipeTI);
+    }
+}
+
 typedef struct PipeInfo {
     struct PipeInfo *nextPtr;	/* Pointer to next registered pipe. */
     Tcl_Channel channel;	/* Pointer to channel structure. */
@@ -109,28 +387,17 @@ typedef struct PipeInfo {
     Tcl_ThreadId threadId;	/* Thread to which events should be reported.
 				 * This value is used by the reader/writer
 				 * threads. */
+    PipeThreadInfo *writeTI;	/* Thread info of writer and reader, this */
+    PipeThreadInfo *readTI;	/* structure owned by corresponding thread. */
     HANDLE writeThread;		/* Handle to writer thread. */
     HANDLE readThread;		/* Handle to reader thread. */
-    int writeThreadExiting;	/* Boolean indicating that write thread is exiting */
-    int readThreadExiting;	/* Boolean indicating that read thread is exiting */
+
     HANDLE writable;		/* Manual-reset event to signal when the
 				 * writer thread has finished waiting for the
 				 * current buffer to be written. */
     HANDLE readable;		/* Manual-reset event to signal when the
 				 * reader thread has finished waiting for
 				 * input. */
-    HANDLE startWriter;		/* Auto-reset event used by the main thread to
-				 * signal when the writer thread should
-				 * attempt to write to the pipe. Additionally
-				 * this event used as wait for thread event (init). */
-    HANDLE stopWriter;		/* Manual-reset event used to alert the reader
-				 * thread to fall-out and exit */
-    HANDLE startReader;		/* Auto-reset event used by the main thread to
-				 * signal when the reader thread should
-				 * attempt to read from the pipe. Additionally
-				 * this event used as wait for thread event (init). */
-    HANDLE stopReader;		/* Manual-reset event used to alert the reader
-				 * thread to fall-out and exit */
     DWORD writeError;		/* An error caused by the last background
 				 * write. Set to 0 if no error has been
 				 * detected. This word is shared with the
@@ -1575,8 +1842,7 @@ TclpCreateCommandChannel(
     Tcl_Pid *pidPtr)		/* An array of process identifiers. */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
-    DWORD id, wEventsCnt = 0;
-    HANDLE wEvents[2];
+    DWORD id;
     PipeInfo *infoPtr = ckalloc(sizeof(PipeInfo));
 
     PipeInit();
@@ -1603,16 +1869,18 @@ TclpCreateCommandChannel(
 	 * Start the background reader thread.
 	 */
 
+	PipeThreadInfo *pipeTI = ckalloc(sizeof(PipeThreadInfo));
+	pipeTI->evControl = CreateEvent(NULL, FALSE, FALSE, NULL);
+	pipeTI->state = PTI_STATE_IDLE;
+	pipeTI->clientData = infoPtr;
+	infoPtr->readTI = pipeTI;
 	infoPtr->readable = CreateEvent(NULL, TRUE, TRUE, NULL);
-	infoPtr->startReader = CreateEvent(NULL, FALSE, FALSE, NULL);
-	infoPtr->stopReader = CreateEvent(NULL, TRUE, FALSE, NULL);
-	infoPtr->readThreadExiting = FALSE;
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
-		infoPtr, 0, &id);
+		pipeTI, 0, &id);
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
-	wEvents[wEventsCnt++] = infoPtr->startReader;
     } else {
+    	infoPtr->readTI = NULL;
 	infoPtr->readThread = 0;
     }
     if (writeFile != NULL) {
@@ -1620,29 +1888,19 @@ TclpCreateCommandChannel(
 	 * Start the background writer thread.
 	 */
 
+	PipeThreadInfo *pipeTI = ckalloc(sizeof(PipeThreadInfo));
+	pipeTI->evControl = CreateEvent(NULL, FALSE, FALSE, NULL);
+	pipeTI->state = PTI_STATE_IDLE;
+	pipeTI->clientData = infoPtr;
+	infoPtr->writeTI = pipeTI;
 	infoPtr->writable = CreateEvent(NULL, TRUE, TRUE, NULL);
-	infoPtr->startWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
-	infoPtr->stopWriter = CreateEvent(NULL, TRUE, FALSE, NULL);
-	infoPtr->writeThreadExiting = FALSE;
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
-		infoPtr, 0, &id);
+		pipeTI, 0, &id);
 	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
-	wEvents[wEventsCnt++] = infoPtr->startWriter;
     } else {
+    	infoPtr->writeTI = NULL;
     	infoPtr->writeThread = 0;
-    }
-
-    /* 
-     * Wait for both threads to initialize (using theirs start-events)
-     */
-    if (wEventsCnt) {
-	WaitForMultipleObjects(wEventsCnt, wEvents, TRUE, 5000);
-	/* Resume both waiting threads, we've get the events */
-	if (infoPtr->readThread)
-	    SetEvent(infoPtr->stopReader);
-	if (infoPtr->writeThread)
-	    SetEvent(infoPtr->stopWriter);
     }
 
     /*
@@ -1828,7 +2086,6 @@ PipeClose2Proc(
     int errorCode, result;
     PipeInfo *infoPtr, **nextPtrPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    DWORD exitCode;
 
     errorCode = 0;
     result = 0;
@@ -1841,71 +2098,10 @@ PipeClose2Proc(
 	 */
 
 	if (pipePtr->readThread) {
-	    /*
-	     * The thread may already have closed on its own. Check its exit
-	     * code.
-	     */
 
-	    GetExitCodeThread(pipePtr->readThread, &exitCode);
-
-	    if (exitCode == STILL_ACTIVE) {
-		/*
-		 * Set the stop event so that if the reader thread is blocked
-		 * in PipeReaderThread on WaitForMultipleEvents, it will exit
-		 * cleanly.
-		 */
-
-		SetEvent(pipePtr->stopReader);
-
-		/*
-		 * Wait at most 20 milliseconds for the reader thread to
-		 * close.
-		 */
-
-		if (WaitForSingleObject(pipePtr->readThread,
-			20) == WAIT_TIMEOUT) {
-		    /*
-		     * The thread must be blocked waiting for the pipe to
-		     * become readable in ReadFile(). There isn't a clean way
-		     * to exit the thread from this condition. We should
-		     * terminate the child process instead to get the reader
-		     * thread to fall out of ReadFile with a FALSE. (below) is
-		     * not the correct way to do this, but will stay here
-		     * until a better solution is found.
-		     *
-		     * Note that we need to guard against terminating the
-		     * thread while it is in the middle of Tcl_ThreadAlert
-		     * because it won't be able to release the notifier lock.
-		     *
-		     * Also note that terminating threads during their initialization or teardown phase
-		     * may result in ntdll.dll's LoaderLock to remain locked indefinitely.
-		     * This causes ntdll.dll's LdrpInitializeThread() to deadlock trying to acquire LoaderLock.
-		     * LdrpInitializeThread() is executed within new threads to perform
-		     * initialization and to execute DllMain() of all loaded dlls.
-		     * As a result, all new threads are deadlocked in their initialization phase and never execute,
-		     * even though CreateThread() reports successful thread creation.
-		     * This results in a very weird process-wide behavior, which is extremely hard to debug.
-		     * 
-		     * THREADS SHOULD NEVER BE TERMINATED. Period.
-		     * 
-		     * But for now, check if thread is exiting, and if so, let it die peacefully.
-		     */
-
-		    if ( !pipePtr->readThreadExiting
-		      || WaitForSingleObject(pipePtr->readThread, 5000) != WAIT_OBJECT_0
-		    ) {
-			Tcl_MutexLock(&pipeMutex);
-			/* BUG: this leaks memory */
-			TerminateThread(pipePtr->readThread, 0);
-			Tcl_MutexUnlock(&pipeMutex);
-		    }
-		}
-	    }
-
+	    PipeThreadStop(&pipePtr->readTI, pipePtr->readThread);
 	    CloseHandle(pipePtr->readThread);
 	    CloseHandle(pipePtr->readable);
-	    CloseHandle(pipePtr->startReader);
-	    CloseHandle(pipePtr->stopReader);
 	    pipePtr->readThread = NULL;
 	}
 	if (TclpCloseFile(pipePtr->readFile) != 0) {
@@ -1917,93 +2113,32 @@ PipeClose2Proc(
     if ((!flags || flags & TCL_CLOSE_WRITE)
 	    && (pipePtr->writeFile != NULL)) {
 	if (pipePtr->writeThread) {
-	    /*
-	     * Wait for the  writer thread to finish the  current buffer, then
-	     * terminate the thread  and close the handles. If  the channel is
-	     * nonblocking but blocked during  exit, bail out since the worker
-	     * thread is not interruptible and we want TIP#398-fast-exit.
-	     */
-	    if (TclInExit()
-		&& (pipePtr->flags & PIPE_ASYNC)) {
 
-		/* give it a chance to leave honorably */
-		SetEvent(pipePtr->stopWriter);
-
-		if (WaitForSingleObject(pipePtr->writable, 0) == WAIT_TIMEOUT) {
-		    return EWOULDBLOCK;
-		}
-
-	    } else {
-
-		WaitForSingleObject(pipePtr->writable, INFINITE);
-
-	    }
-
-	    /*
-	     * The thread may already have closed on it's own. Check its exit
-	     * code.
-	     */
-
-	    GetExitCodeThread(pipePtr->writeThread, &exitCode);
-
-	    if (exitCode == STILL_ACTIVE) {
+	    /* Notify thread we will stop work and check it still seems to work */
+	    if (!PipeThreadStopSignal(&pipePtr->writeTI)) {
 		/*
-		 * Set the stop event so that if the writer thread is blocked
-		 * in PipeWriterThread on WaitForMultipleEvents, it will exit
-		 * cleanly.
+		 * Wait for the  writer thread to finish the  current buffer, then
+		 * terminate the thread  and close the handles. If  the channel is
+		 * nonblocking or may block during exit, bail out since the worker
+		 * thread is not interruptible and we want TIP#398-fast-exit.
 		 */
+		if ((pipePtr->flags & PIPE_ASYNC) || TclInExit()) {
 
-		SetEvent(pipePtr->stopWriter);
-
-		/*
-		 * Wait at most 20 milliseconds for the reader thread to
-		 * close.
-		 */
-
-		if (WaitForSingleObject(pipePtr->writeThread,
-			20) == WAIT_TIMEOUT) {
-		    /*
-		     * The thread must be blocked waiting for the pipe to
-		     * consume input in WriteFile(). There isn't a clean way
-		     * to exit the thread from this condition. We should
-		     * terminate the child process instead to get the writer
-		     * thread to fall out of WriteFile with a FALSE. (below)
-		     * is not the correct way to do this, but will stay here
-		     * until a better solution is found.
-		     *
-		     * Note that we need to guard against terminating the
-		     * thread while it is in the middle of Tcl_ThreadAlert
-		     * because it won't be able to release the notifier lock.
-		     *
-		     * Also note that terminating threads during their initialization or teardown phase
-		     * may result in ntdll.dll's LoaderLock to remain locked indefinitely.
-		     * This causes ntdll.dll's LdrpInitializeThread() to deadlock trying to acquire LoaderLock.
-		     * LdrpInitializeThread() is executed within new threads to perform
-		     * initialization and to execute DllMain() of all loaded dlls.
-		     * As a result, all new threads are deadlocked in their initialization phase and never execute,
-		     * even though CreateThread() reports successful thread creation.
-		     * This results in a very weird process-wide behavior, which is extremely hard to debug.
-		     * 
-		     * THREADS SHOULD NEVER BE TERMINATED. Period.
-		     * 
-		     * But for now, check if thread is exiting, and if so, let it die peacefully.
-		     */
-
-		    if ( !pipePtr->writeThreadExiting
-		      || WaitForSingleObject(pipePtr->writeThread, 5000) != WAIT_OBJECT_0
-		    ) {
-			Tcl_MutexLock(&pipeMutex);
-			/* BUG: this leaks memory */
-			TerminateThread(pipePtr->writeThread, 0);
-			Tcl_MutexUnlock(&pipeMutex);
+		    /* give it a chance to leave honorably */
+		    if (WaitForSingleObject(pipePtr->writable, 0) == WAIT_TIMEOUT) {
+			return EWOULDBLOCK;
 		    }
+
+		} else {
+
+		    WaitForSingleObject(pipePtr->writable, INFINITE);
+
 		}
 	    }
+	    PipeThreadStop(&pipePtr->writeTI, pipePtr->writeThread);
 
-	    CloseHandle(pipePtr->writeThread);
 	    CloseHandle(pipePtr->writable);
-	    CloseHandle(pipePtr->startWriter);
-	    CloseHandle(pipePtr->stopWriter);
+	    CloseHandle(pipePtr->writeThread);
 	    pipePtr->writeThread = NULL;
 	}
 	if (TclpCloseFile(pipePtr->writeFile) != 0) {
@@ -2257,7 +2392,7 @@ PipeOutputProc(
 	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
 	infoPtr->toWrite = toWrite;
 	ResetEvent(infoPtr->writable);
-	SetEvent(infoPtr->startWriter);
+	PipeThreadSignal(&infoPtr->writeTI);
 	bytesWritten = toWrite;
     } else {
 	/*
@@ -2841,7 +2976,7 @@ WaitForRead(
 	 */
 
 	ResetEvent(infoPtr->readable);
-	SetEvent(infoPtr->startReader);
+	PipeThreadSignal(&infoPtr->readTI);
     }
 }
 
@@ -2869,37 +3004,25 @@ static DWORD WINAPI
 PipeReaderThread(
     LPVOID arg)
 {
-    PipeInfo *infoPtr = (PipeInfo *)arg;
-    HANDLE *handle = ((WinFile *) infoPtr->readFile)->handle;
+    PipeThreadInfo *pipeTI = (PipeThreadInfo *)arg;
+    PipeInfo *infoPtr = NULL; /* access info only after success init/wait */
+    HANDLE handle = NULL;
     DWORD count, err;
     int done = 0;
-    HANDLE wEvents[2];
-    DWORD waitResult;
-
-    /*
-     * Notify caller that this thread has been initialized
-     */
-    SignalObjectAndWait(infoPtr->startReader, infoPtr->stopReader, INFINITE, FALSE);
-    ResetEvent(infoPtr->stopReader); /* not auto-reset */
-    
-    wEvents[0] = infoPtr->stopReader;
-    wEvents[1] = infoPtr->startReader;
-
+   
     while (!done) {
 	/*
 	 * Wait for the main thread to signal before attempting to wait on the
 	 * pipe becoming readable.
 	 */
-
-	waitResult = WaitForMultipleObjects(2, wEvents, FALSE, INFINITE);
-
-	if (waitResult != (WAIT_OBJECT_0 + 1)) {
-	    /*
-	     * The start event was not signaled. It might be the stop event or
-	     * an error, so exit.
-	     */
-
+	if (!PipeThreadWaitForSignal(&pipeTI)) {
+	    /* exit */
 	    break;
+	}
+
+	if (!infoPtr) {
+	    infoPtr = (PipeInfo *)pipeTI->clientData;
+	    handle = ((WinFile *) infoPtr->readFile)->handle;
 	}
 
 	/*
@@ -2948,7 +3071,6 @@ PipeReaderThread(
 	    }
 	}
 
-
 	/*
 	 * Signal the main thread by signalling the readable event and then
 	 * waking up the notifier thread.
@@ -2975,10 +3097,10 @@ PipeReaderThread(
     }
 
     /*
-     * Inform caller that this thread should not be terminated, since it is about to exit.
-     * See comment in PipeClose2Proc() for reasons.
-    */
-    infoPtr->readThreadExiting = TRUE;
+     * If state of thread was set to stop, we can sane free info structure,
+     * otherwise it is shared with main thread, so main thread will own it
+     */
+    PipeThreadExit(&pipeTI);
 
     return 0;
 }
@@ -3004,41 +3126,25 @@ static DWORD WINAPI
 PipeWriterThread(
     LPVOID arg)
 {
-    PipeInfo *infoPtr = (PipeInfo *)arg;
-    HANDLE *handle = ((WinFile *) infoPtr->writeFile)->handle;
+    PipeThreadInfo *pipeTI = (PipeThreadInfo *)arg;
+    PipeInfo *infoPtr = NULL; /* access info only after success init/wait */
+    HANDLE handle = NULL;
     DWORD count, toWrite;
     char *buf;
     int done = 0;
-    HANDLE wEvents[2];
-    DWORD waitResult;
-
-    /*
-     * Notify caller that this thread has been initialized
-     */
-    SignalObjectAndWait(infoPtr->startWriter, infoPtr->stopWriter, INFINITE, FALSE);
-    ResetEvent(infoPtr->stopWriter); /* not auto-reset */
-
-    wEvents[0] = infoPtr->stopWriter;
-    wEvents[1] = infoPtr->startWriter;
 
     while (!done) {
 	/*
 	 * Wait for the main thread to signal before attempting to write.
 	 */
-
-	waitResult = WaitForMultipleObjects(2, wEvents, FALSE, INFINITE);
-
-	if (waitResult != (WAIT_OBJECT_0 + 1)) {
-	    /*
-	     * The start event was not signaled. It might be the stop event or
-	     * an error, so exit.
-	     */
-
-	    if (waitResult == WAIT_OBJECT_0) {
-		SetEvent(infoPtr->writable);
-	    }
-
+	if (!PipeThreadWaitForSignal(&pipeTI)) {
+	    /* exit */
 	    break;
+	}
+
+	if (!infoPtr) {
+	    infoPtr = (PipeInfo *)pipeTI->clientData;
+	    handle = ((WinFile *) infoPtr->writeFile)->handle;
 	}
 
 	buf = infoPtr->writeBuf;
@@ -3085,10 +3191,10 @@ PipeWriterThread(
     }
 
     /*
-     * Inform caller that this thread should not be terminated, since it is about to exit.
-     * See comment in PipeClose2Proc() for reasons.
+     * If state of thread was set to stop, we can sane free info structure,
+     * otherwise it is shared with main thread, so main thread will own it.
      */
-    infoPtr->writeThreadExiting = TRUE;
+    PipeThreadExit(&pipeTI);
 
     return 0;
 }
