@@ -69,7 +69,22 @@ testConstraint exec [llength [info commands exec]]
 
 # Produce a random port number in the Dynamic/Private range
 # from 49152 through 65535.
-proc randport {} { expr {int(rand()*16383+49152)} }
+proc randport {} {
+    # firstly try dynamic port via server-socket(0):
+    set port 0x7fffffff
+    catch {
+	set port [lindex [fconfigure [set s [socket -server {} 0]] -sockname] 2]
+	close $s
+    }
+    while {[catch {
+	close [socket -server {} $port]
+    } msg]} {
+	if {[incr i] > 1000} {return -code error "too many iterations to get free random port: $msg"}
+	# try random port:
+	set port [expr {int(rand()*16383+49152)}]
+    }
+    return $port
+}
 
 # Test the latency of tcp connections over the loopback interface. Some OSes
 # (e.g. NetBSD) seem to use the Nagle algorithm and delayed ACKs, so it takes
