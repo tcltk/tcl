@@ -330,7 +330,7 @@ test zlib-8.9 {transformation and fconfigure} -setup {
     set strm [zlib stream decompress]
 } -constraints zlib -body {
     zlib push compress $outSide -dictionary $spdyDict
-    fconfigure $outSide -blocking 0 -translation binary -buffering none
+    fconfigure $outSide -blocking 1 -translation binary -buffering none
     fconfigure $inSide -blocking 1 -translation binary
     puts -nonewline $outSide $spdyHeaders
     set result [fconfigure $outSide -checksum]
@@ -347,7 +347,7 @@ test zlib-8.10 {transformation and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
 } -constraints {zlib recentZlib} -body {
     zlib push deflate $outSide -dictionary $spdyDict
-    fconfigure $outSide -blocking 0 -translation binary -buffering none
+    fconfigure $outSide -blocking 1 -translation binary -buffering none
     fconfigure $inSide -blocking 1 -translation binary
     puts -nonewline $outSide $spdyHeaders
     chan pop $outSide
@@ -369,7 +369,7 @@ test zlib-8.11 {transformation and fconfigure} -setup {
     set strm [zlib stream inflate]
 } -constraints zlib -body {
     zlib push deflate $outSide -dictionary $spdyDict
-    fconfigure $outSide -blocking 0 -translation binary -buffering none
+    fconfigure $outSide -blocking 1 -translation binary -buffering none
     fconfigure $inSide -blocking 1 -translation binary
     puts -nonewline $outSide $spdyHeaders
     chan pop $outSide
@@ -387,7 +387,7 @@ test zlib-8.12 {transformation and fconfigure} -setup {
 } -constraints zlib -body {
     $strm put -dictionary $spdyDict -finalize $spdyHeaders
     zlib push decompress $inSide
-    fconfigure $outSide -blocking 0 -translation binary
+    fconfigure $outSide -blocking 1 -translation binary
     fconfigure $inSide -translation binary -dictionary $spdyDict
     puts -nonewline $outSide [$strm get]
     close $outSide
@@ -404,7 +404,7 @@ test zlib-8.13 {transformation and fconfigure} -setup {
 } -constraints zlib -body {
     $strm put -dictionary $spdyDict -finalize $spdyHeaders
     zlib push decompress $inSide -dictionary $spdyDict
-    fconfigure $outSide -blocking 0 -translation binary
+    fconfigure $outSide -blocking 1 -translation binary
     fconfigure $inSide -translation binary
     puts -nonewline $outSide [$strm get]
     close $outSide
@@ -421,7 +421,7 @@ test zlib-8.14 {transformation and fconfigure} -setup {
 } -constraints zlib -body {
     $strm put -finalize -dictionary $spdyDict $spdyHeaders
     zlib push inflate $inSide
-    fconfigure $outSide -blocking 0 -buffering none -translation binary
+    fconfigure $outSide -blocking 1 -buffering none -translation binary
     fconfigure $inSide -translation binary -dictionary $spdyDict
     puts -nonewline $outSide [$strm get]
     close $outSide
@@ -437,7 +437,7 @@ test zlib-8.15 {transformation and fconfigure} -setup {
 } -constraints zlib -body {
     $strm put -finalize -dictionary $spdyDict $spdyHeaders
     zlib push inflate $inSide -dictionary $spdyDict
-    fconfigure $outSide -blocking 0 -buffering none -translation binary
+    fconfigure $outSide -blocking 1 -buffering none -translation binary
     fconfigure $inSide -translation binary
     puts -nonewline $outSide [$strm get]
     close $outSide
