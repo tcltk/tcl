@@ -110,6 +110,7 @@ typedef struct TclPipeThreadInfo {
 				 * used as signal to stop (state set to -1) */
     volatile LONG state;	/* Indicates current state of the thread */
     ClientData clientData;	/* Referenced data of the main thread */
+    HANDLE evWakeUp;		/* Optional wake-up event worker set by shutdown */
 } TclPipeThreadInfo;
 
 
@@ -134,7 +135,8 @@ typedef struct TclPipeThreadInfo {
 
 
 MODULE_SCOPE 
-TclPipeThreadInfo *	TclPipeThreadCreateTI(TclPipeThreadInfo **pipeTIPtr, ClientData clientData);
+TclPipeThreadInfo *	TclPipeThreadCreateTI(TclPipeThreadInfo **pipeTIPtr, 
+			    ClientData clientData, HANDLE wakeEvent);
 MODULE_SCOPE int	TclPipeThreadWaitForSignal(TclPipeThreadInfo **pipeTIPtr);
 
 static inline void
@@ -147,7 +149,7 @@ TclPipeThreadSignal(
     }
 };
 
-MODULE_SCOPE int	TclPipeThreadStopSignal(TclPipeThreadInfo **pipeTIPtr);
+MODULE_SCOPE int	TclPipeThreadStopSignal(TclPipeThreadInfo **pipeTIPtr, HANDLE wakeEvent);
 MODULE_SCOPE void	TclPipeThreadStop(TclPipeThreadInfo **pipeTIPtr, HANDLE hThread);
 MODULE_SCOPE void	TclPipeThreadExit(TclPipeThreadInfo **pipeTIPtr);
 
