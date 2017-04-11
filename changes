@@ -8704,6 +8704,15 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2016-09-07 (bug)[4dbdd9] Memleak in test var-8.3 (mr_calvin,porter)
 
 2016-10-03 (bug)[2bf561] Allow empty command as alias target (yorick,nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-10-04 (bug)[4d5ae7] Crash in async connects host no address (gahr,fellows)
+
+2016-10-08 (bug)[838e99] treat application/xml as text (gahr,fellows)
+=> http 2.8.10
+
+2016-10-11 (bug)[3cc1d9] Thread finalization crash in zippy (neumann)
+
 
 
 
