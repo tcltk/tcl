@@ -1592,7 +1592,8 @@ TclpCreateCommandChannel(
 
 	infoPtr->readable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
-	    TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr, NULL), 0, NULL);
+	    TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr, infoPtr->readable),
+	    0, NULL);
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
@@ -1798,6 +1799,7 @@ PipeClose2Proc(
     int errorCode, result;
     PipeInfo *infoPtr, **nextPtrPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    int inExit = (TclInExit() || TclInThreadExit());
 
     errorCode = 0;
     result = 0;
@@ -1832,7 +1834,7 @@ PipeClose2Proc(
 	     * nonblocking or may block during exit, bail out since the worker
 	     * thread is not interruptible and we want TIP#398-fast-exit.
 	     */
-	    if ((pipePtr->flags & PIPE_ASYNC) && TclInExit()) {
+	    if ((pipePtr->flags & PIPE_ASYNC) && inExit) {
 
 		/* give it a chance to leave honorably */
 		TclPipeThreadStopSignal(&pipePtr->writeTI, pipePtr->writable);
@@ -1843,7 +1845,7 @@ PipeClose2Proc(
 
 	    } else {
 
-		WaitForSingleObject(pipePtr->writable, INFINITE);
+		WaitForSingleObject(pipePtr->writable, inExit ? 5000 : INFINITE);
 
 	    }
 
@@ -1885,7 +1887,7 @@ PipeClose2Proc(
 	}
     }
 
-    if ((pipePtr->flags & PIPE_ASYNC) || TclInExit()) {
+    if ((pipePtr->flags & PIPE_ASYNC) || inExit) {
 	/*
 	 * If the channel is non-blocking or Tcl is being cleaned up, just
 	 * detach the children PIDs, reap them (important if we are in a
@@ -2063,7 +2065,10 @@ PipeOutputProc(
     DWORD bytesWritten, timeout;
 
     *errorCode = 0;
-    timeout = (infoPtr->flags & PIPE_ASYNC) ? 0 : INFINITE;
+
+    /* avoid blocking if pipe-thread exited */
+    timeout = ((infoPtr->flags & PIPE_ASYNC) || !TclPipeThreadIsAlive(&infoPtr->writeTI)
+	|| TclInExit() || TclInThreadExit()) ? 0 : INFINITE;
     if (WaitForSingleObject(infoPtr->writable, timeout) == WAIT_TIMEOUT) {
 	/*
 	 * The writer thread is blocked waiting for a write to complete and
@@ -2614,7 +2619,9 @@ WaitForRead(
 	 * Synchronize with the reader thread.
 	 */
 
-	timeout = blocking ? INFINITE : 0;
+	/* avoid blocking if pipe-thread exited */
+	timeout = (!blocking || !TclPipeThreadIsAlive(&infoPtr->readTI) 
+		|| TclInExit() || TclInThreadExit()) ? 0 : INFINITE;
 	if (WaitForSingleObject(infoPtr->readable, timeout) == WAIT_TIMEOUT) {
 	    /*
 	     * The reader thread is blocked waiting for data and the channel
@@ -2756,7 +2763,7 @@ PipeReaderThread(
 		infoPtr->readFlags |= PIPE_EOF;
 		done = 1;
 	    } else if (err == ERROR_INVALID_HANDLE) {
-		break;
+		done = 1;
 	    }
 	} else if (count == 0) {
 	    if (ReadFile(handle, &(infoPtr->extraByte), 1, &count, NULL)
@@ -2778,7 +2785,7 @@ PipeReaderThread(
 		    infoPtr->readFlags |= PIPE_EOF;
 		    done = 1;
 		} else if (err == ERROR_INVALID_HANDLE) {
-		    break;
+		    done = 1;
 		}
 	    }
 	}
@@ -3247,7 +3254,7 @@ TclPipeThreadStop(
     HANDLE hThread)
 {
     TclPipeThreadInfo *pipeTI = *pipeTIPtr;
-    HANDLE evControl;
+    HANDLE evControl, wakeEvent;
     int state;
 
     if (!pipeTI) {
@@ -3255,6 +3262,7 @@ TclPipeThreadStop(
     }
     pipeTI = *pipeTIPtr;
     evControl = pipeTI->evControl;
+    wakeEvent = pipeTI->evWakeUp;
     pipeTI->evWakeUp = NULL;
     /*
      * Try to sane stop the pipe worker, corresponding its current state
@@ -3290,7 +3298,12 @@ TclPipeThreadStop(
 	     * Thread works currently, we should try to end it, own the TI structure
 	     * (because of possible sharing the joint structures with thread)
 	     */
-	    InterlockedExchange(&pipeTI->state, PTI_STATE_END);
+	    if ((state = InterlockedCompareExchange(&pipeTI->state,
+		    PTI_STATE_END, PTI_STATE_WORK)) == PTI_STATE_DOWN
+	    ) {
+		/* we don't need to wait for it, but we should free pipeTI */
+		hThread = NULL;
+	    };
 	break;
     }
 
@@ -3305,6 +3318,8 @@ TclPipeThreadStop(
 	GetExitCodeThread(hThread, &exitCode);
 
 	if (exitCode == STILL_ACTIVE) {
+
+	    int inExit = (TclInExit() || TclInThreadExit());
 	    /*
 	     * Set the stop event so that if the pipe thread is blocked
 	     * somewhere, it may hereafter sane exit cleanly.
@@ -3325,8 +3340,7 @@ TclPipeThreadStop(
 	     */
 
 	    /* if we want TIP#398-fast-exit. */
-	    if (WaitForSingleObject(hThread,
-		    TclInExit() ? 0 : 20) == WAIT_TIMEOUT) {
+	    if (WaitForSingleObject(hThread, inExit ? 0 : 20) == WAIT_TIMEOUT) {
 
 		/*
 		 * The thread must be blocked waiting for the pipe to
@@ -3353,22 +3367,22 @@ TclPipeThreadStop(
 		 * THREADS SHOULD NEVER BE TERMINATED. Period.
 		 * 
 		 * But for now, check if thread is exiting, and if so, let it die peacefully.
+		 *
+		 * Also don't terminate if in exit (otherwise deadlocked in ntdll.dll's).
 		 */
 
 		if ( pipeTI->state != PTI_STATE_DOWN
 		  && WaitForSingleObject(hThread, 
-			    TclInExit() ? 0 : 5000) != WAIT_OBJECT_0 
+			inExit ? 50 : 5000) != WAIT_OBJECT_0 
 		) {
-		    Tcl_MutexLock(&pipeMutex);
 		    /* BUG: this leaks memory */
-		    if (!TerminateThread(hThread, 0)) {
-			/* terminate fails, just give thread a chance to exit */
+		    if (inExit || !TerminateThread(hThread, 0)) {
+			/* in exit or terminate fails, just give thread a chance to exit */
 			if (InterlockedExchange(&pipeTI->state, 
 				PTI_STATE_STOP) != PTI_STATE_DOWN) {
 			    pipeTI = NULL;
 			}
 		    };
-		    Tcl_MutexUnlock(&pipeMutex);
 		}
 	    }
 	}
@@ -3376,6 +3390,9 @@ TclPipeThreadStop(
 
     *pipeTIPtr = NULL;
     if (pipeTI) {
+	if (pipeTI->evWakeUp) {
+	    SetEvent(pipeTI->evWakeUp);
+	}
 	CloseHandle(pipeTI->evControl);
     #ifndef _PTI_USE_CKALLOC
 	free(pipeTI);
