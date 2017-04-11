@@ -101,11 +101,42 @@ typedef struct PipeThreadInfo {
 } PipeThreadInfo;
 
 
-#define PTI_STATE_IDLE	0
-#define PTI_STATE_WORK	1
-#define PTI_STATE_STOP	2
-#define PTI_STATE_END	4
-#define PTI_STATE_DOWN  8
+/* If pipe-workers will use some tcl subsystem, we can use ckalloc without
+ * more overhead for finalize thread (should be executed anyway)
+ *
+ * #define _PTI_USE_CKALLOC 1
+ */
+
+/*
+ * State of the pipe-worker.
+ * 
+ * State PTI_STATE_STOP possible from idle state only, worker owns TI structure.
+ * Otherwise PTI_STATE_END used (main thread hold ownership of the TI).
+ */
+
+#define PTI_STATE_IDLE	0	/* idle or not yet initialzed */
+#define PTI_STATE_WORK	1	/* in work */
+#define PTI_STATE_STOP	2	/* thread should stop work (owns TI structure) */
+#define PTI_STATE_END	4	/* thread should stop work (worker is busy) */
+#define PTI_STATE_DOWN  8	/* worker is down */
+
+
+PipeThreadInfo *
+PipeThreadCreateTI(
+    PipeThreadInfo **pipeTIPtr,
+    ClientData clientData)
+{
+    PipeThreadInfo *pipeTI;
+#ifndef _PTI_USE_CKALLOC
+    pipeTI = malloc(sizeof(PipeThreadInfo));
+#else
+    pipeTI = ckalloc(sizeof(PipeThreadInfo));
+#endif
+    pipeTI->evControl = CreateEvent(NULL, FALSE, FALSE, NULL);
+    pipeTI->state = PTI_STATE_IDLE;
+    pipeTI->clientData = clientData;
+    return (*pipeTIPtr = pipeTI);
+}
 
 int
 PipeThreadWaitForSignal(
@@ -292,7 +323,7 @@ PipeThreadStop(
 
 	    /* if we want TIP#398-fast-exit. */
 	    if (WaitForSingleObject(hThread,
-		    TclInExit() ? 0 : 0) == WAIT_TIMEOUT) {
+		    TclInExit() ? 0 : 20) == WAIT_TIMEOUT) {
 
 		/*
 		 * The thread must be blocked waiting for the pipe to
@@ -343,7 +374,11 @@ PipeThreadStop(
     *pipeTIPtr = NULL;
     if (pipeTI) {
 	CloseHandle(pipeTI->evControl);
+    #ifndef _PTI_USE_CKALLOC
+	free(pipeTI);
+    #else
 	ckfree(pipeTI);
+    #endif
     }
 }
 
@@ -365,7 +400,13 @@ PipeThreadExit(
     if ((state = InterlockedExchange(&pipeTI->state,
 	    PTI_STATE_DOWN)) == PTI_STATE_STOP) {
 	CloseHandle(pipeTI->evControl);
+    #ifndef _PTI_USE_CKALLOC
+	free(pipeTI);
+    #else
 	ckfree(pipeTI);
+	/* be sure all subsystems used are finalized */
+	Tcl_FinalizeThread();
+    #endif
     }
 }
 
@@ -1869,14 +1910,9 @@ TclpCreateCommandChannel(
 	 * Start the background reader thread.
 	 */
 
-	PipeThreadInfo *pipeTI = ckalloc(sizeof(PipeThreadInfo));
-	pipeTI->evControl = CreateEvent(NULL, FALSE, FALSE, NULL);
-	pipeTI->state = PTI_STATE_IDLE;
-	pipeTI->clientData = infoPtr;
-	infoPtr->readTI = pipeTI;
 	infoPtr->readable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
-		pipeTI, 0, &id);
+		PipeThreadCreateTI(&infoPtr->readTI, infoPtr), 0, &id);
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
@@ -1888,14 +1924,9 @@ TclpCreateCommandChannel(
 	 * Start the background writer thread.
 	 */
 
-	PipeThreadInfo *pipeTI = ckalloc(sizeof(PipeThreadInfo));
-	pipeTI->evControl = CreateEvent(NULL, FALSE, FALSE, NULL);
-	pipeTI->state = PTI_STATE_IDLE;
-	pipeTI->clientData = infoPtr;
-	infoPtr->writeTI = pipeTI;
 	infoPtr->writable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
-		pipeTI, 0, &id);
+		PipeThreadCreateTI(&infoPtr->writeTI, infoPtr), 0, &id);
 	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     } else {
@@ -2114,27 +2145,27 @@ PipeClose2Proc(
 	    && (pipePtr->writeFile != NULL)) {
 	if (pipePtr->writeThread) {
 
-	    /* Notify thread we will stop work and check it still seems to work */
-	    if (!PipeThreadStopSignal(&pipePtr->writeTI)) {
-		/*
-		 * Wait for the  writer thread to finish the  current buffer, then
-		 * terminate the thread  and close the handles. If  the channel is
-		 * nonblocking or may block during exit, bail out since the worker
-		 * thread is not interruptible and we want TIP#398-fast-exit.
-		 */
-		if ((pipePtr->flags & PIPE_ASYNC) || TclInExit()) {
+	    /*
+	     * Wait for the  writer thread to finish the  current buffer, then
+	     * terminate the thread  and close the handles. If  the channel is
+	     * nonblocking or may block during exit, bail out since the worker
+	     * thread is not interruptible and we want TIP#398-fast-exit.
+	     */
+	    if ((pipePtr->flags & PIPE_ASYNC) && TclInExit()) {
 
-		    /* give it a chance to leave honorably */
-		    if (WaitForSingleObject(pipePtr->writable, 0) == WAIT_TIMEOUT) {
-			return EWOULDBLOCK;
-		    }
+		/* give it a chance to leave honorably */
+		PipeThreadStopSignal(&pipePtr->writeTI);
 
-		} else {
-
-		    WaitForSingleObject(pipePtr->writable, INFINITE);
-
+		if (WaitForSingleObject(pipePtr->writable, 20) == WAIT_TIMEOUT) {
+		    return EWOULDBLOCK;
 		}
+
+	    } else {
+
+		WaitForSingleObject(pipePtr->writable, INFINITE);
+
 	    }
+
 	    PipeThreadStop(&pipePtr->writeTI, pipePtr->writeThread);
 
 	    CloseHandle(pipePtr->writable);
@@ -3128,7 +3159,7 @@ PipeWriterThread(
 {
     PipeThreadInfo *pipeTI = (PipeThreadInfo *)arg;
     PipeInfo *infoPtr = NULL; /* access info only after success init/wait */
-    HANDLE handle = NULL;
+    HANDLE handle = NULL, writable = NULL;
     DWORD count, toWrite;
     char *buf;
     int done = 0;
@@ -3139,12 +3170,16 @@ PipeWriterThread(
 	 */
 	if (!PipeThreadWaitForSignal(&pipeTI)) {
 	    /* exit */
+	    if (writable) {
+		SetEvent(writable);
+	    }
 	    break;
 	}
 
 	if (!infoPtr) {
 	    infoPtr = (PipeInfo *)pipeTI->clientData;
 	    handle = ((WinFile *) infoPtr->writeFile)->handle;
+	    writable = infoPtr->writable;
 	}
 
 	buf = infoPtr->writeBuf;
@@ -3170,7 +3205,7 @@ PipeWriterThread(
 	 * waking up the notifier thread.
 	 */
 
-	SetEvent(infoPtr->writable);
+	SetEvent(writable);
 
 	/*
 	 * Alert the foreground thread. Note that we need to treat this like a
