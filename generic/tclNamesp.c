@@ -32,7 +32,7 @@
  * limited to a single interpreter.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     size_t numNsCreated;	/* Count of the number of namespaces created
 				 * within the thread. This value is used as a
 				 * unique id for each namespace. Cannot be

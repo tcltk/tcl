@@ -65,7 +65,7 @@
 
 #define NUM_REGEXPS 30
 
-typedef struct ThreadSpecificData {
+typedef struct {
     int initialized;		/* Set to 1 when the module is initialized. */
     char *patterns[NUM_REGEXPS];/* Strings corresponding to compiled regular
 				 * expression patterns. NULL means that this
@@ -678,7 +678,7 @@ TclRegAbout(
 
     resultObj = Tcl_NewObj();
     Tcl_ListObjAppendElement(NULL, resultObj,
-	    Tcl_NewIntObj((int) regexpPtr->re.re_nsub));
+	    Tcl_NewWideIntObj((Tcl_WideInt) regexpPtr->re.re_nsub));
 
     /*
      * Now append a list of all the bit-flags set for the RE.
