@@ -1071,7 +1071,7 @@ Tcl_CallWhenDeleted(
     Interp *iPtr = (Interp *) interp;
     static Tcl_ThreadDataKey assocDataCounterKey;
     int *assocDataCounterPtr =
-	    Tcl_GetThreadData(&assocDataCounterKey, (int)sizeof(int));
+	    Tcl_GetThreadData(&assocDataCounterKey, sizeof(int));
     int isNew;
     char buffer[32 + TCL_INTEGER_SPACE];
     AssocData *dPtr = ckalloc(sizeof(AssocData));
@@ -5880,7 +5880,6 @@ Tcl_Eval(
     (void) Tcl_GetStringResult(interp);
     return code;
 }
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -5915,6 +5914,7 @@ Tcl_GlobalEvalObj(
 {
     return Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

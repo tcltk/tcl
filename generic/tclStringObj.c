@@ -1670,8 +1670,11 @@ Tcl_AppendFormatToObj(
 
     while (*format != '\0') {
 	char *end;
-	int gotMinus, gotHash, gotZero, gotSpace, gotPlus, sawFlag;
-	int width, gotPrecision, precision, useShort, useWide, useBig;
+	int gotMinus = 0, gotHash = 0, gotZero = 0, gotSpace = 0, gotPlus = 0;
+	int width, gotPrecision, precision, sawFlag, useShort = 0, useBig = 0;
+#ifndef TCL_WIDE_INT_IS_LONG
+	int useWide = 0;
+#endif
 	int newXpg, numChars, allocSegment = 0, segmentLimit, segmentNumBytes;
 	Tcl_Obj *segment;
 	Tcl_UniChar ch;
@@ -1747,7 +1750,6 @@ Tcl_AppendFormatToObj(
 	 * Step 2. Set of flags.
 	 */
 
-	gotMinus = gotHash = gotZero = gotSpace = gotPlus = 0;
 	sawFlag = 1;
 	do {
 	    switch (ch) {
@@ -1848,7 +1850,6 @@ Tcl_AppendFormatToObj(
 	 * Step 5. Length modifier.
 	 */
 
-	useShort = useWide = useBig = 0;
 	if (ch == 'h') {
 	    useShort = 1;
 	    format += step;
@@ -1869,7 +1870,9 @@ Tcl_AppendFormatToObj(
 	    if ((format[1] == '6') && (format[2] == '4')) {
 		format += (step + 2);
 		step = Tcl_UtfToUniChar(format, &ch);
-		useBig = 1;
+#ifndef TCL_WIDE_INT_IS_LONG
+		useWide = 1;
+#endif
 	    } else if ((format[1] == '3') && (format[2] == '2')) {
 		format += (step + 2);
 		step = Tcl_UtfToUniChar(format, &ch);
@@ -1880,10 +1883,17 @@ Tcl_AppendFormatToObj(
 	} else if ((ch == 't') || (ch == 'z')) {
 	    format += step;
 	    step = Tcl_UtfToUniChar(format, &ch);
+#ifndef TCL_WIDE_INT_IS_LONG
+	    if (sizeof(size_t) > sizeof(int)) {
+		useWide = 1;
+	    }
+#endif
 	} else if ((ch == 'q') ||(ch == 'j')) {
 	    format += step;
 	    step = Tcl_UtfToUniChar(format, &ch);
-	    useBig = 1;
+#ifndef TCL_WIDE_INT_IS_LONG
+	    useWide = 1;
+#endif
 	}
 
 	format += step;
@@ -1929,11 +1939,6 @@ Tcl_AppendFormatToObj(
 	}
 
 	case 'u':
-	    if (useBig) {
-		msg = "unsigned bignum format is invalid";
-		errCode = "BADUNSIGNED";
-		goto errorMsg;
-	    }
 	case 'd':
 	case 'o':
 	case 'p':
@@ -1947,11 +1952,26 @@ Tcl_AppendFormatToObj(
 	    mp_int big;
 	    int toAppend, isNegative = 0;
 
+#ifndef TCL_WIDE_INT_IS_LONG
+	    if (ch == 'p') {
+		useWide = 1;
+	    }
+#endif
 	    if (useBig) {
 		if (Tcl_GetBignumFromObj(interp, segment, &big) != TCL_OK) {
 		    goto error;
 		}
 		isNegative = (mp_cmp_d(&big, 0) == MP_LT);
+		if (ch == 'u') {
+		    if (isNegative) {
+			msg = "unsigned bignum format is invalid";
+			errCode = "BADUNSIGNED";
+			goto errorMsg;
+		    } else {
+			ch = 'd';
+		    }
+		}
+#ifndef TCL_WIDE_INT_IS_LONG
 	    } else if (useWide) {
 		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
 		    Tcl_Obj *objPtr;
@@ -1966,6 +1986,7 @@ Tcl_AppendFormatToObj(
 		    Tcl_DecrRefCount(objPtr);
 		}
 		isNegative = (w < (Tcl_WideInt) 0);
+#endif
 	    } else if (TclGetLongFromObj(NULL, segment, &l) != TCL_OK) {
 		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
 		    Tcl_Obj *objPtr;
@@ -2033,8 +2054,10 @@ Tcl_AppendFormatToObj(
 
 		if (useShort) {
 		    pure = Tcl_NewIntObj((int) s);
+#ifndef TCL_WIDE_INT_IS_LONG
 		} else if (useWide) {
 		    pure = Tcl_NewWideIntObj(w);
+#endif
 		} else if (useBig) {
 		    pure = Tcl_NewBignumObj(&big);
 		} else {
@@ -2118,6 +2141,7 @@ Tcl_AppendFormatToObj(
 			numDigits++;
 			us /= base;
 		    }
+#ifndef TCL_WIDE_INT_IS_LONG
 		} else if (useWide) {
 		    Tcl_WideUInt uw = (Tcl_WideUInt) w;
 
@@ -2126,6 +2150,7 @@ Tcl_AppendFormatToObj(
 			numDigits++;
 			uw /= base;
 		    }
+#endif
 		} else if (useBig && big.used) {
 		    int leftover = (big.used * DIGIT_BIT) % numBits;
 		    mp_digit mask = (~(mp_digit)0) << (DIGIT_BIT-leftover);

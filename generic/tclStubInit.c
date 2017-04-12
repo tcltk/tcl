@@ -41,15 +41,15 @@
 #undef Tcl_FindExecutable
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
-#define TclBackgroundException Tcl_BackgroundException
 #undef Tcl_SetIntObj
 #undef TclpInetNtoa
 #undef TclWinGetServByName
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
+#undef TclWinNToHS
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
-#ifdef _WIN64
+#if defined(_WIN64) || defined(TCL_NO_DEPRECATED)
 #   define TclSockMinimumBuffersOld 0
 #else
 #define TclSockMinimumBuffersOld sockMinimumBuffersOld
@@ -59,6 +59,17 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 }
 #endif
 
+#if defined(TCL_NO_DEPRECATED)
+#   define TclSetStartupScriptPath 0
+#   define TclGetStartupScriptPath 0
+#   define TclSetStartupScriptFileName 0
+#   define TclGetStartupScriptFileName 0
+#   define TclpInetNtoa 0
+#   define TclWinGetServByName 0
+#   define TclWinGetSockOpt 0
+#   define TclWinSetSockOpt 0
+#   define TclWinNToHS 0
+#else
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
 {
@@ -92,6 +103,7 @@ static unsigned short TclWinNToHS(unsigned short ns) {
 	return ntohs(ns);
 }
 #endif
+#endif /* TCL_NO_DEPRECATED */
 
 #ifdef _WIN32
 #   define TclUnixWaitForFile 0
@@ -287,17 +299,9 @@ static int formatInt(char *buffer, int n){
 }
 #define TclFormatInt (int(*)(char *, long))formatInt
 
-#endif
+#endif /* TCL_WIDE_INT_IS_LONG */
 
-#else /* UNIX and MAC */
-#   ifdef TCL_NO_DEPRECATED
-#	define TclpLocaltime_unix 0
-#	define TclpGmtime_unix 0
-#   else
-#	define TclpLocaltime_unix TclpLocaltime
-#	define TclpGmtime_unix TclpGmtime
-#   endif
-#endif
+#endif /* __CYGWIN__ */
 
 #ifdef TCL_NO_DEPRECATED
 #   define Tcl_SeekOld 0
@@ -351,9 +355,23 @@ static int formatInt(char *buffer, int n){
 #   define Tcl_EvalObj 0
 #   undef Tcl_GlobalEvalObj
 #   define Tcl_GlobalEvalObj 0
+#   define TclBackgroundException 0
+#   undef TclpReaddir
+#   define TclpReaddir 0
+#   undef TclpGetDate
+#   define TclpGetDate 0
+#   undef TclpLocaltime
+#   define TclpLocaltime 0
+#   undef TclpGmtime
+#   define TclpGmtime 0
+#   define TclpLocaltime_unix 0
+#   define TclpGmtime_unix 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
+#   define TclBackgroundException Tcl_BackgroundException
+#   define TclpLocaltime_unix TclpLocaltime
+#   define TclpGmtime_unix TclpGmtime
 
 static int
 seekOld(
