@@ -394,7 +394,9 @@ typedef long LONG;
 #   if defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
 #      define TCL_LL_MODIFIER	"I64"
-#      define TCL_Z_MODIFIER	"I"
+#      if defined(_WIN64)
+#         define TCL_Z_MODIFIER	"I"
+#      endif
 #   elif defined(__GNUC__)
 #      define TCL_Z_MODIFIER	"z"
 #   else /* ! _WIN32 && ! __GNUC__ */
@@ -420,7 +422,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #   define TCL_LL_MODIFIER	"ll"
 #endif /* !TCL_LL_MODIFIER */
 #ifndef TCL_Z_MODIFIER
-#   define TCL_Z_MODIFIER	"l"
+#   define TCL_Z_MODIFIER	""
 #endif /* !TCL_Z_MODIFIER */
 #define Tcl_WideAsLong(val)	((long)((Tcl_WideInt)(val)))
 #define Tcl_LongAsWide(val)	((Tcl_WideInt)((long)(val)))
