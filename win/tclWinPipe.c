@@ -1804,7 +1804,7 @@ PipeClose2Proc(
     errorCode = 0;
     result = 0;
 
-    if ((!flags || flags == TCL_CLOSE_READ) && (pipePtr->readFile != NULL)) {
+    if ((!flags || flags & TCL_CLOSE_READ) && (pipePtr->readFile != NULL)) {
 	/*
 	 * Clean up the background thread if necessary. Note that this must be
 	 * done before we can close the file, since the thread may be blocking
@@ -1824,8 +1824,7 @@ PipeClose2Proc(
 	pipePtr->validMask &= ~TCL_READABLE;
 	pipePtr->readFile = NULL;
     }
-    if ((!flags || flags & TCL_CLOSE_WRITE)
-	    && (pipePtr->writeFile != NULL)) {
+    if ((!flags || flags & TCL_CLOSE_WRITE) && (pipePtr->writeFile != NULL)) {
 	if (pipePtr->writeThread) {
 
 	    /*
