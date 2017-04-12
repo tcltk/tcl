@@ -8713,6 +8713,18 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2016-10-11 (bug)[3cc1d9] Thread finalization crash in zippy (neumann)
 
+2016-10-12 (bug)[be003d] Fix [scan 0x1 %b], [scan 0x1 %o] (porter)
+
+2016-10-14 (bug)[eb6b68] Fix stringComp-14.5 (porter)
+
+2016-10-30 (bug)[b26e38] Fix zlib-7.8 (fellows)
+
+2016-10-30 (bug)[1ae129] Fix memleak in [history] destruction (fellows)
+
+2016-11-04 (feature) Provision Tcl 9 support in msgcat and tcltest (nijtmans)
+=> msgcat 1.6.1
+=> tcltest 2.4.1
+
 
 
 
