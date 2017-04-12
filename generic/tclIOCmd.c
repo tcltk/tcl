@@ -113,7 +113,6 @@ Tcl_PutsObjCmd(
     int newline;		/* Add a newline at end? */
     int result;			/* Result of puts operation. */
     int mode;			/* Mode in which channel is opened. */
-    ThreadSpecificData *tsdPtr;
 
     switch (objc) {
     case 2:			/* [puts $x] */
@@ -147,7 +146,7 @@ Tcl_PutsObjCmd(
     }
 
     if (chanObjPtr == NULL) {
-	tsdPtr = TCL_TSD_INIT(&dataKey);
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	if (!tsdPtr->initialized) {
 	    tsdPtr->initialized = 1;
