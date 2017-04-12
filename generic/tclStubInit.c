@@ -41,12 +41,12 @@
 #undef Tcl_FindExecutable
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
-#define TclBackgroundException Tcl_BackgroundException
 #undef Tcl_SetIntObj
 #undef TclpInetNtoa
 #undef TclWinGetServByName
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
+#undef TclWinNToHS
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #if defined(_WIN64) || defined(TCL_NO_DEPRECATED)
@@ -64,6 +64,10 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define TclGetStartupScriptPath 0
 #   define TclSetStartupScriptFileName 0
 #   define TclGetStartupScriptFileName 0
+#   define TclpInetNtoa 0
+#   define TclWinGetServByName 0
+#   define TclWinGetSockOpt 0
+#   define TclWinSetSockOpt 0
 #   define TclWinNToHS 0
 #else
 #define TclSetStartupScriptPath setStartupScriptPath
@@ -351,6 +355,9 @@ static int formatInt(char *buffer, int n){
 #   define Tcl_EvalObj 0
 #   undef Tcl_GlobalEvalObj
 #   define Tcl_GlobalEvalObj 0
+#   define TclBackgroundException 0
+#   undef TclpReaddir
+#   define TclpReaddir 0
 #   define TclSetStartupScript 0
 #   define TclGetStartupScript 0
 #   define TclCreateNamespace 0
@@ -376,6 +383,7 @@ static int formatInt(char *buffer, int n){
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
+#   define TclBackgroundException Tcl_BackgroundException
 #   define TclSetStartupScript Tcl_SetStartupScript
 #   define TclGetStartupScript Tcl_GetStartupScript
 #   define TclCreateNamespace Tcl_CreateNamespace
