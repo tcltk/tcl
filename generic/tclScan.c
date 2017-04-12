@@ -10,7 +10,6 @@
  */
 
 #include "tclInt.h"
-#include "tommath.h"
 
 /*
  * Flag values used by Tcl_ScanObjCmd.
@@ -416,7 +415,14 @@ ValidateFormat(
 	case 'x':
 	case 'X':
 	case 'b':
+	    break;
 	case 'u':
+	    if (flags & SCAN_BIG) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"unsigned bignum scans are invalid", -1));
+		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADUNSIGNED",NULL);
+		goto error;
+	    }
 	    break;
 	    /*
 	     * Bracket terms need special checking
@@ -930,18 +936,7 @@ Tcl_ScanObjCmd(
 		} else {
 		    Tcl_SetWideIntObj(objPtr, wideValue);
 		}
-	    } else if (flags & SCAN_BIG) {
-		if (flags & SCAN_UNSIGNED) {
-		    mp_int big;
-		    if ((Tcl_GetBignumFromObj(interp, objPtr, &big) != TCL_OK)
-			    || (mp_cmp_d(&big, 0) == MP_LT)) {
-			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"unsigned bignum scans are invalid", -1));
-			Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADUNSIGNED",NULL);
-			return TCL_ERROR;
-		    }
-		}
-	    } else {
+	    } else if (!(flags & SCAN_BIG)) {
 		if (TclGetLongFromObj(NULL, objPtr, &value) != TCL_OK) {
 		    if (TclGetString(objPtr)[0] == '-') {
 			value = LONG_MIN;
