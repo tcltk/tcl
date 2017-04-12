@@ -549,12 +549,6 @@ test format-17.3 {testing %ld with non-wide} {wideIs64bit} {
 test format-17.4 {testing %l with non-integer} {
     format %lf 1
 } 1.000000
-test format-17.5 {testing %llu with bignum} {
-    format %llu 0xabcdef0123456789abcdef
-} 207698809136909011942886895
-test format-17.6 {testing %llu with negative number} -body {
-    format %llu -1
-} -returnCodes 1 -result {unsigned bignum format is invalid}
 
 test format-18.1 {do not demote existing numeric values} {
     set a 0xaaaaaaaa
