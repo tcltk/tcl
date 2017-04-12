@@ -135,7 +135,7 @@ typedef struct ExceptionAux {
     int numBreakTargets;	/* The number of [break]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    int *breakTargets;		/* The offsets of the INST_JUMP4 instructions
+    unsigned int *breakTargets;	/* The offsets of the INST_JUMP4 instructions
 				 * issued by the [break]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
@@ -145,7 +145,7 @@ typedef struct ExceptionAux {
     int numContinueTargets;	/* The number of [continue]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    int *continueTargets;	/* The offsets of the INST_JUMP4 instructions
+    unsigned int *continueTargets; /* The offsets of the INST_JUMP4 instructions
 				 * issued by the [continue]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
@@ -417,7 +417,7 @@ typedef struct ByteCode {
 				 * procs are specific to an interpreter so the
 				 * code emitted will depend on the
 				 * interpreter. */
-    int compileEpoch;		/* Value of iPtr->compileEpoch when this
+    unsigned int compileEpoch;	/* Value of iPtr->compileEpoch when this
 				 * ByteCode was compiled. Used to invalidate
 				 * code when, e.g., commands with compile
 				 * procs are redefined. */
@@ -425,7 +425,7 @@ typedef struct ByteCode {
 				 * compiled. If the code is executed if a
 				 * different namespace, it must be
 				 * recompiled. */
-    int nsEpoch;		/* Value of nsPtr->resolverEpoch when this
+    size_t nsEpoch;		/* Value of nsPtr->resolverEpoch when this
 				 * ByteCode was compiled. Used to invalidate
 				 * code when new namespace resolution rules
 				 * are put into effect. */
@@ -821,8 +821,10 @@ typedef struct ByteCode {
 #define INST_LAPPEND_LIST_ARRAY_STK	187
 #define INST_LAPPEND_LIST_STK		188
 
+#define INST_CLOCK_READ			189
+
 /* The last opcode */
-#define LAST_INST_OPCODE		188
+#define LAST_INST_OPCODE		189
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -928,7 +930,7 @@ typedef enum {
 
 typedef struct JumpFixup {
     TclJumpType jumpType;	/* Indicates the kind of jump. */
-    int codeOffset;		/* Offset of the first byte of the one-byte
+    unsigned int codeOffset;	/* Offset of the first byte of the one-byte
 				 * forward jump's code. */
     int cmdIndex;		/* Index of the first command after the one
 				 * for which the jump was emitted. Used to
@@ -995,12 +997,6 @@ typedef struct ForeachInfo {
 				 * LAST FIELD IN THE STRUCTURE! */
 } ForeachInfo;
 
-MODULE_SCOPE const AuxDataType tclForeachInfoType;
-MODULE_SCOPE const AuxDataType tclNewForeachInfoType;
-
-#define FOREACHINFO(envPtr, index) \
-    ((ForeachInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
-
 /*
  * Structure used to hold information about a switch command that is needed
  * during program execution. These structures are stored in CompileEnv and
@@ -1032,11 +1028,6 @@ typedef struct {
 				 * take account of this. MUST BE LAST FIELD IN
 				 * STRUCTURE. */
 } DictUpdateInfo;
-
-MODULE_SCOPE const AuxDataType tclDictUpdateInfoType;
-
-#define DICTUPDATEINFO(envPtr, index) \
-    ((DictUpdateInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
 
 /*
  * ClientData type used by the math operator commands.
@@ -1078,7 +1069,6 @@ MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, int depth, Command *cmdPtr,
 			    CompileEnv *envPtr);
-MODULE_SCOPE void	TclCleanupByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
@@ -1107,7 +1097,7 @@ MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
-MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, char *bytes,
+MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, const char *bytes,
 			    int length, unsigned int hash, int *newPtr,
 			    Namespace *nsPtr, int flags,
 			    LiteralEntry **globalPtrPtr);
@@ -1123,7 +1113,6 @@ MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, unsigned int index);
-MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
@@ -1131,9 +1120,9 @@ MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    int distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
-MODULE_SCOPE void	TclInitAuxDataTypeTable(void);
-MODULE_SCOPE void	TclInitByteCodeObj(Tcl_Obj *objPtr,
-			    CompileEnv *envPtr);
+MODULE_SCOPE ByteCode *	TclInitByteCode(CompileEnv *envPtr);
+MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
+			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
 			    int numBytes, const CmdFrame *invoker, int word);
@@ -1170,6 +1159,8 @@ MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
 			    int *isScalarPtr);
+MODULE_SCOPE void	TclPreserveByteCode(ByteCode *codePtr);
+MODULE_SCOPE void	TclReleaseByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
@@ -1221,29 +1212,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define LITERAL_ON_HEAP		0x01
 #define LITERAL_CMD_NAME	0x02
-
-/*
- * Form of TclRegisterLiteral with flags == 0. In that case, it is safe to
- * cast away constness, and it is cleanest to do that here, all in one place.
- *
- * int TclRegisterNewLiteral(CompileEnv *envPtr, const char *bytes,
- *			     int length);
- */
-
-#define TclRegisterNewLiteral(envPtr, bytes, length) \
-    TclRegisterLiteral(envPtr, (char *)(bytes), length, /*flags*/ 0)
-
-/*
- * Form of TclRegisterLiteral with flags == LITERAL_CMD_NAME. In that case, it
- * is safe to cast away constness, and it is cleanest to do that here, all in
- * one place.
- *
- * int TclRegisterNewNSLiteral(CompileEnv *envPtr, const char *bytes,
- *			       int length);
- */
-
-#define TclRegisterNewCmdLiteral(envPtr, bytes, length) \
-    TclRegisterLiteral(envPtr, (char *)(bytes), length, LITERAL_CMD_NAME)
+#define LITERAL_UNSHARED	0x04
 
 /*
  * Macro used to manually adjust the stack requirements; used in cases where
@@ -1560,9 +1529,9 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  */
 
 #define PushLiteral(envPtr, string, length) \
-    TclEmitPush(TclRegisterNewLiteral((envPtr), (string), (length)), (envPtr))
+    TclEmitPush(TclRegisterLiteral(envPtr, string, length, 0), (envPtr))
 #define PushStringLiteral(envPtr, string) \
-    PushLiteral((envPtr), (string), (int) (sizeof(string "") - 1))
+    PushLiteral(envPtr, string, (int) (sizeof(string "") - 1))
 
 /*
  * Macro to advance to the next token; it is more mnemonic than the address

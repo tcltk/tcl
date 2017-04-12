@@ -71,7 +71,8 @@ The name of the object to create, or NULL if a new unused name is to be
 automatically selected.
 .AP "const char" *nsName in
 The name of the namespace to create for the object's private use, or NULL if a
-new unused name is to be automatically selected.
+new unused name is to be automatically selected. The namespace must not
+already exist.
 .AP int objc in
 The number of elements in the \fIobjv\fR array.
 .AP "Tcl_Obj *const" *objv in

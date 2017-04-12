@@ -43,7 +43,7 @@
 /* protos */
 
 static int CheckForCompilerFeature(const char *option);
-static int CheckForLinkerFeature(const char *option);
+static int CheckForLinkerFeature(const char **options, int count);
 static int IsIn(const char *string, const char *substring);
 static int SubstituteFile(const char *substs, const char *filename);
 static int QualifyPath(const char *path);
@@ -102,16 +102,16 @@ main(
 	    }
 	    return CheckForCompilerFeature(argv[2]);
 	case 'l':
-	    if (argc != 3) {
+	    if (argc < 3) {
 		chars = snprintf(msg, sizeof(msg) - 1,
-	       		"usage: %s -l <linker option>\n"
+	       		"usage: %s -l <linker option> ?<mandatory option> ...?\n"
 			"Tests for whether link.exe supports an option\n"
 			"exitcodes: 0 == no, 1 == yes, 2 == error\n", argv[0]);
 		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars,
 			&dwWritten, NULL);
 		return 2;
 	    }
-	    return CheckForLinkerFeature(argv[2]);
+	    return CheckForLinkerFeature(&argv[2], argc-2);
 	case 'f':
 	    if (argc == 2) {
 		chars = snprintf(msg, sizeof(msg) - 1,
@@ -313,7 +313,8 @@ CheckForCompilerFeature(
 
 static int
 CheckForLinkerFeature(
-    const char *option)
+    const char **options,
+    int count)
 {
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
@@ -322,7 +323,8 @@ CheckForLinkerFeature(
     char msg[300];
     BOOL ok;
     HANDLE hProcess, h, pipeThreads[2];
-    char cmdline[100];
+    int i;
+    char cmdline[255];
 
     hProcess = GetCurrentProcess();
 
@@ -368,7 +370,11 @@ CheckForLinkerFeature(
      * Append our option for testing.
      */
 
-    lstrcat(cmdline, option);
+    for (i = 0; i < count; i++) {
+	lstrcat(cmdline, " \"");
+	lstrcat(cmdline, options[i]);
+	lstrcat(cmdline, "\"");
+    }
 
     ok = CreateProcess(
 	    NULL,	    /* Module name. */
@@ -433,7 +439,9 @@ CheckForLinkerFeature(
     return !(strstr(Out.buffer, "LNK1117") != NULL ||
 	    strstr(Err.buffer, "LNK1117") != NULL ||
 	    strstr(Out.buffer, "LNK4044") != NULL ||
-	    strstr(Err.buffer, "LNK4044") != NULL);
+	    strstr(Err.buffer, "LNK4044") != NULL ||
+	    strstr(Out.buffer, "LNK4224") != NULL ||
+	    strstr(Err.buffer, "LNK4224") != NULL);
 }
 
 static DWORD WINAPI
@@ -606,8 +614,8 @@ SubstituteFile(
 	sp = fopen(substitutions, "rt");
 	if (sp != NULL) {
 	    while (fgets(szBuffer, cbBuffer, sp) != NULL) {
-		char *ks, *ke, *vs, *ve;
-		ks = szBuffer;
+		unsigned char *ks, *ke, *vs, *ve;
+		ks = (unsigned char*)szBuffer;
 		while (ks && *ks && isspace(*ks)) ++ks;
 		ke = ks;
 		while (ke && *ke && !isspace(*ke)) ++ke;
@@ -616,7 +624,7 @@ SubstituteFile(
 		ve = vs;
 		while (ve && *ve && !(*ve == '\r' || *ve == '\n')) ++ve;
 		*ke = 0, *ve = 0;
-		list_insert(&substPtr, ks, vs);
+		list_insert(&substPtr, (char*)ks, (char*)vs);
 	    }
 	    fclose(sp);
 	}
