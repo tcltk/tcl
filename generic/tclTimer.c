@@ -91,7 +91,7 @@ typedef struct IdleHandler {
  * The structure defined below is used in this file only.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     TimerHandler *firstTimerHandlerPtr;	/* First event in queue. */
     int lastTimerId;		/* Timer identifier of most recently created
 				 * timer. */
@@ -900,10 +900,10 @@ Tcl_AfterObjCmd(
 	} else {
 	    commandPtr = Tcl_ConcatObj(objc-2, objv+2);;
 	}
-	command = Tcl_GetStringFromObj(commandPtr, &length);
+	command = TclGetStringFromObj(commandPtr, &length);
 	for (afterPtr = assocPtr->firstAfterPtr;  afterPtr != NULL;
 		afterPtr = afterPtr->nextPtr) {
-	    tempCommand = Tcl_GetStringFromObj(afterPtr->commandPtr,
+	    tempCommand = TclGetStringFromObj(afterPtr->commandPtr,
 		    &tempLength);
 	    if ((length == tempLength)
 		    && !memcmp(command, tempCommand, (unsigned) length)) {
@@ -1053,11 +1053,17 @@ AfterDelay(
 	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
 		diff = TCL_TIME_MAXIMUM_SLICE;
 	    }
-            if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) diff = 1;
+            if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) {
+                diff = 1;
+            }
 	    if (diff > 0) {
 		Tcl_Sleep((long) diff);
-                if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) break;
-	    } else break;
+                if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
+                    break;
+                }
+	    } else {
+                break;
+            }
 	} else {
 	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
 #ifndef TCL_WIDE_INT_IS_LONG

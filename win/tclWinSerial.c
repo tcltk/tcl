@@ -120,7 +120,7 @@ typedef struct SerialInfo {
 				 * [fconfigure -queue] */
 } SerialInfo;
 
-typedef struct ThreadSpecificData {
+typedef struct {
     /*
      * The following pointer refers to the head of the list of serials that
      * are being watched for file events.
@@ -136,7 +136,7 @@ static Tcl_ThreadDataKey dataKey;
  * events are generated.
  */
 
-typedef struct SerialEvent {
+typedef struct {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     SerialInfo *infoPtr;	/* Pointer to serial info structure. Note that

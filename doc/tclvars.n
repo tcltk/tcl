@@ -4,7 +4,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -94,7 +94,7 @@ Note that this environment variable should \fInot\fR normally be set.
 \fBenv(TCLLIBPATH)\fR
 .
 If set, then it must contain a valid Tcl list giving directories to
-search during auto-load operations.  Directories must be specified in 
+search during auto-load operations.  Directories must be specified in
 Tcl format, using
 .QW /
 as the path separator, regardless of platform.
@@ -229,7 +229,7 @@ nested Tcl commands that had been invoked at the time of the error.
 This variable holds the name of a directory containing the
 system library of Tcl scripts, such as those used for auto-loading.
 The value of this variable is returned by the \fBinfo library\fR command.
-See the \fBlibrary\fR manual entry for details of the facilities 
+See the \fBlibrary\fR manual entry for details of the facilities
 provided by the Tcl script library.
 Normally each application or package will have its own application-specific
 script library in addition to the Tcl script library;
@@ -289,7 +289,7 @@ predefined elements are:
 \fBbyteOrder\fR
 .
 The native byte order of this machine: either \fBlittleEndian\fR or
-\fBbigEndian\fR. 
+\fBbigEndian\fR.
 .TP
 \fBdebug\fR
 .
@@ -298,6 +298,11 @@ to a debug-enabled C run-time.  This variable will only exist on Windows,
 so extension writers can specify which package to load depending on the
 C run-time library that is in use.  This is not an indication that this core
 contains symbols.
+.TP
+\fBengine\fR
+.
+The name of the Tcl language implementation.  When the interpreter is first
+created, this is always set to the string \fBTcl\fR.
 .TP
 \fBmachine\fR
 .
@@ -371,7 +376,7 @@ binary number.
 .PP
 .RS
 If \fBtcl_precision\fR is not zero, then when Tcl converts a floating
-point number, it creates a decimal representation of at most 
+point number, it creates a decimal representation of at most
 \fBtcl_precision\fR significant digits; the result may be shorter if
 the shorter result represents the original number exactly. If no
 result of at most \fBtcl_precision\fR digits is an exact representation

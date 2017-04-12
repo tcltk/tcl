@@ -92,7 +92,7 @@ static const char *const literals[] = {
  */
 
 typedef struct ClockClientData {
-    int refCount;		/* Number of live references. */
+    size_t refCount;		/* Number of live references. */
     Tcl_Obj **literals;		/* Pool of object literals. */
 } ClockClientData;
 
@@ -208,11 +208,7 @@ struct ClockCommand {
 };
 
 static const struct ClockCommand clockCommands[] = {
-    { "clicks",			ClockClicksObjCmd },
     { "getenv",			ClockGetenvObjCmd },
-    { "microseconds",		ClockMicrosecondsObjCmd },
-    { "milliseconds",		ClockMillisecondsObjCmd },
-    { "seconds",		ClockSecondsObjCmd },
     { "Oldscan",		TclClockOldscanObjCmd },
     { "ConvertLocalToUTC",	ClockConvertlocaltoutcObjCmd },
     { "GetDateFields",		ClockGetdatefieldsObjCmd },
@@ -253,6 +249,19 @@ TclClockInit(
     ClockClientData *data;
     int i;
 
+    /* Structure of the 'clock' ensemble */
+
+    static const EnsembleImplMap clockImplMap[] = {
+	{"add",          NULL,                    TclCompileBasicMin1ArgCmd, NULL, NULL,       0},
+	{"clicks",       ClockClicksObjCmd,       TclCompileClockClicksCmd,  NULL, NULL,       0},
+	{"format",       NULL,                    TclCompileBasicMin1ArgCmd, NULL, NULL,       0},
+	{"microseconds", ClockMicrosecondsObjCmd, TclCompileClockReadingCmd, NULL, INT2PTR(1), 0},
+	{"milliseconds", ClockMillisecondsObjCmd, TclCompileClockReadingCmd, NULL, INT2PTR(2), 0},
+	{"scan",         NULL,                    TclCompileBasicMin1ArgCmd, NULL, NULL      , 0},
+	{"seconds",      ClockSecondsObjCmd,      TclCompileClockReadingCmd, NULL, INT2PTR(3), 0},
+	{NULL,           NULL,                    NULL,                      NULL, NULL,       0}
+    };
+
     /*
      * Safe interps get [::clock] as alias to a master, so do not need their
      * own copies of the support routines.
@@ -276,6 +285,7 @@ TclClockInit(
 
     /*
      * Install the commands.
+     * TODO - Let Tcl_MakeEnsemble do this?
      */
 
 #define TCL_CLOCK_PREFIX_LEN 14 /* == strlen("::tcl::clock::") */
@@ -286,6 +296,10 @@ TclClockInit(
 	Tcl_CreateObjCommand(interp, cmdName, clockCmdPtr->objCmdProc, data,
 		ClockDeleteCmdProc);
     }
+
+    /* Make the clock ensemble */
+
+    TclMakeEnsemble(interp, "clock", clockImplMap);
 }
 
 /*
@@ -1499,7 +1513,19 @@ GetJulianDayFromEraYearMonthDay(
      * Try an initial conversion in the Gregorian calendar.
      */
 
+#if 0 /* BUG http://core.tcl.tk/tcl/tktview?name=da340d4f32 */
     ym1o4 = ym1 / 4;
+#else
+    /*
+     * Have to make sure quotient is truncated towards 0 when negative.
+     * See above bug for details. The casts are necessary.
+     */
+    if (ym1 >= 0)
+        ym1o4 = ym1 / 4;
+    else {
+        ym1o4 = - (int) (((unsigned int) -ym1) / 4);
+    }
+#endif
     if (ym1 % 4 < 0) {
 	ym1o4--;
     }
@@ -1668,7 +1694,7 @@ ThreadSafeLocalTime(
      * Get a thread-local buffer to hold the returned time.
      */
 
-    struct tm *tmPtr = Tcl_GetThreadData(&tmKey, (int) sizeof(struct tm));
+    struct tm *tmPtr = Tcl_GetThreadData(&tmKey, sizeof(struct tm));
 #ifdef HAVE_LOCALTIME_R
     localtime_r(timePtr, tmPtr);
 #else
@@ -2005,22 +2031,23 @@ ClockSecondsObjCmd(
 static void
 TzsetIfNecessary(void)
 {
-    static char *tzWas = NULL;	/* Previous value of TZ, protected by
+    static char* tzWas = INT2PTR(-1);	/* Previous value of TZ, protected by
 				 * clockMutex. */
     const char *tzIsNow;	/* Current value of TZ */
 
     Tcl_MutexLock(&clockMutex);
     tzIsNow = getenv("TZ");
-    if (tzIsNow != NULL && (tzWas == NULL || strcmp(tzIsNow, tzWas) != 0)) {
+    if (tzIsNow != NULL && (tzWas == NULL || tzWas == INT2PTR(-1)
+	    || strcmp(tzIsNow, tzWas) != 0)) {
 	tzset();
-	if (tzWas != NULL) {
+	if (tzWas != NULL && tzWas != INT2PTR(-1)) {
 	    ckfree(tzWas);
 	}
 	tzWas = ckalloc(strlen(tzIsNow) + 1);
 	strcpy(tzWas, tzIsNow);
     } else if (tzIsNow == NULL && tzWas != NULL) {
 	tzset();
-	ckfree(tzWas);
+	if (tzWas != INT2PTR(-1)) ckfree(tzWas);
 	tzWas = NULL;
     }
     Tcl_MutexUnlock(&clockMutex);
@@ -2047,8 +2074,7 @@ ClockDeleteCmdProc(
     ClockClientData *data = clientData;
     int i;
 
-    data->refCount--;
-    if (data->refCount == 0) {
+    if (data->refCount-- <= 1) {
 	for (i = 0; i < LIT__END; ++i) {
 	    Tcl_DecrRefCount(data->literals[i]);
 	}

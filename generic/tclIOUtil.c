@@ -57,7 +57,7 @@ typedef struct FilesystemRecord {
  * this information each time the corresponding epoch counter changes.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     int initialized;
     size_t cwdPathEpoch;
     size_t filesystemEpoch;
@@ -71,8 +71,7 @@ typedef struct ThreadSpecificData {
  * Prototypes for functions defined later in this file.
  */
 
-static int		EvalFileCallback(ClientData data[],
-			    Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	EvalFileCallback;
 static FilesystemRecord*FsGetFirstFilesystem(void);
 static void		FsThrExitProc(ClientData cd);
 static Tcl_Obj *	FsListMounts(Tcl_Obj *pathPtr, const char *pattern);
@@ -545,8 +544,8 @@ TclFSCwdPointerEquals(
 	int len1, len2;
 	const char *str1, *str2;
 
-	str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
-	str2 = Tcl_GetStringFromObj(*pathPtrPtr, &len2);
+	str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+	str2 = TclGetStringFromObj(*pathPtrPtr, &len2);
 	if ((len1 == len2) && !memcmp(str1, str2, len1)) {
 	    /*
 	     * They are equal, but different objects. Update so they will be
@@ -612,6 +611,7 @@ FsRecacheFilesystemList(void)
 
     while (toFree) {
 	FilesystemRecord *next = toFree->nextPtr;
+
 	toFree->fsPtr = NULL;
 	ckfree(toFree);
 	toFree = next;
@@ -639,8 +639,8 @@ FsGetFirstFilesystem(void)
 }
 
 /*
- * The epoch can be changed both by filesystems being added or removed and by
- * env(HOME) changing.
+ * The epoch can be changed by filesystems being added or removed, by changing
+ * the "system encoding" and by env(HOME) changing.
  */
 
 int
@@ -673,7 +673,6 @@ TclFSEpoch(void)
 
     return tsdPtr->filesystemEpoch;
 }
-
 
 /*
  * If non-NULL, clientData is owned by us and must be freed later.
@@ -689,7 +688,7 @@ FsUpdateCwd(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 
     if (cwdObj != NULL) {
-	str = Tcl_GetStringFromObj(cwdObj, &len);
+	str = TclGetStringFromObj(cwdObj, &len);
     }
 
     Tcl_MutexLock(&cwdMutex);
@@ -785,7 +784,9 @@ TclFinalizeFilesystem(void)
     while (fsRecPtr != NULL) {
 	FilesystemRecord *tmpFsRecPtr = fsRecPtr->nextPtr;
 
-	/* The native filesystem is static, so we don't free it. */
+	/*
+	 * The native filesystem is static, so we don't free it.
+	 */
 
 	if (fsRecPtr != &nativeFilesystemRecord) {
 	    ckfree(fsRecPtr);
@@ -948,7 +949,7 @@ Tcl_FSRegister(
 
 int
 Tcl_FSUnregister(
-    const Tcl_Filesystem *fsPtr)	/* The filesystem record to remove. */
+    const Tcl_Filesystem *fsPtr)/* The filesystem record to remove. */
 {
     int retVal = TCL_ERROR;
     FilesystemRecord *fsRecPtr;
@@ -1225,8 +1226,8 @@ FsAddMountsToGlobResult(
 	    if (norm != NULL) {
 		const char *path, *mount;
 
-		mount = Tcl_GetStringFromObj(mElt, &mlen);
-		path = Tcl_GetStringFromObj(norm, &len);
+		mount = TclGetStringFromObj(mElt, &mlen);
+		path = TclGetStringFromObj(norm, &len);
 		if (path[len-1] == '/') {
 		    /*
 		     * Deal with the root of the volume.
@@ -1234,7 +1235,7 @@ FsAddMountsToGlobResult(
 
 		    len--;
 		}
-		len++; /* account for '/' in the mElt [Bug 1602539] */
+		len++;		/* account for '/' in the mElt [Bug 1602539] */
 		mElt = TclNewFSPathObj(pathPtr, mount + len, mlen - len);
 		Tcl_ListObjAppendElement(NULL, resultPtr, mElt);
 	    }
@@ -1404,7 +1405,7 @@ TclFSNormalizeToUniquePath(
      * Call each of the "normalise path" functions in succession. This is a
      * special case, in which if we have a native filesystem handler, we call
      * it first. This is because the root of Tcl's filesystem is always a
-     * native filesystem (i.e. '/' on unix is native).
+     * native filesystem (i.e., '/' on unix is native).
      */
 
     firstFsRecPtr = FsGetFirstFilesystem();
@@ -1526,7 +1527,7 @@ TclGetOpenModeEx(
 #define RW_MODES (O_RDONLY|O_WRONLY|O_RDWR)
 
     /*
-     * Check for the simpler fopen-like access modes (e.g. "r"). They are
+     * Check for the simpler fopen-like access modes (e.g., "r"). They are
      * distinguished from the POSIX access modes by the presence of a
      * lower-case first letter.
      */
@@ -1817,7 +1818,7 @@ Tcl_FSEvalFileEx(
     oldScriptFile = iPtr->scriptFile;
     iPtr->scriptFile = pathPtr;
     Tcl_IncrRefCount(iPtr->scriptFile);
-    string = Tcl_GetStringFromObj(objPtr, &length);
+    string = TclGetStringFromObj(objPtr, &length);
 
     /*
      * TIP #280 Force the evaluator to open a frame for a sourced file.
@@ -1844,7 +1845,7 @@ Tcl_FSEvalFileEx(
 	 * Record information telling where the error occurred.
 	 */
 
-	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
+	const char *pathString = TclGetStringFromObj(pathPtr, &length);
 	int limit = 150;
 	int overflow = (length > limit);
 
@@ -1891,6 +1892,7 @@ TclNREvalFile(
 		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
+    TclPkgFileSeen(interp, Tcl_GetString(pathPtr));
 
     /*
      * The eofchar is \32 (^Z). This is the usual on Windows, but we effect
@@ -1995,7 +1997,7 @@ EvalFileCallback(
 	 */
 
 	int length;
-	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
+	const char *pathString = TclGetStringFromObj(pathPtr, &length);
 	const int limit = 150;
 	int overflow = (length > limit);
 
@@ -2671,6 +2673,7 @@ Tcl_FSGetCwd(
 		fsRecPtr = fsRecPtr->nextPtr) {
 	    ClientData retCd;
 	    TclFSGetCwdProc2 *proc2;
+
 	    if (fsRecPtr->fsPtr->getCwdProc == NULL) {
 		continue;
 	    }
@@ -2847,8 +2850,8 @@ Tcl_FSGetCwd(
 	    int len1, len2;
 	    const char *str1, *str2;
 
-	    str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
-	    str2 = Tcl_GetStringFromObj(norm, &len2);
+	    str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+	    str2 = TclGetStringFromObj(norm, &len2);
 	    if ((len1 == len2) && (strcmp(str1, str2) == 0)) {
 		/*
 		 * If the paths were equal, we can be more efficient and
@@ -3143,8 +3146,8 @@ Tcl_FSLoadFile(
  * Workaround for issue with modern HPUX which do allow the unlink (no ETXTBSY
  * error) yet somehow trash some internal data structures which prevents the
  * second and further shared libraries from getting properly loaded. Only the
- * first is ok. We try to get around the issue by not unlinking,
- * i.e. emulating the behaviour of the older HPUX which denied removal.
+ * first is ok. We try to get around the issue by not unlinking, i.e.,
+ * emulating the behaviour of the older HPUX which denied removal.
  *
  * Doing the unlink is also an issue within docker containers, whose AUFS
  * bungles this as well, see
@@ -3162,28 +3165,30 @@ Tcl_FSLoadFile(
  */
 
 int
-TclSkipUnlink (Tcl_Obj* shlibFile)
+TclSkipUnlink(
+    Tcl_Obj *shlibFile)
 {
-    /* Order of testing:
+    /*
+     * Order of testing:
      * 1. On hpux we generally want to skip unlink in general
      *
      * Outside of hpux then:
-     * 2. For a general user request   (TCL_TEMPLOAD_NO_UNLINK present, non-empty, => int)
+     * 2. For a general user request   (TCL_TEMPLOAD_NO_UNLINK present,
+     *					non-empty, => int)
      * 3. For general AUFS environment (statfs, if available).
      *
      * Ad 2: This variable can disable/override the AUFS detection, i.e. for
-     * testing if a newer AUFS does not have the bug any more.
+     *	     testing if a newer AUFS does not have the bug any more.
      *
-     * Ad 3: This is conditionally compiled in. Condition currently must be set manually.
-     *       This part needs proper tests in the configure(.in).
+     * Ad 3: This is conditionally compiled in. Condition currently must be
+     *	     set manually. This part needs proper tests in the configure(.in).
      */
 
 #ifdef hpux
     return 1;
 #else
-    char* skipstr;
+    char *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
 
-    skipstr = getenv ("TCL_TEMPLOAD_NO_UNLINK");
     if (skipstr && (skipstr[0] != '\0')) {
 	return atoi(skipstr);
     }
@@ -3192,7 +3197,8 @@ TclSkipUnlink (Tcl_Obj* shlibFile)
 #ifndef NO_FSTATFS
     {
 	struct statfs fs;
-	/* Have fstatfs. May not have the AUFS super magic ... Indeed our build
+	/*
+	 * Have fstatfs. May not have the AUFS super magic ... Indeed our build
 	 * box is too old to have it directly in the headers. Define taken from
 	 *     http://mooon.googlecode.com/svn/trunk/linux_include/linux/aufs_type.h
 	 *     http://aufs.sourceforge.net/
@@ -3209,8 +3215,10 @@ TclSkipUnlink (Tcl_Obj* shlibFile)
 #endif /* ... NO_FSTATFS */
 #endif /* ... TCL_TEMPLOAD_NO_UNLINK */
 
-    /* Fallback: !hpux, no EV override, no AUFS (detection, nor detected):
-     * Don't skip */
+    /*
+     * Fallback: !hpux, no EV override, no AUFS (detection, nor detected):
+     * Don't skip
+     */
     return 0;
 #endif /* hpux */
 }
@@ -3254,7 +3262,9 @@ Tcl_LoadFile(
 	    if (*handlePtr == NULL) {
 		return TCL_ERROR;
 	    }
-	    Tcl_ResetResult(interp);
+	    if (interp) {
+		Tcl_ResetResult(interp);
+	    }
 	    goto resolveSymbols;
 	}
 	if (Tcl_GetErrno() != EXDEV) {
@@ -3270,9 +3280,11 @@ Tcl_LoadFile(
      */
 
     if (Tcl_FSAccess(pathPtr, R_OK) != 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't load library \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "couldn't load library \"%s\": %s",
+		    Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+	}
 	return TCL_ERROR;
     }
 
@@ -3321,7 +3333,9 @@ Tcl_LoadFile(
     }
 
   mustCopyToTempAnyway:
-    Tcl_ResetResult(interp);
+    if (interp) {
+	Tcl_ResetResult(interp);
+    }
 #endif /* TCL_LOAD_FROM_MEMORY */
 
     /*
@@ -3345,8 +3359,10 @@ Tcl_LoadFile(
 
 	Tcl_FSDeleteFile(copyToPtr);
 	Tcl_DecrRefCount(copyToPtr);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"couldn't load from current filesystem", -1));
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "couldn't load from current filesystem", -1));
+	}
 	return TCL_ERROR;
     }
 
@@ -3386,7 +3402,9 @@ Tcl_LoadFile(
      * have stored the number of bytes in the result.
      */
 
-    Tcl_ResetResult(interp);
+    if (interp) {
+	Tcl_ResetResult(interp);
+    }
 
     retVal = Tcl_LoadFile(interp, copyToPtr, symbols, flags, procPtrs,
 	    &newLoadHandle);
@@ -3405,9 +3423,8 @@ Tcl_LoadFile(
      * avoids any worries about leaving the copy laying around on exit.
      */
 
-    if (
-	!TclSkipUnlink (copyToPtr) &&
-	(Tcl_FSDeleteFile(copyToPtr) == TCL_OK)) {
+    if (!TclSkipUnlink(copyToPtr) &&
+	    (Tcl_FSDeleteFile(copyToPtr) == TCL_OK)) {
 	Tcl_DecrRefCount(copyToPtr);
 
 	/*
@@ -3418,7 +3435,9 @@ Tcl_LoadFile(
 	 */
 
 	*handlePtr = newLoadHandle;
-	Tcl_ResetResult(interp);
+	if (interp) {
+	    Tcl_ResetResult(interp);
+	}
 	return TCL_OK;
     }
 
@@ -3479,7 +3498,9 @@ Tcl_LoadFile(
     divertedLoadHandle->unloadFileProcPtr = DivertUnloadFile;
     *handlePtr = divertedLoadHandle;
 
-    Tcl_ResetResult(interp);
+    if (interp) {
+	Tcl_ResetResult(interp);
+    }
     return retVal;
 
   resolveSymbols:
@@ -4102,7 +4123,7 @@ TclGetPathType(
 				 * caller. */
 {
     int pathLen;
-    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+    const char *path = TclGetStringFromObj(pathPtr, &pathLen);
     Tcl_PathType type;
 
     type = TclFSNonnativePathType(path, pathLen, filesystemPtrPtr,
@@ -4214,7 +4235,7 @@ TclFSNonnativePathType(
 
 		    numVolumes--;
 		    Tcl_ListObjIndex(NULL, thisFsVolumes, numVolumes, &vol);
-		    strVol = Tcl_GetStringFromObj(vol,&len);
+		    strVol = TclGetStringFromObj(vol,&len);
 		    if (pathLen < len) {
 			continue;
 		    }
@@ -4561,8 +4582,8 @@ Tcl_FSRemoveDirectory(
 	    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 
 	    if (normPath != NULL) {
-		normPathStr = Tcl_GetStringFromObj(normPath, &normLen);
-		cwdStr = Tcl_GetStringFromObj(cwdPtr, &cwdLen);
+		normPathStr = TclGetStringFromObj(normPath, &normLen);
+		cwdStr = TclGetStringFromObj(cwdPtr, &cwdLen);
 		if ((cwdLen >= normLen) && (strncmp(normPathStr, cwdStr,
 			(size_t) normLen) == 0)) {
 		    /*
