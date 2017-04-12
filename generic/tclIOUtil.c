@@ -57,7 +57,7 @@ typedef struct FilesystemRecord {
  * this information each time the corresponding epoch counter changes.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     int initialized;
     size_t cwdPathEpoch;
     size_t filesystemEpoch;
