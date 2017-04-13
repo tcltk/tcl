@@ -8721,19 +8721,44 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2016-10-30 (bug)[1ae129] Fix memleak in [history] destruction (fellows)
 
-2016-11-04 (feature) Provision Tcl 9 support in msgcat and tcltest (nijtmans)
+2016-11-04 (feature) Provisional Tcl 9 support in msgcat and tcltest (nijtmans)
 => msgcat 1.6.1
 => tcltest 2.4.1
 
+2016-11-04 (bug)[824752] Crash in Tcl_ListObjReplace() (gahr,porter)
 
+2016-11-11 (bug)[79614f] invalidate VFS mounts on sytem encoding change (yorick)
 
+2016-11-14 OSX: End panic() as legacy support macro; system conflicts (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
 
+2016-11-15 (bug) TclOO fix stops crash mixing Itcl and snit (fellows)
 
+2016-11-17 (update) Reconcile libtommath updates; purge unused files (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
 
+2017-01-09 (bug)[b87ad7] Repair drifts in timer clock (sebres)
 
+2017-01-17 (update) => zlib 1.2.11 (nijtmans)
 
+2017-01-31 (bug)[39f630] Revise Tcl_LinkVar to tolerate some prefixes (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
 
+2017-02-01 (bug)[d0f7ba] Improper NAN optimization. expr-22.1[01] (aspect)
 
+2017-02-26 (bug)[25842c] zlib stream finalization (aspect)
 
+2017-03-07 (deprecate) Remove unmaintained makefile.bc file (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
 
---- Released 8.6.7, March 31, 2016 --- http://core.tcl.tk/tcl/ for details
+2017-03-14 (enhancement) [clock] and [encoding] are now ensembles (kenny)
+
+2017-03-15 (enhancement) several [clock] subcommands bytecoded (kenny)
+
+2017-03-23 tzdata updated to Olson's tzdata2017b (jima)
+
+2017-03-29 (bug)[900cb0] Fix OO unexport introspection (napier)
+
+2017-04-12 (bug)[42202b] Nesting imbalance in coro injection (nadkarni,sebres)
+
+--- Released 8.6.7, April 30, 2016 --- http://core.tcl.tk/tcl/ for details
