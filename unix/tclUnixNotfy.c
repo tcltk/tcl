@@ -153,8 +153,8 @@ static int triggerPipe = -1;
  * The notifierMutex locks access to all of the global notifier state.
  */
 
-pthread_mutex_t notifierInitMutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t notifierMutex     = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t notifierInitMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t notifierMutex     = PTHREAD_MUTEX_INITIALIZER;
 /*
  * The following static indicates if the notifier thread is running.
  *
@@ -196,7 +196,7 @@ static Tcl_ThreadId notifierThread;
  */
 
 #ifdef TCL_THREADS
-static void	NotifierThreadProc(ClientData clientData);
+static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
 #if defined(HAVE_PTHREAD_ATFORK)
 static int	atForkInit = 0;
 static void	AtForkChild(void);
@@ -1172,7 +1172,7 @@ Tcl_WaitForEvent(
  *----------------------------------------------------------------------
  */
 
-static void
+static TCL_NORETURN void
 NotifierThreadProc(
     ClientData clientData)	/* Not used. */
 {

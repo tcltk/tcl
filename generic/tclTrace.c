@@ -52,7 +52,7 @@ typedef struct {
 				 * invoked step trace */
     int curFlags;		/* Trace flags for the current command */
     int curCode;		/* Return code for the current command */
-    int refCount;		/* Used to ensure this structure is not
+    size_t refCount;		/* Used to ensure this structure is not
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
@@ -2819,6 +2819,7 @@ DisposeTraceResult(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_UntraceVar
 void
 Tcl_UntraceVar(
@@ -2834,6 +2835,7 @@ Tcl_UntraceVar(
 {
     Tcl_UntraceVar2(interp, varName, NULL, flags, proc, clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2988,6 +2990,7 @@ Tcl_UntraceVar2(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_VarTraceInfo
 ClientData
 Tcl_VarTraceInfo(
@@ -3005,6 +3008,7 @@ Tcl_VarTraceInfo(
     return Tcl_VarTraceInfo2(interp, varName, NULL, flags, proc,
 	    prevClientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -3097,6 +3101,7 @@ Tcl_VarTraceInfo2(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_TraceVar
 int
 Tcl_TraceVar(
@@ -3114,6 +3119,7 @@ Tcl_TraceVar(
 {
     return Tcl_TraceVar2(interp, varName, NULL, flags, proc, clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

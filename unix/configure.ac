@@ -182,7 +182,6 @@ SC_CONFIG_CFLAGS
 
 SC_ENABLE_SYMBOLS(bccdebug)
 
-AC_DEFINE(TCL_TOMMATH, 1, [Build libtommath?])
 AC_DEFINE(MP_PREC, 4, [Default libtommath precision.])
 
 #--------------------------------------------------------------------

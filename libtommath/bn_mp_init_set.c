@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_INIT_SET_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /* initialize and set a digit */
@@ -26,3 +26,7 @@ int mp_init_set (mp_int * a, mp_digit b)
   return err;
 }
 #endif
+
+/* $Source$ */
+/* $Revision$ */
+/* $Date$ */

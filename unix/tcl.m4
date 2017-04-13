@@ -1096,7 +1096,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     CFLAGS_DEBUG=-g
     AS_IF([test "$GCC" = yes], [
 	CFLAGS_OPTIMIZE=-O2
-	CFLAGS_WARNING="-Wall -Wsign-compare -Wdeclaration-after-statement"
+	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement"
     ], [
 	CFLAGS_OPTIMIZE=-O
 	CFLAGS_WARNING=""
@@ -2709,7 +2709,7 @@ AC_DEFUN([SC_TCL_CFG_ENCODING], [
 #	advancedTest - the advanced test to run if the function is present
 #
 # Results:
-#	Might cause compatability versions of the function to be used.
+#	Might cause compatibility versions of the function to be used.
 #	Might affect the following vars:
 #		USE_COMPAT	(implicit)
 #

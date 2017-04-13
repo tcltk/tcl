@@ -12,6 +12,7 @@
 package \- Facilities for package loading and version control
 .SH SYNOPSIS
 .nf
+\fBpackage files\fR \fIpackage\fR
 \fBpackage forget\fR ?\fIpackage package ...\fR?
 \fBpackage ifneeded \fIpackage version\fR ?\fIscript\fR?
 \fBpackage names\fR
@@ -42,6 +43,13 @@ primarily by system scripts that maintain the package database.
 .PP
 The behavior of the \fBpackage\fR command is determined by its first argument.
 The following forms are permitted:
+.TP
+\fBpackage files\fR \fIpackage\fR
+.
+Lists all files forming part of \fIpackage\fR. Auto-loaded files are not
+included in this list, only files which were directly sourced during package
+initialization. The list order corresponds with the order in which the
+files were sourced.
 .TP
 \fBpackage forget\fR ?\fIpackage package ...\fR?
 .

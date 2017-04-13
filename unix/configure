@@ -5038,7 +5038,7 @@ fi
     if test "$GCC" = yes; then :
 
 	CFLAGS_OPTIMIZE=-O2
-	CFLAGS_WARNING="-Wall -Wsign-compare -Wdeclaration-after-statement"
+	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement"
 
 else
 
@@ -6908,9 +6908,6 @@ $as_echo "enabled $tcl_ok debugging" >&6; }
 	fi
     fi
 
-
-
-$as_echo "#define TCL_TOMMATH 1" >>confdefs.h
 
 
 $as_echo "#define MP_PREC 4" >>confdefs.h

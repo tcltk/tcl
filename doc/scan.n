@@ -123,9 +123,7 @@ with conversion character \fBu\fR.
 .TP
 \fBi\fR
 .
-The input substring must be an integer.  The base (i.e. decimal, binary,
-octal, or hexadecimal) is determined in the same fashion as described in
-\fBexpr\fR.  The integer value is stored in the variable,
+The input substring must be an integer.  The base (i.e. decimal, octal, or hexadecimal) is determined by the C convention (leading 0 for octal; prefix 0x for hexadecimal).  The integer value is stored in the variable,
 truncated as required by the size modifier value.
 .TP
 \fBc\fR
