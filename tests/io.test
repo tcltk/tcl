@@ -5652,8 +5652,8 @@ test io-40.3 {POSIX open access modes: CREAT} {unix umask} {
     set f [open $path(test3) {WRONLY CREAT}]
     close $f
     file stat $path(test3) stats
-    format "0%o" [expr $stats(mode)&0o777]
-} [format %04o [expr {0o666 & ~ $umaskValue}]]
+    format "%#o" [expr $stats(mode)&0o777]
+} [format %#5o [expr {0o666 & ~ $umaskValue}]]
 test io-40.4 {POSIX open access modes: CREAT} {
     file delete $path(test3)
     set f [open $path(test3) w]
