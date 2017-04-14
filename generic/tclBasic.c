@@ -8787,7 +8787,7 @@ TclNREvalList(
     int objc;
     Tcl_Obj **objv;
     Tcl_Obj *listPtr = data[0];
-   
+
     Tcl_IncrRefCount(listPtr);
 
     TclMarkTailcall(interp);

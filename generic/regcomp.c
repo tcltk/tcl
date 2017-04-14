@@ -2086,7 +2086,7 @@ dump(
     }
 
     fprintf(f, "\n\n\n========= DUMP ==========\n");
-    fprintf(f, "nsub %d, info 0%lo, csize %d, ntree %d\n",
+    fprintf(f, "nsub %d, info 0o%lo, csize %d, ntree %d\n",
 	    (int) re->re_nsub, re->re_info, re->re_csize, g->ntree);
 
     dumpcolors(&g->cmap, f);
