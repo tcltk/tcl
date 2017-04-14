@@ -77,8 +77,8 @@ test format-1.11.1 {integer formatting} longIs64bit {
     format "%-#5o %-#20o %#-20o %#-20o %#-20o" 0 6 34 16923 -12 -1
 } {0     0o6                  0o42                 0o41033              0o1777777777777777777764}
 test format-1.12 {integer formatting} {
-    format "%b %#b %llb" 5 5 [expr {2**100}]
-} {101 0b101 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}
+    format "%b %#b %#b %llb" 5 0 5 [expr {2**100}]
+} {101 0 0b101 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}
 
 test format-2.1 {string formatting} {
     format "%s %s %c %s" abcd {This is a very long test string.} 120 x
@@ -379,11 +379,11 @@ test format-8.25 {Undocumented formats} -constraints pointerIs64bit -body {
 # therefore they are not documented. It's intended use is through the
 # function Tcl_AppendPrintfToObj (et al).
 test format-8.26 {Undocumented formats} -body {
-    format "%p %p %#x" 0 [expr 2**31] [expr 2**31]
-} -result {0x0 0x80000000 0x80000000}
+    format "%p %#x" [expr 2**31] [expr 2**31]
+} -result {0x80000000 0x80000000}
 test format-8.27 {Undocumented formats} -constraints pointerIs64bit -body {
-    format "%p %p %#llx" 0 [expr 2**33] [expr 2**33]
-} -result {0x0 0x200000000 0x200000000}
+    format "%p %#llx" [expr 2**33] [expr 2**33]
+} -result {0x200000000 0x200000000}
 
 test format-9.1 {long result} {
     set a {1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ 1 2 3 4 5 6 7 8 9 0 a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
@@ -549,9 +549,9 @@ test format-17.3 {testing %ld with non-wide} {wideIs64bit} {
 test format-17.4 {testing %l with non-integer} {
     format %lf 1
 } 1.000000
-test format-17.5 {testing %llu with bignum} {
+test format-17.5 {testing %llu with positive bignum} -body {
     format %llu 0xabcdef0123456789abcdef
-} 207698809136909011942886895
+} -result 207698809136909011942886895
 test format-17.6 {testing %llu with negative number} -body {
     format %llu -1
 } -returnCodes 1 -result {unsigned bignum format is invalid}
