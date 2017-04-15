@@ -191,7 +191,12 @@ enum {
 
 typedef struct Tcl_ArraySearch_ ArraySearch;
 struct Tcl_ArraySearch_ {
-    Tcl_Obj *name;		/* Name of this search */
+    Tcl_Obj *name;		/* Name of this search. NULL if this search was
+				 * created by Tcl_ArraySearchStart() rather than
+				 * the [array startsearch] command. This is done
+				 * to prevent C-initiated searches from being
+				 * accessed via Tcl commands since they have
+				 * different memory management semantics. */
     int id;			/* Integer id used to distinguish among
 				 * multiple concurrent searches for the same
 				 * array. */
@@ -1522,7 +1527,9 @@ void
 ArraySearchFree(
     ArraySearch *searchPtr)	/* Array enumeration state structure. */
 {
-    Tcl_DecrRefCount(searchPtr->name);
+    if (searchPtr->name) {
+	Tcl_DecrRefCount(searchPtr->name);
+    }
     Tcl_DecrRefCount(searchPtr->varNameObj);
     if (searchPtr->filterObj) {
 	Tcl_DecrRefCount(searchPtr->filterObj);
@@ -2351,18 +2358,19 @@ Tcl_ArraySearchStart(
 	return NULL;
     }
 
+    search.nextEntry = ArrayFirst(interp, &search, &fail);
+    if (!search.nextEntry && fail) {
+	return NULL;
+    }
+    search.name = NULL;
     search.varNameObj = part1Ptr;
     search.varPtr = varPtr;
     search.filterObj = part2Ptr;
     search.filterType = flags & TCL_MATCH;
-    search.nextEntry = ArrayFirst(interp, &search, &fail);
     search.flags = KEEP_ON_ABORT;
-    if (!search.nextEntry && fail) {
-	return NULL;
-    }
 
     /*
-     * Make a new array search with a free name.
+     * Make a new array search.
      */
 
     hPtr = Tcl_CreateHashEntry(&iPtr->varSearches, varPtr, &isNew);
@@ -2374,8 +2382,6 @@ Tcl_ArraySearchStart(
 	search.id = ((ArraySearch *)Tcl_GetHashValue(hPtr))->id + 1;
 	search.nextPtr = Tcl_GetHashValue(hPtr);
     }
-    search.name = Tcl_ObjPrintf("s-%d-%s", search.id, TclGetString(part1Ptr));
-    Tcl_IncrRefCount(search.name);
     Tcl_IncrRefCount(search.varNameObj);
     if (part2Ptr) {
 	Tcl_IncrRefCount(part2Ptr);
@@ -4255,7 +4261,7 @@ ArrayStartSearchCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Obj *varNameObj, *filterObj;
+    Tcl_Obj *varNameObj, *filterObj, *tokenObj;
     ArraySearch *searchPtr;
     int filterType;
 
@@ -4270,6 +4276,15 @@ ArrayStartSearchCmd(
     }
 
     /*
+     * Give the search a name so it can be looked up by other array commands.
+     */
+
+    tokenObj = Tcl_ObjPrintf("s-%d-%s", searchPtr->id,
+	    TclGetString(varNameObj));
+    searchPtr->name = tokenObj;
+    Tcl_IncrRefCount(tokenObj);
+
+    /*
      * Clear the KEEP_ON_ABORT flag which was set by Tcl_ArraySearchStart() so
      * the search structure will automatically be deallocated should the search
      * terminate early due to array elements being added or removed or the array
@@ -4278,7 +4293,7 @@ ArrayStartSearchCmd(
 
     searchPtr->flags = 0;
 
-    Tcl_SetObjResult(interp, searchPtr->name);
+    Tcl_SetObjResult(interp, tokenObj);
     return TCL_OK;
 }
 
@@ -5656,7 +5671,8 @@ ParseSearchId(
 	/* Fallback: do string compares. */
 	for (searchPtr = Tcl_GetHashValue(hPtr); searchPtr != NULL;
 		searchPtr = searchPtr->nextPtr) {
-	    if (strcmp(TclGetString(searchPtr->name), handle) == 0) {
+	    if (searchPtr->name
+		    && strcmp(TclGetString(searchPtr->name), handle) == 0) {
 		return searchPtr;
 	    }
 	}
