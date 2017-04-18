@@ -2,19 +2,19 @@
 namespace eval ::tcl::clock {
     ::msgcat::mcset fo DAYS_OF_WEEK_ABBREV [list \
         "sun"\
-        "m\u00e1n"\
-        "t\u00fds"\
+        "mán"\
+        "týs"\
         "mik"\
-        "h\u00f3s"\
-        "fr\u00ed"\
+        "hós"\
+        "frí"\
         "ley"]
     ::msgcat::mcset fo DAYS_OF_WEEK_FULL [list \
         "sunnudagur"\
-        "m\u00e1nadagur"\
-        "t\u00fdsdagur"\
+        "mánadagur"\
+        "týsdagur"\
         "mikudagur"\
-        "h\u00f3sdagur"\
-        "fr\u00edggjadagur"\
+        "hósdagur"\
+        "fríggjadagur"\
         "leygardagur"]
     ::msgcat::mcset fo MONTHS_ABBREV [list \
         "jan"\
@@ -34,7 +34,7 @@ namespace eval ::tcl::clock {
         "januar"\
         "februar"\
         "mars"\
-        "apr\u00edl"\
+        "apríl"\
         "mai"\
         "juni"\
         "juli"\
