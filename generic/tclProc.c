@@ -38,9 +38,6 @@ static int		InitArgsAndLocals(Tcl_Interp *interp,
 static int		InitArgsWithOptions(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj, Tcl_Obj *const *argObjs,
 			    int numArgs);
-static int		InitArgWithUpvarSpec(Tcl_Interp *interp,
-			    Var *varArrayPtr, CompiledLocal *localPtr,
-			    ExtendedArgSpec *argSpecPtr, Tcl_Obj *objPtr);
 static void		InitResolvedLocals(Tcl_Interp *interp,
 			    ByteCode *codePtr, Var *defPtr,
 			    Namespace *nsPtr);
@@ -56,7 +53,8 @@ static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		ProcParseArgSpec(Tcl_Interp *interp,
 			    const char *argSpec, int argIdx, int isLastArg,
 			    CompiledLocal **localPtrPtr,
-			    CompiledLocal **lastLocalPtrPtr);
+			    CompiledLocal **lastLocalPtrPtr,
+			    Tcl_HashTable **namedHashPtrPtr);
 static inline int	ProcCheckScalarArg(const char *arg, const char **err);
 static void		ProcCompiledLocalsFree(CompiledLocal *localPtr);
 
@@ -406,12 +404,14 @@ TclCreateProc(
 {
     Interp *iPtr = (Interp *) interp;
     const char **argArray = NULL;
+
     register Proc *procPtr;
     int i, length, result, numArgs;
     const char *args, *bytes;
     register CompiledLocal *localPtr = NULL;
     CompiledLocal *newLocalPtr, *lastLocalPtr;
     int precompiled = 0, numLocalsDiff = 0;
+    Tcl_HashTable *hPtr = NULL;
 
     if (bodyPtr->typePtr == &tclProcBodyType) {
 	/*
@@ -514,7 +514,7 @@ TclCreateProc(
     for (i = 0; i < numArgs; i++) {
 
 	result = ProcParseArgSpec(interp, argArray[i], i + numLocalsDiff,
-		(i == numArgs - 1), &newLocalPtr, &lastLocalPtr);
+		(i == numArgs - 1), &newLocalPtr, &lastLocalPtr, &hPtr);
 	if (result != TCL_OK) {
 	    goto procError;
 	}
@@ -552,19 +552,14 @@ TclCreateProc(
 
 	    argSpec1 = TclProcGetArgSpec(interp, localPtr, 0);
 	    argSpec2 = TclProcGetArgSpec(interp, newLocalPtr, 0);
-	    if ((argSpec1 == NULL) || (argSpec2 == NULL)
-		    || (strcmp(Tcl_GetString(argSpec1), Tcl_GetString(argSpec2)) != 0)) {
+	    if (strcmp(Tcl_GetString(argSpec1), Tcl_GetString(argSpec2)) != 0) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"procedure \"%s\": formal parameter \"%s\" has "
 			"argument spec inconsistent with precompiled body",
 			procName, newLocalPtr->name));
 		ProcCompiledLocalsFree(newLocalPtr);
-		if (argSpec1 != NULL) {
-		    Tcl_DecrRefCount(argSpec1);
-		}
-		if (argSpec2 != NULL) {
-		    Tcl_DecrRefCount(argSpec2);
-		}
+		Tcl_DecrRefCount(argSpec1);
+		Tcl_DecrRefCount(argSpec2);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 			"BYTECODELIES", NULL);
 		goto procError;
@@ -579,7 +574,7 @@ TclCreateProc(
 
 	    if (newLocalPtr != lastLocalPtr) {
 		/* adjust numArgs/numCompiledLocals if ProcParseArgSpec
-		 * has created additional locals for upvar name.
+		 * has created additional locals for varname.
 		 */
 		int diff = lastLocalPtr->frameIndex - newLocalPtr->frameIndex;
 		numLocalsDiff += diff;
@@ -595,7 +590,7 @@ TclCreateProc(
 	} else {
 	    if (newLocalPtr != lastLocalPtr) {
 		/* adjust numArgs/numCompiledLocals if ProcParseArgSpec
-		 * has created additional locals for upvar name.
+		 * has created additional locals for varname.
 		 */
 		int diff = lastLocalPtr->frameIndex - newLocalPtr->frameIndex;
 		procPtr->numArgs += diff;
@@ -611,7 +606,7 @@ TclCreateProc(
 		procPtr->lastLocalPtr = lastLocalPtr;
 	    }
 
-	    if (newLocalPtr->argSpecPtr != NULL) {
+	    if (TclIsVarWithExtArgs(newLocalPtr)) {
 		procPtr->flags |= PROC_HAS_EXT_ARG_SPEC;
 	    }
 	}
@@ -687,21 +682,127 @@ ProcCheckScalarArg(
 /*
  *----------------------------------------------------------------------
  *
+ * ProcAddNamedGroupEntry --
+ *
+ *	Create a NamedGroupEntry for a specific CompiledLocal object.
+ *	NamedGroupEntry are created for each name defined using -name
+ *	or -switch argument specifier. In the later case, a value is
+ *	also associated with the name.
+ *	A Tcl_HashTable object is shared between all contiguous named
+ *	parameters, it is created when parsing the first entry.
+ *
+ * Results:
+ *	Returns TCL_OK on success and TCL_ERROR if anything goes wrong.
+ *
+ * Side effects:
+ *	If anything goes wrong, this function returns an error message in the
+ *	interpreter. On success, memory is allocated and linked into the
+ *	ExtendedArgSpec structure. A Tcl_HashTable is allocated when
+ *	parsing the first entry of a named group entry.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ProcAddNamedGroupEntry(
+    Tcl_Interp *interp,		/* Interpreter containing proc. */
+    CompiledLocal *localPtr,	/* Related CompiledLocal */
+    const char *argName,	/* Name string to add */
+    Tcl_Obj *valuePtr,		/* Value to add when related to a -switch
+				 * argspec (NULL for -name argspec) */
+    Tcl_HashTable **namedHashPtrPtr)
+				/* Shared Tcl_HashTable created on the first
+				 * named parameter entry to speedup lookups
+				 * of named parameters. */
+{
+    NamedGroupEntry *entryPtr;
+    ExtendedArgSpec *argSpecPtr = localPtr->argSpecPtr;
+    int length = strlen(argName), isNew;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashTable *namedHashPtr;
+
+    /*
+     * Check that the name is not empty, does not contain a space or has
+     * not already been added.
+     */
+
+    if (length == 0) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "named argument with no name", -1));
+	return TCL_ERROR;
+    } else if (strchr(argName, ' ') != NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "named argument \"%s\" with unexpected space character",
+	    argName));
+	return TCL_ERROR;
+    } else if ((*namedHashPtrPtr != NULL)
+	    && (Tcl_FindHashEntry(*namedHashPtrPtr, argName) != NULL)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "named argument \"%s\" has been used more than once "
+	    "in the same named group", argName));
+	return TCL_ERROR;
+    }
+
+    entryPtr = ckalloc(TclOffset(NamedGroupEntry, name) + length+1);
+    entryPtr->nextPtr = NULL;
+    entryPtr->nameLength = length;
+    entryPtr->localIndex = localPtr->frameIndex;
+    entryPtr->localPtr = localPtr;
+    entryPtr->valuePtr = valuePtr;
+    memcpy(entryPtr->name, argName, length+1);
+    if (entryPtr->valuePtr != NULL) {
+	Tcl_IncrRefCount(entryPtr->valuePtr);
+    }
+
+    if (argSpecPtr->firstNamedEntryPtr == NULL) {
+	argSpecPtr->firstNamedEntryPtr = entryPtr;
+    } else {
+	argSpecPtr->lastNamedEntryPtr->nextPtr = entryPtr;
+    }
+    argSpecPtr->lastNamedEntryPtr = entryPtr;
+
+    /* Either use existing hash table or create a new one */
+
+    if (*namedHashPtrPtr != NULL) {
+	namedHashPtr = *namedHashPtrPtr;
+    }
+    else {
+	namedHashPtr = ckalloc(sizeof(Tcl_HashTable));
+	Tcl_InitHashTable(namedHashPtr, TCL_STRING_KEYS);
+
+	argSpecPtr->namedHashTable = namedHashPtr;
+	*namedHashPtrPtr = namedHashPtr;
+    }
+
+    hPtr = Tcl_CreateHashEntry(namedHashPtr, argName, &isNew);
+    Tcl_SetHashValue(hPtr, entryPtr);
+
+    localPtr->flags |= VAR_NAMED_GROUP;
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ProcParseArgSpec --
  *
  *	Given an argument specification defined either using old-style
  *	(arg ?default?) or extended argument specification (TIP#457),
  *	create and initialize the related CompiledLocal entry, including
- *	any required additional entries (for '-upvar name').
+ *	any required additional entries (for '-varname name').
  *
  * Results:
  *	Returns TCL_OK on success, along with a pointer to the created
  *	CompiledLocal entry and a pointer to the last CompiledLocal entry.
+ *	A Tcl_HashTable object is shared between all contiguous named
+ *	parameters, it is created when parsing the first entry.
  *	Returns TCL_ERROR and set an error if the argument specification
  *	is not valid.
  *
  * Side effects:
- *	CompiledLocal and ExtendedArgSpec entries are allocated.
+ *	CompiledLocal and related entries are allocated. A Tcl_HashTable
+ *	is allocated when parsing the first entry of a named group entry.
  *
  *----------------------------------------------------------------------
  */
@@ -716,16 +817,22 @@ ProcParseArgSpec(
     CompiledLocal **localPtrPtr,
 				/* On success, store the created CompiledLocal
 				 * here. */
-    CompiledLocal **lastLocalPtrPtr)
+    CompiledLocal **lastLocalPtrPtr,
 				/* On sucess, store the pointer to the last
 				 * created CompiledLocal here. */
+    Tcl_HashTable **namedHashPtrPtr)
+				/* Shared Tcl_HashTable created on the first
+				 * named parameter entry to speedup lookups
+				 * of named parameters. */
 {
-    CompiledLocal *localPtr = NULL, *upLocalPtr, *lastLocalPtr = NULL;
-    ExtendedArgSpec *argSpecPtr, *lastArgSpecPtr = NULL;
+    CompiledLocal *localPtr = NULL, *varNamePtr = NULL;
+    ExtendedArgSpec *argSpecPtr;
     const char **fieldValues = NULL;
-    int fieldCount, length, df=0;
+    int fieldCount, length;
     const char *err;
-    int result, i;
+    Tcl_Obj *boolObj;
+    int required = -1, hasSwitch = 0;
+    int result, i, j, boolVal;
 
     /*
      * Divide the argument specifier into a list.
@@ -738,12 +845,12 @@ ProcParseArgSpec(
 
     if ((fieldCount > 2) && (fieldCount % 2 != 1)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unexpected fields number in argument specifier \"%s\"",
-		argSpec));
+	    "unexpected fields number in argument specifier \"%s\"",
+	    argSpec));
 	goto parseError;
     } else if ((fieldCount == 0) || (*fieldValues[0] == 0)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"argument with no name", -1));
+	    "argument with no name", -1));
 	goto parseError;
     }
 
@@ -753,7 +860,7 @@ ProcParseArgSpec(
 
     if (ProcCheckScalarArg(fieldValues[0], &err) != TCL_OK) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"formal parameter \"%s\" %s", fieldValues[0], err));
+	    "formal parameter \"%s\" %s", fieldValues[0], err));
 	goto parseError;
     }
 
@@ -767,7 +874,6 @@ ProcParseArgSpec(
     localPtr->resolveInfo = NULL;
     localPtr->argSpecPtr = NULL;
     memcpy(localPtr->name, fieldValues[0], length+1);
-    lastLocalPtr = localPtr;
 
     if ((isLastArg != 0)
 	    && (localPtr->nameLength == 4)
@@ -785,7 +891,8 @@ ProcParseArgSpec(
 	}
 
 	*localPtrPtr = localPtr;
-	*lastLocalPtrPtr = lastLocalPtr;
+	*lastLocalPtrPtr = localPtr;
+	*namedHashPtrPtr = NULL;
 	ckfree(fieldValues);
 	return TCL_OK;
     }
@@ -794,165 +901,254 @@ ProcParseArgSpec(
      * Check and handle each extended argument specification.
      */
 
+    argSpecPtr = ckalloc(sizeof(ExtendedArgSpec));
+    argSpecPtr->firstNamedEntryPtr = NULL;
+    argSpecPtr->lastNamedEntryPtr = NULL;
+    argSpecPtr->varnameIndex = -1;
+    argSpecPtr->namedHashTable = NULL;
+    localPtr->argSpecPtr = argSpecPtr;
+
     for (i = 1 ; i < fieldCount ; i += 2) {
 	length = strlen(fieldValues[i]);
 
 	if (*fieldValues[i] != '-') {
+
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "unknown argument option \"%s\" or "
-		    "too many fields in argument specifier \"%s\"",
-		    fieldValues[i], argSpec));
+		"unknown argument option \"%s\" or "
+		"too many fields in argument specifier \"%s\"",
+		fieldValues[i], argSpec));
 	    goto parseError;
+
 	} else if ((length == 8)
-		&& (fieldValues[i][1] == 'd')
 		&& (strcmp(fieldValues[i], "-default") == 0)) {
 
 	    /*
-	     * Handle '-default value'. Must only be specified before
-	     * a name group.
+	     * Handle '-default <value>', keep value in localPtr->defValuePtr.
 	     */
 
-	    if (localPtr->flags & VAR_NAMED_GROUP) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"-default is not allowed after -name", -1));
-		goto parseError;
-	    }
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_DecrRefCount(localPtr->defValuePtr);
 	    }
-	    localPtr->defValuePtr =
-		    Tcl_NewStringObj(fieldValues[i+1], -1);
+	    localPtr->defValuePtr = Tcl_NewStringObj(fieldValues[i+1], -1);
 	    Tcl_IncrRefCount(localPtr->defValuePtr);
+
 	} else if ((length == 5)
-		&& (fieldValues[i][1] == 'n')
 		&& (strcmp(fieldValues[i], "-name") == 0)) {
 
 	    /*
-	     * Handle '-name name'. This create a name group if not
+	     * Handle '-name name', this create a name group if not
 	     * already created.
 	     */
 
-	    if ((localPtr->argSpecPtr != NULL)
-		    && (localPtr->argSpecPtr->nameLength == 0)
-		    && (localPtr->argSpecPtr->flags & VAR_UPVAR_ARG)) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"-upvar is not allowed before first -name", -1));
+	    int nameCount;
+	    const char **nameValues;
+
+	    result = Tcl_SplitList(interp, fieldValues[i+1], &nameCount,
+		    &nameValues);
+	    if (result != TCL_OK) {
 		goto parseError;
 	    }
 
-	    length = strlen(fieldValues[i+1]);
-	    argSpecPtr = ckalloc(TclOffset(ExtendedArgSpec, name) + length+1);
-	    argSpecPtr->nextPtr = NULL;
-	    argSpecPtr->flags = 0;
-	    argSpecPtr->localIndex = argIdx;
-	    argSpecPtr->valuePtr = NULL;
-	    argSpecPtr->upvarNameIndex = -1;
-	    argSpecPtr->nameLength = length;
-	    memcpy(argSpecPtr->name, fieldValues[i+1], length+1);
-	    if (lastArgSpecPtr == NULL) {
-		localPtr->argSpecPtr = argSpecPtr;
-	    } else {
-		lastArgSpecPtr->nextPtr = argSpecPtr;
+	    for (j = 0; j < nameCount; j++) {
+		result = ProcAddNamedGroupEntry(interp, localPtr,
+		    nameValues[j], NULL, namedHashPtrPtr);
+		if (result != TCL_OK) {
+		    ckfree(nameValues);
+		    goto parseError;
+		}
 	    }
 
-	    lastArgSpecPtr = argSpecPtr;
-	    localPtr->flags |= VAR_NAMED_GROUP;
-	} else if ((length == 6)
-		&& (fieldValues[i][1] == 'v')
-		&& (strcmp(fieldValues[i], "-value") == 0)) {
+	    ckfree(nameValues);
+
+	} else if ((length == 7)
+		&& (strcmp(fieldValues[i], "-switch") == 0)) {
 
 	    /*
-	     * Handle '-value value'. Must only be specified inside
-	     * a name group.
+	     * Handle '-switch switch', this create a name group (with a value)
+	     * if not already created.
 	     */
 
-	    if (lastArgSpecPtr == NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"-name required for -value", -1));
+	    int swCount, swEntCount;
+	    const char **swValues, **swEntValues;
+
+	    result = Tcl_SplitList(interp, fieldValues[i+1], &swCount,
+		&swValues);
+	    if (result != TCL_OK) {
 		goto parseError;
 	    }
-	    if (lastArgSpecPtr->flags & VAR_UPVAR_ARG) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"-upvar and -value are not allowed together", -1));
-		goto parseError;
+
+	    for (j = 0; j < swCount; j++) {
+		result = Tcl_SplitList(interp, swValues[j], &swEntCount,
+		    &swEntValues);
+		if (result != TCL_OK) {
+		    ckfree(swValues);
+		    goto parseError;
+		}
+
+		if (swEntCount == 1) {
+		    /* one field, use switch name as value */
+		    result = ProcAddNamedGroupEntry(interp, localPtr,
+			swEntValues[0], Tcl_NewStringObj(swEntValues[0], -1),
+			namedHashPtrPtr);
+		} else if (swEntCount == 2) {
+		    /* two fields, use second one as value */
+		    result = ProcAddNamedGroupEntry(interp, localPtr,
+			swEntValues[0], Tcl_NewStringObj(swEntValues[1], -1),
+			namedHashPtrPtr);
+		} else {
+		    /* invalid number of fields */
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"incorrect switch value \"%s\"", swValues[j]));
+		    result = TCL_ERROR;
+		}
+		ckfree(swEntValues);
+
+		if (result != TCL_OK) {
+		    ckfree(swValues);
+		    goto parseError;
+		}
 	    }
-	    if (lastArgSpecPtr->valuePtr != NULL) {
-		Tcl_DecrRefCount(lastArgSpecPtr->valuePtr);
-	    }
-	    lastArgSpecPtr->valuePtr =
-		    Tcl_NewStringObj(fieldValues[i+1], -1);
-	    Tcl_IncrRefCount(lastArgSpecPtr->valuePtr);
+
+	    hasSwitch = 1;
+	    ckfree(swValues);
+
 	} else if ((length == 6)
-		&& (fieldValues[i][1] == 'u')
 		&& (strcmp(fieldValues[i], "-upvar") == 0)) {
 
 	    /*
-	     * Handle '-upvar arg'. Can be created without or inside
-	     * a name group. When created without a name group, an
-	     * unnamed ExtentedArgSpec entry will be created. If 'arg'
-	     * is not empty, a new CompiledLocal entry will also be
-	     * created to later store the original variable name.
+	     * Handle '-upvar bool', set or unset VAR_ARG_UPVAR flag.
 	     */
 
-	    if (lastArgSpecPtr == NULL) {
-		argSpecPtr = ckalloc(TclOffset(ExtendedArgSpec, name) + 1);
-		argSpecPtr->nextPtr = NULL;
-		argSpecPtr->flags = VAR_UPVAR_ARG;
-		argSpecPtr->localIndex = argIdx;
-		argSpecPtr->valuePtr = NULL;
-		argSpecPtr->upvarNameIndex = -1;
-		argSpecPtr->nameLength = 0;
-		argSpecPtr->name[0] = '\0';
-		localPtr->argSpecPtr = argSpecPtr;
-		lastArgSpecPtr = argSpecPtr;
+	    boolObj = Tcl_NewStringObj(fieldValues[i+1], -1);
+	    Tcl_IncrRefCount(boolObj);
+	    result = Tcl_GetBooleanFromObj(NULL, boolObj, &boolVal);
+	    TclDecrRefCount(boolObj);
+
+	    if (result != TCL_OK) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Invalid boolean \"%s\" for -upvar arg specifier",
+		    fieldValues[i+1]));
+		goto parseError;
+	    } else if (boolVal) {
+		localPtr->flags |= VAR_ARG_UPVAR;
 	    } else {
-		if (lastArgSpecPtr->flags & VAR_UPVAR_ARG) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "-upvar has already been set", -1));
-		    goto parseError;
-		}
-		if (lastArgSpecPtr->valuePtr != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "-upvar and -value are not allowed together", -1));
-		    goto parseError;
-		}
-		lastArgSpecPtr->flags |= VAR_UPVAR_ARG;
+		localPtr->flags &= VAR_ARG_UPVAR;
 	    }
 
+	} else if ((length == 8)
+		&& (strcmp(fieldValues[i], "-varname") == 0)) {
+
+	    /*
+	     * Handle '-varname name', create variable, set varnameIndex
+	     */
+
+	    const char *err;
 	    length = strlen(fieldValues[i+1]);
-	    if (length > 0) {
-		const char *err;
-		if (ProcCheckScalarArg(fieldValues[i+1], &err) != TCL_OK) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "upvar parameter \"%s\" %s", fieldValues[i+1],
-			    err));
-		    goto parseError;
-		}
-
-		upLocalPtr = ckalloc(TclOffset(CompiledLocal, name) + length+1);
-		upLocalPtr->nextPtr = NULL;
-		upLocalPtr->nameLength = length;
-		upLocalPtr->frameIndex = argIdx + (++df);
-		upLocalPtr->flags = VAR_UPVAR_NAME;
-		upLocalPtr->defValuePtr = NULL;
-		upLocalPtr->resolveInfo = NULL;
-		upLocalPtr->argSpecPtr = NULL;
-		memcpy(upLocalPtr->name, fieldValues[i+1], length + 1);
-		lastLocalPtr->nextPtr = upLocalPtr;
-		lastLocalPtr = upLocalPtr;
-		lastArgSpecPtr->upvarNameIndex = upLocalPtr->frameIndex;
+	    if (length == 0) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "varname argument with no name", -1));
+		goto parseError;
+	    } else if (ProcCheckScalarArg(fieldValues[i+1], &err) != TCL_OK) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "varname parameter \"%s\" %s", fieldValues[i+1], err));
+		goto parseError;
+	    } else if (varNamePtr != NULL) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "varname already set", -1));
+		goto parseError;
 	    }
+
+	    varNamePtr = ckalloc(TclOffset(CompiledLocal, name) + length+1);
+	    varNamePtr->nextPtr = NULL;
+	    varNamePtr->nameLength = length;
+	    varNamePtr->frameIndex = argIdx + 1;
+	    varNamePtr->flags = VAR_ARG_IS_VARNAME;
+	    varNamePtr->defValuePtr = NULL;
+	    varNamePtr->resolveInfo = NULL;
+	    varNamePtr->argSpecPtr = NULL;
+	    memcpy(varNamePtr->name, fieldValues[i+1], length + 1);
+	    argSpecPtr->varnameIndex = varNamePtr->frameIndex;
+	    localPtr->flags |= VAR_ARG_HAS_VARNAME;
+	    localPtr->nextPtr = varNamePtr;
+
+	} else if ((length == 9)
+		&& (strcmp(fieldValues[i], "-required") == 0)) {
+
+	    /*
+	     * Handle '-required bool', set required var which will be used
+	     * to set VAR_ARG_OPTIONAL flag depending on the other specifiers.
+	     */
+
+	    boolObj = Tcl_NewStringObj(fieldValues[i+1], -1);
+	    Tcl_IncrRefCount(boolObj);
+	    result = Tcl_GetBooleanFromObj(NULL, boolObj, &boolVal);
+	    TclDecrRefCount(boolObj);
+
+	    if (result != TCL_OK) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Invalid boolean \"%s\" for -required arg specifier",
+		    fieldValues[i+1]));
+		goto parseError;
+	    } else if (boolVal) {
+		required = 1;
+	    } else {
+		required = 0;
+	    }
+
 	} else {
+
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "unknown argument option \"%s\" or "
-		    "too many fields in argument specifier \"%s\"",
-		    fieldValues[i], argSpec));
+		"unknown argument option \"%s\" or "
+		"too many fields in argument specifier \"%s\"",
+		fieldValues[i], argSpec));
+	    goto parseError;
+
+	}
+    }
+
+    if (hasSwitch) {
+	if (localPtr->flags & VAR_ARG_UPVAR) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"-upvar can't be used with -switch", -1));
+	    goto parseError;
+	}
+	if (localPtr->flags & VAR_ARG_HAS_VARNAME) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"-varname can't be used with -switch", -1));
 	    goto parseError;
 	}
     }
 
+    if (varNamePtr != NULL) {
+	/* Argument created to handle '-varname arg' specifier must have
+	 * the VAR_NAMED_GROUP flag when the related argument is part of
+	 * a named group. This is required when searching the end of the
+	 * named group. */
+	if (localPtr->flags & VAR_NAMED_GROUP) {
+	    varNamePtr->flags |= VAR_NAMED_GROUP;
+	}
+    }
+
+    if ((required == 1) && (localPtr->defValuePtr)) {
+	/* '-required 1' explicitely set, remove the default value to
+	 * enforce the requirement. */
+	Tcl_DecrRefCount(localPtr->defValuePtr);
+	localPtr->defValuePtr = NULL;
+    } else if ((required == 0)
+	    || ((required == -1) && (localPtr->flags & VAR_NAMED_GROUP))) {
+	/* Variable is optional if '-required 0' has been explicitely set,
+	 * or if is part of a named group and no '-requirement' specifier
+	 * has been used. */
+	localPtr->flags |= VAR_ARG_OPTIONAL;
+    }
+
+    if ((*namedHashPtrPtr != NULL) && !(localPtr->flags & VAR_NAMED_GROUP)) {
+	/* Not part of a named group anymore, unset current named hash table */
+	*namedHashPtrPtr = NULL;
+    }
+
     *localPtrPtr = localPtr;
-    *lastLocalPtrPtr = lastLocalPtr;
+    *lastLocalPtrPtr = (varNamePtr != NULL) ? varNamePtr : localPtr;
     ckfree(fieldValues);
     return TCL_OK;
 
@@ -964,7 +1160,7 @@ parseError:
 	ckfree(fieldValues);
     }
     Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-	    "FORMALARGUMENTFORMAT", NULL);
+	"FORMALARGUMENTFORMAT", NULL);
     return TCL_ERROR;
 }
 
@@ -1384,40 +1580,43 @@ ProcWrongNumArgs(
 		continue;
 	    } else  if (localPtr->flags & VAR_IS_ARGS) {
 		argObj = Tcl_NewStringObj("?arg ...?", -1);
-	    } else if (localPtr->argSpecPtr != NULL) {
-		ExtendedArgSpec *argSpecPtr;
-		int hasNames = 0;
+	    } else if ((localPtr->argSpecPtr != NULL)
+		    && (localPtr->argSpecPtr->firstNamedEntryPtr != NULL)) {
+		NamedGroupEntry *namedGroupPtr;
 		TclNewObj(argObj);
-		for (argSpecPtr = localPtr->argSpecPtr;
-			argSpecPtr != NULL;
-			argSpecPtr = argSpecPtr->nextPtr) {
-		    if (argSpecPtr->nameLength > 0) {
-			Tcl_AppendStringsToObj(argObj, "|-", argSpecPtr->name,
-				NULL);
-			hasNames = 1;
-		    }
-		    if (argSpecPtr->flags & VAR_UPVAR_ARG) {
+		for (namedGroupPtr = localPtr->argSpecPtr->firstNamedEntryPtr;
+			namedGroupPtr != NULL;
+			namedGroupPtr = namedGroupPtr->nextPtr) {
+		    Tcl_AppendStringsToObj(argObj, "|-", namedGroupPtr->name,
+			NULL);
+		    if (localPtr->flags & VAR_ARG_UPVAR) {
 			Tcl_AppendStringsToObj(argObj,
-				Tcl_GetString(argObj)[0] ? " &" : "&",
-				localPtr->name, "&", NULL);
-		    } else if (argSpecPtr->valuePtr == NULL) {
+			    " &", localPtr->name, "&", NULL);
+		    } else if (namedGroupPtr->valuePtr == NULL) {
 			Tcl_AppendStringsToObj(argObj, " ", localPtr->name,
-				NULL);
+			    NULL);
 		    }
 		}
-		if (hasNames) {
-		    Tcl_AppendStringsToObj(argObj, "|", NULL);
-		}
+		Tcl_AppendStringsToObj(argObj, "|", NULL);
 	    } else {
-		argObj = Tcl_NewStringObj(localPtr->name, localPtr->nameLength);
+		if (localPtr->flags & VAR_ARG_UPVAR) {
+		    TclNewObj(argObj);
+		    Tcl_AppendStringsToObj(argObj,
+			"&", localPtr->name, "&", NULL);
+		} else {
+		    argObj = Tcl_NewStringObj(localPtr->name,
+			localPtr->nameLength);
+		}
 	    }
 
-	    Tcl_AppendStringsToObj(finalObj,
-		    first ? "" : " ",
-		    (localPtr->defValuePtr != NULL) ? "?" : "",
-		    Tcl_GetString(argObj),
-		    (localPtr->defValuePtr != NULL) ? "?" : "",
-		    NULL);
+	    if ((localPtr->defValuePtr != NULL)
+		    || (localPtr->flags & VAR_ARG_OPTIONAL)) {
+		Tcl_AppendStringsToObj(finalObj, first ? "?" : " ?",
+		    Tcl_GetString(argObj), "?", NULL);
+	    } else {
+		Tcl_AppendStringsToObj(finalObj, first ? "" : " ",
+		    Tcl_GetString(argObj), NULL);
+	    }
 	    first = 0;
 	    Tcl_DecrRefCount(argObj);
 	}
@@ -1430,7 +1629,7 @@ ProcWrongNumArgs(
 	    if (defPtr->value.objPtr != NULL) {
 		TclNewObj(argObj);
 		Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr),
-			"?", NULL);
+		    "?", NULL);
 	    } else if (defPtr->flags & VAR_IS_ARGS) {
 		numArgs--;
 		final = "?arg ...?";
@@ -1911,11 +2110,11 @@ InitArgsWithOptions(
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     register Proc *procPtr = framePtr->procPtr;
-    register Var *varPtr = framePtr->compiledLocals;
+    register Var *varPtr = framePtr->compiledLocals, *localVarPtr;
     int numArgs = procPtr->numArgs, iLocal, iArg;
     Tcl_Obj *objPtr;
-    CompiledLocal *localPtr, *namedLocalPtr;
-    ExtendedArgSpec *argSpecPtr;
+    CompiledLocal *localPtr;
+    NamedGroupEntry *namedGroupPtr;
     int optLength, result;
     const char *optStr;
 
@@ -1923,8 +2122,10 @@ InitArgsWithOptions(
 	    iLocal < numArgs;
 	    iLocal++, localPtr = localPtr->nextPtr) {
 	if (!TclIsVarArgument(localPtr)) {
-	    /* most probably the name of an upvar argument */
+
+	    /* most probably a local allocated for -varname */
 	    continue;
+
 	} else if (localPtr->flags & VAR_IS_ARGS) {
 
 	    /*
@@ -1935,6 +2136,7 @@ InitArgsWithOptions(
 	    varPtr[iLocal].value.objPtr = objPtr;
 	    Tcl_IncrRefCount(objPtr);
 	    iArg = argCt;  /* all arguments have been handled */
+
 	} else if (localPtr->flags & VAR_NAMED_GROUP) {
 
 	    /*
@@ -1942,6 +2144,14 @@ InitArgsWithOptions(
 	     */
 
 	    for (; iArg < argCt; iArg++) {
+
+		if ((argObjs[iArg]->typePtr == &tclListType)
+			&& (ListRepPtr(argObjs[iArg])->elemCount > 1)) {
+		    /* multiple-elements list, end named group before getting
+		     * string representation. */
+		    break;
+		}
+
 		optStr = TclGetString(argObjs[iArg]);
 
 		if (*optStr != '-') {
@@ -1959,88 +2169,78 @@ InitArgsWithOptions(
 		}
 
 		/*
-		 * Find referenced argument using names from all arguments
-		 * in the named group.
+		 * Find the referenced argument using the hash table
+		 * created with the first name of the named group.
 		 */
 
-		for (argSpecPtr = NULL, namedLocalPtr = localPtr;
-			(namedLocalPtr != NULL);
-			namedLocalPtr = namedLocalPtr->nextPtr) {
-		    if (!(namedLocalPtr->flags & VAR_NAMED_GROUP)) {
-			/*
-			 * Loop over all arguments within the same named group
-			 * but handle any VAR_UPVAR_NAME argument that may be
-			 * present.
-			 */
-			if (namedLocalPtr->flags & VAR_UPVAR_NAME) {
-			    continue;
-			}
-			break;
-		    }
-
-		    for (argSpecPtr = namedLocalPtr->argSpecPtr;
-			    argSpecPtr;
-			    argSpecPtr = argSpecPtr->nextPtr) {
-			if ((optLength == argSpecPtr->nameLength) &&
-				strcmp(optStr, argSpecPtr->name) == 0) {
-			    break;
-			}
-		    }
-		    if (argSpecPtr != NULL) {
-			break;
+		namedGroupPtr = NULL;
+		if (localPtr->argSpecPtr->namedHashTable != NULL) {
+		    Tcl_HashEntry *hPtr;
+		    hPtr = Tcl_FindHashEntry(
+			localPtr->argSpecPtr->namedHashTable, optStr);
+		    if (hPtr != NULL) {
+			namedGroupPtr = Tcl_GetHashValue(hPtr);
 		    }
 		}
 
-		if (argSpecPtr == NULL) {
-		    return TCL_ERROR;
-		} else if (argSpecPtr->valuePtr) {
-		    objPtr = argSpecPtr->valuePtr;
+		if (namedGroupPtr == NULL) {
+		    return TCL_ERROR;  /* not found */
+		} else if (namedGroupPtr->valuePtr) {
+		    objPtr = namedGroupPtr->valuePtr;
 		} else if (iArg+1 < argCt) {
 		    objPtr = argObjs[++iArg];
-		    if (argSpecPtr->flags & VAR_UPVAR_ARG) {
-			result = InitArgWithUpvarSpec(interp, varPtr,
-				localPtr, argSpecPtr, objPtr);
-			if (result != TCL_OK) {
-			    return result;
-			}
-			continue;
+		} else {
+		    return TCL_ERROR;  /* not enough input args */
+		}
+
+		if (namedGroupPtr->localPtr->flags & VAR_ARG_UPVAR) {
+		    result = TclUpvarForExtArg(interp, objPtr,
+			namedGroupPtr->localPtr->name);
+		    if (result != TCL_OK) {
+			return result;
 		    }
 		} else {
-		    return TCL_ERROR;
+		    localVarPtr = &(varPtr[namedGroupPtr->localIndex]);
+		    if (localVarPtr->value.objPtr != NULL) {
+			Tcl_DecrRefCount(localVarPtr->value.objPtr);
+		    }
+
+		    localVarPtr->value.objPtr = objPtr;
+		    Tcl_IncrRefCount(objPtr);
 		}
 
-		if (varPtr[argSpecPtr->localIndex].value.objPtr != NULL) {
-		    Tcl_DecrRefCount(varPtr[argSpecPtr->localIndex].value.objPtr);
+		if (namedGroupPtr->localPtr->flags & VAR_ARG_HAS_VARNAME) {
+		    localVarPtr = &(varPtr[namedGroupPtr->localPtr->argSpecPtr->varnameIndex]);
+		    if (localVarPtr->value.objPtr != NULL) {
+			Tcl_DecrRefCount(localVarPtr->value.objPtr);
+		    }
+		    localVarPtr->value.objPtr = objPtr;
+		    Tcl_IncrRefCount(objPtr);
 		}
-
-		varPtr[argSpecPtr->localIndex].value.objPtr = objPtr;
-		Tcl_IncrRefCount(objPtr);
 	    }
 
 	    /*
 	     * Ensure that all variables in the named group have been
-	     * set or have a default value. localPtr is set to the last
-	     * argument of the named group so that the loop will continue
-	     * with the next argument. iLocal is updated in the same way.
-	     * A special attention is made on any related upvar name
-	     * (VAR_UPVAR_NAME) inside the named group.
+	     * set, have a default value or are optionals. localPtr is set
+	     * to the last argument of the named group so that the loop
+	     * will continue with the next argument. iLocal is updated in
+	     * the same way.
 	     */
 
 	    for (; ; localPtr=localPtr->nextPtr, iLocal++) {
-		if (!varPtr[iLocal].value.objPtr
-			&& !(localPtr->flags & VAR_UPVAR_NAME)) {
+		if (!varPtr[iLocal].value.objPtr) {
 		    if (localPtr->defValuePtr) {
 			objPtr = localPtr->defValuePtr;
 			varPtr[iLocal].value.objPtr = objPtr;
 			Tcl_IncrRefCount(objPtr);
-		    } else {
+		    } else if (!(localPtr->flags & VAR_ARG_OPTIONAL)) {
 			return TCL_ERROR;
 		    }
 		}
 
 		/* stop on the last argument of the named group */
 		if ((localPtr->nextPtr == NULL)
-			|| !(localPtr->nextPtr->flags & (VAR_NAMED_GROUP|VAR_UPVAR_NAME))) {
+			|| !(localPtr->nextPtr->flags & (VAR_NAMED_GROUP))) {
 		    break;
 		}
 	    }
@@ -2051,10 +2251,8 @@ InitArgsWithOptions(
 	     */
 
 	    objPtr = argObjs[iArg++];
-	    if ((localPtr->argSpecPtr != NULL)
-		    && (localPtr->argSpecPtr->flags & VAR_UPVAR_ARG)) {
-		result = InitArgWithUpvarSpec(interp, varPtr, localPtr,
-			argSpecPtr, objPtr);
+	    if (localPtr->flags & VAR_ARG_UPVAR) {
+		result = TclUpvarForExtArg(interp, objPtr, localPtr->name);
 		if (result != TCL_OK) {
 		    return result;
 		}
@@ -2062,6 +2260,16 @@ InitArgsWithOptions(
 		varPtr[iLocal].value.objPtr = objPtr;
 		Tcl_IncrRefCount(objPtr);
 	    }
+
+	    if (localPtr->flags & VAR_ARG_HAS_VARNAME) {
+		localVarPtr = &(varPtr[localPtr->argSpecPtr->varnameIndex]);
+		if (localVarPtr->value.objPtr != NULL) {
+		    Tcl_DecrRefCount(localVarPtr->value.objPtr);
+		}
+		localVarPtr->value.objPtr = objPtr;
+		Tcl_IncrRefCount(objPtr);
+	    }
+
 	} else if (localPtr->defValuePtr) {
 
 	    /*
@@ -2071,10 +2279,11 @@ InitArgsWithOptions(
 	    objPtr = localPtr->defValuePtr;
 	    varPtr[iLocal].value.objPtr = objPtr;
 	    Tcl_IncrRefCount(objPtr);
-	} else {
+
+	} else if (!(localPtr->flags & VAR_ARG_OPTIONAL)) {
 
 	    /*
-	     * No more input arguments, no default value.
+	     * No more input arguments, no default value, not optional.
 	     */
 
 	    return TCL_ERROR;
@@ -2088,62 +2297,6 @@ InitArgsWithOptions(
 	 */
 
 	return TCL_ERROR;
-    }
-
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InitArgsWithUpvarSpec --
- *
- *	This routine is invoked in order to initialize an argument
- *	defined with the '-upvar arg' argument specification.
- *	The link variable is initialized with the input argument
- *	and the input argument name is stored in a dedicated variable
- *	if it is available (upvarNameIndex >= 0).
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	Variables inside the array of local variables may be initialized
- *	with an object.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-InitArgWithUpvarSpec(
-    Tcl_Interp *interp,		/* Interpreter in which procedure was
-				 * invoked. */
-    Var *varArrayPtr,		/* array of local variables */
-    CompiledLocal *localPtr,	/* related variable */
-    ExtendedArgSpec *argSpecPtr,
-				/* related argument specification */
-    Tcl_Obj *objPtr)		/* input object */
-{
-    register Var *varPtr = &(varArrayPtr[localPtr->frameIndex]);
-    int result;
-
-    if (varPtr->value.objPtr != NULL) {
-	Tcl_DecrRefCount(varPtr->value.objPtr);
-	varPtr->value.objPtr = NULL;
-    }
-
-    result = Tcl_UpVar(interp, "1", TclGetString(objPtr), localPtr->name, 0);
-    if (result != TCL_OK) {
-	return result;
-    }
-
-    if (localPtr->argSpecPtr->upvarNameIndex >= 0) {
-	Var *varNamePtr = &(varArrayPtr[localPtr->argSpecPtr->upvarNameIndex]);
-	if (varNamePtr->value.objPtr) {
-	    Tcl_DecrRefCount(varNamePtr->value.objPtr);
-	}
-	varNamePtr->value.objPtr = objPtr;
-	Tcl_IncrRefCount(objPtr);
     }
 
     return TCL_OK;
@@ -2174,72 +2327,109 @@ TclProcGetArgSpec(
     CompiledLocal *localPtr,
     int flags)
 {
-    Tcl_Obj *listObjPtr;
-    ExtendedArgSpec *argSpecPtr;
+    Tcl_Obj *listObjPtr, *nameListPtr = NULL, *switchListPtr = NULL;
+    NamedGroupEntry *ngPtr;
 
     listObjPtr = Tcl_NewListObj(0, NULL);
 
     if (flags & TCL_GETARGSPEC_WITH_NAME) {
 	Tcl_ListObjAppendElement(interp, listObjPtr,
-		Tcl_NewStringObj(localPtr->name, localPtr->nameLength));
+	    Tcl_NewStringObj(localPtr->name, localPtr->nameLength));
 
     }
 
     if ((flags & TCL_GETARGSPEC_TRY_OLDSTYLE)
-	    && (localPtr->argSpecPtr == NULL)) {
+	    && (!TclIsVarWithExtArgs(localPtr))) {
 	if (localPtr->defValuePtr != NULL) {
 	    Tcl_ListObjAppendElement(interp, listObjPtr,
-		    localPtr->defValuePtr);
+		localPtr->defValuePtr);
 	}
 	return listObjPtr;
     }
 
     if (localPtr->defValuePtr != NULL) {
 	Tcl_ListObjAppendElement(interp, listObjPtr,
-		Tcl_NewStringObj("-default", -1));
+	    Tcl_NewStringObj("-default", -1));
 	Tcl_ListObjAppendElement(interp, listObjPtr,
-		localPtr->defValuePtr);
+	    localPtr->defValuePtr);
     }
 
-    for (argSpecPtr = localPtr->argSpecPtr;
-	    argSpecPtr != NULL;
-	    argSpecPtr = argSpecPtr->nextPtr) {
+    if ((localPtr->flags & VAR_NAMED_GROUP)
+	    && !(localPtr->flags & VAR_ARG_OPTIONAL)) {
+	Tcl_ListObjAppendElement(interp, listObjPtr,
+	    Tcl_NewStringObj("-required", -1));
+	Tcl_ListObjAppendElement(interp, listObjPtr,
+	    Tcl_NewBooleanObj(1));
+    } else if (!(localPtr->flags & VAR_NAMED_GROUP)
+	    && (localPtr->flags & VAR_ARG_OPTIONAL)) {
+	Tcl_ListObjAppendElement(interp, listObjPtr,
+	    Tcl_NewStringObj("-required", -1));
+	Tcl_ListObjAppendElement(interp, listObjPtr,
+	    Tcl_NewBooleanObj(0));
+    }
 
-	if (argSpecPtr->nameLength > 0) {
-	    Tcl_ListObjAppendElement(interp, listObjPtr,
-		    Tcl_NewStringObj("-name", -1));
-	    Tcl_ListObjAppendElement(interp, listObjPtr,
-		    Tcl_NewStringObj(argSpecPtr->name, argSpecPtr->nameLength));
-	}
+    if (localPtr->flags & VAR_ARG_UPVAR) {
+	Tcl_ListObjAppendElement(interp, listObjPtr,
+	    Tcl_NewStringObj("-upvar", -1));
+	Tcl_ListObjAppendElement(interp, listObjPtr,
+	    Tcl_NewBooleanObj(1));
+    }
 
-	if (argSpecPtr->flags & VAR_UPVAR_ARG) {
-	    CompiledLocal *upLocal = NULL;
-
-	    Tcl_ListObjAppendElement(interp, listObjPtr,
-		    Tcl_NewStringObj("-upvar", -1));
-
-	    if (argSpecPtr->upvarNameIndex >= 0) {
-		upLocal = localPtr->nextPtr;
-		while ((upLocal != NULL)
-			&& (upLocal->frameIndex != argSpecPtr->upvarNameIndex)) {
-		    upLocal = upLocal->nextPtr;
+    if ((localPtr->argSpecPtr != NULL)
+	&& (localPtr->argSpecPtr->firstNamedEntryPtr != NULL)) {
+	for (ngPtr = localPtr->argSpecPtr->firstNamedEntryPtr;
+		ngPtr != NULL;
+		ngPtr = ngPtr->nextPtr) {
+	    Tcl_Obj *objArray[2] = {
+		Tcl_NewStringObj(ngPtr->name, ngPtr->nameLength),
+		ngPtr->valuePtr
+	    };
+	    if (objArray[1] == NULL) {
+		if (nameListPtr == NULL) {
+		    nameListPtr = Tcl_NewListObj(0, NULL);
 		}
-	    }
-
-	    if (upLocal != NULL) {
-		Tcl_ListObjAppendElement(interp, listObjPtr,
-			Tcl_NewStringObj(upLocal->name, upLocal->nameLength));
+		Tcl_ListObjAppendElement(interp, nameListPtr, objArray[0]);
+	    } else if ((objArray[0]->length == objArray[1]->length)
+		    && (strcmp(Tcl_GetString(objArray[0]), Tcl_GetString(objArray[1])) == 0)) {
+		if (switchListPtr == NULL) {
+		    switchListPtr = Tcl_NewListObj(0, NULL);
+		}
+		Tcl_ListObjAppendElement(interp, switchListPtr, objArray[0]);
 	    } else {
-		Tcl_ListObjAppendElement(interp, listObjPtr,
-			Tcl_NewListObj(0, NULL));
+		if (switchListPtr == NULL) {
+		    switchListPtr = Tcl_NewListObj(0, NULL);
+		}
+		Tcl_ListObjAppendElement(interp, switchListPtr,
+		    Tcl_NewListObj(2, objArray));
 	    }
 	}
+    }
 
-	if (argSpecPtr->valuePtr != NULL) {
+    if (nameListPtr != NULL) {
+	Tcl_ListObjAppendElement(interp, listObjPtr,
+	    Tcl_NewStringObj("-name", -1));
+	Tcl_ListObjAppendElement(interp, listObjPtr, nameListPtr);
+    }
+
+    if (switchListPtr != NULL) {
+	Tcl_ListObjAppendElement(interp, listObjPtr,
+	    Tcl_NewStringObj("-switch", -1));
+	Tcl_ListObjAppendElement(interp, listObjPtr, switchListPtr);
+    }
+
+    if ((localPtr->argSpecPtr != NULL)
+	    && (localPtr->argSpecPtr->varnameIndex >= 0)) {
+	CompiledLocal *upLocal = localPtr->nextPtr;
+	while ((upLocal != NULL)
+		&& (upLocal->frameIndex != localPtr->argSpecPtr->varnameIndex)) {
+	    upLocal = upLocal->nextPtr;
+	}
+
+	if (upLocal != NULL) {
 	    Tcl_ListObjAppendElement(interp, listObjPtr,
-		    Tcl_NewStringObj("-value", -1));
+		Tcl_NewStringObj("-varname", -1));
 	    Tcl_ListObjAppendElement(interp, listObjPtr,
-		    argSpecPtr->valuePtr);
+		Tcl_NewStringObj(upLocal->name, upLocal->nameLength));
 	}
     }
 
@@ -2891,7 +3081,7 @@ TclProcCleanupProc(
  * ProcCompiledLocalsFree --
  *
  *	This function does all the real work of freeing up a CompiledLocal
- *      linked list.
+ *	linked list.
  *
  * Results:
  *	None.
@@ -2908,7 +3098,7 @@ ProcCompiledLocalsFree(
 {
     CompiledLocal *nextLocalPtr = localPtr;
     Tcl_ResolvedVarInfo *resVarInfo;
-    ExtendedArgSpec *argSpecPtr;
+    NamedGroupEntry *entryPtr, *nextEntryPtr;
 
     while (nextLocalPtr != NULL) {
 	localPtr = nextLocalPtr;
@@ -2927,15 +3117,21 @@ ProcCompiledLocalsFree(
 	    Tcl_DecrRefCount(localPtr->defValuePtr);
 	}
 
-	while (localPtr->argSpecPtr != NULL) {
-	    argSpecPtr = localPtr->argSpecPtr;
-	    localPtr->argSpecPtr = argSpecPtr->nextPtr;
+	if (localPtr->argSpecPtr != NULL) {
+	    entryPtr = localPtr->argSpecPtr->firstNamedEntryPtr;
 
-	    if (argSpecPtr->valuePtr != NULL) {
-		Tcl_DecrRefCount(argSpecPtr->valuePtr);
+	    while (entryPtr != NULL) {
+		nextEntryPtr = entryPtr->nextPtr;
+
+		if (entryPtr->valuePtr) {
+		    Tcl_DecrRefCount(entryPtr->valuePtr);
+		}
+
+		ckfree(entryPtr);
+		entryPtr = nextEntryPtr;
 	    }
 
-	    ckfree(argSpecPtr);
+	    ckfree(localPtr->argSpecPtr);
 	}
 
 	ckfree(localPtr);

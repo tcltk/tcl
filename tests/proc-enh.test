@@ -14,218 +14,283 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 testConstraint procbodytest [expr {![catch {package require procbodytest}]}]
 
-test proc-enh-1.1 {default option} {
+# proc-enh-1.x: error while parsing argspec
+test proc-enh-1.1 {argspec parsing error: unexpected fields number} {
+    list [catch {
+	proc p {{a -default 1 -name}} {}
+    } msg] $msg $errorCode
+} {1 {unexpected fields number in argument specifier "a -default 1 -name"} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.2 {argspec parsing error: argument with no name} {
+    list [catch {
+	proc p {{}} {}
+    } msg] $msg $errorCode
+} {1 {argument with no name} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.3 {argspec parsing error: formal parameter is an array elt} {
+    list [catch {
+	proc p {a(1)} {}
+    } msg] $msg $errorCode
+} {1 {formal parameter "a(1)" is an array element} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.4 {argspec parsing error: formal parameter is not a simple name} {
+    list [catch {
+	proc p {a::b} {}
+    } msg] $msg $errorCode
+} {1 {formal parameter "a::b" is not a simple name} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.5 {argspec parsing error: unknown option} {
+    list [catch {
+	proc p {{a -foo 1}} {}
+    } msg] $msg $errorCode
+} {1 {unknown argument option "-foo" or too many fields in argument specifier "a -foo 1"} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.5b {argspec parsing error: unknown option} {
+    list [catch {
+	proc p {{a foo 1}} {}
+    } msg] $msg $errorCode
+} {1 {unknown argument option "foo" or too many fields in argument specifier "a foo 1"} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.6 {argspec parsing error: empty named argument} {
+    list [catch {
+	proc p {{a -name {""}}} {}
+    } msg] $msg $errorCode
+} {1 {named argument with no name} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.7 {argspec parsing error: named argument with space} {
+    list [catch {
+	proc p {{a -name {"a b"}}} {}
+    } msg] $msg $errorCode
+} {1 {named argument "a b" with unexpected space character} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.8 {argspec parsing error: empty named argument (switch)} {
+    list [catch {
+	proc p {{a -switch {a {}}}} {}
+    } msg] $msg $errorCode
+} {1 {incorrect switch value ""} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.9 {argspec parsing error: named argument with space (switch)} {
+    list [catch {
+	proc p {{a -switch {a {"a b" 3}}}} {}
+    } msg] $msg $errorCode
+} {1 {named argument "a b" with unexpected space character} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.10 {argspec parsing error: two many fields in switch} {
+    list [catch {
+	proc p {{a -switch {{a b c}}}} {}
+    } msg] $msg $errorCode
+} {1 {incorrect switch value "a b c"} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.11 {argspec parsing error: upvar with no boolean} {
+    list [catch {
+	proc p {{a -upvar foo}} {}
+    } msg] $msg $errorCode
+} {1 {Invalid boolean "foo" for -upvar arg specifier} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.12 {argspec parsing error: varname argument with no name} {
+    list [catch {
+	proc p {{a -varname {}}} {}
+    } msg] $msg $errorCode
+} {1 {varname argument with no name} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.13 {argspec parsing error: varname parameter is an array elt} {
+    list [catch {
+	proc p {{a -varname a(1)}} {}
+    } msg] $msg $errorCode
+} {1 {varname parameter "a(1)" is an array element} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.14 {argspec parsing error: varname is not a simple name} {
+    list [catch {
+	proc p {{a -varname a::b}} {}
+    } msg] $msg $errorCode
+} {1 {varname parameter "a::b" is not a simple name} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.15 {argspec parsing error: varname set twice} {
+    list [catch {
+	proc p {{a -varname up1 -varname up2}} {}
+    } msg] $msg $errorCode
+} {1 {varname already set} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.16 {argspec parsing error: required with no boolean} {
+    list [catch {
+	proc p {{a -required foo}} {}
+    } msg] $msg $errorCode
+} {1 {Invalid boolean "foo" for -required arg specifier} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.16 {argspec parsing error: same arg name used twice} {
+    list [catch {
+	proc p {{a -name A} {b -name B} {a2 -name A}} {}
+    } msg] $msg $errorCode
+} {1 {named argument "A" has been used more than once in the same named group} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.17 {argspec parsing error: -upvar with -switch} {
+    list [catch {
+	proc p {{a -switch A -upvar 1}} {}
+    } msg] $msg $errorCode
+} {1 {-upvar can't be used with -switch} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+test proc-enh-1.18 {argspec parsing error: -varname with -switch} {
+    list [catch {
+	proc p {{a -switch A -varname va}} {}
+    } msg] $msg $errorCode
+} {1 {-varname can't be used with -switch} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
+
+# proc-enh-2.x: correct usage
+test proc-enh-2.1 {correct usage: -default} {
     proc p { { a -default 1 } } { list $a }
     list [p] [p 2]
 } {1 2}
-test proc-enh-1.3 {default option twice} {
-    proc p { { a -default 1 -default 2 } } { list $a }; p
+test proc-enh-2.2 {correct usage: -default set twice} {
+    proc p { { a -default 1 -default 2 } } { return $a }; p
 } {2}
-test proc-enh-1.4 {unknown option} {
-    list [catch {
-	proc p { { a -foo 1 } } { }
-    } msg] $msg $errorCode
-} {1 {unknown argument option "-foo" or too many fields in argument specifier " a -foo 1 "} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
-test proc-enh-1.5 {unexpected fields number} {
-    list [catch {
-	proc p { { a -default 1 -name } } { }
-    } msg] $msg $errorCode
-} {1 {unexpected fields number in argument specifier " a -default 1 -name "} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
-test proc-enh-1.6 {-value without -name} {
-    list [catch {
-	proc p { { a -default 0 -value 1 } } { }
-    } msg] $msg $errorCode
-} {1 {-name required for -value} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
-test proc-enh-1.7 {-value without -default} {
-    list [catch {
-	proc p { { a -name foo -value 1 } } { }
-	p
-    } msg] $msg $errorCode
-} {1 {wrong # args: should be "p |-foo|"} {TCL WRONGARGS}}
-test proc-enh-1.8 {switch test} {
-    proc p { { a -default 3 -name zero -value 0 -name ten -value 10 } } { list $a }
-    list [p] [p -zero] [p -ten]
-} {3 0 10}
-test proc-enh-1.9 {named arg test} {
-    proc p { { a -default 3 -name value } } { list $a }
-    list [p] [p -value 5]
-} {3 5}
-test proc-enh-1.9 {named arg test without value} {
-    proc p { { a -default 3 -name value } } { list $a }
-    list [catch {
-	p -value
-    } msg] $msg $errorCode
-} {1 {wrong # args: should be "p ?|-value a|?"} {TCL WRONGARGS}}
-test proc-enh-1.10 {multiple name test} {
-    proc p { { a -default 3 -name zero -value 0 -name ten -value 10 -name value } } { list $a }
-    list [p] [p -zero] [p -ten] [p -value 5]
-} {3 0 10 5}
-test proc-enh-1.10b {namearg group} {
-    proc p1 { { a -name a } { b -name b } { c 0 } } { list $a $b $c }
-    proc p2 { { a -default Z -name a } { b -name b } { c 0 } } { list $a $b $c }
-    list [p1 -a 1 -b 2] [p1 -b B -a A] [p2 -b Y] [p2 -b Z -- -5] [p2 -b B --] [p2 -b 1 6]
-} {{1 2 0} {A B 0} {Z Y 0} {Z Z -5} {Z B 0} {Z 1 6}}
-test proc-enh-1.10c {namearg group followed by a pos arg with leading dash} {
-    list [catch {
-	proc p { { a -default Z -name a } { b -name b } { c 0 } } { list $a $b $c }
-	list [p -b Z -5]
-    } msg] $msg $errorCode
-} {1 {wrong # args: should be "p ?|-a a|? |-b b| ?c?"} {TCL WRONGARGS}}
-test proc-enh-1.10d {namearg group followed by more options than allowed} {
-    list [catch {
-	proc p { { a -default Z -name a } b } { list $a $b $c }
-	list [p -- 5 6]
-    } msg] $msg $errorCode
-} {1 {wrong # args: should be "p ?|-a a|? b"} {TCL WRONGARGS}}
-test proc-enh-1.11 {upvar group} {
-    proc p { { a -upvar up1 } { b -name b -upvar up2 } } {
-	incr a; list $up1 $a $up2 $b
+test proc-enh-2.3 {correct usage: -name} {
+    proc p {{a -name A} {b -name {B0 B1}} {c -name C0 -name C1}} {
+	list $a $b $c
+    };
+    list [p -B0 5 -A 1 -C1 6] [p -C0 0 -B1 8 -A 2 -C0 3]
+} {{1 5 6} {2 8 3}}
+test proc-enh-2.4 {correct usage: -switch} {
+    proc p {{a -switch {A}} {b -switch {B0 {B1 b1}}} {c -switch {{C0 c0}} -switch C1}} {
+	list $a $b $c
+    };
+    list [p -B1 -C1 -A] [p -A -C0 -B0]
+} {{A b1 C1} {A B0 c0}}
+test proc-enh-2.5 {correct usage: -switch + -name} {
+    proc p {{v -name val -switch {{low 0} {high 9}}}} { return $v }
+    list [p -low] [p -val 5] [p -high]
+} {0 5 9}
+test proc-enh-2.6 {correct usage: -required} {
+    proc p {{a -required 0}} {
+	if {[info exists a]} { return $a } else { return unset }
+    };
+    list [p] [p 2]
+} {unset 2}
+test proc-enh-2.7 {correct usage: -required + -switch} {
+    proc p {{a -required 0 -switch dbg}} {
+	if {[info exists a]} { return $a } else { return unset }
+    };
+    list [p] [p -dbg]
+} {unset dbg}
+test proc-enh-2.8 {correct usage: -upvar} {
+    proc p {{a -upvar 1}} {
+	incr a; return $a
     }
-    set i 5; set j 42
-    list [p i -b j] [p j -b i]
-} {{i 6 j 42} {j 43 i 6}}
-test proc-enh-1.11b {upvar group} {
-    proc p { { a -upvar up1 } { b -name b -upvar up2 -name b2 } } {
-	incr a; list $up1 $a [if {[info exist up2]} {list $up2} {list ?}] $b
+    set i 5;
+    if [info exists j] { unset j }
+    list [p i] [p j] [list $i $j]
+} {6 1 {6 1}}
+test proc-enh-2.8 {correct usage: -upvar + -varname} {
+    proc p {{a -varname up -upvar 1}} {
+	incr a; list $up $a
     }
-    set i 5; set j 42
-    list [p i -b j] [p j -b2 i]
-} {{i 6 j 42} {j 43 ? i}}
-test proc-enh-1.12 {wrong num args with named arguments group} {
-    proc p { { a -name A -name U -upvar {} } { c -default 0 -name C -value 2 } } { }
-    list [catch {
-	p
-    } msg] $msg $errorCode
-} {1 {wrong # args: should be "p |-A a|-U &a&| ?|-C|?"} {TCL WRONGARGS}}
-test proc-enh-1.13 {wrong num args with upvar arg} {
-    proc p { { a -upvar up } } { }
-    list [catch {
-	p
-    } msg] $msg $errorCode
-} {1 {wrong # args: should be "p &a&"} {TCL WRONGARGS}}
-test proc-enh-1.14 {upvar arg: proc call with non-existing arg (read)} {
-    proc p { { a -upvar up } } { list $up $a }
-    if [info exists v] { unset v}
-    list [catch {
-	p v
-    } msg] $msg $errorCode
-} {1 {can't read "a": no such variable} {TCL READ VARNAME}}
-test proc-enh-1.14b {upvar arg: proc call with non-existing arg (name+read)} {
-    proc p { { a -name A -upvar up } } { list $up $a }
-    if [info exists v] { unset v}
-    list [catch {
-	p -A v
-    } msg] $msg $errorCode
-} {1 {can't read "a": no such variable} {TCL READ VARNAME}}
-test proc-enh-1.14c {upvar arg: proc call with non-existing arg (write)} {
-    proc p { { a -upvar up } } { set a ini }
-    if [info exists v] { unset v}
-    list [info exists v] [p v] [info exists v] $v
-} {0 ini 1 ini}
-test proc-enh-1.14d {upvar arg: proc call with non-existing arg (name+write)} {
-    proc p { { a -name A -upvar up } } { set a ini }
-    if [info exists v] { unset v}
-    list [info exists v] [p -A v] [info exists v] $v
-} {0 ini 1 ini}
-test proc-enh-1.15 {upvar before first name} {
-    list [catch {
-	proc p { { a -upvar {} -name A } } { }
-    } msg] $msg $errorCode
-} {1 {-upvar is not allowed before first -name} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
-test proc-enh-1.16 {both upvar and value are invalid} {
-    list [catch {
-	proc p { { a -name A -upvar {} -value 1 } } { }
-    } msg] $msg $errorCode
-} {1 {-upvar and -value are not allowed together} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
-test proc-enh-1.16b {both upvar and value are invalid} {
-    list [catch {
-	proc p { { a -name A -value 1 -upvar {} } } { }
-    } msg] $msg $errorCode
-} {1 {-upvar and -value are not allowed together} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
-test proc-enh-1.17 {-default after -name} {
-    list [catch {
-	proc p { { a -name A -default 1} } { }
-    } msg] $msg $errorCode
-} {1 {-default is not allowed after -name} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
-test proc-enh-1.18 {-upvar set twice} {
-    list [catch {
-	proc p { { a -upvar up1 -upvar up2 } } { }
-    } msg] $msg $errorCode
-} {1 {-upvar has already been set} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
-test proc-enh-1.18b {-upvar set twice} {
-    list [catch {
-	proc p { { a -name U -upvar up1 -upvar up2 } } { }
-    } msg] $msg $errorCode
-} {1 {-upvar has already been set} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
-test proc-enh-1.19 {-upvar with non scalar arg} {
-    list [catch {
-	proc p { { a -upvar a(1) } } { list $a(1) $a }
-    } msg] $msg $errorCode
-} {1 {upvar parameter "a(1)" is an array element} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
-test proc-enh-1.19b {-upvar with non scalar arg} {
-    list [catch {
-	proc p { { a -upvar b::c } } { list $b::c $a }
-    } msg] $msg $errorCode
-} {1 {upvar parameter "b::c" is not a simple name} {TCL OPERATION PROC FORMALARGUMENTFORMAT}}
-test proc-enh-1.20 {-upvar inside a named group (not last one)} {
-    proc p {{v -name var -upvar nm} {i -default 1 -name incr}} {
+    set i 5;
+    if [info exists j] { unset j }
+    list [p i] [p j] [list $i $j]
+} {{i 6} {j 1} {6 1}}
+test proc-enh-2.9 {correct usage: -upvar + -varname + -name} {
+    proc p {{a -varname up1 -upvar 1 -name A} {b -name B -upvar 1 -varname up2}} {
+	incr a; incr b; list $up1 $a $up2 $b
+    }
+    set i 5;
+    if [info exists j] { unset j }
+    list [p -B j -A i] [p -A j -B i] [list $i $j]
+} {{i 6 j 1} {j 2 i 7} {7 2}}
+test proc-enh-2.10 {correct usage: end of named group} {
+    proc p {{a -name A -default 0} {b -default 1 -name B} args} {
+	list $a $b $args
+    }
+    list [p foo] [p -B 3 -- -A 5]
+} {{0 1 foo} {0 3 {-A 5}}}
+test proc-enh-2.11 {correct usage: -upvar inside a named group (not last one)} {
+    proc p {{v -name var -upvar 1} {i -default 1 -name incr}} {
 	incr v $i
     }
     if [info exists i] {unset i}
     list [p -var i -incr 2] [p -incr 3 -var i] [p -var i]
 } {2 5 6}
-test proc-enh-1.20b {-upvar inside a named group + end-of-option marker} {
-    proc p {{v -name var -upvar nm} {i -default 1 -name incr} args} {
+test proc-enh-2.12 {correct usage: -upvar inside a named group + end-of-option marker} {
+    proc p {{v -name var -upvar 1 -varname nm} {i -default 1 -name incr} args} {
 	incr v $i; list $nm $v $args
     }
     set i 0
     list [p -var i] [p -var i -- -incr 3] [p -var i -- a b c] [p -var i -- -- abc]
 } {{i 1 {}} {i 2 {-incr 3}} {i 3 {a b c}} {i 4 {-- abc}}}
-test proc-enh-1.21 {-upvar followed with args} {
-    proc p {{v -upvar nm} args} {
-	list v $v nm $nm args $args
+test proc-enh-2.13 {correct usage: two distinct named group} {
+    proc p {{a -switch A -default 0} {b -switch B -default 0} c {d -switch D -default 0} {e -switch E -default 0}} {
+	list $a $b $c $d $e
     }
-    set i 0
-    list [p i] [p i 1 2 3]
-} {{v 0 nm i args {}} {v 0 nm i args {1 2 3}}}
-test proc-enh-1.21b {-upvar followed with args: wrong # args} {
-    proc p {{v -upvar nm} args} {
-	list v $v nm $nm args $args
-    }
-    list [catch {
-	p
-    } msg] $msg $errorCode
-} {1 {wrong # args: should be "p &v& ?arg ...?"} {TCL WRONGARGS}}
+    list [p -B 5 -E -D] [p -- foo -E]
+} {{0 B 5 D E} {0 0 foo 0 E}}
+test proc-enh-2.14 {correct usage: named arg without required is optionnal} {
+    proc p {{a -name A}} {
+	if {[info exists a]} { return $a } else { return unset }
+    };
+    list [p] [p -A 2]
+} {unset 2}
+test proc-enh-2.15 {correct usage: multi-elems list must not be handled as a named name} {
+    proc p {{a -name A -default 0} b} {
+	list $a $b
+    };
+    set l [list -Z 1]
+    p $l
+} {0 {-Z 1}}
+test proc-enh-2.16 {correct usage: varname without upvar} {
+    proc p {{a -name A -varname vn1} {b -varname vn2}} {
+	list $a $vn1 $b $vn2
+    };
+    p -A i j
+} {i i j j}
 
-test proc-enh-2.1 {precompiled, inconsistent arg default value} -body {
+# proc-enh-3.x: wrong # args
+test proc-enh-3.1 {wrong # args: -name arg without value} {
+    proc p {{a -name A} {b -name B -default 1}} { }
+    list [catch { p -A } msg] $msg $errorCode
+} {1 {wrong # args: should be "p ?|-A a|? ?|-B b|?"} {TCL WRONGARGS}}
+test proc-enh-3.2 {wrong # args: named group ended by an arg with leading dash} {
+    proc p {{a -name A} {b -name B} args} { }
+    list [catch { p -b Z -5 } msg] $msg $errorCode
+} {1 {wrong # args: should be "p ?|-A a|? ?|-B b|? ?arg ...?"} {TCL WRONGARGS}}
+test proc-enh-3.3 {wrong # args: named group followed by too many options} {
+    proc p {{a -name A -default 1} b} { }
+    list [catch { p -- 5 6 } msg] $msg $errorCode
+} {1 {wrong # args: should be "p ?|-A a|? b"} {TCL WRONGARGS}}
+test proc-enh-3.4 {wrong # args: required named group with name+switch} {
+    proc p {{a -name A -switch {A0 A1} -required 1}} { }
+    list [catch { p } msg] $msg $errorCode
+} {1 {wrong # args: should be "p |-A a|-A0|-A1|"} {TCL WRONGARGS}}
+test proc-enh-3.5 {wrong # args: required named group with upvar} {
+    proc p {{a -name A -upvar 1 -required 1} {b -upvar 1}} { }
+    list [catch { p } msg] $msg $errorCode
+} {1 {wrong # args: should be "p |-A &a&| &b&"} {TCL WRONGARGS}}
+test proc-enh-3.6 {wrong # args: two distinct named group, specified in wrong order} {
+    proc p {{a -switch A} {b -switch B} c {d -switch D} {e -switch E}} { }
+    list [catch { p -E 1 } msg] $msg $errorCode
+} {1 {wrong # args: should be "p ?|-A|? ?|-B|? c ?|-D|? ?|-E|?"} {TCL WRONGARGS}}
+
+# proc-enh-4.x: errors during call
+test proc-enh-4.1 {errors during call: -upvar read access with non-existing arg} {
+    proc p {{a -upvar 1}} { return $a }
+    if [info exists v] { unset v}
+    list [catch { p v } msg] $msg $errorCode
+} {1 {can't read "a": no such variable} {TCL READ VARNAME}}
+test proc-enh-4.2 {errors during call: -upvar read access with non-existing arg + -name} {
+    proc p {{a -upvar 1 -name A}} { return $a }
+    if [info exists v] { unset v}
+    list [catch { p -A v } msg] $msg $errorCode
+} {1 {can't read "a": no such variable} {TCL READ VARNAME}}
+
+# proc-enh-5.x: precompiled
+test proc-enh-5.1 {precompiled: inconsistent arg default value} -body {
     proc p {x y {z -default 2}} { }
     procbodytest::proc t {x y {z ZZ}} p
 } -constraints procbodytest -returnCodes error -cleanup {
     catch {rename p ""}
     catch {rename t ""}
 } -result {procedure "t": formal parameter "z" has argument spec inconsistent with precompiled body}
-test proc-enh-2.2 {precompiled, inconsistent arg spec} -body {
+test proc-enh-5.2 {precompiled: inconsistent arg spec} -body {
     proc p {x y {z -name z}} { }
     procbodytest::proc t {x y {z -name ZZ}} p
 } -constraints procbodytest -returnCodes error -cleanup {
     catch {rename p ""}
     catch {rename t ""}
 } -result {procedure "t": formal parameter "z" has argument spec inconsistent with precompiled body}
-test proc-enh-2.3 {precompiled with upvar arg} -body {
-    proc p {x {y -upvar up} z} { }
-    procbodytest::proc t {x {y -upvar up} z} p
+test proc-enh-5.3 {precompiled: with upvar arg} -body {
+    proc p {x {y -upvar 1 -varname up} z} { }
+    procbodytest::proc t {x {y -upvar 1 -varname up} z} p
 } -constraints procbodytest -result {}
 
-test proc-enh-3.1 {apply/lambda - wrong args} {
+# proc-enh-6.x: apply/lambda
+test proc-enh-6.1 {apply/lambda: wrong args} {
+    set lambda [list {{a -name A -switch A1 -required 1} {b -default B0 -name B}} {list $a $b}]
     list [catch {
-	set lambda [list {{a -name A -name A1 -value 1} {b -default B0 -name B}} {list $a $b}]
 	apply $lambda
     } msg] $msg $errorCode
 } {1 {wrong # args: should be "apply lambdaExpr |-A a|-A1| ?|-B b|?"} {TCL WRONGARGS}}
-test proc-enh-3.1 {apply/lambda - correct usage} {
-    set lambda [list {{a -name A -name A1 -value 1} {b -default B0 -name B}} {list $a $b}]
+test proc-enh-6.2 {apply/lambda: correct usage} {
+    set lambda [list {{a -name A -switch A1} {b -default B0 -name B}} {list $a $b}]
     list [apply $lambda -A1] [apply $lambda -B 4 -A 8]
-} {{1 B0} {8 4}}
+} {{A1 B0} {8 4}}
 
 # cleanup
 ::tcltest::cleanupTests

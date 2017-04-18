@@ -2417,42 +2417,97 @@ test info-39.0 {Bug 4b61afd660} -setup {
 
 # -------------------------------------------------------------------------
 # info argspec
-test info-40-0 {info argspec with old-style proc} {
+test info-40-0 {info argspec missing type} -body {
+    info argspec
+} -returnCodes error -result {wrong # args: should be "info argspec type ..."}
+test info-40-1 {info argspec proc with old-style proc} {
     proc p { a { b 1 } { c {} } } {}
-    list [info argspec p a] [info argspec p b] [info argspec p c]
+    list [info argspec proc p a] [info argspec proc p b] [info argspec proc p c]
 } {{} {-default 1} {-default {}}}
-test info-40-1 {info argspec missing arg} -body {
-    info argspec fooproc
-} -returnCodes error -result {wrong # args: should be "info argspec procname arg"}
-test info-40-2 {info argspec unknown proc} -body {
-    info argspec fooproc x
+test info-40-2 {info argspec proc missing procname} -body {
+    info argspec proc
+} -returnCodes error -result {wrong # args: should be "info argspec proc procname ?arg?"}
+test info-40-3 {info argspec proc too many args} -body {
+    info argspec proc proc arg foo
+} -returnCodes error -result {wrong # args: should be "info argspec proc procname ?arg?"}
+test info-40-4 {info argspec proc unknown proc} -body {
+    info argspec proc fooproc x
 } -returnCodes error -result {"fooproc" isn't a procedure}
-test info-40-3 {info argspec unknown arg} -body {
+test info-40-5 {info argspec proc unknown arg} -body {
     proc p {a} {}
-    info argspec p x
-} -returnCodes error -result {procedure "p" doesn't have an argument "x"}
-test info-40-4 {info argspec on local variable} -body {
+    info argspec proc p x
+} -returnCodes error -result {proc "p" doesn't have an argument "x"}
+test info-40-6 {info argspec proc on local variable} -body {
     proc p {a} {set x 0}
-    info argspec p x
-} -returnCodes error -result {procedure "p" doesn't have an argument "x"}
-test info-40-5 {info argspec on upvar name} -body {
-    proc p {{a -upvar up}} {}
-    info argspec p up
-} -returnCodes error -result {procedure "p" doesn't have an argument "up"}
-test info-40-6 {info argspec with new-style proc} {
-    proc p { 
+    info argspec proc p x
+} -returnCodes error -result {proc "p" doesn't have an argument "x"}
+test info-40-7 {info argspec proc on varname name} -body {
+    proc p {{a -varname up}} {}
+    info argspec proc p up
+} -returnCodes error -result {proc "p" doesn't have an argument "up"}
+test info-40-8 {info argspec proc with new-style proc} {
+    proc p {
 	{ a -default 2 }
-	{ b -upvar {} }
-	{ c -upvar up }
+	{ b -upvar 1 }
+	{ c -upvar 1 -varname up }
+	{ d -required 0 }
     } {}
-    list [info argspec p a] [info argspec p b] [info argspec p c]
-} {{-default 2} {-upvar {}} {-upvar up}}
-test info-40-7 {info argspec with multiple named args} {
-    proc p { 
-	{ a -default 0 -name val -name flag -value x -name var -upvar {} -name var2 -upvar up }
+    list [info argspec proc p a] [info argspec proc p b] [info argspec proc p c] [info argspec proc p d]
+} {{-default 2} {-upvar 1} {-upvar 1 -varname up} {-required 0}}
+test info-40-9 {info argspec proc with multiple named args} {
+    proc p {
+	{ a -default 0 -name val -switch {flag1 { flag2 22 }} -name {val2}}
     } {}
-    info argspec p a
-} {-default 0 -name val -name flag -value x -name var -upvar {} -name var2 -upvar up}
+    info argspec proc p a
+} {-default 0 -name {val val2} -switch {flag1 {flag2 22}}}
+test info-40-10 {info argspec proc without arg} {
+    proc p {
+	{ a -default 2 }
+	{ b -name {B B1} -required 1 }
+	args
+    } {}
+    info argspec proc p
+} {{a -default 2} {b -required 1 -name {B B1}} args}
+test info-40-11 {info argspec unknown type} -body {
+    info argspec foo
+} -returnCodes error -result {bad type "foo": must be proc, lambda, constructor, method, objmethod, or specifiers}
+test info-40-12 {info argspec lambda} {
+    set l [list {{a -name A} {b -default 5}} {list $a $b}]
+    list [info argspec lambda $l] [info argspec lambda $l a]
+} {{{a -name A} {b -default 5}} {-name A}}
+test info-40-13 {info argspec lambda not a lambda} -body {
+    proc p {} {}
+    info argspec lambda p
+} -returnCodes error -result {can't interpret "p" as a lambda expression}
+test info-40-14 {info argspec specifiers} {
+    info argspec specifiers
+} {-default -name -required -switch -upvar -varname}
+test info-40-15 {info argspec objmethod} -setup {
+    oo::object create foo
+} -body {
+    oo::objdefine foo method bar {a {b B} {c -switch {{C 1}} -default 0}} {}
+    list [info argspec objmethod foo bar] [info argspec objmethod foo bar c]
+} -cleanup {
+    foo destroy
+} -result {{a {b -default B} {c -default 0 -switch {{C 1}}}} {-default 0 -switch {{C 1}}}}
+test info-40-15 {info argspec constructor} -setup {
+    oo::class create testClass {
+	constructor {{a -default 0 -name A}} { }
+    }
+} -body {
+    list [info argspec constructor testClass] [info argspec constructor testClass a]
+} -cleanup {
+    testClass destroy
+} -result {{{a -default 0 -name A}} {-default 0 -name A}}
+test info-40-16 {info argspec method} -setup {
+    oo::class create testClass {
+	method m {a {b -required 0}} { }
+    }
+} -body {
+    list [info argspec method testClass m] [info argspec method testClass m b]
+} -cleanup {
+    testClass destroy
+} -result {{a {b -required 0}} {-required 0}}
 
 # cleanup
 catch {namespace delete test_ns_info1 test_ns_info2}

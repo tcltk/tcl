@@ -3732,7 +3732,9 @@ test oo-35.4 {Bug 593baa032c: mixins list teardown} {
 test oo-36.1 {OO/CloneProcedureMethod with extended argspec} {
     oo::object create foo
     oo::objdefine foo {
-	method p {{x -default off -name ON -value on}} {lappend ::result [self object] >$x<}
+	method p { {x -default off -switch {{ON on}}} } {
+	    lappend ::result [self object] >$x<
+	}
     }
     set result {}
     foo p; foo p -ON
@@ -3743,11 +3745,12 @@ test oo-36.1 {OO/CloneProcedureMethod with extended argspec} {
 } {::foo >off< ::foo >on< ::bar >off< ::bar >on<}
 catch {foo destroy}
 catch {bar destroy}
+
 test oo-36.2 {OO/clonedBody with extended argspec} -setup {
     oo::class create ArbitraryClass {export eval}
 } -body {
     ArbitraryClass create a
-    a eval {proc foo {a {n -default 3 -name num}} {
+    a eval {proc foo {a {n -name num -default 3}} {
 	return [string repeat $a $n]
     }}
     set result [a eval {foo A -num 2}]
@@ -3756,24 +3759,27 @@ test oo-36.2 {OO/clonedBody with extended argspec} -setup {
 } -cleanup {
     ArbitraryClass destroy
 } -result {AA BBBB CCC}
+
 test oo-36.3 {"info object definition" with extended argspec} -setup {
     oo::object create foo
 } -body {
-    oo::objdefine foo method bar {a {b B} {c -default 0 -name C -value 1}
-	{d -upvar up} args} {body}
+    oo::objdefine foo method bar {a {b B} {c -switch {{C 1}} -default 0}
+	{d -upvar true -varname up} args} {body}
     set result [info object definition foo bar]
 } -cleanup {
     foo destroy
-} -result {{a {b B} {c -default 0 -name C -value 1} {d -upvar up} args} body}
+} -result {{a {b B} {c -default 0 -switch {{C 1}}} {d -upvar 1 -varname up} args} body}
+
 test oo-36.4 {"info class definition" with extended argspec} -setup {
     oo::class create foo
 } -body {
-    oo::define foo method bar {a {b 8} {c -name C} {d -name D -upvar {}}
+    oo::define foo method bar {a {b 8} {c -name C} {d -name D -upvar true}
 	args} {body}
     set result [info class definition foo bar]
 } -cleanup {
     foo destroy
-} -result {{a {b 8} {c -name C} {d -name D -upvar {}} args} body}
+} -result {{a {b 8} {c -name C} {d -upvar 1 -name D} args} body}
+
 test oo-36.5 {OO constructor with extended argspec} {
     oo::class create testClass {
 	constructor {{a -default 0 -name A}} {

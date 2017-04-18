@@ -4411,6 +4411,51 @@ Tcl_UpVar2(
 /*
  *----------------------------------------------------------------------
  *
+ * TclUpvarForExtArg --
+ *
+ *	This function links one variable to another. It is used during
+ *	initialization of proc variables which use the upvar extended
+ *	argument specification.
+ *
+ * Results:
+ *	A standard Tcl completion code. If an error occurs then an error
+ *	message is left in the interp's result.
+ *
+ * Side effects:
+ *	The variable in upper frame whose name is given by varName becomes
+ *	accessible under the name localNameStr, so that references to
+ *	localNameStr are redirected to the other variable like a symbolic
+ *	link.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclUpvarForExtArg(
+    Tcl_Interp *interp,		/* Command interpreter in which varName is to
+				 * be looked up. */
+    Tcl_Obj *varNamePtr,	/* Name of variable in interp to link to. */
+    const char *localNameStr)	/* Name of link variable. */
+{
+    int result;
+    CallFrame *framePtr;
+    Tcl_Obj *localNamePtr;
+
+    if (TclObjGetFrame(interp, NULL, &framePtr) == -1) {
+	return TCL_ERROR;
+    }
+
+    localNamePtr = Tcl_NewStringObj(localNameStr, -1);
+    Tcl_IncrRefCount(localNamePtr);
+
+    result = ObjMakeUpvar(interp, framePtr, varNamePtr, NULL, 0,
+	    localNamePtr, 0, -1);
+    Tcl_DecrRefCount(localNamePtr);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetVariableFullName --
  *
  *	Given a Tcl_Var token returned by Tcl_FindNamespaceVar, this function

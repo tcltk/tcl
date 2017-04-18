@@ -186,7 +186,7 @@ static const char *clonedBody =
 "    set args [info args $p];"
 "    set idx -1;"
 "    foreach a $args {"
-"        lset args [incr idx] [concat $a [info argspec $p $a]]"
+"        lset args [incr idx] [concat $a [info argspec proc $p $a]]"
 "    };"
 "    set b [info body $p];"
 "    set p [namespace tail $p];"

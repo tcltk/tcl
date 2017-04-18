@@ -697,18 +697,21 @@ typedef struct VarInHash {
  * VAR_RESOLVED -		1 if name resolution has been done for this
  *				variable.
  * VAR_IS_ARGS			1 if this variable is the last argument and is
+ *				named "args".
  * VAR_NAMED_GROUP		1 means that this argument is part of a named
  *				group defined using an extended argument
  *				specification.
- * VAR_UPVAR_NAME		1 means that this variable has been added to
+ * VAR_ARG_UPVAR		1 means that this argument has been defined
+ *				using the -upvar extended arg specification.
+ * VAR_ARG_HAS_VARNAME		1 means that this variable has been specified
+ *				with the -varname specifier and that a
+ *				dedicated variable has been created to store
+ *				the original value.
+ * VAR_ARG_IS_VARNAME		1 means that this variable has been added to
  *				store the name of a passed-by-name argument,
  *				defined using an extended arg specification.
- *
- * The following additional flags are used with the ExtendedArgSpec type
- * defined below:
- *
- * VAR_UPVAR_ARG		1 means that this argument has been defined
- *				using the -upvar extended arg specification.
+ * VAR_ARG_OPTIONAL		1 means that this argument is not required to
+ *				be specified on call-site.
  */
 
 /*
@@ -751,8 +754,10 @@ typedef struct VarInHash {
 #define VAR_IS_ARGS		0x400
 #define VAR_RESOLVED		0x8000
 #define VAR_NAMED_GROUP		0x10000
-#define VAR_UPVAR_ARG		0x20000
-#define VAR_UPVAR_NAME		0x40000
+#define VAR_ARG_UPVAR		0x20000
+#define VAR_ARG_IS_VARNAME	0x40000
+#define VAR_ARG_HAS_VARNAME	0x80000
+#define VAR_ARG_OPTIONAL	0x100000
 
 /*
  * Macros to ensure that various flag bits are set properly for variables.
@@ -859,6 +864,9 @@ typedef struct VarInHash {
 #define TclIsVarDeadHash(varPtr) \
     ((varPtr)->flags & VAR_DEAD_HASH)
 
+#define TclIsVarWithExtArgs(varPtr) \
+    ((varPtr)->flags & (VAR_NAMED_GROUP|VAR_ARG_UPVAR|VAR_ARG_HAS_VARNAME|VAR_ARG_OPTIONAL))
+
 #define TclGetVarNsPtr(varPtr) \
     (TclIsVarInHash(varPtr) \
 	? ((TclVarHashTable *) ((((VarInHash *) (varPtr))->entry.tablePtr)))->nsPtr \
@@ -907,36 +915,59 @@ typedef struct VarInHash {
 /*
  * Forward declaration to prevent an error when the forward reference to
  * Command is encountered in the Proc and ImportRef types declared below.
+ * Same for CompiledLocal in the NamedGroupEntry type.
  */
 
 struct Command;
+struct CompiledLocal;
 
 /*
- * The variable-length structure below describes an extended argument
- * specification applied on a proc argument (see TIP#457).
+ * The variable-length structure below describes an entry in a group of
+ * named parameter defined together.
+ */
+
+typedef struct NamedGroupEntry {
+    struct NamedGroupEntry *nextPtr;
+				/* Next entry in the named-group, or NULL if
+				 * this is the last entry. */
+    int nameLength;		/* The number of characters in entry's name */
+    int localIndex;		/* Index of the related local in the array of
+				 * compiler-assigned variables in the procedure
+				 * call frame. */
+    Tcl_Obj *valuePtr;		/* Pointer to the default value of the named
+				 * parameter, used with the -switch argument
+				 * specifier. NULL if it is related to a named
+				 * parameter created with the -name argument
+				 * specifier. */
+    struct CompiledLocal *localPtr;
+				/* Pointer to the related local in the linked
+				 * list of locals for the procedure. */
+    char name[1];		/* Name of the entry starts here. The actual
+				 * size of this field will be large enough to
+				 * hold the name. MUST BE THE LAST FIELD IN
+				 * THE STRUCTURE! */
+} NamedGroupEntry;
+
+/*
+ * The structure below describes an extended argument specification applied
+ * on a proc argument (see TIP#457).
  */
 
 typedef struct ExtendedArgSpec {
-    struct ExtendedArgSpec *nextPtr;
-				/* Next arg specification defined on the same
-				 * argument (most probably a named group). */
-    int flags;			/* Flag bits for the argument specification.
-				 * Only VAR_UPVAR_ARG is currently used.*/
-    int localIndex;		/* Index of the related argument in the array
-				 * of compiler-assigned variables in the
-				 * procedure call frame. */
-    Tcl_Obj *valuePtr;		/* Pointer to the -value argument used in a
-				 * named group to define a flag option. */
-    int upvarNameIndex;		/* If >= 0 and VAR_UPVAR_ARG set, index of the
-				 * added variable to store the name of the
-				 * passed-by-name (-upvar arg) argument. */
-    int nameLength;		/* The number of characters in option name
-				 * Used to speed up name lookups. */
-    char name[1];		/* Name of the named-group starts here. If
-				 * there is no name, this will just be '\0'.
-				 * The actual size of this field will be large
-				 * enough to hold the name. MUST BE THE LAST
-				 * FIELD IN THE STRUCTURE! */
+    struct NamedGroupEntry *firstNamedEntryPtr;
+				/* Pointer to the first named parameter entry
+				 * defined on the proc argument. */
+    struct NamedGroupEntry *lastNamedEntryPtr;
+				/* Pointer to the last named parameter entry
+				 * defined on the proc argument. */
+    int varnameIndex;		/* Index of the local created to store the
+				 * name of the passed-by-name argument. Set
+				 * to -1 when not used. */
+    Tcl_HashTable *namedHashTable;
+				/* Pointer to the hash table created for a
+				 * fast lookup of named entry. The pointer is
+				 * only set on the first local of a named
+				 * group. */
 } ExtendedArgSpec;
 
 /*
@@ -965,8 +996,8 @@ typedef struct CompiledLocal {
     int flags;			/* Flag bits for the local variable. Same as
 				 * the flags for the Var structure above,
 				 * although only VAR_ARGUMENT, VAR_TEMPORARY,
-				 * and VAR_RESOLVED, VAR_NAMED_GROUP and
-				 * VAR_UPVAR_NAME make sense. */
+				 * VAR_RESOLVED, VAR_NAMED_GROUP and VAR_ARG_*
+				 * make sense. */
     Tcl_Obj *defValuePtr;	/* Pointer to the default value of an
 				 * argument, if any. NULL if not an argument
 				 * or, if an argument, no default value. */
@@ -979,7 +1010,7 @@ typedef struct CompiledLocal {
 				 * find the variable at runtime. */
     ExtendedArgSpec *argSpecPtr;
 				/* Extended argument specification if this is
-				 * a proc argument defined using a one. */
+				 * a proc argument defined using one. */
     char name[1];		/* Name of the local variable starts here. If
 				 * the name is NULL, this will just be '\0'.
 				 * The actual size of this field will be large
@@ -3237,6 +3268,8 @@ MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
+MODULE_SCOPE int	TclUpvarForExtArg(Tcl_Interp *interp,
+			    Tcl_Obj *varNamePtr, const char *localNameStr);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCount(int ch);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);

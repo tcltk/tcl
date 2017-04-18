@@ -19,6 +19,8 @@
 
 #include "tclInt.h"
 #include "tclRegexp.h"
+#include "tclCompile.h"
+#include "tclOOInt.h"
 
 /*
  * During execution of the "lsort" command, structures of the following type
@@ -524,10 +526,15 @@ InfoArgsCmd(
  * InfoArgSpecCmd --
  *
  *	Called to implement the "info argspec" command that returns the
- *	extendend argument specification for a procedure argument.
- *	Handles the following syntax:
+ *	extendend argument specification for a procedure.
+ *	Handles the following syntaxes:
  *
- *	    info argspec procName arg
+ *	    info argspec proc procName ?arg?
+ *	    info argspec lambda lambdaTerm ?arg?
+ *	    info argspec constructor className ?arg?
+ *	    info argspec method className methodName ?arg?
+ *	    info argspec objmethod object methodName ?arg?
+ *	    info argspec specifiers
  *
  * Results:
  *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
@@ -546,29 +553,226 @@ InfoArgSpecCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    static const char *const types[] = {
+	"proc", "lambda", "constructor", "method", "objmethod",
+	"specifiers", NULL,
+    };
+    static const char *const specifiers[] = {
+	/* supported specifiers, must be ordered */
+	"-default", "-name", "-required", "-switch", "-upvar",
+	"-varname", NULL
+    };
+    enum Types {
+	ARGSPEC_PROC, ARGSPEC_LAMBDA, ARGSPEC_CONSTRUCTOR, ARGSPEC_METHOD,
+	ARGSPEC_OBJMETHOD, ARGSPEC_SPECIFIERS
+    };
     register Interp *iPtr = (Interp *) interp;
     const char *procName, *argName;
     Proc *procPtr;
     CompiledLocal *localPtr;
     Tcl_Obj *listObjPtr;
+    Object *oPtr;
+    Method *methodPtr;
+    Tcl_HashEntry *hPtr;
+    int idx, result;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "procname arg");
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "type ...");
 	return TCL_ERROR;
     }
 
-    procName = TclGetString(objv[1]);
-    argName = TclGetString(objv[2]);
+    if (Tcl_GetIndexFromObj(interp, objv[1], types, "type", 0, &idx)!=TCL_OK) {
+	return TCL_ERROR;
+    }
 
-    procPtr = TclFindProc(iPtr, procName);
-    if (procPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    switch ((enum Types) idx) {
+    case ARGSPEC_PROC:
+	if (objc < 3 || objc > 4) {
+	    Tcl_WrongNumArgs(interp, 1, objv, "proc procname ?arg?");
+	    return TCL_ERROR;
+	}
+
+	procName = TclGetString(objv[2]);
+	procPtr = TclFindProc(iPtr, procName);
+	if (procPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"%s\" isn't a procedure", procName));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", procName,
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", procName,
 		NULL);
-	return TCL_ERROR;
+	    return TCL_ERROR;
+	}
+
+	argName = (objc == 4) ? TclGetString(objv[3]) : NULL;
+	break;
+
+    case ARGSPEC_LAMBDA:
+	if (objc < 3 || objc > 4) {
+	    Tcl_WrongNumArgs(interp, 1, objv, "lambda lambdaTerm ?arg?");
+	    return TCL_ERROR;
+	}
+
+	if (objv[2]->typePtr == &tclLambdaType) {
+	    procPtr = objv[2]->internalRep.twoPtrValue.ptr1;
+	}
+	if (procPtr == NULL || procPtr->iPtr != (Interp *) interp) {
+	    result = tclLambdaType.setFromAnyProc(interp, objv[2]);
+	    if (result != TCL_OK) {
+		return result;
+	    }
+	    procPtr = objv[2]->internalRep.twoPtrValue.ptr1;
+	}
+
+	procName = "lambdaTerm";
+	argName = (objc == 4) ? TclGetString(objv[3]) : NULL;
+	break;
+
+    case ARGSPEC_CONSTRUCTOR:
+	if (objc < 3 || objc > 4) {
+	    Tcl_WrongNumArgs(interp, 1, objv, "constructor className ?arg?");
+	    return TCL_ERROR;
+	}
+
+	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
+	if (oPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	if (oPtr->classPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"\"%s\" is not a class", TclGetString(objv[2])));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
+		TclGetString(objv[2]), NULL);
+	    return TCL_ERROR;
+	}
+
+	methodPtr = oPtr->classPtr->constructorPtr;
+	if (methodPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"\"%s\" has no defined constructor",
+		TclGetString(objv[2])));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ARGSPEC",
+		"CONSRUCTOR", NULL);
+	    return TCL_ERROR;
+	}
+	procPtr = TclOOGetProcFromMethod(methodPtr);
+	if (procPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"body not available for this kind of constructor", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ARGSPEC",
+		"METHODTYPE", NULL);
+	    return TCL_ERROR;
+	}
+
+	procName = "constructor";
+	argName = (objc == 4) ? TclGetString(objv[3]) : NULL;
+	break;
+
+    case ARGSPEC_METHOD:
+	if (objc < 4 || objc > 5) {
+	    Tcl_WrongNumArgs(interp, 1, objv,
+		"method className methodName ?arg?");
+	    return TCL_ERROR;
+	}
+
+	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
+	if (oPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	if (oPtr->classPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"\"%s\" is not a class", TclGetString(objv[2])));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
+		TclGetString(objv[2]), NULL);
+	    return TCL_ERROR;
+	}
+
+	procName = TclGetString(objv[3]);
+	hPtr = Tcl_FindHashEntry(&oPtr->classPtr->classMethods,
+	    (char *) objv[3]);
+	if (hPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"unknown method \"%s\"", procName));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[3]), NULL);
+	    return TCL_ERROR;
+	}
+	procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
+	if (procPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"body not available for this kind of method", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ARGSPEC",
+		"METHODTYPE", NULL);
+	    return TCL_ERROR;
+	}
+
+	argName = (objc == 5) ? TclGetString(objv[4]) : NULL;
+	break;
+
+    case ARGSPEC_OBJMETHOD:
+	if (objc < 4 || objc > 5) {
+	    Tcl_WrongNumArgs(interp, 1, objv,
+		"objmethod object methodName ?arg?");
+	    return TCL_ERROR;
+	}
+
+	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
+	if (oPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	if (oPtr->methodsPtr == NULL) {
+	    hPtr = NULL;
+	} else {
+	    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) objv[3]);
+	}
+
+	procName = TclGetString(objv[3]);
+	if (hPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"unknown method \"%s\"", procName));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[3]), NULL);
+	    return TCL_ERROR;
+	}
+
+	procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
+	if (procPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"body not available for this kind of method", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ARGSPEC",
+		"METHODTYPE", NULL);
+	    return TCL_ERROR;
+	}
+
+	argName = (objc == 5) ? TclGetString(objv[4]) : NULL;
+	break;
+
+    case ARGSPEC_SPECIFIERS:
+	listObjPtr = Tcl_NewListObj(0, NULL);
+	for (idx = 0; specifiers[idx] != NULL; idx++) {
+	    Tcl_ListObjAppendElement(interp, listObjPtr,
+		Tcl_NewStringObj(specifiers[idx], -1));
+	}
+	Tcl_SetObjResult(interp, listObjPtr);
+	return TCL_OK;
+	break;
     }
 
+    if (argName == NULL) {
+	/* info argspec ... procName */
+	listObjPtr = Tcl_NewListObj(0, NULL);
+	for (localPtr = procPtr->firstLocalPtr;  localPtr != NULL;
+		localPtr = localPtr->nextPtr) {
+	    if (TclIsVarArgument(localPtr)) {
+		Tcl_ListObjAppendElement(interp, listObjPtr,
+		    TclProcGetArgSpec(interp, localPtr,
+		    TCL_GETARGSPEC_WITH_NAME));
+	    }
+	}
+
+	Tcl_SetObjResult(interp, listObjPtr);
+	return TCL_OK;
+    }
+
+    /* info argspec ... procName arg */
     for (localPtr = procPtr->firstLocalPtr;  localPtr != NULL;
 	    localPtr = localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)
@@ -580,8 +784,8 @@ InfoArgSpecCmd(
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "procedure \"%s\" doesn't have an argument \"%s\"",
-	    procName, argName));
+	"%s \"%s\" doesn't have an argument \"%s\"",
+	Tcl_GetString(objv[1]), procName, argName));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARGUMENT", argName, NULL);
     return TCL_ERROR;
 }
