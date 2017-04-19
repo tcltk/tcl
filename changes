@@ -8761,4 +8761,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2017-04-12 (bug)[42202b] Nesting imbalance in coro injection (nadkarni,sebres)
 
+2017-04-18 (bug)[bc4322] http package support for safe interps (nash,nijtmans)
+
 --- Released 8.6.7, April 30, 2016 --- http://core.tcl.tk/tcl/ for details
