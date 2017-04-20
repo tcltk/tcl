@@ -1939,6 +1939,11 @@ Tcl_AppendFormatToObj(
 	}
 
 	case 'u':
+	    if (useBig) {
+		msg = "unsigned bignum format is invalid";
+		errCode = "BADUNSIGNED";
+		goto errorMsg;
+	    }
 	case 'd':
 	case 'o':
 	case 'p':
@@ -1962,15 +1967,6 @@ Tcl_AppendFormatToObj(
 		    goto error;
 		}
 		isNegative = (mp_cmp_d(&big, 0) == MP_LT);
-		if (ch == 'u') {
-		    if (isNegative) {
-			msg = "unsigned bignum format is invalid";
-			errCode = "BADUNSIGNED";
-			goto errorMsg;
-		    } else {
-			ch = 'd';
-		    }
-		}
 #ifndef TCL_WIDE_INT_IS_LONG
 	    } else if (useWide) {
 		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
@@ -2784,7 +2780,7 @@ TclStringRepeat(
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"string size overflow: unable to alloc %"
-			TCL_LL_MODIFIER "u bytes",
+			TCL_LL_MODIFIER "d bytes",
 			(Tcl_WideUInt)STRING_SIZE(count*length)));
 		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	    }
@@ -3008,7 +3004,7 @@ TclStringCatObjv(
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    	"concatenation failed: unable to alloc %"
-			TCL_LL_MODIFIER "u bytes",
+			TCL_LL_MODIFIER "d bytes",
 			(Tcl_WideUInt)STRING_SIZE(length)));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
@@ -3024,7 +3020,7 @@ TclStringCatObjv(
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    	"concatenation failed: unable to alloc %"
-			TCL_LL_MODIFIER "u bytes",
+			TCL_LL_MODIFIER "d bytes",
 			(Tcl_WideUInt)STRING_SIZE(length)));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
