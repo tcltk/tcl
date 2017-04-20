@@ -567,8 +567,8 @@ InfoArgSpecCmd(
 	ARGSPEC_OBJMETHOD, ARGSPEC_SPECIFIERS
     };
     register Interp *iPtr = (Interp *) interp;
-    const char *procName, *argName;
-    Proc *procPtr;
+    const char *procName = NULL, *argName = NULL;
+    Proc *procPtr = NULL;
     CompiledLocal *localPtr;
     Tcl_Obj *listObjPtr;
     Object *oPtr;
