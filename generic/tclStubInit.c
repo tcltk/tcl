@@ -143,6 +143,7 @@ void *TclWinGetTclInstance()
     return hInstance;
 }
 
+#ifndef TCL_NO_DEPRECATED
 #define TclWinSetSockOpt winSetSockOpt
 static int
 TclWinSetSockOpt(SOCKET s, int level, int optname,
@@ -165,6 +166,7 @@ TclWinGetServByName(const char *name, const char *proto)
 {
     return getservbyname(name, proto);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 #define TclWinNoBackslash winNoBackslash
 static char *
