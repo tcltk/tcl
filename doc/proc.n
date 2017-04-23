@@ -30,9 +30,14 @@ the procedure is created in the specified namespace.
 procedure.  It consists of a list, possibly empty, each of whose
 elements specifies
 one argument.  Each argument specifier is also a list with either
-one or two fields.  If there is only a single field in the specifier
+one, two fields or an odd number of fields.
+If there is only a single field in the specifier
 then it is the name of the argument; if there are two fields, then
-the first is the argument name and the second is its default value.
+the first is the argument name and the second is its default value;
+if there are an odd number of fields, then the first is the argument
+name and the remaining fields are extended argument specifiers.
+See \fBEXTENDED ARGUMENT SPECIFIERS\fR below for details on allowed
+specifiers.
 Arguments with default values that are followed by non-defaulted
 arguments become required arguments; enough actual arguments must be
 supplied to allow all arguments up to and including the last required
@@ -42,7 +47,7 @@ When \fIname\fR is invoked a local variable
 will be created for each of the formal arguments to the procedure; its
 value will be the value of corresponding argument in the invoking command
 or the argument's default value.
-Actual arguments are assigned to formal arguments strictly in order.
+Actual positional arguments are assigned to formal arguments strictly in order.
 Arguments with default values need not be
 specified in a procedure invocation.  However, there must be enough
 actual arguments for all the
@@ -53,7 +58,11 @@ arguments become de-facto required arguments, though this may change
 in a future version of Tcl; portable code should ensure that all
 optional arguments come after all required arguments.
 .PP
-There is one special case to permit procedures with
+Named arguments, defined with the \fB-name\fR or \fB-switch\fR extended
+argument specifiers have a specific handling detailed in
+\fBNAMED ARGUMENTS HANDLING\fR below.
+.PP
+There is an other special case to permit procedures with
 variable numbers of arguments.  If the last formal argument has the name
 .QW \fBargs\fR ,
 then a call to the procedure may contain more actual arguments
@@ -67,7 +76,8 @@ local variables, which are created automatically when referenced and
 deleted when the procedure returns.  One local variable is automatically
 created for each of the procedure's arguments.
 Other variables can only be accessed by invoking one of the \fBglobal\fR,
-\fBvariable\fR, \fBupvar\fR or \fBnamespace upvar\fR commands.
+\fBvariable\fR, \fBupvar\fR or \fBnamespace upvar\fR commands or by
+using the \fB-upvar 1\fR extended argument specifier.
 The current namespace when \fIbody\fR is executed will be the
 namespace that the procedure's name exists in, which will be the
 namespace that it was created in unless it has been changed with
@@ -82,6 +92,80 @@ invoked, the procedure's return value is the value specified in a
 executed in the procedure's body.
 If an error occurs while executing the procedure
 body, then the procedure-as-a-whole will return that same error.
+.SS "EXTENDED ARGUMENT SPECIFIERS"
+.VS
+.PP
+The following extended specifiers can be used to define an argument:
+.VE
+.TP
+\fB-default \fIvalue\fR
+.VS
+Set \fIvalue\fR as the default value for the argument. It is ignored
+if \fB-required 1\fR is also used.
+.TP
+\fB-name \fInames\fR
+.VS
+Defines the argument to be a named argument. \fINames\fR can be string
+or a list of strings, each string being added as a potential name for
+this argument. If \fB-name\fR is used several times for the same argument,
+all strings are added as potential names. See \fBNAMED ARGUMENTS HANDLING\fR
+below for details on named arguments.
+.TP
+\fB-required \fIbool\fR
+.VS
+Defines that the argument is required or not to be set by the caller.
+If \fIbool\fR is true, it is required to be set and any default value
+is ignored. It is the default handling for non-named argument
+without a default value.
+If \fIbool\fR is false, it is not required to be set and the related
+argument will be left unset if there is no default value. It is the
+default handling for named argument.
+.TP
+\fB-switch \fIswitches\fR
+.VS
+Defines the argument to be a flag/switch named argument. \fISwitches\fR
+is a list of potential switches for this argument.
+Each switch is defined either as a
+single string or as a list of a string and a value. When the switch is
+defined as a single string, the string is used as both the switch name
+and the switch value.
+When the switch is defined as a list of two entries, the first one is
+the switch name and the second one is the switch value. If \fB-switch\fR
+is used several times for the same argument, all switches are added
+as potential switches. On call-site, the related switch value will be
+set on the argument if one of the switch names is used.
+See \fBNAMED ARGUMENTS HANDLING\fR below for details on named arguments.
+.TP
+\fB-upvar \fIbool\fR
+.VS
+If \fIbool\fR is set to true, this will cause the related variable,
+rather than taking the parameter value, to become an alias
+to the variable in caller's scope corresponding to the parameter value.
+This specifier is incompatible with the \fB-switch\fR specifier.
+.TP
+\fB-varname \fIvarname\fR
+.VS
+Defines a new variable named \fIvarname\fR which will be added in the
+procedure with the original value of the parameter. This is mostly used
+with \fB-upvar 1\fR to access the name of the linked variable.
+.VE
+.SS "NAMED ARGUMENTS HANDLING"
+.VS
+.PP
+Named argument are arguments defined using the \fB-name\fR or \fB-switch\fR
+extended argument specifiers. They have a special handling on call-site.
+All contiguous named arguments, called named group, are handled together,
+they are not required to be declared in order, can be omited or declared
+multiple times. The handling of a named group is started when previous
+formal arguments have been assigned.
+Each named parameter uses a string starting with a dash character, followed
+by the name of the related argument. If it is not a switch argument, it is
+followed by the value to assign to the formal argument. The handling of
+a named group is ended if the next parameter is a multiple-elements list,
+does not start with a dash or is the special \fB--\fR keyword. Remaining
+parameters, except the \fB--\fR keyword if used, are then assigned to
+following positional arguments using the default handling.
+.VE
 .SH EXAMPLES
 .PP
 This is a procedure that takes two arguments and prints both their sum
@@ -109,15 +193,44 @@ them out, one by one.
 }
 .CE
 .PP
-This procedure is a bit like the \fBincr\fR command, except it
-multiplies the contents of the named variable by the value, which
-defaults to \fB2\fR:
+These procedures are a bit like the \fBincr\fR command, except they
+multiply the contents of the named variable by the value, which
+defaults to \fB2\fR. The second procedure uses extended argument
+specifiers and especially the \fB-upvar\fR specifier:
 .PP
 .CS
 \fBproc\fR mult {varName {multiplier 2}} {
     upvar 1 $varName var
     set var [expr {$var * $multiplier}]
 }
+
+\fBproc\fR mult {{var -upvar 1} {multiplier -default 2}} {
+  set var [expr {$var * $multiplier}]
+}
+.CE
+.PP
+This is a procedure that uses named argument for the first two
+arguments. \fILevel\fR defaults to \fB1\fR and can be defined
+using either \fB-level \fIlevelValue\fR or one of the switches
+\fB-debug\fR (\fB0\fR) or \fB-error\fR (\fB3\fR). \fITime\fR
+can be defined using either \fB-time \fItimeValue\fR or
+\fB-timestamp \fItimeValue\fR. If none is used, \fItime\fR will
+be left unset in the procedure.
+.PP
+.CS
+\fBproc\fR log {
+    {level -name level -switch {{debug 0} {error 3}} -default 1}
+    {time -name {time timestamp}}
+    {message} } {
+  if {![info exists time]} {set time [clock seconds]}
+  array set levels {0 DEBUG 1 INFO 2 WARN 3 ERROR}
+  puts "[clock format $time] : $levels($level) : $message"
+}
+
+% log -level 2 "Warning..."
+Sun Apr 23 20:29:41 UTC 2017 : WARN : Warning...
+% log -timestamp 946684800 -debug -- -Y2K-
+Sat Jan 01 00:00:00 UTC 2000 : DEBUG : -Y2K-
 .CE
 .SH "SEE ALSO"
 info(n), unknown(n)

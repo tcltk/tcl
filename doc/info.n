@@ -29,6 +29,12 @@ Returns a list containing the names of the arguments to procedure
 \fIprocname\fR, in order.  \fIProcname\fR must be the name of a
 Tcl command procedure.
 .TP
+\fBinfo argspec ?\fIarg ...\fR
+.
+Returns information about the arguments specification of Tcl-pure
+procedures, lambda or class methods. The \fIsubcommand\fRs are
+described in \fBARGSPEC INTROSPECTION\fR below.
+.TP
 \fBinfo body \fIprocname\fR
 .
 Returns the body of procedure \fIprocname\fR.  \fIProcname\fR must be
@@ -398,6 +404,81 @@ Note that a currently-visible variable may not yet
 .QW exist
 if it has not
 been set (e.g. a variable declared but not set by \fBvariable\fR).
+.SS "ARGSPEC INTROSPECTION"
+.VS
+.PP
+The following \fIsubcommand\fR values are supported by \fBinfo argspec\fR:
+.VE
+.TP
+\fBinfo argspec constructor \fIclassName \fR?\fIarg\fR?
+.VS
+If \fIarg\fR is specified, returns a list containing the argument
+specifiers which describe the argument \fIarg\fR of the constructor
+of the class \fIclassName\fR.
+If \fIarg\fR is not specified, returns a list containing the argument
+specifiers list of all arguments of the constructor of the
+class \fIclassName\fR.
+.TP
+\fBinfo argspec lambda \fIlambdaTerm \fR?\fIarg\fR?
+.VS
+If \fIarg\fR is specified, returns a list containing the argument
+specifiers which describe the argument \fIarg\fR of the lambda
+\fIlambdaTerm\fR.
+If \fIarg\fR is not specified, returns a list containing the argument
+specifiers list of all arguments of the lambda \fIlambdaTerm\fR.
+.TP
+\fBinfo argspec method \fIclassName methodName \fR?\fIarg\fR?
+.VS
+If \fIarg\fR is specified, returns a list containing the argument
+specifiers which describe the argument \fIarg\fR of the method
+\fImethodName\fR of the class \fIclassName\fR.
+If \fIarg\fR is not specified, returns a list containing the argument
+specifiers list of all arguments of the method \fImethodName\fR
+of the class \fIclassName\fR.
+.TP
+\fBinfo argspec objmethod \fIobject methodName \fR?\fIarg\fR?
+.VS
+If \fIarg\fR is specified, returns a list containing the argument
+specifiers which describe the argument \fIarg\fR of the method
+\fImethodName\fR of the object \fIobject\fR.
+If \fIarg\fR is not specified, returns a list containing the argument
+specifiers list of all arguments of the method \fImethodName\fR
+of the object \fIobject\fR.
+.TP
+\fBinfo argspec proc \fIprocName \fR?\fIarg\fR?
+.VS
+If \fIarg\fR is specified, returns a list containing the argument
+specifiers which describe the argument \fIarg\fR of the procedure
+\fIprocName\fR.
+If \fIarg\fR is not specified, returns a list containing the argument
+specifiers list of all arguments of the procedure \fIprocName\fR.
+.TP
+\fBinfo argspec specifiers
+.VS
+Returns a list containing the argument specifiers supported by the
+current interpreter.
+.PP
+Note that the returned argument specifiers in all subcommands, except
+\fIspecifiers\fR, may not be exactly the
+same as the ones used during the procedure creation, but they are
+strictly equivalents.
+.VE
+.PP
+.CS
+proc p {{a -name A -name arg} {b -required 1 -default def}} {}
+info argspec proc p a
+                     \fI\(-> returns {a -name {A arg}}\fR
+
+info argspec proc p
+                     \fI\(-> returns {{a -name {A arg}} b}\fR
+.CE
+.PP
+In the example above, \fI-name A -name arg\fR and \fI-name {A arg}\fR
+are equivalent specifiers. Using \fI-required 1\fR and a default value
+on a non-keyword argument is equivalent to using no specifiers, as the
+default value is ignored when \fI-required 1\fR is used and will also
+force the argument to be specified.
+.VE
 .SS "CLASS INTROSPECTION"
 .VS 8.6
 .PP
