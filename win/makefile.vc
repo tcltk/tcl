@@ -878,6 +878,7 @@ $(OUT_DIR)\tclConfig.sh: $(WINDIR)\tclConfig.sh.in
 @SHLIB_SUFFIX@       .dll
 @DL_LIBS@
 @LDFLAGS@
+@TCL_CC_SEARCH_FLAGS@
 @TCL_LD_SEARCH_FLAGS@
 @LIBOBJS@
 @RANLIB@
