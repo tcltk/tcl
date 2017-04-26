@@ -747,20 +747,18 @@ Tcl_WaitForEvent(
 
 	numFound = PlatformEventsWait(tsdPtr->readyEvents, tsdPtr->maxReadyEvents, timeoutPtr);
 	for (numEvent = 0; numEvent < numFound; numEvent++) {
+	    char dummy;
 	    pedPtr = tsdPtr->readyEvents[numEvent].data.ptr;
 	    filePtr = pedPtr->filePtr;
 	    mask = PlatformEventsTranslate(&tsdPtr->readyEvents[numEvent]);
 #ifdef HAVE_EVENTFD
 	    if (filePtr->fd == tsdPtr->triggerEventFd) {
-		uint64_t eventFdVal;
-		i = read(tsdPtr->triggerEventFd, &eventFdVal, sizeof(eventFdVal));
-		if ((i != sizeof(eventFdVal)) && (errno != EAGAIN)) {
+		i = read(tsdPtr->triggerEventFd, &dummy, 1);
 #else
 	    if (filePtr->fd == tsdPtr->triggerPipe[0]) {
-		char triggerPipeVal;
-		i = read(tsdPtr->triggerPipe[0], &triggerPipeVal, sizeof(triggerPipeVal));
-		if ((i != sizeof(triggerPipeVal)) && (errno != EAGAIN)) {
+		i = read(tsdPtr->triggerPipe[0], &dummy, 1);
 #endif
+		if ((i != 1) && (errno != EAGAIN)) {
 			Tcl_Panic("Tcl_WaitForEvent: "
 				"read from %p->triggerEventFd: %s",
 				(void *)tsdPtr, strerror(errno));

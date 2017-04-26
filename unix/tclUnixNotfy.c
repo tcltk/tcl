@@ -123,9 +123,7 @@ Tcl_AlertNotifier(
 #else
 	ThreadSpecificData *tsdPtr = clientData;
 #if defined(NOTIFIER_EPOLL) && defined(HAVE_EVENTFD)
-	uint64_t eventFdVal = 1;
-	if (write(tsdPtr->triggerEventFd, &eventFdVal,
-		sizeof(eventFdVal)) != sizeof(eventFdVal)) {
+	if (write(tsdPtr->triggerEventFd, "", 1) != 1) {
 	    Tcl_Panic("Tcl_AlertNotifier: unable to write to %p->triggerEventFd",
 		(void *)tsdPtr);
 #else
