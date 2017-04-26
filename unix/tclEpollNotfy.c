@@ -354,24 +354,21 @@ PlatformEventsInit(
     if (errno) {
 	Tcl_Panic("Tcl_InitNotifier: %s", "could not create mutex");
     }
+    filePtr = ckalloc(sizeof(*filePtr));
 #ifdef HAVE_EVENTFD
     if ((tsdPtr->triggerEventFd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK)) <= 0) {
 	Tcl_Panic("Tcl_InitNotifier: %s", "could not create trigger eventfd");
     }
+    filePtr->fd = tsdPtr->triggerEventFd;
 #else
     if (pipe2(tsdPtr->triggerPipe, O_CLOEXEC | O_NONBLOCK) != 0) {
 	Tcl_Panic("Tcl_InitNotifier: %s", "could not create trigger pipe");
     }
+    filePtr->fd = tsdPtr->triggerPipe[0];
 #endif
     if ((tsdPtr->eventsFd = epoll_create1(EPOLL_CLOEXEC)) == -1) {
 	Tcl_Panic("epoll_create1: %s", strerror(errno));
     }
-    filePtr = ckalloc(sizeof(*filePtr));
-#ifdef HAVE_EVENTFD
-    filePtr->fd = tsdPtr->triggerEventFd;
-#else
-    filePtr->fd = tsdPtr->triggerPipe[0];
-#endif
     filePtr->mask = TCL_READABLE;
     PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_ADD, 1);
     if (!tsdPtr->readyEvents) {
@@ -660,11 +657,6 @@ Tcl_WaitForEvent(
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 	int numQueued;
 	ssize_t i;
-#ifdef HAVE_EVENTFD
-	uint64_t eventFdVal;
-#else
-	char triggerPipeVal;
-#endif
 
 	/*
 	 * Set up the timeout structure. Note that if there are no events to
@@ -760,10 +752,12 @@ Tcl_WaitForEvent(
 	    mask = PlatformEventsTranslate(&tsdPtr->readyEvents[numEvent]);
 #ifdef HAVE_EVENTFD
 	    if (filePtr->fd == tsdPtr->triggerEventFd) {
+		uint64_t eventFdVal;
 		i = read(tsdPtr->triggerEventFd, &eventFdVal, sizeof(eventFdVal));
 		if ((i != sizeof(eventFdVal)) && (errno != EAGAIN)) {
 #else
 	    if (filePtr->fd == tsdPtr->triggerPipe[0]) {
+		char triggerPipeVal;
 		i = read(tsdPtr->triggerPipe[0], &triggerPipeVal, sizeof(triggerPipeVal));
 		if ((i != sizeof(triggerPipeVal)) && (errno != EAGAIN)) {
 #endif
