@@ -102,11 +102,6 @@ void
 Tcl_AlertNotifier(
     ClientData clientData)
 {
-#ifdef NOTIFIER_EPOLL
-#ifdef HAVE_EVENTFD
-    uint64_t eventFdVal;
-#endif /* HAVE_EVENTFD */
-#endif /* NOTIFIER_EPOLL */
     if (tclNotifierHooks.alertNotifierProc) {
 	tclNotifierHooks.alertNotifierProc(clientData);
 	return;
@@ -128,7 +123,7 @@ Tcl_AlertNotifier(
 #else
 	ThreadSpecificData *tsdPtr = clientData;
 #if defined(NOTIFIER_EPOLL) && defined(HAVE_EVENTFD)
-	eventFdVal = 1;
+	uint64_t eventFdVal = 1;
 	if (write(tsdPtr->triggerEventFd, &eventFdVal,
 		sizeof(eventFdVal)) != sizeof(eventFdVal)) {
 	    Tcl_Panic("Tcl_AlertNotifier: unable to write to %p->triggerEventFd",
