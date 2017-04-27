@@ -363,9 +363,7 @@ VarHashCreateVar(
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
-    ((((objPtr)->typePtr == NULL) && ((objPtr)->bytes == NULL)) ||	\
-    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
-	? TCL_ERROR :							\
+    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))? TCL_ERROR : \
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 
 #else
@@ -385,9 +383,7 @@ VarHashCreateVar(
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
-    ((((objPtr)->typePtr == NULL) && ((objPtr)->bytes == NULL)) ||	\
-    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
-	? TCL_ERROR :							\
+    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))? TCL_ERROR :	\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 
 #endif
