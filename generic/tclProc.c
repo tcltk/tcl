@@ -2744,6 +2744,41 @@ MakeLambdaError(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclGetCmdFrameForProcedure --
+ *
+ *	How to get the CmdFrame information for a procedure.
+ *
+ * Results:
+ *	A pointer to the CmdFrame (only guaranteed to be valid until the next
+ *	Tcl command is processed or the interpreter's state is otherwise
+ *	modified) or a NULL if the information is not available.
+ *
+ * Side effects:
+ *	none.
+ *
+ *----------------------------------------------------------------------
+ */
+
+CmdFrame *
+TclGetCmdFrameForProcedure(
+    Proc *procPtr)		/* The procedure whose cmd-frame is to be
+				 * looked up. */
+{
+    Tcl_HashEntry *hePtr;
+
+    if (procPtr == NULL || procPtr->iPtr == NULL) {
+	return NULL;
+    }
+    hePtr = Tcl_FindHashEntry(procPtr->iPtr->linePBodyPtr, procPtr);
+    if (hePtr == NULL) {
+	return NULL;
+    }
+    return (CmdFrame *) Tcl_GetHashValue(hePtr);
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

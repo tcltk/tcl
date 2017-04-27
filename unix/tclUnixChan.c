@@ -605,7 +605,6 @@ TtySetOptionProc(
 	return TCL_OK;
     }
 
-
     /*
      * Option -handshake none|xonxoff|rtscts|dtrdsr
      */
@@ -706,6 +705,7 @@ TtySetOptionProc(
     /*
      * Option -ttycontrol {DTR 1 RTS 0 BREAK 0}
      */
+
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
 #if defined(TIOCMGET) && defined(TIOCMSET)
 	int i, control, flag;
@@ -882,6 +882,7 @@ TtyGetOptionProc(
      * Option is readonly and returned by [fconfigure chan -ttystatus] but not
      * returned by unnamed [fconfigure chan].
      */
+
     if ((len > 4) && (strncmp(optionName, "-ttystatus", len) == 0)) {
 	int status;
 
@@ -894,12 +895,10 @@ TtyGetOptionProc(
     if (valid) {
 	return TCL_OK;
     }
-    return Tcl_BadChannelOption(interp, optionName, "mode"
-	    " queue ttystatus xchar"
-	    );
+    return Tcl_BadChannelOption(interp, optionName,
+		"mode queue ttystatus xchar");
 }
 
-
 static const struct {int baud; speed_t speed;} speeds[] = {
 #ifdef B0
     {0, B0},
@@ -1023,7 +1022,7 @@ static const struct {int baud; speed_t speed;} speeds[] = {
 #endif
     {-1, 0}
 };
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -1315,7 +1314,8 @@ TtyParseMode(
 
 static void
 TtyInit(
-    int fd)	/* Open file descriptor for serial port to be initialized. */
+    int fd)			/* Open file descriptor for serial port to be
+				 * initialized. */
 {
     struct termios iostate;
     tcgetattr(fd, &iostate);
@@ -1325,8 +1325,7 @@ TtyInit(
 	    || iostate.c_lflag != 0
 	    || iostate.c_cflag & CREAD
 	    || iostate.c_cc[VMIN] != 1
-	    || iostate.c_cc[VTIME] != 0)
-    {
+	    || iostate.c_cc[VTIME] != 0) {
 	iostate.c_iflag = IGNBRK;
 	iostate.c_oflag = 0;
 	iostate.c_lflag = 0;
