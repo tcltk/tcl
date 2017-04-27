@@ -27,9 +27,8 @@ static Tcl_Obj *	DisassembleByteCodeObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 static int		FormatInstruction(ByteCode *codePtr,
 			    const unsigned char *pc, Tcl_Obj *bufferObj);
-static void		GetLocationInformation(Tcl_Interp *interp,
-			    Proc *procPtr, Tcl_Obj **fileObjPtr,
-			    int *linePtr);
+static void		GetLocationInformation(Proc *procPtr,
+			    Tcl_Obj **fileObjPtr, int *linePtr);
 static void		PrintSourceToObj(Tcl_Obj *appendObj,
 			    const char *stringPtr, int maxChars);
 static void		UpdateStringOfInstName(Tcl_Obj *objPtr);
@@ -82,8 +81,6 @@ static const Tcl_ObjType instNameType = {
 
 static void
 GetLocationInformation(
-    Tcl_Interp *interp,		/* Where to look up the location
-				 * information. */
     Proc *procPtr,		/* What to look up the information for. */
     Tcl_Obj **fileObjPtr,	/* Where to write the information about what
 				 * file the code came from. Will be written
@@ -97,20 +94,21 @@ GetLocationInformation(
 				 * either with the line number or with -1 if
 				 * the information is not available. */
 {
-    Interp *iPtr = (Interp *) interp;
-    Tcl_HashEntry *hePtr;
-    CmdFrame *cfPtr;
+    CmdFrame *cfPtr = TclGetCmdFrameForProcedure(procPtr);
 
     *fileObjPtr = NULL;
     *linePtr = -1;
-    if (iPtr != NULL && procPtr != NULL) {
-	hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, procPtr);
-	if (hePtr != NULL && (cfPtr = Tcl_GetHashValue(hePtr)) != NULL) {
-	    *linePtr = cfPtr->line[0];
-	    if (cfPtr->type == TCL_LOCATION_SOURCE) {
-		*fileObjPtr = cfPtr->data.eval.path;
-	    }
-	}
+    if (cfPtr == NULL) {
+	return;
+    }
+
+    /*
+     * Get the source location data out of the CmdFrame.
+     */
+
+    *linePtr = cfPtr->line[0];
+    if (cfPtr->type == TCL_LOCATION_SOURCE) {
+	*fileObjPtr = cfPtr->data.eval.path;
     }
 }
 
@@ -288,7 +286,7 @@ DisassembleByteCodeObj(
     Tcl_AppendToObj(bufferObj, "  Source ", -1);
     PrintSourceToObj(bufferObj, codePtr->source,
 	    TclMin(codePtr->numSrcBytes, 55));
-    GetLocationInformation(interp, codePtr->procPtr, &fileObj, &line);
+    GetLocationInformation(codePtr->procPtr, &fileObj, &line);
     if (line > -1 && fileObj != NULL) {
 	Tcl_AppendPrintfToObj(bufferObj, "\n  File \"%s\" Line %d",
 		Tcl_GetString(fileObj), line);
@@ -1233,7 +1231,7 @@ DisassembleByteCodeAsDicts(
      * system if it is available.
      */
 
-    GetLocationInformation(interp, codePtr->procPtr, &file, &line);
+    GetLocationInformation(codePtr->procPtr, &file, &line);
 
     /*
      * Build the overall result.
