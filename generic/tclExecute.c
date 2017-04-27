@@ -492,7 +492,9 @@ VarHashCreateVar(
 
 /*
  * Macro used in this file to save a function call for common uses of
- * TclGetNumberFromObj(). The ANSI C "prototype" is:
+ * TclGetNumberFromObj(). An "unsafe" version is available when objPtr
+ * is known to be of numeric type and valid (non-NAN) value already.
+ * The ANSI C "prototype" is:
  *
  * MODULE_SCOPE int GetNumberFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  *			ClientData *ptrPtr, int *tPtr);
@@ -514,6 +516,14 @@ VarHashCreateVar(
     (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
 	? TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
+#define GetNumberFromObjUnsafe(objPtr, ptrPtr, tPtr)			\
+    ((objPtr)->typePtr == &tclIntType)					\
+	?	(*(tPtr) = TCL_NUMBER_LONG,				\
+		*(ptrPtr) = (ClientData)				\
+		    (&((objPtr)->internalRep.longValue))) :		\
+		(*(tPtr) = TCL_NUMBER_DOUBLE,				\
+		*(ptrPtr) = (ClientData)				\
+		    (&((objPtr)->internalRep.doubleValue)))
 #else /* !TCL_WIDE_INT_IS_LONG */
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
     (((objPtr)->typePtr == &tclIntType)					\
@@ -534,6 +544,18 @@ VarHashCreateVar(
     (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
 	? TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
+#define GetNumberFromObjUnsafe(objPtr, ptrPtr, tPtr)			\
+    ((objPtr)->typePtr == &tclIntType)					\
+	?	(*(tPtr) = TCL_NUMBER_LONG,				\
+		*(ptrPtr) = (ClientData)				\
+		    (&((objPtr)->internalRep.longValue))) :		\
+    ((objPtr)->typePtr == &tclWideIntType)				\
+	?	(*(tPtr) = TCL_NUMBER_WIDE,				\
+		*(ptrPtr) = (ClientData)				\
+		    (&((objPtr)->internalRep.wideValue))) :		\
+		(*(tPtr) = TCL_NUMBER_DOUBLE,				\
+		*(ptrPtr) = (ClientData)				\
+		    (&((objPtr)->internalRep.doubleValue)))
 #endif /* TCL_WIDE_INT_IS_LONG */
 
 /*
@@ -9241,8 +9263,8 @@ TclCompareTwoNumbers(
     Tcl_WideInt w1, w2;
 #endif
 
-    (void) GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
-    (void) GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
+    GetNumberFromObjUnsafe(valuePtr, &ptr1, &type1);
+    GetNumberFromObjUnsafe(value2Ptr, &ptr2, &type2);
 
     switch (type1) {
     case TCL_NUMBER_LONG:
