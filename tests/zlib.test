@@ -1004,7 +1004,7 @@ test zlib-12.2 {Patrick Dunnigan's issue} -constraints zlib -setup {
 } -cleanup {
     removeFile $filesrc
     removeFile $filedst
-} -result 4152
+} -result 56
 
 ::tcltest::cleanupTests
 return
