@@ -8763,4 +8763,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2017-04-18 (bug)[bc4322] http package support for safe interps (nash,nijtmans)
 
---- Released 8.6.7, April 30, 2016 --- http://core.tcl.tk/tcl/ for details
+2017-04-28 (bug)[f34cf8] [file join a //b] => /b (neumann,porter)
+
+--- Released 8.6.7, May 10, 2016 --- http://core.tcl.tk/tcl/ for details
