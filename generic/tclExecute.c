@@ -512,8 +512,7 @@ VarHashCreateVar(
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
-    ((((objPtr)->typePtr == NULL) && ((objPtr)->bytes == NULL)) ||	\
-    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
+    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
 	? TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 #define GetNumberFromObjUnsafe(objPtr, ptrPtr, tPtr)			\
@@ -540,8 +539,7 @@ VarHashCreateVar(
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
-    ((((objPtr)->typePtr == NULL) && ((objPtr)->bytes == NULL)) ||	\
-    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
+    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
 	? TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 #define GetNumberFromObjUnsafe(objPtr, ptrPtr, tPtr)			\
@@ -8186,8 +8184,8 @@ ExecuteExtendedBinaryMathOp(
     int invalid, numPos, zero;
     long shift;
 
-    (void) GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
-    (void) GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
+    GetNumberFromObjUnsafe(valuePtr, &ptr1, &type1);
+    GetNumberFromObjUnsafe(value2Ptr, &ptr2, &type2);
 
     switch (opcode) {
     case INST_MOD:
@@ -9181,7 +9179,7 @@ ExecuteExtendedUnaryMathOp(
     mp_int big;
     Tcl_Obj *objResultPtr;
 
-    (void) GetNumberFromObj(NULL, valuePtr, &ptr, &type);
+    GetNumberFromObjUnsafe(valuePtr, &ptr, &type);
 
     switch (opcode) {
     case INST_BITNOT:
