@@ -166,7 +166,7 @@ TclpInitPlatform(void)
      */
     hInstance = LoadLibraryW(L"kernel32");
     if (hInstance != NULL) {
-	_tclWinProcs.cancelSynchronousIo = 
+	_tclWinProcs.cancelSynchronousIo =
 	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(hInstance,
 	    "CancelSynchronousIo");
     }
