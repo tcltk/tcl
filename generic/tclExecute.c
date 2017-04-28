@@ -519,10 +519,12 @@ VarHashCreateVar(
     ((objPtr)->typePtr == &tclIntType)					\
 	?	(*(tPtr) = TCL_NUMBER_LONG,				\
 		*(ptrPtr) = (ClientData)				\
-		    (&((objPtr)->internalRep.longValue))) :		\
-		(*(tPtr) = TCL_NUMBER_DOUBLE,				\
+		    (&((objPtr)->internalRep.longValue)), TCL_OK) :	\
+    ((objPtr)->typePtr == &tclDoubleType)				\
+	?	(*(tPtr) = TCL_NUMBER_DOUBLE,				\
 		*(ptrPtr) = (ClientData)				\
-		    (&((objPtr)->internalRep.doubleValue)))
+		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
+    TclGetNumberFromObj(NULL, (objPtr), (ptrPtr), (tPtr))
 #else /* !TCL_WIDE_INT_IS_LONG */
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
     (((objPtr)->typePtr == &tclIntType)					\
@@ -546,14 +548,16 @@ VarHashCreateVar(
     ((objPtr)->typePtr == &tclIntType)					\
 	?	(*(tPtr) = TCL_NUMBER_LONG,				\
 		*(ptrPtr) = (ClientData)				\
-		    (&((objPtr)->internalRep.longValue))) :		\
+		    (&((objPtr)->internalRep.longValue)), TCL_OK) :	\
     ((objPtr)->typePtr == &tclWideIntType)				\
 	?	(*(tPtr) = TCL_NUMBER_WIDE,				\
 		*(ptrPtr) = (ClientData)				\
-		    (&((objPtr)->internalRep.wideValue))) :		\
-		(*(tPtr) = TCL_NUMBER_DOUBLE,				\
+		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
+    ((objPtr)->typePtr == &tclDoubleType)				\
+	?	(*(tPtr) = TCL_NUMBER_DOUBLE,				\
 		*(ptrPtr) = (ClientData)				\
-		    (&((objPtr)->internalRep.doubleValue)))
+		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
+    TclGetNumberFromObj(NULL, (objPtr), (ptrPtr), (tPtr))
 #endif /* TCL_WIDE_INT_IS_LONG */
 
 /*
