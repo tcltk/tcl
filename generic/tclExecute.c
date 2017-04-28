@@ -9230,7 +9230,7 @@ TclCompareTwoNumbers(
     Tcl_Obj *valuePtr,
     Tcl_Obj *value2Ptr)
 {
-    int type1, type2, compare;
+    int type1 = TCL_NUMBER_NAN, type2 = TCL_NUMBER_NAN, compare;
     ClientData ptr1, ptr2;
     mp_int big1, big2;
     double d1, d2, tmp;
