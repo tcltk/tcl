@@ -98,14 +98,14 @@ MODULE_SCOPE void	TclpSetAllocCache(void *);
 /*
  *----------------------------------------------------------------------
  * Declarations of helper-workers threaded facilities for a pipe based channel.
- * 
+ *
  * Corresponding functionality provided in "tclWinPipe.c".
  *----------------------------------------------------------------------
  */
 
 typedef struct TclPipeThreadInfo {
     HANDLE evControl;		/* Auto-reset event used by the main thread to
-				 * signal when the pipe thread should attempt 
+				 * signal when the pipe thread should attempt
 				 * to do read/write operation. Additionally
 				 * used as signal to stop (state set to -1) */
     volatile LONG state;	/* Indicates current state of the thread */
@@ -122,7 +122,7 @@ typedef struct TclPipeThreadInfo {
 
 /*
  * State of the pipe-worker.
- * 
+ *
  * State PTI_STATE_STOP possible from idle state only, worker owns TI structure.
  * Otherwise PTI_STATE_END used (main thread hold ownership of the TI).
  */
@@ -134,8 +134,8 @@ typedef struct TclPipeThreadInfo {
 #define PTI_STATE_DOWN  8	/* worker is down */
 
 
-MODULE_SCOPE 
-TclPipeThreadInfo *	TclPipeThreadCreateTI(TclPipeThreadInfo **pipeTIPtr, 
+MODULE_SCOPE
+TclPipeThreadInfo *	TclPipeThreadCreateTI(TclPipeThreadInfo **pipeTIPtr,
 			    ClientData clientData, HANDLE wakeEvent);
 MODULE_SCOPE int	TclPipeThreadWaitForSignal(TclPipeThreadInfo **pipeTIPtr);
 
