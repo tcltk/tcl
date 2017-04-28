@@ -948,6 +948,7 @@ TclJoinPath(
 	    }
 	}
 	strElt = TclGetStringFromObj(elt, &strEltLen);
+	driveNameLength = 0;
 	type = TclGetPathType(elt, &fsPtr, &driveNameLength, &driveName);
 	if (type != TCL_PATH_RELATIVE) {
 	    /*
@@ -1003,6 +1004,12 @@ TclJoinPath(
 		}
 	    }
 	    ptr = strElt;
+	    /* [Bug f34cf83dd0] */
+	    if (driveNameLength > 0) {
+		if (ptr[0] == '/' && ptr[-1] == '/') {
+		    goto noQuickReturn;
+		}
+	    }
 	    while (*ptr != '\0') {
 		if (*ptr == '/' && (ptr[1] == '/' || ptr[1] == '\0')) {
 		    /*
