@@ -744,6 +744,43 @@ Tcl_GetEncodingNameFromEnvironment(
  *----------------------------------------------------------------------
  */
 
+#if defined(HAVE_COREFOUNDATION) && MAC_OS_X_VERSION_MAX_ALLOWED > 1020
+/*
+ * Helper because whether CFLocaleCopyCurrent and CFLocaleGetIdentifier are
+ * strongly or weakly bound varies by version of OSX, triggering warnings.
+ */
+
+static inline void
+InitMacLocaleInfoVar(
+    CFLocaleRef (*localeCopyCurrent)(void),
+    CFStringRef (*localeGetIdentifier)(CFLocaleRef),
+    Tcl_Interp *interp)
+{
+    CFLocaleRef localeRef;
+    CFStringRef locale;
+    char loc[256];
+
+    if (localeCopyCurrent == NULL || localeGetIdentifier == NULL) {
+	return;
+    }
+
+    localeRef = localeCopyCurrent();
+    if (!localeRef) {
+	return;
+    }
+
+    locale = localeGetIdentifier(localeRef);
+    if (locale && CFStringGetCString(locale, loc, 256,
+	    kCFStringEncodingUTF8)) {
+	if (!Tcl_CreateNamespace(interp, "::tcl::mac", NULL, NULL)) {
+	    Tcl_ResetResult(interp);
+	}
+	Tcl_SetVar(interp, "::tcl::mac::locale", loc, TCL_GLOBAL_ONLY);
+    }
+    CFRelease(localeRef);
+}
+#endif /*defined(HAVE_COREFOUNDATION) && MAC_OS_X_VERSION_MAX_ALLOWED > 1020*/
+
 void
 TclpSetVariables(
     Tcl_Interp *interp)
@@ -762,29 +799,12 @@ TclpSetVariables(
 #ifdef HAVE_COREFOUNDATION
     char tclLibPath[MAXPATHLEN + 1];
 
-#if MAC_OS_X_VERSION_MAX_ALLOWED > 1020
     /*
      * Set msgcat fallback locale to current CFLocale identifier.
      */
 
-    CFLocaleRef localeRef;
-
-    if (&CFLocaleCopyCurrent != NULL && &CFLocaleGetIdentifier != NULL &&
-	    (localeRef = CFLocaleCopyCurrent())) {
-	CFStringRef locale = CFLocaleGetIdentifier(localeRef);
-
-	if (locale) {
-	    char loc[256];
-
-	    if (CFStringGetCString(locale, loc, 256, kCFStringEncodingUTF8)) {
-		if (!Tcl_CreateNamespace(interp, "::tcl::mac", NULL, NULL)) {
-		    Tcl_ResetResult(interp);
-		}
-		Tcl_SetVar(interp, "::tcl::mac::locale", loc, TCL_GLOBAL_ONLY);
-	    }
-	}
-	CFRelease(localeRef);
-    }
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1020
+    InitMacLocaleInfoVar(CFLocaleCopyCurrent, CFLocaleGetIdentifier, interp);
 #endif /* MAC_OS_X_VERSION_MAX_ALLOWED > 1020 */
 
     if (MacOSXGetLibraryPath(interp, MAXPATHLEN, tclLibPath) == TCL_OK) {

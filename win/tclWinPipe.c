@@ -2619,7 +2619,7 @@ WaitForRead(
 	 */
 
 	/* avoid blocking if pipe-thread exited */
-	timeout = (!blocking || !TclPipeThreadIsAlive(&infoPtr->readTI) 
+	timeout = (!blocking || !TclPipeThreadIsAlive(&infoPtr->readTI)
 		|| TclInExit() || TclInThreadExit()) ? 0 : INFINITE;
 	if (WaitForSingleObject(infoPtr->readable, timeout) == WAIT_TIMEOUT) {
 	    /*
@@ -2727,7 +2727,7 @@ PipeReaderThread(
     HANDLE handle = NULL;
     DWORD count, err;
     int done = 0;
-   
+
     while (!done) {
 	/*
 	 * Wait for the main thread to signal before attempting to wait on the
@@ -3154,7 +3154,7 @@ TclPipeThreadWaitForSignal(
     }
 
     /* signaled to work */
-    return 1;   
+    return 1;
 
 end:
     /* end of work, check the owner of the TI structure */
@@ -3211,7 +3211,7 @@ TclPipeThreadStopSignal(
 	    *pipeTIPtr = NULL;
 
 	case PTI_STATE_DOWN:
-	
+
 	return 1;
 
 	default:
@@ -3308,7 +3308,7 @@ TclPipeThreadStop(
 
     if (pipeTI && hThread) {
 	DWORD exitCode;
-    
+
 	/*
 	 * The thread may already have closed on its own. Check its exit
 	 * code.
@@ -3362,22 +3362,22 @@ TclPipeThreadStop(
 		 * As a result, all new threads are deadlocked in their initialization phase and never execute,
 		 * even though CreateThread() reports successful thread creation.
 		 * This results in a very weird process-wide behavior, which is extremely hard to debug.
-		 * 
+		 *
 		 * THREADS SHOULD NEVER BE TERMINATED. Period.
-		 * 
+		 *
 		 * But for now, check if thread is exiting, and if so, let it die peacefully.
 		 *
 		 * Also don't terminate if in exit (otherwise deadlocked in ntdll.dll's).
 		 */
 
 		if ( pipeTI->state != PTI_STATE_DOWN
-		  && WaitForSingleObject(hThread, 
-			inExit ? 50 : 5000) != WAIT_OBJECT_0 
+		  && WaitForSingleObject(hThread,
+			inExit ? 50 : 5000) != WAIT_OBJECT_0
 		) {
 		    /* BUG: this leaks memory */
 		    if (inExit || !TerminateThread(hThread, 0)) {
 			/* in exit or terminate fails, just give thread a chance to exit */
-			if (InterlockedExchange(&pipeTI->state, 
+			if (InterlockedExchange(&pipeTI->state,
 				PTI_STATE_STOP) != PTI_STATE_DOWN) {
 			    pipeTI = NULL;
 			}
@@ -3408,7 +3408,7 @@ TclPipeThreadStop(
  *
  *	Clean-up for the pipe thread (removes owned TI-structure in worker).
  *
- *	Should be executed on worker exit, to inform the main thread or 
+ *	Should be executed on worker exit, to inform the main thread or
  *	free TI-structure (if owned).
  *
  *	After calling of this function, TI-structure pointer given via pipeTIPtr

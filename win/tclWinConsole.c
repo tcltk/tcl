@@ -1106,7 +1106,7 @@ ConsoleReaderThread(
     HANDLE *handle = NULL;
     ConsoleThreadInfo *threadInfo = NULL;
     int done = 0;
-   
+
     while (!done) {
 	/*
 	 * Wait for the main thread to signal before attempting to read.
@@ -1205,7 +1205,7 @@ ConsoleWriterThread(
     DWORD count, toWrite;
     char *buf;
     int done = 0;
-   
+
     while (!done) {
 	/*
 	 * Wait for the main thread to signal before attempting to write.
@@ -1339,7 +1339,7 @@ TclWinOpenConsoleChannel(
 
 	infoPtr->reader.readyEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->reader.thread = CreateThread(NULL, 256, ConsoleReaderThread,
-		TclPipeThreadCreateTI(&infoPtr->reader.TI, infoPtr, 
+		TclPipeThreadCreateTI(&infoPtr->reader.TI, infoPtr,
 			infoPtr->reader.readyEvent), 0, NULL);
 	SetThreadPriority(infoPtr->reader.thread, THREAD_PRIORITY_HIGHEST);
     }
