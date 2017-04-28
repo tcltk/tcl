@@ -8184,8 +8184,8 @@ ExecuteExtendedBinaryMathOp(
     int invalid, numPos, zero;
     long shift;
 
-    GetNumberFromObjUnsafe(valuePtr, &ptr1, &type1);
-    GetNumberFromObjUnsafe(value2Ptr, &ptr2, &type2);
+    (void) GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
+    (void) GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
 
     switch (opcode) {
     case INST_MOD:
@@ -9179,7 +9179,7 @@ ExecuteExtendedUnaryMathOp(
     mp_int big;
     Tcl_Obj *objResultPtr;
 
-    GetNumberFromObjUnsafe(valuePtr, &ptr, &type);
+    (void) GetNumberFromObj(NULL, valuePtr, &ptr, &type);
 
     switch (opcode) {
     case INST_BITNOT:
