@@ -1278,6 +1278,15 @@ TclNewFSPathObj(
     const char *p;
     int state = 0, count = 0;
 
+    /* if dirPtr is already tclFsPathType, its string representation
+     * may not be canonical.  Try to use its normPathPtr in this case.
+     */
+    if (   (dirPtr->typePtr == &tclFsPathType)
+	&& (PATHOBJ(dirPtr)->cwdPtr == NULL) 
+	&& (PATHOBJ(dirPtr)->normPathPtr != NULL)  ) {
+	dirPtr = PATHOBJ(dirPtr)->normPathPtr;
+    }
+
     /* [Bug 2806250] - this is only a partial solution of the problem.
      * The PATHFLAGS != 0 representation assumes in many places that
      * the "tail" part stored in the normPathPtr field is itself a
