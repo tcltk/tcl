@@ -128,7 +128,7 @@ static const Tcl_ChannelType fileChannelType = {
 
 #define SET_FLAG(var, flag)	((var) |= (flag))
 #define CLEAR_FLAG(var, flag)	((var) &= ~(flag))
-#define TEST_FLAG(value, flag)	((value) & (flag) != 0)
+#define TEST_FLAG(value, flag)	(((value) & (flag)) != 0)
 
 /*
  *----------------------------------------------------------------------
