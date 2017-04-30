@@ -433,7 +433,7 @@ NativeMatchType(
 	    return 0;
 	}
     } else {
-	if (types->perm != 0) {
+	if ((types->perm & ~TCL_GLOB_PERM_HIDDEN) != 0) {
 	    if (TclOSstat(nativeEntry, &buf) != 0) {
 		/*
 		 * Either the file has disappeared between the 'readdir' call
@@ -474,7 +474,7 @@ NativeMatchType(
 	    }
 	}
 	if (types->type != 0) {
-	    if (types->perm == 0) {
+	    if ((types->perm & ~TCL_GLOB_PERM_HIDDEN) == 0) {
 		/*
 		 * We haven't yet done a stat on the file.
 		 */

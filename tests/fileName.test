@@ -730,6 +730,25 @@ test filename-11.12 {Tcl_GlobCmd} {testsetplatform} {
     set env(HOME) $home
     set x
 } {1 {couldn't find HOME environment variable to expand path}}
+test filename-11.13 {Tcl_GlobCmd: hidden links on unix without stat()} -constraints {testsetplatform} -setup {
+    testsetplatform unix
+    file mkdir globTest/11.13
+    close [open globTest/11.13/nonexistent w]
+    file link -symbolic globTest/11.13/badlink nonexistent
+    file link -symbolic globTest/11.13/.badlink nonexistent
+    file delete globTest/11.13/nonexistent
+} -body {
+    # these should either both give results, or neither.  Bug 391bc0fd2c
+    list [
+        glob -nocomplain -tails -types l -dir globTest/11.13 *
+    ] [
+        glob -nocomplain -tails -types {hidden l} -dir globTest/11.13/ *
+    ] 
+} -cleanup {
+    file delete globTest/11.13/badlink
+    file delete globTest/11.13/.badlink
+    file delete globTest/11.13
+} -result {badlink .badlink}
 
 if {[testConstraint testsetplatform]} {
     testsetplatform $platform
