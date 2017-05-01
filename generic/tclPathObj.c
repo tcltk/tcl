@@ -921,7 +921,17 @@ TclJoinPath(
 			if (res != NULL) {
 			    TclDecrRefCount(res);
 			}
-			return TclNewFSPathObj(elt, str, len);
+
+			if (PATHFLAGS(elt)) {
+			    return TclNewFSPathObj(elt, str, len);
+			}
+			if (TCL_PATH_ABSOLUTE != Tcl_FSGetPathType(elt)) {
+			    return TclNewFSPathObj(elt, str, len);
+			}
+			(void) Tcl_FSGetNormalizedPath(NULL, elt);
+			if (elt == PATHOBJ(elt)->normPathPtr) {
+			    return TclNewFSPathObj(elt, str, len);
+			}
 		    }
 		}
 
@@ -1312,8 +1322,14 @@ TclNewFSPathObj(
     fsPathPtr->translatedPathPtr = NULL;
     fsPathPtr->normPathPtr = Tcl_NewStringObj(addStrRep, len);
     Tcl_IncrRefCount(fsPathPtr->normPathPtr);
-    fsPathPtr->cwdPtr = dirPtr;
-    Tcl_IncrRefCount(dirPtr);
+
+    if (TCL_PATH_ABSOLUTE == Tcl_FSGetPathType(dirPtr)) {
+	fsPathPtr->cwdPtr = Tcl_FSGetNormalizedPath(NULL, dirPtr);
+    } else {
+fprintf(stdout, "FUCKING BROKEN!\n"); fflush(stdout);
+	fsPathPtr->cwdPtr = dirPtr;
+    }
+    Tcl_IncrRefCount(fsPathPtr->cwdPtr);
     fsPathPtr->nativePathPtr = NULL;
     fsPathPtr->fsPtr = NULL;
     fsPathPtr->filesystemEpoch = 0;
