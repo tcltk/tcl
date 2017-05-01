@@ -1322,14 +1322,8 @@ TclNewFSPathObj(
     fsPathPtr->translatedPathPtr = NULL;
     fsPathPtr->normPathPtr = Tcl_NewStringObj(addStrRep, len);
     Tcl_IncrRefCount(fsPathPtr->normPathPtr);
-
-    if (TCL_PATH_ABSOLUTE == Tcl_FSGetPathType(dirPtr)) {
-	fsPathPtr->cwdPtr = Tcl_FSGetNormalizedPath(NULL, dirPtr);
-    } else {
-fprintf(stdout, "FUCKING BROKEN!\n"); fflush(stdout);
-	fsPathPtr->cwdPtr = dirPtr;
-    }
-    Tcl_IncrRefCount(fsPathPtr->cwdPtr);
+    fsPathPtr->cwdPtr = dirPtr;
+    Tcl_IncrRefCount(dirPtr);
     fsPathPtr->nativePathPtr = NULL;
     fsPathPtr->fsPtr = NULL;
     fsPathPtr->filesystemEpoch = 0;
