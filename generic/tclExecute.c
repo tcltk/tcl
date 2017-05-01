@@ -453,8 +453,7 @@ VarHashCreateVar(
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
-    ((((objPtr)->typePtr == NULL) && ((objPtr)->bytes == NULL)) ||	\
-    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
+    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
 	? TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 #else /* !TCL_WIDE_INT_IS_LONG */
@@ -473,8 +472,7 @@ VarHashCreateVar(
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
-    ((((objPtr)->typePtr == NULL) && ((objPtr)->bytes == NULL)) ||	\
-    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
+    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
 	? TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 #endif /* TCL_WIDE_INT_IS_LONG */
@@ -9090,7 +9088,7 @@ TclCompareTwoNumbers(
     Tcl_Obj *valuePtr,
     Tcl_Obj *value2Ptr)
 {
-    int type1, type2, compare;
+    int type1 = TCL_NUMBER_NAN, type2 = TCL_NUMBER_NAN, compare;
     ClientData ptr1, ptr2;
     mp_int big1, big2;
     double d1, d2, tmp;
