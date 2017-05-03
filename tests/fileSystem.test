@@ -498,7 +498,7 @@ test filesystem-1.51.1 {file normalisation .. beyond root (Bug 1379287)} {
         set res "ok"
     }
 } {ok}
-test filesystem-1.52 {bug f9f390d0fa: file join where strep is not canonical} -body {
+test filesystem-1.52 {bug f9f390d0fa: file join where strep is not canonical} -constraints unix -body {
     set x //foo
     file normalize $x
     file join $x bar
