@@ -76,6 +76,15 @@ typedef struct {
 #define PROCESSOR_ARCHITECTURE_UNKNOWN		0xFFFF
 #endif
 
+
+/*
+ * Windows version dependend functions
+ */
+static TclWinProcs _tclWinProcs = {
+    NULL
+};
+TclWinProcs *tclWinProcs = &_tclWinProcs;
+
 /*
  * The following arrays contain the human readable strings for the Windows
  * platform and processor values.
@@ -141,9 +150,7 @@ TclpInitPlatform(void)
 {
     WSADATA wsaData;
     WORD wVersionRequested = MAKEWORD(2, 2);
-#ifdef WIN32_USE_TICKCOUNT
     HMODULE dllH;
-#endif
 
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
@@ -185,6 +192,16 @@ TclpInitPlatform(void)
 
     TclWinInit(GetModuleHandle(NULL));
 #endif
+
+    /*
+     * Fill available functions depending on windows version
+     */
+    dllH = GetModuleHandle(TEXT("KERNEL32"));
+    if (dllH != NULL) {
+	_tclWinProcs.cancelSynchronousIo =
+	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(dllH,
+	    "CancelSynchronousIo");
+    }
 }
 
 /*
