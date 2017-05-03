@@ -285,7 +285,7 @@ declare 75 {
 declare 76 {
     void Tcl_BackgroundError(Tcl_Interp *interp)
 }
-declare 77 deprecated {
+declare 77 {deprecated {Use Tcl_UtfBackslash}} {
     char Tcl_Backslash(const char *src, int *readPtr)
 }
 declare 78 {
@@ -352,7 +352,7 @@ declare 93 {
 declare 94 {
     Tcl_Interp *Tcl_CreateInterp(void)
 }
-declare 95 deprecated {
+declare 95 {deprecated {}} {
     void Tcl_CreateMathFunc(Tcl_Interp *interp, const char *name,
 	    int numArgs, Tcl_ValueType *argTypes,
 	    Tcl_MathProc *proc, ClientData clientData)
@@ -470,7 +470,7 @@ declare 129 {
     int Tcl_Eval(Tcl_Interp *interp, const char *script)
 }
 # This is obsolete, use Tcl_FSEvalFile
-declare 130 deprecated {
+declare 130 {deprecated {Use Tcl_FSEvalFile}} {
     int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
 }
 declare 131 {
@@ -781,7 +781,7 @@ declare 219 {
     int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
 }
 # Obsolete
-declare 220 deprecated {
+declare 220 {
     int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
 }
 declare 221 {
@@ -869,7 +869,7 @@ declare 245 {
     int Tcl_StringMatch(const char *str, const char *pattern)
 }
 # Obsolete
-declare 246 deprecated {
+declare 246 {
     int Tcl_TellOld(Tcl_Channel chan)
 }
 declare 247 {
@@ -1214,10 +1214,10 @@ declare 339 {
 declare 340 {
     char *Tcl_GetString(Tcl_Obj *objPtr)
 }
-declare 341 deprecated {
+declare 341 {deprecated {Use Tcl_GetEncodingSearchPath}} {
     CONST84_RETURN char *Tcl_GetDefaultEncodingDir(void)
 }
-declare 342 deprecated {
+declare 342 {deprecated {Use Tcl_SetEncodingSearchPath}} {
     void Tcl_SetDefaultEncodingDir(const char *path)
 }
 declare 343 {
@@ -1266,7 +1266,7 @@ declare 356 {
     Tcl_RegExp Tcl_GetRegExpFromObj(Tcl_Interp *interp, Tcl_Obj *patObj,
 	    int flags)
 }
-declare 357 deprecated {
+declare 357 {deprecated {Use Tcl_EvalTokensStandard}} {
     Tcl_Obj *Tcl_EvalTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 	    int count)
 }
@@ -1548,12 +1548,12 @@ declare 434 {
 }
 
 # TIP#15 (math function introspection) dkf
-declare 435 deprecated {
+declare 435 {deprecated {}} {
     int Tcl_GetMathFuncInfo(Tcl_Interp *interp, const char *name,
 	    int *numArgsPtr, Tcl_ValueType **argTypesPtr,
 	    Tcl_MathProc **procPtr, ClientData *clientDataPtr)
 }
-declare 436 deprecated {
+declare 436 {deprecated {}} {
     Tcl_Obj *Tcl_ListMathFuncs(Tcl_Interp *interp, const char *pattern)
 }
 

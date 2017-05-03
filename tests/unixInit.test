@@ -88,10 +88,10 @@ test unixInit-1.2 {initialisation: standard channel type deduction} {unix stdio}
 skip [concat [skip] unixInit-2.*]
 
 test unixInit-2.0 {TclpInitLibraryPath: setting tclDefaultEncodingDir} {
-    set origDir [testgetdefenc]
-    testsetdefenc slappy
-    set path [testgetdefenc]
-    testsetdefenc $origDir
+    set origPath [testgetencpath]
+    testsetencpath slappy
+    set path [testgetencpath]
+    testsetencpath $origPath
     set path
 } {slappy}
 test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} -setup {
