@@ -619,7 +619,7 @@ TclWinSetInterfaces(
     int wide)			/* Non-zero to use wide interfaces, 0
 				 * otherwise. */
 {
-    HINSTANCE hKernInst = NULL;
+    HINSTANCE hInstance, hKernInst = NULL;
 
     Tcl_FreeEncoding(tclWinTCharEncoding);
 
