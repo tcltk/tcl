@@ -80,10 +80,7 @@ typedef struct {
 /*
  * Windows version dependend functions
  */
-static TclWinProcs _tclWinProcs = {
-    NULL
-};
-TclWinProcs *tclWinProcs = &_tclWinProcs;
+TclWinProcs tclWinProcs;
 
 /*
  * The following arrays contain the human readable strings for the Windows
@@ -141,7 +138,7 @@ TclpInitPlatform(void)
 {
     WSADATA wsaData;
     WORD wVersionRequested = MAKEWORD(2, 2);
-    HINSTANCE hInstance;
+    HMODULE handle;
 
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
@@ -164,12 +161,10 @@ TclpInitPlatform(void)
     /*
      * Fill available functions depending on windows version
      */
-    hInstance = LoadLibraryW(L"kernel32");
-    if (hInstance != NULL) {
-	_tclWinProcs.cancelSynchronousIo =
-	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(hInstance,
+    handle = GetModuleHandle(TEXT("KERNEL32"));
+    tclWinProcs.cancelSynchronousIo =
+	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(handle,
 	    "CancelSynchronousIo");
-    }
 }
 
 /*
@@ -557,15 +552,12 @@ TclpSetVariables(
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
 
     if (!osInfoInitialized) {
-	HANDLE handle = LoadLibraryW(L"NTDLL");
+	HMODULE handle = GetModuleHandle(TEXT("NTDLL"));
 	int(__stdcall *getversion)(void *) =
 		(int(__stdcall *)(void *)) GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
 	if (!getversion || getversion(&osInfo)) {
 	    GetVersionExW(&osInfo);
-	}
-	if (handle) {
-		FreeLibrary(handle);
 	}
 	osInfoInitialized = 1;
     }
