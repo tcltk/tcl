@@ -8141,7 +8141,14 @@ test io-60.1 {writing illegal utf sequences} {openpipe fileevent} {
 
     set out [open $path(script) w]
     puts $out {
-	puts [encoding convertfrom identity \xe2]
+	# be sure we are utf-8 here (e. g. on windows platform)
+	fconfigure stdout -encoding utf-8
+	# if have testbytestring:
+        if {[llength [info commands testbytestring]]} {
+	    puts [testbytestring \xe2]
+        } else {
+	    puts [encoding convertfrom identity \xe2]
+	}
 	exit 1
     }
     proc readit {pipe} {
@@ -8157,6 +8164,7 @@ test io-60.1 {writing illegal utf sequences} {openpipe fileevent} {
     }
     close $out
     set pipe [open "|[list [interpreter] $path(script)]" r]
+    fconfigure $pipe -encoding utf-8; # be sure we are utf-8 (e. g. on windows platform)
     fileevent $pipe readable [namespace code [list readit $pipe]]
     variable x ""
     set result ""
