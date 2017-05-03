@@ -38,7 +38,7 @@ typedef struct TclWinProcs {
     BOOL (WINAPI *cancelSynchronousIo)(HANDLE);
 } TclWinProcs;
 
-MODULE_SCOPE TclWinProcs *tclWinProcs;
+MODULE_SCOPE TclWinProcs tclWinProcs;
 
 /*
  * Some versions of Borland C have a define for the OSVERSIONINFO for
