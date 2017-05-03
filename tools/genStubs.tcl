@@ -470,9 +470,10 @@ proc genStubs::makeDecl {name decl index} {
 
     append text "/* $index */\n"
     if {[info exists stubs($name,deprecated,$index)]} {
-    set line "[string toupper $libraryName]_DEPRECATED(\"$stubs($name,deprecated,$index)\")\n$rtype"
+	append text "[string toupper $libraryName]_DEPRECATED(\"$stubs($name,deprecated,$index)\")\n"
+	set line "$rtype"
     } else {
-    set line "$scspec $rtype"
+	set line "$scspec $rtype"
     }
     set count [expr {2 - ([string length $line] / 8)}]
     append line [string range "\t\t\t" 0 $count]
