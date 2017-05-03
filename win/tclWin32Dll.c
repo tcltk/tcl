@@ -116,7 +116,9 @@ static TclWinProcs asciiProcs = {
     /* ReadConsole and WriteConsole */
     (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleA,
     (BOOL (WINAPI *)(HANDLE, const VOID*, DWORD, LPDWORD, LPVOID)) WriteConsoleA,
-    (BOOL (WINAPI *)(LPTSTR, LPDWORD)) GetUserNameA
+    (BOOL (WINAPI *)(LPTSTR, LPDWORD)) GetUserNameA,
+    /* Windows version dependend functions */
+    NULL
 };
 
 static TclWinProcs unicodeProcs = {
@@ -175,7 +177,9 @@ static TclWinProcs unicodeProcs = {
     /* ReadConsole and WriteConsole */
     (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleW,
     (BOOL (WINAPI *)(HANDLE, const VOID*, DWORD, LPDWORD, LPVOID)) WriteConsoleW,
-    (BOOL (WINAPI *)(LPTSTR, LPDWORD)) GetUserNameW
+    (BOOL (WINAPI *)(LPTSTR, LPDWORD)) GetUserNameW,
+    /* Windows version dependend functions */
+    NULL
 };
 
 TclWinProcs *tclWinProcs;
@@ -448,7 +452,9 @@ TclWinInit(
 	Tcl_Panic("Win32s is not a supported platform");
     }
 
-    tclWinProcs = &asciiProcs;
+    /* Initialize tclWinProcs as &asciiProcs (can later switch to &unicodeProcs
+     * within Tcl_FindExecutable) */
+    TclWinSetInterfaces(0);
 }
 
 /*
@@ -613,34 +619,35 @@ TclWinSetInterfaces(
     int wide)			/* Non-zero to use wide interfaces, 0
 				 * otherwise. */
 {
+    HINSTANCE hKernInst = NULL;
+
     Tcl_FreeEncoding(tclWinTCharEncoding);
 
     if (wide) {
 	tclWinProcs = &unicodeProcs;
 	tclWinTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
 	if (tclWinProcs->getFileAttributesExProc == NULL) {
-	    HINSTANCE hInstance = LoadLibraryA("kernel32");
-	    if (hInstance != NULL) {
+	    hKernInst = LoadLibraryA("kernel32");
+	    if (hKernInst != NULL) {
 		tclWinProcs->getFileAttributesExProc =
 			(BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS,
-			LPVOID)) GetProcAddress(hInstance,
+			LPVOID)) GetProcAddress(hKernInst,
 			"GetFileAttributesExW");
 		tclWinProcs->createHardLinkProc =
 			(BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*,
-			LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance,
+			LPSECURITY_ATTRIBUTES)) GetProcAddress(hKernInst,
 			"CreateHardLinkW");
 		tclWinProcs->findFirstFileExProc =
 			(HANDLE (WINAPI *)(CONST TCHAR*, UINT, LPVOID, UINT,
-			LPVOID, DWORD)) GetProcAddress(hInstance,
+			LPVOID, DWORD)) GetProcAddress(hKernInst,
 			"FindFirstFileExW");
 		tclWinProcs->getVolumeNameForVMPProc =
 			(BOOL (WINAPI *)(CONST TCHAR*, TCHAR*,
-			DWORD)) GetProcAddress(hInstance,
+			DWORD)) GetProcAddress(hKernInst,
 			"GetVolumeNameForVolumeMountPointW");
 		tclWinProcs->getLongPathNameProc =
 			(DWORD (WINAPI *)(CONST TCHAR*, TCHAR*,
-			DWORD)) GetProcAddress(hInstance, "GetLongPathNameW");
-		FreeLibrary(hInstance);
+			DWORD)) GetProcAddress(hKernInst, "GetLongPathNameW");
 	    }
 	    hInstance = LoadLibraryA("advapi32");
 	    if (hInstance != NULL) {
@@ -677,15 +684,15 @@ TclWinSetInterfaces(
 	tclWinProcs = &asciiProcs;
 	tclWinTCharEncoding = NULL;
 	if (tclWinProcs->getFileAttributesExProc == NULL) {
-	    HINSTANCE hInstance = LoadLibraryA("kernel32");
-	    if (hInstance != NULL) {
+	    hKernInst = LoadLibraryA("kernel32");
+	    if (hKernInst != NULL) {
 		tclWinProcs->getFileAttributesExProc =
 			(BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS,
-			LPVOID)) GetProcAddress(hInstance,
+			LPVOID)) GetProcAddress(hKernInst,
 			"GetFileAttributesExA");
 		tclWinProcs->createHardLinkProc =
 			(BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*,
-			LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance,
+			LPSECURITY_ATTRIBUTES)) GetProcAddress(hKernInst,
 			"CreateHardLinkA");
 		tclWinProcs->findFirstFileExProc = NULL;
 		tclWinProcs->getLongPathNameProc = NULL;
@@ -697,16 +704,23 @@ TclWinSetInterfaces(
 		 * findFirstFileProc.
 		 *
 		 * (HANDLE (WINAPI *)(CONST TCHAR*, UINT,
-		 * LPVOID, UINT, LPVOID, DWORD)) GetProcAddress(hInstance,
+		 * LPVOID, UINT, LPVOID, DWORD)) GetProcAddress(hKernInst,
 		 * "FindFirstFileExA");
 		 */
 		tclWinProcs->getVolumeNameForVMPProc =
 			(BOOL (WINAPI *)(CONST TCHAR*, TCHAR*,
-			DWORD)) GetProcAddress(hInstance,
+			DWORD)) GetProcAddress(hKernInst,
 			"GetVolumeNameForVolumeMountPointA");
-		FreeLibrary(hInstance);
 	    }
 	}
+    }
+
+    /* Windows version dependend functions */
+    if (hKernInst != NULL) {
+	tclWinProcs->cancelSynchronousIo = 
+	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(hKernInst,
+	    "CancelSynchronousIo");
+	FreeLibrary(hKernInst);
     }
 }
 
