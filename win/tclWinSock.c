@@ -262,7 +262,6 @@ static Tcl_ChannelType tcpChannelType = {
 static void
 InitSockets(void)
 {
-    DWORD id;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 	    TclThreadDataKeyGet(&dataKey);
 
@@ -313,8 +312,8 @@ InitSockets(void)
 	if (tsdPtr->socketListLock == NULL) {
 	    goto initFailure;
 	}
-	tsdPtr->socketThread = CreateThread(NULL, 256, SocketThread, tsdPtr,
-		0, &id);
+	tsdPtr->socketThread = TclWinThreadCreate(NULL, SocketThread, tsdPtr,
+		256);
 	if (tsdPtr->socketThread == NULL) {
 	    goto initFailure;
 	}
@@ -432,17 +431,20 @@ TclpFinalizeSockets(void)
     if (tsdPtr != NULL) {
 	if (tsdPtr->socketThread != NULL) {
 	    if (tsdPtr->hwnd != NULL) {
-		if (PostMessage(tsdPtr->hwnd, SOCKET_TERMINATE, 0, 0)) {
-		    /*
-		     * Wait for the thread to exit. This ensures that we are
-		     * completely cleaned up before we leave this function.
-		     */
-		    WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
-		}
+		PostMessage(tsdPtr->hwnd, SOCKET_TERMINATE, 0, 0);
 		tsdPtr->hwnd = NULL;
 	    }
-	    CloseHandle(tsdPtr->socketThread);
-	    tsdPtr->socketThread = NULL;
+	    /*
+	     * Wait for the thread to exit. This ensures that we are
+	     * completely cleaned up before we leave this function.
+	     */
+	    if (tsdPtr->socketThread) {
+		WaitForSingleObject(tsdPtr->socketThread, INFINITE);
+		if (tsdPtr->socketThread) {
+		    CloseHandle(tsdPtr->socketThread);
+		    tsdPtr->socketThread = NULL;
+		}
+	    }
 	}
 	if (tsdPtr->readyEvent != NULL) {
 	    CloseHandle(tsdPtr->readyEvent);
@@ -2263,6 +2265,11 @@ SocketThread(
 
     SetEvent(tsdPtr->readyEvent);
 
+    tsdPtr->hwnd = NULL;
+    CloseHandle(tsdPtr->socketThread);
+    tsdPtr->socketThread = NULL;
+
+    TclWinThreadExit(msg.wParam);
     return msg.wParam;
 }
 
