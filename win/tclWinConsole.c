@@ -1204,10 +1204,10 @@ ConsoleWriterThread(
 				  &count) == FALSE) {
 		infoPtr->writeError = GetLastError();
 		done = 1;
-	    } else {
-		toWrite -= count;
-		buf += count;
+		break;
 	    }
+	    toWrite -= count;
+	    buf += count;
 	}
 
 	/*
