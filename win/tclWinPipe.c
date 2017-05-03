@@ -3329,8 +3329,8 @@ TclPipeThreadStop(
 	    /*
 	     * Cancel all sync-IO of this thread (may be blocked there).
 	     */
-	    if (tclWinProcs->cancelSynchronousIo) {
-		tclWinProcs->cancelSynchronousIo(hThread);
+	    if (tclWinProcs.cancelSynchronousIo) {
+		tclWinProcs.cancelSynchronousIo(hThread);
 	    }
 
 	    /*
