@@ -223,18 +223,8 @@ TclpThreadCreate(
 
     EnterCriticalSection(&joinLock);
 
-    *idPtr = 0; /* must initialize as Tcl_Thread is a pointer and
-                 * on WIN64 sizeof void* != sizeof unsigned
-		 */
-
-#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
-    tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize,
-	    (Tcl_ThreadCreateProc*) TclWinThreadStart, winThreadPtr,
-	    0, (unsigned *)idPtr);
-#else
-    tHandle = CreateThread(NULL, (DWORD) stackSize,
-	    TclWinThreadStart, winThreadPtr, 0, (LPDWORD)idPtr);
-#endif
+    tHandle = TclWinThreadCreate(idPtr,	TclWinThreadStart, winThreadPtr,
+		stackSize);
 
     if (tHandle == NULL) {
 	LeaveCriticalSection(&joinLock);
@@ -305,11 +295,7 @@ TclpThreadExit(
     TclSignalExitThread(Tcl_GetCurrentThread(), status);
     LeaveCriticalSection(&joinLock);
 
-#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
-    _endthreadex((unsigned) status);
-#else
-    ExitThread((DWORD) status);
-#endif
+    TclWinThreadExit(status);
 }
 
 /*

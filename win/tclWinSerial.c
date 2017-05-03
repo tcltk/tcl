@@ -1469,9 +1469,8 @@ TclWinOpenSerialChannel(
 
 	infoPtr->osWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	infoPtr->evWritable = CreateEvent(NULL, TRUE, TRUE, NULL);
-	infoPtr->writeThread = CreateThread(NULL, 256, SerialWriterThread,
-		TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr, 
-			infoPtr->evWritable), 0, NULL);
+	infoPtr->writeThread = TclPipeThreadCreate(&infoPtr->writeTI,
+		SerialWriterThread, infoPtr, infoPtr->evWritable);
     }
 
     /*

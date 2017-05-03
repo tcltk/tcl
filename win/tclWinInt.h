@@ -210,6 +210,51 @@ MODULE_SCOPE void	TclpSetAllocCache(void *);
 #define FILE_ATTRIBUTE_REPARSE_POINT 0x00000400
 #endif
 
+
+/*
+ * Windows specified thread declarations.
+ * 
+ * Prevent runtime error R6016 (not enough space for thread data). See section
+ * "Remarks" in https://msdn.microsoft.com/en-us/library/windows/desktop/ms682453(v=vs.85).aspx
+ */
+
+static inline HANDLE
+TclWinThreadCreate(
+    Tcl_ThreadId *idPtr,	/* Return, the ID of the thread. */
+    LPTHREAD_START_ROUTINE proc,/* Main() function of the thread. */
+    ClientData clientData,	/* The one argument to Main(). */
+    int stackSize)		/* Size of stack for the new thread. */
+{
+
+    if (idPtr) {
+	*idPtr = 0; /* must initialize as Tcl_Thread is a pointer and
+		     * on WIN64 sizeof void* != sizeof unsigned */
+    }
+    /*
+     * Threads that calls CRT, should use the _beginthreadex and _endthreadex
+     * functions for thread management rather than CreateThread and ExitThread.
+     * WARNING: If a thread created using CreateThread calls the CRT, the CRT
+     * may terminate the process in low-memory conditions.
+     */
+#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+    return (HANDLE) _beginthreadex(NULL, (unsigned) stackSize,
+	proc, clientData, 0, (unsigned *)idPtr);
+#else
+    return CreateThread(NULL, (DWORD) stackSize,
+	proc, clientData, 0, (LPDWORD)idPtr);
+#endif
+}
+
+static void
+TclWinThreadExit(int status)
+{
+#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+    _endthreadex((unsigned) status);
+#else
+    ExitThread((DWORD) status);
+#endif
+}
+
 /*
  *----------------------------------------------------------------------
  * Declarations of helper-workers threaded facilities for a pipe based channel.
@@ -252,6 +297,10 @@ typedef struct TclPipeThreadInfo {
 MODULE_SCOPE 
 TclPipeThreadInfo *	TclPipeThreadCreateTI(TclPipeThreadInfo **pipeTIPtr, 
 			    ClientData clientData, HANDLE wakeEvent);
+MODULE_SCOPE HANDLE	TclPipeThreadCreate(TclPipeThreadInfo **pipeTIPtr,
+			    LPTHREAD_START_ROUTINE proc, ClientData clientData,
+			    HANDLE wakeEvent);
+
 MODULE_SCOPE int	TclPipeThreadWaitForSignal(TclPipeThreadInfo **pipeTIPtr);
 
 static inline void

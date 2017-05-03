@@ -1310,18 +1310,16 @@ TclWinOpenConsoleChannel(
 	SetConsoleMode(infoPtr->handle, modes);
 
 	infoPtr->reader.readyEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
-	infoPtr->reader.thread = CreateThread(NULL, 256, ConsoleReaderThread,
-		TclPipeThreadCreateTI(&infoPtr->reader.TI, infoPtr, 
-			infoPtr->reader.readyEvent), 0, NULL);
+	infoPtr->reader.thread = TclPipeThreadCreate(&infoPtr->reader.TI,
+		ConsoleReaderThread, infoPtr, infoPtr->reader.readyEvent);
 	SetThreadPriority(infoPtr->reader.thread, THREAD_PRIORITY_HIGHEST);
     }
 
     if (permissions & TCL_WRITABLE) {
 
 	infoPtr->writer.readyEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
-	infoPtr->writer.thread = CreateThread(NULL, 256, ConsoleWriterThread,
-		TclPipeThreadCreateTI(&infoPtr->writer.TI, infoPtr,
-			infoPtr->writer.readyEvent), 0, NULL);
+	infoPtr->writer.thread = TclPipeThreadCreate(&infoPtr->writer.TI,
+		ConsoleWriterThread, infoPtr, infoPtr->writer.readyEvent);
 	SetThreadPriority(infoPtr->writer.thread, THREAD_PRIORITY_HIGHEST);
     }
 

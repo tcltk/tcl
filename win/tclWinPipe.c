@@ -1667,9 +1667,8 @@ TclpCreateCommandChannel(
 	 */
 
 	infoPtr->readable = CreateEvent(NULL, TRUE, TRUE, NULL);
-	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
-	    TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr, infoPtr->readable),
-	    0, NULL);
+	infoPtr->readThread = TclPipeThreadCreate(&infoPtr->readTI,
+		PipeReaderThread, infoPtr, infoPtr->readable);
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
@@ -1682,9 +1681,8 @@ TclpCreateCommandChannel(
 	 */
 
 	infoPtr->writable = CreateEvent(NULL, TRUE, TRUE, NULL);
-	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
-	    TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr, infoPtr->writable),
-	    0, NULL);
+	infoPtr->writeThread = TclPipeThreadCreate(&infoPtr->writeTI,
+		PipeWriterThread, infoPtr, infoPtr->writable);
 	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     } else {
@@ -3035,6 +3033,31 @@ TclPipeThreadCreateTI(
 /*
  *----------------------------------------------------------------------
  *
+ * TclPipeThreadCreate --
+ *
+ *	Creates a pipe-worker thread and its thread info structure.
+ *
+ * Results:
+ *	Pointer to created TI structure.
+ *
+ *----------------------------------------------------------------------
+ */
+
+HANDLE
+TclPipeThreadCreate(
+    TclPipeThreadInfo **pipeTIPtr,/* Resulting thread info structure */
+    LPTHREAD_START_ROUTINE proc,/* Main() function of the thread. */
+    ClientData clientData,	/* The one argument to Main(). */
+    HANDLE wakeEvent)		/* Optional thread wake-up event */
+{
+    return TclWinThreadCreate(NULL, proc,
+		TclPipeThreadCreateTI(pipeTIPtr, clientData, wakeEvent), 256);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclPipeThreadWaitForSignal --
  *
  *	Wait for work/stop signals inside pipe worker.
@@ -3371,7 +3394,7 @@ TclPipeThreadExit(
      * own it.
      */
     if (!pipeTI) {
-	return;
+	goto end;
     }
     *pipeTIPtr = NULL;
     if ((state = InterlockedExchange(&pipeTI->state,
@@ -3388,6 +3411,9 @@ TclPipeThreadExit(
 	Tcl_FinalizeThread();
     #endif
     }
+
+  end:
+    TclWinThreadExit(0);
 }
 
 /*
