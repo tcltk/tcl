@@ -10,8 +10,6 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.4
-
 namespace eval genStubs {
     # libraryName --
     #
@@ -193,12 +191,21 @@ proc genStubs::declare {args} {
     regsub -all "\[ \t\n\]+" [string trim $decl] " " decl
     set decl [parseDecl $decl]
 
-    foreach platform $platformList {
-	if {$decl ne ""} {
-	    set stubs($curName,$platform,$index) $decl
-	    if {![info exists stubs($curName,$platform,lastNum)] \
-		    || ($index > $stubs($curName,$platform,lastNum))} {
-		set stubs($curName,$platform,lastNum) $index
+    if {([lindex $platformList 0] eq "deprecated")} {
+	set stubs($curName,deprecated,$index) [lindex $platformList 1]
+	set stubs($curName,generic,$index) $decl
+	if {![info exists stubs($curName,generic,lastNum)] \
+		|| ($index > $stubs($curName,generic,lastNum))} {
+	    set stubs($curName,generic,lastNum) $index
+	}
+    } else {
+	foreach platform $platformList {
+	    if {$decl ne ""} {
+		set stubs($curName,$platform,$index) $decl
+		    if {![info exists stubs($curName,$platform,lastNum)] \
+			    || ($index > $stubs($curName,$platform,lastNum))} {
+			set stubs($curName,$platform,lastNum) $index
+		}
 	    }
 	}
     }
@@ -457,10 +464,17 @@ proc genStubs::parseArg {arg} {
 
 proc genStubs::makeDecl {name decl index} {
     variable scspec
+    variable stubs
+    variable libraryName
     lassign $decl rtype fname args
 
     append text "/* $index */\n"
-    set line "$scspec $rtype"
+    if {[info exists stubs($name,deprecated,$index)]} {
+	append text "[string toupper $libraryName]_DEPRECATED(\"$stubs($name,deprecated,$index)\")\n"
+	set line "$rtype"
+    } else {
+	set line "$scspec $rtype"
+    }
     set count [expr {2 - ([string length $line] / 8)}]
     append line [string range "\t\t\t" 0 $count]
     set pad [expr {24 - [string length $line]}]
@@ -571,17 +585,23 @@ proc genStubs::makeMacro {name decl index} {
 
 proc genStubs::makeSlot {name decl index} {
     lassign $decl rtype fname args
+    variable stubs
 
     set lfname [string tolower [string index $fname 0]]
     append lfname [string range $fname 1 end]
 
     set text "    "
+    if {[info exists stubs($name,deprecated,$index)]} {
+	append text "TCL_DEPRECATED_API(\"$stubs($name,deprecated,$index)\") "
+    }
     if {$args eq ""} {
 	append text $rtype " *" $lfname "; /* $index */\n"
 	return $text
     }
     if {[string range $rtype end-8 end] eq "__stdcall"} {
 	append text [string trim [string range $rtype 0 end-9]] " (__stdcall *" $lfname ") "
+    } elseif {[string range $rtype 0 11] eq "TCL_NORETURN"} {
+	append text "TCL_NORETURN1 " [string trim [string range $rtype 12 end]] " (*" $lfname ") "
     } else {
 	append text $rtype " (*" $lfname ") "
     }
@@ -682,7 +702,10 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 	for {set i 0} {$i <= $lastNum} {incr i} {
 	    set slots [array names stubs $name,*,$i]
 	    set emit 0
-	    if {[info exists stubs($name,generic,$i)]} {
+	    if {[info exists stubs($name,deprecated,$i)]} {
+		append text [$slotProc $name $stubs($name,generic,$i) $i]
+		set emit 1
+	    } elseif {[info exists stubs($name,generic,$i)]} {
 		if {[llength $slots] > 1} {
 		    puts stderr "conflicting generic and platform entries:\
 			    $name $i"

@@ -564,13 +564,13 @@ ParseExpr(
 {
     OpNode *nodes = NULL;	/* Pointer to the OpNode storage array where
 				 * we build the parse tree. */
-    int nodesAvailable = 64;	/* Initial size of the storage array. This
+    unsigned int nodesAvailable = 64; /* Initial size of the storage array. This
 				 * value establishes a minimum tree memory
 				 * cost of only about 1 kibyte, and is large
 				 * enough for most expressions to parse with
 				 * no need for array growth and
 				 * reallocation. */
-    int nodesUsed = 0;		/* Number of OpNodes filled. */
+    unsigned int nodesUsed = 0;	/* Number of OpNodes filled. */
     int scanned = 0;		/* Capture number of byte scanned by parsing
 				 * routines. */
     int lastParsed;		/* Stores info about what the lexeme parsed
@@ -662,11 +662,13 @@ ParseExpr(
 	 */
 
 	if (nodesUsed >= nodesAvailable) {
-	    int size = nodesUsed * 2;
-	    OpNode *newPtr;
+	    unsigned int size = nodesUsed * 2;
+	    OpNode *newPtr = NULL;
 
 	    do {
+	      if (size <= UINT_MAX/sizeof(OpNode)) {
 		newPtr = attemptckrealloc(nodes, size * sizeof(OpNode));
+	      }
 	    } while ((newPtr == NULL)
 		    && ((size -= (size - nodesUsed) / 2) > nodesUsed));
 	    if (newPtr == NULL) {
@@ -2179,7 +2181,6 @@ ExecConstantExprTree(
     CompileEnv *envPtr;
     ByteCode *byteCodePtr;
     int code;
-    Tcl_Obj *byteCodeObj = Tcl_NewObj();
     NRE_callback *rootPtr = TOP_CB(interp);
 
     /*
@@ -2193,14 +2194,12 @@ ExecConstantExprTree(
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
 	    0 /* optimize */);
     TclEmitOpcode(INST_DONE, envPtr);
-    Tcl_IncrRefCount(byteCodeObj);
-    TclInitByteCodeObj(byteCodeObj, envPtr);
+    byteCodePtr = TclInitByteCode(envPtr);
     TclFreeCompileEnv(envPtr);
     TclStackFree(interp, envPtr);
-    byteCodePtr = byteCodeObj->internalRep.twoPtrValue.ptr1;
     TclNRExecuteByteCode(interp, byteCodePtr);
     code = TclNRRunCallbacks(interp, TCL_OK, rootPtr);
-    Tcl_DecrRefCount(byteCodeObj);
+    TclReleaseByteCode(byteCodePtr);
     return code;
 }
 
@@ -2268,9 +2267,9 @@ CompileExprTree(
 		p = TclGetStringFromObj(*funcObjv, &length);
 		funcObjv++;
 		Tcl_DStringAppend(&cmdName, p, length);
-		TclEmitPush(TclRegisterNewCmdLiteral(envPtr,
+		TclEmitPush(TclRegisterLiteral(envPtr,
 			Tcl_DStringValue(&cmdName),
-			Tcl_DStringLength(&cmdName)), envPtr);
+			Tcl_DStringLength(&cmdName), LITERAL_CMD_NAME), envPtr);
 		Tcl_DStringFree(&cmdName);
 
 		/*
@@ -2377,8 +2376,8 @@ CompileExprTree(
 		pc1 = CurrentOffset(envPtr);
 		TclEmitInstInt1((nodePtr->lexeme == AND) ? INST_JUMP_FALSE1
 			: INST_JUMP_TRUE1, 0, envPtr);
-		TclEmitPush(TclRegisterNewLiteral(envPtr,
-			(nodePtr->lexeme == AND) ? "1" : "0", 1), envPtr);
+		TclEmitPush(TclRegisterLiteral(envPtr,
+			(nodePtr->lexeme == AND) ? "1" : "0", 1, 0), envPtr);
 		pc2 = CurrentOffset(envPtr);
 		TclEmitInstInt1(INST_JUMP1, 0, envPtr);
 		TclAdjustStackDepth(-1, envPtr);
@@ -2387,8 +2386,8 @@ CompileExprTree(
 		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
 		    pc2 += 3;
 		}
-		TclEmitPush(TclRegisterNewLiteral(envPtr,
-			(nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
+		TclEmitPush(TclRegisterLiteral(envPtr,
+			(nodePtr->lexeme == AND) ? "0" : "1", 1, 0), envPtr);
 		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc2,
 			envPtr->codeStart + pc2 + 1);
 		convert = 0;
@@ -2422,7 +2421,7 @@ CompileExprTree(
 	    if (optimize) {
 		int length;
 		const char *bytes = TclGetStringFromObj(literal, &length);
-		int index = TclRegisterNewLiteral(envPtr, bytes, length);
+		int index = TclRegisterLiteral(envPtr, bytes, length, 0);
 		Tcl_Obj *objPtr = TclFetchLiteral(envPtr, index);
 
 		if ((objPtr->typePtr == NULL) && (literal->typePtr != NULL)) {
@@ -2480,8 +2479,8 @@ CompileExprTree(
 		    if (objPtr->bytes) {
 			Tcl_Obj *tableValue;
 
-			index = TclRegisterNewLiteral(envPtr, objPtr->bytes,
-				objPtr->length);
+			index = TclRegisterLiteral(envPtr, objPtr->bytes,
+				objPtr->length, 0);
 			tableValue = TclFetchLiteral(envPtr, index);
 			if ((tableValue->typePtr == NULL) &&
 				(objPtr->typePtr != NULL)) {

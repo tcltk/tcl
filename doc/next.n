@@ -122,7 +122,7 @@ oo::class create theSubclass {
     }
 }
 theSubclass create obj
-oo::define obj method example args {
+oo::objdefine obj method example args {
     puts "per-object method, args = $args"
     \fBnext\fR x {*}$args y
     \fBnext\fR
@@ -138,7 +138,7 @@ before chaining from subclass, args = x 1 2 3 y
 in the superclass, args = a x 1 2 3 y b
 in the superclass, args = pureSynthesis
 after chaining from subclass
-before chaining from subclass, args = 
+before chaining from subclass, args =
 in the superclass, args = a b
 in the superclass, args = pureSynthesis
 after chaining from subclass
@@ -176,7 +176,7 @@ oo::class create cache {
 }
 
 oo::object create demo
-oo::define demo {
+oo::objdefine demo {
     mixin cache
     method compute {a b c} {
         after 3000 \fI;# Simulate deep thought\fR

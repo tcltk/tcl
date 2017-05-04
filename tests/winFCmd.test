@@ -21,8 +21,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 # Initialise the test constraints
 
 testConstraint winVista 0
-testConstraint win2000orXP 0
-testConstraint winOlderThan2000 0
+testConstraint winXP 0
 testConstraint testvolumetype [llength [info commands testvolumetype]]
 testConstraint testfile       [llength [info commands testfile]]
 testConstraint testchmod      [llength [info commands testchmod]]
@@ -56,16 +55,12 @@ proc cleanup {args} {
     }
 }
 
-if {[testConstraint winOnly]} {
+if {[testConstraint win]} {
     set major [string index $tcl_platform(osVersion) 0]
-    if {[testConstraint nt] && $major > 4} {
-        if {$major > 5} {
-            testConstraint winVista 1
-        } elseif {$major == 5} {
-            testConstraint win2000orXP 1
-        }
-    } else {
-	testConstraint winOlderThan2000 1
+    if {$major > 5} {
+	testConstraint winVista 1
+    } elseif {$major == 5} {
+	testConstraint winXP 1
     }
 }
 
@@ -205,17 +200,12 @@ test winFCmd-1.12 {TclpRenameFile: errno: EACCES} -setup {
 } -returnCodes error -result EACCES
 test winFCmd-1.13 {TclpRenameFile: errno: EACCES} -setup {
     cleanup
-} -constraints {win win2000orXP testfile} -body {
+} -constraints {win winXP testfile} -body {
     testfile mv nul tf1
 } -returnCodes error -result EINVAL
-test winFCmd-1.14 {TclpRenameFile: errno: EACCES} -setup {
-    cleanup
-} -constraints {win nt winOlderThan2000 testfile} -body {
-    testfile mv nul tf1
-} -returnCodes error -result EACCES
 test winFCmd-1.15 {TclpRenameFile: errno: EEXIST} -setup {
     cleanup
-} -constraints {win nt testfile} -body {
+} -constraints {win testfile} -body {
     createfile tf1
     testfile mv tf1 nul
 } -returnCodes error -result EEXIST
@@ -238,19 +228,12 @@ test winFCmd-1.18 {TclpRenameFile: srcAttr == -1} -setup {
 } -returnCodes error -result ENOENT
 test winFCmd-1.19 {TclpRenameFile: errno == EACCES} -setup {
     cleanup
-} -constraints {win win2000orXP testfile} -body {
+} -constraints {win winXP testfile} -body {
     testfile mv nul tf1
 } -returnCodes error -result EINVAL
-test winFCmd-1.19.1 {TclpRenameFile: errno == EACCES} -setup {
-    cleanup
-} -constraints {win nt winOlderThan2000 testfile} -body {
-    testfile mv nul tf1
-} -returnCodes error -result EACCES
 test winFCmd-1.20 {TclpRenameFile: src is dir} -setup {
     cleanup
-} -constraints {win nt testfile} -body {
-    # under 95, this would actually succeed and move the current dir out from
-    # under the current process!
+} -constraints {win testfile} -body {
     file delete /tf1
     testfile mv [pwd] /tf1
 } -returnCodes error -result EACCES
@@ -458,14 +441,9 @@ test winFCmd-2.6 {TclpCopyFile: errno: ENOENT} -setup {
 } -returnCodes error -result ENOENT
 test winFCmd-2.7 {TclpCopyFile: errno: EACCES} -setup {
     cleanup
-} -constraints {win win2000orXP testfile} -body {
+} -constraints {win winXP testfile} -body {
     testfile cp nul tf1
 } -returnCodes error -result EINVAL
-test winFCmd-2.8 {TclpCopyFile: errno: EACCES} -setup {
-    cleanup
-} -constraints {win nt winOlderThan2000 testfile} -body {
-    testfile cp nul tf1
-} -returnCodes error -result EACCES
 test winFCmd-2.10 {TclpCopyFile: CopyFile succeeds} -setup {
     cleanup
 } -constraints {win testfile} -body {
@@ -623,7 +601,7 @@ test winFCmd-3.11 {TclpDeleteFile: still can't remove path} -setup {
 
 test winFCmd-4.1 {TclpCreateDirectory: errno: EACCES} -body {
     testfile mkdir $cdrom/dummy~~.dir
-} -constraints {win nt cdrom testfile} -returnCodes error -result EACCES
+} -constraints {win cdrom testfile} -returnCodes error -result EACCES
 test winFCmd-4.3 {TclpCreateDirectory: errno: EEXIST} -setup {
     cleanup
 } -constraints {win testfile} -body {
@@ -721,7 +699,7 @@ test winFCmd-6.9 {TclpRemoveDirectory: errno == EACCES} -setup {
 } -result {td1 EACCES}
 test winFCmd-6.11 {TclpRemoveDirectory: attr == -1} -setup {
     cleanup
-} -constraints {win nt testfile} -body {
+} -constraints {win testfile} -body {
     testfile rmdir /
     # WinXP returns EEXIST, WinNT seems to return EACCES.  No policy
     # decision has been made as to which is correct.
@@ -819,7 +797,7 @@ test winFCmd-7.7 {TraverseWinTree: append \ to source if necessary} -setup {
 } -result {tf1}
 test winFCmd-7.9 {TraverseWinTree: append \ to source if necessary} -body {
     testfile rmdir $cdrom/
-} -constraints {win nt cdrom testfile} -returnCodes error -match glob \
+} -constraints {win cdrom testfile} -returnCodes error -match glob \
     -result {* EACCES}
 test winFCmd-7.10 {TraverseWinTree: can't read directory: handle == INVALID} \
 	{win emptyTest} {
@@ -857,7 +835,7 @@ test winFCmd-7.13 {TraverseWinTree: append \ to target if necessary} -setup {
 } -result {tf1}
 test winFCmd-7.15 {TraverseWinTree: append \ to target if necessary} -setup {
     cleanup
-} -constraints {win nt testfile} -body {
+} -constraints {win testfile} -body {
     file mkdir td1
     testfile cpdir td1 /
 } -cleanup {
@@ -1072,7 +1050,7 @@ test winFCmd-12.5 {ConvertFileNameFormat: absolute path} -body {
 } -constraints {win} -result {/ /}
 test winFCmd-12.6 {ConvertFileNameFormat: absolute path with drive} -setup {
     catch {file delete -force -- c:/td1}
-} -constraints {win win2000orXP} -body {
+} -constraints {win winXP} -body {
     createfile c:/td1 {}
     string tolower [file attributes c:/td1 -longname]
 } -cleanup {
@@ -1350,13 +1328,13 @@ test winFCmd-18.8 {Windows reserved path names} -constraints win -body {
     file normalize cOm1:
 } -result COM1
 
-test winFCmd-19.1 {Windows extended path names} -constraints nt -body {
+test winFCmd-19.1 {Windows extended path names} -constraints win -body {
     file normalize //?/c:/windows/win.ini
 } -result //?/c:/windows/win.ini
-test winFCmd-19.2 {Windows extended path names} -constraints nt -body {
+test winFCmd-19.2 {Windows extended path names} -constraints win -body {
     file normalize //?/c:/windows/../windows/win.ini
 } -result //?/c:/windows/win.ini
-test winFCmd-19.3 {Windows extended path names} -constraints nt -setup {
+test winFCmd-19.3 {Windows extended path names} -constraints win -setup {
     set tmpfile [file join $::env(TEMP) tcl[string repeat x 20].tmp]
     set tmpfile [file normalize $tmpfile]
 } -body {
@@ -1367,7 +1345,7 @@ test winFCmd-19.3 {Windows extended path names} -constraints nt -setup {
 } -cleanup {
     catch {file delete $tmpfile}
 } -result [list 0 {}]
-test winFCmd-19.4 {Windows extended path names} -constraints nt -setup {
+test winFCmd-19.4 {Windows extended path names} -constraints win -setup {
     set tmpfile [file join $::env(TEMP) tcl[string repeat x 20].tmp]
     set tmpfile //?/[file normalize $tmpfile]
 } -body {
@@ -1378,7 +1356,7 @@ test winFCmd-19.4 {Windows extended path names} -constraints nt -setup {
 } -cleanup {
     catch {file delete $tmpfile}
 } -result [list 0 {}]
-test winFCmd-19.5 {Windows extended path names} -constraints nt -setup {
+test winFCmd-19.5 {Windows extended path names} -constraints win -setup {
     set tmpfile [file join $::env(TEMP) tcl[string repeat x 248].tmp]
     set tmpfile [file normalize $tmpfile]
 } -body {
@@ -1389,7 +1367,7 @@ test winFCmd-19.5 {Windows extended path names} -constraints nt -setup {
 } -cleanup {
     catch {file delete $tmpfile}
 } -result [list 0 {}]
-test winFCmd-19.6 {Windows extended path names} -constraints nt -setup {
+test winFCmd-19.6 {Windows extended path names} -constraints win -setup {
     set tmpfile [file join $::env(TEMP) tcl[string repeat x 248].tmp]
     set tmpfile //?/[file normalize $tmpfile]
 } -body {
@@ -1400,7 +1378,7 @@ test winFCmd-19.6 {Windows extended path names} -constraints nt -setup {
 } -cleanup {
     catch {file delete $tmpfile}
 } -result [list 0 {}]
-test winFCmd-19.7 {Windows extended path names} -constraints nt -setup {
+test winFCmd-19.7 {Windows extended path names} -constraints win -setup {
     set tmpfile [file join $::env(TEMP) "tcl[pid].tmp "]
     set tmpfile [file normalize $tmpfile]
 } -body {
@@ -1411,7 +1389,7 @@ test winFCmd-19.7 {Windows extended path names} -constraints nt -setup {
 } -cleanup {
     catch {file delete $tmpfile}
 } -result [list 0 {} [list tcl[pid].tmp]]
-test winFCmd-19.8 {Windows extended path names} -constraints nt -setup {
+test winFCmd-19.8 {Windows extended path names} -constraints win -setup {
     set tmpfile [file join $::env(TEMP) "tcl[pid].tmp "]
     set tmpfile //?/[file normalize $tmpfile]
 } -body {
@@ -1423,7 +1401,7 @@ test winFCmd-19.8 {Windows extended path names} -constraints nt -setup {
     catch {file delete $tmpfile}
 } -result [list 0 {} [list "tcl[pid].tmp "]]
 
-test winFCmd-19.9 {Windows devices path names} -constraints nt -body {
+test winFCmd-19.9 {Windows devices path names} -constraints win -body {
     file normalize //./com1
 } -result //./com1
 

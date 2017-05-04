@@ -37,7 +37,7 @@ typedef struct BgError {
  * pending background errors for the interpreter.
  */
 
-typedef struct ErrAssocData {
+typedef struct {
     Tcl_Interp *interp;		/* Interpreter in which error occurred. */
     Tcl_Obj *cmdPrefix;		/* First word(s) of the handler command */
     BgError *firstBgPtr;	/* First in list of all background errors
@@ -89,7 +89,7 @@ static int subsystemsInitialized = 0;
  * non-NULL value.
  */
 
-static Tcl_ExitProc *appExitPtr = NULL;
+static TCL_NORETURN1 Tcl_ExitProc *appExitPtr = NULL;
 
 typedef struct ThreadSpecificData {
     ExitHandler *firstExitPtr;	/* First in list of all exit handlers for this
@@ -857,7 +857,7 @@ Tcl_DeleteThreadExitHandler(
 
 Tcl_ExitProc *
 Tcl_SetExitProc(
-    Tcl_ExitProc *proc)		/* New exit handler for app or NULL */
+    TCL_NORETURN1 Tcl_ExitProc *proc)		/* New exit handler for app or NULL */
 {
     Tcl_ExitProc *prevExitProc;
 
@@ -892,7 +892,7 @@ Tcl_SetExitProc(
  *----------------------------------------------------------------------
  */
 static void
-InvokeExitHandlers(void) 
+InvokeExitHandlers(void)
 {
     ExitHandler *exitPtr;
 
@@ -933,12 +933,12 @@ InvokeExitHandlers(void)
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 Tcl_Exit(
     int status)			/* Exit status for application; typically 0
 				 * for normal return, 1 for error return. */
 {
-    Tcl_ExitProc *currentAppExitPtr;
+    TCL_NORETURN1 Tcl_ExitProc *currentAppExitPtr;
 
     Tcl_MutexLock(&exitMutex);
     currentAppExitPtr = appExitPtr;
@@ -968,22 +968,22 @@ Tcl_Exit(
 	    /*
 	     * Fast and deterministic exit (default behavior)
 	     */
-	    
+
 	    InvokeExitHandlers();
-	    
+
 	    /*
 	     * Ensure the thread-specific data is initialised as it is used in
 	     * Tcl_FinalizeThread()
 	     */
-	    
+
 	    (void) TCL_TSD_INIT(&dataKey);
-	    
+
 	    /*
 	     * Now finalize the calling thread only (others are not safely
 	     * reachable).  Among other things, this triggers a flush of the
 	     * Tcl_Channels that may have data enqueued.
 	     */
-	    
+
 	    FinalizeThread(/* quick */ 1);
 	}
 	TclpExit(status);
@@ -1043,6 +1043,9 @@ TclInitSubsystems(void)
 #if USE_TCLALLOC
 	    TclInitAlloc();		/* Process wide mutex init */
 #endif
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+	    TclInitThreadAlloc();	/* Setup thread allocator caches */
+#endif
 #ifdef TCL_MEM_DEBUG
 	    TclInitDbCkalloc();		/* Process wide mutex init */
 #endif
@@ -1090,7 +1093,7 @@ Tcl_Finalize(void)
      * Invoke exit handlers first.
      */
 
-    InvokeExitHandlers();   
+    InvokeExitHandlers();
 
     TclpInitLock();
     if (subsystemsInitialized == 0) {
@@ -1462,6 +1465,8 @@ VwaitVarProc(
     int *donePtr = clientData;
 
     *donePtr = 1;
+    Tcl_UntraceVar(interp, name1, TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+	    VwaitVarProc, clientData);
     return NULL;
 }
 

@@ -385,7 +385,7 @@ file delete -force -- foo.test
 test unixFCmd-18.1 {Unix pwd} -constraints {unix notRoot nonPortable} -setup {
     set cd [pwd]
 } -body {
-    # This test is nonportable because SunOS generates a weird error
+    # This test is nonPortable because SunOS generates a weird error
     # message when the current directory isn't readable.
     set nd $cd/tstdir
     file mkdir $nd

@@ -217,7 +217,7 @@ typedef struct FileHandler {
  * handlers are ready to fire.
  */
 
-typedef struct FileHandlerEvent {
+typedef struct {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     int fd;			/* File descriptor that is ready. Used to find
@@ -232,7 +232,7 @@ typedef struct FileHandlerEvent {
  * writable, and exceptional conditions.
  */
 
-typedef struct SelectMasks {
+typedef struct {
     fd_set readable;
     fd_set writable;
     fd_set exceptional;
@@ -385,8 +385,7 @@ static CFStringRef tclEventsOnlyRunLoopMode = NULL;
  */
 
 static void		StartNotifierThread(void);
-static void		NotifierThreadProc(ClientData clientData)
-			    __attribute__ ((__noreturn__));
+static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
 static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 static void		TimerWakeUp(CFRunLoopTimerRef timer, void *info);
 static void		QueueFileEvents(void *info);
@@ -1753,7 +1752,7 @@ TclUnixWaitForFile(
  *----------------------------------------------------------------------
  */
 
-static void
+static TCL_NORETURN void
 NotifierThreadProc(
     ClientData clientData)	/* Not used. */
 {

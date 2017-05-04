@@ -46,6 +46,7 @@ makeFile {
 
 cd [temporaryDirectory]
 testConstraint exec [llength [info commands exec]]
+
 # test -help
 # Child processes because -help [exit]s.
 test tcltest-1.1 {tcltest -help} {exec} {
@@ -1824,9 +1825,13 @@ test tcltest-26.2 {Bug/RFE 1017151} -setup {
 ---- errorInfo: body error
 *
 ---- errorInfo(cleanup): cleanup error*}
-
+
 cleanupTests
 }
 
 namespace delete ::tcltest::test
 return
+
+# Local Variables:
+# mode: tcl
+# End:

@@ -1412,6 +1412,32 @@ test thread-7.37 {cancel: send async thread cancel nested catch inside pure insi
     unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
 
+test thread-8.1 {threaded fork stress} -constraints {thread} -setup {
+    unset -nocomplain ::threadCount ::execCount ::threads ::thread
+    set ::threadCount 10
+    set ::execCount 10
+} -body {
+    set ::threads [list]
+    for {set i 0} {$i < $::threadCount} {incr i} {
+	lappend ::threads [thread::create -joinable [string map \
+		[list %execCount% $::execCount] {
+	    proc execLs {} {
+		if {$::tcl_platform(platform) eq "windows"} then {
+		    return [exec $::env(COMSPEC) /c DIR]
+		} else {
+		    return [exec /bin/ls]
+		}
+	    }
+	    set j {%execCount%}; while {[incr j -1]} {execLs}
+	}]]
+    }
+    foreach ::thread $::threads {
+	thread::join $::thread
+    }
+} -cleanup {
+    unset -nocomplain ::threadCount ::execCount ::threads ::thread
+} -result {}
+
 # cleanup
 ::tcltest::cleanupTests
 return

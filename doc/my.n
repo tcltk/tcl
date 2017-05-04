@@ -37,7 +37,7 @@ the \fBoo::object\fR class, which is not publicly visible by default:
 oo::class create c {
     method count {} {
         \fBmy\fR variable counter
-        print [incr counter]
+        puts [incr counter]
     }
 }
 c create o
