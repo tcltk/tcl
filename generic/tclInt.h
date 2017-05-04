@@ -2630,7 +2630,7 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, size_t *lengthPtr,
  */
 
 typedef struct ProcessGlobalValue {
-    size_t epoch;			/* Epoch counter to detect changes in the
+    size_t epoch;		/* Epoch counter to detect changes in the
 				 * master value. */
     size_t numBytes;		/* Length of the master string. */
     char *value;		/* The master string value. */
@@ -2971,7 +2971,8 @@ MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
 MODULE_SCOPE int	TclGetChannelFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Channel *chanPtr,
 			    int *modePtr, int flags);
-MODULE_SCOPE int TclGetCompletionCodeFromObj(Tcl_Interp *interp,
+MODULE_SCOPE CmdFrame *	TclGetCmdFrameForProcedure(Proc *procPtr);
+MODULE_SCOPE int	TclGetCompletionCodeFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *value, int *code);
 MODULE_SCOPE int	TclGetNumberFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, ClientData *clientDataPtr,
@@ -3968,7 +3969,7 @@ MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 			    struct CompileEnv *envPtr);
 
 /*
- * Functions defined in generic/tclVar.c and currenttly exported only for use
+ * Functions defined in generic/tclVar.c and currently exported only for use
  * by the bytecode compiler and engine. Some of these could later be placed in
  * the public interface.
  */
