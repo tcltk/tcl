@@ -921,7 +921,17 @@ TclJoinPath(
 			if (res != NULL) {
 			    TclDecrRefCount(res);
 			}
-			return TclNewFSPathObj(elt, str, len);
+
+			if (PATHFLAGS(elt)) {
+			    return TclNewFSPathObj(elt, str, len);
+			}
+			if (TCL_PATH_ABSOLUTE != Tcl_FSGetPathType(elt)) {
+			    return TclNewFSPathObj(elt, str, len);
+			}
+			(void) Tcl_FSGetNormalizedPath(NULL, elt);
+			if (elt == PATHOBJ(elt)->normPathPtr) {
+			    return TclNewFSPathObj(elt, str, len);
+			}
 		    }
 		}
 
