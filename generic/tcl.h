@@ -60,6 +60,7 @@ extern "C" {
 #define TCL_VERSION	    "8.7"
 #define TCL_PATCH_LEVEL	    "8.7a0"
 
+#if !defined(TCL_NO_DEPRECATED) || defined(RC_INVOKED)
 /*
  *----------------------------------------------------------------------------
  * The following definitions set up the proper options for Windows compilers.
@@ -88,6 +89,7 @@ extern "C" {
 #  define JOIN(a,b) JOIN1(a,b)
 #  define JOIN1(a,b) a##b
 #endif
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * A special definition used to allow this header file to be included from
@@ -139,7 +141,7 @@ extern "C" {
 #    define TCL_VARARGS(type, name) (type name, ...)
 #    define TCL_VARARGS_DEF(type, name) (type name, ...)
 #    define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
-#endif
+#endif /* !TCL_NO_DEPRECATED */
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #   define TCL_NORETURN __attribute__ ((noreturn))
@@ -255,7 +257,7 @@ extern "C" {
 #ifndef TCL_NO_DEPRECATED
 #   undef _ANSI_ARGS_
 #   define _ANSI_ARGS_(x)	x
-#endif
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Definitions that allow this header file to be used either with or without
@@ -521,7 +523,7 @@ typedef struct Tcl_Interp
     int errorLineDontUse; /* Don't use in extensions! */
 #endif
 }
-#endif /* TCL_NO_DEPRECATED */
+#endif /* !TCL_NO_DEPRECATED */
 Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
@@ -995,7 +997,9 @@ typedef struct Tcl_DString {
 
 #define Tcl_DStringLength(dsPtr) ((dsPtr)->length)
 #define Tcl_DStringValue(dsPtr) ((dsPtr)->string)
-#define Tcl_DStringTrunc Tcl_DStringSetLength
+#ifndef TCL_NO_DEPRECATED
+#   define Tcl_DStringTrunc Tcl_DStringSetLength
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Definitions for the maximum number of digits of precision that may be
@@ -1123,7 +1127,7 @@ typedef struct Tcl_DString {
 
 #ifndef TCL_NO_DEPRECATED
 #   define TCL_PARSE_PART1	0x400
-#endif
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Types for linked variables:
@@ -2624,7 +2628,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #   define panic		Tcl_Panic
 #endif
 #   define panicVA		Tcl_PanicVA
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------------
@@ -2634,6 +2637,8 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 extern Tcl_AppInitProc Tcl_AppInit;
+
+#endif /* !TCL_NO_DEPRECATED */
 
 #endif /* RC_INVOKED */
 
