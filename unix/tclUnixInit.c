@@ -14,11 +14,11 @@
 #ifdef HAVE_LANGINFO
 #   include <langinfo.h>
 #   ifdef __APPLE__
-#       if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030
+#	if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030
 	    /* Support for weakly importing nl_langinfo on Darwin. */
 #	    define WEAK_IMPORT_NL_LANGINFO
 	    extern char *nl_langinfo(nl_item) WEAK_IMPORT_ATTRIBUTE;
-#       endif
+#	endif
 #    endif
 #endif
 #include <sys/resource.h>
@@ -34,7 +34,7 @@
 
 #ifdef __CYGWIN__
 DLLIMPORT extern __stdcall unsigned char GetVersionExW(void *);
-DLLIMPORT extern __stdcall void *LoadLibraryW(const void *);
+DLLIMPORT extern __stdcall void *GetModuleHandleW(const void *);
 DLLIMPORT extern __stdcall void FreeLibrary(void *);
 DLLIMPORT extern __stdcall void *GetProcAddress(void *, const char *);
 DLLIMPORT extern __stdcall void GetSystemInfo(void *);
@@ -878,7 +878,7 @@ TclpSetVariables(
 #ifdef __CYGWIN__
 	unameOK = 1;
     if (!osInfoInitialized) {
-	HMODULE handle = GetModuleHandle(TEXT("NTDLL"));
+	HANDLE handle = GetModuleHandleW(L"NTDLL");
 	int(__stdcall *getversion)(void *) =
 		(int(__stdcall *)(void *))GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
@@ -1041,7 +1041,6 @@ TclpFindVariable(
     Tcl_DStringFree(&envString);
     return result;
 }
-
 
 /*
  *----------------------------------------------------------------------
