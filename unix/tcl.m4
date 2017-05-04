@@ -1096,7 +1096,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     CFLAGS_DEBUG=-g
     AS_IF([test "$GCC" = yes], [
 	CFLAGS_OPTIMIZE=-O2
-	CFLAGS_WARNING="-Wall"
+	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement"
     ], [
 	CFLAGS_OPTIMIZE=-O
 	CFLAGS_WARNING=""
@@ -1106,6 +1106,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     LD_LIBRARY_PATH_VAR="LD_LIBRARY_PATH"
     PLAT_OBJS=""
     PLAT_SRCS=""
+    STUB_OBJS=""
     LDAIX_SRC=""
     AS_IF([test x"${SHLIB_VERSION}" = x], [SHLIB_VERSION="1.0"])
     case $system in
@@ -1212,6 +1213,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    DL_OBJS="tclLoadDl.o"
 	    PLAT_OBJS='${CYGWIN_OBJS}'
 	    PLAT_SRCS='${CYGWIN_SRCS}'
+	    STUB_OBJS="tclWinPanic.o"
 	    DL_LIBS="-ldl"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
@@ -1476,7 +1478,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		;;
 	    *)
 		case "$arch" in
-		alpha|sparc64)
+		alpha|sparc|sparc64)
 		    SHLIB_CFLAGS="-fPIC"
 		    ;;
 		*)
@@ -2050,7 +2052,7 @@ dnl # preprocessing tests use only CPPFLAGS.
         LIB_SUFFIX=${SHARED_LIB_SUFFIX}
         MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
         AS_IF([test "${SHLIB_SUFFIX}" = ".dll"], [
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)";if test -f $(LIB_FILE).a; then $(INSTALL_DATA) $(LIB_FILE).a "$(LIB_INSTALL_DIR)"; fi;'
             DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
         ], [
             INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
@@ -2108,6 +2110,7 @@ dnl # preprocessing tests use only CPPFLAGS.
     AC_SUBST(DL_OBJS)
     AC_SUBST(PLAT_OBJS)
     AC_SUBST(PLAT_SRCS)
+    AC_SUBST(STUB_OBJS)
     AC_SUBST(LDAIX_SRC)
     AC_SUBST(CFLAGS)
     AC_SUBST(CFLAGS_DEBUG)
@@ -2706,7 +2709,7 @@ AC_DEFUN([SC_TCL_CFG_ENCODING], [
 #	advancedTest - the advanced test to run if the function is present
 #
 # Results:
-#	Might cause compatability versions of the function to be used.
+#	Might cause compatibility versions of the function to be used.
 #	Might affect the following vars:
 #		USE_COMPAT	(implicit)
 #

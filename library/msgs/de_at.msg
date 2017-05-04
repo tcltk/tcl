@@ -1,9 +1,9 @@
 # created by tools/loadICU.tcl -- do not edit
 namespace eval ::tcl::clock {
     ::msgcat::mcset de_AT MONTHS_ABBREV [list \
-        "J\u00e4n"\
+        "Jän"\
         "Feb"\
-        "M\u00e4r"\
+        "Mär"\
         "Apr"\
         "Mai"\
         "Jun"\
@@ -15,9 +15,9 @@ namespace eval ::tcl::clock {
         "Dez"\
         ""]
     ::msgcat::mcset de_AT MONTHS_FULL [list \
-        "J\u00e4nner"\
+        "Jänner"\
         "Februar"\
-        "M\u00e4rz"\
+        "März"\
         "April"\
         "Mai"\
         "Juni"\

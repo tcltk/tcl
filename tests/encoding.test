@@ -73,7 +73,7 @@ test encoding-2.2 {Tcl_FreeEncoding: refcount != 0} -setup {
 } -constraints {testencoding} -body {
     encoding system shiftjis		;# incr ref count
     encoding dirs [list [pwd]]
-    set x [encoding convertto shiftjis \u4e4e]	;# old one found   
+    set x [encoding convertto shiftjis \u4e4e]	;# old one found
     encoding system identity
     llength shiftjis		;# Shimmer away any cache of Tcl_Encoding
     lappend x [catch {encoding convertto shiftjis \u4e4e} msg] $msg
@@ -182,7 +182,7 @@ test encoding-8.1 {Tcl_ExternalToUtf} {
     puts -nonewline $f "ab\x8c\xc1g"
     close $f
     set f [open [file join [temporaryDirectory] dummy] r]
-    fconfigure $f -translation binary -encoding shiftjis    
+    fconfigure $f -translation binary -encoding shiftjis
     set x [read $f]
     close $f
     file delete [file join [temporaryDirectory] dummy]
@@ -265,7 +265,7 @@ test encoding-11.6 {LoadEncodingFile: invalid file} -constraints {testencoding} 
     makeDirectory tmp
     makeDirectory [file join tmp encoding]
     set f [open [file join tmp encoding splat.enc] w]
-    fconfigure $f -translation binary 
+    fconfigure $f -translation binary
     puts $f "abcdefghijklmnop"
     close $f
     encoding convertto splat \u4e4e
@@ -286,11 +286,11 @@ test encoding-12.1 {LoadTableEncoding: normal encoding} {
     append x [encoding convertfrom iso8859-3 \xd5]
 } "\xd5?\u120"
 test encoding-12.2 {LoadTableEncoding: single-byte encoding} {
-    set x [encoding convertto iso8859-3 ab\u0120g] 
+    set x [encoding convertto iso8859-3 ab\u0120g]
     append x [encoding convertfrom iso8859-3 ab\xd5g]
 } "ab\xd5gab\u120g"
 test encoding-12.3 {LoadTableEncoding: multi-byte encoding} {
-    set x [encoding convertto shiftjis ab\u4e4eg] 
+    set x [encoding convertto shiftjis ab\u4e4eg]
     append x [encoding convertfrom shiftjis ab\x8c\xc1g]
 } "ab\x8c\xc1gab\u4e4eg"
 test encoding-12.4 {LoadTableEncoding: double-byte encoding} {

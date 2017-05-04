@@ -1,9 +1,8 @@
 # tclTomMath.decls --
 #
-#	This file contains the declarations for the functions in
-#	'libtommath' that are contained within the Tcl library.
-#	This file is used to generate the 'tclTomMathDecls.h' and
-#	'tclTomMathStub.c' files.
+#	This file contains the declarations for the functions in 'libtommath'
+#	that are contained within the Tcl library.  This file is used to
+#	generate the 'tclTomMathDecls.h' and 'tclStubInit.c' files.
 #
 # If you edit this file, advance the revision number (and the epoch
 # if the new stubs are not backward compatible) in tclTomMathDecls.h
@@ -91,7 +90,7 @@ declare 21 {
     int TclBN_mp_init(mp_int *a)
 }
 declare 22 {
-    int TclBN_mp_init_copy(mp_int *a, mp_int *b)
+    int TclBN_mp_init_copy(mp_int *a, const mp_int *b)
 }
 declare 23 {
     int TclBN_mp_init_multi(mp_int *a, ...)
@@ -130,7 +129,7 @@ declare 34 {
     int TclBN_mp_or(mp_int *a, mp_int *b, mp_int *c)
 }
 declare 35 {
-    int TclBN_mp_radix_size(mp_int *a, int radix, int *size)
+    int TclBN_mp_radix_size(const mp_int *a, int radix, int *size)
 }
 declare 36 {
     int TclBN_mp_read_radix(mp_int *a, const char *str, int radix)
@@ -221,3 +220,24 @@ declare 62 {
 declare 63 {
     int TclBN_mp_cnt_lsb(const mp_int *a)
 }
+
+# Formerly internal API to allow initialisation of bignums without knowing the
+# typedefs of how a bignum works internally.
+declare 64 {
+    void TclBNInitBignumFromLong(mp_int *bignum, long initVal)
+}
+declare 65 {
+    void TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
+}
+declare 66 {
+    void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
+}
+
+# Added in libtommath 1.0
+declare 67 {
+    int TclBN_mp_expt_d_ex(mp_int *a, mp_digit b, mp_int *c, int fast)
+}
+
+# Local Variables:
+# mode: tcl
+# End:

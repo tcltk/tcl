@@ -84,8 +84,15 @@ typedef off_t		Tcl_SeekOffset;
 #   define HINSTANCE void *
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
+#   define STD_ERROR_HANDLE ((DWORD)-12)
     typedef unsigned short WCHAR;
-    __declspec(dllimport) extern __stdcall int GetModuleHandleExW(unsigned int, const char *, void *);
+    __declspec(dllimport) extern __stdcall int _isatty(int);
+    __declspec(dllimport) extern __stdcall size_t wcslen(const void *);
+    __declspec(dllimport) extern __stdcall HANDLE GetStdHandle(DWORD);
+    __declspec(dllimport) extern __stdcall int WriteConsoleW(HANDLE, const void *, DWORD, void *, void *);
+    __declspec(dllimport) extern __stdcall int WriteFile(HANDLE, const void *, DWORD, void *, void *);
+    __declspec(dllimport) extern __stdcall int FlushFileBuffers(HANDLE);
+    __declspec(dllimport) extern __stdcall int GetModuleHandleExW(DWORD, const char *, void *);
     __declspec(dllimport) extern __stdcall int GetModuleFileNameW(void *, const char *, int);
     __declspec(dllimport) extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
 	    const char *, int, const char *, const char *);
@@ -439,16 +446,6 @@ extern int	gettimeofday(struct timeval *tp,
 #   else
 #	define MAXNAMLEN	255
 #   endif
-#endif
-
-/*
- *---------------------------------------------------------------------------
- * Make sure that L_tmpnam is defined.
- *---------------------------------------------------------------------------
- */
-
-#ifndef L_tmpnam
-#   define L_tmpnam	100
 #endif
 
 /*
