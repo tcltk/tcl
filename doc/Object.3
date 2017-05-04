@@ -118,11 +118,16 @@ typedef struct Tcl_Obj {
     union {
         long \fIlongValue\fR;
         double \fIdoubleValue\fR;
+        void *\fIotherValuePtr\fR;
         Tcl_WideInt \fIwideValue\fR;
         struct {
             void *\fIptr1\fR;
             void *\fIptr2\fR;
         } \fItwoPtrValue\fR;
+        struct {
+            void *\fIptr\fR;
+            unsigned long \fIvalue\fR;
+        } \fIptrAndLongRep\fR;
     } \fIinternalRep\fR;
 } \fBTcl_Obj\fR;
 .CE

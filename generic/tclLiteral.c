@@ -453,10 +453,10 @@ TclRegisterLiteral(
     objIndex = AddLocalLiteralEntry(envPtr, objPtr, localHash);
 
 #ifdef TCL_COMPILE_DEBUG
-    if (globalPtr != NULL && globalPtr->refCount < 1) {
+    if (globalPtr != NULL && (globalPtr->refCount < 1 || globalPtr->refCount == (size_t)-1)) {
 	Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
 		"TclRegisterLiteral", (length>60? 60 : (int)length), bytes,
-		globalPtr->refCount);
+		(int)globalPtr->refCount);
     }
     TclVerifyLocalLiteralTable(envPtr);
 #endif /*TCL_COMPILE_DEBUG*/
@@ -615,7 +615,7 @@ TclAddLiteralObj(
     lPtr = &envPtr->literalArrayPtr[objIndex];
     lPtr->objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
-    lPtr->refCount = -1;	/* i.e., unused */
+    lPtr->refCount = (size_t) -1; /* i.e., unused */
     lPtr->nextPtr = NULL;
 
     if (litPtrPtr) {
@@ -834,15 +834,13 @@ TclReleaseLiteral(
     for (prevPtr=NULL, entryPtr=globalTablePtr->buckets[index];
 	    entryPtr!=NULL ; prevPtr=entryPtr, entryPtr=entryPtr->nextPtr) {
 	if (entryPtr->objPtr == objPtr) {
-	    entryPtr->refCount--;
-
 	    /*
 	     * If the literal is no longer being used by any ByteCode, delete
 	     * the entry then remove the reference corresponding to the global
 	     * literal table entry (decrement the ref count of the object).
 	     */
 
-	    if (entryPtr->refCount == 0) {
+	    if (entryPtr->refCount-- <= 1) {
 		if (prevPtr == NULL) {
 		    globalTablePtr->buckets[index] = entryPtr->nextPtr;
 		} else {
@@ -1169,9 +1167,9 @@ TclVerifyLocalLiteralTable(
 	    if (localPtr->refCount != -1) {
 		bytes = TclGetString(localPtr->objPtr);
 		length = localPtr->objPtr->length;
-		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %d",
+		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %" TCL_LL_MODIFIER "d",
 			"TclVerifyLocalLiteralTable",
-			(length>60? 60 : (int) length), bytes, localPtr->refCount);
+			(length>60? 60 : (int) length), bytes, (Tcl_WideInt)localPtr->refCount);
 	    }
 	    if (localPtr->objPtr->bytes == NULL) {
 		Tcl_Panic("%s: literal has NULL string rep",

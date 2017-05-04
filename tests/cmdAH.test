@@ -165,10 +165,10 @@ test cmdAH-3.2 {Tcl_ContinueObjCmd, success} {
 
 test cmdAH-4.1 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding
-} -result {wrong # args: should be "encoding option ?arg ...?"}
+} -result {wrong # args: should be "encoding subcommand ?arg ...?"}
 test cmdAH-4.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding foo
-} -result {bad option "foo": must be convertfrom, convertto, dirs, names, or system}
+} -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, or system}
 test cmdAH-4.3 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertto
 } -result {wrong # args: should be "encoding convertto ?encoding? data"}

@@ -189,11 +189,16 @@ struct Tcl_Obj {
     union {
 	long longValue;
 	double doubleValue;
+	void *otherValuePtr;
 	int64_t wideValue;
 	struct {
 	    void *ptr1;
 	    void *ptr2;
 	} twoPtrValue;
+	struct {
+	    void *ptr;
+	    unsigned long value;
+	} ptrAndLongRep;
     } internalRep;
 };
 

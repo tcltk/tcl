@@ -106,9 +106,10 @@ declare 20 {
 declare 21 {
     int Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file, int line)
 }
-declare 22 {
-    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
-}
+# Removed in 9.0
+#declare 22 {
+#    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
+#}
 declare 23 {
     Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, int length,
 	    const char *file, int line)
@@ -201,9 +202,10 @@ declare 48 {
     int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, int first,
 	    int count, int objc, Tcl_Obj *const objv[])
 }
-declare 49 {
-    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
-}
+# Removed in 9.0:
+#declare 49 {
+#    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
+#}
 declare 50 {
     Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int length)
 }
@@ -225,9 +227,10 @@ declare 55 {
 declare 56 {
     Tcl_Obj *Tcl_NewStringObj(const char *bytes, int length)
 }
-declare 57 {
-    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
-}
+# Removed in 9.0:
+#declare 57 {
+#    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
+#}
 declare 58 {
     unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, size_t length)
 }
@@ -253,10 +256,10 @@ declare 64 {
 declare 65 {
     void Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes, size_t length)
 }
-declare 66 {
-    void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
-}
 # Removed in 9.0:
+#declare 66 {
+#    void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
+#}
 #declare 67 {
 #    void Tcl_AddObjErrorInfo(Tcl_Interp *interp, const char *message,
 #	    int length)
@@ -832,10 +835,11 @@ declare 229 {
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
 }
-declare 232 {
-    void Tcl_SetResult(Tcl_Interp *interp, char *result,
-	    Tcl_FreeProc *freeProc)
-}
+# Removed (from stubtable only) in 9.0:
+#declare 232 {
+#    void Tcl_SetResult(Tcl_Interp *interp, char *result,
+#	    Tcl_FreeProc *freeProc)
+#}
 declare 233 {
     int Tcl_SetServiceMode(int mode)
 }
@@ -1083,7 +1087,7 @@ declare 293 {
     int Tcl_EvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 declare 294 {
-    void Tcl_ExitThread(int status)
+    TCL_NORETURN void Tcl_ExitThread(int status)
 }
 declare 295 {
     int Tcl_ExternalToUtf(Tcl_Interp *interp, Tcl_Encoding encoding,
@@ -2354,6 +2358,17 @@ declare 630 {
 }
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
+
+# TIP #456
+declare 631 {
+    Tcl_Channel Tcl_OpenTcpServerEx(Tcl_Interp *interp, const char *service,
+	    const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc,
+	    ClientData callbackData)
+}
+
+# ----- BASELINE -- FOR -- 8.7.0 ----- #
+
+
 
 ##############################################################################
 

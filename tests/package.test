@@ -832,7 +832,7 @@ test package-4.52 {Tcl_PackageCmd procedure, "vsatisfies" option} {
 } {0}
 test package-4.53 {Tcl_PackageCmd procedure, "versions" option} -body {
     package foo
-} -returnCodes error -result {bad option "foo": must be forget, ifneeded, names, prefer, present, provide, require, unknown, vcompare, versions, or vsatisfies}
+} -returnCodes error -result {bad option "foo": must be files, forget, ifneeded, names, prefer, present, provide, require, unknown, vcompare, versions, or vsatisfies}
 test package-4.54 {Tcl_PackageCmd procedure, "vsatisfies" option} -body {
     package vsatisfies 2.1 2.1-3.2-4.5
 } -returnCodes error -result {expected versionMin-versionMax but got "2.1-3.2-4.5"}
