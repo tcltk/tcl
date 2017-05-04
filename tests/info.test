@@ -678,16 +678,16 @@ test info-21.1 {miscellaneous error conditions} -returnCodes error -body {
 } -result {wrong # args: should be "info subcommand ?arg ...?"}
 test info-21.2 {miscellaneous error conditions} -returnCodes error -body {
     info gorp
-} -result {unknown or ambiguous subcommand "gorp": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+} -result {unknown or ambiguous subcommand "gorp": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, linkedname, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
 test info-21.3 {miscellaneous error conditions} -returnCodes error -body {
     info c
-} -result {unknown or ambiguous subcommand "c": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+} -result {unknown or ambiguous subcommand "c": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, linkedname, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
 test info-21.4 {miscellaneous error conditions} -returnCodes error -body {
     info l
-} -result {unknown or ambiguous subcommand "l": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+} -result {unknown or ambiguous subcommand "l": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, linkedname, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
 test info-21.5 {miscellaneous error conditions} -returnCodes error -body {
     info s
-} -result {unknown or ambiguous subcommand "s": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+} -result {unknown or ambiguous subcommand "s": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, linkedname, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
 
 ##
 # ### ### ### ######### ######### #########
@@ -2414,6 +2414,31 @@ test info-39.0 {Bug 4b61afd660} -setup {
     rename demo {}
     rename probe {}
 } -result 3
+
+# -------------------------------------------------------------------------
+# info linkedname
+test info-41.0 {info linkedname - valid} -body {
+    proc getname {var} { upvar 1 $var up ; return [info linkedname up] }
+    set i 1
+    getname i
+} -result {i}
+test info-41.1 {info linkedname - valid} -body {
+    proc getname {var} { upvar 1 $var up ; return [info linkedname up] }
+    proc p {i} { return [getname i] }
+    p 2
+} -result {i}
+test info-41.2 {info linkedname - valid} -body {
+    proc getname {var} { upvar 1 $var up ; return [info linkedname up] }
+    array set a {1 one 2 two}
+    getname a(1)
+} -result {a(1)}
+test info-41.3 {info linkedname - no such variable} -body {
+    info linkedname foo
+} -returnCodes error -result {can't access "foo": no such variable}
+test info-41.4 {info linkedname - not a varlink object} -body {
+    set i 5
+    info linkedname i
+} -returnCodes error -result {can't access "i": variable isn't a link}
 
 # cleanup
 catch {namespace delete test_ns_info1 test_ns_info2}

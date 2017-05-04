@@ -297,6 +297,11 @@ scripts are stored.
 This is actually the value of the \fBtcl_library\fR
 variable and may be changed by setting \fBtcl_library\fR.
 .TP
+\fBinfo linkedname \fIvarname\fR
+.
+\fIVarname\fR must be a link variable.
+Returns the name of the variable it is linked to.
+.TP
 \fBinfo loaded \fR?\fIinterp\fR? ?\fIpackage\fR?
 .
 Returns the filename loaded as part of \fIpackage\fR. If \fIpackage\fR

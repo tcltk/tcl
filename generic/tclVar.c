@@ -135,6 +135,7 @@ static const char *badNamespace =	"parent namespace doesn't exist";
 static const char *missingName =	"missing variable name";
 static const char *isArrayElement =
 	"name refers to an element in an array";
+static const char *needVarLink =	"variable isn't a link";
 
 /*
  * A test to see if we are in a call frame that has local variables. This is
@@ -199,6 +200,8 @@ static Var *		VerifyArray(Tcl_Interp *interp, Tcl_Obj *varNameObj);
 MODULE_SCOPE Var *	TclLookupSimpleVar(Tcl_Interp *interp,
 			    Tcl_Obj *varNamePtr, int flags, const int create,
 			    const char **errMsgPtr, int *indexPtr);
+MODULE_SCOPE int	TclGetVarName(Tcl_Interp *interp, Var *varPtr,
+			    Tcl_Obj *objPtr);
 
 static Tcl_DupInternalRepProc	DupLocalVarName;
 static Tcl_FreeInternalRepProc	FreeLocalVarName;
@@ -968,8 +971,6 @@ TclLookupArrayElement(
 {
     int isNew;
     Var *varPtr;
-    TclVarHashTable *tablePtr;
-    Namespace *nsPtr;
 
     /*
      * We're dealing with an array element. Make sure the variable is an array
@@ -1003,15 +1004,7 @@ TclLookupArrayElement(
 	}
 
 	TclSetVarArray(arrayPtr);
-	tablePtr = ckalloc(sizeof(TclVarHashTable));
-	arrayPtr->value.tablePtr = tablePtr;
-
-	if (TclIsVarInHash(arrayPtr) && TclGetVarNsPtr(arrayPtr)) {
-	    nsPtr = TclGetVarNsPtr(arrayPtr);
-	} else {
-	    nsPtr = NULL;
-	}
-	TclInitVarHashTable(arrayPtr->value.tablePtr, nsPtr);
+	TclInitArrayHashTable(arrayPtr);
     } else if (!TclIsVarArray(arrayPtr)) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg, needArray,
@@ -1043,6 +1036,72 @@ TclLookupArrayElement(
 	}
     }
     return varPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetVarName --
+ *
+ *	Appends the name of a Tcl variable to the objPtr object.
+ *
+ * Results:
+ *	Returns 1 if the variable name was found, 0 otherwise.
+ *
+ * Side effects:
+ *	If found, the variable's name is appended to the string
+ *	representation of objPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclGetVarName(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *objPtr)
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *varFramePtr;
+    Tcl_Obj *objNamePtr;
+    int isElement;
+
+    if (TclIsVarInHash(varPtr)) {
+	if (TclIsVarDeadHash(varPtr)) {
+	    return 0;
+	}
+
+	isElement = TclIsVarArrayElement(varPtr);
+	if (isElement) {
+	    Var *arrayPtr = TclGetVarArrayPtr(varPtr);
+	    if (arrayPtr) {
+		TclGetVarName(interp, arrayPtr, objPtr);
+	    }
+	    Tcl_AppendToObj(objPtr, "(", 1);
+	}
+
+	objNamePtr = VarHashGetKey(varPtr);
+	Tcl_AppendObjToObj(objPtr, objNamePtr);
+
+	if (isElement) {
+	    Tcl_AppendToObj(objPtr, ")", 1);
+	}
+
+	return 1;
+    }
+
+    /* Find varPtr in compiled locals from current or upper call frames. */
+    for (varFramePtr = iPtr->varFramePtr;
+	    varFramePtr != NULL ;
+	    varFramePtr = varFramePtr->callerVarPtr) {
+
+	int index = varPtr - varFramePtr->compiledLocals;
+
+	if (index >= 0 && index < varFramePtr->numCompiledLocals) {
+	    objNamePtr = localName(varFramePtr, index);
+	    Tcl_AppendObjToObj(objPtr, objNamePtr);
+	    return 1;
+	}
+    }
+
+    return 0;
 }
 
 /*
@@ -2825,8 +2884,7 @@ TclArraySet(
 	}
     }
     TclSetVarArray(varPtr);
-    varPtr->value.tablePtr = ckalloc(sizeof(TclVarHashTable));
-    TclInitVarHashTable(varPtr->value.tablePtr, TclGetVarNsPtr(varPtr));
+    TclInitArrayHashTable(varPtr);
     return TCL_OK;
 }
 
@@ -4441,7 +4499,6 @@ Tcl_GetVariableFullName(
 {
     Interp *iPtr = (Interp *) interp;
     register Var *varPtr = (Var *) variable;
-    Tcl_Obj *namePtr;
     Namespace *nsPtr;
 
     if (!varPtr || TclIsVarArrayElement(varPtr)) {
@@ -4460,19 +4517,7 @@ Tcl_GetVariableFullName(
 	    Tcl_AppendToObj(objPtr, "::", 2);
 	}
     }
-    if (TclIsVarInHash(varPtr)) {
-	if (!TclIsVarDeadHash(varPtr)) {
-	    namePtr = VarHashGetKey(varPtr);
-	    Tcl_AppendObjToObj(objPtr, namePtr);
-	}
-    } else if (iPtr->varFramePtr->procPtr) {
-	int index = varPtr - iPtr->varFramePtr->compiledLocals;
-
-	if (index >= 0 && index < iPtr->varFramePtr->numCompiledLocals) {
-	    namePtr = localName(iPtr->varFramePtr, index);
-	    Tcl_AppendObjToObj(objPtr, namePtr);
-	}
-    }
+    TclGetVarName(interp, varPtr, objPtr);
 }
 
 /*
@@ -5812,6 +5857,71 @@ TclInfoGlobalsCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclInfoLinkedNameCmd --
+ *
+ *	Called to implement the "info linkedname" command that returns the
+ *	name of a link variable. Handles the following syntax:
+ *
+ *	    info linkedname varname
+ *
+ * Results:
+ *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
+ *
+ * Side effects:
+ *	Returns a result in the interpreter's result object. If there is an
+ *	error, the result is an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclInfoLinkedNameCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Obj *varName, *objNamePtr;
+    Var *varPtr;
+    const char *errMsg;
+    int index;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "varname");
+	return TCL_ERROR;
+    }
+
+    varName = objv[1];
+    varPtr = TclLookupSimpleVar(interp, varName, TCL_AVOID_RESOLVERS,
+	/* create */ 0, &errMsg, &index);
+
+    if (varPtr && !TclIsVarLink(varPtr)) {
+	errMsg = needVarLink;
+	varPtr = NULL;
+    }
+
+    if (varPtr == NULL) {
+	TclObjVarErrMsg(interp, varName, NULL, "access", errMsg, -1);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARLINK",
+	    TclGetString(varName), NULL);
+	return TCL_ERROR;
+    }
+
+    objNamePtr = Tcl_NewObj();
+    if (TclGetVarName(interp, varPtr->value.linkPtr, objNamePtr) != 1) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "unable to find linked name for \"%s\"", TclGetString(varName)));
+	TclDecrRefCount(objNamePtr);
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, objNamePtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclInfoLocalsCmd -- (moved over from tclCmdIl.c)
  *
  *	Called to implement the "info locals" command to return a list of
@@ -6015,6 +6125,22 @@ TclInitVarHashTable(
     Tcl_InitCustomHashTable(&tablePtr->table,
 	    TCL_CUSTOM_TYPE_KEYS, &tclVarHashKeyType);
     tablePtr->nsPtr = nsPtr;
+    tablePtr->arrayPtr = NULL;
+}
+
+void
+TclInitArrayHashTable(
+    Var *arrayPtr)
+{
+    TclVarHashTable *tablePtr;
+
+    tablePtr = ckalloc(sizeof(TclVarHashTable));
+
+    Tcl_InitCustomHashTable(&tablePtr->table,
+	    TCL_CUSTOM_TYPE_KEYS, &tclVarHashKeyType);
+    tablePtr->nsPtr = TclGetVarNsPtr(arrayPtr);
+    tablePtr->arrayPtr = arrayPtr;
+    arrayPtr->value.tablePtr = tablePtr;
 }
 
 static Tcl_HashEntry *

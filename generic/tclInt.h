@@ -208,14 +208,15 @@ typedef struct NamespacePathEntry NamespacePathEntry;
 
 /*
  * Special hashtable for variables: this is just a Tcl_HashTable with an nsPtr
- * field added at the end: in this way variables can find their namespace
- * without having to copy a pointer in their struct: they can access it via
- * their hPtr->tablePtr.
+ * field and a Var field added at the end: in this way variables can find their
+ * namespace or related array variable (for array elements) without having to
+ * copy a pointer in their struct: they can access it via their hPtr->tablePtr.
  */
 
 typedef struct TclVarHashTable {
     Tcl_HashTable table;
     struct Namespace *nsPtr;
+    struct Var *arrayPtr;
 } TclVarHashTable;
 
 /*
@@ -848,6 +849,11 @@ typedef struct VarInHash {
 #define TclGetVarNsPtr(varPtr) \
     (TclIsVarInHash(varPtr) \
 	? ((TclVarHashTable *) ((((VarInHash *) (varPtr))->entry.tablePtr)))->nsPtr \
+	: NULL)
+
+#define TclGetVarArrayPtr(varPtr) \
+    (TclIsVarInHash(varPtr) \
+	? ((TclVarHashTable *) ((((VarInHash *) (varPtr))->entry.tablePtr)))->arrayPtr \
 	: NULL)
 
 #define VarHashRefCount(varPtr) \
@@ -3002,11 +3008,14 @@ MODULE_SCOPE int	TclInfoCoroutineCmd(ClientData dummy, Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclInfoFrame(Tcl_Interp *interp, CmdFrame *framePtr);
 MODULE_SCOPE int	TclInfoGlobalsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+MODULE_SCOPE int	TclInfoLinkedNameCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclInfoLocalsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclInfoVarsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void	TclInitAlloc(void);
+MODULE_SCOPE void	TclInitArrayHashTable(Var *arrayPtr);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
 MODULE_SCOPE void	TclInitDoubleConversion(void);
 MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
