@@ -4,7 +4,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH open n 8.3 Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -68,7 +68,7 @@ Set the initial access position  to the end of the file.
 All of the legal \fIaccess\fR values above may have the character
 \fBb\fR added as the second or third character in the value to
 indicate that the opened channel should be configured as if with the
-\fBfconfigure\fR \fB\-translation binary\fR option, making the channel suitable for 
+\fBfconfigure\fR \fB\-translation binary\fR option, making the channel suitable for
 reading or writing of binary data.
 .PP
 In the second form, \fIaccess\fR consists of a list of any of the
@@ -382,7 +382,7 @@ pipe is closed.  These problems only occur because both Tcl and the child
 application are competing for the console at the same time.  If the command
 pipeline is started from a script, so that Tcl is not accessing the console,
 or if the command pipeline does not use standard input or output, but is
-redirected from or to a file, then the above problems do not occur.  
+redirected from or to a file, then the above problems do not occur.
 .RE
 .TP
 \fBUnix\fR\0\0\0\0\0\0\0
@@ -402,7 +402,7 @@ some will be sent to the Tcl evaluator.  This problem only occurs because
 both Tcl and the child application are competing for the console at the
 same time.  If the command pipeline is started from a script, so that Tcl is
 not accessing the console, or if the command pipeline does not use standard
-input, but is redirected from a file, then the above problem does not occur.  
+input, but is redirected from a file, then the above problem does not occur.
 .RE
 .PP
 See the \fBPORTABILITY ISSUES\fR section of the \fBexec\fR command for

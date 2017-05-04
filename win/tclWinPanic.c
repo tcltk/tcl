@@ -11,7 +11,8 @@
  */
 
 #include "tclInt.h"
-
+#ifdef __CYGWIN__
+#endif
 /*
  *----------------------------------------------------------------------
  *
@@ -37,8 +38,10 @@ Tcl_ConsolePanic(
     va_list argList;
     WCHAR msgString[TCL_MAX_WARN_LEN];
     char buf[TCL_MAX_WARN_LEN * TCL_UTF_MAX];
+#ifndef __CYGWIN__
     HANDLE handle = GetStdHandle(STD_ERROR_HANDLE);
     DWORD dummy;
+#endif
 
     va_start(argList, format);
     vsnprintf(buf+3, sizeof(buf)-3, format, argList);
@@ -56,12 +59,19 @@ Tcl_ConsolePanic(
 
     if (IsDebuggerPresent()) {
 	OutputDebugStringW(msgString);
+#ifdef __CYGWIN__
+    } else {
+	buf[0] = 0xEF; buf[1] = 0xBB; buf[2] = 0xBF; /* UTF-8 bom */
+	write(2, buf, strlen(buf));
+	fsync(2);
+#else
     } else if (_isatty(2)) {
 	WriteConsoleW(handle, msgString, wcslen(msgString), &dummy, 0);
     } else {
 	buf[0] = 0xEF; buf[1] = 0xBB; buf[2] = 0xBF; /* UTF-8 bom */
 	WriteFile(handle, buf, strlen(buf), &dummy, 0);
 	FlushFileBuffers(handle);
+#endif
     }
 #   if defined(__GNUC__)
 	__builtin_trap();
@@ -72,7 +82,11 @@ Tcl_ConsolePanic(
 #   else
 	DebugBreak();
 #   endif
+#if defined(_WIN32)
 	ExitProcess(1);
+#else
+	abort();
+#endif
 }
 /*
  * Local Variables:

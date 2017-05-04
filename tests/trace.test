@@ -164,30 +164,30 @@ test trace-1.10 {trace variable reads} {
 } {}
 test trace-1.11 {read traces that modify the array structure} {
     unset -nocomplain x
-    set x(bar) 0 
-    trace variable x r {set x(foo) 1 ;#} 
-    trace variable x r {unset -nocomplain x(bar) ;#} 
+    set x(bar) 0
+    trace variable x r {set x(foo) 1 ;#}
+    trace variable x r {unset -nocomplain x(bar) ;#}
     array get x
 } {}
 test trace-1.12 {read traces that modify the array structure} {
     unset -nocomplain x
-    set x(bar) 0 
-    trace variable x r {unset -nocomplain x(bar) ;#} 
-    trace variable x r {set x(foo) 1 ;#} 
+    set x(bar) 0
+    trace variable x r {unset -nocomplain x(bar) ;#}
+    trace variable x r {set x(foo) 1 ;#}
     array get x
 } {}
 test trace-1.13 {read traces that modify the array structure} {
     unset -nocomplain x
-    set x(bar) 0 
-    trace variable x r {set x(foo) 1 ;#} 
-    trace variable x r {unset -nocomplain x;#} 
+    set x(bar) 0
+    trace variable x r {set x(foo) 1 ;#}
+    trace variable x r {unset -nocomplain x;#}
     list [catch {array get x} res] $res
 } {1 {can't read "x(bar)": no such variable}}
 test trace-1.14 {read traces that modify the array structure} {
     unset -nocomplain x
-    set x(bar) 0 
-    trace variable x r {unset -nocomplain x;#} 
-    trace variable x r {set x(foo) 1 ;#} 
+    set x(bar) 0
+    trace variable x r {unset -nocomplain x;#}
+    trace variable x r {set x(foo) 1 ;#}
     list [catch {array get x} res] $res
 } {1 {can't read "x(bar)": no such variable}}
 
@@ -419,7 +419,7 @@ test trace-5.8 {array traces fire for undefined variables} {
     trace add variable x array {set x(foo) 1 ;#}
     set res "names: [array names x]"
 } {names: foo}
-    
+
 # Trace multiple trace types at once.
 
 test trace-6.1 {multiple ops traced at once} {
@@ -767,7 +767,7 @@ test trace-13.1 {delete one trace from another} {
     trace add variable x read {traceTag 2}
     trace add variable x read {traceTag 3}
     trace add variable x read {traceTag 4}
-    trace add variable x read delTraces 
+    trace add variable x read delTraces
     trace add variable x read {traceTag 5}
     set x
     set info
@@ -872,7 +872,7 @@ test trace-14.5 {trace command, invalid option} {
 } [list 1 "bad option \"gorp\": must be add, info, remove, variable, vdelete, or vinfo"]
 
 # Again, [trace ... command] and [trace ... variable] share syntax and
-# error message styles for their opList options; these loops test those 
+# error message styles for their opList options; these loops test those
 # error messages.
 
 set i 0
@@ -2104,7 +2104,7 @@ foo foo 0 1 leave}
 test trace-28.2 {exec traces with 'error'} {
     set info {}
     set res {}
-    
+
     proc foo {} {
 	if {[catch {bar}]} {
 	    return "error"
@@ -2126,7 +2126,7 @@ test trace-28.2 {exec traces with 'error'} {
 
     trace remove execution foo {enter enterstep leave leavestep} \
       [list traceExecute foo]
-    
+
     list $res [join $info \n]
 } {{error error} {foo foo enter
 foo {if {[catch {bar}]} {
@@ -2152,7 +2152,7 @@ foo foo 0 error leave}}
 test trace-28.3 {exec traces with 'return -code error'} {
     set info {}
     set res {}
-    
+
     proc foo {} {
 	if {[catch {bar}]} {
 	    return "error"
@@ -2174,7 +2174,7 @@ test trace-28.3 {exec traces with 'return -code error'} {
 
     trace remove execution foo {enter enterstep leave leavestep} \
       [list traceExecute foo]
-    
+
     list $res [join $info \n]
 } {{error error} {foo foo enter
 foo {if {[catch {bar}]} {
@@ -2204,7 +2204,7 @@ test trace-28.4 {exec traces in slave with 'return -code error'} {
     set res [interp eval slave {
 	set info {}
 	set res {}
-	
+
 	proc foo {} {
 	    if {[catch {bar}]} {
 		return "error"
@@ -2212,21 +2212,21 @@ test trace-28.4 {exec traces in slave with 'return -code error'} {
 		return "ok"
 	    }
 	}
-	
+
 	proc bar {} { return -code error "msg" }
-	
+
 	lappend res [foo]
-	
+
 	trace add execution foo {enter enterstep leave leavestep} \
 	  [list traceExecute foo]
-	
+
 	# With the trace active
-	
+
 	lappend res [foo]
-	
+
 	trace remove execution foo {enter enterstep leave leavestep} \
 	  [list traceExecute foo]
-	
+
 	list $res
     }]
     interp delete slave
@@ -2610,7 +2610,7 @@ test trace-39 {bug #3484621: tracing Bc'ed commands} -setup {
     proc foo {} {
 	incr ::traceCalls
 	# choose a BC'ed command that is 'unlikely' to interfere with tcltest's
-	# internals 
+	# internals
 	lset ::bar 1 2
     }
 } -body {
@@ -2631,7 +2631,7 @@ test trace-39 {bug #3484621: tracing Bc'ed commands} -setup {
     rename dotrace {}
     rename foo {}
 } -result {3 | 0 1 1}
-    
+
 test trace-39.1 {bug #3485022: tracing Bc'ed commands} -setup {
     set ::traceLog 0
     set ::traceCalls 0
@@ -2668,7 +2668,7 @@ test trace-40.1 {execution trace errors become command errors} {
     catch foo m
     return -level 0 $m[unset m]
 } bar
-    
+
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).
 catch {rename foobar {}}

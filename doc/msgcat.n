@@ -3,7 +3,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH "msgcat" n 1.5 msgcat "Tcl Bundled Packages"
 .so man.macros
 .BS
@@ -259,7 +259,7 @@ language[_country][.codeset][@modifier]
 .CE
 .PP
 to extract its parts.  The initial locale is then set by calling
-\fB::msgcat::mclocale\fR with the argument 
+\fB::msgcat::mclocale\fR with the argument
 .PP
 .CS
 language[_country][_modifier]
@@ -384,7 +384,7 @@ the package. For example, a short \fBes.msg\fR might contain:
 .PP
 .CS
 namespace eval ::mypackage {
-    \fB::msgcat::mcflset\fR "Free Beer!" "Cerveza Gracias!"
+    \fB::msgcat::mcflset\fR "Free Beer" "Cerveza Gratis"
 }
 .CE
 .SH "RECOMMENDED MESSAGE SETUP FOR PACKAGES"

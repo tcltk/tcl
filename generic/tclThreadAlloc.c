@@ -196,20 +196,11 @@ GetCache(void)
 
     if (listLockPtr == NULL) {
 	Tcl_Mutex *initLockPtr;
-	unsigned int i;
 
 	initLockPtr = Tcl_GetAllocMutex();
 	Tcl_MutexLock(initLockPtr);
 	if (listLockPtr == NULL) {
-	    listLockPtr = TclpNewAllocMutex();
-	    objLockPtr = TclpNewAllocMutex();
-	    for (i = 0; i < NBUCKETS; ++i) {
-		bucketInfo[i].blockSize = MINALLOC << i;
-		bucketInfo[i].maxBlocks = 1 << (NBUCKETS - 1 - i);
-		bucketInfo[i].numMove = i < NBUCKETS - 1 ?
-			1 << (NBUCKETS - 2 - i) : 1;
-		bucketInfo[i].lockPtr = TclpNewAllocMutex();
-	    }
+	    TclInitThreadAlloc();
 	}
 	Tcl_MutexUnlock(initLockPtr);
     }
@@ -1064,6 +1055,40 @@ GetBlocks(
     }
     return 1;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclInitThreadAlloc --
+ *
+ *	Initializes the allocator cache-maintenance structures.
+ *      It is done early and protected during the TclInitSubsystems().
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclInitThreadAlloc(void)
+{
+    unsigned int i;
+
+    listLockPtr = TclpNewAllocMutex();
+    objLockPtr = TclpNewAllocMutex();
+    for (i = 0; i < NBUCKETS; ++i) {
+	bucketInfo[i].blockSize = MINALLOC << i;
+	bucketInfo[i].maxBlocks = 1 << (NBUCKETS - 1 - i);
+	bucketInfo[i].numMove = i < NBUCKETS - 1 ?
+		1 << (NBUCKETS - 2 - i) : 1;
+	bucketInfo[i].lockPtr = TclpNewAllocMutex();
+    }
+    TclpInitAllocCache();
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1106,9 +1131,9 @@ TclFinalizeThreadAlloc(void)
  *
  * TclFinalizeThreadAllocThread --
  *
- *	This procedure is used to destroy single thread private resources used
- *	in this file. 
- * Called in TclpFinalizeThreadData when a thread exits (Tcl_FinalizeThread).
+ *	This procedure is used to destroy single thread private resources
+ *	defined in this file. Called either during Tcl_FinalizeThread() or
+ *	Tcl_Finalize().
  *
  * Results:
  *	None.

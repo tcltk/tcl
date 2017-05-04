@@ -67,7 +67,9 @@ The class to create the method in.
 The name of the method to create. Should not be NULL unless creating
 constructors or destructors.
 .AP int isPublic in
-A boolean flag saying whether the method is to be exported.
+A flag saying what the visibility of the method is. The only supported public
+values of this flag are 0 for a non-exported method, and 1 for an exported
+method.
 .AP Tcl_MethodType *methodTypePtr in
 A description of the type of the method to create, or the type of method to
 compare against.
