@@ -4027,20 +4027,44 @@ test util-18.2 {Tcl_ObjPrintf} {testprint} {
 } {9223372036854775807}
 
 test util-18.3 {Tcl_ObjPrintf} {testprint} {
-    testprint %Ld [expr 2**63-1]
+    testprint %qd [expr 2**63-1]
 } {9223372036854775807}
 
 test util-18.4 {Tcl_ObjPrintf} {testprint} {
+    testprint %jd [expr 2**63-1]
+} {9223372036854775807}
+
+test util-18.5 {Tcl_ObjPrintf} {testprint} {
     testprint %lld [expr -2**63]
 } {-9223372036854775808}
 
-test util-18.5 {Tcl_ObjPrintf} {testprint} {
+test util-18.6 {Tcl_ObjPrintf} {testprint} {
     testprint %I64d [expr -2**63]
 } {-9223372036854775808}
 
-test util-18.6 {Tcl_ObjPrintf} {testprint} {
-    testprint %Ld [expr -2**63]
+test util-18.7 {Tcl_ObjPrintf} {testprint} {
+    testprint %qd [expr -2**63]
 } {-9223372036854775808}
+
+test util-18.8 {Tcl_ObjPrintf} {testprint} {
+    testprint %jd [expr -2**63]
+} {-9223372036854775808}
+
+test util-18.9 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d %I32d" [expr -2**63+2]
+} {-9223372036854775806 2}
+
+test util-18.10 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d %p" 65535
+} {65535 0xffff}
+
+test util-18.11 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d %td" 65536
+} {65536 65536}
+
+test util-18.12 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d %Id" 65537
+} {65537 65537}
 
 set ::tcl_precision $saved_precision
 

@@ -661,9 +661,7 @@ TclpFreeAllocMutex(
 void
 TclpInitAllocCache(void)
 {
-    pthread_mutex_lock(allocLockPtr);
     pthread_key_create(&key, NULL);
-    pthread_mutex_unlock(allocLockPtr);
 }
 
 void

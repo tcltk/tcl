@@ -619,6 +619,7 @@ AddClassMethodNames(
 		int isWanted = (!(flags & PUBLIC_METHOD)
 			|| (mPtr->flags & PUBLIC_METHOD)) ? IN_LIST : 0;
 
+		isWanted |= (mPtr->typePtr == NULL ? NO_IMPLEMENTATION : 0);
 		Tcl_SetHashValue(hPtr, INT2PTR(isWanted));
 	    } else if ((PTR2INT(Tcl_GetHashValue(hPtr)) & NO_IMPLEMENTATION)
 		    && mPtr->typePtr != NULL) {
@@ -1017,7 +1018,7 @@ TclOOGetCallContext(
 	AddSimpleChainToCallContext(oPtr, oPtr->fPtr->unknownMethodNameObj,
 		&cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
-	callPtr->epoch = -1;
+	callPtr->epoch = 0;
 	if (callPtr->numChain == 0) {
 	    TclOODeleteChain(callPtr);
 	    return NULL;
@@ -1087,7 +1088,7 @@ TclOOGetCallContext(
 	AddSimpleChainToCallContext(oPtr, oPtr->fPtr->unknownMethodNameObj,
 		&cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
-	callPtr->epoch = -1;
+	callPtr->epoch = 0;
 	if (count == callPtr->numChain) {
 	    TclOODeleteChain(callPtr);
 	    return NULL;
@@ -1254,7 +1255,7 @@ TclOOGetStereotypeCallChain(
 	AddSimpleChainToCallContext(&obj, fPtr->unknownMethodNameObj, &cb,
 		NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
-	callPtr->epoch = -1;
+	callPtr->epoch = 0;
 	if (count == callPtr->numChain) {
 	    TclOODeleteChain(callPtr);
 	    return NULL;

@@ -12,16 +12,21 @@
 #include "tclInt.h"
 
 #if defined(_WIN32) && defined(UNICODE)
-/* On Windows, we need to do proper Unicode->UTF-8 conversion. */
+/*
+ * On Windows, we need to do proper Unicode->UTF-8 conversion.
+ */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     int initialized;
     Tcl_DString errorMsg; /* UTF-8 encoded error-message */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 
 #undef gai_strerror
-static const char *gai_strerror(int code) {
+static const char *
+gai_strerror(
+    int code)
+{
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (tsdPtr->initialized) {
@@ -126,7 +131,7 @@ TclSockMinimumBuffers(
     }
     len = sizeof(int);
     getsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_RCVBUF,
-		(char *) &current, &len);
+	    (char *) &current, &len);
     if (current < size) {
 	len = sizeof(int);
 	setsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_RCVBUF,
@@ -214,7 +219,7 @@ TclCreateSocketAddress(
      * We found some problems when using AI_ADDRCONFIG, e.g. on systems that
      * have no networking besides the loopback interface and want to resolve
      * localhost. See [Bugs 3385024, 3382419, 3382431]. As the advantage of
-     * using AI_ADDRCONFIG in situations where it works, is probably low,
+     * using AI_ADDRCONFIG is probably low even in situations where it works,
      * we'll leave it out for now. After all, it is just an optimisation.
      *
      * Missing on: OpenBSD, NetBSD.
@@ -280,6 +285,38 @@ TclCreateSocketAddress(
 	}
     }
     return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_OpenTcpServer --
+ *
+ *	Opens a TCP server socket and creates a channel around it.
+ *
+ * Results:
+ *	The channel or NULL if failed. If an error occurred, an error message
+ *	is left in the interp's result if interp is not NULL.
+ *
+ * Side effects:
+ *	Opens a server socket and creates a new channel.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Channel
+Tcl_OpenTcpServer(
+    Tcl_Interp *interp,
+    int port,
+    const char *host,
+    Tcl_TcpAcceptProc *acceptProc,
+    ClientData callbackData)
+{
+    char portbuf[TCL_INTEGER_SPACE];
+
+    TclFormatInt(portbuf, port);
+    return Tcl_OpenTcpServerEx(interp, portbuf, host, TCL_TCPSERVER_REUSEADDR,
+	    acceptProc, callbackData);
 }
 
 /*
