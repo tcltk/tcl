@@ -136,18 +136,13 @@ as potential switches. On call-site, the related switch value will be
 set on the argument if one of the switch names is used.
 See \fBNAMED ARGUMENTS HANDLING\fR below for details on named arguments.
 .TP
-\fB-upvar \fIbool\fR
+\fB-upvar \fIlevel\fR
 .VS
-If \fIbool\fR is set to true, this will cause the related variable,
-rather than taking the parameter value, to become an alias
-to the variable in caller's scope corresponding to the parameter value.
+When defined, this will cause the related variable, rather than taking
+the parameter value, to become an alias to the variable in the frame
+at level \fIlevel\fR corresponding to the parameter value. \fILevel\fR
+may have any of the forms permitted for the \fBupvar\fR command.
 This specifier is incompatible with the \fB-switch\fR specifier.
-.TP
-\fB-varname \fIvarname\fR
-.VS
-Defines a new variable named \fIvarname\fR which will be added in the
-procedure with the original value of the parameter. This is mostly used
-with \fB-upvar 1\fR to access the name of the linked variable.
 .VE
 .SS "NAMED ARGUMENTS HANDLING"
 .VS

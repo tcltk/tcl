@@ -3802,16 +3802,16 @@ test oo-36.3 {"info object definition" with extended argspec} -setup {
     oo::object create foo
 } -body {
     oo::objdefine foo method bar {a {b B} {c -switch {{C 1}} -default 0}
-	{d -upvar true -varname up} args} {body}
+	{d -upvar 1} args} {body}
     set result [info object definition foo bar]
 } -cleanup {
     foo destroy
-} -result {{a {b B} {c -default 0 -switch {{C 1}}} {d -upvar 1 -varname up} args} body}
+} -result {{a {b B} {c -default 0 -switch {{C 1}}} {d -upvar 1} args} body}
 
 test oo-36.4 {"info class definition" with extended argspec} -setup {
     oo::class create foo
 } -body {
-    oo::define foo method bar {a {b 8} {c -name C} {d -name D -upvar true}
+    oo::define foo method bar {a {b 8} {c -name C} {d -name D -upvar 1}
 	args} {body}
     set result [info class definition foo bar]
 } -cleanup {

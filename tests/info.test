@@ -2441,26 +2441,21 @@ test info-40-6 {info argspec proc on local variable} -body {
     proc p {a} {set x 0}
     info argspec proc p x
 } -returnCodes error -result {proc "p" doesn't have an argument "x"}
-test info-40-7 {info argspec proc on varname name} -body {
-    proc p {{a -varname up}} {}
-    info argspec proc p up
-} -returnCodes error -result {proc "p" doesn't have an argument "up"}
-test info-40-8 {info argspec proc with new-style proc} {
+test info-40-7 {info argspec proc with new-style proc} {
     proc p {
 	{ a -default 2 }
-	{ b -upvar 1 }
-	{ c -upvar 1 -varname up }
-	{ d -required 0 }
+	{ b -upvar #1 }
+	{ c -required 0 }
     } {}
-    list [info argspec proc p a] [info argspec proc p b] [info argspec proc p c] [info argspec proc p d]
-} {{-default 2} {-upvar 1} {-upvar 1 -varname up} {-required 0}}
-test info-40-9 {info argspec proc with multiple named args} {
+    list [info argspec proc p a] [info argspec proc p b] [info argspec proc p c]
+} {{-default 2} {-upvar #1} {-required 0}}
+test info-40-8 {info argspec proc with multiple named args} {
     proc p {
 	{ a -default 0 -name val -switch {flag1 { flag2 22 }} -name {val2}}
     } {}
     info argspec proc p a
 } {-default 0 -name {val val2} -switch {flag1 {flag2 22}}}
-test info-40-10 {info argspec proc without arg} {
+test info-40-9 {info argspec proc without arg} {
     proc p {
 	{ a -default 2 }
 	{ b -name {B B1} -required 1 }
@@ -2468,21 +2463,21 @@ test info-40-10 {info argspec proc without arg} {
     } {}
     info argspec proc p
 } {{a -default 2} {b -required 1 -name {B B1}} args}
-test info-40-11 {info argspec unknown type} -body {
+test info-40-10 {info argspec unknown type} -body {
     info argspec foo
 } -returnCodes error -result {bad type "foo": must be proc, lambda, constructor, method, objmethod, or specifiers}
-test info-40-12 {info argspec lambda} {
+test info-40-11 {info argspec lambda} {
     set l [list {{a -name A} {b -default 5}} {list $a $b}]
     list [info argspec lambda $l] [info argspec lambda $l a]
 } {{{a -name A} {b -default 5}} {-name A}}
-test info-40-13 {info argspec lambda not a lambda} -body {
+test info-40-12 {info argspec lambda not a lambda} -body {
     proc p {} {}
     info argspec lambda p
 } -returnCodes error -result {can't interpret "p" as a lambda expression}
-test info-40-14 {info argspec specifiers} {
+test info-40-13 {info argspec specifiers} {
     info argspec specifiers
-} {-default -name -required -switch -upvar -varname}
-test info-40-15 {info argspec objmethod} -setup {
+} {-default -name -required -switch -upvar}
+test info-40-14 {info argspec objmethod} -setup {
     oo::object create foo
 } -body {
     oo::objdefine foo method bar {a {b B} {c -switch {{C 1}} -default 0}} {}

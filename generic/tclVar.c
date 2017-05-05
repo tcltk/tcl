@@ -4437,6 +4437,8 @@ int
 TclUpvarForExtArg(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to
 				 * be looked up. */
+    Tcl_Obj *frameNamePtr,	/* Name of the frame containing the source
+				 * variable. */
     Tcl_Obj *varNamePtr,	/* Name of variable in interp to link to. */
     const char *localNameStr)	/* Name of link variable. */
 {
@@ -4444,7 +4446,7 @@ TclUpvarForExtArg(
     CallFrame *framePtr;
     Tcl_Obj *localNamePtr;
 
-    if (TclObjGetFrame(interp, NULL, &framePtr) == -1) {
+    if (TclObjGetFrame(interp, frameNamePtr, &framePtr) == -1) {
 	return TCL_ERROR;
     }
 

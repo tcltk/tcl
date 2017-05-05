@@ -703,13 +703,6 @@ typedef struct VarInHash {
  *				specification.
  * VAR_ARG_UPVAR		1 means that this argument has been defined
  *				using the -upvar extended arg specification.
- * VAR_ARG_HAS_VARNAME		1 means that this variable has been specified
- *				with the -varname specifier and that a
- *				dedicated variable has been created to store
- *				the original value.
- * VAR_ARG_IS_VARNAME		1 means that this variable has been added to
- *				store the name of a passed-by-name argument,
- *				defined using an extended arg specification.
  * VAR_ARG_OPTIONAL		1 means that this argument is not required to
  *				be specified on call-site.
  */
@@ -755,9 +748,7 @@ typedef struct VarInHash {
 #define VAR_RESOLVED		0x8000
 #define VAR_NAMED_GROUP		0x10000
 #define VAR_ARG_UPVAR		0x20000
-#define VAR_ARG_IS_VARNAME	0x40000
-#define VAR_ARG_HAS_VARNAME	0x80000
-#define VAR_ARG_OPTIONAL	0x100000
+#define VAR_ARG_OPTIONAL	0x40000
 
 /*
  * Macros to ensure that various flag bits are set properly for variables.
@@ -865,7 +856,7 @@ typedef struct VarInHash {
     ((varPtr)->flags & VAR_DEAD_HASH)
 
 #define TclIsVarWithExtArgs(varPtr) \
-    ((varPtr)->flags & (VAR_NAMED_GROUP|VAR_ARG_UPVAR|VAR_ARG_HAS_VARNAME|VAR_ARG_OPTIONAL))
+    ((varPtr)->flags & (VAR_NAMED_GROUP|VAR_ARG_UPVAR|VAR_ARG_OPTIONAL))
 
 #define TclGetVarNsPtr(varPtr) \
     (TclIsVarInHash(varPtr) \
@@ -960,14 +951,13 @@ typedef struct ExtendedArgSpec {
     struct NamedGroupEntry *lastNamedEntryPtr;
 				/* Pointer to the last named parameter entry
 				 * defined on the proc argument. */
-    int varnameIndex;		/* Index of the local created to store the
-				 * name of the passed-by-name argument. Set
-				 * to -1 when not used. */
     Tcl_HashTable *namedHashTable;
 				/* Pointer to the hash table created for a
 				 * fast lookup of named entry. The pointer is
 				 * only set on the first local of a named
 				 * group. */
+    Tcl_Obj *upvarLevelPtr;	/* Pointer to the level value specified using
+				 * the -upvar specifier. */
 } ExtendedArgSpec;
 
 /*
@@ -3279,7 +3269,8 @@ MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclUpvarForExtArg(Tcl_Interp *interp,
-			    Tcl_Obj *varNamePtr, const char *localNameStr);
+			    Tcl_Obj *frameNamePtr, Tcl_Obj *varNamePtr,
+			    const char *localNameStr);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCount(int ch);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);

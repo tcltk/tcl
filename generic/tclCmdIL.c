@@ -559,8 +559,7 @@ InfoArgSpecCmd(
     };
     static const char *const specifiers[] = {
 	/* supported specifiers, must be ordered */
-	"-default", "-name", "-required", "-switch", "-upvar",
-	"-varname", NULL
+	"-default", "-name", "-required", "-switch", "-upvar", NULL
     };
     enum Types {
 	ARGSPEC_PROC, ARGSPEC_LAMBDA, ARGSPEC_CONSTRUCTOR, ARGSPEC_METHOD,
