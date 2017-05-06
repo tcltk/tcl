@@ -1920,206 +1920,162 @@ Tcl_StringCaseMatch(
 {
     int p, charLen;
     CONST char *pstart = pattern;
-    Tcl_UniChar ch1, ch2;
+    Tcl_UniChar pch, sch;
+    Tcl_UniChar startChar, endChar;
 
     while (1) {
-	p = *pattern;
+	switch (*pattern) {
+	    case '\0':
+		return (*str == '\0');
 
-	/*
-	 * See if we're at the end of both the pattern and the string. If so,
-	 * we succeeded. If we're at the end of the pattern but not at the end
-	 * of the string, we failed.
-	 */
-
-	if (p == '\0') {
-	    return (*str == '\0');
-	}
-	if ((*str == '\0') && (p != '*')) {
-	    return 0;
-	}
-
-	/*
-	 * Check for a "*" as the next pattern character. It matches any
-	 * substring. We handle this by calling ourselves recursively for each
-	 * postfix of string, until either we match or we reach the end of the
-	 * string.
-	 */
-
-	if (p == '*') {
-	    /*
-	     * Skip all successive *'s in the pattern
-	     */
-
-	    while (*(++pattern) == '*') {}
-	    p = *pattern;
-	    if (p == '\0') {
-		return 1;
-	    }
-
-	    /*
-	     * This is a special case optimization for single-byte utf.
-	     */
-
-	    if (UCHAR(*pattern) < 0x80) {
-		ch2 = (Tcl_UniChar)
-			(nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
-	    } else {
-		Tcl_UtfToUniChar(pattern, &ch2);
-		if (nocase) {
-		    ch2 = Tcl_UniCharToLower(ch2);
-		}
-	    }
-
-	    while (1) {
-		/*
-		 * Optimization for matching - cruise through the string
-		 * quickly if the next char in the pattern isn't a special
-		 * character
-		 */
-
-		if ((p != '[') && (p != '?') && (p != '\\')) {
-		    if (nocase) {
-			while (*str) {
-			    charLen = TclUtfToUniChar(str, &ch1);
-			    if (ch2==ch1 || ch2==Tcl_UniCharToLower(ch1)) {
-				break;
-			    }
-			    str += charLen;
-			}
-		    } else {
-			/*
-			 * There's no point in trying to make this code
-			 * shorter, as the number of bytes you want to compare
-			 * each time is non-constant.
-			 */
-
-			while (*str) {
-			    charLen = TclUtfToUniChar(str, &ch1);
-			    if (ch2 == ch1) {
-				break;
-			    }
-			    str += charLen;
-			}
-		    }
-		}
-		if (Tcl_StringCaseMatch(str, pattern, nocase)) {
-		    return 1;
-		}
+	    case '?':
 		if (*str == '\0') {
 		    return 0;
-		}
-		str += TclUtfToUniChar(str, &ch1);
-	    }
-	}
-
-	/*
-	 * Check for a "?" as the next pattern character. It matches any
-	 * single character.
-	 */
-
-	if (p == '?') {
-	    pattern++;
-	    str += TclUtfToUniChar(str, &ch1);
-	    continue;
-	}
-
-	/*
-	 * Check for a "[" as the next pattern character. It is followed by a
-	 * list of characters that are acceptable, or by a range (two
-	 * characters separated by "-").
-	 */
-
-	if (p == '[') {
-	    Tcl_UniChar startChar, endChar;
-
-	    pattern++;
-	    if (UCHAR(*str) < 0x80) {
-		ch1 = (Tcl_UniChar)
-			(nocase ? tolower(UCHAR(*str)) : UCHAR(*str));
-		str++;
-	    } else {
-		str += Tcl_UtfToUniChar(str, &ch1);
-		if (nocase) {
-		    ch1 = Tcl_UniCharToLower(ch1);
-		}
-	    }
-	    while (1) {
-		if ((*pattern == ']') || (*pattern == '\0')) {
-		    return 0;
-		}
-		if (UCHAR(*pattern) < 0x80) {
-		    startChar = (Tcl_UniChar) (nocase
-			    ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
-		    pattern++;
 		} else {
-		    pattern += Tcl_UtfToUniChar(pattern, &startChar);
+		    str += TclUtfToUniChar(str, &sch);
+		}
+		++pattern;
+		break;
+
+	    case '*':
+		/* skip runs of *** */
+		while (*(++pattern) == '*') {}
+
+		/* if end of pattern, we have a match */
+		if (*pattern == '\0') {
+		    return 1;
+		}
+
+		/* peek at the next pattern char */
+		if (UCHAR(*pattern) < 0x80) {
+		    pch = (Tcl_UniChar)
+			(nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
+		} else {
+		    TclUtfToUniChar(pattern, &pch);
 		    if (nocase) {
-			startChar = Tcl_UniCharToLower(startChar);
+			pch = Tcl_UniCharToLower(pch);
 		    }
 		}
-		if (*pattern == '-') {
-		    pattern++;
+
+		/* if the next char in pattern is a literal, zoom through str to the next match */
+		switch (*pattern) {
+		    case '[': case '?': case '\\':
+			break;
+		    default:
+			while (*str) {
+			    charLen = TclUtfToUniChar(str, &sch);
+			    if ( (pch == sch)
+				    || (nocase && (pch == Tcl_UniCharToLower(sch)))) {
+				break;
+			    }
+			    str += charLen;
+			}
+		}
+
+		while (*str != '\0') {
+		    /* recursion! */
+		    if (Tcl_StringCaseMatch(str, pattern, nocase)) {
+			return 1;
+		    }
+		    str += TclUtfToUniChar(str, &sch);
+		}
+		break;
+
+	    case '[':
+		++pattern;
+
+		if(UCHAR(*str) < 0x80) {
+		    sch = (Tcl_UniChar)
+			(nocase ? tolower(UCHAR(*str)) : UCHAR(*str));
+		    ++str;
+		} else {
+		    str += TclUtfToUniChar(str, &sch);
+		    if (nocase) {
+			sch = Tcl_UniCharToLower(sch);
+		    }
+		}
+
+		while (1) {
+		    if (*pattern == ']') {
+			/* end of range */
+			return 0;
+		    }
 		    if (*pattern == '\0') {
+			/* illegal pattern */
+			// WAS: break;
 			return 0;
 		    }
 		    if (UCHAR(*pattern) < 0x80) {
-			endChar = (Tcl_UniChar) (nocase
-				? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
-			pattern++;
+			pch = (Tcl_UniChar)
+			    (nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
+			++pattern;
 		    } else {
-			pattern += Tcl_UtfToUniChar(pattern, &endChar);
+			pattern += TclUtfToUniChar(pattern, &pch);
 			if (nocase) {
-			    endChar = Tcl_UniCharToLower(endChar);
+			    pch = Tcl_UniCharToLower(pch);
 			}
 		    }
-		    if (((startChar <= ch1) && (ch1 <= endChar))
-			    || ((endChar <= ch1) && (ch1 <= startChar))) {
-			/*
-			 * Matches ranges of form [a-z] or [z-a].
-			 */
-
+		    startChar = pch;
+		    if (*pattern == '-') {
+			++pattern;
+			if (*pattern == '\0') {
+			    /* illegal pattern */
+			    return 0;
+			}
+			if (UCHAR(*pattern) < 0x80) {
+			    pch = (Tcl_UniChar)
+				(nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
+			    ++pattern;
+			} else {
+			    pattern += TclUtfToUniChar(pattern, &pch);
+			    if (nocase) {
+				pch = Tcl_UniCharToLower(pch);
+			    }
+			}
+			endChar = pch;
+			if (((startChar <= sch) && (sch <= endChar))
+				|| ((endChar <= sch) && (sch <= startChar))) {
+			    /* matches ranges of form [a-z] or [z-a] */
+			    break;
+			}
+			/* otherwise, process the rest of the [] */
+			continue;
+		    } else if (startChar == sch) {
 			break;
 		    }
-		} else if (startChar == ch1) {
-		    break;
 		}
-	    }
-	    while (*pattern != ']') {
-		if (*pattern == '\0') {
-		    pattern = Tcl_UtfPrev(pattern, pstart);
-		    break;
+		/* if we've matched in [], *pattern is still inside the brackets */
+		while (*pattern != ']') {
+		    if (*pattern == '\0') {
+			/* illegal pattern */
+			// WAS: --pattern; break;
+			return 0;
+		    }
+		    pattern++;
 		}
 		pattern++;
-	    }
-	    pattern++;
-	    continue;
-	}
+		break;
 
-	/*
-	 * If the next pattern character is '\', just strip off the '\' so we
-	 * do exact matching on the character that follows.
-	 */
+	    case '\\':
+		++pattern;
+		if (*pattern == '\0') {
+		    /* illegal pattern */
+		    return 0;
+		}
+		// fall through to literal match
 
-	if (p == '\\') {
-	    pattern++;
-	    if (*pattern == '\0') {
-		return 0;
-	    }
-	}
-
-	/*
-	 * There's no special character. Just make sure that the next bytes of
-	 * each string match.
-	 */
-
-	str += TclUtfToUniChar(str, &ch1);
-	pattern += TclUtfToUniChar(pattern, &ch2);
-	if (nocase) {
-	    if (Tcl_UniCharToLower(ch1) != Tcl_UniCharToLower(ch2)) {
-		return 0;
-	    }
-	} else if (ch1 != ch2) {
-	    return 0;
+	    default:
+		/* literal match */
+		str += TclUtfToUniChar(str, &sch);
+		pattern += TclUtfToUniChar(pattern, &pch);
+		if (nocase) {
+		    if (Tcl_UniCharToLower(sch) != Tcl_UniCharToLower(pch)) {
+			return 0;
+		    }
+		} else if (sch != pch) {
+		    return 0;
+		}
+		break;
 	}
     }
 }
