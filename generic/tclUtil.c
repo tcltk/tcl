@@ -1918,165 +1918,161 @@ Tcl_StringCaseMatch(
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
-    int p, charLen;
+    int charLen;
     CONST char *pstart = pattern;
     Tcl_UniChar pch, sch;
     Tcl_UniChar startChar, endChar;
 
+    CONST char *pnext = 0, *snext;
+
     while (1) {
-	switch (*pattern) {
-	    case '\0':
-		return (*str == '\0');
+        if (*pattern == '\0') {
+            return (*str == '\0');
+        } else if (*pattern == '?') {
+            if (*str == '\0') {
+                return 0;
+            } else {
+                str += TclUtfToUniChar(str, &sch);
+            }
+            ++pattern;
+            continue;
+        } else if (*pattern == '*') {
+            /* skip runs of *** */
+            while (*(++pattern) == '*') {}
 
-	    case '?':
-		if (*str == '\0') {
-		    return 0;
-		} else {
-		    str += TclUtfToUniChar(str, &sch);
-		}
-		++pattern;
-		break;
+            /* if end of pattern, we have a match */
+            if (*pattern == '\0') {
+                return 1;
+            }
 
-	    case '*':
-		/* skip runs of *** */
-		while (*(++pattern) == '*') {}
+            /* peek at the next pattern char */
+            if (UCHAR(*pattern) < 0x80) {
+                pch = (Tcl_UniChar)
+                    (nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
+            } else {
+                TclUtfToUniChar(pattern, &pch);
+                if (nocase) {
+                    pch = Tcl_UniCharToLower(pch);
+                }
+            }
 
-		/* if end of pattern, we have a match */
-		if (*pattern == '\0') {
-		    return 1;
-		}
+            /* if the next char in pattern is a literal, zoom through str to the next match */
+            switch (*pattern) {
+                case '[': case '?': case '\\':
+                    break;
+                default:
+                    while (*str) {
+                        charLen = TclUtfToUniChar(str, &sch);
+                        if ( (pch == sch)
+                                || (nocase && (pch == Tcl_UniCharToLower(sch)))) {
+                            break;
+                        }
+                        str += charLen;
+                    }
+            }
 
-		/* peek at the next pattern char */
-		if (UCHAR(*pattern) < 0x80) {
-		    pch = (Tcl_UniChar)
-			(nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
-		} else {
-		    TclUtfToUniChar(pattern, &pch);
-		    if (nocase) {
-			pch = Tcl_UniCharToLower(pch);
-		    }
-		}
+            while (*str != '\0') {
+                /* recursion! */
+                if (Tcl_StringCaseMatch(str, pattern, nocase)) {
+                    return 1;
+                }
+                str += TclUtfToUniChar(str, &sch);
+            }
+            //	    pnext = pattern - 1;
+            //	    snext = str + TclUtfToUniChar(str, &sch);
+            continue;
+        } else if (*pattern == '[') {
+            ++pattern;
 
-		/* if the next char in pattern is a literal, zoom through str to the next match */
-		switch (*pattern) {
-		    case '[': case '?': case '\\':
-			break;
-		    default:
-			while (*str) {
-			    charLen = TclUtfToUniChar(str, &sch);
-			    if ( (pch == sch)
-				    || (nocase && (pch == Tcl_UniCharToLower(sch)))) {
-				break;
-			    }
-			    str += charLen;
-			}
-		}
+            if(UCHAR(*str) < 0x80) {
+                sch = (Tcl_UniChar)
+                    (nocase ? tolower(UCHAR(*str)) : UCHAR(*str));
+                ++str;
+            } else {
+                str += TclUtfToUniChar(str, &sch);
+                if (nocase) {
+                    sch = Tcl_UniCharToLower(sch);
+                }
+            }
 
-		while (*str != '\0') {
-		    /* recursion! */
-		    if (Tcl_StringCaseMatch(str, pattern, nocase)) {
-			return 1;
-		    }
-		    str += TclUtfToUniChar(str, &sch);
-		}
-		break;
-
-	    case '[':
-		++pattern;
-
-		if(UCHAR(*str) < 0x80) {
-		    sch = (Tcl_UniChar)
-			(nocase ? tolower(UCHAR(*str)) : UCHAR(*str));
-		    ++str;
-		} else {
-		    str += TclUtfToUniChar(str, &sch);
-		    if (nocase) {
-			sch = Tcl_UniCharToLower(sch);
-		    }
-		}
-
-		while (1) {
-		    if (*pattern == ']') {
-			/* end of range */
-			return 0;
-		    }
-		    if (*pattern == '\0') {
-			/* illegal pattern */
-			// WAS: break;
-			return 0;
-		    }
-		    if (UCHAR(*pattern) < 0x80) {
-			pch = (Tcl_UniChar)
-			    (nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
-			++pattern;
-		    } else {
-			pattern += TclUtfToUniChar(pattern, &pch);
-			if (nocase) {
-			    pch = Tcl_UniCharToLower(pch);
-			}
-		    }
-		    startChar = pch;
-		    if (*pattern == '-') {
-			++pattern;
-			if (*pattern == '\0') {
-			    /* illegal pattern */
-			    return 0;
-			}
-			if (UCHAR(*pattern) < 0x80) {
-			    pch = (Tcl_UniChar)
-				(nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
-			    ++pattern;
-			} else {
-			    pattern += TclUtfToUniChar(pattern, &pch);
-			    if (nocase) {
-				pch = Tcl_UniCharToLower(pch);
-			    }
-			}
-			endChar = pch;
-			if (((startChar <= sch) && (sch <= endChar))
-				|| ((endChar <= sch) && (sch <= startChar))) {
-			    /* matches ranges of form [a-z] or [z-a] */
-			    break;
-			}
-			/* otherwise, process the rest of the [] */
-			continue;
-		    } else if (startChar == sch) {
-			break;
-		    }
-		}
-		/* if we've matched in [], *pattern is still inside the brackets */
-		while (*pattern != ']') {
-		    if (*pattern == '\0') {
-			/* illegal pattern */
-			// WAS: --pattern; break;
-			return 0;
-		    }
-		    pattern++;
-		}
-		pattern++;
-		break;
-
-	    case '\\':
-		++pattern;
-		if (*pattern == '\0') {
-		    /* illegal pattern */
-		    return 0;
-		}
-		// fall through to literal match
-
-	    default:
-		/* literal match */
-		str += TclUtfToUniChar(str, &sch);
-		pattern += TclUtfToUniChar(pattern, &pch);
-		if (nocase) {
-		    if (Tcl_UniCharToLower(sch) != Tcl_UniCharToLower(pch)) {
-			return 0;
-		    }
-		} else if (sch != pch) {
-		    return 0;
-		}
-		break;
-	}
+            while (1) {
+                if (*pattern == ']') {
+                    /* end of range */
+                    return 0;
+                }
+                if (*pattern == '\0') {
+                    /* illegal pattern */
+                    return 0;
+                }
+                if (UCHAR(*pattern) < 0x80) {
+                    pch = (Tcl_UniChar)
+                        (nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
+                    ++pattern;
+                } else {
+                    pattern += TclUtfToUniChar(pattern, &pch);
+                    if (nocase) {
+                        pch = Tcl_UniCharToLower(pch);
+                    }
+                }
+                startChar = pch;
+                if (*pattern == '-') {
+                    ++pattern;
+                    if (*pattern == '\0') {
+                        /* illegal pattern */
+                        return 0;
+                    }
+                    if (UCHAR(*pattern) < 0x80) {
+                        pch = (Tcl_UniChar)
+                            (nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
+                        ++pattern;
+                    } else {
+                        pattern += TclUtfToUniChar(pattern, &pch);
+                        if (nocase) {
+                            pch = Tcl_UniCharToLower(pch);
+                        }
+                    }
+                    endChar = pch;
+                    if (((startChar <= sch) && (sch <= endChar))
+                            || ((endChar <= sch) && (sch <= startChar))) {
+                        /* matches ranges of form [a-z] or [z-a] */
+                        break;
+                    }
+                    /* otherwise, process the rest of the [] */
+                    continue;
+                } else if (startChar == sch) {
+                    break;
+                }
+            }
+            /* if we've matched in [], *pattern is still inside the brackets */
+            while (*pattern != ']') {
+                if (*pattern == '\0') {
+                    /* illegal pattern */
+                    return 0;
+                }
+                pattern++;
+            }
+            pattern++;
+            continue;
+        } else if (*pattern == '\\') {
+            ++pattern;
+            if (*pattern == '\0') {
+                /* illegal pattern */
+                return 0;
+            }
+            goto matchLiteral;
+        } else {
+matchLiteral:
+            /* literal match */
+            str += TclUtfToUniChar(str, &sch);
+            pattern += TclUtfToUniChar(pattern, &pch);
+            if (nocase) {
+                if (Tcl_UniCharToLower(sch) != Tcl_UniCharToLower(pch)) {
+                    return 0;
+                }
+            } else if (sch != pch) {
+                return 0;
+            }
+        }
     }
 }
 
