@@ -746,7 +746,7 @@ IPv6AddressNeedsNumericRendering(
      * at least some versions of OSX.
      */
 
-#pragma GCC diagnostic push 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
     if (!IN6_IS_ADDR_V4MAPPED(&addr)) {
 #pragma GCC diagnostic pop
