@@ -8765,4 +8765,12 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2017-04-28 (bug)[f34cf8] [file join a //b] => /b (neumann,porter)
 
---- Released 8.6.7, May 10, 2016 --- http://core.tcl.tk/tcl/ for details
+2017-05-01 (bug)[8bd13f] Windows threads and pipes (sebres,nijtmans)
+
+2017-05-01 (bug)[f9fe90] [file join //a b] EIAS violation (aspect,porter)
+
+2017-05-04 (bug) Make test filesystem-1.52 pass on Windows (nijtmans)
+
+2017-05-05 (bug)[601522] [binary] field spec overflow -> segfault (porter)
+
+--- Released 8.6.7, May 17, 2016 --- http://core.tcl.tk/tcl/ for details
