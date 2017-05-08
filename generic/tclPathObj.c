@@ -921,7 +921,17 @@ TclJoinPath(
 			if (res != NULL) {
 			    TclDecrRefCount(res);
 			}
-			return TclNewFSPathObj(elt, str, len);
+
+			if (PATHFLAGS(elt)) {
+			    return TclNewFSPathObj(elt, str, len);
+			}
+			if (TCL_PATH_ABSOLUTE != Tcl_FSGetPathType(elt)) {
+			    return TclNewFSPathObj(elt, str, len);
+			}
+			(void) Tcl_FSGetNormalizedPath(NULL, elt);
+			if (elt == PATHOBJ(elt)->normPathPtr) {
+			    return TclNewFSPathObj(elt, str, len);
+			}
 		    }
 		}
 
@@ -948,6 +958,7 @@ TclJoinPath(
 	    }
 	}
 	strElt = TclGetStringFromObj(elt, &strEltLen);
+	driveNameLength = 0;
 	type = TclGetPathType(elt, &fsPtr, &driveNameLength, &driveName);
 	if (type != TCL_PATH_RELATIVE) {
 	    /*
@@ -1003,6 +1014,12 @@ TclJoinPath(
 		}
 	    }
 	    ptr = strElt;
+	    /* [Bug f34cf83dd0] */
+	    if (driveNameLength > 0) {
+		if (ptr[0] == '/' && ptr[-1] == '/') {
+		    goto noQuickReturn;
+		}
+	    }
 	    while (*ptr != '\0') {
 		if (*ptr == '/' && (ptr[1] == '/' || ptr[1] == '\0')) {
 		    /*
