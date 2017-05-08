@@ -3270,7 +3270,7 @@ TclPipeThreadStop(
     HANDLE hThread)
 {
     TclPipeThreadInfo *pipeTI = *pipeTIPtr;
-    HANDLE evControl, wakeEvent;
+    HANDLE evControl;
     int state;
 
     if (!pipeTI) {
@@ -3278,7 +3278,6 @@ TclPipeThreadStop(
     }
     pipeTI = *pipeTIPtr;
     evControl = pipeTI->evControl;
-    wakeEvent = pipeTI->evWakeUp;
     pipeTI->evWakeUp = NULL;
     /*
      * Try to sane stop the pipe worker, corresponding its current state
@@ -3346,8 +3345,8 @@ TclPipeThreadStop(
 	    /*
 	     * Cancel all sync-IO of this thread (may be blocked there).
 	     */
-	    if (tclWinProcs->cancelSynchronousIo) {
-		tclWinProcs->cancelSynchronousIo(hThread);
+	    if (tclWinProcs.cancelSynchronousIo) {
+		tclWinProcs.cancelSynchronousIo(hThread);
 	    }
 
 	    /*

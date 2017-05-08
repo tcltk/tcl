@@ -80,10 +80,7 @@ typedef struct {
 /*
  * Windows version dependend functions
  */
-static TclWinProcs _tclWinProcs = {
-    NULL
-};
-TclWinProcs *tclWinProcs = &_tclWinProcs;
+TclWinProcs tclWinProcs;
 
 /*
  * The following arrays contain the human readable strings for the Windows
@@ -118,8 +115,6 @@ static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
 static int		ToUtf(const WCHAR *wSrc, char *dst);
 
 #ifdef WIN32_USE_TICKCOUNT
-typedef ULONGLONG WINAPI (GetTickCount64Proc)(void);
-static GetTickCount64Proc *GetTickCount64ProcPtr = NULL;
 static CRITICAL_SECTION TickMutex;
 static DWORD TickOffset, LastTick;
 static ULONGLONG TickUpper;
@@ -150,7 +145,7 @@ TclpInitPlatform(void)
 {
     WSADATA wsaData;
     WORD wVersionRequested = MAKEWORD(2, 2);
-    HMODULE dllH;
+    HMODULE handle;
 
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
@@ -161,16 +156,6 @@ TclpInitPlatform(void)
     WSAStartup(wVersionRequested, &wsaData);
 
 #ifdef WIN32_USE_TICKCOUNT
-    /*
-     * Check for availability of the GetTickCount64() API.
-     */
-
-    dllH = GetModuleHandle(TEXT("KERNEL32"));
-    if (dllH != NULL) {
-	GetTickCount64ProcPtr = (GetTickCount64Proc *)
-		GetProcAddress(dllH, "GetTickCount64");
-    }
-
     InitializeCriticalSection(&TickMutex);
 
     /*
@@ -196,12 +181,13 @@ TclpInitPlatform(void)
     /*
      * Fill available functions depending on windows version
      */
-    dllH = GetModuleHandle(TEXT("KERNEL32"));
-    if (dllH != NULL) {
-	_tclWinProcs.cancelSynchronousIo =
-	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(dllH,
+    handle = GetModuleHandle(TEXT("KERNEL32"));
+    tclWinProcs.cancelSynchronousIo =
+	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(handle,
 	    "CancelSynchronousIo");
-    }
+    tclWinProcs.getTickCount64 =
+	    (ULONGLONG (WINAPI *)(void)) GetProcAddress(handle,
+	    "GetTickCount64");
 }
 
 /*
@@ -610,15 +596,12 @@ TclpSetVariables(
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
 
     if (!osInfoInitialized) {
-	HANDLE handle = LoadLibraryW(L"NTDLL");
+	HMODULE handle = GetModuleHandle(TEXT("NTDLL"));
 	int(__stdcall *getversion)(void *) =
 		(int(__stdcall *)(void *)) GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
 	if (!getversion || getversion(&osInfo)) {
 	    GetVersionExW(&osInfo);
-	}
-	if (handle) {
-		FreeLibrary(handle);
 	}
 	osInfoInitialized = 1;
     }
@@ -810,8 +793,8 @@ TclpGetMonotonicTime(Tcl_Time *timePtr)
     ULONGLONG ms;
     DWORD tick;
 
-    if (GetTickCount64ProcPtr != NULL) {
-	ms = GetTickCount64ProcPtr();
+    if (tclWinProcs.getTickCount64 != NULL) {
+	ms = tclWinProcs.getTickCount64();
     } else {
 	/*
 	 * Emulate 64 bit wide tick counter, e.g. on XP.

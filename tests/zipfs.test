@@ -73,8 +73,8 @@ test zipfs-2.2 {zipfs mkzip} -constraints zipfs -body {
 } -result {/abc/cp850.enc}
 
 test zipfs-2.3 {zipfs unmount} -constraints zipfs -body {
-    zipfs info /abc/cp850.enc
-} -result [list $tcl_library/encoding/abc.zip 1090 527 39434]
+    lrange [zipfs info /abc/cp850.enc] 0 2
+} -result [list $tcl_library/encoding/abc.zip 1090 527]
 
 test zipfs-2.4 {zipfs unmount} -constraints zipfs -body {
     set f [open /abc/cp850.enc]
