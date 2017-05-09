@@ -8773,4 +8773,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2017-05-05 (bug)[601522] [binary] field spec overflow -> segfault (porter)
 
+2017-05-08 (bug)[6ca52a] http memleak handling keep-alive (aspect,nijtmans)
+=> http 2.8.11
+
 --- Released 8.6.7, May 17, 2016 --- http://core.tcl.tk/tcl/ for details

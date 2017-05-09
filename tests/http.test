@@ -592,6 +592,14 @@ test http-4.15 {http::Event} -body {
 } -cleanup {
     catch {http::cleanup $token}
 } -returnCodes 1 -match glob -result "couldn't open socket*"
+test http-1.15 {Leak with Close vs Keepalive (bug [6ca52aec14]} -body {
+    set before [chan names]
+    set token [http::geturl $url -headers {X-Connection keep-alive}]
+    http::cleanup $token
+    update
+    set after [chan names]
+    expr {$before eq $after}
+} -result 1
 
 test http-5.1 {http::formatQuery} {
     http::formatQuery name1 value1 name2 "value two"
