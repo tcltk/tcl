@@ -2884,6 +2884,7 @@ MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, int dictLength,
 			    const char **elementPtr, const char **nextPtr,
 			    int *sizePtr, int *literalPtr);
+MODULE_SCOPE Tcl_Obj *	Tcl_DictObjSmartRef(Tcl_Interp *interp, Tcl_Obj *);
 /* TIP #280 - Modified token based evulation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags, int line,
@@ -4872,6 +4873,13 @@ typedef struct NRE_callback {
 #define Tcl_AttemptRealloc(ptr, size) TclpRealloc((ptr), (size))
 #define Tcl_Free(ptr)                 TclpFree(ptr)
 #endif
+
+/*
+ * Other externals.
+ */
+
+MODULE_SCOPE unsigned long TclEnvEpoch; /* Epoch of the tcl environment 
+                                         * (if changed with tcl-env). */
 
 #endif /* _TCLINT */
 
