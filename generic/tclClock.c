@@ -2865,7 +2865,7 @@ ClockClicksObjCmd(
 	}
 	break;
     default:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-switch?");
+	Tcl_WrongNumArgs(interp, 0, NULL, "clock clicks ?-switch?");
 	return TCL_ERROR;
     }
 
@@ -2918,7 +2918,7 @@ ClockMillisecondsObjCmd(
     Tcl_Time now;
 
     if (objc != 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	Tcl_WrongNumArgs(interp, 0, NULL, "clock milliseconds");
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);
@@ -2953,7 +2953,7 @@ ClockMicrosecondsObjCmd(
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     if (objc != 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	Tcl_WrongNumArgs(interp, 0, NULL, "clock microseconds");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetMicroseconds()));
@@ -3223,7 +3223,7 @@ ClockFormatObjCmd(
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, "clockval|-now "
+	Tcl_WrongNumArgs(interp, 0, NULL, "clock format clockval|-now "
 	    "?-format string? "
 	    "?-gmt boolean? "
 	    "?-locale LOCALE? ?-timezone ZONE?");
@@ -3298,7 +3298,7 @@ ClockScanObjCmd(
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, "string "
+	Tcl_WrongNumArgs(interp, 0, NULL, "clock scan string "
 	    "?-base seconds? "
 	    "?-format string? "
 	    "?-gmt boolean? "
@@ -3857,7 +3857,7 @@ ClockAddObjCmd(
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, "clockval|-now ?number units?..."
+	Tcl_WrongNumArgs(interp, 0, NULL, "clock add clockval|-now ?number units?..."
 	    "?-gmt boolean? "
 	    "?-locale LOCALE? ?-timezone ZONE?");
 	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
@@ -4014,7 +4014,7 @@ ClockSecondsObjCmd(
     Tcl_Time now;
 
     if (objc != 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	Tcl_WrongNumArgs(interp, 0, NULL, "clock seconds");
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);

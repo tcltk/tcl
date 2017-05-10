@@ -257,6 +257,10 @@ test clock-1.0 "clock format - wrong # args" {
     list [catch {clock format} msg] $msg $::errorCode
 } {1 {wrong # args: should be "clock format clockval|-now ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"} {CLOCK wrongNumArgs}}
 
+test clock-1.0.1 "clock format - wrong # args (compiled ensemble with invalid syntax)" {
+    list [catch {clock format 0 -too-few-options-4-test} msg] $msg $::errorCode
+} {1 {wrong # args: should be "clock format clockval|-now ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"} {CLOCK wrongNumArgs}}
+
 test clock-1.1 "clock format - bad time" {
     list [catch {clock format foo} msg] $msg
 } {1 {expected integer but got "foo"}}
