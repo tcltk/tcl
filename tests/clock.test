@@ -36191,7 +36191,7 @@ test clock-36.3 {clock scan next monthname} {
 } "05.2001"
 
 test clock-37.1 {%s gmt testing} {
-    set s [clock seconds]
+    set s [clock scan "2017-05-10 09:00:00" -gmt 1]
     set a [clock format $s -format %s -gmt 0]
     set b [clock format $s -format %s -gmt 1]
     set c [clock scan $s -format %s -gmt 0]
@@ -36200,8 +36200,8 @@ test clock-37.1 {%s gmt testing} {
     # depend on the time zone.
     list [expr {$b-$a}] [expr {$d-$c}]
 } {0 0}
-test clock-37.2 {%Es gmt testing} {
-    set s [clock seconds]
+test clock-37.2 {%Es gmt testing CET} {
+    set s [clock scan "2017-01-10 09:00:00" -gmt 1]
     set a [clock format $s -format %Es -timezone CET]
     set b [clock format $s -format %Es -gmt 1]
     set c [clock scan $s -format %Es -timezone CET]
@@ -36209,6 +36209,15 @@ test clock-37.2 {%Es gmt testing} {
     # %Es depend on the time zone (local seconds instead of posix seconds).
     list [expr {$b-$a}] [expr {$d-$c}]
 } {-3600 3600}
+test clock-37.3 {%Es gmt testing CEST} {
+    set s [clock scan "2017-05-10 09:00:00" -gmt 1]
+    set a [clock format $s -format %Es -timezone CET]
+    set b [clock format $s -format %Es -gmt 1]
+    set c [clock scan $s -format %Es -timezone CET]
+    set d [clock scan $s -format %Es -gmt 1]
+    # %Es depend on the time zone (local seconds instead of posix seconds).
+    list [expr {$b-$a}] [expr {$d-$c}]
+} {-7200 7200}
 
 test clock-38.1 {regression - convertUTCToLocalViaC - east of Greenwich} \
     -setup {
