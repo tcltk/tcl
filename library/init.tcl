@@ -45,6 +45,7 @@ if {![info exists auto_path]} {
 	set auto_path ""
     }
 }
+
 namespace eval tcl {
     variable Dir
     foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
@@ -169,9 +170,16 @@ if {[interp issafe]} {
 
     namespace eval ::tcl::clock [list variable TclLibDir $::tcl_library]
 
-    proc ::tcl::initClock {} {
-	# Auto-loading stubs for 'clock.tcl'
+    proc clock args {
+	set cmdmap [dict create]
+	foreach cmd {add clicks format microseconds milliseconds scan seconds configure} {
+	    dict set cmdmap $cmd ::tcl::clock::$cmd
+	}
+	namespace eval ::tcl::clock [list namespace ensemble create -command \
+	    [uplevel 1 [list namespace origin [lindex [info level 0] 0]]] \
+	    -map $cmdmap -compile 1]
 
+	# Auto-loading stubs for 'clock.tcl'
 	foreach cmd {mcget LocalizeFormat SetupTimeZone GetSystemTimeZone} {
 	    proc ::tcl::clock::$cmd args {
 		variable TclLibDir
@@ -180,9 +188,8 @@ if {[interp issafe]} {
 	    }
 	}
 
-	rename ::tcl::initClock {}
+	return [uplevel 1 [info level 0]]
     }
-    ::tcl::initClock
 }
 
 # Conditionalize for presence of exec.

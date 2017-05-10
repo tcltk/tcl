@@ -17,6 +17,7 @@
 #include "tclInt.h"
 #include "tclStrIdxTree.h"
 #include "tclDate.h"
+#include "tclCompile.h"
 
 /*
  * Windows has mktime. The configurators do not check.
@@ -152,21 +153,29 @@ struct ClockCommand {
     Tcl_ObjCmdProc *objCmdProc;	/* Function that implements the command. This
 				 * will always have the ClockClientData sent
 				 * to it, but may well ignore this data. */
+    CompileProc *compileProc;	/* The compiler for the command. */
+    ClientData clientData;	/* Any clientData to give the command (if NULL
+    				 * a reference to ClockClientData will be sent) */
 };
 
 static const struct ClockCommand clockCommands[] = {
-    { "getenv",			ClockGetenvObjCmd },
-    { "format",			ClockFormatObjCmd },
-    { "scan",			ClockScanObjCmd },
-    { "configure",		ClockConfigureObjCmd },
-    { "Oldscan",		TclClockOldscanObjCmd },
-    { "ConvertLocalToUTC",	ClockConvertlocaltoutcObjCmd },
-    { "GetDateFields",		ClockGetdatefieldsObjCmd },
-    { "GetJulianDayFromEraYearMonthDay",
-		ClockGetjuliandayfromerayearmonthdayObjCmd },
-    { "GetJulianDayFromEraYearWeekDay",
-		ClockGetjuliandayfromerayearweekdayObjCmd },
-    { NULL, NULL }
+    {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, NULL},
+    {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd,  NULL},
+    {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
+    {"getenv",		ClockGetenvObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
+    {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(1)},
+    {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(2)},
+    {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
+    {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, INT2PTR(3)},
+    {"configure",	  ClockConfigureObjCmd,			NULL, NULL},
+    {"Oldscan",		  TclClockOldscanObjCmd,		NULL, NULL},
+    {"ConvertLocalToUTC", ClockConvertlocaltoutcObjCmd,		NULL, NULL},
+    {"GetDateFields",	  ClockGetdatefieldsObjCmd,		NULL, NULL},
+    {"GetJulianDayFromEraYearMonthDay",
+		ClockGetjuliandayfromerayearmonthdayObjCmd,	NULL, NULL},
+    {"GetJulianDayFromEraYearWeekDay",
+		ClockGetjuliandayfromerayearweekdayObjCmd,	NULL, NULL},
+    {NULL, NULL, NULL, NULL}
 };
 
 /*
@@ -195,21 +204,9 @@ TclClockInit(
     char cmdName[50];		/* Buffer large enough to hold the string
 				 *::tcl::clock::GetJulianDayFromEraYearMonthDay
 				 * plus a terminating NUL. */
+    Command         *cmdPtr;
     ClockClientData *data;
     int i;
-
-    /* Structure of the 'clock' ensemble */
-
-    static const EnsembleImplMap clockImplMap[] = {
-	{"add",          NULL,                    TclCompileBasicMin1ArgCmd, NULL, NULL,       0},
-	{"clicks",       ClockClicksObjCmd,       TclCompileClockClicksCmd,  NULL, NULL,       0},
-	{"format",       NULL,                    TclCompileBasicMin1ArgCmd, NULL, NULL,       0},
-	{"microseconds", ClockMicrosecondsObjCmd, TclCompileClockReadingCmd, NULL, INT2PTR(1), 0},
-	{"milliseconds", ClockMillisecondsObjCmd, TclCompileClockReadingCmd, NULL, INT2PTR(2), 0},
-	{"scan",         NULL,                    TclCompileBasicMin1ArgCmd, NULL, NULL      , 0},
-	{"seconds",      ClockSecondsObjCmd,      TclCompileClockReadingCmd, NULL, INT2PTR(3), 0},
-	{NULL,           NULL,                    NULL,                      NULL, NULL,       0}
-    };
 
     /*
      * Safe interps get [::clock] as alias to a master, so do not need their
@@ -258,21 +255,24 @@ TclClockInit(
 
     /*
      * Install the commands.
-     * TODO - Let Tcl_MakeEnsemble do this?
      */
 
 #define TCL_CLOCK_PREFIX_LEN 14 /* == strlen("::tcl::clock::") */
     memcpy(cmdName, "::tcl::clock::", TCL_CLOCK_PREFIX_LEN);
     for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
+    	ClientData clientData;
+
 	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
-	data->refCount++;
-	Tcl_CreateObjCommand(interp, cmdName, clockCmdPtr->objCmdProc, data,
-		ClockDeleteCmdProc);
+	if (!(clientData = clockCmdPtr->clientData)) {
+	    clientData = data;
+	    data->refCount++;
+	}
+	cmdPtr = (Command *)Tcl_CreateObjCommand(interp, cmdName, 
+		clockCmdPtr->objCmdProc, clientData,
+		clockCmdPtr->clientData ? NULL : ClockDeleteCmdProc);
+	cmdPtr->compileProc = clockCmdPtr->compileProc ? 
+		clockCmdPtr->compileProc : TclCompileBasicMin0ArgCmd;
     }
-
-    /* Make the clock ensemble */
-
-    TclMakeEnsemble(interp, "clock", clockImplMap);
 }
 
 /*
