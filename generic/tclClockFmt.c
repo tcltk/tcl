@@ -1174,7 +1174,7 @@ ClockMCGetListIdxTree(
 	    goto done;
 	};
 
-	if (TclStrIdxTreeBuildFromList(idxTree, lstc, lstv) != TCL_OK) {
+	if (TclStrIdxTreeBuildFromList(idxTree, lstc, lstv, NULL) != TCL_OK) {
 	    goto done;
 	}
 
@@ -1249,7 +1249,7 @@ ClockMCGetMultiListIdxTree(
 		goto done;
 	    };
 
-	    if (TclStrIdxTreeBuildFromList(idxTree, lstc, lstv) != TCL_OK) {
+	    if (TclStrIdxTreeBuildFromList(idxTree, lstc, lstv, NULL) != TCL_OK) {
 		goto done;
 	    }
 	    mcKeys++;
@@ -1301,12 +1301,12 @@ ClockStrIdxTreeSearch(ClockFmtScnCmdArgs *opts,
 	/* not found */
 	return TCL_RETURN;
     }
-    if (foundItem->value == -1) {
+    if (!foundItem->value) {
 	/* ambigous */
 	return TCL_RETURN;
     }
 
-    *val = foundItem->value;
+    *val = PTR2INT(foundItem->value);
 
     /* shift input pointer */
     yyInput = f;
@@ -1406,7 +1406,7 @@ ClockScnToken_Month_Proc(ClockFmtScnCmdArgs *opts,
 	return ret;
     }
 
-    yyMonth = val + 1;
+    yyMonth = val;
     return TCL_OK;
 
 }
@@ -1445,6 +1445,7 @@ ClockScnToken_DayOfWeek_Proc(ClockFmtScnCmdArgs *opts,
 	    if (ret != TCL_OK) {
 		return ret;
 	    }
+	    --val;
 	}
 
 	if (val != -1) {
@@ -1476,6 +1477,7 @@ ClockScnToken_DayOfWeek_Proc(ClockFmtScnCmdArgs *opts,
     if (ret != TCL_OK) {
 	return ret;
     }
+    --val;
 
     if (val == 0) {
 	val = 7;
@@ -1578,7 +1580,7 @@ ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts,
     }
 
     if (tok->map->offs > 0) {
-	*(int *)(((char *)info) + tok->map->offs) = val;
+	*(int *)(((char *)info) + tok->map->offs) = --val;
     }
 
     return TCL_OK;
