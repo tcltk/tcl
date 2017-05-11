@@ -185,23 +185,30 @@ test load-7.4 {Tcl_StaticPackage procedure, redundant calls} -setup {
     info loaded
 } -result [list {{} Double} {{} More} {{} Another} {{} Test} {*}$currentRealPackages {*}$alreadyTotalLoaded]
 
-teststaticpkg Test 1 1
-teststaticpkg Another 0 1
-teststaticpkg More 0 1
-teststaticpkg Double 0 1
-test load-8.1 {TclGetLoadedPackages procedure} [list teststaticpkg $dll $loaded] {
+testConstraint teststaticpkg_8.x \
+    [if {[testConstraint teststaticpkg]} {
+	teststaticpkg Test 1 1
+	teststaticpkg Another 0 1
+	teststaticpkg More 0 1
+	teststaticpkg Double 0 1
+	expr 1
+    } else {
+	expr 0
+    }]
+
+test load-8.1 {TclGetLoadedPackages procedure} [list teststaticpkg_8.x $dll $loaded] {
     lsort -index 1 [info loaded]
 } [lsort -index 1 [list {{} Double} {{} More} {{} Another} {{} Test} {*}$currentRealPackages {*}$alreadyTotalLoaded]]
-test load-8.2 {TclGetLoadedPackages procedure} -body {
+test load-8.2 {TclGetLoadedPackages procedure} -constraints {teststaticpkg_8.x} -body {
     info loaded gorp
 } -returnCodes error -result {could not find interpreter "gorp"}
-test load-8.3a {TclGetLoadedPackages procedure} [list teststaticpkg $dll $loaded] {
+test load-8.3a {TclGetLoadedPackages procedure} [list teststaticpkg_8.x $dll $loaded] {
     lsort -index 1 [info loaded {}]
 } [lsort -index 1 [list {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga] [list [file join $testDir pkgb$ext] Pkgb] {*}$alreadyLoaded]]
-test load-8.3b {TclGetLoadedPackages procedure} [list teststaticpkg $dll $loaded] {
+test load-8.3b {TclGetLoadedPackages procedure} [list teststaticpkg_8.x $dll $loaded] {
     lsort -index 1 [info loaded child]
 } [lsort -index 1 [list {{} Test} [list [file join $testDir pkgb$ext] Pkgb]]]
-test load-8.4 {TclGetLoadedPackages procedure} [list $dll $loaded teststaticpkg] {
+test load-8.4 {TclGetLoadedPackages procedure} [list teststaticpkg_8.x $dll $loaded] {
     load [file join $testDir pkgb$ext] pkgb
     list [lsort -index 1 [info loaded {}]] [lsort [info commands pkgb_*]]
 } [list [lsort -index 1 [concat [list [list [file join $testDir pkgb$ext] Pkgb] {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga]] $alreadyLoaded]] {pkgb_demo pkgb_sub pkgb_unsafe}]

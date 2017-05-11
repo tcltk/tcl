@@ -634,7 +634,7 @@ ClockFmtObj_UpdateString(objPtr)
  *
  *	This is normally stored in second pointer of internal representation.
  *	If format object is not localizable, it is equal the given format 
- *	pointer and the first pointer of internal representation may be NULL.
+ *	pointer (special case to fast fallback by not-localizable formats).
  *
  * Results:
  *	Returns tcl object with key or format object if not localizable.
@@ -825,16 +825,20 @@ ClockLocalizeFormat(
 	return opts->formatObj;
     }
 
+    /* prevents loss of key object if the format object (where key stored) 
+     * becomes changed (loses its internal representation during evals) */
+    Tcl_IncrRefCount(keyObj);
+
     if (opts->mcDictObj == NULL) {
 	ClockMCDict(opts);
 	if (opts->mcDictObj == NULL)
-	    return NULL;
+	    goto done;
     }
 
     /* try to find in cache within locale mc-catalog */
     if (Tcl_DictObjGet(NULL, opts->mcDictObj, 
 	    keyObj, &valObj) != TCL_OK) {
-	return NULL;
+	goto done;
     }
 
     /* call LocalizeFormat locale format fmtkey */
@@ -844,10 +848,9 @@ ClockLocalizeFormat(
 	callargs[1] = opts->localeObj;
 	callargs[2] = opts->formatObj;
 	callargs[3] = keyObj;
-	Tcl_IncrRefCount(keyObj);
 	if (Tcl_EvalObjv(opts->interp, 4, callargs, 0) != TCL_OK
 	) {
-	    goto clean;
+	    goto done;
 	}
 
 	valObj = Tcl_GetObjResult(opts->interp);
@@ -857,8 +860,10 @@ ClockLocalizeFormat(
 		keyObj, valObj) != TCL_OK
 	) {
 	    valObj = NULL;
-	    goto clean;
+	    goto done;
 	}
+
+	Tcl_ResetResult(opts->interp);
 
 	/* check special case - format object is not localizable */
 	if (valObj == opts->formatObj) {
@@ -868,14 +873,11 @@ ClockLocalizeFormat(
 		ObjLocFmtKey(opts->formatObj) = opts->formatObj;
 	    }
 	}
-clean:
-
-	Tcl_UnsetObjRef(keyObj);
-	if (valObj) {
-	    Tcl_ResetResult(opts->interp);
-	}
     }
 
+done:
+
+    Tcl_UnsetObjRef(keyObj);
     return (opts->formatObj = valObj);
 }
 
@@ -1172,7 +1174,7 @@ ClockMCGetListIdxTree(
 	    goto done;
 	};
 
-	if (TclStrIdxTreeBuildFromList(idxTree, lstc, lstv) != TCL_OK) {
+	if (TclStrIdxTreeBuildFromList(idxTree, lstc, lstv, NULL) != TCL_OK) {
 	    goto done;
 	}
 
@@ -1247,7 +1249,7 @@ ClockMCGetMultiListIdxTree(
 		goto done;
 	    };
 
-	    if (TclStrIdxTreeBuildFromList(idxTree, lstc, lstv) != TCL_OK) {
+	    if (TclStrIdxTreeBuildFromList(idxTree, lstc, lstv, NULL) != TCL_OK) {
 		goto done;
 	    }
 	    mcKeys++;
@@ -1299,12 +1301,12 @@ ClockStrIdxTreeSearch(ClockFmtScnCmdArgs *opts,
 	/* not found */
 	return TCL_RETURN;
     }
-    if (foundItem->value == -1) {
+    if (!foundItem->value) {
 	/* ambigous */
 	return TCL_RETURN;
     }
 
-    *val = foundItem->value;
+    *val = PTR2INT(foundItem->value);
 
     /* shift input pointer */
     yyInput = f;
@@ -1404,7 +1406,7 @@ ClockScnToken_Month_Proc(ClockFmtScnCmdArgs *opts,
 	return ret;
     }
 
-    yyMonth = val + 1;
+    yyMonth = val;
     return TCL_OK;
 
 }
@@ -1443,6 +1445,7 @@ ClockScnToken_DayOfWeek_Proc(ClockFmtScnCmdArgs *opts,
 	    if (ret != TCL_OK) {
 		return ret;
 	    }
+	    --val;
 	}
 
 	if (val != -1) {
@@ -1474,6 +1477,7 @@ ClockScnToken_DayOfWeek_Proc(ClockFmtScnCmdArgs *opts,
     if (ret != TCL_OK) {
 	return ret;
     }
+    --val;
 
     if (val == 0) {
 	val = 7;
@@ -1576,7 +1580,7 @@ ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts,
     }
 
     if (tok->map->offs > 0) {
-	*(int *)(((char *)info) + tok->map->offs) = val;
+	*(int *)(((char *)info) + tok->map->offs) = --val;
     }
 
     return TCL_OK;
