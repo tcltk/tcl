@@ -371,8 +371,34 @@ proc test-other {{reptime 1000}} {
   }
 }
 
+proc test-ensemble-perf {{reptime 1000}} {
+  _test_run $reptime {
+    # Clock clicks (ensemble)
+    {clock clicks}
+    # Clock clicks (direct)
+    {::tcl::clock::clicks}
+    # Clock seconds (ensemble)
+    {clock seconds}
+    # Clock seconds (direct)
+    {::tcl::clock::seconds}
+    # Clock microseconds (ensemble)
+    {clock microseconds}
+    # Clock microseconds (direct)
+    {::tcl::clock::microseconds}
+    # Clock scan (ensemble)
+    {clock scan ""}
+    # Clock scan (direct)
+    {::tcl::clock::scan ""}
+    # Clock format (ensemble)
+    {clock format 0 -f %s}
+    # Clock format (direct)
+    {::tcl::clock::format 0 -f %s}
+  }
+}
+
 proc test {{reptime 1000}} {
   puts ""
+  test-ensemble-perf [expr {$reptime / 2}]; #fast enough
   test-format $reptime
   test-scan $reptime
   test-freescan $reptime
