@@ -150,7 +150,7 @@ struct ClockCommand {
     const char *name;		/* The tail of the command name. The full name
 				 * is "::tcl::clock::<name>". When NULL marks
 				 * the end of the table. */
-    Tcl_ObjCmdProc *objCmdProc;	/* Function that implements the command. This
+    Tcl_ObjCmdProc *objCmdProc; /* Function that implements the command. This
 				 * will always have the ClockClientData sent
 				 * to it, but may well ignore this data. */
     CompileProc *compileProc;	/* The compiler for the command. */
@@ -2004,7 +2004,7 @@ ConvertUTCToLocal(
 	if (ConvertUTCToLocalUsingTable(interp, fields, rowc, rowv, 
 		dataPtr->UTC2Local.rangesVal) != TCL_OK) {
 	    return TCL_ERROR;
-    }
+	}
     }
 
     /* Cache the last conversion */
@@ -2576,9 +2576,9 @@ GetJulianDayFromEraYearMonthDay(
      * See above bug for details. The casts are necessary.
      */
     if (ym1 >= 0)
-        ym1o4 = ym1 / 4;
+	ym1o4 = ym1 / 4;
     else {
-        ym1o4 = - (int) (((unsigned int) -ym1) / 4);
+	ym1o4 = - (int) (((unsigned int) -ym1) / 4);
     }
 #endif
     if (ym1 % 4 < 0) {
@@ -2992,12 +2992,12 @@ ClockInitFmtScnArgs(
 static int
 ClockParseFmtScnArgs(
     register
-    ClockFmtScnCmdArgs *opts, /* Result vector: format, locale, timezone... */
-    TclDateFields      *date, /* Extracted date-time corresponding base 
-			       * (by scan or add) resp. clockval (by format) */
+    ClockFmtScnCmdArgs *opts,	/* Result vector: format, locale, timezone... */
+    TclDateFields      *date,	/* Extracted date-time corresponding base 
+				 * (by scan or add) resp. clockval (by format) */
     int objc,			/* Parameter count */
-    Tcl_Obj *const objv[],  /* Parameter vector */
-    int		flags	    /* Flags, differentiates between format, scan, add */
+    Tcl_Obj *const objv[],	/* Parameter vector */
+    int		flags		/* Flags, differentiates between format, scan, add */
 ) {
     Tcl_Interp	    *interp =  opts->interp;
     ClockClientData *dataPtr = opts->clientData;
@@ -3031,7 +3031,7 @@ ClockParseFmtScnArgs(
 	    Tcl_WideInt num;
 	    if (TclGetWideIntFromObj(NULL, objv[i], &num) == TCL_OK) {
 		continue;
-	}
+	    }
 	}
 	/* get option */
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, 
@@ -3067,10 +3067,10 @@ ClockParseFmtScnArgs(
 	case CLC_ARGS_BASE:
 	    if ( !(flags & (CLC_SCN_ARGS)) ) {
 		goto badOptionMsg;
-	}
+	    }
 	    opts->baseObj = objv[i+1];
 	    break;
-    }
+	}
 	saw |= (1 << optionIndex);
     }
 
@@ -3130,10 +3130,10 @@ ClockParseFmtScnArgs(
 	    i = 1;
 	    goto badOption;
 	}
-    /*
+	/*
 	 * seconds could be an unsigned number that overflowed. Make sure
 	 * that it isn't.
-     */
+	 */
 
 	if (opts->baseObj->typePtr == &tclBignumType) {
 	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
@@ -4042,14 +4042,14 @@ ClockSecondsObjCmd(
 static unsigned long
 TzsetGetEpoch(void)
 {
-    static char* tzWas = INT2PTR(-1);	/* Previous value of TZ, protected by
-				 * clockMutex. */
+    static char* tzWas = INT2PTR(-1);	 /* Previous value of TZ, protected by
+					  * clockMutex. */
     static long	 tzLastRefresh = 0;	 /* Used for latency before next refresh */
     static unsigned long tzWasEpoch = 0; /* Epoch, signals that TZ changed */
     static unsigned long tzEnvEpoch = 0; /* Last env epoch, for faster signaling, 
 					    that TZ changed via TCL */
     
-    const char *tzIsNow;	/* Current value of TZ */
+    const char *tzIsNow;		 /* Current value of TZ */
     
     /* 
      * Prevent performance regression on some platforms by resolving of system time zone:
@@ -4068,7 +4068,7 @@ TzsetGetEpoch(void)
     Tcl_MutexLock(&clockMutex);
     tzIsNow = getenv("TCL_TZ");
     if (tzIsNow == NULL) {
-    tzIsNow = getenv("TZ");
+	tzIsNow = getenv("TZ");
     }
     if (tzIsNow != NULL && (tzWas == NULL || tzWas == INT2PTR(-1)
 	    || strcmp(tzIsNow, tzWas) != 0)) {
