@@ -24,26 +24,28 @@
  *
  * Index-Tree:
  *
- *	j		-1	 *	...
- *	 anuar		 0	 *
- *	 u		-1	 *	a		-1
- *	  ni		 5	 *	 pril		 3
- *	  li		 6	 *	 ugust		 7
- *	 n		-1	 *	 gt		 7
- *	  r		 0	 *	s		 8
- *	  i		 5	 *	 eptember	 8
- *	 li		 6	 *	 pt		 8
- *	f		 1	 *	oktober		 9
- *	 ebruar		 1	 *	n		10
- *	 br		 1	 *	 ovember	10
- *	m		-1	 *	 vb		10
- *	 a		-1	 *	d		11
- *	  erz		 2	 *	 ezember	11
- *	  i		 4	 *	 zb		11
- *	 rz		 2	 *
+ *	j		 0	 *	...
+ *	 anuar		 1	 *
+ *	 u		 0	 *	a		 0
+ *	  ni		 6	 *	 pril		 4
+ *	  li		 7	 *	 ugust		 8
+ *	 n		 0	 *	 gt		 8
+ *	  r		 1	 *	s		 9
+ *	  i		 6	 *	 eptember	 9
+ *	 li		 7	 *	 pt		 9
+ *	f		 2	 *	oktober		10
+ *	 ebruar		 2	 *	n		11
+ *	 br		 2	 *	 ovember	11
+ *	m		 0	 *	 vb		11
+ *	 a		 0	 *	d		12
+ *	  erz		 3	 *	 ezember	12
+ *	  i		 5	 *	 zb		12
+ *	 rz		 3	 *
  *	...
  *				  
- * Thereby value -1 shows pure group items (corresponding ambigous matches).
+ * Thereby value 0 shows pure group items (corresponding ambigous matches).
+ * But the group may have a value if it contains only same values 
+ * (see for example group "f" above).
  *
  * StrIdxTree's are very fast, so:
  *    build of above-mentioned tree takes about 10 microseconds.
@@ -109,7 +111,7 @@ TclStrIdxTreeSearch(
 	    if (offs >= item->length && item->childTree.firstPtr) {
 		/* save previuosly found item (if not ambigous) for 
 		 * possible fallback (few greedy match) */
-		if (item->value != -1) {
+		if (item->value != NULL) {
 		    prevf = f;
 		    prevItem = item;
 		    prevParent = parent;
@@ -206,7 +208,9 @@ TclStrIdxTreeAppend(
  * TclStrIdxTreeBuildFromList --
  *
  * Build or extend string indexed tree from tcl list.
- * 
+ * If the values not given the values of built list are indices starts with 1.
+ * Value of 0 is thereby reserved to the ambigous values.
+ *
  * Important: by multiple lists, optimal tree can be created only if list with
  * larger strings used firstly.
  *
@@ -223,10 +227,12 @@ MODULE_SCOPE int
 TclStrIdxTreeBuildFromList(
     TclStrIdxTree *idxTree,
     int	       lstc,
-    Tcl_Obj  **lstv)
+    Tcl_Obj  **lstv,
+    ClientData *values)
 {
     Tcl_Obj  **lwrv;
     int i, ret = TCL_ERROR;
+    ClientData val;
     const char *s, *e, *f;
     TclStrIdx	*item;
 
@@ -250,8 +256,9 @@ TclStrIdxTreeBuildFromList(
 	TclStrIdxTree *foundParent = idxTree;
 	e = s = TclGetString(lwrv[i]);
 	e += lwrv[i]->length;
+	val = values ? values[i] : INT2PTR(i+1);
 
-	/* ignore empty values (impossible to index it) */
+	/* ignore empty keys (impossible to index it) */
 	if (lwrv[i]->length == 0) continue;
 
 	item = NULL;
@@ -267,7 +274,7 @@ TclStrIdxTreeBuildFromList(
 		}
 		/* if shortest key was found with the same value,
 		 * just replace its current key with longest key */
-		if ( foundItem->value == i 
+		if ( foundItem->value == val
 		  && foundItem->length < lwrv[i]->length
 		  && foundItem->childTree.firstPtr == NULL
 		) {
@@ -286,7 +293,7 @@ TclStrIdxTreeBuildFromList(
 		    Tcl_InitObjRef(item->key, foundItem->key);
 		    item->length = f - s;
 		    /* set value or mark as ambigous if not the same value of both */
-		    item->value = (foundItem->value == i) ? i : -1;
+		    item->value = (foundItem->value == val) ? val : NULL;
 		    /* insert group item between foundParent and foundItem */
 		    TclStrIdxTreeInsertBranch(foundParent, item, foundItem);
 		    foundParent = &item->childTree;
@@ -304,7 +311,7 @@ TclStrIdxTreeBuildFromList(
 	item->childTree.lastPtr = item->childTree.firstPtr = NULL;
 	Tcl_InitObjRef(item->key, lwrv[i]);
 	item->length = lwrv[i]->length;
-	item->value = i;
+	item->value = val;
 	TclStrIdxTreeAppend(foundParent, item);
     };
 
@@ -496,7 +503,7 @@ TclStrIdxTreeTestObjCmd(
 		    &lstc, &lstv) != TCL_OK) {
 		return TCL_ERROR;
 	    };
-	    TclStrIdxTreeBuildFromList(&idxTree, lstc, lstv);
+	    TclStrIdxTreeBuildFromList(&idxTree, lstc, lstv, NULL);
 	}
 	if (optionIndex == O_PUTS_INDEX) {
 	    TclStrIdxTreePrint(interp, idxTree.firstPtr, 0);
