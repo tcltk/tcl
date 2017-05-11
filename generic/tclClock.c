@@ -2992,12 +2992,12 @@ ClockInitFmtScnArgs(
 static int
 ClockParseFmtScnArgs(
     register
-    ClockFmtScnCmdArgs *opts, /* Result vector: format, locale, timezone... */
-    TclDateFields      *date, /* Extracted date-time corresponding base 
-			       * (by scan or add) resp. clockval (by format) */
+    ClockFmtScnCmdArgs *opts,	/* Result vector: format, locale, timezone... */
+    TclDateFields      *date,	/* Extracted date-time corresponding base 
+				 * (by scan or add) resp. clockval (by format) */
     int objc,		    /* Parameter count */
-    Tcl_Obj *const objv[],  /* Parameter vector */
-    int		flags	    /* Flags, differentiates between format, scan, add */
+    Tcl_Obj *const objv[],	/* Parameter vector */
+    int		flags		/* Flags, differentiates between format, scan, add */
 ) {
     Tcl_Interp	    *interp =  opts->interp;
     ClockClientData *dataPtr = opts->clientData;
