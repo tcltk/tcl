@@ -232,6 +232,7 @@ Tcl_DiscardInterpState(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_SaveResult
 void
 Tcl_SaveResult(
@@ -409,7 +410,6 @@ Tcl_DiscardResult(
  *----------------------------------------------------------------------
  */
 
-#ifndef TCL_NO_DEPRECATED
 void
 Tcl_SetResult(
     Tcl_Interp *interp,		/* Interpreter with which to associate the

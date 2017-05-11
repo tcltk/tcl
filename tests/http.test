@@ -36,7 +36,6 @@ proc bgerror {args} {
     puts stderr $errorInfo
 }
 
-set port 8010
 set bindata "This is binary data\x0d\x0amore\x0dmore\x0amore\x00null"
 catch {unset data}
 
@@ -55,9 +54,8 @@ catch {package require Thread 2.7-}
 if {[catch {package present Thread}] == 0 && [file exists $httpdFile]} {
     set httpthread [thread::create -preserved]
     thread::send $httpthread [list source $httpdFile]
-    thread::send $httpthread [list set port $port]
     thread::send $httpthread [list set bindata $bindata]
-    thread::send $httpthread {httpd_init $port}
+    thread::send $httpthread {httpd_init 0; set port} port
     puts "Running httpd in thread $httpthread"
 } else {
     if {![file exists $httpdFile]} {
@@ -69,10 +67,8 @@ if {[catch {package present Thread}] == 0 && [file exists $httpdFile]} {
     # Let the OS pick the port; that's much more flexible
     if {[catch {httpd_init 0} listen]} {
 	puts "Cannot start http server, http test skipped"
-	unset port
+	catch {unset port}
 	return
-    } else {
-	set port [lindex [fconfigure $listen -sockname] 2]
     }
 }
 
@@ -592,6 +588,14 @@ test http-4.15 {http::Event} -body {
 } -cleanup {
     catch {http::cleanup $token}
 } -returnCodes 1 -match glob -result "couldn't open socket*"
+test http-1.15 {Leak with Close vs Keepalive (bug [6ca52aec14]} -body {
+    set before [chan names]
+    set token [http::geturl $url -headers {X-Connection keep-alive}]
+    http::cleanup $token
+    update
+    set after [chan names]
+    expr {$before eq $after}
+} -result 1
 
 test http-5.1 {http::formatQuery} {
     http::formatQuery name1 value1 name2 "value two"

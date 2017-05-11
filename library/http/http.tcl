@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.10
+package provide http 2.8.11
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -28,10 +28,19 @@ namespace eval http {
 	# We need a useragent string of this style or various servers will refuse to
 	# send us compressed content even when we ask for it. This follows the
 	# de-facto layout of user-agent strings in current browsers.
-	set http(-useragent) "Mozilla/5.0\
-            ([string totitle $::tcl_platform(platform)]; U;\
-            $::tcl_platform(os) $::tcl_platform(osVersion))\
-            http/[package provide http] Tcl/[package provide Tcl]"
+	# Safe interpreters do not have ::tcl_platform(os) or
+	# ::tcl_platform(osVersion).
+	if {[interp issafe]} {
+	    set http(-useragent) "Mozilla/5.0\
+                (Windows; U;\
+                Windows NT 10.0)\
+                http/[package provide http] Tcl/[package provide Tcl]"
+	} else {
+	    set http(-useragent) "Mozilla/5.0\
+                ([string totitle $::tcl_platform(platform)]; U;\
+                $::tcl_platform(os) $::tcl_platform(osVersion))\
+                http/[package provide http] Tcl/[package provide Tcl]"
+	}
     }
 
     proc init {} {
@@ -197,9 +206,10 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 	set state(error) [list $errormsg $errorInfo $errorCode]
 	set state(status) "error"
     }
-    if {
-	($state(status) eq "timeout") || ($state(status) eq "error") ||
-	([info exists state(connection)] && ($state(connection) eq "close"))
+    if { ($state(status) eq "timeout") 
+       || ($state(status) eq "error")
+       || ([info exists state(-keepalive)] && !$state(-keepalive))
+       || ([info exists state(connection)] && ($state(connection) eq "close"))
     } {
         CloseSocket $state(sock) $token
     }
