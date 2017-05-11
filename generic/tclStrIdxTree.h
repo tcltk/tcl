@@ -27,9 +27,9 @@ typedef struct TclStrIdx {
     struct TclStrIdxTree childTree;
     struct TclStrIdx *nextPtr;
     struct TclStrIdx *prevPtr;
-    Tcl_Obj *key;
-    int	     length;
-    int	     value;
+    Tcl_Obj	*key;
+    int		 length;
+    ClientData	 value;
 } TclStrIdx;
 
 
@@ -152,7 +152,7 @@ MODULE_SCOPE const char*
 			const char *start, const char *end);
 
 MODULE_SCOPE int    TclStrIdxTreeBuildFromList(TclStrIdxTree *idxTree,
-			int lstc, Tcl_Obj **lstv);
+			int lstc, Tcl_Obj **lstv, ClientData *values);
 
 MODULE_SCOPE Tcl_Obj* 
 		    TclStrIdxTreeNewObj();

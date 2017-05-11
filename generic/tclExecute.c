@@ -510,8 +510,7 @@ VarHashCreateVar(
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
-    ((((objPtr)->typePtr == NULL) && ((objPtr)->bytes == NULL)) ||	\
-    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
+    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
 	? TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 #else /* !TCL_WIDE_INT_IS_LONG */
@@ -530,8 +529,7 @@ VarHashCreateVar(
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
-    ((((objPtr)->typePtr == NULL) && ((objPtr)->bytes == NULL)) ||	\
-    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
+    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
 	? TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 #endif /* TCL_WIDE_INT_IS_LONG */
@@ -910,9 +908,9 @@ TclCreateExecEnv(
 	    + (size_t) (size-1) * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
-    TclNewBooleanObj(eePtr->constants[0], 0);
+    TclNewLongObj(eePtr->constants[0], 0);
     Tcl_IncrRefCount(eePtr->constants[0]);
-    TclNewBooleanObj(eePtr->constants[1], 1);
+    TclNewLongObj(eePtr->constants[1], 1);
     Tcl_IncrRefCount(eePtr->constants[1]);
     eePtr->interp = interp;
     eePtr->callbackPtr = NULL;
@@ -7664,6 +7662,39 @@ TEBCresume(
      * -----------------------------------------------------------------
      */
 
+    case INST_CLOCK_READ:
+	{			/* Read the wall clock */
+	    Tcl_WideInt wval;
+	    Tcl_Time now;
+	    switch(TclGetUInt1AtPtr(pc+1)) {
+	    case 0:		/* clicks */
+#ifdef TCL_WIDE_CLICKS
+		wval = TclpGetWideClicks();
+#else
+		wval = (Tcl_WideInt) TclpGetClicks();
+#endif
+		break;
+	    case 1:		/* microseconds */
+		Tcl_GetTime(&now);
+		wval = (Tcl_WideInt) now.sec * 1000000 + now.usec;
+		break;
+	    case 2:		/* milliseconds */
+		Tcl_GetTime(&now);
+		wval = (Tcl_WideInt) now.sec * 1000 + now.usec / 1000;
+		break;
+	    case 3:		/* seconds */
+		Tcl_GetTime(&now);
+		wval = (Tcl_WideInt) now.sec;
+		break;
+	    default:
+		Tcl_Panic("clockRead instruction with unknown clock#");
+	    }
+	    /* TclNewWideObj(objResultPtr, wval); doesn't exist */
+	    objResultPtr = Tcl_NewWideIntObj(wval);
+	    TRACE_WITH_OBJ(("=> "), objResultPtr);
+	    NEXT_INST_F(2, 0, 1);
+	}
+
     default:
 	Tcl_Panic("TclNRExecuteByteCode: unrecognized opCode %u", *pc);
     } /* end of switch on opCode */
@@ -9199,7 +9230,7 @@ TclCompareTwoNumbers(
     Tcl_Obj *valuePtr,
     Tcl_Obj *value2Ptr)
 {
-    int type1, type2, compare;
+    int type1 = TCL_NUMBER_NAN, type2 = TCL_NUMBER_NAN, compare;
     ClientData ptr1, ptr2;
     mp_int big1, big2;
     double d1, d2, tmp;
