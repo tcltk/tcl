@@ -35,6 +35,9 @@ testConstraint y2038 \
 
 # TEST PLAN
 
+# clock-0:
+#	several base test-cases
+#
 # clock-1:
 #	[clock format] - tests of bad and empty arguments
 #
@@ -250,6 +253,24 @@ proc ::testClock::registry { cmd path key } {
     }
     return [dict get $reg $path $key]
 }
+
+# Base test cases:
+
+test clock-0.1 "initial: auto-loading of ensemble and stubs on demand" {
+    set i [interp create]; # because clock can be used somewhere, test it in new interp:
+
+    set ret [$i eval {
+
+	lappend ret ens:[namespace ensemble exists ::clock]
+	clock seconds; # init ensemble (but not yet stubs, loading of clock.tcl retarded)
+	lappend ret ens:[namespace ensemble exists ::clock]
+	lappend ret stubs:[expr {[namespace which -command ::tcl::clock::GetSystemTimeZone] ne ""}]
+	clock format -now; # clock.tcl stubs expected
+	lappend ret stubs:[expr {[namespace which -command ::tcl::clock::GetSystemTimeZone] ne ""}]
+    }]
+    interp delete $i
+    set ret
+} {ens:0 ens:1 stubs:0 stubs:1}
 
 # Test some of the basics of [clock format]
 
