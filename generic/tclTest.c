@@ -22,6 +22,9 @@
 #include "tclInt.h"
 #include "tclOO.h"
 #include <math.h>
+#ifndef TCL_NO_DEPRECATED
+#   define TCL_NO_DEPRECATED
+#endif
 
 /*
  * Required for Testregexp*Cmd

@@ -570,7 +570,7 @@ foreach from {cp932 shiftjis euc-jp iso2022-jp} {
     }
 }
 
-test encoding-26.0 {Tcl_GetDefaultEncodingDir} -constraints {
+test encoding-26.0 {Tcl_GetEncodingSearchPath} -constraints {
     testgetencpath
 } -setup {
     set origPath [testgetencpath]

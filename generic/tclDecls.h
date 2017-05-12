@@ -23,10 +23,12 @@
 #   endif
 #endif
 
-#if defined(TCL_NO_DEPRECATED) && defined(BUILD_tcl)
+#if !defined(BUILD_tcl)
+# define TCL_DEPRECATED(msg) EXTERN TCL_DEPRECATED_API(msg)
+#elif defined(TCL_NO_DEPRECATED)
 # define TCL_DEPRECATED(msg) MODULE_SCOPE
 #else
-# define TCL_DEPRECATED(msg) EXTERN TCL_DEPRECATED_API(msg)
+# define TCL_DEPRECATED(msg) EXTERN
 #endif
 
 
