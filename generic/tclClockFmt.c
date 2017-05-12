@@ -2489,13 +2489,13 @@ ClockFmtToken_StarDate_Proc(
  {
     int fractYear;
     /* Get day of year, zero based */
-    int doy = dateFmt->date.dayOfYear - 1;
+    int v = dateFmt->date.dayOfYear - 1;
 
     /* Convert day of year to a fractional year */
     if (IsGregorianLeapYear(&dateFmt->date)) {
-	fractYear = 1000 * doy / 366;
+	fractYear = 1000 * v / 366;
     } else {
-	fractYear = 1000 * doy / 365;
+	fractYear = 1000 * v / 365;
     }
 
     /* Put together the StarDate as "Stardate %02d%03d.%1d" */
@@ -2507,8 +2507,10 @@ ClockFmtToken_StarDate_Proc(
     dateFmt->output = _itoaw(dateFmt->output, 
 	fractYear, '0', 3);
     *dateFmt->output++ = '.';
-    dateFmt->output = _itoaw(dateFmt->output,
-	dateFmt->date.localSeconds % SECONDS_PER_DAY / ( SECONDS_PER_DAY / 10 ), '0', 1);
+    /* be sure positive after decimal point (note: clock-value can be negative) */
+    v = dateFmt->date.localSeconds % SECONDS_PER_DAY / ( SECONDS_PER_DAY / 10 );
+    if (v < 0) v = 10 + v;
+    dateFmt->output = _itoaw(dateFmt->output, v, '0', 1);
 
     return TCL_OK;
 }
