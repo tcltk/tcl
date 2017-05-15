@@ -193,7 +193,9 @@ if {[interp issafe]} {
 	uplevel 1 [info level 0]
     }
     # Auto-loading stubs for 'clock.tcl'
-    set ::auto_index_ns(::tcl::clock) {::namespace inscope ::tcl::clock {::source [::file join [info library] clock.tcl]}}
+    set ::auto_index_ns(::tcl::clock) {::namespace inscope ::tcl::clock {
+	::source -encoding utf-8 [::file join [info library] clock.tcl]
+    }}
 }
 
 # Conditionalize for presence of exec.
