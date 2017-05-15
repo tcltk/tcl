@@ -18647,10 +18647,42 @@ test clock-6.20 {special char tokens %n, %t} {
 } 1246386600
 
 # Hi, Jeff!
+proc _testStarDates {s {days {366*2}} {step {86400}}} {
+    set step [expr {int($step * 86400)}]
+    # reconvert - arrange in order of stardate:
+    set s [set i [clock scan [clock format $s -f "%Q" -g 1] -g 1]]
+    # test:
+    set wrong {}
+    while {$i < $s + $days*86400} {
+	set d [clock format $i -f "%Q" -g 1]
+	if {![regexp {^Stardate \d+\.\d$} $d]} {
+	    lappend wrong "wrong: $d -- ($i) -- [clock format $i -g 1]"
+	}
+	if {[catch {
+	    set i2 [clock scan $d -f "%Q" -g 1]
+	} msg]} {
+	    lappend wrong "$d -- ($i) -- [clock format $i -g 1]: $msg"
+	}
+	if {$i != $i2} {
+	    lappend wrong "$d -- ($i != $i2) -- [clock format $i -g 1]"
+	}
+	incr i $step
+    }
+    join $wrong \n
+}
 test clock-6.21.0 {Stardate 0 day} {
     list [set d [clock format -757382400 -format "%Q" -gmt 1]] \
          [clock scan $d -format "%Q" -gmt 1]
 } [list "Stardate 00000.0" -757382400]
+test clock-6.21.0.1 {Stardate 0.1 - 1.9 (test negative clock value -> positive Stardate)} {
+    _testStarDates -757382400 2 0.1
+} {}
+test clock-6.21.0.2 {Stardate 10000.1 - 10002.9 (test negative clock value -> positive Stardate)} {
+    _testStarDates [clock scan "Stardate 10000.1" -f %Q -g 1] 3 0.1
+} {}
+test clock-6.21.0.2 {Stardate 80000.1 - 80002.9 (test positive clock value)} {
+    _testStarDates [clock scan "Stardate 80001.1" -f %Q -g 1] 3 0.1
+} {}
 test clock-6.21.1 {Stardate} {
     list [set d [clock format 1482857280 -format "%Q" -gmt 1]] \
          [clock scan $d -format "%Q" -gmt 1]
@@ -18659,21 +18691,10 @@ test clock-6.21.2 {Stardate next time} {
     list [set d [clock format 1482865920 -format "%Q" -gmt 1]] \
          [clock scan $d -format "%Q" -gmt 1]
 } [list "Stardate 70986.8" 1482865920]
-test clock-6.21.3 {Stardate correct scan over year (leap year, begin, middle and end of the year)} -body {
-    set s [clock scan "01.01.2016" -f "%d.%m.%Y" -g 1]
-    set s [set i [clock scan [clock format $s -f "%Q" -g 1] -g 1]]
-    set wrong {}
-    while {[incr i 86400] < $s + 86400*366*2} {
-	set d [clock format $i -f "%Q" -g 1]
-	set i2 [clock scan $d -f "%Q" -g 1]
-	if {$i != $i2} {
-	    lappend wrong "$d -- ($i != $i2) -- [clock format $i -g 1]"
-	}
-    }
-    join $wrong \n
-} -result {} -cleanup {
-    unset -nocomplain wrong i i2 s d
-}
+test clock-6.21.3 {Stardate correct scan over year (leap year, begin, middle and end of the year)} {
+    _testStarDates [clock scan "01.01.2016" -f "%d.%m.%Y" -g 1] [expr {366*2}] 1
+} {}
+rename _testStarDates {}
 
 test clock-6.22.1 {Greedy match} {
     clock format [clock scan "111" -format "%d%m%y" -gmt 1] -locale en -gmt 1
