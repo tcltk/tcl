@@ -1189,10 +1189,10 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define TclCheckStackDepth(depth, envPtr)				\
     do {								\
-	int dd = (depth);						\
-	if (dd != (envPtr)->currStackDepth) {				\
+	int _dd = (depth);						\
+	if (_dd != (envPtr)->currStackDepth) {				\
 	    Tcl_Panic("bad stack depth computations: is %i, should be %i", \
-		    (envPtr)->currStackDepth, dd);		\
+		    (envPtr)->currStackDepth, _dd);		\
 	}								\
     } while (0)
 
@@ -1208,12 +1208,12 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define TclUpdateStackReqs(op, i, envPtr) \
     do {							\
-	int delta = tclInstructionTable[(op)].stackEffect;	\
-	if (delta) {						\
-	    if (delta == INT_MIN) {				\
-		delta = 1 - (i);				\
+	int _delta = tclInstructionTable[(op)].stackEffect;	\
+	if (_delta) {						\
+	    if (_delta == INT_MIN) {				\
+		_delta = 1 - (i);				\
 	    }							\
-	    TclAdjustStackDepth(delta, envPtr);			\
+	    TclAdjustStackDepth(_delta, envPtr);			\
 	}							\
     } while (0)
 
@@ -1327,11 +1327,11 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define TclEmitPush(objIndex, envPtr) \
     do {							 \
-	register int objIndexCopy = (objIndex);			 \
-	if (objIndexCopy <= 255) {				 \
-	    TclEmitInstInt1(INST_PUSH1, objIndexCopy, (envPtr)); \
+	register int _objIndexCopy = (objIndex);			 \
+	if (_objIndexCopy <= 255) {				 \
+	    TclEmitInstInt1(INST_PUSH1, _objIndexCopy, (envPtr)); \
 	} else {						 \
-	    TclEmitInstInt4(INST_PUSH4, objIndexCopy, (envPtr)); \
+	    TclEmitInstInt4(INST_PUSH4, _objIndexCopy, (envPtr)); \
 	}							 \
     } while (0)
 
