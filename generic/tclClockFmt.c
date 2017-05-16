@@ -34,9 +34,6 @@ static void ClockFmtScnStorageDelete(ClockFmtScnStorage *fss);
 
 static void ClockFrmScnFinalize(ClientData clientData);
 
-/* Msgcat index literals prefixed with _IDX_, used for quick dictionary search */
-CLOCK_LOCALE_LITERAL_ARRAY(MsgCtLitIdxs, "_IDX_");
-
 /*
  * Clock scan and format facilities.
  */
@@ -1906,7 +1903,7 @@ EstimateTokenCount(
 
 #define AllocTokenInChain(tok, chain, tokCnt) \
     if (++(tok) >= (chain) + (tokCnt)) { \
-	*((char **)&chain) = ckrealloc((char *)(chain), \
+	chain = ckrealloc((char *)(chain), \
 	    (tokCnt + CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE) * sizeof(*(tok))); \
 	if ((chain) == NULL) { goto done; }; \
 	(tok) = (chain) + (tokCnt); \
