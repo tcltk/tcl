@@ -3118,7 +3118,7 @@ ClockParseFmtScnArgs(
 	) {
 
 	    /* we accept "-now" as current date-time */
-	    const char *const nowOpts[] = {
+	    static const char *const nowOpts[] = {
 		"-now", NULL
 	    };
 	    int idx;
