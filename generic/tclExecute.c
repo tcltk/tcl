@@ -1346,48 +1346,29 @@ FreeExprCodeInternalRep(
 /*
  *----------------------------------------------------------------------
  *
- * TclCompEvalObj --
+ * TclCompileObj --
  *
- *	This procedure evaluates the script contained in a Tcl_Obj by first
- *	compiling it and then passing it to TclExecuteByteCode.
+ *  This procedure compiles the script contained in a Tcl_Obj.
  *
  * Results:
- *	The return value is one of the return codes defined in tcl.h (such as
- *	TCL_OK), and interp->objResultPtr refers to a Tcl object that either
- *	contains the result of executing the code or an error message.
+ *  A pointer to the corresponding ByteCode, never NULL.
  *
  * Side effects:
- *	Almost certainly, depending on the ByteCode's instructions.
+ *  The object is shimmered to bytecode type.
  *
  *----------------------------------------------------------------------
  */
 
-int
-TclCompEvalObj(
-    Tcl_Interp *interp,
+ByteCode *
+TclCompileObj(
+    Tcl_Interp *interp, 
     Tcl_Obj *objPtr,
     const CmdFrame *invoker,
     int word)
 {
     register Interp *iPtr = (Interp *) interp;
     register ByteCode *codePtr;	/* Tcl Internal type of bytecode. */
-    int result;
-    Namespace *namespacePtr;
-
-    /*
-     * Check that the interpreter is ready to execute scripts. Note that we
-     * manage the interp's runlevel here: it is a small white lie (maybe), but
-     * saves a ++/-- pair at each invocation. Amazingly enough, the impact on
-     * performance is noticeable.
-     */
-
-    iPtr->numLevels++;
-    if (TclInterpReady(interp) == TCL_ERROR) {
-	result = TCL_ERROR;
-	goto done;
-    }
-
-    namespacePtr = iPtr->varFramePtr->nsPtr;
+    Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
 
     /*
      * If the object is not already of tclByteCodeType, compile it (and reset
@@ -1418,19 +1399,24 @@ TclCompEvalObj(
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != namespacePtr)
 		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
-	    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-		if ((Interp *) *codePtr->interpHandle != iPtr) {
-		    Tcl_Panic("Tcl_EvalObj: compiled script jumped interps");
-		}
-		codePtr->compileEpoch = iPtr->compileEpoch;
-	    } else {
-		/*
-		 * This byteCode is invalid: free it and recompile.
-		 */
-
-		objPtr->typePtr->freeIntRepProc(objPtr);
+	    if (!(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 		goto recompileObj;
 	    }
+	    if ((Interp *) *codePtr->interpHandle != iPtr) {
+		Tcl_Panic("Tcl_EvalObj: compiled script jumped interps");
+	    }
+	    codePtr->compileEpoch = iPtr->compileEpoch;
+	}
+
+	/*
+	 * Check that any compiled locals do refer to the current proc
+	 * environment! If not, recompile.
+	 */
+
+	if (!(codePtr->flags & TCL_BYTECODE_PRECOMPILED) &&
+		(codePtr->procPtr == NULL) &&
+		(codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)){
+	    goto recompileObj;
 	}
 
 	/*
@@ -1468,77 +1454,68 @@ TclCompEvalObj(
 	 *     information.
 	 */
 
-	if (invoker) {
+	if (invoker == NULL) {
+	    return codePtr;
+	} else {
 	    Tcl_HashEntry *hePtr =
 		    Tcl_FindHashEntry(iPtr->lineBCPtr, (char *) codePtr);
 
-	    if (hePtr) {
-		ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
-		int redo = 0;
-		CmdFrame *ctxPtr = TclStackAlloc(interp,sizeof(CmdFrame));
+	    ExtCmdLoc *eclPtr;
+	    CmdFrame *ctxCopyPtr;
+	    int redo;
 
-		*ctxPtr = *invoker;
+	    if (!hePtr) {
+		return codePtr;
+	    }
 
-		if (invoker->type == TCL_LOCATION_BC) {
+	    eclPtr = Tcl_GetHashValue(hePtr);
+	    redo = 0;
+	    ctxCopyPtr = TclStackAlloc(interp, sizeof(CmdFrame));
+	    *ctxCopyPtr = *invoker;
+
+	    if (invoker->type == TCL_LOCATION_BC) {
+		/*
+		 * Note: Type BC => ctx.data.eval.path    is not used.
+		 *		    ctx.data.tebc.codePtr used instead
+		 */
+
+		TclGetSrcInfoForPc(ctxCopyPtr);
+		if (ctxCopyPtr->type == TCL_LOCATION_SOURCE) {
 		    /*
-		     * Note: Type BC => ctx.data.eval.path    is not used.
-		     *		    ctx.data.tebc.codePtr used instead
+		     * The reference made by 'TclGetSrcInfoForPc' is dead.
 		     */
 
-		    TclGetSrcInfoForPc(ctxPtr);
-		    if (ctxPtr->type == TCL_LOCATION_SOURCE) {
-			/*
-			 * The reference made by 'TclGetSrcInfoForPc' is
-			 * dead.
-			 */
-
-			Tcl_DecrRefCount(ctxPtr->data.eval.path);
-			ctxPtr->data.eval.path = NULL;
-		    }
-		}
-
-		if (word < ctxPtr->nline) {
-		    /*
-		     * Note: We do not care if the line[word] is -1. This
-		     * is a difference and requires a recompile (location
-		     * changed from absolute to relative, literal is used
-		     * fixed and through variable)
-		     *
-		     * Example:
-		     * test info-32.0 using literal of info-24.8
-		     *     (dict with ... vs           set body ...).
-		     */
-
-		    redo = ((eclPtr->type == TCL_LOCATION_SOURCE)
-			    && (eclPtr->start != ctxPtr->line[word]))
-			|| ((eclPtr->type == TCL_LOCATION_BC)
-				&& (ctxPtr->type == TCL_LOCATION_SOURCE));
-		}
-
-		TclStackFree(interp, ctxPtr);
-
-		if (redo) {
-		    goto recompileObj;
+		    Tcl_DecrRefCount(ctxCopyPtr->data.eval.path);
+		    ctxCopyPtr->data.eval.path = NULL;
 		}
 	    }
-	}
 
-	/*
-	 * Increment the code's ref count while it is being executed. If
-	 * afterwards no references to it remain, free the code.
-	 */
+	    if (word < ctxCopyPtr->nline) {
+		/*
+		 * Note: We do not care if the line[word] is -1. This is a
+		 * difference and requires a recompile (location changed from
+		 * absolute to relative, literal is used fixed and through
+		 * variable)
+		 *
+		 * Example:
+		 * test info-32.0 using literal of info-24.8
+		 *     (dict with ... vs           set body ...).
+		 */
 
-    runCompiledObj:
-	codePtr->refCount++;
-	result = TclExecuteByteCode(interp, codePtr);
-	codePtr->refCount--;
-	if (codePtr->refCount <= 0) {
-	    TclCleanupByteCode(codePtr);
+		redo = ((eclPtr->type == TCL_LOCATION_SOURCE)
+			    && (eclPtr->start != ctxCopyPtr->line[word]))
+			|| ((eclPtr->type == TCL_LOCATION_BC)
+			    && (ctxCopyPtr->type == TCL_LOCATION_SOURCE));
+	    }
+
+	    TclStackFree(interp, ctxCopyPtr);
+	    if (!redo) {
+		return codePtr;
+	    }
 	}
-	goto done;
     }
 
-    recompileObj:
+  recompileObj:
     iPtr->errorLine = 1;
 
     /*
@@ -1550,12 +1527,75 @@ TclCompEvalObj(
 
     iPtr->invokeCmdFramePtr = invoker;
     iPtr->invokeWord = word;
-    tclByteCodeType.setFromAnyProc(interp, objPtr);
+    TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
     iPtr->invokeCmdFramePtr = NULL;
     codePtr = (ByteCode *) objPtr->internalRep.twoPtrValue.ptr1;
-    goto runCompiledObj;
+    if (iPtr->varFramePtr->localCachePtr) {
+	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
+	codePtr->localCachePtr->refCount++;
+    }
+    return codePtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompEvalObj --
+ *
+ *	This procedure evaluates the script contained in a Tcl_Obj by first
+ *	compiling it and then passing it to TclExecuteByteCode.
+ *
+ * Results:
+ *	The return value is one of the return codes defined in tcl.h (such as
+ *	TCL_OK), and interp->objResultPtr refers to a Tcl object that either
+ *	contains the result of executing the code or an error message.
+ *
+ * Side effects:
+ *	Almost certainly, depending on the ByteCode's instructions.
+ *
+ *----------------------------------------------------------------------
+ */
 
-    done:
+int
+TclCompEvalObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    const CmdFrame *invoker,
+    int word)
+{
+    register Interp *iPtr = (Interp *) interp;
+    register ByteCode *codePtr;	/* Tcl Internal type of bytecode. */
+    int result;
+
+    /*
+     * Check that the interpreter is ready to execute scripts. Note that we
+     * manage the interp's runlevel here: it is a small white lie (maybe), but
+     * saves a ++/-- pair at each invocation. Amazingly enough, the impact on
+     * performance is noticeable.
+     */
+
+    iPtr->numLevels++;
+    if (TclInterpReady(interp) == TCL_ERROR) {
+	result = TCL_ERROR;
+	goto done;
+    }
+
+    /* Compile objPtr to the byte code */
+    codePtr = TclCompileObj(interp, objPtr, invoker, word);
+
+    /*
+     * Increment the code's ref count while it is being executed. If
+     * afterwards no references to it remain, free the code.
+     */
+
+    codePtr->refCount++;
+    result = TclExecuteByteCode(interp, codePtr);
+    codePtr->refCount--;
+    if (codePtr->refCount <= 0) {
+	TclCleanupByteCode(codePtr);
+    }
+
+  done:
     iPtr->numLevels--;
     return result;
 }
