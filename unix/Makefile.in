@@ -344,7 +344,7 @@ UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 	tclUnixTime.o tclUnixInit.o tclUnixThrd.o \
 	tclUnixCompat.o
 
-NOTIFY_OBJS = tclUnixNotfy.o
+NOTIFY_OBJS = tclEpollNotfy.o tclKqueueNotfy.o tclSelectNotfy.o
 
 MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o tclMacOSXNotify.o
 
@@ -563,7 +563,9 @@ UNIX_SRCS = \
 	$(UNIX_DIR)/tclUnixCompat.c
 
 NOTIFY_SRCS = \
-	$(UNIX_DIR)/tclUnixNotfy.c
+	$(UNIX_DIR)/tclEpollNotfy.c \
+	$(UNIX_DIR)/tclKqueueNotfy.c \
+	$(UNIX_DIR)/tclSelectNotfy.c
 
 DL_SRCS = \
 	$(UNIX_DIR)/tclLoadAix.c \
@@ -1557,8 +1559,14 @@ tclUnixFCmd.o: $(UNIX_DIR)/tclUnixFCmd.c
 tclUnixFile.o: $(UNIX_DIR)/tclUnixFile.c $(FSHDR)
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixFile.c
 
-tclUnixNotfy.o: $(UNIX_DIR)/tclUnixNotfy.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixNotfy.c
+tclEpollNotfy.o: $(UNIX_DIR)/tclEpollNotfy.c
+	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclEpollNotfy.c
+
+tclKqueueNotfy.o: $(UNIX_DIR)/tclKqueueNotfy.c
+	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclKqueueNotfy.c
+
+tclSelectNotfy.o: $(UNIX_DIR)/tclSelectNotfy.c
+	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclSelectNotfy.c
 
 tclUnixPipe.o: $(UNIX_DIR)/tclUnixPipe.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixPipe.c
