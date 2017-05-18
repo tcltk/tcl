@@ -206,7 +206,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 	set state(error) [list $errormsg $errorInfo $errorCode]
 	set state(status) "error"
     }
-    if { ($state(status) eq "timeout") 
+    if { ($state(status) eq "timeout")
        || ($state(status) eq "error")
        || ([info exists state(-keepalive)] && !$state(-keepalive))
        || ([info exists state(connection)] && ($state(connection) eq "close"))
