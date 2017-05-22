@@ -1940,9 +1940,9 @@ matchLoop:
                     goto matchFail;
                 } else {
                     str += TclUtfToUniChar(str, &sch);
+                    ++pattern;
+                    goto matchLoop;
                 }
-                ++pattern;
-                goto matchLoop;
 
             case '*':
                 /*
@@ -2002,6 +2002,10 @@ matchLoop:
             case '[':
                 ++pattern;
 
+                /*
+                 * Take the next char from input string to match
+                 * against '[]' group
+                 */
                 if(UCHAR(*str) < 0x80) {
                     sch = (Tcl_UniChar)
                         (nocase ? tolower(UCHAR(*str)) : UCHAR(*str));
@@ -2013,6 +2017,9 @@ matchLoop:
                     }
                 }
 
+                /*
+                 * '[]' group loop: process single chars and a-z ranges
+                 */
                 while (1) {
                     if (*pattern == ']') {
                         /*
@@ -2033,7 +2040,13 @@ matchLoop:
                             pch = Tcl_UniCharToLower(pch);
                         }
                     }
-                    if (*pattern == '-') {
+                    if (*pattern != '-') {
+                        /* 
+                         * Try to match a single char in '[]' group
+                         */
+                        if (pch == sch) break;
+                        continue;
+                    } else {
                         /*
                          * Start of a 'a-z' style range.
                          */
@@ -2068,11 +2081,6 @@ matchLoop:
                          * on with the next part of '[]'
                          */
                         continue;
-                    } else if (startChar == sch) {
-                        /* 
-                         * Try to match a single char in '[]' group
-                         */
-                        break;
                     }
                 }
                 /*
