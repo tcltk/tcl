@@ -2128,7 +2128,7 @@ matchFail:
          * it first.
          */
         pattern = pnext;
-        str = snext + TclUtfToUniChar(str, &sch);
+        str = snext + TclUtfToUniChar(snext, &sch);
         if (*str) goto matchLoop;
     }
     return 0;
