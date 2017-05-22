@@ -1945,15 +1945,21 @@ matchLoop:
                 goto matchLoop;
 
             case '*':
-                /* skip runs of *** */
+                /*
+                 * Skip past the '*', and any following '*'s
+                 */
                 while (*(++pattern) == '*') {}
 
-                /* if end of pattern, we have a match */
+                /*
+                 * If the pattern ends after '*', we have a match
+                 */
                 if (*pattern == '\0') {
                     return 1;
                 }
 
-                /* peek at the next pattern char */
+                /*
+                 * Peek at the next pattern char
+                 */
                 if (UCHAR(*pattern) < 0x80) {
                     pch = (Tcl_UniChar)
                         (nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
@@ -1964,7 +1970,9 @@ matchLoop:
                     }
                 }
 
-                /* if the next char in pattern is a literal, zoom through str to the next match */
+                /*
+                 * If the next char in pattern is a literal, zoom through str to the next match
+                 */
                 switch (*pattern) {
                     case '[': case '?': case '\\':
                         break;
@@ -1979,18 +1987,16 @@ matchLoop:
                         }
                 }
 
-#if 0
-                while (*str != '\0') {
-                    /* recursion! */
-                    if (Tcl_StringCaseMatch(str, pattern, nocase)) {
-                        return 1;
-                    }
-                    str += TclUtfToUniChar(str, &sch);
-                }
-#else
+                /*
+                 * Avoid recursion, using technique described at https://research.swtch.com/glob
+                 *
+                 * `pnext` stores the first pattern char following a (sequence of) '*'.
+                 * `snext` stores the current match position - on resume at matchFail it
+                 *   will need to be incremented.
+                 */
                 pnext = pattern - 1;
                 snext = str;
-#endif
+
                 goto matchLoop;
 
             case '[':
@@ -2009,12 +2015,13 @@ matchLoop:
 
                 while (1) {
                     if (*pattern == ']') {
-                        /* end of range */
+                        /*
+                         * End of [] range with no match - fail!
+                         */
                         goto matchFail;
                     }
                     if (*pattern == '\0') {
-                        /* illegal pattern */
-                        return 0;
+                        return 0;	/* Illegal pattern! (incomplete [..) */
                     }
                     if (UCHAR(*pattern) < 0x80) {
                         pch = (Tcl_UniChar)
@@ -2026,13 +2033,17 @@ matchLoop:
                             pch = Tcl_UniCharToLower(pch);
                         }
                     }
-                    startChar = pch;
                     if (*pattern == '-') {
+                        /*
+                         * Start of a 'a-z' style range.
+                         */
                         ++pattern;
                         if (*pattern == '\0') {
-                            /* illegal pattern */
-                            return 0;
+                            return 0;   /* Illegal pattern! (incomplete [..) */
                         }
+                        // if (*pattern == ']') {
+                        //      return 0;       /* Illegal pattern! (incomplete [a-]) */
+                        // }
                         if (UCHAR(*pattern) < 0x80) {
                             pch = (Tcl_UniChar)
                                 (nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
@@ -2044,22 +2055,33 @@ matchLoop:
                             }
                         }
                         endChar = pch;
+                        /*
+                         * We have a range ('a-z' inside '[]') with
+                         * startChar, endChar as the endpoints.
+                         */
                         if (((startChar <= sch) && (sch <= endChar))
                                 || ((endChar <= sch) && (sch <= startChar))) {
-                            /* matches ranges of form [a-z] or [z-a] */
                             break;
                         }
-                        /* otherwise, process the rest of the [] */
+                        /*
+                         * No match with this character or range.  Carry
+                         * on with the next part of '[]'
+                         */
                         continue;
                     } else if (startChar == sch) {
+                        /* 
+                         * Try to match a single char in '[]' group
+                         */
                         break;
                     }
                 }
-                /* if we've matched in [], *pattern is still inside the brackets */
+                /*
+                 * If we get here, a [] group has successfully matched. *pattern
+                 * is still inside the brackets, so advance past next ']'
+                 */
                 while (*pattern != ']') {
                     if (*pattern == '\0') {
-                        /* illegal pattern */
-                        return 0;
+                        return 0;	/* Illegal pattern! (incomplete [..) */
                     }
                     pattern++;
                 }
@@ -2069,14 +2091,15 @@ matchLoop:
             case '\\':
                 ++pattern;
                 if (*pattern == '\0') {
-                    /* illegal pattern */
-                    return 0;
+                    return 0;		/* Illegal pattern! (lone \ at end) */
                 }
                 goto matchLiteral;
 
             default:
 matchLiteral:
-                /* literal match */
+                /*
+                 * Try to match a literal character in pattern
+                 */
                 str += TclUtfToUniChar(str, &sch);
                 pattern += TclUtfToUniChar(pattern, &pch);
                 if (nocase) {
@@ -2091,6 +2114,11 @@ matchLiteral:
     }
 matchFail:
     if (pnext != 0) {
+        /*
+         * Backtrack to position following last '*' in `pattern`.
+         * `snext` points to where we last tried to match, so advance
+         * it first.
+         */
         pattern = pnext;
         str = snext + TclUtfToUniChar(str, &sch);
         if (*str) goto matchLoop;
