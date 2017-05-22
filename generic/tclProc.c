@@ -401,6 +401,13 @@ TclCreateProc(
     register CompiledLocal *localPtr = NULL;
     Tcl_Obj *defPtr;
     int precompiled = 0;
+    /*
+     * To report on bad arglists:
+     *  - set to 1 when 0 and optional/args is found
+     *  - set to 2 when 1 and required is found
+     *  - error when 2 and optional/args is found
+     */
+    int arglist_shape = 0;
 
     if (bodyPtr->typePtr == &tclProcBodyType) {
 	/*
@@ -539,6 +546,28 @@ TclCreateProc(
 	}
 
 	/*
+	 * Reject invalid argspecs early
+	 */
+	if (fieldCount == 2 
+		|| ((nameLength == 4)
+		    && !strcmp(fieldValues[0], "args"))) {
+	    if (arglist_shape == 0) {
+		arglist_shape = 1;
+	    } else if (arglist_shape == 2) {
+		ckfree(fieldValues);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"required args in the middle", -1));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+			"FORMALARGUMENTFORMAT", NULL);
+		goto procError;
+	    }
+	} else {
+	    if (arglist_shape == 1) {
+		arglist_shape = 2;
+	    }
+	}
+
+	/*
 	 * Check that the formal parameter name is a scalar.
 	 */
 
@@ -618,8 +647,7 @@ TclCreateProc(
 		    goto procError;
 		}
 	    }
-	    if ((i == numArgs - 1)
-		    && (localPtr->nameLength == 4)
+	    if ((localPtr->nameLength == 4)
 		    && (localPtr->name[0] == 'a')
 		    && (strcmp(localPtr->name, "args") == 0)) {
 		localPtr->flags |= VAR_IS_ARGS;
@@ -653,8 +681,7 @@ TclCreateProc(
 		localPtr->defValuePtr = NULL;
 	    }
 	    memcpy(localPtr->name, fieldValues[0], nameLength + 1);
-	    if ((i == numArgs - 1)
-		    && (localPtr->nameLength == 4)
+	    if ((localPtr->nameLength == 4)
 		    && (localPtr->name[0] == 'a')
 		    && (strcmp(localPtr->name, "args") == 0)) {
 		localPtr->flags |= VAR_IS_ARGS;
@@ -1104,9 +1131,7 @@ ProcWrongNumArgs(
 	    TclNewObj(argObj);
 	    Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?", NULL);
 	} else if (defPtr->flags & VAR_IS_ARGS) {
-	    numArgs--;
-	    final = "?arg ...?";
-	    break;
+	    TclNewLiteralStringObj(argObj, "?arg ...?");
 	} else {
 	    argObj = namePtr;
 	    Tcl_IncrRefCount(namePtr);
@@ -1400,24 +1425,28 @@ InitArgsAndLocals(
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     register Proc *procPtr = framePtr->procPtr;
     ByteCode *codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
-    register Var *varPtr, *defPtr;
-    int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
-    Tcl_Obj *const *argObjs;
-
+    int numLocals = procPtr->numCompiledLocals;	/* Total compiled locals, >= numArgs */
+    int numArgs = procPtr->numArgs;		/* Number of args taken */
+    int argCt = framePtr->objc - skip;		/* Number of arguments given */
+    register Var *nextVarPtr, *lastVarPtr, *localVarPtr, *nextDefPtr, *lastDefPtr;
+    Tcl_Obj *const *nextArgObj;
+    Tcl_Obj *const *lastArgObj;
     /*
      * Make sure that the local cache of variable names and initial values has
      * been initialised properly .
      */
 
-    if (localCt) {
+    if (numLocals) {
 	if (!codePtr->localCachePtr) {
 	    InitLocalCache(procPtr) ;
 	}
 	framePtr->localCachePtr = codePtr->localCachePtr;
 	framePtr->localCachePtr->refCount++;
-	defPtr = (Var *) (&framePtr->localCachePtr->varName0 + localCt);
+	nextDefPtr = (Var *) (&framePtr->localCachePtr->varName0 + numLocals);
+	lastDefPtr = &nextDefPtr[numArgs-1];
     } else {
-	defPtr = NULL;
+	nextDefPtr = NULL;
+	lastDefPtr = NULL;
     }
 
     /*
@@ -1426,9 +1455,12 @@ InitArgsAndLocals(
      * parameters.
      */
 
-    varPtr = TclStackAlloc(interp, (int)(localCt * sizeof(Var)));
-    framePtr->compiledLocals = varPtr;
-    framePtr->numCompiledLocals = localCt;
+    nextVarPtr = TclStackAlloc(interp, (int)(numLocals * sizeof(Var)));
+    lastVarPtr = &nextVarPtr[numArgs-1];
+    localVarPtr = &nextVarPtr[numArgs];
+    framePtr->compiledLocals = nextVarPtr;
+    framePtr->numCompiledLocals = numLocals;
+    // printf("compiledLocals alloced at %p (%d)\n", framePtr->compiledLocals, framePtr->numCompiledLocals); fflush(stdout);
 
     /*
      * Match and assign the call's actual parameters to the procedure's formal
@@ -1437,10 +1469,7 @@ InitArgsAndLocals(
      * frame's local variable array.
      */
 
-    numArgs = procPtr->numArgs;
-    argCt = framePtr->objc - skip;	/* Set it to the number of args to the
-					 * procedure. */
-    argObjs = framePtr->objv + skip;
+    nextArgObj = framePtr->objv + skip;
     if (numArgs == 0) {
 	if (argCt) {
 	    goto incorrectArgs;
@@ -1448,60 +1477,97 @@ InitArgsAndLocals(
 	    goto correctArgs;
 	}
     }
-    imax = ((argCt < numArgs-1) ? argCt : numArgs-1);
-    for (i = 0; i < imax; i++, varPtr++, defPtr ? defPtr++ : defPtr) {
-	/*
-	 * "Normal" arguments; last formal is special, depends on it being
-	 * 'args'.
-	 */
-
-	Tcl_Obj *objPtr = argObjs[i];
-
-	varPtr->flags = 0;
-	varPtr->value.objPtr = objPtr;
-	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
+    lastArgObj = &nextArgObj[argCt-1];
+    if(nextDefPtr == NULL) {
+	Tcl_Panic("defPtr is null for %s\n", Tcl_GetStringFromObj(procNameObj, NULL));
     }
-    for (; i < numArgs-1; i++, varPtr++, defPtr ? defPtr++ : defPtr) {
-	/*
-	 * This loop is entered if argCt < (numArgs-1). Set default values;
-	 * last formal is special.
-	 */
 
-	Tcl_Obj *objPtr = defPtr ? defPtr->value.objPtr : NULL;
+    // printf("proc %s: numArgs = %d, argCt = %d, numLocals = %d\n", Tcl_GetStringFromObj(procNameObj, NULL), numArgs, argCt, numLocals); fflush(stdout);
+    /*
+     * Required args, LHS
+     */
+    while ( (nextVarPtr <= lastVarPtr)
+	 && !(nextDefPtr->flags & VAR_IS_ARGS)
+	 && (nextDefPtr->value.objPtr == NULL) ) {
+	if (nextArgObj > lastArgObj) goto incorrectArgs;	/* not enough args */
+	nextVarPtr->flags = 0;
+	nextVarPtr->value.objPtr = *(nextArgObj++);
+	Tcl_IncrRefCount(nextVarPtr->value.objPtr);	/* Local var is a reference. */
+	// printf("Assigned req LHS 1\n"); fflush(stdout);
 
-	if (!objPtr) {
+	++nextVarPtr; ++nextDefPtr;
+    }
+    /*
+     * Required args, RHS
+     */
+    while ( (nextVarPtr <= lastVarPtr)
+	 && !(lastDefPtr->flags & VAR_IS_ARGS)
+	 && (lastDefPtr->value.objPtr == NULL) ) {
+	if (nextArgObj > lastArgObj) goto incorrectArgs;	/* not enough args */
+	lastVarPtr->flags = 0;
+	lastVarPtr->value.objPtr = *(lastArgObj--);
+	Tcl_IncrRefCount(lastVarPtr->value.objPtr);	/* Local var is a reference. */
+	// printf("Assigned req RHS 1\n"); fflush(stdout);
+
+	--lastVarPtr; --lastDefPtr;
+    }
+    /*
+     * Optional args, LHS
+     */
+    while ( (nextVarPtr <= lastVarPtr)
+	 && !(nextDefPtr->flags & VAR_IS_ARGS) ) {
+	Tcl_Obj * objPtr;
+	if (nextArgObj > lastArgObj) {
+	    objPtr = nextDefPtr->value.objPtr;	/* take default */
+	} else {
+	    objPtr = *(nextArgObj++);
+	}
+	if (objPtr == NULL) Tcl_Panic("oops LHS!");
+	nextVarPtr->value.objPtr = objPtr;
+	nextVarPtr->flags = 0;
+	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
+	// printf("Assigned opt LHS 1\n"); fflush(stdout);
+
+	++nextVarPtr; ++nextDefPtr;
+    }
+    /*
+     * Optional args, RHS
+     */
+    while ( (nextVarPtr <= lastVarPtr)
+	 && !(lastDefPtr->flags & VAR_IS_ARGS) ) {
+	Tcl_Obj * objPtr;
+	if (nextArgObj > lastArgObj) {
+	    objPtr = lastDefPtr->value.objPtr;	/* take default */
+	} else {
+	    objPtr = *(lastArgObj--);
+	}
+	if (objPtr == NULL) Tcl_Panic("oops RHS!");
+	lastVarPtr->value.objPtr = objPtr;
+	lastVarPtr->flags = 0;
+	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
+	// printf("Assigned opt RHS 1\n"); fflush(stdout);
+
+	--lastVarPtr; --lastDefPtr;
+    }
+    /*
+     * Args?
+     */
+    if (nextVarPtr < lastVarPtr) {
+	Tcl_Panic("nextVarPtr < lastVarPtr!\n");
+    }
+    if (nextVarPtr == lastVarPtr) {
+	if (!(nextDefPtr->flags & VAR_IS_ARGS)) {
 	    goto incorrectArgs;
 	}
-	varPtr->flags = 0;
-	varPtr->value.objPtr = objPtr;
-	Tcl_IncrRefCount(objPtr);	/* Local var reference. */
-    }
-
-    /*
-     * When we get here, the last formal argument remains to be defined:
-     * defPtr and varPtr point to the last argument to be initialized.
-     */
-
-    varPtr->flags = 0;
-    if (defPtr && defPtr->flags & VAR_IS_ARGS) {
-	Tcl_Obj *listPtr = Tcl_NewListObj(argCt-i, argObjs+i);
-
-	varPtr->value.objPtr = listPtr;
+	Tcl_Obj *listPtr = Tcl_NewListObj(1+lastArgObj-nextArgObj, nextArgObj);
+	nextVarPtr->value.objPtr = listPtr;
+	nextVarPtr->flags = 0;
 	Tcl_IncrRefCount(listPtr);	/* Local var is a reference. */
-    } else if (argCt == numArgs) {
-	Tcl_Obj *objPtr = argObjs[i];
-
-	varPtr->value.objPtr = objPtr;
-	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
-    } else if ((argCt < numArgs) && defPtr && defPtr->value.objPtr) {
-	Tcl_Obj *objPtr = defPtr->value.objPtr;
-
-	varPtr->value.objPtr = objPtr;
-	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
     } else {
-	goto incorrectArgs;
+	if (nextArgObj <= lastArgObj) {
+	    goto incorrectArgs;
+	}
     }
-    varPtr++;
 
     /*
      * Initialise and resolve the remaining compiledLocals. In the absence of
@@ -1509,14 +1575,24 @@ InitArgsAndLocals(
      */
 
   correctArgs:
-    if (numArgs < localCt) {
+    if (numArgs < numLocals) {
 	if (!framePtr->nsPtr->compiledVarResProc
 		&& !((Interp *)interp)->resolverPtr) {
-	    memset(varPtr, 0, (localCt - numArgs)*sizeof(Var));
+	    // printf("Zeroing %d Vars at localVarPtr = %p (%tx)\n", numLocals - numArgs, localVarPtr, localVarPtr - framePtr->compiledLocals); fflush(stdout);
+	    memset(localVarPtr, 0, (numLocals - numArgs)*sizeof(Var));
 	} else {
-	    InitResolvedLocals(interp, codePtr, varPtr, framePtr->nsPtr);
+	    // printf("calling InitResolvedLocals with localVarPtr = %p (%tx)\n", localVarPtr, localVarPtr - framePtr->compiledLocals); fflush(stdout);
+	    InitResolvedLocals(interp, codePtr, localVarPtr, framePtr->nsPtr);
 	}
     }
+//    do {
+//	int n = ((Interp *)interp)->varFramePtr->numCompiledLocals;
+//	Var * vs = ((Interp *)interp)->varFramePtr->compiledLocals;
+//	int i = 0;
+//	for(i=0; i<n; ++i) {
+//	    printf("compiledLocals[%d] = %p\n", i, vs[i].value.objPtr); fflush(stdout);
+//	}
+ //   } while (0);
 
     return TCL_OK;
 
@@ -1525,12 +1601,17 @@ InitArgsAndLocals(
      */
 
   incorrectArgs:
+    // printf("incorrectArgs for %s (numArgs = %d, argCt = %d, numLocals = %d)\n", Tcl_GetStringFromObj(procNameObj, NULL), numArgs, argCt, numLocals); fflush(stdout);
     if ((skip != 1) &&
 	    TclInitRewriteEnsemble(interp, skip-1, 0, framePtr->objv)) {
 	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
-    memset(varPtr, 0,
-	    ((framePtr->compiledLocals + localCt)-varPtr) * sizeof(Var));
+    /*
+     * Ensure all un-assigned vars are zeroed
+     */
+    // printf("memset(%p, %d * sizeof(Var))\n", nextVarPtr, ((framePtr->compiledLocals + numLocals)-nextVarPtr)); fflush(stdout);
+    memset(nextVarPtr, 0,
+	    ((framePtr->compiledLocals + numLocals)-nextVarPtr) * sizeof(Var));
     return ProcWrongNumArgs(interp, skip);
 }
 
