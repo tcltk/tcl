@@ -6650,8 +6650,10 @@ fi
     PLAT_OBJS=""
     PLAT_SRCS=""
     LDAIX_SRC=""
-    if test x"${SHLIB_VERSION}" = x; then
-  SHLIB_VERSION="1.0"
+    if test "x${SHLIB_VERSION}" = x; then
+  SHLIB_VERSION=".1.0"
+else
+  SHLIB_VERSION=".${SHLIB_VERSION}"
 fi
 
     case $system in
@@ -7533,7 +7535,7 @@ fi
 fi
 
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
+	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so${SHLIB_VERSION}'
 	    LDFLAGS="-Wl,-export-dynamic"
 	    CFLAGS_OPTIMIZE="-O2"
 	    if test "${TCL_THREADS}" = "1"; then
@@ -8274,7 +8276,7 @@ fi
 	    # requires an extra version number at the end of .so file names.
 	    # So, the library has to have a name like libtcl75.so.1.0
 
-	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
+	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so${SHLIB_VERSION}'
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
