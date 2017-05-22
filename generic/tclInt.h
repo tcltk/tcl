@@ -4711,9 +4711,9 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #define TclSmallFreeEx(interp, memPtr) \
     do {								\
 	Tcl_Obj *_objPtr = (Tcl_Obj *) memPtr;				\
-	objPtr->bytes = NULL;						\
-	objPtr->typePtr = NULL;						\
-	objPtr->refCount = 1;						\
+	_objPtr->bytes = NULL;						\
+	_objPtr->typePtr = NULL;					\
+	_objPtr->refCount = 1;						\
 	TclDecrRefCount(_objPtr);					\
     } while (0)
 #endif   /* TCL_MEM_DEBUG */
