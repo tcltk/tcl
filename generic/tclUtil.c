@@ -2028,7 +2028,7 @@ matchLoop:
                         goto matchFail;
                     }
                     if (*pattern == '\0') {
-                        return 0;	/* Illegal pattern! (incomplete [..) */
+                        return 0;       /* Illegal pattern! (incomplete [..) */
                     }
                     if (UCHAR(*pattern) < 0x80) {
                         pch = (Tcl_UniChar)
@@ -2089,7 +2089,7 @@ matchLoop:
                  */
                 while (*pattern != ']') {
                     if (*pattern == '\0') {
-                        return 0;	/* Illegal pattern! (incomplete [..) */
+                        return 0;       /* Illegal pattern! (incomplete [..) */
                     }
                     pattern++;
                 }
@@ -2099,7 +2099,7 @@ matchLoop:
             case '\\':
                 ++pattern;
                 if (*pattern == '\0') {
-                    return 0;		/* Illegal pattern! (lone \ at end) */
+                    return 0;           /* Illegal pattern! (lone \ at end) */
                 }
                 goto matchLiteral;
 
