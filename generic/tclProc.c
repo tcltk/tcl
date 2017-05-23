@@ -50,6 +50,10 @@ static void		MakeProcError(Tcl_Interp *interp,
 static void		MakeLambdaError(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static int		ProcAddNamedGroupEntry(Tcl_Interp *interp,
+			    CompiledLocal *localPtr, const char *argName,
+			    Tcl_Obj *valuePtr, NamedGroupEntry **lastEntryPtr,
+			    Tcl_HashTable **namedHashPtrPtr);
 static int		ProcParseArgSpec(Tcl_Interp *interp,
 			    const char *argSpec, int argIdx, int isLastArg,
 			    CompiledLocal **localPtrPtr,
@@ -585,7 +589,44 @@ TclCreateProc(
 
 	    if (TclIsVarWithExtArgs(newLocalPtr)) {
 		procPtr->flags |= PROC_HAS_EXT_ARG_SPEC;
+		if (newLocalPtr->flags & VAR_NAMED_GROUP) {
+		    procPtr->flags |= PROC_HAS_NAMED_GROUP;
+		}
 	    }
+	}
+    }
+
+    if ((procPtr->flags & PROC_HAS_NAMED_GROUP)
+	    && !(procPtr->lastLocalPtr->flags & (VAR_IS_ARGS|VAR_ARG_OPTIONAL))
+	    && (procPtr->lastLocalPtr->defValuePtr == NULL)) {
+
+	/* proc with at least one named group and a non-optional and non-args
+	 * last variable. Find and store the number of arguments after the
+	 * last named group, this will be used to end the named group handling
+	 * and ensure the last input arguments can be assigned.
+	 */
+
+	CompiledLocal *lastNamedGroupPtr = NULL;
+	for (localPtr = procPtr->firstLocalPtr; localPtr != NULL;
+		localPtr = localPtr->nextPtr) {
+	    if ((localPtr->argSpecPtr != NULL)
+		    && (localPtr->argSpecPtr->namedHashTable != NULL)) {
+		lastNamedGroupPtr = localPtr;
+	    }
+	}
+
+	/* find last entry of the named group */
+	for (localPtr = lastNamedGroupPtr; localPtr != NULL;
+		localPtr = localPtr->nextPtr) {
+	    if ((localPtr->nextPtr == NULL)
+		    || !(localPtr->nextPtr->flags & VAR_NAMED_GROUP)) {
+		break;
+	    }
+	}
+
+	if (localPtr != NULL) {
+	    lastNamedGroupPtr->argSpecPtr->remainAfterNamedGroup =
+		procPtr->lastLocalPtr->frameIndex - localPtr->frameIndex;
 	}
     }
 
@@ -675,7 +716,9 @@ ProcCheckScalarArg(
  *	If anything goes wrong, this function returns an error message in the
  *	interpreter. On success, memory is allocated and linked into the
  *	ExtendedArgSpec structure. A Tcl_HashTable is allocated when
- *	parsing the first entry of a named group entry.
+ *	parsing the first entry of a named group entry. The variable pointed
+ *	by lastEntryPtr will be updated to always contain the pointer
+ *	of the last entry.
  *
  *----------------------------------------------------------------------
  */
@@ -687,6 +730,9 @@ ProcAddNamedGroupEntry(
     const char *argName,	/* Name string to add */
     Tcl_Obj *valuePtr,		/* Value to add when related to a -switch
 				 * argspec (NULL for -name argspec) */
+    NamedGroupEntry **lastEntryPtr,
+				/* Pointer to a variable which contain the current
+				 * last named entry for this local. */
     Tcl_HashTable **namedHashPtrPtr)
 				/* Shared Tcl_HashTable created on the first
 				 * named parameter entry to speedup lookups
@@ -734,9 +780,9 @@ ProcAddNamedGroupEntry(
     if (argSpecPtr->firstNamedEntryPtr == NULL) {
 	argSpecPtr->firstNamedEntryPtr = entryPtr;
     } else {
-	argSpecPtr->lastNamedEntryPtr->nextPtr = entryPtr;
+	(*lastEntryPtr)->nextPtr = entryPtr;
     }
-    argSpecPtr->lastNamedEntryPtr = entryPtr;
+    *lastEntryPtr = entryPtr;
 
     /* Either use existing hash table or create a new one */
 
@@ -799,6 +845,7 @@ ProcParseArgSpec(
 {
     CompiledLocal *localPtr = NULL;
     ExtendedArgSpec *argSpecPtr;
+    NamedGroupEntry *lastNamedEntryPtr = NULL;
     const char **fieldValues = NULL;
     int fieldCount, length;
     const char *err;
@@ -873,8 +920,8 @@ ProcParseArgSpec(
 
     argSpecPtr = ckalloc(sizeof(ExtendedArgSpec));
     argSpecPtr->firstNamedEntryPtr = NULL;
-    argSpecPtr->lastNamedEntryPtr = NULL;
     argSpecPtr->namedHashTable = NULL;
+    argSpecPtr->remainAfterNamedGroup = -1;
     argSpecPtr->upvarLevelPtr = NULL;
     localPtr->argSpecPtr = argSpecPtr;
 
@@ -921,7 +968,7 @@ ProcParseArgSpec(
 
 	    for (j = 0; j < nameCount; j++) {
 		result = ProcAddNamedGroupEntry(interp, localPtr,
-		    nameValues[j], NULL, namedHashPtrPtr);
+		    nameValues[j], NULL, &lastNamedEntryPtr, namedHashPtrPtr);
 		if (result != TCL_OK) {
 		    ckfree(nameValues);
 		    goto parseError;
@@ -959,12 +1006,12 @@ ProcParseArgSpec(
 		    /* one field, use switch name as value */
 		    result = ProcAddNamedGroupEntry(interp, localPtr,
 			swEntValues[0], Tcl_NewStringObj(swEntValues[0], -1),
-			namedHashPtrPtr);
+			&lastNamedEntryPtr, namedHashPtrPtr);
 		} else if (swEntCount == 2) {
 		    /* two fields, use second one as value */
 		    result = ProcAddNamedGroupEntry(interp, localPtr,
 			swEntValues[0], Tcl_NewStringObj(swEntValues[1], -1),
-			namedHashPtrPtr);
+			&lastNamedEntryPtr, namedHashPtrPtr);
 		} else {
 		    /* invalid number of fields */
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2064,10 +2111,13 @@ InitArgsWithOptions(
 
 	    for (; iArg < argCt; iArg++) {
 
-		if ((argObjs[iArg]->typePtr == &tclListType)
-			&& (ListRepPtr(argObjs[iArg])->elemCount > 1)) {
-		    /* multiple-elements list, end named group before getting
-		     * string representation. */
+		if ((localPtr->argSpecPtr != NULL)
+			&& (localPtr->argSpecPtr->remainAfterNamedGroup > 0)
+			&& ((argCt - iArg) <=
+			    localPtr->argSpecPtr->remainAfterNamedGroup)) {
+		    /* Remaining arguments must be assigned to remaining
+		     * positional locals after named group, end handling
+		     */
 		    break;
 		}
 

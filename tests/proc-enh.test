@@ -180,13 +180,13 @@ test proc-enh-2.14 {correct usage: named arg without required is optionnal} {
     };
     list [p] [p -A 2]
 } {unset 2}
-test proc-enh-2.15 {correct usage: multi-elems list must not be handled as a named name} {
-    proc p {{a -name A -default 0} b} {
-	list $a $b
+test proc-enh-2.15 {correct usage: fixed number of arguments after named group, automatically ended} {
+    proc p {{a -name A -default 0} {b -name B -default 0} c} {
+	list $a $b $c
     };
     set l [list -Z 1]
-    p $l
-} {0 {-Z 1}}
+    list [p -2] [p -A 1 -5] [p -- -3] [p --]
+} {{0 0 -2} {1 0 -5} {0 0 -3} {0 0 --}}
 
 # proc-enh-3.x: wrong # args
 test proc-enh-3.1 {wrong # args: -name arg without value} {

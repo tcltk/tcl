@@ -151,15 +151,27 @@ Named argument are arguments defined using the \fB-name\fR or \fB-switch\fR
 extended argument specifiers. They have a special handling on call-site.
 All contiguous named arguments, called named group, are handled together,
 they are not required to be declared in order, can be omited or declared
-multiple times. The handling of a named group is started when previous
-formal arguments have been assigned.
+multiple times.
+.PP
+The handling of a named group is started when previous formal arguments have
+been assigned.
 Each named parameter uses a string starting with a dash character, followed
 by the name of the related argument. If it is not a switch argument, it is
-followed by the value to assign to the formal argument. The handling of
-a named group is ended if the next parameter is a multiple-elements list,
-does not start with a dash or is the special \fB--\fR keyword. Remaining
-parameters, except the \fB--\fR keyword if used, are then assigned to
+followed by the value to assign to the formal argument.
+.PP
+The handling of
+a named group is ended if the next parameter does not start with a dash or is
+the special \fB--\fR keyword. In the case where the arguments after the named
+group are all non-optional positional arguments and do not end with \fBargs\fR,
+the handling of the named group will also be ended when the number of remaining
+parameters will be equal to the number of the remaining positional arguments.
+When the handling of named argument has been ended, remaining parameters,
+except the \fB--\fR keyword if used, are then assigned to
 following positional arguments using the default handling.
+.PP
+It is recommended to explicitely use the \fB--\fR keyword if the next parameter
+following the named group is a variable which may start with a dash, or if it
+is an object which can be expensive to stringify.
 .VE
 .SH EXAMPLES
 .PP
@@ -221,11 +233,6 @@ be left unset in the procedure.
   array set levels {0 DEBUG 1 INFO 2 WARN 3 ERROR}
   puts "[clock format $time] : $levels($level) : $message"
 }
-
-% log -level 2 "Warning..."
-Sun Apr 23 20:29:41 UTC 2017 : WARN : Warning...
-% log -timestamp 946684800 -debug -- -Y2K-
-Sat Jan 01 00:00:00 UTC 2000 : DEBUG : -Y2K-
 .CE
 .SH "SEE ALSO"
 info(n), unknown(n)

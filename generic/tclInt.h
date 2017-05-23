@@ -947,15 +947,17 @@ typedef struct NamedGroupEntry {
 typedef struct ExtendedArgSpec {
     struct NamedGroupEntry *firstNamedEntryPtr;
 				/* Pointer to the first named parameter entry
-				 * defined on the proc argument. */
-    struct NamedGroupEntry *lastNamedEntryPtr;
-				/* Pointer to the last named parameter entry
-				 * defined on the proc argument. */
+				 * defined on this proc argument. */
     Tcl_HashTable *namedHashTable;
 				/* Pointer to the hash table created for a
 				 * fast lookup of named entry. The pointer is
 				 * only set on the first local of a named
 				 * group. */
+    int remainAfterNamedGroup;	/* If the number of arguments after a named
+				 * group is fixed and non-optional, this will
+				 * contain that number. Otherwise, will be set
+				 * to -1. This is only set on the first local
+				 * of a named group. */
     Tcl_Obj *upvarLevelPtr;	/* Pointer to the level value specified using
 				 * the -upvar specifier. */
 } ExtendedArgSpec;
@@ -1050,9 +1052,12 @@ typedef struct Proc {
  * PROC_HAS_EXT_ARG_SPEC	1 means that the procedure has at least one
  *				argument defined using an extended argument
  *				specification.
+ * PROC_HAS_NAMED_GROUP		1 means that the procedure has at least one
+ *				named group.
  */
 
 #define PROC_HAS_EXT_ARG_SPEC   0x01
+#define PROC_HAS_NAMED_GROUP    0x02
 
 /*
  * The type of functions called to process errors found during the execution
