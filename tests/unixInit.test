@@ -15,6 +15,9 @@ namespace import ::tcltest::*
 unset -nocomplain path
 catch {set oldlang $env(LANG)}
 set env(LANG) C
+
+# Some tests require the testgetencpath command
+testConstraint testgetencpath [llength [info commands testgetencpath]]
 
 test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unix stdio} {
     set x {}
@@ -87,13 +90,15 @@ test unixInit-1.2 {initialisation: standard channel type deduction} {unix stdio}
 
 skip [concat [skip] unixInit-2.*]
 
-test unixInit-2.0 {TclpInitLibraryPath: setting tclDefaultEncodingDir} {
-    set origDir [testgetdefenc]
-    testsetdefenc slappy
-    set path [testgetdefenc]
-    testsetdefenc $origDir
+test unixInit-2.0 {TclpInitLibraryPath: setting tclDefaultEncodingDir} -constraints {
+    testgetencpath
+} -body {
+    set origPath [testgetencpath]
+    testsetencpath slappy
+    set path [testgetencpath]
+    testsetencpath $origPath
     set path
-} {slappy}
+} -result {slappy}
 test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} -setup {
     unset -nocomplain oldlibrary
     if {[info exists env(TCL_LIBRARY)]} {
