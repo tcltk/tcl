@@ -67,7 +67,7 @@ Tcl_InitStubs(
 
     if (!stubsPtr || (stubsPtr->magic != (((exact&0xff00) >= 0x900) ? magic : TCL_STUB_MAGIC))) {
 	iPtr->result = (char *)"interpreter uses an incompatible stubs mechanism";
-	iPtr->freeProc = TCL_STATIC;
+	iPtr->freeProc = 0;
 	return NULL;
     }
 
@@ -101,12 +101,16 @@ Tcl_InitStubs(
 	    }
 	}
     }
-    tclStubsPtr = (TclStubs *)pkgData;
+    if (((exact&0xff00) < 0x900)) {
+	/* We are running Tcl 8.x */
+	stubsPtr = (TclStubs *)pkgData;
+    }
+    tclStubsPtr = stubsPtr;
 
-    if (tclStubsPtr->hooks) {
-	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
-	tclIntStubsPtr = tclStubsPtr->hooks->tclIntStubs;
-	tclIntPlatStubsPtr = tclStubsPtr->hooks->tclIntPlatStubs;
+    if (stubsPtr->hooks) {
+	tclPlatStubsPtr = stubsPtr->hooks->tclPlatStubs;
+	tclIntStubsPtr = stubsPtr->hooks->tclIntStubs;
+	tclIntPlatStubsPtr = stubsPtr->hooks->tclIntPlatStubs;
     } else {
 	tclPlatStubsPtr = NULL;
 	tclIntStubsPtr = NULL;

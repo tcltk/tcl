@@ -57,7 +57,7 @@ typedef struct FilesystemRecord {
  * this information each time the corresponding epoch counter changes.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     int initialized;
     size_t cwdPathEpoch;
     size_t filesystemEpoch;
@@ -611,6 +611,7 @@ FsRecacheFilesystemList(void)
 
     while (toFree) {
 	FilesystemRecord *next = toFree->nextPtr;
+
 	toFree->fsPtr = NULL;
 	ckfree(toFree);
 	toFree = next;
@@ -638,8 +639,8 @@ FsGetFirstFilesystem(void)
 }
 
 /*
- * The epoch can be changed both by filesystems being added or removed and by
- * env(HOME) changing.
+ * The epoch can be changed by filesystems being added or removed, by changing
+ * the "system encoding" and by env(HOME) changing.
  */
 
 int
@@ -672,7 +673,6 @@ TclFSEpoch(void)
 
     return tsdPtr->filesystemEpoch;
 }
-
 
 /*
  * If non-NULL, clientData is owned by us and must be freed later.
@@ -784,7 +784,9 @@ TclFinalizeFilesystem(void)
     while (fsRecPtr != NULL) {
 	FilesystemRecord *tmpFsRecPtr = fsRecPtr->nextPtr;
 
-	/* The native filesystem is static, so we don't free it. */
+	/*
+	 * The native filesystem is static, so we don't free it.
+	 */
 
 	if (fsRecPtr != &nativeFilesystemRecord) {
 	    ckfree(fsRecPtr);
@@ -947,7 +949,7 @@ Tcl_FSRegister(
 
 int
 Tcl_FSUnregister(
-    const Tcl_Filesystem *fsPtr)	/* The filesystem record to remove. */
+    const Tcl_Filesystem *fsPtr)/* The filesystem record to remove. */
 {
     int retVal = TCL_ERROR;
     FilesystemRecord *fsRecPtr;
@@ -1233,7 +1235,7 @@ FsAddMountsToGlobResult(
 
 		    len--;
 		}
-		len++; /* account for '/' in the mElt [Bug 1602539] */
+		len++;		/* account for '/' in the mElt [Bug 1602539] */
 		mElt = TclNewFSPathObj(pathPtr, mount + len, mlen - len);
 		Tcl_ListObjAppendElement(NULL, resultPtr, mElt);
 	    }
@@ -1403,7 +1405,7 @@ TclFSNormalizeToUniquePath(
      * Call each of the "normalise path" functions in succession. This is a
      * special case, in which if we have a native filesystem handler, we call
      * it first. This is because the root of Tcl's filesystem is always a
-     * native filesystem (i.e. '/' on unix is native).
+     * native filesystem (i.e., '/' on unix is native).
      */
 
     firstFsRecPtr = FsGetFirstFilesystem();
@@ -1525,7 +1527,7 @@ TclGetOpenModeEx(
 #define RW_MODES (O_RDONLY|O_WRONLY|O_RDWR)
 
     /*
-     * Check for the simpler fopen-like access modes (e.g. "r"). They are
+     * Check for the simpler fopen-like access modes (e.g., "r"). They are
      * distinguished from the POSIX access modes by the presence of a
      * lower-case first letter.
      */
@@ -1890,6 +1892,7 @@ TclNREvalFile(
 		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
+    TclPkgFileSeen(interp, Tcl_GetString(pathPtr));
 
     /*
      * The eofchar is \32 (^Z). This is the usual on Windows, but we effect
@@ -2670,6 +2673,7 @@ Tcl_FSGetCwd(
 		fsRecPtr = fsRecPtr->nextPtr) {
 	    ClientData retCd;
 	    TclFSGetCwdProc2 *proc2;
+
 	    if (fsRecPtr->fsPtr->getCwdProc == NULL) {
 		continue;
 	    }
@@ -3142,8 +3146,8 @@ Tcl_FSLoadFile(
  * Workaround for issue with modern HPUX which do allow the unlink (no ETXTBSY
  * error) yet somehow trash some internal data structures which prevents the
  * second and further shared libraries from getting properly loaded. Only the
- * first is ok. We try to get around the issue by not unlinking,
- * i.e. emulating the behaviour of the older HPUX which denied removal.
+ * first is ok. We try to get around the issue by not unlinking, i.e.,
+ * emulating the behaviour of the older HPUX which denied removal.
  *
  * Doing the unlink is also an issue within docker containers, whose AUFS
  * bungles this as well, see
@@ -3161,28 +3165,30 @@ Tcl_FSLoadFile(
  */
 
 int
-TclSkipUnlink (Tcl_Obj* shlibFile)
+TclSkipUnlink(
+    Tcl_Obj *shlibFile)
 {
-    /* Order of testing:
+    /*
+     * Order of testing:
      * 1. On hpux we generally want to skip unlink in general
      *
      * Outside of hpux then:
-     * 2. For a general user request   (TCL_TEMPLOAD_NO_UNLINK present, non-empty, => int)
+     * 2. For a general user request   (TCL_TEMPLOAD_NO_UNLINK present,
+     *					non-empty, => int)
      * 3. For general AUFS environment (statfs, if available).
      *
      * Ad 2: This variable can disable/override the AUFS detection, i.e. for
-     * testing if a newer AUFS does not have the bug any more.
+     *	     testing if a newer AUFS does not have the bug any more.
      *
-     * Ad 3: This is conditionally compiled in. Condition currently must be set manually.
-     *       This part needs proper tests in the configure(.in).
+     * Ad 3: This is conditionally compiled in. Condition currently must be
+     *	     set manually. This part needs proper tests in the configure(.in).
      */
 
 #ifdef hpux
     return 1;
 #else
-    char* skipstr;
+    char *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
 
-    skipstr = getenv ("TCL_TEMPLOAD_NO_UNLINK");
     if (skipstr && (skipstr[0] != '\0')) {
 	return atoi(skipstr);
     }
@@ -3191,7 +3197,8 @@ TclSkipUnlink (Tcl_Obj* shlibFile)
 #ifndef NO_FSTATFS
     {
 	struct statfs fs;
-	/* Have fstatfs. May not have the AUFS super magic ... Indeed our build
+	/*
+	 * Have fstatfs. May not have the AUFS super magic ... Indeed our build
 	 * box is too old to have it directly in the headers. Define taken from
 	 *     http://mooon.googlecode.com/svn/trunk/linux_include/linux/aufs_type.h
 	 *     http://aufs.sourceforge.net/
@@ -3208,8 +3215,10 @@ TclSkipUnlink (Tcl_Obj* shlibFile)
 #endif /* ... NO_FSTATFS */
 #endif /* ... TCL_TEMPLOAD_NO_UNLINK */
 
-    /* Fallback: !hpux, no EV override, no AUFS (detection, nor detected):
-     * Don't skip */
+    /*
+     * Fallback: !hpux, no EV override, no AUFS (detection, nor detected):
+     * Don't skip
+     */
     return 0;
 #endif /* hpux */
 }
@@ -3414,9 +3423,8 @@ Tcl_LoadFile(
      * avoids any worries about leaving the copy laying around on exit.
      */
 
-    if (
-	!TclSkipUnlink (copyToPtr) &&
-	(Tcl_FSDeleteFile(copyToPtr) == TCL_OK)) {
+    if (!TclSkipUnlink(copyToPtr) &&
+	    (Tcl_FSDeleteFile(copyToPtr) == TCL_OK)) {
 	Tcl_DecrRefCount(copyToPtr);
 
 	/*

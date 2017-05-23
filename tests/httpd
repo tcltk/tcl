@@ -11,7 +11,12 @@
 #set httpLog 1
 
 proc httpd_init {{port 8015}} {
-    socket -server httpdAccept $port
+    set s [socket -server httpdAccept $port]
+    # Save the actual port number in a global variable.
+    # This is important when we're called with port 0
+    # for picking an unused port at random.
+    set ::port [lindex [chan configure $s -sockname] 2]
+    return $s
 }
 proc httpd_log {args} {
     global httpLog
@@ -170,6 +175,10 @@ proc httpdRespond { sock } {
 	*binary* {
 	    set html "$bindata[info hostname]:$port$data(url)"
 	    set type application/octet-stream
+	}
+	*xml* {
+	    set html [encoding convertto utf-8 "<test>\u1234</test>"]
+	    set type "application/xml;charset=UTF-8"
 	}
 	*post* {
 	    set html "Got [string length $data(query)] bytes"

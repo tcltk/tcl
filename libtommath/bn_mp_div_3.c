@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_DIV_3_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /* divide by three (based on routine from MPI and the GMP manual) */
@@ -73,3 +73,7 @@ mp_div_3 (mp_int * a, mp_int *c, mp_digit * d)
 }
 
 #endif
+
+/* $Source$ */
+/* $Revision$ */
+/* $Date$ */

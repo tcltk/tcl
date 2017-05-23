@@ -4890,8 +4890,8 @@ if ${tcl_cv_sys_version+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	if test -f /usr/lib/NextStep/software_version; then
-	    tcl_cv_sys_version=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
+	if test "${TEA_PLATFORM}" = "windows" ; then
+	    tcl_cv_sys_version=windows
 	else
 	    tcl_cv_sys_version=`uname -s`-`uname -r`
 	    if test "$?" -ne 0 ; then
@@ -4899,12 +4899,6 @@ else
 $as_echo "$as_me: WARNING: can't find uname command" >&2;}
 		tcl_cv_sys_version=unknown
 	    else
-		# Special check for weird MP-RAS system (uname returns weird
-		# results, and the version is kept in special file).
-
-		if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
-		    tcl_cv_sys_version=MP-RAS-`awk '{print $3}' /etc/.relid`
-		fi
 		if test "`uname -s`" = "AIX" ; then
 		    tcl_cv_sys_version=AIX-`uname -v`.`uname -r`
 		fi
@@ -4985,7 +4979,7 @@ fi
     if test "$GCC" = yes; then :
 
 	CFLAGS_OPTIMIZE=-O2
-	CFLAGS_WARNING="-Wall -Wsign-compare -Wdeclaration-after-statement"
+	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement"
 
 else
 
@@ -5090,8 +5084,10 @@ fi
     PLAT_OBJS=""
     PLAT_SRCS=""
     LDAIX_SRC=""
-    if test x"${SHLIB_VERSION}" = x; then :
-  SHLIB_VERSION="1.0"
+    if test "x${SHLIB_VERSION}" = x; then :
+  SHLIB_VERSION=".1.0"
+else
+  SHLIB_VERSION=".${SHLIB_VERSION}"
 fi
     case $system in
 	AIX-*)
@@ -5302,9 +5298,9 @@ $as_echo "$ac_cv_cygwin" >&6; }
 	    fi
 	    do64bit_ok=yes
 	    if test "x${SHARED_BUILD}" = "x1"; then
-		echo "running cd ${TCL_SRC_DIR}/win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
+		echo "running cd ../win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
 		# The eval makes quoting arguments work.
-		if cd ${TCL_SRC_DIR}/win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
+		if cd ../win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
 		then :
 		else
 		    { echo "configure: error: configure failed for ../win" 1>&2; exit 1; }
@@ -5724,70 +5720,28 @@ fi
 		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 fi
 	    ;;
-	MP-RAS-02*)
-	    SHLIB_CFLAGS="-K PIC"
-	    SHLIB_LD='${CC} -G'
-	    SHLIB_LD_LIBS=""
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS="-ldl"
-	    CC_SEARCH_FLAGS=""
-	    LD_SEARCH_FLAGS=""
-	    ;;
-	MP-RAS-*)
-	    SHLIB_CFLAGS="-K PIC"
-	    SHLIB_LD='${CC} -G'
-	    SHLIB_LD_LIBS=""
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS="-ldl"
-	    LDFLAGS="$LDFLAGS -Wl,-Bexport"
-	    CC_SEARCH_FLAGS=""
-	    LD_SEARCH_FLAGS=""
-	    ;;
 	OpenBSD-*)
 	    arch=`arch -s`
 	    case "$arch" in
-	    vax)
-		# Equivalent using configure option --disable-load
-		# Step 4 will set the necessary variables
-		DL_OBJS=""
-		SHLIB_LD_LIBS=""
-		LDFLAGS=""
+	    alpha|sparc64)
+		SHLIB_CFLAGS="-fPIC"
 		;;
 	    *)
-		case "$arch" in
-		alpha|sparc|sparc64)
-		    SHLIB_CFLAGS="-fPIC"
-		    ;;
-		*)
-		    SHLIB_CFLAGS="-fpic"
-		    ;;
-		esac
-		SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
-		SHLIB_SUFFIX=".so"
-		DL_OBJS="tclLoadDl.o"
-		DL_LIBS=""
-		if test $doRpath = yes; then :
+		SHLIB_CFLAGS="-fpic"
+		;;
+	    esac
+	    SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
+	    SHLIB_SUFFIX=".so"
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS=""
+	    if test $doRpath = yes; then :
 
-		    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 fi
-		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
-		LDFLAGS="-Wl,-export-dynamic"
-		;;
-	    esac
-	    case "$arch" in
-	    vax)
-		CFLAGS_OPTIMIZE="-O1"
-		;;
-	    sh)
-		CFLAGS_OPTIMIZE="-O0"
-		;;
-	    *)
-		CFLAGS_OPTIMIZE="-O2"
-		;;
-	    esac
+	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
+	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
+	    LDFLAGS="-Wl,-export-dynamic"
+	    CFLAGS_OPTIMIZE="-O2"
 	    if test "${TCL_THREADS}" = "1"; then :
 
 		# On OpenBSD:	Compile with -pthread
@@ -6170,51 +6124,12 @@ fi
 
 fi
 	    ;;
-	NEXTSTEP-*)
-	    SHLIB_CFLAGS=""
-	    SHLIB_LD='${CC} -nostdlib -r'
-	    SHLIB_LD_LIBS=""
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadNext.o"
-	    DL_LIBS=""
-	    CC_SEARCH_FLAGS=""
-	    LD_SEARCH_FLAGS=""
-	    ;;
 	OS/390-*)
 	    SHLIB_LD_LIBS=""
 	    CFLAGS_OPTIMIZE=""		# Optimizer is buggy
 
 $as_echo "#define _OE_SOCKETS 1" >>confdefs.h
 
-	    ;;
-	OSF1-1.0|OSF1-1.1|OSF1-1.2)
-	    # OSF/1 1.[012] from OSF, and derivatives, including Paragon OSF/1
-	    SHLIB_CFLAGS=""
-	    # Hack: make package name same as library name
-	    SHLIB_LD='ld -R -export :'
-	    SHLIB_LD_LIBS=""
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadOSF.o"
-	    DL_LIBS=""
-	    CC_SEARCH_FLAGS=""
-	    LD_SEARCH_FLAGS=""
-	    ;;
-	OSF1-1.*)
-	    # OSF/1 1.3 from OSF using ELF, and derivatives, including AD2
-	    SHLIB_CFLAGS="-fPIC"
-	    if test "$SHARED_BUILD" = 1; then :
-  SHLIB_LD="ld -shared"
-else
-
-	        SHLIB_LD="ld -non_shared"
-
-fi
-	    SHLIB_LD_LIBS=""
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS=""
-	    CC_SEARCH_FLAGS=""
-	    LD_SEARCH_FLAGS=""
 	    ;;
 	OSF1-V*)
 	    # Digital OSF/1
@@ -6296,35 +6211,6 @@ fi
 	    DL_LIBS=""
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
-	    ;;
-	SINIX*5.4*)
-	    SHLIB_CFLAGS="-K PIC"
-	    SHLIB_LD='${CC} -G'
-	    SHLIB_LD_LIBS=""
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS="-ldl"
-	    CC_SEARCH_FLAGS=""
-	    LD_SEARCH_FLAGS=""
-	    ;;
-	SunOS-4*)
-	    SHLIB_CFLAGS="-PIC"
-	    SHLIB_LD="ld"
-	    SHLIB_LD_LIBS=""
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS="-ldl"
-	    CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
-	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-
-	    # SunOS can't handle version numbers with dots in them in library
-	    # specs, like -ltcl7.5, so use -ltcl75 instead.  Also, it
-	    # requires an extra version number at the end of .so file names.
-	    # So, the library has to have a name like libtcl75.so.1.0
-
-	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
-	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
 	SunOS-5.[0-6])
 	    # Careful to not let 5.10+ fall into this case
@@ -6855,9 +6741,6 @@ $as_echo "enabled $tcl_ok debugging" >&6; }
 	fi
     fi
 
-
-
-$as_echo "#define TCL_TOMMATH 1" >>confdefs.h
 
 
 $as_echo "#define MP_PREC 4" >>confdefs.h
@@ -8442,6 +8325,84 @@ $as_echo "#define NO_FD_SET 1" >>confdefs.h
 
 fi
 
+#------------------------------------------------------------------------
+#	Options for the notifier. Checks for epoll(7) on Linux, and
+#	kqueue(2) on {DragonFly,Free,Net,Open}BSD
+#------------------------------------------------------------------------
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for advanced notifier support" >&5
+$as_echo_n "checking for advanced notifier support... " >&6; }
+case x`uname -s` in
+  xLinux)
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: epoll(7)" >&5
+$as_echo "epoll(7)" >&6; }
+	for ac_header in sys/epoll.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "sys/epoll.h" "ac_cv_header_sys_epoll_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_epoll_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_SYS_EPOLL_H 1
+_ACEOF
+
+$as_echo "#define NOTIFIER_EPOLL 1" >>confdefs.h
+
+fi
+
+done
+
+	for ac_header in sys/eventfd.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "sys/eventfd.h" "ac_cv_header_sys_eventfd_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_eventfd_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_SYS_EVENTFD_H 1
+_ACEOF
+
+$as_echo "#define HAVE_EVENTFD 1" >>confdefs.h
+
+fi
+
+done
+;;
+  xDragonFlyBSD|xFreeBSD|xNetBSD|xOpenBSD)
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: kqueue(2)" >&5
+$as_echo "kqueue(2)" >&6; }
+	# Messy because we want to check if *all* the headers are present, and not
+	# just *any*
+	tcl_kqueue_headers=x
+	for ac_header in sys/types.h sys/event.h sys/time.h
+do :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ tcl_kqueue_headers=${tcl_kqueue_headers}y
+fi
+
+done
+
+	if test $tcl_kqueue_headers = xyyy; then :
+
+
+$as_echo "#define NOTIFIER_KQUEUE 1" >>confdefs.h
+
+fi;;
+  xDarwin)
+	# Assume that we've got CoreFoundation present (checked elsewhere because
+	# of wider impact).
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: OSX" >&5
+$as_echo "OSX" >&6; };;
+  *)
+	cat >>confdefs.h <<_ACEOF
+#define NOTIFIER_SELECT 1
+_ACEOF
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
+$as_echo "none" >&6; };;
+esac
+
 #------------------------------------------------------------------------------
 #       Find out all about time handling differences.
 #------------------------------------------------------------------------------
@@ -9980,8 +9941,8 @@ if ${tcl_cv_sys_version+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	if test -f /usr/lib/NextStep/software_version; then
-	    tcl_cv_sys_version=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
+	if test "${TEA_PLATFORM}" = "windows" ; then
+	    tcl_cv_sys_version=windows
 	else
 	    tcl_cv_sys_version=`uname -s`-`uname -r`
 	    if test "$?" -ne 0 ; then
@@ -9989,12 +9950,6 @@ else
 $as_echo "$as_me: WARNING: can't find uname command" >&2;}
 		tcl_cv_sys_version=unknown
 	    else
-		# Special check for weird MP-RAS system (uname returns weird
-		# results, and the version is kept in special file).
-
-		if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
-		    tcl_cv_sys_version=MP-RAS-`awk '{print $3}' /etc/.relid`
-		fi
 		if test "`uname -s`" = "AIX" ; then
 		    tcl_cv_sys_version=AIX-`uname -v`.`uname -r`
 		fi

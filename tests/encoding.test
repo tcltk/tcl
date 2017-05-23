@@ -35,7 +35,7 @@ proc runtests {} {
 # Some tests require the testencoding command
 testConstraint testencoding [llength [info commands testencoding]]
 testConstraint exec [llength [info commands exec]]
-testConstraint testgetdefenc [llength [info commands testgetdefenc]]
+testConstraint testgetencpath [llength [info commands testgetencpath]]
 
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
@@ -575,15 +575,15 @@ foreach from {cp932 shiftjis euc-jp iso2022-jp} {
     }
 }
 
-test encoding-26.0 {Tcl_GetDefaultEncodingDir} -constraints {
-    testgetdefenc
+test encoding-26.0 {Tcl_GetEncodingSearchPath} -constraints {
+    testgetencpath
 } -setup {
-    set origDir [testgetdefenc]
-    testsetdefenc slappy
+    set origPath [testgetencpath]
+    testsetencpath slappy
 } -body {
-    testgetdefenc
+    testgetencpath
 } -cleanup {
-    testsetdefenc $origDir
+    testsetencpath $origPath
 } -result slappy
 
 file delete {*}[glob -directory [temporaryDirectory] *.chars *.tcltestout]

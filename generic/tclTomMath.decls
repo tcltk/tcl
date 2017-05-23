@@ -90,7 +90,7 @@ declare 21 {
     int TclBN_mp_init(mp_int *a)
 }
 declare 22 {
-    int TclBN_mp_init_copy(mp_int *a, mp_int *b)
+    int TclBN_mp_init_copy(mp_int *a, const mp_int *b)
 }
 declare 23 {
     int TclBN_mp_init_multi(mp_int *a, ...)
@@ -129,7 +129,7 @@ declare 34 {
     int TclBN_mp_or(mp_int *a, mp_int *b, mp_int *c)
 }
 declare 35 {
-    int TclBN_mp_radix_size(mp_int *a, int radix, int *size)
+    int TclBN_mp_radix_size(const mp_int *a, int radix, int *size)
 }
 declare 36 {
     int TclBN_mp_read_radix(mp_int *a, const char *str, int radix)
@@ -231,6 +231,11 @@ declare 65 {
 }
 declare 66 {
     void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
+}
+
+# Added in libtommath 1.0
+declare 67 {
+    int TclBN_mp_expt_d_ex(mp_int *a, mp_digit b, mp_int *c, int fast)
 }
 
 # Local Variables:

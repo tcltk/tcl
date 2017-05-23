@@ -8,10 +8,10 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.6
+package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.9
+package provide http 2.8.11
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -28,10 +28,19 @@ namespace eval http {
 	# We need a useragent string of this style or various servers will refuse to
 	# send us compressed content even when we ask for it. This follows the
 	# de-facto layout of user-agent strings in current browsers.
-	set http(-useragent) "Mozilla/5.0\
-            ([string totitle $::tcl_platform(platform)]; U;\
-            $::tcl_platform(os) $::tcl_platform(osVersion))\
-            http/[package provide http] Tcl/[package provide Tcl]"
+	# Safe interpreters do not have ::tcl_platform(os) or
+	# ::tcl_platform(osVersion).
+	if {[interp issafe]} {
+	    set http(-useragent) "Mozilla/5.0\
+                (Windows; U;\
+                Windows NT 10.0)\
+                http/[package provide http] Tcl/[package provide Tcl]"
+	} else {
+	    set http(-useragent) "Mozilla/5.0\
+                ([string totitle $::tcl_platform(platform)]; U;\
+                $::tcl_platform(os) $::tcl_platform(osVersion))\
+                http/[package provide http] Tcl/[package provide Tcl]"
+	}
     }
 
     proc init {} {
@@ -197,9 +206,10 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 	set state(error) [list $errormsg $errorInfo $errorCode]
 	set state(status) "error"
     }
-    if {
-	($state(status) eq "timeout") || ($state(status) eq "error") ||
-	([info exists state(connection)] && ($state(connection) eq "close"))
+    if { ($state(status) eq "timeout")
+       || ($state(status) eq "error")
+       || ([info exists state(-keepalive)] && !$state(-keepalive))
+       || ([info exists state(connection)] && ($state(connection) eq "close"))
     } {
         CloseSocket $state(sock) $token
     }
@@ -1047,7 +1057,7 @@ proc http::Event {sock token} {
 	    fconfigure $sock -translation binary
 
 	    if {
-		$state(-binary) || ![string match -nocase text* $state(type)]
+		$state(-binary) || [IsBinaryContentType $state(type)]
 	    } {
 		# Turn off conversions for non-text data
 		set state(binary) 1
@@ -1181,6 +1191,38 @@ proc http::Event {sock token} {
 	}
 	return
     }
+}
+
+# http::IsBinaryContentType --
+#
+#	Determine if the content-type means that we should definitely transfer
+#	the data as binary. [Bug 838e99a76d]
+#
+# Arguments
+#	type	The content-type of the data.
+#
+# Results:
+#	Boolean, true if we definitely should be binary.
+
+proc http::IsBinaryContentType {type} {
+    lassign [split [string tolower $type] "/;"] major minor
+    if {$major eq "text"} {
+	return false
+    }
+    # There's a bunch of XML-as-application-format things about. See RFC 3023
+    # and so on.
+    if {$major eq "application"} {
+	set minor [string trimright $minor]
+	if {$minor in {"xml" "xml-external-parsed-entity" "xml-dtd"}} {
+	    return false
+	}
+    }
+    # Not just application/foobar+xml but also image/svg+xml, so let us not
+    # restrict things for now...
+    if {[string match "*+xml" $minor]} {
+	return false
+    }
+    return true
 }
 
 # http::getTextLine --
@@ -1415,7 +1457,7 @@ proc http::mapReply {string} {
     set converted [string map $formMap $string]
     if {[string match "*\[\u0100-\uffff\]*" $converted]} {
 	regexp "\[\u0100-\uffff\]" $converted badChar
-	# Return this error message for maximum compatability... :^/
+	# Return this error message for maximum compatibility... :^/
 	return -code error \
 	    "can't read \"formMap($badChar)\": no such element in array"
     }
