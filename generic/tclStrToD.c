@@ -482,7 +482,7 @@ TclParseNumber(
 {
     enum State {
 	INITIAL, SIGNUM, ZERO, ZERO_X,
-	ZERO_O, ZERO_B, BINARY,
+	ZERO_O, ZERO_B, ZERO_D, BINARY,
 	HEXADECIMAL, OCTAL, BAD_OCTAL, DECIMAL,
 	LEADING_RADIX_POINT, FRACTION,
 	EXPONENT_START, EXPONENT_SIGNUM, EXPONENT,
@@ -662,6 +662,10 @@ TclParseNumber(
 	    if (c == 'o' || c == 'O') {
 		explicitOctal = 1;
 		state = ZERO_O;
+		break;
+	    }
+	    if (c == 'd' || c == 'D') {
+		state = ZERO_D;
 		break;
 	    }
 #ifdef TCL_NO_DEPRECATED
@@ -879,6 +883,16 @@ TclParseNumber(
 	    numTrailZeros = 0;
 	    state = BINARY;
 	    break;
+
+	case ZERO_D:
+	    if (c == '0') {
+		numTrailZeros++;
+	    } else if ( ! isdigit(UCHAR(c))) {
+		goto endgame;
+	    }		
+	    state = DECIMAL;
+	    flags |= TCL_PARSE_INTEGER_ONLY;
+	    /* FALLTHROUGH */
 
 	case DECIMAL:
 	    /*
