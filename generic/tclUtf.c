@@ -302,7 +302,9 @@ Tcl_UtfToUniChar(
 	     */
 
 	    *chPtr = (Tcl_UniChar) (((byte & 0x1F) << 6) | (src[1] & 0x3F));
-	    return 2;
+	    if ((*chPtr == 0) || (*chPtr <= 0x3ff) && (*chPtr > 0x7f)) {
+		return 2;
+	    }
 	}
 
 	/*
@@ -317,7 +319,9 @@ Tcl_UtfToUniChar(
 
 	    *chPtr = (Tcl_UniChar) (((byte & 0x0F) << 12)
 		    | ((src[1] & 0x3F) << 6) | (src[2] & 0x3F));
-	    return 3;
+	    if ((*chPtr <= 0xffff) && (*chPtr > 0x3ff)) {
+		return 3;
+	    }
 	}
 
 	/*
@@ -331,10 +335,30 @@ Tcl_UtfToUniChar(
 	    /*
 	     * Four-byte-character lead byte followed by three trail bytes.
 	     */
+#if TCL_UTF_MAX == 4
+	    Tcl_UniChar surrogate;
 
+	    byte = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
+		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F)) - 0x10000;
+	    surrogate = 0xD800 + (byte >> 10);
+	    if (byte & 0x100000) {
+		/* out of range, < 0x10000 or > 0x10ffff */
+	    } else if (*chPtr != surrogate) {
+		/* produce high surrogate, but don't advance source pointer */
+		*chPtr = surrogate;
+		return 0;
+	    } else {
+		/* produce low surrogate, and advance source pointer */
+		*chPtr = (Tcl_UniChar) (0xDC00 | (byte & 0x3FF));
+		return 4;
+	    }
+#else
 	    *chPtr = (Tcl_UniChar) (((byte & 0x0E) << 18) | ((src[1] & 0x3F) << 12)
 		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
-	    return 4;
+	    if ((*chPtr <= 0x10ffff) && (*chPtr > 0xffff)) {
+		return 4;
+	    }
+#endif
 	}
 
 	/*
