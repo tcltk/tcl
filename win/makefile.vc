@@ -270,6 +270,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclBinary.obj \
 	$(TMP_DIR)\tclCkalloc.obj \
 	$(TMP_DIR)\tclClock.obj \
+	$(TMP_DIR)\tclClockFmt.obj \
 	$(TMP_DIR)\tclCmdAH.obj \
 	$(TMP_DIR)\tclCmdIL.obj \
 	$(TMP_DIR)\tclCmdMZ.obj \
@@ -332,6 +333,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclResult.obj \
 	$(TMP_DIR)\tclScan.obj \
 	$(TMP_DIR)\tclStringObj.obj \
+	$(TMP_DIR)\tclStrIdxTree.obj \
 	$(TMP_DIR)\tclStrToD.obj \
 	$(TMP_DIR)\tclStubInit.obj \
 	$(TMP_DIR)\tclThread.obj \
