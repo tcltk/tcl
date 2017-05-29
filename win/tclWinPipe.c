@@ -1482,7 +1482,7 @@ BuildCommandLine(
 	    Tcl_UniChar ch;
 
 	    for (start = arg; *start != '\0'; start += count) {
-		count = Tcl_UtfToUniChar(start, &ch);
+		count = TclUtfToUniChar(start, &ch);
 		if (Tcl_UniCharIsSpace(ch)) {	/* INTL: ISO space. */
 		    quote = 1;
 		    break;
