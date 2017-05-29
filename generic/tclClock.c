@@ -3110,14 +3110,19 @@ ClockParseFmtScnArgs(
     /* Base (by scan or add) or clock value (by format) */
 
     if (opts->baseObj != NULL) {
-	if (TclGetWideIntFromObj(NULL, opts->baseObj, &baseVal) != TCL_OK) {
+	register Tcl_Obj *baseObj = opts->baseObj;
+	/* bypass integer recognition if looks like option "-now" */
+	if (
+	    (baseObj->length == 4 && baseObj->bytes && *(baseObj->bytes+1) == 'n') ||
+	    TclGetWideIntFromObj(NULL, baseObj, &baseVal) != TCL_OK
+	) {
 
 	    /* we accept "-now" as current date-time */
-	    const char *const nowOpts[] = {
+	    static const char *const nowOpts[] = {
 		"-now", NULL
 	    };
 	    int idx;
-	    if (Tcl_GetIndexFromObj(NULL, opts->baseObj, nowOpts, "seconds or -now",
+	    if (Tcl_GetIndexFromObj(NULL, baseObj, nowOpts, "seconds or -now",
 		    TCL_EXACT, &idx) == TCL_OK
 	    ) {
 		goto baseNow;
@@ -3125,7 +3130,7 @@ ClockParseFmtScnArgs(
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "expected integer but got \"%s\"",
-		    Tcl_GetString(opts->baseObj)));
+		    Tcl_GetString(baseObj)));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    i = 1;
 	    goto badOption;
@@ -3135,7 +3140,7 @@ ClockParseFmtScnArgs(
 	 * that it isn't.
 	 */
 
-	if (opts->baseObj->typePtr == &tclBignumType) {
+	if (baseObj->typePtr == &tclBignumType) {
 	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
 	    return TCL_ERROR;
 	}
