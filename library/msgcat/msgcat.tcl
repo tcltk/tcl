@@ -225,6 +225,65 @@ proc msgcat::mc {src args} {
     }
 }
 
+# msgcat::mcget --
+#
+#	Return the translation for the given string based on the given
+#	locale setting or the whole dictionary object of the package/locale.
+#	Searching of catalog is similar to "msgcat::mc".
+#
+#	Contrary to "msgcat::mc" may additionally load a package catalog 
+#	on demand.
+#
+# Arguments:
+#	ns	The package namespace (as catalog selector).
+#	loc	The locale used for translation.
+#	{src}	The string to translate.
+#	{args}	Args to pass to the format command
+#
+# Results:
+#	Returns the translated string.  Propagates errors thrown by the
+#	format command.
+
+proc msgcat::mcget {ns loc args} {
+    if {$loc eq {C}} {
+	set loclist [PackagePreferences $ns]
+	set loc [lindex $loclist 0]
+    } else {
+    	set loc [string tolower $loc]
+	variable PackageConfig
+	# get locales list for given locale (de_de -> {de_de de {}})
+	if {[catch {
+	    set loclist [dict get $PackageConfig locales $ns $loc]
+	}]} {
+	    # lazy load catalog on demand
+	    mcpackagelocale load $loc $ns
+	    set loclist [dict get $PackageConfig locales $ns $loc]
+	}
+    }
+    if {![llength $args]} {
+	# get whole catalog:
+	return [msgcat::Merge $ns $loclist]
+    }
+    set src [lindex $args 0]
+    # search translation for each locale (regarding parent namespaces)
+    for {set nscur $ns} {$nscur != ""} {set nscur [namespace parent $nscur]} {
+	foreach loc $loclist {
+	    set msgs [mcget $nscur $loc]
+	    if {![catch { set val [dict get $msgs $src] }]} {
+		if {[llength $args] == 1} {
+		    return $val
+		}
+		return [format $val {*}[lrange $args 1 end]]
+	    }
+	}
+    }
+    # no translation :
+    if {[llength $args] == 1} {
+	return $src
+    }
+    return [format $src {*}[lrange $args 1 end]]
+}
+
 # msgcat::mcexists --
 #
 #	Check if a catalog item is set or if mc would invoke mcunknown.
@@ -415,6 +474,10 @@ proc msgcat::mcloadedlocales {subcommand} {
 #	    items, if the former locale was the default locale.
 #	    Returns the normalized set locale.
 #	    The default locale is taken, if locale is not given.
+#	load
+#	    Load a package locale without set it (lazy loading from mcget).
+#	    Returns the normalized set locale.
+#	    The default locale is taken, if locale is not given.
 #	get
 #	    Get the locale valid for this package.
 #	isset
@@ -442,7 +505,7 @@ proc msgcat::mcloadedlocales {subcommand} {
 # Results:
 #	Empty string, if not stated differently for the subcommand
 
-proc msgcat::mcpackagelocale {subcommand {locale ""}} {
+proc msgcat::mcpackagelocale {subcommand {locale ""} {ns ""}} {
     # todo: implement using an ensemble
     variable Loclist
     variable LoadedLocales
@@ -462,7 +525,9 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
 	}
         set locale [string tolower $locale]
     }
-    set ns [uplevel 1 {::namespace current}]
+    if {$ns eq ""} {
+	set ns [uplevel 1 {::namespace current}]
+    }
 
     switch -exact -- $subcommand {
 	get { return [lindex [PackagePreferences $ns] 0] }
@@ -470,7 +535,7 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
 	loaded { return [PackageLocales $ns] }
 	present { return [expr {$locale in [PackageLocales $ns]} ]}
 	isset { return [dict exists $PackageConfig loclist $ns] }
-	set { # set a package locale or add a package locale
+	set - load { # set a package locale or add a package locale
 
 	    # Copy the default locale if no package locale set so far
 	    if {![dict exists $PackageConfig loclist $ns]} {
@@ -480,17 +545,21 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
 
 	    # Check if changed
 	    set loclist [dict get $PackageConfig loclist $ns]
-	    if {! [info exists locale] || $locale eq [lindex $loclist 0] } {
+	    if {[llength [info level 0]] == 2 || $locale eq [lindex $loclist 0] } {
 		return [lindex $loclist 0]
 	    }
 
 	    # Change loclist
 	    set loclist [GetPreferences $locale]
 	    set locale [lindex $loclist 0]
-	    dict set PackageConfig loclist $ns $loclist
+	    if {$subcommand eq {set}} {
+		# set loclist
+		dict set PackageConfig loclist $ns $loclist
+	    }
 
 	    # load eventual missing locales
 	    set loadedLocales [dict get $PackageConfig loadedlocales $ns]
+	    dict set PackageConfig locales $ns $locale $loclist
 	    if {$locale in $loadedLocales} { return $locale }
 	    set loadLocales [ListComplement $loadedLocales $loclist]
 	    dict set PackageConfig loadedlocales $ns\
@@ -521,6 +590,7 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
 		    [dict get $PackageConfig loadedlocales $ns] $LoadedLocales]
 	    dict unset PackageConfig loadedlocales $ns
 	    dict unset PackageConfig loclist $ns
+	    dict unset PackageConfig locales $ns
 
 	    # unset keys not in global loaded locales
 	    if {[dict exists $Msgs $ns]} {
@@ -847,6 +917,47 @@ proc msgcat::Load {ns locales {callbackonly 0}} {
     return $x
 }
 
+# msgcat::Merge --
+#
+#	Merge message catalog dictionaries to one dictionary.
+#
+# Arguments:
+#	ns		Namespace (equal package) to load the message catalog.
+#	locales		List of locales to merge.
+#
+# Results:
+#	Returns the merged dictionary of message catalogs.
+proc msgcat::Merge {ns locales} {
+    variable Merged
+    if {![catch {
+    	set mrgcat [dict get $Merged $ns [set loc [lindex $locales 0]]]
+    }]} {
+    	return $mrgcat
+    }
+    variable Msgs
+    # Merge sequential locales (in reverse order, e. g. {} -> en -> en_en):
+    if {[llength $locales] > 1} {
+	set mrgcat [msgcat::Merge $ns [lrange $locales 1 end]]
+	catch {
+	    set mrgcat [dict merge $mrgcat [dict get $Msgs $ns $loc]]
+	}
+    } else {
+	if {[catch {
+	    set mrgcat [dict get $Msgs $ns $loc]
+	}]} {
+	    set mrgcat [dict create]
+	}
+    }
+    dict set Merged $ns $loc $mrgcat
+    # return smart reference (shared dict as object with exact one ref-counter)
+    return [dict smartref $mrgcat]
+}
+
+proc msgcat::ClearCaches {ns} {
+    variable Merged
+    dict unset Merged $ns
+}
+
 # msgcat::Invoke --
 #
 #	Invoke a set of registered callbacks.
@@ -919,6 +1030,7 @@ proc msgcat::Invoke {index arglist {ns ""} {resultname ""} {failerror 0}} {
 
 proc msgcat::mcset {locale src {dest ""}} {
     variable Msgs
+    variable Merged
     if {[llength [info level 0]] == 3} { ;# dest not specified
 	set dest $src
     }
@@ -928,6 +1040,7 @@ proc msgcat::mcset {locale src {dest ""}} {
     set locale [string tolower $locale]
 
     dict set Msgs $ns $locale $src $dest
+    dict unset Merged $ns
     return $dest
 }
 
@@ -967,6 +1080,7 @@ proc msgcat::mcflset {src {dest ""}} {
 
 proc msgcat::mcmset {locale pairs} {
     variable Msgs
+    variable Merged
 
     set length [llength $pairs]
     if {$length % 2} {
@@ -980,6 +1094,7 @@ proc msgcat::mcmset {locale pairs} {
     foreach {src dest} $pairs {
 	dict set Msgs $ns $locale $src $dest
     }
+    dict unset Merged $ns
 
     return [expr {$length / 2}]
 }
