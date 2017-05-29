@@ -228,6 +228,7 @@ GENERIC_OBJS = \
 	tclBinary.$(OBJEXT) \
 	tclCkalloc.$(OBJEXT) \
 	tclClock.$(OBJEXT) \
+	tclClockFmt.$(OBJEXT) \
 	tclCmdAH.$(OBJEXT) \
 	tclCmdIL.$(OBJEXT) \
 	tclCmdMZ.$(OBJEXT) \
@@ -290,6 +291,7 @@ GENERIC_OBJS = \
 	tclResult.$(OBJEXT) \
 	tclScan.$(OBJEXT) \
 	tclStringObj.$(OBJEXT) \
+	tclStrIdxTree.$(OBJEXT) \
 	tclStrToD.$(OBJEXT) \
 	tclStubInit.$(OBJEXT) \
 	tclThread.$(OBJEXT) \
