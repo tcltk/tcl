@@ -1678,7 +1678,7 @@ Tcl_AppendFormatToObj(
 	int newXpg, numChars, allocSegment = 0, segmentLimit, segmentNumBytes;
 	Tcl_Obj *segment;
 	Tcl_UniChar ch;
-	int step = Tcl_UtfToUniChar(format, &ch);
+	int step = TclUtfToUniChar(format, &ch);
 
 	format += step;
 	if (ch != '%') {
@@ -1702,7 +1702,7 @@ Tcl_AppendFormatToObj(
 	 * Step 0. Handle special case of escaped format marker (i.e., %%).
 	 */
 
-	step = Tcl_UtfToUniChar(format, &ch);
+	step = TclUtfToUniChar(format, &ch);
 	if (ch == '%') {
 	    span = format;
 	    numBytes = step;
@@ -1722,7 +1722,7 @@ Tcl_AppendFormatToObj(
 		newXpg = 1;
 		objIndex = position - 1;
 		format = end + 1;
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 	    }
 	}
 	if (newXpg) {
@@ -1773,7 +1773,7 @@ Tcl_AppendFormatToObj(
 	    }
 	    if (sawFlag) {
 		format += step;
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 	    }
 	} while (sawFlag);
 
@@ -1785,7 +1785,7 @@ Tcl_AppendFormatToObj(
 	if (isdigit(UCHAR(ch))) {
 	    width = strtoul(format, &end, 10);
 	    format = end;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
 	    if (objIndex >= objc - 1) {
 		msg = badIndex[gotXpg];
@@ -1801,7 +1801,7 @@ Tcl_AppendFormatToObj(
 	    }
 	    objIndex++;
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 	}
 	if (width > limit) {
 	    msg = overflow;
@@ -1817,12 +1817,12 @@ Tcl_AppendFormatToObj(
 	if (ch == '.') {
 	    gotPrecision = 1;
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 	}
 	if (isdigit(UCHAR(ch))) {
 	    precision = strtoul(format, &end, 10);
 	    format = end;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
 	    if (objIndex >= objc - 1) {
 		msg = badIndex[gotXpg];
@@ -1843,7 +1843,7 @@ Tcl_AppendFormatToObj(
 	    }
 	    objIndex++;
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 	}
 
 	/*
@@ -1853,14 +1853,14 @@ Tcl_AppendFormatToObj(
 	if (ch == 'h') {
 	    useShort = 1;
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == 'l') {
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 	    if (ch == 'l') {
 		useBig = 1;
 		format += step;
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 #ifndef TCL_WIDE_INT_IS_LONG
 	    } else {
 		useWide = 1;
@@ -3409,7 +3409,7 @@ TclStringObjReverse(
 		 * It's part of the contract for objPtr->bytes values.
 		 * Thus, we can skip calling Tcl_UtfCharComplete() here.
 		 */
-		int bytesInChar = Tcl_UtfToUniChar(from, &ch);
+		int bytesInChar = TclUtfToUniChar(from, &ch);
 
 		ReverseBytes((unsigned char *)to, (unsigned char *)from,
 			bytesInChar);
