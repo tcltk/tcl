@@ -606,7 +606,7 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 	    
 	    if (opts->localeObj == NULL) {
 		Tcl_SetResult(opts->interp,
-		    "locale not specified and no default locale set", TCL_STATIC);
+		    (char*)"locale not specified and no default locale set", TCL_STATIC);
 		Tcl_SetErrorCode(opts->interp, "CLOCK", "badOption", NULL);
 		return NULL;
 	    }
@@ -3080,7 +3080,7 @@ ClockParseFmtScnArgs(
 
     if ((saw & (1 << CLC_ARGS_GMT))
 	    && (saw & (1 << CLC_ARGS_TIMEZONE))) {
-	Tcl_SetResult(interp, "cannot use -gmt and -timezone in same call", TCL_STATIC);
+	Tcl_SetResult(interp, (char*)"cannot use -gmt and -timezone in same call", TCL_STATIC);
 	Tcl_SetErrorCode(interp, "CLOCK", "gmtWithTimezone", NULL);
 	return TCL_ERROR;
     }
@@ -3335,7 +3335,7 @@ ClockScanObjCmd(
 	/* [SB] TODO: Perhaps someday we'll localize the legacy code. Right now, it's not localized. */
 	if (opts.localeObj != NULL) {
 	    Tcl_SetResult(interp,
-		"legacy [clock scan] does not support -locale", TCL_STATIC);
+		(char*)"legacy [clock scan] does not support -locale", TCL_STATIC);
 	    Tcl_SetErrorCode(interp, "CLOCK", "flagWithLegacyFormat", NULL);
 	    return TCL_ERROR;
 	}
