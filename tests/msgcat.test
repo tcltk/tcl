@@ -811,7 +811,7 @@ namespace eval ::msgcat::test {
 	test msgcat-12.1 {mcpackagelocale no subcommand} -body {
 	    mcpackagelocale
 	} -returnCodes 1\
-	-result {wrong # args: should be "mcpackagelocale subcommand ?locale? ?ns?"}
+	-result {wrong # args: should be "mcpackagelocale subcommand ?locale?"}
 
 	test msgcat-12.2 {mclpackagelocale wrong subcommand} -body {
 	    mcpackagelocale junk
