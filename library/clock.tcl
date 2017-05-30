@@ -506,18 +506,103 @@ proc ::tcl::clock::Initialize {} {
     variable FormatProc;		# Array mapping format group
 					# and locale to the name of a procedure
 					# that renders the given format
+
+    variable mcLocales	 [dict create];	# Dictionary with loaded locales
+    variable mcMergedCat [dict create];	# Dictionary with merged locale catalogs
 }
 ::tcl::clock::Initialize
 
 #----------------------------------------------------------------------
 
-proc mcget {locale args} {
-    switch -- $locale system {
-    	set locale [GetSystemLocale]
+# mcget --
+#
+#	Return the merged translation catalog for the ::tcl::clock namespace
+#	Searching of catalog is similar to "msgcat::mc".
+#
+#	Contrary to "msgcat::mc" may additionally load a package catalog 
+#	on demand.
+#
+# Arguments:
+#	loc	The locale used for translation.
+#
+# Results:
+#	Returns the dictionary object as whole catalog of the package/locale.
+#
+proc mcget {loc} {
+    variable mcMergedCat
+    switch -- $loc system {
+	set loc [GetSystemLocale]
     } current {
-	set locale [mclocale]
+	set loc [mclocale]
     }
-    msgcat::mcget ::tcl::clock $locale {*}$args
+    if {$loc eq {C}} {
+	set loclist [msgcat::PackagePreferences ::tcl::clock]
+	set loc [lindex $loclist 0]
+    } else {
+    	set loc [string tolower $loc]
+    }
+
+    # try to retrieve now if already available:
+    if {[dict exists $mcMergedCat $loc]} {
+	set mrgcat [dict get $mcMergedCat $loc]
+	return [dict smartref $mrgcat]
+    }
+
+    # get locales list for given locale (de_de -> {de_de de {}})
+    variable mcLocales
+    if {[dict exists $mcLocales $loc]} {
+	set loclist [dict get $mcLocales $loc]
+    } else {
+	# save current locale:
+	set prevloc [mclocale]
+	# lazy load catalog on demand (set it will load the catalog)
+	mcpackagelocale set $loc
+	set loclist [msgcat::GetPreferences $loc]
+	dict set $mcLocales $loc $loclist
+	# restore:
+        if {$prevloc ne $loc} {
+	   mcpackagelocale set $prevloc
+	}
+    }
+    # get whole catalog:
+    mcMerge $loclist
+}
+
+# mcMerge --
+#
+#	Merge message catalog dictionaries to one dictionary.
+#
+# Arguments:
+#	locales		List of locales to merge.
+#
+# Results:
+#	Returns the (weak pointer) to merged dictionary of message catalog.
+#
+proc mcMerge {locales} {
+    variable mcMergedCat
+    if {[dict exists $mcMergedCat [set loc [lindex $locales 0]]]} {
+	set mrgcat [dict get $mcMergedCat $loc]
+	return [dict smartref $mrgcat]
+    }
+    # package msgcat currently does not provide possibility to get whole catalog:
+    upvar ::msgcat::Msgs Msgs
+    set ns ::tcl::clock
+    # Merge sequential locales (in reverse order, e. g. {} -> en -> en_en):
+    if {[llength $locales] > 1} {
+	set mrgcat [mcMerge [lrange $locales 1 end]]
+	if {[dict exists $Msgs $ns $loc]} {
+	    set mrgcat [dict merge $mrgcat [dict get $Msgs $ns $loc]]
+	}
+    } else {
+	if {[dict exists $Msgs $ns $loc]} {
+	    set mrgcat [dict get $Msgs $ns $loc]
+	} else {
+	    set mrgcat [dict create]
+	}
+    }
+    dict set mcMergedCat $loc $mrgcat
+    # return smart reference (shared dict as object with exact one ref-counter)
+    return [dict smartref $mrgcat]
 }
 
 #----------------------------------------------------------------------
@@ -2004,13 +2089,14 @@ proc ::tcl::clock::ClearCaches {} {
     variable FormatProc
     variable LocaleFormats
     variable LocaleNumeralCache
+    variable mcMergedCat
     variable TimeZoneBad
 
     # tell backend - should invalidate:
     configure -clear
 
     # clear msgcat cache:
-    msgcat::ClearCaches ::tcl::clock
+    set mcMergedCat [dict create]
 
     foreach p [info procs [namespace current]::scanproc'*] {
 	rename $p {}
