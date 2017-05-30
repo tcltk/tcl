@@ -607,7 +607,7 @@ static void
 ClockFmtObj_UpdateString(objPtr)
     Tcl_Obj  *objPtr;
 {
-    char *name = "UNKNOWN";
+    const char *name = "UNKNOWN";
     int	  len;
     ClockFmtScnStorage *fss = ObjClockFmtScn(objPtr);
 
@@ -1450,7 +1450,7 @@ ClockScnToken_DayOfWeek_Proc(ClockFmtScnCmdArgs *opts,
 		val = 7;
 	    }
 	    if (val > 7) {
-		Tcl_SetResult(opts->interp, "day of week is greater than 7",
+		Tcl_SetResult(opts->interp, (char*)"day of week is greater than 7",
 		    TCL_STATIC);
 		Tcl_SetErrorCode(opts->interp, "CLOCK", "badDayOfWeek", NULL);
 		return TCL_ERROR;
@@ -2400,14 +2400,14 @@ ClockScan(
 
 overflow:
 
-    Tcl_SetResult(opts->interp, "requested date too large to represent", 
+    Tcl_SetResult(opts->interp, (char*)"requested date too large to represent", 
 	TCL_STATIC);
     Tcl_SetErrorCode(opts->interp, "CLOCK", "dateTooLarge", NULL);
     goto done;
 
 not_match:
 
-    Tcl_SetResult(opts->interp, "input string does not match supplied format",
+    Tcl_SetResult(opts->interp, (char*)"input string does not match supplied format",
 	TCL_STATIC);
     Tcl_SetErrorCode(opts->interp, "CLOCK", "badInputString", NULL);
 
