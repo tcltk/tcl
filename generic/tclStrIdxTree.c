@@ -469,7 +469,7 @@ TclStrIdxTreeTestObjCmd(
     int optionIndex;
 
     if (objc < 2) {
-	Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
+	Tcl_SetResult(interp, (char*)"wrong # args", TCL_STATIC);
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], options, 
@@ -481,7 +481,7 @@ TclStrIdxTreeTestObjCmd(
     switch (optionIndex) {
     case O_FINDEQUAL:
 	if (objc < 4) {
-	    Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
+	    Tcl_SetResult(interp, (char*)"wrong # args", TCL_STATIC);
 	    return TCL_ERROR;
 	}
 	cs = TclGetString(objv[2]);

@@ -370,7 +370,7 @@ typedef struct ClockScanTokenMap {
     unsigned short int	maxSize;
     unsigned short int	offs;
     ClockScanTokenProc *parser;
-    void	       *data;
+    const void	       *data;
 } ClockScanTokenMap;
 
 typedef struct ClockScanToken {
