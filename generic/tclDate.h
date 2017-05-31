@@ -109,7 +109,7 @@ typedef enum ClockMsgCtLiteral {
     MCLIT__NIL, /* placeholder */
     MCLIT_MONTHS_FULL,	MCLIT_MONTHS_ABBREV,  MCLIT_MONTHS_COMB,
     MCLIT_DAYS_OF_WEEK_FULL,  MCLIT_DAYS_OF_WEEK_ABBREV,  MCLIT_DAYS_OF_WEEK_COMB,
-    MCLIT_AM,  MCLIT_PM, 
+    MCLIT_AM,  MCLIT_PM,
     MCLIT_LOCALE_ERAS,
     MCLIT_BCE,	 MCLIT_CE,
     MCLIT_BCE2,	 MCLIT_CE2,
@@ -486,16 +486,16 @@ MODULE_SCOPE Tcl_Obj *
 		    ClockMCGet(ClockFmtScnCmdArgs *opts, int mcKey);
 MODULE_SCOPE Tcl_Obj *
 		    ClockMCGetIdx(ClockFmtScnCmdArgs *opts, int mcKey);
-MODULE_SCOPE int    ClockMCSetIdx(ClockFmtScnCmdArgs *opts, int mcKey, 
+MODULE_SCOPE int    ClockMCSetIdx(ClockFmtScnCmdArgs *opts, int mcKey,
 			Tcl_Obj *valObj);
 
 /* tclClockFmt.c module declarations */
 
-MODULE_SCOPE Tcl_Obj* 
+MODULE_SCOPE Tcl_Obj*
 		    ClockFrmObjGetLocFmtKey(Tcl_Interp *interp,
 			Tcl_Obj *objPtr);
 
-MODULE_SCOPE ClockFmtScnStorage * 
+MODULE_SCOPE ClockFmtScnStorage *
 		    Tcl_GetClockFrmScnFromObj(Tcl_Interp *interp,
 			Tcl_Obj *objPtr);
 MODULE_SCOPE Tcl_Obj *
@@ -504,7 +504,7 @@ MODULE_SCOPE Tcl_Obj *
 MODULE_SCOPE int    ClockScan(register DateInfo *info,
 			Tcl_Obj *strObj, ClockFmtScnCmdArgs *opts);
 
-MODULE_SCOPE int    ClockFormat(register DateFormat *dateFmt, 
+MODULE_SCOPE int    ClockFormat(register DateFormat *dateFmt,
 			ClockFmtScnCmdArgs *opts);
 
 MODULE_SCOPE void   ClockFrmScnClearCaches(void);

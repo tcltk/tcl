@@ -1,7 +1,7 @@
 /*
  * tclStrIdxTree.h --
  *
- *	Declarations of string index tries and other primitives currently 
+ *	Declarations of string index tries and other primitives currently
  *  back-ported from tclSE.
  *
  * Copyright (c) 2016 Serg G. Brester (aka sebres)
@@ -38,7 +38,7 @@ typedef struct TclStrIdx {
  *
  * TclUtfFindEqual, TclUtfFindEqualNC --
  *
- *  Find largest part of string cs in string cin (case sensitive and not). 
+ *  Find largest part of string cs in string cin (case sensitive and not).
  *
  * Results:
  *  Return position of UTF character in cs after last equal character.
@@ -148,13 +148,13 @@ if (1) { \
 
 MODULE_SCOPE const char*
 		    TclStrIdxTreeSearch(TclStrIdxTree **foundParent,
-			TclStrIdx **foundItem, TclStrIdxTree *tree, 
+			TclStrIdx **foundItem, TclStrIdxTree *tree,
 			const char *start, const char *end);
 
 MODULE_SCOPE int    TclStrIdxTreeBuildFromList(TclStrIdxTree *idxTree,
 			int lstc, Tcl_Obj **lstv, ClientData *values);
 
-MODULE_SCOPE Tcl_Obj* 
+MODULE_SCOPE Tcl_Obj*
 		    TclStrIdxTreeNewObj();
 
 MODULE_SCOPE TclStrIdxTree*

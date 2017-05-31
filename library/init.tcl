@@ -157,7 +157,7 @@ if {[interp issafe]} {
     package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
 } else {
     # Default known auto_index (avoid loading auto index implicit after interp create):
-    
+
     array set ::auto_index {
 	::tcl::tm::UnknownHandler {source [info library]/tm.tcl}
 	::tclPkgUnknown {source [info library]/package.tcl}
@@ -431,7 +431,7 @@ proc auto_load {cmd {namespace {}}} {
     # workaround non canonical auto_index entries that might be around
     # from older auto_mkindex versions
     if {$cmd ni $nameList} {lappend nameList $cmd}
-    
+
     # try to load (and create sub-cmd handler "_sub_load_cmd" for further usage):
     foreach name $nameList [set _sub_load_cmd {
     	# via auto_index:
@@ -461,7 +461,7 @@ proc auto_load {cmd {namespace {}}} {
 	    }
 	}
     }]
-    
+
     # load auto_index if possible:
     if {![info exists auto_path]} {
 	return 0
