@@ -13,6 +13,7 @@ Tcl_WrongNumArgs \- generate standard error message for wrong number of argument
 .nf
 \fB#include <tcl.h>\fR
 .sp
+int
 \fBTcl_WrongNumArgs\fR(\fIinterp, objc, objv, message\fR)
 .SH ARGUMENTS
 .AS "Tcl_Obj *const" *message
@@ -73,6 +74,9 @@ is now an \fIindexObject\fR because it was passed to
 .CS
 wrong # args: should be "foo barfly fileName count"
 .CE
+.PP
+\fBTcl_WrongNumArgs\fR always returns TCL_ERRROR, as a convenience to
+the programmer.
 .SH "SEE ALSO"
 Tcl_GetIndexFromObj(3)
 .SH KEYWORDS

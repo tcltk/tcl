@@ -836,7 +836,7 @@ PrefixLongestObjCmd(
  *	functions, including the function that implements procedures.
  *
  * Results:
- *	None.
+ *	Always returns TCL_ERROR, as a convenience to the programmer.
  *
  * Side effects:
  *	An error message is generated in interp's result object to indicate
@@ -865,7 +865,7 @@ PrefixLongestObjCmd(
  *----------------------------------------------------------------------
  */
 
-void
+int
 Tcl_WrongNumArgs(
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments to print from objv. */
@@ -1059,6 +1059,8 @@ Tcl_WrongNumArgs(
     Tcl_SetObjResult(interp, objPtr);
 #undef MAY_QUOTE_WORD
 #undef AFTER_FIRST_WORD
+
+    return TCL_ERROR;
 }
 
 /*

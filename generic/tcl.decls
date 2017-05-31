@@ -936,7 +936,7 @@ declare 263 {
     int Tcl_Write(Tcl_Channel chan, const char *s, int slen)
 }
 declare 264 {
-    void Tcl_WrongNumArgs(Tcl_Interp *interp, int objc,
+    int Tcl_WrongNumArgs(Tcl_Interp *interp, int objc,
 	    Tcl_Obj *const objv[], const char *message)
 }
 declare 265 {
