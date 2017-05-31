@@ -28,6 +28,9 @@ static void		FreeJumptableInfo(ClientData clientData);
 static void		PrintJumptableInfo(ClientData clientData,
 			    Tcl_Obj *appendObj, ByteCode *codePtr,
 			    unsigned int pcOffset);
+static void		DisassembleJumptableInfo(ClientData clientData,
+			    Tcl_Obj *dictObj, ByteCode *codePtr,
+			    unsigned int pcOffset);
 static int		CompileAssociativeBinaryOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, const char *identity,
 			    int instruction, CompileEnv *envPtr);
@@ -72,7 +75,8 @@ const AuxDataType tclJumptableInfoType = {
     "JumptableInfo",		/* name */
     DupJumptableInfo,		/* dupProc */
     FreeJumptableInfo,		/* freeProc */
-    PrintJumptableInfo		/* printProc */
+    PrintJumptableInfo,		/* printProc */
+    DisassembleJumptableInfo	/* disassembleProc */
 };
 
 /*
@@ -288,7 +292,7 @@ TclCompileStringCatCmd(
 	PushStringLiteral(envPtr, "");
 	return TCL_OK;
     }
-	
+
     /* General case: issue CONCAT1's (by chunks of 254 if needed), folding
        contiguous constants along the way */
 
@@ -308,8 +312,8 @@ TclCompileStringCatCmd(
 	    Tcl_DecrRefCount(obj);
 	    if (folded) {
 		int len;
-		const char *bytes = Tcl_GetStringFromObj(folded, &len);
-		
+		const char *bytes = TclGetStringFromObj(folded, &len);
+
 		PushLiteral(envPtr, bytes, len);
 		Tcl_DecrRefCount(folded);
 		folded = NULL;
@@ -318,16 +322,16 @@ TclCompileStringCatCmd(
 	    CompileWord(envPtr, wordTokenPtr, interp, i);
 	    numArgs ++;
 	    if (numArgs >= 254) { /* 254 to take care of the possible +1 of "folded" above */
-		TclEmitInstInt1(INST_STR_CONCAT1, 254, envPtr);
-		numArgs -= 253;	/* concat pushes 1 obj, the result */
+		TclEmitInstInt1(INST_STR_CONCAT1, numArgs, envPtr);
+		numArgs = 1;	/* concat pushes 1 obj, the result */
 	    }
 	}
 	wordTokenPtr = TokenAfter(wordTokenPtr);
     }
     if (folded) {
 	int len;
-	const char *bytes = Tcl_GetStringFromObj(folded, &len);
-	
+	const char *bytes = TclGetStringFromObj(folded, &len);
+
 	PushLiteral(envPtr, bytes, len);
 	Tcl_DecrRefCount(folded);
 	folded = NULL;
@@ -944,12 +948,12 @@ TclCompileStringMapCmd(
      * correct semantics for mapping.
      */
 
-    bytes = Tcl_GetStringFromObj(objv[0], &len);
+    bytes = TclGetStringFromObj(objv[0], &len);
     if (len == 0) {
 	CompileWord(envPtr, stringTokenPtr, interp, 2);
     } else {
 	PushLiteral(envPtr, bytes, len);
-	bytes = Tcl_GetStringFromObj(objv[1], &len);
+	bytes = TclGetStringFromObj(objv[1], &len);
 	PushLiteral(envPtr, bytes, len);
 	CompileWord(envPtr, stringTokenPtr, interp, 2);
 	OP(STR_MAP);
@@ -999,7 +1003,7 @@ TclCompileStringRangeCmd(
 
     /*
      * Push the operands onto the stack and then the substring operation.
-     */    
+     */
 
   nonConstantIndices:
     CompileWord(envPtr, stringTokenPtr,			interp, 1);
@@ -1452,8 +1456,8 @@ TclSubstCompile(
 
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_TEXT:
-	    literal = TclRegisterNewLiteral(envPtr,
-		    tokenPtr->start, tokenPtr->size);
+	    literal = TclRegisterLiteral(envPtr,
+		    tokenPtr->start, tokenPtr->size, 0);
 	    TclEmitPush(literal, envPtr);
 	    TclAdvanceLines(&bline, tokenPtr->start,
 		    tokenPtr->start + tokenPtr->size);
@@ -1462,7 +1466,7 @@ TclSubstCompile(
 	case TCL_TOKEN_BS:
 	    length = TclParseBackslash(tokenPtr->start, tokenPtr->size,
 		    NULL, buf);
-	    literal = TclRegisterNewLiteral(envPtr, buf, length);
+	    literal = TclRegisterLiteral(envPtr, buf, length, 0);
 	    TclEmitPush(literal, envPtr);
 	    count++;
 	    continue;
@@ -1898,10 +1902,10 @@ TclCompileSwitchCmd(
 	}
 	if (numWords % 2) {
 	abort:
-	    ckfree((char *) bodyToken);
-	    ckfree((char *) bodyTokenArray);
-	    ckfree((char *) bodyLines);
-	    ckfree((char *) bodyContLines);
+	    ckfree(bodyToken);
+	    ckfree(bodyTokenArray);
+	    ckfree(bodyLines);
+	    ckfree(bodyContLines);
 	    return TCL_ERROR;
 	}
     } else if (numWords % 2 || numWords == 0) {
@@ -2024,7 +2028,7 @@ IssueSwitchChainedTests(
     int foundDefault;		/* Flag to indicate whether a "default" clause
 				 * is present. */
     JumpFixup *fixupArray;	/* Array of forward-jump fixup records. */
-    int *fixupTargetArray;	/* Array of places for fixups to point at. */
+    unsigned int *fixupTargetArray; /* Array of places for fixups to point at. */
     int fixupCount;		/* Number of places to fix up. */
     int contFixIndex;		/* Where the first of the jumps due to a group
 				 * of continuation bodies starts, or -1 if
@@ -2178,7 +2182,7 @@ IssueSwitchChainedTests(
 	}
 
 	/*
-	 * Now do the actual compilation. Note that we do not use BODY() 
+	 * Now do the actual compilation. Note that we do not use BODY()
 	 * because we may have synthesized the tokens in a non-standard
 	 * pattern.
 	 */
@@ -2441,11 +2445,13 @@ IssueSwitchJumpTable(
  *	DupJumptableInfo: a copy of the jump-table
  *	FreeJumptableInfo: none
  *	PrintJumptableInfo: none
+ *	DisassembleJumptableInfo: none
  *
  * Side effects:
  *	DupJumptableInfo: allocates memory
  *	FreeJumptableInfo: releases memory
  *	PrintJumptableInfo: none
+ *	DisassembleJumptableInfo: none
  *
  *----------------------------------------------------------------------
  */
@@ -2507,6 +2513,30 @@ PrintJumptableInfo(
 	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %d",
 		keyPtr, pcOffset + offset);
     }
+}
+
+static void
+DisassembleJumptableInfo(
+    ClientData clientData,
+    Tcl_Obj *dictObj,
+    ByteCode *codePtr,
+    unsigned int pcOffset)
+{
+    register JumptableInfo *jtPtr = clientData;
+    Tcl_Obj *mapping = Tcl_NewObj();
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    const char *keyPtr;
+    int offset;
+
+    hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
+    for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
+	keyPtr = Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
+	offset = PTR2INT(Tcl_GetHashValue(hPtr));
+	Tcl_DictObjPut(NULL, mapping, Tcl_NewStringObj(keyPtr, -1),
+		Tcl_NewIntObj(offset));
+    }
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("mapping", -1), mapping);
 }
 
 /*
@@ -2610,7 +2640,7 @@ TclCompileThrowCmd(
     }
     CompileWord(envPtr, msgToken, interp, 2);
 
-    codeIsList = codeKnown && (TCL_OK == 
+    codeIsList = codeKnown && (TCL_OK ==
 	    Tcl_ListObjLength(interp, objPtr, &len));
     codeIsValid = codeIsList && (len != 0);
 
@@ -2795,7 +2825,7 @@ TclCompileTryCmd(
 	    }
 	    if (objc > 0) {
 		int len;
-		const char *varname = Tcl_GetStringFromObj(objv[0], &len);
+		const char *varname = TclGetStringFromObj(objv[0], &len);
 
 		resultVarIndices[i] = LocalScalar(varname, len, envPtr);
 		if (resultVarIndices[i] < 0) {
@@ -2807,7 +2837,7 @@ TclCompileTryCmd(
 	    }
 	    if (objc == 2) {
 		int len;
-		const char *varname = Tcl_GetStringFromObj(objv[1], &len);
+		const char *varname = TclGetStringFromObj(objv[1], &len);
 
 		optionVarIndices[i] = LocalScalar(varname, len, envPtr);
 		if (optionVarIndices[i] < 0) {
@@ -3010,7 +3040,7 @@ IssueTryClausesInstructions(
 	    OP4(			DICT_GET, 1);
 	    TclAdjustStackDepth(-1, envPtr);
 	    OP44(			LIST_RANGE_IMM, 0, len-1);
-	    p = Tcl_GetStringFromObj(matchClauses[i], &len);
+	    p = TclGetStringFromObj(matchClauses[i], &len);
 	    PushLiteral(envPtr, p, len);
 	    OP(				STR_EQ);
 	    JUMP4(			JUMP_FALSE, notECJumpSource);
@@ -3221,7 +3251,7 @@ IssueTryClausesFinallyInstructions(
 	    OP4(			DICT_GET, 1);
 	    TclAdjustStackDepth(-1, envPtr);
 	    OP44(			LIST_RANGE_IMM, 0, len-1);
-	    p = Tcl_GetStringFromObj(matchClauses[i], &len);
+	    p = TclGetStringFromObj(matchClauses[i], &len);
 	    PushLiteral(envPtr, p, len);
 	    OP(				STR_EQ);
 	    JUMP4(			JUMP_FALSE, notECJumpSource);
@@ -3545,16 +3575,16 @@ TclCompileUnsetCmd(
 	    }
 	    return TCL_ERROR;
 	}
-	if (i == 1) {
+	if (varCount == 0) {
 	    const char *bytes;
 	    int len;
 
-	    bytes = Tcl_GetStringFromObj(leadingWord, &len);
-	    if (len == 11 && !strncmp("-nocomplain", bytes, 11)) {
+	    bytes = TclGetStringFromObj(leadingWord, &len);
+	    if (i == 1 && len == 11 && !strncmp("-nocomplain", bytes, 11)) {
 		flags = 0;
-		haveFlags = 1;
-	    } else if (len == 2 && !strncmp("--", bytes, 2)) {
-		haveFlags = 1;
+		haveFlags++;
+	    } else if (i == (2 - flags) && len == 2 && !strncmp("--", bytes, 2)) {
+		haveFlags++;
 	    } else {
 		varCount++;
 	    }
@@ -3569,7 +3599,7 @@ TclCompileUnsetCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (haveFlags) {
+    for (i=0; i<haveFlags;i++) {
 	varTokenPtr = TokenAfter(varTokenPtr);
     }
     for (i=1+haveFlags ; i<parsePtr->numWords ; i++) {
@@ -3752,7 +3782,6 @@ TclCompileWhileCmd(
 	}
 	SetLineInformation(1);
 	TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-	TclClearNumConversion(envPtr);
 
 	jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
 	if (jumpDist > 127) {

@@ -17,19 +17,16 @@
  */
 
 #include "tclInt.h"
+#include "tclCompile.h"
 #include "tclRegexp.h"
 #include "tclStringTrim.h"
 
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
-static int		SwitchPostProc(ClientData data[], Tcl_Interp *interp,
-			    int result);
-static int		TryPostBody(ClientData data[], Tcl_Interp *interp,
-			    int result);
-static int		TryPostFinal(ClientData data[], Tcl_Interp *interp,
-			    int result);
-static int		TryPostHandler(ClientData data[], Tcl_Interp *interp,
-			    int result);
+static Tcl_NRPostProc	SwitchPostProc;
+static Tcl_NRPostProc	TryPostBody;
+static Tcl_NRPostProc	TryPostFinal;
+static Tcl_NRPostProc	TryPostHandler;
 static int		UniCharIsAscii(int character);
 static int		UniCharIsHexDigit(int character);
 
@@ -38,7 +35,7 @@ static int		UniCharIsHexDigit(int character);
  * UTF-8 literal string containing all Unicode space characters [TIP #413]
  */
 
-const char tclDefaultTrimSet[] = 
+const char tclDefaultTrimSet[] =
 	"\x09\x0a\x0b\x0c\x0d " /* ASCII */
 	"\xc0\x80" /*     nul (U+0000) */
 	"\xc2\x85" /*     next line (U+0085) */
@@ -327,7 +324,7 @@ Tcl_RegexpObjCmd(
 
 	if (match == 0) {
 	    /*
-	     * We want to set the value of the intepreter result only when
+	     * We want to set the value of the interpreter result only when
 	     * this is the first time through the loop.
 	     */
 
@@ -993,8 +990,11 @@ TclNRSourceObjCmd(
 {
     const char *encodingName = NULL;
     Tcl_Obj *fileName;
+    int result;
+    void **pkgFiles = NULL;
+    void *names = NULL;
 
-    if (objc != 2 && objc !=4) {
+    if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-encoding name? fileName");
 	return TCL_ERROR;
     }
@@ -1012,9 +1012,30 @@ TclNRSourceObjCmd(
 	    return TCL_ERROR;
 	}
 	encodingName = TclGetString(objv[2]);
-    }
+    } else if (objc == 3) {
+	/* Handle undocumented -nopkg option. This should only be
+	 * used by the internal ::tcl::Pkg::source utility function. */
+	static const char *const nopkgoptions[] = {
+	    "-nopkg", NULL
+	};
+	int index;
 
-    return TclNREvalFile(interp, fileName, encodingName);
+	if (TCL_ERROR == Tcl_GetIndexFromObj(interp, objv[1], nopkgoptions,
+		"option", TCL_EXACT, &index)) {
+	    return TCL_ERROR;
+	}
+	pkgFiles = Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+	/* Make sure that during the following TclNREvalFile no filenames
+	 * are recorded for inclusion in the "package files" command */
+	names = *pkgFiles;
+	*pkgFiles = NULL;
+    }
+    result = TclNREvalFile(interp, fileName, encodingName);
+    if (pkgFiles) {
+	/* restore "tclPkgFiles" assocdata to how it was. */
+	*pkgFiles = names;
+    }
+    return result;
 }
 
 /*
@@ -1180,8 +1201,7 @@ StringFirstCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *needleStr, *haystackStr;
-    int match, start, needleLen, haystackLen;
+    int start = 0;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1189,82 +1209,23 @@ StringFirstCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * We are searching haystackStr for the sequence needleStr.
-     */
-
-    match = -1;
-    start = 0;
-    haystackLen = -1;
-
-    needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
-    haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
-
     if (objc == 4) {
-	/*
-	 * If a startIndex is specified, we will need to fast forward to that
-	 * point in the string before we think about a match.
-	 */
+	int size = Tcl_GetCharLength(objv[2]);
 
-	if (TclGetIntForIndexM(interp, objv[3], haystackLen-1,
-		&start) != TCL_OK){
+	if (TCL_OK != TclGetIntForIndexM(interp, objv[3], size - 1, &start)) {
 	    return TCL_ERROR;
 	}
 
-	/*
-	 * Reread to prevent shimmering problems.
-	 */
-
-	needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
-	haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
-
-	if (start >= haystackLen) {
-	    goto str_first_done;
-	} else if (start > 0) {
-	    haystackStr += start;
-	    haystackLen -= start;
-	} else if (start < 0) {
-	    /*
-	     * Invalid start index mapped to string start; Bug #423581
-	     */
-
+	if (start < 0) {
 	    start = 0;
 	}
-    }
-
-    /*
-     * If the length of the needle is more than the length of the haystack, it
-     * cannot be contained in there so we can avoid searching. [Bug 2960021]
-     */
-
-    if (needleLen > 0 && needleLen <= haystackLen) {
-	register Tcl_UniChar *p, *end;
-
-	end = haystackStr + haystackLen - needleLen + 1;
-	for (p = haystackStr;  p < end;  p++) {
-	    /*
-	     * Scan forward to find the first character.
-	     */
-
-	    if ((*p == *needleStr) && (TclUniCharNcmp(needleStr, p,
-		    (unsigned long) needleLen) == 0)) {
-		match = p - haystackStr;
-		break;
-	    }
+	if (start >= size) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+	    return TCL_OK;
 	}
     }
-
-    /*
-     * Compute the character index of the matching string by counting the
-     * number of characters before the match.
-     */
-
-    if ((match != -1) && (objc == 4)) {
-	match += start;
-    }
-
-  str_first_done:
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringFind(objv[1],
+	    objv[2], start)));
     return TCL_OK;
 }
 
@@ -1293,76 +1254,31 @@ StringLastCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *needleStr, *haystackStr, *p;
-    int match, start, needleLen, haystackLen;
+    int last = INT_MAX - 1;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"needleString haystackString ?startIndex?");
+		"needleString haystackString ?lastIndex?");
 	return TCL_ERROR;
     }
 
-    /*
-     * We are searching haystackString for the sequence needleString.
-     */
-
-    match = -1;
-    start = 0;
-    haystackLen = -1;
-
-    needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
-    haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
-
     if (objc == 4) {
-	/*
-	 * If a startIndex is specified, we will need to restrict the string
-	 * range to that char index in the string
-	 */
+	int size = Tcl_GetCharLength(objv[2]);
 
-	if (TclGetIntForIndexM(interp, objv[3], haystackLen-1,
-		&start) != TCL_OK){
+	if (TCL_OK != TclGetIntForIndexM(interp, objv[3], size - 1, &last)) {
 	    return TCL_ERROR;
 	}
 
-	/*
-	 * Reread to prevent shimmering problems.
-	 */
-
-	needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
-	haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
-
-	if (start < 0) {
-	    goto str_last_done;
-	} else if (start < haystackLen) {
-	    p = haystackStr + start + 1 - needleLen;
-	} else {
-	    p = haystackStr + haystackLen - needleLen;
+	if (last < 0) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+	    return TCL_OK;
 	}
-    } else {
-	p = haystackStr + haystackLen - needleLen;
-    }
-
-    /*
-     * If the length of the needle is more than the length of the haystack, it
-     * cannot be contained in there so we can avoid searching. [Bug 2960021]
-     */
-
-    if (needleLen > 0 && needleLen <= haystackLen) {
-	for (; p >= haystackStr; p--) {
-	    /*
-	     * Scan backwards to find the first character.
-	     */
-
-	    if ((*p == *needleStr) && !memcmp(needleStr, p,
-		    sizeof(Tcl_UniChar) * (size_t)needleLen)) {
-		match = p - haystackStr;
-		break;
-	    }
+	if (last >= size) {
+	    last = size - 1;
 	}
     }
-
-  str_last_done:
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringLast(objv[1],
+	    objv[2], last)));
     return TCL_OK;
 }
 
@@ -1877,7 +1793,7 @@ StringMapCmd(
 
     /*
      * This test is tricky, but has to be that way or you get other strange
-     * inconsistencies (see test string-10.20 for illustration why!)
+     * inconsistencies (see test string-10.20.1 for illustration why!)
      */
 
     if (objv[objc-2]->typePtr == &tclDictType && objv[objc-2]->bytes == NULL){
@@ -2227,9 +2143,7 @@ StringReptCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *string1;
-    char *string2;
-    int count, index, length1, length2;
+    int count;
     Tcl_Obj *resultPtr;
 
     if (objc != 3) {
@@ -2247,70 +2161,15 @@ StringReptCmd(
 
     if (count == 1) {
 	Tcl_SetObjResult(interp, objv[1]);
-	goto done;
+	return TCL_OK;
     } else if (count < 1) {
-	goto done;
-    }
-    string1 = TclGetStringFromObj(objv[1], &length1);
-    if (length1 <= 0) {
-	goto done;
+	return TCL_OK;
     }
 
-    /*
-     * Only build up a string that has data. Instead of building it up with
-     * repeated appends, we just allocate the necessary space once and copy
-     * the string value in.
-     *
-     * We have to worry about overflow [Bugs 714106, 2561746].
-     * At this point we know 1 <= length1 <= INT_MAX and 2 <= count <= INT_MAX.
-     * We need to keep 2 <= length2 <= INT_MAX.
-     */
-
-    if (count > INT_MAX/length1) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"result exceeds max size for a Tcl value (%d bytes)",
-		INT_MAX));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+    if (TCL_OK != TclStringRepeat(interp, objv[1], count, &resultPtr)) {
 	return TCL_ERROR;
     }
-    length2 = length1 * count;
-
-    /*
-     * Include space for the NUL.
-     */
-
-    string2 = attemptckalloc((unsigned) length2 + 1);
-    if (string2 == NULL) {
-	/*
-	 * Alloc failed. Note that in this case we try to do an error message
-	 * since this is a case that's most likely when the alloc is large and
-	 * that's easy to do with this API. Note that if we fail allocating a
-	 * short string, this will likely keel over too (and fatally).
-	 */
-
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"string size overflow, out of memory allocating %u bytes",
-		length2 + 1));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
-	return TCL_ERROR;
-    }
-    for (index = 0; index < count; index++) {
-	memcpy(string2 + (length1 * index), string1, (size_t) length1);
-    }
-    string2[length2] = '\0';
-
-    /*
-     * We have to directly assign this instead of using Tcl_SetStringObj (and
-     * indirectly TclInitStringRep) because that makes another copy of the
-     * data.
-     */
-
-    TclNewObj(resultPtr);
-    resultPtr->bytes = string2;
-    resultPtr->length = length2;
     Tcl_SetObjResult(interp, resultPtr);
-
-  done:
     return TCL_OK;
 }
 
@@ -2859,7 +2718,7 @@ StringCatCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i;
+    int code;
     Tcl_Obj *objResultPtr;
 
     if (objc < 2) {
@@ -2876,16 +2735,16 @@ StringCatCmd(
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
     }
-    objResultPtr = objv[1];
-    if (Tcl_IsShared(objResultPtr)) {
-	objResultPtr = Tcl_DuplicateObj(objResultPtr);
+
+    code = TclStringCatObjv(interp, /* inPlace */ 1, objc-1, objv+1,
+	    &objResultPtr);
+
+    if (code == TCL_OK) {
+	Tcl_SetObjResult(interp, objResultPtr);
+	return TCL_OK;
     }
-    for(i = 2;i < objc;i++) {
-	Tcl_AppendObjToObj(objResultPtr, objv[i]);
-    }
-    Tcl_SetObjResult(interp, objResultPtr);
-    
-    return TCL_OK;
+
+    return code;
 }
 
 /*
@@ -4150,7 +4009,7 @@ Tcl_TimeObjCmd(
     start = TclpGetWideClicks();
 #endif
     while (i-- > 0) {
-	result = Tcl_EvalObjEx(interp, objPtr, 0);
+	result = TclEvalObjEx(interp, objPtr, 0, NULL, 0);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -4185,6 +4044,351 @@ Tcl_TimeObjCmd(
     Tcl_SetObjResult(interp, Tcl_NewListObj(4, objs));
 
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_TimeRateObjCmd --
+ *
+ *	This object-based procedure is invoked to process the "timerate" Tcl
+ *	command. 
+ *	This is similar to command "time", except the execution limited by 
+ *	given time (in milliseconds) instead of repetition count.
+ *
+ * Example:
+ *	timerate {after 5} 1000 ; # equivalent for `time {after 5} [expr 1000/5]`
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_TimeRateObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    static 
+    double measureOverhead = 0; /* global measure-overhead */
+    double overhead = -1;	/* given measure-overhead */
+    register Tcl_Obj *objPtr;
+    register int result, i;
+    Tcl_Obj *calibrate = NULL, *direct = NULL;
+    Tcl_WideInt count = 0;	/* Holds repetition count */
+    Tcl_WideInt maxms = -0x7FFFFFFFFFFFFFFFL; 
+				/* Maximal running time (in milliseconds) */
+    Tcl_WideInt threshold = 1;	/* Current threshold for check time (faster
+				 * repeat count without time check) */
+    Tcl_WideInt maxIterTm = 1;	/* Max time of some iteration as max threshold
+				 * additionally avoid divide to zero (never < 1) */
+    register Tcl_WideInt start, middle, stop;
+#ifndef TCL_WIDE_CLICKS
+    Tcl_Time now;
+#endif
+
+    static const char *const options[] = {
+	"-direct",	"-overhead",	"-calibrate",	"--",	NULL
+    };
+    enum options {
+	TMRT_EV_DIRECT,	TMRT_OVERHEAD,	TMRT_CALIBRATE,	TMRT_LAST
+    };
+
+    NRE_callback *rootPtr;
+    ByteCode	 *codePtr = NULL;
+
+    for (i = 1; i < objc - 1; i++) {
+    	int index;
+	if (Tcl_GetIndexFromObj(NULL, objv[i], options, "option", TCL_EXACT,
+		&index) != TCL_OK) {
+	    break;
+	}
+	if (index == TMRT_LAST) {
+	    i++;
+	    break;
+	}
+	switch (index) {
+	case TMRT_EV_DIRECT:
+	    direct = objv[i];
+	    break;
+	case TMRT_OVERHEAD:
+	    if (++i >= objc - 1) {
+		goto usage;
+	    }
+	    if (Tcl_GetDoubleFromObj(interp, objv[i], &overhead) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
+	case TMRT_CALIBRATE:
+	    calibrate = objv[i];
+	    break;
+	}
+    }
+
+    if (i >= objc || i < objc-2) {
+usage:
+	Tcl_WrongNumArgs(interp, 1, objv, "?-direct? ?-calibrate? ?-overhead double? command ?time?");
+	return TCL_ERROR;
+    }
+    objPtr = objv[i++];
+    if (i < objc) {
+	result = TclGetWideIntFromObj(interp, objv[i], &maxms);
+	if (result != TCL_OK) {
+	    return result;
+	}
+    }
+
+    /* if calibrate */
+    if (calibrate) {
+
+	/* if no time specified for the calibration */
+	if (maxms == -0x7FFFFFFFFFFFFFFFL) {
+	    Tcl_Obj *clobjv[6];
+	    Tcl_WideInt maxCalTime = 5000;
+	    double lastMeasureOverhead = measureOverhead;
+	    
+	    clobjv[0] = objv[0]; 
+	    i = 1;
+	    if (direct) {
+	    	clobjv[i++] = direct;
+	    }
+	    clobjv[i++] = objPtr; 
+
+	    /* reset last measurement overhead */
+	    measureOverhead = (double)0;
+
+	    /* self-call with 100 milliseconds to warm-up,
+	     * before entering the calibration cycle */
+	    TclNewLongObj(clobjv[i], 100);
+	    Tcl_IncrRefCount(clobjv[i]);
+	    result = Tcl_TimeRateObjCmd(dummy, interp, i+1, clobjv);
+	    Tcl_DecrRefCount(clobjv[i]);
+	    if (result != TCL_OK) {
+		return result;
+	    }
+
+	    i--;
+	    clobjv[i++] = calibrate;
+	    clobjv[i++] = objPtr; 
+
+	    /* set last measurement overhead to max */
+	    measureOverhead = (double)0x7FFFFFFFFFFFFFFFL;
+
+	    /* calibration cycle until it'll be preciser */
+	    maxms = -1000;
+	    do {
+		lastMeasureOverhead = measureOverhead;
+		TclNewLongObj(clobjv[i], (int)maxms);
+		Tcl_IncrRefCount(clobjv[i]);
+		result = Tcl_TimeRateObjCmd(dummy, interp, i+1, clobjv);
+		Tcl_DecrRefCount(clobjv[i]);
+		if (result != TCL_OK) {
+		    return result;
+		}
+		maxCalTime += maxms;
+		/* increase maxms for preciser calibration */
+		maxms -= (-maxms / 4);
+		/* as long as new value more as 0.05% better */
+	    } while ( (measureOverhead >= lastMeasureOverhead
+		    || measureOverhead / lastMeasureOverhead <= 0.9995)
+		    && maxCalTime > 0
+	    );
+
+	    return result;
+	}
+	if (maxms == 0) {
+	    /* reset last measurement overhead */
+	    measureOverhead = 0;
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
+	    return TCL_OK;
+	}
+
+	/* if time is negative - make current overhead more precise */
+	if (maxms > 0) {
+	    /* set last measurement overhead to max */
+	    measureOverhead = (double)0x7FFFFFFFFFFFFFFFL;
+	} else {
+	    maxms = -maxms;
+	}
+
+    }
+
+    if (maxms == -0x7FFFFFFFFFFFFFFFL) {
+    	maxms = 1000;
+    }
+    if (overhead == -1) {
+	overhead = measureOverhead;
+    }
+
+    /* be sure that resetting of result will not smudge the further measurement */
+    Tcl_ResetResult(interp);
+
+    /* compile object */
+    if (!direct) {
+	if (TclInterpReady(interp) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	codePtr = TclCompileObj(interp, objPtr, NULL, 0);
+	TclPreserveByteCode(codePtr);
+    }
+
+    /* get start and stop time */
+#ifdef TCL_WIDE_CLICKS
+    start = middle = TclpGetWideClicks();
+    /* time to stop execution (in wide clicks) */
+    stop = start + (maxms * 1000 / TclpWideClickInMicrosec());
+#else
+    Tcl_GetTime(&now);
+    start = now.sec; start *= 1000000; start += now.usec;
+    middle = start;
+    /* time to stop execution (in microsecs) */
+    stop = start + maxms * 1000;
+#endif
+
+    /* start measurement */
+    while (1) {
+    	/* eval single iteration */
+    	count++;
+
+	if (!direct) {
+	    /* precompiled */
+	    rootPtr = TOP_CB(interp);
+	    result = TclNRExecuteByteCode(interp, codePtr);
+	    result = TclNRRunCallbacks(interp, result, rootPtr);
+	} else {
+	    /* eval */
+	    result = TclEvalObjEx(interp, objPtr, 0, NULL, 0);
+	}
+	if (result != TCL_OK) {
+	    goto done;
+	}
+	
+	/* don't check time up to threshold */
+	if (--threshold > 0) continue;
+
+	/* check stop time reached, estimate new threshold */
+    #ifdef TCL_WIDE_CLICKS
+	middle = TclpGetWideClicks();
+    #else
+	Tcl_GetTime(&now);
+	middle = now.sec; middle *= 1000000; middle += now.usec;
+    #endif
+	if (middle >= stop) {
+	    break;
+	}
+
+	/* don't calculate threshold by few iterations, because sometimes
+	 * first iteration(s) can be too fast (cached, delayed clean up, etc) */
+	if (count < 10) {
+	   threshold = 1; continue;
+	}
+
+	/* average iteration time in microsecs */
+	threshold = (middle - start) / count;
+	if (threshold > maxIterTm) {
+	    maxIterTm = threshold;
+	}
+	/* as relation between remaining time and time since last check */
+	threshold = ((stop - middle) / maxIterTm) / 4;
+	if (threshold > 100000) {	    /* fix for too large threshold */
+	    threshold = 100000;
+	}
+    }
+
+    {
+	Tcl_Obj *objarr[8], **objs = objarr;
+	Tcl_WideInt val;
+	const char *fmt;
+
+	middle -= start;		     /* execution time in microsecs */
+
+    #ifdef TCL_WIDE_CLICKS
+	/* convert execution time in wide clicks to microsecs */
+	middle *= TclpWideClickInMicrosec();
+    #endif
+
+	/* if not calibrate */
+	if (!calibrate) {
+	    /* minimize influence of measurement overhead */
+	    if (overhead > 0) {
+		/* estimate the time of overhead (microsecs) */
+		Tcl_WideInt curOverhead = overhead * count;
+		if (middle > curOverhead) {
+		    middle -= curOverhead;
+		} else {
+		    middle = 1;
+		}
+	    }
+	} else {
+	    /* calibration - obtaining new measurement overhead */
+	    if (measureOverhead > (double)middle / count) {
+		measureOverhead = (double)middle / count;
+	    }
+	    objs[0] = Tcl_NewDoubleObj(measureOverhead);
+	    TclNewLiteralStringObj(objs[1], "\xC2\xB5s/#-overhead"); /* mics */
+	    objs += 2;
+	}
+
+	val = middle / count;		     /* microsecs per iteration */
+	if (val >= 1000000) {
+	    objs[0] = Tcl_NewWideIntObj(val);
+	} else {
+	    if (val < 10)    { fmt = "%.6f"; } else
+	    if (val < 100)   { fmt = "%.4f"; } else
+	    if (val < 1000)  { fmt = "%.3f"; } else
+	    if (val < 10000) { fmt = "%.2f"; } else
+			     { fmt = "%.1f"; };
+	    objs[0] = Tcl_ObjPrintf(fmt, ((double)middle)/count);
+	}
+
+	objs[2] = Tcl_NewWideIntObj(count); /* iterations */
+	
+	/* calculate speed as rate (count) per sec */
+	if (!middle) middle++; /* +1 ms, just to avoid divide by zero */
+	if (count < (0x7FFFFFFFFFFFFFFFL / 1000000)) {
+	    val = (count * 1000000) / middle;
+	    if (val < 100000) {
+		if (val < 100)	{ fmt = "%.3f"; } else
+		if (val < 1000) { fmt = "%.2f"; } else
+				{ fmt = "%.1f"; };
+		objs[4] = Tcl_ObjPrintf(fmt, ((double)(count * 1000000)) / middle);
+	    } else {
+		objs[4] = Tcl_NewWideIntObj(val);
+	    }
+	} else {
+	    objs[4] = Tcl_NewWideIntObj((count / middle) * 1000000);
+	}
+
+	/* estimated net execution time (in millisecs) */
+	if (!calibrate) {
+	    objs[6] = Tcl_ObjPrintf("%.3f", (double)middle / 1000);
+	    TclNewLiteralStringObj(objs[7], "nett-ms");
+	}
+
+	/*
+	* Construct the result as a list because many programs have always parsed
+	* as such (extracting the first element, typically).
+	*/
+
+	TclNewLiteralStringObj(objs[1], "\xC2\xB5s/#"); /* mics/# */
+	TclNewLiteralStringObj(objs[3], "#");
+	TclNewLiteralStringObj(objs[5], "#/sec");
+	Tcl_SetObjResult(interp, Tcl_NewListObj(8, objarr));
+    }
+
+done:
+
+    if (codePtr != NULL) {
+	TclReleaseByteCode(codePtr);
+    }
+
+    return result;
 }
 
 /*
@@ -4323,7 +4527,7 @@ TclNRTryObjCmd(
 	    }
 
 	    info[0] = objv[i];			/* type */
-	    TclNewIntObj(info[1], code);	/* returnCode */
+	    TclNewLongObj(info[1], code);	/* returnCode */
 	    if (info[2] == NULL) {		/* errorCodePrefix */
 		TclNewObj(info[2]);
 	    }

@@ -10,6 +10,7 @@
 #----------------------------------------------------------------------
 #
 # Copyright (c) 2004,2005,2006,2007 by Kevin B. Kenny
+# Copyright (c) 2015 by Sergey G. Brester aka sebres.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
@@ -19,7 +20,7 @@
 # access to the Registry on Windows systems.
 
 uplevel \#0 {
-    package require msgcat 1.4
+    package require msgcat 1.6
     if { $::tcl_platform(platform) eq {windows} } {
 	if { [catch { package require registry 1.1 }] } {
 	    namespace eval ::tcl::clock [list variable NoRegistry {}]
@@ -60,6 +61,8 @@ namespace eval ::tcl::clock {
 
     namespace import ::msgcat::mcload
     namespace import ::msgcat::mclocale
+    namespace import ::msgcat::mc
+    namespace import ::msgcat::mcpackagelocale
 
 }
 
@@ -105,6 +108,11 @@ proc ::tcl::clock::Initialize {} {
 	set TZData(:localtime) {}
     }
     InitTZData
+
+    mcpackagelocale set {}
+    ::msgcat::mcpackageconfig set mcfolder [file join $LibDir msgs]
+    ::msgcat::mcpackageconfig set unknowncmd ""
+    ::msgcat::mcpackageconfig set changecmd ChangeCurrentLocale
 
     # Define the message catalog for the root locale.
 
@@ -249,7 +257,6 @@ proc ::tcl::clock::Initialize {} {
     # Define the directories for time zone data and message catalogs.
 
     variable DataDir [file join $LibDir tzdata]
-    variable MsgDir [file join $LibDir msgs]
 
     # Number of days in the months, in common years and leap years.
 
@@ -280,6 +287,12 @@ proc ::tcl::clock::Initialize {} {
     # Day before Leap Day
 
     variable FEB_28	       58
+
+    # Default configuration
+
+    configure -default-locale  [mclocale]
+    #configure -year-century    2000 \
+    #          -century-switch  38
 
     # Translation table to map Windows TZI onto cities, so that the Olson
     # rules can apply.  In some cases the mapping is ambiguous, so it's wise
@@ -377,152 +390,6 @@ proc ::tcl::clock::Initialize {} {
 	{46800 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Pacific/Tongatapu
     }]
 
-    # Groups of fields that specify the date, priorities, and code bursts that
-    # determine Julian Day Number given those groups.  The code in [clock
-    # scan] will choose the highest priority (lowest numbered) set of fields
-    # that determines the date.
-
-    variable DateParseActions {
-
-	{ seconds } 0 {}
-
-	{ julianDay } 1 {}
-
-	{ era century yearOfCentury month dayOfMonth } 2 {
-	    dict set date year [expr { 100 * [dict get $date century]
-				       + [dict get $date yearOfCentury] }]
-	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
-			  $changeover]
-	}
-	{ era century yearOfCentury dayOfYear } 2 {
-	    dict set date year [expr { 100 * [dict get $date century]
-				       + [dict get $date yearOfCentury] }]
-	    set date [GetJulianDayFromEraYearDay $date[set date {}] \
-			  $changeover]
-	}
-
-	{ century yearOfCentury month dayOfMonth } 3 {
-	    dict set date era CE
-	    dict set date year [expr { 100 * [dict get $date century]
-				       + [dict get $date yearOfCentury] }]
-	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
-			  $changeover]
-	}
-	{ century yearOfCentury dayOfYear } 3 {
-	    dict set date era CE
-	    dict set date year [expr { 100 * [dict get $date century]
-				       + [dict get $date yearOfCentury] }]
-	    set date [GetJulianDayFromEraYearDay $date[set date {}] \
-			  $changeover]
-	}
-	{ iso8601Century iso8601YearOfCentury iso8601Week dayOfWeek } 3 {
-	    dict set date era CE
-	    dict set date iso8601Year \
-		[expr { 100 * [dict get $date iso8601Century]
-			+ [dict get $date iso8601YearOfCentury] }]
-	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}] \
-			 $changeover]
-	}
-
-	{ yearOfCentury month dayOfMonth } 4 {
-	    set date [InterpretTwoDigitYear $date[set date {}] $baseTime]
-	    dict set date era CE
-	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
-			  $changeover]
-	}
-	{ yearOfCentury dayOfYear } 4 {
-	    set date [InterpretTwoDigitYear $date[set date {}] $baseTime]
-	    dict set date era CE
-	    set date [GetJulianDayFromEraYearDay $date[set date {}] \
-			  $changeover]
-	}
-	{ iso8601YearOfCentury iso8601Week dayOfWeek } 4 {
-	    set date [InterpretTwoDigitYear \
-			  $date[set date {}] $baseTime \
-			  iso8601YearOfCentury iso8601Year]
-	    dict set date era CE
-	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}] \
-			 $changeover]
-	}
-
-	{ month dayOfMonth } 5 {
-	    set date [AssignBaseYear $date[set date {}] \
-			  $baseTime $timeZone $changeover]
-	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
-			  $changeover]
-	}
-	{ dayOfYear } 5 {
-	    set date [AssignBaseYear $date[set date {}] \
-			  $baseTime $timeZone $changeover]
-	    set date [GetJulianDayFromEraYearDay $date[set date {}] \
-			 $changeover]
-	}
-	{ iso8601Week dayOfWeek } 5 {
-	    set date [AssignBaseIso8601Year $date[set date {}] \
-			  $baseTime $timeZone $changeover]
-	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}] \
-			 $changeover]
-	}
-
-	{ dayOfMonth } 6 {
-	    set date [AssignBaseMonth $date[set date {}] \
-			  $baseTime $timeZone $changeover]
-	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
-			  $changeover]
-	}
-
-	{ dayOfWeek } 7 {
-	    set date [AssignBaseWeek $date[set date {}] \
-			  $baseTime $timeZone $changeover]
-	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}] \
-			 $changeover]
-	}
-
-	{} 8 {
-	    set date [AssignBaseJulianDay $date[set date {}] \
-			  $baseTime $timeZone $changeover]
-	}
-    }
-
-    # Groups of fields that specify time of day, priorities, and code that
-    # processes them
-
-    variable TimeParseActions {
-
-	seconds 1 {}
-
-	{ hourAMPM minute second amPmIndicator } 2 {
-	    dict set date secondOfDay [InterpretHMSP $date]
-	}
-	{ hour minute second } 2 {
-	    dict set date secondOfDay [InterpretHMS $date]
-	}
-
-	{ hourAMPM minute amPmIndicator } 3 {
-	    dict set date second 0
-	    dict set date secondOfDay [InterpretHMSP $date]
-	}
-	{ hour minute } 3 {
-	    dict set date second 0
-	    dict set date secondOfDay [InterpretHMS $date]
-	}
-
-	{ hourAMPM amPmIndicator } 4 {
-	    dict set date minute 0
-	    dict set date second 0
-	    dict set date secondOfDay [InterpretHMSP $date]
-	}
-	{ hour } 4 {
-	    dict set date minute 0
-	    dict set date second 0
-	    dict set date secondOfDay [InterpretHMS $date]
-	}
-
-	{ } 5 {
-	    dict set date secondOfDay 0
-	}
-    }
-
     # Legacy time zones, used primarily for parsing RFC822 dates.
 
     variable LegacyTimeZone [dict create \
@@ -617,22 +484,17 @@ proc ::tcl::clock::Initialize {} {
 
     # Caches
 
-    variable LocaleNumeralCache {};	# Dictionary whose keys are locale
+    variable LocaleFormats \
+			[dict create];	# Dictionary with localized formats
+
+    variable LocaleNumeralCache \
+			[dict create];	# Dictionary whose keys are locale
 					# names and whose values are pairs
 					# comprising regexes matching numerals
 					# in the given locales and dictionaries
 					# mapping the numerals to their numeric
 					# values.
-    variable McLoaded {};		# Dictionary whose keys are locales
-					# in which [mcload] has been executed
-					# and whose values are second-level
-    					# dictionaries indexed by message
-    					# name and giving message text.
-    # variable CachedSystemTimeZone;    # If 'CachedSystemTimeZone' exists,
-					# it contains the value of the
-					# system time zone, as determined from
-					# the environment.
-    variable TimeZoneBad {};	        # Dictionary whose keys are time zone
+    variable TimeZoneBad [dict create]; # Dictionary whose keys are time zone
     					# names and whose values are 1 if
 					# the time zone is unknown and 0
     					# if it is known.
@@ -648,1645 +510,58 @@ proc ::tcl::clock::Initialize {} {
 ::tcl::clock::Initialize
 
 #----------------------------------------------------------------------
-#
-# clock format --
-#
-#	Formats a count of seconds since the Posix Epoch as a time of day.
-#
-# The 'clock format' command formats times of day for output.  Refer to the
-# user documentation to see what it does.
-#
-#----------------------------------------------------------------------
 
-proc ::tcl::clock::format { args } {
-    variable FormatProc
-    variable TZData
-
-    lassign [ParseFormatArgs {*}$args] format locale timezone
-    set locale [string tolower $locale]
-    set clockval [lindex $args 0]
-
-    # Get the data for time changes in the given zone
-
-    if {$timezone eq ""} {
-	set timezone [GetSystemTimeZone]
+proc mcget {locale args} {
+    switch -- $locale system {
+    	set locale [GetSystemLocale]
+    } current {
+	set locale [mclocale]
     }
-    if {![info exists TZData($timezone)]} {
-	if {[catch {SetupTimeZone $timezone} retval opts]} {
-	    dict unset opts -errorinfo
-	    return -options $opts $retval
-	}
-    }
-
-    # Build a procedure to format the result. Cache the built procedure's name
-    # in the 'FormatProc' array to avoid losing its internal representation,
-    # which contains the name resolution.
-
-    set procName formatproc'$format'$locale
-    set procName [namespace current]::[string map {: {\:} \\ {\\}} $procName]
-    if {[info exists FormatProc($procName)]} {
-	set procName $FormatProc($procName)
-    } else {
-	set FormatProc($procName) \
-	    [ParseClockFormatFormat $procName $format $locale]
-    }
-
-    return [$procName $clockval $timezone]
+    msgcat::mcget ::tcl::clock $locale {*}$args
 }
 
 #----------------------------------------------------------------------
 #
-# ParseClockFormatFormat --
+# GetSystemLocale --
 #
-#	Builds and caches a procedure that formats a time value.
+#	Determines the system locale, which corresponds to "system"
+#	keyword for locale parameter of 'clock' command.
 #
 # Parameters:
-#	format -- Format string to use
-#	locale -- Locale in which the format string is to be interpreted
-#
-# Results:
-#	Returns the name of the newly-built procedure.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::ParseClockFormatFormat {procName format locale} {
-    if {[namespace which $procName] ne {}} {
-	return $procName
-    }
-
-    # Map away the locale-dependent composite format groups
-
-    EnterLocale $locale oldLocale
-
-    # Change locale if a fresh locale has been given on the command line.
-
-    try {
-	return [ParseClockFormatFormat2 $format $locale $procName]
-    } trap CLOCK {result opts} {
-	dict unset opts -errorinfo
-	return -options $opts $result
-    } finally {
-	# Restore the locale
-
-	if { [info exists oldLocale] } {
-	    mclocale $oldLocale
-	}
-    }
-}
-
-proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
-    set didLocaleEra 0
-    set didLocaleNumerals 0
-    set preFormatCode \
-	[string map [list @GREGORIAN_CHANGE_DATE@ \
-				       [mc GREGORIAN_CHANGE_DATE]] \
-	     {
-		 variable TZData
-		 set date [GetDateFields $clockval \
-			       $TZData($timezone) \
-			       @GREGORIAN_CHANGE_DATE@]
-	     }]
-    set formatString {}
-    set substituents {}
-    set state {}
-
-    set format [LocalizeFormat $locale $format]
-
-    foreach char [split $format {}] {
-	switch -exact -- $state {
-	    {} {
-		if { [string equal % $char] } {
-		    set state percent
-		} else {
-		    append formatString $char
-		}
-	    }
-	    percent {			# Character following a '%' character
-		set state {}
-		switch -exact -- $char {
-		    % {			# A literal character, '%'
-			append formatString %%
-		    }
-		    a {			# Day of week, abbreviated
-			append formatString %s
-			append substituents \
-			    [string map \
-				 [list @DAYS_OF_WEEK_ABBREV@ \
-				      [list [mc DAYS_OF_WEEK_ABBREV]]] \
-				 { [lindex @DAYS_OF_WEEK_ABBREV@ \
-					[expr {[dict get $date dayOfWeek] \
-						   % 7}]]}]
-		    }
-		    A {			# Day of week, spelt out.
-			append formatString %s
-			append substituents \
-			    [string map \
-				 [list @DAYS_OF_WEEK_FULL@ \
-				      [list [mc DAYS_OF_WEEK_FULL]]] \
-				 { [lindex @DAYS_OF_WEEK_FULL@ \
-					[expr {[dict get $date dayOfWeek] \
-						   % 7}]]}]
-		    }
-		    b - h {		# Name of month, abbreviated.
-			append formatString %s
-			append substituents \
-			    [string map \
-				 [list @MONTHS_ABBREV@ \
-				      [list [mc MONTHS_ABBREV]]] \
-				 { [lindex @MONTHS_ABBREV@ \
-					[expr {[dict get $date month]-1}]]}]
-		    }
-		    B {			# Name of month, spelt out
-			append formatString %s
-			append substituents \
-			    [string map \
-				 [list @MONTHS_FULL@ \
-				      [list [mc MONTHS_FULL]]] \
-				 { [lindex @MONTHS_FULL@ \
-					[expr {[dict get $date month]-1}]]}]
-		    }
-		    C {			# Century number
-			append formatString %02d
-			append substituents \
-			    { [expr {[dict get $date year] / 100}]}
-		    }
-		    d {			# Day of month, with leading zero
-			append formatString %02d
-			append substituents { [dict get $date dayOfMonth]}
-		    }
-		    e {			# Day of month, without leading zero
-			append formatString %2d
-			append substituents { [dict get $date dayOfMonth]}
-		    }
-		    E {			# Format group in a locale-dependent
-					# alternative era
-			set state percentE
-			if {!$didLocaleEra} {
-			    append preFormatCode \
-				[string map \
-				     [list @LOCALE_ERAS@ \
-					  [list [mc LOCALE_ERAS]]] \
-				     {
-					 set date [GetLocaleEra \
-						       $date[set date {}] \
-						       @LOCALE_ERAS@]}] \n
-			    set didLocaleEra 1
-			}
-			if {!$didLocaleNumerals} {
-			    append preFormatCode \
-				[list set localeNumerals \
-				     [mc LOCALE_NUMERALS]] \n
-			    set didLocaleNumerals 1
-			}
-		    }
-		    g {			# Two-digit year relative to ISO8601
-					# week number
-			append formatString %02d
-			append substituents \
-			    { [expr { [dict get $date iso8601Year] % 100 }]}
-		    }
-		    G {			# Four-digit year relative to ISO8601
-					# week number
-			append formatString %02d
-			append substituents { [dict get $date iso8601Year]}
-		    }
-		    H {			# Hour in the 24-hour day, leading zero
-			append formatString %02d
-			append substituents \
-			    { [expr { [dict get $date localSeconds] \
-					  / 3600 % 24}]}
-		    }
-		    I {			# Hour AM/PM, with leading zero
-			append formatString %02d
-			append substituents \
-			    { [expr { ( ( ( [dict get $date localSeconds] \
-					    % 86400 ) \
-					  + 86400 \
-					  - 3600 ) \
-					/ 3600 ) \
-				      % 12 + 1 }] }
-		    }
-		    j {			# Day of year (001-366)
-			append formatString %03d
-			append substituents { [dict get $date dayOfYear]}
-		    }
-		    J {			# Julian Day Number
-			append formatString %07ld
-			append substituents { [dict get $date julianDay]}
-		    }
-		    k {			# Hour (0-23), no leading zero
-			append formatString %2d
-			append substituents \
-			    { [expr { [dict get $date localSeconds]
-				      / 3600
-				      % 24 }]}
-		    }
-		    l {			# Hour (12-11), no leading zero
-			append formatString %2d
-			append substituents \
-			    { [expr { ( ( ( [dict get $date localSeconds]
-					   % 86400 )
-					 + 86400
-					 - 3600 )
-				       / 3600 )
-				     % 12 + 1 }]}
-		    }
-		    m {			# Month number, leading zero
-			append formatString %02d
-			append substituents { [dict get $date month]}
-		    }
-		    M {			# Minute of the hour, leading zero
-			append formatString %02d
-			append substituents \
-			    { [expr { [dict get $date localSeconds]
-				      / 60
-				      % 60 }]}
-		    }
-		    n {			# A literal newline
-			append formatString \n
-		    }
-		    N {			# Month number, no leading zero
-			append formatString %2d
-			append substituents { [dict get $date month]}
-		    }
-		    O {			# A format group in the locale's
-					# alternative numerals
-			set state percentO
-			if {!$didLocaleNumerals} {
-			    append preFormatCode \
-				[list set localeNumerals \
-				     [mc LOCALE_NUMERALS]] \n
-			    set didLocaleNumerals 1
-			}
-		    }
-		    p {			# Localized 'AM' or 'PM' indicator
-					# converted to uppercase
-			append formatString %s
-			append preFormatCode \
-			    [list set AM [string toupper [mc AM]]] \n \
-			    [list set PM [string toupper [mc PM]]] \n
-			append substituents \
-			    { [expr {(([dict get $date localSeconds]
-				       % 86400) < 43200) ?
-				     $AM : $PM}]}
-		    }
-		    P {			# Localized 'AM' or 'PM' indicator
-			append formatString %s
-			append preFormatCode \
-			    [list set am [mc AM]] \n \
-			    [list set pm [mc PM]] \n
-			append substituents \
-			    { [expr {(([dict get $date localSeconds]
-				       % 86400) < 43200) ?
-				     $am : $pm}]}
-
-		    }
-		    Q {			# Hi, Jeff!
-			append formatString %s
-			append substituents { [FormatStarDate $date]}
-		    }
-		    s {			# Seconds from the Posix Epoch
-			append formatString %s
-			append substituents { [dict get $date seconds]}
-		    }
-		    S {			# Second of the minute, with
-			# leading zero
-			append formatString %02d
-			append substituents \
-			    { [expr { [dict get $date localSeconds]
-				      % 60 }]}
-		    }
-		    t {			# A literal tab character
-			append formatString \t
-		    }
-		    u {			# Day of the week (1-Monday, 7-Sunday)
-			append formatString %1d
-			append substituents { [dict get $date dayOfWeek]}
-		    }
-		    U {			# Week of the year (00-53). The
-					# first Sunday of the year is the
-					# first day of week 01
-			append formatString %02d
-			append preFormatCode {
-			    set dow [dict get $date dayOfWeek]
-			    if { $dow == 7 } {
-				set dow 0
-			    }
-			    incr dow
-			    set UweekNumber \
-				[expr { ( [dict get $date dayOfYear]
-					  - $dow + 7 )
-					/ 7 }]
-			}
-			append substituents { $UweekNumber}
-		    }
-		    V {			# The ISO8601 week number
-			append formatString %02d
-			append substituents { [dict get $date iso8601Week]}
-		    }
-		    w {			# Day of the week (0-Sunday,
-					# 6-Saturday)
-			append formatString %1d
-			append substituents \
-			    { [expr { [dict get $date dayOfWeek] % 7 }]}
-		    }
-		    W {			# Week of the year (00-53). The first
-					# Monday of the year is the first day
-					# of week 01.
-			append preFormatCode {
-			    set WweekNumber \
-				[expr { ( [dict get $date dayOfYear]
-					  - [dict get $date dayOfWeek]
-					  + 7 )
-					/ 7 }]
-			}
-			append formatString %02d
-			append substituents { $WweekNumber}
-		    }
-		    y {			# The two-digit year of the century
-			append formatString %02d
-			append substituents \
-			    { [expr { [dict get $date year] % 100 }]}
-		    }
-		    Y {			# The four-digit year
-			append formatString %04d
-			append substituents { [dict get $date year]}
-		    }
-		    z {			# The time zone as hours and minutes
-					# east (+) or west (-) of Greenwich
-			append formatString %s
-			append substituents { [FormatNumericTimeZone \
-						   [dict get $date tzOffset]]}
-		    }
-		    Z {			# The name of the time zone
-			append formatString %s
-			append substituents { [dict get $date tzName]}
-		    }
-		    % {			# A literal percent character
-			append formatString %%
-		    }
-		    default {		# An unknown escape sequence
-			append formatString %% $char
-		    }
-		}
-	    }
-	    percentE {			# Character following %E
-		set state {}
-		switch -exact -- $char {
-		    E {
-			append formatString %s
-			append substituents { } \
-			    [string map \
-				 [list @BCE@ [list [mc BCE]] \
-				      @CE@ [list [mc CE]]] \
-				      {[dict get {BCE @BCE@ CE @CE@} \
-					    [dict get $date era]]}]
-		    }
-		    C {			# Locale-dependent era
-			append formatString %s
-			append substituents { [dict get $date localeEra]}
-		    }
-		    y {			# Locale-dependent year of the era
-			append preFormatCode {
-			    set y [dict get $date localeYear]
-			    if { $y >= 0 && $y < 100 } {
-				set Eyear [lindex $localeNumerals $y]
-			    } else {
-				set Eyear $y
-			    }
-			}
-			append formatString %s
-			append substituents { $Eyear}
-		    }
-		    default {		# Unknown %E format group
-			append formatString %%E $char
-		    }
-		}
-	    }
-	    percentO {			# Character following %O
-		set state {}
-		switch -exact -- $char {
-		    d - e {		# Day of the month in alternative
-			# numerals
-			append formatString %s
-			append substituents \
-			    { [lindex $localeNumerals \
-				   [dict get $date dayOfMonth]]}
-		    }
-		    H - k {		# Hour of the day in alternative
-					# numerals
-			append formatString %s
-			append substituents \
-			    { [lindex $localeNumerals \
-				   [expr { [dict get $date localSeconds]
-					   / 3600
-					   % 24 }]]}
-		    }
-		    I - l {		# Hour (12-11) AM/PM in alternative
-					# numerals
-			append formatString %s
-			append substituents \
-			    { [lindex $localeNumerals \
-				   [expr { ( ( ( [dict get $date localSeconds]
-						 % 86400 )
-					       + 86400
-					       - 3600 )
-					     / 3600 )
-					   % 12 + 1 }]]}
-		    }
-		    m {			# Month number in alternative numerals
-			append formatString %s
-			append substituents \
-			    { [lindex $localeNumerals [dict get $date month]]}
-		    }
-		    M {			# Minute of the hour in alternative
-					# numerals
-			append formatString %s
-			append substituents \
-			    { [lindex $localeNumerals \
-				   [expr { [dict get $date localSeconds]
-					   / 60
-					   % 60 }]]}
-		    }
-		    S {			# Second of the minute in alternative
-					# numerals
-			append formatString %s
-			append substituents \
-			    { [lindex $localeNumerals \
-				   [expr { [dict get $date localSeconds]
-					   % 60 }]]}
-		    }
-		    u {			# Day of the week (Monday=1,Sunday=7)
-					# in alternative numerals
-			append formatString %s
-			append substituents \
-			    { [lindex $localeNumerals \
-				   [dict get $date dayOfWeek]]}
-			}
-		    w {			# Day of the week (Sunday=0,Saturday=6)
-					# in alternative numerals
-			append formatString %s
-			append substituents \
-			    { [lindex $localeNumerals \
-				   [expr { [dict get $date dayOfWeek] % 7 }]]}
-		    }
-		    y {			# Year of the century in alternative
-					# numerals
-			append formatString %s
-			append substituents \
-			    { [lindex $localeNumerals \
-				   [expr { [dict get $date year] % 100 }]]}
-		    }
-		    default {	# Unknown format group
-			append formatString %%O $char
-		    }
-		}
-	    }
-	}
-    }
-
-    # Clean up any improperly terminated groups
-
-    switch -exact -- $state {
-	percent {
-	    append formatString %%
-	}
-	percentE {
-	    append retval %%E
-	}
-	percentO {
-	    append retval %%O
-	}
-    }
-
-    proc $procName {clockval timezone} "
-        $preFormatCode
-        return \[::format [list $formatString] $substituents\]
-    "
-
-    #    puts [list $procName [info args $procName] [info body $procName]]
-
-    return $procName
-}
-
-#----------------------------------------------------------------------
-#
-# clock scan --
-#
-#	Inputs a count of seconds since the Posix Epoch as a time of day.
-#
-# The 'clock format' command scans times of day on input.  Refer to the user
-# documentation to see what it does.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::scan { args } {
-    set format {}
-
-    # Check the count of args
-
-    if { [llength $args] < 1 || [llength $args] % 2 != 1 } {
-	set cmdName "clock scan"
-	return -code error \
-	    -errorcode [list CLOCK wrongNumArgs] \
-	    "wrong \# args: should be\
-             \"$cmdName string\
-             ?-base seconds?\
-             ?-format string? ?-gmt boolean?\
-             ?-locale LOCALE? ?-timezone ZONE?\""
-    }
-
-    # Set defaults
-
-    set base [clock seconds]
-    set string [lindex $args 0]
-    set format {}
-    set gmt 0
-    set locale c
-    set timezone [GetSystemTimeZone]
-
-    # Pick up command line options.
-
-    foreach { flag value } [lreplace $args 0 0] {
-	set saw($flag) {}
-	switch -exact -- $flag {
-	    -b - -ba - -bas - -base {
-		set base $value
-	    }
-	    -f - -fo - -for - -form - -forma - -format {
-		set format $value
-	    }
-	    -g - -gm - -gmt {
-		set gmt $value
-	    }
-	    -l - -lo - -loc - -loca - -local - -locale {
-		set locale [string tolower $value]
-	    }
-	    -t - -ti - -tim - -time - -timez - -timezo - -timezon - -timezone {
-		set timezone $value
-	    }
-	    default {
-		return -code error \
-		    -errorcode [list CLOCK badOption $flag] \
-		    "bad option \"$flag\",\
-                     must be -base, -format, -gmt, -locale or -timezone"
-	    }
-	}
-    }
-
-    # Check options for validity
-
-    if { [info exists saw(-gmt)] && [info exists saw(-timezone)] } {
-	return -code error \
-	    -errorcode [list CLOCK gmtWithTimezone] \
-	    "cannot use -gmt and -timezone in same call"
-    }
-    if { [catch { expr { wide($base) } } result] } {
-	return -code error "expected integer but got \"$base\""
-    }
-    if { ![string is boolean -strict $gmt] } {
-	return -code error "expected boolean value but got \"$gmt\""
-    } elseif { $gmt } {
-	set timezone :GMT
-    }
-
-    if { ![info exists saw(-format)] } {
-	# Perhaps someday we'll localize the legacy code. Right now, it's not
-	# localized.
-	if { [info exists saw(-locale)] } {
-	    return -code error \
-		-errorcode [list CLOCK flagWithLegacyFormat] \
-		"legacy \[clock scan\] does not support -locale"
-
-	}
-	return [FreeScan $string $base $timezone $locale]
-    }
-
-    # Change locale if a fresh locale has been given on the command line.
-
-    EnterLocale $locale oldLocale
-
-    try {
-	# Map away the locale-dependent composite format groups
-
-	set scanner [ParseClockScanFormat $format $locale]
-	return [$scanner $string $base $timezone]
-    } trap CLOCK {result opts} {
-	# Conceal location of generation of expected errors
-
-	dict unset opts -errorinfo
-	return -options $opts $result
-    } finally {
-	# Restore the locale
-
-	if { [info exists oldLocale] } {
-	    mclocale $oldLocale
-	}
-    }
-}
-
-#----------------------------------------------------------------------
-#
-# FreeScan --
-#
-#	Scans a time in free format
-#
-# Parameters:
-#	string - String containing the time to scan
-#	base - Base time, expressed in seconds from the Epoch
-#	timezone - Default time zone in which the time will be expressed
-#	locale - (Unused) Name of the locale where the time will be scanned.
-#
-# Results:
-#	Returns the date and time extracted from the string in seconds from
-#	the epoch
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::FreeScan { string base timezone locale } {
-    variable TZData
-
-    # Get the data for time changes in the given zone
-
-    try {
-	SetupTimeZone $timezone
-    } on error {retval opts} {
-	dict unset opts -errorinfo
-	return -options $opts $retval
-    }
-
-    # Extract year, month and day from the base time for the parser to use as
-    # defaults
-
-    set date [GetDateFields $base $TZData($timezone) 2361222]
-    dict set date secondOfDay [expr {
-	[dict get $date localSeconds] % 86400
-    }]
-
-    # Parse the date.  The parser will return a list comprising date, time,
-    # time zone, relative month/day/seconds, relative weekday, ordinal month.
-
-    try {
-	set scanned [Oldscan $string \
-		     [dict get $date year] \
-		     [dict get $date month] \
-		     [dict get $date dayOfMonth]]
-	lassign $scanned \
-	    parseDate parseTime parseZone parseRel \
-	    parseWeekday parseOrdinalMonth
-    } on error message {
-	return -code error \
-	    "unable to convert date-time string \"$string\": $message"
-    }
-
-    # If the caller supplied a date in the string, update the 'date' dict with
-    # the value. If the caller didn't specify a time with the date, default to
-    # midnight.
-
-    if { [llength $parseDate] > 0 } {
-	lassign $parseDate y m d
-	if { $y < 100 } {
-	    if { $y >= 39 } {
-		incr y 1900
-	    } else {
-		incr y 2000
-	    }
-	}
-	dict set date era CE
-	dict set date year $y
-	dict set date month $m
-	dict set date dayOfMonth $d
-	if { $parseTime eq {} } {
-	    set parseTime 0
-	}
-    }
-
-    # If the caller supplied a time zone in the string, it comes back as a
-    # two-element list; the first element is the number of minutes east of
-    # Greenwich, and the second is a Daylight Saving Time indicator (1 == yes,
-    # 0 == no, -1 == unknown). We make it into a time zone indicator of
-    # +-hhmm.
-
-    if { [llength $parseZone] > 0 } {
-	lassign $parseZone minEast dstFlag
-	set timezone [FormatNumericTimeZone \
-			  [expr { 60 * $minEast + 3600 * $dstFlag }]]
-	SetupTimeZone $timezone
-    }
-    dict set date tzName $timezone
-
-    # Assemble date, time, zone into seconds-from-epoch
-
-    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] 2361222]
-    if { $parseTime ne {} } {
-	dict set date secondOfDay $parseTime
-    } elseif { [llength $parseWeekday] != 0
-	       || [llength $parseOrdinalMonth] != 0
-	       || ( [llength $parseRel] != 0
-		    && ( [lindex $parseRel 0] != 0
-			 || [lindex $parseRel 1] != 0 ) ) } {
-	dict set date secondOfDay 0
-    }
-
-    dict set date localSeconds [expr {
-	-210866803200
-	+ ( 86400 * wide([dict get $date julianDay]) )
-	+ [dict get $date secondOfDay]
-    }]
-    dict set date tzName $timezone
-    set date [ConvertLocalToUTC $date[set date {}] $TZData($timezone) 2361222]
-    set seconds [dict get $date seconds]
-
-    # Do relative times
-
-    if { [llength $parseRel] > 0 } {
-	lassign $parseRel relMonth relDay relSecond
-	set seconds [add $seconds \
-			 $relMonth months $relDay days $relSecond seconds \
-			 -timezone $timezone -locale $locale]
-    }
-
-    # Do relative weekday
-
-    if { [llength $parseWeekday] > 0 } {
-	lassign $parseWeekday dayOrdinal dayOfWeek
-	set date2 [GetDateFields $seconds $TZData($timezone) 2361222]
-	dict set date2 era CE
-	set jdwkday [WeekdayOnOrBefore $dayOfWeek [expr {
-	    [dict get $date2 julianDay] + 6
-	}]]
-	incr jdwkday [expr { 7 * $dayOrdinal }]
-	if { $dayOrdinal > 0 } {
-	    incr jdwkday -7
-	}
-	dict set date2 secondOfDay \
-	    [expr { [dict get $date2 localSeconds] % 86400 }]
-	dict set date2 julianDay $jdwkday
-	dict set date2 localSeconds [expr {
-	    -210866803200
-	    + ( 86400 * wide([dict get $date2 julianDay]) )
-	    + [dict get $date secondOfDay]
-	}]
-	dict set date2 tzName $timezone
-	set date2 [ConvertLocalToUTC $date2[set date2 {}] $TZData($timezone) \
-		       2361222]
-	set seconds [dict get $date2 seconds]
-    }
-
-    # Do relative month
-
-    if { [llength $parseOrdinalMonth] > 0 } {
-	lassign $parseOrdinalMonth monthOrdinal monthNumber
-	if { $monthOrdinal > 0 } {
-	    set monthDiff [expr { $monthNumber - [dict get $date month] }]
-	    if { $monthDiff <= 0 } {
-		incr monthDiff 12
-	    }
-	    incr monthOrdinal -1
-	} else {
-	    set monthDiff [expr { [dict get $date month] - $monthNumber }]
-	    if { $monthDiff >= 0 } {
-		incr monthDiff -12
-	    }
-	    incr monthOrdinal
-	}
-	set seconds [add $seconds $monthOrdinal years $monthDiff months \
-			 -timezone $timezone -locale $locale]
-    }
-
-    return $seconds
-}
-
-
-#----------------------------------------------------------------------
-#
-# ParseClockScanFormat --
-#
-#	Parses a format string given to [clock scan -format]
-#
-# Parameters:
-#	formatString - The format being parsed
-#	locale - The current locale
-#
-# Results:
-#	Constructs and returns a procedure that accepts the string being
-#	scanned, the base time, and the time zone.  The procedure will either
-#	return the scanned time or else throw an error that should be rethrown
-#	to the caller of [clock scan]
-#
-# Side effects:
-#	The given procedure is defined in the ::tcl::clock namespace.  Scan
-#	procedures are not deleted once installed.
-#
-# Why do we parse dates by defining a procedure to parse them?  The reason is
-# that by doing so, we have one convenient place to cache all the information:
-# the regular expressions that match the patterns (which will be compiled),
-# the code that assembles the date information, everything lands in one place.
-# In this way, when a given format is reused at run time, all the information
-# of how to apply it is available in a single place.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
-    # Check whether the format has been parsed previously, and return the
-    # existing recognizer if it has.
-
-    set procName scanproc'$formatString'$locale
-    set procName [namespace current]::[string map {: {\:} \\ {\\}} $procName]
-    if { [namespace which $procName] != {} } {
-	return $procName
-    }
-
-    variable DateParseActions
-    variable TimeParseActions
-
-    # Localize the %x, %X, etc. groups
-
-    set formatString [LocalizeFormat $locale $formatString]
-
-    # Condense whitespace
-
-    regsub -all {[[:space:]]+} $formatString { } formatString
-
-    # Walk through the groups of the format string.  In this loop, we
-    # accumulate:
-    #	- a regular expression that matches the string,
-    #   - the count of capturing brackets in the regexp
-    #   - a set of code that post-processes the fields captured by the regexp,
-    #   - a dictionary whose keys are the names of fields that are present
-    #     in the format string.
-
-    set re {^[[:space:]]*}
-    set captureCount 0
-    set postcode {}
-    set fieldSet [dict create]
-    set fieldCount 0
-    set postSep {}
-    set state {}
-
-    foreach c [split $formatString {}] {
-	switch -exact -- $state {
-	    {} {
-		if { $c eq "%" } {
-		    set state %
-		} elseif { $c eq " " } {
-		    append re {[[:space:]]+}
-		} else {
-		    if { ! [string is alnum $c] } {
-			append re "\\"
-		    }
-		    append re $c
-		}
-	    }
-	    % {
-		set state {}
-		switch -exact -- $c {
-		    % {
-			append re %
-		    }
-		    { } {
-			append re "\[\[:space:\]\]*"
-		    }
-		    a - A { 		# Day of week, in words
-			set l {}
-			foreach \
-			    i {7 1 2 3 4 5 6} \
-			    abr [mc DAYS_OF_WEEK_ABBREV] \
-			    full [mc DAYS_OF_WEEK_FULL] {
-				dict set l [string tolower $abr] $i
-				dict set l [string tolower $full] $i
-				incr i
-			    }
-			lassign [UniquePrefixRegexp $l] regex lookup
-			append re ( $regex )
-			dict set fieldSet dayOfWeek [incr fieldCount]
-			append postcode "dict set date dayOfWeek \[" \
-			    "dict get " [list $lookup] " " \
-			    \[ {string tolower $field} [incr captureCount] \] \
-			    "\]\n"
-		    }
-		    b - B - h {		# Name of month
-			set i 0
-			set l {}
-			foreach \
-			    abr [mc MONTHS_ABBREV] \
-			    full [mc MONTHS_FULL] {
-				incr i
-				dict set l [string tolower $abr] $i
-				dict set l [string tolower $full] $i
-			    }
-			lassign [UniquePrefixRegexp $l] regex lookup
-			append re ( $regex )
-			dict set fieldSet month [incr fieldCount]
-			append postcode "dict set date month \[" \
-			    "dict get " [list $lookup] \
-			    " " \[ {string tolower $field} \
-			    [incr captureCount] \] \
-			    "\]\n"
-		    }
-		    C {			# Gregorian century
-			append re \\s*(\\d\\d?)
-			dict set fieldSet century [incr fieldCount]
-			append postcode "dict set date century \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n"
-		    }
-		    d - e {		# Day of month
-			append re \\s*(\\d\\d?)
-			dict set fieldSet dayOfMonth [incr fieldCount]
-			append postcode "dict set date dayOfMonth \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n"
-		    }
-		    E {			# Prefix for locale-specific codes
-			set state %E
-		    }
-		    g {			# ISO8601 2-digit year
-			append re \\s*(\\d\\d)
-			dict set fieldSet iso8601YearOfCentury \
-			    [incr fieldCount]
-			append postcode \
-			    "dict set date iso8601YearOfCentury \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n"
-		    }
-		    G {			# ISO8601 4-digit year
-			append re \\s*(\\d\\d)(\\d\\d)
-			dict set fieldSet iso8601Century [incr fieldCount]
-			dict set fieldSet iso8601YearOfCentury \
-			    [incr fieldCount]
-			append postcode \
-			    "dict set date iso8601Century \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n" \
-			    "dict set date iso8601YearOfCentury \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n"
-		    }
-		    H - k {		# Hour of day
-			append re \\s*(\\d\\d?)
-			dict set fieldSet hour [incr fieldCount]
-			append postcode "dict set date hour \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n"
-		    }
-		    I - l {		# Hour, AM/PM
-			append re \\s*(\\d\\d?)
-			dict set fieldSet hourAMPM [incr fieldCount]
-			append postcode "dict set date hourAMPM \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n"
-		    }
-		    j {			# Day of year
-			append re \\s*(\\d\\d?\\d?)
-			dict set fieldSet dayOfYear [incr fieldCount]
-			append postcode "dict set date dayOfYear \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n"
-		    }
-		    J {			# Julian Day Number
-			append re \\s*(\\d+)
-			dict set fieldSet julianDay [incr fieldCount]
-			append postcode "dict set date julianDay \[" \
-			    "::scan \$field" [incr captureCount] " %ld" \
-			    "\]\n"
-		    }
-		    m - N {		# Month number
-			append re \\s*(\\d\\d?)
-			dict set fieldSet month [incr fieldCount]
-			append postcode "dict set date month \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n"
-		    }
-		    M {			# Minute
-			append re \\s*(\\d\\d?)
-			dict set fieldSet minute [incr fieldCount]
-			append postcode "dict set date minute \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n"
-		    }
-		    n {			# Literal newline
-			append re \\n
-		    }
-		    O {			# Prefix for locale numerics
-			set state %O
-		    }
-		    p - P { 		# AM/PM indicator
-			set l [list [string tolower [mc AM]] 0 \
-				   [string tolower [mc PM]] 1]
-			lassign [UniquePrefixRegexp $l] regex lookup
-			append re ( $regex )
-			dict set fieldSet amPmIndicator [incr fieldCount]
-			append postcode "dict set date amPmIndicator \[" \
-			    "dict get " [list $lookup] " \[string tolower " \
-			    "\$field" \
-			    [incr captureCount] \
-			    "\]\]\n"
-		    }
-		    Q {			# Hi, Jeff!
-			append re {Stardate\s+([-+]?\d+)(\d\d\d)[.](\d)}
-			incr captureCount
-			dict set fieldSet seconds [incr fieldCount]
-			append postcode {dict set date seconds } \[ \
-			    {ParseStarDate $field} [incr captureCount] \
-			    { $field} [incr captureCount] \
-			    { $field} [incr captureCount] \
-			    \] \n
-		    }
-		    s {			# Seconds from Posix Epoch
-			# This next case is insanely difficult, because it's
-			# problematic to determine whether the field is
-			# actually within the range of a wide integer.
-			append re {\s*([-+]?\d+)}
-			dict set fieldSet seconds [incr fieldCount]
-			append postcode {dict set date seconds } \[ \
-			    {ScanWide $field} [incr captureCount] \] \n
-		    }
-		    S {			# Second
-			append re \\s*(\\d\\d?)
-			dict set fieldSet second [incr fieldCount]
-			append postcode "dict set date second \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n"
-		    }
-		    t {			# Literal tab character
-			append re \\t
-		    }
-		    u - w {		# Day number within week, 0 or 7 == Sun
-					# 1=Mon, 6=Sat
-			append re \\s*(\\d)
-			dict set fieldSet dayOfWeek [incr fieldCount]
-			append postcode {::scan $field} [incr captureCount] \
-			    { %d dow} \n \
-			    {
-				if { $dow == 0 } {
-				    set dow 7
-				} elseif { $dow > 7 } {
-				    return -code error \
-					-errorcode [list CLOCK badDayOfWeek] \
-					"day of week is greater than 7"
-				}
-				dict set date dayOfWeek $dow
-			    }
-		    }
-		    U {			# Week of year. The first Sunday of
-					# the year is the first day of week
-					# 01. No scan rule uses this group.
-			append re \\s*\\d\\d?
-		    }
-		    V {			# Week of ISO8601 year
-
-			append re \\s*(\\d\\d?)
-			dict set fieldSet iso8601Week [incr fieldCount]
-			append postcode "dict set date iso8601Week \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n"
-		    }
-		    W {			# Week of the year (00-53). The first
-					# Monday of the year is the first day
-					# of week 01. No scan rule uses this
-					# group.
-			append re \\s*\\d\\d?
-		    }
-		    y {			# Two-digit Gregorian year
-			append re \\s*(\\d\\d?)
-			dict set fieldSet yearOfCentury [incr fieldCount]
-			append postcode "dict set date yearOfCentury \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n"
-		    }
-		    Y {			# 4-digit Gregorian year
-			append re \\s*(\\d\\d)(\\d\\d)
-			dict set fieldSet century [incr fieldCount]
-			dict set fieldSet yearOfCentury [incr fieldCount]
-			append postcode \
-			    "dict set date century \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n" \
-			    "dict set date yearOfCentury \[" \
-			    "::scan \$field" [incr captureCount] " %d" \
-			    "\]\n"
-		    }
-		    z - Z {			# Time zone name
-			append re {(?:([-+]\d\d(?::?\d\d(?::?\d\d)?)?)|([[:alnum:]]{1,4}))}
-			dict set fieldSet tzName [incr fieldCount]
-			append postcode \
-			    {if } \{ { $field} [incr captureCount] \
-			    { ne "" } \} { } \{ \n \
-			    {dict set date tzName $field} \
-			    $captureCount \n \
-			    \} { else } \{ \n \
-			    {dict set date tzName } \[ \
-			    {ConvertLegacyTimeZone $field} \
-			    [incr captureCount] \] \n \
-			    \} \n \
-		    }
-		    % {			# Literal percent character
-			append re %
-		    }
-		    default {
-			append re %
-			if { ! [string is alnum $c] } {
-			    append re \\
-			    }
-			append re $c
-		    }
-		}
-	    }
-	    %E {
-		switch -exact -- $c {
-		    C {			# Locale-dependent era
-			set d {}
-			foreach triple [mc LOCALE_ERAS] {
-			    lassign $triple t symbol year
-			    dict set d [string tolower $symbol] $year
-			}
-			lassign [UniquePrefixRegexp $d] regex lookup
-			append re (?: $regex )
-		    }
-		    E {
-			set l {}
-			dict set l [string tolower [mc BCE]] BCE
-			dict set l [string tolower [mc CE]] CE
-			dict set l b.c.e. BCE
-			dict set l c.e. CE
-			dict set l b.c. BCE
-			dict set l a.d. CE
-			lassign [UniquePrefixRegexp $l] regex lookup
-			append re ( $regex )
-			dict set fieldSet era [incr fieldCount]
-			append postcode "dict set date era \["\
-			    "dict get " [list $lookup] \
-			    { } \[ {string tolower $field} \
-			    [incr captureCount] \] \
-			    "\]\n"
-		    }
-		    y {			# Locale-dependent year of the era
-			lassign [LocaleNumeralMatcher $locale] regex lookup
-			append re $regex
-			incr captureCount
-		    }
-		    default {
-			append re %E
-			if { ! [string is alnum $c] } {
-			    append re \\
-			    }
-			append re $c
-		    }
-		}
-		set state {}
-	    }
-	    %O {
-		switch -exact -- $c {
-		    d - e {
-			lassign [LocaleNumeralMatcher $locale] regex lookup
-			append re $regex
-			dict set fieldSet dayOfMonth [incr fieldCount]
-			append postcode "dict set date dayOfMonth \[" \
-			    "dict get " [list $lookup] " \$field" \
-			    [incr captureCount] \
-			    "\]\n"
-		    }
-		    H - k {
-			lassign [LocaleNumeralMatcher $locale] regex lookup
-			append re $regex
-			dict set fieldSet hour [incr fieldCount]
-			append postcode "dict set date hour \[" \
-			    "dict get " [list $lookup] " \$field" \
-			    [incr captureCount] \
-			    "\]\n"
-		    }
-		    I - l {
-			lassign [LocaleNumeralMatcher $locale] regex lookup
-			append re $regex
-			dict set fieldSet hourAMPM [incr fieldCount]
-			append postcode "dict set date hourAMPM \[" \
-			    "dict get " [list $lookup] " \$field" \
-			    [incr captureCount] \
-			    "\]\n"
-		    }
-		    m {
-			lassign [LocaleNumeralMatcher $locale] regex lookup
-			append re $regex
-			dict set fieldSet month [incr fieldCount]
-			append postcode "dict set date month \[" \
-			    "dict get " [list $lookup] " \$field" \
-			    [incr captureCount] \
-			    "\]\n"
-		    }
-		    M {
-			lassign [LocaleNumeralMatcher $locale] regex lookup
-			append re $regex
-			dict set fieldSet minute [incr fieldCount]
-			append postcode "dict set date minute \[" \
-			    "dict get " [list $lookup] " \$field" \
-			    [incr captureCount] \
-			    "\]\n"
-		    }
-		    S {
-			lassign [LocaleNumeralMatcher $locale] regex lookup
-			append re $regex
-			dict set fieldSet second [incr fieldCount]
-			append postcode "dict set date second \[" \
-			    "dict get " [list $lookup] " \$field" \
-			    [incr captureCount] \
-			    "\]\n"
-		    }
-		    u - w {
-			lassign [LocaleNumeralMatcher $locale] regex lookup
-			append re $regex
-			dict set fieldSet dayOfWeek [incr fieldCount]
-			append postcode "set dow \[dict get " [list $lookup] \
-			    { $field} [incr captureCount] \] \n \
-			    {
-				if { $dow == 0 } {
-				    set dow 7
-				} elseif { $dow > 7 } {
-				    return -code error \
-					-errorcode [list CLOCK badDayOfWeek] \
-					"day of week is greater than 7"
-				}
-				dict set date dayOfWeek $dow
-			    }
-		    }
-		    y {
-			lassign [LocaleNumeralMatcher $locale] regex lookup
-			append re $regex
-			dict set fieldSet yearOfCentury [incr fieldCount]
-			append postcode {dict set date yearOfCentury } \[ \
-			    {dict get } [list $lookup] { $field} \
-			    [incr captureCount] \] \n
-		    }
-		    default {
-			append re %O
-			if { ! [string is alnum $c] } {
-			    append re \\
-			    }
-			append re $c
-		    }
-		}
-		set state {}
-	    }
-	}
-    }
-
-    # Clean up any unfinished format groups
-
-    append re $state \\s*\$
-
-    # Build the procedure
-
-    set procBody {}
-    append procBody "variable ::tcl::clock::TZData" \n
-    append procBody "if \{ !\[ regexp -nocase [list $re] \$string ->"
-    for { set i 1 } { $i <= $captureCount } { incr i } {
-	append procBody " " field $i
-    }
-    append procBody "\] \} \{" \n
-    append procBody {
-	return -code error -errorcode [list CLOCK badInputString] \
-	    {input string does not match supplied format}
-    }
-    append procBody \}\n
-    append procBody "set date \[dict create\]" \n
-    append procBody {dict set date tzName $timeZone} \n
-    append procBody $postcode
-    append procBody [list set changeover [mc GREGORIAN_CHANGE_DATE]] \n
-
-    # Set up the time zone before doing anything with a default base date
-    # that might need a timezone to interpret it.
-
-    if { ![dict exists $fieldSet seconds]
-	    && ![dict exists $fieldSet starDate] } {
-	if { [dict exists $fieldSet tzName] } {
-	    append procBody {
-		set timeZone [dict get $date tzName]
-	    }
-	}
-	append procBody {
-	    ::tcl::clock::SetupTimeZone $timeZone
-	}
-    }
-
-    # Add code that gets Julian Day Number from the fields.
-
-    append procBody [MakeParseCodeFromFields $fieldSet $DateParseActions]
-
-    # Get time of day
-
-    append procBody [MakeParseCodeFromFields $fieldSet $TimeParseActions]
-
-    # Assemble seconds from the Julian day and second of the day.
-    # Convert to local time unless epoch seconds or stardate are
-    # being processed - they're always absolute
-
-    if { ![dict exists $fieldSet seconds]
-         && ![dict exists $fieldSet starDate] } {
-	append procBody {
-	    if { [dict get $date julianDay] > 5373484 } {
-		return -code error -errorcode [list CLOCK dateTooLarge] \
-		    "requested date too large to represent"
-	    }
-	    dict set date localSeconds [expr {
-		-210866803200
-		+ ( 86400 * wide([dict get $date julianDay]) )
-		+ [dict get $date secondOfDay]
-	    }]
-	}
-
-	# Finally, convert the date to local time
-
-	append procBody {
-	    set date [::tcl::clock::ConvertLocalToUTC $date[set date {}] \
-			  $TZData($timeZone) $changeover]
-	}
-    }
-
-    # Return result
-
-    append procBody {return [dict get $date seconds]} \n
-
-    proc $procName { string baseTime timeZone } $procBody
-
-    # puts [list proc $procName [list string baseTime timeZone] $procBody]
-
-    return $procName
-}
-
-#----------------------------------------------------------------------
-#
-# LocaleNumeralMatcher --
-#
-#	Composes a regexp that captures the numerals in the given locale, and
-#	a dictionary to map them to conventional numerals.
-#
-# Parameters:
-#	locale - Name of the current locale
-#
-# Results:
-#	Returns a two-element list comprising the regexp and the dictionary.
-#
-# Side effects:
-#	Caches the result.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::LocaleNumeralMatcher {l} {
-    variable LocaleNumeralCache
-
-    if { ![dict exists $LocaleNumeralCache $l] } {
-	set d {}
-	set i 0
-	set sep \(
-	foreach n [mc LOCALE_NUMERALS] {
-	    dict set d $n $i
-	    regsub -all {[^[:alnum:]]} $n \\\\& subex
-	    append re $sep $subex
-	    set sep |
-	    incr i
-	}
-	append re \)
-	dict set LocaleNumeralCache $l [list $re $d]
-    }
-    return [dict get $LocaleNumeralCache $l]
-}
-
-
-
-#----------------------------------------------------------------------
-#
-# UniquePrefixRegexp --
-#
-#	Composes a regexp that performs unique-prefix matching.  The RE
-#	matches one of a supplied set of strings, or any unique prefix
-#	thereof.
-#
-# Parameters:
-#	data - List of alternating match-strings and values.
-#	       Match-strings with distinct values are considered
-#	       distinct.
-#
-# Results:
-#	Returns a two-element list.  The first is a regexp that matches any
-#	unique prefix of any of the strings.  The second is a dictionary whose
-#	keys are match values from the regexp and whose values are the
-#	corresponding values from 'data'.
-#
-# Side effects:
 #	None.
 #
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::UniquePrefixRegexp { data } {
-    # The 'successors' dictionary will contain, for each string that is a
-    # prefix of any key, all characters that may follow that prefix.  The
-    # 'prefixMapping' dictionary will have keys that are prefixes of keys and
-    # values that correspond to the keys.
-
-    set prefixMapping [dict create]
-    set successors [dict create {} {}]
-
-    # Walk the key-value pairs
-
-    foreach { key value } $data {
-	# Construct all prefixes of the key;
-
-	set prefix {}
-	foreach char [split $key {}] {
-	    set oldPrefix $prefix
-	    dict set successors $oldPrefix $char {}
-	    append prefix $char
-
-	    # Put the prefixes in the 'prefixMapping' and 'successors'
-	    # dictionaries
-
-	    dict lappend prefixMapping $prefix $value
-	    if { ![dict exists $successors $prefix] } {
-		dict set successors $prefix {}
-	    }
-	}
-    }
-
-    # Identify those prefixes that designate unique values, and those that are
-    # the full keys
-
-    set uniquePrefixMapping {}
-    dict for { key valueList } $prefixMapping {
-	if { [llength $valueList] == 1 } {
-	    dict set uniquePrefixMapping $key [lindex $valueList 0]
-	}
-    }
-    foreach { key value } $data {
-	dict set uniquePrefixMapping $key $value
-    }
-
-    # Construct the re.
-
-    return [list \
-		[MakeUniquePrefixRegexp $successors $uniquePrefixMapping {}] \
-		$uniquePrefixMapping]
-}
-
-#----------------------------------------------------------------------
-#
-# MakeUniquePrefixRegexp --
-#
-#	Service procedure for 'UniquePrefixRegexp' that constructs a regular
-#	expresison that matches the unique prefixes.
-#
-# Parameters:
-#	successors - Dictionary whose keys are all prefixes
-#		     of keys passed to 'UniquePrefixRegexp' and whose
-#		     values are dictionaries whose keys are the characters
-#		     that may follow those prefixes.
-#	uniquePrefixMapping - Dictionary whose keys are the unique
-#			      prefixes and whose values are not examined.
-#	prefixString - Current prefix being processed.
-#
 # Results:
-#	Returns a constructed regular expression that matches the set of
-#	unique prefixes beginning with the 'prefixString'.
+#	Returns the system locale.
 #
 # Side effects:
-#	None.
+#	None
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::MakeUniquePrefixRegexp { successors
-					  uniquePrefixMapping
-					  prefixString } {
-    # Get the characters that may follow the current prefix string
+proc ::tcl::clock::GetSystemLocale {} {
+    if { $::tcl_platform(platform) ne {windows} } {
+	# On a non-windows platform, the 'system' locale is the same as
+	# the 'current' locale
 
-    set schars [lsort -ascii [dict keys [dict get $successors $prefixString]]]
-    if { [llength $schars] == 0 } {
-	return {}
+	return [mclocale]
     }
 
-    # If there is more than one successor character, or if the current prefix
-    # is a unique prefix, surround the generated re with non-capturing
-    # parentheses.
+    # On a windows platform, the 'system' locale is adapted from the
+    # 'current' locale by applying the date and time formats from the
+    # Control Panel.  First, load the 'current' locale if it's not yet
+    # loaded
 
-    set re {}
-    if {
-	[dict exists $uniquePrefixMapping $prefixString]
-	|| [llength $schars] > 1
-    } then {
-	append re "(?:"
+    mcpackagelocale set [mclocale]
+
+    # Make a new locale string for the system locale, and get the
+    # Control Panel information
+
+    set locale [mclocale]_windows
+    if { ! [mcpackagelocale present $locale] } {
+	LoadWindowsDateTimeFormats $locale
     }
 
-    # Generate a regexp that matches the successors.
-
-    set sep ""
-    foreach { c } $schars {
-	set nextPrefix $prefixString$c
-	regsub -all {[^[:alnum:]]} $c \\\\& rechar
-	append re $sep $rechar \
-	    [MakeUniquePrefixRegexp \
-		 $successors $uniquePrefixMapping $nextPrefix]
-	set sep |
-    }
-
-    # If the current prefix is a unique prefix, make all following text
-    # optional. Otherwise, if there is more than one successor character,
-    # close the non-capturing parentheses.
-
-    if { [dict exists $uniquePrefixMapping $prefixString] } {
-	append re ")?"
-    } elseif { [llength $schars] > 1 } {
-	append re ")"
-    }
-
-    return $re
-}
-
-#----------------------------------------------------------------------
-#
-# MakeParseCodeFromFields --
-#
-#	Composes Tcl code to extract the Julian Day Number from a dictionary
-#	containing date fields.
-#
-# Parameters:
-#	dateFields -- Dictionary whose keys are fields of the date,
-#	              and whose values are the rightmost positions
-#		      at which those fields appear.
-#	parseActions -- List of triples: field set, priority, and
-#			code to emit.  Smaller priorities are better, and
-#			the list must be in ascending order by priority
-#
-# Results:
-#	Returns a burst of code that extracts the day number from the given
-#	date.
-#
-# Side effects:
-#	None.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::MakeParseCodeFromFields { dateFields parseActions } {
-    set currPrio 999
-    set currFieldPos [list]
-    set currCodeBurst {
-	error "in ::tcl::clock::MakeParseCodeFromFields: can't happen"
-    }
-
-    foreach { fieldSet prio parseAction } $parseActions {
-	# If we've found an answer that's better than any that follow, quit
-	# now.
-
-	if { $prio > $currPrio } {
-	    break
-	}
-
-	# Accumulate the field positions that are used in the current field
-	# grouping.
-
-	set fieldPos [list]
-	set ok true
-	foreach field $fieldSet {
-	    if { ! [dict exists $dateFields $field] } {
-		set ok 0
-		break
-	    }
-	    lappend fieldPos [dict get $dateFields $field]
-	}
-
-	# Quit if we don't have a complete set of fields
-	if { !$ok } {
-	    continue
-	}
-
-	# Determine whether the current answer is better than the last.
-
-	set fPos [lsort -integer -decreasing $fieldPos]
-
-	if { $prio ==  $currPrio } {
-	    foreach currPos $currFieldPos newPos $fPos {
-		if {
-		    ![string is integer $newPos]
-		    || ![string is integer $currPos]
-		    || $newPos > $currPos
-		} then {
-		    break
-		}
-		if { $newPos < $currPos } {
-		    set ok 0
-		    break
-		}
-	    }
-	}
-	if { !$ok } {
-	    continue
-	}
-
-	# Remember the best possibility for extracting date information
-
-	set currPrio $prio
-	set currFieldPos $fPos
-	set currCodeBurst $parseAction
-    }
-
-    return $currCodeBurst
+    return $locale
 }
 
 #----------------------------------------------------------------------
@@ -2297,65 +572,24 @@ proc ::tcl::clock::MakeParseCodeFromFields { dateFields parseActions } {
 #
 # Parameters:
 #	locale -- Desired locale
-#	oldLocaleVar -- Name of a variable in caller's scope that
-#		        tracks the previous locale name.
 #
 # Results:
 #	Returns the locale that was previously current.
 #
 # Side effects:
-#	Does [mclocale].  If necessary, uses [mcload] to load the designated
-#	locale's files, and tracks that it has done so in the 'McLoaded'
-#	variable.
+#	Does [mclocale].  If necessary, loades the designated locale's files.
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::EnterLocale { locale oldLocaleVar } {
-    upvar 1 $oldLocaleVar oldLocale
-
-    variable MsgDir
-    variable McLoaded
-
-    set oldLocale [mclocale]
-    if { $locale eq {system} } {
-	if { $::tcl_platform(platform) ne {windows} } {
-	    # On a non-windows platform, the 'system' locale is the same as
-	    # the 'current' locale
-
-	    set locale current
-	} else {
-	    # On a windows platform, the 'system' locale is adapted from the
-	    # 'current' locale by applying the date and time formats from the
-	    # Control Panel.  First, load the 'current' locale if it's not yet
-	    # loaded
-
-	    if {![dict exists $McLoaded $oldLocale] } {
-		mcload $MsgDir
-		dict set McLoaded $oldLocale {}
-	    }
-
-	    # Make a new locale string for the system locale, and get the
-	    # Control Panel information
-
-	    set locale ${oldLocale}_windows
-	    if { ![dict exists $McLoaded $locale] } {
-		LoadWindowsDateTimeFormats $locale
-		dict set McLoaded $locale {}
-	    }
-	}
+proc ::tcl::clock::EnterLocale { locale } {
+    switch -- $locale system {
+    	set locale [GetSystemLocale]
+    } current {
+	set locale [mclocale]
     }
-    if { $locale eq {current}} {
-	set locale $oldLocale
-	unset oldLocale
-    } elseif { $locale eq $oldLocale } {
-	unset oldLocale
-    } else {
-	mclocale $locale
-    }
-    if { ![dict exists $McLoaded $locale] } {
-	mcload $MsgDir
-	dict set McLoaded $locale {}
-    }
+    # Select the locale, eventually load it
+    mcpackagelocale set $locale
+    return $locale
 }
 
 #----------------------------------------------------------------------
@@ -2482,6 +716,7 @@ proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
     }
 
     return
+
 }
 
 #----------------------------------------------------------------------
@@ -2504,485 +739,64 @@ proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::LocalizeFormat { locale format } {
-    variable McLoaded
+proc ::tcl::clock::LocalizeFormat { locale format {fmtkey {}} } {
+    variable LocaleFormats
+    
+    if { $fmtkey eq {} } { set fmtkey FMT_$format }
+    if { [catch {
+    	set locfmt [dict get $LocaleFormats $locale $fmtkey]
+    }] } {
 
-    if { [dict exists $McLoaded $locale FORMAT $format] } {
-	return [dict get $McLoaded $locale FORMAT $format]
-    }
-    set inFormat $format
+    	# get map list cached or build it:
+	if { [catch {
+	    set mlst [dict get $LocaleFormats $locale MLST]
+	}] } {
+	
+	    # message catalog dictionary:
+	    set mcd [mcget $locale]
+		
+	    # Handle locale-dependent format groups by mapping them out of the format
+	    # string.  Note that the order of the [string map] operations is
+	    # significant because later formats can refer to later ones; for example
+	    # %c can refer to %X, which in turn can refer to %T.
 
-    # Handle locale-dependent format groups by mapping them out of the format
-    # string.  Note that the order of the [string map] operations is
-    # significant because later formats can refer to later ones; for example
-    # %c can refer to %X, which in turn can refer to %T.
+	    set mlst {
+		%% %%
+		%D %m/%d/%Y
+		%+ {%a %b %e %H:%M:%S %Z %Y}
+	    }
+	    lappend mlst %EY [string map $mlst [dict get $mcd LOCALE_YEAR_FORMAT]]
+	    lappend mlst %T  [string map $mlst [dict get $mcd TIME_FORMAT_24_SECS]]
+	    lappend mlst %R  [string map $mlst [dict get $mcd TIME_FORMAT_24]]
+	    lappend mlst %r  [string map $mlst [dict get $mcd TIME_FORMAT_12]]
+	    lappend mlst %X  [string map $mlst [dict get $mcd TIME_FORMAT]]
+	    lappend mlst %EX [string map $mlst [dict get $mcd LOCALE_TIME_FORMAT]]
+	    lappend mlst %x  [string map $mlst [dict get $mcd DATE_FORMAT]]
+	    lappend mlst %Ex [string map $mlst [dict get $mcd LOCALE_DATE_FORMAT]]
+	    lappend mlst %c  [string map $mlst [dict get $mcd DATE_TIME_FORMAT]]
+	    lappend mlst %Ec [string map $mlst [dict get $mcd LOCALE_DATE_TIME_FORMAT]]
 
-    set list {
-	%% %%
-	%D %m/%d/%Y
-	%+ {%a %b %e %H:%M:%S %Z %Y}
-    }
-    lappend list %EY [string map $list [mc LOCALE_YEAR_FORMAT]]
-    lappend list %T  [string map $list [mc TIME_FORMAT_24_SECS]]
-    lappend list %R  [string map $list [mc TIME_FORMAT_24]]
-    lappend list %r  [string map $list [mc TIME_FORMAT_12]]
-    lappend list %X  [string map $list [mc TIME_FORMAT]]
-    lappend list %EX [string map $list [mc LOCALE_TIME_FORMAT]]
-    lappend list %x  [string map $list [mc DATE_FORMAT]]
-    lappend list %Ex [string map $list [mc LOCALE_DATE_FORMAT]]
-    lappend list %c  [string map $list [mc DATE_TIME_FORMAT]]
-    lappend list %Ec [string map $list [mc LOCALE_DATE_TIME_FORMAT]]
-    set format [string map $list $format]
+	    dict set LocaleFormats $locale MLST $mlst
+	}
 
-    dict set McLoaded $locale FORMAT $inFormat $format
-    return $format
-}
+	# translate copy of format (don't use format object here, because otherwise 
+	# it can lose its internal representation (string map - convert to unicode)
+	set locfmt [string map $mlst [string range " $format" 1 end]]
 
-#----------------------------------------------------------------------
-#
-# FormatNumericTimeZone --
-#
-#	Formats a time zone as +hhmmss
-#
-# Parameters:
-#	z - Time zone in seconds east of Greenwich
-#
-# Results:
-#	Returns the time zone formatted in a numeric form
-#
-# Side effects:
-#	None.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::FormatNumericTimeZone { z } {
-    if { $z < 0 } {
-	set z [expr { - $z }]
-	set retval -
-    } else {
-	set retval +
-    }
-    append retval [::format %02d [expr { $z / 3600 }]]
-    set z [expr { $z % 3600 }]
-    append retval [::format %02d [expr { $z / 60 }]]
-    set z [expr { $z % 60 }]
-    if { $z != 0 } {
-	append retval [::format %02d $z]
-    }
-    return $retval
-}
-
-#----------------------------------------------------------------------
-#
-# FormatStarDate --
-#
-#	Formats a date as a StarDate.
-#
-# Parameters:
-#	date - Dictionary containing 'year', 'dayOfYear', and
-#	       'localSeconds' fields.
-#
-# Results:
-#	Returns the given date formatted as a StarDate.
-#
-# Side effects:
-#	None.
-#
-# Jeff Hobbs put this in to support an atrocious pun about Tcl being
-# "Enterprise ready."  Now we're stuck with it.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::FormatStarDate { date } {
-    variable Roddenberry
-
-    # Get day of year, zero based
-
-    set doy [expr { [dict get $date dayOfYear] - 1 }]
-
-    # Determine whether the year is a leap year
-
-    set lp [IsGregorianLeapYear $date]
-
-    # Convert day of year to a fractional year
-
-    if { $lp } {
-	set fractYear [expr { 1000 * $doy / 366 }]
-    } else {
-	set fractYear [expr { 1000 * $doy / 365 }]
+	# cache it:
+	dict set LocaleFormats $locale $fmtkey $locfmt
     }
 
-    # Put together the StarDate
-
-    return [::format "Stardate %02d%03d.%1d" \
-		[expr { [dict get $date year] - $Roddenberry }] \
-		$fractYear \
-		[expr { [dict get $date localSeconds] % 86400
-			/ ( 86400 / 10 ) }]]
-}
-
-#----------------------------------------------------------------------
-#
-# ParseStarDate --
-#
-#	Parses a StarDate
-#
-# Parameters:
-#	year - Year from the Roddenberry epoch
-#	fractYear - Fraction of a year specifiying the day of year.
-#	fractDay - Fraction of a day
-#
-# Results:
-#	Returns a count of seconds from the Posix epoch.
-#
-# Side effects:
-#	None.
-#
-# Jeff Hobbs put this in to support an atrocious pun about Tcl being
-# "Enterprise ready."  Now we're stuck with it.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::ParseStarDate { year fractYear fractDay } {
-    variable Roddenberry
-
-    # Build a tentative date from year and fraction.
-
-    set date [dict create \
-		  gregorian 1 \
-		  era CE \
-		  year [expr { $year + $Roddenberry }] \
-		  dayOfYear [expr { $fractYear * 365 / 1000 + 1 }]]
-    set date [GetJulianDayFromGregorianEraYearDay $date[set date {}]]
-
-    # Determine whether the given year is a leap year
-
-    set lp [IsGregorianLeapYear $date]
-
-    # Reconvert the fractional year according to whether the given year is a
-    # leap year
-
-    if { $lp } {
-	dict set date dayOfYear \
-	    [expr { $fractYear * 366 / 1000 + 1 }]
-    } else {
-	dict set date dayOfYear \
-	    [expr { $fractYear * 365 / 1000 + 1 }]
+    # Save original format as long as possible, because of internal 
+    # representation (performance).
+    # Note that in this case such format will be never localized (also
+    # using another locales). To prevent this return a duplicate (but 
+    # it may be slower).
+    if {$locfmt eq $format} {
+        set locfmt $format
     }
-    dict unset date julianDay
-    dict unset date gregorian
-    set date [GetJulianDayFromGregorianEraYearDay $date[set date {}]]
 
-    return [expr {
-	86400 * [dict get $date julianDay]
-	- 210866803200
-	+ ( 86400 / 10 ) * $fractDay
-    }]
-}
-
-#----------------------------------------------------------------------
-#
-# ScanWide --
-#
-#	Scans a wide integer from an input
-#
-# Parameters:
-#	str - String containing a decimal wide integer
-#
-# Results:
-#	Returns the string as a pure wide integer.  Throws an error if the
-#	string is misformatted or out of range.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::ScanWide { str } {
-    set count [::scan $str {%ld %c} result junk]
-    if { $count != 1 } {
-	return -code error -errorcode [list CLOCK notAnInteger $str] \
-	    "\"$str\" is not an integer"
-    }
-    if { [incr result 0] != $str } {
-	return -code error -errorcode [list CLOCK integervalueTooLarge] \
-	    "integer value too large to represent"
-    }
-    return $result
-}
-
-#----------------------------------------------------------------------
-#
-# InterpretTwoDigitYear --
-#
-#	Given a date that contains only the year of the century, determines
-#	the target value of a two-digit year.
-#
-# Parameters:
-#	date - Dictionary containing fields of the date.
-#	baseTime - Base time relative to which the date is expressed.
-#	twoDigitField - Name of the field that stores the two-digit year.
-#			Default is 'yearOfCentury'
-#	fourDigitField - Name of the field that will receive the four-digit
-#	                 year.  Default is 'year'
-#
-# Results:
-#	Returns the dictionary augmented with the four-digit year, stored in
-#	the given key.
-#
-# Side effects:
-#	None.
-#
-# The current rule for interpreting a two-digit year is that the year shall be
-# between 1937 and 2037, thus staying within the range of a 32-bit signed
-# value for time.  This rule may change to a sliding window in future
-# versions, so the 'baseTime' parameter (which is currently ignored) is
-# provided in the procedure signature.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::InterpretTwoDigitYear { date baseTime
-					   { twoDigitField yearOfCentury }
-					   { fourDigitField year } } {
-    set yr [dict get $date $twoDigitField]
-    if { $yr <= 37 } {
-	dict set date $fourDigitField [expr { $yr + 2000 }]
-    } else {
-	dict set date $fourDigitField [expr { $yr + 1900 }]
-    }
-    return $date
-}
-
-#----------------------------------------------------------------------
-#
-# AssignBaseYear --
-#
-#	Places the number of the current year into a dictionary.
-#
-# Parameters:
-#	date - Dictionary value to update
-#	baseTime - Base time from which to extract the year, expressed
-#		   in seconds from the Posix epoch
-#	timezone - the time zone in which the date is being scanned
-#	changeover - the Julian Day on which the Gregorian calendar
-#		     was adopted in the target locale.
-#
-# Results:
-#	Returns the dictionary with the current year assigned.
-#
-# Side effects:
-#	None.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::AssignBaseYear { date baseTime timezone changeover } {
-    variable TZData
-
-    # Find the Julian Day Number corresponding to the base time, and
-    # find the Gregorian year corresponding to that Julian Day.
-
-    set date2 [GetDateFields $baseTime $TZData($timezone) $changeover]
-
-    # Store the converted year
-
-    dict set date era [dict get $date2 era]
-    dict set date year [dict get $date2 year]
-
-    return $date
-}
-
-#----------------------------------------------------------------------
-#
-# AssignBaseIso8601Year --
-#
-#	Determines the base year in the ISO8601 fiscal calendar.
-#
-# Parameters:
-#	date - Dictionary containing the fields of the date that
-#	       is to be augmented with the base year.
-#	baseTime - Base time expressed in seconds from the Posix epoch.
-#	timeZone - Target time zone
-#	changeover - Julian Day of adoption of the Gregorian calendar in
-#		     the target locale.
-#
-# Results:
-#	Returns the given date with "iso8601Year" set to the
-#	base year.
-#
-# Side effects:
-#	None.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::AssignBaseIso8601Year {date baseTime timeZone changeover} {
-    variable TZData
-
-    # Find the Julian Day Number corresponding to the base time
-
-    set date2 [GetDateFields $baseTime $TZData($timeZone) $changeover]
-
-    # Calculate the ISO8601 date and transfer the year
-
-    dict set date era CE
-    dict set date iso8601Year [dict get $date2 iso8601Year]
-    return $date
-}
-
-#----------------------------------------------------------------------
-#
-# AssignBaseMonth --
-#
-#	Places the number of the current year and month into a
-#	dictionary.
-#
-# Parameters:
-#	date - Dictionary value to update
-#	baseTime - Time from which the year and month are to be
-#	           obtained, expressed in seconds from the Posix epoch.
-#	timezone - Name of the desired time zone
-#	changeover - Julian Day on which the Gregorian calendar was adopted.
-#
-# Results:
-#	Returns the dictionary with the base year and month assigned.
-#
-# Side effects:
-#	None.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::AssignBaseMonth {date baseTime timezone changeover} {
-    variable TZData
-
-    # Find the year and month corresponding to the base time
-
-    set date2 [GetDateFields $baseTime $TZData($timezone) $changeover]
-    dict set date era [dict get $date2 era]
-    dict set date year [dict get $date2 year]
-    dict set date month [dict get $date2 month]
-    return $date
-}
-
-#----------------------------------------------------------------------
-#
-# AssignBaseWeek --
-#
-#	Determines the base year and week in the ISO8601 fiscal calendar.
-#
-# Parameters:
-#	date - Dictionary containing the fields of the date that
-#	       is to be augmented with the base year and week.
-#	baseTime - Base time expressed in seconds from the Posix epoch.
-#	changeover - Julian Day on which the Gregorian calendar was adopted
-#		     in the target locale.
-#
-# Results:
-#	Returns the given date with "iso8601Year" set to the
-#	base year and "iso8601Week" to the week number.
-#
-# Side effects:
-#	None.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::AssignBaseWeek {date baseTime timeZone changeover} {
-    variable TZData
-
-    # Find the Julian Day Number corresponding to the base time
-
-    set date2 [GetDateFields $baseTime $TZData($timeZone) $changeover]
-
-    # Calculate the ISO8601 date and transfer the year
-
-    dict set date era CE
-    dict set date iso8601Year [dict get $date2 iso8601Year]
-    dict set date iso8601Week [dict get $date2 iso8601Week]
-    return $date
-}
-
-#----------------------------------------------------------------------
-#
-# AssignBaseJulianDay --
-#
-#	Determines the base day for a time-of-day conversion.
-#
-# Parameters:
-#	date - Dictionary that is to get the base day
-#	baseTime - Base time expressed in seconds from the Posix epoch
-#	changeover - Julian day on which the Gregorian calendar was
-#		     adpoted in the target locale.
-#
-# Results:
-#	Returns the given dictionary augmented with a 'julianDay' field
-#	that contains the base day.
-#
-# Side effects:
-#	None.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::AssignBaseJulianDay { date baseTime timeZone changeover } {
-    variable TZData
-
-    # Find the Julian Day Number corresponding to the base time
-
-    set date2 [GetDateFields $baseTime $TZData($timeZone) $changeover]
-    dict set date julianDay [dict get $date2 julianDay]
-
-    return $date
-}
-
-#----------------------------------------------------------------------
-#
-# InterpretHMSP --
-#
-#	Interprets a time in the form "hh:mm:ss am".
-#
-# Parameters:
-#	date -- Dictionary containing "hourAMPM", "minute", "second"
-#	        and "amPmIndicator" fields.
-#
-# Results:
-#	Returns the number of seconds from local midnight.
-#
-# Side effects:
-#	None.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::InterpretHMSP { date } {
-    set hr [dict get $date hourAMPM]
-    if { $hr == 12 } {
-	set hr 0
-    }
-    if { [dict get $date amPmIndicator] } {
-	incr hr 12
-    }
-    dict set date hour $hr
-    return [InterpretHMS $date[set date {}]]
-}
-
-#----------------------------------------------------------------------
-#
-# InterpretHMS --
-#
-#	Interprets a 24-hour time "hh:mm:ss"
-#
-# Parameters:
-#	date -- Dictionary containing the "hour", "minute" and "second"
-#	        fields.
-#
-# Results:
-#	Returns the given dictionary augmented with a "secondOfDay"
-#	field containing the number of seconds from local midnight.
-#
-# Side effects:
-#	None.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::InterpretHMS { date } {
-    return [expr {
-	( [dict get $date hour] * 60
-	  + [dict get $date minute] ) * 60
-	+ [dict get $date second]
-    }]
+    return $locfmt
 }
 
 #----------------------------------------------------------------------
@@ -2999,13 +813,12 @@ proc ::tcl::clock::InterpretHMS { date } {
 #	Returns the system time zone.
 #
 # Side effects:
-#	Stores the sustem time zone in the 'CachedSystemTimeZone'
-#	variable, since determining it may be an expensive process.
+#	Stores the sustem time zone in engine configuration, since
+#	determining it may be an expensive process.
 #
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::GetSystemTimeZone {} {
-    variable CachedSystemTimeZone
     variable TimeZoneBad
 
     if {[set result [getenv TCL_TZ]] ne {}} {
@@ -3014,61 +827,33 @@ proc ::tcl::clock::GetSystemTimeZone {} {
 	set timezone $result
     }
     if {![info exists timezone]} {
-        # Cache the time zone only if it was detected by one of the
-        # expensive methods.
-        if { [info exists CachedSystemTimeZone] } {
-            set timezone $CachedSystemTimeZone
-        } elseif { $::tcl_platform(platform) eq {windows} } {
-            set timezone [GuessWindowsTimeZone]
-        } elseif { [file exists /etc/localtime]
-                   && ![catch {ReadZoneinfoFile \
-                                   Tcl/Localtime /etc/localtime}] } {
-            set timezone :Tcl/Localtime
-        } else {
-            set timezone :localtime
+        # ask engine for the cached timezone:
+        set timezone [configure -system-tz]
+        if { $timezone ne "" } {
+            return $timezone
         }
-	set CachedSystemTimeZone $timezone
+	if { $::tcl_platform(platform) eq {windows} } {
+	    set timezone [GuessWindowsTimeZone]
+	} elseif { [file exists /etc/localtime]
+	           && ![catch {ReadZoneinfoFile \
+	                           Tcl/Localtime /etc/localtime}] } {
+	    set timezone :Tcl/Localtime
+	} else {
+	    set timezone :localtime
+	}
     }
     if { ![dict exists $TimeZoneBad $timezone] } {
-	dict set TimeZoneBad $timezone [catch {SetupTimeZone $timezone}]
+	catch {set timezone [SetupTimeZone $timezone]}
     }
-    if { [dict get $TimeZoneBad $timezone] } {
-	return :localtime
-    } else {
-	return $timezone
+
+    if { [dict exists $TimeZoneBad $timezone] } {
+	set timezone :localtime
     }
-}
+    
+    # tell backend - current system timezone:
+    configure -system-tz $timezone
 
-#----------------------------------------------------------------------
-#
-# ConvertLegacyTimeZone --
-#
-#	Given an alphanumeric time zone identifier and the system time zone,
-#	convert the alphanumeric identifier to an unambiguous time zone.
-#
-# Parameters:
-#	tzname - Name of the time zone to convert
-#
-# Results:
-#	Returns a time zone name corresponding to tzname, but in an
-#	unambiguous form, generally +hhmm.
-#
-# This procedure is implemented primarily to allow the parsing of RFC822
-# date/time strings.  Processing a time zone name on input is not recommended
-# practice, because there is considerable room for ambiguity; for instance, is
-# BST Brazilian Standard Time, or British Summer Time?
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::ConvertLegacyTimeZone { tzname } {
-    variable LegacyTimeZone
-
-    set tzname [string tolower $tzname]
-    if { ![dict exists $LegacyTimeZone $tzname] } {
-	return -code error -errorcode [list CLOCK badTZName $tzname] \
-	    "time zone \"$tzname\" not found"
-    }
-    return [dict get $LegacyTimeZone $tzname]
+    return $timezone
 }
 
 #----------------------------------------------------------------------
@@ -3088,10 +873,17 @@ proc ::tcl::clock::ConvertLegacyTimeZone { tzname } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::SetupTimeZone { timezone } {
+proc ::tcl::clock::SetupTimeZone { timezone {alias {}} } {
     variable TZData
 
     if {! [info exists TZData($timezone)] } {
+
+    	variable TimeZoneBad
+	if { [dict exists $TimeZoneBad $timezone] } {
+	    return -code error \
+		-errorcode [list CLOCK badTimeZone $timezone] \
+		"time zone \"$timezone\" not found"
+	}
 	variable MINWIDE
 	if { $timezone eq {:localtime} } {
 	    # Nothing to do, we'll convert using the localtime function
@@ -3129,11 +921,11 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 		    LoadZoneinfoFile [string range $timezone 1 end]
 		}]
 	    } then {
+	    	dict set TimeZoneBad $timezone 1
 		return -code error \
 		    -errorcode [list CLOCK badTimeZone $timezone] \
 		    "time zone \"$timezone\" not found"
 	    }
-
 	} elseif { ![catch {ParsePosixTimeZone $timezone} tzfields] } {
 	    # This looks like a POSIX time zone - try to process it
 
@@ -3141,25 +933,43 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 		if { [lindex [dict get $opts -errorcode] 0] eq {CLOCK} } {
 		    dict unset opts -errorinfo
 		}
+		dict set TimeZoneBad $timezone 1
 		return -options $opts $data
 	    } else {
 		set TZData($timezone) $data
 	    }
 
 	} else {
+
+	    variable LegacyTimeZone
+
 	    # We couldn't parse this as a POSIX time zone.  Try again with a
 	    # time zone file - this time without a colon
 
 	    if { [catch { LoadTimeZoneFile $timezone }]
 		 && [catch { LoadZoneinfoFile $timezone } - opts] } {
+
+		# Check may be a legacy zone:
+
+		if { $alias eq {} && ![catch {
+		    set tzname [dict get $LegacyTimeZone [string tolower $timezone]]
+		}] } {
+		    set tzname [::tcl::clock::SetupTimeZone $tzname $timezone]
+		    set TZData($timezone) $TZData($tzname)
+		    # tell backend - timezone is initialized and return shared timezone object:
+		    return [configure -setup-tz $timezone]
+		}
+
 		dict unset opts -errorinfo
+		dict set TimeZoneBad $timezone 1
 		return -options $opts "time zone $timezone not found"
 	    }
 	    set TZData($timezone) $TZData(:$timezone)
 	}
     }
 
-    return
+    # tell backend - timezone is initialized and return shared timezone object:
+    configure -setup-tz $timezone
 }
 
 #----------------------------------------------------------------------
@@ -3230,12 +1040,12 @@ proc ::tcl::clock::GuessWindowsTimeZone {} {
     if { [dict exists $WinZoneInfo $data] } {
 	set tzname [dict get $WinZoneInfo $data]
 	if { ! [dict exists $TimeZoneBad $tzname] } {
-	    dict set TimeZoneBad $tzname [catch {SetupTimeZone $tzname}]
+	    catch {set tzname [SetupTimeZone $tzname]}
 	}
     } else {
 	set tzname {}
     }
-    if { $tzname eq {} || [dict get $TimeZoneBad $tzname] } {
+    if { $tzname eq {} || [dict exists $TimeZoneBad $tzname] } {
 	lassign $data \
 	    bias stdBias dstBias \
 	    stdYear stdMonth stdDayOfWeek stdDayOfMonth \
@@ -3901,6 +1711,7 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
+
     variable FEB_28
 
     # Determine the start or end day of DST
@@ -3908,6 +1719,7 @@ proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
     set date [dict create era CE year $y]
     set doy [dict get $z ${bound}DayOfYear]
     if { $doy ne {} } {
+
 	# Time was specified as a day of the year
 
 	if { [dict get $z ${bound}J] ne {}
@@ -3956,43 +1768,6 @@ proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
     }
     set tod [expr { ( $h * 60 + $m ) * 60 + $s }]
     return [expr { $seconds + $tod }]
-}
-
-#----------------------------------------------------------------------
-#
-# GetLocaleEra --
-#
-#	Given local time expressed in seconds from the Posix epoch,
-#	determine localized era and year within the era.
-#
-# Parameters:
-#	date - Dictionary that must contain the keys, 'localSeconds',
-#	       whose value is expressed as the appropriate local time;
-#	       and 'year', whose value is the Gregorian year.
-#	etable - Value of the LOCALE_ERAS key in the message catalogue
-#	         for the target locale.
-#
-# Results:
-#	Returns the dictionary, augmented with the keys, 'localeEra' and
-#	'localeYear'.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::GetLocaleEra { date etable } {
-    set index [BSearch $etable [dict get $date localSeconds]]
-    if { $index < 0} {
-	dict set date localeEra \
-	    [::format %02d [expr { [dict get $date year] / 100 }]]
-	dict set date localeYear [expr {
-	    [dict get $date year] % 100
-	}]
-    } else {
-	dict set date localeEra [lindex $etable $index 1]
-	dict set date localeYear [expr {
-	    [dict get $date year] - [lindex $etable $index 2]
-	}]
-    }
-    return $date
 }
 
 #----------------------------------------------------------------------
@@ -4174,363 +1949,38 @@ proc ::tcl::clock::WeekdayOnOrBefore { weekday j } {
 
 #----------------------------------------------------------------------
 #
-# BSearch --
+# ChangeCurrentLocale --
 #
-#	Service procedure that does binary search in several places inside the
-#	'clock' command.
+#        The global locale was changed within msgcat.
+#        Clears the buffered parse functions of the current locale.
 #
 # Parameters:
-#	list - List of lists, sorted in ascending order by the
-#	       first elements
-#	key - Value to search for
+#        loclist (ignored)
 #
 # Results:
-#	Returns the index of the greatest element in $list that is less than
-#	or equal to $key.
+#        None.
 #
 # Side effects:
-#	None.
+#        Buffered parse functions are cleared.
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::BSearch { list key } {
-    if {[llength $list] == 0} {
-	return -1
+proc ::tcl::clock::ChangeCurrentLocale {args} {
+
+    configure -default-locale [lindex $args 0]
+
+    variable FormatProc
+    variable LocaleNumeralCache
+
+    foreach p [info procs [namespace current]::scanproc'*'current] {
+        rename $p {}
     }
-    if { $key < [lindex $list 0 0] } {
-	return -1
-    }
-
-    set l 0
-    set u [expr { [llength $list] - 1 }]
-
-    while { $l < $u } {
-	# At this point, we know that
-	#   $k >= [lindex $list $l 0]
-	#   Either $u == [llength $list] or else $k < [lindex $list $u+1 0]
-	# We find the midpoint of the interval {l,u} rounded UP, compare
-	# against it, and set l or u to maintain the invariant.  Note that the
-	# interval shrinks at each step, guaranteeing convergence.
-
-	set m [expr { ( $l + $u + 1 ) / 2 }]
-	if { $key >= [lindex $list $m 0] } {
-	    set l $m
-	} else {
-	    set u [expr { $m - 1 }]
-	}
+    foreach p [info procs [namespace current]::formatproc'*'current] {
+        rename $p {}
     }
 
-    return $l
-}
-
-#----------------------------------------------------------------------
-#
-# clock add --
-#
-#	Adds an offset to a given time.
-#
-# Syntax:
-#	clock add clockval ?count unit?... ?-option value?
-#
-# Parameters:
-#	clockval -- Starting time value
-#	count -- Amount of a unit of time to add
-#	unit -- Unit of time to add, must be one of:
-#			years year months month weeks week
-#			days day hours hour minutes minute
-#			seconds second
-#
-# Options:
-#	-gmt BOOLEAN
-#		(Deprecated) Flag synonymous with '-timezone :GMT'
-#	-timezone ZONE
-#		Name of the time zone in which calculations are to be done.
-#	-locale NAME
-#		Name of the locale in which calculations are to be done.
-#		Used to determine the Gregorian change date.
-#
-# Results:
-#	Returns the given time adjusted by the given offset(s) in
-#	order.
-#
-# Notes:
-#	It is possible that adding a number of months or years will adjust the
-#	day of the month as well.  For instance, the time at one month after
-#	31 January is either 28 or 29 February, because February has fewer
-#	than 31 days.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::add { clockval args } {
-    if { [llength $args] % 2 != 0 } {
-	set cmdName "clock add"
-	return -code error \
-	    -errorcode [list CLOCK wrongNumArgs] \
-	    "wrong \# args: should be\
-             \"$cmdName clockval ?number units?...\
-             ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?\""
-    }
-    if { [catch { expr {wide($clockval)} } result] } {
-	return -code error $result
-    }
-
-    set offsets {}
-    set gmt 0
-    set locale c
-    set timezone [GetSystemTimeZone]
-
-    foreach { a b } $args {
-	if { [string is integer -strict $a] } {
-	    lappend offsets $a $b
-	} else {
-	    switch -exact -- $a {
-		-g - -gm - -gmt {
-		    set gmt $b
-		}
-		-l - -lo - -loc - -loca - -local - -locale {
-		    set locale [string tolower $b]
-		}
-		-t - -ti - -tim - -time - -timez - -timezo - -timezon -
-		-timezone {
-		    set timezone $b
-		}
-		default {
-		    throw [list CLOCK badOption $a] \
-			"bad option \"$a\",\
-                         must be -gmt, -locale or -timezone"
-		}
-	    }
-	}
-    }
-
-    # Check options for validity
-
-    if { [info exists saw(-gmt)] && [info exists saw(-timezone)] } {
-	return -code error \
-	    -errorcode [list CLOCK gmtWithTimezone] \
-	    "cannot use -gmt and -timezone in same call"
-    }
-    if { [catch { expr { wide($clockval) } } result] } {
-	return -code error "expected integer but got \"$clockval\""
-    }
-    if { ![string is boolean -strict $gmt] } {
-	return -code error "expected boolean value but got \"$gmt\""
-    } elseif { $gmt } {
-	set timezone :GMT
-    }
-
-    EnterLocale $locale oldLocale
-
-    set changeover [mc GREGORIAN_CHANGE_DATE]
-
-    if {[catch {SetupTimeZone $timezone} retval opts]} {
-	dict unset opts -errorinfo
-	return -options $opts $retval
-    }
-
-    try {
-	foreach { quantity unit } $offsets {
-	    switch -exact -- $unit {
-		years - year {
-		    set clockval [AddMonths [expr { 12 * $quantity }] \
-			    $clockval $timezone $changeover]
-		}
-		months - month {
-		    set clockval [AddMonths $quantity $clockval $timezone \
-			    $changeover]
-		}
-
-		weeks - week {
-		    set clockval [AddDays [expr { 7 * $quantity }] \
-			    $clockval $timezone $changeover]
-		}
-		days - day {
-		    set clockval [AddDays $quantity $clockval $timezone \
-			    $changeover]
-		}
-
-		hours - hour {
-		    set clockval [expr { 3600 * $quantity + $clockval }]
-		}
-		minutes - minute {
-		    set clockval [expr { 60 * $quantity + $clockval }]
-		}
-		seconds - second {
-		    set clockval [expr { $quantity + $clockval }]
-		}
-
-		default {
-		    throw [list CLOCK badUnit $unit] \
-			"unknown unit \"$unit\", must be \
-                        years, months, weeks, days, hours, minutes or seconds"
-		}
-	    }
-	}
-	return $clockval
-    } trap CLOCK {result opts} {
-	# Conceal the innards of [clock] when it's an expected error
-	dict unset opts -errorinfo
-	return -options $opts $result
-    } finally {
-	# Restore the locale
-
-	if { [info exists oldLocale] } {
-	    mclocale $oldLocale
-	}
-    }
-}
-
-#----------------------------------------------------------------------
-#
-# AddMonths --
-#
-#	Add a given number of months to a given clock value in a given
-#	time zone.
-#
-# Parameters:
-#	months - Number of months to add (may be negative)
-#	clockval - Seconds since the epoch before the operation
-#	timezone - Time zone in which the operation is to be performed
-#
-# Results:
-#	Returns the new clock value as a number of seconds since
-#	the epoch.
-#
-# Side effects:
-#	None.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::AddMonths { months clockval timezone changeover } {
-    variable DaysInRomanMonthInCommonYear
-    variable DaysInRomanMonthInLeapYear
-    variable TZData
-
-    # Convert the time to year, month, day, and fraction of day.
-
-    set date [GetDateFields $clockval $TZData($timezone) $changeover]
-    dict set date secondOfDay [expr {
-	[dict get $date localSeconds] % 86400
-    }]
-    dict set date tzName $timezone
-
-    # Add the requisite number of months
-
-    set m [dict get $date month]
-    incr m $months
-    incr m -1
-    set delta [expr { $m / 12 }]
-    set mm [expr { $m % 12 }]
-    dict set date month [expr { $mm + 1 }]
-    dict incr date year $delta
-
-    # If the date doesn't exist in the current month, repair it
-
-    if { [IsGregorianLeapYear $date] } {
-	set hath [lindex $DaysInRomanMonthInLeapYear $mm]
-    } else {
-	set hath [lindex $DaysInRomanMonthInCommonYear $mm]
-    }
-    if { [dict get $date dayOfMonth] > $hath } {
-	dict set date dayOfMonth $hath
-    }
-
-    # Reconvert to a number of seconds
-
-    set date [GetJulianDayFromEraYearMonthDay \
-		  $date[set date {}]\
-		  $changeover]
-    dict set date localSeconds [expr {
-	-210866803200
-	+ ( 86400 * wide([dict get $date julianDay]) )
-	+ [dict get $date secondOfDay]
-    }]
-    set date [ConvertLocalToUTC $date[set date {}] $TZData($timezone) \
-		 $changeover]
-
-    return [dict get $date seconds]
-}
-
-#----------------------------------------------------------------------
-#
-# AddDays --
-#
-#	Add a given number of days to a given clock value in a given time
-#	zone.
-#
-# Parameters:
-#	days - Number of days to add (may be negative)
-#	clockval - Seconds since the epoch before the operation
-#	timezone - Time zone in which the operation is to be performed
-#	changeover - Julian Day on which the Gregorian calendar was adopted
-#		     in the target locale.
-#
-# Results:
-#	Returns the new clock value as a number of seconds since the epoch.
-#
-# Side effects:
-#	None.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::AddDays { days clockval timezone changeover } {
-    variable TZData
-
-    # Convert the time to Julian Day
-
-    set date [GetDateFields $clockval $TZData($timezone) $changeover]
-    dict set date secondOfDay [expr {
-	[dict get $date localSeconds] % 86400
-    }]
-    dict set date tzName $timezone
-
-    # Add the requisite number of days
-
-    dict incr date julianDay $days
-
-    # Reconvert to a number of seconds
-
-    dict set date localSeconds [expr {
-	-210866803200
-	+ ( 86400 * wide([dict get $date julianDay]) )
-	+ [dict get $date secondOfDay]
-    }]
-    set date [ConvertLocalToUTC $date[set date {}] $TZData($timezone) \
-		  $changeover]
-
-    return [dict get $date seconds]
-}
-
-#----------------------------------------------------------------------
-#
-# mc --
-#
-#	Wrapper around ::msgcat::mc that caches the result according to the
-#	locale.
-#
-# Parameters:
-#	Accepts the name of the message to retrieve.
-#
-# Results:
-#	Returns the message text.
-#
-# Side effects:
-#	Caches the message text.
-#
-# Notes:
-#	Only the single-argument version of [mc] is supported.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::mc { name } {
-    variable McLoaded
-    set Locale [mclocale]
-    if { [dict exists $McLoaded $Locale $name] } {
-	return [dict get $McLoaded $Locale $name]
-    }
-    set val [::msgcat::mc $name]
-    dict set McLoaded $Locale $name $val
-    return $val
+    catch {array unset FormatProc *'current}
+    set LocaleNumeralCache {}
 }
 
 #----------------------------------------------------------------------
@@ -4552,10 +2002,15 @@ proc ::tcl::clock::mc { name } {
 
 proc ::tcl::clock::ClearCaches {} {
     variable FormatProc
+    variable LocaleFormats
     variable LocaleNumeralCache
-    variable McLoaded
-    variable CachedSystemTimeZone
     variable TimeZoneBad
+
+    # tell backend - should invalidate:
+    configure -clear
+
+    # clear msgcat cache:
+    msgcat::ClearCaches ::tcl::clock
 
     foreach p [info procs [namespace current]::scanproc'*] {
 	rename $p {}
@@ -4564,10 +2019,9 @@ proc ::tcl::clock::ClearCaches {} {
 	rename $p {}
     }
 
-    catch {unset FormatProc}
+    unset -nocomplain FormatProc
+    set LocaleFormats {}
     set LocaleNumeralCache {}
-    set McLoaded {}
-    catch {unset CachedSystemTimeZone}
     set TimeZoneBad {}
     InitTZData
 }

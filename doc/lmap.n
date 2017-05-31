@@ -3,7 +3,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH lmap n "" Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -51,7 +51,7 @@ Zip lists together:
 .CS
 set list1 {a b c d}
 set list2 {1 2 3 4}
-set zipped [\fBlmap\fR a $list1 b $list2 {list $a $b}] 
+set zipped [\fBlmap\fR a $list1 b $list2 {list $a $b}]
 # The value of zipped is "{a 1} {b 2} {c 3} {d 4}"
 .CE
 .PP

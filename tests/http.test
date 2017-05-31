@@ -36,7 +36,6 @@ proc bgerror {args} {
     puts stderr $errorInfo
 }
 
-set port 8010
 set bindata "This is binary data\x0d\x0amore\x0dmore\x0amore\x00null"
 catch {unset data}
 
@@ -55,9 +54,8 @@ catch {package require Thread 2.7-}
 if {[catch {package present Thread}] == 0 && [file exists $httpdFile]} {
     set httpthread [thread::create -preserved]
     thread::send $httpthread [list source $httpdFile]
-    thread::send $httpthread [list set port $port]
     thread::send $httpthread [list set bindata $bindata]
-    thread::send $httpthread {httpd_init $port}
+    thread::send $httpthread {httpd_init 0; set port} port
     puts "Running httpd in thread $httpthread"
 } else {
     if {![file exists $httpdFile]} {
@@ -69,10 +67,8 @@ if {[catch {package present Thread}] == 0 && [file exists $httpdFile]} {
     # Let the OS pick the port; that's much more flexible
     if {[catch {httpd_init 0} listen]} {
 	puts "Cannot start http server, http test skipped"
-	unset port
+	catch {unset port}
 	return
-    } else {
-	set port [lindex [fconfigure $listen -sockname] 2]
     }
 }
 
@@ -133,6 +129,7 @@ set tail /a/b/c
 set url //[info hostname]:$port/a/b/c
 set fullurl HTTP://user:pass@[info hostname]:$port/a/b/c
 set binurl //[info hostname]:$port/binary
+set xmlurl //[info hostname]:$port/xml
 set posturl //[info hostname]:$port/post
 set badposturl //[info hostname]:$port/droppost
 set authorityurl //[info hostname]:$port
@@ -306,7 +303,6 @@ test http-3.13 {http::geturl socket leak test} {
     for {set i 0} {$i < 3} {incr i} {
 	catch {http::geturl $badurl -timeout 5000}
     }
-
     # No extra channels should be taken
     expr {[llength [file channels]] == $chanCount}
 } 1
@@ -372,11 +368,11 @@ test http-3.27 {http::geturl: -headers override -type} -body {
     http::data $token
 } -cleanup {
     http::cleanup $token
-} -match regexp -result {(?n)Accept \*/\*
-Host .*
+} -match regexp -result {(?n)Host .*
 User-Agent .*
 Connection close
 Content-Type {text/plain;charset=utf-8}
+Accept \*/\*
 Accept-Encoding .*
 Content-Length 5}
 test http-3.28 {http::geturl: -headers override -type default} -body {
@@ -385,11 +381,11 @@ test http-3.28 {http::geturl: -headers override -type default} -body {
     http::data $token
 } -cleanup {
     http::cleanup $token
-} -match regexp -result {(?n)Accept \*/\*
-Host .*
+} -match regexp -result {(?n)Host .*
 User-Agent .*
 Connection close
 Content-Type {text/plain;charset=utf-8}
+Accept \*/\*
 Accept-Encoding .*
 Content-Length 5}
 test http-3.29 {http::geturl IPv6 address} -body {
@@ -418,6 +414,28 @@ test http-3.31 {http::geturl fragment without path} -body {
 } -cleanup {
     catch { http::cleanup $token }
 } -result 200
+# Bug c11a51c482
+test http-3.32 {http::geturl: -headers override -accept default} -body {
+    set token [http::geturl $url/headers -query dummy \
+	    -headers [list "Accept" "text/plain,application/tcl-test-value"]]
+    http::data $token
+} -cleanup {
+    http::cleanup $token
+} -match regexp -result {(?n)Host .*
+User-Agent .*
+Connection close
+Accept text/plain,application/tcl-test-value
+Accept-Encoding .*
+Content-Type application/x-www-form-urlencoded
+Content-Length 5}
+# Bug 838e99a76d
+test http-3.33 {http::geturl application/xml is text} -body {
+    set token [http::geturl "$xmlurl"]
+    scan [http::data $token] "<%\[^>]>%c<%\[^>]>"
+} -cleanup {
+    catch { http::cleanup $token }
+} -result {test 4660 /test}
+
 test http-4.1 {http::Event} -body {
     set token [http::geturl $url -keepalive 0]
     upvar #0 $token data
@@ -570,6 +588,14 @@ test http-4.15 {http::Event} -body {
 } -cleanup {
     catch {http::cleanup $token}
 } -returnCodes 1 -match glob -result "couldn't open socket*"
+test http-4.16 {Leak with Close vs Keepalive (bug [6ca52aec14]} -body {
+    set before [chan names]
+    set token [http::geturl $url -headers {X-Connection keep-alive}]
+    http::cleanup $token
+    update
+    set after [chan names]
+    expr {$before eq $after}
+} -result 1
 
 test http-5.1 {http::formatQuery} {
     http::formatQuery name1 value1 name2 "value two"

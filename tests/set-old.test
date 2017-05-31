@@ -14,7 +14,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -305,6 +305,11 @@ test set-old-7.18 {unset command, -nocomplain (no abbreviation)} {
     catch {unset -nocomp}
     list [info exists -nocomp] [catch {unset -nocomp}]
 } {0 1}
+test set-old-7.19 {unset command, both switches} {
+    set -- val
+    list [info exists --] [catch {unset -nocomplain --}] [info exists --]\
+	[catch {unset -nocomplain -- --}] [info exists --]
+} {1 0 1 0 0}
 
 # Array command.
 
@@ -647,6 +652,13 @@ test set-old-8.52 {array command, array names -regexp on regexp pattern} {
     set a(11) 1
     list [catch {lsort [array names a -regexp ^1]} msg] $msg
 } {0 {1*2 11 12}}
+test set-old-8.52.1 {array command, array names -regexp, backrefs} {
+    catch {unset a}
+    set a(1*2) 1
+    set a(12) 1
+    set a(11) 1
+    list [catch {lsort [array names a -regexp {^(.)\1}]} msg] $msg
+} {0 11}
 test set-old-8.53 {array command, array names -regexp} {
     catch {unset a}
     set a(-glob) 1
@@ -860,6 +872,8 @@ test set-old-10.13 {array enumeration errors} {
     list [catch {array done a b c} msg] $msg
 } {1 {wrong # args: should be "array donesearch arrayName searchId"}}
 test set-old-10.14 {array enumeration errors} {
+    catch {unset a}
+    set a(a) a
     list [catch {array done a b} msg] $msg
 } {1 {illegal search identifier "b"}}
 test set-old-10.15 {array enumeration errors} {
@@ -926,7 +940,7 @@ catch {rename foo {}}
 
 # cleanup
 ::tcltest::cleanupTests
-return 
+return
 
 # Local Variables:
 # mode: tcl

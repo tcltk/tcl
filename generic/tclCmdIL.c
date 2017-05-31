@@ -105,8 +105,7 @@ typedef struct SortInfo {
  */
 
 static int		DictionaryCompare(const char *left, const char *right);
-static int		IfConditionCallback(ClientData data[],
-			    Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	IfConditionCallback;
 static int		InfoArgsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoBodyCmd(ClientData dummy, Tcl_Interp *interp,
@@ -1203,7 +1202,7 @@ InfoFrameCmd(
     levelError:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad level \"%s\"", TclGetString(objv[1])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_FRAME",
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 		TclGetString(objv[1]), NULL);
 	code = TCL_ERROR;
 	goto done;
@@ -1638,7 +1637,7 @@ InfoLevelCmd(
   levelError:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "bad level \"%s\"", TclGetString(objv[1])));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_LEVEL",
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 	    TclGetString(objv[1]), NULL);
     return TCL_ERROR;
 }
@@ -1678,7 +1677,7 @@ InfoLibraryCmd(
 	return TCL_ERROR;
     }
 
-    libDirName = Tcl_GetVar(interp, "tcl_library", TCL_GLOBAL_ONLY);
+    libDirName = Tcl_GetVar2(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
     if (libDirName != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(libDirName, -1));
 	return TCL_OK;
@@ -1718,19 +1717,24 @@ InfoLoadedCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *interpName;
+    const char *interpName, *packageName;
 
-    if ((objc != 1) && (objc != 2)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?interp?");
+    if (objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?interp? ?packageName?");
 	return TCL_ERROR;
     }
 
-    if (objc == 1) {		/* Get loaded pkgs in all interpreters. */
+    if (objc < 2) {		/* Get loaded pkgs in all interpreters. */
 	interpName = NULL;
     } else {			/* Get pkgs just in specified interp. */
 	interpName = TclGetString(objv[1]);
     }
-    return TclGetLoadedPackages(interp, interpName);
+    if (objc < 3) {		/* Get loaded files in all packages. */
+	packageName = NULL;
+    } else {			/* Get pkgs just in specified interp. */
+	packageName = TclGetString(objv[2]);
+    }
+    return TclGetLoadedPackagesEx(interp, interpName, packageName);
 }
 
 /*
@@ -1804,7 +1808,7 @@ InfoPatchLevelCmd(
 	return TCL_ERROR;
     }
 
-    patchlevel = Tcl_GetVar(interp, "tcl_patchLevel",
+    patchlevel = Tcl_GetVar2(interp, "tcl_patchLevel", NULL,
 	    (TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG));
     if (patchlevel != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(patchlevel, -1));
@@ -2156,8 +2160,8 @@ Tcl_JoinObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int listLen, i;
-    Tcl_Obj *resObjPtr, *joinObjPtr, **elemPtrs;
+    int listLen;
+    Tcl_Obj *resObjPtr = NULL, *joinObjPtr, **elemPtrs;
 
     if ((objc < 2) || (objc > 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list ?joinString?");
@@ -2174,19 +2178,47 @@ Tcl_JoinObjCmd(
 	return TCL_ERROR;
     }
 
+    if (listLen == 0) {
+	/* No elements to join; default empty result is correct. */
+	return TCL_OK;
+    }
+    if (listLen == 1) {
+	/* One element; return it */
+	Tcl_SetObjResult(interp, elemPtrs[0]);
+	return TCL_OK;
+    }
+
     joinObjPtr = (objc == 2) ? Tcl_NewStringObj(" ", 1) : objv[2];
     Tcl_IncrRefCount(joinObjPtr);
 
-    resObjPtr = Tcl_NewObj();
-    for (i = 0;  i < listLen;  i++) {
-	if (i > 0) {
-	    Tcl_AppendObjToObj(resObjPtr, joinObjPtr);
+    if (Tcl_GetCharLength(joinObjPtr) == 0) {
+	TclStringCatObjv(interp, /* inPlace */ 0, listLen, elemPtrs,
+		&resObjPtr);
+    } else {
+	int i;
+
+	resObjPtr = Tcl_NewObj();
+	for (i = 0;  i < listLen;  i++) {
+	    if (i > 0) {
+
+		/*
+		 * NOTE: This code is relying on Tcl_AppendObjToObj() **NOT**
+		 * to shimmer joinObjPtr.  If it did, then the case where
+		 * objv[1] and objv[2] are the same value would not be safe.
+		 * Accessing elemPtrs would crash.
+		 */
+
+		Tcl_AppendObjToObj(resObjPtr, joinObjPtr);
+	    }
+	    Tcl_AppendObjToObj(resObjPtr, elemPtrs[i]);
 	}
-	Tcl_AppendObjToObj(resObjPtr, elemPtrs[i]);
     }
     Tcl_DecrRefCount(joinObjPtr);
-    Tcl_SetObjResult(interp, resObjPtr);
-    return TCL_OK;
+    if (resObjPtr) {
+	Tcl_SetObjResult(interp, resObjPtr);
+	return TCL_OK;
+    }
+    return TCL_ERROR;
 }
 
 /*
@@ -2390,7 +2422,10 @@ Tcl_LinsertObjCmd(
 
 	Tcl_ListObjAppendElement(NULL, listPtr, objv[3]);
     } else {
-	Tcl_ListObjReplace(NULL, listPtr, index, 0, (objc-3), &(objv[3]));
+	if (TCL_OK != Tcl_ListObjReplace(interp, listPtr, index, 0,
+		(objc-3), &(objv[3]))) {
+	    return TCL_ERROR;
+	}
     }
 
     /*
@@ -2752,7 +2787,7 @@ Tcl_LreplaceObjCmd(
      * (to allow for replacing the last elem).
      */
 
-    if ((first >= listLen) && (listLen > 0)) {
+    if ((first > listLen) && (listLen > 0)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"list doesn't contain element %s", TclGetString(objv[2])));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPLACE", "BADIDX",
@@ -2786,7 +2821,10 @@ Tcl_LreplaceObjCmd(
      * optimize this case away.
      */
 
-    Tcl_ListObjReplace(NULL, listPtr, first, numToDelete, objc-4, objv+4);
+    if (TCL_OK != Tcl_ListObjReplace(interp, listPtr, first, numToDelete,
+	    objc-4, objv+4)) {
+	return TCL_ERROR;
+    }
 
     /*
      * Set the interpreter's object result.
@@ -3644,7 +3682,7 @@ Tcl_LsortObjCmd(
     int sortMode = SORTMODE_ASCII;
     int group, groupSize, groupOffset, idx, allocatedIndexVector = 0;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
-    SortElement *elementArray, *elementPtr;
+    SortElement *elementArray = NULL, *elementPtr;
     SortInfo sortInfo;		/* Information about this sort that needs to
 				 * be passed to the comparison function. */
 #   define NUM_LISTS 30
@@ -3690,7 +3728,7 @@ Tcl_LsortObjCmd(
 	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "option", 0,
 		&index) != TCL_OK) {
 	    sortInfo.resultCode = TCL_ERROR;
-	    goto done2;
+	    goto done;
 	}
 	switch ((enum Lsort_Switches) index) {
 	case LSORT_ASCII:
@@ -3703,7 +3741,7 @@ Tcl_LsortObjCmd(
 			"by comparison command", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		sortInfo.resultCode = TCL_ERROR;
-		goto done2;
+		goto done;
 	    }
 	    sortInfo.sortMode = SORTMODE_COMMAND;
 	    cmdPtr = objv[i+1];
@@ -3728,12 +3766,12 @@ Tcl_LsortObjCmd(
 			-1));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		sortInfo.resultCode = TCL_ERROR;
-		goto done2;
+		goto done;
 	    }
 	    if (TclListObjGetElements(interp, objv[i+1], &indexc,
 		    &indexv) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
-		goto done2;
+		goto done;
 	    }
 
 	    /*
@@ -3750,7 +3788,7 @@ Tcl_LsortObjCmd(
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (-index option item number %d)", j));
 		    sortInfo.resultCode = TCL_ERROR;
-		    goto done2;
+		    goto done;
 		}
 	    }
 	    indexPtr = objv[i+1];
@@ -3779,11 +3817,11 @@ Tcl_LsortObjCmd(
 			"followed by stride length", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		sortInfo.resultCode = TCL_ERROR;
-		goto done2;
+		goto done;
 	    }
 	    if (Tcl_GetIntFromObj(interp, objv[i+1], &groupSize) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
-		goto done2;
+		goto done;
 	    }
 	    if (groupSize < 2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -3791,7 +3829,7 @@ Tcl_LsortObjCmd(
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
 			"BADSTRIDE", NULL);
 		sortInfo.resultCode = TCL_ERROR;
-		goto done2;
+		goto done;
 	    }
 	    group = 1;
 	    i++;
@@ -3846,7 +3884,7 @@ Tcl_LsortObjCmd(
 	listObj = TclListObjCopy(interp, listObj);
 	if (listObj == NULL) {
 	    sortInfo.resultCode = TCL_ERROR;
-	    goto done2;
+	    goto done;
 	}
 
 	/*
@@ -3864,7 +3902,7 @@ Tcl_LsortObjCmd(
 	    Tcl_IncrRefCount(newObjPtr);
 	    TclDecrRefCount(newObjPtr);
 	    sortInfo.resultCode = TCL_ERROR;
-	    goto done2;
+	    goto done;
 	}
 	Tcl_ListObjAppendElement(interp, newCommandPtr, Tcl_NewObj());
 	sortInfo.compareCmdPtr = newCommandPtr;
@@ -3957,7 +3995,7 @@ Tcl_LsortObjCmd(
      * begins sorting it into the sublists as it appears.
      */
 
-    elementArray = TclStackAlloc(interp, length * sizeof(SortElement));
+    elementArray = ckalloc(length * sizeof(SortElement));
 
     for (i=0; i < length; i++){
 	idx = groupSize * i + groupOffset;
@@ -3967,7 +4005,7 @@ Tcl_LsortObjCmd(
 	     */
 	    indexPtr = SelectObjFromSublist(listObjPtrs[idx], &sortInfo);
 	    if (sortInfo.resultCode != TCL_OK) {
-		goto done1;
+		goto done;
 	    }
 	} else {
 	    indexPtr = listObjPtrs[idx];
@@ -3984,7 +4022,7 @@ Tcl_LsortObjCmd(
 
 	    if (TclGetWideIntFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
-		goto done1;
+		goto done;
 	    }
 	    elementArray[i].collationKey.wideValue = a;
 	} else if (sortMode == SORTMODE_REAL) {
@@ -3993,7 +4031,7 @@ Tcl_LsortObjCmd(
 	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr,
 		    &a) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
-		goto done1;
+		goto done;
 	    }
 	    elementArray[i].collationKey.doubleValue = a;
 	} else {
@@ -4080,18 +4118,17 @@ Tcl_LsortObjCmd(
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
-  done1:
-    TclStackFree(interp, elementArray);
-
   done:
     if (sortMode == SORTMODE_COMMAND) {
 	TclDecrRefCount(sortInfo.compareCmdPtr);
 	TclDecrRefCount(listObj);
 	sortInfo.compareCmdPtr = NULL;
     }
-  done2:
     if (allocatedIndexVector) {
 	TclStackFree(interp, sortInfo.indexv);
+    }
+    if (elementArray) {
+	ckfree(elementArray);
     }
     return sortInfo.resultCode;
 }
@@ -4402,8 +4439,8 @@ DictionaryCompare(
 	 */
 
 	if ((*left != '\0') && (*right != '\0')) {
-	    left += Tcl_UtfToUniChar(left, &uniLeft);
-	    right += Tcl_UtfToUniChar(right, &uniRight);
+	    left += TclUtfToUniChar(left, &uniLeft);
+	    right += TclUtfToUniChar(right, &uniRight);
 
 	    /*
 	     * Convert both chars to lower for the comparison, because

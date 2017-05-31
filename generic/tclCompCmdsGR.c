@@ -144,7 +144,7 @@ TclCompileGlobalCmd(
 	    return TCL_ERROR;
 	}
 
-	/* TODO: Consider what value can pass throug the 
+	/* TODO: Consider what value can pass throug the
 	 * IndexTailVarIfKnown() screen.  Full CompileWord()
 	 * likely does not apply here.  Push known value instead. */
 	CompileWord(envPtr, varTokenPtr, interp, i);
@@ -281,7 +281,6 @@ TclCompileIfCmd(
 		SetLineInformation(wordIdx);
 		Tcl_ResetResult(interp);
 		TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-		TclClearNumConversion(envPtr);
 		if (jumpFalseFixupArray.next >= jumpFalseFixupArray.end) {
 		    TclExpandJumpFixupArray(&jumpFalseFixupArray);
 		}
@@ -531,7 +530,6 @@ TclCompileIncrCmd(
 	} else {
 	    SetLineInformation(2);
 	    CompileTokens(envPtr, incrTokenPtr, interp);
-	    TclClearNumConversion(envPtr);
 	}
     } else {			/* No incr amount given so use 1. */
 	haveImmValue = 1;
@@ -873,7 +871,7 @@ TclCompileLappendCmd(
 
     /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
-    if (numWords == 1) {
+    if (numWords < 3) {
 	return TCL_ERROR;
     }
 
@@ -1212,20 +1210,7 @@ TclCompileListCmd(
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
     if (listObj != NULL) {
-	int len;
-	const char *bytes = Tcl_GetStringFromObj(listObj, &len);
-
-	PushLiteral(envPtr, bytes, len);
-	Tcl_DecrRefCount(listObj);
-	if (len > 0) {
-	    /*
-	     * Force list interpretation!
-	     */
-
-	    TclEmitOpcode(	INST_DUP,		envPtr);
-	    TclEmitOpcode(	INST_LIST_LENGTH,	envPtr);
-	    TclEmitOpcode(	INST_POP,		envPtr);
-	}
+	TclEmitPush(TclAddLiteralObj(envPtr, listObj, NULL), envPtr);
 	return TCL_OK;
     }
 
@@ -1504,6 +1489,29 @@ TclCompileLreplaceCmd(
     }
 
     /*
+     * idx1, idx2 are now in canonical form:
+     *
+     *  - integer:	[0,len+1]
+     *  - end index:    INDEX_END
+     *  - -ive offset:  INDEX_END-[len-1,0]
+     *  - +ive offset:  INDEX_END+1
+     */
+
+    /*
+     * Compilation fails when one index is end-based but the other isn't.
+     * Fixing this will require more bytecodes, but this is a workaround for
+     * now. [Bug 47ac84309b]
+     */
+
+    if ((idx1 <= INDEX_END) != (idx2 <= INDEX_END)) {
+	return TCL_ERROR;
+    }
+
+    if (idx2 != INDEX_END && idx2 >= 0 && idx2 < idx1) {
+	idx2 = idx1 - 1;
+    }
+
+    /*
      * Work out what this [lreplace] is actually doing.
      */
 
@@ -1522,6 +1530,9 @@ TclCompileLreplaceCmd(
 	    idx1 = 0;
 	    goto dropEnd;
 	} else {
+	    if (idx2 < idx1) {
+		idx2 = idx1 - 1;
+	    }
 	    if (idx1 > 0) {
 		tmpObj = Tcl_NewIntObj(idx1);
 		Tcl_IncrRefCount(tmpObj);
@@ -1549,9 +1560,7 @@ TclCompileLreplaceCmd(
 	idx1 = 0;
 	goto replaceTail;
     } else {
-	if (idx1 > 0 && idx2 > 0 && idx2 < idx1) {
-	    idx2 = idx1 - 1;
-	} else if (idx1 < 0 && idx2 < 0 && idx2 < idx1) {
+	if (idx2 < idx1) {
 	    idx2 = idx1 - 1;
 	}
 	if (idx1 > 0) {
@@ -1567,7 +1576,7 @@ TclCompileLreplaceCmd(
      * operate on.
      */
 
-  dropAll:
+  dropAll:			/* This just ensures the arg is a list. */
     TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
     TclEmitOpcode(		INST_POP,			envPtr);
     PushStringLiteral(envPtr,	"");
@@ -1580,12 +1589,21 @@ TclCompileLreplaceCmd(
 
   dropRange:
     if (tmpObj != NULL) {
+	/*
+	 * Emit bytecode to check the list length.
+	 */
+
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
 	TclEmitPush(TclAddLiteralObj(envPtr, tmpObj, NULL),	envPtr);
-	TclEmitOpcode(		INST_GT,			envPtr);
+	TclEmitOpcode(		INST_GE,			envPtr);
 	offset = CurrentOffset(envPtr);
 	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+
+	/*
+	 * Emit an error if we've been given an empty list.
+	 */
+
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
 	offset2 = CurrentOffset(envPtr);
@@ -1636,16 +1654,30 @@ TclCompileLreplaceCmd(
 
   replaceRange:
     if (tmpObj != NULL) {
+	/*
+	 * Emit bytecode to check the list length.
+	 */
+
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+
+	/*
+	 * Check the list length vs idx1.
+	 */
+
 	TclEmitPush(TclAddLiteralObj(envPtr, tmpObj, NULL),	envPtr);
-	TclEmitOpcode(		INST_GT,			envPtr);
+	TclEmitOpcode(		INST_GE,			envPtr);
 	offset = CurrentOffset(envPtr);
 	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+
+	/*
+	 * Emit an error if we've been given an empty list.
+	 */
+
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
 	offset2 = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+	TclEmitInstInt1(	INST_JUMP_FALSE1, 0,		envPtr);
 	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
 		"list doesn't contain element %d", idx1), NULL), envPtr);
 	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
@@ -2046,7 +2078,7 @@ TclCompileNamespaceUpvarCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
-    int isScalar, localIndex, numWords, i;
+    int localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
 
     if (envPtr->procPtr == NULL) {
@@ -2081,10 +2113,8 @@ TclCompileNamespaceUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	CompileWord(envPtr, otherTokenPtr, interp, i);
-	PushVarNameWord(interp, localTokenPtr, envPtr, 0,
-		&localIndex, &isScalar, i+1);
-
-	if ((localIndex < 0) || !isScalar) {
+	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
+	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
 	TclEmitInstInt4(	INST_NSUPVAR, localIndex,	envPtr);
@@ -2421,7 +2451,7 @@ TclCompileRegsubCmd(
      * replacement "simple"?
      */
 
-    bytes = Tcl_GetStringFromObj(patternObj, &len);
+    bytes = TclGetStringFromObj(patternObj, &len);
     if (TclReToGlob(NULL, bytes, len, &pattern, &exact, &quantified)
 	    != TCL_OK || exact || quantified) {
 	goto done;
@@ -2469,7 +2499,7 @@ TclCompileRegsubCmd(
     result = TCL_OK;
     bytes = Tcl_DStringValue(&pattern) + 1;
     PushLiteral(envPtr,	bytes, len);
-    bytes = Tcl_GetStringFromObj(replacementObj, &len);
+    bytes = TclGetStringFromObj(replacementObj, &len);
     PushLiteral(envPtr,	bytes, len);
     CompileWord(envPtr,	stringTokenPtr, interp, parsePtr->numWords-2);
     TclEmitOpcode(	INST_STR_MAP,	envPtr);
@@ -2731,7 +2761,7 @@ TclCompileSyntaxError(
     const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
     TclErrorStackResetIf(interp, bytes, numBytes);
-    TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, numBytes), envPtr);
+    TclEmitPush(TclRegisterLiteral(envPtr, bytes, numBytes, 0), envPtr);
     CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
 	    TclNoErrorStack(interp, Tcl_GetReturnOptions(interp, TCL_ERROR)));
     Tcl_ResetResult(interp);
@@ -2765,7 +2795,7 @@ TclCompileUpvarCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
-    int isScalar, localIndex, numWords, i;
+    int localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *objPtr;
 
@@ -2828,10 +2858,8 @@ TclCompileUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	CompileWord(envPtr, otherTokenPtr, interp, i);
-	PushVarNameWord(interp, localTokenPtr, envPtr, 0,
-		&localIndex, &isScalar, i+1);
-
-	if ((localIndex < 0) || !isScalar) {
+	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
+	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
 	TclEmitInstInt4(	INST_UPVAR, localIndex,		envPtr);
@@ -2905,7 +2933,7 @@ TclCompileVariableCmd(
 	    return TCL_ERROR;
 	}
 
-	/* TODO: Consider what value can pass throug the 
+	/* TODO: Consider what value can pass throug the
 	 * IndexTailVarIfKnown() screen.  Full CompileWord()
 	 * likely does not apply here.  Push known value instead. */
 	CompileWord(envPtr, varTokenPtr, interp, i);
@@ -2981,10 +3009,12 @@ IndexTailVarIfKnown(
     } else {
 	full = 0;
 	lastTokenPtr = varTokenPtr + n;
-	if (!TclWordKnownAtCompileTime(lastTokenPtr, tailPtr)) {
+
+	if (lastTokenPtr->type != TCL_TOKEN_TEXT) {
 	    Tcl_DecrRefCount(tailPtr);
 	    return -1;
 	}
+	Tcl_SetStringObj(tailPtr, lastTokenPtr->start, lastTokenPtr->size);
     }
 
     tailName = TclGetStringFromObj(tailPtr, &len);

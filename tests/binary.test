@@ -1506,6 +1506,18 @@ test binary-37.9 {GetFormatSpec: numbers} {
     binary scan $x f* bla
     set bla
 } {1.0 -1.0 2.0 -2.0 0.0}
+test binary-37.10 {GetFormatSpec: count overflow} {
+    binary scan x a[format %ld 0x7fffffff] r
+} 0
+test binary-37.11 {GetFormatSpec: count overflow} {
+    binary scan x a[format %ld 0x10000000] r
+} 0
+test binary-37.12 {GetFormatSpec: count overflow} {
+    binary scan x a[format %ld 0x100000000] r
+} 0
+test binary-37.13 {GetFormatSpec: count overflow} {
+    binary scan x a[format %lld 0x10000000000000000] r
+} 0
 
 test binary-38.1 {FormatNumber: word alignment} {
     set x [binary format c1s1 1 1]
@@ -2837,6 +2849,19 @@ test binary-76.2 {binary string appending growth algorithm} win {
     # Append to it
     string length [append str [binary format a* foo]]
 } 3
+
+test binary-77.1 {string cat ops on all bytearrays} {
+    apply {{a b} {
+	return [binary format H* $a][binary format H* $b]
+    }} ab cd
+} [binary format H* abcd]
+test binary-77.2 {string cat ops on all bytearrays} {
+    apply {{a b} {
+	set one [binary format H* $a]
+	return $one[binary format H* $b]
+    }} ab cd
+} [binary format H* abcd]
+
 
 
 test binary-80.1 {Tcl_BinaryObjCmd: scan @} {

@@ -193,6 +193,9 @@ typedef struct Object {
 				 * destroyed. */
 #define DESTRUCTOR_CALLED 2	/* Flag to say that the destructor has been
 				 * called. */
+#define CLASS_GONE	4	/* Indicates that the class of this object has
+				 * been deleted, and so the object should not
+				 * attempt to remove itself from its class. */
 #define ROOT_OBJECT 0x1000	/* Flag to say that this object is the root of
 				 * the class hierarchy and should be treated
 				 * specially during teardown. */
@@ -588,8 +591,8 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 
 #define AddRef(ptr) ((ptr)->refCount++)
 #define DelRef(ptr) do {			\
-	if (--(ptr)->refCount < 1) {		\
-	    ckfree((char *) (ptr));		\
+	if ((ptr)->refCount-- <= 1) {		\
+	    ckfree(ptr);			\
 	}					\
     } while(0)
 

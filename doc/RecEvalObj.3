@@ -3,7 +3,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH Tcl_RecordAndEvalObj 3 8.0 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
@@ -32,8 +32,6 @@ the command at global level instead of the current stack level.
 .PP
 \fBTcl_RecordAndEvalObj\fR is invoked to record a command as an event
 on the history list and then execute it using \fBTcl_EvalObjEx\fR
-(or \fBTcl_GlobalEvalObj\fR if the \fBTCL_EVAL_GLOBAL\fR bit is set
-in \fIflags\fR).
 It returns a completion code such as \fBTCL_OK\fR just like \fBTcl_EvalObjEx\fR,
 as well as a result value containing additional information
 (a result value or error message)

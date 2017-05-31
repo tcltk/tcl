@@ -16,7 +16,9 @@
 
 #include "tcl.h"
 #define WIN32_LEAN_AND_MEAN
+#define STRICT			/* See MSDN Article Q83456 */
 #include <windows.h>
+#undef STRICT
 #undef WIN32_LEAN_AND_MEAN
 #include <locale.h>
 #include <stdlib.h>

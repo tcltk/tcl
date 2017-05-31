@@ -488,7 +488,7 @@ proc tclPkgUnknown {name args} {
 		set dir [file dirname $file]
 		if {![info exists procdDirs($dir)]} {
 		    try {
-			source $file
+			::tcl::Pkg::source $file
 		    } trap {POSIX EACCES} {} {
 			# $file was not readable; silently ignore
 			continue
@@ -506,7 +506,7 @@ proc tclPkgUnknown {name args} {
 	    # safe interps usually don't have "file exists",
 	    if {([interp issafe] || [file exists $file])} {
 		try {
-		    source $file
+		    ::tcl::Pkg::source $file
 		} trap {POSIX EACCES} {} {
 		    # $file was not readable; silently ignore
 		    continue
@@ -590,7 +590,7 @@ proc tcl::MacOSXPkgUnknown {original name args} {
 	    set dir [file dirname $file]
 	    if {![info exists procdDirs($dir)]} {
 		try {
-		    source $file
+		    ::tcl::Pkg::source $file
 		} trap {POSIX EACCES} {} {
 		    # $file was not readable; silently ignore
 		    continue
@@ -726,7 +726,7 @@ proc ::tcl::Pkg::Create {args} {
     foreach key {load source} {
 	foreach filespec $opts(-$key) {
 	    lassign $filespec filename proclist
-	    
+
 	    if { [llength $proclist] == 0 } {
 		set cmd "\[list $key \[file join \$dir [list $filename]\]\]"
 		lappend cmdList $cmd

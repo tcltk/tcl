@@ -22,8 +22,9 @@
  * variable is the key to this buffer.
  */
 
+#ifndef TCL_NO_DEPRECATED
 static Tcl_ThreadDataKey tmKey;
-typedef struct ThreadSpecificData {
+typedef struct {
     struct tm gmtime_buf;
     struct tm localtime_buf;
 } ThreadSpecificData;
@@ -45,6 +46,8 @@ static char *lastTZ = NULL;	/* Holds the last setting of the TZ
 
 static void		SetTZIfNecessary(void);
 static void		CleanupMemory(ClientData clientData);
+#endif /* TCL_NO_DEPRECATED */
+
 static void		NativeScaleTime(Tcl_Time *timebuf,
 			    ClientData clientData);
 static void		NativeGetTime(Tcl_Time *timebuf,
@@ -79,6 +82,32 @@ unsigned long
 TclpGetSeconds(void)
 {
     return time(NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetMicroseconds --
+ *
+ *	This procedure returns the number of microseconds from the epoch.
+ *	On most Unix systems the epoch is Midnight Jan 1, 1970 GMT.
+ *
+ * Results:
+ *	Number of microseconds from the epoch.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_WideInt
+TclpGetMicroseconds(void)
+{
+    Tcl_Time time;
+
+    tclGetTimeProcPtr(&time, tclTimeClientData);
+    return ((Tcl_WideInt)time.sec)*1000000 + time.usec;
 }
 
 /*
@@ -158,7 +187,7 @@ TclpGetWideClicks(void)
 	Tcl_Time time;
 
 	tclGetTimeProcPtr(&time, tclTimeClientData);
-	now = (Tcl_WideInt) (time.sec*1000000 + time.usec);
+	now = ((Tcl_WideInt)time.sec)*1000000 + time.usec;
     } else {
 #ifdef MAC_OSX_TCL
 	now = (Tcl_WideInt) (mach_absolute_time() & INT64_MAX);
@@ -199,7 +228,7 @@ TclpWideClicksToNanoseconds(
 #ifdef MAC_OSX_TCL
 	static mach_timebase_info_data_t tb;
 	static uint64_t maxClicksForUInt64;
-	
+
 	if (!tb.denom) {
 	    mach_timebase_info(&tb);
 	    maxClicksForUInt64 = UINT64_MAX / tb.numer;
@@ -215,6 +244,51 @@ TclpWideClicksToNanoseconds(
     }
 
     return nsec;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpWideClickInMicrosec --
+ *
+ *	This procedure return scale to convert click values from the 
+ *	TclpGetWideClicks native resolution to microsecond resolution
+ *	and back.
+ *
+ * Results:
+ * 	1 click in microseconds as double.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+double
+TclpWideClickInMicrosec(void)
+{
+    if (tclGetTimeProcPtr != NativeGetTime) {
+	return 1.0;
+    } else {
+#ifdef MAC_OSX_TCL
+	static int initialized = 0;
+	static double scale = 0.0;
+
+	if (initialized) {
+	    return scale;
+	} else {
+	    mach_timebase_info_data_t tb;
+
+	    mach_timebase_info(&tb);
+	    /* value of tb.numer / tb.denom = 1 click in nanoseconds */
+	    scale = ((double)tb.numer) / tb.denom / 1000;
+	    initialized = 1;
+	    return scale;
+	}
+#else
+#error Wide high-resolution clicks not implemented on this platform
+#endif
+    }
 }
 #endif /* TCL_WIDE_CLICKS */
 
@@ -263,6 +337,7 @@ Tcl_GetTime(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 struct tm *
 TclpGetDate(
     const time_t *time,
@@ -352,6 +427,7 @@ TclpLocaltime(
 
     return &tsdPtr->localtime_buf;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -486,6 +562,7 @@ NativeGetTime(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 static void
 SetTZIfNecessary(void)
 {
@@ -531,6 +608,7 @@ CleanupMemory(
 {
     ckfree(lastTZ);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Local Variables:

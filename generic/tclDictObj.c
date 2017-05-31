@@ -51,6 +51,8 @@ static int		DictSetCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictSizeCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
+static int		DictSmartRefCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const *objv);
 static int		DictUnsetCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictUpdateCmd(ClientData dummy, Tcl_Interp *interp,
@@ -70,18 +72,12 @@ static inline void	DeleteChainTable(struct Dict *dict);
 static inline Tcl_HashEntry *CreateChainEntry(struct Dict *dict,
 			    Tcl_Obj *keyPtr, int *newPtr);
 static inline int	DeleteChainEntry(struct Dict *dict, Tcl_Obj *keyPtr);
-static int		FinalizeDictUpdate(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		FinalizeDictWith(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		DictForNRCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictMapNRCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictForLoopCallback(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		DictMapLoopCallback(ClientData data[],
-			    Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	FinalizeDictUpdate;
+static Tcl_NRPostProc	FinalizeDictWith;
+static Tcl_ObjCmdProc	DictForNRCmd;
+static Tcl_ObjCmdProc	DictMapNRCmd;
+static Tcl_NRPostProc	DictForLoopCallback;
+static Tcl_NRPostProc	DictMapLoopCallback;
 
 /*
  * Table of dict subcommand names and implementations.
@@ -104,6 +100,7 @@ static const EnsembleImplMap implementationMap[] = {
     {"replace",	DictReplaceCmd, NULL, NULL, NULL, 0 },
     {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, NULL, 0 },
     {"size",	DictSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
+    {"smartref",DictSmartRefCmd,NULL, NULL, NULL, 0 },
     {"unset",	DictUnsetCmd,	TclCompileDictUnsetCmd, NULL, NULL, 0 },
     {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd, NULL, NULL, 0 },
     {"values",	DictValuesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
@@ -148,7 +145,7 @@ typedef struct Dict {
 				 * the entries in the order that they are
 				 * created. */
     int epoch;			/* Epoch counter */
-    int refcount;		/* Reference counter (see above) */
+    size_t refCount;		/* Reference counter (see above) */
     Tcl_Obj *chain;		/* Linked list used for invalidating the
 				 * string representations of updated nested
 				 * dictionaries. */
@@ -398,7 +395,7 @@ DupDictInternalRep(
 
     newDict->epoch = 0;
     newDict->chain = NULL;
-    newDict->refcount = 1;
+    newDict->refCount = 1;
 
     /*
      * Store in the object.
@@ -433,8 +430,7 @@ FreeDictInternalRep(
 {
     Dict *dict = DICT(dictPtr);
 
-    dict->refcount--;
-    if (dict->refcount <= 0) {
+    if (dict->refCount-- <= 1) {
 	DeleteDict(dict);
     }
     dictPtr->typePtr = NULL;
@@ -513,7 +509,7 @@ UpdateStringOfDict(
 
     /* Handle empty list case first, simplifies what follows */
     if (numElems == 0) {
-	dictPtr->bytes = tclEmptyStringRep;
+	dictPtr->bytes = &tclEmptyString;
 	dictPtr->length = 0;
 	return;
     }
@@ -631,7 +627,7 @@ SetDictFromAny(
 	}
 
 	for (i=0 ; i<objc ; i+=2) {
-	
+
 	    /* Store key and value in the hash table we're building. */
 	    hPtr = CreateChainEntry(dict, objv[i], &isNew);
 	    if (!isNew) {
@@ -719,7 +715,7 @@ SetDictFromAny(
     TclFreeIntRep(objPtr);
     dict->epoch = 0;
     dict->chain = NULL;
-    dict->refcount = 1;
+    dict->refCount = 1;
     DICT(objPtr) = dict;
     objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &tclDictType;
@@ -1123,7 +1119,7 @@ Tcl_DictObjFirst(
 	searchPtr->dictionaryPtr = (Tcl_Dict) dict;
 	searchPtr->epoch = dict->epoch;
 	searchPtr->next = cPtr->nextPtr;
-	dict->refcount++;
+	dict->refCount++;
 	if (keyPtrPtr != NULL) {
 	    *keyPtrPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
 	}
@@ -1237,8 +1233,7 @@ Tcl_DictObjDone(
     if (searchPtr->epoch != -1) {
 	searchPtr->epoch = -1;
 	dict = (Dict *) searchPtr->dictionaryPtr;
-	dict->refcount--;
-	if (dict->refcount <= 0) {
+	if (dict->refCount-- <= 1) {
 	    DeleteDict(dict);
 	}
     }
@@ -1390,7 +1385,7 @@ Tcl_NewDictObj(void)
     InitChainTable(dict);
     dict->epoch = 0;
     dict->chain = NULL;
-    dict->refcount = 1;
+    dict->refCount = 1;
     DICT(dictPtr) = dict;
     dictPtr->internalRep.twoPtrValue.ptr2 = NULL;
     dictPtr->typePtr = &tclDictType;
@@ -1440,7 +1435,7 @@ Tcl_DbNewDictObj(
     InitChainTable(dict);
     dict->epoch = 0;
     dict->chain = NULL;
-    dict->refcount = 1;
+    dict->refCount = 1;
     DICT(dictPtr) = dict;
     dictPtr->internalRep.twoPtrValue.ptr2 = NULL;
     dictPtr->typePtr = &tclDictType;
@@ -1966,6 +1961,102 @@ DictSizeCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_DictObjSmartRef --
+ *
+ *	This function returns new tcl-object with the smart reference to
+ *	dictionary object.
+ *
+ *	Object returned with this function is a smart reference (pointer),
+ *	so new object of type tclDictType, that directly references given
+ *	dictionary object (with internally increased refCount).
+ *
+ *	The usage of such pointer objects allows to hold more as one
+ *	reference to the same real dictionary object, allows to make a pointer
+ *	to part of another dictionary, allows to change the dictionary without
+ *	regarding of the "shared" state of the dictionary object.
+ *
+ *	Prevents "called with shared object" exception if object is multiple
+ *	referenced.
+ *
+ * Results:
+ *	The newly create object (contains smart reference) is returned.
+ *	The returned object has a ref count of 0.
+ *
+ * Side effects:
+ *	Increases ref count of the referenced dictionary.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Tcl_DictObjSmartRef(
+    Tcl_Interp *interp,
+    Tcl_Obj    *dictPtr)
+{
+    Tcl_Obj *result;
+    Dict    *dict;
+
+    if (dictPtr->typePtr != &tclDictType
+	    && SetDictFromAny(interp, dictPtr) != TCL_OK) {
+	return NULL;
+    }
+
+    dict = DICT(dictPtr);
+
+    result = Tcl_NewObj();
+    DICT(result) = dict;
+    dict->refCount++;
+    result->internalRep.twoPtrValue.ptr2 = NULL;
+    result->typePtr = &tclDictType;
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DictSmartRefCmd --
+ *
+ *	This function implements the "dict smartref" Tcl command.
+ *
+ *	See description of Tcl_DictObjSmartRef for details.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+DictSmartRefCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_Obj *result;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
+	return TCL_ERROR;
+    }
+
+    result = Tcl_DictObjSmartRef(interp, objv[1]);
+    if (result == NULL) {
+    	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, result);
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * DictExistsCmd --
  *
  *	This function implements the "dict exists" Tcl command. See the user
@@ -2288,7 +2379,7 @@ DictAppendCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
-    int i, allocatedDict = 0;
+    int allocatedDict = 0;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
@@ -2311,17 +2402,44 @@ DictAppendCmd(
 	return TCL_ERROR;
     }
 
-    if (valuePtr == NULL) {
-	TclNewObj(valuePtr);
-    } else if (Tcl_IsShared(valuePtr)) {
-	valuePtr = Tcl_DuplicateObj(valuePtr);
+    if ((objc > 3) || (valuePtr == NULL)) {
+	/* Only go through append activites when something will change. */
+	Tcl_Obj *appendObjPtr = NULL;
+
+	if (objc > 3) {
+	    /* Something to append */
+
+	    if (objc == 4) {
+		appendObjPtr = objv[3];
+	    } else if (TCL_OK != TclStringCatObjv(interp, /* inPlace */ 1,
+		    objc-3, objv+3, &appendObjPtr)) {
+		return TCL_ERROR;
+	    }
+	}
+
+	if (appendObjPtr == NULL) {
+	    /* => (objc == 3) => (valuePtr == NULL) */
+	    TclNewObj(valuePtr);
+	} else if (valuePtr == NULL) {
+	    valuePtr = appendObjPtr;
+	    appendObjPtr = NULL;
+	}
+
+	if (appendObjPtr) {
+	    if (Tcl_IsShared(valuePtr)) {
+		valuePtr = Tcl_DuplicateObj(valuePtr);
+	    }
+
+	    Tcl_AppendObjToObj(valuePtr, appendObjPtr);
+	}
+
+	Tcl_DictObjPut(NULL, dictPtr, objv[2], valuePtr);
     }
 
-    for (i=3 ; i<objc ; i++) {
-	Tcl_AppendObjToObj(valuePtr, objv[i]);
-    }
-
-    Tcl_DictObjPut(NULL, dictPtr, objv[2], valuePtr);
+    /*
+     * Even if nothing changed, we still overwrite so that variable
+     * trace expectations are met.
+     */
 
     resultPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, dictPtr,
 	    TCL_LEAVE_ERR_MSG);
@@ -3051,14 +3169,14 @@ DictFilterCmd(
 	    Tcl_IncrRefCount(valueObj);
 	    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
-		Tcl_AddErrorInfo(interp, 
+		Tcl_AddErrorInfo(interp,
 			"\n    (\"dict filter\" filter script key variable)");
 		result = TCL_ERROR;
 		goto abnormalResult;
 	    }
 	    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
-		Tcl_AddErrorInfo(interp, 
+		Tcl_AddErrorInfo(interp,
 			"\n    (\"dict filter\" filter script value variable)");
 		result = TCL_ERROR;
 		goto abnormalResult;

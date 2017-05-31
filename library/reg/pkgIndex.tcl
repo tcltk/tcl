@@ -1,9 +1,19 @@
 if {([info commands ::tcl::pkgconfig] eq "")
-	|| ([info sharedlibextension] ne ".dll")} return
+  || ([info sharedlibextension] ne ".dll")} return
 if {[::tcl::pkgconfig get debug]} {
-    package ifneeded registry 1.3.0 \
+  if {[info exists [file join $dir tclreg13g.dll]]} {
+    package ifneeded registry 1.3.2 \
             [list load [file join $dir tclreg13g.dll] registry]
+  } else {
+    package ifneeded registry 1.3.2 \
+            [list load tclreg13g registry]
+  }
 } else {
-    package ifneeded registry 1.3.0 \
+  if {[info exists [file join $dir tclreg13.dll]]} {
+    package ifneeded registry 1.3.2 \
             [list load [file join $dir tclreg13.dll] registry]
+  } else {
+    package ifneeded registry 1.3.2 \
+            [list load tclreg13 registry]
+  }
 }

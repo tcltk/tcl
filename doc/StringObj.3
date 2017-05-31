@@ -3,7 +3,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH Tcl_StringObj 3 8.1 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
@@ -308,7 +308,7 @@ sprintf(buf, format, ...);
 \fBTcl_NewStringObj\fR(buf, -1);
 .CE
 .PP
-but with greater convenience and no need to 
+but with greater convenience and no need to
 determine \fBSOME_SUITABLE_LENGTH\fR. The formatting is done with the same
 core formatting engine used by \fBTcl_Format\fR.  This means the set of
 supported conversion specifiers is that of the \fBformat\fR command and
@@ -329,8 +329,8 @@ Tcl_Obj *objPtr = \fBTcl_ObjPrintf\fR("Value is %d", x);
 .PP
 If the value of \fIformat\fR contains internal inconsistencies or invalid
 specifier formats, the formatted string result produced by
-\fBTcl_ObjPrintf\fR will be an error message describing the error. 
-It is impossible however to provide runtime protection against 
+\fBTcl_ObjPrintf\fR will be an error message describing the error.
+It is impossible however to provide runtime protection against
 mismatches between the format and any subsequent arguments.
 Compile-time protection may be provided by some compilers.
 .PP

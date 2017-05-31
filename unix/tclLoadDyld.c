@@ -48,6 +48,7 @@
 #endif /* TCL_DYLD_USE_DLFCN */
 
 #if TCL_DYLD_USE_NSMODULE || defined(TCL_LOAD_FROM_MEMORY)
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <mach-o/dyld.h>
 #include <mach-o/fat.h>
 #include <mach-o/swap.h>

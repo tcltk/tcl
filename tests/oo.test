@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require TclOO 1.0.1
+package require TclOO 1.0.3
 package require tcltest 2
 if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
@@ -280,7 +280,7 @@ test oo-1.18.2 {Bug 21c144f0f5} -setup {
     }
 } -cleanup {
     interp delete slave
-} 
+}
 test oo-1.19 {basic test of OO functionality: teardown order} -body {
     oo::object create o
     namespace delete [info object namespace o]
@@ -416,6 +416,31 @@ test oo-2.8 {construction, method calls and ensembles - Bug 3514761} -setup {
 } -returnCodes error -cleanup {
     namespace delete k
 } -result {wrong # args: should be "k next j"}
+test oo-2.9 {construction failures and self creation} -setup {
+    set ::result {}
+    oo::class create Root
+} -body {
+    oo::class create A {
+	superclass Root
+	constructor {} {
+	    lappend ::result "in A"
+	    error "failure in A"
+	}
+	destructor {lappend ::result [self]}
+    }
+    oo::class create B {
+	superclass Root
+	constructor {} {
+	    lappend ::result "in B [self]"
+	    error "failure in B"
+	}
+	destructor {lappend ::result [self]}
+    }
+    lappend ::result [catch {A create a} msg] $msg
+    lappend ::result [catch {B create b} msg] $msg
+} -cleanup {
+    Root destroy
+} -result {{in A} ::a 1 {failure in A} {in B ::b} ::b 1 {failure in B}}
 
 test oo-3.1 {basic test of OO functionality: destructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as we're
@@ -613,6 +638,57 @@ test oo-3.9 {Bug 2944404: deleting the object in the destructor} -setup {
 } -cleanup {
     cls destroy
 } -result {in destructor}
+test oo-3.10 {Bug 3d96b7076e: killing the object's class in a method call} -setup {
+    oo::class create Super
+} -body {
+    # Only reliably failed in a memdebug build
+    oo::class create Cls {
+	superclass Super
+	method mthd {} {
+	    [self class] destroy
+	    return ok
+	}
+    }
+    [Cls new] mthd
+} -cleanup {
+    Super destroy
+} -result ok
+test oo-3.11 {Bug 3d96b7076e: killing the object's class in a method call} -setup {
+    oo::class create Super
+    oo::class create Sub {
+	superclass Super
+    }
+} -body {
+    # Only reliably failed in a memdebug build
+    oo::class create Cls {
+	superclass Super
+	method mthd {} {
+	    oo::objdefine [self] class Sub
+	    Cls destroy
+	    return ok
+	}
+    }
+    [Cls new] mthd
+} -cleanup {
+    Super destroy
+} -result ok
+test oo-3.12 {Bug 3d96b7076e: killing the object's class in a method call} -setup {
+    oo::class create Super
+} -body {
+    # Only reliably failed in a memdebug build
+    oo::class create Cls {
+	superclass Super
+	method mthd {} {
+	    [self class] destroy
+	    return ok
+	}
+    }
+    set o [Super new]
+    oo::objdefine $o mixin Cls
+    $o mthd
+} -cleanup {
+    Super destroy
+} -result ok
 
 test oo-4.1 {basic test of OO functionality: export} {
     set o [oo::object new]
@@ -1544,6 +1620,34 @@ test oo-12.7 {OO: filters} -setup {
 } -cleanup {
     Aclass destroy
 } -result {foo {{::Aclass outerfoo} {::Aclass InnerFoo}}}
+test oo-12.8 {OO: filters and destructors} -setup {
+    oo::class create Aclass
+    Aclass create Aobject
+    set ::log {}
+} -body {
+    oo::define Aclass {
+	constructor {} {
+	    lappend ::log "in constructor"
+	}
+	destructor {
+	    lappend ::log "in destructor"
+	}
+	method bar {} {
+	    lappend ::log "in method"
+	}
+	method Boo args {
+	    lappend ::log [self target]
+	    next {*}$args
+	}
+	filter Boo
+    }
+    set obj [Aclass new]
+    $obj bar
+    $obj destroy
+    return $::log
+} -cleanup {
+    Aclass destroy
+} -result {{in constructor} {::Aclass bar} {in method} {::oo::object destroy} {in destructor}}
 
 test oo-13.1 {OO: changing an object's class} {
     oo::class create Aclass
@@ -1885,7 +1989,7 @@ test oo-15.10 {variable binding must not bleed through oo::copy} -setup {
 } -body {
     set obj1 [FooClass new]
     oo::objdefine $obj1 {
-	variable var 
+	variable var
 	method m {} {
 	    set var foo
 	}
@@ -1913,6 +2017,12 @@ test oo-15.10 {variable binding must not bleed through oo::copy} -setup {
 test oo-16.1 {OO: object introspection} -body {
     info object
 } -returnCodes 1 -result "wrong \# args: should be \"info object subcommand ?arg ...?\""
+test oo-16.1.1 {OO: object introspection} -body {
+    catch {info object} m o
+    dict get $o -errorinfo
+} -result "wrong \# args: should be \"info object subcommand ?arg ...?\"
+    while executing
+\"info object\""
 test oo-16.2 {OO: object introspection} -body {
     info object class NOTANOBJECT
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
@@ -2024,10 +2134,40 @@ test oo-16.13 {OO: object introspection} -setup {
     oo::objdefine foo method Bar {} {return "ok in foo"}
     [info object namespace foo]::my Bar
 } -result "ok in foo"
+test oo-16.14 {OO: object introspection: TIP #436} -setup {
+    oo::class create meta { superclass oo::class }
+    [meta create instance1] create instance2
+} -body {
+    list class [list [info object isa class NOTANOBJECT] \
+		    [info object isa class list]] \
+	meta [list [info object isa metaclass NOTANOBJECT] \
+		  [info object isa metaclass list] \
+		  [info object isa metaclass oo::object]] \
+	type [list [info object isa typeof oo::object NOTANOBJECT] \
+		  [info object isa typeof NOTANOBJECT oo::object] \
+		  [info object isa typeof list NOTANOBJECT] \
+		  [info object isa typeof NOTANOBJECT list] \
+		  [info object isa typeof oo::object list] \
+		  [info object isa typeof list oo::object]] \
+	mix [list [info object isa mixin oo::object NOTANOBJECT] \
+		 [info object isa mixin NOTANOBJECT oo::object] \
+		 [info object isa mixin list NOTANOBJECT] \
+		 [info object isa mixin NOTANOBJECT list] \
+		 [info object isa mixin oo::object list] \
+		 [info object isa mixin list oo::object]]
+} -cleanup {
+    meta destroy
+} -result {class {0 0} meta {0 0 0} type {0 0 0 0 0 0} mix {0 0 0 0 0 0}}
 
 test oo-17.1 {OO: class introspection} -body {
     info class
 } -returnCodes 1 -result "wrong \# args: should be \"info class subcommand ?arg ...?\""
+test oo-17.1.1 {OO: class introspection} -body {
+    catch {info class} m o
+    dict get $o -errorinfo
+} -result "wrong \# args: should be \"info class subcommand ?arg ...?\"
+    while executing
+\"info class\""
 test oo-17.2 {OO: class introspection} -body {
     info class superclass NOTANOBJECT
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
@@ -2101,6 +2241,44 @@ test oo-17.10 {OO: class introspection} -setup {
     oo::define foo unexport {*}[info class methods foo -all]
     info class methods foo -all
 } -result {}
+set stdmethods {<cloned> destroy eval unknown variable varname}
+test oo-17.11 {OO: object method unexport (bug 900cb0284bc)} -setup {
+    oo::object create o
+    oo::objdefine o unexport m
+} -body {
+    lsort [info object methods o -all -private]
+} -cleanup {
+    o destroy
+} -result $stdmethods
+test oo-17.12 {OO: instance method unexport (bug 900cb0284bc)} -setup {
+    oo::class create c
+    c create o
+    oo::objdefine o unexport m
+} -body {
+    lsort [info object methods o -all -private]
+} -cleanup {
+    o destroy
+    c destroy
+} -result $stdmethods
+test oo-17.13 {OO: class method unexport (bug 900cb0284bc)} -setup {
+    oo::class create c
+    oo::define c unexport m
+} -body {
+    lsort [info class methods c -all -private]
+} -cleanup {
+    c destroy
+} -result $stdmethods
+test oo-17.14 {OO: instance method unexport (bug 900cb0284bc)} -setup {
+    oo::class create c
+    oo::define c unexport m
+    c create o
+} -body {
+    lsort [info object methods o -all -private]
+} -cleanup {
+    o destroy
+    c destroy
+} -result $stdmethods
+
 
 test oo-18.1 {OO: define command support} {
     list [catch {oo::define oo::object {error foo}} msg] $msg $errorInfo
@@ -2491,7 +2669,7 @@ test oo-20.10 {OO: variable and varname methods refer to same things} -setup {
 test oo-20.11 {OO: variable mustn't crash when recursing} -body {
     oo::class create A {
 	constructor {name} {
-	    my variable np_name 
+	    my variable np_name
 	    set np_name $name
 	}
 	method copy {nm} {
@@ -2506,7 +2684,7 @@ test oo-20.11 {OO: variable mustn't crash when recursing} -body {
 			lappend objs [$ref copy {}]
 		    }
 		    $cpy prop $var $objs
-		} else { 
+		} else {
 		    $cpy prop $var $val
 		}
 	    }
@@ -3284,6 +3462,38 @@ test oo-27.22 {variables declaration uniqueifies: Bug 3396896} -setup {
 } -cleanup {
     foo destroy
 } -result {v t}
+test oo-27.23 {variable resolver leakage: Bug 1493a43044} -setup {
+    oo::class create Super
+    oo::class create Master {
+	superclass Super
+	variable member1 member2
+	constructor {} {
+	    set member1 master1
+	    set member2 master2
+	}
+	method getChild {} {
+	    Child new [self]
+	}
+    }
+    oo::class create Child {
+	superclass Super
+	variable member1 result
+	constructor {m} {
+	    set [namespace current]::member1 child1
+	    set ns [info object namespace $m]
+	    namespace upvar $ns member1 l1 member2 l2
+	    upvar 1 member1 l3 member2 l4
+	    [format namespace] upvar $ns member1 l5 member2 l6
+	    [format upvar] 1 member1 l7 member2 l8
+	    set result [list $l1 $l2 $l3 $l4 $l5 $l6 $l7 $l8]
+	}
+	method result {} {return $result}
+    }
+} -body {
+    [[Master new] getChild] result
+} -cleanup {
+    Super destroy
+} -result {master1 master2 master1 master2 master1 master2 master1 master2}
 
 # A feature that's not supported because the mechanism may change without
 # warning, but is supposed to work...
@@ -3543,6 +3753,19 @@ test oo-35.2 {Bug 9d61624b3d: Empty superclass must not cause crash} -setup {
     unset -nocomplain result
     fruitMetaclass destroy
 } -result {::appleClass ::orange ::oo::class ::oo::class 1 1 ::appleClass ::pear}
+test oo-35.3 {Bug 593baa032c: superclass list teardown} {
+    # Bug makes this crash, especially with mem-debugging on
+    oo::class create B {}
+    oo::class create D {superclass B}
+    namespace eval [info object namespace D] [list [namespace which B] destroy]
+} {}
+test oo-35.4 {Bug 593baa032c: mixins list teardown} {
+    # Bug makes this crash, especially with mem-debugging on
+    oo::class create B {}
+    oo::class create D {mixin B}
+    namespace eval [info object namespace D] [list [namespace which B] destroy]
+} {}
+
 
 cleanupTests
 return
