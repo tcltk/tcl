@@ -539,7 +539,7 @@ Common Era.
 \fB%Es\fR
 This affects similar to \fB%s\fR, but in opposition to \fB%s\fR it parses
 or formats local seconds (not the posix seconds).
-Because \fB%s\fR has the same precedence as \fB%s\fR (uniquely determines 
+Because \fB%s\fR has the same precedence as \fB%s\fR (uniquely determines
 a point in time), it overrides all other input formats.
 .TP
 \fB%Ex\fR
@@ -736,7 +736,7 @@ week number \fB%V\fR; programs should use \fB%G\fR for that purpose.
 On output, produces the current time zone, expressed in hours and
 minutes east (+hhmm) or west (\-hhmm) of Greenwich. On input, accepts a
 time zone specifier (see \fBTIME ZONES\fR below) that will be used to
-determine the time zone (this token is optionally applicable on input, 
+determine the time zone (this token is optionally applicable on input,
 so the value is not mandatory and can be missing in input).
 .TP
 \fB%Z\fR
@@ -951,7 +951,7 @@ precision of type of the token.
 In example below the second date-string contains "next January", therefore
 it results in next year but in January. And third date-string besides "January"
 contains also additionally "Fri", so it results in the nearest Friday.
-Thus both win before "385 days" resp. make it more precise, because of higher 
+Thus both win before "385 days" resp. make it more precise, because of higher
 precision of this token types.
 .CS
 % clock format [clock scan "5 years 18 months 385 days" -base 0 -gmt 1] -gmt 1

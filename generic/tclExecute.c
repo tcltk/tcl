@@ -2695,7 +2695,7 @@ TEBCresume(
 	    if (objv[0]->bytes == &tclEmptyString) {
 		objResultPtr = objv[1];
 		goto endINST_STR_CONCAT1;
-	    } 
+	    }
 	    else
 	    if (objv[1]->bytes == &tclEmptyString) {
 		objResultPtr = objv[0];

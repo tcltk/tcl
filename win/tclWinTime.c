@@ -256,7 +256,7 @@ TclpGetWideClicks(void)
 
 	/*
 	 * The frequency of the performance counter is fixed at system boot and
-	 * is consistent across all processors. Therefore, the frequency need 
+	 * is consistent across all processors. Therefore, the frequency need
 	 * only be queried upon application initialization.
 	 */
 	if (QueryPerformanceFrequency(&perfCounterFreq)) {
@@ -267,7 +267,7 @@ TclpGetWideClicks(void)
 	    wideClick.perfCounter = 0;
 	    wideClick.microsecsScale = 1;
 	}
-	
+
 	wideClick.initialized = 1;
     }
     if (wideClick.perfCounter) {
@@ -288,7 +288,7 @@ TclpGetWideClicks(void)
  *
  * TclpWideClickInMicrosec --
  *
- *	This procedure return scale to convert wide click values from the 
+ *	This procedure return scale to convert wide click values from the
  *	TclpGetWideClicks native resolution to microsecond resolution
  *	and back.
  *
@@ -327,7 +327,7 @@ TclpWideClickInMicrosec(void)
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt 
+Tcl_WideInt
 TclpGetMicroseconds(void)
 {
     Tcl_WideInt usecSincePosixEpoch;
