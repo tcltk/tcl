@@ -5085,9 +5085,7 @@ fi
     PLAT_SRCS=""
     LDAIX_SRC=""
     if test "x${SHLIB_VERSION}" = x; then :
-  SHLIB_VERSION=".1.0"
-else
-  SHLIB_VERSION=".${SHLIB_VERSION}"
+  SHLIB_VERSION="1.0"
 fi
     case $system in
 	AIX-*)
