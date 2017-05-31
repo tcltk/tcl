@@ -19,7 +19,7 @@ TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 
 
 /* MODULE_SCOPE */
-unsigned long TclEnvEpoch = 0;	/* Epoch of the tcl environment 
+size_t TclEnvEpoch = 0;	/* Epoch of the tcl environment
 				 * (if changed with tcl-env). */
 
 static struct {

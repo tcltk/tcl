@@ -519,7 +519,7 @@ proc ::tcl::clock::Initialize {} {
 #	Return the merged translation catalog for the ::tcl::clock namespace
 #	Searching of catalog is similar to "msgcat::mc".
 #
-#	Contrary to "msgcat::mc" may additionally load a package catalog 
+#	Contrary to "msgcat::mc" may additionally load a package catalog
 #	on demand.
 #
 # Arguments:
@@ -826,7 +826,7 @@ proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
 
 proc ::tcl::clock::LocalizeFormat { locale format {fmtkey {}} } {
     variable LocaleFormats
-    
+
     if { $fmtkey eq {} } { set fmtkey FMT_$format }
     if { [catch {
     	set locfmt [dict get $LocaleFormats $locale $fmtkey]
@@ -836,10 +836,10 @@ proc ::tcl::clock::LocalizeFormat { locale format {fmtkey {}} } {
 	if { [catch {
 	    set mlst [dict get $LocaleFormats $locale MLST]
 	}] } {
-	
+
 	    # message catalog dictionary:
 	    set mcd [mcget $locale]
-		
+
 	    # Handle locale-dependent format groups by mapping them out of the format
 	    # string.  Note that the order of the [string map] operations is
 	    # significant because later formats can refer to later ones; for example
@@ -864,7 +864,7 @@ proc ::tcl::clock::LocalizeFormat { locale format {fmtkey {}} } {
 	    dict set LocaleFormats $locale MLST $mlst
 	}
 
-	# translate copy of format (don't use format object here, because otherwise 
+	# translate copy of format (don't use format object here, because otherwise
 	# it can lose its internal representation (string map - convert to unicode)
 	set locfmt [string map $mlst [string range " $format" 1 end]]
 
@@ -872,10 +872,10 @@ proc ::tcl::clock::LocalizeFormat { locale format {fmtkey {}} } {
 	dict set LocaleFormats $locale $fmtkey $locfmt
     }
 
-    # Save original format as long as possible, because of internal 
+    # Save original format as long as possible, because of internal
     # representation (performance).
     # Note that in this case such format will be never localized (also
-    # using another locales). To prevent this return a duplicate (but 
+    # using another locales). To prevent this return a duplicate (but
     # it may be slower).
     if {$locfmt eq $format} {
         set locfmt $format
@@ -934,7 +934,7 @@ proc ::tcl::clock::GetSystemTimeZone {} {
     if { [dict exists $TimeZoneBad $timezone] } {
 	set timezone :localtime
     }
-    
+
     # tell backend - current system timezone:
     configure -system-tz $timezone
 
