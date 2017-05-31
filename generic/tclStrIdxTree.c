@@ -1,7 +1,7 @@
 /*
  * tclStrIdxTree.c --
  *
- *	Contains the routines for managing string index tries in Tcl. 
+ *	Contains the routines for managing string index tries in Tcl.
  *
  *	This code is back-ported from the tclSE engine, by Serg G. Brester.
  *
@@ -12,11 +12,11 @@
  *
  * -----------------------------------------------------------------------
  *
- * String index tries are prepaired structures used for fast greedy search of the string 
+ * String index tries are prepaired structures used for fast greedy search of the string
  * (index) by unique string prefix as key.
  *
  * Index tree build for two lists together can be explained in the following datagram
- * 
+ *
  * Lists:
  *
  *	{Januar Februar Maerz April Mai Juni Juli August September Oktober November Dezember}
@@ -42,9 +42,9 @@
  *	  i		 5	 *	 zb		12
  *	 rz		 3	 *
  *	...
- *				  
+ *
  * Thereby value 0 shows pure group items (corresponding ambigous matches).
- * But the group may have a value if it contains only same values 
+ * But the group may have a value if it contains only same values
  * (see for example group "f" above).
  *
  * StrIdxTree's are very fast, so:
@@ -109,7 +109,7 @@ TclStrIdxTreeSearch(
 	    s = f;
 	    /* if match item, go deeper as long as possible */
 	    if (offs >= item->length && item->childTree.firstPtr) {
-		/* save previuosly found item (if not ambigous) for 
+		/* save previuosly found item (if not ambigous) for
 		 * possible fallback (few greedy match) */
 		if (item->value != NULL) {
 		    prevf = f;
@@ -145,7 +145,7 @@ done:
     return start;
 }
 
-MODULE_SCOPE void 
+MODULE_SCOPE void
 TclStrIdxTreeFree(
     TclStrIdx *tree)
 {
@@ -157,13 +157,13 @@ TclStrIdxTreeFree(
 	}
 	t = tree, tree = tree->nextPtr;
 	ckfree(t);
-    }	
+    }
 }
 
 /*
  * Several bidirectional list primitives
  */
-inline void 
+inline void
 TclStrIdxTreeInsertBranch(
     TclStrIdxTree *parent,
     register TclStrIdx *item,
@@ -282,7 +282,7 @@ TclStrIdxTreeBuildFromList(
 		    foundItem->length = lwrv[i]->length;
 		    continue;
 		}
-		/* split tree (e. g. j->(jan,jun) + jul == j->(jan,ju->(jun,jul)) ) 
+		/* split tree (e. g. j->(jan,jun) + jul == j->(jan,ju->(jun,jul)) )
 		 * but don't split by fulfilled child of found item ( ii->iii->iiii ) */
 		if (foundItem->length != (f - s)) {
 		    /* first split found item (insert one between parent and found + new one) */
@@ -351,7 +351,7 @@ Tcl_ObjType StrIdxTreeObjType = {
     NULL			    /* setFromAnyProc */
 };
 
-MODULE_SCOPE Tcl_Obj* 
+MODULE_SCOPE Tcl_Obj*
 TclStrIdxTreeNewObj()
 {
     Tcl_Obj *objPtr = Tcl_NewObj();
@@ -372,7 +372,7 @@ StrIdxTreeObj_DupIntRepProc(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
 	srcPtr = (Tcl_Obj*)srcPtr->internalRep.twoPtrValue.ptr1;
     }
     /* create smart pointer to it (ptr1 != NULL, ptr2 = NULL) */
-    Tcl_InitObjRef(*((Tcl_Obj **)&copyPtr->internalRep.twoPtrValue.ptr1), 
+    Tcl_InitObjRef(*((Tcl_Obj **)&copyPtr->internalRep.twoPtrValue.ptr1),
 	srcPtr);
     copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
     copyPtr->typePtr = &StrIdxTreeObjType;
@@ -428,7 +428,7 @@ TclStrIdxTreeGetFromObj(Tcl_Obj *objPtr) {
 #if 0
 /* currently unused, debug resp. test purposes only */
 
-void 
+void
 TclStrIdxTreePrint(
     Tcl_Interp *interp,
     TclStrIdx  *tree,
@@ -439,7 +439,7 @@ TclStrIdxTreePrint(
     Tcl_InitObjRef(obj[0], Tcl_NewStringObj("::puts", -1));
     while (tree != NULL) {
 	s = TclGetString(tree->key) + offs;
-	Tcl_InitObjRef(obj[1], Tcl_ObjPrintf("%*s%.*s\t:%d", 
+	Tcl_InitObjRef(obj[1], Tcl_ObjPrintf("%*s%.*s\t:%d",
 		offs, "", tree->length - offs, s, tree->value));
 	Tcl_PutsObjCmd(NULL, interp, 2, obj);
 	Tcl_UnsetObjRef(obj[1]);
@@ -469,10 +469,10 @@ TclStrIdxTreeTestObjCmd(
     int optionIndex;
 
     if (objc < 2) {
-	Tcl_SetResult(interp, (char*)"wrong # args", TCL_STATIC);
+	Tcl_WrongNumArgs(interp, 1, objv, "");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], options, 
+    if (Tcl_GetIndexFromObj(interp, objv[1], options,
 	"option", 0, &optionIndex) != TCL_OK) {
 	Tcl_SetErrorCode(interp, "CLOCK", "badOption",
 		Tcl_GetString(objv[1]), NULL);
@@ -481,7 +481,7 @@ TclStrIdxTreeTestObjCmd(
     switch (optionIndex) {
     case O_FINDEQUAL:
 	if (objc < 4) {
-	    Tcl_SetResult(interp, (char*)"wrong # args", TCL_STATIC);
+	    Tcl_WrongNumArgs(interp, 1, objv, "");
 	    return TCL_ERROR;
 	}
 	cs = TclGetString(objv[2]);
@@ -499,7 +499,7 @@ TclStrIdxTreeTestObjCmd(
 	TclStrIdxTree idxTree = {NULL, NULL};
 	i = 1;
 	while (++i < objc) {
-	    if (TclListObjGetElements(interp, objv[i], 
+	    if (TclListObjGetElements(interp, objv[i],
 		    &lstc, &lstv) != TCL_OK) {
 		return TCL_ERROR;
 	    };

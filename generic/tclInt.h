@@ -4875,7 +4875,7 @@ typedef struct NRE_callback {
  * Other externals.
  */
 
-MODULE_SCOPE unsigned long TclEnvEpoch; /* Epoch of the tcl environment 
+MODULE_SCOPE size_t TclEnvEpoch; /* Epoch of the tcl environment
                                          * (if changed with tcl-env). */
 
 #endif /* _TCLINT */

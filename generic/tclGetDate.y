@@ -896,7 +896,7 @@ TclClockFreeScan(
 
     /*
      * yyInput = stringToParse;
-     * 
+     *
      * ClockInitDateInfo(info) should be executed to pre-init info;
      */
 
