@@ -9971,13 +9971,6 @@ $as_echo "#define USE_FIONBIO 1" >>confdefs.h
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: FIONBIO" >&5
 $as_echo "FIONBIO" >&6; }
 	    ;;
-	SunOS-4*)
-
-$as_echo "#define USE_FIONBIO 1" >>confdefs.h
-
-	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: FIONBIO" >&5
-$as_echo "FIONBIO" >&6; }
-	    ;;
 	*)
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: O_NONBLOCK" >&5
 $as_echo "O_NONBLOCK" >&6; }
