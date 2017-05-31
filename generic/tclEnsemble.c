@@ -328,7 +328,7 @@ TclNamespaceEnsembleCmd(
 		}
 		continue;
 	    case CRT_COMPILE:
-		if (Tcl_GetBooleanFromObj(interp, objv[1], 
+		if (Tcl_GetBooleanFromObj(interp, objv[1],
 			&ensCompFlag) != TCL_OK) {
 		    return TCL_ERROR;
 		};
@@ -358,7 +358,7 @@ TclNamespaceEnsembleCmd(
 	Tcl_SetEnsembleMappingDict(interp, token, mapObj);
 	Tcl_SetEnsembleUnknownHandler(interp, token, unknownObj);
 	Tcl_SetEnsembleParameterList(interp, token, paramObj);
-	/* 
+	/*
 	 * Ensemble should be compiled if it has map (performance purposes)
 	 */
 	if (ensCompFlag > 0 && mapObj != NULL) {
