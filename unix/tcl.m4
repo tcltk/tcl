@@ -971,8 +971,8 @@ AC_DEFUN([SC_CONFIG_SYSTEM], [
 #                       shared libraries. The value of the symbol defaults to
 #                       "${LIBS}" if all of the dependent libraries should
 #                       be specified when creating a shared library.  If
-#                       dependent libraries should not be specified (as on
-#                       SunOS 4.x, where they cause the link to fail, or in
+#                       dependent libraries should not be specified (as on some
+#                       SunOS systems, where they cause the link to fail, or in
 #                       general if Tcl and Tk aren't themselves shared
 #                       libraries), then this symbol has an empty string
 #                       as its value.
@@ -2219,10 +2219,6 @@ AC_DEFUN([SC_BLOCKING_STYLE], [
     AC_MSG_CHECKING([FIONBIO vs. O_NONBLOCK for nonblocking I/O])
     case $system in
 	OSF*)
-	    AC_DEFINE(USE_FIONBIO, 1, [Should we use FIONBIO?])
-	    AC_MSG_RESULT([FIONBIO])
-	    ;;
-	SunOS-4*)
 	    AC_DEFINE(USE_FIONBIO, 1, [Should we use FIONBIO?])
 	    AC_MSG_RESULT([FIONBIO])
 	    ;;
