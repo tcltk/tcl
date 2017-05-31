@@ -4009,7 +4009,7 @@ Tcl_TimeObjCmd(
     start = TclpGetWideClicks();
 #endif
     while (i-- > 0) {
-	result = TclEvalObjEx(interp, objPtr, 0, NULL, 0);
+	result = Tcl_EvalObjEx(interp, objPtr, 0);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -4052,8 +4052,8 @@ Tcl_TimeObjCmd(
  * Tcl_TimeRateObjCmd --
  *
  *	This object-based procedure is invoked to process the "timerate" Tcl
- *	command. 
- *	This is similar to command "time", except the execution limited by 
+ *	command.
+ *	This is similar to command "time", except the execution limited by
  *	given time (in milliseconds) instead of repetition count.
  *
  * Example:
@@ -4075,14 +4075,14 @@ Tcl_TimeRateObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static 
+    static
     double measureOverhead = 0; /* global measure-overhead */
     double overhead = -1;	/* given measure-overhead */
     register Tcl_Obj *objPtr;
     register int result, i;
     Tcl_Obj *calibrate = NULL, *direct = NULL;
     Tcl_WideInt count = 0;	/* Holds repetition count */
-    Tcl_WideInt maxms = -0x7FFFFFFFFFFFFFFFL; 
+    Tcl_WideInt maxms = -0x7FFFFFFFFFFFFFFFL;
 				/* Maximal running time (in milliseconds) */
     Tcl_WideInt threshold = 1;	/* Current threshold for check time (faster
 				 * repeat count without time check) */
@@ -4152,13 +4152,13 @@ usage:
 	    Tcl_Obj *clobjv[6];
 	    Tcl_WideInt maxCalTime = 5000;
 	    double lastMeasureOverhead = measureOverhead;
-	    
-	    clobjv[0] = objv[0]; 
+
+	    clobjv[0] = objv[0];
 	    i = 1;
 	    if (direct) {
 	    	clobjv[i++] = direct;
 	    }
-	    clobjv[i++] = objPtr; 
+	    clobjv[i++] = objPtr;
 
 	    /* reset last measurement overhead */
 	    measureOverhead = (double)0;
@@ -4175,7 +4175,7 @@ usage:
 
 	    i--;
 	    clobjv[i++] = calibrate;
-	    clobjv[i++] = objPtr; 
+	    clobjv[i++] = objPtr;
 
 	    /* set last measurement overhead to max */
 	    measureOverhead = (double)0x7FFFFFFFFFFFFFFFL;
@@ -4268,7 +4268,7 @@ usage:
 	if (result != TCL_OK) {
 	    goto done;
 	}
-	
+
 	/* don't check time up to threshold */
 	if (--threshold > 0) continue;
 
@@ -4348,7 +4348,7 @@ usage:
 	}
 
 	objs[2] = Tcl_NewWideIntObj(count); /* iterations */
-	
+
 	/* calculate speed as rate (count) per sec */
 	if (!middle) middle++; /* +1 ms, just to avoid divide by zero */
 	if (count < (0x7FFFFFFFFFFFFFFFL / 1000000)) {
