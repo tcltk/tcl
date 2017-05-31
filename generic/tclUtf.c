@@ -302,7 +302,7 @@ Tcl_UtfToUniChar(
 	     */
 
 	    *chPtr = (Tcl_UniChar) (((byte & 0x1F) << 6) | (src[1] & 0x3F));
-	    if ((*chPtr == 0) || (*chPtr <= 0x3ff) && (*chPtr > 0x7f)) {
+	    if ((*chPtr == 0) || (*chPtr > 0x7f)) {
 		return 2;
 	    }
 	}
@@ -319,7 +319,7 @@ Tcl_UtfToUniChar(
 
 	    *chPtr = (Tcl_UniChar) (((byte & 0x0F) << 12)
 		    | ((src[1] & 0x3F) << 6) | (src[2] & 0x3F));
-	    if ((*chPtr <= 0xffff) && (*chPtr > 0x3ff)) {
+	    if (*chPtr > 0x7ff) {
 		return 3;
 	    }
 	}
@@ -353,7 +353,7 @@ Tcl_UtfToUniChar(
 		return 4;
 	    }
 #else
-	    *chPtr = (Tcl_UniChar) (((byte & 0x0E) << 18) | ((src[1] & 0x3F) << 12)
+	    *chPtr = (Tcl_UniChar) (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
 		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
 	    if ((*chPtr <= 0x10ffff) && (*chPtr > 0xffff)) {
 		return 4;

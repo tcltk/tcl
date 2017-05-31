@@ -67,12 +67,12 @@ namespace eval tcl {
     }
 
     if {![interp issafe]} {
-        variable Path [encoding dirs]
-        set Dir [file join $::tcl_library encoding]
-        if {$Dir ni $Path} {
+	variable Path [encoding dirs]
+	set Dir [file join $::tcl_library encoding]
+	if {$Dir ni $Path} {
 	    lappend Path $Dir
 	    encoding dirs $Path
-        }
+	}
     }
 
     # TIP #255 min and max functions
@@ -158,6 +158,17 @@ if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
 if {[interp issafe]} {
     package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
 } else {
+    # Default known auto_index (avoid loading auto index implicit after interp create):
+
+    array set ::auto_index {
+	::tcl::tm::UnknownHandler {source [info library]/tm.tcl}
+	::tclPkgUnknown {source [info library]/package.tcl}
+	::history {source [info library]/history.tcl}
+    }
+
+    # The newest possibility to load whole namespace:
+    array set ::auto_index_ns {}
+
     # Set up search for Tcl Modules (TIP #189).
     # and setup platform specific unknown package handlers
     if {$tcl_platform(os) eq "Darwin"
@@ -170,22 +181,21 @@ if {[interp issafe]} {
 
     # Set up the 'clock' ensemble
 
-    namespace eval ::tcl::clock [list variable TclLibDir $::tcl_library]
-
-    proc ::tcl::initClock {} {
-	# Auto-loading stubs for 'clock.tcl'
-
-	foreach cmd {add format scan} {
-	    proc ::tcl::clock::$cmd args {
-		variable TclLibDir
-		source -encoding utf-8 [file join $TclLibDir clock.tcl]
-		return [uplevel 1 [info level 0]]
-	    }
+    proc clock args {
+	set cmdmap [dict create]
+	foreach cmd {add clicks format microseconds milliseconds scan seconds configure} {
+	    dict set cmdmap $cmd ::tcl::clock::$cmd
 	}
+	namespace inscope ::tcl::clock [list namespace ensemble create -command \
+	    [uplevel 1 [list ::namespace origin [::lindex [info level 0] 0]]] \
+	    -map $cmdmap -compile 1]
 
-	rename ::tcl::initClock {}
+	uplevel 1 [info level 0]
     }
-    ::tcl::initClock
+    # Auto-loading stubs for 'clock.tcl'
+    set ::auto_index_ns(::tcl::clock) {::namespace inscope ::tcl::clock {
+	::source -encoding utf-8 [::file join [info library] clock.tcl]
+    }}
 }
 
 # Conditionalize for presence of exec.
@@ -413,18 +423,22 @@ proc unknown args {
 #                       for instance. If not given, namespace current is used.
 
 proc auto_load {cmd {namespace {}}} {
-    global auto_index auto_path
+    global auto_index auto_index_ns auto_path
 
+    # qualify names:
     if {$namespace eq ""} {
 	set namespace [uplevel 1 [list ::namespace current]]
     }
     set nameList [auto_qualify $cmd $namespace]
     # workaround non canonical auto_index entries that might be around
     # from older auto_mkindex versions
-    lappend nameList $cmd
-    foreach name $nameList {
+    if {$cmd ni $nameList} {lappend nameList $cmd}
+
+    # try to load (and create sub-cmd handler "_sub_load_cmd" for further usage):
+    foreach name $nameList [set _sub_load_cmd {
+    	# via auto_index:
 	if {[info exists auto_index($name)]} {
-	    namespace eval :: $auto_index($name)
+	    namespace inscope :: $auto_index($name)
 	    # There's a couple of ways to look for a command of a given
 	    # name.  One is to use
 	    #    info commands $name
@@ -436,22 +450,31 @@ proc auto_load {cmd {namespace {}}} {
 		return 1
 	    }
 	}
-    }
-    if {![info exists auto_path]} {
-	return 0
-    }
-
-    if {![auto_load_index]} {
-	return 0
-    }
-    foreach name $nameList {
-	if {[info exists auto_index($name)]} {
-	    namespace eval :: $auto_index($name)
+	# via auto_index_ns - resolver for the whole namespace loaders
+	if {[set ns [::namespace qualifiers $name]] ni {"" "::"} &&
+	    [info exists auto_index_ns($ns)]
+	} {
+	    # remove handler before loading (prevents several self-recursion cases):
+	    set ldr $auto_index_ns($ns); unset auto_index_ns($ns)
+	    namespace inscope :: $ldr
+	    # if got it:
 	    if {[namespace which -command $name] ne ""} {
 		return 1
 	    }
 	}
+    }]
+
+    # load auto_index if possible:
+    if {![info exists auto_path]} {
+	return 0
     }
+    if {![auto_load_index]} {
+	return 0
+    }
+
+    # try again (something new could be loaded):
+    foreach name $nameList $_sub_load_cmd
+
     return 0
 }
 
@@ -614,12 +637,12 @@ proc auto_import {pattern} {
     auto_load_index
 
     foreach pattern $patternList {
-        foreach name [array names auto_index $pattern] {
-            if {([namespace which -command $name] eq "")
+	foreach name [array names auto_index $pattern] {
+	    if {([namespace which -command $name] eq "")
 		    && ([namespace qualifiers $pattern] eq [namespace qualifiers $name])} {
-                namespace eval :: $auto_index($name)
-            }
-        }
+		namespace inscope :: $auto_index($name)
+	    }
+	}
     }
 }
 

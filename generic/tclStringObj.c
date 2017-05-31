@@ -2732,7 +2732,7 @@ TclStringRepeat(
     if (!binary) {
 	if (objPtr->typePtr == &tclStringType) {
 	    String *stringPtr = GET_STRING(objPtr);
-	    if (stringPtr->hasUnicode) {
+	    if (stringPtr->flags & TCL_HAS_UNICODE) {
 		unichar = 1;
 	    }
 	}
