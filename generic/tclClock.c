@@ -637,7 +637,7 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 	    /* be sure that object reference not increases (dict changeable) */
 	    if (opts->mcDictObj->refCount > 0) {
 		/* smart reference (shared dict as object with no ref-counter) */
-		opts->mcDictObj = Tcl_DictObjSmartRef(opts->interp, opts->mcDictObj);
+		opts->mcDictObj = Tcl_DuplicateObj(opts->mcDictObj);
 	    }
 	    if ( opts->localeObj == dataPtr->CurrentLocale ) {
 		Tcl_SetObjRef(dataPtr->CurrentLocaleDict, opts->mcDictObj);
