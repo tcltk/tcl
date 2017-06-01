@@ -55,12 +55,11 @@ enum EnsSubcmds {
 };
 
 static const char *const ensembleCreateOptions[] = {
-    "-command", "-compile", "-map", "-parameters", "-prefixes",
-    "-subcommands", "-unknown", NULL
+    "-command", "-map", "-parameters", "-prefixes", "-subcommands",
+    "-unknown", NULL
 };
 enum EnsCreateOpts {
-    CRT_CMD, CRT_COMPILE, CRT_MAP, CRT_PARAM, CRT_PREFIX,
-    CRT_SUBCMDS, CRT_UNKNOWN
+    CRT_CMD, CRT_MAP, CRT_PARAM, CRT_PREFIX, CRT_SUBCMDS, CRT_UNKNOWN
 };
 
 static const char *const ensembleConfigOptions[] = {
@@ -184,7 +183,6 @@ TclNamespaceEnsembleCmd(
 	int permitPrefix = 1;
 	Tcl_Obj *unknownObj = NULL;
 	Tcl_Obj *paramObj = NULL;
-	int ensCompFlag = -1;
 
 	/*
 	 * Check that we've got option-value pairs... [Bug 1558654]
@@ -327,12 +325,6 @@ TclNamespaceEnsembleCmd(
 		    return TCL_ERROR;
 		}
 		continue;
-	    case CRT_COMPILE:
-		if (Tcl_GetBooleanFromObj(interp, objv[1],
-			&ensCompFlag) != TCL_OK) {
-		    return TCL_ERROR;
-		};
-		continue;
 	    case CRT_UNKNOWN:
 		if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 		    if (allocatedMapFlag) {
@@ -361,7 +353,7 @@ TclNamespaceEnsembleCmd(
 	/*
 	 * Ensemble should be compiled if it has map (performance purposes)
 	 */
-	if (ensCompFlag > 0 && mapObj != NULL) {
+	if (mapObj != NULL) {
 	    Tcl_SetEnsembleFlags(interp, token, ENSEMBLE_COMPILE);
 	}
 
