@@ -366,6 +366,69 @@ proc test-add {{reptime 1000}} {
   } {puts [clock format $_(r) -locale en]}
 }
 
+proc test-convert {{reptime 1000}} {
+  _test_run $reptime {
+    # Convert locale (en -> de):
+    {clock format [clock scan "Tue May 30 2017" -format "%a %b %d %Y" -gmt 1 -locale en] -format "%a %b %d %Y" -gmt 1 -locale de}
+    # Convert locale (de -> en):
+    {clock format [clock scan "Di Mai 30 2017" -format "%a %b %d %Y" -gmt 1 -locale de] -format "%a %b %d %Y" -gmt 1 -locale en}
+
+    # Convert TZ: direct
+    {clock format [clock scan "19:18:30" -base 148863600 -timezone EST] -timezone MST}
+    {clock format [clock scan "19:18:30" -base 148863600 -timezone MST] -timezone EST}
+    # Convert TZ: included in scan string & format
+    {clock format [clock scan "19:18:30 EST" -base 148863600] -format "%H:%M:%S %z" -timezone MST}
+    {clock format [clock scan "19:18:30 EST" -base 148863600] -format "%H:%M:%S %z" -timezone EST}
+
+    # Format locale 1x: comparison values
+    {clock format 0 -gmt 1 -locale en} 
+    {clock format 0 -gmt 1 -locale de}
+    {clock format 0 -gmt 1 -locale fr}
+    # Format locale 2x: without switching locale (en, en)
+    {clock format 0 -gmt 1 -locale en; clock format 0 -gmt 1 -locale en}
+    # Format locale 2x: with switching locale (en, de)
+    {clock format 0 -gmt 1 -locale en; clock format 0 -gmt 1 -locale de}
+    # Format locale 3x: without switching locale (en, en, en)
+    {clock format 0 -gmt 1 -locale en; clock format 0 -gmt 1 -locale en; clock format 0 -gmt 1 -locale en}
+    # Format locale 3x: with switching locale (en, de, fr)
+    {clock format 0 -gmt 1 -locale en; clock format 0 -gmt 1 -locale de; clock format 0 -gmt 1 -locale fr}
+
+    # Scan locale 2x: without switching locale (en, en) + (de, de)
+    {clock scan "Tue May 30 2017" -format "%a %b %d %Y" -gmt 1 -locale en; clock scan "Tue May 30 2017" -format "%a %b %d %Y" -gmt 1 -locale en}
+    {clock scan "Di Mai 30 2017" -format "%a %b %d %Y" -gmt 1 -locale de; clock scan "Di Mai 30 2017" -format "%a %b %d %Y" -gmt 1 -locale de}
+    # Scan locale 2x: with switching locale (en, de)
+    {clock scan "Tue May 30 2017" -format "%a %b %d %Y" -gmt 1 -locale en; clock scan "Di Mai 30 2017" -format "%a %b %d %Y" -gmt 1 -locale de}
+    # Scan locale 3x: with switching locale (en, de, fr)
+    {clock scan "Tue May 30 2017" -format "%a %b %d %Y" -gmt 1 -locale en; clock scan "Di Mai 30 2017" -format "%a %b %d %Y" -gmt 1 -locale de; clock scan "mar mai 30 2017" -format "%a %b %d %Y" -gmt 1 -locale fr}
+
+    # Format TZ 2x: comparison values
+    {clock format 0 -timezone CET -format "%Y-%m-%d %H:%M:%S %z"}
+    {clock format 0 -timezone EST -format "%Y-%m-%d %H:%M:%S %z"}
+    # Format TZ 2x: without switching
+    {clock format 0 -timezone CET -format "%Y-%m-%d %H:%M:%S %z"; clock format 0 -timezone CET -format "%Y-%m-%d %H:%M:%S %z"}
+    {clock format 0 -timezone EST -format "%Y-%m-%d %H:%M:%S %z"; clock format 0 -timezone EST -format "%Y-%m-%d %H:%M:%S %z"}
+    # Format TZ 2x: with switching
+    {clock format 0 -timezone CET -format "%Y-%m-%d %H:%M:%S %z"; clock format 0 -timezone EST -format "%Y-%m-%d %H:%M:%S %z"}
+    # Format TZ 3x: with switching (CET, EST, MST)
+    {clock format 0 -timezone CET -format "%Y-%m-%d %H:%M:%S %z"; clock format 0 -timezone EST -format "%Y-%m-%d %H:%M:%S %z"; clock format 0 -timezone MST -format "%Y-%m-%d %H:%M:%S %z"}
+    # Format TZ 3x: with switching (GMT, EST, MST)
+    {clock format 0 -gmt 1 -format "%Y-%m-%d %H:%M:%S %z"; clock format 0 -timezone EST -format "%Y-%m-%d %H:%M:%S %z"; clock format 0 -timezone MST -format "%Y-%m-%d %H:%M:%S %z"}
+
+    # FreeScan TZ 2x (+1 system-default): without switching TZ
+    {clock scan "19:18:30 MST" -base 148863600; clock scan "19:18:30 MST" -base 148863600}
+    {clock scan "19:18:30 EST" -base 148863600; clock scan "19:18:30 EST" -base 148863600}
+    # FreeScan TZ 2x (+1 system-default): with switching TZ
+    {clock scan "19:18:30 MST" -base 148863600; clock scan "19:18:30 EST" -base 148863600}
+    # FreeScan TZ 2x (+1 gmt, +1 system-default)
+    {clock scan "19:18:30 MST" -base 148863600 -gmt 1; clock scan "19:18:30 EST" -base 148863600}
+    
+    # Scan TZ: comparison included in scan string vs. given
+    {clock scan "2009-06-30T18:30:00 CEST" -format "%Y-%m-%dT%H:%M:%S %z"}
+    {clock scan "2009-06-30T18:30:00 CET" -format "%Y-%m-%dT%H:%M:%S %z"}
+    {clock scan "2009-06-30T18:30:00" -timezone CET -format "%Y-%m-%dT%H:%M:%S"}
+  }
+}
+
 proc test-other {{reptime 1000}} {
   _test_run $reptime {
     # Bad zone
@@ -413,6 +476,7 @@ proc test {{reptime 1000}} {
   test-scan $reptime
   test-freescan $reptime
   test-add $reptime
+  test-convert [expr {$reptime / 2}]; #fast enough
   test-other $reptime
 
   puts \n**OK**
