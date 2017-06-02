@@ -17,7 +17,6 @@
  */
 
 #include "tclInt.h"
-#include "tclCompile.h"
 #include "tclRegexp.h"
 #include "tclStringTrim.h"
 
