@@ -3657,7 +3657,7 @@ Tcl_LsortObjCmd(
     int sortMode = SORTMODE_ASCII;
     int group, groupSize, groupOffset, idx, allocatedIndexVector = 0;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
-    SortElement *elementArray, *elementPtr;
+    SortElement *elementArray = NULL, *elementPtr;
     SortInfo sortInfo;		/* Information about this sort that needs to
 				 * be passed to the comparison function. */
 #   define NUM_LISTS 30
@@ -3703,7 +3703,7 @@ Tcl_LsortObjCmd(
 	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "option", 0,
 		&index) != TCL_OK) {
 	    sortInfo.resultCode = TCL_ERROR;
-	    goto done2;
+	    goto done;
 	}
 	switch ((enum Lsort_Switches) index) {
 	case LSORT_ASCII:
@@ -3716,7 +3716,7 @@ Tcl_LsortObjCmd(
 			"by comparison command", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		sortInfo.resultCode = TCL_ERROR;
-		goto done2;
+		goto done;
 	    }
 	    sortInfo.sortMode = SORTMODE_COMMAND;
 	    cmdPtr = objv[i+1];
@@ -3741,12 +3741,12 @@ Tcl_LsortObjCmd(
 			-1));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		sortInfo.resultCode = TCL_ERROR;
-		goto done2;
+		goto done;
 	    }
 	    if (TclListObjGetElements(interp, objv[i+1], &indexc,
 		    &indexv) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
-		goto done2;
+		goto done;
 	    }
 
 	    /*
@@ -3763,7 +3763,7 @@ Tcl_LsortObjCmd(
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (-index option item number %d)", j));
 		    sortInfo.resultCode = TCL_ERROR;
-		    goto done2;
+		    goto done;
 		}
 	    }
 	    indexPtr = objv[i+1];
@@ -3792,11 +3792,11 @@ Tcl_LsortObjCmd(
 			"followed by stride length", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		sortInfo.resultCode = TCL_ERROR;
-		goto done2;
+		goto done;
 	    }
 	    if (Tcl_GetIntFromObj(interp, objv[i+1], &groupSize) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
-		goto done2;
+		goto done;
 	    }
 	    if (groupSize < 2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -3804,7 +3804,7 @@ Tcl_LsortObjCmd(
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
 			"BADSTRIDE", NULL);
 		sortInfo.resultCode = TCL_ERROR;
-		goto done2;
+		goto done;
 	    }
 	    group = 1;
 	    i++;
@@ -3859,7 +3859,7 @@ Tcl_LsortObjCmd(
 	listObj = TclListObjCopy(interp, listObj);
 	if (listObj == NULL) {
 	    sortInfo.resultCode = TCL_ERROR;
-	    goto done2;
+	    goto done;
 	}
 
 	/*
@@ -3877,7 +3877,7 @@ Tcl_LsortObjCmd(
 	    Tcl_IncrRefCount(newObjPtr);
 	    TclDecrRefCount(newObjPtr);
 	    sortInfo.resultCode = TCL_ERROR;
-	    goto done2;
+	    goto done;
 	}
 	Tcl_ListObjAppendElement(interp, newCommandPtr, Tcl_NewObj());
 	sortInfo.compareCmdPtr = newCommandPtr;
@@ -3970,7 +3970,7 @@ Tcl_LsortObjCmd(
      * begins sorting it into the sublists as it appears.
      */
 
-    elementArray = TclStackAlloc(interp, length * sizeof(SortElement));
+    elementArray = ckalloc(length * sizeof(SortElement));
 
     for (i=0; i < length; i++){
 	idx = groupSize * i + groupOffset;
@@ -3980,7 +3980,7 @@ Tcl_LsortObjCmd(
 	     */
 	    indexPtr = SelectObjFromSublist(listObjPtrs[idx], &sortInfo);
 	    if (sortInfo.resultCode != TCL_OK) {
-		goto done1;
+		goto done;
 	    }
 	} else {
 	    indexPtr = listObjPtrs[idx];
@@ -3997,7 +3997,7 @@ Tcl_LsortObjCmd(
 
 	    if (TclGetWideIntFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
-		goto done1;
+		goto done;
 	    }
 	    elementArray[i].collationKey.wideValue = a;
 	} else if (sortMode == SORTMODE_REAL) {
@@ -4006,7 +4006,7 @@ Tcl_LsortObjCmd(
 	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr,
 		    &a) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
-		goto done1;
+		goto done;
 	    }
 	    elementArray[i].collationKey.doubleValue = a;
 	} else {
@@ -4093,18 +4093,17 @@ Tcl_LsortObjCmd(
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
-  done1:
-    TclStackFree(interp, elementArray);
-
   done:
     if (sortMode == SORTMODE_COMMAND) {
 	TclDecrRefCount(sortInfo.compareCmdPtr);
 	TclDecrRefCount(listObj);
 	sortInfo.compareCmdPtr = NULL;
     }
-  done2:
     if (allocatedIndexVector) {
 	TclStackFree(interp, sortInfo.indexv);
+    }
+    if (elementArray) {
+	ckfree(elementArray);
     }
     return sortInfo.resultCode;
 }
@@ -4415,8 +4414,8 @@ DictionaryCompare(
 	 */
 
 	if ((*left != '\0') && (*right != '\0')) {
-	    left += Tcl_UtfToUniChar(left, &uniLeft);
-	    right += Tcl_UtfToUniChar(right, &uniRight);
+	    left += TclUtfToUniChar(left, &uniLeft);
+	    right += TclUtfToUniChar(right, &uniRight);
 
 	    /*
 	     * Convert both chars to lower for the comparison, because
