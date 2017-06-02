@@ -1030,8 +1030,9 @@ ClockConfigureObjCmd(
 		    dataPtr->DefaultLocaleDict = NULL;
 		}
 	    }
-	    if (i+1 >= objc && dataPtr->DefaultLocale != NULL) {
-		Tcl_SetObjResult(interp, dataPtr->DefaultLocale);
+	    if (i+1 >= objc) {
+		Tcl_SetObjResult(interp, dataPtr->DefaultLocale ?
+		    dataPtr->DefaultLocale : dataPtr->literals[LIT_C]);
 	    }
 	break;
 	case CLOCK_CURRENT_LOCALE:
