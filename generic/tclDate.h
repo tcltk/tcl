@@ -300,6 +300,8 @@ typedef struct ClockClientData {
     Tcl_Obj *PrevSetupTimeZone;
     Tcl_Obj *PrevSetupTZData;
 
+    Tcl_Obj *DefaultLocale;
+    Tcl_Obj *DefaultLocaleDict;
     Tcl_Obj *CurrentLocale;
     Tcl_Obj *CurrentLocaleDict;
     Tcl_Obj *LastUsedLocaleUnnorm;
