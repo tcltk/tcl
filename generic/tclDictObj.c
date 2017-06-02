@@ -51,8 +51,6 @@ static int		DictSetCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictSizeCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictSmartRefCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
 static int		DictUnsetCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictUpdateCmd(ClientData dummy, Tcl_Interp *interp,
@@ -100,7 +98,6 @@ static const EnsembleImplMap implementationMap[] = {
     {"replace",	DictReplaceCmd, NULL, NULL, NULL, 0 },
     {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, NULL, 0 },
     {"size",	DictSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
-    {"smartref",DictSmartRefCmd,NULL, NULL, NULL, 0 },
     {"unset",	DictUnsetCmd,	TclCompileDictUnsetCmd, NULL, NULL, 0 },
     {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd, NULL, NULL, 0 },
     {"values",	DictValuesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
@@ -2010,48 +2007,6 @@ Tcl_DictObjSmartRef(
     result->typePtr = &tclDictType;
 
     return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DictSmartRefCmd --
- *
- *	This function implements the "dict smartref" Tcl command.
- *
- *	See description of Tcl_DictObjSmartRef for details.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-DictSmartRefCmd(
-    ClientData dummy,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    Tcl_Obj *result;
-
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
-	return TCL_ERROR;
-    }
-
-    result = Tcl_DictObjSmartRef(interp, objv[1]);
-    if (result == NULL) {
-    	return TCL_ERROR;
-    }
-
-    Tcl_SetObjResult(interp, result);
-
-    return TCL_OK;
 }
 
 /*

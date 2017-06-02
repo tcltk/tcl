@@ -281,6 +281,8 @@ typedef struct ClockClientData {
     Tcl_Obj **mcLitIdxs;	/* Msgcat object indices prefixed with _IDX_,
 				 * used for quick dictionary search */
 
+    Tcl_Obj *mcMergedCat;	/* Msgcat collaction contains waek pointers to locale catalogs */
+
     /* Cache for current clock parameters, imparted via "configure" */
     unsigned long LastTZEpoch;
     int currentYearCentury;

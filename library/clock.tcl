@@ -544,8 +544,7 @@ proc mcget {loc} {
 
     # try to retrieve now if already available:
     if {[dict exists $mcMergedCat $loc]} {
-	set mrgcat [dict get $mcMergedCat $loc]
-	return [dict smartref $mrgcat]
+	return [dict get $mcMergedCat $loc]
     }
 
     # get locales list for given locale (de_de -> {de_de de {}})
@@ -581,8 +580,7 @@ proc mcget {loc} {
 proc mcMerge {locales} {
     variable mcMergedCat
     if {[dict exists $mcMergedCat [set loc [lindex $locales 0]]]} {
-	set mrgcat [dict get $mcMergedCat $loc]
-	return [dict smartref $mrgcat]
+	return [dict get $mcMergedCat $loc]
     }
     # package msgcat currently does not provide possibility to get whole catalog:
     upvar ::msgcat::Msgs Msgs
@@ -602,7 +600,7 @@ proc mcMerge {locales} {
     }
     dict set mcMergedCat $loc $mrgcat
     # return smart reference (shared dict as object with exact one ref-counter)
-    return [dict smartref $mrgcat]
+    return $mrgcat
 }
 
 #----------------------------------------------------------------------

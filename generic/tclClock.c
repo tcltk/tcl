@@ -229,6 +229,7 @@ TclClockInit(
     }
     data->mcLiterals = NULL;
     data->mcLitIdxs = NULL;
+    data->mcMergedCat = NULL;
     data->LastTZEpoch = 0;
     data->currentYearCentury = ClockDefaultYearCentury;
     data->yearOfCenturySwitch = ClockDefaultCenturySwitch;
@@ -308,15 +309,17 @@ ClockConfigureClear(
     Tcl_UnsetObjRef(data->LastSetupTZData);
 
     Tcl_UnsetObjRef(data->CurrentLocale);
-    Tcl_UnsetObjRef(data->CurrentLocaleDict);
+    data->CurrentLocaleDict = NULL;
     Tcl_UnsetObjRef(data->LastUnnormUsedLocale);
     Tcl_UnsetObjRef(data->LastUsedLocale);
-    Tcl_UnsetObjRef(data->LastUsedLocaleDict);
+    data->LastUsedLocaleDict = NULL;
 
     Tcl_UnsetObjRef(data->lastBase.timezoneObj);
     Tcl_UnsetObjRef(data->UTC2Local.timezoneObj);
     Tcl_UnsetObjRef(data->UTC2Local.tzName);
     Tcl_UnsetObjRef(data->Local2UTC.timezoneObj);
+
+    Tcl_UnsetObjRef(data->mcMergedCat);
 }
 
 /*
@@ -474,7 +477,7 @@ ClockGetCurrentLocale(
     }
 
     Tcl_SetObjRef(dataPtr->CurrentLocale, Tcl_GetObjResult(interp));
-    Tcl_UnsetObjRef(dataPtr->CurrentLocaleDict);
+    dataPtr->CurrentLocaleDict = NULL;
 
     return dataPtr->CurrentLocale;
 }
@@ -625,30 +628,44 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 
 	if (opts->mcDictObj == NULL) {
 	    Tcl_Obj *callargs[2];
-	    /* get msgcat dictionary - ::tcl::clock::mcget locale */
-	    callargs[0] = dataPtr->literals[LIT_MCGET];
-	    callargs[1] = opts->localeObj;
 
-	    if (Tcl_EvalObjv(opts->interp, 2, callargs, 0) != TCL_OK) {
-		return NULL;
+	    /* first try to find it own catalog dict */
+	    if (dataPtr->mcMergedCat == NULL) {
+		dataPtr->mcMergedCat = Tcl_NewDictObj();
 	    }
+	    Tcl_DictObjGet(NULL, dataPtr->mcMergedCat,
+		opts->localeObj, &opts->mcDictObj);
 
-	    opts->mcDictObj = Tcl_GetObjResult(opts->interp);
+	    if (opts->mcDictObj == NULL) {
+		/* get msgcat dictionary - ::tcl::clock::mcget locale */
+		callargs[0] = dataPtr->literals[LIT_MCGET];
+		callargs[1] = opts->localeObj;
+
+		if (Tcl_EvalObjv(opts->interp, 2, callargs, 0) != TCL_OK) {
+		    return NULL;
+		}
+
+		opts->mcDictObj = Tcl_GetObjResult(opts->interp);
+		Tcl_ResetResult(opts->interp);
+	    }
 	    /* be sure that object reference not increases (dict changeable) */
 	    if (opts->mcDictObj->refCount > 0) {
 		/* smart reference (shared dict as object with no ref-counter) */
 		opts->mcDictObj = Tcl_DictObjSmartRef(opts->interp, opts->mcDictObj);
 	    }
+
+	    Tcl_DictObjPut(NULL, dataPtr->mcMergedCat, opts->localeObj,
+		    opts->mcDictObj);
+
 	    if ( opts->localeObj == dataPtr->CurrentLocale ) {
-		Tcl_SetObjRef(dataPtr->CurrentLocaleDict, opts->mcDictObj);
+		dataPtr->CurrentLocaleDict = opts->mcDictObj;
 	    } else if ( opts->localeObj == dataPtr->LastUsedLocale ) {
-		Tcl_SetObjRef(dataPtr->LastUsedLocaleDict, opts->mcDictObj);
+		dataPtr->LastUsedLocaleDict = opts->mcDictObj;
 	    } else {
 		Tcl_SetObjRef(dataPtr->LastUsedLocale, opts->localeObj);
 		Tcl_UnsetObjRef(dataPtr->LastUnnormUsedLocale);
-		Tcl_SetObjRef(dataPtr->LastUsedLocaleDict, opts->mcDictObj);
+		dataPtr->LastUsedLocaleDict = opts->mcDictObj;
 	    }
-	    Tcl_ResetResult(opts->interp);
 	}
     }
 
@@ -886,7 +903,7 @@ ClockConfigureObjCmd(
 	    if (i < objc) {
 		if (dataPtr->CurrentLocale != objv[i]) {
 		    Tcl_SetObjRef(dataPtr->CurrentLocale, objv[i]);
-		    Tcl_UnsetObjRef(dataPtr->CurrentLocaleDict);
+		    dataPtr->CurrentLocaleDict = NULL;
 		}
 	    }
 	    if (i+1 >= objc && dataPtr->CurrentLocale != NULL) {
