@@ -229,7 +229,7 @@ TclClockInit(
     }
     data->mcLiterals = NULL;
     data->mcLitIdxs = NULL;
-    data->mcMergedCat = NULL;
+    data->McDicts = NULL;
     data->LastTZEpoch = 0;
     data->currentYearCentury = ClockDefaultYearCentury;
     data->yearOfCenturySwitch = ClockDefaultCenturySwitch;
@@ -245,9 +245,12 @@ TclClockInit(
 
     data->CurrentLocale = NULL;
     data->CurrentLocaleDict = NULL;
-    data->LastUnnormUsedLocale = NULL;
+    data->LastUsedLocaleUnnorm = NULL;
     data->LastUsedLocale = NULL;
     data->LastUsedLocaleDict = NULL;
+    data->PrevUsedLocaleUnnorm = NULL;
+    data->PrevUsedLocale = NULL;
+    data->PrevUsedLocaleDict = NULL;
 
     data->lastBase.timezoneObj = NULL;
     data->UTC2Local.timezoneObj = NULL;
@@ -310,16 +313,19 @@ ClockConfigureClear(
 
     Tcl_UnsetObjRef(data->CurrentLocale);
     data->CurrentLocaleDict = NULL;
-    Tcl_UnsetObjRef(data->LastUnnormUsedLocale);
+    Tcl_UnsetObjRef(data->LastUsedLocaleUnnorm);
     Tcl_UnsetObjRef(data->LastUsedLocale);
     data->LastUsedLocaleDict = NULL;
+    Tcl_UnsetObjRef(data->PrevUsedLocaleUnnorm);
+    Tcl_UnsetObjRef(data->PrevUsedLocale);
+    data->PrevUsedLocaleDict = NULL;
 
     Tcl_UnsetObjRef(data->lastBase.timezoneObj);
     Tcl_UnsetObjRef(data->UTC2Local.timezoneObj);
     Tcl_UnsetObjRef(data->UTC2Local.tzName);
     Tcl_UnsetObjRef(data->Local2UTC.timezoneObj);
 
-    Tcl_UnsetObjRef(data->mcMergedCat);
+    Tcl_UnsetObjRef(data->McDicts);
 }
 
 /*
@@ -485,6 +491,34 @@ ClockGetCurrentLocale(
 /*
  *----------------------------------------------------------------------
  *
+ * SavePrevLocaleObj --
+ *
+ *	Used to store previously used/cached locale (makes it reusable).
+ *
+ *	This enables faster switch between locales (e. g. to convert from one to another).
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline void
+SavePrevLocaleObj(
+    ClockClientData *dataPtr)	/* Client data containing literal pool */
+{
+    Tcl_Obj *localeObj = dataPtr->LastUsedLocale;
+    if (localeObj && localeObj != dataPtr->PrevUsedLocale) {
+	Tcl_SetObjRef(dataPtr->PrevUsedLocaleUnnorm, dataPtr->LastUsedLocaleUnnorm);
+	Tcl_SetObjRef(dataPtr->PrevUsedLocale, localeObj);
+	/* mcDicts owns reference to dict */
+	dataPtr->PrevUsedLocaleDict = dataPtr->LastUsedLocaleDict;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NormLocaleObj --
  *
  *	Normalizes the locale object (used for caching puposes).
@@ -517,10 +551,16 @@ NormLocaleObj(
 	return dataPtr->CurrentLocale;
     }
     if ( localeObj == dataPtr->LastUsedLocale
-      || localeObj == dataPtr->LastUnnormUsedLocale
+      || localeObj == dataPtr->LastUsedLocaleUnnorm
     ) {
 	*mcDictObj = dataPtr->LastUsedLocaleDict;
 	return dataPtr->LastUsedLocale;
+    }
+    if ( localeObj == dataPtr->PrevUsedLocale
+      || localeObj == dataPtr->PrevUsedLocaleUnnorm
+    ) {
+	*mcDictObj = dataPtr->PrevUsedLocaleDict;
+	return dataPtr->PrevUsedLocale;
     }
 
     loc = TclGetString(localeObj);
@@ -543,8 +583,20 @@ NormLocaleObj(
       )
     ) {
 	*mcDictObj = dataPtr->LastUsedLocaleDict;
-	Tcl_SetObjRef(dataPtr->LastUnnormUsedLocale, localeObj);
+	Tcl_SetObjRef(dataPtr->LastUsedLocaleUnnorm, localeObj);
 	localeObj = dataPtr->LastUsedLocale;
+    }
+    else
+    if ( dataPtr->PrevUsedLocale != NULL
+      && ( localeObj == dataPtr->PrevUsedLocale
+       || (localeObj->length == dataPtr->PrevUsedLocale->length
+	  && strcmp(loc, TclGetString(dataPtr->PrevUsedLocale)) == 0
+	)
+      )
+    ) {
+	*mcDictObj = dataPtr->PrevUsedLocaleDict;
+	Tcl_SetObjRef(dataPtr->PrevUsedLocaleUnnorm, localeObj);
+	localeObj = dataPtr->PrevUsedLocale;
     }
     else
     if (
@@ -564,7 +616,8 @@ NormLocaleObj(
 	 (localeObj->length == 6 /* system */
 	   && strncasecmp(loc, Literals[LIT_SYSTEM], localeObj->length) == 0)
     ) {
-	Tcl_SetObjRef(dataPtr->LastUnnormUsedLocale, localeObj);
+	SavePrevLocaleObj(dataPtr);
+	Tcl_SetObjRef(dataPtr->LastUsedLocaleUnnorm, localeObj);
 	localeObj = ClockGetSystemLocale(dataPtr, interp);
 	Tcl_SetObjRef(dataPtr->LastUsedLocale, localeObj);
 	*mcDictObj = NULL;
@@ -626,17 +679,17 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 	    }
 	}
 
-	if (opts->mcDictObj == NULL) {
+	if (opts->mcDictObj == NULL || opts->mcDictObj->refCount > 1) {
 	    Tcl_Obj *callargs[2];
 
 	    /* first try to find it own catalog dict */
-	    if (dataPtr->mcMergedCat == NULL) {
-		dataPtr->mcMergedCat = Tcl_NewDictObj();
+	    if (dataPtr->McDicts == NULL) {
+		Tcl_SetObjRef(dataPtr->McDicts, Tcl_NewDictObj());
 	    }
-	    Tcl_DictObjGet(NULL, dataPtr->mcMergedCat,
+	    Tcl_DictObjGet(NULL, dataPtr->McDicts,
 		opts->localeObj, &opts->mcDictObj);
 
-	    if (opts->mcDictObj == NULL) {
+	    if (opts->mcDictObj == NULL || opts->mcDictObj->refCount > 1) {
 		/* get msgcat dictionary - ::tcl::clock::mcget locale */
 		callargs[0] = dataPtr->literals[LIT_MCGET];
 		callargs[1] = opts->localeObj;
@@ -647,23 +700,27 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 
 		opts->mcDictObj = Tcl_GetObjResult(opts->interp);
 		Tcl_ResetResult(opts->interp);
-	    }
-	    /* be sure that object reference not increases (dict changeable) */
-	    if (opts->mcDictObj->refCount > 0) {
-		/* smart reference (shared dict as object with no ref-counter) */
-		opts->mcDictObj = Tcl_DictObjSmartRef(opts->interp, opts->mcDictObj);
-	    }
 
-	    Tcl_DictObjPut(NULL, dataPtr->mcMergedCat, opts->localeObj,
+		/* be sure that object reference not increases (dict changeable) */
+		if (opts->mcDictObj->refCount > 0) {
+		    /* smart reference (shared dict as object with no ref-counter) */
+		    opts->mcDictObj = Tcl_DictObjSmartRef(opts->interp, 
+		    	opts->mcDictObj);
+	        }
+
+		/* create exactly one reference to catalog / make it searchable for future */
+		Tcl_DictObjPut(NULL, dataPtr->McDicts, opts->localeObj,
 		    opts->mcDictObj);
+	    }
 
 	    if ( opts->localeObj == dataPtr->CurrentLocale ) {
 		dataPtr->CurrentLocaleDict = opts->mcDictObj;
 	    } else if ( opts->localeObj == dataPtr->LastUsedLocale ) {
 		dataPtr->LastUsedLocaleDict = opts->mcDictObj;
 	    } else {
+		SavePrevLocaleObj(dataPtr);
 		Tcl_SetObjRef(dataPtr->LastUsedLocale, opts->localeObj);
-		Tcl_UnsetObjRef(dataPtr->LastUnnormUsedLocale);
+		Tcl_UnsetObjRef(dataPtr->LastUsedLocaleUnnorm);
 		dataPtr->LastUsedLocaleDict = opts->mcDictObj;
 	    }
 	}

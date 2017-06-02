@@ -281,7 +281,8 @@ typedef struct ClockClientData {
     Tcl_Obj **mcLitIdxs;	/* Msgcat object indices prefixed with _IDX_,
 				 * used for quick dictionary search */
 
-    Tcl_Obj *mcMergedCat;	/* Msgcat collaction contains waek pointers to locale catalogs */
+    Tcl_Obj *McDicts;		/* Msgcat collection, contains weak pointers to locale
+				 * catalogs, and owns it references (onetime referenced) */
 
     /* Cache for current clock parameters, imparted via "configure" */
     unsigned long LastTZEpoch;
@@ -299,9 +300,12 @@ typedef struct ClockClientData {
 
     Tcl_Obj *CurrentLocale;
     Tcl_Obj *CurrentLocaleDict;
-    Tcl_Obj *LastUnnormUsedLocale;
+    Tcl_Obj *LastUsedLocaleUnnorm;
     Tcl_Obj *LastUsedLocale;
     Tcl_Obj *LastUsedLocaleDict;
+    Tcl_Obj *PrevUsedLocaleUnnorm;
+    Tcl_Obj *PrevUsedLocale;
+    Tcl_Obj *PrevUsedLocaleDict;
 
     /* Cache for last base (last-second fast convert if base/tz not changed) */
     struct {
