@@ -290,13 +290,15 @@ typedef struct ClockClientData {
     int yearOfCenturySwitch;
     Tcl_Obj *SystemTimeZone;
     Tcl_Obj *SystemSetupTZData;
+    Tcl_Obj *GMTSetupTimeZoneUnnorm;
     Tcl_Obj *GMTSetupTimeZone;
     Tcl_Obj *GMTSetupTZData;
-    Tcl_Obj *AnySetupTimeZone;
-    Tcl_Obj *AnySetupTZData;
-    Tcl_Obj *LastUnnormSetupTimeZone;
+    Tcl_Obj *LastSetupTimeZoneUnnorm;
     Tcl_Obj *LastSetupTimeZone;
     Tcl_Obj *LastSetupTZData;
+    Tcl_Obj *PrevSetupTimeZoneUnnorm;
+    Tcl_Obj *PrevSetupTimeZone;
+    Tcl_Obj *PrevSetupTZData;
 
     Tcl_Obj *CurrentLocale;
     Tcl_Obj *CurrentLocaleDict;
