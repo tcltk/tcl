@@ -5085,9 +5085,7 @@ fi
     PLAT_SRCS=""
     LDAIX_SRC=""
     if test "x${SHLIB_VERSION}" = x; then :
-  SHLIB_VERSION=".1.0"
-else
-  SHLIB_VERSION=".${SHLIB_VERSION}"
+  SHLIB_VERSION="1.0"
 fi
     case $system in
 	AIX-*)
@@ -9965,13 +9963,6 @@ $as_echo "$tcl_cv_sys_version" >&6; }
 $as_echo_n "checking FIONBIO vs. O_NONBLOCK for nonblocking I/O... " >&6; }
     case $system in
 	OSF*)
-
-$as_echo "#define USE_FIONBIO 1" >>confdefs.h
-
-	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: FIONBIO" >&5
-$as_echo "FIONBIO" >&6; }
-	    ;;
-	SunOS-4*)
 
 $as_echo "#define USE_FIONBIO 1" >>confdefs.h
 

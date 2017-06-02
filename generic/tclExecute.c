@@ -2628,11 +2628,34 @@ TEBCresume(
 
 	opnd = TclGetUInt1AtPtr(pc+1);
 
+	objv = &OBJ_AT_DEPTH(opnd-1);
+	/* minor optimization in simplest cases */
+	switch (opnd) {
+	case 1: /* only one object */
+	    objResultPtr = *objv;
+	    goto endINST_STR_CONCAT1;
+	case 2: /* two objects - check empty */
+	    if (objv[0]->bytes == &tclEmptyString) {
+		objResultPtr = objv[1];
+		goto endINST_STR_CONCAT1;
+	    }
+	    else
+	    if (objv[1]->bytes == &tclEmptyString) {
+		objResultPtr = objv[0];
+		goto endINST_STR_CONCAT1;
+	    }
+	    break;
+	case 0: /* no objects - use new empty */
+	    TclNewObj(objResultPtr);
+	    goto endINST_STR_CONCAT1;
+	}
+	/* do concat */
 	if (TCL_OK != TclStringCatObjv(interp, /* inPlace */ 1,
-		opnd, &OBJ_AT_DEPTH(opnd-1), &objResultPtr)) {
+		opnd, objv, &objResultPtr)) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
+      endINST_STR_CONCAT1:
 
 	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	NEXT_INST_V(2, opnd, 1);
