@@ -163,7 +163,7 @@ TclStrIdxTreeFree(
 /*
  * Several bidirectional list primitives
  */
-inline void
+static inline void
 TclStrIdxTreeInsertBranch(
     TclStrIdxTree *parent,
     register TclStrIdx *item,
@@ -185,7 +185,7 @@ TclStrIdxTreeInsertBranch(
     item->childTree.lastPtr = child;
 }
 
-inline void
+static inline void
 TclStrIdxTreeAppend(
     register TclStrIdxTree *parent,
     register TclStrIdx	   *item)
