@@ -544,10 +544,7 @@ proc mcget {loc} {
     } current {
 	set loc [mclocale]
     }
-    if {$loc eq {C}} {
-	set loclist [msgcat::PackagePreferences ::tcl::clock]
-	set loc [lindex $loclist 0]
-    } else {
+    if {$loc ne {}} {
     	set loc [string tolower $loc]
     }
 
