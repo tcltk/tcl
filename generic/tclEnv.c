@@ -17,11 +17,6 @@
 
 TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 
-
-/* MODULE_SCOPE */
-size_t TclEnvEpoch = 0;	/* Epoch of the tcl environment
-				 * (if changed with tcl-env). */
-
 static struct {
     int cacheSize;		/* Number of env strings in cache. */
     char **cache;		/* Array containing all of the environment
@@ -376,7 +371,6 @@ Tcl_PutEnv(
 	value[0] = '\0';
 	TclSetEnv(name, value+1);
     }
-    TclEnvEpoch++;
 
     Tcl_DStringFree(&nameString);
     return 0;
@@ -585,7 +579,6 @@ EnvTraceProc(
 
     if (flags & TCL_TRACE_ARRAY) {
 	TclSetupEnv(interp);
-	TclEnvEpoch++;
 	return NULL;
     }
 
@@ -606,7 +599,6 @@ EnvTraceProc(
 
 	value = Tcl_GetVar2(interp, "env", name2, TCL_GLOBAL_ONLY);
 	TclSetEnv(name2, value);
-	TclEnvEpoch++;
     }
 
     /*
@@ -630,7 +622,6 @@ EnvTraceProc(
 
     if (flags & TCL_TRACE_UNSETS) {
 	TclUnsetEnv(name2);
-	TclEnvEpoch++;
     }
     return NULL;
 }
