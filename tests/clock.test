@@ -18,20 +18,10 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 if {[testConstraint win]} {
-    # for windows test cases using system locale / TZ :localtime
     if {[catch {
-	::tcltest::loadTestedCommands
-	package require registry
-    }]} {
-    	# try to load registry directly from root (uninstalled / development env):
-    	if {[catch {
-	    load [lindex \
-		    [glob -tails -directory [file dirname [info nameofexecutable]] \
-			tclreg*[expr {[::tcl::pkgconfig get debug] ? {g} : {}}].dll] 0 \
-	    ] registry
+	    ::tcltest::loadTestedCommands
 	}]} {
-	    namespace eval ::tcl::clock {variable NoRegistry {}}
-	}
+	# nothing to be done (registry loaded on demand)
     }
 }
 
