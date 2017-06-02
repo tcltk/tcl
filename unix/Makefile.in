@@ -1035,6 +1035,7 @@ MATHHDRS=$(GENERIC_DIR)/tommath.h $(GENERIC_DIR)/tclTomMath.h
 PARSEHDR=$(GENERIC_DIR)/tclParse.h
 NREHDR=$(GENERIC_DIR)/tclInt.h
 TRIMHDR=$(GENERIC_DIR)/tclStringTrim.h
+TCLDATEHDR=$(GENERIC_DIR)/tclDate.h $(GENERIC_DIR)/tclStrIdxTree.h
 
 regcomp.o: $(REGHDRS) $(GENERIC_DIR)/regcomp.c $(GENERIC_DIR)/regc_lex.c \
 		$(GENERIC_DIR)/regc_color.c $(GENERIC_DIR)/regc_locale.c \
@@ -1071,10 +1072,10 @@ tclBinary.o: $(GENERIC_DIR)/tclBinary.c
 tclCkalloc.o: $(GENERIC_DIR)/tclCkalloc.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCkalloc.c
 
-tclClock.o: $(GENERIC_DIR)/tclClock.c
+tclClock.o: $(GENERIC_DIR)/tclClock.c $(TCLDATEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclClock.c
 
-tclClockFmt.o: $(GENERIC_DIR)/tclClockFmt.c
+tclClockFmt.o: $(GENERIC_DIR)/tclClockFmt.c $(TCLDATEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclClockFmt.c
 
 tclCmdAH.o: $(GENERIC_DIR)/tclCmdAH.c
@@ -1086,7 +1087,7 @@ tclCmdIL.o: $(GENERIC_DIR)/tclCmdIL.c $(TCLREHDRS)
 tclCmdMZ.o: $(GENERIC_DIR)/tclCmdMZ.c $(TCLREHDRS) $(TRIMHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCmdMZ.c
 
-tclDate.o: $(GENERIC_DIR)/tclDate.c
+tclDate.o: $(GENERIC_DIR)/tclDate.c $(TCLDATEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDate.c
 
 tclCompCmds.o: $(GENERIC_DIR)/tclCompCmds.c $(COMPILEHDR)
@@ -1305,7 +1306,7 @@ tclScan.o: $(GENERIC_DIR)/tclScan.c
 tclStringObj.o: $(GENERIC_DIR)/tclStringObj.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStringObj.c
 
-tclStrIdxTree.o: $(GENERIC_DIR)/tclStrIdxTree.c $(MATHHDRS)
+tclStrIdxTree.o: $(GENERIC_DIR)/tclStrIdxTree.c $(GENERIC_DIR)/tclStrIdxTree.h $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStrIdxTree.c
 
 tclStrToD.o: $(GENERIC_DIR)/tclStrToD.c $(MATHHDRS)
