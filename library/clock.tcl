@@ -298,7 +298,8 @@ proc ::tcl::clock::Initialize {} {
 
     # Default configuration
 
-    configure -default-locale  [mclocale]
+    configure -current-locale  [mclocale]
+    #configure -default-locale  C
     #configure -year-century    2000 \
     #          -century-switch  38
 
@@ -2058,7 +2059,7 @@ proc ::tcl::clock::WeekdayOnOrBefore { weekday j } {
 
 proc ::tcl::clock::ChangeCurrentLocale {args} {
 
-    configure -default-locale [lindex $args 0]
+    configure -current-locale [lindex $args 0]
 
     variable FormatProc
     variable LocaleNumeralCache
