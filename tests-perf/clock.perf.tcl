@@ -21,10 +21,20 @@ set ::env(TCL_TZ) :CET
 
 # warm-up interpeter compiler env, clock platform-related features,
 # calibrate timerate measurement functionality:
-puts -nonewline "Calibration ... "; flush stdout
-puts "done: [lrange \
-  [timerate -calibrate {}] \
-0 1]"
+
+# if no timerate here - import from unsupported:
+if {[namespace which -command timerate] eq {}} {
+  namespace inscope ::tcl::unsupported {namespace export timerate}
+  namespace import ::tcl::unsupported::timerate
+}
+
+# if not yet calibrated:
+if {[lindex [timerate {} 10] 6] >= (10-1)} {
+  puts -nonewline "Calibration ... "; flush stdout
+  puts "done: [lrange \
+    [timerate -calibrate {}] \
+  0 1]"
+}
 
 ## warm-up test-related features (load clock.tcl, system zones, locales, etc.):
 clock scan "" -gmt 1
