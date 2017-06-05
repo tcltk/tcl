@@ -2848,7 +2848,7 @@ TclStringCatObjv(
     Tcl_Obj **objPtrPtr)
 {
     Tcl_Obj *objPtr, *objResultPtr, * const *ov;
-    int oc, length = 0, binary = 1, first = 0;
+    int oc, length = 0, binary = 1, first = 0, last = 0;
     int allowUniChar = 1, requestUniChar = 0;
 
     /* assert (objc >= 2) */
@@ -2904,8 +2904,11 @@ TclStringCatObjv(
 		int numBytes;
 
 		Tcl_GetByteArrayFromObj(objPtr, &numBytes); /* PANIC? */
-		if (length == 0) {
-		    first = objc - oc - 1;
+		if (numBytes) {
+		    last = objc - oc - 1;
+		    if (length == 0) {
+			first = last;
+		    }
 		}
 		length += numBytes;
 	    }
@@ -2920,8 +2923,11 @@ TclStringCatObjv(
 		int numChars;
 
 		Tcl_GetUnicodeFromObj(objPtr, &numChars); /* PANIC? */
-		if (length == 0) {
-		    first = objc - oc - 1;
+		if (numChars) {
+		    last = objc - oc - 1;
+		    if (length == 0) {
+			first = last;
+		    }
 		}
 		length += numChars;
 	    }
@@ -2935,8 +2941,11 @@ TclStringCatObjv(
 	    objPtr = *ov++;
 
 	    Tcl_GetStringFromObj(objPtr, &numBytes);	/* PANIC? */
-	    if ((length == 0) && numBytes) {
-		first = objc - oc - 1;
+	    if (numBytes) {
+		last = objc - oc - 1;
+		if (length == 0) {
+		    first = last;
+		}
 	    }
 	    length += numBytes;
 	}
@@ -2956,8 +2965,13 @@ TclStringCatObjv(
 	*objPtrPtr = objv[0];
 	return TCL_OK;
     }
+    if (last == first) {
+	/* Only one non-empty value; return it */
+	*objPtrPtr = objv[first];
+	return TCL_OK;
+    }
 
-    objv += first; objc -= first;
+    objv += first; objc = (last - first + 1);
 
     if (binary) {
 	/* Efficiently produce a pure byte array result */
