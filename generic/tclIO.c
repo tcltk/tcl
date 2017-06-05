@@ -1138,7 +1138,7 @@ Tcl_IsStandardChannel(
  *	channel refCount.
  *
  * Results:
- *	None.
+ *	The channel.
  *
  * Side effects:
  *	May increment the reference count of a channel.
@@ -1146,7 +1146,7 @@ Tcl_IsStandardChannel(
  *----------------------------------------------------------------------
  */
 
-void
+Tcl_Channel
 Tcl_RegisterChannel(
     Tcl_Interp *interp,		/* Interpreter in which to add the channel. */
     Tcl_Channel chan)		/* The channel to add to this interpreter
@@ -1175,7 +1175,7 @@ Tcl_RegisterChannel(
 	hPtr = Tcl_CreateHashEntry(hTblPtr, statePtr->channelName, &isNew);
 	if (!isNew) {
 	    if (chan == Tcl_GetHashValue(hPtr)) {
-		return;
+		return chan;
 	    }
 
 	    Tcl_Panic("Tcl_RegisterChannel: duplicate channel names");
@@ -1183,6 +1183,8 @@ Tcl_RegisterChannel(
 	Tcl_SetHashValue(hPtr, chanPtr);
     }
     statePtr->refCount++;
+
+    return chan;
 }
 
 /*

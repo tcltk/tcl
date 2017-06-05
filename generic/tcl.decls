@@ -748,7 +748,7 @@ declare 209 {
     int Tcl_RecordAndEvalObj(Tcl_Interp *interp, Tcl_Obj *cmdPtr, int flags)
 }
 declare 210 {
-    void Tcl_RegisterChannel(Tcl_Interp *interp, Tcl_Channel chan)
+    Tcl_Channel Tcl_RegisterChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 211 {
     void Tcl_RegisterObjType(const Tcl_ObjType *typePtr)

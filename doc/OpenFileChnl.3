@@ -32,7 +32,7 @@ int
 int
 \fBTcl_GetChannelNamesEx\fR(\fIinterp, pattern\fR)
 .sp
-void
+Tcl_Channel
 \fBTcl_RegisterChannel\fR(\fIinterp, channel\fR)
 .sp
 int
@@ -319,6 +319,8 @@ the name given in the call to \fBTcl_CreateChannel\fR.  After this call,
 the channel becomes the property of the interpreter, and the caller should
 not call \fBTcl_Close\fR for the channel; the channel will be closed
 automatically when it is unregistered from the interpreter.
+\fBTcl_RegisterChannel\fR returns the channel, as a convenience to the
+programmer, 
 .PP
 Code executing outside of any Tcl interpreter can call
 \fBTcl_RegisterChannel\fR with \fIinterp\fR as NULL, to indicate that it

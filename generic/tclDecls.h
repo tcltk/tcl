@@ -633,7 +633,7 @@ EXTERN int		Tcl_RecordAndEval(Tcl_Interp *interp,
 EXTERN int		Tcl_RecordAndEvalObj(Tcl_Interp *interp,
 				Tcl_Obj *cmdPtr, int flags);
 /* 210 */
-EXTERN void		Tcl_RegisterChannel(Tcl_Interp *interp,
+EXTERN Tcl_Channel	Tcl_RegisterChannel(Tcl_Interp *interp,
 				Tcl_Channel chan);
 /* 211 */
 EXTERN void		Tcl_RegisterObjType(const Tcl_ObjType *typePtr);
@@ -2067,7 +2067,7 @@ typedef struct TclStubs {
     void (*tcl_ReapDetachedProcs) (void); /* 207 */
     int (*tcl_RecordAndEval) (Tcl_Interp *interp, const char *cmd, int flags); /* 208 */
     int (*tcl_RecordAndEvalObj) (Tcl_Interp *interp, Tcl_Obj *cmdPtr, int flags); /* 209 */
-    void (*tcl_RegisterChannel) (Tcl_Interp *interp, Tcl_Channel chan); /* 210 */
+    Tcl_Channel (*tcl_RegisterChannel) (Tcl_Interp *interp, Tcl_Channel chan); /* 210 */
     void (*tcl_RegisterObjType) (const Tcl_ObjType *typePtr); /* 211 */
     Tcl_RegExp (*tcl_RegExpCompile) (Tcl_Interp *interp, const char *pattern); /* 212 */
     int (*tcl_RegExpExec) (Tcl_Interp *interp, Tcl_RegExp regexp, const char *text, const char *start); /* 213 */
