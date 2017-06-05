@@ -448,6 +448,31 @@ test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
     list $count [viewable $line]
 } [list 3 "\u4e4e\u4e5e\u4e5f (\\u4e4e\\u4e5e\\u4e5f)"]
 
+test encoding-24.4 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc0\x80"]
+} 1
+test encoding-24.5 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc0\x81"]
+} 2
+test encoding-24.6 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc1\xbf"]
+} 2
+test encoding-24.7 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc2\x80"]
+} 1
+test encoding-24.8 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xe0\x80\x80"]
+} 3
+test encoding-24.9 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xe0\x9f\xbf"]
+} 3
+test encoding-24.10 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xe0\xa0\x80"]
+} 1
+test encoding-24.10 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xef\xbf\xbf"]
+} 1
+
 file delete [file join [temporaryDirectory] iso2022.txt]
 
 #
