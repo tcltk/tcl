@@ -8776,4 +8776,9 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2017-05-08 (bug)[6ca52a] http memleak handling keep-alive (aspect,nijtmans)
 => http 2.8.11
 
---- Released 8.6.7, May 17, 2016 --- http://core.tcl.tk/tcl/ for details
+2017-05-29 (bug)[a3fb33] crash in [lsort] on long lists (sebres)
+
+2017-06-05 (bug)[67aa9a] Tcl_UtfToUniChar() revised handling invalid UTF-8 (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+--- Released 8.6.7, ????, 2017 --- http://core.tcl.tk/tcl/ for details
