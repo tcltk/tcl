@@ -924,7 +924,7 @@ HashStringKey(
  *
  * BogusFind --
  *
- *	This function is invoked when an Tcl_FindHashEntry is called on a
+ *	This function is invoked when Tcl_FindHashEntry is called on a
  *	table that has been deleted.
  *
  * Results:
@@ -951,7 +951,7 @@ BogusFind(
  *
  * BogusCreate --
  *
- *	This function is invoked when an Tcl_CreateHashEntry is called on a
+ *	This function is invoked when Tcl_CreateHashEntry is called on a
  *	table that has been deleted.
  *
  * Results:

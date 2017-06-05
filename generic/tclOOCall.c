@@ -179,6 +179,7 @@ StashCallChain(
     CallChain *callPtr)
 {
     callPtr->refCount++;
+    TclGetString(objPtr);
     TclFreeIntRep(objPtr);
     objPtr->typePtr = &methodNameType;
     objPtr->internalRep.twoPtrValue.ptr1 = callPtr;
@@ -618,6 +619,7 @@ AddClassMethodNames(
 		int isWanted = (!(flags & PUBLIC_METHOD)
 			|| (mPtr->flags & PUBLIC_METHOD)) ? IN_LIST : 0;
 
+		isWanted |= (mPtr->typePtr == NULL ? NO_IMPLEMENTATION : 0);
 		Tcl_SetHashValue(hPtr, INT2PTR(isWanted));
 	    } else if ((PTR2INT(Tcl_GetHashValue(hPtr)) & NO_IMPLEMENTATION)
 		    && mPtr->typePtr != NULL) {

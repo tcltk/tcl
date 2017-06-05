@@ -374,7 +374,7 @@ Tcl_SetListObj(
 	listRepPtr = NewListIntRep(objc, objv, 1);
 	ListSetIntRep(objPtr, listRepPtr);
     } else {
-	objPtr->bytes = tclEmptyStringRep;
+	objPtr->bytes = &tclEmptyString;
 	objPtr->length = 0;
     }
 }
@@ -465,7 +465,7 @@ Tcl_ListObjGetElements(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes == tclEmptyStringRep) {
+	if (listPtr->bytes == &tclEmptyString) {
 	    *objcPtr = 0;
 	    *objvPtr = NULL;
 	    return TCL_OK;
@@ -575,7 +575,7 @@ Tcl_ListObjAppendElement(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes == tclEmptyStringRep) {
+	if (listPtr->bytes == &tclEmptyString) {
 	    Tcl_SetListObj(listPtr, 1, &objPtr);
 	    return TCL_OK;
 	}
@@ -739,7 +739,7 @@ Tcl_ListObjIndex(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes == tclEmptyStringRep) {
+	if (listPtr->bytes == &tclEmptyString) {
 	    *objPtrPtr = NULL;
 	    return TCL_OK;
 	}
@@ -792,7 +792,7 @@ Tcl_ListObjLength(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes == tclEmptyStringRep) {
+	if (listPtr->bytes == &tclEmptyString) {
 	    *intPtr = 0;
 	    return TCL_OK;
 	}
@@ -863,7 +863,7 @@ Tcl_ListObjReplace(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
     }
     if (listPtr->typePtr != &tclListType) {
-	if (listPtr->bytes == tclEmptyStringRep) {
+	if (listPtr->bytes == &tclEmptyString) {
 	    if (!objc) {
 		return TCL_OK;
 	    }
@@ -897,18 +897,18 @@ Tcl_ListObjReplace(
     }
     if (count < 0) {
 	count = 0;
-    } else if (numElems < first+count || first+count < 0) {
-	/*
-	 * The 'first+count < 0' condition here guards agains integer
-	 * overflow in determining 'first+count'.
-	 */
+    } else if (first > INT_MAX - count /* Handle integer overflow */
+	    || numElems < first+count) {
 
 	count = numElems - first;
     }
 
     if (objc > LIST_MAX - (numElems - count)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"max length of a Tcl list (%d elements) exceeded", LIST_MAX));
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "max length of a Tcl list (%d elements) exceeded",
+		    LIST_MAX));
+	}
 	return TCL_ERROR;
     }
     isShared = (listRepPtr->refCount > 1);
@@ -1650,7 +1650,7 @@ TclListObjSetElement(
     if (listPtr->typePtr != &tclListType) {
 	int result;
 
-	if (listPtr->bytes == tclEmptyStringRep) {
+	if (listPtr->bytes == &tclEmptyString) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
 			Tcl_NewStringObj("list index out of range", -1));
@@ -1898,7 +1898,7 @@ SetListFromAny(
 		while (--elemPtrs >= &listRepPtr->elements) {
 		    Tcl_DecrRefCount(*elemPtrs);
 		}
-		ckfree((char *) listRepPtr);
+		ckfree(listRepPtr);
 		return TCL_ERROR;
 	    }
 	    if (elemStart == limit) {
@@ -1979,7 +1979,7 @@ UpdateStringOfList(
      */
 
     if (numElems == 0) {
-	listPtr->bytes = tclEmptyStringRep;
+	listPtr->bytes = &tclEmptyString;
 	listPtr->length = 0;
 	return;
     }

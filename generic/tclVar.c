@@ -1067,6 +1067,7 @@ TclLookupArrayElement(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_GetVar
 const char *
 Tcl_GetVar(
@@ -1087,6 +1088,7 @@ Tcl_GetVar(
     }
     return TclGetString(resultPtr);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -1456,6 +1458,7 @@ Tcl_SetObjCmd(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_SetVar
 const char *
 Tcl_SetVar(
@@ -1468,18 +1471,15 @@ Tcl_SetVar(
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
 				 * TCL_LEAVE_ERR_MSG. */
 {
-    Tcl_Obj *varValuePtr, *varNamePtr = Tcl_NewStringObj(varName, -1);
-
-    Tcl_IncrRefCount(varNamePtr);
-    varValuePtr = Tcl_ObjSetVar2(interp, varNamePtr, NULL,
+    Tcl_Obj *varValuePtr = Tcl_SetVar2Ex(interp, varName, NULL,
 	    Tcl_NewStringObj(newValue, -1), flags);
-    Tcl_DecrRefCount(varNamePtr);
 
     if (varValuePtr == NULL) {
 	return NULL;
     }
     return TclGetString(varValuePtr);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2161,6 +2161,7 @@ TclPtrIncrObjVarIdx(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_UnsetVar
 int
 Tcl_UnsetVar(
@@ -2189,6 +2190,7 @@ Tcl_UnsetVar(
     Tcl_DecrRefCount(varNamePtr);
     return result;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2957,7 +2959,7 @@ TclArraySet(
     } else {
 	/*
 	 * Not a dictionary, so assume (and convert to, for backward-
-	 * -compatability reasons) a list.
+	 * -compatibility reasons) a list.
 	 */
 
 	int elemLen;
@@ -4253,7 +4255,7 @@ TclInitArrayCmd(
  *
  * Results:
  *	A standard Tcl completion code. If an error occurs then an error
- *	message is left in iPtr->result.
+ *	message is left in interp.
  *
  * Side effects:
  *	The variable given by myName is linked to the variable in framePtr
@@ -4347,7 +4349,7 @@ ObjMakeUpvar(
  *
  * Results:
  *	A standard Tcl completion code. If an error occurs then an error
- *	message is left in iPtr->result.
+ *	message is left in interp.
  *
  * Side effects:
  *	The variable given by myName is linked to the variable in framePtr
@@ -4538,6 +4540,7 @@ TclPtrObjMakeUpvarIdx(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_UpVar
 int
 Tcl_UpVar(
@@ -4571,6 +4574,7 @@ Tcl_UpVar(
     Tcl_DecrRefCount(localNamePtr);
     return result;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -5251,44 +5255,27 @@ TclDeleteVars(
     TclVarHashTable *tablePtr)	/* Hash table containing variables to
 				 * delete. */
 {
+    Tcl_Interp *interp = (Tcl_Interp *) iPtr;
     Tcl_HashSearch search;
     register Var *varPtr;
+    int flags;
+    Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
+
+    /*
+     * Determine what flags to pass to the trace callback functions.
+     */
+
+    flags = TCL_TRACE_UNSETS;
+    if (tablePtr == &iPtr->globalNsPtr->varTable) {
+	flags |= TCL_GLOBAL_ONLY;
+    } else if (tablePtr == &currNsPtr->varTable) {
+	flags |= TCL_NAMESPACE_ONLY;
+    }
 
     for (varPtr = VarHashFirstVar(tablePtr, &search); varPtr != NULL;
 	 varPtr = VarHashFirstVar(tablePtr, &search)) {
-	VarHashRefCount(varPtr)++;
-
-	UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr),
-		NULL, TCL_TRACE_UNSETS, -1);
-
-        if (TclIsVarTraced(varPtr)) {
-            Tcl_HashEntry *tPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
-            VarTrace *tracePtr = Tcl_GetHashValue(tPtr);
-            ActiveVarTrace *activePtr;
-
-            while (tracePtr) {
-                VarTrace *prevPtr = tracePtr;
-
-                tracePtr = tracePtr->nextPtr;
-                prevPtr->nextPtr = NULL;
-                Tcl_EventuallyFree(prevPtr, TCL_DYNAMIC);
-            }
-            Tcl_DeleteHashEntry(tPtr);
-            varPtr->flags &= ~VAR_ALL_TRACES;
-            for (activePtr = iPtr->activeVarTracePtr; activePtr != NULL;
-                    activePtr = activePtr->nextPtr) {
-                if (activePtr->varPtr == varPtr) {
-                    activePtr->nextTracePtr = NULL;
-                }
-            }
-        }
-
-	if (!TclIsVarUndefined(varPtr)) {
-	    UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr),
-		    NULL, TCL_TRACE_UNSETS, -1);
-	}
-
-	VarHashRefCount(varPtr)--;
+	UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr), NULL, flags,
+		-1);
 	VarHashDeleteEntry(varPtr);
     }
     VarHashDeleteTable(tablePtr);

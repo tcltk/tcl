@@ -500,7 +500,8 @@ TclCreateProc(
     }
 
     for (i = 0; i < numArgs; i++) {
-	int fieldCount, nameLength, valueLength;
+	int fieldCount, nameLength;
+	size_t valueLength;
 	const char **fieldValues;
 
 	/*
@@ -602,12 +603,11 @@ TclCreateProc(
 	     */
 
 	    if (localPtr->defValuePtr != NULL) {
-		int tmpLength;
-		const char *tmpPtr = TclGetStringFromObj(localPtr->defValuePtr,
-			&tmpLength);
+		const char *tmpPtr = TclGetString(localPtr->defValuePtr);
+		size_t tmpLength = localPtr->defValuePtr->length;
 
 		if ((valueLength != tmpLength) ||
-			strncmp(fieldValues[1], tmpPtr, (size_t) tmpLength)) {
+			strncmp(fieldValues[1], tmpPtr, tmpLength)) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "procedure \"%s\": formal parameter \"%s\" has "
 			    "default value inconsistent with precompiled body",
@@ -2747,6 +2747,41 @@ MakeLambdaError(
 	    "\n    (lambda term \"%.*s%s\" line %d)",
 	    (overflow ? limit : nameLen), procName,
 	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetCmdFrameForProcedure --
+ *
+ *	How to get the CmdFrame information for a procedure.
+ *
+ * Results:
+ *	A pointer to the CmdFrame (only guaranteed to be valid until the next
+ *	Tcl command is processed or the interpreter's state is otherwise
+ *	modified) or a NULL if the information is not available.
+ *
+ * Side effects:
+ *	none.
+ *
+ *----------------------------------------------------------------------
+ */
+
+CmdFrame *
+TclGetCmdFrameForProcedure(
+    Proc *procPtr)		/* The procedure whose cmd-frame is to be
+				 * looked up. */
+{
+    Tcl_HashEntry *hePtr;
+
+    if (procPtr == NULL || procPtr->iPtr == NULL) {
+	return NULL;
+    }
+    hePtr = Tcl_FindHashEntry(procPtr->iPtr->linePBodyPtr, procPtr);
+    if (hePtr == NULL) {
+	return NULL;
+    }
+    return (CmdFrame *) Tcl_GetHashValue(hePtr);
 }
 
 /*
