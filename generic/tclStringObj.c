@@ -2851,7 +2851,11 @@ TclStringCatObjv(
     int oc, length = 0, binary = 1, first = 0, last = 0;
     int allowUniChar = 1, requestUniChar = 0;
 
-    /* assert (objc >= 2) */
+    if (objc <= 1) {
+	/* Only one or no objects; return first or empty */
+	*objPtrPtr = objc ? objv[0] : Tcl_NewObj();
+	return TCL_OK;
+    }
 
     /*
      * Analyze to determine what representation result should be.
@@ -2861,7 +2865,7 @@ TclStringCatObjv(
      */
 
     ov = objv, oc = objc;
-    while (oc-- && (binary || allowUniChar)) {
+    do {
 	objPtr = *ov++;
 
 	if (objPtr->bytes) {
@@ -2892,12 +2896,12 @@ TclStringCatObjv(
 		}
 	    }
 	}
-    }
+    } while (--oc && (binary || allowUniChar));
 
     if (binary) {
 	/* Result will be pure byte array. Pre-size it */
 	ov = objv; oc = objc;
-	while (oc--) {
+	do {
 	    objPtr = *ov++;
 
 	    if (objPtr->bytes == NULL) {
@@ -2905,7 +2909,7 @@ TclStringCatObjv(
 
 		Tcl_GetByteArrayFromObj(objPtr, &numBytes); /* PANIC? */
 		if (numBytes) {
-		    last = objc - oc - 1;
+		    last = objc - oc;
 		    if (length == 0) {
 			first = last;
 		    }
@@ -2914,11 +2918,11 @@ TclStringCatObjv(
 		    }
 		}
 	    }
-	}
+	} while (--oc);
     } else if (allowUniChar && requestUniChar) {
 	/* Result will be pure Tcl_UniChar array. Pre-size it. */
 	ov = objv; oc = objc;
-	while (oc--) {
+	do {
 	    objPtr = *ov++;
 
 	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
@@ -2926,7 +2930,7 @@ TclStringCatObjv(
 
 		Tcl_GetUnicodeFromObj(objPtr, &numChars); /* PANIC? */
 		if (numChars) {
-		    last = objc - oc - 1;
+		    last = objc - oc;
 		    if (length == 0) {
 			first = last;
 		    }
@@ -2935,18 +2939,18 @@ TclStringCatObjv(
 		    }
 		}
 	    }
-	}
+	} while (--oc);
     } else {
 	/* Result will be concat of string reps. Pre-size it. */
 	ov = objv; oc = objc;
-	while (oc--) {
+	do {
 	    int numBytes;
 
 	    objPtr = *ov++;
 
 	    Tcl_GetStringFromObj(objPtr, &numBytes);	/* PANIC? */
 	    if (numBytes) {
-		last = objc - oc - 1;
+		last = objc - oc;
 		if (length == 0) {
 		    first = last;
 		}
@@ -2954,7 +2958,7 @@ TclStringCatObjv(
 		    break; /* overflow */
 		}
 	    }
-	}
+	} while (--oc);
     }
 
     if (last == first || length == 0) {
