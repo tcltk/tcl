@@ -2930,9 +2930,9 @@ TclStringCatObjv(
 		    if (length == 0) {
 			first = last;
 		    }
-		}
-		if ((length += numChars) < 0) {
-		    break; /* overflow */
+		    if ((length += numChars) < 0) {
+			break; /* overflow */
+		    }
 		}
 	    }
 	}
