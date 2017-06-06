@@ -2851,11 +2851,15 @@ TclStringCatObjv(
     int oc, length = 0, binary = 1, first = 0, last = 0;
     int allowUniChar = 1, requestUniChar = 0;
 
+    /* assert ( objc >= 0 ) */
+
     if (objc <= 1) {
 	/* Only one or no objects; return first or empty */
 	*objPtrPtr = objc ? objv[0] : Tcl_NewObj();
 	return TCL_OK;
     }
+
+    /* assert ( objc >= 2 ) */
 
     /*
      * Analyze to determine what representation result should be.
@@ -2914,7 +2918,7 @@ TclStringCatObjv(
 			first = last;
 		    }
 		    if ((length += numBytes) < 0) {
-			break; /* overflow */
+			goto overflow;
 		    }
 		}
 	    }
@@ -2935,7 +2939,7 @@ TclStringCatObjv(
 			first = last;
 		    }
 		    if ((length += numChars) < 0) {
-			break; /* overflow */
+			goto overflow;
 		    }
 		}
 	    }
@@ -2955,25 +2959,17 @@ TclStringCatObjv(
 		    first = last;
 		}
 		if ((length += numBytes) < 0) {
-		    break; /* overflow */
+		    goto overflow;
 		}
 	    }
 	} while (--oc);
     }
 
-    if (last == first || length == 0) {
+    if (last == first /*|| length == 0 */) {
 	/* Only one non-empty value or zero length; return first */
+	/* NOTE: (length == 0) implies (last == first) */
 	*objPtrPtr = objv[first];
 	return TCL_OK;
-    }
-
-    if (length < 0) {
-	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
-	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
-	}
-	return TCL_ERROR;
     }
 
     objv += first; objc = (last - first + 1);
@@ -3106,6 +3102,14 @@ TclStringCatObjv(
     }
     *objPtrPtr = objResultPtr;
     return TCL_OK;
+
+  overflow:
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+    }
+    return TCL_ERROR;
 }
 
 /*
