@@ -112,17 +112,6 @@ static TimeInfo timeInfo = {
 };
 
 /*
- * Scale to convert wide click values from the TclpGetWideClicks native
- * resolution to microsecond resolution and back.
- */
-static struct {
-    int initialized;		/* 1 if initialized, 0 otherwise */
-    int perfCounter;		/* 1 if performance counter usable for wide clicks */
-    double microsecsScale;	/* Denominator scale between clock / microsecs */
-} wideClick = {0, 0.0};
-
-
-/*
  * Declarations for functions defined later in this file.
  */
 
@@ -138,7 +127,6 @@ static Tcl_WideInt	AccumulateSample(Tcl_WideInt perfCounter,
 			    Tcl_WideUInt fileTime);
 static void		NativeScaleTime(Tcl_Time* timebuf,
 			    ClientData clientData);
-static Tcl_WideInt	NativeGetMicroseconds(void);
 static void		NativeGetTime(Tcl_Time* timebuf,
 			    ClientData clientData);
 
@@ -170,19 +158,10 @@ ClientData tclTimeClientData = NULL;
 unsigned long
 TclpGetSeconds(void)
 {
-    Tcl_WideInt usecSincePosixEpoch;
+    Tcl_Time t;
 
-    /* Try to use high resolution timer */
-    if ( tclGetTimeProcPtr == NativeGetTime
-      && (usecSincePosixEpoch = NativeGetMicroseconds())
-    ) {
-	return usecSincePosixEpoch / 1000000;
-    } else {
-	Tcl_Time t;
-
-	tclGetTimeProcPtr(&t, tclTimeClientData);	/* Tcl_GetTime inlined. */
-	return t.sec;
-    }
+    tclGetTimeProcPtr(&t, tclTimeClientData);	/* Tcl_GetTime inlined. */
+    return t.sec;
 }
 
 /*
@@ -207,147 +186,19 @@ TclpGetSeconds(void)
 unsigned long
 TclpGetClicks(void)
 {
-    Tcl_WideInt usecSincePosixEpoch;
+    /*
+     * Use the Tcl_GetTime abstraction to get the time in microseconds, as
+     * nearly as we can, and return it.
+     */
 
-    /* Try to use high resolution timer */
-    if ( tclGetTimeProcPtr == NativeGetTime
-      && (usecSincePosixEpoch = NativeGetMicroseconds())
-    ) {
-	return (unsigned long)usecSincePosixEpoch;
-    } else {
-	/*
-	* Use the Tcl_GetTime abstraction to get the time in microseconds, as
-	* nearly as we can, and return it.
-	*/
+    Tcl_Time now;		/* Current Tcl time */
+    unsigned long retval;	/* Value to return */
 
-	Tcl_Time now;		/* Current Tcl time */
+    tclGetTimeProcPtr(&now, tclTimeClientData);	/* Tcl_GetTime inlined */
 
-	tclGetTimeProcPtr(&now, tclTimeClientData);	/* Tcl_GetTime inlined */
-	return (unsigned long)(now.sec * 1000000) + now.usec;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpGetWideClicks --
- *
- *	This procedure returns a WideInt value that represents the highest
- *	resolution clock in microseconds available on the system.
- *
- * Results:
- *	Number of microseconds (from some start time).
- *
- * Side effects:
- *	This should be used for time-delta resp. for measurement purposes
- *	only, because on some platforms can return microseconds from some
- *	start time (not from the epoch).
- *
- *----------------------------------------------------------------------
- */
+    retval = (now.sec * 1000000) + now.usec;
+    return retval;
 
-Tcl_WideInt
-TclpGetWideClicks(void)
-{
-    LARGE_INTEGER curCounter;
-
-    if (!wideClick.initialized) {
-	LARGE_INTEGER perfCounterFreq;
-
-	/*
-	 * The frequency of the performance counter is fixed at system boot and
-	 * is consistent across all processors. Therefore, the frequency need
-	 * only be queried upon application initialization.
-	 */
-	if (QueryPerformanceFrequency(&perfCounterFreq)) {
-	    wideClick.perfCounter = 1;
-	    wideClick.microsecsScale = 1000000.0 / perfCounterFreq.QuadPart;
-	} else {
-	    /* fallback using microseconds */
-	    wideClick.perfCounter = 0;
-	    wideClick.microsecsScale = 1;
-	}
-
-	wideClick.initialized = 1;
-    }
-    if (wideClick.perfCounter) {
-	if (QueryPerformanceCounter(&curCounter)) {
-	    return (Tcl_WideInt)curCounter.QuadPart;
-	}
-	/* fallback using microseconds */
-	wideClick.perfCounter = 0;
-	wideClick.microsecsScale = 1;
-	return TclpGetMicroseconds();
-    } else {
-    	return TclpGetMicroseconds();
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpWideClickInMicrosec --
- *
- *	This procedure return scale to convert wide click values from the
- *	TclpGetWideClicks native resolution to microsecond resolution
- *	and back.
- *
- * Results:
- * 	1 click in microseconds as double.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-double
-TclpWideClickInMicrosec(void)
-{
-    if (!wideClick.initialized) {
-    	(void)TclpGetWideClicks();	/* initialize */
-    }
-    return wideClick.microsecsScale;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpGetMicroseconds --
- *
- *	This procedure returns a WideInt value that represents the highest
- *	resolution clock in microseconds available on the system.
- *
- * Results:
- *	Number of microseconds (from the epoch).
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_WideInt
-TclpGetMicroseconds(void)
-{
-    Tcl_WideInt usecSincePosixEpoch;
-
-    /* Try to use high resolution timer */
-    if ( tclGetTimeProcPtr == NativeGetTime
-      && (usecSincePosixEpoch = NativeGetMicroseconds())
-    ) {
-	return usecSincePosixEpoch;
-    } else {
-	/*
-	* Use the Tcl_GetTime abstraction to get the time in microseconds, as
-	* nearly as we can, and return it.
-	*/
-
-	Tcl_Time now;
-
-	tclGetTimeProcPtr(&now, tclTimeClientData);	/* Tcl_GetTime inlined */
-	return (((Tcl_WideInt)now.sec) * 1000000) + now.usec;
-    }
 }
 
 /*
@@ -376,17 +227,7 @@ void
 Tcl_GetTime(
     Tcl_Time *timePtr)		/* Location to store time information. */
 {
-    Tcl_WideInt usecSincePosixEpoch;
-
-    /* Try to use high resolution timer */
-    if ( tclGetTimeProcPtr == NativeGetTime
-      && (usecSincePosixEpoch = NativeGetMicroseconds())
-    ) {
-	timePtr->sec = (long) (usecSincePosixEpoch / 1000000);
-	timePtr->usec = (unsigned long) (usecSincePosixEpoch % 1000000);
-    } else {
-    	tclGetTimeProcPtr(timePtr, tclTimeClientData);
-    }
+    tclGetTimeProcPtr(timePtr, tclTimeClientData);
 }
 
 /*
@@ -419,14 +260,13 @@ NativeScaleTime(
 /*
  *----------------------------------------------------------------------
  *
- * NativeGetMicroseconds --
+ * NativeGetTime --
  *
- *	Gets the current system time in microseconds since the beginning
- *	of the epoch: 00:00 UCT, January 1, 1970.
+ *	TIP #233: Gets the current system time in seconds and microseconds
+ *	since the beginning of the epoch: 00:00 UCT, January 1, 1970.
  *
  * Results:
- *	Returns the wide integer with number of microseconds from the epoch, or
- *	0 if high resolution timer is not available.
+ *	Returns the current time in timePtr.
  *
  * Side effects:
  *	On the first call, initializes a set of static variables to keep track
@@ -439,12 +279,13 @@ NativeScaleTime(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
-NativeGetMicroseconds(void)
+static void
+NativeGetTime(
+    Tcl_Time *timePtr,
+    ClientData clientData)
 {
-    static LARGE_INTEGER posixEpoch;
-				/* Posix epoch expressed as 100-ns ticks since
-				 * the windows epoch. */
+    struct _timeb t;
+
     /*
      * Initialize static storage on the first trip through.
      *
@@ -455,10 +296,6 @@ NativeGetMicroseconds(void)
     if (!timeInfo.initialized) {
 	TclpInitLock();
 	if (!timeInfo.initialized) {
-
-	    posixEpoch.LowPart = 0xD53E8000;
-	    posixEpoch.HighPart = 0x019DB1DE;
-
 	    timeInfo.perfCounterAvailable =
 		    QueryPerformanceFrequency(&timeInfo.nominalFreq);
 
@@ -571,8 +408,14 @@ NativeGetMicroseconds(void)
 				/* Current performance counter. */
 	Tcl_WideInt curFileTime;/* Current estimated time, expressed as 100-ns
 				 * ticks since the Windows epoch. */
+	static LARGE_INTEGER posixEpoch;
+				/* Posix epoch expressed as 100-ns ticks since
+				 * the windows epoch. */
 	Tcl_WideInt usecSincePosixEpoch;
 				/* Current microseconds since Posix epoch. */
+
+	posixEpoch.LowPart = 0xD53E8000;
+	posixEpoch.HighPart = 0x019DB1DE;
 
 	QueryPerformanceCounter(&curCounter);
 
@@ -593,7 +436,9 @@ NativeGetMicroseconds(void)
 	if (curCounter.QuadPart <= perfCounterLastCall.QuadPart) {
 	    usecSincePosixEpoch =
 		(fileTimeLastCall.QuadPart - posixEpoch.QuadPart) / 10;
-	    return usecSincePosixEpoch;
+	    timePtr->sec = (long) (usecSincePosixEpoch / 1000000);
+	    timePtr->usec = (unsigned long) (usecSincePosixEpoch % 1000000);
+	    return;
 	}
 
 	/*
@@ -614,57 +459,19 @@ NativeGetMicroseconds(void)
 		    * 10000000 / curCounterFreq.QuadPart);
 
 	    usecSincePosixEpoch = (curFileTime - posixEpoch.QuadPart) / 10;
-	    return usecSincePosixEpoch;
+	    timePtr->sec = (long) (usecSincePosixEpoch / 1000000);
+	    timePtr->usec = (unsigned long) (usecSincePosixEpoch % 1000000);
+	    return;
 	}
     }
 
     /*
-     * High resolution timer is not available.
+     * High resolution timer is not available. Just use ftime.
      */
-    return 0;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NativeGetTime --
- *
- *	TIP #233: Gets the current system time in seconds and microseconds
- *	since the beginning of the epoch: 00:00 UCT, January 1, 1970.
- *
- * Results:
- *	Returns the current time in timePtr.
- *
- * Side effects:
- *	See NativeGetMicroseconds for more information.
- *
- *----------------------------------------------------------------------
- */
 
-static void
-NativeGetTime(
-    Tcl_Time *timePtr,
-    ClientData clientData)
-{
-    Tcl_WideInt usecSincePosixEpoch;
-
-    /*
-     * Try to use high resolution timer.
-     */
-    if ( (usecSincePosixEpoch = NativeGetMicroseconds()) ) {
-	timePtr->sec = (long) (usecSincePosixEpoch / 1000000);
-	timePtr->usec = (unsigned long) (usecSincePosixEpoch % 1000000);
-    } else {
-	/*
-	* High resolution timer is not available. Just use ftime.
-	*/
-
-	struct _timeb t;
-
-	_ftime(&t);
-	timePtr->sec = (long)t.time;
-	timePtr->usec = t.millitm * 1000;
-    }
+    _ftime(&t);
+    timePtr->sec = (long)t.time;
+    timePtr->usec = t.millitm * 1000;
 }
 
 /*

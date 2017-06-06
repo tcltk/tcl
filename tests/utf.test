@@ -20,11 +20,8 @@ testConstraint testbytestring [llength [info commands testbytestring]]
 
 catch {unset x}
 
-# Some tests require support for utf16
-
-if {[testConstraint testbytestring]} {
-    testConstraint utf16 [expr {[format %c 0x010000] != [testbytestring "\xef\xbf\xbd"]}]
-}
+# Some tests require support for 4-byte UTF-8 sequences
+testConstraint fullutf [expr {[format %c 0x010000] != "\ufffd"}]
 
 test utf-1.1 {Tcl_UniCharToUtf: 1 byte sequences} testbytestring {
     expr {"\x01" eq [testbytestring "\x01"]}
@@ -44,7 +41,7 @@ test utf-1.5 {Tcl_UniCharToUtf: overflowed Tcl_UniChar} testbytestring {
 test utf-1.6 {Tcl_UniCharToUtf: negative Tcl_UniChar} testbytestring {
     expr {[format %c -1] eq [testbytestring "\xef\xbf\xbd"]}
 } 1
-test utf-1.7 {Tcl_UniCharToUtf: 4 byte sequences} -constraints {utf16 testbytestring} -body {
+test utf-1.7 {Tcl_UniCharToUtf: 4 byte sequences} -constraints {fullutf testbytestring} -body {
     expr {"\U014e4e" eq [testbytestring "\xf0\x94\xb9\x8e"]}
 } -result 1
 
@@ -69,10 +66,10 @@ test utf-2.6 {Tcl_UtfToUniChar: lead (3-byte) followed by 1 trail} testbytestrin
 test utf-2.7 {Tcl_UtfToUniChar: lead (3-byte) followed by 2 trail} testbytestring {
     string length [testbytestring "\xE4\xb9\x8e"]
 } {1}
-test utf-2.8 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {utf16 testbytestring} -body {
+test utf-2.8 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {fullutf testbytestring} -body {
     string length [testbytestring "\xF0\x90\x80\x80"]
 } -result {1}
-test utf-2.9 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {utf16 testbytestring} -body {
+test utf-2.9 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {fullutf testbytestring} -body {
     string length [testbytestring "\xF4\x8F\xBF\xBF"]
 } -result {1}
 test utf-2.10 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, underflow} testbytestring {
@@ -217,7 +214,7 @@ bsCheck \U4e21	20001
 bsCheck \U004e21	20001
 bsCheck \U00004e21	20001
 bsCheck \U0000004e21	78
-if {[testConstraint utf16]} {
+if {[testConstraint fullutf]} {
     bsCheck \U00110000	69632
     bsCheck \U01100000	69632
     bsCheck \U11000000	69632
