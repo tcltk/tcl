@@ -2897,7 +2897,7 @@ TclStringCatObjv(
     if (binary) {
 	/* Result will be pure byte array. Pre-size it */
 	ov = objv; oc = objc;
-	while (oc-- && (length >= 0)) {
+	while (oc--) {
 	    objPtr = *ov++;
 
 	    if (objPtr->bytes == NULL) {
@@ -2909,14 +2909,16 @@ TclStringCatObjv(
 		    if (length == 0) {
 			first = last;
 		    }
+		    if ((length += numBytes) < 0) {
+			break; /* overflow */
+		    }
 		}
-		length += numBytes;
 	    }
 	}
     } else if (allowUniChar && requestUniChar) {
 	/* Result will be pure Tcl_UniChar array. Pre-size it. */
 	ov = objv; oc = objc;
-	while (oc-- && (length >= 0)) {
+	while (oc--) {
 	    objPtr = *ov++;
 
 	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
@@ -2929,13 +2931,15 @@ TclStringCatObjv(
 			first = last;
 		    }
 		}
-		length += numChars;
+		if ((length += numChars) < 0) {
+		    break; /* overflow */
+		}
 	    }
 	}
     } else {
 	/* Result will be concat of string reps. Pre-size it. */
 	ov = objv; oc = objc;
-	while (oc-- && (length >= 0)) {
+	while (oc--) {
 	    int numBytes;
 
 	    objPtr = *ov++;
@@ -2946,9 +2950,17 @@ TclStringCatObjv(
 		if (length == 0) {
 		    first = last;
 		}
+		if ((length += numBytes) < 0) {
+		    break; /* overflow */
+		}
 	    }
-	    length += numBytes;
 	}
+    }
+
+    if (last == first || length == 0) {
+	/* Only one non-empty value or zero length; return first */
+	*objPtrPtr = objv[first];
+	return TCL_OK;
     }
 
     if (length < 0) {
@@ -2958,17 +2970,6 @@ TclStringCatObjv(
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	}
 	return TCL_ERROR;
-    }
-
-    if (length == 0) {
-	/* Total length of zero means every value has length zero */
-	*objPtrPtr = objv[0];
-	return TCL_OK;
-    }
-    if (last == first) {
-	/* Only one non-empty value; return it */
-	*objPtrPtr = objv[first];
-	return TCL_OK;
     }
 
     objv += first; objc = (last - first + 1);
