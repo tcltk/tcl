@@ -281,40 +281,40 @@ typedef struct ClockClientData {
     Tcl_Obj **mcLitIdxs;	/* Msgcat object indices prefixed with _IDX_,
 				 * used for quick dictionary search */
 
-    Tcl_Obj *McDicts;		/* Msgcat collection, contains weak pointers to locale
+    Tcl_Obj *mcDicts;		/* Msgcat collection, contains weak pointers to locale
 				 * catalogs, and owns it references (onetime referenced) */
 
     /* Cache for current clock parameters, imparted via "configure" */
-    unsigned long LastTZEpoch;
+    size_t lastTZEpoch;
     int currentYearCentury;
     int yearOfCenturySwitch;
-    Tcl_Obj *SystemTimeZone;
-    Tcl_Obj *SystemSetupTZData;
-    Tcl_Obj *GMTSetupTimeZoneUnnorm;
-    Tcl_Obj *GMTSetupTimeZone;
-    Tcl_Obj *GMTSetupTZData;
-    Tcl_Obj *LastSetupTimeZoneUnnorm;
-    Tcl_Obj *LastSetupTimeZone;
-    Tcl_Obj *LastSetupTZData;
-    Tcl_Obj *PrevSetupTimeZoneUnnorm;
-    Tcl_Obj *PrevSetupTimeZone;
-    Tcl_Obj *PrevSetupTZData;
+    Tcl_Obj *systemTimeZone;
+    Tcl_Obj *systemSetupTZData;
+    Tcl_Obj *gmtSetupTimeZoneUnnorm;
+    Tcl_Obj *gmtSetupTimeZone;
+    Tcl_Obj *gmtSetupTZData;
+    Tcl_Obj *lastSetupTimeZoneUnnorm;
+    Tcl_Obj *lastSetupTimeZone;
+    Tcl_Obj *lastSetupTZData;
+    Tcl_Obj *prevSetupTimeZoneUnnorm;
+    Tcl_Obj *prevSetupTimeZone;
+    Tcl_Obj *prevSetupTZData;
 
-    Tcl_Obj *DefaultLocale;
-    Tcl_Obj *DefaultLocaleDict;
-    Tcl_Obj *CurrentLocale;
-    Tcl_Obj *CurrentLocaleDict;
-    Tcl_Obj *LastUsedLocaleUnnorm;
-    Tcl_Obj *LastUsedLocale;
-    Tcl_Obj *LastUsedLocaleDict;
-    Tcl_Obj *PrevUsedLocaleUnnorm;
-    Tcl_Obj *PrevUsedLocale;
-    Tcl_Obj *PrevUsedLocaleDict;
+    Tcl_Obj *defaultLocale;
+    Tcl_Obj *defaultLocaleDict;
+    Tcl_Obj *currentLocale;
+    Tcl_Obj *currentLocaleDict;
+    Tcl_Obj *lastUsedLocaleUnnorm;
+    Tcl_Obj *lastUsedLocale;
+    Tcl_Obj *lastUsedLocaleDict;
+    Tcl_Obj *prevUsedLocaleUnnorm;
+    Tcl_Obj *prevUsedLocale;
+    Tcl_Obj *prevUsedLocaleDict;
 
     /* Cache for last base (last-second fast convert if base/tz not changed) */
     struct {
 	Tcl_Obj *timezoneObj;
-	TclDateFields Date;
+	TclDateFields date;
     } lastBase;
     /* Las-period cache for fast UTC2Local conversion */
     struct {
@@ -326,8 +326,8 @@ typedef struct ClockClientData {
 	/* values */
 	int	    tzOffset;
 	Tcl_Obj	   *tzName;
-    } UTC2Local;
-    /* Las-period cache for fast Local2UTC conversion */
+    } utc2local;
+    /* Las-period cache for fast local2utc conversion */
     struct {
 	/* keys */
 	Tcl_Obj	   *timezoneObj;
@@ -336,7 +336,7 @@ typedef struct ClockClientData {
 	Tcl_WideInt rangesVal[2];   /* Bounds for cached time zone offset */
 	/* values */
 	int	    tzOffset;
-    } Local2UTC;
+    } local2utc;
 } ClockClientData;
 
 #define ClockDefaultYearCentury 2000
