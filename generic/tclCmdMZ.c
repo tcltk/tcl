@@ -4147,7 +4147,7 @@ Tcl_TimeObjCmd(
     start = TclpGetWideClicks();
 #endif
     while (i-- > 0) {
-	result = TclEvalObjEx(interp, objPtr, 0, NULL, 0);
+	result = Tcl_EvalObjEx(interp, objPtr, 0);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -4373,7 +4373,7 @@ usage:
 	    return TCL_ERROR;
 	}
 	codePtr = TclCompileObj(interp, objPtr, NULL, 0);
-	TclPreserveByteCode(codePtr);
+	codePtr->refCount++;
     }
 
     /* get start and stop time */
@@ -4522,8 +4522,9 @@ usage:
 
 done:
 
-    if (codePtr != NULL) {
-	TclReleaseByteCode(codePtr);
+    if ((codePtr != NULL) && (codePtr->refCount-- <= 1)) {
+	/* Just dropped to refcount==0.  Clean up. */
+	TclCleanupByteCode(codePtr);
     }
 
     return result;

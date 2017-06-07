@@ -2448,7 +2448,7 @@ TclDateerror(
     infoPtr->separatrix = "\n";
 }
 
-MODULE_SCOPE int
+int
 ToSeconds(
     int Hours,
     int Minutes,

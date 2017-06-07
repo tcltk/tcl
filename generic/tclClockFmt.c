@@ -643,7 +643,7 @@ ClockFmtObj_UpdateString(objPtr)
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_Obj*
+Tcl_Obj*
 ClockFrmObjGetLocFmtKey(
     Tcl_Interp *interp,
     Tcl_Obj    *objPtr)
@@ -808,7 +808,7 @@ Tcl_GetClockFrmScnFromObj(
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_Obj *
+Tcl_Obj *
 ClockLocalizeFormat(
     ClockFmtScnCmdArgs *opts)
 {
@@ -3102,7 +3102,7 @@ done:
 }
 
 
-MODULE_SCOPE void
+void
 ClockFrmScnClearCaches(void)
 {
     Tcl_MutexLock(&ClockFmtMutex);
