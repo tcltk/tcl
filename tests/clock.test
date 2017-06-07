@@ -273,13 +273,14 @@ test clock-0.1 "initial: auto-loading of ensemble and stubs on demand" {
 
 # Test some of the basics of [clock format]
 
+set syntax "clock format clockval|-now ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"
 test clock-1.0 "clock format - wrong # args" {
     list [catch {clock format} msg] $msg $::errorCode
-} {1 {wrong # args: should be "clock format clockval|-now ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"} {CLOCK wrongNumArgs}}
+} [subst {1 {wrong # args: should be "$syntax"} {CLOCK wrongNumArgs}}]
 
 test clock-1.0.1 "clock format - wrong # args (compiled ensemble with invalid syntax)" {
     list [catch {clock format 0 -too-few-options-4-test} msg] $msg $::errorCode
-} {1 {wrong # args: should be "clock format clockval|-now ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"} {CLOCK wrongNumArgs}}
+} [subst {1 {wrong # args: should be "$syntax"} {CLOCK wrongNumArgs}}]
 
 test clock-1.1 "clock format - bad time" {
     list [catch {clock format foo} msg] $msg
@@ -293,14 +294,14 @@ test clock-1.3 "clock format - empty val" {
     clock format 0 -gmt 1 -format ""
 } {}
 
-test clock-1.4 "clock format - bad flag" {*}{
-    -body {
+test clock-1.4 "clock format - bad flag" {
     # range error message for possible extensions:
     list [catch {clock format 0 -oops badflag} msg] $msg $::errorCode
-    }
-    -match glob
-    -result {1 {bad option "-oops": must be -base, -format, -gmt, -locale, or -timezone} {CLOCK badOption -oops}}
-}
+} [subst {1 {bad option "-oops": should be "$syntax"} {CLOCK badOption -oops}}]
+test clock-1.4.1 "clock format - unexpected option for this sub-command" {
+    # range error message for possible extensions:
+    list [catch {clock format 0 -base 0} msg] $msg $::errorCode
+} [subst {1 {bad option "-base": should be "$syntax"} {CLOCK badOption -base}}]
 
 test clock-1.5 "clock format - bad timezone" {
     list [catch {clock format 0 -format "%s" -timezone :NOWHERE} msg] $msg $::errorCode
@@ -35822,9 +35823,10 @@ test clock-33.11a {clock test, millis align with micros} {
 } {1}
 
 # clock scan
+set syntax "clock scan string ?-base seconds? ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"
 test clock-34.1 {clock scan tests} {
     list [catch {clock scan} msg] $msg
-} {1 {wrong # args: should be "clock scan string ?-base seconds? ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"}}
+} [subst {1 {wrong # args: should be "$syntax"}}]
 test clock-34.2 {clock scan tests} {*}{
     -body {clock scan "bad-string"}
     -returnCodes error
@@ -35858,7 +35860,7 @@ test clock-34.8 {clock scan tests} {
 } {Oct 23,1992 15:00 GMT}
 test clock-34.9 {clock scan tests} {
     list [catch {clock scan "Jan 12" -bad arg} msg] $msg
-} {1 {bad option "-bad": must be -base, -format, -gmt, -locale, or -timezone}}
+} [subst {1 {bad option "-bad": should be "$syntax"}}]
 # The following two two tests test the two year date policy
 test clock-34.10 {clock scan tests} {
     set time [clock scan "1/1/71" -gmt true]

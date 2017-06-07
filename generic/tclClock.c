@@ -3143,7 +3143,11 @@ ClockInitFmtScnArgs(
  *
  * ClockParseFmtScnArgs --
  *
- *	Parses the arguments for [clock scan] and [clock format].
+ *	Parses the arguments for sub-commands "scan", "format" and "add".
+ *
+ *	Note:	common options table used here, because for the options often used
+ *		the same literals (objects), so it avoids permanent "recompiling" of
+ *		option object representation to indexType with another table.
  *
  * Results:
  *	Returns a standard Tcl result, and stores parsed options
@@ -3164,7 +3168,8 @@ ClockParseFmtScnArgs(
 				 * (by scan or add) resp. clockval (by format) */
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[],	/* Parameter vector */
-    int		flags		/* Flags, differentiates between format, scan, add */
+    int		flags,		/* Flags, differentiates between format, scan, add */
+    const char *syntax		/* Syntax of the current command */
 ) {
     Tcl_Interp	    *interp =  opts->interp;
     ClockClientData *dataPtr = opts->clientData;
@@ -3202,10 +3207,14 @@ ClockParseFmtScnArgs(
 	/* get option */
 	if (Tcl_GetIndexFromObj(interp, objv[i], options,
 	    "option", 0, &optionIndex) != TCL_OK) {
-	    goto badOption;
+	    goto badOptionMsg;
 	}
 	/* if already specified */
 	if (saw & (1 << optionIndex)) {
+	    if ( !(flags & CLC_SCN_ARGS) 
+	       && optionIndex == CLC_ARGS_BASE) {
+		goto badOptionMsg;
+	    }
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad option \"%s\": doubly present",
 		TclGetString(objv[i]))
@@ -3231,9 +3240,6 @@ ClockParseFmtScnArgs(
 	    opts->timezoneObj = objv[i+1];
 	    break;
 	case CLC_ARGS_BASE:
-	    if ( !(flags & (CLC_SCN_ARGS)) ) {
-		goto badOptionMsg;
-	    }
 	    opts->baseObj = objv[i+1];
 	    break;
 	}
@@ -3347,8 +3353,8 @@ baseNow:
 badOptionMsg:
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	"bad option \"%s\": unexpected for command \"%s\"",
-	TclGetString(objv[i]), TclGetString(objv[0]))
+	"bad option \"%s\": should be \"%s\"",
+	TclGetString(objv[i]), syntax)
     );
 
 badOption:
@@ -3388,16 +3394,17 @@ ClockFormatObjCmd(
 {
     ClockClientData *dataPtr = clientData;
 
+    static const char *syntax = "clock format clockval|-now "
+	"?-format string? "
+	"?-gmt boolean? "
+	"?-locale LOCALE? ?-timezone ZONE?";
     int ret;
     ClockFmtScnCmdArgs opts;	/* Format, locale, timezone and base */
     DateFormat	    dateFmt;	/* Common structure used for formatting */
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 0, NULL, "clock format clockval|-now "
-	    "?-format string? "
-	    "?-gmt boolean? "
-	    "?-locale LOCALE? ?-timezone ZONE?");
+	Tcl_WrongNumArgs(interp, 0, NULL, syntax);
 	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
 	return TCL_ERROR;
     }
@@ -3410,7 +3417,7 @@ ClockFormatObjCmd(
 
     ClockInitFmtScnArgs(clientData, interp, &opts);
     ret = ClockParseFmtScnArgs(&opts, &dateFmt.date, objc, objv,
-	    CLC_FMT_ARGS);
+	    CLC_FMT_ARGS, syntax);
     if (ret != TCL_OK) {
 	goto done;
     }
@@ -3462,6 +3469,11 @@ ClockScanObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
+    static const char *syntax = "clock scan string "
+	    "?-base seconds? "
+	    "?-format string? "
+	    "?-gmt boolean? "
+	    "?-locale LOCALE? ?-timezone ZONE?";
     int ret;
     ClockFmtScnCmdArgs opts;	/* Format, locale, timezone and base */
     DateInfo	    yy;		/* Common structure used for parsing */
@@ -3469,11 +3481,7 @@ ClockScanObjCmd(
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 0, NULL, "clock scan string "
-	    "?-base seconds? "
-	    "?-format string? "
-	    "?-gmt boolean? "
-	    "?-locale LOCALE? ?-timezone ZONE?");
+	Tcl_WrongNumArgs(interp, 0, NULL, syntax);
 	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
 	return TCL_ERROR;
     }
@@ -3486,7 +3494,7 @@ ClockScanObjCmd(
 
     ClockInitFmtScnArgs(clientData, interp, &opts);
     ret = ClockParseFmtScnArgs(&opts, &yy.date, objc, objv,
-	    CLC_SCN_ARGS);
+	    CLC_SCN_ARGS, syntax);
     if (ret != TCL_OK) {
 	goto done;
     }
@@ -4004,6 +4012,9 @@ ClockAddObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
+    static const char *syntax = "clock add clockval|-now ?number units?..."
+	"?-gmt boolean? "
+	"?-locale LOCALE? ?-timezone ZONE?";
     ClockClientData *dataPtr = clientData;
     int ret;
     ClockFmtScnCmdArgs opts;	/* Format, locale, timezone and base */
@@ -4028,9 +4039,7 @@ ClockAddObjCmd(
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 0, NULL, "clock add clockval|-now ?number units?..."
-	    "?-gmt boolean? "
-	    "?-locale LOCALE? ?-timezone ZONE?");
+	Tcl_WrongNumArgs(interp, 0, NULL, syntax);
 	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
 	return TCL_ERROR;
     }
@@ -4043,7 +4052,7 @@ ClockAddObjCmd(
 
     ClockInitFmtScnArgs(clientData, interp, &opts);
     ret = ClockParseFmtScnArgs(&opts, &yy.date, objc, objv,
-	    CLC_ADD_ARGS);
+	    CLC_ADD_ARGS, syntax);
     if (ret != TCL_OK) {
 	goto done;
     }
