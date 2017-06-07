@@ -710,7 +710,7 @@ NormLocaleObj(
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_Obj *
+Tcl_Obj *
 ClockMCDict(ClockFmtScnCmdArgs *opts)
 {
     ClockClientData *dataPtr = opts->clientData;
@@ -813,7 +813,7 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_Obj *
+Tcl_Obj *
 ClockMCGet(
     ClockFmtScnCmdArgs *opts,
     int mcKey)
@@ -893,7 +893,7 @@ ClockMCGetIdx(
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE int
+int
 ClockMCSetIdx(
     ClockFmtScnCmdArgs *opts,
     int mcKey, Tcl_Obj *valObj)
@@ -1221,7 +1221,7 @@ ClockGetSystemTimeZone(
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_Obj *
+Tcl_Obj *
 ClockSetupTimeZone(
     ClientData clientData,	/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
@@ -2096,7 +2096,7 @@ ConvertLocalToUTCUsingC(
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE int
+int
 ConvertUTCToLocal(
     ClientData clientData,	/* Client data of the interpreter */
     Tcl_Interp *interp,		/* Tcl interpreter */
@@ -2339,13 +2339,13 @@ ConvertUTCToLocalUsingC(
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_Obj *
+Tcl_Obj *
 LookupLastTransition(
     Tcl_Interp *interp,		/* Interpreter for error messages */
     Tcl_WideInt tick,		/* Time from the epoch */
     int rowc,			/* Number of rows of tzdata */
     Tcl_Obj *const *rowv,	/* Rows in tzdata */
-    Tcl_WideInt rangesVal[2])	/* Return bounds for time period */
+    Tcl_WideInt *rangesVal)	/* Return bounds for time period */
 {
     int l = 0;
     int u;
@@ -2367,7 +2367,11 @@ LookupLastTransition(
      */
 
     if (tick < compVal) {
-	goto done;
+	if (rangesVal) {
+	    rangesVal[0] = fromVal;
+	    rangesVal[1] = toVal;
+	}
+	return rowv[0];
     }
 
     /*
@@ -2390,8 +2394,6 @@ LookupLastTransition(
 	    toVal = compVal;
 	}
     }
-
-done:
 
     if (rangesVal) {
 	rangesVal[0] = fromVal;
@@ -2635,7 +2637,7 @@ GetMonthDay(
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE void
+void
 GetJulianDayFromEraYearWeekDay(
     TclDateFields *fields,	/* Date to convert */
     int changeover)		/* Julian Day Number of the Gregorian
@@ -2688,7 +2690,7 @@ GetJulianDayFromEraYearWeekDay(
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE void
+void
 GetJulianDayFromEraYearMonthDay(
     TclDateFields *fields,	/* Date to convert */
     int changeover)		/* Gregorian transition date as a Julian Day */
@@ -2799,7 +2801,7 @@ GetJulianDayFromEraYearMonthDay(
  */
 
 
-MODULE_SCOPE void
+void
 GetJulianDayFromEraYearDay(
     TclDateFields *fields,	/* Date to convert */
     int changeover)		/* Gregorian transition date as a Julian Day */
@@ -2850,7 +2852,7 @@ GetJulianDayFromEraYearDay(
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE int
+int
 IsGregorianLeapYear(
     TclDateFields *fields)	/* Date to test */
 {

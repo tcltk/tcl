@@ -480,7 +480,7 @@ MODULE_SCOPE int    ConvertUTCToLocal(ClientData clientData, Tcl_Interp *,
 			    TclDateFields *, Tcl_Obj *timezoneObj, int);
 MODULE_SCOPE Tcl_Obj *
 		    LookupLastTransition(Tcl_Interp *, Tcl_WideInt,
-			    int, Tcl_Obj *const *, Tcl_WideInt rangesVal[2]);
+			    int, Tcl_Obj *const *, Tcl_WideInt *rangesVal);
 
 MODULE_SCOPE int    TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
 

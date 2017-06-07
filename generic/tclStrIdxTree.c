@@ -76,7 +76,7 @@
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE const char*
+const char*
 TclStrIdxTreeSearch(
     TclStrIdxTree **foundParent, /* Return value of found sub tree (used for tree build) */
     TclStrIdx	  **foundItem,	 /* Return value of found item */
@@ -145,7 +145,7 @@ done:
     return start;
 }
 
-MODULE_SCOPE void
+void
 TclStrIdxTreeFree(
     TclStrIdx *tree)
 {
@@ -223,7 +223,7 @@ TclStrIdxTreeAppend(
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE int
+int
 TclStrIdxTreeBuildFromList(
     TclStrIdxTree *idxTree,
     int	       lstc,
@@ -351,7 +351,7 @@ Tcl_ObjType StrIdxTreeObjType = {
     NULL			    /* setFromAnyProc */
 };
 
-MODULE_SCOPE Tcl_Obj*
+Tcl_Obj*
 TclStrIdxTreeNewObj()
 {
     Tcl_Obj *objPtr = Tcl_NewObj();
@@ -407,7 +407,7 @@ StrIdxTreeObj_UpdateStringProc(Tcl_Obj *objPtr)
     objPtr->bytes = &tclEmptyString;
 };
 
-MODULE_SCOPE TclStrIdxTree *
+TclStrIdxTree *
 TclStrIdxTreeGetFromObj(Tcl_Obj *objPtr) {
     /* follow links (smart pointers) */
     if (objPtr->typePtr != &StrIdxTreeObjType) {
@@ -452,7 +452,7 @@ TclStrIdxTreePrint(
 }
 
 
-MODULE_SCOPE int
+int
 TclStrIdxTreeTestObjCmd(
     ClientData clientData, Tcl_Interp *interp,
     int objc, Tcl_Obj *const objv[])
