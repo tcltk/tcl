@@ -2916,10 +2916,10 @@ TclStringCatObjv(
 		    last = objc - oc;
 		    if (length == 0) {
 			first = last;
-		    }
-		    if ((length += numBytes) < 0) {
+		    } else if (numBytes > INT_MAX - length) {
 			goto overflow;
 		    }
+		    length += numBytes;
 		}
 	    }
 	} while (--oc);
@@ -2937,10 +2937,10 @@ TclStringCatObjv(
 		    last = objc - oc;
 		    if (length == 0) {
 			first = last;
-		    }
-		    if ((length += numChars) < 0) {
+		    } else if (numChars > INT_MAX - length) {
 			goto overflow;
 		    }
+		    length += numChars;
 		}
 	    }
 	} while (--oc);
@@ -2973,10 +2973,10 @@ TclStringCatObjv(
 		}
 		if (length == 0) {
 		    first = last;
-		}
-		if ((length += numBytes) < 0) {
+		} else if (numBytes > INT_MAX - length) {
 		    goto overflow;
 		}
+		length += numBytes;
 	    }
 	} while (--oc);
     }
