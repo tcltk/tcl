@@ -2847,7 +2847,7 @@ TclStringCatObjv(
     Tcl_Obj * const objv[],
     Tcl_Obj **objPtrPtr)
 {
-    Tcl_Obj *objPtr, *objResultPtr, * const *ov;
+    Tcl_Obj *objPtr, *objResultPtr, * const *ov, *pendingPtr = NULL;
     int oc, length = 0, binary = 1, first = 0, last = 0;
     int allowUniChar = 1, requestUniChar = 0;
 
@@ -2952,14 +2952,37 @@ TclStringCatObjv(
 
 	    objPtr = *ov++;
 
-	    Tcl_GetStringFromObj(objPtr, &numBytes);	/* PANIC? */
-	    if (numBytes) {
+	    if ((length == 0) && (objPtr->bytes == NULL) && !pendingPtr) {
+		/* No string rep; Take the chance we can avoid making it */
+
 		last = objc - oc;
-		if (length == 0) {
-		    first = last;
-		}
-		if ((length += numBytes) < 0) {
-		    goto overflow;
+		first = last;
+		pendingPtr = objPtr;
+	    } else {
+
+		Tcl_GetStringFromObj(objPtr, &numBytes);/* PANIC? */
+		if (numBytes) {
+		    last = objc - oc;
+		    if (length == 0) {
+			if (pendingPtr) {
+			    int pendingNumBytes;
+
+			    Tcl_GetStringFromObj(pendingPtr, &pendingNumBytes);	/* PANIC? */
+			    if (pendingNumBytes) {
+				if ((length += pendingNumBytes) < 0) {
+				    goto overflow;
+				}
+			    } else {
+				first = last;
+			    }
+			    pendingPtr = NULL;
+			} else {
+			    first = last;
+			}
+		    }
+		    if ((length += numBytes) < 0) {
+			goto overflow;
+		    }
 		}
 	    }
 	} while (--oc);
@@ -3056,13 +3079,18 @@ TclStringCatObjv(
     } else {
 	/* Efficiently concatenate string reps */
 	char *dst;
+	int start;
 
 	if (inPlace && !Tcl_IsShared(*objv)) {
-	    int start;
-
 	    objResultPtr = *objv++; objc--;
 
 	    Tcl_GetStringFromObj(objResultPtr, &start);
+	    if (pendingPtr) {
+		/* assert ( pendingPtr == objResultPtr ) */
+		if ((length += start) < 0) {
+		    goto overflow;
+		}
+	    }
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3075,8 +3103,16 @@ TclStringCatObjv(
 	    dst = Tcl_GetString(objResultPtr) + start;
 	    if (length > start) {
 		TclFreeIntRep(objResultPtr);
+	    } else {
+		/* Can't happen ? */
 	    }
 	} else {
+	    if (pendingPtr) {
+		Tcl_GetStringFromObj(pendingPtr, &start);
+		if ((length += start) < 0) {
+		    goto overflow;
+		}
+	    }
 	    objResultPtr = Tcl_NewObj();	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
