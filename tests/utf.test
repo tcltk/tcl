@@ -110,8 +110,12 @@ test utf-4.7 {Tcl_NumUtfChars: long string, calc len} {testnumutfchars testbytes
 test utf-4.8 {Tcl_NumUtfChars: #u0000, calc len} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xC0\x80"] 2
 } {1}
-test utf-4.9 {Tcl_NumUtfChars: #u20AC, calc len, incomplete} {knownBug testnumutfchars testbytestring} {
+# Bug [2738427]: Tcl_NumUtfChars(...) no overflow check
+test utf-4.9 {Tcl_NumUtfChars: #u20AC, calc len, incomplete} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xE2\x82\xAC"] 2
+} {2}
+test utf-4.10 {Tcl_NumUtfChars: #u0000, calc len, overcomplete} {testnumutfchars testbytestring} {
+    testnumutfchars [testbytestring "\x00"] 2
 } {2}
 
 test utf-5.1 {Tcl_UtfFindFirsts} {
