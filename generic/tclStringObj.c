@@ -2847,7 +2847,7 @@ TclStringCatObjv(
     Tcl_Obj * const objv[],
     Tcl_Obj **objPtrPtr)
 {
-    Tcl_Obj *objPtr, *objResultPtr, * const *ov, *pendingPtr = NULL;
+    Tcl_Obj *objPtr, *objResultPtr, * const *ov;
     int oc, length = 0, binary = 1, first = 0, last = 0;
     int allowUniChar = 1, requestUniChar = 0;
 
@@ -2945,6 +2945,8 @@ TclStringCatObjv(
 	    }
 	} while (--oc);
     } else {
+	Tcl_Obj *pendingPtr = NULL;
+
 	/* Result will be concat of string reps. Pre-size it. */
 	ov = objv; oc = objc;
 	do {
@@ -2975,7 +2977,6 @@ TclStringCatObjv(
 			    } else {
 				first = last;
 			    }
-			    pendingPtr = NULL;
 			} else {
 			    first = last;
 			}
@@ -3085,12 +3086,6 @@ TclStringCatObjv(
 	    objResultPtr = *objv++; objc--;
 
 	    Tcl_GetStringFromObj(objResultPtr, &start);
-	    if (pendingPtr) {
-		/* assert ( pendingPtr == objResultPtr ) */
-		if ((length += start) < 0) {
-		    goto overflow;
-		}
-	    }
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3107,12 +3102,6 @@ TclStringCatObjv(
 		/* Can't happen ? */
 	    }
 	} else {
-	    if (pendingPtr) {
-		Tcl_GetStringFromObj(pendingPtr, &start);
-		if ((length += start) < 0) {
-		    goto overflow;
-		}
-	    }
 	    objResultPtr = Tcl_NewObj();	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
