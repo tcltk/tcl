@@ -464,7 +464,6 @@ Tcl_NumUtfChars(
 				 * for strlen(string). */
 {
     Tcl_UniChar ch;
-    register Tcl_UniChar *chPtr = &ch;
     register int i;
 
     /*
@@ -477,22 +476,24 @@ Tcl_NumUtfChars(
     i = 0;
     if (length < 0) {
 	while (*src != '\0') {
-	    src += TclUtfToUniChar(src, chPtr);
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
+	if (i < 0) i = INT_MAX; /* Bug [2738427] */
     } else {
-	register int n;
+	register const char *endPtr = src + length - TCL_UTF_MAX;
 
-	while (length > 0) {
-	    if (UCHAR(*src) < 0xC0) {
-		length--;
-		src++;
-	    } else {
-		n = Tcl_UtfToUniChar(src, chPtr);
-		length -= n;
-		src += n;
-	    }
+	while (src < endPtr) {
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
+	}
+	endPtr += TCL_UTF_MAX;
+	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
+	    src += TclUtfToUniChar(src, &ch);
+	    i++;
+	}
+	if (src < endPtr) {
+	    i += endPtr - src;
 	}
     }
     return i;
