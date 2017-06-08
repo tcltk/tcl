@@ -3089,11 +3089,9 @@ TclStringCatObjv(
 		return TCL_ERROR;
 	    }
 	    dst = Tcl_GetString(objResultPtr) + start;
-	    if (length > start) {
-		TclFreeIntRep(objResultPtr);
-	    } else {
-		/* Can't happen ? */
-	    }
+
+	    /* assert ( length > start ) */
+	    TclFreeIntRep(objResultPtr);
 	} else {
 	    objResultPtr = Tcl_NewObj();	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
