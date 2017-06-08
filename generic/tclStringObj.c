@@ -2962,20 +2962,20 @@ TclStringCatObjv(
 		pendingPtr = objPtr;
 	    } else {
 
-		Tcl_GetStringFromObj(objPtr, &numBytes);/* PANIC? */
-		if (numBytes) {
-		    last = objc - oc;
-		    if (length == 0) {
-			if (pendingPtr) {
-			    Tcl_GetStringFromObj(pendingPtr, &length);	/* PANIC? */
-			}
-			if (length == 0) {
-			    first = last;
-			}
-		    }
-		    if ((length += numBytes) < 0) {
-			goto overflow;
-		    }
+		Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
+		if (numBytes == 0) {
+		    continue;
+		}
+		last = objc - oc;
+		if (pendingPtr) {
+		    Tcl_GetStringFromObj(pendingPtr, &length); /* PANIC? */
+		    pendingPtr = NULL;
+		}
+		if (length == 0) {
+		    first = last;
+		}
+		if ((length += numBytes) < 0) {
+		    goto overflow;
 		}
 	    }
 	} while (--oc);
