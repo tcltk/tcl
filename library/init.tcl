@@ -830,3 +830,18 @@ proc tcl::CopyDirectory {action src dest} {
     }
     return
 }
+
+
+##
+## TIP 452 -- start of addition
+##
+namespace eval ::tcltest:: {}
+proc ::tcltest::seam {action seamName body} {
+    if {![string equal $action "define"]} {
+        return -code error -errorcode [list tcltest seam UNKACT $action] "Uknown action: '$action' -- must be 'define'"
+    }
+    return [uplevel 1 $body]
+}
+##
+## TIP 452 -- end of addition
+##
