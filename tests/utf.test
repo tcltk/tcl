@@ -99,17 +99,20 @@ test utf-4.4 {Tcl_NumUtfChars: #u0000} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring "\xC0\x80"]
 } {1}
 test utf-4.5 {Tcl_NumUtfChars: zero length, calc len} testnumutfchars {
-    testnumutfchars "" 1
+    testnumutfchars "" 0
 } {0}
 test utf-4.6 {Tcl_NumUtfChars: length 1, calc len} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "\xC2\xA2"] 1
+    testnumutfchars [testbytestring "\xC2\xA2"] 2
 } {1}
 test utf-4.7 {Tcl_NumUtfChars: long string, calc len} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "abc\xC2\xA2\xe4\xb9\x8e\uA2\u4e4e"] 1
+    testnumutfchars [testbytestring "abc\xC2\xA2\xe4\xb9\x8e\uA2\u4e4e"] 10
 } {7}
 test utf-4.8 {Tcl_NumUtfChars: #u0000, calc len} {testnumutfchars testbytestring} {
-    testnumutfchars [testbytestring "\xC0\x80"] 1
+    testnumutfchars [testbytestring "\xC0\x80"] 2
 } {1}
+test utf-4.9 {Tcl_NumUtfChars: #u20AC, calc len, incomplete} {knownBug testnumutfchars testbytestring} {
+    testnumutfchars [testbytestring "\xE2\x82\xAC"] 2
+} {2}
 
 test utf-5.1 {Tcl_UtfFindFirsts} {
 } {}
