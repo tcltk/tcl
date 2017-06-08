@@ -2967,17 +2967,9 @@ TclStringCatObjv(
 		    last = objc - oc;
 		    if (length == 0) {
 			if (pendingPtr) {
-			    int pendingNumBytes;
-
-			    Tcl_GetStringFromObj(pendingPtr, &pendingNumBytes);	/* PANIC? */
-			    if (pendingNumBytes) {
-				if ((length += pendingNumBytes) < 0) {
-				    goto overflow;
-				}
-			    } else {
-				first = last;
-			    }
-			} else {
+			    Tcl_GetStringFromObj(pendingPtr, &length);	/* PANIC? */
+			}
+			if (length == 0) {
 			    first = last;
 			}
 		    }
@@ -3080,9 +3072,10 @@ TclStringCatObjv(
     } else {
 	/* Efficiently concatenate string reps */
 	char *dst;
-	int start;
 
 	if (inPlace && !Tcl_IsShared(*objv)) {
+	    int start;
+
 	    objResultPtr = *objv++; objc--;
 
 	    Tcl_GetStringFromObj(objResultPtr, &start);
