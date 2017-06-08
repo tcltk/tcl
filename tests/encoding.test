@@ -34,6 +34,7 @@ proc runtests {} {
 
 # Some tests require the testencoding command
 testConstraint testencoding [llength [info commands testencoding]]
+testConstraint fullutf [expr {[format %c 0x010000] != "\ufffd"}]
 testConstraint exec [llength [info commands exec]]
 testConstraint testgetdefenc [llength [info commands testgetdefenc]]
 
@@ -332,9 +333,14 @@ test encoding-16.1 {UnicodeToUtfProc} {
     set val [encoding convertfrom unicode NN]
     list $val [format %x [scan $val %c]]
 } "\u4e4e 4e4e"
+test encoding-16.2 {UnicodeToUtfProc} -constraints fullutf -body {
+    set val [encoding convertfrom unicode "\xd8\xd8\xdc\xdc"]
+    list $val [format %x [scan $val %c]]
+} -result "\U460dc 460dc"
 
-test encoding-17.1 {UtfToUnicodeProc} {
-} {}
+test encoding-17.1 {UtfToUnicodeProc} -constraints fullutf -body {
+    encoding convertto unicode "\U460dc"
+} -result "\xd8\xd8\xdc\xdc"
 
 test encoding-18.1 {TableToUtfProc} {
 } {}
@@ -447,6 +453,31 @@ test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
     removeFile iso2022.tcl
     list $count [viewable $line]
 } [list 3 "\u4e4e\u4e5e\u4e5f (\\u4e4e\\u4e5e\\u4e5f)"]
+
+test encoding-24.4 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc0\x80"]
+} 1
+test encoding-24.5 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc0\x81"]
+} 2
+test encoding-24.6 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc1\xbf"]
+} 2
+test encoding-24.7 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc2\x80"]
+} 1
+test encoding-24.8 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xe0\x80\x80"]
+} 3
+test encoding-24.9 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xe0\x9f\xbf"]
+} 3
+test encoding-24.10 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xe0\xa0\x80"]
+} 1
+test encoding-24.11 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xef\xbf\xbf"]
+} 1
 
 file delete [file join [temporaryDirectory] iso2022.txt]
 
