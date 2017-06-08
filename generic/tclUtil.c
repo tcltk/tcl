@@ -2162,14 +2162,9 @@ Tcl_StringCaseMatch(
 	     * This is a special case optimization for single-byte utf.
 	     */
 
-	    if (UCHAR(*pattern) < 0x80) {
-		ch2 = (Tcl_UniChar)
-			(nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
-	    } else {
-		Tcl_UtfToUniChar(pattern, &ch2);
-		if (nocase) {
-		    ch2 = Tcl_UniCharToLower(ch2);
-		}
+	    TclUtfToUniChar(pattern, &ch2);
+	    if (nocase) {
+		ch2 = Tcl_UniCharToLower(ch2);
 	    }
 
 	    while (1) {
@@ -2235,44 +2230,26 @@ Tcl_StringCaseMatch(
 	    Tcl_UniChar startChar, endChar;
 
 	    pattern++;
-	    if (UCHAR(*str) < 0x80) {
-		ch1 = (Tcl_UniChar)
-			(nocase ? tolower(UCHAR(*str)) : UCHAR(*str));
-		str++;
-	    } else {
-		str += Tcl_UtfToUniChar(str, &ch1);
-		if (nocase) {
-		    ch1 = Tcl_UniCharToLower(ch1);
-		}
+	    str += TclUtfToUniChar(str, &ch1);
+	    if (nocase) {
+		ch1 = Tcl_UniCharToLower(ch1);
 	    }
 	    while (1) {
 		if ((*pattern == ']') || (*pattern == '\0')) {
 		    return 0;
 		}
-		if (UCHAR(*pattern) < 0x80) {
-		    startChar = (Tcl_UniChar) (nocase
-			    ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
-		    pattern++;
-		} else {
-		    pattern += Tcl_UtfToUniChar(pattern, &startChar);
-		    if (nocase) {
-			startChar = Tcl_UniCharToLower(startChar);
-		    }
+		pattern += TclUtfToUniChar(pattern, &startChar);
+		if (nocase) {
+		    startChar = Tcl_UniCharToLower(startChar);
 		}
 		if (*pattern == '-') {
 		    pattern++;
 		    if (*pattern == '\0') {
 			return 0;
 		    }
-		    if (UCHAR(*pattern) < 0x80) {
-			endChar = (Tcl_UniChar) (nocase
-				? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
-			pattern++;
-		    } else {
-			pattern += Tcl_UtfToUniChar(pattern, &endChar);
-			if (nocase) {
-			    endChar = Tcl_UniCharToLower(endChar);
-			}
+		    pattern += TclUtfToUniChar(pattern, &endChar);
+		    if (nocase) {
+			endChar = Tcl_UniCharToLower(endChar);
 		    }
 		    if (((startChar <= ch1) && (ch1 <= endChar))
 			    || ((endChar <= ch1) && (ch1 <= startChar))) {
