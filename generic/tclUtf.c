@@ -487,7 +487,7 @@ Tcl_NumUtfChars(
 				 * for strlen(string). */
 {
     Tcl_UniChar ch = 0;
-    register int i, n;
+    register int i = 0, n;
 
     /*
      * The separate implementations are faster.
@@ -496,7 +496,6 @@ Tcl_NumUtfChars(
      * single-byte char case specially.
      */
 
-    i = 0;
     if (length < 0) {
 	while (*src != '\0') {
 	    n = TclUtfToUniChar(src, &ch);
@@ -506,20 +505,29 @@ Tcl_NumUtfChars(
 	    src += n;
 	    i++;
 	}
+	if (i < 0) i = INT_MAX; /* Bug [2738427] */
     } else {
-	while (length > 0) {
-	    if (UCHAR(*src) < 0xC0) {
-		length--;
-		src++;
-	    } else {
-		n = Tcl_UtfToUniChar(src, &ch);
-		if (!n) {
-		    n = Tcl_UtfToUniChar(src, &ch);
-		}
-		length -= n;
-		src += n;
+	register const char *endPtr = src + length - TCL_UTF_MAX;
+
+	while (src < endPtr) {
+	    n = TclUtfToUniChar(src, &ch);
+	    if (!n) {
+	        n = Tcl_UtfToUniChar(src, &ch);
 	    }
+	    src += n;
 	    i++;
+	}
+	endPtr += TCL_UTF_MAX;
+	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
+	    n = TclUtfToUniChar(src, &ch);
+	    if (!n) {
+	        n = Tcl_UtfToUniChar(src, &ch);
+	    }
+	    src += n;
+	    i++;
+	}
+	if (src < endPtr) {
+	    i += endPtr - src;
 	}
     }
     return i;
@@ -1218,7 +1226,7 @@ Tcl_UniCharToUpper(
 	    ch -= GetDelta(info);
 	}
     }
-    return ch & 0x1fffff;
+    return ch & 0x1FFFFF;
 }
 
 /*
@@ -1248,7 +1256,7 @@ Tcl_UniCharToLower(
 	    ch += GetDelta(info);
 	}
     }
-    return ch & 0x1fffff;
+    return ch & 0x1FFFFF;
 }
 
 /*
@@ -1285,7 +1293,7 @@ Tcl_UniCharToTitle(
 	    ch -= GetDelta(info);
 	}
     }
-    return ch & 0x1fffff;
+    return ch & 0x1FFFFF;
 }
 
 /*
@@ -1654,10 +1662,10 @@ Tcl_UniCharIsSpace(
 {
 #if TCL_UTF_MAX > 3
     /* Ignore upper 11 bits. */
-    ch &= 0x1fffff;
+    ch &= 0x1FFFFF;
 #else
     /* Ignore upper 16 bits. */
-    ch &= 0xffff;
+    ch &= 0xFFFF;
 #endif
 
     /*
@@ -1727,9 +1735,11 @@ int
 Tcl_UniCharIsWordChar(
     int ch)			/* Unicode character to test. */
 {
+#if TCL_UTF_MAX > 3
     if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
     }
+#endif
     return ((WORD_BITS >> GetCategory(ch)) & 1);
 }
 

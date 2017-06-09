@@ -2927,10 +2927,10 @@ TclStringCatObjv(
 		    last = objc - oc;
 		    if (length == 0) {
 			first = last;
-		    }
-		    if ((length += numBytes) < 0) {
+		    } else if (numBytes > INT_MAX - length) {
 			goto overflow;
 		    }
+		    length += numBytes;
 		}
 	    }
 	} while (--oc);
@@ -2948,14 +2948,16 @@ TclStringCatObjv(
 		    last = objc - oc;
 		    if (length == 0) {
 			first = last;
-		    }
-		    if ((length += numChars) < 0) {
+		    } else if (numChars > INT_MAX - length) {
 			goto overflow;
 		    }
+		    length += numChars;
 		}
 	    }
 	} while (--oc);
     } else {
+	Tcl_Obj *pendingPtr = NULL;
+
 	/* Result will be concat of string reps. Pre-size it. */
 	ov = objv; oc = objc;
 	do {
@@ -2963,15 +2965,29 @@ TclStringCatObjv(
 
 	    objPtr = *ov++;
 
-	    Tcl_GetStringFromObj(objPtr, &numBytes);	/* PANIC? */
-	    if (numBytes) {
+	    if ((length == 0) && (objPtr->bytes == NULL) && !pendingPtr) {
+		/* No string rep; Take the chance we can avoid making it */
+
 		last = objc - oc;
+		first = last;
+		pendingPtr = objPtr;
+	    } else {
+
+		Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
+		if (numBytes == 0) {
+		    continue;
+		}
+		last = objc - oc;
+		if (pendingPtr) {
+		    Tcl_GetStringFromObj(pendingPtr, &length); /* PANIC? */
+		    pendingPtr = NULL;
+		}
 		if (length == 0) {
 		    first = last;
-		}
-		if ((length += numBytes) < 0) {
+		} else if (numBytes > INT_MAX - length) {
 		    goto overflow;
 		}
+		length += numBytes;
 	    }
 	} while (--oc);
     }
@@ -3084,9 +3100,9 @@ TclStringCatObjv(
 		return TCL_ERROR;
 	    }
 	    dst = Tcl_GetString(objResultPtr) + start;
-	    if (length > start) {
-		TclFreeIntRep(objResultPtr);
-	    }
+
+	    /* assert ( length > start ) */
+	    TclFreeIntRep(objResultPtr);
 	} else {
 	    objResultPtr = Tcl_NewObj();	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
