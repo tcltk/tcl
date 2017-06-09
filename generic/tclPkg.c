@@ -213,6 +213,7 @@ static void PkgFilesCleanupProc(ClientData clientData,
 	entry = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(&pkgFiles->table);
+    ckfree(pkgFiles);
     return;
 }
 

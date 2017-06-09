@@ -1149,7 +1149,7 @@ declare 311 {
 	    const Tcl_Time *timePtr)
 }
 declare 312 {
-    int Tcl_NumUtfChars(const char *src, int length)
+    size_t Tcl_NumUtfChars(const char *src, size_t length)
 }
 declare 313 {
     int Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr, int charsToRead,
@@ -1196,7 +1196,7 @@ declare 325 {
     const char *Tcl_UtfAtIndex(const char *src, int index)
 }
 declare 326 {
-    int Tcl_UtfCharComplete(const char *src, int length)
+    int Tcl_UtfCharComplete(const char *src, size_t length)
 }
 declare 327 {
     int Tcl_UtfBackslash(const char *src, int *readPtr, char *dst)
@@ -1288,11 +1288,11 @@ declare 353 {
 }
 declare 354 {
     char *Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
-	    int uniLength, Tcl_DString *dsPtr)
+	    size_t uniLength, Tcl_DString *dsPtr)
 }
 declare 355 {
     Tcl_UniChar *Tcl_UtfToUniCharDString(const char *src,
-	    int length, Tcl_DString *dsPtr)
+	    size_t length, Tcl_DString *dsPtr)
 }
 declare 356 {
     Tcl_RegExp Tcl_GetRegExpFromObj(Tcl_Interp *interp, Tcl_Obj *patObj,

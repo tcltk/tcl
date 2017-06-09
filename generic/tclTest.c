@@ -6672,7 +6672,7 @@ TestNumUtfCharsCmd(
 	int len = -1;
 
 	if (objc > 2) {
-	    (void) Tcl_GetStringFromObj(objv[1], &len);
+	    (void) Tcl_GetIntFromObj(interp, objv[2], &len);
 	}
 	len = Tcl_NumUtfChars(Tcl_GetString(objv[1]), len);
 	Tcl_SetObjResult(interp, Tcl_NewLongObj(len));

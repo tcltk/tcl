@@ -853,7 +853,7 @@ TCLAPI void		Tcl_ConditionNotify(Tcl_Condition *condPtr);
 TCLAPI void		Tcl_ConditionWait(Tcl_Condition *condPtr,
 				Tcl_Mutex *mutexPtr, const Tcl_Time *timePtr);
 /* 312 */
-TCLAPI int		Tcl_NumUtfChars(const char *src, int length);
+TCLAPI size_t		Tcl_NumUtfChars(const char *src, size_t length);
 /* 313 */
 TCLAPI int		Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
 				int charsToRead, int appendFlag);
@@ -884,7 +884,7 @@ TCLAPI int		Tcl_UniCharToUtf(int ch, char *buf);
 /* 325 */
 TCLAPI const char *	Tcl_UtfAtIndex(const char *src, int index);
 /* 326 */
-TCLAPI int		Tcl_UtfCharComplete(const char *src, int length);
+TCLAPI int		Tcl_UtfCharComplete(const char *src, size_t length);
 /* 327 */
 TCLAPI int		Tcl_UtfBackslash(const char *src, int *readPtr,
 				char *dst);
@@ -949,10 +949,10 @@ TCLAPI int		Tcl_UniCharNcmp(const Tcl_UniChar *ucs,
 				const Tcl_UniChar *uct, size_t numChars);
 /* 354 */
 TCLAPI char *		Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
-				int uniLength, Tcl_DString *dsPtr);
+				size_t uniLength, Tcl_DString *dsPtr);
 /* 355 */
-TCLAPI Tcl_UniChar *	Tcl_UtfToUniCharDString(const char *src, int length,
-				Tcl_DString *dsPtr);
+TCLAPI Tcl_UniChar *	Tcl_UtfToUniCharDString(const char *src,
+				size_t length, Tcl_DString *dsPtr);
 /* 356 */
 TCLAPI Tcl_RegExp	Tcl_GetRegExpFromObj(Tcl_Interp *interp,
 				Tcl_Obj *patObj, int flags);
@@ -2075,7 +2075,7 @@ typedef struct TclStubs {
     void (*tcl_MutexUnlock) (Tcl_Mutex *mutexPtr); /* 309 */
     void (*tcl_ConditionNotify) (Tcl_Condition *condPtr); /* 310 */
     void (*tcl_ConditionWait) (Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr, const Tcl_Time *timePtr); /* 311 */
-    int (*tcl_NumUtfChars) (const char *src, int length); /* 312 */
+    size_t (*tcl_NumUtfChars) (const char *src, size_t length); /* 312 */
     int (*tcl_ReadChars) (Tcl_Channel channel, Tcl_Obj *objPtr, int charsToRead, int appendFlag); /* 313 */
     void (*reserved314)(void);
     void (*reserved315)(void);
@@ -2089,7 +2089,7 @@ typedef struct TclStubs {
     Tcl_UniChar (*tcl_UniCharToUpper) (int ch); /* 323 */
     int (*tcl_UniCharToUtf) (int ch, char *buf); /* 324 */
     const char * (*tcl_UtfAtIndex) (const char *src, int index); /* 325 */
-    int (*tcl_UtfCharComplete) (const char *src, int length); /* 326 */
+    int (*tcl_UtfCharComplete) (const char *src, size_t length); /* 326 */
     int (*tcl_UtfBackslash) (const char *src, int *readPtr, char *dst); /* 327 */
     const char * (*tcl_UtfFindFirst) (const char *src, int ch); /* 328 */
     const char * (*tcl_UtfFindLast) (const char *src, int ch); /* 329 */
@@ -2117,8 +2117,8 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsWordChar) (int ch); /* 351 */
     int (*tcl_UniCharLen) (const Tcl_UniChar *uniStr); /* 352 */
     int (*tcl_UniCharNcmp) (const Tcl_UniChar *ucs, const Tcl_UniChar *uct, size_t numChars); /* 353 */
-    char * (*tcl_UniCharToUtfDString) (const Tcl_UniChar *uniStr, int uniLength, Tcl_DString *dsPtr); /* 354 */
-    Tcl_UniChar * (*tcl_UtfToUniCharDString) (const char *src, int length, Tcl_DString *dsPtr); /* 355 */
+    char * (*tcl_UniCharToUtfDString) (const Tcl_UniChar *uniStr, size_t uniLength, Tcl_DString *dsPtr); /* 354 */
+    Tcl_UniChar * (*tcl_UtfToUniCharDString) (const char *src, size_t length, Tcl_DString *dsPtr); /* 355 */
     Tcl_RegExp (*tcl_GetRegExpFromObj) (Tcl_Interp *interp, Tcl_Obj *patObj, int flags); /* 356 */
     void (*reserved357)(void);
     void (*tcl_FreeParse) (Tcl_Parse *parsePtr); /* 358 */

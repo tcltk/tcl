@@ -14,11 +14,11 @@
 #ifdef HAVE_LANGINFO
 #   include <langinfo.h>
 #   ifdef __APPLE__
-#       if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030
+#	if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030
 	    /* Support for weakly importing nl_langinfo on Darwin. */
 #	    define WEAK_IMPORT_NL_LANGINFO
 	    extern char *nl_langinfo(nl_item) WEAK_IMPORT_ATTRIBUTE;
-#       endif
+#	endif
 #    endif
 #endif
 #include <sys/resource.h>
@@ -1041,7 +1041,6 @@ TclpFindVariable(
     Tcl_DStringFree(&envString);
     return result;
 }
-
 
 /*
  *----------------------------------------------------------------------
