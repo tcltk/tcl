@@ -1994,6 +1994,36 @@ test string-29.4 {string cat, many args} {
     set r2 [string compare $xx [eval "string cat $vvs"]]
     list $r1 $r2
 } {0 0}
+test string-29.5 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list x] [list]]
+} -match glob -result {*no string representation}
+test string-29.6 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list] [list x]]
+} -match glob -result {*no string representation}
+test string-29.7 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list x] [list] [list]]
+} -match glob -result {*no string representation}
+test string-29.8 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list] [list x] [list]]
+} -match glob -result {*no string representation}
+test string-29.9 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list] [list] [list x]]
+} -match glob -result {*no string representation}
+test string-29.10 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list x] [list x]]
+} -match glob -result {*, string representation "xx"}
+test string-29.11 {string cat, efficiency} -body {
+    tcl::unsupported::representation \
+	[string cat [list x] [encoding convertto utf-8 {}]]
+} -match glob -result {*no string representation}
+test string-29.12 {string cat, efficiency} -body {
+    tcl::unsupported::representation \
+	[string cat [encoding convertto utf-8 {}] [list x]]
+} -match glob -result {*, string representation "x"}
+test string-29.13 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat \
+	[encoding convertto utf-8 {}] [encoding convertto utf-8 {}] [list x]]
+} -match glob -result {*, string representation "x"}
 
 
 
