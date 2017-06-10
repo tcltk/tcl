@@ -842,6 +842,9 @@ proc ::tcltest::seam {action seamName body} {
     }
     return [uplevel 1 $body]
 }
+namespace eval ::tcltest:: {
+       namespace seam
+}
 ##
 ## TIP 452 -- end of addition
 ##
