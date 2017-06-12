@@ -103,7 +103,7 @@ TclUtfCount(
 	return 2;
     }
 #if TCL_UTF_MAX > 3
-    if (((unsigned)(ch - 0x10000) <= 0xfffff)) {
+    if (((unsigned)(ch - 0x10000) <= 0xFFFFF)) {
 	return 4;
     }
 #endif
@@ -292,7 +292,9 @@ Tcl_UtfToUniChar(
 	     */
 
 	    *chPtr = (Tcl_UniChar) (((byte & 0x1F) << 6) | (src[1] & 0x3F));
-	    return 2;
+	    if ((unsigned)(*chPtr - 1) >= (UNICODE_SELF - 1)) {
+		return 2;
+	    }
 	}
 
 	/*
@@ -307,7 +309,9 @@ Tcl_UtfToUniChar(
 
 	    *chPtr = (Tcl_UniChar) (((byte & 0x0F) << 12)
 		    | ((src[1] & 0x3F) << 6) | (src[2] & 0x3F));
-	    return 3;
+	    if (*chPtr > 0x7FF) {
+		return 3;
+	    }
 	}
 
 	/*
@@ -322,13 +326,15 @@ Tcl_UtfToUniChar(
 	     * Four-byte-character lead byte followed by three trail bytes.
 	     */
 
-	    *chPtr = (Tcl_UniChar) (((byte & 0x0E) << 18) | ((src[1] & 0x3F) << 12)
+	    *chPtr = (Tcl_UniChar) (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
 		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
-	    return 4;
+	    if ((unsigned)(*chPtr - 0x10000) <= 0xFFFFF) {
+		return 4;
+	    }
 	}
 
 	/*
-	 * A three-byte-character lead-byte not followed by two trail-bytes
+	 * A four-byte-character lead-byte not followed by two trail-bytes
 	 * represents itself.
 	 */
     }
@@ -453,7 +459,6 @@ Tcl_NumUtfChars(
 				 * for strlen(string). */
 {
     Tcl_UniChar ch;
-    register Tcl_UniChar *chPtr = &ch;
     register int i;
 
     /*
@@ -466,22 +471,24 @@ Tcl_NumUtfChars(
     i = 0;
     if (length < 0) {
 	while (*src != '\0') {
-	    src += TclUtfToUniChar(src, chPtr);
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
+	if (i < 0) i = INT_MAX; /* Bug [2738427] */
     } else {
-	register int n;
+	register const char *endPtr = src + length - TCL_UTF_MAX;
 
-	while (length > 0) {
-	    if (UCHAR(*src) < 0xC0) {
-		length--;
-		src++;
-	    } else {
-		n = Tcl_UtfToUniChar(src, chPtr);
-		length -= n;
-		src += n;
-	    }
+	while (src < endPtr) {
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
+	}
+	endPtr += TCL_UTF_MAX;
+	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
+	    src += TclUtfToUniChar(src, &ch);
+	    i++;
+	}
+	if (src < endPtr) {
+	    i += endPtr - src;
 	}
     }
     return i;
@@ -1004,7 +1011,7 @@ Tcl_UtfNcmp(
 
     /*
      * Cannot use 'memcmp(cs, ct, n);' as byte representation of \u0000 (the
-     * pair of bytes 0xc0,0x80) is larger than byte representation of \u0001
+     * pair of bytes 0xC0,0x80) is larger than byte representation of \u0001
      * (the byte 0x01.)
      */
 
@@ -1388,11 +1395,11 @@ Tcl_UniCharIsControl(
 {
 #if TCL_UTF_MAX > 3
     if (UNICODE_OUT_OF_RANGE(ch)) {
-	ch &= 0x1fffff;
-	if ((ch == 0xe0001) || ((ch >= 0xe0020) && (ch <= 0xe007f))) {
+	ch &= 0x1FFFFF;
+	if ((ch == 0xE0001) || ((ch >= 0xE0020) && (ch <= 0xE007f))) {
 	    return 1;
 	}
-	if ((ch >= 0xf0000) && ((ch & 0xffff) <= 0xfffd)) {
+	if ((ch >= 0xF0000) && ((ch & 0xFFFF) <= 0xFFFD)) {
 	    return 1;
 	}
 	return 0;
@@ -1451,8 +1458,8 @@ Tcl_UniCharIsGraph(
 {
 #if TCL_UTF_MAX > 3
     if (UNICODE_OUT_OF_RANGE(ch)) {
-	ch &= 0x1fffff;
-	return (ch >= 0xe0100) && (ch <= 0xe01ef);
+	ch &= 0x1FFFFF;
+	return (ch >= 0xE0100) && (ch <= 0xE01EF);
     }
 #endif
     return ((GRAPH_BITS >> GetCategory(ch)) & 1);
@@ -1508,8 +1515,8 @@ Tcl_UniCharIsPrint(
 {
 #if TCL_UTF_MAX > 3
     if (UNICODE_OUT_OF_RANGE(ch)) {
-	ch &= 0x1fffff;
-	return (ch >= 0xe0100) && (ch <= 0xe01ef);
+	ch &= 0x1FFFFF;
+	return (ch >= 0xE0100) && (ch <= 0xE01EF);
     }
 #endif
     return (((GRAPH_BITS|SPACE_BITS) >> GetCategory(ch)) & 1);
@@ -1565,10 +1572,10 @@ Tcl_UniCharIsSpace(
 {
 #if TCL_UTF_MAX > 3
     /* Ignore upper 11 bits. */
-    ch &= 0x1fffff;
+    ch &= 0x1FFFFF;
 #else
     /* Ignore upper 16 bits. */
-    ch &= 0xffff;
+    ch &= 0xFFFF;
 #endif
 
     /*
@@ -1582,8 +1589,8 @@ Tcl_UniCharIsSpace(
     } else if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
 #endif
-    } else if (ch == 0x0085 || ch == 0x180e || ch == 0x200b
-	    || ch == 0x202f || ch == 0x2060 || ch == 0xfeff) {
+    } else if (ch == 0x0085 || ch == 0x180E || ch == 0x200B
+	    || ch == 0x202F || ch == 0x2060 || ch == 0xFEFF) {
 	return 1;
     } else {
 	return ((SPACE_BITS >> GetCategory(ch)) & 1);
