@@ -22,10 +22,16 @@ package require TclOO
 The \fBoo::copy\fR command creates a copy of an object or class. It takes the
 name of the object or class to be copied, \fIsourceObject\fR, and optionally
 the name of the object or class to create, \fItargetObject\fR, which will be
-resolved relative to the current namespace if not an absolute qualified name and
+resolved relative to the current namespace if not an absolute qualified name
+and
+.VS TIP473
 \fItargetNamespace\fR which is the name of the namespace where the object is
 going to be created in.
-If \fItargetObject\fR or \fItargetNamespace\fR is omitted, a new name is chosen.
+If either \fItargetObject\fR or \fItargetNamespace\fR is omitted or is given
+as the empty string, a new name is chosen. Names, unless specified, are
+chosen with the same algorithm used by the \fBnew\fR method of
+\fBoo::class\fR.
+.VE TIP473
 The copied object will be of the same class as the source object, and will have 
 all its per-object methods copied. If it is a class, it will also have all the 
 class methods in the class copied, but it will not have any of its instances 

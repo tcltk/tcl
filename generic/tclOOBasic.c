@@ -1210,7 +1210,9 @@ TclOOCopyObjectCmd(
 
 	name = TclGetString(objv[2]);
 	Tcl_DStringInit(&buffer);
-	if (name[0]!=':' || name[1]!=':') {
+	if (name[0] == '\0') {
+	    name = NULL;
+	} else if (name[0]!=':' || name[1]!=':') {
 	    Interp *iPtr = (Interp *) interp;
 
 	    if (iPtr->varFramePtr != NULL) {
@@ -1222,13 +1224,18 @@ TclOOCopyObjectCmd(
 	    name = Tcl_DStringValue(&buffer);
 	}
 
-	/* Choose a unique namespace name if the user didn't supply one */
-	namespaceName = NULL;
+	/*
+	 * Choose a unique namespace name if the user didn't supply one.
+	 */
 
+	namespaceName = NULL;
 	if (objc == 4) {
 	    namespaceName = TclGetString(objv[3]);
 
-	    if (Tcl_FindNamespace(interp, namespaceName, NULL, 0) != NULL) {
+	    if (namespaceName[0] == '\0') {
+		namespaceName = NULL;
+	    } else if (Tcl_FindNamespace(interp, namespaceName, NULL,
+		    0) != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"%s refers to an existing namespace", namespaceName));
 		return TCL_ERROR;
