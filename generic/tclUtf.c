@@ -98,7 +98,7 @@ static int		UtfCount(int ch);
  *---------------------------------------------------------------------------
  */
 
-INLINE static int
+static int
 UtfCount(
     int ch)			/* The Tcl_UniChar whose size is returned. */
 {
@@ -461,9 +461,7 @@ Tcl_UtfCharComplete(
 				 * a complete UTF-8 character. */
     int length)			/* Length of above string in bytes. */
 {
-    int ch = *((unsigned char *) src);
-
-    return length >= totalBytes[ch];
+    return length >= totalBytes[(unsigned char)*src];
 }
 
 /*
@@ -491,7 +489,7 @@ Tcl_NumUtfChars(
 				 * for strlen(string). */
 {
     Tcl_UniChar ch = 0;
-    register int i;
+    register int i = 0;
 
     /*
      * The separate implementations are faster.
@@ -500,25 +498,26 @@ Tcl_NumUtfChars(
      * single-byte char case specially.
      */
 
-    i = 0;
     if (length < 0) {
 	while (*src != '\0') {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
+	if (i < 0) i = INT_MAX; /* Bug [2738427] */
     } else {
-	register int n;
+	register const char *endPtr = src + length - TCL_UTF_MAX;
 
-	while (length > 0) {
-	    if (UCHAR(*src) < 0xC0) {
-		length--;
-		src++;
-	    } else {
-		n = Tcl_UtfToUniChar(src, &ch);
-		length -= n;
-		src += n;
-	    }
+	while (src < endPtr) {
+	    src += TclUtfToUniChar(src, &ch);
 	    i++;
+	}
+	endPtr += TCL_UTF_MAX;
+	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
+	    src += TclUtfToUniChar(src, &ch);
+	    i++;
+	}
+	if (src < endPtr) {
+	    i += endPtr - src;
 	}
     }
     return i;
@@ -826,7 +825,7 @@ int
 Tcl_UtfToUpper(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch, upChar;
+    Tcl_UniChar ch = 0, upChar;
     char *src, *dst;
     int bytes;
 
@@ -879,7 +878,7 @@ int
 Tcl_UtfToLower(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch, lowChar;
+    Tcl_UniChar ch = 0, lowChar;
     char *src, *dst;
     int bytes;
 
@@ -933,7 +932,7 @@ int
 Tcl_UtfToTitle(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch, titleChar, lowChar;
+    Tcl_UniChar ch = 0, titleChar, lowChar;
     char *src, *dst;
     int bytes;
 
@@ -1042,7 +1041,7 @@ Tcl_UtfNcmp(
     const char *ct,		/* UTF string cs is compared to. */
     unsigned long numChars)	/* Number of UTF chars to compare. */
 {
-    Tcl_UniChar ch1, ch2;
+    Tcl_UniChar ch1 = 0, ch2 = 0;
 
     /*
      * Cannot use 'memcmp(cs, ct, n);' as byte representation of \u0000 (the
@@ -1090,7 +1089,7 @@ Tcl_UtfNcasecmp(
     const char *ct,		/* UTF string cs is compared to. */
     unsigned long numChars)	/* Number of UTF chars to compare. */
 {
-    Tcl_UniChar ch1, ch2;
+    Tcl_UniChar ch1 = 0, ch2 = 0;
     while (numChars-- > 0) {
 	/*
 	 * n must be interpreted as chars, not bytes.
@@ -1719,7 +1718,7 @@ Tcl_UniCharCaseMatch(
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
-    Tcl_UniChar ch1, p;
+    Tcl_UniChar ch1 = 0, p;
 
     while (1) {
 	p = *uniPattern;
