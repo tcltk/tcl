@@ -4,7 +4,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH Tcl_GetInt 3 "" Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
@@ -57,6 +57,9 @@ after the optional white space and sign are
 .QW \fB0x\fR
 then \fIsrc\fR is expected to be in hexadecimal form;  otherwise,
 if the first such characters are
+.QW \fB0d\fR
+then \fIsrc\fR is expected to be in decimal form; otherwise,
+if the first such characters are
 .QW \fB0o\fR
 then \fIsrc\fR is expected to be in octal form;  otherwise,
 if the first such characters are
@@ -65,8 +68,8 @@ then \fIsrc\fR is expected to be in binary form;  otherwise,
 if the first such character is
 .QW \fB0\fR
 then \fIsrc\fR
-is expected to be in octal form;  otherwise, \fIsrc\fR is
-expected to be in decimal form.
+is expected to be in octal form;  otherwise, \fIsrc\fR
+is expected to be in decimal form.
 .PP
 \fBTcl_GetDouble\fR expects \fIsrc\fR to consist of a floating-point
 number, which is:  white space;  a sign; a sequence of digits;  a

@@ -208,7 +208,7 @@ test util-4.6 {Tcl_ConcatObj - utf-8 sequence with "whitespace" char} {
 } \xe0
 test util-4.7 {Tcl_ConcatObj - refCount safety} testconcatobj {
     # Check for Bug #1447328 (actually, bugs in its original "fix"). One of the
-    # symptoms was Bug #2055782. 
+    # symptoms was Bug #2055782.
     testconcatobj
 } {}
 
@@ -552,6 +552,12 @@ test util-9.0.6 {TclGetIntForIndex} {
 test util-9.0.7 {TclGetIntForIndex} {
     string index abcd { 01 }
 } b
+test util-9.0.8 {TclGetIntForIndex} {
+    string index abcd { 0d0 }
+} a
+test util-9.0.9 {TclGetIntForIndex} {
+    string index abcd { -0d0 }
+} a
 test util-9.1.0 {TclGetIntForIndex} {
     string index abcd 3
 } d
@@ -564,9 +570,15 @@ test util-9.1.2 {TclGetIntForIndex} {
 test util-9.1.3 {TclGetIntForIndex} {
     string index abcdefghijk { 0xa }
 } k
+test util-9.1.4 {TclGetIntForIndex} {
+    string index abcdefghijk 0d10
+} k
+test util-9.1.5 {TclGetIntForIndex} {
+    string index abcdefghijk { 0d10 }
+} k
 test util-9.2.0 {TclGetIntForIndex} {
     string index abcd end
-} d 
+} d
 test util-9.2.1 {TclGetIntForIndex} -body {
     string index abcd { end}
 } -returnCodes error -match glob -result *
@@ -671,11 +683,17 @@ test util-9.30 {TclGetIntForIndex} -body {
 test util-9.31 {TclGetIntForIndex} -body {
     string index a 0x
 } -returnCodes error -match glob -result *
+test util-9.31.1 {TclGetIntForIndex} -body {
+    string index a 0d
+} -returnCodes error -match glob -result *
 test util-9.32 {TclGetIntForIndex} -body {
     string index a 0x1FFFFFFFF+0
 } -returnCodes error -match glob -result *
 test util-9.33 {TclGetIntForIndex} -body {
     string index a 100000000000+0
+} -returnCodes error -match glob -result *
+test util-9.33.1 {TclGetIntForIndex} -body {
+    string index a 0d100000000000+0
 } -returnCodes error -match glob -result *
 test util-9.34 {TclGetIntForIndex} -body {
     string index a 1.0
@@ -4007,7 +4025,7 @@ test util-17.1 {bankers' rounding [Bug 3349507]} {ieeeFloatingPoint} {
     }
     set r
 } [list {*}{
-    0x43fffffffffffffc 0xc3fffffffffffffc 
+    0x43fffffffffffffc 0xc3fffffffffffffc
     0x43fffffffffffffc 0xc3fffffffffffffc
     0x43fffffffffffffd 0xc3fffffffffffffd
     0x43fffffffffffffe 0xc3fffffffffffffe

@@ -43,7 +43,8 @@ parentheses and commas.
 White space may be used between the operands and operators and
 parentheses (or commas); it is ignored by the expression's instructions.
 Where possible, operands are interpreted as integer values.
-Integer values may be specified in decimal (the normal case), in binary
+Integer values may be specified in decimal (the normal case, the optional
+first two characters are \fB0d\fR), in binary
 (if the first two characters of the operand are \fB0b\fR), in octal
 (if the first two characters of the operand are \fB0o\fR), or in hexadecimal
 (if the first two characters of the operand are \fB0x\fR).  For
