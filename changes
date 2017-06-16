@@ -8781,4 +8781,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2017-06-05 (bug)[67aa9a] Tcl_UtfToUniChar() revised handling invalid UTF-8 (nijtmans)
         *** POTENTIAL INCOMPATIBILITY ***
 
+2017-06-08 (bug)[2738427] Tcl_NumUtfChars() corner case utf-4.9 (nijtmans)
+
 --- Released 8.6.7, ????, 2017 --- http://core.tcl.tk/tcl/ for details
