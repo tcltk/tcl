@@ -2952,6 +2952,26 @@ TclStringCatObjv(
 	/* Result will be concat of string reps. Pre-size it. */
 	ov = objv; oc = objc;
 	do {
+	    /* assert ( pendingPtr == NULL ) */
+	    /* assert ( length == 0 ) */
+
+	    Tcl_Obj *objPtr = *ov++;
+
+	    if (objPtr->bytes == NULL) {
+		/* No string rep; Take the chance we can avoid making it */
+		pendingPtr = objPtr;
+	    } else {
+		Tcl_GetStringFromObj(objPtr, &length); /* PANIC? */
+	    }
+	} while (--oc && (length == 0) && (pendingPtr == NULL));
+
+      if (oc) {
+
+	/* assert ( length > 0 || pendingPtr != NULL )  */
+
+	first = last = objc - oc - 1;
+
+	do {
 	    int numBytes;
 
 	    Tcl_Obj *objPtr = *ov++;
@@ -2987,6 +3007,7 @@ TclStringCatObjv(
 		length += numBytes;
 	    }
 	} while (--oc);
+      }
     }
 
     if (last <= first /*|| length == 0 */) {
