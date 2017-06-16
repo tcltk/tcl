@@ -2848,8 +2848,10 @@ TclStringCatObjv(
     Tcl_Obj **objPtrPtr)
 {
     Tcl_Obj *objPtr, *objResultPtr, * const *ov;
-    int oc, length = 0, binary = 1, first = 0, last = 0;
+    int oc, length = 0, binary = 1;
     int allowUniChar = 1, requestUniChar = 0;
+    int first = objc - 1;	/* Index of first value possibly not empty */
+    int last = 0;		/* Index of last value possibly not empty */
 
     /* assert ( objc >= 0 ) */
 
@@ -2981,9 +2983,9 @@ TclStringCatObjv(
 	} while (--oc);
     }
 
-    if (last == first /*|| length == 0 */) {
+    if (last <= first /*|| length == 0 */) {
 	/* Only one non-empty value or zero length; return first */
-	/* NOTE: (length == 0) implies (last == first) */
+	/* NOTE: (length == 0) implies (last <= first) */
 	*objPtrPtr = objv[first];
 	return TCL_OK;
     }
