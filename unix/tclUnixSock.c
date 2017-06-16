@@ -730,6 +730,8 @@ TcpClose2Proc(
  */
 
 #ifndef NEED_FAKE_RFC2553
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 static inline int
 IPv6AddressNeedsNumericRendering(
     struct in6_addr addr)
@@ -743,16 +745,14 @@ IPv6AddressNeedsNumericRendering(
      * at least some versions of OSX.
      */
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstrict-aliasing"
     if (!IN6_IS_ADDR_V4MAPPED(&addr)) {
-#pragma GCC diagnostic pop
         return 0;
     }
 
     return (addr.s6_addr[12] == 0 && addr.s6_addr[13] == 0
             && addr.s6_addr[14] == 0 && addr.s6_addr[15] == 0);
 }
+#pragma GCC diagnostic pop
 #endif /* NEED_FAKE_RFC2553 */
 
 static void
