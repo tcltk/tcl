@@ -44,6 +44,9 @@ proc bgerror {args} {
 set bindata "This is binary data\x0d\x0amore\x0dmore\x0amore\x00null"
 catch {unset data}
 
+##
+## Test http::config command -- not modified from original tests
+##
 ::tcltest::test http-1.1 {http::config} {
     http::config -useragent UserAgent
     http::config
@@ -80,8 +83,1341 @@ catch {unset data}
 ##
 ## Test http::geturl
 ##
+
+##
+## Happy path, no options
+##
 ::tcltest::test http-2.1 {http::geturl} \
     -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Happy path, with all options
+##
+::tcltest::test http-2.2 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Bad options
+##
+::tcltest::test http-2.3 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Good options, but invalid numeric value
+##
+::tcltest::test http-2.4 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Invalid use of -query and -querychannel options
+##
+::tcltest::test http-2.5 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Unsupported URL
+##
+::tcltest::test http-2.5 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Missing host
+##
+::tcltest::test http-2.7 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Invalid port number
+##
+::tcltest::test http-2.8 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Illegal encoding character usage in URL user
+##
+::tcltest::test http-2.9 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Illegal characters in URL user
+##
+::tcltest::test http-2.10 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Path of URL is empty
+##
+::tcltest::test http-2.11 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Illegal encoding character usage in URL path
+##
+::tcltest::test http-2.12 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Illegal characters in URL path
+##
+::tcltest::test http-2.13 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Protocol missing
+##
+::tcltest::test http-2.14 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Unsupported URL type
+##
+::tcltest::test http-2.15 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Port missing
+##
+::tcltest::test http-2.16 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Proxy Filter specified
+##
+::tcltest::test http-2.17 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Non-empty valid user
+##
+::tcltest::test http-2.18 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Non default port specified
+##
+::tcltest::test http-2.19 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Timeout specified
+##
+::tcltest::test http-2.20 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Keep alive on closed channel
+##
+::tcltest::test http-2.21 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Keep alive on open channel
+##
+::tcltest::test http-2.22 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Keep alive on new channel
+##
+::tcltest::test http-2.23 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## New socket with -myaddr specified
+##
+::tcltest::test http-2.24 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Error when opening the connection
+##
+::tcltest::test http-2.25 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Synchronus connection with no error
+##
+::tcltest::test http-2.26 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Synchronus connection with timeout
+##
+::tcltest::test http-2.27 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Synchronus connection with error
+##
+::tcltest::test http-2.28 {http::geturl} \
+    -setup {
+        ::tcltest::testSetup {
+            ::fileevent {
+                * {
+                    returns {Test error}
+                    code {error}
+                    errorcode {HTTP TEST RESET FILEEVENT}
+                }
+            }
+            ::http::reset {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::wait {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::http::cleanup {
+                * {
+                    returns {}
+                    errorcode {}
+                }
+            }
+            ::after {
+                * {
+                    returns {test::afterId}
+                    errorcode {}
+                }
+            }
+        }
 
     } \
     -body {
