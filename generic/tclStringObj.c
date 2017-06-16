@@ -2847,9 +2847,11 @@ TclStringCatObjv(
     Tcl_Obj * const objv[],
     Tcl_Obj **objPtrPtr)
 {
-    Tcl_Obj *objPtr, *objResultPtr, * const *ov;
-    int oc, length = 0, binary = 1, first = 0, last = 0;
+    Tcl_Obj *objResultPtr, * const *ov;
+    int oc, length = 0, binary = 1;
     int allowUniChar = 1, requestUniChar = 0;
+    int first = objc - 1;	/* Index of first value possibly not empty */
+    int last = 0;		/* Index of last value possibly not empty */
 
     /* assert ( objc >= 0 ) */
 
@@ -2870,7 +2872,7 @@ TclStringCatObjv(
 
     ov = objv, oc = objc;
     do {
-	objPtr = *ov++;
+	Tcl_Obj *objPtr = *ov++;
 
 	if (objPtr->bytes) {
 	    /* Value has a string rep. */
@@ -2906,7 +2908,7 @@ TclStringCatObjv(
 	/* Result will be pure byte array. Pre-size it */
 	ov = objv; oc = objc;
 	do {
-	    objPtr = *ov++;
+	    Tcl_Obj *objPtr = *ov++;
 
 	    if (objPtr->bytes == NULL) {
 		int numBytes;
@@ -2916,10 +2918,10 @@ TclStringCatObjv(
 		    last = objc - oc;
 		    if (length == 0) {
 			first = last;
-		    }
-		    if ((length += numBytes) < 0) {
+		    } else if (numBytes > INT_MAX - length) {
 			goto overflow;
 		    }
+		    length += numBytes;
 		}
 	    }
 	} while (--oc);
@@ -2927,7 +2929,7 @@ TclStringCatObjv(
 	/* Result will be pure Tcl_UniChar array. Pre-size it. */
 	ov = objv; oc = objc;
 	do {
-	    objPtr = *ov++;
+	    Tcl_Obj *objPtr = *ov++;
 
 	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
 		int numChars;
@@ -2937,10 +2939,10 @@ TclStringCatObjv(
 		    last = objc - oc;
 		    if (length == 0) {
 			first = last;
-		    }
-		    if ((length += numChars) < 0) {
+		    } else if (numChars > INT_MAX - length) {
 			goto overflow;
 		    }
+		    length += numChars;
 		}
 	    }
 	} while (--oc);
@@ -2948,26 +2950,91 @@ TclStringCatObjv(
 	/* Result will be concat of string reps. Pre-size it. */
 	ov = objv; oc = objc;
 	do {
-	    int numBytes;
+	    Tcl_Obj *pendingPtr = NULL;
 
-	    objPtr = *ov++;
+	    /*
+	     * Loop until a possibly non-empty value is reached.
+	     * Keep string rep generation pending when possible.
+	     */
 
-	    Tcl_GetStringFromObj(objPtr, &numBytes);	/* PANIC? */
-	    if (numBytes) {
-		last = objc - oc;
-		if (length == 0) {
-		    first = last;
+	    do {
+		/* assert ( pendingPtr == NULL ) */
+		/* assert ( length == 0 ) */
+
+		Tcl_Obj *objPtr = *ov++;
+
+		if (objPtr->bytes == NULL) {
+		    /* No string rep; Take the chance we can avoid making it */
+		    pendingPtr = objPtr;
+		} else {
+		    Tcl_GetStringFromObj(objPtr, &length); /* PANIC? */
 		}
-		if ((length += numBytes) < 0) {
+	    } while (--oc && (length == 0) && (pendingPtr == NULL));
+
+	    /*
+ 	     * Either we found a possibly non-empty value, and we
+ 	     * remember this index as the first and last such value so
+ 	     * far seen, or (oc == 0) and all values are known empty,
+ 	     * so first = last = objc - 1 signals the right quick return.
+ 	     */
+
+	    first = last = objc - oc - 1;
+
+	    if (oc && (length == 0)) {
+		int numBytes;
+
+		/* assert ( pendingPtr != NULL ) */
+
+		/*
+		 * There's a pending value followed by more values.
+		 * Loop over remaining values generating strings until
+		 * a non-empty value is found, or the pending value gets
+		 * its string generated.
+		 */
+
+		do {
+		    Tcl_Obj *objPtr = *ov++;
+		    Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
+		} while (--oc && numBytes == 0 && pendingPtr->bytes == NULL);
+
+		if (numBytes) {
+		    last = objc -oc -1;
+		}
+		if (oc || numBytes) {
+		    Tcl_GetStringFromObj(pendingPtr, &length);
+		}
+		if (length == 0) {
+		    if (numBytes) {
+			first = last;
+		    }
+		} else if (numBytes > INT_MAX - length) {
 		    goto overflow;
 		}
+		length += numBytes;
 	    }
-	} while (--oc);
+	} while (oc && (length == 0));
+
+	while (oc) {
+	    int numBytes;
+	    Tcl_Obj *objPtr = *ov++;
+
+	    /* assert ( length > 0 && pendingPtr == NULL )  */
+
+	    Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
+	    if (numBytes) {
+		last = objc - oc;
+		if (numBytes > INT_MAX - length) {
+		    goto overflow;
+		}
+		length += numBytes;
+	    }
+	    --oc;
+	}
     }
 
-    if (last == first /*|| length == 0 */) {
+    if (last <= first /*|| length == 0 */) {
 	/* Only one non-empty value or zero length; return first */
-	/* NOTE: (length == 0) implies (last == first) */
+	/* NOTE: (length == 0) implies (last <= first) */
 	*objPtrPtr = objv[first];
 	return TCL_OK;
     }
@@ -3073,9 +3140,9 @@ TclStringCatObjv(
 		return TCL_ERROR;
 	    }
 	    dst = Tcl_GetString(objResultPtr) + start;
-	    if (length > start) {
-		TclFreeIntRep(objResultPtr);
-	    }
+
+	    /* assert ( length > start ) */
+	    TclFreeIntRep(objResultPtr);
 	} else {
 	    objResultPtr = Tcl_NewObj();	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
