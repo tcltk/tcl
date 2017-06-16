@@ -3007,48 +3007,22 @@ TclStringCatObjv(
 	    --oc;
 	}
 
-      if (oc) {
-
-	/* assert ( length > 0 )  */
-
-
-	do {
+	while (oc) {
 	    int numBytes;
-
 	    Tcl_Obj *objPtr = *ov++;
 
-	    if ((length == 0) && (objPtr->bytes == NULL) && !pendingPtr) {
-		/* No string rep; Take the chance we can avoid making it */
+	    /* assert ( length > 0 && pendingPtr == NULL )  */
 
+	    Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
+	    if (numBytes) {
 		last = objc - oc;
-		first = last;
-		pendingPtr = objPtr;
-	    } else {
-
-		Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
-		if (numBytes) {
-		    last = objc - oc;
-		} else if (pendingPtr == NULL || pendingPtr->bytes == NULL) {
-		    continue;
-		}
-		if (pendingPtr) {
-		    Tcl_GetStringFromObj(pendingPtr, &length); /* PANIC? */
-		    pendingPtr = NULL;
-		}
-		if (length == 0) {
-		    if (numBytes) {
-			first = last;
-		    } else {
-			first = objc - 1;
-			last = 0;
-		    }
-		} else if (numBytes > INT_MAX - length) {
+		if (numBytes > INT_MAX - length) {
 		    goto overflow;
 		}
 		length += numBytes;
 	    }
-	} while (--oc);
-      }
+	    --oc;
+	}
     }
 
     if (last <= first /*|| length == 0 */) {
