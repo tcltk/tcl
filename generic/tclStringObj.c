@@ -2947,65 +2947,72 @@ TclStringCatObjv(
 	    }
 	} while (--oc);
     } else {
-	Tcl_Obj *pendingPtr = NULL;
-
 	/* Result will be concat of string reps. Pre-size it. */
 	ov = objv; oc = objc;
 	do {
-	    /* assert ( pendingPtr == NULL ) */
-	    /* assert ( length == 0 ) */
+	    Tcl_Obj *pendingPtr = NULL;
 
-	    Tcl_Obj *objPtr = *ov++;
+	    /*
+	     * Loop until a possibly non-empty value is reached.
+	     * Keep string rep generation pending when possible.
+	     */
 
-	    if (objPtr->bytes == NULL) {
-		/* No string rep; Take the chance we can avoid making it */
-		pendingPtr = objPtr;
-	    } else {
-		Tcl_GetStringFromObj(objPtr, &length); /* PANIC? */
-	    }
-	} while (--oc && (length == 0) && (pendingPtr == NULL));
+	    do {
+		/* assert ( pendingPtr == NULL ) */
+		/* assert ( length == 0 ) */
 
-	first = last = objc - oc - 1;
+		Tcl_Obj *objPtr = *ov++;
 
-	while (oc && (length == 0)) {
-	    int numBytes;
-	    Tcl_Obj *objPtr = *ov++;
-
-	    /* assert ( pendingPtr != NULL ) <-- aiming for */
-
-	    if ((length == 0) && (objPtr->bytes == NULL) && !pendingPtr) {
-		/* No string rep; Take the chance we can avoid making it */
-
-		last = objc - oc;
-		first = last;
-		pendingPtr = objPtr;
-	    } else {
-
-		Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
-		if (numBytes) {
-		    last = objc - oc;
-		} else if (pendingPtr == NULL || pendingPtr->bytes == NULL) {
-		    --oc;
-		    continue;
+		if (objPtr->bytes == NULL) {
+		    /* No string rep; Take the chance we can avoid making it */
+		    pendingPtr = objPtr;
+		} else {
+		    Tcl_GetStringFromObj(objPtr, &length); /* PANIC? */
 		}
-		if (pendingPtr) {
-		    Tcl_GetStringFromObj(pendingPtr, &length); /* PANIC? */
-		    pendingPtr = NULL;
+	    } while (--oc && (length == 0) && (pendingPtr == NULL));
+
+	    /*
+ 	     * Either we found a possibly non-empty value, and we
+ 	     * remember this index as the first and last such value so
+ 	     * far seen, or (oc == 0) and all values are known empty,
+ 	     * so first = last = objc - 1 signals the right quick return.
+ 	     */
+
+	    first = last = objc - oc - 1;
+
+	    if (oc && (length == 0)) {
+		int numBytes;
+
+		/* assert ( pendingPtr != NULL ) */
+
+		/*
+		 * There's a pending value followed by more values.
+		 * Loop over remaining values generating strings until
+		 * a non-empty value is found, or the pending value gets
+		 * its string generated.
+		 */
+
+		do {
+		    Tcl_Obj *objPtr = *ov++;
+		    Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
+		} while (--oc && numBytes == 0 && pendingPtr->bytes == NULL);
+
+		if (numBytes) {
+		    last = objc -oc -1;
+		}
+		if (oc || numBytes) {
+		    Tcl_GetStringFromObj(pendingPtr, &length);
 		}
 		if (length == 0) {
 		    if (numBytes) {
 			first = last;
-		    } else {
-			first = objc - 1;
-			last = 0;
 		    }
 		} else if (numBytes > INT_MAX - length) {
 		    goto overflow;
 		}
 		length += numBytes;
 	    }
-	    --oc;
-	}
+	} while (oc && (length == 0));
 
 	while (oc) {
 	    int numBytes;
