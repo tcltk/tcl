@@ -4138,6 +4138,193 @@ proc ::tcltest::SeamDeactivate {procName seamName} {
 }
 
 ##
+## Add in the TclOO support
+##
+
+oo::class create ::tcltest::object {
+
+  # An independant constructor that tcltest can control
+  constructor args {
+    my variable tcltest
+    set tcltest(mixinmap) {}
+    my tcltest_configure {*}$args
+  }
+
+  destructor {
+    my variable tcltest
+    if {[info exists tcltest(destructor)]} {
+      eval $tcltest(destructor)
+    } else {
+      next
+    }
+  }
+
+  method tcltest_destructor body {
+    my variable tcltest
+    set tcltest(destructor) $body
+  }
+
+  # A means of controlling the tcltest framework class
+  # Note the method names are designed to minimize conflict
+  # with existing classes
+  method tcltest_configure args {
+    foreach {key value} $args {
+      switch [string trimleft $key -] {
+        class {
+          set tcltest(class) $value
+          my tcltest_morph $value
+        }
+        eval {
+          eval $value
+        }
+        destructor {
+          my tcltest_destructor $value
+        }
+      }
+    }
+  }
+
+  method tcltest_set args {
+    my variable tcltest
+    array set tcltest $args
+  }
+
+  method tcltest_morph classname {
+    my variable tcltest
+    if {[info commands ::tcltest::hybrid::$classname] eq {}} {
+      oo::class create ::tcltest::hybrid::$classname [list superclass ::tcltest::object $classname]
+    }
+    set tcltest(class) $classname
+    ::oo::objdefine [self] class ::tcltest::hybrid::$classname
+    if {[info exists tcltest(mixinmap)]} {
+      my Tcltest_mixin_apply $tcltest(mixinmap)
+    }
+  }
+
+  # A method to allow tcltest to invoke code internally to
+  # objects. Including access to private methods and variables
+  method tcltest_eval script {
+    eval $script
+  }
+
+  method Tcltest_mixin_apply {map} {
+    set mixlist {}
+    foreach {s c} $map {
+      if {$c eq {}} continue
+      lappend mixlist $c
+    }
+    ::oo::objdefine [self] mixin {*}$mixlist
+  }
+
+  # A formalized slot-based mechanism for managing mixins. Because we
+  # break the space up into slots, individual aspects of behavior
+  # can be added, removed, and combined with other mixins.
+  # We use a dict internally for storage to allow the order in which mixins
+  # were applied to be preserved. Not the difference between:
+  # tcltest_mixin map FOO {}
+  # and
+  # tcltest_mixin unmap FOO
+  #
+  # A blank mapping will removed the effect, but preserve FOO's place in line
+  # Unmap removes the concept completely.
+  #
+  method tcltest_mixin {command args} {
+    my variable tcltest
+    switch $command {
+      dump {
+        return $tcltest(mixinmap)
+      }
+      map {
+        if {[llength $args]!=2} {
+          error "Usage: [self method] map STUB CLASS"
+        }
+        lassign $args stub class
+        # Placed here as a safety in case the before or after did not actually exist
+        # And it's a handy place to make the call even if we didn't use before/after
+        dict set tcltest(mixinmap) $stub $class
+        # Build the list of classes to mixin, in the order proscribed by the dict
+        my Tcltest_mixin_apply $tcltest(mixinmap)
+      }
+      replace {
+        # Allows users to specify the order of mixins
+        # Note we always include ::tcltest::object
+        set tcltest(mixinmap) $args
+        my Tcltest_mixin_apply $tcltest(mixinmap)
+      }
+      unmap {
+        if {[llength $args]!=1} {
+          error "Usage: mixinmap unmap STUB"
+        }
+        lassign $args stub
+        if {[dict exists $tcltest(mixinmap) $stub]} {
+          dict unset tcltest(mixinmap) $stub
+        }
+        my Tcltest_mixin_apply $tcltest(mixinmap)
+      }
+      default {
+        error "Valid commands are: dump, map, replace, unmap"
+      }
+    }
+  }
+}
+
+##
+## Define the "Static" methods on the ::tcltest::object
+##
+oo::objdefine ::tcltest::object {
+  method hijack object {
+    set classname [info object class $object]
+    if {[info commands ::tcltest::hybrid::$classname] eq {}} {
+      oo::class create ::tcltest::hybrid::$classname [list superclass ::tcltest::object $classname]
+    }
+    ::oo::objdefine $object class ::tcltest::hybrid::$classname
+    $object tcltest_set class $classname
+  }
+}
+
+##
+## Add in the "easy to use" command
+##
+namespace eval ::tcltest:: {
+    array set ::tcltest::SavedObjectDefinitions {
+        constructor {}
+        destructor  {}
+    }
+
+    proc  testObject {name description class args} {
+        if {([llength $args] % 2) != 0 } {
+            return -code error {Unpaired options and values.}
+        }
+        array set optionArr {
+            -objectVar cut
+            -arguments {}
+            -stubs {}
+        }
+        array set optionArr $args
+
+        set objectVarName $optionArr(-objectVar)
+        unset -nocomplain optionArr(-objectVar)
+        upvar 1 $objectVarName cut
+
+        set consList [info class constructor $class]
+        if {![info exists optionArr(-constructor)]} {
+            set optionArr(-constructor) [lindex $consList 1]
+        }
+        set consScript {}
+        if {llength [lindex $consList 0]]} {
+            append consScript \
+                [format {lassign {%s} %s} $optionArr(-arguments) [lindex $consList 0]] \
+                "\n"
+        }
+        append consScript $optionArr(-constructor)
+
+        if {![info exists optionArr(-destructor)]} {
+            set optionArr(-destructor) [info class destructor $class]
+        }
+    }
+}
+
+##
 ## End TIP 452
 ##
 
