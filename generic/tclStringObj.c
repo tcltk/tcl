@@ -2966,9 +2966,25 @@ TclStringCatObjv(
 
 		Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
 		if (numBytes == 0) {
+		    if (pendingPtr && pendingPtr->bytes) {
+			/*
+			 * Generating string rep of objPtr also 
+			 * generated string rep of pendingPtr.
+			 */
+			if (pendingPtr->length) {
+			    /* Can this happen? */
+			    goto foo;
+			} else {
+			    /* string-29.14 */
+			    first = objc - 1;
+			    last = 0;
+			    pendingPtr = NULL;
+			}
+		    }
 		    continue;
 		}
 		last = objc - oc;
+foo:
 		if (pendingPtr) {
 		    Tcl_GetStringFromObj(pendingPtr, &length); /* PANIC? */
 		    pendingPtr = NULL;
