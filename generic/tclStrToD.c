@@ -1130,9 +1130,9 @@ TclParseNumber(
 	case sNA:
 	case sNANPAREN:
 	case sNANHEX:
+#endif
 	    Tcl_Panic("TclParseNumber: bad acceptState %d parsing '%s'",
 		    acceptState, bytes);
-#endif
 	case BINARY:
 	    shift = numTrailZeros;
 	    if (!significandOverflow && significandWide != 0 &&
