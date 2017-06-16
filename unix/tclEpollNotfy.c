@@ -21,7 +21,9 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/epoll.h>
+#ifdef HAVE_EVENTFD
 #include <sys/eventfd.h>
+#endif /* HAVE_EVENTFD */
 #include <sys/queue.h>
 #include <unistd.h>
 
