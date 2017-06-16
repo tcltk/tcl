@@ -44,7 +44,6 @@ proc bgerror {args} {
 set bindata "This is binary data\x0d\x0amore\x0dmore\x0amore\x00null"
 catch {unset data}
 
-
 ::tcltest::test http-1.1 {http::config} {
     http::config -useragent UserAgent
     http::config
@@ -79,9 +78,45 @@ catch {unset data}
 
 
 ##
+## Test http::geturl
+##
+::tcltest::test http-2.1 {http::geturl} \
+    -setup {
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::formatQuery
+##
+::tcltest::test http-3.1 {http::formatQuery}  \
+    -setup {
+
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::reset
+##
+
+##
 ## Happy path
 ##
-::tcltest::test http-2.1 {http::reset} \
+::tcltest::test http-4.1 {http::reset} \
     -setup {
         array set ::http_1 {
             sock none
@@ -115,10 +150,11 @@ catch {unset data}
     -cleanup {
         ::tcltest::testCleanup
     }
- 
-## Test error path
+
 ##
-::tcltest::test http-2.2 {http::reset} \
+## Test error
+#
+::tcltest::test http-4.2 {http::rest} \
     -setup {
         array set ::http_1 {
             sock none
@@ -134,7 +170,7 @@ catch {unset data}
             }
             ::http::Finish {
                 * {
-                    returns {Finish Error}
+                    returns {No Error}
                     errorcode {}
                     set {
                         ::http_1 A {
@@ -153,17 +189,394 @@ catch {unset data}
     -cleanup {
         ::tcltest::testCleanup
     }
- 
+
+
+##
+## Test http::wait
+##
+::tcltest::test http-5.1 {http::wait} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Testhttp::data
+##
+::tcltest::test http-6.1 {http::data} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::error
+##
+::tcltest::test http-7.1 {http::error} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::status
+##
+::tcltest::test http-8.1 {http::status} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::code
+##
+::tcltest::test http-9.1 {http::code} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::ncode
+##
+::tcltest::test http-10.1 {http::ncode} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Test http::size
+##
+::tcltest::test http-11.1 {http::size} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Test http::me
+##
+::tcltest::test http-12.1 {http::size} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::cleanup
+##
+::tcltest::test http-13.1 {http::cleanup} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::register
+##
+::tcltest::test http-15.1 {http::register} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::unregister
+##
+::tcltest::test http-16.1 {http::unregister} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::Finish
+##
+::tcltest::test http-17.1 {http::Finish}  \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+
+##
+## Test http::Connected
+##
+::tcltest::test http-18.1 {http::Connected}  \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Test http::Connect
+##
+::tcltest::test http-19.1 {http::Connect}  \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Test http::Write
+##
+::tcltest::test http-20.1 {http::Write} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Test http::Event
+##
+::tcltest::test http-21.1 {http::Event} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Test http::IsBinaryContentType
+##
+::tcltest::test http-22.1 {http::IsBinaryContentType} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::CopyStart
+###
+::tcltest::test http-23.1 {http::CopyStart} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Test http::CopyChunk
+##
+::tcltest::test http-24.1 {http::CopyChunk} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Test http::CopyDone
+##
+::tcltest::test http-25.1 {http::CopyDone} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::EOF
+##
+::tcltest::test http-26.1 {http::EOF} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::mapReply
+##
+::tcltest::test http-27.1 {http::mapReply} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Test http::ProxyRequire
+##
+::tcltest::test http-28.1 {http::ProxyRequire} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::CharsetToEncoding
+##
+::tcltest::test http-29.1 {http::CharsetToEncoding} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+##
+## Test http::ContentEncoding
+##
+::tcltest::test http-30.1 {http::ContentEncoding} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
+
+##
+## Test http::make-transformation-chunked
+##
+::tcltest::test http-31.1 {http::make-transformation-chunked} \
+    -setup {
+    } \
+    -body {
+        list Test Not Yet Implemented
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {}
+
 
 # cleanup
 catch {unset url}
 catch {unset badurl}
 catch {unset port}
 catch {unset data}
-
-if {[info exists removeHttpd]} {
-    ::tcltest::removeFile $httpdFile
-}
 
 rename bgerror {}
 ::tcltest::cleanupTests
