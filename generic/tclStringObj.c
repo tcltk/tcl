@@ -2847,7 +2847,7 @@ TclStringCatObjv(
     Tcl_Obj * const objv[],
     Tcl_Obj **objPtrPtr)
 {
-    Tcl_Obj *objPtr, *objResultPtr, * const *ov;
+    Tcl_Obj *objResultPtr, * const *ov;
     int oc, length = 0, binary = 1;
     int allowUniChar = 1, requestUniChar = 0;
     int first = objc - 1;	/* Index of first value possibly not empty */
@@ -2872,7 +2872,7 @@ TclStringCatObjv(
 
     ov = objv, oc = objc;
     do {
-	objPtr = *ov++;
+	Tcl_Obj *objPtr = *ov++;
 
 	if (objPtr->bytes) {
 	    /* Value has a string rep. */
@@ -2908,7 +2908,7 @@ TclStringCatObjv(
 	/* Result will be pure byte array. Pre-size it */
 	ov = objv; oc = objc;
 	do {
-	    objPtr = *ov++;
+	    Tcl_Obj *objPtr = *ov++;
 
 	    if (objPtr->bytes == NULL) {
 		int numBytes;
@@ -2929,7 +2929,7 @@ TclStringCatObjv(
 	/* Result will be pure Tcl_UniChar array. Pre-size it. */
 	ov = objv; oc = objc;
 	do {
-	    objPtr = *ov++;
+	    Tcl_Obj *objPtr = *ov++;
 
 	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
 		int numChars;
@@ -2954,7 +2954,7 @@ TclStringCatObjv(
 	do {
 	    int numBytes;
 
-	    objPtr = *ov++;
+	    Tcl_Obj *objPtr = *ov++;
 
 	    if ((length == 0) && (objPtr->bytes == NULL) && !pendingPtr) {
 		/* No string rep; Take the chance we can avoid making it */
