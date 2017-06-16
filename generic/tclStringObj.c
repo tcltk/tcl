@@ -2965,32 +2965,22 @@ TclStringCatObjv(
 	    } else {
 
 		Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
-		if (numBytes == 0) {
-		    if (pendingPtr && pendingPtr->bytes) {
-			/*
-			 * Generating string rep of objPtr also 
-			 * generated string rep of pendingPtr.
-			 */
-			if (pendingPtr->length) {
-			    /* Can this happen? */
-			    goto foo;
-			} else {
-			    /* string-29.14 */
-			    first = objc - 1;
-			    last = 0;
-			    pendingPtr = NULL;
-			}
-		    }
+		if (numBytes) {
+		    last = objc - oc;
+		} else if (pendingPtr == NULL || pendingPtr->bytes == NULL) {
 		    continue;
 		}
-		last = objc - oc;
-foo:
 		if (pendingPtr) {
 		    Tcl_GetStringFromObj(pendingPtr, &length); /* PANIC? */
 		    pendingPtr = NULL;
 		}
 		if (length == 0) {
-		    first = last;
+		    if (numBytes) {
+			first = last;
+		    } else {
+			first = objc - 1;
+			last = 0;
+		    }
 		} else if (numBytes > INT_MAX - length) {
 		    goto overflow;
 		}
