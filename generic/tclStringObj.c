@@ -2965,11 +2965,52 @@ TclStringCatObjv(
 	    }
 	} while (--oc && (length == 0) && (pendingPtr == NULL));
 
+	first = last = objc - oc - 1;
+
+	while (oc && (length == 0)) {
+	    int numBytes;
+	    Tcl_Obj *objPtr = *ov++;
+
+	    /* assert ( pendingPtr != NULL ) <-- aiming for */
+
+	    if ((length == 0) && (objPtr->bytes == NULL) && !pendingPtr) {
+		/* No string rep; Take the chance we can avoid making it */
+
+		last = objc - oc;
+		first = last;
+		pendingPtr = objPtr;
+	    } else {
+
+		Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
+		if (numBytes) {
+		    last = objc - oc;
+		} else if (pendingPtr == NULL || pendingPtr->bytes == NULL) {
+		    --oc;
+		    continue;
+		}
+		if (pendingPtr) {
+		    Tcl_GetStringFromObj(pendingPtr, &length); /* PANIC? */
+		    pendingPtr = NULL;
+		}
+		if (length == 0) {
+		    if (numBytes) {
+			first = last;
+		    } else {
+			first = objc - 1;
+			last = 0;
+		    }
+		} else if (numBytes > INT_MAX - length) {
+		    goto overflow;
+		}
+		length += numBytes;
+	    }
+	    --oc;
+	}
+
       if (oc) {
 
-	/* assert ( length > 0 || pendingPtr != NULL )  */
+	/* assert ( length > 0 )  */
 
-	first = last = objc - oc - 1;
 
 	do {
 	    int numBytes;
