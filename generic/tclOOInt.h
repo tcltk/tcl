@@ -187,6 +187,13 @@ typedef struct Object {
 				/* Function to allow remapping of method
 				 * names. For itcl-ng. */
     LIST_STATIC(Tcl_Obj *) variables;
+    Tcl_Obj *definitionNs;	/* Name of the namespace to use for
+				 * oo::objdefine. If NULL, use the default
+				 * from the Foundation. It's an error at
+				 * [oo::objdefine] call time if this namespace
+				 * is defined but doesn't exist; we also check
+				 * at setting time but don't check between
+				 * times. */
 } Object;
 
 #define OBJECT_DELETED	1	/* Flag to say that an object has been
@@ -272,6 +279,13 @@ typedef struct Class {
 				 * (and filters and method implementations for
 				 * when getting method chains). */
     LIST_STATIC(Tcl_Obj *) variables;
+    Tcl_Obj *definitionNs;	/* Name of the namespace to do definitions of
+				 * this class in. If NULL, use the default
+				 * from the Foundation. It's an error at
+				 * [oo::define] call time if this namespace is
+				 * defined but doesn't exist; we also check
+				 * at setting time but don't check between
+				 * times. */
 } Class;
 
 /*
@@ -446,6 +460,12 @@ MODULE_SCOPE int	TclOONextToObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclOOSelfObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOOSetClassDefinitionNamespaceObjectCmd(
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOOSetObjectDefinitionNamespaceObjectCmd(
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const *objv)
 
 /*
  * Method implementations (in tclOOBasic.c).

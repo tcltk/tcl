@@ -350,6 +350,10 @@ InitFoundation(
     TclNewLiteralStringObj(namePtr, "::oo::UnknownDefinition");
     Tcl_SetNamespaceUnknownHandler(interp, fPtr->defineNs, namePtr);
     Tcl_SetNamespaceUnknownHandler(interp, fPtr->objdefNs, namePtr);
+    Tcl_CreateObjCommand(interp, "::oo::SetClassDefinitionNamespace",
+	    TclOOSetClassDefinitionNamespaceObjectCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::oo::SetObjectDefinitionNamespace",
+	    TclOOSetObjectDefinitionNamespaceObjectCmd, NULL, NULL);
 
     /*
      * Create the subcommands in the oo::define and oo::objdefine spaces.

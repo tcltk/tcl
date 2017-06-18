@@ -1236,6 +1236,87 @@ TclOOCopyObjectCmd(
     return TCL_OK;
 }
 
+int
+TclOOSetClassDefinitionNamespaceObjectCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_Object object;
+    Class *classPtr;
+    int haveNs;
+    Tcl_Namespace *nsPtr;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "class namespace");
+	return TCL_ERROR;
+    }
+    object = Tcl_GetObjectFromObj(interp, objv[1]);
+    if (object == NULL) {
+	return TCL_ERROR;
+    }
+    classPtr = ((Object *)object)->classPtr;
+    if (classPtr == NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"\"%s\" is not a class", TclGetString(objv[1])));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_REQUIRED", NULL);
+	return TCL_ERROR;
+    }
+    haveNs = (Tcl_GetString(objv[2])[0] != '\0');
+    if (haveNs &&
+	    TclGetNamespaceFromObj(interp, objv[2], &nsPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (classPtr->definitionNs) {
+	Tcl_DecrRefCount(classPtr->definitionNs);
+	classPtr->definitionNs = NULL;
+    }
+    if (haveNs) {
+	classPtr->definitionNs = objv[2];
+	Tcl_IncrRefCount(classPtr->definitionNs);
+    }
+    return TCL_OK;
+}
+
+int
+TclOOSetObjectDefinitionNamespaceObjectCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr;
+    int haveNs;
+    Tcl_Namespace *nsPtr;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "object namespace");
+	return TCL_ERROR;
+    }
+
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    haveNs = (Tcl_GetString(objv[2])[0] != '\0');
+    if (haveNs &&
+	    TclGetNamespaceFromObj(interp, objv[2], &nsPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (oPtr->definitionNs) {
+	Tcl_DecrRefCount(oPtr->definitionNs);
+	oPtr->definitionNs = NULL;
+    }
+    if (haveNs) {
+	oPtr->definitionNs = objv[2];
+	Tcl_IncrRefCount(oPtr->definitionNs);
+    }
+    return TCL_OK;
+}
+
 /*
  * Local Variables:
  * mode: c

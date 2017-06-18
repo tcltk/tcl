@@ -807,6 +807,7 @@ TclOODefineObjCmd(
     Foundation *fPtr = TclOOGetFoundation(interp);
     int result;
     Object *oPtr;
+    Tcl_Namespace *nsPtr = NULL;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className arg ?arg ...?");
@@ -826,11 +827,19 @@ TclOODefineObjCmd(
     }
 
     /*
-     * Make the oo::define namespace the current namespace and evaluate the
-     * command(s).
+     * Make the oo::define namespace (or its override) the current namespace
+     * and evaluate the command(s).
      */
 
-    if (InitDefineContext(interp, fPtr->defineNs, oPtr, objc,objv) != TCL_OK){
+    if (oPtr->classPtr->definitionNs &&
+	    TclGetNamespaceFromObj(interp, oPtr->classPtr->definitionNs,
+		    &nsPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (nsPtr == NULL) {
+	nsPtr = fPtr->defineNs;
+    }
+    if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -869,7 +878,7 @@ TclOODefineObjCmd(
 
 	objPtr = Tcl_NewObj();
 	obj2Ptr = Tcl_NewObj();
-	cmd = FindCommand(interp, objv[2], fPtr->defineNs);
+	cmd = FindCommand(interp, objv[2], nsPtr);
 	if (cmd == NULL) {
 	    /* punt this case! */
 	    Tcl_AppendObjToObj(obj2Ptr, objv[2]);
@@ -920,6 +929,7 @@ TclOOObjDefObjCmd(
     Foundation *fPtr = TclOOGetFoundation(interp);
     int isRoot, result;
     Object *oPtr;
+    Tcl_Namespace *nsPtr = NULL;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objectName arg ?arg ...?");
@@ -932,11 +942,19 @@ TclOOObjDefObjCmd(
     }
 
     /*
-     * Make the oo::objdefine namespace the current namespace and evaluate the
-     * command(s).
+     * Make the oo::objdefine namespace (or its override) the current
+     * namespace and evaluate the command(s).
      */
 
-    if (InitDefineContext(interp, fPtr->objdefNs, oPtr, objc,objv) != TCL_OK){
+    if (oPtr->definitionNs &&
+	    TclGetNamespaceFromObj(interp, oPtr->definitionNs,
+		    &nsPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (nsPtr == NULL) {
+	nsPtr = fPtr->objdefNs;
+    }
+    if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -975,7 +993,7 @@ TclOOObjDefObjCmd(
 
 	objPtr = Tcl_NewObj();
 	obj2Ptr = Tcl_NewObj();
-	cmd = FindCommand(interp, objv[2], fPtr->objdefNs);
+	cmd = FindCommand(interp, objv[2], nsPtr);
 	if (cmd == NULL) {
 	    /* punt this case! */
 	    Tcl_AppendObjToObj(obj2Ptr, objv[2]);
