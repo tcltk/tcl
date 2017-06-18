@@ -1045,6 +1045,7 @@ TclOODefineSelfObjCmd(
     Foundation *fPtr = TclOOGetFoundation(interp);
     int result;
     Object *oPtr;
+    Tcl_Namespace *nsPtr = NULL;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
@@ -1061,7 +1062,15 @@ TclOODefineSelfObjCmd(
      * command(s).
      */
 
-    if (InitDefineContext(interp, fPtr->objdefNs, oPtr, objc,objv) != TCL_OK){
+    if (oPtr->definitionNs &&
+	    TclGetNamespaceFromObj(interp, oPtr->definitionNs,
+		    &nsPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (nsPtr == NULL) {
+	nsPtr = fPtr->objdefNs;
+    }
+    if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1100,7 +1109,7 @@ TclOODefineSelfObjCmd(
 
 	objPtr = Tcl_NewObj();
 	obj2Ptr = Tcl_NewObj();
-	cmd = FindCommand(interp, objv[1], fPtr->objdefNs);
+	cmd = FindCommand(interp, objv[1], nsPr);
 	if (cmd == NULL) {
 	    /* punt this case! */
 	    Tcl_AppendObjToObj(obj2Ptr, objv[1]);
