@@ -4311,7 +4311,7 @@ namespace eval ::tcltest:: {
             set optionArr(-constructor) [lindex $consList 1]
         }
         set consScript {}
-        if {llength [lindex $consList 0]]} {
+        if {[llength [lindex $consList 0]]} {
             append consScript \
                 [format {lassign {%s} %s} $optionArr(-arguments) [lindex $consList 0]] \
                 "\n"
