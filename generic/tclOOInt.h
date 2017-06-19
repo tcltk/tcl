@@ -465,7 +465,7 @@ MODULE_SCOPE int	TclOOSetClassDefinitionNamespaceObjectCmd(
 			    int objc, Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOOSetObjectDefinitionNamespaceObjectCmd(
 			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv)
+			    int objc, Tcl_Obj *const *objv);
 
 /*
  * Method implementations (in tclOOBasic.c).
