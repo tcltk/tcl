@@ -1906,17 +1906,93 @@ catch {unset data}
 ##
 ## Test http::formatQuery
 ##
-::tcltest::test http-3.1 {http::formatQuery}  \
+::tcltest::test http-3.1 {http::formatQuery -- no arguments}  \
     -setup {
-
+        ::tcltest::testSetup {
+            ::http::mapReply {
+                * {
+                    use {
+                        prefix {return}
+                    }
+                    code {ok}
+                }
+            }
+        }
     } \
     -body {
-        list Test Not Yet Implemented
+        set status [catch {::http::formatQuery} result]
+        list $status $result
     } \
     -cleanup {
         ::tcltest::testCleanup
     } \
-    -result {}
+    -result {0 {}}
+
+::tcltest::test http-3.2 {http::formatQuery -- one set arguments}  \
+    -setup {
+        ::tcltest::testSetup {
+            ::http::mapReply {
+                * {
+                    use {
+                        prefix {return}
+                    }
+                    code {ok}
+                }
+            }
+        }
+    } \
+    -body {
+        set status [catch {::http::formatQuery arg1 val1} result]
+        list $status $result
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {0 arg1=val1}
+
+::tcltest::test http-3.3 {http::formatQuery -- two set arguments}  \
+    -setup {
+        ::tcltest::testSetup {
+            ::http::mapReply {
+                * {
+                    use {
+                        prefix {return}
+                    }
+                    code {ok}
+                }
+            }
+        }
+    } \
+    -body {
+        set status [catch {::http::formatQuery arg1 val1 arg2 val2} result]
+        list $status $result
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {0 arg1=val1&arg2=val2}
+
+::tcltest::test http-3.4 {http::formatQuery -- odd set arguments (Ticket: 4e5007ea1b2855277b349964ef1512ad884edace (6970))}  \
+    -setup {
+        ::tcltest::testSetup {
+            ::http::mapReply {
+                * {
+                    use {
+                        prefix {return}
+                    }
+                    code {ok}
+                }
+            }
+        }
+    } \
+    -body {
+        set status [catch {::http::formatQuery arg1 val1 arg2} result]
+        list $status $result
+    } \
+    -cleanup {
+        ::tcltest::testCleanup
+    } \
+    -result {1 {Incorrect number of arguments, must be an even number.}}
 
 
 ##

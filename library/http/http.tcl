@@ -1419,6 +1419,12 @@ proc http::wait {token} {
 #	TODO
 
 proc http::formatQuery {args} {
+    if {[llength $args] % 2} {
+        return \
+            -code error \
+            -errorcode [list HTTP BADARGCNT $args] \
+            {Incorrect number of arguments, must be an even number.}
+    }
     set result ""
     set sep ""
     foreach i $args {
