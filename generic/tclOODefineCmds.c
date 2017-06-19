@@ -47,8 +47,11 @@ struct DeclaredSlot {
 static inline void	BumpGlobalEpoch(Tcl_Interp *interp, Class *classPtr);
 static Tcl_Command	FindCommand(Tcl_Interp *interp, Tcl_Obj *stringObj,
 			    Tcl_Namespace *const namespacePtr);
-static void		GenerateErrorInfo(Tcl_Interp *interp, Object *oPtr,
+static inline void	GenerateErrorInfo(Tcl_Interp *interp, Object *oPtr,
 			    Tcl_Obj *savedNameObj, const char *typeOfSubject);
+static inline int	MagicDefinitionInvoke(Tcl_Interp *interp,
+			    Tcl_Namespace *nsPtr, int cmdIndex,
+			    int objc, Tcl_Obj *const *objv);
 static inline Class *	GetClassInOuterContext(Tcl_Interp *interp,
 			    Tcl_Obj *className, const char *errMsg);
 static inline int	InitDefineContext(Tcl_Interp *interp,
@@ -755,7 +758,7 @@ GetClassInOuterContext(
  * ----------------------------------------------------------------------
  */
 
-static void
+static inline void
 GenerateErrorInfo(
     Tcl_Interp *interp,		/* Where to store the error info trace. */
     Object *oPtr,		/* What object (or class) was being configured
@@ -787,6 +790,69 @@ GenerateErrorInfo(
 /*
  * ----------------------------------------------------------------------
  *
+ * MagicDefinitionInvoke --
+ *	Part of the implementation of the "oo::define" and "oo::objdefine"
+ *	commands that is used to implement the more-than-one-argument case,
+ *	applying ensemble-like tricks with dispatch so that error messages are
+ *	clearer. Doesn't handle the management of the stack frame.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline int
+MagicDefinitionInvoke(
+    Tcl_Interp *interp,
+    Tcl_Namespace *nsPtr,
+    int cmdIndex,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_Obj *objPtr, *obj2Ptr, **objs;
+    Tcl_Command cmd;
+    int isRoot, dummy, result, offset = cmdIndex + 1;
+
+    /*
+     * More than one argument: fire them through the ensemble processing
+     * engine so that everything appears to be good and proper in error
+     * messages. Note that we cannot just concatenate and send through
+     * Tcl_EvalObjEx, as that doesn't do ensemble processing, and we cannot go
+     * through Tcl_EvalObjv without the extra work to pre-find the command, as
+     * that finds command names in the wrong namespace at the moment. Ugly!
+     */
+
+    isRoot = TclInitRewriteEnsemble(interp, offset, 1, objv);
+
+    /*
+     * Build the list of arguments using a Tcl_Obj as a workspace. See
+     * comments above for why these contortions are necessary.
+     */
+
+    objPtr = Tcl_NewObj();
+    obj2Ptr = Tcl_NewObj();
+    cmd = FindCommand(interp, objv[cmdIndex], nsPtr);
+    if (cmd == NULL) {
+	/* punt this case! */
+	Tcl_AppendObjToObj(obj2Ptr, objv[cmdIndex]);
+    } else {
+	Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
+    }
+    Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
+    /* TODO: overflow? */
+    Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-offset, objv+offset);
+    Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
+
+    result = Tcl_EvalObjv(interp, objc-cmdIndex, objs, TCL_EVAL_INVOKE);
+    if (isRoot) {
+	TclResetRewriteEnsemble(interp, 1);
+    }
+    Tcl_DecrRefCount(objPtr);
+
+    return result;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOODefineObjCmd --
  *	Implementation of the "oo::define" command. Works by effectively doing
  *	the same as 'namespace eval', but with extra magic applied so that the
@@ -805,9 +871,9 @@ TclOODefineObjCmd(
     Tcl_Obj *const *objv)
 {
     Foundation *fPtr = TclOOGetFoundation(interp);
-    int result;
     Object *oPtr;
     Tcl_Namespace *nsPtr = NULL;
+    int result;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className arg ?arg ...?");
@@ -855,46 +921,7 @@ TclOODefineObjCmd(
 	}
 	TclDecrRefCount(objNameObj);
     } else {
-	Tcl_Obj *objPtr, *obj2Ptr, **objs;
-	Tcl_Command cmd;
-	int isRoot, dummy;
-
-	/*
-	 * More than one argument: fire them through the ensemble processing
-	 * engine so that everything appears to be good and proper in error
-	 * messages. Note that we cannot just concatenate and send through
-	 * Tcl_EvalObjEx, as that doesn't do ensemble processing, and we
-	 * cannot go through Tcl_EvalObjv without the extra work to pre-find
-	 * the command, as that finds command names in the wrong namespace at
-	 * the moment. Ugly!
-	 */
-
-	isRoot = TclInitRewriteEnsemble(interp, 3, 1, objv);
-
-	/*
-	 * Build the list of arguments using a Tcl_Obj as a workspace. See
-	 * comments above for why these contortions are necessary.
-	 */
-
-	objPtr = Tcl_NewObj();
-	obj2Ptr = Tcl_NewObj();
-	cmd = FindCommand(interp, objv[2], nsPtr);
-	if (cmd == NULL) {
-	    /* punt this case! */
-	    Tcl_AppendObjToObj(obj2Ptr, objv[2]);
-	} else {
-	    Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
-	}
-	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
-	/* TODO: overflow? */
-	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-3, objv+3);
-	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
-
-	result = Tcl_EvalObjv(interp, objc-2, objs, TCL_EVAL_INVOKE);
-	if (isRoot) {
-	    TclResetRewriteEnsemble(interp, 1);
-	}
-	Tcl_DecrRefCount(objPtr);
+	result = MagicDefinitionInvoke(interp, nsPtr, 2, objc, objv);
     }
     DelRef(oPtr);
 
@@ -927,9 +954,9 @@ TclOOObjDefObjCmd(
     Tcl_Obj *const *objv)
 {
     Foundation *fPtr = TclOOGetFoundation(interp);
-    int isRoot, result;
     Object *oPtr;
     Tcl_Namespace *nsPtr = NULL;
+    int result;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objectName arg ?arg ...?");
@@ -970,47 +997,7 @@ TclOOObjDefObjCmd(
 	}
 	TclDecrRefCount(objNameObj);
     } else {
-	Tcl_Obj *objPtr, *obj2Ptr, **objs;
-	Tcl_Command cmd;
-	int dummy;
-
-	/*
-	 * More than one argument: fire them through the ensemble processing
-	 * engine so that everything appears to be good and proper in error
-	 * messages. Note that we cannot just concatenate and send through
-	 * Tcl_EvalObjEx, as that doesn't do ensemble processing, and we
-	 * cannot go through Tcl_EvalObjv without the extra work to pre-find
-	 * the command, as that finds command names in the wrong namespace at
-	 * the moment. Ugly!
-	 */
-
-	isRoot = TclInitRewriteEnsemble(interp, 3, 1, objv);
-
-	/*
-	 * Build the list of arguments using a Tcl_Obj as a workspace. See
-	 * comments above for why these contortions are necessary.
-	 */
-
-	objPtr = Tcl_NewObj();
-	obj2Ptr = Tcl_NewObj();
-	cmd = FindCommand(interp, objv[2], nsPtr);
-	if (cmd == NULL) {
-	    /* punt this case! */
-	    Tcl_AppendObjToObj(obj2Ptr, objv[2]);
-	} else {
-	    Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
-	}
-	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
-	/* TODO: overflow? */
-	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-3, objv+3);
-	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
-
-	result = Tcl_EvalObjv(interp, objc-2, objs, TCL_EVAL_INVOKE);
-
-	if (isRoot) {
-	    TclResetRewriteEnsemble(interp, 1);
-	}
-	Tcl_DecrRefCount(objPtr);
+	result = MagicDefinitionInvoke(interp, nsPtr, 2, objc, objv);
     }
     DelRef(oPtr);
 
@@ -1043,9 +1030,9 @@ TclOODefineSelfObjCmd(
     Tcl_Obj *const *objv)
 {
     Foundation *fPtr = TclOOGetFoundation(interp);
-    int result;
     Object *oPtr;
     Tcl_Namespace *nsPtr = NULL;
+    int result;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
@@ -1086,46 +1073,7 @@ TclOODefineSelfObjCmd(
 	}
 	TclDecrRefCount(objNameObj);
     } else {
-	Tcl_Obj *objPtr, *obj2Ptr, **objs;
-	Tcl_Command cmd;
-	int isRoot, dummy;
-
-	/*
-	 * More than one argument: fire them through the ensemble processing
-	 * engine so that everything appears to be good and proper in error
-	 * messages. Note that we cannot just concatenate and send through
-	 * Tcl_EvalObjEx, as that doesn't do ensemble processing, and we
-	 * cannot go through Tcl_EvalObjv without the extra work to pre-find
-	 * the command, as that finds command names in the wrong namespace at
-	 * the moment. Ugly!
-	 */
-
-	isRoot = TclInitRewriteEnsemble(interp, 2, 1, objv);
-
-	/*
-	 * Build the list of arguments using a Tcl_Obj as a workspace. See
-	 * comments above for why these contortions are necessary.
-	 */
-
-	objPtr = Tcl_NewObj();
-	obj2Ptr = Tcl_NewObj();
-	cmd = FindCommand(interp, objv[1], nsPr);
-	if (cmd == NULL) {
-	    /* punt this case! */
-	    Tcl_AppendObjToObj(obj2Ptr, objv[1]);
-	} else {
-	    Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
-	}
-	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
-	/* TODO: overflow? */
-	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-2, objv+2);
-	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
-
-	result = Tcl_EvalObjv(interp, objc-1, objs, TCL_EVAL_INVOKE);
-	if (isRoot) {
-	    TclResetRewriteEnsemble(interp, 1);
-	}
-	Tcl_DecrRefCount(objPtr);
+	result = MagicDefinitionInvoke(interp, nsPtr, 1, objc, objv);
     }
     DelRef(oPtr);
 
