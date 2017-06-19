@@ -530,7 +530,7 @@ UpdateStringOfDict(
 	elem = TclGetString(keyPtr);
 	length = keyPtr->length;
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
-	if (bytesNeeded < 0) {
+	if (bytesNeeded > INT_MAX) {
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
 
