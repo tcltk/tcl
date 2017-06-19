@@ -22,6 +22,7 @@ http \- Client-side implementation of the HTTP/1.1 protocol
 .sp
 \fB::http::formatQuery\fR \fIkey value\fR ?\fIkey value\fR ...?
 .sp
+\fB::http::quoteString\fR \fIvalue\fR
 \fB::http::reset\fR \fItoken\fR ?\fIwhy\fR?
 .sp
 \fB::http::wait \fItoken\fR
@@ -119,12 +120,13 @@ non-empty.
 \fB\-urlencoding\fR \fIencoding\fR
 .
 The \fIencoding\fR used for creating the x-url-encoded URLs with
-\fB::http::formatQuery\fR.  The default is \fButf-8\fR, as specified by RFC
+\fB::http::formatQuery\fR and \fB::http::quoteString\fR.
+The default is \fButf-8\fR, as specified by RFC
 2718.  Prior to http 2.5 this was unspecified, and that behavior can be
 returned by specifying the empty string (\fB{}\fR), although
 \fIiso8859-1\fR is recommended to restore similar behavior but without the
-\fB::http::formatQuery\fR throwing an error processing non-latin-1
-characters.
+\fB::http::formatQuery\fR or \fB::http::quoteString\fR
+throwing an error processing non-latin-1 characters.
 .TP
 \fB\-useragent\fR \fIstring\fR
 .
@@ -333,6 +335,11 @@ number of arguments that are the keys and values of the query.  It
 encodes the keys and values, and generates one string that has the
 proper & and = separators.  The result is suitable for the
 \fB\-query\fR value passed to \fB::http::geturl\fR.
+.TP
+\fB::http::quoteString\fR \fIvalue\fR
+.
+This procedure does x-url-encoding of string.  It takes a single argument and
+encodes it.
 .TP
 \fB::http::reset\fR \fItoken\fR ?\fIwhy\fR?
 .

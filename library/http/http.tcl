@@ -95,7 +95,7 @@ namespace eval http {
 	set defaultKeepalive 0
     }
 
-    namespace export geturl config reset wait formatQuery register unregister
+    namespace export geturl config reset wait formatQuery register unregister quoteString
     # Useful, but not exported: data size status code
 }
 
@@ -1469,6 +1469,7 @@ proc http::mapReply {string} {
     }
     return $converted
 }
+interp alias {} http::quoteString {} http::mapReply 
 
 # http::ProxyRequired --
 #	Default proxy filter.
