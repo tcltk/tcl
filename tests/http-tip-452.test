@@ -44,2419 +44,3065 @@ proc bgerror {args} {
 set bindata "This is binary data\x0d\x0amore\x0dmore\x0amore\x00null"
 catch {unset data}
 
-##
-## Test http::config command -- not modified from original tests
-##
-::tcltest::test http-1.1 {http::config} {
-    http::config -useragent UserAgent
-    http::config
-} [list -accept */* -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -urlencoding utf-8 -useragent "UserAgent"]
-::tcltest::test http-1.2 {http::config} {
-    http::config -proxyfilter
-} http::ProxyRequired
-::tcltest::test http-1.3 {http::config} {
-    catch {http::config -junk}
-} 1
-::tcltest::test http-1.4 {http::config} {
-    set savedconf [http::config]
-    http::config -proxyhost nowhere.come -proxyport 8080 \
-	-proxyfilter myFilter -useragent "Tcl Test Suite" \
-	-urlencoding iso8859-1
-    set x [http::config]
-    http::config {*}$savedconf
-    set x
-} {-accept */* -proxyfilter myFilter -proxyhost nowhere.come -proxyport 8080 -urlencoding iso8859-1 -useragent {Tcl Test Suite}}
-::tcltest::test http-1.5 {http::config} -returnCodes error -body {
-    http::config -proxyhost {} -junk 8080
-} -result {Unknown option -junk, must be: -accept, -proxyfilter, -proxyhost, -proxyport, -urlencoding, -useragent}
-::tcltest::test http-1.6 {http::config} -setup {
-    set oldenc [http::config -urlencoding]
-} -body {
-    set enc [list [http::config -urlencoding]]
-    http::config -urlencoding iso8859-1
-    lappend enc [http::config -urlencoding]
-} -cleanup {
-    http::config -urlencoding $oldenc
-} -result {utf-8 iso8859-1}
+namespace eval ::httpTest:: {
+
+    ##
+    ## Test http::config command -- not modified from original tests
+    ##
+    ::tcltest::test http-1.1 {http::config} {
+        http::config -useragent UserAgent
+        http::config
+    } [list -accept */* -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -urlencoding utf-8 -useragent "UserAgent"]
+    ::tcltest::test http-1.2 {http::config} {
+        http::config -proxyfilter
+    } http::ProxyRequired
+    ::tcltest::test http-1.3 {http::config} {
+        catch {http::config -junk}
+    } 1
+    ::tcltest::test http-1.4 {http::config} {
+        set savedconf [http::config]
+        http::config -proxyhost nowhere.come -proxyport 8080 \
+            -proxyfilter myFilter -useragent "Tcl Test Suite" \
+            -urlencoding iso8859-1
+        set x [http::config]
+        http::config {*}$savedconf
+        set x
+    } {-accept */* -proxyfilter myFilter -proxyhost nowhere.come -proxyport 8080 -urlencoding iso8859-1 -useragent {Tcl Test Suite}}
+    ::tcltest::test http-1.5 {http::config} -returnCodes error -body {
+        http::config -proxyhost {} -junk 8080
+    } -result {Unknown option -junk, must be: -accept, -proxyfilter, -proxyhost, -proxyport, -urlencoding, -useragent}
+    ::tcltest::test http-1.6 {http::config} -setup {
+        set oldenc [http::config -urlencoding]
+    } -body {
+        set enc [list [http::config -urlencoding]]
+        http::config -urlencoding iso8859-1
+        lappend enc [http::config -urlencoding]
+    } -cleanup {
+        http::config -urlencoding $oldenc
+    } -result {utf-8 iso8859-1}
 
 
-##
-## Test http::geturl
-##
+    ##
+    ## Test http::geturl
+    ##
 
-##
-## Happy path, no options
-##
-::tcltest::test http-2.1 {http::geturl -- Happy path, no options} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {http://test.it/some/fragment}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
-
-##
-## Happy path, with all options except:
-##      -channel, -command, -keepalive and -querychannel
-##
-::tcltest::test http-2.2 {http::geturl with options} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {
-            ::http::geturl {http://test.it/some/fragment} \
-                -binary false \
-                -blocksize 1024 \
-                -handler SomeHandler \
-                -headers {CustomHeader true CustomState no} \
-                -method POST \
-                -myaddr 1024:45 \
-                -progress ProgressBar \
-                -protocol 1.2 \
-                -query SomeQuery \
-                -queryblocksize 2020 \
-                -queryprogress QueryProgressBar \
-                -strict yes \
-                -timeout 1000 \
-                -type xml \
-                -validate true
-        } token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 ::http::1 {::after,count 1 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
-
-##
-## Bad options
-##
-::tcltest::test http-2.3 {http::geturl} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {
-            ::http::geturl {http://test.it/some/fragment} \
-                -oops
-        } token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Unknown option -oops, can be: -binary, -blocksize, -channel, -command, -handler, -headers, -keepalive, -method, -myaddr, -progress, -protocol, -query, -queryblocksize, -querychannel, -queryprogress, -strict, -timeout, -type, -validate} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
-
-##
-## Good options, but invalid numeric value
-##
-::tcltest::test http-2.4a {http::geturl - Good options, but invalid numeric value for -blocksize} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {
-            ::http::geturl {http://test.it/some/fragment} \
-                -binary false \
-                -blocksize QED \
-                -handler SomeHandler \
-                -headers {CustomHeader true CustomState no} \
-                -method POST \
-                -myaddr 1024:45 \
-                -progress ProgressBar \
-                -protocol 1.2 \
-                -query SomeQuery \
-                -queryblocksize 2020 \
-                -queryprogress QueryProgressBar \
-                -strict yes \
-                -timeout 1000 \
-                -type xml \
-                -validate true
-        } token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Bad value for -blocksize (QED), must be integer} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
-
-::tcltest::test http-2.4b {http::geturl - Good options, but invalid numeric value for -queryblocksize} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {
-            ::http::geturl {http://test.it/some/fragment} \
-                -binary false \
-                -blocksize 1024 \
-                -handler SomeHandler \
-                -headers {CustomHeader true CustomState no} \
-                -method POST \
-                -myaddr 1024:45 \
-                -progress ProgressBar \
-                -protocol 1.2 \
-                -query SomeQuery \
-                -queryblocksize QED \
-                -queryprogress QueryProgressBar \
-                -strict yes \
-                -timeout 1000 \
-                -type xml \
-                -validate true
-        } token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Bad value for -queryblocksize (QED), must be integer} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
-
-::tcltest::test http-2.4c {http::geturl - Good options, but invalid numeric value for -timeout} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {
-            ::http::geturl {http://test.it/some/fragment} \
-                -binary false \
-                -blocksize 1024 \
-                -handler SomeHandler \
-                -headers {CustomHeader true CustomState no} \
-                -method POST \
-                -myaddr 1024:45 \
-                -progress ProgressBar \
-                -protocol 1.2 \
-                -query SomeQuery \
-                -queryblocksize 1024 \
-                -queryprogress QueryProgressBar \
-                -strict yes \
-                -timeout QED \
-                -type xml \
-                -validate true
-        } token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Bad value for -timeout (QED), must be integer} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
-
-##
-## Invalid use of -query and -querychannel options
-##
-::tcltest::test http-2.5 {http::geturl -- Invalid use of -query and -querychannel options} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {
-            ::http::geturl {http://test.it/some/fragment} \
-                -query SomeQuery \
-                -querychannel 10000
-        } token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Can't combine -query and -querychannel options!} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
-
-##
-## Unsupported URL
-##
-::tcltest::test http-2.5 {http::geturl -- Unsupported URL} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {
-            ::http::geturl {bad/url/me.test}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Unsupported URL: bad/url/me.test} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
-
-##
-## Missing host
-##
-::tcltest::test http-2.7 {http::geturl -- Missing host} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {
-            ::http::geturl {http://:20/some/fragment}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Missing host part: http://:20/some/fragment} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
-
-##
-## Invalid port number
-##
-::tcltest::test http-2.8 {http::geturl - Invalid port number} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {
-            ::http::geturl {http://test.it:99999999/some/fragment}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Invalid port number: 99999999} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
-
-##
-## Illegal encoding character usage in URL user
-##
-::tcltest::test http-2.9 {http::geturl - Illegal encoding character usage in URL user} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {
-            ::http::geturl {http://%@test.it/some/fragment} -strict yes} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Illegal encoding character usage "%" in URL user} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
-
-##
-## Illegal characters in URL user
-##
-::tcltest::test http-2.10 {http::geturl -- Illegal characters in URL user} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {
-            ::http::geturl {http://{ME}@test.it/some/fragment}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Illegal characters in URL user} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
-
-##
-## Path of URL is empty
-##
-::tcltest::test http-2.11 {http::geturl -- Path of URL is empty} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {
-            ::http::geturl {http://test.it}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
-
-##
-## Illegal encoding character usage in URL path
-##
-::tcltest::test http-2.12 {http::geturl -- Illegal encoding character usage in URL path} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {http://foo.bar/test%--}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Illegal encoding character usage "%--" in URL path} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
-
-##
-## Illegal characters in URL path
-##
-::tcltest::test http-2.13 {http::geturl - Illegal characters in URL path} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {http://test.it/{}}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Illegal characters in URL path} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
-
-##
-## Protocol missing
-##
-::tcltest::test http-2.14 {http::geturl - Protocol missing} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {//test.it/}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
-
-##
-## Unsupported URL type
-##
-::tcltest::test http-2.15 {http::geturl -- Unsupported URL type} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {://test.it/}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Unsupported URL: ://test.it/} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
-
-##
-## Port missing
-##
-::tcltest::test http-2.16 {http::geturl -- Port missing} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {http://test.it:/}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Missing host part: http://test.it:/} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
-
-##
-## Proxy Filter specified
-##
-::tcltest::test http-2.17 {http::geturl -- Proxy Filter specified} \
-    -setup {
-        set ::http::http(uid) {0}
-        set ::http::http(-proxyfilter) {proxy.it 1028}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        ::http::config -proxyhost proxy.com -proxyport 1024
-        set status [catch {::http::geturl {http://test.it/}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
-
-##
-## Non-empty valid user
-##
-::tcltest::test http-2.18 {http::geturl -- Non-empty valid user} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {http://jdoe@test.it/}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
-
-##
-## Non default port specified
-##
-::tcltest::test http-2.19 {http::geturl - Non default port specified} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {http://test.it:8080/}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
-
-##
-## Timeout specified
-##
-::tcltest::test http-2.20 {http::geturl -- Timeout specified} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {http://test.it/} -timeout 10} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 ::http::1 {::after,count 1 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
-
-##
-## Keep alive on closed channel
-##
-::tcltest::test http-2.21 {http::geturl -- Keep alive on closed channel} \
-    -setup {
-        set ::http::http(uid) {0}
-        set ::http::defaultKeepalive true
-        set http::socketmap(test.it:80) yes
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::fconfigure {
-                * {
-                    returns {Socket Closed}
-                    code {error}
-                    errorcode {HTTP TEST SOCKCLS}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {http://test.it/} -keepalive yes} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 ::http::1 {::after,count 0 ::fconfigure,count 1 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
-
-##
-## Keep alive on open channel
-##
-::tcltest::test http-2.22 {http::geturl -- Keep alive on open channel} \
-    -setup {
-        set ::http::http(uid) {0}
-        set ::http::defaultKeepalive true
-        set http::socketmap(test.it:80) yes
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::fconfigure {
-                * {
-                    returns {}
-                    code {ok}
-                    errorcode {}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {http://test.it/} -keepalive yes} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 ::http::1 {::after,count 0 ::fconfigure,count 1 ::fileevent,count 3 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 0}}
-
-##
-## Keep alive on new channel
-##
-::tcltest::test http-2.23 {http::geturl -- Keep alive on new channel} \
-    -setup {
-        set ::http::http(uid) {0}
-        set ::http::defaultKeepalive true
-        unset -nocomplain http::socketmap
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {http://test.it/} -keepalive yes} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
-
-
-##
-## New socket with -myaddr specified
-##
-::tcltest::test http-2.24 {http::geturl -- New socket with -myaddr specified} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {http://test.it/} -myaddr Interface1} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
-
-##
-## Error when opening the connection
-##
-::tcltest::test http-2.25 {http::geturl -- Error when opening the connection} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {Failed Socket Open}
-                    errorcode {HTTP TEST SOCKERR}
-                    code {error}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {http://test.it/} -myaddr Interface1} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Failed Socket Open} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 1 ::http::Finish,count 1 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 1}}
-
-##
-## Synchronus connection with timeout
-##
-::tcltest::test http-2.26 {http::geturl -- Synchronus connection with timeout} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
-                }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
-                }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
-                }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                    use {
-                        prefix {unset}
+    ##
+    ## Happy path, no options
+    ##
+    ::tcltest::test http-2.1 {http::geturl -- Happy path, no options} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
                     }
                 }
             }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {http://test.it/}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
+        } \
+        -body {
+            set status [catch {::http::geturl {http://test.it/some/fragment}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
 
-##
-## Synchronus connection with error
-##
-::tcltest::test http-2.27 {http::geturl -- Synchronus connection with error} \
-    -setup {
-        set ::http::http(uid) {0}
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {}
-                    code {ok}
+    ##
+    ## Happy path, with all options except:
+    ##      -channel, -command, -keepalive and -querychannel
+    ##
+    ::tcltest::test http-2.2 {http::geturl with options} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
                 }
-            }
-            ::after {
-                * {
-                    returns {test::afterId}
-                    errorcode {}
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
                 }
-            }
-            ::socket {
-                * {
-                    returns {TestSocket}
-                    errorcode {}
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
                 }
-            }
-            ::http::reset {
-                * {
-                    returns {}
-                    errorcode {}
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
                 }
-            }
-            ::http::wait {
-                * {
-                    returns {}
-                    errorcode {}
-                    set {
-                        ::http::1 A {status error error TestError}
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
                     }
                 }
             }
-            ::http::cleanup {
-                * {
-                    returns {}
-                    errorcode {}
-                }
-            }
-            ::http::Finish {
-                * {
-                    returns {}
-                }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::geturl {http://test.it/}} token]
-        list $status $token [::tcltest::callCount]
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 TestError {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 1 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
+        } \
+        -body {
+            set status [catch {
+                ::http::geturl {http://test.it/some/fragment} \
+                    -binary false \
+                    -blocksize 1024 \
+                    -handler SomeHandler \
+                    -headers {CustomHeader true CustomState no} \
+                    -method POST \
+                    -myaddr 1024:45 \
+                    -progress ProgressBar \
+                    -protocol 1.2 \
+                    -query SomeQuery \
+                    -queryblocksize 2020 \
+                    -queryprogress QueryProgressBar \
+                    -strict yes \
+                    -timeout 1000 \
+                    -type xml \
+                    -validate true
+            } token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 ::http::1 {::after,count 1 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
 
-
-
-##
-## Test http::formatQuery
-##
-::tcltest::test http-3.1 {http::formatQuery -- no arguments}  \
-    -setup {
-        ::tcltest::testSetup {
-            ::http::mapReply {
-                * {
-                    use {
-                        prefix {return}
+    ##
+    ## Bad options
+    ##
+    ::tcltest::test http-2.3 {http::geturl} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
                     }
-                    code {ok}
                 }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::formatQuery} result]
-        list $status $result
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 {}}
-
-::tcltest::test http-3.2 {http::formatQuery -- one set arguments}  \
-    -setup {
-        ::tcltest::testSetup {
-            ::http::mapReply {
-                * {
-                    use {
-                        prefix {return}
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
                     }
-                    code {ok}
                 }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::formatQuery arg1 val1} result]
-        list $status $result
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 arg1=val1}
-
-::tcltest::test http-3.3 {http::formatQuery -- two set arguments}  \
-    -setup {
-        ::tcltest::testSetup {
-            ::http::mapReply {
-                * {
-                    use {
-                        prefix {return}
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
                     }
-                    code {ok}
                 }
-            }
-        }
-    } \
-    -body {
-        set status [catch {::http::formatQuery arg1 val1 arg2 val2} result]
-        list $status $result
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {0 arg1=val1&arg2=val2}
-
-::tcltest::test http-3.4 {http::formatQuery -- odd set arguments (Ticket: 4e5007ea1b2855277b349964ef1512ad884edace (6970))}  \
-    -setup {
-        ::tcltest::testSetup {
-            ::http::mapReply {
-                * {
-                    use {
-                        prefix {return}
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
                     }
-                    code {ok}
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
                 }
             }
-        }
-    } \
-    -body {
-        set status [catch {::http::formatQuery arg1 val1 arg2} result]
-        list $status $result
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {1 {Incorrect number of arguments, must be an even number.}}
+        } \
+        -body {
+            set status [catch {
+                ::http::geturl {http://test.it/some/fragment} \
+                    -oops
+            } token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Unknown option -oops, can be: -binary, -blocksize, -channel, -command, -handler, -headers, -keepalive, -method, -myaddr, -progress, -protocol, -query, -queryblocksize, -querychannel, -queryprogress, -strict, -timeout, -type, -validate} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
 
-
-##
-## Test http::reset
-##
-
-##
-## Happy path
-##
-::tcltest::test http-4.1 {http::reset} \
-    -setup {
-        array set ::http_1 {
-            sock none
-        }
-        unset -nocomplain ::http_1(error)
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {Test error}
-                    code {error}
-                    errorcode {HTTP TEST RESET FILEEVENT}
+    ##
+    ## Good options, but invalid numeric value
+    ##
+    ::tcltest::test http-2.4a {http::geturl - Good options, but invalid numeric value for -blocksize} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
                 }
             }
-            ::http::Finish {
-                * {
-                    returns {No Error}
-                    errorcode {}
-                    set {
-                        ::http_1 A {
-                            status {---}
+        } \
+        -body {
+            set status [catch {
+                ::http::geturl {http://test.it/some/fragment} \
+                    -binary false \
+                    -blocksize QED \
+                    -handler SomeHandler \
+                    -headers {CustomHeader true CustomState no} \
+                    -method POST \
+                    -myaddr 1024:45 \
+                    -progress ProgressBar \
+                    -protocol 1.2 \
+                    -query SomeQuery \
+                    -queryblocksize 2020 \
+                    -queryprogress QueryProgressBar \
+                    -strict yes \
+                    -timeout 1000 \
+                    -type xml \
+                    -validate true
+            } token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Bad value for -blocksize (QED), must be integer} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
+
+    ::tcltest::test http-2.4b {http::geturl - Good options, but invalid numeric value for -queryblocksize} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {
+                ::http::geturl {http://test.it/some/fragment} \
+                    -binary false \
+                    -blocksize 1024 \
+                    -handler SomeHandler \
+                    -headers {CustomHeader true CustomState no} \
+                    -method POST \
+                    -myaddr 1024:45 \
+                    -progress ProgressBar \
+                    -protocol 1.2 \
+                    -query SomeQuery \
+                    -queryblocksize QED \
+                    -queryprogress QueryProgressBar \
+                    -strict yes \
+                    -timeout 1000 \
+                    -type xml \
+                    -validate true
+            } token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Bad value for -queryblocksize (QED), must be integer} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
+
+    ::tcltest::test http-2.4c {http::geturl - Good options, but invalid numeric value for -timeout} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {
+                ::http::geturl {http://test.it/some/fragment} \
+                    -binary false \
+                    -blocksize 1024 \
+                    -handler SomeHandler \
+                    -headers {CustomHeader true CustomState no} \
+                    -method POST \
+                    -myaddr 1024:45 \
+                    -progress ProgressBar \
+                    -protocol 1.2 \
+                    -query SomeQuery \
+                    -queryblocksize 1024 \
+                    -queryprogress QueryProgressBar \
+                    -strict yes \
+                    -timeout QED \
+                    -type xml \
+                    -validate true
+            } token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Bad value for -timeout (QED), must be integer} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
+
+    ##
+    ## Invalid use of -query and -querychannel options
+    ##
+    ::tcltest::test http-2.5 {http::geturl -- Invalid use of -query and -querychannel options} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {
+                ::http::geturl {http://test.it/some/fragment} \
+                    -query SomeQuery \
+                    -querychannel 10000
+            } token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Can't combine -query and -querychannel options!} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
+
+    ##
+    ## Unsupported URL
+    ##
+    ::tcltest::test http-2.5 {http::geturl -- Unsupported URL} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {
+                ::http::geturl {bad/url/me.test}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Unsupported URL: bad/url/me.test} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
+
+    ##
+    ## Missing host
+    ##
+    ::tcltest::test http-2.7 {http::geturl -- Missing host} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {
+                ::http::geturl {http://:20/some/fragment}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Missing host part: http://:20/some/fragment} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
+
+    ##
+    ## Invalid port number
+    ##
+    ::tcltest::test http-2.8 {http::geturl - Invalid port number} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {
+                ::http::geturl {http://test.it:99999999/some/fragment}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Invalid port number: 99999999} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
+
+    ##
+    ## Illegal encoding character usage in URL user
+    ##
+    ::tcltest::test http-2.9 {http::geturl - Illegal encoding character usage in URL user} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {
+                ::http::geturl {http://%@test.it/some/fragment} -strict yes} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Illegal encoding character usage "%" in URL user} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
+
+    ##
+    ## Illegal characters in URL user
+    ##
+    ::tcltest::test http-2.10 {http::geturl -- Illegal characters in URL user} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {
+                ::http::geturl {http://{ME}@test.it/some/fragment}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Illegal characters in URL user} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
+
+    ##
+    ## Path of URL is empty
+    ##
+    ::tcltest::test http-2.11 {http::geturl -- Path of URL is empty} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {
+                ::http::geturl {http://test.it}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
+
+    ##
+    ## Illegal encoding character usage in URL path
+    ##
+    ::tcltest::test http-2.12 {http::geturl -- Illegal encoding character usage in URL path} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {http://foo.bar/test%--}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Illegal encoding character usage "%--" in URL path} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
+
+    ##
+    ## Illegal characters in URL path
+    ##
+    ::tcltest::test http-2.13 {http::geturl - Illegal characters in URL path} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {http://test.it/{}}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Illegal characters in URL path} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
+
+    ##
+    ## Protocol missing
+    ##
+    ::tcltest::test http-2.14 {http::geturl - Protocol missing} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {//test.it/}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
+
+    ##
+    ## Unsupported URL type
+    ##
+    ::tcltest::test http-2.15 {http::geturl -- Unsupported URL type} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {://test.it/}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Unsupported URL: ://test.it/} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
+
+    ##
+    ## Port missing
+    ##
+    ::tcltest::test http-2.16 {http::geturl -- Port missing} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {http://test.it:/}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Missing host part: http://test.it:/} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 0}}
+
+    ##
+    ## Proxy Filter specified
+    ##
+    ::tcltest::test http-2.17 {http::geturl -- Proxy Filter specified} \
+        -setup {
+            set ::http::http(uid) {0}
+            set ::http::http(-proxyfilter) {proxy.it 1028}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            ::http::config -proxyhost proxy.com -proxyport 1024
+            set status [catch {::http::geturl {http://test.it/}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
+
+    ##
+    ## Non-empty valid user
+    ##
+    ::tcltest::test http-2.18 {http::geturl -- Non-empty valid user} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {http://jdoe@test.it/}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
+
+    ##
+    ## Non default port specified
+    ##
+    ::tcltest::test http-2.19 {http::geturl - Non default port specified} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {http://test.it:8080/}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
+
+    ##
+    ## Timeout specified
+    ##
+    ::tcltest::test http-2.20 {http::geturl -- Timeout specified} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {http://test.it/} -timeout 10} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 ::http::1 {::after,count 1 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
+
+    ##
+    ## Keep alive on closed channel
+    ##
+    ::tcltest::test http-2.21 {http::geturl -- Keep alive on closed channel} \
+        -setup {
+            set ::http::http(uid) {0}
+            set ::http::defaultKeepalive true
+            set http::socketmap(test.it:80) yes
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::fconfigure {
+                    * {
+                        returns {Socket Closed}
+                        code {error}
+                        errorcode {HTTP TEST SOCKCLS}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {http://test.it/} -keepalive yes} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 ::http::1 {::after,count 0 ::fconfigure,count 1 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
+
+    ##
+    ## Keep alive on open channel
+    ##
+    ::tcltest::test http-2.22 {http::geturl -- Keep alive on open channel} \
+        -setup {
+            set ::http::http(uid) {0}
+            set ::http::defaultKeepalive true
+            set http::socketmap(test.it:80) yes
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::fconfigure {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {http://test.it/} -keepalive yes} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 ::http::1 {::after,count 0 ::fconfigure,count 1 ::fileevent,count 3 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 0}}
+
+    ##
+    ## Keep alive on new channel
+    ##
+    ::tcltest::test http-2.23 {http::geturl -- Keep alive on new channel} \
+        -setup {
+            set ::http::http(uid) {0}
+            set ::http::defaultKeepalive true
+            unset -nocomplain http::socketmap
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {http://test.it/} -keepalive yes} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
+
+
+    ##
+    ## New socket with -myaddr specified
+    ##
+    ::tcltest::test http-2.24 {http::geturl -- New socket with -myaddr specified} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {http://test.it/} -myaddr Interface1} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
+
+    ##
+    ## Error when opening the connection
+    ##
+    ::tcltest::test http-2.25 {http::geturl -- Error when opening the connection} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {Failed Socket Open}
+                        errorcode {HTTP TEST SOCKERR}
+                        code {error}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {http://test.it/} -myaddr Interface1} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Failed Socket Open} {::after,count 0 ::fileevent,count 0 ::http::cleanup,count 1 ::http::Finish,count 1 ::http::reset,count 1 ::http::wait,count 0 ::socket,count 1}}
+
+    ##
+    ## Synchronus connection with timeout
+    ##
+    ::tcltest::test http-2.26 {http::geturl -- Synchronus connection with timeout} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                        use {
+                            prefix {unset}
+                        }
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {http://test.it/}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 ::http::1 {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 0 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
+
+    ##
+    ## Synchronus connection with error
+    ##
+    ::tcltest::test http-2.27 {http::geturl -- Synchronus connection with error} \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::after {
+                    * {
+                        returns {test::afterId}
+                        errorcode {}
+                    }
+                }
+                ::socket {
+                    * {
+                        returns {TestSocket}
+                        errorcode {}
+                    }
+                }
+                ::http::reset {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::wait {
+                    * {
+                        returns {}
+                        errorcode {}
+                        set {
+                            ::http::1 A {status error error TestError}
+                        }
+                    }
+                }
+                ::http::cleanup {
+                    * {
+                        returns {}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::geturl {http://test.it/}} token]
+            list $status $token [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 TestError {::after,count 0 ::fileevent,count 1 ::http::cleanup,count 1 ::http::Finish,count 0 ::http::reset,count 1 ::http::wait,count 1 ::socket,count 1}}
+
+
+
+    ##
+    ## Test http::formatQuery
+    ##
+    ::tcltest::test http-3.1 {http::formatQuery -- no arguments}  \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::http::mapReply {
+                    * {
+                        use {
+                            prefix {return}
+                        }
+                        code {ok}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::formatQuery} result]
+            list $status $result
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 {}}
+
+    ::tcltest::test http-3.2 {http::formatQuery -- one set arguments}  \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::http::mapReply {
+                    * {
+                        use {
+                            prefix {return}
+                        }
+                        code {ok}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::formatQuery arg1 val1} result]
+            list $status $result
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 arg1=val1}
+
+    ::tcltest::test http-3.3 {http::formatQuery -- two set arguments}  \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::http::mapReply {
+                    * {
+                        use {
+                            prefix {return}
+                        }
+                        code {ok}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::formatQuery arg1 val1 arg2 val2} result]
+            list $status $result
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 arg1=val1&arg2=val2}
+
+    ::tcltest::test http-3.4 {http::formatQuery -- odd set arguments (Ticket: 4e5007ea1b2855277b349964ef1512ad884edace (6970))}  \
+        -setup {
+            set ::http::http(uid) {0}
+            ::tcltest::testSetup {
+                ::http::mapReply {
+                    * {
+                        use {
+                            prefix {return}
+                        }
+                        code {ok}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::formatQuery arg1 val1 arg2} result]
+            list $status $result
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {Incorrect number of arguments, must be an even number.}}
+
+
+    ##
+    ## Test http::reset
+    ##
+
+    ##
+    ## Happy path
+    ##
+    ::tcltest::test http-4.1 {http::reset} \
+        -setup {
+            set ::http::http(uid) {0}
+            array set ::http_1 {
+                sock none
+            }
+            unset -nocomplain ::http_1(error)
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {Test error}
+                        code {error}
+                        errorcode {HTTP TEST RESET FILEEVENT}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {No Error}
+                        errorcode {}
+                        set {
+                            ::http_1 A {
+                                status {---}
+                            }
                         }
                     }
                 }
             }
+        } \
+        -body {
+            list [catch {::http::reset ::http_1}] [info exists ::http_1] [::tcltest::callCount]
+        } \
+        -result {0 1 {::fileevent,count 2 ::http::Finish,count 1}} \
+        -cleanup {
+            ::tcltest::testCleanup
         }
-    } \
-    -body {
-        list [catch {::http::reset ::http_1}] [info exists ::http_1] [::tcltest::callCount]
-    } \
-    -result {0 1 {::fileevent,count 2 ::http::Finish,count 1}} \
-    -cleanup {
-        ::tcltest::testCleanup
-    }
 
-##
-## Test error
-#
-::tcltest::test http-4.2 {http::rest} \
-    -setup {
-        array set ::http_1 {
-            sock none
-        }
-        unset -nocomplain ::http_1(error)
-        ::tcltest::testSetup {
-            ::fileevent {
-                * {
-                    returns {Test error}
-                    code {error}
-                    errorcode {HTTP TEST RESET FILEEVENT}
-                }
+    ##
+    ## Test error
+    #
+    ::tcltest::test http-4.2 {http::rest} \
+        -setup {
+            set ::http::http(uid) {0}
+            array set ::http_1 {
+                sock none
             }
-            ::http::Finish {
-                * {
-                    returns {No Error}
-                    errorcode {}
-                    set {
-                        ::http_1 A {
-                            status {---}
-                            error {{HTTP TEST ERROR}}
+            unset -nocomplain ::http_1(error)
+            ::tcltest::testSetup {
+                ::fileevent {
+                    * {
+                        returns {Test error}
+                        code {error}
+                        errorcode {HTTP TEST RESET FILEEVENT}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {No Error}
+                        errorcode {}
+                        set {
+                            ::http_1 A {
+                                status {---}
+                                error {{HTTP TEST ERROR}}
+                            }
                         }
                     }
                 }
             }
+        } \
+        -body {
+            list [catch {::http::reset ::http_1} result] [info exists ::http_1] [::tcltest::callCount] $result
+        } \
+        -result {1 0 {::fileevent,count 2 ::http::Finish,count 1} {HTTP TEST ERROR}} \
+        -cleanup {
+            ::tcltest::testCleanup
         }
-    } \
-    -body {
-        list [catch {::http::reset ::http_1} result] [info exists ::http_1] [::tcltest::callCount] $result
-    } \
-    -result {1 0 {::fileevent,count 2 ::http::Finish,count 1} {HTTP TEST ERROR}} \
-    -cleanup {
-        ::tcltest::testCleanup
-    }
 
 
-##
-## Test http::wait
-##
-::tcltest::test http-5.1 {http::wait} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::wait
+    ##
+    ::tcltest::test http-5.1 {http::wait -- status array index does not exists} \
+        -setup {
+            set ::http::http(uid) {0}
+            array set ::httpTest::TestStatus {
+                index value
+            }
+            ::tcltest::testSetup {
+                ::vwait {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::status {
+                    * {
+                        returns {TestPassed}
+                        errorcode {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::wait ::httpTest::TestStatus} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestStatus
+            ::tcltest::testCleanup
+        } \
+        -result {0 TestPassed}
+
+    ::tcltest::test http-5.2 {http::wait -- status currently a space} \
+        -setup {
+            set ::http::http(uid) {0}
+            array set ::httpTest::TestStatus {
+                status {}
+            }
+            ::tcltest::testSetup {
+                ::vwait {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::status {
+                    * {
+                        returns {TestPassed}
+                        errorcode {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::wait ::httpTest::TestStatus} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestStatus
+            ::tcltest::testCleanup
+        } \
+        -result {0 TestPassed}
+
+    ::tcltest::test http-5.3 {http::wait -- status array index exists and is not a space} \
+        -setup {
+            set ::http::http(uid) {0}
+            array set ::httpTest::TestStatus {
+                status someValue
+            }
+            ::tcltest::testSetup {
+                ::vwait {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::status {
+                    * {
+                        returns {TestPassed}
+                        errorcode {}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {::http::wait ::httpTest::TestStatus} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestStatus
+            ::tcltest::testCleanup
+        } \
+        -result {0 TestPassed}
 
 
-##
-## Testhttp::data
-##
-::tcltest::test http-6.1 {http::data} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Testhttp::data
+    ##
+    ::tcltest::test http-6.1 {http::data -- happy path} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {Some String}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::data ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {Some String}}
+
+    ::tcltest::test http-6.2 {http::data -- not an array} \
+        -setup {
+            set ::httpTest::TestToken {
+                body {Some String}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::data ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {1 {can't read "state(body)": variable isn't array}}
+
+    ::tcltest::test http-6.3 {http::data -- no data returned} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::data ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {}}
+
+    ::tcltest::test http-6.4 {http::data -- data index does not exists} \
+        -setup {
+            array set ::httpTest::TestToken {
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::data ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {1 {can't read "state(body)": no such element in array}}
 
 
-##
-## Test http::error
-##
-::tcltest::test http-7.1 {http::error} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::error
+    ##
+    ::tcltest::test http-7.1 {http::error -- happy path} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {Some String}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::error ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {Some Error}}
+
+    ::tcltest::test http-7.2 {http::error -- not an array} \
+        -setup {
+            set ::httpTest::TestToken {
+                body {Some String}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::error ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {}}
+
+    ::tcltest::test http-7.3 {http::error -- no error returned} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {Some Data}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {}
+            }
+        } \
+        -body {
+            set status [catch {::http::error ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {}}
+
+    ::tcltest::test http-7.4 {http::error -- error index does not exists} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {Some Data}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+            }
+        } \
+        -body {
+            set status [catch {::http::error ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {}}
+
+    ##
+    ## Test http::status
+    ##
+    ::tcltest::test http-8.1 {http::status -- happy path} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {Some String}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::status ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {Some Status}}
+
+    ::tcltest::test http-8.2 {http::status -- not an array} \
+        -setup {
+            set ::httpTest::TestToken {
+                body {Some String}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::status ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {1 {can't read "state(status)": variable isn't array}}
+
+    ::tcltest::test http-8.3 {http::status -- no status returned} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {Some Data}
+                status {}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::status ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {}}
+
+    ::tcltest::test http-8.4 {http::status -- status index does not exists} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {Some Data}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::status ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {1 {can't read "state(status)": no such element in array}}
+
+    ::tcltest::test http-8.5 {http::status -- token does not exists} \
+        -setup {
+        } \
+        -body {
+            set status [catch {::http::status ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 error}
+
+    ##
+    ## Test http::code
+    ##
+    ::tcltest::test http-9.1 {http::code -- happy path} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {Some String}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::code ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {HTTP/1.1 200 OK}}
+
+    ::tcltest::test http-9.2 {http::code -- not an array} \
+        -setup {
+            set ::httpTest::TestToken {
+                body {Some String}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::code ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {1 {can't read "state(http)": variable isn't array}}
+
+    ::tcltest::test http-9.3 {http::code -- no code returned} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {Some Data}
+                status {Some Status}
+                code {}
+                http {}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::code ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {}}
+
+    ::tcltest::test http-9.4 {http::code -- code index does not exists} \
+        -setup {
+            array set ::httpTest::TestToken {
+                status {Some Status}
+                body {Some Data}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::code ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {1 {can't read "state(http)": no such element in array}}
+
+    ##
+    ## Test http::ncode
+    ##
+    ::tcltest::test http-10.1 {http::ncode -- happy path} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {Some String}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::ncode ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 200}
+
+    ::tcltest::test http-10.2 {http::ncode -- not an array} \
+        -setup {
+            set ::httpTest::TestToken {
+                body {Some String}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::ncode ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {1 {can't read "state(http)": variable isn't array}}
+
+    ::tcltest::test http-10.3 {http::ncode -- no ncode returned} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {Some Data}
+                status {Some Status}
+
+                http {}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::ncode ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {}}
+
+    ::tcltest::test http-10.4 {http::ncode -- ncode index does not exists} \
+        -setup {
+            array set ::httpTest::TestToken {
+                status {Some Status}
+
+                body {Some Data}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::ncode ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {1 {can't read "state(http)": no such element in array}}
+
+    ##
+    ## Test http::size
+    ##
+    ::tcltest::test http-11.1 {http::size -- happy path} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {Some String}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::size ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 69}
+
+    ::tcltest::test http-11.2 {http::size -- not an array} \
+        -setup {
+            set ::httpTest::TestToken {
+                body {Some String}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::size ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {1 {can't read "state(currentsize)": variable isn't array}}
+
+    ::tcltest::test http-11.3 {http::size -- no size returned} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {Some Data}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::size ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {}}
+
+    ::tcltest::test http-11.4 {http::size -- currentsize index does not exists} \
+        -setup {
+            array set ::httpTest::TestToken {
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                body {Some Data}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::size ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {1 {can't read "state(currentsize)": no such element in array}}
+
+    ##
+    ## Test http::meta
+    ##
+    ::tcltest::test http-12.1 {http::meta -- happy path} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {Some String}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::meta ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {Some Meta Data}}
+
+    ::tcltest::test http-12.2 {http::meta -- not an array} \
+        -setup {
+            set ::httpTest::TestToken {
+                body {Some String}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {Some Meta Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::meta ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {1 {can't read "state(meta)": variable isn't array}}
+
+    ::tcltest::test http-12.3 {http::meta -- no metadata returned} \
+        -setup {
+            array set ::httpTest::TestToken {
+                body {}
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                meta {}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::meta ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {}}
+
+    ::tcltest::test http-12.4 {http::meta -- meta index does not exists} \
+        -setup {
+            array set ::httpTest::TestToken {
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                body {Some Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::meta ::httpTest::TestToken} results]
+            list $status $results
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {1 {can't read "state(meta)": no such element in array}}
+
+    ##
+    ## Test http::cleanup
+    ##
+    ::tcltest::test http-13.1 {http::cleanup} \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
 
 
-##
-## Test http::status
-##
-::tcltest::test http-8.1 {http::status} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::register
+    ##
+    ::tcltest::test http-15.1 {http::register} \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
 
 
-##
-## Test http::code
-##
-::tcltest::test http-9.1 {http::code} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::unregister
+    ##
+    ::tcltest::test http-16.1 {http::unregister} \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
 
 
-##
-## Test http::ncode
-##
-::tcltest::test http-10.1 {http::ncode} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
-
-##
-## Test http::size
-##
-::tcltest::test http-11.1 {http::size} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
-
-##
-## Test http::me
-##
-::tcltest::test http-12.1 {http::size} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
-
-
-##
-## Test http::cleanup
-##
-::tcltest::test http-13.1 {http::cleanup} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
-
-
-##
-## Test http::register
-##
-::tcltest::test http-15.1 {http::register} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
-
-
-##
-## Test http::unregister
-##
-::tcltest::test http-16.1 {http::unregister} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
-
-
-##
-## Test http::Finish
-##
-::tcltest::test http-17.1 {http::Finish}  \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::Finish
+    ##
+    ::tcltest::test http-17.1 {http::Finish}  \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
 
 
 
-##
-## Test http::Connected
-##
-::tcltest::test http-18.1 {http::Connected}  \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::Connected
+    ##
+    ::tcltest::test http-18.1 {http::Connected}  \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
 
-##
-## Test http::Connect
-##
-::tcltest::test http-19.1 {http::Connect}  \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::Connect
+    ##
+    ::tcltest::test http-19.1 {http::Connect}  \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
 
-##
-## Test http::Write
-##
-::tcltest::test http-20.1 {http::Write} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::Write
+    ##
+    ::tcltest::test http-20.1 {http::Write} \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
 
-##
-## Test http::Event
-##
-::tcltest::test http-21.1 {http::Event} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::Event
+    ##
+    ::tcltest::test http-21.1 {http::Event} \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
 
-##
-## Test http::IsBinaryContentType
-##
-::tcltest::test http-22.1 {http::IsBinaryContentType} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
-
-
-##
-## Test http::CopyStart
-###
-::tcltest::test http-23.1 {http::CopyStart} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
-
-##
-## Test http::CopyChunk
-##
-::tcltest::test http-24.1 {http::CopyChunk} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
-
-##
-## Test http::CopyDone
-##
-::tcltest::test http-25.1 {http::CopyDone} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::IsBinaryContentType
+    ##
+    ::tcltest::test http-22.1 {http::IsBinaryContentType} \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
 
 
-##
-## Test http::EOF
-##
-::tcltest::test http-26.1 {http::EOF} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::CopyStart
+    ###
+    ::tcltest::test http-23.1 {http::CopyStart} \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
+
+    ##
+    ## Test http::CopyChunk
+    ##
+    ::tcltest::test http-24.1 {http::CopyChunk} \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
+
+    ##
+    ## Test http::CopyDone
+    ##
+    ::tcltest::test http-25.1 {http::CopyDone} \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
 
 
-##
-## Test http::mapReply
-##
-::tcltest::test http-27.1 {http::mapReply} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
-
-##
-## Test http::ProxyRequire
-##
-::tcltest::test http-28.1 {http::ProxyRequire} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::EOF
+    ##
+    ::tcltest::test http-26.1 {http::EOF} \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
 
 
-##
-## Test http::CharsetToEncoding
-##
-::tcltest::test http-29.1 {http::CharsetToEncoding} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::mapReply
+    ##
+    ::tcltest::test http-27.1 {http::mapReply} \
+        -setup {
+        } \
+        -body {
+            ::http::mapReply {this is a test}
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {this%20is%20a%20test}
 
-##
-## Test http::ContentEncoding
-##
-::tcltest::test http-30.1 {http::ContentEncoding} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::mapReply
+    ##
+    ::tcltest::test http-27.2 {http::quoteString} \
+        -setup {
+        } \
+        -body {
+            ::http::quoteString {this is a test}
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {this%20is%20a%20test}
+
+    ##
+    ## Test http::ProxyRequire
+    ##
+    ::tcltest::test http-28.1 {http::ProxyRequire} \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
 
 
-##
-## Test http::make-transformation-chunked
-##
-::tcltest::test http-31.1 {http::make-transformation-chunked} \
-    -setup {
-    } \
-    -body {
-        list Test Not Yet Implemented
-    } \
-    -cleanup {
-        ::tcltest::testCleanup
-    } \
-    -result {}
+    ##
+    ## Test http::CharsetToEncoding
+    ##
+    ::tcltest::test http-29.1 {http::CharsetToEncoding} \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
 
+    ##
+    ## Test http::ContentEncoding
+    ##
+    ::tcltest::test http-30.1 {http::ContentEncoding} \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
+
+
+    ##
+    ## Test http::make-transformation-chunked
+    ##
+    ::tcltest::test http-31.1 {http::make-transformation-chunked} \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
+}
 
 # cleanup
 catch {unset url}
@@ -2466,6 +3112,8 @@ catch {unset data}
 
 rename bgerror {}
 ::tcltest::cleanupTests
+
+namespace delete ::httpTest::
 
 # Local variables:
 # mode: tcl
