@@ -1469,7 +1469,7 @@ proc http::mapReply {string} {
     }
     return $converted
 }
-interp alias {} http::quoteString {} http::mapReply 
+interp alias {} http::quoteString {} http::mapReply
 
 # http::ProxyRequired --
 #	Default proxy filter.

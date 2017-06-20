@@ -2193,7 +2193,6 @@ namespace eval ::httpTest:: {
             array set ::httpTest::TestToken {
                 body {Some String}
                 status {Some Status}
-
                 http {HTTP/1.1 200 OK}
                 currentsize {69}
                 meta {Some Meta Data}
@@ -2830,91 +2829,791 @@ namespace eval ::httpTest:: {
     ##
     ## Test http::cleanup
     ##
-    ::tcltest::test http-13.1 {http::cleanup} \
+    ::tcltest::test http-13.1 {http::cleanup -- token exists} \
+        -setup {
+            array set ::httpTest::TestToken {
+                status {Some Status}
+
+                http {HTTP/1.1 200 OK}
+                currentsize {69}
+                body {Some Data}
+                error {Some Error}
+            }
+        } \
+        -body {
+            set status [catch {::http::cleanup ::httpTest::TestToken} results]
+            list $status $results [info exists ::httpTest::TestToken]
+        } \
+        -cleanup {
+            unset -nocomplain ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} 0}
+
+    ::tcltest::test http-13.2 {http::cleanup -- token does not exist} \
         -setup {
         } \
         -body {
-            list Test Not Yet Implemented
+            set status [catch {::http::cleanup ::httpTest::TestToken} results]
+            list $status $results [info exists ::httpTest::TestToken]
         } \
         -cleanup {
+            unset -nocomplain ::httpTest::TestToken
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {0 {} 0}
 
 
     ##
     ## Test http::register
     ##
-    ::tcltest::test http-15.1 {http::register} \
+    ::tcltest::test http-15.1 {http::register -- new registration} \
         -setup {
+            ::tcltest::saveVars {::http::urlTypes}
+            unset -nocomplain ::http::urlTypes
         } \
         -body {
-            list Test Not Yet Implemented
+            set status [catch {http::register test 8080 TestCmd} results]
+            list $status $results [info exists ::http::urlTypes(test)]
         } \
         -cleanup {
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {0 {8080 TestCmd} 1}
+
+    ::tcltest::test http-15.2 {http::register -- existing registration} \
+        -setup {
+            ::tcltest::saveVars {::http::urlTypes}
+            set ::http::urlTypes(test) {BAD RESULTS}
+        } \
+        -body {
+            set status [catch {http::register test 8080 TestCmd} results]
+            list $status $results [info exists ::http::urlTypes(test)]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 {8080 TestCmd} 1}
+
+    ::tcltest::test http-15.3 {http::register -- existing registration different case} \
+        -setup {
+            ::tcltest::saveVars {::http::urlTypes}
+            set ::http::urlTypes(test) {BAD RESULTS}
+        } \
+        -body {
+            set status [catch {http::register TEST 8080 TestCmd} results]
+            list $status $results [info exists ::http::urlTypes(test)]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 {8080 TestCmd} 1}
 
 
     ##
     ## Test http::unregister
     ##
-    ::tcltest::test http-16.1 {http::unregister} \
+    ::tcltest::test http-16.1 {http::unregister - protocol already registered} \
         -setup {
+            ::tcltest::saveVars {::http::urlTypes}
+            set ::http::urlTypes(test) {8080 TestCmd}
         } \
         -body {
-            list Test Not Yet Implemented
+            set status [catch {http::unregister test} results]
+            list $status $results [info exists ::http::urlTypes(test)]
         } \
         -cleanup {
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {0 {8080 TestCmd} 0}
+
+    ::tcltest::test http-16.2 {http::unregister - protocol already registered with a different case} \
+        -setup {
+            ::tcltest::saveVars {::http::urlTypes}
+            set ::http::urlTypes(test) {8080 TestCmd}
+        } \
+        -body {
+            set status [catch {http::unregister TEST} results]
+            list $status $results [info exists ::http::urlTypes(test)]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 {8080 TestCmd} 0}
+
+    ::tcltest::test http-16.3 {http::unregister - protocol not registered} \
+        -setup {
+            ::tcltest::saveVars {::http::urlTypes}
+            unset -nocomplain ::http::urlTypes(test)
+        } \
+        -body {
+            set status [catch {http::unregister test} results]
+            list $status $results [info exists ::http::urlTypes(test)]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {1 {unsupported url type "test"} 0}
 
 
     ##
     ## Test http::Finish
     ##
-    ::tcltest::test http-17.1 {http::Finish}  \
+    ::tcltest::test http-17.1 {http::Finish -- default all optionals, happy path}  \
         -setup {
+            ::tcltest::testSetup {
+                ::after {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CloseSocket {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+            }
+            ##
+            ## For some test we will also need -keepalive, connection, after,
+            ## -command and done-command-cb
+            ##
+            array set ::httpTest::TestToken {
+                status {ok}
+                error {}
+                sock {TestSocket}
+            }
         } \
         -body {
-            list Test Not Yet Implemented
+            set status [catch {http::Finish ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(error) [::tcltest::callCount]
         } \
         -cleanup {
+            unset ::httpTest::TestToken
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {0 {} ok {} {::after,count 0 ::http::CloseSocket,count 0}}
 
-
-
-    ##
-    ## Test http::Connected
-    ##
-    ::tcltest::test http-18.1 {http::Connected}  \
+    ::tcltest::test http-17.2 {http::Finish -- default all optionals, status of timeout}  \
         -setup {
+            ::tcltest::testSetup {
+                ::after {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CloseSocket {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+            }
+            ##
+            ## For some test we will also need -keepalive, connection, after,
+            ## -command and done-command-cb
+            ##
+            array set ::httpTest::TestToken {
+                status {timeout}
+                error {}
+                sock {TestSocket}
+            }
         } \
         -body {
-            list Test Not Yet Implemented
+            set status [catch {http::Finish ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(error) [::tcltest::callCount]
         } \
         -cleanup {
+            unset ::httpTest::TestToken
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {0 {} timeout {} {::after,count 0 ::http::CloseSocket,count 1}}
+
+    ::tcltest::test http-17.3 {http::Finish -- default all optionals, status of error}  \
+        -setup {
+            ::tcltest::testSetup {
+                ::after {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CloseSocket {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+            }
+            ##
+            ## For some test we will also need -keepalive, connection, after,
+            ## -command and done-command-cb
+            ##
+            array set ::httpTest::TestToken {
+                status {error}
+                error {}
+                sock {TestSocket}
+            }
+        } \
+        -body {
+            set status [catch {http::Finish ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(error) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} error {} {::after,count 0 ::http::CloseSocket,count 1}}
+
+    ::tcltest::test http-17.4 {http::Finish -- default all optionals, -keepalive is yes}  \
+        -setup {
+            ::tcltest::testSetup {
+                ::after {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CloseSocket {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+            }
+            ##
+            ## For some test we will also need -keepalive, connection, after,
+            ## -command and done-command-cb
+            ##
+            array set ::httpTest::TestToken {
+                status {ok}
+                error {}
+                sock {TestSocket}
+                -keepalive yes
+            }
+        } \
+        -body {
+            set status [catch {http::Finish ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(error) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} ok {} {::after,count 0 ::http::CloseSocket,count 0}}
+
+    ::tcltest::test http-17.5 {http::Finish -- default all optionals, -keepalive is no}  \
+        -setup {
+            ::tcltest::testSetup {
+                ::after {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CloseSocket {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+            }
+            ##
+            ## For some test we will also need -keepalive, connection, after,
+            ## -command and done-command-cb
+            ##
+            array set ::httpTest::TestToken {
+                status {ok}
+                error {}
+                sock {TestSocket}
+                -keepalive no
+            }
+        } \
+        -body {
+            set status [catch {http::Finish ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(error) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} ok {} {::after,count 0 ::http::CloseSocket,count 1}}
+
+    ::tcltest::test http-17.6 {http::Finish -- default all optionals, connection is close}  \
+        -setup {
+            ::tcltest::testSetup {
+                ::after {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CloseSocket {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+            }
+            ##
+            ## For some test we will also need -keepalive, connection, after,
+            ## -command and done-command-cb
+            ##
+            array set ::httpTest::TestToken {
+                status {ok}
+                error {}
+                sock {TestSocket}
+                connection close
+            }
+        } \
+        -body {
+            set status [catch {http::Finish ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(error) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} ok {} {::after,count 0 ::http::CloseSocket,count 1}}
+
+    ::tcltest::test http-17.7 {http::Finish -- default all optionals, connection is no}  \
+        -setup {
+            ::tcltest::testSetup {
+                ::after {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CloseSocket {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+            }
+            ##
+            ## For some test we will also need -keepalive, connection, after,
+            ## -command and done-command-cb
+            ##
+            array set ::httpTest::TestToken {
+                status {ok}
+                error {}
+                sock {TestSocket}
+                connection no
+            }
+        } \
+        -body {
+            set status [catch {http::Finish ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(error) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} ok {} {::after,count 0 ::http::CloseSocket,count 0}}
+
+    ::tcltest::test http-17.8 {http::Finish -- default all optionals, -command is set, no error}  \
+        -setup {
+            ::tcltest::testSetup {
+                ::after {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CloseSocket {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+            }
+            ##
+            ## For some test we will also need -keepalive, connection, after,
+            ## -command and done-command-cb
+            ##
+            array set ::httpTest::TestToken {
+                status {ok}
+                error {}
+                sock {TestSocket}
+                -command list
+            }
+        } \
+        -body {
+            set status [catch {http::Finish ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(error) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} ok {} {::after,count 0 ::http::CloseSocket,count 0}}
+
+    proc ::httpTest::GenerateError {args} {
+        return
+    }
+
+    ::tcltest::test http-17.9 {http::Finish -- default all optionals, -command is set, with error}  \
+        -setup {
+            ::tcltest::testSetup {
+                ::after {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CloseSocket {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::httpTest::GenerateError {
+                    * {
+                        returns {Generated Error}
+                        code {error}
+                        errorcode {HTTP FINISH ERROR}
+                    }
+                }
+            }
+            ##
+            ## For some test we will also need -keepalive, connection, after,
+            ## -command and done-command-cb
+            ##
+            array set ::httpTest::TestToken {
+                status {ok}
+                error {}
+                sock {TestSocket}
+                -command ::httpTest::GenerateError
+            }
+        } \
+        -body {
+            set status [catch {http::Finish ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(error) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 error error {{Generated Error} {Generated Error
+    while executing
+"::httpTest::GenerateError $token"
+    ("eval" body line 1)
+    invoked from within
+"eval $state(-command) {$token}"} {HTTP FINISH ERROR}} {::after,count 0 ::http::CloseSocket,count 0 ::httpTest::GenerateError,count 1}}
+
+    ::tcltest::test http-17.10 {http::Finish -- default all optionals, -command is set, with already invoked}  \
+        -setup {
+            ::tcltest::testSetup {
+                ::after {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CloseSocket {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::httpTest::GenerateError {
+                    * {
+                        returns {Generated Error}
+                        code {error}
+                        errorcode {HTTP FINISH ERROR}
+                    }
+                }
+            }
+            ##
+            ## For some test we will also need -keepalive, connection, after,
+            ## -command and done-command-cb
+            ##
+            array set ::httpTest::TestToken {
+                status {ok}
+                error {}
+                sock {TestSocket}
+                -command ::httpTest::GenerateError
+                done-command-cb yes
+            }
+        } \
+        -body {
+            set status [catch {http::Finish ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(error) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} ok {} {::after,count 0 ::http::CloseSocket,count 0 ::httpTest::GenerateError,count 0}}
+
+    ::tcltest::test http-17.11 {http::Finish -- skipCB set, -command is set}  \
+        -setup {
+            ::tcltest::testSetup {
+                ::after {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CloseSocket {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::httpTest::GenerateError {
+                    * {
+                        returns {Generated Error}
+                        code {error}
+                        errorcode {HTTP FINISH ERROR}
+                    }
+                }
+            }
+            ##
+            ## For some test we will also need -keepalive, connection, after,
+            ## -command and done-command-cb
+            ##
+            array set ::httpTest::TestToken {
+                status {ok}
+                error {}
+                sock {TestSocket}
+                -command ::httpTest::GenerateError
+                done-command-cb yes
+            }
+        } \
+        -body {
+            set status [catch {http::Finish ::httpTest::TestToken {} yes} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(error) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} ok {} {::after,count 0 ::http::CloseSocket,count 0 ::httpTest::GenerateError,count 0}}
+
+    ::tcltest::test http-17.11 {http::Finish -- errormessage set}  \
+        -setup {
+            ::tcltest::testSetup {
+                ::after {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CloseSocket {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+            }
+            ##
+            ## For some test we will also need -keepalive, connection, after,
+            ## -command and done-command-cb
+            ##
+            array set ::httpTest::TestToken {
+                status {ok}
+                error {}
+                sock {TestSocket}
+            }
+        } \
+        -body {
+            set ::errorCode {HTTP FINISH TEST}
+            set ::errorInfo {This is a trace list}
+            set status [catch {http::Finish ::httpTest::TestToken {Finish Error Message}} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(error) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} error {{Finish Error Message} {This is a trace list} {HTTP FINISH TEST}} {::after,count 0 ::http::CloseSocket,count 1}}
 
     ##
     ## Test http::Connect
     ##
-    ::tcltest::test http-19.1 {http::Connect}  \
+    ::tcltest::test http-18.1 {http::Connect -- happy path}  \
+        -setup {
+            ::tcltest::testSetup {
+                ::eof {
+                    * {
+                        returns {no}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::fconfigure {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Connected {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                sock {TestSocket}
+            }
+        } \
+        -body {
+            set status [catch {http::Connect ::httpTest::TestToken proto phost srvurl} results]
+            list $status $results [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::eof,count 1 ::fconfigure,count 1 ::fileevent,count 1 ::http::Connected,count 1 ::http::Finish,count 0}}
+
+    ::tcltest::test http-18.2 {http::Connect -- eof true}  \
+        -setup {
+            ::tcltest::testSetup {
+                ::eof {
+                    * {
+                        returns {yes}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::fconfigure {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Connected {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                sock {TestSocket}
+            }
+        } \
+        -body {
+            set status [catch {http::Connect ::httpTest::TestToken proto phost srvurl} results]
+            list $status $results [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::eof,count 1 ::fconfigure,count 0 ::fileevent,count 0 ::http::Connected,count 0 ::http::Finish,count 1}}
+
+    ::tcltest::test http-18.3 {http::Connect -- fconfigure errored}  \
+        -setup {
+            ::tcltest::testSetup {
+                ::eof {
+                    * {
+                        returns {no}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::fconfigure {
+                    * {
+                        returns {bad socket}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Connected {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                sock {TestSocket}
+            }
+        } \
+        -body {
+            set status [catch {http::Connect ::httpTest::TestToken proto phost srvurl} results]
+            list $status $results [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::eof,count 1 ::fconfigure,count 1 ::fileevent,count 0 ::http::Connected,count 0 ::http::Finish,count 1}}
+
+    ##
+    ## Test http::quoteStrings
+    ##
+    ::tcltest::test http-19.1 {http::quoteString} \
         -setup {
         } \
         -body {
-            list Test Not Yet Implemented
+            ::http::quoteString {this is a test}
         } \
         -cleanup {
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {this%20is%20a%20test}
 
     ##
     ## Test http::Write
@@ -2947,16 +3646,71 @@ namespace eval ::httpTest:: {
     ##
     ## Test http::IsBinaryContentType
     ##
-    ::tcltest::test http-22.1 {http::IsBinaryContentType} \
+    ::tcltest::test http-22.1 {http::IsBinaryContentType -- is not a known text format} \
         -setup {
         } \
         -body {
-            list Test Not Yet Implemented
+            http::IsBinaryContentType image/jpeg
         } \
         -cleanup {
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {true}
+
+    ::tcltest::test http-22.2 {http::IsBinaryContentType -- some type of text format} \
+        -setup {
+        } \
+        -body {
+            http::IsBinaryContentType text/html
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {false}
+
+    ::tcltest::test http-22.3 {http::IsBinaryContentType -- some type of xml format} \
+        -setup {
+        } \
+        -body {
+            http::IsBinaryContentType image/svg+xml
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {false}
+
+    ::tcltest::test http-22.4 {http::IsBinaryContentType -- application XML} \
+        -setup {
+        } \
+        -body {
+            http::IsBinaryContentType application/xml
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {false}
+
+    ::tcltest::test http-22.5 {http::IsBinaryContentType -- application parsed XML} \
+        -setup {
+        } \
+        -body {
+            http::IsBinaryContentType application/xml-external-parsed-entity
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {false}
+
+    ::tcltest::test http-22.6 {http::IsBinaryContentType -- application XML DTD} \
+        -setup {
+        } \
+        -body {
+            http::IsBinaryContentType application/xml-dtd
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {false}
 
 
     ##
@@ -3032,20 +3786,6 @@ namespace eval ::httpTest:: {
         -result {this%20is%20a%20test}
 
     ##
-    ## Test http::mapReply
-    ##
-    ::tcltest::test http-27.2 {http::quoteString} \
-        -setup {
-        } \
-        -body {
-            ::http::quoteString {this is a test}
-        } \
-        -cleanup {
-            ::tcltest::testCleanup
-        } \
-        -result {this%20is%20a%20test}
-
-    ##
     ## Test http::ProxyRequire
     ##
     ::tcltest::test http-28.1 {http::ProxyRequire} \
@@ -3102,6 +3842,22 @@ namespace eval ::httpTest:: {
             ::tcltest::testCleanup
         } \
         -result {}
+
+
+    ##
+    ## Test http::Connected
+    ##
+    ::tcltest::test http-32.1 {http::Connected}  \
+        -setup {
+        } \
+        -body {
+            list Test Not Yet Implemented
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {}
+
 }
 
 # cleanup
