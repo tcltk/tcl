@@ -3715,60 +3715,1438 @@ namespace eval ::httpTest:: {
 
     ##
     ## Test http::CopyStart
-    ###
-    ::tcltest::test http-23.1 {http::CopyStart} \
+    ##
+    ::tcltest::test http-23.1 {http::CopyStart -- no options, no errors} \
         -setup {
+            ::tcltest::testSetup {
+                ::fcopy {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::zlib {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::make-transformation-chunked {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::ContentEncoding {
+                    * {
+                        returns {1 2}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CopyDone {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need transfer for some test
+            ##
+            array set ::httpTest::TestToken {
+                -blocksize {1024}
+                -channel {TestSocket}
+                zlib {}
+            }
         } \
         -body {
-            list Test Not Yet Implemented
+            set status [catch {::http::CopyStart TestSocket ::httpTest::TestToken} results]
+            list $status $results [::tcltest::callCount]
         } \
         -cleanup {
+            unset ::httpTest::TestToken
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {0 {} {::fcopy,count 1 ::http::ContentEncoding,count 1 ::http::CopyDone,count 0 ::http::Finish,count 0 ::http::make-transformation-chunked,count 0 ::zlib,count 2}}
+
+    ::tcltest::test http-23.2 {http::CopyStart -- intital true, no errors} \
+        -setup {
+            ::tcltest::testSetup {
+                ::fcopy {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::zlib {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::make-transformation-chunked {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::ContentEncoding {
+                    * {
+                        returns {1 2}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CopyDone {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need transfer for some test
+            ##
+            array set ::httpTest::TestToken {
+                -blocksize {1024}
+                -channel {TestSocket}
+                zlib {}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyStart TestSocket ::httpTest::TestToken yes} results]
+            list $status $results [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::fcopy,count 1 ::http::ContentEncoding,count 1 ::http::CopyDone,count 0 ::http::Finish,count 0 ::http::make-transformation-chunked,count 0 ::zlib,count 2}}
+
+    ::tcltest::test http-23.3 {http::CopyStart -- intital false, no errors} \
+        -setup {
+            ::tcltest::testSetup {
+                ::fcopy {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::zlib {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::make-transformation-chunked {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::ContentEncoding {
+                    * {
+                        returns {1 2}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CopyDone {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need transfer for some test
+            ##
+            array set ::httpTest::TestToken {
+                -blocksize {1024}
+                -channel {TestSocket}
+                zlib {}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyStart TestSocket ::httpTest::TestToken no} results]
+            list $status $results [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::fcopy,count 1 ::http::ContentEncoding,count 0 ::http::CopyDone,count 0 ::http::Finish,count 0 ::http::make-transformation-chunked,count 0 ::zlib,count 0}}
+
+    ::tcltest::test http-23.4 {http::CopyStart -- intital false, no errors, transfer set to not chunked} \
+        -setup {
+            ::tcltest::testSetup {
+                ::fcopy {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::zlib {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::make-transformation-chunked {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::ContentEncoding {
+                    * {
+                        returns {1 2}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CopyDone {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need transfer for some test
+            ##
+            array set ::httpTest::TestToken {
+                -blocksize {1024}
+                -channel {TestSocket}
+                zlib {}
+                transfer {not chunked}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyStart TestSocket ::httpTest::TestToken no} results]
+            list $status $results [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::fcopy,count 1 ::http::ContentEncoding,count 0 ::http::CopyDone,count 0 ::http::Finish,count 0 ::http::make-transformation-chunked,count 0 ::zlib,count 0}}
+
+    ::tcltest::test http-23.6 {http::CopyStart -- intital false, no errors, transfer set to chunked} \
+        -setup {
+            ::tcltest::testSetup {
+                ::fcopy {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::zlib {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::make-transformation-chunked {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::ContentEncoding {
+                    * {
+                        returns {1 2}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CopyDone {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need transfer for some test
+            ##
+            array set ::httpTest::TestToken {
+                -blocksize {1024}
+                -channel {TestSocket}
+                zlib {}
+                transfer {chunked}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyStart TestSocket ::httpTest::TestToken no} results]
+            list $status $results [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::fcopy,count 0 ::http::ContentEncoding,count 1 ::http::CopyDone,count 0 ::http::Finish,count 0 ::http::make-transformation-chunked,count 1 ::zlib,count 2}}
+
+    ::tcltest::test http-23.7 {http::CopyStart -- intital false, error doing fcopy} \
+        -setup {
+            ::tcltest::testSetup {
+                ::fcopy {
+                    * {
+                        returns {FCopy failed!}
+                        code {error}
+                        errorcode {HTTP TEST ERROR}
+                    }
+                }
+                ::zlib {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::make-transformation-chunked {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::ContentEncoding {
+                    * {
+                        returns {1 2}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CopyDone {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need transfer for some test
+            ##
+            array set ::httpTest::TestToken {
+                -blocksize {1024}
+                -channel {TestSocket}
+                zlib {}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyStart TestSocket ::httpTest::TestToken no} results]
+            list $status $results [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::fcopy,count 1 ::http::ContentEncoding,count 0 ::http::CopyDone,count 0 ::http::Finish,count 1 ::http::make-transformation-chunked,count 0 ::zlib,count 0}}
+
 
     ##
     ## Test http::CopyChunk
     ##
-    ::tcltest::test http-24.1 {http::CopyChunk} \
+    proc ::httpTest::CopyChunkStreamHelper {args} {
+        return;
+    }
+    proc ::httpTest::CopyChunkProgressHelper {args} {
+        return;
+    }
+    ::tcltest::test http-24.1 {http::CopyChunk -- not done, no zlib, no progress} \
         -setup {
+            ::tcltest::testSetup {
+                ::puts {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Log {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Eof {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkStreamHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkProgressHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need -progress for some test
+            ##
+            array set ::httpTest::TestToken {
+                currentsize {1024}
+                totalsize {2048}
+                -channel {TestSocket}
+            }
         } \
         -body {
-            list Test Not Yet Implemented
+            set status [catch {::http::CopyChunk ::httpTest::TestToken {some string}} results]
+            list $status $results $::httpTest::TestToken(currentsize) [::tcltest::callCount]
         } \
         -cleanup {
+            unset ::httpTest::TestToken
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {0 {} 1035 {::http::Eof,count 0 ::http::Log,count 0 ::httpTest::CopyChunkProgressHelper,count 0 ::httpTest::CopyChunkStreamHelper,count 0 ::puts,count 1}}
+
+    ::tcltest::test http-24.2 {http::CopyChunk -- not done, no zlib streams, no progress} \
+        -setup {
+            ::tcltest::testSetup {
+                ::puts {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Log {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Eof {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkStreamHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkProgressHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need -progress for some test
+            ##
+            array set ::httpTest::TestToken {
+                currentsize {1024}
+                totalsize {2048}
+                zlib {}
+                -channel {TestSocket}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyChunk ::httpTest::TestToken {some string}} results]
+            list $status $results $::httpTest::TestToken(currentsize) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} 1035 {::http::Eof,count 0 ::http::Log,count 0 ::httpTest::CopyChunkProgressHelper,count 0 ::httpTest::CopyChunkStreamHelper,count 0 ::puts,count 1}}
+
+    ::tcltest::test http-24.3 {http::CopyChunk -- not done, two zlib streams, no progress} \
+        -setup {
+            ::tcltest::testSetup {
+                ::puts {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Log {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Eof {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkStreamHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkProgressHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need -progress for some test
+            ##
+            array set ::httpTest::TestToken {
+                currentsize {1024}
+                totalsize {2048}
+                zlib {::httpTest::CopyChunkStreamHelper ::httpTest::CopyChunkStreamHelper}
+                -channel {TestSocket}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyChunk ::httpTest::TestToken {some string}} results]
+            list $status $results $::httpTest::TestToken(currentsize) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} 1035 {::http::Eof,count 0 ::http::Log,count 0 ::httpTest::CopyChunkProgressHelper,count 0 ::httpTest::CopyChunkStreamHelper,count 2 ::puts,count 1}}
+
+    ::tcltest::test http-24.4 {http::CopyChunk -- not done, no zlib, progress callback} \
+        -setup {
+            ::tcltest::testSetup {
+                ::puts {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Log {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Eof {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkStreamHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkProgressHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need -progress for some test
+            ##
+            array set ::httpTest::TestToken {
+                currentsize {1024}
+                totalsize {2048}
+                -channel {TestSocket}
+                -progress {::httpTest::CopyChunkProgressHelper}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyChunk ::httpTest::TestToken {some string}} results]
+            list $status $results $::httpTest::TestToken(currentsize) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} 1035 {::http::Eof,count 0 ::http::Log,count 0 ::httpTest::CopyChunkProgressHelper,count 1 ::httpTest::CopyChunkStreamHelper,count 0 ::puts,count 1}}
+
+    ::tcltest::test http-24.5 {http::CopyChunk -- done, no zlib} \
+        -setup {
+            ::tcltest::testSetup {
+                ::puts {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Log {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Eof {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkStreamHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkProgressHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need -progress for some test
+            ##
+            array set ::httpTest::TestToken {
+                currentsize {1024}
+                totalsize {2048}
+                -channel {TestSocket}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyChunk ::httpTest::TestToken {}} results]
+            list $status $results $::httpTest::TestToken(currentsize) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} 1024 {::http::Eof,count 1 ::http::Log,count 1 ::httpTest::CopyChunkProgressHelper,count 0 ::httpTest::CopyChunkStreamHelper,count 0 ::puts,count 0}}
+
+    ::tcltest::test http-24.6 {http::CopyChunk -- done, no zlib streams} \
+        -setup {
+            ::tcltest::testSetup {
+                ::puts {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Log {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Eof {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkStreamHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkProgressHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need -progress for some test
+            ##
+            array set ::httpTest::TestToken {
+                currentsize {1024}
+                totalsize {2048}
+                zlib {}
+                -channel {TestSocket}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyChunk ::httpTest::TestToken {}} results]
+            list $status $results $::httpTest::TestToken(currentsize) [info exists ::httpTest::TestToken(zlib)] [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} 1024 0 {::http::Eof,count 1 ::http::Log,count 1 ::httpTest::CopyChunkProgressHelper,count 0 ::httpTest::CopyChunkStreamHelper,count 0 ::puts,count 1}}
+
+    ::tcltest::test http-24.7 {http::CopyChunk -- done, two zlib streams} \
+        -setup {
+            ::tcltest::testSetup {
+                ::puts {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Log {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Eof {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkStreamHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkProgressHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need -progress for some test
+            ##
+            array set ::httpTest::TestToken {
+                currentsize {1024}
+                totalsize {2048}
+                zlib {::httpTest::CopyChunkStreamHelper ::httpTest::CopyChunkStreamHelper}
+                -channel {TestSocket}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyChunk ::httpTest::TestToken {}} results]
+            list $status $results $::httpTest::TestToken(currentsize) [info exists ::httpTest::TestToken(zlib)] [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} 1024 0 {::http::Eof,count 1 ::http::Log,count 1 ::httpTest::CopyChunkProgressHelper,count 0 ::httpTest::CopyChunkStreamHelper,count 4 ::puts,count 1}}
 
     ##
     ## Test http::CopyDone
     ##
-    ::tcltest::test http-25.1 {http::CopyDone} \
+    ::tcltest::test http-25.1 {http::CopyDone - no progress callback, no error, not eof} \
         -setup {
+            ::tcltest::testSetup {
+                ::eof {
+                    * {
+                        returns {0}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CopyStart {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Eof {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkProgressHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need -progress for some test
+            ##
+            array set ::httpTest::TestToken {
+                currentsize {1024}
+                totalsize {1044}
+                sock {TestSocket}
+            }
         } \
         -body {
-            list Test Not Yet Implemented
+            set status [catch {::http::CopyDone ::httpTest::TestToken 20} results]
+            list $status $results $::httpTest::TestToken(currentsize) [::tcltest::callCount]
         } \
         -cleanup {
+            unset ::httpTest::TestToken
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {0 {} 1044 {::eof,count 1 ::http::CopyStart,count 1 ::http::Eof,count 0 ::http::Finish,count 0 ::httpTest::CopyChunkProgressHelper,count 0}}
+
+    ::tcltest::test http-25.2 {http::CopyDone - progress callback, no error, not eof} \
+        -setup {
+            ::tcltest::testSetup {
+                ::eof {
+                    * {
+                        returns {0}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CopyStart {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Eof {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkProgressHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need -progress for some test
+            ##
+            array set ::httpTest::TestToken {
+                currentsize {1024}
+                totalsize {1044}
+                sock {TestSocket}
+                -progress {::httpTest::CopyChunkProgressHelper}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyDone ::httpTest::TestToken 20} results]
+            list $status $results $::httpTest::TestToken(currentsize) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} 1044 {::eof,count 1 ::http::CopyStart,count 1 ::http::Eof,count 0 ::http::Finish,count 0 ::httpTest::CopyChunkProgressHelper,count 1}}
+
+    ::tcltest::test http-25.3 {http::CopyDone - no progress callback, error, not eof} \
+        -setup {
+            ::tcltest::testSetup {
+                ::eof {
+                    * {
+                        returns {0}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CopyStart {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Eof {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkProgressHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need -progress for some test
+            ##
+            array set ::httpTest::TestToken {
+                currentsize {1024}
+                totalsize {1044}
+                sock {TestSocket}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyDone ::httpTest::TestToken 20 {We had an error}} results]
+            list $status $results $::httpTest::TestToken(currentsize) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} 1044 {::eof,count 0 ::http::CopyStart,count 0 ::http::Eof,count 0 ::http::Finish,count 1 ::httpTest::CopyChunkProgressHelper,count 0}}
+
+    ::tcltest::test http-25.4 {http::CopyDone - no progress callback, no error, eof} \
+        -setup {
+            ::tcltest::testSetup {
+                ::eof {
+                    * {
+                        returns {1}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CopyStart {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Eof {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkProgressHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need -progress for some test
+            ##
+            array set ::httpTest::TestToken {
+                currentsize {1024}
+                totalsize {1044}
+                sock {TestSocket}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyDone ::httpTest::TestToken 20} results]
+            list $status $results $::httpTest::TestToken(currentsize) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} 1044 {::eof,count 1 ::http::CopyStart,count 0 ::http::Eof,count 1 ::http::Finish,count 0 ::httpTest::CopyChunkProgressHelper,count 0}}
+
+    ::tcltest::test http-25.5 {http::CopyDone - no progress callback, no error, eof errored} \
+        -setup {
+            ::tcltest::testSetup {
+                ::eof {
+                    * {
+                        returns {HTTP eof test Error}
+                        code {error}
+                        errorcode {}
+                    }
+                }
+                ::http::CopyStart {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Eof {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::httpTest::CopyChunkProgressHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            ##
+            ## Need -progress for some test
+            ##
+            array set ::httpTest::TestToken {
+                currentsize {1024}
+                totalsize {1044}
+                sock {TestSocket}
+            }
+        } \
+        -body {
+            set status [catch {::http::CopyDone ::httpTest::TestToken 20} results]
+            list $status $results $::httpTest::TestToken(currentsize) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} 1044 {::eof,count 1 ::http::CopyStart,count 0 ::http::Eof,count 1 ::http::Finish,count 0 ::httpTest::CopyChunkProgressHelper,count 0}}
 
 
     ##
     ## Test http::EOF
     ##
-    ::tcltest::test http-26.1 {http::EOF} \
+    ::tcltest::test http-26.1 {http::EOF - past the headers but no body received} \
         -setup {
+            ::tcltest::testSetup {
+                ::zlib {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::encoding {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::ContentEncoding {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Log {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CharsetToEncoding {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                state body
+                body {}
+                binary {no}
+                status {BAD}
+                charset {ascii}
+            }
         } \
         -body {
-            list Test Not Yet Implemented
+            set status [catch {::http::Eof ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(body) [::tcltest::callCount]
         } \
         -cleanup {
+            unset ::httpTest::TestToken
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {0 {} ok {} {::encoding,count 0 ::http::CharsetToEncoding,count 0 ::http::ContentEncoding,count 0 ::http::Finish,count 1 ::http::Log,count 0 ::zlib,count 0}}
+
+    ::tcltest::test http-26.2 {http::EOF - doing the headers and no body received} \
+        -setup {
+            ::tcltest::testSetup {
+                ::zlib {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::encoding {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::ContentEncoding {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Log {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CharsetToEncoding {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                state header
+                body {}
+                binary {no}
+                status {BAD}
+                charset {ascii}
+            }
+        } \
+        -body {
+            set status [catch {::http::Eof ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(body) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} eof {} {::encoding,count 0 ::http::CharsetToEncoding,count 0 ::http::ContentEncoding,count 0 ::http::Finish,count 1 ::http::Log,count 0 ::zlib,count 0}}
+
+    ::tcltest::test http-26.3 {http::EOF - getting the body, body received with two zlibs} \
+        -setup {
+            ::tcltest::testSetup {
+                ::zlib {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::encoding {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::ContentEncoding {
+                    * {
+                        returns {Encoding1 Encoding1}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Log {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CharsetToEncoding {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                state body
+                body {This is a test.}
+                binary {no}
+                status {BAD}
+                charset {ascii}
+            }
+        } \
+        -body {
+            set status [catch {::http::Eof ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(body) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} ok {} {::encoding,count 1 ::http::CharsetToEncoding,count 1 ::http::ContentEncoding,count 1 ::http::Finish,count 1 ::http::Log,count 0 ::zlib,count 2}}
+
+
+    ::tcltest::test http-26.4 {http::EOF - getting the body, body received with no zlibs but unknonw encoding} \
+        -setup {
+            ::tcltest::testSetup {
+                ::zlib {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::encoding {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::ContentEncoding {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Log {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CharsetToEncoding {
+                    * {
+                        returns {binary}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                state body
+                body {This is a test.}
+                binary {no}
+                status {BAD}
+                charset {ascii}
+            }
+        } \
+        -body {
+            set status [catch {::http::Eof ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(body) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} ok {This is a test.} {::encoding,count 0 ::http::CharsetToEncoding,count 1 ::http::ContentEncoding,count 1 ::http::Finish,count 1 ::http::Log,count 0 ::zlib,count 0}}
+
+    ::tcltest::test http-26.5 {http::EOF - getting the body, body received with no zlibs with binary body} \
+        -setup {
+            ::tcltest::testSetup {
+                ::zlib {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::encoding {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::ContentEncoding {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Log {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+                ::http::CharsetToEncoding {
+                    * {
+                        returns {binary}
+                        code {ok}
+                        errorcode {}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                state body
+                body {This is a test.}
+                binary {yes}
+                status {BAD}
+                charset {ascii}
+            }
+        } \
+        -body {
+            set status [catch {::http::Eof ::httpTest::TestToken} results]
+            list $status $results $::httpTest::TestToken(status) $::httpTest::TestToken(body) [::tcltest::callCount]
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} ok {This is a test.} {::encoding,count 0 ::http::CharsetToEncoding,count 0 ::http::ContentEncoding,count 1 ::http::Finish,count 1 ::http::Log,count 0 ::zlib,count 0}}
 
 
     ##
