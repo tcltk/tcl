@@ -41,6 +41,7 @@ static const struct {
     {"forward", TclOODefineForwardObjCmd, 1},
     {"method", TclOODefineMethodObjCmd, 1},
     {"renamemethod", TclOODefineRenameMethodObjCmd, 1},
+    {"self", TclOODefineObjSelfObjCmd, 0},
     {"unexport", TclOODefineUnexportObjCmd, 1},
     {NULL, NULL, 0}
 };
