@@ -45,7 +45,6 @@ if {![info exists auto_path]} {
 	set auto_path ""
     }
 }
-
 namespace eval tcl {
     variable Dir
     foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
@@ -172,13 +171,7 @@ if {[interp issafe]} {
 
     namespace eval ::tcl::clock [list variable TclLibDir $::tcl_library]
 
-    proc clock args {
-	namespace eval ::tcl::clock [list namespace ensemble create -command \
-		[uplevel 1 [list namespace origin [lindex [info level 0] 0]]] \
-		-subcommands {
-		    add clicks format microseconds milliseconds scan seconds
-		}]
-
+    proc ::tcl::initClock {} {
 	# Auto-loading stubs for 'clock.tcl'
 
 	foreach cmd {add format scan} {
@@ -189,8 +182,9 @@ if {[interp issafe]} {
 	    }
 	}
 
-	return [uplevel 1 [info level 0]]
+	rename ::tcl::initClock {}
     }
+    ::tcl::initClock
 }
 
 # Conditionalize for presence of exec.
@@ -470,9 +464,9 @@ proc auto_load {cmd {namespace {}}} {
 
 proc ::tcl::Pkg::source {filename} {
     if {[interp issafe]} {
-	uplevel 1 [list ::source $filename]    
+	uplevel 1 [list ::source $filename]
     } else {
-	uplevel 1 [list ::source -nopkg $filename]    
+	uplevel 1 [list ::source -nopkg $filename]
     }
 }
 

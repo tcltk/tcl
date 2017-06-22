@@ -963,13 +963,13 @@ TclParseBackslash(
 	 */
 
 	if (Tcl_UtfCharComplete(p, numBytes - 1)) {
-	    count = Tcl_UtfToUniChar(p, &unichar) + 1;	/* +1 for '\' */
+	    count = TclUtfToUniChar(p, &unichar) + 1;	/* +1 for '\' */
 	} else {
 	    char utfBytes[TCL_UTF_MAX];
 
 	    memcpy(utfBytes, p, (size_t) (numBytes - 1));
 	    utfBytes[numBytes - 1] = '\0';
-	    count = Tcl_UtfToUniChar(utfBytes, &unichar) + 1;
+	    count = TclUtfToUniChar(utfBytes, &unichar) + 1;
 	}
 	result = unichar;
 	break;
@@ -1169,6 +1169,8 @@ ParseTokens(
 	    numBytes--;
 	    nestedPtr = TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
 	    while (1) {
+		const char *curEnd;
+
 		if (Tcl_ParseCommand(parsePtr->interp, src, numBytes, 1,
 			nestedPtr) != TCL_OK) {
 		    parsePtr->errorType = nestedPtr->errorType;
@@ -1177,8 +1179,9 @@ ParseTokens(
 		    TclStackFree(parsePtr->interp, nestedPtr);
 		    return TCL_ERROR;
 		}
+		curEnd = src + numBytes;
 		src = nestedPtr->commandStart + nestedPtr->commandSize;
-		numBytes = parsePtr->end - src;
+		numBytes = curEnd - src;
 		Tcl_FreeParse(nestedPtr);
 
 		/*
