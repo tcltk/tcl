@@ -1552,36 +1552,38 @@ proc http::ContentEncoding {token} {
     return $r
 }
 
-proc http::make-transformation-chunked {chan command} {
-    set lambda {{chan command} {
-        set data ""
-        set size -1
-        yield
-        while {1} {
-            chan configure $chan -translation {crlf binary}
-            while {[gets $chan line] < 1} { yield }
-            chan configure $chan -translation {binary binary}
-            if {[scan $line %x size] != 1} { return -code error "invalid size: \"$line\"" }
-            set chunk ""
-            while {$size && ![chan eof $chan]} {
-                set part [chan read $chan $size]
-                incr size -[string length $part]
-                append chunk $part
-            }
-            if {[catch {
-		uplevel #0 [linsert $command end $chunk]
-	    }]} {
-		http::Log "Error in callback: $::errorInfo"
-	    }
-            if {[string length $chunk] == 0} {
-		# channel might have been closed in the callback
-                catch {chan event $chan readable {}}
-                return
-            }
+proc http::ReceiveChunked {chan command} {
+    set data ""
+    set size -1
+    yield
+    while {1} {
+        fconfigure $chan -translation {crlf binary}
+        while {[gets $chan line] < 1} { yield }
+        fconfigure $chan -translation {binary binary}
+        if {[scan $line %x size] != 1} {return -code error "invalid size: \"$line\"" }
+        set chunk ""
+        while {$size && ![eof $chan]} {
+            set part [read $chan $size]
+            incr size -[string length $part]
+            append chunk $part
         }
-    }}
-    coroutine dechunk$chan ::apply $lambda $chan $command
-    chan event $chan readable [namespace origin dechunk$chan]
+        if {[catch {
+            uplevel #0 [linsert $command end $chunk]
+        }]} {
+            http::Log "Error in callback: $::errorInfo"
+            return
+        }
+        if {[string length $chunk] == 0} {
+            # channel might have been closed in the callback
+            catch {fileevent $chan readable {}}
+            return
+        }
+    }
+}
+
+proc http::make-transformation-chunked {chan command} {
+    coroutine [namespace current]::dechunk$chan ::http::ReceiveChunked $chan $command
+    chan event $chan readable [namespace current]::dechunk$chan
     return
 }
 

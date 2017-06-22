@@ -5166,66 +5166,505 @@ namespace eval ::httpTest:: {
     ##
     ## Test http::ProxyRequire
     ##
-    ::tcltest::test http-28.1 {http::ProxyRequire} \
+    ::tcltest::test http-28.1 {http::ProxyRequire -- no proxy set} \
         -setup {
+            ::tcltest::saveVars {
+                ::http::http
+            }
+            array unset ::http::http -proxy*
         } \
         -body {
-            list Test Not Yet Implemented
+            http::ProxyRequired test.host.it
         } \
         -cleanup {
             ::tcltest::testCleanup
         } \
         -result {}
+
+
+    ::tcltest::test http-28.2 {http::ProxyRequire -- only proxy host set} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::http
+            }
+            array unset ::http::http -proxy*
+            array set ::http::http {
+                -proxyhost {proxy.it}
+            }
+        } \
+        -body {
+            http::ProxyRequired test.host.it
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {proxy.it 8080}
+
+
+    ::tcltest::test http-28.3 {http::ProxyRequire -- proxy fully set} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::http
+            }
+            array unset ::http::http -proxy*
+            array set ::http::http {
+                -proxyhost {proxy.it}
+                -proxyport {1024}
+            }
+        } \
+        -body {
+            http::ProxyRequired test.host.it
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {proxy.it 1024}
 
 
     ##
     ## Test http::CharsetToEncoding
     ##
-    ::tcltest::test http-29.1 {http::CharsetToEncoding} \
+    ::tcltest::test http-29.1 {http::CharsetToEncoding - unknown encoding} \
         -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {utf-8 utf-16}
         } \
         -body {
-            list Test Not Yet Implemented
+            list [catch {http::CharsetToEncoding unknown-char} enc] $enc
         } \
         -cleanup {
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {0 binary}
+
+    ::tcltest::test http-29.2 {http::CharsetToEncoding - known "normalized" encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {text utf-8 utf-16}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding utf-8} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 utf-8}
+
+    ::tcltest::test http-29.3a {http::CharsetToEncoding - iso8859-* encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {iso8859-4 iso8859-74 other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding iso-8859-4} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 iso8859-4}
+
+    ::tcltest::test http-29.3b {http::CharsetToEncoding - iso8859-* encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {iso8859-4 iso8859-74 other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding iso-8859-74} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 iso8859-74}
+
+    ::tcltest::test http-29.4a {http::CharsetToEncoding - iso2022-* encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {iso2022-jp iso2022-kr other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding iso-2022-jp} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 iso2022-jp}
+
+    ::tcltest::test http-29.4b {http::CharsetToEncoding - iso2022-* encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {iso2022-jp iso2022-kr other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding iso-2022-kr} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 iso2022-kr}
+
+    ::tcltest::test http-29.5a {http::CharsetToEncoding - shiftjis encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {shiftjis other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding shift_js} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 shiftjis}
+
+    ::tcltest::test http-29.5b {http::CharsetToEncoding - shiftjis encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {shiftjis other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding shift-js} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 shiftjis}
+
+    ::tcltest::test http-29.6a {http::CharsetToEncoding - windows/cp encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {cp5 cp57 other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding windows-5} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 cp5}
+
+    ::tcltest::test http-29.6b {http::CharsetToEncoding - windows/cp encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {cp5 cp57 other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding windows-57} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 cp57}
+
+    ::tcltest::test http-29.6c {http::CharsetToEncoding - windows/cp encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {cp5 cp57 other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding cp-5} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 cp5}
+
+    ::tcltest::test http-29.6d {http::CharsetToEncoding - windows/cp encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {cp5 cp57 other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding cp-57} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 cp57}
+
+    ::tcltest::test http-29.7 {http::CharsetToEncoding - ascii encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {text ascii other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding us-ascii} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 ascii}
+
+    ::tcltest::test http-29.8a {http::CharsetToEncoding - iso-latin encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {text iso8859-1 iso8859-2 iso8859-3 iso8859-9 other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding iso-latin-1} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 iso8859-1}
+
+    ::tcltest::test http-29.8b {http::CharsetToEncoding - iso-latin encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {text iso8859-1 iso8859-2 iso8859-3 iso8859-9 other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding iso-lat-1} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 iso8859-1}
+
+    ::tcltest::test http-29.8c {http::CharsetToEncoding - iso-latin encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {text iso8859-1 iso8859-2 iso8859-3 iso8859-9 other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding iso-latin-2} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 iso8859-2}
+
+    ::tcltest::test http-29.8d {http::CharsetToEncoding - iso-latin encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {text iso8859-1 iso8859-2 iso8859-3 iso8859-9 other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding iso-lat-2} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 iso8859-2}
+
+    ::tcltest::test http-29.8e {http::CharsetToEncoding - iso-latin encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {text iso8859-1 iso8859-2 iso8859-3 iso8859-9 other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding iso-latin-3} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 iso8859-3}
+
+    ::tcltest::test http-29.8e {http::CharsetToEncoding - iso-latin encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {text iso8859-1 iso8859-2 iso8859-3 iso8859-9 other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding iso-lat-3} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 iso8859-3}
+
+    ::tcltest::test http-29.8f {http::CharsetToEncoding - iso-latin encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {text iso8859-1 iso8859-2 iso8859-3 iso8859-9 other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding iso-latin-5} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 iso8859-9}
+
+    ::tcltest::test http-29.8g {http::CharsetToEncoding - iso-latin encoding} \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::encodings
+            }
+            set ::http::encodings {text iso8859-1 iso8859-2 iso8859-3 iso8859-9 other}
+        } \
+        -body {
+            list [catch {http::CharsetToEncoding iso-lat-5} enc] $enc
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 iso8859-9}
 
     ##
     ## Test http::ContentEncoding
     ##
-    ::tcltest::test http-30.1 {http::ContentEncoding} \
+    ::tcltest::test http-30.1 {http::ContentEncoding - unknown} \
         -setup {
+            set ::httpTest::TestToken(coding) {unknown}
         } \
         -body {
-            list Test Not Yet Implemented
+            list [catch {http::ContentEncoding ::httpTest::TestToken} result] $result
         } \
         -cleanup {
+            unset ::httpTest::TestToken
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {1 {unsupported content-encoding "unknown"}}
 
-
-    ##
-    ## Test http::make-transformation-chunked
-    ##
-    ::tcltest::test http-31.1 {http::make-transformation-chunked} \
+    ::tcltest::test http-30.2 {http::ContentEncoding - deflate} \
         -setup {
+            set ::httpTest::TestToken(coding) {deflate}
         } \
         -body {
-            list Test Not Yet Implemented
+            list [catch {http::ContentEncoding ::httpTest::TestToken} result] $result
         } \
         -cleanup {
+            unset ::httpTest::TestToken
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {0 inflate}
+
+    ::tcltest::test http-30.3 {http::ContentEncoding - gzip} \
+        -setup {
+            set ::httpTest::TestToken(coding) {gzip}
+        } \
+        -body {
+            list [catch {http::ContentEncoding ::httpTest::TestToken} result] $result
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 gunzip}
+
+    ::tcltest::test http-30.4 {http::ContentEncoding - x-gzip} \
+        -setup {
+            set ::httpTest::TestToken(coding) {x-gzip}
+        } \
+        -body {
+            list [catch {http::ContentEncoding ::httpTest::TestToken} result] $result
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 gunzip}
+
+    ::tcltest::test http-30.5 {http::ContentEncoding - compress} \
+        -setup {
+            set ::httpTest::TestToken(coding) {compress}
+        } \
+        -body {
+            list [catch {http::ContentEncoding ::httpTest::TestToken} result] $result
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 decompress}
+
+    ::tcltest::test http-30.6 {http::ContentEncoding - x-compress} \
+        -setup {
+            set ::httpTest::TestToken(coding) {x-compress}
+        } \
+        -body {
+            list [catch {http::ContentEncoding ::httpTest::TestToken} result] $result
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 decompress}
+
+    ::tcltest::test http-30.7 {http::ContentEncoding - identity} \
+        -setup {
+            set ::httpTest::TestToken(coding) {identity}
+        } \
+        -body {
+            list [catch {http::ContentEncoding ::httpTest::TestToken} result] $result
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {}}
+
+    ::tcltest::test http-30.7 {http::ContentEncoding - multiple} \
+        -setup {
+            set ::httpTest::TestToken(coding) {deflate,gzip,x-gzip,compress,x-compress,identity}
+        } \
+        -body {
+            list [catch {http::ContentEncoding ::httpTest::TestToken} result] $result
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {inflate gunzip gunzip decompress decompress}}
+
+
+    ::tcltest::test http-30.8 {http::ContentEncoding - multiple with error} \
+        -setup {
+            set ::httpTest::TestToken(coding) {deflate,gzip,x-gzip,compress,x-compress,identity,unknown}
+        } \
+        -body {
+            list [catch {http::ContentEncoding ::httpTest::TestToken} result] $result
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {1 {unsupported content-encoding "unknown"}}
 
 
     ##
     ## Test http::Connected
     ##
-    ::tcltest::test http-32.1 {http::Connected}  \
+    ::tcltest::test http-31.1 {http::Connected}  \
         -setup {
         } \
         -body {
@@ -5235,6 +5674,128 @@ namespace eval ::httpTest:: {
             ::tcltest::testCleanup
         } \
         -result {}
+
+    ##
+    ## Test http::ReceiveChunked
+    ##
+    proc ::httpTest::ReceiveChunkedHelper {args} {
+        return;
+    }
+    ::tcltest::test http-32.1 {http::ReceiveChunked} \
+        -setup {
+            ::tcltest::testSetup {
+                ::fconfigure {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::read {
+                    3 {
+                        returns {}
+                        code {error}
+                    }
+                    * {
+                        returns {1234567890123456}
+                        code {ok}
+                    }
+                }
+                ::eof {
+                    1 {
+                        returns {false}
+                        code {ok}
+                    }
+                    2 {
+                        returns {false}
+                        code {ok}
+                    }
+                    * {
+                        returns {true}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::gets {
+                    3 {
+                        returns {2}
+                        code {ok}
+                        set {
+                            line S 20
+                        }
+                    }
+                    4 {
+                        returns {1}
+                        code {ok}
+                        set {
+                            line S 0
+                        }
+                    }
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::yield {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::http::Log {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::httpTest::ReceiveChunkedHelper {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+            }
+        } \
+        -body {
+            set status [catch {http::ReceiveChunked TestSocket ::httpTest::ReceiveChunkedHelper} results]
+            list $status $results [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::eof,count 2 ::fconfigure,count 4 ::fileevent,count 1 ::gets,count 4 ::http::Log,count 0 ::httpTest::ReceiveChunkedHelper,count 2 ::read,count 2 ::yield,count 3}}
+
+    ##
+    ## Test http::make-transformation-chunked
+    ##
+    ::tcltest::test http-33.1 {http::make-transformation-chunked} \
+        -setup {
+            ::tcltest::testSetup {
+                ::chan {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::http::ReceiveChunked {
+                    * {
+                        prefix {yield}
+                    }
+                }
+            }
+        } \
+        -body {
+            list [catch {::http::make-transformation-chunked TestSocket Error} result] $result [::tcltest::callCount]
+        } \
+        -cleanup {
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::chan,count 1 ::http::ReceiveChunked,count 1}}
+
 
 }
 
