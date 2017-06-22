@@ -1184,6 +1184,10 @@ test regexp-27.10 {regsub -command error cases} -returnCodes error -body {
 test regexp-27.11 {regsub -command error cases} -returnCodes error -body {
     regsub -command . abc {}
 } -result {command prefix must be a list of at least one element}
+test regexp-27.12 {regsub -command representation smash} {
+    set s {list (.+)}
+    regsub -command $s {list list} $s
+} {(.+) {list list} list}
 
 # cleanup
 ::tcltest::cleanupTests
