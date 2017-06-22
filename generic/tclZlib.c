@@ -1204,10 +1204,10 @@ Tcl_ZlibStreamPut(
 	zshPtr->stream.avail_in = size;
 
 	/*
-	 * Must not do a zero-length compress. [Bug 25842c161]
+	 * Must not do a zero-length compress unless finalizing. [Bug 25842c161]
 	 */
 
-	if (size == 0) {
+	if (size == 0 && flush != Z_FINISH) {
 	    return TCL_OK;
 	}
 
@@ -3113,30 +3113,28 @@ ZlibTransformOutput(
 		errorCodePtr);
     }
 
+    /*
+     * No zero-length writes. Flushes must be explicit.
+     */
+
+    if (toWrite == 0) {
+	return 0;
+    }
+
     cd->outStream.next_in = (Bytef *) buf;
     cd->outStream.avail_in = toWrite;
-    do {
+    while (cd->outStream.avail_in > 0) {
 	e = Deflate(&cd->outStream, cd->outBuffer, cd->outAllocated,
 		Z_NO_FLUSH, &produced);
-
-	if ((e == Z_OK && produced > 0) || e == Z_BUF_ERROR) {
-	    /*
-	     * deflate() indicates that it is out of space by returning
-	     * Z_BUF_ERROR *or* by simply returning Z_OK with no remaining
-	     * space; in either case, we must write the whole buffer out and
-	     * retry to compress what is left.
-	     */
-
-	    if (e == Z_BUF_ERROR) {
-		produced = cd->outAllocated;
-		e = Z_OK;
-	    }
-	    if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) < 0) {
-		*errorCodePtr = Tcl_GetErrno();
-		return -1;
-	    }
+	if (e != Z_OK || produced == 0) {
+	    break;
 	}
-    } while (e == Z_OK && produced > 0 && cd->outStream.avail_in > 0);
+
+	if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) < 0) {
+	    *errorCodePtr = Tcl_GetErrno();
+	    return -1;
+	}
+    }
 
     if (e == Z_OK) {
 	return toWrite - cd->outStream.avail_in;

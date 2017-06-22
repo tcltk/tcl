@@ -6,6 +6,7 @@
 *.lib
 *.o
 *.obj
+*.pdb
 *.res
 *.sl
 *.so
@@ -17,6 +18,7 @@
 */tclsh*
 */tcltest*
 */versions.vc
+html
 libtommath/bn.ilg
 libtommath/bn.ind
 libtommath/pretty.build
@@ -38,5 +40,7 @@ unix/dltest.marker
 unix/tcl.pc
 unix/tclIndex
 unix/pkgs/*
+win/Debug_VC*
+win/Release_VC*
 win/pkgs/*
 win/tcl.hpj

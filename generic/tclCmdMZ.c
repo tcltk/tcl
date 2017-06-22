@@ -989,8 +989,11 @@ TclNRSourceObjCmd(
 {
     const char *encodingName = NULL;
     Tcl_Obj *fileName;
+    int result;
+    void **pkgFiles = NULL;
+    void *names = NULL;
 
-    if (objc != 2 && objc !=4) {
+    if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-encoding name? fileName");
 	return TCL_ERROR;
     }
@@ -1008,9 +1011,30 @@ TclNRSourceObjCmd(
 	    return TCL_ERROR;
 	}
 	encodingName = TclGetString(objv[2]);
-    }
+    } else if (objc == 3) {
+	/* Handle undocumented -nopkg option. This should only be
+	 * used by the internal ::tcl::Pkg::source utility function. */
+	static const char *const nopkgoptions[] = {
+	    "-nopkg", NULL
+	};
+	int index;
 
-    return TclNREvalFile(interp, fileName, encodingName);
+	if (TCL_ERROR == Tcl_GetIndexFromObj(interp, objv[1], nopkgoptions,
+		"option", TCL_EXACT, &index)) {
+	    return TCL_ERROR;
+	}
+	pkgFiles = Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+	/* Make sure that during the following TclNREvalFile no filenames
+	 * are recorded for inclusion in the "package files" command */
+	names = *pkgFiles;
+	*pkgFiles = NULL;
+    }
+    result = TclNREvalFile(interp, fileName, encodingName);
+    if (pkgFiles) {
+	/* restore "tclPkgFiles" assocdata to how it was. */
+	*pkgFiles = names;
+    }
+    return result;
 }
 
 /*
@@ -1541,7 +1565,7 @@ StringIsCmd(
 	}
 	break;
     case STR_IS_WIDE:
-	if (TCL_OK == Tcl_GetWideIntFromObj(NULL, objPtr, &w)) {
+	if (TCL_OK == TclGetWideIntFromObj(NULL, objPtr, &w)) {
 	    break;
 	}
 

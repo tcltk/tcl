@@ -203,7 +203,7 @@ static const CmdInfo builtInCmds[] = {
     {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	NULL,	CMD_IS_SAFE},
     {"apply",		Tcl_ApplyObjCmd,	NULL,			TclNRApplyObjCmd,	CMD_IS_SAFE},
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	NULL,	CMD_IS_SAFE},
-#ifndef EXCLUDE_OBSOLETE_COMMANDS
+#ifndef TCL_NO_DEPRECATED
     {"case",		Tcl_CaseObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
 #endif
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	CMD_IS_SAFE},
@@ -265,7 +265,6 @@ static const CmdInfo builtInCmds[] = {
     {"cd",		Tcl_CdObjCmd,		NULL,			NULL,	0},
     {"close",		Tcl_CloseObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"eof",		Tcl_EofObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
-    {"encoding",	Tcl_EncodingObjCmd,	NULL,			NULL,	0},
     {"exec",		Tcl_ExecObjCmd,		NULL,			NULL,	0},
     {"exit",		Tcl_ExitObjCmd,		NULL,			NULL,	0},
     {"fblocked",	Tcl_FblockedObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
@@ -511,7 +510,11 @@ Tcl_CreateInterp(void)
     iPtr = ckalloc(sizeof(Interp));
     interp = (Tcl_Interp *) iPtr;
 
+#ifdef TCL_NO_DEPRECATED
+    iPtr->result = &tclEmptyString;
+#else
     iPtr->result = iPtr->resultSpace;
+#endif
     iPtr->freeProc = NULL;
     iPtr->errorLine = 0;
     iPtr->objResultPtr = Tcl_NewObj();
@@ -571,9 +574,11 @@ Tcl_CreateInterp(void)
     iPtr->rootFramePtr = NULL;	/* Initialise as soon as :: is available */
     iPtr->lookupNsPtr = NULL;
 
+#ifndef TCL_NO_DEPRECATED
     iPtr->appendResult = NULL;
     iPtr->appendAvl = 0;
     iPtr->appendUsed = 0;
+#endif
 
     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
     iPtr->packageUnknown = NULL;
@@ -603,7 +608,9 @@ Tcl_CreateInterp(void)
     iPtr->emptyObjPtr = Tcl_NewObj();
 				/* Another empty object. */
     Tcl_IncrRefCount(iPtr->emptyObjPtr);
+#ifndef TCL_NO_DEPRECATED
     iPtr->resultSpace[0] = 0;
+#endif
     iPtr->threadId = Tcl_GetCurrentThread();
 
     /* TIP #378 */
@@ -790,16 +797,17 @@ Tcl_CreateInterp(void)
     }
 
     /*
-     * Create the "array", "binary", "chan", "dict", "file", "info",
-     * "namespace" and "string" ensembles. Note that all these commands (and
-     * their subcommands that are not present in the global namespace) are
-     * wholly safe *except* for "file".
+     * Create the "array", "binary", "chan", "clock", "dict", "encoding",
+     * "file", "info", "namespace" and "string" ensembles. Note that all these
+     * commands (and their subcommands that are not present in the global
+     * namespace) are wholly safe *except* for "clock", "encoding" and "file".
      */
 
     TclInitArrayCmd(interp);
     TclInitBinaryCmd(interp);
     TclInitChanCmd(interp);
     TclInitDictCmd(interp);
+    TclInitEncodingCmd(interp);
     TclInitFileCmd(interp);
     TclInitInfoCmd(interp);
     TclInitNamespaceCmd(interp);
@@ -1027,6 +1035,7 @@ TclHideUnsafeCommands(
 	    Tcl_HideCommand(interp, cmdInfoPtr->name, cmdInfoPtr->name);
 	}
     }
+    TclMakeEncodingCommandSafe(interp); /* Ugh! */
     TclMakeFileCommandSafe(interp);     /* Ugh! */
     return TCL_OK;
 }
@@ -1062,7 +1071,7 @@ Tcl_CallWhenDeleted(
     Interp *iPtr = (Interp *) interp;
     static Tcl_ThreadDataKey assocDataCounterKey;
     int *assocDataCounterPtr =
-	    Tcl_GetThreadData(&assocDataCounterKey, (int)sizeof(int));
+	    Tcl_GetThreadData(&assocDataCounterKey, sizeof(int));
     int isNew;
     char buffer[32 + TCL_INTEGER_SPACE];
     AssocData *dPtr = ckalloc(sizeof(AssocData));
@@ -1534,10 +1543,12 @@ DeleteInterpProc(
     if (iPtr->returnOpts) {
 	Tcl_DecrRefCount(iPtr->returnOpts);
     }
+#ifndef TCL_NO_DEPRECATED
     if (iPtr->appendResult != NULL) {
 	ckfree(iPtr->appendResult);
 	iPtr->appendResult = NULL;
     }
+#endif
     TclFreePackageInfo(iPtr);
     while (iPtr->tracePtr != NULL) {
 	Tcl_DeleteTrace((Tcl_Interp *) iPtr, (Tcl_Trace) iPtr->tracePtr);
@@ -3550,7 +3561,7 @@ OldMathFuncProc(
 		args[k].type = TCL_INT;
 		break;
 	    }
-	    if (Tcl_GetWideIntFromObj(interp, valuePtr, &args[k].wideValue)
+	    if (TclGetWideIntFromObj(interp, valuePtr, &args[k].wideValue)
 		    == TCL_OK) {
 		args[k].type = TCL_WIDE_INT;
 		break;
@@ -3576,7 +3587,7 @@ OldMathFuncProc(
 		return TCL_ERROR;
 	    }
 	    valuePtr = Tcl_GetObjResult(interp);
-	    Tcl_GetWideIntFromObj(NULL, valuePtr, &args[k].wideValue);
+	    TclGetWideIntFromObj(NULL, valuePtr, &args[k].wideValue);
 	    Tcl_ResetResult(interp);
 	    break;
 	}
@@ -4705,7 +4716,7 @@ TEOV_RunEnterTraces(
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr = *cmdPtrPtr;
-    int newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
+    size_t newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
     int length, traceCode = TCL_OK;
     const char *command = TclGetStringFromObj(commandPtr, &length);
 
@@ -5850,6 +5861,7 @@ TclArgumentGet(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_Eval
 int
 Tcl_Eval(
@@ -5902,6 +5914,7 @@ Tcl_GlobalEvalObj(
 {
     return Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -6055,7 +6068,7 @@ TclNREvalObjEx(
         TclNRAddCallback(interp, TEOEx_ListCallback, listPtr, eoFramePtr,
 		objPtr, NULL);
 
-	ListObjGetElements(listPtr, objc, objv);
+	TclListObjGetElements(NULL, listPtr, &objc, &objv);
 	return TclNREvalObjv(interp, objc, objv, flags, NULL);
     }
 
@@ -6702,11 +6715,10 @@ Tcl_AppendObjToErrorInfo(
 				 * pertains. */
     Tcl_Obj *objPtr)		/* Message to record. */
 {
-    int length;
-    const char *message = TclGetStringFromObj(objPtr, &length);
+    const char *message = TclGetString(objPtr);
 
     Tcl_IncrRefCount(objPtr);
-    Tcl_AddObjErrorInfo(interp, message, length);
+    Tcl_AddObjErrorInfo(interp, message, objPtr->length);
     Tcl_DecrRefCount(objPtr);
 }
 
@@ -6729,6 +6741,7 @@ Tcl_AppendObjToErrorInfo(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_AddErrorInfo
 void
 Tcl_AddErrorInfo(
@@ -6738,6 +6751,7 @@ Tcl_AddErrorInfo(
 {
     Tcl_AddObjErrorInfo(interp, message, -1);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -6910,6 +6924,7 @@ Tcl_VarEval(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_GlobalEval
 int
 Tcl_GlobalEval(
@@ -6927,6 +6942,7 @@ Tcl_GlobalEval(
     iPtr->varFramePtr = savedVarFramePtr;
     return result;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -7180,7 +7196,7 @@ ExprIsqrtFunc(
 	}
 	break;
     default:
-	if (Tcl_GetWideIntFromObj(interp, objv[1], &w) != TCL_OK) {
+	if (TclGetWideIntFromObj(interp, objv[1], &w) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (w < 0) {
@@ -7623,7 +7639,7 @@ ExprWideFunc(
 	return TCL_ERROR;
     }
     objPtr = Tcl_GetObjResult(interp);
-    if (Tcl_GetWideIntFromObj(NULL, objPtr, &wResult) != TCL_OK) {
+    if (TclGetWideIntFromObj(NULL, objPtr, &wResult) != TCL_OK) {
 	/*
 	 * Truncate the bignum; keep only bits in wide int range.
 	 */
@@ -7634,7 +7650,7 @@ ExprWideFunc(
 	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(Tcl_WideInt), &big);
 	objPtr = Tcl_NewBignumObj(&big);
 	Tcl_IncrRefCount(objPtr);
-	Tcl_GetWideIntFromObj(NULL, objPtr, &wResult);
+	TclGetWideIntFromObj(NULL, objPtr, &wResult);
 	Tcl_DecrRefCount(objPtr);
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wResult));
@@ -8754,6 +8770,35 @@ TclNRCoroutineActivateCallback(
 /*
  *----------------------------------------------------------------------
  *
+ * TclNREvalList --
+ *
+ *      Callback to invoke command as list, used in order to delayed
+ *	processing of canonical list command in sane environment.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TclNREvalList(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    int objc;
+    Tcl_Obj **objv;
+    Tcl_Obj *listPtr = data[0];
+
+    Tcl_IncrRefCount(listPtr);
+
+    TclMarkTailcall(interp);
+    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
+    TclListObjGetElements(NULL, listPtr, &objc, &objv);
+    return TclNREvalObjv(interp, objc, objv, 0, NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NRCoroInjectObjCmd --
  *
  *      Implementation of [::tcl::unsupported::inject] command.
@@ -8805,7 +8850,8 @@ NRCoroInjectObjCmd(
      */
 
     iPtr->execEnvPtr = corPtr->eePtr;
-    TclNREvalObjEx(interp, Tcl_NewListObj(objc-2, objv+2), 0, NULL, INT_MIN);
+    TclNRAddCallback(interp, TclNREvalList, Tcl_NewListObj(objc-2, objv+2),
+	NULL, NULL, NULL);
     iPtr->execEnvPtr = savedEEPtr;
 
     return TCL_OK;

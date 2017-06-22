@@ -41,7 +41,6 @@ extern "C" {
  * unix/configure.ac	(2 LOC Major, 2 LOC minor, 1 LOC patch)
  * win/configure.ac	(as above)
  * win/tcl.m4		(not patchlevel)
- * win/makefile.bc	(not patchlevel) 2 LOC
  * README		(sections 0 and 2, with and without separator)
  * macosx/Tcl.pbproj/project.pbxproj (not patchlevel) 1 LOC
  * macosx/Tcl.pbproj/default.pbxuser (not patchlevel) 1 LOC
@@ -61,6 +60,7 @@ extern "C" {
 #define TCL_VERSION	    "8.7"
 #define TCL_PATCH_LEVEL	    "8.7a0"
 
+#if !defined(TCL_NO_DEPRECATED) || defined(RC_INVOKED)
 /*
  *----------------------------------------------------------------------------
  * The following definitions set up the proper options for Windows compilers.
@@ -89,6 +89,7 @@ extern "C" {
 #  define JOIN(a,b) JOIN1(a,b)
 #  define JOIN1(a,b) a##b
 #endif
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * A special definition used to allow this header file to be included from
@@ -140,7 +141,7 @@ extern "C" {
 #    define TCL_VARARGS(type, name) (type name, ...)
 #    define TCL_VARARGS_DEF(type, name) (type name, ...)
 #    define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
-#endif
+#endif /* !TCL_NO_DEPRECATED */
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #   define TCL_NORETURN __attribute__ ((noreturn))
@@ -256,7 +257,7 @@ extern "C" {
 #ifndef TCL_NO_DEPRECATED
 #   undef _ANSI_ARGS_
 #   define _ANSI_ARGS_(x)	x
-#endif
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Definitions that allow this header file to be used either with or without
@@ -376,8 +377,8 @@ typedef long LONG;
  * we have one, we can have the other.)
  *
  * Also defines the following macros:
- * TCL_WIDE_INT_IS_LONG - if wide ints are really longs (i.e. we're on a real
- *	64-bit system.)
+ * TCL_WIDE_INT_IS_LONG - if wide ints are really longs (i.e. we're on a
+ *	LP64 system such as modern Solaris or Linux ... not including Win64)
  * Tcl_WideAsLong - forgetful converter from wideInt to long.
  * Tcl_LongAsWide - sign-extending converter from long to wideInt.
  * Tcl_WideAsDouble - converter from wideInt to double.
@@ -394,11 +395,7 @@ typedef long LONG;
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
 #   if defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
-#      ifdef __BORLANDC__
-#         define TCL_LL_MODIFIER	"L"
-#      else /* __BORLANDC__ */
-#         define TCL_LL_MODIFIER	"I64"
-#      endif /* __BORLANDC__ */
+#      define TCL_LL_MODIFIER	"I64"
 #   elif defined(__GNUC__)
 #      define TCL_WIDE_INT_TYPE long long
 #      define TCL_LL_MODIFIER	"ll"
@@ -424,10 +421,6 @@ typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
 typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #ifdef TCL_WIDE_INT_IS_LONG
-#   define Tcl_WideAsLong(val)		((long)(val))
-#   define Tcl_LongAsWide(val)		((long)(val))
-#   define Tcl_WideAsDouble(val)	((double)((long)(val)))
-#   define Tcl_DoubleAsWide(val)	((long)((double)(val)))
 #   ifndef TCL_LL_MODIFIER
 #      define TCL_LL_MODIFIER		"l"
 #   endif /* !TCL_LL_MODIFIER */
@@ -439,11 +432,12 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #   ifndef TCL_LL_MODIFIER
 #      define TCL_LL_MODIFIER		"ll"
 #   endif /* !TCL_LL_MODIFIER */
-#   define Tcl_WideAsLong(val)		((long)((Tcl_WideInt)(val)))
-#   define Tcl_LongAsWide(val)		((Tcl_WideInt)((long)(val)))
-#   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
-#   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 #endif /* TCL_WIDE_INT_IS_LONG */
+
+#define Tcl_WideAsLong(val)	((long)((Tcl_WideInt)(val)))
+#define Tcl_LongAsWide(val)	((Tcl_WideInt)((long)(val)))
+#define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
+#define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
 #if defined(_WIN32)
 #   ifdef __BORLANDC__
@@ -529,7 +523,7 @@ typedef struct Tcl_Interp
     int errorLineDontUse; /* Don't use in extensions! */
 #endif
 }
-#endif /* TCL_NO_DEPRECATED */
+#endif /* !TCL_NO_DEPRECATED */
 Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
@@ -1003,7 +997,9 @@ typedef struct Tcl_DString {
 
 #define Tcl_DStringLength(dsPtr) ((dsPtr)->length)
 #define Tcl_DStringValue(dsPtr) ((dsPtr)->string)
-#define Tcl_DStringTrunc Tcl_DStringSetLength
+#ifndef TCL_NO_DEPRECATED
+#   define Tcl_DStringTrunc Tcl_DStringSetLength
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Definitions for the maximum number of digits of precision that may be
@@ -1131,7 +1127,7 @@ typedef struct Tcl_DString {
 
 #ifndef TCL_NO_DEPRECATED
 #   define TCL_PARSE_PART1	0x400
-#endif
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Types for linked variables:
@@ -1147,8 +1143,13 @@ typedef struct Tcl_DString {
 #define TCL_LINK_SHORT		8
 #define TCL_LINK_USHORT		9
 #define TCL_LINK_UINT		10
+#if defined(TCL_WIDE_INT_IS_LONG) || defined(_WIN32) || defined(__CYGWIN__)
+#define TCL_LINK_LONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT)
+#define TCL_LINK_ULONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
+#else
 #define TCL_LINK_LONG		11
 #define TCL_LINK_ULONG		12
+#endif
 #define TCL_LINK_FLOAT		13
 #define TCL_LINK_WIDE_UINT	14
 #define TCL_LINK_READ_ONLY	0x80
@@ -2372,6 +2373,13 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 
 /*
  *----------------------------------------------------------------------------
+ * Definitions needed for the Tcl_OpenTcpServerEx function. [TIP #456]
+ */
+#define TCL_TCPSERVER_REUSEADDR (1<<0)
+#define TCL_TCPSERVER_REUSEPORT (1<<1)
+
+/*
+ *----------------------------------------------------------------------------
  * Single public declaration for NRE.
  */
 
@@ -2527,7 +2535,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
      Tcl_DbNewBignumObj(val, __FILE__, __LINE__)
 #  undef  Tcl_NewBooleanObj
 #  define Tcl_NewBooleanObj(val) \
-     Tcl_DbNewBooleanObj(val, __FILE__, __LINE__)
+     Tcl_DbNewLongObj((val)!=0, __FILE__, __LINE__)
 #  undef  Tcl_NewByteArrayObj
 #  define Tcl_NewByteArrayObj(bytes, len) \
      Tcl_DbNewByteArrayObj(bytes, len, __FILE__, __LINE__)
@@ -2620,7 +2628,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #   define panic		Tcl_Panic
 #endif
 #   define panicVA		Tcl_PanicVA
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------------
@@ -2630,6 +2637,8 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 extern Tcl_AppInitProc Tcl_AppInit;
+
+#endif /* !TCL_NO_DEPRECATED */
 
 #endif /* RC_INVOKED */
 

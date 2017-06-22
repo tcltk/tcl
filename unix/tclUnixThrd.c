@@ -644,6 +644,7 @@ TclpFinalizeCondition(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_DirEntry *
 TclpReaddir(
     DIR * dir)
@@ -666,6 +667,7 @@ TclpInetNtoa(
     return inet_ntoa(addr);
 #endif
 }
+#endif /* TCL_NO_DEPRECATED */
 
 #ifdef TCL_THREADS
 /*
@@ -711,9 +713,7 @@ TclpFreeAllocMutex(
 void
 TclpInitAllocCache(void)
 {
-    pthread_mutex_lock(allocLockPtr);
     pthread_key_create(&key, NULL);
-    pthread_mutex_unlock(allocLockPtr);
 }
 
 void

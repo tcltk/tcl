@@ -172,7 +172,7 @@ static const EnsembleImplMap decodeMap[] = {
  * where the codepoint of each character is the value of corresponding byte.
  * This approach creates a one-to-one map between all bytearray values
  * and a subset of Tcl string values.
- * 
+ *
  * When converting a Tcl string value to the bytearray internal rep, the
  * question arises what to do with strings outside that subset?  That is,
  * those Tcl strings containing at least one codepoint greater than 255?
@@ -180,7 +180,7 @@ static const EnsembleImplMap decodeMap[] = {
  * does not represent any valid bytearray value. Full Stop.  The
  * setFromAnyProc signature has a completion code return value for just
  * this reason, to reject invalid inputs.
- * 
+ *
  * Unfortunately this was not the path taken by the authors of the
  * original tclByteArrayType.  They chose to accept all Tcl string values
  * as acceptable string encodings of the bytearray values that result
@@ -204,7 +204,7 @@ static const EnsembleImplMap decodeMap[] = {
  *	unsigned char *Tcl_GetByteArrayFromObj(objPtr, lenPtr)
  *
  * has a guarantee to always return a non-NULL value, but that value
- * points to a byte sequence that cannot be used by the caller to  
+ * points to a byte sequence that cannot be used by the caller to
  * process the Tcl value absent some sideband testing that objPtr
  * is "pure".  Tcl offers no public interface to perform this test,
  * so callers either break encapsulation or are unavoidably buggy.  Tcl
@@ -218,7 +218,7 @@ static const EnsembleImplMap decodeMap[] = {
  * Bytearrays should simply be usable as bytearrays without a kabuki
  * dance of testing.
  *
- * The Tcl_ObjType "properByteArrayType" is (nearly) a correct 
+ * The Tcl_ObjType "properByteArrayType" is (nearly) a correct
  * implementation of bytearrays.  Any Tcl value with the type
  * properByteArrayType can have its bytearray value fetched and
  * used with confidence that acting on that value is equivalent to
@@ -551,7 +551,7 @@ SetByteArrayFromAny(
 
     byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
-	src += Tcl_UtfToUniChar(src, &ch);
+	src += TclUtfToUniChar(src, &ch);
 	improper = improper || (ch > 255);
 	*dst++ = UCHAR(ch);
     }
@@ -1303,7 +1303,7 @@ BinaryFormatCmd(
 	Tcl_UniChar ch;
 	char buf[TCL_UTF_MAX + 1];
 
-	Tcl_UtfToUniChar(errorString, &ch);
+	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad field specifier \"%s\"", buf));
@@ -1673,7 +1673,7 @@ BinaryScanCmd(
 	Tcl_UniChar ch;
 	char buf[TCL_UTF_MAX + 1];
 
-	Tcl_UtfToUniChar(errorString, &ch);
+	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad field specifier \"%s\"", buf));
@@ -1743,7 +1743,15 @@ GetFormatSpec(
 	(*formatPtr)++;
 	*countPtr = BINARY_ALL;
     } else if (isdigit(UCHAR(**formatPtr))) { /* INTL: digit */
-	*countPtr = strtoul(*formatPtr, (char **) formatPtr, 10);
+	unsigned long int count;
+
+	errno = 0;
+	count = strtoul(*formatPtr, (char **) formatPtr, 10);
+	if (errno || (count > (unsigned long) INT_MAX)) {
+	    *countPtr = INT_MAX;
+	} else {
+	    *countPtr = (int) count;
+	}
     } else {
 	*countPtr = BINARY_NOCOUNT;
     }
