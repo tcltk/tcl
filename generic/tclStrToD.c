@@ -539,7 +539,7 @@ TclParseNumber(
      */
 
     if (bytes == NULL) {
-	if (endPtrPtr == NULL) {
+	if (interp == NULL && endPtrPtr == NULL) {
 	    if (objPtr->typePtr == &tclDictType) {
 		/* A dict can never be a (single) number */
 		return TCL_ERROR;
@@ -1190,9 +1190,9 @@ TclParseNumber(
 	case sNA:
 	case sNANPAREN:
 	case sNANHEX:
+#endif
 	    Tcl_Panic("TclParseNumber: bad acceptState %d parsing '%s'",
 		    acceptState, bytes);
-#endif
 	case BINARY:
 	    shift = numTrailZeros;
 	    if (!significandOverflow && significandWide != 0 &&
@@ -3805,7 +3805,7 @@ ShorteningBignumConversion(
 	    --s5;
 
 	    /*
-	     * IDEA: It might possibly be a win to fall back to int64
+	     * IDEA: It might possibly be a win to fall back to int64_t
 	     *       arithmetic here if S < 2**64/10. But it's a win only for
 	     *       a fairly narrow range of magnitudes so perhaps not worth
 	     *       bothering.  We already know that we shorten the
@@ -3970,7 +3970,7 @@ StrictBignumConversion(
 	     * As with the shortening bignum conversion, it's possible at this
 	     * point that we will have reduced the denominator to less than
 	     * 2**64/10, at which point it would be possible to fall back to
-	     * to int64 arithmetic. But the potential payoff is tremendously
+	     * to int64_t arithmetic. But the potential payoff is tremendously
 	     * less - unless we're working in F format - because we know that
 	     * three groups of digits will always suffice for %#.17e, the
 	     * longest format that doesn't introduce empty precision.

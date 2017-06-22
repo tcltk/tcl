@@ -510,8 +510,7 @@ VarHashCreateVar(
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
-    ((((objPtr)->typePtr == NULL) && ((objPtr)->bytes == NULL)) ||	\
-    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
+    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
 	? TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 #else /* !TCL_WIDE_INT_IS_LONG */
@@ -530,8 +529,7 @@ VarHashCreateVar(
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
-    ((((objPtr)->typePtr == NULL) && ((objPtr)->bytes == NULL)) ||	\
-    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
+    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
 	? TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 #endif /* TCL_WIDE_INT_IS_LONG */
@@ -910,9 +908,9 @@ TclCreateExecEnv(
 	    + (size_t) (size-1) * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
-    TclNewBooleanObj(eePtr->constants[0], 0);
+    TclNewLongObj(eePtr->constants[0], 0);
     Tcl_IncrRefCount(eePtr->constants[0]);
-    TclNewBooleanObj(eePtr->constants[1], 1);
+    TclNewLongObj(eePtr->constants[1], 1);
     Tcl_IncrRefCount(eePtr->constants[1]);
     eePtr->interp = interp;
     eePtr->callbackPtr = NULL;
@@ -3186,7 +3184,7 @@ TEBCresume(
 	 */
 
 	DECACHE_STACK_INFO();
-	objResultPtr = TclPtrGetVar(interp, varPtr, arrayPtr,
+	objResultPtr = TclPtrGetVarIdx(interp, varPtr, arrayPtr,
 		part1Ptr, part2Ptr, TCL_LEAVE_ERR_MSG, opnd);
 	CACHE_STACK_INFO();
 	if (!objResultPtr) {
@@ -3433,7 +3431,7 @@ TEBCresume(
 
     doCallPtrSetVar:
 	DECACHE_STACK_INFO();
-	objResultPtr = TclPtrSetVar(interp, varPtr, arrayPtr,
+	objResultPtr = TclPtrSetVarIdx(interp, varPtr, arrayPtr,
 		part1Ptr, part2Ptr, valuePtr, storeFlags, opnd);
 	CACHE_STACK_INFO();
 	if (!objResultPtr) {
@@ -3569,7 +3567,7 @@ TEBCresume(
 	    VarHashRefCount(arrayPtr)++;
 	}
 	DECACHE_STACK_INFO();
-	objResultPtr = TclPtrGetVar(interp, varPtr, arrayPtr,
+	objResultPtr = TclPtrGetVarIdx(interp, varPtr, arrayPtr,
 		part1Ptr, part2Ptr, TCL_LEAVE_ERR_MSG, opnd);
 	CACHE_STACK_INFO();
 	if (TclIsVarInHash(varPtr)) {
@@ -3598,7 +3596,7 @@ TEBCresume(
 		}
 	    }
 	    DECACHE_STACK_INFO();
-	    objResultPtr = TclPtrSetVar(interp, varPtr, arrayPtr, part1Ptr,
+	    objResultPtr = TclPtrSetVarIdx(interp, varPtr, arrayPtr, part1Ptr,
 		    part2Ptr, objResultPtr, TCL_LEAVE_ERR_MSG, opnd);
 	    CACHE_STACK_INFO();
 	    if (!objResultPtr) {
@@ -3862,7 +3860,7 @@ TEBCresume(
 	    Tcl_DecrRefCount(incrPtr);
 	} else {
 	    DECACHE_STACK_INFO();
-	    objResultPtr = TclPtrIncrObjVar(interp, varPtr, arrayPtr,
+	    objResultPtr = TclPtrIncrObjVarIdx(interp, varPtr, arrayPtr,
 		    part1Ptr, part2Ptr, incrPtr, TCL_LEAVE_ERR_MSG, opnd);
 	    CACHE_STACK_INFO();
 	    Tcl_DecrRefCount(incrPtr);
@@ -4017,7 +4015,7 @@ TEBCresume(
 
     slowUnsetScalar:
 	DECACHE_STACK_INFO();
-	if (TclPtrUnsetVar(interp, varPtr, NULL, NULL, NULL, flags,
+	if (TclPtrUnsetVarIdx(interp, varPtr, NULL, NULL, NULL, flags,
 		opnd) != TCL_OK && flags) {
 	    goto errorInUnset;
 	}
@@ -4069,7 +4067,7 @@ TEBCresume(
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		goto errorInUnset;
 	    }
-	} else if (TclPtrUnsetVar(interp, varPtr, arrayPtr, NULL, part2Ptr,
+	} else if (TclPtrUnsetVarIdx(interp, varPtr, arrayPtr, NULL, part2Ptr,
 		flags, opnd) != TCL_OK && (flags & TCL_LEAVE_ERR_MSG)) {
 	    goto errorInUnset;
 	}
@@ -4126,7 +4124,7 @@ TEBCresume(
 	    varPtr->value.objPtr = NULL;
 	} else {
 	    DECACHE_STACK_INFO();
-	    TclPtrUnsetVar(interp, varPtr, NULL, NULL, NULL, 0, opnd);
+	    TclPtrUnsetVarIdx(interp, varPtr, NULL, NULL, NULL, 0, opnd);
 	    CACHE_STACK_INFO();
 	}
 	NEXT_INST_F(5, 0, 0);
@@ -4342,7 +4340,7 @@ TEBCresume(
 	    if (TclIsVarInHash(otherPtr)) {
 		VarHashRefCount(otherPtr)++;
 	    }
-	} else if (TclPtrObjMakeUpvar(interp, otherPtr, NULL, 0,
+	} else if (TclPtrObjMakeUpvarIdx(interp, otherPtr, NULL, 0,
 		opnd) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -6764,7 +6762,7 @@ TEBCresume(
 			}
 		    } else {
 			DECACHE_STACK_INFO();
-			if (TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
+			if (TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL,
 				valuePtr, TCL_LEAVE_ERR_MSG, varIndex)==NULL){
 			    CACHE_STACK_INFO();
 			    TRACE_APPEND((
@@ -6935,7 +6933,7 @@ TEBCresume(
 			}
 		    } else {
 			DECACHE_STACK_INFO();
-			if (TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
+			if (TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL,
 				valuePtr, TCL_LEAVE_ERR_MSG, varIndex)==NULL){
 			    CACHE_STACK_INFO();
 			    TRACE_APPEND(("ERROR init. index temp %d: %.30s",
@@ -7158,7 +7156,8 @@ TEBCresume(
 	    dictPtr = varPtr->value.objPtr;
 	} else {
 	    DECACHE_STACK_INFO();
-	    dictPtr = TclPtrGetVar(interp, varPtr, NULL,NULL,NULL, 0, opnd2);
+	    dictPtr = TclPtrGetVarIdx(interp, varPtr, NULL, NULL, NULL, 0,
+		    opnd2);
 	    CACHE_STACK_INFO();
 	}
 	if (dictPtr == NULL) {
@@ -7232,7 +7231,7 @@ TEBCresume(
 	} else {
 	    Tcl_IncrRefCount(dictPtr);
 	    DECACHE_STACK_INFO();
-	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
+	    objResultPtr = TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL,
 		    dictPtr, TCL_LEAVE_ERR_MSG, opnd2);
 	    CACHE_STACK_INFO();
 	    TclDecrRefCount(dictPtr);
@@ -7261,7 +7260,8 @@ TEBCresume(
 	    dictPtr = varPtr->value.objPtr;
 	} else {
 	    DECACHE_STACK_INFO();
-	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, NULL, NULL, 0, opnd);
+	    dictPtr = TclPtrGetVarIdx(interp, varPtr, NULL, NULL, NULL, 0,
+		    opnd);
 	    CACHE_STACK_INFO();
 	}
 	if (dictPtr == NULL) {
@@ -7370,7 +7370,7 @@ TEBCresume(
 	} else {
 	    Tcl_IncrRefCount(dictPtr);
 	    DECACHE_STACK_INFO();
-	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
+	    objResultPtr = TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL,
 		    dictPtr, TCL_LEAVE_ERR_MSG, opnd);
 	    CACHE_STACK_INFO();
 	    TclDecrRefCount(dictPtr);
@@ -7464,7 +7464,7 @@ TEBCresume(
 	    dictPtr = varPtr->value.objPtr;
 	} else {
 	    DECACHE_STACK_INFO();
-	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, NULL, NULL,
+	    dictPtr = TclPtrGetVarIdx(interp, varPtr, NULL, NULL, NULL,
 		    TCL_LEAVE_ERR_MSG, opnd);
 	    CACHE_STACK_INFO();
 	    if (dictPtr == NULL) {
@@ -7497,7 +7497,7 @@ TEBCresume(
 		TclObjUnsetVar2(interp,
 			localName(iPtr->varFramePtr, duiPtr->varIndices[i]),
 			NULL, 0);
-	    } else if (TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
+	    } else if (TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL,
 		    valuePtr, TCL_LEAVE_ERR_MSG,
 		    duiPtr->varIndices[i]) == NULL) {
 		CACHE_STACK_INFO();
@@ -7524,7 +7524,8 @@ TEBCresume(
 	    dictPtr = varPtr->value.objPtr;
 	} else {
 	    DECACHE_STACK_INFO();
-	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, NULL, NULL, 0, opnd);
+	    dictPtr = TclPtrGetVarIdx(interp, varPtr, NULL, NULL, NULL, 0,
+		    opnd);
 	    CACHE_STACK_INFO();
 	}
 	if (dictPtr == NULL) {
@@ -7554,8 +7555,8 @@ TEBCresume(
 		valuePtr = var2Ptr->value.objPtr;
 	    } else {
 		DECACHE_STACK_INFO();
-		valuePtr = TclPtrGetVar(interp, var2Ptr, NULL, NULL, NULL, 0,
-			duiPtr->varIndices[i]);
+		valuePtr = TclPtrGetVarIdx(interp, var2Ptr, NULL, NULL, NULL,
+			0, duiPtr->varIndices[i]);
 		CACHE_STACK_INFO();
 	    }
 	    if (valuePtr == NULL) {
@@ -7573,7 +7574,7 @@ TEBCresume(
 	    varPtr->value.objPtr = dictPtr;
 	} else {
 	    DECACHE_STACK_INFO();
-	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
+	    objResultPtr = TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL,
 		    dictPtr, TCL_LEAVE_ERR_MSG, opnd);
 	    CACHE_STACK_INFO();
 	    if (objResultPtr == NULL) {
@@ -7663,6 +7664,39 @@ TEBCresume(
      *	   End of dictionary-related instructions.
      * -----------------------------------------------------------------
      */
+
+    case INST_CLOCK_READ:
+	{			/* Read the wall clock */
+	    Tcl_WideInt wval;
+	    Tcl_Time now;
+	    switch(TclGetUInt1AtPtr(pc+1)) {
+	    case 0:		/* clicks */
+#ifdef TCL_WIDE_CLICKS
+		wval = TclpGetWideClicks();
+#else
+		wval = (Tcl_WideInt) TclpGetClicks();
+#endif
+		break;
+	    case 1:		/* microseconds */
+		Tcl_GetTime(&now);
+		wval = (Tcl_WideInt) now.sec * 1000000 + now.usec;
+		break;
+	    case 2:		/* milliseconds */
+		Tcl_GetTime(&now);
+		wval = (Tcl_WideInt) now.sec * 1000 + now.usec / 1000;
+		break;
+	    case 3:		/* seconds */
+		Tcl_GetTime(&now);
+		wval = (Tcl_WideInt) now.sec;
+		break;
+	    default:
+		Tcl_Panic("clockRead instruction with unknown clock#");
+	    }
+	    /* TclNewWideObj(objResultPtr, wval); doesn't exist */
+	    objResultPtr = Tcl_NewWideIntObj(wval);
+	    TRACE_WITH_OBJ(("=> "), objResultPtr);
+	    NEXT_INST_F(2, 0, 1);
+	}
 
     default:
 	Tcl_Panic("TclNRExecuteByteCode: unrecognized opCode %u", *pc);
@@ -9199,7 +9233,7 @@ TclCompareTwoNumbers(
     Tcl_Obj *valuePtr,
     Tcl_Obj *value2Ptr)
 {
-    int type1, type2, compare;
+    int type1 = TCL_NUMBER_NAN, type2 = TCL_NUMBER_NAN, compare;
     ClientData ptr1, ptr2;
     mp_int big1, big2;
     double d1, d2, tmp;
