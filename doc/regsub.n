@@ -68,6 +68,31 @@ and
 sequences are handled for each substitution using the information
 from the corresponding match.
 .TP
+\fB\-command\fR
+.VS 8.7
+Changes the handling of the substitution string so that it no longer treats
+.QW &
+and
+.QW \e
+as special characters, but instead uses them as a non-empty list of words.
+Each time a substitution is processed, another complete Tcl word is appended
+to that list for each substitution value (the first such argument represents
+the overall matched substring, the subsequent arguments will be one per
+capturing sub-RE, much as are returned from \fBregexp\fR \fB\-inline\fR) and
+the overall list is then evaluated as a Tcl command call. If the command
+finishes successfully, the result of command call is substituted into the
+resulting string.
+.RS
+.PP
+If \fB\-all\fR is not also given, the command callback will be invoked at most
+once (exactly when the regular expression matches). If \fB\-all\fR is given,
+the command callback will be invoked for each matched location, in sequence.
+The exact location indices that matched are not made available to the script.
+.PP
+See \fBEXAMPLES\fR below for illustrative cases.
+.RE
+.VE 8.7
+.TP
 \fB\-expanded\fR
 .
 Enables use of the expanded regular expression syntax where
@@ -183,6 +208,53 @@ set substitution {[format \e\e\e\eu%04x [scan "\e\e&" %c]]}
 set quoted [subst [string map {\en {\e\eu000a}} \e
         [\fBregsub\fR -all $RE $string $substitution]]]
 .CE
+.PP
+.VS 8.7
+The above operation can be done using \fBregsub \-command\fR instead, which is
+often faster. (A full pre-computed \fBstring map\fR would be faster still, but
+the cost of computing the map for a transformation as complex as this can be
+quite large.)
+.PP
+.CS
+# This RE is just a character class for everything "bad"
+set RE {[][{};#\e\e\e$\es\eu0080-\euffff]}
+
+# This encodes what the RE described above matches
+proc encodeChar {ch} {
+    # newline is handled specially since backslash-newline is a
+    # special sequence.
+    if {$ch eq "\en"} {
+        return "\e\eu000a"
+    }
+    # No point in writing this as a one-liner
+    scan $ch %c charNumber
+    format "\e\eu%04x" $charNumber
+}
+
+set quoted [\fBregsub\fR -all -command $RE $string encodeChar]
+.CE
+.PP
+Decoding a URL-encoded string using \fBregsub \-command\fR, a lambda term and
+the \fBapply\fR command.
+.PP
+.CS
+# Match one of the sequences in a URL-encoded string that needs
+# fixing, converting + to space and %XX to the right character
+# (e.g., %7e becomes ~)
+set RE {(\e+)|%([0-9A-Fa-f]{2})}
+
+# Note that -command uses a command prefix, not a command name
+set decoded [\fBregsub\fR -all -command $RE $string {apply {{- p h} {
+    # + is a special case; handle directly
+    if {$p eq "+"} {
+        return " "
+    }
+    # convert hex to a char
+    scan $h %x charNumber
+    format %c $charNumber
+}}}]
+.CE
+.VE 8.7
 .SH "SEE ALSO"
 regexp(n), re_syntax(n), subst(n), string(n)
 .SH KEYWORDS
