@@ -70,18 +70,20 @@ from the corresponding match.
 .TP
 \fB\-command\fR
 .VS 8.7
-Changes the handling of the substitution string so that it no longer treats
+Changes the handling of \fIsubSpec\fR so that it is not treated
+as a template for a substitution string and the substrings
 .QW &
 and
-.QW \e
-as special characters, but instead uses them as a non-empty list of words.
-Each time a substitution is processed, another complete Tcl word is appended
-to that list for each substitution value (the first such argument represents
-the overall matched substring, the subsequent arguments will be one per
-capturing sub-RE, much as are returned from \fBregexp\fR \fB\-inline\fR) and
-the overall list is then evaluated as a Tcl command call. If the command
-finishes successfully, the result of command call is substituted into the
-resulting string.
+.QW \e\fIn\fR
+no longer have special meaning. Instead \fIsubSpec\fR must be a
+command prefix, that is, a non-empty list.  The substring of \fIstring\fR
+that matches \fIexp\fR, and then each substring that matches each
+capturing sub-RE within \fIexp\fR are appended as additional elements
+to that list. (The items appended to the list are much like what
+\fBregexp\fR \fB-inline\fR would return).  The completed list is then
+evaluated as a Tcl command, and the result of that command is the
+substitution string.  Any error or exception from command evaluation
+becomes an error or exception from the \fBregsub\fR command.
 .RS
 .PP
 If \fB\-all\fR is not also given, the command callback will be invoked at most
