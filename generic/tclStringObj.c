@@ -2039,6 +2039,10 @@ Tcl_AppendFormatToObj(
 		    Tcl_AppendToObj(segment, "0b", 2);
 		    segmentLimit -= 2;
 		    break;
+		case 'd':
+		    Tcl_AppendToObj(segment, "0d", 2);
+		    segmentLimit -= 2;
+		    break;
 		}
 	    }
 
