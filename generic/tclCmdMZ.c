@@ -487,11 +487,10 @@ Tcl_RegsubObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int idx, result, cflags, all, wlen, wsublen, numMatches, offset;
-    int start, end, subStart, subEnd, match, command, numParts, numArgs;
+    int start, end, subStart, subEnd, match, command, numParts;
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
     Tcl_Obj *resultPtr, *subPtr, *objPtr, *startIndex = NULL;
-    Tcl_Obj **args = NULL, **parts;
     Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
 
     static const char *const options[] = {
@@ -773,12 +772,13 @@ Tcl_RegsubObjCmd(
 	 */
 
 	if (command) {
-	    if (args == NULL) {
-		Tcl_ListObjGetElements(interp, subPtr, &numParts, &parts);
-		numArgs = numParts + info.nsubs + 1;
-		args = ckalloc(sizeof(Tcl_Obj*) * numArgs);
-		memcpy(args, parts, sizeof(Tcl_Obj*) * numParts);
-	    }
+	    Tcl_Obj **args = NULL, **parts;
+	    int numArgs;
+
+	    Tcl_ListObjGetElements(interp, subPtr, &numParts, &parts);
+	    numArgs = numParts + info.nsubs + 1;
+	    args = ckalloc(sizeof(Tcl_Obj*) * numArgs);
+	    memcpy(args, parts, sizeof(Tcl_Obj*) * numParts);
 
 	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
 		subStart = info.matches[idx].start;
@@ -807,6 +807,7 @@ Tcl_RegsubObjCmd(
 	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
 		TclDecrRefCount(args[idx + numParts]);
 	    }
+	    ckfree(args);
 	    if (result != TCL_OK) {
 		if (result == TCL_ERROR) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
@@ -974,9 +975,6 @@ Tcl_RegsubObjCmd(
     }
     if (subPtr && (objv[2] == objv[0])) {
 	Tcl_DecrRefCount(subPtr);
-    }
-    if (args) {
-	ckfree(args);
     }
     if (resultPtr) {
 	Tcl_DecrRefCount(resultPtr);
