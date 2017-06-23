@@ -219,8 +219,8 @@ test cmdIL-3.10 {SortCompare procedure, -integer option} -body {
     lsort -integer {3 q}
 } -returnCodes error -result {expected integer but got "q"}
 test cmdIL-3.11 {SortCompare procedure, -integer option} {
-    lsort -integer {35 21 0x20 30 0o23 100 8}
-} {8 0o23 21 30 0x20 35 100}
+    lsort -integer {35 21 0x20 0d30 0o23 100 8}
+} {8 0o23 21 0d30 0x20 35 100}
 test cmdIL-3.12 {SortCompare procedure, -real option} -body {
     lsort -real {6...4 3}
 } -returnCodes error -result {expected floating-point number but got "6...4"}

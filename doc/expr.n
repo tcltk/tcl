@@ -46,7 +46,8 @@ value is the form produced by the \fB%g\fR format specifier of Tcl's
 An expression consists of a combination of operands, operators, parentheses and
 commas, possibly with whitespace between any of these elements, which is
 ignored.
-An integer operand may be specified in decimal, binary
+An integer operand may be specified in decimal (the normal case, the optional
+first two characters are \fB0d\fR), binary
 (the first two characters are \fB0b\fR), octal
 (the first two characters are \fB0o\fR), or hexadecimal
 (the first two characters are \fB0x\fR) form.
