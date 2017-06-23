@@ -3618,16 +3618,336 @@ namespace eval ::httpTest:: {
     ##
     ## Test http::Write
     ##
-    ::tcltest::test http-20.1 {http::Write} \
+    ::tcltest::test http-20.1 {http::Write - no error, -query, no excess received, not eof, no progess command} \
         -setup {
+            ::tcltest::testSetup {
+                ::eof {
+                    * {
+                        returns {no}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::flush {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::puts {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::read {
+                    * {
+                        returns {1234567890}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                posterror {}
+                querylength {1024}
+                queryoffset {0}
+                sock {TestSocket}
+                -query {some randome query}
+                -queryblocksize {32}
+                -querychannel {TestQueryChannel}
+                -queryprogress {}
+            }
+            set ::httpTest::Progress {}
         } \
         -body {
-            list Test Not Yet Implemented
+            list [catch {::http::Write ::httpTest::TestToken} results] $results [::tcltest::callCount] $::httpTest::Progress
         } \
         -cleanup {
+            unset ::httpTest::TestToken
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {0 {} {::eof,count 0 ::fileevent,count 0 ::flush,count 0 ::puts,count 1 ::read,count 0} {}}
+
+    ::tcltest::test http-20.2 {http::Write - error, -query, no excess received, not eof, no progess command} \
+        -setup {
+            ::tcltest::testSetup {
+                ::eof {
+                    * {
+                        returns {no}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::flush {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::puts {
+                    * {
+                        returns {TEST ERROR IN PUTS}
+                        code {error}
+                        errorcoe {HTTP TEST PUTSERROR}
+                    }
+                }
+                ::read {
+                    * {
+                        returns {1234567890}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                posterror {}
+                querylength {1024}
+                queryoffset {0}
+                sock {TestSocket}
+                -query {some random query}
+                -queryblocksize {32}
+                -querychannel {TestQueryChannel}
+                -queryprogress {}
+            }
+            set ::httpTest::Progress {}
+        } \
+        -body {
+            list [catch {::http::Write ::httpTest::TestToken} results] $results [::tcltest::callCount] $::httpTest::Progress
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::eof,count 0 ::fileevent,count 2 ::flush,count 1 ::puts,count 1 ::read,count 0} {}}
+
+    ::tcltest::test http-20.3 {http::Write - no error, not -query, no excess received, not eof, no progess command} \
+        -setup {
+            ::tcltest::testSetup {
+                ::eof {
+                    * {
+                        returns {no}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::flush {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::puts {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::read {
+                    * {
+                        returns {1234567890}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                posterror {}
+                querylength {1024}
+                queryoffset {0}
+                sock {TestSocket}
+                ?-query {}
+                -queryblocksize {32}
+                -querychannel {TestQueryChannel}
+                -queryprogress {}
+            }
+            set ::httpTest::Progress {}
+        } \
+        -body {
+            list [catch {::http::Write ::httpTest::TestToken} results] $results [::tcltest::callCount] $::httpTest::Progress
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::eof,count 1 ::fileevent,count 0 ::flush,count 0 ::puts,count 1 ::read,count 1} {}}
+
+    ::tcltest::test http-20.4 {http::Write - no error, -query, excess received, not eof, no progess command} \
+        -setup {
+            ::tcltest::testSetup {
+                ::eof {
+                    * {
+                        returns {no}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::flush {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::puts {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::read {
+                    * {
+                        returns {1234567890}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                posterror {}
+                querylength {1024}
+                queryoffset {1000}
+                sock {TestSocket}
+                -query {some random query}
+                -queryblocksize {32}
+                -querychannel {TestQueryChannel}
+                -queryprogress {}
+            }
+            set ::httpTest::Progress {}
+        } \
+        -body {
+            list [catch {::http::Write ::httpTest::TestToken} results] $results [::tcltest::callCount] $::httpTest::Progress
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::eof,count 0 ::fileevent,count 2 ::flush,count 1 ::puts,count 1 ::read,count 0} {}}
+
+    ::tcltest::test http-20.5 {http::Write - no error, not -query, no excess received, eof, no progess command} \
+        -setup {
+            ::tcltest::testSetup {
+                ::eof {
+                    * {
+                        returns {yes}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::flush {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::puts {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::read {
+                    * {
+                        returns {1234567890}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                posterror {}
+                querylength {1024}
+                queryoffset {0}
+                sock {TestSocket}
+                ?-query {some random query}
+                -queryblocksize {32}
+                -querychannel {TestQueryChannel}
+                -queryprogress {}
+            }
+            set ::httpTest::Progress {}
+        } \
+        -body {
+            list [catch {::http::Write ::httpTest::TestToken} results] $results [::tcltest::callCount] $::httpTest::Progress
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::eof,count 1 ::fileevent,count 2 ::flush,count 1 ::puts,count 1 ::read,count 1} {}}
+
+    ::tcltest::test http-20.6 {http::Write - no error, -query, no excess received, not eof, progess command} \
+        -setup {
+            ::tcltest::testSetup {
+                ::eof {
+                    * {
+                        returns {no}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::flush {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::puts {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::read {
+                    * {
+                        returns {1234567890}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                posterror {}
+                querylength {1024}
+                queryoffset {0}
+                sock {TestSocket}
+                -query {some random query}
+                -queryblocksize {32}
+                -querychannel {TestQueryChannel}
+                -queryprogress {lappend ::httpTest::Progress}
+            }
+            set ::httpTest::Progress {}
+        } \
+        -body {
+            list [catch {::http::Write ::httpTest::TestToken} results] $results [::tcltest::callCount] $::httpTest::Progress
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            ::tcltest::testCleanup
+        } \
+        -result {0 {::httpTest::TestToken 1024 32} {::eof,count 0 ::fileevent,count 0 ::flush,count 0 ::puts,count 1 ::read,count 0} {::httpTest::TestToken 1024 32}}
 
     ##
     ## Test http::Event
