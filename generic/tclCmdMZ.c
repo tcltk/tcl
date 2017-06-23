@@ -800,7 +800,7 @@ Tcl_RegsubObjCmd(
 	     * because Tcl_EvalObjv is "hairy monster" in terms of refcount
 	     * handling, being able to optionally add references to any of its
 	     * argument words. We'll drop the local refs immediately
-	     * afterwarsds; subPtr is handled in the main exit stanza.
+	     * afterwards; subPtr is handled in the main exit stanza.
 	     */
 
 	    result = Tcl_EvalObjv(interp, numArgs, args, 0);
