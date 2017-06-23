@@ -5664,16 +5664,762 @@ namespace eval ::httpTest:: {
     ##
     ## Test http::Connected
     ##
-    ::tcltest::test http-31.1 {http::Connected}  \
+    ::tcltest::test http-31.1 {http::Connected -- not a query, not a querychannel, validate off, no method, no handler, no error, no headers}  \
         -setup {
+            ::tcltest::saveVars {
+                ::http::http
+                ::http::urlTypes
+            }
+            ::tcltest::testSetup {
+                ::fconfigure {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::flush {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::puts {
+                    * {
+                        use {
+                            prefix {lappend ::httpTest::PutsList }
+                        }
+                    }
+                }
+                ::tell {
+                    1 {
+                        returns {0}
+                        code {ok}
+                    }
+                    2 {
+                        returns {1024}
+                        code {ok}
+                    }
+                }
+                ::http::Event {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Write {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                accept-types {*}
+                querylength {}
+                sock {TestSocket}
+                socketinfo {http://test.me/some/url}
+                status {}
+                -blocksize {1024}
+                ?-handler {}
+                -headers {}
+                -keepalive {no}
+                ?-method {}
+                -protocol {1.1}
+                ?-querychannel {}
+                ?-query {}
+                -type {}
+                -validate {no}
+            }
+            set ::http::urlTypes(http) 80
+            set ::errorInfo {}
+            set ::errorCode {}
+            set ::httpTest::PutsList {}
         } \
         -body {
-            list Test Not Yet Implemented
+            set status [catch {http::Connected ::httpTest::TestToken http phost srvurl} results]
+            list $status $results [::tcltest::callCount] $::httpTest::PutsList
         } \
         -cleanup {
+            unset ::httpTest::TestToken
+            unset ::httpTest::PutsList
             ::tcltest::testCleanup
         } \
-        -result {}
+        -result {0 {} {::fconfigure,count 2 ::fileevent,count 1 ::flush,count 1 ::http::Event,count 0 ::http::Finish,count 0 ::http::Write,count 0 ::puts,count 7 ::tell,count 0} {TestSocket {GET srvurl HTTP/1.1} TestSocket {Host: http://test.me/some/url} TestSocket {User-Agent: UserAgent} TestSocket {Connection: close} TestSocket {Accept: *} TestSocket {Accept-Encoding: gzip,deflate,compress} TestSocket {}}}
+
+    ::tcltest::test http-31.2 {http::Connected -- query, not a querychannel, validate off, no method, no handler, no error, no headers}  \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::http
+                ::http::urlTypes
+            }
+            ::tcltest::testSetup {
+                ::fconfigure {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::flush {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::puts {
+                    * {
+                        use {
+                            prefix {lappend ::httpTest::PutsList }
+                        }
+                    }
+                }
+                ::tell {
+                    1 {
+                        returns {0}
+                        code {ok}
+                    }
+                    2 {
+                        returns {1024}
+                        code {ok}
+                    }
+                }
+                ::http::Event {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Write {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                accept-types {*}
+                querylength {}
+                sock {TestSocket}
+                socketinfo {http://test.me/some/url}
+                status {}
+                -blocksize {1024}
+                ?-handler {}
+                -headers {}
+                -keepalive {no}
+                ?-method {}
+                -protocol {1.1}
+                ?-querychannel {}
+                -query {This is a Query}
+                -type {}
+                -validate {no}
+            }
+            set ::http::urlTypes(http) 80
+            set ::errorInfo {}
+            set ::errorCode {}
+            set ::httpTest::PutsList {}
+        } \
+        -body {
+            set status [catch {http::Connected ::httpTest::TestToken http phost srvurl} results]
+            list $status $results [::tcltest::callCount] $::httpTest::PutsList
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            unset ::httpTest::PutsList
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::fconfigure,count 3 ::fileevent,count 1 ::flush,count 0 ::http::Event,count 0 ::http::Finish,count 0 ::http::Write,count 0 ::puts,count 9 ::tell,count 0} {TestSocket {POST srvurl HTTP/1.1} TestSocket {Host: http://test.me/some/url} TestSocket {User-Agent: UserAgent} TestSocket {Connection: close} TestSocket {Accept: *} TestSocket {Accept-Encoding: gzip,deflate,compress} TestSocket {Content-Type: } TestSocket {Content-Length: 15} TestSocket {}}}
+
+    ::tcltest::test http-31.3 {http::Connected -- not query, querychannel, validate off, no method, no handler, no error, no headers}  \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::http
+                ::http::urlTypes
+            }
+            ::tcltest::testSetup {
+                ::fconfigure {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::flush {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::puts {
+                    * {
+                        use {
+                            prefix {lappend ::httpTest::PutsList }
+                        }
+                    }
+                }
+                ::tell {
+                    1 {
+                        returns {0}
+                        code {ok}
+                    }
+                    2 {
+                        returns {1024}
+                        code {ok}
+                    }
+                }
+                ::http::Event {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Write {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                accept-types {*}
+                querylength {}
+                sock {TestSocket}
+                socketinfo {http://test.me/some/url}
+                status {}
+                -blocksize {1024}
+                ?-handler {}
+                -headers {}
+                -keepalive {no}
+                ?-method {}
+                -protocol {1.1}
+                -querychannel {TestQueryChannel}
+                ?-query {}
+                -type {}
+                -validate {no}
+            }
+            set ::http::urlTypes(http) 80
+            set ::errorInfo {}
+            set ::errorCode {}
+            set ::httpTest::PutsList {}
+        } \
+        -body {
+            set status [catch {http::Connected ::httpTest::TestToken http phost srvurl} results]
+            list $status $results [::tcltest::callCount] $::httpTest::PutsList
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            unset ::httpTest::PutsList
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::fconfigure,count 4 ::fileevent,count 1 ::flush,count 0 ::http::Event,count 0 ::http::Finish,count 0 ::http::Write,count 0 ::puts,count 9 ::tell,count 0} {TestSocket {POST srvurl HTTP/1.1} TestSocket {Host: http://test.me/some/url} TestSocket {User-Agent: UserAgent} TestSocket {Connection: close} TestSocket {Accept: *} TestSocket {Accept-Encoding: gzip,deflate,compress} TestSocket {Content-Type: } TestSocket {Content-Length: } TestSocket {}}}
+
+    ::tcltest::test http-31.4 {http::Connected -- not query, not querychannel, validate on, no method, no handler, no error, no headers}  \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::http
+                ::http::urlTypes
+            }
+            ::tcltest::testSetup {
+                ::fconfigure {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::flush {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::puts {
+                    * {
+                        use {
+                            prefix {lappend ::httpTest::PutsList }
+                        }
+                    }
+                }
+                ::tell {
+                    1 {
+                        returns {0}
+                        code {ok}
+                    }
+                    2 {
+                        returns {1024}
+                        code {ok}
+                    }
+                }
+                ::http::Event {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Write {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                accept-types {*}
+                querylength {}
+                sock {TestSocket}
+                socketinfo {http://test.me/some/url}
+                status {}
+                -blocksize {1024}
+                ?-handler {}
+                -headers {}
+                -keepalive {no}
+                ?-method {}
+                -protocol {1.1}
+                -querychannel {TestQueryChannel}
+                ?-query {}
+                -type {}
+                -validate {yes}
+            }
+            set ::http::urlTypes(http) 80
+            set ::errorInfo {}
+            set ::errorCode {}
+            set ::httpTest::PutsList {}
+        } \
+        -body {
+            set status [catch {http::Connected ::httpTest::TestToken http phost srvurl} results]
+            list $status $results [::tcltest::callCount] $::httpTest::PutsList
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            unset ::httpTest::PutsList
+            ::tcltest::testCleanup
+        } \
+        -result {0 0 {::fconfigure,count 2 ::fileevent,count 0 ::flush,count 0 ::http::Event,count 0 ::http::Finish,count 1 ::http::Write,count 0 ::puts,count 7 ::tell,count 0} {TestSocket {HEAD srvurl HTTP/1.1} TestSocket {Host: http://test.me/some/url} TestSocket {User-Agent: UserAgent} TestSocket {Connection: close} TestSocket {Accept: *} TestSocket {Accept-Encoding: gzip,deflate,compress} TestSocket {Content-Type: }}}
+
+    ::tcltest::test http-31.5 {http::Connected -- not query, not querychannel, validate off, use method TESTING, no handler, no error, no headers}  \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::http
+                ::http::urlTypes
+            }
+            ::tcltest::testSetup {
+                ::fconfigure {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::flush {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::puts {
+                    * {
+                        use {
+                            prefix {lappend ::httpTest::PutsList }
+                        }
+                    }
+                }
+                ::tell {
+                    1 {
+                        returns {0}
+                        code {ok}
+                    }
+                    2 {
+                        returns {1024}
+                        code {ok}
+                    }
+                }
+                ::http::Event {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Write {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                accept-types {*}
+                querylength {}
+                sock {TestSocket}
+                socketinfo {http://test.me/some/url}
+                status {}
+                -blocksize {1024}
+                ?-handler {}
+                -headers {}
+                -keepalive {no}
+                -method {TESTING}
+                -protocol {1.1}
+                -querychannel {TestQueryChannel}
+                ?-query {}
+                -type {}
+                -validate {no}
+            }
+            set ::http::urlTypes(http) 80
+            set ::errorInfo {}
+            set ::errorCode {}
+            set ::httpTest::PutsList {}
+        } \
+        -body {
+            set status [catch {http::Connected ::httpTest::TestToken http phost srvurl} results]
+            list $status $results [::tcltest::callCount] $::httpTest::PutsList
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            unset ::httpTest::PutsList
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::fconfigure,count 4 ::fileevent,count 1 ::flush,count 0 ::http::Event,count 0 ::http::Finish,count 0 ::http::Write,count 0 ::puts,count 9 ::tell,count 0} {TestSocket {TESTING srvurl HTTP/1.1} TestSocket {Host: http://test.me/some/url} TestSocket {User-Agent: UserAgent} TestSocket {Connection: close} TestSocket {Accept: *} TestSocket {Accept-Encoding: gzip,deflate,compress} TestSocket {Content-Type: } TestSocket {Content-Length: } TestSocket {}}}
+
+    ::tcltest::test http-31.6 {http::Connected -- not query, not querychannel, validate off, no method, with handler TESTHANDLER, no error, no headers}  \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::http
+                ::http::urlTypes
+            }
+            ::tcltest::testSetup {
+                ::fconfigure {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::flush {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::puts {
+                    * {
+                        use {
+                            prefix {lappend ::httpTest::PutsList }
+                        }
+                    }
+                }
+                ::tell {
+                    1 {
+                        returns {0}
+                        code {ok}
+                    }
+                    2 {
+                        returns {1024}
+                        code {ok}
+                    }
+                }
+                ::http::Event {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Write {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                accept-types {*}
+                querylength {}
+                sock {TestSocket}
+                socketinfo {http://test.me/some/url}
+                status {}
+                -blocksize {1024}
+                -handler {TESTHANDLER}
+                -headers {}
+                -keepalive {no}
+                ?-method {}
+                -protocol {1.1}
+                -querychannel {TestQueryChannel}
+                ?-query {}
+                -type {}
+                -validate {no}
+            }
+            set ::http::urlTypes(http) 80
+            set ::errorInfo {}
+            set ::errorCode {}
+            set ::httpTest::PutsList {}
+        } \
+        -body {
+            set status [catch {http::Connected ::httpTest::TestToken http phost srvurl} results]
+            list $status $results [::tcltest::callCount] $::httpTest::PutsList
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            unset ::httpTest::PutsList
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::fconfigure,count 4 ::fileevent,count 1 ::flush,count 0 ::http::Event,count 0 ::http::Finish,count 0 ::http::Write,count 0 ::puts,count 7 ::tell,count 0} {TestSocket {POST srvurl HTTP/1.0} TestSocket {Host: http://test.me/some/url} TestSocket {User-Agent: UserAgent} TestSocket {Accept: *} TestSocket {Content-Type: } TestSocket {Content-Length: } TestSocket {}}}
+
+    ::tcltest::test http-31.7 {http::Connected -- not query, not querychannel, validate off, no method, no handler, with error at first puts, no headers}  \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::http
+                ::http::urlTypes
+            }
+            ::tcltest::testSetup {
+                ::fconfigure {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::flush {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::puts {
+                    1 {
+                        returns {PUTS FAILED}
+                        code {error}
+                        errorcode {HTTP TEST PUTSFAILED}
+                    }
+                    * {
+                        use {
+                            prefix {lappend ::httpTest::PutsList }
+                        }
+                    }
+                }
+                ::tell {
+                    1 {
+                        returns {0}
+                        code {ok}
+                    }
+                    2 {
+                        returns {1024}
+                        code {ok}
+                    }
+                }
+                ::http::Event {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Write {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                accept-types {*}
+                querylength {}
+                sock {TestSocket}
+                socketinfo {http://test.me/some/url}
+                status {}
+                -blocksize {1024}
+                ?-handler {}
+                -headers {}
+                -keepalive {no}
+                ?-method {}
+                -protocol {1.1}
+                -querychannel {TestQueryChannel}
+                ?-query {}
+                -type {}
+                -validate {no}
+            }
+            set ::http::urlTypes(http) 80
+            set ::errorInfo {}
+            set ::errorCode {}
+            set ::httpTest::PutsList {}
+        } \
+        -body {
+            set status [catch {http::Connected ::httpTest::TestToken http phost srvurl} results]
+            list $status $results [::tcltest::callCount] $::httpTest::PutsList
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            unset ::httpTest::PutsList
+            ::tcltest::testCleanup
+        } \
+        -result {0 0 {::fconfigure,count 3 ::fileevent,count 0 ::flush,count 0 ::http::Event,count 0 ::http::Finish,count 1 ::http::Write,count 0 ::puts,count 1 ::tell,count 0} {}}
+
+    ::tcltest::test http-31.8 {http::Connected -- not query, not querychannel, validate off, no method, no handler, no error, with headers TESTING == true}  \
+        -setup {
+            ::tcltest::saveVars {
+                ::http::http
+                ::http::urlTypes
+            }
+            ::tcltest::testSetup {
+                ::fconfigure {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::fileevent {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::flush {
+                    * {
+                        returns {}
+                        code {ok}
+                    }
+                }
+                ::puts {
+                    * {
+                        use {
+                            prefix {lappend ::httpTest::PutsList }
+                        }
+                    }
+                }
+                ::tell {
+                    1 {
+                        returns {0}
+                        code {ok}
+                    }
+                    2 {
+                        returns {1024}
+                        code {ok}
+                    }
+                }
+                ::http::Event {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Finish {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+                ::http::Write {
+                    * {
+                        returns {0}
+                        code {ok}
+                    }
+                }
+            }
+            array set ::httpTest::TestToken {
+                accept-types {*}
+                querylength {}
+                sock {TestSocket}
+                socketinfo {http://test.me/some/url}
+                status {}
+                -blocksize {1024}
+                ?-handler {}
+                -headers {TESTING true}
+                -keepalive {no}
+                ?-method {}
+                -protocol {1.1}
+                -querychannel {TestQueryChannel}
+                ?-query {}
+                -type {}
+                -validate {no}
+            }
+            set ::http::urlTypes(http) 80
+            set ::errorInfo {}
+            set ::errorCode {}
+            set ::httpTest::PutsList {}
+        } \
+        -body {
+            set status [catch {http::Connected ::httpTest::TestToken http phost srvurl} results]
+            list $status $results [::tcltest::callCount] $::httpTest::PutsList
+        } \
+        -cleanup {
+            unset ::httpTest::TestToken
+            unset ::httpTest::PutsList
+            ::tcltest::testCleanup
+        } \
+        -result {0 {} {::fconfigure,count 4 ::fileevent,count 1 ::flush,count 0 ::http::Event,count 0 ::http::Finish,count 0 ::http::Write,count 0 ::puts,count 10 ::tell,count 0} {TestSocket {POST srvurl HTTP/1.1} TestSocket {Host: http://test.me/some/url} TestSocket {User-Agent: UserAgent} TestSocket {Connection: close} TestSocket {TESTING: true} TestSocket {Accept: *} TestSocket {Accept-Encoding: gzip,deflate,compress} TestSocket {Content-Type: } TestSocket {Content-Length: } TestSocket {}}}
 
     ##
     ## Test http::ReceiveChunked
