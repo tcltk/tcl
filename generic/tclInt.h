@@ -3983,20 +3983,21 @@ MODULE_SCOPE Var *	TclLookupArrayElement(Tcl_Interp *interp,
 			    const int flags, const char *msg,
 			    const int createPart1, const int createPart2,
 			    Var *arrayPtr, int index);
-MODULE_SCOPE Tcl_Obj *	TclPtrGetVar(Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Obj *	TclPtrGetVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const int flags, int index);
-MODULE_SCOPE Tcl_Obj *	TclPtrSetVar(Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Obj *	TclPtrSetVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr,
 			    const int flags, int index);
-MODULE_SCOPE Tcl_Obj *	TclPtrIncrObjVar(Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Obj *	TclPtrIncrObjVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr,
 			    const int flags, int index);
-MODULE_SCOPE int	TclPtrObjMakeUpvar(Tcl_Interp *interp, Var *otherPtr,
-			    Tcl_Obj *myNamePtr, int myFlags, int index);
-MODULE_SCOPE int	TclPtrUnsetVar(Tcl_Interp *interp, Var *varPtr,
+MODULE_SCOPE int	TclPtrObjMakeUpvarIdx(Tcl_Interp *interp,
+			    Var *otherPtr, Tcl_Obj *myNamePtr, int myFlags,
+			    int index);
+MODULE_SCOPE int	TclPtrUnsetVarIdx(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const int flags,
 			    int index);
@@ -4781,9 +4782,9 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #define TclSmallFreeEx(interp, memPtr) \
     do {								\
 	Tcl_Obj *_objPtr = (Tcl_Obj *) memPtr;				\
-	objPtr->bytes = NULL;						\
-	objPtr->typePtr = NULL;						\
-	objPtr->refCount = 1;						\
+	_objPtr->bytes = NULL;						\
+	_objPtr->typePtr = NULL;					\
+	_objPtr->refCount = 1;						\
 	TclDecrRefCount(_objPtr);					\
     } while (0)
 #endif   /* TCL_MEM_DEBUG */
