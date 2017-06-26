@@ -176,7 +176,7 @@ test init-4.$count {[Bug 46f801ed5a]} -setup {
 } -cleanup {
     array unset auto_index demo
     rename demo {}
-} -match glob -result *
+} -returnCodes error -result foo
 
 test init-5.0 {return options passed through ::unknown} -setup {
     catch {rename xxx {}}
