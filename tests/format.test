@@ -79,22 +79,13 @@ test format-1.11.1 {integer formatting} longIs64bit {
 test format-1.12 {integer formatting} {
     format "%b %#b %#b %llb" 5 0 5 [expr {2**100}]
 } {101 0b0 0b101 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}
-test format-1.13 {integer formatting} longIs32bit {
+test format-1.13 {integer formatting} {
     format "%#d %#d %#d %#d %#d" 0 6 34 16923 -12 -1
 } {0 6 34 16923 -12}
-test format-1.13.1 {integer formatting} longIs64bit {
-    format "%#d %#d %#d %#d %#d" 0 6 34 16923 -12 -1
-} {0 6 34 16923 -12}
-test format-1.14 {integer formatting} longIs32bit {
+test format-1.14 {integer formatting} {
     format "%#5d %#20d %#20d %#20d %#20d" 0 6 34 16923 -12 -1
 } {    0                    6                   34                16923                  -12}
-test format-1.14.1 {integer formatting} longIs64bit {
-    format "%#5d %#20d %#20d %#20d %#20d" 0 6 34 16923 -12 -1
-} {    0                    6                   34                16923                  -12}
-test format-1.15 {integer formatting} longIs32bit {
-    format "%-#5d %-#20d %-#20d %-#20d %-#20d" 0 6 34 16923 -12 -1
-} {0     6                    34                   16923                -12                 }
-test format-1.15.1 {integer formatting} longIs64bit {
+test format-1.15 {integer formatting} {
     format "%-#5d %-#20d %-#20d %-#20d %-#20d" 0 6 34 16923 -12 -1
 } {0     6                    34                   16923                -12                 }
 
