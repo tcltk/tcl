@@ -2040,8 +2040,12 @@ Tcl_AppendFormatToObj(
 		    segmentLimit -= 2;
 		    break;
 		case 'd':
-		    Tcl_AppendToObj(segment, "0d", 2);
-		    segmentLimit -= 2;
+#if TCL_MAJOR_VERSION < 9
+		    if (gotZero) {
+			Tcl_AppendToObj(segment, "0d", 2);
+			segmentLimit -= 2;
+		    }
+#endif
 		    break;
 		}
 	    }
