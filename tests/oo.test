@@ -2013,6 +2013,41 @@ test oo-15.10 {variable binding must not bleed through oo::copy} -setup {
 } -cleanup {
     FooClass destroy
 } -result {foo bar grill bar}
+test oo-15.11 {OO: object cloning} -returnCodes error -body {
+    oo::copy
+} -result {wrong # args: should be "oo::copy sourceName ?targetName? ?targetNamespace?"}
+test oo-15.12 {OO: object cloning with target NS} -setup {
+    oo::class create Super
+    oo::class create Cls {superclass Super}
+} -body {
+    namespace eval ::existing {}
+    oo::copy Cls {} ::existing
+} -returnCodes error -cleanup {
+    Super destroy
+    catch {namespace delete ::existing}
+} -result {::existing refers to an existing namespace}
+test oo-15.13 {OO: object cloning with target NS} -setup {
+    oo::class create Super
+    oo::class create Cls {superclass Super}
+} -body {
+    list [namespace exist ::dupens] [oo::copy Cls Cls2 ::dupens] [namespace exist ::dupens]
+} -cleanup {
+    Super destroy
+} -result {0 ::Cls2 1}
+test oo-15.14 {OO: object cloning with target NS} -setup {
+    oo::class create Cls {export eval}
+    set result {}
+} -body {
+    Cls create obj
+    obj eval {
+	proc test-15.14 {} {}
+    }
+    lappend result [info commands ::dupens::t*]
+    oo::copy obj obj2 ::dupens
+    lappend result [info commands ::dupens::t*]
+} -cleanup {
+    Cls destroy
+} -result {{} ::dupens::test-15.14}
 
 test oo-16.1 {OO: object introspection} -body {
     info object
@@ -3766,6 +3801,113 @@ test oo-35.4 {Bug 593baa032c: mixins list teardown} {
     namespace eval [info object namespace D] [list [namespace which B] destroy]
 } {}
 
+test oo-36.1 {TIP #470: introspection within oo::define} {
+    oo::define oo::object self
+} ::oo::object
+test oo-36.2 {TIP #470: introspection within oo::define} -setup {
+    oo::class create Cls
+} -body {
+    oo::define Cls self
+} -cleanup {
+    Cls destroy
+} -result ::Cls
+test oo-36.3 {TIP #470: introspection within oo::define} -setup {
+    oo::class create Super
+    set result uncalled
+} -body {
+    oo::class create Sub {
+	superclass Super
+	::set ::result [self]
+    }
+    return $result
+} -cleanup {
+    Super destroy
+} -result ::Sub
+test oo-36.4 {TIP #470: introspection within oo::define} -setup {
+    oo::class create Super
+    set result uncalled
+} -body {
+    oo::class create Sub {
+	superclass Super
+	::set ::result [self {}]
+    }
+    return $result
+} -cleanup {
+    Super destroy
+} -result {}
+test oo-36.5 {TIP #470: introspection within oo::define} -setup {
+    oo::class create Super
+    set result uncalled
+} -body {
+    oo::class create Sub {
+	superclass Super
+	::set ::result [self self]
+    }
+} -cleanup {
+    Super destroy
+} -result ::Sub
+test oo-36.6 {TIP #470: introspection within oo::objdefine} -setup {
+    oo::class create Cls
+    set result uncalled
+} -body {
+    Cls create obj
+    oo::objdefine obj {
+	::set ::result [self]
+    }
+} -cleanup {
+    Cls destroy
+} -result ::obj
+test oo-36.7 {TIP #470: introspection within oo::objdefine} -setup {
+    oo::class create Cls
+} -body {
+    Cls create obj
+    oo::objdefine obj {
+	self
+    }
+} -cleanup {
+    Cls destroy
+} -result ::obj
+test oo-36.8 {TIP #470: introspection within oo::objdefine} -setup {
+    oo::class create Cls
+} -body {
+    Cls create obj
+    oo::objdefine obj {
+	self anything
+    }
+} -returnCodes error -cleanup {
+    Cls destroy
+} -result {wrong # args: should be "self"}
+test oo-36.9 {TIP #470: introspection within oo::define} -setup {
+    oo::class create Cls
+    set result uncalled
+} -body {
+    proc oo::define::testself {} {
+	global result
+	set result [list [catch {self} msg] $msg \
+			[catch {uplevel 1 self} msg] $msg]
+	return
+    }
+    list [oo::define Cls testself] $result
+} -cleanup {
+    Cls destroy
+    catch {rename oo::define::testself {}}
+} -result {{} {1 {this command may only be called from within the context of an ::oo::define or ::oo::objdefine command} 0 ::Cls}}
+test oo-36.10 {TIP #470: introspection within oo::define} -setup {
+    oo::class create Cls
+    set result uncalled
+} -body {
+    proc oo::objdefine::testself {} {
+	global result
+	set result [list [catch {self} msg] $msg \
+			[catch {uplevel 1 self} msg] $msg]
+	return
+    }
+    Cls create obj
+    list [oo::objdefine obj testself] $result
+} -cleanup {
+    Cls destroy
+    catch {rename oo::objdefine::testself {}}
+} -result {{} {1 {this command may only be called from within the context of an ::oo::define or ::oo::objdefine command} 0 ::obj}}
 
 cleanupTests
 return
