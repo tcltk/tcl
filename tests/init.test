@@ -168,6 +168,16 @@ foreach arg [subst -nocommands -novariables {
     incr count
 }
 
+test init-4.$count {[Bug 46f801ed5a]} -setup {
+    auto_reset
+    array set auto_index {demo {proc demo {} {tailcall error foo}}}
+} -body {
+    demo
+} -cleanup {
+    array unset auto_index demo
+    rename demo {}
+} -returnCodes error -result foo
+
 test init-5.0 {return options passed through ::unknown} -setup {
     catch {rename xxx {}}
     set ::auto_index(::xxx) {proc ::xxx {} {
