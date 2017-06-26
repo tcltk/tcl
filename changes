@@ -8783,4 +8783,11 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2017-06-08 (bug)[2738427] Tcl_NumUtfChars() corner case utf-4.9 (nijtmans)
 
+2017-06-22 (update) Update Unicode data to 10.0 (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2017-06-22 (TIP 473) Let [oo::copy] specify target namespace (fellows)
+
+2017-06-26 (bug)[46f801] Repair autoloader fragility (porter)
+
 --- Released 8.6.7, ????, 2017 --- http://core.tcl.tk/tcl/ for details
