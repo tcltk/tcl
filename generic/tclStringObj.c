@@ -2036,9 +2036,14 @@ Tcl_AppendFormatToObj(
 		    Tcl_AppendToObj(segment, "0o", 2);
 		    segmentLimit -= 2;
 		    break;
+		case 'X':
+#if TCL_MAJOR_VERSION < 9
+		    Tcl_AppendToObj(segment, "0X", 2);
+		    segmentLimit -= 2;
+		    break;
+#endif
 		case 'p':
 		case 'x':
-		case 'X':
 		    Tcl_AppendToObj(segment, "0x", 2);
 		    segmentLimit -= 2;
 		    break;
@@ -2046,14 +2051,14 @@ Tcl_AppendFormatToObj(
 		    Tcl_AppendToObj(segment, "0b", 2);
 		    segmentLimit -= 2;
 		    break;
-		case 'd':
 #if TCL_MAJOR_VERSION < 9
+		case 'd':
 		    if (gotZero) {
 			Tcl_AppendToObj(segment, "0d", 2);
 			segmentLimit -= 2;
 		    }
-#endif
 		    break;
+#endif
 		}
 	    }
 
