@@ -4,16 +4,11 @@ package provided http 3
 namespace eval ::http {
     if {[info command ::http::Log] eq {}} {proc ::http::Log {args} {}}
 
-    variable ContextConfiguration {
-	-accept accept
-	-proxyfilter proxyfilter
-	-proxyhost proxyhost
-	-proxyport proxyport
-	-urlencoding urlencoding
-	-useragent useragent
-    }
-    variable ContextCfgType {
+    variable ContextConfig {
 	-accept {string {^[^\s/]+/+[^\s/+]$} "MIME type"}
+	-charset string
+	-connectionclass class
+	-keepalive boolean
 	-proxyfilter callback
 	-proxyhost string
 	-proxyport integer
@@ -21,28 +16,7 @@ namespace eval ::http {
 	-useragent string
     }
 
-    variable ConnectionConfiguration {
-	-binary isBinary
-	-blocksize blocksize
-	-channel channel
-	-command cmdCallback
-	-handler handlerCallback
-	-headers headers
-	-keepalive keepalive
-	-method method
-	-myaddr myaddr
-	-progress progressCallback
-	-protocol protocol
-	-query queryData
-	-queryblocksize queryBlocksize
-	-querychannel queryChannel
-	-queryprogress queryCallback
-	-strict strict
-	-timeout timeout
-	-type mimetype
-	-validate validate
-    }
-    variable ConnectionCfgType {
+    variable ConnectionConfig {
 	-binary boolean
 	-blocksize integer
 	-channel channel
@@ -63,17 +37,34 @@ namespace eval ::http {
 	-type {string {^[^\s/]+/+[^\s/+]$} "MIME type"}
 	-validate boolean
     }
+    variable ConnectionDefaults {
+	-binary false
+	-blocksize 8192
+	-queryblocksize 8192
+	-validate false
+	-headers {}
+	-timeout 0
+	-type application/x-www-form-urlencoded
+	-queryprogress {}
+	-protocol 1.1
+    }
 
     oo::class create Context {
-	variable accept proxyhost proxyport proxyfilter urlencoding strict
-	variable useragent socketmap urltypes encodings charset keepalive 
+	variable config
+	variable strict socketmap urltypes encodings charset keepalive
+	variable connectionclass counter
 
 	constructor {} {
-	    set accept */*
-	    set proxyhost {}
-	    set proxyport {}
-	    set proxyfilter [namespace code {my ProxyRequired}]
-	    set urlencoding utf-8
+	    array set config {
+		-accept */*
+		-charset iso8859-1
+		-keepalive 0
+		-proxyhost {}
+		-proxyport {}
+		-urlencoding utf-8
+	    }
+	    set config(-proxyfilter) [namespace code {my ProxyRequired}]
+	    set connectionclass ::http::Connection
 
 	    # We need a useragent string of this style or various servers will
 	    # refuse to send us compressed content even when we ask for it.
@@ -87,7 +78,7 @@ namespace eval ::http {
 		set platform "[string totitle $tcl_platform(platform)]; U;\
 			$tcl_platform(os) $tcl_platform(osVersion)"
 	    }
-	    set useragent "Mozilla/5.0 ($platform)\
+	    set config(-useragent) "Mozilla/5.0 ($platform)\
 		    http/[package provide http] Tcl/[package provide Tcl]"
 
 	    # Create a map for HTTP/1.1 open sockets
@@ -105,6 +96,7 @@ namespace eval ::http {
 	    set charset "iso8859-1"
 	    set keepalive 0
 	    set strict 1
+	    set counter 0
 	}
 
 	method register {proto port command} {
@@ -131,30 +123,25 @@ namespace eval ::http {
 	}
 
 	method configure {args} {
-	    variable ::http::ContextConfiguration
-	    variable ::http::ContextCfgType
+	    variable ::http::ContextConfig
 
-	    set options [dict keys $ContextConfiguration]
-	    set usage [join $options ", "]
+	    set options [dict keys $ContextConfig]
 	    if {[llength $args] == 0} {
 		set result {}
-		dict for {option var} $ContextConfiguration {
-		    upvar 0 [my varname $var] v
-		    lappend result $option $v
+		dict for {option typeinfo} $ContextConfig {
+		    lappend result $option $config($option)
 		}
 		return $result
 	    }
 	    if {[llength $args] == 1} {
 		set opt [::tcl::prefix match $options [lindex $args 0]]
-		upvar 0 [my varname [dict get $ContextConfiguration $opt]] v
-		return $v
+		return $config($opt)
 	    }
 	    foreach {option value} $args {
 		set opt [::tcl::prefix match $options $option]
-		upvar 0 [my varname [dict get $ContextConfiguration $opt]] v
-		set typeinfo [lassign [dict get $ContextCfgType $opt] type]
+		set typeinfo [lassign [dict get $ContextConfig $opt] type]
 		::http::Validate($type) $opt $value {*}$typeinfo
-		set v $value
+		set config($opt) $value
 	    }
 	}
 
@@ -196,24 +183,63 @@ namespace eval ::http {
 	}
 
 	method geturl {url args} {
-	    variable ::http::ConnectionCfgType
+	    variable ::http::ConnectionConfig
+	    variable ::http::ConnectionDefaults
 	    if {[llength $args] & 1} {
 		return -code error "missing configuration option"
 	    }
-	    set names [dict keys $ConnectionCfgType]
+	    set names [dict keys $ConnectionConfig]
 	    set options [dict map {opt value} $args {
 		set opt [::tcl::prefix match $names $opt]
-		set typeinfo [lassign [dict get $ConnectionCfgType $opt] type]
+		set typeinfo [lassign [dict get $ConnectionConfig $opt] type]
 		::http::Validate($type) $opt $value {*}$typeinfo
 		set value
 	    }]
-	    ::http::Connection new [self] $url $options
+	    $connectionclass create [incr counter] \
+		[self] $url $ConnectionDefaults $options
+	}
+
+	method ProxyRequred {host} {
+	    if {[info exists proxyhost] && [string length $proxyhost]} {
+		if {![info exists proxyport] || ![string length $proxyport]} {
+		    set proxyport 8080
+		}
+		return [list $proxyhost $proxyport]
+	    }
 	}
     }
 
     oo::class create Connection {
-	constructor {config url options} {
-	    variable ::http::ConnectionConfiguration
+	variable cfg http
+	variable binary state meta coding currentsize totalsize querylength
+	variable queryoffset type body status httpline connection charset
+	constructor {context url defaults options} {
+	    interp alias {} [namespace current]::Context {} $context
+	    my eval upvar 0 [info object namespace $context]::config http
+	    foreach {opt value} $defaults {
+		set cfg($opt) $value
+	    }
+	    set cfg(-keepalive) $http(-keepalive)
+	    foreach {opt value} $options {
+		set cfg($opt) $value
+	    }
+
+	    my reset
+
+	    set binary 0
+	    set state connecting
+	    set meta {}
+	    set coding {}
+	    set currentsize 0
+	    set totalsize 0
+	    set querylength 0
+	    set queryoffset 0
+	    set type text/html
+	    set body {}
+	    set status ""
+	    set httpline ""
+	    set connection close
+	    set charset $http(-charset)
 	}
 
 	destructor {
@@ -223,24 +249,73 @@ namespace eval ::http {
 	}
 
 	method wait {} {
+	    if {![info exists status] || $status eq ""} {
+		# We must wait on the true variable name, not the local
+		# unqualified version.
+		vwait [my varname status]
+	    }
+
+	    return [my status]
 	}
 
 	method data {} {
+	    return $body
 	}
 
 	method error {} {
+	    if {[info exists error]} {
+		return $error
+	    }
+	    return ""
 	}
 
 	method status {} {
+	    if {![info exists status]} {
+		return "error"
+	    }
+	    return $status
 	}
 
 	method code {} {
+	    return $httpline
 	}
 
 	method ncode {} {
+	    set thecode [my code]
+	    if {[regexp {[0-9]{3}} $thecode numeric_code]} {
+		return $numeric_code
+	    } else {
+		return $thecode
+	    }
+	}
+
+	method size {} {
+	    return $currentsize
 	}
 
 	method meta {} {
+	    return $meta
+	}
+
+	# Return the list of content-encoding transformations we need to do in
+	# order.
+	method ContentEncoding {} {
+	    set r {}
+	    if {[info exists coding]} {
+		foreach c [split $coding ,] {
+		    switch -exact -- $c {
+			deflate { lappend r inflate }
+			gzip - x-gzip { lappend r gunzip }
+			compress - x-compress { lappend r decompress }
+			identity {}
+			default {
+			    return -code error \
+				"unsupported content-encoding \"$c\""
+			}
+		    }
+		}
+	    }
+	    return $r
 	}
     }
 
@@ -298,4 +373,56 @@ namespace eval ::http {
 		"bad value for $opt ($value), must be dict"
 	}
     }
+
+    proc Validate(class) {option value} {
+	if {![info object isa class $value]} {
+	    return -code error \
+		"bad value for $opt ($value), must be class"
+	}
+    }
+
+    # http::CharsetToEncoding --
+    #
+    #	Tries to map a given IANA charset to a tcl encoding.  If no encoding
+    #	can be found, returns binary.
+    #
+
+    proc CharsetToEncoding {charset} {
+	variable encodings
+
+	set charset [string tolower $charset]
+	if {[regexp {iso-?8859-([0-9]+)} $charset -> num]} {
+	    set encoding "iso8859-$num"
+	} elseif {[regexp {iso-?2022-(jp|kr)} $charset -> ext]} {
+	    set encoding "iso2022-$ext"
+	} elseif {[regexp {shift[-_]?js} $charset]} {
+	    set encoding "shiftjis"
+	} elseif {[regexp {(?:windows|cp)-?([0-9]+)} $charset -> num]} {
+	    set encoding "cp$num"
+	} elseif {$charset eq "us-ascii"} {
+	    set encoding "ascii"
+	} elseif {[regexp {(?:iso-?)?lat(?:in)?-?([0-9]+)} $charset -> num]} {
+	    switch -- $num {
+		5 {set encoding "iso8859-9"}
+		1 - 2 - 3 {
+		    set encoding "iso8859-$num"
+		}
+	    }
+	} else {
+	    # other charset, like euc-xx, utf-8,... may directly map to
+	    # encoding
+	    set encoding $charset
+	}
+	set idx [lsearch -exact $encodings $encoding]
+	if {$idx >= 0} {
+	    return $encoding
+	} else {
+	    return "binary"
+	}
+    }
 }
+
+# Local variables:
+# mode: tcl
+# indent-tabs-mode: t
+# End:
