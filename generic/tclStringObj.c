@@ -2263,6 +2263,8 @@ Tcl_AppendFormatToObj(
 	    break;
 	}
 
+	case 'a':
+	case 'A':
 	case 'e':
 	case 'E':
 	case 'f':
@@ -2343,9 +2345,12 @@ Tcl_AppendFormatToObj(
 	}
 
 	switch (ch) {
-	case 'E':
-	case 'G': {
-	    Tcl_SetObjLength(segment, Tcl_UtfToUpper(TclGetString(segment)));
+	case 'A': {
+	    char *p = TclGetString(segment);
+	    p[1] = 'x';
+	    p = strchr(p, 'P');
+	    if (p) *p = 'p';
+	    break;
 	}
 	}
 
