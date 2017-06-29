@@ -2036,14 +2036,9 @@ Tcl_AppendFormatToObj(
 		    Tcl_AppendToObj(segment, "0o", 2);
 		    segmentLimit -= 2;
 		    break;
-		case 'X':
-#if TCL_MAJOR_VERSION < 9
-		    Tcl_AppendToObj(segment, "0X", 2);
-		    segmentLimit -= 2;
-		    break;
-#endif
 		case 'p':
 		case 'x':
+		case 'X':
 		    Tcl_AppendToObj(segment, "0x", 2);
 		    segmentLimit -= 2;
 		    break;
@@ -2333,6 +2328,12 @@ Tcl_AppendFormatToObj(
 		errCode = "OVERFLOW";
 		goto errorMsg;
 	    }
+	    if (ch == 'A') {
+		char *p = TclGetString(segment) + 1;
+		*p = 'x';
+		p = strchr(p, 'P');
+		if (p) *p = 'p';
+	    }
 	    break;
 	}
 	default:
@@ -2342,16 +2343,6 @@ Tcl_AppendFormatToObj(
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", NULL);
 	    }
 	    goto error;
-	}
-
-	switch (ch) {
-	case 'A': {
-	    char *p = TclGetString(segment);
-	    p[1] = 'x';
-	    p = strchr(p, 'P');
-	    if (p) *p = 'p';
-	    break;
-	}
 	}
 
 	if (width>0 && numChars<0) {
