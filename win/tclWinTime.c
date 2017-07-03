@@ -700,14 +700,6 @@ NativeGetMicroseconds(
 		unsigned int regs[4];
 
 		GetSystemInfo(&systemInfo);
-		if (TclWinCPUID(1, regs) == TCL_OK) {
-		printf("********* system pen: %d, hyperthread: %d, cpu-count: %d\n, cpu-num: %d\n", 
-			(regs[0]&0x00000F00) == 0x00000F00 /* Pentium 4 */
-			,((regs[0] & 0x0FF00000)	/* Extended family (bits 20-27) */
-			&& (regs[3] & 0x10000000)),
-			((regs[1]&0x00FF0000) >> 16)/* CPU count */,
-			systemInfo.dwNumberOfProcessors
-		);}
 
 		if (TclWinCPUID(0, regs) == TCL_OK
 			&& regs[1] == 0x756e6547	/* "Genu" */
@@ -724,7 +716,6 @@ NativeGetMicroseconds(
 		} else {
 		    timeInfo.perfCounterAvailable = FALSE;
 		}
-		printf("********* available %d\n", timeInfo.perfCounterAvailable);
 
 	    }
 #endif /* above code is Win32 only */
@@ -770,7 +761,6 @@ NativeGetMicroseconds(
 	 */
 	if (InterlockedCompareExchange(&timeInfo.lastCIEpoch, 
 				ciEpoch, ciEpoch) != ciEpoch) {
-	    printf("**** not equal: %d != %d\n", ciEpoch, timeInfo.lastCIEpoch);
 	    EnterCriticalSection(&timeInfo.cs);
 	    if (ciEpoch != timeInfo.lastCIEpoch) {
 		memcpy(&ci, &timeInfo.lastCI, sizeof(ci));
@@ -823,7 +813,6 @@ NativeGetMicroseconds(
 	    if (MsToT100ns(-800) < tdiff && tdiff < MsToT100ns(800)) {
 
 		/* Allow small drift if discrepancy larger as expected */
-//!!!		printf("************* tdiff: %I64d\n", tdiff);
 		if (tdiff <= MsToT100ns(-VT_MAX_DISCREPANCY)) {
 		    vt0 += MsToT100ns(VT_MAX_DRIFT_TIME);
 		}
@@ -845,9 +834,7 @@ NativeGetMicroseconds(
 		  && (lastTime -= vt0) > 0 /* offset to vt0 */
 		  && lastTime < MsToT100ns(800) /* bypass time-switch (drifts only) */
 		) {
-//!!!		    printf("************* forwards 1: %I64d, last-time: %I64d, distance: %I64d\n", lastTime, vt0, (vt0 - trSysTime));
 		    vt0 += lastTime; /* hold on the time a bit */
-//!!!		    printf("************* forwards 1: %I64d, last-time: %I64d, distance: %I64d\n", lastTime, ci.virtTimeBase, (vt0 - trSysTime));
 		}
 
 		/* difference for addjustment of monotonic base */
@@ -860,7 +847,6 @@ NativeGetMicroseconds(
 		 */
 		vt0 = sysTime;
 		tdiff = 0;
-//!!!		printf("************* reset time: %I64d *****************\n", vt0);
 	    }
 
 	    /*
@@ -888,9 +874,7 @@ NativeGetMicroseconds(
 	    memcpy(&timeInfo.lastCI, &ci, sizeof(ci));
 	    /* Increase epoch, to inform all other threads about new data */
 	    InterlockedIncrement(&timeInfo.lastCIEpoch);
-
-//!!!	    printf("************* recalibrated: %I64d, %I64d adj. %I64d, distance: %I64d\n", vt0, ci.virtTimeBase, ci.perfCounter, (vt0 - trSysTime));
-	  
+  
 	  } /* end lock */
 	  LeaveCriticalSection(&timeInfo.cs);
 	} /* common info lastCI contains actual data */
