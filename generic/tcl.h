@@ -696,6 +696,7 @@ typedef void (Tcl_FileFreeProc) _ANSI_ARGS_((ClientData clientData));
 typedef void (Tcl_FreeInternalRepProc) _ANSI_ARGS_((struct Tcl_Obj *objPtr));
 typedef void (Tcl_FreeProc) _ANSI_ARGS_((char *blockPtr));
 typedef void (Tcl_IdleProc) _ANSI_ARGS_((ClientData clientData));
+typedef void (Tcl_IdleDeleteProc) _ANSI_ARGS_((ClientData clientData));
 typedef void (Tcl_InterpDeleteProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp));
 typedef int (Tcl_MathProc) _ANSI_ARGS_((ClientData clientData,
@@ -710,6 +711,7 @@ typedef void (Tcl_PanicProc) _ANSI_ARGS_((CONST char *format, ...));
 typedef void (Tcl_TcpAcceptProc) _ANSI_ARGS_((ClientData callbackData,
 	Tcl_Channel chan, char *address, int port));
 typedef void (Tcl_TimerProc) _ANSI_ARGS_((ClientData clientData));
+typedef void (Tcl_TimerDeleteProc) _ANSI_ARGS_((ClientData clientData));
 typedef int (Tcl_SetFromAnyProc) _ANSI_ARGS_((Tcl_Interp *interp,
 	struct Tcl_Obj *objPtr));
 typedef void (Tcl_UpdateStringProc) _ANSI_ARGS_((struct Tcl_Obj *objPtr));

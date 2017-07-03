@@ -2499,6 +2499,65 @@ MODULE_SCOPE char	tclEmptyString;
 #define TCL_DD_SHORTEST0		0x0
 				/* 'Shortest possible' after masking */
 
+
+
+/*
+ *----------------------------------------------------------------
+ * Data structures related to timer / idle events.
+ *----------------------------------------------------------------
+ */
+
+/*
+ * For each timer callback that's pending there is one record of the following
+ * type. The normal handlers (created by Tcl_CreateTimerHandler) are chained
+ * together in a list sorted by time (earliest event first).
+ */
+
+				 
+typedef struct TimerHandler {
+    Tcl_TimerProc	*proc;	/* Function to call timer event */
+    Tcl_TimerDeleteProc *deleteProc; /* Function to cleanup timer event */
+    ClientData clientData;	/* Argument to pass to proc and deleteProc */
+    size_t generation;		/* Used to distinguish older handlers from
+				 * recently-created ones. */
+    Tcl_TimerToken token;	/* Identifies handler so it can be deleted. */
+    struct TimerHandler *nextPtr; /* Next and prev event in timer/idle queue, */
+    struct TimerHandler *prevPtr; /* or NULL for end/start of the queue. */
+    Tcl_Time	time;		/* When timer is to fire (if timer event). */
+/*  ExtraData	 */
+} TimerHandler;
+
+/*
+ * There is one of the following structures for each of the handlers declared
+ * in a call to Tcl_DoWhenIdle. All of the currently-active handlers are
+ * linked together into a list.
+ */
+
+typedef struct IdleHandler {
+    Tcl_IdleProc	*proc;	/* Function to call idle event */
+    Tcl_IdleDeleteProc  *deleteProc; /* Function to cleanup idle event */
+    ClientData clientData;	/* Argument to pass to proc and deleteProc */
+    size_t generation;		/* Used to distinguish older handlers from
+				 * recently-created ones. */
+    struct IdleHandler *nextPtr;/* Next and prev event in idle queue, */
+    struct IdleHandler *prevPtr;/* or NULL for end/start of the queue. */
+/*  ExtraData	 */
+} IdleHandler;
+
+
+/*
+ * Macros to wrap ExtraData and TimerHandler resp. IdleHandler (and vice versa)
+ */
+#define TimerHandler2ClientData(ptr)					\
+	    ( (ClientData)(((TimerHandler *)(ptr))+1) )
+#define ClientData2TimerHandler(ptr)					\
+	    ( ((TimerHandler *)(ptr))-1 )
+
+#define IdleHandler2ClientData(ptr)					\
+	    ( (ClientData)(((IdleHandler *)(ptr))+1) )
+#define ClientData2IdleHandler(ptr)					\
+	    ( ((IdleHandler *)(ptr))-1 )
+
 /*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside world:
@@ -2867,6 +2926,14 @@ MODULE_SCOPE int	Tcl_ContinueObjCmd(ClientData clientData,
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
 			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
 			    ClientData clientData);
+MODULE_SCOPE TimerHandler*  TclCreateAbsoluteTimerHandlerEx(
+			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
+			    Tcl_TimerDeleteProc *deleteProc, size_t extraSize);
+MODULE_SCOPE void	TclDeleteTimerHandler(TimerHandler *timerHandlerPtr);
+MODULE_SCOPE IdleHandler*   TclCreateIdleHandlerEx(
+			    Tcl_IdleProc *proc, Tcl_IdleDeleteProc *deleteProc,
+			    size_t extraDataSize);
+MODULE_SCOPE void	TclDeleteIdleHandler(IdleHandler *idlePtr);
 MODULE_SCOPE int	TclDefaultBgErrorHandlerObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
