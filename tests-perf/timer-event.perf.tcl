@@ -33,39 +33,67 @@ proc test-queue {howmuch} {
 
   puts "*** $howmuch events ***"
   _test_run 0 [string map [list \$howmuch $howmuch \\# \#] {
+
+    # generate $howmuch idle-events:
+    {time {after idle {set foo bar}} $howmuch; llength [after info]}
     # update / after idle:
-    setup {puts [time {after idle {set foo bar}} $howmuch]}
     {update; \# $howmuch idle-events}
+    
+    # generate $howmuch idle-events:
+    {time {after idle {set foo bar}} $howmuch; llength [after info]}
     # update idletasks / after idle:
-    setup {puts [time {after idle {set foo bar}} $howmuch]}
     {update idletasks; \# $howmuch idle-events}
 
+    # generate $howmuch immediate events:
+    {time {after 0 {set foo bar}} $howmuch; llength [after info]}
     # update / after 0:
-    setup {puts [time {after 0 {set foo bar}} $howmuch]}
     {update; \# $howmuch timer-events}
+    
+    # generate $howmuch 1-ms events:
+    {time {after 1 {set foo bar}} $howmuch; llength [after info]}
+    setup {after 1}
     # update / after 1:
-    setup {puts [time {after 1 {set foo bar}} $howmuch]; after 1}
     {update; \# $howmuch timer-events}
+
+    # generate $howmuch immediate events (+ 1 event of the second generation):
+    {time {after 0 {after 0 {}}} $howmuch; llength [after info]}
+    # update / after 0 (double generation):
+    {while {1} {update; if {![llength [after info]]} break }; \# all generations of events}
 
     # cancel forwards "after idle" / $howmuch idle-events in queue:
     setup {set i 0; time {set ev([incr i]) [after idle {set foo bar}]} $howmuch}
     {set i 0; time {after cancel $ev([incr i])} $howmuch}
-    cleanup {update}
+    cleanup {update; unset -nocomplain ev}
     # cancel backwards "after idle" / $howmuch idle-events in queue:
     setup {set i 0; time {set ev([incr i]) [after idle {set foo bar}]} $howmuch}
     {incr i; time {after cancel $ev([incr i -1])} $howmuch}
-    cleanup {update}
+    cleanup {update; unset -nocomplain ev}
 
     # cancel forwards "after 0" / $howmuch timer-events in queue:
     setup {set i 0; time {set ev([incr i]) [after 0 {set foo bar}]} $howmuch}
     {set i 0; time {after cancel $ev([incr i])} $howmuch}
-    cleanup {update}
+    cleanup {update; unset -nocomplain ev}
     # cancel backwards "after 0" / $howmuch timer-events in queue:
     setup {set i 0; time {set ev([incr i]) [after 0 {set foo bar}]} $howmuch}
     {incr i; time {after cancel $ev([incr i -1])} $howmuch}
-    cleanup {update}
+    cleanup {update; unset -nocomplain ev}
     # end $howmuch events.
   }]
+}
+
+proc test-access {{reptime 1000}} {
+  foreach count {5000 50000} {
+  _test_run $reptime [string map [list \$count $count] {
+    # event random access: after idle + after info (by $count events)
+    setup {set i -1; time {set ev([incr i]) [after idle {}]} $count; array size ev }
+    {after info $ev([expr {int(rand()*$count)}])}
+    cleanup {update; unset -nocomplain ev}
+    # event random access: after 0 + after info (by $count events)
+    setup {set i -1; time {set ev([incr i]) [after 0 {}]} $count; array size ev}
+    {after info $ev([expr {int(rand()*$count)}])}
+    cleanup {update; unset -nocomplain ev}
+  }]
+  }
 }
 
 proc test-exec {{reptime 1000}} {
@@ -164,6 +192,7 @@ proc test-long {{reptime 1000}} {
 
 proc test {{reptime 1000}} {
   test-exec $reptime
+  test-access $reptime
   if {![catch {update -noidle}]} {
     test-exec-new $reptime
     test-nrt-capability $reptime
