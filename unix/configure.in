@@ -519,8 +519,6 @@ if test "`uname -s`" = "Darwin" ; then
 	[Are we to override what our default encoding is?])
     AC_DEFINE(TCL_LOAD_FROM_MEMORY, 1,
 	[Can this platform load code from memory?])
-    AC_DEFINE(TCL_WIDE_CLICKS, 1,
-	[Does this platform have wide high-resolution clicks?])
     AC_CHECK_HEADERS(AvailabilityMacros.h)
     if test "$ac_cv_header_AvailabilityMacros_h" = yes; then
 	AC_CACHE_CHECK([if weak import is available], tcl_cv_cc_weak_import, [
@@ -567,6 +565,11 @@ else
     DLTEST_LD='${SHLIB_LD}'
     DLTEST_SUFFIX=""
 fi
+
+# Completelly supports on unix (linux/darwin)
+AC_DEFINE(TCL_WIDE_CLICKS, 1,
+    [Does this platform have wide high-resolution clicks?])
+
 
 #--------------------------------------------------------------------
 # Check for support of fts functions (readdir replacement)
