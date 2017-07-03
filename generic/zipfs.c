@@ -3,7 +3,7 @@
  *
  *	Implementation of the ZIP filesystem used in AndroWish.
  *
- * Copyright (c) 2013-2016 Christian Werner <chw@ch-werner.de>
+ * Copyright (c) 2013-2017 Christian Werner <chw@ch-werner.de>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -807,8 +807,10 @@ ZipFSCloseArchive(Tcl_Interp *interp, ZipFile *zf)
 	Tcl_Free((char *) zf->tofree);
 	zf->tofree = NULL;
     }
-    Tcl_Close(interp, zf->chan);
-    zf->chan = NULL;
+    if (zf->chan != NULL) {
+	Tcl_Close(interp, zf->chan);
+	zf->chan = NULL;
+    }
 }
 
 /*
@@ -2047,7 +2049,8 @@ ZipFSMkZipOrImgObjCmd(ClientData clientData, Tcl_Interp *interp,
 	pwlen = 0;
     }
     if (isImg) {
-	ZipFile zf0;
+	ZipFile *zf, zf0;
+	int isMounted = 0;
 	const char *imgName;
 
 	if (isList) {
@@ -2075,17 +2078,47 @@ ZipFSMkZipOrImgObjCmd(ClientData clientData, Tcl_Interp *interp,
 	    pwbuf[i++] = (char) (ZIP_PASSWORD_END_SIG >> 24);
 	    pwbuf[i] = '\0';
 	}
-	if (ZipFSOpenArchive(interp, imgName, 0, &zf0) == TCL_OK) {
-	    i = Tcl_Write(out, (char *) zf0.data, zf0.baseoffsp);
-	    if (i != zf0.baseoffsp) {
+	/* Check for mounted image */
+	WriteLock();
+	hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
+	while (hPtr != NULL) {
+	    if ((zf = (ZipFile *) Tcl_GetHashValue(hPtr)) != NULL) {
+		if (strcmp(zf->name, imgName) == 0) {
+		    isMounted = 1;
+		    zf->nopen++;
+		    break;
+		}
+	    }
+	    hPtr = Tcl_NextHashEntry(&search);
+	}
+	Unlock();
+	if (!isMounted) {
+	    zf = &zf0;
+	}
+	if (isMounted ||
+	    (ZipFSOpenArchive(interp, imgName, 0, zf) == TCL_OK)) {
+	    i = Tcl_Write(out, (char *) zf->data, zf->baseoffsp);
+	    if (i != zf->baseoffsp) {
 		memset(pwbuf, 0, sizeof (pwbuf));
 		Tcl_DecrRefCount(list);
 		Tcl_SetObjResult(interp, Tcl_NewStringObj("write error", -1));
 		Tcl_Close(interp, out);
-		ZipFSCloseArchive(interp, &zf0);
+		if (zf == &zf0) {
+		    ZipFSCloseArchive(interp, zf);
+		} else {
+		    WriteLock();
+		    zf->nopen--;
+		    Unlock();
+		}
 		return TCL_ERROR;
 	    }
-	    ZipFSCloseArchive(interp, &zf0);
+	    if (zf == &zf0) {
+		ZipFSCloseArchive(interp, zf);
+	    } else {
+		WriteLock();
+		zf->nopen--;
+		Unlock();
+	    }
 	} else {
 	    int k, n, m;
 	    Tcl_Channel in;
