@@ -2995,9 +2995,10 @@ MODULE_SCOPE int	Tcl_ConcatObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_ContinueObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE void	TclSetTimerEventMarker(int head);
+MODULE_SCOPE void	TclSetTimerEventMarker(int flags);
 MODULE_SCOPE int	TclServiceTimerEvents(void);
 MODULE_SCOPE int	TclServiceIdleEx(int flags, int count);
+MODULE_SCOPE void	TclpCancelEvent(Tcl_Event *evPtr);
 MODULE_SCOPE TclTimerEvent* TclpCreateTimerEvent(Tcl_WideInt usec,
 			    Tcl_TimerProc *proc, Tcl_TimerDeleteProc *delProc,
 			    size_t extraDataSize, int flags);

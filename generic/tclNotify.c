@@ -496,6 +496,12 @@ QueueEvent(
 	    tsdPtr->lastEventPtr = evPtr;
 	}
 	tsdPtr->firstEventPtr = evPtr;
+
+	/* move timer event hereafter */
+	if (tsdPtr->timerMarkerPtr == INT2PTR(-1)) {
+	    tsdPtr->timerMarkerPtr = evPtr;
+	}
+
     } else if (position == TCL_QUEUE_MARK) {
 	/*
 	 * Insert the event after the current marker event and advance the
@@ -513,10 +519,45 @@ QueueEvent(
 	if (evPtr->nextPtr == NULL) {
 	    tsdPtr->lastEventPtr = evPtr;
 	}
+
+	/* move timer event hereafter */
+	if (tsdPtr->timerMarkerPtr == INT2PTR(-1)) {
+	    tsdPtr->timerMarkerPtr = evPtr;
+	}
     }
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 }
 
+static void
+UnlinkEvent(
+    ThreadSpecificData *tsdPtr,
+    Tcl_Event *evPtr,
+    Tcl_Event *prevPtr) {
+    /*
+     * Unlink it.
+     */
+
+    if (prevPtr == NULL) {
+	tsdPtr->firstEventPtr = evPtr->nextPtr;
+    } else {
+	prevPtr->nextPtr = evPtr->nextPtr;
+    }
+
+    /*
+     * Update 'last' and 'marker' events if either has been deleted.
+     */
+
+    if (evPtr->nextPtr == NULL) {
+	tsdPtr->lastEventPtr = prevPtr;
+    }
+    if (tsdPtr->markerEventPtr == evPtr) {
+	tsdPtr->markerEventPtr = prevPtr;
+    }
+    if (tsdPtr->timerMarkerPtr == evPtr) {
+	tsdPtr->timerMarkerPtr = prevPtr ? prevPtr : INT2PTR(-1);
+    }
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -545,7 +586,6 @@ Tcl_DeleteEvents(
     Tcl_Event *prevPtr;		/* Pointer to evPtr's predecessor, or NULL if
 				 * evPtr designates the first event in the
 				 * queue for the thread. */
-    Tcl_Event* hold;
 
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -559,47 +599,70 @@ Tcl_DeleteEvents(
     prevPtr = NULL;
     evPtr = tsdPtr->firstEventPtr;
     while (evPtr != NULL) {
+	Tcl_Event *nextPtr = evPtr->nextPtr;
 	if ((*proc)(evPtr, clientData) == 1) {
+
 	    /*
 	     * This event should be deleted. Unlink it.
 	     */
 
-	    if (prevPtr == NULL) {
-		tsdPtr->firstEventPtr = evPtr->nextPtr;
-	    } else {
-		prevPtr->nextPtr = evPtr->nextPtr;
-	    }
-
-	    /*
-	     * Update 'last' and 'marker' events if either has been deleted.
-	     */
-
-	    if (evPtr->nextPtr == NULL) {
-		tsdPtr->lastEventPtr = prevPtr;
-	    }
-	    if (tsdPtr->markerEventPtr == evPtr) {
-		tsdPtr->markerEventPtr = prevPtr;
-	    }
-	    if (tsdPtr->timerMarkerPtr == evPtr) {
-		tsdPtr->timerMarkerPtr = prevPtr;
-	    }
+	    UnlinkEvent(tsdPtr, evPtr, prevPtr);
 
 	    /*
 	     * Delete the event data structure.
 	     */
 
-	    hold = evPtr;
-	    evPtr = evPtr->nextPtr;
-	    ckfree((char *) hold);
+	    ckfree((char *) evPtr);
 	} else {
 	    /*
 	     * Event is to be retained.
 	     */
 
 	    prevPtr = evPtr;
-	    evPtr = evPtr->nextPtr;
+	}
+	evPtr = nextPtr;
+    }
+    Tcl_MutexUnlock(&(tsdPtr->queueMutex));
+}
+
+void
+TclpCancelEvent(
+    Tcl_Event *evPtr)		/* Event to remove from queue. */
+{
+    Tcl_Event *prevPtr = NULL;
+
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    Tcl_MutexLock(&(tsdPtr->queueMutex));
+
+    /*
+     * Search event to unlink from queue.
+     */
+
+    if (evPtr != tsdPtr->firstEventPtr) {
+	for (prevPtr = tsdPtr->firstEventPtr;
+		prevPtr && prevPtr->nextPtr != evPtr;
+		prevPtr = prevPtr->nextPtr) {
+	    /* Empty loop body. */
+	}
+	if (!prevPtr) {
+	    evPtr = NULL; /* not in queue (already removed) */
 	}
     }
+
+    if (evPtr) {
+	/*
+	 * Unlink it.
+	 */
+
+	UnlinkEvent(tsdPtr, evPtr, prevPtr);
+
+	/*
+	 * Delete the event data structure.
+	 */
+	ckfree((char *) evPtr);
+    }
+
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 }
 
@@ -632,7 +695,7 @@ Tcl_ServiceEvent(
 				 * matching this will be skipped for
 				 * processing later. */
 {
-    Tcl_Event *evPtr, *prevPtr;
+    Tcl_Event *evPtr, *prevPtr = NULL;
     Tcl_EventProc *proc;
     int result;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -666,16 +729,13 @@ Tcl_ServiceEvent(
      * If timer marker reached, process timer events now.
      */
     if (flags & TCL_TIMER_EVENTS) { /* timer allowed */
-	if (tsdPtr->timerMarkerPtr == INT2PTR(-1)) { /* timer-event reached */
+	if ( tsdPtr->timerMarkerPtr == INT2PTR(-1) /* timer-event reached */
+	  || ( tsdPtr->timerMarkerPtr == INT2PTR(-2) /* next cycle, but ... */
+	    && ((flags & TCL_ALL_EVENTS) == TCL_TIMER_EVENTS) /* timers only */
+	  )
+	) {
 	    goto processTimer;
 	}
-#if 0
-	if ( !tsdPtr->firstEventPtr		 /* no another events at all */
-	  || ((flags & TCL_ALL_EVENTS) == TCL_TIMER_EVENTS) /* timers only */
-	) {
-	    goto timer;
-	}
-#endif
     }
 
     /*
@@ -684,9 +744,15 @@ Tcl_ServiceEvent(
      */
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
-    for (evPtr = tsdPtr->firstEventPtr; evPtr != NULL;
-	    evPtr = evPtr->nextPtr) {
+    for (evPtr = tsdPtr->firstEventPtr;
+	 evPtr != NULL && tsdPtr->timerMarkerPtr != INT2PTR(-1);
+	 evPtr = evPtr->nextPtr
+    ) {
 	
+	if (tsdPtr->timerMarkerPtr == evPtr) {
+	    tsdPtr->timerMarkerPtr = INT2PTR(-1); /* timer marker reached */
+	}
+
 	/*
 	 * Call the handler for the event. If it actually handles the event
 	 * then free the storage for the event. There are two tricky things
@@ -705,6 +771,7 @@ Tcl_ServiceEvent(
 
 	proc = evPtr->proc;
 	if (proc == NULL) {
+	    prevPtr = evPtr;
 	    continue;
 	}
 	evPtr->proc = NULL;
@@ -721,41 +788,48 @@ Tcl_ServiceEvent(
 	Tcl_MutexLock(&(tsdPtr->queueMutex));
 
 	if (result) {
+
 	    /*
 	     * The event was processed, so remove it from the queue.
 	     */
 
-	    if (tsdPtr->timerMarkerPtr == evPtr) {
-		tsdPtr->timerMarkerPtr = INT2PTR(-1); /* timer marker reached */
-	    }
-	    if (tsdPtr->firstEventPtr == evPtr) {
-		tsdPtr->firstEventPtr = evPtr->nextPtr;
-		if (evPtr->nextPtr == NULL) {
-		    tsdPtr->lastEventPtr = NULL;
-		}
-		if (tsdPtr->markerEventPtr == evPtr) {
-		    tsdPtr->markerEventPtr = NULL;
-		}
-	    } else {
+	    prevPtr = NULL;
+	    if (evPtr != tsdPtr->firstEventPtr) {
 		for (prevPtr = tsdPtr->firstEventPtr;
 			prevPtr && prevPtr->nextPtr != evPtr;
 			prevPtr = prevPtr->nextPtr) {
 		    /* Empty loop body. */
 		}
-		if (prevPtr) {
-		    prevPtr->nextPtr = evPtr->nextPtr;
-		    if (evPtr->nextPtr == NULL) {
-			tsdPtr->lastEventPtr = prevPtr;
-		    }
-		    if (tsdPtr->markerEventPtr == evPtr) {
-			tsdPtr->markerEventPtr = prevPtr;
-		    }
-		} else {
+		if (!prevPtr) {
 		    evPtr = NULL;
 		}
 	    }
 	    if (evPtr) {
-		ckfree((char *) evPtr);
+		/* Detach event from queue */
+		UnlinkEvent(tsdPtr, evPtr, prevPtr);
+
+		/* If wanted to prolong (repeat) */
+		if (evPtr->proc) {
+		    /*
+		     * Event was restored (prolonged) - sign to reattach to tail
+		     */
+		    if (evPtr != tsdPtr->lastEventPtr) {
+			/* detach event from queue */
+			UnlinkEvent(tsdPtr, evPtr, prevPtr);
+			/* attach to tail */
+			evPtr->nextPtr = NULL;
+			if (tsdPtr->firstEventPtr == NULL) {
+			    tsdPtr->firstEventPtr = evPtr;
+			} else {
+			    tsdPtr->lastEventPtr->nextPtr = evPtr;
+			}
+			tsdPtr->lastEventPtr = evPtr;
+		    }
+		} else {
+		    /* Free event */
+		    UnlinkEvent(tsdPtr, evPtr, prevPtr);
+		    ckfree((char *) evPtr);
+		}
 	    }
 	    Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 	    return 1;
@@ -775,50 +849,19 @@ Tcl_ServiceEvent(
      */
 
     if (flags & TCL_TIMER_EVENTS) {
-timer:
-#if 1
+
 	/* If available pending timer-events of new generation */
-	if (tsdPtr->timerMarkerPtr == INT2PTR(-2)) {
+	if (tsdPtr->timerMarkerPtr == INT2PTR(-2)) { /* pending */
 	    /* no other events - process timer-events (next cycle) */
-	    if (!tsdPtr->lastEventPtr) { /* no other events */
-		goto processTimer;
-	    } else {
-	    	tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr;
-	    }
-	    return 0;
-	}
-#else
-#if 1
-	/* If available pending timer-events of new generation */
-	if ( tsdPtr->timerMarkerPtr == INT2PTR(-2)
-	  || !tsdPtr->firstEventPtr /* no other events */
-	) {
-	    /* no other events - process timer-events (next cycle) */
-	    if (tsdPtr->timerMarkerPtr == INT2PTR(-2)) {
+	    if (!(tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr)) { /* no other events */
 		tsdPtr->timerMarkerPtr = INT2PTR(-1);
-	    } else {
-		tsdPtr->timerMarkerPtr = INT2PTR(-2);
 	    }
 	    return 0;
 	}
-#else
-	/* If available pending timer-events of new generation */
-	if ( tsdPtr->timerMarkerPtr == INT2PTR(-2)
-	  || !tsdPtr->lastEventPtr
-	) {
-	    /* if other events available */
-	    if ((tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr)) {
-		/* process timer-events after it (next cycle) */
-		return 0;
-	    }
-	    /* no other events - process timer-events now */
-	    goto processTimer;
-        }
-#endif
-#endif
+
 	if (tsdPtr->timerMarkerPtr == INT2PTR(-1)) {
 
-	  processTimer:
+      processTimer:
 	    /* reset marker */
 	    tsdPtr->timerMarkerPtr = NULL;
 
@@ -833,7 +876,7 @@ timer:
 		    /* marker to last event in the queue */
 		    if (!(tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr)) {
 			/* 
-			 * Marker as "now" - queue is empty, so timers events are first,
+			 * Marker as "pending" - queue is empty, so timers events are first,
 			 * if setup-proc resp. check-proc will not generate new events.
 			 */
 			tsdPtr->timerMarkerPtr = INT2PTR(-2);
@@ -882,7 +925,7 @@ TclPeekEventQueued(
     	 */
 	if ( Tcl_AsyncReady()
 	  || (tsdPtr->firstEventPtr)
-	  || ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerMarkerPtr == INT2PTR(-1))
+	  || ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerMarkerPtr)
 	) {
 	    return 1;
 	}
@@ -943,18 +986,21 @@ TclPeekEventQueued(
 
 void
 TclSetTimerEventMarker(
-    int head)
+    int flags)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (tsdPtr->timerMarkerPtr == NULL || tsdPtr->timerMarkerPtr == INT2PTR(-2)) {
 	/* marker to last event in the queue */
-	if (head || !(tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr)) {
+	if ( !(tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr) /* no other events */
+	  || ((flags & TCL_ALL_EVENTS) == TCL_TIMER_EVENTS) /* timers only */
+	) {
 	    /* 
-	     * Marker as "now" - queue is empty, so timers events are first,
+	     * Marker as "pending" - queue is empty, so timers events are first,
 	     * if setup-proc resp. check-proc will not generate new events.
+	     * Force timer execution if flags specified (from checkProc).
 	     */
-	    tsdPtr->timerMarkerPtr = INT2PTR(-2);
+	    tsdPtr->timerMarkerPtr = flags ? INT2PTR(-1) : INT2PTR(-2);
 	};
     }
 }

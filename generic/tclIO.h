@@ -187,7 +187,7 @@ typedef struct ChannelState {
 				/* Chain of all scripts registered for event
 				 * handlers ("fileevent") on this channel. */
     int bufSize;		/* What size buffers to allocate? */
-    TclTimerEvent *timer;	/* Handle to wakeup timer for this channel. */
+    Tcl_Event *schedEvent;	/* Scheduler event to wakeup this channel. */
     struct CopyState *csPtrR;	/* State of background copy for which channel
 				 * is input, or NULL. */
     struct CopyState *csPtrW;	/* State of background copy for which channel

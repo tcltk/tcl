@@ -918,7 +918,6 @@ TimerSetupProc(
 {
     Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)data;
-    Tcl_WideInt entryTime = 0;
 
     if (tsdPtr == NULL) { tsdPtr = InitTimer(); };
 
@@ -941,7 +940,7 @@ TimerSetupProc(
 	 */
 
 	Tcl_WideInt now = TclpGetMicroseconds();
-	entryTime = 0x7FFFFFFFFFFFFFFFL;
+	Tcl_WideInt entryTime = 0x7FFFFFFFFFFFFFFFL;
 
 	if (tsdPtr->relTimerList) {
 	    entryTime = TimerGetDueTime(tsdPtr,
@@ -971,14 +970,6 @@ TimerSetupProc(
 	
     } else {
 	return;
-    }
-
-    /*
-     * If the first timer has expired, stick an event on the queue right now.
-     */
-    if (!tsdPtr->timerPending && entryTime <= 0) {
-	TclSetTimerEventMarker(0);
-	tsdPtr->timerPending = 1;
     }
 
     Tcl_SetMaxBlockTime(&blockTime);
@@ -1015,20 +1006,18 @@ TimerCheckProc(
 
     if (tsdPtr == NULL) { tsdPtr = InitTimer(); };
 
-    /* If already pending (or no timer-events) */
-    if (tsdPtr->timerPending) {
-	return;
-    }
-    if (tsdPtr->promptList) {
+    /* If already pending (or prompt-events) */
+    if (tsdPtr->timerPending || tsdPtr->promptList) {
 	goto mark;
-    }
-    if (!tsdPtr->relTimerList && !tsdPtr->absTimerList) {
-	return;
     }
 
     /*
      * Verify the first timer on the queue.
      */
+
+    if (!tsdPtr->relTimerList && !tsdPtr->absTimerList) {
+	return;
+    }
     entryTime = 0x7FFFFFFFFFFFFFFFL;
     now = TclpGetMicroseconds();
     if (tsdPtr->relTimerList) {
@@ -1051,9 +1040,9 @@ TimerCheckProc(
     /*
     * If the first timer has expired, stick an event on the queue.
     */
-    if (!tsdPtr->timerPending && entryTime <= 0) {
+    if (entryTime <= 0) {
   mark:
-	TclSetTimerEventMarker(0);
+	TclSetTimerEventMarker(flags); /* force timer execution */
 	tsdPtr->timerPending = 1;
     }
 }
