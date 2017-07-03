@@ -2933,7 +2933,6 @@ MODULE_SCOPE TimerEntry* TclCreateTimerEntryEx(
 			    Tcl_TimerProc *proc, Tcl_TimerDeleteProc *deleteProc,
 			    size_t extraDataSize, int flags);
 MODULE_SCOPE void	TclDeleteTimerEntry(TimerEntry *entryPtr);
-MODULE_SCOPE int	TclPeekEventQueued(int flags);
 MODULE_SCOPE int	TclDefaultBgErrorHandlerObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);

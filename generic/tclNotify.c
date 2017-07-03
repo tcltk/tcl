@@ -639,7 +639,7 @@ Tcl_ServiceEvent(
     /*
      * If timer marker reached, process timer events now.
      */
-    if (tsdPtr->timerMarkerPtr == INT2PTR(-1) || !tsdPtr->firstEventPtr) {
+    if (tsdPtr->timerMarkerPtr == INT2PTR(-1)) {
 	goto timer;
     }
 
@@ -743,7 +743,7 @@ timer:
     /*
      * Process timer queue, if alloved and timers are enabled.
      */
-    if ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerMarkerPtr) {
+    if (flags & TCL_TIMER_EVENTS && tsdPtr->timerMarkerPtr) {
 	/* reset marker */
 	tsdPtr->timerMarkerPtr = NULL;
 
@@ -757,36 +757,6 @@ timer:
 
 
     return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclPeekEventQueued --
- *
- *	Check whether some event (except idle) available (async, queued, timer).
- *
- *	This will be used e. g. in TclServiceIdle to stop the processing of the
- *	the idle events if some "normal" event occurred.
- *
- * Results:
- *	Returns 1 if some event queued, 0 otherwise.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclPeekEventQueued(
-    int flags)
-{
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-    return Tcl_AsyncReady()
-        || (tsdPtr->firstEventPtr)
-	|| ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerMarkerPtr);
 }
 
 /*
@@ -950,10 +920,19 @@ Tcl_DoOneEvent(
 				 * TCL_TIMER_EVENTS, TCL_IDLE_EVENTS, or
 				 * others defined by event sources. */
 {
-    int result = 0, oldMode, i = 0;
+    int result = 0, oldMode;
     EventSource *sourcePtr;
     Tcl_Time *timePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    /*
+     * The first thing we do is to service any asynchronous event handlers.
+     */
+
+    if (Tcl_AsyncReady()) {
+	(void) Tcl_AsyncInvoke(NULL, 0);
+	return 1;
+    }
 
     /*
      * No event flags is equivalent to TCL_ALL_EVENTS.
@@ -990,8 +969,7 @@ Tcl_DoOneEvent(
 	}
 
 	/*
-	 * Ask Tcl to service any asynchronous event handlers or 
-	* queued event, if there are any.
+	 * Ask Tcl to service a queued event, if there are any.
 	 */
 
 	if (Tcl_ServiceEvent(flags)) {
@@ -1008,8 +986,6 @@ Tcl_DoOneEvent(
 	    tsdPtr->blockTime.sec = 0;
 	    tsdPtr->blockTime.usec = 0;
 	    tsdPtr->blockTimeSet = 1;
-	    timePtr = &tsdPtr->blockTime;
-	    goto wait; /* for notifier resp. system events */
 	} else {
 	    tsdPtr->blockTimeSet = 0;
 	}
@@ -1028,7 +1004,7 @@ Tcl_DoOneEvent(
 	}
 	tsdPtr->inTraversal = 0;
 
-	if (tsdPtr->blockTimeSet) {
+	if ((flags & TCL_DONT_WAIT) || tsdPtr->blockTimeSet) {
 	    timePtr = &tsdPtr->blockTime;
 	} else {
 	    timePtr = NULL;
@@ -1038,7 +1014,7 @@ Tcl_DoOneEvent(
 	 * Wait for a new event or a timeout. If Tcl_WaitForEvent returns -1,
 	 * we should abort Tcl_DoOneEvent.
 	 */
-    wait:
+
 	result = Tcl_WaitForEvent(timePtr);
 	if (result < 0) {
 	    result = 0;
