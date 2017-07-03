@@ -8138,7 +8138,7 @@ ChannelTimerProc(
 	 * before UpdateInterest gets called by Tcl_NotifyChannel.
 	 */
 
-	statePtr->timer = TclpProlongTimerEvent(statePtr->timer, 0, 0);
+	statePtr->timer = TclpProlongTimerEvent(statePtr->timer, 0, TCL_TMREV_PROMPT);
 	if (!statePtr->timer) {
 	    statePtr->timer = TclpCreatePromptTimerEvent(ChannelTimerProc,
 		FreeChannelTimerProc, 0, TCL_TMREV_PROMPT);

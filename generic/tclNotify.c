@@ -32,6 +32,14 @@ typedef struct EventSource {
 } EventSource;
 
 /*
+ * Used for performance purposes, threshold to bypass check source (if don't wait)
+ * Values under 1000 should be approximately under 1ms, e. g. 5 is ca. 0.005ms
+ */
+#ifndef TCL_CHECK_EVENT_SOURCE_THRESHOLD
+    #define TCL_CHECK_EVENT_SOURCE_THRESHOLD 5
+#endif
+
+/*
  * The following structure keeps track of the state of the notifier on a
  * per-thread basis. The first three elements keep track of the event queue.
  * In addition to the first (next to be serviced) and last events in the
@@ -72,23 +80,18 @@ typedef struct ThreadSpecificData {
 				/* Next notifier in global list of notifiers.
 				 * Access is controlled by the listLock global
 				 * mutex. */
-#ifndef TCL_WIDE_CLICKS		/* Last "time" source checked, used as threshold */
+#if TCL_CHECK_EVENT_SOURCE_THRESHOLD
+				/* Last "time" source checked, used as threshold
+				 * to avoid checking for events too often */
+  #ifndef TCL_WIDE_CLICKS
     unsigned long lastCheckClicks;
-#else
+  #else
     Tcl_WideInt lastCheckClicks;
+  #endif
 #endif
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
-
-/*
- * Used for performance purposes, threshold to bypass check source (if don't wait)
- * Values under 1000 should be approximately under 1ms, e. g. 10 is ca. 0.01ms
- */
-#ifndef CHECK_EVENT_SOURCE_THRESHOLD
-    #define CHECK_EVENT_SOURCE_THRESHOLD 10
-#endif
-
 
 /*
  * Global list of notifiers. Access to this list is controlled by the listLock
@@ -662,13 +665,17 @@ Tcl_ServiceEvent(
     /*
      * If timer marker reached, process timer events now.
      */
-    if ( (flags & TCL_TIMER_EVENTS) /* timer allowed */
-      && ( tsdPtr->timerMarkerPtr == INT2PTR(-1) /* timer-event reached */
-	|| !tsdPtr->firstEventPtr		 /* no another events at all */
-	|| ((flags & TCL_ALL_EVENTS) == TCL_TIMER_EVENTS) /* timers only */
-      )
-    ) {
-	goto timer;
+    if (flags & TCL_TIMER_EVENTS) { /* timer allowed */
+	if (tsdPtr->timerMarkerPtr == INT2PTR(-1)) { /* timer-event reached */
+	    goto processTimer;
+	}
+#if 0
+	if ( !tsdPtr->firstEventPtr		 /* no another events at all */
+	  || ((flags & TCL_ALL_EVENTS) == TCL_TIMER_EVENTS) /* timers only */
+	) {
+	    goto timer;
+	}
+#endif
     }
 
     /*
@@ -680,13 +687,6 @@ Tcl_ServiceEvent(
     for (evPtr = tsdPtr->firstEventPtr; evPtr != NULL;
 	    evPtr = evPtr->nextPtr) {
 	
-	/*
-	* If timer marker reached, next cycle will process timer events.
-	*/
-	if (evPtr == tsdPtr->timerMarkerPtr) {
-	    tsdPtr->timerMarkerPtr = INT2PTR(-1);
-	}
-
 	/*
 	 * Call the handler for the event. If it actually handles the event
 	 * then free the storage for the event. There are two tricky things
@@ -725,6 +725,9 @@ Tcl_ServiceEvent(
 	     * The event was processed, so remove it from the queue.
 	     */
 
+	    if (tsdPtr->timerMarkerPtr == evPtr) {
+		tsdPtr->timerMarkerPtr = INT2PTR(-1); /* timer marker reached */
+	    }
 	    if (tsdPtr->firstEventPtr == evPtr) {
 		tsdPtr->firstEventPtr = evPtr->nextPtr;
 		if (evPtr->nextPtr == NULL) {
@@ -773,8 +776,36 @@ Tcl_ServiceEvent(
 
     if (flags & TCL_TIMER_EVENTS) {
 timer:
+#if 1
 	/* If available pending timer-events of new generation */
 	if (tsdPtr->timerMarkerPtr == INT2PTR(-2)) {
+	    /* no other events - process timer-events (next cycle) */
+	    if (!tsdPtr->lastEventPtr) { /* no other events */
+		goto processTimer;
+	    } else {
+	    	tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr;
+	    }
+	    return 0;
+	}
+#else
+#if 1
+	/* If available pending timer-events of new generation */
+	if ( tsdPtr->timerMarkerPtr == INT2PTR(-2)
+	  || !tsdPtr->firstEventPtr /* no other events */
+	) {
+	    /* no other events - process timer-events (next cycle) */
+	    if (tsdPtr->timerMarkerPtr == INT2PTR(-2)) {
+		tsdPtr->timerMarkerPtr = INT2PTR(-1);
+	    } else {
+		tsdPtr->timerMarkerPtr = INT2PTR(-2);
+	    }
+	    return 0;
+	}
+#else
+	/* If available pending timer-events of new generation */
+	if ( tsdPtr->timerMarkerPtr == INT2PTR(-2)
+	  || !tsdPtr->lastEventPtr
+	) {
 	    /* if other events available */
 	    if ((tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr)) {
 		/* process timer-events after it (next cycle) */
@@ -783,7 +814,8 @@ timer:
 	    /* no other events - process timer-events now */
 	    goto processTimer;
         }
-
+#endif
+#endif
 	if (tsdPtr->timerMarkerPtr == INT2PTR(-1)) {
 
 	  processTimer:
@@ -850,23 +882,31 @@ TclPeekEventQueued(
     	 */
 	if ( Tcl_AsyncReady()
 	  || (tsdPtr->firstEventPtr)
-	  || ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerMarkerPtr)
+	  || ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerMarkerPtr == INT2PTR(-1))
 	) {
 	    return 1;
 	}
 
-	if (flags & TCL_DONT_WAIT) {
-	    /* don't need to wait/check for events too often */
-#ifndef TCL_WIDE_CLICKS
-	    unsigned long clicks = TclpGetClicks();
-#else
-	    Tcl_WideInt clicks = TclpGetWideClicks();
-#endif
+	/* once from here */
+	if (!repeat) {
+	    break;
+	}
 
-	    if ((clicks - tsdPtr->lastCheckClicks) <= CHECK_EVENT_SOURCE_THRESHOLD) {
+	if (flags & TCL_DONT_WAIT) {
+    #if TCL_CHECK_EVENT_SOURCE_THRESHOLD
+	    /* don't need to wait/check for events too often */
+	#ifndef TCL_WIDE_CLICKS
+	    unsigned long clickdiff, clicks = TclpGetClicks();
+	#else
+	    Tcl_WideInt clickdiff, clicks = TclpGetWideClicks();
+	#endif
+	    /* considering possible clicks-jump */
+	    if ( (clickdiff = (clicks - tsdPtr->lastCheckClicks)) >= 0 
+	      && clickdiff <= TCL_CHECK_EVENT_SOURCE_THRESHOLD) {
 		return 0;
 	    }
 	    tsdPtr->lastCheckClicks = clicks;
+    #endif
 	}
 
 	/*
@@ -907,7 +947,7 @@ TclSetTimerEventMarker(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (tsdPtr->timerMarkerPtr == NULL) {
+    if (tsdPtr->timerMarkerPtr == NULL || tsdPtr->timerMarkerPtr == INT2PTR(-2)) {
 	/* marker to last event in the queue */
 	if (head || !(tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr)) {
 	    /* 
@@ -1133,16 +1173,21 @@ Tcl_DoOneEvent(
 	 */
 
 	if (flags & TCL_DONT_WAIT) {
+
 	    /* don't need to wait/check for events too often */
-#ifndef TCL_WIDE_CLICKS
-	    unsigned long clicks = TclpGetClicks();
-#else
-	    Tcl_WideInt clicks = TclpGetWideClicks();
-#endif
-	    if ((clicks - tsdPtr->lastCheckClicks) <= CHECK_EVENT_SOURCE_THRESHOLD) {
+    #if TCL_CHECK_EVENT_SOURCE_THRESHOLD
+	#ifndef TCL_WIDE_CLICKS
+	    unsigned long clickdiff, clicks = TclpGetClicks();
+	#else
+	    Tcl_WideInt clickdiff, clicks = TclpGetWideClicks();
+	#endif
+	    /* considering possible clicks-jump */
+	    if ( (clickdiff = (clicks - tsdPtr->lastCheckClicks)) >= 0 
+	      && clickdiff <= TCL_CHECK_EVENT_SOURCE_THRESHOLD) {
 		goto idleEvents;
 	    }
 	    tsdPtr->lastCheckClicks = clicks;
+    #endif
 
 	    tsdPtr->blockTime.sec = 0;
 	    tsdPtr->blockTime.usec = 0;

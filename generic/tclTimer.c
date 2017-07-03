@@ -270,7 +270,7 @@ AttachTimerEvent(
 	/* attach to the prompt queue */
 	TclSpliceTailEx(tmrEvent, tsdPtr->promptList, tsdPtr->promptTail);
 	/* execute immediately: signal pending and set timer marker */
-	tsdPtr->timerPending++;
+	tsdPtr->timerPending = 1;
 	TclSetTimerEventMarker(0);
 	return;
     } 
@@ -918,10 +918,11 @@ TimerSetupProc(
 {
     Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)data;
+    Tcl_WideInt entryTime = 0;
 
     if (tsdPtr == NULL) { tsdPtr = InitTimer(); };
 
-    if ( ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerPending)
+    if ( ((flags & TCL_TIMER_EVENTS) && (tsdPtr->timerPending || tsdPtr->promptList))
       || ((flags & TCL_IDLE_EVENTS) && tsdPtr->idleList )
     ) {
 	/*
@@ -940,7 +941,7 @@ TimerSetupProc(
 	 */
 
 	Tcl_WideInt now = TclpGetMicroseconds();
-	Tcl_WideInt entryTime = 0x7FFFFFFFFFFFFFFFL;
+	entryTime = 0x7FFFFFFFFFFFFFFFL;
 
 	if (tsdPtr->relTimerList) {
 	    entryTime = TimerGetDueTime(tsdPtr,
@@ -968,16 +969,16 @@ TimerSetupProc(
 	    blockTime.usec = 0;
 	}
 	
-	/*
-	* If the first timer has expired, stick an event on the queue right now.
-	*/
-	if (!tsdPtr->timerPending && entryTime <= 0) {
-	    TclSetTimerEventMarker(0);
-	    tsdPtr->timerPending = 1;
-	}
-    
     } else {
 	return;
+    }
+
+    /*
+     * If the first timer has expired, stick an event on the queue right now.
+     */
+    if (!tsdPtr->timerPending && entryTime <= 0) {
+	TclSetTimerEventMarker(0);
+	tsdPtr->timerPending = 1;
     }
 
     Tcl_SetMaxBlockTime(&blockTime);
@@ -1005,7 +1006,7 @@ TimerCheckProc(
     ClientData data,		/* Specific data. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    Tcl_WideInt now, entryTime = 0x7FFFFFFFFFFFFFFFL;
+    Tcl_WideInt now, entryTime = 0;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)data;
 
     if (!(flags & TCL_TIMER_EVENTS)) {
@@ -1015,13 +1016,20 @@ TimerCheckProc(
     if (tsdPtr == NULL) { tsdPtr = InitTimer(); };
 
     /* If already pending (or no timer-events) */
-    if (tsdPtr->timerPending || !tsdPtr->relTimerList) {
-    	return;
+    if (tsdPtr->timerPending) {
+	return;
+    }
+    if (tsdPtr->promptList) {
+	goto mark;
+    }
+    if (!tsdPtr->relTimerList && !tsdPtr->absTimerList) {
+	return;
     }
 
     /*
      * Verify the first timer on the queue.
      */
+    entryTime = 0x7FFFFFFFFFFFFFFFL;
     now = TclpGetMicroseconds();
     if (tsdPtr->relTimerList) {
 	entryTime = TimerGetDueTime(tsdPtr,
@@ -1043,7 +1051,8 @@ TimerCheckProc(
     /*
     * If the first timer has expired, stick an event on the queue.
     */
-    if (entryTime <= 0) {
+    if (!tsdPtr->timerPending && entryTime <= 0) {
+  mark:
 	TclSetTimerEventMarker(0);
 	tsdPtr->timerPending = 1;
     }
@@ -1076,6 +1085,7 @@ TclServiceTimerEvents(void)
 {
     TclTimerEvent *tmrEvent, *relTimerList, *absTimerList;
     size_t currentGeneration, currentEpoch;
+    int result = 0;
     int prevTmrPending;
     ThreadSpecificData *tsdPtr = InitTimer();
 
@@ -1107,6 +1117,7 @@ TclServiceTimerEvents(void)
      */
 
     currentGeneration = tsdPtr->timerGeneration++;
+    tsdPtr->timerPending = 0;
 
     /* First process all prompt (immediate) events */
     while ((tmrEvent = tsdPtr->promptList) != NULL
@@ -1121,6 +1132,7 @@ TclServiceTimerEvents(void)
 	tsdPtr->timerPending = 0;
 	/* execute event */
 	(*tmrEvent->proc)(tmrEvent->clientData);
+	result = 1;
 	/* restore current timer pending */
 	tsdPtr->timerPending += prevTmrPending;
 	/* unfreeze / if used somewhere else (nested) or prolongation (reattached) */
@@ -1207,6 +1219,7 @@ TclServiceTimerEvents(void)
 	tsdPtr->timerPending = 0;
 	/* invoke timer proc */
 	(*tmrEvent->proc)(tmrEvent->clientData);
+	result = 1;
 	/* restore current timer pending */
 	tsdPtr->timerPending += prevTmrPending;
 	/* unfreeze / if used somewhere else (nested) or prolongation (reattached) */
@@ -1230,20 +1243,20 @@ TclServiceTimerEvents(void)
     }
 
     /* pending timer events, so mark (queue) timer events  */
-    if (tsdPtr->timerPending > 1) {
+    if (tsdPtr->timerPending >= 1) {
     	tsdPtr->timerPending = 1;
     	return -1;
     }
 
     /* Reset generation if both timer queue are empty */
-    if (!tsdPtr->relTimerList && !tsdPtr->absTimerList) {
+    if (!tsdPtr->promptList && !tsdPtr->relTimerList && !tsdPtr->absTimerList) {
 	tsdPtr->timerGeneration = 0;
     }
 
     /* Compute the next timeout (later via TimerSetupProc using the first timer). */
     tsdPtr->timerPending = 0;
 
-    return 1; /* processing done, again later via TimerCheckProc */
+    return result; /* processing done, again later via TimerCheckProc */
 }
 
 /*
