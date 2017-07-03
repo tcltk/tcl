@@ -51,7 +51,7 @@ typedef struct TimeInfo {
 				 * initialized. */
     int perfCounterAvailable;	/* Flag == 1 if the hardware has a performance
 				 * counter. */
-    DWORD calibrationInterv;	/* Calibration interval in seconds (start 1 sec) */
+    Tcl_WideInt calibNextTime;	/* Next time of calibration (in 100-ns ticks) */
     HANDLE calibrationThread;	/* Handle to the thread that keeps the virtual
 				 * clock calibrated. */
     HANDLE readyEvent;		/* System event used to trigger the requesting
@@ -62,20 +62,24 @@ typedef struct TimeInfo {
     LARGE_INTEGER nominalFreq;	/* Nominal frequency of the system performance
 				 * counter, that is, the value returned from
 				 * QueryPerformanceFrequency. */
+    LARGE_INTEGER posixEpoch;	/* Posix epoch expressed as 100-ns ticks since
+				 * the windows epoch. */
     /*
      * The following values are used for calculating virtual time. Virtual
      * time is always equal to:
-     *    lastFileTime + (current perf counter - lastCounter)
-     *				* 10000000 / curCounterFreq
-     * and lastFileTime and lastCounter are updated any time that virtual time
-     * is returned to a caller.
+     *    fileTime + (current perf counter - lastCounter)
+     *				* 10000000 / counterFreq
      */
 
-    ULARGE_INTEGER fileTimeLastCall;
-    LARGE_INTEGER perfCounterLastCall;
-    LARGE_INTEGER curCounterFreq;
-    LARGE_INTEGER posixEpoch;	/* Posix epoch expressed as 100-ns ticks since
-				 * the windows epoch. */
+    struct {
+	ULONGLONG fileTime;
+	volatile		/* used also to compare calibration epoch */
+	LONGLONG perfCounter; 
+	LONGLONG counterFreq;
+    } lastCC;			/* Last data updated in calibration cycle */
+    
+    Tcl_WideInt lastUsedTime;	/* Last known (caller) virtual time in 100-ns
+				 * (used to avoid drifts after calibrate) */
 
     /*
      * Data used in developing the estimate of performance counter frequency
@@ -92,25 +96,25 @@ static TimeInfo timeInfo = {
     { NULL, 0, 0, NULL, NULL, 0 },
     0,
     0,
-    1,
+    (Tcl_WideInt) 0,
     (HANDLE) NULL,
     (HANDLE) NULL,
     (HANDLE) NULL,
 #ifdef HAVE_CAST_TO_UNION
     (LARGE_INTEGER) (Tcl_WideInt) 0,
-    (ULARGE_INTEGER) (DWORDLONG) 0,
-    (LARGE_INTEGER) (Tcl_WideInt) 0,
-    (LARGE_INTEGER) (Tcl_WideInt) 0,
     (LARGE_INTEGER) (Tcl_WideInt) 0,
 #else
     {0, 0},
     {0, 0},
-    {0, 0},
-    {0, 0},
-    {0, 0},
 #endif
-    { 0 },
-    { 0 },
+    {
+	(ULONGLONG) 0,
+	(LONGLONG) 0,
+	(LONGLONG) 0
+    },
+    (Tcl_WideInt) 0,
+    { (Tcl_WideUInt) 0 },
+    { (Tcl_WideInt) 0 },
     0
 };
 
@@ -150,6 +154,50 @@ static void		NativeGetTime(Tcl_Time* timebuf,
 Tcl_GetTimeProc *tclGetTimeProcPtr = NativeGetTime;
 Tcl_ScaleTimeProc *tclScaleTimeProcPtr = NativeScaleTime;
 ClientData tclTimeClientData = NULL;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NativeCalc100NsTicks --
+ *
+ *	Calculate the current system time in 100-ns ticks since posix epoch,
+ *	for current performance counter (curCounter), using given calibrated values.
+ *
+ * Results:
+ *	Returns the wide integer with number of microseconds from the epoch.
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline Tcl_WideInt
+NativeCalc100NsTicks(
+    ULONGLONG ccFileTime,
+    LONGLONG ccPerfCounter,
+    LONGLONG ccCounterFreq,
+    LONGLONG curCounter
+) {
+    return ccFileTime + 
+	((curCounter - ccPerfCounter) * 10000000 / ccCounterFreq);
+}
+
+/*
+ * Representing the number of 100-nanosecond intervals since posix epoch.
+ */
+static inline Tcl_WideInt
+GetSystemTimeAsVirtual(void)
+{
+    FILETIME curSysTime;	/* Current system time. */
+    LARGE_INTEGER curFileTime;
+
+    /* 100-ns ticks since since Jan 1, 1601 (UTC) */
+    GetSystemTimeAsFileTime(&curSysTime);
+    curFileTime.LowPart = curSysTime.dwLowDateTime;
+    curFileTime.HighPart = curSysTime.dwHighDateTime;
+    return (Tcl_WideInt)(curFileTime.QuadPart - timeInfo.posixEpoch.QuadPart);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -331,13 +379,19 @@ TclpWideClickInMicrosec(void)
 Tcl_WideInt 
 TclpGetMicroseconds(void)
 {
+    static Tcl_WideInt prevUS = 0;
+    static Tcl_WideInt fileTimeLastCall, perfCounterLastCall, curCounterFreq;
+    static LARGE_INTEGER prevPerfCounter;
+    LARGE_INTEGER newPerfCounter;
+
     Tcl_WideInt usecSincePosixEpoch;
 
     /* Try to use high resolution timer */
-    if ( tclGetTimeProcPtr == NativeGetTime
-      && (usecSincePosixEpoch = NativeGetMicroseconds())
-    ) {
-	return usecSincePosixEpoch;
+    if (tclGetTimeProcPtr == NativeGetTime) {
+	if ( !(usecSincePosixEpoch = NativeGetMicroseconds()) ) {
+	    usecSincePosixEpoch = GetSystemTimeAsVirtual() / 10; /* in 100-ns */
+	    printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!no-native-ms!!!!!!!!!!!\n");
+	}
     } else {
 	/*
 	* Use the Tcl_GetTime abstraction to get the time in microseconds, as
@@ -347,8 +401,31 @@ TclpGetMicroseconds(void)
 	Tcl_Time now;
 
 	tclGetTimeProcPtr(&now, tclTimeClientData);	/* Tcl_GetTime inlined */
-	return (((Tcl_WideInt)now.sec) * 1000000) + now.usec;
+	usecSincePosixEpoch = (((Tcl_WideInt)now.sec) * 1000000) + now.usec;
+	printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!no-native-ms!!!!!!!!!!!\n");
     }
+
+	QueryPerformanceCounter(&newPerfCounter);
+
+    	if (prevUS && usecSincePosixEpoch < prevUS) {
+    	    printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!time-backwards!!!! pre-struct: %I64d, %I64d, %I64d, %I64d == %I64d \n", fileTimeLastCall, perfCounterLastCall, prevPerfCounter.QuadPart, curCounterFreq,
+    	    	NativeCalc100NsTicks(fileTimeLastCall,
+		perfCounterLastCall, curCounterFreq,
+		prevPerfCounter.QuadPart));
+    	    printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!time-backwards!!!! new-struct: %I64d, %I64d, %I64d, %I64d == %I64d \n", timeInfo.lastCC.fileTime, timeInfo.lastCC.perfCounter, newPerfCounter.QuadPart, timeInfo.lastCC.counterFreq,
+    	    	NativeCalc100NsTicks(timeInfo.lastCC.fileTime,
+		timeInfo.lastCC.perfCounter, timeInfo.lastCC.counterFreq,
+		newPerfCounter.QuadPart));
+	    printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!time-backwards!!!! prev: %I64d - now: %I64d (%I64d usec)\n", prevUS, usecSincePosixEpoch, usecSincePosixEpoch - prevUS);
+	    Tcl_Panic("Time running backwards!!!");
+    	}
+    	prevUS = usecSincePosixEpoch;
+	fileTimeLastCall = timeInfo.lastCC.fileTime;
+	perfCounterLastCall = timeInfo.lastCC.perfCounter;
+	curCounterFreq = timeInfo.lastCC.counterFreq;
+	prevPerfCounter.QuadPart = newPerfCounter.QuadPart;
+
+	return usecSincePosixEpoch;
 }
 
 /*
@@ -469,20 +546,12 @@ NativeScaleTime(
  *----------------------------------------------------------------------
  */
 
-static inline Tcl_WideInt
-NativeCalc100NsTicks(
-    ULONGLONG fileTimeLastCall,
-    LONGLONG perfCounterLastCall,
-    LONGLONG curCounterFreq,
-    LONGLONG curCounter
-) {
-    return fileTimeLastCall + 
-	((curCounter - perfCounterLastCall) * 10000000 / curCounterFreq);
-}
-
 static Tcl_WideInt
 NativeGetMicroseconds(void)
 {
+    Tcl_WideInt curTime;	/* Current time in 100-ns ticks since epoch */
+    Tcl_WideInt lastTime;	/* Used to compare with last known time */
+
     /*
      * Initialize static storage on the first trip through.
      *
@@ -595,42 +664,52 @@ NativeGetMicroseconds(void)
 	TclpInitUnlock();
     }
 
-    if (timeInfo.perfCounterAvailable && timeInfo.curCounterFreq.QuadPart!=0) {
-	/*
-	 * Query the performance counter and use it to calculate the current
-	 * time.
-	 */
+    if (timeInfo.perfCounterAvailable && timeInfo.lastCC.counterFreq!=0) {
 
-	ULONGLONG fileTimeLastCall;
-	LONGLONG perfCounterLastCall, curCounterFreq;
-				/* Copy with current data of calibration cycle */
+	static struct {
+	    ULONGLONG fileTime;
+	    volatile		/* don't optimize */
+	    LONGLONG  perfCounter;
+	    LONGLONG  counterFreq;
+	    Tcl_WideInt calibNextTime;
+	} cc = {0, 0, 0, 0};	/* Copy with current data of calibration cycle */
 
 	LARGE_INTEGER curCounter;
 				/* Current performance counter. */
 
-	QueryPerformanceCounter(&curCounter);
-
 	/*
 	 * Hold time section locked as short as possible
 	 */
-	EnterCriticalSection(&timeInfo.cs);
-
-	fileTimeLastCall = timeInfo.fileTimeLastCall.QuadPart;
-	perfCounterLastCall = timeInfo.perfCounterLastCall.QuadPart;
-	curCounterFreq = timeInfo.curCounterFreq.QuadPart;
-
-	LeaveCriticalSection(&timeInfo.cs);
-
-	/*
-	 * If calibration cycle occurred after we get curCounter
-	 */
-	if (curCounter.QuadPart <= perfCounterLastCall) {
-	    /* Calibrated file-time is saved from posix in 100-ns ticks */
-	    return fileTimeLastCall / 10;
+	if (cc.perfCounter != timeInfo.lastCC.perfCounter) {
+	    EnterCriticalSection(&timeInfo.cs);
+	    if (cc.perfCounter != timeInfo.lastCC.perfCounter) {
+		cc.perfCounter = timeInfo.lastCC.perfCounter;
+		cc.fileTime = timeInfo.lastCC.fileTime;
+		cc.counterFreq = timeInfo.lastCC.counterFreq;
+		cc.calibNextTime = timeInfo.calibNextTime;
+	    }
+	    LeaveCriticalSection(&timeInfo.cs);
 	}
 
 	/*
-	 * If it appears to be more than 1.1 seconds since the last trip
+	 * Query the performance counter and use it to calculate the current
+	 * time.
+	 */
+	QueryPerformanceCounter(&curCounter);
+
+	/* Calibrated file-time is saved from posix in 100-ns ticks */
+	curTime = NativeCalc100NsTicks(cc.fileTime,
+		cc.perfCounter, cc.counterFreq, curCounter.QuadPart);
+
+	/* Be sure the clock ticks never backwards (avoid backwards time-drifts) */
+	if ( (lastTime = timeInfo.lastUsedTime) && lastTime > curTime
+	  && lastTime - curTime < 1000000 /* bypass time-switch (drifts only) */
+	) {
+	    curTime = timeInfo.lastUsedTime;
+	}
+
+	/*
+	 * If it appears to be more than 1.5 seconds since the last trip
 	 * through the calibration loop, the performance counter may have
 	 * jumped forward. (See MSDN Knowledge Base article Q274323 for a
 	 * description of the hardware problem that makes this test
@@ -639,19 +718,26 @@ NativeGetMicroseconds(void)
 	 * loop should recover.
 	 */
 
-	if (curCounter.QuadPart - perfCounterLastCall <
-		11 * curCounterFreq * timeInfo.calibrationInterv / 10
-	) {
-	    /* Calibrated file-time is saved from posix in 100-ns ticks */
-	    return NativeCalc100NsTicks(fileTimeLastCall,
-		perfCounterLastCall, curCounterFreq, curCounter.QuadPart) / 10;
+	if (curTime < cc.calibNextTime + 5000000 /* 500 millisec (in 100-ns ticks). */) {
+	    /* save last used time */
+	    timeInfo.lastUsedTime = curTime;
+	    return curTime / 10;
 	}
+	printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!calibration-error!!!! cur: %I64d - call: %I64d (%I64d) -- prev: %I64d - now: %I64d (%I64d)\n", curTime, cc.calibNextTime, cc.calibNextTime - curTime, cc.perfCounter, curCounter.QuadPart, curCounter.QuadPart - cc.perfCounter);
     }
 
     /*
      * High resolution timer is not available.
      */
-    return 0;
+    curTime = GetSystemTimeAsVirtual(); /* in 100-ns ticks */
+    /* Be sure the clock ticks never backwards (avoid backwards time-drifts) */
+    if ( (lastTime = timeInfo.lastUsedTime) && lastTime > curTime
+      && lastTime - curTime < 1000000 /* bypass time-switch (drifts only) */
+    ) {
+	curTime = timeInfo.lastUsedTime;
+    }
+    timeInfo.lastUsedTime = curTime;
+    return curTime / 10;
 }
 
 /*
@@ -1076,29 +1162,31 @@ static DWORD WINAPI
 CalibrationThread(
     LPVOID arg)
 {
-    FILETIME curFileTime;
     DWORD waitResult;
 
     /*
      * Get initial system time and performance counter.
      */
 
-    GetSystemTimeAsFileTime(&curFileTime);
-    QueryPerformanceCounter(&timeInfo.perfCounterLastCall);
-    QueryPerformanceFrequency(&timeInfo.curCounterFreq);
-    timeInfo.fileTimeLastCall.LowPart = curFileTime.dwLowDateTime;
-    timeInfo.fileTimeLastCall.HighPart = curFileTime.dwHighDateTime;
-    /* Calibrated file-time will be saved from posix in 100-ns ticks */
-    timeInfo.fileTimeLastCall.QuadPart -= timeInfo.posixEpoch.QuadPart;
+    LARGE_INTEGER curPerfCounter;
 
-    ResetCounterSamples(timeInfo.fileTimeLastCall.QuadPart,
-	    timeInfo.perfCounterLastCall.QuadPart,
-	    timeInfo.curCounterFreq.QuadPart);
+    QueryPerformanceCounter(&curPerfCounter);
+    timeInfo.lastCC.perfCounter = curPerfCounter.QuadPart;
+    timeInfo.lastCC.counterFreq = timeInfo.nominalFreq.QuadPart;
+    timeInfo.lastCC.fileTime = GetSystemTimeAsVirtual();
+
+    ResetCounterSamples(timeInfo.lastCC.fileTime,
+	    timeInfo.lastCC.perfCounter,
+	    timeInfo.lastCC.counterFreq);
 
     /*
-     * Wake up the calling thread. When it wakes up, it will release the
-     * initialization lock.
+     * Calibrate first time and wake up the calling thread. 
+     * When it wakes up, it will release the initialization lock.
      */
+
+    if (timeInfo.perfCounterAvailable) {
+	UpdateTimeEachSecond();
+    }
 
     SetEvent(timeInfo.readyEvent);
 
@@ -1153,13 +1241,13 @@ UpdateTimeEachSecond(void)
     LARGE_INTEGER curPerfCounter;
 				/* Current value returned from
 				 * QueryPerformanceCounter. */
-    FILETIME curSysTime;	/* Current system time. */
-    static LARGE_INTEGER lastFileTime; /* File time of the previous calibration */
-    LARGE_INTEGER curFileTime;	/* File time at the time this callback was
+    static int calibrationInterv = 10000000;
+				/* Calibration interval in 100-ns ticks (starts from 1s) */
+    Tcl_WideInt curFileTime;	/* File time at the time this callback was
 				 * scheduled. */
     Tcl_WideInt estFreq;	/* Estimated perf counter frequency. */
     Tcl_WideInt vt0;		/* Tcl time right now. */
-    Tcl_WideInt vt1;		/* Tcl time one second from now. */
+    Tcl_WideInt vt1, nt0, nt1;	/* Interim virtual time used during adjustments */
     Tcl_WideInt tdiff;		/* Difference between system clock and Tcl
 				 * time. */
     Tcl_WideInt driftFreq;	/* Frequency needed to drift virtual time into
@@ -1169,24 +1257,23 @@ UpdateTimeEachSecond(void)
      * Sample performance counter and system time (from posix epoch).
      */
 
-    GetSystemTimeAsFileTime(&curSysTime);
-    curFileTime.LowPart = curSysTime.dwLowDateTime;
-    curFileTime.HighPart = curSysTime.dwHighDateTime;
-    curFileTime.QuadPart -= timeInfo.posixEpoch.QuadPart;
-    /* If calibration still not needed (check for possible time switch) */
-    if ( curFileTime.QuadPart > lastFileTime.QuadPart
-      && curFileTime.QuadPart < lastFileTime.QuadPart +
-      				    (timeInfo.calibrationInterv * 10000000)
+    printf("-------------calibration start, prev-struct: %I64d, %I64d, %I64d\n", timeInfo.lastCC.fileTime, timeInfo.lastCC.perfCounter, timeInfo.lastCC.counterFreq);
+    curFileTime = GetSystemTimeAsVirtual();
+    /* 
+     * If calibration still not needed (check for possible time-switch). Note, that
+     * NativeGetMicroseconds checks calibNextTime also, be sure it does not overflow.
+     */
+    if ( curFileTime < timeInfo.calibNextTime - 10000000 /* 1 sec (in 100-ns ticks). */
+      && timeInfo.calibNextTime - curFileTime < 10 * 10000000 /* max. 10 seconds in-between */
     ) {
     	/* again in next one second */
+//    	printf("-------------calibration end, not needed. ------ cur:%I64d - next:%I64d (d: %I64d) ------\n", curFileTime, timeInfo.calibNextTime, timeInfo.calibNextTime - curFileTime);
 	return;
     }
     QueryPerformanceCounter(&curPerfCounter);
     
-    lastFileTime.QuadPart = curFileTime.QuadPart;
-
     /*
-     * We devide by timeInfo.curCounterFreq.QuadPart in several places. That
+     * We devide by timeInfo.lastCC.counterFreq in several places. That
      * value should always be positive on a correctly functioning system. But
      * it is good to be defensive about such matters. So if something goes
      * wrong and the value does goes to zero, we clear the
@@ -1194,7 +1281,7 @@ UpdateTimeEachSecond(void)
      * to shut itself down, then return without additional processing.
      */
 
-    if (timeInfo.curCounterFreq.QuadPart == 0){
+    if (timeInfo.lastCC.counterFreq == 0) {
 	timeInfo.perfCounterAvailable = 0;
 	return;
     }
@@ -1213,16 +1300,15 @@ UpdateTimeEachSecond(void)
      * estimate the performance counter frequency.
      */
 
-     estFreq = AccumulateSample(curPerfCounter.QuadPart,
-	    (Tcl_WideUInt) curFileTime.QuadPart);
+     estFreq = AccumulateSample(curPerfCounter.QuadPart, curFileTime);
 
     /*
      * We want to adjust things so that time appears to be continuous.
      * Virtual file time, right now, is
      *
-     * vt0 = 10000000 * (curPerfCounter - perfCounterLastCall)
-     *	     / curCounterFreq
-     *	     + fileTimeLastCall
+     * vt0 = 10000000 * (curPerfCounter - lastCC.perfCounter)
+     *	     / lastCC.counterFreq
+     *	     + lastCC.fileTime
      *
      * Ideally, we would like to drift the clock into place over a period of 2
      * sec, so that virtual time 2 sec from now will be
@@ -1233,8 +1319,8 @@ UpdateTimeEachSecond(void)
      * is estFreq * 20000000 / (vt1 - vt0)
      */
 
-    vt0 = NativeCalc100NsTicks(timeInfo.fileTimeLastCall.QuadPart,
-	    timeInfo.perfCounterLastCall.QuadPart, timeInfo.curCounterFreq.QuadPart,
+    vt0 = NativeCalc100NsTicks(timeInfo.lastCC.fileTime,
+	    timeInfo.lastCC.perfCounter, timeInfo.lastCC.counterFreq,
 	    curPerfCounter.QuadPart);
     /*
      * If we've gotten more than a second away from system time, then drifting
@@ -1242,80 +1328,92 @@ UpdateTimeEachSecond(void)
      * compute the drift frequency and fill in everything.
      */
 
-    tdiff = vt0 - curFileTime.QuadPart;
+    tdiff = vt0 - curFileTime;
     if (tdiff > 10000000 || tdiff < -10000000) {
+    	/* More as a second difference, so could be a time-switch
     	/* jump to current system time, use curent estimated frequency */
-    	vt0 = curFileTime.QuadPart;
+    	vt0 = curFileTime;
+    	timeInfo.lastUsedTime = 0; /* reset last used time */
     } else {
     	/* calculate new frequency and estimate drift to the next second */
-	vt1 = 20000000 + curFileTime.QuadPart;
+	vt1 = 20000000 + curFileTime;
 	driftFreq = (estFreq * 20000000 / (vt1 - vt0));
 	/* 
 	 * Avoid too large drifts (only half of the current difference),
 	 * that allows also be more accurate (aspire to the smallest tdiff),
 	 * so then we can prolong calibration interval by tdiff < 100000
 	 */
-	driftFreq = timeInfo.curCounterFreq.QuadPart +
-		(driftFreq - timeInfo.curCounterFreq.QuadPart) / 2;
+	driftFreq = timeInfo.lastCC.counterFreq +
+		(driftFreq - timeInfo.lastCC.counterFreq) / 2;
 
 	/* 
 	 * Average between estimated, 2 current and 5 drifted frequencies,
 	 * (do the soft drifting as possible)
 	 */
-	estFreq = (estFreq + 2 * timeInfo.curCounterFreq.QuadPart + 5 * driftFreq) / 8;
+	estFreq = (estFreq + 2 * timeInfo.lastCC.counterFreq + 5 * driftFreq) / 8;
     }
     
-    /* Avoid too large discrepancy from nominal frequency */
+    /* 
+     * Avoid too large discrepancy from nominal frequency
+     */
     if (estFreq > 1003*timeInfo.nominalFreq.QuadPart/1000) {
 	estFreq = 1003*timeInfo.nominalFreq.QuadPart/1000;
-	vt0 = curFileTime.QuadPart;
+	vt0 = curFileTime;
     } else if (estFreq < 997*timeInfo.nominalFreq.QuadPart/1000) {
 	estFreq = 997*timeInfo.nominalFreq.QuadPart/1000;
-	vt0 = curFileTime.QuadPart;
-    } else if (vt0 != curFileTime.QuadPart) {
+	vt0 = curFileTime;
+    }
+
+    /* If possible backwards time-drifts */
+    if (estFreq > timeInfo.lastCC.counterFreq) {
 	/* 
+	 * Calculate the time using new calibration values (and compare with old),
+	 * to avoid possible backwards drifts (adjust current base time).
+	 * This should affect at least next 10 ticks.
+	 */
+	vt1 = curPerfCounter.QuadPart + 10;
+	/*
 	 * Be sure the clock ticks never backwards (avoid it by negative drifting)
 	 * just compare native time (in 100-ns) before and hereafter using 
-	 * new calibrated values) and do a small adjustment (short time freeze)
+	 * previous/new calibrated values) and do a small adjustment
 	 */
-	LARGE_INTEGER newPerfCounter;
-	Tcl_WideInt nt0, nt1;
-
-	QueryPerformanceCounter(&newPerfCounter);
-	nt0 = NativeCalc100NsTicks(timeInfo.fileTimeLastCall.QuadPart,
-		timeInfo.perfCounterLastCall.QuadPart, timeInfo.curCounterFreq.QuadPart,
-		newPerfCounter.QuadPart);
-	nt1 = NativeCalc100NsTicks(vt0,
+	nt0 = NativeCalc100NsTicks(timeInfo.lastCC.fileTime,
+		timeInfo.lastCC.perfCounter, timeInfo.lastCC.counterFreq,
+		vt1);
+	nt1 = NativeCalc100NsTicks(curFileTime,
 		curPerfCounter.QuadPart, estFreq,
-		newPerfCounter.QuadPart);
-	if (nt0 > nt1) { /* drifted backwards, try to compensate with new base */
-	    /* first adjust with a micro jump (short frozen time is acceptable) */
-	    vt0 += nt0 - nt1;
-	    /* if drift unavoidable (e. g. we had a time switch), then reset it */
-	    vt1 = vt0 - curFileTime.QuadPart;
-	    if (vt1 > 10000000 || vt1 < -10000000) {
-	    	/* larger jump resp. shift relative new file-time */
-	    	vt0 = curFileTime.QuadPart;
-	    }
+		vt1);
+	vt1 = (nt0 - nt1); /* old time - new time */
+	if (vt1 > 0 && vt1 < 10000000) {
+	    /* base time should jump forwards (the same virtual time using current values) */
+	    vt0 += vt1;
 	}
+    }
+
+    /* grow calibration interval up to 10 seconds (if still precise enough) */
+    if (tdiff < -100000 || tdiff > 100000) {
+	/* too long drift - reset calibration interval to 1 second */
+	calibrationInterv = 10000000;
+    } else if (calibrationInterv < 10*10000000) {
+	calibrationInterv += 10000000;
     }
 
     /* In lock commit new values to timeInfo (hold lock as short as possible) */
     EnterCriticalSection(&timeInfo.cs);
 
-    /* grow calibration interval up to 10 seconds (if still precise enough) */
-    if (tdiff < -100000 || tdiff > 100000) {
-	/* too long drift - reset calibration interval to 1000 second */
-	timeInfo.calibrationInterv = 1;
-    } else if (timeInfo.calibrationInterv < 10) {
-	timeInfo.calibrationInterv++;
-    }
+    timeInfo.lastCC.perfCounter = curPerfCounter.QuadPart;
+    timeInfo.lastCC.fileTime = vt0;
+    timeInfo.lastCC.counterFreq = estFreq;
 
-    timeInfo.fileTimeLastCall.QuadPart = vt0;
-    timeInfo.curCounterFreq.QuadPart = estFreq;
-    timeInfo.perfCounterLastCall.QuadPart = curPerfCounter.QuadPart;
+    timeInfo.calibNextTime = curFileTime + calibrationInterv;
 
     LeaveCriticalSection(&timeInfo.cs);
+#if 1
+    printf("-------------calibration adj -- nt1:%I64d - nt0:%I64d: adj: %I64d\n", nt1, nt0, vt1);
+    printf("-------------calibration end, tdiff %I64d, jump -- vt:%I64d - st:%I64d: %I64d, adj: %I64d\n", tdiff, 
+    	vt0, curFileTime, (vt0 - curFileTime), vt1);
+    printf("-------------calibration end  ,  new-struct: %I64d, %I64d, %I64d\n", timeInfo.lastCC.fileTime, timeInfo.lastCC.perfCounter, timeInfo.lastCC.counterFreq);
+#endif
 }
 
 /*

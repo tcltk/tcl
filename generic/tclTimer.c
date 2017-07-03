@@ -108,6 +108,9 @@ static Tcl_ThreadDataKey dataKey;
 #define TCL_TIME_DIFF_MS(t1, t2) \
     (1000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
 	    ((long)(t1).usec - (long)(t2).usec)/1000)
+#define TCL_TIME_DIFF_US(t1, t2) \
+    (1000000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
+	    ((long)(t1).usec - (long)(t2).usec))
 
 /*
  * Prototypes for functions referenced only in this file:
@@ -1382,8 +1385,8 @@ AfterDelay(
 {
     Interp *iPtr = (Interp *) interp;
 
-    Tcl_Time endTime, now;
-    Tcl_WideInt diff;
+    Tcl_Time endTime, now, prevNow;
+    Tcl_WideInt diff, prevUS, nowUS;
 #ifdef TMR_RES_TOLERANCE
     long tolerance;
 #endif
@@ -1399,11 +1402,20 @@ AfterDelay(
     tolerance = ((ms < 1000) ? ms : 1000) * (1000 * TMR_RES_TOLERANCE / 100);
 #endif
 
-    Tcl_GetTime(&endTime);
+    prevUS = TclpGetMicroseconds();
+    Tcl_GetTime(&endTime); now = endTime;
+    prevNow = now;
     TclTimeAddMilliseconds(&endTime, ms);
 
     do {
+    	nowUS = TclpGetMicroseconds();
 	Tcl_GetTime(&now);
+	if (now.sec < prevNow.sec || (now.sec == prevNow.sec && now.usec < prevNow.usec) ) {
+	    printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!long-diff!!!! %5.3f, prev: %d.%06d - now: %d.%06d (%d usec)\n", ms, prevNow.sec, prevNow.usec, now.sec, now.usec, now.usec - prevNow.usec);
+	    printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!long-diff!!!! %5.3f, prev: %I64d - now: %I64d (%I64d usec)\n", ms, prevUS, nowUS, nowUS - prevUS);
+	    //Tcl_Panic("Time running backwards!");
+	    //return TCL_ERROR;
+	}
 	if (iPtr->limit.timeEvent != NULL
 	    && TCL_TIME_BEFORE(iPtr->limit.time, now)) {
 	    iPtr->limit.granularityTicker = 0;
@@ -1414,6 +1426,9 @@ AfterDelay(
 	if (iPtr->limit.timeEvent == NULL
 	    || TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
 	    diff = TCL_TIME_DIFF_MS(endTime, now);
+	    if (TCL_TIME_DIFF_US(endTime, now) > 500 || TCL_TIME_DIFF_US(endTime, now) < -500) {
+		printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!drift!!!! %5.3f, diff: %d -- %d.%06d - %d.%06d (%d usec)\n", ms, (int)diff, endTime.sec, endTime.usec, now.sec, now.usec, TCL_TIME_DIFF_US(endTime, now));
+	    }
 #ifndef TCL_WIDE_INT_IS_LONG
 	    if (diff > LONG_MAX) {
 		diff = LONG_MAX;
@@ -1421,6 +1436,7 @@ AfterDelay(
 #endif
 	    if (diff > 0) {
 		Tcl_Sleep((long)diff);
+		nowUS = TclpGetMicroseconds();
 		Tcl_GetTime(&now);
 	    }
 	} else {
@@ -1432,6 +1448,7 @@ AfterDelay(
 #endif
 	    if (diff > 0) {
 		Tcl_Sleep((long)diff);
+		nowUS = TclpGetMicroseconds();
 		Tcl_GetTime(&now);
 	    }
 	    if (Tcl_LimitCheck(interp) != TCL_OK) {
@@ -1439,6 +1456,8 @@ AfterDelay(
 	    }
 	}
 	/* consider timer resolution tolerance (avoid busy wait) */
+	prevNow = now;
+	prevUS = nowUS;
     #ifdef TMR_RES_TOLERANCE
 	now.usec += tolerance;
 	if (now.usec > 1000000) {

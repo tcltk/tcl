@@ -2894,8 +2894,8 @@ TclTimeAddMilliseconds(
     timePtr->sec += (long)(ms / 1000);
     timePtr->usec += (((long)ms) % 1000) * 1000 + (((long)(ms*1000)) % 1000);
     if (timePtr->usec > 1000000) {
-	timePtr->sec++;
 	timePtr->usec -= 1000000;
+	timePtr->sec++;
     }
 }
 
