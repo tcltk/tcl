@@ -845,9 +845,9 @@ NotifierProc(
 /*
  *----------------------------------------------------------------------
  *
- * TclpSleep --
+ * TclpUSleep --
  *
- *	Delay execution for the specified time.
+ *	Delay execution for the specified time (in microseconds).
  *
  * Results:
  *	None.
@@ -859,67 +859,68 @@ NotifierProc(
  */
 
 void
-TclpSleep(
-    const Tcl_Time *timePtr)	/* Time to sleep. */
+TclpUSleep(
+    Tcl_WideInt usec)	/* Time to sleep. */
 {
-    struct timeval delay;
-    Tcl_Time before, after, vdelay;
+    Tcl_WideInt now, desired, sleepTime;
 
+    if (usec < 0) {
+	usec = 0;
+    }
     /*
      * The only trick here is that select appears to return early under some
      * conditions, so we have to check to make sure that the right amount of
      * time really has elapsed.  If it's too early, go back to sleep again.
+     *
+     * Note the time can be switched (time-jump), so use monotonic time here.
      */
 
-    Tcl_GetTime(&before);
-    after = before;
-    if (timePtr) { /* if given calculate, otherwise - 0 usec */
+    now = TclpGetUTimeMonotonic();
+    if ((desired = (now + usec)) < now) { /* overflow */
+	desired = 0x7FFFFFFFFFFFFFFFL;
+    }
 
+    while (1) {
+	
 	/*
 	 * TIP #233: Scale from virtual time to real-time for select/usleep.
 	 */
+	TclpScaleUTime(&usec);
 
-	vdelay = *timePtr;
-	if ((vdelay.sec != 0) || (vdelay.usec != 0)) {
-	    tclScaleTimeProcPtr(&vdelay, tclTimeClientData);
-	}
+	if (usec >= TCL_TMR_MIN_DELAY) {
 
-	after.sec += vdelay.sec;
-	after.usec += vdelay.usec;
-	if (after.usec > 1000000) {
-	    after.usec -= 1000000;
-	    after.sec += 1;
-	}
-    }
-    while (1) {
-	vdelay.sec  = after.sec  - before.sec;
-	vdelay.usec = after.usec - before.usec;
+	    struct timeval delay;
 
-	if (vdelay.usec < 0) {
-	    vdelay.usec += 1000000;
-	    vdelay.sec  -= 1;
-	}
+	    delay.tv_sec  = usec / 1000000;
+	    delay.tv_usec = usec % 1000000;
 
-	delay.tv_sec  = vdelay.sec;
-	delay.tv_usec = vdelay.usec;
-
-	/*
-	 * Special note: must convert delay.tv_sec to int before comparing to
-	 * zero, since delay.tv_usec is unsigned on some platforms.
-	 */
-
-	if ((((int) delay.tv_sec) < 0)
-		|| ((delay.tv_usec == 0) && (delay.tv_sec == 0))) {
-	    break;
-	}
-
-	if (delay.tv_sec || delay.tv_usec >= TCL_TMR_MIN_DELAY) {
+	    sleepTime = usec;
 	    (void) select(0, (SELECT_MASK *) 0, (SELECT_MASK *) 0,
 		(SELECT_MASK *) 0, &delay);
-	} else if (delay.tv_usec >= TCL_TMR_MIN_SLEEP) {
-	    usleep(delay.tv_usec - TCL_TMR_MIN_SLEEP);
+
+	} else if (usec >= TCL_TMR_MIN_SLEEP) {
+	    sleepTime = usec - TCL_TMR_MIN_SLEEP;
+	    usleep(sleepTime);
+	} else {
+	    /* nanosleep has the same minimal sleep interval as usleep */
+#if 1
+	    sleepTime = 0;
+#else
+	    struct timespec delay;
+
+	    delay.tv_sec  = usec / 1000000;
+	    delay.tv_nsec = (usec % 1000000) * 1000; /* usec to nsec */
+
+	    sleepTime = usec;
+	    nanosleep(&delay, NULL);
+#endif
 	}
-	Tcl_GetTime(&before);
+	
+	now = TclpGetUTimeMonotonic();
+
+	if ((usec = (desired - now)) <= 0 /* or tolerance */) {
+	    break;
+	}
     }
 }
 
@@ -947,7 +948,7 @@ Tcl_WaitForEvent(
 {
     FileHandler *filePtr;
     int mask, canWait = 1;
-    Tcl_Time now, endTime, waitTime;
+    Tcl_WideInt endTime = 0, waitTime = 0;
 #ifdef TCL_THREADS
     int waitForFiles = 0;
 #ifdef __CYGWIN__
@@ -969,8 +970,6 @@ Tcl_WaitForEvent(
 	return tclStubs.tcl_WaitForEvent(timePtr);
     }
 
-    Tcl_GetTime(&now);
-
     tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
@@ -981,13 +980,13 @@ Tcl_WaitForEvent(
 
     if (timePtr != NULL) {
 
-	endTime = now;
-	endTime.sec += timePtr->sec;
-	endTime.usec += timePtr->usec;
-	if (endTime.usec > 1000000) {
-	    endTime.usec -= 1000000;
-	    endTime.sec++;
-	}
+	waitTime = TCL_TIME_TO_USEC(*timePtr);
+
+	/*
+	 * Note the time can be switched (time-jump), so use monotonic time here.
+	 */
+	endTime = TclpGetUTimeMonotonic() + waitTime;
+
 	/* 
 	 * If short wait or no wait at all, just process events already available
 	 * right now, avoid waiting too long somewhere (NRT-capability fix).
@@ -1076,25 +1075,14 @@ Tcl_WaitForEvent(
     while (!tsdPtr->eventReady) {
 
 	if (timePtr) {
-	    Tcl_GetTime(&now);
-	    waitTime = endTime;
-	    waitTime.sec -= now.sec;
-	    waitTime.usec -= now.usec;
-	    if (waitTime.usec < 0) {
-		waitTime.usec += 1000000;
-		waitTime.sec--;
-	    }
-	
-	    if (now.sec > endTime.sec) {
+
+	    waitTime = endTime - TclpGetUTimeMonotonic();
+
+	    if (waitTime <= 0) {
 		break; /* end of wait */
 	    }
-	    if (now.sec == endTime.sec) {
-	    	if (now.usec > endTime.usec) {
-		    break; /* end of wait */
-	    	}
-		if (now.usec > endTime.usec + TCL_TMR_OVERHEAD) {
-		    canWait = 0;
-		}
+	    if (waitTime <= TCL_TMR_OVERHEAD) {
+		canWait = 0;
 	    }
 	}
 
@@ -1104,9 +1092,9 @@ Tcl_WaitForEvent(
 
 	    if (timePtr) {
 		/* TIP #233: Scale from virtual time to real-time  */
-		tclScaleTimeProcPtr(&waitTime, tclTimeClientData);
+		TclpScaleUTime(&waitTime);
 
-		timeout = waitTime.sec * 1000 + waitTime.usec / 1000;
+		timeout = waitTime / 1000;
 	    } else {
 		timeout = 0xFFFFFFFF;
 	    }
@@ -1118,28 +1106,23 @@ Tcl_WaitForEvent(
 	/* prevent too long waiting (NRT-capability) */
 	if ( !canWait ) {
 	    /* short sleep */
-	    TclpSleep(&waitTime);
+	    TclpUSleep(waitTime);
 	    break; /* end of wait */
 	}
 	else
 	if (timePtr) {
 	    struct timespec ptime;
 
-#if 1
 	    /* TIP #233: Scale from virtual time to real-time  */
-	    tclScaleTimeProcPtr(&waitTime, tclTimeClientData);
+	    TclpScaleUTime(&waitTime);
 
-	    ptime.tv_sec = now.sec;
-	    ptime.tv_nsec = (now.usec + waitTime.usec);
-	    if (ptime.tv_nsec > 1000000) {
-		ptime.tv_nsec -= 1000000;
+	    clock_gettime(CLOCK_REALTIME, &ptime);
+	    ptime.tv_sec += waitTime / 1000000;
+	    ptime.tv_nsec += (waitTime % 1000000) * 1000;
+	    if (ptime.tv_nsec > 1000000*1000) {
+		ptime.tv_nsec -= 1000000*1000;
 		ptime.tv_sec++;
 	    }
-	    ptime.tv_nsec *= 1000; /* usec to nsec */
-#else
-	    ptime.tv_sec = endTime.sec;
-	    ptime.tv_nsec = 1000 * endTime.usec;
-#endif
 
 #if defined(__APPLE__) && defined(__LP64__)
 	    /*
@@ -1149,24 +1132,22 @@ Tcl_WaitForEvent(
 	     * time; as a workaround, when given a very brief timeout,
 	     * just increment a bit the waiting-time from now. [Bug 1457797]
 	     */
-	    if ( now.sec > endTime.sec 
-	     || (now.sec == endTime.sec && now.usec > endTime.usec)
-	    ) {
+	    if (waitTime <= 0) {
 		ptime.tv_sec = now.sec;
 		ptime.tv_nsec = 1000 * now.usec + 10; /* + 10 nanosecond */
 	    }
 #else
 	    /* remove overhead in nsec */
 	    if (ptime.tv_nsec < TCL_TMR_OVERHEAD * 1000) {
-	    	ptime.tv_nsec += 1000000000;
+	    	ptime.tv_nsec += 1000000*1000;
 	    	ptime.tv_sec--;
 	    }
 	    ptime.tv_nsec -= TCL_TMR_OVERHEAD * 1000;
 	    
 #endif /* __APPLE__ && __LP64__ */
 
-	    if (ptime.tv_nsec > 1000000000) {
-		ptime.tv_nsec -= 1000000000;
+	    if (ptime.tv_nsec > 1000000*1000) {
+		ptime.tv_nsec -= 1000000*1000;
 		ptime.tv_sec++;
 	    }
 	    if (pthread_cond_timedwait(&tsdPtr->waitCV, &notifierMutex,

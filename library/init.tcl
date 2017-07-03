@@ -177,7 +177,7 @@ if {[interp issafe]} {
 	namespace eval ::tcl::clock [list namespace ensemble create -command \
 		[uplevel 1 [list namespace origin [lindex [info level 0] 0]]] \
 		-subcommands {
-		    add clicks format microseconds milliseconds scan seconds
+		    add clicks format microseconds milliseconds monotonic scan seconds
 		}]
 
 	# Auto-loading stubs for 'clock.tcl'

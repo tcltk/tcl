@@ -1465,6 +1465,29 @@ Tcl_ThreadAlert(
 
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Sleep --
+ *
+ *	Delay execution for the specified number of milliseconds.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Time passes.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_Sleep(
+    int ms)			/* Number of milliseconds to sleep. */
+{
+    TclpUSleep((Tcl_WideInt)ms * 1000);
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

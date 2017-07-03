@@ -60,8 +60,6 @@ typedef struct AfterAssocData {
  */
 
 typedef struct {
-    Tcl_WideInt knownTime;	/* Last know time */
-    size_t knownTimeJumpEpoch;	/* Epoch of the last time-jump */
     Tcl_WideInt relTimerBase;	/* Time base of the first known relative */
 				/* timer, used to revert all events to the new
 				 * base after possible time-jump (adjustment).*/
@@ -361,7 +359,7 @@ TimerMakeRelativeTime(
     ThreadSpecificData *tsdPtr,
     Tcl_WideInt usec)
 {
-    Tcl_WideInt now = TclpGetMicroseconds();
+    Tcl_WideInt now = TclpGetUTimeMonotonic();
 
     /* 
      * We should have the ability to ajust end-time of relative events,
@@ -374,19 +372,11 @@ TimerMakeRelativeTime(
 	 * end-time = base + relative event-time, which corresponds 
 	 * original end-time.
 	 */
-	Tcl_WideInt diff;
-	if ( (diff = TclpGetLastTimeJump(&tsdPtr->knownTimeJumpEpoch)) != 0
-	  || (diff = (tsdPtr->knownTime - now)) < 0
-	) { /* jump recognized */
-	    tsdPtr->relTimerBase += diff; /* shift the base of relative events */
-	}
 	usec += now - tsdPtr->relTimerBase;
     } else {
 	/* first event here - initial values (base/epoch) */
 	tsdPtr->relTimerBase = now;
-	tsdPtr->knownTimeJumpEpoch = TclpGetLastTimeJumpEpoch();
     }
-    tsdPtr->knownTime = now;
 
     return usec;
 }
@@ -850,8 +840,8 @@ TclpProlongTimerEvent(
  *
  * TimerGetDueTime --
  *
- *	Find the execution time of first relative or absolute timer starting
- *	from given heads.
+ *	Find the execution time offset of first relative or absolute timer 
+ *	starting from given heads.
  *
  * Results:
  *	A wide integer representing the due time (as microseconds) of first
@@ -866,33 +856,36 @@ TclpProlongTimerEvent(
 static Tcl_WideInt
 TimerGetDueTime(
     ThreadSpecificData *tsdPtr,
-    TclTimerEvent *relEvent,
-    Tcl_WideInt now)
+    TclTimerEvent *relTimerList,
+    TclTimerEvent *absTimerList,
+    TclTimerEvent **dueEventPtr)
 {
-    /* 
-     * Consider time-jump (especially back) - if the time jumped forwards (and
-     * it recognized) the base can be shifted, but not badly needed, because
-     * event will be nevertheless executed early as specified. But for backwards
-     * jumps it is very important and we should adjust relative base to avoid 
-     * too long waiting for relative events.
-     */
-    Tcl_WideInt diff;
-    if ( (diff = TclpGetLastTimeJump(&tsdPtr->knownTimeJumpEpoch)) != 0
-      || (diff = (now - tsdPtr->knownTime)) < 0 /* switched back */
-    ) {
-	/* 
-	 * If the real jump is unknown (resp. too complex to retrieve
-	 * accross all threads), we simply accept possible small increment
-	 * of the real wait-time.
-	 */
-	tsdPtr->relTimerBase += diff; /* shift the base */
-    }
-    tsdPtr->knownTime = now;
+    TclTimerEvent *tmrEvent;
+    Tcl_WideInt timeOffs = 0x7FFFFFFFFFFFFFFFL;
 
-    /* end-time = base + relative event-time */
-    return tsdPtr->relTimerBase + relEvent->time;
+    /* find shortest due-time */
+    if ((tmrEvent = relTimerList) != NULL) {
+	/* offset to now (monotonic base) */
+	timeOffs = tsdPtr->relTimerBase + tmrEvent->time
+			    - TclpGetUTimeMonotonic();
+    }
+    if (absTimerList) {
+	Tcl_WideInt absOffs;
+	/* offset to now (real-time base) */
+	absOffs = absTimerList->time - TclpGetMicroseconds();
+	if (!tmrEvent || absOffs < timeOffs) {
+	    tmrEvent = absTimerList;
+	    timeOffs = absOffs;
+	}
+    }
+
+    if (dueEventPtr) {
+	*dueEventPtr = tmrEvent;
+    }
+    return timeOffs;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -938,30 +931,20 @@ TimerSetupProc(
 	/*
 	 * Compute the timeout for the next timer on the list.
 	 */
+	Tcl_WideInt timeOffs;
 
-	Tcl_WideInt now = TclpGetMicroseconds();
-	Tcl_WideInt entryTime = 0x7FFFFFFFFFFFFFFFL;
-
-	if (tsdPtr->relTimerList) {
-	    entryTime = TimerGetDueTime(tsdPtr,
-	    	tsdPtr->relTimerList, now);
-	}
-	/* if absolute timer before */
-	if (tsdPtr->absTimerList && tsdPtr->absTimerList->time < entryTime) {
-	    entryTime = tsdPtr->absTimerList->time;
-	}
-	/* as offset to now */
-	entryTime -= now;
+	timeOffs = TimerGetDueTime(tsdPtr,
+			tsdPtr->relTimerList, tsdPtr->absTimerList, NULL);
 
 	#ifdef TMR_RES_TOLERANCE
 	    /* consider timer resolution tolerance (avoid busy wait) */
-	    entryTime -= ((entryTime <= 1000000) ? entryTime : 1000000) *
+	    timeOffs -= ((timeOffs <= 1000000) ? timeOffs : 1000000) *
 				TMR_RES_TOLERANCE / 100;
 	#endif
 
-	if (entryTime > 0) {
-	    blockTime.sec = (long) (entryTime / 1000000);
-	    blockTime.usec = (unsigned long) (entryTime % 1000000);
+	if (timeOffs > 0) {
+	    blockTime.sec = (long) (timeOffs / 1000000);
+	    blockTime.usec = (unsigned long) (timeOffs % 1000000);
 
 	} else {
 	    blockTime.sec = 0;
@@ -997,7 +980,7 @@ TimerCheckProc(
     ClientData data,		/* Specific data. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    Tcl_WideInt now, entryTime = 0;
+    Tcl_WideInt timeOffs = 0;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)data;
 
     if (!(flags & TCL_TIMER_EVENTS)) {
@@ -1018,29 +1001,20 @@ TimerCheckProc(
     if (!tsdPtr->relTimerList && !tsdPtr->absTimerList) {
 	return;
     }
-    entryTime = 0x7FFFFFFFFFFFFFFFL;
-    now = TclpGetMicroseconds();
-    if (tsdPtr->relTimerList) {
-	entryTime = TimerGetDueTime(tsdPtr,
-	tsdPtr->relTimerList, now);
-    }
-    /* if absolute timer before */
-    if (tsdPtr->absTimerList && tsdPtr->absTimerList->time < entryTime) {
-	entryTime = tsdPtr->absTimerList->time;
-    }
-    /* as offset to now */
-    entryTime -= now;
-    
+
+    timeOffs = TimerGetDueTime(tsdPtr,
+			tsdPtr->relTimerList, tsdPtr->absTimerList, NULL);
+
 #ifdef TMR_RES_TOLERANCE
     /* consider timer resolution tolerance (avoid busy wait) */
-    entryTime -= ((entryTime <= 1000000) ? entryTime : 1000000) *
+    timeOffs -= ((timeOffs <= 1000000) ? timeOffs : 1000000) *
 			TMR_RES_TOLERANCE / 100;
 #endif
    
     /*
     * If the first timer has expired, stick an event on the queue.
     */
-    if (entryTime <= 0) {
+    if (timeOffs <= 0) {
   mark:
 	TclSetTimerEventMarker(flags); /* force timer execution */
 	tsdPtr->timerPending = 1;
@@ -1147,25 +1121,18 @@ TclServiceTimerEvents(void)
     relTimerList = tsdPtr->relTimerList;
     absTimerList = tsdPtr->absTimerList;
     while (relTimerList || absTimerList) {
-    	Tcl_WideInt entryTime = 0x7FFFFFFFFFFFFFFFL;
-	Tcl_WideInt now = TclpGetMicroseconds();
-	/* find shortest due-time */
-	if ((tmrEvent = relTimerList) != NULL) {
-	    entryTime = TimerGetDueTime(tsdPtr, tmrEvent, now);
-	}
-	if (absTimerList && (!tmrEvent || absTimerList->time < entryTime)) {
-	    tmrEvent = absTimerList;
-	    entryTime = absTimerList->time;
-	}
-	/* offset to now */
-	entryTime -= now;
+	Tcl_WideInt timeOffs;
+
+	/* find timer (absolute/relative) with shortest due-time */
+	timeOffs = TimerGetDueTime(tsdPtr,
+			relTimerList, absTimerList, &tmrEvent);
     	/* the same tolerance logic as in TimerSetupProc/TimerCheckProc */
     #ifdef TMR_RES_TOLERANCE
-	entryTime -= ((entryTime <= 1000000) ? entryTime : 1000000) *
+	timeOffs -= ((timeOffs <= 1000000) ? timeOffs : 1000000) *
 				TMR_RES_TOLERANCE / 100;
     #endif
 	/* still not reached */
-	if (entryTime > 0) {
+	if (timeOffs > 0) {
 	    break;
 	}
 
@@ -1788,9 +1755,8 @@ AfterDelay(
 {
     Interp *iPtr = (Interp *) interp;
 
-    Tcl_WideInt endTime, now, lastNow, diff;
+    Tcl_WideInt endTime, now, diff, limOffs = 0x7FFFFFFFFFFFFFFFL;
     long tolerance = 0;
-    size_t timeJumpEpoch = 0;
 
     if (usec <= 0) {
 	/* to cause a context switch only */
@@ -1803,61 +1769,55 @@ AfterDelay(
     tolerance = ((usec < 1000000) ? usec : 1000000) * TMR_RES_TOLERANCE / 100;
 #endif
 
-    lastNow = now = TclpGetMicroseconds();
-    endTime = usec;
-    timeJumpEpoch = TclpGetLastTimeJumpEpoch();
-
     if (!absolute) {
-	endTime += now;
-	if (endTime < now) { /* overflow */
+	/*
+	 * Note the time can be switched (time-jump), so use monotonic time here.
+	 */
+	now = TclpGetUTimeMonotonic();
+	if ((endTime = (now + usec)) < now) { /* overflow */
 	    endTime = 0x7FFFFFFFFFFFFFFFL;
 	}
+    } else {
+	now = TclpGetMicroseconds();
+	endTime = usec;
     }
-
     do {
 	if ( iPtr->limit.timeEvent != NULL
-	  && now > TCL_TIME_TO_USEC(iPtr->limit.time)
+	  && (limOffs = (TCL_TIME_TO_USEC(iPtr->limit.time)
+				- TclpGetMicroseconds())) <= 0
 	) {
 	    iPtr->limit.granularityTicker = 0;
 	    if (Tcl_LimitCheck(interp) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	}
-	if ( iPtr->limit.timeEvent == NULL
-	  || endTime < (diff = TCL_TIME_TO_USEC(iPtr->limit.time))
-	) {
-	    diff = endTime - now;
+	diff = endTime - now;
+	if (iPtr->limit.timeEvent == NULL || diff < limOffs) {
 	    if (diff > 0) {
 		TclpUSleep(diff);
-		now = TclpGetMicroseconds();
+		if (!absolute) {
+		    now = TclpGetUTimeMonotonic();
+		} else {
+		    now = TclpGetMicroseconds();
+		}
 	    }
 	} else {
-	    diff -= now;
+	    diff = limOffs;
 	    if (diff > 0) {
 		TclpUSleep(diff);
-		now = TclpGetMicroseconds();
+		if (!absolute) {
+		    now = TclpGetUTimeMonotonic();
+		} else {
+		    now = TclpGetMicroseconds();
+		}
 	    }
 	    if (Tcl_LimitCheck(interp) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	}
 
-	/* 
-	 * Note time can be switched backwards, certainly adjust end-time
-	 * by possible time-jumps (for relative sleep).
-	 */
-	if (!absolute
-	  && ( (diff = TclpGetLastTimeJump(&timeJumpEpoch)) != 0 
-	    || (diff = (now - lastNow)) < 0
-	  )
-	) {
-	    /* recognized time-jump - simply shift wakeup-time */
-	    endTime += diff;
-	}
-	lastNow = now;
-
 	/* consider timer resolution tolerance (avoid busy wait) */
-    } while (now < endTime);
+    } while (now < endTime - tolerance);
     return TCL_OK;
 }
 

@@ -634,10 +634,9 @@ Tcl_WaitForEvent(
     DWORD timeout = INFINITE, result = WAIT_TIMEOUT;
     int status = 0;
     Tcl_WideInt waitTime = 0;
-    Tcl_WideInt lastNow = 0, endTime = 0;
+    Tcl_WideInt endTime = 0;
     long tolerance = 0;
     unsigned long actualResolution = 0;
-    size_t timeJumpEpoch = 0;
 
     /*
      * Allow the notifier to be hooked. This may not make sense on windows,
@@ -654,7 +653,7 @@ Tcl_WaitForEvent(
 
     if (timePtr) {
 
-	waitTime = timePtr->sec * 1000000 + timePtr->usec;
+	waitTime = TCL_TIME_TO_USEC(*timePtr);
 
 	/* if no wait */
 	if (waitTime <= 0) {
@@ -662,10 +661,10 @@ Tcl_WaitForEvent(
 	    goto peek;
 	}
 
-	/* calculate end of wait */
-	lastNow = TclpGetMicroseconds();
-	endTime = lastNow + waitTime;
-	timeJumpEpoch = TclpGetLastTimeJumpEpoch();
+	/*
+	 * Note the time can be switched (time-jump), so use monotonic time here.
+	 */
+	endTime = TclpGetUTimeMonotonic() + waitTime;
 
 	if (timerResolution.available == -1) {
 	    InitTimerResolution();
@@ -685,7 +684,7 @@ Tcl_WaitForEvent(
 	* TIP #233 (Virtualized Time). Convert virtual domain delay to
 	* real-time.
 	*/
-	waitTime = TclpScaleUTime(waitTime);
+	TclpScaleUTime(&waitTime);
 
 	/* No wait if timeout too small (because windows may wait too long) */
 	if (waitTime < (long)timerResolution.minDelay) {
@@ -789,27 +788,8 @@ Tcl_WaitForEvent(
     else
     if (result == WAIT_TIMEOUT && timeout != INFINITE) {
 	/* Check the wait should be repeated, and correct time for wait */
-	Tcl_WideInt now;
 
-	now = TclpGetMicroseconds();
-	/* 
-	 * Note time can be switched backwards, certainly adjust end-time
-	 * by possible time-jumps.
-	 */
-	if ((waitTime = TclpGetLastTimeJump(&timeJumpEpoch)) != 0) {
-	    /* we know time-jump, adjust end-time using this offset */
-	    endTime += waitTime;
-	}
-	else
-	if ((waitTime = (now - lastNow)) < 0) {
-	    /* recognized backwards time-jump - simply shift wakeup-time *
-	     * considering timeout also, assume we've reached it completely */
-	    endTime += (waitTime - (timeout * 1000));
-	}
-	lastNow = now;
-
-	/* calculate new waitTime */
-	waitTime = endTime - now;
+	waitTime = endTime - TclpGetUTimeMonotonic();
 	if (waitTime <= tolerance) {
 	    goto end;
 	}
@@ -831,9 +811,9 @@ Tcl_WaitForEvent(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Sleep --, TclpUSleep --
+ * TclpUSleep --
  *
- *	Delay execution for the specified number of milliseconds (or microsec.).
+ *	Delay execution for the specified number of microseconds.
  *
  *	TclpUSleep in contrast to Tcl_Sleep is more precise (microseconds).
  *
@@ -845,13 +825,6 @@ Tcl_WaitForEvent(
  *
  *----------------------------------------------------------------------
  */
-
-void
-Tcl_Sleep(
-    int ms)			/* Number of milliseconds to sleep. */
-{
-    TclpUSleep((Tcl_WideInt)ms * 1000);
-}
 
 void
 TclpUSleep(
@@ -867,12 +840,10 @@ TclpUSleep(
      * requisite amount.
      */
 
-    Tcl_WideInt lastNow, now;	/* Current wall clock time. */
     Tcl_WideInt desired;	/* Desired wakeup time. */
     DWORD sleepTime;		/* Time to sleep, real-time */
     long tolerance = 0;
     unsigned long actualResolution = 0;
-    size_t timeJumpEpoch = 0;
 
     if (usec <= 9) { /* too short to start whole sleep process */
 	do {
@@ -886,9 +857,10 @@ TclpUSleep(
 	InitTimerResolution();
     }
 
-    lastNow = now = TclpGetMicroseconds();
-    desired = now + usec;
-    timeJumpEpoch = TclpGetLastTimeJumpEpoch();
+    /*
+     * Note the time can be switched (time-jump), so use monotonic time here.
+     */
+    desired = TclpGetUTimeMonotonic() + usec;
 
   #ifdef TMR_RES_TOLERANCE
     /* calculate possible maximal tolerance (in usec) of original wait-time */
@@ -904,7 +876,7 @@ TclpUSleep(
 	/*
 	 * TIP #233: Scale delay from virtual to real-time.
 	 */
-	usec = TclpScaleUTime(usec);
+	TclpScaleUTime(&usec);
 
 	/* No wait if sleep time too small (because windows may wait too long) */
 	if (usec < (long)timerResolution.minDelay) {
@@ -940,24 +912,11 @@ TclpUSleep(
 
     wait:
 	Sleep(sleepTime);
-	now = TclpGetMicroseconds();
-	/* 
-	 * Note time can be switched backwards, certainly adjust end-time
-	 * by possible time-jumps.
-	 */
-	if ((usec = TclpGetLastTimeJump(&timeJumpEpoch)) != 0) {
-	    /* we know time-jump, adjust end-time using this offset */
-	    desired += usec;
-	}
-	else
-	if ((usec = (now - lastNow)) < 0) {
-	    /* recognized backwards time-jump - simply shift wakeup-time *
-	     * considering sleep-time also, assume we've reached it completely */
-	    desired += (usec - (sleepTime * 1000));
-	}
-	lastNow = now;
 
-	if ((usec = (desired - now)) <= tolerance) {
+	/* new difference to now (monotonic base) */
+	usec = desired - TclpGetUTimeMonotonic();
+	
+	if (usec <= tolerance) {
 	    break;
 	}
     }

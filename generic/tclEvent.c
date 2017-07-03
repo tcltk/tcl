@@ -1385,8 +1385,7 @@ Tcl_VwaitObjCmd(
     char *nameString;
     int optc = objc - 2; /* options count without cmd and varname */
     Tcl_WideInt usec = -1;
-    Tcl_WideInt lastNow = 0, wakeup = 0;
-    size_t timeJumpEpoch = 0;
+    Tcl_WideInt now = 0, wakeup = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? ?timeout? name");
@@ -1414,12 +1413,14 @@ Tcl_VwaitObjCmd(
 
     done = 0;
 
-    /* if timeout specified - create timer event or no-wait by 0ms */
+    /* 
+     * If timeout specified - create timer event or no-wait by 0ms.
+     * Note the time can be switched (time-jump), so use monotonic time here.
+     */
     if (usec != -1) {
 	if (usec > 0) {
-	    lastNow = TclpGetMicroseconds();
-	    timeJumpEpoch = TclpGetLastTimeJumpEpoch();
-	    wakeup = lastNow + usec;
+	    now = TclpGetUTimeMonotonic();
+	    wakeup = now + usec;
 	} else {
 	    flags |= TCL_DONT_WAIT;
 	}
@@ -1436,20 +1437,11 @@ Tcl_VwaitObjCmd(
     	/* if wait - set blocking time */
 	if (usec > 0) {
 	    Tcl_Time blockTime;
-	    Tcl_WideInt diff, now = TclpGetMicroseconds();
-	    /* 
-	     * Note time can be switched backwards, certainly adjust end-time
-	     * by possible time-jumps back.
-	     */
-	    
-	    if ( (diff = TclpGetLastTimeJump(&timeJumpEpoch)) != 0 
-	      || (diff = (now - lastNow)) < 0
-	    ) {
-		/* recognized time-jump - simply shift wakeup-time */
-		wakeup += diff;
-	    }
+	    Tcl_WideInt diff;
+
+	    now = TclpGetUTimeMonotonic();
+
 	    /* calculate blocking time */
-	    lastNow = now;
 	    diff = wakeup - now;
 	    diff -= 1; /* overhead for this code (e. g. Tcl_TraceVar/Tcl_UntraceVar) */
 	    /* be sure process at least one event */

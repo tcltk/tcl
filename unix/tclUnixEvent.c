@@ -13,36 +13,6 @@
 #ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
 				 * in tclMacOSXNotify.c */
 
-/* declaration of TclpSleep() from tclUnixNotfy.c */
-void	TclpSleep(const Tcl_Time *timePtr);
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_Sleep --
- *
- *	Delay execution for the specified number of milliseconds.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Time passes.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_Sleep(
-    int ms)			/* Number of milliseconds to sleep. */
-{
-    Tcl_Time delay;
-
-    delay.sec = ms/1000;
-    delay.usec = (ms%1000)*1000;
-    TclpSleep(&delay);
-}
-
 #endif /* HAVE_COREFOUNDATION */
 /*
  * Local Variables:

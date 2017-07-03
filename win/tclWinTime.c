@@ -44,6 +44,7 @@ static Tcl_ThreadDataKey dataKey;
 typedef struct TimeCalibInfo {
     LONGLONG perfCounter;	/* QPC value of last calibrated virtual time */
     Tcl_WideInt virtTimeBase;	/* Last virtual time base (in 100-ns) */
+    Tcl_WideInt monoTimeBase;	/* Last monotonic time base (in 100-ns) */
     Tcl_WideInt sysTime;	/* Last real system time (in 100-ns),
 				   truncated to VT_SYSTMR_DIST (100ms) */
 } TimeCalibInfo;
@@ -101,10 +102,8 @@ typedef struct TimeInfo {
 				 * calibration process. */
     volatile LONG lastCIEpoch;	/* Calibration epoch (increased each 100ms) */
     
-    size_t lastUsedTime;	/* Last known (caller) offset to virtual time
+    size_t lastUsedTime;	/* Last known (caller) offset to time base
 				 * (used to avoid back-drifts after calibrate) */
-    size_t lastTimeJumpEpoch;	/* Last known epoch since last time-jump. */
-    Tcl_WideInt lastTimeJump;	/* Last known time-jump of thread. */
 } TimeInfo;
 
 static TimeInfo timeInfo = {
@@ -147,7 +146,7 @@ static struct {
 static struct tm *	ComputeGMT(const time_t *tp);
 static void		NativeScaleTime(Tcl_Time* timebuf,
 			    ClientData clientData);
-static Tcl_WideInt	NativeGetMicroseconds(void);
+static Tcl_WideInt	NativeGetMicroseconds(int monotonic);
 static void		NativeGetTime(Tcl_Time* timebuf,
 			    ClientData clientData);
 
@@ -189,13 +188,15 @@ NativePerformanceCounter(void) {
 /*
  *----------------------------------------------------------------------
  *
- * NativeCalc100NsTicks --
+ * NativeCalc100NsOffs --
  *
- *	Calculate the current system time in 100-ns ticks since posix epoch,
+ *	Calculate the current system time in 100-ns ticks since some base,
  *	for current performance counter (curCounter), using given calibrated values.
  *
- *	vt = lastCI.virtTimeBase
- *		+ (curCounter - lastCI.perfCounter) * 10000000 / nominalFreq
+ *	offs = (curCounter - lastCI.perfCounter) * 10000000 / nominalFreq
+ *
+ *	vt = lastCI.virtTimeBase + offs
+ *	mt = lastCI.monoTimeBase + offs
  *
  * Results:
  *	Returns the wide integer with number of 100-ns ticks from the epoch.
@@ -207,17 +208,16 @@ NativePerformanceCounter(void) {
  */
 
 static inline Tcl_WideInt
-NativeCalc100NsTicks(
-    ULONGLONG ciVirtTimeBase,
+NativeCalc100NsOffs(
     LONGLONG ciPerfCounter,
     LONGLONG curCounter
 ) {
     curCounter -= ciPerfCounter; /* current distance */
     if (!curCounter) {
-    	return ciVirtTimeBase; /* virtual time without offset */
+    	return 0; /* virtual time without offset */
     }
     /* virtual time with offset */
-    return ciVirtTimeBase + curCounter * 10000000 / timeInfo.nominalFreq;
+    return curCounter * 10000000 / timeInfo.nominalFreq;
 }
 
 /*
@@ -256,13 +256,9 @@ GetSystemTimeAsVirtual(void)
 unsigned long
 TclpGetSeconds(void)
 {
-    Tcl_WideInt usecSincePosixEpoch;
-
     /* Try to use high resolution timer */
-    if ( tclGetTimeProcPtr == NativeGetTime
-      && (usecSincePosixEpoch = NativeGetMicroseconds())
-    ) {
-	return usecSincePosixEpoch / 1000000;
+    if (tclGetTimeProcPtr == NativeGetTime) {
+	return NativeGetMicroseconds(0) / 1000000;
     } else {
 	Tcl_Time t;
 
@@ -293,13 +289,9 @@ TclpGetSeconds(void)
 unsigned long
 TclpGetClicks(void)
 {
-    Tcl_WideInt usecSincePosixEpoch;
-
     /* Try to use high resolution timer */
-    if ( tclGetTimeProcPtr == NativeGetTime
-      && (usecSincePosixEpoch = NativeGetMicroseconds())
-    ) {
-	return (unsigned long)usecSincePosixEpoch;
+    if (tclGetTimeProcPtr == NativeGetTime) {
+	return (unsigned long)NativeGetMicroseconds(1);
     } else {
 	/*
 	* Use the Tcl_GetTime abstraction to get the time in microseconds, as
@@ -416,10 +408,9 @@ TclpWideClickInMicrosec(void)
 Tcl_WideInt 
 TclpGetMicroseconds(void)
 {
-#if 1
     /* Use high resolution timer if possible */
     if (tclGetTimeProcPtr == NativeGetTime) {
-    	return NativeGetMicroseconds();
+    	return NativeGetMicroseconds(0);
     } else {
 	/*
 	 * Use the Tcl_GetTime abstraction to get the time in microseconds, as
@@ -431,18 +422,31 @@ TclpGetMicroseconds(void)
 	tclGetTimeProcPtr(&now, tclTimeClientData);	/* Tcl_GetTime inlined */
 	return TCL_TIME_TO_USEC(now);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetMicroseconds --
+ *
+ *	This procedure returns a WideInt value that represents the highest
+ *	resolution clock in microseconds available on the system.
+ *
+ * Results:
+ *	Number of microseconds (from the epoch).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
-#else
-    static Tcl_WideInt prevUS = 0;
-
-    Tcl_WideInt usecSincePosixEpoch;
-
-    /* Try to use high resolution timer */
+Tcl_WideInt 
+TclpGetUTimeMonotonic(void)
+{
+    /* Use high resolution timer if possible */
     if (tclGetTimeProcPtr == NativeGetTime) {
-	if ( !(usecSincePosixEpoch = NativeGetMicroseconds()) ) {
-	    usecSincePosixEpoch = GetSystemTimeAsVirtual() / 10; /* in 100-ns */
-	    printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!no-native-ms!!!!!!!!!!!\n");
-	}
+    	return NativeGetMicroseconds(1); /* monotonic based time */
     } else {
 	/*
 	 * Use the Tcl_GetTime abstraction to get the time in microseconds, as
@@ -452,18 +456,8 @@ TclpGetMicroseconds(void)
 	Tcl_Time now;
 
 	tclGetTimeProcPtr(&now, tclTimeClientData);	/* Tcl_GetTime inlined */
-	usecSincePosixEpoch = (((Tcl_WideInt)now.sec) * 1000000) + now.usec;
-	printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!no-native-ms!!!!!!!!!!!\n");
+	return TCL_TIME_TO_USEC(now);
     }
-
-    	if (prevUS && usecSincePosixEpoch < prevUS) {
-	    printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!time-backwards!!!! prev: %I64d - now: %I64d (%I64d usec)\n", prevUS, usecSincePosixEpoch, usecSincePosixEpoch - prevUS);
-	    Tcl_Panic("Time running backwards!!!");
-    	}
-    	prevUS = usecSincePosixEpoch;
-
-	return usecSincePosixEpoch;
-#endif
 }
 
 /*
@@ -521,14 +515,11 @@ void
 Tcl_GetTime(
     Tcl_Time *timePtr)		/* Location to store time information. */
 {
-    Tcl_WideInt usecSincePosixEpoch;
-
     /* Try to use high resolution timer */
-    if ( tclGetTimeProcPtr == NativeGetTime
-      && (usecSincePosixEpoch = NativeGetMicroseconds())
-    ) {
-	timePtr->sec = (long) (usecSincePosixEpoch / 1000000);
-	timePtr->usec = (unsigned long) (usecSincePosixEpoch % 1000000);
+    if ( tclGetTimeProcPtr == NativeGetTime) {
+    	Tcl_WideInt now = NativeGetMicroseconds(0);
+	timePtr->sec = (long) (now / 1000000);
+	timePtr->usec = (unsigned long) (now % 1000000);
     } else {
     	tclGetTimeProcPtr(timePtr, tclTimeClientData);
     }
@@ -573,19 +564,19 @@ NativeScaleTime(
  *
  *----------------------------------------------------------------------
  */
-Tcl_WideInt
+void
 TclpScaleUTime(
-    Tcl_WideInt usec)
+    Tcl_WideInt *usec)
 {
     /* Native scale is 1:1. */
-    if (tclScaleTimeProcPtr == NativeScaleTime) {
-	return usec;
+    if (tclScaleTimeProcPtr != NativeScaleTime) {
+	return;
     } else {
 	Tcl_Time scTime;
-	scTime.sec = usec / 1000000;
-	scTime.usec = usec % 1000000;
+	scTime.sec = *usec / 1000000;
+	scTime.usec = *usec % 1000000;
 	tclScaleTimeProcPtr(&scTime, tclTimeClientData);
-	return ((Tcl_WideInt)scTime.sec) * 1000000 + scTime.usec;
+	*usec = ((Tcl_WideInt)scTime.sec) * 1000000 + scTime.usec;
     }
 }
 
@@ -613,7 +604,8 @@ TclpScaleUTime(
  */
 
 static Tcl_WideInt
-NativeGetMicroseconds(void)
+NativeGetMicroseconds(
+    int monotonic)
 {
     static size_t nomObtainSTPerfCntrDist = 0;
 				/* Nominal distance in perf-counter ticks to
@@ -745,10 +737,13 @@ NativeGetMicroseconds(void)
 		InitializeCriticalSection(&timeInfo.cs);
 
 		timeInfo.lastCI.perfCounter = NativePerformanceCounter();
+		/* base of the real-time (and last known system time) */
 		timeInfo.lastCI.sysTime =
 		    timeInfo.lastCI.virtTimeBase = GetSystemTimeAsVirtual();
 
-		timeInfo.lastTimeJumpEpoch = 1; /* let the caller know we've epoch */
+		/* base of the monotonic time */
+		timeInfo.lastCI.monoTimeBase = NativeCalc100NsOffs(
+			0, timeInfo.lastCI.perfCounter);
 	    }
 	    timeInfo.initialized = TRUE;
 	}
@@ -815,12 +810,13 @@ NativeGetMicroseconds(void)
 	     * Recalibration / Adjustment of base values.
 	     */
 
-	    Tcl_WideInt vt0;		/* Desired virtual time */
+	    Tcl_WideInt vt0, vt1;	/* Desired virtual time */
 	    Tcl_WideInt tdiff;		/* Time difference to the system time */
 	    Tcl_WideInt lastTime;	/* Used to compare with last known time */
 
 	    /* New desired virtual time using current base values */
-	    vt0 = NativeCalc100NsTicks(ci.virtTimeBase, ci.perfCounter, curCounter);
+	    vt1 = vt0 = ci.virtTimeBase
+		+ NativeCalc100NsOffs(ci.perfCounter, curCounter);
 
 	    tdiff = vt0 - sysTime;
 	    /* If we can adjust offsets (not a jump to new system time) */
@@ -829,11 +825,15 @@ NativeGetMicroseconds(void)
 		/* Allow small drift if discrepancy larger as expected */
 //!!!		printf("************* tdiff: %I64d\n", tdiff);
 		if (tdiff <= MsToT100ns(-VT_MAX_DISCREPANCY)) {
-		   vt0 += MsToT100ns(VT_MAX_DRIFT_TIME);
+		    vt0 += MsToT100ns(VT_MAX_DRIFT_TIME);
+		}
+		else
+		if (tdiff <= MsToT100ns(-VT_MAX_DRIFT_TIME)) {
+		    vt0 -= tdiff / 2; /* small drift forwards */
 		}
 		else
 		if (tdiff >= MsToT100ns(VT_MAX_DISCREPANCY)) {
-		   vt0 -= MsToT100ns(VT_MAX_DRIFT_TIME);
+		    vt0 -= MsToT100ns(VT_MAX_DRIFT_TIME);
 		}
 		
 		/*
@@ -850,15 +850,28 @@ NativeGetMicroseconds(void)
 //!!!		    printf("************* forwards 1: %I64d, last-time: %I64d, distance: %I64d\n", lastTime, ci.virtTimeBase, (vt0 - trSysTime));
 		}
 
+		/* difference for addjustment of monotonic base */
+		tdiff = vt0 - vt1;
+
 	    } else {
 		/* 
 		 * The time-jump (reset or initial), we should use system time
 		 * instead of virtual to recalibrate offsets (let the time jump).
 		 */
-		timeInfo.lastTimeJump = T100nsToUs(sysTime - vt0); /* 100-ns */;
-		timeInfo.lastTimeJumpEpoch++;
 		vt0 = sysTime;
+		tdiff = 0;
 //!!!		printf("************* reset time: %I64d *****************\n", vt0);
+	    }
+
+	    /*
+	     * Now adjust monotonic time base, note this time should absolutely
+	     * never ticks backwards (relative the last known monotonic time).
+	     */
+	    ci.monoTimeBase += NativeCalc100NsOffs(ci.perfCounter, curCounter);
+	    ci.monoTimeBase += tdiff;
+	    lastTime = (timeInfo.lastCI.monoTimeBase + timeInfo.lastUsedTime);
+	    if (ci.monoTimeBase < lastTime) {
+		ci.monoTimeBase = lastTime; /* freeze monotonic time a bit */
 	    }
 
 	    /* 
@@ -882,12 +895,20 @@ NativeGetMicroseconds(void)
 	  LeaveCriticalSection(&timeInfo.cs);
 	} /* common info lastCI contains actual data */
 	
-    calcVT:	
-	/* Calculate actual virtual time now using performance counter */
-	curTime = NativeCalc100NsTicks(ci.virtTimeBase, ci.perfCounter, curCounter);
+    calcVT:
 
-	/* Save last used time (offset) and return virtual time */
-	timeInfo.lastUsedTime = (size_t)(curTime - ci.virtTimeBase);
+	/* Calculate actual time-offset using performance counter */
+	curTime = NativeCalc100NsOffs(ci.perfCounter, curCounter);
+	/* Save last used time (offset) */
+	timeInfo.lastUsedTime = (size_t)curTime;
+	if (monotonic) {
+	    /* Use monotonic time base */
+	    curTime += ci.monoTimeBase;
+	} else {
+	    /* Use real-time base */
+	    curTime += ci.virtTimeBase;
+	}
+	/* Return virtual time */
 	return T100nsToUs(curTime); /* 100-ns to microseconds */
     }
 
@@ -921,25 +942,11 @@ NativeGetTime(
     Tcl_Time *timePtr,
     ClientData clientData)
 {
-    Tcl_WideInt usecSincePosixEpoch;
+    Tcl_WideInt now;
 
-    /*
-     * Try to use high resolution timer.
-     */
-    if ( (usecSincePosixEpoch = NativeGetMicroseconds()) ) {
-	timePtr->sec = (long) (usecSincePosixEpoch / 1000000);
-	timePtr->usec = (unsigned long) (usecSincePosixEpoch % 1000000);
-    } else {
-	/*
-	* High resolution timer is not available. Just use ftime.
-	*/
-
-	struct _timeb t;
-
-	_ftime(&t);
-	timePtr->sec = (long)t.time;
-	timePtr->usec = t.millitm * 1000;
-    }
+    now = NativeGetMicroseconds(0);
+    timePtr->sec = (long) (now / 1000000);
+    timePtr->usec = (unsigned long) (now % 1000000);
 }
 
 /*
@@ -1371,21 +1378,6 @@ Tcl_QueryTimeProc(
     if (clientData) {
 	*clientData = tclTimeClientData;
     }
-}
-
-Tcl_WideInt
-TclpGetLastTimeJump(size_t *epoch)
-{
-    if (timeInfo.lastTimeJumpEpoch > *epoch) {
-    	*epoch = timeInfo.lastTimeJumpEpoch;
-	return timeInfo.lastTimeJump;
-    };
-    return 0;
-}
-size_t
-TclpGetLastTimeJumpEpoch(void)
-{
-    return timeInfo.lastTimeJumpEpoch;
 }
 
 /*

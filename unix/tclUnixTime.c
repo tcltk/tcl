@@ -104,10 +104,54 @@ TclpGetSeconds(void)
 Tcl_WideInt
 TclpGetMicroseconds(void)
 {
-    Tcl_Time time;
+    if (tclGetTimeProcPtr == NativeGetTime) {
+	struct timeval tv;
 
-    tclGetTimeProcPtr(&time, tclTimeClientData);
-    return ((Tcl_WideInt)time.sec)*1000000 + time.usec;
+	(void) gettimeofday(&tv, NULL);
+	return ((Tcl_WideInt)tv.tv_sec)*1000000 + tv.tv_usec;
+    } else {
+	Tcl_Time time;
+
+	tclGetTimeProcPtr(&time, tclTimeClientData);
+	return ((Tcl_WideInt)time.sec)*1000000 + time.usec;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetUTimeMonotonic --
+ *
+ *	This procedure returns the number of microseconds from some unspecified
+ *	starting point.
+ *	This time is monotonic (not affected by the time-jumps), so can be used
+ *	for relative wait purposes and relative time calculation.
+ *
+ * Results:
+ *	Monotonic time in microseconds.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_WideInt
+TclpGetUTimeMonotonic(void)
+{
+    struct timespec mntv;
+    if ( tclGetTimeProcPtr == NativeGetTime
+      && clock_gettime(CLOCK_MONOTONIC, &mntv) == 0
+    ) {
+	/* monotonic time since some starting point in microseconds */
+	return ((Tcl_WideInt)mntv.tv_sec)*1000000 + mntv.tv_nsec / 1000;
+    } else {
+    	/* fallback via tclGetTimeProcPtr */
+	Tcl_Time time;
+
+	tclGetTimeProcPtr(&time, tclTimeClientData);
+	return ((Tcl_WideInt)time.sec)*1000000 + time.usec;
+    }
 }
 
 /*
@@ -641,19 +685,19 @@ NativeScaleTime(
  *
  *----------------------------------------------------------------------
  */
-Tcl_WideInt
+void
 TclpScaleUTime(
-    Tcl_WideInt usec)
+    Tcl_WideInt *usec)
 {
     /* Native scale is 1:1. */
     if (tclScaleTimeProcPtr != NativeScaleTime) {
-	return usec;
+	return;
     } else {
 	Tcl_Time scTime;
-	scTime.sec = usec / 1000000;
-	scTime.usec = usec % 1000000;
+	scTime.sec = *usec / 1000000;
+	scTime.usec = *usec % 1000000;
 	tclScaleTimeProcPtr(&scTime, tclTimeClientData);
-	return ((Tcl_WideInt)scTime.sec) * 1000000 + scTime.usec;
+	*usec = ((Tcl_WideInt)scTime.sec) * 1000000 + scTime.usec;
     }
 }
 

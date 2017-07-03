@@ -2881,13 +2881,12 @@ MODULE_SCOPE double	TclpWideClickInMicrosec(void);
 #     endif
 #   endif
 #endif
-MODULE_SCOPE Tcl_WideInt TclpGetLastTimeJump(size_t *epoch);
-MODULE_SCOPE size_t	 TclpGetLastTimeJumpEpoch(void);
 MODULE_SCOPE Tcl_WideInt TclpGetMicroseconds(void);
+MODULE_SCOPE Tcl_WideInt TclpGetUTimeMonotonic(void);
 
 MODULE_SCOPE int	TclpGetUTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, 
 			    Tcl_WideInt *timePtr, int factor);
-MODULE_SCOPE Tcl_WideInt TclpScaleUTime(Tcl_WideInt usec);
+MODULE_SCOPE void	TclpScaleUTime(Tcl_WideInt *usec);
 
 MODULE_SCOPE void	TclpUSleep(Tcl_WideInt usec);
 /*
@@ -2915,7 +2914,7 @@ MODULE_SCOPE void	TclpUSleep(Tcl_WideInt usec);
     (1000000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
 	    ((long)(t1).usec - (long)(t2).usec))
 #define TCL_TIME_TO_USEC(t) \
-    ((Tcl_WideInt)(t).sec * 1000000 + (t).usec)
+    (((Tcl_WideInt)(t).sec)*1000000 + (t).usec)
 
 static inline void
 TclTimeSetMilliseconds(
