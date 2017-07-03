@@ -770,7 +770,7 @@ timer:
 	tsdPtr->timerMarkerPtr = NULL;
 
 	result = TclServiceTimerEvents();
-	if (result <= 0) {
+	if (result < 0) {
 	    /* events processed, but marker to process still pending timers */
 	    tsdPtr->timerMarkerPtr = INT2PTR(-1);
 	    result = 1;
@@ -865,13 +865,14 @@ TclPeekEventQueued(
  */
 
 void
-TclSetTimerEventMarker(void)
+TclSetTimerEventMarker(
+    int head)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (tsdPtr->timerMarkerPtr == NULL) {
 	/* marker to last event in the queue */
-	if (!(tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr)) {
+	if (head || !(tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr)) {
 	    /* marker as "now" - queue is empty, so timers events are first */
 	    tsdPtr->timerMarkerPtr = INT2PTR(-1);
 	};
@@ -1017,7 +1018,7 @@ Tcl_DoOneEvent(
     EventSource *sourcePtr;
     Tcl_Time *timePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    int stopWait;
+    int blockTimeWasSet;
 
     /*
      * No event flags is equivalent to TCL_ALL_EVENTS.
@@ -1027,9 +1028,9 @@ Tcl_DoOneEvent(
 	flags |= TCL_ALL_EVENTS;
     }
 
-    /* Block time was set outside an event source traversal or no wait */
-    stopWait = tsdPtr->blockTimeSet || (flags & TCL_DONT_WAIT);
-
+    /* Block time was set outside an event source traversal, caller has specified a waittime */
+    blockTimeWasSet = tsdPtr->blockTimeSet;
+    
     /*
      * Asynchronous event handlers are considered to be the highest priority
      * events, and so must be invoked before we process events on the event
@@ -1059,7 +1060,7 @@ Tcl_DoOneEvent(
 
     /*
      * Main loop until servicing exact one event or block time resp. 
-     * TCL_DONT_WAIT specified (infinite loop if stopWait = 0).
+     * TCL_DONT_WAIT specified (infinite loop otherwise).
      */
     do {
 	/*
@@ -1133,7 +1134,9 @@ Tcl_DoOneEvent(
     wait:
 	result = Tcl_WaitForEvent(timePtr);
 	if (result < 0) {
-	    result = 0;
+	    if (blockTimeWasSet) {
+		result = 0;
+	    }
 	    break;
 	}
 
@@ -1179,13 +1182,20 @@ Tcl_DoOneEvent(
 	 * had the side effect of changing the variable (so the vwait can
 	 * return and unwind properly).
 	 *
-	 * We can stop also if block time was set outside an event source,
-	 * that means timeout was set (so exit loop also without event/result).
+	 * We can stop also if works in block to event mode (e. g. block time was
+	 * set outside an event source, that means timeout was set so exit loop
+	 * also without event/result).
 	 */
 
-    } while (!stopWait);
-
+	result = 0;
+	if (blockTimeWasSet) {
+	    break;
+	}
+    } while ( !(flags & TCL_DONT_WAIT) );
+    
+    /* Reset block time earliest at the end of event cycle */
     tsdPtr->blockTimeSet = 0;
+
     tsdPtr->serviceMode = oldMode;
     return result;
 }

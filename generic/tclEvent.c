@@ -1330,8 +1330,7 @@ GetEventFlagsFromOpts(
 	{0, TCL_WINDOW_EVENTS},	{TCL_WINDOW_EVENTS, 0},	/* -window, -nowindow */
 	{0, TCL_ASYNC_EVENTS},	{TCL_ASYNC_EVENTS, 0},	/* -async, -noasync */
 	{0, TCL_DONT_WAIT},	{TCL_DONT_WAIT, 0},	/* -nowait, -wait */
-	{TCL_ALL_EVENTS, 
-	    TCL_WINDOW_EVENTS|TCL_IDLE_EVENTS}, /* idletasks */
+	{TCL_ALL_EVENTS, TCL_WINDOW_EVENTS|TCL_IDLE_EVENTS}, /* idletasks */
 	{0, 0} /* dummy / place holder */
     };
 
@@ -1381,12 +1380,12 @@ Tcl_VwaitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    int done = 0, foundEvent = 1;
+    int done = 0, foundEvent = 1, limit = 0;
     int flags = TCL_ALL_EVENTS; /* default flags */
     char *nameString;
     int opti = 1,	 /* start option index (and index of varname later) */
     	optc = objc - 2; /* options count without cmd and varname */
-    Tcl_WideInt ms = -1;
+    double ms = -1;
     Tcl_Time wakeup;
 
     if (objc < 2) {
@@ -1400,7 +1399,7 @@ Tcl_VwaitObjCmd(
 	 * we assume that option is not an integer, try to get numeric timeout
 	 */
 	if (!TclObjIsIndexOfTable(objv[optc], updateEventOptions)
-	  && Tcl_GetWideIntFromObj(NULL, objv[optc], &ms) == TCL_OK) {
+	  && Tcl_GetDoubleFromObj(NULL, objv[optc], &ms) == TCL_OK) {
 	    optc--;
 	}
 
@@ -1418,12 +1417,7 @@ Tcl_VwaitObjCmd(
     if (ms != -1) {
 	if (ms > 0) {
 	    Tcl_GetTime(&wakeup);
-	    wakeup.sec += (long)(ms / 1000);
-	    wakeup.usec += ((long)(ms % 1000)) * 1000;
-	    if (wakeup.usec > 1000000) {
-		wakeup.sec++;
-		wakeup.usec -= 1000000;
-	    }
+	    TclTimeAddMilliseconds(&wakeup, ms);
 	} else if (ms == 0) {
 	    flags |= TCL_DONT_WAIT;
 	}
@@ -1444,7 +1438,7 @@ Tcl_VwaitObjCmd(
 	    blockTime.sec = wakeup.sec - blockTime.sec;
 	    blockTime.usec = wakeup.usec - blockTime.usec;
 	    if (blockTime.usec < 0) {
-		blockTime.sec -= 1;
+		blockTime.sec--;
 		blockTime.usec += 1000000;
 	    }
 	    if (  blockTime.sec < 0 
@@ -1459,7 +1453,7 @@ Tcl_VwaitObjCmd(
 	if ((foundEvent = Tcl_DoOneEvent(flags)) == 0) {
 	    /* 
 	     * If don't wait flag set - no error, and two cases:
-	     * option -nowait for vwait means - we don't wait for events
+	     * option -nowait for vwait means - we don't wait for events;
 	     * if no timeout (0) - just stop waiting (no more events)
 	     */
 	    if (flags & TCL_DONT_WAIT) {
@@ -1468,14 +1462,14 @@ Tcl_VwaitObjCmd(
 	    }
 	    if (ms > 0) {
 		foundEvent = 1;
-		goto checkWait; /* continue waiting */
 	    }
-	    break;
+	    /* don't stop wait - no event expected here 
+	     * (stop only on error case foundEvent < 0). */
 	}
-      checkWait:
 	/* check interpreter limit exceeded */
 	if (Tcl_LimitExceeded(interp)) {
-	    foundEvent = -1;
+	    limit = 1;
+	    foundEvent = 0;
 	    break;
 	}
     } while (!done);
@@ -1500,13 +1494,13 @@ Tcl_VwaitObjCmd(
      */
 
     Tcl_ResetResult(interp);
-    if (!foundEvent) {
-	Tcl_AppendResult(interp, "can't wait for variable \"", nameString,
-		"\": would wait forever", NULL);
+    if (limit) {
+	Tcl_AppendResult(interp, "limit exceeded", NULL);
 	return TCL_ERROR;
     }
-    if (foundEvent == -1) {
-	Tcl_AppendResult(interp, "limit exceeded", NULL);
+    if (foundEvent <= 0) {
+	Tcl_AppendResult(interp, "can't wait for variable \"", nameString,
+		"\": would wait forever", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;

@@ -731,6 +731,11 @@ StopCalibration(
     WaitForSingleObject(timeInfo.calibrationThread, 100);
     CloseHandle(timeInfo.exitEvent);
     CloseHandle(timeInfo.calibrationThread);
+
+    /*
+     * Reset timer resolution (shutdown case)
+     */
+    (void)TclWinResetTimerResolution();
 }
 
 /*
@@ -1111,6 +1116,11 @@ CalibrationThread(
 	    break;
 	}
 	UpdateTimeEachSecond();
+
+	/*
+	* Reset timer resolution if expected (check waiter count once per second)
+	*/
+	(void)TclWinResetTimerResolution();
     }
 
     /* lint */

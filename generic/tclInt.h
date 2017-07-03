@@ -2870,6 +2870,19 @@ MODULE_SCOPE double	TclpWideClickInMicrosec(void);
 #endif
 MODULE_SCOPE Tcl_WideInt TclpGetMicroseconds(void);
 
+static inline void
+TclTimeAddMilliseconds(
+    register Tcl_Time *timePtr,
+    register double ms
+) {
+    timePtr->sec += (long)(ms / 1000);
+    timePtr->usec += (((long)ms) % 1000) * 1000 + (((long)(ms*1000)) % 1000);
+    if (timePtr->usec > 1000000) {
+	timePtr->sec++;
+	timePtr->usec -= 1000000;
+    }
+}
+
 MODULE_SCOPE Tcl_Obj *	TclDisassembleByteCodeObj(Tcl_Obj *objPtr);
 MODULE_SCOPE int TclUtfCasecmp(CONST char *cs, CONST char *ct);
 
@@ -2926,7 +2939,7 @@ MODULE_SCOPE int	Tcl_ConcatObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_ContinueObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE void	TclSetTimerEventMarker(void);
+MODULE_SCOPE void	TclSetTimerEventMarker(int head);
 MODULE_SCOPE int	TclServiceTimerEvents(void);
 MODULE_SCOPE int	TclServiceIdleEx(int flags, int count);
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(

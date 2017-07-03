@@ -115,7 +115,7 @@ static Tcl_ThreadDataKey dataKey;
 
 static void		AfterCleanupProc(ClientData clientData,
 			    Tcl_Interp *interp);
-static int		AfterDelay(Tcl_Interp *interp, Tcl_WideInt ms);
+static int		AfterDelay(Tcl_Interp *interp, double ms);
 static void		AfterProc(ClientData clientData);
 static void		FreeAfterPtr(ClientData clientData);
 static AfterInfo *	GetAfterEvent(AfterAssocData *assocPtr, Tcl_Obj *objPtr);
@@ -623,7 +623,7 @@ TimerSetupProc(
 	* If the first timer has expired, stick an event on the queue right now.
 	*/
 	if (!tsdPtr->timerPending && blockTime.sec == 0 && blockTime.usec == 0) {
-	    TclSetTimerEventMarker();
+	    TclSetTimerEventMarker(0);
 	    tsdPtr->timerPending = 1;
 	}
     
@@ -690,7 +690,7 @@ TimerCheckProc(
     * If the first timer has expired, stick an event on the queue.
     */
     if (blockTime.sec == 0 && blockTime.usec == 0) {
-	TclSetTimerEventMarker();
+	TclSetTimerEventMarker(0);
 	tsdPtr->timerPending = 1;
     }
 }
@@ -709,7 +709,7 @@ TimerCheckProc(
  *	the queue. 
  *	Returns 0 if the event was not handled (no timer events).
  *	Returns -1 if pending timer events available, meaning the marker should
- *	stay on the queue.
+ *	stay on the head of queue.
  *
  * Side effects:
  *	Whatever the timer handler callback functions do.
@@ -723,6 +723,7 @@ TclServiceTimerEvents(void)
     TimerEntry *entryPtr, *nextPtr;
     Tcl_Time time;
     size_t currentGeneration, currentEpoch;
+    int prevTmrPending;
     ThreadSpecificData *tsdPtr = InitTimer();
 
 
@@ -762,8 +763,13 @@ TclServiceTimerEvents(void)
 	/* detach entry from the owner's list */
 	TclSpliceOutEx(entryPtr, tsdPtr->promptList, tsdPtr->lastPromptPtr);
 
+	/* reset current timer pending (correct process nested wait event) */
+	prevTmrPending = tsdPtr->timerPending;
+	tsdPtr->timerPending = 0;
 	/* execute event */
 	(*entryPtr->proc)(entryPtr->clientData);
+	/* restore current timer pending */
+	tsdPtr->timerPending += prevTmrPending;
 
 	/* free it via deleteProc and ckfree */
 	if (entryPtr->deleteProc) {
@@ -775,6 +781,7 @@ TclServiceTimerEvents(void)
     /* if stil pending prompt events (new generation) - repeat event cycle as 
      * soon as possible */
     if (tsdPtr->promptList) {
+        tsdPtr->timerPending = 1;
     	return -1;
     }
 
@@ -815,8 +822,14 @@ TclServiceTimerEvents(void)
 
 	currentEpoch = tsdPtr->timerListEpoch;
 
+	/* reset current timer pending (correct process nested wait event) */
+	prevTmrPending = tsdPtr->timerPending;
+	tsdPtr->timerPending = 0;
 	/* invoke timer proc */
 	(*entryPtr->proc)(entryPtr->clientData);
+	/* restore current timer pending */
+	tsdPtr->timerPending += prevTmrPending;
+
 	/* free it via deleteProc or ckfree */
 	if (entryPtr->deleteProc) {
 	    (*entryPtr->deleteProc)(entryPtr->clientData);
@@ -836,6 +849,7 @@ done:
     /* pending timer events, so mark (queue) timer events  */
     if (tsdPtr->timerPending > 1) {
     	tsdPtr->timerPending = 1;
+
     	return -1;
     }
 
@@ -901,7 +915,7 @@ TclCreateTimerEntryEx(
 	
 	/* execute immediately: signal pending and set timer marker */
 	tsdPtr->timerPending++;
-	TclSetTimerEventMarker();
+	TclSetTimerEventMarker(0);
     } else {
     	/* idle generation */
 	entryPtr->generation = tsdPtr->idleGeneration;
@@ -1103,7 +1117,7 @@ Tcl_AfterObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    Tcl_WideInt ms;		/* Number of milliseconds to wait */
+    double ms;		/* Number of milliseconds to wait */
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr;
     int length;
@@ -1140,7 +1154,7 @@ Tcl_AfterObjCmd(
 
     index = -1;
     if ( ( TclObjIsIndexOfTable(objv[1], afterSubCmds)
-	|| Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK
+	|| Tcl_GetDoubleFromObj(NULL, objv[1], &ms) != TCL_OK
       )
       && Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0,
 				 &index) != TCL_OK
@@ -1169,12 +1183,7 @@ Tcl_AfterObjCmd(
 	if (ms) {
 	    Tcl_Time wakeup;
 	    Tcl_GetTime(&wakeup);
-	    wakeup.sec += (long)(ms / 1000);
-	    wakeup.usec += ((long)(ms % 1000)) * 1000;
-	    if (wakeup.usec > 1000000) {
-		wakeup.sec++;
-		wakeup.usec -= 1000000;
-	    }
+	    TclTimeAddMilliseconds(&wakeup, ms);
 	    entryPtr = TclCreateAbsoluteTimerHandlerEx(&wakeup, AfterProc,
 			    FreeAfterPtr, sizeof(AfterInfo));
 	} else {
@@ -1359,7 +1368,7 @@ Tcl_AfterObjCmd(
 static int
 AfterDelay(
     Tcl_Interp *interp,
-    Tcl_WideInt ms)
+    double ms)
 {
     Interp *iPtr = (Interp *) interp;
 
@@ -1367,12 +1376,7 @@ AfterDelay(
     Tcl_WideInt diff;
 
     Tcl_GetTime(&endTime);
-    endTime.sec += (long)(ms/1000);
-    endTime.usec += ((int)(ms%1000))*1000;
-    if (endTime.usec >= 1000000) {
-	endTime.sec++;
-	endTime.usec -= 1000000;
-    }
+    TclTimeAddMilliseconds(&endTime, ms);
 
     do {
 	Tcl_GetTime(&now);
