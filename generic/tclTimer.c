@@ -135,7 +135,15 @@ static void             AfterObj_DupInternalRep(Tcl_Obj *, Tcl_Obj *);
 static void		AfterObj_FreeInternalRep(Tcl_Obj *);
 static void		AfterObj_UpdateString(Tcl_Obj *);
 
+static inline void
+QueueTimerHandlerEvent()
+{
+    Tcl_Event *timerEvPtr;
 
+    timerEvPtr = (Tcl_Event *) ckalloc(sizeof(Tcl_Event));
+    timerEvPtr->proc = TimerHandlerEventProc;
+    Tcl_QueueEvent(timerEvPtr, TCL_QUEUE_TAIL);
+}
 
 /*
  * Type definition.
@@ -367,6 +375,10 @@ Tcl_CreateTimerHandler(
  *	Arrange for a given function to be invoked at a particular time in the
  *	future.
  *
+ *	Specifying the timePtr as NULL ensures that timer event-handler will
+ *	be queued immediately to guarantee the execution of timer-event as 
+ *	soon as possible
+ *
  * Results:
  *	The return value is a handler or token of the timer event, which may
  *	be used to delete the event before it fires.
@@ -398,7 +410,13 @@ TclCreateAbsoluteTimerHandlerEx(
      * Fill in fields for the event.
      */
 
-    memcpy((void *)&timerHandlerPtr->time, (void *)timePtr, sizeof(Tcl_Time));
+    if (timePtr) {
+	memcpy((void *)&timerHandlerPtr->time, (void *)timePtr,
+		sizeof(timerHandlerPtr->time));
+    } else {
+	memset((void *)&timerHandlerPtr->time, 0,
+		sizeof(timerHandlerPtr->time));
+    }
     timerHandlerPtr->proc = proc;
     timerHandlerPtr->deleteProc = deleteProc;
     timerHandlerPtr->clientData = TimerHandler2ClientData(timerHandlerPtr);
@@ -423,7 +441,7 @@ TclCreateAbsoluteTimerHandlerEx(
     	/* search from end as long as one with time before not found */
 	for (thPtrPos = tsdPtr->lastTimerPtr; thPtrPos != NULL;
 	    thPtrPos = thPtrPos->prevPtr) {
-	    if (TCL_TIME_BEFORE(thPtrPos->time, timerHandlerPtr->time)) {
+	    if (!TCL_TIME_BEFORE(timerHandlerPtr->time, thPtrPos->time)) {
 		break;
 	    }
 	}
@@ -444,7 +462,13 @@ TclCreateAbsoluteTimerHandlerEx(
 	}
     }
 
-    TimerSetupProc(NULL, TCL_ALL_EVENTS);
+    if (!timePtr) {
+	/* execute immediately: queue handler event right now */
+	if (!tsdPtr->timerPending) {
+	    QueueTimerHandlerEvent();
+	}
+	tsdPtr->timerPending++;
+    }
 
     return timerHandlerPtr;
 }
@@ -615,11 +639,12 @@ TimerCheckProc(
     ClientData data,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    Tcl_Event *timerEvPtr;
     Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    if ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerList) {
+    if ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerList
+      && !tsdPtr->timerPending
+    ) {
 	/*
 	 * Compute the timeout for the next timer on the list.
 	 */
@@ -641,12 +666,9 @@ TimerCheckProc(
 	 * If the first timer has expired, stick an event on the queue.
 	 */
 
-	if (blockTime.sec == 0 && blockTime.usec == 0 &&
-		!tsdPtr->timerPending) {
+	if (blockTime.sec == 0 && blockTime.usec == 0) {
 	    tsdPtr->timerPending = 1;
-	    timerEvPtr = (Tcl_Event *) ckalloc(sizeof(Tcl_Event));
-	    timerEvPtr->proc = TimerHandlerEventProc;
-	    Tcl_QueueEvent(timerEvPtr, TCL_QUEUE_TAIL);
+	    QueueTimerHandlerEvent();
 	}
     }
 }
@@ -716,7 +738,6 @@ TimerHandlerEventProc(
      *	  timers appearing before later ones.
      */
 
-    tsdPtr->timerPending = 0;
     currentGeneration = tsdPtr->timerGeneration++;
     Tcl_GetTime(&time);
     for (timerHandlerPtr = tsdPtr->timerList; 
@@ -734,6 +755,7 @@ TimerHandlerEventProc(
 	 */
 
 	if (timerHandlerPtr->generation > currentGeneration) {
+	    tsdPtr->timerPending++;
 	    continue;
 	}
 
@@ -761,8 +783,15 @@ TimerHandlerEventProc(
 	/* be sure that timer-list was not changed inside the proc call */
 	if (currentEpoch != tsdPtr->timerListEpoch) {
 	    /* timer-list was changed - stop processing */
+	    tsdPtr->timerPending++;
 	    break;
 	}
+    }
+
+    /* don't need to queue event again by pending timer events */
+    if (tsdPtr->timerPending > 1) {
+    	tsdPtr->timerPending = 1;
+    	return 0; /* leave handler event in the queue */
     }
 
     /* Reset generation */
@@ -770,9 +799,10 @@ TimerHandlerEventProc(
     	tsdPtr->timerGeneration = 0;
     }
 
-    /* Compute the next timeout (first timer on the list). */
-    TimerSetupProc(NULL, TCL_TIMER_EVENTS);
-    return 1;
+    /* Compute the next timeout (later via TimerSetupProc using the first timer). */
+    tsdPtr->timerPending = 0;
+
+    return 1; /* processing done, again later via TimerCheckProc */
 }
 
 /*
@@ -1082,6 +1112,7 @@ Tcl_AfterObjCmd(
 
     switch (index) {
     case -1: {
+    	Tcl_Time *timePtr = NULL;
     	TimerHandler *timerPtr;
 	if (ms < 0) {
 	    ms = 0;
@@ -1090,15 +1121,18 @@ Tcl_AfterObjCmd(
 	    return AfterDelay(interp, ms);
 	}
 
-	Tcl_GetTime(&wakeup);
-	wakeup.sec += (long)(ms / 1000);
-	wakeup.usec += ((long)(ms % 1000)) * 1000;
-	if (wakeup.usec > 1000000) {
-	    wakeup.sec++;
-	    wakeup.usec -= 1000000;
+	if (ms) {
+	    timePtr = &wakeup;
+	    Tcl_GetTime(&wakeup);
+	    wakeup.sec += (long)(ms / 1000);
+	    wakeup.usec += ((long)(ms % 1000)) * 1000;
+	    if (wakeup.usec > 1000000) {
+		wakeup.sec++;
+		wakeup.usec -= 1000000;
+	    }
 	}
 
-	timerPtr = TclCreateAbsoluteTimerHandlerEx(&wakeup, AfterProc,
+	timerPtr = TclCreateAbsoluteTimerHandlerEx(timePtr, AfterProc,
 			FreeAfterPtr, sizeof(AfterInfo));
 	if (timerPtr == NULL) { /* error handled in panic */
 	    return TCL_ERROR;
