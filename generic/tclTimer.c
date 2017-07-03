@@ -1464,12 +1464,15 @@ AfterProc(
     }
 
     /* release object (mark it was triggered) */
-    if (afterPtr->selfPtr && afterPtr->selfPtr->typePtr == &afterObjType) {
-	afterPtr->selfPtr->internalRep.twoPtrValue.ptr1 = NULL;
+    if (afterPtr->selfPtr) {
+	if (afterPtr->selfPtr->typePtr == &afterObjType) {
+	    afterPtr->selfPtr->internalRep.twoPtrValue.ptr1 = NULL;
+	}
 	Tcl_DecrRefCount(afterPtr->selfPtr);
+	afterPtr->selfPtr = NULL;
     }
 
-    /* detach entry from the owner's list */
+    /* detach after-entry from the owner's list */
     TclSpliceOutEx(afterPtr, assocPtr->firstAfterPtr, assocPtr->lastAfterPtr);
 
     /*
@@ -1518,13 +1521,16 @@ FreeAfterPtr(
     AfterInfo *afterPtr = (AfterInfo *) clientData;
     AfterAssocData *assocPtr = afterPtr->assocPtr;
 
-    /* release object (mark it was triggered) */
-    if (afterPtr->selfPtr && afterPtr->selfPtr->typePtr == &afterObjType) {
-	afterPtr->selfPtr->internalRep.twoPtrValue.ptr1 = NULL;
+    /* release object (mark it was removed) */
+    if (afterPtr->selfPtr) {
+	if (afterPtr->selfPtr->typePtr == &afterObjType) {
+	    afterPtr->selfPtr->internalRep.twoPtrValue.ptr1 = NULL;
+	}
 	Tcl_DecrRefCount(afterPtr->selfPtr);
+	afterPtr->selfPtr = NULL;
     }
 
-    /* detach entry from the owner's list */
+    /* detach after-entry from the owner's list */
     TclSpliceOutEx(afterPtr, assocPtr->firstAfterPtr, assocPtr->lastAfterPtr);
 
     /* free command of entry */
