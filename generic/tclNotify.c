@@ -989,14 +989,18 @@ Tcl_SetMaxBlockTime(
  * Results:
  *	The return value is 1 if the function actually found an event to
  *	process. If no processing occurred, then 0 is returned (this can
- *	happen if the TCL_DONT_WAIT flag is set or if there are no event
- *	handlers to wait for in the set specified by flags).
+ *	happen if the TCL_DONT_WAIT flag is set or block time was set using
+ *	Tcl_SetMaxBlockTime before or if there are no event handlers to wait
+ *	for in the set specified by flags).
  *
  * Side effects:
  *	May delay execution of process while waiting for an event, unless
  *	TCL_DONT_WAIT is set in the flags argument. Event sources are invoked
  *	to check for and queue events. Event handlers may produce arbitrary
  *	side effects.
+ *	If block time was set (Tcl_SetMaxBlockTime) but another event occurs
+ *	and interrupt wait, the function can return early, thereby it resets
+ *	the block time (caller should use Tcl_SetMaxBlockTime again).
  *
  *----------------------------------------------------------------------
  */
@@ -1013,6 +1017,7 @@ Tcl_DoOneEvent(
     EventSource *sourcePtr;
     Tcl_Time *timePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    int stopWait;
 
     /*
      * No event flags is equivalent to TCL_ALL_EVENTS.
@@ -1022,20 +1027,26 @@ Tcl_DoOneEvent(
 	flags |= TCL_ALL_EVENTS;
     }
 
+    /* Block time was set outside an event source traversal or no wait */
+    stopWait = tsdPtr->blockTimeSet || (flags & TCL_DONT_WAIT);
+
     /*
      * Asynchronous event handlers are considered to be the highest priority
      * events, and so must be invoked before we process events on the event
      * queue.
      */
 
-    if ((flags & TCL_ASYNC_EVENTS) && Tcl_AsyncReady()) {
-	(void) Tcl_AsyncInvoke(NULL, 0);
-	return 1;
-    }
+    if (flags & TCL_ASYNC_EVENTS) {
+	if (Tcl_AsyncReady()) {
+	    (void) Tcl_AsyncInvoke(NULL, 0);
+	    return 1;
+	}
 
-    /* Async only */
-    if ((flags & TCL_ALL_EVENTS) == TCL_ASYNC_EVENTS) {
-	return 0;
+	/* Async only and don't wait - return */
+	if ( (flags & (TCL_ALL_EVENTS|TCL_DONT_WAIT))
+			== (TCL_ASYNC_EVENTS|TCL_DONT_WAIT) ) {
+	    return 0;
+	}
     }
 
     /*
@@ -1047,12 +1058,10 @@ Tcl_DoOneEvent(
     tsdPtr->serviceMode = TCL_SERVICE_NONE;
 
     /*
-     * The core of this function is an infinite loop, even though we only
-     * service one event. The reason for this is that we may be processing
-     * events that don't do anything inside of Tcl.
+     * Main loop until servicing exact one event or block time resp. 
+     * TCL_DONT_WAIT specified (infinite loop if stopWait = 0).
      */
-
-    while (1) {
+    do {
 	/*
 	 * If idle events are the only things to service, skip the main part
 	 * of the loop and go directly to handle idle events (i.e. don't wait
@@ -1060,7 +1069,6 @@ Tcl_DoOneEvent(
 	 */
 
 	if ((flags & TCL_ALL_EVENTS) == TCL_IDLE_EVENTS) {
-	    flags |= TCL_DONT_WAIT;
 	    goto idleEvents;
 	}
 
@@ -1096,8 +1104,6 @@ Tcl_DoOneEvent(
 	    tsdPtr->blockTimeSet = 1;
 	    timePtr = &tsdPtr->blockTime;
 	    goto wait; /* for notifier resp. system events */
-	} else {
-	    tsdPtr->blockTimeSet = 0;
 	}
 
 	/*
@@ -1164,9 +1170,6 @@ Tcl_DoOneEvent(
 		break;
 	    }
 	}
-	if (flags & TCL_DONT_WAIT) {
-	    break;
-	}
 
 	/*
 	 * If Tcl_WaitForEvent has returned 1, indicating that one system
@@ -1176,16 +1179,13 @@ Tcl_DoOneEvent(
 	 * had the side effect of changing the variable (so the vwait can
 	 * return and unwind properly).
 	 *
-	 * NB: We will process idle events if any first, because otherwise we
-	 *     might never do the idle events if the notifier always gets
-	 *     system events.
+	 * We can stop also if block time was set outside an event source,
+	 * that means timeout was set (so exit loop also without event/result).
 	 */
 
-	if (result) {
-	    break;
-	}
-    }
+    } while (!stopWait);
 
+    tsdPtr->blockTimeSet = 0;
     tsdPtr->serviceMode = oldMode;
     return result;
 }

@@ -488,7 +488,7 @@ test event-10.1 {Tcl_Exit procedure} {stdio} {
 
 test event-11.1 {Tcl_VwaitCmd procedure} {
     list [catch {vwait} msg] $msg
-} {1 {wrong # args: should be "vwait ?options? name ?timeout?"}}
+} {1 {wrong # args: should be "vwait ?options? ?timeout? name"}}
 test event-11.2 {Tcl_VwaitCmd procedure} {
     list [catch {vwait a b} msg] $msg
 } {1 {bad option "a": must be -idle, -noidle, -timer, -notimer, -file, -nofile, -window, -nowindow, -async, -noasync, -nowait, -wait, or idletasks}}
@@ -527,26 +527,26 @@ test event-11.4.0 {vwait - interp limit precedence} {} {
 
     # no limit in between:
     $i limit time -seconds {} -milliseconds {}
-    lappend result 2. [catch {$i eval {vwait x 0}} msg] $msg
+    lappend result 2. [catch {$i eval {vwait 0 x}} msg] $msg
 
     # limit should be exceeded: (wait infinite by -1)
     $i limit time -milliseconds 0
-    lappend result 3. [catch {$i eval {vwait x -1}} msg] $msg
+    lappend result 3. [catch {$i eval {vwait -1 x}} msg] $msg
     # limit should be exceeded (wait too long - 1000ms):
     $i limit time -milliseconds 0
-    lappend result 4. [catch {$i eval {vwait x 1000}} msg] $msg
+    lappend result 4. [catch {$i eval {vwait 1000 x}} msg] $msg
 
     set tout [clock seconds]; incr tout 10
     # wait timeout (before limit):
     $i limit time -seconds $tout
-    lappend result 5. [catch {$i eval {vwait x 0}} msg] $msg
+    lappend result 5. [catch {$i eval {vwait 0 x}} msg] $msg
     # wait timeout (before limit):
     $i limit time -seconds $tout
-    lappend result 6. [catch {$i eval {vwait x 10}} msg] $msg
+    lappend result 6. [catch {$i eval {vwait 10 x}} msg] $msg
 
     # wait successful (before limit):
     $i limit time -seconds $tout
-    lappend result 7. [catch {$i eval {after 0 {set x ""}; vwait x 10}} msg] $msg
+    lappend result 7. [catch {$i eval {after 0 {set x ""}; vwait 10 x}} msg] $msg
 
     interp delete $i
     set result
@@ -560,6 +560,27 @@ test event-11.4.0 {vwait - interp limit precedence} {} {
     7. 0 1 \
 ]
 
+test event-11.4.0 {vwait conditional with timeout (bypass timer)} {} {
+    set x {}
+    after 1000 {lappend x "error-too-slow"}
+    after 0 {lappend x 1-timer}
+    after 1 {lappend x 2-timer}
+    after idle {lappend x 3-idle}
+    vwait -async 50 x; # ignore all except async (timer also)
+    lappend x 4-async
+    vwait -idle 50 x; # ignore all except idle (timer also)
+    lappend x 5-idle
+    after idle {lappend x 6-idle}
+    vwait 100 x; # now we accept timer events
+    lappend x 7-idle
+    vwait 100 x;
+    # cleanup:
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x
+} {4-async 3-idle 5-idle 1-timer 2-timer 7-idle 6-idle}
+
 test event-11.4.1 {vwait with timeout} {} {
     foreach i [after info] {
 	after cancel $i
@@ -568,15 +589,15 @@ test event-11.4.1 {vwait with timeout} {} {
     set x {}
     # success cases:
     after 0 {lappend z 0}
-    after 100 {lappend x 1}
-    after 100 {lappend x 2}
-    after 500 {lappend x 3}
+    after 50 {lappend x 1}
+    after 50 {lappend x 2}
+    after 250 {lappend x 3}
     after 1000 {lappend x "error-too-slow"}
-    vwait x 0; # no-wait
+    vwait 0 x; # no-wait
     lappend z $x; # 0 {} - (x still empty)
-    vwait x 200; # wait up-to 200ms
+    vwait 200 x; # wait up-to 200ms
     lappend z $x; # 0 {} {1 2}
-    vwait x -1; # infinite wait
+    vwait -1 x; # infinite wait
     lappend z $x; # 0 {} {1 2} {1 2 3}
     foreach i [after info] {
 	after cancel $i
@@ -746,7 +767,7 @@ test event-12.5 {update -idle, update -noidle} {
     update -idle
     lappend x 6
     update
-    lappend x res:[vwait x 500]
+    lappend x res:[vwait 500 x]
     set x
 } {0 2 idle 3 idle 6 4 5 1 res:1}
 
@@ -775,7 +796,7 @@ test event-12.6 {update -timer, update -notimer} {
     update -timer -idle
     lappend x 6
     update
-    lappend x res:[vwait x 500]
+    lappend x res:[vwait 500 x]
     update -noidle
     lappend x 7
     update

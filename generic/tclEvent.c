@@ -1300,6 +1300,17 @@ TclInThreadExit(void)
 }
 
 
+static CONST char *updateEventOptions[] = {
+	"-idle", "-noidle",	/* new options */
+	"-timer", "-notimer",
+	"-file", "-nofile",
+	"-window", "-nowindow",
+	"-async", "-noasync",
+	"-nowait", "-wait",
+	"idletasks",  		/* backwards compat. */
+	NULL
+};
+
 static int
 GetEventFlagsFromOpts(
     Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
@@ -1309,15 +1320,6 @@ GetEventFlagsFromOpts(
 {
     int i, optionIndex, result = TCL_ERROR;
     int flags = *flagsPtr; /* default flags */
-    static CONST char *updateOptions[] = {
-	"-idle", "-noidle",	/* new options */
-	"-timer", "-notimer",
-	"-file", "-nofile",
-	"-window", "-nowindow",
-	"-async", "-noasync",
-	"-nowait", "-wait",
-	"idletasks",  		/* backwards compat. */
-	NULL};
     static CONST struct {
 	int mask;
 	int flags;
@@ -1334,7 +1336,7 @@ GetEventFlagsFromOpts(
     };
 
     for (i = 0; i < objc; i++) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], updateOptions,
+	if (Tcl_GetIndexFromObj(interp, objv[i], updateEventOptions,
 		"option", 0, &optionIndex) != TCL_OK) {
 	    goto done;
 	}
@@ -1354,14 +1356,6 @@ GetEventFlagsFromOpts(
     return result;
 }
 
-static void
-VwaitTimeOutProc(
-    ClientData clientData)
-{
-    int *donePtr = (int *) clientData;
-
-    *donePtr = -1;
-}
 /*
  *----------------------------------------------------------------------
  *
@@ -1387,27 +1381,26 @@ Tcl_VwaitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    int done = 0, foundEvent;
+    int done = 0, foundEvent = 1;
     int flags = TCL_ALL_EVENTS; /* default flags */
     char *nameString;
     int opti = 1,	 /* start option index (and index of varname later) */
     	optc = objc - 2; /* options count without cmd and varname */
-    TimerEntry *timerEvent = NULL;
     Tcl_WideInt ms = -1;
+    Tcl_Time wakeup;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?options? name ?timeout?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?options? ?timeout? name");
 	return TCL_ERROR;
     }
 
     /* if arguments available - wrap options to flags */
     if (objc >= 3) {
 	/* first try to recognize options up to the possible end, thereby
-	 * we assume that varname is not integer, try to get numeric timeout,
-	 * (just assume precidence of option fewer as timeout)
+	 * we assume that option is not an integer, try to get numeric timeout
 	 */
-	if (Tcl_GetWideIntFromObj(NULL, objv[objc-1], &ms) == TCL_OK) {
-	    objc--;
+	if (!TclObjIsIndexOfTable(objv[optc], updateEventOptions)
+	  && Tcl_GetWideIntFromObj(NULL, objv[optc], &ms) == TCL_OK) {
 	    optc--;
 	}
 
@@ -1417,16 +1410,12 @@ Tcl_VwaitObjCmd(
 	) {
 	    return TCL_ERROR;
 	}
-	/* opti points to varname */
-	opti += optc;
     }
 
     done = 0;
 
     /* if timeout specified - create timer event or no-wait by 0ms */
     if (ms != -1) {
-	Tcl_Time wakeup;
-
 	if (ms > 0) {
 	    Tcl_GetTime(&wakeup);
 	    wakeup.sec += (long)(ms / 1000);
@@ -1435,26 +1424,38 @@ Tcl_VwaitObjCmd(
 		wakeup.sec++;
 		wakeup.usec -= 1000000;
 	    }
-	    timerEvent = TclCreateAbsoluteTimerHandlerEx(&wakeup, VwaitTimeOutProc, NULL, 0);
-	    timerEvent->clientData = &done;
 	} else if (ms == 0) {
 	    flags |= TCL_DONT_WAIT;
 	}
     }
 
-    nameString = Tcl_GetString(objv[opti]);
+    nameString = Tcl_GetString(objv[objc-1]);
     if (Tcl_TraceVar(interp, nameString,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, (ClientData) &done) != TCL_OK) {
-
-	/* if timeout-timer and no timeout fired, cancel timer event */
-	if (timerEvent && done != -1) {
-	    TclDeleteTimerEntry(timerEvent);
-	}
 	return TCL_ERROR;
     };
 
     do {
+    	/* if wait - set blocking time */
+	if (ms > 0) {
+	    Tcl_Time blockTime;
+	    Tcl_GetTime(&blockTime);
+	    blockTime.sec = wakeup.sec - blockTime.sec;
+	    blockTime.usec = wakeup.usec - blockTime.usec;
+	    if (blockTime.usec < 0) {
+		blockTime.sec -= 1;
+		blockTime.usec += 1000000;
+	    }
+	    if (  blockTime.sec < 0 
+	      || (blockTime.sec == 0 && blockTime.usec <= 0)
+	    ) {
+		/* timeout occurs */
+		done = -1;
+		break;
+	    }
+	    Tcl_SetMaxBlockTime(&blockTime);
+	}
 	if ((foundEvent = Tcl_DoOneEvent(flags)) == 0) {
 	    /* 
 	     * If don't wait flag set - no error, and two cases:
@@ -1463,14 +1464,16 @@ Tcl_VwaitObjCmd(
 	     */
 	    if (flags & TCL_DONT_WAIT) {
 		foundEvent = 1;
-		if (ms != 0) {
-		    goto checkLimit; /* continue waiting */
-		}
 		done = -2;
+	    }
+	    if (ms > 0) {
+		foundEvent = 1;
+		goto checkWait; /* continue waiting */
 	    }
 	    break;
 	}
-      checkLimit:
+      checkWait:
+	/* check interpreter limit exceeded */
 	if (Tcl_LimitExceeded(interp)) {
 	    foundEvent = -1;
 	    break;
@@ -1480,11 +1483,6 @@ Tcl_VwaitObjCmd(
     Tcl_UntraceVar(interp, nameString,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, (ClientData) &done);
-
-    /* if timeout-timer and no timeout fired, cancel timer event */
-    if (timerEvent && done != -1) {
-	TclDeleteTimerEntry(timerEvent);
-    }
 
     /* if timeout specified (and no errors) */
     if (ms != -1 && foundEvent > 0) {

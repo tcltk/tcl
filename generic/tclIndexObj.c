@@ -63,6 +63,43 @@ typedef struct {
 /*
  *----------------------------------------------------------------------
  *
+ * TclObjIsIndexOfStruct --
+ *
+ *	This function looks up an object's is a index of given table.
+ *
+ *	Used for fast lookup by dynamic options count to check for other
+ *	object types.
+ *
+ * Results:
+ *	1 if object is an option of table, otherwise 0.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclObjIsIndexOfStruct(
+    Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
+    const void *tablePtr)	/* Array of strings to compare against the
+				 * value of objPtr; last entry must be NULL
+				 * and there must not be duplicate entries. */
+{
+    IndexRep *indexRep;
+    if (objPtr->typePtr != &tclIndexType) {
+	return 0;
+    }
+    indexRep = objPtr->internalRep.twoPtrValue.ptr1;
+
+    if (indexRep->tablePtr != (void *) tablePtr) {
+	return 0;
+    }
+    return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetIndexFromObj --
  *
  *	This function looks up an object's value in a table of strings and

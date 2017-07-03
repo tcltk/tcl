@@ -2561,6 +2561,12 @@ MODULE_SCOPE char	tclEmptyString;
  *----------------------------------------------------------------
  */
 
+MODULE_SCOPE int	TclObjIsIndexOfStruct(Tcl_Obj *objPtr,
+			    const void *tablePtr);
+#define TclObjIsIndexOfTable(objPtr, tablePtr) \
+	((objPtr->typePtr == &tclIndexType) \
+		&& TclObjIsIndexOfStruct(objPtr, tablePtr))
+
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, int len);
 MODULE_SCOPE void       TclAdvanceContinuations(int* line, int** next, int loc);

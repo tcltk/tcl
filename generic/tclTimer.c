@@ -1139,7 +1139,7 @@ Tcl_AfterObjCmd(
      */
 
     index = -1;
-    if ( ( objv[1]->typePtr == &tclIndexType 
+    if ( ( TclObjIsIndexOfTable(objv[1], afterSubCmds)
 	|| Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK
       )
       && Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0,
