@@ -118,7 +118,7 @@ Tcl_InitNotifier(void)
 
     tsdPtr->hwnd = NULL;
     tsdPtr->thread = GetCurrentThreadId();
-    tsdPtr->event = CreateEvent(NULL, TRUE /* manual */,
+    tsdPtr->event = CreateEvent(NULL, FALSE /* !manual */,
 	    FALSE /* !signaled */, NULL);
 
     return (ClientData) tsdPtr;
@@ -746,7 +746,6 @@ Tcl_WaitForEvent(
     if (result == WAIT_IO_COMPLETION) {
 	goto again;
     }
-    ResetEvent(tsdPtr->event);
     if (result == WAIT_FAILED) {
 	status = -1;
 	goto end;
