@@ -1299,6 +1299,14 @@ TclInThreadExit(void)
     }
 }
 
+static void
+VwaitTimeOutProc(
+    ClientData clientData)
+{
+    int *donePtr = (int *) clientData;
+
+    *donePtr = -1;
+}
 /*
  *----------------------------------------------------------------------
  *
@@ -1324,30 +1332,81 @@ Tcl_VwaitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    int done, foundEvent;
+    int done, foundEvent, flags = TCL_ALL_EVENTS;
     char *nameString;
+    TimerEntry *timerEvent = NULL;
 
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "name");
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name ?timeout?");
 	return TCL_ERROR;
     }
+
+    /* if timeout specified - create timer event or no-wait by 0ms */
+    if (objc == 3) {
+    	Tcl_Time wakeup;
+    	Tcl_WideInt ms;
+    	if (Tcl_GetWideIntFromObj(interp, objv[2], &ms) != TCL_OK) {
+    	    return TCL_ERROR;
+    	}
+    	if (ms > 0) {
+	    Tcl_GetTime(&wakeup);
+	    wakeup.sec += (long)(ms / 1000);
+	    wakeup.usec += ((long)(ms % 1000)) * 1000;
+	    if (wakeup.usec > 1000000) {
+	        wakeup.sec++;
+	        wakeup.usec -= 1000000;
+	    }
+	    timerEvent = TclCreateAbsoluteTimerHandlerEx(&wakeup, VwaitTimeOutProc, NULL, 0);
+	    timerEvent->clientData = &done;
+	} else if (ms == 0) {
+	    flags |= TCL_DONT_WAIT;
+	} else {
+	    /* infinite vait */
+	    objc = 2;
+	}
+    }
+
     nameString = Tcl_GetString(objv[1]);
     if (Tcl_TraceVar(interp, nameString,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, (ClientData) &done) != TCL_OK) {
 	return TCL_ERROR;
     };
+
     done = 0;
-    foundEvent = 1;
-    while (!done && foundEvent) {
-	foundEvent = Tcl_DoOneEvent(TCL_ALL_EVENTS);
-	if (Tcl_LimitExceeded(interp)) {
+    do {
+	if ((foundEvent = Tcl_DoOneEvent(flags)) == 0) {
+	    /* no wait, no error - just stop waiting (no more events) */
+	    if (flags |= TCL_DONT_WAIT) {
+		foundEvent = 1;
+		done = -2;
+	    }
 	    break;
 	}
-    }
+	if (Tcl_LimitExceeded(interp)) {
+	    foundEvent = -1;
+	    break;
+	}
+    } while (!done);
+    
     Tcl_UntraceVar(interp, nameString,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, (ClientData) &done);
+
+    /* if timeout-timer and no timeout fired, cancel timer event */
+    if (timerEvent && done != -1) {
+	TclDeleteTimerEntry(timerEvent);
+    }
+
+    /* if timeout specified (and no errors) */
+    if (objc == 3 && foundEvent > 0) {
+    	Tcl_Obj *objPtr;
+
+	/* done - true, timeout false */
+	TclNewLongObj(objPtr, (done > 0));
+	Tcl_SetObjResult(interp, objPtr);
+	return TCL_OK;
+    }
 
     /*
      * Clear out the interpreter's result, since it may have been set by event
@@ -1360,7 +1419,7 @@ Tcl_VwaitObjCmd(
 		"\": would wait forever", NULL);
 	return TCL_ERROR;
     }
-    if (!done) {
+    if (foundEvent == -1) {
 	Tcl_AppendResult(interp, "limit exceeded", NULL);
 	return TCL_ERROR;
     }

@@ -488,10 +488,10 @@ test event-10.1 {Tcl_Exit procedure} {stdio} {
 
 test event-11.1 {Tcl_VwaitCmd procedure} {
     list [catch {vwait} msg] $msg
-} {1 {wrong # args: should be "vwait name"}}
+} {1 {wrong # args: should be "vwait name ?timeout?"}}
 test event-11.2 {Tcl_VwaitCmd procedure} {
     list [catch {vwait a b} msg] $msg
-} {1 {wrong # args: should be "vwait name"}}
+} {1 {expected integer but got "b"}}
 test event-11.3 {Tcl_VwaitCmd procedure} {
     catch {unset x}
     set x 1
@@ -512,6 +512,77 @@ test event-11.4 {Tcl_VwaitCmd procedure} {} {
     set q before
     list [vwait y] $x $y $z $q
 } {{} x-done y-done before q-done}
+
+test event-11.4.0 {vwait - interp limit precedence} {} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set result {}
+    set i [interp create]
+    $i bgerror {lappend errors}; # prevent stdout background errors;
+
+    # limit should be exceeded (wait infinite):
+    $i limit time -milliseconds 0
+    lappend result 1. [catch {$i eval {vwait x}} msg] $msg
+
+    # no limit in between:
+    $i limit time -seconds {} -milliseconds {}
+    lappend result 2. [catch {$i eval {vwait x 0}} msg] $msg
+
+    # limit should be exceeded: (wait infinite by -1)
+    $i limit time -milliseconds 0
+    lappend result 3. [catch {$i eval {vwait x -1}} msg] $msg
+    # limit should be exceeded (wait too long - 1000ms):
+    $i limit time -milliseconds 0
+    lappend result 4. [catch {$i eval {vwait x 1000}} msg] $msg
+
+    set tout [clock seconds]; incr tout 10
+    # wait timeout (before limit):
+    $i limit time -seconds $tout
+    lappend result 5. [catch {$i eval {vwait x 0}} msg] $msg
+    # wait timeout (before limit):
+    $i limit time -seconds $tout
+    lappend result 6. [catch {$i eval {vwait x 10}} msg] $msg
+
+    # wait successful (before limit):
+    $i limit time -seconds $tout
+    lappend result 7. [catch {$i eval {after 0 {set x ""}; vwait x 10}} msg] $msg
+
+    interp delete $i
+    set result
+} [list \
+    1. 1 {limit exceeded} \
+    2. 0 0 \
+    3. 1 {limit exceeded} \
+    4. 1 {limit exceeded} \
+    5. 0 0 \
+    6. 0 0 \
+    7. 0 1 \
+]
+
+test event-11.4.1 {vwait with timeout} {} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set z {}
+    set x {}
+    # success cases:
+    after 0 {lappend z 0}
+    after 20 {lappend x 1}
+    after 30 {lappend x 2}
+    after 100 {lappend x 3}
+    after 1000 {lappend x "error-too-slow"}
+    vwait x 0; # no-wait
+    lappend z $x; # 0 {} - (x still empty)
+    vwait x 50; # wait up-to 50ms
+    lappend z $x; # 0 {} {1 2}
+    vwait x -1; # wait without timeout
+    lappend z $x; # 0 {} {1 2} {1 2 3}
+    foreach i [after info] {
+	after cancel $i
+    }
+    set z
+} {0 {} {1 2} {1 2 3}}
 
 test event-11.4.2 {cancel} {} {
     foreach i [after info] {
