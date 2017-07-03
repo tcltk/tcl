@@ -417,13 +417,15 @@ static struct {
     LONG  minDelay;		/* Lowest delay by max resolution (in microsecs) */
     LONG  maxDelay;		/* Highest delay by min resolution (in microsecs) */
     size_t count;		/* Waiter count (used to restore the resolution) */
+    Tcl_WideInt timeToReset;	/* Time to reset resolution (typically now + 5s) */
     CRITICAL_SECTION cs;	/* Mutex guarding this structure. */
 } timerResolution = {
     -1,
     15600 * TMR_RES_MICROSEC, 500 * TMR_RES_MICROSEC, 
     15600 * TMR_RES_MICROSEC, 0,
     500, 15600,
-    0
+    0,
+    (Tcl_WideInt)0x7FFFFFFFFFFFFFFFL
 };
 
 /*
@@ -532,7 +534,7 @@ SetTimerResolution(
     /* resolution unchanged (and counter not increased) */
     return 0;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -560,22 +562,21 @@ RestoreTimerResolution(
     if (timerResolution.available > 0 && newResolution) {
 	EnterCriticalSection(&timerResolution.cs);
 	if (timerResolution.count-- <= 1) {
-	    if (newResolution > timerResolution.resRes) {
-	    	timerResolution.resRes = newResolution;
-	    };
+	    timerResolution.resRes = newResolution;
+	    /* prolong time to reset resolution */
+	    timerResolution.timeToReset = TclpGetMicroseconds() + 1000000;
 	}
 	LeaveCriticalSection(&timerResolution.cs);
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
  * TclWinResetTimerResolution --
  *
- *	This is called by CalibrationThread to delayed reset of the timer
- *	resolution (once per second), if no more waiting workers using 
- *	precise timer resolution.
+ *	This is called to delayed reset (after 1 second) of the timer resolution
+ *	to original value, if no more waiting workers using precise resolution.
  *
  * Results:
  *	None.
@@ -591,6 +592,7 @@ TclWinResetTimerResolution(void)
 {
     if ( timerResolution.available > 0
       && timerResolution.count == 0 && timerResolution.resRes > timerResolution.curRes
+      && TclpGetMicroseconds() >= timerResolution.timeToReset
     ) {
 	EnterCriticalSection(&timerResolution.cs);
 	if (timerResolution.count == 0 && timerResolution.resRes > timerResolution.curRes) {
@@ -598,6 +600,7 @@ TclWinResetTimerResolution(void)
 	    if (NtSetTimerResolution(timerResolution.resRes, TRUE, &curRes) == 0) {
 		timerResolution.curRes = curRes;
 	    };
+	    timerResolution.timeToReset = 0x7FFFFFFFFFFFFFFFL;
 	}
 	LeaveCriticalSection(&timerResolution.cs);
     }
@@ -692,6 +695,7 @@ Tcl_WaitForEvent(
 	    	timeout = 0;
 		goto wait;
 	    }
+	    Sleep(0);
 	    goto peek;
 	}
 	
@@ -810,8 +814,10 @@ Tcl_WaitForEvent(
 
     /* restore timer resolution */
     if (actualResolution) {
-	RestoreTimerResolution(actualResolution); 
+	RestoreTimerResolution(actualResolution);
     }
+    /* todo: move it to the service-thread (if available at some point) */
+    TclWinResetTimerResolution();
     return status;
 }
 
@@ -945,6 +951,8 @@ Tcl_Sleep(
     if (actualResolution) {
 	RestoreTimerResolution(actualResolution); 
     }
+    /* todo: move it to the service-thread (if available at some point) */
+    TclWinResetTimerResolution();
 }
 
 /*
