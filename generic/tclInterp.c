@@ -3730,8 +3730,8 @@ Tcl_LimitSetTime(
 	nextMoment.sec++;
 	nextMoment.usec -= 1000000;
     }
-    iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandlerEx(&nextMoment,
-	    TimeLimitCallback, TimeLimitDeleteCallback, 0);
+    iPtr->limit.timeEvent = TclCreateTimerHandlerEx(&nextMoment,
+	    TimeLimitCallback, TimeLimitDeleteCallback, 0, TCL_ABSTMR_EVENT);
     iPtr->limit.timeEvent->clientData = interp;
     iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
 }

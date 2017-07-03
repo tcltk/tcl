@@ -1385,7 +1385,7 @@ Tcl_VwaitObjCmd(
     char *nameString;
     int optc = objc - 2; /* options count without cmd and varname */
     double ms = -1;
-    Tcl_Time wakeup;
+    Tcl_Time lastNow, wakeup;
     long tolerance = 0;
 
     if (objc < 2) {
@@ -1416,7 +1416,8 @@ Tcl_VwaitObjCmd(
     /* if timeout specified - create timer event or no-wait by 0ms */
     if (ms != -1) {
 	if (ms > 0) {
-	    Tcl_GetTime(&wakeup);
+	    Tcl_GetTime(&lastNow);
+	    wakeup = lastNow;
 	    TclTimeAddMilliseconds(&wakeup, ms);
 	#ifdef TMR_RES_TOLERANCE
 	    tolerance = (ms < 1000 ? ms : 1000) *
@@ -1439,11 +1440,26 @@ Tcl_VwaitObjCmd(
 	if (ms > 0) {
 	    Tcl_Time blockTime;
 	    Tcl_GetTime(&blockTime);
+	    /* 
+	     * Note time can be switched backwards, certainly adjust end-time
+	     * by possible time-jumps back.
+	     */
+	    if (TCL_TIME_BEFORE(blockTime, lastNow)) {
+		/* backwards time-jump - simply shift wakeup-time */
+		wakeup.sec -= (lastNow.sec - blockTime.sec);
+		wakeup.usec -= (lastNow.usec - blockTime.usec);
+		if (wakeup.usec < 0) {
+		    wakeup.usec += 1000000;
+		    wakeup.sec--;
+		}
+	    }
+	    /* calculate blocking time */
+	    lastNow = blockTime;
 	    blockTime.sec = wakeup.sec - blockTime.sec;
 	    blockTime.usec = wakeup.usec - blockTime.usec;
 	    if (blockTime.usec < 0) {
-		blockTime.sec--;
 		blockTime.usec += 1000000;
+		blockTime.sec--;
 	    }
 	    /* be sure process at least one event */
 	    if (  blockTime.sec < 0 

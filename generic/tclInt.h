@@ -144,10 +144,12 @@ typedef int ptrdiff_t;
  */
 
 #define TCL_PROMPT_EVENT (1 << 0)	/* Mark immediate event */
+#define TCL_ABSTMR_EVENT (1 << 1)	/* Mark absolute timer event (the time 
+					 * of TimerHandler is absolute). */
 #define TCL_IDLE_EVENT   (1 << 5)	/* Mark idle event */
 
 /*
- * This structure used for handling of prompt timer events (without time to 
+ * This structure used for handling of timer events (with or without time to 
  * invoke, e. g. created with "after 0") or declared in a call to Tcl_DoWhenIdle
  * (created with "after idle"). All of the currently-active handlers are linked
  * together into corresponding list.
@@ -173,7 +175,7 @@ typedef struct TimerEntry {
 
 				 
 typedef struct TimerHandler {
-    Tcl_Time		time;	/* When timer is to fire (if timer event). */
+    Tcl_WideInt		time;	/* When timer is to fire (absolute/relative). */
     Tcl_TimerToken	token;	/* Identifies handler so it can be deleted. */
     struct TimerEntry	entry;
 /*  ExtraData	 */
@@ -2886,6 +2888,38 @@ MODULE_SCOPE double	TclpWideClickInMicrosec(void);
 #endif
 MODULE_SCOPE Tcl_WideInt TclpGetMicroseconds(void);
 
+/*
+ * Helper macros for working with times. TCL_TIME_BEFORE encodes how to write
+ * the ordering relation on (normalized) times, and TCL_TIME_DIFF_MS resp. 
+ * TCL_TIME_DIFF_US compute the number of milliseconds or microseconds difference
+ * between two times. Both macros use both of their arguments multiple times,
+ * so make sure they are cheap and side-effect free. 
+ * The "prototypes" for these macros are:
+ *
+ * static int		TCL_TIME_BEFORE(Tcl_Time t1, Tcl_Time t2);
+ * static Tcl_WideInt	TCL_TIME_DIFF_MS(Tcl_Time t1, Tcl_Time t2);
+ * static Tcl_WideInt	TCL_TIME_DIFF_US(Tcl_Time t1, Tcl_Time t2);
+ */
+
+#define TCL_TIME_BEFORE(t1, t2) \
+    (((t1).sec<(t2).sec) || ((t1).sec==(t2).sec && (t1).usec<(t2).usec))
+
+#define TCL_TIME_DIFF_MS(t1, t2) \
+    (1000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
+	    ((long)(t1).usec - (long)(t2).usec)/1000)
+#define TCL_TIME_DIFF_US(t1, t2) \
+    (1000000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
+	    ((long)(t1).usec - (long)(t2).usec))
+
+static inline void
+TclTimeSetMilliseconds(
+    register Tcl_Time *timePtr,
+    register double ms
+) {
+    timePtr->sec = (long)(ms / 1000);
+    timePtr->usec = (((long)ms) % 1000) * 1000 + (((long)(ms*1000)) % 1000);
+}
+
 static inline void
 TclTimeAddMilliseconds(
     register Tcl_Time *timePtr,
@@ -2958,13 +2992,16 @@ MODULE_SCOPE int	Tcl_ContinueObjCmd(ClientData clientData,
 MODULE_SCOPE void	TclSetTimerEventMarker(int head);
 MODULE_SCOPE int	TclServiceTimerEvents(void);
 MODULE_SCOPE int	TclServiceIdleEx(int flags, int count);
+MODULE_SCOPE TimerEntry* TclpCreateTimerHandlerEx(
+			    Tcl_WideInt usec,
+			    Tcl_TimerProc *proc, Tcl_TimerDeleteProc *deleteProc,
+			    size_t extraDataSize, int flags);
+MODULE_SCOPE Tcl_TimerToken TclCreateRelativeTimerHandler(
+			    Tcl_Time *timeOffsPtr, Tcl_TimerProc *proc,
+			    ClientData clientData);
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
 			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
 			    ClientData clientData);
-MODULE_SCOPE TimerEntry* TclCreateAbsoluteTimerHandlerEx(
-			    Tcl_Time *timePtr,
-			    Tcl_TimerProc *proc, Tcl_TimerDeleteProc *deleteProc,
-			    size_t extraDataSize);
 MODULE_SCOPE TimerEntry* TclCreateTimerEntryEx(
 			    Tcl_TimerProc *proc, Tcl_TimerDeleteProc *deleteProc,
 			    size_t extraDataSize, int flags);

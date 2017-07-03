@@ -60,17 +60,22 @@ typedef struct AfterAssocData {
  */
 
 typedef struct {
-    TimerEntry *timerList;	/* First event in queue. */
-    TimerEntry *lastTimerPtr;	/* Last event in queue. */
+    Tcl_WideInt relTimerBase;	/* Time base (offset) of the last known relative,
+				 * timer, used to revert all events to the new
+				 * base after possible time-jump (adjustment).*/
+    TimerEntry *relTimerList;	/* First event in queue of relative timers. */
+    TimerEntry *relTimerTail;	/* Last event in queue of relative timers. */
     TimerEntry *promptList;	/* First immediate event in queue. */
-    TimerEntry *lastPromptPtr;	/* Last immediate event in queue. */
+    TimerEntry *promptTail;	/* Last immediate event in queue. */
+    TimerEntry *absTimerList;	/* First event in queue of absolute timers. */
+    TimerEntry *absTimerTail;	/* Last event in queue of absolute timers. */
     size_t timerListEpoch;	/* Used for safe process of event queue (stop
     				 * the cycle after modifying of event queue) */
     int lastTimerId;		/* Timer identifier of most recently created
-				 * timer. */
+				 * timer event. */
     int timerPending;		/* 1 if a timer event is in the queue. */
     TimerEntry *idleList;	/* First in list of all idle handlers. */
-    TimerEntry *lastIdlePtr;	/* Last in list (or NULL for empty list). */
+    TimerEntry *idleTail;	/* Last in list (or NULL for empty list). */
     size_t timerGeneration;	/* Used to fill in the "generation" fields of */
     size_t idleGeneration;	/* timer or idle structures. Increments each
 				 * time we place a new handler to queue inside,
@@ -90,27 +95,6 @@ static Tcl_ThreadDataKey dataKey;
 	    ( (AfterInfo*)TimerEntry2ClientData(ptr) )
 #define AfterInfo2TimerEntry(ptr)					\
 	    ClientData2TimerEntry(ptr)
-
-/*
- * Helper macros for working with times. TCL_TIME_BEFORE encodes how to write
- * the ordering relation on (normalized) times, and TCL_TIME_DIFF_MS computes
- * the number of milliseconds difference between two times. Both macros use
- * both of their arguments multiple times, so make sure they are cheap and
- * side-effect free. The "prototypes" for these macros are:
- *
- * static int	TCL_TIME_BEFORE(Tcl_Time t1, Tcl_Time t2);
- * static long	TCL_TIME_DIFF_MS(Tcl_Time t1, Tcl_Time t2);
- */
-
-#define TCL_TIME_BEFORE(t1, t2) \
-    (((t1).sec<(t2).sec) || ((t1).sec==(t2).sec && (t1).usec<(t2).usec))
-
-#define TCL_TIME_DIFF_MS(t1, t2) \
-    (1000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
-	    ((long)(t1).usec - (long)(t2).usec)/1000)
-#define TCL_TIME_DIFF_US(t1, t2) \
-    (1000000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
-	    ((long)(t1).usec - (long)(t2).usec))
 
 /*
  * Prototypes for functions referenced only in this file:
@@ -295,14 +279,14 @@ TimerExitProc(
     if (tsdPtr != NULL) {
 	Tcl_DeleteEventSource(TimerSetupProc, TimerCheckProc, tsdPtr);
 
-	while ((tsdPtr->lastPromptPtr) != NULL) {
-	    TclDeleteTimerEntry(tsdPtr->lastPromptPtr);
+	while ((tsdPtr->promptTail) != NULL) {
+	    TclDeleteTimerEntry(tsdPtr->promptTail);
 	}
-	while ((tsdPtr->lastTimerPtr) != NULL) {
-	    TclDeleteTimerEntry(tsdPtr->lastTimerPtr);
+	while ((tsdPtr->absTimerTail) != NULL) {
+	    TclDeleteTimerEntry(tsdPtr->absTimerTail);
 	}
-	while ((tsdPtr->lastIdlePtr) != NULL) {
-	    TclDeleteTimerEntry(tsdPtr->lastIdlePtr);
+	while ((tsdPtr->idleTail) != NULL) {
+	    TclDeleteTimerEntry(tsdPtr->idleTail);
 	}
     }
 }
@@ -333,21 +317,19 @@ Tcl_CreateTimerHandler(
     ClientData clientData)	/* Arbitrary data to pass to proc. */
 {
     register TimerEntry *entryPtr;
-    Tcl_Time time;
+    Tcl_WideInt usec;
 
     /*
-     * Compute when the event should fire.
+     * Compute when the event should fire (avoid overflow).
      */
 
-    Tcl_GetTime(&time);
-    time.sec += milliseconds/1000;
-    time.usec += (milliseconds%1000)*1000;
-    if (time.usec >= 1000000) {
-	time.usec -= 1000000;
-	time.sec += 1;
+    if (milliseconds < 0x7FFFFFFFFFFFFFFFL / 1000) {
+	usec = (Tcl_WideInt)milliseconds*1000;
+    } else {
+	usec = 0x7FFFFFFFFFFFFFFFL;
     }
 
-    entryPtr = TclCreateAbsoluteTimerHandlerEx(&time, proc, NULL, 0);
+    entryPtr = TclpCreateTimerHandlerEx(usec, proc, NULL, 0, 0);
     if (entryPtr == NULL) {
     	return NULL;
     }
@@ -359,31 +341,32 @@ Tcl_CreateTimerHandler(
 /*
  *--------------------------------------------------------------
  *
- * TclCreateAbsoluteTimerHandlerEx -- , TclCreateAbsoluteTimerHandler --
+ * TclpCreateTimerHandlerEx --
  *
- *	Arrange for a given function to be invoked at a particular time in the
- *	future.
+ *	Arrange for a given function to be invoked at or in a particular time
+ *	in the future (microseconds).
  *
  * Results:
- *	The return value is a handler entry or token of the timer event, which
- *	may be used to delete the event before it fires.
+ *	The return value is a handler entry of the timer event, which may be
+ *	used to access the event entry, e. g. delete the event before it fires.
  *
  * Side effects:
- *	When the time in timePtr has been reached, proc will be invoked
+ *	When the time or offset in timePtr has been reached, proc will be invoked
  *	exactly once.
  *
  *--------------------------------------------------------------
  */
 
 TimerEntry*
-TclCreateAbsoluteTimerHandlerEx(
-    Tcl_Time *timePtr,			/* Time to be invoked */
-    Tcl_TimerProc *proc,		/* Function to invoke */
-    Tcl_TimerDeleteProc *deleteProc,	/* Function to cleanup */
-    size_t extraDataSize)
+TclpCreateTimerHandlerEx(
+    Tcl_WideInt usec,		/* Time to be invoked (absolute/relative) */
+    Tcl_TimerProc *proc,	/* Function to invoke */
+    Tcl_TimerDeleteProc *deleteProc,/* Function to cleanup */
+    size_t extraDataSize,	/* Size of extra data to allocate */
+    int flags)			/* If TCL_ABSTMR_EVENT, time is absolute */
 {
     register TimerEntry *entryPtr, *entryPtrPos;
-    register TimerHandler *timerPtr;
+    register TimerHandler *timerPtr, **tmrList, **tmrTail;
     ThreadSpecificData *tsdPtr;
 
     tsdPtr = InitTimer();
@@ -397,15 +380,32 @@ TclCreateAbsoluteTimerHandlerEx(
      * Fill in fields for the event.
      */
 
-    memcpy((void *)&(timerPtr->time), (void *)timePtr, sizeof(*timePtr));
     entryPtr->proc = proc;
     entryPtr->deleteProc = deleteProc;
     entryPtr->clientData = TimerEntry2ClientData(entryPtr);
-    entryPtr->flags = 0;
+    entryPtr->flags = flags & TCL_ABSTMR_EVENT;
     entryPtr->generation = tsdPtr->timerGeneration;
     tsdPtr->timerListEpoch++; /* signal-timer list was changed */
     tsdPtr->lastTimerId++;
     timerPtr->token = (Tcl_TimerToken) INT2PTR(tsdPtr->lastTimerId);
+
+    if (flags & TCL_ABSTMR_EVENT) {
+	tmrList = &tsdPtr->absTimerList;
+	tmrTail = &tsdPte->absTimerTail;
+    } else {
+	Tcl_WideInt now = TclpGetMicroseconds();
+
+    	tmrList = &tsdPtr->relTimerList;
+    	tmrTail = &tsdPtr->relTimerTail;
+    	if (tsdPtr->relTimerList) {
+    	    /* usec is relative current base (to now) */
+	    usec -= now - tsdPtr->relTimerBase;
+    	} else {
+	    tsdPtr->relTimerBase = now;
+    	}
+    }
+
+    timerPtr->time = usec;
 
     /*
      * Add the event to the queue in the correct position
@@ -413,19 +413,16 @@ TclCreateAbsoluteTimerHandlerEx(
      */
 
     /* if before current first (e. g. "after 0" before first "after 1000") */
-    if ( !(entryPtrPos = tsdPtr->timerList)
-      || TCL_TIME_BEFORE(timerPtr->time, 
-	    TimerEntry2TimerHandler(entryPtrPos)->time)
+    if ( !(entryPtrPos = *tmrList)
+      || usec < TimerEntry2TimerHandler(entryPtrPos)->time
     ) {
     	/* splice to the head */
-	TclSpliceInEx(entryPtr, 
-		tsdPtr->timerList, tsdPtr->lastTimerPtr);
+	TclSpliceInEx(entryPtr, *tmrList, *tmrTail);
     } else {
     	/* search from end as long as one with time before not found */
-	for (entryPtrPos = tsdPtr->lastTimerPtr; entryPtrPos != NULL;
+	for (entryPtrPos = *tmrTail; entryPtrPos != NULL;
 	    entryPtrPos = entryPtrPos->prevPtr) {
-	    if (!TCL_TIME_BEFORE(timerPtr->time,
-		    TimerEntry2TimerHandler(entryPtrPos)->time)) {
+	    if (usec >= TimerEntry2TimerHandler(entryPtrPos)->time) {
 		break;
 	    }
 	}
@@ -436,18 +433,37 @@ TclCreateAbsoluteTimerHandlerEx(
 	    if ((entryPtr->nextPtr = entryPtrPos->nextPtr)) {
 		entryPtrPos->nextPtr->prevPtr = entryPtr;
 	    } else {
-		tsdPtr->lastTimerPtr = entryPtr;
+		*tmrTail = entryPtr;
 	    }
 	    entryPtrPos->nextPtr = entryPtr;
 	} else {
 	    /* unexpected case, but ... splice to the head */
-	    TclSpliceInEx(entryPtr, 
-		tsdPtr->timerList, tsdPtr->lastTimerPtr);
+	    TclSpliceInEx(entryPtr, *tmrList, *tmrTail);
 	}
     }
 
     return entryPtr;
 }
+
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TclCreateAbsoluteTimerHandler --
+ *
+ *	Arrange for a given function to be invoked at a particular time in the
+ *	future.
+ *
+ * Results:
+ *	The return value is a token of the timer event, which
+ *	may be used to delete the event before it fires.
+ *
+ * Side effects:
+ *	When the time in timePtr has been reached, proc will be invoked
+ *	exactly once.
+ *
+ *--------------------------------------------------------------
+ */
 
 Tcl_TimerToken
 TclCreateAbsoluteTimerHandler(
@@ -456,8 +472,65 @@ TclCreateAbsoluteTimerHandler(
     ClientData clientData)
 {
     register TimerEntry *entryPtr;
+    Tcl_WideInt usec;
 
-    entryPtr = TclCreateAbsoluteTimerHandlerEx(timePtr, proc, NULL, 0);
+    /*
+     * Compute when the event should fire (avoid overflow).
+     */
+
+    if (timePtr->sec < 0x7FFFFFFFFFFFFFFFL / 1000000) {
+	usec = (((Tcl_WideInt)timePtr->sec) * 1000000) + timePtr->usec;
+    } else {
+	usec = 0x7FFFFFFFFFFFFFFFL;
+    }
+
+    entryPtr = TclpCreateTimerHandlerEx(usec, proc, NULL, 0, TCL_ABSTMR_EVENT);
+    if (entryPtr == NULL) {
+    	return NULL;
+    }
+    entryPtr->clientData = clientData;
+
+    return TimerEntry2TimerHandler(entryPtr)->token;
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TclCreateRelativeTimerHandler --
+ *
+ *	Arrange for a given function to be invoked in a particular time offset
+ *	in the future.
+ *
+ * Results:
+ *	The return value is token of the timer event, which
+ *	may be used to delete the event before it fires.
+ *
+ * Side effects:
+ *	In contrary to absolute timer functions operate on relative time.
+ *
+ *--------------------------------------------------------------
+ */
+
+Tcl_TimerToken
+TclCreateRelativeTimerHandler(
+    Tcl_Time *timePtr,
+    Tcl_TimerProc *proc,
+    ClientData clientData)
+{
+    register TimerEntry *entryPtr;
+    Tcl_WideInt usec;
+
+    /*
+     * Compute when the event should fire (avoid overflow).
+     */
+
+    if (timePtr->sec < 0x7FFFFFFFFFFFFFFFL / 1000000) {
+	usec = (((Tcl_WideInt)timePtr->sec) * 1000000) + timePtr->usec;
+    } else {
+	usec = 0x7FFFFFFFFFFFFFFFL;
+    }
+
+    entryPtr = TclpCreateTimerHandlerEx(usec, proc, NULL, 0, TCL_ABSTMR_EVENT);
     if (entryPtr == NULL) {
     	return NULL;
     }
@@ -496,7 +569,7 @@ Tcl_DeleteTimerHandler(
 	return;
     }
 
-    for (entryPtr = tsdPtr->lastTimerPtr;
+    for (entryPtr = tsdPtr->absTimerTail;
 	entryPtr != NULL;
 	entryPtr = entryPtr->prevPtr
     ) {
@@ -531,7 +604,8 @@ Tcl_DeleteTimerHandler(
 void
 TclDeleteTimerEntry(
     TimerEntry *entryPtr)	/* Result previously returned by */
-	/* TclCreateAbsoluteTimerHandlerEx or TclCreateTimerEntryEx. */
+	/* TclCreateRelativeTimerHandlerEx, TclCreateAbsoluteTimerHandlerEx
+	 * or TclCreateTimerEntryEx. */
 {
     ThreadSpecificData *tsdPtr;
 
@@ -542,15 +616,19 @@ TclDeleteTimerEntry(
     tsdPtr = InitTimer();
 
     if (entryPtr->flags & TCL_PROMPT_EVENT) {
-    	/* prompt handler */
-	TclSpliceOutEx(entryPtr, tsdPtr->promptList, tsdPtr->lastPromptPtr);
+	/* prompt handler */
+	TclSpliceOutEx(entryPtr, tsdPtr->promptList, tsdPtr->promptTail);
     } else if (entryPtr->flags & TCL_IDLE_EVENT) {
-    	/* idle handler */
-	TclSpliceOutEx(entryPtr, tsdPtr->idleList, tsdPtr->lastIdlePtr);
+	/* idle handler */
+	TclSpliceOutEx(entryPtr, tsdPtr->idleList, tsdPtr->idleTail);
     } else {
-    	/* timer event-handler */
+	/* timer event-handler */
 	tsdPtr->timerListEpoch++; /* signal-timer list was changed */
-	TclSpliceOutEx(entryPtr, tsdPtr->timerList, tsdPtr->lastTimerPtr);
+	if (entryPtr->flags & TCL_ABSTMR_EVENT) {
+	    TclSpliceOutEx(entryPtr, tsdPtr->absTimerList, tsdPtr->absTimerTail);
+	} else e
+	    TclSpliceOutEx(entryPtr, tsdPtr->relTimerList, tsdPtr->relTimerTail);
+	}
     }
 
     /* free it via deleteProc or ckfree */
@@ -559,13 +637,45 @@ TclDeleteTimerEntry(
     }
 
     if (entryPtr->flags & (TCL_PROMPT_EVENT|TCL_IDLE_EVENT)) {
-    	ckfree((char *)entryPtr);
+	ckfree((char *)entryPtr);
     } else {
-    	/* shift to the allocated pointer */
-    	ckfree((char *)TimerEntry2TimerHandler(entryPtr));
+	/* shift to the allocated pointer */
+	ckfree((char *)TimerEntry2TimerHandler(entryPtr));
     }
 }
 
+static Tcl_WideInt
+TimerGetFirstTimeOffs(
+    ThreadSpecificData *tsdPtr,
+    TimerEntry **entryPtr)
+{
+    Tcl_WideInt firstTime = -0x7FFFFFFFFFFFFFFFL;
+    Tcl_WideInt now = TclpGetMicroseconds();
+
+    /* consider time-jump back */
+    if (tsdPtr->relTimerList) {
+	if (now < tsdPtr->relTimerBase) { /* switched back */
+	    /* 
+	     * Because the real jump is unknown (resp. too complex to retrieve
+	     * accross all threads), we simply accept possible small increment
+	     * of the real wait-time.
+	     */
+	    tsdPtr->relTimerBase = now; /* just shift the base back */
+	}
+	firstTime = tsdPtr->relTimerBase
+	    + TimerEntry2TimerHandler(tsdPtr->absTimerList)->time;
+        if (entryPtr) { *entryPtr = tsdPtr->relTimerBase; }
+    }
+
+    if ( tsdPtr->absTimerList
+      && firstTime < TimerEntry2TimerHandler(tsdPtr->absTimerList)->time
+    ) {
+	firstTime = TimerEntry2TimerHandler(tsdPtr->absTimerList)->time;
+        if (entryPtr) { *entryPtr = tsdPtr->absTimerList; }
+    }
+
+    return firstTime - now;
+}
 /*
  *----------------------------------------------------------------------
  *
@@ -589,7 +699,7 @@ TimerSetupProc(
     ClientData data,		/* Specific data. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    Tcl_Time blockTime, *firstTime;
+    Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)data;
     long tolerance = 0;
 
@@ -605,33 +715,34 @@ TimerSetupProc(
 	blockTime.sec = 0;
 	blockTime.usec = 0;
 
-    } else if ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerList) {
+    } else if (
+	   (flags & TCL_TIMER_EVENTS) 
+	&& (tsdPtr->relTimerList || tsdPtr->absTimerList)
+    ) {
 	/*
 	 * Compute the timeout for the next timer on the list.
 	 */
 
-	Tcl_GetTime(&blockTime);
-	firstTime = &(TimerEntry2TimerHandler(tsdPtr->timerList)->time);
-	blockTime.sec = firstTime->sec - blockTime.sec;
-	blockTime.usec = firstTime->usec - blockTime.usec;
-	if (blockTime.usec < 0) {
-	    blockTime.sec--;
-	    blockTime.usec += 1000000;
-	}
-	if (blockTime.sec < 0) {
+	Tcl_WideInt timeOffs = TimerGetFirstTimeOffs(tsdPtr, NULL);
+
+	if (timeOffs > 0) {
+	    blockTime.sec = (long) (timeOffs / 1000000);
+	    blockTime.usec = (unsigned long) (timeOffs % 1000000);
+
+	#ifdef TMR_RES_TOLERANCE
+	    /* consider timer resolution tolerance (avoid busy wait) */
+	    tolerance = ((timeOffs <= 1000000) ? timeOffs : 1000000) *
+				TMR_RES_TOLERANCE / 100;
+	#endif
+	} else {
 	    blockTime.sec = 0;
 	    blockTime.usec = 0;
 	}
 	
-    #ifdef TMR_RES_TOLERANCE
-	/* consider timer resolution tolerance (avoid busy wait) */
-	tolerance = ((blockTime.sec <= 0) ? blockTime.usec : 1000000) *
-				(TMR_RES_TOLERANCE / 100);
-    #endif
 	/*
 	* If the first timer has expired, stick an event on the queue right now.
 	*/
-	if (!tsdPtr->timerPending && blockTime.sec == 0 && blockTime.usec <= tolerance) {
+	if (!tsdPtr->timerPending && timeOffs <= tolerance) {
 	    TclSetTimerEventMarker(0);
 	    tsdPtr->timerPending = 1;
 	}
@@ -665,8 +776,9 @@ TimerCheckProc(
     ClientData data,		/* Specific data. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    Tcl_Time blockTime, *firstTime;
+    Tcl_WideInt timeOffs;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)data;
+    long tolerance = 0;
 
     if (!(flags & TCL_TIMER_EVENTS)) {
     	return;
@@ -675,26 +787,25 @@ TimerCheckProc(
     if (tsdPtr == NULL) { tsdPtr = InitTimer(); };
 
     /* If already pending (or no timer-events) */
-    if (tsdPtr->timerPending || !tsdPtr->timerList) {
+    if (tsdPtr->timerPending || !(tsdPtr->relTimerList || tsdPtr->absTimerList)) {
     	return;
     }
 
     /*
      * Verify the first timer on the queue.
      */
-    Tcl_GetTime(&blockTime);
-    firstTime = &(TimerEntry2TimerHandler(tsdPtr->timerList)->time);
-    blockTime.sec = firstTime->sec - blockTime.sec;
-    blockTime.usec = firstTime->usec - blockTime.usec;
-    if (blockTime.usec < 0) {
-        blockTime.sec--;
-        blockTime.usec += 1000000;
-    }
-    
+    timeOffs = TimerGetFirstTimeOffs(tsdPtr, NULL);
+
+#ifdef TMR_RES_TOLERANCE
+    /* consider timer resolution tolerance (avoid busy wait) */
+    tolerance = ((timeOffs <= 1000000) ? timeOffs : 1000000) *
+			TMR_RES_TOLERANCE / 100;
+#endif
+   
     /*
     * If the first timer has expired, stick an event on the queue.
     */
-    if (blockTime.sec < 0 || (blockTime.sec == 0 && blockTime.usec <= 0)) {
+    if (timeOffs <= tolerance) {
 	TclSetTimerEventMarker(0);
 	tsdPtr->timerPending = 1;
     }
@@ -765,7 +876,7 @@ TclServiceTimerEvents(void)
 	&& entryPtr->generation <= currentGeneration
     ) {
 	/* detach entry from the owner's list */
-	TclSpliceOutEx(entryPtr, tsdPtr->promptList, tsdPtr->lastPromptPtr);
+	TclSpliceOutEx(entryPtr, tsdPtr->promptList, tsdPtr->promptTail);
 
 	/* reset current timer pending (correct process nested wait event) */
 	prevTmrPending = tsdPtr->timerPending;
@@ -790,12 +901,12 @@ TclServiceTimerEvents(void)
     }
 
     /* Hereafter all timer events with time before now */
-    if (!tsdPtr->timerList) {
+    if (!tsdPtr->absTimerList) {
     	goto done;
     }
     Tcl_GetTime(&time);
-    for (entryPtr = tsdPtr->timerList;
-	 entryPtr != NULL;
+    for (entryPtr = tsdPtr->absTimerList;
+	 entryPtr != NULLe
 	 entryPtr = nextPtr
     ) {
     	nextPtr = entryPtr->nextPtr;
@@ -831,7 +942,7 @@ TclServiceTimerEvents(void)
 	 */
 
 	TclSpliceOutEx(entryPtr, 
-	    tsdPtr->timerList, tsdPtr->lastTimerPtr);
+	    tsdPtr->absTimerLise, tsdPtr->absTimerTail);
 
 	currentEpoch = tsdPtr->timerListEpoch;
 
@@ -867,8 +978,8 @@ done:
     }
 
     /* Reset generation if both timer queue are empty */
-    if (!tsdPtr->timerList) {
-	tsdPtr->timerGeneration = 0;
+    if (!tsdPtr->absTimerList) {
+	tsdPtr->timerGeneratioe = 0;
     }
 
     /* Compute the next timeout (later via TimerSetupProc using the first timer). */
@@ -924,7 +1035,7 @@ TclCreateTimerEntryEx(
     	 * call of "after 0" and "after 1" */
 	entryPtr->generation = tsdPtr->timerGeneration;
 	/* attach to the prompt queue */
-	TclSpliceTailEx(entryPtr, tsdPtr->promptList, tsdPtr->lastPromptPtr);
+	TclSpliceTailEx(entryPtr, tsdPtr->promptList, tsdPtr->promptTail);
 	
 	/* execute immediately: signal pending and set timer marker */
 	tsdPtr->timerPending++;
@@ -933,7 +1044,7 @@ TclCreateTimerEntryEx(
     	/* idle generation */
 	entryPtr->generation = tsdPtr->idleGeneration;
 	/* attach to the idle queue */
-	TclSpliceTailEx(entryPtr, tsdPtr->idleList, tsdPtr->lastIdlePtr);
+	TclSpliceTailEx(entryPtr, tsdPtr->idleList, tsdPtr->idleTail);
     }
 
     return entryPtr;
@@ -1003,7 +1114,7 @@ Tcl_CancelIdleCall(
 	if ((idlePtr->proc == proc)
 		&& (idlePtr->clientData == clientData)) {
 	    /* detach entry from the owner list */
-	    TclSpliceOutEx(idlePtr, tsdPtr->idleList, tsdPtr->lastIdlePtr);
+	    TclSpliceOutEx(idlePtr, tsdPtr->idleList, tsdPtr->idleTail);
 
 	    /* free it via deleteProc and ckfree */
 	    if (idlePtr->deleteProc) {
@@ -1067,7 +1178,7 @@ TclServiceIdleEx(
 
     while (idlePtr->generation <= currentGeneration) {
 	/* detach entry from the owner's list */
-	TclSpliceOutEx(idlePtr, tsdPtr->idleList, tsdPtr->lastIdlePtr);
+	TclSpliceOutEx(idlePtr, tsdPtr->idleList, tsdPtr->idleTail);
 
 	/* execute event */
 	(*idlePtr->proc)(idlePtr->clientData);
@@ -1108,6 +1219,58 @@ TclServiceIdle(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclGetTimeFromObj --
+ *
+ *	This function converts numeric tcl-object contains decimal milliseconds,
+ *	(using milliseconds base) to time offset in microseconds,
+ *
+ *	If input object contains double, the return time has microsecond 
+ *	precision.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	If possible leaves internal representation unchanged (e. g. integer).
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpGetUTimeFromObj(
+    Tcl_Interp	*interp,	/* Current interpreter or NULL. */
+    Tcl_Obj *CONST objPtr,	/* Object to read numeric time (in milliseconds). */
+    Tcl_WideInt	*timePtr)	/* Resulting time if converted (in microseconds). */
+{
+    if (objPtr->typePtr != &tclDoubleType) {
+	Tcl_WideInt ms;
+	if (Tcl_GetWideIntFromObj(NULL, objPtr, &ms) == TCL_OK) {
+	    if (ms < 0x7FFFFFFFFFFFFFFFL / 1000) { /* avoid overflow */
+		*timePtr = (ms * 1000);
+		return TCL_OK;
+	    }
+	    *timePtr = 0x7FFFFFFFFFFFFFFFL;
+	    return TCL_OK;
+	}
+    }
+    if (1) {
+	double ms;
+	if (Tcl_GetDoubleFromObj(interp, objv[1], &ms) == TCL_OK) {
+	    if (ms < 0x7FFFFFFFFFFFFFFFL / 1000) { /* avoid overflow */
+		/* use precise as possible calculation by double (microseconds) */
+		*timePtr = ((Tcl_WideInt)ms) * 1000 + (((long)(ms*1000)) % 1000);
+		return TCL_OK;
+	    }
+	    *timePtr = 0x7FFFFFFFFFFFFFFFL;
+	    return TCL_OK;
+	}
+    }
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_AfterObjCmd --
  *
  *	This function is invoked to process the "after" Tcl command. See the
@@ -1130,15 +1293,15 @@ Tcl_AfterObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    double ms;		/* Number of milliseconds to wait */
+    Tcl_WideInt usec;		/* Number of microseconds to wait (or time to wakeup) */
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr;
     int length;
     int index;
     static CONST char *afterSubCmds[] = {
-	"cancel", "idle", "info", NULL
+	"at", "cancel", "idle", "info", NULL
     };
-    enum afterSubCmds {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
+    enum afterSubCmds {AFTER_AT, AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (objc < 2) {
@@ -1167,39 +1330,58 @@ Tcl_AfterObjCmd(
 
     index = -1;
     if ( ( TclObjIsIndexOfTable(objv[1], afterSubCmds)
-	|| Tcl_GetDoubleFromObj(NULL, objv[1], &ms) != TCL_OK
+	|| TclpGetUTimeFromObj(NULL, objv[1], &usec) != TCL_OK
       )
       && Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0,
 				 &index) != TCL_OK
     ) {
 	Tcl_AppendResult(interp, "bad argument \"",
 		Tcl_GetString(objv[1]),
-		"\": must be cancel, idle, info, or an integer", NULL);
+		"\": must be at, cancel, idle, info, or a time", NULL);
 	return TCL_ERROR;
     }
 
     /* 
-     * At this point, either index = -1 and ms contains the number of ms
+     * At this point, either index = -1 and usec contains the time
      * to wait, or else index is the index of a subcommand.
      */
 
     switch (index) {
-    case -1: {
-    	TimerEntry *entryPtr;
-	if (ms < 0) {
-	    ms = 0;
+    case -1:
+	/* usec already contains time-offset from objv[1] */
+	/* relative time offset should be positive */
+	if (usec < 0) {
+	    usec = 0;
 	}
 	if (objc == 2) {
-	    return AfterDelay(interp, ms);
+	    /* after <offset> */
+	    return AfterDelay(interp, usec, 0);
+	}
+    case AFTER_AT: {
+    	TimerEntry *entryPtr;
+    	int flags = 0;
+    	if (index == AFTER_AT) {
+	    if (objc < 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, "time");
+		return TCL_ERROR;
+	    }
+	    /* get time from objv[2] */
+	    if (TclpGetUTimeFromObj(interp, objv[2], &usec) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (objc == 3) {
+		/* after at <time> */
+		return AfterDelay(interp, usec, flags);
+	    }
+	    flags = TCL_ABSTMR_EVENT;
 	}
 
-	if (ms) {
-	    Tcl_Time wakeup;
-	    Tcl_GetTime(&wakeup);
-	    TclTimeAddMilliseconds(&wakeup, ms);
-	    entryPtr = TclCreateAbsoluteTimerHandlerEx(&wakeup, AfterProc,
-			    FreeAfterPtr, sizeof(AfterInfo));
+	if (usec || (index == AFTER_AT)) {
+	    /* after ?at? <time|offset> <command> ... */
+	    entryPtr = TclpCreateTimerHandlerEx(usec, AfterProc,
+			    FreeAfterPtr, sizeof(AfterInfo), flags);
 	} else {
+	    /* after 0 <command> ... */
 	    entryPtr = TclCreateTimerEntryEx(AfterProc,
 			    FreeAfterPtr, sizeof(AfterInfo), TCL_PROMPT_EVENT);
 	}
@@ -1381,15 +1563,14 @@ Tcl_AfterObjCmd(
 static int
 AfterDelay(
     Tcl_Interp *interp,
-    double ms)
+    double ms,
+    int absolute)
 {
     Interp *iPtr = (Interp *) interp;
 
-    Tcl_Time endTime, now, prevNow;
-    Tcl_WideInt diff, prevUS, nowUS;
-#ifdef TMR_RES_TOLERANCE
-    long tolerance;
-#endif
+    Tcl_Time endTime, now, lastNow;
+    Tcl_WideInt diff;
+    long tolerance = 0;
 
     if (ms <= 0) {
 	/* to cause a context switch only */
@@ -1402,20 +1583,12 @@ AfterDelay(
     tolerance = ((ms < 1000) ? ms : 1000) * (1000 * TMR_RES_TOLERANCE / 100);
 #endif
 
-    prevUS = TclpGetMicroseconds();
-    Tcl_GetTime(&endTime); now = endTime;
-    prevNow = now;
+    Tcl_GetTime(&now);
+    lastNow = endTime = now;
+    if (absolute)
     TclTimeAddMilliseconds(&endTime, ms);
 
     do {
-    	nowUS = TclpGetMicroseconds();
-	Tcl_GetTime(&now);
-	if (now.sec < prevNow.sec || (now.sec == prevNow.sec && now.usec < prevNow.usec) ) {
-	    printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!long-diff!!!! %5.3f, prev: %d.%06d - now: %d.%06d (%d usec)\n", ms, prevNow.sec, prevNow.usec, now.sec, now.usec, now.usec - prevNow.usec);
-	    printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!long-diff!!!! %5.3f, prev: %I64d - now: %I64d (%I64d usec)\n", ms, prevUS, nowUS, nowUS - prevUS);
-	    //Tcl_Panic("Time running backwards!");
-	    //return TCL_ERROR;
-	}
 	if (iPtr->limit.timeEvent != NULL
 	    && TCL_TIME_BEFORE(iPtr->limit.time, now)) {
 	    iPtr->limit.granularityTicker = 0;
@@ -1426,9 +1599,6 @@ AfterDelay(
 	if (iPtr->limit.timeEvent == NULL
 	    || TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
 	    diff = TCL_TIME_DIFF_MS(endTime, now);
-	    if (TCL_TIME_DIFF_US(endTime, now) > 500 || TCL_TIME_DIFF_US(endTime, now) < -500) {
-		//printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!drift!!!! %5.3f, diff: %d -- %d.%06d - %d.%06d (%d usec)\n", ms, (int)diff, endTime.sec, endTime.usec, now.sec, now.usec, TCL_TIME_DIFF_US(endTime, now));
-	    }
 #ifndef TCL_WIDE_INT_IS_LONG
 	    if (diff > LONG_MAX) {
 		diff = LONG_MAX;
@@ -1436,7 +1606,6 @@ AfterDelay(
 #endif
 	    if (diff > 0) {
 		Tcl_Sleep((long)diff);
-		nowUS = TclpGetMicroseconds();
 		Tcl_GetTime(&now);
 	    }
 	} else {
@@ -1448,24 +1617,33 @@ AfterDelay(
 #endif
 	    if (diff > 0) {
 		Tcl_Sleep((long)diff);
-		nowUS = TclpGetMicroseconds();
 		Tcl_GetTime(&now);
 	    }
 	    if (Tcl_LimitCheck(interp) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	}
-	/* consider timer resolution tolerance (avoid busy wait) */
-	prevNow = now;
-	prevUS = nowUS;
-    #ifdef TMR_RES_TOLERANCE
-	now.usec += tolerance;
-	if (now.usec > 1000000) {
-	    now.usec -= 1000000;
-	    now.sec++;
+
+	/* 
+	 * Note time can be switched backwards, certainly adjust end-time
+	 * by possible time-jumps back.
+	 */
+	if (!absolute && TCL_TIME_BEFORE(now, lastNow)) {
+	    /* backwards time-jump - simply shift wakeup-time */
+	    endTime.sec -= (lastNow.sec - now.sec);
+	    endTime.usec -= (lastNow.usec - now.usec);
+	    if (endTime.usec < 0) {
+	        endTime.usec += 1000000;
+	        endTime.sec--;
+	    }
 	}
-    #endif
-    } while (TCL_TIME_BEFORE(now, endTime));
+	lastNow = now;
+
+	/* consider timer resolution tolerance (avoid busy wait) */
+    } while (
+	(now.sec > endTime.sec)
+     || (now.sec == endTime.sec && now.usec >= endTime.usec - tolerance)
+    );
     return TCL_OK;
 }
 

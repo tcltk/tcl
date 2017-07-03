@@ -634,7 +634,7 @@ Tcl_WaitForEvent(
     DWORD timeout, result = WAIT_TIMEOUT;
     int status = 0;
     Tcl_Time waitTime = {0, 0};
-    Tcl_Time endTime;
+    Tcl_Time lastNow, endTime;
     long tolerance = 0;
     unsigned long actualResolution = 0;
 
@@ -670,6 +670,7 @@ Tcl_WaitForEvent(
 
 	/* calculate end of wait */
 	Tcl_GetTime(&endTime);
+	lastNow = endTime;
 	endTime.sec += waitTime.sec;
 	endTime.usec += waitTime.usec;
 	if (endTime.usec > 1000000) {
@@ -798,6 +799,22 @@ Tcl_WaitForEvent(
 	Tcl_Time now;
 
 	Tcl_GetTime(&now);
+	/* 
+	 * Note time can be switched backwards, certainly adjust end-time
+	 * by possible time-jumps back.
+	 */
+	if (TCL_TIME_BEFORE(now, lastNow)) {
+	    /* backwards time-jump - simply shift wakeup-time */
+	    endTime.sec -= (lastNow.sec - now.sec);
+	    endTime.usec -= (lastNow.usec - now.usec);
+	    if (endTime.usec < 0) {
+	        endTime.usec += 1000000;
+	        endTime.sec--;
+	    }
+	}
+	lastNow = now;
+
+	/* calculate new waitTime */
 	waitTime.sec = (endTime.sec - now.sec);
 	if ((waitTime.usec = (endTime.usec - now.usec)) < 0) {
 	    waitTime.usec += 1000000;
@@ -851,11 +868,12 @@ Tcl_Sleep(
      * requisite amount.
      */
 
-    Tcl_Time now;		/* Current wall clock time. */
+    Tcl_Time lastNow, now;	/* Current wall clock time. */
     Tcl_Time desired;		/* Desired wakeup time. */
     Tcl_Time vdelay;		/* Time to sleep, for scaling virtual ->
 				 * real. */
     DWORD sleepTime;		/* Time to sleep, real-time */
+    long tolerance = 0;
     unsigned long actualResolution = 0;
 
     if (ms <= 0) {
@@ -872,6 +890,7 @@ Tcl_Sleep(
     vdelay.usec = (ms % 1000) * 1000;
 
     Tcl_GetTime(&now);
+    lastNow = now;
     desired.sec  = now.sec  + vdelay.sec;
     desired.usec = now.usec + vdelay.usec;
     if (desired.usec > 1000000) {
@@ -879,16 +898,11 @@ Tcl_Sleep(
 	desired.sec++;
     }
 
-#ifdef TMR_RES_TOLERANCE
+  #ifdef TMR_RES_TOLERANCE
     /* calculate possible maximal tolerance (in usec) of original wait-time */
-    if (vdelay.sec <= 0) {
-	desired.usec -= vdelay.usec * (TMR_RES_TOLERANCE / 100);
-	if (desired.usec < 0) {
-	    desired.usec += 1000000;
-	    desired.sec--;
-	}
-    }
-#endif
+    tolerance = ((vdelay.sec <= 0) ? vdelay.usec : 1000000) *
+			(TMR_RES_TOLERANCE / 100);
+  #endif
 
     /*
      * TIP #233: Scale delay from virtual to real-time.
@@ -933,17 +947,32 @@ Tcl_Sleep(
     wait:
 	Sleep(sleepTime);
 	Tcl_GetTime(&now);
-	if (now.sec > desired.sec) {
-	    break;
-	} else if ((now.sec == desired.sec) && (now.usec >= desired.usec)) {
-	    break;
+	/* 
+	 * Note time can be switched backwards, certainly adjust end-time
+	 * by possible time-jumps back.
+	 */
+	if (TCL_TIME_BEFORE(now, lastNow)) {
+	    /* backwards time-jump - simply shift wakeup-time */
+	    desired.sec -= (lastNow.sec - now.sec);
+	    desired.usec -= (lastNow.usec - now.usec);
+	    if (desired.usec < 0) {
+	        desired.usec += 1000000;
+	        desired.sec--;
+	    }
 	}
+	lastNow = now;
 
 	vdelay.sec  = desired.sec  - now.sec;
 	vdelay.usec = desired.usec - now.usec;
 	if (vdelay.usec < 0) {
-	    vdelay.sec--;
 	    vdelay.usec += 1000000;
+	    vdelay.sec--;
+	}
+
+	if (vdelay.sec < 0) {
+	    break;
+	} else if ((vdelay.sec == 0) && (vdelay.usec <= tolerance)) {
+	    break;
 	}
     }
 
