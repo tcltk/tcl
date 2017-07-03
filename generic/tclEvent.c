@@ -1386,7 +1386,6 @@ Tcl_VwaitObjCmd(
     int optc = objc - 2; /* options count without cmd and varname */
     Tcl_WideInt usec = -1;
     Tcl_WideInt lastNow = 0, wakeup = 0;
-    long tolerance = 0;
     size_t timeJumpEpoch = 0;
 
     if (objc < 2) {
@@ -1420,11 +1419,6 @@ Tcl_VwaitObjCmd(
 	if (usec > 0) {
 	    lastNow = TclpGetMicroseconds();
 	    timeJumpEpoch = TclpGetLastTimeJumpEpoch();
-	#ifdef TMR_RES_TOLERANCE
-	    tolerance = (usec < 1000000 ? usec : 1000000) *
-				TMR_RES_TOLERANCE / 100;
-	    usec += tolerance / 3;
-	#endif
 	    wakeup = lastNow + usec;
 	} else {
 	    flags |= TCL_DONT_WAIT;
@@ -1457,9 +1451,9 @@ Tcl_VwaitObjCmd(
 	    /* calculate blocking time */
 	    lastNow = now;
 	    diff = wakeup - now;
-	    diff -= 1; /* overhead for Tcl_TraceVar / Tcl_UntraceVar */
+	    diff -= 1; /* overhead for this code (e. g. Tcl_TraceVar/Tcl_UntraceVar) */
 	    /* be sure process at least one event */
-	    if (diff <= tolerance) {
+	    if (diff <= 0) {
 		/* timeout occurs */
 		if (checktime) {
 		    done = -1;
