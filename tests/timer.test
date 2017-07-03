@@ -326,15 +326,41 @@ set childEvent [x eval {after idle event in child}]
 test timer-6.19 {Tcl_AfterCmd, info option} {
     lsort [after info]
 } [lsort "$event1 $event2"]
+test timer-6.19.1 {Tcl_AfterCmd, info option (all events in child)} {
+    x eval {after info}
+} [list $childEvent]
 test timer-6.20 {Tcl_AfterCmd, info option} {
     list [catch {after info a b} msg] $msg
 } {1 {wrong # args: should be "after info ?id?"}}
 test timer-6.21 {Tcl_AfterCmd, info option} {
     list [catch {after info $childEvent} msg] $msg
 } "1 {event \"$childEvent\" doesn't exist}"
+test timer-6.21.1 {Tcl_AfterCmd, info option (internal representation)} {
+    list [catch {x eval [list after info $childEvent]} msg] $msg
+} {0 {{event in child} idle}}
+test timer-6.21.1 {Tcl_AfterCmd, info option (internal representation)} {
+    list [catch {x eval [list after info $childEvent]} msg] $msg
+} {0 {{event in child} idle}}
+test timer-6.21.2 {Tcl_AfterCmd, info option (search using string representation)} {
+    list [catch {x eval [list after info [string trim " $childEvent "]]} msg] $msg
+} {0 {{event in child} idle}}
 test timer-6.22 {Tcl_AfterCmd, info option} {
     list [after info $event1] [after info $event2]
 } {{{event 1} idle} {{event 2} timer}}
+test timer-6.22.1 {Tcl_AfterCmd, cancel option (internal representation)} {
+    after cancel $childEvent; # foreign event - does nothing
+    # check still available:
+    list [catch {x eval [list after info $childEvent]} msg] $msg
+} {0 {{event in child} idle}}
+test timer-6.22.2 {Tcl_AfterCmd, cancel option (search using string representation)} {
+    after cancel [string trim " $childEvent "]; # foreign event - does nothing
+    # check still available:
+    set lst [list [catch {x eval [list after info $childEvent]} msg] $msg]
+    # cancel again but in child:
+    x eval [list after cancel [string trim " $childEvent "]]
+    # check it was canceled:
+    lappend lst {*}[list [catch {x eval [list after info $childEvent]} msg] $msg]
+} [list 0 {{event in child} idle} 1 "event \"$childEvent\" doesn't exist"]
 
 after cancel $event1
 after cancel $event2

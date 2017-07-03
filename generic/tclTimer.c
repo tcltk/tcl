@@ -1273,7 +1273,7 @@ Tcl_AfterObjCmd(
 		Tcl_DecrRefCount(commandPtr);
 	    }
 	}
-	if (afterPtr != NULL) {
+	if (afterPtr != NULL && afterPtr->assocPtr->interp == interp) {
 	    TclDeleteTimerEntry(AfterInfo2TimerEntry(afterPtr));
 	}
 	break;
@@ -1338,7 +1338,7 @@ Tcl_AfterObjCmd(
 	}
 
 	afterPtr = GetAfterEvent(assocPtr, objv[2]);
-	if (afterPtr == NULL) {
+	if (afterPtr == NULL || afterPtr->assocPtr->interp != interp) {
 	    Tcl_AppendResult(interp, "event \"", TclGetString(objv[2]),
 		    "\" doesn't exist", NULL);
 	    return TCL_ERROR;
