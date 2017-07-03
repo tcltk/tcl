@@ -110,6 +110,7 @@ typedef struct ThreadSpecificData {
     pthread_cond_t waitCV;	/* Any other thread alerts a notifier that an
 				 * event is ready to be processed by signaling
 				 * this condition variable. */
+    int waitCVMono;		/* Mark wait monotonic based */
 #endif /* __CYGWIN__ */
     int waitCVinitialized;	/* Variable to flag initialization of the structure */
     int eventReady;		/* > 0 if an event is ready to be processed.
@@ -332,6 +333,7 @@ ClientData
 Tcl_InitNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    pthread_condattr_t wcvAttr, *wcvAttrPtr = NULL;
 
 #ifdef TCL_THREADS
     tsdPtr->eventReady = 0;
@@ -361,7 +363,14 @@ Tcl_InitNotifier(void)
 	tsdPtr->event = CreateEventW(NULL, 1 /* manual */,
 		0 /* !signaled */, NULL);
 #else
-	pthread_cond_init(&tsdPtr->waitCV, NULL);
+	pthread_condattr_init(&wcvAttr);
+        if (pthread_condattr_setclock(&wcvAttr, CLOCK_MONOTONIC) == 0) {
+	    /* we can use conditional wait monotonic based */
+	    wcvAttrPtr = &wcvAttr;
+	    tsdPtr->waitCVMono = 1;
+        }
+	pthread_cond_init(&tsdPtr->waitCV, wcvAttrPtr);
+        (void)pthread_condattr_destroy(&wcvAttr);
 #endif /* __CYGWIN__ */
 	tsdPtr->waitCVinitialized = 1;
     }
@@ -1116,7 +1125,8 @@ Tcl_WaitForEvent(
 	    /* TIP #233: Scale from virtual time to real-time  */
 	    TclpScaleUTime(&waitTime);
 
-	    clock_gettime(CLOCK_REALTIME, &ptime);
+	    clock_gettime(tsdPtr->waitCVMono ? 
+		CLOCK_MONOTONIC : CLOCK_REALTIME, &ptime);
 	    ptime.tv_sec += waitTime / 1000000;
 	    ptime.tv_nsec += (waitTime % 1000000) * 1000;
 	    if (ptime.tv_nsec > 1000000*1000) {
@@ -1151,7 +1161,7 @@ Tcl_WaitForEvent(
 		ptime.tv_sec++;
 	    }
 	    if (pthread_cond_timedwait(&tsdPtr->waitCV, &notifierMutex,
-	    		&ptime) == ETIMEDOUT) {
+			&ptime) == ETIMEDOUT) {
 		continue; /* repeat wait (if not yet real timeout) */
 	    };
 	} else {
