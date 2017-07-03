@@ -55,6 +55,16 @@
 typedef int ptrdiff_t;
 #endif
 
+/* 
+ * [MSVC] fallback to replace C++ keyword "inline" with C keyword "__inline" 
+ * Otherwise depending on the VC-version, context, include-order it can cause:
+ *  error C2054: expected '(' to follow 'inline'
+ */
+#if defined(_MSC_VER) && !defined(inline)
+#	define inline	__inline
+#endif
+
+
 /*
  * Ensure WORDS_BIGENDIAN is defined correctly:
  * Needs to happen here in addition to configure to work with fat compiles on
