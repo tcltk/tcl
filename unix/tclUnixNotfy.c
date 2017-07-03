@@ -871,7 +871,7 @@ void
 TclpUSleep(
     Tcl_WideInt usec)	/* Time to sleep. */
 {
-    Tcl_WideInt now, desired, sleepTime;
+    Tcl_WideInt now, desired;
 
     if (usec < 0) {
 	usec = 0;
@@ -903,24 +903,19 @@ TclpUSleep(
 	    delay.tv_sec  = usec / 1000000;
 	    delay.tv_usec = usec % 1000000;
 
-	    sleepTime = usec;
 	    (void) select(0, (SELECT_MASK *) 0, (SELECT_MASK *) 0,
 		(SELECT_MASK *) 0, &delay);
 
 	} else if (usec >= TCL_TMR_MIN_SLEEP) {
-	    sleepTime = usec - TCL_TMR_MIN_SLEEP;
-	    usleep(sleepTime);
+	    usleep((useconds_t)(usec - TCL_TMR_MIN_SLEEP));
 	} else {
 	    /* nanosleep has the same minimal sleep interval as usleep */
-#if 1
-	    sleepTime = 0;
-#else
+#if 0
 	    struct timespec delay;
 
 	    delay.tv_sec  = usec / 1000000;
 	    delay.tv_nsec = (usec % 1000000) * 1000; /* usec to nsec */
 
-	    sleepTime = usec;
 	    nanosleep(&delay, NULL);
 #endif
 	}
@@ -991,17 +986,18 @@ Tcl_WaitForEvent(
 
 	waitTime = TCL_TIME_TO_USEC(*timePtr);
 
-	/*
-	 * Note the time can be switched (time-jump), so use monotonic time here.
-	 */
-	endTime = TclpGetUTimeMonotonic() + waitTime;
-
 	/* 
 	 * If short wait or no wait at all, just process events already available
 	 * right now, avoid waiting too long somewhere (NRT-capability fix).
 	 */
 	if (!timePtr->sec && timePtr->usec < TCL_TMR_MIN_DELAY) {
+
 	    canWait = 0;
+	} else {
+	    /*
+	     * Note the time can be switched (time-jump), so use monotonic time here.
+	     */
+	    endTime = TclpGetUTimeMonotonic() + waitTime;
 	}
 
 #ifndef TCL_THREADS
@@ -1038,6 +1034,7 @@ Tcl_WaitForEvent(
 	goto nowait;
     }
 
+    waitForFiles = (tsdPtr->numFdBits > 0);
     if (!canWait) {
 	/*
 	 * Cannot emulate a polling select with a polling condition
@@ -1047,10 +1044,10 @@ Tcl_WaitForEvent(
 	 * state as ours currently is. We block until that happens.
 	 */
 
-	waitForFiles = 1;
-	tsdPtr->pollState = POLL_WANT;
+	if (waitForFiles) {
+	    tsdPtr->pollState = POLL_WANT;
+	}
     } else {
-	waitForFiles = (tsdPtr->numFdBits > 0);
 	tsdPtr->pollState = 0;
     }
 
@@ -1083,7 +1080,7 @@ Tcl_WaitForEvent(
 
     while (!tsdPtr->eventReady) {
 
-	if (timePtr) {
+	if (canWait && timePtr) {
 
 	    waitTime = endTime - TclpGetUTimeMonotonic();
 
@@ -1095,7 +1092,7 @@ Tcl_WaitForEvent(
 	    }
 	}
 
-#ifdef __CYGWIN__
+#  ifdef __CYGWIN__
 	if (!PeekMessageW(&msg, NULL, 0, 0, 0)) {
 	    DWORD timeout;
 
@@ -1111,11 +1108,13 @@ Tcl_WaitForEvent(
 	    MsgWaitForMultipleObjects(1, &tsdPtr->event, 0, timeout, 1279);
 	    pthread_mutex_lock(&notifierMutex);
 	}
-#else
+#  else
 	/* prevent too long waiting (NRT-capability) */
 	if ( !canWait ) {
 	    /* short sleep */
-	    TclpUSleep(waitTime);
+	    if (waitTime) {
+		TclpUSleep(waitTime);
+	    }
 	    break; /* end of wait */
 	}
 	else
@@ -1134,7 +1133,7 @@ Tcl_WaitForEvent(
 		ptime.tv_sec++;
 	    }
 
-#if defined(__APPLE__) && defined(__LP64__)
+#    if defined(__APPLE__) && defined(__LP64__)
 	    /*
 	     * On 64-bit Darwin, pthread_cond_timedwait() appears to have
 	     * a bug that causes it to wait forever when passed an
@@ -1146,7 +1145,7 @@ Tcl_WaitForEvent(
 		ptime.tv_sec = now.sec;
 		ptime.tv_nsec = 1000 * now.usec + 10; /* + 10 nanosecond */
 	    }
-#else
+#    else
 	    /* remove overhead in nsec */
 	    if (ptime.tv_nsec < TCL_TMR_OVERHEAD * 1000) {
 	    	ptime.tv_nsec += 1000000*1000;
@@ -1154,7 +1153,7 @@ Tcl_WaitForEvent(
 	    }
 	    ptime.tv_nsec -= TCL_TMR_OVERHEAD * 1000;
 	    
-#endif /* __APPLE__ && __LP64__ */
+#    endif /* __APPLE__ && __LP64__ */
 
 	    if (ptime.tv_nsec > 1000000*1000) {
 		ptime.tv_nsec -= 1000000*1000;
@@ -1167,7 +1166,7 @@ Tcl_WaitForEvent(
 	} else {
 	    pthread_cond_wait(&tsdPtr->waitCV, &notifierMutex);
 	}
-#endif /* __CYGWIN__ */
+#  endif /* __CYGWIN__ */
 
 	break; /* end of wait */
     }
@@ -1175,7 +1174,7 @@ Tcl_WaitForEvent(
 	tsdPtr->eventReady--;
     }
 
-#ifdef __CYGWIN__
+#  ifdef __CYGWIN__
     while (PeekMessageW(&msg, NULL, 0, 0, 0)) {
 	/*
 	 * Retrieve and dispatch the message.
@@ -1192,7 +1191,7 @@ Tcl_WaitForEvent(
 	}
     }
     ResetEvent(tsdPtr->event);
-#endif /* __CYGWIN__ */
+#  endif /* __CYGWIN__ */
 
     if (waitForFiles && tsdPtr->onList) {
 	/*
@@ -1218,7 +1217,7 @@ Tcl_WaitForEvent(
 	}
     }
 
-#else
+#else /* !TCL_THREADS */
     tsdPtr->readyMasks = tsdPtr->checkMasks;
     numFound = select(tsdPtr->numFdBits, &tsdPtr->readyMasks.readable,
 	    &tsdPtr->readyMasks.writable, &tsdPtr->readyMasks.exception,
@@ -1234,7 +1233,7 @@ Tcl_WaitForEvent(
 	FD_ZERO(&tsdPtr->readyMasks.writable);
 	FD_ZERO(&tsdPtr->readyMasks.exception);
     }
-#endif /* TCL_THREADS */
+#endif /* !TCL_THREADS */
 
     /*
      * Queue all detected file events before returning.

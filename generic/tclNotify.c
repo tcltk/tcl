@@ -726,17 +726,18 @@ Tcl_ServiceEvent(
 	}
     }
 
+    /* Fast bypass case */
+    if ( !tsdPtr->firstEventPtr /* no other events */
+      || ((flags & TCL_ALL_EVENTS) == TCL_TIMER_EVENTS) /* timers only */
+    ) {
+	goto timer;
+    }
+
     /*
      * If timer marker reached, process timer events now.
      */
-    if (flags & TCL_TIMER_EVENTS) { /* timer allowed */
-	if ( tsdPtr->timerMarkerPtr == INT2PTR(-1) /* timer-event reached */
-	  || ( tsdPtr->timerMarkerPtr == INT2PTR(-2) /* next cycle, but ... */
-	    && ((flags & TCL_ALL_EVENTS) == TCL_TIMER_EVENTS) /* timers only */
-	  )
-	) {
-	    goto processTimer;
-	}
+    if ((flags & TCL_TIMER_EVENTS) && (tsdPtr->timerMarkerPtr == INT2PTR(-1))) {
+	goto processTimer;
     }
 
     /*
@@ -845,6 +846,7 @@ Tcl_ServiceEvent(
     }
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 
+  timer:
     /*
      * Process timer queue, if alloved and timers are enabled.
      */
