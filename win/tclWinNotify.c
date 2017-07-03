@@ -671,17 +671,17 @@ Tcl_WaitForEvent(
 		endTime.sec++;
 	}
 
+	if (timerResolution.available == -1) {
+	    InitTimerResolution();
+	}
+	
+    repeat:
 	/*
 	* TIP #233 (Virtualized Time). Convert virtual domain delay to
 	* real-time.
 	*/
 	(*tclScaleTimeProcPtr) (&waitTime, tclTimeClientData);
 
-	if (timerResolution.available == -1) {
-	    InitTimerResolution();
-	}
-	
-    repeat:
 	/* add possible tolerance in percent, so "round" to full ms (-overhead) */
 	waitTime.usec += waitTime.usec * (TMR_RES_TOLERANCE / 100);
 	/* No wait if timeout too small (because windows may wait too long) */
@@ -846,6 +846,18 @@ Tcl_Sleep(
 				 * real. */
     DWORD sleepTime;		/* Time to sleep, real-time */
 
+    unsigned long actualResolution = 0;
+
+    if (ms <= 0) {
+    	/* causes context switch only */
+    	Sleep(0);
+    	return;
+    }
+
+    if (timerResolution.available == -1) {
+	InitTimerResolution();
+    }
+
     vdelay.sec  = ms / 1000;
     vdelay.usec = (ms % 1000) * 1000;
 
@@ -861,10 +873,45 @@ Tcl_Sleep(
      * TIP #233: Scale delay from virtual to real-time.
      */
 
-    (*tclScaleTimeProcPtr) (&vdelay, tclTimeClientData);
-    sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
-
     for (;;) {
+	
+	(*tclScaleTimeProcPtr) (&vdelay, tclTimeClientData);
+
+	/* add possible tolerance in percent, so "round" to full ms (-overhead) */
+	vdelay.usec += vdelay.usec * (TMR_RES_TOLERANCE / 100);
+	/* No wait if sleep time too small (because windows may wait too long) */
+	if (!vdelay.sec && vdelay.usec < (long)timerResolution.minDelay) {
+	    sleepTime = 0;
+	    goto wait;
+	}
+
+	if (timerResolution.available) {
+	    if (vdelay.sec || vdelay.usec > timerResolution.maxDelay) {
+	    	long usec;
+	    	sleepTime = vdelay.sec * 1000;
+		usec = ((sleepTime * 1000) + vdelay.usec) % 1000000;
+		sleepTime += (usec - (usec % timerResolution.maxDelay)) / 1000;
+	    } else {
+	    	/* calculate resolution up to 1000 microseconds
+	    	 * (don't use highest, because of too large CPU load) */
+		ULONG res;
+		if (vdelay.usec >= 10000) {
+		    res = 10000 * TMR_RES_MICROSEC;
+		} else {
+		    res = 1000 * TMR_RES_MICROSEC;
+		}
+		sleepTime = vdelay.usec / 1000;
+		/* set more precise timer resolution for minimal delay */
+		if (!actualResolution || res < timerResolution.curRes) {
+		    actualResolution = SetTimerResolution(
+			res, actualResolution);
+		}
+	    }
+	} else {
+	    sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
+	}
+
+    wait:
 	Sleep(sleepTime);
 	Tcl_GetTime(&now);
 	if (now.sec > desired.sec) {
@@ -875,9 +922,15 @@ Tcl_Sleep(
 
 	vdelay.sec  = desired.sec  - now.sec;
 	vdelay.usec = desired.usec - now.usec;
+	if (vdelay.usec < 0) {
+	    vdelay.sec--;
+	    vdelay.usec += 1000000;
+	}
+    }
 
-	(*tclScaleTimeProcPtr) (&vdelay, tclTimeClientData);
-	sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
+    /* restore timer resolution */
+    if (actualResolution) {
+	RestoreTimerResolution(actualResolution); 
     }
 }
 

@@ -611,7 +611,7 @@ TimerSetupProc(
 	blockTime.sec = firstTime->sec - blockTime.sec;
 	blockTime.usec = firstTime->usec - blockTime.usec;
 	if (blockTime.usec < 0) {
-	    blockTime.sec -= 1;
+	    blockTime.sec--;
 	    blockTime.usec += 1000000;
 	}
 	if (blockTime.sec < 0) {
@@ -665,8 +665,8 @@ TimerCheckProc(
 
     if (tsdPtr == NULL) { tsdPtr = InitTimer(); };
 
-    /* If already pending */
-    if (!tsdPtr->timerList || tsdPtr->timerPending) {
+    /* If already pending (or no timer-events) */
+    if (tsdPtr->timerPending || !tsdPtr->timerList) {
     	return;
     }
 
@@ -678,18 +678,14 @@ TimerCheckProc(
     blockTime.sec = firstTime->sec - blockTime.sec;
     blockTime.usec = firstTime->usec - blockTime.usec;
     if (blockTime.usec < 0) {
-        blockTime.sec -= 1;
+        blockTime.sec--;
         blockTime.usec += 1000000;
-    }
-    if (blockTime.sec < 0) {
-        blockTime.sec = 0;
-        blockTime.usec = 0;
     }
     
     /*
     * If the first timer has expired, stick an event on the queue.
     */
-    if (blockTime.sec == 0 && blockTime.usec == 0) {
+    if (blockTime.sec < 0 || blockTime.sec == 0 && blockTime.usec <= 0) {
 	TclSetTimerEventMarker(0);
 	tsdPtr->timerPending = 1;
     }
@@ -725,7 +721,6 @@ TclServiceTimerEvents(void)
     size_t currentGeneration, currentEpoch;
     int prevTmrPending;
     ThreadSpecificData *tsdPtr = InitTimer();
-
 
     if (!tsdPtr->timerPending) {
     	return 0; /* no timer events */
@@ -1374,6 +1369,13 @@ AfterDelay(
 
     Tcl_Time endTime, now;
     Tcl_WideInt diff;
+
+    if (ms <= 0) {
+	/* to cause a context switch only */
+	Tcl_Sleep(0);
+	return TCL_OK;
+    }
+
 
     Tcl_GetTime(&endTime);
     TclTimeAddMilliseconds(&endTime, ms);
