@@ -1380,13 +1380,13 @@ Tcl_VwaitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    int done = 0, foundEvent = 1, limit = 0;
+    int done = 0, foundEvent = 1, limit = 0, checktime = 0;
     int flags = TCL_ALL_EVENTS; /* default flags */
     char *nameString;
-    int opti = 1,	 /* start option index (and index of varname later) */
-    	optc = objc - 2; /* options count without cmd and varname */
+    int optc = objc - 2; /* options count without cmd and varname */
     double ms = -1;
     Tcl_Time wakeup;
+    long tolerance = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? ?timeout? name");
@@ -1418,6 +1418,10 @@ Tcl_VwaitObjCmd(
 	if (ms > 0) {
 	    Tcl_GetTime(&wakeup);
 	    TclTimeAddMilliseconds(&wakeup, ms);
+	#ifdef TMR_RES_TOLERANCE
+	    tolerance = (ms < 1000 ? ms : 1000) *
+				(1000 * TMR_RES_TOLERANCE / 100);
+	#endif
 	} else if (ms == 0) {
 	    flags |= TCL_DONT_WAIT;
 	}
@@ -1441,16 +1445,20 @@ Tcl_VwaitObjCmd(
 		blockTime.sec--;
 		blockTime.usec += 1000000;
 	    }
-	    if (  blockTime.sec < 0 
-	      || (blockTime.sec == 0 && blockTime.usec <= 0)
-	    ) {
-		/* timeout occurs */
-		done = -1;
-		break;
+	    /* be sure process at least one event */
+	    if (checktime) {
+		if (  blockTime.sec < 0 
+		  || (blockTime.sec == 0 && blockTime.usec <= tolerance)
+		) {
+		    /* timeout occurs */
+		    done = -1;
+		    break;
+		}
 	    }
+	    checktime = 1;
 	    Tcl_SetMaxBlockTime(&blockTime);
 	}
-	if ((foundEvent = Tcl_DoOneEvent(flags)) == 0) {
+	if ((foundEvent = Tcl_DoOneEvent(flags)) <= 0) {
 	    /* 
 	     * If don't wait flag set - no error, and two cases:
 	     * option -nowait for vwait means - we don't wait for events;
@@ -1459,12 +1467,14 @@ Tcl_VwaitObjCmd(
 	    if (flags & TCL_DONT_WAIT) {
 		foundEvent = 1;
 		done = -2;
-	    }
-	    if (ms > 0) {
+	    } else if (ms > 0 && foundEvent == 0) {
 		foundEvent = 1;
-	    }
+	    } 
 	    /* don't stop wait - no event expected here 
 	     * (stop only on error case foundEvent < 0). */
+	    if (foundEvent < 0) {
+		done = -2;
+	    }
 	}
 	/* check interpreter limit exceeded */
 	if (Tcl_LimitExceeded(interp)) {

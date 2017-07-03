@@ -22,7 +22,6 @@
 #define WM_WAKEUP	WM_USER	/* Message that is send by
 				 * Tcl_AlertNotifier. */
 
-//#define WIN_TIMER_PRECISION	15000	/* Handle of interval timer. */
 /*
  * The following static structure contains the state information for the
  * Windows implementation of the Tcl notifier. One of these structures is
@@ -408,9 +407,6 @@ static LPFN_NtQueryTimerResolution NtQueryTimerResolution = NULL;
 static LPFN_NtSetTimerResolution NtSetTimerResolution = NULL;
 
 #define TMR_RES_MICROSEC (1000 / 100)
-#define TMR_RES_TOLERANCE 2.5	/* Tolerance (in percent), prevents entering
-				 * busy wait, but has fewer accuracy because
-				 * can wait a bit longer as wanted */
 
 static struct {
     int   available;		/* Availability of timer resolution functions */
@@ -636,6 +632,7 @@ Tcl_WaitForEvent(
     int status = 0;
     Tcl_Time waitTime = {0, 0};
     Tcl_Time endTime;
+    long tolerance = 0;
     unsigned long actualResolution = 0;
 
     /*
@@ -657,10 +654,16 @@ Tcl_WaitForEvent(
 	waitTime.usec = timePtr->usec;
 
 	/* if no wait */
-	if (waitTime.sec == 0 && waitTime.usec == 0) {
+	if (waitTime.sec <= 0 && waitTime.usec <= 0) {
 	    result = 0;
 	    goto peek;
 	}
+
+    #ifdef TMR_RES_TOLERANCE
+	/* calculate possible maximal tolerance (in usec) of original wait-time */
+	tolerance = ((waitTime.sec <= 0) ? waitTime.usec : 1000000) *
+			(TMR_RES_TOLERANCE / 100);
+    #endif
 
 	/* calculate end of wait */
 	Tcl_GetTime(&endTime);
@@ -682,8 +685,6 @@ Tcl_WaitForEvent(
 	*/
 	(*tclScaleTimeProcPtr) (&waitTime, tclTimeClientData);
 
-	/* add possible tolerance in percent, so "round" to full ms (-overhead) */
-	waitTime.usec += waitTime.usec * (TMR_RES_TOLERANCE / 100);
 	/* No wait if timeout too small (because windows may wait too long) */
 	if (!waitTime.sec && waitTime.usec < (long)timerResolution.minDelay) {
 	    /* prevent busy wait */
@@ -695,14 +696,18 @@ Tcl_WaitForEvent(
 	}
 	
 	if (timerResolution.available) {
-	    if (waitTime.sec || waitTime.usec > timerResolution.maxDelay) {
-	    	long usec;
-	    	timeout = waitTime.sec * 1000;
-		usec = ((timeout * 1000) + waitTime.usec) % 1000000;
+	    if (waitTime.sec || waitTime.usec + tolerance > timerResolution.maxDelay) {
+		long usec;
+		timeout = waitTime.sec * 1000;
+		usec = (timeout * 1000) + waitTime.usec + tolerance;
+		if (usec > 1000000) {
+		    usec -= 1000000;
+		    timeout += 1000;
+		}
 		timeout += (usec - (usec % timerResolution.maxDelay)) / 1000;
 	    } else {
-	    	/* calculate resolution up to 1000 microseconds
-	    	 * (don't use highest, because of too large CPU load) */
+		/* calculate resolution up to 1000 microseconds
+		 * (don't use highest, because of too large CPU load) */
 		ULONG res;
 		if (waitTime.usec >= 10000) {
 		    res = 10000 * TMR_RES_MICROSEC;
@@ -794,7 +799,7 @@ Tcl_WaitForEvent(
 	    waitTime.usec += 1000000;
 	    waitTime.sec--;
 	}
-	if (waitTime.sec < 0 || !waitTime.sec && waitTime.usec <= 0) {
+	if (waitTime.sec < 0 || !waitTime.sec && waitTime.usec <= tolerance) {
 	    goto end;
 	}
 	/* Repeat wait with more precise timer resolution (or using sleep) */
@@ -845,7 +850,6 @@ Tcl_Sleep(
     Tcl_Time vdelay;		/* Time to sleep, for scaling virtual ->
 				 * real. */
     DWORD sleepTime;		/* Time to sleep, real-time */
-
     unsigned long actualResolution = 0;
 
     if (ms <= 0) {
@@ -865,9 +869,20 @@ Tcl_Sleep(
     desired.sec  = now.sec  + vdelay.sec;
     desired.usec = now.usec + vdelay.usec;
     if (desired.usec > 1000000) {
-	++desired.sec;
 	desired.usec -= 1000000;
+	desired.sec++;
     }
+
+#ifdef TMR_RES_TOLERANCE
+    /* calculate possible maximal tolerance (in usec) of original wait-time */
+    if (vdelay.sec <= 0) {
+	desired.usec -= vdelay.usec * (TMR_RES_TOLERANCE / 100);
+	if (desired.usec < 0) {
+	    desired.usec += 1000000;
+	    desired.sec--;
+	}
+    }
+#endif
 
     /*
      * TIP #233: Scale delay from virtual to real-time.
@@ -877,8 +892,6 @@ Tcl_Sleep(
 	
 	(*tclScaleTimeProcPtr) (&vdelay, tclTimeClientData);
 
-	/* add possible tolerance in percent, so "round" to full ms (-overhead) */
-	vdelay.usec += vdelay.usec * (TMR_RES_TOLERANCE / 100);
 	/* No wait if sleep time too small (because windows may wait too long) */
 	if (!vdelay.sec && vdelay.usec < (long)timerResolution.minDelay) {
 	    sleepTime = 0;

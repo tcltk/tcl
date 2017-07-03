@@ -588,6 +588,7 @@ TimerSetupProc(
 {
     Tcl_Time blockTime, *firstTime;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)data;
+    long tolerance = 0;
 
     if (tsdPtr == NULL) { tsdPtr = InitTimer(); };
 
@@ -619,10 +620,15 @@ TimerSetupProc(
 	    blockTime.usec = 0;
 	}
 	
+    #ifdef TMR_RES_TOLERANCE
+	/* consider timer resolution tolerance (avoid busy wait) */
+	tolerance = ((blockTime.sec <= 0) ? blockTime.usec : 1000000) *
+				(TMR_RES_TOLERANCE / 100);
+    #endif
 	/*
 	* If the first timer has expired, stick an event on the queue right now.
 	*/
-	if (!tsdPtr->timerPending && blockTime.sec == 0 && blockTime.usec == 0) {
+	if (!tsdPtr->timerPending && blockTime.sec == 0 && blockTime.usec <= tolerance) {
 	    TclSetTimerEventMarker(0);
 	    tsdPtr->timerPending = 1;
 	}
@@ -717,7 +723,7 @@ int
 TclServiceTimerEvents(void)
 {
     TimerEntry *entryPtr, *nextPtr;
-    Tcl_Time time;
+    Tcl_Time time, entrytm;
     size_t currentGeneration, currentEpoch;
     int prevTmrPending;
     ThreadSpecificData *tsdPtr = InitTimer();
@@ -791,7 +797,16 @@ TclServiceTimerEvents(void)
     ) {
     	nextPtr = entryPtr->nextPtr;
 
-	if (TCL_TIME_BEFORE(time, TimerEntry2TimerHandler(entryPtr)->time)) {
+	entrytm = TimerEntry2TimerHandler(entryPtr)->time;
+    #ifdef TMR_RES_TOLERANCE
+	entrytm.usec -= ((entrytm.sec <= 0) ? entrytm.usec : 1000000) *
+				(TMR_RES_TOLERANCE / 100);
+	if (entrytm.usec < 0) {
+	    entrytm.usec += 1000000;
+	    entrytm.sec--;
+	}
+    #endif
+	if (TCL_TIME_BEFORE(time, entrytm)) {
 	    break;
 	}
 
@@ -1369,6 +1384,9 @@ AfterDelay(
 
     Tcl_Time endTime, now;
     Tcl_WideInt diff;
+#ifdef TMR_RES_TOLERANCE
+    long tolerance;
+#endif
 
     if (ms <= 0) {
 	/* to cause a context switch only */
@@ -1376,6 +1394,10 @@ AfterDelay(
 	return TCL_OK;
     }
 
+    /* calculate possible maximal tolerance (in usec) of original wait-time */
+#ifdef TMR_RES_TOLERANCE
+    tolerance = ((ms < 1000) ? ms : 1000) * (1000 * TMR_RES_TOLERANCE / 100);
+#endif
 
     Tcl_GetTime(&endTime);
     TclTimeAddMilliseconds(&endTime, ms);
@@ -1399,6 +1421,7 @@ AfterDelay(
 #endif
 	    if (diff > 0) {
 		Tcl_Sleep((long)diff);
+		Tcl_GetTime(&now);
 	    }
 	} else {
 	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
@@ -1409,11 +1432,20 @@ AfterDelay(
 #endif
 	    if (diff > 0) {
 		Tcl_Sleep((long)diff);
+		Tcl_GetTime(&now);
 	    }
 	    if (Tcl_LimitCheck(interp) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	}
+	/* consider timer resolution tolerance (avoid busy wait) */
+    #ifdef TMR_RES_TOLERANCE
+	now.usec += tolerance;
+	if (now.usec > 1000000) {
+	    now.usec -= 1000000;
+	    now.sec++;
+	}
+    #endif
     } while (TCL_TIME_BEFORE(now, endTime));
     return TCL_OK;
 }

@@ -2876,6 +2876,12 @@ MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClickInMicrosec(void);
 #	define		TclpWideClicksToNanoseconds(clicks) \
 				((double)(clicks) * TclpWideClickInMicrosec() * 1000)
+	/* Tolerance (in percent), prevents entering busy wait, but has fewer accuracy
+	 * because can wait a bit shorter as wanted. Currently experimental value
+	 * (4.5% equivalent to 15600 / 15000 with small overhead) */
+#     ifndef TMR_RES_TOLERANCE
+#	define TMR_RES_TOLERANCE 4.5
+#     endif
 #   endif
 #endif
 MODULE_SCOPE Tcl_WideInt TclpGetMicroseconds(void);
