@@ -1014,7 +1014,7 @@ Tcl_DoOneEvent(
 				 * TCL_TIMER_EVENTS, TCL_IDLE_EVENTS, or
 				 * others defined by event sources. */
 {
-    int result = 0, oldMode, i = 0;
+    int result = 0, oldMode;
     EventSource *sourcePtr;
     Tcl_Time *timePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);

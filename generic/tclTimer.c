@@ -25,7 +25,7 @@ typedef struct AfterInfo {
 				 * executed. */
     Tcl_Obj *commandPtr;	/* Command to execute. */
     Tcl_Obj *selfPtr;		/* Points to the handle object (self) */
-    size_t id;			/* Integer identifier for command */
+    unsigned int id;		/* Integer identifier for command */
     struct AfterInfo *nextPtr;	/* Next in list of all "after" commands for
 				 * this interpreter. */
     struct AfterInfo *prevPtr;	/* Prev in list of all "after" commands for
@@ -77,7 +77,7 @@ typedef struct {
 				 * a new loop, so that all old handlers can be
 				 * called without calling any of the new ones
 				 * created by old ones. */
-    size_t afterId;		/* For unique identifiers of after events. */
+    unsigned int afterId;	/* For unique identifiers of after events. */
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -203,7 +203,7 @@ AfterObj_UpdateString(objPtr)
 	return;
     }
 
-    len = sprintf(buf, "after#%d", afterPtr->id);
+    len = sprintf(buf, "after#%u", afterPtr->id);
 
     objPtr->length = len;
     objPtr->bytes = ckalloc((size_t)++len);
@@ -691,7 +691,7 @@ TimerCheckProc(
     /*
     * If the first timer has expired, stick an event on the queue.
     */
-    if (blockTime.sec < 0 || blockTime.sec == 0 && blockTime.usec <= 0) {
+    if (blockTime.sec < 0 || (blockTime.sec == 0 && blockTime.usec <= 0)) {
 	TclSetTimerEventMarker(0);
 	tsdPtr->timerPending = 1;
     }

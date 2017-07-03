@@ -1562,7 +1562,6 @@ Tcl_UpdateObjCmd(
 
     /* if arguments available - wrap options to flags */
     if (objc > 1) {
-	int i = 1;
 	if (GetEventFlagsFromOpts(interp, objc-1, objv+1, &flags) != TCL_OK) {
 	    return TCL_ERROR;
 	}
