@@ -86,6 +86,9 @@ proc test-exec {{reptime 1000}} {
     {update}
     # empty update idle tasks:
     {update idletasks}
+
+    # simple shortest sleep:
+    {after 0}
   }
 }
 
@@ -127,6 +130,15 @@ proc test-nrt-capability {{reptime 1000}} {
     {vwait 0.01 a}
     {vwait 0.005 a}
     {vwait 0.001 a}
+
+    # NRT sleep / very brief delays (0.5 - 0.005):
+    {after 0.5}
+    {after 0.05}
+    {after 0.005}
+    # NRT sleep / very brief delays (0.1 - 0.001):
+    {after 0.1}
+    {after 0.01}
+    {after 0.001}
 
     # comparison of update's executing event:
     {after idle {set a 5}; update -idle -timer}
