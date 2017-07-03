@@ -26,6 +26,7 @@ typedef struct AfterInfo {
 				 * interp in which command will be
 				 * executed. */
     Tcl_Obj *commandPtr;	/* Command to execute. */
+    Tcl_Obj *selfPtr;		/* Points to the handle object (self) */
     size_t id;			/* Integer identifier for command */
     int			flags;	/* Flags (IDLE_EVENT) */
     struct AfterInfo *nextPtr;	/* Next in list of all "after" commands for
@@ -123,15 +124,127 @@ static void		AfterCleanupProc(ClientData clientData,
 static int		AfterDelay(Tcl_Interp *interp, Tcl_WideInt ms);
 static void		AfterProc(ClientData clientData);
 static void		FreeAfterPtr(ClientData clientData);
-static AfterInfo *	GetAfterEvent(AfterAssocData *assocPtr,
-			    Tcl_Obj *commandPtr);
+static AfterInfo *	GetAfterEvent(AfterAssocData *assocPtr, Tcl_Obj *objPtr);
 static ThreadSpecificData *InitTimer(void);
 static void		TimerExitProc(ClientData clientData);
 static int		TimerHandlerEventProc(Tcl_Event *evPtr, int flags);
 static void		TimerCheckProc(ClientData clientData, int flags);
 static void		TimerSetupProc(ClientData clientData, int flags);
 
-/*
+static void             AfterObj_DupInternalRep(Tcl_Obj *, Tcl_Obj *);
+static void		AfterObj_FreeInternalRep(Tcl_Obj *);
+static void		AfterObj_UpdateString(Tcl_Obj *);
+
+
+
+/*
+ * Type definition.
+ */
+
+Tcl_ObjType afterObjType = {
+    "after",                    /* name */
+    AfterObj_FreeInternalRep,   /* freeIntRepProc */
+    AfterObj_DupInternalRep,    /* dupIntRepProc */
+    AfterObj_UpdateString,      /* updateStringProc */
+    NULL                        /* setFromAnyProc */
+};
+
+/*
+ *----------------------------------------------------------------------
+ */
+static void
+AfterObj_DupInternalRep(srcPtr, dupPtr)
+    Tcl_Obj *srcPtr;
+    Tcl_Obj *dupPtr;
+{
+    /* 
+     * Because we should have only a single reference to the after event,
+     * we'll copy string representation only.
+     */
+    if (dupPtr->bytes == NULL) {
+	if (srcPtr->bytes == NULL) {
+	    AfterObj_UpdateString(srcPtr);
+	}
+	if (srcPtr->bytes != tclEmptyStringRep) {
+	    TclInitStringRep(dupPtr, srcPtr->bytes, srcPtr->length);
+	} else {
+	    dupPtr->bytes = tclEmptyStringRep;
+	}
+    }
+}
+/*
+ *----------------------------------------------------------------------
+ */
+static void
+AfterObj_FreeInternalRep(objPtr)
+    Tcl_Obj *objPtr;
+{
+    /* 
+     * Because we should always have a reference by active after event,
+     * so it is a triggered / canceled event - just reset type and pointers
+     */
+    objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    objPtr->typePtr = NULL;
+
+    /* prevent no string representation bug */
+    if (objPtr->bytes == NULL) {
+	objPtr->length = 0;
+	objPtr->bytes = tclEmptyStringRep;
+    }
+}
+/*
+ *----------------------------------------------------------------------
+ */
+static void
+AfterObj_UpdateString(objPtr)
+    Tcl_Obj  *objPtr;
+{
+    char buf[16 + TCL_INTEGER_SPACE];
+    int len;
+ 
+    AfterInfo *afterPtr = (AfterInfo*)objPtr->internalRep.twoPtrValue.ptr1;
+
+    /* if already triggered / canceled - equivalent not found, we can use empty */
+    if (!afterPtr) {
+	objPtr->length = 0;
+	objPtr->bytes = tclEmptyStringRep;
+	return;
+    }
+
+    len = sprintf(buf, "after#%d", afterPtr->id);
+
+    objPtr->length = len;
+    objPtr->bytes = ckalloc((size_t)++len);
+    if (objPtr->bytes)
+	memcpy(objPtr->bytes, buf, len);
+
+}
+/*
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj*
+GetAfterObj(
+    AfterInfo *afterPtr)
+{
+    Tcl_Obj * objPtr = afterPtr->selfPtr;
+    
+    if (objPtr != NULL) {
+	return objPtr;
+    }
+    
+    TclNewObj(objPtr);
+    objPtr->typePtr = &afterObjType;
+    objPtr->bytes = NULL;
+    objPtr->internalRep.twoPtrValue.ptr1 = afterPtr;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    Tcl_IncrRefCount(objPtr);
+    afterPtr->selfPtr = objPtr;
+
+    return objPtr;
+};
+
+/*
  *----------------------------------------------------------------------
  *
  * InitTimer --
@@ -915,7 +1028,6 @@ Tcl_AfterObjCmd(
     AfterAssocData *assocPtr;
     int length;
     int index;
-    char buf[16 + TCL_INTEGER_SPACE];
     static CONST char *afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
     };
@@ -998,6 +1110,7 @@ Tcl_AfterObjCmd(
 	TclSpliceTailEx(afterPtr, 
 		assocPtr->firstAfterPtr, assocPtr->lastAfterPtr);
 	afterPtr->flags = 0;
+	afterPtr->selfPtr = NULL;
 
 	if (objc == 3) {
 	    afterPtr->commandPtr = objv[2];
@@ -1018,7 +1131,7 @@ Tcl_AfterObjCmd(
 
 	afterPtr->id = tsdPtr->afterId++;
 
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
+	Tcl_SetObjResult(interp, GetAfterObj(afterPtr));
 	return TCL_OK;
     }
     case AFTER_CANCEL: {
@@ -1030,27 +1143,35 @@ Tcl_AfterObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "id|command");
 	    return TCL_ERROR;
 	}
+
+	afterPtr = NULL;
 	if (objc == 3) {
 	    commandPtr = objv[2];
 	} else {
 	    commandPtr = Tcl_ConcatObj(objc-2, objv+2);;
 	}
-	command = Tcl_GetStringFromObj(commandPtr, &length);
-	for (afterPtr = assocPtr->lastAfterPtr;  afterPtr != NULL;
-		afterPtr = afterPtr->prevPtr) {
-	    tempCommand = Tcl_GetStringFromObj(afterPtr->commandPtr,
-		    &tempLength);
-	    if ((length == tempLength)
-		    && (memcmp((void*) command, (void*) tempCommand,
-			    (unsigned) length) == 0)) {
-		break;
+	if (commandPtr->typePtr == &afterObjType) {
+	    afterPtr = (AfterInfo*)commandPtr->internalRep.twoPtrValue.ptr1;
+	} else {
+	    command = Tcl_GetStringFromObj(commandPtr, &length);
+	    for (afterPtr = assocPtr->lastAfterPtr;
+		 afterPtr != NULL;
+		 afterPtr = afterPtr->prevPtr
+	    ) {
+		tempCommand = Tcl_GetStringFromObj(afterPtr->commandPtr,
+			&tempLength);
+		if ((length == tempLength)
+			&& (memcmp((void*) command, (void*) tempCommand,
+				(unsigned) length) == 0)) {
+		    break;
+		}
 	    }
-	}
-	if (afterPtr == NULL) {
-	    afterPtr = GetAfterEvent(assocPtr, commandPtr);
-	}
-	if (objc != 3) {
-	    Tcl_DecrRefCount(commandPtr);
+	    if (afterPtr == NULL) {
+		afterPtr = GetAfterEvent(assocPtr, commandPtr);
+	    }
+	    if (objc != 3) {
+		Tcl_DecrRefCount(commandPtr);
+	    }
 	}
 	if (afterPtr != NULL) {
 	    if (!(afterPtr->flags & IDLE_EVENT)) {
@@ -1081,6 +1202,7 @@ Tcl_AfterObjCmd(
 	TclSpliceTailEx(afterPtr, 
 		assocPtr->firstAfterPtr, assocPtr->lastAfterPtr);
 	afterPtr->flags = IDLE_EVENT;
+	afterPtr->selfPtr = NULL;
 
 	if (objc == 3) {
 	    afterPtr->commandPtr = objv[2];
@@ -1091,7 +1213,7 @@ Tcl_AfterObjCmd(
 	
 	afterPtr->id = tsdPtr->afterId++;
 	
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
+	Tcl_SetObjResult(interp, GetAfterObj(afterPtr));
 
 	return TCL_OK;
     };
@@ -1099,19 +1221,27 @@ Tcl_AfterObjCmd(
 	Tcl_Obj *resultListPtr;
 
 	if (objc == 2) {
-	    for (afterPtr = assocPtr->lastAfterPtr; afterPtr != NULL;
-		    afterPtr = afterPtr->prevPtr) {
-		if (assocPtr->interp == interp) {
-		    sprintf(buf, "after#%d", afterPtr->id);
-		    Tcl_AppendElement(interp, buf);
+	    /* return list of all after-events */
+	    Tcl_Obj *listPtr = Tcl_NewListObj(0, NULL);
+	    for (afterPtr = assocPtr->lastAfterPtr;
+		 afterPtr != NULL;
+		 afterPtr = afterPtr->prevPtr
+	    ) {
+		if (assocPtr->interp != interp) {
+		    continue;
 		}
+		
+		Tcl_ListObjAppendElement(NULL, listPtr, GetAfterObj(afterPtr));
 	    }
+
+	    Tcl_SetObjResult(interp, listPtr);
 	    return TCL_OK;
 	}
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "?id?");
 	    return TCL_ERROR;
 	}
+
 	afterPtr = GetAfterEvent(assocPtr, objv[2]);
 	if (afterPtr == NULL) {
 	    Tcl_AppendResult(interp, "event \"", TclGetString(objv[2]),
@@ -1228,7 +1358,7 @@ static AfterInfo *
 GetAfterEvent(
     AfterAssocData *assocPtr,	/* Points to "after"-related information for
 				 * this interpreter. */
-    Tcl_Obj *commandPtr)
+    Tcl_Obj *objPtr)
 {
     char *cmdString;		/* Textual identifier for after event, such as
 				 * "after#6". */
@@ -1236,7 +1366,11 @@ GetAfterEvent(
     int id;
     char *end;
 
-    cmdString = TclGetString(commandPtr);
+    if (objPtr->typePtr == &afterObjType) {
+	return (AfterInfo*)objPtr->internalRep.twoPtrValue.ptr1;
+    }
+
+    cmdString = TclGetString(objPtr);
     if (strncmp(cmdString, "after#", 6) != 0) {
 	return NULL;
     }
@@ -1288,12 +1422,17 @@ AfterProc(
      * a core dump.
      */
 
-
     /* remove delete proc from handler (we'll do cleanup here) */
     if (!(afterPtr->flags & IDLE_EVENT)) {
 	AfterInfo2TimerHandler(afterPtr)->deleteProc = NULL;
     } else {
 	AfterInfo2IdleHandler(afterPtr)->deleteProc = NULL;
+    }
+
+    /* release object (mark it was triggered) */
+    if (afterPtr->selfPtr && afterPtr->selfPtr->typePtr == &afterObjType) {
+	afterPtr->selfPtr->internalRep.twoPtrValue.ptr1 = NULL;
+	Tcl_DecrRefCount(afterPtr->selfPtr);
     }
 
     /* detach entry from the owner's list */
@@ -1344,6 +1483,12 @@ FreeAfterPtr(
 {
     AfterInfo *afterPtr = (AfterInfo *) clientData;
     AfterAssocData *assocPtr = afterPtr->assocPtr;
+
+    /* release object (mark it was triggered) */
+    if (afterPtr->selfPtr && afterPtr->selfPtr->typePtr == &afterObjType) {
+	afterPtr->selfPtr->internalRep.twoPtrValue.ptr1 = NULL;
+	Tcl_DecrRefCount(afterPtr->selfPtr);
+    }
 
     /* detach entry from the owner's list */
     TclSpliceOutEx(afterPtr, assocPtr->firstAfterPtr, assocPtr->lastAfterPtr);

@@ -513,6 +513,59 @@ test event-11.4 {Tcl_VwaitCmd procedure} {} {
     list [vwait y] $x $y $z $q
 } {{} x-done y-done before q-done}
 
+test event-11.4.2 {cancel} {} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x {}
+    # success cases:
+    after 10 {lappend x 1}
+    after 10 {lappend x 2}
+    after 10 {lappend x 3}
+    # cancel via object representation (4-6) and searching by id (7-9):
+    foreach i [list \
+	[after 0 {lappend x 4-unexpected}] \
+	[after 5 {lappend x 5-unexpected}] \
+	[after 10 {lappend x 6-unexpected}] \
+	[string trim " [after 0 {lappend x 7-unexpected}] "] \
+	[string trim " [after 5 {lappend x 8-unexpected}] "] \
+	[string trim " [after 10 {lappend x 9-unexpected}] "] \
+    ] {
+	after cancel $i
+    }
+    after 20 {set y done}
+    list [vwait y] $x $y
+} {{} {1 2 3} done}
+
+test event-11.4.3 {cancel twice and info} {} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x {}
+    # success cases:
+    after 10 {lappend x 1}
+    after 10 {lappend x 2}
+    after 10 {lappend x 3}
+    # cancel via object representation (4-6) and searching by id (7-9):
+    foreach i [list \
+	[after 0 {lappend x 4-unexpected}] \
+	[after 5 {lappend x 5-unexpected}] \
+	[after 10 {lappend x 6-unexpected}] \
+	[string trim " [after 0 {lappend x 7-unexpected}] "] \
+	[string trim " [after 5 {lappend x 8-unexpected}] "] \
+	[string trim " [after 10 {lappend x 9-unexpected}] "] \
+    ] {
+	after cancel $i
+	# just to test possible segfault:
+	after cancel $i
+	if {![catch {after info $i} i]} {; # unexpected (event doesn't exist)
+	    error "\"after info\" returns \"$i\" - should be an error"
+	}
+    }
+    after 20 {set y done}
+    list [vwait y] $x $y
+} {{} {1 2 3} done}
+
 foreach i [after info] {
     after cancel $i
 }
