@@ -17,12 +17,6 @@
 #define SECSPER4YEAR	(SECSPERYEAR * 4L + SECSPERDAY)
 
 /*
- * Number of samples over which to estimate the performance counter.
- */
-
-#define SAMPLES		64
-
-/*
  * The following arrays contain the day of year for the last day of each
  * month, where index 1 is January.
  */
@@ -75,22 +69,15 @@ typedef struct TimeInfo {
 	ULONGLONG fileTime;
 	ULONGLONG virtTime;
 	volatile		/* used also to compare calibration epoch */
-	LONGLONG perfCounter; 
+	LONGLONG perfCounter;
 	LONGLONG counterFreq;
     } lastCC;			/* Last data updated in calibration cycle */
+    
+    int freqFactor;		/* Frequency factor (1000 - KHz, 1 - Hz) */
     
     Tcl_WideInt lastUsedTime;	/* Last known (caller) virtual time in 100-ns
 				 * (used to avoid drifts after calibrate) */
 
-    /*
-     * Data used in developing the estimate of performance counter frequency
-     */
-
-    Tcl_WideUInt fileTimeSample[SAMPLES];
-				/* Last 64 samples of system time. */
-    Tcl_WideInt perfCounterSample[SAMPLES];
-				/* Last 64 samples of performance counter. */
-    int sampleNo;		/* Current sample number. */
 } TimeInfo;
 
 static TimeInfo timeInfo = {
@@ -114,10 +101,8 @@ static TimeInfo timeInfo = {
 	(LONGLONG) 0,
 	(LONGLONG) 0
     },
-    (Tcl_WideInt) 0,
-    { (Tcl_WideUInt) 0 },
-    { (Tcl_WideInt) 0 },
-    0
+    1000, /* KHz */
+    (Tcl_WideInt) 0
 };
 
 /*
@@ -139,10 +124,6 @@ static struct tm *	ComputeGMT(const time_t *tp);
 static void		StopCalibration(ClientData clientData);
 static DWORD WINAPI	CalibrationThread(LPVOID arg);
 static void 		UpdateTimeEachSecond(void);
-static void		ResetCounterSamples(Tcl_WideUInt fileTime,
-			    Tcl_WideInt perfCounter, Tcl_WideInt perfFreq);
-static Tcl_WideInt	AccumulateSample(Tcl_WideInt perfCounter,
-			    Tcl_WideUInt fileTime);
 static void		NativeScaleTime(Tcl_Time* timebuf,
 			    ClientData clientData);
 static Tcl_WideInt	NativeGetMicroseconds(void);
@@ -657,6 +638,12 @@ NativeGetMicroseconds(void)
 
 	    if (timeInfo.perfCounterAvailable) {
 		DWORD id;
+
+		/* Some systems having frequency in Hz, so save the factor here */
+		if (timeInfo.nominalFreq.QuadPart >= 1000000000) {
+		    /* assume that frequency in Hz, factor used only for tolerance */
+		    timeInfo.freqFactor = 1;
+		}
 
 		InitializeCriticalSection(&timeInfo.cs);
 		timeInfo.readyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -1194,10 +1181,6 @@ CalibrationThread(
     timeInfo.lastCC.counterFreq = timeInfo.nominalFreq.QuadPart;
     timeInfo.lastCC.fileTime = timeInfo.lastCC.virtTime = GetSystemTimeAsVirtual();
 
-    ResetCounterSamples(timeInfo.lastCC.fileTime,
-	    timeInfo.lastCC.perfCounter,
-	    timeInfo.lastCC.counterFreq);
-
     /*
      * Calibrate first time and wake up the calling thread. 
      * When it wakes up, it will release the initialization lock.
@@ -1260,9 +1243,6 @@ UpdateTimeEachSecond(void)
     LARGE_INTEGER curPerfCounter;
 				/* Current value returned from
 				 * QueryPerformanceCounter. */
-    static Tcl_WideInt lastDiff = 0;
-    				/* Last difference between system clock and Tcl
-				 * time. */
     static int calibrationInterv = 10000000;
 				/* Calibration interval in 100-ns ticks (starts from 1s) */
     Tcl_WideInt curFileTime;	/* File time at the time this callback was
@@ -1271,27 +1251,30 @@ UpdateTimeEachSecond(void)
     int		driftBack;	/* Sign the virtual time may drift backwards */
     Tcl_WideInt vt0;		/* Tcl time right now. */
     Tcl_WideInt vt1;		/* Interim virtual time used during adjustments */
-    Tcl_WideInt tdiff;		/* Difference between system clock and Tcl
-				 * time. */
+    Tcl_WideInt tdiff,		/* Difference between system clock and Tcl time. */
+		lastDiff;	/* Difference of last calibration. */
 
-    printf("-------------calibration start, prev-struct: %I64d, %I64d, %I64d\n", timeInfo.lastCC.fileTime, timeInfo.lastCC.perfCounter, timeInfo.lastCC.counterFreq);
     /*
      * Sample system time (from posix epoch) and performance counter.
      */
 
     curFileTime = GetSystemTimeAsVirtual();
     QueryPerformanceCounter(&curPerfCounter);
+    printf("-------------calibration start, prev-struct: %I64d, %I64d, %I64d, pc-diff: %I64d\n", timeInfo.lastCC.fileTime, timeInfo.lastCC.perfCounter, timeInfo.lastCC.counterFreq, curPerfCounter.QuadPart - timeInfo.lastCC.perfCounter);
 
     /* 
-     * Current virtual time:
-     * vt0 = lastCC.fileTime +
+     * Current virtual time (using average between fileTime and virtTime):
+     * vt0 = (lastCC.fileTime + lastCC.virtTime) / 2 +
      *       10000000 * (curPerfCounter - lastCC.perfCounter) / lastCC.counterFreq
      */
-    vt0 = NativeCalc100NsTicks((timeInfo.lastCC.fileTime/2 + timeInfo.lastCC.virtTime/2),
+    vt0 = NativeCalc100NsTicks(
+	    (timeInfo.lastCC.fileTime/2 + timeInfo.lastCC.virtTime/2),
 	    timeInfo.lastCC.perfCounter, timeInfo.lastCC.counterFreq,
 	    curPerfCounter.QuadPart);
 
-    tdiff = vt0 - curFileTime; /* discrepancy between virtual and real-time */
+    /* Differences between virtual and real-time */
+    tdiff = vt0 - curFileTime;
+    lastDiff = timeInfo.lastCC.virtTime - timeInfo.lastCC.fileTime;
     if (tdiff >= 10000000 || tdiff <= -10000000) {
 	printf("---!!!!!!!---calibration ERR, tdiff %I64d\n", tdiff);
     }
@@ -1300,14 +1283,13 @@ UpdateTimeEachSecond(void)
      * NativeGetMicroseconds checks calibNextTime also, be sure it does not overflow.
      * Calibrate immediately if we've too large discrepancy to the real-time (15.6 ms).
      */
-#if 0
+#if 1
     if ( curFileTime < timeInfo.calibNextTime - (10000000/2) /* 0.5 sec (in 100-ns ticks). */
       && timeInfo.calibNextTime - curFileTime < 10 * 10000000 /* max. 10 seconds in-between (time-switch?) */
-      && tdiff > -156000 && tdiff < 156000 /* small discrepancy */
-      && (tdiff >= 0 && tdiff <= lastDiff / 3 * 2 || tdiff < 0 && tdiff >= lastDiff / 3 * 2) /* more precise now */
+      && tdiff > -10000 && tdiff < 10000 /* very small discrepancy (1ms) */
     ) {
     	/* again in next one second */
-    	printf("-------------calibration end, tdiff %I64d, *** not needed. (next in: %I64d) ------\n", tdiff, curFileTime, timeInfo.calibNextTime, timeInfo.calibNextTime - curFileTime);
+    	//printf("-------------calibration end, tdiff %I64d, *** not needed. (next in: %I64d) ------\n", tdiff, curFileTime, timeInfo.calibNextTime, timeInfo.calibNextTime - curFileTime);
 	lastDiff = tdiff;
 	return;
     }
@@ -1330,39 +1312,7 @@ UpdateTimeEachSecond(void)
      * Several things may have gone wrong here that have to be checked for.
      *  (1) The performance counter may have jumped.
      *  (2) The system clock may have been reset.
-     *
-     * In either case, we'll need to reinitialize the circular buffer with
-     * samples relative to the current system time and the NOMINAL performance
-     * frequency (not the actual, because the actual has probably run slow in
-     * the first case). Our estimated frequency will be the nominal frequency.
-     *
-     * Store the current sample into the circular buffer of samples, and
-     * estimate the performance counter frequency.
      */
-#if 0
-    estFreq = AccumulateSample(curPerfCounter.QuadPart, curFileTime);
-#else
-    vt1 = curFileTime - timeInfo.lastCC.fileTime;
-    if (vt1) {
-	estFreq = 10000000 * (curPerfCounter.QuadPart - timeInfo.lastCC.perfCounter) / vt1;
-#if 1
-	
-	/* 
-	 * Minimize influence of estFreq if tdiff falls (in relation to last difference),
-	 * with dual falling speed. This indicates better choice of lastCC.counterFreq.
-	 */
-	if (tdiff > 0 && tdiff < lastDiff / 2 || tdiff < 0 && tdiff > lastDiff / 2) {
-	    printf("-----***-----calibration minimize %I64d, %I64d\n", estFreq, lastDiff);
-	    estFreq = (estFreq + timeInfo.lastCC.counterFreq * 2) / 3;
-	    printf("-----***-----calibration minimize %I64d, %I64d\n", estFreq, tdiff);
-	}
-#endif
-    } else {
-    	estFreq = timeInfo.lastCC.counterFreq;
-    }
-    //printf("------**-----calibration estimated, tdiff: %I64d, ** %s ** cntrDiff:%I64d\n", tdiff, (estFreq > timeInfo.lastCC.counterFreq) ? "^^^" : "vvv", (curPerfCounter.QuadPart - timeInfo.lastCC.perfCounter));
-    //printf("------**-----calibration estimated Frequency %I64d, %I64d, %I64d, diff: %I64d\n", curFileTime, curPerfCounter.QuadPart, estFreq, estFreq - timeInfo.lastCC.counterFreq);
-#endif
 
     driftBack = 0;
 
@@ -1373,10 +1323,10 @@ UpdateTimeEachSecond(void)
      * Ideally, we would like to drift the clock into place over a period of 2
      * sec, so that virtual time 2 sec from now will be
      *
-     * vt1 = 20000000 + curFileTime
+     * vt1 = 10000000 + curFileTime
      *
      * The frequency that we need to use to drift the counter back into place
-     * is estFreq * 20000000 / (vt1 - vt0)
+     * is estFreq * 10000000 / (vt1 - vt0)
      *
      * If we've gotten more than a second away from system time, then drifting
      * the clock is going to be pretty hopeless. Just let it jump. Otherwise,
@@ -1384,18 +1334,47 @@ UpdateTimeEachSecond(void)
      */
 
     if (tdiff > 10000000 || tdiff < -10000000) {
-    	/* More as a second difference, so could be a time-switch
+    	/* More as a second difference, so could be a time-switch (reset)
     	/* jump to current system time, use curent estimated frequency */
     	vt0 = curFileTime;
     	timeInfo.lastUsedTime = 0; /* reset last used time */
     	estFreq = timeInfo.nominalFreq.QuadPart;
     } else {
+
 	Tcl_WideInt driftFreq;	/* Frequency needed to drift virtual time into
 				 * step over 1 second. */
 
-    	/* calculate new frequency and estimate drift to the next second */
-	vt1 = 20000000 + curFileTime;
-	driftFreq = (estFreq * 20000000 / (vt1 - vt0));
+	/*
+	 * Estimate current frequency corresponding current time / counter.
+	 */
+
+	vt1 = curFileTime - timeInfo.lastCC.fileTime;
+	if (vt1 > 0) {
+	    estFreq = (curPerfCounter.QuadPart - timeInfo.lastCC.perfCounter) * 10000000 / vt1;
+
+	    /* 
+	     * Minimize influence of estFreq if tdiff falls (in relation to 
+	     * last difference), with dual falling speed. This indicates better
+	     * choice of lastCC.counterFreq.
+	     */
+	    if (tdiff > 0 && tdiff < lastDiff / 2 || tdiff < 0 && tdiff > lastDiff / 2) {
+		//printf("-----***-----calibration minimize %I64d, %I64d\n", estFreq, lastDiff);
+		estFreq = (estFreq + timeInfo.lastCC.counterFreq * 2) / 3;
+		//printf("-----***-----calibration minimize %I64d, %I64d\n", estFreq, tdiff);
+	    }
+	} else {
+	    estFreq = timeInfo.lastCC.counterFreq;
+	}
+	printf("------**-----calibration estimated, tdiff: %I64d, ** %s ** cntrDiff:%I64d\n", tdiff, (estFreq > timeInfo.lastCC.counterFreq) ? "^^^" : "vvv", (curPerfCounter.QuadPart - timeInfo.lastCC.perfCounter));
+	printf("------**-----calibration estimated Frequency %I64d, %I64d, %I64d, diff: %I64d, to-nomin: %I64d\n", curFileTime, curPerfCounter.QuadPart, estFreq, estFreq - timeInfo.lastCC.counterFreq, estFreq - timeInfo.nominalFreq.QuadPart);
+
+#if 1
+    	/*
+    	 * Calculate new frequency and estimate drift to the next second
+    	 */
+
+	vt1 = 10000000 + curFileTime;
+	driftFreq = estFreq * 10000000 / (vt1 - vt0);
 	/* 
 	 * Avoid too large drifts (only half of the current difference),
 	 * that allows also be more accurate (aspire to the smallest tdiff),
@@ -1403,6 +1382,10 @@ UpdateTimeEachSecond(void)
 	 */
 	driftFreq = timeInfo.lastCC.counterFreq +
 		(driftFreq - timeInfo.lastCC.counterFreq) / 2;
+
+	printf("------**-----calibration lastFreq: %I64d\n", timeInfo.lastCC.counterFreq);
+	printf("------**-----calibration estFreq:  %I64d\n", estFreq);
+	printf("------**-----calibration driftFreq:%I64d\n", driftFreq);
 
 	/* 
 	 * Average between estimated, 2 current and 5 drifted frequencies,
@@ -1418,6 +1401,10 @@ UpdateTimeEachSecond(void)
 #else
 	estFreq = (estFreq + timeInfo.lastCC.counterFreq + driftFreq) / 3;
 #endif
+
+#else
+	estFreq = (estFreq + timeInfo.lastCC.counterFreq) / 2;
+#endif
     }
     
     /* 
@@ -1426,14 +1413,22 @@ UpdateTimeEachSecond(void)
     if ( estFreq > (vt1 = (1000+5)*timeInfo.nominalFreq.QuadPart/1000)
       || estFreq < (vt1 = (1000-5)*timeInfo.nominalFreq.QuadPart/1000)
     ) {
-	estFreq = vt1;
-	driftBack = vt0 > curFileTime;
-	vt0 = curFileTime; /* too large - just reset */
+	/* Some systems having frequency in Hz, so fewer tolerant (1.5%) */
+	if ( timeInfo.freqFactor == 1000 /* frequency in KHz */
+	  || ( estFreq > (vt1 = (1000+15)*timeInfo.nominalFreq.QuadPart/1000)
+	    || estFreq < (vt1 = (1000-15)*timeInfo.nominalFreq.QuadPart/1000)
+	  )
+	) {
+	    estFreq = vt1;
+	    driftBack = vt0 > curFileTime;
+	    vt0 = curFileTime; /* too large - just reset */
+	    printf("************ too large: %I64d\n", estFreq);
+	}
     }
 
     /* If possible backwards time-drifts (larger divider now) */
     vt1 = 0;
-    if (1 || driftBack || estFreq > timeInfo.lastCC.counterFreq) {
+    if (driftBack || estFreq > timeInfo.lastCC.counterFreq) {
 	Tcl_WideInt nt0, nt1;
 
 	/* 
@@ -1463,15 +1458,14 @@ UpdateTimeEachSecond(void)
     }
 
     /* if still precise enough, grow calibration interval up to 10 seconds */
-    if (tdiff < -156000 || tdiff > 156000 /* 15.6-ms */) {
-	/* too long drift - reset calibration interval to 1 second */
-	calibrationInterv = 10000000;
-    } else if (calibrationInterv < 10*10000000) {
-	calibrationInterv += 10000000;
+    if ( timeInfo.freqFactor == 1000 ) { /* frequency in KHz */
+	if (tdiff < -100000 || tdiff > 100000 /* 10-ms */) {
+	    /* too long drift - reset calibration interval to 1 second */
+	    calibrationInterv = 10000000;
+	} else if (calibrationInterv < 10*10000000) {
+	    calibrationInterv += 10000000;
+	}
     }
-
-    lastDiff = tdiff;
-
     /* In lock commit new values to timeInfo (hold lock as short as possible) */
     EnterCriticalSection(&timeInfo.cs);
 
@@ -1489,136 +1483,6 @@ UpdateTimeEachSecond(void)
     	vt0, curFileTime, (vt0 - curFileTime), vt1);
     printf("-------------calibration end  ,  new-struct: %I64d, %I64d, %I64d\n", timeInfo.lastCC.virtTime, timeInfo.lastCC.perfCounter, timeInfo.lastCC.counterFreq);
 #endif
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ResetCounterSamples --
- *
- *	Fills the sample arrays in 'timeInfo' with dummy values that will
- *	yield the current performance counter and frequency.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The array of samples is filled in so that it appears that there are
- *	SAMPLES samples at one-second intervals, separated by precisely the
- *	given frequency.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-ResetCounterSamples(
-    Tcl_WideUInt fileTime,	/* Current file time */
-    Tcl_WideInt perfCounter,	/* Current performance counter */
-    Tcl_WideInt perfFreq)	/* Target performance frequency */
-{
-    int i;
-    for (i=SAMPLES-1 ; i>=0 ; --i) {
-	timeInfo.perfCounterSample[i] = perfCounter;
-	timeInfo.fileTimeSample[i] = fileTime;
-	perfCounter -= perfFreq;
-	fileTime -= 10000000;
-    }
-    timeInfo.sampleNo = 0;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * AccumulateSample --
- *
- *	Updates the circular buffer of performance counter and system time
- *	samples with a new data point.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The new data point replaces the oldest point in the circular buffer,
- *	and the descriptive statistics are updated to accumulate the new
- *	point.
- *
- * Several things may have gone wrong here that have to be checked for.
- *  (1) The performance counter may have jumped.
- *  (2) The system clock may have been reset.
- *
- * In either case, we'll need to reinitialize the circular buffer with samples
- * relative to the current system time and the NOMINAL performance frequency
- * (not the actual, because the actual has probably run slow in the first
- * case).
- */
-
-static Tcl_WideInt
-AccumulateSample(
-    Tcl_WideInt perfCounter,
-    Tcl_WideUInt fileTime)
-{
-    Tcl_WideUInt workFTSample;	/* File time sample being removed from or
-				 * added to the circular buffer. */
-    Tcl_WideInt workPCSample;	/* Performance counter sample being removed
-				 * from or added to the circular buffer. */
-    Tcl_WideUInt lastFTSample;	/* Last file time sample recorded */
-    Tcl_WideInt lastPCSample;	/* Last performance counter sample recorded */
-    Tcl_WideInt FTdiff;		/* Difference between last FT and current */
-    Tcl_WideInt PCdiff;		/* Difference between last PC and current */
-    Tcl_WideInt estFreq;	/* Estimated performance counter frequency */
-
-    /*
-     * Test for jumps and reset the samples if we have one.
-     */
-
-    if (timeInfo.sampleNo == 0) {
-	lastPCSample =
-		timeInfo.perfCounterSample[timeInfo.sampleNo + SAMPLES - 1];
-	lastFTSample =
-		timeInfo.fileTimeSample[timeInfo.sampleNo + SAMPLES - 1];
-    } else {
-	lastPCSample = timeInfo.perfCounterSample[timeInfo.sampleNo - 1];
-	lastFTSample = timeInfo.fileTimeSample[timeInfo.sampleNo - 1];
-    }
-
-    PCdiff = perfCounter - lastPCSample;
-    FTdiff = fileTime - lastFTSample;
-    if (PCdiff < timeInfo.nominalFreq.QuadPart * 9 / 10
-	    || PCdiff > timeInfo.nominalFreq.QuadPart * 11 / 10
-	    || FTdiff < 9000000 || FTdiff > 11000000) {
-	ResetCounterSamples(fileTime, perfCounter,
-		timeInfo.nominalFreq.QuadPart);
-#if 0
-	FTdiff = fileTime - timeInfo.lastCC.fileTime;
-	if (FTdiff) {
-	    estFreq = 10000000 * (perfCounter - timeInfo.lastCC.perfCounter) / FTdiff;
-	    printf("------**-----calibration estimated Frequency %I64d, %I64d, %I64d, diff: %I64d\n", fileTime, perfCounter, estFreq, estFreq - timeInfo.lastCC.counterFreq);
-	}
-	return (timeInfo.nominalFreq.QuadPart + timeInfo.lastCC.counterFreq) / 2;
-#endif
-	return timeInfo.nominalFreq.QuadPart;
-    } else {
-	/*
-	 * Estimate the frequency.
-	 */
-
-	workPCSample = timeInfo.perfCounterSample[timeInfo.sampleNo];
-	workFTSample = timeInfo.fileTimeSample[timeInfo.sampleNo];
-	estFreq = 10000000 * (perfCounter - workPCSample)
-		/ (fileTime - workFTSample);
-	timeInfo.perfCounterSample[timeInfo.sampleNo] = perfCounter;
-	timeInfo.fileTimeSample[timeInfo.sampleNo] = (Tcl_WideInt) fileTime;
-
-	/*
-	 * Advance the sample number.
-	 */
-
-	if (++timeInfo.sampleNo >= SAMPLES) {
-	    timeInfo.sampleNo = 0;
-	}
-
-	return estFreq;
-    }
 }
 
 /*
