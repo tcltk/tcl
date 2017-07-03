@@ -72,9 +72,23 @@ typedef struct ThreadSpecificData {
 				/* Next notifier in global list of notifiers.
 				 * Access is controlled by the listLock global
 				 * mutex. */
+#ifndef TCL_WIDE_CLICKS		/* Last "time" source checked, used as threshold */
+    unsigned long lastCheckClicks;
+#else
+    Tcl_WideInt lastCheckClicks;
+#endif
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
+
+/*
+ * Used for performance purposes, threshold to bypass check source (if don't wait)
+ * Values under 1000 should be approximately under 1ms, e. g. 10 is ca. 0.01ms
+ */
+#ifndef CHECK_EVENT_SOURCE_THRESHOLD
+    #define CHECK_EVENT_SOURCE_THRESHOLD 10
+#endif
+
 
 /*
  * Global list of notifiers. Access to this list is controlled by the listLock
@@ -618,17 +632,6 @@ Tcl_ServiceEvent(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
-     * Asynchronous event handlers are considered to be the highest priority
-     * events, and so must be invoked before we process events on the event
-     * queue.
-     */
-
-    if (Tcl_AsyncReady()) {
-	(void) Tcl_AsyncInvoke(NULL, 0);
-	return 1;
-    }
-
-    /*
      * No event flags is equivalent to TCL_ALL_EVENTS.
      */
 
@@ -637,9 +640,28 @@ Tcl_ServiceEvent(
     }
 
     /*
+     * Asynchronous event handlers are considered to be the highest priority
+     * events, and so must be invoked before we process events on the event
+     * queue.
+     */
+
+    if ((flags & TCL_ASYNC_EVENTS) && Tcl_AsyncReady()) {
+	(void) Tcl_AsyncInvoke(NULL, 0);
+	return 1;
+    }
+
+    /* Async only */
+    if ((flags & TCL_ALL_EVENTS) == TCL_ASYNC_EVENTS) {
+	return 0;
+    }
+
+    /*
      * If timer marker reached, process timer events now.
      */
-    if (tsdPtr->timerMarkerPtr == INT2PTR(-1)) {
+    if ( tsdPtr->timerMarkerPtr == INT2PTR(-1)
+      || !tsdPtr->firstEventPtr
+      || ((flags & TCL_ALL_EVENTS) == TCL_TIMER_EVENTS)
+    ) {
 	goto timer;
     }
 
@@ -743,7 +765,7 @@ timer:
     /*
      * Process timer queue, if alloved and timers are enabled.
      */
-    if (flags & TCL_TIMER_EVENTS && tsdPtr->timerMarkerPtr) {
+    if ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerMarkerPtr) {
 	/* reset marker */
 	tsdPtr->timerMarkerPtr = NULL;
 
@@ -757,6 +779,73 @@ timer:
 
 
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPeekEventQueued --
+ *
+ *	Check whether some event (except idle) available (async, queued, timer).
+ *
+ *	This will be used e. g. in TclServiceIdle to stop the processing of the
+ *	the idle events if some "normal" event occurred.
+ *
+ * Results:
+ *	Returns 1 if some event queued, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclPeekEventQueued(
+    int flags)
+{
+    EventSource *sourcePtr;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    int repeat = 1;
+
+    do {
+    	/* 
+    	 * Events already pending ? 
+    	 */
+	if ( Tcl_AsyncReady()
+	  || (tsdPtr->firstEventPtr)
+	  || ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerMarkerPtr)
+	) {
+	    return 1;
+	}
+
+	if (flags & TCL_DONT_WAIT) {
+	    /* don't need to wait/check for events too often */
+#ifndef TCL_WIDE_CLICKS
+	    unsigned long clicks = TclpGetClicks();
+#else
+	    Tcl_WideInt clicks = TclpGetWideClicks();
+#endif
+
+	    if ((clicks - tsdPtr->lastCheckClicks) <= CHECK_EVENT_SOURCE_THRESHOLD) {
+		return 0;
+	    }
+	    tsdPtr->lastCheckClicks = clicks;
+	}
+
+	/*
+	 * Check all the event sources for new events.
+	 */
+	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
+		sourcePtr = sourcePtr->nextPtr) {
+	    if (sourcePtr->checkProc) {
+		(sourcePtr->checkProc)(sourcePtr->clientData, flags);
+	    }
+	}
+    
+    } while (repeat--);
+
+    return 0;
 }
 
 /*
@@ -920,19 +1009,10 @@ Tcl_DoOneEvent(
 				 * TCL_TIMER_EVENTS, TCL_IDLE_EVENTS, or
 				 * others defined by event sources. */
 {
-    int result = 0, oldMode;
+    int result = 0, oldMode, i = 0;
     EventSource *sourcePtr;
     Tcl_Time *timePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-    /*
-     * The first thing we do is to service any asynchronous event handlers.
-     */
-
-    if (Tcl_AsyncReady()) {
-	(void) Tcl_AsyncInvoke(NULL, 0);
-	return 1;
-    }
 
     /*
      * No event flags is equivalent to TCL_ALL_EVENTS.
@@ -940,6 +1020,22 @@ Tcl_DoOneEvent(
 
     if ((flags & TCL_ALL_EVENTS) == 0) {
 	flags |= TCL_ALL_EVENTS;
+    }
+
+    /*
+     * Asynchronous event handlers are considered to be the highest priority
+     * events, and so must be invoked before we process events on the event
+     * queue.
+     */
+
+    if ((flags & TCL_ASYNC_EVENTS) && Tcl_AsyncReady()) {
+	(void) Tcl_AsyncInvoke(NULL, 0);
+	return 1;
+    }
+
+    /* Async only */
+    if ((flags & TCL_ALL_EVENTS) == TCL_ASYNC_EVENTS) {
+	return 0;
     }
 
     /*
@@ -964,12 +1060,13 @@ Tcl_DoOneEvent(
 	 */
 
 	if ((flags & TCL_ALL_EVENTS) == TCL_IDLE_EVENTS) {
-	    flags = TCL_IDLE_EVENTS | TCL_DONT_WAIT;
+	    flags |= TCL_DONT_WAIT;
 	    goto idleEvents;
 	}
 
 	/*
-	 * Ask Tcl to service a queued event, if there are any.
+	 * Ask Tcl to service any asynchronous event handlers or 
+	* queued event, if there are any.
 	 */
 
 	if (Tcl_ServiceEvent(flags)) {
@@ -983,9 +1080,22 @@ Tcl_DoOneEvent(
 	 */
 
 	if (flags & TCL_DONT_WAIT) {
+	    /* don't need to wait/check for events too often */
+#ifndef TCL_WIDE_CLICKS
+	    unsigned long clicks = TclpGetClicks();
+#else
+	    Tcl_WideInt clicks = TclpGetWideClicks();
+#endif
+	    if ((clicks - tsdPtr->lastCheckClicks) <= CHECK_EVENT_SOURCE_THRESHOLD) {
+		goto idleEvents;
+	    }
+	    tsdPtr->lastCheckClicks = clicks;
+
 	    tsdPtr->blockTime.sec = 0;
 	    tsdPtr->blockTime.usec = 0;
 	    tsdPtr->blockTimeSet = 1;
+	    timePtr = &tsdPtr->blockTime;
+	    goto wait; /* for notifier resp. system events */
 	} else {
 	    tsdPtr->blockTimeSet = 0;
 	}
@@ -1004,7 +1114,7 @@ Tcl_DoOneEvent(
 	}
 	tsdPtr->inTraversal = 0;
 
-	if ((flags & TCL_DONT_WAIT) || tsdPtr->blockTimeSet) {
+	if (tsdPtr->blockTimeSet) {
 	    timePtr = &tsdPtr->blockTime;
 	} else {
 	    timePtr = NULL;
@@ -1014,7 +1124,7 @@ Tcl_DoOneEvent(
 	 * Wait for a new event or a timeout. If Tcl_WaitForEvent returns -1,
 	 * we should abort Tcl_DoOneEvent.
 	 */
-
+    wait:
 	result = Tcl_WaitForEvent(timePtr);
 	if (result < 0) {
 	    result = 0;
@@ -1049,7 +1159,7 @@ Tcl_DoOneEvent(
 
     idleEvents:
 	if (flags & TCL_IDLE_EVENTS) {
-	    if (TclServiceIdle()) {
+	    if (TclServiceIdleEx(flags, INT_MAX)) {
 		result = 1;
 		break;
 	    }

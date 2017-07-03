@@ -694,12 +694,9 @@ test event-11.7 {Bug 16828b3744} {
 } {}
 
 
-test event-12.1 {Tcl_UpdateCmd procedure} {
-    list [catch {update a b} msg] $msg
-} {1 {wrong # args: should be "update ?option?"}}
 test event-12.2 {Tcl_UpdateCmd procedure} {
     list [catch {update bogus} msg] $msg
-} {1 {bad option "bogus": must be idletasks or noidletasks}}
+} {1 {bad option "bogus": must be idletasks, -nowait, -wait, -idle, -noidle, -timer, -notimer, -file, -nofile, -window, -nowindow, -async, or -noasync}}
 test event-12.3 {Tcl_UpdateCmd procedure} {
     foreach i [after info] {
 	after cancel $i
@@ -728,6 +725,62 @@ test event-12.4 {Tcl_UpdateCmd procedure} {
     update
     list $x $y $z
 } {x-done before z-done}
+
+test event-12.5 {update -idle, update -noidle} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x {}
+    after idle {lappend x idle}
+    update -noidle
+    after 0 {lappend x 0}
+    update -noidle
+    after 50 {lappend x 1}
+    update -noidle
+    lappend x 2
+    update -idle
+    lappend x 3
+    after idle {lappend x idle}
+    after 0 {lappend x 4}
+    after 0 {lappend x 5}
+    update -idle
+    lappend x 6
+    update
+    lappend x res:[vwait x 500]
+    set x
+} {0 2 idle 3 idle 6 4 5 1 res:1}
+
+test event-12.6 {update -timer, update -notimer} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x {}
+    after idle {lappend x idle.0}
+    update -timer
+    after 0 {lappend x 0a}
+    update -notimer
+    after idle {
+    	lappend x idle.1a;
+	after 0 {lappend x 0b};
+	after idle {lappend x idle.1b}
+    }
+    after 50 {lappend x 1; after idle {lappend x idle.2}}
+    update -timer
+    lappend x 2
+    update -timer -idle
+    lappend x 3
+    after idle {lappend x idle.3}
+    after 0 {lappend x 4}
+    after 0 {lappend x 5}
+    update -timer -idle
+    lappend x 6
+    update
+    lappend x res:[vwait x 500]
+    update -noidle
+    lappend x 7
+    update
+    set x
+} {idle.0 0a 2 idle.1a 0b idle.1b 3 4 5 idle.3 6 1 res:1 7 idle.2}
 
 test event-13.1 {Tcl_WaitForFile procedure, readable} {testfilehandler} {
     foreach i [after info] {

@@ -1297,6 +1297,7 @@ typedef struct {
  * events:
  */
 
+#define TCL_ASYNC_EVENTS	(1<<0)
 #define TCL_DONT_WAIT		(1<<1)
 #define TCL_WINDOW_EVENTS	(1<<2)
 #define TCL_FILE_EVENTS		(1<<3)

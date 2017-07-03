@@ -1468,30 +1468,42 @@ Tcl_UpdateObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    int optionIndex;
-    int flags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
-    static CONST char *updateOptions[] = {"idletasks", "noidletasks", NULL};
-    enum updateOptions {UPDATE_IDLETASKS, UPDATE_NOIDLETASKS};
+    int i, optionIndex;
+    static CONST defUpdateFlags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
+    int flags = defUpdateFlags;
+    static CONST char *updateOptions[] = {"idletasks",  /* backwards compat. */
+	"-nowait", "-wait",				/* new options */
+	"-idle", "-noidle", "-timer", "-notimer",	
+	"-file", "-nofile", "-window", "-nowindow",
+	"-async", "-noasync",
+	NULL};
+    static CONST struct {
+	int minus;
+	int plus;
+    } *updateFlag, updateFlags[] = {
+	{TCL_ALL_EVENTS, 
+	    TCL_WINDOW_EVENTS|TCL_IDLE_EVENTS}, /* idletasks */
+	{0, TCL_DONT_WAIT},	{TCL_DONT_WAIT, 0},	/* -nowait, -wait */
+	{0, TCL_IDLE_EVENTS},	{TCL_IDLE_EVENTS, 0},	/* -idle, -noidle */
+	{0, TCL_TIMER_EVENTS},	{TCL_TIMER_EVENTS, 0},	/* -file, -nofile */
+	{0, TCL_FILE_EVENTS},	{TCL_FILE_EVENTS, 0},	/* -file, -nofile */
+	{0, TCL_WINDOW_EVENTS},	{TCL_WINDOW_EVENTS, 0},	/* -window, -nowindow */
+	{0, TCL_ASYNC_EVENTS},	{TCL_ASYNC_EVENTS, 0},	/* -async, -noasync */
+	{0, 0} /* dummy / place holder */
+    };
 
-    if (objc == 1) {
-    } else if (objc == 2) {
-	if (Tcl_GetIndexFromObj(interp, objv[1], updateOptions,
+    for (i = 1; i < objc; i++) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], updateOptions,
 		"option", 0, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum updateOptions) optionIndex) {
-	case UPDATE_IDLETASKS:
-	    flags = TCL_WINDOW_EVENTS|TCL_IDLE_EVENTS|TCL_DONT_WAIT;
-	    break;
-	case UPDATE_NOIDLETASKS:
-	    flags &= ~TCL_IDLE_EVENTS;
-	    break;
-	default:
-	    Tcl_Panic("Tcl_UpdateObjCmd: bad option index to UpdateOptions");
+	updateFlag = &updateFlags[optionIndex];
+	/* pure positive option and still default - reset all events */
+	if (flags == defUpdateFlags && !updateFlag->minus) {
+	    flags &= ~TCL_ALL_EVENTS;
 	}
-    } else {
-	Tcl_WrongNumArgs(interp, 1, objv, "?option?");
-	return TCL_ERROR;
+	flags &= ~updateFlag->minus;
+	flags |= updateFlag->plus;
     }
 
     while (Tcl_DoOneEvent(flags) != 0) {
@@ -1500,6 +1512,9 @@ Tcl_UpdateObjCmd(
 	    Tcl_AppendResult(interp, "limit exceeded", NULL);
 	    return TCL_ERROR;
 	}
+
+	/* be sure not to produce infinite wait (wait only once) */
+	flags |= TCL_DONT_WAIT;
     }
 
     /*
