@@ -696,7 +696,6 @@ typedef void (Tcl_FileFreeProc) _ANSI_ARGS_((ClientData clientData));
 typedef void (Tcl_FreeInternalRepProc) _ANSI_ARGS_((struct Tcl_Obj *objPtr));
 typedef void (Tcl_FreeProc) _ANSI_ARGS_((char *blockPtr));
 typedef void (Tcl_IdleProc) _ANSI_ARGS_((ClientData clientData));
-typedef void (Tcl_IdleDeleteProc) _ANSI_ARGS_((ClientData clientData));
 typedef void (Tcl_InterpDeleteProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp));
 typedef int (Tcl_MathProc) _ANSI_ARGS_((ClientData clientData,

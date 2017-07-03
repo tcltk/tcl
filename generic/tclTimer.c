@@ -18,8 +18,6 @@
  * interpreter are linked together in a list.
  */
 
-#define IDLE_EVENT  (1 << 1)	/* Mark idle event */
-
 typedef struct AfterInfo {
     struct AfterAssocData *assocPtr;
 				/* Pointer to the "tclAfter" assocData for the
@@ -28,7 +26,6 @@ typedef struct AfterInfo {
     Tcl_Obj *commandPtr;	/* Command to execute. */
     Tcl_Obj *selfPtr;		/* Points to the handle object (self) */
     size_t id;			/* Integer identifier for command */
-    int			flags;	/* Flags (IDLE_EVENT) */
     struct AfterInfo *nextPtr;	/* Next in list of all "after" commands for
 				 * this interpreter. */
     struct AfterInfo *prevPtr;	/* Prev in list of all "after" commands for
@@ -63,15 +60,17 @@ typedef struct AfterAssocData {
  */
 
 typedef struct {
-    TimerHandler *timerList;	/* First event in queue. */
-    TimerHandler *lastTimerPtr;	/* Last event in queue. */
+    TimerEntry *timerList;	/* First event in queue. */
+    TimerEntry *lastTimerPtr;	/* Last event in queue. */
+    TimerEntry *promptList;	/* First immediate event in queue. */
+    TimerEntry *lastPromptPtr;	/* Last immediate event in queue. */
     size_t timerListEpoch;	/* Used for safe process of event queue (stop
     				 * the cycle after modifying of event queue) */
     int lastTimerId;		/* Timer identifier of most recently created
 				 * timer. */
     int timerPending;		/* 1 if a timer event is in the queue. */
-    IdleHandler *idleList;	/* First in list of all idle handlers. */
-    IdleHandler *lastIdlePtr;	/* Last in list (or NULL for empty list). */
+    TimerEntry *idleList;	/* First in list of all idle handlers. */
+    TimerEntry *lastIdlePtr;	/* Last in list (or NULL for empty list). */
     size_t timerGeneration;	/* Used to fill in the "generation" fields of */
     size_t idleGeneration;	/* timer or idle structures. Increments each
 				 * time we place a new handler to queue inside,
@@ -87,15 +86,10 @@ static Tcl_ThreadDataKey dataKey;
  * Helper macros to wrap AfterInfo and handlers (and vice versa)
  */
 
-#define TimerHandler2AfterInfo(ptr)					\
-	    ( (AfterInfo*)TimerHandler2ClientData(ptr) )
-#define AfterInfo2TimerHandler(ptr)					\
-	    ClientData2TimerHandler(ptr)
-
-#define IdleHandler2AfterInfo(ptr)					\
-	    ( (AfterInfo*)IdleHandler2ClientData(ptr) )
-#define AfterInfo2IdleHandler(ptr)					\
-	    ClientData2IdleHandler(ptr)
+#define TimerEntry2AfterInfo(ptr)					\
+	    ( (AfterInfo*)TimerEntry2ClientData(ptr) )
+#define AfterInfo2TimerEntry(ptr)					\
+	    ClientData2TimerEntry(ptr)
 
 /*
  * Helper macros for working with times. TCL_TIME_BEFORE encodes how to write
@@ -128,7 +122,9 @@ static AfterInfo *	GetAfterEvent(AfterAssocData *assocPtr, Tcl_Obj *objPtr);
 static ThreadSpecificData *InitTimer(void);
 static void		TimerExitProc(ClientData clientData);
 static int		TimerHandlerEventProc(Tcl_Event *evPtr, int flags);
+#if 0
 static void		TimerCheckProc(ClientData clientData, int flags);
+#endif
 static void		TimerSetupProc(ClientData clientData, int flags);
 
 static void             AfterObj_DupInternalRep(Tcl_Obj *, Tcl_Obj *);
@@ -276,7 +272,7 @@ InitTimer(void)
 
     if (tsdPtr == NULL) {
 	tsdPtr = TCL_TSD_INIT(&dataKey);
-	Tcl_CreateEventSource(TimerSetupProc, TimerCheckProc, NULL);
+	Tcl_CreateEventSource(TimerSetupProc, NULL, tsdPtr);
 	Tcl_CreateThreadExitHandler(TimerExitProc, NULL);
     }
     return tsdPtr;
@@ -306,15 +302,18 @@ TimerExitProc(
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 	    TclThreadDataKeyGet(&dataKey);
 
-    Tcl_DeleteEventSource(TimerSetupProc, TimerCheckProc, NULL);
     if (tsdPtr != NULL) {
-	register TimerHandler *timerHandlerPtr;
+	Tcl_DeleteEventSource(TimerSetupProc, NULL, tsdPtr);
 
-	while ((timerHandlerPtr = tsdPtr->timerList) != NULL) {
-	    tsdPtr->timerList = timerHandlerPtr->nextPtr;
-	    ckfree((char *) timerHandlerPtr);
+	while ((tsdPtr->lastPromptPtr) != NULL) {
+	    TclDeleteTimerEntry(tsdPtr->lastPromptPtr);
 	}
-	tsdPtr->lastTimerPtr = NULL;
+	while ((tsdPtr->lastTimerPtr) != NULL) {
+	    TclDeleteTimerEntry(tsdPtr->lastTimerPtr);
+	}
+	while ((tsdPtr->lastIdlePtr) != NULL) {
+	    TclDeleteTimerEntry(tsdPtr->lastIdlePtr);
+	}
     }
 }
 
@@ -343,7 +342,7 @@ Tcl_CreateTimerHandler(
     Tcl_TimerProc *proc,	/* Function to invoke. */
     ClientData clientData)	/* Arbitrary data to pass to proc. */
 {
-    register TimerHandler *timerHandlerPtr;
+    register TimerEntry *entryPtr;
     Tcl_Time time;
 
     /*
@@ -358,13 +357,13 @@ Tcl_CreateTimerHandler(
 	time.sec += 1;
     }
 
-    timerHandlerPtr = TclCreateAbsoluteTimerHandlerEx(&time, proc, NULL, 0);
-    if (timerHandlerPtr == NULL) {
+    entryPtr = TclCreateAbsoluteTimerHandlerEx(&time, proc, NULL, 0);
+    if (entryPtr == NULL) {
     	return NULL;
     }
-    timerHandlerPtr->clientData = clientData;
+    entryPtr->clientData = clientData;
 
-    return timerHandlerPtr->token;
+    return TimerEntry2TimerHandler(entryPtr)->token;
 }
 
 /*
@@ -375,13 +374,9 @@ Tcl_CreateTimerHandler(
  *	Arrange for a given function to be invoked at a particular time in the
  *	future.
  *
- *	Specifying the timePtr as NULL ensures that timer event-handler will
- *	be queued immediately to guarantee the execution of timer-event as 
- *	soon as possible
- *
  * Results:
- *	The return value is a handler or token of the timer event, which may
- *	be used to delete the event before it fires.
+ *	The return value is a handler entry or token of the timer event, which
+ *	may be used to delete the event before it fires.
  *
  * Side effects:
  *	When the time in timePtr has been reached, proc will be invoked
@@ -390,40 +385,37 @@ Tcl_CreateTimerHandler(
  *--------------------------------------------------------------
  */
 
-TimerHandler*
+TimerEntry*
 TclCreateAbsoluteTimerHandlerEx(
     Tcl_Time *timePtr,			/* Time to be invoked */
     Tcl_TimerProc *proc,		/* Function to invoke */
     Tcl_TimerDeleteProc *deleteProc,	/* Function to cleanup */
     size_t extraDataSize)
 {
-    register TimerHandler *timerHandlerPtr, *thPtrPos;
+    register TimerEntry *entryPtr, *entryPtrPos;
+    register TimerHandler *timerPtr;
     ThreadSpecificData *tsdPtr;
 
     tsdPtr = InitTimer();
-    timerHandlerPtr = (TimerHandler *) ckalloc(sizeof(TimerHandler) + extraDataSize);
-    if (timerHandlerPtr == NULL) {
+    timerPtr = (TimerHandler *) ckalloc(sizeof(TimerHandler) + extraDataSize);
+    if (timerPtr == NULL) {
 	return NULL;
     }
+    entryPtr = TimerHandler2TimerEntry(timerPtr);
 
     /*
      * Fill in fields for the event.
      */
 
-    if (timePtr) {
-	memcpy((void *)&timerHandlerPtr->time, (void *)timePtr,
-		sizeof(timerHandlerPtr->time));
-    } else {
-	memset((void *)&timerHandlerPtr->time, 0,
-		sizeof(timerHandlerPtr->time));
-    }
-    timerHandlerPtr->proc = proc;
-    timerHandlerPtr->deleteProc = deleteProc;
-    timerHandlerPtr->clientData = TimerHandler2ClientData(timerHandlerPtr);
-    timerHandlerPtr->generation = tsdPtr->timerGeneration;
+    memcpy((void *)&(timerPtr->time), (void *)timePtr, sizeof(*timePtr));
+    entryPtr->proc = proc;
+    entryPtr->deleteProc = deleteProc;
+    entryPtr->clientData = TimerEntry2ClientData(entryPtr);
+    entryPtr->flags = 0;
+    entryPtr->generation = tsdPtr->timerGeneration;
     tsdPtr->timerListEpoch++; /* signal-timer list was changed */
     tsdPtr->lastTimerId++;
-    timerHandlerPtr->token = (Tcl_TimerToken) INT2PTR(tsdPtr->lastTimerId);
+    timerPtr->token = (Tcl_TimerToken) INT2PTR(tsdPtr->lastTimerId);
 
     /*
      * Add the event to the queue in the correct position
@@ -431,46 +423,40 @@ TclCreateAbsoluteTimerHandlerEx(
      */
 
     /* if before current first (e. g. "after 0" before first "after 1000") */
-    if ( !(thPtrPos = tsdPtr->timerList)
-      || TCL_TIME_BEFORE(timerHandlerPtr->time, thPtrPos->time)
+    if ( !(entryPtrPos = tsdPtr->timerList)
+      || TCL_TIME_BEFORE(timerPtr->time, 
+	    TimerEntry2TimerHandler(entryPtrPos)->time)
     ) {
     	/* splice to the head */
-	TclSpliceInEx(timerHandlerPtr, 
+	TclSpliceInEx(entryPtr, 
 		tsdPtr->timerList, tsdPtr->lastTimerPtr);
     } else {
     	/* search from end as long as one with time before not found */
-	for (thPtrPos = tsdPtr->lastTimerPtr; thPtrPos != NULL;
-	    thPtrPos = thPtrPos->prevPtr) {
-	    if (!TCL_TIME_BEFORE(timerHandlerPtr->time, thPtrPos->time)) {
+	for (entryPtrPos = tsdPtr->lastTimerPtr; entryPtrPos != NULL;
+	    entryPtrPos = entryPtrPos->prevPtr) {
+	    if (!TCL_TIME_BEFORE(timerPtr->time,
+		    TimerEntry2TimerHandler(entryPtrPos)->time)) {
 		break;
 	    }
 	}
 	/* normally it should be always true, because checked above, but ... */
-	if (thPtrPos != NULL) {
+	if (entryPtrPos != NULL) {
 	    /* insert after found element (with time before new) */
-	    timerHandlerPtr->prevPtr = thPtrPos;
-	    if ((timerHandlerPtr->nextPtr = thPtrPos->nextPtr)) {
-		thPtrPos->nextPtr->prevPtr = timerHandlerPtr;
+	    entryPtr->prevPtr = entryPtrPos;
+	    if ((entryPtr->nextPtr = entryPtrPos->nextPtr)) {
+		entryPtrPos->nextPtr->prevPtr = entryPtr;
 	    } else {
-		tsdPtr->lastTimerPtr = timerHandlerPtr;
+		tsdPtr->lastTimerPtr = entryPtr;
 	    }
-	    thPtrPos->nextPtr = timerHandlerPtr;
+	    entryPtrPos->nextPtr = entryPtr;
 	} else {
 	    /* unexpected case, but ... splice to the head */
-	    TclSpliceInEx(timerHandlerPtr, 
+	    TclSpliceInEx(entryPtr, 
 		tsdPtr->timerList, tsdPtr->lastTimerPtr);
 	}
     }
 
-    if (!timePtr) {
-	/* execute immediately: queue handler event right now */
-	if (!tsdPtr->timerPending) {
-	    QueueTimerHandlerEvent();
-	}
-	tsdPtr->timerPending++;
-    }
-
-    return timerHandlerPtr;
+    return entryPtr;
 }
 
 Tcl_TimerToken
@@ -479,15 +465,15 @@ TclCreateAbsoluteTimerHandler(
     Tcl_TimerProc *proc,
     ClientData clientData)
 {
-    register TimerHandler *timerHandlerPtr;
+    register TimerEntry *entryPtr;
 
-    timerHandlerPtr = TclCreateAbsoluteTimerHandlerEx(timePtr, proc, NULL, 0);
-    if (timerHandlerPtr == NULL) {
+    entryPtr = TclCreateAbsoluteTimerHandlerEx(timePtr, proc, NULL, 0);
+    if (entryPtr == NULL) {
     	return NULL;
     }
-    timerHandlerPtr->clientData = clientData;
+    entryPtr->clientData = clientData;
 
-    return timerHandlerPtr->token;
+    return TimerEntry2TimerHandler(entryPtr)->token;
 }
 
 /*
@@ -513,48 +499,81 @@ Tcl_DeleteTimerHandler(
     Tcl_TimerToken token)	/* Result previously returned by
 				 * Tcl_CreateTimerHandler. */
 {
-    register TimerHandler *timerHandlerPtr;
+    register TimerEntry *entryPtr;
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (token == NULL) {
 	return;
     }
 
-    for (timerHandlerPtr = tsdPtr->lastTimerPtr;
-	timerHandlerPtr != NULL;
-	timerHandlerPtr = timerHandlerPtr->prevPtr
+    for (entryPtr = tsdPtr->lastTimerPtr;
+	entryPtr != NULL;
+	entryPtr = entryPtr->prevPtr
     ) {
-	if (timerHandlerPtr->token != token) {
+	if (TimerEntry2TimerHandler(entryPtr)->token != token) {
 	    continue;
 	}
 
-	TclDeleteTimerHandler(timerHandlerPtr);
+	TclDeleteTimerEntry(entryPtr);
 	return;
     }
 }
 
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TclDeleteTimerEntry --
+ *
+ *	Delete a previously-registered prompt, timer or idle handler.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Destroy the timer callback, so that its associated function will
+ *	not be called. If the callback has already fired this will be executed
+ *	internally.
+ *
+ *--------------------------------------------------------------
+ */
+
 void
-TclDeleteTimerHandler(
-    TimerHandler *timerHandlerPtr)	/* Result previously returned by */
-					/* TclCreateAbsoluteTimerHandlerEx. */
+TclDeleteTimerEntry(
+    TimerEntry *entryPtr)	/* Result previously returned by */
+	/* TclCreateAbsoluteTimerHandlerEx or TclCreateTimerEntryEx. */
 {
     ThreadSpecificData *tsdPtr;
 
-    if (timerHandlerPtr == NULL) {
+    if (entryPtr == NULL) {
 	return;
     }
 
     tsdPtr = InitTimer();
 
-    tsdPtr->timerListEpoch++; /* signal-timer list was changed */
-    TclSpliceOutEx(timerHandlerPtr, tsdPtr->timerList, tsdPtr->lastTimerPtr);
-
-    /* free it via deleteProc or ckfree */
-    if (timerHandlerPtr->deleteProc) {
-	(*timerHandlerPtr->deleteProc)(timerHandlerPtr->clientData);
+    if (entryPtr->flags & TCL_PROMPT_EVENT) {
+    	/* prompt handler */
+	TclSpliceOutEx(entryPtr, tsdPtr->promptList, tsdPtr->lastPromptPtr);
+    } else if (entryPtr->flags & TCL_IDLE_EVENT) {
+    	/* idle handler */
+	TclSpliceOutEx(entryPtr, tsdPtr->idleList, tsdPtr->lastIdlePtr);
+    } else {
+    	/* timer event-handler */
+	tsdPtr->timerListEpoch++; /* signal-timer list was changed */
+	TclSpliceOutEx(entryPtr, tsdPtr->timerList, tsdPtr->lastTimerPtr);
     }
 
-    ckfree((char *)timerHandlerPtr);
+    /* free it via deleteProc or ckfree */
+    if (entryPtr->deleteProc) {
+	(*entryPtr->deleteProc)(entryPtr->clientData);
+    }
+
+    if (entryPtr->flags & (TCL_PROMPT_EVENT|TCL_IDLE_EVENT)) {
+    	ckfree((char *)entryPtr);
+    } else {
+    	/* shift to the allocated pointer */
+    	ckfree((char *)TimerEntry2TimerHandler(entryPtr));
+    }
 }
 
 /*
@@ -580,10 +599,12 @@ TimerSetupProc(
     ClientData data,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    Tcl_Time blockTime;
-    ThreadSpecificData *tsdPtr = InitTimer();
+    Tcl_Time blockTime, *firstTime;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)data;
 
-    if (((flags & TCL_IDLE_EVENTS) && tsdPtr->idleList)
+    if (tsdPtr == NULL) { tsdPtr = InitTimer(); };
+
+    if (((flags & TCL_IDLE_EVENTS) && tsdPtr->idleList )
 	    || ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerPending)) {
 	/*
 	 * There is an idle handler or a pending timer event, so just poll.
@@ -598,9 +619,9 @@ TimerSetupProc(
 	 */
 
 	Tcl_GetTime(&blockTime);
-	blockTime.sec = tsdPtr->timerList->time.sec - blockTime.sec;
-	blockTime.usec = tsdPtr->timerList->time.usec -
-		blockTime.usec;
+	firstTime = &(TimerEntry2TimerHandler(tsdPtr->timerList)->time);
+	blockTime.sec = firstTime->sec - blockTime.sec;
+	blockTime.usec = firstTime->usec - blockTime.usec;
 	if (blockTime.usec < 0) {
 	    blockTime.sec -= 1;
 	    blockTime.usec += 1000000;
@@ -609,6 +630,16 @@ TimerSetupProc(
 	    blockTime.sec = 0;
 	    blockTime.usec = 0;
 	}
+
+	/*
+	 * If the first timer has expired, stick an event on the queue.
+	 */
+
+	if (blockTime.sec == 0 && blockTime.usec == 0) {
+	    tsdPtr->timerPending = 1;
+	    QueueTimerHandlerEvent();
+	}
+    
     } else {
 	return;
     }
@@ -616,6 +647,7 @@ TimerSetupProc(
     Tcl_SetMaxBlockTime(&blockTime);
 }
 
+#if 0
 /*
  *----------------------------------------------------------------------
  *
@@ -639,20 +671,27 @@ TimerCheckProc(
     ClientData data,		/* Not used. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    Tcl_Time blockTime;
+    Tcl_Time blockTime, *firstTime;
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    if ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerList
+    if ((flags & TCL_TIMER_EVENTS)
       && !tsdPtr->timerPending
     ) {
 	/*
 	 * Compute the timeout for the next timer on the list.
 	 */
 
+	if (tsdPtr->promptList) {
+	    goto queuetmr;
+	}
+
+	if (!tsdPtr->timerList) {
+	    return;
+	}
 	Tcl_GetTime(&blockTime);
-	blockTime.sec = tsdPtr->timerList->time.sec - blockTime.sec;
-	blockTime.usec = tsdPtr->timerList->time.usec -
-		blockTime.usec;
+	firstTime = &(TimerEntry2TimerHandler(tsdPtr->timerList)->time);
+	blockTime.sec = firstTime->sec - blockTime.sec;
+	blockTime.usec = firstTime->usec - blockTime.usec;
 	if (blockTime.usec < 0) {
 	    blockTime.sec -= 1;
 	    blockTime.usec += 1000000;
@@ -667,12 +706,14 @@ TimerCheckProc(
 	 */
 
 	if (blockTime.sec == 0 && blockTime.usec == 0) {
+    queuetmr:
 	    tsdPtr->timerPending = 1;
 	    QueueTimerHandlerEvent();
 	}
     }
 }
 
+#endif
 /*
  *----------------------------------------------------------------------
  *
@@ -700,7 +741,7 @@ TimerHandlerEventProc(
     int flags)			/* Flags that indicate what events to handle,
 				 * such as TCL_FILE_EVENTS. */
 {
-    TimerHandler *timerHandlerPtr, *nextPtr;
+    TimerEntry *entryPtr, *nextPtr;
     Tcl_Time time;
     size_t currentGeneration, currentEpoch;
     ThreadSpecificData *tsdPtr = InitTimer();
@@ -739,14 +780,42 @@ TimerHandlerEventProc(
      */
 
     currentGeneration = tsdPtr->timerGeneration++;
-    Tcl_GetTime(&time);
-    for (timerHandlerPtr = tsdPtr->timerList; 
-	 timerHandlerPtr != NULL;
-	 timerHandlerPtr = nextPtr
-    ) {
-    	nextPtr = timerHandlerPtr->nextPtr;
 
-	if (TCL_TIME_BEFORE(time, timerHandlerPtr->time)) {
+    /* First process all prompt (immediate) events */
+    while ((entryPtr = tsdPtr->promptList) != NULL
+	&& entryPtr->generation <= currentGeneration
+    ) {
+	/* detach entry from the owner's list */
+	TclSpliceOutEx(entryPtr, tsdPtr->promptList, tsdPtr->lastPromptPtr);
+
+	/* execute event */
+	(*entryPtr->proc)(entryPtr->clientData);
+
+	/* free it via deleteProc and ckfree */
+	if (entryPtr->deleteProc) {
+	    (*entryPtr->deleteProc)(entryPtr->clientData);
+	}
+	ckfree((char *) entryPtr);
+    }
+
+    /* if pending prompt events (new generation) - repeat event cycle right now */
+    if (tsdPtr->promptList) {
+    	tsdPtr->timerPending = 1;
+    	return 0; /* leave handler event in the queue */
+    }
+
+    /* Hereafter all timer events with time before now */
+    if (!tsdPtr->timerList) {
+    	goto done;
+    }
+    Tcl_GetTime(&time);
+    for (entryPtr = tsdPtr->timerList;
+	 entryPtr != NULL;
+	 entryPtr = nextPtr
+    ) {
+    	nextPtr = entryPtr->nextPtr;
+
+	if (TCL_TIME_BEFORE(time, TimerEntry2TimerHandler(entryPtr)->time)) {
 	    break;
 	}
 
@@ -754,7 +823,8 @@ TimerHandlerEventProc(
 	 * Bypass timers of newer generation.
 	 */
 
-	if (timerHandlerPtr->generation > currentGeneration) {
+	if (entryPtr->generation > currentGeneration) {
+	    /* increase pending to signal repeat */
 	    tsdPtr->timerPending++;
 	    continue;
 	}
@@ -766,19 +836,19 @@ TimerHandlerEventProc(
 	 * potential reentrancy problems.
 	 */
 
-	TclSpliceOutEx(timerHandlerPtr, 
+	TclSpliceOutEx(entryPtr, 
 	    tsdPtr->timerList, tsdPtr->lastTimerPtr);
 
 	currentEpoch = tsdPtr->timerListEpoch;
 
 	/* invoke timer proc */
-	(*timerHandlerPtr->proc)(timerHandlerPtr->clientData);
+	(*entryPtr->proc)(entryPtr->clientData);
 	/* free it via deleteProc or ckfree */
-	if (timerHandlerPtr->deleteProc) {
-	    (*timerHandlerPtr->deleteProc)(timerHandlerPtr->clientData);
+	if (entryPtr->deleteProc) {
+	    (*entryPtr->deleteProc)(entryPtr->clientData);
 	}
 
-	ckfree((char *) timerHandlerPtr);
+	ckfree((char *) TimerEntry2TimerHandler(entryPtr));
 
 	/* be sure that timer-list was not changed inside the proc call */
 	if (currentEpoch != tsdPtr->timerListEpoch) {
@@ -788,27 +858,92 @@ TimerHandlerEventProc(
 	}
     }
 
+done:
     /* don't need to queue event again by pending timer events */
     if (tsdPtr->timerPending > 1) {
     	tsdPtr->timerPending = 1;
     	return 0; /* leave handler event in the queue */
     }
 
-    /* Reset generation */
+    /* Reset generation if both timer queue are empty */
     if (!tsdPtr->timerList) {
-    	tsdPtr->timerGeneration = 0;
+	tsdPtr->timerGeneration = 0;
     }
 
     /* Compute the next timeout (later via TimerSetupProc using the first timer). */
     tsdPtr->timerPending = 0;
 
-    return 1; /* processing done, again later via TimerCheckProc */
+    return 1; /* processing done, again later via TimerSetupProc */
 }
 
 /*
  *--------------------------------------------------------------
  *
- * TclCreateIdleHandlerEx --, Tcl_DoWhenIdle --
+ * TclCreateTimerEntryEx --
+ *
+ *	Arrange for proc to be invoked delayed (but prompt) as timer event,
+ *	without time ("after 0").
+ *	Or as idle event (the next time the system is idle i.e., just 
+ *	before the next time that Tcl_DoOneEvent would have to wait for
+ *	something to happen).
+ *
+ *	Providing the flag TCL_PROMPT_EVENT ensures that timer event-handler
+ *	will be queued immediately to guarantee the execution of timer-event
+ *	as soon as possible
+ *
+ * Results:
+ *	Returns the created timer entry.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+
+TimerEntry *
+TclCreateTimerEntryEx(
+    Tcl_TimerProc *proc,		/* Function to invoke. */
+    Tcl_TimerDeleteProc *deleteProc,	/* Function to cleanup */
+    size_t extraDataSize,
+    int flags)
+{
+    register TimerEntry *entryPtr;
+    ThreadSpecificData *tsdPtr = InitTimer();
+
+    entryPtr = (TimerEntry *) ckalloc(sizeof(TimerEntry) + extraDataSize);
+    if (entryPtr == NULL) {
+	return NULL;
+    }
+    entryPtr->proc = proc;
+    entryPtr->deleteProc = deleteProc;
+    entryPtr->clientData = TimerEntry2ClientData(entryPtr);
+    entryPtr->flags = flags;
+    if (flags & TCL_PROMPT_EVENT) {
+    	/* use timer generation, because usually no differences between 
+    	 * call of "after 0" and "after 1" */
+	entryPtr->generation = tsdPtr->timerGeneration;
+	/* attach to the prompt queue */
+	TclSpliceTailEx(entryPtr, tsdPtr->promptList, tsdPtr->lastPromptPtr);
+	
+	/* execute immediately: queue handler event right now */
+	if (!tsdPtr->timerPending) {
+	    QueueTimerHandlerEvent();
+	}
+	tsdPtr->timerPending++; /* queued and TimerSetupProc knows about */
+    } else {
+    	/* idle generation */
+	entryPtr->generation = tsdPtr->idleGeneration;
+	/* attach to the idle queue */
+	TclSpliceTailEx(entryPtr, tsdPtr->idleList, tsdPtr->lastIdlePtr);
+    }
+
+    return entryPtr;
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * Tcl_DoWhenIdle --
  *
  *	Arrange for proc to be invoked the next time the system is idle (i.e.,
  *	just before the next time that Tcl_DoOneEvent would have to wait for
@@ -823,86 +958,16 @@ TimerHandlerEventProc(
  *
  *--------------------------------------------------------------
  */
-
-IdleHandler *
-TclCreateIdleHandlerEx(
-    Tcl_IdleProc *proc,			/* Function to invoke. */
-    Tcl_IdleDeleteProc *deleteProc,	/* Function to cleanup */
-    size_t extraDataSize)
-{
-    register IdleHandler *idlePtr;
-    Tcl_Time blockTime;
-    ThreadSpecificData *tsdPtr = InitTimer();
-
-    idlePtr = (IdleHandler *) ckalloc(sizeof(IdleHandler) + extraDataSize);
-    if (idlePtr == NULL) {
-	return NULL;
-    }
-    idlePtr->proc = proc;
-    idlePtr->deleteProc = deleteProc;
-    idlePtr->clientData = IdleHandler2ClientData(idlePtr);
-    idlePtr->generation = tsdPtr->idleGeneration;
-
-    /* attach to the idle queue */
-    TclSpliceTailEx(idlePtr, tsdPtr->idleList, tsdPtr->lastIdlePtr);
-
-    /* reset next block time */
-    blockTime.sec = 0;
-    blockTime.usec = 0;
-    Tcl_SetMaxBlockTime(&blockTime);
-
-    return idlePtr;
-}
-
 void
 Tcl_DoWhenIdle(
     Tcl_IdleProc *proc,		/* Function to invoke. */
     ClientData clientData)	/* Arbitrary value to pass to proc. */
 {
-    register IdleHandler *idlePtr = TclCreateIdleHandlerEx(proc, NULL, 0);
+    TimerEntry *idlePtr = TclCreateTimerEntryEx(proc, NULL, 0, TCL_IDLE_EVENT);
 
     if (idlePtr) {
     	idlePtr->clientData = clientData;
     }
-}
-
-/*
- *--------------------------------------------------------------
- *
- * TclDeleteIdleHandler --
- *
- *	Delete a previously-registered idle handler.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *--------------------------------------------------------------
- */
-
-void
-TclDeleteIdleHandler(
-    IdleHandler *idlePtr)	/* Result previously returned by */
-				/* TclCreateIdleHandlerEx */
-{
-    ThreadSpecificData *tsdPtr;
-
-    if (idlePtr == NULL) {
-	return;
-    }
-
-    tsdPtr = InitTimer();
-
-    /* detach entry from the owner list */
-    TclSpliceOutEx(idlePtr, tsdPtr->idleList, tsdPtr->lastIdlePtr);
-
-    /* free it via deleteProc and ckfree */
-    if (idlePtr->deleteProc) {
-	(*idlePtr->deleteProc)(idlePtr->clientData);
-    }
-    ckfree((char *)idlePtr);
 }
 
 /*
@@ -928,7 +993,7 @@ Tcl_CancelIdleCall(
     Tcl_IdleProc *proc,		/* Function that was previously registered. */
     ClientData clientData)	/* Arbitrary value to pass to proc. */
 {
-    register IdleHandler *idlePtr, *nextPtr;
+    register TimerEntry *idlePtr, *nextPtr;
     ThreadSpecificData *tsdPtr = InitTimer();
 
     for (idlePtr = tsdPtr->idleList;
@@ -972,7 +1037,7 @@ Tcl_CancelIdleCall(
 int
 TclServiceIdle(void)
 {
-    IdleHandler *idlePtr;
+    TimerEntry *idlePtr;
     size_t currentGeneration;
     Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
@@ -1053,7 +1118,6 @@ Tcl_AfterObjCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_WideInt ms;		/* Number of milliseconds to wait */
-    Tcl_Time wakeup;
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr;
     int length;
@@ -1112,8 +1176,7 @@ Tcl_AfterObjCmd(
 
     switch (index) {
     case -1: {
-    	Tcl_Time *timePtr = NULL;
-    	TimerHandler *timerPtr;
+    	TimerEntry *entryPtr;
 	if (ms < 0) {
 	    ms = 0;
 	}
@@ -1122,7 +1185,7 @@ Tcl_AfterObjCmd(
 	}
 
 	if (ms) {
-	    timePtr = &wakeup;
+	    Tcl_Time wakeup;
 	    Tcl_GetTime(&wakeup);
 	    wakeup.sec += (long)(ms / 1000);
 	    wakeup.usec += ((long)(ms % 1000)) * 1000;
@@ -1130,20 +1193,22 @@ Tcl_AfterObjCmd(
 		wakeup.sec++;
 		wakeup.usec -= 1000000;
 	    }
+	    entryPtr = TclCreateAbsoluteTimerHandlerEx(&wakeup, AfterProc,
+			    FreeAfterPtr, sizeof(AfterInfo));
+	} else {
+	    entryPtr = TclCreateTimerEntryEx(AfterProc,
+			    FreeAfterPtr, sizeof(AfterInfo), TCL_PROMPT_EVENT);
 	}
 
-	timerPtr = TclCreateAbsoluteTimerHandlerEx(timePtr, AfterProc,
-			FreeAfterPtr, sizeof(AfterInfo));
-	if (timerPtr == NULL) { /* error handled in panic */
+	if (entryPtr == NULL) { /* error handled in panic */
 	    return TCL_ERROR;
 	}
-	afterPtr = TimerHandler2AfterInfo(timerPtr);
+	afterPtr = TimerEntry2AfterInfo(entryPtr);
 
 	/* attach to the list */
 	afterPtr->assocPtr = assocPtr;
 	TclSpliceTailEx(afterPtr, 
 		assocPtr->firstAfterPtr, assocPtr->lastAfterPtr);
-	afterPtr->flags = 0;
 	afterPtr->selfPtr = NULL;
 
 	if (objc == 3) {
@@ -1208,34 +1273,29 @@ Tcl_AfterObjCmd(
 	    }
 	}
 	if (afterPtr != NULL) {
-	    if (!(afterPtr->flags & IDLE_EVENT)) {
-		TclDeleteTimerHandler(AfterInfo2TimerHandler(afterPtr));
-	    } else {
-		TclDeleteIdleHandler(AfterInfo2IdleHandler(afterPtr));
-	    }
+	    TclDeleteTimerEntry(AfterInfo2TimerEntry(afterPtr));
 	}
 	break;
     }
     case AFTER_IDLE: {
-    	IdleHandler *idlePtr;
+    	TimerEntry *idlePtr;
 
 	if (objc < 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "script script ...");
 	    return TCL_ERROR;
 	}
 
-	idlePtr = TclCreateIdleHandlerEx(AfterProc,
-			FreeAfterPtr, sizeof(AfterInfo));
+	idlePtr = TclCreateTimerEntryEx(AfterProc,
+			FreeAfterPtr, sizeof(AfterInfo), TCL_IDLE_EVENT);
 	if (idlePtr == NULL) { /* error handled in panic */
 	    return TCL_ERROR;
 	}
-	afterPtr = IdleHandler2AfterInfo(idlePtr);
+	afterPtr = TimerEntry2AfterInfo(idlePtr);
 
 	/* attach to the list */
 	afterPtr->assocPtr = assocPtr;
 	TclSpliceTailEx(afterPtr, 
 		assocPtr->firstAfterPtr, assocPtr->lastAfterPtr);
-	afterPtr->flags = IDLE_EVENT;
 	afterPtr->selfPtr = NULL;
 
 	if (objc == 3) {
@@ -1285,7 +1345,8 @@ Tcl_AfterObjCmd(
 	resultListPtr = Tcl_NewObj();
 	Tcl_ListObjAppendElement(interp, resultListPtr, afterPtr->commandPtr);
 	Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
- 		(afterPtr->flags & IDLE_EVENT) ? "idle" : "timer", -1));
+ 		(AfterInfo2TimerEntry(afterPtr)->flags & TCL_IDLE_EVENT) ? 
+ 		    "idle" : "timer", -1));
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
@@ -1457,11 +1518,7 @@ AfterProc(
      */
 
     /* remove delete proc from handler (we'll do cleanup here) */
-    if (!(afterPtr->flags & IDLE_EVENT)) {
-	AfterInfo2TimerHandler(afterPtr)->deleteProc = NULL;
-    } else {
-	AfterInfo2IdleHandler(afterPtr)->deleteProc = NULL;
-    }
+    AfterInfo2TimerEntry(afterPtr)->deleteProc = NULL;
 
     /* release object (mark it was triggered) */
     if (afterPtr->selfPtr) {
@@ -1562,14 +1619,9 @@ AfterCleanupProc(
     Tcl_Interp *interp)		/* Interpreter that is being deleted. */
 {
     AfterAssocData *assocPtr = (AfterAssocData *) clientData;
-    AfterInfo *afterPtr;
 
-    while ( (afterPtr = assocPtr->lastAfterPtr) ) {
-	if (!(afterPtr->flags & IDLE_EVENT)) {
-	    TclDeleteTimerHandler(AfterInfo2TimerHandler(afterPtr));
-	} else {
-	    TclDeleteIdleHandler(AfterInfo2IdleHandler(afterPtr));
-	}
+    while ( assocPtr->lastAfterPtr ) {
+	TclDeleteTimerEntry(AfterInfo2TimerEntry(assocPtr->lastAfterPtr));
     }
 }
 
