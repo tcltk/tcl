@@ -890,7 +890,7 @@ Tcl_Sleep(
 
     for (;;) {
 	
-	(*tclScaleTimeProcPtr) (&vdelay, tclTimeClientData);
+	tclScaleTimeProcPtr(&vdelay, tclTimeClientData);
 
 	/* No wait if sleep time too small (because windows may wait too long) */
 	if (!vdelay.sec && vdelay.usec < (long)timerResolution.minDelay) {
