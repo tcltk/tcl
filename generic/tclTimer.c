@@ -1427,7 +1427,7 @@ AfterDelay(
 	    || TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
 	    diff = TCL_TIME_DIFF_MS(endTime, now);
 	    if (TCL_TIME_DIFF_US(endTime, now) > 500 || TCL_TIME_DIFF_US(endTime, now) < -500) {
-		printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!drift!!!! %5.3f, diff: %d -- %d.%06d - %d.%06d (%d usec)\n", ms, (int)diff, endTime.sec, endTime.usec, now.sec, now.usec, TCL_TIME_DIFF_US(endTime, now));
+		//printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!drift!!!! %5.3f, diff: %d -- %d.%06d - %d.%06d (%d usec)\n", ms, (int)diff, endTime.sec, endTime.usec, now.sec, now.usec, TCL_TIME_DIFF_US(endTime, now));
 	    }
 #ifndef TCL_WIDE_INT_IS_LONG
 	    if (diff > LONG_MAX) {

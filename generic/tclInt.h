@@ -4092,6 +4092,9 @@ TclInlLimitExceeded(
 {
     return (((Interp *)interp)->limit.exceeded != 0);
 }
+#ifdef Tcl_LimitExceeded
+#  undef Tcl_LimitExceeded
+#endif
 #define Tcl_LimitExceeded(interp) TclInlLimitExceeded(interp)
 
 #define TclLimitReady(limit)						\
