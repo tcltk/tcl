@@ -849,18 +849,18 @@ TclJoinPath(
     int elements,
     Tcl_Obj * const objv[])
 {
-    Tcl_Obj *res;
+    Tcl_Obj *res = NULL;	/* Resulting path object (container of join) */
+    Tcl_Obj *elt;		/* Path part (result if returns part of path) */
     int i;
     const Tcl_Filesystem *fsPtr = NULL;
-
-    res = NULL;
 
     for (i = 0; i < elements; i++) {
 	int driveNameLength, strEltLen, length;
 	Tcl_PathType type;
 	char *strElt, *ptr;
 	Tcl_Obj *driveName = NULL;
-	Tcl_Obj *elt = objv[i];
+	
+	elt = objv[i];
 
 	/*
 	 * This is a special case where we can be much more efficient, where
@@ -893,10 +893,7 @@ TclJoinPath(
 		     * the base itself is just fine!
 		     */
 
-		    if (res != NULL) {
-			TclDecrRefCount(res);
-		    }
-		    return elt;
+		    goto partReturn; /* return elt; */
 		}
 
 		/*
@@ -917,20 +914,20 @@ TclJoinPath(
 		     */
 
 		    if ((tclPlatform != TCL_PLATFORM_WINDOWS)
-			    || (strchr(Tcl_GetString(elt), '\\') == NULL)) {
-			if (res != NULL) {
-			    TclDecrRefCount(res);
-			}
-
+			    || (strchr(Tcl_GetString(elt), '\\') == NULL)
+		    ) {
 			if (PATHFLAGS(elt)) {
-			    return TclNewFSPathObj(elt, str, len);
+			    elt = TclNewFSPathObj(elt, str, len);
+			    goto partReturn; /* return elt; */
 			}
 			if (TCL_PATH_ABSOLUTE != Tcl_FSGetPathType(elt)) {
-			    return TclNewFSPathObj(elt, str, len);
+			    elt = TclNewFSPathObj(elt, str, len);
+			    goto partReturn; /* return elt; */
 			}
 			(void) Tcl_FSGetNormalizedPath(NULL, elt);
 			if (elt == PATHOBJ(elt)->normPathPtr) {
-			    return TclNewFSPathObj(elt, str, len);
+			    elt = TclNewFSPathObj(elt, str, len);
+			    goto partReturn; /* return elt; */
 			}
 		    }
 		}
@@ -940,19 +937,15 @@ TclJoinPath(
 		 * more general code below handle things.
 		 */
 	    } else if (tclPlatform == TCL_PLATFORM_UNIX) {
-		if (res != NULL) {
-		    TclDecrRefCount(res);
-		}
-		return tailObj;
+		elt = tailObj;
+		goto partReturn; /* return elt; */
 	    } else {
 		const char *str = TclGetString(tailObj);
 
 		if (tclPlatform == TCL_PLATFORM_WINDOWS) {
 		    if (strchr(str, '\\') == NULL) {
-			if (res != NULL) {
-			    TclDecrRefCount(res);
-			}
-			return tailObj;
+			elt = tailObj;
+			goto partReturn; /* return elt; */
 		    }
 		}
 	    }
@@ -1031,16 +1024,12 @@ TclJoinPath(
 		}
 		ptr++;
 	    }
-	    if (res != NULL) {
-		TclDecrRefCount(res);
-	    }
-
 	    /*
 	     * This element is just what we want to return already; no further
 	     * manipulation is requred.
 	     */
 
-	    return elt;
+	    goto partReturn; /* return elt; */
 	}
 
 	/*
@@ -1051,10 +1040,8 @@ TclJoinPath(
     noQuickReturn:
 	if (res == NULL) {
 	    res = Tcl_NewObj();
-	    ptr = Tcl_GetStringFromObj(res, &length);
-	} else {
-	    ptr = Tcl_GetStringFromObj(res, &length);
 	}
+	ptr = Tcl_GetStringFromObj(res, &length);
 
 	/*
 	 * Strip off any './' before a tilde, unless this is the beginning of
@@ -1087,6 +1074,7 @@ TclJoinPath(
 
 		if (sep != NULL) {
 		    separator = TclGetString(sep)[0];
+		    TclDecrRefCount(sep);
 		}
 		/* Safety check in case the VFS driver caused sharing */
 		if (Tcl_IsShared(res)) {
@@ -1126,6 +1114,12 @@ TclJoinPath(
 	res = Tcl_NewObj();
     }
     return res;
+
+partReturn:
+    if (res != NULL) {
+	TclDecrRefCount(res);
+    }
+    return elt;
 }
 
 /*
