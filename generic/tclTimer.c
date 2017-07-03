@@ -943,9 +943,24 @@ TimerSetupProc(
 	#endif
 
 	if (timeOffs > 0) {
-	    blockTime.sec = (long) (timeOffs / 1000000);
-	    blockTime.usec = (unsigned long) (timeOffs % 1000000);
-
+	    blockTime.sec = 0;
+	    if (timeOffs >= 1000000) {
+		/*
+		 * Note we use monotonic time by all wait functions, so to
+		 * avoid too long wait by the absolute timers (to be able
+		 * to trigger it) if time jumped to the expected time, just
+		 * let block for maximal 1s if absolute timers available.
+		 */
+		if (tsdPtr->absTimerList) {
+		    /* we've some absolute timers - won't wait longer as 1s. */
+		    timeOffs = 1000000;
+		}
+		blockTime.sec = (long) (timeOffs / 1000000);
+		blockTime.usec = (unsigned long)(timeOffs % 1000000);
+	    } else {
+		blockTime.sec = 0;
+		blockTime.usec = (unsigned long)timeOffs;
+	    }
 	} else {
 	    blockTime.sec = 0;
 	    blockTime.usec = 0;
@@ -1792,6 +1807,14 @@ AfterDelay(
 	    }
 	}
 	diff = endTime - now;
+	if (absolute && diff >= 1000000) {
+	    /*
+	     * Note by absolute sleep we should avoid too long waits, to be
+	     * able to process further if time jumped to the expected time, so
+	     * just let wait maximal 1 second.
+	     */
+	    diff = 1000000;
+	}
 	if (iPtr->limit.timeEvent == NULL || diff < limOffs) {
 	    if (diff > 0) {
 		TclpUSleep(diff);

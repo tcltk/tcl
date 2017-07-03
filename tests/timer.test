@@ -581,6 +581,180 @@ test timer-11.3 {[after] correct timer ordering (insert ahead)} \
     } \
     -result {ev:0 ev:0.1 ev:0.25 ev:0.5 ev:0.75 ev:1}
 
+# -----------------------------------------------------------------------------
+# 
+# timer-20.x --
+# 
+#    Following test-cases cover event-driven functionality during time-jump's
+#
+#    Note: on some platforms it is only possible if the user has corresponding
+#          privileges to change system date and time.
+#
+# Ex.:  sudo LD_LIBRARY_PATH=. ./tclsh ../tests/timer.test -match timer-20.*
+# -----------------------------------------------------------------------------
+
+proc timejump {args} {
+  set tnow [clock clicks]
+  set tm [clock format [clock add [clock seconds] {*}$args] -format %H:%M:%S]
+  #puts -nonewline "***[format \[%04X\] [pid]]*** jump to $tm ($args) "
+  if {$::tcl_platform(platform) eq "windows"} {
+    exec $::env(COMSPEC) /c time $tm
+  } else {
+    exec date +%T -s $tm
+  }
+  #puts "***[format \[%04X\] [pid]]*** [clock format [clock seconds] -format {%Y-%m-%d %H:%M:%S}] =="
+}
+
+testConstraint ChangeTimePrivilege [expr {![catch { timejump 0 minutes }]}]
+testConstraint NewVWaitAfter	   [expr {![catch { vwait 0 nothing }]}]
+
+# provide monotonic command, if "clock monotonic" not available (old core):
+if {![catch {::tcl::clock::monotonic}]} {
+  namespace inscope ::tcl::clock {namespace export monotonic}
+  namespace import ::tcl::clock::monotonic
+} else {
+  proc monotonic {} {
+    variable tickFactor
+    # warming-up:
+    clock clicks; clock microseconds
+    # calc tick2usec factor:
+    set tick [::tcl::clock::clicks]; set usec [::tcl::clock::microseconds]
+    after 100
+    set tickFactor [expr {double([::tcl::clock::clicks] - $tick) / ([::tcl::clock::microseconds] - $usec)}]
+    proc monotonic {} {
+      variable tickFactor
+      expr {wide([::tcl::clock::clicks] / $tickFactor)} 
+    }
+    monotonic
+  }
+}
+# asynchronous function doing 3 time jumps (+1 min, +1 min, -2 minutes) in 250-ms:
+proc delayedtimejump {delay {async 1} {startms {}}} {
+  # async code (executed in separate process):
+  if {$async} {
+    set code ""
+    foreach pr {timejump delayedtimejump} {
+	append code [list proc $pr [info args $pr] [info body $pr]] \n
+    }
+    append code "delayedtimejump $delay 0 [::tcl::clock::milliseconds]"
+    exec [info nameofexecutable] << $code &
+    return
+  }
+  # time-jumps (1st in 250-ms, 2nd and 3rd in given delay):
+  set delay1 250
+  if {$startms ne {}} {
+     set delay1 [expr {250 - ([::tcl::clock::milliseconds] - $startms)}]
+     if {$delay1 < 0} { set delay1 0 }
+  }
+  after $delay1; timejump +1 minutes
+  after $delay; timejump +1 minutes
+  after $delay; timejump -2 minutes
+}
+
+proc test-timer-with-jump {code maxCount expMT {maxOffs 100}} {
+    set mitm [set sttm [clock seconds]]
+    set stmt [monotonic]
+    set expMT [expr {$expMT * 1000}]
+    set maxOffs [expr {$maxOffs * 1000}]
+    set res {}
+    set jumped 0
+    for {set i 0} {$i < $maxCount} {incr i} {
+	set rt [::tcl::clock::microseconds]
+	set mt [monotonic]
+	# execute:
+	if 1 $code
+	# verify monotonic time:
+	set mt [expr {[monotonic] - $mt}]
+	set rt [expr {[::tcl::clock::microseconds] - $rt}]
+	# give +/- 100-ms for some slow or busy systems:
+	if {$mt < $expMT - $maxOffs || $mt > $expMT + $maxOffs} {
+	  lappend res "$i. too large discrepancy mt: $mt ~ $expMT (rt: $rt)"
+	} else {
+	  #lappend res "$i. debug, # mt: $mt, rt: $rt"
+	}
+	# be sure we are in the future and then comming back:
+	if {$jumped > 2} break; # we are already back
+	if {[clock seconds] - $mitm > 30 || [clock seconds] - $mitm < -30} {
+	   set mitm [clock seconds]
+	   incr jumped
+	}
+    }
+    # wait for time-jump back (from the future):
+    set future [clock add $sttm +30 seconds]
+    set aftto [after 10000 {set tout 1}]
+    while {[clock seconds] >= $future} {
+	if {[vwait 100 tout]} {
+	   error "unexpected case: too long wait for time-reset."
+	}
+    }
+    after cancel $aftto
+    after 10
+    # result:
+    if {[llength $res]} {
+      return [join $res \n]
+    }
+    return $jumped
+}
+
+test timer-20.1 {time jump: after relative} {ChangeTimePrivilege} {
+    delayedtimejump 250; # delayed time jump in 250-ms
+    test-timer-with-jump {
+	after 150 {set x 1}; vwait x
+    } 20 150
+} 3
+
+test timer-20.2 {time jump: vwait timeout} {ChangeTimePrivilege NewVWaitAfter} {
+    delayedtimejump 250; # delayed time jump in 250-ms
+    test-timer-with-jump {
+	vwait -timer 150 nothing; # we want listen timer only
+    } 20 150
+} 3
+
+test timer-20.3 {time jump: simple sleep} {ChangeTimePrivilege} {
+    delayedtimejump 250; # delayed time jump in 250-ms
+    test-timer-with-jump {
+	after 150
+    } 20 150
+} 3
+
+
+# Increase delay between time-jumps (1.5s) for possible retarded reaction of 
+# the notifier by absolute timers (retarded recognition of the time-jump so
+# the time can jump again (also backwards) without recognition.
+# Note also we cannot test absolute timers by the backwards time-jump.
+
+test timer-20.4 {time jump: after absolute time - "after at real-time code"} {ChangeTimePrivilege NewVWaitAfter} {
+    set sttm [clock seconds]
+    set i 0
+    foreach tm [list \
+      [clock add $sttm +1 minute -2 second] \
+      [clock add $sttm +2 minute -2 second] \
+    ] {
+      after at $tm [list set x$i 1]
+      incr i
+    }
+    delayedtimejump 1500; # delayed time jump in 1.5s
+    test-timer-with-jump {
+    	# we want listen timer only:
+	if {![vwait -timer 10000 x$i]} {
+	   error "too long wait for \"x$i\" (should be maximal 1 second)"
+	}
+    } 2 250 3000; # max 3 seconds difference (compared to 1 minute)
+} 2
+
+test timer-20.5 {time jump: sleep to absolute time - "after at real-time"} {ChangeTimePrivilege NewVWaitAfter} {
+    set sttm [clock seconds]
+    set offsLst [list \
+      [clock add $sttm +1 minute] \
+      [clock add $sttm +2 minute] \
+    ]
+    delayedtimejump 1500; # delayed time jump in 1.5s
+    test-timer-with-jump {
+	upvar offsLst offsLst
+	after at [lindex $offsLst $i]
+    } 2 250 3000; # max 3 seconds difference (compared to 1 minute)
+} 2
+
 # cleanup
 ::tcltest::cleanupTests
 return
