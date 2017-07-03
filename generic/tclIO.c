@@ -2969,7 +2969,11 @@ CloseChannel(
      */
 
     if (statePtr->schedEvent) {
+	/* reset channel in event (cancel delayed) */
+	*(Channel**)(statePtr->schedEvent+1) = NULL;
+#if 0
 	TclpCancelEvent(statePtr->schedEvent);
+#endif
 	statePtr->schedEvent = NULL;
     }
 
@@ -3454,7 +3458,11 @@ Tcl_ClearChannelHandlers(
      */
 
     if (statePtr->schedEvent) {
+	/* reset channel in event (cancel delayed) */
+	*(Channel**)(statePtr->schedEvent+1) = NULL;
+#if 0
 	TclpCancelEvent(statePtr->schedEvent);
+#endif
 	statePtr->schedEvent = NULL;
     }
 
@@ -8105,7 +8113,7 @@ ChannelScheduledProc(
     Channel *chanPtr = *(Channel**)(evPtr+1);
     ChannelState *statePtr; /* State info for channel */
 
-    if (!chanPtr) {
+    if (!chanPtr) { /* channel deleted */
 	return 1;
     }
 
