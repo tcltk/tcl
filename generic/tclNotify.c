@@ -577,6 +577,9 @@ Tcl_DeleteEvents(
 	    if (tsdPtr->markerEventPtr == evPtr) {
 		tsdPtr->markerEventPtr = prevPtr;
 	    }
+	    if (tsdPtr->timerMarkerPtr == evPtr) {
+		tsdPtr->timerMarkerPtr = prevPtr;
+	    }
 
 	    /*
 	     * Delete the event data structure.
@@ -628,7 +631,7 @@ Tcl_ServiceEvent(
 {
     Tcl_Event *evPtr, *prevPtr;
     Tcl_EventProc *proc;
-    int result = 0;
+    int result;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
@@ -645,22 +648,25 @@ Tcl_ServiceEvent(
      * queue.
      */
 
-    if ((flags & TCL_ASYNC_EVENTS) && Tcl_AsyncReady()) {
-	(void) Tcl_AsyncInvoke(NULL, 0);
-	return 1;
-    }
-
-    /* Async only */
-    if ((flags & TCL_ALL_EVENTS) == TCL_ASYNC_EVENTS) {
-	return 0;
+    if ((flags & TCL_ASYNC_EVENTS)) {
+	if (Tcl_AsyncReady()) {
+	    (void) Tcl_AsyncInvoke(NULL, 0);
+	    return 1;
+	}
+	/* Async only */
+	if ((flags & TCL_ALL_EVENTS) == TCL_ASYNC_EVENTS) {
+	    return 0;
+	}
     }
 
     /*
      * If timer marker reached, process timer events now.
      */
-    if ( tsdPtr->timerMarkerPtr == INT2PTR(-1)
-      || !tsdPtr->firstEventPtr
-      || ((flags & TCL_ALL_EVENTS) == TCL_TIMER_EVENTS)
+    if ( (flags & TCL_TIMER_EVENTS) /* timer allowed */
+      && ( tsdPtr->timerMarkerPtr == INT2PTR(-1) /* timer-event reached */
+	|| !tsdPtr->firstEventPtr		 /* no another events at all */
+	|| ((flags & TCL_ALL_EVENTS) == TCL_TIMER_EVENTS) /* timers only */
+      )
     ) {
 	goto timer;
     }
@@ -761,26 +767,56 @@ Tcl_ServiceEvent(
     }
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 
-timer:
     /*
      * Process timer queue, if alloved and timers are enabled.
      */
-    if ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerMarkerPtr) {
-	/* reset marker */
-	tsdPtr->timerMarkerPtr = NULL;
 
-	result = TclServiceTimerEvents();
-	if (result < 0) {
-	    /* events processed, but marker to process still pending timers */
-	    tsdPtr->timerMarkerPtr = INT2PTR(-1);
-	    result = 1;
+    if (flags & TCL_TIMER_EVENTS) {
+timer:
+	/* If available pending timer-events of new generation */
+	if (tsdPtr->timerMarkerPtr == INT2PTR(-2)) {
+	    /* if other events available */
+	    if ((tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr)) {
+		/* process timer-events after it (next cycle) */
+		return 0;
+	    }
+	    /* no other events - process timer-events now */
+	    goto processTimer;
+        }
+
+	if (tsdPtr->timerMarkerPtr == INT2PTR(-1)) {
+
+	  processTimer:
+	    /* reset marker */
+	    tsdPtr->timerMarkerPtr = NULL;
+
+	    result = TclServiceTimerEvents();
+	    if (result < 0) {
+		/* 
+		 * Events processed, but still pending timers (of new generation)
+		 * set marker to process timer, if setup- resp. check-proc will
+		 * not generate new events.
+		 */
+		if (tsdPtr->timerMarkerPtr == NULL) {
+		    /* marker to last event in the queue */
+		    if (!(tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr)) {
+			/* 
+			 * Marker as "now" - queue is empty, so timers events are first,
+			 * if setup-proc resp. check-proc will not generate new events.
+			 */
+			tsdPtr->timerMarkerPtr = INT2PTR(-2);
+		    };
+		}
+		result = 1;
+	    }
+	    return result;
 	}
     }
 
-
-    return result;
+    return 0;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -847,7 +883,8 @@ TclPeekEventQueued(
 
     return 0;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -873,12 +910,16 @@ TclSetTimerEventMarker(
     if (tsdPtr->timerMarkerPtr == NULL) {
 	/* marker to last event in the queue */
 	if (head || !(tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr)) {
-	    /* marker as "now" - queue is empty, so timers events are first */
-	    tsdPtr->timerMarkerPtr = INT2PTR(-1);
+	    /* 
+	     * Marker as "now" - queue is empty, so timers events are first,
+	     * if setup-proc resp. check-proc will not generate new events.
+	     */
+	    tsdPtr->timerMarkerPtr = INT2PTR(-2);
 	};
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -902,7 +943,8 @@ Tcl_GetServiceMode(void)
 
     return tsdPtr->serviceMode;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -934,7 +976,8 @@ Tcl_SetServiceMode(
     }
     return oldMode;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -978,7 +1021,8 @@ Tcl_SetMaxBlockTime(
 	Tcl_SetTimer(&tsdPtr->blockTime);
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1199,7 +1243,8 @@ Tcl_DoOneEvent(
     tsdPtr->serviceMode = oldMode;
     return result;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1284,7 +1329,8 @@ Tcl_ServiceAll(void)
     tsdPtr->serviceMode = TCL_SERVICE_ALL;
     return result;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1325,7 +1371,8 @@ Tcl_ThreadAlert(
     }
     Tcl_MutexUnlock(&listLock);
 }
-
+
+
 /*
  * Local Variables:
  * mode: c
