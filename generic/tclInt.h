@@ -143,10 +143,12 @@ typedef int ptrdiff_t;
  *----------------------------------------------------------------
  */
 
-#define TCL_PROMPT_EVENT (1 << 0)	/* Mark immediate event */
-#define TCL_ABSTMR_EVENT (1 << 1)	/* Mark absolute timer event (the time 
-					 * of TimerHandler is absolute). */
-#define TCL_IDLE_EVENT   (1 << 5)	/* Mark idle event */
+#define TCL_PROMPT_EVENT    (1 << 0)	/* Mark immediate event */
+#define TCL_ABSTMR_EVENT    (1 << 1)	/* Mark absolute timer event (the time 
+					 * of TclTimerHandler is absolute). */
+#define TCL_IDLE_EVENT      (1 << 3)	/* Mark idle event */
+#define TCL_EVENTST_EXECUTE (1 << 5)	/* Event executed now (reset to prolong). */
+#define TCL_EVENTST_DELETE  (1 << 7)	/* Event will be deleted. */
 
 /*
  * This structure used for handling of timer events (with or without time to 
@@ -155,43 +157,44 @@ typedef int ptrdiff_t;
  * together into corresponding list.
  */
 
-typedef struct TimerEntry {
+typedef struct TclTimerEntry {
     Tcl_TimerProc	*proc;	/* Function to call timer/idle event */
     Tcl_TimerDeleteProc *deleteProc; /* Function to cleanup idle event */
     ClientData clientData;	/* Argument to pass to proc and deleteProc */
     int			flags;	/* Flags (TCL_IDLE_EVENT, TCL_PROMPT_EVENT) */
     size_t generation;		/* Used to distinguish older handlers from
 				 * recently-created ones. */
-    struct TimerEntry *nextPtr;/* Next and prev event in idle queue, */
-    struct TimerEntry *prevPtr;/* or NULL for end/start of the queue. */
+    struct TclTimerEntry *nextPtr;/* Next and prev event in idle queue, */
+    struct TclTimerEntry *prevPtr;/* or NULL for end/start of the queue. */
 /*  ExtraData	 */
-} TimerEntry;
+} TclTimerEntry;
 
 /*
  * For each timer callback that's pending there is one record of the following
  * type. The normal handlers (created by Tcl_CreateTimerHandler) are chained
- * together in a list via TimerEntry sorted by time (earliest event first).
+ * together in a list via TclTimerEntry sorted by time (earliest event first).
  */
 
 				 
-typedef struct TimerHandler {
+typedef struct TclTimerHandler {
     Tcl_WideInt		time;	/* When timer is to fire (absolute/relative). */
     Tcl_TimerToken	token;	/* Identifies handler so it can be deleted. */
-    struct TimerEntry	entry;
+    struct TclTimerEntry	entry;
 /*  ExtraData	 */
-} TimerHandler;
+} TclTimerHandler;
 
 /*
- * Macros to wrap ExtraData and TimerHandler resp. TimerEntry (and vice versa)
+ * Macros to wrap ExtraData and TclTimerHandler resp. TclTimerEntry (and vice versa)
  */
-#define TimerEntry2ClientData(ptr)					\
-	    ( (ClientData)(((TimerEntry *)(ptr))+1) )
-#define ClientData2TimerEntry(ptr)					\
-	    ( ((TimerEntry *)(ptr))-1 )
+#define TclpTimerEntry2ClientData(ptr)					\
+	    ( (ClientData)(((TclTimerEntry *)(ptr))+1) )
+#define TclpClientData2TimerEntry(ptr)					\
+	    ( ((TclTimerEntry *)(ptr))-1 )
 
-#define TimerEntry2TimerHandler(ptr)					\
-	    ( (TimerHandler *)(((char *)(ptr)) - TclOffset(TimerHandler,entry)) )
-#define TimerHandler2TimerEntry(ptr)					\
+#define TclpTimerEntry2TimerHandler(ptr)				\
+	    ( (TclTimerHandler *)(((char *)(ptr)) -			\
+			TclOffset(TclTimerHandler,entry)) )
+#define TclpTimerHandler2TimerEntry(ptr)				\
 	    ( &(ptr)->entry )
 
 /*
@@ -1864,7 +1867,7 @@ typedef struct Interp {
 				 * reached. */
 	int timeGranularity;	/* Mod factor used to determine how often to
 				 * evaluate the limit check. */
-	TimerEntry *timeEvent;	/* Handle for a timer callback that will occur
+	TclTimerEntry *timeEvent;/* Handle for a timer callback that will occur
 				 * when the time-limit is exceeded. */
 
 	Tcl_HashTable callbacks;/* Mapping from (interp,type) pair to data
@@ -3003,7 +3006,7 @@ MODULE_SCOPE int	Tcl_ContinueObjCmd(ClientData clientData,
 MODULE_SCOPE void	TclSetTimerEventMarker(int head);
 MODULE_SCOPE int	TclServiceTimerEvents(void);
 MODULE_SCOPE int	TclServiceIdleEx(int flags, int count);
-MODULE_SCOPE TimerEntry* TclpCreateTimerHandlerEx(
+MODULE_SCOPE TclTimerEntry* TclpCreateTimerHandlerEx(
 			    Tcl_WideInt usec,
 			    Tcl_TimerProc *proc, Tcl_TimerDeleteProc *deleteProc,
 			    size_t extraDataSize, int flags);
@@ -3013,10 +3016,12 @@ MODULE_SCOPE Tcl_TimerToken TclCreateRelativeTimerHandler(
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
 			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
 			    ClientData clientData);
-MODULE_SCOPE TimerEntry* TclCreateTimerEntryEx(
+MODULE_SCOPE TclTimerEntry* TclpCreateTimerEntryEx(
 			    Tcl_TimerProc *proc, Tcl_TimerDeleteProc *deleteProc,
 			    size_t extraDataSize, int flags);
-MODULE_SCOPE void	TclDeleteTimerEntry(TimerEntry *entryPtr);
+MODULE_SCOPE void	TclpDeleteTimerEntry(TclTimerEntry *entryPtr);
+MODULE_SCOPE void	TclpProlongTimerHandler(TclTimerEntry *entryPtr,
+			    Tcl_WideInt usec, int flags);
 MODULE_SCOPE int	TclPeekEventQueued(int flags);
 MODULE_SCOPE int	TclDefaultBgErrorHandlerObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,

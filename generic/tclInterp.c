@@ -3513,7 +3513,7 @@ TclLimitRemoveAllHandlers(
      */
 
     if (iPtr->limit.timeEvent != NULL) {
-	TclDeleteTimerEntry(iPtr->limit.timeEvent);
+	TclpDeleteTimerEntry(iPtr->limit.timeEvent);
 	iPtr->limit.timeEvent = NULL;
     }
 }
@@ -3722,7 +3722,7 @@ Tcl_LimitSetTime(
 
     memcpy(&iPtr->limit.time, timeLimitPtr, sizeof(Tcl_Time));
     if (iPtr->limit.timeEvent != NULL) {
-	TclDeleteTimerEntry(iPtr->limit.timeEvent);
+	TclpDeleteTimerEntry(iPtr->limit.timeEvent);
     }
     nextMoment = TCL_TIME_TO_USEC(*timeLimitPtr) + 10;
     iPtr->limit.timeEvent = TclpCreateTimerHandlerEx(nextMoment,

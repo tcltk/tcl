@@ -167,6 +167,7 @@ static void		PreserveChannelBuffer(ChannelBuffer *bufPtr);
 static void		ReleaseChannelBuffer(ChannelBuffer *bufPtr);
 static int		IsShared(ChannelBuffer *bufPtr);
 static void		ChannelFree(Channel *chanPtr);
+static void		FreeChannelTimerProc(ClientData clientData);
 static void		ChannelTimerProc(ClientData clientData);
 static int		ChanRead(Channel *chanPtr, char *dst, int dstSize);
 static int		CheckChannelErrors(ChannelState *statePtr,
@@ -2968,7 +2969,9 @@ CloseChannel(
      * Cancel any outstanding timer.
      */
 
-    Tcl_DeleteTimerHandler(statePtr->timer);
+    if (statePtr->timer) {
+	TclpDeleteTimerEntry(statePtr->timer);
+    }
 
     /*
      * Mark the channel as deleted by clearing the type structure.
@@ -3450,7 +3453,9 @@ Tcl_ClearChannelHandlers(
      * Cancel any outstanding timer.
      */
 
-    Tcl_DeleteTimerHandler(statePtr->timer);
+    if (statePtr->timer) {
+	TclpDeleteTimerEntry(statePtr->timer);
+    }
 
     /*
      * Remove any references to channel handlers for this channel that may be
@@ -8063,12 +8068,44 @@ UpdateInterest(
 	    mask &= ~TCL_EXCEPTION;
 
 	    if (!statePtr->timer) {
-		statePtr->timer = Tcl_CreateTimerHandler(0, ChannelTimerProc,
-			chanPtr);
+		statePtr->timer = TclpCreateTimerEntryEx(ChannelTimerProc,
+			FreeChannelTimerProc, 0, TCL_PROMPT_EVENT);
+		if (statePtr->timer) {
+		    statePtr->timer->clientData = chanPtr;
+		}
 	    }
 	}
     }
     (chanPtr->typePtr->watchProc)(chanPtr->instanceData, mask);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeChannelTimerProc --
+ *
+ *	This function simply reset timer in channel state structure.
+ *	It does *not* cancel the timer (called on execute/delete timer).
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeChannelTimerProc(
+    ClientData clientData)		/* Channel handle. */
+{
+    Channel *chanPtr = clientData;
+    ChannelState *statePtr = chanPtr->state;
+    /* 
+     * Because channel can operate with multiple timers (asynchronously),
+     * be sure another timer was not set in-between (e. g. recursive events)
+     */
+    if (statePtr->timer && (statePtr->timer->flags & TCL_EVENTST_DELETE)) {
+	statePtr->timer = NULL; /* timer deleted */
+    }
 }
 
 /*
@@ -8101,11 +8138,11 @@ ChannelTimerProc(
 	    && (statePtr->inQueueHead != NULL)
 	    && IsBufferReady(statePtr->inQueueHead)) {
 	/*
-	 * Restart the timer in case a channel handler reenters the event loop
+	 * Prolong the timer in case a channel handler reenters the event loop
 	 * before UpdateInterest gets called by Tcl_NotifyChannel.
 	 */
 
-	statePtr->timer = Tcl_CreateTimerHandler(0, ChannelTimerProc,chanPtr);
+	TclpProlongTimerHandler(statePtr->timer, 0, 0);
 	Tcl_Preserve(statePtr);
 	Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
 	Tcl_Release(statePtr);
@@ -8703,7 +8740,9 @@ TclCopyChannel(
      */
 
     if ((nonBlocking == CHANNEL_NONBLOCKING) && (toRead == 0)) {
-        Tcl_CreateTimerHandler(0, ZeroTransferTimerProc, csPtr);
+        TclTimerEntry *timer = TclpCreateTimerEntryEx(ZeroTransferTimerProc,
+        	NULL, 0, TCL_PROMPT_EVENT);
+        timer->clientData = csPtr;
         return 0;
     }
 
