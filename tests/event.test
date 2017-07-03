@@ -488,10 +488,10 @@ test event-10.1 {Tcl_Exit procedure} {stdio} {
 
 test event-11.1 {Tcl_VwaitCmd procedure} {
     list [catch {vwait} msg] $msg
-} {1 {wrong # args: should be "vwait name ?timeout?"}}
+} {1 {wrong # args: should be "vwait ?options? name ?timeout?"}}
 test event-11.2 {Tcl_VwaitCmd procedure} {
     list [catch {vwait a b} msg] $msg
-} {1 {expected integer but got "b"}}
+} {1 {bad option "a": must be -idle, -noidle, -timer, -notimer, -file, -nofile, -window, -nowindow, -async, -noasync, -nowait, -wait, or idletasks}}
 test event-11.3 {Tcl_VwaitCmd procedure} {
     catch {unset x}
     set x 1
@@ -568,15 +568,15 @@ test event-11.4.1 {vwait with timeout} {} {
     set x {}
     # success cases:
     after 0 {lappend z 0}
-    after 20 {lappend x 1}
-    after 30 {lappend x 2}
-    after 100 {lappend x 3}
+    after 100 {lappend x 1}
+    after 100 {lappend x 2}
+    after 500 {lappend x 3}
     after 1000 {lappend x "error-too-slow"}
     vwait x 0; # no-wait
     lappend z $x; # 0 {} - (x still empty)
-    vwait x 50; # wait up-to 50ms
+    vwait x 200; # wait up-to 200ms
     lappend z $x; # 0 {} {1 2}
-    vwait x -1; # wait without timeout
+    vwait x -1; # infinite wait
     lappend z $x; # 0 {} {1 2} {1 2 3}
     foreach i [after info] {
 	after cancel $i
@@ -696,7 +696,7 @@ test event-11.7 {Bug 16828b3744} {
 
 test event-12.2 {Tcl_UpdateCmd procedure} {
     list [catch {update bogus} msg] $msg
-} {1 {bad option "bogus": must be idletasks, -nowait, -wait, -idle, -noidle, -timer, -notimer, -file, -nofile, -window, -nowindow, -async, or -noasync}}
+} {1 {bad option "bogus": must be -idle, -noidle, -timer, -notimer, -file, -nofile, -window, -nowindow, -async, -noasync, -nowait, -wait, or idletasks}}
 test event-12.3 {Tcl_UpdateCmd procedure} {
     foreach i [after info] {
 	after cancel $i

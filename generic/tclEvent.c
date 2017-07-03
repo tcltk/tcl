@@ -1298,6 +1298,61 @@ TclInThreadExit(void)
 	return tsdPtr->inExit;
     }
 }
+
+
+static int
+GetEventFlagsFromOpts(
+    Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[],	/* Arguments containing the option to lookup. */
+    int *flagsPtr)		/* Input and resulting flags. */
+{
+    int i, optionIndex, result = TCL_ERROR;
+    int flags = *flagsPtr; /* default flags */
+    static CONST char *updateOptions[] = {
+	"-idle", "-noidle",	/* new options */
+	"-timer", "-notimer",
+	"-file", "-nofile",
+	"-window", "-nowindow",
+	"-async", "-noasync",
+	"-nowait", "-wait",
+	"idletasks",  		/* backwards compat. */
+	NULL};
+    static CONST struct {
+	int mask;
+	int flags;
+    } *updateFlag, updateFlags[] = {
+	{0, TCL_IDLE_EVENTS},	{TCL_IDLE_EVENTS, 0},	/* -idle, -noidle */
+	{0, TCL_TIMER_EVENTS},	{TCL_TIMER_EVENTS, 0},	/* -timer, -notimer */
+	{0, TCL_FILE_EVENTS},	{TCL_FILE_EVENTS, 0},	/* -file, -nofile */
+	{0, TCL_WINDOW_EVENTS},	{TCL_WINDOW_EVENTS, 0},	/* -window, -nowindow */
+	{0, TCL_ASYNC_EVENTS},	{TCL_ASYNC_EVENTS, 0},	/* -async, -noasync */
+	{0, TCL_DONT_WAIT},	{TCL_DONT_WAIT, 0},	/* -nowait, -wait */
+	{TCL_ALL_EVENTS, 
+	    TCL_WINDOW_EVENTS|TCL_IDLE_EVENTS}, /* idletasks */
+	{0, 0} /* dummy / place holder */
+    };
+
+    for (i = 0; i < objc; i++) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], updateOptions,
+		"option", 0, &optionIndex) != TCL_OK) {
+	    goto done;
+	}
+	updateFlag = &updateFlags[optionIndex];
+	/* pure positive option and still default, 
+	 * reset all events (only this flag) */
+	if (!updateFlag->mask && flags == *flagsPtr) {
+	    flags &= ~TCL_ALL_EVENTS;
+	}
+	flags &= ~updateFlag->mask;
+	flags |= updateFlag->flags;
+    }
+    result = TCL_OK;
+
+  done:
+    *flagsPtr = flags;
+    return result;
+}
 
 static void
 VwaitTimeOutProc(
@@ -1332,57 +1387,90 @@ Tcl_VwaitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    int done, foundEvent, flags = TCL_ALL_EVENTS;
+    int done = 0, foundEvent;
+    int flags = TCL_ALL_EVENTS; /* default flags */
     char *nameString;
+    int opti = 1,	 /* start option index (and index of varname later) */
+    	optc = objc - 2; /* options count without cmd and varname */
     TimerEntry *timerEvent = NULL;
+    Tcl_WideInt ms = -1;
 
-    if (objc < 2 || objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "name ?timeout?");
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?options? name ?timeout?");
 	return TCL_ERROR;
     }
 
+    /* if arguments available - wrap options to flags */
+    if (objc >= 3) {
+	/* first try to recognize options up to the possible end, thereby
+	 * we assume that varname is not integer, try to get numeric timeout,
+	 * (just assume precidence of option fewer as timeout)
+	 */
+	if (Tcl_GetWideIntFromObj(NULL, objv[objc-1], &ms) == TCL_OK) {
+	    objc--;
+	    optc--;
+	}
+
+	/* now try to parse options (if available) */
+	if ( optc > 0 
+	  && GetEventFlagsFromOpts(interp, optc, objv+1, &flags) != TCL_OK
+	) {
+	    return TCL_ERROR;
+	}
+	/* opti points to varname */
+	opti += optc;
+    }
+
+    done = 0;
+
     /* if timeout specified - create timer event or no-wait by 0ms */
-    if (objc == 3) {
-    	Tcl_Time wakeup;
-    	Tcl_WideInt ms;
-    	if (Tcl_GetWideIntFromObj(interp, objv[2], &ms) != TCL_OK) {
-    	    return TCL_ERROR;
-    	}
-    	if (ms > 0) {
+    if (ms != -1) {
+	Tcl_Time wakeup;
+
+	if (ms > 0) {
 	    Tcl_GetTime(&wakeup);
 	    wakeup.sec += (long)(ms / 1000);
 	    wakeup.usec += ((long)(ms % 1000)) * 1000;
 	    if (wakeup.usec > 1000000) {
-	        wakeup.sec++;
-	        wakeup.usec -= 1000000;
+		wakeup.sec++;
+		wakeup.usec -= 1000000;
 	    }
 	    timerEvent = TclCreateAbsoluteTimerHandlerEx(&wakeup, VwaitTimeOutProc, NULL, 0);
 	    timerEvent->clientData = &done;
 	} else if (ms == 0) {
 	    flags |= TCL_DONT_WAIT;
-	} else {
-	    /* infinite vait */
-	    objc = 2;
 	}
     }
 
-    nameString = Tcl_GetString(objv[1]);
+    nameString = Tcl_GetString(objv[opti]);
     if (Tcl_TraceVar(interp, nameString,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, (ClientData) &done) != TCL_OK) {
+
+	/* if timeout-timer and no timeout fired, cancel timer event */
+	if (timerEvent && done != -1) {
+	    TclDeleteTimerEntry(timerEvent);
+	}
 	return TCL_ERROR;
     };
 
-    done = 0;
     do {
 	if ((foundEvent = Tcl_DoOneEvent(flags)) == 0) {
-	    /* no wait, no error - just stop waiting (no more events) */
-	    if (flags |= TCL_DONT_WAIT) {
+	    /* 
+	     * If don't wait flag set - no error, and two cases:
+	     * option -nowait for vwait means - we don't wait for events
+	     * if no timeout (0) - just stop waiting (no more events)
+	     */
+	    if (flags & TCL_DONT_WAIT) {
 		foundEvent = 1;
+		if (ms != 0) {
+		    goto checkLimit; /* continue waiting */
+		}
 		done = -2;
 	    }
 	    break;
 	}
+      checkLimit:
 	if (Tcl_LimitExceeded(interp)) {
 	    foundEvent = -1;
 	    break;
@@ -1399,7 +1487,7 @@ Tcl_VwaitObjCmd(
     }
 
     /* if timeout specified (and no errors) */
-    if (objc == 3 && foundEvent > 0) {
+    if (ms != -1 && foundEvent > 0) {
     	Tcl_Obj *objPtr;
 
 	/* done - true, timeout false */
@@ -1468,42 +1556,14 @@ Tcl_UpdateObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    int i, optionIndex;
-    static CONST defUpdateFlags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
-    int flags = defUpdateFlags;
-    static CONST char *updateOptions[] = {"idletasks",  /* backwards compat. */
-	"-nowait", "-wait",				/* new options */
-	"-idle", "-noidle", "-timer", "-notimer",	
-	"-file", "-nofile", "-window", "-nowindow",
-	"-async", "-noasync",
-	NULL};
-    static CONST struct {
-	int minus;
-	int plus;
-    } *updateFlag, updateFlags[] = {
-	{TCL_ALL_EVENTS, 
-	    TCL_WINDOW_EVENTS|TCL_IDLE_EVENTS}, /* idletasks */
-	{0, TCL_DONT_WAIT},	{TCL_DONT_WAIT, 0},	/* -nowait, -wait */
-	{0, TCL_IDLE_EVENTS},	{TCL_IDLE_EVENTS, 0},	/* -idle, -noidle */
-	{0, TCL_TIMER_EVENTS},	{TCL_TIMER_EVENTS, 0},	/* -file, -nofile */
-	{0, TCL_FILE_EVENTS},	{TCL_FILE_EVENTS, 0},	/* -file, -nofile */
-	{0, TCL_WINDOW_EVENTS},	{TCL_WINDOW_EVENTS, 0},	/* -window, -nowindow */
-	{0, TCL_ASYNC_EVENTS},	{TCL_ASYNC_EVENTS, 0},	/* -async, -noasync */
-	{0, 0} /* dummy / place holder */
-    };
+    int flags = TCL_ALL_EVENTS|TCL_DONT_WAIT; /* default flags */
 
-    for (i = 1; i < objc; i++) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], updateOptions,
-		"option", 0, &optionIndex) != TCL_OK) {
+    /* if arguments available - wrap options to flags */
+    if (objc > 1) {
+	int i = 1;
+	if (GetEventFlagsFromOpts(interp, objc-1, objv+1, &flags) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	updateFlag = &updateFlags[optionIndex];
-	/* pure positive option and still default - reset all events */
-	if (flags == defUpdateFlags && !updateFlag->minus) {
-	    flags &= ~TCL_ALL_EVENTS;
-	}
-	flags &= ~updateFlag->minus;
-	flags |= updateFlag->plus;
     }
 
     while (Tcl_DoOneEvent(flags) != 0) {
