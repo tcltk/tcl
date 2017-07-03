@@ -3511,7 +3511,7 @@ TclLimitRemoveAllHandlers(
      */
 
     if (iPtr->limit.timeEvent != NULL) {
-	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
+	TclDeleteTimerHandler(iPtr->limit.timeEvent);
 	iPtr->limit.timeEvent = NULL;
     }
 }
@@ -3681,6 +3681,15 @@ Tcl_LimitGetCommands(
 
     return iPtr->limit.cmdCount;
 }
+
+static void
+TimeLimitDeleteCallback(
+    ClientData clientData)
+{
+    Interp *iPtr = clientData;
+
+    iPtr->limit.timeEvent = NULL;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -3711,7 +3720,7 @@ Tcl_LimitSetTime(
 
     memcpy(&iPtr->limit.time, timeLimitPtr, sizeof(Tcl_Time));
     if (iPtr->limit.timeEvent != NULL) {
-	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
+	TclDeleteTimerHandler(iPtr->limit.timeEvent);
     }
     nextMoment.sec = timeLimitPtr->sec;
     nextMoment.usec = timeLimitPtr->usec+10;
@@ -3719,8 +3728,9 @@ Tcl_LimitSetTime(
 	nextMoment.sec++;
 	nextMoment.usec -= 1000000;
     }
-    iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandler(&nextMoment,
-	    TimeLimitCallback, interp);
+    iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandlerEx(&nextMoment,
+	    TimeLimitCallback, TimeLimitDeleteCallback, 0);
+    iPtr->limit.timeEvent->clientData = interp;
     iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
 }
 

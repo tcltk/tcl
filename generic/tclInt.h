@@ -128,6 +128,50 @@ typedef int ptrdiff_t;
 #endif
 
 /*
+ *----------------------------------------------------------------
+ * Data structures related to timer / idle events.
+ *----------------------------------------------------------------
+ */
+
+/*
+ * For each timer callback that's pending there is one record of the following
+ * type. The normal handlers (created by Tcl_CreateTimerHandler) are chained
+ * together in a list sorted by time (earliest event first).
+ */
+
+				 
+typedef struct TimerHandler {
+    Tcl_TimerProc	*proc;	/* Function to call timer event */
+    Tcl_TimerDeleteProc *deleteProc; /* Function to cleanup timer event */
+    ClientData clientData;	/* Argument to pass to proc and deleteProc */
+    size_t generation;		/* Used to distinguish older handlers from
+				 * recently-created ones. */
+    Tcl_TimerToken token;	/* Identifies handler so it can be deleted. */
+    struct TimerHandler *nextPtr; /* Next and prev event in timer/idle queue, */
+    struct TimerHandler *prevPtr; /* or NULL for end/start of the queue. */
+    Tcl_Time	time;		/* When timer is to fire (if timer event). */
+/*  ExtraData	 */
+} TimerHandler;
+
+/*
+ * There is one of the following structures for each of the handlers declared
+ * in a call to Tcl_DoWhenIdle. All of the currently-active handlers are
+ * linked together into a list.
+ */
+
+typedef struct IdleHandler {
+    Tcl_IdleProc	*proc;	/* Function to call idle event */
+    Tcl_IdleDeleteProc  *deleteProc; /* Function to cleanup idle event */
+    ClientData clientData;	/* Argument to pass to proc and deleteProc */
+    size_t generation;		/* Used to distinguish older handlers from
+				 * recently-created ones. */
+    struct IdleHandler *nextPtr;/* Next and prev event in idle queue, */
+    struct IdleHandler *prevPtr;/* or NULL for end/start of the queue. */
+/*  ExtraData	 */
+} IdleHandler;
+
+
+/*
  * The following procedures allow namespaces to be customized to support
  * special name resolution rules for commands/variables.
  */
@@ -1797,7 +1841,7 @@ typedef struct Interp {
 				 * reached. */
 	int timeGranularity;	/* Mod factor used to determine how often to
 				 * evaluate the limit check. */
-	Tcl_TimerToken timeEvent;
+	TimerHandler *timeEvent;
 				/* Handle for a timer callback that will occur
 				 * when the time-limit is exceeded. */
 
@@ -2498,51 +2542,6 @@ MODULE_SCOPE char	tclEmptyString;
 				/* 'Steele&White' after masking */
 #define TCL_DD_SHORTEST0		0x0
 				/* 'Shortest possible' after masking */
-
-
-
-/*
- *----------------------------------------------------------------
- * Data structures related to timer / idle events.
- *----------------------------------------------------------------
- */
-
-/*
- * For each timer callback that's pending there is one record of the following
- * type. The normal handlers (created by Tcl_CreateTimerHandler) are chained
- * together in a list sorted by time (earliest event first).
- */
-
-				 
-typedef struct TimerHandler {
-    Tcl_TimerProc	*proc;	/* Function to call timer event */
-    Tcl_TimerDeleteProc *deleteProc; /* Function to cleanup timer event */
-    ClientData clientData;	/* Argument to pass to proc and deleteProc */
-    size_t generation;		/* Used to distinguish older handlers from
-				 * recently-created ones. */
-    Tcl_TimerToken token;	/* Identifies handler so it can be deleted. */
-    struct TimerHandler *nextPtr; /* Next and prev event in timer/idle queue, */
-    struct TimerHandler *prevPtr; /* or NULL for end/start of the queue. */
-    Tcl_Time	time;		/* When timer is to fire (if timer event). */
-/*  ExtraData	 */
-} TimerHandler;
-
-/*
- * There is one of the following structures for each of the handlers declared
- * in a call to Tcl_DoWhenIdle. All of the currently-active handlers are
- * linked together into a list.
- */
-
-typedef struct IdleHandler {
-    Tcl_IdleProc	*proc;	/* Function to call idle event */
-    Tcl_IdleDeleteProc  *deleteProc; /* Function to cleanup idle event */
-    ClientData clientData;	/* Argument to pass to proc and deleteProc */
-    size_t generation;		/* Used to distinguish older handlers from
-				 * recently-created ones. */
-    struct IdleHandler *nextPtr;/* Next and prev event in idle queue, */
-    struct IdleHandler *prevPtr;/* or NULL for end/start of the queue. */
-/*  ExtraData	 */
-} IdleHandler;
 
 
 /*
