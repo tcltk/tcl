@@ -2970,7 +2970,8 @@ CloseChannel(
      */
 
     if (statePtr->timer) {
-	TclpDeleteTimerEntry(statePtr->timer);
+	TclpDeleteTimerEvent(statePtr->timer);
+	statePtr->timer = NULL;
     }
 
     /*
@@ -3454,7 +3455,8 @@ Tcl_ClearChannelHandlers(
      */
 
     if (statePtr->timer) {
-	TclpDeleteTimerEntry(statePtr->timer);
+	TclpDeleteTimerEvent(statePtr->timer);
+	statePtr->timer = NULL;
     }
 
     /*
@@ -8068,8 +8070,8 @@ UpdateInterest(
 	    mask &= ~TCL_EXCEPTION;
 
 	    if (!statePtr->timer) {
-		statePtr->timer = TclpCreateTimerEntryEx(ChannelTimerProc,
-			FreeChannelTimerProc, 0, TCL_PROMPT_EVENT);
+		statePtr->timer = TclpCreatePromptTimerEvent(ChannelTimerProc,
+			FreeChannelTimerProc, 0, TCL_TMREV_PROMPT);
 		if (statePtr->timer) {
 		    statePtr->timer->clientData = chanPtr;
 		}
@@ -8099,13 +8101,7 @@ FreeChannelTimerProc(
 {
     Channel *chanPtr = clientData;
     ChannelState *statePtr = chanPtr->state;
-    /* 
-     * Because channel can operate with multiple timers (asynchronously),
-     * be sure another timer was not set in-between (e. g. recursive events)
-     */
-    if (statePtr->timer && (statePtr->timer->flags & TCL_EVENTST_DELETE)) {
-	statePtr->timer = NULL; /* timer deleted */
-    }
+    statePtr->timer = NULL; /* timer deleted */
 }
 
 /*
@@ -8142,7 +8138,14 @@ ChannelTimerProc(
 	 * before UpdateInterest gets called by Tcl_NotifyChannel.
 	 */
 
-	TclpProlongTimerHandler(statePtr->timer, 0, 0);
+	statePtr->timer = TclpProlongTimerEvent(statePtr->timer, 0, 0);
+	if (!statePtr->timer) {
+	    statePtr->timer = TclpCreatePromptTimerEvent(ChannelTimerProc,
+		FreeChannelTimerProc, 0, TCL_TMREV_PROMPT);
+	    if (statePtr->timer) {
+		statePtr->timer->clientData = chanPtr;
+	    }
+	}
 	Tcl_Preserve(statePtr);
 	Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
 	Tcl_Release(statePtr);
@@ -8740,8 +8743,8 @@ TclCopyChannel(
      */
 
     if ((nonBlocking == CHANNEL_NONBLOCKING) && (toRead == 0)) {
-        TclTimerEntry *timer = TclpCreateTimerEntryEx(ZeroTransferTimerProc,
-        	NULL, 0, TCL_PROMPT_EVENT);
+        TclTimerEvent *timer = TclpCreatePromptTimerEvent(ZeroTransferTimerProc,
+        	NULL, 0, TCL_TMREV_PROMPT);
         timer->clientData = csPtr;
         return 0;
     }

@@ -1399,7 +1399,7 @@ Tcl_VwaitObjCmd(
 	 * we assume that option is not an integer, try to get numeric timeout
 	 */
 	if (!TclObjIsIndexOfTable(objv[optc], updateEventOptions)
-	  && TclpGetUTimeFromObj(NULL, objv[optc], &usec) == TCL_OK) {
+	  && TclpGetUTimeFromObj(NULL, objv[optc], &usec, 1000) == TCL_OK) {
 	    if (usec < 0) { usec = 0; };
 	    optc--;
 	}

@@ -404,6 +404,37 @@ foo
     ("after" script)
 }
 
+test event-7.10 {after at - absolute time} {
+    set result {}
+    # 1st test simple delay (and mix generation / recursive processing)
+    set attm [expr {[clock milliseconds]+150}]
+    after 0 {lappend result 1}
+    after 100 {
+    	update; # this don't catch event 3
+    	lappend result 2a
+    	after at $attm; # delay to 150ms from start
+    	update; # this still don't catch event 3 also
+    	lappend result 2b
+    	after at [incr attm 100]; # delay to 250ms from start
+    	update; # this should catch event 3
+    	lappend result 2c
+    }
+    after 200 {lappend result 3; set a done}
+    vwait a
+    # 2nd test events "at" (mix due-times between relative/absolute events)
+    lappend result --
+    set sttm [clock milliseconds]
+    after 200 {lappend result 4; set a done}
+    after 120 {lappend result 5}
+    after 40 {lappend result 6}
+    after at [expr {$sttm+160}] {lappend result at-1}
+    after at [expr {$sttm+80}] {lappend result at-2}
+    after at ${sttm}.999 {lappend result at-3}
+    after 2000 {lappend result [set a timeout]}
+    after 0 {lappend result 7}
+    vwait a
+    set result
+} {1 2a 2b 3 2c -- 7 at-3 6 at-2 5 at-1 4}
 
 # someday : add a test checking that 
 # when there is no bgerror, an error msg goes to stderr
