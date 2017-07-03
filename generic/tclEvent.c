@@ -1446,16 +1446,18 @@ Tcl_VwaitObjCmd(
 		blockTime.usec += 1000000;
 	    }
 	    /* be sure process at least one event */
-	    if (checktime) {
-		if (  blockTime.sec < 0 
-		  || (blockTime.sec == 0 && blockTime.usec <= tolerance)
-		) {
-		    /* timeout occurs */
+	    if (  blockTime.sec < 0 
+	      || (blockTime.sec == 0 && blockTime.usec <= tolerance)
+	    ) {
+		/* timeout occurs */
+		if (checktime) {
 		    done = -1;
 		    break;
 		}
+		/* expired, be sure non-negative values here */
+		blockTime.usec = blockTime.sec = 0;
+		checktime = 1;
 	    }
-	    checktime = 1;
 	    Tcl_SetMaxBlockTime(&blockTime);
 	}
 	if ((foundEvent = Tcl_DoOneEvent(flags)) <= 0) {
