@@ -407,7 +407,7 @@ foo
 test event-7.10 {after at - absolute time} {
     set result {}
     # 1st test simple delay (and mix generation / recursive processing)
-    set attm [expr {[clock milliseconds]+150}]
+    set attm [expr {[clock milliseconds]/1000.0 + 0.150}]
     after 0 {lappend result 1}
     after 100 {
     	update; # this don't catch event 3
@@ -415,7 +415,7 @@ test event-7.10 {after at - absolute time} {
     	after at $attm; # delay to 150ms from start
     	update; # this still don't catch event 3 also
     	lappend result 2b
-    	after at [incr attm 100]; # delay to 250ms from start
+    	after at [expr {$attm + 0.100}]; # delay to 250ms from start
     	update; # this should catch event 3
     	lappend result 2c
     }
@@ -423,13 +423,13 @@ test event-7.10 {after at - absolute time} {
     vwait a
     # 2nd test events "at" (mix due-times between relative/absolute events)
     lappend result --
-    set sttm [clock milliseconds]
+    set sttm [expr {[clock milliseconds]/1000.0}]
     after 200 {lappend result 4; set a done}
     after 120 {lappend result 5}
     after 40 {lappend result 6}
-    after at [expr {$sttm+160}] {lappend result at-1}
-    after at [expr {$sttm+80}] {lappend result at-2}
-    after at ${sttm}.999 {lappend result at-3}
+    after at [expr {$sttm+0.160}] {lappend result at-1}
+    after at [expr {$sttm+0.080}] {lappend result at-2}
+    after at [expr {$sttm+0.005}] {lappend result at-3}
     after 2000 {lappend result [set a timeout]}
     after 0 {lappend result 7}
     vwait a

@@ -175,10 +175,10 @@ test timer-6.1 {Tcl_AfterCmd procedure, basics} {
 } {1 {wrong # args: should be "after option ?arg arg ...?"}}
 test timer-6.2 {Tcl_AfterCmd procedure, basics} {
     list [catch {after 2x} msg] $msg
-} {1 {bad argument "2x": must be cancel, idle, info, or an integer}}
+} {1 {bad argument "2x": must be at, cancel, idle, info or a time}}
 test timer-6.3 {Tcl_AfterCmd procedure, basics} {
     list [catch {after gorp} msg] $msg
-} {1 {bad argument "gorp": must be cancel, idle, info, or an integer}}
+} {1 {bad argument "gorp": must be at, cancel, idle, info or a time}}
 test timer-6.4 {Tcl_AfterCmd procedure, ms argument} {
     set x before
     # cover prompt events also (immediate handling differs now):

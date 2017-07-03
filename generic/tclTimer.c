@@ -1468,10 +1468,10 @@ TclpGetUTimeFromObj(
 	    if (tm < 0x7FFFFFFFFFFFFFFFL / factor) { /* avoid overflow */
 		/* use precise as possible calculation by double (microseconds) */
 		if (factor == 1) {
-		    *timePtr = tm;
+		    *timePtr = (Tcl_WideInt)tm;
 		} else {
 		    *timePtr = ((Tcl_WideInt)tm * factor) + 
-			(((long)(tm*factor)) % factor);
+			(((Tcl_WideInt)(tm*factor)) % factor);
 		}
 		return TCL_OK;
 	    }
@@ -1553,7 +1553,7 @@ Tcl_AfterObjCmd(
     ) {
 	Tcl_AppendResult(interp, "bad argument \"",
 		Tcl_GetString(objv[1]),
-		"\": must be at, cancel, idle, info, prolong or a time", NULL);
+		"\": must be at, cancel, idle, info or a time", NULL);
 	return TCL_ERROR;
     }
 
@@ -1584,8 +1584,8 @@ Tcl_AfterObjCmd(
 		Tcl_WrongNumArgs(interp, 1, objv, "?option? time");
 		return TCL_ERROR;
 	    }
-	    /* get time from object, default factor 1000 (ms) */
-	    if (TclpGetUTimeFromObj(interp, objv[1], &usec, 1000) != TCL_OK) {
+	    /* get time from object, default factor for "at" - 1000000 (s) */
+	    if (TclpGetUTimeFromObj(interp, objv[1], &usec, 1000000) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (objc == 2) {
