@@ -111,6 +111,34 @@ proc test-exec-new {{reptime 1000}} {
   }
 }
 
+proc test-nrt-capability {{reptime 1000}} {
+  _test_run $reptime {
+    # comparison values:
+    {after 0 {set a 5}; update}
+    {after 0 {set a 5}; vwait a}
+
+    # conditional vwait with very brief wait-time:
+    {vwait 1 a}
+    {vwait 0.5 a}
+    {vwait 0.2 a}
+    {vwait 0.1 a}
+    {vwait 0.05 a}
+    {vwait 0.02 a}
+    {vwait 0.01 a}
+    {vwait 0.005 a}
+    {vwait 0.001 a}
+
+    # comparison of update's executing event:
+    {after idle {set a 5}; update -idle -timer}
+    {after 0 {set a 5}; update -idle -timer}
+    {after idle {set a 5}; update -idle}
+    # comparison of vwait's executing event:
+    {after idle {set a 5}; vwait -idle -timer a}
+    {after 0 {set a 5}; vwait -idle -timer a}
+    {after idle {set a 5}; vwait -idle a}
+  }
+}
+
 proc test-long {{reptime 1000}} {
   _test_run $reptime {
     # in-between important event by amount of idle events:
@@ -126,6 +154,7 @@ proc test {{reptime 1000}} {
   test-exec $reptime
   if {![catch {update -noidle}]} {
     test-exec-new $reptime
+    test-nrt-capability $reptime
   }
   test-long $reptime
 
