@@ -45,15 +45,15 @@ typedef struct TimeCalibInfo {
     LONGLONG perfCounter;	/* QPC value of last calibrated virtual time */
     Tcl_WideInt virtTimeBase;	/* Last virtual time base (in 100-ns) */
     Tcl_WideInt sysTime;	/* Last real system time (in 100-ns),
-    				   truncated to VT_SYSTMR_DIST (100ms) */
+				   truncated to VT_SYSTMR_DIST (100ms) */
 } TimeCalibInfo;
 
 /* Milliseconds <-> 100-ns ticks */
-#define MsToT100ns(ms)   (ms * 10000)
-#define T100nsToMs(ms)   (ms / 10000)
+#define MsToT100ns(ms)   ((ms) * 10000)
+#define T100nsToMs(ms)   ((ms) / 10000)
 /* Microseconds <-> 100-ns ticks */
-#define UsToT100ns(ms)   (ms * 10)
-#define T100nsToUs(ms)   (ms / 10)
+#define UsToT100ns(ms)   ((ms) * 10)
+#define T100nsToUs(ms)   ((ms) / 10)
 
 
 /*
@@ -103,7 +103,8 @@ typedef struct TimeInfo {
     
     size_t lastUsedTime;	/* Last known (caller) offset to virtual time
 				 * (used to avoid back-drifts after calibrate) */
-
+    size_t lastTimeJumpEpoch;	/* Last known epoch since last time-jump. */
+    Tcl_WideInt lastTimeJump;	/* Last known time-jump of thread. */
 } TimeInfo;
 
 static TimeInfo timeInfo = {
@@ -415,7 +416,7 @@ TclpWideClickInMicrosec(void)
 Tcl_WideInt 
 TclpGetMicroseconds(void)
 {
-#if 0
+#if 1
     /* Use high resolution timer if possible */
     if (tclGetTimeProcPtr == NativeGetTime) {
     	return NativeGetMicroseconds();
@@ -428,7 +429,7 @@ TclpGetMicroseconds(void)
 	Tcl_Time now;
 
 	tclGetTimeProcPtr(&now, tclTimeClientData);	/* Tcl_GetTime inlined */
-	return (((Tcl_WideInt)now.sec) * 1000000) + now.usec;
+	return TCL_TIME_TO_USEC(now);
     }
 
 #else
@@ -558,6 +559,34 @@ NativeScaleTime(
     /*
      * Native scale is 1:1. Nothing is done.
      */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpScaleUTime --
+ *
+ *	This procedure scales number of microseconds if expected.
+ *
+ * Results:
+ *	Number of microseconds scaled using tclScaleTimeProcPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_WideInt
+TclpScaleUTime(
+    Tcl_WideInt usec)
+{
+    /* Native scale is 1:1. */
+    if (tclScaleTimeProcPtr == NativeScaleTime) {
+	return usec;
+    } else {
+	Tcl_Time scTime;
+	scTime.sec = usec / 1000000;
+	scTime.usec = usec % 1000000;
+	tclScaleTimeProcPtr(&scTime, tclTimeClientData);
+	return ((Tcl_WideInt)scTime.sec) * 1000000 + scTime.usec;
+    }
 }
 
 /*
@@ -719,7 +748,7 @@ NativeGetMicroseconds(void)
 		timeInfo.lastCI.sysTime =
 		    timeInfo.lastCI.virtTimeBase = GetSystemTimeAsVirtual();
 
-
+		timeInfo.lastTimeJumpEpoch = 1; /* let the caller know we've epoch */
 	    }
 	    timeInfo.initialized = TRUE;
 	}
@@ -826,6 +855,8 @@ NativeGetMicroseconds(void)
 		 * The time-jump (reset or initial), we should use system time
 		 * instead of virtual to recalibrate offsets (let the time jump).
 		 */
+		timeInfo.lastTimeJump = T100nsToUs(sysTime - vt0); /* 100-ns */;
+		timeInfo.lastTimeJumpEpoch++;
 		vt0 = sysTime;
 //!!!		printf("************* reset time: %I64d *****************\n", vt0);
 	    }
@@ -1340,6 +1371,21 @@ Tcl_QueryTimeProc(
     if (clientData) {
 	*clientData = tclTimeClientData;
     }
+}
+
+Tcl_WideInt
+TclpGetLastTimeJump(size_t *epoch)
+{
+    if (timeInfo.lastTimeJumpEpoch > *epoch) {
+    	*epoch = timeInfo.lastTimeJumpEpoch;
+	return timeInfo.lastTimeJump;
+    };
+    return 0;
+}
+size_t
+TclpGetLastTimeJumpEpoch(void)
+{
+    return timeInfo.lastTimeJumpEpoch;
 }
 
 /*

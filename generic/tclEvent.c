@@ -1384,9 +1384,10 @@ Tcl_VwaitObjCmd(
     int flags = TCL_ALL_EVENTS; /* default flags */
     char *nameString;
     int optc = objc - 2; /* options count without cmd and varname */
-    double ms = -1;
-    Tcl_Time lastNow, wakeup;
+    Tcl_WideInt usec = -1;
+    Tcl_WideInt lastNow = 0, wakeup = 0;
     long tolerance = 0;
+    size_t timeJumpEpoch = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? ?timeout? name");
@@ -1399,7 +1400,8 @@ Tcl_VwaitObjCmd(
 	 * we assume that option is not an integer, try to get numeric timeout
 	 */
 	if (!TclObjIsIndexOfTable(objv[optc], updateEventOptions)
-	  && Tcl_GetDoubleFromObj(NULL, objv[optc], &ms) == TCL_OK) {
+	  && TclpGetUTimeFromObj(NULL, objv[optc], &usec) == TCL_OK) {
+	    if (usec < 0) { usec = 0; };
 	    optc--;
 	}
 
@@ -1414,16 +1416,17 @@ Tcl_VwaitObjCmd(
     done = 0;
 
     /* if timeout specified - create timer event or no-wait by 0ms */
-    if (ms != -1) {
-	if (ms > 0) {
-	    Tcl_GetTime(&lastNow);
-	    wakeup = lastNow;
-	    TclTimeAddMilliseconds(&wakeup, ms);
+    if (usec != -1) {
+	if (usec > 0) {
+	    lastNow = TclpGetMicroseconds();
+	    timeJumpEpoch = TclpGetLastTimeJumpEpoch();
 	#ifdef TMR_RES_TOLERANCE
-	    tolerance = (ms < 1000 ? ms : 1000) *
-				(1000 * TMR_RES_TOLERANCE / 100);
+	    tolerance = (usec < 1000000 ? usec : 1000000) *
+				TMR_RES_TOLERANCE / 100;
+	    usec += tolerance / 3;
 	#endif
-	} else if (ms == 0) {
+	    wakeup = lastNow + usec;
+	} else {
 	    flags |= TCL_DONT_WAIT;
 	}
     }
@@ -1437,43 +1440,37 @@ Tcl_VwaitObjCmd(
 
     do {
     	/* if wait - set blocking time */
-	if (ms > 0) {
+	if (usec > 0) {
 	    Tcl_Time blockTime;
-	    Tcl_GetTime(&blockTime);
+	    Tcl_WideInt diff, now = TclpGetMicroseconds();
 	    /* 
 	     * Note time can be switched backwards, certainly adjust end-time
 	     * by possible time-jumps back.
 	     */
-	    if (TCL_TIME_BEFORE(blockTime, lastNow)) {
-		/* backwards time-jump - simply shift wakeup-time */
-		wakeup.sec -= (lastNow.sec - blockTime.sec);
-		wakeup.usec -= (lastNow.usec - blockTime.usec);
-		if (wakeup.usec < 0) {
-		    wakeup.usec += 1000000;
-		    wakeup.sec--;
-		}
+	    
+	    if ( (diff = TclpGetLastTimeJump(&timeJumpEpoch)) != 0 
+	      || (diff = (now - lastNow)) < 0
+	    ) {
+		/* recognized time-jump - simply shift wakeup-time */
+		wakeup += diff;
 	    }
 	    /* calculate blocking time */
-	    lastNow = blockTime;
-	    blockTime.sec = wakeup.sec - blockTime.sec;
-	    blockTime.usec = wakeup.usec - blockTime.usec;
-	    if (blockTime.usec < 0) {
-		blockTime.usec += 1000000;
-		blockTime.sec--;
-	    }
+	    lastNow = now;
+	    diff = wakeup - now;
+	    diff -= 1; /* overhead for Tcl_TraceVar / Tcl_UntraceVar */
 	    /* be sure process at least one event */
-	    if (  blockTime.sec < 0 
-	      || (blockTime.sec == 0 && blockTime.usec <= tolerance)
-	    ) {
+	    if (diff <= tolerance) {
 		/* timeout occurs */
 		if (checktime) {
 		    done = -1;
 		    break;
 		}
 		/* expired, be sure non-negative values here */
-		blockTime.usec = blockTime.sec = 0;
+		diff = 0;
 		checktime = 1;
 	    }
+	    blockTime.sec = diff / 1000000;
+	    blockTime.usec = diff % 1000000;
 	    Tcl_SetMaxBlockTime(&blockTime);
 	}
 	if ((foundEvent = Tcl_DoOneEvent(flags)) <= 0) {
@@ -1485,9 +1482,9 @@ Tcl_VwaitObjCmd(
 	    if (flags & TCL_DONT_WAIT) {
 		foundEvent = 1;
 		done = -2;
-	    } else if (ms > 0 && foundEvent == 0) {
+	    } else if (usec > 0 && foundEvent == 0) {
 		foundEvent = 1;
-	    } 
+	    }
 	    /* don't stop wait - no event expected here 
 	     * (stop only on error case foundEvent < 0). */
 	    if (foundEvent < 0) {
@@ -1507,7 +1504,7 @@ Tcl_VwaitObjCmd(
 	    VwaitVarProc, (ClientData) &done);
 
     /* if timeout specified (and no errors) */
-    if (ms != -1 && foundEvent > 0) {
+    if (usec != -1 && foundEvent > 0) {
     	Tcl_Obj *objPtr;
 
 	/* done - true, timeout false */

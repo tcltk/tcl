@@ -3718,19 +3718,14 @@ Tcl_LimitSetTime(
     Tcl_Time *timeLimitPtr)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Time nextMoment;
+    Tcl_WideInt nextMoment;
 
     memcpy(&iPtr->limit.time, timeLimitPtr, sizeof(Tcl_Time));
     if (iPtr->limit.timeEvent != NULL) {
 	TclDeleteTimerEntry(iPtr->limit.timeEvent);
     }
-    nextMoment.sec = timeLimitPtr->sec;
-    nextMoment.usec = timeLimitPtr->usec+10;
-    if (nextMoment.usec >= 1000000) {
-	nextMoment.sec++;
-	nextMoment.usec -= 1000000;
-    }
-    iPtr->limit.timeEvent = TclCreateTimerHandlerEx(&nextMoment,
+    nextMoment = TCL_TIME_TO_USEC(*timeLimitPtr) + 10;
+    iPtr->limit.timeEvent = TclpCreateTimerHandlerEx(nextMoment,
 	    TimeLimitCallback, TimeLimitDeleteCallback, 0, TCL_ABSTMR_EVENT);
     iPtr->limit.timeEvent->clientData = interp;
     iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;

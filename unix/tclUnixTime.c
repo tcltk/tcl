@@ -632,6 +632,34 @@ NativeScaleTime(
 /*
  *----------------------------------------------------------------------
  *
+ * TclpScaleUTime --
+ *
+ *	This procedure scales number of microseconds if expected.
+ *
+ * Results:
+ *	Number of microseconds scaled using tclScaleTimeProcPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_WideInt
+TclpScaleUTime(
+    Tcl_WideInt usec)
+{
+    /* Native scale is 1:1. */
+    if (tclScaleTimeProcPtr != NativeScaleTime) {
+	return usec;
+    } else {
+	Tcl_Time scTime;
+	scTime.sec = usec / 1000000;
+	scTime.usec = usec % 1000000;
+	tclScaleTimeProcPtr(&scTime, tclTimeClientData);
+	return ((Tcl_WideInt)scTime.sec) * 1000000 + scTime.usec;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NativeGetTime --
  *
  *	TIP #233: Gets the current system time in seconds and microseconds

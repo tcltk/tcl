@@ -2886,19 +2886,28 @@ MODULE_SCOPE double	TclpWideClickInMicrosec(void);
 #     endif
 #   endif
 #endif
+MODULE_SCOPE Tcl_WideInt TclpGetLastTimeJump(size_t *epoch);
+MODULE_SCOPE size_t	 TclpGetLastTimeJumpEpoch(void);
 MODULE_SCOPE Tcl_WideInt TclpGetMicroseconds(void);
 
+MODULE_SCOPE int	TclpGetUTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, 
+			    Tcl_WideInt *timePtr);
+MODULE_SCOPE Tcl_WideInt TclpScaleUTime(Tcl_WideInt usec);
+
+MODULE_SCOPE void	TclpUSleep(Tcl_WideInt usec);
 /*
  * Helper macros for working with times. TCL_TIME_BEFORE encodes how to write
  * the ordering relation on (normalized) times, and TCL_TIME_DIFF_MS resp. 
  * TCL_TIME_DIFF_US compute the number of milliseconds or microseconds difference
  * between two times. Both macros use both of their arguments multiple times,
  * so make sure they are cheap and side-effect free. 
+ * Macro TCL_TIME_TO_USEC converts Tcl_Time to microseconds.
  * The "prototypes" for these macros are:
  *
  * static int		TCL_TIME_BEFORE(Tcl_Time t1, Tcl_Time t2);
  * static Tcl_WideInt	TCL_TIME_DIFF_MS(Tcl_Time t1, Tcl_Time t2);
  * static Tcl_WideInt	TCL_TIME_DIFF_US(Tcl_Time t1, Tcl_Time t2);
+ * static Tcl_WideInt   TCL_TIME_TO_USEC(Tcl_Time t)
  */
 
 #define TCL_TIME_BEFORE(t1, t2) \
@@ -2910,6 +2919,8 @@ MODULE_SCOPE Tcl_WideInt TclpGetMicroseconds(void);
 #define TCL_TIME_DIFF_US(t1, t2) \
     (1000000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
 	    ((long)(t1).usec - (long)(t2).usec))
+#define TCL_TIME_TO_USEC(t) \
+    ((Tcl_WideInt)(t).sec * 1000000 + (t).usec)
 
 static inline void
 TclTimeSetMilliseconds(

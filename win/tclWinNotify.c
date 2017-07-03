@@ -631,12 +631,13 @@ Tcl_WaitForEvent(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     MSG msg;
-    DWORD timeout, result = WAIT_TIMEOUT;
+    DWORD timeout = INFINITE, result = WAIT_TIMEOUT;
     int status = 0;
-    Tcl_Time waitTime = {0, 0};
-    Tcl_Time lastNow, endTime;
+    Tcl_WideInt waitTime = 0;
+    Tcl_WideInt lastNow = 0, endTime = 0;
     long tolerance = 0;
     unsigned long actualResolution = 0;
+    size_t timeJumpEpoch = 0;
 
     /*
      * Allow the notifier to be hooked. This may not make sense on windows,
@@ -653,47 +654,44 @@ Tcl_WaitForEvent(
 
     if (timePtr) {
 
-	waitTime.sec  = timePtr->sec;
-	waitTime.usec = timePtr->usec;
+	waitTime = timePtr->sec * 1000000 + timePtr->usec;
 
 	/* if no wait */
-	if (waitTime.sec <= 0 && waitTime.usec <= 0) {
+	if (waitTime <= 0) {
 	    result = 0;
 	    goto peek;
 	}
 
-    #ifdef TMR_RES_TOLERANCE
-	/* calculate possible maximal tolerance (in usec) of original wait-time */
-	tolerance = ((waitTime.sec <= 0) ? waitTime.usec : 1000000) *
-			(TMR_RES_TOLERANCE / 100);
-    #endif
-
 	/* calculate end of wait */
-	Tcl_GetTime(&endTime);
-	lastNow = endTime;
-	endTime.sec += waitTime.sec;
-	endTime.usec += waitTime.usec;
-	if (endTime.usec > 1000000) {
-		endTime.usec -= 1000000;
-		endTime.sec++;
-	}
+	lastNow = TclpGetMicroseconds();
+	endTime = lastNow + waitTime;
+	timeJumpEpoch = TclpGetLastTimeJumpEpoch();
 
 	if (timerResolution.available == -1) {
 	    InitTimerResolution();
 	}
 	
+    #ifdef TMR_RES_TOLERANCE
+	/* calculate possible maximal tolerance (in usec) of original wait-time */
+	tolerance = ((waitTime <= 1000000) ? waitTime : 1000000) *
+			TMR_RES_TOLERANCE / 100;
+	if (tolerance > timerResolution.maxDelay) {
+	    tolerance = timerResolution.maxDelay;
+	}
+    #endif
+
     repeat:
 	/*
 	* TIP #233 (Virtualized Time). Convert virtual domain delay to
 	* real-time.
 	*/
-	(*tclScaleTimeProcPtr) (&waitTime, tclTimeClientData);
+	waitTime = TclpScaleUTime(waitTime);
 
 	/* No wait if timeout too small (because windows may wait too long) */
-	if (!waitTime.sec && waitTime.usec < (long)timerResolution.minDelay) {
+	if (waitTime < (long)timerResolution.minDelay) {
+	    timeout = 0;
 	    /* prevent busy wait */
-	    if (waitTime.usec >= 10) {
-	    	timeout = 0;
+	    if (waitTime >= 10) {
 		goto wait;
 	    }
 	    Sleep(0);
@@ -701,25 +699,23 @@ Tcl_WaitForEvent(
 	}
 	
 	if (timerResolution.available) {
-	    if (waitTime.sec || waitTime.usec + tolerance > timerResolution.maxDelay) {
-		long usec;
-		timeout = waitTime.sec * 1000;
-		usec = (timeout * 1000) + waitTime.usec + tolerance;
-		if (usec > 1000000) {
-		    usec -= 1000000;
-		    timeout += 1000;
-		}
-		timeout += (usec - (usec % timerResolution.maxDelay)) / 1000;
+	    long overhead = (tolerance < 100 ? tolerance/2 : 50);
+	    Tcl_WideInt waitTimeWithOverhead = waitTime + overhead;
+	    if (waitTimeWithOverhead > timerResolution.maxDelay) {
+		/* floor (truncate) using max delay as base (follow timeout better) */
+		timeout = (waitTimeWithOverhead
+				/ timerResolution.maxDelay)
+				* timerResolution.maxDelay / 1000;
 	    } else {
 		/* calculate resolution up to 1000 microseconds
 		 * (don't use highest, because of too large CPU load) */
 		ULONG res;
-		if (waitTime.usec >= 10000) {
+		if (waitTimeWithOverhead >= 10000) {
 		    res = 10000 * TMR_RES_MICROSEC;
 		} else {
 		    res = 1000 * TMR_RES_MICROSEC;
 		}
-		timeout = waitTime.usec / 1000;
+		timeout = waitTimeWithOverhead / 1000;
 		/* set more precise timer resolution for minimal delay */
 		if (!actualResolution || res < timerResolution.curRes) {
 		    actualResolution = SetTimerResolution(
@@ -727,11 +723,8 @@ Tcl_WaitForEvent(
 		}
 	    }
 	} else {
-	    timeout = waitTime.sec * 1000 + waitTime.usec / 1000;
+	    timeout = waitTime / 1000;
 	}
-
-    } else {
-	timeout = INFINITE;
     }
 
     /*
@@ -796,31 +789,28 @@ Tcl_WaitForEvent(
     else
     if (result == WAIT_TIMEOUT && timeout != INFINITE) {
 	/* Check the wait should be repeated, and correct time for wait */
-	Tcl_Time now;
+	Tcl_WideInt now;
 
-	Tcl_GetTime(&now);
+	now = TclpGetMicroseconds();
 	/* 
 	 * Note time can be switched backwards, certainly adjust end-time
-	 * by possible time-jumps back.
+	 * by possible time-jumps.
 	 */
-	if (TCL_TIME_BEFORE(now, lastNow)) {
-	    /* backwards time-jump - simply shift wakeup-time */
-	    endTime.sec -= (lastNow.sec - now.sec);
-	    endTime.usec -= (lastNow.usec - now.usec);
-	    if (endTime.usec < 0) {
-	        endTime.usec += 1000000;
-	        endTime.sec--;
-	    }
+	if ((waitTime = TclpGetLastTimeJump(&timeJumpEpoch)) != 0) {
+	    /* we know time-jump, adjust end-time using this offset */
+	    endTime += waitTime;
+	}
+	else
+	if ((waitTime = (now - lastNow)) < 0) {
+	    /* recognized backwards time-jump - simply shift wakeup-time *
+	     * considering timeout also, assume we've reached it completely */
+	    endTime += (waitTime - (timeout * 1000));
 	}
 	lastNow = now;
 
 	/* calculate new waitTime */
-	waitTime.sec = (endTime.sec - now.sec);
-	if ((waitTime.usec = (endTime.usec - now.usec)) < 0) {
-	    waitTime.usec += 1000000;
-	    waitTime.sec--;
-	}
-	if (waitTime.sec < 0 || !waitTime.sec && waitTime.usec <= tolerance) {
+	waitTime = endTime - now;
+	if (waitTime <= tolerance) {
 	    goto end;
 	}
 	/* Repeat wait with more precise timer resolution (or using sleep) */
@@ -841,9 +831,11 @@ Tcl_WaitForEvent(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Sleep --
+ * Tcl_Sleep --, TclpUSleep --
  *
- *	Delay execution for the specified number of milliseconds.
+ *	Delay execution for the specified number of milliseconds (or microsec.).
+ *
+ *	TclpUSleep in contrast to Tcl_Sleep is more precise (microseconds).
  *
  * Results:
  *	None.
@@ -858,6 +850,13 @@ void
 Tcl_Sleep(
     int ms)			/* Number of milliseconds to sleep. */
 {
+    TclpUSleep((Tcl_WideInt)ms * 1000);
+}
+
+void
+TclpUSleep(
+    Tcl_WideInt usec)		/* Number of microseconds to sleep. */
+{
     /*
      * Simply calling 'Sleep' for the requisite number of milliseconds can
      * make the process appear to wake up early because it isn't synchronized
@@ -868,72 +867,67 @@ Tcl_Sleep(
      * requisite amount.
      */
 
-    Tcl_Time lastNow, now;	/* Current wall clock time. */
-    Tcl_Time desired;		/* Desired wakeup time. */
-    Tcl_Time vdelay;		/* Time to sleep, for scaling virtual ->
-				 * real. */
+    Tcl_WideInt lastNow, now;	/* Current wall clock time. */
+    Tcl_WideInt desired;	/* Desired wakeup time. */
     DWORD sleepTime;		/* Time to sleep, real-time */
     long tolerance = 0;
     unsigned long actualResolution = 0;
+    size_t timeJumpEpoch = 0;
 
-    if (ms <= 0) {
-    	/* causes context switch only */
-    	Sleep(0);
-    	return;
+    if (usec <= 9) { /* too short to start whole sleep process */
+	do {
+	    /* causes context switch only (shortest waiting) */
+	    Sleep(0);
+	} while (--usec > 0);
+	return;
     }
 
     if (timerResolution.available == -1) {
 	InitTimerResolution();
     }
 
-    vdelay.sec  = ms / 1000;
-    vdelay.usec = (ms % 1000) * 1000;
-
-    Tcl_GetTime(&now);
-    lastNow = now;
-    desired.sec  = now.sec  + vdelay.sec;
-    desired.usec = now.usec + vdelay.usec;
-    if (desired.usec > 1000000) {
-	desired.usec -= 1000000;
-	desired.sec++;
-    }
+    lastNow = now = TclpGetMicroseconds();
+    desired = now + usec;
+    timeJumpEpoch = TclpGetLastTimeJumpEpoch();
 
   #ifdef TMR_RES_TOLERANCE
     /* calculate possible maximal tolerance (in usec) of original wait-time */
-    tolerance = ((vdelay.sec <= 0) ? vdelay.usec : 1000000) *
-			(TMR_RES_TOLERANCE / 100);
+    tolerance = ((usec <= 1000000) ? usec : 1000000) *
+			TMR_RES_TOLERANCE / 100;
+    if (tolerance > timerResolution.maxDelay) {
+	tolerance = timerResolution.maxDelay;
+    }
   #endif
-
-    /*
-     * TIP #233: Scale delay from virtual to real-time.
-     */
 
     for (;;) {
 	
-	tclScaleTimeProcPtr(&vdelay, tclTimeClientData);
+	/*
+	 * TIP #233: Scale delay from virtual to real-time.
+	 */
+	usec = TclpScaleUTime(usec);
 
 	/* No wait if sleep time too small (because windows may wait too long) */
-	if (!vdelay.sec && vdelay.usec < (long)timerResolution.minDelay) {
+	if (usec < (long)timerResolution.minDelay) {
 	    sleepTime = 0;
 	    goto wait;
 	}
 
 	if (timerResolution.available) {
-	    if (vdelay.sec || vdelay.usec > timerResolution.maxDelay) {
-	    	long usec;
-	    	sleepTime = vdelay.sec * 1000;
-		usec = ((sleepTime * 1000) + vdelay.usec) % 1000000;
-		sleepTime += (usec - (usec % timerResolution.maxDelay)) / 1000;
+	    if (usec > timerResolution.maxDelay) {
+		/* floor (truncate) using max delay as base (follow timeout better) */
+		sleepTime = (usec
+				/ timerResolution.maxDelay)
+				* timerResolution.maxDelay / 1000;
 	    } else {
 	    	/* calculate resolution up to 1000 microseconds
 	    	 * (don't use highest, because of too large CPU load) */
 		ULONG res;
-		if (vdelay.usec >= 10000) {
+		if (usec >= 10000) {
 		    res = 10000 * TMR_RES_MICROSEC;
 		} else {
 		    res = 1000 * TMR_RES_MICROSEC;
 		}
-		sleepTime = vdelay.usec / 1000;
+		sleepTime = usec / 1000;
 		/* set more precise timer resolution for minimal delay */
 		if (!actualResolution || res < timerResolution.curRes) {
 		    actualResolution = SetTimerResolution(
@@ -941,37 +935,29 @@ Tcl_Sleep(
 		}
 	    }
 	} else {
-	    sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
+	    sleepTime = usec / 1000;
 	}
 
     wait:
 	Sleep(sleepTime);
-	Tcl_GetTime(&now);
+	now = TclpGetMicroseconds();
 	/* 
 	 * Note time can be switched backwards, certainly adjust end-time
-	 * by possible time-jumps back.
+	 * by possible time-jumps.
 	 */
-	if (TCL_TIME_BEFORE(now, lastNow)) {
-	    /* backwards time-jump - simply shift wakeup-time */
-	    desired.sec -= (lastNow.sec - now.sec);
-	    desired.usec -= (lastNow.usec - now.usec);
-	    if (desired.usec < 0) {
-	        desired.usec += 1000000;
-	        desired.sec--;
-	    }
+	if ((usec = TclpGetLastTimeJump(&timeJumpEpoch)) != 0) {
+	    /* we know time-jump, adjust end-time using this offset */
+	    desired += usec;
+	}
+	else
+	if ((usec = (now - lastNow)) < 0) {
+	    /* recognized backwards time-jump - simply shift wakeup-time *
+	     * considering sleep-time also, assume we've reached it completely */
+	    desired += (usec - (sleepTime * 1000));
 	}
 	lastNow = now;
 
-	vdelay.sec  = desired.sec  - now.sec;
-	vdelay.usec = desired.usec - now.usec;
-	if (vdelay.usec < 0) {
-	    vdelay.usec += 1000000;
-	    vdelay.sec--;
-	}
-
-	if (vdelay.sec < 0) {
-	    break;
-	} else if ((vdelay.sec == 0) && (vdelay.usec <= tolerance)) {
+	if ((usec = (desired - now)) <= tolerance) {
 	    break;
 	}
     }
