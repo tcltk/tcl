@@ -33,7 +33,8 @@ typedef struct EventSource {
 
 /*
  * Used for performance purposes, threshold to bypass check source (if don't wait)
- * Values under 1000 should be approximately under 1ms, e. g. 5 is ca. 0.005ms
+ * Value should be approximately correspond 100-ns ranges, if the wide-clicks
+ * supported, it is more precise so e. g. 5 is ca. 0.5 microseconds (500-ns).
  */
 #ifndef TCL_CHECK_EVENT_SOURCE_THRESHOLD
     #define TCL_CHECK_EVENT_SOURCE_THRESHOLD 5
@@ -890,8 +891,45 @@ Tcl_ServiceEvent(
 
     return 0;
 }
+
+#if TCL_CHECK_EVENT_SOURCE_THRESHOLD
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckSourceThreshold --
+ *
+ *	Check whether we should iterate over event sources for availability.
+ *
+ *	This is used to avoid too unneeded overhead (too often call checkProc).
+ *
+ * Results:
+ *	Returns 1 if threshold reached (check event sources), 0 otherwise.
+ *
+ *----------------------------------------------------------------------
+ */
 
-
+static inline int
+CheckSourceThreshold(
+    ThreadSpecificData *tsdPtr)
+{
+    /* don't need to wait/check for events too often */
+#ifndef TCL_WIDE_CLICKS
+    unsigned long clickdiff, clicks = TclpGetClicks();
+#else
+    Tcl_WideInt clickdiff, clicks;
+    /* in 100-ns */
+    clicks = TclpGetWideClicks() * (TclpWideClickInMicrosec() * 10);
+#endif
+    /* considering possible clicks-jump */
+    if ( (clickdiff = (clicks - tsdPtr->lastCheckClicks)) >= 0
+      && clickdiff <= TCL_CHECK_EVENT_SOURCE_THRESHOLD) {
+	return 0;
+    }
+    tsdPtr->lastCheckClicks = clicks;
+    return 1;
+}
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -936,19 +974,11 @@ TclPeekEventQueued(
 	}
 
 	if (flags & TCL_DONT_WAIT) {
-    #if TCL_CHECK_EVENT_SOURCE_THRESHOLD
 	    /* don't need to wait/check for events too often */
-	#ifndef TCL_WIDE_CLICKS
-	    unsigned long clickdiff, clicks = TclpGetClicks();
-	#else
-	    Tcl_WideInt clickdiff, clicks = TclpGetWideClicks();
-	#endif
-	    /* considering possible clicks-jump */
-	    if ( (clickdiff = (clicks - tsdPtr->lastCheckClicks)) >= 0 
-	      && clickdiff <= TCL_CHECK_EVENT_SOURCE_THRESHOLD) {
+    #if TCL_CHECK_EVENT_SOURCE_THRESHOLD
+	    if (!CheckSourceThreshold(tsdPtr)) {
 		return 0;
 	    }
-	    tsdPtr->lastCheckClicks = clicks;
     #endif
 	}
 
@@ -966,8 +996,7 @@ TclPeekEventQueued(
 
     return 0;
 }
-
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1004,8 +1033,7 @@ TclSetTimerEventMarker(
 	};
     }
 }
-
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1029,8 +1057,7 @@ Tcl_GetServiceMode(void)
 
     return tsdPtr->serviceMode;
 }
-
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1062,8 +1089,7 @@ Tcl_SetServiceMode(
     }
     return oldMode;
 }
-
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1107,8 +1133,7 @@ Tcl_SetMaxBlockTime(
 	Tcl_SetTimer(&tsdPtr->blockTime);
     }
 }
-
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1222,19 +1247,10 @@ Tcl_DoOneEvent(
 
 	    /* don't need to wait/check for events too often */
     #if TCL_CHECK_EVENT_SOURCE_THRESHOLD
-	#ifndef TCL_WIDE_CLICKS
-	    unsigned long clickdiff, clicks = TclpGetClicks();
-	#else
-	    Tcl_WideInt clickdiff, clicks = TclpGetWideClicks();
-	#endif
-	    /* considering possible clicks-jump */
-	    if ( (clickdiff = (clicks - tsdPtr->lastCheckClicks)) >= 0 
-	      && clickdiff <= TCL_CHECK_EVENT_SOURCE_THRESHOLD) {
+	    if (!CheckSourceThreshold(tsdPtr)) {
 		goto idleEvents;
 	    }
-	    tsdPtr->lastCheckClicks = clicks;
     #endif
-
 	    tsdPtr->blockTime.sec = 0;
 	    tsdPtr->blockTime.usec = 0;
 	    tsdPtr->blockTimeSet = 1;
@@ -1334,8 +1350,7 @@ Tcl_DoOneEvent(
     tsdPtr->serviceMode = oldMode;
     return result;
 }
-
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1420,8 +1435,7 @@ Tcl_ServiceAll(void)
     tsdPtr->serviceMode = TCL_SERVICE_ALL;
     return result;
 }
-
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1462,8 +1476,7 @@ Tcl_ThreadAlert(
     }
     Tcl_MutexUnlock(&listLock);
 }
-
-
+
 /*
  *----------------------------------------------------------------------
  *
