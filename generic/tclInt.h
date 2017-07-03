@@ -1946,17 +1946,36 @@ typedef struct Interp {
  * existence of struct items 'prevPtr' and 'nextPtr'.
  *
  * a = element to add or remove.
- * b = list head.
+ * b = list head (points to the first element).
+ * e = list tail (points to the last element).
  *
  * TclSpliceIn adds to the head of the list.
+ * TclSpliceTail adds to the tail of the list.
  */
 
 #define TclSpliceIn(a,b)			\
-    (a)->nextPtr = (b);				\
-    if ((b) != NULL) {				\
+    if (((a)->nextPtr = (b)) != NULL) {		\
 	(b)->prevPtr = (a);			\
     }						\
     (a)->prevPtr = NULL, (b) = (a);
+
+#define TclSpliceInEx(a,b,e)			\
+    TclSpliceIn(a,b);				\
+    if ((e) == NULL) {				\
+	(e) = (a);				\
+    }
+
+#define TclSpliceTail(a,e)			\
+    if (((a)->prevPtr = (e)) != NULL) {		\
+	(e)->nextPtr = (a);			\
+    }						\
+    (a)->nextPtr = NULL, (e) = (a);
+
+#define TclSpliceTailEx(a,b,e)			\
+    TclSpliceTail(a,e);				\
+    if ((b) == NULL) {				\
+	(b) = (a);				\
+    }
 
 #define TclSpliceOut(a,b)			\
     if ((a)->prevPtr != NULL) {			\
@@ -1966,6 +1985,11 @@ typedef struct Interp {
     }						\
     if ((a)->nextPtr != NULL) {			\
 	(a)->nextPtr->prevPtr = (a)->prevPtr;	\
+    }
+
+#define TclSpliceOutEx(a,b,e)			\
+    TclSpliceOut(a,b) else {			\
+	(e) = (e)->prevPtr;			\
     }
 
 /*

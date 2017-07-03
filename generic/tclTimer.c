@@ -49,6 +49,8 @@ typedef struct AfterInfo {
 				 * rather than a timer handler. */
     struct AfterInfo *nextPtr;	/* Next in list of all "after" commands for
 				 * this interpreter. */
+    struct AfterInfo *prevPtr;	/* Prev in list of all "after" commands for
+				 * this interpreter. */
 } AfterInfo;
 
 /*
@@ -63,6 +65,7 @@ typedef struct AfterAssocData {
     AfterInfo *firstAfterPtr;	/* First in list of all "after" commands still
 				 * pending for this interpreter, or NULL if
 				 * none. */
+    AfterInfo *lastAfterPtr;	/* Last in list of all "after" commands. */
 } AfterAssocData;
 
 /*
@@ -797,6 +800,7 @@ Tcl_AfterObjCmd(
 	assocPtr = (AfterAssocData *) ckalloc(sizeof(AfterAssocData));
 	assocPtr->interp = interp;
 	assocPtr->firstAfterPtr = NULL;
+	assocPtr->lastAfterPtr = NULL;
 	Tcl_SetAssocData(interp, "tclAfter", AfterCleanupProc,
 		(ClientData) assocPtr);
     }
@@ -865,8 +869,9 @@ Tcl_AfterObjCmd(
 	}
 	afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup, AfterProc,
 							(ClientData) afterPtr);
-	afterPtr->nextPtr = assocPtr->firstAfterPtr;
-	assocPtr->firstAfterPtr = afterPtr;
+	/* attach to the list */
+	TclSpliceTailEx(afterPtr, assocPtr->firstAfterPtr, assocPtr->lastAfterPtr);
+
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
 	return TCL_OK;
     }
@@ -885,8 +890,8 @@ Tcl_AfterObjCmd(
 	    commandPtr = Tcl_ConcatObj(objc-2, objv+2);;
 	}
 	command = Tcl_GetStringFromObj(commandPtr, &length);
-	for (afterPtr = assocPtr->firstAfterPtr;  afterPtr != NULL;
-		afterPtr = afterPtr->nextPtr) {
+	for (afterPtr = assocPtr->lastAfterPtr;  afterPtr != NULL;
+		afterPtr = afterPtr->prevPtr) {
 	    tempCommand = Tcl_GetStringFromObj(afterPtr->commandPtr,
 		    &tempLength);
 	    if ((length == tempLength)
@@ -927,8 +932,9 @@ Tcl_AfterObjCmd(
 	afterPtr->id = tsdPtr->afterId;
 	tsdPtr->afterId += 1;
 	afterPtr->token = NULL;
-	afterPtr->nextPtr = assocPtr->firstAfterPtr;
-	assocPtr->firstAfterPtr = afterPtr;
+	/* attach to the list */
+	TclSpliceTailEx(afterPtr, assocPtr->firstAfterPtr, assocPtr->lastAfterPtr);
+
 	Tcl_DoWhenIdle(AfterProc, (ClientData) afterPtr);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
 	break;
@@ -936,8 +942,8 @@ Tcl_AfterObjCmd(
 	Tcl_Obj *resultListPtr;
 
 	if (objc == 2) {
-	    for (afterPtr = assocPtr->firstAfterPtr; afterPtr != NULL;
-		    afterPtr = afterPtr->nextPtr) {
+	    for (afterPtr = assocPtr->lastAfterPtr; afterPtr != NULL;
+		    afterPtr = afterPtr->prevPtr) {
 		if (assocPtr->interp == interp) {
 		    sprintf(buf, "after#%d", afterPtr->id);
 		    Tcl_AppendElement(interp, buf);
@@ -1082,8 +1088,8 @@ GetAfterEvent(
     if ((end == cmdString) || (*end != 0)) {
 	return NULL;
     }
-    for (afterPtr = assocPtr->firstAfterPtr; afterPtr != NULL;
-	    afterPtr = afterPtr->nextPtr) {
+    for (afterPtr = assocPtr->lastAfterPtr; afterPtr != NULL;
+	    afterPtr = afterPtr->prevPtr) {
 	if (afterPtr->id == id) {
 	    return afterPtr;
 	}
@@ -1116,7 +1122,6 @@ AfterProc(
 {
     AfterInfo *afterPtr = (AfterInfo *) clientData;
     AfterAssocData *assocPtr = afterPtr->assocPtr;
-    AfterInfo *prevPtr;
     int result;
     Tcl_Interp *interp;
 
@@ -1126,15 +1131,8 @@ AfterProc(
      * a core dump.
      */
 
-    if (assocPtr->firstAfterPtr == afterPtr) {
-	assocPtr->firstAfterPtr = afterPtr->nextPtr;
-    } else {
-	for (prevPtr = assocPtr->firstAfterPtr; prevPtr->nextPtr != afterPtr;
-		prevPtr = prevPtr->nextPtr) {
-	    /* Empty loop body. */
-	}
-	prevPtr->nextPtr = afterPtr->nextPtr;
-    }
+    /* detach entry from the owner's list */
+    TclSpliceOutEx(afterPtr, assocPtr->firstAfterPtr, assocPtr->lastAfterPtr);
 
     /*
      * Execute the callback.
@@ -1179,18 +1177,12 @@ static void
 FreeAfterPtr(
     AfterInfo *afterPtr)		/* Command to be deleted. */
 {
-    AfterInfo *prevPtr;
     AfterAssocData *assocPtr = afterPtr->assocPtr;
 
-    if (assocPtr->firstAfterPtr == afterPtr) {
-	assocPtr->firstAfterPtr = afterPtr->nextPtr;
-    } else {
-	for (prevPtr = assocPtr->firstAfterPtr; prevPtr->nextPtr != afterPtr;
-		prevPtr = prevPtr->nextPtr) {
-	    /* Empty loop body. */
-	}
-	prevPtr->nextPtr = afterPtr->nextPtr;
-    }
+    /* detach entry from the owner's list */
+    TclSpliceOutEx(afterPtr, assocPtr->firstAfterPtr, assocPtr->lastAfterPtr);
+
+    /* free command and entry */
     Tcl_DecrRefCount(afterPtr->commandPtr);
     ckfree((char *) afterPtr);
 }
@@ -1222,9 +1214,10 @@ AfterCleanupProc(
     AfterAssocData *assocPtr = (AfterAssocData *) clientData;
     AfterInfo *afterPtr;
 
-    while (assocPtr->firstAfterPtr != NULL) {
-	afterPtr = assocPtr->firstAfterPtr;
-	assocPtr->firstAfterPtr = afterPtr->nextPtr;
+    while ( (afterPtr = assocPtr->lastAfterPtr) ) {
+	/* detach entry from the owner's list */
+	TclSpliceOutEx(afterPtr, assocPtr->firstAfterPtr, assocPtr->lastAfterPtr);
+
 	if (afterPtr->token != NULL) {
 	    Tcl_DeleteTimerHandler(afterPtr->token);
 	} else {
