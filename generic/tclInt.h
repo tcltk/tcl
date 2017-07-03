@@ -2484,6 +2484,7 @@ MODULE_SCOPE Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE Tcl_ObjType tclDoubleType;
 MODULE_SCOPE Tcl_ObjType tclEndOffsetType;
 MODULE_SCOPE Tcl_ObjType tclIntType;
+MODULE_SCOPE Tcl_ObjType tclIndexType;
 MODULE_SCOPE Tcl_ObjType tclListType;
 MODULE_SCOPE Tcl_ObjType tclDictType;
 MODULE_SCOPE Tcl_ObjType tclProcBodyType;
@@ -2919,6 +2920,8 @@ MODULE_SCOPE int	Tcl_ConcatObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_ContinueObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE void	TclSetTimerEventMarker(void);
+MODULE_SCOPE int	TclServiceTimerEvents(void);
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
 			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
 			    ClientData clientData);
@@ -2930,6 +2933,7 @@ MODULE_SCOPE TimerEntry* TclCreateTimerEntryEx(
 			    Tcl_TimerProc *proc, Tcl_TimerDeleteProc *deleteProc,
 			    size_t extraDataSize, int flags);
 MODULE_SCOPE void	TclDeleteTimerEntry(TimerEntry *entryPtr);
+MODULE_SCOPE int	TclPeekEventQueued(int flags);
 MODULE_SCOPE int	TclDefaultBgErrorHandlerObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);

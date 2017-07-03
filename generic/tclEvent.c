@@ -1410,26 +1410,28 @@ Tcl_UpdateObjCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     int optionIndex;
-    int flags = 0;		/* Initialized to avoid compiler warning. */
-    static CONST char *updateOptions[] = {"idletasks", NULL};
-    enum updateOptions {REGEXP_IDLETASKS};
+    int flags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
+    static CONST char *updateOptions[] = {"idletasks", "noidletasks", NULL};
+    enum updateOptions {UPDATE_IDLETASKS, UPDATE_NOIDLETASKS};
 
     if (objc == 1) {
-	flags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
     } else if (objc == 2) {
 	if (Tcl_GetIndexFromObj(interp, objv[1], updateOptions,
 		"option", 0, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum updateOptions) optionIndex) {
-	case REGEXP_IDLETASKS:
+	case UPDATE_IDLETASKS:
 	    flags = TCL_WINDOW_EVENTS|TCL_IDLE_EVENTS|TCL_DONT_WAIT;
+	    break;
+	case UPDATE_NOIDLETASKS:
+	    flags &= ~TCL_IDLE_EVENTS;
 	    break;
 	default:
 	    Tcl_Panic("Tcl_UpdateObjCmd: bad option index to UpdateOptions");
 	}
     } else {
-	Tcl_WrongNumArgs(interp, 1, objv, "?idletasks?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?option?");
 	return TCL_ERROR;
     }
 

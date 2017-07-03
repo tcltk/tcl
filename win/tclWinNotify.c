@@ -437,12 +437,18 @@ Tcl_WaitForEvent(
      */
 
     if (timePtr) {
+
+	Tcl_Time myTime;
+
+	/* No wait if timeout too small (because windows may wait too long) */
+	if (!timePtr->sec && timePtr->usec <= 10) {
+	    goto peek;
+	}
+
 	/*
 	 * TIP #233 (Virtualized Time). Convert virtual domain delay to
 	 * real-time.
 	 */
-
-	Tcl_Time myTime;
 
 	myTime.sec  = timePtr->sec;
 	myTime.usec = timePtr->usec;
@@ -452,6 +458,7 @@ Tcl_WaitForEvent(
 	}
 
 	timeout = myTime.sec * 1000 + myTime.usec / 1000;
+
     } else {
 	timeout = INFINITE;
     }
@@ -462,33 +469,38 @@ Tcl_WaitForEvent(
      * currently sitting in the queue.
      */
 
-    if (!PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
-	/*
-	 * Wait for something to happen (a signal from another thread, a
-	 * message, or timeout) or loop servicing asynchronous procedure calls
-	 * queued to this thread.
-	 */
+    if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+    	goto get;
+    }
 
-    again:
-	result = MsgWaitForMultipleObjectsEx(1, &tsdPtr->event, timeout,
+    /*
+     * Wait for something to happen (a signal from another thread, a
+     * message, or timeout) or loop servicing asynchronous procedure calls
+     * queued to this thread.
+     */
+    
+  again:
+    result = MsgWaitForMultipleObjectsEx(1, &tsdPtr->event, timeout,
 		QS_ALLINPUT, MWMO_ALERTABLE);
-	if (result == WAIT_IO_COMPLETION) {
-	    goto again;
-	} else if (result == WAIT_FAILED) {
-	    status = -1;
-	    goto end;
-	}
+    if (result == WAIT_IO_COMPLETION) {
+	goto again;
+    }
+    ResetEvent(tsdPtr->event);
+    if (result == WAIT_FAILED) {
+	status = -1;
+	goto end;
     }
 
     /*
      * Check to see if there are any messages to process.
      */
-
+  peek:
     if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
 	/*
 	 * Retrieve and dispatch the first message.
 	 */
 
+  get:
 	result = GetMessage(&msg, NULL, 0, 0);
 	if (result == 0) {
 	    /*
@@ -515,7 +527,6 @@ Tcl_WaitForEvent(
     }
 
   end:
-    ResetEvent(tsdPtr->event);
     return status;
 }
 

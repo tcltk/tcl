@@ -625,10 +625,10 @@ test event-11.7 {Bug 16828b3744} {
 
 test event-12.1 {Tcl_UpdateCmd procedure} {
     list [catch {update a b} msg] $msg
-} {1 {wrong # args: should be "update ?idletasks?"}}
+} {1 {wrong # args: should be "update ?option?"}}
 test event-12.2 {Tcl_UpdateCmd procedure} {
     list [catch {update bogus} msg] $msg
-} {1 {bad option "bogus": must be idletasks}}
+} {1 {bad option "bogus": must be idletasks or noidletasks}}
 test event-12.3 {Tcl_UpdateCmd procedure} {
     foreach i [after info] {
 	after cancel $i
