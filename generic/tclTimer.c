@@ -65,12 +65,10 @@ typedef struct {
     Tcl_WideInt relTimerBase;	/* Time base of the first known relative */
 				/* timer, used to revert all events to the new
 				 * base after possible time-jump (adjustment).*/
-    TimerEntry *relTimerList;	/* First event in queue of relative timers. */
-    TimerEntry *relTimerTail;	/* Last event in queue of relative timers. */
+    TimerEntry *timerList;	/* First event in queue of timers. */
+    TimerEntry *timerTail;	/* Last event in queue of timers. */
     TimerEntry *promptList;	/* First immediate event in queue. */
     TimerEntry *promptTail;	/* Last immediate event in queue. */
-    TimerEntry *absTimerList;	/* First event in queue of absolute timers. */
-    TimerEntry *absTimerTail;	/* Last event in queue of absolute timers. */
     size_t timerListEpoch;	/* Used for safe process of event queue (stop
     				 * the cycle after modifying of event queue) */
     int lastTimerId;		/* Timer identifier of most recently created
@@ -285,11 +283,8 @@ TimerExitProc(
 	while ((tsdPtr->promptTail) != NULL) {
 	    TclDeleteTimerEntry(tsdPtr->promptTail);
 	}
-	while ((tsdPtr->relTimerTail) != NULL) {
-	    TclDeleteTimerEntry(tsdPtr->relTimerTail);
-	}
-	while ((tsdPtr->absTimerTail) != NULL) {
-	    TclDeleteTimerEntry(tsdPtr->absTimerTail);
+	while ((tsdPtr->timerTail) != NULL) {
+	    TclDeleteTimerEntry(tsdPtr->timerTail);
 	}
 	while ((tsdPtr->idleTail) != NULL) {
 	    TclDeleteTimerEntry(tsdPtr->idleTail);
@@ -372,7 +367,6 @@ TclpCreateTimerHandlerEx(
     int flags)			/* If TCL_ABSTMR_EVENT, time is absolute */
 {
     register TimerEntry *entryPtr, *entryPtrPos;
-    TimerEntry **tmrList, **tmrTail;
     register TimerHandler *timerPtr;
     ThreadSpecificData *tsdPtr;
 
@@ -396,19 +390,14 @@ TclpCreateTimerHandlerEx(
     tsdPtr->lastTimerId++;
     timerPtr->token = (Tcl_TimerToken) INT2PTR(tsdPtr->lastTimerId);
 
-    if (flags & TCL_ABSTMR_EVENT) {
-	tmrList = &tsdPtr->absTimerList;
-	tmrTail = &tsdPtr->absTimerTail;
-    } else {
+    if (!(flags & TCL_ABSTMR_EVENT)) {
 	Tcl_WideInt now = TclpGetMicroseconds();
 
-	tmrList = &tsdPtr->relTimerList;
-	tmrTail = &tsdPtr->relTimerTail;
 	/* 
 	 * We should have the ability to ajust end-time of relative events,
 	 * for possible time-jumps.
 	 */
-	if (tsdPtr->relTimerList) {
+	if (tsdPtr->timerList) {
 	    /* 
 	     * end-time = now + usec
 	     * Adjust value of usec relative current base (to now), so
@@ -437,15 +426,15 @@ TclpCreateTimerHandlerEx(
      * (ordered by event firing time).
      */
 
-    /* if before current first (e. g. "after 0" before first "after 1000") */
-    if ( !(entryPtrPos = *tmrList)
+    /* if before current first (e. g. "after 1" before first "after 1000") */
+    if ( !(entryPtrPos = tsdPtr->timerList)
       || usec < TimerEntry2TimerHandler(entryPtrPos)->time
     ) {
     	/* splice to the head */
-	TclSpliceInEx(entryPtr, *tmrList, *tmrTail);
+	TclSpliceInEx(entryPtr, tsdPtr->timerList, tsdPtr->timerTail);
     } else {
     	/* search from end as long as one with time before not found */
-	for (entryPtrPos = *tmrTail; entryPtrPos != NULL;
+	for (entryPtrPos = tsdPtr->timerTail; entryPtrPos != NULL;
 	    entryPtrPos = entryPtrPos->prevPtr) {
 	    if (usec >= TimerEntry2TimerHandler(entryPtrPos)->time) {
 		break;
@@ -458,12 +447,12 @@ TclpCreateTimerHandlerEx(
 	    if ((entryPtr->nextPtr = entryPtrPos->nextPtr)) {
 		entryPtrPos->nextPtr->prevPtr = entryPtr;
 	    } else {
-		*tmrTail = entryPtr;
+		tsdPtr->timerTail = entryPtr;
 	    }
 	    entryPtrPos->nextPtr = entryPtr;
 	} else {
 	    /* unexpected case, but ... splice to the head */
-	    TclSpliceInEx(entryPtr, *tmrList, *tmrTail);
+	    TclSpliceInEx(entryPtr, tsdPtr->timerList, tsdPtr->timerTail);
 	}
     }
 
@@ -594,19 +583,7 @@ Tcl_DeleteTimerHandler(
 	return;
     }
 
-    for (entryPtr = tsdPtr->relTimerTail;
-	entryPtr != NULL;
-	entryPtr = entryPtr->prevPtr
-    ) {
-	if (TimerEntry2TimerHandler(entryPtr)->token != token) {
-	    continue;
-	}
-
-	TclDeleteTimerEntry(entryPtr);
-	return;
-    }
-
-    for (entryPtr = tsdPtr->absTimerTail;
+    for (entryPtr = tsdPtr->timerTail;
 	entryPtr != NULL;
 	entryPtr = entryPtr->prevPtr
     ) {
@@ -660,11 +637,7 @@ TclDeleteTimerEntry(
     } else {
 	/* timer event-handler */
 	tsdPtr->timerListEpoch++; /* signal-timer list was changed */
-	if (!(entryPtr->flags & TCL_ABSTMR_EVENT)) {
-	    TclSpliceOutEx(entryPtr, tsdPtr->relTimerList, tsdPtr->relTimerTail);
-	} else {
-	    TclSpliceOutEx(entryPtr, tsdPtr->absTimerList, tsdPtr->absTimerTail);
-	}
+	TclSpliceOutEx(entryPtr, tsdPtr->timerList, tsdPtr->timerTail);
     }
 
     /* free it via deleteProc or ckfree */
@@ -683,7 +656,7 @@ TclDeleteTimerEntry(
 /*
  *--------------------------------------------------------------
  *
- * TimerGetFirstTime --
+ * TimerGetDueTime --
  *
  *	Find the execution time of first relative or absolute timer starting
  *	from given heads.
@@ -699,14 +672,12 @@ TclDeleteTimerEntry(
  */
 
 static Tcl_WideInt
-TimerGetFirstTime(
+TimerGetDueTime(
     ThreadSpecificData *tsdPtr,
-    TimerEntry *relTimerList,
-    TimerEntry *absTimerList,
-    Tcl_WideInt now,
-    TimerEntry **entryPtr)
+    TimerEntry *entryPtr,
+    Tcl_WideInt now)
 {
-    Tcl_WideInt firstTime = -0x7FFFFFFFFFFFFFFFL;
+    Tcl_WideInt firstTime;
 
     /* 
      * Consider time-jump (especially back) - if the time jumped forwards (and
@@ -715,34 +686,26 @@ TimerGetFirstTime(
      * jumps it is very important and we should adjust relative base to avoid 
      * too long waiting for relative events.
      */
-    if (relTimerList) {
-	Tcl_WideInt diff;
-	if ( (diff = TclpGetLastTimeJump(&tsdPtr->knownTimeJumpEpoch)) != 0
-	  || (diff = (now - tsdPtr->knownTime)) < 0 /* switched back */
-	) {
-	    /* 
-	     * If the real jump is unknown (resp. too complex to retrieve
-	     * accross all threads), we simply accept possible small increment
-	     * of the real wait-time.
-	     */
-	    tsdPtr->relTimerBase += diff; /* shift the base */
-	}
-	tsdPtr->knownTime = now;
-	/* end-time = base + relative event-time */
-	firstTime = tsdPtr->relTimerBase
-	    + TimerEntry2TimerHandler(relTimerList)->time;
-	if (entryPtr) { *entryPtr = relTimerList; }
-    }
-
-    if ( absTimerList
-      && firstTime < TimerEntry2TimerHandler(absTimerList)->time
+    Tcl_WideInt diff;
+    if ( (diff = TclpGetLastTimeJump(&tsdPtr->knownTimeJumpEpoch)) != 0
+      || (diff = (now - tsdPtr->knownTime)) < 0 /* switched back */
     ) {
-	/* end-time = absolute event-time */
-	firstTime = TimerEntry2TimerHandler(absTimerList)->time;
-	if (entryPtr) { *entryPtr = absTimerList; }
+	/* 
+	 * If the real jump is unknown (resp. too complex to retrieve
+	 * accross all threads), we simply accept possible small increment
+	 * of the real wait-time.
+	 */
+	tsdPtr->relTimerBase += diff; /* shift the base */
     }
+    tsdPtr->knownTime = now;
 
-    return firstTime;
+    /* If absolute timer: end-time = absolute event-time */
+    firstTime = TimerEntry2TimerHandler(entryPtr)->time;
+    if ((entryPtr->flags & TCL_ABSTMR_EVENT)) {
+    	return firstTime;
+    }
+    /* end-time = base + relative event-time */
+    return firstTime + tsdPtr->relTimerBase;
 }
 
 /*
@@ -770,7 +733,6 @@ TimerSetupProc(
 {
     Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)data;
-    long tolerance = 0;
 
     if (tsdPtr == NULL) { tsdPtr = InitTimer(); };
 
@@ -786,25 +748,27 @@ TimerSetupProc(
 
     } else if (
 	   (flags & TCL_TIMER_EVENTS) 
-	&& (tsdPtr->relTimerList || tsdPtr->absTimerList)
+	&& (tsdPtr->timerList)
     ) {
 	/*
 	 * Compute the timeout for the next timer on the list.
 	 */
 
 	Tcl_WideInt now = TclpGetMicroseconds();
-	Tcl_WideInt timeOffs = TimerGetFirstTime(tsdPtr, 
-		tsdPtr->relTimerList, tsdPtr->absTimerList, now, NULL) - now;
+	Tcl_WideInt entryTime;
 
-	if (timeOffs > 0) {
-	    blockTime.sec = (long) (timeOffs / 1000000);
-	    blockTime.usec = (unsigned long) (timeOffs % 1000000);
+	entryTime = TimerGetDueTime(tsdPtr, tsdPtr->timerList, now) - now;
 
 	#ifdef TMR_RES_TOLERANCE
 	    /* consider timer resolution tolerance (avoid busy wait) */
-	    tolerance = ((timeOffs <= 1000000) ? timeOffs : 1000000) *
+	    entryTime -= ((entryTime <= 1000000) ? entryTime : 1000000) *
 				TMR_RES_TOLERANCE / 100;
 	#endif
+
+	if (entryTime > 0) {
+	    blockTime.sec = (long) (entryTime / 1000000);
+	    blockTime.usec = (unsigned long) (entryTime % 1000000);
+
 	} else {
 	    blockTime.sec = 0;
 	    blockTime.usec = 0;
@@ -813,7 +777,7 @@ TimerSetupProc(
 	/*
 	* If the first timer has expired, stick an event on the queue right now.
 	*/
-	if (!tsdPtr->timerPending && timeOffs <= tolerance) {
+	if (!tsdPtr->timerPending && entryTime <= 0) {
 	    TclSetTimerEventMarker(0);
 	    tsdPtr->timerPending = 1;
 	}
@@ -847,9 +811,8 @@ TimerCheckProc(
     ClientData data,		/* Specific data. */
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    Tcl_WideInt now, timeOffs;
+    Tcl_WideInt now, entryTime;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)data;
-    long tolerance = 0;
 
     if (!(flags & TCL_TIMER_EVENTS)) {
     	return;
@@ -858,7 +821,7 @@ TimerCheckProc(
     if (tsdPtr == NULL) { tsdPtr = InitTimer(); };
 
     /* If already pending (or no timer-events) */
-    if (tsdPtr->timerPending || !(tsdPtr->relTimerList || tsdPtr->absTimerList)) {
+    if (tsdPtr->timerPending || !tsdPtr->timerList) {
     	return;
     }
 
@@ -866,19 +829,18 @@ TimerCheckProc(
      * Verify the first timer on the queue.
      */
     now = TclpGetMicroseconds();
-    timeOffs = TimerGetFirstTime(tsdPtr,
-    	tsdPtr->relTimerList, tsdPtr->absTimerList, now, NULL) - now;
+    entryTime = TimerGetDueTime(tsdPtr, tsdPtr->timerList, now) - now;
     
 #ifdef TMR_RES_TOLERANCE
     /* consider timer resolution tolerance (avoid busy wait) */
-    tolerance = ((timeOffs <= 1000000) ? timeOffs : 1000000) *
+    entryTime -= ((entryTime <= 1000000) ? entryTime : 1000000) *
 			TMR_RES_TOLERANCE / 100;
 #endif
    
     /*
     * If the first timer has expired, stick an event on the queue.
     */
-    if (timeOffs <= tolerance) {
+    if (entryTime <= 0) {
 	TclSetTimerEventMarker(0);
 	tsdPtr->timerPending = 1;
     }
@@ -909,7 +871,7 @@ TimerCheckProc(
 int
 TclServiceTimerEvents(void)
 {
-    TimerEntry *entryPtr, *relTimerList, *absTimerList;
+    TimerEntry *entryPtr, *nextPtr;
     Tcl_WideInt now, entryTime;
     size_t currentGeneration, currentEpoch;
     int prevTmrPending;
@@ -974,27 +936,24 @@ TclServiceTimerEvents(void)
     }
 
     /* Hereafter all relative and absolute timer events with time before now */
-    relTimerList = tsdPtr->relTimerList;
-    absTimerList = tsdPtr->absTimerList;
-    while (relTimerList || absTimerList)
-    {
+    for (entryPtr = tsdPtr->timerList;
+	 entryPtr != NULL;
+	 entryPtr = nextPtr
+    ) {
+	nextPtr = entryPtr->nextPtr;
 	now = TclpGetMicroseconds();
-	entryTime = TimerGetFirstTime(tsdPtr, relTimerList, absTimerList, now, &entryPtr);
+	entryTime = TimerGetDueTime(tsdPtr, entryPtr, now);
 
+    	/* the same tolerance logic as in TimerSetupProc/TimerCheckProc */
     #ifdef TMR_RES_TOLERANCE
 	entryTime -= ((entryTime <= 1000000) ? entryTime : 1000000) *
 				TMR_RES_TOLERANCE / 100;
     #endif
+
 	if (now < entryTime) {
 	    break;
 	}
 
-	/* Current list head to next entry */
-	if (entryPtr == relTimerList) {
-	    relTimerList = relTimerList->nextPtr;
-	} else {
-	    absTimerList = absTimerList->nextPtr;
-	}
 	/*
 	 * Bypass timers of newer generation.
 	 */
@@ -1012,13 +971,8 @@ TclServiceTimerEvents(void)
 	 * Remove the handler from the queue before invoking it, to avoid
 	 * potential reentrancy problems.
 	 */
-	if (!(entryPtr->flags & TCL_ABSTMR_EVENT)) {
-	    TclSpliceOutEx(entryPtr, 
-		tsdPtr->relTimerList, tsdPtr->relTimerTail);
-	} else {
-	    TclSpliceOutEx(entryPtr, 
-		tsdPtr->absTimerList, tsdPtr->absTimerTail);
-	}
+	TclSpliceOutEx(entryPtr, 
+		tsdPtr->timerList, tsdPtr->timerTail);
 
 	/* reset current timer pending (correct process nested wait event) */
 	prevTmrPending = tsdPtr->timerPending;
@@ -1050,7 +1004,7 @@ TclServiceTimerEvents(void)
     }
 
     /* Reset generation if both timer queue are empty */
-    if (!tsdPtr->relTimerList && !tsdPtr->absTimerList) {
+    if (!tsdPtr->timerList) {
 	tsdPtr->timerGeneration = 0;
     }
 
