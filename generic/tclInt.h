@@ -4070,6 +4070,14 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 
 #define TclLimitExceeded(limit) ((limit).exceeded != 0)
 
+static inline int
+TclInlLimitExceeded(
+    register Tcl_Interp *interp)
+{
+    return (((Interp *)interp)->limit.exceeded != 0);
+}
+#define Tcl_LimitExceeded(interp) TclInlLimitExceeded(interp)
+
 #define TclLimitReady(limit)						\
     (((limit).active == 0) ? 0 :					\
     (++(limit).granularityTicker,					\

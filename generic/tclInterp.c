@@ -3042,6 +3042,8 @@ Tcl_MakeSafe(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_LimitExceeded
+ 
 int
 Tcl_LimitExceeded(
     Tcl_Interp *interp)
