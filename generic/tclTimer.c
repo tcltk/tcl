@@ -285,6 +285,9 @@ TimerExitProc(
 	while ((tsdPtr->promptTail) != NULL) {
 	    TclDeleteTimerEntry(tsdPtr->promptTail);
 	}
+	while ((tsdPtr->relTimerTail) != NULL) {
+	    TclDeleteTimerEntry(tsdPtr->relTimerTail);
+	}
 	while ((tsdPtr->absTimerTail) != NULL) {
 	    TclDeleteTimerEntry(tsdPtr->absTimerTail);
 	}
@@ -334,7 +337,7 @@ Tcl_CreateTimerHandler(
 
     entryPtr = TclpCreateTimerHandlerEx(usec, proc, NULL, 0, 0);
     if (entryPtr == NULL) {
-    	return NULL;
+	return NULL;
     }
     entryPtr->clientData = clientData;
 
@@ -412,15 +415,19 @@ TclpCreateTimerHandlerEx(
 	     * end-time = base + relative event-time, which corresponds 
 	     * original end-time.
 	     */
-	    Tcl_WideInt diff = TclpGetLastTimeJump(&tsdPtr->knownTimeJumpEpoch);
-	    if (diff != 0) { /* jump recognized */
-		tsdPtr->relTimerBase += diff; /* shift the base of relative events*/
+	    Tcl_WideInt diff;
+	    if ( (diff = TclpGetLastTimeJump(&tsdPtr->knownTimeJumpEpoch)) != 0
+	      || (diff = (tsdPtr->knownTime - now)) < 0
+	    ) { /* jump recognized */
+		tsdPtr->relTimerBase += diff; /* shift the base of relative events */
     	    }
 	    usec += now - tsdPtr->relTimerBase;
 	} else {
-	    tsdPtr->knownTime = tsdPtr->relTimerBase = now;
+	    /* first event here - initial values (base/epoch) */
+	    tsdPtr->relTimerBase = now;
 	    tsdPtr->knownTimeJumpEpoch = TclpGetLastTimeJumpEpoch();
 	}
+	tsdPtr->knownTime = now;
     }
 
     timerPtr->time = usec;
@@ -504,7 +511,7 @@ TclCreateAbsoluteTimerHandler(
 
     entryPtr = TclpCreateTimerHandlerEx(usec, proc, NULL, 0, TCL_ABSTMR_EVENT);
     if (entryPtr == NULL) {
-    	return NULL;
+	return NULL;
     }
     entryPtr->clientData = clientData;
 
@@ -550,7 +557,7 @@ TclCreateRelativeTimerHandler(
 
     entryPtr = TclpCreateTimerHandlerEx(usec, proc, NULL, 0, TCL_ABSTMR_EVENT);
     if (entryPtr == NULL) {
-    	return NULL;
+	return NULL;
     }
     entryPtr->clientData = clientData;
 
@@ -584,6 +591,18 @@ Tcl_DeleteTimerHandler(
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (token == NULL) {
+	return;
+    }
+
+    for (entryPtr = tsdPtr->relTimerTail;
+	entryPtr != NULL;
+	entryPtr = entryPtr->prevPtr
+    ) {
+	if (TimerEntry2TimerHandler(entryPtr)->token != token) {
+	    continue;
+	}
+
+	TclDeleteTimerEntry(entryPtr);
 	return;
     }
 
@@ -622,8 +641,7 @@ Tcl_DeleteTimerHandler(
 void
 TclDeleteTimerEntry(
     TimerEntry *entryPtr)	/* Result previously returned by */
-	/* TclCreateRelativeTimerHandlerEx, TclCreateAbsoluteTimerHandlerEx
-	 * or TclCreateTimerEntryEx. */
+	/* TclCreateTimerHandlerEx or TclCreateTimerEntryEx. */
 {
     ThreadSpecificData *tsdPtr;
 
@@ -642,10 +660,10 @@ TclDeleteTimerEntry(
     } else {
 	/* timer event-handler */
 	tsdPtr->timerListEpoch++; /* signal-timer list was changed */
-	if (entryPtr->flags & TCL_ABSTMR_EVENT) {
-	    TclSpliceOutEx(entryPtr, tsdPtr->absTimerList, tsdPtr->absTimerTail);
-	} else {
+	if (!(entryPtr->flags & TCL_ABSTMR_EVENT)) {
 	    TclSpliceOutEx(entryPtr, tsdPtr->relTimerList, tsdPtr->relTimerTail);
+	} else {
+	    TclSpliceOutEx(entryPtr, tsdPtr->absTimerList, tsdPtr->absTimerTail);
 	}
     }
 
@@ -662,6 +680,24 @@ TclDeleteTimerEntry(
     }
 }
 
+/*
+ *--------------------------------------------------------------
+ *
+ * TimerGetFirstTime --
+ *
+ *	Find the execution time of first relative or absolute timer starting
+ *	from given heads.
+ *
+ * Results:
+ *	A wide integer representing the due time (as microseconds) of first
+ *	timer event to execute.
+ *
+ * Side effects:
+ *	If time-jump recognized, may adjust the base for relative timers.
+ *
+ *--------------------------------------------------------------
+ */
+
 static Tcl_WideInt
 TimerGetFirstTime(
     ThreadSpecificData *tsdPtr,
@@ -673,10 +709,11 @@ TimerGetFirstTime(
     Tcl_WideInt firstTime = -0x7FFFFFFFFFFFFFFFL;
 
     /* 
-     * Consider time-jump back - if time jumped forwards, nothing to be done,
-     * because event will be executed early as specified. But for backwards
-     * jumps we should adjust relative base to avoid too long waiting for
-     * relative events.
+     * Consider time-jump (especially back) - if the time jumped forwards (and
+     * it recognized) the base can be shifted, but not badly needed, because
+     * event will be nevertheless executed early as specified. But for backwards
+     * jumps it is very important and we should adjust relative base to avoid 
+     * too long waiting for relative events.
      */
     if (relTimerList) {
 	Tcl_WideInt diff;

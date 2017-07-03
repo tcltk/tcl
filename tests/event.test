@@ -529,9 +529,9 @@ test event-11.4.0 {vwait - interp limit precedence} {} {
     $i limit time -seconds {} -milliseconds {}
     lappend result 2. [catch {$i eval {vwait 0 x}} msg] $msg
 
-    # limit should be exceeded: (wait infinite by -1)
+    # limit should be exceeded: (wait infinite)
     $i limit time -milliseconds 0
-    lappend result 3. [catch {$i eval {vwait -1 x}} msg] $msg
+    lappend result 3. [catch {$i eval {vwait x}} msg] $msg
     # limit should be exceeded (wait too long - 1000ms):
     $i limit time -milliseconds 0
     lappend result 4. [catch {$i eval {vwait 1000 x}} msg] $msg
@@ -597,7 +597,7 @@ test event-11.4.1 {vwait with timeout} {} {
     lappend z $x; # 0 {} - (x still empty)
     vwait 200 x; # wait up-to 200ms
     lappend z $x; # 0 {} {1 2}
-    vwait -1 x; # infinite wait
+    vwait x; # infinite wait
     lappend z $x; # 0 {} {1 2} {1 2 3}
     foreach i [after info] {
 	after cancel $i
