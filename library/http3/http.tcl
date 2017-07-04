@@ -12,6 +12,7 @@ namespace eval ::http {
 	-proxyfilter callback
 	-proxyhost string
 	-proxyport integer
+	-strict boolean
 	-urlencoding encoding
 	-useragent string
     }
@@ -32,7 +33,6 @@ namespace eval ::http {
 	-queryblocksize integer
 	-querychannel channel
 	-queryprogress callback
-	-strict boolean
 	-timeout integer
 	-type {string {^[^\s/]+/+[^\s/+]$} "MIME type"}
 	-validate boolean
@@ -51,7 +51,7 @@ namespace eval ::http {
 
     oo::class create Context {
 	variable config
-	variable strict socketmap urltypes encodings charset keepalive
+	variable socketmap urltypes encodings charset keepalive
 	variable connectionclass counter
 
 	constructor {} {
@@ -71,6 +71,7 @@ namespace eval ::http {
 	    # This follows the de-facto layout of user-agent strings in
 	    # current browsers.  Safe interpreters do not have
 	    # ::tcl_platform(os) or ::tcl_platform(osVersion).
+
 	    if {[interp issafe]} {
 		set platform "Windows; U; Windows NT 10.0"
 	    } else {
@@ -95,7 +96,6 @@ namespace eval ::http {
 	    set encodings [string tolower [encoding names]]
 	    set charset "iso8859-1"
 	    set keepalive 0
-	    set strict 1
 	    set counter 0
 	}
 
@@ -207,15 +207,150 @@ namespace eval ::http {
 		return [list $proxyhost $proxyport]
 	    }
 	}
+
+	method parseURL {url} {
+	    # Validate URL, determine the server host and port, and check
+	    # proxy case Recognize user:pass@host URLs also, although we do
+	    # not do anything with that info yet.
+
+	    # URLs have basically four parts.
+	    #
+	    # First, before the colon, is the protocol scheme (e.g. http).
+	    #
+	    # Second, for HTTP-like protocols, is the authority. The authority
+	    #	is preceded by // and lasts up to (but not including) the
+	    #	following / or ? and it identifies up to four parts, of which
+	    #	only one, the host, is required (if an authority is present at
+	    #	all). All other parts of the authority (user name, password,
+	    #	port number) are optional.
+	    #
+	    # Third is the resource name, which is split into two parts at a ?
+	    #	The first part (from the single "/" up to "?") is the path,
+	    #	and the second part (from that "?" up to "#") is the
+	    #	query. *HOWEVER*, we do not need to separate them; we send the
+	    #	whole lot to the server.  Both, path and query are allowed to
+	    #	be missing, including their delimiting character.
+	    #
+	    # Fourth is the fragment identifier, which is everything after the
+	    #	firsts "#" in the URL. The fragment identifier MUST NOT be
+	    #	sent to the server and indeed, we don't bother to validate it
+	    #	(it could be an error to pass it in here, but it's cheap to
+	    #	strip).
+	    #
+	    # An example of a URL that has all the parts:
+	    #
+	    #   http://joe:xyzzy@www.bogus.net:8000/foo/bar.tml?q=foo#changes
+	    #
+	    # The "http" is the protocol, the user is "joe", the password is
+	    # "xyzzy", the host is "www.bogus.net", the port is "8000", the
+	    # path is "/foo/bar.tml", the query is "q=foo", and the fragment
+	    # is "changes".
+	    #
+	    # Note that the RE actually combines the user and password parts,
+	    # as recommended in RFC 3986. Indeed, that RFC states that putting
+	    # passwords in URLs is a Really Bad Idea, something with which I
+	    # would agree utterly.
+	    #
+	    # From a validation perspective, we need to ensure that the parts
+	    # of the URL that are going to the server are correctly encoded.
+	    # This is only done if $config(-strict) is true.
+
+	    set URLmatcher {(?x)	# this is _expanded_ syntax
+		^
+		(?: (\w+) : ) ?		# <protocol scheme>
+		(?: //
+		    (?:
+			(
+			    [^@/\#?]+	# <userinfo part of authority>
+			) @
+		    )?
+		    (			# <host part of authority>
+			[^/:\#?]+ |	# host name or IPv4 address
+			\[ [^/\#?]+ \]	# IPv6 address in square brackets
+		    )
+		    (?: : (\d+) )?	# <port part of authority>
+		)?
+		( [/\?] [^\#]*)?	# <path> (including query)
+		(?: \# (.*) )?		# <fragment>
+		$
+	    }
+
+	    # Phase one: parse
+	    if {![regexp -- $URLmatcher $url -> \
+		    proto user host port srvurl fragment]} {
+		return -code error "unsupported URL: $url"
+	    }
+	    # Phase two: validate
+	    set host [string trim $host {[]}]; # strip square brackets from IPv6 address
+	    if {$host eq ""} {
+		# Caller has to provide a host name; we do not have a "default
+		# host" that would enable us to handle relative URLs.
+		return -code error "Missing host part: $url"
+		# Note that we don't check the hostname for validity here; if
+		# it's invalid, we'll simply fail to resolve it later on.
+	    }
+	    if {$port ne "" && $port > 65535} {
+		return -code error "invalid port number: $port"
+	    }
+	    # The user identification and resource identification parts of the
+	    # URL can have encoded characters in them; take care!
+	    if {$user ne ""} {
+		# Check for validity according to RFC 3986, Appendix A
+		set validityRE {(?xi)
+		    ^
+		    (?: [-\w.~!$&'()*+,;=:] | %[0-9a-f][0-9a-f] )+
+		    $
+		}
+		if {$config(-strict) && ![regexp -- $validityRE $user]} {
+		    # Provide a better error message in this error case
+		    if {[regexp {(?i)%(?![0-9a-f][0-9a-f]).?.?} $user bad]} {
+			return -code error \
+			    "illegal encoding character usage \"$bad\" in URL user"
+		    }
+		    return -code error "illegal characters in URL user"
+		}
+	    }
+	    if {$srvurl ne ""} {
+		# RFC 3986 allows empty paths (not even a /), but servers
+		# return 400 if the path in the HTTP request doesn't start
+		# with / , so add it here if needed.
+		if {[string index $srvurl 0] ne "/"} {
+		    set srvurl /$srvurl
+		}
+		# Check for validity according to RFC 3986, Appendix A
+		set validityRE {(?xi)
+		    ^
+		    # Path part (already must start with / character)
+		    (?:	      [-\w.~!$&'()*+,;=:@/]  | %[0-9a-f][0-9a-f] )*
+		    # Query part (optional, permits ? characters)
+		    (?: \? (?: [-\w.~!$&'()*+,;=:@/?] | %[0-9a-f][0-9a-f] )* )?
+		    $
+		}
+		if {$config(-strict) && ![regexp -- $validityRE $srvurl]} {
+		    # Provide a better error message in this error case
+		    if {[regexp {(?i)%(?![0-9a-f][0-9a-f])..} $srvurl bad]} {
+			return -code error \
+			    "illegal encoding character usage \"$bad\" in URL path"
+		    }
+		    return -code error "illegal characters in URL path"
+		}
+	    }
+
+	    return [list $proto $user $host $port $srvurl \
+		    [string trimleft $fragment "#"]]
+	}
     }
 
     oo::class create Connection {
-	variable cfg http
+	variable cfg urlTypes http
 	variable binary state meta coding currentsize totalsize querylength
 	variable queryoffset type body status httpline connection charset
+	variable theURL
+
 	constructor {context url defaults options} {
 	    interp alias {} [namespace current]::Context {} $context
-	    my eval upvar 0 [info object namespace $context]::config http
+	    set ns [info object namespace $context]
+	    my eval upvar 0 ${ns}::config http ${ns}::urlTypes urlTypes
 	    foreach {opt value} $defaults {
 		set cfg($opt) $value
 	    }
@@ -240,6 +375,48 @@ namespace eval ::http {
 	    set httpline ""
 	    set connection close
 	    set charset $http(-charset)
+
+	    if {[info exists cfg(-querychannel)]&&[info exists cfg(-query)]} {
+		return -code error \
+		    "can't use -query and -querychannel options together"
+	    }
+
+	    lassign [Context parseURL $url] proto user host port srvurl
+	    if {$srvurl eq ""} {
+		set srvurl "/"
+	    }
+	    if {$proto eq ""} {
+		set proto "http"
+	    }
+	    set lower [string tolower $proto]
+	    if {![info exists urlTypes($lower)]} {
+		return -code error "unsupported URL type \"$proto\""
+	    }
+	    lassign $urlTypes($lower) defport defcmd
+	    if {$port eq ""} {
+		set port $defport
+	    }
+
+	    # Check for the proxy's opinion
+	    catch {
+		if {[llength $http(-proxyfilter)]} {
+		    lassign [{*}$http(-proxyfilter) $host] phost pport
+		}
+	    }
+
+	    # OK, now reassemble into a full URL
+	    set url ${proto}://
+	    if {$user ne ""} {
+		append url $user
+		append url @
+	    }
+	    append url $host
+	    if {$port != $defport} {
+		append url : $port
+	    }
+	    append url $srvurl
+	    # Don't append the fragment!
+	    set theURL $url
 	}
 
 	destructor {
@@ -361,9 +538,9 @@ namespace eval ::http {
     }
 
     proc Validate(callback) {option value} {
-	if {![string is list $value] || [llength $value] == 0} {
+	if {![string is list $value]} {
 	    return -code error \
-		"bad value for $option ($value), must be non-empty callback"
+		"bad value for $option ($value), must be command prefix"
 	}
     }
 
