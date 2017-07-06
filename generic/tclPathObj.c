@@ -862,12 +862,8 @@ TclJoinPath(
 
     assert ( elements > 0 );
 
-    for (i = 0; i < elements; i++) {
-	int driveNameLength, strEltLen, length;
-	Tcl_PathType type;
-	char *strElt, *ptr;
-	Tcl_Obj *driveName = NULL;
-	Tcl_Obj *elt = objv[i];
+    if (elements == 2) {
+	Tcl_Obj *elt = objv[0];
 
 	/*
 	 * This is a special case where we can be much more efficient, where
@@ -876,18 +872,17 @@ TclJoinPath(
 	 * object which can be normalized more efficiently. Currently we only
 	 * use the special case when we have exactly two elements, but we
 	 * could expand that in the future.
-         *
-         * Bugfix [a47641a0]. TclNewFSPathObj requires first argument
-         * to be an absolute path. Added a check for that elt is absolute.
+	 *
+	 * Bugfix [a47641a0]. TclNewFSPathObj requires first argument
+	 * to be an absolute path. Added a check for that elt is absolute.
 	 */
 
-	if ((i == (elements-2)) && (i == 0)
-                && (elt->typePtr == &tclFsPathType)
+	if ((elt->typePtr == &tclFsPathType)
 		&& !((elt->bytes != NULL) && (elt->bytes[0] == '\0'))
                 && TclGetPathType(elt, NULL, NULL, NULL) == TCL_PATH_ABSOLUTE) {
-            Tcl_Obj *tailObj = objv[i+1];
+            Tcl_Obj *tailObj = objv[1];
+	    Tcl_PathType type = TclGetPathType(tailObj, NULL, NULL, NULL);
 
-	    type = TclGetPathType(tailObj, NULL, NULL, NULL);
 	    if (type == TCL_PATH_RELATIVE) {
 		const char *str;
 		int len;
@@ -900,7 +895,6 @@ TclJoinPath(
 		     * the base itself is just fine!
 		     */
 
-		    assert ( res == NULL );
 		    return elt;
 		}
 
@@ -924,8 +918,6 @@ TclJoinPath(
 		    if ((tclPlatform != TCL_PLATFORM_WINDOWS)
 			    || (strchr(Tcl_GetString(elt), '\\') == NULL)) {
 
-			assert ( res == NULL );
-
 			if (PATHFLAGS(elt)) {
 			    return TclNewFSPathObj(elt, str, len);
 			}
@@ -944,19 +936,28 @@ TclJoinPath(
 		 * more general code below handle things.
 		 */
 	    } else if (tclPlatform == TCL_PLATFORM_UNIX) {
-		assert ( res == NULL );
 		return tailObj;
 	    } else {
 		const char *str = TclGetString(tailObj);
 
 		if (tclPlatform == TCL_PLATFORM_WINDOWS) {
 		    if (strchr(str, '\\') == NULL) {
-			assert ( res == NULL );
 			return tailObj;
 		    }
 		}
 	    }
 	}
+    }
+
+    assert ( res == NULL );
+
+    for (i = 0; i < elements; i++) {
+	int driveNameLength, strEltLen, length;
+	Tcl_PathType type;
+	char *strElt, *ptr;
+	Tcl_Obj *driveName = NULL;
+	Tcl_Obj *elt = objv[i];
+
 	strElt = Tcl_GetStringFromObj(elt, &strEltLen);
 	driveNameLength = 0;
 	type = TclGetPathType(elt, &fsPtr, &driveNameLength, &driveName);
