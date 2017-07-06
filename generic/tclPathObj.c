@@ -13,6 +13,7 @@
 
 #include "tclInt.h"
 #include "tclFileSystem.h"
+#include <assert.h>
 
 /*
  * Prototypes for functions defined later in this file.
@@ -849,11 +850,17 @@ TclJoinPath(
     int elements,
     Tcl_Obj * const objv[])
 {
-    Tcl_Obj *res;
+    Tcl_Obj *res = NULL;
     int i;
     const Tcl_Filesystem *fsPtr = NULL;
 
-    res = NULL;
+    assert ( elements >= 0 );
+
+    if (elements == 0) {
+	return Tcl_NewObj();
+    }
+
+    assert ( elements > 0 );
 
     for (i = 0; i < elements; i++) {
 	int driveNameLength, strEltLen, length;
@@ -893,9 +900,7 @@ TclJoinPath(
 		     * the base itself is just fine!
 		     */
 
-		    if (res != NULL) {
-			TclDecrRefCount(res);
-		    }
+		    assert ( res == NULL );
 		    return elt;
 		}
 
@@ -918,9 +923,8 @@ TclJoinPath(
 
 		    if ((tclPlatform != TCL_PLATFORM_WINDOWS)
 			    || (strchr(Tcl_GetString(elt), '\\') == NULL)) {
-			if (res != NULL) {
-			    TclDecrRefCount(res);
-			}
+
+			assert ( res == NULL );
 
 			if (PATHFLAGS(elt)) {
 			    return TclNewFSPathObj(elt, str, len);
@@ -940,18 +944,14 @@ TclJoinPath(
 		 * more general code below handle things.
 		 */
 	    } else if (tclPlatform == TCL_PLATFORM_UNIX) {
-		if (res != NULL) {
-		    TclDecrRefCount(res);
-		}
+		assert ( res == NULL );
 		return tailObj;
 	    } else {
 		const char *str = TclGetString(tailObj);
 
 		if (tclPlatform == TCL_PLATFORM_WINDOWS) {
 		    if (strchr(str, '\\') == NULL) {
-			if (res != NULL) {
-			    TclDecrRefCount(res);
-			}
+			assert ( res == NULL );
 			return tailObj;
 		    }
 		}
@@ -1087,6 +1087,7 @@ TclJoinPath(
 
 		if (sep != NULL) {
 		    separator = TclGetString(sep)[0];
+		    Tcl_DecrRefCount(sep);
 		}
 		/* Safety check in case the VFS driver caused sharing */
 		if (Tcl_IsShared(res)) {
@@ -1122,9 +1123,7 @@ TclJoinPath(
 	    Tcl_SetObjLength(res, length);
 	}
     }
-    if (res == NULL) {
-	res = Tcl_NewObj();
-    }
+    assert ( res != NULL );
     return res;
 }
 
