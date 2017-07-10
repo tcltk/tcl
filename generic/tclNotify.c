@@ -1077,6 +1077,18 @@ SetUpEventSources(
     }
     tsdPtr->inTraversal--;
 
+    /*
+     * If we've some retarded events (from last event-cycle), wait non-blocking.
+     */
+    if ( tsdPtr->firstRetardEv
+      && ( !tsdPtr->blockTimeSet 
+	|| tsdPtr->blockTimeServLev < tsdPtr->serviceLevel )
+    ) {
+	tsdPtr->blockTime.sec = 0;
+	tsdPtr->blockTime.usec = 0;
+	tsdPtr->blockTimeSet = 1;
+    }
+
     return res;
 }
 
