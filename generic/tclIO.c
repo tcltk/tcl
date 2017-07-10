@@ -156,7 +156,7 @@ static void		PreserveChannelBuffer(ChannelBuffer *bufPtr);
 static void		ReleaseChannelBuffer(ChannelBuffer *bufPtr);
 static int		IsShared(ChannelBuffer *bufPtr);
 static void		ChannelFree(Channel *chanPtr);
-static void		ChannelTimerProc(ClientData clientData);
+static int		ChannelScheduledProc(Tcl_Event *evPtr, int flags);
 static int		ChanRead(Channel *chanPtr, char *dst, int dstSize);
 static int		CheckChannelErrors(ChannelState *statePtr,
 			    int direction);
@@ -1693,7 +1693,7 @@ Tcl_CreateChannel(
     statePtr->interestMask	= 0;
     statePtr->scriptRecordPtr	= NULL;
     statePtr->bufSize		= CHANNELBUFFER_DEFAULT_SIZE;
-    statePtr->timer		= NULL;
+    statePtr->schedEvent	= NULL;
     statePtr->csPtrR		= NULL;
     statePtr->csPtrW		= NULL;
     statePtr->outputStage	= NULL;
@@ -3081,10 +3081,17 @@ CloseChannel(
     }
 
     /*
-     * Cancel any outstanding timer.
+     * Cancel any outstanding scheduled event.
      */
 
-    Tcl_DeleteTimerHandler(statePtr->timer);
+    if (statePtr->schedEvent) {
+	/* reset channel in event (cancel delayed) */
+	*(Channel**)(statePtr->schedEvent+1) = NULL;
+#if 0
+	TclpCancelEvent(statePtr->schedEvent);
+#endif
+	statePtr->schedEvent = NULL;
+    }
 
     /*
      * Mark the channel as deleted by clearing the type structure.
@@ -3877,10 +3884,17 @@ Tcl_ClearChannelHandlers(
     chanPtr = statePtr->topChanPtr;
 
     /*
-     * Cancel any outstanding timer.
+     * Cancel any outstanding scheduled event.
      */
 
-    Tcl_DeleteTimerHandler(statePtr->timer);
+    if (statePtr->schedEvent) {
+	/* reset channel in event (cancel delayed) */
+	*(Channel**)(statePtr->schedEvent+1) = NULL;
+#if 0
+	TclpCancelEvent(statePtr->schedEvent);
+#endif
+	statePtr->schedEvent = NULL;
+    }
 
     /*
      * Remove any references to channel handlers for this channel that may be
@@ -4816,7 +4830,7 @@ Tcl_GetsObj(
     /*
      * We didn't get a complete line so we need to indicate to UpdateInterest
      * that the gets blocked. It will wait for more data instead of firing a
-     * timer, avoiding a busy wait. This is where we are assuming that the
+     * event, avoiding a busy wait. This is where we are assuming that the
      * next operation is a gets. No more file events will be delivered on this
      * channel until new data arrives or some operation is performed on the
      * channel (e.g. gets, read, fconfigure) that changes the blocking state.
@@ -5101,7 +5115,7 @@ TclGetsObjBinary(
     /*
      * We didn't get a complete line so we need to indicate to UpdateInterest
      * that the gets blocked. It will wait for more data instead of firing a
-     * timer, avoiding a busy wait. This is where we are assuming that the
+     * event, avoiding a busy wait. This is where we are assuming that the
      * next operation is a gets. No more file events will be delivered on this
      * channel until new data arrives or some operation is performed on the
      * channel (e.g. gets, read, fconfigure) that changes the blocking state.
@@ -8397,7 +8411,7 @@ Tcl_NotifyChannel(
  *	None.
  *
  * Side effects:
- *	May schedule a timer or driver handler.
+ *	May schedule a event or driver handler.
  *
  *----------------------------------------------------------------------
  */
@@ -8426,7 +8440,7 @@ UpdateInterest(
 
     /*
      * If there is data in the input queue, and we aren't waiting for more
-     * data, then we need to schedule a timer so we don't block in the
+     * data, then we need to schedule an event so we don't block in the
      * notifier. Also, cancel the read interest so we don't get duplicate
      * events.
      */
@@ -8455,7 +8469,7 @@ UpdateInterest(
 	     *
 	     * - Tcl drops READABLE here, because it has data in its own
 	     *	 buffers waiting to be read by the extension.
-	     * - A READABLE event is syntesized via timer.
+	     * - A READABLE event is syntesized via tcl-event (on queue tail).
 	     * - The OS still reports the EXCEPTION condition on the file.
 	     * - And the extension gets the EXCPTION event first, and handles
 	     *	 this as EOF.
@@ -8477,9 +8491,13 @@ UpdateInterest(
 
 	    mask &= ~TCL_EXCEPTION;
 
-	    if (!statePtr->timer) {
-		statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-                        ChannelTimerProc, chanPtr);
+	    if (!statePtr->schedEvent) {
+		Tcl_Event *evPtr = (Tcl_Event *)ckalloc(
+			sizeof(Tcl_Event) + sizeof(Channel*));
+		*(Channel**)(evPtr+1) = chanPtr;
+		evPtr->proc = ChannelScheduledProc;
+		statePtr->schedEvent = evPtr;
+		Tcl_QueueEvent(evPtr, TCL_QUEUE_TAIL);
 	    }
 	}
     }
@@ -8489,9 +8507,9 @@ UpdateInterest(
 /*
  *----------------------------------------------------------------------
  *
- * ChannelTimerProc --
+ * ChannelScheduledProc --
  *
- *	Timer handler scheduled by UpdateInterest to monitor the channel
+ *	Event handler scheduled by UpdateInterest to monitor the channel
  *	buffers until they are empty.
  *
  * Results:
@@ -8503,32 +8521,41 @@ UpdateInterest(
  *----------------------------------------------------------------------
  */
 
-static void
-ChannelTimerProc(
-    ClientData clientData)
+static int
+ChannelScheduledProc(
+    Tcl_Event *evPtr, int flags)
 {
-    Channel *chanPtr = clientData;
-    ChannelState *statePtr = chanPtr->state;
-				/* State info for channel */
+    Channel *chanPtr = *(Channel**)(evPtr+1);
+    ChannelState *statePtr; /* State info for channel */
+
+    if (!chanPtr) { /* channel deleted */
+	return 1;
+    }
+
+    statePtr = chanPtr->state;
 
     if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
 	    && (statePtr->interestMask & TCL_READABLE)
 	    && (statePtr->inQueueHead != NULL)
 	    && IsBufferReady(statePtr->inQueueHead)) {
+
 	/*
-	 * Restart the timer in case a channel handler reenters the event loop
+	 * Prolong the event in case a channel handler reenters the event loop
 	 * before UpdateInterest gets called by Tcl_NotifyChannel.
 	 */
 
-	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-                ChannelTimerProc,chanPtr);
+	statePtr->schedEvent->proc = ChannelScheduledProc; /* reattach to tail */
+
 	Tcl_Preserve(statePtr);
 	Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
 	Tcl_Release(statePtr);
-    } else {
-	statePtr->timer = NULL;
-	UpdateInterest(chanPtr);
+
+	return 1;
     }
+
+    statePtr->schedEvent = NULL; /* event done. */
+    UpdateInterest(chanPtr);
+    return 1;
 }
 
 /*
@@ -8983,9 +9010,9 @@ Tcl_FileEventObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * ZeroTransferTimerProc --
+ * ZeroTransferEventProc --
  *
- *	Timer handler scheduled by TclCopyChannel so that -command is
+ *	Event handler scheduled by TclCopyChannel so that -command is
  *	called asynchronously even when -size is 0.
  *
  * Results:
@@ -8997,14 +9024,17 @@ Tcl_FileEventObjCmd(
  *----------------------------------------------------------------------
  */
 
-static void
-ZeroTransferTimerProc(
-    ClientData clientData)
+static int
+ZeroTransferEventProc(
+    Tcl_Event *evPtr, int flags)
 {
     /* calling CopyData with mask==0 still implies immediate invocation of the
      *  -command callback, and completion of the fcopy.
      */
+    ClientData clientData = *(ClientData*)(evPtr+1);
     CopyData(clientData, 0);
+
+    return 1;
 }
 
 /*
@@ -9149,7 +9179,11 @@ TclCopyChannel(
      */
 
     if ((nonBlocking == CHANNEL_NONBLOCKING) && (toRead == 0)) {
-        Tcl_CreateTimerHandler(0, ZeroTransferTimerProc, csPtr);
+	Tcl_Event *evPtr = (Tcl_Event *)ckalloc(
+		sizeof(Tcl_Event) + sizeof(ClientData*));
+	*(ClientData*)(evPtr+1) = csPtr;
+	evPtr->proc = ZeroTransferEventProc;
+	Tcl_QueueEvent(evPtr, TCL_QUEUE_TAIL);
         return 0;
     }
 

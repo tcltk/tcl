@@ -3590,24 +3590,31 @@ test interp-36.7 {SlaveBgerror sets error handler of slave [1999035]} -setup {
     interp create slave
     slave alias handler handler
     slave bgerror handler
-    variable result {untouched}
+    variable result {}
     proc handler {args} {
-        variable result
-        set result [lindex $args 0]
+	variable result
+	lappend result [lindex $args 0]
     }
 } -body {
-    slave eval {
-        variable done {}
-        after 0 error foo
-        after 10 [list ::set [namespace which -variable done] {}]
-        vwait [namespace which -variable done]
+    # because bgerror executed in background and it is idle-event, give enough 
+    # time to process it (resp. wait until last idle event is done).
+    slave eval {; # via vwait
+	after 0 error foo-1
+	after 10 {after idle {set done {}}}
+	vwait done
+    }
+    lappend result between
+    slave eval {; # via update
+	after 1 error foo-2
+	after 10
+	update
     }
     set result
 } -cleanup {
     variable result {}
     unset -nocomplain result
     interp delete slave
-} -result foo
+} -result {foo-1 between foo-2}
 
 test interp-37.1 {safe interps and min() and max(): Bug 2895741} -setup {
     catch {interp delete a}

@@ -423,6 +423,38 @@ foo
     ("after" script)
 }
 
+test event-7.10 {after at - absolute time} {
+    set result {}
+    # 1st test simple delay (and mix generation / recursive processing)
+    set attm [expr {[clock milliseconds]/1000.0 + 0.150}]
+    after 0 {lappend result 1}
+    after 100 {
+    	update; # this don't catch event 3
+    	lappend result 2a
+    	after at $attm; # delay to 150ms from start
+    	update; # this still don't catch event 3 also
+    	lappend result 2b
+    	after at [expr {$attm + 0.100}]; # delay to 250ms from start
+    	update; # this should catch event 3
+    	lappend result 2c
+    }
+    after 200 {lappend result 3; set a done}
+    vwait a
+    # 2nd test events "at" (mix due-times between relative/absolute events)
+    lappend result --
+    set sttm [expr {[clock milliseconds]/1000.0}]
+    after 200 {lappend result 4; set a done}
+    after 120 {lappend result 5}
+    after 40 {lappend result 6}
+    after at [expr {$sttm+0.160}] {lappend result at-1}
+    after at [expr {$sttm+0.080}] {lappend result at-2}
+    after at [expr {$sttm+0.005}] {lappend result at-3}
+    after 2000 {lappend result [set a timeout]}
+    after 0 {lappend result 7}
+    vwait a
+    set result
+} {1 2a 2b 3 2c -- 7 at-3 6 at-2 5 at-1 4}
+
 # someday : add a test checking that when there is no bgerror, an error msg
 # goes to stderr ideally one would use sub interp and transfer a fake stderr
 # to it, unfortunatly the current interp tcl API does not allow that. The
@@ -509,10 +541,10 @@ test event-10.1 {Tcl_Exit procedure} {stdio} {
 
 test event-11.1 {Tcl_VwaitCmd procedure} -returnCodes error -body {
     vwait
-} -result {wrong # args: should be "vwait name"}
+} -result {wrong # args: should be "vwait ?options? ?timeout? name"}
 test event-11.2 {Tcl_VwaitCmd procedure} -returnCodes error -body {
     vwait a b
-} -result {wrong # args: should be "vwait name"}
+} -result {bad option "a": must be -idle, -noidle, -timer, -notimer, -file, -nofile, -window, -nowindow, -async, -noasync, -nowait, -wait, or idletasks}
 test event-11.3 {Tcl_VwaitCmd procedure} -setup {
     catch {unset x}
 } -body {
@@ -539,6 +571,155 @@ test event-11.4 {Tcl_VwaitCmd procedure} -setup {
 	after cancel $i
     }
 } -result {{} x-done y-done before q-done}
+test event-11.4.0 {vwait - interp limit precedence} {} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set result {}
+    set i [interp create]
+    $i bgerror {lappend errors}; # prevent stdout background errors;
+
+    # limit should be exceeded (wait infinite):
+    $i limit time -milliseconds 0
+    lappend result 1. [catch {$i eval {vwait x}} msg] $msg
+
+    # no limit in between:
+    $i limit time -seconds {} -milliseconds {}
+    lappend result 2. [catch {$i eval {vwait 0 x}} msg] $msg
+
+    # limit should be exceeded: (wait infinite)
+    $i limit time -milliseconds 0
+    lappend result 3. [catch {$i eval {vwait x}} msg] $msg
+    # limit should be exceeded (wait too long - 1000ms):
+    $i limit time -milliseconds 0
+    lappend result 4. [catch {$i eval {vwait 1000 x}} msg] $msg
+
+    set tout [clock seconds]; incr tout 10
+    # wait timeout (before limit):
+    $i limit time -seconds $tout
+    lappend result 5. [catch {$i eval {vwait 0 x}} msg] $msg
+    # wait timeout (before limit):
+    $i limit time -seconds $tout
+    lappend result 6. [catch {$i eval {vwait 10 x}} msg] $msg
+
+    # wait successful (before limit):
+    $i limit time -seconds $tout
+    lappend result 7. [catch {$i eval {after 0 {set x ""}; vwait 10 x}} msg] $msg
+
+    interp delete $i
+    set result
+} [list \
+    1. 1 {limit exceeded} \
+    2. 0 0 \
+    3. 1 {limit exceeded} \
+    4. 1 {limit exceeded} \
+    5. 0 0 \
+    6. 0 0 \
+    7. 0 1 \
+]
+
+test event-11.4.0 {vwait conditional with timeout (bypass timer)} {} {
+    set x {}
+    after 1000 {lappend x "error-too-slow"}
+    after 0 {lappend x 1-timer}
+    after 1 {lappend x 2-timer}
+    after idle {lappend x 3-idle}
+    vwait -async 50 x; # ignore all except async (timer also)
+    lappend x 4-async
+    vwait -idle 50 x; # ignore all except idle (timer also)
+    lappend x 5-idle
+    after idle {lappend x 6-idle}
+    vwait 100 x; # now we accept timer events
+    lappend x 7-idle
+    vwait 100 x;
+    # cleanup:
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x
+} {4-async 3-idle 5-idle 1-timer 2-timer 7-idle 6-idle}
+
+test event-11.4.1 {vwait with timeout} {} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set z {}
+    set x {}
+    # success cases:
+    after 0 {lappend z 0}
+    after 50 {lappend x 1}
+    after 50 {lappend x 2}
+    after 250 {lappend x 3}
+    after 1000 {lappend x "error-too-slow"}
+    vwait 0 x; # no-wait
+    lappend z $x; # 0 {} - (x still empty)
+    vwait 200 x; # wait up-to 200ms
+    lappend z $x; # 0 {} {1 2}
+    vwait x; # infinite wait
+    lappend z $x; # 0 {} {1 2} {1 2 3}
+    foreach i [after info] {
+	after cancel $i
+    }
+    set z
+} {0 {} {1 2} {1 2 3}}
+
+test event-11.4.2 {cancel} {} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x {}
+    # success cases:
+    after 10 {lappend x 1}
+    after 10 {lappend x 2}
+    after 10 {lappend x 3}
+    # cancel via object representation (4-6) and searching by id (7-9):
+    foreach i [list \
+	[after 0 {lappend x 4-unexpected}] \
+	[after 5 {lappend x 5-unexpected}] \
+	[after 10 {lappend x 6-unexpected}] \
+	[string trim " [after 0 {lappend x 7-unexpected}] "] \
+	[string trim " [after 5 {lappend x 8-unexpected}] "] \
+	[string trim " [after 10 {lappend x 9-unexpected}] "] \
+    ] {
+	after cancel $i
+    }
+    after 20 {set y done}
+    list [vwait y] $x $y
+} {{} {1 2 3} done}
+
+test event-11.4.3 {cancel twice and info} {} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x {}
+    # success cases:
+    after 10 {lappend x 1}
+    after 10 {lappend x 2}
+    after 10 {lappend x 3}
+    # cancel via object representation (4-6) and searching by id (7-9):
+    foreach i [list \
+	[after 0 {lappend x 4-unexpected}] \
+	[after 5 {lappend x 5-unexpected}] \
+	[after 10 {lappend x 6-unexpected}] \
+	[string trim " [after 0 {lappend x 7-unexpected}] "] \
+	[string trim " [after 5 {lappend x 8-unexpected}] "] \
+	[string trim " [after 10 {lappend x 9-unexpected}] "] \
+    ] {
+	after cancel $i
+	# just to test possible segfault:
+	after cancel $i
+	if {![catch {after info $i} i]} {; # unexpected (event doesn't exist)
+	    error "\"after info\" returns \"$i\" - should be an error"
+	}
+    }
+    after 20 {set y done}
+    list [vwait y] $x $y
+} {{} {1 2 3} done}
+
+foreach i [after info] {
+    after cancel $i
+}
+
 test event-11.5 {Tcl_VwaitCmd procedure: round robin scheduling, 2 sources} -setup {
     set test1file [makeFile "" test1]
 } -constraints {socket} -body {
@@ -612,12 +793,9 @@ test event-11.8 {Bug 16828b3744} -setup {
     A destroy
 } -result {}
 
-test event-12.1 {Tcl_UpdateCmd procedure} -returnCodes error -body {
-    update a b
-} -result {wrong # args: should be "update ?idletasks?"}
 test event-12.2 {Tcl_UpdateCmd procedure} -returnCodes error -body {
     update bogus
-} -result {bad option "bogus": must be idletasks}
+} -result {bad option "bogus": must be -idle, -noidle, -timer, -notimer, -file, -nofile, -window, -nowindow, -async, -noasync, -nowait, -wait, or idletasks}
 test event-12.3 {Tcl_UpdateCmd procedure} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -656,6 +834,62 @@ test event-12.4 {Tcl_UpdateCmd procedure} -setup {
 	after cancel $i
     }
 } -result {x-done before z-done}
+
+test event-12.5 {update -idle, update -noidle} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x {}
+    after idle {lappend x idle}
+    update -noidle
+    after 0 {lappend x 0}
+    update -noidle
+    after 50 {lappend x 1}
+    update -noidle
+    lappend x 2
+    update -idle
+    lappend x 3
+    after idle {lappend x idle}
+    after 0 {lappend x 4}
+    after 0 {lappend x 5}
+    update -idle
+    lappend x 6
+    update
+    lappend x res:[vwait 500 x]
+    set x
+} {0 2 idle 3 idle 6 4 5 1 res:1}
+
+test event-12.6 {update -timer, update -notimer} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x {}
+    after idle {lappend x idle.0}
+    update -timer
+    after 0 {lappend x 0a}
+    update -notimer
+    after idle {
+    	lappend x idle.1a;
+	after 0 {lappend x 0b};
+	after idle {lappend x idle.1b}
+    }
+    after 50 {lappend x 1; after idle {lappend x idle.2}}
+    update -timer
+    lappend x 2
+    update -timer -idle
+    lappend x 3
+    after idle {lappend x idle.3}
+    after 0 {lappend x 4}
+    after 0 {lappend x 5}
+    update -timer -idle
+    lappend x 6
+    update
+    lappend x res:[vwait 500 x]
+    update -noidle
+    lappend x 7
+    update
+    set x
+} {idle.0 0a 2 idle.1a 0b idle.1b 3 4 5 idle.3 6 1 res:1 7 idle.2}
 
 test event-13.1 {Tcl_WaitForFile procedure, readable} -setup {
     foreach i [after info] {

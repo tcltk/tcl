@@ -3276,6 +3276,8 @@ Tcl_MakeSafe(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_LimitExceeded
+ 
 int
 Tcl_LimitExceeded(
     Tcl_Interp *interp)
@@ -3747,7 +3749,7 @@ TclLimitRemoveAllHandlers(
      */
 
     if (iPtr->limit.timeEvent != NULL) {
-	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
+	TclpDeleteTimerEvent(iPtr->limit.timeEvent);
 	iPtr->limit.timeEvent = NULL;
     }
 }
@@ -3917,14 +3919,25 @@ Tcl_LimitGetCommands(
 
     return iPtr->limit.cmdCount;
 }
+
+static void
+TimeLimitDeleteCallback(
+    ClientData clientData)
+{
+    Interp *iPtr = clientData;
+    iPtr->limit.timeEvent = NULL;
+}
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_LimitSetTime --
+ * Tcl_LimitSetTime --, TclpLimitSetTimeOffs --
  *
  *	Set the time limit for an interpreter by copying it from the value
  *	pointed to by the timeLimitPtr argument.
+ *
+ *	TclpLimitSetTimeOffs opposite to Tcl_LimitSetTime set the limit as
+ *	relative time.
  *
  * Results:
  *	None.
@@ -3943,22 +3956,52 @@ Tcl_LimitSetTime(
     Tcl_Time *timeLimitPtr)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Time nextMoment;
+    Tcl_WideInt nextMoment;
 
     memcpy(&iPtr->limit.time, timeLimitPtr, sizeof(Tcl_Time));
+    nextMoment = TCL_TIME_TO_USEC(*timeLimitPtr) + 10;
     if (iPtr->limit.timeEvent != NULL) {
-	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
+	iPtr->limit.timeEvent = TclpProlongTimerEvent(iPtr->limit.timeEvent,
+		nextMoment, TCL_TMREV_AT);
+	if (iPtr->limit.timeEvent) {
+	    return;
+	}
     }
-    nextMoment.sec = timeLimitPtr->sec;
-    nextMoment.usec = timeLimitPtr->usec+10;
-    if (nextMoment.usec >= 1000000) {
-	nextMoment.sec++;
-	nextMoment.usec -= 1000000;
-    }
-    iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandler(&nextMoment,
-	    TimeLimitCallback, interp);
+    iPtr->limit.timeEvent = TclpCreateTimerEvent(nextMoment,
+	    TimeLimitCallback, TimeLimitDeleteCallback, 0, TCL_TMREV_AT);
+    iPtr->limit.timeEvent->clientData = interp;
     iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
 }
+#if 0
+void
+TclpLimitSetTimeOffs(
+    Tcl_Interp *interp,
+    Tcl_WideInt timeOffs)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    Tcl_GetTime(&iPtr->limit.time);
+    iPtr->limit.time.sec += timeOffs / 1000000;
+    iPtr->limit.time.usec += timeOffs % 1000000;
+    if (iPtr->limit.time.usec > 1000000) {
+    	iPtr->limit.time.usec -= 1000000;
+    	iPtr->limit.time.sec++;
+    }
+    timeOffs += 10;
+    /* we should use relative time (because of the timeout meaning) */
+    if (iPtr->limit.timeEvent != NULL) {
+	iPtr->limit.timeEvent = TclpProlongTimerEvent(iPtr->limit.timeEvent,
+		timeOffs, 0);
+	if (iPtr->limit.timeEvent) {
+	    return;
+	}
+    }
+    iPtr->limit.timeEvent = TclpCreateTimerEvent(timeOffs,
+	    TimeLimitCallback, TimeLimitDeleteCallback, 0, 0);
+    iPtr->limit.timeEvent->clientData = interp;
+    iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
+}
+#endif
 
 /*
  *----------------------------------------------------------------------

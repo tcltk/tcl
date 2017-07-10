@@ -759,6 +759,7 @@ typedef void (Tcl_PanicProc) (const char *format, ...);
 typedef void (Tcl_TcpAcceptProc) (ClientData callbackData, Tcl_Channel chan,
 	char *address, int port);
 typedef void (Tcl_TimerProc) (ClientData clientData);
+typedef void (Tcl_TimerDeleteProc) _ANSI_ARGS_((ClientData clientData));
 typedef int (Tcl_SetFromAnyProc) (Tcl_Interp *interp, struct Tcl_Obj *objPtr);
 typedef void (Tcl_UpdateStringProc) (struct Tcl_Obj *objPtr);
 typedef char * (Tcl_VarTraceProc) (ClientData clientData, Tcl_Interp *interp,
@@ -1363,6 +1364,7 @@ typedef struct {
  * events:
  */
 
+#define TCL_ASYNC_EVENTS	(1<<0)
 #define TCL_DONT_WAIT		(1<<1)
 #define TCL_WINDOW_EVENTS	(1<<2)
 #define TCL_FILE_EVENTS		(1<<3)

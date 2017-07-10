@@ -39,6 +39,15 @@ typedef struct EventSource {
 } EventSource;
 
 /*
+ * Used for performance purposes, threshold to bypass check source (if don't wait)
+ * Value should be approximately correspond 100-ns ranges, if the wide-clicks
+ * supported, it is more precise so e. g. 5 is ca. 0.5 microseconds (500-ns).
+ */
+#ifndef TCL_CHECK_EVENT_SOURCE_THRESHOLD
+    #define TCL_CHECK_EVENT_SOURCE_THRESHOLD 5
+#endif
+
+/*
  * The following structure keeps track of the state of the notifier on a
  * per-thread basis. The first three elements keep track of the event queue.
  * In addition to the first (next to be serviced) and last events in the
@@ -56,6 +65,8 @@ typedef struct ThreadSpecificData {
     Tcl_Event *lastEventPtr;	/* Last pending event, or NULL if none. */
     Tcl_Event *markerEventPtr;	/* Last high-priority event in queue, or NULL
 				 * if none. */
+    Tcl_Event *timerMarkerPtr;	/* Weak pointer to last event in the queue, 
+				 * before timer event generation */
     Tcl_Mutex queueMutex;	/* Mutex to protect access to the previous
 				 * three fields. */
     int serviceMode;		/* One of TCL_SERVICE_NONE or
@@ -77,6 +88,15 @@ typedef struct ThreadSpecificData {
 				/* Next notifier in global list of notifiers.
 				 * Access is controlled by the listLock global
 				 * mutex. */
+#if TCL_CHECK_EVENT_SOURCE_THRESHOLD
+				/* Last "time" source checked, used as threshold
+				 * to avoid checking for events too often */
+  #ifndef TCL_WIDE_CLICKS
+    unsigned long lastCheckClicks;
+  #else
+    Tcl_WideInt lastCheckClicks;
+  #endif
+#endif
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -473,6 +493,12 @@ QueueEvent(
 	    tsdPtr->lastEventPtr = evPtr;
 	}
 	tsdPtr->firstEventPtr = evPtr;
+
+	/* move timer event hereafter */
+	if (tsdPtr->timerMarkerPtr == INT2PTR(-1)) {
+	    tsdPtr->timerMarkerPtr = evPtr;
+	}
+
     } else if (position == TCL_QUEUE_MARK) {
 	/*
 	 * Insert the event after the current marker event and advance the
@@ -490,10 +516,45 @@ QueueEvent(
 	if (evPtr->nextPtr == NULL) {
 	    tsdPtr->lastEventPtr = evPtr;
 	}
+
+	/* move timer event hereafter */
+	if (tsdPtr->timerMarkerPtr == INT2PTR(-1)) {
+	    tsdPtr->timerMarkerPtr = evPtr;
+	}
     }
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 }
 
+static void
+UnlinkEvent(
+    ThreadSpecificData *tsdPtr,
+    Tcl_Event *evPtr,
+    Tcl_Event *prevPtr) {
+    /*
+     * Unlink it.
+     */
+
+    if (prevPtr == NULL) {
+	tsdPtr->firstEventPtr = evPtr->nextPtr;
+    } else {
+	prevPtr->nextPtr = evPtr->nextPtr;
+    }
+
+    /*
+     * Update 'last' and 'marker' events if either has been deleted.
+     */
+
+    if (evPtr->nextPtr == NULL) {
+	tsdPtr->lastEventPtr = prevPtr;
+    }
+    if (tsdPtr->markerEventPtr == evPtr) {
+	tsdPtr->markerEventPtr = prevPtr;
+    }
+    if (tsdPtr->timerMarkerPtr == evPtr) {
+	tsdPtr->timerMarkerPtr = prevPtr ? prevPtr : INT2PTR(-1);
+    }
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -522,7 +583,6 @@ Tcl_DeleteEvents(
     Tcl_Event *prevPtr;		/* Pointer to evPtr's predecessor, or NULL if
 				 * evPtr designates the first event in the
 				 * queue for the thread. */
-    Tcl_Event *hold;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
@@ -535,44 +595,69 @@ Tcl_DeleteEvents(
     prevPtr = NULL;
     evPtr = tsdPtr->firstEventPtr;
     while (evPtr != NULL) {
+	Tcl_Event *nextPtr = evPtr->nextPtr;
 	if (proc(evPtr, clientData) == 1) {
 	    /*
 	     * This event should be deleted. Unlink it.
 	     */
 
-	    if (prevPtr == NULL) {
-		tsdPtr->firstEventPtr = evPtr->nextPtr;
-	    } else {
-		prevPtr->nextPtr = evPtr->nextPtr;
-	    }
-
-	    /*
-	     * Update 'last' and 'marker' events if either has been deleted.
-	     */
-
-	    if (evPtr->nextPtr == NULL) {
-		tsdPtr->lastEventPtr = prevPtr;
-	    }
-	    if (tsdPtr->markerEventPtr == evPtr) {
-		tsdPtr->markerEventPtr = prevPtr;
-	    }
+	    UnlinkEvent(tsdPtr, evPtr, prevPtr);
 
 	    /*
 	     * Delete the event data structure.
 	     */
 
-	    hold = evPtr;
-	    evPtr = evPtr->nextPtr;
-	    ckfree(hold);
+	    ckfree(evPtr);
 	} else {
 	    /*
 	     * Event is to be retained.
 	     */
 
 	    prevPtr = evPtr;
-	    evPtr = evPtr->nextPtr;
+	}
+	evPtr = nextPtr;
+    }
+    Tcl_MutexUnlock(&(tsdPtr->queueMutex));
+}
+
+void
+TclpCancelEvent(
+    Tcl_Event *evPtr)		/* Event to remove from queue. */
+{
+    Tcl_Event *prevPtr = NULL;
+
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    Tcl_MutexLock(&(tsdPtr->queueMutex));
+
+    /*
+     * Search event to unlink from queue.
+     */
+
+    if (evPtr != tsdPtr->firstEventPtr) {
+	for (prevPtr = tsdPtr->firstEventPtr;
+		prevPtr && prevPtr->nextPtr != evPtr;
+		prevPtr = prevPtr->nextPtr) {
+	    /* Empty loop body. */
+	}
+	if (!prevPtr) {
+	    evPtr = NULL; /* not in queue (already removed) */
 	}
     }
+
+    if (evPtr) {
+	/*
+	 * Unlink it.
+	 */
+
+	UnlinkEvent(tsdPtr, evPtr, prevPtr);
+
+	/*
+	 * Delete the event data structure.
+	 */
+	ckfree((char *) evPtr);
+    }
+
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 }
 
@@ -605,21 +690,10 @@ Tcl_ServiceEvent(
 				 * matching this will be skipped for
 				 * processing later. */
 {
-    Tcl_Event *evPtr, *prevPtr;
+    Tcl_Event *evPtr, *prevPtr = NULL;
     Tcl_EventProc *proc;
     int result;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-    /*
-     * Asynchronous event handlers are considered to be the highest priority
-     * events, and so must be invoked before we process events on the event
-     * queue.
-     */
-
-    if (Tcl_AsyncReady()) {
-	(void) Tcl_AsyncInvoke(NULL, 0);
-	return 1;
-    }
 
     /*
      * No event flags is equivalent to TCL_ALL_EVENTS.
@@ -630,13 +704,51 @@ Tcl_ServiceEvent(
     }
 
     /*
+     * Asynchronous event handlers are considered to be the highest priority
+     * events, and so must be invoked before we process events on the event
+     * queue.
+     */
+
+    if ((flags & TCL_ASYNC_EVENTS)) {
+	if (Tcl_AsyncReady()) {
+	    (void) Tcl_AsyncInvoke(NULL, 0);
+	    return 1;
+	}
+	/* Async only */
+	if ((flags & TCL_ALL_EVENTS) == TCL_ASYNC_EVENTS) {
+	    return 0;
+	}
+    }
+
+    /* Fast bypass case */
+    if ( !tsdPtr->firstEventPtr /* no other events */
+      || ((flags & TCL_ALL_EVENTS) == TCL_TIMER_EVENTS) /* timers only */
+    ) {
+	goto timer;
+    }
+
+    /*
+     * If timer marker reached, process timer events now.
+     */
+    if ((flags & TCL_TIMER_EVENTS) && (tsdPtr->timerMarkerPtr == INT2PTR(-1))) {
+	goto processTimer;
+    }
+
+    /*
      * Loop through all the events in the queue until we find one that can
      * actually be handled.
      */
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
-    for (evPtr = tsdPtr->firstEventPtr; evPtr != NULL;
-	    evPtr = evPtr->nextPtr) {
+    for (evPtr = tsdPtr->firstEventPtr;
+	 evPtr != NULL && tsdPtr->timerMarkerPtr != INT2PTR(-1);
+	 evPtr = evPtr->nextPtr
+    ) {
+	
+	if (tsdPtr->timerMarkerPtr == evPtr) {
+	    tsdPtr->timerMarkerPtr = INT2PTR(-1); /* timer marker reached */
+	}
+
 	/*
 	 * Call the handler for the event. If it actually handles the event
 	 * then free the storage for the event. There are two tricky things
@@ -655,6 +767,7 @@ Tcl_ServiceEvent(
 
 	proc = evPtr->proc;
 	if (proc == NULL) {
+	    prevPtr = evPtr;
 	    continue;
 	}
 	evPtr->proc = NULL;
@@ -671,38 +784,48 @@ Tcl_ServiceEvent(
 	Tcl_MutexLock(&(tsdPtr->queueMutex));
 
 	if (result) {
+
 	    /*
 	     * The event was processed, so remove it from the queue.
 	     */
 
-	    if (tsdPtr->firstEventPtr == evPtr) {
-		tsdPtr->firstEventPtr = evPtr->nextPtr;
-		if (evPtr->nextPtr == NULL) {
-		    tsdPtr->lastEventPtr = NULL;
-		}
-		if (tsdPtr->markerEventPtr == evPtr) {
-		    tsdPtr->markerEventPtr = NULL;
-		}
-	    } else {
+	    prevPtr = NULL;
+	    if (evPtr != tsdPtr->firstEventPtr) {
 		for (prevPtr = tsdPtr->firstEventPtr;
 			prevPtr && prevPtr->nextPtr != evPtr;
 			prevPtr = prevPtr->nextPtr) {
 		    /* Empty loop body. */
 		}
-		if (prevPtr) {
-		    prevPtr->nextPtr = evPtr->nextPtr;
-		    if (evPtr->nextPtr == NULL) {
-			tsdPtr->lastEventPtr = prevPtr;
-		    }
-		    if (tsdPtr->markerEventPtr == evPtr) {
-			tsdPtr->markerEventPtr = prevPtr;
-		    }
-		} else {
+		if (!prevPtr) {
 		    evPtr = NULL;
 		}
 	    }
 	    if (evPtr) {
-		ckfree(evPtr);
+		/* Detach event from queue */
+		UnlinkEvent(tsdPtr, evPtr, prevPtr);
+
+		/* If wanted to prolong (repeat) */
+		if (evPtr->proc) {
+		    /*
+		     * Event was restored (prolonged) - sign to reattach to tail
+		     */
+		    if (evPtr != tsdPtr->lastEventPtr) {
+			/* detach event from queue */
+			UnlinkEvent(tsdPtr, evPtr, prevPtr);
+			/* attach to tail */
+			evPtr->nextPtr = NULL;
+			if (tsdPtr->firstEventPtr == NULL) {
+			    tsdPtr->firstEventPtr = evPtr;
+			} else {
+			    tsdPtr->lastEventPtr->nextPtr = evPtr;
+			}
+			tsdPtr->lastEventPtr = evPtr;
+		    }
+		} else {
+		    /* Free event */
+		    UnlinkEvent(tsdPtr, evPtr, prevPtr);
+		    ckfree(evPtr);
+		}
 	    }
 	    Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 	    return 1;
@@ -716,7 +839,195 @@ Tcl_ServiceEvent(
 	}
     }
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
+
+  timer:
+    /*
+     * Process timer queue, if alloved and timers are enabled.
+     */
+
+    if (flags & TCL_TIMER_EVENTS) {
+
+	/* If available pending timer-events of new generation */
+	if (tsdPtr->timerMarkerPtr == INT2PTR(-2)) { /* pending */
+	    /* no other events - process timer-events (next cycle) */
+	    if (!(tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr)) { /* no other events */
+		tsdPtr->timerMarkerPtr = INT2PTR(-1);
+	    }
+	    return 0;
+	}
+
+	if (tsdPtr->timerMarkerPtr == INT2PTR(-1)) {
+
+      processTimer:
+	    /* reset marker */
+	    tsdPtr->timerMarkerPtr = NULL;
+
+	    result = TclServiceTimerEvents();
+	    if (result < 0) {
+		/* 
+		 * Events processed, but still pending timers (of new generation)
+		 * set marker to process timer, if setup- resp. check-proc will
+		 * not generate new events.
+		 */
+		if (tsdPtr->timerMarkerPtr == NULL) {
+		    /* marker to last event in the queue */
+		    if (!(tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr)) {
+			/* 
+			 * Marker as "pending" - queue is empty, so timers events are first,
+			 * if setup-proc resp. check-proc will not generate new events.
+			 */
+			tsdPtr->timerMarkerPtr = INT2PTR(-2);
+		    };
+		}
+		result = 1;
+	    }
+	    return result;
+	}
+    }
+
     return 0;
+}
+
+#if TCL_CHECK_EVENT_SOURCE_THRESHOLD
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckSourceThreshold --
+ *
+ *	Check whether we should iterate over event sources for availability.
+ *
+ *	This is used to avoid too unneeded overhead (too often call checkProc).
+ *
+ * Results:
+ *	Returns 1 if threshold reached (check event sources), 0 otherwise.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline int
+CheckSourceThreshold(
+    ThreadSpecificData *tsdPtr)
+{
+    /* don't need to wait/check for events too often */
+#ifndef TCL_WIDE_CLICKS
+    unsigned long clickdiff, clicks = TclpGetClicks();
+#else
+    Tcl_WideInt clickdiff, clicks;
+    /* in 100-ns */
+    clicks = TclpGetWideClicks() * (TclpWideClickInMicrosec() * 10);
+#endif
+    /* considering possible clicks-jump */
+    if ( (clickdiff = (clicks - tsdPtr->lastCheckClicks)) >= 0
+      && clickdiff <= TCL_CHECK_EVENT_SOURCE_THRESHOLD) {
+	return 0;
+    }
+    tsdPtr->lastCheckClicks = clicks;
+    return 1;
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPeekEventQueued --
+ *
+ *	Check whether some event (except idle) available (async, queued, timer).
+ *
+ *	This will be used e. g. in TclServiceIdle to stop the processing of the
+ *	the idle events if some "normal" event occurred.
+ *
+ * Results:
+ *	Returns 1 if some event queued, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclPeekEventQueued(
+    int flags)
+{
+    EventSource *sourcePtr;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    int repeat = 1;
+
+    do {
+    	/* 
+    	 * Events already pending ? 
+    	 */
+	if ( Tcl_AsyncReady()
+	  || (tsdPtr->firstEventPtr)
+	  || ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerMarkerPtr)
+	) {
+	    return 1;
+	}
+
+	/* once from here */
+	if (!repeat) {
+	    break;
+	}
+
+	if (flags & TCL_DONT_WAIT) {
+	    /* don't need to wait/check for events too often */
+    #if TCL_CHECK_EVENT_SOURCE_THRESHOLD
+	    if (!CheckSourceThreshold(tsdPtr)) {
+		return 0;
+	    }
+    #endif
+	}
+
+	/*
+	 * Check all the event sources for new events.
+	 */
+	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
+		sourcePtr = sourcePtr->nextPtr) {
+	    if (sourcePtr->checkProc) {
+		(sourcePtr->checkProc)(sourcePtr->clientData, flags);
+	    }
+	}
+    
+    } while (repeat--);
+
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetTimerEventMarker --
+ *
+ *	Set timer event marker to the last pending event in the queue.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclSetTimerEventMarker(
+    int flags)
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if (tsdPtr->timerMarkerPtr == NULL || tsdPtr->timerMarkerPtr == INT2PTR(-2)) {
+	/* marker to last event in the queue */
+	if ( !(tsdPtr->timerMarkerPtr = tsdPtr->lastEventPtr) /* no other events */
+	  || ((flags & TCL_ALL_EVENTS) == TCL_TIMER_EVENTS) /* timers only */
+	) {
+	    /* 
+	     * Marker as "pending" - queue is empty, so timers events are first,
+	     * if setup-proc resp. check-proc will not generate new events.
+	     * Force timer execution if flags specified (from checkProc).
+	     */
+	    tsdPtr->timerMarkerPtr = flags ? INT2PTR(-1) : INT2PTR(-2);
+	};
+    }
 }
 
 /*
@@ -828,14 +1139,18 @@ Tcl_SetMaxBlockTime(
  * Results:
  *	The return value is 1 if the function actually found an event to
  *	process. If no processing occurred, then 0 is returned (this can
- *	happen if the TCL_DONT_WAIT flag is set or if there are no event
- *	handlers to wait for in the set specified by flags).
+ *	happen if the TCL_DONT_WAIT flag is set or block time was set using
+ *	Tcl_SetMaxBlockTime before or if there are no event handlers to wait
+ *	for in the set specified by flags).
  *
  * Side effects:
  *	May delay execution of process while waiting for an event, unless
  *	TCL_DONT_WAIT is set in the flags argument. Event sources are invoked
  *	to check for and queue events. Event handlers may produce arbitrary
  *	side effects.
+ *	If block time was set (Tcl_SetMaxBlockTime) but another event occurs
+ *	and interrupt wait, the function can return early, thereby it resets
+ *	the block time (caller should use Tcl_SetMaxBlockTime again).
  *
  *----------------------------------------------------------------------
  */
@@ -852,15 +1167,7 @@ Tcl_DoOneEvent(
     EventSource *sourcePtr;
     Tcl_Time *timePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-    /*
-     * The first thing we do is to service any asynchronous event handlers.
-     */
-
-    if (Tcl_AsyncReady()) {
-	(void) Tcl_AsyncInvoke(NULL, 0);
-	return 1;
-    }
+    int blockTimeWasSet;
 
     /*
      * No event flags is equivalent to TCL_ALL_EVENTS.
@@ -868,6 +1175,28 @@ Tcl_DoOneEvent(
 
     if ((flags & TCL_ALL_EVENTS) == 0) {
 	flags |= TCL_ALL_EVENTS;
+    }
+
+    /* Block time was set outside an event source traversal, caller has specified a waittime */
+    blockTimeWasSet = tsdPtr->blockTimeSet;
+    
+    /*
+     * Asynchronous event handlers are considered to be the highest priority
+     * events, and so must be invoked before we process events on the event
+     * queue.
+     */
+
+    if (flags & TCL_ASYNC_EVENTS) {
+	if (Tcl_AsyncReady()) {
+	    (void) Tcl_AsyncInvoke(NULL, 0);
+	    return 1;
+	}
+
+	/* Async only and don't wait - return */
+	if ( (flags & (TCL_ALL_EVENTS|TCL_DONT_WAIT))
+			== (TCL_ASYNC_EVENTS|TCL_DONT_WAIT) ) {
+	    return 0;
+	}
     }
 
     /*
@@ -879,12 +1208,10 @@ Tcl_DoOneEvent(
     tsdPtr->serviceMode = TCL_SERVICE_NONE;
 
     /*
-     * The core of this function is an infinite loop, even though we only
-     * service one event. The reason for this is that we may be processing
-     * events that don't do anything inside of Tcl.
+     * Main loop until servicing exact one event or block time resp. 
+     * TCL_DONT_WAIT specified (infinite loop otherwise).
      */
-
-    while (1) {
+    do {
 	/*
 	 * If idle events are the only things to service, skip the main part
 	 * of the loop and go directly to handle idle events (i.e. don't wait
@@ -892,12 +1219,12 @@ Tcl_DoOneEvent(
 	 */
 
 	if ((flags & TCL_ALL_EVENTS) == TCL_IDLE_EVENTS) {
-	    flags = TCL_IDLE_EVENTS | TCL_DONT_WAIT;
 	    goto idleEvents;
 	}
 
 	/*
-	 * Ask Tcl to service a queued event, if there are any.
+	 * Ask Tcl to service any asynchronous event handlers or 
+	* queued event, if there are any.
 	 */
 
 	if (Tcl_ServiceEvent(flags)) {
@@ -911,11 +1238,18 @@ Tcl_DoOneEvent(
 	 */
 
 	if (flags & TCL_DONT_WAIT) {
+
+	    /* don't need to wait/check for events too often */
+    #if TCL_CHECK_EVENT_SOURCE_THRESHOLD
+	    if (!CheckSourceThreshold(tsdPtr)) {
+		goto idleEvents;
+	    }
+    #endif
 	    tsdPtr->blockTime.sec = 0;
 	    tsdPtr->blockTime.usec = 0;
 	    tsdPtr->blockTimeSet = 1;
-	} else {
-	    tsdPtr->blockTimeSet = 0;
+	    timePtr = &tsdPtr->blockTime;
+	    goto wait; /* for notifier resp. system events */
 	}
 
 	/*
@@ -932,7 +1266,7 @@ Tcl_DoOneEvent(
 	}
 	tsdPtr->inTraversal = 0;
 
-	if ((flags & TCL_DONT_WAIT) || tsdPtr->blockTimeSet) {
+	if (tsdPtr->blockTimeSet) {
 	    timePtr = &tsdPtr->blockTime;
 	} else {
 	    timePtr = NULL;
@@ -942,10 +1276,12 @@ Tcl_DoOneEvent(
 	 * Wait for a new event or a timeout. If Tcl_WaitForEvent returns -1,
 	 * we should abort Tcl_DoOneEvent.
 	 */
-
+    wait:
 	result = Tcl_WaitForEvent(timePtr);
 	if (result < 0) {
-	    result = 0;
+	    if (blockTimeWasSet) {
+		result = 0;
+	    }
 	    break;
 	}
 
@@ -977,13 +1313,10 @@ Tcl_DoOneEvent(
 
     idleEvents:
 	if (flags & TCL_IDLE_EVENTS) {
-	    if (TclServiceIdle()) {
+	    if (TclServiceIdleEx(flags, INT_MAX)) {
 		result = 1;
 		break;
 	    }
-	}
-	if (flags & TCL_DONT_WAIT) {
-	    break;
 	}
 
 	/*
@@ -994,15 +1327,19 @@ Tcl_DoOneEvent(
 	 * had the side effect of changing the variable (so the vwait can
 	 * return and unwind properly).
 	 *
-	 * NB: We will process idle events if any first, because otherwise we
-	 *     might never do the idle events if the notifier always gets
-	 *     system events.
+	 * We can stop also if works in block to event mode (e. g. block time was
+	 * set outside an event source, that means timeout was set so exit loop
+	 * also without event/result).
 	 */
 
-	if (result) {
+	result = 0;
+	if (blockTimeWasSet) {
 	    break;
 	}
-    }
+    } while ( !(flags & TCL_DONT_WAIT) );
+    
+    /* Reset block time earliest at the end of event cycle */
+    tsdPtr->blockTimeSet = 0;
 
     tsdPtr->serviceMode = oldMode;
     return result;
@@ -1130,6 +1467,29 @@ Tcl_ThreadAlert(
 	}
     }
     Tcl_MutexUnlock(&listLock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Sleep --
+ *
+ *	Delay execution for the specified number of milliseconds.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Time passes.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_Sleep(
+    int ms)			/* Number of milliseconds to sleep. */
+{
+    TclpUSleep((Tcl_WideInt)ms * 1000);
 }
 
 /*

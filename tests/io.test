@@ -2907,7 +2907,8 @@ test io-29.33b {TIP#398, no implicit flush of nonblocking on exit} {exec} {
 	close $ff
 	expr {($t2-$t1)/2000 ? $t2-$t1 : 0}
 } 0
-test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMac fileevent} {
+
+proc io-29.34 {wait} {
     variable c 0
     variable x running
     set l abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
@@ -2936,14 +2937,25 @@ test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMa
     }
     set ss [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
     set cs [socket 127.0.0.1 [lindex [fconfigure $ss -sockname] 2]]
-    vwait [namespace which -variable x]
+    {*}$wait [namespace which -variable x]
+    if {$x ne "accepted"} {error "timeout, state: $x"}
     fconfigure $cs -blocking off
     writelots $cs $l
     close $cs
     close $ss
-    vwait [namespace which -variable x]
+    {*}$wait [namespace which -variable x]
+    if {$x ne "done"} {error "timeout, state: $x"}
     set c
+}
+test io-29.34.1 {Tcl_Close, async flush on close, using sockets} {socket tempNotMac fileevent} {
+    io-29.34 {vwait 5000}
 } 9000
+
+test io-29.34.2 {same as io-29.34 / IO without timer events} {socket tempNotMac fileevent} {
+    # this test will fail if IO uses timer event for scheduled execution.
+    io-29.34 {vwait -notimer 5000}
+} 9000
+
 test io-29.35 {Tcl_Close vs fileevent vs multiple interpreters} {socket tempNotMac fileevent} {
     # On Mac, this test screws up sockets such that subsequent tests using port 2828
     # either cause errors or panic().

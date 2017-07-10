@@ -101,10 +101,54 @@ TclpGetSeconds(void)
 Tcl_WideInt
 TclpGetMicroseconds(void)
 {
-    Tcl_Time time;
+    if (tclGetTimeProcPtr == NativeGetTime) {
+	struct timeval tv;
 
-    tclGetTimeProcPtr(&time, tclTimeClientData);
-    return ((Tcl_WideInt)time.sec)*1000000 + time.usec;
+	(void) gettimeofday(&tv, NULL);
+	return ((Tcl_WideInt)tv.tv_sec)*1000000 + tv.tv_usec;
+    } else {
+	Tcl_Time time;
+
+	tclGetTimeProcPtr(&time, tclTimeClientData);
+	return ((Tcl_WideInt)time.sec)*1000000 + time.usec;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetUTimeMonotonic --
+ *
+ *	This procedure returns the number of microseconds from some unspecified
+ *	starting point.
+ *	This time is monotonic (not affected by the time-jumps), so can be used
+ *	for relative wait purposes and relative time calculation.
+ *
+ * Results:
+ *	Monotonic time in microseconds.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_WideInt
+TclpGetUTimeMonotonic(void)
+{
+    struct timespec mntv;
+    if ( tclGetTimeProcPtr == NativeGetTime
+      && clock_gettime(CLOCK_MONOTONIC, &mntv) == 0
+    ) {
+	/* monotonic time since some starting point in microseconds */
+	return ((Tcl_WideInt)mntv.tv_sec)*1000000 + mntv.tv_nsec / 1000;
+    } else {
+    	/* fallback via tclGetTimeProcPtr */
+	Tcl_Time time;
+
+	tclGetTimeProcPtr(&time, tclTimeClientData);
+	return ((Tcl_WideInt)time.sec)*1000000 + time.usec;
+    }
 }
 
 /*
@@ -129,30 +173,8 @@ TclpGetMicroseconds(void)
 unsigned long
 TclpGetClicks(void)
 {
-    unsigned long now;
-
-#ifdef NO_GETTOD
-    if (tclGetTimeProcPtr != NativeGetTime) {
-	Tcl_Time time;
-
-	tclGetTimeProcPtr(&time, tclTimeClientData);
-	now = time.sec*1000000 + time.usec;
-    } else {
-	/*
-	 * A semi-NativeGetTime, specialized to clicks.
-	 */
-	struct tms dummy;
-
-	now = (unsigned long) times(&dummy);
-    }
-#else
-    Tcl_Time time;
-
-    tclGetTimeProcPtr(&time, tclTimeClientData);
-    now = time.sec*1000000 + time.usec;
-#endif
-
-    return now;
+    /* clicks should provide monotonic intervals */
+    return (unsigned long) TclpGetUTimeMonotonic();
 }
 #ifdef TCL_WIDE_CLICKS
 
@@ -180,17 +202,23 @@ TclpGetWideClicks(void)
 {
     Tcl_WideInt now;
 
-    if (tclGetTimeProcPtr != NativeGetTime) {
+    if (tclGetTimeProcPtr == NativeGetTime) {
+#ifndef MAC_OSX_TCL
+    	/* 1 wide click == 0.001 microseconds (1 nanosecond) */
+	struct timespec mntv;
+	
+	(void)clock_gettime(CLOCK_MONOTONIC, &mntv);
+	return ((Tcl_WideInt)mntv.tv_sec)*1000000*1000 + mntv.tv_nsec;
+#else	/* MAC_OSX_TCL: */
+	/* 1 wide click == (tb.numer / tb.denom / 1000) microseconds */
+	return (Tcl_WideInt) (mach_absolute_time() & INT64_MAX);
+#endif
+    } else {
+	/* 1 wide click == 1 microsecond (1000 nanoseconds) */
 	Tcl_Time time;
 
 	tclGetTimeProcPtr(&time, tclTimeClientData);
 	now = ((Tcl_WideInt)time.sec)*1000000 + time.usec;
-    } else {
-#ifdef MAC_OSX_TCL
-	now = (Tcl_WideInt) (mach_absolute_time() & INT64_MAX);
-#else
-#error Wide high-resolution clicks not implemented on this platform
-#endif
     }
 
     return now;
@@ -219,10 +247,12 @@ TclpWideClicksToNanoseconds(
 {
     double nsec;
 
-    if (tclGetTimeProcPtr != NativeGetTime) {
-	nsec = clicks * 1000;
-    } else {
-#ifdef MAC_OSX_TCL
+    if (tclGetTimeProcPtr == NativeGetTime) {
+#ifndef MAC_OSX_TCL
+	/* 1 wide click == 0.001 microseconds (1 nanosecond) */
+	return clicks;
+#else	/* MAC_OSX_TCL: */
+	/* 1 wide click == (tb.numer / tb.denom) nanoseconds */
 	static mach_timebase_info_data_t tb;
 	static uint64_t maxClicksForUInt64;
 
@@ -235,9 +265,10 @@ TclpWideClicksToNanoseconds(
 	} else {
 	    nsec = ((long double) (uint64_t) clicks) * tb.numer / tb.denom;
 	}
-#else
-#error Wide high-resolution clicks not implemented on this platform
 #endif
+    } else {
+	/* 1 wide click == 1 microsecond (1000 nanoseconds) */
+	nsec = clicks * 1000;
     }
 
     return nsec;
@@ -264,10 +295,12 @@ TclpWideClicksToNanoseconds(
 double
 TclpWideClickInMicrosec(void)
 {
-    if (tclGetTimeProcPtr != NativeGetTime) {
-	return 1.0;
-    } else {
-#ifdef MAC_OSX_TCL
+    if (tclGetTimeProcPtr == NativeGetTime) {
+#ifndef MAC_OSX_TCL
+	/* 1 wide click == 0.001 microseconds (1 nanosecond) */
+	return 0.001;
+#else	/* MAC_OSX_TCL: */
+	/* 1 wide click == (tb.numer / tb.denom / 1000) microseconds */
 	static int initialized = 0;
 	static double scale = 0.0;
 
@@ -282,9 +315,10 @@ TclpWideClickInMicrosec(void)
 	    initialized = 1;
 	    return scale;
 	}
-#else
-#error Wide high-resolution clicks not implemented on this platform
 #endif
+    } else {
+	/* 1 wide click == 1 microsecond (1000 nanoseconds) */
+	return 1.0;
     }
 }
 #endif /* TCL_WIDE_CLICKS */
@@ -508,6 +542,34 @@ NativeScaleTime(
     ClientData clientData)
 {
     /* Native scale is 1:1. Nothing is done */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpScaleUTime --
+ *
+ *	This procedure scales number of microseconds if expected.
+ *
+ * Results:
+ *	Number of microseconds scaled using tclScaleTimeProcPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+TclpScaleUTime(
+    Tcl_WideInt *usec)
+{
+    /* Native scale is 1:1. */
+    if (tclScaleTimeProcPtr != NativeScaleTime) {
+	return;
+    } else {
+	Tcl_Time scTime;
+	scTime.sec = *usec / 1000000;
+	scTime.usec = *usec % 1000000;
+	tclScaleTimeProcPtr(&scTime, tclTimeClientData);
+	*usec = ((Tcl_WideInt)scTime.sec) * 1000000 + scTime.usec;
+    }
 }
 
 /*

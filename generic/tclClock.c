@@ -184,6 +184,9 @@ static int		ClockMicrosecondsObjCmd(
 static int		ClockMillisecondsObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		ClockMonotonicObjCmd(
+                            ClientData clientData, Tcl_Interp *interp,
+                            int objc, Tcl_Obj *const objv[]);
 static int		ClockParseformatargsObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -257,6 +260,7 @@ TclClockInit(
 	{"format",       NULL,                    TclCompileBasicMin1ArgCmd, NULL, NULL,       0},
 	{"microseconds", ClockMicrosecondsObjCmd, TclCompileClockReadingCmd, NULL, INT2PTR(1), 0},
 	{"milliseconds", ClockMillisecondsObjCmd, TclCompileClockReadingCmd, NULL, INT2PTR(2), 0},
+	{"monotonic",    ClockMonotonicObjCmd,    NULL,                      NULL, NULL,       0},
 	{"scan",         NULL,                    TclCompileBasicMin1ArgCmd, NULL, NULL      , 0},
 	{"seconds",      ClockSecondsObjCmd,      TclCompileClockReadingCmd, NULL, INT2PTR(3), 0},
 	{NULL,           NULL,                    NULL,                      NULL, NULL,       0}
@@ -1849,6 +1853,40 @@ ClockMicrosecondsObjCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetMicroseconds()));
+    return TCL_OK;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * ClockMonotonicObjCmd -
+ *
+ *      Returns a count of microseconds since some starting point.
+ *      This represents monotonic time not affected from the time-jumps.
+ *
+ * Results:
+ *      Returns a standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ * This function implements the 'clock monotonic' Tcl command. Refer to the
+ * user documentation for details on what it does.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ClockMonotonicObjCmd(
+    ClientData clientData,      /* Client data is unused */
+    Tcl_Interp* interp,         /* Tcl interpreter */
+    int objc,                   /* Parameter count */
+    Tcl_Obj* const* objv)       /* Parameter values */
+{
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetUTimeMonotonic()));
     return TCL_OK;
 }
 

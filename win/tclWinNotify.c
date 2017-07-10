@@ -21,6 +21,7 @@
 
 #define WM_WAKEUP	WM_USER	/* Message that is send by
 				 * Tcl_AlertNotifier. */
+
 /*
  * The following static structure contains the state information for the
  * Windows implementation of the Tcl notifier. One of these structures is
@@ -79,49 +80,49 @@ static LRESULT CALLBACK		NotifierProc(HWND hwnd, UINT message,
 ClientData
 Tcl_InitNotifier(void)
 {
-    if (tclNotifierHooks.initNotifierProc) {
-	return tclNotifierHooks.initNotifierProc();
-    } else {
-	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-	WNDCLASS class;
+  if (tclNotifierHooks.initNotifierProc) {
+    return tclNotifierHooks.initNotifierProc();
+  } else {
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    WNDCLASS class;
 
-	/*
-	 * Register Notifier window class if this is the first thread to use
-	 * this module.
-	 */
+    /*
+     * Register Notifier window class if this is the first thread to use this
+     * module.
+     */
 
-	Tcl_MutexLock(&notifierMutex);
-	if (notifierCount == 0) {
-	    class.style = 0;
-	    class.cbClsExtra = 0;
-	    class.cbWndExtra = 0;
-	    class.hInstance = TclWinGetTclInstance();
-	    class.hbrBackground = NULL;
-	    class.lpszMenuName = NULL;
-	    class.lpszClassName = classname;
-	    class.lpfnWndProc = NotifierProc;
-	    class.hIcon = NULL;
-	    class.hCursor = NULL;
+    Tcl_MutexLock(&notifierMutex);
+    if (notifierCount == 0) {
+	class.style = 0;
+	class.cbClsExtra = 0;
+	class.cbWndExtra = 0;
+	class.hInstance = TclWinGetTclInstance();
+	class.hbrBackground = NULL;
+	class.lpszMenuName = NULL;
+	class.lpszClassName = classname;
+	class.lpfnWndProc = NotifierProc;
+	class.hIcon = NULL;
+	class.hCursor = NULL;
 
-	    if (!RegisterClass(&class)) {
-		Tcl_Panic("Unable to register TclNotifier window class");
-	    }
+	if (!RegisterClass(&class)) {
+	    Tcl_Panic("Unable to register TclNotifier window class");
 	}
-	notifierCount++;
-	Tcl_MutexUnlock(&notifierMutex);
-
-	tsdPtr->pending = 0;
-	tsdPtr->timerActive = 0;
-
-	InitializeCriticalSection(&tsdPtr->crit);
-
-	tsdPtr->hwnd = NULL;
-	tsdPtr->thread = GetCurrentThreadId();
-	tsdPtr->event = CreateEvent(NULL, TRUE /* manual */,
-		FALSE /* !signaled */, NULL);
-
-	return tsdPtr;
     }
+    notifierCount++;
+    Tcl_MutexUnlock(&notifierMutex);
+
+    tsdPtr->pending = 0;
+    tsdPtr->timerActive = 0;
+
+    InitializeCriticalSection(&tsdPtr->crit);
+
+    tsdPtr->hwnd = NULL;
+    tsdPtr->thread = GetCurrentThreadId();
+    tsdPtr->event = CreateEvent(NULL, FALSE /* !manual */,
+	    FALSE /* !signaled */, NULL);
+
+    return tsdPtr;
+  }
 }
 
 /*
@@ -410,6 +411,216 @@ NotifierProc(
 }
 
 /*
+ * Timer resolution primitives
+ */
+
+typedef int (CALLBACK* LPFN_NtQueryTimerResolution)(PULONG,PULONG,PULONG);
+typedef int (CALLBACK* LPFN_NtSetTimerResolution)(ULONG,BOOLEAN,PULONG);
+
+static LPFN_NtQueryTimerResolution NtQueryTimerResolution = NULL;
+static LPFN_NtSetTimerResolution NtSetTimerResolution = NULL;
+
+#define TMR_RES_MICROSEC (1000 / 100)
+
+static struct {
+    int   available;		/* Availability of timer resolution functions */
+    ULONG minRes;		/* Lowest possible resolution (in 100-ns) */
+    ULONG maxRes;		/* Highest possible resolution (in 100-ns) */
+    ULONG curRes;		/* Current resolution (in 100-ns units). */
+    ULONG resRes;		/* Resolution to be restored (delayed restore) */
+    LONG  minDelay;		/* Lowest delay by max resolution (in microsecs) */
+    LONG  maxDelay;		/* Highest delay by min resolution (in microsecs) */
+    size_t count;		/* Waiter count (used to restore the resolution) */
+    Tcl_WideInt timeToReset;	/* Time to reset resolution (typically now + 5s) */
+    CRITICAL_SECTION cs;	/* Mutex guarding this structure. */
+} timerResolution = {
+    -1,
+    15600 * TMR_RES_MICROSEC, 500 * TMR_RES_MICROSEC, 
+    15600 * TMR_RES_MICROSEC, 0,
+    500, 15600,
+    0,
+    (Tcl_WideInt)0x7FFFFFFFFFFFFFFFL
+};
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitTimerResolution --
+ *
+ *	This function initializes the timer resolution functionality.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+InitTimerResolution(void)
+{
+    if (timerResolution.available == -1) {
+    	TclpInitLock();
+    	if (timerResolution.available == -1) {
+    	    HMODULE hLib = GetModuleHandle(TEXT("NTDLL"));
+	    if (hLib) {
+		NtQueryTimerResolution = 
+		    (LPFN_NtQueryTimerResolution)GetProcAddress(hLib, 
+		    	"NtQueryTimerResolution");
+		NtSetTimerResolution = 
+		    (LPFN_NtSetTimerResolution)GetProcAddress(hLib, 
+		    	"NtSetTimerResolution");
+
+		if ( NtSetTimerResolution && NtQueryTimerResolution
+		  && NtQueryTimerResolution(&timerResolution.minRes,
+				&timerResolution.maxRes, &timerResolution.curRes) == 0
+		) {
+		    InitializeCriticalSection(&timerResolution.cs);
+		    timerResolution.resRes = timerResolution.curRes;
+		    timerResolution.minRes -= (timerResolution.minRes % TMR_RES_MICROSEC);
+		    timerResolution.minDelay = timerResolution.maxRes / TMR_RES_MICROSEC;
+		    timerResolution.maxDelay = timerResolution.minRes / TMR_RES_MICROSEC;
+		    if (timerResolution.maxRes <= 1000 * TMR_RES_MICROSEC) {
+		    	timerResolution.available = 1;
+		    }
+		}
+	    }
+	    if (timerResolution.available <= 0) {
+	    	/* not available, set min/max to typical values on windows */ 
+		timerResolution.minRes = 15600 * TMR_RES_MICROSEC;
+		timerResolution.maxRes = 500 * TMR_RES_MICROSEC;
+		timerResolution.minDelay = timerResolution.maxRes / TMR_RES_MICROSEC;
+		timerResolution.maxDelay = timerResolution.minRes / TMR_RES_MICROSEC;
+		timerResolution.available = 0;
+	    }
+	}
+	TclpInitUnlock();
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetTimerResolution --
+ *
+ *	This is called by Tcl_WaitForEvent to increase timer resolution if wait
+ *	for events with time smaller as the typical windows value (ca. 15ms).
+ *
+ * Results:
+ *	Returns previous value of timer resolution, used for restoring with
+ *	RestoreTimerResolution.
+ *
+ * Side effects:
+ *	Note that timer resolution takes affect for the whole process (accross
+ *	all threads).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static unsigned long
+SetTimerResolution(
+    unsigned long newResolution,
+    unsigned long actualResolution
+) {
+    /* if available */
+    if (timerResolution.available > 0)
+    {
+	if (newResolution < timerResolution.maxRes) {
+	    newResolution = timerResolution.maxRes;
+	}
+	EnterCriticalSection(&timerResolution.cs);
+	if (!actualResolution) {
+	    timerResolution.count++;
+	    actualResolution = timerResolution.curRes;
+	}
+	if (newResolution < timerResolution.curRes) {
+	    ULONG curRes;
+	    if (NtSetTimerResolution(newResolution, TRUE, &curRes) == 0) {
+		timerResolution.curRes = curRes;
+	    }
+	}
+	LeaveCriticalSection(&timerResolution.cs);
+	return actualResolution;
+    }
+
+    /* resolution unchanged (and counter not increased) */
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RestoreTimerResolution --
+ *
+ *	This is called by Tcl_WaitForEvent to restore timer resolution to
+ *	previous value.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Because timer resolution takes affect for the whole process, it can
+ *	remain max resolution after execution of this function (if some thread
+ *	still waits with the highest timer resolution).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+RestoreTimerResolution(
+    unsigned long newResolution
+) {
+    /* if available */
+    if (timerResolution.available > 0 && newResolution) {
+	EnterCriticalSection(&timerResolution.cs);
+	if (timerResolution.count-- <= 1) {
+	    timerResolution.resRes = newResolution;
+	    /* prolong time to reset resolution */
+	    timerResolution.timeToReset = TclpGetMicroseconds() + 1000000;
+	}
+	LeaveCriticalSection(&timerResolution.cs);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinResetTimerResolution --
+ *
+ *	This is called to delayed reset (after 1 second) of the timer resolution
+ *	to original value, if no more waiting workers using precise resolution.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclWinResetTimerResolution(void)
+{
+    if ( timerResolution.available > 0
+      && timerResolution.count == 0 && timerResolution.resRes > timerResolution.curRes
+      && TclpGetMicroseconds() >= timerResolution.timeToReset
+    ) {
+	EnterCriticalSection(&timerResolution.cs);
+	if (timerResolution.count == 0 && timerResolution.resRes > timerResolution.curRes) {
+	    ULONG curRes;
+	    if (NtSetTimerResolution(timerResolution.resRes, TRUE, &curRes) == 0) {
+		timerResolution.curRes = curRes;
+	    };
+	    timerResolution.timeToReset = 0x7FFFFFFFFFFFFFFFL;
+	}
+	LeaveCriticalSection(&timerResolution.cs);
+    }
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * Tcl_WaitForEvent --
@@ -432,108 +643,188 @@ int
 Tcl_WaitForEvent(
     const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
 {
-    if (tclNotifierHooks.waitForEventProc) {
-	return tclNotifierHooks.waitForEventProc(timePtr);
-    } else {
-	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-	MSG msg;
-	DWORD timeout, result;
-	int status;
+  if (tclNotifierHooks.waitForEventProc) {
+    return tclNotifierHooks.waitForEventProc(timePtr);
+  } else {
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    MSG msg;
+    DWORD timeout = INFINITE, result = WAIT_TIMEOUT;
+    int status = 0;
+    Tcl_WideInt waitTime = 0;
+    Tcl_WideInt endTime = 0;
+    long tolerance = 0;
+    unsigned long actualResolution = 0;
 
-	/*
-	 * Compute the timeout in milliseconds.
-	 */
+    /*
+     * Compute the timeout in milliseconds.
+     */
 
-	if (timePtr) {
-	    /*
-	     * TIP #233 (Virtualized Time). Convert virtual domain delay to
-	     * real-time.
-	     */
+    if (timePtr) {
 
-	    Tcl_Time myTime;
+	waitTime = TCL_TIME_TO_USEC(*timePtr);
 
-	    myTime.sec  = timePtr->sec;
-	    myTime.usec = timePtr->usec;
-
-	    if (myTime.sec != 0 || myTime.usec != 0) {
-		tclScaleTimeProcPtr(&myTime, tclTimeClientData);
-	    }
-
-	    timeout = myTime.sec * 1000 + myTime.usec / 1000;
-	} else {
-	    timeout = INFINITE;
+	/* if no wait */
+	if (waitTime <= 0) {
+	    result = 0;
+	    goto peek;
 	}
 
 	/*
-	 * Check to see if there are any messages in the queue before waiting
-	 * because MsgWaitForMultipleObjects will not wake up if there are
-	 * events currently sitting in the queue.
+	 * Note the time can be switched (time-jump), so use monotonic time here.
 	 */
+	endTime = TclpGetUTimeMonotonic() + waitTime;
 
-	if (!PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
-	    /*
-	     * Wait for something to happen (a signal from another thread, a
-	     * message, or timeout) or loop servicing asynchronous procedure
-	     * calls queued to this thread.
-	     */
-
-	again:
-	    result = MsgWaitForMultipleObjectsEx(1, &tsdPtr->event, timeout,
-		    QS_ALLINPUT, MWMO_ALERTABLE);
-	    if (result == WAIT_IO_COMPLETION) {
-		goto again;
-	    } else if (result == WAIT_FAILED) {
-		status = -1;
-		goto end;
-	    }
+	if (timerResolution.available == -1) {
+	    InitTimerResolution();
 	}
+	
+    #ifdef TMR_RES_TOLERANCE
+	/* calculate possible maximal tolerance (in usec) of original wait-time */
+	tolerance = ((waitTime <= 1000000) ? waitTime : 1000000) *
+			TMR_RES_TOLERANCE / 100;
+	if (tolerance > timerResolution.maxDelay) {
+	    tolerance = timerResolution.maxDelay;
+	}
+    #endif
 
+    repeat:
 	/*
-	 * Check to see if there are any messages to process.
-	 */
+	* TIP #233 (Virtualized Time). Convert virtual domain delay to
+	* real-time.
+	*/
+	TclpScaleUTime(&waitTime);
 
-	if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
-	    /*
-	     * Retrieve and dispatch the first message.
-	     */
-
-	    result = GetMessage(&msg, NULL, 0, 0);
-	    if (result == 0) {
-		/*
-		 * We received a request to exit this thread (WM_QUIT), so
-		 * propagate the quit message and start unwinding.
-		 */
-
-		PostQuitMessage((int) msg.wParam);
-		status = -1;
-	    } else if (result == (DWORD)-1) {
-		/*
-		 * We got an error from the system. I have no idea why this
-		 * would happen, so we'll just unwind.
-		 */
-
-		status = -1;
+	/* No wait if timeout too small (because windows may wait too long) */
+	if (waitTime < (long)timerResolution.minDelay) {
+	    timeout = 0;
+	    /* prevent busy wait */
+	    if (waitTime >= 10) {
+		goto wait;
+	    }
+	    Sleep(0);
+	    goto peek;
+	}
+	
+	if (timerResolution.available) {
+	    long overhead = (tolerance < 100 ? tolerance/2 : 50);
+	    Tcl_WideInt waitTimeWithOverhead = waitTime + overhead;
+	    if (waitTimeWithOverhead > timerResolution.maxDelay) {
+		/* floor (truncate) using max delay as base (follow timeout better) */
+		timeout = (waitTimeWithOverhead
+				/ timerResolution.maxDelay)
+				* timerResolution.maxDelay / 1000;
 	    } else {
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-		status = 1;
+		/* calculate resolution up to 1000 microseconds
+		 * (don't use highest, because of too large CPU load) */
+		ULONG res;
+		if (waitTimeWithOverhead >= 10000) {
+		    res = 10000 * TMR_RES_MICROSEC;
+		} else {
+		    res = 1000 * TMR_RES_MICROSEC;
+		}
+		timeout = waitTimeWithOverhead / 1000;
+		/* set more precise timer resolution for minimal delay */
+		if (!actualResolution || res < timerResolution.curRes) {
+		    actualResolution = SetTimerResolution(
+			res, actualResolution);
+		}
 	    }
 	} else {
-	    status = 0;
+	    timeout = waitTime / 1000;
 	}
-
-      end:
-	ResetEvent(tsdPtr->event);
-	return status;
     }
+
+    /*
+     * Check to see if there are any messages in the queue before waiting
+     * because MsgWaitForMultipleObjects will not wake up if there are events
+     * currently sitting in the queue.
+     */
+  wait:
+    if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+    	goto get;
+    }
+
+    /*
+     * Wait for something to happen (a signal from another thread, a
+     * message, or timeout) or loop servicing asynchronous procedure calls
+     * queued to this thread.
+     */
+    
+  again:
+    result = MsgWaitForMultipleObjectsEx(1, &tsdPtr->event, timeout,
+		QS_ALLINPUT, MWMO_ALERTABLE);
+    if (result == WAIT_IO_COMPLETION) {
+	goto again;
+    }
+    if (result == WAIT_FAILED) {
+	status = -1;
+	goto end;
+    }
+
+    /*
+     * Check to see if there are any messages to process.
+     */
+  peek:
+    if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+	/*
+	 * Retrieve and dispatch the first message.
+	 */
+
+  get:
+	result = GetMessage(&msg, NULL, 0, 0);
+	if (result == 0) {
+	    /*
+	     * We received a request to exit this thread (WM_QUIT), so
+	     * propagate the quit message and start unwinding.
+	     */
+
+	    PostQuitMessage((int) msg.wParam);
+	    status = -1;
+	} else if (result == (DWORD)-1) {
+	    /*
+	     * We got an error from the system. I have no idea why this would
+	     * happen, so we'll just unwind.
+	     */
+
+	    status = -1;
+	} else {
+	    TranslateMessage(&msg);
+	    DispatchMessage(&msg);
+	    status = 1;
+	}
+    }
+    else
+    if (result == WAIT_TIMEOUT && timeout != INFINITE) {
+	/* Check the wait should be repeated, and correct time for wait */
+
+	waitTime = endTime - TclpGetUTimeMonotonic();
+	if (waitTime <= tolerance) {
+	    goto end;
+	}
+	/* Repeat wait with more precise timer resolution (or using sleep) */
+	goto repeat;
+    }
+
+  end:
+
+    /* restore timer resolution */
+    if (actualResolution) {
+	RestoreTimerResolution(actualResolution);
+    }
+    /* todo: move it to the service-thread (if available at some point) */
+    TclWinResetTimerResolution();
+    return status;
+  }
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Sleep --
+ * TclpUSleep --
  *
- *	Delay execution for the specified number of milliseconds.
+ *	Delay execution for the specified number of microseconds.
+ *
+ *	TclpUSleep in contrast to Tcl_Sleep is more precise (microseconds).
  *
  * Results:
  *	None.
@@ -545,8 +836,8 @@ Tcl_WaitForEvent(
  */
 
 void
-Tcl_Sleep(
-    int ms)			/* Number of milliseconds to sleep. */
+TclpUSleep(
+    Tcl_WideInt usec)		/* Number of microseconds to sleep. */
 {
     /*
      * Simply calling 'Sleep' for the requisite number of milliseconds can
@@ -558,45 +849,93 @@ Tcl_Sleep(
      * requisite amount.
      */
 
-    Tcl_Time now;		/* Current wall clock time. */
-    Tcl_Time desired;		/* Desired wakeup time. */
-    Tcl_Time vdelay;		/* Time to sleep, for scaling virtual ->
-				 * real. */
+    Tcl_WideInt desired;	/* Desired wakeup time. */
     DWORD sleepTime;		/* Time to sleep, real-time */
+    long tolerance = 0;
+    unsigned long actualResolution = 0;
 
-    vdelay.sec  = ms / 1000;
-    vdelay.usec = (ms % 1000) * 1000;
+    if (usec <= 9) { /* too short to start whole sleep process */
+	do {
+	    /* causes context switch only (shortest waiting) */
+	    SleepEx(0, TRUE);
+	} while (--usec > 0);
+	return;
+    }
 
-    Tcl_GetTime(&now);
-    desired.sec  = now.sec  + vdelay.sec;
-    desired.usec = now.usec + vdelay.usec;
-    if (desired.usec > 1000000) {
-	++desired.sec;
-	desired.usec -= 1000000;
+    if (timerResolution.available == -1) {
+	InitTimerResolution();
     }
 
     /*
-     * TIP #233: Scale delay from virtual to real-time.
+     * Note the time can be switched (time-jump), so use monotonic time here.
      */
+    desired = TclpGetUTimeMonotonic() + usec;
 
-    tclScaleTimeProcPtr(&vdelay, tclTimeClientData);
-    sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
+  #ifdef TMR_RES_TOLERANCE
+    /* calculate possible maximal tolerance (in usec) of original wait-time */
+    tolerance = ((usec <= 1000000) ? usec : 1000000) *
+			TMR_RES_TOLERANCE / 100;
+    if (tolerance > timerResolution.maxDelay) {
+	tolerance = timerResolution.maxDelay;
+    }
+  #endif
 
     for (;;) {
-	SleepEx(sleepTime, TRUE);
-	Tcl_GetTime(&now);
-	if (now.sec > desired.sec) {
-	    break;
-	} else if ((now.sec == desired.sec) && (now.usec >= desired.usec)) {
-	    break;
+	
+	/*
+	 * TIP #233: Scale delay from virtual to real-time.
+	 */
+	TclpScaleUTime(&usec);
+
+	/* No wait if sleep time too small (because windows may wait too long) */
+	if (usec < (long)timerResolution.minDelay) {
+	    sleepTime = 0;
+	    goto wait;
 	}
 
-	vdelay.sec  = desired.sec  - now.sec;
-	vdelay.usec = desired.usec - now.usec;
+	if (timerResolution.available) {
+	    if (usec > timerResolution.maxDelay) {
+		/* floor (truncate) using max delay as base (follow timeout better) */
+		sleepTime = (usec
+				/ timerResolution.maxDelay)
+				* timerResolution.maxDelay / 1000;
+	    } else {
+	    	/* calculate resolution up to 1000 microseconds
+	    	 * (don't use highest, because of too large CPU load) */
+		ULONG res;
+		if (usec >= 10000) {
+		    res = 10000 * TMR_RES_MICROSEC;
+		} else {
+		    res = 1000 * TMR_RES_MICROSEC;
+		}
+		sleepTime = usec / 1000;
+		/* set more precise timer resolution for minimal delay */
+		if (!actualResolution || res < timerResolution.curRes) {
+		    actualResolution = SetTimerResolution(
+			res, actualResolution);
+		}
+	    }
+	} else {
+	    sleepTime = usec / 1000;
+	}
 
-	tclScaleTimeProcPtr(&vdelay, tclTimeClientData);
-	sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
+    wait:
+	SleepEx(sleepTime, TRUE);
+
+	/* new difference to now (monotonic base) */
+	usec = desired - TclpGetUTimeMonotonic();
+	
+	if (usec <= tolerance) {
+	    break;
+	}
     }
+
+    /* restore timer resolution */
+    if (actualResolution) {
+	RestoreTimerResolution(actualResolution); 
+    }
+    /* todo: move it to the service-thread (if available at some point) */
+    TclWinResetTimerResolution();
 }
 
 /*
