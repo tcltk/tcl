@@ -91,8 +91,9 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 		for i in `ls -d ${libdir} 2>/dev/null` \
 			`ls -d ${exec_prefix}/lib 2>/dev/null` \
 			`ls -d ${prefix}/lib 2>/dev/null` \
-			`ls -d /usr/local/lib 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
+			`ls -d /usr/local/lib 2>/dev/null` \
+			`ls -d /usr/pkg/lib 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
 			; do
@@ -611,7 +612,6 @@ AC_DEFUN([SC_ENABLE_FRAMEWORK], [
 #		TCL_THREADS
 #		_REENTRANT
 #		_THREAD_SAFE
-#
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_ENABLE_THREADS], [
@@ -727,7 +727,6 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 #				Sets to $(LDFLAGS_OPTIMIZE) if false
 #		DBGX		Formerly used as debug library extension;
 #				always blank now.
-#
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_ENABLE_SYMBOLS], [
@@ -977,7 +976,7 @@ AC_DEFUN([SC_CONFIG_SYSTEM], [
 #       SHLIB_LD_LIBS - Dependent libraries for the linker to scan when
 #                       creating shared libraries.  This symbol typically
 #                       goes at the end of the "ld" commands that build
-#                       shared libraries. The value of the symbol is
+#                       shared libraries. The value of the symbol defaults to
 #                       "${LIBS}" if all of the dependent libraries should
 #                       be specified when creating a shared library.  If
 #                       dependent libraries should not be specified (as on
@@ -1107,7 +1106,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     PLAT_OBJS=""
     PLAT_SRCS=""
     LDAIX_SRC=""
-    AS_IF([test x"${SHLIB_VERSION}" = x], [SHLIB_VERSION="1.0"])
+    AS_IF([test "x${SHLIB_VERSION}" = x],[SHLIB_VERSION=".1.0"],[SHLIB_VERSION=".${SHLIB_VERSION}"])
     case $system in
 	AIX-*)
 	    AS_IF([test "${TCL_THREADS}" = "1" -a "$GCC" != "yes"], [
@@ -1236,9 +1235,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    fi
 	    do64bit_ok=yes
 	    if test "x${SHARED_BUILD}" = "x1"; then
-		echo "running cd ${TCL_SRC_DIR}/win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
+		echo "running cd ../win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
 		# The eval makes quoting arguments work.
-		if cd ${TCL_SRC_DIR}/win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
+		if cd ../win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
 		then :
 		else
 		    { echo "configure: error: configure failed for ../win" 1>&2; exit 1; }
@@ -1467,44 +1466,23 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	OpenBSD-*)
 	    arch=`arch -s`
 	    case "$arch" in
-	    vax)
-		# Equivalent using configure option --disable-load
-		# Step 4 will set the necessary variables
-		DL_OBJS=""
-		SHLIB_LD_LIBS=""
-		LDFLAGS=""
+	    alpha|sparc64)
+		SHLIB_CFLAGS="-fPIC"
 		;;
 	    *)
-		case "$arch" in
-		alpha|sparc|sparc64)
-		    SHLIB_CFLAGS="-fPIC"
-		    ;;
-		*)
-		    SHLIB_CFLAGS="-fpic"
-		    ;;
-		esac
-		SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
-		SHLIB_SUFFIX=".so"
-		DL_OBJS="tclLoadDl.o"
-		DL_LIBS=""
-		AS_IF([test $doRpath = yes], [
-		    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
-		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
-		LDFLAGS="-Wl,-export-dynamic"
+		SHLIB_CFLAGS="-fpic"
 		;;
 	    esac
-	    case "$arch" in
-	    vax)
-		CFLAGS_OPTIMIZE="-O1"
-		;;
-	    sh)
-		CFLAGS_OPTIMIZE="-O0"
-		;;
-	    *)
-		CFLAGS_OPTIMIZE="-O2"
-		;;
-	    esac
+	    SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
+	    SHLIB_SUFFIX=".so"
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS=""
+	    AS_IF([test $doRpath = yes], [
+		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
+	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
+	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so${SHLIB_VERSION}'
+	    LDFLAGS="-Wl,-export-dynamic"
+	    CFLAGS_OPTIMIZE="-O2"
 	    AS_IF([test "${TCL_THREADS}" = "1"], [
 		# On OpenBSD:	Compile with -pthread
 		#		Don't link with -lpthread
@@ -1825,7 +1803,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # requires an extra version number at the end of .so file names.
 	    # So, the library has to have a name like libtcl75.so.1.0
 
-	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
+	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so${SHLIB_VERSION}'
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
