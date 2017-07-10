@@ -122,7 +122,8 @@ TCL_DECLARE_MUTEX(listLock)
 
 static void		QueueEvent(ThreadSpecificData *tsdPtr,
 			    Tcl_Event *evPtr, Tcl_QueuePosition position);
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -166,7 +167,8 @@ TclInitNotifier(void)
     }
     Tcl_MutexUnlock(&listLock);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -237,7 +239,8 @@ TclFinalizeNotifier(void)
 
     Tcl_MutexUnlock(&listLock);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -263,7 +266,8 @@ Tcl_SetNotifier(
 {
     tclNotifierHooks = *notifierProcPtr;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -319,7 +323,8 @@ Tcl_CreateEventSource(
     sourcePtr->nextPtr = tsdPtr->firstEventSourcePtr;
     tsdPtr->firstEventSourcePtr = sourcePtr;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -369,7 +374,8 @@ Tcl_DeleteEventSource(
 	return;
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -400,7 +406,8 @@ Tcl_QueueEvent(
 
     QueueEvent(tsdPtr, evPtr, position);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -451,7 +458,8 @@ Tcl_ThreadQueueEvent(
     }
     Tcl_MutexUnlock(&listLock);
 }
-
+
+
 static inline void
 SpliceEventTail(
     Tcl_Event *evPtr,
@@ -466,7 +474,8 @@ SpliceEventTail(
     }
     *lastEvPtr = evPtr;
 }
-
+
+
 static inline void
 LinkEvent(
     ThreadSpecificData *tsdPtr,
@@ -484,7 +493,8 @@ LinkEvent(
 	tsdPtr->lastEventPtr = evPtr;
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -574,7 +584,8 @@ QueueEvent(
     }
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 }
-
+
+
 static Tcl_Event *
 SearchEventInQueue(
     Tcl_Event *firstEvPtr,
@@ -604,7 +615,8 @@ SearchEventInQueue(
     }
     return evPtr;
 }
-
+
+
 static void
 UnlinkEvent(
     ThreadSpecificData *tsdPtr,
@@ -638,7 +650,8 @@ UnlinkEvent(
 	tsdPtr->timerMarkerPtr = prevPtr ? prevPtr : INT2PTR(-1);
     }
 }
-
+
+
 static void
 InvolveRetardedEvents(
     ThreadSpecificData *tsdPtr)
@@ -653,7 +666,8 @@ InvolveRetardedEvents(
     /* reset retarded list */
     tsdPtr->lastRetardEv = tsdPtr->firstRetardEv = NULL;
 }
-
+
+
 static void
 UnlinkRetardedEvent(
     ThreadSpecificData *tsdPtr,
@@ -669,7 +683,8 @@ UnlinkRetardedEvent(
 	tsdPtr->lastRetardEv = prevPtr;
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -741,7 +756,8 @@ Tcl_DeleteEvents(
 
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 }
-
+
+
 void
 TclpCancelEvent(
     Tcl_Event *evPtr)		/* Event to remove from queue. */
@@ -768,7 +784,8 @@ TclpCancelEvent(
 
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1008,7 +1025,8 @@ Tcl_ServiceEvent(
 
     return 0;
 }
-
+
+
 #if TCL_CHECK_EVENT_SOURCE_THRESHOLD
 /*
  *----------------------------------------------------------------------
@@ -1046,7 +1064,8 @@ CheckSourceThreshold(
     return 1;
 }
 #endif
-
+
+
 static int 
 SetUpEventSources(
     ThreadSpecificData *tsdPtr,
@@ -1071,9 +1090,22 @@ SetUpEventSources(
     }
     tsdPtr->inTraversal--;
 
+    /*
+     * If we've some retarded events (from last event-cycle), wait non-blocking.
+     */
+    if ( tsdPtr->firstRetardEv
+      && ( !tsdPtr->blockTimeSet 
+	|| tsdPtr->blockTimeServLev < tsdPtr->serviceLevel )
+    ) {
+	tsdPtr->blockTime.sec = 0;
+	tsdPtr->blockTime.usec = 0;
+	tsdPtr->blockTimeSet = 1;
+    }
+
     return res;
 }
-
+
+
 static int
 CheckEventSources(
     ThreadSpecificData *tsdPtr,
@@ -1110,7 +1142,8 @@ CheckEventSources(
     
     return res;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1173,7 +1206,8 @@ TclPeekEventQueued(
 
     return 0;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1210,7 +1244,8 @@ TclSetTimerEventMarker(
 	};
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1234,7 +1269,8 @@ Tcl_GetServiceMode(void)
 
     return tsdPtr->serviceMode;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1264,7 +1300,8 @@ Tcl_SetServiceMode(
     Tcl_ServiceModeHook(mode);
     return oldMode;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1312,7 +1349,8 @@ Tcl_SetMaxBlockTime(
 	Tcl_SetTimer(&tsdPtr->blockTime);
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1523,7 +1561,8 @@ done:
     tsdPtr->serviceLevel--;
     return result;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1595,7 +1634,8 @@ Tcl_ServiceAll(void)
     tsdPtr->serviceMode = TCL_SERVICE_ALL;
     return result;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1634,7 +1674,8 @@ Tcl_ThreadAlert(
     }
     Tcl_MutexUnlock(&listLock);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1657,7 +1698,8 @@ Tcl_Sleep(
 {
     TclpUSleep((Tcl_WideInt)ms * 1000);
 }
-
+
+
 /*
  * Local Variables:
  * mode: c

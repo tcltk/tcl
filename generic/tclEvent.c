@@ -1552,7 +1552,6 @@ Tcl_VwaitObjCmd(
 	    break;
 	}
 	if (Tcl_LimitExceeded(interp)) {
-	    Tcl_ResetResult(interp);
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", -1));
 	    done = -4;
 	    break;
@@ -1567,7 +1566,6 @@ Tcl_VwaitObjCmd(
     if (done <= -2) {
 
 	if (done == -2) {
-	    Tcl_ResetResult(interp);
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	        "can't wait for variable \"%s\": would wait forever",
 	        nameString));

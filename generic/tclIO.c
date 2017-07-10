@@ -8507,7 +8507,7 @@ UpdateInterest(
 	    mask &= ~TCL_EXCEPTION;
 
 	    if (!statePtr->schedEvent) {
-	    	statePtr->schedEvent = CreateChannelScheduledEvent(chanPtr);
+		statePtr->schedEvent = CreateChannelScheduledEvent(chanPtr);
 	    }
 	}
     }
