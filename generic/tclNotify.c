@@ -60,10 +60,16 @@ typedef struct ThreadSpecificData {
 				 * if none. */
     Tcl_Event *timerMarkerPtr;	/* Weak pointer to last event in the queue, 
     				 * before timer event generation */
+    Tcl_Event *firstRetardEv;	/* First retarded event, or NULL if none. */
+    Tcl_Event *lastRetardEv;	/* Last retarded event, or NULL if none. */
     Tcl_Mutex queueMutex;	/* Mutex to protect access to the previous
 				 * three fields. */
+    size_t queueEpoch;		/* Epoch of the queue (incremented if changed 
+				 * using TCL_QUEUE_HEAD or TCL_QUEUE_MARK). */
     int serviceMode;		/* One of TCL_SERVICE_NONE or
 				 * TCL_SERVICE_ALL. */
+    size_t serviceLevel;	/* Current (nested) level of event cycle. */
+    size_t blockTimeServLev;	/* Level of the event cycle block time was set. */
     int blockTimeSet;		/* 0 means there is no maximum block time:
 				 * block forever. */
     Tcl_Time blockTime;		/* If blockTimeSet is 1, gives the maximum
@@ -139,7 +145,7 @@ TclInitNotifier(void)
 	/* Empty loop body. */
     }
 
-    if (NULL == tsdPtr) {
+    if (NULL == tsdPtr || !tsdPtr->initialized) {
 	/*
 	 * Notifier not yet initialized in this thread.
 	 */
@@ -196,8 +202,17 @@ TclFinalizeNotifier(void)
 	evPtr = evPtr->nextPtr;
 	ckfree((char *) hold);
     }
+    for (evPtr = tsdPtr->firstRetardEv; evPtr != NULL; ) {
+	hold = evPtr;
+	evPtr = evPtr->nextPtr;
+	ckfree((char *) hold);
+    }
     tsdPtr->firstEventPtr = NULL;
     tsdPtr->lastEventPtr = NULL;
+    tsdPtr->markerEventPtr = NULL;
+    tsdPtr->timerMarkerPtr = NULL;
+    tsdPtr->firstRetardEv = NULL;
+    tsdPtr->lastRetardEv = NULL;
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 
     Tcl_MutexLock(&listLock);
@@ -384,7 +399,7 @@ Tcl_QueueEvent(
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
     Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
-				 * TCL_QUEUE_MARK. */
+				 * TCL_QUEUE_MARK or TCL_QUEUE_RETARDED. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     QueueEvent(tsdPtr, evPtr, position);
@@ -415,7 +430,7 @@ Tcl_ThreadQueueEvent(
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
     Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
-				 * TCL_QUEUE_MARK. */
+				 * TCL_QUEUE_MARK or TCL_QUEUE_RETARDED. */
 {
     ThreadSpecificData *tsdPtr;
 
@@ -439,6 +454,39 @@ Tcl_ThreadQueueEvent(
 	ckfree((char *) evPtr);
     }
     Tcl_MutexUnlock(&listLock);
+}
+
+static inline void
+SpliceEventTail(
+    Tcl_Event *evPtr,
+    Tcl_Event **firstEvPtr,
+    Tcl_Event **lastEvPtr)
+{
+    evPtr->nextPtr = NULL;
+    if (*firstEvPtr == NULL) {
+        *firstEvPtr = evPtr;
+    } else {
+        (*lastEvPtr)->nextPtr = evPtr;
+    }
+    *lastEvPtr = evPtr;
+}
+
+static inline void
+LinkEvent(
+    ThreadSpecificData *tsdPtr,
+    Tcl_Event *evPtr,
+    Tcl_Event *prevPtr)
+{
+    if (prevPtr) {
+	evPtr->nextPtr = prevPtr->nextPtr;
+	prevPtr->nextPtr = evPtr;
+    } else {
+	evPtr->nextPtr = tsdPtr->firstEventPtr;
+	tsdPtr->firstEventPtr = evPtr;
+    }
+    if (evPtr->nextPtr == NULL) {
+	tsdPtr->lastEventPtr = evPtr;
+    }
 }
 
 /*
@@ -472,22 +520,19 @@ QueueEvent(
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
     Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
-				 * TCL_QUEUE_MARK. */
+				 * TCL_QUEUE_MARK or TCL_QUEUE_RETARDED. */
 {
     Tcl_MutexLock(&(tsdPtr->queueMutex));
-    if (position == TCL_QUEUE_TAIL) {
+    switch (position) {
+      case TCL_QUEUE_TAIL:
 	/*
 	 * Append the event on the end of the queue.
 	 */
 
-	evPtr->nextPtr = NULL;
-	if (tsdPtr->firstEventPtr == NULL) {
-	    tsdPtr->firstEventPtr = evPtr;
-	} else {
-	    tsdPtr->lastEventPtr->nextPtr = evPtr;
-	}
-	tsdPtr->lastEventPtr = evPtr;
-    } else if (position == TCL_QUEUE_HEAD) {
+	SpliceEventTail(evPtr, &tsdPtr->firstEventPtr, &tsdPtr->lastEventPtr);
+
+      break;
+      case TCL_QUEUE_HEAD:
 	/*
 	 * Push the event on the head of the queue.
 	 */
@@ -503,37 +548,73 @@ QueueEvent(
 	    tsdPtr->timerMarkerPtr = evPtr;
 	}
 
-    } else if (position == TCL_QUEUE_MARK) {
+	tsdPtr->queueEpoch++; /* queue may be changed in the middle */
+
+      break;
+      case TCL_QUEUE_MARK:
 	/*
 	 * Insert the event after the current marker event and advance the
 	 * marker to the new event.
 	 */
 
-	if (tsdPtr->markerEventPtr == NULL) {
-	    evPtr->nextPtr = tsdPtr->firstEventPtr;
-	    tsdPtr->firstEventPtr = evPtr;
-	} else {
-	    evPtr->nextPtr = tsdPtr->markerEventPtr->nextPtr;
-	    tsdPtr->markerEventPtr->nextPtr = evPtr;
-	}
+	LinkEvent(tsdPtr, evPtr, tsdPtr->markerEventPtr);
 	tsdPtr->markerEventPtr = evPtr;
-	if (evPtr->nextPtr == NULL) {
-	    tsdPtr->lastEventPtr = evPtr;
-	}
 
 	/* move timer event hereafter */
 	if (tsdPtr->timerMarkerPtr == INT2PTR(-1)) {
 	    tsdPtr->timerMarkerPtr = evPtr;
 	}
+
+	tsdPtr->queueEpoch++; /* queue may be changed in the middle */
+      break;
+      case TCL_QUEUE_RETARDED:
+	/*
+	 * Append the event on the end of the retarded list.
+	 * This guarantees the service earliest at the next event-cycle.
+	 */
+
+	SpliceEventTail(evPtr, &tsdPtr->firstRetardEv, &tsdPtr->lastRetardEv);
+      break;
     }
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
+}
+
+static Tcl_Event *
+SearchEventInQueue(
+    Tcl_Event *firstEvPtr,
+    Tcl_Event *evPtr,
+    Tcl_Event **prevEvPtr)
+{
+    Tcl_Event *prevPtr = NULL;
+
+    /*
+     * Search event in the queue (if not first one).
+     */
+
+    if (evPtr != firstEvPtr) {
+
+	for (prevPtr = firstEvPtr;
+		prevPtr && prevPtr->nextPtr != evPtr;
+		prevPtr = prevPtr->nextPtr) {
+	    /* Empty loop body. */
+	}
+	if (!prevPtr) {
+	    /* not in queue */
+	    evPtr = NULL;
+	}
+    }
+    if (prevEvPtr) {
+	*prevEvPtr = prevPtr;
+    }
+    return evPtr;
 }
 
 static void
 UnlinkEvent(
     ThreadSpecificData *tsdPtr,
     Tcl_Event *evPtr,
-    Tcl_Event *prevPtr) {
+    Tcl_Event *prevPtr)
+{
     /*
      * Unlink it.
      */
@@ -543,14 +624,17 @@ UnlinkEvent(
     } else {
 	prevPtr->nextPtr = evPtr->nextPtr;
     }
-
-    /*
-     * Update 'last' and 'marker' events if either has been deleted.
-     */
-
     if (evPtr->nextPtr == NULL) {
 	tsdPtr->lastEventPtr = prevPtr;
     }
+
+    /* queue may be changed in the middle */
+    tsdPtr->queueEpoch++;
+
+    /*
+     * Update 'marker' events if either has been deleted.
+     */
+
     if (tsdPtr->markerEventPtr == evPtr) {
 	tsdPtr->markerEventPtr = prevPtr;
     }
@@ -558,7 +642,38 @@ UnlinkEvent(
 	tsdPtr->timerMarkerPtr = prevPtr ? prevPtr : INT2PTR(-1);
     }
 }
-
+
+static void
+InvolveRetardedEvents(
+    ThreadSpecificData *tsdPtr)
+{
+    /* move retarded events at end of the queue */
+    if (tsdPtr->firstEventPtr == NULL) {
+	tsdPtr->firstEventPtr = tsdPtr->firstRetardEv;
+    } else {
+	tsdPtr->lastEventPtr->nextPtr = tsdPtr->firstRetardEv;
+    }
+    tsdPtr->lastEventPtr = tsdPtr->lastRetardEv;
+    /* reset retarded list */
+    tsdPtr->lastRetardEv = tsdPtr->firstRetardEv = NULL;
+}
+
+static void
+UnlinkRetardedEvent(
+    ThreadSpecificData *tsdPtr,
+    Tcl_Event *evPtr,
+    Tcl_Event *prevPtr)
+{
+    if (prevPtr == NULL) {
+	tsdPtr->firstRetardEv = evPtr->nextPtr;
+    } else {
+	prevPtr->nextPtr = evPtr->nextPtr;
+    }
+    if (evPtr->nextPtr == NULL) {
+	tsdPtr->lastRetardEv = prevPtr;
+    }
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -596,33 +711,40 @@ Tcl_DeleteEvents(
      * Walk the queue of events for the thread, applying 'proc' to each to
      * decide whether to eliminate the event.
      */
-
     prevPtr = NULL;
     evPtr = tsdPtr->firstEventPtr;
     while (evPtr != NULL) {
 	Tcl_Event *nextPtr = evPtr->nextPtr;
 	if ((*proc)(evPtr, clientData) == 1) {
 
-	    /*
-	     * This event should be deleted. Unlink it.
-	     */
-
+	    /* This event should be deleted. Unlink and delete it. */
 	    UnlinkEvent(tsdPtr, evPtr, prevPtr);
-
-	    /*
-	     * Delete the event data structure.
-	     */
-
 	    ckfree((char *) evPtr);
 	} else {
-	    /*
-	     * Event is to be retained.
-	     */
-
+	    /* Event is to be retained. */
 	    prevPtr = evPtr;
 	}
 	evPtr = nextPtr;
     }
+    
+    /*
+     * Do the same for the retarded list.
+     */
+    prevPtr = NULL;
+    evPtr = tsdPtr->firstRetardEv;
+    while (evPtr != NULL) {
+	Tcl_Event *nextPtr = evPtr->nextPtr;
+	if (proc(evPtr, clientData) == 1) {
+	    /* This event should be deleted. Unlink and delete it. */
+	    UnlinkRetardedEvent(tsdPtr, evPtr, prevPtr);
+	    ckfree((char *) evPtr);
+	} else {
+	    /* Event is to be retained. */
+	    prevPtr = evPtr;
+	}
+	evPtr = nextPtr;
+    }
+
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 }
 
@@ -631,36 +753,22 @@ TclpCancelEvent(
     Tcl_Event *evPtr)		/* Event to remove from queue. */
 {
     Tcl_Event *prevPtr = NULL;
-
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
 
     /*
-     * Search event to unlink from queue.
+     * Search event to unlink from queue and delete it.
+     * Note the event can be in retarded list.
      */
 
-    if (evPtr != tsdPtr->firstEventPtr) {
-	for (prevPtr = tsdPtr->firstEventPtr;
-		prevPtr && prevPtr->nextPtr != evPtr;
-		prevPtr = prevPtr->nextPtr) {
-	    /* Empty loop body. */
-	}
-	if (!prevPtr) {
-	    evPtr = NULL; /* not in queue (already removed) */
-	}
-    }
-
-    if (evPtr) {
-	/*
-	 * Unlink it.
-	 */
-
+    if (SearchEventInQueue(tsdPtr->firstEventPtr, evPtr, &prevPtr)) {
 	UnlinkEvent(tsdPtr, evPtr, prevPtr);
-
-	/*
-	 * Delete the event data structure.
-	 */
+	ckfree((char *) evPtr);
+    }
+    else
+    if (!SearchEventInQueue(tsdPtr->firstRetardEv, evPtr, &prevPtr)) {
+	UnlinkRetardedEvent(tsdPtr, evPtr, prevPtr);
 	ckfree((char *) evPtr);
     }
 
@@ -696,9 +804,10 @@ Tcl_ServiceEvent(
 				 * matching this will be skipped for
 				 * processing later. */
 {
-    Tcl_Event *evPtr, *prevPtr = NULL;
+    Tcl_Event *evPtr, *prevPtr;
     Tcl_EventProc *proc;
     int result;
+    size_t queueEpoch;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
@@ -740,17 +849,21 @@ Tcl_ServiceEvent(
 	goto processTimer;
     }
 
+    /* Lock queue to process events */
+    Tcl_MutexLock(&(tsdPtr->queueMutex));
+
     /*
      * Loop through all the events in the queue until we find one that can
      * actually be handled.
      */
 
-    Tcl_MutexLock(&(tsdPtr->queueMutex));
-    for (evPtr = tsdPtr->firstEventPtr;
+    for (prevPtr = NULL, evPtr = tsdPtr->firstEventPtr;
 	 evPtr != NULL && tsdPtr->timerMarkerPtr != INT2PTR(-1);
-	 evPtr = evPtr->nextPtr
+	 prevPtr = evPtr, evPtr = evPtr->nextPtr
     ) {
-	
+
+    repeatCycle:
+
 	if (tsdPtr->timerMarkerPtr == evPtr) {
 	    tsdPtr->timerMarkerPtr = INT2PTR(-1); /* timer marker reached */
 	}
@@ -773,10 +886,12 @@ Tcl_ServiceEvent(
 
 	proc = evPtr->proc;
 	if (proc == NULL) {
-	    prevPtr = evPtr;
 	    continue;
 	}
 	evPtr->proc = NULL;
+
+	/* Save current queue epoch (if unchanged - the same prevPtr) */
+	queueEpoch = tsdPtr->queueEpoch;
 
 	/*
 	 * Release the lock before calling the event function. This allows
@@ -789,58 +904,64 @@ Tcl_ServiceEvent(
 	result = (*proc)(evPtr, flags);
 	Tcl_MutexLock(&(tsdPtr->queueMutex));
 
-	if (result) {
+	/* If event processed or scheduled to be executed later (retarding) */
+	if (result || evPtr->proc) {
 
 	    /*
-	     * The event was processed, so remove it from the queue.
+	     * Check the queue was changed.
 	     */
 
-	    prevPtr = NULL;
-	    if (evPtr != tsdPtr->firstEventPtr) {
-		for (prevPtr = tsdPtr->firstEventPtr;
-			prevPtr && prevPtr->nextPtr != evPtr;
-			prevPtr = prevPtr->nextPtr) {
-		    /* Empty loop body. */
-		}
-		if (!prevPtr) {
-		    evPtr = NULL;
-		}
+	    if (queueEpoch != tsdPtr->queueEpoch) {
+		/* queue may be changed in the middle */
+		queueEpoch = tsdPtr->queueEpoch;
+		/* try to find event */
+		evPtr = SearchEventInQueue(tsdPtr->firstEventPtr,
+				evPtr, &prevPtr);
 	    }
+
+	    /* 
+	     * If the handler set another function to process it later, 
+	     * do retarding of the event.
+	     */
+	    if (evPtr && evPtr->proc) {
+		/*
+		 * Reattach the event on the end of the retarded list.
+		 */
+		UnlinkEvent(tsdPtr, evPtr, prevPtr);
+		SpliceEventTail(evPtr,
+			&tsdPtr->firstRetardEv, &tsdPtr->lastRetardEv);
+
+		/* next event to service */
+		if (prevPtr == NULL) {
+		    /* we stood on begin of list - just repeat from new begin */
+		    evPtr = tsdPtr->firstEventPtr;
+		} else {
+		    /* continue from next of previous event */
+		    evPtr = prevPtr->nextPtr;
+		}
+		goto repeatCycle;
+	    }
+
+	    /*
+	     * The event was processed, so remove it.
+	     */
 	    if (evPtr) {
 		/* Detach event from queue */
 		UnlinkEvent(tsdPtr, evPtr, prevPtr);
-
-		/* If wanted to prolong (repeat) */
-		if (evPtr->proc) {
-		    /*
-		     * Event was restored (prolonged) - sign to reattach to tail
-		     */
-		    if (evPtr != tsdPtr->lastEventPtr) {
-			/* detach event from queue */
-			UnlinkEvent(tsdPtr, evPtr, prevPtr);
-			/* attach to tail */
-			evPtr->nextPtr = NULL;
-			if (tsdPtr->firstEventPtr == NULL) {
-			    tsdPtr->firstEventPtr = evPtr;
-			} else {
-			    tsdPtr->lastEventPtr->nextPtr = evPtr;
-			}
-			tsdPtr->lastEventPtr = evPtr;
-		    }
-		} else {
-		    /* Free event */
-		    UnlinkEvent(tsdPtr, evPtr, prevPtr);
-		    ckfree((char *) evPtr);
-		}
+		
+		/* Free event */
+		ckfree((char *) evPtr);
 	    }
+	    
+	    /* event processed - return with 1 */
 	    Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 	    return 1;
+
 	} else {
 	    /*
 	     * The event wasn't actually handled, so we have to restore the
 	     * proc field to allow the event to be attempted again.
 	     */
-
 	    evPtr->proc = proc;
 	}
     }
@@ -932,6 +1053,70 @@ CheckSourceThreshold(
 }
 #endif
 
+static int 
+SetUpEventSources(
+    ThreadSpecificData *tsdPtr,
+    int flags)
+{
+    int res = 0;
+    EventSource *sourcePtr;
+
+    /*
+     * Set up all the event sources for new events. This will cause the
+     * block time to be updated if necessary.
+     */
+    tsdPtr->inTraversal++;
+    for (sourcePtr = tsdPtr->firstEventSourcePtr;
+	 sourcePtr != NULL;
+	 sourcePtr = sourcePtr->nextPtr
+    ) {
+	if (sourcePtr->checkProc) {
+	    sourcePtr->setupProc(sourcePtr->clientData, flags);
+	    res++;
+	}
+    }
+    tsdPtr->inTraversal--;
+
+    return res;
+}
+
+static int
+CheckEventSources(
+    ThreadSpecificData *tsdPtr,
+    int flags)
+{
+    int res = 0;
+    EventSource *sourcePtr;
+
+    /*
+     * Check all the event sources for new events.
+     */
+    for (sourcePtr = tsdPtr->firstEventSourcePtr;
+	 sourcePtr != NULL;
+	 sourcePtr = sourcePtr->nextPtr
+    ) {
+	if (sourcePtr->checkProc) {
+	    sourcePtr->checkProc(sourcePtr->clientData, flags);
+	    res++;
+	}
+    }
+    
+    /*
+     * If we've some retarded events (from last event-cycle), attach they here
+     * to the tail of the event queue (new event-cycle).
+     */
+    if (tsdPtr->firstRetardEv) {
+	Tcl_MutexLock(&(tsdPtr->queueMutex));
+	if (tsdPtr->firstRetardEv) {
+	    InvolveRetardedEvents(tsdPtr);
+	    res++;
+	}
+	Tcl_MutexUnlock(&(tsdPtr->queueMutex));
+    }
+    
+    return res;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -955,7 +1140,6 @@ int
 TclPeekEventQueued(
     int flags)
 {
-    EventSource *sourcePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     int repeat = 1;
 
@@ -987,13 +1171,10 @@ TclPeekEventQueued(
 	/*
 	 * Check all the event sources for new events.
 	 */
-	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
-		sourcePtr = sourcePtr->nextPtr) {
-	    if (sourcePtr->checkProc) {
-		(sourcePtr->checkProc)(sourcePtr->clientData, flags);
-	    }
+	if (!CheckEventSources(tsdPtr, flags)) {
+	    return 0; /* no sources - no events could be created at all */
 	}
-    
+
     } while (repeat--);
 
     return 0;
@@ -1132,6 +1313,10 @@ Tcl_SetMaxBlockTime(
      */
 
     if (!tsdPtr->inTraversal) {
+	if (tsdPtr->blockTimeServLev < tsdPtr->serviceLevel) {
+	    /* avoid resetting the blockTime set outside of traversal. */
+	    tsdPtr->blockTimeServLev = tsdPtr->serviceLevel;
+	}
 	Tcl_SetTimer(&tsdPtr->blockTime);
     }
 }
@@ -1172,7 +1357,6 @@ Tcl_DoOneEvent(
 				 * others defined by event sources. */
 {
     int result = 0, oldMode;
-    EventSource *sourcePtr;
     Tcl_Time *timePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     int blockTimeWasSet;
@@ -1189,6 +1373,15 @@ Tcl_DoOneEvent(
     blockTimeWasSet = tsdPtr->blockTimeSet;
     
     /*
+     * Set the service mode to none so notifier event routines won't try to
+     * service events recursively.
+     */
+
+    oldMode = tsdPtr->serviceMode;
+    tsdPtr->serviceMode = TCL_SERVICE_NONE;
+    tsdPtr->serviceLevel++;
+
+    /*
      * Asynchronous event handlers are considered to be the highest priority
      * events, and so must be invoked before we process events on the event
      * queue.
@@ -1197,23 +1390,16 @@ Tcl_DoOneEvent(
     if (flags & TCL_ASYNC_EVENTS) {
 	if (Tcl_AsyncReady()) {
 	    (void) Tcl_AsyncInvoke(NULL, 0);
-	    return 1;
+	    result = 1;
+	    goto done;
 	}
 
 	/* Async only and don't wait - return */
 	if ( (flags & (TCL_ALL_EVENTS|TCL_DONT_WAIT))
 			== (TCL_ASYNC_EVENTS|TCL_DONT_WAIT) ) {
-	    return 0;
+	    goto done;
 	}
     }
-
-    /*
-     * Set the service mode to none so notifier event routines won't try to
-     * service events recursively.
-     */
-
-    oldMode = tsdPtr->serviceMode;
-    tsdPtr->serviceMode = TCL_SERVICE_NONE;
 
     /*
      * Main loop until servicing exact one event or block time resp. 
@@ -1264,15 +1450,7 @@ Tcl_DoOneEvent(
 	 * Set up all the event sources for new events. This will cause the
 	 * block time to be updated if necessary.
 	 */
-
-	tsdPtr->inTraversal = 1;
-	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
-		sourcePtr = sourcePtr->nextPtr) {
-	    if (sourcePtr->setupProc) {
-		(sourcePtr->setupProc)(sourcePtr->clientData, flags);
-	    }
-	}
-	tsdPtr->inTraversal = 0;
+	SetUpEventSources(tsdPtr, flags);
 
 	if (tsdPtr->blockTimeSet) {
 	    timePtr = &tsdPtr->blockTime;
@@ -1286,6 +1464,7 @@ Tcl_DoOneEvent(
 	 */
     wait:
 	result = Tcl_WaitForEvent(timePtr);
+	tsdPtr->blockTimeServLev = 0; /* reset block-time level (processed). */
 	if (result < 0) {
 	    if (blockTimeWasSet) {
 		result = 0;
@@ -1296,13 +1475,7 @@ Tcl_DoOneEvent(
 	/*
 	 * Check all the event sources for new events.
 	 */
-
-	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
-		sourcePtr = sourcePtr->nextPtr) {
-	    if (sourcePtr->checkProc) {
-		(sourcePtr->checkProc)(sourcePtr->clientData, flags);
-	    }
-	}
+	CheckEventSources(tsdPtr, flags);
 
 	/*
 	 * Check for events queued by the notifier or event sources.
@@ -1345,11 +1518,17 @@ Tcl_DoOneEvent(
 	    break;
 	}
     } while ( !(flags & TCL_DONT_WAIT) );
-    
-    /* Reset block time earliest at the end of event cycle */
-    tsdPtr->blockTimeSet = 0;
 
+done:
+    /*
+     * Reset block time earliest at the end of event cycle and restore mode.
+     */
+    if (tsdPtr->blockTimeServLev < tsdPtr->serviceLevel) {
+	tsdPtr->blockTimeSet = 0;
+	tsdPtr->blockTimeServLev = 0;
+    }
     tsdPtr->serviceMode = oldMode;
+    tsdPtr->serviceLevel--;
     return result;
 }
 
@@ -1377,7 +1556,6 @@ int
 Tcl_ServiceAll(void)
 {
     int result = 0;
-    EventSource *sourcePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (tsdPtr->serviceMode == TCL_SERVICE_NONE) {
@@ -1405,21 +1583,10 @@ Tcl_ServiceAll(void)
      * so we can avoid multiple changes.
      */
 
-    tsdPtr->inTraversal = 1;
     tsdPtr->blockTimeSet = 0;
 
-    for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
-	    sourcePtr = sourcePtr->nextPtr) {
-	if (sourcePtr->setupProc) {
-	    (sourcePtr->setupProc)(sourcePtr->clientData, TCL_ALL_EVENTS);
-	}
-    }
-    for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
-	    sourcePtr = sourcePtr->nextPtr) {
-	if (sourcePtr->checkProc) {
-	    (sourcePtr->checkProc)(sourcePtr->clientData, TCL_ALL_EVENTS);
-	}
-    }
+    SetUpEventSources(tsdPtr, TCL_ALL_EVENTS);
+    CheckEventSources(tsdPtr, TCL_ALL_EVENTS);
 
     while (Tcl_ServiceEvent(0)) {
 	result = 1;
@@ -1433,7 +1600,6 @@ Tcl_ServiceAll(void)
     } else {
 	Tcl_SetTimer(&tsdPtr->blockTime);
     }
-    tsdPtr->inTraversal = 0;
     tsdPtr->serviceMode = TCL_SERVICE_ALL;
     return result;
 }

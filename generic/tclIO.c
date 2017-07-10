@@ -7984,6 +7984,21 @@ Tcl_NotifyChannel(
     tsdPtr->nestedHandlerPtr = nh.nestedHandlerPtr;
 }
 
+static inline Tcl_Event *
+CreateChannelScheduledEvent(
+    Channel *chanPtr)
+{
+#ifdef SYNTHETIC_EVENT_TIME
+    Tcl_Time blckTime;
+
+    blckTime.sec = SYNTHETIC_EVENT_TIME / 1000000;
+    blckTime.usec = SYNTHETIC_EVENT_TIME % 1000000;
+    Tcl_SetMaxBlockTime(&blckTime);
+#endif
+    return TclpQueueEventClientData(ChannelScheduledProc, chanPtr,
+		TCL_QUEUE_RETARDED);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8077,12 +8092,7 @@ UpdateInterest(
 	    mask &= ~TCL_EXCEPTION;
 
 	    if (!statePtr->schedEvent) {
-		Tcl_Event *evPtr = (Tcl_Event *)ckalloc(
-			sizeof(Tcl_Event) + sizeof(Channel*));
-		*(Channel**)(evPtr+1) = chanPtr;
-		evPtr->proc = ChannelScheduledProc;
-		statePtr->schedEvent = evPtr;
-		Tcl_QueueEvent(evPtr, TCL_QUEUE_TAIL);
+		statePtr->schedEvent = CreateChannelScheduledEvent(chanPtr);
 	    }
 	}
     }
@@ -8129,13 +8139,13 @@ ChannelScheduledProc(
 	 * before UpdateInterest gets called by Tcl_NotifyChannel.
 	 */
 
-	statePtr->schedEvent->proc = ChannelScheduledProc; /* reattach to tail */
-
+	statePtr->schedEvent = CreateChannelScheduledEvent(chanPtr);
+	
 	Tcl_Preserve(statePtr);
 	Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
 	Tcl_Release(statePtr);
 
-	return 1;
+	return 1; /* next cycle */
     }
 
     statePtr->schedEvent = NULL; /* event done. */
@@ -8734,11 +8744,7 @@ TclCopyChannel(
      */
 
     if ((nonBlocking == CHANNEL_NONBLOCKING) && (toRead == 0)) {
-	Tcl_Event *evPtr = (Tcl_Event *)ckalloc(
-		sizeof(Tcl_Event) + sizeof(ClientData*));
-	*(ClientData*)(evPtr+1) = csPtr;
-	evPtr->proc = ZeroTransferEventProc;
-	Tcl_QueueEvent(evPtr, TCL_QUEUE_TAIL);
+	TclpQueueEventClientData(ZeroTransferEventProc, csPtr, TCL_QUEUE_TAIL);
         return 0;
     }
 

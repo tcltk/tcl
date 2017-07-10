@@ -2998,6 +2998,33 @@ MODULE_SCOPE void	TclSetTimerEventMarker(int flags);
 MODULE_SCOPE int	TclServiceTimerEvents(void);
 MODULE_SCOPE int	TclServiceIdleEx(int flags, int count);
 MODULE_SCOPE void	TclpCancelEvent(Tcl_Event *evPtr);
+static inline Tcl_Event*
+TclpQueueEventEx(
+    Tcl_EventProc *proc,	/* Event function to call if it servicing. */
+    ClientData extraData,	/* Event extra data to be included and its */
+    size_t extraDataSize,	/* extra size (to allocate and copy into). */
+    Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
+				 * TCL_QUEUE_MARK or TCL_QUEUE_RETARDED. */
+{
+    Tcl_Event *evPtr = (Tcl_Event*)ckalloc(sizeof(Tcl_Event) + extraDataSize);
+    evPtr->proc = proc;
+    memcpy((evPtr+1), extraData, extraDataSize);
+    Tcl_QueueEvent(evPtr, position);
+    return evPtr;
+}
+static inline Tcl_Event*
+TclpQueueEventClientData(
+    Tcl_EventProc *proc,	/* Event function to call if it servicing. */
+    ClientData clientData,	/* Event extra data to be included. */
+    Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
+				 * TCL_QUEUE_MARK or TCL_QUEUE_RETARDED. */
+{
+    Tcl_Event *evPtr = (Tcl_Event*)ckalloc(sizeof(Tcl_Event) + sizeof(clientData));
+    evPtr->proc = proc;
+    *(ClientData*)(evPtr+1) = clientData;
+    Tcl_QueueEvent(evPtr, position);
+    return evPtr;
+}
 MODULE_SCOPE TclTimerEvent* TclpCreateTimerEvent(Tcl_WideInt usec,
 			    Tcl_TimerProc *proc, Tcl_TimerDeleteProc *delProc,
 			    size_t extraDataSize, int flags);

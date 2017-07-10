@@ -1380,9 +1380,9 @@ Tcl_VwaitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    int done = 0, foundEvent = 1, limit = 0, checktime = 0;
+    int done = 0, foundEvent = 1, checktime = 0;
     int flags = TCL_ALL_EVENTS; /* default flags */
-    char *nameString;
+    const char *nameString;
     int optc = objc - 2; /* options count without cmd and varname */
     Tcl_WideInt usec = -1;
     Tcl_WideInt now = 0, wakeup = 0;
@@ -1411,8 +1411,6 @@ Tcl_VwaitObjCmd(
 	}
     }
 
-    done = 0;
-
     /* 
      * If timeout specified - create timer event or no-wait by 0ms.
      * Note the time can be switched (time-jump), so use monotonic time here.
@@ -1427,7 +1425,7 @@ Tcl_VwaitObjCmd(
     }
 
     nameString = Tcl_GetString(objv[objc-1]);
-    if (Tcl_TraceVar(interp, nameString,
+    if (Tcl_TraceVar2(interp, nameString, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, (ClientData) &done) != TCL_OK) {
 	return TCL_ERROR;
@@ -1465,33 +1463,53 @@ Tcl_VwaitObjCmd(
 	     * option -nowait for vwait means - we don't wait for events;
 	     * if no timeout (0) - just stop waiting (no more events)
 	     */
-	    if (flags & TCL_DONT_WAIT) {
+	    if (foundEvent == 0 && (flags & TCL_DONT_WAIT || usec != -1)) {
 		foundEvent = 1;
-		done = -2;
-	    } else if (usec > 0 && foundEvent == 0) {
-		foundEvent = 1;
+		if (usec == 0) { /* timeout occurs */
+		    done = -1;
+		    break;
+		}
 	    }
 	    /* don't stop wait - no event expected here 
-	     * (stop only on error case foundEvent < 0). */
+	     * (stop only on error case foundEvent <= 0). */
 	    if (foundEvent < 0) {
 		done = -2;
 	    }
 	}
 	/* check interpreter limit exceeded */
 	if (Tcl_LimitExceeded(interp)) {
-	    limit = 1;
-	    foundEvent = 0;
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", -1));
+	    done = -4;
 	    break;
 	}
     } while (!done);
     
-    Tcl_UntraceVar(interp, nameString,
+    Tcl_UntraceVar2(interp, nameString, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, (ClientData) &done);
 
+    /* if some error */
+    if (done <= -2) {
+
+	if (done == -2) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	        "can't wait for variable \"%s\": would wait forever",
+	        nameString));
+	    Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", NULL);
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * The interpreter's result was already set to the right error message
+	 * prior to exiting the loop above.
+	 */
+
+	return TCL_ERROR;
+    }
+
     /* if timeout specified (and no errors) */
-    if (usec != -1 && foundEvent > 0) {
-    	Tcl_Obj *objPtr;
+    if (usec != -1) {
+	Tcl_Obj *objPtr;
 
 	/* done - true, timeout false */
 	TclNewLongObj(objPtr, (done > 0));
@@ -1505,15 +1523,6 @@ Tcl_VwaitObjCmd(
      */
 
     Tcl_ResetResult(interp);
-    if (limit) {
-	Tcl_AppendResult(interp, "limit exceeded", NULL);
-	return TCL_ERROR;
-    }
-    if (foundEvent <= 0) {
-	Tcl_AppendResult(interp, "can't wait for variable \"", nameString,
-		"\": would wait forever", NULL);
-	return TCL_ERROR;
-    }
     return TCL_OK;
 }
 

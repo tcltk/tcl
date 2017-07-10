@@ -1324,7 +1324,7 @@ struct Tcl_Event {
  */
 
 typedef enum {
-    TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK
+    TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK, TCL_QUEUE_RETARDED
 } Tcl_QueuePosition;
 
 /*

@@ -985,6 +985,10 @@ Tcl_WaitForEvent(
     if (timePtr != NULL) {
 
 	waitTime = TCL_TIME_TO_USEC(*timePtr);
+	/*
+	 * Note the time can be switched (time-jump), so use monotonic time here.
+	 */
+	endTime = TclpGetUTimeMonotonic() + waitTime;
 
 	/* 
 	 * If short wait or no wait at all, just process events already available
@@ -993,11 +997,6 @@ Tcl_WaitForEvent(
 	if (!timePtr->sec && timePtr->usec < TCL_TMR_MIN_DELAY) {
 
 	    canWait = 0;
-	} else {
-	    /*
-	     * Note the time can be switched (time-jump), so use monotonic time here.
-	     */
-	    endTime = TclpGetUTimeMonotonic() + waitTime;
 	}
 
 #ifndef TCL_THREADS
@@ -1029,12 +1028,13 @@ Tcl_WaitForEvent(
 
     pthread_mutex_lock(&notifierMutex);
 
+    waitForFiles = (tsdPtr->numFdBits > 0);
+
     /* if cannot wait (but not really necessary to wait), bypass triggering pipe */
-    if (!canWait && (!tsdPtr->numFdBits || tsdPtr->eventReady)) {
+    if (!canWait && (!waitForFiles || tsdPtr->eventReady)) {
 	goto nowait;
     }
 
-    waitForFiles = (tsdPtr->numFdBits > 0);
     if (!canWait) {
 	/*
 	 * Cannot emulate a polling select with a polling condition
@@ -1046,6 +1046,7 @@ Tcl_WaitForEvent(
 
 	if (waitForFiles) {
 	    tsdPtr->pollState = POLL_WANT;
+	    canWait = 1;
 	}
     } else {
 	tsdPtr->pollState = 0;
@@ -1084,11 +1085,20 @@ Tcl_WaitForEvent(
 
 	    waitTime = endTime - TclpGetUTimeMonotonic();
 
+	    /* Note: we should wait at least once if waitForFiles set */
 	    if (waitTime <= 0) {
-		break; /* end of wait */
+		if (!waitForFiles) {
+		    break; /* end of wait */
+		}
+		waitForFiles = 0;
+		waitTime = 0;
 	    }
+	    else
 	    if (waitTime <= TCL_TMR_OVERHEAD) {
-		canWait = 0;
+		if (!waitForFiles) {
+		    canWait = 0;
+		}
+		waitForFiles = 0;
 	    }
 	}
 
@@ -1193,7 +1203,7 @@ Tcl_WaitForEvent(
     ResetEvent(tsdPtr->event);
 #  endif /* __CYGWIN__ */
 
-    if (waitForFiles && tsdPtr->onList) {
+    if (tsdPtr->onList) {
 	/*
 	 * Remove the ThreadSpecificData structure of this thread from the
 	 * waiting list. Alert the notifier thread to recompute its select
