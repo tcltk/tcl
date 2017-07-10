@@ -7220,7 +7220,10 @@ test chan-io-54.1 {Recursive channel events} {socket fileevent} {
 	lappend result $next
 	if {$next == 1} {
 	    chan event $s readable [namespace code [list readit $s 2]]
-	    vwait [namespace which -variable x]
+	    if {![vwait 2000 [namespace which -variable x]]} {
+		set x failure
+		error "timeout: too long wait"
+	    }
 	}
 	incr x
     }
@@ -7249,9 +7252,7 @@ test chan-io-54.1 {Recursive channel events} {socket fileevent} {
     lappend result [chan gets $cs]
     chan configure $cs -blocking off
     chan event $cs readable [namespace code [list readit $cs 1]]
-    set a [after 2000 [namespace code { set x failure }]]
     vwait [namespace which -variable x]
-    after cancel $a
     chan close $as
     chan close $ss
     chan close $cs
