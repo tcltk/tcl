@@ -1526,10 +1526,18 @@ Tcl_DoOneEvent(
 	 */
 
 	result = 0;
-	if (blockTimeWasSet) {
+	if ((flags & TCL_DONT_WAIT) || blockTimeWasSet) {
 	    break;
 	}
-    } while ( !(flags & TCL_DONT_WAIT) );
+
+	/*
+	 * Reset block time before continue event-cycle.
+	 */
+	if (tsdPtr->blockTimeServLev < tsdPtr->serviceLevel) {
+	    tsdPtr->blockTimeSet = 0;
+	    tsdPtr->blockTimeServLev = 0;
+	}
+    } while (1);
 
 done:
     /*
@@ -1579,6 +1587,7 @@ Tcl_ServiceAll(void)
      * avoid recursive calls.
      */
 
+    tsdPtr->serviceLevel++;
     tsdPtr->serviceMode = TCL_SERVICE_NONE;
 
     /*
@@ -1595,23 +1604,29 @@ Tcl_ServiceAll(void)
      * so we can avoid multiple changes.
      */
 
+    tsdPtr->inTraversal++;
     tsdPtr->blockTimeSet = 0;
+    tsdPtr->blockTimeServLev = 0;
 
     SetUpEventSources(tsdPtr, TCL_ALL_EVENTS);
     CheckEventSources(tsdPtr, TCL_ALL_EVENTS);
 
-    while (Tcl_ServiceEvent(0)) {
+    if (Tcl_ServiceEvent(0)) {
+	while (Tcl_ServiceEvent(0)) {};
 	result = 1;
     }
     if (TclServiceIdle()) {
 	result = 1;
     }
 
-    if (!tsdPtr->blockTimeSet) {
-	Tcl_SetTimer(NULL);
-    } else {
-	Tcl_SetTimer(&tsdPtr->blockTime);
+    if (tsdPtr->inTraversal-- <= 1) {
+	if (!tsdPtr->blockTimeSet) {
+	    Tcl_SetTimer(NULL);
+	} else {
+	    Tcl_SetTimer(&tsdPtr->blockTime);
+	}
     }
+    tsdPtr->serviceLevel--;
     tsdPtr->serviceMode = TCL_SERVICE_ALL;
     return result;
 }
