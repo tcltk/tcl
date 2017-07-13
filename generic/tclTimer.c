@@ -1216,7 +1216,6 @@ TclServiceTimerEvents(void)
 	/* be sure that timer-list was not changed inside the proc call */
 	if (currentEpoch != tsdPtr->timerListEpoch) {
 	    /* timer-list was changed - stop processing */
-	    tsdPtr->timerPending++;
 	    break;
 	}
     }
