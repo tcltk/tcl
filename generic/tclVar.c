@@ -1740,6 +1740,7 @@ Tcl_ObjSetVar2(
 				 * TCL_LEAVE_ERR_MSG. */
 {
     Var *varPtr, *arrayPtr;
+    int newValRefCnt = newValuePtr->refCount; /* save original refCount */
 
     /*
      * Filter to pass through only the flags this interface supports.
@@ -1750,7 +1751,15 @@ Tcl_ObjSetVar2(
     varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, flags, "set",
 	    /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
     if (varPtr == NULL) {
-	if (newValuePtr->refCount == 0) {
+	/* 
+	 * Free newValuePtr only if it had previously no references (otherwise
+	 * the pointer newValRefCnt may be already released (during lookup, 
+	 * by rewriting of interpreter state with error, by trace call, etc.)
+	 *
+	 * TODO: check this can be sane rewritten using something like flag
+	 * TCL_OWN_OBJREF as suggested in ticket [578155d5a19b348d].
+	 */
+	if (newValRefCnt == 0) { /* not set and no other references */
 	    Tcl_DecrRefCount(newValuePtr);
 	}
 	return NULL;
@@ -1807,6 +1816,7 @@ TclPtrSetVar(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *oldValuePtr;
     Tcl_Obj *resultPtr = NULL;
+    int newValRefCnt = newValuePtr->refCount;  /* save original refCount */
     int result;
 
     /*
@@ -1921,7 +1931,7 @@ TclPtrSetVar(
 		    Tcl_IncrRefCount(oldValuePtr);	/* Since var is ref */
 		}
 		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
-		if (newValuePtr->refCount == 0) {
+		if (newValRefCnt == 0) { /* not set and no other references */
 		    Tcl_DecrRefCount(newValuePtr);
 		}
 	    }
@@ -1981,7 +1991,7 @@ TclPtrSetVar(
     return resultPtr;
 
   earlyError:
-    if (newValuePtr->refCount == 0) {
+    if (newValRefCnt == 0) { /* not set and no other references */
 	Tcl_DecrRefCount(newValuePtr);
     }
     goto cleanup;
