@@ -290,14 +290,9 @@ proc unknown args {
 		    }
 		    append cinfo ...
 		}
-		append cinfo "\"\n    (\"uplevel\" body line 1)"
-		append cinfo "\n    invoked from within"
-		append cinfo "\n\"uplevel 1 \$args\""
-		#
-		# Try each possible form of the stack trace
-		# and trim the extra contribution from the matching case
-		#
-		set expect "$msg\n    while executing\n\"$cinfo"
+		set tail "\n    (\"uplevel\" body line 1)\n    invoked\
+			from within\n\"uplevel 1 \$args\""
+		set expect "$msg\n    while executing\n\"$cinfo\"$tail"
 		if {$errInfo eq $expect} {
 		    #
 		    # The stack has only the eval from the expanded command
@@ -311,21 +306,32 @@ proc unknown args {
 		# Stack trace is nested, trim off just the contribution
 		# from the extra "eval" of $args due to the "catch" above.
 		#
-		set expect "\n    invoked from within\n\"$cinfo"
-		set exlen [string length $expect]
-		set eilen [string length $errInfo]
-		set i [expr {$eilen - $exlen - 1}]
-		set einfo [string range $errInfo 0 $i]
-		#
-		# For now verify that $errInfo consists of what we are about
-		# to return plus what we expected to trim off.
-		#
-		if {$errInfo ne "$einfo$expect"} {
-		    error "Tcl bug: unexpected stack trace in \"unknown\"" {} \
-			[list CORE UNKNOWN BADTRACE $einfo $expect $errInfo]
+		set last [string last $tail $errInfo]
+		if {$last + [string length $tail] != [string length $errInfo]} {
+		    # Very likely cannot happen
+		    return -options $opts $msg
 		}
-		return -code error -errorcode $errCode \
-			-errorinfo $einfo $msg
+		set errInfo [string range $errInfo 0 $last-1]
+		set tail "\"$cinfo\""
+		set last [string last $tail $errInfo]
+		if {$last + [string length $tail] != [string length $errInfo]} {
+		    return -code error -errorcode $errCode \
+			    -errorinfo $errInfo $msg
+		}
+		set errInfo [string range $errInfo 0 $last-1]
+		set tail "\n    invoked from within\n"
+		set last [string last $tail $errInfo]
+		if {$last + [string length $tail] == [string length $errInfo]} {
+		    return -code error -errorcode $errCode \
+			    -errorinfo [string range $errInfo 0 $last-1] $msg
+		}
+		set tail "\n    while executing\n"
+		set last [string last $tail $errInfo]
+		if {$last + [string length $tail] == [string length $errInfo]} {
+		    return -code error -errorcode $errCode \
+			    -errorinfo [string range $errInfo 0 $last-1] $msg
+		}
+		return -options $opts $msg
 	    } else {
 		dict incr opts -level
 		return -options $opts $msg
