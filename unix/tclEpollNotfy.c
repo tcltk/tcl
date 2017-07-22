@@ -220,7 +220,10 @@ PlatformEventsControl(
     struct stat fdStat;
 
     newEvent.events = 0;
-    if (filePtr->mask & (TCL_READABLE | TCL_EXCEPTION)) {
+    if (filePtr->mask & TCL_EXCEPTION) {
+	newEvent.events |= EPOLLERR;
+    }
+    if (filePtr->mask & TCL_READABLE) {
 	newEvent.events |= EPOLLIN;
     }
     if (filePtr->mask & TCL_WRITABLE) {
@@ -241,9 +244,9 @@ PlatformEventsControl(
      *		associated with regular files belonging to tsdPtr.
      */
 
-    if (fstat(filePtr->fd, &fdStat) == -1) {
+    if (0 && fstat(filePtr->fd, &fdStat) == -1) {
 	Tcl_Panic("fstat: %s", strerror(errno));
-    } else if ((fdStat.st_mode & S_IFMT) == S_IFREG) {
+    } else if (0 && (fdStat.st_mode & S_IFMT) == S_IFREG) {
 	switch (op) {
 	case EPOLL_CTL_ADD:
 	    if (isNew) {
