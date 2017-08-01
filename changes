@@ -8790,4 +8790,8 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2017-06-26 (bug)[46f801] Repair autoloader fragility (porter)
 
---- Released 8.6.7, ????, 2017 --- http://core.tcl.tk/tcl/ for details
+2017-07-06 (bug)[adb198] Plug memleak in TclJoinPath (sebres,porter)
+
+2017-07-17 (bug)[fb2208] Repeatable tclIndex generation (wiedemann,nijtmans)
+
+--- Released 8.6.7, August 4, 2017 --- http://core.tcl.tk/tcl/ for details
