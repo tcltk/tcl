@@ -599,14 +599,20 @@ test http-4.15 {http::Event} -body {
 } -cleanup {
     catch {http::cleanup $token}
 } -returnCodes 1 -match glob -result "couldn't open socket*"
-test http-4.16 {Leak with Close vs Keepalive (bug [6ca52aec14]} -body {
+test http-4.16 {Leak with Close vs Keepalive (bug [6ca52aec14]} -setup {
+    proc list-difference {l1 l2} {
+	lmap item $l2 {if {$item in $l1} continue; set item}
+    }
+} -body {
     set before [chan names]
     set token [http::geturl $url -headers {X-Connection keep-alive}]
     http::cleanup $token
     update
-    set after [chan names]
-    expr {$before eq $after}
-} -result 1
+    # Compute what channels have been unexpectedly leaked past cleanup
+    list-difference $before [chan names]
+} -cleanup {
+    rename list-difference {}
+} -result {}
 
 test http-5.1 {http::formatQuery} {
     http::formatQuery name1 value1 name2 "value two"
