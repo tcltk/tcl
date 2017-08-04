@@ -36,6 +36,13 @@ proc bgerror {args} {
     puts stderr $errorInfo
 }
 
+if {$::tcl_platform(os) eq "Darwin"} {
+    # Name resolution often a problem on OSX; not focus of HTTP package anyway
+    set HOST localhost
+} else {
+    set HOST [info hostname]
+}
+
 set bindata "This is binary data\x0d\x0amore\x0dmore\x0amore\x00null"
 catch {unset data}
 
@@ -114,8 +121,8 @@ test http-3.1 {http::geturl} -returnCodes error -body {
 test http-3.2 {http::geturl} -returnCodes error -body {
     http::geturl http:junk
 } -result {Unsupported URL: http:junk}
-set url //[info hostname]:$port
-set badurl //[info hostname]:[expr $port+1]
+set url //${::HOST}:$port
+set badurl //${::HOST}:[expr $port+1]
 test http-3.3 {http::geturl} -body {
     set token [http::geturl $url]
     http::data $token
@@ -126,13 +133,13 @@ test http-3.3 {http::geturl} -body {
 <h2>GET /</h2>
 </body></html>"
 set tail /a/b/c
-set url //[info hostname]:$port/a/b/c
-set fullurl HTTP://user:pass@[info hostname]:$port/a/b/c
-set binurl //[info hostname]:$port/binary
-set xmlurl //[info hostname]:$port/xml
-set posturl //[info hostname]:$port/post
-set badposturl //[info hostname]:$port/droppost
-set authorityurl //[info hostname]:$port
+set url //${::HOST}:$port/a/b/c
+set fullurl HTTP://user:pass@${::HOST}:$port/a/b/c
+set binurl //${::HOST}:$port/binary
+set xmlurl //${::HOST}:$port/xml
+set posturl //${::HOST}:$port/post
+set badposturl //${::HOST}:$port/droppost
+set authorityurl //${::HOST}:$port
 set ipv6url http://\[::1\]:$port/
 test http-3.4 {http::geturl} -body {
     set token [http::geturl $url]
@@ -145,7 +152,7 @@ test http-3.4 {http::geturl} -body {
 </body></html>"
 proc selfproxy {host} {
     global port
-    return [list [info hostname] $port]
+    return [list ${::HOST} $port]
 }
 test http-3.5 {http::geturl} -body {
     http::config -proxyfilter selfproxy
@@ -588,14 +595,20 @@ test http-4.15 {http::Event} -body {
 } -cleanup {
     catch {http::cleanup $token}
 } -returnCodes 1 -match glob -result "couldn't open socket*"
-test http-4.16 {Leak with Close vs Keepalive (bug [6ca52aec14]} -body {
+test http-4.16 {Leak with Close vs Keepalive (bug [6ca52aec14]} -setup {
+    proc list-difference {l1 l2} {
+	lmap item $l2 {if {$item in $l1} continue; set item}
+    }
+} -body {
     set before [chan names]
     set token [http::geturl $url -headers {X-Connection keep-alive}]
     http::cleanup $token
     update
-    set after [chan names]
-    expr {$before eq $after}
-} -result 1
+    # Compute what channels have been unexpectedly leaked past cleanup
+    list-difference $before [chan names]
+} -cleanup {
+    rename list-difference {}
+} -result {}
 
 test http-5.1 {http::formatQuery} {
     http::formatQuery name1 value1 name2 "value two"
@@ -616,7 +629,7 @@ test http-5.5 {http::formatQuery} {
 } {name1=~bwelch&name2=%A1%A2%A2}
 
 test http-6.1 {http::ProxyRequired} -body {
-    http::config -proxyhost [info hostname] -proxyport $port
+    http::config -proxyhost ${::HOST} -proxyport $port
     set token [http::geturl $url]
     http::wait $token
     upvar #0 $token data
