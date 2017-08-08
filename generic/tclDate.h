@@ -144,7 +144,7 @@ typedef struct TclDateFields {
 				 * from the Posix epoch */
     int tzOffset;		/* Time zone offset in seconds east of
 				 * Greenwich */
-    int julianDay;		/* Julian Day Number in local time zone */
+    Tcl_WideInt julianDay;	/* Julian Day Number in local time zone */
     enum {BCE=1, CE=0} era;	/* Era */
     int gregorian;		/* Flag == 1 if the date is Gregorian */
     int year;			/* Year of the era */
@@ -368,8 +368,8 @@ typedef int ClockScanTokenProc(
 
 
 typedef enum _CLCKTOK_TYPE {
-   CTOKT_DIGIT = 1, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD, CTOKT_CHAR,
-   CFMTT_INT, CFMTT_WIDE, CFMTT_PROC
+   CTOKT_INT = 1, CTOKT_WIDE, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD, CTOKT_CHAR,
+   CFMTT_PROC
 } CLCKTOK_TYPE;
 
 typedef struct ClockScanTokenMap {

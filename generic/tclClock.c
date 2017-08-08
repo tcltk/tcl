@@ -88,7 +88,7 @@ static int		ClockConfigureObjCmd(ClientData clientData,
 static void		GetYearWeekDay(TclDateFields *, int);
 static void		GetGregorianEraYearDay(TclDateFields *, int);
 static void		GetMonthDay(TclDateFields *);
-static int		WeekdayOnOrBefore(int, int);
+static Tcl_WideInt	WeekdayOnOrBefore(int, Tcl_WideInt);
 static int		ClockClicksObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -1543,8 +1543,8 @@ ClockGetDateFields(
      * Extract Julian day.
      */
 
-    fields->julianDay = (int) ((fields->localSeconds + JULIAN_SEC_POSIX_EPOCH)
-	    / SECONDS_PER_DAY);
+    fields->julianDay = (fields->localSeconds + JULIAN_SEC_POSIX_EPOCH)
+	    / SECONDS_PER_DAY;
 
     /*
      * Convert to Julian or Gregorian calendar.
@@ -2031,7 +2031,7 @@ ConvertLocalToUTCUsingC(
      */
 
     jsec = fields->localSeconds + JULIAN_SEC_POSIX_EPOCH;
-    fields->julianDay = (int) (jsec / SECONDS_PER_DAY);
+    fields->julianDay = (jsec / SECONDS_PER_DAY);
     secondOfDay = (int)(jsec % SECONDS_PER_DAY);
     if (secondOfDay < 0) {
 	secondOfDay += SECONDS_PER_DAY;
@@ -2493,10 +2493,10 @@ GetGregorianEraYearDay(
     TclDateFields *fields,	/* Date fields containing 'julianDay' */
     int changeover)		/* Gregorian transition date */
 {
-    int jday = fields->julianDay;
-    int day;
-    int year;
-    int n;
+    Tcl_WideInt jday = fields->julianDay;
+    Tcl_WideInt year;
+    Tcl_WideInt day;
+    Tcl_WideInt n;
 
     if (jday >= changeover) {
 	/*
@@ -2580,12 +2580,12 @@ GetGregorianEraYearDay(
 
     if (year <= 0) {
 	fields->era = BCE;
-	fields->year = 1 - year;
+	fields->year = 1 - (int)year;
     } else {
 	fields->era = CE;
-	fields->year = year;
+	fields->year = (int)year;
     }
-    fields->dayOfYear = day + 1;
+    fields->dayOfYear = (int)(day + 1);
 }
 
 /*
@@ -2642,7 +2642,7 @@ GetJulianDayFromEraYearWeekDay(
     int changeover)		/* Julian Day Number of the Gregorian
 				 * transition */
 {
-    int firstMonday;		/* Julian day number of week 1, day 1 in the
+    Tcl_WideInt firstMonday;	/* Julian day number of week 1, day 1 in the
 				 * given year */
     TclDateFields firstWeek;
 
@@ -2694,7 +2694,8 @@ GetJulianDayFromEraYearMonthDay(
     TclDateFields *fields,	/* Date to convert */
     int changeover)		/* Gregorian transition date as a Julian Day */
 {
-    int year, ym1, month, mm1, q, r, ym1o4, ym1o100, ym1o400;
+    Tcl_WideInt year, ym1, ym1o4, ym1o100, ym1o400;
+    int month, mm1, q, r;
 
     if (fields->era == BCE) {
 	year = 1 - fields->year;
@@ -2805,7 +2806,7 @@ GetJulianDayFromEraYearDay(
     TclDateFields *fields,	/* Date to convert */
     int changeover)		/* Gregorian transition date as a Julian Day */
 {
-    int year, ym1;
+    Tcl_WideInt year, ym1;
 
     /* Get absolute year number from the civil year */
     if (fields->era == BCE) {
@@ -2855,7 +2856,7 @@ int
 IsGregorianLeapYear(
     TclDateFields *fields)	/* Date to test */
 {
-    int year = fields->year;
+    Tcl_WideInt year = fields->year;
 
     if (fields->era == BCE) {
 	year = 1 - year;
@@ -2887,10 +2888,10 @@ IsGregorianLeapYear(
  *----------------------------------------------------------------------
  */
 
-static int
+static Tcl_WideInt
 WeekdayOnOrBefore(
     int dayOfWeek,		/* Day of week; Sunday == 0 or 7 */
-    int julianDay)		/* Reference date */
+    Tcl_WideInt julianDay)	/* Reference date */
 {
     int k = (dayOfWeek + 6) % 7;
     if (k < 0) {
@@ -3308,11 +3309,16 @@ ClockParseFmtScnArgs(
 	    goto badOption;
 	}
 	/*
-	 * seconds could be an unsigned number that overflowed. Make sure
-	 * that it isn't.
+	 * Seconds could be an unsigned number that overflowed. Make sure
+	 * that it isn't. Additionally it may be too complex to calculate 
+	 * julianday etc (forwards/backwards) by too large/small values, thus
+	 * just let accept a bit shorter values to avoid overflow.
+	 * Note the year is currently an integer, thus avoid to overflow it also.
 	 */
 
-	if (baseObj->typePtr == &tclBignumType) {
+	if ( baseObj->typePtr == &tclBignumType
+	  || baseVal < -0x00F0000000000000L || baseVal > 0x00F0000000000000L
+	) {
 	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
 	    return TCL_ERROR;
 	}
