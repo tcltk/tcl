@@ -4488,6 +4488,24 @@ Tcl_RepresentationCmd(
             objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
 	    objv[1]->refCount, ptrBuffer);
 
+    /*
+     * This is a workaround to silence reports from `make valgrind`
+     * on 64-bit systems.  The problem is that the test suite
+     * includes calling the [represenation] command on values of
+     * &tclDoubleType.  When these values are created, the "doubleValue"
+     * is set, but when the "twoPtrValue" is examined, its "ptr2"
+     * field has never been initialized.  Since [representation]
+     * presents the value of the ptr2 value in its output, valgrind
+     * alerts about the read of uninitialized memory.
+     *
+     * The general problem with [representation], that it can read
+     * and report uninitialized fields, is still present.  This is
+     * just the minimal workaround to silence one particular test.
+     */
+
+    if ((sizeof(void *) > 4) && objv[1]->typePtr == &tclDoubleType) {
+	objv[1]->internalRep.twoPtrValue.ptr2 = NULL;
+    }
     if (objv[1]->typePtr) {
 	sprintf(ptrBuffer, "%p:%p",
 		(void *) objv[1]->internalRep.twoPtrValue.ptr1,
