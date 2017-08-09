@@ -8794,4 +8794,4 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2017-07-17 (bug)[fb2208] Repeatable tclIndex generation (wiedemann,nijtmans)
 
---- Released 8.6.7, August 4, 2017 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.7, August 9, 2017 --- http://core.tcl.tk/tcl/ for details
