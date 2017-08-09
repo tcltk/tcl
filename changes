@@ -8698,3 +8698,100 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2016-07-20 tzdata updated to Olson's tzdata2016f (venkat)
 
 --- Released 8.6.6, July 27, 2016 --- http://core.tcl.tk/tcl/ for details
+
+2016-09-07 (bug)[c09edf] Bad caching with  custom resolver (neumann,nijtmans)
+
+2016-09-07 (bug)[4dbdd9] Memleak in test var-8.3 (mr_calvin,porter)
+
+2016-10-03 (bug)[2bf561] Allow empty command as alias target (yorick,nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-10-04 (bug)[4d5ae7] Crash in async connects host no address (gahr,fellows)
+
+2016-10-08 (bug)[838e99] treat application/xml as text (gahr,fellows)
+=> http 2.8.10
+
+2016-10-11 (bug)[3cc1d9] Thread finalization crash in zippy (neumann)
+
+2016-10-12 (bug)[be003d] Fix [scan 0x1 %b], [scan 0x1 %o] (porter)
+
+2016-10-14 (bug)[eb6b68] Fix stringComp-14.5 (porter)
+
+2016-10-30 (bug)[b26e38] Fix zlib-7.8 (fellows)
+
+2016-10-30 (bug)[1ae129] Fix memleak in [history] destruction (fellows)
+
+2016-11-04 (feature) Provisional Tcl 9 support in msgcat and tcltest (nijtmans)
+=> msgcat 1.6.1
+=> tcltest 2.4.1
+
+2016-11-04 (bug)[824752] Crash in Tcl_ListObjReplace() (gahr,porter)
+
+2016-11-11 (bug)[79614f] invalidate VFS mounts on sytem encoding change (yorick)
+
+2016-11-14 OSX: End panic() as legacy support macro; system conflicts (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-11-15 (bug) TclOO fix stops crash mixing Itcl and snit (fellows)
+
+2016-11-17 (update) Reconcile libtommath updates; purge unused files (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2017-01-09 (bug)[b87ad7] Repair drifts in timer clock (sebres)
+
+2017-01-17 (update) => zlib 1.2.11 (nijtmans)
+
+2017-01-31 (bug)[39f630] Revise Tcl_LinkVar to tolerate some prefixes (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2017-02-01 (bug)[d0f7ba] Improper NAN optimization. expr-22.1[01] (aspect)
+
+2017-02-26 (bug)[25842c] zlib stream finalization (aspect)
+
+2017-03-07 (deprecate) Remove unmaintained makefile.bc file (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2017-03-14 (enhancement) [clock] and [encoding] are now ensembles (kenny)
+
+2017-03-15 (enhancement) several [clock] subcommands bytecoded (kenny)
+
+2017-03-23 tzdata updated to Olson's tzdata2017b (jima)
+
+2017-03-29 (bug)[900cb0] Fix OO unexport introspection (napier)
+
+2017-04-12 (bug)[42202b] Nesting imbalance in coro injection (nadkarni,sebres)
+
+2017-04-18 (bug)[bc4322] http package support for safe interps (nash,nijtmans)
+
+2017-04-28 (bug)[f34cf8] [file join a //b] => /b (neumann,porter)
+
+2017-05-01 (bug)[8bd13f] Windows threads and pipes (sebres,nijtmans)
+
+2017-05-01 (bug)[f9fe90] [file join //a b] EIAS violation (aspect,porter)
+
+2017-05-04 (bug) Make test filesystem-1.52 pass on Windows (nijtmans)
+
+2017-05-05 (bug)[601522] [binary] field spec overflow -> segfault (porter)
+
+2017-05-08 (bug)[6ca52a] http memleak handling keep-alive (aspect,nijtmans)
+=> http 2.8.11
+
+2017-05-29 (bug)[a3fb33] crash in [lsort] on long lists (sebres)
+
+2017-06-05 (bug)[67aa9a] Tcl_UtfToUniChar() revised handling invalid UTF-8 (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2017-06-08 (bug)[2738427] Tcl_NumUtfChars() corner case utf-4.9 (nijtmans)
+
+2017-06-22 (update) Update Unicode data to 10.0 (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2017-06-22 (TIP 473) Let [oo::copy] specify target namespace (fellows)
+
+2017-06-26 (bug)[46f801] Repair autoloader fragility (porter)
+
+2017-07-06 (bug)[adb198] Plug memleak in TclJoinPath (sebres,porter)
+
+2017-07-17 (bug)[fb2208] Repeatable tclIndex generation (wiedemann,nijtmans)
+
+--- Released 8.6.7, August 9, 2017 --- http://core.tcl.tk/tcl/ for details
