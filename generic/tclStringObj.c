@@ -3384,7 +3384,7 @@ TclStringInsert(
 	    outBytes = Tcl_GetByteArrayFromObj(outObj, NULL);
 	    memcpy(outBytes, bytes1, idx);
 	    memcpy(outBytes + idx, bytes2, len2);
-	    memcpy(outBytes + idx + len2, bytes1, len1 - idx);
+	    memcpy(outBytes + idx + len2, bytes1 + idx, len1 - idx);
 	}
     } else if (pureUni || !Tcl_IsShared(string1) || !Tcl_IsShared(string2)) {
 	/*
