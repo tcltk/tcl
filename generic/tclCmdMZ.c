@@ -2370,9 +2370,6 @@ StringRplcCmd(
     } else {
 	Tcl_Obj *resultPtr;
 
-	ustring = Tcl_GetUnicodeFromObj(objv[1], &length);
-	length--;
-
 	if (first < 0) {
 	    first = 0;
 	}
