@@ -30,7 +30,7 @@ testConstraint memory [llength [info commands memory]]
 
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2 {error conditions} {
     list [catch {string} msg] $msg
 } {1 {wrong # args: should be "string subcommand ?arg ...?"}}
@@ -235,7 +235,7 @@ test string-5.3 {string index} {
     string index abcde 0
 } a
 test string-5.4 {string index} {
-    string in abcde 4
+    string ind abcde 4
 } e
 test string-5.5 {string index} {
     string index abcde 5
@@ -1517,7 +1517,7 @@ test string-20.1 {string trimright errors} {
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
 test string-20.2 {string trimright errors} {
     list [catch {string trimg a} msg] $msg
-} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3 {string trimright} {
     string trimright "    XYZ      "
 } {    XYZ}
@@ -1576,7 +1576,7 @@ test string-21.14 {string wordend, unicode} {
 
 test string-22.1 {string wordstart} {
     list [catch {string word a} msg] $msg
-} {1 {unknown or ambiguous subcommand "word": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "word": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2 {string wordstart} {
     list [catch {string wordstart a} msg] $msg
 } {1 {wrong # args: should be "string wordstart string index"}}
