@@ -3156,6 +3156,8 @@ MODULE_SCOPE int	TclStringCatObjv(Tcl_Interp *interp, int inPlace,
 			    Tcl_Obj **objPtrPtr);
 MODULE_SCOPE int	TclStringFind(Tcl_Obj *needle, Tcl_Obj *haystack,
 			    int start);
+MODULE_SCOPE Tcl_Obj *	TclStringInsert(Tcl_Interp *interp, Tcl_Obj *string1,
+			    Tcl_Obj *index, Tcl_Obj *string2);
 MODULE_SCOPE int	TclStringLast(Tcl_Obj *needle, Tcl_Obj *haystack,
 			    int last);
 MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,

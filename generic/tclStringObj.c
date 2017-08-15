@@ -3282,6 +3282,187 @@ TclStringFind(
 /*
  *---------------------------------------------------------------------------
  *
+ * TclStringInsert --
+ *
+ *	Implements the [string insert] operation.
+ *
+ * Results:
+ *	Inserts string2 into string1 at the specified index and returns the
+ *	combined string.  On failure, returns NULL and places error information
+ *	in the interpreter result.
+ *
+ * Side effects:
+ *	string1 and string2 may have their Tcl_ObjType changed, and either one's
+ *	value may be changed in-place if unshared.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclStringInsert(
+    Tcl_Interp *interp,		/* Interpreter to hold error messages */
+    Tcl_Obj *string1,		/* String to insert substring into */
+    Tcl_Obj *index,		/* Index at which to insert */
+    Tcl_Obj *string2)		/* Substring being inserted */
+{
+    unsigned char *bytes1;	/* First string as byte array */
+    Tcl_UniChar *uniChars1;	/* First string as Unicode character array */
+    int len1;			/* First byte array or string size */
+    unsigned char *bytes2;	/* Second string as byte array */
+    Tcl_UniChar *uniChars2;	/* Second string as Unicode character array */
+    int len2;			/* Second byte array or string size */
+    unsigned char *outBytes;	/* Output byte array */
+    Tcl_UniChar *outUniChars;	/* Output Unicode character array */
+    String *outString;		/* Output string */
+    Tcl_Obj *outObj;		/* Output object */
+    int pureByteArray;		/* 1 if byte array with no string rep */
+    int pureUni;    	    	/* 1 if Unicode with no string rep */
+    int idx;			/* Insert index */
+
+    /*
+     * Get the string data either as byte or Unicode character arrays.
+     */
+
+    pureByteArray = TclIsPureByteArray(string1) && TclIsPureByteArray(string2);
+    if (pureByteArray) {
+	bytes1 = Tcl_GetByteArrayFromObj(string1, &len1);
+	bytes2 = Tcl_GetByteArrayFromObj(string2, &len2);
+    } else {
+	pureUni = !string1->bytes && !string2->bytes;
+	uniChars1 = Tcl_GetUnicodeFromObj(string1, &len1);
+	uniChars2 = Tcl_GetUnicodeFromObj(string1, &len2);
+    }
+
+    if (TclGetIntForIndexM(interp, index, len1, &idx) != TCL_OK) {
+	return NULL;
+    }
+
+    /*
+     * Reject out-of-bounds indexes.  Use [lset] semantics, i.e. allow only
+     * indexes from zero through the string length, inclusive, in which case
+     * this function simply appends.  Contrast with [string replace] which
+     * treats negative indexes as zero and silently ignores attempts to replace
+     * beyond the end of the string.
+     */
+
+    if (idx < 0 || idx > len1) {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("string index out of range", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "STRING INSERT",
+		"BADINDEX", NULL);
+	return NULL;
+    }
+
+    if (!len1) {
+	/*
+	 * Trivial cases: if either argument is empty, simply return the other.
+	 */
+
+	outObj = string2;
+    } else if (!len2) {
+	outObj = string1;
+    } else if (pureByteArray) {
+	/*
+	 * Optimize the pure byte array case to avoid shimmering.  If either
+	 * byte array argument is unshared, modify it in place.  If both
+	 * arguments are shared, create a new, unshared byte array result.
+	 */
+
+	if (!Tcl_IsShared(string1)) {
+	    outObj = string1;
+	    outBytes = Tcl_SetByteArrayLength(outObj, len1 + len2);
+	    memmove(outBytes + idx + len2, outBytes + idx, len1 - idx);
+	    memcpy(outBytes + idx, bytes2, len2);
+	} else if (!Tcl_IsShared(string2)) {
+	    outObj = string2;
+	    outBytes = Tcl_SetByteArrayLength(outObj, len1 + len2);
+	    memmove(outBytes + idx, outBytes, len2);
+	    memcpy(outBytes, bytes1, idx);
+	    memcpy(outBytes + idx + len2, bytes1 + idx, len1 - idx);
+	} else {
+	    outObj = Tcl_NewByteArrayObj(NULL, len1 + len2);
+	    outBytes = Tcl_GetByteArrayFromObj(outObj, NULL);
+	    memcpy(outBytes, bytes1, idx);
+	    memcpy(outBytes + idx, bytes2, len2);
+	    memcpy(outBytes + idx + len2, bytes1, len1 - idx);
+	}
+    } else if (pureUni || !Tcl_IsShared(string1) || !Tcl_IsShared(string2)) {
+	/*
+	 * Same as above, but for pure Unicode strings and for unshared ordinary
+	 * strings.  If the latter, convert to pure Unicode.
+	 */
+
+	if (!Tcl_IsShared(string1)) {
+	    outObj = string1;
+	} else if (!Tcl_IsShared(string2)) {
+	    outObj = string2;
+	} else {
+	    outObj = Tcl_NewUnicodeObj(uniChars1, idx);
+	}
+
+	GrowUnicodeBuffer(outObj, len1 + len2);
+	outString = GET_STRING(outObj);
+	outUniChars = outString->unicode;
+	outString->numChars = len1 + len2;
+
+	if (!pureUni) {
+	    TclInvalidateStringRep(outObj);
+	    outString->allocated = 0;
+	}
+
+	if (!Tcl_IsShared(string1)) {
+	    memmove(outUniChars + idx + len2, outUniChars + idx,
+		    (len1 - idx) * sizeof(Tcl_UniChar));
+	    memcpy(outUniChars + idx, uniChars2, len2 * sizeof(Tcl_UniChar));
+	} else if (!Tcl_IsShared(string2)) {
+	    memmove(outUniChars + idx, outUniChars, len2 * sizeof(Tcl_UniChar));
+	    memcpy(outUniChars, uniChars1, idx * sizeof(Tcl_UniChar));
+	    memcpy(outUniChars + idx + len2, uniChars1 + idx,
+		    (len1 - idx) * sizeof(Tcl_UniChar));
+	} else {
+	    memcpy(outUniChars + idx, uniChars2, len2 * sizeof(Tcl_UniChar));
+	    memcpy(outUniChars + idx + len2, uniChars1 + idx,
+		    (len1 - idx) * sizeof(Tcl_UniChar));
+	}
+    } else if (!idx || idx == len1) {
+	/*
+	 * Inserting at the beginning or end of the string is nothing more than
+	 * concatenating the two strings in either order.
+	 */
+
+	Tcl_Obj *parts[2];
+	
+	if (idx) {
+	    parts[0] = string1;
+	    parts[1] = string2;
+	} else {
+	    parts[0] = string2;
+	    parts[1] = string1;
+	}
+
+	if (TclStringCatObjv(interp, 1, 2, parts, &outObj) != TCL_OK) {
+	    return NULL;
+	}
+    } else {
+	/*
+	 * Non-byte array, non-Unicode, non-prepend, non-append, non-empty,
+	 * non-unshared case.  Fall back on building up a new string by
+	 * concatenating the parts.
+	 */
+
+	outObj = Tcl_NewUnicodeObj(uniChars1, idx);
+	Tcl_AppendObjToObj(outObj, string2);
+	if (idx < len1) {
+	    Tcl_AppendUnicodeToObj(outObj, uniChars1 + idx, len1 - idx);
+	}
+    }
+
+    return outObj;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * TclStringLast --
  *
  *	Implements the [string last] operation.
