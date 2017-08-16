@@ -1017,7 +1017,7 @@ BinaryFormatCmd(
     }
 
     /*
-     * Prepare the result object by preallocating the caclulated number of
+     * Prepare the result object by preallocating the calculated number of
      * bytes and filling with nulls.
      */
 
