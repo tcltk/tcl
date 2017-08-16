@@ -3416,6 +3416,9 @@ TclInitStringCmd(
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
 
+    /* XXX Test if ensembles are interfering with argument reference counts */
+    Tcl_CreateObjCommand(interp, "stringInsert", StringInsertCmd, NULL, NULL);
+
     return TclMakeEnsemble(interp, "string", stringImplMap);
 }
 
