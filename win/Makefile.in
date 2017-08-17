@@ -285,6 +285,7 @@ GENERIC_OBJS = \
 	tclPosixStr.$(OBJEXT) \
 	tclPreserve.$(OBJEXT) \
 	tclProc.$(OBJEXT) \
+	tclProcess.$(OBJEXT) \
 	tclRegexp.$(OBJEXT) \
 	tclResolve.$(OBJEXT) \
 	tclResult.$(OBJEXT) \
