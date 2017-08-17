@@ -3414,6 +3414,7 @@ MODULE_SCOPE int	Tcl_PidObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE Tcl_Command TclInitPrefixCmd(Tcl_Interp *interp);
+MODULE_SCOPE Tcl_Command TclInitProcessCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_PutsObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
