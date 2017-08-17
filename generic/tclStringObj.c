@@ -3333,24 +3333,18 @@ TclStringInsert(
 	uniChars2 = Tcl_GetUnicodeFromObj(string1, &len2);
     }
 
+    /*
+     * Compute effective index.  Clip out-of-bounds indexes just like [linsert].
+     */
+
     if (TclGetIntForIndexM(interp, index, len1, &idx) != TCL_OK) {
 	return NULL;
     }
 
-    /*
-     * Reject out-of-bounds indexes.  Use [lset] semantics, i.e. allow only
-     * indexes from zero through the string length, inclusive, in which case
-     * this function simply appends.  Contrast with [string replace] which
-     * treats negative indexes as zero and silently ignores attempts to replace
-     * beyond the end of the string.
-     */
-
-    if (idx < 0 || idx > len1) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("string index out of range", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "STRING INSERT",
-		"BADINDEX", NULL);
-	return NULL;
+    if (idx < 0) {
+	idx = 0;
+    } else if (idx > len1) {
+	idx = len1;
     }
 
     if (!len1) {

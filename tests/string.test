@@ -2070,12 +2070,12 @@ test string-30.8 {string insert, empty insert string} {
 test string-30.9 {string insert, empty strings} {
     tcl::string::insert {} 0 {}
 } {}
-test string-30.10 {string insert, negative index} -body {
+test string-30.10 {string insert, negative index} {
     tcl::string::insert 0123 -1 _
-} -returnCodes 1 -result {string index out of range}
-test string-30.11 {string insert, index beyond end} -body {
+} _0123
+test string-30.11 {string insert, index beyond end} {
     tcl::string::insert 0123 5 _
-} -returnCodes 1 -result {string index out of range}
+} 0123_
 test string-30.12 {string insert, start of string, pure byte array} {
     tcl::string::insert [binary format a* 0123] 0 [binary format a* _]
 } _0123
