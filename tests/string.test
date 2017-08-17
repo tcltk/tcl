@@ -2074,8 +2074,7 @@ test string-30.11 {string insert, index beyond end} -body {
     string insert 0123 5 _
 } -returnCodes 1 -result {string index out of range}
 test string-30.12 {string insert, start of string, pure byte array} {
-    # XXX Test if ensembles are interfering with argument reference counts
-    stringInsert [binary format a* 0123] 0 [binary format a* _]
+    string insert [binary format a* 0123] 0 [binary format a* _]
 } _0123
 test string-30.13 {string insert, middle of string, pure byte array} {
     string insert [binary format a* 0123] 2 [binary format a* _]
