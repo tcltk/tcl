@@ -3330,7 +3330,7 @@ TclStringInsert(
     } else {
 	pureUni = !string1->bytes && !string2->bytes;
 	uniChars1 = Tcl_GetUnicodeFromObj(string1, &len1);
-	uniChars2 = Tcl_GetUnicodeFromObj(string1, &len2);
+	uniChars2 = Tcl_GetUnicodeFromObj(string2, &len2);
     }
 
     /*
