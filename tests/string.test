@@ -2040,47 +2040,50 @@ test string-29.15 {string cat, efficiency} -setup {
     tcl::unsupported::representation [string cat $e $f $e $f [list x]]
 } -match glob -result {*no string representation}
 
+# Note: string-30.* tests use [tcl::string::insert] rather than [string insert]
+# to dodge ticket [3397978fff] which would cause all arguments to be shared,
+# thereby preventing the optimizations from being tested.
 test string-30.1 {string insert, start of string} {
-    string insert 0123 0 _
+    tcl::string::insert 0123 0 _
 } _0123
 test string-30.2 {string insert, middle of string} {
-    string insert 0123 2 _
+    tcl::string::insert 0123 2 _
 } 01_23
 test string-30.3 {string insert, end of string} {
-    string insert 0123 4 _
+    tcl::string::insert 0123 4 _
 } 0123_
 test string-30.4 {string insert, start of string, end-relative} {
-    string insert 0123 end-4 _
+    tcl::string::insert 0123 end-4 _
 } _0123
 test string-30.5 {string insert, middle of string, end-relative} {
-    string insert 0123 end-2 _
+    tcl::string::insert 0123 end-2 _
 } 01_23
 test string-30.6 {string insert, end of string, end-relative} {
-    string insert 0123 end _
+    tcl::string::insert 0123 end _
 } 0123_
 test string-30.7 {string insert, empty target string} {
-    string insert {} 0 _
+    tcl::string::insert {} 0 _
 } _
 test string-30.8 {string insert, empty insert string} {
-    string insert 0123 0 {}
+    tcl::string::insert 0123 0 {}
 } 0123
 test string-30.9 {string insert, empty strings} {
-    string insert {} 0 {}
+    tcl::string::insert {} 0 {}
 } {}
 test string-30.10 {string insert, negative index} -body {
-    string insert 0123 -1 _
+    tcl::string::insert 0123 -1 _
 } -returnCodes 1 -result {string index out of range}
 test string-30.11 {string insert, index beyond end} -body {
-    string insert 0123 5 _
+    tcl::string::insert 0123 5 _
 } -returnCodes 1 -result {string index out of range}
 test string-30.12 {string insert, start of string, pure byte array} {
-    string insert [binary format a* 0123] 0 [binary format a* _]
+    tcl::string::insert [binary format a* 0123] 0 [binary format a* _]
 } _0123
 test string-30.13 {string insert, middle of string, pure byte array} {
-    string insert [binary format a* 0123] 2 [binary format a* _]
+    tcl::string::insert [binary format a* 0123] 2 [binary format a* _]
 } 01_23
 test string-30.14 {string insert, end of string, pure byte array} {
-    string insert [binary format a* 0123] 4 [binary format a* _]
+    tcl::string::insert [binary format a* 0123] 4 [binary format a* _]
 } 0123_
 
 # cleanup
