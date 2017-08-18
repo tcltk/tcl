@@ -247,6 +247,61 @@ Tcl_ReapDetachedProcs(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclReapPids --
+ *
+ *	This function is similar to Tcl_ReapDetachedProcs but works on a
+ *	subset of processes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Processes are waited on, so that they can be reaped by the system.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclReapPids(
+    int numPids,		/* Number of pids to detach: gives size of
+				 * array pointed to by pidPtr. */
+    Tcl_Pid *pidPtr)		/* Array of pids to detach. */
+{
+    register Detached *detPtr;
+    Detached *nextPtr, *prevPtr;
+    int status;
+    Tcl_Pid pid;
+    int i;
+
+    Tcl_MutexLock(&pipeMutex);
+    for (detPtr = detList, prevPtr = NULL; detPtr != NULL; ) {
+	pid = 0;
+	for (i = 0; i < numPids; i++) {
+	    if (detPtr->pid == pidPtr[i]) {
+		pid = Tcl_WaitPid(detPtr->pid, &status, WNOHANG);
+		break;
+	    }
+	}
+	if ((pid == 0) || ((pid == (Tcl_Pid) -1) && (errno != ECHILD))) {
+	    prevPtr = detPtr;
+	    detPtr = detPtr->nextPtr;
+	    continue;
+	}
+	nextPtr = detPtr->nextPtr;
+	if (prevPtr == NULL) {
+	    detList = detPtr->nextPtr;
+	} else {
+	    prevPtr->nextPtr = detPtr->nextPtr;
+	}
+	ckfree(detPtr);
+	detPtr = nextPtr;
+    }
+    Tcl_MutexUnlock(&pipeMutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCleanupChildren --
  *
  *	This is a utility function used to wait for child processes to exit,
@@ -854,7 +909,9 @@ TclCreatePipeline(
      * arguments between the "|" characters.
      */
 
-    Tcl_ReapDetachedProcs();
+    if (TclProcessGetAutopurge()) {
+	Tcl_ReapDetachedProcs();
+    }
     pidPtr = ckalloc(cmdCount * sizeof(Tcl_Pid));
 
     curInFile = inputFile;

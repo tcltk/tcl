@@ -123,8 +123,47 @@ ProcessPurgeObjCmd(
 	return TCL_ERROR;
     }
 
-    /* TODO */
-    return TCL_ERROR;
+    if (objc == 1) {
+        /*
+         * Purge all detached processes.
+         */
+        
+        Tcl_ReapDetachedProcs();
+    } else {
+        int result;
+        int numPids;
+        Tcl_Obj **pidObjs;
+        Tcl_Pid *pids;
+        int id;
+        int i;
+
+        /*
+         * Get pids from argument.
+         */
+        
+        result = Tcl_ListObjGetElements(interp, objv[1], &numPids, &pidObjs);
+        if (result != TCL_OK) {
+            return result;
+        }
+        pids = (Tcl_Pid *) TclStackAlloc(interp, numPids * sizeof(Tcl_Pid));
+        for (i = 0; i < numPids; i++) {
+            result = Tcl_GetIntFromObj(interp, pidObjs[i], (int *) &id);
+            if (result != TCL_OK) {
+                TclStackFree(interp, (void *) pids);
+                return result;
+            }
+            pids[i] = TclpGetChildPid(id);
+        }
+
+        /*
+         * Purge only provided processes.
+         */
+        
+        TclReapPids(numPids, pids);
+        TclStackFree(interp, (void *) pids);
+    }
+    
+    return TCL_OK;
  }
 
 /*----------------------------------------------------------------------
@@ -138,7 +177,7 @@ ProcessPurgeObjCmd(
  *	Returns a standard Tcl result.
  *
  * Side effects:
- *	None.TODO
+ *	Alters detached process handling by Tcl_ReapDetachedProcs().
  *
  *----------------------------------------------------------------------
  */
