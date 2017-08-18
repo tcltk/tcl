@@ -884,6 +884,44 @@ TclpGetPid(
     Tcl_MutexUnlock(&pipeMutex);
     return (unsigned long) -1;
 }
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * TclpGetChildPid --
+ *
+ *	Given a process id of a child process, return the HANDLE for that
+ *	child process.
+ *
+ * Results:
+ *	Returns the HANDLE for the child process. If the id was not known
+ *	by Tcl, either because the id was not created by Tcl or the child
+ *	process has already been reaped, NULL is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+Tcl_Pid
+TclpGetChildPid(
+    int id)			/* The process id of the child process. */
+{
+    ProcInfo *infoPtr;
+
+    PipeInit();
+
+    Tcl_MutexLock(&pipeMutex);
+    for (infoPtr = procList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
+	if (infoPtr->dwProcessId == (DWORD) id) {
+	    Tcl_MutexUnlock(&pipeMutex);
+	    return (Tcl_Pid) infoPtr->hProcess;
+	}
+    }
+    Tcl_MutexUnlock(&pipeMutex);
+    return (Tcl_Pid) NULL;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1991,7 +2029,9 @@ PipeClose2Proc(
 	 */
 
 	Tcl_DetachPids(pipePtr->numPids, pipePtr->pidPtr);
-	Tcl_ReapDetachedProcs();
+	if (TclProcessGetAutopurge()) {
+	    Tcl_ReapDetachedProcs();
+	}
 
 	if (pipePtr->errorFile) {
 	    if (TclpCloseFile(pipePtr->errorFile) != 0) {
