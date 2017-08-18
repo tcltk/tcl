@@ -986,7 +986,9 @@ PipeClose2Proc(
 	 */
 
 	Tcl_DetachPids(pipePtr->numPids, pipePtr->pidPtr);
-	Tcl_ReapDetachedProcs();
+	if (TclProcessGetAutopurge()) {
+	    Tcl_ReapDetachedProcs();
+	}
 
 	if (pipePtr->errorFile) {
 	    TclpCloseFile(pipePtr->errorFile);
