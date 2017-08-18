@@ -259,6 +259,15 @@ Tcl_UniCharToUtfDString(
  *	Tcl_UtfCharComplete() before calling this routine to ensure that
  *	enough bytes remain in the string.
  *
+ *	If TCL_UTF_MAX == 4, special handling of Surrogate pairs is done:
+ *	For any UTF-8 string containing a character outside of the BMP, the
+ *	first call to this function will fill *chPtr with the high surrogate
+ *	and generate a return value of 0. Calling Tcl_UtfToUniChar again
+ *	will produce the low surrogate and a return value of 4. Because *chPtr
+ *	is used to remember whether the high surrogate is already produced, it
+ *	is recommended to initialize the variable it points to as 0 before
+ *	the first call to Tcl_UtfToUniChar is done.
+ *
  * Results:
  *	*chPtr is filled with the Tcl_UniChar, and the return value is the
  *	number of bytes from the UTF-8 string that were consumed.
@@ -278,7 +287,7 @@ Tcl_UtfToUniChar(
     register int byte;
 
     /*
-     * Unroll 1 to 3 byte UTF-8 sequences, use loop to handle longer ones.
+     * Unroll 1 to 3 (or 4) byte UTF-8 sequences.
      */
 
     byte = *((unsigned char *) src);
@@ -331,12 +340,30 @@ Tcl_UtfToUniChar(
 	    /*
 	     * Four-byte-character lead byte followed by three trail bytes.
 	     */
+#if TCL_UTF_MAX == 4
+	    Tcl_UniChar surrogate;
 
+	    byte = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
+		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F)) - 0x10000;
+	    surrogate = (Tcl_UniChar) (0xD800 + (byte >> 10));
+	    if (byte & 0x100000) {
+		/* out of range, < 0x10000 or > 0x10ffff */
+	    } else if (*chPtr != surrogate) {
+		/* produce high surrogate, but don't advance source pointer */
+		*chPtr = surrogate;
+		return 0;
+	    } else {
+		/* produce low surrogate, and advance source pointer */
+		*chPtr = (Tcl_UniChar) (0xDC00 | (byte & 0x3FF));
+		return 4;
+	    }
+#else
 	    *chPtr = (Tcl_UniChar) (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
 		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F));
 	    if ((unsigned)(*chPtr - 0x10000) <= 0xFFFFF) {
 		return 4;
 	    }
+#endif
 	}
 
 	/*
@@ -377,7 +404,7 @@ Tcl_UtfToUniCharDString(
 				 * appended to this previously initialized
 				 * DString. */
 {
-    Tcl_UniChar *w, *wString;
+    Tcl_UniChar ch, *w, *wString;
     const char *p, *end;
     int oldLength;
 
@@ -399,8 +426,8 @@ Tcl_UtfToUniCharDString(
     w = wString;
     end = src + length;
     for (p = src; p < end; ) {
-	p += TclUtfToUniChar(p, w);
-	w++;
+	p += TclUtfToUniChar(p, &ch);
+	*w++ = ch;
     }
     *w = '\0';
     Tcl_DStringSetLength(dsPtr,
@@ -434,10 +461,7 @@ Tcl_UtfCharComplete(
 				 * a complete UTF-8 character. */
     int length)			/* Length of above string in bytes. */
 {
-    int ch;
-
-    ch = *((unsigned char *) src);
-    return length >= totalBytes[ch];
+    return length >= totalBytes[(unsigned char)*src];
 }
 
 /*
@@ -464,8 +488,8 @@ Tcl_NumUtfChars(
     int length)			/* The length of the string in bytes, or -1
 				 * for strlen(string). */
 {
-    Tcl_UniChar ch;
-    register int i;
+    Tcl_UniChar ch = 0;
+    register int i = 0;
 
     /*
      * The separate implementations are faster.
@@ -474,7 +498,6 @@ Tcl_NumUtfChars(
      * single-byte char case specially.
      */
 
-    i = 0;
     if (length < 0) {
 	while (*src != '\0') {
 	    src += TclUtfToUniChar(src, &ch);
@@ -525,7 +548,7 @@ Tcl_UtfFindFirst(
     int ch)			/* The Tcl_UniChar to search for. */
 {
     int len;
-    Tcl_UniChar find;
+    Tcl_UniChar find = 0;
 
     while (1) {
 	len = TclUtfToUniChar(src, &find);
@@ -564,7 +587,7 @@ Tcl_UtfFindLast(
     int ch)			/* The Tcl_UniChar to search for. */
 {
     int len;
-    Tcl_UniChar find;
+    Tcl_UniChar find = 0;
     const char *last;
 
     last = NULL;
@@ -604,9 +627,15 @@ const char *
 Tcl_UtfNext(
     const char *src)		/* The current location in the string. */
 {
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
+    int len = TclUtfToUniChar(src, &ch);
 
-    return src + TclUtfToUniChar(src, &ch);
+#if TCL_UTF_MAX == 4
+    if (len == 0) {
+      len = TclUtfToUniChar(src, &ch);
+    }
+#endif
+    return src + len;
 }
 
 /*
@@ -639,8 +668,7 @@ Tcl_UtfPrev(
     const char *look;
     int i, byte;
 
-    src--;
-    look = src;
+    look = --src;
     for (i = 0; i < TCL_UTF_MAX; i++) {
 	if (look < start) {
 	    if (src < start) {
@@ -713,7 +741,7 @@ Tcl_UtfAtIndex(
     register const char *src,	/* The UTF-8 string. */
     register int index)		/* The position of the desired character. */
 {
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
 
     while (index > 0) {
 	index--;
@@ -797,7 +825,7 @@ int
 Tcl_UtfToUpper(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch, upChar;
+    Tcl_UniChar ch = 0, upChar;
     char *src, *dst;
     int bytes;
 
@@ -850,7 +878,7 @@ int
 Tcl_UtfToLower(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch, lowChar;
+    Tcl_UniChar ch = 0, lowChar;
     char *src, *dst;
     int bytes;
 
@@ -904,7 +932,7 @@ int
 Tcl_UtfToTitle(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch, titleChar, lowChar;
+    Tcl_UniChar ch = 0, titleChar, lowChar;
     char *src, *dst;
     int bytes;
 
@@ -1013,7 +1041,7 @@ Tcl_UtfNcmp(
     const char *ct,		/* UTF string cs is compared to. */
     unsigned long numChars)	/* Number of UTF chars to compare. */
 {
-    Tcl_UniChar ch1, ch2;
+    Tcl_UniChar ch1 = 0, ch2 = 0;
 
     /*
      * Cannot use 'memcmp(cs, ct, n);' as byte representation of \u0000 (the
@@ -1061,7 +1089,7 @@ Tcl_UtfNcasecmp(
     const char *ct,		/* UTF string cs is compared to. */
     unsigned long numChars)	/* Number of UTF chars to compare. */
 {
-    Tcl_UniChar ch1, ch2;
+    Tcl_UniChar ch1 = 0, ch2 = 0;
     while (numChars-- > 0) {
 	/*
 	 * n must be interpreted as chars, not bytes.
@@ -1690,7 +1718,7 @@ Tcl_UniCharCaseMatch(
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
-    Tcl_UniChar ch1, p;
+    Tcl_UniChar ch1 = 0, p;
 
     while (1) {
 	p = *uniPattern;
