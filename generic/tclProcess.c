@@ -10,7 +10,9 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
- #include "tclInt.h"
+#include "tclInt.h"
+
+static int autopurge = 1;		/* Autopurge flag. */
 
  /*
  * Prototypes for functions defined later in this file:
@@ -45,13 +47,18 @@ static int             ProcessAutopurgeObjCmd(ClientData clientData,
  *----------------------------------------------------------------------
  */
 
- static int
- ProcessListObjCmd(
-     ClientData clientData,	/* Not used. */
-     Tcl_Interp *interp,	/* Current interpreter. */
-     int objc,			/* Number of arguments. */
-     Tcl_Obj *const objv[])	/* Argument objects. */
- {
+static int
+ProcessListObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,	/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	return TCL_ERROR;
+    }
+
     /* TODO */
     return TCL_ERROR;
  }
@@ -72,13 +79,18 @@ static int             ProcessAutopurgeObjCmd(ClientData clientData,
  *----------------------------------------------------------------------
  */
 
- static int
- ProcessStatusObjCmd(
-     ClientData clientData,	/* Not used. */
-     Tcl_Interp *interp,	/* Current interpreter. */
-     int objc,			/* Number of arguments. */
-     Tcl_Obj *const objv[])	/* Argument objects. */
- {
+static int
+ProcessStatusObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,	/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc < 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?switches? ?pids?");
+	return TCL_ERROR;
+    }
+
     /* TODO */
     return TCL_ERROR;
  }
@@ -99,13 +111,18 @@ static int             ProcessAutopurgeObjCmd(ClientData clientData,
  *----------------------------------------------------------------------
  */
 
- static int
- ProcessPurgeObjCmd(
-     ClientData clientData,	/* Not used. */
-     Tcl_Interp *interp,	/* Current interpreter. */
-     int objc,			/* Number of arguments. */
-     Tcl_Obj *const objv[])	/* Argument objects. */
- {
+static int
+ProcessPurgeObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,	/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 1 && objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?pids?");
+	return TCL_ERROR;
+    }
+
     /* TODO */
     return TCL_ERROR;
  }
@@ -126,17 +143,40 @@ static int             ProcessAutopurgeObjCmd(ClientData clientData,
  *----------------------------------------------------------------------
  */
 
- static int
- ProcessAutopurgeObjCmd(
-     ClientData clientData,	/* Not used. */
-     Tcl_Interp *interp,	/* Current interpreter. */
-     int objc,			/* Number of arguments. */
-     Tcl_Obj *const objv[])	/* Argument objects. */
+static int
+ProcessAutopurgeObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,	/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
  {
-    /* TODO */
-    return TCL_ERROR;
- }
- 
+    if (objc != 1 && objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?flag?");
+	return TCL_ERROR;
+    }
+
+    if (objc == 2) {
+        /*
+         * Set given value.
+         */
+        
+        int flag;
+        int result = Tcl_GetBooleanFromObj(interp, objv[1], &flag);
+        if (result != TCL_OK) {
+            return result;
+        }
+
+        TclProcessSetAutopurge(flag);
+    }
+
+    /* 
+     * Return current value. 
+     */
+
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(TclProcessGetAutopurge()));
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -154,22 +194,66 @@ static int             ProcessAutopurgeObjCmd(ClientData clientData,
  *----------------------------------------------------------------------
  */
 
- Tcl_Command
- TclInitProcessCmd(
-     Tcl_Interp *interp)		/* Current interpreter. */
- {
-     static const EnsembleImplMap processImplMap[] = {
+Tcl_Command
+TclInitProcessCmd(
+    Tcl_Interp *interp)		/* Current interpreter. */
+{
+    static const EnsembleImplMap processImplMap[] = {
         {"list", ProcessListObjCmd, TclCompileBasic0ArgCmd, NULL, NULL, 1},
         {"status", ProcessStatusObjCmd, TclCompileBasicMin0ArgCmd, NULL, NULL, 1},
         {"purge", ProcessPurgeObjCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
         {"autopurge", ProcessAutopurgeObjCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
         {NULL, NULL, NULL, NULL, NULL, 0}
-     };
-     Tcl_Command processCmd;
- 
-     processCmd = TclMakeEnsemble(interp, "::tcl::process", processImplMap);
-     Tcl_Export(interp, Tcl_FindNamespace(interp, "::tcl", NULL, 0),
-             "process", 0);
-     return processCmd;
- }
- 
+    };
+    Tcl_Command processCmd;
+
+    processCmd = TclMakeEnsemble(interp, "::tcl::process", processImplMap);
+    Tcl_Export(interp, Tcl_FindNamespace(interp, "::tcl", NULL, 0),
+            "process", 0);
+    return processCmd;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclProcessGetAutopurge --
+ *
+ *	This function queries the value of the autopurge flag.
+ *
+ * Results:
+ *	The current boolean value of the autopurge flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclProcessGetAutopurge(void)
+{
+    return autopurge;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclProcessSetAutopurge --
+ *
+ *	This function sets the value of the autopurge flag.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the autopurge static variable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclProcessSetAutopurge(
+    int flag)				/* New value for autopurge. */
+{
+    autopurge = !!flag;
+}

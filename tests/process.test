@@ -19,3 +19,13 @@ test process-1.1 {tcl::process command basic syntax} -returnCodes error -body {
 test process-1.2 {tcl::process command basic syntax} -returnCodes error -body {
     tcl::process ?
 } -match glob -result {unknown or ambiguous subcommand "?": must be autopurge, list, purge, or status}
+
+test process-2.1 {tcl::process autopurge get} {tcl::process autopurge} {1}
+test process-2.2 {tcl::process autopurge set true} {
+    tcl::process autopurge true
+    tcl::process autopurge
+} {1}
+test process-2.3 {tcl::process autopurge set false} {
+    tcl::process autopurge false
+    tcl::process autopurge
+} {0}
