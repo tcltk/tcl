@@ -2356,41 +2356,45 @@ StringRplcCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *ustring;
-    int first, last, length;
+    int first, last, length;	/* Replacement indexes and string length */
+    int del;			/* Number of characters to delete */
+    Tcl_Obj *strObj;		/* String being modified */
+    Tcl_Obj *insObj;		/* Substring to insert, may be NULL */
+    Tcl_Obj *outObj;		/* Output object */
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string first last ?string?");
 	return TCL_ERROR;
     }
 
-    ustring = Tcl_GetUnicodeFromObj(objv[1], &length);
-    length--;
-
-    if (TclGetIntForIndexM(interp, objv[2], length, &first) != TCL_OK ||
-	    TclGetIntForIndexM(interp, objv[3], length, &last) != TCL_OK){
+    strObj = objv[1];
+    length = Tcl_GetCharLength(strObj) - 1;
+    if (TclGetIntForIndexM(interp, objv[2], length, &first) != TCL_OK
+     || TclGetIntForIndexM(interp, objv[3], length, &last) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    if ((last < first) || (last < 0) || (first > length)) {
-	Tcl_SetObjResult(interp, objv[1]);
-    } else {
-	Tcl_Obj *resultPtr;
-
-	if (first < 0) {
-	    first = 0;
-	}
-
-	resultPtr = Tcl_NewUnicodeObj(ustring, first);
-	if (objc == 5) {
-	    Tcl_AppendObjToObj(resultPtr, objv[4]);
-	}
-	if (last < length) {
-	    Tcl_AppendUnicodeToObj(resultPtr, ustring + last + 1,
-		    length - last);
-	}
-	Tcl_SetObjResult(interp, resultPtr);
+    if (first < 0) {
+	first = 0;
     }
+
+    if (last >= first) {
+	del = last - first + 1;
+    } else {
+	del = 0;
+    }
+
+    if (objc == 5) {
+	insObj = objv[4];
+    } else {
+	insObj = NULL;
+    }
+
+    if (!(outObj = TclStringReplace(interp, strObj, first, del, insObj))) {
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, outObj);
     return TCL_OK;
 }
 
