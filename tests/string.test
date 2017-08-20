@@ -2191,6 +2191,10 @@ test string-30.25 {string insert, neither byte array nor Unicode} {
 
 # cleanup
 rename MemStress {}
+rename makeByteArray {}
+rename makeUnicode {}
+rename makeList {}
+rename makeShared {}
 catch {rename foo {}}
 ::tcltest::cleanupTests
 return
