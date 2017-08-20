@@ -20,6 +20,12 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
+# Helper commands to test various optimizations, code paths, and special cases.
+proc makeByteArray {s} {binary format a* $s}
+proc makeUnicode {s} {lindex [regexp -inline .* $s] 0}
+proc makeList {args} {return $args}
+proc makeShared {s} {uplevel 1 [list lappend copy $s]; return $s}
+
 # Some tests require the testobj command
 
 testConstraint testobj [expr {[info commands testobj] != {}}]
@@ -1425,6 +1431,14 @@ test string-14.18 {string replace} {
 test string-14.18.1 {string replace non-bytecode} {
     {*}[list string replace] abcdefghijklmnop 10 9 XXX
 } {abcdefghijklmnop}
+test string-14.19 {string replace} {
+    string replace [makeByteArray abcdefghijklmnop] end-10 end-2\
+	    [makeByteArray NEW]
+} {abcdeNEWop}
+test string-14.19.1 {string replace non-bytecode} {
+    {*}[list tcl::string::replace] [makeByteArray abcdefghijklmnop]\
+	    end-10 end-2 [makeByteArray NEW]
+} {abcdeNEWop}
 
 test string-15.1 {string tolower too few args} {
     list [catch {string tolower} msg] $msg
@@ -2131,14 +2145,49 @@ test string-30.11 {string insert, index beyond end} {
     tcl::string::insert 0123 5 _
 } 0123_
 test string-30.12 {string insert, start of string, pure byte array} {
-    tcl::string::insert [binary format a* 0123] 0 [binary format a* _]
+    tcl::string::insert [makeByteArray 0123] 0 [makeByteArray _]
 } _0123
 test string-30.13 {string insert, middle of string, pure byte array} {
-    tcl::string::insert [binary format a* 0123] 2 [binary format a* _]
+    tcl::string::insert [makeByteArray 0123] 2 [makeByteArray _]
 } 01_23
 test string-30.14 {string insert, end of string, pure byte array} {
-    tcl::string::insert [binary format a* 0123] 4 [binary format a* _]
+    tcl::string::insert [makeByteArray 0123] 4 [makeByteArray _]
 } 0123_
+test string-30.15 {string insert, pure byte array, neither shared} {
+    tcl::string::insert [makeByteArray 0123] 2 [makeByteArray _]
+} 01_23
+test string-30.16 {string insert, pure byte array, first shared} {
+    tcl::string::insert [makeShared [makeByteArray 0123]] 2 [makeByteArray _]
+} 01_23
+test string-30.17 {string insert, pure byte array, second shared} {
+    tcl::string::insert [makeByteArray 0123] 2 [makeShared [makeByteArray _]]
+} 01_23
+test string-30.18 {string insert, pure byte array, both shared} {
+    tcl::string::insert [makeShared [makeByteArray 0123]] 2\
+	    [makeShared [makeByteArray _]]
+} 01_23
+test string-30.19 {string insert, start of string, pure Unicode} {
+    tcl::string::insert [makeUnicode 0123] 0 [makeUnicode _]
+} _0123
+test string-30.20 {string insert, middle of string, pure Unicode} {
+    tcl::string::insert [makeUnicode 0123] 2 [makeUnicode _]
+} 01_23
+test string-30.21 {string insert, end of string, pure Unicode} {
+    tcl::string::insert [makeUnicode 0123] 4 [makeUnicode _]
+} 0123_
+test string-30.22 {string insert, start of string, pure Unicode, first shared} {
+    tcl::string::insert [makeShared [makeUnicode 0123]] 0 [makeUnicode _]
+} _0123
+test string-30.23 {string insert, middle of string, pure Unicode, 2nd shared} {
+    tcl::string::insert [makeUnicode 0123] 2 [makeShared [makeUnicode _]]
+} 01_23
+test string-30.24 {string insert, end of string, pure Unicode, both shared} {
+    tcl::string::insert [makeShared [makeUnicode 0123]] 4\
+	    [makeShared [makeUnicode _]]
+} 0123_
+test string-30.25 {string insert, neither byte array nor Unicode} {
+    tcl::string::insert [makeList a b c] 1 zzzzzz
+} {azzzzzz b c}
 
 # cleanup
 rename MemStress {}
