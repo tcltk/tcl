@@ -3282,143 +3282,288 @@ TclStringFind(
 /*
  *---------------------------------------------------------------------------
  *
- * TclStringInsert --
+ * TclStringReplace --
  *
- *	Implements the [string insert] operation.
+ *	Inserts, replaces, or removes characters in a string.  Implements the
+ *	[string insert] and [string replace] operations.  Observe that inserting
+ *	a string is the same as replacing an empty substring with a non-empty
+ *	substring.  This function can also be used to implement removing a
+ *	substring by replacing a non-empty substring with an empty substring.
  *
  * Results:
- *	Inserts string2 into string1 at the specified index and returns the
- *	combined string.  On failure, returns NULL and places error information
- *	in the interpreter result.
+ *	Removes removeCount characters from strObj starting at startIndex and
+ *	inserts insObj at that same location.  removeCount may be 0 to insert
+ *	without removing, and insObj may be NULL or empty string to remove
+ *	without inserting.  On memory allocation failure, returns NULL and
+ *	places error information in the interpreter result.
  *
  * Side effects:
- *	string1 and string2 may have their Tcl_ObjType changed, and either one's
- *	value may be changed in-place if unshared.
+ *	strObj and insObj may have their Tcl_ObjType changed to tclStringType or
+ *	properByteArrayType, and either one's value may be modified if unshared.
+ *
+ * TODO:
+ *	Memory allocation failure is only checked when concatenating shared,
+ *	non-pure byte array, non-pure Unicode character array strings.  Need to
+ *	commit to a consistent memory allocation failure handling policy.
  *
  *---------------------------------------------------------------------------
  */
 
 Tcl_Obj *
-TclStringInsert(
-    Tcl_Interp *interp,		/* Interpreter to hold error messages */
-    Tcl_Obj *string1,		/* String to insert substring into */
-    Tcl_Obj *index,		/* Index at which to insert */
-    Tcl_Obj *string2)		/* Substring being inserted */
+TclStringReplace(
+    Tcl_Interp *interp,		/* Interpreter for error logging, may be NULL */
+    Tcl_Obj *strObj,	    	/* String being modified */
+    int startIndex,		/* Index at which to insert/remove/replace */
+    int removeCount,		/* Number of characters to remove or replace */
+    Tcl_Obj *insObj)	    	/* Substring to insert/replace, may be NULL */
 {
-    unsigned char *bytes1;	/* First string as byte array */
-    Tcl_UniChar *uniChars1;	/* First string as Unicode character array */
-    int len1;			/* First byte array or string size */
-    unsigned char *bytes2;	/* Second string as byte array */
-    Tcl_UniChar *uniChars2;	/* Second string as Unicode character array */
-    int len2;			/* Second byte array or string size */
-    unsigned char *outBytes;	/* Output byte array */
-    Tcl_UniChar *outUniChars;	/* Output Unicode character array */
-    String *outString;		/* Output string */
-    Tcl_Obj *outObj;		/* Output object */
-    int pureByteArray;		/* 1 if byte array with no string rep */
-    int pureUni;    	    	/* 1 if Unicode with no string rep */
-    int idx;			/* Insert index */
+    int idx;		    	/* Effective start index */
+    int del;		    	/* Effective number of characters to remove */
+    int pureBin;		/* 1 if byte array with no string rep */
+    int pureUni;    	    	/* 1 if Unicode with no string representation */
+    /* Representations of strObj (string being modified) */
+    unsigned char *strBin;	/* String being modified, byte array */
+    Tcl_UniChar   *strUni;	/* String being modified, Unicode char array */
+    int		   strLen;	/* String being modified, byte or char count */
+    /* Representations of insObj (substring to insert or replace) */
+    unsigned char *insBin;	/* String to insert, byte array */
+    Tcl_UniChar   *insUni;	/* String to insert, Unicode character array */
+    int		   insLen;	/* String to insert, byte or character count */
+    /* Representations of output string */
+    unsigned char *outBin;	/* Output string, byte array */
+    Tcl_UniChar   *outUni;	/* Output string, Unicode character array */
+    String	  *outStr;	/* Output string, Tcl string buffer */
+    Tcl_Obj	  *outObj;	/* Output string, Tcl object */
 
     /*
-     * Get the string data either as byte or Unicode character arrays.
+     * Check if strObj is a pure byte array or pure Unicode character array.
+     * Get its length and byte array or Unicode character array representation.
      */
 
-    pureByteArray = TclIsPureByteArray(string1) && TclIsPureByteArray(string2);
-    if (pureByteArray) {
-	bytes1 = Tcl_GetByteArrayFromObj(string1, &len1);
-	bytes2 = Tcl_GetByteArrayFromObj(string2, &len2);
+    if ((pureBin = TclIsPureByteArray(strObj))) {
+	strBin = Tcl_GetByteArrayFromObj(strObj, &strLen);
     } else {
-	pureUni = !string1->bytes && !string2->bytes;
-	uniChars1 = Tcl_GetUnicodeFromObj(string1, &len1);
-	uniChars2 = Tcl_GetUnicodeFromObj(string2, &len2);
+	pureUni = !strObj->bytes;
+	strUni = Tcl_GetUnicodeFromObj(strObj, &strLen);
     }
 
     /*
-     * Compute effective index.  Clip out-of-bounds indexes just like [linsert].
+     * Do the same for insObj, and update pureBin or pureUni to indicate if both
+     * strObj and insObj are pure byte arrays or pure Unicode character arrays.
+     * If insObj is NULL, treat it as empty string, which is effectively both a
+     * pure byte array and a pure Unicode character array.
      */
 
-    if (TclGetIntForIndexM(interp, index, len1, &idx) != TCL_OK) {
-	return NULL;
+    if (!insObj) {
+	insLen = 0;
+    } else if (pureBin && (pureBin &= TclIsPureByteArray(insObj))) {
+	insBin = Tcl_GetByteArrayFromObj(insObj, &insLen);
+    } else {
+	pureUni &= !insObj->bytes;
+	insUni = Tcl_GetUnicodeFromObj(insObj, &insLen);
     }
 
-    if (idx < 0) {
+    /*
+     * Clip start index and removal count to lie within string length limits.
+     */
+
+    if (startIndex < 0) {
 	idx = 0;
-    } else if (idx > len1) {
-	idx = len1;
+    } else if (startIndex > strLen) {
+	idx = strLen;
+    } else {
+	idx = startIndex;
+    }
+    if (removeCount < 0) {
+	del = 0;
+    } else if (idx + removeCount > strLen) {
+	del = strLen - idx;
+    } else {
+	del = removeCount;
     }
 
-    if (!len1) {
+    /*
+     * Setup is complete.  Now perform the actual string replacement.
+     */
+
+    if (!insLen && !del) {
 	/*
-	 * Trivial cases: if either argument is empty, simply return the other.
+	 * If insObj is empty/NULL and no removal is being done, return strObj.
 	 */
 
-	outObj = string2;
-    } else if (!len2) {
-	outObj = string1;
-    } else if (pureByteArray) {
+	outObj = strObj;
+    } else if (!strLen) {
+	/*
+	 * If strObj is empty, return insObj, which is guaranteed non-NULL.
+	 */
+
+	outObj = insObj;
+    } else if (pureBin) {
 	/*
 	 * Optimize the pure byte array case to avoid shimmering.  If either
 	 * byte array argument is unshared, modify it in place.  If both
 	 * arguments are shared, create a new, unshared byte array result.
+	 * ASCII strings are frequently represented as pure byte arrays.
 	 */
 
-	if (!Tcl_IsShared(string1)) {
-	    outObj = string1;
-	    outBytes = Tcl_SetByteArrayLength(outObj, len1 + len2);
-	    memmove(outBytes + idx + len2, outBytes + idx, len1 - idx);
-	    memcpy(outBytes + idx, bytes2, len2);
-	} else if (!Tcl_IsShared(string2)) {
-	    outObj = string2;
-	    outBytes = Tcl_SetByteArrayLength(outObj, len1 + len2);
-	    memmove(outBytes + idx, outBytes, len2);
-	    memcpy(outBytes, bytes1, idx);
-	    memcpy(outBytes + idx + len2, bytes1 + idx, len1 - idx);
+	if (Tcl_IsShared(strObj) && (!insObj || Tcl_IsShared(insObj))) {
+	    /*
+	     * Both arguments are shared, so fill a new byte array with bytes
+	     * from strObj and insObj.
+	     */
+
+	    outObj = Tcl_NewByteArrayObj(NULL, strLen + insLen - del);
+	    outBin = Tcl_GetByteArrayFromObj(outObj, NULL);
+	    if (idx) {
+		memcpy(outBin, strBin, idx);
+	    }
+	    if (insLen) {
+		memcpy(outBin + idx, insBin, insLen);
+	    }
+	    if (strLen != idx + del) {
+		memcpy(outBin + idx + insLen, strBin + idx + del,
+			strLen - idx - del);
+	    }
 	} else {
-	    outObj = Tcl_NewByteArrayObj(NULL, len1 + len2);
-	    outBytes = Tcl_GetByteArrayFromObj(outObj, NULL);
-	    memcpy(outBytes, bytes1, idx);
-	    memcpy(outBytes + idx, bytes2, len2);
-	    memcpy(outBytes + idx + len2, bytes1 + idx, len1 - idx);
+	    /*
+	     * An argument is unshared and can be modified in place.  Note: At
+	     * this point, if insObj is NULL, strObj is necessarily unshared.
+	     */
+
+	    if (!Tcl_IsShared(strObj)) {
+		outObj = strObj;
+	    } else {
+		outObj = insObj;
+	    }
+
+	    /*
+	     * If more bytes are about to be inserted than deleted, increase the
+	     * allocation now.  Defer decreasing allocation until later to avoid
+	     * accessing memory after deallocating it.
+	     */
+
+	    if (insLen > del) {
+		outBin = Tcl_SetByteArrayLength(outObj, strLen + insLen - del);
+	    } else {
+		outBin = Tcl_GetByteArrayFromObj(outObj, NULL);
+	    }
+
+	    if (!Tcl_IsShared(strObj)) {
+		/*
+		 * Handle modifying strObj in place.  The bytes before idx are
+		 * already where they need to be.  Adjust the position of the
+		 * bytes after the end of the insert/replace/delete region, then
+		 * insert the substring.
+		 */
+
+		if (insLen != del && strLen != idx + del) {
+		    memmove(outBin + idx + insLen, outBin + idx + del,
+			    strLen - idx - del);
+		}
+		if (insLen) {
+		    memcpy(outBin + idx, insBin, insLen);
+		}
+	    } else {
+		/*
+		 * Handle modifying insObj in place.  Move the insObj bytes to
+		 * idx, then copy strObj in two parts before and after insObj.
+		 */
+
+		if (idx && insLen) {
+		    memmove(outBin + idx, outBin, insLen);
+		}
+		if (idx) {
+		    memcpy(outBin, strBin, idx);
+		}
+		if (insLen != del && strLen != idx + del) {
+		    memcpy(outBin + idx + insLen, strBin + idx + del,
+			    strLen - idx - del);
+		}
+	    }
+
+	    /*
+	     * Now that all bytes are in place, decrease allocation if more
+	     * bytes were deleted than were inserted.
+	     */
+
+	    if (del > insLen) {
+		Tcl_SetByteArrayLength(outObj, strLen + insLen - del);
+	    }
 	}
-    } else if (pureUni || !Tcl_IsShared(string1) || !Tcl_IsShared(string2)) {
+    } else if (pureUni || !Tcl_IsShared(strObj)
+	    || (insObj && !Tcl_IsShared(insObj))) {
 	/*
-	 * Same as above, but for pure Unicode strings and for unshared ordinary
-	 * strings.  If the latter, convert to pure Unicode.
+	 * Same as above, but for pure Unicode character arrays and for unshared
+	 * arguments.  Modify the unshared argument in place, or create a new
+	 * output object if the arguments are shared.
 	 */
 
-	if (!Tcl_IsShared(string1)) {
-	    outObj = string1;
-	} else if (!Tcl_IsShared(string2)) {
-	    outObj = string2;
+	if (!Tcl_IsShared(strObj)) {
+	    outObj = strObj;
+	} else if (insObj && !Tcl_IsShared(insObj)) {
+	    outObj = insObj;
 	} else {
-	    outObj = Tcl_NewUnicodeObj(uniChars1, idx);
+	    outObj = Tcl_NewUnicodeObj(strUni, idx);
 	}
 
-	GrowUnicodeBuffer(outObj, len1 + len2);
-	outString = GET_STRING(outObj);
-	outUniChars = outString->unicode;
-	outString->numChars = len1 + len2;
+	/*
+	 * Increase the string allocation as necessary, and get access to the
+	 * Unicode character array internals.
+	 */
+
+	outStr = GET_STRING(outObj);
+	if (strLen + insLen - del > outStr->maxChars) {
+	    GrowUnicodeBuffer(outObj, strLen + insLen - del);
+	    outStr = GET_STRING(outObj);
+	}
+	outUni = outStr->unicode;
+	outStr->numChars = strLen + insLen - del;
+
+	/*
+	 * Convert output to a pure Unicode character array if not already so.
+	 */
 
 	if (!pureUni) {
 	    TclInvalidateStringRep(outObj);
-	    outString->allocated = 0;
+	    outStr->allocated = 0;
 	}
 
-	if (!Tcl_IsShared(string1)) {
-	    memmove(outUniChars + idx + len2, outUniChars + idx,
-		    (len1 - idx) * sizeof(Tcl_UniChar));
-	    memcpy(outUniChars + idx, uniChars2, len2 * sizeof(Tcl_UniChar));
-	} else if (!Tcl_IsShared(string2)) {
-	    memmove(outUniChars + idx, outUniChars, len2 * sizeof(Tcl_UniChar));
-	    memcpy(outUniChars, uniChars1, idx * sizeof(Tcl_UniChar));
-	    memcpy(outUniChars + idx + len2, uniChars1 + idx,
-		    (len1 - idx) * sizeof(Tcl_UniChar));
+	/*
+	 * Rearrange the character array to accomplish the replace operation.
+	 */
+
+	if (!Tcl_IsShared(strObj)) {
+	    /*
+	     * Handle modifying strObj in place.  The characters before idx are
+	     * already where they need to be.  Adjust the position of the
+	     * characters after the end of the insert/replace/delete region,
+	     * then insert the substring.
+	     */
+
+	    memmove(outUni + idx + insLen, outUni + idx + del,
+		    (strLen - idx - del) * sizeof(Tcl_UniChar));
+	    memcpy(outUni + idx, insUni, insLen * sizeof(Tcl_UniChar));
+	} else if (insObj && !Tcl_IsShared(insObj)) {
+	    /*
+	     * Handle modifying insObj in place.  Move the insObj characters to
+	     * idx, then copy strObj in two parts before and after insObj.
+	     */
+
+	    memmove(outUni + idx, outUni, insLen * sizeof(Tcl_UniChar));
+	    memcpy(outUni, strUni, idx * sizeof(Tcl_UniChar));
+	    memcpy(outUni + idx + insLen, strUni + idx + del,
+		    (strLen - idx - del) * sizeof(Tcl_UniChar));
 	} else {
-	    memcpy(outUniChars + idx, uniChars2, len2 * sizeof(Tcl_UniChar));
-	    memcpy(outUniChars + idx + len2, uniChars1 + idx,
-		    (len1 - idx) * sizeof(Tcl_UniChar));
+	    /*
+	     * Both arguments are shared, so fill the new Unicode character
+	     * array with characters from strObj and insObj.
+	     */
+
+	    memcpy(outUni + idx, insUni, insLen * sizeof(Tcl_UniChar));
+	    memcpy(outUni + idx + insLen, strUni + idx + del,
+		    (strLen - idx - del) * sizeof(Tcl_UniChar));
 	}
-    } else if (!idx || idx == len1) {
+    } else if ((!idx || idx == strLen) && !del) {
 	/*
 	 * Inserting at the beginning or end of the string is nothing more than
 	 * concatenating the two strings in either order.
@@ -3427,11 +3572,11 @@ TclStringInsert(
 	Tcl_Obj *parts[2];
 	
 	if (idx) {
-	    parts[0] = string1;
-	    parts[1] = string2;
+	    parts[0] = strObj;
+	    parts[1] = insObj;
 	} else {
-	    parts[0] = string2;
-	    parts[1] = string1;
+	    parts[0] = insObj;
+	    parts[1] = strObj;
 	}
 
 	if (TclStringCatObjv(interp, 1, 2, parts, &outObj) != TCL_OK) {
@@ -3440,14 +3585,14 @@ TclStringInsert(
     } else {
 	/*
 	 * Non-byte array, non-Unicode, non-prepend, non-append, non-empty,
-	 * non-unshared case.  Fall back on building up a new string by
-	 * concatenating the parts.
+	 * non-unshared case.  Build a new string by concatenating the parts.
 	 */
 
-	outObj = Tcl_NewUnicodeObj(uniChars1, idx);
-	Tcl_AppendObjToObj(outObj, string2);
-	if (idx < len1) {
-	    Tcl_AppendUnicodeToObj(outObj, uniChars1 + idx, len1 - idx);
+	outObj = Tcl_NewUnicodeObj(strUni, idx);
+	Tcl_AppendObjToObj(outObj, insObj);
+	if (strLen != idx + del) {
+	    Tcl_AppendUnicodeToObj(outObj, strUni + idx + del,
+		    strLen - idx - del);
 	}
     }
 

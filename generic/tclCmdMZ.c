@@ -1481,6 +1481,8 @@ StringInsertCmd(
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument objects */
 {
+    int length;			/* String length */
+    int index;			/* Insert index */
     Tcl_Obj *outObj;		/* Output object */
 
     if (objc != 4) {
@@ -1488,7 +1490,12 @@ StringInsertCmd(
 	return TCL_ERROR;
     }
 
-    if (!(outObj = TclStringInsert(interp, objv[1], objv[2], objv[3]))) {
+    length = Tcl_GetCharLength(objv[1]);
+    if (TclGetIntForIndexM(interp, objv[2], length, &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (!(outObj = TclStringReplace(interp, objv[1], index, 0, objv[3]))) {
 	return TCL_ERROR;
     }
 
