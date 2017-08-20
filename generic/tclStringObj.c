@@ -3359,7 +3359,7 @@ TclStringReplace(
     } else if (pureBin && (pureBin &= TclIsPureByteArray(insObj))) {
 	insBin = Tcl_GetByteArrayFromObj(insObj, &insLen);
     } else {
-	pureUni &= !insObj->bytes;
+	pureUni = pureUni && !insObj->bytes;
 	insUni = Tcl_GetUnicodeFromObj(insObj, &insLen);
     }
 
@@ -3589,7 +3589,9 @@ TclStringReplace(
 	 */
 
 	outObj = Tcl_NewUnicodeObj(strUni, idx);
-	Tcl_AppendObjToObj(outObj, insObj);
+	if (insLen) {
+	    Tcl_AppendObjToObj(outObj, insObj);
+	}
 	if (strLen != idx + del) {
 	    Tcl_AppendUnicodeToObj(outObj, strUni + idx + del,
 		    strLen - idx - del);
