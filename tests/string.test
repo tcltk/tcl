@@ -1324,55 +1324,106 @@ test string-13.14 {string repeat} {
 test string-14.1 {string replace} {
     list [catch {string replace} msg] $msg
 } {1 {wrong # args: should be "string replace string first last ?string?"}}
+test string-14.1.1 {string replace non-bytecode} {
+    list [catch {{*}[list string replace]} msg] $msg
+} {1 {wrong # args: should be "string replace string first last ?string?"}}
 test string-14.2 {string replace} {
     list [catch {string replace a 1} msg] $msg
 } {1 {wrong # args: should be "string replace string first last ?string?"}}
+test string-14.2.1 {string replace non-bytecode} {
+    list [catch {{*}[list string replace] a 1} msg] $msg
+} {1 {wrong # args: should be "string replace string first last ?string?"}}
 test string-14.3 {string replace} {
     list [catch {string replace a 1 2 3 4} msg] $msg
+} {1 {wrong # args: should be "string replace string first last ?string?"}}
+test string-14.3.1 {string replace non-bytecode} {
+    list [catch {{*}[list string replace] a 1 2 3 4} msg] $msg
 } {1 {wrong # args: should be "string replace string first last ?string?"}}
 test string-14.4 {string replace} {
 } {}
 test string-14.5 {string replace} {
     string replace abcdefghijklmnop 2 14
 } {abp}
+test string-14.5.1 {string replace non-bytecode} {
+    {*}[list string replace] abcdefghijklmnop 2 14
+} {abp}
 test string-14.6 {string replace} {
     string replace abcdefghijklmnop 7 1000
+} {abcdefg}
+test string-14.6.1 {string replace non-bytecode} {
+    {*}[list string replace] abcdefghijklmnop 7 1000
 } {abcdefg}
 test string-14.7 {string replace} {
     string replace abcdefghijklmnop 10 end
 } {abcdefghij}
+test string-14.7.1 {string replace non-bytecode} {
+    {*}[list string replace] abcdefghijklmnop 10 end
+} {abcdefghij}
 test string-14.8 {string replace} {
     string replace abcdefghijklmnop 10 9
+} {abcdefghijklmnop}
+test string-14.8.1 {string replace non-bytecode} {
+    {*}[list string replace] abcdefghijklmnop 10 9
 } {abcdefghijklmnop}
 test string-14.9 {string replace} {
     string replace abcdefghijklmnop -3 2
 } {defghijklmnop}
+test string-14.9.1 {string replace non-bytecode} {
+    {*}[list string replace] abcdefghijklmnop -3 2
+} {defghijklmnop}
 test string-14.10 {string replace} {
     string replace abcdefghijklmnop -3 -2
+} {abcdefghijklmnop}
+test string-14.10.1 {string replace non-bytecode} {
+    {*}[list string replace] abcdefghijklmnop -3 -2
 } {abcdefghijklmnop}
 test string-14.11 {string replace} {
     string replace abcdefghijklmnop 1000 1010
 } {abcdefghijklmnop}
+test string-14.11.1 {string replace non-bytecode} {
+    {*}[list string replace] abcdefghijklmnop 1000 1010
+} {abcdefghijklmnop}
 test string-14.12 {string replace} {
     string replace abcdefghijklmnop -100 end
+} {}
+test string-14.12.1 {string replace non-bytecode} {
+    {*}[list string replace] abcdefghijklmnop -100 end
 } {}
 test string-14.13 {string replace} {
     list [catch {string replace abc abc 1} msg] $msg
 } {1 {bad index "abc": must be integer?[+-]integer? or end?[+-]integer?}}
+test string-14.13.1 {string replace non-bytecode} {
+    list [catch {{*}[list string replace] abc abc 1} msg] $msg
+} {1 {bad index "abc": must be integer?[+-]integer? or end?[+-]integer?}}
 test string-14.14 {string replace} {
     list [catch {string replace abc 1 eof} msg] $msg
+} {1 {bad index "eof": must be integer?[+-]integer? or end?[+-]integer?}}
+test string-14.14.1 {string replace non-bytecode} {
+    list [catch {{*}[list string replace] abc 1 eof} msg] $msg
 } {1 {bad index "eof": must be integer?[+-]integer? or end?[+-]integer?}}
 test string-14.15 {string replace} {
     string replace abcdefghijklmnop end-10 end-2 NEW
 } {abcdeNEWop}
+test string-14.15.1 {string replace non-bytecode} {
+    {*}[list string replace] abcdefghijklmnop end-10 end-2 NEW
+} {abcdeNEWop}
 test string-14.16 {string replace} {
     string replace abcdefghijklmnop 0 end foo
+} {foo}
+test string-14.16.1 {string replace non-bytecode} {
+    {*}[list string replace] abcdefghijklmnop 0 end foo
 } {foo}
 test string-14.17 {string replace} {
     string replace abcdefghijklmnop end end-1
 } {abcdefghijklmnop}
+test string-14.17.1 {string replace non-bytecode} {
+    {*}[list string replace] abcdefghijklmnop end end-1
+} {abcdefghijklmnop}
 test string-14.18 {string replace} {
     string replace abcdefghijklmnop 10 9 XXX
+} {abcdefghijklmnop}
+test string-14.18.1 {string replace non-bytecode} {
+    {*}[list string replace] abcdefghijklmnop 10 9 XXX
 } {abcdefghijklmnop}
 
 test string-15.1 {string tolower too few args} {
