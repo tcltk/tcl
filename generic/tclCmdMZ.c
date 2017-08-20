@@ -2374,6 +2374,12 @@ StringRplcCmd(
 	return TCL_ERROR;
     }
 
+    if (objc == 5) {
+	insObj = objv[4];
+    } else {
+	insObj = NULL;
+    }
+
     if (first < 0) {
 	first = 0;
     }
@@ -2382,11 +2388,6 @@ StringRplcCmd(
 	del = last - first + 1;
     } else {
 	del = 0;
-    }
-
-    if (objc == 5) {
-	insObj = objv[4];
-    } else {
 	insObj = NULL;
     }
 
