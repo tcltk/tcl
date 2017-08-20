@@ -3367,16 +3367,16 @@ TclStringReplace(
      * Clip start index and removal count to lie within string length limits.
      */
 
-    if (startIndex < 0) {
+    if (startIndex <= 0) {
 	idx = 0;
-    } else if (startIndex > strLen) {
+    } else if (startIndex >= strLen) {
 	idx = strLen;
     } else {
 	idx = startIndex;
     }
-    if (removeCount < 0) {
+    if (removeCount <= 0) {
 	del = 0;
-    } else if (idx + removeCount > strLen) {
+    } else if (idx + removeCount >= strLen) {
 	del = strLen - idx;
     } else {
 	del = removeCount;
