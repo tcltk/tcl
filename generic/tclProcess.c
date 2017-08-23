@@ -77,7 +77,7 @@ ProcessListObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *result;
+    Tcl_Obj *list;
     Tcl_HashEntry *entry;
     Tcl_HashSearch search;
     ProcessInfo *info;
@@ -91,16 +91,16 @@ ProcessListObjCmd(
      * Return the list of all chid process ids.
      */
 
-    result = Tcl_NewListObj(0, NULL);
+    list = Tcl_NewListObj(0, NULL);
     Tcl_MutexLock(&statusMutex);
     for (entry = Tcl_FirstHashEntry(&statusTable, &search); entry != NULL;
 	    entry = Tcl_NextHashEntry(&search)) {
         info = (ProcessInfo *) Tcl_GetHashValue(entry);
-        Tcl_ListObjAppendElement(interp, result, 
+        Tcl_ListObjAppendElement(interp, list, 
                 Tcl_NewIntObj(info->resolvedPid));
     }
     Tcl_MutexUnlock(&statusMutex);
-    Tcl_SetObjResult(interp, result);
+    Tcl_SetObjResult(interp, list);
     return TCL_OK;
 }
 
@@ -127,55 +127,136 @@ ProcessStatusObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *result;
-    int options;
+    Tcl_Obj *dict;
+    int index, options = WNOHANG;
     Tcl_HashEntry *entry;
     Tcl_HashSearch search;
     ProcessInfo *info;
+    int numPids;
+    Tcl_Obj **pidObjs;
+    int result;
+    int i;
+    int pid;
+    Tcl_Obj *const *savedobjv = objv;
+    static const char *const switches[] = {
+	"-wait", "--", NULL
+    };
+    enum switches {
+	STATUS_WAIT, STATUS_LAST
+    };
     
-    if (objc < 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?switches? ?pids?");
+    while (objc > 1) {
+	if (TclGetString(objv[1])[0] != '-') {
+	    break;
+	}
+	if (Tcl_GetIndexFromObj(interp, objv[1], switches, "switches", 0,
+		&index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	++objv; --objc;
+	if (STATUS_WAIT == (enum switches) index) {
+	    options = 0;
+	} else {
+	    break;
+	}
+    }
+    
+    if (objc != 1 && objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, savedobjv, "?switches? ?pids?");
 	return TCL_ERROR;
     }
 
-    /* FRED TODO switches */
-    options = WNOHANG;
+    if (objc == 1) {
+        /*
+        * Return the list of all child process statuses.
+        */
 
-    /*
-     * Return the list of all chid process statuses.
-     */
+        dict = Tcl_NewDictObj();
+        Tcl_MutexLock(&statusMutex);
+        for (entry = Tcl_FirstHashEntry(&statusTable, &search); entry != NULL;
+                entry = Tcl_NextHashEntry(&search)) {
+            info = (ProcessInfo *) Tcl_GetHashValue(entry);
+            if (autopurge) {
+                if (GetProcessStatus(info->pid, info->resolvedPid, options, 
+                        NULL)) {
+                   /*
+                    * Purge.
+                    */
 
-    result = Tcl_NewDictObj();
-    Tcl_MutexLock(&statusMutex);
-    for (entry = Tcl_FirstHashEntry(&statusTable, &search); entry != NULL;
-	    entry = Tcl_NextHashEntry(&search)) {
-        info = (ProcessInfo *) Tcl_GetHashValue(entry);
-        if (autopurge) {
-            if (GetProcessStatus(info->pid, info->resolvedPid, options, 
-                    NULL)) {
+                    PurgeProcessStatus(entry);
+                    Tcl_DeleteHashEntry(entry);
+                    continue;
+                }
+            } else if (!info->status) {
                 /*
-                 * Purge.
-                 */
+                * Update status.
+                */
 
-                PurgeProcessStatus(entry);
-                Tcl_DeleteHashEntry(entry);
+                if (GetProcessStatus(info->pid, info->resolvedPid, options, 
+                        &info->status)) {
+                    Tcl_IncrRefCount(info->status);
+                }
+           }
+           Tcl_DictObjPut(interp, dict, Tcl_NewIntObj(info->resolvedPid), 
+                    info->status ? info->status : Tcl_NewObj());
+        }
+        Tcl_MutexUnlock(&statusMutex);
+    } else {
+        /*
+         * Only return statuses of provided processes.
+         */
+        
+        result = Tcl_ListObjGetElements(interp, objv[1], &numPids, &pidObjs);
+        if (result != TCL_OK) {
+            return result;
+        }
+        dict = Tcl_NewDictObj();
+        Tcl_MutexLock(&statusMutex);
+        for (i = 0; i < numPids; i++) {
+            result = Tcl_GetIntFromObj(interp, pidObjs[i], (int *) &pid);
+            if (result != TCL_OK) {
+                Tcl_MutexUnlock(&statusMutex);
+                Tcl_DecrRefCount(dict);
+                return result;
+            }
+
+            entry = Tcl_FindHashEntry(&statusTable, INT2PTR(pid));
+            if (!entry) {
+                /*
+                 * Skip unknown process.
+                 */
+                
                 continue;
             }
-        } else if (!info->status) {
-            /*
-             * Update status.
-             */
+            
+            info = (ProcessInfo *) Tcl_GetHashValue(entry);
+            if (autopurge) {
+                if (GetProcessStatus(info->pid, info->resolvedPid, options, 
+                        NULL)) {
+                   /*
+                    * Purge.
+                    */
 
-            if (GetProcessStatus(info->pid, info->resolvedPid, options, 
-                    &info->status)) {
-                Tcl_IncrRefCount(info->status);
-            }
+                    PurgeProcessStatus(entry);
+                    Tcl_DeleteHashEntry(entry);
+                    continue;
+                }
+            } else if (!info->status) {
+                /*
+                * Update status.
+                */
+
+                if (GetProcessStatus(info->pid, info->resolvedPid, options, 
+                        &info->status)) {
+                    Tcl_IncrRefCount(info->status);
+                }
+           }
+           Tcl_DictObjPut(interp, dict, Tcl_NewIntObj(info->resolvedPid), 
+                    info->status ? info->status : Tcl_NewObj());
         }
-        Tcl_DictObjPut(interp, result, Tcl_NewIntObj(info->resolvedPid), 
-                info->status ? info->status : Tcl_NewObj());
+        Tcl_MutexUnlock(&statusMutex);
     }
-    Tcl_MutexUnlock(&statusMutex);
-    Tcl_SetObjResult(interp, result);
+    Tcl_SetObjResult(interp, dict);
     return TCL_OK;
 }
 
@@ -214,8 +295,6 @@ ProcessPurgeObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "?pids?");
 	return TCL_ERROR;
     }
-
-//FRED TODO update status list first.
 
     if (objc == 1) {
         /*
