@@ -4026,10 +4026,8 @@ MODULE_SCOPE int	TclFullFinalizationRequested(void);
  */
 
 MODULE_SCOPE Tcl_Command TclInitProcessCmd(Tcl_Interp *interp);
-MODULE_SCOPE int	TclProcessGetAutopurge(void);
-MODULE_SCOPE void	TclProcessSetAutopurge(int flag);
-MODULE_SCOPE void	TclReapPids(int numPids, Tcl_Pid *pidPtr);
-MODULE_SCOPE Tcl_Pid	TclpGetChildPid(int id);
+MODULE_SCOPE void	TclProcessDetach(Tcl_Pid pid);
+MODULE_SCOPE int	TclProcessStatus(Tcl_Pid pid, int options);
 
 /*
  *----------------------------------------------------------------
