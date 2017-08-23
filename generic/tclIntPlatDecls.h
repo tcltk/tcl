@@ -562,8 +562,6 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #else
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((unsigned long) (pid))
-#   undef TclpGetChildPid
-#   define TclpGetChildPid(id) ((Tcl_Pid) (id))
 #endif
 
 #endif /* _TCLINTPLATDECLS */
