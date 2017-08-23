@@ -12,22 +12,45 @@
 
 #include "tclInt.h"
 
+/*
+ * Autopurge flag. Process-global because of the way Tcl manages child 
+ * processes (see tclPipe.c).
+ */
+
 static int autopurge = 1;		/* Autopurge flag. */
+
+/*
+ * Hash table that keeps track of all child process statuses. Keys are the 
+ * child process ids, values are (ProcessInfo *).
+ */
+
+typedef struct ProcessInfo {
+    Tcl_Pid pid; /*FRED TODO*/
+    int resolvedPid; /*FRED TODO unused?*/
+    Tcl_Obj *status; /*FRED TODO*/
+
+} ProcessInfo;
+static Tcl_HashTable statusTable;
+static int statusTableInitialized = 0;	/* 0 means not yet initialized. */
+TCL_DECLARE_MUTEX(statusMutex)
 
  /*
  * Prototypes for functions defined later in this file:
  */
 
-static int             ProcessListObjCmd(ClientData clientData,
+static int              GetProcessStatus(Tcl_Pid pid, int resolvedPid, 
+                            int options, Tcl_Obj **statusPtr);
+static int              PurgeProcessStatus(Tcl_HashEntry *entry);
+static int              ProcessListObjCmd(ClientData clientData,
                             Tcl_Interp *interp, int objc,
                             Tcl_Obj *const objv[]);
-static int             ProcessStatusObjCmd(ClientData clientData,
+static int              ProcessStatusObjCmd(ClientData clientData,
                             Tcl_Interp *interp, int objc,
                             Tcl_Obj *const objv[]);
-static int             ProcessPurgeObjCmd(ClientData clientData,
+static int              ProcessPurgeObjCmd(ClientData clientData,
                             Tcl_Interp *interp, int objc,
                             Tcl_Obj *const objv[]);
-static int             ProcessAutopurgeObjCmd(ClientData clientData,
+static int              ProcessAutopurgeObjCmd(ClientData clientData,
                             Tcl_Interp *interp, int objc,
                             Tcl_Obj *const objv[]);
 
@@ -42,7 +65,7 @@ static int             ProcessAutopurgeObjCmd(ClientData clientData,
  *	Returns a standard Tcl result.
  *
  * Side effects:
- *	None.TODO
+ *	None.FRED TODO
  *
  *----------------------------------------------------------------------
  */
@@ -50,18 +73,36 @@ static int             ProcessAutopurgeObjCmd(ClientData clientData,
 static int
 ProcessListObjCmd(
     ClientData clientData,	/* Not used. */
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    Tcl_Obj *result;
+    Tcl_HashEntry *entry;
+    Tcl_HashSearch search;
+    ProcessInfo *info;
+
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
 
-    /* TODO */
-    return TCL_ERROR;
- }
+    /*
+     * Return the list of all chid process ids.
+     */
+
+    result = Tcl_NewListObj(0, NULL);
+    Tcl_MutexLock(&statusMutex);
+    for (entry = Tcl_FirstHashEntry(&statusTable, &search); entry != NULL;
+	    entry = Tcl_NextHashEntry(&search)) {
+        info = (ProcessInfo *) Tcl_GetHashValue(entry);
+        Tcl_ListObjAppendElement(interp, result, 
+                Tcl_NewIntObj(info->resolvedPid));
+    }
+    Tcl_MutexUnlock(&statusMutex);
+    Tcl_SetObjResult(interp, result);
+    return TCL_OK;
+}
 
 /*----------------------------------------------------------------------
  *
@@ -74,7 +115,7 @@ ProcessListObjCmd(
  *	Returns a standard Tcl result.
  *
  * Side effects:
- *	None.TODO
+ *	None.FRED TODO
  *
  *----------------------------------------------------------------------
  */
@@ -82,18 +123,61 @@ ProcessListObjCmd(
 static int
 ProcessStatusObjCmd(
     ClientData clientData,	/* Not used. */
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    Tcl_Obj *result;
+    int options;
+    Tcl_HashEntry *entry;
+    Tcl_HashSearch search;
+    ProcessInfo *info;
+    
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?switches? ?pids?");
 	return TCL_ERROR;
     }
 
-    /* TODO */
-    return TCL_ERROR;
- }
+    /* FRED TODO switches */
+    options = WNOHANG;
+
+    /*
+     * Return the list of all chid process statuses.
+     */
+
+    result = Tcl_NewDictObj();
+    Tcl_MutexLock(&statusMutex);
+    for (entry = Tcl_FirstHashEntry(&statusTable, &search); entry != NULL;
+	    entry = Tcl_NextHashEntry(&search)) {
+        info = (ProcessInfo *) Tcl_GetHashValue(entry);
+        if (autopurge) {
+            if (GetProcessStatus(info->pid, info->resolvedPid, options, 
+                    NULL)) {
+                /*
+                 * Purge.
+                 */
+
+                PurgeProcessStatus(entry);
+                Tcl_DeleteHashEntry(entry);
+                continue;
+            }
+        } else if (!info->status) {
+            /*
+             * Update status.
+             */
+
+            if (GetProcessStatus(info->pid, info->resolvedPid, options, 
+                    &info->status)) {
+                Tcl_IncrRefCount(info->status);
+            }
+        }
+        Tcl_DictObjPut(interp, result, Tcl_NewIntObj(info->resolvedPid), 
+                info->status ? info->status : Tcl_NewObj());
+    }
+    Tcl_MutexUnlock(&statusMutex);
+    Tcl_SetObjResult(interp, result);
+    return TCL_OK;
+}
 
 /*----------------------------------------------------------------------
  *
@@ -106,7 +190,7 @@ ProcessStatusObjCmd(
  *	Returns a standard Tcl result.
  *
  * Side effects:
- *	None.TODO
+ *	None.FRED TODO
  *
  *----------------------------------------------------------------------
  */
@@ -114,57 +198,65 @@ ProcessStatusObjCmd(
 static int
 ProcessPurgeObjCmd(
     ClientData clientData,	/* Not used. */
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    Tcl_HashEntry *entry;
+    Tcl_HashSearch search;
+    int numPids;
+    Tcl_Obj **pidObjs;
+    int result;
+    int i;
+    int pid;
+
     if (objc != 1 && objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pids?");
 	return TCL_ERROR;
     }
 
+//FRED TODO update status list first.
+
     if (objc == 1) {
         /*
-         * Purge all detached processes.
+         * Purge all terminated processes.
          */
-        
-        Tcl_ReapDetachedProcs();
-    } else {
-        int result;
-        int numPids;
-        Tcl_Obj **pidObjs;
-        Tcl_Pid *pids;
-        int id;
-        int i;
 
+        Tcl_MutexLock(&statusMutex);
+        for (entry = Tcl_FirstHashEntry(&statusTable, &search); entry != NULL;
+                entry = Tcl_NextHashEntry(&search)) {
+            if (PurgeProcessStatus(entry)) {
+                Tcl_DeleteHashEntry(entry);
+            }
+        }
+        Tcl_MutexUnlock(&statusMutex);
+    } else {
         /*
-         * Get pids from argument.
+         * Purge only provided processes.
          */
         
         result = Tcl_ListObjGetElements(interp, objv[1], &numPids, &pidObjs);
         if (result != TCL_OK) {
             return result;
         }
-        pids = (Tcl_Pid *) TclStackAlloc(interp, numPids * sizeof(Tcl_Pid));
+        Tcl_MutexLock(&statusMutex);
         for (i = 0; i < numPids; i++) {
-            result = Tcl_GetIntFromObj(interp, pidObjs[i], (int *) &id);
+            result = Tcl_GetIntFromObj(interp, pidObjs[i], (int *) &pid);
             if (result != TCL_OK) {
-                TclStackFree(interp, (void *) pids);
+                Tcl_MutexUnlock(&statusMutex);
                 return result;
             }
-            pids[i] = TclpGetChildPid(id);
-        }
 
-        /*
-         * Purge only provided processes.
-         */
-        
-        TclReapPids(numPids, pids);
-        TclStackFree(interp, (void *) pids);
+            entry = Tcl_FindHashEntry(&statusTable, INT2PTR(pid));
+            if (entry && PurgeProcessStatus(entry)) {
+                Tcl_DeleteHashEntry(entry);
+            }
+        }
+        Tcl_MutexUnlock(&statusMutex);
     }
     
     return TCL_OK;
- }
+}
 
 /*----------------------------------------------------------------------
  *
@@ -185,10 +277,10 @@ ProcessPurgeObjCmd(
 static int
 ProcessAutopurgeObjCmd(
     ClientData clientData,	/* Not used. */
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
- {
+{
     if (objc != 1 && objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?flag?");
 	return TCL_ERROR;
@@ -205,14 +297,14 @@ ProcessAutopurgeObjCmd(
             return result;
         }
 
-        TclProcessSetAutopurge(flag);
+        autopurge = !!flag;
     }
 
     /* 
      * Return current value. 
      */
 
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(TclProcessGetAutopurge()));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(autopurge));
     return TCL_OK;
 }
 
@@ -246,53 +338,258 @@ TclInitProcessCmd(
     };
     Tcl_Command processCmd;
 
+    if (statusTableInitialized == 0) {
+	Tcl_MutexLock(&statusMutex);
+	if (statusTableInitialized == 0) {
+	    Tcl_InitHashTable(&statusTable, TCL_ONE_WORD_KEYS);
+	    statusTableInitialized = 1;
+	}
+	Tcl_MutexUnlock(&statusMutex);
+    }
+    
     processCmd = TclMakeEnsemble(interp, "::tcl::process", processImplMap);
     Tcl_Export(interp, Tcl_FindNamespace(interp, "::tcl", NULL, 0),
             "process", 0);
     return processCmd;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * TclProcessGetAutopurge --
- *
- *	This function queries the value of the autopurge flag.
- *
- * Results:
- *	The current boolean value of the autopurge flag.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclProcessGetAutopurge(void)
+/* FRED TODO */
+void
+TclProcessDetach(
+    Tcl_Pid pid)
 {
-    return autopurge;
+    int resolvedPid;
+    Tcl_HashEntry *entry;
+    int isNew;
+    ProcessInfo *info;
+
+    resolvedPid = TclpGetPid(pid);
+    Tcl_MutexLock(&statusMutex);
+    entry = Tcl_CreateHashEntry(&statusTable, INT2PTR(resolvedPid), &isNew);
+    if (!isNew) {
+        /*
+         * Pid was reused, free old status and reuse structure.
+         */
+        
+        info = (ProcessInfo *) Tcl_GetHashValue(entry);
+        if (info->status) {
+            Tcl_DecrRefCount(info->status);
+        }
+    } else {
+        /*
+         * Allocate new info structure.
+         */
+
+        info = (ProcessInfo *) ckalloc(sizeof(ProcessInfo));
+        Tcl_SetHashValue(entry, info);
+    }
+    
+    /*
+     * Initialize with an empty status.
+     */
+
+    info->pid = pid;
+    info->resolvedPid = resolvedPid;
+    info->status = NULL;
+
+    Tcl_MutexUnlock(&statusMutex);
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * TclProcessSetAutopurge --
- *
- *	This function sets the value of the autopurge flag.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Sets the autopurge static variable.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclProcessSetAutopurge(
-    int flag)				/* New value for autopurge. */
+/* FRED TODO */
+int
+TclProcessStatus(
+    Tcl_Pid pid,
+    int options)
 {
-    autopurge = !!flag;
+    int resolvedPid;
+    Tcl_HashEntry *entry;
+    ProcessInfo *info;
+    Tcl_Obj *status;
+    int isNew;
+    
+    /*
+     * We need to get the resolved pid before we wait on it as the windows
+     * implementation of Tcl_WaitPid deletes the information such that any
+     * following calls to TclpGetPid fail.
+     */
+
+    resolvedPid = TclpGetPid(pid);
+
+    if (!GetProcessStatus(pid, resolvedPid, options, 
+            (autopurge ? NULL /* unused */: &status))) {
+        /*
+         * Process still alive, or non child-related error.
+         */
+        
+        return 0;
+    }
+    
+    if (autopurge) {
+        /*
+        * Child terminated, purge.
+        */
+
+        Tcl_MutexLock(&statusMutex);
+        entry = Tcl_FindHashEntry(&statusTable, INT2PTR(resolvedPid));
+        if (entry) {
+            PurgeProcessStatus(entry);
+            Tcl_DeleteHashEntry(entry);
+        }
+        Tcl_MutexUnlock(&statusMutex);
+
+        return 1;
+    }
+
+    /*
+     * Store process status.
+     */
+
+    Tcl_MutexLock(&statusMutex);
+    entry = Tcl_CreateHashEntry(&statusTable, INT2PTR(resolvedPid), &isNew);
+    if (!isNew) {
+        info = (ProcessInfo *) Tcl_GetHashValue(entry);
+        if (info->status) {
+            /*
+             * Free old status object.
+             */
+        
+            Tcl_DecrRefCount(info->status);
+        }
+    } else {
+        /*
+         * Allocate new info structure.
+         */
+
+        info = (ProcessInfo *) ckalloc(sizeof(ProcessInfo));
+        info->pid = pid;
+        info->resolvedPid = resolvedPid;
+        Tcl_SetHashValue(entry, info);
+    }
+
+    info->status = status;
+    Tcl_IncrRefCount(status);
+    Tcl_MutexUnlock(&statusMutex);
+    
+    return 1;
+}
+
+/* FRED TODO */
+int
+GetProcessStatus(
+    Tcl_Pid pid,
+    int resolvedPid,
+    int options,
+    Tcl_Obj **statusPtr)
+{
+    int waitStatus;
+    Tcl_Obj *statusCodes[5];
+    const char *msg;
+
+    pid = Tcl_WaitPid(pid, &waitStatus, options);
+    if ((pid == 0) || ((pid == (Tcl_Pid) -1) && (errno != ECHILD))) {
+        /*
+         * Process still alive, or non child-related error.
+         */
+        
+        return 0;
+    }
+
+    if (!statusPtr) {
+        return 1;
+    }
+
+    /*
+     * Get process status.
+     */
+
+    if (pid == (Tcl_Pid) -1) {
+        /*
+         * POSIX errName msg
+         */
+
+        statusCodes[0] = Tcl_NewStringObj("POSIX", -1);
+        statusCodes[1] = Tcl_NewStringObj(Tcl_ErrnoId(), -1);
+        msg = Tcl_ErrnoMsg(errno);
+        if (errno == ECHILD) {
+            /*
+             * This changeup in message suggested by Mark Diekhans to
+             * remind people that ECHILD errors can occur on some
+             * systems if SIGCHLD isn't in its default state.
+             */
+
+            msg = "child process lost (is SIGCHLD ignored or trapped?)";
+        }
+        statusCodes[2] = Tcl_NewStringObj(msg, -1);
+        *statusPtr = Tcl_NewListObj(3, statusCodes);
+    } else if (WIFEXITED(waitStatus)) {
+        /*
+         * CHILDSTATUS pid code
+         *
+         * Child exited with a non-zero exit status.
+         */
+
+        statusCodes[0] = Tcl_NewStringObj("CHILDSTATUS", -1);
+        statusCodes[1] = Tcl_NewIntObj(resolvedPid);
+        statusCodes[2] = Tcl_NewIntObj(WEXITSTATUS(waitStatus));
+        *statusPtr = Tcl_NewListObj(3, statusCodes);
+    } else if (WIFSIGNALED(waitStatus)) {
+        /*
+         * CHILDKILLED pid sigName msg
+         *
+         * Child killed because of a signal
+         */
+
+        statusCodes[0] = Tcl_NewStringObj("CHILDKILLED", -1);
+        statusCodes[1] = Tcl_NewIntObj(resolvedPid);
+        statusCodes[2] = Tcl_NewStringObj(Tcl_SignalId(WTERMSIG(waitStatus)), -1);
+        statusCodes[3] = Tcl_NewStringObj(Tcl_SignalMsg(WTERMSIG(waitStatus)), -1);
+        *statusPtr = Tcl_NewListObj(4, statusCodes);
+    } else if (WIFSTOPPED(waitStatus)) {
+        /*
+         * CHILDSUSP pid sigName msg
+         *
+         * Child suspended because of a signal
+         */
+
+        statusCodes[0] = Tcl_NewStringObj("CHILDSUSP", -1);
+        statusCodes[1] = Tcl_NewIntObj(resolvedPid);
+        statusCodes[2] = Tcl_NewStringObj(Tcl_SignalId(WSTOPSIG(waitStatus)), -1);
+        statusCodes[3] = Tcl_NewStringObj(Tcl_SignalMsg(WSTOPSIG(waitStatus)), -1);
+        *statusPtr = Tcl_NewListObj(4, statusCodes);
+    } else {
+        /*
+         * TCL OPERATION EXEC ODDWAITRESULT
+         *
+         * Child wait status didn't make sense.
+         */
+
+        statusCodes[0] = Tcl_NewStringObj("TCL", -1);
+        statusCodes[1] = Tcl_NewStringObj("OPERATION", -1);
+        statusCodes[2] = Tcl_NewStringObj("EXEC", -1);
+        statusCodes[3] = Tcl_NewStringObj("ODDWAITRESULT", -1);
+        statusCodes[4] = Tcl_NewIntObj(resolvedPid);
+        *statusPtr = Tcl_NewListObj(5, statusCodes);
+    }
+
+    return 1;
+}
+
+/* FRED TODO */
+int
+PurgeProcessStatus(
+    Tcl_HashEntry *entry)
+{
+    ProcessInfo *info;
+
+    info = (ProcessInfo *) Tcl_GetHashValue(entry);
+    if (info->status) {
+        /*
+         * Process has ended, purge.
+         */
+
+        Tcl_DecrRefCount(info->status);
+        return 1;
+    }
+
+    return 0;
 }
