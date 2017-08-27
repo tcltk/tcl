@@ -345,7 +345,7 @@ TclCleanupChildren(
 			Tcl_PosixError(interp)));
 	    } else if (count > 0) {
 		anyErrorInfo = 1;
-                Tcl_SetObjResult(interp, objPtr);
+		Tcl_SetObjResult(interp, objPtr);
 		result = TCL_ERROR;
 	    } else {
 		Tcl_DecrRefCount(objPtr);
