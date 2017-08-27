@@ -4025,9 +4025,20 @@ MODULE_SCOPE int	TclFullFinalizationRequested(void);
  * TIP #462.
  */
 
+typedef enum TclProcessWaitStatus {
+    TCL_PROCESS_ERROR = -1,
+    TCL_PROCESS_UNCHANGED = 0, 
+    TCL_PROCESS_EXITED = 1, 
+    TCL_PROCESS_SIGNALED = 2,
+    TCL_PROCESS_STOPPED = 3,
+    TCL_PROCESS_UNKNOWN_STATUS = 4
+} TclProcessWaitStatus;
+
 MODULE_SCOPE Tcl_Command TclInitProcessCmd(Tcl_Interp *interp);
-MODULE_SCOPE void	TclProcessDetach(Tcl_Pid pid);
-MODULE_SCOPE int	TclProcessStatus(Tcl_Pid pid, int options);
+MODULE_SCOPE void	TclProcessCreated(Tcl_Pid pid);
+MODULE_SCOPE TclProcessWaitStatus TclProcessWait(Tcl_Pid pid, int options,
+			    int *codePtr, Tcl_Obj **msgObjPtr,
+			    Tcl_Obj **errorObjPtr);
 
 /*
  *----------------------------------------------------------------
