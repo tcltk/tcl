@@ -290,6 +290,8 @@ TclCleanupChildren(
 		Tcl_SetObjErrorCode(interp, error);
 		Tcl_SetObjResult(interp, msg);
 	    }
+	    Tcl_DecrRefCount(error);
+	    Tcl_DecrRefCount(msg);
 	    continue;
 	}
 
@@ -305,7 +307,6 @@ TclCleanupChildren(
 	    if (waitStatus == TCL_PROCESS_EXITED) {
 		if (interp != NULL) {
 		    Tcl_SetObjErrorCode(interp, error);
-		    Tcl_DecrRefCount(msg);
 		}
 		abnormalExit = 1;
 	    } else if (interp != NULL) {
@@ -313,6 +314,8 @@ TclCleanupChildren(
 		Tcl_SetObjResult(interp, msg);
 	    }
 	}
+	Tcl_DecrRefCount(error);
+	Tcl_DecrRefCount(msg);
     }
 
     /*
