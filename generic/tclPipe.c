@@ -192,7 +192,6 @@ Tcl_DetachPids(
 	detPtr->pid = pidPtr[i];
 	detPtr->nextPtr = detList;
 	detList = detPtr;
-	TclProcessDetach(pidPtr[i]);
     }
     Tcl_MutexUnlock(&pipeMutex);
 
@@ -222,10 +221,13 @@ Tcl_ReapDetachedProcs(void)
 {
     register Detached *detPtr;
     Detached *nextPtr, *prevPtr;
+    int status, code;
 
     Tcl_MutexLock(&pipeMutex);
     for (detPtr = detList, prevPtr = NULL; detPtr != NULL; ) {
-	if (!TclProcessStatus(detPtr->pid, WNOHANG)) {
+	status = TclProcessWait(detPtr->pid, WNOHANG, &code, NULL, NULL);
+	if (status == TCL_PROCESS_UNCHANGED || (status == TCL_PROCESS_ERROR
+		&& code != ECHILD)) {
 	    prevPtr = detPtr;
 	    detPtr = detPtr->nextPtr;
 	    continue;
@@ -275,37 +277,18 @@ TclCleanupChildren(
 {
     int result = TCL_OK;
     int i, abnormalExit, anyErrorInfo;
-    Tcl_Pid pid;
-    int waitStatus;
-    const char *msg;
-    unsigned long resolvedPid;
+    TclProcessWaitStatus waitStatus;
+    int code;
+    Tcl_Obj *msg, *error;
 
     abnormalExit = 0;
     for (i = 0; i < numPids; i++) {
-	/*
-	 * We need to get the resolved pid before we wait on it as the windows
-	 * implementation of Tcl_WaitPid deletes the information such that any
-	 * following calls to TclpGetPid fail.
-	 */
-
-	resolvedPid = TclpGetPid(pidPtr[i]);
-	pid = Tcl_WaitPid(pidPtr[i], &waitStatus, 0);
-	if (pid == (Tcl_Pid) -1) {
+	waitStatus = TclProcessWait(pidPtr[i], 0, &code, &msg, &error);
+	if (waitStatus == TCL_PROCESS_ERROR) {
 	    result = TCL_ERROR;
 	    if (interp != NULL) {
-		msg = Tcl_PosixError(interp);
-		if (errno == ECHILD) {
-		    /*
-		     * This changeup in message suggested by Mark Diekhans to
-		     * remind people that ECHILD errors can occur on some
-		     * systems if SIGCHLD isn't in its default state.
-		     */
-
-		    msg =
-			"child process lost (is SIGCHLD ignored or trapped?)";
-		}
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"error waiting for process to exit: %s", msg));
+		Tcl_SetObjErrorCode(interp, error);
+		Tcl_SetObjResult(interp, msg);
 	    }
 	    continue;
 	}
@@ -317,38 +300,17 @@ TclCleanupChildren(
 	 * removed).
 	 */
 
-	if (!WIFEXITED(waitStatus) || (WEXITSTATUS(waitStatus) != 0)) {
-	    char msg1[TCL_INTEGER_SPACE], msg2[TCL_INTEGER_SPACE];
-
+	if (waitStatus != TCL_PROCESS_EXITED || code != 0) {
 	    result = TCL_ERROR;
-	    sprintf(msg1, "%lu", resolvedPid);
-	    if (WIFEXITED(waitStatus)) {
+	    if (waitStatus == TCL_PROCESS_EXITED) {
 		if (interp != NULL) {
-		    sprintf(msg2, "%u", WEXITSTATUS(waitStatus));
-		    Tcl_SetErrorCode(interp, "CHILDSTATUS", msg1, msg2, NULL);
+		    Tcl_SetObjErrorCode(interp, error);
+		    Tcl_DecrRefCount(msg);
 		}
 		abnormalExit = 1;
 	    } else if (interp != NULL) {
-		const char *p;
-
-		if (WIFSIGNALED(waitStatus)) {
-		    p = Tcl_SignalMsg(WTERMSIG(waitStatus));
-		    Tcl_SetErrorCode(interp, "CHILDKILLED", msg1,
-			    Tcl_SignalId(WTERMSIG(waitStatus)), p, NULL);
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "child killed: %s\n", p));
-		} else if (WIFSTOPPED(waitStatus)) {
-		    p = Tcl_SignalMsg(WSTOPSIG(waitStatus));
-		    Tcl_SetErrorCode(interp, "CHILDSUSP", msg1,
-			    Tcl_SignalId(WSTOPSIG(waitStatus)), p, NULL);
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "child suspended: %s\n", p));
-		} else {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "child wait status didn't make sense\n", -1));
-		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
-			    "ODDWAITRESULT", msg1, NULL);
-		}
+		Tcl_SetObjErrorCode(interp, error);
+		Tcl_SetObjResult(interp, msg);
 	    }
 	}
     }
@@ -380,7 +342,7 @@ TclCleanupChildren(
 			Tcl_PosixError(interp)));
 	    } else if (count > 0) {
 		anyErrorInfo = 1;
-		Tcl_SetObjResult(interp, objPtr);
+                Tcl_SetObjResult(interp, objPtr);
 		result = TCL_ERROR;
 	    } else {
 		Tcl_DecrRefCount(objPtr);
@@ -928,6 +890,7 @@ TclCreatePipeline(
 
 	pidPtr[numPids] = pid;
 	numPids++;
+	TclProcessCreated(pid);
 
 	/*
 	 * Close off our copies of file descriptors that were set up for this
