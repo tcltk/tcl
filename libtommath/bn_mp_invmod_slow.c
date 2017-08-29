@@ -170,6 +170,6 @@ LBL_ERR:mp_clear_multi (&x, &y, &u, &v, &A, &B, &C, &D, NULL);
 }
 #endif
 
-/* ref:         HEAD -> release/1.0.1, tag: v1.0.1-rc2 */
-/* git commit:  e8c27ba7df0efb90708029115c94d681dfa7812f */
-/* commit time: 2017-08-29 10:48:46 +0200 */
+/* ref:         tag: v1.0.1, master */
+/* git commit:  5953f62e42b24af93748b1ee5e1d062e242c2546 */
+/* commit time: 2017-08-29 22:27:36 +0200 */
