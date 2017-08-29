@@ -15,6 +15,7 @@
  * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
+#ifndef LTM_NO_FILE
 int mp_fwrite(mp_int *a, int radix, FILE *stream)
 {
    char *buf;
@@ -44,9 +45,10 @@ int mp_fwrite(mp_int *a, int radix, FILE *stream)
    XFREE (buf);
    return MP_OKAY;
 }
+#endif
 
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         HEAD -> release/1.0.1, tag: v1.0.1-rc2 */
+/* git commit:  e8c27ba7df0efb90708029115c94d681dfa7812f */
+/* commit time: 2017-08-29 10:48:46 +0200 */
