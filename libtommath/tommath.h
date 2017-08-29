@@ -62,7 +62,7 @@ extern "C" {
 #endif
 #elif defined(MP_64BIT)
    /* for GCC only on supported platforms */
-   typedef ulong64 mp_digit;
+   typedef uint64_t mp_digit;
 #if defined(_WIN32)
    typedef unsigned __int128    mp_word;
 #elif defined(__GNUC__)
@@ -79,7 +79,7 @@ extern "C" {
 
    /* this is to make porting into LibTomCrypt easier :-) */
    typedef uint32_t             mp_digit;
-   typedef ulong64              mp_word;
+   typedef uint64_t             mp_word;
 
 #ifdef MP_31BIT
    /* this is an extension that uses 31-bit digits */

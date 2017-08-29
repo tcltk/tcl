@@ -63,13 +63,8 @@ extern "C" {
 #endif
 #elif defined(MP_64BIT)
    /* for GCC only on supported platforms */
-#ifndef CRYPT
-   typedef unsigned long long   ulong64;
-   typedef signed long long     long64;
-#endif
-
 #ifndef MP_DIGIT_DECLARED
-   typedef ulong64 mp_digit;
+   typedef uint64_t mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
 #if defined(_WIN32)
@@ -87,16 +82,11 @@ extern "C" {
    /* this is the default case, 28-bit digits */
 
    /* this is to make porting into LibTomCrypt easier :-) */
-#ifndef CRYPT
-   typedef unsigned long long   ulong64;
-   typedef signed long long     long64;
-#endif
-
 #ifndef MP_DIGIT_DECLARED
    typedef uint32_t             mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
-   typedef ulong64              mp_word;
+   typedef uint64_t             mp_word;
 
 #ifdef MP_31BIT
    /* this is an extension that uses 31-bit digits */
