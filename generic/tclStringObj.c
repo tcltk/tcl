@@ -1678,7 +1678,7 @@ Tcl_AppendFormatToObj(
 #endif
 	int newXpg, numChars, allocSegment = 0, segmentLimit, segmentNumBytes;
 	Tcl_Obj *segment;
-	Tcl_UniChar ch;
+	Tcl_UniChar ch = 0;
 	int step = TclUtfToUniChar(format, &ch);
 
 	format += step;
@@ -3425,7 +3425,7 @@ TclStringObjReverse(
     Tcl_Obj *objPtr)
 {
     String *stringPtr;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
 
     if (TclIsPureByteArray(objPtr)) {
 	int numBytes;
