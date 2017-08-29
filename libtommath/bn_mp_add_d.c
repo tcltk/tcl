@@ -49,9 +49,6 @@ mp_add_d (mp_int * a, mp_digit b, mp_int * c)
   /* old number of used digits in c */
   oldused = c->used;
 
-  /* sign always positive */
-  c->sign = MP_ZPOS;
-
   /* source alias */
   tmpa    = a->dp;
 
@@ -96,6 +93,9 @@ mp_add_d (mp_int * a, mp_digit b, mp_int * c)
      ix       = 1;
   }
 
+  /* sign always positive */
+  c->sign = MP_ZPOS;
+
   /* now zero to oldused */
   while (ix++ < oldused) {
      *tmpc++ = 0;
@@ -107,6 +107,6 @@ mp_add_d (mp_int * a, mp_digit b, mp_int * c)
 
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         HEAD -> release/1.0.1, tag: v1.0.1-rc2 */
+/* git commit:  e8c27ba7df0efb90708029115c94d681dfa7812f */
+/* commit time: 2017-08-29 10:48:46 +0200 */

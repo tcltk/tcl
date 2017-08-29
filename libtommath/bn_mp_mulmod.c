@@ -21,7 +21,7 @@ int mp_mulmod (mp_int * a, mp_int * b, mp_int * c, mp_int * d)
   int     res;
   mp_int  t;
 
-  if ((res = mp_init (&t)) != MP_OKAY) {
+  if ((res = mp_init_size (&t, c->used)) != MP_OKAY) {
     return res;
   }
 
@@ -35,6 +35,6 @@ int mp_mulmod (mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 }
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         HEAD -> release/1.0.1, tag: v1.0.1-rc2 */
+/* git commit:  e8c27ba7df0efb90708029115c94d681dfa7812f */
+/* commit time: 2017-08-29 10:48:46 +0200 */

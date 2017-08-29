@@ -116,16 +116,16 @@ extern "C" {
    typedef mp_digit mp_min_u32;
 #endif
 
-/* platforms that can use a better rand function */
+/* use arc4random on platforms that support it */
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
-    #define MP_USE_ALT_RAND 1
+    #define MP_GEN_RANDOM()    arc4random()
+    #define MP_GEN_RANDOM_MAX  0xffffffff
 #endif
 
-/* use arc4random on platforms that support it */
-#ifdef MP_USE_ALT_RAND
-    #define MP_GEN_RANDOM()    arc4random()
-#else
+/* use rand() as fall-back if there's no better rand function */
+#ifndef MP_GEN_RANDOM
     #define MP_GEN_RANDOM()    rand()
+    #define MP_GEN_RANDOM_MAX  RAND_MAX
 #endif
 
 #define MP_DIGIT_BIT     DIGIT_BIT
@@ -796,7 +796,7 @@ int mp_fwrite(mp_int *a, int radix, FILE *stream);
 #endif
 
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         HEAD -> release/1.0.1, tag: v1.0.1-rc2 */
+/* git commit:  e8c27ba7df0efb90708029115c94d681dfa7812f */
+/* commit time: 2017-08-29 10:48:46 +0200 */
 
