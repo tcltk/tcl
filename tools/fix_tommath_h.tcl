@@ -22,7 +22,6 @@ foreach line [split $data \n] {
 	    {#define BN_H_} {
 		puts $line
 		puts {}
-		puts "\#include \"tclInt.h\""
 		puts "\#include \"tclTomMathDecls.h\""
 		puts "\#ifndef MODULE_SCOPE"
 		puts "\#define MODULE_SCOPE extern"
@@ -72,10 +71,6 @@ foreach line [split $data \n] {
 		puts $line
 		puts "\#if 0 /* these are macros in tclTomMathDecls.h */"
 		set eat_endif 1
-	    }
-	    {__x86_64__} {
-		puts "[string map {__x86_64__ NEVER} $line]\
-                      /* 128-bit ints fail in too many places */"
 	    }
 	    {#include} {
 		# remove all includes
