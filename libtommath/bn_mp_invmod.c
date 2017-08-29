@@ -25,7 +25,7 @@ int mp_invmod (mp_int * a, mp_int * b, mp_int * c)
 
 #ifdef BN_FAST_MP_INVMOD_C
   /* if the modulus is odd we can use a faster routine instead */
-  if (mp_isodd (b) == MP_YES) {
+  if ((mp_isodd(b) == MP_YES) && (mp_cmp_d(b, 1) != MP_EQ)) {
     return fast_mp_invmod (a, b, c);
   }
 #endif
@@ -38,6 +38,6 @@ int mp_invmod (mp_int * a, mp_int * b, mp_int * c)
 }
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         HEAD -> release/1.0.1, tag: v1.0.1-rc2 */
+/* git commit:  e8c27ba7df0efb90708029115c94d681dfa7812f */
+/* commit time: 2017-08-29 10:48:46 +0200 */

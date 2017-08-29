@@ -20,8 +20,6 @@ int mp_div_2d (mp_int * a, int b, mp_int * c, mp_int * d)
 {
   mp_digit D, r, rr;
   int     x, res;
-  mp_int  t;
-
 
   /* if the shift count is <= 0 then we do no work */
   if (b <= 0) {
@@ -32,22 +30,17 @@ int mp_div_2d (mp_int * a, int b, mp_int * c, mp_int * d)
     return res;
   }
 
-  if ((res = mp_init (&t)) != MP_OKAY) {
+  /* copy */
+  if ((res = mp_copy (a, c)) != MP_OKAY) {
     return res;
   }
+  /* 'a' should not be used after here - it might be the same as d */
 
   /* get the remainder */
   if (d != NULL) {
-    if ((res = mp_mod_2d (a, b, &t)) != MP_OKAY) {
-      mp_clear (&t);
+    if ((res = mp_mod_2d (a, b, d)) != MP_OKAY) {
       return res;
     }
-  }
-
-  /* copy */
-  if ((res = mp_copy (a, c)) != MP_OKAY) {
-    mp_clear (&t);
-    return res;
   }
 
   /* shift by as many digits in the bit count */
@@ -84,14 +77,10 @@ int mp_div_2d (mp_int * a, int b, mp_int * c, mp_int * d)
     }
   }
   mp_clamp (c);
-  if (d != NULL) {
-    mp_exch (&t, d);
-  }
-  mp_clear (&t);
   return MP_OKAY;
 }
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         HEAD -> release/1.0.1, tag: v1.0.1-rc2 */
+/* git commit:  e8c27ba7df0efb90708029115c94d681dfa7812f */
+/* commit time: 2017-08-29 10:48:46 +0200 */

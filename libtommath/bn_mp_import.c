@@ -68,6 +68,6 @@ int mp_import(mp_int* rop, size_t count, int order, size_t size,
 
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         HEAD -> release/1.0.1, tag: v1.0.1-rc2 */
+/* git commit:  e8c27ba7df0efb90708029115c94d681dfa7812f */
+/* commit time: 2017-08-29 10:48:46 +0200 */
