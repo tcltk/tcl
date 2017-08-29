@@ -74,7 +74,7 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
   
   /* if an illegal character was found, fail. */
 
-  if ( *str != '\0' ) {
+  if (!(*str == '\0' || *str == '\r' || *str == '\n')) {
       mp_zero( a );
       return MP_VAL;
   }
