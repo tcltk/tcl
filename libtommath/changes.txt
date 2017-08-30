@@ -1,4 +1,4 @@
-XXX, 2017
+Aug 29th, 2017
 v1.0.1
        -- Dmitry Kovalenko provided fixes to mp_add_d() and mp_init_copy()
        -- Matt Johnston contributed some improvements to mp_div_2d(),
