@@ -48,7 +48,7 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
      * this allows numbers like 1AB and 1ab to represent the same  value
      * [e.g. in hex]
      */
-    ch = (radix <= 36) ? (char)toupper((unsigned char)*str) : *str;
+    ch = (radix <= 36) ? (char)toupper((int)*str) : *str;
     for (y = 0; y < 64; y++) {
       if (ch == mp_s_rmap[y]) {
          break;
@@ -71,11 +71,10 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
     }
     ++str;
   }
-  
-  /* if an illegal character was found, fail. */
 
-  if ( *str != '\0' ) {
-      mp_zero( a );
+  /* if an illegal character was found, fail. */
+  if (!(*str == '\0' || *str == '\r' || *str == '\n')) {
+      mp_zero(a);
       return MP_VAL;
   }
 
@@ -87,6 +86,6 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
 }
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         tag: v1.0.1, master */
+/* git commit:  5953f62e42b24af93748b1ee5e1d062e242c2546 */
+/* commit time: 2017-08-29 22:27:36 +0200 */
