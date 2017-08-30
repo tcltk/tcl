@@ -3282,7 +3282,7 @@ TclStringFind(
 /*
  *---------------------------------------------------------------------------
  *
- * TclStringReplace --
+ * Tcl_StringReplace --
  *
  *	Inserts, replaces, or removes characters in a string.  Implements the
  *	[string insert] and [string replace] operations.  Observe that inserting
@@ -3310,7 +3310,7 @@ TclStringFind(
  */
 
 Tcl_Obj *
-TclStringReplace(
+Tcl_StringReplace(
     Tcl_Interp *interp,		/* Interpreter for error logging, may be NULL */
     Tcl_Obj *strObj,	    	/* String being modified */
     int startIndex,		/* Index at which to insert/remove/replace */
