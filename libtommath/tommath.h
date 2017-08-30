@@ -203,7 +203,7 @@ int mp_init_size(mp_int *a, int size);
 
 /* ---> Basic Manipulations <--- */
 #define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
-#define mp_iseven(a) ((((a)->used > 0) && (((a)->dp[0] & 1u) == 0u)) ? MP_YES : MP_NO)
+#define mp_iseven(a) ((((a)->used == 0) || (((a)->dp[0] & 1u) == 0u)) ? MP_YES : MP_NO)
 #define mp_isodd(a)  ((((a)->used > 0) && (((a)->dp[0] & 1u) == 1u)) ? MP_YES : MP_NO)
 #define mp_isneg(a)  (((a)->sign != MP_ZPOS) ? MP_YES : MP_NO)
 
