@@ -46,7 +46,10 @@ extern "C" {
    typedef uint8_t              mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
+#ifndef MP_WORD_DECLARED
    typedef uint16_t             mp_word;
+#define MP_WORD_DECLARED
+#endif
 #define MP_SIZEOF_MP_DIGIT      1
 #ifdef DIGIT_BIT
 #error You must not define DIGIT_BIT when using MP_8BIT
@@ -56,7 +59,10 @@ extern "C" {
    typedef uint16_t             mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
+#ifndef MP_WORD_DECLARED
    typedef uint32_t             mp_word;
+#define MP_WORD_DECLARED
+#endif
 #define MP_SIZEOF_MP_DIGIT      2
 #ifdef DIGIT_BIT
 #error You must not define DIGIT_BIT when using MP_16BIT
@@ -68,13 +74,19 @@ extern "C" {
 #define MP_DIGIT_DECLARED
 #endif
 #if defined(_WIN32)
+#ifndef MP_WORD_DECLARED
    typedef unsigned __int128    mp_word;
+#define MP_WORD_DECLARED
+#endif
 #elif defined(__GNUC__)
    typedef unsigned long        mp_word __attribute__ ((mode(TI)));
 #else
    /* it seems you have a problem
     * but we assume you can somewhere define your own uint128_t */
+#ifndef MP_WORD_DECLARED
    typedef uint128_t            mp_word;
+#define MP_WORD_DECLARED
+#endif
 #endif
 
    #define DIGIT_BIT            60
@@ -86,7 +98,10 @@ extern "C" {
    typedef uint32_t             mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
+#ifndef MP_WORD_DECLARED
    typedef uint64_t             mp_word;
+#define MP_WORD_DECLARED
+#endif
 
 #ifdef MP_31BIT
    /* this is an extension that uses 31-bit digits */
