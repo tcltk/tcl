@@ -71,7 +71,13 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
     }
     ++str;
   }
-  
+
+  /* if an illegal character was found, fail. */
+  if (!(*str == '\0' || *str == '\r' || *str == '\n')) {
+      mp_zero(a);
+      return MP_VAL;
+  }
+
   /* set the sign only if a != 0 */
   if (mp_iszero(a) != MP_YES) {
      a->sign = neg;
