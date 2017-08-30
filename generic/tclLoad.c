@@ -130,7 +130,7 @@ Tcl_LoadObjCmd(
     Tcl_PackageInitProc *initProc;
     const char *p, *fullFileName, *packageName;
     Tcl_LoadHandle loadHandle;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     unsigned len;
     int index, flags = 0;
     Tcl_Obj *const *savedobjv = objv;
