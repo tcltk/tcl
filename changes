@@ -8795,3 +8795,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2017-07-17 (bug)[fb2208] Repeatable tclIndex generation (wiedemann,nijtmans)
 
 --- Released 8.6.7, August 9, 2017 --- http://core.tcl.tk/tcl/ for details
+
+2017-08-31 (bug)[2a9465] http state 100 continue handling broken (oehlmann)
+=> http 2.8.12
