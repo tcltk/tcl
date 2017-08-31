@@ -45,6 +45,12 @@ foreach line [split $data \n] {
 		puts "\#define MP_DIGIT_DECLARED"
 		puts "\#endif"
 	    }
+	    {typedef.*mp_word;} {
+		puts "\#ifndef MP_WORD_DECLARED"
+		puts $line
+		puts "\#define MP_WORD_DECLARED"
+		puts "\#endif"
+	    }
 	    {typedef struct} {
 		puts "\#ifndef MP_INT_DECLARED"
 		puts "\#define MP_INT_DECLARED"
