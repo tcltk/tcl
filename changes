@@ -8624,3 +8624,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2016-02-22 (bug)[9b4702] [info exists env(missing)] kills trace (nijtmans)
 
 --- Released 8.6.5, February 29, 2016 --- http://core.tcl.tk/tcl/ for details
+
+2017-08-31 (bug)[2a9465] http state 100 continue handling broken (oehlmann)
+=> http 2.8.12
