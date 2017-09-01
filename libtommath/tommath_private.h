@@ -19,11 +19,11 @@
 #include <ctype.h>
 
 #ifndef MIN
-#define MIN(x,y) (((x) < (y)) ? (x) : (y))
+  #define MIN(x,y) (((x) < (y)) ? (x) : (y))
 #endif
 
 #ifndef MAX
-#define MAX(x,y) (((x) > (y)) ? (x) : (y))
+  #define MAX(x,y) (((x) > (y)) ? (x) : (y))
 #endif
 
 #ifdef __cplusplus
@@ -120,6 +120,6 @@ int func_name (mp_int * a, type b)                       \
 #endif
 
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */
