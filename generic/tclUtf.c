@@ -266,16 +266,6 @@ Tcl_UniCharToUtfDString(
  *	*chPtr is filled with the Tcl_UniChar, and the return value is the
  *	number of bytes from the UTF-8 string that were consumed.
  *
- *  If TCL_UTF_MAX == 4, special handling of Surrogate pairs is done:
- *
- *  If the UTF-8 string represents a character outside of the BMP, the
- *  first call to this function will fill *chPtr with the high surrogate
- *  and generate a return value of 0. Calling Tcl_UtfToUniChar again
- *  will produce the low surrogate and a return value of 4. Because *chPtr
- *  is used to remember whether the high surrogate is already produced, it
- *  is recommended to initialize the variable it points to as 0 before
- *  the first call to Tcl_UtfToUniChar is done.
- *
  * Side effects:
  *	None.
  *
@@ -349,7 +339,7 @@ Tcl_UtfToUniChar(
 
 	    byte = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
 		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F)) - 0x10000;
-	    surrogate = 0xD800 + (byte >> 10);
+	    surrogate = (Tcl_UniChar) (0xD800 + (byte >> 10));
 	    if (byte & 0x100000) {
 		/* out of range, < 0x10000 or > 0x10ffff */
 	    } else if (*chPtr != surrogate) {
