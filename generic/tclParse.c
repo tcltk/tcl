@@ -1286,7 +1286,7 @@ TclParseBackslash(
 				 * written there. */
 {
     register const char *p = src+1;
-    Tcl_UniChar unichar;
+    Tcl_UniChar unichar = 0;
     int result;
     int count;
     char buf[TCL_UTF_MAX];
