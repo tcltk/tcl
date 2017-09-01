@@ -8835,4 +8835,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2017-06-23 (TIP 472) Support 0d as prefix of decimal numbers (iyer,griffin)
 
+2017-08-31 (bug)[2a9465] http state 100 continue handling broken (oehlmann)
+=> http 2.8.12
+
 --- Released 8.7a1, August ??, 2017 --- http://core.tcl.tk/tcl/ for details
