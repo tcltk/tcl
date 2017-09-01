@@ -46,7 +46,10 @@ extern "C" {
    typedef uint8_t              mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
+#ifndef MP_WORD_DECLARED
    typedef uint16_t             mp_word;
+#define MP_WORD_DECLARED
+#endif
 #define MP_SIZEOF_MP_DIGIT      1
 #ifdef DIGIT_BIT
 #error You must not define DIGIT_BIT when using MP_8BIT
@@ -56,30 +59,34 @@ extern "C" {
    typedef uint16_t             mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
+#ifndef MP_WORD_DECLARED
    typedef uint32_t             mp_word;
+#define MP_WORD_DECLARED
+#endif
 #define MP_SIZEOF_MP_DIGIT      2
 #ifdef DIGIT_BIT
 #error You must not define DIGIT_BIT when using MP_16BIT
 #endif
 #elif defined(MP_64BIT)
    /* for GCC only on supported platforms */
-#ifndef CRYPT
-   typedef unsigned long long   ulong64;
-   typedef signed long long     long64;
-#endif
-
 #ifndef MP_DIGIT_DECLARED
-   typedef ulong64 mp_digit;
+   typedef uint64_t mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
 #if defined(_WIN32)
+#ifndef MP_WORD_DECLARED
    typedef unsigned __int128    mp_word;
+#define MP_WORD_DECLARED
+#endif
 #elif defined(__GNUC__)
    typedef unsigned long        mp_word __attribute__ ((mode(TI)));
 #else
    /* it seems you have a problem
     * but we assume you can somewhere define your own uint128_t */
+#ifndef MP_WORD_DECLARED
    typedef uint128_t            mp_word;
+#define MP_WORD_DECLARED
+#endif
 #endif
 
    #define DIGIT_BIT            60
@@ -87,16 +94,14 @@ extern "C" {
    /* this is the default case, 28-bit digits */
 
    /* this is to make porting into LibTomCrypt easier :-) */
-#ifndef CRYPT
-   typedef unsigned long long   ulong64;
-   typedef signed long long     long64;
-#endif
-
 #ifndef MP_DIGIT_DECLARED
    typedef uint32_t             mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
-   typedef ulong64              mp_word;
+#ifndef MP_WORD_DECLARED
+   typedef uint64_t             mp_word;
+#define MP_WORD_DECLARED
+#endif
 
 #ifdef MP_31BIT
    /* this is an extension that uses 31-bit digits */
@@ -116,16 +121,16 @@ extern "C" {
    typedef mp_digit mp_min_u32;
 #endif
 
-/* platforms that can use a better rand function */
+/* use arc4random on platforms that support it */
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
-    #define MP_USE_ALT_RAND 1
+    #define MP_GEN_RANDOM()    arc4random()
+    #define MP_GEN_RANDOM_MAX  0xffffffff
 #endif
 
-/* use arc4random on platforms that support it */
-#ifdef MP_USE_ALT_RAND
-    #define MP_GEN_RANDOM()    arc4random()
-#else
+/* use rand() as fall-back if there's no better rand function */
+#ifndef MP_GEN_RANDOM
     #define MP_GEN_RANDOM()    rand()
+    #define MP_GEN_RANDOM_MAX  RAND_MAX
 #endif
 
 #define MP_DIGIT_BIT     DIGIT_BIT
@@ -796,7 +801,7 @@ int mp_fwrite(mp_int *a, int radix, FILE *stream);
 #endif
 
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         tag: v1.0.1, master */
+/* git commit:  5953f62e42b24af93748b1ee5e1d062e242c2546 */
+/* commit time: 2017-08-29 22:27:36 +0200 */
 
