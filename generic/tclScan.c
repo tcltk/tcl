@@ -257,7 +257,7 @@ ValidateFormat(
 {
     int gotXpg, gotSequential, value, i, flags;
     char *end;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
     int *nassign = TclStackAlloc(interp, nspace * sizeof(int));
     char buf[TCL_UTF_MAX+1];

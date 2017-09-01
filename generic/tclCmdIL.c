@@ -4360,7 +4360,7 @@ static int
 DictionaryCompare(
     const char *left, const char *right)	/* The strings to compare. */
 {
-    Tcl_UniChar uniLeft, uniRight, uniLeftLower, uniRightLower;
+    Tcl_UniChar uniLeft = 0, uniRight = 0, uniLeftLower, uniRightLower;
     int diff, zeros;
     int secondaryDiff = 0;
 
