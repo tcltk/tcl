@@ -2296,7 +2296,7 @@ UtfToUtfProc(
     Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
 
     if (flags & TCL_ENCODING_START) {
-    	*chPtr = 0;
+    	*statePtr = 0;
     }
     result = TCL_OK;
 
@@ -2349,7 +2349,7 @@ UtfToUtfProc(
 	     * incomplete char its bytes are made to represent themselves.
 	     */
 
-		*chPtr = (unsigned char) *src;
+	    *chPtr = (unsigned char) *src;
 	    src += 1;
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	} else {
@@ -2415,7 +2415,7 @@ UnicodeToUtfProc(
     Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
 
     if (flags & TCL_ENCODING_START) {
-    	*chPtr = 0;
+    	*statePtr = 0;
     }
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
@@ -2510,7 +2510,7 @@ UtfToUnicodeProc(
     Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
 
     if (flags & TCL_ENCODING_START) {
-    	*chPtr = 0;
+    	*statePtr = 0;
     }
     srcStart = src;
     srcEnd = src + srcLen;
