@@ -2013,8 +2013,8 @@ Tcl_CreateObjCommand(
 {
     Interp *iPtr = (Interp *) interp;
     ImportRef *oldRefPtr = NULL;
-    Namespace *nsPtr, *dummy1, *dummy2;
-    Command *cmdPtr, *refCmdPtr;
+    Namespace *nsPtr;
+    Command *cmdPtr;
     Tcl_HashEntry *hPtr;
     const char *tail;
     int isNew = 0, deleted = 0;
@@ -2032,35 +2032,41 @@ Tcl_CreateObjCommand(
     /*
      * If the command name we seek to create already exists, we need to
      * delete that first.  That can be tricky in the presence of traces.
-     * Loop until we no longer find an existing command in the way.
+     * Loop until we no longer find an existing command in the way, or
+     * until we've deleted one command and that didn't finish the job.
      */
 
     while (1) {
+        /*
+         * Determine where the command should reside. If its name contains
+         * namespace qualifiers, we put it in the specified namespace;
+	 * otherwise, we always put it in the global namespace.
+         */
 
-    /*
-     * Determine where the command should reside. If its name contains
-     * namespace qualifiers, we put it in the specified namespace; otherwise,
-     * we always put it in the global namespace.
-     */
+        if (strstr(cmdName, "::") != NULL) {
+	    Namespace *dummy1, *dummy2;
 
-    if (strstr(cmdName, "::") != NULL) {
-	TclGetNamespaceForQualName(interp, cmdName, NULL,
+	    TclGetNamespaceForQualName(interp, cmdName, NULL,
 		TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
-	if ((nsPtr == NULL) || (tail == NULL)) {
-	    return (Tcl_Command) NULL;
-	}
-    } else {
-	nsPtr = iPtr->globalNsPtr;
-	tail = cmdName;
-    }
+	    if ((nsPtr == NULL) || (tail == NULL)) {
+	        return (Tcl_Command) NULL;
+	    }
+        } else {
+	    nsPtr = iPtr->globalNsPtr;
+	    tail = cmdName;
+        }
 
-    hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
+        hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
 
-    if (isNew || deleted) {
-	break;
-    }
+        if (isNew || deleted) {
+	    /*
+	     * isNew - No conflict with existing command.
+	     * deleted - We've already deleted a conflicting command
+	     */
+	    break;
+        }
 
-	/* Command already exists. */
+	/* An existing command conflicts. Try to delete it.. */
 	cmdPtr = Tcl_GetHashValue(hPtr);
 
 	/*
@@ -2101,17 +2107,18 @@ Tcl_CreateObjCommand(
 	TclCleanupCommandMacro(cmdPtr);
 	deleted = 1;
     }
-	if (!isNew) {
-	    /*
-	     * If the deletion callback recreated the command, just throw away
-	     * the new command (if we try to delete it again, we could get
-	     * stuck in an infinite loop).
-	     */
 
-	     ckfree(Tcl_GetHashValue(hPtr));
-	}
+    if (!isNew) {
+	/*
+	 * If the deletion callback recreated the command, just throw away
+	 * the new command (if we try to delete it again, we could get
+	 * stuck in an infinite loop).
+	 */
 
-	if (!deleted) {
+	ckfree(Tcl_GetHashValue(hPtr));
+    }
+
+    if (!deleted) {
 	/*
 	 * The list of command exported from the namespace might have changed.
 	 * However, we do not need to recompute this just yet; next time we
@@ -2120,7 +2127,7 @@ Tcl_CreateObjCommand(
 
 	TclInvalidateNsCmdLookup(nsPtr);
 	TclInvalidateNsPath(nsPtr);
-	}
+    }
     cmdPtr = (Command *) ckalloc(sizeof(Command));
     Tcl_SetHashValue(hPtr, cmdPtr);
     cmdPtr->hPtr = hPtr;
@@ -2146,7 +2153,7 @@ Tcl_CreateObjCommand(
     if (oldRefPtr != NULL) {
 	cmdPtr->importRefPtr = oldRefPtr;
 	while (oldRefPtr != NULL) {
-	    refCmdPtr = oldRefPtr->importedCmdPtr;
+	    Command *refCmdPtr = oldRefPtr->importedCmdPtr;
 	    dataPtr = refCmdPtr->objClientData;
 	    dataPtr->realCmdPtr = cmdPtr;
 	    oldRefPtr = oldRefPtr->nextPtr;
