@@ -2017,7 +2017,7 @@ Tcl_CreateObjCommand(
     Command *cmdPtr, *refCmdPtr;
     Tcl_HashEntry *hPtr;
     const char *tail;
-    int isNew;
+    int isNew = 0, deleted = 0;
     ImportedCmdData *dataPtr;
 
     if (iPtr->flags & DELETED) {
@@ -2028,6 +2028,14 @@ Tcl_CreateObjCommand(
 
 	return (Tcl_Command) NULL;
     }
+
+    /*
+     * If the command name we seek to create already exists, we need to
+     * delete that first.  That can be tricky in the presence of traces.
+     * Loop until we no longer find an existing command in the way.
+     */
+
+    while (1) {
 
     /*
      * Determine where the command should reside. If its name contains
@@ -2047,11 +2055,13 @@ Tcl_CreateObjCommand(
     }
 
     hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
-    TclInvalidateNsPath(nsPtr);
-    if (!isNew) {
-	cmdPtr = Tcl_GetHashValue(hPtr);
+
+    if (isNew || deleted) {
+	break;
+    }
 
 	/* Command already exists. */
+	cmdPtr = Tcl_GetHashValue(hPtr);
 
 	/*
 	 * [***] This is wrong.  See Tcl Bug a16752c252.  
@@ -2089,8 +2099,8 @@ Tcl_CreateObjCommand(
 	    cmdPtr->importRefPtr = NULL;
 	}
 	TclCleanupCommandMacro(cmdPtr);
-
-	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
+	deleted = 1;
+    }
 	if (!isNew) {
 	    /*
 	     * If the deletion callback recreated the command, just throw away
@@ -2100,7 +2110,8 @@ Tcl_CreateObjCommand(
 
 	     ckfree(Tcl_GetHashValue(hPtr));
 	}
-    } else {
+
+	if (!deleted) {
 	/*
 	 * The list of command exported from the namespace might have changed.
 	 * However, we do not need to recompute this just yet; next time we
@@ -2108,7 +2119,8 @@ Tcl_CreateObjCommand(
 	 */
 
 	TclInvalidateNsCmdLookup(nsPtr);
-    }
+	TclInvalidateNsPath(nsPtr);
+	}
     cmdPtr = (Command *) ckalloc(sizeof(Command));
     Tcl_SetHashValue(hPtr, cmdPtr);
     cmdPtr->hPtr = hPtr;
