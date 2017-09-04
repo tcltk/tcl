@@ -2108,7 +2108,7 @@ Tcl_CreateCommand(
 
 	/* An existing command conflicts. Try to delete it.. */
 	cmdPtr = Tcl_GetHashValue(hPtr);
-	
+
 	/*
 	 * Be careful to preserve
 	 * any existing import links so we can restore them down below. That
