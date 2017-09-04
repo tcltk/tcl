@@ -22,6 +22,9 @@
 #include <time.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#ifndef MAP_FILE
+#define MAP_FILE 0
+#endif
 
 #ifdef HAVE_ZLIB
 #include "zlib.h"
