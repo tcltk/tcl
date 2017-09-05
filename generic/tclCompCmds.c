@@ -734,6 +734,105 @@ TclCompileCatchCmd(
     return TCL_OK;
 }
 
+/*----------------------------------------------------------------------
+ *
+ * TclCompileClockClicksCmd --
+ *
+ *	Procedure called to compile the "tcl::clock::clicks" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to run time.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "clock clicks"
+ *	command at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileClockClicksCmd(
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token* tokenPtr;
+
+    switch (parsePtr->numWords) {
+    case 1:
+	/*
+	 * No args
+	 */
+	TclEmitInstInt1(INST_CLOCK_READ, 0, envPtr);
+	break;
+    case 2:
+	/*
+	 * -milliseconds or -microseconds
+	 */
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD
+	    || tokenPtr[1].size < 4
+	    || tokenPtr[1].size > 13) {
+	    return TCL_ERROR;
+	} else if (!strncmp(tokenPtr[1].start, "-microseconds",
+			    tokenPtr[1].size)) {
+	    TclEmitInstInt1(INST_CLOCK_READ, 1, envPtr);
+	    break;
+	} else if (!strncmp(tokenPtr[1].start, "-milliseconds",
+			    tokenPtr[1].size)) {
+	    TclEmitInstInt1(INST_CLOCK_READ, 2, envPtr);
+	    break;
+	} else {
+	    return TCL_ERROR;
+	}
+    default:
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+
+/*----------------------------------------------------------------------
+ *
+ * TclCompileClockReadingCmd --
+ *
+ *	Procedure called to compile the "tcl::clock::microseconds",
+ *	"tcl::clock::milliseconds" and "tcl::clock::seconds" commands.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to run time.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "clock clicks"
+ *	command at runtime.
+ *
+ * Client data is 1 for microseconds, 2 for milliseconds, 3 for seconds.
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileClockReadingCmd(
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    if (parsePtr->numWords != 1) {
+	return TCL_ERROR;
+    }
+
+    TclEmitInstInt1(INST_CLOCK_READ, PTR2INT(cmdPtr->objClientData), envPtr);
+
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -801,7 +900,7 @@ TclCompileConcatCmd(
 	Tcl_ListObjGetElements(NULL, listObj, &len, &objs);
 	objPtr = Tcl_ConcatObj(len, objs);
 	Tcl_DecrRefCount(listObj);
-	bytes = Tcl_GetStringFromObj(objPtr, &len);
+	bytes = TclGetStringFromObj(objPtr, &len);
 	PushLiteral(envPtr, bytes, len);
 	Tcl_DecrRefCount(objPtr);
 	return TCL_OK;
@@ -1209,7 +1308,7 @@ TclCompileDictCreateCmd(
      * We did! Excellent. The "verifyDict" is to do type forcing.
      */
 
-    bytes = Tcl_GetStringFromObj(dictObj, &len);
+    bytes = TclGetStringFromObj(dictObj, &len);
     PushLiteral(envPtr, bytes, len);
     TclEmitOpcode(		INST_DUP,			envPtr);
     TclEmitOpcode(		INST_DICT_VERIFY,		envPtr);
@@ -2650,7 +2749,7 @@ CompileEachloopCmd(
 	    int numBytes, varIndex;
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
-	    bytes = Tcl_GetStringFromObj(varNameObj, &numBytes);
+	    bytes = TclGetStringFromObj(varNameObj, &numBytes);
 	    varIndex = LocalScalar(bytes, numBytes, envPtr);
 	    if (varIndex < 0) {
 		code = TCL_ERROR;
@@ -3087,7 +3186,7 @@ TclCompileFormatCmd(
      * literal. Job done.
      */
 
-    bytes = Tcl_GetStringFromObj(tmpObj, &len);
+    bytes = TclGetStringFromObj(tmpObj, &len);
     PushLiteral(envPtr, bytes, len);
     Tcl_DecrRefCount(tmpObj);
     return TCL_OK;
@@ -3158,7 +3257,7 @@ TclCompileFormatCmd(
 	    if (*++bytes == '%') {
 		Tcl_AppendToObj(tmpObj, "%", 1);
 	    } else {
-		char *b = Tcl_GetStringFromObj(tmpObj, &len);
+		char *b = TclGetStringFromObj(tmpObj, &len);
 
 		/*
 		 * If there is a non-empty literal from the format string,
@@ -3192,7 +3291,7 @@ TclCompileFormatCmd(
      */
 
     Tcl_AppendToObj(tmpObj, start, bytes - start);
-    bytes = Tcl_GetStringFromObj(tmpObj, &len);
+    bytes = TclGetStringFromObj(tmpObj, &len);
     if (len > 0) {
 	PushLiteral(envPtr, bytes, len);
 	i++;

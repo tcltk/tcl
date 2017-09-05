@@ -387,7 +387,7 @@ TclpGetNativePathType(
 {
     Tcl_PathType type = TCL_PATH_ABSOLUTE;
     int pathLen;
-    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+    const char *path = TclGetStringFromObj(pathPtr, &pathLen);
 
     if (path[0] == '~') {
 	/*
@@ -578,7 +578,7 @@ Tcl_SplitPath(
     size = 1;
     for (i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
-	Tcl_GetStringFromObj(eltPtr, &len);
+	TclGetStringFromObj(eltPtr, &len);
 	size += len + 1;
     }
 
@@ -597,7 +597,7 @@ Tcl_SplitPath(
     p = (char *) &(*argvPtr)[(*argcPtr) + 1];
     for (i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
-	str = Tcl_GetStringFromObj(eltPtr, &len);
+	str = TclGetStringFromObj(eltPtr, &len);
 	memcpy(p, str, (size_t) len+1);
 	p += len+1;
     }
@@ -857,7 +857,7 @@ TclpNativeJoinPath(
     const char *p;
     const char *start;
 
-    start = Tcl_GetStringFromObj(prefix, &length);
+    start = TclGetStringFromObj(prefix, &length);
 
     /*
      * Remove the ./ from tilde prefixed elements, and drive-letter prefixed
@@ -885,7 +885,7 @@ TclpNativeJoinPath(
 
 	if (length > 0 && (start[length-1] != '/')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
-	    Tcl_GetStringFromObj(prefix, &length);
+	    TclGetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
 
@@ -921,7 +921,7 @@ TclpNativeJoinPath(
 	if ((length > 0) &&
 		(start[length-1] != '/') && (start[length-1] != ':')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
-	    Tcl_GetStringFromObj(prefix, &length);
+	    TclGetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
 
@@ -1003,7 +1003,7 @@ Tcl_JoinPath(
      * Store the result.
      */
 
-    resultStr = Tcl_GetStringFromObj(resultObj, &len);
+    resultStr = TclGetStringFromObj(resultObj, &len);
     Tcl_DStringAppend(resultPtr, resultStr, len);
     Tcl_DecrRefCount(resultObj);
 
@@ -1249,7 +1249,7 @@ Tcl_GlobObjCmd(
     for (i = 1; i < objc; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&index) != TCL_OK) {
-	    string = Tcl_GetStringFromObj(objv[i], &length);
+	    string = TclGetStringFromObj(objv[i], &length);
 	    if (string[0] == '-') {
 		/*
 		 * It looks like the command contains an option so signal an
@@ -1357,7 +1357,7 @@ Tcl_GlobObjCmd(
     if (dir == PATH_GENERAL) {
 	int pathlength;
 	const char *last;
-	const char *first = Tcl_GetStringFromObj(pathOrDir,&pathlength);
+	const char *first = TclGetStringFromObj(pathOrDir,&pathlength);
 
 	/*
 	 * Find the last path separator in the path
@@ -1460,7 +1460,7 @@ Tcl_GlobObjCmd(
 	    const char *str;
 
 	    Tcl_ListObjIndex(interp, typePtr, length, &look);
-	    str = Tcl_GetStringFromObj(look, &len);
+	    str = TclGetStringFromObj(look, &len);
 	    if (strcmp("readonly", str) == 0) {
 		globTypes->perm |= TCL_GLOB_PERM_RONLY;
 	    } else if (strcmp("hidden", str) == 0) {
@@ -1992,7 +1992,7 @@ TclGlob(
 	    Tcl_Panic("Called TclGlob with TCL_GLOBMODE_TAILS and pathPrefix==NULL");
 	}
 
-	pre = Tcl_GetStringFromObj(pathPrefix, &prefixLen);
+	pre = TclGetStringFromObj(pathPrefix, &prefixLen);
 	if (prefixLen > 0
 		&& (strchr(separators, pre[prefixLen-1]) == NULL)) {
 	    /*
@@ -2010,7 +2010,7 @@ TclGlob(
 	Tcl_ListObjGetElements(NULL, filenamesObj, &objc, &objv);
 	for (i = 0; i< objc; i++) {
 	    int len;
-	    const char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
+	    const char *oldStr = TclGetStringFromObj(objv[i], &len);
 	    Tcl_Obj *elem;
 
 	    if (len == prefixLen) {
@@ -2362,7 +2362,7 @@ DoGlob(
 			Tcl_Obj *fixme, *newObj;
 
 			Tcl_ListObjIndex(NULL, matchesObj, repair, &fixme);
-			bytes = Tcl_GetStringFromObj(fixme, &numBytes);
+			bytes = TclGetStringFromObj(fixme, &numBytes);
 			newObj = Tcl_NewStringObj(bytes+2, numBytes-2);
 			Tcl_ListObjReplace(NULL, matchesObj, repair, 1,
 				1, &newObj);
@@ -2400,7 +2400,7 @@ DoGlob(
 	Tcl_DStringAppend(&append, pattern, p-pattern);
 
 	if (pathPtr != NULL) {
-	    (void) Tcl_GetStringFromObj(pathPtr, &length);
+	    (void) TclGetStringFromObj(pathPtr, &length);
 	} else {
 	    length = 0;
 	}
@@ -2446,7 +2446,7 @@ DoGlob(
 		 */
 
 		int len;
-		const char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
+		const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
 		if (strchr(separators, joined[len-1]) == NULL) {
 		    Tcl_AppendToObj(joinedPtr, "/", 1);
@@ -2483,7 +2483,7 @@ DoGlob(
 	     */
 
 	    int len;
-	    const char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
+	    const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
 	    if (strchr(separators, joined[len-1]) == NULL) {
 		if (Tcl_FSGetPathType(pathPtr) != TCL_PATH_VOLUME_RELATIVE) {
