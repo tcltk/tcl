@@ -431,6 +431,9 @@ MODULE_SCOPE int	TclOODefineClassObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclOODefineSelfObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineObjSelfObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOOUnknownDefinition(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
@@ -592,7 +595,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 #define AddRef(ptr) ((ptr)->refCount++)
 #define DelRef(ptr) do {			\
 	if ((ptr)->refCount-- <= 1) {		\
-	    ckfree((char *) (ptr));		\
+	    ckfree(ptr);			\
 	}					\
     } while(0)
 

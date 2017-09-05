@@ -27,6 +27,7 @@
  * month, where index 1 is January.
  */
 
+#ifndef TCL_NO_DEPRECATED
 static const int normalDays[] = {
     -1, 30, 58, 89, 119, 150, 180, 211, 242, 272, 303, 333, 364
 };
@@ -35,17 +36,18 @@ static const int leapDays[] = {
     -1, 30, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
 };
 
-typedef struct ThreadSpecificData {
+typedef struct {
     char tzName[64];		/* Time zone name */
     struct tm tm;		/* time information */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Data for managing high-resolution timers.
  */
 
-typedef struct TimeInfo {
+typedef struct {
     CRITICAL_SECTION cs;	/* Mutex guarding this structure. */
     int initialized;		/* Flag == 1 if this structure is
 				 * initialized. */
@@ -113,7 +115,9 @@ static TimeInfo timeInfo = {
  * Declarations for functions defined later in this file.
  */
 
+#ifndef TCL_NO_DEPRECATED
 static struct tm *	ComputeGMT(const time_t *tp);
+#endif /* TCL_NO_DEPRECATED */
 static void		StopCalibration(ClientData clientData);
 static DWORD WINAPI	CalibrationThread(LPVOID arg);
 static void 		UpdateTimeEachSecond(void);
@@ -339,7 +343,7 @@ NativeGetTime(
 		 */
 
 		SYSTEM_INFO systemInfo;
-		unsigned int regs[4];
+		int regs[4];
 
 		GetSystemInfo(&systemInfo);
 		if (TclWinCPUID(0, regs) == TCL_OK
@@ -351,7 +355,7 @@ NativeGetTime(
 			|| ((regs[0] & 0x00F00000)	/* Extended family */
 			&& (regs[3] & 0x10000000)))	/* Hyperthread */
 			&& (((regs[1]&0x00FF0000) >> 16)/* CPU count */
-			    == systemInfo.dwNumberOfProcessors)) {
+			    == (int)systemInfo.dwNumberOfProcessors)) {
 		    timeInfo.perfCounterAvailable = TRUE;
 		} else {
 		    timeInfo.perfCounterAvailable = FALSE;
@@ -522,6 +526,7 @@ StopCalibration(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 struct tm *
 TclpGetDate(
     const time_t *t,
@@ -724,6 +729,7 @@ ComputeGMT(
 
     return tmPtr;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -1068,6 +1074,7 @@ AccumulateSample(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 struct tm *
 TclpGmtime(
     const time_t *timePtr)	/* Pointer to the number of seconds since the
@@ -1112,6 +1119,7 @@ TclpLocaltime(
 
     return localtime(timePtr);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

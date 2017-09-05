@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_EXPTMOD_FAST_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /* computes Y == G**X mod P, HAC pp.616, Algorithm 14.85
@@ -67,13 +67,13 @@ int mp_exptmod_fast (mp_int * G, mp_int * X, mp_int * P, mp_int * Y, int redmode
 
   /* init M array */
   /* init first cell */
-  if ((err = mp_init(&M[1])) != MP_OKAY) {
+  if ((err = mp_init_size(&M[1], P->alloc)) != MP_OKAY) {
      return err;
   }
 
   /* now init the second half of the array */
   for (x = 1<<(winsize-1); x < (1 << winsize); x++) {
-    if ((err = mp_init(&M[x])) != MP_OKAY) {
+    if ((err = mp_init_size(&M[x], P->alloc)) != MP_OKAY) {
       for (y = 1<<(winsize-1); y < x; y++) {
         mp_clear (&M[y]);
       }
@@ -96,8 +96,8 @@ int mp_exptmod_fast (mp_int * G, mp_int * X, mp_int * P, mp_int * Y, int redmode
 
      /* automatically pick the comba one if available (saves quite a few calls/ifs) */
 #ifdef BN_FAST_MP_MONTGOMERY_REDUCE_C
-     if (((P->used * 2 + 1) < MP_WARRAY) &&
-          P->used < (1 << ((CHAR_BIT * sizeof (mp_word)) - (2 * DIGIT_BIT)))) {
+     if ((((P->used * 2) + 1) < MP_WARRAY) &&
+          (P->used < (1 << ((CHAR_BIT * sizeof(mp_word)) - (2 * DIGIT_BIT))))) {
         redux = fast_mp_montgomery_reduce;
      } else 
 #endif
@@ -133,7 +133,7 @@ int mp_exptmod_fast (mp_int * G, mp_int * X, mp_int * P, mp_int * Y, int redmode
   }
 
   /* setup result */
-  if ((err = mp_init (&res)) != MP_OKAY) {
+  if ((err = mp_init_size (&res, P->alloc)) != MP_OKAY) {
     goto LBL_M;
   }
 
@@ -150,15 +150,15 @@ int mp_exptmod_fast (mp_int * G, mp_int * X, mp_int * P, mp_int * Y, int redmode
      if ((err = mp_montgomery_calc_normalization (&res, P)) != MP_OKAY) {
        goto LBL_RES;
      }
-#else 
-     err = MP_VAL;
-     goto LBL_RES;
-#endif
 
      /* now set M[1] to G * R mod m */
      if ((err = mp_mulmod (G, &res, P, &M[1])) != MP_OKAY) {
        goto LBL_RES;
      }
+#else
+     err = MP_VAL;
+     goto LBL_RES;
+#endif
   } else {
      mp_set(&res, 1);
      if ((err = mp_mod(G, P, &M[1])) != MP_OKAY) {
@@ -219,12 +219,12 @@ int mp_exptmod_fast (mp_int * G, mp_int * X, mp_int * P, mp_int * Y, int redmode
      * in the exponent.  Technically this opt is not required but it
      * does lower the # of trivial squaring/reductions used
      */
-    if (mode == 0 && y == 0) {
+    if ((mode == 0) && (y == 0)) {
       continue;
     }
 
     /* if the bit is zero and mode == 1 then we square */
-    if (mode == 1 && y == 0) {
+    if ((mode == 1) && (y == 0)) {
       if ((err = mp_sqr (&res, &res)) != MP_OKAY) {
         goto LBL_RES;
       }
@@ -266,7 +266,7 @@ int mp_exptmod_fast (mp_int * G, mp_int * X, mp_int * P, mp_int * Y, int redmode
   }
 
   /* if bits remain then square/multiply */
-  if (mode == 2 && bitcpy > 0) {
+  if ((mode == 2) && (bitcpy > 0)) {
     /* square then multiply if the bit is set */
     for (x = 0; x < bitcpy; x++) {
       if ((err = mp_sqr (&res, &res)) != MP_OKAY) {
@@ -314,3 +314,8 @@ LBL_M:
   return err;
 }
 #endif
+
+
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */
