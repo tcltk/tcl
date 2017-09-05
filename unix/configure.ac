@@ -3,8 +3,8 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 
-AC_INIT([tcl],[8.6])
-AC_PREREQ(2.59)
+AC_INIT([tcl],[8.7])
+AC_PREREQ(2.69)
 
 dnl This is only used when included from macosx/configure.ac
 m4_ifdef([SC_USE_CONFIG_HEADERS], [
@@ -22,10 +22,10 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
     #endif /* _TCLCONFIG */])
 ])
 
-TCL_VERSION=8.6
+TCL_VERSION=8.7
 TCL_MAJOR_VERSION=8
-TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".6"
+TCL_MINOR_VERSION=7
+TCL_PATCH_LEVEL="a0"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -182,7 +182,6 @@ SC_CONFIG_CFLAGS
 
 SC_ENABLE_SYMBOLS(bccdebug)
 
-AC_DEFINE(TCL_TOMMATH, 1, [Build libtommath?])
 AC_DEFINE(MP_PREC, 4, [Default libtommath precision.])
 
 #--------------------------------------------------------------------
@@ -300,6 +299,37 @@ fi
 if test $tcl_ok = no; then
     AC_DEFINE(NO_FD_SET, 1, [Do we have fd_set?])
 fi
+
+#------------------------------------------------------------------------
+#	Options for the notifier. Checks for epoll(7) on Linux, and
+#	kqueue(2) on {DragonFly,Free,Net,Open}BSD
+#------------------------------------------------------------------------
+
+AC_MSG_CHECKING([for advanced notifier support])
+case x`uname -s` in
+  xLinux)
+	AC_MSG_RESULT([epoll(7)])
+	AC_CHECK_HEADERS([sys/epoll.h],
+	    [AC_DEFINE(NOTIFIER_EPOLL, [1], [Is epoll(7) supported?])])
+	AC_CHECK_HEADERS([sys/eventfd.h],
+	    [AC_DEFINE(HAVE_EVENTFD, [1], [Is eventfd(2) supported?])]);;
+  xDragonFlyBSD|xFreeBSD|xNetBSD|xOpenBSD)
+	AC_MSG_RESULT([kqueue(2)])
+	# Messy because we want to check if *all* the headers are present, and not
+	# just *any*
+	tcl_kqueue_headers=x
+	AC_CHECK_HEADERS([sys/types.h sys/event.h sys/time.h],
+	    [tcl_kqueue_headers=${tcl_kqueue_headers}y])
+	AS_IF([test $tcl_kqueue_headers = xyyy], [
+	    AC_DEFINE(NOTIFIER_KQUEUE, [1], [Is kqueue(2) supported?])]);;
+  xDarwin)
+	# Assume that we've got CoreFoundation present (checked elsewhere because
+	# of wider impact).
+	AC_MSG_RESULT([OSX]);;
+  *)
+	AC_DEFINE_UNQUOTED(NOTIFIER_SELECT)
+	AC_MSG_RESULT([none]);;
+esac
 
 #------------------------------------------------------------------------------
 #       Find out all about time handling differences.

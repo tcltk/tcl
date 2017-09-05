@@ -46,7 +46,22 @@ struct ForeachState {
 
 static int		CheckAccess(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    int mode);
+static int		BadEncodingSubcommand(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+static int		EncodingConvertfromObjCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+static int		EncodingConverttoObjCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		EncodingDirsObjCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+static int		EncodingNamesObjCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+static int		EncodingSystemObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static inline int	ForeachAssignments(Tcl_Interp *interp,
@@ -149,7 +164,7 @@ Tcl_BreakObjCmd(
  *
  *----------------------------------------------------------------------
  */
-
+#ifndef TCL_NO_DEPRECATED
 	/* ARGSUSED */
 int
 Tcl_CaseObjCmd(
@@ -267,6 +282,7 @@ Tcl_CaseObjCmd(
 
     return TCL_OK;
 }
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -541,79 +557,280 @@ Tcl_EncodingObjCmd(
 
     switch ((enum options) index) {
     case ENC_CONVERTTO:
-    case ENC_CONVERTFROM: {
-	Tcl_Obj *data;
-	Tcl_DString ds;
-	Tcl_Encoding encoding;
-	int length;
-	const char *stringPtr;
-
-	if (objc == 3) {
-	    encoding = Tcl_GetEncoding(interp, NULL);
-	    data = objv[2];
-	} else if (objc == 4) {
-	    if (Tcl_GetEncodingFromObj(interp, objv[2], &encoding) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    data = objv[3];
-	} else {
-	    Tcl_WrongNumArgs(interp, 2, objv, "?encoding? data");
-	    return TCL_ERROR;
-	}
-
-	if ((enum options) index == ENC_CONVERTFROM) {
-	    /*
-	     * Treat the string as binary data.
-	     */
-
-	    stringPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
-	    Tcl_ExternalToUtfDString(encoding, stringPtr, length, &ds);
-
-	    /*
-	     * Note that we cannot use Tcl_DStringResult here because it will
-	     * truncate the string at the first null byte.
-	     */
-
-	    Tcl_SetObjResult(interp, TclDStringToObj(&ds));
-	} else {
-	    /*
-	     * Store the result as binary data.
-	     */
-
-	    stringPtr = TclGetStringFromObj(data, &length);
-	    Tcl_UtfToExternalDString(encoding, stringPtr, length, &ds);
-	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
-		    (unsigned char *) Tcl_DStringValue(&ds),
-		    Tcl_DStringLength(&ds)));
-	    Tcl_DStringFree(&ds);
-	}
-
-	Tcl_FreeEncoding(encoding);
-	break;
-    }
+	return EncodingConverttoObjCmd(dummy, interp, objc, objv);
+    case ENC_CONVERTFROM:
+	return EncodingConvertfromObjCmd(dummy, interp, objc, objv);
     case ENC_DIRS:
 	return EncodingDirsObjCmd(dummy, interp, objc, objv);
     case ENC_NAMES:
-	if (objc > 2) {
-	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
-	    return TCL_ERROR;
-	}
-	Tcl_GetEncodingNames(interp);
-	break;
+	return EncodingNamesObjCmd(dummy, interp, objc, objv);
     case ENC_SYSTEM:
-	if (objc > 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "?encoding?");
-	    return TCL_ERROR;
-	}
-	if (objc == 2) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    Tcl_GetEncodingName(NULL), -1));
-	} else {
-	    return Tcl_SetSystemEncoding(interp, TclGetString(objv[2]));
-	}
-	break;
+	return EncodingSystemObjCmd(dummy, interp, objc, objv);
     }
     return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * TclInitEncodingCmd --
+ *
+ *	This function creates the 'encoding' ensemble.
+ *
+ * Results:
+ *	Returns the Tcl_Command so created.
+ *
+ * Side effects:
+ *	The ensemble is initialized.
+ *
+ * This command is hidden in a safe interpreter.
+ */
+
+Tcl_Command
+TclInitEncodingCmd(
+    Tcl_Interp* interp)		/* Tcl interpreter */
+{
+    static const EnsembleImplMap encodingImplMap[] = {
+	{"convertfrom", EncodingConvertfromObjCmd, TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"convertto",   EncodingConverttoObjCmd,   TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"dirs",        EncodingDirsObjCmd,        TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+	{"names",       EncodingNamesObjCmd,       TclCompileBasic0ArgCmd,    NULL, NULL, 0},
+	{"system",      EncodingSystemObjCmd,      TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+	{NULL,          NULL,                      NULL,                      NULL, NULL, 0}
+    };
+
+    return TclMakeEnsemble(interp, "encoding", encodingImplMap);
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * TclMakeEncodingCommandSafe --
+ *
+ *	This function hides the unsafe 'dirs' and 'system' subcommands of
+ *	the "encoding" Tcl command ensemble. It must be called only from
+ *	TclHideUnsafeCommands.
+ *
+ * Results:
+ *	A standard Tcl result
+ *
+ * Side effects:
+ *	Adds commands to the table of hidden commands.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+int
+TclMakeEncodingCommandSafe(
+    Tcl_Interp* interp)		/* Tcl interpreter */
+{
+    static const struct {
+	const char *cmdName;
+	int unsafe;
+    } unsafeInfo[] = {
+	{"convertfrom", 0},
+	{"convertto",   0},
+	{"dirs",        1},
+	{"names",       0},
+	{"system",      0},
+	{NULL,          0}
+    };
+
+    int i;
+    Tcl_DString oldBuf, newBuf;
+
+    Tcl_DStringInit(&oldBuf);
+    TclDStringAppendLiteral(&oldBuf, "::tcl::encoding::");
+    Tcl_DStringInit(&newBuf);
+    TclDStringAppendLiteral(&newBuf, "tcl:encoding:");
+    for (i=0 ; unsafeInfo[i].cmdName != NULL ; i++) {
+	if (unsafeInfo[i].unsafe) {
+	    const char *oldName, *newName;
+
+	    Tcl_DStringSetLength(&oldBuf, 17);
+	    oldName = Tcl_DStringAppend(&oldBuf, unsafeInfo[i].cmdName, -1);
+	    Tcl_DStringSetLength(&newBuf, 13);
+	    newName = Tcl_DStringAppend(&newBuf, unsafeInfo[i].cmdName, -1);
+	    if (TclRenameCommand(interp, oldName, "___tmp") != TCL_OK
+		    || Tcl_HideCommand(interp, "___tmp", newName) != TCL_OK) {
+		Tcl_Panic("problem making 'encoding %s' safe: %s",
+			unsafeInfo[i].cmdName,
+			Tcl_GetString(Tcl_GetObjResult(interp)));
+	    }
+	    Tcl_CreateObjCommand(interp, oldName, BadEncodingSubcommand,
+		    (ClientData) unsafeInfo[i].cmdName, NULL);
+	}
+    }
+    Tcl_DStringFree(&oldBuf);
+    Tcl_DStringFree(&newBuf);
+
+    /*
+     * Ugh. The [encoding] command is now actually safe, but it is assumed by
+     * scripts that it is not, which messes up security policies.
+     */
+
+    if (Tcl_HideCommand(interp, "encoding", "encoding") != TCL_OK) {
+	Tcl_Panic("problem making 'encoding' safe: %s",
+		Tcl_GetString(Tcl_GetObjResult(interp)));
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BadEncodingSubcommand --
+ *
+ *	Command used to act as a backstop implementation when subcommands of
+ *	"encoding" are unsafe (the real implementations of the subcommands are
+ *	hidden). The clientData is always the full official subcommand name.
+ *
+ * Results:
+ *	A standard Tcl result (always a TCL_ERROR).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BadEncodingSubcommand(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    const char *subcommandName = (const char *) clientData;
+
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "not allowed to invoke subcommand %s of encoding", subcommandName));
+    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", NULL);
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EncodingConvertfromObjCmd --
+ *
+ *	This command converts a byte array in an external encoding into a
+ *	Tcl string
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+EncodingConvertfromObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Obj *data;		/* Byte array to convert */
+    Tcl_DString ds;		/* Buffer to hold the string */
+    Tcl_Encoding encoding;	/* Encoding to use */
+    int length;			/* Length of the byte array being converted */
+    const char *bytesPtr;	/* Pointer to the first byte of the array */
+
+    if (objc == 2) {
+	encoding = Tcl_GetEncoding(interp, NULL);
+	data = objv[1];
+    } else if (objc == 3) {
+	if (Tcl_GetEncodingFromObj(interp, objv[1], &encoding) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	data = objv[2];
+    } else {
+	Tcl_WrongNumArgs(interp, 1, objv, "?encoding? data");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Convert the string into a byte array in 'ds'
+     */
+    bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
+    Tcl_ExternalToUtfDString(encoding, bytesPtr, length, &ds);
+
+    /*
+     * Note that we cannot use Tcl_DStringResult here because it will
+     * truncate the string at the first null byte.
+     */
+
+    Tcl_SetObjResult(interp, TclDStringToObj(&ds));
+
+    /*
+     * We're done with the encoding
+     */
+
+    Tcl_FreeEncoding(encoding);
+    return TCL_OK;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EncodingConverttoObjCmd --
+ *
+ *	This command converts a Tcl string into a byte array that
+ *	encodes the string according to some encoding.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+EncodingConverttoObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Obj *data;		/* String to convert */
+    Tcl_DString ds;		/* Buffer to hold the byte array */
+    Tcl_Encoding encoding;	/* Encoding to use */
+    int length;			/* Length of the string being converted */
+    const char *stringPtr;	/* Pointer to the first byte of the string */
+
+    /* TODO - ADJUST OBJ INDICES WHEN ENSEMBLIFYING THIS */
+
+    if (objc == 2) {
+	encoding = Tcl_GetEncoding(interp, NULL);
+	data = objv[1];
+    } else if (objc == 3) {
+	if (Tcl_GetEncodingFromObj(interp, objv[1], &encoding) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	data = objv[2];
+    } else {
+	Tcl_WrongNumArgs(interp, 1, objv, "?encoding? data");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Convert the string to a byte array in 'ds'
+     */
+
+    stringPtr = TclGetStringFromObj(data, &length);
+    Tcl_UtfToExternalDString(encoding, stringPtr, length, &ds);
+    Tcl_SetObjResult(interp,
+		     Tcl_NewByteArrayObj((unsigned char*) Tcl_DStringValue(&ds),
+					 Tcl_DStringLength(&ds)));
+    Tcl_DStringFree(&ds);
+
+    /*
+     * We're done with the encoding
+     */
+
+    Tcl_FreeEncoding(encoding);
+    return TCL_OK;
+
 }
 
 /*
@@ -641,16 +858,16 @@ EncodingDirsObjCmd(
 {
     Tcl_Obj *dirListObj;
 
-    if (objc > 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?dirList?");
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?dirList?");
 	return TCL_ERROR;
     }
-    if (objc == 2) {
+    if (objc == 1) {
 	Tcl_SetObjResult(interp, Tcl_GetEncodingSearchPath());
 	return TCL_OK;
     }
 
-    dirListObj = objv[2];
+    dirListObj = objv[1];
     if (Tcl_SetEncodingSearchPath(dirListObj) == TCL_ERROR) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"expected directory list but got \"%s\"",
@@ -660,6 +877,68 @@ EncodingDirsObjCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, dirListObj);
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * EncodingNamesObjCmd --
+ *
+ *	This command returns a list of the available encoding names
+ *
+ * Results:
+ *	Returns a standard Tcl result
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+int
+EncodingNamesObjCmd(ClientData dummy,       /* Unused */
+		    Tcl_Interp* interp,	    /* Tcl interpreter */
+		    int objc,		    /* Number of command line args */
+		    Tcl_Obj* const objv[])  /* Vector of command line args */
+{
+    if (objc > 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	return TCL_ERROR;
+    }
+    Tcl_GetEncodingNames(interp);
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * EncodingSystemObjCmd --
+ *
+ *	This command retrieves or changes the system encoding
+ *
+ * Results:
+ *	Returns a standard Tcl result
+ *
+ * Side effects:
+ *	May change the system encoding.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+int
+EncodingSystemObjCmd(ClientData dummy,      /* Unused */
+		     Tcl_Interp* interp,    /* Tcl interpreter */
+		     int objc,		    /* Number of command line args */
+		     Tcl_Obj* const objv[]) /* Vector of command line args */
+{
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?encoding?");
+	return TCL_ERROR;
+    }
+    if (objc == 1) {
+	Tcl_SetObjResult(interp,
+			 Tcl_NewStringObj(Tcl_GetEncodingName(NULL), -1));
+    } else {
+	return Tcl_SetSystemEncoding(interp, TclGetString(objv[1]));
+    }
     return TCL_OK;
 }
 

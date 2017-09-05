@@ -171,7 +171,7 @@ TCLTEST_EXE		= tcltest${EXE_SUFFIX}
 NATIVE_TCLSH		= @TCLSH_PROG@
 
 # The symbols below provide support for dynamic loading and shared libraries.
-# See configure.in for a description of what the symbols mean. The values of
+# See configure.ac for a description of what the symbols mean. The values of
 # the symbols are normally set by the configure script. You shouldn't normally
 # need to modify any of these definitions by hand.
 
@@ -320,7 +320,7 @@ TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
 	bn_mp_cnt_lsb.o bn_mp_copy.o \
 	bn_mp_count_bits.o bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o \
 	bn_mp_div_2d.o bn_mp_div_3.o \
-        bn_mp_exch.o bn_mp_expt_d.o bn_mp_grow.o bn_mp_init.o \
+        bn_mp_exch.o bn_mp_expt_d.o bn_mp_expt_d_ex.o bn_mp_grow.o bn_mp_init.o \
 	bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o \
 	bn_mp_init_set_int.o bn_mp_init_size.o bn_mp_karatsuba_mul.o \
 	bn_mp_karatsuba_sqr.o \
@@ -345,7 +345,7 @@ UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 	tclUnixTime.o tclUnixInit.o tclUnixThrd.o \
 	tclUnixCompat.o
 
-NOTIFY_OBJS = tclUnixNotfy.o
+NOTIFY_OBJS = tclEpollNotfy.o tclKqueueNotfy.o tclSelectNotfy.o
 
 MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o tclMacOSXNotify.o
 
@@ -505,6 +505,7 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_div_3.c \
 	$(TOMMATH_DIR)/bn_mp_exch.c \
 	$(TOMMATH_DIR)/bn_mp_expt_d.c \
+	$(TOMMATH_DIR)/bn_mp_expt_d_ex.c \
 	$(TOMMATH_DIR)/bn_mp_grow.c \
 	$(TOMMATH_DIR)/bn_mp_init.c \
 	$(TOMMATH_DIR)/bn_mp_init_copy.c \
@@ -566,7 +567,9 @@ UNIX_SRCS = \
 	$(UNIX_DIR)/tclUnixCompat.c
 
 NOTIFY_SRCS = \
-	$(UNIX_DIR)/tclUnixNotfy.c
+	$(UNIX_DIR)/tclEpollNotfy.c \
+	$(UNIX_DIR)/tclKqueueNotfy.c \
+	$(UNIX_DIR)/tclSelectNotfy.c
 
 DL_SRCS = \
 	$(UNIX_DIR)/tclLoadAix.c \
@@ -842,15 +845,15 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/http1.0; \
 	    done;
-	@echo "Installing package http 2.8.10 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.8.10.tm;
+	@echo "Installing package http 2.8.12 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.8.12.tm;
 	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/";
 	@for i in $(TOP_DIR)/library/opt/*.tcl ; \
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/opt0.4; \
 	    done;
-	@echo "Installing package msgcat 1.6.0 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.6.0.tm;
+	@echo "Installing package msgcat 1.6.1 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.6.1.tm;
 	@echo "Installing package tcltest 2.4.0 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.4.0.tm;
 
@@ -1426,6 +1429,9 @@ bn_mp_exch.o: $(TOMMATH_DIR)/bn_mp_exch.c $(MATHHDRS)
 bn_mp_expt_d.o: $(TOMMATH_DIR)/bn_mp_expt_d.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_d.c
 
+bn_mp_expt_d_ex.o: $(TOMMATH_DIR)/bn_mp_expt_d_ex.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_d_ex.c
+
 bn_mp_grow.o: $(TOMMATH_DIR)/bn_mp_grow.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_grow.c
 
@@ -1561,8 +1567,14 @@ tclUnixFCmd.o: $(UNIX_DIR)/tclUnixFCmd.c
 tclUnixFile.o: $(UNIX_DIR)/tclUnixFile.c $(FSHDR)
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixFile.c
 
-tclUnixNotfy.o: $(UNIX_DIR)/tclUnixNotfy.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixNotfy.c
+tclEpollNotfy.o: $(UNIX_DIR)/tclEpollNotfy.c
+	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclEpollNotfy.c
+
+tclKqueueNotfy.o: $(UNIX_DIR)/tclKqueueNotfy.c
+	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclKqueueNotfy.c
+
+tclSelectNotfy.o: $(UNIX_DIR)/tclSelectNotfy.c
+	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclSelectNotfy.c
 
 tclUnixPipe.o: $(UNIX_DIR)/tclUnixPipe.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixPipe.c
@@ -1717,7 +1729,7 @@ tclOOStubLib.o: $(GENERIC_DIR)/tclOOStubLib.c
 # Propagate configure args like --enable-64bit to package configure
 PKG_CFG_ARGS		= @PKG_CFG_ARGS@
 # If PKG_DIR is changed to a different relative depth to the build dir, need
-# to adapt the ../.. relative paths below and at the top of configure.in (we
+# to adapt the ../.. relative paths below and at the top of configure.ac (we
 # cannot use absolute paths due to issues in nested configure when path to
 # build dir contains spaces).
 PKG_DIR			= ./pkgs
@@ -1950,7 +1962,7 @@ DISTROOT = /tmp/dist
 DISTNAME = tcl${VERSION}${PATCH_LEVEL}
 ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}-src.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
-$(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in $(UNIX_DIR)/tcl.m4 \
+$(UNIX_DIR)/configure: $(UNIX_DIR)/configure.ac $(UNIX_DIR)/tcl.m4 \
 		$(UNIX_DIR)/aclocal.m4
 	cd $(UNIX_DIR); autoconf
 $(MAC_OSX_DIR)/configure: $(MAC_OSX_DIR)/configure.ac $(UNIX_DIR)/configure
@@ -1964,14 +1976,14 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	cp -p $(UNIX_DIR)/*.[ch] $(DISTDIR)/unix
 	cp $(UNIX_DIR)/Makefile.in $(DISTDIR)/unix
 	chmod 664 $(DISTDIR)/unix/Makefile.in
-	cp $(UNIX_DIR)/configure $(UNIX_DIR)/configure.in \
+	cp $(UNIX_DIR)/configure $(UNIX_DIR)/configure.ac \
 		$(UNIX_DIR)/tcl.m4 $(UNIX_DIR)/aclocal.m4 \
 		$(UNIX_DIR)/tclConfig.sh.in $(UNIX_DIR)/tclooConfig.sh \
 		$(UNIX_DIR)/install-sh \
 		$(UNIX_DIR)/README $(UNIX_DIR)/ldAix $(UNIX_DIR)/tcl.spec \
 		$(UNIX_DIR)/installManPage $(UNIX_DIR)/tclConfig.h.in \
 		$(UNIX_DIR)/tcl.pc.in $(DISTDIR)/unix
-	chmod 775 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.in
+	chmod 775 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.ac
 	chmod 775 $(DISTDIR)/unix/ldAix
 	@mkdir $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/*.[cdh] $(DISTDIR)/generic
@@ -2016,7 +2028,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 		$(DISTDIR)/tests
 	@mkdir $(DISTDIR)/win
 	cp $(TOP_DIR)/win/Makefile.in $(DISTDIR)/win
-	cp $(TOP_DIR)/win/configure.in $(TOP_DIR)/win/configure \
+	cp $(TOP_DIR)/win/configure.ac $(TOP_DIR)/win/configure \
 		$(TOP_DIR)/win/tclConfig.sh.in $(TOP_DIR)/win/tclooConfig.sh \
 		$(TOP_DIR)/win/tcl.m4 $(TOP_DIR)/win/aclocal.m4 \
 		$(TOP_DIR)/win/tclsh.exe.manifest.in \
@@ -2050,7 +2062,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 		$(UNIX_DIR)/dltest/README $(DISTDIR)/unix/dltest
 	@mkdir $(DISTDIR)/tools
 	cp -p $(TOOL_DIR)/Makefile.in $(TOOL_DIR)/README \
-		$(TOOL_DIR)/configure $(TOOL_DIR)/configure.in \
+		$(TOOL_DIR)/configure $(TOOL_DIR)/configure.ac \
 		$(TOOL_DIR)/*.tcl $(TOOL_DIR)/man2tcl.c \
 		$(TOOL_DIR)/*.bmp $(TOOL_DIR)/tcl.hpj.in \
 		$(DISTDIR)/tools

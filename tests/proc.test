@@ -99,7 +99,7 @@ test proc-1.6 {Tcl_ProcObjCmd, namespace code ignores single ":"s in middle or e
 test proc-1.7 {Tcl_ProcObjCmd, check that formal parameter names are not array elements} -setup {
     catch {rename p ""}
 } -returnCodes error -body {
-    proc p {a(1) a(2)} { 
+    proc p {a(1) a(2)} {
 	set z [expr $a(1)+$a(2)]
 	puts "$z=z, $a(1)=$a(1)"
     }
@@ -107,7 +107,7 @@ test proc-1.7 {Tcl_ProcObjCmd, check that formal parameter names are not array e
 test proc-1.8 {Tcl_ProcObjCmd, check that formal parameter names are simple names} -setup {
     catch {rename p ""}
 } -body {
-    proc p {b:a b::a} { 
+    proc p {b:a b::a} {
     }
 } -returnCodes error -result {formal parameter "b::a" is not a simple name}
 
@@ -329,7 +329,7 @@ test proc-5.1 {Bytecompiling noop; test for correct argument substitution} -body
 } -cleanup {
     catch {rename p ""}
     catch {rename t ""}
-} -result {aba}    
+} -result {aba}
 
 test proc-6.1 {ProcessProcResultCode: Bug 647307 (negative return code)} -body {
     proc a {} {return -code -5}

@@ -878,7 +878,7 @@ EXTERN int		Tcl_EvalObjv(Tcl_Interp *interp, int objc,
 EXTERN int		Tcl_EvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
 				int flags);
 /* 294 */
-EXTERN void		Tcl_ExitThread(int status);
+EXTERN TCL_NORETURN void Tcl_ExitThread(int status);
 /* 295 */
 EXTERN int		Tcl_ExternalToUtf(Tcl_Interp *interp,
 				Tcl_Encoding encoding, const char *src,
@@ -1816,6 +1816,12 @@ EXTERN int		Tcl_FSUnloadFile(Tcl_Interp *interp,
 EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 				Tcl_ZlibStream zhandle,
 				Tcl_Obj *compressionDictionaryObj);
+/* 631 */
+EXTERN Tcl_Channel	Tcl_OpenTcpServerEx(Tcl_Interp *interp,
+				const char *service, const char *host,
+				unsigned int flags,
+				Tcl_TcpAcceptProc *acceptProc,
+				ClientData callbackData);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2145,7 +2151,7 @@ typedef struct TclStubs {
     int (*tcl_EvalEx) (Tcl_Interp *interp, const char *script, int numBytes, int flags); /* 291 */
     int (*tcl_EvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 292 */
     int (*tcl_EvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 293 */
-    void (*tcl_ExitThread) (int status); /* 294 */
+    TCL_NORETURN1 void (*tcl_ExitThread) (int status); /* 294 */
     int (*tcl_ExternalToUtf) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, int dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr); /* 295 */
     char * (*tcl_ExternalToUtfDString) (Tcl_Encoding encoding, const char *src, int srcLen, Tcl_DString *dsPtr); /* 296 */
     void (*tcl_FinalizeThread) (void); /* 297 */
@@ -2482,6 +2488,7 @@ typedef struct TclStubs {
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
+    Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc, ClientData callbackData); /* 631 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3774,6 +3781,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FSUnloadFile) /* 629 */
 #define Tcl_ZlibStreamSetCompressionDictionary \
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
+#define Tcl_OpenTcpServerEx \
+	(tclStubsPtr->tcl_OpenTcpServerEx) /* 631 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3826,13 +3835,13 @@ extern const TclStubs *tclStubsPtr;
 	sizeof(char *), msg, flags, indexPtr)
 #undef Tcl_NewBooleanObj
 #define Tcl_NewBooleanObj(boolValue) \
-	Tcl_NewIntObj((boolValue)!=0)
+	Tcl_NewLongObj((boolValue)!=0)
 #undef Tcl_DbNewBooleanObj
 #define Tcl_DbNewBooleanObj(boolValue, file, line) \
 	Tcl_DbNewLongObj((boolValue)!=0, file, line)
 #undef Tcl_SetBooleanObj
 #define Tcl_SetBooleanObj(objPtr, boolValue) \
-	Tcl_SetIntObj((objPtr), (boolValue)!=0)
+	Tcl_SetLongObj(objPtr, (boolValue)!=0)
 #undef Tcl_SetVar
 #define Tcl_SetVar(interp, varName, newValue, flags) \
 	Tcl_SetVar2(interp, varName, NULL, newValue, flags)
@@ -3854,6 +3863,51 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_UpVar
 #define Tcl_UpVar(interp, frameName, varName, localName, flags) \
 	Tcl_UpVar2(interp, frameName, varName, NULL, localName, flags)
+#undef Tcl_AddErrorInfo
+#define Tcl_AddErrorInfo(interp, message) \
+	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, -1))
+#undef Tcl_AddObjErrorInfo
+#define Tcl_AddObjErrorInfo(interp, message, length) \
+	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, length))
+#ifdef TCL_NO_DEPRECATED
+#undef Tcl_Eval
+#define Tcl_Eval(interp, objPtr) \
+	Tcl_EvalEx(interp, objPtr, -1, 0)
+#undef Tcl_GlobalEval
+#define Tcl_GlobalEval(interp, objPtr) \
+	Tcl_EvalEx(interp, objPtr, -1, TCL_EVAL_GLOBAL)
+#undef Tcl_SaveResult
+#define Tcl_SaveResult(interp, statePtr) \
+	do { \
+	    (statePtr)->objResultPtr = Tcl_GetObjResult(interp); \
+	    Tcl_IncrRefCount((statePtr)->objResultPtr); \
+	    Tcl_SetObjResult(interp, Tcl_NewObj()); \
+	} while(0)
+#undef Tcl_RestoreResult
+#define Tcl_RestoreResult(interp, statePtr) \
+	do { \
+	    Tcl_ResetResult(interp); \
+   	    Tcl_SetObjResult(interp, (statePtr)->objResultPtr); \
+   	    Tcl_DecrRefCount((statePtr)->objResultPtr); \
+	} while(0)
+#undef Tcl_DiscardResult
+#define Tcl_DiscardResult(statePtr) \
+	Tcl_DecrRefCount((statePtr)->objResultPtr)
+#undef Tcl_SetResult
+#define Tcl_SetResult(interp, result, freeProc) \
+	do { \
+	    char *__result = result; \
+	    Tcl_FreeProc *__freeProc = freeProc; \
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(__result, -1)); \
+	    if (__result != NULL && __freeProc != NULL && __freeProc != TCL_VOLATILE) { \
+		if (__freeProc == TCL_DYNAMIC) { \
+		    ckfree(__result); \
+		} else { \
+		    (*__freeProc)(__result); \
+		} \
+	    } \
+	} while(0)
+#endif /* TCL_NO_DEPRECATED */
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
 #   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)
@@ -3908,10 +3962,10 @@ extern const TclStubs *tclStubsPtr;
  */
 
 #undef Tcl_EvalObj
-#define Tcl_EvalObj(interp,objPtr) \
-    Tcl_EvalObjEx((interp),(objPtr),0)
+#define Tcl_EvalObj(interp, objPtr) \
+    Tcl_EvalObjEx(interp, objPtr, 0)
 #undef Tcl_GlobalEvalObj
-#define Tcl_GlobalEvalObj(interp,objPtr) \
-    Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+#define Tcl_GlobalEvalObj(interp, objPtr) \
+    Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
 
 #endif /* _TCLDECLS */
