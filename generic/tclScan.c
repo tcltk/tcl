@@ -72,7 +72,7 @@ BuildCharSet(
     CharSet *cset,
     const char *format)		/* Points to first char of set. */
 {
-    Tcl_UniChar ch, start;
+    Tcl_UniChar ch = 0, start;
     int offset, nranges;
     const char *end;
 
@@ -582,7 +582,7 @@ Tcl_ScanObjCmd(
     char op = 0;
     int width, underflow = 0;
     Tcl_WideInt wideValue;
-    Tcl_UniChar ch, sch;
+    Tcl_UniChar ch = 0, sch = 0;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
     int flags;
     char buf[513];		/* Temporary buffer to hold scanned number
