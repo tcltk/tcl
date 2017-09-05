@@ -1754,10 +1754,10 @@ CheckRequirement(
     char *dash = NULL, *buf;
 
     dash = strchr(string, '-');
-    if ((dash != NULL) && (dash[1]=='a' || dash[1]=='b')) {
+    if ((dash != NULL) && (dash[1]=='a' || dash[1]=='b' || dash[1]=='r')) {
 	dash = strchr(dash+1, '-');
     }
-    if ((dash == NULL) || dash[1]=='a' || dash[1]=='b') {
+    if ((dash == NULL) || dash[1]=='a' || dash[1]=='b' || dash[1]=='r') {
 	/*
 	 * No dash found, has to be a simple version.
 	 */
