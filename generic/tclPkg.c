@@ -1402,7 +1402,7 @@ CheckVersionAndConvert(
     int hasunstable = 0;
     /*
      * 4* assuming that each char is a separator (a,b become ' -x ').
-     * 4+ to have spce for an additional -2 at the end
+     * 4+ to have spce for an additional -3 at the end
      */
     char *ibuf = ckalloc(4 + 4*strlen(string));
     char *ip = ibuf;
@@ -1422,7 +1422,9 @@ CheckVersionAndConvert(
      *
      * TIP 439, Modified rules
      * In stead of "a" and "b" in the above rules, the longer
-     * forms "-alpha." and "-beta." are accepted as well
+     * forms "-alpha." and "-beta." are accepted as well. In
+     * addition, "-rc." is allowed as intermediate between
+     * beta and final release.
      */
 
     if (!isdigit(UCHAR(*p))) {				/* INTL: digit */
@@ -1435,7 +1437,7 @@ CheckVersionAndConvert(
 	if (!isdigit(UCHAR(*p)) &&			/* INTL: digit */
 		((*p!='.' && *p!='a' && *p!='b' && *p!='-') ||
 		((hasunstable && (*p=='a' || *p=='b'|| *p=='-')) ||
-		((prevChar=='a' || prevChar=='b' || prevChar=='.')
+		((prevChar=='a' || prevChar=='b' || prevChar=='r' || prevChar=='.')
 			&& (*p=='.')) ||
 		((*p=='a' || *p=='b' || *p=='.') && prevChar=='.')))) {
 	    goto error;
@@ -1455,6 +1457,9 @@ CheckVersionAndConvert(
 	    } else if (!strncmp(p+1, "beta.", 5)) {
 		p += 5;
 		prevChar = 'b';
+	    } else if (!strncmp(p+1, "rc.", 3)) {
+		p += 3;
+		prevChar = 'r';
 	    }
 	}
 	if (prevChar == '.') {
@@ -1465,9 +1470,15 @@ CheckVersionAndConvert(
 	    hasunstable = 1;
 	    *ip++ = ' ';
 	    *ip++ = '-';
-	    *ip++ = '2';
+	    *ip++ = '3';
 	    *ip++ = ' ';
 	} else if (prevChar == 'b') {
+	    hasunstable = 1;
+	    *ip++ = ' ';
+	    *ip++ = '-';
+	    *ip++ = '2';
+	    *ip++ = ' ';
+	} else if (prevChar == 'r') {
 	    hasunstable = 1;
 	    *ip++ = ' ';
 	    *ip++ = '-';
@@ -1478,7 +1489,7 @@ CheckVersionAndConvert(
 	}
 
     }
-    if (prevChar!='.' && prevChar!='a' && prevChar!='b') {
+    if (prevChar!='.' && prevChar!='a' && prevChar!='b' && prevChar!='r') {
 	*ip = '\0';
 	if (internal != NULL) {
 	    *internal = ibuf;
@@ -1942,7 +1953,7 @@ RequirementSatisfied(
 	/*
 	 * No dash found, is a simple version, fallback to regular check. The
 	 * 'CheckVersionAndConvert' cannot fail. We pad the requirement with
-	 * 'a0', i.e '-2' before doing the comparison to properly accept
+	 * 'a0', i.e '-3' before doing the comparison to properly accept
 	 * unstables as well.
 	 */
 
@@ -1950,7 +1961,7 @@ RequirementSatisfied(
 	int thisIsMajor;
 
 	CheckVersionAndConvert(NULL, req, &reqi, NULL);
-	strcat(reqi, " -2");
+	strcat(reqi, " -3");
 	res = CompareVersions(havei, reqi, &thisIsMajor);
 	satisfied = (res == 0) || ((res == 1) && !thisIsMajor);
 	ckfree(reqi);
@@ -1971,11 +1982,11 @@ RequirementSatisfied(
     if (*dash == '\0') {
 	/*
 	 * We have a min, but no max. For the comparison we generate the
-	 * internal rep, padded with 'a0' i.e. '-2'.
+	 * internal rep, padded with 'a0' i.e. '-3'.
 	 */
 
 	CheckVersionAndConvert(NULL, buf, &min, NULL);
-	strcat(min, " -2");
+	strcat(min, " -3");
 	satisfied = (CompareVersions(havei, min, NULL) >= 0);
 	ckfree(min);
 	ckfree(buf);
@@ -1994,8 +2005,8 @@ RequirementSatisfied(
     if (CompareVersions(min, max, NULL) == 0) {
 	satisfied = (CompareVersions(min, havei, NULL) == 0);
     } else {
-	strcat(min, " -2");
-	strcat(max, " -2");
+	strcat(min, " -3");
+	strcat(max, " -3");
 	satisfied = ((CompareVersions(min, havei, NULL) <= 0) &&
 		(CompareVersions(havei, max, NULL) < 0));
     }

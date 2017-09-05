@@ -117,9 +117,13 @@ test package-2.6 {Tcl_PkgProvide procedure} {
     package forget t
     package provide t 2.3a1
 } {}
-test package-2.6 {Tcl_PkgProvide procedure} {
+test package-2.7 {Tcl_PkgProvide procedure} {
     package forget t
     package provide t 2.3.0-alpha.1
+} {}
+test package-2.8 {Tcl_PkgProvide procedure} {
+    package forget t
+    package provide t 2.3.0-rc.1
 } {}
 
 set n 0

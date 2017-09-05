@@ -57,6 +57,25 @@ extern "C" {
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
 #define TCL_RELEASE_SERIAL  0
 
+/*
+ * Translation of above numbers to the strings below are as follows:
+ *      TCL_VERSION = $TCL_MAJOR_VERSION.$TCL_MINOR_VERSION
+ * For alpha releases:
+ *      TCL_PATCH_LEVEL = $TCL_MAJOR_VERSION.$TCL_MINOR_VERSION.0-alpha.$TCL_RELEASE_SERIAL
+ * For beta releases:
+ *      TCL_PATCH_LEVEL = $TCL_MAJOR_VERSION.$TCL_MINOR_VERSION.0-beta.$TCL_RELEASE_SERIAL
+ * For rc releases (not distinguishing from final releases, other than through TCL_PATCH_LEVEL):
+ *      TCL_PATCH_LEVEL = $TCL_MAJOR_VERSION.$TCL_MINOR_VERSION.0-rc.1
+ * For final releases:
+ *      TCL_PATCH_LEVEL = $TCL_MAJOR_VERSION.$TCL_MINOR_VERSION.$TCL_RELEASE_SERIAL
+ *
+ * Indeed, for alpha and beta releases, and additional ".0" is inserted in order
+ * to comply with the semver rules that the numerical version must consist of 3 parts.
+ * It indicates that version "a.b.c-anything" will eventually lead to version "a.b.c".
+ * Tcl only releases alpha/beta's for c=0, there are no plans to change that (although
+ * it would be possible with the semver numbering)
+ */
+
 #define TCL_VERSION	    "8.7"
 #define TCL_PATCH_LEVEL	    "8.7.0-alpha.0"
 
