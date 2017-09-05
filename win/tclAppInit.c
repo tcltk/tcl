@@ -25,7 +25,6 @@
 #include <tchar.h>
 
 #ifdef TCL_TEST
-#include "tclZipfs.h"
 extern Tcl_PackageInitProc Tcltest_Init;
 extern Tcl_PackageInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
@@ -175,10 +174,6 @@ Tcl_AppInit(
 	return TCL_ERROR;
     }
     Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
-    if (Tclzipfs_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    Tcl_StaticPackage(interp, "zipfs", Tclzipfs_Init, Tclzipfs_SafeInit);
 #endif /* TCL_TEST */
 
     /*
