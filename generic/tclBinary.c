@@ -536,7 +536,7 @@ SetByteArrayFromAny(
     const char *src, *srcEnd;
     unsigned char *dst;
     ByteArray *byteArrayPtr;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
 
     if (objPtr->typePtr == &properByteArrayType) {
 	return TCL_OK;
@@ -551,7 +551,7 @@ SetByteArrayFromAny(
 
     byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
-	src += Tcl_UtfToUniChar(src, &ch);
+	src += TclUtfToUniChar(src, &ch);
 	improper = improper || (ch > 255);
 	*dst++ = UCHAR(ch);
     }
@@ -1300,10 +1300,10 @@ BinaryFormatCmd(
 
  badField:
     {
-	Tcl_UniChar ch;
+	Tcl_UniChar ch = 0;
 	char buf[TCL_UTF_MAX + 1];
 
-	Tcl_UtfToUniChar(errorString, &ch);
+	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad field specifier \"%s\"", buf));
@@ -1670,10 +1670,10 @@ BinaryScanCmd(
 
  badField:
     {
-	Tcl_UniChar ch;
+	Tcl_UniChar ch = 0;
 	char buf[TCL_UTF_MAX + 1];
 
-	Tcl_UtfToUniChar(errorString, &ch);
+	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad field specifier \"%s\"", buf));

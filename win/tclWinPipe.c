@@ -1479,10 +1479,10 @@ BuildCommandLine(
 	    quote = 1;
 	} else {
 	    int count;
-	    Tcl_UniChar ch;
+	    Tcl_UniChar ch = 0;
 
 	    for (start = arg; *start != '\0'; start += count) {
-		count = Tcl_UtfToUniChar(start, &ch);
+		count = TclUtfToUniChar(start, &ch);
 		if (Tcl_UniCharIsSpace(ch)) {	/* INTL: ISO space. */
 		    quote = 1;
 		    break;
