@@ -19,6 +19,48 @@
 #    include <intrin.h>
 #endif
 
+/*
+ * All of our key/value pairs are to be stored in persistent sorted
+ * (on the key value) lists
+ *
+ *
+ * listsWhat we seek to store is a mapping from keys to values.  This is
+ * done as a collection of key, value pairings, each pair stored in
+ * a KVNode.  These nodes are further chained together into lists
+ * where the keys of each KVNode in the same list all generate the
+ * same hash value.  These lists should be persistent and sorted
+ * (on their key values) for efficiency.
+ */
+
+typedef struct KVNode *KVList;
+
+typeder struct KVNode {
+    size_t	claim;	/* How many claims on this struct */
+    KVList	tail;	/* The part of the list(s) following this pair */
+    ClientData	key;	/* Key... */
+    ClientData	value;	/* ...and Value of this pair */
+} KVNode;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* These are values for 64-bit size_t */
 #define LEAF_SHIFT 4
 #define BRANCH_SHIFT 6
