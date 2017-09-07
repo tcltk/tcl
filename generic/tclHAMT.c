@@ -263,6 +263,129 @@ KVList Remove(
     return l;
 }
 
+/*
+ * That completes the persistent KVLists.  They are the containers of
+ * our Key/Value pairs that live in the leaves of our HAMT.  Now to
+ * make the tree.
+ */
+
+/*
+ * Each interior node of the trie is an ArrayMap.
+ * 
+ * We can conceptualize the trie as a complete tree with each node
+ * branching so that it has 2^k child nodes.  An index of k bits
+ * is needed to select one child among all of them.  Each node in the
+ * complete tree can be labeled by the sequence of k-bit indices followed
+ * to reach it.  Since the overall index into our trie is a size_t hash
+ * value, the depth of the tree need be no larger than the number of bits
+ * in a size_t divided by the k bits consumed by each index taking is 
+ * another step deeper into the tree.
+ * 
+ * For a concrete example, consider k=6, so a 64-branching tree.  To
+ * follow a 64-bit hash value through the tree to its KVList down in
+ * a leaf, we take 10 6-bit steps to a new child node, and end up in
+ * a leaf node holding 16 (2^(64 - 10 * 6)) KVLists.  This is in
+ * fact what a trie would have to look like, were it actually filled up
+ * with all 2^64 possible hash values a size_t hash can hold.
+ *
+ * The idea is that we follow a path down this complete tree as directed
+ * by our hash value to find the one leaf node containing the KVList we
+ * need. When thinking of that walk through the complete tree, we know
+ * where we are on our journey by examining the hash value. and counting
+ * our depth.  All we need the nodes themselves to provide are the pointers
+ * to the children.
+ *
+ * However, we are never going to store anything close to 2^64 pairs
+ * in our structure.  The leaf nodes are not going to be full.
+ * Any leaf node will not actually hold its capacity of 16 KVLists.
+ * There are 2^60 of them!  They will almost all be empty!
+ * Some will hold 1 KVList, and some even smaller fraction may hold 2,
+ * with truly rare examples of anything more.  This is true even if
+ * we are storing what we think of as a very large mapping of 2^30
+ * KVLists.  That remains the tiniest fraction of the space available.
+ *
+ * Also, the paths through the tree that actually lead to a stored
+ * KVList are also quite sparse, and full of uninteresting segments.
+ * At many interior nodes there will be only one path in and one path
+ * out.  The node itself serves no function in terms of making a choice
+ * to go one way or another.  We see that we can throw away huge portions
+ * of the complete tree if we strip away all the empty and uselessly
+ * trivial bits and keep only those portions where there is structurally
+ * actual decisive branching taking place.  This is one of the key
+ * accomplishments of this data type.
+ *
+ * The catch is that if we throw away the nonessentials, we can no longer
+ * know where we are in the tree just by counting steps and consulting
+ * our hash value as a map.  We need to store identifying information
+ * in each node itself, and that's what the mask and id values do for us.
+ *
+ * Although we will only create and make use of a small fraction of the
+ * possible interior nodes, those that we do use still have a place in
+ * the complete structure, and we record within them the name of that place.
+ * We label each node with an id that is the prefix of all hash values
+ * that are stored in children of that node.  The node exists only if
+ * there are at least 2 such children.  The node also stores a mask to
+ * be applied to the hash value so that comparison to the node id only
+ * takes into account the proper prefix length.
+ *
+ * ZZ
+
+ * Because we implement the trie as another persistent, immutable
+ * structure, we also use a claim counting system to manage lifetimes
+ * for now to get something functional, with intent to change to other
+ * less constraining techniques later on.
+ *
+ It starts with four
+ * fields, each a size_t, then we have anywhere from one to 64 pointers.
+ * So the size of an interior node ranges from 5 to 68 pointers, or
+ * from 40 to 544 bytes.
+ */
+
+typedef struct ArrayMap {
+    size_t	claim;	/* How many claims on this struct */
+    size_t	mask;	/* What mask we should apply to a hash value
+			 * before comparing to our id value.  This value
+			 * determines the depth of the node when its place
+			 * is considered in the conception of the complete
+			 * tree. In a complete tree, the mask of the root
+			 * node is 0.  In a complete tree, the children of
+			 * the root node have a mask with enough high bits
+			 * set to select one branching index.  The next
+			 * level o
+			 * 
+
+			 * be a multiple of the branching shift of set
+			 * high bits followed by all the low bits cleared.
+			 *
+			 * 1..1 1..1 ... 1..1 0..0 ... 0..0
+			 * ----
+			 * ^- Branch shift * depth
+			 */ Branch
+    size_t	id;
+    size_t	map;
+    void *	children;
+} ArrayMap;
+
+typeder struct KVNode {
+    KVList	tail;	/* The part of the list(s) following this pair */
+    ClientData	key;	/* Key... */
+    ClientData	value;	/* ...and Value of this pair */
+} KVNode;
+
+
+ *
+ * We will use a size_t value to hold the bitmap directing internal nodes.
+ * This means our branching factor can be no bigger than our pointer size.
+ * We can have up to 32-wide branching on 32 bit systems.  On 64 bit systems,
+ * it is possible to go up to 64-wide branching.  The impact on performance
+ * plays out in both the benefits from shallow, wide trees and the potential
+ * cost of internal nodes that outgrow practical cache sizes.  Since we only
+ * grow our nodes as needed, many nodes are not actually as large as they
+ * potentially can become.  We may need to experiment to make a final choice.
+ * 
+ * On 64 bit systems we have the potential to benefit from the immensely
+ * wider space made possible by 64 bit hash values.
+ */
 
 
 
@@ -286,12 +409,6 @@ typedef struct ArrayMap {
     size_t	map;
     void *	children;
 } ArrayMap;
-
-typedef struct KeyValue {
-    struct KeyValue	*nextPtr;
-    ClientData		key;
-    ClientData 		value;
-} KeyValue;
 
 #define AM_SIZE(numChildren) \
 	(sizeof(ArrayMap) + ((numChildren) - 1) * sizeof(void *))
