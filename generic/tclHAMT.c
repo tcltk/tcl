@@ -6,7 +6,7 @@
  *	implementation, but later revisions may support concurrency much
  *	better.
  *
- * Contributions from Don Porter, NIST, 2015. (not subject to US copyright)
+ * Contributions from Don Porter, NIST, 2015-2017. (not subject to US copyright)
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -20,16 +20,21 @@
 #endif
 
 /*
- * All of our key/value pairs are to be stored in persistent sorted
- * (on the key value) lists
+ * All of our key/value pairs are to be stored in persistent lists, where
+ * all the keys in a list produce the same hash value.  Given a quality
+ * hash function, these lists should almost always hold a single key/value
+ * pair.  For the rare case when we experience a hash collision, though, we
+ * have to be prepared to make lists of arbitrary length.
  *
- *
- * listsWhat we seek to store is a mapping from keys to values.  This is
- * done as a collection of key, value pairings, each pair stored in
- * a KVNode.  These nodes are further chained together into lists
- * where the keys of each KVNode in the same list all generate the
- * same hash value.  These lists should be persistent and sorted
- * (on their key values) for efficiency.
+ * For the most part these are pretty standard linked lists.  The only
+ * tricky things are that in anyy one list we will store at most one
+ * key from each equivalence class of keys, as determined by the key type,
+ * and we keep the collection of all lists, persistent and immutable, each 
+ * until nothing has an interest in it any longer.  This means that distinct
+ * lists can have common tails. The interest is maintained by
+ * a claim count.  The current implementation of the claim mechanism
+ * makes the overall structure suitable for only single-threaded operations.
+ * Later refinements in development are intended to ease this constraint.
  */
 
 typedef struct KVNode *KVList;
@@ -41,19 +46,222 @@ typeder struct KVNode {
     ClientData	value;	/* ...and Value of this pair */
 } KVNode;
 
+/*
+ * The operations on a KVList:
+ *	Claim		Make a claim on the list.
+ *	Disclaim	Release a claim on the list.
+ *	Find		Find the tail starting with an equal key.
+ *	Insert		Create a new list, inserting new pair into old list.
+ *	Remove		Create a new list, with any pair matching key removed.
+ */
 
+static
+void Claim(
+    KVList l)
+{
+    if (l != NULL) {
+	l->claim++;
+    }
+}
 
+static
+void Disclaim(
+    KVList l,
+    TclHAMTKeyType kt,
+    TclHAMTValueType vt)
+{
+    if (l == NULL) {
+	return;
+    }
+    l->claim--;
+    if (l->claim) {
+	return;
+    }
+    if (kt && kt->dropRefProc) {
+	kt->dropRefProc(l->key);
+    }
+    l->key = NULL;
+    if (vt && vt->dropRefProc) {
+	vt->dropRefProc(l->value);
+    }
+    l->value = NULL;
+    Disclaim(l->tail);
+    l->tail = NULL;
+    ckfree(l);
+}
 
+static
+KVList Find(
+    KVList l,
+    TclHAMTKeyType kt,
+    ClientData key)
+{
+    if (l == NULL) {
+	return NULL;
+    }
+    if (l->key == key) {
+	return l;
+    }
+    if (kt && kt->isEqualProc) {
+	if ( kt->isEqualProc( l->key, key) ) {
+	    return l;
+	}
+    }
+    return Find(l->tail, kt, key);
+}
 
+static
+void FillPair(
+    KVList l,
+    TclHAMTKeyType kt,
+    ClientData key,
+    TclHAMTValueType vt,
+    ClientData value)
+{
+    if (kt && kt->makeRefProc) {
+	kt->makeRefProc(key);
+    }
+    l->key = key;
+    if (vt && vt->makeRefProc) {
+	vt->makeRefProc(value);
+    }
+    l->value = value;
+}
 
+static
+KVList Insert(
+    KVList l,
+    TclHAMTKeyType kt,
+    ClientData key,
+    TclHAMTValueType vt,
+    ClientData value)
+{
+    KVList result, found = Find(l, kt, key);
 
+    if (found) {
+	KVList copy, last = NULL;
 
+	/* List l already has a pair matching key */
 
+	if (found->value == value) {
+	    /* ...and it already has the desired value, so make no
+	     * change and return the unchanged list. */
+	    return l;
+	}
 
+	/*
+	 * Need to replace old value with desired one.  Lists are persistent
+	 * so create new list with desired pair. Make needed copies. Keep
+	 * common tail.
+	 */
 
+	/* Create copies of nodes before found to start new list. */
 
+	while (l != found) {
+	    copy = ckalloc(sizeof(KVNode));
+	    copy->claim = 0;
+	    if (last) {
+		Claim(copy);
+		last->tail = copy;
+	    } else {
+		result = copy;
+	    }
 
+	    FillPair(copy, kt, l->key, vt, l->value);
 
+	    last = copy;
+	    l = l->tail;
+	}
+
+	/* Create a copy of *found to be the inserted node. */
+
+	copy = ckalloc(sizeof(KVNode));
+	copy->claim = 0;
+	if (last) {
+	    Claim(copy);
+	    last->tail = copy;
+	} else {
+	    result = copy;
+	}
+
+	FillPair(copy, kt, key, vt, value);
+
+	/* Share tail of found as tail of copied/modified list */
+
+	Claim(found->tail);
+	copy->tail = found->tail;
+
+	return result;
+    }
+
+    /*
+     * Did not find the desired key. Create new pair and place it at head.
+     * Share whole prior list as tail of new node.
+     */
+
+    result = ckalloc(sizeof(KVNode));
+    result->claim = 0;
+
+    FillPair(result, kt, key, vt, value);
+
+    Claim(l);
+    result->tail = l;
+
+    return result;
+}
+
+static
+KVList Remove(
+    KVList l,
+    TclHAMTKeyType kt,
+    ClientData key,
+    TclHAMTValueType vt)
+{
+    KVList found = Find(l, kt, key);
+
+    if (found) {
+	/* List l has a pair matching key */
+
+	KVList copy, result = NULL, last = NULL;
+
+	/*
+	 * Need to create new list without the found node.
+	 * Make needed copies. Keep common tail.
+	 */
+
+	/* Create copies of nodes before found to start new list. */
+
+	while (l != found) {
+	    copy = ckalloc(sizeof(KVNode));
+	    copy->claim = 0;
+	    if (last) {
+		Claim(copy);
+		last->tail = copy;
+	    } else {
+		result = copy;
+	    }
+
+	    FillPair(copy, kt, l->key, vt, l->value);
+
+	    last = copy;
+	    l = l->tail;
+	}
+
+	/* Share tail of found as tail of copied/modified list */
+
+	if (last) {
+	    Claim(found->tail);
+	    last->tail = found->tail;
+	} else {
+	    result = found->tail;
+	}
+
+	return result;
+    }
+
+    /* The key is not here. Nothing to remove. Return unchanged list. */
+    return l;
+}
 
 
 
