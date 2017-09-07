@@ -277,13 +277,19 @@ int mp_set_long_long(mp_int *a, unsigned long long b);
 */
 
 /* get a 32-bit value */
-unsigned long mp_get_int(mp_int * a);
+/*
+unsigned long mp_get_int(const mp_int * a);
+*/
 
 /* get a platform dependent unsigned long value */
-unsigned long mp_get_long(mp_int * a);
+/*
+unsigned long mp_get_long(const mp_int * a);
+*/
 
 /* get a platform dependent unsigned long long value */
-unsigned long long mp_get_long_long(mp_int * a);
+/*
+unsigned long long mp_get_long_long(const mp_int * a);
+*/
 
 /* initialize and set a digit */
 /*
@@ -339,7 +345,7 @@ int mp_div_2d(const mp_int *a, int b, mp_int *c, mp_int *d);
 
 /* b = a/2 */
 /*
-int mp_div_2(mp_int *a, mp_int *b);
+int mp_div_2(const mp_int *a, mp_int *b);
 */
 
 /* c = a * 2**b, implemented as c = a << b */
@@ -349,7 +355,7 @@ int mp_mul_2d(const mp_int *a, int b, mp_int *c);
 
 /* b = a*2 */
 /*
-int mp_mul_2(mp_int *a, mp_int *b);
+int mp_mul_2(const mp_int *a, mp_int *b);
 */
 
 /* c = a mod 2**b */
@@ -801,7 +807,7 @@ int mp_fwrite(mp_int *a, int radix, FILE *stream);
 #endif
 
 
-/* ref:         tag: v1.0.1, master */
-/* git commit:  5953f62e42b24af93748b1ee5e1d062e242c2546 */
-/* commit time: 2017-08-29 22:27:36 +0200 */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */
 
