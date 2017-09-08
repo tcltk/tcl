@@ -48,15 +48,15 @@ typeder struct KVNode {
 
 /*
  * The operations on a KVList:
- *	Claim		Make a claim on the list.
- *	Disclaim	Release a claim on the list.
- *	Find		Find the tail starting with an equal key.
- *	Insert		Create a new list, inserting new pair into old list.
- *	Remove		Create a new list, with any pair matching key removed.
+ *	KVLClaim	Make a claim on the list.
+ *	KVLDisclaim	Release a claim on the list.
+ *	KVLFind		Find the tail starting with an equal key.
+ *	KVLInsert	Create a new list, inserting new pair into old list.
+ *	KVLRemove	Create a new list, with any pair matching key removed.
  */
 
 static
-void Claim(
+void KVLClaim(
     KVList l)
 {
     if (l != NULL) {
@@ -65,10 +65,10 @@ void Claim(
 }
 
 static
-void Disclaim(
+void KVLDisclaim(
     KVList l,
-    TclHAMTKeyType kt,
-    TclHAMTValueType vt)
+    TclHAMTKeyType *kt,
+    TclHAMTValueType *vt)
 {
     if (l == NULL) {
 	return;
@@ -85,15 +85,15 @@ void Disclaim(
 	vt->dropRefProc(l->value);
     }
     l->value = NULL;
-    Disclaim(l->tail);
+    KVLDisclaim(l->tail);
     l->tail = NULL;
     ckfree(l);
 }
 
 static
-KVList Find(
+KVList KVLFind(
     KVList l,
-    TclHAMTKeyType kt,
+    TclHAMTKeyType *kt,
     ClientData key)
 {
     if (l == NULL) {
@@ -107,15 +107,15 @@ KVList Find(
 	    return l;
 	}
     }
-    return Find(l->tail, kt, key);
+    return KVLFind(l->tail, kt, key);
 }
 
 static
 void FillPair(
     KVList l,
-    TclHAMTKeyType kt,
+    TclHAMTKeyType *kt,
     ClientData key,
-    TclHAMTValueType vt,
+    TclHAMTValueType *vt,
     ClientData value)
 {
     if (kt && kt->makeRefProc) {
@@ -129,19 +129,24 @@ void FillPair(
 }
 
 static
-KVList Insert(
+KVList KVLInsert(
     KVList l,
-    TclHAMTKeyType kt,
+    TclHAMTKeyType *kt,
     ClientData key,
-    TclHAMTValueType vt,
-    ClientData value)
+    TclHAMTValueType *vt,
+    ClientData value,
+    ClientData *valuePtr)
 {
-    KVList result, found = Find(l, kt, key);
+    KVList result, found = KVLFind(l, kt, key);
 
     if (found) {
 	KVList copy, last = NULL;
 
 	/* List l already has a pair matching key */
+
+	if (valuePtr) {
+	    *valuePtr = found->value;
+	}
 
 	if (found->value == value) {
 	    /* ...and it already has the desired value, so make no
@@ -161,7 +166,7 @@ KVList Insert(
 	    copy = ckalloc(sizeof(KVNode));
 	    copy->claim = 0;
 	    if (last) {
-		Claim(copy);
+		KVLClaim(copy);
 		last->tail = copy;
 	    } else {
 		result = copy;
@@ -178,7 +183,7 @@ KVList Insert(
 	copy = ckalloc(sizeof(KVNode));
 	copy->claim = 0;
 	if (last) {
-	    Claim(copy);
+	    KVLClaim(copy);
 	    last->tail = copy;
 	} else {
 	    result = copy;
@@ -188,7 +193,7 @@ KVList Insert(
 
 	/* Share tail of found as tail of copied/modified list */
 
-	Claim(found->tail);
+	KVLClaim(found->tail);
 	copy->tail = found->tail;
 
 	return result;
@@ -199,25 +204,29 @@ KVList Insert(
      * Share whole prior list as tail of new node.
      */
 
+    if (valuePtr) {
+	*valuePtr = NULL;
+    }
+
     result = ckalloc(sizeof(KVNode));
     result->claim = 0;
 
     FillPair(result, kt, key, vt, value);
 
-    Claim(l);
+    KVLClaim(l);
     result->tail = l;
 
     return result;
 }
 
 static
-KVList Remove(
+KVList KVLRemove(
     KVList l,
-    TclHAMTKeyType kt,
+    TclHAMTKeyType *kt,
     ClientData key,
-    TclHAMTValueType vt)
+    TclHAMTValueType *vt)
 {
-    KVList found = Find(l, kt, key);
+    KVList found = KVLFind(l, kt, key);
 
     if (found) {
 	/* List l has a pair matching key */
@@ -235,7 +244,7 @@ KVList Remove(
 	    copy = ckalloc(sizeof(KVNode));
 	    copy->claim = 0;
 	    if (last) {
-		Claim(copy);
+		KVLClaim(copy);
 		last->tail = copy;
 	    } else {
 		result = copy;
@@ -250,7 +259,7 @@ KVList Remove(
 	/* Share tail of found as tail of copied/modified list */
 
 	if (last) {
-	    Claim(found->tail);
+	    KVLClaim(found->tail);
 	    last->tail = found->tail;
 	} else {
 	    result = found->tail;
@@ -366,12 +375,6 @@ typedef struct ArrayMap {
     void *	children;
 } ArrayMap;
 
-typeder struct KVNode {
-    KVList	tail;	/* The part of the list(s) following this pair */
-    ClientData	key;	/* Key... */
-    ClientData	value;	/* ...and Value of this pair */
-} KVNode;
-
 
  *
  * We will use a size_t value to hold the bitmap directing internal nodes.
@@ -389,6 +392,20 @@ typeder struct KVNode {
 
 
 
+
+
+
+typedef struct HAMT {
+    size_t		 claim;	/* How many claims on this struct */
+    const TclHAMTKeyType *kt;	/* Custom key handling functions */
+    const TclHAMTValType *vt;	/* Custom value handling functions */
+    KVList		 kvl;	/* When map stores a single KVList,
+				 * just store it here (no tree) ... */
+    union {
+	size_t		 hash;	/* ...with its hash value. */
+	ArrayMap	 *am;	/* >1 KVList? Here's the tree root. */
+    } x;
+} HAMT;
 
 
 
@@ -413,12 +430,6 @@ typedef struct ArrayMap {
 #define AM_SIZE(numChildren) \
 	(sizeof(ArrayMap) + ((numChildren) - 1) * sizeof(void *))
 
-typedef struct HAMT {
-    const TclHAMTKeyType *keyTypePtr;	/* Custom key handling functions */
-    const TclHAMTValType *valTypePtr;	/* Custom value handling functions */
-    ArrayMap		 *amPtr;	/* Top level array map */
-} HAMT;
-
 static ArrayMap *	MakeLeafMap(const size_t hash,
 			    const TclHAMTKeyType *ktPtr, const ClientData key,
 			    const TclHAMTValType *vtPtr,
@@ -428,11 +439,6 @@ static ArrayMap *	GetSet(ArrayMap *amPtr, const size_t *hashPtr,
 			    const TclHAMTKeyType *ktPtr, const ClientData key,
 			    const TclHAMTValType *vtPtr,
 			    const ClientData value, ClientData *valuePtr);
-static KeyValue *	MakeKeyValue(const TclHAMTKeyType *ktPtr,
-			    const ClientData key, const TclHAMTValType *vtPtr,
-			    const ClientData value);
-static void		DeleteKeyValue(const TclHAMTKeyType *ktPtr,
-			    const TclHAMTValType *vtPtr, KeyValue *kvPtr);
 
 
 /*
@@ -717,6 +723,32 @@ GetSet(
 	}
     }
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Hash --
+ *
+ *	Factored out utility routine to compute the hash of a key for
+ *	a particular HAMT.
+ *
+ * Results:
+ *	The computed hash value.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static
+size_t Hash(
+    HAMT *hPtr,
+    ClientData key)
+{
+    return (hPtr->kt && hPtr->kt->hashProc) ? hPtr->ky->hashProc(key) : key;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -756,64 +788,6 @@ TclHAMTRemove(
 /*
  *----------------------------------------------------------------------
  *
- * TclHAMTFetch --
- *
- * Results:
- *	New revised TclHAMT.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-ClientData
-TclHAMTFetch(
-    TclHAMT hamt,
-    ClientData key)
-{
-    HAMT *hamtPtr = hamt;
-    ClientData value;
-
-    hamtPtr->amPtr = GetSet(hamtPtr->amPtr, NULL,
-	    hamtPtr->keyTypePtr, key,
-	    hamtPtr->valTypePtr, NULL, &value);
-    return value;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclHAMTInsert--
- *
- * Results:
- *	New revised TclHAMT.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-TclHAMT
-TclHAMTInsert(
-    TclHAMT hamt,
-    ClientData key,
-    ClientData value,
-    ClientData *valuePtr)
-{
-    HAMT *hamtPtr = hamt;
-
-    /* TODO: Persistence */
-    hamtPtr->amPtr = GetSet(hamtPtr->amPtr, NULL,
-	    hamtPtr->keyTypePtr, key,
-	    hamtPtr->valTypePtr, value, valuePtr);
-    return hamtPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclHAMTCreate --
  *
  *	Create and return a new empty TclHAMT, with key operations 
@@ -830,28 +804,98 @@ TclHAMTInsert(
 
 TclHAMT
 TclHAMTCreate(
-    const TclHAMTKeyType *ktPtr,	/* Custom key handling functions */
-    const TclHAMTValType *vtPtr)	/* Custom value handling functions */
+    const TclHAMTKeyType *kt,	/* Custom key handling functions */
+    const TclHAMTValType *vt)	/* Custom value handling functions */
 {
-    HAMT *hamtPtr = ckalloc(sizeof(HAMT));
+    HAMT *hPtr = ckalloc(sizeof(HAMT));
 
-    hamtPtr->keyTypePtr = ktPtr;
-    hamtPtr->valTypePtr = vtPtr;
-    hamtPtr->amPtr = NULL;
-    return hamtPtr;
+    hPtr->claim = 1;	/* Don't make original creator claim us. (??) */
+    hPtr->kt = kt;
+    hPtr->vt = vt;
+    hPtr->kvl = NULL;
+    hPtr->x.am = NULL;
+    return hPtr;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * MakeLeafMap --
+ * TclHAMTClaim--
  *
- *	Make an ArrayMap that sits among the leaves of the tree.  Make
- *	the leaf suitable for the hash value, and create, store and
- *	return a pointer to a new KeyValue to store key.
+ *	Record a claim on a TclHAMT.
  *
  * Results:
- *	Pointer to the new leaf ArrayMap.
+ *	None.
+ *
+ * Side effects:
+ *	HAMT is claimed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclHAMTClaim(
+    TclHAMT hamt)
+{
+    HAMT *hPtr = hamt;
+
+    if (hPtr == NULL) {
+	return;
+    }
+    hPtr->claim++;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclHAMTDisclaim--
+ *
+ *	Release a claim on a TclHAMT.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	HAMT is released. Other claims may release. Memory may free.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclHAMTDisclaim(
+    TclHAMT hamt)
+{
+    HAMT *hPtr = hamt;
+
+    if (hPtr == NULL) {
+	return;
+    }
+    hPtr->claim--;
+    if (hPtr->claim) {
+	return;
+    }
+    hPtr->kt = NULL;
+    hPtr->vt = NULL;
+    if (hPtr->kvl) {
+	KVLDisclaim(hPtr->kvl);
+	hPtr->kvl = NULL;
+	hPtr->x.hash = 0;
+    } else if (hPtr->x.am) {
+	AMDisclaim(hPtr->x.am);
+	hPtr->x.am = NULL;
+    }
+    ckfree(hPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclHAMTFetch --
+ *
+ *	Lookup key in the key/value map.
+ *
+ * Results:
+ *	The corresponding value, or NULL, if the key was not in the map.
  *
  * Side effects:
  *	None.
@@ -859,77 +903,120 @@ TclHAMTCreate(
  *----------------------------------------------------------------------
  */
 
-static ArrayMap *
-MakeLeafMap(
-    const size_t hash,
-    const TclHAMTKeyType *ktPtr,
-    const ClientData key,
-    const TclHAMTValType *vtPtr,
-    const ClientData value)
+ClientData
+TclHAMTFetch(
+    TclHAMT hamt,
+    ClientData key)
 {
-    ArrayMap *amPtr = ckalloc(AM_SIZE(1));
+    HAMT *hPtr = hamt;
 
-    amPtr->mask = LEAF_MASK;
-    amPtr->id = hash & (LEAF_MASK << 1);
-    amPtr->map = 1 << (hash & ~(LEAF_MASK << 1));
-
-    /* child[0] */
-    amPtr->children = MakeKeyValue(ktPtr, key, vtPtr, value);
-    return amPtr;
+    if (hPtr->kvl) {
+	/* Map holds a single KVList. Is it for the right hash? */
+	if (hPtr->x.hash == Hash(hPtr, key)) {
+	    /* Yes, try to find key in it. */
+	    KVList l = KVLFind(hPtr->kvl, hPtr->kt, key);
+	    return l ? l->value : NULL;
+	}
+	/* No. Map doesn't hold the key. */
+	return NULL;
+    }
+    if (hPtr->x.am == NULL) {
+	/* Map is empty. No key is in it. */
+	return NULL;
+    }
+    /* Map has a tree. Fetch from it. */
+    return AMFetch(hPtr->x.am, ..., /* hashPtr */ NULL, key);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * MakeKeyValue --
+ * TclHAMTInsert--
  *
- *	Make a KeyValue struct to hold key value pair.
+ *	Insert new key, value pair into the TclHAMT.
  *
  * Results:
- *	Pointer to the new KeyValue struct.
+ *	The new revised TclHAMT.
  *
  * Side effects:
- *	None.
+ *	If valuePtr is not NULL, write to *valuePtr the
+ *	previous value associated with key in the TclHAMT,
+ *	or NULL if the key is new to the map.
  *
  *----------------------------------------------------------------------
  */
-static KeyValue *
-MakeKeyValue(
-    const TclHAMTKeyType *ktPtr,
-    const ClientData key,
-    const TclHAMTValType *vtPtr,
-    const ClientData value)
-{
-    KeyValue *kvPtr = ckalloc(sizeof(KeyValue));
 
-    kvPtr->nextPtr = NULL;
-    if (ktPtr && ktPtr->makeRefProc) {
-	kvPtr->key = ktPtr->makeRefProc(key);		
-    } else {
-	kvPtr->key = key;		
+TclHAMT
+TclHAMTInsert(
+    TclHAMT hamt,
+    ClientData key,
+    ClientData value,
+    ClientData *valuePtr)
+{
+    HAMT *new, *hPtr = hamt;
+    KVList l;
+
+    if (hPtr->kvl) {
+	/* Map holds a single KVList. Is it for the same hash? */
+	if (hPtr->x.hash == Hash(hPtr, key)) {
+	    /* Yes. Indeed we have a hash collision! This is the right
+	     * KVList to insert our pair into. */
+	    l = KVLInsert(hPtr->kvl, hPtr->kt, key, hPtr->vt, value, valuePtr);
+	
+	    if (l == hPtr->kvl) {
+		/* list unchanged -> HAMT unchanged. */
+		return hamt;
+	    }
+
+	    /* Construct a new HAMT with a new kvl */
+	    new = ckalloc(sizeof(HAMT));
+	    new->claim = 0;
+	    new->kt = hPtr->kt;
+	    new->vt = hPtr->vt;
+	    new->kvl = l;
+	    new->x.am = NULL;
+
+	    return new;
+	}
+	/* No. Insertion should not be into the singleton KVList.
+	 * We get to build a tree out of the singleton KVList and
+	 * a new list holding our new pair. */
+
+/* TODO TODO TODO */
+	new = ckalloc(sizeof(HAMT));
+	new->claim = 0;
+	new->kt = hPtr->kt;
+	new->vt = hPtr->vt;
+	new->kvl = l;
+	new->x.am = AMInsert(...) ;
+
+	return new;
     }
-    if (vtPtr && vtPtr->makeRefProc) {
-	kvPtr->value = vtPtr->makeRefProc(value);
-    } else {
-	kvPtr->value = value;
+    if (hPtr->x.am == NULL) {
+	/* Map is empty. No key is in it. Create singleton KVList
+	 * out of new pair. */
+
+	new = ckalloc(sizeof(HAMT));
+	new->claim = 0;
+	new->kt = hPtr->kt;
+	new->vt = hPtr->vt;
+	new->kvl = KVLInsert(NULL, hPtr->kt, key, hPtr->vt, value, valuePtr);
+	new->x.hash = Hash(hPtr, key);
+	
+	return new;
     }
-    return kvPtr;
+    /* Map has a tree. Insert into it. */
+	new = ckalloc(sizeof(HAMT));
+	new->claim = 0;
+	new->kt = hPtr->kt;
+	new->vt = hPtr->vt;
+	new->kvl = NULL;
+	new->x.am = AMInsert(hPtr->x.am,  ..., /* hashPtr */ NULL,
+		hPtr->kt, key, vt, value, valuePtr);
+	
+	return new;
 }
 
-static void
-DeleteKeyValue(
-    const TclHAMTKeyType *ktPtr,
-    const TclHAMTValType *vtPtr,
-    KeyValue *kvPtr)
-{
-    if (ktPtr && ktPtr->dropRefProc) {
-	ktPtr->dropRefProc(kvPtr->key);		
-    }
-    if (vtPtr && vtPtr->dropRefProc) {
-	vtPtr->dropRefProc(kvPtr->value);
-    }
-    ckfree(kvPtr);
-}
 /*
  * Local Variables:
  * mode: c
