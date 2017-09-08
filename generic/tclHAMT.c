@@ -85,7 +85,7 @@ void KVLDisclaim(
 	vt->dropRefProc(l->value);
     }
     l->value = NULL;
-    KVLDisclaim(l->tail);
+    KVLDisclaim(l->tail, kt, vt);
     l->tail = NULL;
     ckfree(l);
 }
@@ -282,14 +282,268 @@ KVList KVLRemove(
 }
 
 /*
- * That completes the persistent KVLists.  They are the containers of
- * our Key/Value pairs that live in the leaves of our HAMT.  Now to
- * make the tree.
+ * Each interior node of the trie is an ArrayMap.
+ *
+ * In concept each ArrayMap stands for a single interior node in the
+ * complete trie.  The mask and id fields identify which node it is.
+ * The masks are set high bits followed by cleared low bits.  The number
+ * of set bits is a multiple of the branch index size of the tree, and
+ * the multiplier is the depth of the node in the complete tree.
+ *
+ * All hashes for which ( (hash & mask) == id ) are hashes with paths
+ * that pass through the node identified by those mask and id values.
+ *
+ * Since we can name each node in this way, we don't have to store the
+ * entire tree structure.  We can create and operate on only those nodes
+ * where something consquential happens.  In particular we need only nodes
+ * that have at least 2 children.  Entire sub-paths that have no real
+ * branching are collapsed into single links.
+ *
+ * If we demand that each node contain 2 children, we have to permit
+ * KVLists to be stored in any node. Otherwise, frequently a leaf node
+ * would only hold one KVList.  Each ArrayMap can have 2 types of children,
+ * KVLists and subnode ArrayMaps.  Since we are not limiting storage of
+ * KVLists to leaf nodes, we cannot derive their hash values from where
+ * they are stored. We must store the hash values.  This means the
+ * ArrayMap subnode children are identified by a pointer alone, while
+ * the KVList children need both a hash and a pointer.  To deal with
+ * this we store the two children sets in separate portions of the slot
+ * array with separate indexing.  That is the reason for separate kvMap
+ * and amMap.
+ *
+ * The slot storage is structured with all hash values stored first,
+ * as indexed by kvMap. Next comes parallel storage of the KVList pointers.
+ * Last comes the storage of the subnode ArrayMap pointers, as indexed
+ * by amMap.  The size of the AMNode struct must be set so that slot
+ * has the space needed for all 3 collections.
+ */
+
+
+typedef struct AMNode *ArrayMap;
+
+typedef struct AMNode {
+    size_t	claim;	/* How many claims on this struct */
+    size_t	mask;	/* The mask and id fields together identify the */
+    size_t	id;	/* location of the node in the complete tree */
+    size_t	kvMap;  /* Map to children containing a single KVList each */
+    size_t	amMap;	/* Map to children that are subnodes */
+    void *	slot;	/* Resizable space for outward links */
+} AMNode;
+
+#define AMN_SIZE(numList, numSubnode) \
+	(sizeof(AMNode) + (2*(numList) + (numSubnode) - 1) * sizeof(void *))
+
+/*
+ * The branching factor of the tree is constrained by our map sizes
+ * which is determined by the size of size_t.
+ *
+ * TODO: Implement way to easily configure these values to explore
+ * impact of different branching factor.
+ */
+
+/* Bits in a size_t. Use as our branching factor. Max children per node. */
+const int branchFactor = CHAR_BIT * sizeof(size_t);
+
+/* Bits in a index selecting a child of a node */
+const int branchShift = TclMSB(branchFactor);
+
+/* Mask used to carve out branch index. */
+const int branchMask = (branchFactor - 1)
+
+/*
+ * The operations on an ArrayMap:
+ *	AMClaim		Make a claim on a node.
+ *	AMDisclaim	Release a claim on a node.
+ *	AMNew		Make initial node from two NVLists.
+ *	AMFetch		Fetch value from node given a key.
+ *	AMInsert	Create a new node, inserting new pair into old node.
+ *	AMRemove	Create a new node, with any pair matching key removed.
  */
 
 /*
- * Each interior node of the trie is an ArrayMap.
- * 
+ *----------------------------------------------------------------------
+ *
+ * NumBits --
+ *
+ * Results:
+ *	Number of set bits (aka Hamming weight, aka population count) in
+ *	a size_t value.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline int
+NumBits(
+    size_t value)
+{
+#if defined(__GNUC__) && ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2))
+        return __builtin_popcountll((long long)value);
+#else
+#error  NumBits not implemented!
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LSB --
+ *
+ * Results:
+ *	Least significant set bit in a size_t value.
+ *	AKA, number of trailing cleared bits in the value.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline int
+LSB(
+    size_t value)
+{
+#if defined(__GNUC__) && ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2))
+    return __builtin_ctzll(value);
+#else
+#error  LSB not implemented!
+#endif
+}
+
+static
+void AMClaim(
+    ArrayMap am)
+{
+    if (am != NULL) {
+	am->claim++;
+    }
+}
+
+static
+void AMDisclaim(
+    ArrayMap am,
+    TclHAMTKeyType *kt,
+    TclHAMTValueType *vt)
+{
+    int i, numList, numSubnode;
+
+    if (am == NULL) {
+	return;
+    }
+    am->claim--;
+    if (am->claim) {
+	return;
+    }
+
+    numList = NumBits(am->kvMap);
+    numSubnode = NumBits(am->amMap);
+
+    am->mask = 0;
+    am->id = 0;
+    am->kvMap = 0;
+    am->amMap = 0;
+
+    for (i = 0; i < numList; i++) {
+	am->slot[i] = NULL;
+    }
+    for (i = numList; i < 2*numList; i++) {
+	KVLDisclaim(am->slot[i], kt, vt);
+	am->slot[i] = NULL;
+    }
+    for (i = 2*numList; i < 2*numList + numSubnode; i++) {
+	AMDisclaim(am->slot[i], kt, vt);
+	am->slot[i] = NULL;
+    }
+
+    ckfree(am);
+}
+
+
+typedef struct AMNode {
+    size_t	claim;	/* How many claims on this struct */
+    size_t	mask;	/* The mask and id fields together identify the */
+    size_t	id;	/* location of the node in the complete tree */
+    size_t	kvMap;  /* Map to children containing a single KVList each */
+    size_t	amMap;	/* Map to children that are subnodes */
+    void *	slot;	/* Resizable space for outward links */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AMNew --
+ *
+ * 	Create an ArrayMap to serve as a branching node distinguishing
+ * 	the paths to two KVLists given their hash values.
+ *
+ * Results:
+ *	The created ArrayMap.
+ *
+ * Side effects:
+ * 	Memory is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static
+ArrayMap AMNew(
+    ClientData hash1,
+    KVList l1,
+    ClientData hash2,
+    KVList l2)
+{
+    int depth, idx1, idx2;
+    size_t *hashes;
+    KVList *lists;
+    ArrayMap new = ckalloc(AMN_SIZE(2, 0));
+
+    new->claim = 0;
+
+    /* The depth of the tree for the node we must create.
+     * Determine by lowest bit where hashes differ. */
+
+    depth = LSB(hash1 ^ hash2) / branchShift;
+
+    new->mask =  (1 << (depth * branchShift)) - 1;
+    new->id = hash1 & new->mask;
+
+    assert ( (hash2 & new->mask) == new->id );
+
+    idx1 = (hash1 >> (depth * branchShift)) & branchMask;
+    idx2 = (hash2 >> (depth * branchShift)) & branchMask;
+
+    assert ( idx1 != idx2 );
+
+    new->kvMap = ((size_t)1 << idx1) | ((size_t)1 << idx2);
+    new->amMap = 0;
+
+    KVLClaim(l1);
+    KVLCLaim(l2);
+
+    hashes = (size_t *)&(new->slots);
+    lists = (KVList *) (hashes + 2)
+    if (idx1 < idx2) {
+	assert ( hash1 < hash2 );
+
+	hashes[0] = hash1;
+	hashes[1] = hash2;
+	lists[0] = l1;
+	lists[1] = l2;
+    } else {
+	assert ( hash1 > hash2 );
+
+	hashes[0] = hash2;
+	hashes[1] = hash1;
+	lists[0] = l2;
+	lists[1] = l1;
+    }
+
+    return new;
+}
+
+/* 
  * We can conceptualize the trie as a complete tree with each node
  * branching so that it has 2^k child nodes.  An index of k bits
  * is needed to select one child among all of them.  Each node in the
@@ -434,32 +688,6 @@ static ArrayMap *	GetSet(ArrayMap *amPtr, const size_t *hashPtr,
 			    const TclHAMTValType *vtPtr,
 			    const ClientData value, ClientData *valuePtr);
 
-
-/*
- *----------------------------------------------------------------------
- *
- * NumBits --
- *
- * Results:
- *	Number of set bits (aka Hamming weight, aka population count) in
- *	a size_t value.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static inline int
-NumBits(
-    size_t value)
-{
-#if defined(__GNUC__) && ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2))
-        return __builtin_popcountll((long long)value);
-#else
-#error  NumBits not implemented!
-#endif
-}
 
 /*
  *----------------------------------------------------------------------
@@ -727,7 +955,7 @@ typedef struct HAMT {
 				 * just store it here (no tree) ... */
     union {
 	size_t		 hash;	/* ...with its hash value. */
-	ArrayMap	 *am;	/* >1 KVList? Here's the tree root. */
+	ArrayMap	 am;	/* >1 KVList? Here's the tree root. */
     } x;
 } HAMT;
 
@@ -845,16 +1073,16 @@ TclHAMTDisclaim(
     if (hPtr->claim) {
 	return;
     }
-    hPtr->kt = NULL;
-    hPtr->vt = NULL;
     if (hPtr->kvl) {
-	KVLDisclaim(hPtr->kvl);
+	KVLDisclaim(hPtr->kvl, hPtr->kt, hPtr->vt);
 	hPtr->kvl = NULL;
 	hPtr->x.hash = 0;
     } else if (hPtr->x.am) {
-	AMDisclaim(hPtr->x.am);
+	AMDisclaim(hPtr->x.am, hPtr->kt, hPtr->vt);
 	hPtr->x.am = NULL;
     }
+    hPtr->kt = NULL;
+    hPtr->vt = NULL;
     ckfree(hPtr);
 }
 
@@ -926,7 +1154,7 @@ TclHAMTInsert(
 {
     HAMT *new, *hPtr = hamt;
     KVList l;
-    ArrayMap *am;
+    ArrayMap am;
 
     if (hPtr->kvl) {
 	/* Map holds a single KVList. Is it for the same hash? */
@@ -1024,7 +1252,7 @@ TclHAMTRemove(
 {
     HAMT *new, *hPtr = hamt;
     KVList l;
-    ArrayMap *am;
+    ArrayMap am;
 
     if (hPtr->kvl) {
 	/* Map holds a single KVList. Is it for the same hash? */
