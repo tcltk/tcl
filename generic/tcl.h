@@ -55,10 +55,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   7
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  1
+#define TCL_RELEASE_SERIAL  2
 
 #define TCL_VERSION	    "8.7"
-#define TCL_PATCH_LEVEL	    "8.7a1"
+#define TCL_PATCH_LEVEL	    "8.7a2"
 
 #if !defined(TCL_NO_DEPRECATED) || defined(RC_INVOKED)
 /*
