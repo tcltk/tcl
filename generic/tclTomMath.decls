@@ -69,7 +69,7 @@ declare 14 {
     int TclBN_mp_div_d(mp_int *a, mp_digit b, mp_int *q, mp_digit *r)
 }
 declare 15 {
-    int TclBN_mp_div_2(mp_int *a, mp_int *q)
+    int TclBN_mp_div_2(const mp_int *a, mp_int *q)
 }
 declare 16 {
     int TclBN_mp_div_2d(const mp_int *a, int b, mp_int *q, mp_int *r)
@@ -117,7 +117,7 @@ declare 30 {
     int TclBN_mp_mul_d(mp_int *a, mp_digit b, mp_int *p)
 }
 declare 31 {
-    int TclBN_mp_mul_2(mp_int *a, mp_int *p)
+    int TclBN_mp_mul_2(const mp_int *a, mp_int *p)
 }
 declare 32 {
     int TclBN_mp_mul_2d(const mp_int *a, int d, mp_int *p)
@@ -236,6 +236,13 @@ declare 66 {
 # Added in libtommath 1.0
 declare 67 {
     int TclBN_mp_expt_d_ex(mp_int *a, mp_digit b, mp_int *c, int fast)
+}
+# Added in libtommath 1.0.1
+declare 68 {
+    int TclBN_mp_set_long_long(mp_int *a, Tcl_WideUInt i)
+}
+declare 69 {
+    Tcl_WideUInt TclBN_mp_get_long_long(const mp_int *a)
 }
 
 # Local Variables:
