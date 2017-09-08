@@ -7,7 +7,7 @@
 .BS
 '\"  Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_Panic, Tcl_PanicVA, Tcl_SetPanicProc \- report fatal error and abort
+Tcl_Panic, Tcl_PanicVA, Tcl_SetPanicProc, Tcl_ConsolePanic \- report fatal error and abort
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -20,6 +20,9 @@ void
 .sp
 void
 \fBTcl_SetPanicProc\fR(\fIpanicProc\fR)
+.sp
+void
+\fBTcl_ConsolePanic\fR(\fIformat\fR, \fIarg\fR, \fIarg\fR, \fI...\fR)
 .sp
 .SH ARGUMENTS
 .AS Tcl_PanicProc *panicProc
@@ -53,6 +56,14 @@ return. On Windows, when a debugger is running, the formatted error
 message is sent to the debugger in stead. If the windows executable
 does not have a stderr channel (e.g. \fBwish.exe\fR), then a
 system dialog box is used to display the panic message.
+.PP
+If your application doesn't use \fBTcl_Main\fR or \fBTk_Main\fR
+and you want to implicitly use the stderr channel of your
+application's C runtime (in stead of the stderr channel of the
+C runtime used by Tcl), you can call \fBTcl_SetPanicProc\fR
+with \fBTcl_ConsolePanic\fR as its argument. On platforms which
+only have one C runtime (almost all platforms except Windows)
+\fBTcl_ConsolePanic\fR is equivalent to NULL.
 .PP
 \fBTcl_SetPanicProc\fR may be used to modify the behavior of
 \fBTcl_Panic\fR.  The \fIpanicProc\fR argument should match the
