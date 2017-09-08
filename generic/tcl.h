@@ -396,44 +396,36 @@ typedef long LONG;
 #   if defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
 #      define TCL_LL_MODIFIER	"I64"
+#      if defined(_WIN64)
+#         define TCL_Z_MODIFIER	"I"
+#      endif
 #   elif defined(__GNUC__)
-#      define TCL_WIDE_INT_TYPE long long
-#      define TCL_LL_MODIFIER	"ll"
+#      define TCL_Z_MODIFIER	"z"
 #   else /* ! _WIN32 && ! __GNUC__ */
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
  */
 #      include <limits.h>
-#      if (INT_MAX < LONG_MAX)
+#      if defined(LLONG_MAX) && (LLONG_MAX == LONG_MAX)
 #         define TCL_WIDE_INT_IS_LONG	1
-#      else
-#         define TCL_WIDE_INT_TYPE long long
 #      endif
 #   endif /* _WIN32 */
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
-#ifdef TCL_WIDE_INT_IS_LONG
-#   undef TCL_WIDE_INT_TYPE
-#   define TCL_WIDE_INT_TYPE	long
-#endif /* TCL_WIDE_INT_IS_LONG */
+
+#ifndef TCL_WIDE_INT_TYPE
+#   define TCL_WIDE_INT_TYPE		long long
+#endif /* !TCL_WIDE_INT_TYPE */
 
 typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
 typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
-#ifdef TCL_WIDE_INT_IS_LONG
-#   ifndef TCL_LL_MODIFIER
-#      define TCL_LL_MODIFIER		"l"
-#   endif /* !TCL_LL_MODIFIER */
-#else /* TCL_WIDE_INT_IS_LONG */
-/*
- * The next short section of defines are only done when not running on Windows
- * or some other strange platform.
- */
-#   ifndef TCL_LL_MODIFIER
-#      define TCL_LL_MODIFIER		"ll"
-#   endif /* !TCL_LL_MODIFIER */
-#endif /* TCL_WIDE_INT_IS_LONG */
-
+#ifndef TCL_LL_MODIFIER
+#   define TCL_LL_MODIFIER	"ll"
+#endif /* !TCL_LL_MODIFIER */
+#ifndef TCL_Z_MODIFIER
+#   define TCL_Z_MODIFIER	""
+#endif /* !TCL_Z_MODIFIER */
 #define Tcl_WideAsLong(val)	((long)((Tcl_WideInt)(val)))
 #define Tcl_LongAsWide(val)	((Tcl_WideInt)((long)(val)))
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))

@@ -53,12 +53,6 @@ MODULE_SCOPE TclWinProcs tclWinProcs;
 #define VER_PLATFORM_WIN32_CE 3
 #endif
 
-#ifdef _WIN64
-#         define TCL_I_MODIFIER        "I"
-#else
-#         define TCL_I_MODIFIER        ""
-#endif
-
 /*
  * Declarations of functions that are not accessible by way of the
  * stubs table.
