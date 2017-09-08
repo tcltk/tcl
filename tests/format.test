@@ -54,31 +54,31 @@ test format-1.7.1 {integer formatting} longIs64bit {
 } {   6   22 421b fffffffffffffff4}
 test format-1.8 {integer formatting} longIs32bit {
     format "%#x %#x %#X %#X %#x" 0 6 34 16923 -12 -1
-} {0x0 0x6 0X22 0X421B 0xfffffff4}
+} {0 0x6 0X22 0X421B 0xfffffff4}
 test format-1.8.1 {integer formatting} longIs64bit {
     format "%#x %#x %#X %#X %#x" 0 6 34 16923 -12 -1
-} {0x0 0x6 0X22 0X421B 0xfffffffffffffff4}
+} {0 0x6 0X22 0X421B 0xfffffffffffffff4}
 test format-1.9 {integer formatting} longIs32bit {
     format "%#5x %#20x %#20x %#20x %#20x" 0 6 34 16923 -12 -1
-} {  0x0                  0x6                 0x22               0x421b           0xfffffff4}
+} {    0                  0x6                 0x22               0x421b           0xfffffff4}
 test format-1.9.1 {integer formatting} longIs64bit {
     format "%#5x %#20x %#20x %#20x %#20x" 0 6 34 16923 -12 -1
-} {  0x0                  0x6                 0x22               0x421b   0xfffffffffffffff4}
+} {    0                  0x6                 0x22               0x421b   0xfffffffffffffff4}
 test format-1.10 {integer formatting} longIs32bit {
     format "%-#5x %-#20x %-#20x %-#20x %-#20x" 0 6 34 16923 -12 -1
-} {0x0   0x6                  0x22                 0x421b               0xfffffff4          }
+} {0     0x6                  0x22                 0x421b               0xfffffff4          }
 test format-1.10.1 {integer formatting} longIs64bit {
     format "%-#5x %-#20x %-#20x %-#20x %-#20x" 0 6 34 16923 -12 -1
-} {0x0   0x6                  0x22                 0x421b               0xfffffffffffffff4  }
+} {0     0x6                  0x22                 0x421b               0xfffffffffffffff4  }
 test format-1.11 {integer formatting} longIs32bit {
     format "%-#5o %-#20o %#-20o %#-20o %#-20o" 0 6 34 16923 -12 -1
-} {0     06                   042                  041033               037777777764        }
+} {0     0o6                  0o42                 0o41033              0o37777777764       }
 test format-1.11.1 {integer formatting} longIs64bit {
     format "%-#5o %-#20o %#-20o %#-20o %#-20o" 0 6 34 16923 -12 -1
-} {0     06                   042                  041033               01777777777777777777764}
+} {0     0o6                  0o42                 0o41033              0o1777777777777777777764}
 test format-1.12 {integer formatting} {
     format "%b %#b %#b %llb" 5 0 5 [expr {2**100}]
-} {101 0b0 0b101 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}
+} {101 0 0b101 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}
 test format-1.13 {integer formatting} {
     format "%#d %#d %#d %#d %#d" 0 6 34 16923 -12 -1
 } {0d0 0d6 0d34 0d16923 -0d12}
@@ -561,7 +561,7 @@ test format-17.4 {testing %l with non-integer} {
 } 1.000000
 test format-17.5 {testing %llu with positive bignum} -body {
     format %llu 0xabcdef0123456789abcdef
-} -returnCodes 1 -result {unsigned bignum format is invalid}
+} -result 207698809136909011942886895
 test format-17.6 {testing %llu with negative number} -body {
     format %llu -1
 } -returnCodes 1 -result {unsigned bignum format is invalid}
