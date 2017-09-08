@@ -531,10 +531,64 @@ ArrayMap AMNew(
 
     return new;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AMFetch --
+ *
+ *	Lookup key in this subset of the key/value map.
+ *
+ * Results:
+ *	The corresponding value, or NULL, if the key was not there.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
-/* Finally, the top level struct that puts all the pieces together */
+static
+ClientData AMFetch(
+    ArrayMap am,
+    TclHAMTKeyType *kt,
+    size_t hash,
+    ClientData key)
+{
+    size_t tally;
+
+    if ((am->mask & hash) != am->id) {
+	/* Hash indicates key is not in this subtree */
+	return NULL;
+    }
+
+    tally = 1 << ((hash >> LSB(am->mask + 1)) & branchMask);
+    if (tally & am->kvMap) {
+	KVList l;
+
+	/* Hash is consistent with one of our KVList children... */
+	int offset = NumBits(am->kvMap & (tally - 1));
+
+	if (am->slot[offset] != hash)
+	    /* ...but does not actually match. */
+	    return NULL;
+	}
+
+	l = KVLFind(am->slot[offset + NumBits(am->kvMap)], kt, key);
+	return l ? l->value : NULL;
+    }
+    if (tally & am->amMap) {
+	/* Hash is consistent with one of our subnode children... */
+
+	return AMFetch(am->slot[2 * NumBits(am->kvMap)
+		+ NumBits(am->amMap & (tally - 1))], kt, hash, key);
+    }
+    return NULL;
+}
 
 
+/* Finally, the top level struct that puts all the pieces together */
+
 typedef struct HAMT {
     size_t		 claim;	/* How many claims on this struct */
     const TclHAMTKeyType *kt;	/* Custom key handling functions */
@@ -712,7 +766,7 @@ TclHAMTFetch(
 	return NULL;
     }
     /* Map has a tree. Fetch from it. */
-    return AMFetch(hPtr->x.am, ..., /* hashPtr */ NULL, key);
+    return AMFetch(hPtr->x.am, hPtr->kt, Hash(hPtr, key), key);
 }
 
 /*
