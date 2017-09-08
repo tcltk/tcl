@@ -89,7 +89,7 @@ void KVLDisclaim(
     l->tail = NULL;
     ckfree(l);
 }
-
+
 static
 KVList KVLFind(
     KVList l,
@@ -127,7 +127,7 @@ void FillPair(
     }
     l->value = value;
 }
-
+
 static
 KVList KVLInsert(
     KVList l,
@@ -218,13 +218,14 @@ KVList KVLInsert(
 
     return result;
 }
-
+
 static
 KVList KVLRemove(
     KVList l,
     TclHAMTKeyType *kt,
     ClientData key,
-    TclHAMTValueType *vt)
+    TclHAMTValueType *vt,
+    ClientData *valuePtr)
 {
     KVList found = KVLFind(l, kt, key);
 
@@ -232,6 +233,10 @@ KVList KVLRemove(
 	/* List l has a pair matching key */
 
 	KVList copy, result = NULL, last = NULL;
+
+	if (valuePtr) {
+	    *valuePtr = found->value;
+	}
 
 	/*
 	 * Need to create new list without the found node.
@@ -268,10 +273,14 @@ KVList KVLRemove(
 	return result;
     }
 
+    if (valuePtr) {
+	*valuePtr = NULL;
+    }
+
     /* The key is not here. Nothing to remove. Return unchanged list. */
     return l;
 }
-
+
 /*
  * That completes the persistent KVLists.  They are the containers of
  * our Key/Value pairs that live in the leaves of our HAMT.  Now to
@@ -349,7 +358,7 @@ KVList KVLRemove(
  * So the size of an interior node ranges from 5 to 68 pointers, or
  * from 40 to 544 bytes.
  */
-
+
 typedef struct ArrayMap {
     size_t	claim;	/* How many claims on this struct */
     size_t	mask;	/* What mask we should apply to a hash value
@@ -395,17 +404,6 @@ typedef struct ArrayMap {
 
 
 
-typedef struct HAMT {
-    size_t		 claim;	/* How many claims on this struct */
-    const TclHAMTKeyType *kt;	/* Custom key handling functions */
-    const TclHAMTValType *vt;	/* Custom value handling functions */
-    KVList		 kvl;	/* When map stores a single KVList,
-				 * just store it here (no tree) ... */
-    union {
-	size_t		 hash;	/* ...with its hash value. */
-	ArrayMap	 *am;	/* >1 KVList? Here's the tree root. */
-    } x;
-} HAMT;
 
 
 
@@ -721,6 +719,18 @@ GetSet(
 }
 
 
+typedef struct HAMT {
+    size_t		 claim;	/* How many claims on this struct */
+    const TclHAMTKeyType *kt;	/* Custom key handling functions */
+    const TclHAMTValType *vt;	/* Custom value handling functions */
+    KVList		 kvl;	/* When map stores a single KVList,
+				 * just store it here (no tree) ... */
+    union {
+	size_t		 hash;	/* ...with its hash value. */
+	ArrayMap	 *am;	/* >1 KVList? Here's the tree root. */
+    } x;
+} HAMT;
+
 /*
  *----------------------------------------------------------------------
  *
@@ -745,7 +755,7 @@ size_t Hash(
 {
     return (hPtr->kt && hPtr->kt->hashProc) ? hPtr->ky->hashProc(key) : key;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -805,7 +815,7 @@ TclHAMTClaim(
     }
     hPtr->claim++;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1022,75 +1032,56 @@ TclHAMTRemove(
 	    /* Yes. Indeed we have a hash collision! This is the right
 	     * KVList to remove our pair from. */
 
-KVList KVLRemove(
-    KVList l,
-    TclHAMTKeyType *kt,
-    ClientData key,
-    TclHAMTValueType *vt)
-
-	    l = KVLRemove(hPtr->kvl, hPtr->kt, key, hPtr->vt, value, valuePtr);
+	    l = KVLRemove(hPtr->kvl, hPtr->kt, key, hPtr->vt, valuePtr);
 	
 	    if (l == hPtr->kvl) {
 		/* list unchanged -> HAMT unchanged. */
 		return hamt;
 	    }
 
+	    /* TODO: Implement a shared empty HAMT ? */
 	    /* Construct a new HAMT with a new kvl */
 	    new = ckalloc(sizeof(HAMT));
 	    new->claim = 0;
 	    new->kt = hPtr->kt;
 	    new->vt = hPtr->vt;
-	    KVLClaim(l);
+	    if (l) {
+		KVLClaim(l);
+	    }
 	    new->kvl = l;
 	    new->x.am = NULL;
 
 	    return new;
 	}
-	/* No. Insertion should not be into the singleton KVList.
-	 * We get to build a tree out of the singleton KVList and
-	 * a new list holding our new pair. */
 
-/* TODO TODO TODO */
-	new = ckalloc(sizeof(HAMT));
-	new->claim = 0;
-	new->kt = hPtr->kt;
-	new->vt = hPtr->vt;
-	new->kvl = NULL;
-	am = AMInsert(...) ;
-	AMClaim(am);
-	new->x.am = am;
-/* TODO TODO TODO */
-
-	return new;
+	/* The key is not in the only KVList we have. */
+	if (valuePtr) {
+	    *valuePtr = NULL;
+	}
+	return hamt;
     }
     if (hPtr->x.am == NULL) {
-	/* Map is empty. No key is in it. Create singleton KVList
-	 * out of new pair. */
-
-	new = ckalloc(sizeof(HAMT));
-	new->claim = 0;
-	new->kt = hPtr->kt;
-	new->vt = hPtr->vt;
-	l = KVLInsert(NULL, hPtr->kt, key, hPtr->vt, value, valuePtr);
-	KVLClaim(l);
-	new->kvl = l;
-	new->x.hash = Hash(hPtr, key);
-	
-	return new;
+	/* Map is empty. No key is in it. */
+	if (valuePtr) {
+	    *valuePtr = NULL;
+	}
+	return hamt;
     }
-    /* Map has a tree. Insert into it. */
+
+/* TODO TODO TODO *
+ * Sort out case where AM drops to singleton. */
+    /* Map has a tree. Remove from it. */
     new = ckalloc(sizeof(HAMT));
     new->claim = 0;
     new->kt = hPtr->kt;
     new->vt = hPtr->vt;
     new->kvl = NULL;
-    am = AMInsert(hPtr->x.am,  ..., /* hashPtr */ NULL,
+    am = AMRemove(hPtr->x.am,  ..., /* hashPtr */ NULL,
 	hPtr->kt, key, vt, value, valuePtr);
     AMClaim(am);
     new->x.am = am;
 	
     return new;
-
 }
 
 /*
