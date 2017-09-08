@@ -318,7 +318,6 @@ KVList KVLRemove(
  * has the space needed for all 3 collections.
  */
 
-
 typedef struct AMNode *ArrayMap;
 
 typedef struct AMNode {
@@ -747,7 +746,8 @@ TclHAMTInsert(
 
     if (hPtr->kvl) {
 	/* Map holds a single KVList. Is it for the same hash? */
-	if (hPtr->x.hash == Hash(hPtr, key)) {
+	size_t hash = Hash(hPtr, key);
+	if (hPtr->x.hash == hash) {
 	    /* Yes. Indeed we have a hash collision! This is the right
 	     * KVList to insert our pair into. */
 	    l = KVLInsert(hPtr->kvl, hPtr->kt, key, hPtr->vt, value, valuePtr);
@@ -772,16 +772,16 @@ TclHAMTInsert(
 	 * We get to build a tree out of the singleton KVList and
 	 * a new list holding our new pair. */
 
-/* TODO TODO TODO */
 	new = ckalloc(sizeof(HAMT));
 	new->claim = 0;
 	new->kt = hPtr->kt;
 	new->vt = hPtr->vt;
 	new->kvl = NULL;
-	am = AMInsert(...) ;
+
+	am = AMNew(hPtr->x.hash, hPtr->kvl, hash,
+		KVLInsert(NULL, hPtr->kt, key, hPtr->vt, value, valuePtr));
 	AMClaim(am);
 	new->x.am = am;
-/* TODO TODO TODO */
 
 	return new;
     }
