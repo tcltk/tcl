@@ -273,7 +273,7 @@ int mp_set_long(mp_int *a, unsigned long b);
 
 /* set a platform dependent unsigned long long value */
 /*
-int mp_set_long_long(mp_int *a, unsigned long long b);
+int mp_set_long_long(mp_int *a, Tcl_WideUInt b);
 */
 
 /* get a 32-bit value */
@@ -288,7 +288,7 @@ unsigned long mp_get_long(const mp_int * a);
 
 /* get a platform dependent unsigned long long value */
 /*
-unsigned long long mp_get_long_long(const mp_int * a);
+Tcl_WideUInt mp_get_long_long(const mp_int * a);
 */
 
 /* initialize and set a digit */
