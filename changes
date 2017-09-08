@@ -8234,7 +8234,7 @@ Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 
 2013-05-16 (platform support) mingw-4.0 (nijtmans)
 
-2013-05-19 (platform support) FreeBSD updates (cerutti)
+2013-05-19 (platform support) FreeBSD updates (gahr)
 
 2013-05-20 (bug fix)[3613567] access error temp file creation (keene)
 
@@ -8657,7 +8657,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2016-05-21 (bug)[f7d4e] [namespace delete] performance (fellows)
 
-2016-06-02 (TIP 447) execution time verbosity option (cerutti)
+2016-06-02 (TIP 447) execution time verbosity option (gahr)
 => tcltest 2.4.0
 
 2016-06-16 (bug)[16828b] crash due to [vwait] trace undo fail (dah,porter)
