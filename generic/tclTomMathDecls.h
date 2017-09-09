@@ -74,6 +74,8 @@
 #define mp_exch TclBN_mp_exch
 #define mp_expt_d TclBN_mp_expt_d
 #define mp_expt_d_ex TclBN_mp_expt_d_ex
+#define mp_get_int TclBN_mp_get_int
+#define mp_get_long_long TclBN_mp_get_long_long
 #define mp_grow TclBN_mp_grow
 #define mp_init TclBN_mp_init
 #define mp_init_copy TclBN_mp_init_copy
@@ -98,6 +100,7 @@
 #define mp_s_rmap TclBNMpSRmap
 #define mp_set TclBN_mp_set
 #define mp_set_int TclBN_mp_set_int
+#define mp_set_long_long TclBN_mp_set_long_long
 #define mp_shrink TclBN_mp_shrink
 #define mp_sqr TclBN_mp_sqr
 #define mp_sqrt TclBN_mp_sqrt
@@ -165,7 +168,7 @@ TCLAPI int		TclBN_mp_div(mp_int *a, mp_int *b, mp_int *q,
 TCLAPI int		TclBN_mp_div_d(mp_int *a, mp_digit b, mp_int *q,
 				mp_digit *r);
 /* 15 */
-TCLAPI int		TclBN_mp_div_2(mp_int *a, mp_int *q);
+TCLAPI int		TclBN_mp_div_2(const mp_int *a, mp_int *q);
 /* 16 */
 TCLAPI int		TclBN_mp_div_2d(const mp_int *a, int b, mp_int *q,
 				mp_int *r);
@@ -198,7 +201,7 @@ TCLAPI int		TclBN_mp_mul(mp_int *a, mp_int *b, mp_int *p);
 /* 30 */
 TCLAPI int		TclBN_mp_mul_d(mp_int *a, mp_digit b, mp_int *p);
 /* 31 */
-TCLAPI int		TclBN_mp_mul_2(mp_int *a, mp_int *p);
+TCLAPI int		TclBN_mp_mul_2(const mp_int *a, mp_int *p);
 /* 32 */
 TCLAPI int		TclBN_mp_mul_2d(const mp_int *a, int d, mp_int *p);
 /* 33 */
@@ -281,6 +284,10 @@ TCLAPI void		TclBNInitBignumFromWideUInt(mp_int *bignum,
 /* 67 */
 TCLAPI int		TclBN_mp_expt_d_ex(mp_int *a, mp_digit b, mp_int *c,
 				int fast);
+/* 68 */
+TCLAPI int		TclBN_mp_set_long_long(mp_int *a, Tcl_WideUInt i);
+/* 69 */
+TCLAPI Tcl_WideUInt	TclBN_mp_get_long_long(const mp_int *a);
 
 typedef struct TclTomMathStubs {
     int magic;
@@ -301,7 +308,7 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_count_bits) (const mp_int *a); /* 12 */
     int (*tclBN_mp_div) (mp_int *a, mp_int *b, mp_int *q, mp_int *r); /* 13 */
     int (*tclBN_mp_div_d) (mp_int *a, mp_digit b, mp_int *q, mp_digit *r); /* 14 */
-    int (*tclBN_mp_div_2) (mp_int *a, mp_int *q); /* 15 */
+    int (*tclBN_mp_div_2) (const mp_int *a, mp_int *q); /* 15 */
     int (*tclBN_mp_div_2d) (const mp_int *a, int b, mp_int *q, mp_int *r); /* 16 */
     int (*tclBN_mp_div_3) (mp_int *a, mp_int *q, mp_digit *r); /* 17 */
     void (*tclBN_mp_exch) (mp_int *a, mp_int *b); /* 18 */
@@ -317,7 +324,7 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_mod_2d) (const mp_int *a, int b, mp_int *r); /* 28 */
     int (*tclBN_mp_mul) (mp_int *a, mp_int *b, mp_int *p); /* 29 */
     int (*tclBN_mp_mul_d) (mp_int *a, mp_digit b, mp_int *p); /* 30 */
-    int (*tclBN_mp_mul_2) (mp_int *a, mp_int *p); /* 31 */
+    int (*tclBN_mp_mul_2) (const mp_int *a, mp_int *p); /* 31 */
     int (*tclBN_mp_mul_2d) (const mp_int *a, int d, mp_int *p); /* 32 */
     int (*tclBN_mp_neg) (const mp_int *a, mp_int *b); /* 33 */
     int (*tclBN_mp_or) (mp_int *a, mp_int *b, mp_int *c); /* 34 */
@@ -354,6 +361,8 @@ typedef struct TclTomMathStubs {
     void (*tclBNInitBignumFromWideInt) (mp_int *bignum, Tcl_WideInt initVal); /* 65 */
     void (*tclBNInitBignumFromWideUInt) (mp_int *bignum, Tcl_WideUInt initVal); /* 66 */
     int (*tclBN_mp_expt_d_ex) (mp_int *a, mp_digit b, mp_int *c, int fast); /* 67 */
+    int (*tclBN_mp_set_long_long) (mp_int *a, Tcl_WideUInt i); /* 68 */
+    Tcl_WideUInt (*tclBN_mp_get_long_long) (const mp_int *a); /* 69 */
 } TclTomMathStubs;
 
 extern const TclTomMathStubs *tclTomMathStubsPtr;
@@ -504,6 +513,10 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBNInitBignumFromWideUInt) /* 66 */
 #define TclBN_mp_expt_d_ex \
 	(tclTomMathStubsPtr->tclBN_mp_expt_d_ex) /* 67 */
+#define TclBN_mp_set_long_long \
+	(tclTomMathStubsPtr->tclBN_mp_set_long_long) /* 68 */
+#define TclBN_mp_get_long_long \
+	(tclTomMathStubsPtr->tclBN_mp_get_long_long) /* 69 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
