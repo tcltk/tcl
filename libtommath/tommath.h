@@ -220,16 +220,16 @@ int mp_set_int(mp_int *a, unsigned long b);
 int mp_set_long(mp_int *a, unsigned long b);
 
 /* set a platform dependent unsigned long long value */
-int mp_set_long_long(mp_int *a, unsigned long long b);
+int mp_set_long_long(mp_int *a, Tcl_WideUInt b);
 
 /* get a 32-bit value */
-unsigned long mp_get_int(mp_int * a);
+unsigned long mp_get_int(const mp_int * a);
 
 /* get a platform dependent unsigned long value */
-unsigned long mp_get_long(mp_int * a);
+unsigned long mp_get_long(const mp_int * a);
 
 /* get a platform dependent unsigned long long value */
-unsigned long long mp_get_long_long(mp_int * a);
+Tcl_WideUInt mp_get_long_long(const mp_int * a);
 
 /* initialize and set a digit */
 int mp_init_set (mp_int * a, mp_digit b);
@@ -264,13 +264,13 @@ int mp_lshd(mp_int *a, int b);
 int mp_div_2d(const mp_int *a, int b, mp_int *c, mp_int *d);
 
 /* b = a/2 */
-int mp_div_2(mp_int *a, mp_int *b);
+int mp_div_2(const mp_int *a, mp_int *b);
 
 /* c = a * 2**b, implemented as c = a << b */
 int mp_mul_2d(const mp_int *a, int b, mp_int *c);
 
 /* b = a*2 */
-int mp_mul_2(mp_int *a, mp_int *b);
+int mp_mul_2(const mp_int *a, mp_int *b);
 
 /* c = a mod 2**b */
 int mp_mod_2d(const mp_int *a, int b, mp_int *c);
