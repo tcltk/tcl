@@ -1479,7 +1479,7 @@ BuildCommandLine(
 	    quote = 1;
 	} else {
 	    int count;
-	    Tcl_UniChar ch;
+	    Tcl_UniChar ch = 0;
 
 	    for (start = arg; *start != '\0'; start += count) {
 		count = TclUtfToUniChar(start, &ch);

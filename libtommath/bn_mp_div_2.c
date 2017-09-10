@@ -16,7 +16,7 @@
  */
 
 /* b = a/2 */
-int mp_div_2(mp_int * a, mp_int * b)
+int mp_div_2(const mp_int * a, mp_int * b)
 {
   int     x, res, oldused;
 
@@ -63,6 +63,6 @@ int mp_div_2(mp_int * a, mp_int * b)
 }
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

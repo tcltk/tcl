@@ -27,7 +27,12 @@ extern "C" {
 #endif
 
 /* detect 64-bit mode if possible */
-#if defined(__x86_64__)
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64) || \
+    defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) || \
+    defined(__s390x__) || defined(__arch64__) || defined(__aarch64__) || \
+    defined(__sparcv9) || defined(__sparc_v9__) || defined(__sparc64__) || \
+    defined(__ia64) || defined(__ia64__) || defined(__itanium__) || defined(_M_IA64) || \
+    defined(__LP64__) || defined(_LP64) || defined(__64BIT__)
    #if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
       #define MP_64BIT
    #endif
@@ -57,12 +62,7 @@ extern "C" {
 #endif
 #elif defined(MP_64BIT)
    /* for GCC only on supported platforms */
-#ifndef CRYPT
-   typedef unsigned long long   ulong64;
-   typedef signed long long     long64;
-#endif
-
-   typedef ulong64 mp_digit;
+   typedef uint64_t mp_digit;
 #if defined(_WIN32)
    typedef unsigned __int128    mp_word;
 #elif defined(__GNUC__)
@@ -78,13 +78,8 @@ extern "C" {
    /* this is the default case, 28-bit digits */
 
    /* this is to make porting into LibTomCrypt easier :-) */
-#ifndef CRYPT
-   typedef unsigned long long   ulong64;
-   typedef signed long long     long64;
-#endif
-
    typedef uint32_t             mp_digit;
-   typedef ulong64              mp_word;
+   typedef uint64_t             mp_word;
 
 #ifdef MP_31BIT
    /* this is an extension that uses 31-bit digits */
@@ -104,16 +99,16 @@ extern "C" {
    typedef mp_digit mp_min_u32;
 #endif
 
-/* platforms that can use a better rand function */
+/* use arc4random on platforms that support it */
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
-    #define MP_USE_ALT_RAND 1
+    #define MP_GEN_RANDOM()    arc4random()
+    #define MP_GEN_RANDOM_MAX  0xffffffff
 #endif
 
-/* use arc4random on platforms that support it */
-#ifdef MP_USE_ALT_RAND
-    #define MP_GEN_RANDOM()    arc4random()
-#else
+/* use rand() as fall-back if there's no better rand function */
+#ifndef MP_GEN_RANDOM
     #define MP_GEN_RANDOM()    rand()
+    #define MP_GEN_RANDOM_MAX  RAND_MAX
 #endif
 
 #define MP_DIGIT_BIT     DIGIT_BIT
@@ -225,16 +220,16 @@ int mp_set_int(mp_int *a, unsigned long b);
 int mp_set_long(mp_int *a, unsigned long b);
 
 /* set a platform dependent unsigned long long value */
-int mp_set_long_long(mp_int *a, unsigned long long b);
+int mp_set_long_long(mp_int *a, Tcl_WideUInt b);
 
 /* get a 32-bit value */
-unsigned long mp_get_int(mp_int * a);
+unsigned long mp_get_int(const mp_int * a);
 
 /* get a platform dependent unsigned long value */
-unsigned long mp_get_long(mp_int * a);
+unsigned long mp_get_long(const mp_int * a);
 
 /* get a platform dependent unsigned long long value */
-unsigned long long mp_get_long_long(mp_int * a);
+Tcl_WideUInt mp_get_long_long(const mp_int * a);
 
 /* initialize and set a digit */
 int mp_init_set (mp_int * a, mp_digit b);
@@ -269,13 +264,13 @@ int mp_lshd(mp_int *a, int b);
 int mp_div_2d(const mp_int *a, int b, mp_int *c, mp_int *d);
 
 /* b = a/2 */
-int mp_div_2(mp_int *a, mp_int *b);
+int mp_div_2(const mp_int *a, mp_int *b);
 
 /* c = a * 2**b, implemented as c = a << b */
 int mp_mul_2d(const mp_int *a, int b, mp_int *c);
 
 /* b = a*2 */
-int mp_mul_2(mp_int *a, mp_int *b);
+int mp_mul_2(const mp_int *a, mp_int *b);
 
 /* c = a mod 2**b */
 int mp_mod_2d(const mp_int *a, int b, mp_int *c);
@@ -570,6 +565,6 @@ int mp_fwrite(mp_int *a, int radix, FILE *stream);
 #endif
 
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

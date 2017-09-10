@@ -684,7 +684,7 @@ SetInvalidRealFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
 /*
  * This function checks for integer representations, which are valid
  * when linking with C variables, but which are invalid in other
- * contexts in Tcl. Handled are "+", "-", "", "0x", "0b" and "0o"
+ * contexts in Tcl. Handled are "+", "-", "", "0x", "0b", "0d" and "0o"
  * (upperand lowercase). See bug [39f6304c2e].
  */
 int
@@ -693,7 +693,7 @@ GetInvalidIntFromObj(Tcl_Obj *objPtr, int *intPtr)
     const char *str = TclGetString(objPtr);
 
     if ((objPtr->length == 0) ||
-	    ((objPtr->length == 2) && (str[0] == '0') && strchr("xXbBoO", str[1]))) {
+	    ((objPtr->length == 2) && (str[0] == '0') && strchr("xXbBoOdD", str[1]))) {
 	*intPtr = 0;
 	return TCL_OK;
     } else if ((objPtr->length == 1) && strchr("+-", str[0])) {

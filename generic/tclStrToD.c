@@ -482,7 +482,7 @@ TclParseNumber(
 {
     enum State {
 	INITIAL, SIGNUM, ZERO, ZERO_X,
-	ZERO_O, ZERO_B, BINARY,
+	ZERO_O, ZERO_B, ZERO_D, BINARY,
 	HEXADECIMAL, OCTAL, DECIMAL,
 	LEADING_RADIX_POINT, FRACTION,
 	EXPONENT_START, EXPONENT_SIGNUM, EXPONENT,
@@ -662,6 +662,10 @@ TclParseNumber(
 		state = ZERO_O;
 		break;
 	    }
+	    if (c == 'd' || c == 'D') {
+		state = ZERO_D;
+		break;
+	    }
 	    goto decimal;
 
 	case OCTAL:
@@ -822,6 +826,16 @@ TclParseNumber(
 	    numTrailZeros = 0;
 	    state = BINARY;
 	    break;
+
+	case ZERO_D:
+	    if (c == '0') {
+		numTrailZeros++;
+	    } else if ( ! isdigit(UCHAR(c))) {
+		goto endgame;
+	    }
+	    state = DECIMAL;
+	    flags |= TCL_PARSE_INTEGER_ONLY;
+	    /* FALLTHROUGH */
 
 	case DECIMAL:
 	    /*
@@ -1116,6 +1130,7 @@ TclParseNumber(
 	case ZERO_X:
 	case ZERO_O:
 	case ZERO_B:
+	case ZERO_D:
 	case LEADING_RADIX_POINT:
 	case EXPONENT_START:
 	case EXPONENT_SIGNUM:
@@ -1130,9 +1145,9 @@ TclParseNumber(
 	case sNA:
 	case sNANPAREN:
 	case sNANHEX:
+#endif
 	    Tcl_Panic("TclParseNumber: bad acceptState %d parsing '%s'",
 		    acceptState, bytes);
-#endif
 	case BINARY:
 	    shift = numTrailZeros;
 	    if (!significandOverflow && significandWide != 0 &&
@@ -1917,7 +1932,7 @@ RefineApproximation(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 MulPow5(
     mp_int *base, 		/* Number to multiply. */
     unsigned n,			/* Power of 5 to multiply by. */
@@ -1962,7 +1977,7 @@ MulPow5(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 NormalizeRightward(
     Tcl_WideUInt *wPtr)		/* INOUT: Number to shift. */
 {
@@ -2053,7 +2068,7 @@ RequiredPrecision(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 DoubleToExpAndSig(
     double dv,			/* Number to convert. */
     Tcl_WideUInt *significand,	/* OUTPUT: Significand of the number. */
@@ -2101,7 +2116,7 @@ DoubleToExpAndSig(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 TakeAbsoluteValue(
     Double *d,			/* Number to replace with absolute value. */
     int *sign)			/* Place to put the signum. */
@@ -2132,7 +2147,7 @@ TakeAbsoluteValue(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 FormatInfAndNaN(
     Double *d,			/* Exceptional number to format. */
     int *decpt,			/* Decimal point to set to a bogus value. */
@@ -2174,7 +2189,7 @@ FormatInfAndNaN(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 FormatZero(
     int *decpt,			/* Location of the decimal point. */
     char **endPtr)		/* Pointer to the end of the formatted data */
@@ -2204,7 +2219,7 @@ FormatZero(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ApproximateLog10(
     Tcl_WideUInt bw,		/* Integer significand of the number. */
     int be,			/* Power of two to scale bw. */
@@ -2252,7 +2267,7 @@ ApproximateLog10(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 BetterLog10(
     double d,			/* Original number to format. */
     int k,			/* Characteristic(Log base 10) of the
@@ -2295,7 +2310,7 @@ BetterLog10(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 ComputeScale(
     int be,			/* Exponent part of number: d = bw * 2**be. */
     int k,			/* Characteristic of log10(number). */
@@ -2358,7 +2373,7 @@ ComputeScale(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 SetPrecisionLimits(
     int convType,		/* Type of conversion: TCL_DD_SHORTEST,
 				 * TCL_DD_STEELE0, TCL_DD_E_FMT,
@@ -2419,7 +2434,7 @@ SetPrecisionLimits(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 BumpUp(
     char *s,		    	/* Cursor pointing one past the end of the
 				 * string. */
@@ -2453,7 +2468,7 @@ BumpUp(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 AdjustRange(
     double *dPtr,		/* INOUT: Number to adjust. */
     int k)			/* IN: floor(log10(d)) */
@@ -2526,7 +2541,7 @@ AdjustRange(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 ShorteningQuickFormat(
     double d,			/* Number to convert. */
     int k,			/* floor(log10(d)) */
@@ -2601,7 +2616,7 @@ ShorteningQuickFormat(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 StrictQuickFormat(
     double d,			/* Number to convert. */
     int k,			/* floor(log10(d)) */
@@ -2675,7 +2690,7 @@ StrictQuickFormat(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 QuickConversion(
     double e,			/* Number to format. */
     int k,			/* floor(log10(d)), approximately. */
@@ -2780,7 +2795,7 @@ QuickConversion(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 CastOutPowersOf2(
     int *b2,			/* Power of 2 to multiply the significand. */
     int *m2,			/* Power of 2 to multiply 1/2 ulp. */
@@ -2824,7 +2839,7 @@ CastOutPowersOf2(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 ShorteningInt64Conversion(
     Double *dPtr,		/* Original number to convert. */
     int convType,		/* Type of conversion (shortest, Steele,
@@ -2993,7 +3008,7 @@ ShorteningInt64Conversion(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 StrictInt64Conversion(
     Double *dPtr,		/* Original number to convert. */
     int convType,		/* Type of conversion (shortest, Steele,
@@ -3099,7 +3114,7 @@ StrictInt64Conversion(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ShouldBankerRoundUpPowD(
     mp_int *b,			/* Numerator of the fraction. */
     int sd,			/* Denominator is 2**(sd*DIGIT_BIT). */
@@ -3137,7 +3152,7 @@ ShouldBankerRoundUpPowD(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ShouldBankerRoundUpToNextPowD(
     mp_int *b,			/* Numerator of the fraction. */
     mp_int *m,			/* Numerator of the rounding tolerance. */
@@ -3200,7 +3215,7 @@ ShouldBankerRoundUpToNextPowD(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 ShorteningBignumConversionPowD(
     Double *dPtr,		/* Original number to convert. */
     int convType,		/* Type of conversion (shortest, Steele,
@@ -3393,7 +3408,7 @@ ShorteningBignumConversionPowD(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 StrictBignumConversionPowD(
     Double *dPtr,		/* Original number to convert. */
     int convType,		/* Type of conversion (shortest, Steele,
@@ -3509,7 +3524,7 @@ StrictBignumConversionPowD(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ShouldBankerRoundUp(
     mp_int *twor,		/* 2x the remainder from thd division that
 				 * produced the last digit. */
@@ -3544,7 +3559,7 @@ ShouldBankerRoundUp(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ShouldBankerRoundUpToNext(
     mp_int *b,			/* Remainder from the division that produced
 				 * the last digit. */
@@ -3598,7 +3613,7 @@ ShouldBankerRoundUpToNext(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 ShorteningBignumConversion(
     Double *dPtr,		/* Original number being converted. */
     int convType,		/* Conversion type. */
@@ -3814,7 +3829,7 @@ ShorteningBignumConversion(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 StrictBignumConversion(
     Double *dPtr,		/* Original number being converted. */
     int convType,		/* Conversion type. */

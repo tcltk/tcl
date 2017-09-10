@@ -1371,6 +1371,9 @@ test string-14.16 {string replace} {
 test string-14.17 {string replace} {
     string replace abcdefghijklmnop end end-1
 } {abcdefghijklmnop}
+test string-14.18 {string replace} {
+    string replace abcdefghijklmnop 10 9 XXX
+} {abcdefghijklmnop}
 
 test string-15.1 {string tolower too few args} {
     list [catch {string tolower} msg] $msg
@@ -2024,6 +2027,21 @@ test string-29.13 {string cat, efficiency} -body {
     tcl::unsupported::representation [string cat \
 	[encoding convertto utf-8 {}] [encoding convertto utf-8 {}] [list x]]
 } -match glob -result {*, string representation "x"}
+test string-29.14 {string cat, efficiency} -setup {
+    set e [encoding convertto utf-8 {}]
+} -cleanup {
+    unset e
+} -body {
+    tcl::unsupported::representation [string cat $e $e [list x]]
+} -match glob -result {*no string representation}
+test string-29.15 {string cat, efficiency} -setup {
+    set e [encoding convertto utf-8 {}]
+    set f [encoding convertto utf-8 {}]
+} -cleanup {
+    unset e f
+} -body {
+    tcl::unsupported::representation [string cat $e $f $e $f [list x]]
+} -match glob -result {*no string representation}
 
 
 
