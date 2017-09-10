@@ -95,7 +95,7 @@ typedef struct HAMT *TclHAMT;
  */
 
 MODULE_SCOPE TclHAMT		TclHAMTCreate(const TclHAMTKeyType *ktPtr,
-				    const TclHAMTValType *vtPtr);
+				    const TclHAMTValueType *vtPtr);
 MODULE_SCOPE void		TclHAMTClaim(TclHAMT hamt);
 MODULE_SCOPE void		TclHAMTDisclaim(TclHAMT hamt);
 MODULE_SCOPE TclHAMT		TclHAMTInsert(TclHAMT hamt, ClientData key,

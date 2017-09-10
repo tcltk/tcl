@@ -39,7 +39,7 @@
 
 typedef struct KVNode *KVList;
 
-typeder struct KVNode {
+typedef struct KVNode {
     size_t	claim;	/* How many claims on this struct */
     KVList	tail;	/* The part of the list(s) following this pair */
     ClientData	key;	/* Key... */
@@ -67,8 +67,8 @@ void KVLClaim(
 static
 void KVLDisclaim(
     KVList l,
-    TclHAMTKeyType *kt,
-    TclHAMTValueType *vt)
+    const TclHAMTKeyType *kt,
+    const TclHAMTValueType *vt)
 {
     if (l == NULL) {
 	return;
@@ -93,7 +93,7 @@ void KVLDisclaim(
 static
 KVList KVLFind(
     KVList l,
-    TclHAMTKeyType *kt,
+    const TclHAMTKeyType *kt,
     ClientData key)
 {
     if (l == NULL) {
@@ -113,9 +113,9 @@ KVList KVLFind(
 static
 void FillPair(
     KVList l,
-    TclHAMTKeyType *kt,
+    const TclHAMTKeyType *kt,
     ClientData key,
-    TclHAMTValueType *vt,
+    const TclHAMTValueType *vt,
     ClientData value)
 {
     if (kt && kt->makeRefProc) {
@@ -131,9 +131,9 @@ void FillPair(
 static
 KVList KVLInsert(
     KVList l,
-    TclHAMTKeyType *kt,
+    const TclHAMTKeyType *kt,
     ClientData key,
-    TclHAMTValueType *vt,
+    const TclHAMTValueType *vt,
     ClientData value,
     ClientData *valuePtr)
 {
@@ -222,9 +222,9 @@ KVList KVLInsert(
 static
 KVList KVLRemove(
     KVList l,
-    TclHAMTKeyType *kt,
+    const TclHAMTKeyType *kt,
     ClientData key,
-    TclHAMTValueType *vt,
+    const TclHAMTValueType *vt,
     ClientData *valuePtr)
 {
     KVList found = KVLFind(l, kt, key);
@@ -326,7 +326,7 @@ typedef struct AMNode {
     size_t	id;	/* location of the node in the complete tree */
     size_t	kvMap;  /* Map to children containing a single KVList each */
     size_t	amMap;	/* Map to children that are subnodes */
-    void *	slot;	/* Resizable space for outward links */
+    ClientData	slot[];	/* Resizable space for outward links */
 } AMNode;
 
 #define AMN_SIZE(numList, numSubnode) \
@@ -343,17 +343,16 @@ typedef struct AMNode {
 /* Bits in a size_t. Use as our branching factor. Max children per node. */
 const int branchFactor = CHAR_BIT * sizeof(size_t);
 
-/* Bits in a index selecting a child of a node */
-const int branchShift = TclMSB(branchFactor);
-
 /* Mask used to carve out branch index. */
-const int branchMask = (branchFactor - 1)
+const int branchMask = (branchFactor - 1);
+
 
 /*
  * The operations on an ArrayMap:
  *	AMClaim		Make a claim on a node.
  *	AMDisclaim	Release a claim on a node.
- *	AMNew		Make initial node from two NVLists.
+ *	AMNewLeaf	Make leaf node from two NVLists.
+ *	AMNewBranch	Make branch mode from NVList and ArrayMap.
  *	AMFetch		Fetch value from node given a key.
  *	AMInsert	Create a new node, inserting new pair into old node.
  *	AMRemove	Create a new node, with any pair matching key removed.
@@ -423,8 +422,8 @@ void AMClaim(
 static
 void AMDisclaim(
     ArrayMap am,
-    TclHAMTKeyType *kt,
-    TclHAMTValueType *vt)
+    const TclHAMTKeyType *kt,
+    const TclHAMTValueType *vt)
 {
     int i, numList, numSubnode;
 
@@ -462,10 +461,10 @@ void AMDisclaim(
 /*
  *----------------------------------------------------------------------
  *
- * AMNew --
+ * AMNewBranch --
  *
- * 	Create an ArrayMap to serve as a branching node distinguishing
- * 	the paths to two KVLists given their hash values.
+ * 	Create an ArrayMap to serve as a container for
+ * 	a new KVList and an existing ArrayMap subnode.
  *
  * Results:
  *	The created ArrayMap.
@@ -477,42 +476,98 @@ void AMDisclaim(
  */
 
 static
-ArrayMap AMNew(
-    ClientData hash1,
-    KVList l1,
-    ClientData hash2,
-    KVList l2)
+ArrayMap AMNewBranch(
+    ArrayMap sub,
+    size_t hash,
+    KVList l)
 {
-    int depth, idx1, idx2;
-    size_t *hashes;
-    KVList *lists;
-    ArrayMap new = ckalloc(AMN_SIZE(2, 0));
 
-    new->claim = 0;
+    /* Bits in a index selecting a child of a node */
+    int branchShift = TclMSB(branchFactor);
 
     /* The depth of the tree for the node we must create.
      * Determine by lowest bit where hashes differ. */
+    int depth = LSB(hash ^ sub->id) / branchShift;
 
-    depth = LSB(hash1 ^ hash2) / branchShift;
+    int idx1 = (hash >> (depth * branchShift)) & branchMask;
+    int idx2 = (sub->id >> (depth * branchShift)) & branchMask;
+    ArrayMap new = ckalloc(AMN_SIZE(1, 1));
 
+    assert ( idx1 != idx2 );
+
+    new->claim = 0;
+    new->mask =  (1 << (depth * branchShift)) - 1;
+    new->id = hash & new->mask;
+
+    assert ( (sub->id & new->mask) == new->id );
+
+    new->kvMap = (size_t)1 << idx1;
+    new->amMap = (size_t)1 << idx2;
+
+    KVLClaim(l);
+    AMClaim(sub);
+
+    new->slot[0] = (ClientData)hash;
+    new->slot[1] = l;
+    new->slot[2] = sub;
+
+    return new;
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * AMNewLeaf --
+ *
+ * 	Create an ArrayMap to serve as a container for
+ * 	two KVLists given their hash values.
+ *
+ * Results:
+ *	The created ArrayMap.
+ *
+ * Side effects:
+ * 	Memory is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static
+ArrayMap AMNewLeaf(
+    size_t hash1,
+    KVList l1,
+    size_t hash2,
+    KVList l2)
+{
+    size_t *hashes;
+    KVList *lists;
+
+    /* Bits in a index selecting a child of a node */
+    int branchShift = TclMSB(branchFactor);
+
+    /* The depth of the tree for the node we must create.
+     * Determine by lowest bit where hashes differ. */
+    int depth = LSB(hash1 ^ hash2) / branchShift;
+
+    int idx1 = (hash1 >> (depth * branchShift)) & branchMask;
+    int idx2 = (hash2 >> (depth * branchShift)) & branchMask;
+
+    ArrayMap new = ckalloc(AMN_SIZE(2, 0));
+
+    assert ( idx1 != idx2 );
+
+    new->claim = 0;
     new->mask =  (1 << (depth * branchShift)) - 1;
     new->id = hash1 & new->mask;
 
     assert ( (hash2 & new->mask) == new->id );
 
-    idx1 = (hash1 >> (depth * branchShift)) & branchMask;
-    idx2 = (hash2 >> (depth * branchShift)) & branchMask;
-
-    assert ( idx1 != idx2 );
-
     new->kvMap = ((size_t)1 << idx1) | ((size_t)1 << idx2);
     new->amMap = 0;
 
     KVLClaim(l1);
-    KVLCLaim(l2);
+    KVLClaim(l2);
 
-    hashes = (size_t *)&(new->slots);
-    lists = (KVList *) (hashes + 2)
+    hashes = (size_t *)&(new->slot);
+    lists = (KVList *) (hashes + 2);
     if (idx1 < idx2) {
 	assert ( hash1 < hash2 );
 
@@ -551,7 +606,7 @@ ArrayMap AMNew(
 static
 ClientData AMFetch(
     ArrayMap am,
-    TclHAMTKeyType *kt,
+    const TclHAMTKeyType *kt,
     size_t hash,
     ClientData key)
 {
@@ -569,7 +624,7 @@ ClientData AMFetch(
 	/* Hash is consistent with one of our KVList children... */
 	int offset = NumBits(am->kvMap & (tally - 1));
 
-	if (am->slot[offset] != hash)
+	if (am->slot[offset] != (ClientData)hash) {
 	    /* ...but does not actually match. */
 	    return NULL;
 	}
@@ -585,19 +640,271 @@ ClientData AMFetch(
     }
     return NULL;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AMInsert --
+ *
+ *	Insert new key, value pair into this subset of the key/value map.
+ *
+ * Results:
+ *	A new revised subset containing the new pair.
+ *
+ * Side effects:
+ *	If valuePtr is not NULL, write to *valuePtr the
+ *	previous value associated with key in subset
+ *	or NULL if the key was not there before.
+ *----------------------------------------------------------------------
+ */
+
+static
+ArrayMap AMInsert(
+    ArrayMap am,
+    size_t hash,
+    const TclHAMTKeyType *kt,
+    ClientData key,
+    const TclHAMTValueType *vt,
+    ClientData value,
+    ClientData *valuePtr)
+{
+    size_t tally;
+    int numList, numSubnode, loffset, soffset, i;
+    ArrayMap new, sub;
+    ClientData *src, *dst;
+
+    if ((am->mask & hash) != am->id) {
+	/* Hash indicates key is not in this subtree */
+
+	/* Caller sent us here, because prefix+index said so,
+	 * but we do not belong here.  We need to create a
+	 * missing node between to hold reference to us and
+	 * reference to the new (key, value).
+	 */
+
+	return AMNewBranch(am, hash,
+		KVLInsert(NULL, kt, key, vt, value, valuePtr));
+    }
+
+    /* Hash indicates key should be descendant of am */
+    numList = NumBits(am->kvMap);
+    numSubnode = NumBits(am->amMap);
+
+    tally = 1 << ((hash >> LSB(am->mask + 1)) & branchMask);
+    if (tally & am->kvMap) {
+
+	/* Hash is consistent with one of our KVList children... */
+	loffset = NumBits(am->kvMap & (tally - 1));
+
+	if (am->slot[loffset] != (ClientData)hash) {
+	    /* ...but does not actually match.
+	     * Need a new KVList to join with this one. */
+	
+	    sub = AMNewLeaf((size_t)am->slot[loffset],
+		    am->slot[loffset + numList], hash,
+		    KVLInsert(NULL, kt, key, vt, value, valuePtr));
+
+	    /* Modified copy of am, - list + sub */
+
+	    new = ckalloc(AMN_SIZE(numList-1, numSubnode+1));
+	    new->claim = 0;
+	    new->mask = am->mask;
+	    new->id = am->id;
+
+	    new->kvMap = am->kvMap & ~tally;
+	    new->amMap = am->amMap | tally;
+
+	    src = am->slot;
+	    dst = new->slot;
+	    /* Copy hashes (except one we're deleting) */
+	    for (i = 0; i < loffset; i++) {
+		*dst++ = *src++;
+	    }
+	    src++;
+	    for (i = loffset + 1; i < numList; i++) {
+		*dst++ = *src++;
+	    }
+
+	    /* Copy list (except one we're deleting) */
+	    for (i = 0; i < loffset; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+	    src++;
+	    for (i = loffset + 1; i < numList; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+
+	    /* Copy subnodes and add the new one */
+	    soffset = NumBits(am->amMap & (tally - 1));
+	    for (i = 0; i < soffset; i++) {
+		AMClaim((ArrayMap) *src);
+		*dst++ = *src++;
+	    }
+	    AMClaim(sub);
+	    *dst++ = sub;
+	    for (i = soffset; i < numSubnode; i++) {
+		AMClaim((ArrayMap) *src);
+		*dst++ = *src++;
+	    }
+
+	    return new;
+	} else {
+	    /* Found the right KVList. Now Insert the pair into it. */
+	    KVList l = KVLInsert(am->slot[loffset + numList], kt, key,
+		    vt, value, valuePtr);
+
+	    if (l == am->slot[loffset + numList]) {
+		/* List unchanged (overwrite same value) */
+		/* Map unchanged, just return */
+		return am;
+	    }
+
+	    /* Modified copy of am, list replaced. */
+	    new = ckalloc(AMN_SIZE(numList, numSubnode));
+	
+	    new->claim = 0;
+	    new->mask = am->mask;
+	    new->id = am->id;
+	    new->kvMap = am->kvMap;
+	    new->amMap = am->amMap;
+
+	    src = am->slot;
+	    dst = new->slot;
+	    /* Copy all hashes */
+	    for (i = 0; i < numList; i++) {
+		*dst++ = *src++;
+	    }
+
+	    /* Copy list (except one we're replacing) */
+	    for (i = 0; i < loffset; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+	    src++;
+	    KVLClaim(l);
+	    *dst++ = l;
+	    for (i = loffset + 1; i < numList; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+
+	    /* Copy all subnodes */
+	    for (i = 0; i < numSubnode; i++) {
+		AMClaim((ArrayMap) *src);
+		*dst++ = *src++;
+	    }
+	    return new;
+	}
+    }
+    if (tally & am->amMap) {
+	/* Hash is consistent with one of our subnode children... */
+	soffset = NumBits(am->amMap & (tally - 1));
+
+	sub = AMInsert((ArrayMap)am->slot[2*numList + soffset], hash,
+		kt, key, vt, value, valuePtr);
+
+	if (sub == am->slot[2*numList + soffset]) {
+	    /* Submap unchanged (overwrite same value) */
+	    /* Map unchanged, just return */
+	    return am;
+	}
+
+	/* Modified copy of am, subnode replaced. */
+	new = ckalloc(AMN_SIZE(numList, numSubnode));
+	
+	new->claim = 0;
+	new->mask = am->mask;
+	new->id = am->id;
+	new->kvMap = am->kvMap;
+	new->amMap = am->amMap;
+
+	src = am->slot;
+	dst = new->slot;
+	/* Copy all hashes */
+	for (i = 0; i < numList; i++) {
+	    *dst++ = *src++;
+	}
+
+	/* Copy all lists */
+	for (i = 0; i < numList; i++) {
+	    KVLClaim((KVList) *src);
+	    *dst++ = *src++;
+	}
+
+	/* Copy subnodes (except the one we're replacing) */
+	for (i = 0; i < soffset; i++) {
+	    AMClaim((ArrayMap) *src);
+	    *dst++ = *src++;
+	}
+	src++;
+	AMClaim(sub);
+	*dst++ = sub;
+	for (i = soffset + 1; i < numSubnode; i++) {
+	    AMClaim((ArrayMap) *src);
+	    *dst++ = *src++;
+	}
+
+	return new;
+    }
+
+    /* Modified copy of am, list inserted. */
+    new = ckalloc(AMN_SIZE(numList + 1, numSubnode));
+	
+    new->claim = 0;
+    new->mask = am->mask;
+    new->id = am->id;
+    new->kvMap = am->kvMap | tally;
+    new->amMap = am->amMap;
+
+    src = am->slot;
+    dst = new->slot;
+
+    loffset = NumBits(am->kvMap & (tally - 1));
+    /* Copy all hashes and insert one */
+    for (i = 0; i < loffset; i++) {
+	*dst++ = *src++;
+    }
+    *dst++ = (ClientData)hash;
+    for (i = loffset; i < numList; i++) {
+	*dst++ = *src++;
+    }
+
+    /* Copy all list and insert one */
+    for (i = 0; i < loffset; i++) {
+	KVLClaim((KVList) *src);
+	*dst++ = *src++;
+    }
+    *dst = KVLInsert(NULL, kt, key, vt, value, valuePtr);
+    KVLClaim(*dst);
+    dst++;
+    for (i = loffset + 1; i < numList; i++) {
+	KVLClaim((KVList) *src);
+	*dst++ = *src++;
+    }
+
+    /* Copy all subnodes */
+    for (i = 0; i < numSubnode; i++) {
+	AMClaim((ArrayMap) *src);
+	*dst++ = *src++;
+    }
+
+    return NULL;
+}
 
 
 /* Finally, the top level struct that puts all the pieces together */
 
 typedef struct HAMT {
-    size_t		 claim;	/* How many claims on this struct */
-    const TclHAMTKeyType *kt;	/* Custom key handling functions */
-    const TclHAMTValType *vt;	/* Custom value handling functions */
-    KVList		 kvl;	/* When map stores a single KVList,
-				 * just store it here (no tree) ... */
+    size_t			claim;	/* How many claims on this struct */
+    const TclHAMTKeyType	*kt;	/* Custom key handling functions */
+    const TclHAMTValueType	*vt;	/* Custom value handling functions */
+    KVList			kvl;	/* When map stores a single KVList,
+					 * just store it here (no tree) ... */
     union {
-	size_t		 hash;	/* ...with its hash value. */
-	ArrayMap	 am;	/* >1 KVList? Here's the tree root. */
+	size_t			 hash;	/* ...with its hash value. */
+	ArrayMap		 am;	/* >1 KVList? Here's the tree root. */
     } x;
 } HAMT;
 
@@ -623,7 +930,8 @@ size_t Hash(
     HAMT *hPtr,
     ClientData key)
 {
-    return (hPtr->kt && hPtr->kt->hashProc) ? hPtr->ky->hashProc(key) : key;
+    return (hPtr->kt && hPtr->kt->hashProc)
+	    ? hPtr->kt->hashProc(key) : (size_t) key;
 }
 
 /*
@@ -646,7 +954,7 @@ size_t Hash(
 TclHAMT
 TclHAMTCreate(
     const TclHAMTKeyType *kt,	/* Custom key handling functions */
-    const TclHAMTValType *vt)	/* Custom value handling functions */
+    const TclHAMTValueType *vt)	/* Custom value handling functions */
 {
     HAMT *hPtr = ckalloc(sizeof(HAMT));
 
@@ -832,7 +1140,7 @@ TclHAMTInsert(
 	new->vt = hPtr->vt;
 	new->kvl = NULL;
 
-	am = AMNew(hPtr->x.hash, hPtr->kvl, hash,
+	am = AMNewLeaf(hPtr->x.hash, hPtr->kvl, hash,
 		KVLInsert(NULL, hPtr->kt, key, hPtr->vt, value, valuePtr));
 	AMClaim(am);
 	new->x.am = am;
@@ -860,8 +1168,8 @@ TclHAMTInsert(
     new->kt = hPtr->kt;
     new->vt = hPtr->vt;
     new->kvl = NULL;
-    am = AMInsert(hPtr->x.am,  ..., /* hashPtr */ NULL,
-	hPtr->kt, key, vt, value, valuePtr);
+    am = AMInsert(hPtr->x.am, Hash(hPtr, key), hPtr->kt, key,
+	    hPtr->vt, value, valuePtr);
     AMClaim(am);
     new->x.am = am;
 	
@@ -948,7 +1256,7 @@ TclHAMTRemove(
     new->vt = hPtr->vt;
     new->kvl = NULL;
     am = AMRemove(hPtr->x.am,  ..., /* hashPtr */ NULL,
-	hPtr->kt, key, vt, value, valuePtr);
+	hPtr->kt, key, hPtr->vt, value, valuePtr);
     AMClaim(am);
     new->x.am = am;
 	
