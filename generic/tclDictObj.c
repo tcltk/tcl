@@ -530,7 +530,6 @@ UpdateStringOfDict(
 	elem = TclGetString(keyPtr);
 	length = keyPtr->length;
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
-
 	flagPtr[i+1] = TCL_DONT_QUOTE_HASH;
 	valuePtr = Tcl_GetHashValue(&cPtr->entry);
 	elem = TclGetString(valuePtr);

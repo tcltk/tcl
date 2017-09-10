@@ -16,7 +16,7 @@
  */
 
 /* get the lower 32-bits of an mp_int */
-unsigned long mp_get_int(mp_int * a)
+unsigned long mp_get_int(const mp_int * a)
 {
   int i;
   mp_min_u32 res;
@@ -40,6 +40,6 @@ unsigned long mp_get_int(mp_int * a)
 }
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */
