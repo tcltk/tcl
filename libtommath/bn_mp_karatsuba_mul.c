@@ -44,7 +44,7 @@
  * Generally though the overhead of this method doesn't pay off 
  * until a certain size (N ~ 80) is reached.
  */
-int mp_karatsuba_mul (mp_int * a, mp_int * b, mp_int * c)
+int mp_karatsuba_mul (const mp_int * a, const mp_int * b, mp_int * c)
 {
   mp_int  x0, x1, y0, y1, t1, x0y0, x1y1;
   int     B, err;
