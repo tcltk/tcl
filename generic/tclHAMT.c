@@ -892,7 +892,271 @@ ArrayMap AMInsert(
 
     return NULL;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AMRemove --
+ *
+ *	Remove the key, value pair containing key from this subset of
+ *	the key/value map, if present.
+ *
+ * Results:
+ *	A new revised subset without a pair containing key.
+ *		OR
+ *	NULL, then hashPtr, listPtr have hash and KVList values
+ *	written to them for the single list left.
+ *
+ * Side effects:
+ *	If valuePtr is not NULL, write to *valuePtr the
+ *	previous value associated with key in subset
+ *	or NULL if the key was not there before.
+ *----------------------------------------------------------------------
+ */
 
+static
+ArrayMap AMRemove(
+    ArrayMap am,
+    size_t hash,
+    const TclHAMTKeyType *kt,
+    ClientData key,
+    const TclHAMTValueType *vt,
+    size_t *hashPtr,
+    KVList *listPtr,
+    ClientData *valuePtr)
+{
+    size_t tally;
+    int numList, numSubnode, loffset, soffset, i;
+    ArrayMap new, sub;
+    ClientData *src, *dst;
+    KVList l;
+
+    if ((am->mask & hash) != am->id) {
+	/* Hash indicates key is not in this subtree */
+
+	if (valuePtr) {
+	    *valuePtr = NULL;
+	}
+	return am;
+    }
+
+    /* Hash indicates key should be descendant of am */
+    numList = NumBits(am->kvMap);
+    numSubnode = NumBits(am->amMap);
+
+    tally = 1 << ((hash >> LSB(am->mask + 1)) & branchMask);
+    if (tally & am->kvMap) {
+
+	/* Hash is consistent with one of our KVList children... */
+	loffset = NumBits(am->kvMap & (tally - 1));
+
+	if (am->slot[loffset] != (ClientData)hash) {
+	    /* ...but does not actually match. Key not here. */
+
+	    if (valuePtr) {
+		*valuePtr = NULL;
+	    }
+	    return am;
+	}
+
+	/* Found the right KVList. Remove the pair from it. */
+	l = KVLRemove(am->slot[loffset + numList], kt, key, vt, valuePtr);
+
+	if (l == am->slot[loffset + numList]) {
+	    /* list unchanged -> ArrayMap unchanged. */
+	    return am;
+	}
+
+	/* Create new ArrayMap with removed KVList */
+
+	if (l != NULL) {
+	    /* Modified copy of am, list replaced. */
+	    new = ckalloc(AMN_SIZE(numList, numSubnode));
+	
+	    new->claim = 0;
+	    new->mask = am->mask;
+	    new->id = am->id;
+	    new->kvMap = am->kvMap;
+	    new->amMap = am->amMap;
+
+	    src = am->slot;
+	    dst = new->slot;
+	    /* Copy all hashes */
+	    for (i = 0; i < numList; i++) {
+		*dst++ = *src++;
+	    }
+
+	    /* Copy list (except one we're replacing) */
+	    for (i = 0; i < loffset; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+	    src++;
+	    KVLClaim(l);
+	    *dst++ = l;
+	    for (i = loffset + 1; i < numList; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+
+	    /* Copy all subnodes */
+	    for (i = 0; i < numSubnode; i++) {
+		AMClaim((ArrayMap) *src);
+		*dst++ = *src++;
+	    }
+	    return new;
+	}
+	if (numList + numSubnode > 2) {
+	    /* Modified copy of am, list removed. */
+	    new = ckalloc(AMN_SIZE(numList-1, numSubnode));
+	
+	    new->claim = 0;
+	    new->mask = am->mask;
+	    new->id = am->id;
+	    new->kvMap = am->kvMap & ~tally;
+	    new->amMap = am->amMap;
+
+	    src = am->slot;
+	    dst = new->slot;
+
+	    /* Copy hashes (except one we're deleting) */
+	    for (i = 0; i < loffset; i++) {
+		*dst++ = *src++;
+	    }
+	    src++;
+	    for (i = loffset + 1; i < numList; i++) {
+		*dst++ = *src++;
+	    }
+
+	    /* Copy list (except one we're deleting) */
+	    for (i = 0; i < loffset; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+	    src++;
+	    for (i = loffset + 1; i < numList; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+
+	    /* Copy all subnodes */
+	    for (i = 0; i < numSubnode; i++) {
+		AMClaim((ArrayMap) *src);
+		*dst++ = *src++;
+	    }
+	    return new;
+	}
+	if (numSubnode) {
+	    /* Removal will leave the subnode. */
+	    return am->slot[2];
+	} else {
+	    /* Removal will leave a list. */
+	    *hashPtr = (size_t) am->slot[1 - loffset];
+	    *listPtr = (KVList) am->slot[3 - loffset];
+	    return NULL;
+	}
+    }
+    if (tally & am->amMap) {
+	size_t subhash;
+
+	/* Hash is consistent with one of our subnode children... */
+	soffset = NumBits(am->amMap & (tally - 1));
+	sub = AMRemove((ArrayMap)am->slot[2*numList + soffset], hash,
+		kt, key, vt, &subhash, &l, valuePtr);
+
+	if (sub) {
+	    /* Modified copy of am, subnode replaced. */
+	    new = ckalloc(AMN_SIZE(numList, numSubnode));
+	
+	    new->claim = 0;
+	    new->mask = am->mask;
+	    new->id = am->id;
+	    new->kvMap = am->kvMap;
+	    new->amMap = am->amMap;
+
+	    src = am->slot;
+	    dst = new->slot;
+	    /* Copy all hashes */
+	    for (i = 0; i < numList; i++) {
+		*dst++ = *src++;
+	    }
+
+	    /* Copy all lists */
+	    for (i = 0; i < numList; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+
+	    /* Copy subnodes */
+	    for (i = 0; i < soffset; i++) {
+		AMClaim((ArrayMap) *src);
+		*dst++ = *src++;
+	    }
+	    src++;
+	    AMClaim(sub);
+	    *dst++ = sub;
+	    for (i = soffset + 1; i < numSubnode; i++) {
+		AMClaim((ArrayMap) *src);
+		*dst++ = *src++;
+	    }
+	    return new;
+	} else {
+	    /* Modified copy of am, + list - sub */
+
+	    loffset = NumBits(am->kvMap & (tally - 1));
+
+	    new = ckalloc(AMN_SIZE(numList+1, numSubnode-1));
+	    new->claim = 0;
+	    new->mask = am->mask;
+	    new->id = am->id;
+
+	    new->kvMap = am->kvMap | tally;
+	    new->amMap = am->amMap & ~tally;
+
+	    src = am->slot;
+	    dst = new->slot;
+	    /* Copy hashes (up to one we're inserting) */
+	    for (i = 0; i < loffset; i++) {
+		*dst++ = *src++;
+	    }
+	    *dst++ = (ClientData) subhash;
+	    for (i = loffset; i < numList; i++) {
+		*dst++ = *src++;
+	    }
+
+	    /* Copy list (except one we're deleting) */
+	    for (i = 0; i < loffset; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+	    KVLClaim(l);
+	    *dst++ = l;
+	    for (i = loffset; i < numList; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+
+	    /* Copy subnodes and add the new one */
+	    for (i = 0; i < soffset; i++) {
+		AMClaim((ArrayMap) *src);
+		*dst++ = *src++;
+	    }
+	    src++;
+	    for (i = soffset + 1; i < numSubnode; i++) {
+		AMClaim((ArrayMap) *src);
+		*dst++ = *src++;
+	    }
+
+	    return new;
+	}
+    }
+
+    /* Key is not here. */
+    if (valuePtr) {
+	*valuePtr = NULL;
+    }
+    return am;
+}
 
 /* Finally, the top level struct that puts all the pieces together */
 
@@ -1202,6 +1466,7 @@ TclHAMTRemove(
     ClientData *valuePtr)
 {
     HAMT *new, *hPtr = hamt;
+    size_t hash;
     KVList l;
     ArrayMap am;
 
@@ -1247,18 +1512,23 @@ TclHAMTRemove(
 	return hamt;
     }
 
-/* TODO TODO TODO *
- * Sort out case where AM drops to singleton. */
     /* Map has a tree. Remove from it. */
     new = ckalloc(sizeof(HAMT));
     new->claim = 0;
     new->kt = hPtr->kt;
     new->vt = hPtr->vt;
-    new->kvl = NULL;
-    am = AMRemove(hPtr->x.am,  ..., /* hashPtr */ NULL,
-	hPtr->kt, key, hPtr->vt, value, valuePtr);
-    AMClaim(am);
-    new->x.am = am;
+
+    am = AMRemove(hPtr->x.am, Hash(hPtr, key), hPtr->kt, key,
+	    hPtr->vt, &hash, &l, valuePtr);
+    if (am) {
+	new->kvl = NULL;
+	AMClaim(am);
+	new->x.am = am;
+    } else {
+	KVLClaim(l);
+	new->kvl = l;
+	new->x.hash = hash;
+    }
 	
     return new;
 }
