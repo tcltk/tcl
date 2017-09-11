@@ -16,7 +16,7 @@
  */
 
 /* wrapper function for mp_expt_d_ex() */
-int mp_expt_d (mp_int * a, mp_digit b, mp_int * c)
+int mp_expt_d (const mp_int * a, mp_digit b, mp_int * c)
 {
   return mp_expt_d_ex(a, b, c, 0);
 }
