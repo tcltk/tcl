@@ -17,7 +17,7 @@
 
 /* high level subtraction (handles signs) */
 int
-mp_sub (mp_int * a, mp_int * b, mp_int * c)
+mp_sub (const mp_int * a, const mp_int * b, mp_int * c)
 {
   int     sa, sb, res;
 

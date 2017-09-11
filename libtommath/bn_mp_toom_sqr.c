@@ -17,7 +17,7 @@
 
 /* squaring using Toom-Cook 3-way algorithm */
 int
-mp_toom_sqr(mp_int *a, mp_int *b)
+mp_toom_sqr(const mp_int *a, mp_int *b)
 {
     mp_int w0, w1, w2, w3, w4, tmp1, a0, a1, a2;
     int res, B;

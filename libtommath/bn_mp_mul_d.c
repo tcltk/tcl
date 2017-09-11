@@ -17,7 +17,7 @@
 
 /* multiply by a digit */
 int
-mp_mul_d (mp_int * a, mp_digit b, mp_int * c)
+mp_mul_d (const mp_int * a, mp_digit b, mp_int * c)
 {
   mp_digit u, *tmpa, *tmpc;
   mp_word  r;
