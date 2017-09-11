@@ -1779,6 +1779,9 @@ DupHydra(
 		fakeSrcObj.internalRep  = hydraPtr->client[i].internalRep;
 		fakeSrcObj.typePtr      = hydraPtr->client[i].typePtr;
 
+		/* DANGER? */
+		fakeCopyObj.bytes = copyPtr->bytes;
+		fakeCopyObj.length = copyPtr->length;
 		fakeSrcObj.typePtr->dupIntRepProc(&fakeSrcObj, &fakeCopyObj);
 
 		if ((fakeSrcObj.refCount != 10)
