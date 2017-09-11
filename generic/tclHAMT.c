@@ -343,10 +343,6 @@ typedef struct AMNode {
 /* Bits in a size_t. Use as our branching factor. Max children per node. */
 const int branchFactor = CHAR_BIT * sizeof(size_t);
 
-/* Mask used to carve out branch index. */
-const int branchMask = (branchFactor - 1);
-
-
 /*
  * The operations on an ArrayMap:
  *	AMClaim		Make a claim on a node.
@@ -481,9 +477,11 @@ ArrayMap AMNewBranch(
     size_t hash,
     KVList l)
 {
+    /* Mask used to carve out branch index. */
+    const int branchMask = (branchFactor - 1);
 
     /* Bits in a index selecting a child of a node */
-    int branchShift = TclMSB(branchFactor);
+    const int branchShift = TclMSB(branchFactor);
 
     /* The depth of the tree for the node we must create.
      * Determine by lowest bit where hashes differ. */
@@ -537,11 +535,14 @@ ArrayMap AMNewLeaf(
     size_t hash2,
     KVList l2)
 {
-    size_t *hashes;
-    KVList *lists;
+    /* Mask used to carve out branch index. */
+    const int branchMask = (branchFactor - 1);
 
     /* Bits in a index selecting a child of a node */
-    int branchShift = TclMSB(branchFactor);
+    const int branchShift = TclMSB(branchFactor);
+
+    size_t *hashes;
+    KVList *lists;
 
     /* The depth of the tree for the node we must create.
      * Determine by lowest bit where hashes differ. */
@@ -610,6 +611,9 @@ ClientData AMFetch(
     size_t hash,
     ClientData key)
 {
+    /* Mask used to carve out branch index. */
+    const int branchMask = (branchFactor - 1);
+
     size_t tally;
 
     if ((am->mask & hash) != am->id) {
@@ -668,6 +672,9 @@ ArrayMap AMInsert(
     ClientData value,
     ClientData *valuePtr)
 {
+    /* Mask used to carve out branch index. */
+    const int branchMask = (branchFactor - 1);
+
     size_t tally;
     int numList, numSubnode, loffset, soffset, i;
     ArrayMap new, sub;
@@ -925,6 +932,9 @@ ArrayMap AMRemove(
     KVList *listPtr,
     ClientData *valuePtr)
 {
+    /* Mask used to carve out branch index. */
+    const int branchMask = (branchFactor - 1);
+
     size_t tally;
     int numList, numSubnode, loffset, soffset, i;
     ArrayMap new, sub;
