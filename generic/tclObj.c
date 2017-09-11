@@ -1754,13 +1754,55 @@ DupHydra(
     Tcl_Obj *srcPtr,
     Tcl_Obj *copyPtr)
 {
-    if (!Tcl_HasStringRep(srcPtr)) {
-	UpdateStringOfHydra(srcPtr);
-    }
-    /* Ensure that duplicates of hydras are pure strings, since the most likely
-     * situation is that we're being duplicated in order to modify the value,
-     * which would invalidate the cached intreps */
-    return;
+    int i;
+    Hydra *hydraPtr;
+    Hydra *hydraCopyPtr;
+    Tcl_Obj fakeSrcObj, fakeCopyObj;
+
+    HydraGetIntRep(srcPtr, hydraPtr);
+
+    hydraCopyPtr = (Hydra *)Tcl_Alloc(sizeof(Hydra));
+    memset(hydraCopyPtr, 0, sizeof(Hydra));
+
+    for (i=0; i<MAX_HYDRA_CLIENTS; i++) {
+	HydraClient *clientPtr     = &hydraPtr->client[i];
+	HydraClient *clientCopyPtr = &hydraCopyPtr->client[i];
+
+	if (clientPtr->typePtr) {
+	    if (clientPtr->typePtr->dupIntRepProc) {
+
+		memset(&fakeSrcObj, 0, sizeof(fakeSrcObj));
+		fakeSrcObj.refCount = 10;
+		memset(&fakeCopyObj, 0, sizeof(fakeCopyObj));
+		fakeCopyObj.refCount = 10;
+
+		fakeSrcObj.internalRep  = hydraPtr->client[i].internalRep;
+		fakeSrcObj.typePtr      = hydraPtr->client[i].typePtr;
+
+		fakeSrcObj.typePtr->dupIntRepProc(&fakeSrcObj, &fakeCopyObj);
+
+		if ((fakeSrcObj.refCount != 10)
+			|| (fakeCopyObj.refCount != 10)) {
+		    /* 
+		     * This Tcl_ObjType does Dup in a way the hydra
+		     * system cannot handle.  Undo, and leave it out
+		     * of the copy.
+		     */
+		    fakeCopyObj.typePtr = NULL;
+		}
+
+		if (fakeCopyObj.typePtr) {
+		    clientCopyPtr->typePtr     = fakeCopyObj.typePtr;
+		    clientCopyPtr->internalRep = fakeCopyObj.internalRep;
+		}
+
+	    }
+	}
+   }
+
+   TclFreeIntRep(copyPtr);	/* Paranoia? */
+   copyPtr->internalRep.twoPtrValue.ptr1 = hydraCopyPtr;
+   copyPtr->typePtr = &tclHydraType;
 }
 
 static void
