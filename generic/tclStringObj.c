@@ -3461,7 +3461,7 @@ TclStringObjReverse(
 	}
 	to = objPtr->bytes;
 
-	if (numChars < numBytes) {
+	if ((numChars == (size_t)-1) || (numChars < numBytes)) {
 	    /*
 	     * Either numChars == -1 and we don't know how many chars are
 	     * represented by objPtr->bytes and we need Pass 1 just in case,
