@@ -20,7 +20,7 @@
 #endif
 
 /* this function is less generic than mp_n_root, simpler and faster */
-int mp_sqrt(mp_int *arg, mp_int *ret) 
+int mp_sqrt(const mp_int *arg, mp_int *ret)
 {
   int res;
   mp_int t1,t2;
