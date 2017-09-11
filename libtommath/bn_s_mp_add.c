@@ -17,9 +17,9 @@
 
 /* low level addition, based on HAC pp.594, Algorithm 14.7 */
 int
-s_mp_add (mp_int * a, mp_int * b, mp_int * c)
+s_mp_add (const mp_int * a, const mp_int * b, mp_int * c)
 {
-  mp_int *x;
+  const mp_int *x;
   int     olduse, res, min, max;
 
   /* find sizes, we let |a| <= |b| which means we have to sort
