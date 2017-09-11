@@ -6141,10 +6141,7 @@ TclNREvalObjEx(
 	    iPtr->varFramePtr = iPtr->rootFramePtr;
 	}
 	Tcl_IncrRefCount(objPtr);
-	ByteCodeGetIntRep(objPtr, &tclByteCodeType, codePtr);
-	if (codePtr == NULL) {
-	    codePtr = TclCompileObj(interp, objPtr, invoker, word);
-	}
+	codePtr = TclCompileObj(interp, objPtr, invoker, word);
 
 	TclNRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
 		objPtr, INT2PTR(allowExceptions), NULL);

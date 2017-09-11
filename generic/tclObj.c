@@ -1997,16 +1997,20 @@ Tcl_StoreIntRep(
 
     if (objPtr->typePtr == NULL) {
 	/* Special case - updating (or clearing) a pure string object */
-	TclFreeIntRep(objPtr);
-	objPtr->internalRep = *irPtr;
-	objPtr->typePtr = typePtr;
+	if (irPtr) {
+	    objPtr->internalRep = *irPtr;
+	    objPtr->typePtr = typePtr;
+	}
 	return;
     }
 
     if (objPtr->typePtr == typePtr) {
 	/* Special case - updating (or clearing) an objects existing intrep */
 	TclFreeIntRep(objPtr);
-	objPtr->internalRep = *irPtr;
+	if (irPtr) {
+	    objPtr->internalRep = *irPtr;
+	    objPtr->typePtr = typePtr;
+	}
 	return;
     }
 
