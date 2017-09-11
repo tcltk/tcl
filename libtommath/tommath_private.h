@@ -57,19 +57,19 @@ extern "C" {
 #endif
 
 /* lowlevel functions, do not call! */
-int s_mp_add(mp_int *a, mp_int *b, mp_int *c);
-int s_mp_sub(mp_int *a, mp_int *b, mp_int *c);
+int s_mp_add(const mp_int *a, const mp_int *b, mp_int *c);
+int s_mp_sub(const mp_int *a, const mp_int *b, mp_int *c);
 #define s_mp_mul(a, b, c) s_mp_mul_digs(a, b, c, (a)->used + (b)->used + 1)
-int fast_s_mp_mul_digs(mp_int *a, mp_int *b, mp_int *c, int digs);
-int s_mp_mul_digs(mp_int *a, mp_int *b, mp_int *c, int digs);
+int fast_s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs);
+int s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs);
 int fast_s_mp_mul_high_digs(mp_int *a, mp_int *b, mp_int *c, int digs);
 int s_mp_mul_high_digs(mp_int *a, mp_int *b, mp_int *c, int digs);
-int fast_s_mp_sqr(mp_int *a, mp_int *b);
-int s_mp_sqr(mp_int *a, mp_int *b);
-int mp_karatsuba_mul(mp_int *a, mp_int *b, mp_int *c);
-int mp_toom_mul(mp_int *a, mp_int *b, mp_int *c);
-int mp_karatsuba_sqr(mp_int *a, mp_int *b);
-int mp_toom_sqr(mp_int *a, mp_int *b);
+int fast_s_mp_sqr(const mp_int *a, mp_int *b);
+int s_mp_sqr(const mp_int *a, mp_int *b);
+int mp_karatsuba_mul(const mp_int *a, const mp_int *b, mp_int *c);
+int mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c);
+int mp_karatsuba_sqr(const mp_int *a, mp_int *b);
+int mp_toom_sqr(const mp_int *a, mp_int *b);
 int fast_mp_invmod(mp_int *a, mp_int *b, mp_int *c);
 int mp_invmod_slow (mp_int * a, mp_int * b, mp_int * c);
 int fast_mp_montgomery_reduce(mp_int *x, mp_int *n, mp_digit rho);
