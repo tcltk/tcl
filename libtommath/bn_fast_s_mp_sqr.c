@@ -25,7 +25,7 @@
 After that loop you do the squares and add them in.
 */
 
-int fast_s_mp_sqr (mp_int * a, mp_int * b)
+int fast_s_mp_sqr (const mp_int * a, mp_int * b)
 {
   int       olduse, res, pa, ix, iz;
   mp_digit   W[MP_WARRAY], *tmpx;

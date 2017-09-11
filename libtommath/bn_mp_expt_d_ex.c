@@ -16,7 +16,7 @@
  */
 
 /* calculate c = a**b  using a square-multiply algorithm */
-int mp_expt_d_ex (mp_int * a, mp_digit b, mp_int * c, int fast)
+int mp_expt_d_ex (const mp_int * a, mp_digit b, mp_int * c, int fast)
 {
   int     res;
   unsigned int x;
