@@ -288,13 +288,13 @@ int mp_rand(mp_int *a, int digits);
 
 /* ---> binary operations <--- */
 /* c = a XOR b  */
-int mp_xor(mp_int *a, mp_int *b, mp_int *c);
+int mp_xor(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* c = a OR b */
-int mp_or(mp_int *a, mp_int *b, mp_int *c);
+int mp_or(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* c = a AND b */
-int mp_and(mp_int *a, mp_int *b, mp_int *c);
+int mp_and(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* ---> Basic arithmetic <--- */
 
@@ -302,7 +302,7 @@ int mp_and(mp_int *a, mp_int *b, mp_int *c);
 int mp_neg(const mp_int *a, mp_int *b);
 
 /* b = |a| */
-int mp_abs(mp_int *a, mp_int *b);
+int mp_abs(const mp_int *a, mp_int *b);
 
 /* compare a to b */
 int mp_cmp(const mp_int *a, const mp_int *b);
@@ -311,22 +311,22 @@ int mp_cmp(const mp_int *a, const mp_int *b);
 int mp_cmp_mag(const mp_int *a, const mp_int *b);
 
 /* c = a + b */
-int mp_add(mp_int *a, mp_int *b, mp_int *c);
+int mp_add(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* c = a - b */
-int mp_sub(mp_int *a, mp_int *b, mp_int *c);
+int mp_sub(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* c = a * b */
-int mp_mul(mp_int *a, mp_int *b, mp_int *c);
+int mp_mul(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* b = a*a  */
-int mp_sqr(mp_int *a, mp_int *b);
+int mp_sqr(const mp_int *a, mp_int *b);
 
 /* a/b => cb + d == a */
-int mp_div(mp_int *a, mp_int *b, mp_int *c, mp_int *d);
+int mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d);
 
 /* c = a mod b, 0 <= c < b  */
-int mp_mod(mp_int *a, mp_int *b, mp_int *c);
+int mp_mod(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* ---> single digit functions <--- */
 
@@ -334,26 +334,26 @@ int mp_mod(mp_int *a, mp_int *b, mp_int *c);
 int mp_cmp_d(const mp_int *a, mp_digit b);
 
 /* c = a + b */
-int mp_add_d(mp_int *a, mp_digit b, mp_int *c);
+int mp_add_d(const mp_int *a, const mp_digit b, mp_int *c);
 
 /* c = a - b */
 int mp_sub_d(mp_int *a, mp_digit b, mp_int *c);
 
 /* c = a * b */
-int mp_mul_d(mp_int *a, mp_digit b, mp_int *c);
+int mp_mul_d(const mp_int *a, mp_digit b, mp_int *c);
 
 /* a/b => cb + d == a */
-int mp_div_d(mp_int *a, mp_digit b, mp_int *c, mp_digit *d);
+int mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d);
 
 /* a/3 => 3c + d == a */
-int mp_div_3(mp_int *a, mp_int *c, mp_digit *d);
+int mp_div_3(const mp_int *a, mp_int *c, mp_digit *d);
 
 /* c = a**b */
-int mp_expt_d(mp_int *a, mp_digit b, mp_int *c);
-int mp_expt_d_ex (mp_int * a, mp_digit b, mp_int * c, int fast);
+int mp_expt_d(const mp_int *a, const mp_digit b, mp_int *c);
+int mp_expt_d_ex (const mp_int * a, const mp_digit b, mp_int * c, int fast);
 
 /* c = a mod b, 0 <= c < b  */
-int mp_mod_d(mp_int *a, mp_digit b, mp_digit *c);
+int mp_mod_d(const mp_int *a, mp_digit b, mp_digit *c);
 
 /* ---> number theory <--- */
 
@@ -389,7 +389,7 @@ int mp_n_root(mp_int *a, mp_digit b, mp_int *c);
 int mp_n_root_ex (mp_int * a, mp_digit b, mp_int * c, int fast);
 
 /* special sqrt algo */
-int mp_sqrt(mp_int *arg, mp_int *ret);
+int mp_sqrt(const mp_int *arg, mp_int *ret);
 
 /* special sqrt (mod prime) */
 int mp_sqrtmod_prime(mp_int *arg, mp_int *prime, mp_int *ret);
