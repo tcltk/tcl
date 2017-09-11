@@ -206,6 +206,10 @@ static Tcl_ThreadDataKey pendingObjDataKey;
  * Prototypes for functions defined later in this file:
  */
 
+static void		FreeHydra(Tcl_Obj *objPtr);
+static void		DupHydra(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
+static void		UpdateStringOfHydra(Tcl_Obj *objPtr);
+static int		SetHydraFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		ParseBoolean(Tcl_Obj *objPtr);
 static int		SetDoubleFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		SetIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -242,6 +246,26 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * tclStringObj.c, tclListObj.c, tclByteCode.c for other type manager
  * implementations.
  */
+
+#define MAX_HYDRA_CLIENTS	5
+static const Tcl_ObjType tclHydraType = {
+    "hydra",			/* name */
+    FreeHydra,			/* freeIntRepProc */
+    DupHydra,			/* dupIntRepProc */
+    UpdateStringOfHydra,	/* updateStringProc */
+    SetHydraFromAny		/* setFromAnyProc */
+};
+
+#define HydraGetIntRep(objPtr, hydraPtr) \
+    (hydraPtr) = (Hydra *)((objPtr)->internalRep.twoPtrValue.ptr1)
+
+typedef struct HydraClient {
+    const Tcl_ObjType	*typePtr;
+    Tcl_ObjIntRep	internalRep;
+} HydraClient;
+typedef struct Hydra {
+    HydraClient		client[MAX_HYDRA_CLIENTS];
+} Hydra;
 
 static const Tcl_ObjType oldBooleanType = {
     "boolean",			/* name */
@@ -1694,6 +1718,122 @@ Tcl_GetStringFromObj(
     return objPtr->bytes;
 }
 
+static void
+FreeHydra(
+    Tcl_Obj *objPtr)
+{
+    int i;
+    Hydra *hydraPtr;
+    Tcl_Obj fakeObj;
+
+    memset(&fakeObj, 0, sizeof(fakeObj));
+    HydraGetIntRep(objPtr, hydraPtr);
+
+    for (i=0; i<MAX_HYDRA_CLIENTS; i++) {
+	if (hydraPtr->client[i].typePtr) {
+	    fakeObj.internalRep = hydraPtr->client[i].internalRep;
+	    fakeObj.typePtr = hydraPtr->client[i].typePtr;
+	    Tcl_FreeIntRep(&fakeObj);
+	    if (fakeObj.refCount > 0) {
+		Tcl_Panic("Invalid reference taken to fakeObj while "
+			"freeing intrep for %s",
+			hydraPtr->client[i].typePtr->name);
+	    }
+
+	    hydraPtr->client[i].typePtr = NULL;
+	    memset(&hydraPtr->client[i].internalRep, 0, sizeof(hydraPtr->client[i].internalRep));
+	}
+    }
+
+    Tcl_Free((char *)hydraPtr);
+    hydraPtr = objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+}
+
+static void
+DupHydra(
+    Tcl_Obj *srcPtr,
+    Tcl_Obj *copyPtr)
+{
+    if (!Tcl_HasStringRep(srcPtr)) {
+	UpdateStringOfHydra(srcPtr);
+    }
+    /* Ensure that duplicates of hydras are pure strings, since the most likely
+     * situation is that we're being duplicated in order to modify the value,
+     * which would invalidate the cached intreps */
+    return;
+}
+
+static void
+UpdateStringOfHydra(
+    Tcl_Obj *objPtr)
+{
+    int i;
+    Hydra *hydraPtr;
+    Tcl_Obj fakeObj;
+
+    memset(&fakeObj, 0, sizeof(fakeObj));
+
+    HydraGetIntRep(objPtr, hydraPtr);
+
+    for (i=0; i<MAX_HYDRA_CLIENTS; i++) {
+	HydraClient *clientPtr = &hydraPtr->client[i];
+
+	if (clientPtr->typePtr) {
+	    if (clientPtr->typePtr->updateStringProc) {
+		fakeObj.internalRep = hydraPtr->client[i].internalRep;
+		fakeObj.typePtr = hydraPtr->client[i].typePtr;
+		/* Don't know if this is necessary */
+		fakeObj.bytes = NULL;
+		fakeObj.length = 0;
+
+		fakeObj.typePtr->updateStringProc(&fakeObj);
+
+		if (fakeObj.refCount > 0) {
+		    Tcl_Panic("Invalid reference taken to fakeObj while "
+			    "updating string rep using %s",
+			    hydraPtr->client[i].typePtr->name);
+		}
+
+		if (TclHasStringRep(&fakeObj)) {  /* Not sure about this */
+		    objPtr->bytes = fakeObj.bytes;
+		    objPtr->length = fakeObj.length;
+		    fakeObj.bytes = NULL;
+		    fakeObj.length = 0;
+		    return;
+		}
+	    }
+	}
+    }
+
+    /* TODO: what? */
+    Tcl_Panic("Could not update string rep of hydra: %s",
+	    "No clients capable of regenerating string rep found");
+}
+
+static int
+SetHydraFromAny(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr)
+{
+    Hydra *hydraPtr;
+
+    if (objPtr->typePtr == &tclHydraType) {
+	return TCL_OK;
+    }
+
+    hydraPtr = (Hydra *)Tcl_Alloc(sizeof(Hydra));
+    memset(hydraPtr, 0, sizeof(Hydra));
+
+    hydraPtr->client[0].typePtr = objPtr->typePtr;
+    hydraPtr->client[0].internalRep = objPtr->internalRep;
+
+    objPtr->internalRep.twoPtrValue.ptr1 = hydraPtr;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    objPtr->typePtr = &tclHydraType;
+
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1852,16 +1992,104 @@ Tcl_StoreIntRep(
     const Tcl_ObjType *typePtr,	/* New type for the object */
     const Tcl_ObjIntRep *irPtr)	/* New IntRep for the object */
 {
-    /* Clear out any existing IntRep ( "shimmer" ) */
-    TclFreeIntRep(objPtr);
+    int i;
+    Hydra *hydraPtr;
 
-    /* When irPtr == NULL, just leave objPtr with no IntRep for typePtr */
-    if (irPtr) {
-	/* Copy the new IntRep into place */
+    if (objPtr->typePtr == NULL) {
+	/* Special case - updating (or clearing) a pure string object */
+	TclFreeIntRep(objPtr);
 	objPtr->internalRep = *irPtr;
-
-	/* Set the type to match */
 	objPtr->typePtr = typePtr;
+	return;
+    }
+
+    if (objPtr->typePtr == typePtr) {
+	/* Special case - updating (or clearing) an objects existing intrep */
+	TclFreeIntRep(objPtr);
+	objPtr->internalRep = *irPtr;
+	return;
+    }
+
+    if (objPtr->typePtr != &tclHydraType) {
+	SetHydraFromAny(NULL, objPtr);
+    }
+
+    HydraGetIntRep(objPtr, hydraPtr);
+
+    if (irPtr) {
+	int firstAvailableSlot = -1;
+
+	/* If we have an existing client with a matching type, we need to
+	 * update that intrep even if there is an open slot before it */
+	for (i=0; i<MAX_HYDRA_CLIENTS; i++) {
+	    HydraClient *clientPtr = &hydraPtr->client[i];
+
+	    if (clientPtr->typePtr == typePtr) {
+		Tcl_Obj fakeObj;
+
+		/* Free the matching client intrep, using a fake obj */
+		memset(&fakeObj, 0, sizeof(fakeObj));
+		fakeObj.typePtr = typePtr;
+		fakeObj.internalRep = clientPtr->internalRep;
+		//Tcl_InvalidateStringRep(&fakeObj);
+		TclFreeIntRep(&fakeObj);
+
+		if (fakeObj.refCount > 0) {
+		    Tcl_Panic("Invalid reference taken to fakeObj while "
+			    "freeing hydra client interp for %s",
+			    typePtr->name);
+		}
+
+		/* Update the intrep */
+		clientPtr->internalRep = *irPtr;
+		return;
+	    } else if (firstAvailableSlot == -1 && clientPtr->typePtr == NULL) {
+		/* Record the first available slot in case we need to add this
+		 * intrep there */
+		firstAvailableSlot = i;
+	    }
+	}
+
+	if (firstAvailableSlot > -1) {
+	    HydraClient *clientPtr = &hydraPtr->client[firstAvailableSlot];
+
+	    if (clientPtr->typePtr == NULL) {
+		/* Found available slot, put this intrep there */
+		clientPtr->internalRep = *irPtr;
+		clientPtr->typePtr = typePtr;
+		return;
+	    }
+	}
+
+	/* No available client slots.  Upconvert to linked list? */
+	Tcl_Panic("Unable to add client intrep for %s to hydra: "
+		"No slots available", typePtr->name);
+    } else {
+	for (i=0; i<MAX_HYDRA_CLIENTS; i++) {
+	    HydraClient *clientPtr = &hydraPtr->client[i];
+
+	    if (clientPtr->typePtr == typePtr) {
+		Tcl_Obj fakeObj;
+
+		/* Free the matching client intrep, using a fake obj */
+		memset(&fakeObj, 0, sizeof(fakeObj));
+		fakeObj.typePtr = typePtr;
+		fakeObj.internalRep = clientPtr->internalRep;
+		//Tcl_InvalidateStringRep(&fakeObj);
+		TclFreeIntRep(&fakeObj);
+
+		if (fakeObj.refCount > 0) {
+		    Tcl_Panic("Invalid reference taken to fakeObj while "
+			    "freeing hydra client interp for %s",
+			    typePtr->name);
+		}
+
+		/* Mark the client slot as available */
+		clientPtr->typePtr = NULL;
+		memset(&clientPtr->internalRep, 0, sizeof(clientPtr->internalRep));
+		return;
+	    }
+	}
     }
 }
 
@@ -1878,8 +2106,7 @@ Tcl_StoreIntRep(
  *	NULL if no such internal representation exists.
  *
  * Side effects:
- *	Calls the freeIntRepProc of the current Tcl_ObjType, if any.
- *	Sets the internalRep and typePtr fields to the submitted values.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -1889,13 +2116,27 @@ Tcl_FetchIntRep(
     Tcl_Obj *objPtr,		/* Object to fetch from. */
     const Tcl_ObjType *typePtr)	/* Requested type */
 {
-    /* If objPtr type doesn't match request, nothing can be fetched */
-    if (objPtr->typePtr != typePtr) {
-	return NULL;
+    if (objPtr->typePtr == typePtr) {
+	/* Type match! objPtr IntRep is the one sought. */
+	return &(objPtr->internalRep);
     }
 
-    /* Type match! objPtr IntRep is the one sought. */
-    return &(objPtr->internalRep);
+    if (objPtr->typePtr == &tclHydraType) {
+	int i;
+	Hydra *hydraPtr;
+
+	HydraGetIntRep(objPtr, hydraPtr);
+
+	for (i=0; i<MAX_HYDRA_CLIENTS; i++) {
+	    HydraClient *clientPtr = &hydraPtr->client[i];
+
+	    if (clientPtr->typePtr == typePtr) {
+		return &(clientPtr->internalRep);
+	    }
+	}
+    }
+
+    return NULL;
 }
 
 /*
@@ -4692,6 +4933,32 @@ Tcl_RepresentationCmd(
 	Tcl_AppendToObj(descObj, "\"", -1);
     } else {
 	Tcl_AppendToObj(descObj, ", no string representation", -1);
+    }
+
+    if (objv[1]->typePtr == &tclHydraType) {
+	int i;
+	Hydra *hydraPtr;
+
+	Tcl_AppendToObj(descObj, ", with client representations:", -1);
+	HydraGetIntRep(objv[1], hydraPtr);
+	for (i=0; i<MAX_HYDRA_CLIENTS; i++) {
+	    HydraClient *clientPtr = &hydraPtr->client[i];
+
+	    if (clientPtr->typePtr == NULL) {
+		continue;
+	    }
+
+	    Tcl_AppendPrintfToObj(descObj, "\n\t%d: %s", i, clientPtr->typePtr->name);
+
+	    if (clientPtr->typePtr == &tclDoubleType) {
+		Tcl_AppendPrintfToObj(descObj, ", internal representation %g",
+			clientPtr->internalRep.doubleValue);
+	    } else {
+		Tcl_AppendPrintfToObj(descObj, ", internal representation %p:%p",
+			(void *) clientPtr->internalRep.twoPtrValue.ptr1,
+			(void *) clientPtr->internalRep.twoPtrValue.ptr2);
+	    }
+	}
     }
 
     Tcl_SetObjResult(interp, descObj);
