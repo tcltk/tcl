@@ -909,7 +909,11 @@ InvalidateDictChain(
     assert( dict != NULL);
 
     do {
+	dict->refCount++;
 	TclInvalidateStringRep(dictObj);
+	Tcl_FreeIntRep(dictObj);
+	DictSetIntRep(dictObj, dict);
+
 	dict->epoch++;
 	dictObj = dict->chain;
 	if (dictObj == NULL) {
