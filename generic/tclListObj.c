@@ -711,6 +711,10 @@ Tcl_ListObjAppendElement(
 	listRepPtr = newPtr;
     }
     ListResetIntRep(listPtr, listRepPtr);
+    listRepPtr->refCount++;
+    TclFreeIntRep(listPtr);
+    ListSetIntRep(listPtr, listRepPtr);
+    listRepPtr->refCount--;
 
     /*
      * Add objPtr to the end of listPtr's array of element pointers. Increment
