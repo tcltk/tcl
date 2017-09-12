@@ -1127,9 +1127,14 @@ Tcl_ListObjReplace(
     listRepPtr->elemCount = numRequired;
 
     /*
-     * Invalidate and free any old string representation since it no longer
-     * reflects the list's internal representation.
+     * Invalidate and free any old representations that may not agree
+     * with the revised list's internal representation.
      */
+
+    listRepPtr->refCount++;
+    TclFreeIntRep(listPtr);
+    ListSetIntRep(listPtr, listRepPtr);
+    listRepPtr->refCount--;
 
     TclInvalidateStringRep(listPtr);
     return TCL_OK;
