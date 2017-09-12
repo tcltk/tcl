@@ -911,7 +911,7 @@ InvalidateDictChain(
     do {
 	dict->refCount++;
 	TclInvalidateStringRep(dictObj);
-	Tcl_FreeIntRep(dictObj);
+	TclFreeIntRep(dictObj);
 	DictSetIntRep(dictObj, dict);
 
 	dict->epoch++;
@@ -965,6 +965,9 @@ Tcl_DictObjPut(
 
     TclInvalidateStringRep(dictPtr);
     hPtr = CreateChainEntry(dict, keyPtr, &isNew);
+    dict->refCount++;
+    TclFreeIntRep(dictPtr)
+    DictSetIntRep(dictPtr, dict);
     Tcl_IncrRefCount(valuePtr);
     if (!isNew) {
 	Tcl_Obj *oldValuePtr = Tcl_GetHashValue(hPtr);
