@@ -1594,23 +1594,32 @@ TclLsetFlat(
 
     while (chainPtr) {
 	Tcl_Obj *objPtr = chainPtr;
-
-	if (result == TCL_OK) {
-	    /*
-	     * We're going to store valuePtr, so spoil string reps of all
-	     * containing lists.
-	     */
-
-	    TclInvalidateStringRep(objPtr);
-	}
+	List *listRepPtr;
 
 	/*
 	 * Clear away our intrep surgery mess.
 	 */
 
 	irPtr = Tcl_FetchIntRep(objPtr, &tclListType);
+	listRepPtr = irPtr->twoPtrValue.ptr1;
 	chainPtr = irPtr->twoPtrValue.ptr2;
-	irPtr->twoPtrValue.ptr2 = NULL;
+	
+	if (result == TCL_OK) {
+
+	    /*
+	     * We're going to store valuePtr, so spoil string reps of all
+	     * containing lists.
+	     */
+
+	    listRepPtr->refCount++;
+	    TclFreeIntRep(objPtr);
+	    ListSetIntRep(objPtr, listRepPtr);
+	    listRepPtr->refCount--;
+
+	    TclInvalidateStringRep(objPtr);
+	} else {
+	    irPtr->twoPtrValue.ptr2 = NULL;
+	}
     }
 
     if (result != TCL_OK) {
@@ -1637,8 +1646,8 @@ TclLsetFlat(
 	Tcl_ListObjAppendElement(NULL, subListPtr, valuePtr);
     } else {
 	TclListObjSetElement(NULL, subListPtr, index, valuePtr);
+	TclInvalidateStringRep(subListPtr);
     }
-    TclInvalidateStringRep(subListPtr);
     Tcl_IncrRefCount(retValuePtr);
     return retValuePtr;
 }
@@ -1780,6 +1789,18 @@ TclListObjSetElement(
      */
 
     elemPtrs[index] = valuePtr;
+
+    /*
+     * Invalidate outdated intreps.
+     */
+
+    ListGetIntRep(listPtr, listRepPtr);
+    listRepPtr->refCount++;
+    TclFreeIntRep(listPtr);
+    ListSetIntRep(listPtr, listRepPtr);
+    listRepPtr->refCount--;
+
+    TclInvalidateStringRep(listPtr);
 
     return TCL_OK;
 }
