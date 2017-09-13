@@ -75,6 +75,7 @@
 #define mp_expt_d TclBN_mp_expt_d
 #define mp_expt_d_ex TclBN_mp_expt_d_ex
 #define mp_get_int TclBN_mp_get_int
+#define mp_get_long TclBN_mp_get_long
 #define mp_get_long_long TclBN_mp_get_long_long
 #define mp_grow TclBN_mp_grow
 #define mp_init TclBN_mp_init
@@ -100,6 +101,7 @@
 #define mp_s_rmap TclBNMpSRmap
 #define mp_set TclBN_mp_set
 #define mp_set_int TclBN_mp_set_int
+#define mp_set_long TclBN_mp_set_long
 #define mp_set_long_long TclBN_mp_set_long_long
 #define mp_shrink TclBN_mp_shrink
 #define mp_sqr TclBN_mp_sqr
@@ -298,12 +300,15 @@ EXTERN int		TclBN_mp_set_int(mp_int *a, unsigned long i);
 /* 63 */
 EXTERN int		TclBN_mp_cnt_lsb(const mp_int *a);
 /* 64 */
-EXTERN void		TclBNInitBignumFromLong(mp_int *bignum, long initVal);
+TCL_DEPRECATED("Use mp_init() + mp_set_long() or mp_set_long_long()")
+void			TclBNInitBignumFromLong(mp_int *bignum, long initVal);
 /* 65 */
-EXTERN void		TclBNInitBignumFromWideInt(mp_int *bignum,
+TCL_DEPRECATED("Use mp_init() + mp_set_long_long()")
+void			TclBNInitBignumFromWideInt(mp_int *bignum,
 				Tcl_WideInt initVal);
 /* 66 */
-EXTERN void		TclBNInitBignumFromWideUInt(mp_int *bignum,
+TCL_DEPRECATED("Use mp_init() + mp_set_long_long()")
+void			TclBNInitBignumFromWideUInt(mp_int *bignum,
 				Tcl_WideUInt initVal);
 /* 67 */
 EXTERN int		TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b,
@@ -381,9 +386,9 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_init_set_int) (mp_int *a, unsigned long i); /* 61 */
     int (*tclBN_mp_set_int) (mp_int *a, unsigned long i); /* 62 */
     int (*tclBN_mp_cnt_lsb) (const mp_int *a); /* 63 */
-    void (*tclBNInitBignumFromLong) (mp_int *bignum, long initVal); /* 64 */
-    void (*tclBNInitBignumFromWideInt) (mp_int *bignum, Tcl_WideInt initVal); /* 65 */
-    void (*tclBNInitBignumFromWideUInt) (mp_int *bignum, Tcl_WideUInt initVal); /* 66 */
+    TCL_DEPRECATED_API("Use mp_init() + mp_set_long() or mp_set_long_long()") void (*tclBNInitBignumFromLong) (mp_int *bignum, long initVal); /* 64 */
+    TCL_DEPRECATED_API("Use mp_init() + mp_set_long_long()") void (*tclBNInitBignumFromWideInt) (mp_int *bignum, Tcl_WideInt initVal); /* 65 */
+    TCL_DEPRECATED_API("Use mp_init() + mp_set_long_long()") void (*tclBNInitBignumFromWideUInt) (mp_int *bignum, Tcl_WideUInt initVal); /* 66 */
     int (*tclBN_mp_expt_d_ex) (const mp_int *a, mp_digit b, mp_int *c, int fast); /* 67 */
     int (*tclBN_mp_set_long_long) (mp_int *a, Tcl_WideUInt i); /* 68 */
     Tcl_WideUInt (*tclBN_mp_get_long_long) (const mp_int *a); /* 69 */
