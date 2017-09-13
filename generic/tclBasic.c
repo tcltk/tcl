@@ -7460,7 +7460,7 @@ ExprAbsFunc(
 	    }
 	    goto unChanged;
 	} else if (l == LONG_MIN) {
-	    TclBNInitBignumFromLong(&big, l);
+	    TclInitBignumFromLong(&big, l);
 	    goto tooLarge;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewLongObj(-l));
@@ -7495,7 +7495,7 @@ ExprAbsFunc(
 	    goto unChanged;
 	}
 	if (w == LLONG_MIN) {
-	    TclBNInitBignumFromWideInt(&big, w);
+	    TclInitBignumFromWideInt(&big, w);
 	    goto tooLarge;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-w));
