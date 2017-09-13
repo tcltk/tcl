@@ -69,6 +69,9 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define TclWinGetSockOpt 0
 #   define TclWinSetSockOpt 0
 #   define TclWinNToHS 0
+#   define TclBNInitBignumFromWideUInt 0
+#   define TclBNInitBignumFromWideInt 0
+#   define TclBNInitBignumFromLong 0
 #else
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
@@ -103,6 +106,9 @@ static unsigned short TclWinNToHS(unsigned short ns) {
 	return ntohs(ns);
 }
 #endif
+#   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
+#   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
+#   define TclBNInitBignumFromLong TclInitBignumFromLong
 #endif /* TCL_NO_DEPRECATED */
 
 #ifdef _WIN32
