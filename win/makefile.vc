@@ -385,6 +385,7 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_expt_d.obj \
 	$(TMP_DIR)\bn_mp_expt_d_ex.obj \
 	$(TMP_DIR)\bn_mp_get_int.obj \
+	$(TMP_DIR)\bn_mp_get_long.obj \
 	$(TMP_DIR)\bn_mp_get_long_long.obj \
 	$(TMP_DIR)\bn_mp_grow.obj \
 	$(TMP_DIR)\bn_mp_init.obj \
@@ -410,6 +411,7 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_rshd.obj \
 	$(TMP_DIR)\bn_mp_set.obj \
 	$(TMP_DIR)\bn_mp_set_int.obj \
+	$(TMP_DIR)\bn_mp_set_long.obj \
 	$(TMP_DIR)\bn_mp_set_long_long.obj \
 	$(TMP_DIR)\bn_mp_shrink.obj \
 	$(TMP_DIR)\bn_mp_sqr.obj \
