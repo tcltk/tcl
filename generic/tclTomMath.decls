@@ -221,17 +221,18 @@ declare 63 {
     int TclBN_mp_cnt_lsb(const mp_int *a)
 }
 
-# Formerly internal API to allow initialisation of bignums without knowing the
-# typedefs of how a bignum works internally.
-declare 64 {
-    void TclBNInitBignumFromLong(mp_int *bignum, long initVal)
-}
-declare 65 {
-    void TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
-}
-declare 66 {
-    void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
-}
+# Removed in Tcl 9.0
+#declare 64 {
+#    void TclBNInitBignumFromLong(mp_int *bignum, long initVal)
+#}
+# Removed in Tcl 9.0
+#declare 65 {
+#    void TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
+#}
+# Removed in Tcl 9.0
+#declare 66 {
+#    void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
+#}
 
 # Added in libtommath 1.0
 declare 67 {
@@ -243,6 +244,12 @@ declare 68 {
 }
 declare 69 {
     Tcl_WideUInt TclBN_mp_get_long_long(const mp_int *a)
+}
+declare 70 {
+    int TclBN_mp_set_long(mp_int *a, unsigned long i)
+}
+declare 71 {
+    unsigned long TclBN_mp_get_long(const mp_int *a)
 }
 
 # Local Variables:

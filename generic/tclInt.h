@@ -2691,6 +2691,10 @@ MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
 
 MODULE_SCOPE char	tclEmptyString;
 
+MODULE_SCOPE void	TclInitBignumFromLong(mp_int *, long);
+MODULE_SCOPE void	TclInitBignumFromWideInt(mp_int *, Tcl_WideInt);
+MODULE_SCOPE void	TclInitBignumFromWideUInt(mp_int *, Tcl_WideUInt);
+
 /*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside world,

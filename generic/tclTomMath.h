@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 /* detect 64-bit mode if possible */
-#if defined(NEVER)
+#if defined(NEVER)  /* 128-bit ints fail in too many places */
    #if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
       #define MP_64BIT
    #endif
