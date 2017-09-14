@@ -16,10 +16,10 @@
  * Prototypes for functions defined later in this file:
  */
 
-static void		DupHamtInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
-static void		FreeHamtInternalRep(Tcl_Obj *objPtr);
-static int		SetHamtFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static void		UpdateStringOfHamt(Tcl_Obj *objPtr);
+static Tcl_DupInternalRepProc	DupHamtInternalRep;
+static Tcl_FreeInternalRepProc	FreeHamtInternalRep;
+static Tcl_SetFromAnyProc	SetHamtFromAny;
+static Tcl_UpdateStringProc	UpdateStringOfHamt;
 
 /*
  * Accessor macro for converting between a Tcl_Obj* and a Dict. Note that this
@@ -137,6 +137,9 @@ SetHamtFromAny(
 	return TCL_ERROR;
     }
 
+    /* Iterative insertion */
+    /* TODO: When transients are available, use them. */
+    /* TODO: Consider copy by merges instead? */
     old = TclHAMTCreate( keyType, valType);
     TclHAMTClaim(old);
     for (i = 0; i < objc, i += 2) {
@@ -151,6 +154,112 @@ SetHamtFromAny(
     objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &hamtType;
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateStringOfHamt --
+ *
+ *	Update the string representation for a hamt object. 
+ *
+ * Results:
+ *	None.
+ *----------------------------------------------------------------------
+ */
+
+static void
+UpdateStringOfHamt(
+    Tcl_Obj *objPtr)
+{
+    /* Need to iterate over key/value pairs in a HAMT */
+
+
+
+}
+
+#define LOCAL_SIZE 64
+    char localFlags[LOCAL_SIZE], *flagPtr = NULL;
+    Dict *dict = DICT(dictPtr);
+    ChainEntry *cPtr;
+    Tcl_Obj *keyPtr, *valuePtr;
+    size_t i, length, bytesNeeded = 0;
+    const char *elem;
+    char *dst;
+
+    /*
+     * This field is the most useful one in the whole hash structure, and it
+     * is not exposed by any API function...
+     */
+
+    size_t numElems = dict->table.numEntries * 2;
+
+    /* Handle empty list case first, simplifies what follows */
+    if (numElems == 0) {
+	dictPtr->bytes = &tclEmptyString;
+	dictPtr->length = 0;
+	return;
+    }
+
+    /*
+     * Pass 1: estimate space, gather flags.
+     */
+
+    if (numElems <= LOCAL_SIZE) {
+	flagPtr = localFlags;
+    } else {
+	flagPtr = ckalloc(numElems);
+    }
+    for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
+	/*
+	 * Assume that cPtr is never NULL since we know the number of array
+	 * elements already.
+	 */
+
+	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
+	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
+	elem = TclGetString(keyPtr);
+	length = keyPtr->length;
+	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
+	if (bytesNeeded > INT_MAX) {
+	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+	}
+
+	flagPtr[i+1] = TCL_DONT_QUOTE_HASH;
+	valuePtr = Tcl_GetHashValue(&cPtr->entry);
+	elem = TclGetString(valuePtr);
+	length = valuePtr->length;
+	bytesNeeded += TclScanElement(elem, length, flagPtr+i+1);
+    }
+    bytesNeeded += numElems;
+
+    /*
+     * Pass 2: copy into string rep buffer.
+     */
+
+    dictPtr->length = bytesNeeded - 1;
+    dictPtr->bytes = ckalloc(bytesNeeded);
+    dst = dictPtr->bytes;
+    for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
+	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
+	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
+	elem = TclGetString(keyPtr);
+	length = keyPtr->length;
+	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
+	*dst++ = ' ';
+
+	flagPtr[i+1] |= TCL_DONT_QUOTE_HASH;
+	valuePtr = Tcl_GetHashValue(&cPtr->entry);
+	elem = TclGetString(valuePtr);
+	length = valuePtr->length;
+	dst += TclConvertElement(elem, length, dst, flagPtr[i+1]);
+	*dst++ = ' ';
+    }
+    dictPtr->bytes[dictPtr->length] = '\0';
+
+    if (flagPtr != localFlags) {
+	ckfree(flagPtr);
+    }
 }
 
 
