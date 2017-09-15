@@ -16,7 +16,7 @@
  */
 
 /* stores a bignum as a ASCII string in a given radix (2..64) */
-int mp_toradix (mp_int * a, char *str, int radix)
+int mp_toradix (const mp_int * a, char *str, int radix)
 {
   int     res, digs;
   mp_int  t;
