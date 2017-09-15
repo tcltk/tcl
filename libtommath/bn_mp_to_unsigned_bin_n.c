@@ -16,7 +16,7 @@
  */
 
 /* store in unsigned [big endian] format */
-int mp_to_unsigned_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen)
+int mp_to_unsigned_bin_n (const mp_int * a, unsigned char *b, unsigned long *outlen)
 {
    if (*outlen < (unsigned long)mp_unsigned_bin_size(a)) {
       return MP_VAL;

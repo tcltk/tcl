@@ -16,7 +16,7 @@
  */
 
 #ifndef LTM_NO_FILE
-int mp_fwrite(mp_int *a, int radix, FILE *stream)
+int mp_fwrite(const mp_int *a, int radix, FILE *stream)
 {
    char *buf;
    int err, len, x;
