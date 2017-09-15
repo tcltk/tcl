@@ -16,7 +16,7 @@
  */
 
 /* store in unsigned [big endian] format */
-int mp_to_unsigned_bin (mp_int * a, unsigned char *b)
+int mp_to_unsigned_bin (const mp_int * a, unsigned char *b)
 {
   int     x, res;
   mp_int  t;

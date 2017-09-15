@@ -747,33 +747,33 @@ int mp_unsigned_bin_size(mp_int *a);
 int mp_read_unsigned_bin(mp_int *a, const unsigned char *b, int c);
 */
 /*
-int mp_to_unsigned_bin(mp_int *a, unsigned char *b);
+int mp_to_unsigned_bin(const mp_int *a, unsigned char *b);
 */
 /*
-int mp_to_unsigned_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen);
+int mp_to_unsigned_bin_n (const mp_int * a, unsigned char *b, unsigned long *outlen);
 */
 
 /*
-int mp_signed_bin_size(mp_int *a);
+int mp_signed_bin_size(const mp_int *a);
 */
 /*
 int mp_read_signed_bin(mp_int *a, const unsigned char *b, int c);
 */
 /*
-int mp_to_signed_bin(mp_int *a,  unsigned char *b);
+int mp_to_signed_bin(const mp_int *a,  unsigned char *b);
 */
 /*
-int mp_to_signed_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen);
+int mp_to_signed_bin_n (const mp_int * a, unsigned char *b, unsigned long *outlen);
 */
 
 /*
 int mp_read_radix(mp_int *a, const char *str, int radix);
 */
 /*
-int mp_toradix(mp_int *a, char *str, int radix);
+int mp_toradix(const mp_int *a, char *str, int radix);
 */
 /*
-int mp_toradix_n(mp_int * a, char *str, int radix, int maxlen);
+int mp_toradix_n(const mp_int * a, char *str, int radix, int maxlen);
 */
 /*
 int mp_radix_size(const mp_int *a, int radix, int *size);
@@ -784,7 +784,7 @@ int mp_radix_size(const mp_int *a, int radix, int *size);
 int mp_fread(mp_int *a, int radix, FILE *stream);
 */
 /*
-int mp_fwrite(mp_int *a, int radix, FILE *stream);
+int mp_fwrite(const mp_int *a, int radix, FILE *stream);
 */
 #endif
 
