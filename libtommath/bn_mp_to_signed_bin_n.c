@@ -16,7 +16,7 @@
  */
 
 /* store in signed [big endian] format */
-int mp_to_signed_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen)
+int mp_to_signed_bin_n(mp_int *a, unsigned char *b, unsigned long *outlen)
 {
    if (*outlen < (unsigned long)mp_signed_bin_size(a)) {
       return MP_VAL;
