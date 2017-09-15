@@ -33,9 +33,9 @@ extern "C" {
     defined(__sparcv9) || defined(__sparc_v9__) || defined(__sparc64__) || \
     defined(__ia64) || defined(__ia64__) || defined(__itanium__) || defined(_M_IA64) || \
     defined(__LP64__) || defined(_LP64) || defined(__64BIT__)
-   #if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
-      #define MP_64BIT
-   #endif
+#   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
+#      define MP_64BIT
+#   endif
 #endif
 
 /* some default configurations.
@@ -47,68 +47,68 @@ extern "C" {
  * [any size beyond that is ok provided it doesn't overflow the data type]
  */
 #ifdef MP_8BIT
-   typedef uint8_t              mp_digit;
-   typedef uint16_t             mp_word;
-#define MP_SIZEOF_MP_DIGIT      1
-#ifdef DIGIT_BIT
-#error You must not define DIGIT_BIT when using MP_8BIT
-#endif
+typedef uint8_t              mp_digit;
+typedef uint16_t             mp_word;
+#   define MP_SIZEOF_MP_DIGIT 1
+#   ifdef DIGIT_BIT
+#      error You must not define DIGIT_BIT when using MP_8BIT
+#   endif
 #elif defined(MP_16BIT)
-   typedef uint16_t             mp_digit;
-   typedef uint32_t             mp_word;
-#define MP_SIZEOF_MP_DIGIT      2
-#ifdef DIGIT_BIT
-#error You must not define DIGIT_BIT when using MP_16BIT
-#endif
+typedef uint16_t             mp_digit;
+typedef uint32_t             mp_word;
+#   define MP_SIZEOF_MP_DIGIT 2
+#   ifdef DIGIT_BIT
+#      error You must not define DIGIT_BIT when using MP_16BIT
+#   endif
 #elif defined(MP_64BIT)
-   /* for GCC only on supported platforms */
-   typedef uint64_t mp_digit;
-#if defined(_WIN32)
-   typedef unsigned __int128    mp_word;
-#elif defined(__GNUC__)
-   typedef unsigned long        mp_word __attribute__ ((mode(TI)));
-#else
-   /* it seems you have a problem
-    * but we assume you can somewhere define your own uint128_t */
-   typedef uint128_t            mp_word;
-#endif
+/* for GCC only on supported platforms */
+typedef uint64_t mp_digit;
+#   if defined(_WIN32)
+typedef unsigned __int128    mp_word;
+#   elif defined(__GNUC__)
+typedef unsigned long        mp_word __attribute__((mode(TI)));
+#   else
+/* it seems you have a problem
+ * but we assume you can somewhere define your own uint128_t */
+typedef uint128_t            mp_word;
+#   endif
 
-   #define DIGIT_BIT            60
+#   define DIGIT_BIT 60
 #else
-   /* this is the default case, 28-bit digits */
+/* this is the default case, 28-bit digits */
 
-   /* this is to make porting into LibTomCrypt easier :-) */
-   typedef uint32_t             mp_digit;
-   typedef uint64_t             mp_word;
+/* this is to make porting into LibTomCrypt easier :-) */
+typedef uint32_t             mp_digit;
+typedef uint64_t             mp_word;
 
-#ifdef MP_31BIT
-   /* this is an extension that uses 31-bit digits */
-   #define DIGIT_BIT            31
-#else
-   /* default case is 28-bit digits, defines MP_28BIT as a handy macro to test */
-   #define DIGIT_BIT            28
-   #define MP_28BIT
-#endif
+#   ifdef MP_31BIT
+/* this is an extension that uses 31-bit digits */
+#      define DIGIT_BIT 31
+#   else
+/* default case is 28-bit digits, defines MP_28BIT as a handy macro to test */
+#      define DIGIT_BIT 28
+#      define MP_28BIT
+#   endif
 #endif
 
 /* otherwise the bits per digit is calculated automatically from the size of a mp_digit */
 #ifndef DIGIT_BIT
-   #define DIGIT_BIT     (((CHAR_BIT * MP_SIZEOF_MP_DIGIT) - 1))  /* bits per digit */
-   typedef uint_least32_t mp_min_u32;
+#   define DIGIT_BIT (((CHAR_BIT * MP_SIZEOF_MP_DIGIT) - 1))  /* bits per digit */
+typedef uint_least32_t mp_min_u32;
 #else
-   typedef mp_digit mp_min_u32;
+typedef mp_digit mp_min_u32;
 #endif
 
 /* use arc4random on platforms that support it */
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
-    #define MP_GEN_RANDOM()    arc4random()
-    #define MP_GEN_RANDOM_MAX  0xffffffff
+#   define MP_GEN_RANDOM()    arc4random()
+#   define MP_GEN_RANDOM_MAX  0xffffffff
 #endif
 
 /* use rand() as fall-back if there's no better rand function */
 #ifndef MP_GEN_RANDOM
-    #define MP_GEN_RANDOM()    rand()
-    #define MP_GEN_RANDOM_MAX  RAND_MAX
+#   define MP_GEN_RANDOM()    rand()
+#   define MP_GEN_RANDOM_MAX  RAND_MAX
 #endif
 
 #define MP_DIGIT_BIT     DIGIT_BIT
@@ -140,20 +140,20 @@ typedef int           mp_err;
 
 /* you'll have to tune these... */
 extern int KARATSUBA_MUL_CUTOFF,
-           KARATSUBA_SQR_CUTOFF,
-           TOOM_MUL_CUTOFF,
-           TOOM_SQR_CUTOFF;
+       KARATSUBA_SQR_CUTOFF,
+       TOOM_MUL_CUTOFF,
+       TOOM_SQR_CUTOFF;
 
 /* define this to use lower memory usage routines (exptmods mostly) */
 /* #define MP_LOW_MEM */
 
 /* default precision */
 #ifndef MP_PREC
-   #ifndef MP_LOW_MEM
-      #define MP_PREC                 32     /* default digits of precision */
-   #else
-      #define MP_PREC                 8      /* default digits of precision */
-   #endif
+#   ifndef MP_LOW_MEM
+#      define MP_PREC 32        /* default digits of precision */
+#   else
+#      define MP_PREC 8         /* default digits of precision */
+#   endif
 #endif
 
 /* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
@@ -161,17 +161,17 @@ extern int KARATSUBA_MUL_CUTOFF,
 
 /* the infamous mp_int structure */
 typedef struct  {
-    int used, alloc, sign;
-    mp_digit *dp;
+   int used, alloc, sign;
+   mp_digit *dp;
 } mp_int;
 
 /* callback for mp_prime_random, should fill dst with random bytes and return how many read [upto len] */
 typedef int ltm_prime_callback(unsigned char *dst, int len, void *dat);
 
 
-#define USED(m)    ((m)->used)
-#define DIGIT(m,k) ((m)->dp[(k)])
-#define SIGN(m)    ((m)->sign)
+#define USED(m)     ((m)->used)
+#define DIGIT(m, k) ((m)->dp[(k)])
+#define SIGN(m)     ((m)->sign)
 
 /* error code to char* string */
 const char *mp_error_to_string(int code);
@@ -223,19 +223,19 @@ int mp_set_long(mp_int *a, unsigned long b);
 int mp_set_long_long(mp_int *a, unsigned long long b);
 
 /* get a 32-bit value */
-unsigned long mp_get_int(mp_int * a);
+unsigned long mp_get_int(mp_int *a);
 
 /* get a platform dependent unsigned long value */
-unsigned long mp_get_long(mp_int * a);
+unsigned long mp_get_long(mp_int *a);
 
 /* get a platform dependent unsigned long long value */
-unsigned long long mp_get_long_long(mp_int * a);
+unsigned long long mp_get_long_long(mp_int *a);
 
 /* initialize and set a digit */
-int mp_init_set (mp_int * a, mp_digit b);
+int mp_init_set(mp_int *a, mp_digit b);
 
 /* initialize and set 32-bit value */
-int mp_init_set_int (mp_int * a, unsigned long b);
+int mp_init_set_int(mp_int *a, unsigned long b);
 
 /* copy, b = a */
 int mp_copy(mp_int *a, mp_int *b);
@@ -247,10 +247,10 @@ int mp_init_copy(mp_int *a, mp_int *b);
 void mp_clamp(mp_int *a);
 
 /* import binary data */
-int mp_import(mp_int* rop, size_t count, int order, size_t size, int endian, size_t nails, const void* op);
+int mp_import(mp_int *rop, size_t count, int order, size_t size, int endian, size_t nails, const void *op);
 
 /* export binary data */
-int mp_export(void* rop, size_t* countp, int order, size_t size, int endian, size_t nails, mp_int* op);
+int mp_export(void *rop, size_t *countp, int order, size_t size, int endian, size_t nails, mp_int *op);
 
 /* ---> digit manipulation <--- */
 
@@ -350,7 +350,7 @@ int mp_div_3(mp_int *a, mp_int *c, mp_digit *d);
 
 /* c = a**b */
 int mp_expt_d(mp_int *a, mp_digit b, mp_int *c);
-int mp_expt_d_ex (mp_int * a, mp_digit b, mp_int * c, int fast);
+int mp_expt_d_ex(mp_int *a, mp_digit b, mp_int *c, int fast);
 
 /* c = a mod b, 0 <= c < b  */
 int mp_mod_d(mp_int *a, mp_digit b, mp_digit *c);
@@ -386,7 +386,7 @@ int mp_lcm(mp_int *a, mp_int *b, mp_int *c);
  * returns error if a < 0 and b is even
  */
 int mp_n_root(mp_int *a, mp_digit b, mp_int *c);
-int mp_n_root_ex (mp_int * a, mp_digit b, mp_int * c, int fast);
+int mp_n_root_ex(mp_int *a, mp_digit b, mp_int *c, int fast);
 
 /* special sqrt algo */
 int mp_sqrt(mp_int *arg, mp_int *ret);
@@ -455,9 +455,9 @@ int mp_exptmod(mp_int *a, mp_int *b, mp_int *c, mp_int *d);
 
 /* number of primes */
 #ifdef MP_8BIT
-   #define PRIME_SIZE      31
+#  define PRIME_SIZE 31
 #else
-   #define PRIME_SIZE      256
+#  define PRIME_SIZE 256
 #endif
 
 /* table of first PRIME_SIZE primes */
@@ -529,16 +529,16 @@ int mp_count_bits(mp_int *a);
 int mp_unsigned_bin_size(mp_int *a);
 int mp_read_unsigned_bin(mp_int *a, const unsigned char *b, int c);
 int mp_to_unsigned_bin(mp_int *a, unsigned char *b);
-int mp_to_unsigned_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen);
+int mp_to_unsigned_bin_n(mp_int *a, unsigned char *b, unsigned long *outlen);
 
 int mp_signed_bin_size(mp_int *a);
 int mp_read_signed_bin(mp_int *a, const unsigned char *b, int c);
 int mp_to_signed_bin(mp_int *a,  unsigned char *b);
-int mp_to_signed_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen);
+int mp_to_signed_bin_n(mp_int *a, unsigned char *b, unsigned long *outlen);
 
 int mp_read_radix(mp_int *a, const char *str, int radix);
 int mp_toradix(mp_int *a, char *str, int radix);
-int mp_toradix_n(mp_int * a, char *str, int radix, int maxlen);
+int mp_toradix_n(mp_int *a, char *str, int radix, int maxlen);
 int mp_radix_size(mp_int *a, int radix, int *size);
 
 #ifndef LTM_NO_FILE
@@ -559,7 +559,7 @@ int mp_fwrite(mp_int *a, int radix, FILE *stream);
 #define mp_tohex(M, S)     mp_toradix((M), (S), 16)
 
 #ifdef __cplusplus
-   }
+}
 #endif
 
 #endif
