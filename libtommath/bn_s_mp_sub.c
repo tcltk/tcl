@@ -17,7 +17,7 @@
 
 /* low level subtraction (assumes |a| > |b|), HAC pp.595 Algorithm 14.9 */
 int
-s_mp_sub (mp_int * a, mp_int * b, mp_int * c)
+s_mp_sub (const mp_int * a, const mp_int * b, mp_int * c)
 {
   int     olduse, res, min, max;
 
@@ -84,6 +84,6 @@ s_mp_sub (mp_int * a, mp_int * b, mp_int * c)
 
 #endif
 
-/* ref:         tag: v1.0.1, master */
-/* git commit:  5953f62e42b24af93748b1ee5e1d062e242c2546 */
-/* commit time: 2017-08-29 22:27:36 +0200 */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

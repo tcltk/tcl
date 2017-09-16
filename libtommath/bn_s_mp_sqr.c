@@ -16,7 +16,7 @@
  */
 
 /* low level squaring, b = a*a, HAC pp.596-597, Algorithm 14.16 */
-int s_mp_sqr (mp_int * a, mp_int * b)
+int s_mp_sqr (const mp_int * a, mp_int * b)
 {
   mp_int  t;
   int     res, ix, iy, pa;
@@ -79,6 +79,6 @@ int s_mp_sqr (mp_int * a, mp_int * b)
 }
 #endif
 
-/* ref:         tag: v1.0.1, master */
-/* git commit:  5953f62e42b24af93748b1ee5e1d062e242c2546 */
-/* commit time: 2017-08-29 22:27:36 +0200 */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

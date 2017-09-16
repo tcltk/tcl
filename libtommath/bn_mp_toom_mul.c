@@ -22,7 +22,7 @@
  * only particularly useful on VERY large inputs
  * (we're talking 1000s of digits here...).
 */
-int mp_toom_mul(mp_int *a, mp_int *b, mp_int *c)
+int mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c)
 {
     mp_int w0, w1, w2, w3, w4, tmp1, tmp2, a0, a1, a2, b0, b1, b2;
     int res, B;
@@ -281,6 +281,6 @@ ERR:
 
 #endif
 
-/* ref:         tag: v1.0.1, master */
-/* git commit:  5953f62e42b24af93748b1ee5e1d062e242c2546 */
-/* commit time: 2017-08-29 22:27:36 +0200 */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

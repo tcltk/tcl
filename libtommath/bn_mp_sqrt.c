@@ -20,7 +20,7 @@
 #endif
 
 /* this function is less generic than mp_n_root, simpler and faster */
-int mp_sqrt(mp_int *arg, mp_int *ret) 
+int mp_sqrt(const mp_int *arg, mp_int *ret)
 {
   int res;
   mp_int t1,t2;
@@ -140,6 +140,6 @@ E2: mp_clear(&t1);
 
 #endif
 
-/* ref:         tag: v1.0.1, master */
-/* git commit:  5953f62e42b24af93748b1ee5e1d062e242c2546 */
-/* commit time: 2017-08-29 22:27:36 +0200 */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

@@ -16,7 +16,7 @@
  */
 
 /* stores a bignum as a ASCII string in a given radix (2..64) */
-int mp_toradix (mp_int * a, char *str, int radix)
+int mp_toradix (const mp_int * a, char *str, int radix)
 {
   int     res, digs;
   mp_int  t;
@@ -70,6 +70,6 @@ int mp_toradix (mp_int * a, char *str, int radix)
 
 #endif
 
-/* ref:         tag: v1.0.1, master */
-/* git commit:  5953f62e42b24af93748b1ee5e1d062e242c2546 */
-/* commit time: 2017-08-29 22:27:36 +0200 */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

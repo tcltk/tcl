@@ -16,7 +16,7 @@
  */
 
 /* store in signed [big endian] format */
-int mp_to_signed_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen)
+int mp_to_signed_bin_n (const mp_int * a, unsigned char *b, unsigned long *outlen)
 {
    if (*outlen < (unsigned long)mp_signed_bin_size(a)) {
       return MP_VAL;
@@ -26,6 +26,6 @@ int mp_to_signed_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen)
 }
 #endif
 
-/* ref:         tag: v1.0.1, master */
-/* git commit:  5953f62e42b24af93748b1ee5e1d062e242c2546 */
-/* commit time: 2017-08-29 22:27:36 +0200 */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

@@ -17,7 +17,7 @@
 
 /* c = a mod b, 0 <= c < b if b > 0, b < c <= 0 if b < 0 */
 int
-mp_mod (mp_int * a, mp_int * b, mp_int * c)
+mp_mod (const mp_int * a, const mp_int * b, mp_int * c)
 {
   mp_int  t;
   int     res;
@@ -43,6 +43,6 @@ mp_mod (mp_int * a, mp_int * b, mp_int * c)
 }
 #endif
 
-/* ref:         tag: v1.0.1, master */
-/* git commit:  5953f62e42b24af93748b1ee5e1d062e242c2546 */
-/* commit time: 2017-08-29 22:27:36 +0200 */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

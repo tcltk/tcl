@@ -17,7 +17,7 @@
 
 /* single digit addition */
 int
-mp_add_d (mp_int * a, mp_digit b, mp_int * c)
+mp_add_d (const mp_int * a, mp_digit b, mp_int * c)
 {
   int     res, ix, oldused;
   mp_digit *tmpa, *tmpc, mu;
@@ -31,14 +31,15 @@ mp_add_d (mp_int * a, mp_digit b, mp_int * c)
 
   /* if a is negative and |a| >= b, call c = |a| - b */
   if ((a->sign == MP_NEG) && ((a->used > 1) || (a->dp[0] >= b))) {
+     mp_int a_ = *a;
      /* temporarily fix sign of a */
-     a->sign = MP_ZPOS;
+     a_.sign = MP_ZPOS;
 
      /* c = |a| - b */
-     res = mp_sub_d(a, b, c);
+     res = mp_sub_d(&a_, b, c);
 
      /* fix sign  */
-     a->sign = c->sign = MP_NEG;
+     c->sign = MP_NEG;
 
      /* clamp */
      mp_clamp(c);
@@ -107,6 +108,6 @@ mp_add_d (mp_int * a, mp_digit b, mp_int * c)
 
 #endif
 
-/* ref:         tag: v1.0.1, master */
-/* git commit:  5953f62e42b24af93748b1ee5e1d062e242c2546 */
-/* commit time: 2017-08-29 22:27:36 +0200 */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

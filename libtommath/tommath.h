@@ -220,16 +220,16 @@ int mp_set_int(mp_int *a, unsigned long b);
 int mp_set_long(mp_int *a, unsigned long b);
 
 /* set a platform dependent unsigned long long value */
-int mp_set_long_long(mp_int *a, unsigned long long b);
+int mp_set_long_long(mp_int *a, Tcl_WideUInt b);
 
 /* get a 32-bit value */
-unsigned long mp_get_int(mp_int * a);
+unsigned long mp_get_int(const mp_int * a);
 
 /* get a platform dependent unsigned long value */
-unsigned long mp_get_long(mp_int * a);
+unsigned long mp_get_long(const mp_int * a);
 
 /* get a platform dependent unsigned long long value */
-unsigned long long mp_get_long_long(mp_int * a);
+Tcl_WideUInt mp_get_long_long(const mp_int * a);
 
 /* initialize and set a digit */
 int mp_init_set (mp_int * a, mp_digit b);
@@ -264,13 +264,13 @@ int mp_lshd(mp_int *a, int b);
 int mp_div_2d(const mp_int *a, int b, mp_int *c, mp_int *d);
 
 /* b = a/2 */
-int mp_div_2(mp_int *a, mp_int *b);
+int mp_div_2(const mp_int *a, mp_int *b);
 
 /* c = a * 2**b, implemented as c = a << b */
 int mp_mul_2d(const mp_int *a, int b, mp_int *c);
 
 /* b = a*2 */
-int mp_mul_2(mp_int *a, mp_int *b);
+int mp_mul_2(const mp_int *a, mp_int *b);
 
 /* c = a mod 2**b */
 int mp_mod_2d(const mp_int *a, int b, mp_int *c);
@@ -288,13 +288,13 @@ int mp_rand(mp_int *a, int digits);
 
 /* ---> binary operations <--- */
 /* c = a XOR b  */
-int mp_xor(mp_int *a, mp_int *b, mp_int *c);
+int mp_xor(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* c = a OR b */
-int mp_or(mp_int *a, mp_int *b, mp_int *c);
+int mp_or(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* c = a AND b */
-int mp_and(mp_int *a, mp_int *b, mp_int *c);
+int mp_and(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* ---> Basic arithmetic <--- */
 
@@ -302,7 +302,7 @@ int mp_and(mp_int *a, mp_int *b, mp_int *c);
 int mp_neg(const mp_int *a, mp_int *b);
 
 /* b = |a| */
-int mp_abs(mp_int *a, mp_int *b);
+int mp_abs(const mp_int *a, mp_int *b);
 
 /* compare a to b */
 int mp_cmp(const mp_int *a, const mp_int *b);
@@ -311,22 +311,22 @@ int mp_cmp(const mp_int *a, const mp_int *b);
 int mp_cmp_mag(const mp_int *a, const mp_int *b);
 
 /* c = a + b */
-int mp_add(mp_int *a, mp_int *b, mp_int *c);
+int mp_add(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* c = a - b */
-int mp_sub(mp_int *a, mp_int *b, mp_int *c);
+int mp_sub(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* c = a * b */
-int mp_mul(mp_int *a, mp_int *b, mp_int *c);
+int mp_mul(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* b = a*a  */
-int mp_sqr(mp_int *a, mp_int *b);
+int mp_sqr(const mp_int *a, mp_int *b);
 
 /* a/b => cb + d == a */
-int mp_div(mp_int *a, mp_int *b, mp_int *c, mp_int *d);
+int mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d);
 
 /* c = a mod b, 0 <= c < b  */
-int mp_mod(mp_int *a, mp_int *b, mp_int *c);
+int mp_mod(const mp_int *a, const mp_int *b, mp_int *c);
 
 /* ---> single digit functions <--- */
 
@@ -334,26 +334,26 @@ int mp_mod(mp_int *a, mp_int *b, mp_int *c);
 int mp_cmp_d(const mp_int *a, mp_digit b);
 
 /* c = a + b */
-int mp_add_d(mp_int *a, mp_digit b, mp_int *c);
+int mp_add_d(const mp_int *a, const mp_digit b, mp_int *c);
 
 /* c = a - b */
-int mp_sub_d(mp_int *a, mp_digit b, mp_int *c);
+int mp_sub_d(const mp_int *a, mp_digit b, mp_int *c);
 
 /* c = a * b */
-int mp_mul_d(mp_int *a, mp_digit b, mp_int *c);
+int mp_mul_d(const mp_int *a, mp_digit b, mp_int *c);
 
 /* a/b => cb + d == a */
-int mp_div_d(mp_int *a, mp_digit b, mp_int *c, mp_digit *d);
+int mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d);
 
 /* a/3 => 3c + d == a */
-int mp_div_3(mp_int *a, mp_int *c, mp_digit *d);
+int mp_div_3(const mp_int *a, mp_int *c, mp_digit *d);
 
 /* c = a**b */
-int mp_expt_d(mp_int *a, mp_digit b, mp_int *c);
-int mp_expt_d_ex (mp_int * a, mp_digit b, mp_int * c, int fast);
+int mp_expt_d(const mp_int *a, const mp_digit b, mp_int *c);
+int mp_expt_d_ex (const mp_int * a, const mp_digit b, mp_int * c, int fast);
 
 /* c = a mod b, 0 <= c < b  */
-int mp_mod_d(mp_int *a, mp_digit b, mp_digit *c);
+int mp_mod_d(const mp_int *a, mp_digit b, mp_digit *c);
 
 /* ---> number theory <--- */
 
@@ -389,7 +389,7 @@ int mp_n_root(mp_int *a, mp_digit b, mp_int *c);
 int mp_n_root_ex (mp_int * a, mp_digit b, mp_int * c, int fast);
 
 /* special sqrt algo */
-int mp_sqrt(mp_int *arg, mp_int *ret);
+int mp_sqrt(const mp_int *arg, mp_int *ret);
 
 /* special sqrt (mod prime) */
 int mp_sqrtmod_prime(mp_int *arg, mp_int *prime, mp_int *ret);
@@ -526,24 +526,24 @@ int mp_prime_random_ex(mp_int *a, int t, int size, int flags, ltm_prime_callback
 /* ---> radix conversion <--- */
 int mp_count_bits(const mp_int *a);
 
-int mp_unsigned_bin_size(mp_int *a);
+int mp_unsigned_bin_size(const mp_int *a);
 int mp_read_unsigned_bin(mp_int *a, const unsigned char *b, int c);
-int mp_to_unsigned_bin(mp_int *a, unsigned char *b);
-int mp_to_unsigned_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen);
+int mp_to_unsigned_bin(const mp_int *a, unsigned char *b);
+int mp_to_unsigned_bin_n (const mp_int * a, unsigned char *b, unsigned long *outlen);
 
-int mp_signed_bin_size(mp_int *a);
+int mp_signed_bin_size(const mp_int *a);
 int mp_read_signed_bin(mp_int *a, const unsigned char *b, int c);
-int mp_to_signed_bin(mp_int *a,  unsigned char *b);
-int mp_to_signed_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen);
+int mp_to_signed_bin(const mp_int *a,  unsigned char *b);
+int mp_to_signed_bin_n (const mp_int * a, unsigned char *b, unsigned long *outlen);
 
 int mp_read_radix(mp_int *a, const char *str, int radix);
-int mp_toradix(mp_int *a, char *str, int radix);
-int mp_toradix_n(mp_int * a, char *str, int radix, int maxlen);
+int mp_toradix(const mp_int *a, char *str, int radix);
+int mp_toradix_n(const mp_int * a, char *str, int radix, int maxlen);
 int mp_radix_size(const mp_int *a, int radix, int *size);
 
 #ifndef LTM_NO_FILE
 int mp_fread(mp_int *a, int radix, FILE *stream);
-int mp_fwrite(mp_int *a, int radix, FILE *stream);
+int mp_fwrite(const mp_int *a, int radix, FILE *stream);
 #endif
 
 #define mp_read_raw(mp, str, len) mp_read_signed_bin((mp), (str), (len))
@@ -565,6 +565,6 @@ int mp_fwrite(mp_int *a, int radix, FILE *stream);
 #endif
 
 
-/* ref:         tag: v1.0.1, master */
-/* git commit:  5953f62e42b24af93748b1ee5e1d062e242c2546 */
-/* commit time: 2017-08-29 22:27:36 +0200 */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

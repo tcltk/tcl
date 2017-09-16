@@ -711,7 +711,7 @@ TclParseNumber(
 				|| (octalSignificandWide >
 					(~(Tcl_WideUInt)0 >> shift)))) {
 			    octalSignificandOverflow = 1;
-			    TclBNInitBignumFromWideUInt(&octalSignificandBig,
+			    TclInitBignumFromWideUInt(&octalSignificandBig,
 				    octalSignificandWide);
 			}
 		    }
@@ -828,7 +828,7 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > (~(Tcl_WideUInt)0 >> shift))) {
 			significandOverflow = 1;
-			TclBNInitBignumFromWideUInt(&significandBig,
+			TclInitBignumFromWideUInt(&significandBig,
 				significandWide);
 		    }
 		}
@@ -869,7 +869,7 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > (~(Tcl_WideUInt)0 >> shift))) {
 			significandOverflow = 1;
-			TclBNInitBignumFromWideUInt(&significandBig,
+			TclInitBignumFromWideUInt(&significandBig,
 				significandWide);
 		    }
 		}
@@ -1214,7 +1214,7 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
 		significandOverflow = 1;
-		TclBNInitBignumFromWideUInt(&significandBig, significandWide);
+		TclInitBignumFromWideUInt(&significandBig, significandWide);
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
@@ -1235,7 +1235,7 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
 		significandOverflow = 1;
-		TclBNInitBignumFromWideUInt(&significandBig, significandWide);
+		TclInitBignumFromWideUInt(&significandBig, significandWide);
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
@@ -1256,7 +1256,7 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    octalSignificandWide > (MOST_BITS + signum) >> shift)) {
 		octalSignificandOverflow = 1;
-		TclBNInitBignumFromWideUInt(&octalSignificandBig,
+		TclInitBignumFromWideUInt(&octalSignificandBig,
 			octalSignificandWide);
 	    }
 	    if (shift) {
@@ -1283,7 +1283,7 @@ TclParseNumber(
 			break;
 		    }
 #endif
-		    TclBNInitBignumFromWideUInt(&octalSignificandBig,
+		    TclInitBignumFromWideUInt(&octalSignificandBig,
 			    octalSignificandWide);
 		    octalSignificandOverflow = 1;
 		} else {
@@ -1311,7 +1311,7 @@ TclParseNumber(
 		    &significandWide, &significandBig, significandOverflow);
 	    if (!significandOverflow && (significandWide > MOST_BITS+signum)){
 		significandOverflow = 1;
-		TclBNInitBignumFromWideUInt(&significandBig, significandWide);
+		TclInitBignumFromWideUInt(&significandBig, significandWide);
 	    }
 	returnInteger:
 	    if (!significandOverflow) {
@@ -1330,7 +1330,7 @@ TclParseNumber(
 			break;
 		    }
 #endif
-		    TclBNInitBignumFromWideUInt(&significandBig,
+		    TclInitBignumFromWideUInt(&significandBig,
 			    significandWide);
 		    significandOverflow = 1;
 		} else {
@@ -1485,7 +1485,7 @@ AccumulateDecimalDigit(
 	     * bignum and fall through into the bignum case.
 	     */
 
-	    TclBNInitBignumFromWideUInt(bignumRepPtr, w);
+	    TclInitBignumFromWideUInt(bignumRepPtr, w);
 	} else {
 	    /*
 	     * Wide multiplication.
@@ -1628,7 +1628,7 @@ MakeLowPrecisionDouble(
      * call MakeHighPrecisionDouble to do it the hard way.
      */
 
-    TclBNInitBignumFromWideUInt(&significandBig, significand);
+    TclInitBignumFromWideUInt(&significandBig, significand);
     retval = MakeHighPrecisionDouble(0, &significandBig, numSigDigs,
 	    exponent);
     mp_clear(&significandBig);
@@ -3315,7 +3315,7 @@ ShorteningBignumConversionPowD(
      * mminus = 5**m5
      */
 
-    TclBNInitBignumFromWideUInt(&b, bw);
+    TclInitBignumFromWideUInt(&b, bw);
     mp_init_set_int(&mminus, 1);
     MulPow5(&b, b5, &b);
     mp_mul_2d(&b, b2, &b);
@@ -3502,7 +3502,7 @@ StrictBignumConversionPowD(
      * b = bw * 2**b2 * 5**b5
      */
 
-    TclBNInitBignumFromWideUInt(&b, bw);
+    TclInitBignumFromWideUInt(&b, bw);
     MulPow5(&b, b5, &b);
     mp_mul_2d(&b, b2, &b);
 
@@ -3710,7 +3710,7 @@ ShorteningBignumConversion(
      * S = 2**s2 * 5*s5
      */
 
-    TclBNInitBignumFromWideUInt(&b, bw);
+    TclInitBignumFromWideUInt(&b, bw);
     mp_mul_2d(&b, b2, &b);
     mp_init_set_int(&S, 1);
     MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
@@ -3923,7 +3923,7 @@ StrictBignumConversion(
      */
 
     mp_init_multi(&temp, &dig, NULL);
-    TclBNInitBignumFromWideUInt(&b, bw);
+    TclInitBignumFromWideUInt(&b, bw);
     mp_mul_2d(&b, b2, &b);
     mp_init_set_int(&S, 1);
     MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
@@ -4579,7 +4579,7 @@ Tcl_InitBignumFromDouble(
 	Tcl_WideInt w = (Tcl_WideInt) ldexp(fract, mantBits);
 	int shift = expt - mantBits;
 
-	TclBNInitBignumFromWideInt(b, w);
+	TclInitBignumFromWideInt(b, w);
 	if (shift < 0) {
 	    mp_div_2d(b, -shift, b, NULL);
 	} else if (shift > 0) {

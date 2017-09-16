@@ -8218,7 +8218,7 @@ ExecuteExtendedBinaryMathOp(
 		 * Arguments are opposite sign; remainder is sum.
 		 */
 
-		TclBNInitBignumFromWideInt(&big1, w1);
+		TclInitBignumFromWideInt(&big1, w1);
 		mp_add(&big2, &big1, &big2);
 		mp_clear(&big1);
 		BIG_RESULT(&big2);
@@ -9184,7 +9184,7 @@ ExecuteExtendedUnaryMathOp(
 	    if (w != LLONG_MIN) {
 		WIDE_RESULT(-w);
 	    }
-	    TclBNInitBignumFromLong(&big, *(const long *) ptr);
+	    TclInitBignumFromLong(&big, *(const long *) ptr);
 	    break;
 #ifndef TCL_WIDE_INT_IS_LONG
 	case TCL_NUMBER_WIDE:
@@ -9192,7 +9192,7 @@ ExecuteExtendedUnaryMathOp(
 	    if (w != LLONG_MIN) {
 		WIDE_RESULT(-w);
 	    }
-	    TclBNInitBignumFromWideInt(&big, w);
+	    TclInitBignumFromWideInt(&big, w);
 	    break;
 #endif
 	default:
