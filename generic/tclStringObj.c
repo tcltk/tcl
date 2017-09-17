@@ -3295,7 +3295,10 @@ TclStringFind(
  *	inserts insObj at that same location.  removeCount may be 0 to insert
  *	without removing, and insObj may be NULL or empty string to remove
  *	without inserting.  On memory allocation failure, returns NULL and
- *	places error information in the interpreter result.
+ *	places error information in the interpreter result.  On success, returns
+ *	a pointer to the updated string object.  As an optimization, the return
+ *	value may be equal to strObj or insObj, indicating that the object was
+ *	unshared and was modified in place without creating a new object.
  *
  * Side effects:
  *	strObj and insObj may have their Tcl_ObjType changed to tclStringType or
