@@ -524,10 +524,10 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_NS_CURRENT,						/* 151 */
     INST_INFO_LEVEL_NUM,					/* 152 */
     INST_RESOLVE_COMMAND,					/* 154 */
-    INST_STR_TRIM, INST_STR_TRIM_LEFT, INST_STR_TRIM_RIGHT,	/* 166-168 */
-    INST_CONCAT_STK,						/* 169 */
-    INST_STR_UPPER, INST_STR_LOWER, INST_STR_TITLE,		/* 170-172 */
-    INST_NUM_TYPE						/* 180 */
+    INST_STR_TRIM, INST_STR_TRIM_LEFT, INST_STR_TRIM_RIGHT,	/* 170-172 */
+    INST_CONCAT_STK,						/* 173 */
+    INST_STR_UPPER, INST_STR_LOWER, INST_STR_TITLE,		/* 174-176 */
+    INST_NUM_TYPE						/* 182 */
 };
 
 /*
