@@ -21,7 +21,7 @@
  * The method is slightly modified to shift B unconditionally upto just under
  * the leading bit of b.  This saves alot of multiple precision shifting.
  */
-int mp_montgomery_calc_normalization(mp_int *a, mp_int *b)
+int mp_montgomery_calc_normalization(mp_int *a, const mp_int *b)
 {
    int     x, bits, res;
 

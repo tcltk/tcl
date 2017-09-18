@@ -25,10 +25,10 @@
  * each step involves a fair bit.  This is not meant to
  * find huge roots [square and cube, etc].
  */
-int mp_n_root_ex(mp_int *a, mp_digit b, mp_int *c, int fast)
+int mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
 {
-   mp_int  t1, t2, t3;
-   int     res, neg;
+   mp_int  t1, t2, t3, a_;
+   int     res;
 
    /* input must be positive if b is even */
    if (((b & 1) == 0) && (a->sign == MP_NEG)) {
@@ -48,8 +48,8 @@ int mp_n_root_ex(mp_int *a, mp_digit b, mp_int *c, int fast)
    }
 
    /* if a is negative fudge the sign but keep track */
-   neg     = a->sign;
-   a->sign = MP_ZPOS;
+   a_ = *a;
+   a_.sign = MP_ZPOS;
 
    /* t2 = 2 */
    mp_set(&t2, 2);
@@ -74,7 +74,7 @@ int mp_n_root_ex(mp_int *a, mp_digit b, mp_int *c, int fast)
       }
 
       /* t2 = t1**b - a */
-      if ((res = mp_sub(&t2, a, &t2)) != MP_OKAY) {
+      if ((res = mp_sub(&t2, &a_, &t2)) != MP_OKAY) {
          goto LBL_T3;
       }
 
@@ -100,7 +100,7 @@ int mp_n_root_ex(mp_int *a, mp_digit b, mp_int *c, int fast)
          goto LBL_T3;
       }
 
-      if (mp_cmp(&t2, a) == MP_GT) {
+      if (mp_cmp(&t2, &a_) == MP_GT) {
          if ((res = mp_sub_d(&t1, 1, &t1)) != MP_OKAY) {
             goto LBL_T3;
          }
@@ -109,14 +109,11 @@ int mp_n_root_ex(mp_int *a, mp_digit b, mp_int *c, int fast)
       }
    }
 
-   /* reset the sign of a first */
-   a->sign = neg;
-
    /* set the result */
    mp_exch(&t1, c);
 
    /* set the sign of the result */
-   c->sign = neg;
+   c->sign = a->sign;
 
    res = MP_OKAY;
 
