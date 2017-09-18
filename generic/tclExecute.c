@@ -5559,118 +5559,28 @@ TEBCresume(
 	    NEXT_INST_F(1, 0, 0);
 	}
 
-	/* TODO: use Tcl_StringReplace(). */
-
-	if (toIdx > length) {
-	    toIdx = length;
+	value2Ptr = Tcl_StringReplace(interp, valuePtr, fromIdx,
+		toIdx - fromIdx + 1, value3Ptr);
+	if (!value2Ptr) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	} else if (valuePtr != value2Ptr) {
+	    (void) POP_OBJECT();
+	    PUSH_OBJECT(value2Ptr);
+	    TclDecrRefCount(valuePtr);
 	}
 
-	if (fromIdx == 0 && toIdx == length) {
-	    TclDecrRefCount(OBJ_AT_TOS);
-	    OBJ_AT_TOS = value3Ptr;
-	    TRACE_APPEND(("\"%.30s\"\n", O2S(value3Ptr)));
-	    NEXT_INST_F(1, 0, 0);
-	}
-
-	length3 = Tcl_GetCharLength(value3Ptr);
-
-	/*
-	 * See if we can splice in place. This happens when the number of
-	 * characters being replaced is the same as the number of characters
-	 * in the string to be inserted.
-	 */
-
-	if (length3 - 1 == toIdx - fromIdx) {
-	    unsigned char *bytes1, *bytes2;
-
-	    if (Tcl_IsShared(valuePtr)) {
-		objResultPtr = Tcl_DuplicateObj(valuePtr);
-	    } else {
-		objResultPtr = valuePtr;
-	    }
-	    if (TclIsPureByteArray(objResultPtr)
-		    && TclIsPureByteArray(value3Ptr)) {
-		bytes1 = Tcl_GetByteArrayFromObj(objResultPtr, NULL);
-		bytes2 = Tcl_GetByteArrayFromObj(value3Ptr, NULL);
-		memcpy(bytes1 + fromIdx, bytes2, length3);
-	    } else {
-		ustring1 = Tcl_GetUnicodeFromObj(objResultPtr, NULL);
-		ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
-		memcpy(ustring1 + fromIdx, ustring2,
-			length3 * sizeof(Tcl_UniChar));
-	    }
-	    Tcl_InvalidateStringRep(objResultPtr);
-	    TclDecrRefCount(value3Ptr);
-	    TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
-	    if (objResultPtr == valuePtr) {
-		NEXT_INST_F(1, 0, 0);
-	    } else {
-		NEXT_INST_F(1, 1, 1);
-	    }
-	}
-
-	/*
-	 * Get the unicode representation; this is where we guarantee to lose
-	 * bytearrays.
-	 */
-
-	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
-	length--;
-
-	/*
-	 * Remove substring using copying.
-	 */
-
-	objResultPtr = NULL;
-	if (fromIdx > 0) {
-	    objResultPtr = Tcl_NewUnicodeObj(ustring1, fromIdx);
-	}
-	if (length3 > 0) {
-	    if (objResultPtr) {
-		Tcl_AppendObjToObj(objResultPtr, value3Ptr);
-	    } else if (Tcl_IsShared(value3Ptr)) {
-		objResultPtr = Tcl_DuplicateObj(value3Ptr);
-	    } else {
-		objResultPtr = value3Ptr;
-	    }
-	}
-	if (toIdx < length) {
-	    if (objResultPtr) {
-		Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
-			length - toIdx);
-	    } else {
-		objResultPtr = Tcl_NewUnicodeObj(ustring1 + toIdx + 1,
-			length - toIdx);
-	    }
-	}
-	if (objResultPtr == NULL) {
-	    /* This has to be the case [string replace $s 0 end {}] */
-	    /* which has result {} which is same as value3Ptr. */
-	    objResultPtr = value3Ptr;
-	}
-	if (objResultPtr == value3Ptr) {
-	    /* See [Bug 82e7f67325] */
-	    TclDecrRefCount(OBJ_AT_TOS);
-	    OBJ_AT_TOS = value3Ptr;
-	    TRACE_APPEND(("\"%.30s\"\n", O2S(value3Ptr)));
-	    NEXT_INST_F(1, 0, 0);
-	}
 	TclDecrRefCount(value3Ptr);
-	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
-	NEXT_INST_F(1, 1, 1);
+	NEXT_INST_F(1, 0, 0);
 
     case INST_STR_INSERT:
-	/*
-	 * Fetch and analyze arguments.
-	 */
-
 	value3Ptr = POP_OBJECT();	/* Argument #3: insertString. */
 	value2Ptr = POP_OBJECT();	/* Argument #2: index. */
 	valuePtr = OBJ_AT_TOS;		/* Argument #1: string. */
 	length = Tcl_GetCharLength(valuePtr);
 	TRACE(("\"%.20s\" %s \"%.20s\" => ", O2S(valuePtr),
 		O2S(value2Ptr), O2S(value3Ptr)));
-	if (TclGetIntForIndexM(interp, value2Ptr, length, &toIdx) != TCL_OK) {
+	if (TclGetIntForIndexM(interp, value2Ptr, length, &fromIdx) != TCL_OK) {
 	    TclDecrRefCount(value3Ptr);
 	    TclDecrRefCount(value2Ptr);
 	    TRACE_ERROR(interp);
@@ -5678,21 +5588,11 @@ TEBCresume(
 	}
 	TclDecrRefCount(value2Ptr);
 
-	/*
-	 * Perform string insertion.
-	 */
-
-	value2Ptr = Tcl_StringReplace(interp, valuePtr, toIdx, 0, value3Ptr);
+	value2Ptr = Tcl_StringReplace(interp, valuePtr, fromIdx, 0, value3Ptr);
 	if (!value2Ptr) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
-	}
-
-	/*
-	 * Put result on stack unless modified in place.
-	 */
-
-	if (valuePtr != value2Ptr) {
+	} else if (valuePtr != value2Ptr) {
 	    (void) POP_OBJECT();
 	    PUSH_OBJECT(value2Ptr);
 	    TclDecrRefCount(valuePtr);
