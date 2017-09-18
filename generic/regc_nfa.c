@@ -3084,7 +3084,7 @@ dumparc(
     case EMPTY:
 	break;
     default:
-	fprintf(f, "0x%x/0o%lo", a->type, (long) a->co);
+	fprintf(f, "0x%x/0%lo", a->type, (long) a->co);
 	break;
     }
     if (a->from != s) {
