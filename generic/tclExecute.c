@@ -5553,23 +5553,20 @@ TEBCresume(
 	    fromIdx = 0;
 	}
 
-	if (fromIdx > toIdx || fromIdx > length) {
-	    TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
-	    TclDecrRefCount(value3Ptr);
-	    NEXT_INST_F(1, 0, 0);
+	if (fromIdx <= toIdx && fromIdx <= length) {
+	    value2Ptr = Tcl_StringReplace(interp, valuePtr, fromIdx,
+		    toIdx - fromIdx + 1, value3Ptr);
+	    if (!value2Ptr) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    } else if (valuePtr != value2Ptr) {
+		(void) POP_OBJECT();
+		PUSH_OBJECT(value2Ptr);
+		TclDecrRefCount(valuePtr);
+	    }
 	}
 
-	value2Ptr = Tcl_StringReplace(interp, valuePtr, fromIdx,
-		toIdx - fromIdx + 1, value3Ptr);
-	if (!value2Ptr) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
-	} else if (valuePtr != value2Ptr) {
-	    (void) POP_OBJECT();
-	    PUSH_OBJECT(value2Ptr);
-	    TclDecrRefCount(valuePtr);
-	}
-
+	TRACE_APPEND(("\"%.30s\"\n", O2S(value2Ptr)));
 	TclDecrRefCount(value3Ptr);
 	NEXT_INST_F(1, 0, 0);
 
@@ -5598,6 +5595,7 @@ TEBCresume(
 	    TclDecrRefCount(valuePtr);
 	}
 
+	TRACE_APPEND(("\"%.30s\"\n", O2S(value2Ptr)));
 	TclDecrRefCount(value3Ptr);
 	NEXT_INST_F(1, 0, 0);
 
