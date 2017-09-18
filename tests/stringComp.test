@@ -9,6 +9,8 @@
 # the runtime parse string code.  The tests of import should match
 # their equivalent number in string.test.
 #
+# TODO: pretty sure non-proc tests go through the bytecoding too...
+#
 # Copyright (c) 2001 by ActiveState Corporation.
 # Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
 #
