@@ -17,7 +17,7 @@
 
 /* d = a - b (mod c) */
 int
-mp_submod(mp_int *a, mp_int *b, mp_int *c, mp_int *d)
+mp_submod(const mp_int *a, const mp_int *b, const mp_int *c, mp_int *d)
 {
    int     res;
    mp_int  t;
