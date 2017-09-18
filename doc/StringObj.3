@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewStringObj, Tcl_NewUnicodeObj, Tcl_SetStringObj, Tcl_SetUnicodeObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_GetUnicodeFromObj, Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_GetRange, Tcl_AppendToObj, Tcl_AppendUnicodeToObj, Tcl_AppendObjToObj, Tcl_AppendStringsToObj, Tcl_AppendStringsToObjVA, Tcl_AppendLimitedToObj, Tcl_Format, Tcl_AppendFormatToObj, Tcl_ObjPrintf, Tcl_AppendPrintfToObj, Tcl_SetObjLength, Tcl_AttemptSetObjLength, Tcl_ConcatObj \- manipulate Tcl values as strings
+Tcl_NewStringObj, Tcl_NewUnicodeObj, Tcl_SetStringObj, Tcl_SetUnicodeObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_GetUnicodeFromObj, Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_GetRange, Tcl_AppendToObj, Tcl_AppendUnicodeToObj, Tcl_AppendObjToObj, Tcl_AppendStringsToObj, Tcl_AppendStringsToObjVA, Tcl_AppendLimitedToObj, Tcl_Format, Tcl_AppendFormatToObj, Tcl_ObjPrintf, Tcl_AppendPrintfToObj, Tcl_SetObjLength, Tcl_AttemptSetObjLength, Tcl_ConcatObj, Tcl_ReplaceObj \- manipulate Tcl values as strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -84,8 +84,13 @@ int
 .sp
 Tcl_Obj *
 \fBTcl_ConcatObj\fR(\fIobjc, objv\fR)
+.sp
+Tcl_Obj *
+\fBTcl_ReplaceObj\fR(\fIinterp, objPtr, startIndex, removeCount, insertObjPtr\fR)
 .SH ARGUMENTS
 .AS "const Tcl_UniChar" *appendObjPtr in/out
+.AP Tcl_Interp *interp in
+If non-NULL, interpreter in which error result messages are stored.
 .AP "const char" *bytes in
 Points to the first byte of an array of UTF-8-encoded bytes
 used to set or append to a string value.
@@ -143,6 +148,12 @@ The array of values to format or concatenate.
 .AP int newLength in
 New length for the string value of \fIobjPtr\fR, not including the
 final null character.
+.AP int startIndex in
+The index of the first character to insert, replace, or remove.
+.AP int removeCount in
+The number of characters to replace or remove.
+.AP Tcl_Obj *insertObjPtr in/out
+The value to insert or replace.  If NULL, interpreted as empty string.
 .BE
 .SH DESCRIPTION
 .PP
@@ -380,6 +391,37 @@ white space, then that value is ignored entirely. This white-space
 removal was added to make the output of the \fBconcat\fR command
 cleaner-looking. \fBTcl_ConcatObj\fR returns a pointer to a
 newly-created value whose ref count is zero.
+.PP
+\fBTcl_ReplaceObj\fR inserts, replaces, or removes a substring in \fIobjPtr\fR
+and returns a pointer to the new or updated string object.
+If \fIobjPtr\fR or \fIinsertObjPtr\fR are unshared, one of them will be modified
+in place, and its address will be returned.
+If this optimization is unavailable, a new string object will be allocated to
+store the result, its address will be returned, and neither \fIobjPtr\fR nor
+\fIinsertObjPtr\fR will be modified.
+Should a memory allocation error occur, \fBTcl_ReplaceObj\fR returns NULL and
+(if \fIinterp\fR is non-NULL) places error information in the result value of
+\fIinterp\fR.
+.PP
+The choice of operation performed by \fBTcl_ReplaceObj\fR is determined by
+\fIremoveCount\fR and the length of \fIinsertObjPtr\fR.
+To insert, \fIremoveCount\fR is zero, and \fIinsertObjPtr\fR is the insertion
+substring.
+To replace, \fIremoveCount\fR is the number of characters to replace, and
+\fIinsertObjPtr\fR is the replacement substring.
+To remove, \fIremoveCount\fR is the number of characters to remove, and
+\fIinsertObjPtr\fR is NULL or empty string.
+.PP
+\fIstartIndex\fR is the index of the first character in \fIobjPtr\fR to insert,
+replace, or remove.
+Negative \fIstartIndex\fR is taken to be zero, and large \fIstartIndex\fR is
+automatically limited to be no greater than the length of \fIobjPtr\fR.
+In a similar manner, negative \fIremoveCount\fR is taken to be zero, and large
+\fIremoveCount\fR is automatically limited such that the sum of \fIstartIndex\fR
+and \fIremoveCount\fR is no greater than the length of \fIobjPtr\fR.
+Consequently, if \fIstartIndex\fR is at the end of \fIobjPtr\fR,
+\fIinsertObjPtr\fR will be appended to \fIobjPtr\fR, and \fIremoveCount\fR will
+be ignored.
 .SH "SEE ALSO"
 Tcl_NewObj(3), Tcl_IncrRefCount(3), Tcl_DecrRefCount(3), format(n), sprintf(3)
 .SH KEYWORDS
