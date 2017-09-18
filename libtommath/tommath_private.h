@@ -40,20 +40,18 @@ extern "C" {
 #endif
 
 /* define heap macros */
-#if 0
 #ifndef XMALLOC
 /* default to libc stuff */
 #   define XMALLOC   malloc
 #   define XFREE     free
 #   define XREALLOC  realloc
 #   define XCALLOC   calloc
-#else
+#elif 0
 /* prototypes for our heap functions */
 extern void *XMALLOC(size_t n);
 extern void *XREALLOC(void *p, size_t n);
 extern void *XCALLOC(size_t n, size_t s);
 extern void XFREE(void *p);
-#endif
 #endif
 
 /* lowlevel functions, do not call! */
@@ -62,8 +60,8 @@ int s_mp_sub(const mp_int *a, const mp_int *b, mp_int *c);
 #define s_mp_mul(a, b, c) s_mp_mul_digs(a, b, c, (a)->used + (b)->used + 1)
 int fast_s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs);
 int s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs);
-int fast_s_mp_mul_high_digs(mp_int *a, mp_int *b, mp_int *c, int digs);
-int s_mp_mul_high_digs(mp_int *a, mp_int *b, mp_int *c, int digs);
+int fast_s_mp_mul_high_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs);
+int s_mp_mul_high_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs);
 int fast_s_mp_sqr(const mp_int *a, mp_int *b);
 int s_mp_sqr(const mp_int *a, mp_int *b);
 int mp_karatsuba_mul(const mp_int *a, const mp_int *b, mp_int *c);
