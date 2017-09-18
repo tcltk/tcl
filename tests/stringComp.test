@@ -48,7 +48,7 @@ if {[testConstraint memory]} {
 test stringComp-1.1 {error conditions} {
     proc foo {} {string gorp a b}
     list [catch {foo} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test stringComp-1.2 {error conditions} {
     proc foo {} {string}
     list [catch {foo} msg] $msg
@@ -294,7 +294,7 @@ test stringComp-5.3 {string index} {
     foo
 } a
 test stringComp-5.4 {string index} {
-    proc foo {} {string in abcde 4}
+    proc foo {} {string ind abcde 4}
     foo
 } e
 test stringComp-5.5 {string index} {
