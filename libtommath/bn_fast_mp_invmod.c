@@ -21,7 +21,7 @@
  * Based on slow invmod except this is optimized for the case where b is
  * odd as per HAC Note 14.64 on pp. 610
  */
-int fast_mp_invmod(mp_int *a, mp_int *b, mp_int *c)
+int fast_mp_invmod(const mp_int *a, const mp_int *b, mp_int *c)
 {
    mp_int  x, y, u, v, B, D;
    int     res, neg;
