@@ -5661,7 +5661,7 @@ TEBCresume(
 
     case INST_STR_INSERT:
 	/*
-	 * Fetch and analyze operands.
+	 * Fetch and analyze arguments.
 	 */
 
 	value3Ptr = POP_OBJECT();	/* Argument #3: insertString. */
