@@ -524,28 +524,25 @@ TclCompileStringInsertCmd(
     if (GetIndexFromToken(indexTokenPtr, &idx) != TCL_OK
      || (idx && idx != INDEX_END)) {
 	/*
-	 * General case: runtime handling of non-constant and interior indices.
+	 * General case: handle non-constant and interior indices at runtime.
 	 */
 
 	CompileWord(envPtr, valueTokenPtr, interp, 1);
 	CompileWord(envPtr, indexTokenPtr, interp, 2);
 	CompileWord(envPtr, insertionTokenPtr, interp, 3);
 	OP(STR_INSERT);
-    } else if (!idx) {
-	/*
-	 * Special case: prepending.
-	 */
-
-	CompileWord(envPtr, insertionTokenPtr, interp, 3);
-	CompileWord(envPtr, valueTokenPtr, interp, 1);
-	OP1(STR_CONCAT1, 2);
     } else {
 	/*
-	 * Special case: appending.
+	 * Special case: prepending and appending.
 	 */
 
-	CompileWord(envPtr, valueTokenPtr, interp, 1);
-	CompileWord(envPtr, insertionTokenPtr, interp, 3);
+	if (!idx) {
+	    CompileWord(envPtr, insertionTokenPtr, interp, 3);
+	    CompileWord(envPtr, valueTokenPtr, interp, 1);
+	} else {
+	    CompileWord(envPtr, valueTokenPtr, interp, 1);
+	    CompileWord(envPtr, insertionTokenPtr, interp, 3);
+	}
 	OP1(STR_CONCAT1, 2);
     }
 
