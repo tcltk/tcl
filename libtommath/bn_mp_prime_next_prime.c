@@ -38,28 +38,28 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style)
    if (mp_cmp_d(a, ltm_prime_tab[PRIME_SIZE-1]) == MP_LT) {
       /* find which prime it is bigger than */
       for (x = PRIME_SIZE - 2; x >= 0; x--) {
-          if (mp_cmp_d(a, ltm_prime_tab[x]) != MP_LT) {
-             if (bbs_style == 1) {
-                /* ok we found a prime smaller or
-                 * equal [so the next is larger]
-                 *
-                 * however, the prime must be
-                 * congruent to 3 mod 4
-                 */
-                if ((ltm_prime_tab[x + 1] & 3) != 3) {
-                   /* scan upwards for a prime congruent to 3 mod 4 */
-                   for (y = x + 1; y < PRIME_SIZE; y++) {
-                       if ((ltm_prime_tab[y] & 3) == 3) {
-                          mp_set(a, ltm_prime_tab[y]);
-                          return MP_OKAY;
-                       }
-                   }
-                }
-             } else {
-                mp_set(a, ltm_prime_tab[x + 1]);
-                return MP_OKAY;
-             }
-          }
+         if (mp_cmp_d(a, ltm_prime_tab[x]) != MP_LT) {
+            if (bbs_style == 1) {
+               /* ok we found a prime smaller or
+                * equal [so the next is larger]
+                *
+                * however, the prime must be
+                * congruent to 3 mod 4
+                */
+               if ((ltm_prime_tab[x + 1] & 3) != 3) {
+                  /* scan upwards for a prime congruent to 3 mod 4 */
+                  for (y = x + 1; y < PRIME_SIZE; y++) {
+                     if ((ltm_prime_tab[y] & 3) == 3) {
+                        mp_set(a, ltm_prime_tab[y]);
+                        return MP_OKAY;
+                     }
+                  }
+               }
+            } else {
+               mp_set(a, ltm_prime_tab[x + 1]);
+               return MP_OKAY;
+            }
+         }
       }
       /* at this point a maybe 1 */
       if (mp_cmp_d(a, 1) == MP_EQ) {
@@ -81,7 +81,9 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style)
    if (bbs_style == 1) {
       /* if a mod 4 != 3 subtract the correct value to make it so */
       if ((a->dp[0] & 3) != 3) {
-         if ((err = mp_sub_d(a, (a->dp[0] & 3) + 1, a)) != MP_OKAY) { return err; };
+         if ((err = mp_sub_d(a, (a->dp[0] & 3) + 1, a)) != MP_OKAY) {
+            return err;
+         };
       }
    } else {
       if (mp_iseven(a) == MP_YES) {
@@ -116,18 +118,18 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style)
 
          /* compute the new residue without using division */
          for (x = 1; x < PRIME_SIZE; x++) {
-             /* add the step to each residue */
-             res_tab[x] += kstep;
+            /* add the step to each residue */
+            res_tab[x] += kstep;
 
-             /* subtract the modulus [instead of using division] */
-             if (res_tab[x] >= ltm_prime_tab[x]) {
-                res_tab[x]  -= ltm_prime_tab[x];
-             }
+            /* subtract the modulus [instead of using division] */
+            if (res_tab[x] >= ltm_prime_tab[x]) {
+               res_tab[x]  -= ltm_prime_tab[x];
+            }
 
-             /* set flag if zero */
-             if (res_tab[x] == 0) {
-                y = 1;
-             }
+            /* set flag if zero */
+            if (res_tab[x] == 0) {
+               y = 1;
+            }
          }
       } while ((y == 1) && (step < ((((mp_digit)1) << DIGIT_BIT) - kstep)));
 
@@ -143,13 +145,13 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style)
 
       /* is this prime? */
       for (x = 0; x < t; x++) {
-          mp_set(&b, ltm_prime_tab[x]);
-          if ((err = mp_prime_miller_rabin(a, &b, &res)) != MP_OKAY) {
-             goto LBL_ERR;
-          }
-          if (res == MP_NO) {
-             break;
-          }
+         mp_set(&b, ltm_prime_tab[x]);
+         if ((err = mp_prime_miller_rabin(a, &b, &res)) != MP_OKAY) {
+            goto LBL_ERR;
+         }
+         if (res == MP_NO) {
+            break;
+         }
       }
 
       if (res == MP_YES) {

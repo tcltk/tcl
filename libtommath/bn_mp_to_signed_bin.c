@@ -16,15 +16,15 @@
  */
 
 /* store in signed [big endian] format */
-int mp_to_signed_bin (const mp_int * a, unsigned char *b)
+int mp_to_signed_bin(const mp_int *a, unsigned char *b)
 {
-  int     res;
+   int     res;
 
-  if ((res = mp_to_unsigned_bin (a, b + 1)) != MP_OKAY) {
-    return res;
-  }
-  b[0] = (a->sign == MP_ZPOS) ? (unsigned char)0 : (unsigned char)1;
-  return MP_OKAY;
+   if ((res = mp_to_unsigned_bin(a, b + 1)) != MP_OKAY) {
+      return res;
+   }
+   b[0] = (a->sign == MP_ZPOS) ? (unsigned char)0 : (unsigned char)1;
+   return MP_OKAY;
 }
 #endif
 

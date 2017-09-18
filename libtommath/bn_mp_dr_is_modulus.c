@@ -29,9 +29,9 @@ int mp_dr_is_modulus(mp_int *a)
     * but the first digit must be equal to -1 (mod b).
     */
    for (ix = 1; ix < a->used; ix++) {
-       if (a->dp[ix] != MP_MASK) {
-          return 0;
-       }
+      if (a->dp[ix] != MP_MASK) {
+         return 0;
+      }
    }
    return 1;
 }
