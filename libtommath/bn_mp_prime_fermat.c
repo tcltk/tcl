@@ -23,7 +23,7 @@
  *
  * Sets result to 1 if the congruence holds, or zero otherwise.
  */
-int mp_prime_fermat(mp_int *a, mp_int *b, int *result)
+int mp_prime_fermat(const mp_int *a, const mp_int *b, int *result)
 {
    mp_int  t;
    int     err;
