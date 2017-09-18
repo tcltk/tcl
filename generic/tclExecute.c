@@ -5548,6 +5548,7 @@ TEBCresume(
 	(void) POP_OBJECT();
 	TclDecrRefCount(OBJ_AT_TOS);
 	(void) POP_OBJECT();
+
 	if (fromIdx < 0) {
 	    fromIdx = 0;
 	}
@@ -5557,6 +5558,8 @@ TEBCresume(
 	    TclDecrRefCount(value3Ptr);
 	    NEXT_INST_F(1, 0, 0);
 	}
+
+	/* TODO: use Tcl_StringReplace(). */
 
 	if (toIdx > length) {
 	    toIdx = length;
@@ -5655,6 +5658,48 @@ TEBCresume(
 	TclDecrRefCount(value3Ptr);
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 1, 1);
+
+    case INST_STR_INSERT:
+	/*
+	 * Fetch and analyze operands.
+	 */
+
+	value3Ptr = POP_OBJECT();	/* Argument #3: insertString. */
+	value2Ptr = POP_OBJECT();	/* Argument #2: index. */
+	valuePtr = OBJ_AT_TOS;		/* Argument #1: string. */
+	length = Tcl_GetCharLength(valuePtr);
+	TRACE(("\"%.20s\" %s \"%.20s\" => ", O2S(valuePtr),
+		O2S(value2Ptr), O2S(value3Ptr)));
+	if (TclGetIntForIndexM(interp, value2Ptr, length, &toIdx) != TCL_OK) {
+	    TclDecrRefCount(value3Ptr);
+	    TclDecrRefCount(value2Ptr);
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	TclDecrRefCount(value2Ptr);
+
+	/*
+	 * Perform string insertion.
+	 */
+
+	value2Ptr = Tcl_StringReplace(interp, valuePtr, toIdx, 0, value3Ptr);
+	if (!value2Ptr) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+
+	/*
+	 * Put result on stack unless modified in place.
+	 */
+
+	if (valuePtr != value2Ptr) {
+	    (void) POP_OBJECT();
+	    PUSH_OBJECT(value2Ptr);
+	    TclDecrRefCount(valuePtr);
+	}
+
+	TclDecrRefCount(value3Ptr);
+	NEXT_INST_F(1, 0, 0);
 
     case INST_STR_MAP:
 	valuePtr = OBJ_AT_TOS;		/* "Main" string. */

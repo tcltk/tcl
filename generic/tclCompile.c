@@ -602,6 +602,9 @@ InstructionDesc const tclInstructionTable[] = {
 	/* [string replace] core: replaces a non-empty range of one string
 	 * with the contents of another.
 	 * Stack: ... string fromIdx toIdx replacement => ... newString */
+    {"strinsert",	 1,	-2,	  0,	{OPERAND_NONE}},
+	/* [string insert] core: inserts a string into another.
+	 * Stack: ... string index insertString => ... newString */
 
     {"originCmd",	 1,	0,	  0,	{OPERAND_NONE}},
 	/* Reports which command was the origin (via namespace import chain)

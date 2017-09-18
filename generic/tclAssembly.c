@@ -477,6 +477,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"strneq",		ASSEM_1BYTE,	INST_STR_NEQ,		2,	1},
     {"strrange",	ASSEM_1BYTE,	INST_STR_RANGE,		3,	1},
     {"strreplace",	ASSEM_1BYTE,	INST_STR_REPLACE,	4,	1},
+    {"strinsert",	ASSEM_1BYTE,	INST_STR_INSERT,	3,	1},
     {"strrfind",	ASSEM_1BYTE,	INST_STR_FIND_LAST,	2,	1},
     {"strtrim",		ASSEM_1BYTE,	INST_STR_TRIM,		2,	1},
     {"strtrimLeft",	ASSEM_1BYTE,	INST_STR_TRIM_LEFT,	2,	1},
@@ -527,7 +528,7 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_STR_TRIM, INST_STR_TRIM_LEFT, INST_STR_TRIM_RIGHT,	/* 170-172 */
     INST_CONCAT_STK,						/* 173 */
     INST_STR_UPPER, INST_STR_LOWER, INST_STR_TITLE,		/* 174-176 */
-    INST_NUM_TYPE						/* 182 */
+    INST_NUM_TYPE						/* 183 */
 };
 
 /*

@@ -501,6 +501,58 @@ TclCompileStringIndexCmd(
 }
 
 int
+TclCompileStringInsertCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *valueTokenPtr, *indexTokenPtr, *insertionTokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+    int idx;
+
+    if (parsePtr->numWords != 4) {
+	return TCL_ERROR;
+    }
+
+    valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    indexTokenPtr = TokenAfter(valueTokenPtr);
+    insertionTokenPtr = TokenAfter(indexTokenPtr);
+
+    if (GetIndexFromToken(indexTokenPtr, &idx) != TCL_OK
+     || (idx && idx != INDEX_END)) {
+	/*
+	 * General case: runtime handling of non-constant and interior indices.
+	 */
+
+	CompileWord(envPtr, valueTokenPtr, interp, 1);
+	CompileWord(envPtr, indexTokenPtr, interp, 2);
+	CompileWord(envPtr, insertionTokenPtr, interp, 3);
+	OP(STR_INSERT);
+    } else if (!idx) {
+	/*
+	 * Special case: prepending.
+	 */
+
+	CompileWord(envPtr, insertionTokenPtr, interp, 3);
+	CompileWord(envPtr, valueTokenPtr, interp, 1);
+	OP1(STR_CONCAT1, 2);
+    } else {
+	/*
+	 * Special case: appending.
+	 */
+
+	CompileWord(envPtr, valueTokenPtr, interp, 1);
+	CompileWord(envPtr, insertionTokenPtr, interp, 3);
+	OP1(STR_CONCAT1, 2);
+    }
+
+    return TCL_OK;
+}
+
+int
 TclCompileStringIsCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
