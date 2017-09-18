@@ -1495,7 +1495,7 @@ StringInsertCmd(
 	return TCL_ERROR;
     }
 
-    if (!(outObj = Tcl_StringReplace(interp, objv[1], index, 0, objv[3]))) {
+    if (!(outObj = Tcl_ReplaceObj(interp, objv[1], index, 0, objv[3]))) {
 	return TCL_ERROR;
     }
 
@@ -2391,7 +2391,7 @@ StringRplcCmd(
 	insObj = NULL;
     }
 
-    if (!(outObj = Tcl_StringReplace(interp, strObj, first, del, insObj))) {
+    if (!(outObj = Tcl_ReplaceObj(interp, strObj, first, del, insObj))) {
 	return TCL_ERROR;
     }
 

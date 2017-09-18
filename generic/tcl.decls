@@ -2337,8 +2337,8 @@ declare 631 {
 
 # TIP #XXX
 declare 632 {
-    Tcl_Obj *Tcl_StringReplace(Tcl_Interp *interp, Tcl_Obj *strObj,
-	    int startIndex, int removeCount, Tcl_Obj *insObj)
+    Tcl_Obj *Tcl_ReplaceObj(Tcl_Interp *interp, Tcl_Obj *strObj, int startIndex,
+	    int removeCount, Tcl_Obj *insObj)
 }
 
 ##############################################################################

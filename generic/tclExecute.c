@@ -5554,7 +5554,7 @@ TEBCresume(
 	}
 
 	if (fromIdx <= toIdx && fromIdx <= length) {
-	    value2Ptr = Tcl_StringReplace(interp, valuePtr, fromIdx,
+	    value2Ptr = Tcl_ReplaceObj(interp, valuePtr, fromIdx,
 		    toIdx - fromIdx + 1, value3Ptr);
 	    if (!value2Ptr) {
 		TRACE_ERROR(interp);
@@ -5585,7 +5585,7 @@ TEBCresume(
 	}
 	TclDecrRefCount(value2Ptr);
 
-	value2Ptr = Tcl_StringReplace(interp, valuePtr, fromIdx, 0, value3Ptr);
+	value2Ptr = Tcl_ReplaceObj(interp, valuePtr, fromIdx, 0, value3Ptr);
 	if (!value2Ptr) {
 	    TRACE_ERROR(interp);
 	    goto gotError;

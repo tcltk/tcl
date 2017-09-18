@@ -3282,11 +3282,11 @@ TclStringFind(
 /*
  *---------------------------------------------------------------------------
  *
- * Tcl_StringReplace --
+ * Tcl_ReplaceObj --
  *
- *	Inserts, replaces, or removes characters in a string.  To insert, let
- *	removeCount be zero.  To replace or remove, let removeCount be nonzero.
- *	To remove, let insObj be empty string or NULL.
+ *	Inserts, replaces, or removes characters in a string object.  To insert,
+ *	let removeCount be zero.  To replace or remove, let removeCount be
+ *	nonzero.  To remove, let insObj be empty string or NULL.
  *
  *	This function is used to implement [string insert] and [string replace].
  *	However, unlike this function, [string replace] cannot be used to insert
@@ -3318,7 +3318,7 @@ TclStringFind(
  */
 
 Tcl_Obj *
-Tcl_StringReplace(
+Tcl_ReplaceObj(
     Tcl_Interp *interp,		/* Interpreter for error logging, may be NULL */
     Tcl_Obj *strObj,	    	/* String being modified */
     int startIndex,		/* Index at which to insert/remove/replace */
