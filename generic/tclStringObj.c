@@ -3284,21 +3284,26 @@ TclStringFind(
  *
  * Tcl_StringReplace --
  *
- *	Inserts, replaces, or removes characters in a string.  Implements the
- *	[string insert] and [string replace] operations.  Observe that inserting
- *	a string is the same as replacing an empty substring with a non-empty
- *	substring.  This function can also be used to implement removing a
- *	substring by replacing a non-empty substring with an empty substring.
+ *	Inserts, replaces, or removes characters in a string.  To insert, let
+ *	removeCount be zero.  To replace or remove, let removeCount be nonzero.
+ *	To remove, let insObj be empty string or NULL.
+ *
+ *	This function is used to implement [string insert] and [string replace].
+ *	However, unlike this function, [string replace] cannot be used to insert
+ *	a substring without replacing at least one character in the original.
  *
  * Results:
  *	Removes removeCount characters from strObj starting at startIndex and
  *	inserts insObj at that same location.  removeCount may be 0 to insert
  *	without removing, and insObj may be NULL or empty string to remove
- *	without inserting.  On memory allocation failure, returns NULL and
- *	places error information in the interpreter result.  On success, returns
- *	a pointer to the updated string object.  As an optimization, the return
- *	value may be equal to strObj or insObj, indicating that the object was
- *	unshared and was modified in place without creating a new object.
+ *	without inserting.
+ *
+ *	On success, returns a pointer to the updated string object.  If the
+ *	string object was modified in place, the return value is equal to strObj
+ *	or insObj, whichever was found to be unshared.  If this optimization
+ *	could not be performed, a new string object is allocated and its pointer
+ *	is returned.  On memory allocation failure, returns NULL and places
+ *	error information in the interpreter result.
  *
  * Side effects:
  *	strObj and insObj may have their Tcl_ObjType changed to tclStringType or
