@@ -22,7 +22,7 @@
  *
  * Sets result to 1 if probably prime, 0 otherwise
  */
-int mp_prime_is_prime(mp_int *a, int t, int *result)
+int mp_prime_is_prime(const mp_int *a, int t, int *result)
 {
    mp_int  b;
    int     ix, err, res;

@@ -20,7 +20,7 @@
  * HAC is wrong here, as the special case of (0 | 1) is not
  * handled correctly.
  */
-int mp_jacobi(mp_int *a, mp_int *n, int *c)
+int mp_jacobi(const mp_int *a, const mp_int *n, int *c)
 {
    mp_int  a1, p1;
    int     k, s, r, res;

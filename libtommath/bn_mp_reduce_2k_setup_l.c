@@ -16,7 +16,7 @@
  */
 
 /* determines the setup value */
-int mp_reduce_2k_setup_l(mp_int *a, mp_int *d)
+int mp_reduce_2k_setup_l(const mp_int *a, mp_int *d)
 {
    int    res;
    mp_int tmp;
