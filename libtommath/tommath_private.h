@@ -19,40 +19,40 @@
 #include <ctype.h>
 
 #ifndef MIN
-  #define MIN(x,y) (((x) < (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #endif
 
 #ifndef MAX
-  #define MAX(x,y) (((x) > (y)) ? (x) : (y))
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 
 /* C++ compilers don't like assigning void * to mp_digit * */
-#define  OPT_CAST(x)  (x *)
+#define OPT_CAST(x) (x *)
 
 #else
 
 /* C on the other hand doesn't care */
-#define  OPT_CAST(x)
+#define OPT_CAST(x)
 
 #endif
 
 /* define heap macros */
 #if 0
 #ifndef XMALLOC
-   /* default to libc stuff */
-   #define XMALLOC  malloc
-   #define XFREE    free
-   #define XREALLOC realloc
-   #define XCALLOC  calloc
+/* default to libc stuff */
+#   define XMALLOC   malloc
+#   define XFREE     free
+#   define XREALLOC  realloc
+#   define XCALLOC   calloc
 #else
-   /* prototypes for our heap functions */
-   extern void *XMALLOC(size_t n);
-   extern void *XREALLOC(void *p, size_t n);
-   extern void *XCALLOC(size_t n, size_t s);
-   extern void XFREE(void *p);
+/* prototypes for our heap functions */
+extern void *XMALLOC(size_t n);
+extern void *XREALLOC(void *p, size_t n);
+extern void *XCALLOC(size_t n, size_t s);
+extern void XFREE(void *p);
 #endif
 #endif
 
@@ -71,10 +71,10 @@ int mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c);
 int mp_karatsuba_sqr(const mp_int *a, mp_int *b);
 int mp_toom_sqr(const mp_int *a, mp_int *b);
 int fast_mp_invmod(mp_int *a, mp_int *b, mp_int *c);
-int mp_invmod_slow (mp_int * a, mp_int * b, mp_int * c);
+int mp_invmod_slow(mp_int *a, mp_int *b, mp_int *c);
 int fast_mp_montgomery_reduce(mp_int *x, mp_int *n, mp_digit rho);
 int mp_exptmod_fast(mp_int *G, mp_int *X, mp_int *P, mp_int *Y, int redmode);
-int s_mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y, int redmode);
+int s_mp_exptmod(mp_int *G, mp_int *X, mp_int *P, mp_int *Y, int redmode);
 void bn_reverse(unsigned char *s, int len);
 
 extern const char *mp_s_rmap;
@@ -114,7 +114,7 @@ int func_name (mp_int * a, type b)                       \
 }
 
 #ifdef __cplusplus
-   }
+}
 #endif
 
 #endif
