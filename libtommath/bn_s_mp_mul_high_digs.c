@@ -19,7 +19,7 @@
  * [meant to get the higher part of the product]
  */
 int
-s_mp_mul_high_digs(mp_int *a, mp_int *b, mp_int *c, int digs)
+s_mp_mul_high_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs)
 {
    mp_int  t;
    int     res, pa, pb, ix, iy;
