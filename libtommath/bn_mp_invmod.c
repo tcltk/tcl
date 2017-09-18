@@ -16,7 +16,7 @@
  */
 
 /* hac 14.61, pp608 */
-int mp_invmod(mp_int *a, mp_int *b, mp_int *c)
+int mp_invmod(const mp_int *a, const mp_int *b, mp_int *c)
 {
    /* b cannot be negative */
    if ((b->sign == MP_NEG) || (mp_iszero(b) == MP_YES)) {
