@@ -16,7 +16,7 @@
  */
 
 /* determines if a number is a valid DR modulus */
-int mp_dr_is_modulus(mp_int *a)
+int mp_dr_is_modulus(const mp_int *a)
 {
    int ix;
 
