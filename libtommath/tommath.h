@@ -464,17 +464,17 @@ int mp_exptmod(const mp_int *a, const mp_int *b, const mp_int *c, mp_int *d);
 extern const mp_digit ltm_prime_tab[PRIME_SIZE];
 
 /* result=1 if a is divisible by one of the first PRIME_SIZE primes */
-int mp_prime_is_divisible(mp_int *a, int *result);
+int mp_prime_is_divisible(const mp_int *a, int *result);
 
 /* performs one Fermat test of "a" using base "b".
  * Sets result to 0 if composite or 1 if probable prime
  */
-int mp_prime_fermat(mp_int *a, mp_int *b, int *result);
+int mp_prime_fermat(const mp_int *a, const mp_int *b, int *result);
 
 /* performs one Miller-Rabin test of "a" using base "b".
  * Sets result to 0 if composite or 1 if probable prime
  */
-int mp_prime_miller_rabin(mp_int *a, mp_int *b, int *result);
+int mp_prime_miller_rabin(const mp_int *a, const mp_int *b, int *result);
 
 /* This gives [for a given bit size] the number of trials required
  * such that Miller-Rabin gives a prob of failure lower than 2^-96
@@ -488,7 +488,7 @@ int mp_prime_rabin_miller_trials(int size);
  *
  * Sets result to 1 if probably prime, 0 otherwise
  */
-int mp_prime_is_prime(mp_int *a, int t, int *result);
+int mp_prime_is_prime(const mp_int *a, int t, int *result);
 
 /* finds the next prime after the number "a" using "t" trials
  * of Miller-Rabin.
