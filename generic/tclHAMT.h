@@ -104,6 +104,11 @@ MODULE_SCOPE TclHAMT		TclHAMTRemove(TclHAMT hamt, ClientData key,
 				    ClientData *valuePtr);
 MODULE_SCOPE ClientData		TclHAMTFetch(TclHAMT hamt, ClientData key);
 
+MODULE_SCOPE TclHAMTIdx		TclHAMTFirst(TclHAMT hamt, ClientData *keyPtr,
+				    ClientData *valuePtr);
+
+
+
 #endif /* TCL_HAMT_H */
 
 /*
