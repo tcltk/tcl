@@ -8234,7 +8234,7 @@ Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 
 2013-05-16 (platform support) mingw-4.0 (nijtmans)
 
-2013-05-19 (platform support) FreeBSD updates (cerutti)
+2013-05-19 (platform support) FreeBSD updates (gahr)
 
 2013-05-20 (bug fix)[3613567] access error temp file creation (keene)
 
@@ -8625,5 +8625,219 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 --- Released 8.6.5, February 29, 2016 --- http://core.tcl.tk/tcl/ for details
 
+2016-03-01 (bug)[803042] mem leak due to reference cycle (porter)
+
+2016-03-08 (bug)[bbc304] reflected watch race condition (porter)
+
+2016-03-17 (bug)[fadc99] compile-5.3 (rodriguez,porter)
+
+2016-03-17 (enhancement)[1a25fd] compile [variable ${ns}::v] (porter)
+
+2016-03-20 (bug)[1af8de] crash in compiled [string replace] (harder,fellows)
+
+2016-03-21 (bug)[d30718] segv in notifier finalize (hirofumi,nijtmans)
+
+2016-03-23 (enhancement)[7d0db7] parallel make (yarda,nijtmans)
+
+2016-03-23 [f12535] enable test bindings customization (vogel,nijtmans)
+
+2016-04-04 (bug)[47ac84] compiled [lreplace] fixes (aspect,ferrieux,fellows)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-04-08 (bug)[866368] RE \w includes 'Punctuation Connector' (nijtmans)
+
+2016-04-08 (bug)[2538f3] Win crash Tcl_OpenTcpServer() (griffin)
+
+2016-04-10 [07d13d] Restore TclBlend support lost in 8.6.1 (buratti)
+
+2016-05-13 (bug)[3154ea] Mem corruption in assembler exceptions (tkob,kenny)
+
+2016-05-13 (bug) registry package support any Unicode env (nijtmans)
+=> registry 1.3.2
+
+2016-05-21 (bug)[f7d4e] [namespace delete] performance (fellows)
+
+2016-06-02 (TIP 447) execution time verbosity option (gahr)
+=> tcltest 2.4.0
+
+2016-06-16 (bug)[16828b] crash due to [vwait] trace undo fail (dah,porter)
+
+2016-06-16 (enhancement)[4b61af] good [info frame] from more cases (beric)
+
+2016-06-21 (bug)[c383eb] crash in [glob -path a] (oehlmann,porter)
+
+2016-06-21 (update) Update Unicode data to 9.0 (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-06-22 (bug)[16896d] Tcl_DString tolerate append to self. (dah,porter)
+
+2016-06-23 (bug)[d55322] crash in [dict update] (yorick,fellows)
+
+2016-06-27 (bug)[dd260a] crash in [chan configure -dictionary] (madden,aspect)
+
+2016-07-02 (bug)[f961d7] usage message with parameters with spaces (porter)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-07-02 (enhancement)[09fabc] Sort order of -relateddir (lanam)
+
+2016-07-07 (bug)[5d7ca0] Win: [file executable] for .cmd and .ps1 (nadkarni)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-07-08 (bug)[a47641] [file normalize] & Windows junctions (nadkarni)
+
+2016-07-09 [ae61a6] [file] handling of Win hardcoded names (CON) (nadkarni)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-07-09 [3613671] [file owned] (more) useful on Win (nadkarni)
+
+2016-07-09 (bug)[1493a4] [namespace upvar] use of resolvers (beric,fellows)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-07-10 (bug)[da340d] integer division in clock math (nadkarni)
+
+2016-07-20 tzdata updated to Olson's tzdata2016f (venkat)
+
+--- Released 8.6.6, July 27, 2016 --- http://core.tcl.tk/tcl/ for details
+
+2016-09-07 (bug)[c09edf] Bad caching with  custom resolver (neumann,nijtmans)
+
+2016-09-07 (bug)[4dbdd9] Memleak in test var-8.3 (mr_calvin,porter)
+
+2016-10-03 (bug)[2bf561] Allow empty command as alias target (yorick,nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-10-04 (bug)[4d5ae7] Crash in async connects host no address (gahr,fellows)
+
+2016-10-08 (bug)[838e99] treat application/xml as text (gahr,fellows)
+=> http 2.8.10
+
+2016-10-11 (bug)[3cc1d9] Thread finalization crash in zippy (neumann)
+
+2016-10-12 (bug)[be003d] Fix [scan 0x1 %b], [scan 0x1 %o] (porter)
+
+2016-10-14 (bug)[eb6b68] Fix stringComp-14.5 (porter)
+
+2016-10-30 (bug)[b26e38] Fix zlib-7.8 (fellows)
+
+2016-10-30 (bug)[1ae129] Fix memleak in [history] destruction (fellows)
+
+2016-11-04 (feature) Provisional Tcl 9 support in msgcat and tcltest (nijtmans)
+=> msgcat 1.6.1
+=> tcltest 2.4.1
+
+2016-11-04 (bug)[824752] Crash in Tcl_ListObjReplace() (gahr,porter)
+
+2016-11-11 (bug)[79614f] invalidate VFS mounts on sytem encoding change (yorick)
+
+2016-11-14 OSX: End panic() as legacy support macro; system conflicts (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-11-15 (bug) TclOO fix stops crash mixing Itcl and snit (fellows)
+
+2016-11-17 (update) Reconcile libtommath updates; purge unused files (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2017-01-09 (bug)[b87ad7] Repair drifts in timer clock (sebres)
+
+2017-01-17 (update) => zlib 1.2.11 (nijtmans)
+
+2017-01-31 (bug)[39f630] Revise Tcl_LinkVar to tolerate some prefixes (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2017-02-01 (bug)[d0f7ba] Improper NAN optimization. expr-22.1[01] (aspect)
+
+2017-02-26 (bug)[25842c] zlib stream finalization (aspect)
+
+2017-03-07 (deprecate) Remove unmaintained makefile.bc file (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2017-03-14 (enhancement) [clock] and [encoding] are now ensembles (kenny)
+
+2017-03-15 (enhancement) several [clock] subcommands bytecoded (kenny)
+
+2017-03-23 tzdata updated to Olson's tzdata2017b (jima)
+
+2017-03-29 (bug)[900cb0] Fix OO unexport introspection (napier)
+
+2017-04-12 (bug)[42202b] Nesting imbalance in coro injection (nadkarni,sebres)
+
+2017-04-18 (bug)[bc4322] http package support for safe interps (nash,nijtmans)
+
+2017-04-28 (bug)[f34cf8] [file join a //b] => /b (neumann,porter)
+
+2017-05-01 (bug)[8bd13f] Windows threads and pipes (sebres,nijtmans)
+
+2017-05-01 (bug)[f9fe90] [file join //a b] EIAS violation (aspect,porter)
+
+2017-05-04 (bug) Make test filesystem-1.52 pass on Windows (nijtmans)
+
+2017-05-05 (bug)[601522] [binary] field spec overflow -> segfault (porter)
+
+2017-05-08 (bug)[6ca52a] http memleak handling keep-alive (aspect,nijtmans)
+=> http 2.8.11
+
+2017-05-29 (bug)[a3fb33] crash in [lsort] on long lists (sebres)
+
+2017-06-05 (bug)[67aa9a] Tcl_UtfToUniChar() revised handling invalid UTF-8 (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2017-06-08 (bug)[2738427] Tcl_NumUtfChars() corner case utf-4.9 (nijtmans)
+
+2017-06-22 (update) Update Unicode data to 10.0 (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2017-06-22 (TIP 473) Let [oo::copy] specify target namespace (fellows)
+
+2017-06-26 (bug)[46f801] Repair autoloader fragility (porter)
+
+2017-07-06 (bug)[adb198] Plug memleak in TclJoinPath (sebres,porter)
+
+2017-07-17 (bug)[fb2208] Repeatable tclIndex generation (wiedemann,nijtmans)
+
+--- Released 8.6.7, August 9, 2017 --- http://core.tcl.tk/tcl/ for details
+
+2016-03-17 (bug)[0b8c38] socket accept callbacks always in global ns (porter)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-07-01 Hack accommodations for legacy Itcl 3 disabled (porter)
+
+2016-07-12 Make TCL_HASH_TYPE build-time configurable (nijtmans)
+
+2016-07-19 (bug)[0363f0] Partial array search ID reform (porter)
+
+2016-07-19 (feature removed) Tcl_ObjType "array search" unregistered (porter)
+	*** POTENTIAL INCOMPATIBILITY for Tcl_GetObjType("array search") ***
+
+2016-10-04 Server socket on port 0 chooses port supporting IPv4 * IPv6 (max)
+
+2016-11-25 [array named -regexp] supports backrefs (goth)
+
+2017-01-04 (TIP 456) New routine Tcl_OpenTcpServerEx() (limeboy)
+
+2017-01-04 (TIP 459) New subcommand [package files] (nijtmans)
+
+2017-01-16 threaded allocator initialization repair (vasiljevic,nijtmans)
+
+2017-01-30 Add to Win shell builtins: assoc ftype move (ashok)
+
+2017-03-31 TCL_MEM_DEBUG facilities better support 64-bit memory (nijtmans)
+
+2017-04-13 \u escaped content in msg files converted to true utf-8 (nijtmans)
+
+2017-05-18 (TIP 458) New epoll or kqueue notifiers are default (alborboz)
+
+2017-05-31 Purge build support for SunOS-4.* (stu)
+
+2017-06-22 (TIP 463) New option [regsub ... -command ...] (fellows)
+
+2017-06-22 (TIP 470) Tcl_GetDefineContextObject();[oo::define [self]] (fellows)
+=> TclOO 1.2.0
+
+2017-06-23 (TIP 472) Support 0d as prefix of decimal numbers (iyer,griffin)
+
 2017-08-31 (bug)[2a9465] http state 100 continue handling broken (oehlmann)
 => http 2.8.12
+
+2017-09-02 (bug)[0e4d88] replace command, delete trace kills namespace (porter)
+
+--- Released 8.7a1, September 8, 2017 --- http://core.tcl.tk/tcl/ for details
