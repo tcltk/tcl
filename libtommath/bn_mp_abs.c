@@ -20,7 +20,7 @@
  * Simple function copies the input and fixes the sign to positive
  */
 int
-mp_abs(mp_int *a, mp_int *b)
+mp_abs(const mp_int *a, mp_int *b)
 {
    int     res;
 
