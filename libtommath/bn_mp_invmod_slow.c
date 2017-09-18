@@ -16,7 +16,7 @@
  */
 
 /* hac 14.61, pp608 */
-int mp_invmod_slow(mp_int *a, mp_int *b, mp_int *c)
+int mp_invmod_slow(const mp_int *a, const mp_int *b, mp_int *c)
 {
    mp_int  x, y, u, v, A, B, C, D;
    int     res;

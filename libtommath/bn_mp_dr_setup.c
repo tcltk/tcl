@@ -16,7 +16,7 @@
  */
 
 /* determines the setup value */
-void mp_dr_setup(mp_int *a, mp_digit *d)
+void mp_dr_setup(const mp_int *a, mp_digit *d)
 {
    /* the casts are required if DIGIT_BIT is one less than
     * the number of bits in a mp_digit [e.g. DIGIT_BIT==31]

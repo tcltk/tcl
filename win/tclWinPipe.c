@@ -3390,11 +3390,11 @@ TclPipeThreadStop(
 	    SetEvent(pipeTI->evWakeUp);
 	}
 	CloseHandle(pipeTI->evControl);
-    #ifndef _PTI_USE_CKALLOC
+#   ifndef _PTI_USE_CKALLOC
 	free(pipeTI);
-    #else
+#   else
 	ckfree(pipeTI);
-    #endif
+#   endif
     }
 }
 
@@ -3438,13 +3438,13 @@ TclPipeThreadExit(
 	if (pipeTI->evWakeUp) {
 	    SetEvent(pipeTI->evWakeUp);
 	}
-    #ifndef _PTI_USE_CKALLOC
+#   ifndef _PTI_USE_CKALLOC
 	free(pipeTI);
-    #else
+#   else
 	ckfree(pipeTI);
 	/* be sure all subsystems used are finalized */
 	Tcl_FinalizeThread();
-    #endif
+#   endif
     }
 }
 
