@@ -113,42 +113,46 @@ CFG_ENCODING	= \"cp1252\"
 #----------------------------------------------------------
 
 ### test for optimizations
-!if [nmakehlp -c -Ot]
+# /O2 optimization includes /Og /Oi /Ot /Oy /Ob2 /Gs /GF /Gy as per
+# documentation. Note we do NOT want /Gs as that inserts a _chkstk
+# stack probe at *every* function entry, not just those with more than
+# a page of stack allocation resulting in a performance hit.  However,
+# /O2 documentation is misleading as its stack probes are simply the
+# default page size locals allocation probes and not what is implied
+# by an explicit /Gs option.
+
+!if [nmakehlp -c -O2]
 !message *** Compiler has 'Optimizations'
 OPTIMIZING	= 1
+OPTIMIZATIONS   = -O2
 !else
 !message *** Compiler does not have 'Optimizations'
 OPTIMIZING	= 0
+OPTIMIZATIONS   = 
 !endif
 
-OPTIMIZATIONS   =
 
-!if [nmakehlp -c -Ot]
-OPTIMIZATIONS  = $(OPTIMIZATIONS) -Ot
-!endif
-
-!if [nmakehlp -c -Oi]
-OPTIMIZATIONS  = $(OPTIMIZATIONS) -Oi
-!endif
-
+# -Op improves float consistency. Note only needed for older compilers
+# Newer compilers do not need or support this option.
 !if [nmakehlp -c -Op]
 OPTIMIZATIONS  = $(OPTIMIZATIONS) -Op
 !endif
 
+# Strict floating point semantics - present in newer compilers in lieu of -Op
 !if [nmakehlp -c -fp:strict]
 OPTIMIZATIONS  = $(OPTIMIZATIONS) -fp:strict
 !endif
 
-!if [nmakehlp -c -Gs]
-OPTIMIZATIONS  = $(OPTIMIZATIONS) -Gs
-!endif
-
+# Checks for buffer overflows in local arrays
 !if [nmakehlp -c -GS]
 OPTIMIZATIONS  = $(OPTIMIZATIONS) -GS
 !endif
 
+# Link time optimization. Note that this option (potentially) makes generated libraries
+# only usable by the specific VC++ version that created it. Requires /LTCG linker option
 !if [nmakehlp -c -GL]
 OPTIMIZATIONS  = $(OPTIMIZATIONS) -GL
+CC_GL_OPT_ENABLED = 1
 !endif
 
 DEBUGFLAGS     =
@@ -208,8 +212,10 @@ ALIGN98_HACK	= 0
 
 LINKERFLAGS     =
 
+!ifdef CC_GL_OPT_ENABLED
 !if [nmakehlp -l -ltcg $(LINKER_TESTFLAGS)]
-LINKERFLAGS     =-ltcg
+LINKERFLAGS     = $(LINKERFLAGS) -ltcg
+!endif
 !endif
 
 #----------------------------------------------------------

@@ -470,7 +470,7 @@ PKGSDIR		= $(ROOT)\pkgs
 !if !$(DEBUG)
 !if $(OPTIMIZING)
 ### This cranks the optimization level to maximize speed
-cdebug	= -O2 $(OPTIMIZATIONS)
+cdebug	= $(OPTIMIZATIONS)
 !else
 cdebug	=
 !endif
