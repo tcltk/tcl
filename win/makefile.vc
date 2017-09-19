@@ -71,7 +71,7 @@ the build instructions.
 #		Sets where to install Tcl from the built binaries.
 #		C:\Progra~1\Tcl is assumed when not specified.
 #
-#	OPTS=loimpact,msvcrt,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,tclalloc,unchecked,none
+#	OPTS=loimpact,msvcrt,pdbs,profile,static,staticpkg,symbols,thrdalloc,tclalloc,unchecked,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -82,7 +82,6 @@ the build instructions.
 #			   using libcmt(d) as the C runtime [by default] to
 #			   msvcrt(d). This is useful for static embedding
 #			   support.
-#		nothreads= Turns off full multithreading support.
 #		pdbs     = Build detached symbols for release builds.
 #		profile  = Adds profiling hooks.  Map file is assumed.
 #		static   = Builds a static library of the core instead of a
