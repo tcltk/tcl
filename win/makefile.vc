@@ -482,6 +482,13 @@ cdebug	= -Zi -WX $(DEBUGFLAGS)
 
 ### Declarations common to all compiler options
 cwarn = $(WARNINGS) -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
+!if "$(MACHINE)" == "AMD64"
+# Disable pointer<->int warnings related to cast between different sizes
+# There are a gadzillion of these due to use of ClientData and clutter up compiler
+# output increasing chance of a real warning getting lost. So disable them.
+# Eventually some day, Tcl will be 64-bit clean.
+cwarn = $(cwarn) -wd4311 -wd4312
+!endif
 cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\
 
 !if $(MSVCRT)
