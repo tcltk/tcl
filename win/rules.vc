@@ -68,11 +68,18 @@ VCVER=0
     && ![echo $(_HASH)endif >> vercl.x] \
     && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
 !include vercl.i
+!if $(VCVERSION) < 1900
 !if ![echo VCVER= ^\> vercl.vc] \
     && ![set /a $(VCVERSION) / 100 - 6 >> vercl.vc]
 !include vercl.vc
 !endif
+!else
+# The simple calculation above does not apply to new Visual Studio releases
+# Keep the compiler version in its native form.
+VCVER = $(VCVERSION)
 !endif
+!endif
+
 !if ![del $(ERRNUL) /q/f vercl.x vercl.i vercl.vc]
 !endif
 
