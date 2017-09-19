@@ -120,12 +120,12 @@ the build instructions.
 #		nodep	 = Turns off compatibility macros to ensure the core
 #			    isn't being built with deprecated functions.
 #
-#	MACHINE=(ALPHA|AMD64|IA64|IX86)
+#	MACHINE=(AMD64|IX86)
 #		Set the machine type used for the compiler, linker, and
 #		resource compiler.  This hook is needed to tell the tools
-#		when alternate platforms are requested.  IX86 is the default
-#		when not specified. If the CPU environment variable has been
-#		set (ie: recent Platform SDK) then MACHINE is set from CPU.
+#		when alternate platforms are requested. This should normally
+#               NOT be set as it is automatically detected based on the
+#               compiler in use.
 #
 #	TMP_DIR=<path>
 #	OUT_DIR=<path>
@@ -153,11 +153,8 @@ the build instructions.
 #       c:\tcl_src\win\>nmake -f makefile.vc install INSTALLDIR=c:\progra~1\tcl
 #
 #                         Building for Win64
-#       c:\tcl_src\win\>c:\progra~1\micros~1\vc98\bin\vcvars32.bat
-#       Setting environment for using Microsoft Visual C++ tools.
-#       c:\tcl_src\win\>c:\progra~1\platfo~1\setenv.bat /pre64 /RETAIL
-#       Targeting Windows pre64 RETAIL
-#       c:\tcl_src\win\>nmake -f makefile.vc MACHINE=IA64
+#       c:\tcl_src\win\>c:\progra~1\platfo~1\setenv.bat /x64 /RETAIL
+#       c:\tcl_src\win\>nmake -f makefile.vc
 #
 #------------------------------------------------------------------------------
 #==============================================================================
@@ -476,7 +473,7 @@ cdebug	=
 !if $(SYMBOLS)
 cdebug	= $(cdebug) -Zi
 !endif
-!else if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
+!else if "$(MACHINE)" == "AMD64"
 ### Warnings are too many, can't support warnings into errors.
 cdebug	= -Zi -Od $(DEBUGFLAGS)
 !else
@@ -552,7 +549,7 @@ guilflags = $(lflags) -subsystem:windows
 baselibs   = netapi32.lib kernel32.lib user32.lib advapi32.lib userenv.lib ws2_32.lib
 # Avoid 'unresolved external symbol __security_cookie' errors.
 # c.f. http://support.microsoft.com/?id=894573
-!if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
+!if "$(MACHINE)" == "AMD64"
 !if $(VCVERSION) > 1399 && $(VCVERSION) < 1500
 baselibs   = $(baselibs) bufferoverflowU.lib
 !endif

@@ -33,23 +33,10 @@ _INSTALLDIR	= $(INSTALLDIR:/=\)
 # "delete all" method.
 #----------------------------------------------------------
 
-!if "$(OS)" == "Windows_NT"
 RMDIR	= rmdir /S /Q
 ERRNULL  = 2>NUL
-!if ![ver | find "4.0" > nul]
-CPY	= echo y | xcopy /i >NUL
-COPY	= copy >NUL
-!else
 CPY	= xcopy /i /y >NUL
 COPY	= copy /y >NUL
-!endif
-!else # "$(OS)" != "Windows_NT"
-CPY	= xcopy /i >_JUNK.OUT # On Win98 NUL does not work here.
-COPY	= copy >_JUNK.OUT # On Win98 NUL does not work here.
-RMDIR	= deltree /Y
-NULL    = \NUL # Used in testing directory existence
-ERRNULL = >NUL # Win9x shell cannot redirect stderr
-!endif
 MKDIR   = mkdir
 
 #------------------------------------------------------------------------------
@@ -186,16 +173,6 @@ OPTIMIZATIONS  = $(OPTIMIZATIONS) -YX
 COMPILERFLAGS  = $(COMPILERFLAGS) -QI0f
 !else
 !message *** Compiler does not have 'Pentium 0x0f fix'
-!endif
-!endif
-
-!if "$(MACHINE)" == "IA64"
-### test for Itanium errata
-!if [nmakehlp -c -QIA64_Bx]
-!message *** Compiler has 'B-stepping errata workarounds'
-COMPILERFLAGS   = $(COMPILERFLAGS) -QIA64_Bx
-!else
-!message *** Compiler does not have 'B-stepping errata workarounds'
 !endif
 !endif
 
@@ -519,7 +496,7 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_OPTIMIZED
 !if $(PROFILE)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_PROFILED
 !endif
-!if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
+!if "$(MACHINE)" == "AMD64"
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 !endif
 !if $(VCVERSION) < 1300
