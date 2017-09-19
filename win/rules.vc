@@ -230,6 +230,9 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 #----------------------------------------------------------
 
 !if "$(OPTS)" == "" || [nmakehlp -f "$(OPTS)" "none"]
+
+# if No OPTS specified
+
 STATIC_BUILD	= 0
 TCL_THREADS	= 1
 DEBUG		= 0
@@ -241,13 +244,18 @@ LOIMPACT	= 0
 TCL_USE_STATIC_PACKAGES	= 0
 USE_THREAD_ALLOC = 1
 UNCHECKED	= 0
+
 !else
+
+# OPTS are specified, parse them
+
 !if [nmakehlp -f $(OPTS) "static"]
 !message *** Doing static
 STATIC_BUILD	= 1
 !else
 STATIC_BUILD	= 0
 !endif
+
 !if [nmakehlp -f $(OPTS) "nomsvcrt"]
 !message *** Doing nomsvcrt
 MSVCRT		= 0
@@ -262,14 +270,17 @@ MSVCRT		= 1
 MSVCRT		= 0
 !endif
 !endif
-!endif
+!endif # [nmakehlp -f $(OPTS) "nomsvcrt"]
+
 !if [nmakehlp -f $(OPTS) "staticpkg"] && $(STATIC_BUILD)
 !message *** Doing staticpkg
 TCL_USE_STATIC_PACKAGES	= 1
 !else
 TCL_USE_STATIC_PACKAGES	= 0
 !endif
+
 !if [nmakehlp -f $(OPTS) "nothreads"]
+!error Option "nothreads" no longer supported. Threads required for sockets, registry and dde to work.
 !message *** Compile explicitly for non-threaded tcl
 TCL_THREADS	= 0
 USE_THREAD_ALLOC= 0
@@ -277,24 +288,28 @@ USE_THREAD_ALLOC= 0
 TCL_THREADS	= 1
 USE_THREAD_ALLOC= 1
 !endif
+
 !if [nmakehlp -f $(OPTS) "symbols"]
 !message *** Doing symbols
 DEBUG		= 1
 !else
 DEBUG		= 0
 !endif
+
 !if [nmakehlp -f $(OPTS) "pdbs"]
 !message *** Doing pdbs
 SYMBOLS		= 1
 !else
 SYMBOLS		= 0
 !endif
+
 !if [nmakehlp -f $(OPTS) "profile"]
 !message *** Doing profile
 PROFILE		= 1
 !else
 PROFILE		= 0
 !endif
+
 !if [nmakehlp -f $(OPTS) "pgi"]
 !message *** Doing profile guided optimization instrumentation
 PGO		= 1
@@ -304,27 +319,32 @@ PGO		= 2
 !else
 PGO		= 0
 !endif
+
 !if [nmakehlp -f $(OPTS) "loimpact"]
 !message *** Doing loimpact
 LOIMPACT	= 1
 !else
 LOIMPACT	= 0
 !endif
+
 !if [nmakehlp -f $(OPTS) "thrdalloc"]
 !message *** Doing thrdalloc
 USE_THREAD_ALLOC = 1
 !endif
+
 !if [nmakehlp -f $(OPTS) "tclalloc"]
 !message *** Doing tclalloc
 USE_THREAD_ALLOC = 0
 !endif
+
 !if [nmakehlp -f $(OPTS) "unchecked"]
 !message *** Doing unchecked
 UNCHECKED = 1
 !else
 UNCHECKED = 0
 !endif
-!endif
+
+!endif # "$(OPTS)" == ""  ... parsing of OPTS
 
 #----------------------------------------------------------
 # Figure-out how to name our intermediate and output directories.
