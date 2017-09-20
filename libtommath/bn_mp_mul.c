@@ -51,7 +51,7 @@ int mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
 #endif
          {
 #ifdef BN_S_MP_MUL_DIGS_C
-            res = s_mp_mul(a, b, c);  /* uses s_mp_mul_digs */
+            res = s_mp_mul(a, b, c); /* uses s_mp_mul_digs */
 #else
             res = MP_VAL;
 #endif

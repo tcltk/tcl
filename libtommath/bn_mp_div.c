@@ -167,7 +167,7 @@ int mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d)
    t = y.used - 1;
 
    /* while (x >= y*b**n-t) do { q[n-t] += 1; x -= y*b**{n-t} } */
-   if ((res = mp_lshd(&y, n - t)) != MP_OKAY) {  /* y = y*b**{n-t} */
+   if ((res = mp_lshd(&y, n - t)) != MP_OKAY) { /* y = y*b**{n-t} */
       goto LBL_Y;
    }
 
