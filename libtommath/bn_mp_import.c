@@ -46,14 +46,11 @@ int mp_import(mp_int *rop, size_t count, int order, size_t size,
 
    for (i = 0; i < count; ++i) {
       for (j = 0; j < (size - nail_bytes); ++j) {
-         unsigned char byte = *(
-                                 (unsigned char *)op +
-                                 (((order == 1) ? i : ((count - 1) - i)) * size) +
-                                 ((endian == 1) ? (j + nail_bytes) : (((size - 1) - j) - nail_bytes))
-                              );
+         unsigned char byte = *((unsigned char *)op +
+                                (((order == 1) ? i : ((count - 1) - i)) * size) +
+                                ((endian == 1) ? (j + nail_bytes) : (((size - 1) - j) - nail_bytes)));
 
-         if (
-            (result = mp_mul_2d(rop, ((j == 0) ? (8 - odd_nails) : 8), rop)) != MP_OKAY) {
+         if ((result = mp_mul_2d(rop, ((j == 0) ? (8 - odd_nails) : 8), rop)) != MP_OKAY) {
             return result;
          }
 

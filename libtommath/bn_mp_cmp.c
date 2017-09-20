@@ -16,8 +16,7 @@
  */
 
 /* compare two ints (signed)*/
-int
-mp_cmp(const mp_int *a, const mp_int *b)
+int mp_cmp(const mp_int *a, const mp_int *b)
 {
    /* compare based on sign */
    if (a->sign != b->sign) {

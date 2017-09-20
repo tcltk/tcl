@@ -16,8 +16,7 @@
  */
 
 /* computes b = a*a */
-int
-mp_sqr(const mp_int *a, mp_int *b)
+int mp_sqr(const mp_int *a, mp_int *b)
 {
    int     res;
 
