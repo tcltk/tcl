@@ -16,8 +16,7 @@
  */
 
 /* copy, b = a */
-int
-mp_copy(const mp_int *a, mp_int *b)
+int mp_copy(const mp_int *a, mp_int *b)
 {
    int     res, n;
 

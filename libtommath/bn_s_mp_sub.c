@@ -16,8 +16,7 @@
  */
 
 /* low level subtraction (assumes |a| > |b|), HAC pp.595 Algorithm 14.9 */
-int
-s_mp_sub(const mp_int *a, const mp_int *b, mp_int *c)
+int s_mp_sub(const mp_int *a, const mp_int *b, mp_int *c)
 {
    int     olduse, res, min, max;
 
