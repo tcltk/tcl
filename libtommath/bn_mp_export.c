@@ -53,11 +53,9 @@ int mp_export(void *rop, size_t *countp, int order, size_t size,
 
    for (i = 0; i < count; ++i) {
       for (j = 0; j < size; ++j) {
-         unsigned char *byte = (
-                                  (unsigned char *)rop +
-                                  (((order == -1) ? i : ((count - 1) - i)) * size) +
-                                  ((endian == -1) ? j : ((size - 1) - j))
-                               );
+         unsigned char *byte = (unsigned char *)rop +
+                               (((order == -1) ? i : ((count - 1) - i)) * size) +
+                               ((endian == -1) ? j : ((size - 1) - j));
 
          if (j >= (size - nail_bytes)) {
             *byte = 0;

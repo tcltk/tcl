@@ -20,8 +20,7 @@
  * Simple algorithm which zeroes the int, grows it then just sets one bit
  * as required.
  */
-int
-mp_2expt(mp_int *a, int b)
+int mp_2expt(mp_int *a, int b)
 {
    int     res;
 
