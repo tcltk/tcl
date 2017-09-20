@@ -22,8 +22,7 @@
  * Typically very fast.  Also fixes the sign if there
  * are no more leading digits
  */
-void
-mp_clamp(mp_int *a)
+void mp_clamp(mp_int *a)
 {
    /* decrease used while the most significant digit is
     * zero.

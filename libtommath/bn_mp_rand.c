@@ -41,8 +41,7 @@ static mp_digit s_gen_random(void)
    return d;
 }
 
-int
-mp_rand(mp_int *a, int digits)
+int mp_rand(mp_int *a, int digits)
 {
    int     res;
    mp_digit d;

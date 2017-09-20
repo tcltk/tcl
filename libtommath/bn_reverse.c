@@ -16,8 +16,7 @@
  */
 
 /* reverse an array, used for radix code */
-void
-bn_reverse(unsigned char *s, int len)
+void bn_reverse(unsigned char *s, int len)
 {
    int     ix, iy;
    unsigned char t;
