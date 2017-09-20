@@ -15,9 +15,9 @@
  * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 #ifdef MP_LOW_MEM
-#define TAB_SIZE 32
+#   define TAB_SIZE 32
 #else
-#define TAB_SIZE 256
+#   define TAB_SIZE 256
 #endif
 
 int s_mp_exptmod(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y, int redmode)
@@ -152,7 +152,7 @@ int s_mp_exptmod(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y, i
          }
          /* read next digit and reset the bitcnt */
          buf    = X->dp[digidx--];
-         bitcnt = (int) DIGIT_BIT;
+         bitcnt = (int)DIGIT_BIT;
       }
 
       /* grab the next msb from the exponent */

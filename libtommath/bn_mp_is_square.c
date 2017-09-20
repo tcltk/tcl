@@ -38,7 +38,7 @@ static const char rem_105[105] = {
 };
 
 /* Store non-zero to ret if arg is square, and zero if not */
-int mp_is_square(const mp_int *arg,int *ret)
+int mp_is_square(const mp_int *arg, int *ret)
 {
    int           res;
    mp_digit      c;
@@ -58,12 +58,12 @@ int mp_is_square(const mp_int *arg,int *ret)
    }
 
    /* First check mod 128 (suppose that DIGIT_BIT is at least 7) */
-   if (rem_128[127 & DIGIT(arg,0)] == 1) {
+   if (rem_128[127 & DIGIT(arg, 0)] == 1) {
       return MP_OKAY;
    }
 
    /* Next check mod 105 (3*5*7) */
-   if ((res = mp_mod_d(arg,105,&c)) != MP_OKAY) {
+   if ((res = mp_mod_d(arg, 105, &c)) != MP_OKAY) {
       return res;
    }
    if (rem_105[c] == 1) {
@@ -71,10 +71,10 @@ int mp_is_square(const mp_int *arg,int *ret)
    }
 
 
-   if ((res = mp_init_set_int(&t,11L*13L*17L*19L*23L*29L*31L)) != MP_OKAY) {
+   if ((res = mp_init_set_int(&t, 11L*13L*17L*19L*23L*29L*31L)) != MP_OKAY) {
       return res;
    }
-   if ((res = mp_mod(arg,&t,&t)) != MP_OKAY) {
+   if ((res = mp_mod(arg, &t, &t)) != MP_OKAY) {
       goto ERR;
    }
    r = mp_get_int(&t);
@@ -91,14 +91,14 @@ int mp_is_square(const mp_int *arg,int *ret)
    if (((1L<<(r%31)) & 0x6DE2B848L) != 0L)  goto ERR;
 
    /* Final check - is sqr(sqrt(arg)) == arg ? */
-   if ((res = mp_sqrt(arg,&t)) != MP_OKAY) {
+   if ((res = mp_sqrt(arg, &t)) != MP_OKAY) {
       goto ERR;
    }
-   if ((res = mp_sqr(&t,&t)) != MP_OKAY) {
+   if ((res = mp_sqr(&t, &t)) != MP_OKAY) {
       goto ERR;
    }
 
-   *ret = (mp_cmp_mag(&t,arg) == MP_EQ) ? MP_YES : MP_NO;
+   *ret = (mp_cmp_mag(&t, arg) == MP_EQ) ? MP_YES : MP_NO;
 ERR:
    mp_clear(&t);
    return res;

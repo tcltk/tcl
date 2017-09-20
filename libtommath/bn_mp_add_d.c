@@ -16,8 +16,7 @@
  */
 
 /* single digit addition */
-int
-mp_add_d(const mp_int *a, mp_digit b, mp_int *c)
+int mp_add_d(const mp_int *a, mp_digit b, mp_int *c)
 {
    int     res, ix, oldused;
    mp_digit *tmpa, *tmpc, mu;
