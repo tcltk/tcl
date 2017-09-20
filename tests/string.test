@@ -40,7 +40,7 @@ if $noComp {
     interp alias {} run {} testevalex
     set constraints testevalex
 } else {
-    interp alias {} run {} if 1
+    interp alias {} run {} try
     set constraints {}
 }
 
