@@ -16,8 +16,7 @@
  */
 
 /* clear one (frees)  */
-void
-mp_clear(mp_int *a)
+void mp_clear(mp_int *a)
 {
    int i;
 
