@@ -463,47 +463,12 @@ PKGSDIR		= $(ROOT)\pkgs
 # Compile flags
 #---------------------------------------------------------------------
 
-!if !$(DEBUG)
-!if $(OPTIMIZING)
-### This cranks the optimization level to maximize speed
-cdebug	= $(OPTIMIZATIONS)
-!else
-cdebug	=
-!endif
-!if $(SYMBOLS)
-cdebug	= $(cdebug) -Zi
-!endif
-!else if "$(MACHINE)" == "AMD64"
-### Warnings are too many, can't support warnings into errors.
-cdebug	= -Zi -Od $(DEBUGFLAGS)
-!else
-cdebug	= -Zi -WX $(DEBUGFLAGS)
-!endif
 
 ### Declarations common to all compiler options
-cwarn = $(WARNINGS) -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
-!if "$(MACHINE)" == "AMD64"
-# Disable pointer<->int warnings related to cast between different sizes
-# There are a gadzillion of these due to use of ClientData and clutter up compiler
-# output increasing chance of a real warning getting lost. So disable them.
-# Eventually some day, Tcl will be 64-bit clean.
-cwarn = $(cwarn) -wd4311 -wd4312
-!endif
+cwarn = $(cwarn) -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
+
 cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\
 
-!if $(MSVCRT)
-!if $(DEBUG) && !$(UNCHECKED)
-crt = -MDd
-!else
-crt = -MD
-!endif
-!else
-!if $(DEBUG) && !$(UNCHECKED)
-crt = -MTd
-!else
-crt = -MT
-!endif
-!endif
 
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(TOMMATHDIR)"
 TCL_DEFINES	= -DTCL_TOMMATH -DMP_PREC=4 -Dinline=__inline -DHAVE_ZLIB=1
@@ -514,56 +479,9 @@ STUB_CFLAGS     = $(cflags) $(cdebug) $(OPTDEFINES)
 
 
 #---------------------------------------------------------------------
-# Link flags
+# Link libraries
 #---------------------------------------------------------------------
-
-!if $(DEBUG)
-ldebug	= -debug -debugtype:cv
-!else
-ldebug	= -release -opt:ref -opt:icf,3
-!if $(SYMBOLS)
-ldebug	= $(ldebug) -debug -debugtype:cv
-!endif
-!endif
-
-### Declarations common to all linker options
-lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
-
-!if $(PROFILE)
-lflags	= $(lflags) -profile
-!endif
-
-!if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
-lflags	= $(lflags) -nodefaultlib:libucrt.lib
-!endif
-
-!if $(ALIGN98_HACK) && !$(STATIC_BUILD)
-### Align sections for PE size savings.
-lflags	= $(lflags) -opt:nowin98
-!else if !$(ALIGN98_HACK) && $(STATIC_BUILD)
-### Align sections for speed in loading by choosing the virtual page size.
-lflags	= $(lflags) -align:4096
-!endif
-
-!if $(LOIMPACT)
-lflags	= $(lflags) -ws:aggressive
-!endif
-
-dlllflags = $(lflags) -dll
-conlflags = $(lflags) -subsystem:console
-guilflags = $(lflags) -subsystem:windows
-
-baselibs   = netapi32.lib kernel32.lib user32.lib advapi32.lib userenv.lib ws2_32.lib
-# Avoid 'unresolved external symbol __security_cookie' errors.
-# c.f. http://support.microsoft.com/?id=894573
-!if "$(MACHINE)" == "AMD64"
-!if $(VCVERSION) > 1399 && $(VCVERSION) < 1500
-baselibs   = $(baselibs) bufferoverflowU.lib
-!endif
-!endif
-!if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
-baselibs   = $(baselibs) ucrt.lib
-!endif
+extralibs   = netapi32.lib user32.lib userenv.lib ws2_32.lib
 
 #---------------------------------------------------------------------
 # TclTest flags
