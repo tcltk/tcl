@@ -19,13 +19,8 @@ static int s_is_power_of_two(mp_digit b, int *p)
 {
    int x;
 
-   /* fast return if no power of two */
-   if ((b & (b-1)) != 0) {
-      return 0;
-   }
-
-   /* This loops gives the wrong result for b==1,
-    * but this function is never called for those values. */
+   /* Gives the wrong result for b==1, but this function
+    * is never called for this value anyway. */
    for (x = 1; x < DIGIT_BIT; x++) {
       if (b == (((mp_digit)1)<<x)) {
          *p = x;
@@ -60,7 +55,7 @@ int mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
    }
 
    /* power of two ? */
-   if (s_is_power_of_two(b, &ix) == 1) {
+   if (((b & (b-1)) == 0) && s_is_power_of_two(b, &ix)) {
       if (d != NULL) {
          *d = a->dp[0] & ((((mp_digit)1)<<ix) - 1);
       }
