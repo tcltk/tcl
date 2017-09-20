@@ -29,8 +29,7 @@
  *
  * Input x must be in the range 0 <= x <= (n-1)**2
  */
-int
-mp_dr_reduce(mp_int *x, const mp_int *n, mp_digit k)
+int mp_dr_reduce(mp_int *x, const mp_int *n, mp_digit k)
 {
    int      err, i, m;
    mp_word  r;
