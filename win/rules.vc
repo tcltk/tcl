@@ -157,7 +157,7 @@ DEBUGFLAGS     = $(DEBUGFLAGS) -RTC1
 DEBUGFLAGS     = $(DEBUGFLAGS) -GZ
 !endif
 
-COMPILERFLAGS  =-W3 /DUNICODE /D_UNICODE /D_ATL_XP_TARGETING
+COMPILERFLAGS  = /DUNICODE /D_UNICODE /D_ATL_XP_TARGETING
 
 # In v13 -GL and -YX are incompatible.
 !if [nmakehlp -c -YX]
@@ -702,6 +702,114 @@ TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
 
 !endif
 
+
+#-----------------------------------------------------------------------------------
+# Now we have all the information we need, set up the actual flags and options that
+# we will pass to the compiler and linker. The main makefile should use these in
+# combination with whatever other flags and switches are specific to it.
+#-----------------------------------------------------------------------------------
+
+# crt picks the C run time based on selected OPTS
+!if $(MSVCRT)
+!if $(DEBUG) && !$(UNCHECKED)
+crt = -MDd
+!else
+crt = -MD
+!endif
+!else
+!if $(DEBUG) && !$(UNCHECKED)
+crt = -MTd
+!else
+crt = -MT
+!endif
+!endif
+
+# cdebug includes compiler options for debugging as well as optimization.
+!if $(DEBUG)
+
+# In debugging mode, optimizations need to be disabled
+cdebug = -Zi -Od $(DEBUGFLAGS)
+
+!else
+
+cdebug = $(OPTIMIZATIONS)
+!if $(SYMBOLS)
+cdebug = $(cdebug) -Zi
+!endif
+
+!endif # $(DEBUG)
+
+# cwarn includes default warning levels.
+cwarn = $(WARNINGS)
+!if "$(MACHINE)" == "AMD64"
+# Disable pointer<->int warnings related to cast between different sizes
+# There are a gadzillion of these due to use of ClientData and clutter up compiler
+# output increasing chance of a real warning getting lost. So disable them.
+# Eventually some day, Tcl will be 64-bit clean.
+cwarn = $(cwarn) -wd4311 -wd4312
+!endif
+!if $(DEBUG)
+# Turn warnings into errors
+cwarn = $(cwarn) -WX
+!endif
+
+# Link flags 
+
+!if $(DEBUG)
+ldebug	= -debug -debugtype:cv
+!else
+ldebug	= -release -opt:ref -opt:icf,3
+!if $(SYMBOLS)
+ldebug	= $(ldebug) -debug -debugtype:cv
+!endif
+!endif
+
+# Note: Profiling is currently only possible with the Enterprise version of Visual Studio
+!if $(PROFILE)
+ldebug= $(ldebug) -profile
+!endif
+
+### Declarations common to all linker versions 
+lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
+
+!if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
+lflags	= $(lflags) -nodefaultlib:libucrt.lib
+!endif
+
+!if $(ALIGN98_HACK) && !$(STATIC_BUILD)
+### Align sections for PE size savings.
+lflags	= $(lflags) -opt:nowin98
+!else if !$(ALIGN98_HACK) && $(STATIC_BUILD)
+### Align sections for speed in loading by choosing the virtual page size.
+lflags	= $(lflags) -align:4096
+!endif
+
+!if $(LOIMPACT)
+lflags	= $(lflags) -ws:aggressive
+!endif
+
+dlllflags = $(lflags) -dll
+conlflags = $(lflags) -subsystem:console
+guilflags = $(lflags) -subsystem:windows
+
+# Libraries that are required for every image.
+# Extensions should define any additional libraries with $(extralibs)
+winlibs   = kernel32.lib advapi32.lib
+
+# Avoid 'unresolved external symbol __security_cookie' errors.
+# c.f. http://support.microsoft.com/?id=894573
+!if "$(MACHINE)" == "AMD64"
+!if $(VCVERSION) > 1399 && $(VCVERSION) < 1500
+winlibs   = $(winlibs) bufferoverflowU.lib
+!endif
+!endif
+
+baselibs = $(winlibs) $(extralibs)
+
+!if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
+baselibs   = $(baselibs) ucrt.lib
+!endif
+
 #----------------------------------------------------------
 # Display stats being used.
 #----------------------------------------------------------
@@ -715,4 +823,4 @@ TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
 !message *** Compiler options '$(COMPILERFLAGS) $(OPTIMIZATIONS) $(DEBUGFLAGS) $(WARNINGS)'
 !message *** Link options '$(LINKERFLAGS)'
 
-!endif
+!endif # ifdef _RULES_VC
