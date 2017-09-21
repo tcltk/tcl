@@ -1542,6 +1542,142 @@ TclHAMTRemove(
 	
     return new;
 }
+
+
+/* A struct to hold our place as we iterate through a HAMT */
+
+typedef struct Idx {
+    TclHAMT	hamt;
+    KVList	kvl;		/* Traverse the KVList */
+    KVList	*kvlv;		/* Traverse a KVList array... */
+    int		kvlc;		/* ... until no more. */
+    ArrayMap	*top;		/* Active KVList array is in the
+    ArrayMap	stack[];
+} Idx;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclHAMTFirst --
+ *
+ *	Starts an iteration through hamt.
+ *
+ * Results:
+ *	If hamt is empty, returns NULL.
+ *	If hamt is non-empty, returns a TclHAMTIdx that refers to the
+ *	first key, value pair in an interation through hamt.
+ *
+ *----------------------------------------------------------------------
+ */
+
+TclHAMTIdx
+TclHAMTFirst(
+    TclHAMT hamt)
+{
+    HAMT *hPtr = hamt;
+    Idx *idx;
+
+    assert ( hamt );
+
+    if (hPtr->kvl == NULL && hPtr->x.am == NULL) {
+	/* Empty */
+	return NULL;
+    }
+
+    idx = ckalloc(sizeof(Idx));
+
+    /*
+     * We claim an interest in hamt.  After that we need not claim any
+     * interest in any of its sub-parts since it already takes care of
+     * that for us.
+     */
+
+    TclHAMTClaim(hamt);
+    idx->hamt = hamt;
+    idx->top = idx->stack;
+
+    if (hPtr->kvl) {
+	/* One bucket */
+	/* Our place is the only place. Pointing at the sole bucket */
+	idx->kvl = hPtr->kvl;
+	idx->top[0] = NULL;
+	return idx;
+    } 
+    /* There's a tree. Must traverse it to leftmost leaf. */
+    idx->top[0] = hamt->x.am;
+    idx->top[1] = NULL;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclHAMTNext --
+ *
+ *	Given a non-NULL *idxPtr referring to key, value pair in an
+ *	iteration of a hamt, transform it to refer to the next key, value
+ * 	pair in that iteration.
+ * 	If there are no more key, value pairs in the iteration, release
+ *	all claims and overwrite *idxPtr with a NULL idx.
+ *
+ * Results:
+ *	None.
+ *----------------------------------------------------------------------
+ */
+
+void
+TclHAMTNext(
+    TclHAMTIdx *idxPtr)
+{
+    Idx *idx = *idxPtr;
+
+    assert ( idx );
+    assert ( idx->kvl );
+
+    if (idx->kvl->tail) {
+	/* There are more key, value pairs in this bucket. */
+	idx->kvl = idx->kvl->tail;
+	return;
+    }
+
+    /* We need to find the next bucket in the tree */
+    if (idx->top[0] == NULL) {
+
+    }
+
+    if (idx->kvl
+    if (hPtr->kvl) {
+	/* One bucket */
+	idx = ckalloc(sizeof(Idx));
+	TclHAMTClaim(hamt);
+	idx->hamt = hamt;
+	KVLClaim(hPtr->kvl);
+	idx->kvl = hPtr->kvl;
+	return idx;
+    } 
+    if (hPtr->x.am == NULL) {
+	/* Empty */
+	return NULL;
+    }
+    /* There's a tree. */
+
+}
+
+void
+TclHAMTGet(
+    TclHAMTIdx idx,
+    ClientData *keyPtr,
+    ClientData *valuePtr)
+{
+    assert ( idx );
+    assert ( idx->kvl );
+    assert ( keyPtr );
+    assert ( valuePtr );
+
+    *keyPtr = idx->kvl->key;
+    *valuePtr = idx->kvl->value;
+}
 
 /*
  * Local Variables:

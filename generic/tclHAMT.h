@@ -88,7 +88,8 @@ typedef struct {
  * Opaque pointers to define the protoypes.
  */
 
-typedef struct HAMT *TclHAMT;
+typedef struct HAMT	*TclHAMT;
+typedef struct Idx	*TclHAMTIdx;
 
 /*
  * Interface procedure declarations.
@@ -106,8 +107,11 @@ MODULE_SCOPE ClientData		TclHAMTFetch(TclHAMT hamt, ClientData key);
 
 MODULE_SCOPE TclHAMTIdx		TclHAMTFirst(TclHAMT hamt, ClientData *keyPtr,
 				    ClientData *valuePtr);
-
-
+MODULE_SCOPE TclHAMTIdx		TclHAMTFirst(TclHAMT hamt);
+MODULE_SCOPE TclHAMTIdx		TclHAMTNext(TclHAMTIdx idx);
+MODULE_SCOPE void		TclHAMTGet(TclHAMTIdx idx, ClientData *keyPtr,
+				    ClientData *valuePtr);
+MODULE_SCOPE void		TCLHAMTDone(TclHAMTIdx idx);
 
 #endif /* TCL_HAMT_H */
 
