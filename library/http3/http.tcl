@@ -345,12 +345,13 @@ namespace eval ::http {
 	variable cfg urlTypes http
 	variable binary state meta coding currentsize totalsize querylength
 	variable queryoffset type body status httpline connection charset
-	variable theURL
+	variable theURL after socketinfo sock acceptTypes
 
 	constructor {context url defaults options} {
 	    interp alias {} [namespace current]::Context {} $context
 	    set ns [info object namespace $context]
-	    my eval upvar 0 ${ns}::config http ${ns}::urlTypes urlTypes
+	    my eval namespace upvar $ns \
+		config http urlTypes urlTypes socketmap socketmap
 	    foreach {opt value} $defaults {
 		set cfg($opt) $value
 	    }
@@ -417,6 +418,100 @@ namespace eval ::http {
 	    append url $srvurl
 	    # Don't append the fragment!
 	    set theURL $url
+
+	    # If a timeout is specified we set up the after event and arrange
+	    # for an asynchronous socket connection.
+
+	    set sockopts [list -async]
+	    if {$cfg(-timeout) > 0} {
+		set after [after $cfg(-timeout) [namespace code {
+		    my reset timeout
+		}]]
+	    }
+
+	    # If we are using the proxy, we must pass in the full URL that
+	    # includes the server name.
+
+	    if {[info exists phost] && ($phost ne "")} {
+		set srvurl $url
+		set targetAddr [list $phost $pport]
+	    } else {
+		set targetAddr [list $host $port]
+	    }
+	    # Proxy connections aren't shared among different hosts.
+	    set socketinfo $host:$port
+
+	    # Save the accept types at this point to prevent a race condition.
+	    # [Bug c11a51c482]
+	    set acceptTypes $http(-accept)
+
+	    # See if we are supposed to use a previously opened channel.
+	    if {$cfg(-keepalive)} {
+		if {[info exists socketmap($socketinfo)]} {
+		    if {[catch {fconfigure $socketmap($socketinfo)}]} {
+			Log "WARNING: socket for $socketinfo was closed"
+			unset socketmap($socketinfo)
+		    } else {
+			set sock $socketmap($socketinfo)
+			Log "reusing socket $sock for $socketinfo"
+			catch {fileevent $sock writable {}}
+			catch {fileevent $sock readable {}}
+		    }
+		}
+		# don't automatically close this connection socket
+		set connection {}
+	    }
+	    if {![info exists sock]} {
+		# Pass -myaddr directly to the socket command
+		if {[info exists cfg(-myaddr)]} {
+		    lappend sockopts -myaddr $cfg(-myaddr)
+		}
+		try {
+		    set sock [{*}$defcmd {*}$sockopts {*}$targetAddr]
+		} on error {msg} {
+		    # Something went wrong while trying to establish the
+		    # connection.  Clean up after events and such, but DON'T
+		    # call the command callback (if available) because we're
+		    # going to throw an exception from here instead.
+		    my Finish "" 1
+		    return -code error $msg
+		}
+	    }
+	    Log "Using $sock for $socketinfo" \
+		[expr {$cfg(-keepalive) ? "keepalive" : ""}]
+	    if {$cfg(-keepalive)} {
+		set socketmap($socketinfo) $sock
+	    }
+
+	    if {![info exists phost]} {
+		set phost ""
+	    }
+	    fileevent $sock writable [namespace code [list \
+		my Connect $proto $phost $srvurl]]
+
+	    # Wait for the connection to complete.
+	    if {![info exists cfg(-command)]} {
+		# geturl does EVERYTHING asynchronously, so if the user calls
+		# it synchronously, we just do a wait here.
+		my wait
+
+		if {![info exists status]} {
+		    # If we timed out then Finish has been called and the
+		    # users command callback may have cleaned up the token. If
+		    # so we end up here with nothing left to do.
+		    return
+		} elseif {$status eq "error"} {
+		    # Something went wrong while trying to establish the
+		    # connection.  Clean up after events and such, but DON'T
+		    # call the command callback (if available) because we're
+		    # going to throw an exception from here instead.
+		    return -code error [lindex $error 0]
+		}
+	    }
+	}
+
+	method Connect {proto phost srvurl} {
+	    
 	}
 
 	destructor {
