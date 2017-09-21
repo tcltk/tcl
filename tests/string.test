@@ -2017,6 +2017,7 @@ test string-29.4.$noComp {string cat, many args} {
     set r2 [run {string compare $xx [eval "run {string cat $vvs}"]}]
     list $r1 $r2
 } {0 0}
+if {$noComp} {
 test string-29.5.$noComp {string cat, efficiency} -body {
     tcl::unsupported::representation [run {string cat [list x] [list]}]
 } -match glob -result {*no string representation}
@@ -2062,6 +2063,7 @@ test string-29.15.$noComp {string cat, efficiency} -setup {
 } -body {
     tcl::unsupported::representation [run {string cat $e $f $e $f [list x]}]
 } -match glob -result {*no string representation}
+}
 
 # Note: string-30.* tests use [tcl::string::insert] rather than [string insert]
 # to dodge ticket [3397978fff] which would cause all arguments to be shared,
