@@ -9,23 +9,33 @@
 #
 # Copyright (c) 2001-2003 David Gravereaux.
 # Copyright (c) 2003-2008 Patrick Thoyts
+# Copyright (c) 2017      Ashok P. Nadkarni
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
 _RULES_VC = 1
 
-cc32		= $(CC)   # built-in default.
-link32		= link
-lib32		= lib
-rc32		= $(RC)   # built-in default.
+################################################################
+# Nmake is a pretty weak environment in syntax and capabilities
+# so this file is necessarily verbose. It's broken down into
+# the following parts.
+#
+# 1. First define the external tools used for compiling, copying etc.
+#    as this is independent of everything else.
+# 2. Figure out our build structure in terms of the directory, whether
+#    we are building Tcl or an extension, etc.
+# 3. Determine the compiler and linker versions
+# 4. Build the nmakehlp helper application
+# 5. Determine the supported compiler options and features
+# 6. Parse the OPTS macro value for user-specified configuration
+#
+# One final note about the macro names used. They are as they are
+# for historical reasons. We would like legacy extensions to
+# continue to work with this make include file so be wary of
+# changing them for consistency or clarity.
 
-!ifndef INSTALLDIR
-### Assume the normal default.
-_INSTALLDIR	= C:\Program Files\Tcl
-!else
-### Fix the path separators.
-_INSTALLDIR	= $(INSTALLDIR:/=\)
-!endif
+################################################################
+# 1. Define external programs being used
 
 #----------------------------------------------------------
 # Set the proper copy method to avoid overwrite questions
@@ -39,9 +49,125 @@ CPY	= xcopy /i /y >NUL
 COPY	= copy /y >NUL
 MKDIR   = mkdir
 
-#------------------------------------------------------------------------------
-# Determine the host and target architectures and compiler version.
-#------------------------------------------------------------------------------
+
+######################################################################
+# 2. Figure out our build environment in terms of what we're building.
+#
+# (a) Tcl itself
+# (b) a Tcl extension using libraries/includes from an *installed* Tcl
+# (c) a Tcl extension using libraries/includes from Tcl source directory
+#
+# This last is needed because some extensions (even Tk) still need
+# some Tcl interfaces that have are not publicly exposed.
+#
+# The fragment will set the following macros:
+# _TCLDIR - root of the Tcl installation OR the Tcl sources. Not set
+#    when building Tcl itself.
+# _INSTALLDIR - native form of the installation path. For Tcl
+#    this will be the root of the Tcl installation. For extensions
+#    this will be the lib directory under the root.
+# TCLINSTALL  - set to 1 if an extension is being built against the
+#    headers and libraries from an installed Tcl, and 0 if built against
+#    Tcl sources. Not set when building Tcl itself. Yes, not very well
+#    named.
+# _TCL_H - native path to the tcl.h file
+
+# The root directory where the built packages and binaries will be installed.
+# INSTALLDIR is the (optional) path specified by the user.
+# _INSTALLDIR is INSTALLDIR using the backslash separator syntax
+!ifdef INSTALLDIR
+### Fix the path separators.
+_INSTALLDIR	= $(INSTALLDIR:/=\)
+!else
+### Assume the normal default.
+_INSTALLDIR	= C:\Program Files\Tcl
+!endif
+
+!if "$(PROJECT)" == "tcl" # Case 2(a) - Building Tcl itself
+
+# Only need to define _TCL_H
+_TCL_H = ..\generic\tcl.h
+
+!else # Case 2(b) or (c) - Building an extension
+
+# If command line has specified Tcl location through TCLDIR, use it
+# else default to the INSTALLDIR setting
+!ifdef TCLDIR
+
+_TCLDIR	= $(TCLDIR:/=\)
+!if exist("$(_TCLDIR)\include\tcl.h") # Case 2(a) with TCLDIR defined
+TCLINSTALL	= 1
+_TCL_H          = $(_TCLDIR)\include\tcl.h
+!elseif exist("$(_TCLDIR)\generic\tcl.h") # Case 2(b) with TCLDIR defined
+TCLINSTALL	= 0
+_TCL_H          = $(_TCLDIR)\generic\tcl.h
+!endif
+
+!else  # TCLDIR is not defined
+
+!if "$(PROJECT)" == "tk"
+
+!if exist("..\..\tcl\generic\tcl.h") # Special case Tk with TCLDIR undefined
+TCLINSTALL	= 0
+TCLDIR          = ..\..\tcl
+_TCLDIR		= $(TCLDIR)
+_TCL_H          = $(_TCLDIR)\generic\tcl.h
+!endif
+
+!elseif exist("$(_INSTALLDIR)\include\tcl.h") # Case 2(a) for non-Tk with TCLDIR undefined
+
+TCLINSTALL	= 1
+TCLDIR          = $(_INSTALLDIR)
+_TCLDIR		= $(_INSTALLDIR)
+_TCL_H          = $(_INSTALLDIR)\include\tcl.h
+
+!endif # $(PROJECT) == "tk"
+
+!endif # TCLDIR
+
+# If INSTALLDIR set to tcl root dir then reset to the lib dir.
+!if exist("$(_INSTALLDIR)\include\tcl.h")
+_INSTALLDIR=$(_INSTALLDIR)\lib
+!endif
+
+!endif # if $(PROJECT) == "tcl"
+
+!ifndef _TCL_H
+MSG =^
+Failed to find tcl.h. The TCLDIR macro is set incorrectly or is not set and default path does not contain tcl.h.
+!error $(MSG)
+!endif
+
+
+
+################################################################
+# 3. Determine compiler version and architecture
+# In this section, we figure out the compiler version and the
+# architecture for which we are building. This sets the
+# following macros:
+# VCVERSION - the internal compiler version as 1200, 1400, 1910 etc.
+#     This is also printed by the compiler in dotted form 19.10 etc.
+# VCVER - the "marketing version", for example Visual C++ 6 for internal
+#     compiler version 1200. This is kept only for legacy reasons as it
+#     does not make sense for recent Microsoft compilers. Only used for
+#     output directory names.
+# ARCH - set to IX86 or AMD64 depending on 32- or 64-bit target
+# NATIVE_ARCH - set to IX86 or AMD64 for the host machine
+# MACHINE - same as $(ARCH) - legacy
+# _VC_MANIFEST_EMBED_{DLL,EXE} - commands for embedding a manifest if needed
+# CFG_ENCODING - set to an character encoding.
+#   TBD - this is passed to compiler as TCL_CFGVAL_ENCODING but can't
+#   see where it is used
+
+cc32		= $(CC)   # built-in default.
+link32		= link
+lib32		= lib
+rc32		= $(RC)   # built-in default.
+
+#----------------------------------------------------------------
+# Figure out the compiler architecture and version by writing
+# the C macros to a file, preprocessing them with the C
+# preprocessor and reading back the created file
 
 _HASH=^#
 _VC_MANIFEST_EMBED_EXE=
@@ -53,7 +179,7 @@ VCVER=0
     && ![echo $(_HASH)elif defined(_M_AMD64) >> vercl.x] \
     && ![echo ARCH=AMD64 >> vercl.x] \
     && ![echo $(_HASH)endif >> vercl.x] \
-    && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
+    && ![$(cc32) -nologo -TC -P vercl.x $(ERRNULL)]
 !include vercl.i
 !if $(VCVERSION) < 1900
 !if ![echo VCVER= ^\> vercl.vc] \
@@ -70,6 +196,26 @@ VCVER = $(VCVERSION)
 !if ![del $(ERRNUL) /q/f vercl.x vercl.i vercl.vc]
 !endif
 
+#----------------------------------------------------------------
+# The MACHINE macro is used by legacy makefiles so set it as well
+!ifdef MACHINE
+!if "$(MACHINE)" == "x86"
+!undef MACHINE
+MACHINE = IX86
+!elseif "$(MACHINE)" == "x64"
+!undef MACHINE
+MACHINE = AMD64
+!endif
+!if "$(MACHINE)" != "$(ARCH)"
+!error Specified MACHINE macro $(MACHINE) does not match detected target architecture $(ARCH).
+!endif
+!else
+MACHINE=$(ARCH)
+!endif
+
+#------------------------------------------------------------
+# Figure out the *host* architecture by reading the registry
+
 !if ![reg query HKLM\Hardware\Description\System\CentralProcessor\0 /v Identifier | findstr /i x86]
 NATIVE_ARCH=IX86
 !else
@@ -82,29 +228,95 @@ _VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -ou
 _VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
 !endif
 
-!ifndef MACHINE
-MACHINE=$(ARCH)
-!endif
-
 !ifndef CFG_ENCODING
 CFG_ENCODING	= \"cp1252\"
 !endif
 
-!message ===============================================================================
+!message =====================================================================
 
-#----------------------------------------------------------
-# build the helper app we need to overcome nmake's limiting
-# environment.
-#----------------------------------------------------------
+################################################################
+# 4. Build the nmakehlp program
+# This is a helper app we need to overcome nmake's limiting
+# environment. We will call out to it to get various bits of
+# information about supported compiler options etc.
+#
+# Tcl itself will always use the nmakehlp.c program which is
+# in its own source. This is the "master" copy and kept updated.
+#
+# Extensions built against an installed Tcl will use the installed
+# copy of Tcl's nmakehlp.c if there is one and their own version
+# otherwise. In the latter case, they would also be using their own
+# rules.vc. Note that older versions of Tcl do not install nmakehlp.c
+# or rules.vc.
+#
+# Extensions built against Tcl sources will use the one from the Tcl source.
+#
+# This can all be overridden by defining the NMAKEHLPC macro to point
+# to the nmakehlp.c file to be used, either from the command line or
+# the containing makefile.
 
-!if !exist(nmakehlp.exe)
-!if [$(cc32) -nologo nmakehlp.c -link -subsystem:console > nul]
+!ifndef NMAKEHLPC
+# Default to the one in the current directory (the extension's own nmakehlp.c)
+NMAKEHLPC = nmakehlp.c
+
+!if "$(PROJECT)" != "tcl"
+!if $(TCLINSTALL)
+!if exist("$(_TCLDIR)\lib\config.nmake\nmakehlp.c")
+NMAKEHLPC = $(_TCLDIR)\lib\config.nmake\nmakehlp.c
+!endif
+!else # ! $(TCLINSTALL)
+!if exist("$(_TCLDIR)\win\nmakehlp.c")
+NMAKEHLPC = $(_TCLDIR)\win\nmakehlp.c
+!endif
+!endif # $(TCLINSTALL)
+!endif # $(PROJECT) != "tcl"
+
+!endif # NMAKEHLPC
+
+# We always build nmakehlp even if it exists since we do not know
+# what source it was built from.
+!message *** Using $(NMAKEHLPC)
+!if [$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console > nul]
+!endif
+
+################################################################
+# 5. Test for compiler features
+# Visual C++ compiler options have changed over the years. Check
+# which options are supported by the compiler in use.
+#
+# The following macros are set:
+# OPTIMIZATIONS - the compiler flags to be used for optimized builds
+# DEBUGFLAGS - the compiler flags to be used for debug builds
+# LINKERFLAGS - Flags passed to the linker 
+#
+# Note that these are the compiler settings *available*, not those
+# that will be *used*. The latter depends on the OPTS macro settings
+# which we have not yet parsed.
+#
+# Also note that some of the flags in OPTIMIZATIONS are not really
+# related to optimization. They are placed there only for legacy reasons
+# as some extensions expect them to be included in that macro.
+
+# -Op improves float consistency. Note only needed for older compilers
+# Newer compilers do not need or support this option.
+!if [nmakehlp -c -Op]
+FPOPTS  = -Op
+!endif
+
+# Strict floating point semantics - present in newer compilers in lieu of -Op
+!if [nmakehlp -c -fp:strict]
+FPOPTS  = $(FPOPTS) -fp:strict
+!endif
+
+!if "$(MACHINE)" == "IX86"
+### test for pentium errata
+!if [nmakehlp -c -QI0f]
+!message *** Compiler has 'Pentium 0x0f fix'
+FPOPTS  = $(FPOPTS) -QI0f
+!else
+!message *** Compiler does not have 'Pentium 0x0f fix'
 !endif
 !endif
-
-#----------------------------------------------------------
-# Test for compiler features
-#----------------------------------------------------------
 
 ### test for optimizations
 # /O2 optimization includes /Og /Oi /Ot /Oy /Ob2 /Gs /GF /Gy as per
@@ -115,26 +327,16 @@ CFG_ENCODING	= \"cp1252\"
 # default page size locals allocation probes and not what is implied
 # by an explicit /Gs option.
 
+OPTIMIZATIONS = $(FPOPTS)
+
 !if [nmakehlp -c -O2]
 !message *** Compiler has 'Optimizations'
-OPTIMIZING	= 1
-OPTIMIZATIONS   = -O2
+OPTIMIZING = 1
+OPTIMIZATIONS   = $(OPTIMIZATIONS) -O2
 !else
+# Legacy, really. All modern compilers support this
 !message *** Compiler does not have 'Optimizations'
-OPTIMIZING	= 0
-OPTIMIZATIONS   = 
-!endif
-
-
-# -Op improves float consistency. Note only needed for older compilers
-# Newer compilers do not need or support this option.
-!if [nmakehlp -c -Op]
-OPTIMIZATIONS  = $(OPTIMIZATIONS) -Op
-!endif
-
-# Strict floating point semantics - present in newer compilers in lieu of -Op
-!if [nmakehlp -c -fp:strict]
-OPTIMIZATIONS  = $(OPTIMIZATIONS) -fp:strict
+OPTIMIZING = 0
 !endif
 
 # Checks for buffer overflows in local arrays
@@ -142,60 +344,46 @@ OPTIMIZATIONS  = $(OPTIMIZATIONS) -fp:strict
 OPTIMIZATIONS  = $(OPTIMIZATIONS) -GS
 !endif
 
-# Link time optimization. Note that this option (potentially) makes generated libraries
-# only usable by the specific VC++ version that created it. Requires /LTCG linker option
+# Link time optimization. Note that this option (potentially) makes
+# generated libraries only usable by the specific VC++ version that
+# created it. Requires /LTCG linker option
 !if [nmakehlp -c -GL]
 OPTIMIZATIONS  = $(OPTIMIZATIONS) -GL
 CC_GL_OPT_ENABLED = 1
+!else
+# In newer compilers -GL and -YX are incompatible.
+!if [nmakehlp -c -YX]
+OPTIMIZATIONS  = $(OPTIMIZATIONS) -YX
 !endif
+!endif # [nmakehlp -c -GL]
 
-DEBUGFLAGS     =
+DEBUGFLAGS     = $(FPOPTS)
 
+# Run time error checks. Not available or valid in a release, non-debug build
+# RTC is for modern compilers, -GZ is legacy
 !if [nmakehlp -c -RTC1]
 DEBUGFLAGS     = $(DEBUGFLAGS) -RTC1
 !elseif [nmakehlp -c -GZ]
 DEBUGFLAGS     = $(DEBUGFLAGS) -GZ
 !endif
 
-COMPILERFLAGS  = /DUNICODE /D_UNICODE /D_ATL_XP_TARGETING
 
-# In v13 -GL and -YX are incompatible.
-!if [nmakehlp -c -YX]
-!if ![nmakehlp -c -GL]
-OPTIMIZATIONS  = $(OPTIMIZATIONS) -YX
-!endif
-!endif
 
-!if "$(MACHINE)" == "IX86"
-### test for pentium errata
-!if [nmakehlp -c -QI0f]
-!message *** Compiler has 'Pentium 0x0f fix'
-COMPILERFLAGS  = $(COMPILERFLAGS) -QI0f
-!else
-!message *** Compiler does not have 'Pentium 0x0f fix'
-!endif
-!endif
+#----------------------------------------------------------------
+# Linker flags
 
-# Prevents "LNK1561: entry point must be defined" error compiling from VS-IDE:
+# LINKER_TESTFLAGS are for internal use when we call nmakehlp to test
+# if the linker supports a specific option. Without these flags link will
+# return "LNK1561: entry point must be defined" error compiling from VS-IDE:
+# They are not passed through to the actual application / extension
+# link rules.
 !ifndef LINKER_TESTFLAGS
 LINKER_TESTFLAGS = /DLL /NOENTRY /OUT:nmhlp-out.txt
 !endif
 
-!if "$(MACHINE)" == "IX86"
-### test for -align:4096, when align:512 will do.
-!if [nmakehlp -l -opt:nowin98 $(LINKER_TESTFLAGS)]
-!message *** Linker has 'Win98 alignment problem'
-ALIGN98_HACK	= 1
-!else
-!message *** Linker does not have 'Win98 alignment problem'
-ALIGN98_HACK	= 0
-!endif
-!else
-ALIGN98_HACK	= 0
-!endif
-
 LINKERFLAGS     =
 
+# If compiler has enabled link time optimization, linker must too with -ltcg
 !ifdef CC_GL_OPT_ENABLED
 !if [nmakehlp -l -ltcg $(LINKER_TESTFLAGS)]
 LINKERFLAGS     = $(LINKERFLAGS) -ltcg
@@ -503,47 +691,6 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
 !endif
 
-#----------------------------------------------------------
-# Locate the Tcl headers to build against
-#----------------------------------------------------------
-
-!if "$(PROJECT)" == "tcl"
-
-_TCL_H          = ..\generic\tcl.h
-
-!else
-
-# If INSTALLDIR set to tcl root dir then reset to the lib dir.
-!if exist("$(_INSTALLDIR)\include\tcl.h")
-_INSTALLDIR=$(_INSTALLDIR)\lib
-!endif
-
-!if !defined(TCLDIR)
-!if exist("$(_INSTALLDIR)\..\include\tcl.h")
-TCLINSTALL	= 1
-_TCLDIR		= $(_INSTALLDIR)\..
-_TCL_H          = $(_INSTALLDIR)\..\include\tcl.h
-TCLDIR          = $(_INSTALLDIR)\..
-!else
-MSG=^
-Failed to find tcl.h.  Set the TCLDIR macro.
-!error $(MSG)
-!endif
-!else
-_TCLDIR	= $(TCLDIR:/=\)
-!if exist("$(_TCLDIR)\include\tcl.h")
-TCLINSTALL	= 1
-_TCL_H          = $(_TCLDIR)\include\tcl.h
-!elseif exist("$(_TCLDIR)\generic\tcl.h")
-TCLINSTALL	= 0
-_TCL_H          = $(_TCLDIR)\generic\tcl.h
-!else
-MSG =^
-Failed to find tcl.h.  The TCLDIR macro does not appear correct.
-!error $(MSG)
-!endif
-!endif
-!endif
 
 #--------------------------------------------------------------
 # Extract various version numbers from tcl headers
@@ -703,11 +850,14 @@ TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
 !endif
 
 
-#-----------------------------------------------------------------------------------
-# Now we have all the information we need, set up the actual flags and options that
-# we will pass to the compiler and linker. The main makefile should use these in
-# combination with whatever other flags and switches are specific to it.
-#-----------------------------------------------------------------------------------
+#----------------------------------------------------------------------
+# Now we have all the information we need, set up the actual flags and
+# options that we will pass to the compiler and linker. The main
+# makefile should use these in combination with whatever other flags
+# and switches are specific to it.
+#----------------------------------------------------------------------
+
+COMPILERFLAGS  = /DUNICODE /D_UNICODE /D_ATL_XP_TARGETING /DBUILD_$(PROJECT)
 
 # crt picks the C run time based on selected OPTS
 !if $(MSVCRT)
@@ -741,13 +891,16 @@ cdebug = $(cdebug) -Zi
 
 # cwarn includes default warning levels.
 cwarn = $(WARNINGS)
+
 !if "$(MACHINE)" == "AMD64"
 # Disable pointer<->int warnings related to cast between different sizes
-# There are a gadzillion of these due to use of ClientData and clutter up compiler
+# There are a gadzillion of these due to use of ClientData and
+# clutter up compiler
 # output increasing chance of a real warning getting lost. So disable them.
 # Eventually some day, Tcl will be 64-bit clean.
 cwarn = $(cwarn) -wd4311 -wd4312
 !endif
+
 !if $(DEBUG)
 # Turn warnings into errors
 cwarn = $(cwarn) -WX
@@ -764,7 +917,7 @@ ldebug	= $(ldebug) -debug -debugtype:cv
 !endif
 !endif
 
-# Note: Profiling is currently only possible with the Enterprise version of Visual Studio
+# Note: Profiling is currently only possible with the Visual Studio Enterprise
 !if $(PROFILE)
 ldebug= $(ldebug) -profile
 !endif
@@ -776,12 +929,16 @@ lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
 lflags	= $(lflags) -nodefaultlib:libucrt.lib
 !endif
 
-!if $(ALIGN98_HACK) && !$(STATIC_BUILD)
-### Align sections for PE size savings.
+# Old linkers (Visual C++ 6 in particular) will link for fast loading
+# on Win98. Since we do not support Win98 any more, we specify nowin98
+# as recommended for NT and later. However, this is only required by
+# IX86 on older compilers and only needed if we are not doing a static build.
+
+!if "$(MACHINE)" == "IX86" && !$(STATIC_BUILD)
+!if [nmakehlp -l -opt:nowin98 $(LINKER_TESTFLAGS)]
+# Align sections for PE size savings.
 lflags	= $(lflags) -opt:nowin98
-!else if !$(ALIGN98_HACK) && $(STATIC_BUILD)
-### Align sections for speed in loading by choosing the virtual page size.
-lflags	= $(lflags) -align:4096
+!endif
 !endif
 
 !if $(LOIMPACT)
@@ -809,6 +966,8 @@ baselibs = $(winlibs) $(extralibs)
 !if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
 baselibs   = $(baselibs) ucrt.lib
 !endif
+
+
 
 #----------------------------------------------------------
 # Display stats being used.
