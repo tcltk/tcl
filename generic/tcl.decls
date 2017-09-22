@@ -2335,7 +2335,7 @@ declare 631 {
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
-# TIP #XXX
+# TIP #475
 declare 632 {
     Tcl_Obj *Tcl_ReplaceObj(Tcl_Interp *interp, Tcl_Obj *strObj, int startIndex,
 	    int removeCount, Tcl_Obj *insObj)
