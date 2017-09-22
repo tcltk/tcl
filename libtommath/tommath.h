@@ -33,10 +33,12 @@ extern "C" {
     defined(__sparcv9) || defined(__sparc_v9__) || defined(__sparc64__) || \
     defined(__ia64) || defined(__ia64__) || defined(__itanium__) || defined(_M_IA64) || \
     defined(__LP64__) || defined(_LP64) || defined(__64BIT__)
-#   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
+#   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT) || defined(_MSC_VER))
 #      define MP_64BIT
 #   endif
 #endif
+
+typedef unsigned long long Tcl_WideUInt;
 
 /* some default configurations.
  *
