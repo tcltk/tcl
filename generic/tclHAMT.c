@@ -1551,8 +1551,8 @@ typedef struct Idx {
     KVList	kvl;		/* Traverse the KVList */
     KVList	*kvlv;		/* Traverse a KVList array... */
     int		kvlc;		/* ... until no more. */
-    ArrayMap	*top;		/* Active KVList array is in the
-    ArrayMap	stack[];
+    ArrayMap	*top;		/* Active KVList array is in the */
+    ArrayMap	stack[];	/* ArrayMap at top of stack. */
 } Idx;
 
 
@@ -1576,7 +1576,9 @@ TclHAMTFirst(
     TclHAMT hamt)
 {
     HAMT *hPtr = hamt;
-    Idx *idx;
+    Idx *i;
+    ArrayMap am;
+    int n;
 
     assert ( hamt );
 
@@ -1585,7 +1587,7 @@ TclHAMTFirst(
 	return NULL;
     }
 
-    idx = ckalloc(sizeof(Idx));
+    i = ckalloc(sizeof(Idx));
 
     /*
      * We claim an interest in hamt.  After that we need not claim any
@@ -1594,20 +1596,31 @@ TclHAMTFirst(
      */
 
     TclHAMTClaim(hamt);
-    idx->hamt = hamt;
-    idx->top = idx->stack;
+    i->hamt = hamt;
+    i->top = i->stack;
 
     if (hPtr->kvl) {
 	/* One bucket */
 	/* Our place is the only place. Pointing at the sole bucket */
-	idx->kvl = hPtr->kvl;
-	idx->top[0] = NULL;
-	return idx;
+	i->kvlv = &(hPtr->kvl);
+	i->kvlc = 0;
+	i->kvl = i->kvlv[0];
+	i->top[0] = NULL;
+	return i;
     } 
-    /* There's a tree. Must traverse it to leftmost leaf. */
-    idx->top[0] = hamt->x.am;
-    idx->top[1] = NULL;
-
+    /* There's a tree. Must traverse it to leftmost KVList. */
+    am = hamt->x.am;
+    while ((n = NumBits(am->kvMap)) == 0) {
+	/* No buckets in the ArrayMap; Must have subnodes. Go Left */
+	i->top[0] = am;
+	i->top++;
+	am = (ArrayMap) am->slot[0];
+    }
+    i->top[0] = am;
+    i->kvlv = (KVList *)am->slot[n];
+    i->kvlc = n - 1;
+    i->kvl = i->kvlv[0];
+    return i;
 }
 
 /*
@@ -1630,39 +1643,94 @@ void
 TclHAMTNext(
     TclHAMTIdx *idxPtr)
 {
-    Idx *idx = *idxPtr;
+    Idx *i = *idxPtr;
+    ArrayMap am, popme;
+    ClientData *slotPtr;
+    int n, seen = 0;
 
-    assert ( idx );
-    assert ( idx->kvl );
+    assert ( i );
+    assert ( i->kvl );
 
-    if (idx->kvl->tail) {
+    if (i->kvl->tail) {
 	/* There are more key, value pairs in this bucket. */
-	idx->kvl = idx->kvl->tail;
+	i->kvl = i->kvl->tail;
 	return;
     }
 
-    /* We need to find the next bucket in the tree */
-    if (idx->top[0] == NULL) {
-
+    /* On to the next KVList bucket. */
+    if (i->kvlc) {
+	i->kvlv++;
+	i->kvlc--;
+	i->kvl = i->kvlv[0];
+	return;
     }
 
-    if (idx->kvl
-    if (hPtr->kvl) {
-	/* One bucket */
-	idx = ckalloc(sizeof(Idx));
-	TclHAMTClaim(hamt);
-	idx->hamt = hamt;
-	KVLClaim(hPtr->kvl);
-	idx->kvl = hPtr->kvl;
-	return idx;
-    } 
-    if (hPtr->x.am == NULL) {
-	/* Empty */
-	return NULL;
+    /* On to the subnodes */
+    if (i->top[0] == NULL) {
+	/* Only get here for hamt of one key, value pair. */
+	TclHAMTDone((TclHAMTIdx) i);
+	*idxPtr = NULL;
+	return;
     }
-    /* There's a tree. */
 
+    /*
+     * We're working through the subnodes. When we entered, i->kvlv
+     * pointed to a KVList within ArrayMap i->top[0], and it must have
+     * pointed to the last one. Either this ArrayMap has subnodes or
+     * it doesn't.
+     */
+  while (1) {
+    if (NumBits(i->top[0]->amMap) - seen) {
+	/* There are subnodes. Traverse to the leftmost KVList. */
+	am = (ArrayMap)(i->kvlv + 1);
+
+	i->top++;
+	while ((n = NumBits(am->kvMap)) == 0) {
+	    /* No buckets in the ArrayMap; Must have subnodes. Go Left */
+	    i->top[0] = am;
+	    i->top++;
+	    am = (ArrayMap) am->slot[0];
+	}
+	i->top[0] = am;
+	i->kvlv = (KVList *)(am->slot + n);
+	i->kvlc = n - 1;
+	i->kvl = i->kvlv[0];
+	return;
+    }
+
+    /* i->top[0] is an ArrayMap with no subnodes. We're done with it.
+     * Need to pop. */
+    if (i->top == i->stack) {
+	/* Nothing left to pop. Stack exhausted. We're done. */
+	TclHAMTDone((TclHAMTIdx) i);
+	*idxPtr = NULL;
+	return;
+    }
+    popme = i->top[0];
+    i->top[0] = NULL;
+    i->top--;
+    am = i->top[0];
+    slotPtr = am->slot + 2*NumBits(am->kvMap);
+    seen = 1;
+    while (slotPtr[0] != (ClientData)popme) {
+	seen++;
+	slotPtr++;
+    }
+    i->kvlv = (KVList *)slotPtr;
+  }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclHAMTGet --
+ *
+ *	Given an idx returned by TclHAMTFirst() or TclHAMTNext() and
+ *	never passed to TclHAMtDone(), retrieve the key and value it
+ *	refers to.
+ *
+ *----------------------------------------------------------------------
+ */
 
 void
 TclHAMTGet(
@@ -1670,13 +1738,37 @@ TclHAMTGet(
     ClientData *keyPtr,
     ClientData *valuePtr)
 {
-    assert ( idx );
-    assert ( idx->kvl );
+    Idx *i = idx;
+
+    assert ( i );
+    assert ( i->kvl );
     assert ( keyPtr );
     assert ( valuePtr );
 
-    *keyPtr = idx->kvl->key;
-    *valuePtr = idx->kvl->value;
+    *keyPtr = i->kvl->key;
+    *valuePtr = i->kvl->value;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclHAMTDone --
+ *
+ *	Given an idx returned by TclHAMTFirst() or TclHAMTNext() and
+ *	never passed to TclHAMtDone(), release any claims.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclHAMTDone(
+    TclHAMTIdx idx)
+{
+    Idx *i = idx;
+
+    TclHAMTDisclaim(i->hamt);
+    i->hamt = NULL;
+    ckfree(i);
 }
 
 /*
