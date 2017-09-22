@@ -1170,34 +1170,11 @@ Tcl_FSConvertToPathType(
 	    return TCL_OK;
 	}
 
-	if (pathPtr->bytes == NULL) {
-	    UpdateStringOfFsPath(pathPtr);
-	}
+	TclGetString(pathPtr);
 	Tcl_StoreIntRep(pathPtr, &fsPathType, NULL);
     }
 
     return SetFsPathFromAny(interp, pathPtr);
-
-    /*
-     * We used to have more complex code here:
-     *
-     * FsPath *fsPathPtr = PATHOBJ(pathPtr);
-     * if (fsPathPtr->cwdPtr == NULL || PATHFLAGS(pathPtr) != 0) {
-     *     return TCL_OK;
-     * } else {
-     *     if (TclFSCwdPointerEquals(&fsPathPtr->cwdPtr)) {
-     *         return TCL_OK;
-     *     } else {
-     *         if (pathPtr->bytes == NULL) {
-     *             UpdateStringOfFsPath(pathPtr);
-     *         }
-     *         FreeFsPathInternalRep(pathPtr);
-     *         return Tcl_ConvertToType(interp, pathPtr, &fsPathType);
-     *     }
-     * }
-     *
-     * But we no longer believe this is necessary.
-     */
 }
 
 /*
@@ -1329,8 +1306,7 @@ TclNewFSPathObj(
 
     SETPATHOBJ(pathPtr, fsPathPtr);
     PATHFLAGS(pathPtr) = TCLPATH_APPENDED;
-    pathPtr->bytes = NULL;
-    pathPtr->length = 0;
+    TclInvalidateStringRep(pathPtr);
 
     /*
      * Look for path components made up of only "."
@@ -1756,9 +1732,7 @@ Tcl_FSGetNormalizedPath(
 	    return NULL;
 	}
 	/* TODO: Figure out why this is needed. */
-	if (pathPtr->bytes == NULL) {
-	    UpdateStringOfFsPath(pathPtr);
-	}
+	TclGetString(pathPtr);
 
 	TclGetStringFromObj(fsPathPtr->normPathPtr, &tailLen);
 	if (tailLen) {
@@ -1854,9 +1828,7 @@ Tcl_FSGetNormalizedPath(
 
     if (fsPathPtr->cwdPtr != NULL) {
 	if (!TclFSCwdPointerEquals(&fsPathPtr->cwdPtr)) {
-	    if (pathPtr->bytes == NULL) {
-		UpdateStringOfFsPath(pathPtr);
-	    }
+	    TclGetString(pathPtr);
 	    Tcl_StoreIntRep(pathPtr, &fsPathType, NULL);
 	    if (SetFsPathFromAny(interp, pathPtr) != TCL_OK) {
 		return NULL;
@@ -2128,9 +2100,7 @@ TclFSEnsureEpochOk(
 	 * We have to discard the stale representation and recalculate it.
 	 */
 
-	if (pathPtr->bytes == NULL) {
-	    UpdateStringOfFsPath(pathPtr);
-	}
+	TclGetString(pathPtr);
 	Tcl_StoreIntRep(pathPtr, &fsPathType, NULL);
 	if (SetFsPathFromAny(NULL, pathPtr) != TCL_OK) {
 	    return TCL_ERROR;
