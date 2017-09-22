@@ -90,7 +90,7 @@ DupHamtInternalRep(
  */
 
 static void
-FreeDictInternalRep(
+FreeHamtInternalRep(
     Tcl_Obj *objPtr)
 {
     TclHAMT hamt = HAMT(objPtr);
@@ -172,98 +172,24 @@ static void
 UpdateStringOfHamt(
     Tcl_Obj *objPtr)
 {
-    /* Need to iterate over key/value pairs in a HAMT */
+    TclHAMT hamt = HAMT(objPtr);
+    TclHAMTIdx idx = TclHAMTFirst(hamt);
 
+    Tcl_Obj *listPtr = Tcl_NewObj();
+    while (idx) {
+	Tcl_Obj *keyPtr;
+	Tcl_Obj *valuePtr;
 
+	TclHAMTGet(idx, &keyPtr, &valuePtr);
+	Tcl_ListObjAppend(NULL, listPtr, keyPtr);
+	Tcl_ListObjAppend(NULL, listPtr, valuePtr);
+	TclHAMTNext(&idx);
+    }
 
+    objPtr->bytes = Tcl_GetStringFromObj(listPtr, &(objPtr->length));
+    listPtr->bytes = NULL;
+    Tcl_DecrRefCount(listPtr);
 }
-
-#define LOCAL_SIZE 64
-    char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    Dict *dict = DICT(dictPtr);
-    ChainEntry *cPtr;
-    Tcl_Obj *keyPtr, *valuePtr;
-    size_t i, length, bytesNeeded = 0;
-    const char *elem;
-    char *dst;
-
-    /*
-     * This field is the most useful one in the whole hash structure, and it
-     * is not exposed by any API function...
-     */
-
-    size_t numElems = dict->table.numEntries * 2;
-
-    /* Handle empty list case first, simplifies what follows */
-    if (numElems == 0) {
-	dictPtr->bytes = &tclEmptyString;
-	dictPtr->length = 0;
-	return;
-    }
-
-    /*
-     * Pass 1: estimate space, gather flags.
-     */
-
-    if (numElems <= LOCAL_SIZE) {
-	flagPtr = localFlags;
-    } else {
-	flagPtr = ckalloc(numElems);
-    }
-    for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
-	/*
-	 * Assume that cPtr is never NULL since we know the number of array
-	 * elements already.
-	 */
-
-	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
-	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = TclGetString(keyPtr);
-	length = keyPtr->length;
-	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
-	if (bytesNeeded > INT_MAX) {
-	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-	}
-
-	flagPtr[i+1] = TCL_DONT_QUOTE_HASH;
-	valuePtr = Tcl_GetHashValue(&cPtr->entry);
-	elem = TclGetString(valuePtr);
-	length = valuePtr->length;
-	bytesNeeded += TclScanElement(elem, length, flagPtr+i+1);
-    }
-    bytesNeeded += numElems;
-
-    /*
-     * Pass 2: copy into string rep buffer.
-     */
-
-    dictPtr->length = bytesNeeded - 1;
-    dictPtr->bytes = ckalloc(bytesNeeded);
-    dst = dictPtr->bytes;
-    for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
-	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
-	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = TclGetString(keyPtr);
-	length = keyPtr->length;
-	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
-	*dst++ = ' ';
-
-	flagPtr[i+1] |= TCL_DONT_QUOTE_HASH;
-	valuePtr = Tcl_GetHashValue(&cPtr->entry);
-	elem = TclGetString(valuePtr);
-	length = valuePtr->length;
-	dst += TclConvertElement(elem, length, dst, flagPtr[i+1]);
-	*dst++ = ' ';
-    }
-    dictPtr->bytes[dictPtr->length] = '\0';
-
-    if (flagPtr != localFlags) {
-	ckfree(flagPtr);
-    }
-}
-
-
-
 
 /*
  * Prototypes for functions defined later in this file:
@@ -561,36 +487,6 @@ DeleteChainEntry(
 /*
  *----------------------------------------------------------------------
  *
- * FreeDictInternalRep --
- *
- *	Deallocate the storage associated with a dictionary object's internal
- *	representation.
- *
- * Results:
- *	None
- *
- * Side effects:
- *	Frees the memory holding the dictionary's internal hash table unless
- *	it is locked by an iteration going over it.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-FreeDictInternalRep(
-    Tcl_Obj *dictPtr)
-{
-    Dict *dict = DICT(dictPtr);
-
-    if (dict->refCount-- <= 1) {
-	DeleteDict(dict);
-    }
-    dictPtr->typePtr = NULL;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * DeleteDict --
  *
  *	Delete the structure that is used to implement a dictionary's internal
@@ -614,116 +510,6 @@ DeleteDict(
 {
     DeleteChainTable(dict);
     ckfree(dict);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * UpdateStringOfDict --
- *
- *	Update the string representation for a dictionary object. Note: This
- *	function does not invalidate an existing old string rep so storage
- *	will be lost if this has not already been done. This code is based on
- *	UpdateStringOfList in tclListObj.c
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The object's string is set to a valid string that results from the
- *	dict-to-string conversion. This string will be empty if the dictionary
- *	has no key/value pairs. The dictionary internal representation should
- *	not be NULL and we assume it is not NULL.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-UpdateStringOfDict(
-    Tcl_Obj *dictPtr)
-{
-#define LOCAL_SIZE 64
-    char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    Dict *dict = DICT(dictPtr);
-    ChainEntry *cPtr;
-    Tcl_Obj *keyPtr, *valuePtr;
-    size_t i, length, bytesNeeded = 0;
-    const char *elem;
-    char *dst;
-
-    /*
-     * This field is the most useful one in the whole hash structure, and it
-     * is not exposed by any API function...
-     */
-
-    size_t numElems = dict->table.numEntries * 2;
-
-    /* Handle empty list case first, simplifies what follows */
-    if (numElems == 0) {
-	dictPtr->bytes = &tclEmptyString;
-	dictPtr->length = 0;
-	return;
-    }
-
-    /*
-     * Pass 1: estimate space, gather flags.
-     */
-
-    if (numElems <= LOCAL_SIZE) {
-	flagPtr = localFlags;
-    } else {
-	flagPtr = ckalloc(numElems);
-    }
-    for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
-	/*
-	 * Assume that cPtr is never NULL since we know the number of array
-	 * elements already.
-	 */
-
-	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
-	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = TclGetString(keyPtr);
-	length = keyPtr->length;
-	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
-	if (bytesNeeded > INT_MAX) {
-	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-	}
-
-	flagPtr[i+1] = TCL_DONT_QUOTE_HASH;
-	valuePtr = Tcl_GetHashValue(&cPtr->entry);
-	elem = TclGetString(valuePtr);
-	length = valuePtr->length;
-	bytesNeeded += TclScanElement(elem, length, flagPtr+i+1);
-    }
-    bytesNeeded += numElems;
-
-    /*
-     * Pass 2: copy into string rep buffer.
-     */
-
-    dictPtr->length = bytesNeeded - 1;
-    dictPtr->bytes = ckalloc(bytesNeeded);
-    dst = dictPtr->bytes;
-    for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
-	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
-	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = TclGetString(keyPtr);
-	length = keyPtr->length;
-	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
-	*dst++ = ' ';
-
-	flagPtr[i+1] |= TCL_DONT_QUOTE_HASH;
-	valuePtr = Tcl_GetHashValue(&cPtr->entry);
-	elem = TclGetString(valuePtr);
-	length = valuePtr->length;
-	dst += TclConvertElement(elem, length, dst, flagPtr[i+1]);
-	*dst++ = ' ';
-    }
-    dictPtr->bytes[dictPtr->length] = '\0';
-
-    if (flagPtr != localFlags) {
-	ckfree(flagPtr);
-    }
 }
 
 /*
