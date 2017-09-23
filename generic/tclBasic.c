@@ -777,6 +777,7 @@ Tcl_CreateInterp(void)
     TclInitDictCmd(interp);
     TclInitEncodingCmd(interp);
     TclInitFileCmd(interp);
+    TclInitHamtCmd(interp);
     TclInitInfoCmd(interp);
     TclInitNamespaceCmd(interp);
     TclInitStringCmd(interp);

@@ -322,6 +322,54 @@ UpdateStringOfHamt(
     Tcl_DecrRefCount(listPtr);
 }
 
+/*
+ * Prototypes for functions defined later in this file:
+ */
+
+static Tcl_ObjCmdProc	HamtCreateCmd;
+
+/*
+ * Table of hamt subcommand names and implementations.
+ */
+
+static const EnsembleImplMap implementationMap[] = {
+    {"create",	HamtCreateCmd,	NULL, NULL, NULL, 0 },
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HamCreateCmd --
+ *
+ *	This function implements the "hamt create" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+HamtCreateCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_Obj *hamtObj = Tcl_NewListObj(objc - 1, objv + 1);
+
+    if (TCL_OK != SetHamtFromAny(interp, hamtObj)) {
+	Tcl_DecrRefCount(hamtObj);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, hamtObj);
+    return TCL_OK;
+}
+
 #if 0
 /*
  * Prototypes for functions defined later in this file:
@@ -3568,15 +3616,14 @@ TclDictWithFinish(
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
  *
- * TclInitDictCmd --
+ * TclInitHamtCmd --
  *
- *	This function is create the "dict" Tcl command. See the user
- *	documentation for details on what it does, and TIP#111 for the formal
- *	specification.
+ *	This function creates the "hamt" Tcl command.
  *
  * Results:
  *	A Tcl command handle.
@@ -3588,12 +3635,11 @@ TclDictWithFinish(
  */
 
 Tcl_Command
-TclInitDictCmd(
+TclInitHamtCmd(
     Tcl_Interp *interp)
 {
-    return TclMakeEnsemble(interp, "dict", implementationMap);
+    return TclMakeEnsemble(interp, "hamt", implementationMap);
 }
-#endif
 
 /*
  * Local Variables:
