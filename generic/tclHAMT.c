@@ -570,15 +570,11 @@ ArrayMap AMNewLeaf(
     hashes = (size_t *)&(new->slot);
     lists = (KVList *) (hashes + 2);
     if (idx1 < idx2) {
-	assert ( hash1 < hash2 );
-
 	hashes[0] = hash1;
 	hashes[1] = hash2;
 	lists[0] = l1;
 	lists[1] = l2;
     } else {
-	assert ( hash1 > hash2 );
-
 	hashes[0] = hash2;
 	hashes[1] = hash1;
 	lists[0] = l2;
@@ -1685,7 +1681,7 @@ TclHAMTNext(
   while (1) {
     if (NumBits(i->top[0]->amMap) - seen) {
 	/* There are subnodes. Traverse to the leftmost KVList. */
-	am = (ArrayMap)(i->kvlv + 1);
+	am = (ArrayMap)(i->kvlv[1]);
 
 	i->top++;
 	while ((n = NumBits(am->kvMap)) == 0) {
