@@ -621,7 +621,7 @@ ClientData AMFetch(
 	return NULL;
     }
 
-    tally = 1 << ((hash >> LSB(am->mask + 1)) & branchMask);
+    tally = (size_t)1 << ((hash >> LSB(am->mask + 1)) & branchMask);
     if (tally & am->kvMap) {
 	KVList l;
 
@@ -697,7 +697,7 @@ ArrayMap AMInsert(
     numList = NumBits(am->kvMap);
     numSubnode = NumBits(am->amMap);
 
-    tally = 1 << ((hash >> LSB(am->mask + 1)) & branchMask);
+    tally = (size_t)1 << ((hash >> LSB(am->mask + 1)) & branchMask);
     if (tally & am->kvMap) {
 
 	/* Hash is consistent with one of our KVList children... */
@@ -886,7 +886,7 @@ ArrayMap AMInsert(
     *dst = KVLInsert(NULL, kt, key, vt, value, valuePtr);
     KVLClaim(*dst);
     dst++;
-    for (i = loffset + 1; i < numList; i++) {
+    for (i = loffset; i < numList; i++) {
 	KVLClaim((KVList) *src);
 	*dst++ = *src++;
     }
@@ -897,7 +897,7 @@ ArrayMap AMInsert(
 	*dst++ = *src++;
     }
 
-    return NULL;
+    return new;
 }
 
 /*
@@ -954,7 +954,7 @@ ArrayMap AMRemove(
     numList = NumBits(am->kvMap);
     numSubnode = NumBits(am->amMap);
 
-    tally = 1 << ((hash >> LSB(am->mask + 1)) & branchMask);
+    tally = (size_t)1 << ((hash >> LSB(am->mask + 1)) & branchMask);
     if (tally & am->kvMap) {
 
 	/* Hash is consistent with one of our KVList children... */
