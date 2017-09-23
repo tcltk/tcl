@@ -182,6 +182,30 @@ Please `cd` to its location first.
 PROJECT = tcl
 !include "rules.vc"
 
+!if [echo PKG_HTTP_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\http\pkgIndex.tcl http >> versions.vc]
+!endif
+!if [echo PKG_TCLTEST_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\tcltest\pkgIndex.tcl tcltest >> versions.vc]
+!endif
+!if [echo PKG_MSGCAT_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\msgcat\pkgIndex.tcl msgcat >> versions.vc]
+!endif
+!if [echo PKG_PLATFORM_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\platform\pkgIndex.tcl "platform " >> versions.vc]
+!endif
+!if [echo PKG_SHELL_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\platform\pkgIndex.tcl "platform::shell" >> versions.vc]
+!endif
+!if [echo PKG_DDE_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\dde\pkgIndex.tcl "dde " >> versions.vc]
+!endif
+!if [echo PKG_REG_VER =\>> versions.vc] \
+   && [nmakehlp -V ..\library\reg\pkgIndex.tcl registry >> versions.vc]
+!endif
+
+!include versions.vc
+
 STUBPREFIX      = $(PROJECT)stub
 DOTVERSION      = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
 VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
