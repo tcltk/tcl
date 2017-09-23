@@ -27,7 +27,12 @@ _RULES_VC = 1
 # 3. Determine the compiler and linker versions
 # 4. Build the nmakehlp helper application
 # 5. Determine the supported compiler options and features
-# 6. Parse the OPTS macro value for user-specified configuration
+# 6. Parse the OPTS macro value for user-specified build configuration
+# 7. Parse the STATS macro value for statistics instrumentation
+# 8. Parse the CHECKS macro for additional compilation checks
+# 9. Extract Tcl version numbers from the headers
+# 10.Based on this specified configuration, construct the output
+#    directory names
 #
 # One final note about the macro names used. They are as they are
 # for historical reasons. We would like legacy extensions to
@@ -390,14 +395,34 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 !endif
 !endif
 
-#----------------------------------------------------------
-# Decode the options requested.
-#----------------------------------------------------------
+########################################################################
+# 6. Parse the OPTS macro to work out the requested build configuration.
+# Based on this, we will construct the actual switches to be passed to the
+# compiler and linker using the macros defined in the previous section.
+# The following macros are defined by this section based on OPTS
+# STATIC_BUILD - 0 -> Tcl is to be built as a shared library
+#                1 -> build as a static library and shell
+# TCL_THREADS - legacy but always 1 on Windows since winsock requires it.
+# DEBUG - 1 -> debug build, 0 -> release builds
+# SYMBOLS - 1 -> generate PDB's, 0 -> no PDB's
+# PROFILE - 1 -> generate profiling info, 0 -> no profiling
+# PGO     - 1 -> profile based optimization, 0 -> no
+# MSVCRT  - 1 -> link to dynamic C runtime even when building static Tcl build
+#           0 -> link to static C runtime for static Tcl build.
+#           Does not impact shared Tcl builds (STATIC_BUILD == 0)
+# LOIMPACT - 1 -> Ask Windows loader to aggressively trim the working set.
+#           Will reduce physical memory use at cost of performance.
+# TCL_USE_STATIC_PACKAGES - 1 -> statically link the registry and dde extensions
+#           in the Tcl shell. 0 -> keep them as shared libraries
+#           Does not impact shared Tcl builds.
+# USE_THREAD_ALLOC - 1 -> Use a shared global free pool for allocation.
+#           0 -> Use the non-thread allocator.
+# UNCHECKED - 1 -> when doing a debug build with symbols, use the release
+#           C runtime, 0 -> use the debug C runtime.
+#
+# Further, LINKERFLAGS are modified based on above.
 
-!if "$(OPTS)" == "" || [nmakehlp -f "$(OPTS)" "none"]
-
-# if No OPTS specified
-
+# Default values for all the above
 STATIC_BUILD	= 0
 TCL_THREADS	= 1
 DEBUG		= 0
@@ -410,7 +435,9 @@ TCL_USE_STATIC_PACKAGES	= 0
 USE_THREAD_ALLOC = 1
 UNCHECKED	= 0
 
-!else
+# If OPTS is not empty AND does not contain "none" which turns off all OPTS
+# set the above macros based on OPTS content
+!if "$(OPTS)" != "" && ![nmakehlp -f "$(OPTS)" "none"]
 
 # OPTS are specified, parse them
 
@@ -446,12 +473,6 @@ TCL_USE_STATIC_PACKAGES	= 0
 
 !if [nmakehlp -f $(OPTS) "nothreads"]
 !error Option "nothreads" no longer supported. Threads required for sockets, registry and dde to work.
-!message *** Compile explicitly for non-threaded tcl
-TCL_THREADS	= 0
-USE_THREAD_ALLOC= 0
-!else
-TCL_THREADS	= 1
-USE_THREAD_ALLOC= 1
 !endif
 
 !if [nmakehlp -f $(OPTS) "symbols"]
@@ -492,11 +513,13 @@ LOIMPACT	= 1
 LOIMPACT	= 0
 !endif
 
+# TBD - should get rid of this option
 !if [nmakehlp -f $(OPTS) "thrdalloc"]
 !message *** Doing thrdalloc
 USE_THREAD_ALLOC = 1
 !endif
 
+# TBD - should get rid of this option
 !if [nmakehlp -f $(OPTS) "tclalloc"]
 !message *** Doing tclalloc
 USE_THREAD_ALLOC = 0
@@ -509,24 +532,135 @@ UNCHECKED = 1
 UNCHECKED = 0
 !endif
 
-!endif # "$(OPTS)" == ""  ... parsing of OPTS
+!endif # "$(OPTS)" != ""  && ... parsing of OPTS
 
-#----------------------------------------------------------
+# Set linker flags based on above
+
+!if $(PGO) > 1
+!if [nmakehlp -l -ltcg:pgoptimize $(LINKER_TESTFLAGS)]
+LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pgoptimize
+!else
+MSG=^
+This compiler does not support profile guided optimization.
+!error $(MSG)
+!endif
+!elseif $(PGO) > 0
+!if [nmakehlp -l -ltcg:pginstrument $(LINKER_TESTFLAGS)]
+LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pginstrument
+!else
+MSG=^
+This compiler does not support profile guided optimization.
+!error $(MSG)
+!endif
+!endif
+
+################################################################
+# 7. Parse the STATS macro to configure code instrumentation
+# The following macros are set by this section:
+# TCL_MEM_DEBUG - 1 -> enables memory allocation instrumentation
+#                 0 -> disables
+# TCL_COMPILE_DEBUG - 1 -> enables byte compiler logging
+#                     0 -> disables
+
+# Default both are off
+TCL_MEM_DEBUG	    = 0
+TCL_COMPILE_DEBUG   = 0
+
+!if "$(STATS)" != "" && ![nmakehlp -f "$(STATS)" "none"]
+
+!if [nmakehlp -f $(STATS) "memdbg"]
+!message *** Doing memdbg
+TCL_MEM_DEBUG	    = 1
+!else
+TCL_MEM_DEBUG	    = 0
+!endif
+
+!if [nmakehlp -f $(STATS) "compdbg"]
+!message *** Doing compdbg
+TCL_COMPILE_DEBUG   = 1
+!else
+TCL_COMPILE_DEBUG   = 0
+!endif
+
+!endif
+
+####################################################################
+# 8. Parse the CHECKS macro to configure additional compiler checks
+# The following macros are set by this section:
+# WARNINGS - compiler switches that control the warnings level
+# TCL_NO_DEPRECATED - 1 -> disable support for deprecated functions
+#                     0 -> enable deprecated functions
+
+# Defaults - Permit deprecated functions and warning level 3
+TCL_NO_DEPRECATED	    = 0
+WARNINGS		    = -W3
+
+!if "$(CHECKS)" != "" && ![nmakehlp -f "$(CHECKS)" "none"]
+
+!if [nmakehlp -f $(CHECKS) "nodep"]
+!message *** Doing nodep check
+TCL_NO_DEPRECATED	    = 1
+!endif
+
+!if [nmakehlp -f $(CHECKS) "fullwarn"]
+!message *** Doing full warnings check
+WARNINGS		    = -W4
+!if [nmakehlp -l -warn:3 $(LINKER_TESTFLAGS)]
+LINKERFLAGS		    = $(LINKERFLAGS) -warn:3
+!endif
+!endif
+
+!if [nmakehlp -f $(CHECKS) "64bit"] && [nmakehlp -c -Wp64]
+!message *** Doing 64bit portability warnings
+WARNINGS		    = $(WARNINGS) -Wp64
+!endif
+
+!endif
+
+################################################################
+# 9. Extract various version numbers from tcl headers
+# Sets the following macros:
+# TCL_MAJOR_VERSION
+# TCL_MINOR_VERSION
+# TCL_PATCH_LEVEL
+#--------------------------------------------------------------
+
+!if [echo REM = This file is generated from rules.vc > versions.vc]
+!endif
+!if [echo TCL_MAJOR_VERSION = \>> versions.vc] \
+   && [nmakehlp -V "$(_TCL_H)" TCL_MAJOR_VERSION >> versions.vc]
+!endif
+!if [echo TCL_MINOR_VERSION = \>> versions.vc] \
+   && [nmakehlp -V "$(_TCL_H)" TCL_MINOR_VERSION >> versions.vc]
+!endif
+!if [echo TCL_PATCH_LEVEL = \>> versions.vc] \
+   && [nmakehlp -V "$(_TCL_H)" TCL_PATCH_LEVEL >> versions.vc]
+!endif
+
+!include versions.vc
+
+################################################################
+# 10. Construct output directory names
 # Figure-out how to name our intermediate and output directories.
-# We wouldn't want different builds to use the same .obj files
-# by accident.
-#----------------------------------------------------------
-
-#----------------------------------------
-# Naming convention:
+# In order to avoid inadvertent mixing of object files built using
+# different compilers, build configurations etc.,
+#
+# Naming convention (suffixes):
 #   t = full thread support.
-#   s = static library (as opposed to an
-#	import library)
-#   g = linked to the debug enabled C
-#	run-time.
-#   x = special static build when it
-#	links to the dynamic C run-time.
-#----------------------------------------
+#   s = static library (as opposed to an import library)
+#   g = linked to the debug enabled C run-time.
+#   x = special static build when it links to the dynamic C run-time.
+#
+# The following macros are set in this section:
+# SUFX - the suffix to use for binaries based on above naming convention
+# BUILDDIRTOP - the toplevel default output directory
+#      is of the form {Release,Debug}[_AMD64][_COMPILERVERSION]
+# TMP_DIR - directory where object files are created
+# OUT_DIR - directory where output executables are created
+# Both TMP_DIR and OUT_DIR are defaulted only if not defined by the
+# parent makefile (or command line). The default values are
+# based on BUILDDIRTOP.
+
 SUFX	    = tsgx
 
 !if $(DEBUG)
@@ -581,76 +715,6 @@ OUT_DIR	    = $(TMP_DIR)
 
 
 #----------------------------------------------------------
-# Decode the statistics requested.
-#----------------------------------------------------------
-
-!if "$(STATS)" == "" || [nmakehlp -f "$(STATS)" "none"]
-TCL_MEM_DEBUG	    = 0
-TCL_COMPILE_DEBUG   = 0
-!else
-!if [nmakehlp -f $(STATS) "memdbg"]
-!message *** Doing memdbg
-TCL_MEM_DEBUG	    = 1
-!else
-TCL_MEM_DEBUG	    = 0
-!endif
-!if [nmakehlp -f $(STATS) "compdbg"]
-!message *** Doing compdbg
-TCL_COMPILE_DEBUG   = 1
-!else
-TCL_COMPILE_DEBUG   = 0
-!endif
-!endif
-
-
-#----------------------------------------------------------
-# Decode the checks requested.
-#----------------------------------------------------------
-
-!if "$(CHECKS)" == "" || [nmakehlp -f "$(CHECKS)" "none"]
-TCL_NO_DEPRECATED	    = 0
-WARNINGS		    = -W3
-!else
-!if [nmakehlp -f $(CHECKS) "nodep"]
-!message *** Doing nodep check
-TCL_NO_DEPRECATED	    = 1
-!else
-TCL_NO_DEPRECATED	    = 0
-!endif
-!if [nmakehlp -f $(CHECKS) "fullwarn"]
-!message *** Doing full warnings check
-WARNINGS		    = -W4
-!if [nmakehlp -l -warn:3 $(LINKER_TESTFLAGS)]
-LINKERFLAGS		    = $(LINKERFLAGS) -warn:3
-!endif
-!else
-WARNINGS		    = -W3
-!endif
-!if [nmakehlp -f $(CHECKS) "64bit"] && [nmakehlp -c -Wp64]
-!message *** Doing 64bit portability warnings
-WARNINGS		    = $(WARNINGS) -Wp64
-!endif
-!endif
-
-!if $(PGO) > 1
-!if [nmakehlp -l -ltcg:pgoptimize $(LINKER_TESTFLAGS)]
-LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pgoptimize
-!else
-MSG=^
-This compiler does not support profile guided optimization.
-!error $(MSG)
-!endif
-!elseif $(PGO) > 0
-!if [nmakehlp -l -ltcg:pginstrument $(LINKER_TESTFLAGS)]
-LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pginstrument
-!else
-MSG=^
-This compiler does not support profile guided optimization.
-!error $(MSG)
-!endif
-!endif
-
-#----------------------------------------------------------
 # Set our defines now armed with our options.
 #----------------------------------------------------------
 
@@ -691,50 +755,6 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
 !endif
 
-
-#--------------------------------------------------------------
-# Extract various version numbers from tcl headers
-# The generated file is then included in the makefile.
-#--------------------------------------------------------------
-
-!if [echo REM = This file is generated from rules.vc > versions.vc]
-!endif
-!if [echo TCL_MAJOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V "$(_TCL_H)" TCL_MAJOR_VERSION >> versions.vc]
-!endif
-!if [echo TCL_MINOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V "$(_TCL_H)" TCL_MINOR_VERSION >> versions.vc]
-!endif
-!if [echo TCL_PATCH_LEVEL = \>> versions.vc] \
-   && [nmakehlp -V "$(_TCL_H)" TCL_PATCH_LEVEL >> versions.vc]
-!endif
-
-# If building the tcl core then we need additional package versions
-!if "$(PROJECT)" == "tcl"
-!if [echo PKG_HTTP_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\http\pkgIndex.tcl http >> versions.vc]
-!endif
-!if [echo PKG_TCLTEST_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\tcltest\pkgIndex.tcl tcltest >> versions.vc]
-!endif
-!if [echo PKG_MSGCAT_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\msgcat\pkgIndex.tcl msgcat >> versions.vc]
-!endif
-!if [echo PKG_PLATFORM_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\platform\pkgIndex.tcl "platform " >> versions.vc]
-!endif
-!if [echo PKG_SHELL_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\platform\pkgIndex.tcl "platform::shell" >> versions.vc]
-!endif
-!if [echo PKG_DDE_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\dde\pkgIndex.tcl "dde " >> versions.vc]
-!endif
-!if [echo PKG_REG_VER =\>> versions.vc] \
-   && [nmakehlp -V ..\library\reg\pkgIndex.tcl registry >> versions.vc]
-!endif
-!endif
-
-!include versions.vc
 
 #--------------------------------------------------------------
 # Setup tcl version dependent stuff headers
