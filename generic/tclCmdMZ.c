@@ -2357,7 +2357,6 @@ StringRplcCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int first, last, length;	/* Replacement indexes and string length */
-    int del;			/* Number of characters to delete */
     Tcl_Obj *strObj;		/* String being modified */
     Tcl_Obj *insObj;		/* Substring to insert, may be NULL */
     Tcl_Obj *outObj;		/* Output object */
@@ -2374,25 +2373,23 @@ StringRplcCmd(
 	return TCL_ERROR;
     }
 
-    if (objc == 5) {
-	insObj = objv[4];
-    } else {
-	insObj = NULL;
-    }
-
     if (first < 0) {
 	first = 0;
     }
 
     if (last >= first) {
-	del = last - first + 1;
-    } else {
-	del = 0;
-	insObj = NULL;
-    }
+	if (objc == 5) {
+	    insObj = objv[4];
+	} else {
+	    insObj = NULL;
+	}
 
-    if (!(outObj = Tcl_ReplaceObj(interp, strObj, first, del, insObj))) {
-	return TCL_ERROR;
+	if (!(outObj = Tcl_ReplaceObj(interp, strObj, first,
+		last - first + 1, insObj))) {
+	    return TCL_ERROR;
+	}
+    } else {
+	outObj = strObj;
     }
 
     Tcl_SetObjResult(interp, outObj);
