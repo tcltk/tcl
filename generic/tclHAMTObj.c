@@ -16,17 +16,35 @@
  * Prototypes for functions defined later in this file:
  */
 
+static TclClaimProc		ObjClaim;
+static TclClaimProc		ObjDisclaim;
+static TclIsEqualProc		ObjKeyIsEqual;
+static TclHashProc		ObjKeyHash;
+
 static Tcl_DupInternalRepProc	DupHamtInternalRep;
 static Tcl_FreeInternalRepProc	FreeHamtInternalRep;
 static Tcl_SetFromAnyProc	SetHamtFromAny;
 static Tcl_UpdateStringProc	UpdateStringOfHamt;
 
+/* Customizing structs for the HAMT */
+
+const TclHAMTValueType hamtValueType = {
+    ObjClaim,		/* makeRefProc */
+    ObjDisclaim		/* dropRefProc */
+};
+
+const TclHAMTKeyType hamtKeyType = {
+    ObjClaim,		/* makeRefProc */
+    ObjDisclaim,	/* dropRefProc */
+    ObjKeyIsEqual,	/* isEqualProc */
+    ObjKeyHash		/* hashProc */
+};
+
 /*
  * Accessor macro for converting between a Tcl_Obj* and a Dict. Note that this
  * must be assignable as well as readable.
  */
-
-#define HAMT(hamtObj)   (*((TclHAMT *)&(dictObj)->internalRep.twoPtrValue.ptr1))
+#define HAMT(hamtObj)   (*((TclHAMT *)&(hamtObj)->internalRep.twoPtrValue.ptr1))
 
 /*
  * The structure below defines the hamt object type by means of
@@ -40,7 +58,120 @@ const Tcl_ObjType hamtType = {
     UpdateStringOfHamt,			/* updateStringProc */
     SetHamtFromAny			/* setFromAnyProc */
 };
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjClaim, ObjDisclaim --
+ *
+ *      Manage refcounting of keys and values held in HAMT.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static
+void ObjClaim(
+    ClientData clientData)
+{
+    Tcl_Obj *objPtr = clientData;
+
+    Tcl_IncrRefCount(objPtr);
+}
+
+static
+void ObjDisclaim(
+    ClientData clientData)
+{
+    Tcl_Obj *objPtr = clientData;
+
+    Tcl_DecrRefCount(objPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjKeyIsEqual --
+ *
+ *      Check two Tcl_Obj keys, k1 and k2, for equality.
+ *	It is assumed the two arguments are different.  The caller
+ *	is expected to know a key is equal to itself and not ask us.
+ *
+ * Results:
+ *      Boolean indicating whether the keys are equal.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static
+int ObjKeyIsEqual(
+    ClientData k1,
+    ClientData k2)
+{
+    Tcl_Obj *objPtr1 = k1;
+    Tcl_Obj *objPtr2 = k2;
+    const char *p1, *p2;
+    size_t l1, l2;
+
+    p1 = TclGetString(objPtr1);
+    l1 = objPtr1->length;
+    p2 = TclGetString(objPtr2);
+    l2 = objPtr2->length;
+
+    /*
+     * Only compare if the string representations are of the same length.
+     */
+
+    if (l1 == l2) {
+        for (;; p1++, p2++, l1--) {
+            if (*p1 != *p2) {
+                break;
+            }
+            if (l1 == 0) {
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjKeyHash --
+ *
+ *      Compute a size_t hash of the string representation of the Tcl_Obj.
+ *
+ * Results:
+ *      The hash value.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static
+size_t ObjKeyHash(
+    ClientData key)               /* Key from which to compute hash value. */
+{
+    Tcl_Obj *objPtr = key;
+    const char *string = TclGetString(objPtr);
+    size_t length = objPtr->length;
+    size_t result = 0;
+
+    if (length > 0) {
+        result = UCHAR(*string);
+        while (--length) {
+            result += (result << 3) + UCHAR(*++string);
+        }
+    }
+    return result;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -70,13 +201,13 @@ DupHamtInternalRep(
 {
     TclHAMT hamt = HAMT(srcPtr);
 
-    HAMTClaim(hamt);
+    TclHAMTClaim(hamt);
     HAMT(copyPtr) = hamt;
 
     copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
     copyPtr->typePtr = &hamtType;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -95,7 +226,7 @@ FreeHamtInternalRep(
 {
     TclHAMT hamt = HAMT(objPtr);
 
-    HAMTDisclaim(hamt);
+    TclHAMTDisclaim(hamt);
     HAMT(objPtr) = NULL;
     objPtr->typePtr = NULL;
 }
@@ -140,10 +271,10 @@ SetHamtFromAny(
     /* Iterative insertion */
     /* TODO: When transients are available, use them. */
     /* TODO: Consider copy by merges instead? */
-    old = TclHAMTCreate( keyType, valType);
+    old = TclHAMTCreate( &hamtKeyType, &hamtValueType);
     TclHAMTClaim(old);
-    for (i = 0; i < objc, i += 2) {
-	TclHAMT new = TclHAMTInsert(hamt, objv[i], objv[i+1]);
+    for (i = 0; i < objc; i += 2) {
+	TclHAMT new = TclHAMTInsert(old, objv[i], objv[i+1], NULL);
 	TclHAMTClaim(new);
 	TclHAMTDisclaim(old);
 	old = new;
@@ -180,9 +311,9 @@ UpdateStringOfHamt(
 	Tcl_Obj *keyPtr;
 	Tcl_Obj *valuePtr;
 
-	TclHAMTGet(idx, &keyPtr, &valuePtr);
-	Tcl_ListObjAppend(NULL, listPtr, keyPtr);
-	Tcl_ListObjAppend(NULL, listPtr, valuePtr);
+	TclHAMTGet(idx, (ClientData *)&keyPtr, (ClientData *)&valuePtr);
+	Tcl_ListObjAppendElement(NULL, listPtr, keyPtr);
+	Tcl_ListObjAppendElement(NULL, listPtr, valuePtr);
 	TclHAMTNext(&idx);
     }
 
@@ -191,6 +322,7 @@ UpdateStringOfHamt(
     Tcl_DecrRefCount(listPtr);
 }
 
+#if 0
 /*
  * Prototypes for functions defined later in this file:
  */
@@ -3461,6 +3593,7 @@ TclInitDictCmd(
 {
     return TclMakeEnsemble(interp, "dict", implementationMap);
 }
+#endif
 
 /*
  * Local Variables:

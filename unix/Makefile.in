@@ -295,7 +295,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclCkalloc.o tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
 	tclCompCmds.o tclCompCmdsGR.o tclCompCmdsSZ.o tclCompExpr.o \
 	tclCompile.o tclConfig.o tclDate.o tclDictObj.o tclDisassemble.o \
-	tclEncoding.o tclEnsemble.o tclHAMT.o \
+	tclEncoding.o tclEnsemble.o tclHAMT.o tclHAMTObj.o \
 	tclEnv.o tclEvent.o tclExecute.o tclFCmd.o tclFileName.o tclGet.o \
 	tclHash.o tclHistory.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
 	tclIORChan.o tclIORTrans.o tclIOGT.o tclIOSock.o tclIOUtil.o \
@@ -417,6 +417,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclFileName.c \
 	$(GENERIC_DIR)/tclGet.c \
 	$(GENERIC_DIR)/tclHAMT.c \
+	$(GENERIC_DIR)/tclHAMTObj.c \
 	$(GENERIC_DIR)/tclHash.c \
 	$(GENERIC_DIR)/tclHistory.c \
 	$(GENERIC_DIR)/tclIndexObj.c \
@@ -1145,6 +1146,9 @@ tclGet.o: $(GENERIC_DIR)/tclGet.c
 
 tclHAMT.o: $(GENERIC_DIR)/tclHAMT.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclHAMT.c
+
+tclHAMTObj.o: $(GENERIC_DIR)/tclHAMTObj.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclHAMTObj.c
 
 tclHash.o: $(GENERIC_DIR)/tclHash.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclHash.c
