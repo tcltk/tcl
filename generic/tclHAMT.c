@@ -330,7 +330,7 @@ typedef struct AMNode {
 } AMNode;
 
 #define AMN_SIZE(numList, numSubnode) \
-	(sizeof(AMNode) + (2*(numList) + (numSubnode) - 1) * sizeof(void *))
+	(sizeof(AMNode) + (2*(numList) + (numSubnode)) * sizeof(void *))
 
 /*
  * The branching factor of the tree is constrained by our map sizes
@@ -1575,6 +1575,9 @@ TclHAMTIdx
 TclHAMTFirst(
     TclHAMT hamt)
 {
+    const int branchShift = TclMSB(branchFactor);
+    const int depth = branchFactor / branchShift;
+
     HAMT *hPtr = hamt;
     Idx *i;
     ArrayMap am;
@@ -1587,7 +1590,7 @@ TclHAMTFirst(
 	return NULL;
     }
 
-    i = ckalloc(sizeof(Idx));
+    i = ckalloc(sizeof(Idx) + depth*sizeof(ArrayMap));
 
     /*
      * We claim an interest in hamt.  After that we need not claim any
@@ -1617,7 +1620,7 @@ TclHAMTFirst(
 	am = (ArrayMap) am->slot[0];
     }
     i->top[0] = am;
-    i->kvlv = (KVList *)am->slot[n];
+    i->kvlv = (KVList *)(am->slot + n);
     i->kvlc = n - 1;
     i->kvl = i->kvlv[0];
     return i;
