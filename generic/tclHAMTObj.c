@@ -16,6 +16,10 @@
  * Prototypes for functions defined later in this file:
  */
 
+static void SetHAMTObj(Tcl_Obj *objPtr, TclHAMT hamt);
+static TclHAMT GetHAMTFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static Tcl_Obj *NewHAMTObj(TclHAMT hamt);
+
 static TclClaimProc		ObjClaim;
 static TclClaimProc		ObjDisclaim;
 static TclIsEqualProc		ObjKeyIsEqual;
@@ -257,6 +261,10 @@ SetHamtFromAny(
     Tcl_Obj **objv;
     TclHAMT old;
 
+    if (objPtr->typePtr == &hamtType) {
+	return TCL_OK;
+    }
+
     if (TCL_OK != Tcl_ListObjGetElements(interp, objPtr, &objc, &objv)) {
 	return TCL_ERROR;
     }
@@ -281,9 +289,8 @@ SetHamtFromAny(
     }
 
     TclFreeIntRep(objPtr);
-    HAMT(objPtr) = old;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    objPtr->typePtr = &hamtType;
+    SetHAMTObj(objPtr, old);
+    TclHAMTDisclaim(old);
     return TCL_OK;
 }
 
@@ -327,6 +334,7 @@ UpdateStringOfHamt(
  */
 
 static Tcl_ObjCmdProc	HamtCreateCmd;
+static Tcl_ObjCmdProc	HamtReplaceCmd;
 
 /*
  * Table of hamt subcommand names and implementations.
@@ -334,13 +342,46 @@ static Tcl_ObjCmdProc	HamtCreateCmd;
 
 static const EnsembleImplMap implementationMap[] = {
     {"create",	HamtCreateCmd,	NULL, NULL, NULL, 0 },
+    {"replace", HamtReplaceCmd, NULL, NULL, NULL, 0 },
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
+static void
+SetHAMTObj(
+    Tcl_Obj *objPtr,
+    TclHAMT hamt)
+{
+    TclHAMTClaim(hamt);
+    HAMT(objPtr) = hamt;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    objPtr->typePtr = &hamtType;
+}
+
+static Tcl_Obj *
+NewHAMTObj(
+    TclHAMT hamt)
+{
+    Tcl_Obj *objPtr = Tcl_NewObj();
+
+    TclInvalidateStringRep(objPtr);
+    SetHAMTObj(objPtr, hamt);
+    return objPtr;
+}
+
+static TclHAMT
+GetHAMTFromObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr)
+{
+    if (TCL_OK != SetHamtFromAny(interp, objPtr)) {
+	return NULL;
+    }
+    return HAMT(objPtr);
+}
 /*
  *----------------------------------------------------------------------
  *
- * HamCreateCmd --
+ * HamtCreateCmd --
  *
  *	This function implements the "hamt create" Tcl command.
  *
@@ -362,11 +403,60 @@ HamtCreateCmd(
 {
     Tcl_Obj *hamtObj = Tcl_NewListObj(objc - 1, objv + 1);
 
-    if (TCL_OK != SetHamtFromAny(interp, hamtObj)) {
+    if (NULL == GetHAMTFromObj(interp, hamtObj)) {
 	Tcl_DecrRefCount(hamtObj);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, hamtObj);
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HamtReplaceCmd --
+ *
+ *	This function implements the "hamt replace" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+HamtReplaceCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    TclHAMT old, new;
+    int i;
+
+    if ((objc < 2) || (objc & 1)) {
+	Tcl_WrongNumArgs(interp, 1, objv, "hamt ?key value ...?");
+	return TCL_ERROR;
+    }
+
+    old = GetHAMTFromObj(interp, objv[1]);
+    if (NULL == old) {
+	return TCL_ERROR;
+    }
+    TclHAMTClaim(old);
+    for (i=2 ; i<objc ; i+=2) {
+	new = TclHAMTInsert(old, objv[i], objv[i+1], NULL);
+	TclHAMTClaim(new);
+	TclHAMTDisclaim(old);
+	old = new;
+    }
+
+    Tcl_SetObjResult(interp, NewHAMTObj(old));
+    TclHAMTDisclaim(old);
     return TCL_OK;
 }
 
@@ -443,7 +533,6 @@ static const EnsembleImplMap implementationMap[] = {
     {"map", 	NULL,       	TclCompileDictMapCmd, DictMapNRCmd, NULL, 0 },
     {"merge",	DictMergeCmd,	TclCompileDictMergeCmd, NULL, NULL, 0 },
     {"remove",	DictRemoveCmd,	TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
-    {"replace",	DictReplaceCmd, NULL, NULL, NULL, 0 },
     {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, NULL, 0 },
     {"size",	DictSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
     {"unset",	DictUnsetCmd,	TclCompileDictUnsetCmd, NULL, NULL, 0 },
