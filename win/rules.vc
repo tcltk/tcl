@@ -81,6 +81,11 @@ MKDIR   = mkdir
 #
 # The fragment will set the following macros:
 # ROOT - root of this module sources
+# COMPATDIR - source directory that holds compatibility sources
+# DOCDIR - source directory containing documentation files
+# GENERICDIR - platform-independent source directory
+# WINDIR - Windows-specific source directory
+# TOOLSDIR - directory containing build tools
 # _TCLDIR - root of the Tcl installation OR the Tcl sources. Not set
 #    when building Tcl itself.
 # _INSTALLDIR - native form of the installation path. For Tcl
@@ -98,8 +103,16 @@ MKDIR   = mkdir
 # TKINSTALL - set 1 if _TKDIR refers to installed Tk and 0 if Tk sources
 # _TK_H - native path to the tk.h file
 
-# Root directory for sources
+# Root directory for sources and assumed subdirectories
 ROOT = $(MAKEDIR)\..
+# The following paths CANNOT have spaces in them as they appear on the
+# left side of implicit rules.
+COMPATDIR	= $(ROOT)\compat
+DOCDIR		= $(ROOT)\doc
+GENERICDIR	= $(ROOT)\generic
+TOOLSDIR	= $(ROOT)\tools
+WINDIR		= $(ROOT)\win
+
 
 # The target directory where the built packages and binaries will be installed.
 # INSTALLDIR is the (optional) path specified by the user.
@@ -1071,6 +1084,29 @@ baselibs = $(winlibs) $(extralibs)
 !if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
 baselibs   = $(baselibs) ucrt.lib
 !endif
+
+basicclean: clean-pkgs
+	@echo Cleaning $(TMP_DIR)\* ...
+	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
+	@echo Cleaning $(WINDIR)\nmakehlp.obj ...
+	@if exist $(WINDIR)\nmakehlp.obj del $(WINDIR)\nmakehlp.obj
+	@echo Cleaning $(WINDIR)\nmakehlp.exe ...
+	@if exist $(WINDIR)\nmakehlp.exe del $(WINDIR)\nmakehlp.exe
+	@echo Cleaning $(WINDIR)\_junk.pch ...
+	@if exist $(WINDIR)\_junk.pch del $(WINDIR)\_junk.pch
+	@echo Cleaning $(WINDIR)\vercl.x ...
+	@if exist $(WINDIR)\vercl.x del $(WINDIR)\vercl.x
+	@echo Cleaning $(WINDIR)\vercl.i ...
+	@if exist $(WINDIR)\vercl.i del $(WINDIR)\vercl.i
+	@echo Cleaning $(WINDIR)\versions.vc ...
+	@if exist $(WINDIR)\versions.vc del $(WINDIR)\versions.vc
+	@if exist $(WINDIR)\version.vc del $(WINDIR)\version.vc
+
+realclean: hose
+
+hose:
+	@echo Hosing $(OUT_DIR)\* ...
+	@if exist $(OUT_DIR)\nul $(RMDIR) $(OUT_DIR)
 
 
 #----------------------------------------------------------
