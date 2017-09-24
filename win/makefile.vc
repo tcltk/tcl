@@ -182,6 +182,8 @@ Please `cd` to its location first.
 PROJECT = tcl
 !include "rules.vc"
 
+!if [echo REM = This file is generated from makefile.vc > versions.vc]
+!endif
 !if [echo PKG_HTTP_VER = \>> versions.vc] \
    && [nmakehlp -V ..\library\http\pkgIndex.tcl http >> versions.vc]
 !endif
@@ -488,18 +490,14 @@ PKGSDIR		= $(ROOT)\pkgs
 #---------------------------------------------------------------------
 
 
-### Declarations common to all compiler options
-cwarn = $(cwarn) -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
-
-cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\
-
+cflags = $(cflags) -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
+cflags = $(cflags) -Fp$(TMP_DIR)^\
 
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(TOMMATHDIR)"
 TCL_DEFINES	= -DTCL_TOMMATH -DMP_PREC=4 -Dinline=__inline -DHAVE_ZLIB=1
-BASE_CFLAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES) $(TCL_DEFINES)
-CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
-TCL_CFLAGS	= $(BASE_CFLAGS) $(OPTDEFINES)
-STUB_CFLAGS     = $(cflags) $(cdebug) $(OPTDEFINES)
+CON_CFLAGS	= $(cflags) $(crt) -DCONSOLE
+TCL_CFLAGS	= $(cflags) $(crt) $(TCL_INCLUDES) $(TCL_DEFINES) $(OPTDEFINES)
+STUB_CFLAGS     = $(cflags) $(OPTDEFINES)
 
 
 #---------------------------------------------------------------------

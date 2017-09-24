@@ -30,9 +30,11 @@ _RULES_VC = 1
 # 6. Parse the OPTS macro value for user-specified build configuration
 # 7. Parse the STATS macro value for statistics instrumentation
 # 8. Parse the CHECKS macro for additional compilation checks
-# 9. Extract Tcl version numbers from the headers
-# 10.Based on this specified configuration, construct the output
-#    directory names
+# 9. Extract Tcl, and possibly Tk, version numbers from the headers
+# 10.Based on this selected configuration, construct the output
+#    directory and file paths
+# 11.Set up the actual options passed to compiler and linker based
+#    on the information gathered above.
 #
 # One final note about the macro names used. They are as they are
 # for historical reasons. We would like legacy extensions to
@@ -59,11 +61,12 @@ MKDIR   = mkdir
 # 2. Figure out our build environment in terms of what we're building.
 #
 # (a) Tcl itself
-# (b) a Tcl extension using libraries/includes from an *installed* Tcl
-# (c) a Tcl extension using libraries/includes from Tcl source directory
+# (b) Tk
+# (c) a Tcl extension using libraries/includes from an *installed* Tcl
+# (d) a Tcl extension using libraries/includes from Tcl source directory
 #
-# This last is needed because some extensions (even Tk) still need
-# some Tcl interfaces that have are not publicly exposed.
+# This last is needed because some extensions still need
+# some Tcl interfaces that are not publicly exposed.
 #
 # The fragment will set the following macros:
 # _TCLDIR - root of the Tcl installation OR the Tcl sources. Not set
@@ -71,11 +74,17 @@ MKDIR   = mkdir
 # _INSTALLDIR - native form of the installation path. For Tcl
 #    this will be the root of the Tcl installation. For extensions
 #    this will be the lib directory under the root.
-# TCLINSTALL  - set to 1 if an extension is being built against the
+# TCLINSTALL  - set to 1 if _TCLDIR refers to
 #    headers and libraries from an installed Tcl, and 0 if built against
 #    Tcl sources. Not set when building Tcl itself. Yes, not very well
 #    named.
 # _TCL_H - native path to the tcl.h file
+#
+# If Tk is involved, also sets the following
+# _TKDIR - native form Tk installation OR Tk source. Not set if building
+#    Tk itself.
+# TKINSTALL - set 1 if _TKDIR refers to installed Tk and 0 if Tk sources
+# _TK_H - native path to the tk.h file
 
 # The root directory where the built packages and binaries will be installed.
 # INSTALLDIR is the (optional) path specified by the user.
@@ -88,54 +97,61 @@ _INSTALLDIR	= $(INSTALLDIR:/=\)
 _INSTALLDIR	= C:\Program Files\Tcl
 !endif
 
-!if "$(PROJECT)" == "tcl" # Case 2(a) - Building Tcl itself
+!if "$(PROJECT)" == "tcl" 
+
+# BEGIN Case 2(a) - Building Tcl itself
 
 # Only need to define _TCL_H
 _TCL_H = ..\generic\tcl.h
 
-!else # Case 2(b) or (c) - Building an extension
+# END Case 2(a) - Building Tcl itself
+
+!elseif "$(PROJECT)" == "tk"
+
+# BEGIN Case 2(b) - Building Tk
+
+TCLINSTALL = 0 # Tk always builds against Tcl source, not an installed Tcl
+!ifndef TCLDIR
+TCLDIR  = ../../tcl
+!endif
+_TCLDIR	= $(TCLDIR:/=\)
+_TCL_H  = $(_TCLDIR)\generic\tcl.h
+!message TCLH $(_TCL_H)
+!if !exist("$(_TCL_H)")
+!error Could not locate tcl.h. Please set the TCLDIR macro to point to the Tcl *source* directory.
+!endif
+
+_TK_H = ..\generic\tk.h
+
+# END Case 2(b) - Building Tk
+
+!else
+
+# BEGIN Case 2(c) or (d) - Building an extension other than Tk
 
 # If command line has specified Tcl location through TCLDIR, use it
 # else default to the INSTALLDIR setting
 !ifdef TCLDIR
 
 _TCLDIR	= $(TCLDIR:/=\)
-!if exist("$(_TCLDIR)\include\tcl.h") # Case 2(a) with TCLDIR defined
+!if exist("$(_TCLDIR)\include\tcl.h") # Case 2(c) with TCLDIR defined
 TCLINSTALL	= 1
 _TCL_H          = $(_TCLDIR)\include\tcl.h
-!elseif exist("$(_TCLDIR)\generic\tcl.h") # Case 2(b) with TCLDIR defined
+!elseif exist("$(_TCLDIR)\generic\tcl.h") # Case 2(d) with TCLDIR defined
 TCLINSTALL	= 0
 _TCL_H          = $(_TCLDIR)\generic\tcl.h
 !endif
 
 !else  # TCLDIR is not defined
 
-!if "$(PROJECT)" == "tk"
-
-!if exist("..\..\tcl\generic\tcl.h") # Special case Tk with TCLDIR undefined
-TCLINSTALL	= 0
-TCLDIR          = ..\..\tcl
-_TCLDIR		= $(TCLDIR)
-_TCL_H          = $(_TCLDIR)\generic\tcl.h
-!endif
-
-!elseif exist("$(_INSTALLDIR)\include\tcl.h") # Case 2(a) for non-Tk with TCLDIR undefined
-
+!if exist("$(_INSTALLDIR)\include\tcl.h") # Case 2(c) for extensions with TCLDIR undefined
 TCLINSTALL	= 1
 TCLDIR          = $(_INSTALLDIR)
 _TCLDIR		= $(_INSTALLDIR)
 _TCL_H          = $(_INSTALLDIR)\include\tcl.h
-
-!endif # $(PROJECT) == "tk"
-
-!endif # TCLDIR
-
-# If INSTALLDIR set to tcl root dir then reset to the lib dir.
-!if exist("$(_INSTALLDIR)\include\tcl.h")
-_INSTALLDIR=$(_INSTALLDIR)\lib
 !endif
 
-!endif # if $(PROJECT) == "tcl"
+!endif # TCLDIR
 
 !ifndef _TCL_H
 MSG =^
@@ -143,7 +159,52 @@ Failed to find tcl.h. The TCLDIR macro is set incorrectly or is not set and defa
 !error $(MSG)
 !endif
 
+# Now do the same to locate Tk headers and libs if project requires Tk
+!ifdef PROJECT_REQUIRES_TK
 
+!ifdef TKDIR
+
+_TKDIR = $(TKDIR:/=\)
+!if exist("$(_TKDIR)\include\tk.h")
+TKINSTALL      = 1
+_TK_H          = $(_TKDIR)\include\tk.h
+!elseif exist("$(_TKDIR)\generic\tk.h")
+TKINSTALL      = 0
+_TK_H          = $(_TKDIR)\generic\tk.h
+!endif
+
+!else # TKDIR not defined
+
+!if exist("$(_INSTALLDIR)\..\include\tk.h")
+TKINSTALL      = 1
+_TKDIR         = $(_INSTALLDIR)\..
+_TK_H          = $(_TKDIR)\include\tk.h
+TKDIR          = $(_TKDIR)
+!elseif exist("$(_TCLDIR)\include\tk.h")
+TKINSTALL      = 1
+_TKDIR         = $(_TCLDIR)
+_TK_H          = $(_TKDIR)\include\tk.h
+TKDIR          = $(_TKDIR)
+!endif
+
+!endif # TKDIR
+
+!ifndef _TK_H
+MSG =^
+Failed to find tk.h. The TKDIR macro is set incorrectly or is not set and default path does not contain tk.h.
+!error $(MSG)
+!endif
+
+!endif # PROJECT_REQUIRES_TK
+
+# If INSTALLDIR set to tcl installation root dir then reset to the
+# lib dir for installing extensions 
+!if exist("$(_INSTALLDIR)\include\tcl.h")
+_INSTALLDIR=$(_INSTALLDIR)\lib
+!endif
+
+# END Case 2(c) or (d) - Building an extension
+!endif # if $(PROJECT) == "tcl"
 
 ################################################################
 # 3. Determine compiler version and architecture
@@ -371,8 +432,6 @@ DEBUGFLAGS     = $(DEBUGFLAGS) -RTC1
 !elseif [nmakehlp -c -GZ]
 DEBUGFLAGS     = $(DEBUGFLAGS) -GZ
 !endif
-
-
 
 #----------------------------------------------------------------
 # Linker flags
@@ -623,6 +682,11 @@ WARNINGS		    = $(WARNINGS) -Wp64
 # TCL_MAJOR_VERSION
 # TCL_MINOR_VERSION
 # TCL_PATCH_LEVEL
+# TCL_VERSION
+# TK_MAJOR_VERSION
+# TK_MINOR_VERSION
+# TK_PATCH_LEVEL
+# TK_VERSION
 #--------------------------------------------------------------
 
 !if [echo REM = This file is generated from rules.vc > versions.vc]
@@ -637,10 +701,28 @@ WARNINGS		    = $(WARNINGS) -Wp64
    && [nmakehlp -V "$(_TCL_H)" TCL_PATCH_LEVEL >> versions.vc]
 !endif
 
+!if defined(_TK_H)
+!if [echo TK_MAJOR_VERSION = \>> versions.vc] \
+   && [nmakehlp -V $(_TK_H) TK_MAJOR_VERSION >> versions.vc]
+!endif
+!if [echo TK_MINOR_VERSION = \>> versions.vc] \
+   && [nmakehlp -V $(_TK_H) TK_MINOR_VERSION >> versions.vc]
+!endif
+!if [echo TK_PATCH_LEVEL = \>> versions.vc] \
+   && [nmakehlp -V $(_TK_H) TK_PATCH_LEVEL >> versions.vc]
+!endif
+!endif # _TK_H
+
 !include versions.vc
 
+TCL_VERSION	= $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
+!if defined(_TK_H)
+TK_VERSION	= $(TK_MAJOR_VERSION)$(TK_MINOR_VERSION)
+!endif
+
+
 ################################################################
-# 10. Construct output directory names
+# 10. Construct output directory and file paths
 # Figure-out how to name our intermediate and output directories.
 # In order to avoid inadvertent mixing of object files built using
 # different compilers, build configurations etc.,
@@ -713,10 +795,85 @@ OUT_DIR	    = $(TMP_DIR)
 !endif
 !endif
 
+# Set up paths to various Tcl executables and libraries needed by extensions
+!if "$(PROJECT)" != "tcl"
 
-#----------------------------------------------------------
-# Set our defines now armed with our options.
-#----------------------------------------------------------
+!if $(TCLINSTALL) # Building against an installed Tcl
+
+TCLSH		= "$(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX).exe"
+!if !exist($(TCLSH)) && $(TCL_THREADS)
+TCLSH           = "$(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX).exe"
+!endif
+TCLSTUBLIB	= "$(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib"
+TCLIMPLIB	= "$(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX).lib"
+TCL_LIBRARY	= $(_TCLDIR)\lib
+TCLREGLIB	= "$(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib"
+TCLDDELIB	= "$(_TCLDIR)\lib\tcldde14$(SUFX:t=).lib"
+COFFBASE	= \must\have\tcl\sources\to\build\this\target
+TCLTOOLSDIR	= \must\have\tcl\sources\to\build\this\target
+TCL_INCLUDES    = -I"$(_TCLDIR)\include"
+
+!else # Building against Tcl sources
+
+TCLSH		= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)$(SUFX).exe"
+!if !exist($(TCLSH)) && $(TCL_THREADS)
+TCLSH		= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX).exe"
+!endif
+TCLSTUBLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib"
+TCLIMPLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX).lib"
+TCL_LIBRARY	= $(_TCLDIR)\library
+TCLREGLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib"
+TCLDDELIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde14$(SUFX:t=).lib"
+COFFBASE	= "$(_TCLDIR)\win\coffbase.txt"
+TCLTOOLSDIR	= $(_TCLDIR)\tools
+TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
+
+!endif # TCLINSTALL
+
+!endif $(PROJECT) != "tcl"
+
+# Do the same for Tk extensions that require the Tk libraries
+!if defined(PROJECT_REQUIRES_TK)
+
+!if $(TKINSTALL) # Building against installed Tk
+
+WISH		= "$(_TKDIR)\bin\wish$(TK_VERSION)$(SUFX).exe"
+TKSTUBLIB	= "$(_TKDIR)\lib\tkstub$(TK_VERSION).lib"
+TKIMPLIB	= "$(_TKDIR)\lib\tk$(TK_VERSION)$(SUFX).lib"
+TK_INCLUDES     = -I"$(_TKDIR)\include"
+
+!else # Building against Tk sources
+
+WISH		= "$(_TKDIR)\win\$(BUILDDIRTOP)\wish$(TCL_VERSION)$(SUFX).exe"
+TKSTUBLIB	= "$(_TKDIR)\win\$(BUILDDIRTOP)\tkstub$(TCL_VERSION).lib"
+TKIMPLIB	= "$(_TKDIR)\win\$(BUILDDIRTOP)\tk$(TCL_VERSION)$(SUFX).lib"
+TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
+
+!endif # TKINSTALL
+
+!endif # PROJECT_REQUIRES_TK
+
+
+###################################################################
+# 11. Set up actual options to be passed to the compiler and linker
+# Now we have all the information we need, set up the actual flags and
+# options that we will pass to the compiler and linker. The main
+# makefile should use these in combination with whatever other flags
+# and switches are specific to it.
+# The following macros are defined, names are for historical compatibility:
+# OPTDEFINES - /Dxxx C macro flags based on user-specified OPTS
+# COMPILERFLAGS - /Dxxx C macro flags independent of any configuration opttions
+# crt - Compiler switch that selects the appropriate C runtime
+# cdebug - Compiler switches related to debug AND optimizations
+# cwarn - Compiler switches that set warning levels
+# cflags - complete compiler switches (subsumes cdebug and cwarn)
+# ldebug - Linker switches controlling debug information and optimization
+# lflags - complete linker switches (subsumes ldebug) except subsystem type
+# dlllflags - complete linker switches to build DLLs (subsumes lflags)
+# conlflags - complete linker switches for console program (subsumes lflags)
+# guilflags - complete linker switches for GUI program (subsumes lflags)
+# baselibs - minimum Windows libraries required. Parent makefile can
+#    define extralibs before including rules.rc if additional libs are needed
 
 OPTDEFINES	= -DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) -DSTDC_HEADERS
 
@@ -755,128 +912,9 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
 !endif
 
-
-#--------------------------------------------------------------
-# Setup tcl version dependent stuff headers
-#--------------------------------------------------------------
-
-!if "$(PROJECT)" != "tcl"
-
-TCL_VERSION	= $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
-
-!if $(TCLINSTALL)
-TCLSH		= "$(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX).exe"
-!if !exist($(TCLSH)) && $(TCL_THREADS)
-TCLSH           = "$(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX).exe"
-!endif
-TCLSTUBLIB	= "$(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib"
-TCLIMPLIB	= "$(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX).lib"
-TCL_LIBRARY	= $(_TCLDIR)\lib
-TCLREGLIB	= "$(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib"
-TCLDDELIB	= "$(_TCLDIR)\lib\tcldde14$(SUFX:t=).lib"
-COFFBASE	= \must\have\tcl\sources\to\build\this\target
-TCLTOOLSDIR	= \must\have\tcl\sources\to\build\this\target
-TCL_INCLUDES    = -I"$(_TCLDIR)\include"
-!else
-TCLSH		= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)$(SUFX).exe"
-!if !exist($(TCLSH)) && $(TCL_THREADS)
-TCLSH		= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX).exe"
-!endif
-TCLSTUBLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib"
-TCLIMPLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX).lib"
-TCL_LIBRARY	= $(_TCLDIR)\library
-TCLREGLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib"
-TCLDDELIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde14$(SUFX:t=).lib"
-COFFBASE	= "$(_TCLDIR)\win\coffbase.txt"
-TCLTOOLSDIR	= $(_TCLDIR)\tools
-TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
-!endif
-
-!endif
-
-#-------------------------------------------------------------------------
-# Locate the Tk headers to build against
-#-------------------------------------------------------------------------
-
-!if "$(PROJECT)" == "tk"
-_TK_H          = ..\generic\tk.h
-_INSTALLDIR    = $(_INSTALLDIR)\..
-!endif
-
-!ifdef PROJECT_REQUIRES_TK
-!if !defined(TKDIR)
-!if exist("$(_INSTALLDIR)\..\include\tk.h")
-TKINSTALL      = 1
-_TKDIR         = $(_INSTALLDIR)\..
-_TK_H          = $(_TKDIR)\include\tk.h
-TKDIR          = $(_TKDIR)
-!elseif exist("$(_TCLDIR)\include\tk.h")
-TKINSTALL      = 1
-_TKDIR         = $(_TCLDIR)
-_TK_H          = $(_TKDIR)\include\tk.h
-TKDIR          = $(_TKDIR)
-!endif
-!else
-_TKDIR = $(TKDIR:/=\)
-!if exist("$(_TKDIR)\include\tk.h")
-TKINSTALL      = 1
-_TK_H          = $(_TKDIR)\include\tk.h
-!elseif exist("$(_TKDIR)\generic\tk.h")
-TKINSTALL      = 0
-_TK_H          = $(_TKDIR)\generic\tk.h
-!else
-MSG =^
-Failed to find tk.h. The TKDIR macro does not appear correct.
-!error $(MSG)
-!endif
-!endif
-!endif
-
-#-------------------------------------------------------------------------
-# Extract Tk version numbers
-#-------------------------------------------------------------------------
-
-!if defined(PROJECT_REQUIRES_TK) || "$(PROJECT)" == "tk"
-
-!if [echo TK_MAJOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V $(_TK_H) TK_MAJOR_VERSION >> versions.vc]
-!endif
-!if [echo TK_MINOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V $(_TK_H) TK_MINOR_VERSION >> versions.vc]
-!endif
-!if [echo TK_PATCH_LEVEL = \>> versions.vc] \
-   && [nmakehlp -V $(_TK_H) TK_PATCH_LEVEL >> versions.vc]
-!endif
-
-!include versions.vc
-
-TK_DOTVERSION	= $(TK_MAJOR_VERSION).$(TK_MINOR_VERSION)
-TK_VERSION	= $(TK_MAJOR_VERSION)$(TK_MINOR_VERSION)
-
-!if "$(PROJECT)" != "tk"
-!if $(TKINSTALL)
-WISH		= "$(_TKDIR)\bin\wish$(TK_VERSION)$(SUFX).exe"
-TKSTUBLIB	= "$(_TKDIR)\lib\tkstub$(TK_VERSION).lib"
-TKIMPLIB	= "$(_TKDIR)\lib\tk$(TK_VERSION)$(SUFX).lib"
-TK_INCLUDES     = -I"$(_TKDIR)\include"
-!else
-WISH		= "$(_TKDIR)\win\$(BUILDDIRTOP)\wish$(TCL_VERSION)$(SUFX).exe"
-TKSTUBLIB	= "$(_TKDIR)\win\$(BUILDDIRTOP)\tkstub$(TCL_VERSION).lib"
-TKIMPLIB	= "$(_TKDIR)\win\$(BUILDDIRTOP)\tk$(TCL_VERSION)$(SUFX).lib"
-TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
-!endif
-!endif
-
-!endif
-
-
-#----------------------------------------------------------------------
-# Now we have all the information we need, set up the actual flags and
-# options that we will pass to the compiler and linker. The main
-# makefile should use these in combination with whatever other flags
-# and switches are specific to it.
-#----------------------------------------------------------------------
-
+# UNICODE - Use the wide char Windows API.
+# _ATL_XP_TARGETING - Newer SDK's need this to build for XP
+# BUILD_xxx - defined to export the xxx_Init call from the DLL
 COMPILERFLAGS  = /DUNICODE /D_UNICODE /D_ATL_XP_TARGETING /DBUILD_$(PROJECT)
 
 # crt picks the C run time based on selected OPTS
@@ -925,6 +963,8 @@ cwarn = $(cwarn) -wd4311 -wd4312
 # Turn warnings into errors
 cwarn = $(cwarn) -WX
 !endif
+
+cflags = -nologo -c $(COMPILERFLAGS) $(cdebug) $(cwarn) -Fp$(TMP_DIR)^\
 
 # Link flags 
 
@@ -986,7 +1026,6 @@ baselibs = $(winlibs) $(extralibs)
 !if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
 baselibs   = $(baselibs) ucrt.lib
 !endif
-
 
 
 #----------------------------------------------------------
