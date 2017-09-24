@@ -13,16 +13,6 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #------------------------------------------------------------------------------
 
-# Check to see we are configured to build with MSVC (MSDEVDIR, MSVCDIR or
-# VCINSTALLDIR) or with the MS Platform SDK (MSSDK or WindowsSDKDir)
-!if !defined(MSDEVDIR) && !defined(MSVCDIR) && !defined(VCINSTALLDIR) && !defined(MSSDK) && !defined(WINDOWSSDKDIR)
-MSG = ^
-You need to run vcvars32.bat from Developer Studio or setenv.bat from the^
-Platform SDK first to setup the environment.  Jump to this line to read^
-the build instructions.
-!error $(MSG)
-!endif
-
 #------------------------------------------------------------------------------
 # HOW TO USE this makefile:
 #
@@ -218,9 +208,6 @@ DDEVERSION = $(DDEDOTVERSION:.=)
 REGDOTVERSION = 1.3
 REGVERSION = $(REGDOTVERSION:.=)
 
-BINROOT		= $(MAKEDIR)     # originally .
-ROOT		= $(MAKEDIR)\..  # originally ..
-
 TCLIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 TCLLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
 TCLLIB		= $(OUT_DIR)\$(TCLLIBNAME)
@@ -248,13 +235,6 @@ TCLSH_NATIVE	= $(TCLSH)
 !error You must explicitly set TCLSH_NATIVE for cross-compilation
 !endif
 !endif
-
-### Make sure we use backslash only.
-LIB_INSTALL_DIR		= $(_INSTALLDIR)\lib
-BIN_INSTALL_DIR		= $(_INSTALLDIR)\bin
-DOC_INSTALL_DIR		= $(_INSTALLDIR)\doc
-SCRIPT_INSTALL_DIR	= $(_INSTALLDIR)\lib\tcl$(DOTVERSION)
-INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\include
 
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
