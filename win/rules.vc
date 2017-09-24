@@ -20,6 +20,7 @@ _RULES_VC = 1
 # so this file is necessarily verbose. It's broken down into
 # the following parts.
 #
+# 0. Sanity check that compiler environment is set up.
 # 1. First define the external tools used for compiling, copying etc.
 #    as this is independent of everything else.
 # 2. Figure out our build structure in terms of the directory, whether
@@ -31,15 +32,25 @@ _RULES_VC = 1
 # 7. Parse the STATS macro value for statistics instrumentation
 # 8. Parse the CHECKS macro for additional compilation checks
 # 9. Extract Tcl, and possibly Tk, version numbers from the headers
-# 10.Based on this selected configuration, construct the output
-#    directory and file paths
-# 11.Set up the actual options passed to compiler and linker based
-#    on the information gathered above.
+# 10. Based on this selected configuration, construct the output
+#     directory and file paths
+# 11. Construct the paths where the package is to be installed
+# 12. Set up the actual options passed to compiler and linker based
+#     on the information gathered above.
 #
 # One final note about the macro names used. They are as they are
 # for historical reasons. We would like legacy extensions to
 # continue to work with this make include file so be wary of
 # changing them for consistency or clarity.
+
+# 0. Sanity check compiler environment
+# Check to see we are configured to build with MSVC (MSDEVDIR, MSVCDIR or
+# VCINSTALLDIR) or with the MS Platform SDK (MSSDK or WindowsSDKDir)
+!if !defined(MSDEVDIR) && !defined(MSVCDIR) && !defined(VCINSTALLDIR) && !defined(MSSDK) && !defined(WINDOWSSDKDIR)
+MSG = ^
+Visual C++ compiler environment not initialized.
+!error $(MSG)
+!endif
 
 ################################################################
 # 1. Define external programs being used
@@ -69,6 +80,7 @@ MKDIR   = mkdir
 # some Tcl interfaces that are not publicly exposed.
 #
 # The fragment will set the following macros:
+# ROOT - root of this module sources
 # _TCLDIR - root of the Tcl installation OR the Tcl sources. Not set
 #    when building Tcl itself.
 # _INSTALLDIR - native form of the installation path. For Tcl
@@ -86,7 +98,10 @@ MKDIR   = mkdir
 # TKINSTALL - set 1 if _TKDIR refers to installed Tk and 0 if Tk sources
 # _TK_H - native path to the tk.h file
 
-# The root directory where the built packages and binaries will be installed.
+# Root directory for sources
+ROOT = $(MAKEDIR)\..
+
+# The target directory where the built packages and binaries will be installed.
 # INSTALLDIR is the (optional) path specified by the user.
 # _INSTALLDIR is INSTALLDIR using the backslash separator syntax
 !ifdef INSTALLDIR
@@ -116,7 +131,6 @@ TCLDIR  = ../../tcl
 !endif
 _TCLDIR	= $(TCLDIR:/=\)
 _TCL_H  = $(_TCLDIR)\generic\tcl.h
-!message TCLH $(_TCL_H)
 !if !exist("$(_TCL_H)")
 !error Could not locate tcl.h. Please set the TCLDIR macro to point to the Tcl *source* directory.
 !endif
@@ -739,6 +753,7 @@ TK_VERSION	= $(TK_MAJOR_VERSION)$(TK_MINOR_VERSION)
 #      is of the form {Release,Debug}[_AMD64][_COMPILERVERSION]
 # TMP_DIR - directory where object files are created
 # OUT_DIR - directory where output executables are created
+# STUBPREFIX - name of the stubs library for this project
 # Both TMP_DIR and OUT_DIR are defaulted only if not defined by the
 # parent makefile (or command line). The default values are
 # based on BUILDDIRTOP.
@@ -794,6 +809,9 @@ OUT_DIR	    = .\$(BUILDDIRTOP)
 OUT_DIR	    = $(TMP_DIR)
 !endif
 !endif
+
+# The name of the stubs library for the project being built
+STUBPREFIX      = $(PROJECT)stub
 
 # Set up paths to various Tcl executables and libraries needed by extensions
 !if "$(PROJECT)" != "tcl"
@@ -855,7 +873,34 @@ TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
 
 
 ###################################################################
-# 11. Set up actual options to be passed to the compiler and linker
+# 11. Construct the paths for the installation directories
+# The following macros get defined in this section:
+# LIB_INSTALL_DIR - where libraries should be installed
+# BIN_INSTALL_DIR - where the executables should be installed
+# DOC_INSTALL_DIR - where documentation should be installed
+# SCRIPT_INSTALL_DIR - where scripts should be installed
+# INCLUDE_INSTALL_DIR - where C include files should be installed
+!if "$(PROJECT)" == "tcl" || "$(PROJECT)" == "tk"
+LIB_INSTALL_DIR		= $(_INSTALLDIR)\lib
+BIN_INSTALL_DIR		= $(_INSTALLDIR)\bin
+DOC_INSTALL_DIR		= $(_INSTALLDIR)\doc
+!if "$(PROJECT)" == "tcl"
+SCRIPT_INSTALL_DIR	= $(_INSTALLDIR)\lib\tcl$(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
+!else
+SCRIPT_INSTALL_DIR	= $(_INSTALLDIR)\lib\tk$(TK_MAJOR_VERSION).$(TK_MINOR_VERSION)
+!endif
+INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\include
+!else
+PRJ_INSTALL_DIR         = $(_INSTALLDIR)\$(PROJECT)$(DOTVERSION)
+LIB_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
+BIN_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
+DOC_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
+SCRIPT_INSTALL_DIR	= $(PRJ_INSTALL_DIR)
+INCLUDE_INSTALL_DIR	= $(_TCLDIR)\include
+!endif
+
+###################################################################
+# 12. Set up actual options to be passed to the compiler and linker
 # Now we have all the information we need, set up the actual flags and
 # options that we will pass to the compiler and linker. The main
 # makefile should use these in combination with whatever other flags
@@ -1038,7 +1083,7 @@ baselibs   = $(baselibs) ucrt.lib
 !message *** Optional defines are '$(OPTDEFINES)'
 !message *** Compiler version $(VCVER). Target machine is $(MACHINE)
 !message *** Host architecture is $(NATIVE_ARCH)
-!message *** Compiler options '$(COMPILERFLAGS) $(OPTIMIZATIONS) $(DEBUGFLAGS) $(WARNINGS)'
-!message *** Link options '$(LINKERFLAGS)'
+!message *** Cflags '$(cflags)'
+!message *** Lflags '$(lflags)'
 
 !endif # ifdef _RULES_VC
