@@ -198,7 +198,6 @@ PROJECT = tcl
 
 !include versions.vc
 
-STUBPREFIX      = $(PROJECT)stub
 DOTVERSION      = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
 VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 
@@ -456,13 +455,9 @@ TCLSTUBOBJS = \
 	$(TMP_DIR)\tclTomMathStubLib.obj \
 	$(TMP_DIR)\tclOOStubLib.obj
 
-### The following paths CANNOT have spaces in them.
-COMPATDIR	= $(ROOT)\compat
-DOCDIR		= $(ROOT)\doc
-GENERICDIR	= $(ROOT)\generic
+### The following paths CANNOT have spaces in them as they appear on
+### the left side of implicit rules.
 TOMMATHDIR	= $(ROOT)\libtommath
-TOOLSDIR	= $(ROOT)\tools
-WINDIR		= $(ROOT)\win
 PKGSDIR		= $(ROOT)\pkgs
 
 #---------------------------------------------------------------------
@@ -471,7 +466,6 @@ PKGSDIR		= $(ROOT)\pkgs
 
 
 cflags = $(cflags) -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
-cflags = $(cflags) -Fp$(TMP_DIR)^\
 
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(TOMMATHDIR)"
 TCL_DEFINES	= -DTCL_TOMMATH -DMP_PREC=4 -Dinline=__inline -DHAVE_ZLIB=1
@@ -1138,27 +1132,7 @@ tidy:
 	@echo Removing $(TCLREGLIB) ...
 	@if exist $(TCLREGLIB) del $(TCLREGLIB)
 
-clean: clean-pkgs
-	@echo Cleaning $(TMP_DIR)\* ...
-	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
-	@echo Cleaning $(WINDIR)\nmakehlp.obj ...
-	@if exist $(WINDIR)\nmakehlp.obj del $(WINDIR)\nmakehlp.obj
-	@echo Cleaning $(WINDIR)\nmakehlp.exe ...
-	@if exist $(WINDIR)\nmakehlp.exe del $(WINDIR)\nmakehlp.exe
-	@echo Cleaning $(WINDIR)\_junk.pch ...
-	@if exist $(WINDIR)\_junk.pch del $(WINDIR)\_junk.pch
-	@echo Cleaning $(WINDIR)\vercl.x ...
-	@if exist $(WINDIR)\vercl.x del $(WINDIR)\vercl.x
-	@echo Cleaning $(WINDIR)\vercl.i ...
-	@if exist $(WINDIR)\vercl.i del $(WINDIR)\vercl.i
-	@echo Cleaning $(WINDIR)\versions.vc ...
-	@if exist $(WINDIR)\versions.vc del $(WINDIR)\versions.vc
-
-realclean: hose
-
-hose:
-	@echo Hosing $(OUT_DIR)\* ...
-	@if exist $(OUT_DIR)\nul $(RMDIR) $(OUT_DIR)
+clean: basicclean clean-pkgs
 
 # Local Variables:
 # mode: makefile
