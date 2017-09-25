@@ -69,6 +69,17 @@ CPY	= xcopy /i /y >NUL
 COPY	= copy /y >NUL
 MKDIR   = mkdir
 
+# The ProgramFiles(x86) environment variable is not accessible
+# from nmake since it has the parenthesis which nmake does not like
+# within a macro name. So define our own in terms of the
+# ProgramFiles environment variable.
+# Note: env variables are always UPPER CASE in nmake
+!if defined(PROCESSOR_ARCHITECTURE) && "$(PROCESSOR_ARCHITECTURE)" == "AMD64"
+PROGRAMFILES_X86 = $(PROGRAMFILES) (x86)
+!else
+PROGRAMFILES_X86 = $(PROGRAMFILES)
+!endif
+
 
 ######################################################################
 # 2. Figure out our build environment in terms of what we're building.
