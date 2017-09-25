@@ -2335,7 +2335,14 @@ declare 631 {
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
-
+# TIP #430
+declare 632 {
+    int TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
+      const char *passwd)
+}
+declare 633 {
+    int TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
+}
 
 ##############################################################################
 

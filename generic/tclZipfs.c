@@ -505,19 +505,19 @@ CanonicalPath(const char *root, const char *tail, Tcl_DString *dsPtr,int ZIPFSPA
   int i, j, c, isunc = 0, isvfs=0, n=0;
 #if HAS_DRIVES
   int zipfspath=1;
-  if ((tail[0] != '\0') && (strchr(drvletters, tail[0]) != NULL) && 
-    (tail[1] == ':')) { 
+  if ((tail[0] != '\0') && (strchr(drvletters, tail[0]) != NULL) &&
+    (tail[1] == ':')) {
     tail += 2;
     zipfspath=0;
-  } 
-  /* UNC style path */ 
-  if (tail[0] == '\\') { 
-    root = ""; 
+  }
+  /* UNC style path */
+  if (tail[0] == '\\') {
+    root = "";
     ++tail;
     zipfspath=0;
-  } 
-  if (tail[0] == '\\') { 
-    root = "/"; 
+  }
+  if (tail[0] == '\\') {
+    root = "/";
     ++tail;
     zipfspath=0;
   }
@@ -571,7 +571,7 @@ CanonicalPath(const char *root, const char *tail, Tcl_DString *dsPtr,int ZIPFSPA
   } else if(isvfs==2) {
     Tcl_DStringSetLength(dsPtr, j);
     path = Tcl_DStringValue(dsPtr);
-    memcpy(path, tail, j);    
+    memcpy(path, tail, j);
   } else {
     if (ZIPFSPATH) {
       Tcl_DStringSetLength(dsPtr, i + j + ZIPFS_VOLUME_LEN);
@@ -586,12 +586,12 @@ CanonicalPath(const char *root, const char *tail, Tcl_DString *dsPtr,int ZIPFSPA
       memcpy(path + i, tail, j);
     }
   }
-#if HAS_DRIVES 
-  for (i = 0; path[i] != '\0'; i++) { 
-  	if (path[i] == '\\') { 
- 	    path[i] = '/'; 
+#if HAS_DRIVES
+  for (i = 0; path[i] != '\0'; i++) {
+  	if (path[i] == '\\') {
+ 	    path[i] = '/';
     }
-  } 
+  }
 #endif
   if(ZIPFSPATH) {
     n=ZIPFS_VOLUME_LEN;
@@ -706,7 +706,7 @@ static ZipEntry *
 ZipFSLookup(char *filename)
 {
   char *realname;
-  
+
   Tcl_HashEntry *hPtr;
   ZipEntry *z;
   Tcl_DString ds;
@@ -1030,7 +1030,7 @@ error:
 /*
  *-------------------------------------------------------------------------
  *
- * TclZipfsMount --
+ * TclZipfs_Mount --
  *
  *      This procedure is invoked to mount a given ZIP archive file on
  *	a given mountpoint with optional ZIP password.
@@ -1046,7 +1046,7 @@ error:
  */
 
 int
-TclZipfsMount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
+TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	    const char *passwd)
 {
   char *realname, *p;
@@ -1379,7 +1379,7 @@ nextent:
 /*
  *-------------------------------------------------------------------------
  *
- * TclZipfsUnmount --
+ * TclZipfs_Unmount --
  *
  *      This procedure is invoked to unmount a given ZIP archive.
  *
@@ -1393,7 +1393,7 @@ nextent:
  */
 
 int
-TclZipfsUnmount(Tcl_Interp *interp, const char *zipname)
+TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
 {
   char *realname;
   ZipFile *zf;
@@ -1471,7 +1471,7 @@ ZipFSMountObjCmd(ClientData clientData, Tcl_Interp *interp,
 			 "?zipfile? ?mountpoint? ?password?");
 	return TCL_ERROR;
     }
-    return TclZipfsMount(interp, (objc > 1) ? Tcl_GetString(objv[1]) : NULL,
+    return TclZipfs_Mount(interp, (objc > 1) ? Tcl_GetString(objv[1]) : NULL,
 		       (objc > 2) ? Tcl_GetString(objv[2]) : NULL,
 		       (objc > 3) ? Tcl_GetString(objv[3]) : NULL);
 }
@@ -1500,7 +1500,7 @@ ZipFSUnmountObjCmd(ClientData clientData, Tcl_Interp *interp,
 	Tcl_WrongNumArgs(interp, 1, objv, "zipfile");
 	return TCL_ERROR;
     }
-    return TclZipfsUnmount(interp, Tcl_GetString(objv[1]));
+    return TclZipfs_Unmount(interp, Tcl_GetString(objv[1]));
 }
 
 /*
@@ -2271,7 +2271,7 @@ ZipFSCanonicalObjCmd(ClientData clientData, Tcl_Interp *interp,
     }
     mntpoint = Tcl_GetString(objv[1]);
     filename = Tcl_GetString(objv[2]);
-    result=CanonicalPath(mntpoint,filename,&dPath,zipfs);    
+    result=CanonicalPath(mntpoint,filename,&dPath,zipfs);
   }
   Tcl_SetObjResult(interp,Tcl_NewStringObj(result,-1));
   return TCL_OK;
@@ -3430,7 +3430,7 @@ Zip_FSPathInFilesystemProc(Tcl_Obj *pathPtr, ClientData *clientDataPtr)
     if(strncmp(path,ZIPFS_VOLUME,ZIPFS_VOLUME_LEN)!=0) {
       return -1;
     }
-    
+
     Tcl_DStringInit(&ds);
     path = CanonicalPath("",path, &ds, 1);
     len = Tcl_DStringLength(&ds);
@@ -3793,7 +3793,7 @@ const Tcl_Filesystem zipfsFilesystem = {
 /*
  *-------------------------------------------------------------------------
  *
- * TclZipfsInit --
+ * TclZipfs_Init --
  *
  *	Perform per interpreter initialization of this module.
  *
@@ -3808,7 +3808,7 @@ const Tcl_Filesystem zipfsFilesystem = {
  */
 
 int
-TclZipfsInit(Tcl_Interp *interp)
+TclZipfs_Init(Tcl_Interp *interp)
 {
 #ifdef HAVE_ZLIB
     /* one-time initialization */
@@ -3884,7 +3884,7 @@ TclZipfsInit(Tcl_Interp *interp)
 /*
  *-------------------------------------------------------------------------
  *
- * TclZipfsMount, TclZipfsUnmount --
+ * TclZipfs_Mount, TclZipfs_Unmount --
  *
  *	Dummy version when no ZLIB support available.
  *
@@ -3892,16 +3892,16 @@ TclZipfsInit(Tcl_Interp *interp)
  */
 
 int
-TclZipfsMount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
+TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	    const char *passwd)
 {
-    return TclZipFsInit(interp, 1);
+    return TclZipfs_Init(interp, 1);
 }
 
 int
-TclZipfsUnmount(Tcl_Interp *interp, const char *zipname)
+TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
 {
-    return TclZipFsInit(interp, 1);
+    return TclZipfs_Init(interp, 1);
 }
 
 #endif
