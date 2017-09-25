@@ -27,11 +27,11 @@ extern "C" {
 #   define ZIPFSAPI DLLEXPORT
 #endif
 
-ZIPFSAPI int Tclzipfs_Mount(Tcl_Interp *interp, const char *zipname,
+ZIPFSAPI int TclZipfs_Mount(Tcl_Interp *interp, const char *zipname,
 			 const char *mntpt, const char *passwd);
-ZIPFSAPI int Tclzipfs_Unmount(Tcl_Interp *interp, const char *zipname);
-ZIPFSAPI int Tclzipfs_Init(Tcl_Interp *interp);
-ZIPFSAPI int Tclzipfs_SafeInit(Tcl_Interp *interp);
+ZIPFSAPI int TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname);
+ZIPFSAPI int TclZipfs_Init(Tcl_Interp *interp);
+ZIPFSAPI int TclZipfs_SafeInit(Tcl_Interp *interp);
 
 #ifdef __cplusplus
 }
