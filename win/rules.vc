@@ -37,6 +37,7 @@ _RULES_VC = 1
 # 11. Construct the paths where the package is to be installed
 # 12. Set up the actual options passed to compiler and linker based
 #     on the information gathered above.
+# 13. Define some standard build targets and implicit rules.
 #
 # One final note about the macro names used. They are as they are
 # for historical reasons. We would like legacy extensions to
@@ -46,6 +47,7 @@ _RULES_VC = 1
 # 0. Sanity check compiler environment
 # Check to see we are configured to build with MSVC (MSDEVDIR, MSVCDIR or
 # VCINSTALLDIR) or with the MS Platform SDK (MSSDK or WindowsSDKDir)
+
 !if !defined(MSDEVDIR) && !defined(MSVCDIR) && !defined(VCINSTALLDIR) && !defined(MSSDK) && !defined(WINDOWSSDKDIR)
 MSG = ^
 Visual C++ compiler environment not initialized.
@@ -931,7 +933,7 @@ INCLUDE_INSTALL_DIR	= $(_TCLDIR)\include
 # conlflags - complete linker switches for console program (subsumes lflags)
 # guilflags - complete linker switches for GUI program (subsumes lflags)
 # baselibs - minimum Windows libraries required. Parent makefile can
-#    define extralibs before including rules.rc if additional libs are needed
+#    define PRJ_LIBS before including rules.rc if additional libs are needed
 
 OPTDEFINES	= -DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) -DSTDC_HEADERS
 
@@ -1022,7 +1024,7 @@ cwarn = $(cwarn) -wd4311 -wd4312
 cwarn = $(cwarn) -WX
 !endif
 
-cflags = -nologo -c $(COMPILERFLAGS) $(cdebug) $(cwarn) -Fp$(TMP_DIR)^\
+cflags = -nologo -c $(COMPILERFLAGS) $(cdebug) $(cwarn) -Fp$(TMP_DIR)^\ $(OPTDEFINES)
 
 # Link flags 
 
@@ -1068,7 +1070,7 @@ conlflags = $(lflags) -subsystem:console
 guilflags = $(lflags) -subsystem:windows
 
 # Libraries that are required for every image.
-# Extensions should define any additional libraries with $(extralibs)
+# Extensions should define any additional libraries with $(PRJ_LIBS)
 winlibs   = kernel32.lib advapi32.lib
 
 # Avoid 'unresolved external symbol __security_cookie' errors.
@@ -1079,13 +1081,22 @@ winlibs   = $(winlibs) bufferoverflowU.lib
 !endif
 !endif
 
-baselibs = $(winlibs) $(extralibs)
+baselibs = $(winlibs) $(PRJ_LIBS)
 
 !if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
 baselibs   = $(baselibs) ucrt.lib
 !endif
 
-basicclean: clean-pkgs
+################################################################
+# 3. Define common make targets and implicit rules
+
+!ifndef DEFAULT_BUILD_TARGET
+DEFAULT_BUILD_TARGET = all
+!endif
+
+default_target: $(DEFAULT_BUILD_TARGET)
+
+clean:
 	@echo Cleaning $(TMP_DIR)\* ...
 	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
 	@echo Cleaning $(WINDIR)\nmakehlp.obj ...
@@ -1107,6 +1118,27 @@ realclean: hose
 hose:
 	@echo Hosing $(OUT_DIR)\* ...
 	@if exist $(OUT_DIR)\nul $(RMDIR) $(OUT_DIR)
+
+# Implicit rule definitions
+
+{$(WINDIR)}.c{$(TMP_DIR)}.obj::
+	$(cc32) $(cflags) $(crt) $(PRJ_INCLUDES) $(PRJ_DEFINES) -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+{$(GENERICDIR)}.c{$(TMP_DIR)}.obj::
+	$(cc32) $(cflags) $(crt) $(PRJ_INCLUDES) $(PRJ_DEFINES) -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+{$(COMPATDIR)}.c{$(TMP_DIR)}.obj::
+	$(cc32) $(cflags) $(crt) $(PRJ_INCLUDES) $(PRJ_DEFINES) -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+.SUFFIXES:
+.SUFFIXES:.c .rc
+
 
 
 #----------------------------------------------------------
