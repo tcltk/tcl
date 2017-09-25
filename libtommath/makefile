@@ -149,3 +149,6 @@ new_file:
 
 perlcritic:
 	perlcritic *.pl
+
+astyle:
+	astyle --options=astylerc $(OBJECTS:.o=.c)
