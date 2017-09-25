@@ -536,45 +536,42 @@ $(TCLIMPLIB): $(TCLLIB)
 
 $(TCLLIB): $(TCLOBJS)
 !if $(STATIC_BUILD)
-	$(lib32) -nologo $(LINKERFLAGS) -out:$@ @<<
+	$(MAKELIBCMD) @<<
 $**
 <<
 !else
-	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tcl -out:$@ \
-		$(baselibs) @<<
+	$(MAKEDLLCMD) @<<
 $**
 <<
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
 
 $(TCLSTUBLIB): $(TCLSTUBOBJS)
-	$(lib32) -nologo $(LINKERFLAGS) -nodefaultlib -out:$@ $(TCLSTUBOBJS)
+	$(MAKELIBCMD) -nodefaultlib $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
-	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
+	$(MAKECONCMD) -stack:2300000 $**
 	$(_VC_MANIFEST_EMBED_EXE)
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
-	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
+	$(MAKECONCMD) -stack:2300000 $**
 	$(_VC_MANIFEST_EMBED_EXE)
 
 !if $(STATIC_BUILD)
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
-	$(lib32) -nologo $(LINKERFLAGS) -out:$@ $**
+	$(MAKELIBCMD) $**
 !else
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
-	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tcldde -out:$@ \
-		$** $(baselibs)
+	$(MAKEDLLCMD) -base:@$(WINDIR)\coffbase.txt,tcldde $**
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
 
 !if $(STATIC_BUILD)
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
-	$(lib32) -nologo $(LINKERFLAGS) -out:$@ $**
+	$(MAKELIBCMD) $**
 !else
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
-	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tclreg -out:$@ \
-		$** $(baselibs)
+	$(MAKEDLLCMD) -base:@$(WINDIR)\coffbase.txt,tclreg $**
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
 
@@ -612,8 +609,7 @@ clean-pkgs:
 
 $(CAT32): $(WINDIR)\cat.c
 	$(cc32) $(cflags) $(crt) -DCONSOLE -Fo$(TMP_DIR)\ $?
-	$(link32) $(conlflags) -out:$@ -stack:16384 $(TMP_DIR)\cat.obj \
-		$(baselibs)
+	$(MAKECONCMD) -stack:16384 $(TMP_DIR)\cat.obj
 	$(_VC_MANIFEST_EMBED_EXE)
 
 #---------------------------------------------------------------------

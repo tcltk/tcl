@@ -1154,7 +1154,10 @@ $<
 .SUFFIXES:
 .SUFFIXES:.c .rc
 
-
+MAKELIBCMD = $(lib32) -nologo $(LINKERFLAGS) -out:$@
+MAKEDLLCMD = $(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tcl -out:$@ $(baselibs)
+MAKECONEXECMD = $(link32) $(conlflags) -out:$@ $(baselibs)
+MAKEGUIEXECMD = $(link32) $(guilflags) -out:$@ $(baselibs)
 
 #----------------------------------------------------------
 # Display stats being used.
