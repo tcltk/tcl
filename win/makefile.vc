@@ -226,9 +226,6 @@ TCLLIB		= $(OUT_DIR)\$(TCLLIBNAME)
 TCLSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
 TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
 
-TCLSHNAME	= $(PROJECT)sh$(VERSION)$(SUFX).exe
-TCLSH		= $(OUT_DIR)\$(TCLSHNAME)
-
 TCLREGLIBNAME	= $(PROJECT)reg$(REGVERSION)$(SUFX:t=).$(EXT)
 TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
 
@@ -237,15 +234,6 @@ TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
 CAT32		= $(OUT_DIR)\cat32.exe
-
-# Can we run what we build? IX86 runs on all architectures.
-!ifndef TCLSH_NATIVE
-!if "$(MACHINE)" == "IX86" || "$(MACHINE)" == "$(NATIVE_ARCH)"
-TCLSH_NATIVE	= $(TCLSH)
-!else
-!error You must explicitly set TCLSH_NATIVE for cross-compilation
-!endif
-!endif
 
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
@@ -772,6 +760,8 @@ install-docs:
 	@$(CPY) "$(HELPCNT)" "$(DOC_INSTALL_DIR)\"
 !endif
 
+# "emacs font-lock highlighting fix
+
 #---------------------------------------------------------------------
 # Build tclConfig.sh for the TEA build system.
 #---------------------------------------------------------------------
@@ -968,7 +958,8 @@ $(TCLOBJS)
 
 
 #---------------------------------------------------------------------
-# Implicit rules.  A limitation exists with nmake that requires that
+# Implicit rules that are not covered by the common ones defined in
+# rules.vc. A limitation exists with nmake that requires that
 # source directory can not contain spaces in the path.  This an
 # absolute.
 #---------------------------------------------------------------------
@@ -1010,8 +1001,6 @@ install-binaries:
 !endif
 	@echo Installing $(TCLSTUBLIBNAME)
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
-
-#" emacs fix
 
 install-libraries: tclConfig install-msgs install-tzdata
 	@if not exist "$(SCRIPT_INSTALL_DIR)$(NULL)" \
@@ -1093,8 +1082,6 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@echo Installing encodings
 	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
 		"$(SCRIPT_INSTALL_DIR)\encoding\"
-
-#" emacs fix
 
 install-tzdata:
 	@echo Installing time zone data
