@@ -169,9 +169,24 @@ Please `cd` to its location first.
 !error $(MSG)
 !endif
 
+# The PROJECT macro is used by rules.vc for generating appropriate
+# macros and rules.
 PROJECT = tcl
+
+# Default target to build if no target is specified. If unspecified, the
+# rules.vc file will set up "all" as the target.
+DEFAULT_BUILD_TARGET = release
+
+# The rules.vc file does most of the hard work in terms of defining
+# the build configuration, macros, output directories etc.
 !include "rules.vc"
 
+# Tcl version info based on macros set up by rules.vc
+DOTVERSION      = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
+VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
+
+# We need versions of various core packages to generate appropriate
+# file names during installation.
 !if [echo REM = This file is generated from makefile.vc > versions.vc]
 !endif
 !if [echo PKG_HTTP_VER = \>> versions.vc] \
@@ -197,9 +212,6 @@ PROJECT = tcl
 !endif
 
 !include versions.vc
-
-DOTVERSION      = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
-VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 
 DDEDOTVERSION = 1.4
 DDEVERSION = $(DDEDOTVERSION:.=)
@@ -465,19 +477,20 @@ PKGSDIR		= $(ROOT)\pkgs
 #---------------------------------------------------------------------
 
 
-cflags = $(cflags) -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
+# Additional include and C macro definitions for the implicit rules
+# defined in rules.vc
+PRJ_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(TOMMATHDIR)"
+PRJ_DEFINES	= -DTCL_TOMMATH -DMP_PREC=4 -Dinline=__inline -DHAVE_ZLIB=1 -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
 
-TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(TOMMATHDIR)"
-TCL_DEFINES	= -DTCL_TOMMATH -DMP_PREC=4 -Dinline=__inline -DHAVE_ZLIB=1
-CON_CFLAGS	= $(cflags) $(crt) -DCONSOLE
-TCL_CFLAGS	= $(cflags) $(crt) $(TCL_INCLUDES) $(TCL_DEFINES) $(OPTDEFINES)
-STUB_CFLAGS     = $(cflags) $(OPTDEFINES)
+# Define compiler flags used in our private implicit rules that are
+# not covered by rules.vc
+TCL_CFLAGS	= $(cflags) $(crt) $(PRJ_INCLUDES) $(PRJ_DEFINES)
+STUB_CFLAGS     = $(cflags)
 
 
-#---------------------------------------------------------------------
-# Link libraries
-#---------------------------------------------------------------------
-extralibs   = netapi32.lib user32.lib userenv.lib ws2_32.lib
+# Additional Link libraries needed beyond those in rules.vc
+PRJ_LIBS   = netapi32.lib user32.lib userenv.lib ws2_32.lib
+
 
 #---------------------------------------------------------------------
 # TclTest flags
@@ -610,7 +623,7 @@ clean-pkgs:
 	  )
 
 $(CAT32): $(WINDIR)\cat.c
-	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $?
+	$(cc32) $(cflags) $(crt) -DCONSOLE -Fo$(TMP_DIR)\ $?
 	$(link32) $(conlflags) -out:$@ -stack:16384 $(TMP_DIR)\cat.obj \
 		$(baselibs)
 	$(_VC_MANIFEST_EMBED_EXE)
@@ -765,6 +778,7 @@ install-docs:
 
 tclConfig: $(OUT_DIR)\tclConfig.sh
 
+# TBD - is this tclConfig.sh file ever used? The values are incorrect!
 $(OUT_DIR)\tclConfig.sh: $(WINDIR)\tclConfig.sh.in
 	@echo Creating tclConfig.sh
         @nmakehlp -s << $** >$@
@@ -782,7 +796,7 @@ $(OUT_DIR)\tclConfig.sh: $(WINDIR)\tclConfig.sh.in
 @TCL_DBGX@           $(SUFX)
 @TCL_LIB_FILE@       $(PROJECT)$(VERSION)$(SUFX).lib
 @TCL_NEEDS_EXP_FILE@
-@LIBS@               $(baselibs)
+@LIBS@               $(baselibs) $(PRJ_LIBS)
 @prefix@             $(_INSTALLDIR)
 @exec_prefix@        $(BIN_INSTALL_DIR)
 @SHLIB_CFLAGS@
@@ -791,7 +805,7 @@ $(OUT_DIR)\tclConfig.sh: $(WINDIR)\tclConfig.sh.in
 @EXTRA_CFLAGS@       -YX
 @SHLIB_LD@           $(link32) $(dlllflags)
 @STLIB_LD@           $(lib32) -nologo
-@SHLIB_LD_LIBS@      $(baselibs)
+@SHLIB_LD_LIBS@      $(baselibs) $(PRJ_LIBS)
 @SHLIB_SUFFIX@       .dll
 @DL_LIBS@
 @LDFLAGS@
@@ -905,13 +919,13 @@ $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 ### specific C run-time.
 
 $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
-	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
+	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(PRJ_INCLUDES) -Fo$@ $?
 
 $(TMP_DIR)\tclTomMathStubLib.obj: $(GENERICDIR)\tclTomMathStubLib.c
-	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
+	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(PRJ_INCLUDES) -Fo$@ $?
 
 $(TMP_DIR)\tclOOStubLib.obj: $(GENERICDIR)\tclOOStubLib.c
-	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
+	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(PRJ_INCLUDES) -Fo$@ $?
 
 $(TMP_DIR)\tclsh.exe.manifest: $(WINDIR)\tclsh.exe.manifest.in
 	@nmakehlp -s << $** >$@
@@ -932,7 +946,7 @@ depend:
 	@echo Build tclsh first!
 !else
 	$(TCLSH) $(TOOLSDIR:\=/)/mkdepend.tcl -vc32 -out:"$(OUT_DIR)\depend.mk" \
-		-passthru:"-DBUILD_tcl $(TCL_INCLUDES)" $(GENERICDIR),$$(GENERICDIR) \
+		-passthru:"-DBUILD_tcl $(PRJ_INCLUDES)" $(GENERICDIR),$$(GENERICDIR) \
 		$(COMPATDIR),$$(COMPATDIR) $(TOMMATHDIR),$$(TOMMATHDIR) $(WINDIR),$$(WINDIR) @<<
 $(TCLOBJS)
 <<
@@ -959,22 +973,7 @@ $(TCLOBJS)
 # absolute.
 #---------------------------------------------------------------------
 
-{$(WINDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
-$<
-<<
-
 {$(TOMMATHDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
-$<
-<<
-
-{$(GENERICDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
-$<
-<<
-
-{$(COMPATDIR)}.c{$(TMP_DIR)}.obj::
 	$(cc32) $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
 $<
 <<
@@ -992,9 +991,6 @@ $<
 	    $<
 
 $(TMP_DIR)\tclsh.res: $(TMP_DIR)\tclsh.exe.manifest
-
-.SUFFIXES:
-.SUFFIXES:.c .rc
 
 
 #---------------------------------------------------------------------
@@ -1132,7 +1128,7 @@ tidy:
 	@echo Removing $(TCLREGLIB) ...
 	@if exist $(TCLREGLIB) del $(TCLREGLIB)
 
-clean: basicclean clean-pkgs
+clean: clean-pkgs
 
 # Local Variables:
 # mode: makefile
