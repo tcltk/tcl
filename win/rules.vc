@@ -829,7 +829,12 @@ OUT_DIR	    = $(TMP_DIR)
 STUBPREFIX      = $(PROJECT)stub
 
 # Set up paths to various Tcl executables and libraries needed by extensions
-!if "$(PROJECT)" != "tcl"
+!if "$(PROJECT)" == "tcl"
+
+TCLSHNAME = $(PROJECT)sh$(TCL_VERSION)$(SUFX).exe
+TCLSH		= $(OUT_DIR)\$(TCLSHNAME)
+
+!else # $(PROJECT) is not "tcl"
 
 !if $(TCLINSTALL) # Building against an installed Tcl
 
@@ -864,6 +869,16 @@ TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
 !endif # TCLINSTALL
 
 !endif $(PROJECT) != "tcl"
+
+# We need a tclsh that will run on the host machine as part of the build.
+# IX86 runs on all architectures.
+!ifndef TCLSH_NATIVE
+!if "$(MACHINE)" == "IX86" || "$(MACHINE)" == "$(NATIVE_ARCH)"
+TCLSH_NATIVE	= $(TCLSH)
+!else
+!error You must explicitly set TCLSH_NATIVE for cross-compilation
+!endif
+!endif
 
 # Do the same for Tk extensions that require the Tk libraries
 !if defined(PROJECT_REQUIRES_TK)
