@@ -649,7 +649,11 @@ gentommath_h:
 
 # NOTE: you can define HHC on the command-line to override this
 !ifndef HHC
-HHC=""%ProgramFiles%\HTML Help Workshop\hhc.exe""
+!if exist("$(PROGRAMFILES_X86)\HTML Help Workshop\hhc.exe")
+HHC=$(PROGRAMFILES_X86)\HTML Help Workshop\hhc.exe
+!else
+HHC=hhc.exe
+!endif
 !endif
 HTMLDIR=$(OUT_DIR)\html
 HTMLBASE=TclTk$(VERSION)
@@ -661,7 +665,7 @@ htmlhelp: chmsetup $(CHMFILE)
 $(CHMFILE): $(DOCDIR)\*
 	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
 	@echo Compiling HTML help project
-	-$(HHC) <<$(HHPFILE) >NUL
+	-"$(HHC)" <<$(HHPFILE) >NUL
 [OPTIONS]
 Compatibility=1.1 or later
 Compiled file=$(HTMLBASE).chm
@@ -685,75 +689,10 @@ UserCmd\*.htm
 chmsetup:
 	@if not exist $(HTMLDIR)\nul mkdir $(HTMLDIR)
 
-#-------------------------------------------------------------------------
-# Build the old-style Windows .hlp file
-#-------------------------------------------------------------------------
-
-TCLHLPBASE	= $(PROJECT)$(VERSION)
-HELPFILE	= $(OUT_DIR)\$(TCLHLPBASE).hlp
-HELPCNT		= $(OUT_DIR)\$(TCLHLPBASE).cnt
-DOCTMP_DIR	= $(OUT_DIR)\$(PROJECT)_docs
-HELPRTF		= $(DOCTMP_DIR)\$(PROJECT).rtf
-MAN2HELP	= $(DOCTMP_DIR)\man2help.tcl
-MAN2HELP2	= $(DOCTMP_DIR)\man2help2.tcl
-INDEX		= $(DOCTMP_DIR)\index.tcl
-BMP		= $(DOCTMP_DIR)\feather.bmp
-BMP_NOPATH	= feather.bmp
-MAN2TCL		= $(DOCTMP_DIR)\man2tcl.exe
-
-winhelp: docsetup $(HELPFILE)
-
-docsetup:
-	@if not exist $(DOCTMP_DIR)\nul mkdir $(DOCTMP_DIR)
-
-$(MAN2HELP) $(MAN2HELP2) $(INDEX) $(BMP): $(TOOLSDIR)\$$(@F)
-	@$(CPY) $(TOOLSDIR)\$(@F) $(@D)
-
-$(HELPFILE): $(HELPRTF) $(BMP)
-	cd $(DOCTMP_DIR)
-	start /wait hcrtf.exe -x <<$(PROJECT).hpj
-[OPTIONS]
-COMPRESS=12 Hall Zeck
-LCID=0x409 0x0 0x0 ; English (United States)
-TITLE=Tcl/Tk Reference Manual
-BMROOT=.
-CNT=$(@B).cnt
-HLP=$(@B).hlp
-
-[FILES]
-$(PROJECT).rtf
-
-[WINDOWS]
-main="Tcl/Tk Reference Manual",,27648,(r15263976),(r65535)
-
-[CONFIG]
-BrowseButtons()
-CreateButton(1, "Web", ExecFile("http://www.tcl.tk"))
-CreateButton(2, "SF", ExecFile("http://sf.net/projects/tcl"))
-CreateButton(3, "Wiki", ExecFile("http://wiki.tcl.tk"))
-CreateButton(4, "FAQ", ExecFile("http://www.purl.org/NET/Tcl-FAQ/"))
-<<
-	cd $(MAKEDIR)
-	@$(CPY) "$(DOCTMP_DIR)\$(@B).hlp" "$(OUT_DIR)"
-	@$(CPY) "$(DOCTMP_DIR)\$(@B).cnt" "$(OUT_DIR)"
-
-$(MAN2TCL): $(TOOLSDIR)\$$(@B).c
-	$(cc32) $(TCL_CFLAGS) -Fo$(@D)\ $(TOOLSDIR)\$(@B).c
-	$(link32) $(conlflags) -out:$@ -stack:16384 $(@D)\man2tcl.obj
-	$(_VC_MANIFEST_EMBED_EXE)
-
-$(HELPRTF): $(MAN2TCL) $(MAN2HELP) $(MAN2HELP2) $(INDEX) $(DOCDIR)\*
-	$(TCLSH) $(MAN2HELP) -bitmap $(BMP_NOPATH) $(PROJECT) $(VERSION) $(DOCDIR:\=/)
-
 install-docs:
 !if exist("$(CHMFILE)")
 	@echo Installing compiled HTML help
 	@$(CPY) "$(CHMFILE)" "$(DOC_INSTALL_DIR)\"
-!endif
-!if exist("$(HELPFILE)")
-	@echo Installing Windows help
-	@$(CPY) "$(HELPFILE)" "$(DOC_INSTALL_DIR)\"
-	@$(CPY) "$(HELPCNT)" "$(DOC_INSTALL_DIR)\"
 !endif
 
 # "emacs font-lock highlighting fix
