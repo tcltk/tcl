@@ -562,7 +562,7 @@ $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
 	$(MAKELIBCMD) $**
 !else
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
-	$(MAKEDLLCMD) -base:@$(WINDIR)\coffbase.txt,tcldde $**
+	$(MAKEDLLCMD) $**
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
 
@@ -571,7 +571,7 @@ $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
 	$(MAKELIBCMD) $**
 !else
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
-	$(MAKEDLLCMD) -base:@$(WINDIR)\coffbase.txt,tclreg $**
+	$(MAKEDLLCMD) $**
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
 

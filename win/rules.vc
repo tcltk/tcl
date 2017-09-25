@@ -847,7 +847,6 @@ TCLIMPLIB	= "$(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX).lib"
 TCL_LIBRARY	= $(_TCLDIR)\lib
 TCLREGLIB	= "$(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib"
 TCLDDELIB	= "$(_TCLDIR)\lib\tcldde14$(SUFX:t=).lib"
-COFFBASE	= \must\have\tcl\sources\to\build\this\target
 TCLTOOLSDIR	= \must\have\tcl\sources\to\build\this\target
 TCL_INCLUDES    = -I"$(_TCLDIR)\include"
 
@@ -862,7 +861,6 @@ TCLIMPLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX).lib"
 TCL_LIBRARY	= $(_TCLDIR)\library
 TCLREGLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib"
 TCLDDELIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde14$(SUFX:t=).lib"
-COFFBASE	= "$(_TCLDIR)\win\coffbase.txt"
 TCLTOOLSDIR	= $(_TCLDIR)\tools
 TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
 
@@ -1155,9 +1153,9 @@ $<
 .SUFFIXES:.c .rc
 
 MAKELIBCMD = $(lib32) -nologo $(LINKERFLAGS) -out:$@
-MAKEDLLCMD = $(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tcl -out:$@ $(baselibs)
-MAKECONEXECMD = $(link32) $(conlflags) -out:$@ $(baselibs)
-MAKEGUIEXECMD = $(link32) $(guilflags) -out:$@ $(baselibs)
+MAKEDLLCMD = $(link32) $(dlllflags) -out:$@ $(baselibs)
+MAKECONCMD = $(link32) $(conlflags) -out:$@ $(baselibs)
+MAKEGUICMD = $(link32) $(guilflags) -out:$@ $(baselibs)
 
 #----------------------------------------------------------
 # Display stats being used.
@@ -1169,7 +1167,5 @@ MAKEGUIEXECMD = $(link32) $(guilflags) -out:$@ $(baselibs)
 !message *** Optional defines are '$(OPTDEFINES)'
 !message *** Compiler version $(VCVER). Target machine is $(MACHINE)
 !message *** Host architecture is $(NATIVE_ARCH)
-!message *** Cflags '$(cflags)'
-!message *** Lflags '$(lflags)'
 
 !endif # ifdef _RULES_VC
