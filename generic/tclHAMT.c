@@ -494,7 +494,7 @@ ArrayMap AMNewBranch(
     assert ( idx1 != idx2 );
 
     new->claim = 0;
-    new->mask =  (1 << (depth * branchShift)) - 1;
+    new->mask =  ((size_t)1 << (depth * branchShift)) - 1;
     new->id = hash & new->mask;
 
     assert ( (sub->id & new->mask) == new->id );
@@ -556,7 +556,7 @@ ArrayMap AMNewLeaf(
     assert ( idx1 != idx2 );
 
     new->claim = 0;
-    new->mask =  (1 << (depth * branchShift)) - 1;
+    new->mask =  ((size_t)1 << (depth * branchShift)) - 1;
     new->id = hash1 & new->mask;
 
     assert ( (hash2 & new->mask) == new->id );

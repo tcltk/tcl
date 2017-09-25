@@ -334,6 +334,7 @@ UpdateStringOfHamt(
  */
 
 static Tcl_ObjCmdProc	HamtCreateCmd;
+static Tcl_ObjCmdProc	HamtRemoveCmd;
 static Tcl_ObjCmdProc	HamtReplaceCmd;
 
 /*
@@ -342,6 +343,7 @@ static Tcl_ObjCmdProc	HamtReplaceCmd;
 
 static const EnsembleImplMap implementationMap[] = {
     {"create",	HamtCreateCmd,	NULL, NULL, NULL, 0 },
+    {"remove",	HamtRemoveCmd,	NULL, NULL, NULL, 0 },
     {"replace", HamtReplaceCmd, NULL, NULL, NULL, 0 },
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
@@ -410,7 +412,55 @@ HamtCreateCmd(
     Tcl_SetObjResult(interp, hamtObj);
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HamtRemoveCmd --
+ *
+ *	This function implements the "hamt remove" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
 
+static int
+HamtRemoveCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    TclHAMT old, new;
+    int i;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "hamt ?key ...?");
+	return TCL_ERROR;
+    }
+
+    old = GetHAMTFromObj(interp, objv[1]);
+    if (NULL == old) {
+	return TCL_ERROR;
+    }
+    TclHAMTClaim(old);
+
+    for (i=2 ; i<objc ; i++) {
+	new = TclHAMTRemove(old, objv[i], NULL);
+	TclHAMTClaim(new);
+	TclHAMTDisclaim(old);
+	old = new;
+    }
+
+    Tcl_SetObjResult(interp, NewHAMTObj(old));
+    TclHAMTDisclaim(old);
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
