@@ -38,6 +38,8 @@ _RULES_VC = 1
 # 12. Set up the actual options passed to compiler and linker based
 #     on the information gathered above.
 # 13. Define some standard build targets and implicit rules.
+# 14. (For extensions only.) Compare the configuration of the target
+#     Tcl and the extensions and warn against discrepancies.
 #
 # One final note about the macro names used. They are as they are
 # for historical reasons. We would like legacy extensions to
@@ -120,12 +122,23 @@ PROGRAMFILES_X86 = $(PROGRAMFILES)
 ROOT = $(MAKEDIR)\..
 # The following paths CANNOT have spaces in them as they appear on the
 # left side of implicit rules.
+!ifndef COMPATDIR
 COMPATDIR	= $(ROOT)\compat
+!endif
+!ifndef DOCDIR
 DOCDIR		= $(ROOT)\doc
+!endif
+!ifndef GENERICDIR
 GENERICDIR	= $(ROOT)\generic
+!endif
+!ifndef TOOLSDIR
 TOOLSDIR	= $(ROOT)\tools
+!endif
+# Do NOT enclose WINDIR in a !ifndef because Windows always defines
+# WINDIR env var to point to c:\windows!
+# TBD - This is a potentially dangerous conflict, rename WINDIR to
+# something else
 WINDIR		= $(ROOT)\win
-
 
 # The target directory where the built packages and binaries will be installed.
 # INSTALLDIR is the (optional) path specified by the user.
@@ -367,8 +380,8 @@ NMAKEHLPC = nmakehlp.c
 
 !if "$(PROJECT)" != "tcl"
 !if $(TCLINSTALL)
-!if exist("$(_TCLDIR)\lib\config.nmake\nmakehlp.c")
-NMAKEHLPC = $(_TCLDIR)\lib\config.nmake\nmakehlp.c
+!if exist("$(_TCLDIR)\lib\nmake\nmakehlp.c")
+NMAKEHLPC = $(_TCLDIR)\lib\nmake\nmakehlp.c
 !endif
 !else # ! $(TCLINSTALL)
 !if exist("$(_TCLDIR)\win\nmakehlp.c")
@@ -1123,17 +1136,15 @@ default_target: $(DEFAULT_BUILD_TARGET)
 clean:
 	@echo Cleaning $(TMP_DIR)\* ...
 	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
-	@echo Cleaning $(WINDIR)\nmakehlp.obj ...
+	@echo Cleaning $(WINDIR)\nmakehlp.obj, nmakehlp.exe ...
 	@if exist $(WINDIR)\nmakehlp.obj del $(WINDIR)\nmakehlp.obj
-	@echo Cleaning $(WINDIR)\nmakehlp.exe ...
 	@if exist $(WINDIR)\nmakehlp.exe del $(WINDIR)\nmakehlp.exe
 	@echo Cleaning $(WINDIR)\_junk.pch ...
 	@if exist $(WINDIR)\_junk.pch del $(WINDIR)\_junk.pch
-	@echo Cleaning $(WINDIR)\vercl.x ...
+	@echo Cleaning $(WINDIR)\vercl.x, vercl.i ...
 	@if exist $(WINDIR)\vercl.x del $(WINDIR)\vercl.x
-	@echo Cleaning $(WINDIR)\vercl.i ...
 	@if exist $(WINDIR)\vercl.i del $(WINDIR)\vercl.i
-	@echo Cleaning $(WINDIR)\versions.vc ...
+	@echo Cleaning $(WINDIR)\versions.vc, version.vc ...
 	@if exist $(WINDIR)\versions.vc del $(WINDIR)\versions.vc
 	@if exist $(WINDIR)\version.vc del $(WINDIR)\version.vc
 
@@ -1167,6 +1178,43 @@ MAKELIBCMD = $(lib32) -nologo $(LINKERFLAGS) -out:$@
 MAKEDLLCMD = $(link32) $(dlllflags) -out:$@ $(baselibs)
 MAKECONCMD = $(link32) $(conlflags) -out:$@ $(baselibs)
 MAKEGUICMD = $(link32) $(guilflags) -out:$@ $(baselibs)
+
+################################################################
+# 14. Sanity check selected options against Tcl build options
+# When building an extension, certain configuration options should
+# match the ones used when Tcl was built. Here we check and
+# warn on a mismatch.
+!if "$(PROJECT)" != "tcl"
+
+!if $(TCLINSTALL) # Building against an installed Tcl
+!if exist("$(_TCLDIR)\lib\nmake\tcl.nmake")
+TCLNMAKECONFIG = "$(_TCLDIR)\lib\nmake\tcl.nmake"
+!endif
+!else # ! $(TCLINSTALL) - building against Tcl source
+!if exist("$(OUT_DIR)\tcl.nmake")
+TCLNMAKECONFIG = "$(OUT_DIR)\tcl.nmake"
+!endif
+!endif # TCLINSTALL
+
+!if ! $(DISABLE_CONFIG_CHECKS)
+!ifdef TCLNMAKECONFIG
+!include $(TCLMAKECONFIG)
+
+!if defined(CORE_MACHINE) && $(CORE_MACHINE) != $(MACHINE)
+!error ERROR: Build target ($(MACHINE)) does not match the Tcl library architecture ($(CORE_MACHINE)).
+!endif
+!if defined(CORE_USE_THREAD_ALLOC) && $(CORE_USE_THREAD_ALLOC) != $(USE_THREAD_ALLOC)
+!message WARNING: Value of USE_THREAD_ALLOC ($(USE_THREAD_ALLOC)) does not match its Tcl core value ($(CORE_USE_THREAD_ALLOC)).
+!endif
+!if defined(CORE_DEBUG) && $(CORE_DEBUG) != $(DEBUG)
+!message WARNING: Value of DEBUG ($(DEBUG)) does not match its Tcl library configuration ($(DEBUG)).
+!endif
+!endif
+
+!endif # TCLNMAKECONFIG
+
+!endif # $(PROJECT) ==  "tcl"
+
 
 #----------------------------------------------------------
 # Display stats being used.
