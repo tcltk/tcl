@@ -468,7 +468,7 @@ PKGSDIR		= $(ROOT)\pkgs
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
 PRJ_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(TOMMATHDIR)"
-PRJ_DEFINES	= -DTCL_TOMMATH -DMP_PREC=4 -Dinline=__inline -DHAVE_ZLIB=1 -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
+PRJ_DEFINES	= -DTCL_TOMMATH -DMP_PREC=4 -Dinline=__inline -DHAVE_ZLIB=1 -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
 
 # Define compiler flags used in our private implicit rules that are
 # not covered by rules.vc
@@ -696,6 +696,19 @@ install-docs:
 !endif
 
 # "emacs font-lock highlighting fix
+
+#---------------------------------------------------------------------
+# Generate the tcl.nmake file which contains the options used to build
+# Tcl itself. This is used when building extensions.
+#---------------------------------------------------------------------
+tcl-nmake: $(OUT_DIR)\tcl.nmake
+$(OUT_DIR)\tcl.nmake:
+	@type << >$@
+CORE_MACHINE = $(MACHINE)
+CORE_DEBUG = $(DEBUG)
+CORE_TCL_THREADS = $(TCL_THREADS)
+CORE_USE_THREAD_ALLOC = $(USE_THREAD_ALLOC)
+<<
 
 #---------------------------------------------------------------------
 # Build tclConfig.sh for the TEA build system.
@@ -937,19 +950,21 @@ install-binaries:
 	@echo Installing $(TCLSTUBLIBNAME)
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 
-install-libraries: tclConfig install-msgs install-tzdata
-	@if not exist "$(SCRIPT_INSTALL_DIR)$(NULL)" \
+install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
+	@if not exist "$(SCRIPT_INSTALL_DIR)" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8$(NULL)" \
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4$(NULL)" \
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform$(NULL)" \
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5$(NULL)" \
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6$(NULL)" \
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6"
+	@if not exist "$(LIB_INSTALL_DIR)\nmake" \
+		$(MKDIR) "$(LIB_INSTALL_DIR)\nmake"
 	@echo Installing header files
 	@$(CPY) "$(GENERICDIR)\tcl.h"             "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclDecls.h"        "$(INCLUDE_INSTALL_DIR)\"
@@ -973,6 +988,9 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@$(CPY) "$(ROOT)\library\auto.tcl"        "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(OUT_DIR)\tclConfig.sh"         "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(WINDIR)\tclooConfig.sh"        "$(LIB_INSTALL_DIR)\"
+	@$(CPY) "$(WINDIR)\rules.vc"              "$(LIB_INSTALL_DIR)\nmake\"
+	@$(CPY) "$(WINDIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
+	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
 	@echo Installing library http1.0 directory
 	@$(CPY) "$(ROOT)\library\http1.0\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\http1.0\"
