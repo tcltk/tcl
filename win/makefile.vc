@@ -634,7 +634,7 @@ $(TCLLIB): $(TCLOBJS)
 $**
 <<
 !else
-	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tcl -out:$@ \
+	$(link32) $(dlllflags) -out:$@ \
 		$(baselibs) @<<
 $**
 <<
@@ -657,7 +657,7 @@ $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
 	$(lib32) -nologo $(LINKERFLAGS) -out:$@ $**
 !else
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
-	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tcldde -out:$@ \
+	$(link32) $(dlllflags) -out:$@ \
 		$** $(baselibs)
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
@@ -667,7 +667,7 @@ $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
 	$(lib32) -nologo $(LINKERFLAGS) -out:$@ $**
 !else
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
-	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tclreg -out:$@ \
+	$(link32) $(dlllflags) -out:$@ \
 		$** $(baselibs)
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
