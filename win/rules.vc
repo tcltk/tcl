@@ -139,6 +139,9 @@ TOOLSDIR	= $(ROOT)\tools
 # TBD - This is a potentially dangerous conflict, rename WINDIR to
 # something else
 WINDIR		= $(ROOT)\win
+!ifndef RCDIR
+RCDIR           = $(WINDIR)\rc
+!endif
 
 # The target directory where the built packages and binaries will be installed.
 # INSTALLDIR is the (optional) path specified by the user.
@@ -202,6 +205,11 @@ TCLINSTALL	= 1
 TCLDIR          = $(_INSTALLDIR)
 _TCLDIR		= $(_INSTALLDIR)
 _TCL_H          = $(_INSTALLDIR)\include\tcl.h
+!elseif exist("..\..\tcl\generic\tcl.h")
+TCLINSTALL      = 0
+TCLDIR          = ..\..\tcl
+_TCLDIR         = $(TCLDIR)
+_TCL_H          = $(_TCLDIR)\generic\tcl.h
 !endif
 
 !endif # TCLDIR
@@ -531,7 +539,9 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 #           0 -> Use the non-thread allocator.
 # UNCHECKED - 1 -> when doing a debug build with symbols, use the release
 #           C runtime, 0 -> use the debug C runtime.
-#
+# USE_STUBS - 1 -> compile to use stubs interfaces, 0 -> direct linking
+# CONFIG_CHECK - 1 -> check current build configuration against Tcl
+#           configuration (ignored for Tcl itself)
 # Further, LINKERFLAGS are modified based on above.
 
 # Default values for all the above
@@ -546,6 +556,12 @@ LOIMPACT	= 0
 TCL_USE_STATIC_PACKAGES	= 0
 USE_THREAD_ALLOC = 1
 UNCHECKED	= 0
+CONFIG_CHECK    = 1
+!if "$(PROJECT)" == "tcl" || "$(PROJECT)" == "tk"
+USE_STUBS       = 0
+!else
+USE_STUBS       = 1
+!endif
 
 # If OPTS is not empty AND does not contain "none" which turns off all OPTS
 # set the above macros based on OPTS content
@@ -556,8 +572,11 @@ UNCHECKED	= 0
 !if [nmakehlp -f $(OPTS) "static"]
 !message *** Doing static
 STATIC_BUILD	= 1
-!else
-STATIC_BUILD	= 0
+!endif
+
+!if [nmakehlp -f $(OPTS) "nostubs"]
+!message *** Not using stubs
+USE_STUBS	= 0
 !endif
 
 !if [nmakehlp -f $(OPTS) "nomsvcrt"]
@@ -642,6 +661,12 @@ USE_THREAD_ALLOC = 0
 UNCHECKED = 1
 !else
 UNCHECKED = 0
+!endif
+
+!if [nmakehlp -f $(OPTS) "noconfigcheck"]
+CONFIG_CHECK = 1
+!else
+CONFIG_CHECK = 0
 !endif
 
 !endif # "$(OPTS)" != ""  && ... parsing of OPTS
@@ -855,8 +880,15 @@ STUBPREFIX      = $(PROJECT)stub
 # Set up paths to various Tcl executables and libraries needed by extensions
 !if "$(PROJECT)" == "tcl"
 
-TCLSHNAME = $(PROJECT)sh$(TCL_VERSION)$(SUFX).exe
+TCLSHNAME       = $(PROJECT)sh$(TCL_VERSION)$(SUFX).exe
 TCLSH		= $(OUT_DIR)\$(TCLSHNAME)
+TCLIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
+TCLLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
+TCLLIB		= $(OUT_DIR)\$(TCLLIBNAME)
+
+TCLSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
+TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
+TCL_INCLUDES    = -I"$(WINDIR)" -I"$(GENERICDIR)"
 
 !else # $(PROJECT) is not "tcl"
 
@@ -902,8 +934,17 @@ TCLSH_NATIVE	= $(TCLSH)
 !endif
 !endif
 
-# Do the same for Tk extensions that require the Tk libraries
-!if defined(PROJECT_REQUIRES_TK)
+# Do the same for Tk and Tk extensions that require the Tk libraries
+!if "$(PROJECT)" == "tk"
+
+WISH 		= "$(OUT_DIR)\$(WISHNAMEPREFIX)$(TK_VERSION)$(SUFX).exe"
+TKSTUBLIBNAME	= $(STUBPREFIX)$(TK_VERSION).lib
+TKSTUBLIB	= "$(OUT_DIR)\$(TKSTUBLIBNAME)"
+TKIMPLIB	= "$(OUT_DIR)\$(PROJECT)$(TK_VERSION)$(SUFX).lib"
+TKLIBNAME	= $(PROJECT)$(TK_VERSION)$(SUFX).$(EXT)
+TK_INCLUDES    = -I"$(WINDIR)" -I"$(GENERICDIR)"
+
+!elseif defined(PROJECT_REQUIRES_TK)
 
 !if $(TKINSTALL) # Building against installed Tk
 
@@ -993,6 +1034,17 @@ OPTDEFINES	= $(OPTDEFINES) -DSTATIC_BUILD
 OPTDEFINES	= $(OPTDEFINES) -DTCL_NO_DEPRECATED
 !endif
 
+!if $(USE_STUBS)
+# Note we do not define USE_TCL_STUBS even when building tk since some
+# test targets in tk do not use stubs
+!if "$(PROJECT)" != "tcl" && "$(PROJECT)" != "tk"
+OPTDEFINES      = $(OPTDEFINES) -DUSE_TCL_STUBS -DUSE_TCLOO_STUBS
+!ifdef PROJECT_REQUIRES_TK
+OPTDEFINES      = $(OPTDEFINES) -DUSE_TK_STUBS
+!endif
+!endif
+!endif # USE_STUBS
+
 !if !$(DEBUG)
 OPTDEFINES	= $(OPTDEFINES) -DNDEBUG
 !if $(OPTIMIZING)
@@ -1012,7 +1064,7 @@ OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
 # UNICODE - Use the wide char Windows API.
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP
 # BUILD_xxx - defined to export the xxx_Init call from the DLL
-COMPILERFLAGS  = /DUNICODE /D_UNICODE /D_ATL_XP_TARGETING /DBUILD_$(PROJECT)
+COMPILERFLAGS  = /DUNICODE /D_UNICODE /D_ATL_XP_TARGETING
 
 # crt picks the C run time based on selected OPTS
 !if $(MSVCRT)
@@ -1061,7 +1113,27 @@ cwarn = $(cwarn) -wd4311 -wd4312
 cwarn = $(cwarn) -WX
 !endif
 
-cflags = -nologo -c $(COMPILERFLAGS) $(cdebug) $(cwarn) -Fp$(TMP_DIR)^\ $(OPTDEFINES)
+# These flags are defined roughly in the order of the pre-reform rules.vc/makefile.vc to help
+# visually compare that the pre- and post-reform build logs
+
+# cflags contains generic flags to be used for building practically all object files
+cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\ $(cdebug)
+
+# appcflags contains $(cflags) and flags  for building the application object files
+# (e.g. tclsh, or wish)
+# pkgcflags contains $(cflags) plus flags used for building shared object files
+# The two differ in the BUILD_$(PROJECT) macro which should be defined only for
+# the shared library *implementation* and not for its caller interface
+appcflags = $(cflags) $(crt) $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES)
+pkgcflags = $(appcflags) /DBUILD_$(PROJECT)
+
+# stubscflags contains $(cflags) plus flags used for building a stubs library for the
+# package.
+# Note: -DSTATIC_BUILD is defined in $(OPTDEFINES) only if the OPTS configuration indicates
+# a static library. However the stubs library is ALWAYS static hence included here
+# irrespective of the OPTS setting.
+stubscflags = $(cflags) $(PRJ_DEFINES) $(OPTDEFINES) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES)
+
 
 # Link flags 
 
@@ -1154,20 +1226,21 @@ hose:
 	@echo Hosing $(OUT_DIR)\* ...
 	@if exist $(OUT_DIR)\nul $(RMDIR) $(OUT_DIR)
 
-# Implicit rule definitions
+# Implicit rule definitions - only for building library objects. For stubs and main
+# application, the master makefile should define explicit rules.
 
 {$(WINDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(cflags) $(crt) $(PRJ_INCLUDES) $(PRJ_DEFINES) -Fo$(TMP_DIR)\ @<<
+	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
 $<
 <<
 
 {$(GENERICDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(cflags) $(crt) $(PRJ_INCLUDES) $(PRJ_DEFINES) -Fo$(TMP_DIR)\ @<<
+	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
 $<
 <<
 
 {$(COMPATDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(cflags) $(crt) $(PRJ_INCLUDES) $(PRJ_DEFINES) -Fo$(TMP_DIR)\ @<<
+	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
 $<
 <<
 
@@ -1196,7 +1269,7 @@ TCLNMAKECONFIG = "$(OUT_DIR)\tcl.nmake"
 !endif
 !endif # TCLINSTALL
 
-!if ! $(DISABLE_CONFIG_CHECKS)
+!if $(CONFIG_CHECK)
 !ifdef TCLNMAKECONFIG
 !include $(TCLMAKECONFIG)
 
