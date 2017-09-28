@@ -1,7 +1,6 @@
-#-------------------------------------------------------------
-# makefile.vc --
+#------------------------------------------------------------- -*- makefile -*-
 #
-#	Microsoft Visual C++ makefile for use with nmake.exe v1.62+ (VC++ 5.0+)
+#	Microsoft Visual C++ makefile for use with nmake
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -11,27 +10,28 @@
 # Copyright (c) 2001-2005 ActiveState Corporation.
 # Copyright (c) 2001-2004 David Gravereaux.
 # Copyright (c) 2003-2008 Pat Thoyts.
+# Copyright (c) 2017 Ashok P. Nadkarni
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 # HOW TO USE this makefile:
 #
-# 1)  It is now necessary to have MSVCDir, MSDevDir or MSSDK set in the
-#     environment.  This is used as a check to see if vcvars32.bat had been
-#     run prior to running nmake or during the installation of Microsoft
-#     Visual C++, MSVCDir had been set globally and the PATH adjusted.
-#     Either way is valid.
+# 1)  It is necessary to have the appropriate Visual C++ environment
+#     set up before invoking nmake. The steps required depend on which
+#     version of Visual Studio and/or the Windows SDK you are building
+#     against and are not described here. With Visual Studio, the simplest
+#     is to start a command shell using one of the installed short cuts.
+#     An alternative is to run vcvars32.bat, vcvars64.bat, vcvarsamd64_x86.bat
+#     etc. depending on the host and target architectures. If compiling
+#     with the Windows SDK instead, run (again depending on the SDK version)
+#     the setenv.bat or equivalent batch file from the command prompt.
 #
-#     You'll need to run vcvars32.bat contained in the MsDev's vc(98)/bin
-#     directory to setup the proper environment, if needed, for your
-#     current setup.  This is a needed bootstrap requirement and allows the
-#     swapping of different environments to be easier.
-#
-# 2)  To use the Platform SDK (not expressly needed), run setenv.bat after
+#     NOTE: For older (Visual C++ 6 or the 2003 SDK), to use the Platform
+#     SDK (not expressly needed), run setenv.bat after
 #     vcvars32.bat according to the instructions for it.  This can also
 #     turn on the 64-bit compiler, if your SDK has it.
 #
-# 3)  Targets are:
+# 2)  Targets are:
 #	release  -- Builds the core, the shell and the dlls. (default)
 #	dlls     -- Just builds the windows extensions
 #	shell    -- Just builds the shell and the core.
@@ -51,12 +51,8 @@
 #		    troff manual pages found in $(ROOT)\doc. You need to
 #		    have installed the HTML Help Compiler package from Microsoft
 #		    to produce the .chm file.
-#	winhelp  -- (deprecated) Builds the windows .hlp file for Tcl from
-#		    the troff man files found in $(ROOT)\doc. This type of
-#		    help file is deprecated by Microsoft in favour of html
-#		    help files (.chm)
 #
-# 4)  Macros usable on the commandline:
+# 3)  Macros usable on the commandline:
 #	INSTALLDIR=<path>
 #		Sets where to install Tcl from the built binaries.
 #		C:\Progra~1\Tcl is assumed when not specified.
@@ -67,7 +63,7 @@
 #		'none' will over-ride everything to nothing.
 #
 #		loimpact = Adds a flag for how NT treats the heap to keep memory
-#			   in use, low.  This is said to impact alloc performance.
+#			   in use, low. Said to impact alloc performance.
 #		msvcrt   = Affects the static option only to switch it from
 #			   using libcmt(d) as the C runtime [by default] to
 #			   msvcrt(d). This is useful for static embedding
@@ -113,15 +109,15 @@
 #	MACHINE=(AMD64|IX86)
 #		Set the machine type used for the compiler, linker, and
 #		resource compiler.  This hook is needed to tell the tools
-#		when alternate platforms are requested. This should normally
-#               NOT be set as it is automatically detected based on the
-#               compiler in use.
+#		when alternate platforms are requested. THIS SHOULD NORMALLY
+#               NOT BE SET AS IT IS AUTOMATICALLY DETECTED BASED ON THE
+#               COMPILER IN USE.
 #
 #	TMP_DIR=<path>
 #	OUT_DIR=<path>
 #		Hooks to allow the intermediate and output directories to be
 #		changed.  $(OUT_DIR) is assumed to be
-#		$(BINROOT)\(Release|Debug) based on if symbols are requested.
+#		.\(Release|Debug) based on if symbols are requested.
 #		$(TMP_DIR) will de $(OUT_DIR)\<buildtype> by default.
 #
 #	TESTPAT=<file>
@@ -131,20 +127,20 @@
 #		name of encoding for configuration information. Defaults
 #		to cp1252
 #
-# 5)  Examples:
+# 4)  Examples:
 #
 #	Basic syntax of calling nmake looks like this:
 #	nmake [-nologo] -f makefile.vc [target|macrodef [target|macrodef] [...]]
 #
 #                        Standard (no frills)
-#       c:\tcl_src\win\>c:\progra~1\micros~1\vc98\bin\vcvars32.bat
-#       Setting environment for using Microsoft Visual C++ tools.
 #       c:\tcl_src\win\>nmake -f makefile.vc release
 #       c:\tcl_src\win\>nmake -f makefile.vc install INSTALLDIR=c:\progra~1\tcl
 #
-#                         Building for Win64
-#       c:\tcl_src\win\>c:\progra~1\platfo~1\setenv.bat /x64 /RETAIL
-#       c:\tcl_src\win\>nmake -f makefile.vc
+#                         With symbols in release builds
+#       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=pdbs 
+#
+#                         Debug build
+#       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=symbols
 #
 #------------------------------------------------------------------------------
 #==============================================================================
@@ -218,13 +214,6 @@ DDEVERSION = $(DDEDOTVERSION:.=)
 
 REGDOTVERSION = 1.3
 REGVERSION = $(REGDOTVERSION:.=)
-
-TCLIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
-TCLLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
-TCLLIB		= $(OUT_DIR)\$(TCLLIBNAME)
-
-TCLSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
-TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
 
 TCLREGLIBNAME	= $(PROJECT)reg$(REGVERSION)$(SUFX:t=).$(EXT)
 TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
@@ -460,25 +449,13 @@ TCLSTUBOBJS = \
 TOMMATHDIR	= $(ROOT)\libtommath
 PKGSDIR		= $(ROOT)\pkgs
 
-#---------------------------------------------------------------------
-# Compile flags
-#---------------------------------------------------------------------
-
-
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
-PRJ_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(TOMMATHDIR)"
+PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
 PRJ_DEFINES	= -DTCL_TOMMATH -DMP_PREC=4 -Dinline=__inline -DHAVE_ZLIB=1 -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
-
-# Define compiler flags used in our private implicit rules that are
-# not covered by rules.vc
-TCL_CFLAGS	= $(cflags) $(crt) $(PRJ_INCLUDES) $(PRJ_DEFINES)
-STUB_CFLAGS     = $(cflags)
-
 
 # Additional Link libraries needed beyond those in rules.vc
 PRJ_LIBS   = netapi32.lib user32.lib userenv.lib ws2_32.lib
-
 
 #---------------------------------------------------------------------
 # TclTest flags
@@ -726,7 +703,7 @@ $(OUT_DIR)\tclConfig.sh: $(WINDIR)\tclConfig.sh.in
 @TCL_MINOR_VERSION@  $(TCL_MINOR_VERSION)
 @TCL_PATCH_LEVEL@    $(TCL_PATCH_LEVEL)
 @CC@                 $(CC)
-@DEFS@               $(TCL_CFLAGS)
+@DEFS@               $(pkgcflags)
 @CFLAGS_DEBUG@       -nologo -c -W3 -YX -Fp$(TMP_DIR)\ -MDd
 @CFLAGS_OPTIMIZE@    -nologo -c -W3 -YX -Fp$(TMP_DIR)\ -MD
 @LDFLAGS_DEBUG@      -nologo -machine:$(MACHINE) -debug -debugtype:cv
@@ -794,28 +771,28 @@ gendate:
 #---------------------------------------------------------------------
 
 $(TMP_DIR)\testMain.obj: $(WINDIR)\tclAppInit.c
-	$(cc32) $(TCL_CFLAGS) -DTCL_TEST \
+	$(cc32) $(appcflags) -DTCL_TEST \
 	    -DTCL_USE_STATIC_PACKAGES=$(TCL_USE_STATIC_PACKAGES) \
 	    -Fo$@ $?
 
 $(TMP_DIR)\tclMain2.obj: $(GENERICDIR)\tclMain.c
-	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -DTCL_ASCII_MAIN \
+	$(cc32) $(pkgcflags) -DTCL_ASCII_MAIN \
 	    -Fo$@ $?
 
 $(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c
-	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
+	$(cc32) $(appcflags) -Fo$@ $?
 
 $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
-	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
+	$(cc32) $(appcflags) -Fo$@ $?
 
 $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
-	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
+	$(cc32) $(appcflags) -Fo$@ $?
 
 $(TMP_DIR)\tclZlib.obj: $(GENERICDIR)\tclZlib.c
-	$(cc32) $(TCL_CFLAGS) -I$(COMPATDIR)\zlib -DBUILD_tcl -Fo$@ $?
+	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -Fo$@ $?
 
 $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
-	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) \
+	$(cc32) $(pkgcflags) \
 	-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR:\=\\)\"" \
 	-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR:\=\\)\"" \
 	-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR:\=\\)\"" \
@@ -829,7 +806,7 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	-Fo$@ $?
 
 $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c
-	$(cc32) $(TCL_CFLAGS) \
+	$(cc32) $(appcflags) \
 	    -DTCL_USE_STATIC_PACKAGES=$(TCL_USE_STATIC_PACKAGES) \
 	    -Fo$@ $?
 
@@ -838,17 +815,17 @@ $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c
 
 $(TMP_DIR)\tclWinReg.obj: $(WINDIR)\tclWinReg.c
 !if $(STATIC_BUILD)
-	$(cc32) $(TCL_CFLAGS) -DTCL_THREADS=1 -DSTATIC_BUILD -Fo$@ $?
+	$(cc32) $(appcflags) -DSTATIC_BUILD -Fo$@ $?
 !else
-	$(cc32) $(TCL_CFLAGS) -DTCL_THREADS=1 -DUSE_TCL_STUBS -Fo$@ $?
+	$(cc32) $(appcflags) -DUSE_TCL_STUBS -Fo$@ $?
 !endif
 
 
 $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 !if $(STATIC_BUILD)
-	$(cc32) $(TCL_CFLAGS) -DTCL_THREADS=1 -DSTATIC_BUILD -Fo$@ $?
+	$(cc32) $(appcflags) -DSTATIC_BUILD -Fo$@ $?
 !else
-	$(cc32) $(TCL_CFLAGS) -DTCL_THREADS=1 -DUSE_TCL_STUBS -Fo$@ $?
+	$(cc32) $(appcflags) -DUSE_TCL_STUBS -Fo$@ $?
 !endif
 
 
@@ -857,13 +834,13 @@ $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 ### specific C run-time.
 
 $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
-	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(PRJ_INCLUDES) -Fo$@ $?
+	$(cc32) $(stubscflags) -Fo$@ $?
 
 $(TMP_DIR)\tclTomMathStubLib.obj: $(GENERICDIR)\tclTomMathStubLib.c
-	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(PRJ_INCLUDES) -Fo$@ $?
+	$(cc32) $(stubscflags) -Fo$@ $?
 
 $(TMP_DIR)\tclOOStubLib.obj: $(GENERICDIR)\tclOOStubLib.c
-	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(PRJ_INCLUDES) -Fo$@ $?
+	$(cc32) $(stubscflags) -Fo$@ $?
 
 $(TMP_DIR)\tclsh.exe.manifest: $(WINDIR)\tclsh.exe.manifest.in
 	@nmakehlp -s << $** >$@
@@ -884,7 +861,7 @@ depend:
 	@echo Build tclsh first!
 !else
 	$(TCLSH) $(TOOLSDIR:\=/)/mkdepend.tcl -vc32 -out:"$(OUT_DIR)\depend.mk" \
-		-passthru:"-DBUILD_tcl $(PRJ_INCLUDES)" $(GENERICDIR),$$(GENERICDIR) \
+		-passthru:"-DBUILD_tcl $(TCL_INCLUDES) $(PRJ_INCLUDES)" $(GENERICDIR),$$(GENERICDIR) \
 		$(COMPATDIR),$$(COMPATDIR) $(TOMMATHDIR),$$(TOMMATHDIR) $(WINDIR),$$(WINDIR) @<<
 $(TCLOBJS)
 <<
@@ -913,12 +890,12 @@ $(TCLOBJS)
 #---------------------------------------------------------------------
 
 {$(TOMMATHDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
+	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
 $<
 <<
 
 {$(COMPATDIR)\zlib}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
+	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
 $<
 <<
 
