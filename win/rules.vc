@@ -557,7 +557,7 @@ TCL_USE_STATIC_PACKAGES	= 0
 USE_THREAD_ALLOC = 1
 UNCHECKED	= 0
 CONFIG_CHECK    = 1
-!if "$(PROJECT)" == "tcl" || "$(PROJECT)" == "tk"
+!if "$(PROJECT)" == "tcl"
 USE_STUBS       = 0
 !else
 USE_STUBS       = 1
@@ -894,29 +894,29 @@ TCL_INCLUDES    = -I"$(WINDIR)" -I"$(GENERICDIR)"
 
 !if $(TCLINSTALL) # Building against an installed Tcl
 
-TCLSH		= "$(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX).exe"
+TCLSH		= $(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX).exe
 !if !exist($(TCLSH)) && $(TCL_THREADS)
-TCLSH           = "$(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX).exe"
+TCLSH           = $(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX).exe
 !endif
-TCLSTUBLIB	= "$(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib"
-TCLIMPLIB	= "$(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX).lib"
+TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib
+TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX).lib
 TCL_LIBRARY	= $(_TCLDIR)\lib
-TCLREGLIB	= "$(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib"
-TCLDDELIB	= "$(_TCLDIR)\lib\tcldde14$(SUFX:t=).lib"
+TCLREGLIB	= $(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib
+TCLDDELIB	= $(_TCLDIR)\lib\tcldde14$(SUFX:t=).lib
 TCLTOOLSDIR	= \must\have\tcl\sources\to\build\this\target
 TCL_INCLUDES    = -I"$(_TCLDIR)\include"
 
 !else # Building against Tcl sources
 
-TCLSH		= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)$(SUFX).exe"
+TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)$(SUFX).exe
 !if !exist($(TCLSH)) && $(TCL_THREADS)
-TCLSH		= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX).exe"
+TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX).exe
 !endif
-TCLSTUBLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib"
-TCLIMPLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX).lib"
+TCLSTUBLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib
+TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX).lib
 TCL_LIBRARY	= $(_TCLDIR)\library
-TCLREGLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib"
-TCLDDELIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde14$(SUFX:t=).lib"
+TCLREGLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib
+TCLDDELIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde14$(SUFX:t=).lib
 TCLTOOLSDIR	= $(_TCLDIR)\tools
 TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
 
@@ -937,27 +937,29 @@ TCLSH_NATIVE	= $(TCLSH)
 # Do the same for Tk and Tk extensions that require the Tk libraries
 !if "$(PROJECT)" == "tk"
 
-WISH 		= "$(OUT_DIR)\$(WISHNAMEPREFIX)$(TK_VERSION)$(SUFX).exe"
+WISHNAMEPREFIX = wish
+WISH 		= $(OUT_DIR)\$(WISHNAMEPREFIX)$(TK_VERSION)$(SUFX).exe
 TKSTUBLIBNAME	= $(STUBPREFIX)$(TK_VERSION).lib
-TKSTUBLIB	= "$(OUT_DIR)\$(TKSTUBLIBNAME)"
-TKIMPLIB	= "$(OUT_DIR)\$(PROJECT)$(TK_VERSION)$(SUFX).lib"
+TKSTUBLIB	= $(OUT_DIR)\$(TKSTUBLIBNAME)
+TKIMPLIB	= $(OUT_DIR)\$(PROJECT)$(TK_VERSION)$(SUFX).lib
 TKLIBNAME	= $(PROJECT)$(TK_VERSION)$(SUFX).$(EXT)
+TKLIB		= $(OUT_DIR)\$(TKLIBNAME)
 TK_INCLUDES    = -I"$(WINDIR)" -I"$(GENERICDIR)"
 
 !elseif defined(PROJECT_REQUIRES_TK)
 
 !if $(TKINSTALL) # Building against installed Tk
 
-WISH		= "$(_TKDIR)\bin\wish$(TK_VERSION)$(SUFX).exe"
-TKSTUBLIB	= "$(_TKDIR)\lib\tkstub$(TK_VERSION).lib"
-TKIMPLIB	= "$(_TKDIR)\lib\tk$(TK_VERSION)$(SUFX).lib"
+WISH		= $(_TKDIR)\bin\wish$(TK_VERSION)$(SUFX).exe
+TKSTUBLIB	= $(_TKDIR)\lib\tkstub$(TK_VERSION).lib
+TKIMPLIB	= $(_TKDIR)\lib\tk$(TK_VERSION)$(SUFX).lib
 TK_INCLUDES     = -I"$(_TKDIR)\include"
 
 !else # Building against Tk sources
 
-WISH		= "$(_TKDIR)\win\$(BUILDDIRTOP)\wish$(TCL_VERSION)$(SUFX).exe"
-TKSTUBLIB	= "$(_TKDIR)\win\$(BUILDDIRTOP)\tkstub$(TCL_VERSION).lib"
-TKIMPLIB	= "$(_TKDIR)\win\$(BUILDDIRTOP)\tk$(TCL_VERSION)$(SUFX).lib"
+WISH		= $(_TKDIR)\win\$(BUILDDIRTOP)\wish$(TCL_VERSION)$(SUFX).exe
+TKSTUBLIB	= $(_TKDIR)\win\$(BUILDDIRTOP)\tkstub$(TCL_VERSION).lib
+TKIMPLIB	= $(_TKDIR)\win\$(BUILDDIRTOP)\tk$(TCL_VERSION)$(SUFX).lib
 TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
 
 !endif # TKINSTALL
@@ -978,9 +980,9 @@ LIB_INSTALL_DIR		= $(_INSTALLDIR)\lib
 BIN_INSTALL_DIR		= $(_INSTALLDIR)\bin
 DOC_INSTALL_DIR		= $(_INSTALLDIR)\doc
 !if "$(PROJECT)" == "tcl"
-SCRIPT_INSTALL_DIR	= $(_INSTALLDIR)\lib\tcl$(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
+SCRIPT_INSTALL_DIR	= $(_INSTALLDIR)\lib\$(PROJECT)$(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
 !else
-SCRIPT_INSTALL_DIR	= $(_INSTALLDIR)\lib\tk$(TK_MAJOR_VERSION).$(TK_MINOR_VERSION)
+SCRIPT_INSTALL_DIR	= $(_INSTALLDIR)\lib\$(PROJECT)$(TK_MAJOR_VERSION).$(TK_MINOR_VERSION)
 !endif
 INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\include
 !else
@@ -1037,10 +1039,10 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_NO_DEPRECATED
 !if $(USE_STUBS)
 # Note we do not define USE_TCL_STUBS even when building tk since some
 # test targets in tk do not use stubs
-!if "$(PROJECT)" != "tcl" && "$(PROJECT)" != "tk"
-OPTDEFINES      = $(OPTDEFINES) -DUSE_TCL_STUBS -DUSE_TCLOO_STUBS
+!if "$(PROJECT)" != "tcl"
+USE_STUBS_DEFS  = -DUSE_TCL_STUBS -DUSE_TCLOO_STUBS
 !ifdef PROJECT_REQUIRES_TK
-OPTDEFINES      = $(OPTDEFINES) -DUSE_TK_STUBS
+USE_STUBS_DEFS  = $(USE_STUBS_DEFS) -DUSE_TK_STUBS
 !endif
 !endif
 !endif # USE_STUBS
@@ -1063,7 +1065,6 @@ OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
 
 # UNICODE - Use the wide char Windows API.
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP
-# BUILD_xxx - defined to export the xxx_Init call from the DLL
 COMPILERFLAGS  = /DUNICODE /D_UNICODE /D_ATL_XP_TARGETING
 
 # crt picks the C run time based on selected OPTS
@@ -1113,27 +1114,31 @@ cwarn = $(cwarn) -wd4311 -wd4312
 cwarn = $(cwarn) -WX
 !endif
 
-# These flags are defined roughly in the order of the pre-reform rules.vc/makefile.vc to help
-# visually compare that the pre- and post-reform build logs
+# These flags are defined roughly in the order of the pre-reform
+# rules.vc/makefile.vc to help visually compare that the pre- and
+# post-reform build logs
 
-# cflags contains generic flags to be used for building practically all object files
+# cflags contains generic flags used for building practically all object files
 cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\ $(cdebug)
 
-# appcflags contains $(cflags) and flags  for building the application object files
-# (e.g. tclsh, or wish)
-# pkgcflags contains $(cflags) plus flags used for building shared object files
-# The two differ in the BUILD_$(PROJECT) macro which should be defined only for
-# the shared library *implementation* and not for its caller interface
-appcflags = $(cflags) $(crt) $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES)
+# appcflags contains $(cflags) and flags for building the application
+# object files (e.g. tclsh, or wish) pkgcflags contains $(cflags) plus
+# flags used for building shared object files The two differ in the
+# BUILD_$(PROJECT) macro which should be defined only for the shared
+# library *implementation* and not for its caller interface
+
+appcflags = $(cflags) $(crt) $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES) $(USE_STUBS_DEFS)
+appcflags_nostubs = $(cflags) $(crt) $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES)
 pkgcflags = $(appcflags) /DBUILD_$(PROJECT)
+pkgcflags_nostubs = $(appcflags_nostubs) /DBUILD_$(PROJECT)
 
-# stubscflags contains $(cflags) plus flags used for building a stubs library for the
-# package.
-# Note: -DSTATIC_BUILD is defined in $(OPTDEFINES) only if the OPTS configuration indicates
-# a static library. However the stubs library is ALWAYS static hence included here
-# irrespective of the OPTS setting.
+# stubscflags contains $(cflags) plus flags used for building a stubs
+# library for the package.  Note: -DSTATIC_BUILD is defined in
+# $(OPTDEFINES) only if the OPTS configuration indicates a static
+# library. However the stubs library is ALWAYS static hence included
+# here irrespective of the OPTS setting.
+
 stubscflags = $(cflags) $(PRJ_DEFINES) $(OPTDEFINES) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES)
-
 
 # Link flags 
 
