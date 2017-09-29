@@ -37,7 +37,8 @@ _RULES_VC = 1
 # 11. Construct the paths where the package is to be installed
 # 12. Set up the actual options passed to compiler and linker based
 #     on the information gathered above.
-# 13. Define some standard build targets and implicit rules.
+# 13. Define some standard build targets and implicit rules. These may
+#     be optionally disabled by the parent makefile.
 # 14. (For extensions only.) Compare the configuration of the target
 #     Tcl and the extensions and warn against discrepancies.
 #
@@ -1204,7 +1205,20 @@ baselibs   = $(baselibs) ucrt.lib
 !endif
 
 ################################################################
-# 3. Define common make targets and implicit rules
+# 3. Define standard commands, common make targets and implicit rules
+
+MAKELIBCMD = $(lib32) -nologo $(LINKERFLAGS) -out:$@
+MAKEDLLCMD = $(link32) $(dlllflags) -out:$@ $(baselibs) $(tcllibs)
+MAKECONCMD = $(link32) $(conlflags) -out:$@ $(baselibs) $(tcllibs)
+MAKEGUICMD = $(link32) $(guilflags) -out:$@ $(baselibs) $(tcllibs)
+MAKERESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
+	    $(TCL_INCLUDES) \
+	    -d DEBUG=$(DEBUG) -d UNCHECKED=$(UNCHECKED) \
+	    -d TCL_THREADS=$(TCL_THREADS) \
+	    -d STATIC_BUILD=$(STATIC_BUILD) \
+	    $<
+
+!ifndef DISABLE_DEFAULT_TARGETS
 
 !ifndef DEFAULT_BUILD_TARGET
 DEFAULT_BUILD_TARGET = all
@@ -1233,8 +1247,11 @@ hose:
 	@echo Hosing $(OUT_DIR)\* ...
 	@if exist $(OUT_DIR)\nul $(RMDIR) $(OUT_DIR)
 
-# Implicit rule definitions - only for building library objects. For stubs and main
-# application, the master makefile should define explicit rules.
+!endif
+
+!ifndef DISABLE_IMPLICIT_RULES
+# Implicit rule definitions - only for building library objects. For stubs and
+# main application, the master makefile should define explicit rules.
 
 {$(WINDIR)}.c{$(TMP_DIR)}.obj::
 	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
@@ -1260,17 +1277,7 @@ $<
 .SUFFIXES:
 .SUFFIXES:.c .rc
 
-MAKELIBCMD = $(lib32) -nologo $(LINKERFLAGS) -out:$@
-MAKEDLLCMD = $(link32) $(dlllflags) -out:$@ $(baselibs) $(tcllibs)
-MAKECONCMD = $(link32) $(conlflags) -out:$@ $(baselibs) $(tcllibs)
-MAKEGUICMD = $(link32) $(guilflags) -out:$@ $(baselibs) $(tcllibs)
-MAKERESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
-	    $(TCL_INCLUDES) \
-	    -d DEBUG=$(DEBUG) -d UNCHECKED=$(UNCHECKED) \
-	    -d TCL_THREADS=$(TCL_THREADS) \
-	    -d STATIC_BUILD=$(STATIC_BUILD) \
-	    $<
-
+!endif
 
 ################################################################
 # 14. Sanity check selected options against Tcl build options
