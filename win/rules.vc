@@ -922,6 +922,8 @@ TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
 
 !endif # TCLINSTALL
 
+tcllibs = "$(TCLSTUBLIB)" "$(TCLIMPLIB)"
+
 !endif $(PROJECT) != "tcl"
 
 # We need a tclsh that will run on the host machine as part of the build.
@@ -1129,8 +1131,8 @@ cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\ $(cdebug)
 
 appcflags = $(cflags) $(crt) $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES) $(USE_STUBS_DEFS)
 appcflags_nostubs = $(cflags) $(crt) $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES)
-pkgcflags = $(appcflags) /DBUILD_$(PROJECT)
-pkgcflags_nostubs = $(appcflags_nostubs) /DBUILD_$(PROJECT)
+pkgcflags = $(appcflags) -DBUILD_$(PROJECT)
+pkgcflags_nostubs = $(appcflags_nostubs) -DBUILD_$(PROJECT)
 
 # stubscflags contains $(cflags) plus flags used for building a stubs
 # library for the package.  Note: -DSTATIC_BUILD is defined in
@@ -1249,13 +1251,26 @@ $<
 $<
 <<
 
+{$(RCDIR)}.rc{$(TMP_DIR)}.res:
+	$(MAKERESCMD)
+	
+{$(WINDIR)}.rc{$(TMP_DIR)}.res:
+	$(MAKERESCMD)
+
 .SUFFIXES:
 .SUFFIXES:.c .rc
 
 MAKELIBCMD = $(lib32) -nologo $(LINKERFLAGS) -out:$@
-MAKEDLLCMD = $(link32) $(dlllflags) -out:$@ $(baselibs)
-MAKECONCMD = $(link32) $(conlflags) -out:$@ $(baselibs)
-MAKEGUICMD = $(link32) $(guilflags) -out:$@ $(baselibs)
+MAKEDLLCMD = $(link32) $(dlllflags) -out:$@ $(baselibs) $(tcllibs)
+MAKECONCMD = $(link32) $(conlflags) -out:$@ $(baselibs) $(tcllibs)
+MAKEGUICMD = $(link32) $(guilflags) -out:$@ $(baselibs) $(tcllibs)
+MAKERESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
+	    $(TCL_INCLUDES) \
+	    -d DEBUG=$(DEBUG) -d UNCHECKED=$(UNCHECKED) \
+	    -d TCL_THREADS=$(TCL_THREADS) \
+	    -d STATIC_BUILD=$(STATIC_BUILD) \
+	    $<
+
 
 ################################################################
 # 14. Sanity check selected options against Tcl build options
