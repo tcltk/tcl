@@ -118,7 +118,7 @@
 #		Hooks to allow the intermediate and output directories to be
 #		changed.  $(OUT_DIR) is assumed to be
 #		.\(Release|Debug) based on if symbols are requested.
-#		$(TMP_DIR) will de $(OUT_DIR)\<buildtype> by default.
+#		$(TMP_DIR) will be $(OUT_DIR)\<buildtype> by default.
 #
 #	TESTPAT=<file>
 #		Reads the tests requested to be run from this file.
