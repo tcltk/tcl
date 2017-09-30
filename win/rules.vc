@@ -213,9 +213,11 @@ _TCL_H          = $(_TCLDIR)\generic\tcl.h
 
 !if exist("$(_INSTALLDIR)\include\tcl.h") # Case 2(c) for extensions with TCLDIR undefined
 TCLINSTALL	= 1
-TCLDIR          = $(_INSTALLDIR)
-_TCLDIR		= $(_INSTALLDIR)
-_TCL_H          = $(_INSTALLDIR)\include\tcl.h
+TCLDIR          = $(_INSTALLDIR)\..
+# NOTE: we will be resetting _INSTALLDIR to _INSTALLDIR/lib for extensions
+# later so the \.. accounts for the /lib
+_TCLDIR		= $(_INSTALLDIR)\..
+_TCL_H          = $(_TCLDIR)\include\tcl.h
 !elseif exist("..\..\tcl\generic\tcl.h")
 TCLINSTALL      = 0
 TCLDIR          = ..\..\tcl
@@ -1228,9 +1230,9 @@ MAKELIBCMD = $(lib32) -nologo $(LINKERFLAGS) -out:$@
 MAKEDLLCMD = $(link32) $(dlllflags) -out:$@ $(baselibs) $(tcllibs) 
 
 !if $(STATIC_BUILD)
-MAKEEXTCMD = $(MAKELIBCMD)
+MAKEBINCMD = $(MAKELIBCMD)
 !else
-MAKEEXTCMD = $(MAKEDLLCMD)
+MAKEBINCMD = $(MAKEDLLCMD)
 !endif
 MAKECONCMD = $(link32) $(conlflags) -out:$@ $(baselibs) $(tcllibs)
 MAKEGUICMD = $(link32) $(guilflags) -out:$@ $(baselibs) $(tcllibs)
@@ -1248,6 +1250,10 @@ DEFAULT_BUILD_TARGET = all
 !endif
 
 default_target: $(DEFAULT_BUILD_TARGET)
+
+setup:
+	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
+	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR)
 
 clean:
 	@echo Cleaning $(TMP_DIR)\* ...
