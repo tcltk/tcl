@@ -503,25 +503,15 @@ runshell: setup $(TCLSH) dlls
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLSH) $(SCRIPT)
 
-setup:
-	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
-	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR)
-
 !if !$(STATIC_BUILD)
 $(TCLIMPLIB): $(TCLLIB)
 !endif
 
 $(TCLLIB): $(TCLOBJS)
-!if $(STATIC_BUILD)
-	$(MAKELIBCMD) @<<
-$**
-<<
-!else
-	$(MAKEDLLCMD) @<<
+	$(MAKEBINCMD) @<<
 $**
 <<
 	$(_VC_MANIFEST_EMBED_DLL)
-!endif
 
 $(TCLSTUBLIB): $(TCLSTUBOBJS)
 	$(MAKELIBCMD) -nodefaultlib $(TCLSTUBOBJS)
@@ -536,21 +526,19 @@ $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 
 !if $(STATIC_BUILD)
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
-	$(MAKELIBCMD) $**
 !else
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
-	$(MAKEDLLCMD) $**
-	$(_VC_MANIFEST_EMBED_DLL)
 !endif
+	$(MAKEBINCMD) $**
+	$(_VC_MANIFEST_EMBED_DLL)
 
 !if $(STATIC_BUILD)
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
-	$(MAKELIBCMD) $**
 !else
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
-	$(MAKEDLLCMD) $**
-	$(_VC_MANIFEST_EMBED_DLL)
 !endif
+	$(MAKEBINCMD) $**
+	$(_VC_MANIFEST_EMBED_DLL)
 
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
