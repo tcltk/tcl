@@ -906,7 +906,7 @@ TCL_INCLUDES    = -I"$(WINDIR)" -I"$(GENERICDIR)"
 !if $(TCLINSTALL) # Building against an installed Tcl
 
 TCLSH		= $(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX).exe
-!if !exist($(TCLSH)) && $(TCL_THREADS)
+!if !exist("$(TCLSH)") && $(TCL_THREADS)
 TCLSH           = $(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX).exe
 !endif
 TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib
@@ -1225,7 +1225,13 @@ baselibs   = $(baselibs) ucrt.lib
 # 3. Define standard commands, common make targets and implicit rules
 
 MAKELIBCMD = $(lib32) -nologo $(LINKERFLAGS) -out:$@
-MAKEDLLCMD = $(link32) $(dlllflags) -out:$@ $(baselibs) $(tcllibs)
+MAKEDLLCMD = $(link32) $(dlllflags) -out:$@ $(baselibs) $(tcllibs) 
+
+!if $(STATIC_BUILD)
+MAKEEXTCMD = $(MAKELIBCMD)
+!else
+MAKEEXTCMD = $(MAKEDLLCMD)
+!endif
 MAKECONCMD = $(link32) $(conlflags) -out:$@ $(baselibs) $(tcllibs)
 MAKEGUICMD = $(link32) $(guilflags) -out:$@ $(baselibs) $(tcllibs)
 MAKERESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
@@ -1315,9 +1321,9 @@ TCLNMAKECONFIG = "$(OUT_DIR)\tcl.nmake"
 
 !if $(CONFIG_CHECK)
 !ifdef TCLNMAKECONFIG
-!include $(TCLMAKECONFIG)
+!include $(TCLNMAKECONFIG)
 
-!if defined(CORE_MACHINE) && $(CORE_MACHINE) != $(MACHINE)
+!if defined(CORE_MACHINE) && "$(CORE_MACHINE)" != "$(MACHINE)"
 !error ERROR: Build target ($(MACHINE)) does not match the Tcl library architecture ($(CORE_MACHINE)).
 !endif
 !if defined(CORE_USE_THREAD_ALLOC) && $(CORE_USE_THREAD_ALLOC) != $(USE_THREAD_ALLOC)
