@@ -50,7 +50,9 @@ typedef struct KVNode {
  * The operations on a KVList:
  *	KVLClaim	Make a claim on the list.
  *	KVLDisclaim	Release a claim on the list.
+ *	KVLNew		Node creation utility
  *	KVLFind		Find the tail starting with an equal key.
+ *	KVLMerge	Create a new list, merger of two lists.
  *	KVLInsert	Create a new list, inserting new pair into old list.
  *	KVLRemove	Create a new list, with any pair matching key removed.
  */
@@ -66,9 +68,9 @@ void KVLClaim(
 
 static
 void KVLDisclaim(
-    KVList l,
     const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt)
+    const TclHAMTValueType *vt,
+    KVList l)
 {
     if (l == NULL) {
 	return;
@@ -85,7 +87,7 @@ void KVLDisclaim(
 	vt->dropRefProc(l->value);
     }
     l->value = NULL;
-    KVLDisclaim(l->tail, kt, vt);
+    KVLDisclaim(kt, vt, l->tail);
     l->tail = NULL;
     ckfree(l);
 }
@@ -127,6 +129,96 @@ void FillPair(
     }
     l->value = value;
 }
+
+static
+KVList KVLNew(
+    const TclHAMTKeyType *kt,
+    const TclHAMTValueType *vt,
+    ClientData key,
+    ClientData value,
+    KVList tail)
+{
+    KVList new = ckalloc(sizeof(KVNode));
+    new->claim = 0;
+    FillPair(new, kt, key, vt, value);
+    if (tail) {
+	KVLClaim(tail);
+    }
+    new->tail = tail;
+    return new;
+}
+
+/*
+ * Return a list that is merge of argument lists one and two.
+ * When returning "one" itself is a correct answer, do that.
+ * Otherwise, when returning "two" itself is a correct answer, do that.
+ * These constraints help subdue creation of unnecessary copies.
+ */
+static
+KVList KVLMerge(
+    const TclHAMTKeyType *kt,
+    const TclHAMTValueType *vt,
+    KVList one,
+    KVList two,
+    ClientData *valuePtr)
+{
+    KVList result = two;
+    KVList l = one;
+    int canReturnOne = 1;
+    int canReturnTwo = 1;
+    int numSame = 0;
+    ClientData prevValue = NULL;
+
+    if (one == two) {
+	/* Merge into self yields self */
+	return one;
+    }
+    while (l) {
+	/* Check whether key from one is in two. */
+	KVList found = KVLFind(two, kt, l->key);
+
+	if (found) {
+	    /*
+	     * This merge includes an overwrite of a key in one by
+	     * the same key in two.
+	     */
+	    if (found->value == l->value) {
+		numSame++;
+	    } else {
+		/* This pair in one cannot be in the merge. */
+		canReturnOne = 0;
+	    }
+	    prevValue = l->value;
+	} else {
+	    /*
+	     * result needs to contain old key value from one that
+	     * was not overwritten as well as the new key values
+	     * from two.  We now know result can be neither one nor two.
+	     */
+	    result = KVLNew(kt, vt, l->key, l->value, result);
+	    canReturnOne = 0;
+	    canReturnTwo = 0;
+	}
+	l = l->tail;
+    }
+    if (valuePtr) {
+	*valuePtr = prevValue;
+    }
+    if (canReturnOne) {
+	l = two;
+	while (numSame--) {
+	    l = l->tail;
+	}
+	if (l == NULL) {
+	    /* We discovered one and two were copies. */
+	    return one;
+	}
+    }
+    if (canReturnTwo) {
+	return two;
+    }
+    return result;
+}
 
 static
 KVList KVLInsert(
@@ -137,85 +229,14 @@ KVList KVLInsert(
     ClientData value,
     ClientData *valuePtr)
 {
-    KVList result, found = KVLFind(l, kt, key);
+    KVList new = KVLNew(kt, vt, key, value, NULL);
+    KVList result = KVLMerge(kt, vt, l, new, valuePtr);
 
-    if (found) {
-	KVList copy, last = NULL;
-
-	/* List l already has a pair matching key */
-
-	if (valuePtr) {
-	    *valuePtr = found->value;
-	}
-
-	if (found->value == value) {
-	    /* ...and it already has the desired value, so make no
-	     * change and return the unchanged list. */
-	    return l;
-	}
-
-	/*
-	 * Need to replace old value with desired one.  Lists are persistent
-	 * so create new list with desired pair. Make needed copies. Keep
-	 * common tail.
-	 */
-
-	/* Create copies of nodes before found to start new list. */
-
-	while (l != found) {
-	    copy = ckalloc(sizeof(KVNode));
-	    copy->claim = 0;
-	    if (last) {
-		KVLClaim(copy);
-		last->tail = copy;
-	    } else {
-		result = copy;
-	    }
-
-	    FillPair(copy, kt, l->key, vt, l->value);
-
-	    last = copy;
-	    l = l->tail;
-	}
-
-	/* Create a copy of *found to be the inserted node. */
-
-	copy = ckalloc(sizeof(KVNode));
-	copy->claim = 0;
-	if (last) {
-	    KVLClaim(copy);
-	    last->tail = copy;
-	} else {
-	    result = copy;
-	}
-
-	FillPair(copy, kt, key, vt, value);
-
-	/* Share tail of found as tail of copied/modified list */
-
-	KVLClaim(found->tail);
-	copy->tail = found->tail;
-
-	return result;
+    if (result == l) {
+	/* No-op insert; discard new node */
+	KVLClaim(new);
+	KVLDisclaim(kt, vt, new);
     }
-
-    /*
-     * Did not find the desired key. Create new pair and place it at head.
-     * Share whole prior list as tail of new node.
-     */
-
-    if (valuePtr) {
-	*valuePtr = NULL;
-    }
-
-    result = ckalloc(sizeof(KVNode));
-    result->claim = 0;
-
-    FillPair(result, kt, key, vt, value);
-
-    KVLClaim(l);
-    result->tail = l;
-
     return result;
 }
 
@@ -443,7 +464,7 @@ void AMDisclaim(
 	am->slot[i] = NULL;
     }
     for (i = numList; i < 2*numList; i++) {
-	KVLDisclaim(am->slot[i], kt, vt);
+	KVLDisclaim(kt, vt, am->slot[i]);
 	am->slot[i] = NULL;
     }
     for (i = 2*numList; i < 2*numList + numSubnode; i++) {
@@ -1294,7 +1315,7 @@ TclHAMTDisclaim(
 	return;
     }
     if (hPtr->kvl) {
-	KVLDisclaim(hPtr->kvl, hPtr->kt, hPtr->vt);
+	KVLDisclaim(hPtr->kt, hPtr->vt, hPtr->kvl);
 	hPtr->kvl = NULL;
 	hPtr->x.hash = 0;
     } else if (hPtr->x.am) {
