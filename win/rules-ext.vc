@@ -1,0 +1,74 @@
+# This file should only be included in makefiles for Tcl extensions,
+# NOT in the makefile for Tcl itself.
+!if "$(PROJECT)" == "tcl"
+!error The rules-ext.vc file is not intended for Tcl itself.
+!endif
+
+# First locate the Tcl directory that we are working with.
+!ifndef TCLDIR
+
+# If an installation path is specified, that is also the Tcl directory.
+# Also, tk never builds against an installed Tcl, it needs Tcl sources
+!if defined(INSTALLDIR) && "$(PROJECT)" != "tk"
+TCLDIR=$(INSTALLDIR)
+!else
+TCLDIR = ../../tcl
+!endif
+
+!endif # ifndef TCLDIR
+
+# _TCLDIR = Windows native path format of TCLDIR
+_TCLDIR	= $(TCLDIR:/=\)
+
+# Now look for the rules.vc file under the Tcl root
+!if exist("$(_TCLDIR)\lib\nmake\rules.vc") # Building against installed Tcl
+_RULESDIR = $(_TCLDIR)\lib\nmake
+!elseif exist("$(_TCLDIR)\win\rules.vc")   # Building against Tcl sources
+_RULESDIR = $(_TCLDIR)\win
+!else
+# If we have not located Tcl's rules file, most likely we are compiling
+# against an older version of Tcl and so must use our own support files.
+_RULESDIR = .
+!endif
+
+_RULES_VC = $(_RULESDIR)\rules.vc
+
+!if "$(_RULESDIR)" != "."
+# Potentially using Tcl's support files. Need to compare the versions.
+# We extract version numbers using the nmakehlp program. For this
+# purpose, we use the version of nmakehlp that we have. 
+!if [$(CC) -nologo nmakehlp.c -link -subsystem:console > nul]
+!endif
+
+!if [echo TCL_RULES_MAJOR = \> versions.vc] \
+   && [nmakehlp -V "$(_RULES_VC)" RULES_VERSION_MAJOR >> versions.vc]
+!endif
+!if [echo TCL_RULES_MINOR = \>> versions.vc] \
+   && [nmakehlp -V "$(_RULES_VC)" RULES_VERSION_MINOR >> versions.vc]
+!endif
+
+!if [echo OUR_RULES_MAJOR = \>> versions.vc] \
+   && [nmakehlp -V "rules.vc" RULES_VERSION_MAJOR >> versions.vc]
+!endif
+!if [echo OUR_RULES_MINOR = \>> versions.vc] \
+   && [nmakehlp -V "rules.vc" RULES_VERSION_MINOR >> versions.vc]
+!endif
+!include versions.vc
+# We have a newer version of the support files, use them
+!message V $(TCL_RULES_MAJOR) $(TCL_RULES_MINOR) $(OUR_RULES_MAJOR) $(OUR_RULES_MINOR)
+!if ($(TCL_RULES_MAJOR) != $(OUR_RULES_MAJOR)) || ($(TCL_RULES_MINOR) < $(OUR_RULES_MINOR))
+_RULESDIR = .
+!endif
+
+!endif # $(_RULESDIR) != "."
+
+
+# Get rid of our internal defines before calling rules.vc
+!undef _TCLDIR
+!undef TCL_RULES_MAJOR
+!undef TCL_RULES_MINOR
+!undef OUR_RULES_MAJOR
+!undef OUR_RULES_MINOR
+
+!message *** Using $(_RULESDIR)\rules.vc
+#!include "$(_RULESDIR)\rules.vc"

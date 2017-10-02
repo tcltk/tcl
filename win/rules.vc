@@ -1,4 +1,4 @@
-#------------------------------------------------------------------------------
+#------------------------------------------------------------- -*- makefile -*-
 # rules.vc --
 #
 #	Microsoft Visual C++ makefile include for decoding the commandline
@@ -14,6 +14,10 @@
 
 !ifndef _RULES_VC
 _RULES_VC = 1
+
+# The following macros define the version of the rules.vc nmake build system
+RULES_VERSION_MAJOR = 1
+RULES_VERSION_MINOR = 0
 
 ################################################################
 # Nmake is a pretty weak environment in syntax and capabilities
@@ -1085,9 +1089,13 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
 !endif
 
-# UNICODE - Use the wide char Windows API.
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP
-COMPILERFLAGS  = /DUNICODE /D_UNICODE /D_ATL_XP_TARGETING
+COMPILERFLAGS  = /D_ATL_XP_TARGETING
+
+# UNICODE - Use the wide char Windows API. Tcl 8.5 does not define this.
+!if $(TCL_VERSION) > 85
+COMPILERFLAGS = $(COMPILERFLAGS) /DUNICODE /D_UNICODE 
+!endif
 
 # crt picks the C run time based on selected OPTS
 !if $(MSVCRT)
@@ -1299,7 +1307,7 @@ $<
 
 {$(RCDIR)}.rc{$(TMP_DIR)}.res:
 	$(MAKERESCMD)
-	
+
 {$(WINDIR)}.rc{$(TMP_DIR)}.res:
 	$(MAKERESCMD)
 
