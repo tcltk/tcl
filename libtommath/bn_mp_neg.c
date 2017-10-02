@@ -16,7 +16,7 @@
  */
 
 /* b = -a */
-int mp_neg(mp_int *a, mp_int *b)
+int mp_neg(const mp_int *a, mp_int *b)
 {
    int     res;
    if (a != b) {

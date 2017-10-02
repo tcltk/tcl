@@ -16,7 +16,7 @@
  */
 
 /* single digit subtraction */
-int mp_sub_d(mp_int *a, mp_digit b, mp_int *c)
+int mp_sub_d(const mp_int *a, mp_digit b, mp_int *c)
 {
    mp_digit *tmpa, *tmpc, mu;
    int       res, ix, oldused;
@@ -32,9 +32,10 @@ int mp_sub_d(mp_int *a, mp_digit b, mp_int *c)
     * addition [with fudged signs]
     */
    if (a->sign == MP_NEG) {
-      a->sign = MP_ZPOS;
-      res     = mp_add_d(a, b, c);
-      a->sign = c->sign = MP_NEG;
+      mp_int a_ = *a;
+      a_.sign = MP_ZPOS;
+      res     = mp_add_d(&a_, b, c);
+      c->sign = MP_NEG;
 
       /* clamp */
       mp_clamp(c);

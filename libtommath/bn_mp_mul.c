@@ -16,7 +16,7 @@
  */
 
 /* high level multiplication (handles sign) */
-int mp_mul(mp_int *a, mp_int *b, mp_int *c)
+int mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
 {
    int     res, neg;
    neg = (a->sign == b->sign) ? MP_ZPOS : MP_NEG;

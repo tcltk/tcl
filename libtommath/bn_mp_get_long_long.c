@@ -16,7 +16,7 @@
  */
 
 /* get the lower unsigned long long of an mp_int, platform dependent */
-unsigned long long mp_get_long_long(mp_int *a)
+unsigned long long mp_get_long_long(const mp_int *a)
 {
    int i;
    unsigned long long res;

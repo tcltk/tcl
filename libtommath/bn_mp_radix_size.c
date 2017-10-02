@@ -16,7 +16,7 @@
  */
 
 /* returns size of ASCII reprensentation */
-int mp_radix_size(mp_int *a, int radix, int *size)
+int mp_radix_size(const mp_int *a, int radix, int *size)
 {
    int     res, digs;
    mp_int  t;
