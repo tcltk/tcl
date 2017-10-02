@@ -1377,46 +1377,31 @@ TclHAMTInsert(
 	    }
 
 	    /* Construct a new HAMT with a new kvl */
-	    new = ckalloc(sizeof(HAMT));
-	    new->claim = 0;
-	    new->kt = hPtr->kt;
-	    new->vt = hPtr->vt;
+	    new = TclHAMTCreate(hPtr->kt, hPtr->vt);
 	    KVLClaim(l);
 	    new->kvl = l;
-	    new->x.am = NULL;
-
 	    return new;
 	}
 	/* No. Insertion should not be into the singleton KVList.
 	 * We get to build a tree out of the singleton KVList and
 	 * a new list holding our new pair. */
 
-	new = ckalloc(sizeof(HAMT));
-	new->claim = 0;
-	new->kt = hPtr->kt;
-	new->vt = hPtr->vt;
-	new->kvl = NULL;
-
+	new = TclHAMTCreate(hPtr->kt, hPtr->vt);
 	am = AMNewLeaf(hPtr->x.hash, hPtr->kvl, hash,
 		KVLInsert(hPtr->kt, hPtr->vt, NULL, key, value, valuePtr));
 	AMClaim(am);
 	new->x.am = am;
-
 	return new;
     }
     if (hPtr->x.am == NULL) {
 	/* Map is empty. No key is in it. Create singleton KVList
 	 * out of new pair. */
 
-	new = ckalloc(sizeof(HAMT));
-	new->claim = 0;
-	new->kt = hPtr->kt;
-	new->vt = hPtr->vt;
+	new = TclHAMTCreate(hPtr->kt, hPtr->vt);
 	l = KVLInsert(hPtr->kt, hPtr->vt, NULL, key, value, valuePtr);
 	KVLClaim(l);
 	new->kvl = l;
 	new->x.hash = Hash(hPtr, key);
-	
 	return new;
     }
     /* Map has a tree. Insert into it. */
@@ -1426,14 +1411,9 @@ TclHAMTInsert(
 	/* Map did not change (overwrite same value) */
 	return hamt;
     }
-    new = ckalloc(sizeof(HAMT));
-    new->claim = 0;
-    new->kt = hPtr->kt;
-    new->vt = hPtr->vt;
-    new->kvl = NULL;
+    new = TclHAMTCreate(hPtr->kt, hPtr->vt);
     AMClaim(am);
     new->x.am = am;
-	
     return new;
 }
 
@@ -1483,16 +1463,11 @@ TclHAMTRemove(
 	    /* TODO: Implement a shared empty HAMT ? */
 	    /* CAUTION: would need one for each set of key & value types */
 	    /* Construct a new HAMT with a new kvl */
-	    new = ckalloc(sizeof(HAMT));
-	    new->claim = 0;
-	    new->kt = hPtr->kt;
-	    new->vt = hPtr->vt;
+	    new = TclHAMTCreate(hPtr->kt, hPtr->vt);
 	    if (l) {
 		KVLClaim(l);
+		new->kvl = l;
 	    }
-	    new->kvl = l;
-	    new->x.am = NULL;
-
 	    return new;
 	}
 
@@ -1511,15 +1486,16 @@ TclHAMTRemove(
     }
 
     /* Map has a tree. Remove from it. */
-    new = ckalloc(sizeof(HAMT));
-    new->claim = 0;
-    new->kt = hPtr->kt;
-    new->vt = hPtr->vt;
-
     am = AMRemove(hPtr->kt, hPtr->vt, hPtr->x.am,
 	    Hash(hPtr, key), key, &hash, &l, valuePtr);
+
+    if (am == hPtr->x.am) {
+	/* Removal was no-op. */
+	return hamt;
+    }
+
+    new = TclHAMTCreate(hPtr->kt, hPtr->vt);
     if (am) {
-	new->kvl = NULL;
 	AMClaim(am);
 	new->x.am = am;
     } else {
@@ -1527,8 +1503,89 @@ TclHAMTRemove(
 	new->kvl = l;
 	new->x.hash = hash;
     }
-	
     return new;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclHAMTMerge --
+ *
+ *	Merge two TclHAMTS.
+ *
+ * Results:
+ *	The new TclHAMT, merger of two arguments.
+ *
+ *----------------------------------------------------------------------
+ */
+
+TclHAMT
+TclHAMTMerge(
+    TclHAMT one,
+    TclHAMT two)
+{
+    HAMT *new;
+    ArrayMap am;
+
+    /* Sanity check for incompatible customizations. */
+    if ((one->kt != two->kt) || (one->vt != two->vt)) {
+	/* For now, panic. Consider returning empty. */
+	Tcl_Panic("Cannot merge incompatible HAMTs");
+    }
+
+    /* Merge to self */
+    if (one == two) {
+	return one;
+    }
+
+    /* Merge any into empty -> any */
+    if ((one->kvl == NULL) && (one->x.am == NULL)) {
+	return two;
+    }
+
+    /* Merge empty into any -> any */
+    if ((two->kvl == NULL) && (two->x.am == NULL)) {
+	return one;
+    }
+
+    /* Neither empty */
+    if (one->kvl) {
+	if (two->kvl) {
+	    /* Both are lists. */
+	    if (one->x.hash == two->x.hash) {
+		/* Same hash -> merge the lists */
+		KVList l = KVLMerge(one->kt, one->vt,
+			one->kvl, two->kvl, NULL);
+
+		if (l == one->kvl) {
+		    return one;
+		}
+		if (l == two->kvl) {
+		    return two;
+		}
+
+		new = TclHAMTCreate(one->kt, one->vt);
+		KVLClaim(l);
+		new->kvl = l;
+		new->x.hash = one->x.hash;
+		return new;
+	    }
+	    /* Different hashes; create leaf to hold pair */
+	    am = AMNewLeaf(one->x.hash, one->kvl, two->x.hash, two->kvl);
+
+	    new = TclHAMTCreate(one->kt, one->vt);
+	    AMClaim(am);
+	    new->x.am = am;
+	    return new;
+	}
+	/* two has a tree */
+	/* AMMergeList(...) */
+    }
+    if (two->kvl) {
+	/* AMMergeList(...) */
+    }
+
+    /* AMMerge() */
 }
 
 
