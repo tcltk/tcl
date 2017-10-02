@@ -1420,13 +1420,17 @@ TclHAMTInsert(
 	return new;
     }
     /* Map has a tree. Insert into it. */
+    am = AMInsert(hPtr->kt, hPtr->vt, hPtr->x.am,
+	    Hash(hPtr, key), key, value, valuePtr);
+    if (am == hPtr->x.am) {
+	/* Map did not change (overwrite same value) */
+	return hamt;
+    }
     new = ckalloc(sizeof(HAMT));
     new->claim = 0;
     new->kt = hPtr->kt;
     new->vt = hPtr->vt;
     new->kvl = NULL;
-    am = AMInsert(hPtr->kt, hPtr->vt, hPtr->x.am,
-	    Hash(hPtr, key), key, value, valuePtr);
     AMClaim(am);
     new->x.am = am;
 	
