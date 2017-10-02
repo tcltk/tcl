@@ -22,7 +22,7 @@
  * is essentially the same algorithm but merely
  * tuned to perform recursive squarings.
  */
-int mp_karatsuba_sqr(mp_int *a, mp_int *b)
+int mp_karatsuba_sqr(const mp_int *a, mp_int *b)
 {
    mp_int  x0, x1, t1, t2, x0x0, x1x1;
    int     B, err;

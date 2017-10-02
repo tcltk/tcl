@@ -16,7 +16,7 @@
  */
 
 /* returns the number of bits in an int */
-int mp_count_bits(mp_int *a)
+int mp_count_bits(const mp_int *a)
 {
    int     r;
    mp_digit q;

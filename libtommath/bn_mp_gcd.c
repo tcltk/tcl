@@ -16,7 +16,7 @@
  */
 
 /* Greatest Common Divisor using the binary method */
-int mp_gcd(mp_int *a, mp_int *b, mp_int *c)
+int mp_gcd(const mp_int *a, const mp_int *b, mp_int *c)
 {
    mp_int  u, v;
    int     k, u_lsb, v_lsb, res;

@@ -16,7 +16,7 @@
  */
 
 /* b = a/2 */
-int mp_div_2(mp_int *a, mp_int *b)
+int mp_div_2(const mp_int *a, mp_int *b)
 {
    int     x, res, oldused;
 

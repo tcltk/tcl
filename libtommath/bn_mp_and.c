@@ -16,10 +16,11 @@
  */
 
 /* AND two ints together */
-int mp_and(mp_int *a, mp_int *b, mp_int *c)
+int mp_and(const mp_int *a, const mp_int *b, mp_int *c)
 {
    int     res, ix, px;
-   mp_int  t, *x;
+   mp_int  t;
+   const mp_int *x;
 
    if (a->used > b->used) {
       if ((res = mp_init_copy(&t, a)) != MP_OKAY) {

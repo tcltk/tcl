@@ -18,7 +18,7 @@
 #ifdef BN_MP_DIV_SMALL
 
 /* slower bit-bang division... also smaller */
-int mp_div(mp_int *a, mp_int *b, mp_int *c, mp_int *d)
+int mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d)
 {
    mp_int ta, tb, tq, q;
    int    res, n, n2;
@@ -100,7 +100,7 @@ LBL_ERR:
  * The overall algorithm is as described as
  * 14.20 from HAC but fixed to treat these cases.
 */
-int mp_div(mp_int *a, mp_int *b, mp_int *c, mp_int *d)
+int mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d)
 {
    mp_int  q, x, y, t1, t2;
    int     res, n, t, i, norm, neg;
