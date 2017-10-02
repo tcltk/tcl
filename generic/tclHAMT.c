@@ -27,7 +27,7 @@
  * have to be prepared to make lists of arbitrary length.
  *
  * For the most part these are pretty standard linked lists.  The only
- * tricky things are that in anyy one list we will store at most one
+ * tricky things are that in any one list we will store at most one
  * key from each equivalence class of keys, as determined by the key type,
  * and we keep the collection of all lists, persistent and immutable, each 
  * until nothing has an interest in it any longer.  This means that distinct
@@ -334,6 +334,7 @@ const int branchFactor = CHAR_BIT * sizeof(size_t);
  * The operations on an ArrayMap:
  *	AMClaim		Make a claim on a node.
  *	AMDisclaim	Release a claim on a node.
+ *	AMNew		allocator
  *	AMNewLeaf	Make leaf node from two NVLists.
  *	AMNewBranch	Make branch mode from NVList and ArrayMap.
  *	AMFetch		Fetch value from node given a key.
@@ -445,6 +446,37 @@ void AMDisclaim(
 /*
  *----------------------------------------------------------------------
  *
+ * AMNew --
+ *
+ * 	Create an ArrayMap with space for numList lists and
+ *	numSubnode subnodes, and initialize with mask and id.
+ *
+ * Results:
+ *	The created ArrayMap.
+ *
+ * Side effects:
+ * 	Memory is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static
+ArrayMap AMNew(
+    int numList,
+    int numSubnode,
+    size_t mask,
+    size_t id)
+{
+    ArrayMap new = ckalloc(AMN_SIZE(numList, numSubnode));
+
+    new->claim = 0;
+    new->mask = mask;
+    new->id = id;
+    return new;
+}
+/*
+ *----------------------------------------------------------------------
+ *
  * AMNewBranch --
  *
  * 	Create an ArrayMap to serve as a container for
@@ -475,17 +507,15 @@ ArrayMap AMNewBranch(
      * Determine by lowest bit where hashes differ. */
     int depth = LSB(hash ^ sub->id) / branchShift;
 
+    /* Compute the mask for all nodes at this depth */
+    size_t mask = ((size_t)1 << (depth * branchShift)) - 1;
+
     int idx1 = (hash >> (depth * branchShift)) & branchMask;
     int idx2 = (sub->id >> (depth * branchShift)) & branchMask;
-    ArrayMap new = ckalloc(AMN_SIZE(1, 1));
+    ArrayMap new = AMNew(1, 1, mask, hash & mask);
 
     assert ( idx1 != idx2 );
-
-    new->claim = 0;
-    new->mask =  ((size_t)1 << (depth * branchShift)) - 1;
-    new->id = hash & new->mask;
-
-    assert ( (sub->id & new->mask) == new->id );
+    assert ( (sub->id & mask) == new->id );
 
     new->kvMap = (size_t)1 << idx1;
     new->amMap = (size_t)1 << idx2;
@@ -536,18 +566,16 @@ ArrayMap AMNewLeaf(
      * Determine by lowest bit where hashes differ. */
     int depth = LSB(hash1 ^ hash2) / branchShift;
 
+    /* Compute the mask for all nodes at this depth */
+    size_t mask = ((size_t)1 << (depth * branchShift)) - 1;
+
     int idx1 = (hash1 >> (depth * branchShift)) & branchMask;
     int idx2 = (hash2 >> (depth * branchShift)) & branchMask;
 
-    ArrayMap new = ckalloc(AMN_SIZE(2, 0));
+    ArrayMap new = AMNew(2, 0, mask, hash1 & mask);
 
     assert ( idx1 != idx2 );
-
-    new->claim = 0;
-    new->mask =  ((size_t)1 << (depth * branchShift)) - 1;
-    new->id = hash1 & new->mask;
-
-    assert ( (hash2 & new->mask) == new->id );
+    assert ( (hash2 & mask) == new->id );
 
     new->kvMap = ((size_t)1 << idx1) | ((size_t)1 << idx2);
     new->amMap = 0;
@@ -653,11 +681,27 @@ ArrayMap AMMergeList(
     /* Mask used to carve out branch index. */
     const int branchMask = (branchFactor - 1);
 
+    size_t tally;
+    ArrayMap new;
+
     if ((am->mask & hash) != am->id) {
         /* Hash indicates list does not belong in this subtree */
         /* Create a new subtree to be parent of both am and kvl. */
         return AMNewBranch(am, hash, kvl);
     }
+
+    /* Hash indicates key should be descendant of am, which? */
+    tally = (size_t)1 << ((hash >> LSB(am->mask + 1)) & branchMask);
+    if (tally & am->kvMap) {
+	/* Hash consistent with existing list child */
+
+    }
+    if (tally & am->kvMap) {
+	/* Hash consistent with existing subnode child */
+    }
+
+    /* am is not using this tally; copy am and add it. */
+//    new = AMNew();
 
 }
 
@@ -728,11 +772,7 @@ ArrayMap AMInsert(
 		    KVLInsert(kt, vt, NULL, key, value, valuePtr));
 
 	    /* Modified copy of am, - list + sub */
-
-	    new = ckalloc(AMN_SIZE(numList-1, numSubnode+1));
-	    new->claim = 0;
-	    new->mask = am->mask;
-	    new->id = am->id;
+	    new = AMNew(numList-1, numSubnode+1, am->mask, am->id);
 
 	    new->kvMap = am->kvMap & ~tally;
 	    new->amMap = am->amMap | tally;
@@ -785,11 +825,8 @@ ArrayMap AMInsert(
 	    }
 
 	    /* Modified copy of am, list replaced. */
-	    new = ckalloc(AMN_SIZE(numList, numSubnode));
-	
-	    new->claim = 0;
-	    new->mask = am->mask;
-	    new->id = am->id;
+	    new = AMNew(numList, numSubnode, am->mask, am->id);
+
 	    new->kvMap = am->kvMap;
 	    new->amMap = am->amMap;
 
@@ -835,11 +872,8 @@ ArrayMap AMInsert(
 	}
 
 	/* Modified copy of am, subnode replaced. */
-	new = ckalloc(AMN_SIZE(numList, numSubnode));
-	
-	new->claim = 0;
-	new->mask = am->mask;
-	new->id = am->id;
+	new = AMNew(numList, numSubnode, am->mask, am->id);
+
 	new->kvMap = am->kvMap;
 	new->amMap = am->amMap;
 
@@ -873,11 +907,8 @@ ArrayMap AMInsert(
     }
 
     /* Modified copy of am, list inserted. */
-    new = ckalloc(AMN_SIZE(numList + 1, numSubnode));
-	
-    new->claim = 0;
-    new->mask = am->mask;
-    new->id = am->id;
+    new = AMNew(numList + 1, numSubnode, am->mask, am->id);
+
     new->kvMap = am->kvMap | tally;
     new->amMap = am->amMap;
 
@@ -997,11 +1028,8 @@ ArrayMap AMRemove(
 
 	if (l != NULL) {
 	    /* Modified copy of am, list replaced. */
-	    new = ckalloc(AMN_SIZE(numList, numSubnode));
-	
-	    new->claim = 0;
-	    new->mask = am->mask;
-	    new->id = am->id;
+	    new = AMNew(numList, numSubnode, am->mask, am->id);
+
 	    new->kvMap = am->kvMap;
 	    new->amMap = am->amMap;
 
@@ -1034,11 +1062,8 @@ ArrayMap AMRemove(
 	}
 	if (numList + numSubnode > 2) {
 	    /* Modified copy of am, list removed. */
-	    new = ckalloc(AMN_SIZE(numList-1, numSubnode));
-	
-	    new->claim = 0;
-	    new->mask = am->mask;
-	    new->id = am->id;
+	    new = AMNew(numList - 1, numSubnode, am->mask, am->id);
+
 	    new->kvMap = am->kvMap & ~tally;
 	    new->amMap = am->amMap;
 
@@ -1092,11 +1117,8 @@ ArrayMap AMRemove(
 
 	if (sub) {
 	    /* Modified copy of am, subnode replaced. */
-	    new = ckalloc(AMN_SIZE(numList, numSubnode));
-	
-	    new->claim = 0;
-	    new->mask = am->mask;
-	    new->id = am->id;
+	    new = AMNew(numList, numSubnode, am->mask, am->id);
+
 	    new->kvMap = am->kvMap;
 	    new->amMap = am->amMap;
 
@@ -1131,10 +1153,7 @@ ArrayMap AMRemove(
 
 	    loffset = NumBits(am->kvMap & (tally - 1));
 
-	    new = ckalloc(AMN_SIZE(numList+1, numSubnode-1));
-	    new->claim = 0;
-	    new->mask = am->mask;
-	    new->id = am->id;
+	    new = AMNew(numList + 1, numSubnode - 1, am->mask, am->id);
 
 	    new->kvMap = am->kvMap | tally;
 	    new->amMap = am->amMap & ~tally;
