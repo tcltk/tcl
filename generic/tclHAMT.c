@@ -113,24 +113,6 @@ KVList KVLFind(
 }
 
 static
-void FillPair(
-    KVList l,
-    const TclHAMTKeyType *kt,
-    ClientData key,
-    const TclHAMTValueType *vt,
-    ClientData value)
-{
-    if (kt && kt->makeRefProc) {
-	kt->makeRefProc(key);
-    }
-    l->key = key;
-    if (vt && vt->makeRefProc) {
-	vt->makeRefProc(value);
-    }
-    l->value = value;
-}
-
-static
 KVList KVLNew(
     const TclHAMTKeyType *kt,
     const TclHAMTValueType *vt,
@@ -140,7 +122,14 @@ KVList KVLNew(
 {
     KVList new = ckalloc(sizeof(KVNode));
     new->claim = 0;
-    FillPair(new, kt, key, vt, value);
+    if (kt && kt->makeRefProc) {
+	kt->makeRefProc(key);
+    }
+    new->key = key;
+    if (vt && vt->makeRefProc) {
+	vt->makeRefProc(value);
+    }
+    new->value = value;
     if (tail) {
 	KVLClaim(tail);
     }
@@ -251,44 +240,21 @@ KVList KVLRemove(
     KVList found = KVLFind(l, kt, key);
 
     if (found) {
-	/* List l has a pair matching key */
-
-	KVList copy, result = NULL, last = NULL;
-
-	if (valuePtr) {
-	    *valuePtr = found->value;
-	}
 
 	/*
+	 * List l has a pair matching key
 	 * Need to create new list without the found node.
 	 * Make needed copies. Keep common tail.
 	 */
 
-	/* Create copies of nodes before found to start new list. */
-
+	KVList result = found->tail;
 	while (l != found) {
-	    copy = ckalloc(sizeof(KVNode));
-	    copy->claim = 0;
-	    if (last) {
-		KVLClaim(copy);
-		last->tail = copy;
-	    } else {
-		result = copy;
-	    }
-
-	    FillPair(copy, kt, l->key, vt, l->value);
-
-	    last = copy;
+	    result = KVLNew(kt, vt, l->key, l->value, result);
 	    l = l->tail;
 	}
 
-	/* Share tail of found as tail of copied/modified list */
-
-	if (last) {
-	    KVLClaim(found->tail);
-	    last->tail = found->tail;
-	} else {
-	    result = found->tail;
+	if (valuePtr) {
+	    *valuePtr = found->value;
 	}
 
 	return result;
