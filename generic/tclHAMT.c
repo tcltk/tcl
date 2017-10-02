@@ -94,8 +94,8 @@ void KVLDisclaim(
 
 static
 KVList KVLFind(
-    KVList l,
     const TclHAMTKeyType *kt,
+    KVList l,
     ClientData key)
 {
     if (l == NULL) {
@@ -109,7 +109,7 @@ KVList KVLFind(
 	    return l;
 	}
     }
-    return KVLFind(l->tail, kt, key);
+    return KVLFind(kt, l->tail, key);
 }
 
 static
@@ -164,7 +164,7 @@ KVList KVLMerge(
     }
     while (l) {
 	/* Check whether key from one is in two. */
-	KVList found = KVLFind(two, kt, l->key);
+	KVList found = KVLFind(kt, two, l->key);
 
 	if (found) {
 	    /*
@@ -211,10 +211,10 @@ KVList KVLMerge(
 
 static
 KVList KVLInsert(
-    KVList l,
     const TclHAMTKeyType *kt,
-    ClientData key,
     const TclHAMTValueType *vt,
+    KVList l,
+    ClientData key,
     ClientData value,
     ClientData *valuePtr)
 {
@@ -231,13 +231,13 @@ KVList KVLInsert(
 
 static
 KVList KVLRemove(
-    KVList l,
     const TclHAMTKeyType *kt,
-    ClientData key,
     const TclHAMTValueType *vt,
+    KVList l,
+    ClientData key,
     ClientData *valuePtr)
 {
-    KVList found = KVLFind(l, kt, key);
+    KVList found = KVLFind(kt, l, key);
 
     if (found) {
 
@@ -404,9 +404,9 @@ void AMClaim(
 
 static
 void AMDisclaim(
-    ArrayMap am,
     const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt)
+    const TclHAMTValueType *vt,
+    ArrayMap am)
 {
     int i, numList, numSubnode;
 
@@ -434,7 +434,7 @@ void AMDisclaim(
 	am->slot[i] = NULL;
     }
     for (i = 2*numList; i < 2*numList + numSubnode; i++) {
-	AMDisclaim(am->slot[i], kt, vt);
+	AMDisclaim(kt, vt, am->slot[i]);
 	am->slot[i] = NULL;
     }
 
@@ -589,8 +589,8 @@ ArrayMap AMNewLeaf(
 
 static
 ClientData AMFetch(
-    ArrayMap am,
     const TclHAMTKeyType *kt,
+    ArrayMap am,
     size_t hash,
     ClientData key)
 {
@@ -616,14 +616,14 @@ ClientData AMFetch(
 	    return NULL;
 	}
 
-	l = KVLFind(am->slot[offset + NumBits(am->kvMap)], kt, key);
+	l = KVLFind(kt, am->slot[offset + NumBits(am->kvMap)], key);
 	return l ? l->value : NULL;
     }
     if (tally & am->amMap) {
 	/* Hash is consistent with one of our subnode children... */
 
-	return AMFetch(am->slot[2 * NumBits(am->kvMap)
-		+ NumBits(am->amMap & (tally - 1))], kt, hash, key);
+	return AMFetch(kt, am->slot[2 * NumBits(am->kvMap)
+		+ NumBits(am->amMap & (tally - 1))], hash, key);
     }
     return NULL;
 }
@@ -647,11 +647,11 @@ ClientData AMFetch(
 
 static
 ArrayMap AMInsert(
+    const TclHAMTKeyType *kt,
+    const TclHAMTValueType *vt,
     ArrayMap am,
     size_t hash,
-    const TclHAMTKeyType *kt,
     ClientData key,
-    const TclHAMTValueType *vt,
     ClientData value,
     ClientData *valuePtr)
 {
@@ -673,7 +673,7 @@ ArrayMap AMInsert(
 	 */
 
 	return AMNewBranch(am, hash,
-		KVLInsert(NULL, kt, key, vt, value, valuePtr));
+		KVLInsert(kt, vt, NULL, key, value, valuePtr));
     }
 
     /* Hash indicates key should be descendant of am */
@@ -692,7 +692,7 @@ ArrayMap AMInsert(
 	
 	    sub = AMNewLeaf((size_t)am->slot[loffset],
 		    am->slot[loffset + numList], hash,
-		    KVLInsert(NULL, kt, key, vt, value, valuePtr));
+		    KVLInsert(kt, vt, NULL, key, value, valuePtr));
 
 	    /* Modified copy of am, - list + sub */
 
@@ -742,8 +742,8 @@ ArrayMap AMInsert(
 	    return new;
 	} else {
 	    /* Found the right KVList. Now Insert the pair into it. */
-	    KVList l = KVLInsert(am->slot[loffset + numList], kt, key,
-		    vt, value, valuePtr);
+	    KVList l = KVLInsert(kt, vt, am->slot[loffset + numList],
+		    key, value, valuePtr);
 
 	    if (l == am->slot[loffset + numList]) {
 		/* List unchanged (overwrite same value) */
@@ -792,8 +792,8 @@ ArrayMap AMInsert(
 	/* Hash is consistent with one of our subnode children... */
 	soffset = NumBits(am->amMap & (tally - 1));
 
-	sub = AMInsert((ArrayMap)am->slot[2*numList + soffset], hash,
-		kt, key, vt, value, valuePtr);
+	sub = AMInsert(kt, vt, (ArrayMap)am->slot[2*numList + soffset],
+		hash, key, value, valuePtr);
 
 	if (sub == am->slot[2*numList + soffset]) {
 	    /* Submap unchanged (overwrite same value) */
@@ -866,7 +866,7 @@ ArrayMap AMInsert(
 	KVLClaim((KVList) *src);
 	*dst++ = *src++;
     }
-    *dst = KVLInsert(NULL, kt, key, vt, value, valuePtr);
+    *dst = KVLInsert(kt, vt, NULL, key, value, valuePtr);
     KVLClaim(*dst);
     dst++;
     for (i = loffset; i < numList; i++) {
@@ -906,11 +906,11 @@ ArrayMap AMInsert(
 
 static
 ArrayMap AMRemove(
+    const TclHAMTKeyType *kt,
+    const TclHAMTValueType *vt,
     ArrayMap am,
     size_t hash,
-    const TclHAMTKeyType *kt,
     ClientData key,
-    const TclHAMTValueType *vt,
     size_t *hashPtr,
     KVList *listPtr,
     ClientData *valuePtr)
@@ -953,7 +953,7 @@ ArrayMap AMRemove(
 	}
 
 	/* Found the right KVList. Remove the pair from it. */
-	l = KVLRemove(am->slot[loffset + numList], kt, key, vt, valuePtr);
+	l = KVLRemove(kt, vt, am->slot[loffset + numList], key, valuePtr);
 
 	if (l == am->slot[loffset + numList]) {
 	    /* list unchanged -> ArrayMap unchanged. */
@@ -1054,8 +1054,8 @@ ArrayMap AMRemove(
 
 	/* Hash is consistent with one of our subnode children... */
 	soffset = NumBits(am->amMap & (tally - 1));
-	sub = AMRemove((ArrayMap)am->slot[2*numList + soffset], hash,
-		kt, key, vt, &subhash, &l, valuePtr);
+	sub = AMRemove(kt, vt, (ArrayMap)am->slot[2*numList + soffset],
+		hash, key, &subhash, &l, valuePtr);
 
 	if (sub) {
 	    /* Modified copy of am, subnode replaced. */
@@ -1285,7 +1285,7 @@ TclHAMTDisclaim(
 	hPtr->kvl = NULL;
 	hPtr->x.hash = 0;
     } else if (hPtr->x.am) {
-	AMDisclaim(hPtr->x.am, hPtr->kt, hPtr->vt);
+	AMDisclaim(hPtr->kt, hPtr->vt, hPtr->x.am);
 	hPtr->x.am = NULL;
     }
     hPtr->kt = NULL;
@@ -1320,7 +1320,7 @@ TclHAMTFetch(
 	/* Map holds a single KVList. Is it for the right hash? */
 	if (hPtr->x.hash == Hash(hPtr, key)) {
 	    /* Yes, try to find key in it. */
-	    KVList l = KVLFind(hPtr->kvl, hPtr->kt, key);
+	    KVList l = KVLFind(hPtr->kt, hPtr->kvl, key);
 	    return l ? l->value : NULL;
 	}
 	/* No. Map doesn't hold the key. */
@@ -1331,7 +1331,7 @@ TclHAMTFetch(
 	return NULL;
     }
     /* Map has a tree. Fetch from it. */
-    return AMFetch(hPtr->x.am, hPtr->kt, Hash(hPtr, key), key);
+    return AMFetch(hPtr->kt, hPtr->x.am, Hash(hPtr, key), key);
 }
 
 /*
@@ -1369,7 +1369,7 @@ TclHAMTInsert(
 	if (hPtr->x.hash == hash) {
 	    /* Yes. Indeed we have a hash collision! This is the right
 	     * KVList to insert our pair into. */
-	    l = KVLInsert(hPtr->kvl, hPtr->kt, key, hPtr->vt, value, valuePtr);
+	    l = KVLInsert(hPtr->kt, hPtr->vt, hPtr->kvl, key, value, valuePtr);
 	
 	    if (l == hPtr->kvl) {
 		/* list unchanged -> HAMT unchanged. */
@@ -1398,7 +1398,7 @@ TclHAMTInsert(
 	new->kvl = NULL;
 
 	am = AMNewLeaf(hPtr->x.hash, hPtr->kvl, hash,
-		KVLInsert(NULL, hPtr->kt, key, hPtr->vt, value, valuePtr));
+		KVLInsert(hPtr->kt, hPtr->vt, NULL, key, value, valuePtr));
 	AMClaim(am);
 	new->x.am = am;
 
@@ -1412,7 +1412,7 @@ TclHAMTInsert(
 	new->claim = 0;
 	new->kt = hPtr->kt;
 	new->vt = hPtr->vt;
-	l = KVLInsert(NULL, hPtr->kt, key, hPtr->vt, value, valuePtr);
+	l = KVLInsert(hPtr->kt, hPtr->vt, NULL, key, value, valuePtr);
 	KVLClaim(l);
 	new->kvl = l;
 	new->x.hash = Hash(hPtr, key);
@@ -1425,8 +1425,8 @@ TclHAMTInsert(
     new->kt = hPtr->kt;
     new->vt = hPtr->vt;
     new->kvl = NULL;
-    am = AMInsert(hPtr->x.am, Hash(hPtr, key), hPtr->kt, key,
-	    hPtr->vt, value, valuePtr);
+    am = AMInsert(hPtr->kt, hPtr->vt, hPtr->x.am,
+	    Hash(hPtr, key), key, value, valuePtr);
     AMClaim(am);
     new->x.am = am;
 	
@@ -1469,7 +1469,7 @@ TclHAMTRemove(
 	    /* Yes. Indeed we have a hash collision! This is the right
 	     * KVList to remove our pair from. */
 
-	    l = KVLRemove(hPtr->kvl, hPtr->kt, key, hPtr->vt, valuePtr);
+	    l = KVLRemove(hPtr->kt, hPtr->vt, hPtr->kvl, key, valuePtr);
 	
 	    if (l == hPtr->kvl) {
 		/* list unchanged -> HAMT unchanged. */
@@ -1477,6 +1477,7 @@ TclHAMTRemove(
 	    }
 
 	    /* TODO: Implement a shared empty HAMT ? */
+	    /* CAUTION: would need one for each set of key & value types */
 	    /* Construct a new HAMT with a new kvl */
 	    new = ckalloc(sizeof(HAMT));
 	    new->claim = 0;
@@ -1511,8 +1512,8 @@ TclHAMTRemove(
     new->kt = hPtr->kt;
     new->vt = hPtr->vt;
 
-    am = AMRemove(hPtr->x.am, Hash(hPtr, key), hPtr->kt, key,
-	    hPtr->vt, &hash, &l, valuePtr);
+    am = AMRemove(hPtr->kt, hPtr->vt, hPtr->x.am,
+	    Hash(hPtr, key), key, &hash, &l, valuePtr);
     if (am) {
 	new->kvl = NULL;
 	AMClaim(am);
