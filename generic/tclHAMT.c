@@ -682,7 +682,7 @@ ArrayMap AMMergeList(
     const int branchMask = (branchFactor - 1);
 
     size_t tally;
-    int numList, numSubnode, loffset, i;
+    int numList, numSubnode, loffset, soffset, i;
     ClientData *src, *dst;
     ArrayMap new, sub;
 
@@ -697,14 +697,99 @@ ArrayMap AMMergeList(
 
     numList = NumBits(am->kvMap);
     numSubnode = NumBits(am->amMap);
+    loffset = NumBits(am->kvMap & (tally - 1));
+    soffset = NumBits(am->amMap & (tally - 1));
+    src = am->slot;
 
     if (tally & am->kvMap) {
 	/* Hash consistent with existing list child */
 
+	if (am->slot[loffset] == (ClientData)hash) {
+	    /* Hash of list child matches. Merge to it. */
+	    KVList l;
+
+	    if (listIsFirst) {
+		l = KVLMerge(kt, vt, kvl, am->slot[loffset + numList], NULL);
+	    } else {
+		l = KVLMerge(kt, vt, am->slot[loffset + numList], kvl, NULL);
+	    }
+	    if (l == am->slot[loffset + numList]) {
+		return am;
+	    }
+
+	    new = AMNew(numList, numSubnode, am->mask, am->id);
+
+	    new->kvMap = am->kvMap;
+	    new->amMap = am->amMap;
+	    dst = new->slot;
+
+	    /* Copy all hashes */
+	    for (i = 0; i < numList; i++) {
+		*dst++ = *src++;
+	    }
+
+	    /* Copy all lists and insert one */
+	    for (i = 0; i < loffset; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+	    KVLClaim(l);
+	    *dst++ = l;
+	    for (i = loffset + 1; i < numList; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+
+	    /* Copy all subnodes */
+	    for (i = 0; i < numSubnode; i++) {
+		AMClaim((ArrayMap) *src);
+		*dst++ = *src++;
+	    }
+	    return new;
+	}
+	/* Hashes do not match. Create Leaf to hold both. */
+	sub = AMNewLeaf((size_t)am->slot[loffset], 
+		(KVList)am->slot[loffset + numList], hash, kvl);
+
+	/* Remove the list, Insert the leaf subnode */
+	new = AMNew(numList - 1, numSubnode + 1, am->mask, am->id);
+
+	new->kvMap = am->kvMap & ~tally;
+	new->amMap = am->amMap | tally;
+	dst = new->slot;
+	/* hashes */
+	for (i = 0; i < loffset; i++) {
+	    *dst++ = *src++;
+	}
+	src++;
+	for (i = loffset + 1; i < numList; i++) {
+	    *dst++ = *src++;
+	}
+	/* lists */
+	for (i = 0; i < loffset; i++) {
+	    KVLClaim((KVList) *src);
+	    *dst++ = *src++;
+	}
+	src++;
+	for (i = loffset + 1; i < numList; i++) {
+	    KVLClaim((KVList) *src);
+	    *dst++ = *src++;
+	}
+	/* subnodes */
+	for (i = 0; i < soffset; i++) {
+	    AMClaim((ArrayMap) *src);
+	    *dst++ = *src++;
+	}
+	AMClaim(sub);
+	*dst++ = sub;
+	for (i = soffset; i < numSubnode; i++) {
+	    AMClaim((ArrayMap) *src);
+	    *dst++ = *src++;
+	}
+	return new;
     }
     if (tally & am->kvMap) {
 	/* Hash consistent with existing subnode child */
-	soffset = NumBits(am->amMap & (tally - 1));
 
 	/* Merge the list into that subnode child... */
 	sub = AMMergeList(kt, vt, (ArrayMap)am->slot[2*numList + soffset],
@@ -719,6 +804,7 @@ ArrayMap AMMergeList(
 
 	new->kvMap = am->kvMap;
 	new->amMap = am->amMap;
+	dst = new->slot;
 
 	/* Copy all hashes */
 	for (i = 0; i < numList; i++) {
@@ -751,11 +837,8 @@ ArrayMap AMMergeList(
 
     new->kvMap = am->kvMap | tally;
     new->amMap = am->amMap;
-
-    src = am->slot;
     dst = new->slot;
 
-    loffset = NumBits(am->kvMap & (tally - 1));
     /* Copy all hashes and insert one */
     for (i = 0; i < loffset; i++) {
 	*dst++ = *src++;
