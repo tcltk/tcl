@@ -74,6 +74,7 @@ main(
     char msg[300];
     DWORD dwWritten;
     int chars;
+    char *s;
 
     /*
      * Make sure children (cl.exe and link.exe) are kept quiet.
@@ -153,8 +154,13 @@ main(
 		    &dwWritten, NULL);
 		return 0;
 	    }
-	    printf("%s\n", GetVersionFromFile(argv[2], argv[3], *(argv[1]+2) - '0'));
-	    return 0;
+	    s = GetVersionFromFile(argv[2], argv[3], *(argv[1]+2) - '0');
+	    if (s && *s) {
+		printf("%s\n", s);
+		return 0;
+	    } else
+		return 1; /* Version not found. Return non-0 exit code */
+		
 	case 'Q':
 	    if (argc != 3) {
 		chars = snprintf(msg, sizeof(msg) - 1,
