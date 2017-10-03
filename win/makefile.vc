@@ -639,7 +639,7 @@ Display compile progress=no
 Error log file=$(HTMLBASE).log
 Full-text search=Yes
 Language=0x409 English (United States)
-Title=Tcl/Tk $(DOT_VERSION) Help
+Title=Tcl/Tk $(DOTVERSION) Help
 [FILES]
 contents.htm
 docs.css
