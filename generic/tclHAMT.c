@@ -340,6 +340,7 @@ const int branchFactor = CHAR_BIT * sizeof(size_t);
  *	AMNewBranch	Make branch mode from NVList and ArrayMap.
  *	AMFetch		Fetch value from node given a key.
  *	AMMergeList	Create new node, merging node and list.
+ *	AMMergeDescendant	Merge two nodes where one is ancestor.
  *	AMMerge		Create new node, merging two nodes.
  *	AMInsert	Create a new node, inserting new pair into old node.
  *	AMRemove	Create a new node, with any pair matching key removed.
@@ -927,6 +928,177 @@ ArrayMap AMMergeList(
 
     return new;
 }
+
+/* Forward declaration for mutual recursion */
+static ArrayMap		AMMerge(const TclHAMTKeyType *kt,
+			    const TclHAMTValueType *vt, ArrayMap one,
+			    ArrayMap two);
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AMMergeContents --
+ *	Merge the contents of two nodes with same id together to make
+ *	a single node with the union of children.
+ *
+ * Results:
+ *	The node created by the merge.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static
+ArrayMap AMMergeContents(
+    const TclHAMTKeyType *kt,
+    const TclHAMTValueType *vt,
+    ArrayMap one,
+    ArrayMap two)
+{
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AMMergeDescendant --
+ *	Merge two nodes together where one is an ancestor.
+ *
+ * Results:
+ *	The node created by the merge.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static
+ArrayMap AMMergeDescendant(
+    const TclHAMTKeyType *kt,
+    const TclHAMTValueType *vt,
+    ArrayMap ancestor,
+    ArrayMap descendant,
+    int ancestorIsFirst)
+{
+    const int branchMask = (branchFactor - 1);
+    int numList = NumBits(ancestor->kvMap);
+    int numSubnode = NumBits(ancestor->amMap);
+    size_t tally = (size_t)1 << (
+	    (descendant->id >> LSB(ancestor->mask + 1)) & branchMask);
+    int i;
+    int loffset = NumBits(ancestor->kvMap & (tally - 1));
+    int soffset = NumBits(ancestor->amMap & (tally - 1));
+    ClientData *dst, *src = ancestor->slot;
+
+    ArrayMap new, sub;
+
+    if (tally & ancestor->kvMap) {
+	/* Already have list child there. Must merge them. */
+	sub = AMMergeList(kt, vt, descendant, (size_t)ancestor->slot[loffset],
+		ancestor->slot[loffset + numList], ancestorIsFirst);
+	new = AMNew(numList - 1, numSubnode + 1, ancestor->mask, ancestor->id);
+
+	new->kvMap = ancestor->kvMap & ~tally;
+	new->amMap = ancestor->amMap | tally;
+	dst = new->slot;
+
+	/* hashes */
+	for (i = 0; i < loffset; i++) {
+	    *dst++ = *src++;
+	}
+	for (i = loffset + 1; i < numList; i++) {
+	    *dst++ = *src++;
+	}
+	/* lists */
+	for (i = 0; i < loffset; i++) {
+	    KVLClaim((KVList) *src);
+	    *dst++ = *src++;
+	}
+	/* lists */
+	for (i = loffset + 1; i < numList; i++) {
+	    KVLClaim((KVList) *src);
+	    *dst++ = *src++;
+	}
+	/* subnodes */
+	for (i = 0; i < soffset; i++) {
+	    AMClaim((ArrayMap) *src);
+	    *dst++ = *src++;
+	}
+	AMClaim(sub);
+	*dst++ = sub;
+	for (i = soffset; i < numSubnode; i++) {
+	    AMClaim((ArrayMap) *src);
+	    *dst++ = *src++;
+	}
+	return new;
+    }
+    if (tally & ancestor->amMap) {
+	/* Already have node child there. Must merge them. */
+	if (ancestorIsFirst) {
+	    sub = AMMerge(kt, vt,
+		    ancestor->slot[2*numList + soffset], descendant);
+	} else {
+	    sub = AMMerge(kt, vt, descendant,
+		    ancestor->slot[2*numList + soffset]);
+	}
+	if (sub == ancestor->slot[2*numList + soffset]) {
+	    return ancestor;
+	}
+	new = AMNew(numList, numSubnode, ancestor->mask, ancestor->id);
+
+	new->kvMap = ancestor->kvMap;
+	new->amMap = ancestor->amMap;
+	dst = new->slot;
+
+	/* hashes */
+	for (i = 0; i < numList; i++) {
+	    *dst++ = *src++;
+	}
+	/* lists */
+	for (i = 0; i < numList; i++) {
+	    KVLClaim((KVList) *src);
+	    *dst++ = *src++;
+	}
+	/* subnodes */
+	for (i = 0; i < soffset; i++) {
+	    AMClaim((ArrayMap) *src);
+	    *dst++ = *src++;
+	}
+	AMClaim(sub);
+	*dst++ = sub;
+	for (i = soffset + 1; i < numSubnode; i++) {
+	    AMClaim((ArrayMap) *src);
+	    *dst++ = *src++;
+	}
+	return new;
+    }
+    /* Nothing in the way. Make modified copy with new subnode */
+    new = AMNew(numList, numSubnode + 1, ancestor->mask, ancestor->id);
+
+    new->kvMap = ancestor->kvMap;
+    new->amMap = ancestor->amMap | tally;
+    dst = new->slot;
+
+    /* hashes */
+    for (i = 0; i < numList; i++) {
+	*dst++ = *src++;
+    }
+    /* lists */
+    for (i = 0; i < numList; i++) {
+	KVLClaim((KVList) *src);
+	*dst++ = *src++;
+    }
+    /* subnodes */
+    for (i = 0; i < soffset; i++) {
+	AMClaim((ArrayMap) *src);
+	*dst++ = *src++;
+    }
+    AMClaim(descendant);
+    *dst++ = descendant;
+    for (i = soffset; i < numSubnode; i++) {
+	AMClaim((ArrayMap) *src);
+	*dst++ = *src++;
+    }
+    return new;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -960,7 +1132,7 @@ ArrayMap AMMerge(
 	/* two is deeper than one... */
 	if ((one->mask & two->id) == one->id) {
 	    /* ... and is a descendant of one. */
-	    return AMMergeDescendant(one, two, 1);
+	    return AMMergeDescendant(kt, vt, one, two, 1);
 	}
 	/* ...but is not a descendant. Create parent to contain both. */
 	return AMNewParent(one, two);
@@ -968,7 +1140,7 @@ ArrayMap AMMerge(
     /* one is deeper than two... */
     if ((two->mask & one->id) == two->id) {
 	/* ... and is a descendant of two. */
-	return AMMergeDescendant(two, one, 0);
+	return AMMergeDescendant(kt, vt, two, one, 0);
     }
     return AMNewParent(one, two);
 }
