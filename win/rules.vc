@@ -1092,8 +1092,21 @@ OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP
 COMPILERFLAGS  = /D_ATL_XP_TARGETING
 
-# UNICODE - Use the wide char Windows API. Tcl 8.5 does not define this.
+
+# Following is primarily for the benefit of extensions. Tcl 8.5 builds
+# Tcl without /DUNICODE, while 8.6 builds with it defined. When building
+# an extension, it is advisable (but not mandated) to use the same Windows
+# API as the Tcl build. This is accordingly defaulted below. A particular
+# extension can override this by pre-definining USE_WIDECHAR_API.
+!ifndef USE_WIDECHAR_API
 !if $(TCL_VERSION) > 85
+USE_WIDECHAR_API = 1
+!else
+USE_WIDECHAR_API = 0
+!endif
+!endif
+
+!if $(USE_WIDECHAR_API)
 COMPILERFLAGS = $(COMPILERFLAGS) /DUNICODE /D_UNICODE 
 !endif
 

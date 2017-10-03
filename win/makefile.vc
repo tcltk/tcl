@@ -673,6 +673,7 @@ CORE_MACHINE = $(MACHINE)
 CORE_DEBUG = $(DEBUG)
 CORE_TCL_THREADS = $(TCL_THREADS)
 CORE_USE_THREAD_ALLOC = $(USE_THREAD_ALLOC)
+CORE_USE_WIDECHAR_API = $(USE_WIDECHAR_API)
 <<
 
 #---------------------------------------------------------------------
@@ -947,6 +948,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(OUT_DIR)\tclConfig.sh"         "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(WINDIR)\tclooConfig.sh"        "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(WINDIR)\rules.vc"              "$(LIB_INSTALL_DIR)\nmake\"
+	@$(CPY) "$(WINDIR)\rules-ext.vc"          "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WINDIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
 	@echo Installing library http1.0 directory
