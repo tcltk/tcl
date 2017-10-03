@@ -336,9 +336,11 @@ const int branchFactor = CHAR_BIT * sizeof(size_t);
  *	AMDisclaim	Release a claim on a node.
  *	AMNew		allocator
  *	AMNewLeaf	Make leaf node from two NVLists.
+ *	AMNewParent	Make node to contain two descendant nodes.
  *	AMNewBranch	Make branch mode from NVList and ArrayMap.
  *	AMFetch		Fetch value from node given a key.
  *	AMMergeList	Create new node, merging node and list.
+ *	AMMerge		Create new node, merging two nodes.
  *	AMInsert	Create a new node, inserting new pair into old node.
  *	AMRemove	Create a new node, with any pair matching key removed.
  */
@@ -472,6 +474,63 @@ ArrayMap AMNew(
     new->claim = 0;
     new->mask = mask;
     new->id = id;
+    return new;
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * AMNewParent --
+ *
+ * 	Create an ArrayMap to serve as a container for
+ * 	two ArrayMap subnodes.
+ *
+ * Results:
+ *	The created ArrayMap.
+ *
+ * Side effects:
+ * 	Memory is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static
+ArrayMap AMNewParent(
+    ArrayMap one,
+    ArrayMap two)
+{
+    /* Mask used to carve out branch index. */
+    const int branchMask = (branchFactor - 1);
+
+    /* Bits in a index selecting a child of a node */
+    const int branchShift = TclMSB(branchFactor);
+
+    /* The depth of the tree for the node we must create.
+     * Determine by lowest bit where hashes differ. */
+    int depth = LSB(one->id ^ two->id) / branchShift;
+
+    /* Compute the mask for all nodes at this depth */
+    size_t mask = ((size_t)1 << (depth * branchShift)) - 1;
+
+    int idx1 = (one->id >> (depth * branchShift)) & branchMask;
+    int idx2 = (two->id >> (depth * branchShift)) & branchMask;
+    ArrayMap new = AMNew(0, 2, mask, one->id & mask);
+
+    assert ( idx1 != idx2 );
+    assert ( (two->id & mask) == new->id );
+
+    new->kvMap = 0;
+    new->amMap = ((size_t)1 << idx1) | ((size_t)1 << idx2);
+
+    AMClaim(one);
+    AMClaim(two);
+
+    if (idx1 < idx2) {
+	new->slot[0] = one;
+	new->slot[1] = two;
+    } else {
+	new->slot[0] = two;
+	new->slot[1] = one;
+    }
     return new;
 }
 /*
@@ -867,6 +926,51 @@ ArrayMap AMMergeList(
     }
 
     return new;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AMMerge --
+ *	Merge two nodes together to make a node.
+ *
+ * Results:
+ *	The node created by the merge.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static
+ArrayMap AMMerge(
+    const TclHAMTKeyType *kt,
+    const TclHAMTValueType *vt,
+    ArrayMap one,
+    ArrayMap two)
+{
+    if (one->mask == two->mask) {
+	/* Nodes at the same depth ... */
+	if (one->id == two->id) {
+	    /* ... and the same id; merge contents */
+	    return AMMergeContents(kt, vt, one, two);
+	}
+	/* ... but are not same. Create parent to contain both. */
+	return AMNewParent(one, two);
+    }
+    if (one->mask < two->mask) {
+	/* two is deeper than one... */
+	if ((one->mask & two->id) == one->id) {
+	    /* ... and is a descendant of one. */
+	    return AMMergeDescendant(one, two, 1);
+	}
+	/* ...but is not a descendant. Create parent to contain both. */
+	return AMNewParent(one, two);
+    }
+    /* one is deeper than two... */
+    if ((two->mask & one->id) == two->id) {
+	/* ... and is a descendant of two. */
+	return AMMergeDescendant(two, one, 0);
+    }
+    return AMNewParent(one, two);
 }
 
 /*
@@ -1811,7 +1915,15 @@ TclHAMTMerge(
 	return HAMTNewRoot(one->kt, one->vt, am);
     }
 
-    /* AMMerge() */
+    /* Merge two trees */
+    am = AMMerge(one->kt, one->vt, one->x.am, two->x.am);
+    if (am == one->x.am) {
+	return one;
+    }
+    if (am == two->x.am) {
+	return two;
+    }
+    return HAMTNewRoot(one->kt, one->vt, am);
 }
 
 
