@@ -682,6 +682,8 @@ ArrayMap AMMergeList(
     const int branchMask = (branchFactor - 1);
 
     size_t tally;
+    int numList, numSubnode, loffset, i;
+    ClientData *src, *dst;
     ArrayMap new;
 
     if ((am->mask & hash) != am->id) {
@@ -692,6 +694,10 @@ ArrayMap AMMergeList(
 
     /* Hash indicates key should be descendant of am, which? */
     tally = (size_t)1 << ((hash >> LSB(am->mask + 1)) & branchMask);
+
+    numList = NumBits(am->kvMap);
+    numSubnode = NumBits(am->amMap);
+
     if (tally & am->kvMap) {
 	/* Hash consistent with existing list child */
 
@@ -701,8 +707,43 @@ ArrayMap AMMergeList(
     }
 
     /* am is not using this tally; copy am and add it. */
-//    new = AMNew();
+    new = AMNew(numList + 1, numSubnode, am->mask, am->id);
 
+    new->kvMap = am->kvMap | tally;
+    new->amMap = am->amMap;
+
+    src = am->slot;
+    dst = new->slot;
+
+    loffset = NumBits(am->kvMap & (tally - 1));
+    /* Copy all hashes and insert one */
+    for (i = 0; i < loffset; i++) {
+	*dst++ = *src++;
+    }
+    *dst++ = (ClientData)hash;
+    for (i = loffset; i < numList; i++) {
+	*dst++ = *src++;
+    }
+
+    /* Copy all lists and insert one */
+    for (i = 0; i < loffset; i++) {
+	KVLClaim((KVList) *src);
+	*dst++ = *src++;
+    }
+    KVLClaim(kvl);
+    *dst++ = kvl;
+    for (i = loffset; i < numList; i++) {
+	KVLClaim((KVList) *src);
+	*dst++ = *src++;
+    }
+
+    /* Copy all subnodes */
+    for (i = 0; i < numSubnode; i++) {
+	AMClaim((ArrayMap) *src);
+	*dst++ = *src++;
+    }
+
+    return new;
 }
 
 /*
