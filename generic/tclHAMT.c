@@ -970,6 +970,9 @@ ArrayMap AMMergeContents(
     ClientData *src2 = two->slot;
     ClientData *dst;
 
+    int numList1 = NumBits(one->kvMap);
+    int numList2 = NumBits(two->kvMap);
+
     for (tally = (size_t)1; tally; tally = tally << 1) {
 	if (!(tally & (amMap | kvMap))) {
 	    assert ((one->amMap & tally)== 0);	/* would be in amMap */
@@ -1010,47 +1013,98 @@ ArrayMap AMMergeContents(
     for (tally = (size_t)1; tally; tally = tally << 1) {
 	if (tally & kvMap) {
 	    if (tally & one->kvMap) {
-		*dst = *src1++;
+		*dst = *src1;
 	    }
 	    if (tally & two->kvMap) {
-		*dst = *src2++;
+		*dst = *src2;
 	    }
 	    dst++;
 	}
+	if (tally & one->kvMap) {
+	    src1++;
+	}
+	if (tally & two->kvMap) {
+	    src2++;
+	}
     }
+
+assert( src1 == one->slot + NumBits(one->kvMap) );
+assert( src2 == two->slot + NumBits(two->kvMap) );
 
     /* Copy/merge the lists */
     for (tally = (size_t)1; tally; tally = tally << 1) {
 	if (tally & kvMap) {
 	    if ((tally & one->kvMap) && (tally & two->kvMap)) {
-		KVList l = KVLMerge(kt, vt, *src1++, *src2++, NULL);
+		KVList l = KVLMerge(kt, vt, *src1, *src2, NULL);
 		KVLClaim(l);
 		*dst++ = l;
 	    } else if (tally & one->kvMap) {
 		KVLClaim(*src1);
-		*dst++ = *src1++;
+		*dst++ = *src1;
 	    } else {
 		assert (tally & two->kvMap);
 		KVLClaim(*src2);
-		*dst++ = *src2++;
+		*dst++ = *src2;
 	    }
 	}
+	if (tally & one->kvMap) {
+	    src1++;
+	}
+	if (tally & two->kvMap) {
+	    src2++;
+	}
     }
+
+assert( src1 == one->slot + 2*NumBits(one->kvMap) );
+assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 
     /* Copy/merge the subnodes */
     for (tally = (size_t)1; tally; tally = tally << 1) {
 	if (tally & amMap) {
+	    ArrayMap am;
+	    int loffset1, loffset2;
+	    size_t hash1, hash2;
+	    KVList l1, l2;
+
 	    if ((tally & one->amMap) && (tally & two->amMap)) {
-		ArrayMap am = AMMerge(kt, vt, *src1++, *src2++);
+		am = AMMerge(kt, vt, *src1++, *src2++);
 		AMClaim(am);
 		*dst++ = am;
 	    } else if (tally & one->amMap) {
-		AMClaim(*src1);
-		*dst++ = *src1++;
+		if (tally & two->kvMap) {
+		    loffset2 = NumBits(two->kvMap & (tally - 1));
+		    hash2 = (size_t)two->slot[loffset2];
+		    l2 = two->slot[loffset2 + numList2];
+
+		    am = AMMergeList(kt, vt, *src1++, hash2, l2, 0);
+		} else {
+		    am = *src1++;
+		}
+		AMClaim(am);
+		*dst++ = am;
+	    } else if (tally & two->amMap) {
+		if (tally & one->kvMap) {
+		    loffset1 = NumBits(one->kvMap & (tally - 1));
+		    hash1 = (size_t)one->slot[loffset1];
+		    l1 = one->slot[loffset1 + numList1];
+		    am = AMMergeList(kt, vt, *src2++, hash1, l1, 0);
+		} else {
+		    am = *src2++;
+		}
+		AMClaim(am);
+		*dst++ = am;
 	    } else {
-		assert (tally & two->amMap);
-		AMClaim(*src2);
-		*dst++ = *src2++;
+		/* TRICKY!!! Have to create node from two lists. */
+		loffset1 = NumBits(one->kvMap & (tally - 1));
+		loffset2 = NumBits(two->kvMap & (tally - 1));
+		hash1 = (size_t)one->slot[loffset1];
+		hash2 = (size_t)two->slot[loffset2];
+		l1 = one->slot[loffset1 + numList1];
+		l2 = two->slot[loffset2 + numList2];
+
+		am = AMNewLeaf(hash1, l1, hash2, l2);
+		AMClaim(am);
+		*dst++ = am;
 	    }
 	}
     }
@@ -1103,6 +1157,7 @@ ArrayMap AMMergeDescendant(
 	for (i = 0; i < loffset; i++) {
 	    *dst++ = *src++;
 	}
+	src++;
 	for (i = loffset + 1; i < numList; i++) {
 	    *dst++ = *src++;
 	}
@@ -1111,6 +1166,7 @@ ArrayMap AMMergeDescendant(
 	    KVLClaim((KVList) *src);
 	    *dst++ = *src++;
 	}
+	src++;
 	/* lists */
 	for (i = loffset + 1; i < numList; i++) {
 	    KVLClaim((KVList) *src);
@@ -1161,6 +1217,7 @@ ArrayMap AMMergeDescendant(
 	    AMClaim((ArrayMap) *src);
 	    *dst++ = *src++;
 	}
+	src++;
 	AMClaim(sub);
 	*dst++ = sub;
 	for (i = soffset + 1; i < numSubnode; i++) {
@@ -2230,7 +2287,7 @@ TclHAMTFirst(
     TclHAMT hamt)
 {
     const int branchShift = TclMSB(branchFactor);
-    const int depth = branchFactor / branchShift;
+    const int depth = CHAR_BIT * sizeof(size_t) / branchShift;
 
     HAMT *hPtr = hamt;
     Idx *i;
