@@ -334,6 +334,7 @@ UpdateStringOfHamt(
  */
 
 static Tcl_ObjCmdProc	HamtCreateCmd;
+static Tcl_ObjCmdProc	HamtMergeCmd;
 static Tcl_ObjCmdProc	HamtRemoveCmd;
 static Tcl_ObjCmdProc	HamtReplaceCmd;
 
@@ -343,6 +344,7 @@ static Tcl_ObjCmdProc	HamtReplaceCmd;
 
 static const EnsembleImplMap implementationMap[] = {
     {"create",	HamtCreateCmd,	NULL, NULL, NULL, 0 },
+    {"merge",	HamtMergeCmd,	NULL, NULL, NULL, 0 },
     {"remove",	HamtRemoveCmd,	NULL, NULL, NULL, 0 },
     {"replace", HamtReplaceCmd, NULL, NULL, NULL, 0 },
     {NULL, NULL, NULL, NULL, NULL, 0}
@@ -410,6 +412,81 @@ HamtCreateCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, hamtObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HamtMergeCmd --
+ *
+ *	This function implements the "hamt merge" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+HamtMergeCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    TclHAMT accum;
+    int i;
+
+    if (objc == 1) {
+	/*
+	 * No dictionary arguments; return default (empty value).
+	 */
+
+	return TCL_OK;
+    }
+
+    /*
+     * Make sure first argument is a hamt.
+     */
+
+    accum = GetHAMTFromObj(interp, objv[1]);
+    if (NULL == accum) {
+	return TCL_ERROR;
+    }
+
+    if (objc == 2) {
+	/*
+	 * Single argument, return it.
+	 */
+
+	Tcl_SetObjResult(interp, objv[1]);
+	return TCL_OK;
+    }
+
+    /*
+     * Normal behaviour: combining two (or more) hamt.
+     */
+
+    TclHAMTClaim(accum);
+    for (i=2 ; i<objc ; i++) {
+	TclHAMT new, hamt;
+
+	hamt = GetHAMTFromObj(interp, objv[i]);
+	if (NULL == hamt) {
+	    TclHAMTDisclaim(accum);
+	    return TCL_ERROR;
+	}
+	new = TclHAMTMerge(accum, hamt);
+	TclHAMTClaim(new);
+	TclHAMTDisclaim(accum);
+	accum = new;
+    }
+    Tcl_SetObjResult(interp, NewHAMTObj(accum));
+    TclHAMTDisclaim(accum);
     return TCL_OK;
 }
 
@@ -518,8 +595,6 @@ HamtReplaceCmd(
 static void		DeleteDict(struct Dict *dict);
 static int		DictAppendCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictCreateCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
 static int		DictExistsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictFilterCmd(ClientData dummy, Tcl_Interp *interp,
@@ -533,12 +608,6 @@ static int		DictInfoCmd(ClientData dummy, Tcl_Interp *interp,
 static int		DictKeysCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictLappendCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictMergeCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictRemoveCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictReplaceCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictSetCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
@@ -571,7 +640,6 @@ static Tcl_NRPostProc	DictMapLoopCallback;
 
 static const EnsembleImplMap implementationMap[] = {
     {"append",	DictAppendCmd,	TclCompileDictAppendCmd, NULL, NULL, 0 },
-    {"create",	DictCreateCmd,	TclCompileDictCreateCmd, NULL, NULL, 0 },
     {"exists",	DictExistsCmd,	TclCompileDictExistsCmd, NULL, NULL, 0 },
     {"filter",	DictFilterCmd,	NULL, NULL, NULL, 0 },
     {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd, NULL, 0 },
@@ -581,8 +649,6 @@ static const EnsembleImplMap implementationMap[] = {
     {"keys",	DictKeysCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
     {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, NULL, 0 },
     {"map", 	NULL,       	TclCompileDictMapCmd, DictMapNRCmd, NULL, 0 },
-    {"merge",	DictMergeCmd,	TclCompileDictMergeCmd, NULL, NULL, 0 },
-    {"remove",	DictRemoveCmd,	TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
     {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, NULL, 0 },
     {"size",	DictSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
     {"unset",	DictUnsetCmd,	TclCompileDictUnsetCmd, NULL, NULL, 0 },
@@ -1545,55 +1611,6 @@ Tcl_DbNewDictObj(
 
 /***** START OF FUNCTIONS IMPLEMENTING TCL COMMANDS *****/
 
-/*
- *----------------------------------------------------------------------
- *
- * DictCreateCmd --
- *
- *	This function implements the "dict create" Tcl command. See the user
- *	documentation for details on what it does, and TIP#111 for the formal
- *	specification.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-DictCreateCmd(
-    ClientData dummy,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    Tcl_Obj *dictObj;
-    int i;
-
-    /*
-     * Must have an even number of arguments; note that number of preceding
-     * arguments (i.e. "dict create" is also even, which makes this much
-     * easier.)
-     */
-
-    if ((objc & 1) == 0) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?key value ...?");
-	return TCL_ERROR;
-    }
-
-    dictObj = Tcl_NewDictObj();
-    for (i=1 ; i<objc ; i+=2) {
-	/*
-	 * The next command is assumed to never fail...
-	 */
-	Tcl_DictObjPut(NULL, dictObj, objv[i], objv[i+1]);
-    }
-    Tcl_SetObjResult(interp, dictObj);
-    return TCL_OK;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -1685,196 +1702,6 @@ DictGetCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, valuePtr);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DictReplaceCmd --
- *
- *	This function implements the "dict replace" Tcl command. See the user
- *	documentation for details on what it does, and TIP#111 for the formal
- *	specification.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-DictReplaceCmd(
-    ClientData dummy,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    Tcl_Obj *dictPtr;
-    int i;
-
-    if ((objc < 2) || (objc & 1)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key value ...?");
-	return TCL_ERROR;
-    }
-
-    dictPtr = objv[1];
-    if (dictPtr->typePtr != &tclDictType
-	    && SetDictFromAny(interp, dictPtr) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (Tcl_IsShared(dictPtr)) {
-	dictPtr = Tcl_DuplicateObj(dictPtr);
-    }
-    if (dictPtr->bytes != NULL) {
-	TclInvalidateStringRep(dictPtr);
-    }
-    for (i=2 ; i<objc ; i+=2) {
-	Tcl_DictObjPut(NULL, dictPtr, objv[i], objv[i+1]);
-    }
-    Tcl_SetObjResult(interp, dictPtr);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DictRemoveCmd --
- *
- *	This function implements the "dict remove" Tcl command. See the user
- *	documentation for details on what it does, and TIP#111 for the formal
- *	specification.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-DictRemoveCmd(
-    ClientData dummy,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    Tcl_Obj *dictPtr;
-    int i;
-
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...?");
-	return TCL_ERROR;
-    }
-
-    dictPtr = objv[1];
-    if (dictPtr->typePtr != &tclDictType
-	    && SetDictFromAny(interp, dictPtr) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (Tcl_IsShared(dictPtr)) {
-	dictPtr = Tcl_DuplicateObj(dictPtr);
-    }
-    if (dictPtr->bytes != NULL) {
-	TclInvalidateStringRep(dictPtr);
-    }
-    for (i=2 ; i<objc ; i++) {
-	Tcl_DictObjRemove(NULL, dictPtr, objv[i]);
-    }
-    Tcl_SetObjResult(interp, dictPtr);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DictMergeCmd --
- *
- *	This function implements the "dict merge" Tcl command. See the user
- *	documentation for details on what it does, and TIP#163 for the formal
- *	specification.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-DictMergeCmd(
-    ClientData dummy,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    Tcl_Obj *targetObj, *keyObj = NULL, *valueObj = NULL;
-    int allocatedDict = 0;
-    int i, done;
-    Tcl_DictSearch search;
-
-    if (objc == 1) {
-	/*
-	 * No dictionary arguments; return default (empty value).
-	 */
-
-	return TCL_OK;
-    }
-
-    /*
-     * Make sure first argument is a dictionary.
-     */
-
-    targetObj = objv[1];
-    if (targetObj->typePtr != &tclDictType
-	    && SetDictFromAny(interp, targetObj) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    if (objc == 2) {
-	/*
-	 * Single argument, return it.
-	 */
-
-	Tcl_SetObjResult(interp, objv[1]);
-	return TCL_OK;
-    }
-
-    /*
-     * Normal behaviour: combining two (or more) dictionaries.
-     */
-
-    if (Tcl_IsShared(targetObj)) {
-	targetObj = Tcl_DuplicateObj(targetObj);
-	allocatedDict = 1;
-    }
-    for (i=2 ; i<objc ; i++) {
-	if (Tcl_DictObjFirst(interp, objv[i], &search, &keyObj, &valueObj,
-		&done) != TCL_OK) {
-	    if (allocatedDict) {
-		TclDecrRefCount(targetObj);
-	    }
-	    return TCL_ERROR;
-	}
-	while (!done) {
-	    /*
-	     * Next line can't fail; already know we have a dictionary in
-	     * targetObj.
-	     */
-
-	    Tcl_DictObjPut(NULL, targetObj, keyObj, valueObj);
-	    Tcl_DictObjNext(&search, &keyObj, &valueObj, &done);
-	}
-	Tcl_DictObjDone(&search);
-    }
-    Tcl_SetObjResult(interp, targetObj);
     return TCL_OK;
 }
 
