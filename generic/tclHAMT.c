@@ -684,7 +684,7 @@ ArrayMap AMMergeList(
     size_t tally;
     int numList, numSubnode, loffset, i;
     ClientData *src, *dst;
-    ArrayMap new;
+    ArrayMap new, sub;
 
     if ((am->mask & hash) != am->id) {
         /* Hash indicates list does not belong in this subtree */
@@ -704,6 +704,46 @@ ArrayMap AMMergeList(
     }
     if (tally & am->kvMap) {
 	/* Hash consistent with existing subnode child */
+	soffset = NumBits(am->amMap & (tally - 1));
+
+	/* Merge the list into that subnode child... */
+	sub = AMMergeList(kt, vt, (ArrayMap)am->slot[2*numList + soffset],
+		hash, kvl, listIsFirst);
+	if (sub == am->slot[2*numList + soffset]) {
+	    /* Subnode unchanged, map unchanged, just return */
+	    return am;
+	}
+
+	/* Copy slots, replacing the subnode with the merge result */
+	new = AMNew(numList, numSubnode, am->mask, am->id);
+
+	new->kvMap = am->kvMap;
+	new->amMap = am->amMap;
+
+	/* Copy all hashes */
+	for (i = 0; i < numList; i++) {
+	    *dst++ = *src++;
+	}
+
+	/* Copy all lists */
+	for (i = 0; i < numList; i++) {
+	    KVLClaim((KVList) *src);
+	    *dst++ = *src++;
+	}
+
+	/* Copy all subnodes, replacing one */
+	for (i = 0; i < soffset; i++) {
+	    AMClaim((ArrayMap) *src);
+	    *dst++ = *src++;
+	}
+	src++;
+	AMClaim(sub);
+	*dst++ = sub;
+	for (i = soffset + 1; i < numSubnode; i++) {
+	    AMClaim((ArrayMap) *src);
+	    *dst++ = *src++;
+	}
+	return new;
     }
 
     /* am is not using this tally; copy am and add it. */
