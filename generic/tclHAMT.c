@@ -955,7 +955,106 @@ ArrayMap AMMergeContents(
     ArrayMap one,
     ArrayMap two)
 {
+    ArrayMap new;
+    int numList, numSubnode;
 
+    /* If either tree has a particular subnode, the merger must too */
+    size_t amMap = one->amMap | two->amMap;
+
+    /* If only one of two has list child, the merge will too, providing
+     * there's not already a subnode claiming the slot. */
+    size_t kvMap = (one->kvMap ^ two->kvMap) & ~amMap;
+
+    size_t tally;
+    ClientData *src1= one->slot;
+    ClientData *src2 = two->slot;
+    ClientData *dst;
+
+    for (tally = (size_t)1; tally; tally = tally << 1) {
+	if (!(tally & (amMap | kvMap))) {
+	    assert ((one->amMap & tally)== 0);	/* would be in amMap */
+	    assert ((two->amMap & tally)== 0);	/* would be in amMap */
+	    assert ((one->kvMap & tally) == (two->kvMap & tally));
+
+	    /* Remaining case is when both have list child @ tally ... */
+	    if (tally & one->kvMap) {
+		if (*src1 == *src2) {
+	    /* When hashes same, this will make a merged list in merge. */
+		    kvMap = kvMap | tally;
+		} else {
+	    /* When hashes differ, this will make a subnode child in merge. */
+		    amMap = amMap | tally;
+		}
+	    }
+	}
+	if (tally & one->kvMap) {
+	    src1++;
+	}
+	if (tally & two->kvMap) {
+	    src2++;
+	}
+    }
+
+    /* We now have the maps for the merged node. */
+    numList = NumBits(kvMap);
+    numSubnode = NumBits(amMap);
+    new = AMNew(numList, numSubnode, one->mask, one->id);
+
+    new->kvMap = kvMap;
+    new->amMap = amMap;
+    dst = new->slot;
+
+    /* Copy the hashes */
+    src1 = one->slot;
+    src2 = two->slot;
+    for (tally = (size_t)1; tally; tally = tally << 1) {
+	if (tally & kvMap) {
+	    if (tally & one->kvMap) {
+		*dst = *src1++;
+	    }
+	    if (tally & two->kvMap) {
+		*dst = *src2++;
+	    }
+	    dst++;
+	}
+    }
+
+    /* Copy/merge the lists */
+    for (tally = (size_t)1; tally; tally = tally << 1) {
+	if (tally & kvMap) {
+	    if ((tally & one->kvMap) && (tally & two->kvMap)) {
+		KVList l = KVLMerge(kt, vt, *src1++, *src2++, NULL);
+		KVLClaim(l);
+		*dst++ = l;
+	    } else if (tally & one->kvMap) {
+		KVLClaim(*src1);
+		*dst++ = *src1++;
+	    } else {
+		assert (tally & two->kvMap);
+		KVLClaim(*src2);
+		*dst++ = *src2++;
+	    }
+	}
+    }
+
+    /* Copy/merge the subnodes */
+    for (tally = (size_t)1; tally; tally = tally << 1) {
+	if (tally & amMap) {
+	    if ((tally & one->amMap) && (tally & two->amMap)) {
+		ArrayMap am = AMMerge(kt, vt, *src1++, *src2++);
+		AMClaim(am);
+		*dst++ = am;
+	    } else if (tally & one->amMap) {
+		AMClaim(*src1);
+		*dst++ = *src1++;
+	    } else {
+		assert (tally & two->amMap);
+		AMClaim(*src2);
+		*dst++ = *src2++;
+	    }
+	}
+    }
+    return new;
 }
 
 /*
