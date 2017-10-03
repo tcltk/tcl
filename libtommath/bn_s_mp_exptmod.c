@@ -25,7 +25,7 @@ int s_mp_exptmod(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y, i
    mp_int  M[TAB_SIZE], res, mu;
    mp_digit buf;
    int     err, bitbuf, bitcpy, bitcnt, mode, digidx, x, y, winsize;
-   int (*redux)(mp_int *,const mp_int *,mp_int *);
+   int (*redux)(mp_int *, const mp_int *, const mp_int *);
 
    /* find window size */
    x = mp_count_bits(X);
