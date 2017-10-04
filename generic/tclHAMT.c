@@ -328,7 +328,8 @@ typedef struct AMNode {
  */
 
 /* Bits in a size_t. Use as our branching factor. Max children per node. */
-const int branchFactor = CHAR_BIT * sizeof(size_t);
+//const int branchFactor = CHAR_BIT * sizeof(size_t);
+const int branchFactor = 2;
 
 /*
  * The operations on an ArrayMap:
@@ -736,6 +737,7 @@ ArrayMap AMMergeList(
     ArrayMap am,
     size_t hash,
     KVList kvl,
+    ClientData *valuePtr,
     int listIsFirst)
 {
     /* Mask used to carve out branch index. */
@@ -769,9 +771,9 @@ ArrayMap AMMergeList(
 	    KVList l;
 
 	    if (listIsFirst) {
-		l = KVLMerge(kt, vt, kvl, am->slot[loffset + numList], NULL);
+		l = KVLMerge(kt, vt, kvl, am->slot[loffset + numList], valuePtr);
 	    } else {
-		l = KVLMerge(kt, vt, am->slot[loffset + numList], kvl, NULL);
+		l = KVLMerge(kt, vt, am->slot[loffset + numList], kvl, valuePtr);
 	    }
 	    if (l == am->slot[loffset + numList]) {
 		return am;
@@ -793,6 +795,7 @@ ArrayMap AMMergeList(
 		KVLClaim((KVList) *src);
 		*dst++ = *src++;
 	    }
+	    src++;
 	    KVLClaim(l);
 	    *dst++ = l;
 	    for (i = loffset + 1; i < numList; i++) {
@@ -853,7 +856,7 @@ ArrayMap AMMergeList(
 
 	/* Merge the list into that subnode child... */
 	sub = AMMergeList(kt, vt, (ArrayMap)am->slot[2*numList + soffset],
-		hash, kvl, listIsFirst);
+		hash, kvl, valuePtr, listIsFirst);
 	if (sub == am->slot[2*numList + soffset]) {
 	    /* Subnode unchanged, map unchanged, just return */
 	    return am;
@@ -1076,7 +1079,7 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 		    hash2 = (size_t)two->slot[loffset2];
 		    l2 = two->slot[loffset2 + numList2];
 
-		    am = AMMergeList(kt, vt, *src1++, hash2, l2, 0);
+		    am = AMMergeList(kt, vt, *src1++, hash2, l2, NULL, 0);
 		} else {
 		    am = *src1++;
 		}
@@ -1087,7 +1090,7 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 		    loffset1 = NumBits(one->kvMap & (tally - 1));
 		    hash1 = (size_t)one->slot[loffset1];
 		    l1 = one->slot[loffset1 + numList1];
-		    am = AMMergeList(kt, vt, *src2++, hash1, l1, 0);
+		    am = AMMergeList(kt, vt, *src2++, hash1, l1, NULL, 0);
 		} else {
 		    am = *src2++;
 		}
@@ -1146,7 +1149,7 @@ ArrayMap AMMergeDescendant(
     if (tally & ancestor->kvMap) {
 	/* Already have list child there. Must merge them. */
 	sub = AMMergeList(kt, vt, descendant, (size_t)ancestor->slot[loffset],
-		ancestor->slot[loffset + numList], ancestorIsFirst);
+		ancestor->slot[loffset + numList], NULL, ancestorIsFirst);
 	new = AMNew(numList - 1, numSubnode + 1, ancestor->mask, ancestor->id);
 
 	new->kvMap = ancestor->kvMap & ~tally;
@@ -1328,13 +1331,24 @@ ArrayMap AMInsert(
     ClientData value,
     ClientData *valuePtr)
 {
+#if 1
+    KVList new = KVLInsert(kt, vt, NULL, key, value, valuePtr);
+    ArrayMap result = AMMergeList(kt, vt, am, hash, new, valuePtr, 0);
+
+    if (result == am) {
+	/* No-op insert; discard new node */
+	KVLClaim(new);
+	KVLDisclaim(kt, vt, new);
+    }
+    return result;
+#else
     /* Mask used to carve out branch index. */
     const int branchMask = (branchFactor - 1);
 
     size_t tally;
     int numList, numSubnode, loffset, soffset, i;
-    ArrayMap new, sub;
     ClientData *src, *dst;
+    ArrayMap new, sub;
 
     if ((am->mask & hash) != am->id) {
 	/* Hash indicates key is not in this subtree */
@@ -1350,66 +1364,20 @@ ArrayMap AMInsert(
     }
 
     /* Hash indicates key should be descendant of am */
+    tally = (size_t)1 << ((hash >> LSB(am->mask + 1)) & branchMask);
+
     numList = NumBits(am->kvMap);
     numSubnode = NumBits(am->amMap);
+    loffset = NumBits(am->kvMap & (tally - 1));
+    soffset = NumBits(am->amMap & (tally - 1));
+    src = am->slot;
 
-    tally = (size_t)1 << ((hash >> LSB(am->mask + 1)) & branchMask);
     if (tally & am->kvMap) {
 
 	/* Hash is consistent with one of our KVList children... */
-	loffset = NumBits(am->kvMap & (tally - 1));
 
-	if (am->slot[loffset] != (ClientData)hash) {
-	    /* ...but does not actually match.
-	     * Need a new KVList to join with this one. */
-	
-	    sub = AMNewLeaf((size_t)am->slot[loffset],
-		    am->slot[loffset + numList], hash,
-		    KVLInsert(kt, vt, NULL, key, value, valuePtr));
+	if (am->slot[loffset] == (ClientData)hash) {
 
-	    /* Modified copy of am, - list + sub */
-	    new = AMNew(numList-1, numSubnode+1, am->mask, am->id);
-
-	    new->kvMap = am->kvMap & ~tally;
-	    new->amMap = am->amMap | tally;
-
-	    src = am->slot;
-	    dst = new->slot;
-	    /* Copy hashes (except one we're deleting) */
-	    for (i = 0; i < loffset; i++) {
-		*dst++ = *src++;
-	    }
-	    src++;
-	    for (i = loffset + 1; i < numList; i++) {
-		*dst++ = *src++;
-	    }
-
-	    /* Copy list (except one we're deleting) */
-	    for (i = 0; i < loffset; i++) {
-		KVLClaim((KVList) *src);
-		*dst++ = *src++;
-	    }
-	    src++;
-	    for (i = loffset + 1; i < numList; i++) {
-		KVLClaim((KVList) *src);
-		*dst++ = *src++;
-	    }
-
-	    /* Copy subnodes and add the new one */
-	    soffset = NumBits(am->amMap & (tally - 1));
-	    for (i = 0; i < soffset; i++) {
-		AMClaim((ArrayMap) *src);
-		*dst++ = *src++;
-	    }
-	    AMClaim(sub);
-	    *dst++ = sub;
-	    for (i = soffset; i < numSubnode; i++) {
-		AMClaim((ArrayMap) *src);
-		*dst++ = *src++;
-	    }
-
-	    return new;
-	} else {
 	    /* Found the right KVList. Now Insert the pair into it. */
 	    KVList l = KVLInsert(kt, vt, am->slot[loffset + numList],
 		    key, value, valuePtr);
@@ -1426,7 +1394,6 @@ ArrayMap AMInsert(
 	    new->kvMap = am->kvMap;
 	    new->amMap = am->amMap;
 
-	    src = am->slot;
 	    dst = new->slot;
 	    /* Copy all hashes */
 	    for (i = 0; i < numList; i++) {
@@ -1453,11 +1420,56 @@ ArrayMap AMInsert(
 	    }
 	    return new;
 	}
+	    /* ...but does not actually match.
+	     * Need a new KVList to join with this one. */
+	
+	    sub = AMNewLeaf((size_t)am->slot[loffset],
+		    am->slot[loffset + numList], hash,
+		    KVLInsert(kt, vt, NULL, key, value, valuePtr));
+
+	    /* Modified copy of am, - list + sub */
+	    new = AMNew(numList-1, numSubnode+1, am->mask, am->id);
+
+	    new->kvMap = am->kvMap & ~tally;
+	    new->amMap = am->amMap | tally;
+
+	    dst = new->slot;
+	    /* Copy hashes (except one we're deleting) */
+	    for (i = 0; i < loffset; i++) {
+		*dst++ = *src++;
+	    }
+	    src++;
+	    for (i = loffset + 1; i < numList; i++) {
+		*dst++ = *src++;
+	    }
+
+	    /* Copy list (except one we're deleting) */
+	    for (i = 0; i < loffset; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+	    src++;
+	    for (i = loffset + 1; i < numList; i++) {
+		KVLClaim((KVList) *src);
+		*dst++ = *src++;
+	    }
+
+	    /* Copy subnodes and add the new one */
+	    for (i = 0; i < soffset; i++) {
+		AMClaim((ArrayMap) *src);
+		*dst++ = *src++;
+	    }
+	    AMClaim(sub);
+	    *dst++ = sub;
+	    for (i = soffset; i < numSubnode; i++) {
+		AMClaim((ArrayMap) *src);
+		*dst++ = *src++;
+	    }
+
+	    return new;
     }
     if (tally & am->amMap) {
 	/* Hash is consistent with one of our subnode children... */
-	soffset = NumBits(am->amMap & (tally - 1));
-
 	sub = AMInsert(kt, vt, (ArrayMap)am->slot[2*numList + soffset],
 		hash, key, value, valuePtr);
 
@@ -1473,7 +1485,6 @@ ArrayMap AMInsert(
 	new->kvMap = am->kvMap;
 	new->amMap = am->amMap;
 
-	src = am->slot;
 	dst = new->slot;
 	/* Copy all hashes */
 	for (i = 0; i < numList; i++) {
@@ -1508,10 +1519,8 @@ ArrayMap AMInsert(
     new->kvMap = am->kvMap | tally;
     new->amMap = am->amMap;
 
-    src = am->slot;
     dst = new->slot;
 
-    loffset = NumBits(am->kvMap & (tally - 1));
     /* Copy all hashes and insert one */
     for (i = 0; i < loffset; i++) {
 	*dst++ = *src++;
@@ -1541,6 +1550,7 @@ ArrayMap AMInsert(
     }
 
     return new;
+#endif
 }
 
 /*
@@ -2228,7 +2238,7 @@ TclHAMTMerge(
 	}
 	/* two has a tree */
 	am = AMMergeList(one->kt, one->vt,
-		two->x.am, one->x.hash, one->kvl, 1);
+		two->x.am, one->x.hash, one->kvl, NULL, 1);
 	if (am == two->x.am) {
 	    /* Merge gave back same tree. Avoid a copy. */
 	    return two;
@@ -2239,7 +2249,7 @@ TclHAMTMerge(
     /* one has a tree */
     if (two->kvl) {
 	am = AMMergeList(one->kt, one->vt,
-		one->x.am, two->x.hash, two->kvl, 0);
+		one->x.am, two->x.hash, two->kvl, NULL, 0);
 	if (am == one->x.am) {
 	    /* Merge gave back same tree. Avoid a copy. */
 	    return one;
