@@ -37,7 +37,8 @@ DOING_TK = 1
 # so this file is necessarily verbose. It's broken down into
 # the following parts.
 #
-# 0. Sanity check that compiler environment is set up.
+# 0. Sanity check that compiler environment is set up and initialize
+#    any built-in settings from the parent makefile
 # 1. First define the external tools used for compiling, copying etc.
 #    as this is independent of everything else.
 # 2. Figure out our build structure in terms of the directory, whether
@@ -72,6 +73,11 @@ DOING_TK = 1
 MSG = ^
 Visual C++ compiler environment not initialized.
 !error $(MSG)
+!endif
+
+# Defaults for built-in internal settings defined in parent makefile
+!ifndef DISABLE_DEFAULT_TARGETS
+DISABLE_DEFAULT_TARGETS = 0
 !endif
 
 ################################################################
@@ -882,10 +888,15 @@ VERSION = $(TK_VERSION)
 #      is of the form {Release,Debug}[_AMD64][_COMPILERVERSION]
 # TMP_DIR - directory where object files are created
 # OUT_DIR - directory where output executables are created
-# STUBPREFIX - name of the stubs library for this project
 # Both TMP_DIR and OUT_DIR are defaulted only if not defined by the
 # parent makefile (or command line). The default values are
 # based on BUILDDIRTOP.
+# STUBPREFIX - name of the stubs library for this project
+# PRJIMPLIB - output path of the generated project import library
+# PRJLIBNAME - name of generated project library
+# PRJLIB     - output path of generated project library
+# PRJSTUBLIBNAME - name of the generated project stubs library
+# PRJSTUBLIB - output path of the generated project stubs library
 
 SUFX	    = tsgx
 
@@ -1032,6 +1043,14 @@ TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
 
 !endif # $(DOING_TK)
 !endif # $(DOING_TK) || PROJECT_REQUIRES_TK
+
+# Various output paths
+PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
+PRJLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
+PRJLIB		= $(OUT_DIR)\$(PRJLIBNAME)
+
+PRJSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
+PRJSTUBLIB	= $(OUT_DIR)\$(PRJSTUBLIBNAME)
 
 ###################################################################
 # 11. Construct the paths for the installation directories
@@ -1315,19 +1334,27 @@ MAKERESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
 	    -DSUFX=\"$(SUFX)\" \
 	    $<
 
-!ifndef DISABLE_DEFAULT_TARGETS
 
 !ifndef DEFAULT_BUILD_TARGET
 DEFAULT_BUILD_TARGET = all
 !endif
 
-default_target: $(DEFAULT_BUILD_TARGET)
+default-target: $(DEFAULT_BUILD_TARGET)
 
-setup:
-	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
-	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR)
+default-install: default-install-binaries default-install-libraries
 
-clean:
+default-install-binaries: $(PRJLIB)
+	@echo Installing binaries to '$(SCRIPT_INSTALL_DIR)'
+	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
+	@$(CPY) $(PRJLIB) "$(SCRIPT_INSTALL_DIR)" >NUL
+
+default-install-libraries: $(OUT_DIR)\pkgIndex.tcl
+	@echo Installing libraries to '$(SCRIPT_INSTALL_DIR)'
+	@if exist $(LIBDIR) $(CPY) $(LIBDIR)\*.tcl "$(SCRIPT_INSTALL_DIR)"
+	@echo Installing package index in '$(SCRIPT_INSTALL_DIR)'
+	@$(CPY) $(OUT_DIR)\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)
+
+default-clean:
 	@echo Cleaning $(TMP_DIR)\* ...
 	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
 	@echo Cleaning $(WINDIR)\nmakehlp.obj, nmakehlp.exe ...
@@ -1342,12 +1369,28 @@ clean:
 	@if exist $(WINDIR)\versions.vc del $(WINDIR)\versions.vc
 	@if exist $(WINDIR)\version.vc del $(WINDIR)\version.vc
 
-realclean: hose
-
-hose:
+default-hose:
 	@echo Hosing $(OUT_DIR)\* ...
 	@if exist $(OUT_DIR)\nul $(RMDIR) $(OUT_DIR)
 
+default-distclean: default-hose
+	@if exist $(WINDIR)\nmakehlp.exe del $(WINDIR)\nmakehlp.exe
+	@if exist $(WINDIR)\nmakehlp.obj del $(WINDIR)\nmakehlp.obj
+
+default-setup:
+	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
+	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR)
+
+# Always enable this target as this is fairly standard across Tcl and all
+# extensions and does the same thing everywhere.
+setup: default-setup
+
+!if ! $(DISABLE_DEFAULT_TARGETS)
+install: default-install
+clean: default-clean
+realclean: hose
+hose: default-hose
+distclean: realclean default-distclean
 !endif
 
 !ifndef DISABLE_IMPLICIT_RULES
