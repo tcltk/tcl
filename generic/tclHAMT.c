@@ -328,8 +328,7 @@ typedef struct AMNode {
  */
 
 /* Bits in a size_t. Use as our branching factor. Max children per node. */
-//const int branchFactor = CHAR_BIT * sizeof(size_t);
-const int branchFactor = 2;
+const int branchFactor = CHAR_BIT * sizeof(size_t);
 
 /*
  * The operations on an ArrayMap:
@@ -851,7 +850,7 @@ ArrayMap AMMergeList(
 	}
 	return new;
     }
-    if (tally & am->kvMap) {
+    if (tally & am->amMap) {
 	/* Hash consistent with existing subnode child */
 
 	/* Merge the list into that subnode child... */
