@@ -1977,6 +1977,10 @@ TclHAMTDisclaim(
  * Results:
  *	The corresponding value, or NULL, if the key was not in the map.
  *
+ *	NOTE: This design is using NULL to indicate "not found".
+ *	The implication is that NULL cannot be in the valid value range.
+ *	This limits the value types this HAMT design can support.
+ *
  * Side effects:
  *	None.
  *

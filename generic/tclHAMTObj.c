@@ -306,13 +306,11 @@ SetHamtFromAny(
  *----------------------------------------------------------------------
  */
 
-static void
-UpdateStringOfHamt(
-    Tcl_Obj *objPtr)
+static Tcl_Obj *
+HamtToList(
+    TclHAMT hamt)
 {
-    TclHAMT hamt = HAMT(objPtr);
     TclHAMTIdx idx = TclHAMTFirst(hamt);
-
     Tcl_Obj *listPtr = Tcl_NewObj();
     while (idx) {
 	Tcl_Obj *keyPtr;
@@ -323,7 +321,14 @@ UpdateStringOfHamt(
 	Tcl_ListObjAppendElement(NULL, listPtr, valuePtr);
 	TclHAMTNext(&idx);
     }
+    return listPtr;
+}
 
+static void
+UpdateStringOfHamt(
+    Tcl_Obj *objPtr)
+{
+    Tcl_Obj *listPtr = HamtToList(HAMT(objPtr));
     objPtr->bytes = Tcl_GetStringFromObj(listPtr, &(objPtr->length));
     listPtr->bytes = NULL;
     Tcl_DecrRefCount(listPtr);
@@ -334,6 +339,7 @@ UpdateStringOfHamt(
  */
 
 static Tcl_ObjCmdProc	HamtCreateCmd;
+static Tcl_ObjCmdProc	HamtGetCmd;
 static Tcl_ObjCmdProc	HamtMergeCmd;
 static Tcl_ObjCmdProc	HamtRemoveCmd;
 static Tcl_ObjCmdProc	HamtReplaceCmd;
@@ -344,6 +350,7 @@ static Tcl_ObjCmdProc	HamtReplaceCmd;
 
 static const EnsembleImplMap implementationMap[] = {
     {"create",	HamtCreateCmd,	NULL, NULL, NULL, 0 },
+    {"get",	HamtGetCmd,	NULL, NULL, NULL, 0 },
     {"merge",	HamtMergeCmd,	NULL, NULL, NULL, 0 },
     {"remove",	HamtRemoveCmd,	NULL, NULL, NULL, 0 },
     {"replace", HamtReplaceCmd, NULL, NULL, NULL, 0 },
@@ -412,6 +419,77 @@ HamtCreateCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, hamtObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HamtGetCmd --
+ *
+ *	This function implements the "hamt get" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+HamtGetCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    TclHAMT hamt;
+    Tcl_Obj *val = NULL;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "hamt ?key ...?");
+	return TCL_ERROR;
+    }
+
+    /* Make sure first argument is a hamt. */
+    hamt = GetHAMTFromObj(interp, objv[1]);
+    if (NULL == hamt) {
+	return TCL_ERROR;
+    }
+
+    /* No keys -> return list of all key value pairs */
+    if (objc == 2) {
+	Tcl_SetObjResult(interp, HamtToList(hamt));
+	return TCL_OK;
+    }
+
+    objc -= 2;
+    objv += 2;
+
+    while (objc--) {
+	val = (Tcl_Obj *)TclHAMTFetch(hamt, (ClientData)(*objv));
+
+	if (NULL == val) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "key \"%s\" not known in hamt",
+		    TclGetString(*objv)));
+
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "HAMT",
+		    TclGetString(*objv), NULL);
+	    return TCL_ERROR;
+	}
+
+	if (objc) {
+	    hamt = GetHAMTFromObj(interp, val);
+	    if (NULL == hamt) {
+		return TCL_ERROR;
+	    }
+	    objv++;
+	}
+    }
+    Tcl_SetObjResult(interp, val);
     return TCL_OK;
 }
 
@@ -599,8 +677,6 @@ static int		DictExistsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictFilterCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictGetCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
 static int		DictIncrCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictInfoCmd(ClientData dummy, Tcl_Interp *interp,
@@ -643,7 +719,6 @@ static const EnsembleImplMap implementationMap[] = {
     {"exists",	DictExistsCmd,	TclCompileDictExistsCmd, NULL, NULL, 0 },
     {"filter",	DictFilterCmd,	NULL, NULL, NULL, 0 },
     {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd, NULL, 0 },
-    {"get",	DictGetCmd,	TclCompileDictGetCmd, NULL, NULL, 0 },
     {"incr",	DictIncrCmd,	TclCompileDictIncrCmd, NULL, NULL, 0 },
     {"info",	DictInfoCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
     {"keys",	DictKeysCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
@@ -1611,99 +1686,6 @@ Tcl_DbNewDictObj(
 
 /***** START OF FUNCTIONS IMPLEMENTING TCL COMMANDS *****/
 
-
-/*
- *----------------------------------------------------------------------
- *
- * DictGetCmd --
- *
- *	This function implements the "dict get" Tcl command. See the user
- *	documentation for details on what it does, and TIP#111 for the formal
- *	specification.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-DictGetCmd(
-    ClientData dummy,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    Tcl_Obj *dictPtr, *valuePtr = NULL;
-    int result;
-
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...?");
-	return TCL_ERROR;
-    }
-
-    /*
-     * Test for the special case of no keys, which returns a *list* of all
-     * key,value pairs. We produce a copy here because that makes subsequent
-     * list handling more efficient.
-     */
-
-    if (objc == 2) {
-	Tcl_Obj *keyPtr = NULL, *listPtr;
-	Tcl_DictSearch search;
-	int done;
-
-	result = Tcl_DictObjFirst(interp, objv[1], &search,
-		&keyPtr, &valuePtr, &done);
-	if (result != TCL_OK) {
-	    return result;
-	}
-	listPtr = Tcl_NewListObj(0, NULL);
-	while (!done) {
-	    /*
-	     * Assume these won't fail as we have complete control over the
-	     * types of things here.
-	     */
-
-	    Tcl_ListObjAppendElement(interp, listPtr, keyPtr);
-	    Tcl_ListObjAppendElement(interp, listPtr, valuePtr);
-
-	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
-	}
-	Tcl_SetObjResult(interp, listPtr);
-	return TCL_OK;
-    }
-
-    /*
-     * Loop through the list of keys, looking up the key at the current index
-     * in the current dictionary each time. Once we've done the lookup, we set
-     * the current dictionary to be the value we looked up (in case the value
-     * was not the last one and we are going through a chain of searches.)
-     * Note that this loop always executes at least once.
-     */
-
-    dictPtr = TclTraceDictPath(interp, objv[1], objc-3,objv+2, DICT_PATH_READ);
-    if (dictPtr == NULL) {
-	return TCL_ERROR;
-    }
-    result = Tcl_DictObjGet(interp, dictPtr, objv[objc-1], &valuePtr);
-    if (result != TCL_OK) {
-	return result;
-    }
-    if (valuePtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"key \"%s\" not known in dictionary",
-		TclGetString(objv[objc-1])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
-		TclGetString(objv[objc-1]), NULL);
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, valuePtr);
-    return TCL_OK;
-}
 
 /*
  *----------------------------------------------------------------------
