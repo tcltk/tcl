@@ -2109,6 +2109,26 @@ TclHAMTMerge(
     return HAMTNewRoot(one->kt, one->vt, one->size + two->size - adjust, am);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclHAMTSize --
+ *
+ *	Size of a TclHAMT.
+ *
+ * Results:
+ *	A size_t value holding the number of key value pairs in hamt.
+ *
+ *----------------------------------------------------------------------
+ */
+
+size_t
+TclHAMTSize(
+    TclHAMT hamt)
+{
+    return hamt->size;
+}
+
 
 /* A struct to hold our place as we iterate through a HAMT */
 

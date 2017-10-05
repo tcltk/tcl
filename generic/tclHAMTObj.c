@@ -343,6 +343,7 @@ static Tcl_ObjCmdProc	HamtGetCmd;
 static Tcl_ObjCmdProc	HamtMergeCmd;
 static Tcl_ObjCmdProc	HamtRemoveCmd;
 static Tcl_ObjCmdProc	HamtReplaceCmd;
+static Tcl_ObjCmdProc	HamtSizeCmd;
 
 /*
  * Table of hamt subcommand names and implementations.
@@ -354,6 +355,7 @@ static const EnsembleImplMap implementationMap[] = {
     {"merge",	HamtMergeCmd,	NULL, NULL, NULL, 0 },
     {"remove",	HamtRemoveCmd,	NULL, NULL, NULL, 0 },
     {"replace", HamtReplaceCmd, NULL, NULL, NULL, 0 },
+    {"size",	HamtSizeCmd, NULL, NULL, NULL, 0 },
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
@@ -665,6 +667,45 @@ HamtReplaceCmd(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * HamtSizeCmd --
+ *
+ *	This function implements the "hamt size" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+HamtSizeCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    TclHAMT hamt;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "hamt");
+	return TCL_ERROR;
+    }
+
+    hamt = GetHAMTFromObj(interp, objv[1]);
+    if (NULL == hamt) {
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)TclHAMTSize(hamt)));
+    return TCL_OK;
+}
+
 #if 0
 /*
  * Prototypes for functions defined later in this file:
@@ -686,8 +727,6 @@ static int		DictKeysCmd(ClientData dummy, Tcl_Interp *interp,
 static int		DictLappendCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictSetCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictSizeCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictUnsetCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
@@ -725,7 +764,6 @@ static const EnsembleImplMap implementationMap[] = {
     {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, NULL, 0 },
     {"map", 	NULL,       	TclCompileDictMapCmd, DictMapNRCmd, NULL, 0 },
     {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, NULL, 0 },
-    {"size",	DictSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
     {"unset",	DictUnsetCmd,	TclCompileDictUnsetCmd, NULL, NULL, 0 },
     {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd, NULL, NULL, 0 },
     {"values",	DictValuesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
@@ -1825,44 +1863,6 @@ DictValuesCmd(
 
     Tcl_SetObjResult(interp, listPtr);
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DictSizeCmd --
- *
- *	This function implements the "dict size" Tcl command. See the user
- *	documentation for details on what it does, and TIP#111 for the formal
- *	specification.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-DictSizeCmd(
-    ClientData dummy,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    int result, size;
-
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
-	return TCL_ERROR;
-    }
-    result = Tcl_DictObjSize(interp, objv[1], &size);
-    if (result == TCL_OK) {
-	Tcl_SetObjResult(interp, Tcl_NewLongObj(size));
-    }
-    return result;
 }
 
 /*
