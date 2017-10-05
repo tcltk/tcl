@@ -3,6 +3,13 @@
 
 !ifndef _RULES_EXT_VC
 
+!if !exist("rules-ext.vc")
+MSG = ^
+You must run this makefile only from the directory it is in.^
+Please `cd` to its location first.
+!error $(MSG)
+!endif
+
 !if "$(PROJECT)" == "tcl"
 !error The rules-ext.vc file is not intended for Tcl itself.
 !endif
