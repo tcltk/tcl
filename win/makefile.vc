@@ -173,6 +173,9 @@ PROJECT = tcl
 # rules.vc file will set up "all" as the target.
 DEFAULT_BUILD_TARGET = release
 
+# We do not want the standard install targets defined in rules.vc
+DISABLE_STANDARD_TARGETS = 1
+
 # The rules.vc file does most of the hard work in terms of defining
 # the build configuration, macros, output directories etc.
 !include "rules.vc"
