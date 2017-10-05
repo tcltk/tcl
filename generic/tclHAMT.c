@@ -2231,9 +2231,11 @@ TclHAMTFirst(
  *----------------------------------------------------------------------
  */
 
-void
-TclHAMTNext(
-    TclHAMTIdx *idxPtr)
+static void
+HAMTNext(
+    TclHAMTIdx *idxPtr,
+    size_t *numNodePtr,
+    size_t *memSizePtr)
 {
     Idx *i = *idxPtr;
     ArrayMap am, popme;
@@ -2292,13 +2294,21 @@ TclHAMTNext(
 
     /* i->top[0] is an ArrayMap with no subnodes. We're done with it.
      * Need to pop. */
+    popme = i->top[0];
+    /* Account for nodes as they pop */
+    if (numNodePtr) {
+	(*numNodePtr)++;
+    }
+    if (memSizePtr) {
+	(*memSizePtr) += AMN_SIZE(NumBits(popme->kvMap),NumBits(popme->amMap));
+    }
+ 
     if (i->top == i->stack) {
 	/* Nothing left to pop. Stack exhausted. We're done. */
 	TclHAMTDone((TclHAMTIdx) i);
 	*idxPtr = NULL;
 	return;
     }
-    popme = i->top[0];
     i->top[0] = NULL;
     i->top--;
     am = i->top[0];
@@ -2309,7 +2319,15 @@ TclHAMTNext(
 	slotPtr++;
     }
     i->kvlv = (KVList *)slotPtr;
+
   }
+}
+
+void
+TclHAMTNext(
+    TclHAMTIdx *idxPtr)
+{
+    HAMTNext(idxPtr, NULL, NULL);
 }
 
 /*
@@ -2362,6 +2380,87 @@ TclHAMTDone(
     i->hamt = NULL;
     ckfree(i);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclHAMTInfo --
+ *
+ *	Statistical information on a hamt.
+ *
+ * Results:
+ *	A Tcl_Obj holding text description of storage stats.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclHAMTInfo(
+    TclHAMT hamt)
+{
+    const int branchShift = TclMSB(branchFactor);
+    const int depth = CHAR_BIT * sizeof(size_t) / branchShift;
+    size_t *accum = ckalloc(depth*sizeof(size_t));
+    size_t size = TclHAMTSize(hamt);
+    double avg = 0.0;
+    int i, collisions = 0;
+    size_t nodes = 0;
+    size_t numBytes = 0;
+
+    TclHAMTIdx idx = TclHAMTFirst(hamt);
+    Tcl_Obj *result = Tcl_NewStringObj("hamt holds ", -1);
+    Tcl_Obj *count = Tcl_NewWideIntObj((Tcl_WideInt)size);
+
+    Tcl_AppendObjToObj(result, count);
+    Tcl_AppendToObj(result, " pairs", -1);
+    Tcl_DecrRefCount(count);
+
+    for (i = 0; i < depth; i++) {
+	accum[i] = 0;
+    }
+
+    /* TODO: Node count. */
+    /* TODO: Memory estimate. */
+    while (idx) {
+	if (idx->kvl->tail) {
+	    collisions++;
+	}
+	accum[ idx->top - idx->stack ]++;
+	HAMTNext(&idx, &nodes, &numBytes);
+    }
+
+    Tcl_AppendPrintfToObj(result, "\nnumber of collisions: %d", collisions);
+    Tcl_AppendToObj(result, "\nnumber of nodes: ", -1);
+    count = Tcl_NewWideIntObj((Tcl_WideInt)nodes);
+    Tcl_AppendObjToObj(result, count);
+    Tcl_DecrRefCount(count);
+    Tcl_AppendToObj(result, "\namount of node memory: ", -1);
+    count = Tcl_NewWideIntObj((Tcl_WideInt)numBytes);
+    Tcl_AppendObjToObj(result, count);
+    Tcl_DecrRefCount(count);
+    if (nodes) {
+	Tcl_AppendPrintfToObj(result, "\naverage bytes per node: %g",
+		(1.0 * numBytes)/nodes);
+    }
+
+    if (size) {
+    for (i = 0; i < depth; i++) {
+	double fraction;
+
+	Tcl_AppendPrintfToObj(result, "\nnumber of leafs at %2d hops: ", i);
+	count = Tcl_NewWideIntObj((Tcl_WideInt)accum[i]);
+	Tcl_AppendObjToObj(result, count);
+	Tcl_DecrRefCount(count);
+
+	fraction = (1.0 * accum[i]) / size;
+	avg += i * fraction;
+    }
+    Tcl_AppendPrintfToObj(result, "\naverage hops: %g ", avg);
+    }
+
+    return result;
+}
+
 
 /*
  * Local Variables:

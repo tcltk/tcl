@@ -112,6 +112,7 @@ MODULE_SCOPE void		TclHAMTNext(TclHAMTIdx *idxPtr);
 MODULE_SCOPE void		TclHAMTGet(TclHAMTIdx idx, ClientData *keyPtr,
 				    ClientData *valuePtr);
 MODULE_SCOPE void		TclHAMTDone(TclHAMTIdx idx);
+MODULE_SCOPE Tcl_Obj *		TclHAMTInfo(TclHAMT hamt);
 
 #endif /* TCL_HAMT_H */
 

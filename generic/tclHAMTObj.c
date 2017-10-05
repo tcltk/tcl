@@ -340,6 +340,7 @@ UpdateStringOfHamt(
 
 static Tcl_ObjCmdProc	HamtCreateCmd;
 static Tcl_ObjCmdProc	HamtGetCmd;
+static Tcl_ObjCmdProc	HamtInfoCmd;
 static Tcl_ObjCmdProc	HamtMergeCmd;
 static Tcl_ObjCmdProc	HamtRemoveCmd;
 static Tcl_ObjCmdProc	HamtReplaceCmd;
@@ -352,6 +353,7 @@ static Tcl_ObjCmdProc	HamtSizeCmd;
 static const EnsembleImplMap implementationMap[] = {
     {"create",	HamtCreateCmd,	NULL, NULL, NULL, 0 },
     {"get",	HamtGetCmd,	NULL, NULL, NULL, 0 },
+    {"info",	HamtInfoCmd,	NULL, NULL, NULL, 0 },
     {"merge",	HamtMergeCmd,	NULL, NULL, NULL, 0 },
     {"remove",	HamtRemoveCmd,	NULL, NULL, NULL, 0 },
     {"replace", HamtReplaceCmd, NULL, NULL, NULL, 0 },
@@ -706,6 +708,42 @@ HamtSizeCmd(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * HamtInfoCmd --
+ *
+ *	This function implements the "hamt info" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+HamtInfoCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    TclHAMT hamt;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "hamt");
+	return TCL_ERROR;
+    }
+
+    hamt = GetHAMTFromObj(interp, objv[1]);
+    if (NULL == hamt) {
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, TclHAMTInfo(hamt));
+    return TCL_OK;
+}
+
 #if 0
 /*
  * Prototypes for functions defined later in this file:
@@ -719,8 +757,6 @@ static int		DictExistsCmd(ClientData dummy, Tcl_Interp *interp,
 static int		DictFilterCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictIncrCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictInfoCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictKeysCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
@@ -759,7 +795,6 @@ static const EnsembleImplMap implementationMap[] = {
     {"filter",	DictFilterCmd,	NULL, NULL, NULL, 0 },
     {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd, NULL, 0 },
     {"incr",	DictIncrCmd,	TclCompileDictIncrCmd, NULL, NULL, 0 },
-    {"info",	DictInfoCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
     {"keys",	DictKeysCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
     {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, NULL, 0 },
     {"map", 	NULL,       	TclCompileDictMapCmd, DictMapNRCmd, NULL, 0 },
@@ -1906,53 +1941,6 @@ DictExistsCmd(
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewLongObj(valuePtr != NULL));
     }
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DictInfoCmd --
- *
- *	This function implements the "dict info" Tcl command. See the user
- *	documentation for details on what it does, and TIP#111 for the formal
- *	specification.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-DictInfoCmd(
-    ClientData dummy,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    Tcl_Obj *dictPtr;
-    Dict *dict;
-    char *statsStr;
-
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
-	return TCL_ERROR;
-    }
-
-    dictPtr = objv[1];
-    if (dictPtr->typePtr != &tclDictType
-	    && SetDictFromAny(interp, dictPtr) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    dict = DICT(dictPtr);
-
-    statsStr = Tcl_HashStats(&dict->table);
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(statsStr, -1));
-    ckfree(statsStr);
     return TCL_OK;
 }
 
