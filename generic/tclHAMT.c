@@ -757,6 +757,9 @@ ArrayMap AMMergeList(
     if ((am->mask & hash) != am->id) {
         /* Hash indicates list does not belong in this subtree */
         /* Create a new subtree to be parent of both am and kvl. */
+	if (adjustPtr) {
+	    *adjustPtr = 0;
+	}
         return AMNewBranch(am, hash, kvl);
     }
 
