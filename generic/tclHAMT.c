@@ -2441,6 +2441,8 @@ TclHAMTInfo(
     if (nodes) {
 	Tcl_AppendPrintfToObj(result, "\naverage bytes per node: %g",
 		(1.0 * numBytes)/nodes);
+	Tcl_AppendPrintfToObj(result, "\naverage pairs per node: %g",
+		(1.0 * size)/nodes);
     }
 
     if (size) {
