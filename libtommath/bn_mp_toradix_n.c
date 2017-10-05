@@ -61,7 +61,7 @@ int mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
          /* no more room */
          break;
       }
-      if ((res = mp_div_d(&t, (mp_digit) radix, &t, &d)) != MP_OKAY) {
+      if ((res = mp_div_d(&t, (mp_digit)radix, &t, &d)) != MP_OKAY) {
          mp_clear(&t);
          return res;
       }

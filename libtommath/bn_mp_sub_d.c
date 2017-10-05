@@ -16,8 +16,7 @@
  */
 
 /* single digit subtraction */
-int
-mp_sub_d(const mp_int *a, mp_digit b, mp_int *c)
+int mp_sub_d(const mp_int *a, mp_digit b, mp_int *c)
 {
    mp_digit *tmpa, *tmpc, mu;
    int       res, ix, oldused;

@@ -16,8 +16,7 @@
  */
 
 /* computes xR**-1 == x (mod N) via Montgomery Reduction */
-int
-mp_montgomery_reduce(mp_int *x, mp_int *n, mp_digit rho)
+int mp_montgomery_reduce(mp_int *x, const mp_int *n, mp_digit rho)
 {
    int     ix, res, digs;
    mp_digit mu;

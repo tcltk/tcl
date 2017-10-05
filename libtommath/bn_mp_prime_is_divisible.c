@@ -20,7 +20,7 @@
  *
  * sets result to 0 if not, 1 if yes
  */
-int mp_prime_is_divisible(mp_int *a, int *result)
+int mp_prime_is_divisible(const mp_int *a, int *result)
 {
    int     err, ix;
    mp_digit res;

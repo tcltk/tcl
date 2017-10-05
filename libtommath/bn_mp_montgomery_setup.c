@@ -16,8 +16,7 @@
  */
 
 /* setups the montgomery reduction stuff */
-int
-mp_montgomery_setup(mp_int *n, mp_digit *rho)
+int mp_montgomery_setup(const mp_int *n, mp_digit *rho)
 {
    mp_digit x, b;
 

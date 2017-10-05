@@ -273,7 +273,7 @@ int mp_set_long(mp_int *a, unsigned long b);
 
 /* set a platform dependent unsigned long long value */
 /*
-int mp_set_long_long(mp_int *a, Tcl_WideUInt b);
+int mp_set_long_long(mp_int *a, unsigned long long b);
 */
 
 /* get a 32-bit value */
@@ -288,7 +288,7 @@ unsigned long mp_get_long(const mp_int *a);
 
 /* get a platform dependent unsigned long long value */
 /*
-Tcl_WideUInt mp_get_long_long(const mp_int *a);
+unsigned long long mp_get_long_long(const mp_int *a);
 */
 
 /* initialize and set a digit */
@@ -323,7 +323,7 @@ int mp_import(mp_int *rop, size_t count, int order, size_t size, int endian, siz
 
 /* export binary data */
 /*
-int mp_export(void *rop, size_t *countp, int order, size_t size, int endian, size_t nails, mp_int *op);
+int mp_export(void *rop, size_t *countp, int order, size_t size, int endian, size_t nails, const mp_int *op);
 */
 
 /* ---> digit manipulation <--- */
@@ -497,42 +497,42 @@ int mp_mod_d(const mp_int *a, mp_digit b, mp_digit *c);
 
 /* d = a + b (mod c) */
 /*
-int mp_addmod(mp_int *a, mp_int *b, mp_int *c, mp_int *d);
+int mp_addmod(const mp_int *a, const mp_int *b, const mp_int *c, mp_int *d);
 */
 
 /* d = a - b (mod c) */
 /*
-int mp_submod(mp_int *a, mp_int *b, mp_int *c, mp_int *d);
+int mp_submod(const mp_int *a, const mp_int *b, const mp_int *c, mp_int *d);
 */
 
 /* d = a * b (mod c) */
 /*
-int mp_mulmod(mp_int *a, mp_int *b, mp_int *c, mp_int *d);
+int mp_mulmod(const mp_int *a, const mp_int *b, const mp_int *c, mp_int *d);
 */
 
 /* c = a * a (mod b) */
 /*
-int mp_sqrmod(mp_int *a, mp_int *b, mp_int *c);
+int mp_sqrmod(const mp_int *a, const mp_int *b, mp_int *c);
 */
 
 /* c = 1/a (mod b) */
 /*
-int mp_invmod(mp_int *a, mp_int *b, mp_int *c);
+int mp_invmod(const mp_int *a, const mp_int *b, mp_int *c);
 */
 
 /* c = (a, b) */
 /*
-int mp_gcd(mp_int *a, mp_int *b, mp_int *c);
+int mp_gcd(const mp_int *a, const mp_int *b, mp_int *c);
 */
 
 /* produces value such that U1*a + U2*b = U3 */
 /*
-int mp_exteuclid(mp_int *a, mp_int *b, mp_int *U1, mp_int *U2, mp_int *U3);
+int mp_exteuclid(const mp_int *a, const mp_int *b, mp_int *U1, mp_int *U2, mp_int *U3);
 */
 
 /* c = [a, b] or (a*b)/(a, b) */
 /*
-int mp_lcm(mp_int *a, mp_int *b, mp_int *c);
+int mp_lcm(const mp_int *a, const mp_int *b, mp_int *c);
 */
 
 /* finds one of the b'th root of a, such that |c|**b <= |a|
@@ -540,10 +540,10 @@ int mp_lcm(mp_int *a, mp_int *b, mp_int *c);
  * returns error if a < 0 and b is even
  */
 /*
-int mp_n_root(mp_int *a, mp_digit b, mp_int *c);
+int mp_n_root(const mp_int *a, mp_digit b, mp_int *c);
 */
 /*
-int mp_n_root_ex(mp_int *a, mp_digit b, mp_int *c, int fast);
+int mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast);
 */
 
 /* special sqrt algo */
@@ -553,22 +553,22 @@ int mp_sqrt(const mp_int *arg, mp_int *ret);
 
 /* special sqrt (mod prime) */
 /*
-int mp_sqrtmod_prime(mp_int *arg, mp_int *prime, mp_int *ret);
+int mp_sqrtmod_prime(const mp_int *arg, const mp_int *prime, mp_int *ret);
 */
 
 /* is number a square? */
 /*
-int mp_is_square(mp_int *arg, int *ret);
+int mp_is_square(const mp_int *arg, int *ret);
 */
 
 /* computes the jacobi c = (a | n) (or Legendre if b is prime)  */
 /*
-int mp_jacobi(mp_int *a, mp_int *n, int *c);
+int mp_jacobi(const mp_int *a, const mp_int *n, int *c);
 */
 
 /* used to setup the Barrett reduction for a given modulus b */
 /*
-int mp_reduce_setup(mp_int *a, mp_int *b);
+int mp_reduce_setup(mp_int *a, const mp_int *b);
 */
 
 /* Barrett Reduction, computes a (mod b) with a precomputed value c
@@ -577,74 +577,74 @@ int mp_reduce_setup(mp_int *a, mp_int *b);
  * compute the reduction as -1 * mp_reduce(mp_abs(a)) [pseudo code].
  */
 /*
-int mp_reduce(mp_int *a, mp_int *b, mp_int *c);
+int mp_reduce(mp_int *a, const mp_int *b, const mp_int *c);
 */
 
 /* setups the montgomery reduction */
 /*
-int mp_montgomery_setup(mp_int *a, mp_digit *mp);
+int mp_montgomery_setup(const mp_int *a, mp_digit *mp);
 */
 
 /* computes a = B**n mod b without division or multiplication useful for
  * normalizing numbers in a Montgomery system.
  */
 /*
-int mp_montgomery_calc_normalization(mp_int *a, mp_int *b);
+int mp_montgomery_calc_normalization(mp_int *a, const mp_int *b);
 */
 
 /* computes x/R == x (mod N) via Montgomery Reduction */
 /*
-int mp_montgomery_reduce(mp_int *a, mp_int *m, mp_digit mp);
+int mp_montgomery_reduce(mp_int *a, const mp_int *m, mp_digit mp);
 */
 
 /* returns 1 if a is a valid DR modulus */
 /*
-int mp_dr_is_modulus(mp_int *a);
+int mp_dr_is_modulus(const mp_int *a);
 */
 
 /* sets the value of "d" required for mp_dr_reduce */
 /*
-void mp_dr_setup(mp_int *a, mp_digit *d);
+void mp_dr_setup(const mp_int *a, mp_digit *d);
 */
 
 /* reduces a modulo b using the Diminished Radix method */
 /*
-int mp_dr_reduce(mp_int *a, mp_int *b, mp_digit mp);
+int mp_dr_reduce(mp_int *a, const mp_int *b, mp_digit mp);
 */
 
 /* returns true if a can be reduced with mp_reduce_2k */
 /*
-int mp_reduce_is_2k(mp_int *a);
+int mp_reduce_is_2k(const mp_int *a);
 */
 
 /* determines k value for 2k reduction */
 /*
-int mp_reduce_2k_setup(mp_int *a, mp_digit *d);
+int mp_reduce_2k_setup(const mp_int *a, mp_digit *d);
 */
 
 /* reduces a modulo b where b is of the form 2**p - k [0 <= a] */
 /*
-int mp_reduce_2k(mp_int *a, mp_int *n, mp_digit d);
+int mp_reduce_2k(mp_int *a, const mp_int *n, mp_digit d);
 */
 
 /* returns true if a can be reduced with mp_reduce_2k_l */
 /*
-int mp_reduce_is_2k_l(mp_int *a);
+int mp_reduce_is_2k_l(const mp_int *a);
 */
 
 /* determines k value for 2k reduction */
 /*
-int mp_reduce_2k_setup_l(mp_int *a, mp_int *d);
+int mp_reduce_2k_setup_l(const mp_int *a, mp_int *d);
 */
 
 /* reduces a modulo b where b is of the form 2**p - k [0 <= a] */
 /*
-int mp_reduce_2k_l(mp_int *a, mp_int *n, mp_int *d);
+int mp_reduce_2k_l(mp_int *a, const mp_int *n, const mp_int *d);
 */
 
 /* d = a**b (mod c) */
 /*
-int mp_exptmod(mp_int *a, mp_int *b, mp_int *c, mp_int *d);
+int mp_exptmod(const mp_int *a, const mp_int *b, const mp_int *c, mp_int *d);
 */
 
 /* ---> Primes <--- */
@@ -663,21 +663,21 @@ MODULE_SCOPE const mp_digit ltm_prime_tab[PRIME_SIZE];
 
 /* result=1 if a is divisible by one of the first PRIME_SIZE primes */
 /*
-int mp_prime_is_divisible(mp_int *a, int *result);
+int mp_prime_is_divisible(const mp_int *a, int *result);
 */
 
 /* performs one Fermat test of "a" using base "b".
  * Sets result to 0 if composite or 1 if probable prime
  */
 /*
-int mp_prime_fermat(mp_int *a, mp_int *b, int *result);
+int mp_prime_fermat(const mp_int *a, const mp_int *b, int *result);
 */
 
 /* performs one Miller-Rabin test of "a" using base "b".
  * Sets result to 0 if composite or 1 if probable prime
  */
 /*
-int mp_prime_miller_rabin(mp_int *a, mp_int *b, int *result);
+int mp_prime_miller_rabin(const mp_int *a, const mp_int *b, int *result);
 */
 
 /* This gives [for a given bit size] the number of trials required
@@ -695,7 +695,7 @@ int mp_prime_rabin_miller_trials(int size);
  * Sets result to 1 if probably prime, 0 otherwise
  */
 /*
-int mp_prime_is_prime(mp_int *a, int t, int *result);
+int mp_prime_is_prime(const mp_int *a, int t, int *result);
 */
 
 /* finds the next prime after the number "a" using "t" trials
