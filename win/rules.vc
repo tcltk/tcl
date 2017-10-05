@@ -1179,6 +1179,13 @@ USE_WIDECHAR_API = 0
 COMPILERFLAGS = $(COMPILERFLAGS) /DUNICODE /D_UNICODE 
 !endif
 
+# Like the TEA system only set this non empty for non-Tk extensions
+!if !$(DOING_TCL) && !$(DOING_TK)
+PKGNAMEFLAGS = -DPACKAGE_NAME="\"$(PROJECT)\"" \
+               -DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
+               -DMODULE_SCOPE=extern 
+!endif
+
 # crt picks the C run time based on selected OPTS
 !if $(MSVCRT)
 !if $(DEBUG) && !$(UNCHECKED)
@@ -1241,8 +1248,8 @@ cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\ $(cdebug)
 
 appcflags = $(cflags) $(crt) $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES) $(USE_STUBS_DEFS)
 appcflags_nostubs = $(cflags) $(crt) $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES)
-pkgcflags = $(appcflags) -DBUILD_$(PROJECT)
-pkgcflags_nostubs = $(appcflags_nostubs) -DBUILD_$(PROJECT)
+pkgcflags = $(appcflags) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
+pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 
 # stubscflags contains $(cflags) plus flags used for building a stubs
 # library for the package.  Note: -DSTATIC_BUILD is defined in
@@ -1396,12 +1403,12 @@ default-setup:
 	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
 	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR)
 
-# Always enable this target as this is fairly standard across Tcl and all
-# extensions and does the same thing everywhere.
-setup: default-setup
-
 !if ! $(DISABLE_STANDARD_TARGETS)
+setup: default-setup
 install: default-install
+pkgindex: default-pkgindex
+pkgIndex: default-pkgindex
+pkgindex-tea: default-pkgindex-tea
 !endif
 
 !if ! $(DISABLE_CLEAN_TARGETS)
