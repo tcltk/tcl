@@ -76,8 +76,11 @@ Visual C++ compiler environment not initialized.
 !endif
 
 # Defaults for built-in internal settings defined in parent makefile
-!ifndef DISABLE_DEFAULT_TARGETS
-DISABLE_DEFAULT_TARGETS = 0
+!ifndef DISABLE_STANDARD_TARGETS
+DISABLE_STANDARD_TARGETS = 0
+!endif
+!ifndef DISABLE_CLEAN_TARGETS
+DISABLE_CLEAN_TARGETS = 0
 !endif
 
 ################################################################
@@ -1341,6 +1344,18 @@ DEFAULT_BUILD_TARGET = all
 
 default-target: $(DEFAULT_BUILD_TARGET)
 
+default-pkgindex:
+	@echo package ifneeded $(PROJECT) $(DOTVERSION) \
+	    [list load [file join $$dir $(PRJLIBNAME)]] >> $(OUT_DIR)\pkgIndex.tcl
+
+default-pkgindex-tea:
+	@if exist $(ROOT)\pkgIndex.tcl.in nmakehlp -s << $(ROOT)\pkgIndex.tcl.in > $(OUT_DIR)\pkgIndex.tcl
+@PACKAGE_VERSION@    $(DOTVERSION)
+@PACKAGE_NAME@       $(PROJECT)
+@PKG_LIB_FILE@       $(PRJLIBNAME)
+<<
+
+
 default-install: default-install-binaries default-install-libraries
 
 default-install-binaries: $(PRJLIB)
@@ -1385,8 +1400,11 @@ default-setup:
 # extensions and does the same thing everywhere.
 setup: default-setup
 
-!if ! $(DISABLE_DEFAULT_TARGETS)
+!if ! $(DISABLE_STANDARD_TARGETS)
 install: default-install
+!endif
+
+!if ! $(DISABLE_CLEAN_TARGETS)
 clean: default-clean
 realclean: hose
 hose: default-hose
