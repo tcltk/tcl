@@ -3404,7 +3404,7 @@ TclInitStringCmd(
 	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},
 	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, NULL, 0},
 	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL, NULL, 0},
-	{"insert",      StringInsertCmd,TclCompileStringInsertCmd, NULL, NULL, 0},
+	{"insert",	StringInsertCmd,TclCompileStringInsertCmd, NULL, NULL, 0},
 	{"is",		StringIsCmd,	TclCompileStringIsCmd, NULL, NULL, 0},
 	{"last",	StringLastCmd,	TclCompileStringLastCmd, NULL, NULL, 0},
 	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL, 0},

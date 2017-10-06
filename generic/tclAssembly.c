@@ -142,6 +142,8 @@ typedef enum TalInstType {
     ASSEM_CONCAT1,		/* 1-byte unsigned-integer operand count, must
 				 * be strictly positive, consumes N, produces
 				 * 1 */
+    ASSEM_STR_REPLACE,		/* 1-byte unsigned-integer case number, in the
+				 * range 0-2 */
     ASSEM_DICT_GET,		/* 'dict get' and related - consumes N+1
 				 * operands, produces 1, N > 0 */
     ASSEM_DICT_SET,		/* specifies key count and LVT index, consumes
@@ -476,8 +478,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"strmatch",	ASSEM_BOOL,	INST_STR_MATCH,		2,	1},
     {"strneq",		ASSEM_1BYTE,	INST_STR_NEQ,		2,	1},
     {"strrange",	ASSEM_1BYTE,	INST_STR_RANGE,		3,	1},
-    {"strreplace",	ASSEM_1BYTE,	INST_STR_REPLACE,	4,	1},
-    {"strinsert",	ASSEM_1BYTE,	INST_STR_INSERT,	3,	1},
+    {"strreplace",	ASSEM_STR_REPLACE, INST_STR_REPLACE,	INT_MIN,1},
     {"strrfind",	ASSEM_1BYTE,	INST_STR_FIND_LAST,	2,	1},
     {"strtrim",		ASSEM_1BYTE,	INST_STR_TRIM,		2,	1},
     {"strtrimLeft",	ASSEM_1BYTE,	INST_STR_TRIM_LEFT,	2,	1},
@@ -525,10 +526,10 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_NS_CURRENT,						/* 151 */
     INST_INFO_LEVEL_NUM,					/* 152 */
     INST_RESOLVE_COMMAND,					/* 154 */
-    INST_STR_TRIM, INST_STR_TRIM_LEFT, INST_STR_TRIM_RIGHT,	/* 170-172 */
-    INST_CONCAT_STK,						/* 173 */
-    INST_STR_UPPER, INST_STR_LOWER, INST_STR_TITLE,		/* 174-176 */
-    INST_NUM_TYPE						/* 183 */
+    INST_STR_TRIM, INST_STR_TRIM_LEFT, INST_STR_TRIM_RIGHT,	/* 166-168 */
+    INST_CONCAT_STK,						/* 169 */
+    INST_STR_UPPER, INST_STR_LOWER, INST_STR_TITLE,		/* 170-172 */
+    INST_NUM_TYPE						/* 180 */
 };
 
 /*
@@ -1390,6 +1391,23 @@ AssembleOneLine(
 	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
 		|| CheckOneByte(interp, opnd) != TCL_OK
 		|| CheckStrictlyPositive(interp, opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	BBEmitInstInt1(assemEnvPtr, tblIdx, opnd, opnd);
+	break;
+
+    case ASSEM_STR_REPLACE:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "imm8");
+	    goto cleanup;
+	}
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	if (opnd < 0 || opnd > 2) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_NewStringObj("operand must be [0..2]", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "OPERAND<0,>2", NULL);
 	    goto cleanup;
 	}
 	BBEmitInstInt1(assemEnvPtr, tblIdx, opnd, opnd);

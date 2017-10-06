@@ -804,29 +804,29 @@ typedef struct ByteCode {
 #define INST_STR_LOWER			175
 #define INST_STR_TITLE			176
 #define INST_STR_REPLACE		177
-#define INST_STR_INSERT			178
 
-#define INST_ORIGIN_COMMAND		179
+#define INST_ORIGIN_COMMAND		178
 
-#define INST_TCLOO_NEXT			180
-#define INST_TCLOO_NEXT_CLASS		181
+#define INST_TCLOO_NEXT			179
+#define INST_TCLOO_NEXT_CLASS		180
 
-#define INST_YIELD_TO_INVOKE		182
+#define INST_YIELD_TO_INVOKE		181
 
-#define INST_NUM_TYPE			183
-#define INST_TRY_CVT_TO_BOOLEAN		184
-#define INST_STR_CLASS			185
+#define INST_NUM_TYPE			182
+#define INST_TRY_CVT_TO_BOOLEAN		183
+#define INST_STR_CLASS			184
 
-#define INST_LAPPEND_LIST		186
-#define INST_LAPPEND_LIST_ARRAY		187
-#define INST_LAPPEND_LIST_ARRAY_STK	188
-#define INST_LAPPEND_LIST_STK		189
+#define INST_LAPPEND_LIST		185
+#define INST_LAPPEND_LIST_ARRAY		186
+#define INST_LAPPEND_LIST_ARRAY_STK	187
+#define INST_LAPPEND_LIST_STK		188
 
-#define INST_CLOCK_READ			190
+#define INST_CLOCK_READ			189
 
 /* The last opcode */
-#define LAST_INST_OPCODE		190
-
+#define LAST_INST_OPCODE		189
+
+
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
  * code), total number of code bytes required (including operand bytes), and a

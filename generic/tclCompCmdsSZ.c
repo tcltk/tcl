@@ -530,7 +530,7 @@ TclCompileStringInsertCmd(
 	CompileWord(envPtr, valueTokenPtr, interp, 1);
 	CompileWord(envPtr, indexTokenPtr, interp, 2);
 	CompileWord(envPtr, insertionTokenPtr, interp, 3);
-	OP(STR_INSERT);
+	OP1(	STR_REPLACE, 0 /* insert */);
     } else {
 	/*
 	 * Special case: prepending and appending.
@@ -543,7 +543,7 @@ TclCompileStringInsertCmd(
 	    CompileWord(envPtr, valueTokenPtr, interp, 1);
 	    CompileWord(envPtr, insertionTokenPtr, interp, 3);
 	}
-	OP1(STR_CONCAT1, 2);
+	OP1(	STR_CONCAT1, 2);
     }
 
     return TCL_OK;
@@ -1183,10 +1183,11 @@ TclCompileStringReplaceCmd(
 	CompileWord(envPtr, tokenPtr, interp, 3);
 	if (replacementTokenPtr != NULL) {
 	    CompileWord(envPtr, replacementTokenPtr, interp, 4);
+	    OP1(	STR_REPLACE, 1 /* replace */);
+	    TclAdjustStackDepth(-1, envPtr); /* Correction to stack depth calcs */
 	} else {
-	    PUSH(	"");
+	    OP1(	STR_REPLACE, 2 /* remove */);
 	}
-	OP(		STR_REPLACE);
 	return TCL_OK;
     }
 }

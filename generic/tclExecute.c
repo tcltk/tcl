@@ -5531,73 +5531,73 @@ TEBCresume(
 	Tcl_Obj *value3Ptr;
 
     case INST_STR_REPLACE:
-	value3Ptr = POP_OBJECT();
-	valuePtr = OBJ_AT_DEPTH(2);
-	length = Tcl_GetCharLength(valuePtr) - 1;
-	TRACE(("\"%.20s\" %s %s \"%.20s\" => ", O2S(valuePtr),
-		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(value3Ptr)));
-	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, length,
+	opnd = TclGetUInt1AtPtr(pc+1);
+	value3Ptr = value2Ptr = NULL;
+	if (opnd != 2 /* insert or replace */) {
+	    value3Ptr = POP_OBJECT();	/* Arg #3/#4: insertString or replacement */
+	}
+	if (opnd /* replace or remove */) {
+	    value2Ptr = OBJ_AT_TOS;	/* Arg #3: index to */
+	    valuePtr = OBJ_UNDER_TOS;	/* Arg #2: index from */
+	    objPtr = OBJ_AT_DEPTH(2);	/* Arg #1: string */
+	} else {
+	    valuePtr = OBJ_AT_TOS;	/* Arg #2: index */
+	    objPtr = OBJ_UNDER_TOS;	/* Arg #1: string */
+	}
+	length = Tcl_GetCharLength(objPtr);
+	if (opnd != 0 /* replace or remove */) length--;
+
+	TRACE(("%u \"%.20s\" %s %s \"%.20s\" => ", opnd, O2S(objPtr),
+		O2S(valuePtr), O2S(value2Ptr), O2S(value3Ptr)));
+	toIdx = 0;
+	if (TclGetIntForIndexM(interp, valuePtr, length,
 		    &fromIdx) != TCL_OK
-	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, length,
+	    || value2Ptr && TclGetIntForIndexM(interp, value2Ptr, length,
 		    &toIdx) != TCL_OK) {
-	    TclDecrRefCount(value3Ptr);
+	    if (value3Ptr) {
+		TclDecrRefCount(value3Ptr); /* not in stack */
+	    }
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	TclDecrRefCount(OBJ_AT_TOS);
+	TclDecrRefCount(valuePtr);
 	(void) POP_OBJECT();
-	TclDecrRefCount(OBJ_AT_TOS);
-	(void) POP_OBJECT();
+	if (value2Ptr) {
+	    TclDecrRefCount(value2Ptr);
+	    (void) POP_OBJECT();
+	}
 
 	if (fromIdx < 0) {
 	    fromIdx = 0;
 	}
 
-	if (fromIdx <= toIdx && fromIdx <= length) {
-	    value2Ptr = Tcl_ReplaceObj(interp, valuePtr, fromIdx,
-		    toIdx - fromIdx + 1, value3Ptr);
-	    if (!value2Ptr) {
-		TRACE_ERROR(interp);
-		goto gotError;
-	    } else if (valuePtr != value2Ptr) {
-		(void) POP_OBJECT();
-		PUSH_OBJECT(value2Ptr);
-		TclDecrRefCount(valuePtr);
+	if ( opnd != 0 /* replace or remove */ ) {
+	    /* replace/remove a non-empty range only */
+	    if (fromIdx > toIdx || fromIdx > length) {
+		/* use original string - already in stack */
+		valuePtr = objPtr;
+		goto instStrReplDone;
 	    }
+	    /* length to remove (replace) */
+	    toIdx -= fromIdx - 1;
 	}
-
-	TRACE_APPEND(("\"%.30s\"\n", O2S(value2Ptr)));
-	TclDecrRefCount(value3Ptr);
-	NEXT_INST_F(1, 0, 0);
-
-    case INST_STR_INSERT:
-	value3Ptr = POP_OBJECT();	/* Argument #3: insertString. */
-	value2Ptr = POP_OBJECT();	/* Argument #2: index. */
-	valuePtr = OBJ_AT_TOS;		/* Argument #1: string. */
-	length = Tcl_GetCharLength(valuePtr);
-	TRACE(("\"%.20s\" %s \"%.20s\" => ", O2S(valuePtr),
-		O2S(value2Ptr), O2S(value3Ptr)));
-	if (TclGetIntForIndexM(interp, value2Ptr, length, &fromIdx) != TCL_OK) {
-	    TclDecrRefCount(value3Ptr);
-	    TclDecrRefCount(value2Ptr);
+	valuePtr = Tcl_ReplaceObj(interp, objPtr, fromIdx, toIdx, value3Ptr);
+	if (!valuePtr) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	TclDecrRefCount(value2Ptr);
-
-	value2Ptr = Tcl_ReplaceObj(interp, valuePtr, fromIdx, 0, value3Ptr);
-	if (!value2Ptr) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
-	} else if (valuePtr != value2Ptr) {
+	if (valuePtr != objPtr) {	/* result to the stack */
 	    (void) POP_OBJECT();
-	    PUSH_OBJECT(value2Ptr);
-	    TclDecrRefCount(valuePtr);
+	    PUSH_OBJECT(valuePtr);
+	    TclDecrRefCount(objPtr);
 	}
 
-	TRACE_APPEND(("\"%.30s\"\n", O2S(value2Ptr)));
-	TclDecrRefCount(value3Ptr);
-	NEXT_INST_F(1, 0, 0);
+      instStrReplDone:
+	TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
+	if (value3Ptr) {
+	    TclDecrRefCount(value3Ptr);
+	}
+	NEXT_INST_F(2, 0, 0);
 
     case INST_STR_MAP:
 	valuePtr = OBJ_AT_TOS;		/* "Main" string. */
