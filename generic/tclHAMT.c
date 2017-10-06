@@ -2238,8 +2238,7 @@ TclHAMTFirst(
 static void
 HAMTNext(
     TclHAMTIdx *idxPtr,
-    size_t *numNodePtr,
-    size_t *memSizePtr)
+    size_t *histPtr)
 {
     Idx *i = *idxPtr;
     ArrayMap am, popme;
@@ -2300,11 +2299,8 @@ HAMTNext(
      * Need to pop. */
     popme = i->top[0];
     /* Account for nodes as they pop */
-    if (numNodePtr) {
-	(*numNodePtr)++;
-    }
-    if (memSizePtr) {
-	(*memSizePtr) += AMN_SIZE(NumBits(popme->kvMap),NumBits(popme->amMap));
+    if (histPtr) {
+	histPtr[2*NumBits(popme->kvMap) + NumBits(popme->amMap)]++;
     }
  
     if (i->top == i->stack) {
@@ -2331,7 +2327,7 @@ void
 TclHAMTNext(
     TclHAMTIdx *idxPtr)
 {
-    HAMTNext(idxPtr, NULL, NULL);
+    HAMTNext(idxPtr, NULL);
 }
 
 /*
@@ -2410,6 +2406,8 @@ TclHAMTInfo(
     int i, collisions = 0;
     size_t nodes = 0;
     size_t numBytes = 0;
+    size_t slots = 0;
+    size_t hist[129];
 
     TclHAMTIdx idx = TclHAMTFirst(hamt);
     Tcl_Obj *result = Tcl_NewStringObj("hamt holds ", -1);
@@ -2422,18 +2420,33 @@ TclHAMTInfo(
     for (i = 0; i < depth; i++) {
 	accum[i] = 0;
     }
+    for (i = 0; i < 129; i++) {
+	hist[i] = 0;
+    }
 
-    /* TODO: Node count. */
-    /* TODO: Memory estimate. */
     while (idx) {
 	if (idx->kvl->tail) {
 	    collisions++;
 	}
 	accum[ idx->top - idx->stack ]++;
-	HAMTNext(&idx, &nodes, &numBytes);
+	HAMTNext(&idx, hist);
     }
-
     Tcl_AppendPrintfToObj(result, "\nnumber of collisions: %d", collisions);
+
+    for (i = 0; i < 129; i++) {
+
+	if (hist[i] == 0) continue;
+
+	Tcl_AppendPrintfToObj(result, "\nnumber of nodes with %2d slots: ", i);
+	count = Tcl_NewWideIntObj((Tcl_WideInt)hist[i]);
+	Tcl_AppendObjToObj(result, count);
+	Tcl_DecrRefCount(count);
+
+	nodes += hist[i];
+	slots += hist[i] * i;
+	numBytes += hist[i] * ((i * sizeof(void *)) + sizeof(AMNode));
+    }
+    if (nodes) {
     Tcl_AppendToObj(result, "\nnumber of nodes: ", -1);
     count = Tcl_NewWideIntObj((Tcl_WideInt)nodes);
     Tcl_AppendObjToObj(result, count);
@@ -2442,7 +2455,8 @@ TclHAMTInfo(
     count = Tcl_NewWideIntObj((Tcl_WideInt)numBytes);
     Tcl_AppendObjToObj(result, count);
     Tcl_DecrRefCount(count);
-    if (nodes) {
+	Tcl_AppendPrintfToObj(result, "\naverage slots per node: %g",
+		(1.0 * slots)/nodes);
 	Tcl_AppendPrintfToObj(result, "\naverage bytes per node: %g",
 		(1.0 * numBytes)/nodes);
 	Tcl_AppendPrintfToObj(result, "\naverage pairs per node: %g",
@@ -2453,6 +2467,7 @@ TclHAMTInfo(
     for (i = 0; i < depth; i++) {
 	double fraction;
 
+	if (accum[i] == 0) continue;
 	Tcl_AppendPrintfToObj(result, "\nnumber of leafs at %2d hops: ", i);
 	count = Tcl_NewWideIntObj((Tcl_WideInt)accum[i]);
 	Tcl_AppendObjToObj(result, count);
