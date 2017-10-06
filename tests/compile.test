@@ -499,7 +499,8 @@ test compile-15.5 {proper TCL_RETURN code from [return]} {
     apply {{} {catch {set a 1}; return}}
 } ""
 
-for {set noComp 0} {$noComp <= 1} {incr noComp} {
+# Do all tests once byte compiled and once with direct string evaluation
+foreach noComp {0 1} {
 
 if $noComp {
     interp alias {} run {} testevalex

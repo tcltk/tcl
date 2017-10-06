@@ -34,7 +34,7 @@ testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
 
-for {set noComp 0} {$noComp <= 1} {incr noComp} {
+foreach noComp {0 1} {
 
 if $noComp {
     interp alias {} run {} testevalex

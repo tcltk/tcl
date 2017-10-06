@@ -670,7 +670,7 @@ proc l3 {} {
 }
 
 # Do all tests once byte compiled and once with direct string evaluation
-for {set noComp 0} {$noComp <= 1} {incr noComp} {
+foreach noComp {0 1} {
 
 if $noComp {
     interp alias {} run {} testevalex
