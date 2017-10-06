@@ -160,10 +160,14 @@ KVList KVLMerge(
     size_t adjust = 0;
     ClientData prevValue = NULL;
 
+    /* We know our callers... and disable code that cannot happen */
+    assert ( adjustPtr || (one != two) );
+#if 0
     if (adjustPtr == NULL && one == two) {
 	/* Merge into self yields self */
 	return one;
     }
+#endif
     while (l) {
 	/* Check whether key from one is in two. */
 	KVList found = KVLFind(kt, two, l->key);
@@ -279,7 +283,7 @@ KVList KVLRemove(
  *
  * In concept each ArrayMap stands for a single interior node in the
  * complete trie.  The mask and id fields identify which node it is.
- * The masks are set high bits followed by cleared low bits.  The number
+ * The masks are cleared high bits followed by set low bits.  The number
  * of set bits is a multiple of the branch index size of the tree, and
  * the multiplier is the depth of the node in the complete tree.
  *
