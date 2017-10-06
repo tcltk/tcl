@@ -417,9 +417,9 @@ CFG_ENCODING	= \"cp1252\"
 #
 # Extensions built against Tcl sources will use the one from the Tcl source.
 #
-# This can all be overridden by defining the NMAKEHLPC macro to point
-# to the nmakehlp.c file to be used, either from the command line or
-# the containing makefile.
+# When building an extension using a sufficiently new version of Tcl,
+# rules-ext.vc will define NMAKEHLPC appropriately to point to the
+# copy of nmakehlp.c to be used.
 
 !ifndef NMAKEHLPC
 # Default to the one in the current directory (the extension's own nmakehlp.c)
@@ -1346,7 +1346,7 @@ MAKERESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
 
 
 !ifndef DEFAULT_BUILD_TARGET
-DEFAULT_BUILD_TARGET = all
+DEFAULT_BUILD_TARGET = $(PROJECT)
 !endif
 
 default-target: $(DEFAULT_BUILD_TARGET)
@@ -1402,21 +1402,6 @@ default-distclean: default-hose
 default-setup:
 	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
 	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR)
-
-!if ! $(DISABLE_STANDARD_TARGETS)
-setup: default-setup
-install: default-install
-pkgindex: default-pkgindex
-pkgIndex: default-pkgindex
-pkgindex-tea: default-pkgindex-tea
-!endif
-
-!if ! $(DISABLE_CLEAN_TARGETS)
-clean: default-clean
-realclean: hose
-hose: default-hose
-distclean: realclean default-distclean
-!endif
 
 !ifndef DISABLE_IMPLICIT_RULES
 # Implicit rule definitions - only for building library objects. For stubs and

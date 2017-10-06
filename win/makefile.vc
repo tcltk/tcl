@@ -173,9 +173,6 @@ PROJECT = tcl
 # rules.vc file will set up "all" as the target.
 DEFAULT_BUILD_TARGET = release
 
-# We do not want the standard install targets defined in rules.vc
-DISABLE_STANDARD_TARGETS = 1
-
 # The rules.vc file does most of the hard work in terms of defining
 # the build configuration, macros, output directories etc.
 !include "rules.vc"
@@ -952,6 +949,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(OUT_DIR)\tclConfig.sh"         "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(WINDIR)\tclooConfig.sh"        "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(WINDIR)\rules.vc"              "$(LIB_INSTALL_DIR)\nmake\"
+	@$(CPY) "$(WINDIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WINDIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
 	@echo Installing library http1.0 directory
@@ -998,6 +996,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@echo Installing encodings
 	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
 		"$(SCRIPT_INSTALL_DIR)\encoding\"
+# "emacs font-lock highlighting fix
 
 install-tzdata:
 	@echo Installing time zone data
@@ -1031,7 +1030,9 @@ tidy:
 	@echo Removing $(TCLREGLIB) ...
 	@if exist $(TCLREGLIB) del $(TCLREGLIB)
 
-clean: clean-pkgs
+clean: default-clean clean-pkgs
+hose: default-hose
+realclean: hose
 
 # Local Variables:
 # mode: makefile

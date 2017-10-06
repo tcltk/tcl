@@ -1,0 +1,21 @@
+#------------------------------------------------------------- -*- makefile -*-
+
+$(PROJECT): setup pkgindex $(PRJLIB)
+
+!if "$(PROJECT)" != "tcl" && "$(PROJECT)" != "tk"
+# MAKEBINCMD will do shared, static and debug links as appropriate
+# _VC_MANIFEST_EMBED_DLL embeds the manifest for shared libraries
+# and is a no-op for static libraries
+$(PRJLIB): $(PRJ_OBJS)
+       $(MAKEBINCMD) $**
+       $(_VC_MANIFEST_EMBED_DLL)
+       -@del $*.exp
+!endif
+
+setup: default-setup
+install: default-install
+clean: default-clean
+realclean: hose
+hose: default-hose
+distclean: realclean default-distclean
+

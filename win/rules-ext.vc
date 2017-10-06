@@ -70,6 +70,8 @@ _RULESDIR = .
 
 !endif # $(_RULESDIR) != "."
 
+# Let rules.vc know what copy of nmakehlp.c to use.
+NMAKEHLPC = $(_RULESDIR)\nmakehlp.c
 
 # Get rid of our internal defines before calling rules.vc
 !undef TCL_RULES_MAJOR
