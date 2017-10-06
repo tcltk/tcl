@@ -28,15 +28,20 @@ proc makeShared {s} {uplevel 1 [list lappend copy $s]; return $s}
 
 # Some tests require the testobj command
 
-testConstraint testobj [expr {[info commands testobj] != {}}]
-testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
+testConstraint testobj [expr {[info commands testobj] ne {}}]
+testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
+testConstraint testevalex [expr {[info commands testevalex] ne {}}]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
 
 foreach noComp {0 1} {
 
-if $noComp {
+if {$noComp} {
+    if {[info commands testevalex] eq {}} {
+	test string-0.1.$noComp "show testevalex availability" {testevalex} {list} {}
+	continue
+    }
     interp alias {} run {} testevalex
     set constraints testevalex
 } else {
