@@ -870,6 +870,7 @@ VERSION = $(TK_VERSION)
 !endif
 !include versions.vc
 !endif # DOTVERSION
+VERSION         = $(DOTVERSION:.=)
 
 !endif # $(DOING_TCL) ... etc.
 
