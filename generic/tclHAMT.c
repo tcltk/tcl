@@ -813,9 +813,7 @@ ArrayMap AMMergeList(
 
 	    new = AMNew(numList, numSubnode, am->mask, am->id);
 
-	    new->size = am->size - KVLSize(am->slot[loffset + numList])
-		    + KVLSize(l);
-
+	    new->size = am->size + KVLSize(l) - *adjustPtr;
 	    new->kvMap = am->kvMap;
 	    new->amMap = am->amMap;
 	    dst = new->slot;
@@ -908,6 +906,8 @@ ArrayMap AMMergeList(
 
 	new->size = am->size - child->size + sub->size;
 
+	assert ( new->size == am->size + child->size - *adjustPtr );
+
 	new->kvMap = am->kvMap;
 	new->amMap = am->amMap;
 	dst = new->slot;
@@ -982,7 +982,7 @@ ArrayMap AMMergeList(
 /* Forward declaration for mutual recursion */
 static ArrayMap		AMMerge(const TclHAMTKeyType *kt,
 			    const TclHAMTValueType *vt, ArrayMap one,
-			    ArrayMap two, size_t *adjustPtr);
+			    ArrayMap two);
 
 
 /*
@@ -1003,8 +1003,7 @@ ArrayMap AMMergeContents(
     const TclHAMTKeyType *kt,
     const TclHAMTValueType *vt,
     ArrayMap one,
-    ArrayMap two,
-    size_t *adjustPtr)
+    ArrayMap two)
 {
     ArrayMap new;
     int numList, numSubnode;
@@ -1120,7 +1119,9 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 	    KVList l1, l2;
 
 	    if ((tally & one->amMap) && (tally & two->amMap)) {
-		am = AMMerge(kt, vt, *src1++, *src2++, &term);
+		size_t sum = ((ArrayMap)*src1)->size + ((ArrayMap)*src2)->size;
+		am = AMMerge(kt, vt, *src1++, *src2++);
+		term = sum - am->size;
 		adjust += term;
 		AMClaim(am);
 		*dst++ = am;
@@ -1167,10 +1168,6 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 	}
     }
     new->size = one->size + two->size - adjust;
-    if (adjustPtr) {
-	*adjustPtr = adjust;
-    }
-
     return new;
 }
 
@@ -1192,7 +1189,6 @@ ArrayMap AMMergeDescendant(
     const TclHAMTValueType *vt,
     ArrayMap ancestor,
     ArrayMap descendant,
-    size_t *adjustPtr,
     int ancestorIsFirst)
 {
     const int branchMask = (branchFactor - 1);
@@ -1211,7 +1207,7 @@ ArrayMap AMMergeDescendant(
 	/* Already have list child there. Must merge them. */
 	sub = AMMergeList(kt, vt, descendant, (size_t)ancestor->slot[loffset],
 		ancestor->slot[loffset + numList],
-		adjustPtr, NULL, ancestorIsFirst);
+		NULL, NULL, ancestorIsFirst);
 	new = AMNew(numList - 1, numSubnode + 1, ancestor->mask, ancestor->id);
 
 	new->size = ancestor->size - descendant->size + sub->size;
@@ -1256,9 +1252,9 @@ ArrayMap AMMergeDescendant(
 
 	/* Already have node child there. Must merge them. */
 	if (ancestorIsFirst) {
-	    sub = AMMerge(kt, vt, child, descendant, adjustPtr);
+	    sub = AMMerge(kt, vt, child, descendant);
 	} else {
-	    sub = AMMerge(kt, vt, descendant, child, adjustPtr);
+	    sub = AMMerge(kt, vt, descendant, child);
 	}
 	if (sub == ancestor->slot[2*numList + soffset]) {
 	    return ancestor;
@@ -1321,9 +1317,6 @@ ArrayMap AMMergeDescendant(
 	AMClaim((ArrayMap) *src);
 	*dst++ = *src++;
     }
-    if (adjustPtr) {
-	*adjustPtr = 0;
-    }
     return new;
 }
 
@@ -1344,40 +1337,30 @@ ArrayMap AMMerge(
     const TclHAMTKeyType *kt,
     const TclHAMTValueType *vt,
     ArrayMap one,
-    ArrayMap two,
-    size_t *adjustPtr)
+    ArrayMap two)
 {
     if (one->mask == two->mask) {
 	/* Nodes at the same depth ... */
 	if (one->id == two->id) {
 	    /* ... and the same id; merge contents */
-	    return AMMergeContents(kt, vt, one, two, adjustPtr);
+	    return AMMergeContents(kt, vt, one, two);
 	}
 	/* ... but are not same. Create parent to contain both. */
-	if (adjustPtr) {
-	    *adjustPtr = 0;
-	}
 	return AMNewParent(one, two);
     }
     if (one->mask < two->mask) {
 	/* two is deeper than one... */
 	if ((one->mask & two->id) == one->id) {
 	    /* ... and is a descendant of one. */
-	    return AMMergeDescendant(kt, vt, one, two, adjustPtr, 1);
+	    return AMMergeDescendant(kt, vt, one, two, 1);
 	}
 	/* ...but is not a descendant. Create parent to contain both. */
-	if (adjustPtr) {
-	    *adjustPtr = 0;
-	}
 	return AMNewParent(one, two);
     }
     /* one is deeper than two... */
     if ((two->mask & one->id) == two->id) {
 	/* ... and is a descendant of two. */
-	return AMMergeDescendant(kt, vt, two, one, adjustPtr, 0);
-    }
-    if (adjustPtr) {
-	*adjustPtr = 0;
+	return AMMergeDescendant(kt, vt, two, one, 0);
     }
     return AMNewParent(one, two);
 }
@@ -1687,7 +1670,6 @@ ArrayMap AMRemove(
 
 typedef struct HAMT {
     size_t			claim;	/* How many claims on this struct */
-    size_t			size;	/* How many pairs stored? */
     const TclHAMTKeyType	*kt;	/* Custom key handling functions */
     const TclHAMTValueType	*vt;	/* Custom value handling functions */
     KVList			kvl;	/* When map stores a single KVList,
@@ -2068,7 +2050,6 @@ TclHAMTMerge(
     TclHAMT two)
 {
     ArrayMap am;
-    size_t adjust;
 
     /* Sanity check for incompatible customizations. */
     if ((one->kt != two->kt) || (one->vt != two->vt)) {
@@ -2098,7 +2079,7 @@ TclHAMTMerge(
 	    if (one->x.hash == two->x.hash) {
 		/* Same hash -> merge the lists */
 		KVList l = KVLMerge(one->kt, one->vt,
-			one->kvl, two->kvl, &adjust, NULL);
+			one->kvl, two->kvl, NULL, NULL);
 
 		if (l == one->kvl) {
 		    return one;
@@ -2114,7 +2095,7 @@ TclHAMTMerge(
 	}
 	/* two has a tree */
 	am = AMMergeList(one->kt, one->vt,
-		two->x.am, one->x.hash, one->kvl, &adjust, NULL, 1);
+		two->x.am, one->x.hash, one->kvl, NULL, NULL, 1);
 	if (am == two->x.am) {
 	    /* Merge gave back same tree. Avoid a copy. */
 	    return two;
@@ -2125,7 +2106,7 @@ TclHAMTMerge(
     /* one has a tree */
     if (two->kvl) {
 	am = AMMergeList(one->kt, one->vt,
-		one->x.am, two->x.hash, two->kvl, &adjust, NULL, 0);
+		one->x.am, two->x.hash, two->kvl, NULL, NULL, 0);
 	if (am == one->x.am) {
 	    /* Merge gave back same tree. Avoid a copy. */
 	    return one;
@@ -2134,7 +2115,7 @@ TclHAMTMerge(
     }
 
     /* Merge two trees */
-    am = AMMerge(one->kt, one->vt, one->x.am, two->x.am, &adjust);
+    am = AMMerge(one->kt, one->vt, one->x.am, two->x.am);
     if (am == one->x.am) {
 	return one;
     }
