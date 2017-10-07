@@ -799,13 +799,17 @@ ArrayMap AMMergeList(
 	if (am->slot[loffset] == (ClientData)hash) {
 	    /* Hash of list child matches. Merge to it. */
 	    KVList l;
+	    size_t adjust = 0;
 
 	    if (listIsFirst) {
 		l = KVLMerge(kt, vt, kvl, am->slot[loffset + numList],
-			adjustPtr, valuePtr);
+			&adjust, valuePtr);
 	    } else {
 		l = KVLMerge(kt, vt, am->slot[loffset + numList], kvl,
-			adjustPtr, valuePtr);
+			&adjust, valuePtr);
+	    }
+	    if (adjustPtr) {
+		*adjustPtr = adjust;
 	    }
 	    if (l == am->slot[loffset + numList]) {
 		return am;
@@ -813,7 +817,7 @@ ArrayMap AMMergeList(
 
 	    new = AMNew(numList, numSubnode, am->mask, am->id);
 
-	    new->size = am->size + KVLSize(l) - *adjustPtr;
+	    new->size = am->size + KVLSize(kvl) - adjust;
 	    new->kvMap = am->kvMap;
 	    new->amMap = am->amMap;
 	    dst = new->slot;
@@ -905,8 +909,6 @@ ArrayMap AMMergeList(
 	new = AMNew(numList, numSubnode, am->mask, am->id);
 
 	new->size = am->size - child->size + sub->size;
-
-	assert ( new->size == am->size + child->size - *adjustPtr );
 
 	new->kvMap = am->kvMap;
 	new->amMap = am->amMap;
@@ -1210,7 +1212,8 @@ ArrayMap AMMergeDescendant(
 		NULL, NULL, ancestorIsFirst);
 	new = AMNew(numList - 1, numSubnode + 1, ancestor->mask, ancestor->id);
 
-	new->size = ancestor->size - descendant->size + sub->size;
+	new->size = ancestor->size - KVLSize(ancestor->slot[loffset + numList])
+		+ sub->size;
 	new->kvMap = ancestor->kvMap & ~tally;
 	new->amMap = ancestor->amMap | tally;
 	dst = new->slot;
