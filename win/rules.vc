@@ -398,8 +398,6 @@ _VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -ou
 CFG_ENCODING	= \"cp1252\"
 !endif
 
-!message =====================================================================
-
 ################################################################
 # 4. Build the nmakehlp program
 # This is a helper app we need to overcome nmake's limiting
@@ -1337,12 +1335,12 @@ MAKEGUICMD = $(link32) $(guilflags) -out:$@ $(baselibs) $(tcllibs)
 MAKERESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
 	    $(TCL_INCLUDES) \
 	    -DDEBUG=$(DEBUG) -d UNCHECKED=$(UNCHECKED) \
-	    -DTCL_THREADS=$(TCL_THREADS) \
-	    -DSTATIC_BUILD=$(STATIC_BUILD) \
 	    -DCOMMAVERSION=$(DOTVERSION:.=,),0 \
 	    -DDOTVERSION=\"$(DOTVERSION)\" \
 	    -DVERSION=\"$(VERSION)\" \
 	    -DSUFX=\"$(SUFX)\" \
+            -DPROJECT=\"$(PROJECT)\" \
+            -DPRJLIBNAME=\"$(PRJLIBNAME)\" \
 	    $<
 
 
@@ -1404,6 +1402,43 @@ default-setup:
 	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
 	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR)
 
+default-rc:
+	@$(COPY) << $(TMP_DIR)\$(PROJECT).rc
+#include <winver.h>
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION	COMMAVERSION
+ PRODUCTVERSION	COMMAVERSION
+ FILEFLAGSMASK	0x3fL
+#ifdef DEBUG
+ FILEFLAGS	VS_FF_DEBUG
+#else
+ FILEFLAGS	0x0L
+#endif
+ FILEOS		VOS_NT_WINDOWS32
+ FILETYPE	VFT_DLL
+ FILESUBTYPE	0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "FileDescription",  "Tcl extension " PROJECT
+            VALUE "OriginalFilename", PRJLIBNAME
+            VALUE "FileVersion",      DOTVERSION
+            VALUE "ProductName",      "Package " PROJECT " for Tcl"
+            VALUE "ProductVersion",   DOTVERSION 
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+<<
+
+
 !ifndef DISABLE_IMPLICIT_RULES
 # Implicit rule definitions - only for building library objects. For stubs and
 # main application, the master makefile should define explicit rules.
@@ -1427,6 +1462,9 @@ $<
 	$(MAKERESCMD)
 
 {$(WINDIR)}.rc{$(TMP_DIR)}.res:
+	$(MAKERESCMD)
+
+{$(TMP_DIR)}.rc{$(TMP_DIR)}.res:
 	$(MAKERESCMD)
 
 .SUFFIXES:
