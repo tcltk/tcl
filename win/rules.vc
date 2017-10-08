@@ -1390,7 +1390,9 @@ default-setup:
 	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
 	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR)
 
-default-rc:
+default-rc: $(TMP_DIR)\$(PROJECT).rc
+
+$(TMP_DIR)\$(PROJECT).rc:
 	@$(COPY) << $(TMP_DIR)\$(PROJECT).rc
 #include <winver.h>
 
