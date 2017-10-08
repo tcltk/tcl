@@ -613,13 +613,12 @@ gentommath_h:
 # Build the Windows HTML help file.
 #---------------------------------------------------------------------
 
-# NOTE: you can define HHC on the command-line to override this
-!ifndef HHC
-!if exist("$(PROGRAMFILES_X86)\HTML Help Workshop\hhc.exe")
-HHC=$(PROGRAMFILES_X86)\HTML Help Workshop\hhc.exe
+# NOTE: you can define HHC on the command-line to override this.
+# nmake does not set macro values if already set on the command line.
+!if defined(PROCESSOR_ARCHITECTURE) && "$(PROCESSOR_ARCHITECTURE)" == "AMD64"
+HHC="%ProgramFiles(x86)%\HTML Help Workshop\hhc.exe"
 !else
-HHC=hhc.exe
-!endif
+HHC="%ProgramFiles%\HTML Help Workshop\hhc.exe"
 !endif
 HTMLDIR=$(OUT_DIR)\html
 HTMLBASE=TclTk$(VERSION)
