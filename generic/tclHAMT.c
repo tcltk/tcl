@@ -110,18 +110,6 @@ void KVLDisclaim(
 }
 
 static
-size_t KVLSize(
-    KVList l)
-{
-    size_t size = 0;
-    while (l) {
-	size++;
-	l = l->tail;
-    }
-    return size;
-}
-
-static
 KVList KVLFind(
     HAMT *hamt,
     KVList l,
@@ -614,7 +602,7 @@ ArrayMap AMNewBranch(
     assert ( idx1 != idx2 );
     assert ( (sub->id & mask) == new->id );
 
-    new->size = sub->size + KVLSize(l);
+    new->size = sub->size + 1;
     new->kvMap = (size_t)1 << idx1;
     new->amMap = (size_t)1 << idx2;
 
@@ -675,7 +663,7 @@ ArrayMap AMNewLeaf(
     assert ( idx1 != idx2 );
     assert ( (hash2 & mask) == new->id );
 
-    new->size = KVLSize(l1) + KVLSize(l2);
+    new->size = 2;
     new->kvMap = ((size_t)1 << idx1) | ((size_t)1 << idx2);
     new->amMap = 0;
 
@@ -828,7 +816,7 @@ ArrayMap AMMergeList(
 
 	    new = AMNew(numList, numSubnode, am->mask, am->id);
 
-	    new->size = am->size + KVLSize(kvl) - adjust;
+	    new->size = am->size + 1 - adjust;
 	    new->kvMap = am->kvMap;
 	    new->amMap = am->amMap;
 	    dst = new->slot;
@@ -865,7 +853,7 @@ ArrayMap AMMergeList(
 	/* Remove the list, Insert the leaf subnode */
 	new = AMNew(numList - 1, numSubnode + 1, am->mask, am->id);
 
-	new->size = am->size + KVLSize(kvl);
+	new->size = am->size + 1;
 
 	new->kvMap = am->kvMap & ~tally;
 	new->amMap = am->amMap | tally;
@@ -954,7 +942,7 @@ ArrayMap AMMergeList(
     /* am is not using this tally; copy am and add it. */
     new = AMNew(numList + 1, numSubnode, am->mask, am->id);
 
-    new->size = am->size + KVLSize(kvl);
+    new->size = am->size + 1;
     new->kvMap = am->kvMap | tally;
     new->amMap = am->amMap;
     dst = new->slot;
@@ -1219,8 +1207,7 @@ ArrayMap AMMergeDescendant(
 		NULL, NULL, ancestorIsFirst);
 	new = AMNew(numList - 1, numSubnode + 1, ancestor->mask, ancestor->id);
 
-	new->size = ancestor->size - KVLSize(ancestor->slot[loffset + numList])
-		+ sub->size;
+	new->size = ancestor->size - 1 + sub->size;
 	new->kvMap = ancestor->kvMap & ~tally;
 	new->amMap = ancestor->amMap | tally;
 	dst = new->slot;
@@ -1623,7 +1610,7 @@ ArrayMap AMRemove(
 
 	    new = AMNew(numList + 1, numSubnode - 1, am->mask, am->id);
 
-	    new->size = am->size - child->size + KVLSize(l);
+	    new->size = am->size - child->size + 1;
 
 	    new->kvMap = am->kvMap | tally;
 	    new->amMap = am->amMap & ~tally;
@@ -2122,12 +2109,14 @@ size_t
 TclHAMTSize(
     TclHAMT hamt)
 {
+    size_t size = 0;
     if (hamt->kvl) {
-	return KVLSize(hamt->kvl);
+	size = 1;
     } else if (hamt->x.am) {
-	return hamt->x.am->size;
+	size = hamt->x.am->size;
     }
-    return 0;
+    /* TODO: Add the size of the hamt overflow. */
+    return size;
 }
 
 
