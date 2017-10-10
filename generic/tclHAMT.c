@@ -22,27 +22,22 @@
 /*
  * Each KVNode contains a key, value pair.
  *
- * OUTDATED text below.
- * All of our key/value pairs are to be stored in persistent lists, where
- * all the keys in a list produce the same hash value.  Given a quality
- * hash function, these lists should almost always hold a single key/value
- * pair.  For the rare case when we experience a hash collision, though, we
- * have to be prepared to make lists of arbitrary length.
+ * It also holds a claim counter to support value sharing. The current
+ * implementation of the claim mechanism makes the overall structure
+ * suitable for only single-threaded operations. Later refinements in
+ * development are intended to ease this constraint.
  *
- * For the most part these are pretty standard linked lists.  The only
- * tricky things are that in any one list we will store at most one
- * key from each equivalence class of keys, as determined by the key type,
- * and we keep the collection of all lists, persistent and immutable, each 
- * until nothing has an interest in it any longer.  This means that distinct
- * lists can have common tails. The interest is maintained by
- * a claim count.  The current implementation of the claim mechanism
- * makes the overall structure suitable for only single-threaded operations.
- * Later refinements in development are intended to ease this constraint.
+ * A previous implementation kept lists of pairs to account for hash
+ * collisions.  With 64-bit hashes and any reasonable hash function,
+ * hash collisions are not just uncommon, they are essentially impossible.
+ * Instead of making every KVNode capable of handling arbitrary numbers
+ * of pairs, we let each handle only one pair, and shift the burden of
+ * taking care of collisions to the overall HAMT structure, still to
+ * be implemented.
  */
 
 typedef struct KVNode *KVList;
 typedef struct AMNode *ArrayMap;
-
 
 typedef struct KVNode {
     size_t	claim;	/* How many claims on this struct */
