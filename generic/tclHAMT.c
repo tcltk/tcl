@@ -84,10 +84,11 @@ void KVLClaim(
 
 static
 void KVLDisclaim(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     KVList l)
 {
+    const TclHAMTKeyType *kt = hamt->kt;
+    const TclHAMTValueType *vt = hamt->vt;
     if (l == NULL) {
 	return;
     }
@@ -103,7 +104,7 @@ void KVLDisclaim(
 	vt->dropRefProc(l->value);
     }
     l->value = NULL;
-    KVLDisclaim(kt, vt, l->tail);
+    KVLDisclaim(hamt, l->tail);
     l->tail = NULL;
     ckfree(l);
 }
@@ -142,12 +143,13 @@ KVList KVLFind(
 
 static
 KVList KVLNew(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     ClientData key,
     ClientData value,
     KVList tail)
 {
+    const TclHAMTKeyType *kt = hamt->kt;
+    const TclHAMTValueType *vt = hamt->vt;
     KVList new = ckalloc(sizeof(KVNode));
     new->claim = 0;
     if (kt && kt->makeRefProc) {
@@ -179,8 +181,6 @@ KVList KVLMerge(
     size_t *adjustPtr,
     ClientData *valuePtr)
 {
-    const TclHAMTKeyType *kt = hamt->kt;
-    const TclHAMTValueType *vt = hamt->vt;
     KVList result = two;
     KVList l = one;
     int canReturnOne = 1;
@@ -220,7 +220,7 @@ KVList KVLMerge(
 	     * was not overwritten as well as the new key values
 	     * from two.  We now know result can be neither one nor two.
 	     */
-	    result = KVLNew(kt, vt, l->key, l->value, result);
+	    result = KVLNew(hamt, l->key, l->value, result);
 	    canReturnOne = 0;
 	    canReturnTwo = 0;
 	}
@@ -256,15 +256,13 @@ KVList KVLInsert(
     ClientData value,
     ClientData *valuePtr)
 {
-    const TclHAMTKeyType *kt = hamt->kt;
-    const TclHAMTValueType *vt = hamt->vt;
-    KVList new = KVLNew(kt, vt, key, value, NULL);
+    KVList new = KVLNew(hamt, key, value, NULL);
     KVList result = KVLMerge(hamt, l, new, NULL, valuePtr);
 
     if (result == l) {
 	/* No-op insert; discard new node */
 	KVLClaim(new);
-	KVLDisclaim(kt, vt, new);
+	KVLDisclaim(hamt, new);
     }
     return result;
 }
@@ -276,8 +274,6 @@ KVList KVLRemove(
     ClientData key,
     ClientData *valuePtr)
 {
-    const TclHAMTKeyType *kt = hamt->kt;
-    const TclHAMTValueType *vt = hamt->vt;
     KVList found = KVLFind(hamt, l, key);
 
     if (found) {
@@ -290,7 +286,7 @@ KVList KVLRemove(
 
 	KVList result = found->tail;
 	while (l != found) {
-	    result = KVLNew(kt, vt, l->key, l->value, result);
+	    result = KVLNew(hamt, l->key, l->value, result);
 	    l = l->tail;
 	}
 
@@ -449,8 +445,7 @@ void AMClaim(
 
 static
 void AMDisclaim(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     ArrayMap am)
 {
     int i, numList, numSubnode;
@@ -475,11 +470,11 @@ void AMDisclaim(
 	am->slot[i] = NULL;
     }
     for (i = numList; i < 2*numList; i++) {
-	KVLDisclaim(kt, vt, am->slot[i]);
+	KVLDisclaim(hamt, am->slot[i]);
 	am->slot[i] = NULL;
     }
     for (i = 2*numList; i < 2*numList + numSubnode; i++) {
-	AMDisclaim(kt, vt, am->slot[i]);
+	AMDisclaim(hamt, am->slot[i]);
 	am->slot[i] = NULL;
     }
 
@@ -1405,15 +1400,13 @@ ArrayMap AMInsert(
     ClientData value,
     ClientData *valuePtr)
 {
-    const TclHAMTKeyType *kt = hamt->kt;
-    const TclHAMTValueType *vt = hamt->vt;
     KVList new = KVLInsert(hamt, NULL, key, value, valuePtr);
     ArrayMap result = AMMergeList(hamt, am, hash, new, NULL, valuePtr, 0);
 
     if (result == am) {
 	/* No-op insert; discard new node */
 	KVLClaim(new);
-	KVLDisclaim(kt, vt, new);
+	KVLDisclaim(hamt, new);
     }
     return result;
 }
@@ -1816,11 +1809,11 @@ TclHAMTDisclaim(
 	return;
     }
     if (hamt->kvl) {
-	KVLDisclaim(hamt->kt, hamt->vt, hamt->kvl);
+	KVLDisclaim(hamt, hamt->kvl);
 	hamt->kvl = NULL;
 	hamt->x.hash = 0;
     } else if (hamt->x.am) {
-	AMDisclaim(hamt->kt, hamt->vt, hamt->x.am);
+	AMDisclaim(hamt, hamt->x.am);
 	hamt->x.am = NULL;
     }
     hamt->kt = NULL;
