@@ -108,14 +108,8 @@ int KVLEqualKeys(
     ClientData key2)
 {
     const TclHAMTKeyType *kt = hamt->kt;
-
-    if (key1 == key2) {
-	return 1;
-    }
-    if (kt && kt->isEqualProc && kt->isEqualProc( key1, key2) ) {
-	return 1;
-    }
-    return 0;
+    return (key1 == key2)
+	    || (kt && kt->isEqualProc && kt->isEqualProc( key1, key2) );
 }
 
 static
@@ -170,6 +164,7 @@ KVList KVLMerge(
     KVList two,
     ClientData *valuePtr)
 {
+    assert ( two != NULL );
     if (one == NULL) {
 	if (valuePtr) {
 	    *valuePtr = NULL;
