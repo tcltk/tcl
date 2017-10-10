@@ -20,6 +20,9 @@
 #endif
 
 /*
+ * Each KVNode contains a key, value pair.
+ *
+ * OUTDATED text below.
  * All of our key/value pairs are to be stored in persistent lists, where
  * all the keys in a list produce the same hash value.  Given a quality
  * hash function, these lists should almost always hold a single key/value
@@ -43,7 +46,6 @@ typedef struct AMNode *ArrayMap;
 
 typedef struct KVNode {
     size_t	claim;	/* How many claims on this struct */
-    KVList	tail;	/* The part of the list(s) following this pair */
     ClientData	key;	/* Key... */
     ClientData	value;	/* ...and Value of this pair */
 } KVNode;
@@ -64,22 +66,21 @@ typedef struct HAMT {
 
 /*
  * The operations on a KVList:
- *	KVLClaim	Make a claim on the list.
- *	KVLDisclaim	Release a claim on the list.
+ *	KVLClaim	Make a claim on the pair.
+ *	KVLDisclaim	Release a claim on the pair.
  *	KVLNew		Node creation utility
- *	KVLFind		Find the tail starting with an equal key.
+ *	KVLFind		Find the KV Pair containing an equal key.
  *	KVLMerge	Bring together two KV pairs with same hash.
- *	KVLInsert	Create a new list, inserting new pair into old list.
- *	KVLRemove	Create a new list, with any pair matching key removed.
+ *	KVLInsert	Create a new pair, merging new pair onto old one.
+ *	KVLRemove	Create a new pair, removing any pair matching key.
  */
 
 static
 void KVLClaim(
     KVList l)
 {
-    if (l != NULL) {
-	l->claim++;
-    }
+    assert ( l != NULL );
+    l->claim++;
 }
 
 static
@@ -89,11 +90,9 @@ void KVLDisclaim(
 {
     const TclHAMTKeyType *kt = hamt->kt;
     const TclHAMTValueType *vt = hamt->vt;
-    if (l == NULL) {
-	return;
-    }
-    l->claim--;
-    if (l->claim) {
+
+    assert ( l != NULL );
+    if (--l->claim) {
 	return;
     }
     if (kt && kt->dropRefProc) {
@@ -104,8 +103,6 @@ void KVLDisclaim(
 	vt->dropRefProc(l->value);
     }
     l->value = NULL;
-    KVLDisclaim(hamt, l->tail);
-    l->tail = NULL;
     ckfree(l);
 }
 
@@ -145,8 +142,7 @@ static
 KVList KVLNew(
     HAMT *hamt,
     ClientData key,
-    ClientData value,
-    KVList tail)
+    ClientData value)
 {
     const TclHAMTKeyType *kt = hamt->kt;
     const TclHAMTValueType *vt = hamt->vt;
@@ -160,10 +156,6 @@ KVList KVLNew(
 	vt->makeRefProc(value);
     }
     new->value = value;
-    if (tail) {
-	KVLClaim(tail);
-    }
-    new->tail = tail;
     return new;
 }
 
@@ -173,11 +165,8 @@ KVList KVLNew(
  * It is extremely likely they hold the same key. In that case, the
  * result of the merge is to return two, and the overwritten value
  * is extracted from one.
- *
- *
- * When returning "one" itself is a correct answer, do that.
- * Otherwise, when returning "two" itself is a correct answer, do that.
- * These constraints help subdue creation of unnecessary copies.
+ * An overwrite by an identical KVNode is detected and turned into
+ * a no-op.
  */
 static
 KVList KVLMerge(
@@ -216,7 +205,7 @@ KVList KVLInsert(
     ClientData value,
     ClientData *valuePtr)
 {
-    KVList new = KVLNew(hamt, key, value, NULL);
+    KVList new = KVLNew(hamt, key, value);
     KVList result = KVLMerge(hamt, l, new, valuePtr);
 
     if (result == l) {
@@ -227,6 +216,12 @@ KVList KVLInsert(
     return result;
 }
 
+/*
+ * Caller asserts that hash of key is same as hash of KVNode l.
+ * It is extremely likely they hold the same key. In that case, the
+ * result is NULL as we remove the KV Node matching key, and the
+ * disappearing value is pulled from l.
+ */
 static
 KVList KVLRemove(
     HAMT *hamt,
@@ -234,28 +229,16 @@ KVList KVLRemove(
     ClientData key,
     ClientData *valuePtr)
 {
-    KVList found = KVLFind(hamt, l, key);
+    assert ( l != NULL );
 
-    if (found) {
-
-	/*
-	 * List l has a pair matching key
-	 * Need to create new list without the found node.
-	 * Make needed copies. Keep common tail.
-	 */
-
-	KVList result = found->tail;
-	while (l != found) {
-	    result = KVLNew(hamt, l->key, l->value, result);
-	    l = l->tail;
-	}
-
+    if (KVLEqualKeys(hamt, l->key, key)) {
 	if (valuePtr) {
-	    *valuePtr = found->value;
+	    *valuePtr = l->value;
 	}
-
-	return result;
+	return NULL;
     }
+
+    /* TODO: Implement fallback to the hamt overflow. */
 
     if (valuePtr) {
 	*valuePtr = NULL;
@@ -1040,6 +1023,13 @@ assert( src2 == two->slot + NumBits(two->kvMap) );
 	if (tally & kvMap) {
 	    if ((tally & one->kvMap) && (tally & two->kvMap)) {
 		KVList l = KVLMerge(hamt, *src1, *src2, NULL);
+		if ((l == *src1) && (l != *src2)) {
+		    /* *src1 and *src2 are identical values.
+		     * Make them the same value. */
+		    KVLClaim(l);
+		    KVLDisclaim(hamt, *src2);
+		    *src2 = l;
+		}
 		KVLClaim(l);
 		*dst++ = l;
 	    } else if (tally & one->kvMap) {
@@ -1998,6 +1988,12 @@ TclHAMTMerge(
 		KVList l = KVLMerge(one, one->kvl, two->kvl, NULL);
 
 		if (l == one->kvl) {
+		    if (l != two->kvl) {
+			/* Convert identical values to same values */
+			KVLClaim(l);
+			KVLDisclaim(one, two->kvl);
+			two->kvl = l;
+		    }
 		    return one;
 		}
 		if (l == two->kvl) {
@@ -2101,6 +2097,8 @@ TclHAMTFirst(
     const int branchShift = TclMSB(branchFactor);
     const int depth = CHAR_BIT * sizeof(size_t) / branchShift;
 
+    /* TODO: Account for the hamt overflow */
+
     Idx *i;
     ArrayMap am;
     int n;
@@ -2174,14 +2172,10 @@ HAMTNext(
     ClientData *slotPtr;
     int n, seen = 0;
 
+    /* TODO: Account for the hamt overflow */
+
     assert ( i );
     assert ( i->kvl );
-
-    if (i->kvl->tail) {
-	/* There are more key, value pairs in this bucket. */
-	i->kvl = i->kvl->tail;
-	return;
-    }
 
     /* On to the next KVList bucket. */
     if (i->kvlc) {
@@ -2354,12 +2348,11 @@ TclHAMTInfo(
     }
 
     while (idx) {
-	if (idx->kvl->tail) {
-	    collisions++;
-	}
 	accum[ idx->top - idx->stack ]++;
 	HAMTNext(&idx, hist);
     }
+
+    /* TODO: account for the hamt overflow contents */
     Tcl_AppendPrintfToObj(result, "\nnumber of collisions: %d", collisions);
 
     for (i = 0; i < 129; i++) {
