@@ -68,7 +68,7 @@ typedef struct HAMT {
  *	KVLDisclaim	Release a claim on the list.
  *	KVLNew		Node creation utility
  *	KVLFind		Find the tail starting with an equal key.
- *	KVLMerge	Create a new list, merger of two lists.
+ *	KVLMerge	Bring together two KV pairs with same hash.
  *	KVLInsert	Create a new list, inserting new pair into old list.
  *	KVLRemove	Create a new list, with any pair matching key removed.
  */
@@ -109,20 +109,32 @@ void KVLDisclaim(
     ckfree(l);
 }
 
+static 
+int KVLEqualKeys(
+    HAMT *hamt,
+    ClientData key1,
+    ClientData key2)
+{
+    const TclHAMTKeyType *kt = hamt->kt;
+
+    if (key1 == key2) {
+	return 1;
+    }
+    if (kt && kt->isEqualProc && kt->isEqualProc( key1, key2) ) {
+	return 1;
+    }
+    return 0;
+}
+
 static
 KVList KVLFind(
     HAMT *hamt,
     KVList l,
     ClientData key)
 {
-    const TclHAMTKeyType *kt = hamt->kt;
-
     assert ( l != NULL);
 
-    if (l->key == key) {
-	return l;
-    }
-    if (kt && kt->isEqualProc && kt->isEqualProc( l->key, key) ) {
+    if (KVLEqualKeys(hamt, l->key, key)) {
 	return l;
     }
     /* TODO: Find in the hamt overflow. */
@@ -156,7 +168,13 @@ KVList KVLNew(
 }
 
 /*
- * Return a list that is merge of argument lists one and two.
+ * Return the merge of argument KV pairs one and two.
+ * Caller asserts that the two pairs belong to the same hash.
+ * It is extremely likely they hold the same key. In that case, the
+ * result of the merge is to return two, and the overwritten value
+ * is extracted from one.
+ *
+ *
  * When returning "one" itself is a correct answer, do that.
  * Otherwise, when returning "two" itself is a correct answer, do that.
  * These constraints help subdue creation of unnecessary copies.
@@ -166,74 +184,28 @@ KVList KVLMerge(
     HAMT *hamt,
     KVList one,
     KVList two,
-    size_t *adjustPtr,
     ClientData *valuePtr)
 {
-    KVList result = two;
-    KVList l = one;
-    int canReturnOne = 1;
-    int canReturnTwo = 1;
-    int numSame = 0;
-    size_t adjust = 0;
-    ClientData prevValue = NULL;
-
-    /* We know our callers... and disable code that cannot happen */
-    assert ( adjustPtr || (one != two) );
-#if 0
-    if (adjustPtr == NULL && one == two) {
-	/* Merge into self yields self */
-	return one;
-    }
-#endif
-    while (l) {
-	/* Check whether key from one is in two. */
-	KVList found = KVLFind(hamt, two, l->key);
-
-	if (found) {
-	    /*
-	     * This merge includes an overwrite of a key in one by
-	     * the same key in two.
-	     */
-	    if (found->value == l->value) {
-		numSame++;
-	    } else {
-		/* This pair in one cannot be in the merge. */
-		canReturnOne = 0;
-	    }
-	    adjust++;
-	    prevValue = l->value;
-	} else {
-	    /*
-	     * result needs to contain old key value from one that
-	     * was not overwritten as well as the new key values
-	     * from two.  We now know result can be neither one nor two.
-	     */
-	    result = KVLNew(hamt, l->key, l->value, result);
-	    canReturnOne = 0;
-	    canReturnTwo = 0;
-	}
-	l = l->tail;
-    }
-    if (valuePtr) {
-	*valuePtr = prevValue;
-    }
-    if (adjustPtr) {
-	*adjustPtr = adjust;
-    }
-    if (canReturnOne) {
-	l = two;
-	while (numSame--) {
-	    l = l->tail;
-	}
-	if (l == NULL) {
-	    /* We discovered one and two were copies. */
-	    return one;
-	}
-    }
-    if (canReturnTwo) {
+    if (one == NULL) {
+	if (valuePtr) {
+	    *valuePtr = NULL;
+	}	
 	return two;
     }
-    return result;
+    if ( (one == two) || KVLEqualKeys(hamt, one->key, two->key) ) {
+	if (valuePtr) {
+	    *valuePtr = one->value;
+	}
+	return (one->value == two->value) ? one : two;
+    }
+
+    /* TODO: maintain the hash overflow. */
+    /* Trickiness here -- how to pass the overflow mods back? */
+    Tcl_Panic("hash collisions not implemented");
+    if (valuePtr) {
+	*valuePtr = NULL;
+    }
+    return NULL;	/* Correct this; for now, compiler bait. */
 }
 
 static
@@ -245,7 +217,7 @@ KVList KVLInsert(
     ClientData *valuePtr)
 {
     KVList new = KVLNew(hamt, key, value, NULL);
-    KVList result = KVLMerge(hamt, l, new, NULL, valuePtr);
+    KVList result = KVLMerge(hamt, l, new, valuePtr);
 
     if (result == l) {
 	/* No-op insert; discard new node */
@@ -762,7 +734,6 @@ ArrayMap AMMergeList(
     ArrayMap am,
     size_t hash,
     KVList kvl,
-    size_t *adjustPtr,
     ClientData *valuePtr,
     int listIsFirst)
 {
@@ -777,9 +748,6 @@ ArrayMap AMMergeList(
     if ((am->mask & hash) != am->id) {
         /* Hash indicates list does not belong in this subtree */
         /* Create a new subtree to be parent of both am and kvl. */
-	if (adjustPtr) {
-	    *adjustPtr = 0;
-	}
         return AMNewBranch(am, hash, kvl);
     }
 
@@ -798,17 +766,11 @@ ArrayMap AMMergeList(
 	if (am->slot[loffset] == (ClientData)hash) {
 	    /* Hash of list child matches. Merge to it. */
 	    KVList l;
-	    size_t adjust = 0;
 
 	    if (listIsFirst) {
-		l = KVLMerge(hamt, kvl, am->slot[loffset + numList],
-			&adjust, valuePtr);
+		l = KVLMerge(hamt, kvl, am->slot[loffset + numList], valuePtr);
 	    } else {
-		l = KVLMerge(hamt, am->slot[loffset + numList], kvl,
-			&adjust, valuePtr);
-	    }
-	    if (adjustPtr) {
-		*adjustPtr = adjust;
+		l = KVLMerge(hamt, am->slot[loffset + numList], kvl, valuePtr);
 	    }
 	    if (l == am->slot[loffset + numList]) {
 		return am;
@@ -816,7 +778,7 @@ ArrayMap AMMergeList(
 
 	    new = AMNew(numList, numSubnode, am->mask, am->id);
 
-	    new->size = am->size + 1 - adjust;
+	    new->size = am->size;
 	    new->kvMap = am->kvMap;
 	    new->amMap = am->amMap;
 	    dst = new->slot;
@@ -887,9 +849,6 @@ ArrayMap AMMergeList(
 	    AMClaim((ArrayMap) *src);
 	    *dst++ = *src++;
 	}
-	if (adjustPtr) {
-	    *adjustPtr = 0;
-	}
 	return new;
     }
     if (tally & am->amMap) {
@@ -897,8 +856,7 @@ ArrayMap AMMergeList(
 	ArrayMap child = (ArrayMap)am->slot[2*numList + soffset];
 
 	/* Merge the list into that subnode child... */
-	sub = AMMergeList(hamt, child, hash, kvl,
-		adjustPtr, valuePtr, listIsFirst);
+	sub = AMMergeList(hamt, child, hash, kvl, valuePtr, listIsFirst);
 	if (sub == child) {
 	    /* Subnode unchanged, map unchanged, just return */
 	    return am;
@@ -973,9 +931,6 @@ ArrayMap AMMergeList(
 	AMClaim((ArrayMap) *src);
 	*dst++ = *src++;
     }
-    if (adjustPtr) {
-	*adjustPtr = 0;
-    }
 
     return new;
 }
@@ -1005,7 +960,7 @@ ArrayMap AMMergeContents(
 {
     ArrayMap new;
     int numList, numSubnode;
-    size_t term, adjust = 0;
+    size_t size = 0;
 
     /* If either tree has a particular subnode, the merger must too */
     size_t amMap = one->amMap | two->amMap;
@@ -1084,8 +1039,7 @@ assert( src2 == two->slot + NumBits(two->kvMap) );
     for (tally = (size_t)1; tally; tally = tally << 1) {
 	if (tally & kvMap) {
 	    if ((tally & one->kvMap) && (tally & two->kvMap)) {
-		KVList l = KVLMerge(hamt, *src1, *src2, &term, NULL);
-		adjust += term;
+		KVList l = KVLMerge(hamt, *src1, *src2, NULL);
 		KVLClaim(l);
 		*dst++ = l;
 	    } else if (tally & one->kvMap) {
@@ -1117,10 +1071,7 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 	    KVList l1, l2;
 
 	    if ((tally & one->amMap) && (tally & two->amMap)) {
-		size_t sum = ((ArrayMap)*src1)->size + ((ArrayMap)*src2)->size;
 		am = AMMerge(hamt, *src1++, *src2++);
-		term = sum - am->size;
-		adjust += term;
 		AMClaim(am);
 		*dst++ = am;
 	    } else if (tally & one->amMap) {
@@ -1129,9 +1080,7 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 		    hash2 = (size_t)two->slot[loffset2];
 		    l2 = two->slot[loffset2 + numList2];
 
-		    am = AMMergeList(hamt, *src1++, hash2, l2,
-			    &term, NULL, 0);
-		    adjust += term;
+		    am = AMMergeList(hamt, *src1++, hash2, l2, NULL, 0);
 		} else {
 		    am = *src1++;
 		}
@@ -1142,9 +1091,7 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 		    loffset1 = NumBits(one->kvMap & (tally - 1));
 		    hash1 = (size_t)one->slot[loffset1];
 		    l1 = one->slot[loffset1 + numList1];
-		    am = AMMergeList(hamt, *src2++, hash1, l1,
-			    &term, NULL, 0);
-		    adjust += term;
+		    am = AMMergeList(hamt, *src2++, hash1, l1, NULL, 0);
 		} else {
 		    am = *src2++;
 		}
@@ -1163,9 +1110,10 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 		AMClaim(am);
 		*dst++ = am;
 	    }
+	    size += am->size;
 	}
     }
-    new->size = one->size + two->size - adjust;
+    new->size = size + numList;
     return new;
 }
 
@@ -1203,8 +1151,7 @@ ArrayMap AMMergeDescendant(
     if (tally & ancestor->kvMap) {
 	/* Already have list child there. Must merge them. */
 	sub = AMMergeList(hamt, descendant, (size_t)ancestor->slot[loffset],
-		ancestor->slot[loffset + numList],
-		NULL, NULL, ancestorIsFirst);
+		ancestor->slot[loffset + numList], NULL, ancestorIsFirst);
 	new = AMNew(numList - 1, numSubnode + 1, ancestor->mask, ancestor->id);
 
 	new->size = ancestor->size - 1 + sub->size;
@@ -1388,7 +1335,7 @@ ArrayMap AMInsert(
     ClientData *valuePtr)
 {
     KVList new = KVLInsert(hamt, NULL, key, value, valuePtr);
-    ArrayMap result = AMMergeList(hamt, am, hash, new, NULL, valuePtr, 0);
+    ArrayMap result = AMMergeList(hamt, am, hash, new, valuePtr, 0);
 
     if (result == am) {
 	/* No-op insert; discard new node */
@@ -2048,7 +1995,7 @@ TclHAMTMerge(
 	    /* Both are lists. */
 	    if (one->x.hash == two->x.hash) {
 		/* Same hash -> merge the lists */
-		KVList l = KVLMerge(one, one->kvl, two->kvl, NULL, NULL);
+		KVList l = KVLMerge(one, one->kvl, two->kvl, NULL);
 
 		if (l == one->kvl) {
 		    return one;
@@ -2063,7 +2010,7 @@ TclHAMTMerge(
 		    AMNewLeaf(one->x.hash, one->kvl, two->x.hash, two->kvl));
 	}
 	/* two has a tree */
-	am = AMMergeList(one, two->x.am, one->x.hash, one->kvl, NULL, NULL, 1);
+	am = AMMergeList(one, two->x.am, one->x.hash, one->kvl, NULL, 1);
 	if (am == two->x.am) {
 	    /* Merge gave back same tree. Avoid a copy. */
 	    return two;
@@ -2073,7 +2020,7 @@ TclHAMTMerge(
 
     /* one has a tree */
     if (two->kvl) {
-	am = AMMergeList(one, one->x.am, two->x.hash, two->kvl, NULL, NULL, 0);
+	am = AMMergeList(one, one->x.am, two->x.hash, two->kvl, NULL, 0);
 	if (am == one->x.am) {
 	    /* Merge gave back same tree. Avoid a copy. */
 	    return one;
