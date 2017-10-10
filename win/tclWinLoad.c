@@ -67,6 +67,7 @@ TclpDlopen(
     HINSTANCE hInstance;
     const TCHAR *nativeName;
     Tcl_LoadHandle handlePtr;
+    DWORD firstError;
 
     /*
      * First try the full path the user gave us. This is particularly
@@ -85,6 +86,12 @@ TclpDlopen(
 
 	Tcl_DString ds;
 
+        /* 
+         * Remember the first error on load attempt to be used if the
+         * second load attempt below also fails.
+        */
+        firstError = GetLastError();
+
 	nativeName = Tcl_WinUtfToTChar(Tcl_GetString(pathPtr), -1, &ds);
 	hInstance = LoadLibraryEx(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
@@ -92,8 +99,21 @@ TclpDlopen(
     }
 
     if (hInstance == NULL) {
-	DWORD lastError = GetLastError();
-	Tcl_Obj *errMsg = Tcl_ObjPrintf("couldn't load library \"%s\": ",
+	DWORD lastError;
+        Tcl_Obj *errMsg;
+
+        /*
+         * We choose to only use the error from the second call if the first
+         * call failed due to the file not being found. Else stick to the
+         * first error for reporting purposes.
+         */
+        if (firstError == ERROR_MOD_NOT_FOUND ||
+            firstError == ERROR_DLL_NOT_FOUND)
+            lastError = GetLastError();
+        else
+            lastError = firstError;
+
+	errMsg = Tcl_ObjPrintf("couldn't load library \"%s\": ",
 		Tcl_GetString(pathPtr));
 
 	/*
@@ -130,7 +150,11 @@ TclpDlopen(
 		Tcl_AppendToObj(errMsg, "the library initialization"
 			" routine failed", -1);
 		break;
-	    default:
+            case ERROR_BAD_EXE_FORMAT:
+		Tcl_SetErrorCode(interp, "WIN_LOAD", "BAD_EXE_FORMAT", NULL);
+		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.", -1);
+                break;
+            default:
 		TclWinConvertError(lastError);
 		Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), -1);
 	    }
