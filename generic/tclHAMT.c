@@ -38,6 +38,12 @@
 
 typedef struct KVNode *KVList;
 typedef struct AMNode *ArrayMap;
+typedef struct CNode *Collision;
+
+typedef struct CNode {
+    Collision	next;	
+    KVList	l;
+} Cnode;
 
 typedef struct KVNode {
     size_t	claim;	/* How many claims on this struct */
@@ -57,6 +63,7 @@ typedef struct HAMT {
 	size_t			 hash;	/* ...with its hash value. */
 	ArrayMap		 am;	/* >1 KVList? Here's the tree root. */
     } x;
+    Collision			overflow;
 } HAMT;
 
 /*
@@ -123,7 +130,14 @@ KVList KVLFind(
     if (KVLEqualKeys(hamt, l->key, key)) {
 	return l;
     }
-    /* TODO: Find in the hamt overflow. */
+    if (hamt->overflow) {
+	Collision p = hamt->overflow;
+	while (p) {
+	    if (KVLEqualKeys(hamt, p->l->key, key)) {
+		return p->l;
+	    }
+	}
+    }
     return NULL;
 }
 
@@ -1642,6 +1656,7 @@ TclHAMTCreate(
     hamt->vt = vt;
     hamt->kvl = NULL;
     hamt->x.am = NULL;
+    hamt->overflow = NULL;
     return hamt;
 }
 
@@ -1729,6 +1744,15 @@ TclHAMTDisclaim(
     } else if (hamt->x.am) {
 	AMDisclaim(hamt, hamt->x.am);
 	hamt->x.am = NULL;
+    }
+    if (hamt->overflow) {
+	Collision p = hamt->overflow;
+	while (p) {
+	    Collision freeme = p;
+	    KVLDisclaim(hamt, p->l);
+	    p = p->next;
+	    ckfree(freeme);
+	}
     }
     hamt->kt = NULL;
     hamt->vt = NULL;
@@ -2048,7 +2072,13 @@ TclHAMTSize(
     } else if (hamt->x.am) {
 	size = hamt->x.am->size;
     }
-    /* TODO: Add the size of the hamt overflow. */
+    if (hamt->overflow) {
+	Collision p = hamt->overflow;
+	while (p) {
+	    size++;
+	    p = p->next;
+	}
+    }
     return size;
 }
 
@@ -2086,8 +2116,6 @@ TclHAMTFirst(
 {
     const int branchShift = TclMSB(branchFactor);
     const int depth = CHAR_BIT * sizeof(size_t) / branchShift;
-
-    /* TODO: Account for the hamt overflow */
 
     Idx *i;
     ArrayMap am;
@@ -2342,7 +2370,13 @@ TclHAMTInfo(
 	HAMTNext(&idx, hist);
     }
 
-    /* TODO: account for the hamt overflow contents */
+    if (hamt->overflow) {
+	Collision p = hamt->overflow;
+	while (p) {
+	    collisions++;
+	    p = p->next;
+	}
+    }
     Tcl_AppendPrintfToObj(result, "\nnumber of collisions: %d", collisions);
 
     for (i = 0; i < 129; i++) {
