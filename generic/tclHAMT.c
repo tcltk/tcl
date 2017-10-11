@@ -2216,6 +2216,7 @@ TclHAMTSize(
 
 typedef struct Idx {
     TclHAMT	hamt;
+    Collision	overflow;
     KVList	kvl;		/* Traverse the KVList */
     KVList	*kvlv;		/* Traverse a KVList array... */
     int		kvlc;		/* ... until no more. */
@@ -2267,6 +2268,7 @@ TclHAMTFirst(
 
     TclHAMTClaim(hamt);
     i->hamt = hamt;
+    i->overflow = hamt->overflow;
     i->top = i->stack;
 
     if (hamt->kvl) {
@@ -2319,8 +2321,6 @@ HAMTNext(
     ClientData *slotPtr;
     int n, seen = 0;
 
-    /* TODO: Account for the hamt overflow */
-
     assert ( i );
     assert ( i->kvl );
 
@@ -2335,6 +2335,11 @@ HAMTNext(
     /* On to the subnodes */
     if (i->top[0] == NULL) {
 	/* Only get here for hamt of one key, value pair. */
+	if (i->overflow) {
+	    i->kvl = i->overflow->l;
+	    i->overflow = i->overflow->next;
+	    return;
+	}
 	TclHAMTDone((TclHAMTIdx) i);
 	*idxPtr = NULL;
 	return;
@@ -2375,6 +2380,12 @@ HAMTNext(
  
     if (i->top == i->stack) {
 	/* Nothing left to pop. Stack exhausted. We're done. */
+	if (i->overflow) {
+	    i->kvl = i->overflow->l;
+	    i->overflow = i->overflow->next;
+	    i->top[0] = NULL;
+	    return;
+	}
 	TclHAMTDone((TclHAMTIdx) i);
 	*idxPtr = NULL;
 	return;
