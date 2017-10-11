@@ -18,6 +18,7 @@
 */tclsh*
 */tcltest*
 */versions.vc
+*/version.vc
 html
 libtommath/bn.ilg
 libtommath/bn.ind
@@ -40,7 +41,7 @@ unix/dltest.marker
 unix/tcl.pc
 unix/tclIndex
 unix/pkgs/*
-win/Debug_VC*
-win/Release_VC*
+win/Debug*
+win/Release*
 win/pkgs/*
-win/tcl.hpj
+win/tcl.hpjwin/nmhlp-out.txt
