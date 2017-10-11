@@ -207,6 +207,32 @@ Collision CNNew(
 
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Hash --
+ *
+ *	Factored out utility routine to compute the hash of a key for
+ *	a particular HAMT.
+ *
+ * Results:
+ *	The computed hash value.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static
+size_t Hash(
+    HAMT *hamt,
+    ClientData key)
+{
+    return (hamt->kt && hamt->kt->hashProc)
+	    ? hamt->kt->hashProc(key) : (size_t) key;
+}
+
+/*
  * Return the merge of argument KV pairs one and two.
  * Caller asserts that the two pairs belong to the same hash.
  * It is extremely likely they hold the same key. In that case, the
@@ -294,24 +320,60 @@ KVList KVLRemove(
     HAMT *hamt,
     KVList l,
     ClientData key,
+    Collision *scratchPtr,
     ClientData *valuePtr)
 {
+    Collision p;
+    size_t hash;
+
     assert ( l != NULL );
 
     if (KVLEqualKeys(hamt, l->key, key)) {
 	if (valuePtr) {
 	    *valuePtr = l->value;
 	}
+	if (hamt->overflow) {
+	    /* We're opening up a slot. Make a pass through the
+	     * overflow waiting area to see if anything is waiting
+	     * for it. */
+	    hash = Hash(hamt, key);
+	    p = hamt->overflow;
+	    while (p) {
+		size_t compare = Hash(hamt, p->l->key);
+
+		if (hash == compare) {
+		    *scratchPtr = CNNew(p->l, *scratchPtr);
+		    return p->l;
+		}
+		p = p->next;
+	    }
+	}
 	return NULL;
     }
 
-    /* TODO: Implement fallback to the hamt overflow. */
-
-    if (valuePtr) {
-	*valuePtr = NULL;
+    /* The key we were seeking for removal did not match the key that was
+     * stored in the slot.  This is a kind of hash collision.  We need to
+     * look in the overflow area in case they key we seek to remove might
+     * be waiting there. */
+     
+    if (hamt->overflow) {
+	p = hamt->overflow;
+	while (p) {
+	    if (KVLEqualKeys(hamt, p->l->key, key)) {
+		if (valuePtr) {
+		    *valuePtr = p->l->value;
+		}
+		*scratchPtr = CNNew(p->l, *scratchPtr);
+		return l;
+	    }
+	    p = p->next;
+	}
     }
 
     /* The key is not here. Nothing to remove. Return unchanged list. */
+    if (valuePtr) {
+	*valuePtr = NULL;
+    }
     return l;
 }
 
@@ -1441,6 +1503,7 @@ ArrayMap AMRemove(
     ArrayMap am,
     size_t hash,
     ClientData key,
+    Collision *scratchPtr,
     size_t *hashPtr,
     KVList *listPtr,
     ClientData *valuePtr)
@@ -1483,7 +1546,8 @@ ArrayMap AMRemove(
 	}
 
 	/* Found the right KVList. Remove the pair from it. */
-	l = KVLRemove(hamt, am->slot[loffset + numList], key, valuePtr);
+	l = KVLRemove(hamt, am->slot[loffset + numList], key,
+		scratchPtr, valuePtr);
 
 	if (l == am->slot[loffset + numList]) {
 	    /* list unchanged -> ArrayMap unchanged. */
@@ -1582,8 +1646,8 @@ ArrayMap AMRemove(
 	/* Hash is consistent with one of our subnode children... */
 	soffset = NumBits(am->amMap & (tally - 1));
 	child = am->slot[2*numList + soffset];
-	sub = AMRemove(hamt, child,
-		hash, key, &subhash, &l, valuePtr);
+	sub = AMRemove(hamt, child, hash, key,
+		scratchPtr, &subhash, &l, valuePtr);
 
 	if (sub) {
 	    /* Modified copy of am, subnode replaced. */
@@ -1674,32 +1738,6 @@ ArrayMap AMRemove(
 	*valuePtr = NULL;
     }
     return am;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Hash --
- *
- *	Factored out utility routine to compute the hash of a key for
- *	a particular HAMT.
- *
- * Results:
- *	The computed hash value.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static
-size_t Hash(
-    HAMT *hamt,
-    ClientData key)
-{
-    return (hamt->kt && hamt->kt->hashProc)
-	    ? hamt->kt->hashProc(key) : (size_t) key;
 }
 
 /*
@@ -1833,6 +1871,43 @@ Collision CollisionMerge(
     }
 
     return result;
+}
+
+/*
+ * This routine is some post-processing after a remove operation
+ * on hamt has resulted in a hash collision leaving some
+ * KVPair(s) in the scratch list.  We must produce the collision overflow
+ * left when the item on the scratch list is removed from hamt->overflow.
+ */
+static
+Collision CollisionRemove(
+    HAMT *hamt,
+    Collision scratch)
+{
+    Collision result, last, p = hamt->overflow;
+    if (scratch == NULL) {
+	return hamt->overflow;
+    }
+    if (scratch->next != NULL) {
+	Tcl_Panic("Remove op put multiple items on the scratch list");
+    }
+    if (p == NULL) {
+	Tcl_Panic("Empty collision list, but item on scratch");
+    }
+    if (p->l == scratch->l) {
+	return p->next;
+    }
+    result = last = CNNew(p->l, NULL);
+    while (p->next) {
+	p = p->next;
+	if (p->l == scratch->l) {
+	    last->next = p->next;
+	    return result;
+	}
+	last->next = CNNew(p->l, NULL);
+	last = last->next;
+    }
+    Tcl_Panic("Scratch item not on the collision list");
 }
 
 /*
@@ -2046,6 +2121,7 @@ TclHAMTRemove(
     size_t hash;
     KVList l;
     ArrayMap am;
+    Collision scratch = NULL;
 
     if (hamt->kvl) {
 	/* Map holds a single KVList. Is it for the same hash? */
@@ -2053,16 +2129,18 @@ TclHAMTRemove(
 	    /* Yes. Indeed we have a hash collision! This is the right
 	     * KVList to remove our pair from. */
 
-	    l = KVLRemove(hamt, hamt->kvl, key, valuePtr);
+	    l = KVLRemove(hamt, hamt->kvl, key, &scratch, valuePtr);
 	
-	    if (l == hamt->kvl) {
+	    scratch = CollisionRemove(hamt, scratch);
+	    if ((l == hamt->kvl) && (scratch == hamt->overflow)) {
 		/* list unchanged -> HAMT unchanged. */
 		return hamt;
 	    }
 
 	    /* Construct a new HAMT with a new kvl */
 	    if (l) {
-		return HAMTNewList(hamt->kt, hamt->vt, l, hamt->x.hash, NULL);
+		return HAMTNewList(hamt->kt, hamt->vt,
+			l, hamt->x.hash, scratch);
 	    }
 	    /* TODO: Implement a shared empty HAMT ? */
 	    /* CAUTION: would need one for each set of key & value types */
@@ -2084,18 +2162,18 @@ TclHAMTRemove(
     }
 
     /* Map has a tree. Remove from it. */
-    am = AMRemove(hamt, hamt->x.am,
-	    Hash(hamt, key), key, &hash, &l, valuePtr);
-
-    if (am == hamt->x.am) {
+    am = AMRemove(hamt, hamt->x.am, Hash(hamt, key), key,
+	    &scratch, &hash, &l, valuePtr);
+    scratch = CollisionRemove(hamt, scratch);
+    if ((am == hamt->x.am) && (scratch == hamt->overflow)) {
 	/* Removal was no-op. */
 	return hamt;
     }
 
     if (am) {
-	return HAMTNewRoot(hamt->kt, hamt->vt, am, NULL);
+	return HAMTNewRoot(hamt->kt, hamt->vt, am, scratch);
     }
-    return HAMTNewList(hamt->kt, hamt->vt, l, hash, NULL);
+    return HAMTNewList(hamt->kt, hamt->vt, l, hash, scratch);
 }
 
 /*
