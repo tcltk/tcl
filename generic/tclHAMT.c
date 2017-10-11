@@ -1095,6 +1095,8 @@ ArrayMap AMMergeContents(
     int numList1 = NumBits(one->kvMap);
     int numList2 = NumBits(two->kvMap);
 
+    assert ( one != two );
+
     for (tally = (size_t)1; tally; tally = tally << 1) {
 	if (!(tally & (amMap | kvMap))) {
 	    assert ((one->amMap & tally)== 0);	/* would be in amMap */
@@ -1416,6 +1418,9 @@ ArrayMap AMMerge(
 	/* Nodes at the same depth ... */
 	if (one->id == two->id) {
 	    /* ... and the same id; merge contents */
+	    if (one == two) {
+		return one;
+	    }
 	    return AMMergeContents(hamt, one, two, scratchPtr);
 	}
 	/* ... but are not same. Create parent to contain both. */
