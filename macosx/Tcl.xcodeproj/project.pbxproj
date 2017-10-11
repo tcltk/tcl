@@ -834,7 +834,6 @@
 		F96D447008F272BA004A47F5 /* aclocal.m4 */ = {isa = PBXFileReference; explicitFileType = text.script.sh; fileEncoding = 4; path = aclocal.m4; sourceTree = "<group>"; };
 		F96D447108F272BA004A47F5 /* buildall.vc.bat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = buildall.vc.bat; sourceTree = "<group>"; };
 		F96D447208F272BA004A47F5 /* cat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cat.c; sourceTree = "<group>"; };
-		F96D447308F272BA004A47F5 /* coffbase.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = coffbase.txt; sourceTree = "<group>"; };
 		F96D447408F272BA004A47F5 /* configure */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = configure; sourceTree = "<group>"; };
 		F96D447508F272BA004A47F5 /* configure.ac */ = {isa = PBXFileReference; explicitFileType = text.script.sh; fileEncoding = 4; path = configure.ac; sourceTree = "<group>"; };
 		F96D447708F272BA004A47F5 /* Makefile.in */ = {isa = PBXFileReference; explicitFileType = sourcecode.make; fileEncoding = 4; path = Makefile.in; sourceTree = "<group>"; };
@@ -1755,7 +1754,6 @@
 				F96D447008F272BA004A47F5 /* aclocal.m4 */,
 				F96D447108F272BA004A47F5 /* buildall.vc.bat */,
 				F96D447208F272BA004A47F5 /* cat.c */,
-				F96D447308F272BA004A47F5 /* coffbase.txt */,
 				F96D447408F272BA004A47F5 /* configure */,
 				F96D447508F272BA004A47F5 /* configure.ac */,
 				F96D447708F272BA004A47F5 /* Makefile.in */,

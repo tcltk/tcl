@@ -33,7 +33,7 @@ declare 2 {
     int TclBN_mp_add(const mp_int *a, const mp_int *b, mp_int *c)
 }
 declare 3 {
-    int TclBN_mp_add_d(mp_int *a, mp_digit b, mp_int *c)
+    int TclBN_mp_add_d(const mp_int *a, mp_digit b, mp_int *c)
 }
 declare 4 {
     int TclBN_mp_and(const mp_int *a, const mp_int *b, mp_int *c)
@@ -153,20 +153,20 @@ declare 42 {
     int TclBN_mp_sub(const mp_int *a, const mp_int *b, mp_int *c)
 }
 declare 43 {
-    int TclBN_mp_sub_d(mp_int *a, mp_digit b, mp_int *c)
+    int TclBN_mp_sub_d(const mp_int *a, mp_digit b, mp_int *c)
 }
 declare 44 {
-    int TclBN_mp_to_unsigned_bin(mp_int *a, unsigned char *b)
+    int TclBN_mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
 }
 declare 45 {
-    int TclBN_mp_to_unsigned_bin_n(mp_int *a, unsigned char *b,
+    int TclBN_mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b,
 	    unsigned long *outlen)
 }
 declare 46 {
-    int TclBN_mp_toradix_n(mp_int *a, char *str, int radix, int maxlen)
+    int TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
 }
 declare 47 {
-    int TclBN_mp_unsigned_bin_size(mp_int *a)
+    int TclBN_mp_unsigned_bin_size(const mp_int *a)
 }
 declare 48 {
     int TclBN_mp_xor(const mp_int *a, const mp_int *b, mp_int *c)
@@ -221,17 +221,18 @@ declare 63 {
     int TclBN_mp_cnt_lsb(const mp_int *a)
 }
 
-# Formerly internal API to allow initialisation of bignums without knowing the
-# typedefs of how a bignum works internally.
-declare 64 {
-    void TclBNInitBignumFromLong(mp_int *bignum, long initVal)
-}
-declare 65 {
-    void TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
-}
-declare 66 {
-    void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
-}
+# Removed in Tcl 9.0
+#declare 64 {
+#    void TclBNInitBignumFromLong(mp_int *bignum, long initVal)
+#}
+# Removed in Tcl 9.0
+#declare 65 {
+#    void TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
+#}
+# Removed in Tcl 9.0
+#declare 66 {
+#    void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
+#}
 
 # Added in libtommath 1.0
 declare 67 {
@@ -243,6 +244,12 @@ declare 68 {
 }
 declare 69 {
     Tcl_WideUInt TclBN_mp_get_long_long(const mp_int *a)
+}
+declare 70 {
+    int TclBN_mp_set_long(mp_int *a, unsigned long i)
+}
+declare 71 {
+    unsigned long TclBN_mp_get_long(const mp_int *a)
 }
 
 # Local Variables:
