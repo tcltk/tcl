@@ -20,63 +20,81 @@
 #endif
 
 /*
- * All of our key/value pairs are to be stored in persistent lists, where
- * all the keys in a list produce the same hash value.  Given a quality
- * hash function, these lists should almost always hold a single key/value
- * pair.  For the rare case when we experience a hash collision, though, we
- * have to be prepared to make lists of arbitrary length.
+ * Each KVNode contains a key, value pair.
  *
- * For the most part these are pretty standard linked lists.  The only
- * tricky things are that in any one list we will store at most one
- * key from each equivalence class of keys, as determined by the key type,
- * and we keep the collection of all lists, persistent and immutable, each 
- * until nothing has an interest in it any longer.  This means that distinct
- * lists can have common tails. The interest is maintained by
- * a claim count.  The current implementation of the claim mechanism
- * makes the overall structure suitable for only single-threaded operations.
- * Later refinements in development are intended to ease this constraint.
+ * It also holds a claim counter to support value sharing. The current
+ * implementation of the claim mechanism makes the overall structure
+ * suitable for only single-threaded operations. Later refinements in
+ * development are intended to ease this constraint.
+ *
+ * A previous implementation kept lists of pairs to account for hash
+ * collisions.  With 64-bit hashes and any reasonable hash function,
+ * hash collisions are not just uncommon, they are essentially impossible.
+ * Instead of making every KVNode capable of handling arbitrary numbers
+ * of pairs, we let each handle only one pair, and shift the burden of
+ * taking care of collisions to the overall HAMT structure.
  */
 
 typedef struct KVNode *KVList;
+typedef struct AMNode *ArrayMap;
+typedef struct CNode *Collision;
+
+typedef struct CNode {
+    size_t	claim;
+    Collision	next;	
+    KVList	l;
+} CNode;
 
 typedef struct KVNode {
     size_t	claim;	/* How many claims on this struct */
-    KVList	tail;	/* The part of the list(s) following this pair */
     ClientData	key;	/* Key... */
     ClientData	value;	/* ...and Value of this pair */
 } KVNode;
 
+/* Finally, the top level struct that puts all the pieces together */
+
+typedef struct HAMT {
+    size_t			claim;	/* How many claims on this struct */
+    const TclHAMTKeyType	*kt;	/* Custom key handling functions */
+    const TclHAMTValueType	*vt;	/* Custom value handling functions */
+    KVList			kvl;	/* When map stores a single KVList,
+					 * just store it here (no tree) ... */
+    union {
+	size_t			 hash;	/* ...with its hash value. */
+	ArrayMap		 am;	/* >1 KVList? Here's the tree root. */
+    } x;
+    Collision			overflow;
+} HAMT;
+
 /*
  * The operations on a KVList:
- *	KVLClaim	Make a claim on the list.
- *	KVLDisclaim	Release a claim on the list.
+ *	KVLClaim	Make a claim on the pair.
+ *	KVLDisclaim	Release a claim on the pair.
  *	KVLNew		Node creation utility
- *	KVLFind		Find the tail starting with an equal key.
- *	KVLMerge	Create a new list, merger of two lists.
- *	KVLInsert	Create a new list, inserting new pair into old list.
- *	KVLRemove	Create a new list, with any pair matching key removed.
+ *	KVLFind		Find the KV Pair containing an equal key.
+ *	KVLMerge	Bring together two KV pairs with same hash.
+ *	KVLInsert	Create a new pair, merging new pair onto old one.
+ *	KVLRemove	Create a new pair, removing any pair matching key.
  */
 
 static
 void KVLClaim(
     KVList l)
 {
-    if (l != NULL) {
-	l->claim++;
-    }
+    assert ( l != NULL );
+    l->claim++;
 }
 
 static
 void KVLDisclaim(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     KVList l)
 {
-    if (l == NULL) {
-	return;
-    }
-    l->claim--;
-    if (l->claim) {
+    const TclHAMTKeyType *kt = hamt->kt;
+    const TclHAMTValueType *vt = hamt->vt;
+
+    assert ( l != NULL );
+    if (--l->claim) {
 	return;
     }
     if (kt && kt->dropRefProc) {
@@ -87,51 +105,50 @@ void KVLDisclaim(
 	vt->dropRefProc(l->value);
     }
     l->value = NULL;
-    KVLDisclaim(kt, vt, l->tail);
-    l->tail = NULL;
     ckfree(l);
 }
 
-static
-size_t KVLSize(
-    KVList l)
+static 
+int KVLEqualKeys(
+    HAMT *hamt,
+    ClientData key1,
+    ClientData key2)
 {
-    size_t size = 0;
-    while (l) {
-	size++;
-	l = l->tail;
-    }
-    return size;
+    const TclHAMTKeyType *kt = hamt->kt;
+    return (key1 == key2)
+	    || (kt && kt->isEqualProc && kt->isEqualProc( key1, key2) );
 }
-
+
 static
 KVList KVLFind(
-    const TclHAMTKeyType *kt,
+    HAMT *hamt,
     KVList l,
     ClientData key)
 {
-    if (l == NULL) {
-	return NULL;
-    }
-    if (l->key == key) {
+    assert ( l != NULL);
+
+    if (KVLEqualKeys(hamt, l->key, key)) {
 	return l;
     }
-    if (kt && kt->isEqualProc) {
-	if ( kt->isEqualProc( l->key, key) ) {
-	    return l;
+    if (hamt->overflow) {
+	Collision p = hamt->overflow;
+	while (p) {
+	    if (KVLEqualKeys(hamt, p->l->key, key)) {
+		return p->l;
+	    }
 	}
     }
-    return KVLFind(kt, l->tail, key);
+    return NULL;
 }
 
 static
 KVList KVLNew(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     ClientData key,
-    ClientData value,
-    KVList tail)
+    ClientData value)
 {
+    const TclHAMTKeyType *kt = hamt->kt;
+    const TclHAMTValueType *vt = hamt->vt;
     KVList new = ckalloc(sizeof(KVNode));
     new->claim = 0;
     if (kt && kt->makeRefProc) {
@@ -142,151 +159,220 @@ KVList KVLNew(
 	vt->makeRefProc(value);
     }
     new->value = value;
-    if (tail) {
-	KVLClaim(tail);
-    }
-    new->tail = tail;
     return new;
+}
+
+static
+void CNClaim(
+    Collision c)
+{
+    assert ( c != NULL);
+    c->claim++;
+}
+
+static
+void CNDisclaim(
+    HAMT *hamt,
+    Collision c)
+{
+    assert ( c != NULL);
+    if (--c->claim) {
+	return;
+    }
+    KVLDisclaim(hamt, c->l);
+    c->l = NULL;
+    if (c->next) {
+	CNDisclaim(hamt, c->next);
+    }
+    c->next = NULL;
+    ckfree(c);
+}
+
+static
+Collision CNNew(
+    KVList l,
+    Collision next)
+{
+    Collision new = ckalloc(sizeof(CNode));
+    new->claim = 0;
+    if (next) {
+	CNClaim(next);
+    }
+    new->next = next;
+    KVLClaim(l);
+    new->l = l;
+    return new;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Hash --
+ *
+ *	Factored out utility routine to compute the hash of a key for
+ *	a particular HAMT.
+ *
+ * Results:
+ *	The computed hash value.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static
+size_t Hash(
+    HAMT *hamt,
+    ClientData key)
+{
+    return (hamt->kt && hamt->kt->hashProc)
+	    ? hamt->kt->hashProc(key) : (size_t) key;
 }
 
 /*
- * Return a list that is merge of argument lists one and two.
- * When returning "one" itself is a correct answer, do that.
- * Otherwise, when returning "two" itself is a correct answer, do that.
- * These constraints help subdue creation of unnecessary copies.
+ * Return the merge of argument KV pairs one and two.
+ * Caller asserts that the two pairs belong to the same hash.
+ * It is extremely likely they hold the same key. In that case, the
+ * result of the merge is to return two, and the overwritten value
+ * is extracted from one.
+ * An overwrite by an identical KVNode is detected and turned into
+ * a no-op.
  */
 static
 KVList KVLMerge(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     KVList one,
     KVList two,
-    size_t *adjustPtr,
+    Collision *scratchPtr,
     ClientData *valuePtr)
 {
-    KVList result = two;
-    KVList l = one;
-    int canReturnOne = 1;
-    int canReturnTwo = 1;
-    int numSame = 0;
-    size_t adjust = 0;
-    ClientData prevValue = NULL;
-
-    /* We know our callers... and disable code that cannot happen */
-    assert ( adjustPtr || (one != two) );
-#if 0
-    if (adjustPtr == NULL && one == two) {
-	/* Merge into self yields self */
-	return one;
-    }
-#endif
-    while (l) {
-	/* Check whether key from one is in two. */
-	KVList found = KVLFind(kt, two, l->key);
-
-	if (found) {
-	    /*
-	     * This merge includes an overwrite of a key in one by
-	     * the same key in two.
-	     */
-	    if (found->value == l->value) {
-		numSame++;
-	    } else {
-		/* This pair in one cannot be in the merge. */
-		canReturnOne = 0;
-	    }
-	    adjust++;
-	    prevValue = l->value;
-	} else {
-	    /*
-	     * result needs to contain old key value from one that
-	     * was not overwritten as well as the new key values
-	     * from two.  We now know result can be neither one nor two.
-	     */
-	    result = KVLNew(kt, vt, l->key, l->value, result);
-	    canReturnOne = 0;
-	    canReturnTwo = 0;
-	}
-	l = l->tail;
-    }
-    if (valuePtr) {
-	*valuePtr = prevValue;
-    }
-    if (adjustPtr) {
-	*adjustPtr = adjust;
-    }
-    if (canReturnOne) {
-	l = two;
-	while (numSame--) {
-	    l = l->tail;
-	}
-	if (l == NULL) {
-	    /* We discovered one and two were copies. */
-	    return one;
-	}
-    }
-    if (canReturnTwo) {
+    assert ( two != NULL );
+    if (one == NULL) {
+	if (valuePtr) {
+	    *valuePtr = NULL;
+	}	
 	return two;
     }
-    return result;
+    if ( (one == two) || KVLEqualKeys(hamt, one->key, two->key) ) {
+	if (valuePtr) {
+	    *valuePtr = one->value;
+	}
+	return (one->value == two->value) ? one : two;
+    }
+
+    /* Argument two holds the KV pair we wish to store. It belongs
+     * where one is, but one is occupying the slot, and one has a
+     * different key.  two will have to wait in the overflow waiting
+     * area until the slot opens up. We have to take a scan through
+     * the overflow to see if we are overwriting.
+     */
+
+    *scratchPtr = CNNew(two, *scratchPtr);
+
+    if (hamt->overflow) {
+	Collision p = hamt->overflow;
+	while (p) {
+	    if ( (p->l == two) || KVLEqualKeys(hamt, p->l->key, two->key)) {
+		if (valuePtr) {
+		    *valuePtr = p->l->value;
+		}
+		return one;
+	    }
+	}
+    }
+    if (valuePtr) {
+	*valuePtr = NULL;
+    }
+    return one;
 }
 
 static
 KVList KVLInsert(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     KVList l,
     ClientData key,
     ClientData value,
+    Collision *scratchPtr,
     ClientData *valuePtr)
 {
-    KVList new = KVLNew(kt, vt, key, value, NULL);
-    KVList result = KVLMerge(kt, vt, l, new, NULL, valuePtr);
+    KVList new = KVLNew(hamt, key, value);
+    KVList result = KVLMerge(hamt, l, new, scratchPtr, valuePtr);
 
     if (result == l) {
 	/* No-op insert; discard new node */
 	KVLClaim(new);
-	KVLDisclaim(kt, vt, new);
+	KVLDisclaim(hamt, new);
     }
     return result;
 }
 
+/*
+ * Caller asserts that hash of key is same as hash of KVNode l.
+ * It is extremely likely they hold the same key. In that case, the
+ * result is NULL as we remove the KV Node matching key, and the
+ * disappearing value is pulled from l.
+ */
 static
 KVList KVLRemove(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     KVList l,
     ClientData key,
+    Collision *scratchPtr,
     ClientData *valuePtr)
 {
-    KVList found = KVLFind(kt, l, key);
+    Collision p;
+    size_t hash;
 
-    if (found) {
+    assert ( l != NULL );
 
-	/*
-	 * List l has a pair matching key
-	 * Need to create new list without the found node.
-	 * Make needed copies. Keep common tail.
-	 */
-
-	KVList result = found->tail;
-	while (l != found) {
-	    result = KVLNew(kt, vt, l->key, l->value, result);
-	    l = l->tail;
-	}
-
+    if (KVLEqualKeys(hamt, l->key, key)) {
 	if (valuePtr) {
-	    *valuePtr = found->value;
+	    *valuePtr = l->value;
 	}
+	if (hamt->overflow) {
+	    /* We're opening up a slot. Make a pass through the
+	     * overflow waiting area to see if anything is waiting
+	     * for it. */
+	    hash = Hash(hamt, key);
+	    p = hamt->overflow;
+	    while (p) {
+		size_t compare = Hash(hamt, p->l->key);
 
-	return result;
+		if (hash == compare) {
+		    *scratchPtr = CNNew(p->l, *scratchPtr);
+		    return p->l;
+		}
+		p = p->next;
+	    }
+	}
+	return NULL;
     }
 
-    if (valuePtr) {
-	*valuePtr = NULL;
+    /* The key we were seeking for removal did not match the key that was
+     * stored in the slot.  This is a kind of hash collision.  We need to
+     * look in the overflow area in case they key we seek to remove might
+     * be waiting there. */
+     
+    if (hamt->overflow) {
+	p = hamt->overflow;
+	while (p) {
+	    if (KVLEqualKeys(hamt, p->l->key, key)) {
+		if (valuePtr) {
+		    *valuePtr = p->l->value;
+		}
+		*scratchPtr = CNNew(p->l, *scratchPtr);
+		return l;
+	    }
+	    p = p->next;
+	}
     }
 
     /* The key is not here. Nothing to remove. Return unchanged list. */
+    if (valuePtr) {
+	*valuePtr = NULL;
+    }
     return l;
 }
 
@@ -326,8 +412,6 @@ KVList KVLRemove(
  * by amMap.  The size of the AMNode struct must be set so that slot
  * has the space needed for all 3 collections.
  */
-
-typedef struct AMNode *ArrayMap;
 
 typedef struct AMNode {
     size_t	claim;	/* How many claims on this struct */
@@ -432,8 +516,7 @@ void AMClaim(
 
 static
 void AMDisclaim(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     ArrayMap am)
 {
     int i, numList, numSubnode;
@@ -458,11 +541,11 @@ void AMDisclaim(
 	am->slot[i] = NULL;
     }
     for (i = numList; i < 2*numList; i++) {
-	KVLDisclaim(kt, vt, am->slot[i]);
+	KVLDisclaim(hamt, am->slot[i]);
 	am->slot[i] = NULL;
     }
     for (i = 2*numList; i < 2*numList + numSubnode; i++) {
-	AMDisclaim(kt, vt, am->slot[i]);
+	AMDisclaim(hamt, am->slot[i]);
 	am->slot[i] = NULL;
     }
 
@@ -602,7 +685,7 @@ ArrayMap AMNewBranch(
     assert ( idx1 != idx2 );
     assert ( (sub->id & mask) == new->id );
 
-    new->size = sub->size + KVLSize(l);
+    new->size = sub->size + 1;
     new->kvMap = (size_t)1 << idx1;
     new->amMap = (size_t)1 << idx2;
 
@@ -663,7 +746,7 @@ ArrayMap AMNewLeaf(
     assert ( idx1 != idx2 );
     assert ( (hash2 & mask) == new->id );
 
-    new->size = KVLSize(l1) + KVLSize(l2);
+    new->size = 2;
     new->kvMap = ((size_t)1 << idx1) | ((size_t)1 << idx2);
     new->amMap = 0;
 
@@ -705,7 +788,7 @@ ArrayMap AMNewLeaf(
 
 static
 ClientData AMFetch(
-    const TclHAMTKeyType *kt,
+    HAMT *hamt,
     ArrayMap am,
     size_t hash,
     ClientData key)
@@ -732,13 +815,13 @@ ClientData AMFetch(
 	    return NULL;
 	}
 
-	l = KVLFind(kt, am->slot[offset + NumBits(am->kvMap)], key);
+	l = KVLFind(hamt, am->slot[offset + NumBits(am->kvMap)], key);
 	return l ? l->value : NULL;
     }
     if (tally & am->amMap) {
 	/* Hash is consistent with one of our subnode children... */
 
-	return AMFetch(kt, am->slot[2 * NumBits(am->kvMap)
+	return AMFetch(hamt, am->slot[2 * NumBits(am->kvMap)
 		+ NumBits(am->amMap & (tally - 1))], hash, key);
     }
     return NULL;
@@ -758,12 +841,11 @@ ClientData AMFetch(
 
 static
 ArrayMap AMMergeList(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     ArrayMap am,
     size_t hash,
     KVList kvl,
-    size_t *adjustPtr,
+    Collision *scratchPtr,
     ClientData *valuePtr,
     int listIsFirst)
 {
@@ -778,9 +860,6 @@ ArrayMap AMMergeList(
     if ((am->mask & hash) != am->id) {
         /* Hash indicates list does not belong in this subtree */
         /* Create a new subtree to be parent of both am and kvl. */
-	if (adjustPtr) {
-	    *adjustPtr = 0;
-	}
         return AMNewBranch(am, hash, kvl);
     }
 
@@ -799,17 +878,13 @@ ArrayMap AMMergeList(
 	if (am->slot[loffset] == (ClientData)hash) {
 	    /* Hash of list child matches. Merge to it. */
 	    KVList l;
-	    size_t adjust = 0;
 
 	    if (listIsFirst) {
-		l = KVLMerge(kt, vt, kvl, am->slot[loffset + numList],
-			&adjust, valuePtr);
+		l = KVLMerge(hamt, kvl, am->slot[loffset + numList],
+			scratchPtr, valuePtr);
 	    } else {
-		l = KVLMerge(kt, vt, am->slot[loffset + numList], kvl,
-			&adjust, valuePtr);
-	    }
-	    if (adjustPtr) {
-		*adjustPtr = adjust;
+		l = KVLMerge(hamt, am->slot[loffset + numList], kvl,
+			scratchPtr, valuePtr);
 	    }
 	    if (l == am->slot[loffset + numList]) {
 		return am;
@@ -817,7 +892,7 @@ ArrayMap AMMergeList(
 
 	    new = AMNew(numList, numSubnode, am->mask, am->id);
 
-	    new->size = am->size + KVLSize(kvl) - adjust;
+	    new->size = am->size;
 	    new->kvMap = am->kvMap;
 	    new->amMap = am->amMap;
 	    dst = new->slot;
@@ -854,7 +929,7 @@ ArrayMap AMMergeList(
 	/* Remove the list, Insert the leaf subnode */
 	new = AMNew(numList - 1, numSubnode + 1, am->mask, am->id);
 
-	new->size = am->size + KVLSize(kvl);
+	new->size = am->size + 1;
 
 	new->kvMap = am->kvMap & ~tally;
 	new->amMap = am->amMap | tally;
@@ -888,9 +963,6 @@ ArrayMap AMMergeList(
 	    AMClaim((ArrayMap) *src);
 	    *dst++ = *src++;
 	}
-	if (adjustPtr) {
-	    *adjustPtr = 0;
-	}
 	return new;
     }
     if (tally & am->amMap) {
@@ -898,8 +970,8 @@ ArrayMap AMMergeList(
 	ArrayMap child = (ArrayMap)am->slot[2*numList + soffset];
 
 	/* Merge the list into that subnode child... */
-	sub = AMMergeList(kt, vt, child, hash, kvl,
-		adjustPtr, valuePtr, listIsFirst);
+	sub = AMMergeList(hamt, child, hash, kvl,
+		scratchPtr, valuePtr, listIsFirst);
 	if (sub == child) {
 	    /* Subnode unchanged, map unchanged, just return */
 	    return am;
@@ -943,7 +1015,7 @@ ArrayMap AMMergeList(
     /* am is not using this tally; copy am and add it. */
     new = AMNew(numList + 1, numSubnode, am->mask, am->id);
 
-    new->size = am->size + KVLSize(kvl);
+    new->size = am->size + 1;
     new->kvMap = am->kvMap | tally;
     new->amMap = am->amMap;
     dst = new->slot;
@@ -974,17 +1046,13 @@ ArrayMap AMMergeList(
 	AMClaim((ArrayMap) *src);
 	*dst++ = *src++;
     }
-    if (adjustPtr) {
-	*adjustPtr = 0;
-    }
 
     return new;
 }
 
 /* Forward declaration for mutual recursion */
-static ArrayMap		AMMerge(const TclHAMTKeyType *kt,
-			    const TclHAMTValueType *vt, ArrayMap one,
-			    ArrayMap two);
+static ArrayMap		AMMerge(HAMT *hamt, ArrayMap one, ArrayMap two,
+			    Collision *scratchPtr);
 
 
 /*
@@ -1002,14 +1070,14 @@ static ArrayMap		AMMerge(const TclHAMTKeyType *kt,
 
 static
 ArrayMap AMMergeContents(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     ArrayMap one,
-    ArrayMap two)
+    ArrayMap two,
+    Collision *scratchPtr)
 {
     ArrayMap new;
     int numList, numSubnode;
-    size_t term, adjust = 0;
+    size_t size = 0;
 
     /* If either tree has a particular subnode, the merger must too */
     size_t amMap = one->amMap | two->amMap;
@@ -1025,6 +1093,8 @@ ArrayMap AMMergeContents(
 
     int numList1 = NumBits(one->kvMap);
     int numList2 = NumBits(two->kvMap);
+
+    assert ( one != two );
 
     for (tally = (size_t)1; tally; tally = tally << 1) {
 	if (!(tally & (amMap | kvMap))) {
@@ -1088,8 +1158,14 @@ assert( src2 == two->slot + NumBits(two->kvMap) );
     for (tally = (size_t)1; tally; tally = tally << 1) {
 	if (tally & kvMap) {
 	    if ((tally & one->kvMap) && (tally & two->kvMap)) {
-		KVList l = KVLMerge(kt, vt, *src1, *src2, &term, NULL);
-		adjust += term;
+		KVList l = KVLMerge(hamt, *src1, *src2, scratchPtr, NULL);
+		if ((l == *src1) && (l != *src2)) {
+		    /* *src1 and *src2 are identical values.
+		     * Make them the same value. */
+		    KVLClaim(l);
+		    KVLDisclaim(hamt, *src2);
+		    *src2 = l;
+		}
 		KVLClaim(l);
 		*dst++ = l;
 	    } else if (tally & one->kvMap) {
@@ -1121,10 +1197,7 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 	    KVList l1, l2;
 
 	    if ((tally & one->amMap) && (tally & two->amMap)) {
-		size_t sum = ((ArrayMap)*src1)->size + ((ArrayMap)*src2)->size;
-		am = AMMerge(kt, vt, *src1++, *src2++);
-		term = sum - am->size;
-		adjust += term;
+		am = AMMerge(hamt, *src1++, *src2++, scratchPtr);
 		AMClaim(am);
 		*dst++ = am;
 	    } else if (tally & one->amMap) {
@@ -1133,9 +1206,8 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 		    hash2 = (size_t)two->slot[loffset2];
 		    l2 = two->slot[loffset2 + numList2];
 
-		    am = AMMergeList(kt, vt, *src1++, hash2, l2,
-			    &term, NULL, 0);
-		    adjust += term;
+		    am = AMMergeList(hamt, *src1++, hash2, l2,
+			    scratchPtr, NULL, 0);
 		} else {
 		    am = *src1++;
 		}
@@ -1146,9 +1218,8 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 		    loffset1 = NumBits(one->kvMap & (tally - 1));
 		    hash1 = (size_t)one->slot[loffset1];
 		    l1 = one->slot[loffset1 + numList1];
-		    am = AMMergeList(kt, vt, *src2++, hash1, l1,
-			    &term, NULL, 0);
-		    adjust += term;
+		    am = AMMergeList(hamt, *src2++, hash1, l1,
+			    scratchPtr, NULL, 0);
 		} else {
 		    am = *src2++;
 		}
@@ -1167,9 +1238,10 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 		AMClaim(am);
 		*dst++ = am;
 	    }
+	    size += am->size;
 	}
     }
-    new->size = one->size + two->size - adjust;
+    new->size = size + numList;
     return new;
 }
 
@@ -1187,10 +1259,10 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 
 static
 ArrayMap AMMergeDescendant(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     ArrayMap ancestor,
     ArrayMap descendant,
+    Collision *scratchPtr,
     int ancestorIsFirst)
 {
     const int branchMask = (branchFactor - 1);
@@ -1207,13 +1279,12 @@ ArrayMap AMMergeDescendant(
 
     if (tally & ancestor->kvMap) {
 	/* Already have list child there. Must merge them. */
-	sub = AMMergeList(kt, vt, descendant, (size_t)ancestor->slot[loffset],
+	sub = AMMergeList(hamt, descendant, (size_t)ancestor->slot[loffset],
 		ancestor->slot[loffset + numList],
-		NULL, NULL, ancestorIsFirst);
+		scratchPtr, NULL, ancestorIsFirst);
 	new = AMNew(numList - 1, numSubnode + 1, ancestor->mask, ancestor->id);
 
-	new->size = ancestor->size - KVLSize(ancestor->slot[loffset + numList])
-		+ sub->size;
+	new->size = ancestor->size - 1 + sub->size;
 	new->kvMap = ancestor->kvMap & ~tally;
 	new->amMap = ancestor->amMap | tally;
 	dst = new->slot;
@@ -1255,9 +1326,9 @@ ArrayMap AMMergeDescendant(
 
 	/* Already have node child there. Must merge them. */
 	if (ancestorIsFirst) {
-	    sub = AMMerge(kt, vt, child, descendant);
+	    sub = AMMerge(hamt, child, descendant, scratchPtr);
 	} else {
-	    sub = AMMerge(kt, vt, descendant, child);
+	    sub = AMMerge(hamt, descendant, child, scratchPtr);
 	}
 	if (sub == ancestor->slot[2*numList + soffset]) {
 	    return ancestor;
@@ -1337,16 +1408,19 @@ ArrayMap AMMergeDescendant(
 
 static
 ArrayMap AMMerge(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     ArrayMap one,
-    ArrayMap two)
+    ArrayMap two,
+    Collision *scratchPtr)
 {
     if (one->mask == two->mask) {
 	/* Nodes at the same depth ... */
 	if (one->id == two->id) {
 	    /* ... and the same id; merge contents */
-	    return AMMergeContents(kt, vt, one, two);
+	    if (one == two) {
+		return one;
+	    }
+	    return AMMergeContents(hamt, one, two, scratchPtr);
 	}
 	/* ... but are not same. Create parent to contain both. */
 	return AMNewParent(one, two);
@@ -1355,7 +1429,7 @@ ArrayMap AMMerge(
 	/* two is deeper than one... */
 	if ((one->mask & two->id) == one->id) {
 	    /* ... and is a descendant of one. */
-	    return AMMergeDescendant(kt, vt, one, two, 1);
+	    return AMMergeDescendant(hamt, one, two, scratchPtr, 1);
 	}
 	/* ...but is not a descendant. Create parent to contain both. */
 	return AMNewParent(one, two);
@@ -1363,7 +1437,7 @@ ArrayMap AMMerge(
     /* one is deeper than two... */
     if ((two->mask & one->id) == two->id) {
 	/* ... and is a descendant of two. */
-	return AMMergeDescendant(kt, vt, two, one, 0);
+	return AMMergeDescendant(hamt, two, one, scratchPtr, 0);
     }
     return AMNewParent(one, two);
 }
@@ -1387,21 +1461,21 @@ ArrayMap AMMerge(
 
 static
 ArrayMap AMInsert(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     ArrayMap am,
     size_t hash,
     ClientData key,
     ClientData value,
+    Collision *scratchPtr,
     ClientData *valuePtr)
 {
-    KVList new = KVLInsert(kt, vt, NULL, key, value, valuePtr);
-    ArrayMap result = AMMergeList(kt, vt, am, hash, new, NULL, valuePtr, 0);
+    KVList new = KVLInsert(hamt, NULL, key, value, NULL, valuePtr);
+    ArrayMap result = AMMergeList(hamt, am, hash, new, scratchPtr, valuePtr, 0);
 
     if (result == am) {
 	/* No-op insert; discard new node */
 	KVLClaim(new);
-	KVLDisclaim(kt, vt, new);
+	KVLDisclaim(hamt, new);
     }
     return result;
 }
@@ -1429,11 +1503,11 @@ ArrayMap AMInsert(
 
 static
 ArrayMap AMRemove(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+    HAMT *hamt,
     ArrayMap am,
     size_t hash,
     ClientData key,
+    Collision *scratchPtr,
     size_t *hashPtr,
     KVList *listPtr,
     ClientData *valuePtr)
@@ -1476,7 +1550,8 @@ ArrayMap AMRemove(
 	}
 
 	/* Found the right KVList. Remove the pair from it. */
-	l = KVLRemove(kt, vt, am->slot[loffset + numList], key, valuePtr);
+	l = KVLRemove(hamt, am->slot[loffset + numList], key,
+		scratchPtr, valuePtr);
 
 	if (l == am->slot[loffset + numList]) {
 	    /* list unchanged -> ArrayMap unchanged. */
@@ -1575,8 +1650,8 @@ ArrayMap AMRemove(
 	/* Hash is consistent with one of our subnode children... */
 	soffset = NumBits(am->amMap & (tally - 1));
 	child = am->slot[2*numList + soffset];
-	sub = AMRemove(kt, vt, child,
-		hash, key, &subhash, &l, valuePtr);
+	sub = AMRemove(hamt, child, hash, key,
+		scratchPtr, &subhash, &l, valuePtr);
 
 	if (sub) {
 	    /* Modified copy of am, subnode replaced. */
@@ -1619,7 +1694,7 @@ ArrayMap AMRemove(
 
 	    new = AMNew(numList + 1, numSubnode - 1, am->mask, am->id);
 
-	    new->size = am->size - child->size + KVLSize(l);
+	    new->size = am->size - child->size + 1;
 
 	    new->kvMap = am->kvMap | tally;
 	    new->amMap = am->amMap & ~tally;
@@ -1668,46 +1743,6 @@ ArrayMap AMRemove(
     }
     return am;
 }
-
-/* Finally, the top level struct that puts all the pieces together */
-
-typedef struct HAMT {
-    size_t			claim;	/* How many claims on this struct */
-    const TclHAMTKeyType	*kt;	/* Custom key handling functions */
-    const TclHAMTValueType	*vt;	/* Custom value handling functions */
-    KVList			kvl;	/* When map stores a single KVList,
-					 * just store it here (no tree) ... */
-    union {
-	size_t			 hash;	/* ...with its hash value. */
-	ArrayMap		 am;	/* >1 KVList? Here's the tree root. */
-    } x;
-} HAMT;
-
-/*
- *----------------------------------------------------------------------
- *
- * Hash --
- *
- *	Factored out utility routine to compute the hash of a key for
- *	a particular HAMT.
- *
- * Results:
- *	The computed hash value.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static
-size_t Hash(
-    HAMT *hPtr,
-    ClientData key)
-{
-    return (hPtr->kt && hPtr->kt->hashProc)
-	    ? hPtr->kt->hashProc(key) : (size_t) key;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -1731,14 +1766,15 @@ TclHAMTCreate(
     const TclHAMTKeyType *kt,	/* Custom key handling functions */
     const TclHAMTValueType *vt)	/* Custom value handling functions */
 {
-    HAMT *hPtr = ckalloc(sizeof(HAMT));
+    HAMT *hamt = ckalloc(sizeof(HAMT));
 
-    hPtr->claim = 0;
-    hPtr->kt = kt;
-    hPtr->vt = vt;
-    hPtr->kvl = NULL;
-    hPtr->x.am = NULL;
-    return hPtr;
+    hamt->claim = 0;
+    hamt->kt = kt;
+    hamt->vt = vt;
+    hamt->kvl = NULL;
+    hamt->x.am = NULL;
+    hamt->overflow = NULL;
+    return hamt;
 }
 
 static
@@ -1746,12 +1782,17 @@ HAMT *HAMTNewList(
     const TclHAMTKeyType *kt,
     const TclHAMTValueType *vt,
     KVList l,
-    size_t hash)
+    size_t hash,
+    Collision overflow)
 {
     HAMT *new = TclHAMTCreate(kt, vt);
     KVLClaim(l);
     new->kvl = l;
     new->x.hash = hash;
+    if (overflow) {
+	CNClaim(overflow);
+    }
+    new->overflow = overflow;
     return new;
 }
 
@@ -1759,12 +1800,118 @@ static
 HAMT *HAMTNewRoot(
     const TclHAMTKeyType *kt,
     const TclHAMTValueType *vt,
-    ArrayMap am)
+    ArrayMap am,
+    Collision overflow)
 {
     HAMT *new = TclHAMTCreate(kt, vt);
     AMClaim(am);
     new->x.am = am;
+    if (overflow) {
+	CNClaim(overflow);
+    }
+    new->overflow = overflow;
     return new;
+}
+
+/*
+ * This routine is some post-processing after a merge or insert operation
+ * on one and possibly two has resulted in a hash collision leaving some
+ * KVPair(s) in the scratch list.  We must produce the collision overflow
+ * for the hamt result of the merge or insert operation.
+ */
+static
+Collision CollisionMerge(
+    HAMT *one,
+    HAMT *two,
+    Collision scratch)
+{
+    /* Everything on the scratch list will be in the final overflow list */
+    Collision p, result = scratch;
+
+    /* A pair on the second overflow list will be on the final list unless
+     * its key is already on the scratch list. */
+    if (two && two->overflow) {
+	if (scratch == NULL) {
+	    result = two->overflow;
+	} else {
+	p = two->overflow;
+	while (p) {
+	    Collision q = scratch;
+	    while (q) {
+		if (KVLEqualKeys(one, p->l->key, q->l->key)) {
+		    break;
+		}
+		q = q->next;
+	    }
+	    if (q == NULL) {
+		result = CNNew(p->l, result);
+	    }
+	    p = p->next;
+	}
+	}
+	scratch = result;
+    }
+    /* A pair on the first overflow list will be on the final list unless
+     * its key is already on the scratch list. */
+    if (one && one->overflow) {
+	if (scratch == NULL) {
+	    result = one->overflow;
+	} else {
+	p = one->overflow;
+	while (p) {
+	    Collision q = scratch;
+	    while (q) {
+		if (KVLEqualKeys(one, p->l->key, q->l->key)) {
+		    break;
+		}
+		q = q->next;
+	    }
+	    if (q == NULL) {
+		result = CNNew(p->l, result);
+	    }
+	    p = p->next;
+	}
+	}
+    }
+
+    return result;
+}
+
+/*
+ * This routine is some post-processing after a remove operation
+ * on hamt has resulted in a hash collision leaving some
+ * KVPair(s) in the scratch list.  We must produce the collision overflow
+ * left when the item on the scratch list is removed from hamt->overflow.
+ */
+static
+Collision CollisionRemove(
+    HAMT *hamt,
+    Collision scratch)
+{
+    Collision result, last, p = hamt->overflow;
+    if (scratch == NULL) {
+	return hamt->overflow;
+    }
+    if (scratch->next != NULL) {
+	Tcl_Panic("Remove op put multiple items on the scratch list");
+    }
+    if (p == NULL) {
+	Tcl_Panic("Empty collision list, but item on scratch");
+    }
+    if (p->l == scratch->l) {
+	return p->next;
+    }
+    result = last = CNNew(p->l, NULL);
+    while (p->next) {
+	p = p->next;
+	if (p->l == scratch->l) {
+	    last->next = p->next;
+	    return result;
+	}
+	last->next = CNNew(p->l, NULL);
+	last = last->next;
+    }
+    Tcl_Panic("Scratch item not on the collision list");
 }
 
 /*
@@ -1787,12 +1934,8 @@ void
 TclHAMTClaim(
     TclHAMT hamt)
 {
-    HAMT *hPtr = hamt;
-
-    if (hPtr == NULL) {
-	return;
-    }
-    hPtr->claim++;
+    assert ( hamt != NULL );
+    hamt->claim++;
 }
 
 /*
@@ -1815,26 +1958,27 @@ void
 TclHAMTDisclaim(
     TclHAMT hamt)
 {
-    HAMT *hPtr = hamt;
-
-    if (hPtr == NULL) {
+    if (hamt == NULL) {
 	return;
     }
-    hPtr->claim--;
-    if (hPtr->claim) {
+    hamt->claim--;
+    if (hamt->claim) {
 	return;
     }
-    if (hPtr->kvl) {
-	KVLDisclaim(hPtr->kt, hPtr->vt, hPtr->kvl);
-	hPtr->kvl = NULL;
-	hPtr->x.hash = 0;
-    } else if (hPtr->x.am) {
-	AMDisclaim(hPtr->kt, hPtr->vt, hPtr->x.am);
-	hPtr->x.am = NULL;
+    if (hamt->kvl) {
+	KVLDisclaim(hamt, hamt->kvl);
+	hamt->kvl = NULL;
+	hamt->x.hash = 0;
+    } else if (hamt->x.am) {
+	AMDisclaim(hamt, hamt->x.am);
+	hamt->x.am = NULL;
     }
-    hPtr->kt = NULL;
-    hPtr->vt = NULL;
-    ckfree(hPtr);
+    if (hamt->overflow) {
+	CNDisclaim(hamt, hamt->overflow);
+    }
+    hamt->kt = NULL;
+    hamt->vt = NULL;
+    ckfree(hamt);
 }
 
 /*
@@ -1862,24 +2006,22 @@ TclHAMTFetch(
     TclHAMT hamt,
     ClientData key)
 {
-    HAMT *hPtr = hamt;
-
-    if (hPtr->kvl) {
+    if (hamt->kvl) {
 	/* Map holds a single KVList. Is it for the right hash? */
-	if (hPtr->x.hash == Hash(hPtr, key)) {
+	if (hamt->x.hash == Hash(hamt, key)) {
 	    /* Yes, try to find key in it. */
-	    KVList l = KVLFind(hPtr->kt, hPtr->kvl, key);
+	    KVList l = KVLFind(hamt, hamt->kvl, key);
 	    return l ? l->value : NULL;
 	}
 	/* No. Map doesn't hold the key. */
 	return NULL;
     }
-    if (hPtr->x.am == NULL) {
+    if (hamt->x.am == NULL) {
 	/* Map is empty. No key is in it. */
 	return NULL;
     }
     /* Map has a tree. Fetch from it. */
-    return AMFetch(hPtr->kt, hPtr->x.am, Hash(hPtr, key), key);
+    return AMFetch(hamt, hamt->x.am, Hash(hamt, key), key);
 }
 
 /*
@@ -1907,50 +2049,52 @@ TclHAMTInsert(
     ClientData value,
     ClientData *valuePtr)
 {
-    HAMT *hPtr = hamt;
     KVList l;
     ArrayMap am;
+    Collision scratch = NULL;
 
-    if (hPtr->kvl) {
+    if (hamt->kvl) {
 	/* Map holds a single KVList. Is it for the same hash? */
-	size_t hash = Hash(hPtr, key);
-	if (hPtr->x.hash == hash) {
+	size_t hash = Hash(hamt, key);
+	if (hamt->x.hash == hash) {
 	    /* Yes. Indeed we have a hash collision! This is the right
 	     * KVList to insert our pair into. */
-	    l = KVLInsert(hPtr->kt, hPtr->vt, hPtr->kvl, key, value, valuePtr);
-	
-	    if (l == hPtr->kvl) {
+	    l = KVLInsert(hamt, hamt->kvl, key, value, &scratch, valuePtr);
+	    scratch = CollisionMerge(hamt, NULL, scratch);
+	    if ((l == hamt->kvl) && (scratch == hamt->overflow)) {
 		/* list unchanged -> HAMT unchanged. */
 		return hamt;
 	    }
 
 	    /* Construct a new HAMT with a new kvl */
-	    return HAMTNewList(hPtr->kt, hPtr->vt, l, hash);
+	    return HAMTNewList(hamt->kt, hamt->vt, l, hash, scratch);
 	}
 	/* No. Insertion should not be into the singleton KVList.
 	 * We get to build a tree out of the singleton KVList and
 	 * a new list holding our new pair. */
 
 
-	return HAMTNewRoot(hPtr->kt, hPtr->vt,
-		AMNewLeaf(hPtr->x.hash, hPtr->kvl, hash,
-		KVLInsert(hPtr->kt, hPtr->vt, NULL, key, value, valuePtr)));
+	return HAMTNewRoot(hamt->kt, hamt->vt,
+		AMNewLeaf(hamt->x.hash, hamt->kvl, hash,
+		KVLInsert(hamt, NULL, key, value, NULL, valuePtr)),
+		hamt->overflow);
     }
-    if (hPtr->x.am == NULL) {
+    if (hamt->x.am == NULL) {
 	/* Map is empty. No key is in it. Create singleton KVList
 	 * out of new pair. */
-	return HAMTNewList(hPtr->kt, hPtr->vt,
-		KVLInsert(hPtr->kt, hPtr->vt, NULL, key, value, valuePtr),
-		Hash(hPtr, key));
+	return HAMTNewList(hamt->kt, hamt->vt,
+		KVLInsert(hamt, NULL, key, value, NULL, valuePtr),
+		Hash(hamt, key), NULL);
     }
     /* Map has a tree. Insert into it. */
-    am = AMInsert(hPtr->kt, hPtr->vt, hPtr->x.am,
-	    Hash(hPtr, key), key, value, valuePtr);
-    if (am == hPtr->x.am) {
+    am = AMInsert(hamt, hamt->x.am,
+	    Hash(hamt, key), key, value, &scratch, valuePtr);
+    scratch = CollisionMerge(hamt, NULL, scratch);
+    if ((am == hamt->x.am) && (scratch == hamt->overflow)) {
 	/* Map did not change (overwrite same value) */
 	return hamt;
     }
-    return HAMTNewRoot(hPtr->kt, hPtr->vt, am);
+    return HAMTNewRoot(hamt->kt, hamt->vt, am, scratch);
 }
 
 /*
@@ -1978,31 +2122,33 @@ TclHAMTRemove(
     ClientData key,
     ClientData *valuePtr)
 {
-    HAMT *hPtr = hamt;
     size_t hash;
     KVList l;
     ArrayMap am;
+    Collision scratch = NULL;
 
-    if (hPtr->kvl) {
+    if (hamt->kvl) {
 	/* Map holds a single KVList. Is it for the same hash? */
-	if (hPtr->x.hash == Hash(hPtr, key)) {
+	if (hamt->x.hash == Hash(hamt, key)) {
 	    /* Yes. Indeed we have a hash collision! This is the right
 	     * KVList to remove our pair from. */
 
-	    l = KVLRemove(hPtr->kt, hPtr->vt, hPtr->kvl, key, valuePtr);
+	    l = KVLRemove(hamt, hamt->kvl, key, &scratch, valuePtr);
 	
-	    if (l == hPtr->kvl) {
+	    scratch = CollisionRemove(hamt, scratch);
+	    if ((l == hamt->kvl) && (scratch == hamt->overflow)) {
 		/* list unchanged -> HAMT unchanged. */
 		return hamt;
 	    }
 
 	    /* Construct a new HAMT with a new kvl */
 	    if (l) {
-		return HAMTNewList(hPtr->kt, hPtr->vt, l, hPtr->x.hash);
+		return HAMTNewList(hamt->kt, hamt->vt,
+			l, hamt->x.hash, scratch);
 	    }
 	    /* TODO: Implement a shared empty HAMT ? */
 	    /* CAUTION: would need one for each set of key & value types */
-	    return TclHAMTCreate(hPtr->kt, hPtr->vt);
+	    return TclHAMTCreate(hamt->kt, hamt->vt);
 	}
 
 	/* The key is not in the only KVList we have. */
@@ -2011,7 +2157,7 @@ TclHAMTRemove(
 	}
 	return hamt;
     }
-    if (hPtr->x.am == NULL) {
+    if (hamt->x.am == NULL) {
 	/* Map is empty. No key is in it. */
 	if (valuePtr) {
 	    *valuePtr = NULL;
@@ -2020,18 +2166,18 @@ TclHAMTRemove(
     }
 
     /* Map has a tree. Remove from it. */
-    am = AMRemove(hPtr->kt, hPtr->vt, hPtr->x.am,
-	    Hash(hPtr, key), key, &hash, &l, valuePtr);
-
-    if (am == hPtr->x.am) {
+    am = AMRemove(hamt, hamt->x.am, Hash(hamt, key), key,
+	    &scratch, &hash, &l, valuePtr);
+    scratch = CollisionRemove(hamt, scratch);
+    if ((am == hamt->x.am) && (scratch == hamt->overflow)) {
 	/* Removal was no-op. */
 	return hamt;
     }
 
     if (am) {
-	return HAMTNewRoot(hPtr->kt, hPtr->vt, am);
+	return HAMTNewRoot(hamt->kt, hamt->vt, am, scratch);
     }
-    return HAMTNewList(hPtr->kt, hPtr->vt, l, hash);
+    return HAMTNewList(hamt->kt, hamt->vt, l, hash, scratch);
 }
 
 /*
@@ -2053,6 +2199,7 @@ TclHAMTMerge(
     TclHAMT two)
 {
     ArrayMap am;
+    Collision scratch = NULL;
 
     /* Sanity check for incompatible customizations. */
     if ((one->kt != two->kt) || (one->vt != two->vt)) {
@@ -2081,51 +2228,65 @@ TclHAMTMerge(
 	    /* Both are lists. */
 	    if (one->x.hash == two->x.hash) {
 		/* Same hash -> merge the lists */
-		KVList l = KVLMerge(one->kt, one->vt,
-			one->kvl, two->kvl, NULL, NULL);
+		KVList l = KVLMerge(one, one->kvl, two->kvl, &scratch, NULL);
 
+		scratch = CollisionMerge(one, two, scratch);
 		if (l == one->kvl) {
-		    return one;
+		    if (l != two->kvl) {
+			/* Convert identical values to same values */
+			KVLClaim(l);
+			KVLDisclaim(one, two->kvl);
+			two->kvl = l;
+		    }
+		    if (scratch == one->overflow) {
+			return one;
+		    }
 		}
-		if (l == two->kvl) {
+		if ((l == two->kvl) && (scratch == two->overflow)) {
 		    return two;
 		}
-		return HAMTNewList(one->kt, one->vt, l, one->x.hash);
+
+		return HAMTNewList(one->kt, one->vt, l, one->x.hash, scratch);
 	    }
 	    /* Different hashes; create leaf to hold pair */
 	    return HAMTNewRoot(one->kt, one->vt,
-		    AMNewLeaf(one->x.hash, one->kvl, two->x.hash, two->kvl));
+		    AMNewLeaf(one->x.hash, one->kvl, two->x.hash, two->kvl),
+		    CollisionMerge(one, two, NULL));
 	}
 	/* two has a tree */
-	am = AMMergeList(one->kt, one->vt,
-		two->x.am, one->x.hash, one->kvl, NULL, NULL, 1);
-	if (am == two->x.am) {
+	am = AMMergeList(one, two->x.am, one->x.hash, one->kvl,
+		&scratch, NULL, 1);
+
+	scratch = CollisionMerge(one, two, scratch);
+	if ((am == two->x.am) && (scratch == two->overflow)) {
 	    /* Merge gave back same tree. Avoid a copy. */
 	    return two;
 	}
-	return HAMTNewRoot(one->kt, one->vt, am);
+	return HAMTNewRoot(one->kt, one->vt, am, scratch);
     }
 
     /* one has a tree */
     if (two->kvl) {
-	am = AMMergeList(one->kt, one->vt,
-		one->x.am, two->x.hash, two->kvl, NULL, NULL, 0);
-	if (am == one->x.am) {
+	am = AMMergeList(one, one->x.am, two->x.hash, two->kvl,
+		&scratch, NULL, 0);
+	scratch = CollisionMerge(one, two, scratch);
+	if ((am == one->x.am) && (scratch == one->overflow)) {
 	    /* Merge gave back same tree. Avoid a copy. */
 	    return one;
 	}
-	return HAMTNewRoot(one->kt, one->vt, am);
+	return HAMTNewRoot(one->kt, one->vt, am, scratch);
     }
 
     /* Merge two trees */
-    am = AMMerge(one->kt, one->vt, one->x.am, two->x.am);
-    if (am == one->x.am) {
+    am = AMMerge(one, one->x.am, two->x.am, &scratch);
+    scratch = CollisionMerge(one, two, scratch);
+    if ((am == one->x.am) && (scratch == one->overflow)) {
 	return one;
     }
-    if (am == two->x.am) {
+    if ((am == two->x.am) && (scratch == two->overflow)) {
 	return two;
     }
-    return HAMTNewRoot(one->kt, one->vt, am);
+    return HAMTNewRoot(one->kt, one->vt, am, scratch);
 }
 
 /*
@@ -2145,12 +2306,20 @@ size_t
 TclHAMTSize(
     TclHAMT hamt)
 {
+    size_t size = 0;
     if (hamt->kvl) {
-	return KVLSize(hamt->kvl);
+	size = 1;
     } else if (hamt->x.am) {
-	return hamt->x.am->size;
+	size = hamt->x.am->size;
     }
-    return 0;
+    if (hamt->overflow) {
+	Collision p = hamt->overflow;
+	while (p) {
+	    size++;
+	    p = p->next;
+	}
+    }
+    return size;
 }
 
 
@@ -2158,6 +2327,7 @@ TclHAMTSize(
 
 typedef struct Idx {
     TclHAMT	hamt;
+    Collision	overflow;
     KVList	kvl;		/* Traverse the KVList */
     KVList	*kvlv;		/* Traverse a KVList array... */
     int		kvlc;		/* ... until no more. */
@@ -2188,14 +2358,13 @@ TclHAMTFirst(
     const int branchShift = TclMSB(branchFactor);
     const int depth = CHAR_BIT * sizeof(size_t) / branchShift;
 
-    HAMT *hPtr = hamt;
     Idx *i;
     ArrayMap am;
     int n;
 
     assert ( hamt );
 
-    if (hPtr->kvl == NULL && hPtr->x.am == NULL) {
+    if (hamt->kvl == NULL && hamt->x.am == NULL) {
 	/* Empty */
 	return NULL;
     }
@@ -2210,12 +2379,13 @@ TclHAMTFirst(
 
     TclHAMTClaim(hamt);
     i->hamt = hamt;
+    i->overflow = hamt->overflow;
     i->top = i->stack;
 
-    if (hPtr->kvl) {
+    if (hamt->kvl) {
 	/* One bucket */
 	/* Our place is the only place. Pointing at the sole bucket */
-	i->kvlv = &(hPtr->kvl);
+	i->kvlv = &(hamt->kvl);
 	i->kvlc = 0;
 	i->kvl = i->kvlv[0];
 	i->top[0] = NULL;
@@ -2265,12 +2435,6 @@ HAMTNext(
     assert ( i );
     assert ( i->kvl );
 
-    if (i->kvl->tail) {
-	/* There are more key, value pairs in this bucket. */
-	i->kvl = i->kvl->tail;
-	return;
-    }
-
     /* On to the next KVList bucket. */
     if (i->kvlc) {
 	i->kvlv++;
@@ -2282,6 +2446,11 @@ HAMTNext(
     /* On to the subnodes */
     if (i->top[0] == NULL) {
 	/* Only get here for hamt of one key, value pair. */
+	if (i->overflow) {
+	    i->kvl = i->overflow->l;
+	    i->overflow = i->overflow->next;
+	    return;
+	}
 	TclHAMTDone((TclHAMTIdx) i);
 	*idxPtr = NULL;
 	return;
@@ -2322,6 +2491,12 @@ HAMTNext(
  
     if (i->top == i->stack) {
 	/* Nothing left to pop. Stack exhausted. We're done. */
+	if (i->overflow) {
+	    i->kvl = i->overflow->l;
+	    i->overflow = i->overflow->next;
+	    i->top[0] = NULL;
+	    return;
+	}
 	TclHAMTDone((TclHAMTIdx) i);
 	*idxPtr = NULL;
 	return;
@@ -2442,11 +2617,16 @@ TclHAMTInfo(
     }
 
     while (idx) {
-	if (idx->kvl->tail) {
-	    collisions++;
-	}
 	accum[ idx->top - idx->stack ]++;
 	HAMTNext(&idx, hist);
+    }
+
+    if (hamt->overflow) {
+	Collision p = hamt->overflow;
+	while (p) {
+	    collisions++;
+	    p = p->next;
+	}
     }
     Tcl_AppendPrintfToObj(result, "\nnumber of collisions: %d", collisions);
 
