@@ -284,7 +284,8 @@ BP_ ## T ## _Next(							\
 	} else {							\
 	    p->lo = 0;							\
 	    p->hi++;							\
-	    p->ptr = p->array->store[p->hi];				\
+	    p->ptr = (p->hi < p->array->dbused)				\
+		    ? p->array->store[p->hi] : NULL;			\
 	    if (p->count == 0) {					\
 		p->count = p->dbsize;					\
 		p->dbsize *= 2;						\
