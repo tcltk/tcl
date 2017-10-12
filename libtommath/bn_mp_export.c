@@ -19,7 +19,7 @@
  * see http://gmplib.org/manual/Integer-Import-and-Export.html
  */
 int mp_export(void *rop, size_t *countp, int order, size_t size,
-              int endian, size_t nails, mp_int *op)
+              int endian, size_t nails, const mp_int *op)
 {
    int result;
    size_t odd_nails, nail_bytes, i, j, bits, count;
