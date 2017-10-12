@@ -2696,6 +2696,7 @@ TclHAMTInfo(
     }
     Tcl_AppendPrintfToObj(result, "\naverage hops: %g ", avg);
     }
+    ckfree(accum);
 
     return result;
 }
