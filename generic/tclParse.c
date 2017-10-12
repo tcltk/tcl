@@ -726,11 +726,11 @@ TclParseCommand(
     }
     if (!append) {
 	TclParseInit(interp, start, numBytes, parsePtr);
+    }
 	parsePtr->commentStart = NULL;
 	parsePtr->commentSize = 0;
 	parsePtr->commandStart = NULL;
 	parsePtr->commandSize = 0;
-    }
     if (nested != 0) {
 	terminators = TYPE_COMMAND_END | TYPE_CLOSE_BRACK;
     } else {
