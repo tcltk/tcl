@@ -32,8 +32,7 @@
  * hash collisions are not just uncommon, they are essentially impossible.
  * Instead of making every KVNode capable of handling arbitrary numbers
  * of pairs, we let each handle only one pair, and shift the burden of
- * taking care of collisions to the overall HAMT structure, still to
- * be implemented.
+ * taking care of collisions to the overall HAMT structure.
  */
 
 typedef struct KVNode *KVList;
