@@ -1104,6 +1104,10 @@ ArrayMap AMMergeContents(
 
     assert ( one != two );
 
+    /* TODO: Detect cases where one or two can be returned as the
+     * merge result, and do so.  If identical parts are detected,
+     * eliminate duplication. */
+
     for (tally = (size_t)1; tally; tally = tally << 1) {
 	if (!(tally & (amMap | kvMap))) {
 	    assert ((one->amMap & tally)== 0);	/* would be in amMap */
@@ -1341,7 +1345,7 @@ ArrayMap AMMergeDescendant(
 	} else {
 	    sub = AMMerge(hamt, descendant, child, scratchPtr);
 	}
-	if (sub == ancestor->slot[2*numList + soffset]) {
+	if (sub == child) {
 	    return ancestor;
 	}
 	new = AMNew(numList, numSubnode, ancestor->mask, ancestor->id);
