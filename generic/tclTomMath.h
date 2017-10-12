@@ -273,7 +273,7 @@ int mp_set_long(mp_int *a, unsigned long b);
 
 /* set a platform dependent unsigned long long value */
 /*
-int mp_set_long_long(mp_int *a, Tcl_WideUInt b);
+int mp_set_long_long(mp_int *a, unsigned long long b);
 */
 
 /* get a 32-bit value */
@@ -288,7 +288,7 @@ unsigned long mp_get_long(const mp_int *a);
 
 /* get a platform dependent unsigned long long value */
 /*
-Tcl_WideUInt mp_get_long_long(const mp_int *a);
+unsigned long long mp_get_long_long(const mp_int *a);
 */
 
 /* initialize and set a digit */
@@ -323,7 +323,7 @@ int mp_import(mp_int *rop, size_t count, int order, size_t size, int endian, siz
 
 /* export binary data */
 /*
-int mp_export(void *rop, size_t *countp, int order, size_t size, int endian, size_t nails, mp_int *op);
+int mp_export(void *rop, size_t *countp, int order, size_t size, int endian, size_t nails, const mp_int *op);
 */
 
 /* ---> digit manipulation <--- */
@@ -577,7 +577,7 @@ int mp_reduce_setup(mp_int *a, const mp_int *b);
  * compute the reduction as -1 * mp_reduce(mp_abs(a)) [pseudo code].
  */
 /*
-int mp_reduce(mp_int *a, const mp_int *b, mp_int *c);
+int mp_reduce(mp_int *a, const mp_int *b, const mp_int *c);
 */
 
 /* setups the montgomery reduction */
@@ -639,7 +639,7 @@ int mp_reduce_2k_setup_l(const mp_int *a, mp_int *d);
 
 /* reduces a modulo b where b is of the form 2**p - k [0 <= a] */
 /*
-int mp_reduce_2k_l(mp_int *a, const mp_int *n, mp_int *d);
+int mp_reduce_2k_l(mp_int *a, const mp_int *n, const mp_int *d);
 */
 
 /* d = a**b (mod c) */
