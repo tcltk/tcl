@@ -301,7 +301,15 @@ KVList KVLInsert(
     KVList result = KVLMerge(hamt, l, new, scratchPtr, valuePtr);
 
     if (result == l) {
-	/* No-op insert; discard new node */
+	/* Two possibilities here. 1) "new" was an exact duplicate
+	 * of "l", so overwriting did nothing. In that case, the
+	 * lines below will discard "new" as it is not stored.
+	 * 2) "new" had a different key which is a hash collision
+	 * with the key in "l". The storage of "new" got shifted off
+	 * to scratchPtr, and will go into the collision list. In that
+	 * case, the lines below are a harmless toggle of a counter.
+	 * An examination of scratchPtr could eliminate that if there's
+	 * reason to think it matters. */
 	KVLClaim(new);
 	KVLDisclaim(hamt, new);
     }
@@ -1160,11 +1168,14 @@ assert( src2 == two->slot + NumBits(two->kvMap) );
 	    if ((tally & one->kvMap) && (tally & two->kvMap)) {
 		KVList l = KVLMerge(hamt, *src1, *src2, scratchPtr, NULL);
 		if ((l == *src1) && (l != *src2)) {
-		    /* *src1 and *src2 are identical values.
-		     * Make them the same value. */
-		    KVLClaim(l);
-		    KVLDisclaim(hamt, *src2);
-		    *src2 = l;
+		    /* Check whether *src1 and *src2 are identical values.
+		     * If so, Make them the same value. */
+		    if ((l->key == ((KVList)(*src2))->key)
+			    && (l->value == ((KVList)(*src2))->value)) {
+			KVLClaim(l);
+			KVLDisclaim(hamt, *src2);
+			*src2 = l;
+		    }
 		}
 		KVLClaim(l);
 		*dst++ = l;
@@ -2232,7 +2243,13 @@ TclHAMTMerge(
 
 		scratch = CollisionMerge(one, two, scratch);
 		if (l == one->kvl) {
-		    if (l != two->kvl) {
+		    /* Good possibility that one->kvl and two->kvl are
+		     * identical values.  If so, make them the same value.
+		     * NOTE: Do this only for identical values, not just
+		     * equal values.  Equal, but distinct, keys should be
+		     * preserved. */
+		    if (l != two->kvl && (l->key == two->kvl->key)
+			    && (l->value == two->kvl->value)) {
 			/* Convert identical values to same values */
 			KVLClaim(l);
 			KVLDisclaim(one, two->kvl);
