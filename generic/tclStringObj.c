@@ -2028,6 +2028,7 @@ Tcl_AppendFormatToObj(
 	    if (gotHash || (ch == 'p')) {
 		switch (ch) {
 		case 'o':
+		    Tcl_AppendToObj(segment, "0o", 2);
 		    segmentLimit -= 2;
 		    break;
 		case 'p':
