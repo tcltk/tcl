@@ -213,7 +213,8 @@ static Tcl_ObjType tokensType = {
 
 /* Structure to hold the data of the "tokens" internal rep */
 typedef struct TokenIntRep {
-    int		refCount;
+    int		copyCount;
+    int		originalShimmered;
     Tcl_Obj *	scriptObjPtr;
     Tcl_Token *	tokenPtr;
     Tcl_Token *	lastTokenPtr;
@@ -242,27 +243,30 @@ FreeTokensInternalRep(objPtr)
 {
     TokenIntRep *tirPtr = objPtr->internalRep.otherValuePtr;
 
-    if (tirPtr->refCount) {
-	tirPtr->refCount--;
-	
-	if (tirPtr->refCount == 0) {
-	    /* Only one holder left.
-	     * If it's the original, break the reference cycle. */
-	    if (tirPtr->scriptObjPtr == objPtr) {
+    if (tirPtr->scriptObjPtr) {
+	if (tirPtr->scriptObjPtr == objPtr) {
+	    /* Must be an attempt to shimmer the original. */
+	    /* Cannot be an attempt to free the original, since
+	     * we still hold a refcount on it. */
+	    tirPtr->originalShimmered = 1;
+	    return;
+	} else {
+	    Tcl_Obj *releaseMe;
+	    int originalShimmered;
 
-		/* Make direct change to refCount.  Don't call
-		 * Tcl_DecrRefCount() so we avoid freeing the value
-		 * when dropping from refCount 1 to refCount 0.
-		 */
-		objPtr->refCount--;
-		tirPtr->scriptObjPtr = NULL;
+	    /* Attempt to shimmer or free a copy */
+	    if (--tirPtr->copyCount) {
+		return;
+	    }
+	    /* All copies are gone; */
+	    originalShimmered = tirPtr->originalShimmered;
+	    releaseMe = tirPtr->scriptObjPtr;
+	    tirPtr->scriptObjPtr = NULL;
+	    Tcl_DecrRefCount(releaseMe);
+	    if (originalShimmered == 0) {
+		return;
 	    }
 	}
-	return;
-    }
-
-    if (tirPtr->scriptObjPtr) {
-	Tcl_DecrRefCount(tirPtr->scriptObjPtr);
     }
     ckfree(tirPtr->tokenPtr);
     ckfree(tirPtr);
@@ -273,11 +277,9 @@ FreeTokensInternalRep(objPtr)
  *
  * DupTokensInternalRep --
  *
- *      Do not copy the internal Tcl_Token array, because it contains
- *      pointers into the original string rep.  Instead, leave the copied
- *      Tcl_Obj untyped with only the string value.  If the new copied
- *      value gets used as a script, new parsing will be done to produce
- *      a new Tcl_Token array intrep tied to the copied string.
+ *	Called by Tcl_DuplicateObj() and by TclTokensCopy to share
+ *	a Tcl_Token array produced by the parse of the bytes of some
+ *	other (Tcl_Obj *).
  *
  * Results:
  *      None.
@@ -295,11 +297,14 @@ DupTokensInternalRep(srcPtr, dupPtr)
 {
     TokenIntRep *tirPtr = srcPtr->internalRep.otherValuePtr;
 
-    if (tirPtr->refCount == 0) {
+    if (tirPtr->scriptObjPtr == NULL) {
+	/* Record and preserve the objPtr holding the parsed script */
+	/* Now that original objPtr cannot be freed while we retain
+	 * interest in it. The reference cycle preserves it. */
 	tirPtr->scriptObjPtr = srcPtr;
 	Tcl_IncrRefCount(srcPtr);
     }
-    tirPtr->refCount++;
+    tirPtr->copyCount++;
     dupPtr->internalRep.otherValuePtr = tirPtr;
     dupPtr->typePtr = &tokensType;
     return;
@@ -319,10 +324,9 @@ DupTokensInternalRep(srcPtr, dupPtr)
  *      get represented by a special Tcl_Token type.)
  *
  * Side effects:
- *      Frees the old internal representation.  Sets the first pointer
- *      of the twoPtrValue field of the internal rep to a (Tcl_Token *)
- *      pointing to an array of Tcl_Token's from the parse, and the
- *      second pointer to point to the last token in the array.
+ *      Frees the old internal representation.  Sets the otherValuePtr
+ *      of the internal rep pointing to a sharable TokenIntRep.
+ *	See comments below regarding rules for valid sharing.
  *
  *----------------------------------------------------------------------
  */
@@ -339,14 +343,28 @@ SetTokensFromAny (interp, objPtr)
 
     /*
      * Free the old internal rep, parse the string as a Tcl script, and
-     * save the Tcl_Token array as the new internal rep
+     * stash the Tcl_Token array into a new internal rep
+     *
+     * NOTE: the Tcl_Token array contains pointers pointing into the
+     * parsed string rep, which in this situation is objPtr->bytes.
+     * The Tcl_Token array is only usable while the string objPtr->bytes
+     * exists.  By Tcl's object model, that string belongs to objPtr.
+     * We can only preserve it by preserving objPtr.
+     *
+     * When the TokenIntRep is first created and attached to the same
+     * objPtr whose objPtr->bytes was parsed, there is no trouble to
+     * solve.  The Tcl_Token array cannot live longer than objPtr->bytes.
+     *
+     * Things get tricky only when the internalRep is copied. See
+     * DupTokensInternalRep().
      */
 
     TclFreeIntRep(objPtr);
     tirPtr->tokenPtr = TclParseScript(interp, script, numBytes, 0,
 	    &(tirPtr->lastTokenPtr), NULL);
     tirPtr->scriptObjPtr = NULL;
-    tirPtr->refCount = 0;
+    tirPtr->copyCount = 0;
+    tirPtr->originalShimmered = 0;
     objPtr->internalRep.otherValuePtr = tirPtr;
     objPtr->typePtr = &tokensType;
     return TCL_OK;
