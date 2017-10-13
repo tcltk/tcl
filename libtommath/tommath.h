@@ -33,10 +33,12 @@ extern "C" {
     defined(__sparcv9) || defined(__sparc_v9__) || defined(__sparc64__) || \
     defined(__ia64) || defined(__ia64__) || defined(__itanium__) || defined(_M_IA64) || \
     defined(__LP64__) || defined(_LP64) || defined(__64BIT__)
-#   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
+#   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT) || defined(_MSC_VER))
 #      define MP_64BIT
 #   endif
 #endif
+
+typedef unsigned long long Tcl_WideUInt;
 
 /* some default configurations.
  *
@@ -250,7 +252,7 @@ void mp_clamp(mp_int *a);
 int mp_import(mp_int *rop, size_t count, int order, size_t size, int endian, size_t nails, const void *op);
 
 /* export binary data */
-int mp_export(void *rop, size_t *countp, int order, size_t size, int endian, size_t nails, mp_int *op);
+int mp_export(void *rop, size_t *countp, int order, size_t size, int endian, size_t nails, const mp_int *op);
 
 /* ---> digit manipulation <--- */
 
@@ -408,7 +410,7 @@ int mp_reduce_setup(mp_int *a, const mp_int *b);
  * Assumes that 0 < a <= b*b, note if 0 > a > -(b*b) then you can merely
  * compute the reduction as -1 * mp_reduce(mp_abs(a)) [pseudo code].
  */
-int mp_reduce(mp_int *a, const mp_int *b, mp_int *c);
+int mp_reduce(mp_int *a, const mp_int *b, const mp_int *c);
 
 /* setups the montgomery reduction */
 int mp_montgomery_setup(const mp_int *a, mp_digit *mp);
@@ -446,7 +448,7 @@ int mp_reduce_is_2k_l(const mp_int *a);
 int mp_reduce_2k_setup_l(const mp_int *a, mp_int *d);
 
 /* reduces a modulo b where b is of the form 2**p - k [0 <= a] */
-int mp_reduce_2k_l(mp_int *a, const mp_int *n, mp_int *d);
+int mp_reduce_2k_l(mp_int *a, const mp_int *n, const mp_int *d);
 
 /* d = a**b (mod c) */
 int mp_exptmod(const mp_int *a, const mp_int *b, const mp_int *c, mp_int *d);

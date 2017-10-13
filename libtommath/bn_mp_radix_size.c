@@ -58,7 +58,7 @@ int mp_radix_size(const mp_int *a, int radix, int *size)
 
    /* fetch out all of the digits */
    while (mp_iszero(&t) == MP_NO) {
-      if ((res = mp_div_d(&t, (mp_digit) radix, &t, &d)) != MP_OKAY) {
+      if ((res = mp_div_d(&t, (mp_digit)radix, &t, &d)) != MP_OKAY) {
          mp_clear(&t);
          return res;
       }

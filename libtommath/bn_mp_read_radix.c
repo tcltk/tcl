@@ -60,10 +60,10 @@ int mp_read_radix(mp_int *a, const char *str, int radix)
        * to the number, otherwise exit the loop.
        */
       if (y < radix) {
-         if ((res = mp_mul_d(a, (mp_digit) radix, a)) != MP_OKAY) {
+         if ((res = mp_mul_d(a, (mp_digit)radix, a)) != MP_OKAY) {
             return res;
          }
-         if ((res = mp_add_d(a, (mp_digit) y, a)) != MP_OKAY) {
+         if ((res = mp_add_d(a, (mp_digit)y, a)) != MP_OKAY) {
             return res;
          }
       } else {
