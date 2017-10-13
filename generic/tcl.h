@@ -424,7 +424,11 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #   define TCL_LL_MODIFIER	"ll"
 #endif /* !TCL_LL_MODIFIER */
 #ifndef TCL_Z_MODIFIER
-#   define TCL_Z_MODIFIER	""
+#   if defined(__GNUC__) && !defined(_WIN32)
+#	define TCL_Z_MODIFIER	"z"
+#   else
+#	define TCL_Z_MODIFIER	""
+#   endif
 #endif /* !TCL_Z_MODIFIER */
 #define Tcl_WideAsLong(val)	((long)((Tcl_WideInt)(val)))
 #define Tcl_LongAsWide(val)	((Tcl_WideInt)((long)(val)))
