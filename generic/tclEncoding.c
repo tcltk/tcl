@@ -2329,7 +2329,7 @@ UtfToUtfProc(
 	}
 	if (UCHAR(*src) < 0x80 && !(UCHAR(*src) == 0 && pureNullMode == 0)) {
 	    /*
-	     * Copy 7bit chatacters, but skip null-bytes when we are in input
+	     * Copy 7bit characters, but skip null-bytes when we are in input
 	     * mode, so that they get converted to 0xc080.
 	     */
 
@@ -3384,7 +3384,7 @@ EscapeFromUtfProc(
 
 	    /*
 	     * The state variable has the value of oldState when word is 0.
-	     * In this case, the escape sequense should not be copied to dst
+	     * In this case, the escape sequence should not be copied to dst
 	     * because the current character set is not changed.
 	     */
 
