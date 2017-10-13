@@ -89,8 +89,9 @@ For \fBx\fR or \fBX\fR conversions, \fB0x\fR or \fB0X\fR (respectively)
 will be added to the beginning of the result unless it is zero.
 For \fBb\fR conversions, \fB0b\fR
 will be added to the beginning of the result unless it is zero.
-For \fBd\fR conversions, \fB0d\fR will be added to the beginning
-of the result unless it is zero.
+For \fBd\fR conversions, \fB0d\fR there is no effect unless
+the \fB0\fR specifier is used as well: In that case, \fB0d\fR or
+\fB0D\fR (respectively) will be added to the beginning.
 For all floating-point conversions (\fBe\fR, \fBE\fR, \fBf\fR,
 \fBg\fR, and \fBG\fR) it guarantees that the result always
 has a decimal point.
