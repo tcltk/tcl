@@ -1234,7 +1234,7 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
 		    hash1 = (size_t)one->slot[loffset1];
 		    l1 = one->slot[loffset1 + numList1];
 		    am = AMMergeList(hamt, *src2++, hash1, l1,
-			    scratchPtr, NULL, 0);
+			    scratchPtr, NULL, 1);
 		} else {
 		    am = *src2++;
 		}
