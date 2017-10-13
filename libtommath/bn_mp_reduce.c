@@ -19,7 +19,7 @@
  * precomputed via mp_reduce_setup.
  * From HAC pp.604 Algorithm 14.42
  */
-int mp_reduce(mp_int *x, const mp_int *m, mp_int *mu)
+int mp_reduce(mp_int *x, const mp_int *m, const mp_int *mu)
 {
    mp_int  q;
    int     res, um = m->used;

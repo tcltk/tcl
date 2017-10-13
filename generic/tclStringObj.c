@@ -1948,10 +1948,13 @@ Tcl_AppendFormatToObj(
 	    }
 #endif
 	    if (useBig) {
+		int cmpResult;
 		if (Tcl_GetBignumFromObj(interp, segment, &big) != TCL_OK) {
 		    goto error;
 		}
-		isNegative = (mp_cmp_d(&big, 0) == MP_LT);
+		cmpResult = mp_cmp_d(&big, 0);
+		isNegative = (cmpResult == MP_LT);
+		if (cmpResult == MP_EQ) gotHash = 0;
 		if (ch == 'u') {
 		    if (isNegative) {
 			msg = "unsigned bignum format is invalid";
@@ -2025,15 +2028,11 @@ Tcl_AppendFormatToObj(
 	    if (gotHash || (ch == 'p')) {
 		switch (ch) {
 		case 'o':
-		    Tcl_AppendToObj(segment, "0o", 2);
-		    segmentLimit -= 2;
-		    break;
-		case 'X':
-		    Tcl_AppendToObj(segment, "0X", 2);
 		    segmentLimit -= 2;
 		    break;
 		case 'p':
 		case 'x':
+		case 'X':
 		    Tcl_AppendToObj(segment, "0x", 2);
 		    segmentLimit -= 2;
 		    break;
@@ -2041,10 +2040,14 @@ Tcl_AppendFormatToObj(
 		    Tcl_AppendToObj(segment, "0b", 2);
 		    segmentLimit -= 2;
 		    break;
+#if TCL_MAJOR_VERSION < 9
 		case 'd':
-		    Tcl_AppendToObj(segment, "0d", 2);
-		    segmentLimit -= 2;
+		    if (gotZero) {
+			Tcl_AppendToObj(segment, "0d", 2);
+			segmentLimit -= 2;
+		    }
 		    break;
+#endif
 		}
 	    }
 
@@ -2249,6 +2252,8 @@ Tcl_AppendFormatToObj(
 	    break;
 	}
 
+	case 'a':
+	case 'A':
 	case 'e':
 	case 'E':
 	case 'f':
@@ -2316,6 +2321,12 @@ Tcl_AppendFormatToObj(
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
+	    }
+	    if (ch == 'A') {
+		char *p = TclGetString(segment) + 1;
+		*p = 'x';
+		p = strchr(p, 'P');
+		if (p) *p = 'p';
 	    }
 	    break;
 	}
