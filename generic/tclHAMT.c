@@ -885,16 +885,33 @@ ArrayMap AMMergeList(
 
 	if (am->slot[loffset] == (ClientData)hash) {
 	    /* Hash of list child matches. Merge to it. */
-	    KVList l;
+	    KVList l, child = (KVList) am->slot[loffset + numList];
+
+	    if (kvl == child) {
+		if (valuePtr) {
+		    *valuePtr = kvl->value;
+		}
+		return am;
+	    }
 
 	    if (listIsFirst) {
-		l = KVLMerge(hamt, kvl, am->slot[loffset + numList],
-			scratchPtr, valuePtr);
+		l = KVLMerge(hamt, kvl, child, scratchPtr, valuePtr);
+		if ((l == kvl) && (kvl->key == child->key)
+			&& (kvl->value == child->value)) {
+		    KVLClaim(kvl);
+		    KVLDisclaim(hamt, child);
+		    am->slot[loffset + numList] = kvl;
+		}
 	    } else {
-		l = KVLMerge(hamt, am->slot[loffset + numList], kvl,
-			scratchPtr, valuePtr);
+		l = KVLMerge(hamt, child, kvl, scratchPtr, valuePtr);
+		if ((l == child) && (kvl->key == child->key)
+			&& (kvl->value == child->value)) {
+		    KVLClaim(kvl);
+		    KVLDisclaim(hamt, child);
+		    am->slot[loffset + numList] = kvl;
+		}
 	    }
-	    if (l == am->slot[loffset + numList]) {
+	    if (l == child) {
 		return am;
 	    }
 
@@ -1169,9 +1186,10 @@ assert( src2 == two->slot + NumBits(two->kvMap) );
     /* Copy/merge the lists */
     for (tally = (size_t)1; tally; tally = tally << 1) {
 	if (tally & kvMap) {
-	    if ((tally & one->kvMap) && (tally & two->kvMap)) {
+	    if ((tally & one->kvMap) && (tally & two->kvMap)
+		    && (*src1 != *src2)) {
 		KVList l = KVLMerge(hamt, *src1, *src2, scratchPtr, NULL);
-		if ((l == *src1) && (l != *src2)) {
+		if (l == *src1) {
 		    /* Check whether *src1 and *src2 are identical values.
 		     * If so, Make them the same value. */
 		    if ((l->key == ((KVList)(*src2))->key)
@@ -2243,27 +2261,33 @@ TclHAMTMerge(
 	    /* Both are lists. */
 	    if (one->x.hash == two->x.hash) {
 		/* Same hash -> merge the lists */
-		KVList l = KVLMerge(one, one->kvl, two->kvl, &scratch, NULL);
+		KVList l;
+		KVList l1 = one->kvl;
+		KVList l2 = two->kvl;
 
+		if ((l1 == l2) && (two->overflow == NULL)) {
+		    return one;
+		}
+		l = KVLMerge(one, l1, l2, &scratch, NULL);
 		scratch = CollisionMerge(one, two, scratch);
-		if (l == one->kvl) {
+		if (l == l1) {
 		    /* Good possibility that one->kvl and two->kvl are
 		     * identical values.  If so, make them the same value.
 		     * NOTE: Do this only for identical values, not just
 		     * equal values.  Equal, but distinct, keys should be
 		     * preserved. */
-		    if (l != two->kvl && (l->key == two->kvl->key)
-			    && (l->value == two->kvl->value)) {
+		    if (l != l2 && (l->key == l2->key)
+			    && (l->value == l2->value)) {
 			/* Convert identical values to same values */
 			KVLClaim(l);
-			KVLDisclaim(one, two->kvl);
+			KVLDisclaim(one, l2);
 			two->kvl = l;
 		    }
 		    if (scratch == one->overflow) {
 			return one;
 		    }
 		}
-		if ((l == two->kvl) && (scratch == two->overflow)) {
+		if ((l == l2) && (scratch == two->overflow)) {
 		    return two;
 		}
 
