@@ -32,6 +32,10 @@ DOING_TCL = 1
 DOING_TK = 1
 !endif
 
+!ifndef(PROJECT_REQUIRES_TK)
+PROJECT_REQUIRES_TK = 0
+!endif
+
 ################################################################
 # Nmake is a pretty weak environment in syntax and capabilities
 # so this file is necessarily verbose. It's broken down into
@@ -73,14 +77,6 @@ DOING_TK = 1
 MSG = ^
 Visual C++ compiler environment not initialized.
 !error $(MSG)
-!endif
-
-# Defaults for built-in internal settings defined in parent makefile
-!ifndef DISABLE_STANDARD_TARGETS
-DISABLE_STANDARD_TARGETS = 0
-!endif
-!ifndef DISABLE_CLEAN_TARGETS
-DISABLE_CLEAN_TARGETS = 0
 !endif
 
 ################################################################
@@ -167,6 +163,7 @@ WINDIR		= $(ROOT)\win
 !ifndef RCDIR
 RCDIR           = $(WINDIR)\rc
 !endif
+RCDIR = $(RCDIR:/=\)
 
 # The target directory where the built packages and binaries will be installed.
 # INSTALLDIR is the (optional) path specified by the user.
@@ -176,7 +173,7 @@ RCDIR           = $(WINDIR)\rc
 _INSTALLDIR	= $(INSTALLDIR:/=\)
 !else
 ### Assume the normal default.
-_INSTALLDIR	= C:\Program Files\Tcl
+_INSTALLDIR	= $(HOMEDRIVE)\Tcl
 !endif
 
 !if $(DOING_TCL)
@@ -248,7 +245,7 @@ Failed to find tcl.h. The TCLDIR macro is set incorrectly or is not set and defa
 !endif
 
 # Now do the same to locate Tk headers and libs if project requires Tk
-!ifdef PROJECT_REQUIRES_TK
+!if $(PROJECT_REQUIRES_TK)
 
 !ifdef TKDIR
 
@@ -887,6 +884,7 @@ VERSION         = $(DOTVERSION:.=)
 # PRJLIB     - output path of generated project library
 # PRJSTUBLIBNAME - name of the generated project stubs library
 # PRJSTUBLIB - output path of the generated project stubs library
+# RESFILE - output resource file (only if not static build)
 
 SUFX	    = tsgx
 
@@ -1003,7 +1001,7 @@ TCLSH_NATIVE	= $(TCLSH)
 !endif
 
 # Do the same for Tk and Tk extensions that require the Tk libraries
-!if $(DOING_TK) || defined(PROJECT_REQUIRES_TK)
+!if $(DOING_TK) || $(PROJECT_REQUIRES_TK)
 WISHNAMEPREFIX = wish
 WISHNAME = $(WISHNAMEPREFIX)$(TK_VERSION)$(SUFX).exe
 TKLIBNAME	= $(PROJECT)$(TK_VERSION)$(SUFX).$(EXT)
@@ -1032,7 +1030,7 @@ TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
 !endif # TKINSTALL
 
 !endif # $(DOING_TK)
-!endif # $(DOING_TK) || PROJECT_REQUIRES_TK
+!endif # $(DOING_TK) || $(PROJECT_REQUIRES_TK)
 
 # Various output paths
 PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
@@ -1041,6 +1039,16 @@ PRJLIB		= $(OUT_DIR)\$(PRJLIBNAME)
 
 PRJSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
 PRJSTUBLIB	= $(OUT_DIR)\$(PRJSTUBLIBNAME)
+
+# If extension parent makefile has not defined a resource definition file,
+# we will generate one from standard template.
+!if !$(DOING_TCL) && !$(DOING_TK) && !$(STATIC_BUILD)
+!ifdef RCFILE
+RESFILE = $(RCFILE:.rc=.res)
+!else
+RESFILE = $(TMP_DIR)\$(PROJECT).res
+!endif
+!endif
 
 ###################################################################
 # 11. Construct the paths for the installation directories
@@ -1124,7 +1132,7 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_NO_DEPRECATED
 # test targets in tk do not use stubs
 !if ! $(DOING_TCL)
 USE_STUBS_DEFS  = -DUSE_TCL_STUBS -DUSE_TCLOO_STUBS
-!ifdef PROJECT_REQUIRES_TK
+!if $(PROJECT_REQUIRES_TK)
 USE_STUBS_DEFS  = $(USE_STUBS_DEFS) -DUSE_TK_STUBS
 !endif
 !endif
@@ -1328,9 +1336,7 @@ MAKERESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
 	    -DVERSION=\"$(VERSION)\" \
 	    -DSUFX=\"$(SUFX)\" \
             -DPROJECT=\"$(PROJECT)\" \
-            -DPRJLIBNAME=\"$(PRJLIBNAME)\" \
-	    $<
-
+            -DPRJLIBNAME=\"$(PRJLIBNAME)\" 
 
 !ifndef DEFAULT_BUILD_TARGET
 DEFAULT_BUILD_TARGET = $(PROJECT)
@@ -1390,7 +1396,10 @@ default-setup:
 	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
 	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR)
 
-default-rc: $(TMP_DIR)\$(PROJECT).rc
+!ifndef RCFILE
+# If parent makefile has not defined a resource definition file,
+# we will generate one from standard template.
+$(TMP_DIR)\$(PROJECT).res: $(TMP_DIR)\$(PROJECT).rc
 
 $(TMP_DIR)\$(PROJECT).rc:
 	@$(COPY) << $(TMP_DIR)\$(PROJECT).rc
@@ -1428,8 +1437,13 @@ END
 
 <<
 
+!endif # ifndef RCFILE
 
 !ifndef DISABLE_IMPLICIT_RULES
+DISABLE_IMPLICIT_RULES = 0
+!endif
+
+!if $(DISABLE_IMPLICIT_RULES)
 # Implicit rule definitions - only for building library objects. For stubs and
 # main application, the master makefile should define explicit rules.
 
@@ -1449,13 +1463,13 @@ $<
 <<
 
 {$(RCDIR)}.rc{$(TMP_DIR)}.res:
-	$(MAKERESCMD)
+	$(MAKERESCMD) $<
 
 {$(WINDIR)}.rc{$(TMP_DIR)}.res:
-	$(MAKERESCMD)
+	$(MAKERESCMD) $<
 
 {$(TMP_DIR)}.rc{$(TMP_DIR)}.res:
-	$(MAKERESCMD)
+	$(MAKERESCMD) $<
 
 .SUFFIXES:
 .SUFFIXES:.c .rc
