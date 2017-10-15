@@ -6,7 +6,7 @@ $(PROJECT): setup pkgindex $(PRJLIB)
 # MAKEBINCMD will do shared, static and debug links as appropriate
 # _VC_MANIFEST_EMBED_DLL embeds the manifest for shared libraries
 # and is a no-op for static libraries
-$(PRJLIB): $(PRJ_OBJS)
+$(PRJLIB): $(PRJ_OBJS) $(RESFILE)
        $(MAKEBINCMD) $**
        $(_VC_MANIFEST_EMBED_DLL)
        -@del $*.exp
