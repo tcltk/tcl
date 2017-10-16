@@ -2331,7 +2331,9 @@ DictAppendCmd(
 		valuePtr = Tcl_DuplicateObj(valuePtr);
 	    }
 
+	    Tcl_IncrRefCount(appendObjPtr);
 	    Tcl_AppendObjToObj(valuePtr, appendObjPtr);
+	    Tcl_DecrRefCount(appendObjPtr);
 	}
 
 	Tcl_DictObjPut(NULL, dictPtr, objv[2], valuePtr);
