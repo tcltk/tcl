@@ -2534,15 +2534,26 @@ AppendPrintfToObjVA(
 		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewWideIntObj(
 			    va_arg(argList, Tcl_WideInt)));
 		    break;
+		case 3:
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewBignumObj(
+			    va_arg(argList, mp_int *)));
+		    break;
 		}
 		break;
+	    case 'a':
+	    case 'A':
 	    case 'e':
 	    case 'E':
 	    case 'f':
 	    case 'g':
 	    case 'G':
+		if (size > 0) {
 		Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
-			va_arg(argList, double)));
+			(double)va_arg(argList, long double)));
+		} else {
+			Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
+				va_arg(argList, double)));
+		}
 		seekingConversion = 0;
 		break;
 	    case '*':
@@ -2562,7 +2573,6 @@ AppendPrintfToObjVA(
 		gotPrecision = 1;
 		p++;
 		break;
-	    /* TODO: support for bignum arguments */
 	    case 'l':
 		++size;
 		p++;
@@ -2588,6 +2598,10 @@ AppendPrintfToObjVA(
 		} else if (sizeof(size_t) == sizeof(Tcl_WideInt)) {
 		    size = 2;
 		}
+		p++;
+		break;
+	    case 'L':
+		size = 3;
 		p++;
 		break;
 	    case 'h':
