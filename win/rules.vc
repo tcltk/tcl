@@ -32,7 +32,7 @@ DOING_TCL = 1
 DOING_TK = 1
 !endif
 
-!ifndef(PROJECT_REQUIRES_TK)
+!ifndef PROJECT_REQUIRES_TK
 PROJECT_REQUIRES_TK = 0
 !endif
 
@@ -845,9 +845,9 @@ VERSION = $(TK_VERSION)
 # first from a configure.in file, and then from configure.ac
 !ifndef DOTVERSION
 !if [echo DOTVERSION = \> versions.vc] \
-   || [nmakehlp -V ..\configure.in AC_INIT >> versions.vc]
+   || [nmakehlp -V $(ROOT)\configure.in AC_INIT >> versions.vc]
 !if [echo DOTVERSION = \> versions.vc] \
-   || [nmakehlp -V ..\configure.ac AC_INIT >> versions.vc]
+   || [nmakehlp -V $(ROOT)\configure.ac AC_INIT >> versions.vc]
 !error *** Could not figure out extension version. Please define DOTVERSION in parent makefile before including rules.vc.
 !endif
 !endif
@@ -1443,7 +1443,7 @@ END
 DISABLE_IMPLICIT_RULES = 0
 !endif
 
-!if $(DISABLE_IMPLICIT_RULES)
+!if !$(DISABLE_IMPLICIT_RULES)
 # Implicit rule definitions - only for building library objects. For stubs and
 # main application, the master makefile should define explicit rules.
 
