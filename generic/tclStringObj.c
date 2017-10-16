@@ -3127,6 +3127,7 @@ TclStringCatObjv(
 	    /* Ugly interface! No scheme to init array size. */
 	    objResultPtr = Tcl_NewUnicodeObj(&ch, 0);	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    	"concatenation failed: unable to alloc %"
@@ -3174,6 +3175,7 @@ TclStringCatObjv(
 	} else {
 	    objResultPtr = Tcl_NewObj();	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    	"concatenation failed: unable to alloc %u bytes",
