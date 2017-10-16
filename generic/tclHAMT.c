@@ -1100,7 +1100,8 @@ ArrayMap AMMergeContents(
     ArrayMap two,
     Collision *scratchPtr)
 {
-    ArrayMap new;
+    ArrayMap new, am;
+    KVList l;
     int numList, numSubnode;
     size_t size = 0;
 
@@ -1120,10 +1121,6 @@ ArrayMap AMMergeContents(
     int numList2 = NumBits(two->kvMap);
 
     assert ( one != two );
-
-    /* TODO: Detect cases where one or two can be returned as the
-     * merge result, and do so.  If identical parts are detected,
-     * eliminate duplication. */
 
     for (tally = (size_t)1; tally; tally = tally << 1) {
 	if (!(tally & (amMap | kvMap))) {
@@ -1160,9 +1157,8 @@ ArrayMap AMMergeContents(
     if ((kvMap == one->kvMap) && (amMap = one->amMap)) {
 	src1 += numList1;
 	src2 += numList2;
+	if (kvMap) {
 	for (tally = (size_t)1; tally; tally = tally << 1) {
-	    KVList l;
-
 	    if ((tally & kvMap) == 0) {
 		continue;
 	    }
@@ -1194,10 +1190,10 @@ ArrayMap AMMergeContents(
 	    src1++;
 	    src2++;
 	}
+	}
 
+	if (amMap) {
 	for (tally = (size_t)1; tally; tally = tally << 1) {
-	    ArrayMap am;
-
 	    if ((tally & amMap) == 0) {
 		continue;
 	    }
@@ -1216,10 +1212,10 @@ ArrayMap AMMergeContents(
 
 	    } else if (tally & two->kvMap) {
 		int loffset = NumBits(two->kvMap & (tally - 1));
-		size_t hash = (size_t)two->slot[loffset];
-		KVList l = two->slot[loffset + numList2];
 
-		am = AMMergeList(hamt, *src1, hash, l, scratchPtr, NULL, 0);
+		am = AMMergeList(hamt, *src1, (size_t)two->slot[loffset],
+			(KVList)two->slot[loffset + numList2],
+			scratchPtr, NULL, 0);
 		if (am != *src1) {
 		    goto notOne;
 		}
@@ -1227,12 +1223,113 @@ ArrayMap AMMergeContents(
 	    src1++;
 	    src2++;
 	}
+	}
 	/* If you get here, congrats! the merge is same as one */
 	return one;
     }
 
   notOne:
     /* src1 points to first failed slot */
+
+    if ((kvMap == two->kvMap) && (amMap = two->amMap)) {
+	ClientData *src = one->slot + numList1;
+
+	src2 = two->slot + numList2;
+	if (src1 > src) {
+	    while (src < src1) {
+		if (*src != *src2) {
+		    goto notTwo;
+		}
+		src++;
+		src2++;
+	    }
+	}
+
+	if (src1 < one->slot + 2*numList1) {
+	for (; tally; tally = tally << 1) {
+	    if ((tally & kvMap) == 0) {
+		continue;
+	    }
+	    if ((tally & one->kvMap) == 0) {
+		/* Merge two to empty -> two */
+		src2++;
+		continue;
+	    }
+	    if (src < src1) {
+		src++;
+		src2++;
+	    }
+	    if ((src == src1) && (l != *src2)) {
+		goto notTwo;
+	    }
+	    if (*src == *src2) {
+		/* Merge two to two -> two */
+		src++;
+		src2++;
+		continue;
+	    }
+
+	    /* General merge - check result */
+	    l = KVLMerge(hamt, *src, *src2, scratchPtr, NULL);
+	    if (l != *src2) {
+		goto notTwo;
+	    }
+	    src++;
+	    src2++;
+	}
+	}
+
+	if (amMap) {
+	for (; tally; tally = tally << 1) {
+	    if ((tally & amMap) == 0) {
+		continue;
+	    }
+	    if (tally & (one->kvMap | one->amMap)) {
+		/* Merge two to empty -> two */
+		src2++;
+		continue;
+	    }
+	    if (src < src1) {
+		src++;
+		src2++;
+	    }
+	    if ((src == src1) && (am != *src2)) {
+		goto notTwo;
+	    }
+
+	    if (tally & one->amMap) {
+		if (*src == *src2) {
+		    /* Merge two into two -> two */
+		    src++;
+		    src2++;
+		    continue;
+		}
+		am = AMMerge(hamt, *src, *src2, scratchPtr);
+		if (am != *src2) {
+		    goto notTwo;
+		}
+	    } else {
+	        /* (tally & one->kvMap) */
+		int loffset = NumBits(one->kvMap & (tally - 1));
+
+		am = AMMergeList(hamt, *src2, (size_t)one->slot[loffset],
+			(KVList)one->slot[loffset + numList1],
+			scratchPtr, NULL, 1);
+		if (am != *src2) {
+		    goto notTwo;
+		}
+	    }
+	    src++;
+	    src2++;
+	}
+	}
+	
+	/* If you get here, congrats! the merge is same as two */
+	return two;
+    }
+  notTwo:
+    /* src1 and src2 point to first failed slots */
+
     /* TODO: copy over known stuff */
 
     new = AMNew(numList, numSubnode, one->mask, one->id);
@@ -1270,7 +1367,7 @@ assert( src2 == two->slot + NumBits(two->kvMap) );
 	if (tally & kvMap) {
 	    if ((tally & one->kvMap) && (tally & two->kvMap)
 		    && (*src1 != *src2)) {
-		KVList l = KVLMerge(hamt, *src1, *src2, scratchPtr, NULL);
+		l = KVLMerge(hamt, *src1, *src2, scratchPtr, NULL);
 		if (l == *src1) {
 		    /* Check whether *src1 and *src2 are identical values.
 		     * If so, Make them the same value. */
@@ -1306,7 +1403,6 @@ assert( src2 == two->slot + 2*NumBits(two->kvMap) );
     /* Copy/merge the subnodes */
     for (tally = (size_t)1; tally; tally = tally << 1) {
 	if (tally & amMap) {
-	    ArrayMap am;
 	    int loffset1, loffset2;
 	    size_t hash1, hash2;
 	    KVList l1, l2;
