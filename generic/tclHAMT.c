@@ -1154,11 +1154,12 @@ ArrayMap AMMergeContents(
     /* Check for case where merge is same as one */
     src1 = one->slot;
     src2 = two->slot;
-    if ((kvMap == one->kvMap) && (amMap = one->amMap)) {
+    tally = (size_t)1;
+    if ((kvMap == one->kvMap) && (amMap == one->amMap)) {
 	src1 += numList1;
 	src2 += numList2;
 	if (kvMap) {
-	for (tally = (size_t)1; tally; tally = tally << 1) {
+	for (; tally; tally = tally << 1) {
 	    if ((tally & kvMap) == 0) {
 		continue;
 	    }
@@ -1231,7 +1232,7 @@ ArrayMap AMMergeContents(
   notOne:
     /* src1 points to first failed slot */
 
-    if ((kvMap == two->kvMap) && (amMap = two->amMap)) {
+    if ((kvMap == two->kvMap) && (amMap == two->amMap)) {
 	ClientData *src = one->slot + numList1;
 
 	src2 = two->slot + numList2;
@@ -1277,6 +1278,7 @@ ArrayMap AMMergeContents(
 	    src++;
 	    src2++;
 	}
+	tally = (size_t)1;
 	}
 
 	if (amMap) {
@@ -1284,7 +1286,7 @@ ArrayMap AMMergeContents(
 	    if ((tally & amMap) == 0) {
 		continue;
 	    }
-	    if (tally & (one->kvMap | one->amMap)) {
+	    if ((tally & (one->kvMap | one->amMap)) == 0) {
 		/* Merge two to empty -> two */
 		src2++;
 		continue;
@@ -1292,6 +1294,7 @@ ArrayMap AMMergeContents(
 	    if (src < src1) {
 		src++;
 		src2++;
+		continue;
 	    }
 	    if ((src == src1) && (am != *src2)) {
 		goto notTwo;
