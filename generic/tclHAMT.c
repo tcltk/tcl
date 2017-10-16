@@ -1153,6 +1153,88 @@ ArrayMap AMMergeContents(
     /* We now have the maps for the merged node. */
     numList = NumBits(kvMap);
     numSubnode = NumBits(amMap);
+
+    /* Check for case where merge is same as one */
+    src1 = one->slot;
+    src2 = two->slot;
+    if ((kvMap == one->kvMap) && (amMap = one->amMap)) {
+	src1 += numList1;
+	src2 += numList2;
+	for (tally = (size_t)1; tally; tally = tally << 1) {
+	    KVList l;
+
+	    if ((tally & kvMap) == 0) {
+		continue;
+	    }
+	    if ((tally & two->kvMap) == 0) {
+		/* Merge empty to one -> one */
+		src1++;
+		continue;
+	    }
+	    if (*src1 == *src2) {
+		/* Merge one to one -> one */
+		src1++;
+		src2++;
+		continue;
+	    }
+
+	    /* General merge - check result */
+	    l = KVLMerge(hamt, *src1, *src2, scratchPtr, NULL);
+	    if (l != *src1) {
+		goto notOne;
+	    }
+	    /* Check whether *src1 and *src2 are identical values.
+	     * If so, Make them the same value. */
+	    if ((l->key == ((KVList)(*src2))->key)
+		    && (l->value == ((KVList)(*src2))->value)) {
+		KVLClaim(l);
+		KVLDisclaim(hamt, *src2);
+		*src2 = l;
+	    }
+	    src1++;
+	    src2++;
+	}
+
+	for (tally = (size_t)1; tally; tally = tally << 1) {
+	    ArrayMap am;
+
+	    if ((tally & amMap) == 0) {
+		continue;
+	    }
+	    if (tally & two->amMap) {
+		if (*src1 == *src2) {
+		    /* Merge one into one -> one */
+		    src1++;
+		    src2++;
+		    continue;
+		}
+		am = AMMerge(hamt, *src1, *src2, scratchPtr);
+		if (am != *src1) {
+		    goto notOne;
+		}
+		/* TODO: Check identity and replace */
+
+	    } else if (tally & two->kvMap) {
+		int loffset = NumBits(two->kvMap & (tally - 1));
+		size_t hash = (size_t)two->slot[loffset];
+		KVList l = two->slot[loffset + numList2];
+
+		am = AMMergeList(hamt, *src1, hash, l, scratchPtr, NULL, 0);
+		if (am != *src1) {
+		    goto notOne;
+		}
+	    }
+	    src1++;
+	    src2++;
+	}
+	/* If you get here, congrats! the merge is same as one */
+	return one;
+    }
+
+  notOne:
+    /* src1 points to first failed slot */
+    /* TODO: copy over known stuff */
+
     new = AMNew(numList, numSubnode, one->mask, one->id);
 
     new->kvMap = kvMap;
