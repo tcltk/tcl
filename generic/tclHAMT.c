@@ -1220,9 +1220,12 @@ ArrayMap AMMergeContents(
 	    src2++;
 	}
 	}
+src1 = one->slot + 2*numList1;
+src2 = two->slot + 2*numList2;
 
 	if (amMap) {
 	for (tally = (size_t)1; tally; tally = tally << 1) {
+assert( (src2 - two->slot) <= 2*numList2 + NumBits(two->amMap) );
 	    if ((tally & amMap) == 0) {
 		continue;
 	    }
@@ -1244,6 +1247,7 @@ ArrayMap AMMergeContents(
 		    AMDisclaim(hamt, *src2);
 		    *src2 = *src1;
 		}
+		src2++;
 	    } else if (tally & two->kvMap) {
 		int loffset = NumBits(two->kvMap & (tally - 1));
 
@@ -1256,7 +1260,6 @@ ArrayMap AMMergeContents(
 		}
 	    }
 	    src1++;
-	    src2++;
 	}
 	}
 	/* If you get here, congrats! the merge is same as one */
@@ -1287,6 +1290,7 @@ ArrayMap AMMergeContents(
 
 	if (src1 < one->slot + 2*numList1) {
 	for (; tally; tally = tally << 1) {
+assert( (src2 - two->slot) < 2*numList2 + NumBits(two->amMap) );
 	    if ((tally & kvMap) == 0) {
 		continue;
 	    }
@@ -1322,6 +1326,7 @@ ArrayMap AMMergeContents(
 
 	if (amMap) {
 	for (; tally; tally = tally << 1) {
+assert( (src2 - two->slot) < 2*numList2 + NumBits(two->amMap) );
 	    if ((tally & amMap) == 0) {
 		continue;
 	    }
@@ -1356,6 +1361,7 @@ ArrayMap AMMergeContents(
 		    AMDisclaim(hamt, *src2);
 		    *src2 = *src1;
 		}
+		src++;
 	    } else {
 	        /* (tally & one->kvMap) */
 		int loffset = NumBits(one->kvMap & (tally - 1));
@@ -1368,7 +1374,6 @@ ArrayMap AMMergeContents(
 		    goto notTwo;
 		}
 	    }
-	    src++;
 	    src2++;
 	}
 	}
