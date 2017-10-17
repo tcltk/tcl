@@ -1341,7 +1341,6 @@ ArrayMap AMMergeContents(
     new->amMap = amMap;
     dst = new->slot;
 
-    /* TODO: Get the Claims right here */
     if (goodOneSlots >= goodTwoSlots) {
       if (goodOneSlots) {
 	memcpy(dst, one->slot, goodOneSlots * sizeof(void *));
@@ -1399,14 +1398,11 @@ ArrayMap AMMergeContents(
 			*src2 = l;
 		    }
 		}
-		KVLClaim(l);
 		*dst++ = l;
 	    } else if (tally & one->kvMap) {
-		KVLClaim(*src1);
 		*dst++ = *src1;
 	    } else {
 		assert (tally & two->kvMap);
-		KVLClaim(*src2);
 		*dst++ = *src2;
 	    }
 	}
@@ -1435,7 +1431,6 @@ ArrayMap AMMergeContents(
 
 	    if ((tally & one->amMap) && (tally & two->amMap)) {
 		am = AMMerge(hamt, *src1++, *src2++, scratchPtr);
-		AMClaim(am);
 		*dst++ = am;
 	    } else if (tally & one->amMap) {
 		if (tally & two->kvMap) {
@@ -1448,7 +1443,6 @@ ArrayMap AMMergeContents(
 		} else {
 		    am = *src1++;
 		}
-		AMClaim(am);
 		*dst++ = am;
 	    } else if (tally & two->amMap) {
 		if (tally & one->kvMap) {
@@ -1460,7 +1454,6 @@ ArrayMap AMMergeContents(
 		} else {
 		    am = *src2++;
 		}
-		AMClaim(am);
 		*dst++ = am;
 	    } else {
 		/* TRICKY!!! Have to create node from two lists. */
@@ -1472,11 +1465,17 @@ ArrayMap AMMergeContents(
 		l2 = two->slot[loffset2 + numList2];
 
 		am = AMNewLeaf(hash1, l1, hash2, l2);
-		AMClaim(am);
 		*dst++ = am;
 	    }
 	    size += am->size;
 	}
+    }
+    dst = new->slot + numList;
+    while (dst < new->slot + 2 * numList) {
+	KVLClaim((KVList) *dst++);
+    }
+    while (dst < new->slot + 2 * numList + numSubnode) {
+	AMClaim((ArrayMap)*dst++);
     }
     new->size = size + numList;
     return new;
