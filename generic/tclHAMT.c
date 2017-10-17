@@ -1102,7 +1102,7 @@ ArrayMap AMMergeContents(
 {
     ArrayMap new, am;
     KVList l;
-    int numList, numSubnode;
+    int numList, numSubnode, goodOneSlots = 0, goodTwoSlots = 0;
     size_t size = 0;
 
     /* If either tree has a particular subnode, the merger must too */
@@ -1231,6 +1231,7 @@ ArrayMap AMMergeContents(
 
   notOne:
     /* src1 points to first failed slot */
+    goodOneSlots = src1 - one->slot;
 
     if ((kvMap == two->kvMap) && (amMap == two->amMap)) {
 	ClientData *src = one->slot + numList1;
@@ -1332,8 +1333,7 @@ ArrayMap AMMergeContents(
     }
   notTwo:
     /* src1 and src2 point to first failed slots */
-
-    /* TODO: copy over known stuff */
+    goodTwoSlots = src2 - two->slot;
 
     new = AMNew(numList, numSubnode, one->mask, one->id);
 
@@ -1341,9 +1341,21 @@ ArrayMap AMMergeContents(
     new->amMap = amMap;
     dst = new->slot;
 
+    /* TODO: Get the Claims right here */
+    if (goodOneSlots >= goodTwoSlots) {
+      if (goodOneSlots) {
+	memcpy(dst, one->slot, goodOneSlots * sizeof(void *));
+	dst += goodOneSlots;
+      }
+    } else {
+	memcpy(dst, two->slot, goodTwoSlots * sizeof(void *));
+	dst += goodTwoSlots;
+    }
+
     /* Copy the hashes */
-    src1 = one->slot;
-    src2 = two->slot;
+    if (dst < new->slot + numList) {
+    assert(src1 == one->slot);
+    assert(src2 == two->slot);
     for (tally = (size_t)1; tally; tally = tally << 1) {
 	if (tally & kvMap) {
 	    if (tally & one->kvMap) {
@@ -1361,12 +1373,18 @@ ArrayMap AMMergeContents(
 	    src2++;
 	}
     }
-
-assert( src1 == one->slot + NumBits(one->kvMap) );
-assert( src2 == two->slot + NumBits(two->kvMap) );
+    tally = (size_t)1;
+    }
+    if (src1 < one->slot + numList1) {
+	src1 = one->slot + numList1;
+    }
+    if (src2 < two->slot + numList2) {
+	src2 = two->slot + numList2;
+    }
 
     /* Copy/merge the lists */
-    for (tally = (size_t)1; tally; tally = tally << 1) {
+    if (dst < new->slot + 2*numList) {
+    for (; tally; tally = tally << 1) {
 	if (tally & kvMap) {
 	    if ((tally & one->kvMap) && (tally & two->kvMap)
 		    && (*src1 != *src2)) {
@@ -1399,12 +1417,17 @@ assert( src2 == two->slot + NumBits(two->kvMap) );
 	    src2++;
 	}
     }
-
-assert( src1 == one->slot + 2*NumBits(one->kvMap) );
-assert( src2 == two->slot + 2*NumBits(two->kvMap) );
+    tally = (size_t)1;
+    }
+    if (src1 < one->slot + 2*numList1) {
+	src1 = one->slot + 2*numList1;
+    }
+    if (src2 < two->slot + 2*numList2) {
+	src2 = two->slot + 2*numList2;
+    }
 
     /* Copy/merge the subnodes */
-    for (tally = (size_t)1; tally; tally = tally << 1) {
+    for (; tally; tally = tally << 1) {
 	if (tally & amMap) {
 	    int loffset1, loffset2;
 	    size_t hash1, hash2;
