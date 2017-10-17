@@ -1077,7 +1077,7 @@ ArrayMap AMMergeList(
 
 /* Forward declaration for mutual recursion */
 static ArrayMap		AMMerge(HAMT *hamt, ArrayMap one, ArrayMap two,
-			    Collision *scratchPtr);
+			    int *idPtr, Collision *scratchPtr);
 
 
 /*
@@ -1098,11 +1098,13 @@ ArrayMap AMMergeContents(
     HAMT *hamt,
     ArrayMap one,
     ArrayMap two,
+    int *identicalPtr,
     Collision *scratchPtr)
 {
     ArrayMap new, am;
     KVList l;
     int numList, numSubnode, goodOneSlots = 0, goodTwoSlots = 0;
+    int identical = 1;
     size_t size = 0;
 
     /* If either tree has a particular subnode, the merger must too */
@@ -1178,6 +1180,7 @@ ArrayMap AMMergeContents(
 	    /* General merge - check result */
 	    l = KVLMerge(hamt, *src1, *src2, scratchPtr, NULL);
 	    if (l != *src1) {
+		identical = 0;
 		goto notOne;
 	    }
 	    /* Check whether *src1 and *src2 are identical values.
@@ -1187,6 +1190,8 @@ ArrayMap AMMergeContents(
 		KVLClaim(l);
 		KVLDisclaim(hamt, *src2);
 		*src2 = l;
+	    } else {
+		identical = 0;
 	    }
 	    src1++;
 	    src2++;
@@ -1199,21 +1204,27 @@ ArrayMap AMMergeContents(
 		continue;
 	    }
 	    if (tally & two->amMap) {
+		int id;
 		if (*src1 == *src2) {
 		    /* Merge one into one -> one */
 		    src1++;
 		    src2++;
 		    continue;
 		}
-		am = AMMerge(hamt, *src1, *src2, scratchPtr);
+		am = AMMerge(hamt, *src1, *src2, &id, scratchPtr);
+		identical = identical && id;
 		if (am != *src1) {
 		    goto notOne;
 		}
-		/* TODO: Check identity and replace */
-
+		if (id) {
+		    AMClaim(*src1);
+		    AMDisclaim(hamt, *src2);
+		    *src2 = *src1;
+		}
 	    } else if (tally & two->kvMap) {
 		int loffset = NumBits(two->kvMap & (tally - 1));
 
+		identical = 0;
 		am = AMMergeList(hamt, *src1, (size_t)two->slot[loffset],
 			(KVList)two->slot[loffset + numList2],
 			scratchPtr, NULL, 0);
@@ -1226,11 +1237,15 @@ ArrayMap AMMergeContents(
 	}
 	}
 	/* If you get here, congrats! the merge is same as one */
+	if (identicalPtr) {
+	    *identicalPtr = identical;
+	}
 	return one;
     }
 
   notOne:
     /* src1 points to first failed slot */
+    identical = 0;
     goodOneSlots = src1 - one->slot;
 
     if ((kvMap == two->kvMap) && (amMap == two->amMap)) {
@@ -1302,20 +1317,27 @@ ArrayMap AMMergeContents(
 	    }
 
 	    if (tally & one->amMap) {
+		int id;
 		if (*src == *src2) {
 		    /* Merge two into two -> two */
 		    src++;
 		    src2++;
 		    continue;
 		}
-		am = AMMerge(hamt, *src, *src2, scratchPtr);
+		am = AMMerge(hamt, *src, *src2, &id, scratchPtr);
 		if (am != *src2) {
 		    goto notTwo;
+		}
+		if (id) {
+		    AMClaim(*src1);
+		    AMDisclaim(hamt, *src2);
+		    *src2 = *src1;
 		}
 	    } else {
 	        /* (tally & one->kvMap) */
 		int loffset = NumBits(one->kvMap & (tally - 1));
 
+		identical = 0;
 		am = AMMergeList(hamt, *src2, (size_t)one->slot[loffset],
 			(KVList)one->slot[loffset + numList1],
 			scratchPtr, NULL, 1);
@@ -1329,6 +1351,10 @@ ArrayMap AMMergeContents(
 	}
 	
 	/* If you get here, congrats! the merge is same as two */
+	assert ( identical == 0 );
+	if (identicalPtr) {
+	    *identicalPtr = identical;
+	}
 	return two;
     }
   notTwo:
@@ -1430,8 +1456,16 @@ ArrayMap AMMergeContents(
 	    KVList l1, l2;
 
 	    if ((tally & one->amMap) && (tally & two->amMap)) {
-		am = AMMerge(hamt, *src1++, *src2++, scratchPtr);
+		int id;
+		am = AMMerge(hamt, *src1, *src2, &id, scratchPtr);
 		*dst++ = am;
+		if (id) {
+		    AMClaim(*src1);
+		    AMDisclaim(hamt, *src2);
+		    *src2 = *src1;
+		}
+		src1++;
+		src2++;
 	    } else if (tally & one->amMap) {
 		if (tally & two->kvMap) {
 		    loffset2 = NumBits(two->kvMap & (tally - 1));
@@ -1478,6 +1512,10 @@ ArrayMap AMMergeContents(
 	AMClaim((ArrayMap)*dst++);
     }
     new->size = size + numList;
+    assert ( identical == 0 );
+    if (identicalPtr) {
+	*identicalPtr = identical;
+    }
     return new;
 }
 
@@ -1559,14 +1597,20 @@ ArrayMap AMMergeDescendant(
     }
     if (tally & ancestor->amMap) {
 	ArrayMap child = ancestor->slot[2*numList + soffset];
+	int id;
 
 	/* Already have node child there. Must merge them. */
 	if (ancestorIsFirst) {
-	    sub = AMMerge(hamt, child, descendant, scratchPtr);
+	    sub = AMMerge(hamt, child, descendant, &id, scratchPtr);
 	} else {
-	    sub = AMMerge(hamt, descendant, child, scratchPtr);
+	    sub = AMMerge(hamt, descendant, child, &id, scratchPtr);
 	}
 	if (sub == child) {
+	    if (id) {
+		AMClaim(descendant);
+		AMDisclaim(hamt, child);
+		ancestor->slot[2*numList + soffset] = descendant;
+	    }
 	    return ancestor;
 	}
 	new = AMNew(numList, numSubnode, ancestor->mask, ancestor->id);
@@ -1647,6 +1691,7 @@ ArrayMap AMMerge(
     HAMT *hamt,
     ArrayMap one,
     ArrayMap two,
+    int *idPtr,
     Collision *scratchPtr)
 {
     if (one->mask == two->mask) {
@@ -1654,12 +1699,21 @@ ArrayMap AMMerge(
 	if (one->id == two->id) {
 	    /* ... and the same id; merge contents */
 	    if (one == two) {
+		if (idPtr) {
+		    *idPtr = 0; /* Same is not identical */
+		}
 		return one;
 	    }
-	    return AMMergeContents(hamt, one, two, scratchPtr);
+	    return AMMergeContents(hamt, one, two, idPtr, scratchPtr);
 	}
 	/* ... but are not same. Create parent to contain both. */
+	if (idPtr) {
+	    *idPtr = 0;
+	}
 	return AMNewParent(one, two);
+    }
+    if (idPtr) {
+	*idPtr = 0;
     }
     if (one->mask < two->mask) {
 	/* two is deeper than one... */
@@ -2526,7 +2580,7 @@ TclHAMTMerge(
     }
 
     /* Merge two trees */
-    am = AMMerge(one, one->x.am, two->x.am, &scratch);
+    am = AMMerge(one, one->x.am, two->x.am, NULL, &scratch);
     scratch = CollisionMerge(one, two, scratch);
     if ((am == one->x.am) && (scratch == one->overflow)) {
 	return one;
