@@ -2170,37 +2170,70 @@ TclHAMTUnlock(
 }
 
 static
-HAMT *HAMTNewList(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+TclHAMT HAMTNewList(
+    TclHAMT hamt,
     KVList l,
     size_t hash,
     Collision overflow)
 {
-    HAMT *new = TclHAMTCreate(kt, vt);
+    TclHAMT new;
+
     KVLClaim(l);
-    new->kvl = l;
-    new->x.hash = hash;
     if (overflow) {
 	CNClaim(overflow);
     }
+
+    if (hamt->id) {
+	/* transient -> overwrite */
+	new = hamt;
+	if (new->kvl) {
+	    KVLDisclaim(new, new->kvl);
+	} else if (new->x.am) {
+	    AMDisclaim(new, new->x.am);
+	}
+	if (new->overflow) {
+	    CNDisclaim(new, new->overflow);
+	}
+    } else {
+	new = TclHAMTCreate(hamt->kt, hamt->vt);
+    }
+
+    new->kvl = l;
+    new->x.hash = hash;
     new->overflow = overflow;
     return new;
 }
 
 static
-HAMT *HAMTNewRoot(
-    const TclHAMTKeyType *kt,
-    const TclHAMTValueType *vt,
+TclHAMT HAMTNewRoot(
+    TclHAMT hamt,
     ArrayMap am,
     Collision overflow)
 {
-    HAMT *new = TclHAMTCreate(kt, vt);
+    TclHAMT new;
+
     AMClaim(am);
-    new->x.am = am;
     if (overflow) {
 	CNClaim(overflow);
     }
+
+    if (hamt->id) {
+	/* transient -> overwrite */
+	new = hamt;
+	if (new->kvl) {
+	    KVLDisclaim(new, new->kvl);
+	    new->kvl = NULL;
+	} else if (new->x.am) {
+	    AMDisclaim(new, new->x.am);
+	}
+	if (new->overflow) {
+	    CNDisclaim(new, new->overflow);
+	}
+    } else {
+	new = TclHAMTCreate(hamt->kt, hamt->vt);
+    }
+
+    new->x.am = am;
     new->overflow = overflow;
     return new;
 }
@@ -2459,14 +2492,13 @@ TclHAMTInsert(
 	    }
 
 	    /* Construct a new HAMT with a new kvl */
-	    return HAMTNewList(hamt->kt, hamt->vt, l, hash, scratch);
+	    return HAMTNewList(hamt, l, hash, scratch);
 	}
 	/* No. Insertion should not be into the singleton KVList.
 	 * We get to build a tree out of the singleton KVList and
 	 * a new list holding our new pair. */
 
-
-	return HAMTNewRoot(hamt->kt, hamt->vt,
+	return HAMTNewRoot(hamt,
 		AMNewLeaf(hamt, hamt->x.hash, hamt->kvl, hash,
 		KVLInsert(hamt, NULL, key, value, NULL, valuePtr)),
 		hamt->overflow);
@@ -2474,7 +2506,7 @@ TclHAMTInsert(
     if (hamt->x.am == NULL) {
 	/* Map is empty. No key is in it. Create singleton KVList
 	 * out of new pair. */
-	return HAMTNewList(hamt->kt, hamt->vt,
+	return HAMTNewList(hamt,
 		KVLInsert(hamt, NULL, key, value, NULL, valuePtr),
 		Hash(hamt, key), NULL);
     }
@@ -2486,7 +2518,7 @@ TclHAMTInsert(
 	/* Map did not change (overwrite same value) */
 	return hamt;
     }
-    return HAMTNewRoot(hamt->kt, hamt->vt, am, scratch);
+    return HAMTNewRoot(hamt, am, scratch);
 }
 
 /*
@@ -2535,7 +2567,7 @@ TclHAMTRemove(
 
 	    /* Construct a new HAMT with a new kvl */
 	    if (l) {
-		return HAMTNewList(hamt->kt, hamt->vt,
+		return HAMTNewList(hamt,
 			l, hamt->x.hash, scratch);
 	    }
 	    /* TODO: Implement a shared empty HAMT ? */
@@ -2567,9 +2599,9 @@ TclHAMTRemove(
     }
 
     if (am) {
-	return HAMTNewRoot(hamt->kt, hamt->vt, am, scratch);
+	return HAMTNewRoot(hamt, am, scratch);
     }
-    return HAMTNewList(hamt->kt, hamt->vt, l, hash, scratch);
+    return HAMTNewList(hamt, l, hash, scratch);
 }
 
 /*
@@ -2650,10 +2682,10 @@ TclHAMTMerge(
 		    return two;
 		}
 
-		return HAMTNewList(one->kt, one->vt, l, one->x.hash, scratch);
+		return HAMTNewList(one, l, one->x.hash, scratch);
 	    }
 	    /* Different hashes; create leaf to hold pair */
-	    return HAMTNewRoot(one->kt, one->vt,
+	    return HAMTNewRoot(one,
 		    AMNewLeaf(one, one->x.hash, one->kvl, two->x.hash, two->kvl),
 		    CollisionMerge(one, two, NULL));
 	}
@@ -2666,7 +2698,7 @@ TclHAMTMerge(
 	    /* Merge gave back same tree. Avoid a copy. */
 	    return two;
 	}
-	return HAMTNewRoot(one->kt, one->vt, am, scratch);
+	return HAMTNewRoot(one, am, scratch);
     }
 
     /* one has a tree */
@@ -2678,7 +2710,7 @@ TclHAMTMerge(
 	    /* Merge gave back same tree. Avoid a copy. */
 	    return one;
 	}
-	return HAMTNewRoot(one->kt, one->vt, am, scratch);
+	return HAMTNewRoot(one, am, scratch);
     }
 
     /* Merge two trees */
@@ -2690,7 +2722,7 @@ TclHAMTMerge(
     if ((am == two->x.am) && (scratch == two->overflow)) {
 	return two;
     }
-    return HAMTNewRoot(one->kt, one->vt, am, scratch);
+    return HAMTNewRoot(one, am, scratch);
 }
 
 /*

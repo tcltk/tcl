@@ -259,7 +259,7 @@ SetHamtFromAny(
 {
     int i, objc;
     Tcl_Obj **objv;
-    TclHAMT old;
+    TclHAMT old, unlocked;
 
     if (objPtr->typePtr == &hamtType) {
 	return TCL_OK;
@@ -281,6 +281,10 @@ SetHamtFromAny(
     /* TODO: Consider copy by merges instead? */
     old = TclHAMTCreate( &hamtKeyType, &hamtValueType);
     TclHAMTClaim(old);
+    unlocked = TclHAMTUnlock(old);
+    TclHAMTClaim(unlocked);
+    TclHAMTDisclaim(old);
+    old = unlocked;
     for (i = 0; i < objc; i += 2) {
 	TclHAMT new = TclHAMTInsert(old, objv[i], objv[i+1], NULL);
 	TclHAMTClaim(new);
@@ -366,8 +370,9 @@ SetHAMTObj(
     Tcl_Obj *objPtr,
     TclHAMT hamt)
 {
-    TclHAMTClaim(hamt);
-    HAMT(objPtr) = hamt;
+    TclHAMT locked = TclHAMTLock(hamt);
+    TclHAMTClaim(locked);
+    HAMT(objPtr) = locked;
     objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &hamtType;
 }
@@ -553,7 +558,9 @@ HamtMergeCmd(
      * Normal behaviour: combining two (or more) hamt.
      */
 
+    accum = TclHAMTUnlock(accum);
     TclHAMTClaim(accum);
+
     for (i=2 ; i<objc ; i++) {
 	TclHAMT new, hamt;
 
@@ -607,6 +614,7 @@ HamtRemoveCmd(
     if (NULL == old) {
 	return TCL_ERROR;
     }
+    old = TclHAMTUnlock(old);
     TclHAMTClaim(old);
 
     for (i=2 ; i<objc ; i++) {
@@ -655,6 +663,9 @@ HamtReplaceCmd(
     old = GetHAMTFromObj(interp, objv[1]);
     if (NULL == old) {
 	return TCL_ERROR;
+    }
+    if (objc > 4) {
+	old = TclHAMTUnlock(old);
     }
     TclHAMTClaim(old);
     for (i=2 ; i<objc ; i+=2) {
