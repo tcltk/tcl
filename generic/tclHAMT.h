@@ -106,6 +106,8 @@ MODULE_SCOPE TclHAMT		TclHAMTRemove(TclHAMT hamt, ClientData key,
 MODULE_SCOPE ClientData		TclHAMTFetch(TclHAMT hamt, ClientData key);
 MODULE_SCOPE TclHAMT		TclHAMTMerge(TclHAMT one, TclHAMT two);
 MODULE_SCOPE size_t		TclHAMTSize(TclHAMT hamt);
+MODULE_SCOPE TclHAMT		TclHAMTLock(TclHAMT hamt);
+MODULE_SCOPE TclHAMT		TclHAMTUnlock(TclHAMT hamt);
 
 MODULE_SCOPE TclHAMTIdx		TclHAMTFirst(TclHAMT hamt);
 MODULE_SCOPE void		TclHAMTNext(TclHAMTIdx *idxPtr);

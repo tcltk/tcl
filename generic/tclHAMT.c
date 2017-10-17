@@ -53,7 +53,10 @@ typedef struct KVNode {
 
 /* Finally, the top level struct that puts all the pieces together */
 
+static size_t HAMTId = 1;
+
 typedef struct HAMT {
+    size_t			id;
     size_t			claim;	/* How many claims on this struct */
     const TclHAMTKeyType	*kt;	/* Custom key handling functions */
     const TclHAMTValueType	*vt;	/* Custom value handling functions */
@@ -422,6 +425,7 @@ KVList KVLRemove(
  */
 
 typedef struct AMNode {
+    size_t	canWrite;
     size_t	claim;	/* How many claims on this struct */
     size_t	size;	/* How many pairs stored under this node? */
     size_t	mask;	/* The mask and id fields together identify the */
@@ -579,6 +583,7 @@ void AMDisclaim(
 
 static
 ArrayMap AMNew(
+    TclHAMT hamt,
     int numList,
     int numSubnode,
     size_t mask,
@@ -586,6 +591,7 @@ ArrayMap AMNew(
 {
     ArrayMap new = ckalloc(AMN_SIZE(numList, numSubnode));
 
+    new->canWrite = (hamt) ? hamt->id : 0;
     new->claim = 0;
     new->size = 0;
     new->mask = mask;
@@ -611,6 +617,7 @@ ArrayMap AMNew(
 
 static
 ArrayMap AMNewParent(
+    TclHAMT hamt,
     ArrayMap one,
     ArrayMap two)
 {
@@ -629,7 +636,7 @@ ArrayMap AMNewParent(
 
     int idx1 = (one->id >> (depth * branchShift)) & branchMask;
     int idx2 = (two->id >> (depth * branchShift)) & branchMask;
-    ArrayMap new = AMNew(0, 2, mask, one->id & mask);
+    ArrayMap new = AMNew(hamt, 0, 2, mask, one->id & mask);
 
     assert ( idx1 != idx2 );
     assert ( (two->id & mask) == new->id );
@@ -669,6 +676,7 @@ ArrayMap AMNewParent(
 
 static
 ArrayMap AMNewBranch(
+    TclHAMT hamt,
     ArrayMap sub,
     size_t hash,
     KVList l)
@@ -688,7 +696,7 @@ ArrayMap AMNewBranch(
 
     int idx1 = (hash >> (depth * branchShift)) & branchMask;
     int idx2 = (sub->id >> (depth * branchShift)) & branchMask;
-    ArrayMap new = AMNew(1, 1, mask, hash & mask);
+    ArrayMap new = AMNew(hamt, 1, 1, mask, hash & mask);
 
     assert ( idx1 != idx2 );
     assert ( (sub->id & mask) == new->id );
@@ -725,6 +733,7 @@ ArrayMap AMNewBranch(
 
 static
 ArrayMap AMNewLeaf(
+    TclHAMT hamt,
     size_t hash1,
     KVList l1,
     size_t hash2,
@@ -749,7 +758,7 @@ ArrayMap AMNewLeaf(
     int idx1 = (hash1 >> (depth * branchShift)) & branchMask;
     int idx2 = (hash2 >> (depth * branchShift)) & branchMask;
 
-    ArrayMap new = AMNew(2, 0, mask, hash1 & mask);
+    ArrayMap new = AMNew(hamt, 2, 0, mask, hash1 & mask);
 
     assert ( idx1 != idx2 );
     assert ( (hash2 & mask) == new->id );
@@ -868,7 +877,7 @@ ArrayMap AMMergeList(
     if ((am->mask & hash) != am->id) {
         /* Hash indicates list does not belong in this subtree */
         /* Create a new subtree to be parent of both am and kvl. */
-        return AMNewBranch(am, hash, kvl);
+        return AMNewBranch(hamt, am, hash, kvl);
     }
 
     /* Hash indicates key should be descendant of am, which? */
@@ -915,7 +924,13 @@ ArrayMap AMMergeList(
 		return am;
 	    }
 
-	    new = AMNew(numList, numSubnode, am->mask, am->id);
+	    if (am->canWrite && (am->canWrite == hamt->id)) {
+		KVLClaim(l);
+		KVLDisclaim(hamt, am->slot[numList + loffset]);
+		am->slot[numList + loffset] = l;
+		return am;
+	    }
+	    new = AMNew(hamt, numList, numSubnode, am->mask, am->id);
 
 	    new->size = am->size;
 	    new->kvMap = am->kvMap;
@@ -948,11 +963,11 @@ ArrayMap AMMergeList(
 	    return new;
 	}
 	/* Hashes do not match. Create Leaf to hold both. */
-	sub = AMNewLeaf((size_t)am->slot[loffset], 
+	sub = AMNewLeaf(hamt, (size_t)am->slot[loffset], 
 		(KVList)am->slot[loffset + numList], hash, kvl);
 
 	/* Remove the list, Insert the leaf subnode */
-	new = AMNew(numList - 1, numSubnode + 1, am->mask, am->id);
+	new = AMNew(hamt, numList - 1, numSubnode + 1, am->mask, am->id);
 
 	new->size = am->size + 1;
 
@@ -1002,8 +1017,16 @@ ArrayMap AMMergeList(
 	    return am;
 	}
 
+	/* Overwrite when we have suitable transient */
+	if (am->canWrite && (am->canWrite == hamt->id)) {
+	    am->size = am->size - child->size + sub->size;
+	    AMClaim(sub);
+	    AMDisclaim(hamt, child);
+	    am->slot[2*numList + soffset] = sub;
+	    return am;
+	}
 	/* Copy slots, replacing the subnode with the merge result */
-	new = AMNew(numList, numSubnode, am->mask, am->id);
+	new = AMNew(hamt, numList, numSubnode, am->mask, am->id);
 
 	new->size = am->size - child->size + sub->size;
 
@@ -1038,7 +1061,7 @@ ArrayMap AMMergeList(
     }
 
     /* am is not using this tally; copy am and add it. */
-    new = AMNew(numList + 1, numSubnode, am->mask, am->id);
+    new = AMNew(hamt, numList + 1, numSubnode, am->mask, am->id);
 
     new->size = am->size + 1;
     new->kvMap = am->kvMap | tally;
@@ -1361,7 +1384,7 @@ ArrayMap AMMergeContents(
     /* src1 and src2 point to first failed slots */
     goodTwoSlots = src2 - two->slot;
 
-    new = AMNew(numList, numSubnode, one->mask, one->id);
+    new = AMNew(hamt, numList, numSubnode, one->mask, one->id);
 
     new->kvMap = kvMap;
     new->amMap = amMap;
@@ -1498,7 +1521,7 @@ ArrayMap AMMergeContents(
 		l1 = one->slot[loffset1 + numList1];
 		l2 = two->slot[loffset2 + numList2];
 
-		am = AMNewLeaf(hash1, l1, hash2, l2);
+		am = AMNewLeaf(hamt, hash1, l1, hash2, l2);
 		*dst++ = am;
 	    }
 	    size += am->size;
@@ -1556,7 +1579,7 @@ ArrayMap AMMergeDescendant(
 	sub = AMMergeList(hamt, descendant, (size_t)ancestor->slot[loffset],
 		ancestor->slot[loffset + numList],
 		scratchPtr, NULL, ancestorIsFirst);
-	new = AMNew(numList - 1, numSubnode + 1, ancestor->mask, ancestor->id);
+	new = AMNew(hamt, numList - 1, numSubnode + 1, ancestor->mask, ancestor->id);
 
 	new->size = ancestor->size - 1 + sub->size;
 	new->kvMap = ancestor->kvMap & ~tally;
@@ -1613,7 +1636,15 @@ ArrayMap AMMergeDescendant(
 	    }
 	    return ancestor;
 	}
-	new = AMNew(numList, numSubnode, ancestor->mask, ancestor->id);
+
+	if (ancestor->canWrite && (ancestor->canWrite == hamt->id)) {
+	    ancestor->size = ancestor->size - child->size + sub->size;
+	    AMClaim(sub);
+	    AMDisclaim(hamt, child);
+	    ancestor->slot[2*numList + soffset] = sub;
+	    return ancestor;
+	}
+	new = AMNew(hamt, numList, numSubnode, ancestor->mask, ancestor->id);
 
 	new->size = ancestor->size - child->size + sub->size;
 	new->kvMap = ancestor->kvMap;
@@ -1644,7 +1675,7 @@ ArrayMap AMMergeDescendant(
 	return new;
     }
     /* Nothing in the way. Make modified copy with new subnode */
-    new = AMNew(numList, numSubnode + 1, ancestor->mask, ancestor->id);
+    new = AMNew(hamt, numList, numSubnode + 1, ancestor->mask, ancestor->id);
 
     new->size = ancestor->size + descendant->size;
     new->kvMap = ancestor->kvMap;
@@ -1710,7 +1741,7 @@ ArrayMap AMMerge(
 	if (idPtr) {
 	    *idPtr = 0;
 	}
-	return AMNewParent(one, two);
+	return AMNewParent(hamt, one, two);
     }
     if (idPtr) {
 	*idPtr = 0;
@@ -1722,14 +1753,14 @@ ArrayMap AMMerge(
 	    return AMMergeDescendant(hamt, one, two, scratchPtr, 1);
 	}
 	/* ...but is not a descendant. Create parent to contain both. */
-	return AMNewParent(one, two);
+	return AMNewParent(hamt, one, two);
     }
     /* one is deeper than two... */
     if ((two->mask & one->id) == two->id) {
 	/* ... and is a descendant of two. */
 	return AMMergeDescendant(hamt, two, one, scratchPtr, 0);
     }
-    return AMNewParent(one, two);
+    return AMNewParent(hamt, one, two);
 }
 
 /*
@@ -1851,8 +1882,16 @@ ArrayMap AMRemove(
 	/* Create new ArrayMap with removed KVList */
 
 	if (l != NULL) {
+	    if (am->canWrite && (am->canWrite == hamt->id)) {
+		am->size--;
+		KVLClaim(l);
+		KVLDisclaim(hamt, am->slot[loffset + numList]);
+		am->slot[loffset + numList] = l;
+		return am;
+	    }
+
 	    /* Modified copy of am, list replaced. */
-	    new = AMNew(numList, numSubnode, am->mask, am->id);
+	    new = AMNew(hamt, numList, numSubnode, am->mask, am->id);
 
 	    new->size = am->size - 1;
 	    new->kvMap = am->kvMap;
@@ -1887,7 +1926,7 @@ ArrayMap AMRemove(
 	}
 	if (numList + numSubnode > 2) {
 	    /* Modified copy of am, list removed. */
-	    new = AMNew(numList - 1, numSubnode, am->mask, am->id);
+	    new = AMNew(hamt, numList - 1, numSubnode, am->mask, am->id);
 
 	    new->size = am->size - 1;
 	    new->kvMap = am->kvMap & ~tally;
@@ -1944,8 +1983,16 @@ ArrayMap AMRemove(
 		scratchPtr, &subhash, &l, valuePtr);
 
 	if (sub) {
+	    if (am->canWrite && (am->canWrite == hamt->id)) {
+		am->size = am->size - child->size + sub->size;
+		AMClaim(sub);
+		AMDisclaim(hamt, child);
+		am->slot[2*numList + soffset] = sub;
+		return am;
+	    }
+
 	    /* Modified copy of am, subnode replaced. */
-	    new = AMNew(numList, numSubnode, am->mask, am->id);
+	    new = AMNew(hamt, numList, numSubnode, am->mask, am->id);
 
 	    new->size = am->size - child->size + sub->size;
 	    new->kvMap = am->kvMap;
@@ -1982,7 +2029,7 @@ ArrayMap AMRemove(
 
 	    loffset = NumBits(am->kvMap & (tally - 1));
 
-	    new = AMNew(numList + 1, numSubnode - 1, am->mask, am->id);
+	    new = AMNew(hamt, numList + 1, numSubnode - 1, am->mask, am->id);
 
 	    new->size = am->size - child->size + 1;
 
@@ -2058,6 +2105,7 @@ TclHAMTCreate(
 {
     HAMT *hamt = ckalloc(sizeof(HAMT));
 
+    hamt->id = 0;
     hamt->claim = 0;
     hamt->kt = kt;
     hamt->vt = vt;
@@ -2065,6 +2113,60 @@ TclHAMTCreate(
     hamt->x.am = NULL;
     hamt->overflow = NULL;
     return hamt;
+}
+
+TclHAMT
+TclHAMTLock(
+    TclHAMT hamt)
+{
+    TclHAMT new;
+
+    if (hamt->id == 0) {
+	return hamt;	/* Already a locked immutable HAMT */
+    }
+    new = TclHAMTCreate(hamt->kt, hamt->vt);
+    if (hamt->kvl) {
+	KVLClaim(hamt->kvl);
+	new->kvl = hamt->kvl;
+	new->x.hash = hamt->x.hash;
+    } else if (hamt->x.am) {
+	AMClaim(hamt->x.am);
+	new->x.am = hamt->x.am;
+    }
+    if (hamt->overflow) {
+	CNClaim(hamt->overflow);
+	new->overflow = hamt->overflow;
+    }
+    hamt->id = 0;	/* Lock it! */
+			/* TODO: Appears we just made an identical copy */
+			/* Rethink the details of this. */
+    return new;
+}
+
+TclHAMT
+TclHAMTUnlock(
+    TclHAMT hamt)
+{
+    TclHAMT new;
+    if (hamt->id) {
+	/* TODO: consider options */
+	Tcl_Panic("Already unlocked");
+    }
+    new = TclHAMTCreate(hamt->kt, hamt->vt);
+    new->id = HAMTId++;	/* TODO: thread safety */
+    if (hamt->kvl) {
+	KVLClaim(hamt->kvl);
+	new->kvl = hamt->kvl;
+	new->x.hash = hamt->x.hash;
+    } else if (hamt->x.am) {
+	AMClaim(hamt->x.am);
+	new->x.am = hamt->x.am;
+    }
+    if (hamt->overflow) {
+	CNClaim(hamt->overflow);
+	new->overflow = hamt->overflow;
+    }
+    return new;
 }
 
 static
@@ -2365,7 +2467,7 @@ TclHAMTInsert(
 
 
 	return HAMTNewRoot(hamt->kt, hamt->vt,
-		AMNewLeaf(hamt->x.hash, hamt->kvl, hash,
+		AMNewLeaf(hamt, hamt->x.hash, hamt->kvl, hash,
 		KVLInsert(hamt, NULL, key, value, NULL, valuePtr)),
 		hamt->overflow);
     }
@@ -2552,7 +2654,7 @@ TclHAMTMerge(
 	    }
 	    /* Different hashes; create leaf to hold pair */
 	    return HAMTNewRoot(one->kt, one->vt,
-		    AMNewLeaf(one->x.hash, one->kvl, two->x.hash, two->kvl),
+		    AMNewLeaf(one, one->x.hash, one->kvl, two->x.hash, two->kvl),
 		    CollisionMerge(one, two, NULL));
 	}
 	/* two has a tree */
