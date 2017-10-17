@@ -1,6 +1,13 @@
 #------------------------------------------------------------- -*- makefile -*-
 
 $(PROJECT): setup pkgindex $(PRJLIB)
+!ifdef PRJ_MANIFEST
+$(PROJECT): $(PRJLIB).manifest
+$(PRJLIB).manifest: $(PRJ_MANIFEST)
+	@nmakehlp -s << $** >$@
+@MACHINE@	  $(MACHINE:IX86=X86)
+<<
+!endif
 
 !if "$(PROJECT)" != "tcl" && "$(PROJECT)" != "tk"
 # MAKEBINCMD will do shared, static and debug links as appropriate
