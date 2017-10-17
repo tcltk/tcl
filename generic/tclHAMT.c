@@ -1384,6 +1384,11 @@ ArrayMap AMMergeContents(
     /* src1 and src2 point to first failed slots */
     goodTwoSlots = src2 - two->slot;
 
+    /* TODO: Overwrite one when possible.  This can only help
+     * multi-argument merges or could help creation operations
+     * if they were recasted into multi-merge instead of
+     * multi-insert. Low prio for now. */
+
     new = AMNew(hamt, numList, numSubnode, one->mask, one->id);
 
     new->kvMap = kvMap;
