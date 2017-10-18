@@ -710,13 +710,13 @@ $(CAT32): $(WINDIR)\cat.c
 #---------------------------------------------------------------------
 
 genstubs:
-!if !exist($(TCLSH))
+!if !exist($(TCLSH_NATIVE))
 	@echo Build tclsh first!
 !else
-	$(TCLSH) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
+	$(TCLSH_NATIVE) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
 		$(GENERICDIR:\=/)/tcl.decls $(GENERICDIR:\=/)/tclInt.decls \
 		$(GENERICDIR:\=/)/tclTomMath.decls
-	$(TCLSH) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
+	$(TCLSH_NATIVE) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
 		$(GENERICDIR:\=/)/tclOO.decls
 !endif
 
@@ -728,10 +728,10 @@ genstubs:
 #----------------------------------------------------------------------
 
 gentommath_h:
-!if !exist($(TCLSH))
+!if !exist($(TCLSH_NATIVE))
 	@echo Build tclsh first!
 !else
-	$(TCLSH) "$(TOOLSDIR:\=/)/fix_tommath_h.tcl" \
+	$(TCLSH_NATIVE) "$(TOOLSDIR:\=/)/fix_tommath_h.tcl" \
 		"$(TOMMATHDIR:\=/)/tommath.h" \
 		> "$(GENERICDIR)\tclTomMath.h"
 !endif
@@ -752,7 +752,7 @@ CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
 htmlhelp: chmsetup $(CHMFILE)
 
 $(CHMFILE): $(DOCDIR)\*
-	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
+	@$(TCLSH_NATIVE) $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
 	@echo Compiling HTML help project
 	-$(HHC) <<$(HHPFILE) >NUL
 [OPTIONS]
@@ -836,7 +836,7 @@ $(MAN2TCL): $(TOOLSDIR)\$$(@B).c
 	$(_VC_MANIFEST_EMBED_EXE)
 
 $(HELPRTF): $(MAN2TCL) $(MAN2HELP) $(MAN2HELP2) $(INDEX) $(DOCDIR)\*
-	$(TCLSH) $(MAN2HELP) -bitmap $(BMP_NOPATH) $(PROJECT) $(VERSION) $(DOCDIR:\=/)
+	$(TCLSH_NATIVE) $(MAN2HELP) -bitmap $(BMP_NOPATH) $(PROJECT) $(VERSION) $(DOCDIR:\=/)
 
 install-docs:
 !if exist("$(CHMFILE)")
@@ -1018,10 +1018,10 @@ $(TMP_DIR)\tclsh.exe.manifest: $(WINDIR)\tclsh.exe.manifest.in
 #---------------------------------------------------------------------
 
 depend:
-!if !exist($(TCLSH))
+!if !exist($(TCLSH_NATIVE))
 	@echo Build tclsh first!
 !else
-	$(TCLSH) $(TOOLSDIR:\=/)/mkdepend.tcl -vc32 -out:"$(OUT_DIR)\depend.mk" \
+	$(TCLSH_NATIVE) $(TOOLSDIR:\=/)/mkdepend.tcl -vc32 -out:"$(OUT_DIR)\depend.mk" \
 		-passthru:"-DBUILD_tcl $(TCL_INCLUDES)" $(GENERICDIR),$$(GENERICDIR) \
 		$(COMPATDIR),$$(COMPATDIR) $(TOMMATHDIR),$$(TOMMATHDIR) $(WINDIR),$$(WINDIR) @<<
 $(TCLOBJS)
