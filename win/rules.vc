@@ -91,6 +91,7 @@ Visual C++ compiler environment not initialized.
 RMDIR	= rmdir /S /Q
 ERRNULL  = 2>NUL
 CPY	= xcopy /i /y >NUL
+CPYDIR  = xcopy /e /i /y >NUL
 COPY	= copy /y >NUL
 MKDIR   = mkdir
 
@@ -161,7 +162,11 @@ DEMODIR		= $(ROOT)\demos
 # something else
 WINDIR		= $(ROOT)\win
 !ifndef RCDIR
+!if exist("$(WINDIR)\rc")
 RCDIR           = $(WINDIR)\rc
+!else
+RCDIR           = $(WINDIR)
+!endif
 !endif
 RCDIR = $(RCDIR:/=\)
 
@@ -845,9 +850,9 @@ VERSION = $(TK_VERSION)
 # first from a configure.in file, and then from configure.ac
 !ifndef DOTVERSION
 !if [echo DOTVERSION = \> versions.vc] \
-   || [nmakehlp -V $(ROOT)\configure.in AC_INIT >> versions.vc]
+   || [nmakehlp -V $(ROOT)\configure.in ^[$(PROJECT)^] >> versions.vc]
 !if [echo DOTVERSION = \> versions.vc] \
-   || [nmakehlp -V $(ROOT)\configure.ac AC_INIT >> versions.vc]
+   || [nmakehlp -V $(ROOT)\configure.ac ^[$(PROJECT)^] >> versions.vc]
 !error *** Could not figure out extension version. Please define DOTVERSION in parent makefile before including rules.vc.
 !endif
 !endif
@@ -1028,6 +1033,7 @@ TKSTUBLIB	= $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKSTUBLIBNAME)
 TKIMPLIB	= $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKIMPLIBNAME)
 TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
 !endif # TKINSTALL
+tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 
 !endif # $(DOING_TK)
 !endif # $(DOING_TK) || $(PROJECT_REQUIRES_TK)
@@ -1043,8 +1049,8 @@ PRJSTUBLIB	= $(OUT_DIR)\$(PRJSTUBLIBNAME)
 # If extension parent makefile has not defined a resource definition file,
 # we will generate one from standard template.
 !if !$(DOING_TCL) && !$(DOING_TK) && !$(STATIC_BUILD)
-!ifdef RCFILE
-RESFILE = $(RCFILE:.rc=.res)
+!ifdef PRJ_RCFILE
+RESFILE = $(TMP_DIR)\$(PRJ_RCFILE:.rc=.res)
 !else
 RESFILE = $(TMP_DIR)\$(PROJECT).res
 !endif
@@ -1228,6 +1234,11 @@ cwarn = $(cwarn) -wd4311 -wd4312
 cwarn = $(cwarn) -WX
 !endif
 
+INCLUDES = $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES)
+!if !$(DOING_TCL) && !$(DOING_TK)
+INCLUDES = $(INCLUDES) -I$(GENERICDIR) -I$(WINDIR) -I(COMPATDIR)
+!endif
+
 # These flags are defined roughly in the order of the pre-reform
 # rules.vc/makefile.vc to help visually compare that the pre- and
 # post-reform build logs
@@ -1241,8 +1252,8 @@ cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\ $(cdebug)
 # BUILD_$(PROJECT) macro which should be defined only for the shared
 # library *implementation* and not for its caller interface
 
-appcflags = $(cflags) $(crt) $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES) $(USE_STUBS_DEFS)
-appcflags_nostubs = $(cflags) $(crt) $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES)
+appcflags = $(cflags) $(crt) $(INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES) $(USE_STUBS_DEFS)
+appcflags_nostubs = $(cflags) $(crt) $(INCLUDES) $(TCL_DEFINES) $(PRJ_DEFINES) $(OPTDEFINES)
 pkgcflags = $(appcflags) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 
@@ -1251,8 +1262,11 @@ pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 # $(OPTDEFINES) only if the OPTS configuration indicates a static
 # library. However the stubs library is ALWAYS static hence included
 # here irrespective of the OPTS setting.
-
-stubscflags = $(cflags) $(PRJ_DEFINES) $(OPTDEFINES) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES)
+#
+# TBD - tclvfs has a comment that stubs libs should not be compiled with -GL
+# without stating why. Tcl itself compiled stubs libs with this flag.
+# so we do not remove it from cflags.
+stubscflags = $(cflags) $(PRJ_DEFINES) $(OPTDEFINES) -Zl -DSTATIC_BUILD $(INCLUDES)
 
 # Link flags 
 
@@ -1301,6 +1315,10 @@ guilflags = $(lflags) -subsystem:windows
 # Extensions should define any additional libraries with $(PRJ_LIBS)
 winlibs   = kernel32.lib advapi32.lib
 
+!if $(PROJECT_REQUIRES_TK)
+winlibs = $(winlibs) gdi32.lib user32.lib uxtheme.lib
+!endif
+
 # Avoid 'unresolved external symbol __security_cookie' errors.
 # c.f. http://support.microsoft.com/?id=894573
 !if "$(MACHINE)" == "AMD64"
@@ -1319,15 +1337,15 @@ baselibs   = $(baselibs) ucrt.lib
 # 3. Define standard commands, common make targets and implicit rules
 
 MAKELIBCMD = $(lib32) -nologo $(LINKERFLAGS) -out:$@
-MAKEDLLCMD = $(link32) $(dlllflags) -out:$@ $(baselibs) $(tcllibs) 
+MAKEDLLCMD = $(link32) $(dlllflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
 
 !if $(STATIC_BUILD)
 MAKEBINCMD = $(MAKELIBCMD)
 !else
 MAKEBINCMD = $(MAKEDLLCMD)
 !endif
-MAKECONCMD = $(link32) $(conlflags) -out:$@ $(baselibs) $(tcllibs)
-MAKEGUICMD = $(link32) $(guilflags) -out:$@ $(baselibs) $(tcllibs)
+MAKECONCMD = $(link32) $(conlflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
+MAKEGUICMD = $(link32) $(guilflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
 MAKERESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
 	    $(TCL_INCLUDES) \
 	    -DDEBUG=$(DEBUG) -d UNCHECKED=$(UNCHECKED) \
@@ -1369,6 +1387,21 @@ default-install-libraries: $(OUT_DIR)\pkgIndex.tcl
 	@echo Installing package index in '$(SCRIPT_INSTALL_DIR)'
 	@$(CPY) $(OUT_DIR)\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)
 
+default-install-html:
+	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
+	@if not exist "$(DOC_INSTALL_DIR)" mkdir "$(DOC_INSTALL_DIR)"
+	@if exist $(DOCDIR) for %f in ("$(DOCDIR)\*.html" "$(DOCDIR)\*.css") do @$(COPY) %f "$(DOC_INSTALL_DIR)"
+
+default-install-man:
+	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
+	@if not exist "$(DOC_INSTALL_DIR)" mkdir "$(DOC_INSTALL_DIR)"
+	@if exist $(DOCDIR) for %f in ("$(DOCDIR)\*.n") do @$(COPY) %f "$(DOC_INSTALL_DIR)"
+
+default-install-demos:
+	@echo Installing demos to '$(DEMO_INSTALL_DIR)'
+	@if not exist "$(DEMO_INSTALL_DIR)" mkdir "$(DEMO_INSTALL_DIR)"
+	@if exist $(DEMODIR) $(CPYDIR) "$(DEMODIR)" "$(DEMO_INSTALL_DIR)"
+
 default-clean:
 	@echo Cleaning $(TMP_DIR)\* ...
 	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
@@ -1396,7 +1429,12 @@ default-setup:
 	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
 	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR)
 
-!ifndef RCFILE
+!ifdef PRJ_RCFILE
+
+$(TMP_DIR)\$(PROJECT).res: $(RCDIR)\$(PROJECT).rc
+	$(MAKERESCMD) $**
+!else
+
 # If parent makefile has not defined a resource definition file,
 # we will generate one from standard template.
 $(TMP_DIR)\$(PROJECT).res: $(TMP_DIR)\$(PROJECT).rc
@@ -1437,7 +1475,7 @@ END
 
 <<
 
-!endif # ifndef RCFILE
+!endif # ifdef PRJ_RCFILE
 
 !ifndef DISABLE_IMPLICIT_RULES
 DISABLE_IMPLICIT_RULES = 0
