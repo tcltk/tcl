@@ -1183,9 +1183,11 @@ ArrayMap AMMergeContents(
     if ((kvMap == one->kvMap) && (amMap == one->amMap)) {
 	src1 += numList1;
 	src2 += numList2;
-	if (kvMap) {
 	for (; tally; tally = tally << 1) {
 	    if ((tally & kvMap) == 0) {
+		if (tally & two->kvMap) {
+		    src2++;
+		}
 		continue;
 	    }
 	    if ((tally & two->kvMap) == 0) {
@@ -1219,9 +1221,8 @@ ArrayMap AMMergeContents(
 	    src1++;
 	    src2++;
 	}
-	}
-src1 = one->slot + 2*numList1;
-src2 = two->slot + 2*numList2;
+assert ( src1 == one->slot + 2*numList1 );
+assert ( src2 == two->slot + 2*numList2 );
 
 	if (amMap) {
 	for (tally = (size_t)1; tally; tally = tally << 1) {
@@ -1256,6 +1257,11 @@ assert( (src2 - two->slot) <= 2*numList2 + NumBits(two->amMap) );
 			(KVList)two->slot[loffset + numList2],
 			scratchPtr, NULL, 0);
 		if (am != *src1) {
+
+		    /* TODO: detect and fix cases failing here
+		     * that should not. 
+fprintf(stdout, "BAIL %p %p\n", am, *src1); fflush(stdout);
+		     */
 		    goto notOne;
 		}
 	    }
@@ -1387,7 +1393,9 @@ assert( (src2 - two->slot) < 2*numList2 + NumBits(two->amMap) );
     }
   notTwo:
     /* src1 and src2 point to first failed slots */
-    goodTwoSlots = src2 - two->slot;
+    if ((kvMap == two->kvMap) && (amMap == two->amMap)) {
+	goodTwoSlots = src2 - two->slot;
+    }
 
     /* TODO: Overwrite one when possible.  This can only help
      * multi-argument merges or could help creation operations
@@ -2159,7 +2167,7 @@ TclHAMTUnlock(
 {
     TclHAMT new;
     if (hamt->id) {
-	/* TODO: consider options */
+	/* TODO: consider alternatives */
 	Tcl_Panic("Already unlocked");
     }
     new = TclHAMTCreate(hamt->kt, hamt->vt);
