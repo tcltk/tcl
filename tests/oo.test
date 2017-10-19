@@ -3799,7 +3799,7 @@ test oo-35.4 {Bug 593baa032c: mixins list teardown} {
     oo::class create D {mixin B}
     namespace eval [info object namespace D] [list [namespace which B] destroy]
 } {}
-test oo-35.5 {Bug } -setup {
+test oo-35.5 {Bug 1a56550e96: introspectors must traverse mixin links correctly} -setup {
     oo::class create base {
 	unexport destroy
     }
