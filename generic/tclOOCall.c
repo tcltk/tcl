@@ -637,6 +637,18 @@ AddClassMethodNames(
 	    break;
 	}
 
+	if (clsPtr->mixins.num != 0) {
+	    Class *mixinPtr;
+	    int i;
+
+	    FOREACH(mixinPtr, clsPtr->mixins) {
+		if (mixinPtr != clsPtr) {
+		    AddClassMethodNames(mixinPtr, flags|TRAVERSED_MIXIN,
+			    namesPtr, examinedClassesPtr);
+		}
+	    }
+	}
+
 	FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
 	    hPtr = Tcl_CreateHashEntry(namesPtr, (char *) namePtr, &isNew);
 	    if (isNew) {
@@ -651,18 +663,6 @@ AddClassMethodNames(
 
 		isWanted &= ~NO_IMPLEMENTATION;
 		Tcl_SetHashValue(hPtr, INT2PTR(isWanted));
-	    }
-	}
-
-	if (clsPtr->mixins.num != 0) {
-	    Class *mixinPtr;
-	    int i;
-
-	    FOREACH(mixinPtr, clsPtr->mixins) {
-		if (mixinPtr != clsPtr) {
-		    AddClassMethodNames(mixinPtr, flags|TRAVERSED_MIXIN,
-			    namesPtr, examinedClassesPtr);
-		}
 	    }
 	}
 
