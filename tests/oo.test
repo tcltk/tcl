@@ -3800,7 +3800,29 @@ test oo-35.4 {Bug 593baa032c: mixins list teardown} {
     oo::class create D {mixin B}
     namespace eval [info object namespace D] [list [namespace which B] destroy]
 } {}
-
+test oo-35.5 {Bug 1a56550e96: introspectors must traverse mixin links correctly} -setup {
+    oo::class create base {
+	unexport destroy
+    }
+} -body {
+    oo::class create C {
+	superclass base
+	method c {} {}
+    }
+    oo::class create D {
+	superclass base
+	mixin C
+	method d {} {}
+    }
+    oo::class create E {
+	superclass D
+	method e {} {}
+    }
+    E create e1
+    list [lsort [info class methods E -all]] [lsort [info object methods e1 -all]]
+} -cleanup {
+    base destroy
+} -result {{c d e} {c d e}}
 test oo-36.1 {TIP #470: introspection within oo::define} {
     oo::define oo::object self
 } ::oo::object
