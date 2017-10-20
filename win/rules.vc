@@ -112,6 +112,7 @@ MKDIR   = mkdir
 # DOCDIR - source directory containing documentation files
 # GENERICDIR - platform-independent source directory
 # WINDIR - Windows-specific source directory
+# TESTDIR - directory containing test files
 # TOOLSDIR - directory containing build tools
 # _TCLDIR - root of the Tcl installation OR the Tcl sources. Not set
 #    when building Tcl itself.
@@ -146,8 +147,15 @@ GENERICDIR	= $(ROOT)\generic
 !ifndef TOOLSDIR
 TOOLSDIR	= $(ROOT)\tools
 !endif
+!ifndef TESTDIR
+TESTDIR	= $(ROOT)\tests
+!endif
 !ifndef LIBDIR
+!if exist("$(ROOT)\library")
 LIBDIR          = $(ROOT)\library
+!else
+LIBDIR          = $(ROOT)\lib
+!endif
 !endif
 !ifndef DEMODIR
 !if exist("$(LIBDIR)\demos")
@@ -1265,7 +1273,9 @@ pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 #
 # TBD - tclvfs has a comment that stubs libs should not be compiled with -GL
 # without stating why. Tcl itself compiled stubs libs with this flag.
-# so we do not remove it from cflags.
+# so we do not remove it from cflags. -GL may prevent extensions
+# compiled with one VC version to fail to link against stubs library
+# compiled with another VC version. Check for this and fix accordingly.
 stubscflags = $(cflags) $(PRJ_DEFINES) $(OPTDEFINES) -Zl -DSTATIC_BUILD $(INCLUDES)
 
 # Link flags 
@@ -1387,12 +1397,12 @@ default-install-libraries: $(OUT_DIR)\pkgIndex.tcl
 	@echo Installing package index in '$(SCRIPT_INSTALL_DIR)'
 	@$(CPY) $(OUT_DIR)\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)
 
-default-install-html:
+default-install-docs-html:
 	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
 	@if not exist "$(DOC_INSTALL_DIR)" mkdir "$(DOC_INSTALL_DIR)"
 	@if exist $(DOCDIR) for %f in ("$(DOCDIR)\*.html" "$(DOCDIR)\*.css") do @$(COPY) %f "$(DOC_INSTALL_DIR)"
 
-default-install-man:
+default-install-docs-n:
 	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
 	@if not exist "$(DOC_INSTALL_DIR)" mkdir "$(DOC_INSTALL_DIR)"
 	@if exist $(DOCDIR) for %f in ("$(DOCDIR)\*.n") do @$(COPY) %f "$(DOC_INSTALL_DIR)"
@@ -1429,6 +1439,21 @@ default-setup:
 	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
 	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR)
 
+!if "$(TESTPAT)" != ""
+TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
+!endif
+
+default-test: default-setup $(PROJECT)
+	@set TCLLIBPATH=$(OUT_DIR:\=/)
+	@if exist $(LIBDIR) for %f in ("$(LIBDIR)\*.tcl") do @$(COPY) %f "$(OUT_DIR)"
+	cd "$(TESTDIR)" && $(DEBUGGER) $(TCLSH) all.tcl $(TESTFLAGS)
+
+default-shell: default-setup $(PROJECT)
+	@set TCLLIBPATH=$(OUT_DIR:\=/)
+	@if exist $(LIBDIR) for %f in ("$(LIBDIR)\*.tcl") do @$(COPY) %f "$(OUT_DIR)"
+	$(DEBUGGER) $(TCLSH)
+
+# Generation of Windows version resource 
 !ifdef PRJ_RCFILE
 
 $(TMP_DIR)\$(PROJECT).res: $(RCDIR)\$(PROJECT).rc
@@ -1484,6 +1509,11 @@ DISABLE_IMPLICIT_RULES = 0
 !if !$(DISABLE_IMPLICIT_RULES)
 # Implicit rule definitions - only for building library objects. For stubs and
 # main application, the master makefile should define explicit rules.
+
+{$(ROOT)}.c{$(TMP_DIR)}.obj::
+	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
+$<
+<<
 
 {$(WINDIR)}.c{$(TMP_DIR)}.obj::
 	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<

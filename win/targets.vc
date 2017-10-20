@@ -1,6 +1,16 @@
 #------------------------------------------------------------- -*- makefile -*-
 
 $(PROJECT): setup pkgindex $(PRJLIB)
+
+!ifdef PRJ_STUBOBJS
+$(PROJECT): $(PRJSTUBLIB)
+$(PRJSTUBLIB): $(PRJ_STUBOBJS)
+	$(MAKELIBCMD) $**
+
+$(PRJ_STUBOBJS):
+	$(cc32) $(stubscflags) -Fo$(TMP_DIR)\ %s
+!endif
+
 !ifdef PRJ_MANIFEST
 $(PROJECT): $(PRJLIB).manifest
 $(PRJLIB).manifest: $(PRJ_MANIFEST)
@@ -8,6 +18,7 @@ $(PRJLIB).manifest: $(PRJ_MANIFEST)
 @MACHINE@	  $(MACHINE:IX86=X86)
 <<
 !endif
+
 
 !if "$(PROJECT)" != "tcl" && "$(PROJECT)" != "tk"
 # MAKEBINCMD will do shared, static and debug links as appropriate
@@ -19,10 +30,17 @@ $(PRJLIB): $(PRJ_OBJS) $(RESFILE)
        -@del $*.exp
 !endif
 
+!ifndef DISABLE_STANDARD_TARGETS
+DISABLE_STANDARD_TARGETS = 0
+!endif
+
+!if !$(DISABLE_STANDARD_TARGETS)
 setup: default-setup
 install: default-install
 clean: default-clean
 realclean: hose
 hose: default-hose
 distclean: realclean default-distclean
-
+test: default-test
+shell: default-shell
+!endif
