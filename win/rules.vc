@@ -70,6 +70,14 @@ PROJECT_REQUIRES_TK = 0
 # changing them for consistency or clarity.
 
 # 0. Sanity check compiler environment
+
+!if !exist("rules-ext.vc")
+MSG = ^
+You must run nmake from the directory containing the makefile and rules-ext.vc.^
+Please `cd` to its location first.
+!error $(MSG)
+!endif
+
 # Check to see we are configured to build with MSVC (MSDEVDIR, MSVCDIR or
 # VCINSTALLDIR) or with the MS Platform SDK (MSSDK or WindowsSDKDir)
 
@@ -538,7 +546,7 @@ DEBUGFLAGS     = $(DEBUGFLAGS) -GZ
 # They are not passed through to the actual application / extension
 # link rules.
 !ifndef LINKER_TESTFLAGS
-LINKER_TESTFLAGS = /DLL /NOENTRY /OUT:nmhlp-out.txt
+LINKER_TESTFLAGS = /DLL /NOENTRY /OUT:nmakehlp.out
 !endif
 
 LINKERFLAGS     =
@@ -950,6 +958,17 @@ OUT_DIR	    = .\$(BUILDDIRTOP)
 OUT_DIR	    = $(TMP_DIR)
 !endif
 !endif
+
+# Relative paths -> absolute
+!if [echo OUT_DIR = \> nmakehlp.out] \
+   || [nmakehlp -Q "$(OUT_DIR)" >> nmakehlp.out]
+!error *** Could not fully qualify path OUT_DIR=$(OUT_DIR)
+!endif
+!if [echo TMP_DIR = \>> nmakehlp.out] \
+   || [nmakehlp -Q "$(TMP_DIR)" >> nmakehlp.out]
+!error *** Could not fully qualify path TMP_DIR=$(TMP_DIR)
+!endif
+!include nmakehlp.out
 
 # The name of the stubs library for the project being built
 STUBPREFIX      = $(PROJECT)stub
@@ -1400,7 +1419,7 @@ default-install-libraries: $(OUT_DIR)\pkgIndex.tcl
 default-install-docs-html:
 	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
 	@if not exist "$(DOC_INSTALL_DIR)" mkdir "$(DOC_INSTALL_DIR)"
-	@if exist $(DOCDIR) for %f in ("$(DOCDIR)\*.html" "$(DOCDIR)\*.css") do @$(COPY) %f "$(DOC_INSTALL_DIR)"
+	@if exist $(DOCDIR) for %f in ("$(DOCDIR)\*.html" "$(DOCDIR)\*.css" "$(DOCDIR)\*.png") do @$(COPY) %f "$(DOC_INSTALL_DIR)"
 
 default-install-docs-n:
 	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
@@ -1418,6 +1437,7 @@ default-clean:
 	@echo Cleaning $(WINDIR)\nmakehlp.obj, nmakehlp.exe ...
 	@if exist $(WINDIR)\nmakehlp.obj del $(WINDIR)\nmakehlp.obj
 	@if exist $(WINDIR)\nmakehlp.exe del $(WINDIR)\nmakehlp.exe
+	@if exist $(WINDIR)\nmakehlp.out del $(WINDIR)\nmakehlp.out
 	@echo Cleaning $(WINDIR)\_junk.pch ...
 	@if exist $(WINDIR)\_junk.pch del $(WINDIR)\_junk.pch
 	@echo Cleaning $(WINDIR)\vercl.x, vercl.i ...

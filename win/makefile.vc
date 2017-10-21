@@ -158,13 +158,6 @@
 #==============================================================================
 #------------------------------------------------------------------------------
 
-!if !exist("makefile.vc")
-MSG = ^
-You must run this makefile only from the directory it is in.^
-Please `cd` to its location first.
-!error $(MSG)
-!endif
-
 # The PROJECT macro is used by rules.vc for generating appropriate
 # macros and rules.
 PROJECT = tcl
