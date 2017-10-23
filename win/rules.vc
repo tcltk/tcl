@@ -573,8 +573,6 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 # MSVCRT  - 1 -> link to dynamic C runtime even when building static Tcl build
 #           0 -> link to static C runtime for static Tcl build.
 #           Does not impact shared Tcl builds (STATIC_BUILD == 0)
-# LOIMPACT - 1 -> Ask Windows loader to aggressively trim the working set.
-#           Will reduce physical memory use at cost of performance.
 # TCL_USE_STATIC_PACKAGES - 1 -> statically link the registry and dde extensions
 #           in the Tcl shell. 0 -> keep them as shared libraries
 #           Does not impact shared Tcl builds.
@@ -595,7 +593,6 @@ SYMBOLS		= 0
 PROFILE		= 0
 PGO		= 0
 MSVCRT		= 1
-LOIMPACT	= 0
 TCL_USE_STATIC_PACKAGES	= 0
 USE_THREAD_ALLOC = 1
 UNCHECKED	= 0
@@ -681,10 +678,7 @@ PGO		= 0
 !endif
 
 !if [nmakehlp -f $(OPTS) "loimpact"]
-!message *** Doing loimpact
-LOIMPACT	= 1
-!else
-LOIMPACT	= 0
+!message *** Warning: ignoring option "loimpact" - deprecated on modern Windows.
 !endif
 
 # TBD - should get rid of this option
@@ -693,9 +687,8 @@ LOIMPACT	= 0
 USE_THREAD_ALLOC = 1
 !endif
 
-# TBD - should get rid of this option
 !if [nmakehlp -f $(OPTS) "tclalloc"]
-!message *** Doing tclalloc
+!error *** Option `tclalloc` is 
 USE_THREAD_ALLOC = 0
 !endif
 
@@ -1330,10 +1323,6 @@ lflags	= $(lflags) -nodefaultlib:libucrt.lib
 # Align sections for PE size savings.
 lflags	= $(lflags) -opt:nowin98
 !endif
-!endif
-
-!if $(LOIMPACT)
-lflags	= $(lflags) -ws:aggressive
 !endif
 
 dlllflags = $(lflags) -dll
