@@ -195,11 +195,6 @@ static unsigned short emptyPage[256];
  * Functions used only in this module.
  */
 
-static int		BinaryProc(ClientData clientData,
-			    const char *src, int srcLen, int flags,
-			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
-			    int *srcReadPtr, int *dstWrotePtr,
-			    int *dstCharsPtr);
 static void		DupEncodingIntRep(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		EscapeFreeProc(ClientData clientData);
 static int		EscapeFromUtfProc(ClientData clientData,
@@ -562,14 +557,6 @@ TclInitEncodingSubsystem(void)
      * translation is not a no-op, because it will turn a stream of improperly
      * formed UTF-8 into a properly formed stream.
      */
-
-    type.encodingName	= "identity";
-    type.toUtfProc	= BinaryProc;
-    type.fromUtfProc	= BinaryProc;
-    type.freeProc	= NULL;
-    type.nullSize	= 1;
-    type.clientData	= NULL;
-    tclIdentityEncoding = Tcl_CreateEncoding(&type);
 
     type.encodingName	= "utf-8";
     type.toUtfProc	= UtfExtToUtfIntProc;
@@ -2078,70 +2065,6 @@ LoadEscapeEncoding(
     type.clientData	= dataPtr;
 
     return Tcl_CreateEncoding(&type);
-}
-
-/*
- *-------------------------------------------------------------------------
- *
- * BinaryProc --
- *
- *	The default conversion when no other conversion is specified. No
- *	translation is done; source bytes are copied directly to destination
- *	bytes.
- *
- * Results:
- *	Returns TCL_OK if conversion was successful.
- *
- * Side effects:
- *	None.
- *
- *-------------------------------------------------------------------------
- */
-
-static int
-BinaryProc(
-    ClientData clientData,	/* Not used. */
-    const char *src,		/* Source string (unknown encoding). */
-    int srcLen,			/* Source string length in bytes. */
-    int flags,			/* Conversion control flags. */
-    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
-				 * information used during a piecewise
-				 * conversion. Contents of statePtr are
-				 * initialized and/or reset by conversion
-				 * routine under control of flags argument. */
-    char *dst,			/* Output buffer in which converted string is
-				 * stored. */
-    int dstLen,			/* The maximum length of output buffer in
-				 * bytes. */
-    int *srcReadPtr,		/* Filled with the number of bytes from the
-				 * source string that were converted. */
-    int *dstWrotePtr,		/* Filled with the number of bytes that were
-				 * stored in the output buffer as a result of
-				 * the conversion. */
-    int *dstCharsPtr)		/* Filled with the number of characters that
-				 * correspond to the bytes stored in the
-				 * output buffer. */
-{
-    int result;
-
-    result = TCL_OK;
-    dstLen -= TCL_UTF_MAX - 1;
-    if (dstLen < 0) {
-	dstLen = 0;
-    }
-    if ((flags & TCL_ENCODING_CHAR_LIMIT) && srcLen > *dstCharsPtr) {
-	srcLen = *dstCharsPtr;
-    }
-    if (srcLen > dstLen) {
-	srcLen = dstLen;
-	result = TCL_CONVERT_NOSPACE;
-    }
-
-    *srcReadPtr = srcLen;
-    *dstWrotePtr = srcLen;
-    *dstCharsPtr = srcLen;
-    memcpy(dst, src, (size_t) srcLen);
-    return result;
 }
 
 /*
