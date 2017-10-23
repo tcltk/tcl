@@ -224,12 +224,10 @@ set string "#08D03F"
 \fBscan\fR $string "#%2x%2x%2x" r g b
 .CE
 .PP
-Parse a \fIHH:MM\fR time string, noting that this avoids problems with
-octal numbers by forcing interpretation as decimals (if we did not
-care, we would use the \fB%i\fR conversion instead):
+Parse a \fIHH:MM\fR time string:
 .PP
 .CS
-set string "08:08"   ;# *Not* octal!
+set string "08:08"
 if {[\fBscan\fR $string "%d:%d" hours minutes] != 2} {
     error "not a valid time string"
 }

@@ -3655,7 +3655,6 @@ TclGetIntForIndex(
 	if (!strncmp(bytes, "end-", 4)) {
 	    bytes += 4;
 	}
-	TclCheckBadOctal(interp, bytes);
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
     }
 
@@ -3794,73 +3793,6 @@ SetEndOffsetFromAny(
     objPtr->typePtr = &tclEndOffsetType;
 
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCheckBadOctal --
- *
- *	This function checks for a bad octal value and appends a meaningful
- *	error to the interp's result.
- *
- * Results:
- *	1 if the argument was a bad octal, else 0.
- *
- * Side effects:
- *	The interpreter's result is modified.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclCheckBadOctal(
-    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
-				 * NULL, then no error message is left after
-				 * errors. */
-    const char *value)		/* String to check. */
-{
-    register const char *p = value;
-
-    /*
-     * A frequent mistake is invalid octal values due to an unwanted leading
-     * zero. Try to generate a meaningful error message.
-     */
-
-    while (TclIsSpaceProc(*p)) {
-	p++;
-    }
-    if (*p == '+' || *p == '-') {
-	p++;
-    }
-    if (*p == '0') {
-	if ((p[1] == 'o') || p[1] == 'O') {
-	    p += 2;
-	}
-	while (isdigit(UCHAR(*p))) {	/* INTL: digit. */
-	    p++;
-	}
-	while (TclIsSpaceProc(*p)) {
-	    p++;
-	}
-	if (*p == '\0') {
-	    /*
-	     * Reached end of string.
-	     */
-
-	    if (interp != NULL) {
-		/*
-		 * Don't reset the result here because we want this result to
-		 * be added to an existing error message as extra info.
-		 */
-
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-			" (looks like invalid octal number)", -1);
-	    }
-	    return 1;
-	}
-    }
-    return 0;
 }
 
 /*
