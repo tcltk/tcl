@@ -1611,13 +1611,11 @@ ConvertFileNameFormat(
     for (i = 0; i < pathc; i++) {
 	Tcl_Obj *elt;
 	char *pathv;
-	size_t pathLen;
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
 	pathv = TclGetString(elt);
-	pathLen = elt->length;
-	if ((pathv[0] == '/') || ((pathLen == 3) && (pathv[1] == ':'))
+	if ((pathv[0] == '/') || ((elt->length == 3) && (pathv[1] == ':'))
 		|| (strcmp(pathv, ".") == 0) || (strcmp(pathv, "..") == 0)) {
 	    /*
 	     * Handle "/", "//machine/export", "c:/", "." or ".." by just
