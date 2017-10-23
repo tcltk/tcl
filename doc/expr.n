@@ -50,9 +50,7 @@ An integer operand may be specified in decimal (the normal case, the optional
 first two characters are \fB0d\fR), binary
 (the first two characters are \fB0b\fR), octal
 (the first two characters are \fB0o\fR), or hexadecimal
-(the first two characters are \fB0x\fR) form.  For
-compatibility with older Tcl releases, an operand that begins with \fB0\fR is
-interpreted as an octal integer even if the second character is not \fBo\fR.
+(the first two characters are \fB0x\fR) form.
 A floating-point number may be specified in any of several
 common decimal formats, and may use the decimal point \fB.\fR,
 \fBe\fR or \fBE\fR for scientific notation, and
