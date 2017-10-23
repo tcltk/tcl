@@ -15,17 +15,16 @@
  * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
-/* swap the elements of two integers, for cases where you can't simply swap the 
+/* swap the elements of two integers, for cases where you can't simply swap the
  * mp_int pointers around
  */
-void
-mp_exch (mp_int * a, mp_int * b)
+void mp_exch(mp_int *a, mp_int *b)
 {
-  mp_int  t;
+   mp_int  t;
 
-  t  = *a;
-  *a = *b;
-  *b = t;
+   t  = *a;
+   *a = *b;
+   *b = t;
 }
 #endif
 
