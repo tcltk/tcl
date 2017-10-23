@@ -1304,10 +1304,6 @@ SOURCE=..\generic\tclOOStubLib.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\generic\tclWinPanic.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\generic\tclTomMathStubLib.c
 # End Source File
 # Begin Source File
@@ -1529,6 +1525,10 @@ SOURCE=.\tclWinLoad.c
 # Begin Source File
 
 SOURCE=.\tclWinNotify.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\tclWinPanic.c
 # End Source File
 # Begin Source File
 
