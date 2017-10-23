@@ -69,6 +69,9 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define TclWinGetSockOpt 0
 #   define TclWinSetSockOpt 0
 #   define TclWinNToHS 0
+#   define TclBNInitBignumFromWideUInt 0
+#   define TclBNInitBignumFromWideInt 0
+#   define TclBNInitBignumFromLong 0
 #else
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
@@ -103,6 +106,9 @@ static unsigned short TclWinNToHS(unsigned short ns) {
 	return ntohs(ns);
 }
 #endif
+#   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
+#   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
+#   define TclBNInitBignumFromLong TclInitBignumFromLong
 #endif /* TCL_NO_DEPRECATED */
 
 #ifdef _WIN32
@@ -859,6 +865,10 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBNInitBignumFromWideInt, /* 65 */
     TclBNInitBignumFromWideUInt, /* 66 */
     TclBN_mp_expt_d_ex, /* 67 */
+    TclBN_mp_set_long_long, /* 68 */
+    TclBN_mp_get_long_long, /* 69 */
+    TclBN_mp_set_long, /* 70 */
+    TclBN_mp_get_long, /* 71 */
 };
 
 static const TclStubHooks tclStubHooks = {
