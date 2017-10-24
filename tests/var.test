@@ -53,7 +53,7 @@ catch {unset arr}
 test var-1.1 {TclLookupVar, Array handling} -setup {
     catch {unset a}
 } -body {
-    set x "incr"  ;# force no compilation and runtime call to Tcl_IncrCmd 
+    set x "incr"  ;# force no compilation and runtime call to Tcl_IncrCmd
     set i 10
     set arr(foo) 37
     list [$x i] $i [$x arr(foo)] $arr(foo)
@@ -234,7 +234,7 @@ test var-3.3 {MakeUpvar, my var has TCL_GLOBAL_ONLY specified} -setup {
     set a 123321
     proc p {} {
 	# create global xx linked to global a
-	testupvar 1 a {} xx global 
+	testupvar 1 a {} xx global
     }
     list [p] $xx [set xx 789] $a
 } -result {{} 123321 789 789}
@@ -246,7 +246,7 @@ test var-3.4 {MakeUpvar, my var has TCL_NAMESPACE_ONLY specified} -setup {
 	catch {unset ::test_ns_var::vv}
 	proc p {} {
 	    # create namespace var vv linked to global a
-	    testupvar 1 a {} vv namespace 
+	    testupvar 1 a {} vv namespace
 	}
 	p
     }
@@ -548,11 +548,11 @@ test var-7.14 {Tcl_VariableObjCmd, array element parameter} -body {
     namespace eval test_ns_var { variable arrayvar(1) }
 } -returnCodes error -result "can't define \"arrayvar(1)\": name refers to an element in an array"
 test var-7.15 {Tcl_VariableObjCmd, array element parameter} -body {
-    namespace eval test_ns_var { 
+    namespace eval test_ns_var {
 	variable arrayvar
 	set arrayvar(1) x
 	variable arrayvar(1) y
-    }   
+    }
 } -returnCodes error -result "can't define \"arrayvar(1)\": name refers to an element in an array"
 test var-7.16 {Tcl_VariableObjCmd, no args (TIP 323)} {
     variable
@@ -790,7 +790,7 @@ test var-15.1 {segfault in [unset], [Bug 735335]} {
 	set var $name
     }
     #
-    # Note that the variable name has to be 
+    # Note that the variable name has to be
     # unused previously for the segfault to
     # be triggered.
     #
@@ -997,7 +997,153 @@ test var-22.1 {leak in localVarName intrep: Bug 80304238ac} -setup {
     rename getbytes {}
     rename doit {}
 } -result 0
-
+
+unset -nocomplain a k v
+test var-23.1 {array command, for loop, too many args} -returnCodes error -body {
+    array for {k v} c d e {}
+} -result {wrong # args: should be "array for {key value} arrayName script"}
+test var-23.2 {array command, for loop, not enough args} -returnCodes error -body {
+    array for {k v} {}
+} -result {wrong # args: should be "array for {key value} arrayName script"}
+test var-23.3 {array command, for loop, too many list args} -setup {
+    unset -nocomplain a
+} -returnCodes error -body {
+    array for {k v w} a {}
+} -result {must have two variable names}
+test var-23.4 {array command, for loop, not enough list args} -setup {
+    unset -nocomplain a
+} -returnCodes error -body {
+    array for {k} a {}
+} -result {must have two variable names}
+test var-23.5 {array command, for loop, no array} -setup {
+    unset -nocomplain a
+} -returnCodes error -body {
+    array for {k v} a {}
+} -result {"a" isn't an array}
+test var-23.6 {array command, for loop, array doesn't exist yet but has compiler-allocated procedure slot} -setup {
+    catch {rename p ""}
+} -returnCodes error -body {
+    apply {{x} {
+        if {$x==1} {
+            return [array for {k v} a {}]
+        }
+        set a(x) 123
+    }} 1
+} -result {"a" isn't an array}
+test var-23.7 {array enumeration} -setup {
+    unset -nocomplain a
+    set reslist [list]
+} -body {
+    array set a {a 1 b 2 c 3}
+    array for {k v} a {
+	lappend reslist $k $v
+    }
+    lsort -stride 2 -index 0 $reslist
+} -cleanup {
+    unset -nocomplain a
+    unset -nocomplain reslist
+} -result {a 1 b 2 c 3}
+test var-23.9 {array enumeration, nested} -setup {
+    unset -nocomplain a
+    set reslist [list]
+} -body {
+    array set a {a 1 b 2 c 3}
+    array for {k1 v1} a {
+	lappend reslist $k1 $v1
+	set r2 {}
+	array for {k2 v2} a {
+	    lappend r2 $k2 $v2
+	}
+	lappend reslist [lsort -stride 2 -index 0 $r2]
+    }
+    # there is no guarantee in which order the array contents will be
+    # returned.
+    lsort -stride 3 -index 0 $reslist
+} -cleanup {
+    unset -nocomplain a
+    unset -nocomplain reslist
+} -result {a 1 {a 1 b 2 c 3} b 2 {a 1 b 2 c 3} c 3 {a 1 b 2 c 3}}
+test var-23.10 {array enumeration, delete key} -match glob -setup {
+    unset -nocomplain a
+    set reslist [list]
+} -body {
+    set retval {}
+    try {
+      array set a {a 1 b 2 c 3 d 4}
+      array for {k v} a {
+  	lappend reslist $k $v
+          if { $k eq "a" } {
+            unset a(c)
+          }
+      }
+      lsort -stride 2 -index 0 $reslist
+    } on error {err res} {
+      set retval [dict get $res -errorinfo]
+    }
+    set retval
+} -cleanup {
+    unset -nocomplain a
+    unset -nocomplain reslist
+    unset -nocomplain retval
+} -result {array changed during iteration*}
+test var-23.11 {array enumeration, insert key} -match glob -setup {
+    unset -nocomplain a
+    set reslist [list]
+} -body {
+    set retval {}
+    try {
+      array set a {a 1 b 2 c 3 d 4}
+      array for {k v} a {
+  	lappend reslist $k $v
+          if { $k eq "a" } {
+            set a(e) 5
+          }
+      }
+      lsort -stride 2 -index 0 $reslist
+    } on error {err res} {
+      set retval [dict get $res -errorinfo]
+    }
+} -cleanup {
+    unset -nocomplain a
+    unset -nocomplain reslist
+} -result {array changed during iteration*}
+test var-23.12 {array enumeration, change value} -setup {
+    unset -nocomplain a
+    set reslist [list]
+} -body {
+    array set a {a 1 b 2 c 3}
+    array for {k v} a {
+	lappend reslist $k $v
+        if { $k eq "a" } {
+          set a(c) 9
+        }
+    }
+    lsort -stride 2 -index 0 $reslist
+} -cleanup {
+    unset -nocomplain a
+    unset -nocomplain reslist
+} -result {a 1 b 2 c 9}
+test var-23.13 {array enumeration, number of traces} -setup {
+    set ::countarrayfor 0
+    proc ::tracearrayfor { args } {
+      incr ::countarrayfor
+    }
+    unset -nocomplain ::a
+    set reslist [list]
+} -body {
+    array set ::a {a 1 b 2 c 3}
+    foreach {k} [array names a] {
+      trace add variable ::a($k) read ::tracearrayfor
+    }
+    array for {k v} ::a {
+	lappend reslist $k $v
+    }
+    set ::countarrayfor
+} -cleanup {
+    unset -nocomplain ::countarrayfor
+    unset -nocomplain ::a
+    unset -nocomplain reslist
+} -result 3
 
 catch {namespace delete ns}
 catch {unset arr}
