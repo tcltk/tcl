@@ -563,7 +563,7 @@ TclInitEncodingSubsystem(void)
      * formed UTF-8 into a properly formed stream.
      */
 
-    type.encodingName	= "identity";
+    type.encodingName	= NULL;
     type.toUtfProc	= BinaryProc;
     type.fromUtfProc	= BinaryProc;
     type.freeProc	= NULL;
@@ -851,7 +851,9 @@ FreeEncoding(
 	if (encodingPtr->hPtr != NULL) {
 	    Tcl_DeleteHashEntry(encodingPtr->hPtr);
 	}
-	ckfree(encodingPtr->name);
+	if (encodingPtr->name) {
+	    ckfree(encodingPtr->name);
+	}
 	ckfree(encodingPtr);
     }
 }
@@ -1040,9 +1042,24 @@ Tcl_CreateEncoding(
     const Tcl_EncodingType *typePtr)
 				/* The encoding type. */
 {
+    Encoding *encodingPtr = ckalloc(sizeof(Encoding));
+    encodingPtr->name		= NULL;
+    encodingPtr->toUtfProc	= typePtr->toUtfProc;
+    encodingPtr->fromUtfProc	= typePtr->fromUtfProc;
+    encodingPtr->freeProc	= typePtr->freeProc;
+    encodingPtr->nullSize	= typePtr->nullSize;
+    encodingPtr->clientData	= typePtr->clientData;
+    if (typePtr->nullSize == 1) {
+	encodingPtr->lengthProc = (LengthProc *) strlen;
+    } else {
+	encodingPtr->lengthProc = (LengthProc *) unilen;
+    }
+    encodingPtr->refCount	= 1;
+    encodingPtr->hPtr		= NULL;
+
+  if (typePtr->encodingName) {
     Tcl_HashEntry *hPtr;
     int isNew;
-    Encoding *encodingPtr;
     char *name;
 
     Tcl_MutexLock(&encodingMutex);
@@ -1058,25 +1075,12 @@ Tcl_CreateEncoding(
     }
 
     name = ckalloc(strlen(typePtr->encodingName) + 1);
-
-    encodingPtr = ckalloc(sizeof(Encoding));
     encodingPtr->name		= strcpy(name, typePtr->encodingName);
-    encodingPtr->toUtfProc	= typePtr->toUtfProc;
-    encodingPtr->fromUtfProc	= typePtr->fromUtfProc;
-    encodingPtr->freeProc	= typePtr->freeProc;
-    encodingPtr->nullSize	= typePtr->nullSize;
-    encodingPtr->clientData	= typePtr->clientData;
-    if (typePtr->nullSize == 1) {
-	encodingPtr->lengthProc = (LengthProc *) strlen;
-    } else {
-	encodingPtr->lengthProc = (LengthProc *) unilen;
-    }
-    encodingPtr->refCount	= 1;
     encodingPtr->hPtr		= hPtr;
     Tcl_SetHashValue(hPtr, encodingPtr);
 
     Tcl_MutexUnlock(&encodingMutex);
-
+  }
     return (Tcl_Encoding) encodingPtr;
 }
 
