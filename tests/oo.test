@@ -2048,6 +2048,17 @@ test oo-15.14 {OO: object cloning with target NS} -setup {
 } -cleanup {
     Cls destroy
 } -result {{} ::dupens::test-15.14}
+test oo-15.15 {method cloning must ensure that there is a string representation of bodies} -setup {
+    oo::class create cls
+} -body {
+    cls create foo
+    oo::objdefine foo {
+	method m1 {} [string map {a b} {return hello}] 
+    }
+    [oo::copy foo] m1
+} -cleanup {
+    cls destroy
+} -result hello
 
 test oo-16.1 {OO: object introspection} -body {
     info object
