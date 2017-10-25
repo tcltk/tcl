@@ -1070,8 +1070,8 @@ Tcl_CreateEncoding(
 	 * reference goes away.
 	 */
 
-	encodingPtr = Tcl_GetHashValue(hPtr);
-	encodingPtr->hPtr = NULL;
+	Encoding *replaceMe = Tcl_GetHashValue(hPtr);
+	replaceMe->hPtr = NULL;
     }
 
     name = ckalloc(strlen(typePtr->encodingName) + 1);
