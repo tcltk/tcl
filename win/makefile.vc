@@ -1,6 +1,6 @@
 #------------------------------------------------------------- -*- makefile -*-
 #
-#	Microsoft Visual C++ makefile for use with nmake
+#	Microsoft Visual C++ makefile for building Tcl with nmake
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -13,25 +13,13 @@
 # Copyright (c) 2017 Ashok P. Nadkarni
 #------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
-# HOW TO USE this makefile:
+# General usage:
+#   nmake [-nologo] -f makefile.vc [TARGET|MACRODEF [TARGET|MACRODEF] [...]]
 #
-# 1)  It is necessary to have the appropriate Visual C++ environment
-#     set up before invoking nmake. The steps required depend on which
-#     version of Visual Studio and/or the Windows SDK you are building
-#     against and are not described here. With Visual Studio, the simplest
-#     is to start a command shell using one of the installed short cuts.
-#     An alternative is to run vcvars32.bat, vcvars64.bat, vcvarsamd64_x86.bat
-#     etc. depending on the host and target architectures. If compiling
-#     with the Windows SDK instead, run (again depending on the SDK version)
-#     the setenv.bat or equivalent batch file from the command prompt.
+# For MACRODEF, see TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md)
+# or examine Steps 6-8 in rules.vc.
 #
-#     NOTE: For older (Visual C++ 6 or the 2003 SDK), to use the Platform
-#     SDK (not expressly needed), run setenv.bat after
-#     vcvars32.bat according to the instructions for it.  This can also
-#     turn on the 64-bit compiler, if your SDK has it.
-#
-# 2)  Targets are:
+# Possible values of TARGET are:
 #	release  -- Builds the core, the shell and the dlls. (default)
 #	dlls     -- Just builds the windows extensions
 #	shell    -- Just builds the shell and the core.
@@ -52,111 +40,29 @@
 #		    have installed the HTML Help Compiler package from Microsoft
 #		    to produce the .chm file.
 #
-# 3)  Macros usable on the commandline:
-#	INSTALLDIR=<path>
-#		Sets where to install Tcl from the built binaries.
-#		C:\Progra~1\Tcl is assumed when not specified.
 #
-#	OPTS=loimpact,msvcrt,pdbs,profile,static,staticpkg,symbols,thrdalloc,tclalloc,unchecked,none
-#		Sets special options for the core.  The default is for none.
-#		Any combination of the above may be used (comma separated).
-#		'none' will over-ride everything to nothing.
+# The steps to setup a Visual C++ environment depend on which
+# version of Visual Studio and/or the Windows SDK you are building
+# against and are not described here. The simplest method is generally
+# to start a command shell using one of the short cuts installed by
+# Visual Studio/Windows SDK for the appropriate target architecture.
 #
-#		loimpact = Adds a flag for how NT treats the heap to keep memory
-#			   in use, low. Said to impact alloc performance.
-#		msvcrt   = Affects the static option only to switch it from
-#			   using libcmt(d) as the C runtime [by default] to
-#			   msvcrt(d). This is useful for static embedding
-#			   support.
-#		pdbs     = Build detached symbols for release builds.
-#		profile  = Adds profiling hooks.  Map file is assumed.
-#		static   = Builds a static library of the core instead of a
-#			   dll.  The static library will contain the dde and reg
-#			   extensions. External applications who want to use
-#			   this, need to link with the stub library as well as
-#			   the static Tcl library.The shell will be static (and
-#			   large), as well.
-#		staticpkg = Affects the static option only to switch
-#			   tclshXX.exe to have the dde and reg extension linked
-#			   inside it.
-#		symbols  = Debug build. Links to the debug C runtime, disables
-#			   optimizations and creates pdb symbols files.
-#		thrdalloc = Use the thread allocator (shared global free pool)
-#			   This is the default on threaded builds.
-#		tclalloc = Use the old non-thread allocator
-#		unchecked= Allows a symbols build to not use the debug
-#			   enabled runtime (msvcrt.dll not msvcrtd.dll
-#			   or libcmt.lib not libcmtd.lib).
+# NOTE: For older (Visual C++ 6 or the 2003 SDK), to use the Platform
+# SDK (not expressly needed), run setenv.bat after
+# vcvars32.bat according to the instructions for it.  This can also
+# turn on the 64-bit compiler, if your SDK has it.
 #
-#	STATS=compdbg,memdbg,none
-#		Sets optional memory and bytecode compiler debugging code added
-#		to the core.  The default is for none.  Any combination of the
-#		above may be used (comma separated).  'none' will over-ride
-#		everything to nothing.
-#
-#		compdbg  = Enables byte compilation logging.
-#		memdbg   = Enables the debugging memory allocator.
-#
-#	CHECKS=64bit,fullwarn,nodep,none
-#		Sets special macros for checking compatibility.
-#
-#		64bit    = Enable 64bit portability warnings (if available)
-#		fullwarn = Builds with full compiler and link warnings enabled.
-#			    Very verbose.
-#		nodep	 = Turns off compatibility macros to ensure the core
-#			    isn't being built with deprecated functions.
-#
-#	MACHINE=(AMD64|IX86)
-#		Set the machine type used for the compiler, linker, and
-#		resource compiler.  This hook is needed to tell the tools
-#		when alternate platforms are requested. THIS SHOULD NORMALLY
-#               NOT BE SET AS IT IS AUTOMATICALLY DETECTED BASED ON THE
-#               COMPILER IN USE.
-#
-#	TMP_DIR=<path>
-#	OUT_DIR=<path>
-#		Hooks to allow the intermediate and output directories to be
-#		changed.  $(OUT_DIR) is assumed to be
-#		.\(Release|Debug) based on if symbols are requested.
-#		$(TMP_DIR) will be $(OUT_DIR)\<buildtype> by default.
-#
-#	TESTPAT=<file>
-#		Reads the tests requested to be run from this file.
-#
-#	CFG_ENCODING=encoding
-#		name of encoding for configuration information. Defaults
-#		to cp1252
-#
-# 4)  Examples:
-#
-#	Basic syntax of calling nmake looks like this:
-#	nmake [-nologo] -f makefile.vc [target|macrodef [target|macrodef] [...]]
-#
-#                        Standard (no frills)
+# Examples:
 #       c:\tcl_src\win\>nmake -f makefile.vc release
+#       c:\tcl_src\win\>nmake -f makefile.vc test
 #       c:\tcl_src\win\>nmake -f makefile.vc install INSTALLDIR=c:\progra~1\tcl
-#
-#                         With symbols in release builds
 #       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=pdbs 
-#
-#                         Debug build
 #       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=symbols
 #
-#------------------------------------------------------------------------------
-#==============================================================================
-###############################################################################
 
-
-#    //==================================================================\\
-#   >>[               -> Do not modify below this line. <-               ]<<
-#   >>[  Please, use the commandline macros to modify how Tcl is built.  ]<<
-#   >>[  If you need more features, send us a patch for more macros.     ]<<
-#    \\==================================================================//
-
-
-###############################################################################
-#==============================================================================
-#------------------------------------------------------------------------------
+# NOTE:
+# Before modifying this file, check whether the modification is applicable
+# to building extensions as well and if so, modify rules.vc instead.
 
 # The PROJECT macro is used by rules.vc for generating appropriate
 # macros and rules.
