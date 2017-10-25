@@ -1985,9 +1985,12 @@ TestencodingObjCmd(
 	if (objc != 3) {
 	    return TCL_ERROR;
 	}
-	encoding = Tcl_GetEncoding(NULL, Tcl_GetString(objv[2]));
-	Tcl_FreeEncoding(encoding);
-	Tcl_FreeEncoding(encoding);
+	if (TCL_OK != Tcl_GetEncodingFromObj(interp, objv[2], &encoding)) {
+	    return TCL_ERROR;
+	}
+	Tcl_FreeEncoding(encoding);	/* Free returned reference */
+	Tcl_FreeEncoding(encoding);	/* Free to match CREATE */
+	TclFreeIntRep(objv[2]);		/* Free the cached ref */
 	break;
     }
     return TCL_OK;
