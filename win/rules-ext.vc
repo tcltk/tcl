@@ -1,5 +1,10 @@
+#------------------------------------------------------------- -*- makefile -*-
+# rules-ext.vc --
+#
+# Part of the nmake based build system for Tcl and its extensions.
 # This file should only be included in makefiles for Tcl extensions,
 # NOT in the makefile for Tcl itself.
+# See TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md) for docs.
 
 !ifndef _RULES_EXT_VC
 
