@@ -1,15 +1,21 @@
 #------------------------------------------------------------- -*- makefile -*-
+# targets.vc --
+#
+# Part of the nmake based build system for Tcl and its extensions.
+# This file defines some standard targets for the convenience of extensions
+# and can be optionally included by the extension makefile.
+# See TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md) for docs.
 
 $(PROJECT): setup pkgindex $(PRJLIB)
 
 !ifdef PRJ_STUBOBJS
 $(PROJECT): $(PRJSTUBLIB)
 $(PRJSTUBLIB): $(PRJ_STUBOBJS)
-	$(MAKELIBCMD) $**
+	$(LIBCMD) $**
 
 $(PRJ_STUBOBJS):
-	$(cc32) $(stubscflags) -Fo$(TMP_DIR)\ %s
-!endif
+	$(CCSTUBSCMD) %s
+!endif # PRJ_STUBOBJS
 
 !ifdef PRJ_MANIFEST
 $(PROJECT): $(PRJLIB).manifest
@@ -19,13 +25,16 @@ $(PRJLIB).manifest: $(PRJ_MANIFEST)
 <<
 !endif
 
-
 !if "$(PROJECT)" != "tcl" && "$(PROJECT)" != "tk"
 # MAKEBINCMD will do shared, static and debug links as appropriate
 # _VC_MANIFEST_EMBED_DLL embeds the manifest for shared libraries
 # and is a no-op for static libraries
 $(PRJLIB): $(PRJ_OBJS) $(RESFILE)
-       $(MAKEBINCMD) $**
+!if $(STATIC_BUILD)
+       $(LIBCMD) $**
+!else
+       $(DLLCMD) $**
+!endif
        $(_VC_MANIFEST_EMBED_DLL)
        -@del $*.exp
 !endif

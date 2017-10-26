@@ -17,7 +17,7 @@
 #   nmake [-nologo] -f makefile.vc [TARGET|MACRODEF [TARGET|MACRODEF] [...]]
 #
 # For MACRODEF, see TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md)
-# or examine Steps 6-8 in rules.vc.
+# or examine Sections 6-8 in rules.vc.
 #
 # Possible values of TARGET are:
 #	release  -- Builds the core, the shell and the dlls. (default)
@@ -39,7 +39,6 @@
 #		    troff manual pages found in $(ROOT)\doc. You need to
 #		    have installed the HTML Help Compiler package from Microsoft
 #		    to produce the .chm file.
-#
 #
 # The steps to setup a Visual C++ environment depend on which
 # version of Visual Studio and/or the Windows SDK you are building
@@ -397,42 +396,53 @@ runshell: setup $(TCLSH) dlls
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLSH) $(SCRIPT)
 
-!if !$(STATIC_BUILD)
-$(TCLIMPLIB): $(TCLLIB)
-!endif
+!if $(STATIC_BUILD)
 
 $(TCLLIB): $(TCLOBJS)
-	$(MAKEBINCMD) @<<
+	$(LIBCMD) @<<
+$**
+<<
+
+!else
+
+$(TCLLIB): $(TCLOBJS)
+	$(DLLCMD) @<<
 $**
 <<
 	$(_VC_MANIFEST_EMBED_DLL)
+$(TCLIMPLIB): $(TCLLIB)
+
+!endif # $(STATIC_BUILD)
+
 
 $(TCLSTUBLIB): $(TCLSTUBOBJS)
-	$(MAKELIBCMD) -nodefaultlib $(TCLSTUBOBJS)
+	$(LIBCMD) -nodefaultlib $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
-	$(MAKECONCMD) -stack:2300000 $**
+	$(CONEXECMD) -stack:2300000 $**
 	$(_VC_MANIFEST_EMBED_EXE)
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
-	$(MAKECONCMD) -stack:2300000 $**
+	$(CONEXECMD) -stack:2300000 $**
 	$(_VC_MANIFEST_EMBED_EXE)
 
 !if $(STATIC_BUILD)
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
+	$(LIBCMD) $**
 !else
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
-!endif
-	$(MAKEBINCMD) $**
+	$(DLLCMD) $**
 	$(_VC_MANIFEST_EMBED_DLL)
+!endif
 
 !if $(STATIC_BUILD)
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
+	$(LIBCMD) $**
 !else
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
-!endif
-	$(MAKEBINCMD) $**
+	$(DLLCMD) $**
 	$(_VC_MANIFEST_EMBED_DLL)
+!endif
 
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
@@ -467,8 +477,8 @@ clean-pkgs:
 	  )
 
 $(CAT32): $(WINDIR)\cat.c
-	$(cc32) $(cflags) $(crt) -DCONSOLE -Fo$(TMP_DIR)\ $?
-	$(MAKECONCMD) -stack:16384 $(TMP_DIR)\cat.obj
+	$(cc32) $(cflags) $(crt) -D_CRT_NONSTDC_NO_DEPRECATE -DCONSOLE -Fo$(TMP_DIR)\ $?
+	$(CONEXECMD) -stack:16384 $(TMP_DIR)\cat.obj
 	$(_VC_MANIFEST_EMBED_EXE)
 
 #---------------------------------------------------------------------

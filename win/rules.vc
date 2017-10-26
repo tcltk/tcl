@@ -1,8 +1,13 @@
 #------------------------------------------------------------- -*- makefile -*-
 # rules.vc --
 #
-#	Microsoft Visual C++ makefile include for decoding the commandline
-#	macros.  This file does not need editing to build Tcl.
+# Part of the nmake based build system for Tcl and its extensions.
+# This file does all the hard work in terms of parsing build options,
+# compiler switches, defining common targets and macros. The Tcl makefile
+# directly includes this. Extensions include it via "rules-ext.vc".
+#
+# See TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md) for
+# detailed documentation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -16,6 +21,8 @@
 _RULES_VC = 1
 
 # The following macros define the version of the rules.vc nmake build system
+# For modifications that are not backward-compatible, you *must* change
+# the major version.
 RULES_VERSION_MAJOR = 1
 RULES_VERSION_MINOR = 0
 
@@ -32,8 +39,21 @@ DOING_TCL = 1
 DOING_TK = 1
 !endif
 
-!ifndef PROJECT_REQUIRES_TK
-PROJECT_REQUIRES_TK = 0
+!ifndef NEED_TK
+# Backwards compatibility
+!ifdef PROJECT_REQUIRES_TK
+NEED_TK = $(PROJECT_REQUIRES_TK)
+!else
+NEED_TK = 0
+!endif
+!endif
+
+!ifndef NEED_TCL_SOURCE
+NEED_TCL_SOURCE = 0
+!endif
+
+!ifndef NEED_TK_SOURCE
+NEED_TK_SOURCE = 0
 !endif
 
 ################################################################
@@ -266,7 +286,7 @@ Failed to find tcl.h. The TCLDIR macro is set incorrectly or is not set and defa
 !endif
 
 # Now do the same to locate Tk headers and libs if project requires Tk
-!if $(PROJECT_REQUIRES_TK)
+!if $(NEED_TK)
 
 !ifdef TKDIR
 
@@ -301,7 +321,24 @@ Failed to find tk.h. The TKDIR macro is set incorrectly or is not set and defaul
 !error $(MSG)
 !endif
 
-!endif # PROJECT_REQUIRES_TK
+!endif # NEED_TK
+
+!if $(NEED_TCL_SOURCE) && $(TCLINSTALL)
+MSG = ^
+*** Warning: This extension requires the source distribution of Tcl.^
+*** Please set the TCLDIR macro to point to the Tcl sources.
+!error $(MSG)
+!endif
+
+!if $(NEED_TK_SOURCE)
+!if $(TKINSTALL)
+MSG = ^
+*** Warning: This extension requires the source distribution of Tk.^
+*** Please set the TKDIR macro to point to the Tk sources.
+!error $(MSG)
+!endif
+!endif
+
 
 # If INSTALLDIR set to tcl installation root dir then reset to the
 # lib dir for installing extensions 
@@ -1026,7 +1063,7 @@ TCLSH_NATIVE	= $(TCLSH)
 !endif
 
 # Do the same for Tk and Tk extensions that require the Tk libraries
-!if $(DOING_TK) || $(PROJECT_REQUIRES_TK)
+!if $(DOING_TK) || $(NEED_TK)
 WISHNAMEPREFIX = wish
 WISHNAME = $(WISHNAMEPREFIX)$(TK_VERSION)$(SUFX).exe
 TKLIBNAME	= $(PROJECT)$(TK_VERSION)$(SUFX).$(EXT)
@@ -1040,7 +1077,7 @@ TKIMPLIB	= $(OUT_DIR)\$(TKIMPLIBNAME)
 TKLIB		= $(OUT_DIR)\$(TKLIBNAME)
 TK_INCLUDES    = -I"$(WINDIR)" -I"$(GENERICDIR)"
 
-!else # effectively PROJECT_REQUIRES_TK
+!else # effectively NEED_TK
 
 !if $(TKINSTALL) # Building against installed Tk
 WISH		= $(_TKDIR)\bin\$(WISHNAME)
@@ -1056,7 +1093,7 @@ TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
 tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 
 !endif # $(DOING_TK)
-!endif # $(DOING_TK) || $(PROJECT_REQUIRES_TK)
+!endif # $(DOING_TK) || $(NEED_TK)
 
 # Various output paths
 PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
@@ -1158,7 +1195,7 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_NO_DEPRECATED
 # test targets in tk do not use stubs
 !if ! $(DOING_TCL)
 USE_STUBS_DEFS  = -DUSE_TCL_STUBS -DUSE_TCLOO_STUBS
-!if $(PROJECT_REQUIRES_TK)
+!if $(NEED_TK)
 USE_STUBS_DEFS  = $(USE_STUBS_DEFS) -DUSE_TK_STUBS
 !endif
 !endif
@@ -1333,7 +1370,7 @@ guilflags = $(lflags) -subsystem:windows
 # Extensions should define any additional libraries with $(PRJ_LIBS)
 winlibs   = kernel32.lib advapi32.lib
 
-!if $(PROJECT_REQUIRES_TK)
+!if $(NEED_TK)
 winlibs = $(winlibs) gdi32.lib user32.lib uxtheme.lib
 !endif
 
@@ -1352,19 +1389,18 @@ baselibs   = $(baselibs) ucrt.lib
 !endif
 
 ################################################################
-# 3. Define standard commands, common make targets and implicit rules
+# 13. Define standard commands, common make targets and implicit rules
 
-MAKELIBCMD = $(lib32) -nologo $(LINKERFLAGS) -out:$@
-MAKEDLLCMD = $(link32) $(dlllflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
+CCPKGCMD = $(cc32) $(pkgcflags) -Fo$(TMP_DIR)^\
+CCAPPCMD = $(cc32) $(appcflags) -Fo$(TMP_DIR)^\
+CCSTUBSCMD = $(cc32) $(stubscflags) -Fo$(TMP_DIR)^\
 
-!if $(STATIC_BUILD)
-MAKEBINCMD = $(MAKELIBCMD)
-!else
-MAKEBINCMD = $(MAKEDLLCMD)
-!endif
-MAKECONCMD = $(link32) $(conlflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
-MAKEGUICMD = $(link32) $(guilflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
-MAKERESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
+LIBCMD = $(lib32) -nologo $(LINKERFLAGS) -out:$@
+DLLCMD = $(link32) $(dlllflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
+
+CONEXECMD = $(link32) $(conlflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
+GUIEXECMD = $(link32) $(guilflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
+RESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
 	    $(TCL_INCLUDES) \
 	    -DDEBUG=$(DEBUG) -d UNCHECKED=$(UNCHECKED) \
 	    -DCOMMAVERSION=$(DOTVERSION:.=,),0 \
@@ -1466,7 +1502,7 @@ default-shell: default-setup $(PROJECT)
 !ifdef PRJ_RCFILE
 
 $(TMP_DIR)\$(PROJECT).res: $(RCDIR)\$(PROJECT).rc
-	$(MAKERESCMD) $**
+	$(RESCMD) $**
 !else
 
 # If parent makefile has not defined a resource definition file,
@@ -1520,33 +1556,33 @@ DISABLE_IMPLICIT_RULES = 0
 # main application, the master makefile should define explicit rules.
 
 {$(ROOT)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
+	$(CCPKGCMD) @<<
 $<
 <<
 
 {$(WINDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
+	$(CCPKGCMD) @<<
 $<
 <<
 
 {$(GENERICDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
+	$(CCPKGCMD) @<<
 $<
 <<
 
 {$(COMPATDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
+	$(CCPKGCMD) @<<
 $<
 <<
 
 {$(RCDIR)}.rc{$(TMP_DIR)}.res:
-	$(MAKERESCMD) $<
+	$(RESCMD) $<
 
 {$(WINDIR)}.rc{$(TMP_DIR)}.res:
-	$(MAKERESCMD) $<
+	$(RESCMD) $<
 
 {$(TMP_DIR)}.rc{$(TMP_DIR)}.res:
-	$(MAKERESCMD) $<
+	$(RESCMD) $<
 
 .SUFFIXES:
 .SUFFIXES:.c .rc
