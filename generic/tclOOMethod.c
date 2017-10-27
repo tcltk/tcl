@@ -1314,6 +1314,7 @@ CloneProcedureMethod(
      */
 
     bodyObj = Tcl_DuplicateObj(pmPtr->procPtr->bodyPtr);
+    Tcl_GetString(bodyObj);
     TclFreeIntRep(bodyObj);
 
     /*
