@@ -1659,7 +1659,7 @@ Tcl_GetString(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetStringFromObj --
+ * Tcl_GetStringFromObj/Tcl_GetStringFromObj2 --
  *
  *	Returns the string representation's byte array pointer and length for
  *	an object.
@@ -1679,11 +1679,27 @@ Tcl_GetString(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetStringFromObj
 char *
 Tcl_GetStringFromObj(
     register Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
 				 * be returned. */
     register int *lengthPtr)	/* If non-NULL, the location where the string
+				 * rep's byte array length should * be stored.
+				 * If NULL, no length is stored. */
+{
+    (void) TclGetString(objPtr);
+
+    if (lengthPtr != NULL) {
+	*lengthPtr = objPtr->length;
+    }
+    return objPtr->bytes;
+}
+char *
+Tcl_GetStringFromObj2(
+    register Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
+				 * be returned. */
+    register size_t *lengthPtr)	/* If non-NULL, the location where the string
 				 * rep's byte array length should * be stored.
 				 * If NULL, no length is stored. */
 {
@@ -2273,6 +2289,7 @@ Tcl_SetDoubleObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetDoubleFromObj
 int
 Tcl_GetDoubleFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
@@ -2466,7 +2483,7 @@ Tcl_SetIntObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetIntFromObj --
+ * Tcl_GetIntFromObj/Tcl_GetValue --
  *
  *	Attempt to return an int from the Tcl object "objPtr". If the object
  *	is not already an int, an attempt will be made to convert it to one.
@@ -2489,6 +2506,7 @@ Tcl_SetIntObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetIntFromObj
 int
 Tcl_GetIntFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
@@ -2515,6 +2533,32 @@ Tcl_GetIntFromObj(
     *intPtr = (int) l;
     return TCL_OK;
 #endif
+}
+int
+Tcl_GetValue(
+    Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
+    register Tcl_Obj *objPtr,	/* The object from which to get a int. */
+    register void *ptr,	/* Place to store resulting int. */
+	register int flags)
+{
+	double value;
+	int result;
+	if (flags == TCL_TYPE_I(int)) {
+		return Tcl_GetIntFromObj(interp, objPtr, ptr);
+	}
+	if (flags == TCL_TYPE_I(Tcl_WideInt)) {
+		return Tcl_GetWideIntFromObj(interp, objPtr, ptr);
+	}
+	if (flags == TCL_TYPE_D(double)) {
+		return Tcl_GetDoubleFromObj(interp, objPtr, ptr);
+	}
+	result = Tcl_GetDoubleFromObj(interp, objPtr, &value);
+	if (flags == TCL_TYPE_D(float)) {
+		*(float *)ptr = (float) value;
+	} else {
+		*(long double *)ptr = (long double) value;
+	}
+	return result;
 }
 
 /*

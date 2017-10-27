@@ -1831,6 +1831,17 @@ EXTERN Tcl_Channel	Tcl_OpenTcpServerEx(Tcl_Interp *interp,
 				unsigned int flags,
 				Tcl_TcpAcceptProc *acceptProc,
 				ClientData callbackData);
+/* Slot 632 is reserved */
+/* Slot 633 is reserved */
+/* 634 */
+EXTERN int		Tcl_GetValue(Tcl_Interp *interp, Tcl_Obj *objPtr,
+				void *intPtr, int flags);
+/* 635 */
+EXTERN char *		Tcl_GetStringFromObj2(Tcl_Obj *objPtr,
+				size_t *lengthPtr);
+/* 636 */
+EXTERN Tcl_UniChar *	Tcl_GetUnicodeFromObj2(Tcl_Obj *objPtr,
+				size_t *lengthPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2498,6 +2509,11 @@ typedef struct TclStubs {
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
     Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc, ClientData callbackData); /* 631 */
+    void (*reserved632)(void);
+    void (*reserved633)(void);
+    int (*tcl_GetValue) (Tcl_Interp *interp, Tcl_Obj *objPtr, void *intPtr, int flags); /* 634 */
+    char * (*tcl_GetStringFromObj2) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 635 */
+    Tcl_UniChar * (*tcl_GetUnicodeFromObj2) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 636 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3792,6 +3808,14 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
 #define Tcl_OpenTcpServerEx \
 	(tclStubsPtr->tcl_OpenTcpServerEx) /* 631 */
+/* Slot 632 is reserved */
+/* Slot 633 is reserved */
+#define Tcl_GetValue \
+	(tclStubsPtr->tcl_GetValue) /* 634 */
+#define Tcl_GetStringFromObj2 \
+	(tclStubsPtr->tcl_GetStringFromObj2) /* 635 */
+#define Tcl_GetUnicodeFromObj2 \
+	(tclStubsPtr->tcl_GetUnicodeFromObj2) /* 636 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3964,6 +3988,34 @@ extern const TclStubs *tclStubsPtr;
 #	define Tcl_UniCharNcasecmp(ucs,uct,n) \
 		((int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned int))tclStubsPtr->tcl_UniCharNcasecmp)(ucs,uct,(unsigned int)(n))
 #   endif
+#endif
+
+#undef Tcl_GetDoubleFromObj
+#undef Tcl_GetIntFromObj
+#undef Tcl_GetStringFromObj
+#undef Tcl_GetUnicodeFromObj
+#if defined(USE_TCL_STUBS)
+#define Tcl_GetDoubleFromObj(interp, objPtr, dblPtr) \
+	(sizeof(*dblPtr) == sizeof(double) ? tclStubsPtr->tcl_GetDoubleFromObj(interp, objPtr, (double *)dblPtr) : tclStubsPtr->tcl_GetValue(interp, objPtr, dblPtr, TCL_TYPE_D(*dblPtr)))
+#define Tcl_GetIntFromObj(interp, objPtr, intPtr) \
+	(sizeof(*intPtr) == sizeof(int) ? tclStubsPtr->tcl_GetIntFromObj(interp, objPtr, (int *)intPtr) : tclStubsPtr->tcl_GetValue(interp, objPtr, intPtr, TCL_TYPE_I(*intPtr)))
+#define Tcl_GetUIntFromObj(interp, objPtr, intPtr) \
+	(sizeof(*intPtr) == sizeof(int) ? tclStubsPtr->tcl_GetIntFromObj(interp, objPtr, (int *)intPtr) : tclStubsPtr->tcl_GetValue(interp, objPtr, intPtr, TCL_TYPE_U(*intPtr)))
+#define Tcl_GetStringFromObj(objPtr, sizePtr) \
+	(sizeof(*sizePtr) <= sizeof(int) ? tclStubsPtr->tcl_GetStringFromObj(objPtr, (int *)sizePtr) : tclStubsPtr->tcl_GetStringFromObj2(objPtr, (size_t *)sizePtr))
+#define Tcl_GetUnicodeFromObj(objPtr, sizePtr) \
+	(sizeof(*sizePtr) <= sizeof(int) ? tclStubsPtr->tcl_GetUnicodeFromObj(objPtr, (int *)sizePtr) : tclStubsPtr->tcl_GetUnicodeFromObj2(objPtr, (size_t *)sizePtr))
+#else
+#define Tcl_GetDoubleFromObj(interp, objPtr, dblPtr) \
+	(sizeof(*dblPtr) == sizeof(double) ? (Tcl_GetDoubleFromObj)(interp, objPtr, (double *)dblPtr) : Tcl_GetValue(interp, objPtr, dblPtr, TCL_TYPE_D(*dblPtr)))
+#define Tcl_GetIntFromObj(interp, objPtr, intPtr) \
+	(sizeof(*intPtr) == sizeof(int) ? Tcl_GetIntFromObj(interp, objPtr, (int *)intPtr) : Tcl_GetValue(interp, objPtr, intPtr, TCL_TYPE_I(*intPtr)))
+#define Tcl_GetUIntFromObj(interp, objPtr, intPtr) \
+	(sizeof(*intPtr) == sizeof(int) ? Tcl_GetIntFromObj(interp, objPtr, (int *)intPtr) : Tcl_GetValue(interp, objPtr, intPtr, TCL_TYPE_U(*intPtr)))
+#define Tcl_GetStringFromObj(objPtr, sizePtr) \
+	(sizeof(*sizePtr) <= sizeof(int) ? Tcl_GetStringFromObj(objPtr, (int *)sizePtr) : Tcl_GetStringFromObj2(objPtr, (size_t *)sizePtr))
+#define Tcl_GetUnicodeFromObj(objPtr, sizePtr) \
+	(sizeof(*sizePtr) <= sizeof(int) ? Tcl_GetUnicodeFromObj(objPtr, (int *)sizePtr) : Tcl_GetUnicodeFromObj2(objPtr, (size_t *)sizePtr))
 #endif
 
 /*
