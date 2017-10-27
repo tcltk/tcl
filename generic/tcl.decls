@@ -2332,6 +2332,18 @@ declare 631 {
 	    const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc,
 	    ClientData callbackData)
 }
+# TIP #481
+declare 634 {
+    int Tcl_GetValue(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    void *intPtr, int flags)
+}
+declare 635 {
+    char *Tcl_GetStringFromObj2(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+declare 636 {
+    Tcl_UniChar *Tcl_GetUnicodeFromObj2(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 

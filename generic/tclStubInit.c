@@ -1536,6 +1536,11 @@ const TclStubs tclStubs = {
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
     Tcl_OpenTcpServerEx, /* 631 */
+    0, /* 632 */
+    0, /* 633 */
+    Tcl_GetValue, /* 634 */
+    Tcl_GetStringFromObj2, /* 635 */
+    Tcl_GetUnicodeFromObj2, /* 636 */
 };
 
 /* !END!: Do not edit above this line. */
