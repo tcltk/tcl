@@ -188,7 +188,7 @@ test cmdAH-4.5 {Tcl_EncodingObjCmd} -setup {
 test cmdAH-4.6 {Tcl_EncodingObjCmd} -setup {
     set system [encoding system]
 } -body {
-    encoding system iso8859-1 
+    encoding system iso8859-1
     encoding convertto jis0208 \u4e4e
 } -cleanup {
     encoding system $system
