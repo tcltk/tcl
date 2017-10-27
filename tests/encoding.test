@@ -66,10 +66,10 @@ test encoding-2.2 {Tcl_FreeEncoding: refcount != 0} {testencoding} {
     encoding system shiftjis		;# incr ref count
     encoding dirs [list [pwd]]
     set x [encoding convertto shiftjis \u4e4e]	;# old one found   
-    encoding system identity
+    encoding system iso8859-1
     llength shiftjis
     lappend x [catch {encoding convertto shiftjis \u4e4e} msg] $msg
-    encoding system identity
+    encoding system iso8859-1
     encoding dirs $path
     encoding system $system
     set x
@@ -121,7 +121,7 @@ test encoding-5.1 {Tcl_SetSystemEncoding} {
     set old [encoding system]
     encoding system jis0208
     set x [encoding convertto \u4e4e]
-    encoding system identity
+    encoding system iso8859-1
     encoding system $old
     set x
 } {8C}
@@ -245,7 +245,7 @@ test encoding-11.5.1 {LoadEncodingFile: escape file} {
 test encoding-11.6 {LoadEncodingFile: invalid file} {testencoding} {
     set system [encoding system]
     set path [encoding dirs]
-    encoding system identity
+    encoding system iso8859-1
     cd [temporaryDirectory]
     encoding dirs [file join tmp encoding]
     makeDirectory tmp
