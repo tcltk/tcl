@@ -24,24 +24,24 @@
  *
  * Based on Algorithm 14.12 on pp.595 of HAC.
  */
-int fast_s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
+int fast_s_mp_mul_high_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs)
 {
-  int     olduse, res, pa, ix, iz;
-  mp_digit W[MP_WARRAY];
-  mp_word  _W;
+   int     olduse, res, pa, ix, iz;
+   mp_digit W[MP_WARRAY];
+   mp_word  _W;
 
-  /* grow the destination as required */
-  pa = a->used + b->used;
-  if (c->alloc < pa) {
-    if ((res = mp_grow (c, pa)) != MP_OKAY) {
-      return res;
-    }
-  }
+   /* grow the destination as required */
+   pa = a->used + b->used;
+   if (c->alloc < pa) {
+      if ((res = mp_grow(c, pa)) != MP_OKAY) {
+         return res;
+      }
+   }
 
-  /* number of output digits to produce */
-  pa = a->used + b->used;
-  _W = 0;
-  for (ix = digs; ix < pa; ix++) { 
+   /* number of output digits to produce */
+   pa = a->used + b->used;
+   _W = 0;
+   for (ix = digs; ix < pa; ix++) {
       int      tx, ty, iy;
       mp_digit *tmpx, *tmpy;
 
@@ -53,7 +53,7 @@ int fast_s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
       tmpx = a->dp + tx;
       tmpy = b->dp + ty;
 
-      /* this is the number of times the loop will iterrate, essentially its 
+      /* this is the number of times the loop will iterrate, essentially its
          while (tx++ < a->used && ty-- >= 0) { ... }
        */
       iy = MIN(a->used-tx, ty+1);
@@ -68,31 +68,31 @@ int fast_s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
 
       /* make next carry */
       _W = _W >> ((mp_word)DIGIT_BIT);
-  }
-  
-  /* setup dest */
-  olduse  = c->used;
-  c->used = pa;
+   }
 
-  {
-    mp_digit *tmpc;
+   /* setup dest */
+   olduse  = c->used;
+   c->used = pa;
 
-    tmpc = c->dp + digs;
-    for (ix = digs; ix < pa; ix++) {
-      /* now extract the previous digit [below the carry] */
-      *tmpc++ = W[ix];
-    }
+   {
+      mp_digit *tmpc;
 
-    /* clear unused digits [that existed in the old copy of c] */
-    for (; ix < olduse; ix++) {
-      *tmpc++ = 0;
-    }
-  }
-  mp_clamp (c);
-  return MP_OKAY;
+      tmpc = c->dp + digs;
+      for (ix = digs; ix < pa; ix++) {
+         /* now extract the previous digit [below the carry] */
+         *tmpc++ = W[ix];
+      }
+
+      /* clear unused digits [that existed in the old copy of c] */
+      for (; ix < olduse; ix++) {
+         *tmpc++ = 0;
+      }
+   }
+   mp_clamp(c);
+   return MP_OKAY;
 }
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

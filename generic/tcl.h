@@ -55,11 +55,12 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   7
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  0
+#define TCL_RELEASE_SERIAL  2
 
 #define TCL_VERSION	    "8.7"
-#define TCL_PATCH_LEVEL	    "8.7a0"
+#define TCL_PATCH_LEVEL	    "8.7a2"
 
+#if !defined(TCL_NO_DEPRECATED) || defined(RC_INVOKED)
 /*
  *----------------------------------------------------------------------------
  * The following definitions set up the proper options for Windows compilers.
@@ -88,6 +89,7 @@ extern "C" {
 #  define JOIN(a,b) JOIN1(a,b)
 #  define JOIN1(a,b) a##b
 #endif
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * A special definition used to allow this header file to be included from
@@ -139,7 +141,7 @@ extern "C" {
 #    define TCL_VARARGS(type, name) (type name, ...)
 #    define TCL_VARARGS_DEF(type, name) (type name, ...)
 #    define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
-#endif
+#endif /* !TCL_NO_DEPRECATED */
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #   define TCL_NORETURN __attribute__ ((noreturn))
@@ -255,7 +257,7 @@ extern "C" {
 #ifndef TCL_NO_DEPRECATED
 #   undef _ANSI_ARGS_
 #   define _ANSI_ARGS_(x)	x
-#endif
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Definitions that allow this header file to be used either with or without
@@ -521,7 +523,7 @@ typedef struct Tcl_Interp
     int errorLineDontUse; /* Don't use in extensions! */
 #endif
 }
-#endif /* TCL_NO_DEPRECATED */
+#endif /* !TCL_NO_DEPRECATED */
 Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
@@ -995,7 +997,9 @@ typedef struct Tcl_DString {
 
 #define Tcl_DStringLength(dsPtr) ((dsPtr)->length)
 #define Tcl_DStringValue(dsPtr) ((dsPtr)->string)
-#define Tcl_DStringTrunc Tcl_DStringSetLength
+#ifndef TCL_NO_DEPRECATED
+#   define Tcl_DStringTrunc Tcl_DStringSetLength
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Definitions for the maximum number of digits of precision that may be
@@ -1123,11 +1127,23 @@ typedef struct Tcl_DString {
 
 #ifndef TCL_NO_DEPRECATED
 #   define TCL_PARSE_PART1	0x400
-#endif
+#endif /* !TCL_NO_DEPRECATED */
+
+/*
+ * Types for Tcl_GetValue():
+ */
+
+#define TCL_TYPE_I(type) (0x100 | (int)sizeof(type)) /* signed integer */
+#define TCL_TYPE_U(type) (0x200 | (int)sizeof(type)) /* unsigned integer */
+#define TCL_TYPE_D(type) (0x300 | (int)sizeof(type)) /* float/double/long double */
 
 /*
  * Types for linked variables:
  */
+
+#define TCL_TYPE_X(type) (0x400 | (int)sizeof(type)) /* Hexadecimal */
+#define TCL_TYPE_B(type) (0x500 | (int)sizeof(type)) /* Boolean */
+#define TCL_TYPE_C(type) (0xa00 | (int)sizeof(type)) /* Complex */
 
 #if !defined(TCL_NO_DEPRECATED) && !defined(BUILD_tcl)
 /* Here are the legacy values 1-14, will be removed in Tcl 9.0 */
@@ -1153,27 +1169,20 @@ typedef struct Tcl_DString {
 #else
 
 /* These are the new values, available starting with Tcl 8.7 */
-#define TCL_LINK_I(type) (0x100 | (int)sizeof(type)) /* signed integer */
-#define TCL_LINK_U(type) (0x200 | (int)sizeof(type)) /* unsigned integer */
-#define TCL_LINK_D(type) (0x300 | (int)sizeof(type)) /* float/double/long double */
-#define TCL_LINK_X(type) (0x400 | (int)sizeof(type)) /* Hexadecimal */
-#define TCL_LINK_B(type) (0x500 | (int)sizeof(type)) /* Boolean */
-#define TCL_LINK_C(type) (0xa00 | (int)sizeof(type)) /* Complex */
-
-#define TCL_LINK_INT         TCL_LINK_I(int)         /* 32bit int -> int */
-#define TCL_LINK_DOUBLE      TCL_LINK_D(double)      /* 64bit double -> double */
-#define TCL_LINK_BOOLEAN     TCL_LINK_B(int)         /* tcl boolean -> int */
+#define TCL_LINK_INT         TCL_TYPE_I(int)         /* 32bit int -> int */
+#define TCL_LINK_DOUBLE      TCL_TYPE_D(double)      /* 64bit double -> double */
+#define TCL_LINK_BOOLEAN     TCL_TYPE_B(int)         /* tcl boolean -> int */
 #define TCL_LINK_STRING      0                       /* 8bit chars -> ckalloc'd string */
-#define TCL_LINK_WIDE_INT    TCL_LINK_I(Tcl_WideInt) /* 64bit int -> Tcl_WideInt */
-#define TCL_LINK_CHAR        TCL_LINK_I(char)        /* 8bit int -> char */
-#define TCL_LINK_UCHAR       TCL_LINK_U(char)        /* 8bit uint -> unsigned char */
-#define TCL_LINK_SHORT       TCL_LINK_I(short)       /* 16bit int -> short */
-#define TCL_LINK_USHORT      TCL_LINK_U(short)       /* 16bit int -> unsigned short */
-#define TCL_LINK_UINT        TCL_LINK_U(int)         /* 32bit uint -> int */
-#define TCL_LINK_LONG        TCL_LINK_I(long)
-#define TCL_LINK_ULONG       TCL_LINK_U(long)
-#define TCL_LINK_FLOAT       TCL_LINK_D(float)       /* 32bit float -> double */
-#define TCL_LINK_WIDE_UINT   TCL_LINK_U(Tcl_WideInt) /* 64bit uint -> wide TODO bignum */
+#define TCL_LINK_WIDE_INT    TCL_TYPE_I(Tcl_WideInt) /* 64bit int -> Tcl_WideInt */
+#define TCL_LINK_CHAR        TCL_TYPE_I(char)        /* 8bit int -> char */
+#define TCL_LINK_UCHAR       TCL_TYPE_U(char)        /* 8bit uint -> unsigned char */
+#define TCL_LINK_SHORT       TCL_TYPE_I(short)       /* 16bit int -> short */
+#define TCL_LINK_USHORT      TCL_TYPE_U(short)       /* 16bit int -> unsigned short */
+#define TCL_LINK_UINT        TCL_TYPE_U(int)         /* 32bit uint -> int */
+#define TCL_LINK_LONG        TCL_TYPE_I(long)
+#define TCL_LINK_ULONG       TCL_TYPE_U(long)
+#define TCL_LINK_FLOAT       TCL_TYPE_D(float)       /* 32bit float -> double */
+#define TCL_LINK_WIDE_UINT   TCL_TYPE_U(Tcl_WideInt) /* 64bit uint -> wide TODO bignum */
 #endif
 
 #define TCL_LINK_CHARS       0x901                   /* 8bit chars -> null terminated string
@@ -2300,6 +2309,8 @@ typedef struct mp_int mp_int;
 #define MP_INT_DECLARED
 typedef unsigned int mp_digit;
 #define MP_DIGIT_DECLARED
+typedef unsigned TCL_WIDE_INT_TYPE mp_word;
+#define MP_WORD_DECLARED
 
 /*
  *----------------------------------------------------------------------------
@@ -2665,7 +2676,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #   define panic		Tcl_Panic
 #endif
 #   define panicVA		Tcl_PanicVA
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------------
@@ -2675,6 +2685,8 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 extern Tcl_AppInitProc Tcl_AppInit;
+
+#endif /* !TCL_NO_DEPRECATED */
 
 #endif /* RC_INVOKED */
 

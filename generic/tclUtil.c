@@ -1646,7 +1646,7 @@ Tcl_Backslash(
 				 * src, unless NULL. */
 {
     char buf[TCL_UTF_MAX];
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
 
     Tcl_UtfBackslash(src, readPtr, buf);
     TclUtfToUniChar(buf, &ch);

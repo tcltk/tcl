@@ -3338,14 +3338,14 @@ TestlinkarrayCmd(
     static const int LinkTypes[] = {
 	TCL_LINK_INT, TCL_LINK_DOUBLE, TCL_LINK_BOOLEAN, TCL_LINK_STRING,
 	TCL_LINK_WIDE_INT, TCL_LINK_CHAR, TCL_LINK_UCHAR,
-       	TCL_LINK_SHORT, TCL_LINK_USHORT, TCL_LINK_UINT,
+	TCL_LINK_SHORT, TCL_LINK_USHORT, TCL_LINK_UINT,
 	TCL_LINK_LONG, TCL_LINK_ULONG, TCL_LINK_FLOAT,
 	TCL_LINK_WIDE_UINT, TCL_LINK_CHARS,
-       	TCL_LINK_C(float), TCL_LINK_C(double), TCL_LINK_BINARY	,
-	TCL_LINK_X(char), TCL_LINK_X(short), TCL_LINK_X(int), TCL_LINK_X(Tcl_WideInt),
+	TCL_TYPE_C(float), TCL_TYPE_C(double), TCL_LINK_BINARY	,
+	TCL_TYPE_X(char), TCL_TYPE_X(short), TCL_TYPE_X(int), TCL_TYPE_X(Tcl_WideInt),
 	TCL_LINK_BITARRAY8, TCL_LINK_BITARRAY16,
 	TCL_LINK_BITARRAY32, TCL_LINK_BITARRAY64,
-	TCL_LINK_B(char), TCL_LINK_B(short), TCL_LINK_B(int), TCL_LINK_B(Tcl_WideInt),
+	TCL_TYPE_B(char), TCL_TYPE_B(short), TCL_TYPE_B(int), TCL_TYPE_B(Tcl_WideInt),
 	TCL_LINK_BIT8, TCL_LINK_BIT16, TCL_LINK_BIT32, TCL_LINK_BIT64,
 	TCL_LINK_S5FLOAT, TCL_LINK_S5TIME
     };
@@ -6988,7 +6988,7 @@ TestNumUtfCharsCmd(
 	int len = -1;
 
 	if (objc > 2) {
-	    (void) Tcl_GetStringFromObj(objv[1], &len);
+	    (void) Tcl_GetIntFromObj(interp, objv[2], &len);
 	}
 	len = Tcl_NumUtfChars(Tcl_GetString(objv[1]), len);
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(len));

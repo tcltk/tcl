@@ -586,6 +586,7 @@ array set exclude_refs_map {
     scrollbar.n		{set}
     selection.n		{string}
     tcltest.n		{error}
+    text.n		{bind image lower raise}
     tkvars.n		{tk}
     tkwait.n		{variable}
     tm.n		{exec}
