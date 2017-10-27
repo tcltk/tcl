@@ -1313,6 +1313,7 @@ CloneProcedureMethod(
      */
 
     bodyObj = Tcl_DuplicateObj(pmPtr->procPtr->bodyPtr);
+    Tcl_GetString(bodyObj);
     Tcl_StoreIntRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, NULL);
 
     /*
