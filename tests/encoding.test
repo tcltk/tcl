@@ -80,7 +80,6 @@ test encoding-2.2 {Tcl_FreeEncoding: refcount != 0} -setup {
     lappend x [catch {encoding convertto shiftjis \u4e4e} msg] $msg
 } -cleanup {
     encoding system iso8859-1
-    encoding system identity
     encoding dirs $path
     encoding system $system
 } -result "\u008c\u00c1 1 {unknown encoding \"shiftjis\"}"
