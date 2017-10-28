@@ -26,16 +26,13 @@ $(PRJLIB).manifest: $(PRJ_MANIFEST)
 !endif
 
 !if "$(PROJECT)" != "tcl" && "$(PROJECT)" != "tk"
-# MAKEBINCMD will do shared, static and debug links as appropriate
-# _VC_MANIFEST_EMBED_DLL embeds the manifest for shared libraries
-# and is a no-op for static libraries
 $(PRJLIB): $(PRJ_OBJS) $(RESFILE)
 !if $(STATIC_BUILD)
        $(LIBCMD) $**
 !else
        $(DLLCMD) $**
-!endif
        $(_VC_MANIFEST_EMBED_DLL)
+!endif
        -@del $*.exp
 !endif
 
