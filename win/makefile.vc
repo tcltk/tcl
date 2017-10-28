@@ -678,7 +678,7 @@ $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 	$(cc32) $(appcflags) -Fo$@ $?
 
 $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
-	$(cc32) $(appcflags) -Fo$@ $?
+	$(CCAPPCMD) $?
 
 $(TMP_DIR)\tclZlib.obj: $(GENERICDIR)\tclZlib.c
 	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -Fo$@ $?
