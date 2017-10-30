@@ -38,6 +38,15 @@ arguments become required arguments; enough actual arguments must be
 supplied to allow all arguments up to and including the last required
 formal argument.
 .PP
+If the \fIargs\fR is the last formal argument, and it is given a default
+value, that default value is interpreted to be the specification for
+how named parameters beyond the last formal argument will be interpreted
+(an argspec). An argspec is a dict where every key calls out a local variable
+to be defined. The values are a dict which can contain one or more of the
+following options: default (a default value), mandatory (boolean, when false
+an error will not be thrown if the parameter is missing), and aliases (a
+list of alternative names for this parameter.)
+.PP
 When \fIname\fR is invoked a local variable
 will be created for each of the formal arguments to the procedure; its
 value will be the value of corresponding argument in the invoking command
@@ -61,6 +70,14 @@ than the procedure has formal arguments.  In this case, all of the actual argume
 starting at the one that would be assigned to \fBargs\fR are combined into
 a list (as if the \fBlist\fR command had been used); this combined value
 is assigned to the local variable \fBargs\fR.
+.PP
+When an argspec is defined elements beyond the last formal
+argument are a dict. A variable with the name of every field will be
+fill with the contents of every value. An argspec can provide a default value
+for missing named parameters, or state that parameter is non-mandatory.
+Non-mandatory fields will not be mapped as local variables. The value of
+\fIargs\fR is still a verbatim record of elements beyond the final formal
+argument.
 .PP
 When \fIbody\fR is being executed, variable names normally refer to
 local variables, which are created automatically when referenced and
