@@ -1789,15 +1789,15 @@ typedef struct Interp {
 				 * line number in the command where the error
 				 * occurred (1 means first line). */
     const struct TclStubs *stubTable;
-                                /* Pointer to the exported Tcl stub table.  In
-                                 * ancient pre-8.1 versions of Tcl this was a
-                                 * pointer to the objResultPtr or a pointer to a
-                                 * buckets array in a hash table. Deployed stubs
-                                 * enabled extensions check for a NULL pointer value
-                                 * and for a TCL_STUBS_MAGIC value to verify they
-                                 * are not [load]ing into one of those pre-stubs
-                                 * interps.
-                                 */
+				/* Pointer to the exported Tcl stub table.  In
+				 * ancient pre-8.1 versions of Tcl this was a
+				 * pointer to the objResultPtr or a pointer to a
+				 * buckets array in a hash table. Deployed stubs
+				 * enabled extensions check for a NULL pointer value
+				 * and for a TCL_STUBS_MAGIC value to verify they
+				 * are not [load]ing into one of those pre-stubs
+				 * interps.
+				 */
 
     TclHandle handle;		/* Handle used to keep track of when this
 				 * interp is deleted. */
