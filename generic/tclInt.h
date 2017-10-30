@@ -2453,17 +2453,17 @@ typedef struct List {
 
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
     (((objPtr)->typePtr == &tclIntType)	\
-	    ? ((*(longPtr) = (objPtr)->internalRep.longValue), TCL_OK) \
+	    ? ((*(longPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetLongFromObj((interp), (objPtr), (longPtr)))
 
 #if (LONG_MAX == INT_MAX)
 #define TclGetIntFromObj(interp, objPtr, intPtr) \
     (((objPtr)->typePtr == &tclIntType)	\
-	    ? ((*(intPtr) = (objPtr)->internalRep.longValue), TCL_OK) \
+	    ? ((*(intPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
     (((objPtr)->typePtr == &tclIntType)	\
-	    ? ((*(idxPtr) = (objPtr)->internalRep.longValue), TCL_OK) \
+	    ? ((*(idxPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
 	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 #else
 #define TclGetIntFromObj(interp, objPtr, intPtr) \
@@ -2484,7 +2484,7 @@ typedef struct List {
 #define TclGetWideIntFromObj(interp, objPtr, wideIntPtr) \
     (((objPtr)->typePtr == &tclIntType)					\
 	? (*(wideIntPtr) = (Tcl_WideInt)				\
-		((objPtr)->internalRep.longValue), TCL_OK) :		\
+		((objPtr)->internalRep.wideValue), TCL_OK) :		\
 	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
 #else /* !TCL_WIDE_INT_IS_LONG */
 #define TclGetWideIntFromObj(interp, objPtr, wideIntPtr)		\
@@ -2492,7 +2492,7 @@ typedef struct List {
 	? (*(wideIntPtr) = (objPtr)->internalRep.wideValue, TCL_OK) :	\
     ((objPtr)->typePtr == &tclIntType)					\
 	? (*(wideIntPtr) = (Tcl_WideInt)				\
-		((objPtr)->internalRep.longValue), TCL_OK) :		\
+		((objPtr)->internalRep.wideValue), TCL_OK) :		\
 	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
 #endif /* TCL_WIDE_INT_IS_LONG */
 
@@ -4545,7 +4545,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     do {						\
 	TclInvalidateStringRep(objPtr);			\
 	TclFreeIntRep(objPtr);				\
-	(objPtr)->internalRep.longValue = (long)(i);	\
+	(objPtr)->internalRep.wideValue = (long)(i);	\
 	(objPtr)->typePtr = &tclIntType;		\
     } while (0)
 
@@ -4589,7 +4589,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	TclAllocObjStorage(objPtr);			\
 	(objPtr)->refCount = 0;				\
 	(objPtr)->bytes = NULL;				\
-	(objPtr)->internalRep.longValue = (long)(i);	\
+	(objPtr)->internalRep.wideValue = (long)(i);	\
 	(objPtr)->typePtr = &tclIntType;		\
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
