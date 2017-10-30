@@ -2335,8 +2335,6 @@ declare 631 {
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
-
-
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only

@@ -16,7 +16,7 @@
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact Tcl 8.7a2
+#package require -exact Tcl 8.7a2
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -836,3 +836,5 @@ proc tcl::CopyDirectory {action src dest} {
     }
     return
 }
+
+proc @proc {name argspec body} { proc $name [list [list args $argspec]] $body }

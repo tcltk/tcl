@@ -200,6 +200,7 @@ static const CmdInfo builtInCmds[] = {
      * Commands in the generic core.
      */
 
+    {"@args",           Tcl_AtArgsObjCmd,       NULL,                   NULL,   CMD_IS_SAFE},
     {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	NULL,	CMD_IS_SAFE},
     {"apply",		Tcl_ApplyObjCmd,	NULL,			TclNRApplyObjCmd,	CMD_IS_SAFE},
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	NULL,	CMD_IS_SAFE},
@@ -821,6 +822,10 @@ Tcl_CreateInterp(void)
      */
 
     TclClockInit(interp);
+
+    /* Tip 479 - Register literals for the @args command */
+    TclProcInit(interp);
+
 
     /*
      * Register the built-in functions. This is empty now that they are

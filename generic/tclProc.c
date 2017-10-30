@@ -47,11 +47,13 @@ static void		MakeProcError(Tcl_Interp *interp,
 static void		MakeLambdaError(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static int              ProcEatArgs(Tcl_Interp *interp,CallFrame *framePtr,Tcl_Obj *argspec,Tcl_Obj *values);
 
 static Tcl_NRPostProc ApplyNR2;
 static Tcl_NRPostProc InterpProcNR2;
 static Tcl_NRPostProc Uplevel_Callback;
 
+#undef TIP_479_AS_COMPILED_LOCALS 1
 /*
  * The ProcBodyObjType type
  */
@@ -96,6 +98,253 @@ const Tcl_ObjType tclLambdaType = {
     NULL,			/* updateStringProc */
     SetLambdaFromAny		/* setFromAnyProc */
 };
+
+/* Literal Pool */
+static Tcl_Obj *obj_const_aliases;
+static Tcl_Obj *obj_const_args;
+static Tcl_Obj *obj_const_default;
+static Tcl_Obj *obj_const_mandatory;
+static Tcl_Obj *obj_const_variable;
+static Tcl_Obj *obj_const_atspec;
+
+int TclProcInit(Tcl_Interp *interp) {
+  static int once=0;
+  if(!once) {
+    obj_const_aliases=Tcl_NewStringObj("aliases",-1);
+    Tcl_IncrRefCount(obj_const_aliases);
+    obj_const_args=Tcl_NewStringObj("args",-1);
+    Tcl_IncrRefCount(obj_const_args);
+    obj_const_default=Tcl_NewStringObj("default",-1);
+    Tcl_IncrRefCount(obj_const_default);
+    obj_const_mandatory=Tcl_NewStringObj("mandatory",-1);
+    Tcl_IncrRefCount(obj_const_mandatory);
+    obj_const_variable=Tcl_NewStringObj("variable",-1);
+    Tcl_IncrRefCount(obj_const_variable);
+    obj_const_atspec=Tcl_NewStringObj("@spec",-1);
+    Tcl_IncrRefCount(obj_const_atspec);
+    once=1;
+  }
+  return TCL_OK;
+}
+
+/*
+** Code to support TIP 479
+*/
+
+/*
+** TIP 479
+** A simplified TclLookupSimpleVar
+*/
+/*
+ * NOTE: VarHashCreateVar increments the recount of its key argument.
+ * All callers that will call Tcl_DecrRefCount on that argument must
+ * call Tcl_IncrRefCount on it before passing it in.  This requirement
+ * can bubble up to callers of callers .... etc.
+ */
+#define VarHashGetValue(hPtr) \
+    ((Var *) ((char *)hPtr - TclOffset(VarInHash, entry)))
+
+static inline Var *
+VarHashCreateVar(
+    TclVarHashTable *tablePtr,
+    Tcl_Obj *key,
+    int *newPtr)
+{
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&tablePtr->table, key, newPtr);
+
+    if (hPtr) {
+        /* printf(" CREATED %s\n",Tcl_GetString(key)); */
+	return VarHashGetValue(hPtr);
+    } else {
+	return NULL;
+    }
+}
+
+void ProcSetLocalVar (
+    CallFrame *framePtr,
+    Tcl_Obj *varNamePtr, 	/* Scaler name */
+    Tcl_Obj *valuePtr           /* Value to set */
+) {
+    int i, varLen, idx, isNew;
+    const char *varName = TclGetStringFromObj(varNamePtr, &varLen);
+    int localLen, localCt = framePtr->numCompiledLocals;
+    Tcl_Obj **objPtrPtr = &framePtr->localCachePtr->varName0;
+    const char *localNameStr;
+    TclVarHashTable *tablePtr;	/* Points to the hashtable, if any, in which
+				 * to look up the variable. */
+    Var *varPtr;		/* Points to the Var structure returned for
+				 * the variable. */
+
+    varPtr = NULL;
+    idx=-1;
+    isNew=-1;
+#ifdef TIP_479_AS_COMPILED_LOCALS
+    for (i=0 ; i<localCt ; i++, objPtrPtr++) {
+	register Tcl_Obj *objPtr = *objPtrPtr;
+
+	if (objPtr) {
+	    localNameStr = TclGetStringFromObj(objPtr, &localLen);
+	    /* printf("Compiled Local %s %d len: %d\n",localNameStr,i, localLen); fflush(stdout); */
+	    if ((varLen == localLen) && (varName[0] == localNameStr[0])
+			&& !memcmp(varName, localNameStr, varLen)) {
+		idx=i;
+		/* printf("Compiled Locals Match %s %d\n",varName,i); fflush(stdout); */
+		varPtr=(Var *) &framePtr->compiledLocals[i];
+		break;
+	    }
+	}
+    }
+#endif
+    if(!varPtr) {
+        tablePtr = framePtr->varTablePtr;
+
+        if (tablePtr == NULL) {
+            tablePtr = ckalloc(sizeof(TclVarHashTable));
+            TclInitVarHashTable(tablePtr, NULL);
+            framePtr->varTablePtr = tablePtr;
+            //printf("Created varTablePtr\n");
+        }
+        varPtr = VarHashCreateVar(tablePtr, varNamePtr, &isNew);
+    }
+    varPtr->flags=VAR_ARGUMENT;
+    varPtr->value.objPtr=valuePtr;
+    Tcl_IncrRefCount(valuePtr);
+    /*
+    printf("Wrote value for %s = %s %d %d %p\n",
+       Tcl_GetString(varNamePtr),Tcl_GetString(valuePtr),idx,isNew,varPtr);
+    */
+}
+
+int ProcEatArgs(
+    Tcl_Interp *interp,
+    CallFrame *framePtr,
+    Tcl_Obj *argspec,
+    Tcl_Obj *argsValuePtr
+) {
+    Tcl_DictSearch search;
+    Tcl_Obj *fieldname, *fieldspec;
+    int done=0;
+    int isNew=0,idx=-1;
+    if (Tcl_DictObjFirst(interp, argspec, &search,
+        &fieldname, &fieldspec, &done) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    ProcSetLocalVar(framePtr,obj_const_atspec,argspec);
+
+    Tcl_IncrRefCount(argspec);	/* Local var is a reference. */
+    for (; !done ; Tcl_DictObjNext(&search, &fieldname, &fieldspec, &done)) {
+        Tcl_Obj *iVal;
+        Tcl_Obj *aliases,*defaultObj,*mandatoryObj;
+        int mandatory=1;
+
+        if(Tcl_DictObjGet(interp,argsValuePtr,fieldname,&iVal)!=TCL_OK) return TCL_ERROR;
+        if(iVal) {
+            ProcSetLocalVar(framePtr,fieldname,iVal);
+            continue;
+        }
+        /* Fight for another day - Look through the aliases */
+        if(Tcl_DictObjGet(interp,fieldspec,obj_const_aliases,&aliases)!=TCL_OK) return TCL_ERROR;
+        if(aliases) {
+            Tcl_Obj **varv;
+            int varc,vargi;
+            if (Tcl_ListObjGetElements(interp, aliases, &varc, &varv) != TCL_OK) return TCL_ERROR;
+            for(vargi=0;vargi<varc;vargi++) {
+                if(Tcl_DictObjGet(interp,argsValuePtr,varv[vargi],&iVal)!=TCL_OK) return TCL_ERROR;
+                if(iVal) {
+                    ProcSetLocalVar(framePtr,fieldname,iVal);
+                    break;
+                }
+            }
+        }
+        if(iVal) {
+            continue;
+        }
+        if(Tcl_DictObjGet(interp,fieldspec,obj_const_default,&defaultObj)!=TCL_OK) return TCL_ERROR;
+        if(defaultObj) {
+            ProcSetLocalVar(framePtr,fieldname,defaultObj);
+            continue;
+        }
+        if(Tcl_DictObjGet(interp,fieldspec,obj_const_mandatory,&mandatoryObj)!=TCL_OK) return TCL_ERROR;
+        if(mandatoryObj) {
+            if(Tcl_GetBooleanFromObj(interp,mandatoryObj,&mandatory)) return TCL_ERROR;
+        }
+        if(mandatory) {
+            printf("Did not find %s\n",Tcl_GetString(fieldname));
+            Tcl_AppendResult(interp,"Error: ", Tcl_GetString(fieldname), " is required", (char *)NULL);
+            return TCL_ERROR;
+        }
+    }
+    fflush(stdout);
+    Tcl_DictObjDone(&search);
+    return TCL_OK;
+}
+
+int Tcl_AtArgsObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *CONST objv[]
+) {
+    Tcl_DictSearch search;
+    Tcl_Obj *fieldname, *fieldspec, *argspec, *argdat;
+    int done=0;
+
+    if(objc!=3) {
+        Tcl_WrongNumArgs(interp, 1, objv, "argspec argdat");
+        return TCL_ERROR;
+    }
+    argspec=objv[1];
+    argdat=objv[2];
+    Tcl_ObjSetVar2(interp,obj_const_atspec,NULL,argspec,0);
+
+    if (Tcl_DictObjFirst(interp, argspec, &search,
+        &fieldname, &fieldspec, &done) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    for (; !done ; Tcl_DictObjNext(&search, &fieldname, &fieldspec, &done)) {
+        Tcl_Obj *iVal;
+        Tcl_Obj *aliases,*defaultObj,*mandatoryObj;
+        int mandatory=1;
+        if(Tcl_DictObjGet(interp,argdat,fieldname,&iVal)!=TCL_OK) return TCL_ERROR;
+        if(iVal) {
+            Tcl_ObjSetVar2(interp,fieldname,NULL,iVal,0);
+            continue;
+        }
+        /* Fight for another day - Look through the aliases */
+        if(Tcl_DictObjGet(interp,fieldspec,obj_const_aliases,&aliases)!=TCL_OK) return TCL_ERROR;
+        if(aliases) {
+            Tcl_Obj **varv;
+            int varc,vargi;
+            if (Tcl_ListObjGetElements(interp, aliases, &varc, &varv) != TCL_OK) return TCL_ERROR;
+            for(vargi=0;vargi<varc;vargi++) {
+                if(Tcl_DictObjGet(interp,argdat,varv[vargi],&iVal)!=TCL_OK) return TCL_ERROR;
+                if(iVal) {
+                      Tcl_ObjSetVar2(interp,fieldname,NULL,iVal,0);
+                      break;
+                }
+            }
+        }
+        if(iVal) {
+            continue;
+        }
+        if(Tcl_DictObjGet(interp,fieldspec,obj_const_default,&defaultObj)!=TCL_OK) return TCL_ERROR;
+        if(defaultObj) {
+            Tcl_ObjSetVar2(interp,fieldname,NULL,defaultObj,0);
+            continue;
+        }
+        if(Tcl_DictObjGet(interp,fieldspec,obj_const_mandatory,&mandatoryObj)!=TCL_OK) return TCL_ERROR;
+        if(mandatoryObj) {
+            if(Tcl_GetBooleanFromObj(interp,mandatoryObj,&mandatory)) return TCL_ERROR;
+        }
+        if(mandatory) {
+            Tcl_AppendResult(interp,"Error: ", Tcl_GetString(fieldname), " is required", (char *)NULL);
+            return TCL_ERROR;
+        }
+    }
+    Tcl_DictObjDone(&search);
+    return TCL_OK;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -359,6 +608,7 @@ Tcl_ProcObjCmd(
     return TCL_OK;
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
@@ -476,11 +726,10 @@ TclCreateProc(
      *
      * THIS FAILS IF THE ARG LIST OBJECT'S STRING REP CONTAINS NULS.
      */
-
     args = TclGetStringFromObj(argsPtr, &length);
     result = Tcl_SplitList(interp, args, &numArgs, &argArray);
     if (result != TCL_OK) {
-	goto procError;
+        goto procError;
     }
 
     if (precompiled) {
@@ -658,9 +907,90 @@ TclCreateProc(
 		    && (localPtr->name[0] == 'a')
 		    && (strcmp(localPtr->name, "args") == 0)) {
 		localPtr->flags |= VAR_IS_ARGS;
+#ifdef TIP_479_AS_COMPILED_LOCALS
+		if(fieldCount == 2) {
+		    /*
+		    ** TIP 479
+		    ** Use the otherwise ignored default field for the last
+		    ** parameter named args as a dict-based specification for
+		    ** named parameters
+		    */
+		    Tcl_DictSearch search;
+                    Tcl_Obj *fieldname, *fieldspec;
+                    int done=0;
+                    char *Fieldname;
+                    int FieldLen;
+                    Tcl_Obj *argspec;
+
+                    /*
+                    ** Create entries in runtime procedure frame's array for
+                    ** each named parameter
+                    */
+                    argspec=localPtr->defValuePtr;
+                    if(Tcl_DictObjFirst(NULL, argspec, &search,&fieldname, &fieldspec, &done) != TCL_OK) goto procError;
+                    /* Allocate one slot for the @procs variable */
+                    procPtr->numCompiledLocals++;
+                    Fieldname=Tcl_GetStringFromObj(obj_const_atspec,&FieldLen);
+  	            localPtr = ckalloc(TclOffset(CompiledLocal, name) + FieldLen+1);
+                    procPtr->lastLocalPtr->nextPtr = localPtr;
+                    procPtr->lastLocalPtr = localPtr;
+ 	            memcpy(localPtr->name, Fieldname, FieldLen + 1);
+
+                    localPtr->nextPtr = NULL;
+                    localPtr->nameLength = FieldLen;
+                    localPtr->frameIndex = i;
+	            localPtr->flags = VAR_ARGUMENT;
+                    localPtr->resolveInfo = NULL;
+		    localPtr->defValuePtr = argspec;
+		    Tcl_IncrRefCount(localPtr->defValuePtr);
+                    printf("named parameter %s # %d %d\n",Fieldname,procPtr->numCompiledLocals,localPtr->flags);
+
+                    for (; !done ; Tcl_DictObjNext(&search, &fieldname, &fieldspec, &done)) {
+                        /* Allocate one slot for each of the other named parameters */
+                        Tcl_Obj *variable,*defaultObj,*mandatoryObj;
+                        int mandatory=1;
+
+                        variable=NULL;
+                        defaultObj=NULL;
+                        mandatoryObj=NULL;
+                        Tcl_DictObjGet(NULL,fieldspec,obj_const_variable,&variable);
+                        if(!variable) {
+                            variable=fieldname;
+                        }
+                        Tcl_DictObjGet(NULL,fieldspec,obj_const_default,&defaultObj);
+                        Tcl_DictObjGet(NULL,fieldspec,obj_const_mandatory,&mandatoryObj);
+                        if(mandatoryObj) {
+                            if(Tcl_GetBooleanFromObj(interp,mandatoryObj,&mandatory)) {
+                                mandatory=1;
+                            }
+                        }
+                        /* Non-mandatory fields are not tracked */
+                        if(!defaultObj && !mandatory) continue;
+
+                        procPtr->numCompiledLocals++;
+                        Fieldname=Tcl_GetStringFromObj(variable,&FieldLen);
+     	                localPtr = ckalloc(TclOffset(CompiledLocal, name) + FieldLen+1);
+        	        procPtr->lastLocalPtr->nextPtr = localPtr;
+ 		        procPtr->lastLocalPtr = localPtr;
+ 		     	memcpy(localPtr->name, Fieldname, FieldLen + 1);
+                        localPtr->nextPtr = NULL;
+                        localPtr->nameLength = FieldLen;
+                        localPtr->frameIndex = i;
+	                localPtr->flags = VAR_ARGUMENT;
+                        printf("named parameter %s # %d %d\n",Fieldname,procPtr->numCompiledLocals,localPtr->flags);
+                        localPtr->resolveInfo = NULL;
+                        if(defaultObj) {
+                            localPtr->defValuePtr=defaultObj;
+                            Tcl_IncrRefCount(localPtr->defValuePtr);
+                        } else {
+                            localPtr->defValuePtr=NULL;
+                        }
+		    }
+		}
+#endif
 	    }
 	}
-
+        fflush(stdout);
 	ckfree(fieldValues);
     }
 
@@ -1099,14 +1429,17 @@ ProcWrongNumArgs(
     for (i=1 ; i<=numArgs ; i++, defPtr++) {
 	Tcl_Obj *argObj;
 	Tcl_Obj *namePtr = localName(framePtr, i-1);
-
-	if (defPtr->value.objPtr != NULL) {
+	if (defPtr->flags & VAR_IS_ARGS) {
+	    numArgs--;
+       	    if (defPtr->value.objPtr) {
+	       final = TclGetString(defPtr->value.objPtr);
+            } else {
+	       final = "?arg ...?";
+            }
+	    break;
+	} else if (defPtr->value.objPtr != NULL) {
 	    TclNewObj(argObj);
 	    Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?", NULL);
-	} else if (defPtr->flags & VAR_IS_ARGS) {
-	    numArgs--;
-	    final = "?arg ...?";
-	    break;
 	} else {
 	    argObj = namePtr;
 	    Tcl_IncrRefCount(namePtr);
@@ -1154,7 +1487,6 @@ TclInitCompiledLocals(
     Var *varPtr = framePtr->compiledLocals;
     Tcl_Obj *bodyPtr;
     ByteCode *codePtr;
-
     bodyPtr = framePtr->procPtr->bodyPtr;
     if (bodyPtr->typePtr != &tclByteCodeType) {
 	Tcl_Panic("body object for proc attached to frame is not a byte code type");
@@ -1168,7 +1500,6 @@ TclInitCompiledLocals(
 	framePtr->localCachePtr = codePtr->localCachePtr;
 	framePtr->localCachePtr->refCount++;
     }
-
     InitResolvedLocals(interp, codePtr, varPtr, nsPtr);
 }
 
@@ -1202,7 +1533,6 @@ InitResolvedLocals(
     CompiledLocal *firstLocalPtr, *localPtr;
     int varNum;
     Tcl_ResolvedVarInfo *resVarInfo;
-
     /*
      * Find the localPtr corresponding to varPtr
      */
@@ -1354,8 +1684,9 @@ InitLocalCache(
 		    &new, /* nsPtr */ NULL, 0, NULL);
 	    Tcl_IncrRefCount(*namePtr);
 	}
-
-	if (i < numArgs) {
+/* TIP 479 - There are now arguments past numArgs */
+/*	if (i < numArgs) */
+	if(localPtr->flags & VAR_ARGUMENT) {
 	    varPtr->flags = (localPtr->flags & VAR_IS_ARGS);
 	    varPtr->value.objPtr = localPtr->defValuePtr;
 	    varPtr++;
@@ -1403,12 +1734,10 @@ InitArgsAndLocals(
     register Var *varPtr, *defPtr;
     int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
     Tcl_Obj *const *argObjs;
-
     /*
      * Make sure that the local cache of variable names and initial values has
      * been initialised properly .
      */
-
     if (localCt) {
 	if (!codePtr->localCachePtr) {
 	    InitLocalCache(procPtr) ;
@@ -1425,7 +1754,6 @@ InitArgsAndLocals(
      * all the procedure's compiled local variables, including its formal
      * parameters.
      */
-
     varPtr = TclStackAlloc(interp, (int)(localCt * sizeof(Var)));
     framePtr->compiledLocals = varPtr;
     framePtr->numCompiledLocals = localCt;
@@ -1484,10 +1812,25 @@ InitArgsAndLocals(
 
     varPtr->flags = 0;
     if (defPtr && defPtr->flags & VAR_IS_ARGS) {
-	Tcl_Obj *listPtr = Tcl_NewListObj(argCt-i, argObjs+i);
-
-	varPtr->value.objPtr = listPtr;
-	Tcl_IncrRefCount(listPtr);	/* Local var is a reference. */
+        Tcl_Obj *argsValuePtr;
+        /*
+        ** Build a conventional list of arguments
+        ** past the last positional argument, and call it
+        ** args
+        */
+        argsValuePtr = Tcl_NewListObj(argCt-i, argObjs+i);
+        varPtr->value.objPtr = argsValuePtr;
+	if (defPtr->value.objPtr) {
+            /*
+            ** TIP 479
+            ** Feed dict values into compiled locals
+            ** If a required parameter is missing ProcEatArgs
+            ** will return TCL_ERROR.
+            */
+            if(ProcEatArgs(interp,framePtr,defPtr->value.objPtr,argsValuePtr)
+               != TCL_OK) goto incorrectArgs;
+        }
+        Tcl_IncrRefCount(argsValuePtr);	/* Local var is a reference. */
     } else if (argCt == numArgs) {
 	Tcl_Obj *objPtr = argObjs[i];
 
@@ -1517,7 +1860,6 @@ InitArgsAndLocals(
 	    InitResolvedLocals(interp, codePtr, varPtr, framePtr->nsPtr);
 	}
     }
-
     return TCL_OK;
 
     /*
@@ -1993,7 +2335,6 @@ TclProcCompileProc(
 	 */
 
 	iPtr->compiledProcPtr = procPtr;
-
 	if (procPtr->numCompiledLocals > procPtr->numArgs) {
 	    CompiledLocal *clPtr = procPtr->firstLocalPtr;
 	    CompiledLocal *lastPtr = NULL;
@@ -2025,7 +2366,6 @@ TclProcCompileProc(
 	    }
 	    procPtr->numCompiledLocals = procPtr->numArgs;
 	}
-
 	(void) TclPushStackFrame(interp, &framePtr, (Tcl_Namespace *) nsPtr,
 		/* isProcCallFrame */ 0);
 
