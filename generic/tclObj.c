@@ -3550,12 +3550,7 @@ TclGetNumberFromObj(
 	    *clientDataPtr = &objPtr->internalRep.doubleValue;
 	    return TCL_OK;
 	}
-	if (objPtr->typePtr == &tclIntType) {
-	    *typePtr = TCL_NUMBER_LONG;
-	    *clientDataPtr = &objPtr->internalRep.wideValue;
-	    return TCL_OK;
-	}
-	if (objPtr->typePtr == &tclWideIntType) {
+	if (objPtr->typePtr == &tclIntType || objPtr->typePtr == &tclWideIntType) {
 	    *typePtr = TCL_NUMBER_WIDE;
 	    *clientDataPtr = &objPtr->internalRep.wideValue;
 	    return TCL_OK;
