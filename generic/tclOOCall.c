@@ -231,7 +231,7 @@ FreeMethodNameRep(
  * TclOOInvokeContext --
  *
  *	Invokes a single step along a method call-chain context. Note that the
- *	invokation of a step along the chain can cause further steps along the
+ *	invocation of a step along the chain can cause further steps along the
  *	chain to be invoked. Note that this function is written to be as light
  *	in stack usage as possible.
  *
@@ -828,7 +828,7 @@ AddMethodToCallChain(
 	     * Call chain semantics states that methods come as *late* in the
 	     * call chain as possible. This is done by copying down the
 	     * following methods. Note that this does not change the number of
-	     * method invokations in the call chain; it just rearranges them.
+	     * method invocations in the call chain; it just rearranges them.
 	     */
 
 	    Class *declCls = callPtr->chain[i].filterDeclarer;
@@ -933,7 +933,7 @@ IsStillValid(
  * TclOOGetCallContext --
  *
  *	Responsible for constructing the call context, an ordered list of all
- *	method implementations to be called as part of a method invokation.
+ *	method implementations to be called as part of a method invocation.
  *	This method is central to the whole operation of the OO system.
  *
  * ----------------------------------------------------------------------
@@ -1516,7 +1516,7 @@ TclOORenderCallChain(
     /*
      * Do the actual construction of the descriptions. They consist of a list
      * of triples that describe the details of how a method is understood. For
-     * each triple, the first word is the type of invokation ("method" is
+     * each triple, the first word is the type of invocation ("method" is
      * normal, "unknown" is special because it adds the method name as an
      * extra argument when handled by some method types, and "filter" is
      * special because it's a filter method). The second word is the name of

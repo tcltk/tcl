@@ -3112,7 +3112,7 @@ Tcl_DeleteCommandFromToken(
     /*
      * We must delete this command, even though both traces and delete procs
      * may try to avoid this (renaming the command etc). Also traces and
-     * delete procs may try to delete the command themsevles. This flag
+     * delete procs may try to delete the command themselves. This flag
      * declares that a delete is in progress and that recursive deletes should
      * be ignored.
      */
@@ -7753,8 +7753,8 @@ ExprRandFunc(
 	iPtr->flags |= RAND_SEED_INITIALIZED;
 
 	/*
-	 * Take into consideration the thread this interp is running in order
-	 * to insure different seeds in different threads (bug #416643)
+	 * To ensure different seeds in different threads (bug #416643), 
+	 * take into consideration the thread this interp is running in.
 	 */
 
 	iPtr->randSeed = TclpGetClicks() + (PTR2INT(Tcl_GetCurrentThread())<<12);
@@ -9122,7 +9122,7 @@ TclNRCoroutineObjCmd(
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
 	    NULL, NULL, NULL);
 
-    /* insure that the command is looked up in the correct namespace */
+    /* ensure that the command is looked up in the correct namespace */
     iPtr->lookupNsPtr = lookupNsPtr;
     Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), 0);
     iPtr->numLevels--;
