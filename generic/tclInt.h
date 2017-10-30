@@ -2720,9 +2720,7 @@ MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
 MODULE_SCOPE const Tcl_ObjType tclEnsembleCmdType;
-#ifndef TCL_WIDE_INT_IS_LONG
 MODULE_SCOPE const Tcl_ObjType tclWideIntType;
-#endif
 MODULE_SCOPE const Tcl_ObjType tclRegexpType;
 MODULE_SCOPE Tcl_ObjType tclCmdNameType;
 
@@ -4545,11 +4543,13 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     do {						\
 	TclInvalidateStringRep(objPtr);			\
 	TclFreeIntRep(objPtr);				\
-	(objPtr)->internalRep.wideValue = (long)(i);	\
+	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(i);	\
 	(objPtr)->typePtr = &tclIntType;		\
     } while (0)
 
-#ifndef TCL_WIDE_INT_IS_LONG
+#ifdef TCL_WIDE_INT_IS_LONG
+#define TclSetWideIntObj(objPtr, w) TclSetLongObj(objPtr, w)
+#else
 #define TclSetWideIntObj(objPtr, w) \
     do {							\
 	TclInvalidateStringRep(objPtr);				\
