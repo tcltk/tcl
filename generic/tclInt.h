@@ -4589,11 +4589,25 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	TclAllocObjStorage(objPtr);			\
 	(objPtr)->refCount = 0;				\
 	(objPtr)->bytes = NULL;				\
-	(objPtr)->internalRep.wideValue = (long)(i);	\
+	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(i);	\
 	(objPtr)->typePtr = &tclIntType;		\
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
+#ifndef TCL_WIDE_INT_IS_LONG
+#define TclNewWideObj(objPtr, i) \
+    do {						\
+	TclIncrObjsAllocated();				\
+	TclAllocObjStorage(objPtr);			\
+	(objPtr)->refCount = 0;				\
+	(objPtr)->bytes = NULL;				\
+	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(i);	\
+	(objPtr)->typePtr = &tclWideIntType;		\
+	TCL_DTRACE_OBJ_CREATE(objPtr);			\
+    } while (0)
+#else
+#define TclNewWideObj(objPtr, i) TclNewLongObj(objPtr, i)
+#endif
 #define TclNewDoubleObj(objPtr, d) \
     do {							\
 	TclIncrObjsAllocated();					\
@@ -4618,6 +4632,9 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #else /* TCL_MEM_DEBUG */
 #define TclNewLongObj(objPtr, l) \
     (objPtr) = Tcl_NewLongObj(l)
+
+#define TclNewWideObj(objPtr, w) \
+    (objPtr) = Tcl_NewWideIntObj(w)
 
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)
