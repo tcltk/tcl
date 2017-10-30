@@ -2923,11 +2923,11 @@ Tcl_DStringGetResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the result
 				 * of interp. */
 {
-    Tcl_Obj *obj = Tcl_GetObjResult(interp);
-    const char *bytes = TclGetString(obj);
+    int length;
+    char *bytes = TclGetStringFromObj(Tcl_GetObjResult(interp), &length);
 
     Tcl_DStringFree(dsPtr);
-    Tcl_DStringAppend(dsPtr, bytes, obj->length);
+    Tcl_DStringAppend(dsPtr, bytes, length);
     Tcl_ResetResult(interp);
 }
 
