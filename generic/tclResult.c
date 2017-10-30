@@ -372,6 +372,7 @@ Tcl_GetStringResult(
     register Tcl_Interp *interp)/* Interpreter whose result to return. */
 {
     Interp *iPtr = (Interp *) interp;
+
     return Tcl_GetString(iPtr->objResultPtr);
 }
 
@@ -441,6 +442,7 @@ Tcl_GetObjResult(
     Tcl_Interp *interp)		/* Interpreter whose result to return. */
 {
     register Interp *iPtr = (Interp *) interp;
+
     return iPtr->objResultPtr;
 }
 
@@ -572,7 +574,8 @@ Tcl_AppendElement(
  *
  * Side effects:
  *	Frees the memory associated with interp's result but does not change
- *	any part of the error dictionary.
+ *	any part of the error dictionary (i.e., the errorinfo and errorcode
+ *	remain the same).
  *
  *----------------------------------------------------------------------
  */
