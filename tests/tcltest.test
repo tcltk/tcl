@@ -544,6 +544,7 @@ set notReadableDir [file join [temporaryDirectory] notreadable]
 set notWriteableDir [file join [temporaryDirectory] notwriteable]
 makeDirectory notreadable
 makeDirectory notwriteable
+
 switch -- $::tcl_platform(platform) {
     unix {
 	file attributes $notReadableDir -permissions 00333
