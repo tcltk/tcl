@@ -3598,7 +3598,7 @@ TclGetIntForIndex(
 	 * be converted to one, use it.
 	 */
 
-	*indexPtr = endValue + objPtr->internalRep.longValue;
+	*indexPtr = endValue + objPtr->internalRep.wideValue;
 	return TCL_OK;
     }
 
@@ -3690,9 +3690,9 @@ UpdateStringOfEndOffset(
     register int len = 3;
 
     memcpy(buffer, "end", 4);
-    if (objPtr->internalRep.longValue != 0) {
+    if (objPtr->internalRep.wideValue != 0) {
 	buffer[len++] = '-';
-	len += TclFormatInt(buffer+len, -(objPtr->internalRep.longValue));
+	len += TclFormatInt(buffer+len, -(objPtr->internalRep.wideValue));
     }
     objPtr->bytes = ckalloc((unsigned) len+1);
     memcpy(objPtr->bytes, buffer, (unsigned) len+1);
@@ -3790,7 +3790,7 @@ SetEndOffsetFromAny(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.longValue = offset;
+    objPtr->internalRep.wideValue = offset;
     objPtr->typePtr = &tclEndOffsetType;
 
     return TCL_OK;

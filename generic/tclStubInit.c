@@ -244,7 +244,7 @@ static Tcl_Obj *dbNewLongObj(
     TclDbNewObj(objPtr, file, line);
     objPtr->bytes = NULL;
 
-    objPtr->internalRep.longValue = (long) intValue;
+    objPtr->internalRep.wideValue = (long) intValue;
     objPtr->typePtr = &tclIntType;
     return objPtr;
 #else

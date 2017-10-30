@@ -1289,10 +1289,10 @@ TclParseNumber(
 		} else {
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
-			objPtr->internalRep.longValue =
+			objPtr->internalRep.wideValue =
 				- (long) octalSignificandWide;
 		    } else {
-			objPtr->internalRep.longValue =
+			objPtr->internalRep.wideValue =
 				(long) octalSignificandWide;
 		    }
 		}
@@ -1336,10 +1336,10 @@ TclParseNumber(
 		} else {
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
-			objPtr->internalRep.longValue =
+			objPtr->internalRep.wideValue =
 				- (long) significandWide;
 		    } else {
-			objPtr->internalRep.longValue =
+			objPtr->internalRep.wideValue =
 				(long) significandWide;
 		    }
 		}

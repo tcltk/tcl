@@ -1810,7 +1810,7 @@ Tcl_DbNewBooleanObj(
     TclDbNewObj(objPtr, file, line);
     objPtr->bytes = NULL;
 
-    objPtr->internalRep.longValue = (boolValue != 0);
+    objPtr->internalRep.wideValue = (boolValue != 0);
     objPtr->typePtr = &tclIntType;
     return objPtr;
 }
@@ -1888,11 +1888,11 @@ Tcl_GetBooleanFromObj(
 {
     do {
 	if (objPtr->typePtr == &tclIntType) {
-	    *boolPtr = (objPtr->internalRep.longValue != 0);
+	    *boolPtr = (objPtr->internalRep.wideValue != 0);
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclBooleanType) {
-	    *boolPtr = (int) objPtr->internalRep.longValue;
+	    *boolPtr = (int) objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclDoubleType) {
@@ -1960,7 +1960,7 @@ TclSetBooleanFromAny(
 
     if (objPtr->bytes == NULL) {
 	if (objPtr->typePtr == &tclIntType) {
-	    switch (objPtr->internalRep.longValue) {
+	    switch (objPtr->internalRep.wideValue) {
 	    case 0L: case 1L:
 		return TCL_OK;
 	    }
@@ -2107,13 +2107,13 @@ ParseBoolean(
 
   goodBoolean:
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.longValue = newBool;
+    objPtr->internalRep.wideValue = newBool;
     objPtr->typePtr = &tclBooleanType;
     return TCL_OK;
 
   numericBoolean:
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.longValue = newBool;
+    objPtr->internalRep.wideValue = newBool;
     objPtr->typePtr = &tclIntType;
     return TCL_OK;
 }
@@ -2294,7 +2294,7 @@ Tcl_GetDoubleFromObj(
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclIntType) {
-	    *dblPtr = objPtr->internalRep.longValue;
+	    *dblPtr = objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclBignumType) {
@@ -2569,7 +2569,7 @@ UpdateStringOfInt(
     char buffer[TCL_INTEGER_SPACE];
     register int len;
 
-    len = TclFormatInt(buffer, objPtr->internalRep.longValue);
+    len = TclFormatInt(buffer, objPtr->internalRep.wideValue);
 
     objPtr->bytes = ckalloc(len + 1);
     memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
@@ -2679,7 +2679,7 @@ Tcl_DbNewLongObj(
     TclDbNewObj(objPtr, file, line);
     objPtr->bytes = NULL;
 
-    objPtr->internalRep.longValue = longValue;
+    objPtr->internalRep.wideValue = longValue;
     objPtr->typePtr = &tclIntType;
     return objPtr;
 }
@@ -2759,7 +2759,7 @@ Tcl_GetLongFromObj(
 {
     do {
 	if (objPtr->typePtr == &tclIntType) {
-	    *longPtr = objPtr->internalRep.longValue;
+	    *longPtr = objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
 #ifndef TCL_WIDE_INT_IS_LONG
@@ -3080,7 +3080,7 @@ Tcl_GetWideIntFromObj(
 	}
 #endif
 	if (objPtr->typePtr == &tclIntType) {
-	    *wideIntPtr = (Tcl_WideInt) objPtr->internalRep.longValue;
+	    *wideIntPtr = (Tcl_WideInt) objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclDoubleType) {
@@ -3402,7 +3402,7 @@ GetBignumFromObj(
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclIntType) {
-	    TclInitBignumFromLong(bignumValue, objPtr->internalRep.longValue);
+	    TclInitBignumFromLong(bignumValue, objPtr->internalRep.wideValue);
 	    return TCL_OK;
 	}
 #ifndef TCL_WIDE_INT_IS_LONG
@@ -3653,7 +3653,7 @@ TclGetNumberFromObj(
 	}
 	if (objPtr->typePtr == &tclIntType) {
 	    *typePtr = TCL_NUMBER_LONG;
-	    *clientDataPtr = &objPtr->internalRep.longValue;
+	    *clientDataPtr = &objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
 #ifndef TCL_WIDE_INT_IS_LONG

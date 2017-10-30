@@ -503,7 +503,7 @@ VarHashCreateVar(
     (((objPtr)->typePtr == &tclIntType)					\
 	?	(*(tPtr) = TCL_NUMBER_LONG,				\
 		*(ptrPtr) = (ClientData)				\
-		    (&((objPtr)->internalRep.longValue)), TCL_OK) :	\
+		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
     ((objPtr)->typePtr == &tclDoubleType)				\
 	?	(((TclIsNaN((objPtr)->internalRep.doubleValue))		\
 		    ?	(*(tPtr) = TCL_NUMBER_NAN)			\
@@ -518,7 +518,7 @@ VarHashCreateVar(
     (((objPtr)->typePtr == &tclIntType)					\
 	?	(*(tPtr) = TCL_NUMBER_LONG,				\
 		*(ptrPtr) = (ClientData)				\
-		    (&((objPtr)->internalRep.longValue)), TCL_OK) :	\
+		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
     ((objPtr)->typePtr == &tclWideIntType)				\
 	?	(*(tPtr) = TCL_NUMBER_WIDE,				\
 		*(ptrPtr) = (ClientData)				\
@@ -545,7 +545,7 @@ VarHashCreateVar(
 #define TclGetBooleanFromObj(interp, objPtr, boolPtr) \
     ((((objPtr)->typePtr == &tclIntType)				\
 	|| ((objPtr)->typePtr == &tclBooleanType))			\
-	? (*(boolPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
+	? (*(boolPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
 	: Tcl_GetBooleanFromObj((interp), (objPtr), (boolPtr)))
 
 /*
@@ -6692,7 +6692,7 @@ TEBCresume(
 
 	iterVarPtr = LOCAL(infoPtr->loopCtTemp);
 	valuePtr = iterVarPtr->value.objPtr;
-	iterNum = valuePtr->internalRep.longValue + 1;
+	iterNum = valuePtr->internalRep.wideValue + 1;
 	TclSetLongObj(valuePtr, iterNum);
 
 	/*
