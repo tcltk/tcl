@@ -1482,6 +1482,18 @@ test oo-11.4 {OO: cleanup} {
     lappend result [bar0 destroy] [oo::object create foo] [foo destroy] \
 	[oo::object create bar2] [bar2 destroy]
 } {1 {can't create object "foo": command already exists with that name} destroyed {} ::foo {} ::bar2 {}}
+test oo-11.5 {OO: cleanup} {
+    oo::class create obj1
+
+    trace add command obj1 delete {apply {{name1 name2 action} {
+	set namespace [info object namespace $name1]
+	namespace delete $namespace
+    }}}
+
+    rename obj1 {}
+    # No segmentation fault
+    return done
+} done
 
 test oo-12.1 {OO: filters} {
     oo::class create Aclass
