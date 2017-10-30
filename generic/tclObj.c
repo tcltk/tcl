@@ -210,10 +210,6 @@ static int		SetDoubleFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		SetIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfDouble(Tcl_Obj *objPtr);
 static void		UpdateStringOfInt(Tcl_Obj *objPtr);
-#ifndef TCL_WIDE_INT_IS_LONG
-static void		UpdateStringOfWideInt(Tcl_Obj *objPtr);
-static int		SetWideIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-#endif
 static void		FreeBignum(Tcl_Obj *objPtr);
 static void		DupBignum(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		UpdateStringOfBignum(Tcl_Obj *objPtr);
@@ -275,8 +271,8 @@ const Tcl_ObjType tclWideIntType = {
     "wideInt",			/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
-    UpdateStringOfWideInt,	/* updateStringProc */
-    SetWideIntFromAny		/* setFromAnyProc */
+    UpdateStringOfInt,	/* updateStringProc */
+    SetIntFromAny		/* setFromAnyProc */
 };
 #endif
 const Tcl_ObjType tclBignumType = {
@@ -2538,9 +2534,8 @@ SetIntFromAny(
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Obj *objPtr)		/* Pointer to the object to convert */
 {
-    long l;
-
-    return TclGetLongFromObj(interp, objPtr, &l);
+    Tcl_WideInt w;
+    return Tcl_GetWideIntFromObj(interp, objPtr, &w);
 }
 
 /*
@@ -2836,49 +2831,6 @@ Tcl_GetLongFromObj(
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
-#ifndef TCL_WIDE_INT_IS_LONG
-
-/*
- *----------------------------------------------------------------------
- *
- * UpdateStringOfWideInt --
- *
- *	Update the string representation for a wide integer object. Note: this
- *	function does not free an existing old string rep so storage will be
- *	lost if this has not already been done.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The object's string is set to a valid string that results from the
- *	wideInt-to-string conversion.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-UpdateStringOfWideInt(
-    register Tcl_Obj *objPtr)	/* Int object whose string rep to update. */
-{
-    char buffer[TCL_INTEGER_SPACE+2];
-    register unsigned len;
-    register Tcl_WideInt wideVal = objPtr->internalRep.wideValue;
-
-    /*
-     * Note that sprintf will generate a compiler warning under Mingw claiming
-     * %I64 is an unknown format specifier. Just ignore this warning. We can't
-     * use %L as the format specifier since that gets printed as a 32 bit
-     * value.
-     */
-
-    sprintf(buffer, "%" TCL_LL_MODIFIER "d", wideVal);
-    len = strlen(buffer);
-    objPtr->bytes = ckalloc(len + 1);
-    memcpy(objPtr->bytes, buffer, len + 1);
-    objPtr->length = len;
-}
-#endif /* !TCL_WIDE_INT_IS_LONG */
 
 /*
  *----------------------------------------------------------------------
@@ -3133,33 +3085,6 @@ Tcl_GetWideIntFromObj(
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
-#ifndef TCL_WIDE_INT_IS_LONG
-
-/*
- *----------------------------------------------------------------------
- *
- * SetWideIntFromAny --
- *
- *	Attempts to force the internal representation for a Tcl object to
- *	tclWideIntType, specifically.
- *
- * Results:
- *	The return value is a standard object Tcl result. If an error occurs
- *	during conversion, an error message is left in the interpreter's
- *	result unless "interp" is NULL.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SetWideIntFromAny(
-    Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Obj *objPtr)		/* Pointer to the object to convert */
-{
-    Tcl_WideInt w;
-    return Tcl_GetWideIntFromObj(interp, objPtr, &w);
-}
-#endif /* !TCL_WIDE_INT_IS_LONG */
 
 /*
  *----------------------------------------------------------------------
