@@ -383,10 +383,112 @@ test proc-7.4 {Proc struct outlives its interp: Bug 3532959} {
     interp delete slave
     unset lambda
 } {}
+
 
 # cleanup
 catch {rename p ""}
 catch {rename t ""}
+
+
+test proc-8.0 {Named parameters tip-479 map named parameters to local vars} -body {
+    proc p {{args {color {default red} flavor {default strawberry}}}} {
+       return [list $color $flavor]
+    }
+    p
+} -result {red strawberry} -cleanup {
+  rename p ""
+}
+
+test proc-8.1 {Named parameters tip-479 map named parameters to args} -body {
+    proc p {{args {color {default red} flavor {default strawberry}}}} {
+       return $args
+    }
+    p
+} -result {} -cleanup {
+  rename p ""
+}
+
+test proc-8.2 {Named parameters tip-479 present in info locals} -body {
+    proc p {{args {color {default red} flavor {default strawberry}}}} {
+       return [info locals]
+    }
+    p
+} -result {args flavor color @spec} -cleanup {
+  rename p ""
+}
+
+test proc-8.3 {Named parameters tip-479 fail on lack of a named parameter} -body {
+    proc p {{args {color {} flavor {default strawberry}}}} {
+       return $args
+    }
+    p
+} -returnCodes 1 -result {wrong # args: should be "p color {} flavor {default strawberry}"} -cleanup {
+  rename p ""
+}
+
+test proc-8.4 {Named parameters tip-479 accept additional named parameters} -body {
+    proc p {{args {color {default red} flavor {default strawberry}}}} {
+       return $args
+    }
+    p shape oval
+} -result {shape oval} -cleanup {
+  rename p ""
+}
+
+test proc-8.5 {Named parameters tip-479 do not map fields outside of the spec} -body {
+    proc p {{args {color {default red} flavor {default strawberry}}}} {
+       return [info locals]
+    }
+    p shape oval
+} -result {args flavor color @spec} -cleanup {
+  rename p ""
+}
+
+test proc-8.6 {Named parameters tip-479 non-manditory fields are not mapped} -body {
+    proc p {{args {color {default red} flavor {mandatory 0}}}} {
+       return [info locals]
+    }
+    p
+} -result {args color @spec} -cleanup {
+  rename p ""
+}
+
+test proc-8.7 {Named parameters tip-479 named parameters can be in any order} -body {
+    proc p {{args {color {default red} flavor {default strawberry}}}} {
+       return [list $color $flavor]
+    }
+    p flavor cherry color blue
+} -result {blue cherry} -cleanup {
+  rename p ""
+}
+
+test proc-8.8 {Named parameters tip-479 order of parameters preserved in args} -body {
+    proc p {{args {color {default red} flavor {default strawberry}}}} {
+       return $args
+    }
+    p flavor cherry color blue
+} -result {flavor cherry color blue} -cleanup {
+  rename p ""
+}
+
+test proc-8.9 {Named parameters tip-479 can introspecs argument specs via the @spec variable} -body {
+    proc p {{args {color {default red} flavor {default strawberry}}}} {
+       return ${@spec}
+    }
+    p flavor cherry color blue
+} -result {color {default red} flavor {default strawberry}} -cleanup {
+  rename p ""
+}
+
+test proc-8.10 {Named parameters tip-479 spec available in [info args]} -body {
+    proc p {{args {color {default red} flavor {default strawberry}}}} {
+       return ${@spec}
+    }
+    info args p
+} -result {args @spec color flavor} -cleanup {
+  rename p ""
+}
+
 ::tcltest::cleanupTests
 return
 
