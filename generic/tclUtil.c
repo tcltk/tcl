@@ -3769,9 +3769,7 @@ SetEndOffsetFromAny(
 	    return TCL_ERROR;
 	}
 	if ((objPtr->typePtr != &tclIntType)
-#ifndef TCL_WIDE_INT_IS_LONG
 		    && (objPtr->typePtr != &tclWideIntType)
-#endif
 		) {
 		goto badIndexFormat;
 	}
