@@ -1774,7 +1774,7 @@ typedef struct AllocCache {
 typedef struct Interp {
     /*
      * The first two fields were named "result" and "freeProc" in earlier
-     * verions of Tcl.  They are no longer used within Tcl, and are no
+     * versions of Tcl.  They are no longer used within Tcl, and are no
      * longer available to be accessed by extensions.  However, they cannot
      * be removed.  Why?  There is a deployed base of stub-enabled extensions
      * that query the value of iPtr->stubTable.  For them to continue to work,
@@ -1792,7 +1792,7 @@ typedef struct Interp {
 				/* Pointer to the exported Tcl stub table. In
 				 * ancient pre-8.1 versions of Tcl this was a
 				 * pointer to the objResultptr or a pointer to a
-				 * buckets array in a hash table.  Deployed stubs
+				 * buckets array in a hash table. Deployed stubs
 				 * enabled extensions check for a NULL pointer value
 				 * and for a TCL_STUBS_MAGIC value to verify they
 				 * are not [load]ing into one of those pre-stubs
