@@ -1580,9 +1580,9 @@ StringIsCmd(
 		result = length1 == 0;
 	    }
 	} else if (((index == STR_IS_TRUE) &&
-		objPtr->internalRep.longValue == 0)
+		objPtr->internalRep.wideValue == 0)
 	    || ((index == STR_IS_FALSE) &&
-		objPtr->internalRep.longValue != 0)) {
+		objPtr->internalRep.wideValue != 0)) {
 	    result = 0;
 	}
 	break;
