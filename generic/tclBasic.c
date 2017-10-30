@@ -510,13 +510,12 @@ Tcl_CreateInterp(void)
     iPtr = ckalloc(sizeof(Interp));
     interp = (Tcl_Interp *) iPtr;
 
-#ifdef TCL_NO_DEPRECATED
-    iPtr->result = &tclEmptyString;
-#else
-    iPtr->result = iPtr->resultSpace;
-#endif
-    iPtr->freeProc = NULL;
+    iPtr->legacyResult = NULL;
+    /* Special invalid value: Any attempt to free the legacy result
+     * will cause a crash. */
+    iPtr->legacyFreeProc = (void (*) (void))-1;
     iPtr->errorLine = 0;
+    iPtr->stubTable = &tclStubs;
     iPtr->objResultPtr = Tcl_NewObj();
     Tcl_IncrRefCount(iPtr->objResultPtr);
     iPtr->handle = TclHandleCreate(iPtr);
@@ -574,12 +573,6 @@ Tcl_CreateInterp(void)
     iPtr->rootFramePtr = NULL;	/* Initialise as soon as :: is available */
     iPtr->lookupNsPtr = NULL;
 
-#ifndef TCL_NO_DEPRECATED
-    iPtr->appendResult = NULL;
-    iPtr->appendAvl = 0;
-    iPtr->appendUsed = 0;
-#endif
-
     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
     iPtr->packageUnknown = NULL;
 
@@ -608,9 +601,6 @@ Tcl_CreateInterp(void)
     iPtr->emptyObjPtr = Tcl_NewObj();
 				/* Another empty object. */
     Tcl_IncrRefCount(iPtr->emptyObjPtr);
-#ifndef TCL_NO_DEPRECATED
-    iPtr->resultSpace[0] = 0;
-#endif
     iPtr->threadId = Tcl_GetCurrentThread();
 
     /* TIP #378 */
@@ -719,12 +709,6 @@ Tcl_CreateInterp(void)
     statsPtr->currentLitStringBytes = 0.0;
     memset(statsPtr->literalCount, 0, sizeof(statsPtr->literalCount));
 #endif /* TCL_COMPILE_STATS */
-
-    /*
-     * Initialise the stub table pointer.
-     */
-
-    iPtr->stubTable = &tclStubs;
 
     /*
      * Initialize the ensemble error message rewriting support.
@@ -1521,7 +1505,6 @@ DeleteInterpProc(
      */
 
     Tcl_FreeResult(interp);
-    iPtr->result = NULL;
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
     Tcl_DecrRefCount(iPtr->ecVar);
@@ -1543,12 +1526,6 @@ DeleteInterpProc(
     if (iPtr->returnOpts) {
 	Tcl_DecrRefCount(iPtr->returnOpts);
     }
-#ifndef TCL_NO_DEPRECATED
-    if (iPtr->appendResult != NULL) {
-	ckfree(iPtr->appendResult);
-	iPtr->appendResult = NULL;
-    }
-#endif
     TclFreePackageInfo(iPtr);
     while (iPtr->tracePtr != NULL) {
 	Tcl_DeleteTrace((Tcl_Interp *) iPtr, (Tcl_Trace) iPtr->tracePtr);
@@ -2482,7 +2459,7 @@ TclInvokeStringCommand(
  *	in the Command structure.
  *
  * Results:
- *	A standard Tcl string result value.
+ *	A standard Tcl result value.
  *
  * Side effects:
  *	Besides those side effects of the called Tcl_ObjCmdProc,
@@ -2521,13 +2498,6 @@ TclInvokeObjectCommand(
 	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
 		cmdPtr->objClientData, argc, objv);
     }
-
-    /*
-     * Move the interpreter's object result to the string result, then reset
-     * the object result.
-     */
-
-    (void) Tcl_GetStringResult(interp);
 
     /*
      * Decrement the ref counts for the argument objects created above, then
@@ -3833,7 +3803,7 @@ Tcl_ListMathFuncs(
  *	otherwise.
  *
  * Side effects:
- *	The interpreters object and string results are cleared.
+ *	The interpreter's result is cleared.
  *
  *----------------------------------------------------------------------
  */
@@ -3845,8 +3815,8 @@ TclInterpReady(
     register Interp *iPtr = (Interp *) interp;
 
     /*
-     * Reset both the interpreter's string and object results and clear out
-     * any previous error information.
+     * Reset the interpreter's result and clear out any previous error
+     * information.
      */
 
     Tcl_ResetResult(interp);
@@ -4426,23 +4396,8 @@ TclNRRunCallbacks(
 				/* All callbacks down to rootPtr not inclusive
 				 * are to be run. */
 {
-    Interp *iPtr = (Interp *) interp;
     NRE_callback *callbackPtr;
     Tcl_NRPostProc *procPtr;
-
-    /*
-     * If the interpreter has a non-empty string result, the result object is
-     * either empty or stale because some function set interp->result
-     * directly. If so, move the string result to the result object, then
-     * reset the string result.
-     *
-     * This only needs to be done for the first item in the list: all other
-     * are for NR function calls, and those are Tcl_Obj based.
-     */
-
-    if (*(iPtr->result) != 0) {
-	(void) Tcl_GetObjResult(interp);
-    }
 
     while (TOP_CB(interp) != rootPtr) {
 	callbackPtr = TOP_CB(interp);
@@ -5911,16 +5866,7 @@ Tcl_Eval(
 				 * previous call to Tcl_CreateInterp). */
     const char *script)		/* Pointer to TCL command to execute. */
 {
-    int code = Tcl_EvalEx(interp, script, -1, 0);
-
-    /*
-     * For backwards compatibility with old C code that predates the object
-     * system in Tcl 8.0, we have to mirror the object result back into the
-     * string result (some callers may expect it there).
-     */
-
-    (void) Tcl_GetStringResult(interp);
-    return code;
+    return Tcl_EvalEx(interp, script, -1, 0);
 }
 
 /*
@@ -6343,9 +6289,6 @@ Tcl_ExprLong(
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprLongObj(interp, exprPtr, ptr);
 	Tcl_DecrRefCount(exprPtr);
-	if (result != TCL_OK) {
-	    (void) Tcl_GetStringResult(interp);
-	}
     }
     return result;
 }
@@ -6372,9 +6315,6 @@ Tcl_ExprDouble(
 	result = Tcl_ExprDoubleObj(interp, exprPtr, ptr);
 	Tcl_DecrRefCount(exprPtr);
 				/* Discard the expression object. */
-	if (result != TCL_OK) {
-	    (void) Tcl_GetStringResult(interp);
-	}
     }
     return result;
 }
@@ -6400,14 +6340,6 @@ Tcl_ExprBoolean(
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprBooleanObj(interp, exprPtr, ptr);
 	Tcl_DecrRefCount(exprPtr);
-	if (result != TCL_OK) {
-	    /*
-	     * Move the interpreter's object result to the string result, then
-	     * reset the object result.
-	     */
-
-	    (void) Tcl_GetStringResult(interp);
-	}
 	return result;
     }
 }
@@ -6723,11 +6655,6 @@ Tcl_ExprString(
 	}
     }
 
-    /*
-     * Force the string rep of the interp result.
-     */
-
-    (void) Tcl_GetStringResult(interp);
     return code;
 }
 
@@ -6834,19 +6761,7 @@ Tcl_AddObjErrorInfo(
 
     iPtr->flags |= ERR_LEGACY_COPY;
     if (iPtr->errorInfo == NULL) {
-	if (iPtr->result[0] != 0) {
-	    /*
-	     * The interp's string result is set, apparently by some extension
-	     * making a deprecated direct write to it. That extension may
-	     * expect interp->result to continue to be set, so we'll take
-	     * special pains to avoid clearing it, until we drop support for
-	     * interp->result completely.
-	     */
-
-	    iPtr->errorInfo = Tcl_NewStringObj(iPtr->result, -1);
-	} else {
-	    iPtr->errorInfo = iPtr->objResultPtr;
-	}
+	iPtr->errorInfo = iPtr->objResultPtr;
 	Tcl_IncrRefCount(iPtr->errorInfo);
 	if (!iPtr->errorCode) {
 	    Tcl_SetErrorCode(interp, "NONE", NULL);
@@ -6924,7 +6839,7 @@ Tcl_VarEvalVA(
  *
  * Results:
  *	A standard Tcl return result. An error message or other result may be
- *	left in interp->result.
+ *	left in the interp.
  *
  * Side effects:
  *	Depends on what was done by the command.
