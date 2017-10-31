@@ -1877,35 +1877,6 @@ TclIncrObj(
 	return TCL_ERROR;
     }
 
-    if ((type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
-	long augend = *((const Tcl_WideInt *) ptr1);
-	long addend = *((const Tcl_WideInt *) ptr2);
-	long sum = augend + addend;
-
-	/*
-	 * Overflow when (augend and sum have different sign) and (augend and
-	 * addend have the same sign). This is encapsulated in the Overflowing
-	 * macro.
-	 */
-
-	if (!Overflowing(augend, addend, sum)) {
-	    TclSetLongObj(valuePtr, sum);
-	    return TCL_OK;
-	}
-	{
-	    Tcl_WideInt w1 = (Tcl_WideInt) augend;
-	    Tcl_WideInt w2 = (Tcl_WideInt) addend;
-
-	    /*
-	     * We know the sum value is outside the long range, so we use the
-	     * macro form that doesn't range test again.
-	     */
-
-	    TclSetWideIntObj(valuePtr, w1 + w2);
-	    return TCL_OK;
-	}
-    }
-
     if ((type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
 	/*
 	 * Produce error message (reparse?!)
@@ -8146,12 +8117,12 @@ ExecuteExtendedBinaryMathOp(
 	/* TODO: Attempts to re-use unshared operands on stack */
 
 	l2 = 0;			/* silence gcc warning */
-	if (type2 == TCL_NUMBER_LONG) {
-	    l2 = *((const Tcl_WideInt *)ptr2);
-	    if (l2 == 0) {
+	if (type2 == TCL_NUMBER_LONG || type2 == TCL_NUMBER_WIDE) {
+	    l2 = w2 = *((const Tcl_WideInt *)ptr2);
+	    if (w2 == 0) {
 		return DIVIDED_BY_ZERO;
 	    }
-	    if ((l2 == 1) || (l2 == -1)) {
+	    if ((w2 == 1) || (w2 == -1)) {
 		/*
 		 * Div. by |1| always yields remainder of 0.
 		 */
@@ -8583,9 +8554,6 @@ ExecuteExtendedBinaryMathOp(
 
 	switch (type2) {
 	case TCL_NUMBER_LONG:
-	    negativeExponent = (l2 < 0);
-	    oddExponent = (int) (l2 & 1);
-	    break;
 	case TCL_NUMBER_WIDE:
 	    w2 = *((const Tcl_WideInt *)ptr2);
 	    negativeExponent = (w2 < 0);
@@ -8600,12 +8568,12 @@ ExecuteExtendedBinaryMathOp(
 	    break;
 	}
 
-	if (type1 == TCL_NUMBER_LONG) {
-	    l1 = *((const Tcl_WideInt *)ptr1);
+	if (type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) {
+	    l1 = w1 = *((const Tcl_WideInt *)ptr1);
 	}
 	if (negativeExponent) {
 	    if (type1 == TCL_NUMBER_LONG) {
-		switch (l1) {
+		switch (w1) {
 		case 0:
 		    /*
 		     * Zero to a negative power is div by zero error.
@@ -8635,7 +8603,7 @@ ExecuteExtendedBinaryMathOp(
 	}
 
 	if (type1 == TCL_NUMBER_LONG) {
-	    switch (l1) {
+	    switch (w1) {
 	    case 0:
 		/*
 		 * Zero to a positive power is zero.
@@ -8764,9 +8732,7 @@ ExecuteExtendedBinaryMathOp(
 #endif
 	}
 #if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
-	if (type1 == TCL_NUMBER_LONG) {
-	    w1 = l1;
-	} else if (type1 == TCL_NUMBER_WIDE) {
+	if (type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) {
 	    w1 = *((const Tcl_WideInt *) ptr1);
 	} else {
 	    goto overflowExpon;
@@ -9001,8 +8967,7 @@ ExecuteExtendedBinaryMathOp(
 		break;
 
 	    case INST_MULT:
-		if ((type1 != TCL_NUMBER_LONG) || (type2 != TCL_NUMBER_LONG)
-			|| (sizeof(Tcl_WideInt) < 2*sizeof(long))) {
+		if ((w1 < INT_MIN) || (w1 > INT_MAX) || (w2 < INT_MIN) || (w2 > INT_MAX)) {
 		    goto overflowBasic;
 		}
 		wResult = w1 * w2;
@@ -9105,7 +9070,7 @@ ExecuteExtendedUnaryMathOp(
 
     switch (opcode) {
     case INST_BITNOT:
-	if (type == TCL_NUMBER_WIDE) {
+	if (type == TCL_NUMBER_LONG || type == TCL_NUMBER_WIDE) {
 	    w = *((const Tcl_WideInt *) ptr);
 	    WIDE_RESULT(~w);
 	}
