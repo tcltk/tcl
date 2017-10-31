@@ -501,7 +501,7 @@ VarHashCreateVar(
 #ifdef TCL_WIDE_INT_IS_LONG
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
     (((objPtr)->typePtr == &tclIntType)					\
-	?	(*(tPtr) = TCL_NUMBER_LONG,				\
+	?	(*(tPtr) = TCL_NUMBER_WIDE,				\
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
     ((objPtr)->typePtr == &tclDoubleType)				\
@@ -516,7 +516,7 @@ VarHashCreateVar(
 #else /* !TCL_WIDE_INT_IS_LONG */
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
     (((objPtr)->typePtr == &tclIntType)					\
-	?	(*(tPtr) = TCL_NUMBER_LONG,				\
+	?	(*(tPtr) = TCL_NUMBER_WIDE,				\
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
     ((objPtr)->typePtr == &tclWideIntType)				\
@@ -3657,7 +3657,7 @@ TEBCresume(
 
 	    objPtr = varPtr->value.objPtr;
 	    if (GetNumberFromObj(NULL, objPtr, &ptr, &type) == TCL_OK) {
-		if (type == TCL_NUMBER_LONG || type == TCL_NUMBER_WIDE) {
+		if (type == TCL_NUMBER_WIDE) {
 		    Tcl_WideInt augend = *((const Tcl_WideInt *)ptr);
 		    Tcl_WideInt sum = augend + increment;
 
@@ -3699,7 +3699,7 @@ TEBCresume(
 			TclSetWideIntObj(objPtr, w+increment);
 		    }
 		    goto doneIncr;
-		}	/* end if (type == TCL_NUMBER_LONG || type == TCL_NUMBER_WIDE) */
+		}	/* end if (type == TCL_NUMBER_WIDE) */
 	    }
 	    if (Tcl_IsShared(objPtr)) {
 		objPtr->refCount--;	/* We know it's shared */
@@ -5802,7 +5802,7 @@ TEBCresume(
     case INST_NUM_TYPE:
 	if (GetNumberFromObj(NULL, OBJ_AT_TOS, &ptr1, &type1) != TCL_OK) {
 	    type1 = 0;
-	} else if (type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) {
+	} else if (type1 == TCL_NUMBER_WIDE) {
 	    /* value is between WIDE_MIN and WIDE_MAX */
 	    /* [string is integer] is -UINT_MAX to UINT_MAX range */
 	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
@@ -5815,14 +5815,10 @@ TEBCresume(
 	    }
 	} else if (type1 == TCL_NUMBER_BIG) {
 	    /* value is an integer outside the WIDE_MIN to WIDE_MAX range */
-	    /* [string is integer] is -UINT_MAX to UINT_MAX range */
 	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
-	    int i;
 	    Tcl_WideInt w;
 
-	    if (Tcl_GetIntFromObj(NULL, OBJ_AT_TOS, &i) == TCL_OK) {
-		type1 = TCL_NUMBER_LONG;
-	    } else if (Tcl_GetWideIntFromObj(NULL, OBJ_AT_TOS, &w) == TCL_OK) {
+	    if (Tcl_GetWideIntFromObj(NULL, OBJ_AT_TOS, &w) == TCL_OK) {
 		type1 = TCL_NUMBER_WIDE;
 	    }
 	}
@@ -5861,7 +5857,7 @@ TEBCresume(
 	    compare = MP_EQ;
 	    goto convertComparison;
 	}
-	if ((type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) && (type2 == TCL_NUMBER_LONG || type2 == TCL_NUMBER_WIDE)) {
+	if ((type1 == TCL_NUMBER_WIDE) && (type2 == TCL_NUMBER_WIDE)) {
 	    w1 = *((const Tcl_WideInt *)ptr1);
 	    w2 = *((const Tcl_WideInt *)ptr2);
 	    compare = (w1 < w2) ? MP_LT : ((w1 > w2) ? MP_GT : MP_EQ);
@@ -5940,7 +5936,7 @@ TEBCresume(
 	 * Check for common, simple case.
 	 */
 
-	if ((type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) && (type2 == TCL_NUMBER_LONG || type2 == TCL_NUMBER_WIDE)) {
+	if ((type1 == TCL_NUMBER_WIDE) && (type2 == TCL_NUMBER_WIDE)) {
 	    w1 = *((const Tcl_WideInt *)ptr1);
 	    w2 = *((const Tcl_WideInt *)ptr2);
 
@@ -6180,7 +6176,7 @@ TEBCresume(
 	 * an external function.
 	 */
 
-	if ((type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) && (type2 == TCL_NUMBER_LONG || type2 == TCL_NUMBER_WIDE)) {
+	if ((type1 == TCL_NUMBER_WIDE) && (type2 == TCL_NUMBER_WIDE)) {
 	    w1 = *((const Tcl_WideInt *)ptr1);
 	    w2 = *((const Tcl_WideInt *)ptr2);
 
@@ -6323,7 +6319,7 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
-	if (type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) {
+	if (type1 == TCL_NUMBER_WIDE) {
 	    w1 = *((const Tcl_WideInt *) ptr1);
 	    if (Tcl_IsShared(valuePtr)) {
 		TclNewWideObj(objResultPtr, ~w1);
@@ -6360,7 +6356,6 @@ TEBCresume(
 	    /* -NaN => NaN */
 	    TRACE_APPEND(("%s\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
-	case TCL_NUMBER_LONG:
 	case TCL_NUMBER_WIDE:
 	    w1 = *((const Tcl_WideInt *) ptr1);
 	    if (w1 != LLONG_MIN) {
@@ -8039,7 +8034,7 @@ ExecuteExtendedBinaryMathOp(
 	/* TODO: Attempts to re-use unshared operands on stack */
 
 	w2 = 0;			/* silence gcc warning */
-	if (type2 == TCL_NUMBER_LONG || type2 == TCL_NUMBER_WIDE) {
+	if (type2 == TCL_NUMBER_WIDE) {
 	    w2 = *((const Tcl_WideInt *)ptr2);
 	    if (w2 == 0) {
 		return DIVIDED_BY_ZERO;
@@ -8122,7 +8117,6 @@ ExecuteExtendedBinaryMathOp(
 	 */
 
 	switch (type2) {
-	case TCL_NUMBER_LONG:
 	case TCL_NUMBER_WIDE:
 	    invalid = (*((const Tcl_WideInt *)ptr2) < (Tcl_WideInt)0);
 	    break;
@@ -8145,7 +8139,7 @@ ExecuteExtendedBinaryMathOp(
 	 * Zero shifted any number of bits is still zero.
 	 */
 
-	if ((type1==TCL_NUMBER_LONG || type1==TCL_NUMBER_WIDE) && (*((const Tcl_WideInt *)ptr1) == (Tcl_WideInt)0)) {
+	if ((type1==TCL_NUMBER_WIDE) && (*((const Tcl_WideInt *)ptr1) == (Tcl_WideInt)0)) {
 	    return constants[0];
 	}
 
@@ -8158,7 +8152,7 @@ ExecuteExtendedBinaryMathOp(
 	     * counterparts, leading to incorrect results.
 	     */
 
-	    if ((type2 != TCL_NUMBER_LONG && type2 != TCL_NUMBER_WIDE)
+	    if ((type2 != TCL_NUMBER_WIDE)
 		    || (*((const Tcl_WideInt *)ptr2) > (long) INT_MAX)) {
 		/*
 		 * Technically, we could hold the value (1 << (INT_MAX+1)) in
@@ -8191,7 +8185,7 @@ ExecuteExtendedBinaryMathOp(
 	     * Quickly force large right shifts to 0 or -1.
 	     */
 
-	    if ((type2 != TCL_NUMBER_LONG && type2 != TCL_NUMBER_WIDE)
+	    if ((type2 != TCL_NUMBER_WIDE)
 		    || (*(const Tcl_WideInt *)ptr2 > INT_MAX)) {
 		/*
 		 * Again, technically, the value to be shifted could be an
@@ -8202,7 +8196,6 @@ ExecuteExtendedBinaryMathOp(
 		 */
 
 		switch (type1) {
-		case TCL_NUMBER_LONG:
 		case TCL_NUMBER_WIDE:
 		    zero = (*(const Tcl_WideInt *)ptr1 > (Tcl_WideInt)0);
 		    break;
@@ -8226,7 +8219,7 @@ ExecuteExtendedBinaryMathOp(
 	     * Handle shifts within the native wide range.
 	     */
 
-	    if (type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) {
+	    if (type1 == TCL_NUMBER_WIDE) {
 		w1 = *(const Tcl_WideInt *)ptr1;
 		if ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideInt)) {
 		    if (w1 >= (Tcl_WideInt)0) {
@@ -8403,7 +8396,7 @@ ExecuteExtendedBinaryMathOp(
 	    BIG_RESULT(&bigResult);
 	}
 
-	if ((type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_LONG || type2 == TCL_NUMBER_WIDE)) {
+	if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE)) {
 	    TclGetWideIntFromObj(NULL, valuePtr, &w1);
 	    TclGetWideIntFromObj(NULL, value2Ptr, &w2);
 
@@ -8457,7 +8450,7 @@ ExecuteExtendedBinaryMathOp(
 	    goto doubleResult;
 	}
 	w2 = 0;
-	if (type2 == TCL_NUMBER_LONG || type2 == TCL_NUMBER_WIDE) {
+	if (type2 == TCL_NUMBER_WIDE) {
 	    w2 = *((const Tcl_WideInt *) ptr2);
 	    if (w2 == 0) {
 		/*
@@ -8475,7 +8468,6 @@ ExecuteExtendedBinaryMathOp(
 	}
 
 	switch (type2) {
-	case TCL_NUMBER_LONG:
 	case TCL_NUMBER_WIDE:
 	    w2 = *((const Tcl_WideInt *)ptr2);
 	    negativeExponent = (w2 < 0);
@@ -8490,11 +8482,11 @@ ExecuteExtendedBinaryMathOp(
 	    break;
 	}
 
-	if (type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) {
+	if (type1 == TCL_NUMBER_WIDE) {
 	    w1 = *((const Tcl_WideInt *)ptr1);
 	}
 	if (negativeExponent) {
-	    if (type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) {
+	    if (type1 == TCL_NUMBER_WIDE) {
 		switch (w1) {
 		case 0:
 		    /*
@@ -8524,7 +8516,7 @@ ExecuteExtendedBinaryMathOp(
 	    return constants[0];
 	}
 
-	if (type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) {
+	if (type1 == TCL_NUMBER_WIDE) {
 	    switch (w1) {
 	    case 0:
 		/*
@@ -8551,17 +8543,17 @@ ExecuteExtendedBinaryMathOp(
 	 * which means the max exponent value is 2**28-1 = 0x0fffffff =
 	 * 268435455, which fits into a signed 32 bit int which is within the
 	 * range of the long int type. This means any numeric Tcl_Obj value
-	 * not using TCL_NUMBER_LONG type must hold a value larger than we
+	 * not using TCL_NUMBER_WIDE type must hold a value larger than we
 	 * accept.
 	 */
 
-	if (type2 != TCL_NUMBER_LONG && type2 != TCL_NUMBER_WIDE) {
+	if (type2 != TCL_NUMBER_WIDE) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "exponent too large", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
-	if (type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) {
+	if (type1 == TCL_NUMBER_WIDE) {
 	    if (w1 == 2) {
 		/*
 		 * Reduce small powers of 2 to shifts.
@@ -8585,7 +8577,7 @@ ExecuteExtendedBinaryMathOp(
 		goto overflowExpon;
 	    }
 	}
-	if (type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) {
+	if (type1 == TCL_NUMBER_WIDE) {
 	    w1 = *((const Tcl_WideInt *) ptr1);
 	} else {
 	    goto overflowExpon;
@@ -8785,7 +8777,7 @@ ExecuteExtendedBinaryMathOp(
 	    switch (opcode) {
 	    case INST_ADD:
 		wResult = w1 + w2;
-		if ((type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_LONG || type2 == TCL_NUMBER_WIDE))
+		if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE))
 		{
 		    /*
 		     * Check for overflow.
@@ -8799,7 +8791,7 @@ ExecuteExtendedBinaryMathOp(
 
 	    case INST_SUB:
 		wResult = w1 - w2;
-		if ((type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_LONG || type2 == TCL_NUMBER_WIDE))
+		if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE))
 		{
 		    /*
 		     * Must check for overflow. The macro tests for overflows
@@ -8922,7 +8914,7 @@ ExecuteExtendedUnaryMathOp(
 
     switch (opcode) {
     case INST_BITNOT:
-	if (type == TCL_NUMBER_LONG || type == TCL_NUMBER_WIDE) {
+	if (type == TCL_NUMBER_WIDE) {
 	    w = *((const Tcl_WideInt *) ptr);
 	    WIDE_RESULT(~w);
 	}
@@ -8935,7 +8927,6 @@ ExecuteExtendedUnaryMathOp(
 	switch (type) {
 	case TCL_NUMBER_DOUBLE:
 	    DOUBLE_RESULT(-(*((const double *) ptr)));
-	case TCL_NUMBER_LONG:
 	case TCL_NUMBER_WIDE:
 	    w = *((const Tcl_WideInt *) ptr);
 	    if (w != LLONG_MIN) {
@@ -8990,11 +8981,9 @@ TclCompareTwoNumbers(
     (void) GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
 
     switch (type1) {
-    case TCL_NUMBER_LONG:
     case TCL_NUMBER_WIDE:
 	w1 = *((const Tcl_WideInt *)ptr1);
 	switch (type2) {
-	case TCL_NUMBER_LONG:
 	case TCL_NUMBER_WIDE:
 	    w2 = *((const Tcl_WideInt *)ptr2);
 	wideCompare:
@@ -9052,7 +9041,6 @@ TclCompareTwoNumbers(
 	    d2 = *((const double *)ptr2);
 	doubleCompare:
 	    return (d1 < d2) ? MP_LT : ((d1 > d2) ? MP_GT : MP_EQ);
-	case TCL_NUMBER_LONG:
 	case TCL_NUMBER_WIDE:
 	    w2 = *((const Tcl_WideInt *)ptr2);
 	    d2 = (double) w2;
@@ -9095,7 +9083,6 @@ TclCompareTwoNumbers(
     case TCL_NUMBER_BIG:
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
 	switch (type2) {
-	case TCL_NUMBER_LONG:
 	case TCL_NUMBER_WIDE:
 	    compare = mp_cmp_d(&big1, 0);
 	    mp_clear(&big1);
