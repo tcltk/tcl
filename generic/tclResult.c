@@ -244,7 +244,7 @@ Tcl_SaveResult(
      * reference. Put an empty object into the interpreter.
      */
 
-    statePtr->objResultPtr = iPtr->objResultPtr;
+    *statePtr = iPtr->objResultPtr;
     iPtr->objResultPtr = Tcl_NewObj();
     Tcl_IncrRefCount(iPtr->objResultPtr);
 }
@@ -282,7 +282,7 @@ Tcl_RestoreResult(
      */
 
     Tcl_DecrRefCount(iPtr->objResultPtr);
-    iPtr->objResultPtr = statePtr->objResultPtr;
+    iPtr->objResultPtr = *statePtr;
 }
 
 /*
@@ -308,7 +308,7 @@ void
 Tcl_DiscardResult(
     Tcl_SavedResult *statePtr)	/* State returned by Tcl_SaveResult. */
 {
-    TclDecrRefCount(statePtr->objResultPtr);
+    Tcl_DecrRefCount(*statePtr);
 }
 
 /*
