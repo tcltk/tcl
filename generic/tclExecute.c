@@ -5893,13 +5893,15 @@ TEBCresume(
 	ClientData ptr1, ptr2;
 	int type1, type2;
 	long l1, l2, lResult;
+    Tcl_WideInt w1, w2, wResult;
 
     case INST_NUM_TYPE:
 	if (GetNumberFromObj(NULL, OBJ_AT_TOS, &ptr1, &type1) != TCL_OK) {
 	    type1 = 0;
 	} else if (type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) {
-	    /* value is between LONG_MIN and LONG_MAX */
+	    /* value is between WIDE_MIN and WIDE_MAX */
 	    /* [string is integer] is -UINT_MAX to UINT_MAX range */
+	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
 	    int i;
 
 	    if (Tcl_GetIntFromObj(NULL, OBJ_AT_TOS, &i) != TCL_OK) {
@@ -5909,10 +5911,14 @@ TEBCresume(
 	    }
 	} else if (type1 == TCL_NUMBER_BIG) {
 	    /* value is an integer outside the WIDE_MIN to WIDE_MAX range */
+	    /* [string is integer] is -UINT_MAX to UINT_MAX range */
 	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
+	    int i;
 	    Tcl_WideInt w;
 
-	    if (Tcl_GetWideIntFromObj(NULL, OBJ_AT_TOS, &w) == TCL_OK) {
+	    if (Tcl_GetIntFromObj(NULL, OBJ_AT_TOS, &i) == TCL_OK) {
+		type1 = TCL_NUMBER_LONG;
+	    } else if (Tcl_GetWideIntFromObj(NULL, OBJ_AT_TOS, &w) == TCL_OK) {
 		type1 = TCL_NUMBER_WIDE;
 	    }
 	}
@@ -5951,10 +5957,10 @@ TEBCresume(
 	    compare = MP_EQ;
 	    goto convertComparison;
 	}
-	if ((type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
-	    l1 = *((const Tcl_WideInt *)ptr1);
-	    l2 = *((const Tcl_WideInt *)ptr2);
-	    compare = (l1 < l2) ? MP_LT : ((l1 > l2) ? MP_GT : MP_EQ);
+	if ((type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) && (type2 == TCL_NUMBER_LONG || type2 == TCL_NUMBER_WIDE)) {
+	    w1 = *((const Tcl_WideInt *)ptr1);
+	    w2 = *((const Tcl_WideInt *)ptr2);
+	    compare = (w1 < w2) ? MP_LT : ((w1 > w2) ? MP_GT : MP_EQ);
 	} else {
 	    compare = TclCompareTwoNumbers(valuePtr, value2Ptr);
 	}
@@ -6280,15 +6286,13 @@ TEBCresume(
 	 */
 
 	if ((type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
-	    Tcl_WideInt w1, w2, wResult;
-
-	    l1 = *((const Tcl_WideInt *)ptr1);
-	    l2 = *((const Tcl_WideInt *)ptr2);
+	    w1 = *((const Tcl_WideInt *)ptr1);
+	    w2 = *((const Tcl_WideInt *)ptr2);
+	    l1 = w1;
+	    l2 = w2;
 
 	    switch (*pc) {
 	    case INST_ADD:
-		w1 = (Tcl_WideInt) l1;
-		w2 = (Tcl_WideInt) l2;
 		wResult = w1 + w2;
 		/*
 		 * Check for overflow.
@@ -6300,8 +6304,6 @@ TEBCresume(
 		goto wideResultOfArithmetic;
 
 	    case INST_SUB:
-		w1 = (Tcl_WideInt) l1;
-		w2 = (Tcl_WideInt) l2;
 		wResult = w1 - w2;
 		/*
 		 * Must check for overflow. The macro tests for overflows in
@@ -6328,40 +6330,40 @@ TEBCresume(
 		NEXT_INST_F(1, 1, 0);
 
 	    case INST_DIV:
-		if (l2 == 0) {
+		if (w2 == 0) {
 		    TRACE(("%s %s => DIVIDE BY ZERO\n",
 			    O2S(valuePtr), O2S(value2Ptr)));
 		    goto divideByZero;
-		} else if ((l1 == LONG_MIN) && (l2 == -1)) {
+		} else if ((w1 == LLONG_MIN) && (w2 == -1)) {
 		    /*
-		     * Can't represent (-LONG_MIN) as a long.
+		     * Can't represent (-LLONG_MIN) as a long.
 		     */
 
 		    goto overflow;
 		}
-		lResult = l1 / l2;
+		wResult = w1 / w2;
 
 		/*
 		 * Force Tcl's integer division rules.
 		 * TODO: examine for logic simplification
 		 */
 
-		if (((lResult < 0) || ((lResult == 0) &&
-			((l1 < 0 && l2 > 0) || (l1 > 0 && l2 < 0)))) &&
-			((lResult * l2) != l1)) {
-		    lResult -= 1;
+		if (((wResult < 0) || ((wResult == 0) &&
+			((w1 < 0 && w2 > 0) || (w1 > 0 && w2 < 0)))) &&
+			((wResult * w2) != w1)) {
+		    wResult -= 1;
 		}
-		goto longResultOfArithmetic;
+		goto wideResultOfArithmetic;
 
 	    case INST_MULT:
 		if (((sizeof(long) >= 2*sizeof(int))
-			&& (l1 <= INT_MAX) && (l1 >= INT_MIN)
-			&& (l2 <= INT_MAX) && (l2 >= INT_MIN))
+			&& (w1 <= INT_MAX) && (w1 >= INT_MIN)
+			&& (w2 <= INT_MAX) && (w2 >= INT_MIN))
 			|| ((sizeof(long) >= 2*sizeof(short))
-			&& (l1 <= SHRT_MAX) && (l1 >= SHRT_MIN)
-			&& (l2 <= SHRT_MAX) && (l2 >= SHRT_MIN))) {
-		    lResult = l1 * l2;
-		    goto longResultOfArithmetic;
+			&& (w1 <= SHRT_MAX) && (w1 >= SHRT_MIN)
+			&& (w2 <= SHRT_MAX) && (w2 >= SHRT_MIN))) {
+		    wResult = w1 * w2;
+		    goto wideResultOfArithmetic;
 		}
 	    }
 
@@ -8227,8 +8229,8 @@ ExecuteExtendedBinaryMathOp(
 	 */
 
 	switch (type2) {
-	case TCL_NUMBER_WIDE:
 	case TCL_NUMBER_LONG:
+	case TCL_NUMBER_WIDE:
 	    invalid = (*((const Tcl_WideInt *)ptr2) < (Tcl_WideInt)0);
 	    break;
 	case TCL_NUMBER_BIG:
@@ -8250,7 +8252,7 @@ ExecuteExtendedBinaryMathOp(
 	 * Zero shifted any number of bits is still zero.
 	 */
 
-	if ((type1==TCL_NUMBER_LONG) && (*((const Tcl_WideInt *)ptr1) == (long)0)) {
+	if ((type1==TCL_NUMBER_LONG || type1==TCL_NUMBER_WIDE) && (*((const Tcl_WideInt *)ptr1) == (Tcl_WideInt)0)) {
 	    return constants[0];
 	}
 
@@ -8308,8 +8310,6 @@ ExecuteExtendedBinaryMathOp(
 
 		switch (type1) {
 		case TCL_NUMBER_LONG:
-		    zero = (*(const Tcl_WideInt *)ptr1 > 0L);
-		    break;
 		case TCL_NUMBER_WIDE:
 		    zero = (*(const Tcl_WideInt *)ptr1 > (Tcl_WideInt)0);
 		    break;
@@ -8981,7 +8981,7 @@ ExecuteExtendedBinaryMathOp(
 
 	    case INST_SUB:
 		wResult = w1 - w2;
-		if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE))
+		if ((type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_LONG || type2 == TCL_NUMBER_WIDE))
 		{
 		    /*
 		     * Must check for overflow. The macro tests for overflows
