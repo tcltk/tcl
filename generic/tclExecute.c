@@ -5863,7 +5863,7 @@ TEBCresume(
     {
 	ClientData ptr1, ptr2;
 	int type1, type2;
-	long l1, l2, lResult;
+	long l1;
     Tcl_WideInt w1, w2, wResult;
 
     case INST_NUM_TYPE:
@@ -6008,16 +6008,16 @@ TEBCresume(
 	 */
 
 	if ((type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
-	    l1 = *((const Tcl_WideInt *)ptr1);
-	    l2 = *((const Tcl_WideInt *)ptr2);
+	    l1 = w1 = *((const Tcl_WideInt *)ptr1);
+	    w2 = *((const Tcl_WideInt *)ptr2);
 
 	    switch (*pc) {
 	    case INST_MOD:
-		if (l2 == 0) {
+		if (w2 == 0) {
 		    TRACE(("%s %s => DIVIDE BY ZERO\n", O2S(valuePtr),
 			    O2S(value2Ptr)));
 		    goto divideByZero;
-		} else if ((l2 == 1) || (l2 == -1)) {
+		} else if ((w2 == 1) || (w2 == -1)) {
 		    /*
 		     * Div. by |1| always yields remainder of 0.
 		     */
@@ -6026,7 +6026,7 @@ TEBCresume(
 		    objResultPtr = TCONST(0);
 		    TRACE(("%s\n", O2S(objResultPtr)));
 		    NEXT_INST_F(1, 2, 1);
-		} else if (l1 == 0) {
+		} else if (w1 == 0) {
 		    /*
 		     * 0 % (non-zero) always yields remainder of 0.
 		     */
@@ -6036,24 +6036,24 @@ TEBCresume(
 		    TRACE(("%s\n", O2S(objResultPtr)));
 		    NEXT_INST_F(1, 2, 1);
 		} else {
-		    lResult = l1 / l2;
+		    wResult = w1 / w2;
 
 		    /*
 		     * Force Tcl's integer division rules.
 		     * TODO: examine for logic simplification
 		     */
 
-		    if ((lResult < 0 || (lResult == 0 &&
-			    ((l1 < 0 && l2 > 0) || (l1 > 0 && l2 < 0)))) &&
-			    (lResult * l2 != l1)) {
-			lResult -= 1;
+		    if ((wResult < 0 || (wResult == 0 &&
+			    ((w1 < 0 && w2 > 0) || (w1 > 0 && w2 < 0)))) &&
+			    (wResult * w2 != w1)) {
+			wResult -= 1;
 		    }
-		    lResult = l1 - l2*lResult;
-		    goto longResultOfArithmetic;
+		    wResult = w1 - w2*wResult;
+		    goto wideResultOfArithmetic;
 		}
 
 	    case INST_RSHIFT:
-		if (l2 < 0) {
+		if (w2 < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "negative shift argument", -1));
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
@@ -6064,7 +6064,7 @@ TEBCresume(
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
-		} else if (l1 == 0) {
+		} else if (w1 == 0) {
 		    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 		    objResultPtr = TCONST(0);
 		    TRACE(("%s\n", O2S(objResultPtr)));
@@ -6074,7 +6074,7 @@ TEBCresume(
 		     * Quickly force large right shifts to 0 or -1.
 		     */
 
-		    if (l2 >= (long)(CHAR_BIT*sizeof(long))) {
+		    if (w2 >= (long)(CHAR_BIT*sizeof(long))) {
 			/*
 			 * We assume that INT_MAX is much larger than the
 			 * number of bits in a long. This is a pretty safe
@@ -6083,7 +6083,7 @@ TEBCresume(
 			 */
 
 			TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
-			if (l1 > 0L) {
+			if (w1 > 0L) {
 			    objResultPtr = TCONST(0);
 			} else {
 			    TclNewLongObj(objResultPtr, -1);
@@ -6096,12 +6096,12 @@ TEBCresume(
 		     * Handle shifts within the native long range.
 		     */
 
-		    lResult = l1 >> ((int) l2);
-		    goto longResultOfArithmetic;
+		    wResult = w1 >> ((int) w2);
+		    goto wideResultOfArithmetic;
 		}
 
 	    case INST_LSHIFT:
-		if (l2 < 0) {
+		if (w2 < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "negative shift argument", -1));
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
@@ -6112,12 +6112,12 @@ TEBCresume(
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
-		} else if (l1 == 0) {
+		} else if (w1 == 0) {
 		    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 		    objResultPtr = TCONST(0);
 		    TRACE(("%s\n", O2S(objResultPtr)));
 		    NEXT_INST_F(1, 2, 1);
-		} else if (l2 > (long) INT_MAX) {
+		} else if (w2 > (long) INT_MAX) {
 		    /*
 		     * Technically, we could hold the value (1 << (INT_MAX+1))
 		     * in an mp_int, but since we're using mp_mul_2d() to do
@@ -6135,17 +6135,17 @@ TEBCresume(
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
 		} else {
-		    int shift = (int) l2;
+		    int shift = (int) w2;
 
 		    /*
 		     * Handle shifts within the native long range.
 		     */
 
-		    if ((size_t) shift < CHAR_BIT*sizeof(long) && (l1 != 0)
-			    && !((l1>0 ? l1 : ~l1) &
+		    if ((size_t) shift < CHAR_BIT*sizeof(long) && (w1 != 0)
+			    && !((w1>0 ? w1 : ~w1) &
 				-(1L<<(CHAR_BIT*sizeof(long) - 1 - shift)))) {
-			lResult = l1 << shift;
-			goto longResultOfArithmetic;
+			wResult = w1 << shift;
+			goto wideResultOfArithmetic;
 		    }
 		}
 
@@ -6157,23 +6157,14 @@ TEBCresume(
 		break;
 
 	    case INST_BITAND:
-		lResult = l1 & l2;
-		goto longResultOfArithmetic;
+		wResult = w1 & w2;
+		goto wideResultOfArithmetic;
 	    case INST_BITOR:
-		lResult = l1 | l2;
-		goto longResultOfArithmetic;
+		wResult = w1 | w2;
+		goto wideResultOfArithmetic;
 	    case INST_BITXOR:
-		lResult = l1 ^ l2;
-	    longResultOfArithmetic:
-		TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
-		if (Tcl_IsShared(valuePtr)) {
-		    TclNewLongObj(objResultPtr, lResult);
-		    TRACE(("%s\n", O2S(objResultPtr)));
-		    NEXT_INST_F(1, 2, 1);
-		}
-		TclSetLongObj(valuePtr, lResult);
-		TRACE(("%s\n", O2S(valuePtr)));
-		NEXT_INST_F(1, 1, 0);
+		wResult = w1 ^ w2;
+		goto wideResultOfArithmetic;
 	    }
 	}
 
@@ -6257,10 +6248,8 @@ TEBCresume(
 	 */
 
 	if ((type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
-	    w1 = *((const Tcl_WideInt *)ptr1);
+	    l1 = w1 = *((const Tcl_WideInt *)ptr1);
 	    w2 = *((const Tcl_WideInt *)ptr2);
-	    l1 = w1;
-	    l2 = w2;
 
 	    switch (*pc) {
 	    case INST_ADD:
@@ -6401,14 +6390,14 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
-	if (type1 == TCL_NUMBER_LONG) {
-	    l1 = *((const Tcl_WideInt *) ptr1);
+	if (type1 == TCL_NUMBER_LONG || type1 == TCL_NUMBER_WIDE) {
+	    w1 = *((const Tcl_WideInt *) ptr1);
 	    if (Tcl_IsShared(valuePtr)) {
-		TclNewLongObj(objResultPtr, ~l1);
+		TclNewWideObj(objResultPtr, ~w1);
 		TRACE_APPEND(("%s\n", O2S(objResultPtr)));
 		NEXT_INST_F(1, 1, 1);
 	    }
-	    TclSetLongObj(valuePtr, ~l1);
+	    TclSetWideIntObj(valuePtr, ~w1);
 	    TRACE_APPEND(("%s\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
@@ -6439,7 +6428,7 @@ TEBCresume(
 	    TRACE_APPEND(("%s\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	case TCL_NUMBER_LONG:
-	    l1 = *((const Tcl_WideInt *) ptr1);
+	    l1 = w1 = *((const Tcl_WideInt *) ptr1);
 	    if (l1 != LONG_MIN) {
 		if (Tcl_IsShared(valuePtr)) {
 		    TclNewLongObj(objResultPtr, -l1);
@@ -8501,8 +8490,8 @@ ExecuteExtendedBinaryMathOp(
 	    }
 	    WIDE_RESULT(wResult);
 	}
-	l1 = *((const Tcl_WideInt *)ptr1);
-	l2 = *((const Tcl_WideInt *)ptr2);
+	l1 = w1 = *((const Tcl_WideInt *)ptr1);
+	l2 = w2 = *((const Tcl_WideInt *)ptr2);
 
 	switch (opcode) {
 	case INST_BITAND:
@@ -8536,14 +8525,14 @@ ExecuteExtendedBinaryMathOp(
 	}
 	l1 = l2 = 0;
 	if (type2 == TCL_NUMBER_LONG) {
-	    l2 = *((const Tcl_WideInt *) ptr2);
-	    if (l2 == 0) {
+	    l2 = w2 = *((const Tcl_WideInt *) ptr2);
+	    if (w2 == 0) {
 		/*
 		 * Anything to the zero power is 1.
 		 */
 
 		return constants[1];
-	    } else if (l2 == 1) {
+	    } else if (w2 == 1) {
 		/*
 		 * Anything to the first power is itself
 		 */
@@ -8640,25 +8629,25 @@ ExecuteExtendedBinaryMathOp(
 	}
 
 	if (type1 == TCL_NUMBER_LONG) {
-	    if (l1 == 2) {
+	    if (w1 == 2) {
 		/*
 		 * Reduce small powers of 2 to shifts.
 		 */
 
-		if ((Tcl_WideUInt) l2 < (Tcl_WideUInt) CHAR_BIT*sizeof(Tcl_WideInt) - 1) {
-		    WIDE_RESULT(((Tcl_WideInt) 1) << l2);
+		if ((Tcl_WideUInt) w2 < (Tcl_WideUInt) CHAR_BIT*sizeof(Tcl_WideInt) - 1) {
+		    WIDE_RESULT(((Tcl_WideInt) 1) << (int)w2);
 		}
 		goto overflowExpon;
 	    }
-	    if (l1 == -2) {
+	    if (w1 == -2) {
 		int signum = oddExponent ? -1 : 1;
 
 		/*
 		 * Reduce small powers of 2 to shifts.
 		 */
 
-		if ((unsigned long)l2 < CHAR_BIT*sizeof(Tcl_WideInt) - 1){
-		    WIDE_RESULT(signum * (((Tcl_WideInt) 1) << l2));
+		if ((Tcl_WideUInt)w2 < CHAR_BIT*sizeof(Tcl_WideInt) - 1){
+		    WIDE_RESULT(signum * (((Tcl_WideInt) 1) << (int) w2));
 		}
 		goto overflowExpon;
 	    }
@@ -8737,19 +8726,19 @@ ExecuteExtendedBinaryMathOp(
 	} else {
 	    goto overflowExpon;
 	}
-	if (l2 - 2 < (long)MaxBase64Size
-		&& w1 <=  MaxBase64[l2 - 2]
-		&& w1 >= -MaxBase64[l2 - 2]) {
+	if (w2 - 2 < (long)MaxBase64Size
+		&& w1 <=  MaxBase64[w2 - 2]
+		&& w1 >= -MaxBase64[w2 - 2]) {
 	    /*
 	     * Small powers of integers whose result is wide.
 	     */
 
 	    wResult = w1 * w1;		/* b**2 */
-	    switch (l2) {
+	    switch (w2) {
 	    case 2:
 		break;
 	    case 3:
-		wResult *= l1;		/* b**3 */
+		wResult *= w1;		/* b**3 */
 		break;
 	    case 4:
 		wResult *= wResult;	/* b**4 */
@@ -8826,9 +8815,9 @@ ExecuteExtendedBinaryMathOp(
 	 */
 
 	if (w1 - 3 >= 0 && w1 - 2 < (long)Exp64IndexSize
-		&& l2 - 2 < (long)(Exp64ValueSize + MaxBase64Size)) {
+		&& w2 - 2 < (long)(Exp64ValueSize + MaxBase64Size)) {
 	    base = Exp64Index[w1 - 3]
-		    + (unsigned short) (l2 - 2 - MaxBase64Size);
+		    + (unsigned short) (w2 - 2 - MaxBase64Size);
 	    if (base < Exp64Index[w1 - 2]) {
 		/*
 		 * 64-bit number raised to intermediate power, done by
@@ -8840,9 +8829,9 @@ ExecuteExtendedBinaryMathOp(
 	}
 
 	if (-w1 - 3 >= 0 && -w1 - 2 < (long)Exp64IndexSize
-		&& l2 - 2 < (long)(Exp64ValueSize + MaxBase64Size)) {
+		&& w2 - 2 < (long)(Exp64ValueSize + MaxBase64Size)) {
 	    base = Exp64Index[-w1 - 3]
-		    + (unsigned short) (l2 - 2 - MaxBase64Size);
+		    + (unsigned short) (w2 - 2 - MaxBase64Size);
 	    if (base < Exp64Index[-w1 - 2]) {
 		/*
 		 * 64-bit number raised to intermediate power, done by
