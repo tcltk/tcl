@@ -621,58 +621,6 @@ Tcl_GetObjResult(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_AppendResultVA --
- *
- *	Append a variable number of strings onto the interpreter's result.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The result of the interpreter given by the first argument is extended
- *	by the strings in the va_list (up to a terminating NULL argument).
- *
- *	If the string result is non-empty, the object result forced to be a
- *	duplicate of it first. There will be a string result afterwards.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_AppendResultVA(
-    Tcl_Interp *interp,		/* Interpreter with which to associate the
-				 * return value. */
-    va_list argList)		/* Variable argument list. */
-{
-    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
-
-    if (Tcl_IsShared(objPtr)) {
-	objPtr = Tcl_DuplicateObj(objPtr);
-    }
-    Tcl_AppendStringsToObjVA(objPtr, argList);
-    Tcl_SetObjResult(interp, objPtr);
-
-    /*
-     * Strictly we should call Tcl_GetStringResult(interp) here to make sure
-     * that interp->result is correct according to the old contract, but that
-     * makes the performance of much code (e.g. in Tk) absolutely awful. So we
-     * leave it out; code that really wants interp->result can just insert the
-     * calls to Tcl_GetStringResult() itself. [Patch 1041072 discussion]
-     */
-
-#ifdef USE_INTERP_RESULT
-    /*
-     * Ensure that the interp->result is legal so old Tcl 7.* code still
-     * works. There's still embarrasingly much of it about...
-     */
-
-    (void) Tcl_GetStringResult(interp);
-#endif /* USE_INTERP_RESULT */
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_AppendResult --
  *
  *	Append a variable number of strings onto the interpreter's result.
@@ -696,9 +644,23 @@ Tcl_AppendResult(
     Tcl_Interp *interp, ...)
 {
     va_list argList;
+    Tcl_Obj *objPtr;
 
     va_start(argList, interp);
-    Tcl_AppendResultVA(interp, argList);
+    objPtr = Tcl_GetObjResult(interp);
+
+    if (Tcl_IsShared(objPtr)) {
+	objPtr = Tcl_DuplicateObj(objPtr);
+    }
+    while (1) {
+	const char *bytes = va_arg(argList, char *);
+
+	if (bytes == NULL) {
+	    break;
+	}
+	Tcl_AppendToObj(objPtr, bytes, -1);
+    }
+    Tcl_SetObjResult(interp, objPtr);
     va_end(argList);
 }
 
@@ -1029,48 +991,6 @@ ResetObjResult(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_SetErrorCodeVA --
- *
- *	This function is called to record machine-readable information about
- *	an error that is about to be returned.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The errorCode field of the interp is modified to hold all of the
- *	arguments to this function, in a list form with each argument becoming
- *	one element of the list.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_SetErrorCodeVA(
-    Tcl_Interp *interp,		/* Interpreter in which to set errorCode */
-    va_list argList)		/* Variable argument list. */
-{
-    Tcl_Obj *errorObj = Tcl_NewObj();
-
-    /*
-     * Scan through the arguments one at a time, appending them to the
-     * errorCode field as list elements.
-     */
-
-    while (1) {
-	char *elem = va_arg(argList, char *);
-
-	if (elem == NULL) {
-	    break;
-	}
-	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, -1));
-    }
-    Tcl_SetObjErrorCode(interp, errorObj);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_SetErrorCode --
  *
  *	This function is called to record machine-readable information about
@@ -1092,6 +1012,7 @@ Tcl_SetErrorCode(
     Tcl_Interp *interp, ...)
 {
     va_list argList;
+    Tcl_Obj *errorObj;
 
     /*
      * Scan through the arguments one at a time, appending them to the
@@ -1099,7 +1020,22 @@ Tcl_SetErrorCode(
      */
 
     va_start(argList, interp);
-    Tcl_SetErrorCodeVA(interp, argList);
+    errorObj = Tcl_NewObj();
+
+    /*
+     * Scan through the arguments one at a time, appending them to the
+     * errorCode field as list elements.
+     */
+
+    while (1) {
+	char *elem = va_arg(argList, char *);
+
+	if (elem == NULL) {
+	    break;
+	}
+	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, -1));
+    }
+    Tcl_SetObjErrorCode(interp, errorObj);
     va_end(argList);
 }
 
