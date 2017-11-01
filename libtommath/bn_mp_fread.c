@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_FREAD_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,17 +12,18 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
+#ifndef LTM_NO_FILE
 /* read a bigint from a file stream in ASCII */
 int mp_fread(mp_int *a, int radix, FILE *stream)
 {
    int err, ch, neg, y;
-   
+
    /* clear a */
    mp_zero(a);
-   
+
    /* if first digit is - then set negative */
    ch = fgetc(stream);
    if (ch == '-') {
@@ -31,18 +32,18 @@ int mp_fread(mp_int *a, int radix, FILE *stream)
    } else {
       neg = MP_ZPOS;
    }
-   
+
    for (;;) {
       /* find y in the radix map */
       for (y = 0; y < radix; y++) {
-          if (mp_s_rmap[y] == ch) {
-             break;
-          }
+         if (mp_s_rmap[y] == ch) {
+            break;
+         }
       }
       if (y == radix) {
          break;
       }
-      
+
       /* shift up and add */
       if ((err = mp_mul_d(a, radix, a)) != MP_OKAY) {
          return err;
@@ -50,14 +51,19 @@ int mp_fread(mp_int *a, int radix, FILE *stream)
       if ((err = mp_add_d(a, y, a)) != MP_OKAY) {
          return err;
       }
-      
+
       ch = fgetc(stream);
    }
    if (mp_cmp_d(a, 0) != MP_EQ) {
       a->sign = neg;
    }
-   
+
    return MP_OKAY;
 }
+#endif
 
 #endif
+
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

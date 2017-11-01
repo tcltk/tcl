@@ -15,7 +15,7 @@
 
 #include "tclInt.h"
 #if defined(_WIN32) || defined(__CYGWIN__)
-    MODULE_SCOPE void tclWinDebugPanic(const char *format, ...);
+    MODULE_SCOPE TCL_NORETURN void tclWinDebugPanic(const char *format, ...);
 #endif
 
 /*
@@ -24,9 +24,9 @@
  */
 
 #if defined(__CYGWIN__)
-static Tcl_PanicProc *panicProc = tclWinDebugPanic;
+static TCL_NORETURN Tcl_PanicProc *panicProc = tclWinDebugPanic;
 #else
-static Tcl_PanicProc *panicProc = NULL;
+static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
 #endif
 
 /*
@@ -47,11 +47,15 @@ static Tcl_PanicProc *panicProc = NULL;
 
 void
 Tcl_SetPanicProc(
-    Tcl_PanicProc *proc)
+    TCL_NORETURN1 Tcl_PanicProc *proc)
 {
 #if defined(_WIN32)
     /* tclWinDebugPanic only installs if there is no panicProc yet. */
     if ((proc != tclWinDebugPanic) || (panicProc == NULL))
+#elif defined(__CYGWIN__)
+    if (proc == NULL)
+	panicProc = tclWinDebugPanic;
+    else
 #endif
     panicProc = proc;
 }
@@ -107,7 +111,7 @@ Tcl_PanicVA(
 	__builtin_trap();
 #   elif defined(_WIN64)
 	__debugbreak();
-#   elif defined(_MSC_VER)
+#   elif defined(_MSC_VER) && defined (_M_IX86)
 	_asm {int 3}
 #   else
 	DebugBreak();
@@ -137,7 +141,14 @@ Tcl_PanicVA(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+/* ARGSUSED */
+
+/*
+ * The following comment is here so that Coverity's static analizer knows that
+ * a Tcl_Panic() call can never return and avoids lots of false positives.
+ */
+
+/* coverity[+kill] */
 void
 Tcl_Panic(
     const char *format,

@@ -19,7 +19,7 @@ testConstraint reg 0
 if {[testConstraint win]} {
     if {![catch {
 	    ::tcltest::loadTestedCommands
-	    set ::regver [package require registry 1.3.0]
+	    set ::regver [package require registry 1.3.2]
 	}]} {
 	testConstraint reg 1
     }
@@ -33,7 +33,7 @@ testConstraint english [expr {
 
 test registry-1.0 {check if we are testing the right dll} {win reg} {
     set ::regver
-} {1.3.0}
+} {1.3.2}
 test registry-1.1 {argument parsing for registry command} {win reg} {
     list [catch {registry} msg] $msg
 } {1 {wrong # args: should be "registry ?-32bit|-64bit? option ?arg ...?"}}
@@ -283,7 +283,7 @@ test registry-4.7 {GetKeyNames: Unicode} {win reg english} {
     registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } "baz\u00c7bar blat"
-test registry-4.8 {GetKeyNames: Unicode} {win reg nt} {
+test registry-4.8 {GetKeyNames: Unicode} {win reg} {
     registry delete HKEY_CURRENT_USER\\TclFoobar
     registry set HKEY_CURRENT_USER\\TclFoobar\\baz\u30b7bar
     registry set HKEY_CURRENT_USER\\TclFoobar\\blat
@@ -487,7 +487,7 @@ test registry-6.17 {GetValue: Unicode value names} {win reg} {
     registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } foobar
-test registry-6.18 {GetValue: values with Unicode strings} {win reg nt} {
+test registry-6.18 {GetValue: values with Unicode strings} {win reg} {
     registry set HKEY_CURRENT_USER\\TclFoobar val1 {foo ba\u30b7r baz} multi_sz
     set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
     registry delete HKEY_CURRENT_USER\\TclFoobar
@@ -505,7 +505,7 @@ test registry-6.20 {GetValue: values with Unicode strings with embedded nulls} {
     registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } "foo ba r baz"
-test registry-6.21 {GetValue: very long value names and values} {pcOnly reg} {
+test registry-6.21 {GetValue: very long value names and values} {win reg} {
     registry set HKEY_CURRENT_USER\\TclFoobar [string repeat k 16383] [string repeat x 16383] multi_sz
     set result [registry get HKEY_CURRENT_USER\\TclFoobar [string repeat k 16383]]
     registry delete HKEY_CURRENT_USER\\TclFoobar
@@ -604,7 +604,7 @@ test registry-9.3 {ParseKeyName: bad keys} -constraints {win reg} -body {
 test registry-9.4 {ParseKeyName: bad keys} -constraints {win reg} -body {
     registry values \\\\\\
 } -returnCodes error -result {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
-test registry-9.5 {ParseKeyName: bad keys} -constraints {win reg english nt} -body {
+test registry-9.5 {ParseKeyName: bad keys} -constraints {win reg english} -body {
     registry values \\\\\\HKEY_CLASSES_ROOT
 } -returnCodes error -result {unable to open key: The network address is invalid.}
 test registry-9.6 {ParseKeyName: bad keys} -constraints {win reg} -body {

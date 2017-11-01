@@ -53,7 +53,7 @@ static const Tcl_ObjType indexType = {
 
 /*
  * The definition of the internal representation of the "index" object; The
- * internalRep.otherValuePtr field of an object of "index" type will be a
+ * internalRep.twoPtrValue.ptr1 field of an object of "index" type will be a
  * pointer to one of these structures.
  *
  * Keep this structure declaration in sync with tclTestObj.c
@@ -69,74 +69,12 @@ typedef struct {
  * The following macros greatly simplify moving through a table...
  */
 
-#define STRING_AT(table, offset, index) \
-	(*((const char *const *)(((char *)(table)) + ((offset) * (index)))))
+#define STRING_AT(table, offset) \
+	(*((const char *const *)(((char *)(table)) + (offset))))
 #define NEXT_ENTRY(table, offset) \
-	(&(STRING_AT(table, offset, 1)))
+	(&(STRING_AT(table, offset)))
 #define EXPAND_OF(indexRep) \
-	STRING_AT((indexRep)->tablePtr, (indexRep)->offset, (indexRep)->index)
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_GetIndexFromObj --
- *
- *	This function looks up an object's value in a table of strings and
- *	returns the index of the matching string, if any.
- *
- * Results:
- *	If the value of objPtr is identical to or a unique abbreviation for
- *	one of the entries in tablePtr, then the return value is TCL_OK and the
- *	index of the matching entry is stored at *indexPtr. If there isn't a
- *	proper match, then TCL_ERROR is returned and an error message is left
- *	in interp's result (unless interp is NULL). The msg argument is used
- *	in the error message; for example, if msg has the value "option" then
- *	the error message will say something flag 'bad option "foo": must be
- *	...'
- *
- * Side effects:
- *	The result of the lookup is cached as the internal rep of objPtr, so
- *	that repeated lookups can be done quickly.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_GetIndexFromObj(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
-    const char *const*tablePtr,	/* Array of strings to compare against the
-				 * value of objPtr; last entry must be NULL
-				 * and there must not be duplicate entries. */
-    const char *msg,		/* Identifying word to use in error
-				 * messages. */
-    int flags,			/* 0 or TCL_EXACT */
-    int *indexPtr)		/* Place to store resulting integer index. */
-{
-
-    /*
-     * See if there is a valid cached result from a previous lookup (doing the
-     * check here saves the overhead of calling Tcl_GetIndexFromObjStruct in
-     * the common case where the result is cached).
-     */
-
-    if (objPtr->typePtr == &indexType) {
-	IndexRep *indexRep = objPtr->internalRep.otherValuePtr;
-
-	/*
-	 * Here's hoping we don't get hit by unfortunate packing constraints
-	 * on odd platforms like a Cray PVP...
-	 */
-
-	if (indexRep->tablePtr == (void *) tablePtr
-		&& indexRep->offset == sizeof(char *)) {
-	    *indexPtr = indexRep->index;
-	    return TCL_OK;
-	}
-    }
-    return Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, sizeof(char *),
-	    msg, flags, indexPtr);
-}
+	STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index)
 
 /*
  *----------------------------------------------------------------------
@@ -210,13 +148,8 @@ GetIndexFromObjList(
     tablePtr[objc] = NULL;
 
     result = Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr,
-	    sizeof(char *), msg, flags, indexPtr);
+	    sizeof(char *), msg, flags | INDEX_TEMP_TABLE, indexPtr);
 
-    /*
-     * The internal rep must be cleared since tablePtr will go away.
-     */
-
-    TclFreeIntRep(objPtr);
     ckfree(tablePtr);
 
     return result;
@@ -238,7 +171,7 @@ GetIndexFromObjList(
  *	a proper match, then TCL_ERROR is returned and an error message is
  *	left in interp's result (unless interp is NULL). The msg argument is
  *	used in the error message; for example, if msg has the value "option"
- *	then the error message will say something flag 'bad option "foo": must
+ *	then the error message will say something like 'bad option "foo": must
  *	be ...'
  *
  * Side effects:
@@ -270,12 +203,16 @@ Tcl_GetIndexFromObjStruct(
     Tcl_Obj *resultPtr;
     IndexRep *indexRep;
 
+    /* Protect against invalid values, like -1 or 0. */
+    if (offset < (int)sizeof(char *)) {
+	offset = (int)sizeof(char *);
+    }
     /*
      * See if there is a valid cached result from a previous lookup.
      */
 
-    if (objPtr->typePtr == &indexType) {
-	indexRep = objPtr->internalRep.otherValuePtr;
+    if (!(flags & INDEX_TEMP_TABLE) && objPtr->typePtr == &indexType) {
+	indexRep = objPtr->internalRep.twoPtrValue.ptr1;
 	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
 	    *indexPtr = indexRep->index;
 	    return TCL_OK;
@@ -335,17 +272,19 @@ Tcl_GetIndexFromObjStruct(
      * operation.
      */
 
-    if (objPtr->typePtr == &indexType) {
-	indexRep = objPtr->internalRep.otherValuePtr;
-    } else {
-	TclFreeIntRep(objPtr);
-	indexRep = ckalloc(sizeof(IndexRep));
-	objPtr->internalRep.otherValuePtr = indexRep;
-	objPtr->typePtr = &indexType;
+    if (!(flags & INDEX_TEMP_TABLE)) {
+	if (objPtr->typePtr == &indexType) {
+	    indexRep = objPtr->internalRep.twoPtrValue.ptr1;
+	} else {
+	    TclFreeIntRep(objPtr);
+	    indexRep = ckalloc(sizeof(IndexRep));
+	    objPtr->internalRep.twoPtrValue.ptr1 = indexRep;
+	    objPtr->typePtr = &indexType;
+	}
+	indexRep->tablePtr = (void *) tablePtr;
+	indexRep->offset = offset;
+	indexRep->index = index;
     }
-    indexRep->tablePtr = (void *) tablePtr;
-    indexRep->offset = offset;
-    indexRep->index = index;
 
     *indexPtr = index;
     return TCL_OK;
@@ -443,7 +382,7 @@ static void
 UpdateStringOfIndex(
     Tcl_Obj *objPtr)
 {
-    IndexRep *indexRep = objPtr->internalRep.otherValuePtr;
+    IndexRep *indexRep = objPtr->internalRep.twoPtrValue.ptr1;
     register char *buf;
     register unsigned len;
     register const char *indexStr = EXPAND_OF(indexRep);
@@ -478,11 +417,11 @@ DupIndex(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    IndexRep *srcIndexRep = srcPtr->internalRep.otherValuePtr;
+    IndexRep *srcIndexRep = srcPtr->internalRep.twoPtrValue.ptr1;
     IndexRep *dupIndexRep = ckalloc(sizeof(IndexRep));
 
     memcpy(dupIndexRep, srcIndexRep, sizeof(IndexRep));
-    dupPtr->internalRep.otherValuePtr = dupIndexRep;
+    dupPtr->internalRep.twoPtrValue.ptr1 = dupIndexRep;
     dupPtr->typePtr = &indexType;
 }
 
@@ -507,7 +446,7 @@ static void
 FreeIndex(
     Tcl_Obj *objPtr)
 {
-    ckfree(objPtr->internalRep.otherValuePtr);
+    ckfree(objPtr->internalRep.twoPtrValue.ptr1);
     objPtr->typePtr = NULL;
 }
 
@@ -587,8 +526,8 @@ PrefixMatchObjCmd(
     }
 
     for (i = 1; i < (objc - 2); i++) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], matchOptions, "option", 0,
-		&index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], matchOptions,
+		sizeof(char *), "option", 0, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum matchOptions) index) {
@@ -657,7 +596,7 @@ PrefixMatchObjCmd(
 	}
 	Tcl_ListObjAppendElement(interp, errorPtr,
 		Tcl_NewStringObj("-code", 5));
-	Tcl_ListObjAppendElement(interp, errorPtr, Tcl_NewIntObj(result));
+	Tcl_ListObjAppendElement(interp, errorPtr, Tcl_NewLongObj(result));
 
 	return Tcl_SetReturnOptions(interp, errorPtr);
     }
@@ -707,10 +646,10 @@ PrefixAllObjCmd(
 	return result;
     }
     resultPtr = Tcl_NewListObj(0, NULL);
-    string = Tcl_GetStringFromObj(objv[2], &length);
+    string = TclGetStringFromObj(objv[2], &length);
 
     for (t = 0; t < tableObjc; t++) {
-	elemString = Tcl_GetStringFromObj(tableObjv[t], &elemLength);
+	elemString = TclGetStringFromObj(tableObjv[t], &elemLength);
 
 	/*
 	 * A prefix cannot match if it is longest.
@@ -763,13 +702,13 @@ PrefixLongestObjCmd(
     if (result != TCL_OK) {
 	return result;
     }
-    string = Tcl_GetStringFromObj(objv[2], &length);
+    string = TclGetStringFromObj(objv[2], &length);
 
     resultString = NULL;
     resultLength = 0;
 
     for (t = 0; t < tableObjc; t++) {
-	elemString = Tcl_GetStringFromObj(tableObjv[t], &elemLength);
+	elemString = TclGetStringFromObj(tableObjv[t], &elemLength);
 
 	/*
 	 * First check if the prefix string matches the element. A prefix
@@ -873,33 +812,10 @@ Tcl_WrongNumArgs(
 				 * NULL. */
 {
     Tcl_Obj *objPtr;
-    int i, len, elemLen;
+    size_t i, len, elemLen;
     char flags;
     Interp *iPtr = (Interp *) interp;
     const char *elementStr;
-
-    /*
-     * [incr Tcl] does something fairly horrific when generating error
-     * messages for its ensembles; it passes the whole set of ensemble
-     * arguments as a list in the first argument. This means that this code
-     * causes a problem in iTcl if it attempts to correctly quote all
-     * arguments, which would be the correct thing to do. We work around this
-     * nasty behaviour for now, and hope that we can remove it all in the
-     * future...
-     */
-
-#ifndef AVOID_HACKS_FOR_ITCL
-    int isFirst = 1;		/* Special flag used to inhibit the treating
-				 * of the first word as a list element so the
-				 * hacky way Itcl generates error messages for
-				 * its ensembles will still work. [Bug
-				 * 1066837] */
-#   define MAY_QUOTE_WORD	(!isFirst)
-#   define AFTER_FIRST_WORD	(isFirst = 0)
-#else /* !AVOID_HACKS_FOR_ITCL */
-#   define MAY_QUOTE_WORD	1
-#   define AFTER_FIRST_WORD	(void) 0
-#endif /* AVOID_HACKS_FOR_ITCL */
 
     TclNewObj(objPtr);
     if (iPtr->flags & INTERP_ALTERNATE_WRONG_ARGS) {
@@ -916,9 +832,17 @@ Tcl_WrongNumArgs(
      */
 
     if (iPtr->ensembleRewrite.sourceObjs != NULL) {
-	int toSkip = iPtr->ensembleRewrite.numInsertedObjs;
-	int toPrint = iPtr->ensembleRewrite.numRemovedObjs;
+	size_t toSkip = iPtr->ensembleRewrite.numInsertedObjs;
+	size_t toPrint = iPtr->ensembleRewrite.numRemovedObjs;
 	Tcl_Obj *const *origObjv = iPtr->ensembleRewrite.sourceObjs;
+
+	/*
+	 * Check for spelling fixes, and substitute the fixed values.
+	 */
+
+	if (origObjv[0] == NULL) {
+	    origObjv = (Tcl_Obj *const *)origObjv[2];
+	}
 
 	/*
 	 * We only know how to do rewriting if all the replaced objects are
@@ -927,7 +851,7 @@ Tcl_WrongNumArgs(
 	 * confusing error message...
 	 */
 
-	if (objc < toSkip) {
+	if ((size_t)objc < toSkip) {
 	    goto addNormalArgumentsToMessage;
 	}
 
@@ -949,23 +873,18 @@ Tcl_WrongNumArgs(
 
 	    if (origObjv[i]->typePtr == &indexType) {
 		register IndexRep *indexRep =
-			origObjv[i]->internalRep.otherValuePtr;
+			origObjv[i]->internalRep.twoPtrValue.ptr1;
 
 		elementStr = EXPAND_OF(indexRep);
 		elemLen = strlen(elementStr);
-	    } else if (origObjv[i]->typePtr == &tclEnsembleCmdType) {
-		register EnsembleCmdRep *ecrPtr =
-			origObjv[i]->internalRep.otherValuePtr;
-
-		elementStr = ecrPtr->fullSubcmdName;
-		elemLen = strlen(elementStr);
 	    } else {
-		elementStr = TclGetStringFromObj(origObjv[i], &elemLen);
+		elementStr = TclGetString(origObjv[i]);
+		elemLen = origObjv[i]->length;
 	    }
 	    flags = 0;
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
-	    if (MAY_QUOTE_WORD && len != elemLen) {
+	    if (len != elemLen) {
 		char *quotedElementStr = TclStackAlloc(interp,
 			(unsigned)len + 1);
 
@@ -976,8 +895,6 @@ Tcl_WrongNumArgs(
 	    } else {
 		Tcl_AppendToObj(objPtr, elementStr, elemLen);
 	    }
-
-	    AFTER_FIRST_WORD;
 
 	    /*
 	     * Add a space if the word is not the last one (which has a
@@ -996,7 +913,7 @@ Tcl_WrongNumArgs(
      */
 
   addNormalArgumentsToMessage:
-    for (i = 0; i < objc; i++) {
+    for (i = 0; i < (size_t)objc; i++) {
 	/*
 	 * If the object is an index type use the index table which allows for
 	 * the correct error message even if the subcommand was abbreviated.
@@ -1004,26 +921,22 @@ Tcl_WrongNumArgs(
 	 */
 
 	if (objv[i]->typePtr == &indexType) {
-	    register IndexRep *indexRep = objv[i]->internalRep.otherValuePtr;
+	    register IndexRep *indexRep = objv[i]->internalRep.twoPtrValue.ptr1;
 
 	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), NULL);
-	} else if (objv[i]->typePtr == &tclEnsembleCmdType) {
-	    register EnsembleCmdRep *ecrPtr =
-		    objv[i]->internalRep.otherValuePtr;
-
-	    Tcl_AppendStringsToObj(objPtr, ecrPtr->fullSubcmdName, NULL);
 	} else {
 	    /*
 	     * Quote the argument if it contains spaces (Bug 942757).
 	     */
 
-	    elementStr = TclGetStringFromObj(objv[i], &elemLen);
+	    elementStr = TclGetString(objv[i]);
+	    elemLen = objv[i]->length;
 	    flags = 0;
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
-	    if (MAY_QUOTE_WORD && len != elemLen) {
+	    if (len != elemLen) {
 		char *quotedElementStr = TclStackAlloc(interp,
-			(unsigned) len + 1);
+			len + 1);
 
 		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
@@ -1034,14 +947,12 @@ Tcl_WrongNumArgs(
 	    }
 	}
 
-	AFTER_FIRST_WORD;
-
 	/*
 	 * Append a space character (" ") if there is more text to follow
 	 * (either another element from objv, or the message string).
 	 */
 
-	if (i<objc-1 || message!=NULL) {
+	if (i<(size_t)(objc-1) || message!=NULL) {
 	    Tcl_AppendStringsToObj(objPtr, " ", NULL);
 	}
     }
@@ -1058,8 +969,6 @@ Tcl_WrongNumArgs(
     Tcl_AppendStringsToObj(objPtr, "\"", NULL);
     Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
     Tcl_SetObjResult(interp, objPtr);
-#undef MAY_QUOTE_WORD
-#undef AFTER_FIRST_WORD
 }
 
 /*
@@ -1147,7 +1056,7 @@ Tcl_ParseArgsObjv(
 	curArg = objv[srcIndex];
 	srcIndex++;
 	objc--;
-	str = Tcl_GetStringFromObj(curArg, &length);
+	str = TclGetStringFromObj(curArg, &length);
 	if (length > 0) {
 	    c = str[1];
 	} else {
@@ -1460,8 +1369,8 @@ TclGetCompletionCodeFromObj(
 	    && TclGetIntFromObj(NULL, value, codePtr) == TCL_OK) {
 	return TCL_OK;
     }
-    if (Tcl_GetIndexFromObj(NULL, value, returnCodes, NULL, TCL_EXACT,
-	    codePtr) == TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(NULL, value, returnCodes,
+	    sizeof(char *), NULL, TCL_EXACT, codePtr) == TCL_OK) {
 	return TCL_OK;
     }
 

@@ -370,7 +370,7 @@ err}
 
 test exec-10.1 {errors in exec invocation} -constraints {exec} -body {
     exec
-} -returnCodes error -result {wrong # args: should be "exec ?-switch ...? arg ?arg ...?"}
+} -returnCodes error -result {wrong # args: should be "exec ?-option ...? arg ?arg ...?"}
 test exec-10.2 {errors in exec invocation} -constraints {exec} -body {
     exec | cat
 } -returnCodes error -result {illegal use of | or |& in command}
@@ -545,10 +545,10 @@ test exec-14.1 {-keepnewline switch} {exec} {
 } "foo\n"
 test exec-14.2 {-keepnewline switch} -constraints {exec} -body {
     exec -keepnewline
-} -returnCodes error -result {wrong # args: should be "exec ?-switch ...? arg ?arg ...?"}
+} -returnCodes error -result {wrong # args: should be "exec ?-option ...? arg ?arg ...?"}
 test exec-14.3 {unknown switch} -constraints {exec} -body {
     exec -gorp
-} -returnCodes error -result {bad switch "-gorp": must be -ignorestderr, -keepnewline, or --}
+} -returnCodes error -result {bad option "-gorp": must be -ignorestderr, -keepnewline, or --}
 test exec-14.4 {-- switch} -constraints {exec} -body {
     exec -- -gorp
 } -returnCodes error -result {couldn't execute "-gorp": no such file or directory}
@@ -671,8 +671,12 @@ test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix} -setup {
     exec /bin/sh -c \
 	    {for a in 1 2 3; do sleep 1; echo $a; done} >>$tmpfile &
     exec /bin/sh -c \
+	    {for a in 4 5 6; do sleep 1; echo $a >&2; done} 2>>$tmpfile &
+    exec /bin/sh -c \
 	    {for a in a b c; do sleep 1; echo $a; done} >>$tmpfile &
-    # The above two shell invokations take about 3 seconds to finish, so allow
+    exec /bin/sh -c \
+	    {for a in d e f; do sleep 1; echo $a >&2; done} 2>>$tmpfile &
+    # The above four shell invokations take about 3 seconds to finish, so allow
     # 5s (in case the machine is busy)
     after 5000
     # Check that no bytes have got lost through mixups with overlapping
@@ -681,7 +685,20 @@ test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix} -setup {
     file size $tmpfile
 } -cleanup {
     removeFile $tmpfile
-} -result 14
+} -result 26
+
+# Tests to ensure batch files and .CMD (Bug 9ece99d58b)
+# can be executed on Windows
+test exec-20.0 {exec .bat file} -constraints {win} -body {
+    set log [makeFile {} exec20.log]
+    exec [makeFile "echo %1> $log" exec20.bat] "Testing exec-20.0"
+    viewFile $log
+} -result "\"Testing exec-20.0\""
+test exec-20.1 {exec .CMD file} -constraints {win} -body {
+    set log [makeFile {} exec201.log]
+    exec [makeFile "echo %1> $log" exec201.CMD] "Testing exec-20.1"
+    viewFile $log
+} -result "\"Testing exec-20.1\""
 
 # ----------------------------------------------------------------------
 # cleanup

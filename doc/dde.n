@@ -4,9 +4,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH dde n 1.4 dde "Tcl Bundled Packages"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -85,7 +85,7 @@ the command returns immediately with no error.
 .VS 8.6
 Without the \fB\-binary\fR option all data will be sent in unicode. For
 dde clients which don't implement the CF_UNICODE clipboard format, this
-will automatically be translated to the system encoding. You can use 
+will automatically be translated to the system encoding. You can use
 the \fB\-binary\fR option in combination with the result of
 \fBencoding convertto\fR to send data in any other encoding.
 .VE 8.6
@@ -102,7 +102,7 @@ application.
 .VS 8.6
 Without the \fB\-binary\fR option all data will be sent in unicode. For
 dde clients which don't implement the CF_UNICODE clipboard format, this
-will automatically be translated to the system encoding. You can use 
+will automatically be translated to the system encoding. You can use
 the \fB\-binary\fR option in combination with the result of
 \fBencoding convertto\fR to send data in any other encoding.
 .VE 8.6

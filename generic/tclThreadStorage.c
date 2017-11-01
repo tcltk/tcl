@@ -85,14 +85,14 @@ TSDTableCreate(void)
     TSDTable *tsdTablePtr;
     sig_atomic_t i;
 
-    tsdTablePtr = TclpSysAlloc(sizeof(TSDTable), 0);
+    tsdTablePtr = TclpSysAlloc(sizeof(TSDTable));
     if (tsdTablePtr == NULL) {
 	Tcl_Panic("unable to allocate TSDTable");
     }
 
     tsdTablePtr->allocated = 8;
     tsdTablePtr->tablePtr =
-	    TclpSysAlloc(sizeof(void *) * tsdTablePtr->allocated, 0);
+	    TclpSysAlloc(sizeof(void *) * tsdTablePtr->allocated);
     if (tsdTablePtr->tablePtr == NULL) {
 	Tcl_Panic("unable to allocate TSDTable");
     }
@@ -208,12 +208,12 @@ TclThreadStorageKeyGet(
  *
  *	This procedure set an association of value with the key passed. The
  *	associated value may be retrieved with TclThreadDataKeyGet().
- * 
+ *
  * Results:
  *	None.
  *
  * Side effects:
- *	The thread-specific table may be created or reallocated. 
+ *	The thread-specific table may be created or reallocated.
  *
  *----------------------------------------------------------------------
  */
@@ -285,7 +285,7 @@ TclThreadStorageKeySet(
  *----------------------------------------------------------------------
  */
 
-void 
+void
 TclFinalizeThreadDataThread(void)
 {
     TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMaster.key);

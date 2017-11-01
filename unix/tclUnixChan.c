@@ -14,16 +14,9 @@
 #include "tclInt.h"	/* Internal definitions for Tcl. */
 #include "tclIO.h"	/* To get Channel type declaration. */
 
-#define SUPPORTS_TTY
-
-#undef DIRECT_BAUD
-#ifdef B4800
-#   if (B4800 == 4800)
-#	define DIRECT_BAUD
-#   endif /* B4800 == 4800 */
-#endif /* B4800 */
-
-#ifdef USE_TERMIOS
+#undef SUPPORTS_TTY
+#if defined(HAVE_TERMIOS_H)
+#   define SUPPORTS_TTY 1
 #   include <termios.h>
 #   ifdef HAVE_SYS_IOCTL_H
 #	include <sys/ioctl.h>
@@ -31,60 +24,29 @@
 #   ifdef HAVE_SYS_MODEM_H
 #	include <sys/modem.h>
 #   endif /* HAVE_SYS_MODEM_H */
-#   define IOSTATE			struct termios
-#   define GETIOSTATE(fd, statePtr)	tcgetattr((fd), (statePtr))
-#   define SETIOSTATE(fd, statePtr)	tcsetattr((fd), TCSADRAIN, (statePtr))
-#   define GETCONTROL(fd, intPtr)	ioctl((fd), TIOCMGET, (intPtr))
-#   define SETCONTROL(fd, intPtr)	ioctl((fd), TIOCMSET, (intPtr))
 
 #   ifdef FIONREAD
 #	define GETREADQUEUE(fd, int)	ioctl((fd), FIONREAD, &(int))
 #   elif defined(FIORDCHK)
 #	define GETREADQUEUE(fd, int)	int = ioctl((fd), FIORDCHK, NULL)
-#   endif /* FIONREAD */
+#   else
+#       define GETREADQUEUE(fd, int)    int = 0
+#   endif
+
 #   ifdef TIOCOUTQ
 #	define GETWRITEQUEUE(fd, int)	ioctl((fd), TIOCOUTQ, &(int))
-#   endif /* TIOCOUTQ */
-#   if defined(TIOCSBRK) && defined(TIOCCBRK)
+#   else
+#	define GETWRITEQUEUE(fd, int)	int = 0
+#   endif
 
-/*
- * Can't use ?: operator below because that messes up types on either Linux or
- * Solaris (the two are mutually exclusive!)
- */
-
-#	define SETBREAK(fd, flag) \
-		if (flag) {				\
-		    ioctl((fd), TIOCSBRK, NULL);	\
-		} else {				\
-		    ioctl((fd), TIOCCBRK, NULL);	\
-		}
-#   endif /* TIOCSBRK&TIOCCBRK */
 #   if !defined(CRTSCTS) && defined(CNEW_RTSCTS)
 #	define CRTSCTS CNEW_RTSCTS
 #   endif /* !CRTSCTS&CNEW_RTSCTS */
 #   if !defined(PAREXT) && defined(CMSPAR)
 #	define PAREXT CMSPAR
 #   endif /* !PAREXT&&CMSPAR */
-#else	/* !USE_TERMIOS */
 
-#ifdef USE_TERMIO
-#   include <termio.h>
-#   define IOSTATE			struct termio
-#   define GETIOSTATE(fd, statePtr)	ioctl((fd), TCGETA, (statePtr))
-#   define SETIOSTATE(fd, statePtr)	ioctl((fd), TCSETAW, (statePtr))
-#else	/* !USE_TERMIO */
-
-#ifdef USE_SGTTY
-#   include <sgtty.h>
-#   define IOSTATE			struct sgttyb
-#   define GETIOSTATE(fd, statePtr)	ioctl((fd), TIOCGETP, (statePtr))
-#   define SETIOSTATE(fd, statePtr)	ioctl((fd), TIOCSETP, (statePtr))
-#else	/* !USE_SGTTY */
-#   undef SUPPORTS_TTY
-#endif	/* !USE_SGTTY */
-
-#endif	/* !USE_TERMIO */
-#endif	/* !USE_TERMIOS */
+#endif	/* HAVE_TERMIOS_H */
 
 /*
  * Helper macros to make parts of this file clearer. The macros do exactly
@@ -108,18 +70,6 @@ typedef struct {
 } FileState;
 
 #ifdef SUPPORTS_TTY
-
-/*
- * The following structure describes per-instance state of a tty-based
- * channel.
- */
-
-typedef struct TtyState {
-    FileState fs;		/* Per-instance state of the file descriptor.
-				 * Must be the first field. */
-    IOSTATE savedState;		/* Initial state of device. Used to reset
-				 * state when device closed. */
-} TtyState;
 
 /*
  * The following structure is used to set or get the serial port attributes in
@@ -167,15 +117,12 @@ static void		TtyGetAttributes(int fd, TtyAttrs *ttyPtr);
 static int		TtyGetOptionProc(ClientData instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
-#ifndef DIRECT_BAUD
-static int		TtyGetBaud(unsigned long speed);
-static unsigned long	TtyGetSpeed(int baud);
-#endif /* DIRECT_BAUD */
-static FileState *	TtyInit(int fd, int initialize);
+static int		TtyGetBaud(speed_t speed);
+static speed_t		TtyGetSpeed(int baud);
+static void		TtyInit(int fd);
 static void		TtyModemStatusStr(int status, Tcl_DString *dsPtr);
 static int		TtyParseMode(Tcl_Interp *interp, const char *mode,
-			    int *speedPtr, int *parityPtr, int *dataPtr,
-			    int *stopPtr);
+			    TtyAttrs *ttyPtr);
 static void		TtySetAttributes(int fd, TtyAttrs *ttyPtr);
 static int		TtySetOptionProc(ClientData instanceData,
 			    Tcl_Interp *interp, const char *optionName,
@@ -573,7 +520,6 @@ FileGetHandleProc(
 }
 
 #ifdef SUPPORTS_TTY
-#ifdef USE_TERMIOS
 /*
  *----------------------------------------------------------------------
  *
@@ -606,7 +552,6 @@ TtyModemStatusStr(
     Tcl_DStringAppendElement(dsPtr, (status & TIOCM_CD) ? "1" : "0");
 #endif /* TIOCM_CD */
 }
-#endif /* USE_TERMIOS */
 
 /*
  *----------------------------------------------------------------------
@@ -636,11 +581,9 @@ TtySetOptionProc(
     FileState *fsPtr = instanceData;
     unsigned int len, vlen;
     TtyAttrs tty;
-#ifdef USE_TERMIOS
-    int flag, control, argc;
+    int argc;
     const char **argv;
-    IOSTATE iostate;
-#endif /* USE_TERMIOS */
+    struct termios iostate;
 
     len = strlen(optionName);
     vlen = strlen(value);
@@ -650,8 +593,7 @@ TtySetOptionProc(
      */
 
     if ((len > 2) && (strncmp(optionName, "-mode", len) == 0)) {
-	if (TtyParseMode(interp, value, &tty.baud, &tty.parity, &tty.data,
-		&tty.stop) != TCL_OK) {
+	if (TtyParseMode(interp, value, &tty) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -663,8 +605,6 @@ TtySetOptionProc(
 	return TCL_OK;
     }
 
-#ifdef USE_TERMIOS
-
     /*
      * Option -handshake none|xonxoff|rtscts|dtrdsr
      */
@@ -674,25 +614,25 @@ TtySetOptionProc(
 	 * Reset all handshake options. DTR and RTS are ON by default.
 	 */
 
-	GETIOSTATE(fsPtr->fd, &iostate);
+	tcgetattr(fsPtr->fd, &iostate);
 	CLEAR_BITS(iostate.c_iflag, IXON | IXOFF | IXANY);
 #ifdef CRTSCTS
 	CLEAR_BITS(iostate.c_cflag, CRTSCTS);
 #endif /* CRTSCTS */
-	if (strncasecmp(value, "NONE", vlen) == 0) {
+	if (Tcl_UtfNcasecmp(value, "NONE", vlen) == 0) {
 	    /*
 	     * Leave all handshake options disabled.
 	     */
-	} else if (strncasecmp(value, "XONXOFF", vlen) == 0) {
+	} else if (Tcl_UtfNcasecmp(value, "XONXOFF", vlen) == 0) {
 	    SET_BITS(iostate.c_iflag, IXON | IXOFF | IXANY);
-	} else if (strncasecmp(value, "RTSCTS", vlen) == 0) {
+	} else if (Tcl_UtfNcasecmp(value, "RTSCTS", vlen) == 0) {
 #ifdef CRTSCTS
 	    SET_BITS(iostate.c_cflag, CRTSCTS);
 #else /* !CRTSTS */
 	    UNSUPPORTED_OPTION("-handshake RTSCTS");
 	    return TCL_ERROR;
 #endif /* CRTSCTS */
-	} else if (strncasecmp(value, "DTRDSR", vlen) == 0) {
+	} else if (Tcl_UtfNcasecmp(value, "DTRDSR", vlen) == 0) {
 	    UNSUPPORTED_OPTION("-handshake DTRDSR");
 	    return TCL_ERROR;
 	} else {
@@ -705,7 +645,7 @@ TtySetOptionProc(
 	    }
 	    return TCL_ERROR;
 	}
-	SETIOSTATE(fsPtr->fd, &iostate);
+	tcsetattr(fsPtr->fd, TCSADRAIN, &iostate);
 	return TCL_OK;
     }
 
@@ -730,7 +670,7 @@ TtySetOptionProc(
 	    return TCL_ERROR;
 	}
 
-	GETIOSTATE(fsPtr->fd, &iostate);
+	tcgetattr(fsPtr->fd, &iostate);
 
 	Tcl_UtfToExternalDString(NULL, argv[0], -1, &ds);
 	iostate.c_cc[VSTART] = *(const cc_t *) Tcl_DStringValue(&ds);
@@ -741,7 +681,7 @@ TtySetOptionProc(
 	Tcl_DStringFree(&ds);
 	ckfree(argv);
 
-	SETIOSTATE(fsPtr->fd, &iostate);
+	tcsetattr(fsPtr->fd, TCSADRAIN, &iostate);
 	return TCL_OK;
     }
 
@@ -752,13 +692,13 @@ TtySetOptionProc(
     if ((len > 2) && (strncmp(optionName, "-timeout", len) == 0)) {
 	int msec;
 
-	GETIOSTATE(fsPtr->fd, &iostate);
+	tcgetattr(fsPtr->fd, &iostate);
 	if (Tcl_GetInt(interp, value, &msec) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	iostate.c_cc[VMIN] = 0;
 	iostate.c_cc[VTIME] = (msec==0) ? 0 : (msec<100) ? 1 : (msec+50)/100;
-	SETIOSTATE(fsPtr->fd, &iostate);
+	tcsetattr(fsPtr->fd, TCSADRAIN, &iostate);
 	return TCL_OK;
     }
 
@@ -767,7 +707,8 @@ TtySetOptionProc(
      */
 
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
-	int i;
+#if defined(TIOCMGET) && defined(TIOCMSET)
+	int i, control, flag;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
@@ -784,44 +725,36 @@ TtySetOptionProc(
 	    return TCL_ERROR;
 	}
 
-	GETCONTROL(fsPtr->fd, &control);
+	ioctl(fsPtr->fd, TIOCMGET, &control);
 	for (i = 0; i < argc-1; i += 2) {
 	    if (Tcl_GetBoolean(interp, argv[i+1], &flag) == TCL_ERROR) {
 		ckfree(argv);
 		return TCL_ERROR;
 	    }
-	    if (strncasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
-#ifdef TIOCM_DTR
+	    if (Tcl_UtfNcasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
 		if (flag) {
 		    SET_BITS(control, TIOCM_DTR);
 		} else {
 		    CLEAR_BITS(control, TIOCM_DTR);
 		}
-#else /* !TIOCM_DTR */
-		UNSUPPORTED_OPTION("-ttycontrol DTR");
-		ckfree(argv);
-		return TCL_ERROR;
-#endif /* TIOCM_DTR */
-	    } else if (strncasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
-#ifdef TIOCM_RTS
+	    } else if (Tcl_UtfNcasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
 		if (flag) {
 		    SET_BITS(control, TIOCM_RTS);
 		} else {
 		    CLEAR_BITS(control, TIOCM_RTS);
 		}
-#else /* !TIOCM_RTS*/
-		UNSUPPORTED_OPTION("-ttycontrol RTS");
-		ckfree(argv);
-		return TCL_ERROR;
-#endif /* TIOCM_RTS*/
-	    } else if (strncasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
-#ifdef SETBREAK
-		SETBREAK(fsPtr->fd, flag);
-#else /* !SETBREAK */
+	    } else if (Tcl_UtfNcasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
+#if defined(TIOCSBRK) && defined(TIOCCBRK)
+		if (flag) {
+		    ioctl(fsPtr->fd, TIOCSBRK, NULL);
+		} else {
+		    ioctl(fsPtr->fd, TIOCCBRK, NULL);
+		}
+#else /* TIOCSBRK & TIOCCBRK */
 		UNSUPPORTED_OPTION("-ttycontrol BREAK");
 		ckfree(argv);
 		return TCL_ERROR;
-#endif /* SETBREAK */
+#endif /* TIOCSBRK & TIOCCBRK */
 	    } else {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -835,17 +768,16 @@ TtySetOptionProc(
 	    }
 	} /* -ttycontrol options loop */
 
-	SETCONTROL(fsPtr->fd, &control);
+	ioctl(fsPtr->fd, TIOCMSET, &control);
 	ckfree(argv);
 	return TCL_OK;
+#else /* TIOCMGET&TIOCMSET */
+	UNSUPPORTED_OPTION("-ttycontrol");
+#endif /* TIOCMGET&TIOCMSET */
     }
 
     return Tcl_BadChannelOption(interp, optionName,
 	    "mode handshake timeout ttycontrol xchar");
-
-#else /* !USE_TERMIOS */
-    return Tcl_BadChannelOption(interp, optionName, "mode");
-#endif /* USE_TERMIOS */
 }
 
 /*
@@ -860,12 +792,8 @@ TtySetOptionProc(
  *
  * Results:
  *	A standard Tcl result. Also sets the supplied DString to the string
- *	value of the option(s) returned.
- *
- * Side effects:
- *	The string returned by this function is in static storage and may be
- *	reused at any time subsequent to the call. Sets error message if
- *	needed (by calling Tcl_BadChannelOption).
+ *	value of the option(s) returned.  Sets error message if needed
+ *	(by calling Tcl_BadChannelOption).
  *
  *----------------------------------------------------------------------
  */
@@ -899,7 +827,6 @@ TtyGetOptionProc(
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 
-#ifdef USE_TERMIOS
     /*
      * Get option -xchar
      */
@@ -909,11 +836,11 @@ TtyGetOptionProc(
 	Tcl_DStringStartSublist(dsPtr);
     }
     if (len==0 || (len>1 && strncmp(optionName, "-xchar", len)==0)) {
-	IOSTATE iostate;
+	struct termios iostate;
 	Tcl_DString ds;
 
 	valid = 1;
-	GETIOSTATE(fsPtr->fd, &iostate);
+	tcgetattr(fsPtr->fd, &iostate);
 	Tcl_DStringInit(&ds);
 
 	Tcl_ExternalToUtfDString(NULL, (char *) &iostate.c_cc[VSTART], 1, &ds);
@@ -938,12 +865,8 @@ TtyGetOptionProc(
 	int inQueue=0, outQueue=0, inBuffered, outBuffered;
 
 	valid = 1;
-#ifdef GETREADQUEUE
 	GETREADQUEUE(fsPtr->fd, inQueue);
-#endif /* GETREADQUEUE */
-#ifdef GETWRITEQUEUE
 	GETWRITEQUEUE(fsPtr->fd, outQueue);
-#endif /* GETWRITEQUEUE */
 	inBuffered = Tcl_InputBuffered(fsPtr->channel);
 	outBuffered = Tcl_OutputBuffered(fsPtr->channel);
 
@@ -953,6 +876,7 @@ TtyGetOptionProc(
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 
+#if defined(TIOCMGET)
     /*
      * Get option -ttystatus
      * Option is readonly and returned by [fconfigure chan -ttystatus] but not
@@ -963,27 +887,19 @@ TtyGetOptionProc(
 	int status;
 
 	valid = 1;
-	GETCONTROL(fsPtr->fd, &status);
+	ioctl(fsPtr->fd, TIOCMGET, &status);
 	TtyModemStatusStr(status, dsPtr);
     }
-#endif /* USE_TERMIOS */
+#endif /* TIOCMGET */
 
     if (valid) {
 	return TCL_OK;
     }
-    return Tcl_BadChannelOption(interp, optionName, "mode"
-#ifdef USE_TERMIOS
-	    " queue ttystatus xchar"
-#endif /* USE_TERMIOS */
-	    );
+    return Tcl_BadChannelOption(interp, optionName,
+		"mode queue ttystatus xchar");
 }
 
-#ifdef DIRECT_BAUD
-#   define TtyGetSpeed(baud)	((unsigned) (baud))
-#   define TtyGetBaud(speed)	((int) (speed))
-#else /* !DIRECT_BAUD */
-
-static const struct {int baud; unsigned long speed;} speeds[] = {
+static const struct {int baud; speed_t speed;} speeds[] = {
 #ifdef B0
     {0, B0},
 #endif
@@ -1071,28 +987,57 @@ static const struct {int baud; unsigned long speed;} speeds[] = {
 #ifdef B460800
     {460800, B460800},
 #endif
+#ifdef B500000
+    {500000, B500000},
+#endif
+#ifdef B576000
+    {576000, B576000},
+#endif
+#ifdef B921600
+    {921600, B921600},
+#endif
+#ifdef B1000000
+    {1000000, B1000000},
+#endif
+#ifdef B1152000
+    {1152000, B1152000},
+#endif
+#ifdef B1500000
+    {1500000,B1500000},
+#endif
+#ifdef B2000000
+    {2000000, B2000000},
+#endif
+#ifdef B2500000
+    {2500000,B2500000},
+#endif
+#ifdef B3000000
+    {3000000,B3000000},
+#endif
+#ifdef B3500000
+    {3500000,B3500000},
+#endif
+#ifdef B4000000
+    {4000000,B4000000},
+#endif
     {-1, 0}
 };
-
+
 /*
  *---------------------------------------------------------------------------
  *
  * TtyGetSpeed --
  *
- *	Given a baud rate, get the mask value that should be stored in the
- *	termios, termio, or sgttyb structure in order to select that baud
- *	rate.
+ *	Given an integer baud rate, get the speed_t value that should be
+ *	used to select that baud rate.
  *
  * Results:
  *	As above.
  *
- * Side effects:
- *	None.
- *
  *---------------------------------------------------------------------------
  */
 
-static unsigned long
+static speed_t
 TtyGetSpeed(
     int baud)			/* The baud rate to look up. */
 {
@@ -1125,21 +1070,17 @@ TtyGetSpeed(
  *
  * TtyGetBaud --
  *
- *	Given a speed mask value from a termios, termio, or sgttyb structure,
- *	get the baus rate that corresponds to that mask value.
+ *	Return the integer baud rate corresponding to a given speed_t value.
  *
  * Results:
  *	As above. If the mask value was not recognized, 0 is returned.
- *
- * Side effects:
- *	None.
  *
  *---------------------------------------------------------------------------
  */
 
 static int
 TtyGetBaud(
-    unsigned long speed)	/* Speed mask value to look up. */
+    speed_t speed)		/* Speed mask value to look up. */
 {
     int i;
 
@@ -1150,7 +1091,6 @@ TtyGetBaud(
     }
     return 0;
 }
-#endif /* !DIRECT_BAUD */
 
 /*
  *---------------------------------------------------------------------------
@@ -1175,12 +1115,11 @@ TtyGetAttributes(
     TtyAttrs *ttyPtr)		/* Buffer filled with serial port
 				 * attributes. */
 {
-    IOSTATE iostate;
+    struct termios iostate;
     int baud, parity, data, stop;
 
-    GETIOSTATE(fd, &iostate);
+    tcgetattr(fd, &iostate);
 
-#ifdef USE_TERMIOS
     baud = TtyGetBaud(cfgetospeed(&iostate));
 
     parity = 'n';
@@ -1202,39 +1141,6 @@ TtyGetAttributes(
     data = (data == CS5) ? 5 : (data == CS6) ? 6 : (data == CS7) ? 7 : 8;
 
     stop = (iostate.c_cflag & CSTOPB) ? 2 : 1;
-#endif /* USE_TERMIOS */
-
-#ifdef USE_TERMIO
-    baud = TtyGetBaud(iostate.c_cflag & CBAUD);
-
-    parity = 'n';
-    switch (iostate.c_cflag & (PARENB | PARODD | PAREXT)) {
-    case PARENB			  : parity = 'e'; break;
-    case PARENB | PARODD	  : parity = 'o'; break;
-    case PARENB |	   PAREXT : parity = 's'; break;
-    case PARENB | PARODD | PAREXT : parity = 'm'; break;
-    }
-
-    data = iostate.c_cflag & CSIZE;
-    data = (data == CS5) ? 5 : (data == CS6) ? 6 : (data == CS7) ? 7 : 8;
-
-    stop = (iostate.c_cflag & CSTOPB) ? 2 : 1;
-#endif /* USE_TERMIO */
-
-#ifdef USE_SGTTY
-    baud = TtyGetBaud(iostate.sg_ospeed);
-
-    parity = 'n';
-    if (iostate.sg_flags & EVENP) {
-	parity = 'e';
-    } else if (iostate.sg_flags & ODDP) {
-	parity = 'o';
-    }
-
-    data = (iostate.sg_flags & (EVENP | ODDP)) ? 7 : 8;
-
-    stop = 1;
-#endif /* USE_SGTTY */
 
     ttyPtr->baud    = baud;
     ttyPtr->parity  = parity;
@@ -1265,12 +1171,10 @@ TtySetAttributes(
     TtyAttrs *ttyPtr)		/* Buffer containing new attributes for serial
 				 * port. */
 {
-    IOSTATE iostate;
-
-#ifdef USE_TERMIOS
+    struct termios iostate;
     int parity, data, flag;
 
-    GETIOSTATE(fd, &iostate);
+    tcgetattr(fd, &iostate);
     cfsetospeed(&iostate, TtyGetSpeed(ttyPtr->baud));
     cfsetispeed(&iostate, TtyGetSpeed(ttyPtr->baud));
 
@@ -1300,58 +1204,7 @@ TtySetAttributes(
     CLEAR_BITS(iostate.c_cflag, PARENB | PARODD | CSIZE | CSTOPB);
     SET_BITS(iostate.c_cflag, flag);
 
-#endif	/* USE_TERMIOS */
-
-#ifdef USE_TERMIO
-    int parity, data, flag;
-
-    GETIOSTATE(fd, &iostate);
-    CLEAR_BITS(iostate.c_cflag, CBAUD);
-    SET_BITS(iostate.c_cflag, TtyGetSpeed(ttyPtr->baud));
-
-    flag = 0;
-    parity = ttyPtr->parity;
-    if (parity != 'n') {
-	SET_BITS(flag, PARENB);
-	if ((parity == 'm') || (parity == 's')) {
-	    SET_BITS(flag, PAREXT);
-	}
-	if ((parity == 'm') || (parity == 'o')) {
-	    SET_BITS(flag, PARODD);
-	}
-    }
-    data = ttyPtr->data;
-    SET_BITS(flag,
-	    (data == 5) ? CS5 :
-	    (data == 6) ? CS6 :
-	    (data == 7) ? CS7 : CS8);
-    if (ttyPtr->stop == 2) {
-	SET_BITS(flag, CSTOPB);
-    }
-
-    CLEAR_BITS(iostate.c_cflag, PARENB | PARODD | PAREXT | CSIZE | CSTOPB);
-    SET_BITS(iostate.c_cflag, flag);
-
-#endif	/* USE_TERMIO */
-
-#ifdef USE_SGTTY
-    int parity;
-
-    GETIOSTATE(fd, &iostate);
-    iostate.sg_ospeed = TtyGetSpeed(ttyPtr->baud);
-    iostate.sg_ispeed = TtyGetSpeed(ttyPtr->baud);
-
-    parity = ttyPtr->parity;
-    if (parity == 'e') {
-	CLEAR_BITS(iostate.sg_flags, ODDP);
-	SET_BITS(iostate.sg_flags, EVENP);
-    } else if (parity == 'o') {
-	CLEAR_BITS(iostate.sg_flags, EVENP);
-	SET_BITS(iostate.sg_flags, ODDP);
-    }
-#endif	/* USE_SGTTY */
-
-    SETIOSTATE(fd, &iostate);
+    tcsetattr(fd, TCSADRAIN, &iostate);
 }
 
 /*
@@ -1367,9 +1220,6 @@ TtySetAttributes(
  *	TCL_ERROR otherwise. If TCL_ERROR is returned, an error message is
  *	left in the interp's result (if interp is non-NULL).
  *
- * Side effects:
- *	None.
- *
  *---------------------------------------------------------------------------
  */
 
@@ -1377,17 +1227,17 @@ static int
 TtyParseMode(
     Tcl_Interp *interp,		/* If non-NULL, interp for error return. */
     const char *mode,		/* Mode string to be parsed. */
-    int *speedPtr,		/* Filled with baud rate from mode string. */
-    int *parityPtr,		/* Filled with parity from mode string. */
-    int *dataPtr,		/* Filled with data bits from mode string. */
-    int *stopPtr)		/* Filled with stop bits from mode string. */
+    TtyAttrs *ttyPtr)		/* Filled with data from mode string */
 {
     int i, end;
     char parity;
-    static const char *bad = "bad value for -mode";
+    const char *bad = "bad value for -mode";
 
-    i = sscanf(mode, "%d,%c,%d,%d%n", speedPtr, &parity, dataPtr,
-	    stopPtr, &end);
+    i = sscanf(mode, "%d,%c,%d,%d%n",
+	    &ttyPtr->baud,
+	    &parity,
+	    &ttyPtr->data,
+	    &ttyPtr->stop, &end);
     if ((i != 4) || (mode[end] != '\0')) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1407,27 +1257,27 @@ TtyParseMode(
      */
 
     if (
-#if defined(PAREXT) || defined(USE_TERMIO)
+#if defined(PAREXT)
         strchr("noems", parity)
 #else
         strchr("noe", parity)
-#endif /* PAREXT|USE_TERMIO */
+#endif /* PAREXT */
                                == NULL) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s parity: should be %s", bad,
-#if defined(PAREXT) || defined(USE_TERMIO)
+#if defined(PAREXT)
 		    "n, o, e, m, or s"
 #else
 		    "n, o, or e"
-#endif /* PAREXT|USE_TERMIO */
+#endif /* PAREXT */
 		    ));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", NULL);
 	}
 	return TCL_ERROR;
     }
-    *parityPtr = parity;
-    if ((*dataPtr < 5) || (*dataPtr > 8)) {
+    ttyPtr->parity = parity;
+    if ((ttyPtr->data < 5) || (ttyPtr->data > 8)) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s data: should be 5, 6, 7, or 8", bad));
@@ -1435,7 +1285,7 @@ TtyParseMode(
 	}
 	return TCL_ERROR;
     }
-    if ((*stopPtr < 0) || (*stopPtr > 2)) {
+    if ((ttyPtr->stop < 0) || (ttyPtr->stop > 2)) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s stop: should be 1 or 2", bad));
@@ -1453,71 +1303,38 @@ TtyParseMode(
  *
  *	Given file descriptor that refers to a serial port, initialize the
  *	serial port to a set of sane values so that Tcl can talk to a device
- *	located on the serial port. Note that no initialization happens if the
- *	initialize flag is not set; this is necessary for the correct handling
- *	of UNIX console TTYs at startup.
- *
- * Results:
- *	A pointer to a FileState suitable for use with Tcl_CreateChannel and
- *	the ttyChannelType structure.
+ *	located on the serial port.
  *
  * Side effects:
  *	Serial device initialized to non-blocking raw mode, similar to sockets
- *	(if initialize flag is non-zero.) All other modes can be simulated on
- *	top of this in Tcl.
+ *	All other modes can be simulated on top of this in Tcl.
  *
  *---------------------------------------------------------------------------
  */
 
-static FileState *
+static void
 TtyInit(
-    int fd,			/* Open file descriptor for serial port to be
+    int fd)			/* Open file descriptor for serial port to be
 				 * initialized. */
-    int initialize)
 {
-    TtyState *ttyPtr = ckalloc(sizeof(TtyState));
-    int stateUpdated = 0;
+    struct termios iostate;
+    tcgetattr(fd, &iostate);
 
-    GETIOSTATE(fd, &ttyPtr->savedState);
-    if (initialize) {
-	IOSTATE iostate = ttyPtr->savedState;
-
-#if defined(USE_TERMIOS) || defined(USE_TERMIO)
-	if (iostate.c_iflag != IGNBRK
-		|| iostate.c_oflag != 0
-		|| iostate.c_lflag != 0
-		|| iostate.c_cflag & CREAD
-		|| iostate.c_cc[VMIN] != 1
-		|| iostate.c_cc[VTIME] != 0) {
-	    stateUpdated = 1;
-	}
+    if (iostate.c_iflag != IGNBRK
+	    || iostate.c_oflag != 0
+	    || iostate.c_lflag != 0
+	    || iostate.c_cflag & CREAD
+	    || iostate.c_cc[VMIN] != 1
+	    || iostate.c_cc[VTIME] != 0) {
 	iostate.c_iflag = IGNBRK;
 	iostate.c_oflag = 0;
 	iostate.c_lflag = 0;
-	SET_BITS(iostate.c_cflag, CREAD);
+	iostate.c_cflag |= CREAD;
 	iostate.c_cc[VMIN] = 1;
 	iostate.c_cc[VTIME] = 0;
-#endif	/* USE_TERMIOS|USE_TERMIO */
 
-#ifdef USE_SGTTY
-	if ((iostate.sg_flags & (EVENP | ODDP))
-		|| !(iostate.sg_flags & RAW)) {
-	    ttyPtr->stateUpdated = 1;
-	}
-	iostate.sg_flags &= EVENP | ODDP;
-	SET_BITS(iostate.sg_flags, RAW);
-#endif	/* USE_SGTTY */
-
-	/*
-	 * Only update if we're changing anything to avoid possible blocking.
-	 */
-
-	if (stateUpdated) {
-	    SETIOSTATE(fd, &iostate);
-	}
+	tcsetattr(fd, TCSADRAIN, &iostate);
     }
-
-    return &ttyPtr->fs;
 }
 #endif	/* SUPPORTS_TTY */
 
@@ -1576,6 +1393,11 @@ TclpOpenFileChannel(
 
     native = Tcl_FSGetNativePath(pathPtr);
     if (native == NULL) {
+	if (interp != (Tcl_Interp *) NULL) {
+	    Tcl_AppendResult(interp, "couldn't open \"",
+	    TclGetString(pathPtr), "\": filename is invalid on this platform",
+	    NULL);
+	}
 	return NULL;
     }
 
@@ -1621,15 +1443,15 @@ TclpOpenFileChannel(
 
 	translation = "auto crlf";
 	channelTypePtr = &ttyChannelType;
-	fsPtr = TtyInit(fd, 1);
+	TtyInit(fd);
     } else
 #endif	/* SUPPORTS_TTY */
     {
 	translation = NULL;
 	channelTypePtr = &fileChannelType;
-	fsPtr = ckalloc(sizeof(FileState));
     }
 
+    fsPtr = ckalloc(sizeof(FileState));
     fsPtr->validMask = channelPermissions | TCL_EXCEPTION;
     fsPtr->fd = fd;
 
@@ -1692,7 +1514,6 @@ Tcl_MakeFileChannel(
 
 #ifdef SUPPORTS_TTY
     if (isatty(fd)) {
-	fsPtr = TtyInit(fd, 0);
 	channelTypePtr = &ttyChannelType;
 	sprintf(channelName, "serial%d", fd);
     } else
@@ -1703,10 +1524,10 @@ Tcl_MakeFileChannel(
 	return TclpMakeTcpClientChannelMode(INT2PTR(fd), mode);
     } else {
 	channelTypePtr = &fileChannelType;
-	fsPtr = ckalloc(sizeof(FileState));
 	sprintf(channelName, "file%d", fd);
     }
 
+    fsPtr = ckalloc(sizeof(FileState));
     fsPtr->fd = fd;
     fsPtr->validMask = mode | TCL_EXCEPTION;
     fsPtr->channel = Tcl_CreateChannel(channelTypePtr, channelName,
@@ -1903,166 +1724,6 @@ Tcl_GetOpenFile(
 	    NULL);
     return TCL_ERROR;
 }
-
-#ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
-				 * in tclMacOSXNotify.c */
-/*
- *----------------------------------------------------------------------
- *
- * TclUnixWaitForFile --
- *
- *	This function waits synchronously for a file to become readable or
- *	writable, with an optional timeout.
- *
- * Results:
- *	The return value is an OR'ed combination of TCL_READABLE,
- *	TCL_WRITABLE, and TCL_EXCEPTION, indicating the conditions that are
- *	present on file at the time of the return. This function will not
- *	return until either "timeout" milliseconds have elapsed or at least
- *	one of the conditions given by mask has occurred for file (a return
- *	value of 0 means that a timeout occurred). No normal events will be
- *	serviced during the execution of this function.
- *
- * Side effects:
- *	Time passes.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclUnixWaitForFile(
-    int fd,			/* Handle for file on which to wait. */
-    int mask,			/* What to wait for: OR'ed combination of
-				 * TCL_READABLE, TCL_WRITABLE, and
-				 * TCL_EXCEPTION. */
-    int timeout)		/* Maximum amount of time to wait for one of
-				 * the conditions in mask to occur, in
-				 * milliseconds. A value of 0 means don't wait
-				 * at all, and a value of -1 means wait
-				 * forever. */
-{
-    Tcl_Time abortTime = {0, 0}, now; /* silence gcc 4 warning */
-    struct timeval blockTime, *timeoutPtr;
-    int numFound, result = 0;
-    fd_set readableMask;
-    fd_set writableMask;
-    fd_set exceptionMask;
-
-#ifndef _DARWIN_C_SOURCE
-    /*
-     * Sanity check fd.
-     */
-
-    if (fd >= FD_SETSIZE) {
-	Tcl_Panic("TclUnixWaitForFile can't handle file id %d", fd);
-	/* must never get here, or select masks overrun will occur below */
-    }
-#endif
-
-    /*
-     * If there is a non-zero finite timeout, compute the time when we give
-     * up.
-     */
-
-    if (timeout > 0) {
-	Tcl_GetTime(&now);
-	abortTime.sec = now.sec + timeout/1000;
-	abortTime.usec = now.usec + (timeout%1000)*1000;
-	if (abortTime.usec >= 1000000) {
-	    abortTime.usec -= 1000000;
-	    abortTime.sec += 1;
-	}
-	timeoutPtr = &blockTime;
-    } else if (timeout == 0) {
-	timeoutPtr = &blockTime;
-	blockTime.tv_sec = 0;
-	blockTime.tv_usec = 0;
-    } else {
-	timeoutPtr = NULL;
-    }
-
-    /*
-     * Initialize the select masks.
-     */
-
-    FD_ZERO(&readableMask);
-    FD_ZERO(&writableMask);
-    FD_ZERO(&exceptionMask);
-
-    /*
-     * Loop in a mini-event loop of our own, waiting for either the file to
-     * become ready or a timeout to occur.
-     */
-
-    while (1) {
-	if (timeout > 0) {
-	    blockTime.tv_sec = abortTime.sec - now.sec;
-	    blockTime.tv_usec = abortTime.usec - now.usec;
-	    if (blockTime.tv_usec < 0) {
-		blockTime.tv_sec -= 1;
-		blockTime.tv_usec += 1000000;
-	    }
-	    if (blockTime.tv_sec < 0) {
-		blockTime.tv_sec = 0;
-		blockTime.tv_usec = 0;
-	    }
-	}
-
-	/*
-	 * Setup the select masks for the fd.
-	 */
-
-	if (mask & TCL_READABLE) {
-	    FD_SET(fd, &readableMask);
-	}
-	if (mask & TCL_WRITABLE) {
-	    FD_SET(fd, &writableMask);
-	}
-	if (mask & TCL_EXCEPTION) {
-	    FD_SET(fd, &exceptionMask);
-	}
-
-	/*
-	 * Wait for the event or a timeout.
-	 */
-
-	numFound = select(fd + 1, &readableMask, &writableMask,
-		&exceptionMask, timeoutPtr);
-	if (numFound == 1) {
-	    if (FD_ISSET(fd, &readableMask)) {
-		SET_BITS(result, TCL_READABLE);
-	    }
-	    if (FD_ISSET(fd, &writableMask)) {
-		SET_BITS(result, TCL_WRITABLE);
-	    }
-	    if (FD_ISSET(fd, &exceptionMask)) { 
-		SET_BITS(result, TCL_EXCEPTION);
-	    }
-	    result &= mask;
-	    if (result) {
-		break;
-	    }
-	}
-	if (timeout == 0) {
-	    break;
-	}
-	if (timeout < 0) {
-	    continue;
-	}
-
-	/*
-	 * The select returned early, so we need to recompute the timeout.
-	 */
-
-	Tcl_GetTime(&now);
-	if ((abortTime.sec < now.sec)
-		|| (abortTime.sec==now.sec && abortTime.usec<=now.usec)) {
-	    break;
-	}
-    }
-    return result;
-}
-#endif /* HAVE_COREFOUNDATION */
 
 /*
  *----------------------------------------------------------------------

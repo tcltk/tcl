@@ -20,12 +20,13 @@
  *-   break and continue - if exception ranges can be sorted out.
  *-   foreach_start4, foreach_step4
  *-   returnImm, returnStk
- *-   expandStart, expandStkTop, invokeExpanded
+ *-   expandStart, expandStkTop, invokeExpanded, expandDrop
  *-   dictFirst, dictNext, dictDone
  *-   dictUpdateStart, dictUpdateEnd
  *-   jumpTable testing
  *-   syntax (?)
  *-   returnCodeBranch
+ *-   tclooNext, tclooNextClass
  */
 
 #include "tclInt.h"
@@ -49,7 +50,7 @@ typedef enum BasicBlockCatchState {
     BBCS_UNKNOWN = 0,		/* Catch context has not yet been identified */
     BBCS_NONE,			/* Block is outside of any catch */
     BBCS_INCATCH,		/* Block is within a catch context */
-    BBCS_CAUGHT,		/* Block is within a catch context and
+    BBCS_CAUGHT 		/* Block is within a catch context and
 				 * may be executed after an exception fires */
 } BasicBlockCatchState;
 
@@ -120,7 +121,7 @@ enum BasicBlockFlags {
 				 * marking it as the start of a 'catch'
 				 * sequence. The 'jumpTarget' is the exception
 				 * exit from the catch block. */
-    BB_ENDCATCH = (1 << 5),	/* Block ends with an 'endCatch' instruction,
+    BB_ENDCATCH = (1 << 5)	/* Block ends with an 'endCatch' instruction,
 				 * unwinding the catch from the exception
 				 * stack. */
 };
@@ -136,6 +137,8 @@ typedef enum TalInstType {
 				 * ranges */
     ASSEM_BOOL,			/* One Boolean operand */
     ASSEM_BOOL_LVT4,		/* One Boolean, one 4-byte LVT ref. */
+    ASSEM_CLOCK_READ,		/* 1-byte unsigned-integer case number, in the
+				 * range 0-3 */
     ASSEM_CONCAT1,		/* 1-byte unsigned-integer operand count, must
 				 * be strictly positive, consumes N, produces
 				 * 1 */
@@ -183,7 +186,7 @@ typedef enum TalInstType {
 				 * produces N */
     ASSEM_SINT1,		/* One 1-byte signed-integer operand
 				 * (INCR_STK_IMM) */
-    ASSEM_SINT4_LVT4,		/* Signed 4-byte integer operand followed by
+    ASSEM_SINT4_LVT4		/* Signed 4-byte integer operand followed by
 				 * LVT entry.  Fixed arity */
 } TalInstType;
 
@@ -324,29 +327,6 @@ static const Tcl_ObjType assembleCodeType = {
 };
 
 /*
- * TIP #280: Remember the per-word line information of the current command. An
- * index is used instead of a pointer as recursive compilation may reallocate,
- * i.e. move, the array. This is also the reason to save the nuloc now, it may
- * change during the course of the function.
- *
- * Macro to encapsulate the variable definition and setup.
- */
-
-#define DefineLineInformation \
-    ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
-    int eclIndex = mapPtr->nuloc - 1
-
-#define SetLineInformation(word) \
-    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
-    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
-
-/*
- * Flags bits used by PushVarName.
- */
-
-#define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
-
-/*
  * Source instructions recognized in the Tcl Assembly Language (TAL)
  */
 
@@ -372,7 +352,9 @@ static const TalInstDesc TalInstructionTable[] = {
     {"bitnot",		ASSEM_1BYTE,	INST_BITNOT,		1,	1},
     {"bitor",		ASSEM_1BYTE,	INST_BITOR,		2,	1},
     {"bitxor",		ASSEM_1BYTE,	INST_BITXOR,		2,	1},
-    {"concat",		ASSEM_CONCAT1,	INST_CONCAT1,		INT_MIN,1},
+    {"clockRead",	ASSEM_CLOCK_READ, INST_CLOCK_READ,	0,	1},
+    {"concat",		ASSEM_CONCAT1,	INST_STR_CONCAT1,	INT_MIN,1},
+    {"concatStk",	ASSEM_LIST,	INST_CONCAT_STK,	INT_MIN,1},
     {"coroName",	ASSEM_1BYTE,	INST_COROUTINE_NAME,	0,	1},
     {"currentNamespace",ASSEM_1BYTE,	INST_NS_CURRENT,	0,	1},
     {"dictAppend",	ASSEM_LVT4,	INST_DICT_APPEND,	2,	1},
@@ -410,9 +392,8 @@ static const TalInstDesc TalInstructionTable[] = {
     {"incrArrayStkImm", ASSEM_SINT1,	INST_INCR_ARRAY_STK_IMM,2,	1},
     {"incrImm",		ASSEM_LVT1_SINT1,
 					INST_INCR_SCALAR1_IMM,	0,	1},
-    {"incrStk",		ASSEM_1BYTE,	INST_INCR_SCALAR_STK,	2,	1},
-    {"incrStkImm",	ASSEM_SINT1,	INST_INCR_SCALAR_STK_IMM,
-								1,	1},
+    {"incrStk",		ASSEM_1BYTE,	INST_INCR_STK,		2,	1},
+    {"incrStkImm",	ASSEM_SINT1,	INST_INCR_STK_IMM,	1,	1},
     {"infoLevelArgs",	ASSEM_1BYTE,	INST_INFO_LEVEL_ARGS,	1,	1},
     {"infoLevelNumber",	ASSEM_1BYTE,	INST_INFO_LEVEL_NUM,	0,	1},
     {"invokeStk",	ASSEM_INVOKE,	(INST_INVOKE_STK1 << 8
@@ -432,11 +413,16 @@ static const TalInstDesc TalInstructionTable[] = {
     {"lappendArray",	ASSEM_LVT,	(INST_LAPPEND_ARRAY1<<8
 					 | INST_LAPPEND_ARRAY4),2,	1},
     {"lappendArrayStk", ASSEM_1BYTE,	INST_LAPPEND_ARRAY_STK,	3,	1},
+    {"lappendList",	ASSEM_LVT4,	INST_LAPPEND_LIST,	1,	1},
+    {"lappendListArray",ASSEM_LVT4,	INST_LAPPEND_LIST_ARRAY,2,	1},
+    {"lappendListArrayStk", ASSEM_1BYTE,INST_LAPPEND_LIST_ARRAY_STK, 3,	1},
+    {"lappendListStk",	ASSEM_1BYTE,	INST_LAPPEND_LIST_STK,	2,	1},
     {"lappendStk",	ASSEM_1BYTE,	INST_LAPPEND_STK,	2,	1},
     {"le",		ASSEM_1BYTE,	INST_LE,		2,	1},
     {"lindexMulti",	ASSEM_LINDEX_MULTI,
 					INST_LIST_INDEX_MULTI,	INT_MIN,1},
     {"list",		ASSEM_LIST,	INST_LIST,		INT_MIN,1},
+    {"listConcat",	ASSEM_1BYTE,	INST_LIST_CONCAT,	2,	1},
     {"listIn",		ASSEM_1BYTE,	INST_LIST_IN,		2,	1},
     {"listIndex",	ASSEM_1BYTE,	INST_LIST_INDEX,	2,	1},
     {"listIndexImm",	ASSEM_INDEX,	INST_LIST_INDEX_IMM,	1,	1},
@@ -447,7 +433,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"loadArray",	ASSEM_LVT,	(INST_LOAD_ARRAY1<<8
 					 | INST_LOAD_ARRAY4),	1,	1},
     {"loadArrayStk",	ASSEM_1BYTE,	INST_LOAD_ARRAY_STK,	2,	1},
-    {"loadStk",		ASSEM_1BYTE,	INST_LOAD_SCALAR_STK,	1,	1},
+    {"loadStk",		ASSEM_1BYTE,	INST_LOAD_STK,		1,	1},
     {"lor",		ASSEM_1BYTE,	INST_LOR,		2,	1},
     {"lsetFlat",	ASSEM_LSET_FLAT,INST_LSET_FLAT,		INT_MIN,1},
     {"lsetList",	ASSEM_1BYTE,	INST_LSET_LIST,		3,	1},
@@ -459,6 +445,8 @@ static const TalInstDesc TalInstructionTable[] = {
     {"nop",		ASSEM_1BYTE,	INST_NOP,		0,	0},
     {"not",		ASSEM_1BYTE,	INST_LNOT,		1,	1},
     {"nsupvar",		ASSEM_LVT4,	INST_NSUPVAR,		2,	1},
+    {"numericType",	ASSEM_1BYTE,	INST_NUM_TYPE,		1,	1},
+    {"originCmd",	ASSEM_1BYTE,	INST_ORIGIN_COMMAND,	1,	1},
     {"over",		ASSEM_OVER,	INST_OVER,		INT_MIN,-1-1},
     {"pop",		ASSEM_1BYTE,	INST_POP,		1,	0},
     {"pushReturnCode",	ASSEM_1BYTE,	INST_PUSH_RETURN_CODE,	0,	1},
@@ -474,8 +462,12 @@ static const TalInstDesc TalInstructionTable[] = {
     {"storeArray",	ASSEM_LVT,	(INST_STORE_ARRAY1<<8
 					 | INST_STORE_ARRAY4),	2,	1},
     {"storeArrayStk",	ASSEM_1BYTE,	INST_STORE_ARRAY_STK,	3,	1},
-    {"storeStk",	ASSEM_1BYTE,	INST_STORE_SCALAR_STK,	2,	1},
+    {"storeStk",	ASSEM_1BYTE,	INST_STORE_STK,		2,	1},
+    {"strcaseLower",	ASSEM_1BYTE,	INST_STR_LOWER,		1,	1},
+    {"strcaseTitle",	ASSEM_1BYTE,	INST_STR_TITLE,		1,	1},
+    {"strcaseUpper",	ASSEM_1BYTE,	INST_STR_UPPER,		1,	1},
     {"strcmp",		ASSEM_1BYTE,	INST_STR_CMP,		2,	1},
+    {"strcat",		ASSEM_CONCAT1,	INST_STR_CONCAT1,	INT_MIN,1},
     {"streq",		ASSEM_1BYTE,	INST_STR_EQ,		2,	1},
     {"strfind",		ASSEM_1BYTE,	INST_STR_FIND,		2,	1},
     {"strindex",	ASSEM_1BYTE,	INST_STR_INDEX,		2,	1},
@@ -484,12 +476,17 @@ static const TalInstDesc TalInstructionTable[] = {
     {"strmatch",	ASSEM_BOOL,	INST_STR_MATCH,		2,	1},
     {"strneq",		ASSEM_1BYTE,	INST_STR_NEQ,		2,	1},
     {"strrange",	ASSEM_1BYTE,	INST_STR_RANGE,		3,	1},
+    {"strreplace",	ASSEM_1BYTE,	INST_STR_REPLACE,	4,	1},
     {"strrfind",	ASSEM_1BYTE,	INST_STR_FIND_LAST,	2,	1},
+    {"strtrim",		ASSEM_1BYTE,	INST_STR_TRIM,		2,	1},
+    {"strtrimLeft",	ASSEM_1BYTE,	INST_STR_TRIM_LEFT,	2,	1},
+    {"strtrimRight",	ASSEM_1BYTE,	INST_STR_TRIM_RIGHT,	2,	1},
     {"sub",		ASSEM_1BYTE,	INST_SUB,		2,	1},
     {"tclooClass",	ASSEM_1BYTE,	INST_TCLOO_CLASS,	1,	1},
     {"tclooIsObject",	ASSEM_1BYTE,	INST_TCLOO_IS_OBJECT,	1,	1},
     {"tclooNamespace",	ASSEM_1BYTE,	INST_TCLOO_NS,		1,	1},
     {"tclooSelf",	ASSEM_1BYTE,	INST_TCLOO_SELF,	0,	1},
+    {"tryCvtToBoolean",	ASSEM_1BYTE,	INST_TRY_CVT_TO_BOOLEAN,1,	2},
     {"tryCvtToNumeric",	ASSEM_1BYTE,	INST_TRY_CVT_TO_NUMERIC,1,	1},
     {"uminus",		ASSEM_1BYTE,	INST_UMINUS,		1,	1},
     {"unset",		ASSEM_BOOL_LVT4,INST_UNSET_SCALAR,	0,	0},
@@ -516,6 +513,7 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_PUSH1, INST_PUSH4, INST_POP, INST_DUP,			/* 1-4 */
     INST_JUMP1, INST_JUMP4,					/* 34-35 */
     INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,	/* 70-72 */
+    INST_LIST,							/* 79 */
     INST_OVER,							/* 95 */
     INST_PUSH_RETURN_OPTIONS,					/* 108 */
     INST_REVERSE,						/* 126 */
@@ -525,7 +523,11 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_COROUTINE_NAME,					/* 149 */
     INST_NS_CURRENT,						/* 151 */
     INST_INFO_LEVEL_NUM,					/* 152 */
-    INST_RESOLVE_COMMAND					/* 154 */
+    INST_RESOLVE_COMMAND,					/* 154 */
+    INST_STR_TRIM, INST_STR_TRIM_LEFT, INST_STR_TRIM_RIGHT,	/* 166-168 */
+    INST_CONCAT_STK,						/* 169 */
+    INST_STR_UPPER, INST_STR_LOWER, INST_STR_TITLE,		/* 170-172 */
+    INST_NUM_TYPE						/* 180 */
 };
 
 /*
@@ -673,7 +675,7 @@ BBEmitOpcode(
     }
 
     TclEmitInt1(op, envPtr);
-    envPtr->atCmdStart = ((op) == INST_START_CMD);
+    TclUpdateAtCmdStart(op, envPtr);
     BBUpdateStackReqs(bbPtr, tblIdx, count);
 }
 
@@ -705,7 +707,7 @@ BBEmitInstInt4(
  * BBEmitInst1or4 --
  *
  *	Emits a 1- or 4-byte operation according to the magnitude of the
- *	operand
+ *	operand.
  *
  *-----------------------------------------------------------------------------
  */
@@ -734,7 +736,7 @@ BBEmitInst1or4(
     } else {
 	TclEmitInt4(param, envPtr);
     }
-    envPtr->atCmdStart = ((op) == INST_START_CMD);
+    TclUpdateAtCmdStart(op, envPtr);
     BBUpdateStackReqs(bbPtr, tblIdx, count);
 }
 
@@ -798,12 +800,10 @@ TclNRAssembleObjCmd(
 
     if (codePtr == NULL) {
 	Tcl_AddErrorInfo(interp, "\n    (\"");
-	Tcl_AddErrorInfo(interp, Tcl_GetString(objv[0]));
+	Tcl_AppendObjToErrorInfo(interp, objv[0]);
 	Tcl_AddErrorInfo(interp, "\" body, line ");
 	backtrace = Tcl_NewIntObj(Tcl_GetErrorLine(interp));
-	Tcl_IncrRefCount(backtrace);
-	Tcl_AddErrorInfo(interp, Tcl_GetString(backtrace));
-	Tcl_DecrRefCount(backtrace);
+	Tcl_AppendObjToErrorInfo(interp, backtrace);
 	Tcl_AddErrorInfo(interp, ")");
 	return TCL_ERROR;
     }
@@ -841,16 +841,11 @@ CompileAssembleObj(
     CompileEnv compEnv;		/* Compilation environment structure */
     register ByteCode *codePtr = NULL;
 				/* Bytecode resulting from the assembly */
-    register const AuxData * auxDataPtr;
-				/* Pointer to an auxiliary data element
-				 * in a compilation environment being
-				 * destroyed. */
     Namespace* namespacePtr;	/* Namespace in which variable and command
 				 * names in the bytecode resolve */
     int status;			/* Status return from Tcl_AssembleCode */
     const char* source;		/* String representation of the source code */
     int sourceLen;		/* Length of the source code in bytes */
-    int i;
 
 
     /*
@@ -860,7 +855,7 @@ CompileAssembleObj(
 
     if (objPtr->typePtr == &assembleCodeType) {
 	namespacePtr = iPtr->varFramePtr->nsPtr;
-	codePtr = objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if (((Interp *) *codePtr->interpHandle == iPtr)
 		&& (codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsPtr == namespacePtr)
@@ -874,7 +869,7 @@ CompileAssembleObj(
 	 * Not valid, so free it and regenerate.
 	 */
 
-	FreeAssembleCodeInternalRep(objPtr);
+	TclFreeIntRep(objPtr);
     }
 
     /*
@@ -888,44 +883,6 @@ CompileAssembleObj(
 	/*
 	 * Assembly failed. Clean up and report the error.
 	 */
-
-	/*
-	 * Free any literals that were constructed for the assembly.
-	 */
-	for (i = 0; i < compEnv.literalArrayNext; i++) {
-	    TclReleaseLiteral(interp, compEnv.literalArrayPtr[i].objPtr);
-	}
-
-	/*
-	 * Free any auxiliary data that was attached to the bytecode
-	 * under construction.
-	 */
-
-	for (i = 0; i < compEnv.auxDataArrayNext; i++) {
-	    auxDataPtr = compEnv.auxDataArrayPtr + i;
-	    if (auxDataPtr->type->freeProc != NULL) {
-		(auxDataPtr->type->freeProc)(auxDataPtr->clientData);
-	    }
-	}
-
-	/*
-	 * TIP 280. If there is extended command line information,
-	 * we need to clean it up.
-	 */
-
-	if (compEnv.extCmdMapPtr != NULL) {
-	    if (compEnv.extCmdMapPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount(compEnv.extCmdMapPtr->path);
-	    }
-	    for (i = 0; i < compEnv.extCmdMapPtr->nuloc; ++i) {
-		ckfree(compEnv.extCmdMapPtr->loc[i].line);
-	    }
-	    if (compEnv.extCmdMapPtr->loc != NULL) {
-		ckfree(compEnv.extCmdMapPtr->loc);
-	    }
-	    Tcl_DeleteHashTable(&(compEnv.extCmdMapPtr->litInfo));
-	}
-
 	TclFreeCompileEnv(&compEnv);
 	return NULL;
     }
@@ -937,15 +894,13 @@ CompileAssembleObj(
      */
 
     TclEmitOpcode(INST_DONE, &compEnv);
-    TclInitByteCodeObj(objPtr, &compEnv);
-    objPtr->typePtr = &assembleCodeType;
+    codePtr = TclInitByteCodeObj(objPtr, &assembleCodeType, &compEnv);
     TclFreeCompileEnv(&compEnv);
 
     /*
      * Record the local variable context to which the bytecode pertains
      */
 
-    codePtr = objPtr->internalRep.otherValuePtr;
     if (iPtr->varFramePtr->localCachePtr) {
 	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	codePtr->localCachePtr->refCount++;
@@ -998,6 +953,10 @@ TclCompileAssembleCmd(
 {
     Tcl_Token *tokenPtr;	/* Token in the input script */
 
+    int numCommands = envPtr->numCommands;
+    int offset = envPtr->codeNext - envPtr->codeStart;
+    int depth = envPtr->currStackDepth;
+
     /*
      * Make sure that the command has a single arg that is a simple word.
      */
@@ -1011,10 +970,23 @@ TclCompileAssembleCmd(
     }
 
     /*
-     * Compile the code and return any error from the compilation.
+     * Compile the code and convert any error from the compilation into
+     * bytecode reporting the error;
      */
 
-    return TclAssembleCode(envPtr, tokenPtr[1].start, tokenPtr[1].size, 0);
+    if (TCL_ERROR == TclAssembleCode(envPtr, tokenPtr[1].start,
+	    tokenPtr[1].size, TCL_EVAL_DIRECT)) {
+
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"%.*s\" body, line %d)",
+		parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
+		Tcl_GetErrorLine(interp)));
+	envPtr->numCommands = numCommands;
+	envPtr->codeNext = envPtr->codeStart + offset;
+	envPtr->currStackDepth = depth;
+	TclCompileSyntaxError(interp, envPtr);
+    }
+    return TCL_OK;
 }
 
 /*
@@ -1053,8 +1025,6 @@ TclAssembleCode(
 
     const char* instPtr = codePtr;
 				/* Where to start looking for a line of code */
-    int instLen;		/* Length in bytes of the current line of
-				 * code */
     const char* nextPtr;	/* Pointer to the end of the line of code */
     int bytesLeft = codeLen;	/* Number of bytes of source code remaining to
 				 * be parsed */
@@ -1068,10 +1038,6 @@ TclAssembleCode(
 	 */
 
 	status = Tcl_ParseCommand(interp, instPtr, bytesLeft, 0, parsePtr);
-	instLen = parsePtr->commandSize;
-	if (parsePtr->term == parsePtr->commandStart + instLen - 1) {
-	    --instLen;
-	}
 
 	/*
 	 * Report errors in the parse.
@@ -1080,7 +1046,7 @@ TclAssembleCode(
 	if (status != TCL_OK) {
 	    if (flags & TCL_EVAL_DIRECT) {
 		Tcl_LogCommandInfo(interp, codePtr, parsePtr->commandStart,
-			instLen);
+			parsePtr->term + 1 - parsePtr->commandStart);
 	    }
 	    FreeAssemblyEnv(assemEnvPtr);
 	    return TCL_ERROR;
@@ -1100,6 +1066,13 @@ TclAssembleCode(
 	 */
 
 	if (parsePtr->numWords > 0) {
+	    int instLen = parsePtr->commandSize;
+		    /* Length in bytes of the current command */
+
+	    if (parsePtr->term == parsePtr->commandStart + instLen - 1) {
+		--instLen;
+	    }
+
 	    /*
 	     * If tracing, show each line assembled as it happens.
 	     */
@@ -1175,7 +1148,7 @@ NewAssemblyEnv(
 
     assemEnvPtr->envPtr = envPtr;
     assemEnvPtr->parsePtr = parsePtr;
-    assemEnvPtr->cmdLine = envPtr->line;
+    assemEnvPtr->cmdLine = 1;
     assemEnvPtr->clNext = envPtr->clNext;
 
     /*
@@ -1329,8 +1302,8 @@ AssembleOneLine(
 	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	}
-	operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
-	litIndex = TclRegisterNewLiteral(envPtr, operand1, operand1Len);
+	operand1 = TclGetStringFromObj(operand1Obj, &operand1Len);
+	litIndex = TclRegisterLiteral(envPtr, operand1, operand1Len, 0);
 	BBEmitInst1or4(assemEnvPtr, tblIdx, litIndex, 0);
 	break;
 
@@ -1389,6 +1362,23 @@ AssembleOneLine(
 	}
 	BBEmitInstInt1(assemEnvPtr, tblIdx, opnd, 0);
 	TclEmitInt4(localVar, envPtr);
+	break;
+
+    case ASSEM_CLOCK_READ:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "imm8");
+	    goto cleanup;
+	}
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	if (opnd < 0 || opnd > 3) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_NewStringObj("operand must be [0..3]", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "OPERAND<0,>3", NULL);
+	    goto cleanup;
+	}
+	BBEmitInstInt1(assemEnvPtr, tblIdx, opnd, opnd);
 	break;
 
     case ASSEM_CONCAT1:
@@ -1478,8 +1468,8 @@ AssembleOneLine(
 		&operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	} else {
-	    operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
-	    litIndex = TclRegisterNewLiteral(envPtr, operand1, operand1Len);
+	    operand1 = TclGetStringFromObj(operand1Obj, &operand1Len);
+	    litIndex = TclRegisterLiteral(envPtr, operand1, operand1Len, 0);
 
 	    /*
 	     * Assumes that PUSH is the first slot!
@@ -1573,7 +1563,7 @@ AssembleOneLine(
 	 * Add the (label_name, address) pair to the hash table.
 	 */
 
-	if (DefineLabel(assemEnvPtr, Tcl_GetString(operand1Obj)) != TCL_OK) {
+	if (DefineLabel(assemEnvPtr, TclGetString(operand1Obj)) != TCL_OK) {
 	    goto cleanup;
 	}
 	break;
@@ -1752,7 +1742,7 @@ AssembleOneLine(
 
     default:
 	Tcl_Panic("Instruction \"%s\" could not be found, can't happen\n",
-		Tcl_GetString(instNameObj));
+		TclGetString(instNameObj));
     }
 
     status = TCL_OK;
@@ -2015,15 +2005,15 @@ CreateMirrorJumpTable(
 
     DEBUG_PRINT("jump table {\n");
     for (i = 0; i < objc; i+=2) {
-	DEBUG_PRINT("  %s -> %s\n", Tcl_GetString(objv[i]),
-		Tcl_GetString(objv[i+1]));
-	hashEntry = Tcl_CreateHashEntry(jtHashPtr, Tcl_GetString(objv[i]),
+	DEBUG_PRINT("  %s -> %s\n", TclGetString(objv[i]),
+		TclGetString(objv[i+1]));
+	hashEntry = Tcl_CreateHashEntry(jtHashPtr, TclGetString(objv[i]),
 		&isNew);
 	if (!isNew) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"duplicate entry in jump table for \"%s\"",
-			Tcl_GetString(objv[i])));
+			TclGetString(objv[i])));
 		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "DUPJUMPTABLEENTRY");
 		DeleteMirrorJumpTable(jtPtr);
 		return TCL_ERROR;
@@ -2318,7 +2308,7 @@ FindLocalVar(
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &varNameObj) != TCL_OK) {
 	return -1;
     }
-    varNameStr = Tcl_GetStringFromObj(varNameObj, &varNameLen);
+    varNameStr = TclGetStringFromObj(varNameObj, &varNameLen);
     if (CheckNamespaceQualifiers(interp, varNameStr, varNameLen)) {
 	Tcl_DecrRefCount(varNameObj);
 	return -1;
@@ -2667,6 +2657,7 @@ AllocBB(
     bb->minStackDepth = 0;
     bb->maxStackDepth = 0;
     bb->finalStackDepth = 0;
+    bb->catchDepth = 0;
     bb->enclosingCatch = NULL;
     bb->foreignExceptionBase = -1;
     bb->foreignExceptionCount = 0;
@@ -2830,7 +2821,7 @@ CalculateJumpRelocations(
 
 	    if (bbPtr->jumpTarget != NULL) {
 		entry = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
-			Tcl_GetString(bbPtr->jumpTarget));
+			TclGetString(bbPtr->jumpTarget));
 		if (entry == NULL) {
 		    ReportUndefinedLabel(assemEnvPtr, bbPtr,
 			    bbPtr->jumpTarget);
@@ -2911,10 +2902,10 @@ CheckJumpTableLabels(
 	    symEntryPtr = Tcl_NextHashEntry(&search)) {
 	symbolObj = Tcl_GetHashValue(symEntryPtr);
 	valEntryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
-		Tcl_GetString(symbolObj));
+		TclGetString(symbolObj));
 	DEBUG_PRINT("  %s -> %s (%d)\n",
 		(char*) Tcl_GetHashKey(symHash, symEntryPtr),
-		Tcl_GetString(symbolObj), (valEntryPtr != NULL));
+		TclGetString(symbolObj), (valEntryPtr != NULL));
 	if (valEntryPtr == NULL) {
 	    ReportUndefinedLabel(assemEnvPtr, bbPtr, symbolObj);
 	    return TCL_ERROR;
@@ -2952,9 +2943,9 @@ ReportUndefinedLabel(
 
     if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"undefined label \"%s\"", Tcl_GetString(jumpTarget)));
+		"undefined label \"%s\"", TclGetString(jumpTarget)));
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NOLABEL",
-		Tcl_GetString(jumpTarget), NULL);
+		TclGetString(jumpTarget), NULL);
 	Tcl_SetErrorLine(interp, bbPtr->jumpLine);
     }
 }
@@ -3037,7 +3028,7 @@ FillInJumpOffsets(
 	    bbPtr = bbPtr->successor1) {
 	if (bbPtr->jumpTarget != NULL) {
 	    entry = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
-		    Tcl_GetString(bbPtr->jumpTarget));
+		    TclGetString(bbPtr->jumpTarget));
 	    jumpTarget = Tcl_GetHashValue(entry);
 	    fromOffset = bbPtr->jumpOffset;
 	    targetOffset = jumpTarget->startOffset;
@@ -3097,7 +3088,7 @@ ResolveJumpTableTargets(
     auxDataIndex = TclGetInt4AtPtr(envPtr->codeStart + bbPtr->jumpOffset + 1);
     DEBUG_PRINT("bbPtr = %p jumpOffset = %d auxDataIndex = %d\n",
 	    bbPtr, bbPtr->jumpOffset, auxDataIndex);
-    realJumpTablePtr = envPtr->auxDataArrayPtr[auxDataIndex].clientData;
+    realJumpTablePtr = TclFetchAuxData(envPtr, auxDataIndex);
     realJumpHashPtr = &realJumpTablePtr->hashTable;
 
     /*
@@ -3109,17 +3100,17 @@ ResolveJumpTableTargets(
 	    symEntryPtr != NULL;
 	    symEntryPtr = Tcl_NextHashEntry(&search)) {
 	symbolObj = Tcl_GetHashValue(symEntryPtr);
-	DEBUG_PRINT("     symbol %s\n", Tcl_GetString(symbolObj));
+	DEBUG_PRINT("     symbol %s\n", TclGetString(symbolObj));
 
 	valEntryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
-		Tcl_GetString(symbolObj));
+		TclGetString(symbolObj));
 	jumpTargetBBPtr = Tcl_GetHashValue(valEntryPtr);
 
 	realJumpEntryPtr = Tcl_CreateHashEntry(realJumpHashPtr,
 		Tcl_GetHashKey(symHash, symEntryPtr), &junk);
 	DEBUG_PRINT("  %s -> %s -> bb %p (pc %d)    hash entry %p\n",
 		(char*) Tcl_GetHashKey(symHash, symEntryPtr),
-		Tcl_GetString(symbolObj), jumpTargetBBPtr,
+		TclGetString(symbolObj), jumpTargetBBPtr,
 		jumpTargetBBPtr->startOffset, realJumpEntryPtr);
 
 	Tcl_SetHashValue(realJumpEntryPtr,
@@ -3491,7 +3482,7 @@ StackCheckBasicBlock(
 
     if (result == TCL_OK && blockPtr->jumpTarget != NULL) {
 	entry = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
-		Tcl_GetString(blockPtr->jumpTarget));
+		TclGetString(blockPtr->jumpTarget));
 	jumpTarget = Tcl_GetHashValue(entry);
 	result = StackCheckBasicBlock(assemEnvPtr, jumpTarget, blockPtr,
 		stackDepth);
@@ -3508,7 +3499,7 @@ StackCheckBasicBlock(
 		jtEntry = Tcl_NextHashEntry(&jtSearch)) {
 	    targetLabel = Tcl_GetHashValue(jtEntry);
 	    entry = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
-		    Tcl_GetString(targetLabel));
+		    TclGetString(targetLabel));
 	    jumpTarget = Tcl_GetHashValue(entry);
 	    result = StackCheckBasicBlock(assemEnvPtr, jumpTarget,
 		    blockPtr, stackDepth);
@@ -3570,7 +3561,7 @@ StackCheckExit(
 	     * Emit a 'push' of the empty literal.
 	     */
 
-	    litIndex = TclRegisterNewLiteral(envPtr, "", 0);
+	    litIndex = TclRegisterLiteral(envPtr, "", 0, 0);
 
 	    /*
 	     * Assumes that 'push' is at slot 0 in TalInstructionTable.
@@ -3813,7 +3804,7 @@ ProcessCatchesInBasicBlock(
     }
     if (result == TCL_OK && bbPtr->jumpTarget != NULL) {
 	entry = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
-		Tcl_GetString(bbPtr->jumpTarget));
+		TclGetString(bbPtr->jumpTarget));
 	jumpTarget = Tcl_GetHashValue(entry);
 	result = ProcessCatchesInBasicBlock(assemEnvPtr, jumpTarget,
 		jumpEnclosing, jumpState, catchDepth);
@@ -3829,7 +3820,7 @@ ProcessCatchesInBasicBlock(
 		jtEntry = Tcl_NextHashEntry(&jtSearch)) {
 	    targetLabel = Tcl_GetHashValue(jtEntry);
 	    entry = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
-		    Tcl_GetString(targetLabel));
+		    TclGetString(targetLabel));
 	    jumpTarget = Tcl_GetHashValue(entry);
 	    result = ProcessCatchesInBasicBlock(assemEnvPtr, jumpTarget,
 		    jumpEnclosing, jumpState, catchDepth);
@@ -4011,10 +4002,12 @@ UnstackExpiredCatches(
 
     while (catchDepth > bbPtr->catchDepth) {
 	--catchDepth;
-	range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
-	range->numCodeBytes = bbPtr->startOffset - range->codeOffset;
-	catches[catchDepth] = NULL;
-	catchIndices[catchDepth] = -1;
+	if (catches[catchDepth] != NULL) {
+	    range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
+	    range->numCodeBytes = bbPtr->startOffset - range->codeOffset;
+	    catches[catchDepth] = NULL;
+	    catchIndices[catchDepth] = -1;
+	}
     }
 
     /*
@@ -4131,7 +4124,7 @@ StackFreshCatches(
 	    range->codeOffset = bbPtr->startOffset;
 
 	    entryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
-		    Tcl_GetString(catch->jumpTarget));
+		    TclGetString(catch->jumpTarget));
 	    if (entryPtr == NULL) {
 		Tcl_Panic("undefined label in tclAssembly.c:"
 			"BuildExceptionRanges, can't happen");
@@ -4270,11 +4263,11 @@ AddBasicBlockRangeToErrorInfo(
     Tcl_AddErrorInfo(interp, "\n    in assembly code between lines ");
     lineNo = Tcl_NewIntObj(bbPtr->startLine);
     Tcl_IncrRefCount(lineNo);
-    Tcl_AddErrorInfo(interp, Tcl_GetString(lineNo));
+    Tcl_AppendObjToErrorInfo(interp, lineNo);
     Tcl_AddErrorInfo(interp, " and ");
     if (bbPtr->successor1 != NULL) {
-	Tcl_SetIntObj(lineNo, bbPtr->successor1->startLine);
-	Tcl_AddErrorInfo(interp, Tcl_GetString(lineNo));
+	TclSetLongObj(lineNo, bbPtr->successor1->startLine);
+	Tcl_AppendObjToErrorInfo(interp, lineNo);
     } else {
 	Tcl_AddErrorInfo(interp, "end of assembly code");
     }
@@ -4338,14 +4331,9 @@ static void
 FreeAssembleCodeInternalRep(
     Tcl_Obj *objPtr)
 {
-    ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    codePtr->refCount--;
-    if (codePtr->refCount <= 0) {
-	TclCleanupByteCode(codePtr);
-    }
-    objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
+    TclReleaseByteCode(codePtr);
 }
 
 /*

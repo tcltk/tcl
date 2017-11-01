@@ -25,6 +25,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -361,7 +365,7 @@ TCLAPI int		TclListObjSetElement(Tcl_Interp *interp,
 /* Slot 168 is reserved */
 /* 169 */
 TCLAPI int		TclpUtfNcmp2(const char *s1, const char *s2,
-				unsigned long n);
+				size_t n);
 /* 170 */
 TCLAPI int		TclCheckInterpTraces(Tcl_Interp *interp,
 				const char *command, int numChars,
@@ -527,7 +531,7 @@ TCLAPI Tcl_HashTable *	TclGetNamespaceChildTable(Tcl_Namespace *nsPtr);
 TCLAPI Tcl_HashTable *	TclGetNamespaceCommandTable(Tcl_Namespace *nsPtr);
 /* 246 */
 TCLAPI int		TclInitRewriteEnsemble(Tcl_Interp *interp,
-				int numRemoved, int numInserted,
+				size_t numRemoved, size_t numInserted,
 				Tcl_Obj *const *objv);
 /* 247 */
 TCLAPI void		TclResetRewriteEnsemble(Tcl_Interp *interp,
@@ -542,6 +546,31 @@ TCLAPI char *		TclDoubleDigits(double dv, int ndigits, int flags,
 /* 250 */
 TCLAPI void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
 				int force);
+/* 251 */
+TCLAPI int		TclRegisterLiteral(void *envPtr, const char *bytes,
+				size_t length, int flags);
+/* 252 */
+TCLAPI Tcl_Obj *	TclPtrGetVar(Tcl_Interp *interp, Tcl_Var varPtr,
+				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
+				Tcl_Obj *part2Ptr, const int flags);
+/* 253 */
+TCLAPI Tcl_Obj *	TclPtrSetVar(Tcl_Interp *interp, Tcl_Var varPtr,
+				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
+				Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr,
+				const int flags);
+/* 254 */
+TCLAPI Tcl_Obj *	TclPtrIncrObjVar(Tcl_Interp *interp, Tcl_Var varPtr,
+				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
+				Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr,
+				const int flags);
+/* 255 */
+TCLAPI int		TclPtrObjMakeUpvar(Tcl_Interp *interp,
+				Tcl_Var otherPtr, Tcl_Obj *myNamePtr,
+				int myFlags);
+/* 256 */
+TCLAPI int		TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr,
+				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
+				Tcl_Obj *part2Ptr, const int flags);
 
 typedef struct TclIntStubs {
     int magic;
@@ -716,7 +745,7 @@ typedef struct TclIntStubs {
     int (*tclListObjSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, int index, Tcl_Obj *valuePtr); /* 166 */
     void (*reserved167)(void);
     void (*reserved168)(void);
-    int (*tclpUtfNcmp2) (const char *s1, const char *s2, unsigned long n); /* 169 */
+    int (*tclpUtfNcmp2) (const char *s1, const char *s2, size_t n); /* 169 */
     int (*tclCheckInterpTraces) (Tcl_Interp *interp, const char *command, int numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 170 */
     int (*tclCheckExecutionTraces) (Tcl_Interp *interp, const char *command, int numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 171 */
     int (*tclInThreadExit) (void); /* 172 */
@@ -793,17 +822,21 @@ typedef struct TclIntStubs {
     void (*tclDbDumpActiveObjects) (FILE *outFile); /* 243 */
     Tcl_HashTable * (*tclGetNamespaceChildTable) (Tcl_Namespace *nsPtr); /* 244 */
     Tcl_HashTable * (*tclGetNamespaceCommandTable) (Tcl_Namespace *nsPtr); /* 245 */
-    int (*tclInitRewriteEnsemble) (Tcl_Interp *interp, int numRemoved, int numInserted, Tcl_Obj *const *objv); /* 246 */
+    int (*tclInitRewriteEnsemble) (Tcl_Interp *interp, size_t numRemoved, size_t numInserted, Tcl_Obj *const *objv); /* 246 */
     void (*tclResetRewriteEnsemble) (Tcl_Interp *interp, int isRootEnsemble); /* 247 */
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
     void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
+    int (*tclRegisterLiteral) (void *envPtr, const char *bytes, size_t length, int flags); /* 251 */
+    Tcl_Obj * (*tclPtrGetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 252 */
+    Tcl_Obj * (*tclPtrSetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, const int flags); /* 253 */
+    Tcl_Obj * (*tclPtrIncrObjVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, const int flags); /* 254 */
+    int (*tclPtrObjMakeUpvar) (Tcl_Interp *interp, Tcl_Var otherPtr, Tcl_Obj *myNamePtr, int myFlags); /* 255 */
+    int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 256 */
 } TclIntStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern const TclIntStubs *tclIntStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
@@ -1204,54 +1237,21 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclDoubleDigits) /* 249 */
 #define TclSetSlaveCancelFlags \
 	(tclIntStubsPtr->tclSetSlaveCancelFlags) /* 250 */
+#define TclRegisterLiteral \
+	(tclIntStubsPtr->tclRegisterLiteral) /* 251 */
+#define TclPtrGetVar \
+	(tclIntStubsPtr->tclPtrGetVar) /* 252 */
+#define TclPtrSetVar \
+	(tclIntStubsPtr->tclPtrSetVar) /* 253 */
+#define TclPtrIncrObjVar \
+	(tclIntStubsPtr->tclPtrIncrObjVar) /* 254 */
+#define TclPtrObjMakeUpvar \
+	(tclIntStubsPtr->tclPtrObjMakeUpvar) /* 255 */
+#define TclPtrUnsetVar \
+	(tclIntStubsPtr->tclPtrUnsetVar) /* 256 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
 /* !END!: Do not edit above this line. */
-
-#if defined(USE_TCL_STUBS) && defined(TCL_NO_DEPRECATED)
-#   undef Tcl_SetStartupScript
-#   define Tcl_SetStartupScript \
-	    (tclStubsPtr->tcl_SetStartupScript) /* 622 */
-#   undef Tcl_GetStartupScript
-#   define Tcl_GetStartupScript \
-	    (tclStubsPtr->tcl_GetStartupScript) /* 623 */
-#   undef Tcl_CreateNamespace
-#   define Tcl_CreateNamespace \
-	   (tclStubsPtr->tcl_CreateNamespace) /* 506 */
-#   undef Tcl_DeleteNamespace
-#   define Tcl_DeleteNamespace \
-	   (tclStubsPtr->tcl_DeleteNamespace) /* 507 */
-#   undef Tcl_AppendExportList
-#   define Tcl_AppendExportList \
-	   (tclStubsPtr->tcl_AppendExportList) /* 508 */
-#   undef Tcl_Export
-#   define Tcl_Export \
-	   (tclStubsPtr->tcl_Export) /* 509 */
-#   undef Tcl_Import
-#   define Tcl_Import \
-	   (tclStubsPtr->tcl_Import) /* 510 */
-#   undef Tcl_ForgetImport
-#   define Tcl_ForgetImport \
-	   (tclStubsPtr->tcl_ForgetImport) /* 511 */
-#   undef Tcl_GetCurrentNamespace
-#   define Tcl_GetCurrentNamespace \
-	   (tclStubsPtr->tcl_GetCurrentNamespace) /* 512 */
-#   undef Tcl_GetGlobalNamespace
-#   define Tcl_GetGlobalNamespace \
-	   (tclStubsPtr->tcl_GetGlobalNamespace) /* 513 */
-#   undef Tcl_FindNamespace
-#   define Tcl_FindNamespace \
-	   (tclStubsPtr->tcl_FindNamespace) /* 514 */
-#   undef Tcl_FindCommand
-#   define Tcl_FindCommand \
-	   (tclStubsPtr->tcl_FindCommand) /* 515 */
-#   undef Tcl_GetCommandFromObj
-#   define Tcl_GetCommandFromObj \
-	   (tclStubsPtr->tcl_GetCommandFromObj) /* 516 */
-#   undef Tcl_GetCommandFullName
-#   define Tcl_GetCommandFullName \
-	   (tclStubsPtr->tcl_GetCommandFullName) /* 517 */
-#endif
 
 #endif /* _TCLINTDECLS */

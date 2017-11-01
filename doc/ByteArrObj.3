@@ -3,12 +3,12 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH Tcl_ByteArrayObj 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
-Tcl_NewByteArrayObj, Tcl_SetByteArrayObj, Tcl_GetByteArrayFromObj, Tcl_SetByteArrayLength \- manipulate Tcl values as a arrays of bytes 
+Tcl_NewByteArrayObj, Tcl_SetByteArrayObj, Tcl_GetByteArrayFromObj, Tcl_SetByteArrayLength \- manipulate Tcl values as a arrays of bytes
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -16,7 +16,7 @@ Tcl_NewByteArrayObj, Tcl_SetByteArrayObj, Tcl_GetByteArrayFromObj, Tcl_SetByteAr
 Tcl_Obj *
 \fBTcl_NewByteArrayObj\fR(\fIbytes, length\fR)
 .sp
-void 
+void
 \fBTcl_SetByteArrayObj\fR(\fIobjPtr, bytes, length\fR)
 .sp
 unsigned char *
@@ -82,7 +82,7 @@ allocated for the array, the array is reallocated to the new length; the
 newly allocated bytes at the end of the array have arbitrary values.  If
 \fIlength\fR is less than the space currently allocated for the array,
 the length of array is reduced to the new length.  The return value is a
-pointer to the value's new array of bytes.  
+pointer to the value's new array of bytes.
 
 .SH "SEE ALSO"
 Tcl_GetStringFromObj, Tcl_NewObj, Tcl_IncrRefCount, Tcl_DecrRefCount

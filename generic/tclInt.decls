@@ -2,9 +2,8 @@
 #
 #	This file contains the declarations for all unsupported
 #	functions that are exported by the Tcl library.  This file
-#	is used to generate the tclIntDecls.h, tclIntPlatDecls.h,
-#	tclIntStub.c, tclPlatStub.c, tclCompileDecls.h and tclCompileStub.c
-#	files
+#	is used to generate the tclIntDecls.h, tclIntPlatDecls.h
+#	and tclStubInit.c files
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
@@ -703,7 +702,7 @@ declare 166 {
 #}
 # variant of Tcl_UtfNCmp that takes n as bytes, not chars
 declare 169 {
-    int TclpUtfNcmp2(const char *s1, const char *s2, unsigned long n)
+    int TclpUtfNcmp2(const char *s1, const char *s2, size_t n)
 }
 declare 170 {
     int TclCheckInterpTraces(Tcl_Interp *interp, const char *command,
@@ -746,7 +745,7 @@ declare 177 {
     void TclVarErrMsg(Tcl_Interp *interp, const char *part1, const char *part2,
 	    const char *operation, const char *reason)
 }
-# TIP 338 made these public - now declared in tcl.h too
+# TIP 338 made these public - now declared in tcl.h
 #declare 178 {
 #    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
 #}
@@ -1001,8 +1000,8 @@ declare 245 {
     Tcl_HashTable *TclGetNamespaceCommandTable(Tcl_Namespace *nsPtr)
 }
 declare 246 {
-    int TclInitRewriteEnsemble(Tcl_Interp *interp, int numRemoved,
-	    int numInserted, Tcl_Obj *const *objv)
+    int TclInitRewriteEnsemble(Tcl_Interp *interp, size_t numRemoved,
+	    size_t numInserted, Tcl_Obj *const *objv)
 }
 declare 247 {
     void TclResetRewriteEnsemble(Tcl_Interp *interp, int isRootEnsemble)
@@ -1020,6 +1019,38 @@ declare 249 {
 # TIP #285: Script cancellation support.
 declare 250 {
     void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
+}
+
+# Allow extensions for optimization
+declare 251 {
+    int TclRegisterLiteral(void *envPtr,
+	    const char *bytes, size_t length, int flags)
+}
+
+# Exporting of the internal API to variables.
+
+declare 252 {
+    Tcl_Obj *TclPtrGetVar(Tcl_Interp *interp, Tcl_Var varPtr,
+	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+	    const int flags)
+}
+declare 253 {
+    Tcl_Obj *TclPtrSetVar(Tcl_Interp *interp, Tcl_Var varPtr,
+	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+	    Tcl_Obj *newValuePtr, const int flags)
+}
+declare 254 {
+    Tcl_Obj *TclPtrIncrObjVar(Tcl_Interp *interp, Tcl_Var varPtr,
+	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+	    Tcl_Obj *incrPtr, const int flags)
+}
+declare 255 {
+    int	TclPtrObjMakeUpvar(Tcl_Interp *interp, Tcl_Var otherPtr,
+	    Tcl_Obj *myNamePtr, int myFlags)
+}
+declare 256 {
+    int	TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr,
+	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
 }
 
 ##############################################################################
@@ -1039,14 +1070,16 @@ declare 0 win {
 #declare 1 win {
 #    void TclWinConvertWSAError(DWORD errCode)
 #}
-declare 2 win {
-    struct servent *TclWinGetServByName(const char *nm,
-	    const char *proto)
-}
-declare 3 win {
-    int TclWinGetSockOpt(SOCKET s, int level, int optname,
-	    char *optval, int *optlen)
-}
+# Removed in Tcl 9.0
+#declare 2 win {
+#    struct servent *TclWinGetServByName(const char *nm,
+#	    const char *proto)
+#}
+# Removed in Tcl 9.0
+#declare 3 win {
+#    int TclWinGetSockOpt(SOCKET s, int level, int optname,
+#	    char *optval, int *optlen)
+#}
 declare 4 win {
     HINSTANCE TclWinGetTclInstance(void)
 }
@@ -1062,20 +1095,21 @@ declare 5 win {
 #declare 6 win {
 #    unsigned short TclWinNToHS(unsigned short ns)
 #}
-declare 7 win {
-    int TclWinSetSockOpt(SOCKET s, int level, int optname,
-	    const char *optval, int optlen)
-}
+# Removed in Tcl 9.0
+#declare 7 win {
+#    int TclWinSetSockOpt(SOCKET s, int level, int optname,
+#	    const char *optval, int optlen)
+#}
 declare 8 win {
     int TclpGetPid(Tcl_Pid pid)
 }
 declare 9 win {
     int TclWinGetPlatformId(void)
 }
-# new for 8.4.20+/8.5.12+ Cygwin only
-declare 10 win {
-    Tcl_DirEntry *TclpReaddir(DIR *dir)
-}
+# Removed in Tcl 9.0
+#declare 10 win {
+#    Tcl_DirEntry *TclpReaddir(DIR *dir)
+#}
 # Removed in 8.3.1 (for Win32s only)
 #declare 10 win {
 #    int TclWinSynchSpawn(void *args, int type, void **trans, Tcl_Pid *pidPtr)
@@ -1126,10 +1160,10 @@ declare 19 win {
 declare 20 win {
     void TclWinAddProcess(HANDLE hProcess, DWORD id)
 }
-# new for 8.4.20+/8.5.12+
-declare 21 win {
-    char *TclpInetNtoa(struct in_addr addr)
-}
+# Removed in Tcl 9.0
+#declare 21 win {
+#    char *TclpInetNtoa(struct in_addr addr)
+#}
 # removed permanently for 8.4
 #declare 21 win {
 #    void TclpAsyncMark(Tcl_AsyncHandler async)
@@ -1211,19 +1245,19 @@ declare 9 unix {
 
 # Added in 8.4:
 
-declare 10 unix {
-    Tcl_DirEntry *TclpReaddir(DIR *dir)
-}
 # Removed in Tcl 9.0
+#declare 10 unix {
+#    Tcl_DirEntry *TclpReaddir(DIR *dir)
+#}
 #declare 11 unix {
 #    struct tm *TclpLocaltime_unix(const time_t *clock)
 #}
 #declare 12 unix {
 #    struct tm *TclpGmtime_unix(const time_t *clock)
 #}
-declare 13 unix {
-    char *TclpInetNtoa(struct in_addr addr)
-}
+#declare 13 unix {
+#    char *TclpInetNtoa(struct in_addr addr)
+#}
 
 # Added in 8.5:
 
@@ -1257,7 +1291,7 @@ declare 19 macosx {
 }
 
 declare 29 {win unix} {
-    int TclWinCPUID(unsigned int index, unsigned int *regs)
+    int TclWinCPUID(int index, int *regs)
 }
 # Added in 8.6; core of TclpOpenTemporaryFile
 declare 30 {win unix} {

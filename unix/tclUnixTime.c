@@ -133,7 +133,7 @@ TclpGetWideClicks(void)
 	Tcl_Time time;
 
 	tclGetTimeProcPtr(&time, tclTimeClientData);
-	now = (Tcl_WideInt) (time.sec*1000000 + time.usec);
+	now = ((Tcl_WideInt)time.sec)*1000000 + time.usec;
     } else {
 #ifdef MAC_OSX_TCL
 	now = (Tcl_WideInt) (mach_absolute_time() & INT64_MAX);
@@ -174,7 +174,7 @@ TclpWideClicksToNanoseconds(
 #ifdef MAC_OSX_TCL
 	static mach_timebase_info_data_t tb;
 	static uint64_t maxClicksForUInt64;
-	
+
 	if (!tb.denom) {
 	    mach_timebase_info(&tb);
 	    maxClicksForUInt64 = UINT64_MAX / tb.numer;

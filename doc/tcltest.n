@@ -7,9 +7,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH "tcltest" n 2.3 tcltest "Tcl Bundled Packages"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -118,7 +118,7 @@ all \fIoption\fRs begin with
 .TP
 \fBloadTestedCommands\fR
 .
-Evaluates in the caller's context the script specified by 
+Evaluates in the caller's context the script specified by
 \fBconfigure \-load\fR or \fBconfigure \-loadfile\fR.
 Returns the result of that script evaluation, including any error
 raised by the script.  Use this command and the related
@@ -486,7 +486,7 @@ test, typically test failure messages.  Good \fIdescription\fR values
 should briefly explain the purpose of the test to users of a test suite.
 The name of a Tcl or C function being tested should be included in the
 description for regression tests.  If the test case exists to reproduce
-a bug, include the bug ID in the description. 
+a bug, include the bug ID in the description.
 .PP
 Valid attributes and associated values are:
 .TP
@@ -508,8 +508,8 @@ should be accomplished by the \fB\-constraints\fR option, not by
 conditional evaluation of \fBtest\fR.  In that way, the same
 number of tests are always reported by the test suite, though
 the number skipped may change based on the testing environment.
-The default value is an empty list.  
-See \fBTEST CONSTRAINTS\fR below for a list of built-in constraints 
+The default value is an empty list.
+See \fBTEST CONSTRAINTS\fR below for a list of built-in constraints
 and information on how to add your own constraints.
 .TP
 \fB\-setup \fIscript\fR
@@ -521,7 +521,7 @@ is an empty script.
 .TP
 \fB\-body \fIscript\fR
 .
-The \fB\-body\fR attribute indicates the \fIscript\fR to run to carry out the 
+The \fB\-body\fR attribute indicates the \fIscript\fR to run to carry out the
 test, which must return a result that can be checked for correctness.
 If evaluation of \fIscript\fR raises an error, the test will fail
 (unless the \fB\-returnCodes\fR option is used to state that an error
@@ -561,7 +561,7 @@ processed for comparison.
 \fB\-errorOutput \fIexpectedValue\fR
 .
 The \fB\-errorOutput\fR attribute supplies the \fIexpectedValue\fR against
-which any output sent to \fBstderr\fR or \fBerrorChannel\fR during 
+which any output sent to \fBstderr\fR or \fBerrorChannel\fR during
 evaluation of the script(s) will be compared. Note that only output
 printed using the global \fBputs\fR command is used for comparison.  If
 \fB\-errorOutput\fR is not specified, output sent to \fBstderr\fR and
@@ -642,14 +642,6 @@ This test can only be run on any Windows platform.
 .
 This test can only be run on any Windows NT platform.
 .TP
-\fI95\fR
-.
-This test can only be run on any Windows 95 platform.
-.TP
-\fI98\fR
-.
-This test can only be run on any Windows 98 platform.
-.TP
 \fImac\fR
 .
 This test can only be run on any Mac platform.
@@ -669,7 +661,7 @@ This test can only be run on a Mac or Unix platform.
 \fItempNotWin\fR
 .
 This test can not be run on Windows.  This flag is used to temporarily
-disable a test. 
+disable a test.
 .TP
 \fItempNotMac\fR
 .
@@ -679,17 +671,17 @@ to temporarily disable a test.
 \fIunixCrash\fR
 .
 This test crashes if it is run on Unix.  This flag is used to temporarily
-disable a test. 
+disable a test.
 .TP
 \fIwinCrash\fR
 .
 This test crashes if it is run on Windows.  This flag is used to temporarily
-disable a test. 
+disable a test.
 .TP
 \fImacCrash\fR
 .
 This test crashes if it is run on a Mac.  This flag is used to temporarily
-disable a test. 
+disable a test.
 .TP
 \fIemptyTest\fR
 .
@@ -710,17 +702,17 @@ This test can only be run in some known development environment.
 Some tests are inherently non-portable because they depend on things
 like word length, file system configuration, window manager, etc.
 This constraint has value false to cause tests to be skipped unless
-the user specifies otherwise.  
+the user specifies otherwise.
 .TP
 \fIuserInteraction\fR
 .
 This test requires interaction from the user.  This constraint has
 value false to causes tests to be skipped unless the user specifies
-otherwise.  
+otherwise.
 .TP
 \fIinteractive\fR
 .
-This test can only be run in if the interpreter is in interactive mode 
+This test can only be run in if the interpreter is in interactive mode
 (when the global tcl_interactive variable is set to 1).
 .TP
 \fInonBlockFiles\fR
@@ -800,7 +792,7 @@ and sorted.  Then each file will be evaluated in turn.  If
 be \fBsource\fRd in the caller's context.  If it is false,
 then a copy of \fBinterpreter\fR will be \fBexec\fR'd to
 evaluate each file.  The multi-process operation is useful
-when testing can cause errors so severe that a process 
+when testing can cause errors so severe that a process
 terminates.  Although such an error may terminate a child
 process evaluating one file, the master process can continue
 with the rest of the test suite.  In multi-process operation,
@@ -880,10 +872,10 @@ harness are doing.
 .
 Sets the type of output verbosity desired to \fIlevel\fR,
 a list of zero or more of the elements \fBbody\fR, \fBpass\fR,
-\fBskip\fR, \fBstart\fR, \fBerror\fR and \fBline\fR.  Default value
-is
+\fBskip\fR, \fBstart\fR, \fBerror\fR, \fBline\fR, \fBmsec\fR and \fBusec\fR.
+Default value is
 .QW "\fBbody error\fR" .
-Levels are defined as: 
+Levels are defined as:
 .RS
 .IP "body (\fBb\fR)"
 Display the body of failed tests
@@ -898,6 +890,16 @@ Print errorInfo and errorCode, if they exist, when a test return code
 does not match its expected return code
 .IP "line (\fBl\fR)"
 Print source file line information of failed tests
+.IP "msec (\fBm\fR)"
+Print each test's execution time in milliseconds
+.IP "usec (\fBu\fR)"
+Print each test's execution time in microseconds
+.PP
+Note that the \fBmsec\fR and \fBusec\fR verbosity levels are provided as
+indicative measures only. They do not tackle the problem of repeatibility which
+should be considered in performance tests or benchmarks. To use these verbosity
+levels to thoroughly track performance degradations, consider wrapping your
+test bodies with \fBtime\fR commands.
 .PP
 The single letter abbreviations noted above are also recognized
 so that
@@ -919,7 +921,7 @@ test files have been evaluated.
 .IP 1
 Also check for core files at the end of each \fBtest\fR command.
 .IP 2
-Check for core files at all times described above, and save a 
+Check for core files at all times described above, and save a
 copy of each core file produced in \fBconfigure \-tmpdir\fR.
 .RE
 .TP
@@ -996,7 +998,7 @@ Sets the filename from which to read a script to be evaluated
 by \fBloadTestedCommands\fR.  This is an alternative to
 \fB\-load\fR.  They cannot be used together.
 .TP
-\fB\-outfile \fIfilename\fR 
+\fB\-outfile \fIfilename\fR
 .
 Sets the file to which all output produced by tcltest should be
 written.  A file named \fIfilename\fR will be \fBopen\fRed for writing,
@@ -1073,7 +1075,7 @@ used by \fBrunAllTests\fR to find test files.  It is a good rule of
 thumb to have one test file for each source code file of your project.
 It is good practice to edit the test file and the source code file
 together, keeping tests synchronized with code changes.
-.PP 
+.PP
 Most of the code in the test file should be the \fBtest\fR commands.
 Use constraints to skip tests, rather than conditional evaluation
 of \fBtest\fR.
@@ -1207,7 +1209,7 @@ to establish a configuration from command line arguments.
 There are two known issues related to nested evaluations of \fBtest\fR.
 The first issue relates to the stack level in which test scripts are
 executed.  Tests nested within other tests may be executed at the same
-stack level as the outermost test.  For example, in the following code: 
+stack level as the outermost test.  For example, in the following code:
 .PP
 .CS
 \fBtest\fR level-1.1 {level 1} {
@@ -1219,7 +1221,7 @@ stack level as the outermost test.  For example, in the following code:
 .CE
 .PP
 any script executed in level-2.1 may be executed at the same stack
-level as the script defined for level-1.1.  
+level as the script defined for level-1.1.
 .PP
 In addition, while two \fBtest\fRs have been run, results will only
 be reported by \fBcleanupTests\fR for tests at the same level as
@@ -1249,7 +1251,7 @@ script is being run.  Errors thrown by C procedures or printed
 directly from C applications will not be caught by the \fBtest\fR command.
 Therefore, usage of the \fB\-output\fR and \fB\-errorOutput\fR
 options to \fBtest\fR is useful only for pure Tcl applications
-that use \fBputs\fR to produce output. 
+that use \fBputs\fR to produce output.
 .SH KEYWORDS
 test, test harness, test suite
 .\" Local Variables:

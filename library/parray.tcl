@@ -11,7 +11,7 @@
 proc parray {a {pattern *}} {
     upvar 1 $a array
     if {![array exists array]} {
-	error "\"$a\" isn't an array"
+	return -code error "\"$a\" isn't an array"
     }
     set maxl 0
     set names [lsort [array names array $pattern]]

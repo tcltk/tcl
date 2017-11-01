@@ -12,16 +12,21 @@
  */
 
 #include "tclInt.h"
+#include "tclOOInt.h"
 
 MODULE_SCOPE const TclStubs *tclStubsPtr;
 MODULE_SCOPE const TclPlatStubs *tclPlatStubsPtr;
 MODULE_SCOPE const TclIntStubs *tclIntStubsPtr;
 MODULE_SCOPE const TclIntPlatStubs *tclIntPlatStubsPtr;
+MODULE_SCOPE const TclOOStubs *tclOOStubsPtr;
+MODULE_SCOPE const TclOOIntStubs *tclOOIntStubsPtr;
 
 const TclStubs *tclStubsPtr = NULL;
 const TclPlatStubs *tclPlatStubsPtr = NULL;
 const TclIntStubs *tclIntStubsPtr = NULL;
 const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
+const TclOOStubs *tclOOStubsPtr = NULL;
+const TclOOIntStubs *tclOOIntStubsPtr = NULL;
 
 /*
  * Use our own ISDIGIT to avoid linking to libc on windows
@@ -32,7 +37,7 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 /*
  *----------------------------------------------------------------------
  *
- * TclInitStubs --
+ * Tcl_InitStubs --
  *
  *	Tries to initialise the stub table pointers and ensures that the
  *	correct version of Tcl is loaded.
@@ -48,11 +53,10 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
  */
 #undef Tcl_InitStubs
 MODULE_SCOPE const char *
-TclInitStubs(
+Tcl_InitStubs(
     Tcl_Interp *interp,
     const char *version,
     int exact,
-    const char *tclversion,
     int magic)
 {
     Interp *iPtr = (Interp *) interp;
@@ -66,7 +70,7 @@ TclInitStubs(
      * times. [Bug 615304]
      */
 
-    if (!stubsPtr || (stubsPtr->magic != TCL_STUB_MAGIC)) {
+    if (!stubsPtr || (stubsPtr->magic != (((exact&0xff00) >= 0x900) ? magic : (int) 0xFCA3BACF))) {
 	iPtr->legacyResult = "interpreter uses an incompatible stubs mechanism";
 	iPtr->legacyFreeProc = 0; /* TCL_STATIC */
 	return NULL;
@@ -76,7 +80,7 @@ TclInitStubs(
     if (actualVersion == NULL) {
 	return NULL;
     }
-    if (exact) {
+    if (exact&1) {
 	const char *p = version;
 	int count = 0;
 
@@ -102,16 +106,24 @@ TclInitStubs(
 	    }
 	}
     }
-    tclStubsPtr = (TclStubs *)pkgData;
+    if (((exact&0xff00) < 0x900)) {
+	/* We are running Tcl 8.x */
+	stubsPtr = (TclStubs *)pkgData;
+    }
+    tclStubsPtr = stubsPtr;
 
-    if (tclStubsPtr->hooks) {
-	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
-	tclIntStubsPtr = tclStubsPtr->hooks->tclIntStubs;
-	tclIntPlatStubsPtr = tclStubsPtr->hooks->tclIntPlatStubs;
+    if (stubsPtr->hooks) {
+	tclPlatStubsPtr = stubsPtr->hooks->tclPlatStubs;
+	tclIntStubsPtr = stubsPtr->hooks->tclIntStubs;
+	tclIntPlatStubsPtr = stubsPtr->hooks->tclIntPlatStubs;
+	tclOOStubsPtr = stubsPtr->hooks->tclOOStubs;
+	tclOOIntStubsPtr = stubsPtr->hooks->tclOOIntStubs;
     } else {
 	tclPlatStubsPtr = NULL;
 	tclIntStubsPtr = NULL;
 	tclIntPlatStubsPtr = NULL;
+	tclOOStubsPtr = NULL;
+	tclOOIntStubsPtr = NULL;
     }
 
     return actualVersion;

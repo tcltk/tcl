@@ -4,9 +4,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -36,6 +36,13 @@ The \fBbinary encode\fR and \fBbinary decode\fR subcommands convert
 binary data to or from string encodings such as base64 (used in MIME
 messages for example).
 .VE 8.6
+.PP
+Note that other operations on binary data, such as taking a subsequence of it,
+getting its length, or reinterpreting it as a string in some encoding, are
+done by other Tcl commands (respectively \fBstring range\fR,
+\fBstring length\fR and \fBencoding convertfrom\fR in the example cases).  A
+binary string in Tcl is merely one where all the characters it contains are in
+the range \eu0000\-\eu00FF.
 .SH "BINARY ENCODE AND DECODE"
 .VS 8.6
 .PP
@@ -95,13 +102,14 @@ between Unix systems and on USENET, but is less common these days, having been
 largely superseded by the \fBbase64\fR binary encoding.
 .RS
 .PP
-During encoding, the following options are supported:
-'\" This is wrong! The uuencode format had more complexity than this!
+During encoding, the following options are supported (though changing them may
+produce files that other implementations of decoders cannot process):
 .TP
 \fB\-maxlen \fIlength\fR
 .
 Indicates that the output should be split into lines of no more than
-\fIlength\fR characters. By default, lines are not split.
+\fIlength\fR characters. By default, lines are split every 61 characters, and
+this must be in the range 3 to 85 due to limitations in the encoding.
 .TP
 \fB\-wrapchar \fIcharacter\fR
 .
@@ -114,7 +122,11 @@ During decoding, the following options are supported:
 .TP
 \fB\-strict\fR
 .
-Instructs the decoder to throw an error if it encounters whitespace characters. Otherwise it ignores them.
+Instructs the decoder to throw an error if it encounters unexpected whitespace
+characters. Otherwise it ignores them.
+.PP
+Note that neither the encoder nor the decoder handle the header and footer of
+the uuencode format.
 .RE
 .VE 8.6
 .SH "BINARY FORMAT"
@@ -288,7 +300,7 @@ example,
 .CS
 \fBbinary format\fR s3 {3 -3 258 1}
 .CE
-will return a string equivalent to 
+will return a string equivalent to
 \fB\ex03\ex00\exfd\exff\ex02\ex01\fR.
 .RE
 .IP \fBS\fR 5
@@ -299,7 +311,7 @@ example,
 .CS
 \fBbinary format\fR S3 {3 -3 258 1}
 .CE
-will return a string equivalent to 
+will return a string equivalent to
 \fB\ex00\ex03\exff\exfd\ex01\ex02\fR.
 .RE
 .IP \fBt\fR 5
@@ -318,7 +330,7 @@ example,
 .CS
 \fBbinary format\fR i3 {3 -3 65536 1}
 .CE
-will return a string equivalent to 
+will return a string equivalent to
 \fB\ex03\ex00\ex00\ex00\exfd\exff\exff\exff\ex00\ex00\ex01\ex00\fR
 .RE
 .IP \fBI\fR 5
@@ -329,7 +341,7 @@ For example,
 .CS
 \fBbinary format\fR I3 {3 -3 65536 1}
 .CE
-will return a string equivalent to 
+will return a string equivalent to
 \fB\ex00\ex00\ex00\ex03\exff\exff\exff\exfd\ex00\ex01\ex00\ex00\fR
 .RE
 .IP \fBn\fR 5
@@ -385,7 +397,7 @@ on a Windows system running on an Intel Pentium processor,
 .CS
 \fBbinary format\fR f2 {1.6 3.4}
 .CE
-will return a string equivalent to 
+will return a string equivalent to
 \fB\excd\excc\excc\ex3f\ex9a\ex99\ex59\ex40\fR.
 .RE
 .IP \fBr\fR 5
@@ -406,7 +418,7 @@ Windows system running on an Intel Pentium processor,
 .CS
 \fBbinary format\fR d1 {1.6}
 .CE
-will return a string equivalent to 
+will return a string equivalent to
 \fB\ex9a\ex99\ex99\ex99\ex99\ex99\exf9\ex3f\fR.
 .RE
 .IP \fBq\fR 5
@@ -672,7 +684,7 @@ order.  For example,
 \fBbinary scan\fR \ex00\ex05\ex00\ex07\exff\exf0 S2S* var1 var2
 .CE
 will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB\-16\fR
-stored in \fIvar2\fR. 
+stored in \fIvar2\fR.
 .RE
 .IP \fBt\fR 5
 The data is interpreted as \fIcount\fR 16-bit signed integers
@@ -855,6 +867,7 @@ architectures, use their textual representation (as produced by
 .PP
 This is a procedure to write a Tcl string to a binary-encoded channel as
 UTF-8 data preceded by a length word:
+.PP
 .CS
 proc \fIwriteString\fR {channel string} {
     set data [encoding convertto utf-8 $string]
@@ -865,6 +878,7 @@ proc \fIwriteString\fR {channel string} {
 .PP
 This procedure reads a string from a channel that was written by the
 previously presented \fIwriteString\fR procedure:
+.PP
 .CS
 proc \fIreadString\fR {channel} {
     if {![\fBbinary scan\fR [read $channel 4] I length]} {
@@ -877,6 +891,7 @@ proc \fIreadString\fR {channel} {
 .PP
 This converts the contents of a file (named in the variable \fIfilename\fR) to
 base64 and prints them:
+.PP
 .CS
 set f [open $filename rb]
 set data [read $f]
@@ -884,9 +899,10 @@ close $f
 puts [\fBbinary encode\fR base64 \-maxlen 64 $data]
 .CE
 .SH "SEE ALSO"
-format(n), scan(n), tclvars(n)
+encoding(n), format(n), scan(n), string(n), tcl_platform(n)
 .SH KEYWORDS
 binary, format, scan
 '\" Local Variables:
 '\" mode: nroff
+'\" fill-column: 78
 '\" End:

@@ -2,8 +2,8 @@
 #
 #	This file contains the declarations for all supported public
 #	functions that are exported by the Tcl library via the stubs table.
-#	This file is used to generate the tclDecls.h, tclPlatDecls.h,
-#	tclStub.c, and tclPlatStub.c files.
+#	This file is used to generate the tclDecls.h, tclPlatDecls.h
+#	and tclStubInit.c files.
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
@@ -18,9 +18,11 @@ library tcl
 #     tclPlat	 - platform specific public
 #     tclInt	 - generic private
 #     tclPlatInt - platform specific private
+#     tclOO	 - tclOO public
+#     tclOOInt	 - tclOO private
 
 interface tcl
-hooks {tclPlat tclInt tclIntPlat}
+hooks {tclPlat tclInt tclIntPlat tclOO tclOOInt}
 scspec TCLAPI
 
 # Declare each of the functions in the public Tcl interface.  Note that
@@ -37,7 +39,7 @@ declare 1 {
 	    void *clientDataPtr)
 }
 declare 2 {
-    void Tcl_Panic(const char *format, ...)
+    TCL_NORETURN void Tcl_Panic(const char *format, ...)
 }
 declare 3 {
     char *Tcl_Alloc(unsigned int size)
@@ -104,9 +106,10 @@ declare 20 {
 declare 21 {
     int Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file, int line)
 }
-declare 22 {
-    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
-}
+# Removed in 9.0
+#declare 22 {
+#    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
+#}
 declare 23 {
     Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, int length,
 	    const char *file, int line)
@@ -152,10 +155,11 @@ declare 35 {
     int Tcl_GetDoubleFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    double *doublePtr)
 }
-declare 36 {
-    int Tcl_GetIndexFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    const char *const *tablePtr, const char *msg, int flags, int *indexPtr)
-}
+# Removed in 9.0
+#declare 36 {
+#    int Tcl_GetIndexFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+#	    const char *const *tablePtr, const char *msg, int flags, int *indexPtr)
+#}
 declare 37 {
     int Tcl_GetInt(Tcl_Interp *interp, const char *src, int *intPtr)
 }
@@ -198,9 +202,10 @@ declare 48 {
     int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, int first,
 	    int count, int objc, Tcl_Obj *const objv[])
 }
-declare 49 {
-    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
-}
+# Removed in 9.0:
+#declare 49 {
+#    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
+#}
 declare 50 {
     Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int length)
 }
@@ -222,9 +227,10 @@ declare 55 {
 declare 56 {
     Tcl_Obj *Tcl_NewStringObj(const char *bytes, int length)
 }
-declare 57 {
-    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
-}
+# Removed in 9.0:
+#declare 57 {
+#    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
+#}
 declare 58 {
     unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int length)
 }
@@ -250,13 +256,14 @@ declare 64 {
 declare 65 {
     void Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes, int length)
 }
-declare 66 {
-    void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
-}
-declare 67 {
-    void Tcl_AddObjErrorInfo(Tcl_Interp *interp, const char *message,
-	    int length)
-}
+# Removed in 9.0:
+#declare 66 {
+#    void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
+#}
+#declare 67 {
+#    void Tcl_AddObjErrorInfo(Tcl_Interp *interp, const char *message,
+#	    int length)
+#}
 declare 68 {
     void Tcl_AllowExceptions(Tcl_Interp *interp)
 }
@@ -467,21 +474,23 @@ declare 127 {
 declare 128 {
     const char *Tcl_ErrnoMsg(int err)
 }
-declare 129 {
-    int Tcl_Eval(Tcl_Interp *interp, const char *script)
-}
+# Removed in 9.0:
+#declare 129 {
+#    int Tcl_Eval(Tcl_Interp *interp, const char *script)
+#}
 # Removed in 9.0:
 #declare 130 {
 #    int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
 #}
-declare 131 {
-    int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
-}
+# Removed in 9.0:
+#declare 131 {
+#    int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+#}
 declare 132 {
     void Tcl_EventuallyFree(ClientData clientData, Tcl_FreeProc *freeProc)
 }
 declare 133 {
-    void Tcl_Exit(int status)
+    TCL_NORETURN void Tcl_Exit(int status)
 }
 declare 134 {
     int Tcl_ExposeCommand(Tcl_Interp *interp, const char *hiddenCmdToken,
@@ -627,10 +636,11 @@ declare 173 {
 declare 174 {
     const char *Tcl_GetStringResult(Tcl_Interp *interp)
 }
-declare 175 {
-    const char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,
-	    int flags)
-}
+# Removed in 9.0
+#declare 175 {
+#    const char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,
+#	    int flags)
+#}
 declare 176 {
     const char *Tcl_GetVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, int flags)
@@ -639,6 +649,7 @@ declare 176 {
 #declare 177 {
 #    int Tcl_GlobalEval(Tcl_Interp *interp, const char *command)
 #}
+# Removed in 9.0
 #declare 178 {
 #    int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 #}
@@ -817,16 +828,18 @@ declare 228 {
 declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
-declare 230 {
-    void Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
-}
+# Removed (from stubtable only) in 9.0:
+#declare 230 {
+#    void Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
+#}
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
 }
-declare 232 {
-    void Tcl_SetResult(Tcl_Interp *interp, char *result,
-	    Tcl_FreeProc *freeProc)
-}
+# Removed (from stubtable only) in 9.0:
+#declare 232 {
+#    void Tcl_SetResult(Tcl_Interp *interp, char *result,
+#	    Tcl_FreeProc *freeProc)
+#}
 declare 233 {
     int Tcl_SetServiceMode(int mode)
 }
@@ -839,10 +852,11 @@ declare 235 {
 declare 236 {
     void Tcl_SetStdChannel(Tcl_Channel channel, int type)
 }
-declare 237 {
-    const char *Tcl_SetVar(Tcl_Interp *interp, const char *varName,
-	    const char *newValue, int flags)
-}
+# Removed in 9.0:
+#declare 237 {
+#    const char *Tcl_SetVar(Tcl_Interp *interp, const char *varName,
+#	    const char *newValue, int flags)
+#}
 declare 238 {
     const char *Tcl_SetVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, const char *newValue, int flags)
@@ -875,10 +889,11 @@ declare 245 {
 #declare 246 {
 #    int Tcl_TellOld(Tcl_Channel chan)
 #}
-declare 247 {
-    int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
-	    Tcl_VarTraceProc *proc, ClientData clientData)
-}
+# Removed in Tcl 9
+#declare 247 {
+#    int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
+#	    Tcl_VarTraceProc *proc, ClientData clientData)
+#}
 declare 248 {
     int Tcl_TraceVar2(Tcl_Interp *interp, const char *part1, const char *part2,
 	    int flags, Tcl_VarTraceProc *proc, ClientData clientData)
@@ -896,17 +911,19 @@ declare 251 {
 declare 252 {
     int Tcl_UnregisterChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
-declare 253 {
-    int Tcl_UnsetVar(Tcl_Interp *interp, const char *varName, int flags)
-}
+# Removed in 9.0:
+#declare 253 {
+#    int Tcl_UnsetVar(Tcl_Interp *interp, const char *varName, int flags)
+#}
 declare 254 {
     int Tcl_UnsetVar2(Tcl_Interp *interp, const char *part1, const char *part2,
 	    int flags)
 }
-declare 255 {
-    void Tcl_UntraceVar(Tcl_Interp *interp, const char *varName, int flags,
-	    Tcl_VarTraceProc *proc, ClientData clientData)
-}
+# Removed in 9.0:
+#declare 255 {
+#    void Tcl_UntraceVar(Tcl_Interp *interp, const char *varName, int flags,
+#	    Tcl_VarTraceProc *proc, ClientData clientData)
+#}
 declare 256 {
     void Tcl_UntraceVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, int flags, Tcl_VarTraceProc *proc,
@@ -915,10 +932,11 @@ declare 256 {
 declare 257 {
     void Tcl_UpdateLinkedVar(Tcl_Interp *interp, const char *varName)
 }
-declare 258 {
-    int Tcl_UpVar(Tcl_Interp *interp, const char *frameName,
-	    const char *varName, const char *localName, int flags)
-}
+# Removed in 9.0
+#declare 258 {
+#    int Tcl_UpVar(Tcl_Interp *interp, const char *frameName,
+#	    const char *varName, const char *localName, int flags)
+#}
 declare 259 {
     int Tcl_UpVar2(Tcl_Interp *interp, const char *frameName, const char *part1,
 	    const char *part2, const char *localName, int flags)
@@ -927,10 +945,11 @@ declare 259 {
 #declare 260 {
 #    int Tcl_VarEval(Tcl_Interp *interp, ...)
 #}
-declare 261 {
-    ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
-	    int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData)
-}
+# Removed in 9.0
+#declare 261 {
+#    ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
+#	    int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData)
+#}
 declare 262 {
     ClientData Tcl_VarTraceInfo2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, int flags, Tcl_VarTraceProc *procPtr,
@@ -994,7 +1013,7 @@ declare 277 {
     Tcl_Pid Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options)
 }
 declare 278 {
-    void Tcl_PanicVA(const char *format, va_list argList)
+    TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList)
 }
 declare 279 {
     void Tcl_GetVersion(int *major, int *minor, int *patchLevel, int *type)
@@ -1052,9 +1071,10 @@ declare 288 {
 declare 289 {
     void Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc, ClientData clientData)
 }
-declare 290 {
-    void Tcl_DiscardResult(Tcl_SavedResult *statePtr)
-}
+# Removed in 9.0:
+#declare 290 {
+#    void Tcl_DiscardResult(Tcl_SavedResult *statePtr)
+#}
 declare 291 {
     int Tcl_EvalEx(Tcl_Interp *interp, const char *script, int numBytes,
 	    int flags)
@@ -1067,7 +1087,7 @@ declare 293 {
     int Tcl_EvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 declare 294 {
-    void Tcl_ExitThread(int status)
+    TCL_NORETURN void Tcl_ExitThread(int status)
 }
 declare 295 {
     int Tcl_ExternalToUtf(Tcl_Interp *interp, Tcl_Encoding encoding,
@@ -1135,12 +1155,14 @@ declare 313 {
     int Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr, int charsToRead,
 	    int appendFlag)
 }
-declare 314 {
-    void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
-}
-declare 315 {
-    void Tcl_SaveResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
-}
+# Removed in 9.0:
+#declare 314 {
+#    void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
+#}
+# Removed in 9.0:
+#declare 315 {
+#    void Tcl_SaveResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
+#}
 declare 316 {
     int Tcl_SetSystemEncoding(Tcl_Interp *interp, const char *name)
 }
@@ -1262,7 +1284,7 @@ declare 352 {
 }
 declare 353 {
     int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-	    unsigned long numChars)
+	    size_t numChars)
 }
 declare 354 {
     char *Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
@@ -1324,10 +1346,10 @@ declare 368 {
     int Tcl_Stat(const char *path, struct stat *bufPtr)
 }
 declare 369 {
-    int Tcl_UtfNcmp(const char *s1, const char *s2, unsigned long n)
+    int Tcl_UtfNcmp(const char *s1, const char *s2, size_t n)
 }
 declare 370 {
-    int Tcl_UtfNcasecmp(const char *s1, const char *s2, unsigned long n)
+    int Tcl_UtfNcasecmp(const char *s1, const char *s2, size_t n)
 }
 declare 371 {
     int Tcl_StringCaseMatch(const char *str, const char *pattern, int nocase)
@@ -1498,19 +1520,19 @@ declare 418 {
 }
 declare 419 {
     int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-	    unsigned long numChars)
+	    size_t numChars)
 }
 declare 420 {
     int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
 	    const Tcl_UniChar *uniPattern, int nocase)
 }
-declare 421 {
-    Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const void *key)
-}
-declare 422 {
-    Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
-	    const void *key, int *newPtr)
-}
+#declare 421 {
+#    Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const void *key)
+#}
+#declare 422 {
+#    Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
+#	    const void *key, int *newPtr)
+#}
 declare 423 {
     void Tcl_InitCustomHashTable(Tcl_HashTable *tablePtr, int keyType,
 	    const Tcl_HashKeyType *typePtr)
@@ -1883,7 +1905,7 @@ declare 518 {
 
 # TIP#121 (exit handler) dkf for Joe Mistachkin
 declare 519 {
-    Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc)
+    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
 }
 
 # TIP#143 (resource limits) dkf
@@ -2336,6 +2358,17 @@ declare 630 {
 }
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
+
+# TIP #456
+declare 631 {
+    Tcl_Channel Tcl_OpenTcpServerEx(Tcl_Interp *interp, const char *service,
+	    const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc,
+	    ClientData callbackData)
+}
+
+# ----- BASELINE -- FOR -- 8.7.0 ----- #
+
+
 
 ##############################################################################
 

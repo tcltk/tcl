@@ -3,9 +3,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH zlib n 8.6 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -81,7 +81,7 @@ named by the \fBfilename\fR field was modified. Suitable for use with
 The type of the uncompressed data (\fBbinary\fR or \fBtext\fR) if known.
 .RE
 .TP
-\fBzlib gzip\fI string\fR ?\fB\-level \fIlevel\fR? ?\fB\-header \fIdict\fR? 
+\fBzlib gzip\fI string\fR ?\fB\-level \fIlevel\fR? ?\fB\-header \fIdict\fR?
 .
 Return the compressed contents of binary string \fIstring\fR in gzip format.
 If \fB\-level\fR is given, \fIlevel\fR gives the compression level to use
@@ -174,7 +174,11 @@ to the \fBzlib push\fR command:
 .VS "TIP 400"
 Sets the compression dictionary to use when working with compressing or
 decompressing the data to be \fIbinData\fR. Not valid for transformations that
-work with gzip-format data.
+work with gzip-format data.  The dictionary should consist of strings (byte
+sequences) that are likely to be encountered later in the data to be compressed,
+with the most commonly used strings preferably put towards the end of the
+dictionary. Tcl provides no mechanism for choosing a good such dictionary for
+a particular data sequence.
 .VE
 .TP
 \fB\-header\fI dictionary\fR
@@ -207,11 +211,13 @@ compression algorithm depends on what format is being produced or consumed.
 .TP
 \fB\-dictionary\fI binData\fR
 .VS "TIP 400"
-This read-write options gets or sets the compression dictionary to use when
-working with compressing or decompressing the data to be \fIbinData\fR. It is
-not valid for transformations that work with gzip-format data, and should not
-normally be set on compressing transformations other than at the point where
-the transformation is stacked.
+This read-write options gets or sets the initial compression dictionary to use
+when working with compressing or decompressing the data to be \fIbinData\fR.
+It is not valid for transformations that work with gzip-format data, and should
+not normally be set on compressing transformations other than at the point where
+the transformation is stacked. Note that this cannot be used to get the
+current active compression dictionary mid-stream, as that information is not
+exposed by the underlying library.
 .VE
 .TP
 \fB\-flush\fI type\fR

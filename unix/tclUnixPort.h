@@ -21,10 +21,6 @@
 
 #ifndef _TCLUNIXPORT
 #define _TCLUNIXPORT
-
-#ifndef MODULE_SCOPE
-#define MODULE_SCOPE	extern
-#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -89,26 +85,28 @@ typedef off_t		Tcl_SeekOffset;
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
     typedef unsigned short WCHAR;
-    DLLIMPORT extern __stdcall int GetModuleHandleExW(unsigned int, const char *, void *);
-    DLLIMPORT extern __stdcall int GetModuleFileNameW(void *, const char *, int);
-    DLLIMPORT extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
+    __declspec(dllimport) extern __stdcall int GetModuleHandleExW(unsigned int, const char *, void *);
+    __declspec(dllimport) extern __stdcall int GetModuleFileNameW(void *, const char *, int);
+    __declspec(dllimport) extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
 	    const char *, int, const char *, const char *);
-    DLLIMPORT extern __stdcall int MultiByteToWideChar(int, int, const char *, int,
+    __declspec(dllimport) extern __stdcall int MultiByteToWideChar(int, int, const char *, int,
 	    WCHAR *, int);
-    DLLIMPORT extern __stdcall void OutputDebugStringW(const WCHAR *);
-    DLLIMPORT extern __stdcall int IsDebuggerPresent();
+    __declspec(dllimport) extern __stdcall void OutputDebugStringW(const WCHAR *);
+    __declspec(dllimport) extern __stdcall int IsDebuggerPresent();
+    __declspec(dllimport) extern __stdcall int GetLastError();
+    __declspec(dllimport) extern __stdcall int GetFileAttributesW(const WCHAR *);
+    __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
 
-    DLLIMPORT extern int cygwin_conv_path(int, const void *, void *, int);
-    DLLIMPORT extern int cygwin_conv_path_list(int, const void *, void *, int);
-#   define USE_PUTENV 1
-#   define USE_PUTENV_FOR_UNSET 1
+    __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
+#ifndef __x86_64__
 #   define environ __cygwin_environ
+    extern char **__cygwin_environ;
+#endif
 #   define timezone _timezone
-    DLLIMPORT extern char **__cygwin_environ;
-    MODULE_SCOPE int TclOSstat(const char *name, Tcl_StatBuf *statBuf);
-    MODULE_SCOPE int TclOSlstat(const char *name, Tcl_StatBuf *statBuf);
-#elif defined(HAVE_STRUCT_STAT64)
+    extern int TclOSstat(const char *name, void *statBuf);
+    extern int TclOSlstat(const char *name, void *statBuf);
+#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
 #   define TclOSstat		stat64
 #   define TclOSlstat		lstat64
 #else
@@ -127,11 +125,11 @@ typedef off_t		Tcl_SeekOffset;
 #   include <sys/select.h>
 #endif
 #include <sys/stat.h>
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 #   include <sys/time.h>
 #   include <time.h>
 #else
-#if HAVE_SYS_TIME_H
+#ifdef HAVE_SYS_TIME_H
 #   include <sys/time.h>
 #else
 #   include <time.h>
@@ -140,15 +138,11 @@ typedef off_t		Tcl_SeekOffset;
 #ifndef NO_SYS_WAIT_H
 #   include <sys/wait.h>
 #endif
-#if HAVE_INTTYPES_H
+#ifdef HAVE_INTTYPES_H
 #   include <inttypes.h>
 #endif
-#ifdef NO_LIMITS_H
-#   include "../compat/limits.h"
-#else
-#   include <limits.h>
-#endif
-#if HAVE_STDINT_H
+#include <limits.h>
+#ifdef HAVE_STDINT_H
 #   include <stdint.h>
 #endif
 #ifdef HAVE_UNISTD_H
@@ -157,7 +151,7 @@ typedef off_t		Tcl_SeekOffset;
 #   include "../compat/unistd.h"
 #endif
 
-MODULE_SCOPE int	TclUnixSetBlockingMode(int fd, int mode);
+extern int TclUnixSetBlockingMode(int fd, int mode);
 
 #include <utime.h>
 
@@ -449,16 +443,6 @@ extern int	gettimeofday(struct timeval *tp,
 
 /*
  *---------------------------------------------------------------------------
- * Make sure that L_tmpnam is defined.
- *---------------------------------------------------------------------------
- */
-
-#ifndef L_tmpnam
-#   define L_tmpnam	100
-#endif
-
-/*
- *---------------------------------------------------------------------------
  * The following macro defines the type of the mask arguments to select:
  *---------------------------------------------------------------------------
  */
@@ -582,19 +566,6 @@ extern char **		environ;
 
 /*
  *---------------------------------------------------------------------------
- * The termios configure test program relies on the configure script being run
- * from a terminal, which is not the case e.g., when configuring from Xcode.
- * Since termios is known to be present on all Mac OS X releases since 10.0,
- * override the configure defines for serial API here. [Bug 497147]
- *---------------------------------------------------------------------------
- */
-
-#   define USE_TERMIOS 1
-#   undef USE_TERMIO
-#   undef USE_SGTTY
-
-/*
- *---------------------------------------------------------------------------
  * Include AvailabilityMacros.h here (when available) to ensure any symbolic
  * MAC_OS_X_VERSION_* constants passed on the command line are translated.
  *---------------------------------------------------------------------------
@@ -701,9 +672,9 @@ typedef int socklen_t;
  *---------------------------------------------------------------------------
  */
 
-#define TclpSysAlloc(size, isBin)	malloc((size_t)(size))
+#define TclpSysAlloc(size)		malloc(size)
 #define TclpSysFree(ptr)		free((char *)(ptr))
-#define TclpSysRealloc(ptr, size)	realloc((char *)(ptr), (size_t)(size))
+#define TclpSysRealloc(ptr, size)	realloc(ptr, size)
 
 /*
  *---------------------------------------------------------------------------
@@ -715,8 +686,6 @@ typedef int socklen_t;
 
 #ifdef TCL_THREADS
 #   include <pthread.h>
-#   undef inet_ntoa
-#   define inet_ntoa(x)	TclpInetNtoa(x)
 #endif /* TCL_THREADS */
 
 /* FIXME - Hyper-enormous platform assumption! */
@@ -735,14 +704,14 @@ typedef int socklen_t;
 #include <pwd.h>
 #include <grp.h>
 
-MODULE_SCOPE struct passwd *	TclpGetPwNam(const char *name);
-MODULE_SCOPE struct group *	TclpGetGrNam(const char *name);
-MODULE_SCOPE struct passwd *	TclpGetPwUid(uid_t uid);
-MODULE_SCOPE struct group *	TclpGetGrGid(gid_t gid);
-MODULE_SCOPE struct hostent *	TclpGetHostByName(const char *name);
-MODULE_SCOPE struct hostent *	TclpGetHostByAddr(const char *addr,
+extern struct passwd *	TclpGetPwNam(const char *name);
+extern struct group *	TclpGetGrNam(const char *name);
+extern struct passwd *	TclpGetPwUid(uid_t uid);
+extern struct group *	TclpGetGrGid(gid_t gid);
+extern struct hostent *	TclpGetHostByName(const char *name);
+extern struct hostent *	TclpGetHostByAddr(const char *addr,
 				    int length, int type);
-MODULE_SCOPE void *TclpMakeTcpClientChannelMode(
+extern void *TclpMakeTcpClientChannelMode(
 				    void *tcpSocket, int mode);
 
 #endif /* _TCLUNIXPORT */

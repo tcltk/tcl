@@ -47,7 +47,7 @@
  * we have to translate that to strcmp here.
  */
 
-#ifndef __WIN32__
+#ifndef _WIN32
 #   define TCHAR char
 #   define TEXT(arg) arg
 #   define _tcscmp strcmp
@@ -80,7 +80,10 @@ NewNativeObj(
  * source directory to make their own modified versions).
  */
 
+#if defined _MSC_VER && _MSC_VER < 1900
+/* isatty is always defined on MSVC 14.0, but not necessarily as CRTIMPORT. */
 extern CRTIMPORT int	isatty(int fd);
+#endif
 
 /*
  * The thread-local variables for this file's functions.
@@ -317,6 +320,9 @@ Tcl_MainEx(
     Tcl_Channel chan;
     InteractiveState is;
 
+    TclpSetInitialEncodings();
+    TclpFindExecutable((const char *)argv[0]);
+
     Tcl_InitMemory(interp);
 
     is.interp = interp;
@@ -362,7 +368,7 @@ Tcl_MainEx(
     argc--;
     argv++;
 
-    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewLongObj(argc), TCL_GLOBAL_ONLY);
 
     argvPtr = Tcl_NewListObj(0, NULL);
     while (argc--) {
@@ -376,7 +382,7 @@ Tcl_MainEx(
 
     is.tty = isatty(0);
     Tcl_SetVar2Ex(interp, "tcl_interactive", NULL,
-	    Tcl_NewIntObj(!path && is.tty), TCL_GLOBAL_ONLY);
+	    Tcl_NewLongObj(!path && is.tty), TCL_GLOBAL_ONLY);
 
     /*
      * Invoke application-specific initialization.
@@ -530,7 +536,7 @@ Tcl_MainEx(
 	     * error messages troubles deeper in, so lop it back off.
 	     */
 
-	    Tcl_GetStringFromObj(is.commandPtr, &length);
+	    TclGetStringFromObj(is.commandPtr, &length);
 	    Tcl_SetObjLength(is.commandPtr, --length);
 	    code = Tcl_RecordAndEvalObj(interp, is.commandPtr,
 		    TCL_EVAL_GLOBAL);
@@ -547,7 +553,7 @@ Tcl_MainEx(
 	    } else if (is.tty) {
 		resultPtr = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(resultPtr);
-		Tcl_GetStringFromObj(resultPtr, &length);
+		TclGetStringFromObj(resultPtr, &length);
 		chan = Tcl_GetStdChannel(TCL_STDOUT);
 		if ((length > 0) && chan) {
 		    Tcl_WriteObj(chan, resultPtr);
@@ -617,7 +623,7 @@ Tcl_MainEx(
 
     if (!Tcl_InterpDeleted(interp) && !Tcl_LimitExceeded(interp)) {
 	Tcl_Obj *cmd = Tcl_ObjPrintf("exit %d", exitCode);
-	    
+
 	Tcl_IncrRefCount(cmd);
 	Tcl_EvalObjEx(interp, cmd, TCL_EVAL_GLOBAL);
 	Tcl_DecrRefCount(cmd);
@@ -715,7 +721,7 @@ TclFullFinalizationRequested(void)
     const char *fin;
     Tcl_DString ds;
     int finalize = 0;
-    
+
     fin = TclGetEnv("TCL_FINALIZE_ON_EXIT", &ds);
     finalize = ((fin != NULL) && strcmp(fin, "0"));
     if (fin != NULL) {
@@ -791,7 +797,7 @@ StdinProc(
 	goto prompt;
     }
     isPtr->prompt = PROMPT_START;
-    Tcl_GetStringFromObj(commandPtr, &length);
+    TclGetStringFromObj(commandPtr, &length);
     Tcl_SetObjLength(commandPtr, --length);
 
     /*
@@ -822,7 +828,7 @@ StdinProc(
 	chan = Tcl_GetStdChannel(TCL_STDOUT);
 
 	Tcl_IncrRefCount(resultPtr);
-	Tcl_GetStringFromObj(resultPtr, &length);
+	TclGetStringFromObj(resultPtr, &length);
 	if ((length > 0) && (chan != NULL)) {
 	    Tcl_WriteObj(chan, resultPtr);
 	    Tcl_WriteChars(chan, "\n", 1);

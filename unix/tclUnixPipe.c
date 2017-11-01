@@ -229,7 +229,7 @@ TclpCreateTempFile(
 Tcl_Obj *
 TclpTempFileName(void)
 {
-    Tcl_Obj *nameObj = Tcl_NewObj();
+    Tcl_Obj *retVal, *nameObj = Tcl_NewObj();
     int fd;
 
     Tcl_IncrRefCount(nameObj);
@@ -242,7 +242,9 @@ TclpTempFileName(void)
     fcntl(fd, F_SETFD, FD_CLOEXEC);
     TclpObjDeleteFile(nameObj);
     close(fd);
-    return nameObj;
+    retVal = Tcl_DuplicateObj(nameObj);
+    Tcl_DecrRefCount(nameObj);
+    return retVal;
 }
 
 /*
@@ -259,7 +261,7 @@ TclpTempFileName(void)
  *
  * On Unix, it works to load a shared object from a file of any name, so this
  * function is merely a thin wrapper around TclpTempFileName().
- *	
+ *
  *----------------------------------------------------------------------------
  */
 
@@ -870,7 +872,7 @@ TclGetAndDetachPids(
     pipePtr = Tcl_GetChannelInstanceData(chan);
     TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
-	Tcl_ListObjAppendElement(NULL, pidsObj, Tcl_NewIntObj(
+	Tcl_ListObjAppendElement(NULL, pidsObj, Tcl_NewLongObj(
 		PTR2INT(pipePtr->pidPtr[i])));
 	Tcl_DetachPids(1, &pipePtr->pidPtr[i]);
     }
@@ -967,7 +969,7 @@ PipeClose2Proc(
 	    pipePtr->outFile = NULL;
 	}
     }
-    
+
     /*
      * If half-closing, stop here.
      */
@@ -1143,7 +1145,7 @@ PipeWatchProc(
     if (psPtr->inFile) {
 	newmask = mask & (TCL_READABLE | TCL_EXCEPTION);
 	if (newmask) {
-	    Tcl_CreateFileHandler(GetFd(psPtr->inFile), mask,
+	    Tcl_CreateFileHandler(GetFd(psPtr->inFile), newmask,
 		    (Tcl_FileProc *) Tcl_NotifyChannel, psPtr->channel);
 	} else {
 	    Tcl_DeleteFileHandler(GetFd(psPtr->inFile));
@@ -1152,7 +1154,7 @@ PipeWatchProc(
     if (psPtr->outFile) {
 	newmask = mask & (TCL_WRITABLE | TCL_EXCEPTION);
 	if (newmask) {
-	    Tcl_CreateFileHandler(GetFd(psPtr->outFile), mask,
+	    Tcl_CreateFileHandler(GetFd(psPtr->outFile), newmask,
 		    (Tcl_FileProc *) Tcl_NotifyChannel, psPtr->channel);
 	} else {
 	    Tcl_DeleteFileHandler(GetFd(psPtr->outFile));
@@ -1288,7 +1290,7 @@ Tcl_PidObjCmd(
 	resultPtr = Tcl_NewObj();
 	for (i = 0; i < pipePtr->numPids; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultPtr,
-		    Tcl_NewIntObj(PTR2INT(TclpGetPid(pipePtr->pidPtr[i]))));
+		    Tcl_NewLongObj(PTR2INT(TclpGetPid(pipePtr->pidPtr[i]))));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }

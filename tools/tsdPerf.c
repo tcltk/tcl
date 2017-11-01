@@ -33,14 +33,14 @@ tsdPerfGetObjCmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const 
     TsdPerf *perf = Tcl_GetThreadData(&key, sizeof(TsdPerf));
 
 
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(perf->value));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(perf->value));
 
     return TCL_OK;
 }
 
 int
 Tsdperf_Init(Tcl_Interp *interp) {
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
 

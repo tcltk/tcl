@@ -819,12 +819,12 @@ Tcl_AfterObjCmd(
      */
 
     if (objv[1]->typePtr == &tclIntType
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	    || objv[1]->typePtr == &tclWideIntType
 #endif
 	    || objv[1]->typePtr == &tclBignumType
-	    || (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0,
-		    &index) != TCL_OK)) {
+	    || (Tcl_GetIndexFromObjStruct(NULL, objv[1], afterSubCmds,
+		    sizeof(char *), "", 0, &index) != TCL_OK)) {
 	index = -1;
 	if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
             const char *arg = Tcl_GetString(objv[1]);
@@ -900,10 +900,10 @@ Tcl_AfterObjCmd(
 	} else {
 	    commandPtr = Tcl_ConcatObj(objc-2, objv+2);;
 	}
-	command = Tcl_GetStringFromObj(commandPtr, &length);
+	command = TclGetStringFromObj(commandPtr, &length);
 	for (afterPtr = assocPtr->firstAfterPtr;  afterPtr != NULL;
 		afterPtr = afterPtr->nextPtr) {
-	    tempCommand = Tcl_GetStringFromObj(afterPtr->commandPtr,
+	    tempCommand = TclGetStringFromObj(afterPtr->commandPtr,
 		    &tempLength);
 	    if ((length == tempLength)
 		    && !memcmp(command, tempCommand, (unsigned) length)) {
@@ -1053,11 +1053,17 @@ AfterDelay(
 	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
 		diff = TCL_TIME_MAXIMUM_SLICE;
 	    }
-            if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) diff = 1;
+            if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) {
+                diff = 1;
+            }
 	    if (diff > 0) {
 		Tcl_Sleep((long) diff);
-                if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) break;
-	    } else break;
+                if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
+                    break;
+                }
+	    } else {
+                break;
+            }
 	} else {
 	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
 #ifndef TCL_WIDE_INT_IS_LONG

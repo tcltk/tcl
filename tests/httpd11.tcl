@@ -44,7 +44,7 @@ proc get-chunks {data {compression gzip}} {
         deflate  { set data [zlib deflate $data] }
         compress { set data [zlib compress $data] }
     }
-    
+
     set data ""
     set chunker [make-chunk-generator $data 512]
     while {[string length [set chunk [$chunker]]]} {
@@ -59,7 +59,7 @@ proc blow-chunks {data {ochan stdout} {compression gzip}} {
         deflate  { set data [zlib deflate $data] }
         compress { set data [zlib compress $data] }
     }
-    
+
     set chunker [make-chunk-generator $data 512]
     while {[string length [set chunk [$chunker]]]} {
         puts -nonewline $ochan $chunk
@@ -156,20 +156,20 @@ proc Service {chan addr port} {
             set code "200 OK"
             set close [expr {[dict get? $meta connection] eq "close"}]
         }
-        
+
         if {$protocol eq "HTTP/1.1"} {
-            if {[string match "*deflate*" [dict get? $meta accept-encoding]]} {
-                set encoding deflate
-            } elseif {[string match "*gzip*" [dict get? $meta accept-encoding]]} {
-                set encoding gzip
-            } elseif {[string match "*compress*" [dict get? $meta accept-encoding]]} {
-                set encoding compress
-            }
+	    foreach enc [split [dict get? $meta accept-encoding] ,] {
+		set enc [string trim $enc]
+		if {$enc in {deflate gzip compress}} {
+		    set encoding $enc
+		    break
+		}
+	    }
             set transfer chunked
         } else {
             set close 1
         }
-        
+
         foreach pair [split $query &] {
             if {[scan $pair {%[^=]=%s} key val] != 2} {set val ""}
             switch -exact -- $key {
@@ -189,6 +189,7 @@ proc Service {chan addr port} {
         if {$close} {
             Puts $chan "connection: close"
         }
+	Puts $chan "x-requested-encodings: [dict get? $meta accept-encoding]"
         if {$encoding eq "identity"} {
             Puts $chan "content-length: [string length $data]"
         } else {
@@ -208,7 +209,7 @@ proc Service {chan addr port} {
         } else {
             puts -nonewline $chan $data
         }
-        
+
         if {$close} {
             chan event $chan readable {}
             close $chan

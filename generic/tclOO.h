@@ -12,21 +12,6 @@
 
 #ifndef TCLOO_H_INCLUDED
 #define TCLOO_H_INCLUDED
-#include "tcl.h"
-
-#ifndef TCLOOAPI
-#   if defined(BUILD_tcl) || defined(BUILD_TclOO)
-#	define TCLOOAPI MODULE_SCOPE
-#   else
-#	define TCLOOAPI extern
-#	undef USE_TCLOO_STUBS
-#	define USE_TCLOO_STUBS 1
-#   endif
-#endif
-
-extern const char *TclOOInitializeStubs(
-	Tcl_Interp *, const char *version);
-#define Tcl_OOInitStubs(interp) TclOOInitializeStubs((interp), TCLOO_VERSION)
 
 /*
  * Be careful when it comes to versioning; need to make sure that the
@@ -39,8 +24,21 @@ extern const char *TclOOInitializeStubs(
  * win/tclooConfig.sh
  */
 
-#define TCLOO_VERSION "1.0"
+#define TCLOO_VERSION "1.2.0"
 #define TCLOO_PATCHLEVEL TCLOO_VERSION
+
+#include "tcl.h"
+
+/*
+ * For C++ compilers, use extern "C"
+ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define Tcl_OOInitStubs(interp)  (TCLOO_PATCHLEVEL)
+#define TclOOInitializeStubs(interp, version) (TCLOO_PATCHLEVEL)
 
 /*
  * These are opaque types.
@@ -92,7 +90,7 @@ typedef struct {
 /*
  * The correct value for the version field of the Tcl_MethodType structure.
  * This allows new versions of the structure to be introduced without breaking
- * binary compatability.
+ * binary compatibility.
  */
 
 #define TCL_OO_METHOD_VERSION_CURRENT 1
@@ -119,7 +117,7 @@ typedef struct {
 /*
  * The correct value for the version field of the Tcl_ObjectMetadataType
  * structure. This allows new versions of the structure to be introduced
- * without breaking binary compatability.
+ * without breaking binary compatibility.
  */
 
 #define TCL_OO_METADATA_VERSION_CURRENT 1
@@ -130,6 +128,9 @@ typedef struct {
 
 #include "tclOODecls.h"
 
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 /*

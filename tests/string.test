@@ -30,7 +30,7 @@ testConstraint memory [llength [info commands memory]]
 
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2 {error conditions} {
     list [catch {string} msg] $msg
 } {1 {wrong # args: should be "string subcommand ?arg ...?"}}
@@ -54,7 +54,7 @@ test string-2.6 {string compare} {
     string compare abcde abdef
 } -1
 test string-2.7 {string compare, shortest method name} {
-    string c abcde ABCDE
+    string co abcde ABCDE
 } 1
 test string-2.8 {string compare} {
     string compare abcde abcde
@@ -81,7 +81,7 @@ test string-2.13 {string compare -nocase} {
     string compare -nocase abcde abdef
 } -1
 test string-2.14 {string compare -nocase} {
-    string c -nocase abcde ABCDE
+    string compare -nocase abcde ABCDE
 } 0
 test string-2.15 {string compare -nocase} {
     string compare -nocase abcde abcde
@@ -219,7 +219,7 @@ test string-4.14 {string first, negative start index} {
 } 1
 test string-4.15 {string first, ability to two-byte encoded utf-8 chars} {
     # Test for a bug in Tcl 8.3 where test for all-single-byte-encoded
-    # strings was incorrect, leading to an index returned by [string first] 
+    # strings was incorrect, leading to an index returned by [string first]
     # which pointed past the end of the string.
     set uchar \u057e    ;# character with two-byte encoding in utf-8
     string first % %#$uchar$uchar#$uchar$uchar#% 3
@@ -408,16 +408,18 @@ test string-6.35 {string is double, false} {
 test string-6.36 {string is double, false} {
     list [string is double -fail var "\n"] $var
 } {0 0}
-test string-6.37 {string is double, false on int overflow} {
+test string-6.37 {string is double, false on int overflow} -setup {
+    set var priorValue
+} -body {
     # Make it the largest int recognizable, with one more digit for overflow
     # Since bignums arrived in Tcl 8.5, the sense of this test changed.
     # Now integer values that exceed native limits become bignums, and
     # bignums can convert to doubles without error.
     list [string is double -fail var [largest_int]0] $var
-} {1 0}
+} -result {1 priorValue}
 # string-6.38 removed, underflow on input is no longer an error.
 test string-6.39 {string is double, false} {
-    # This test is non-portable because IRIX thinks 
+    # This test is non-portable because IRIX thinks
     # that .e1 is a valid double - this is really a bug
     # on IRIX as .e1 should NOT be a valid double
     #
@@ -574,12 +576,12 @@ test string-6.85 {string is control} {
 } 0
 test string-6.86 {string is graph} {
     ## graph is any print char, except space
-    list [string is gra -fail var "0123abc!@#\$\u0100 "] $var
-} {0 12}
+    list [string is gra -fail var "0123abc!@#\$\u0100\UE0100\UE01EF "] $var
+} {0 14}
 test string-6.87 {string is print} {
     ## basically any printable char
-    list [string is print -fail var "0123abc!@#\$\u0100 \u0010"] $var
-} {0 13}
+    list [string is print -fail var "0123abc!@#\$\u0100 \UE0100\UE01EF\u0010"] $var
+} {0 15}
 test string-6.88 {string is punct} {
     ## any graph char that isn't alnum
     list [string is punct -fail var "_!@#\u00beq0"] $var
@@ -754,13 +756,13 @@ catch {rename largest_int {}}
 
 test string-7.1 {string last, too few args} {
     list [catch {string last a} msg] $msg
-} {1 {wrong # args: should be "string last needleString haystackString ?startIndex?"}}
+} {1 {wrong # args: should be "string last needleString haystackString ?lastIndex?"}}
 test string-7.2 {string last, bad args} {
     list [catch {string last a b c} msg] $msg
 } {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
 test string-7.3 {string last, too many args} {
     list [catch {string last a b c d} msg] $msg
-} {1 {wrong # args: should be "string last needleString haystackString ?startIndex?"}}
+} {1 {wrong # args: should be "string last needleString haystackString ?lastIndex?"}}
 test string-7.4 {string last} {
     string la xxx xxxx123xx345x678
 } 1
@@ -899,6 +901,10 @@ test string-10.20 {string map, dictionaries don't alter map ordering} {
     set map {aa X a Y}
     list [string map [dict create aa X a Y] aaa] [string map $map aaa] [dict size $map] [string map $map aaa]
 } {XY XY 2 XY}
+test string-10.20.1 {string map, dictionaries don't alter map ordering} {
+    set map {a X b Y a Z}
+    list [string map [dict create a X b Y a Z] aaa] [string map $map aaa] [dict size $map] [string map $map aaa]
+} {ZZZ XXX 2 XXX}
 test string-10.21 {string map, ABR checks} {
     string map {longstring foob} long
 } long
@@ -1365,6 +1371,9 @@ test string-14.16 {string replace} {
 test string-14.17 {string replace} {
     string replace abcdefghijklmnop end end-1
 } {abcdefghijklmnop}
+test string-14.18 {string replace} {
+    string replace abcdefghijklmnop 10 9 XXX
+} {abcdefghijklmnop}
 
 test string-15.1 {string tolower too few args} {
     list [catch {string tolower} msg] $msg
@@ -1396,6 +1405,9 @@ test string-15.9 {string tolower} {
 test string-15.10 {string tolower, unicode} {
      string tolower ABCabc\xc7\xe7
 } "abcabc\xe7\xe7"
+test string-15.11 {string tolower, compiled} {
+    lindex [string tolower [list A B [list C]]] 1
+} b
 
 test string-16.1 {string toupper} {
     list [catch {string toupper} msg] $msg
@@ -1427,6 +1439,9 @@ test string-16.9 {string toupper} {
 test string-16.10 {string toupper, unicode} {
     string toupper ABCabc\xc7\xe7
 } "ABCABC\xc7\xc7"
+test string-16.11 {string toupper, compiled} {
+    lindex [string toupper [list a b [list c]]] 1
+} B
 
 test string-17.1 {string totitle} {
     list [catch {string totitle} msg] $msg
@@ -1449,6 +1464,9 @@ test string-17.6 {string totitle, unicode} {
 test string-17.7 {string totitle, unicode} {
     string totitle \u01f3BCabc\xc7\xe7
 } "\u01f2bcabc\xe7\xe7"
+test string-17.8 {string totitle, compiled} {
+    lindex [string totitle [list aa bb [list cc]]] 0
+} Aa
 
 test string-18.1 {string trim} {
     list [catch {string trim} msg] $msg
@@ -1502,7 +1520,7 @@ test string-20.1 {string trimright errors} {
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
 test string-20.2 {string trimright errors} {
     list [catch {string trimg a} msg] $msg
-} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3 {string trimright} {
     string trimright "    XYZ      "
 } {    XYZ}
@@ -1561,7 +1579,7 @@ test string-21.14 {string wordend, unicode} {
 
 test string-22.1 {string wordstart} {
     list [catch {string word a} msg] $msg
-} {1 {unknown or ambiguous subcommand "word": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "word": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2 {string wordstart} {
     list [catch {string wordstart a} msg] $msg
 } {1 {wrong # args: should be "string wordstart string index"}}
@@ -1790,8 +1808,8 @@ test string-26.7 {tcl::prefix} -body {
     tcl::prefix match -exact {apa bepa cepa depa} be
 } -returnCodes 1 -result {bad option "be": must be apa, bepa, cepa, or depa}
 test string-26.8 {tcl::prefix} -body {
-    tcl::prefix match -message switch {apa bepa bear depa} be
-} -returnCodes 1 -result {ambiguous switch "be": must be apa, bepa, bear, or depa}
+    tcl::prefix match -message wombat {apa bepa bear depa} be
+} -returnCodes 1 -result {ambiguous wombat "be": must be apa, bepa, bear, or depa}
 test string-26.9 {tcl::prefix} -body {
     tcl::prefix match -error {} {apa bepa bear depa} be
 } -returnCodes 0 -result {}
@@ -1822,7 +1840,7 @@ proc MemStress {args} {
     set res {}
     foreach body $args {
         set end 0
-        for {set i 0} {$i < 5} {incr i} { 
+        for {set i 0} {$i < 5} {incr i} {
             proc MemStress_Body {} $body
             uplevel 1 MemStress_Body
             rename MemStress_Body {}
@@ -1957,6 +1975,75 @@ test string-28.13 {tcl::prefix longest} {
     # Test UTF8 handling
     tcl::prefix longest {ax\x90 bep ax\x91} a
 } ax
+
+test string-29.1 {string cat, no arg} {
+    string cat
+} ""
+test string-29.2 {string cat, single arg} {
+    set x FOO
+    string compare $x [string cat $x]
+} 0
+test string-29.3 {string cat, two args} {
+    set x FOO
+    string compare $x$x [string cat $x $x]
+} 0
+test string-29.4 {string cat, many args} {
+    set x FOO
+    set n 260
+    set xx [string repeat $x $n]
+    set vv [string repeat {$x} $n]
+    set vvs [string repeat {$x } $n]
+    set r1 [string compare $xx [subst $vv]]
+    set r2 [string compare $xx [eval "string cat $vvs"]]
+    list $r1 $r2
+} {0 0}
+test string-29.5 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list x] [list]]
+} -match glob -result {*no string representation}
+test string-29.6 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list] [list x]]
+} -match glob -result {*no string representation}
+test string-29.7 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list x] [list] [list]]
+} -match glob -result {*no string representation}
+test string-29.8 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list] [list x] [list]]
+} -match glob -result {*no string representation}
+test string-29.9 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list] [list] [list x]]
+} -match glob -result {*no string representation}
+test string-29.10 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list x] [list x]]
+} -match glob -result {*, string representation "xx"}
+test string-29.11 {string cat, efficiency} -body {
+    tcl::unsupported::representation \
+	[string cat [list x] [encoding convertto utf-8 {}]]
+} -match glob -result {*no string representation}
+test string-29.12 {string cat, efficiency} -body {
+    tcl::unsupported::representation \
+	[string cat [encoding convertto utf-8 {}] [list x]]
+} -match glob -result {*, string representation "x"}
+test string-29.13 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat \
+	[encoding convertto utf-8 {}] [encoding convertto utf-8 {}] [list x]]
+} -match glob -result {*, string representation "x"}
+test string-29.14 {string cat, efficiency} -setup {
+    set e [encoding convertto utf-8 {}]
+} -cleanup {
+    unset e
+} -body {
+    tcl::unsupported::representation [string cat $e $e [list x]]
+} -match glob -result {*no string representation}
+test string-29.15 {string cat, efficiency} -setup {
+    set e [encoding convertto utf-8 {}]
+    set f [encoding convertto utf-8 {}]
+} -cleanup {
+    unset e f
+} -body {
+    tcl::unsupported::representation [string cat $e $f $e $f [list x]]
+} -match glob -result {*no string representation}
+
+
 
 # cleanup
 rename MemStress {}

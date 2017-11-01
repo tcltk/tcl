@@ -398,9 +398,7 @@ proc pkg_mkIndex {args} {
 
     foreach pkg [lsort [array names files]] {
 	set cmd {}
-	foreach {name version} $pkg {
-	    break
-	}
+	lassign $pkg name version
 	lappend cmd ::tcl::Pkg::Create -name $name -version $version
 	foreach spec [lsort -index 0 $files($pkg)] {
 	    foreach {file type procs} $spec {
@@ -493,7 +491,7 @@ proc tclPkgUnknown {name args} {
 		set dir [file dirname $file]
 		if {![info exists procdDirs($dir)]} {
 		    try {
-			source $file
+			::tcl::Pkg::source $file
 		    } trap {POSIX EACCES} {} {
 			# $file was not readable; silently ignore
 			continue
@@ -511,7 +509,7 @@ proc tclPkgUnknown {name args} {
 	    # safe interps usually don't have "file exists",
 	    if {([interp issafe] || [file exists $file])} {
 		try {
-		    source $file
+		    ::tcl::Pkg::source $file
 		} trap {POSIX EACCES} {} {
 		    # $file was not readable; silently ignore
 		    continue
@@ -547,8 +545,7 @@ proc tclPkgUnknown {name args} {
 	# Don't add directories we've already seen, or ones already on the
 	# $use_path.
 	foreach dir [lrange $auto_path $index end] {
-	    if {![info exists tclSeenPath($dir)]
-		    && ([lsearch -exact $use_path $dir] == -1) } {
+	    if {![info exists tclSeenPath($dir)] && ($dir ni $use_path)} {
 		lappend use_path $dir
 	    }
 	}
@@ -596,7 +593,7 @@ proc tcl::MacOSXPkgUnknown {original name args} {
 	    set dir [file dirname $file]
 	    if {![info exists procdDirs($dir)]} {
 		try {
-		    source $file
+		    ::tcl::Pkg::source $file
 		} trap {POSIX EACCES} {} {
 		    # $file was not readable; silently ignore
 		    continue
@@ -631,8 +628,7 @@ proc tcl::MacOSXPkgUnknown {original name args} {
 	# Don't add directories we've already seen, or ones already on the
 	# $use_path.
 	foreach dir [lrange $auto_path $index end] {
-	    if {![info exists tclSeenPath($dir)]
-		    && ([lsearch -exact $use_path $dir] == -1) } {
+	    if {![info exists tclSeenPath($dir)] && ($dir ni $use_path)} {
 		lappend use_path $dir
 	    }
 	}
@@ -684,10 +680,7 @@ proc ::tcl::Pkg::Create {args} {
     }
 
     # Initialize parameters
-    set opts(-name)		{}
-    set opts(-version)		{}
-    set opts(-source)		{}
-    set opts(-load)		{}
+    array set opts {-name {} -version {} -source {} -load {}}
 
     # process parameters
     for {set i 0} {$i < $len} {incr i} {
@@ -735,14 +728,9 @@ proc ::tcl::Pkg::Create {args} {
     # Handle -load and -source specs
     foreach key {load source} {
 	foreach filespec $opts(-$key) {
-	    foreach {filename proclist} {{} {}} {
-		break
-	    }
-	    foreach {filename proclist} $filespec {
-		break
-	    }
+	    lassign $filespec filename proclist
 
-	    if {![llength $proclist]} {
+	    if { [llength $proclist] == 0 } {
 		set cmd "\[list $key \[file join \$dir [list $filename]\]\]"
 		lappend cmdList $cmd
 	    } else {

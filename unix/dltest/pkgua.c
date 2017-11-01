@@ -69,7 +69,7 @@ PkguaInterpToTokens(
     int newEntry;
     Tcl_Command *cmdTokens;
     Tcl_HashEntry *entryPtr =
-	    Tcl_CreateHashEntry(&interpTokenMap, (char *) interp, &newEntry);
+	    Tcl_CreateHashEntry(&interpTokenMap, interp, &newEntry);
 
     if (newEntry) {
 	cmdTokens = (Tcl_Command *)
@@ -89,7 +89,7 @@ PkguaDeleteTokens(
     Tcl_Interp *interp)
 {
     Tcl_HashEntry *entryPtr =
-	    Tcl_FindHashEntry(&interpTokenMap, (char *) interp);
+	    Tcl_FindHashEntry(&interpTokenMap, interp);
 
     if (entryPtr) {
 	Tcl_Free((char *) Tcl_GetHashValue(entryPtr));
@@ -138,7 +138,7 @@ PkguaEqObjCmd(
     } else {
 	result = 0;
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(result));
     return TCL_OK;
 }
 
@@ -199,7 +199,7 @@ Pkgua_Init(
     int code, cmdIndex = 0;
     Tcl_Command *cmdTokens;
 
-    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
 
@@ -215,7 +215,7 @@ Pkgua_Init(
 	return code;
     }
 
-    Tcl_SetVar(interp, "::pkgua_loaded", ".", TCL_APPEND_VALUE);
+    Tcl_SetVar2(interp, "::pkgua_loaded", NULL, ".", TCL_APPEND_VALUE);
 
     cmdTokens = PkguaInterpToTokens(interp);
     cmdTokens[cmdIndex++] =
@@ -290,7 +290,7 @@ Pkgua_Unload(
 
     PkguaDeleteTokens(interp);
 
-    Tcl_SetVar(interp, "::pkgua_detached", ".", TCL_APPEND_VALUE);
+    Tcl_SetVar2(interp, "::pkgua_detached", NULL, ".", TCL_APPEND_VALUE);
 
     if (flags == TCL_UNLOAD_DETACH_FROM_PROCESS) {
 	/*
@@ -300,7 +300,7 @@ Pkgua_Unload(
 	 */
 
 	PkguaFreeTokensHashTable();
-	Tcl_SetVar(interp, "::pkgua_unloaded", ".", TCL_APPEND_VALUE);
+	Tcl_SetVar2(interp, "::pkgua_unloaded", NULL, ".", TCL_APPEND_VALUE);
     }
     return TCL_OK;
 }

@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.6
+package provide http 2.8.12
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -28,10 +28,19 @@ namespace eval http {
 	# We need a useragent string of this style or various servers will refuse to
 	# send us compressed content even when we ask for it. This follows the
 	# de-facto layout of user-agent strings in current browsers.
-	set http(-useragent) "Mozilla/5.0\
-            ([string totitle $::tcl_platform(platform)]; U;\
-            $::tcl_platform(os) $::tcl_platform(osVersion))\
-            http/[package provide http] Tcl/[package provide Tcl]"
+	# Safe interpreters do not have ::tcl_platform(os) or
+	# ::tcl_platform(osVersion).
+	if {[interp issafe]} {
+	    set http(-useragent) "Mozilla/5.0\
+                (Windows; U;\
+                Windows NT 10.0)\
+                http/[package provide http] Tcl/[package provide Tcl]"
+	} else {
+	    set http(-useragent) "Mozilla/5.0\
+                ([string totitle $::tcl_platform(platform)]; U;\
+                $::tcl_platform(os) $::tcl_platform(osVersion))\
+                http/[package provide http] Tcl/[package provide Tcl]"
+	}
     }
 
     proc init {} {
@@ -113,7 +122,7 @@ if {[info command http::Log] eq {}} {proc http::Log {args} {}}
 
 proc http::register {proto port command} {
     variable urlTypes
-    set urlTypes($proto) [list $port $command]
+    set urlTypes([string tolower $proto]) [list $port $command]
 }
 
 # http::unregister --
@@ -127,11 +136,12 @@ proc http::register {proto port command} {
 
 proc http::unregister {proto} {
     variable urlTypes
-    if {![info exists urlTypes($proto)]} {
+    set lower [string tolower $proto]
+    if {![info exists urlTypes($lower)]} {
 	return -code error "unsupported url type \"$proto\""
     }
-    set old $urlTypes($proto)
-    unset urlTypes($proto)
+    set old $urlTypes($lower)
+    unset urlTypes($lower)
     return $old
 }
 
@@ -196,9 +206,10 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 	set state(error) [list $errormsg $errorInfo $errorCode]
 	set state(status) "error"
     }
-    if {
-	($state(status) eq "timeout") || ($state(status) eq "error") ||
-	([info exists state(connection)] && ($state(connection) eq "close"))
+    if { ($state(status) eq "timeout")
+       || ($state(status) eq "error")
+       || ([info exists state(-keepalive)] && !$state(-keepalive))
+       || ([info exists state(connection)] && ($state(connection) eq "close"))
     } {
         CloseSocket $state(sock) $token
     }
@@ -394,13 +405,16 @@ proc http::geturl {url args} {
     # First, before the colon, is the protocol scheme (e.g. http)
     # Second, for HTTP-like protocols, is the authority
     #	The authority is preceded by // and lasts up to (but not including)
-    #	the following / and it identifies up to four parts, of which only one,
-    #	the host, is required (if an authority is present at all). All other
-    #	parts of the authority (user name, password, port number) are optional.
+    #	the following / or ? and it identifies up to four parts, of which
+    #	only one, the host, is required (if an authority is present at all).
+    #	All other parts of the authority (user name, password, port number)
+    #	are optional.
     # Third is the resource name, which is split into two parts at a ?
     #	The first part (from the single "/" up to "?") is the path, and the
     #	second part (from that "?" up to "#") is the query. *HOWEVER*, we do
     #	not need to separate them; we send the whole lot to the server.
+    #	Both, path and query are allowed to be missing, including their
+    #	delimiting character.
     # Fourth is the fragment identifier, which is everything after the first
     #	"#" in the URL. The fragment identifier MUST NOT be sent to the server
     #	and indeed, we don't bother to validate it (it could be an error to
@@ -437,7 +451,7 @@ proc http::geturl {url args} {
 	    )
 	    (?: : (\d+) )?		# <port part of authority>
 	)?
-	( / [^\#]*)?			# <path> (including query)
+	( [/\?] [^\#]*)?		# <path> (including query)
 	(?: \# (.*) )?			# <fragment>
 	$
     }
@@ -481,6 +495,12 @@ proc http::geturl {url args} {
 	}
     }
     if {$srvurl ne ""} {
+	# RFC 3986 allows empty paths (not even a /), but servers
+	# return 400 if the path in the HTTP request doesn't start
+	# with / , so add it here if needed.
+	if {[string index $srvurl 0] ne "/"} {
+	    set srvurl /$srvurl
+	}
 	# Check for validity according to RFC 3986, Appendix A
 	set validityRE {(?xi)
 	    ^
@@ -505,12 +525,13 @@ proc http::geturl {url args} {
     if {$proto eq ""} {
 	set proto http
     }
-    if {![info exists urlTypes($proto)]} {
+    set lower [string tolower $proto]
+    if {![info exists urlTypes($lower)]} {
 	unset $token
 	return -code error "Unsupported URL type \"$proto\""
     }
-    set defport [lindex $urlTypes($proto) 0]
-    set defcmd [lindex $urlTypes($proto) 1]
+    set defport [lindex $urlTypes($lower) 0]
+    set defcmd [lindex $urlTypes($lower) 1]
 
     if {$port eq ""} {
 	set port $defport
@@ -537,11 +558,10 @@ proc http::geturl {url args} {
     # If a timeout is specified we set up the after event and arrange for an
     # asynchronous socket connection.
 
-    set sockopts [list]
+    set sockopts [list -async]
     if {$state(-timeout) > 0} {
 	set state(after) [after $state(-timeout) \
 		[list http::reset $token timeout]]
-	lappend sockopts -async
     }
 
     # If we are using the proxy, we must pass in the full URL that includes
@@ -555,6 +575,10 @@ proc http::geturl {url args} {
     }
     # Proxy connections aren't shared among different hosts.
     set state(socketinfo) $host:$port
+
+    # Save the accept types at this point to prevent a race condition. [Bug
+    # c11a51c482]
+    set state(accept-types) $http(-accept)
 
     # See if we are supposed to use a previously opened channel.
     if {$state(-keepalive)} {
@@ -597,10 +621,15 @@ proc http::geturl {url args} {
         set socketmap($state(socketinfo)) $sock
     }
 
-    # Wait for the connection to complete.
+    if {![info exists phost]} {
+	set phost ""
+    }
+    fileevent $sock writable [list http::Connect $token $proto $phost $srvurl]
 
-    if {$state(-timeout) > 0} {
-	fileevent $sock writable [list http::Connect $token]
+    # Wait for the connection to complete.
+    if {![info exists state(-command)]} {
+	# geturl does EVERYTHING asynchronously, so if the user
+	# calls it synchronously, we just do a wait here.
 	http::wait $token
 
 	if {![info exists state]} {
@@ -616,12 +645,41 @@ proc http::geturl {url args} {
 	    set err [lindex $state(error) 0]
 	    cleanup $token
 	    return -code error $err
-	} elseif {$state(status) ne "connect"} {
-	    # Likely to be connection timeout
-	    return $token
 	}
-	set state(status) ""
     }
+
+    return $token
+}
+
+# http::Connected --
+#
+#	Callback used when the connection to the HTTP server is actually
+#	established.
+#
+# Arguments:
+#       token	State token.
+#       proto	What protocol (http, https, etc.) was used to connect.
+#	phost	Are we using keep-alive? Non-empty if yes.
+#	srvurl	Service-local URL that we're requesting
+# Results:
+#	None.
+
+proc http::Connected {token proto phost srvurl} {
+    variable http
+    variable urlTypes
+
+    variable $token
+    upvar 0 $token state
+
+    # Set back the variables needed here
+    set sock $state(sock)
+    set isQueryChannel [info exists state(-querychannel)]
+    set isQuery [info exists state(-query)]
+    set host [lindex [split $state(socketinfo) :] 0]
+    set port [lindex [split $state(socketinfo) :] 1]
+
+    set lower [string tolower $proto]
+    set defport [lindex $urlTypes($lower) 0]
 
     # Send data in cr-lf format, but accept any line terminators
 
@@ -659,13 +717,12 @@ proc http::geturl {url args} {
     if {[info exists state(-handler)]} {
 	set state(-protocol) 1.0
     }
+    set accept_types_seen 0
     if {[catch {
 	puts $sock "$how $srvurl HTTP/$state(-protocol)"
-	puts $sock "Accept: $http(-accept)"
-	array set hdrs $state(-headers)
-	if {[info exists hdrs(Host)]} {
+	if {[dict exists $state(-headers) Host]} {
 	    # Allow Host spoofing. [Bug 928154]
-	    puts $sock "Host: $hdrs(Host)"
+	    puts $sock "Host: [dict get $state(-headers) Host]"
 	} elseif {$port == $defport} {
 	    # Don't add port in this case, to handle broken servers. [Bug
 	    # #504508]
@@ -673,7 +730,6 @@ proc http::geturl {url args} {
 	} else {
 	    puts $sock "Host: $host:$port"
 	}
-	unset hdrs
 	puts $sock "User-Agent: $http(-useragent)"
         if {$state(-protocol) == 1.0 && $state(-keepalive)} {
 	    puts $sock "Connection: keep-alive"
@@ -686,18 +742,21 @@ proc http::geturl {url args} {
         }
         set accept_encoding_seen 0
 	set content_type_seen 0
-	foreach {key value} $state(-headers) {
+	dict for {key value} $state(-headers) {
+	    set value [string map [list \n "" \r ""] $value]
+	    set key [string map {" " -} [string trim $key]]
 	    if {[string equal -nocase $key "host"]} {
 		continue
 	    }
 	    if {[string equal -nocase $key "accept-encoding"]} {
 		set accept_encoding_seen 1
 	    }
+	    if {[string equal -nocase $key "accept"]} {
+		set accept_types_seen 1
+	    }
 	    if {[string equal -nocase $key "content-type"]} {
 		set content_type_seen 1
 	    }
-	    set value [string map [list \n "" \r ""] $value]
-	    set key [string trim $key]
 	    if {[string equal -nocase $key "content-length"]} {
 		set contDone 1
 		set state(querylength) $value
@@ -706,8 +765,13 @@ proc http::geturl {url args} {
 		puts $sock "$key: $value"
 	    }
 	}
+	# Allow overriding the Accept header on a per-connection basis. Useful
+	# for working with REST services. [Bug c11a51c482]
+	if {!$accept_types_seen} {
+	    puts $sock "Accept: $state(accept-types)"
+	}
         if {!$accept_encoding_seen && ![info exists state(-handler)]} {
-	    puts $sock "Accept-Encoding: deflate,gzip,compress"
+	    puts $sock "Accept-Encoding: gzip,deflate,compress"
         }
 	if {$isQueryChannel && $state(querylength) == 0} {
 	    # Try to determine size of data in channel. If we cannot seek, the
@@ -753,35 +817,16 @@ proc http::geturl {url args} {
 	    fileevent $sock readable [list http::Event $sock $token]
 	}
 
-	if {![info exists state(-command)]} {
-	    # geturl does EVERYTHING asynchronously, so if the user calls it
-	    # synchronously, we just do a wait here.
-
-	    wait $token
-	    if {$state(status) eq "error"} {
-		# Something went wrong, so throw the exception, and the
-		# enclosing catch will do cleanup.
-		return -code error [lindex $state(error) 0]
-	    }
-	}
     } err]} {
 	# The socket probably was never connected, or the connection dropped
 	# later.
 
-	# Clean up after events and such, but DON'T call the command callback
-	# (if available) because we're going to throw an exception from here
-	# instead.
-
 	# if state(status) is error, it means someone's already called Finish
 	# to do the above-described clean up.
 	if {$state(status) ne "error"} {
-	    Finish $token $err 1
+	    Finish $token $err
 	}
-	cleanup $token
-	return -code error $err
     }
-
-    return $token
 }
 
 # Data access functions:
@@ -865,7 +910,7 @@ proc http::cleanup {token} {
 #	Sets the status of the connection, which unblocks
 # 	the waiting geturl call
 
-proc http::Connect {token} {
+proc http::Connect {token proto phost srvurl} {
     variable $token
     upvar 0 $token state
     set err "due to unexpected EOF"
@@ -873,10 +918,10 @@ proc http::Connect {token} {
 	[eof $state(sock)] ||
 	[set err [fconfigure $state(sock) -error]] ne ""
     } {
-	Finish $token "connect failed $err" 1
+	Finish $token "connect failed $err"
     } else {
-	set state(status) connect
 	fileevent $state(sock) writable {}
+	::http::Connected $token $proto $phost $srvurl
     }
     return
 }
@@ -982,6 +1027,7 @@ proc http::Event {sock token} {
 	    # We have now read all headers
 	    # We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
 	    if {$state(http) == "" || ([regexp {^\S+\s(\d+)} $state(http) {} x] && $x == 100)} {
+		set state(state) "connecting"
 		return
 	    }
 
@@ -1012,7 +1058,7 @@ proc http::Event {sock token} {
 	    fconfigure $sock -translation binary
 
 	    if {
-		$state(-binary) || ![string match -nocase text* $state(type)]
+		$state(-binary) || [IsBinaryContentType $state(type)]
 	    } {
 		# Turn off conversions for non-text data
 		set state(binary) 1
@@ -1146,6 +1192,38 @@ proc http::Event {sock token} {
 	}
 	return
     }
+}
+
+# http::IsBinaryContentType --
+#
+#	Determine if the content-type means that we should definitely transfer
+#	the data as binary. [Bug 838e99a76d]
+#
+# Arguments
+#	type	The content-type of the data.
+#
+# Results:
+#	Boolean, true if we definitely should be binary.
+
+proc http::IsBinaryContentType {type} {
+    lassign [split [string tolower $type] "/;"] major minor
+    if {$major eq "text"} {
+	return false
+    }
+    # There's a bunch of XML-as-application-format things about. See RFC 3023
+    # and so on.
+    if {$major eq "application"} {
+	set minor [string trimright $minor]
+	if {$minor in {"xml" "xml-external-parsed-entity" "xml-dtd"}} {
+	    return false
+	}
+    }
+    # Not just application/foobar+xml but also image/svg+xml, so let us not
+    # restrict things for now...
+    if {[string match "*+xml" $minor]} {
+	return false
+    }
+    return true
 }
 
 # http::getTextLine --
@@ -1285,7 +1363,7 @@ proc http::Eof {token {force 0}} {
 		set state(body) [zlib $coding $state(body)]
 	    }
 	} err]} {
-	    Log "error doing $coding '$state(body)'"
+	    Log "error doing decompression: $err"
 	    return [Finish $token $err]
 	}
 
@@ -1380,7 +1458,7 @@ proc http::mapReply {string} {
     set converted [string map $formMap $string]
     if {[string match "*\[\u0100-\uffff\]*" $converted]} {
 	regexp "\[\u0100-\uffff\]" $converted badChar
-	# Return this error message for maximum compatability... :^/
+	# Return this error message for maximum compatibility... :^/
 	return -code error \
 	    "can't read \"formMap($badChar)\": no such element in array"
     }

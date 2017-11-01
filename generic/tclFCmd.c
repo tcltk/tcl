@@ -10,7 +10,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <sys/stat.h>
 #include "tclInt.h"
 #include "tclFileSystem.h"
 
@@ -121,7 +120,7 @@ FileCopyRename(
     }
     i++;
     if ((objc - i) < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, 
+	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-option value ...? source ?source ...? target");
 	return TCL_ERROR;
     }
@@ -518,7 +517,7 @@ CopyRenameOneFile(
 	 * 16 bits and we get collisions. See bug #2015723.
 	 */
 
-#if !defined(WIN32) && !defined(__CYGWIN__)
+#if !defined(_WIN32) && !defined(__CYGWIN__)
 	if ((sourceStatBuf.st_ino != 0) && (targetStatBuf.st_ino != 0)) {
 	    if ((sourceStatBuf.st_ino == targetStatBuf.st_ino) &&
 		    (sourceStatBuf.st_dev == targetStatBuf.st_dev)) {
@@ -735,17 +734,14 @@ CopyRenameOneFile(
 	     */
 
 	    errfile = target;
-
-	    /*
-	     * We now need to reset the result, because the above call, if it
-	     * failed, may have put an error message in place. (Ideally we
-	     * would prefer not to pass an interpreter in above, but the
-	     * channel IO code used by TclCrossFilesystemCopy currently
-	     * requires one).
-	     */
-
-	    Tcl_ResetResult(interp);
 	}
+	/*
+	 * We now need to reset the result, because the above call,
+	 * may have left set it.  (Ideally we would prefer not to pass
+	 * an interpreter in above, but the channel IO code used by
+	 * TclCrossFilesystemCopy currently requires one)
+	 */
+	Tcl_ResetResult(interp);
     }
     if ((copyFlag == 0) && (result == TCL_OK)) {
 	if (S_ISDIR(sourceStatBuf.st_mode)) {
@@ -832,8 +828,8 @@ FileForceOption(
 	if (TclGetString(objv[i])[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", TCL_EXACT,
-		&idx) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
+		sizeof(char *), "option", TCL_EXACT, &idx) != TCL_OK) {
 	    return -1;
 	}
 	if (idx == 0 /* -force */) {
@@ -1082,12 +1078,9 @@ TclFileAttrsCmd(
 	    goto end;
 	}
 
-	if (Tcl_GetIndexFromObj(interp, objv[0], attributeStrings,
-		"option", 0, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[0], attributeStrings,
+		sizeof(char *), "option", INDEX_TEMP_TABLE, &index) != TCL_OK) {
 	    goto end;
-	}
-	if (attributeStringsAllocated != NULL) {
-	    TclFreeIntRep(objv[0]);
 	}
 	if (Tcl_FSFileAttrsGet(interp, index, filePtr,
 		&objPtr) != TCL_OK) {
@@ -1110,12 +1103,10 @@ TclFileAttrsCmd(
 	}
 
 	for (i = 0; i < objc ; i += 2) {
-	    if (Tcl_GetIndexFromObj(interp, objv[i], attributeStrings,
-		    "option", 0, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], attributeStrings,
+		    sizeof(char *), "option", INDEX_TEMP_TABLE, &index)
+		    != TCL_OK) {
 		goto end;
-	    }
-	    if (attributeStringsAllocated != NULL) {
-		TclFreeIntRep(objv[i]);
 	    }
 	    if (i + 1 == objc) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1200,7 +1191,7 @@ TclFileLinkCmd(
 	    static const char *const linkTypes[] = {
 		"-symbolic", "-hard", NULL
 	    };
-	    if (Tcl_GetIndexFromObj(interp, objv[1], linkTypes, "switch", 0,
+	    if (Tcl_GetIndexFromObj(interp, objv[1], linkTypes, "option", 0,
 		    &linkAction) != TCL_OK) {
 		return TCL_ERROR;
 	    }

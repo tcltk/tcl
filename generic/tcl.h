@@ -38,10 +38,9 @@ extern "C" {
  * update the version numbers:
  *
  * library/init.tcl	(1 LOC patch)
- * unix/configure.in	(2 LOC Major, 2 LOC minor, 1 LOC patch)
- * win/configure.in	(as above)
+ * unix/configure.ac	(2 LOC Major, 2 LOC minor, 1 LOC patch)
+ * win/configure.ac	(as above)
  * win/tcl.m4		(not patchlevel)
- * win/makefile.bc	(not patchlevel) 2 LOC
  * README		(sections 0 and 2, with and without separator)
  * macosx/Tcl.pbproj/project.pbxproj (not patchlevel) 1 LOC
  * macosx/Tcl.pbproj/default.pbxuser (not patchlevel) 1 LOC
@@ -61,34 +60,6 @@ extern "C" {
 #define TCL_VERSION	    "9.0"
 #define TCL_PATCH_LEVEL	    "9.0a0"
 
-/*
- *----------------------------------------------------------------------------
- * The following definitions set up the proper options for Windows compilers.
- * We use this method because there is no autoconf equivalent.
- */
-
-#ifndef __WIN32__
-#   if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__) || defined(__BORLANDC__) || (defined(__WATCOMC__) && defined(__WINDOWS_386__))
-#	define __WIN32__
-#	ifndef WIN32
-#	    define WIN32
-#	endif
-#	ifndef _WIN32
-#	    define _WIN32
-#	endif
-#   endif
-#endif
-
-/*
- * STRICT: See MSDN Article Q83456
- */
-
-#ifdef __WIN32__
-#   ifndef STRICT
-#	define STRICT
-#   endif
-#endif /* __WIN32__ */
-
 /*
  * A special definition used to allow this header file to be included from
  * windows resource files so that they can obtain version information.
@@ -126,19 +97,24 @@ extern "C" {
 /*
  *----------------------------------------------------------------------------
  * Support for functions with a variable number of arguments.
- *
- * The following TCL_VARARGS* macros are to support old extensions
- * written for older versions of Tcl where the macros permitted
- * support for the varargs.h system as well as stdarg.h .
- *
- * New code should just directly be written to use stdarg.h conventions.
  */
 
 #include <stdarg.h>
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
+#   define TCL_NORETURN __attribute__ ((noreturn))
+#   define TCL_NORETURN1 __attribute__ ((noreturn))
+#   define TCL_NOINLINE __attribute__ ((noinline))
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
+#   if defined(_MSC_VER) && (_MSC_VER >= 1310)
+#	define TCL_NORETURN _declspec(noreturn)
+#	define TCL_NOINLINE __declspec(noinline)
+#   else
+#	define TCL_NORETURN /* nothing */
+#	define TCL_NOINLINE /* nothing */
+#   endif
+#   define TCL_NORETURN1 /* nothing */
 #endif
 
 /*
@@ -149,7 +125,7 @@ extern "C" {
  */
 
 #if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
-#   if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC__MINOR__ >= 5))
+#   if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 5))
 #	define TCL_DEPRECATED_API(msg)	__attribute__ ((__deprecated__ (msg)))
 #   else
 #	define TCL_DEPRECATED_API(msg)	__attribute__ ((__deprecated__))
@@ -172,7 +148,7 @@ extern "C" {
  *       MSVCRT.
  */
 
-#if (defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
+#if (defined(_WIN32) && (defined(_MSC_VER) || (defined(__BORLANDC__) && (__BORLANDC__ >= 0x0550)) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
 #   define HAVE_DECLSPEC 1
 #   ifdef STATIC_BUILD
 #       define DLLIMPORT
@@ -214,9 +190,9 @@ extern "C" {
  */
 
 #ifdef BUILD_tcl
-#   define TCLAPI DLLEXPORT
+#   define TCLAPI extern DLLEXPORT
 #else
-#   define TCLAPI DLLIMPORT
+#   define TCLAPI extern DLLIMPORT
 #endif
 
 /*
@@ -249,8 +225,8 @@ typedef void *ClientData;
  * we have one, we can have the other.)
  *
  * Also defines the following macros:
- * TCL_WIDE_INT_IS_LONG - if wide ints are really longs (i.e. we're on a real
- *	64-bit system.)
+ * TCL_WIDE_INT_IS_LONG - if wide ints are really longs (i.e. we're on a
+ *	LP64 system such as modern Solaris or Linux ... not including Win64)
  * Tcl_WideAsLong - forgetful converter from wideInt to long.
  * Tcl_LongAsWide - sign-extending converter from long to wideInt.
  * Tcl_WideAsDouble - converter from wideInt to double.
@@ -265,32 +241,24 @@ typedef void *ClientData;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(__WIN32__)
+#   if defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
-#      ifdef __BORLANDC__
-#         define TCL_LL_MODIFIER	"L"
-#      else /* __BORLANDC__ */
-#         define TCL_LL_MODIFIER	"I64"
-#      endif /* __BORLANDC__ */
+#      define TCL_LL_MODIFIER	"I64"
 #   elif defined(__GNUC__)
 #      define TCL_WIDE_INT_TYPE long long
 #      define TCL_LL_MODIFIER	"ll"
-#   else /* ! __WIN32__ && ! __GNUC__ */
+#   else /* ! _WIN32 && ! __GNUC__ */
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
  */
-#      ifdef NO_LIMITS_H
-#	  error please define either TCL_WIDE_INT_TYPE or TCL_WIDE_INT_IS_LONG
-#      else /* !NO_LIMITS_H */
-#	  include <limits.h>
-#	  if (INT_MAX < LONG_MAX)
-#	     define TCL_WIDE_INT_IS_LONG	1
-#	  else
-#	     define TCL_WIDE_INT_TYPE long long
-#         endif
-#      endif /* NO_LIMITS_H */
-#   endif /* __WIN32__ */
+#      include <limits.h>
+#      if (INT_MAX < LONG_MAX)
+#         define TCL_WIDE_INT_IS_LONG	1
+#      else
+#         define TCL_WIDE_INT_TYPE long long
+#      endif
+#   endif /* _WIN32 */
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
 #ifdef TCL_WIDE_INT_IS_LONG
 #   undef TCL_WIDE_INT_TYPE
@@ -301,10 +269,6 @@ typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
 typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #ifdef TCL_WIDE_INT_IS_LONG
-#   define Tcl_WideAsLong(val)		((long)(val))
-#   define Tcl_LongAsWide(val)		((long)(val))
-#   define Tcl_WideAsDouble(val)	((double)((long)(val)))
-#   define Tcl_DoubleAsWide(val)	((long)((double)(val)))
 #   ifndef TCL_LL_MODIFIER
 #      define TCL_LL_MODIFIER		"l"
 #   endif /* !TCL_LL_MODIFIER */
@@ -316,13 +280,14 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #   ifndef TCL_LL_MODIFIER
 #      define TCL_LL_MODIFIER		"ll"
 #   endif /* !TCL_LL_MODIFIER */
-#   define Tcl_WideAsLong(val)		((long)((Tcl_WideInt)(val)))
-#   define Tcl_LongAsWide(val)		((Tcl_WideInt)((long)(val)))
-#   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
-#   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 #endif /* TCL_WIDE_INT_IS_LONG */
 
-#if defined(__WIN32__)
+#define Tcl_WideAsLong(val)	((long)((Tcl_WideInt)(val)))
+#define Tcl_LongAsWide(val)	((Tcl_WideInt)((long)(val)))
+#define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
+#define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
+
+#if defined(_WIN32)
 #   ifdef __BORLANDC__
 	typedef struct stati64 Tcl_StatBuf;
 #   elif defined(_WIN64)
@@ -349,7 +314,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	struct {long tv_sec;} st_ctim;
 	/* Here is a 4-byte gap */
     } Tcl_StatBuf;
-#elif defined(HAVE_STRUCT_STAT64)
+#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
     typedef struct stat64 Tcl_StatBuf;
 #else
     typedef struct stat Tcl_StatBuf;
@@ -405,7 +370,7 @@ typedef struct Tcl_ZLibStream_ *Tcl_ZlibStream;
  * will be called as the main fuction of the new thread created by that call.
  */
 
-#if defined __WIN32__
+#if defined _WIN32
 typedef unsigned (__stdcall Tcl_ThreadCreateProc) (ClientData clientData);
 #else
 typedef void (Tcl_ThreadCreateProc) (ClientData clientData);
@@ -417,7 +382,7 @@ typedef void (Tcl_ThreadCreateProc) (ClientData clientData);
  * in generic/tclThreadTest.c for it's usage.
  */
 
-#if defined __WIN32__
+#if defined _WIN32
 #   define Tcl_ThreadCreateType		unsigned __stdcall
 #   define TCL_THREAD_CREATE_RETURN	return 0
 #else
@@ -658,18 +623,20 @@ typedef struct Tcl_Obj {
     union {			/* The internal representation: */
 	long longValue;		/*   - an long integer value. */
 	double doubleValue;	/*   - a double-precision floating value. */
-	void *otherValuePtr;	/*   - another, type-specific value. */
+	void *otherValuePtr;	/*   - another, type-specific value, not used
+				 *     internally any more. */
 	Tcl_WideInt wideValue;	/*   - a long long value. */
-	struct {		/*   - internal rep as two pointers. */
+	struct {		/*   - internal rep as two pointers.
+				 *     Many uses in Tcl, including a bignum's
+				 *     tightly packed fields, where the alloc,
+				 *     used and signum flags are packed into
+				 *     ptr2 with everything else hung off
+				 *     ptr1. */
 	    void *ptr1;
 	    void *ptr2;
 	} twoPtrValue;
 	struct {		/*   - internal rep as a pointer and a long,
-				 *     the main use of which is a bignum's
-				 *     tightly packed fields, where the alloc,
-				 *     used and signum flags are packed into a
-				 *     single word with everything else hung
-				 *     off the pointer. */
+				 *     not used internally any more. */
 	    void *ptr;
 	    unsigned long value;
 	} ptrAndLongRep;
@@ -690,14 +657,11 @@ int		Tcl_IsShared(Tcl_Obj *objPtr);
 
 /*
  *----------------------------------------------------------------------------
- * The following structure contains the state needed by Tcl_SaveResult. No-one
- * outside of Tcl should access any of these fields. This structure is
- * typically allocated on the stack.
+ * The following type contains the state needed by Tcl_SaveResult. This
+ * structure is typically allocated on the stack.
  */
 
-typedef struct Tcl_SavedResult {
-    Tcl_Obj *objResultPtr;
-} Tcl_SavedResult;
+typedef Tcl_Obj *Tcl_SavedResult;
 
 /*
  *----------------------------------------------------------------------------
@@ -954,8 +918,13 @@ typedef struct Tcl_DString {
 #define TCL_LINK_SHORT		8
 #define TCL_LINK_USHORT		9
 #define TCL_LINK_UINT		10
+#if defined(TCL_WIDE_INT_IS_LONG) || defined(_WIN32) || defined(__CYGWIN__)
+#define TCL_LINK_LONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT)
+#define TCL_LINK_ULONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
+#else
 #define TCL_LINK_LONG		11
 #define TCL_LINK_ULONG		12
+#endif
 #define TCL_LINK_FLOAT		13
 #define TCL_LINK_WIDE_UINT	14
 #define TCL_LINK_READ_ONLY	0x80
@@ -965,27 +934,19 @@ typedef struct Tcl_DString {
  * Forward declarations of Tcl_HashTable and related types.
  */
 
+#ifndef TCL_HASH_TYPE
+#  define TCL_HASH_TYPE unsigned
+#endif
+
 typedef struct Tcl_HashKeyType Tcl_HashKeyType;
 typedef struct Tcl_HashTable Tcl_HashTable;
 typedef struct Tcl_HashEntry Tcl_HashEntry;
 
-typedef unsigned (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
+typedef TCL_HASH_TYPE (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
 typedef int (Tcl_CompareHashKeysProc) (void *keyPtr, Tcl_HashEntry *hPtr);
 typedef Tcl_HashEntry * (Tcl_AllocHashEntryProc) (Tcl_HashTable *tablePtr,
 	void *keyPtr);
 typedef void (Tcl_FreeHashEntryProc) (Tcl_HashEntry *hPtr);
-
-/*
- * This flag controls whether the hash table stores the hash of a key, or
- * recalculates it. There should be no reason for turning this flag off as it
- * is completely binary and source compatible unless you directly access the
- * bucketPtr member of the Tcl_HashTableEntry structure. This member has been
- * removed and the space used to store the hash value.
- */
-
-#ifndef TCL_HASH_KEY_STORE_HASH
-#   define TCL_HASH_KEY_STORE_HASH 1
-#endif
 
 /*
  * Structure definition for an entry in a hash table. No-one outside Tcl
@@ -996,16 +957,8 @@ struct Tcl_HashEntry {
     Tcl_HashEntry *nextPtr;	/* Pointer to next entry in this hash bucket,
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
-#if TCL_HASH_KEY_STORE_HASH
-    void *hash;			/* Hash value, stored as pointer to ensure
-				 * that the offsets of the fields in this
-				 * structure are not changed. */
-#else
-    Tcl_HashEntry **bucketPtr;	/* Pointer to bucket that points to first
-				 * entry in this entry's chain: used for
-				 * deleting the entry. */
-#endif
-    ClientData clientData;	/* Application stores something here with
+    size_t hash;		/* Hash value. */
+    void *clientData;		/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */
 	char *oneWordValue;	/* One-word value for key. */
@@ -1093,16 +1046,16 @@ struct Tcl_HashTable {
     Tcl_HashEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables (to
 				 * avoid mallocs and frees). */
-    int numBuckets;		/* Total number of buckets allocated at
+    size_t numBuckets;		/* Total number of buckets allocated at
 				 * **bucketPtr. */
-    int numEntries;		/* Total number of entries present in
+    size_t numEntries;		/* Total number of entries present in
 				 * table. */
-    int rebuildSize;		/* Enlarge table when numEntries gets to be
+    size_t rebuildSize;		/* Enlarge table when numEntries gets to be
 				 * this large. */
+    size_t mask;		/* Mask value used in hashing function. */
     int downShift;		/* Shift count used in hashing function.
 				 * Designed to use high-order bits of
 				 * randomized keys. */
-    int mask;			/* Mask value used in hashing function. */
     int keyType;		/* Type of keys used in this table. It's
 				 * either TCL_CUSTOM_KEYS, TCL_STRING_KEYS,
 				 * TCL_ONE_WORD_KEYS, or an integer giving the
@@ -1123,7 +1076,7 @@ struct Tcl_HashTable {
 
 typedef struct Tcl_HashSearch {
     Tcl_HashTable *tablePtr;	/* Table being searched. */
-    int nextIndex;		/* Index of next bucket to be enumerated after
+    size_t nextIndex;		/* Index of next bucket to be enumerated after
 				 * present one. */
     Tcl_HashEntry *nextEntryPtr;/* Next entry to be enumerated in the current
 				 * bucket. */
@@ -1141,9 +1094,9 @@ typedef struct Tcl_HashSearch {
  * TCL_CUSTOM_PTR_KEYS:		The keys are pointers to arbitrary types, the
  *				pointer is stored in the entry.
  *
- * While maintaining binary compatability the above have to be distinct values
+ * While maintaining binary compatibility the above have to be distinct values
  * as they are used to differentiate between old versions of the hash table
- * which don't have a typePtr and new ones which do. Once binary compatability
+ * which don't have a typePtr and new ones which do. Once binary compatibility
  * is discarded in favour of making more wide spread changes TCL_STRING_KEYS
  * can be the same as TCL_CUSTOM_TYPE_KEYS, and TCL_ONE_WORD_KEYS can be the
  * same as TCL_CUSTOM_PTR_KEYS because they simply determine how the key is
@@ -1164,8 +1117,8 @@ typedef struct Tcl_HashSearch {
 typedef struct {
     void *next;			/* Search position for underlying hash
 				 * table. */
-    int epoch;			/* Epoch marker for dictionary being searched,
-				 * or -1 if search has terminated. */
+    unsigned int epoch;		/* Epoch marker for dictionary being searched,
+				 * or 0 if search has terminated. */
     Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
 } Tcl_DictSearch;
 
@@ -1954,11 +1907,28 @@ typedef struct Tcl_EncodingType {
  *				substituting one or more "close" characters in
  *				the destination buffer and then continue to
  *				convert the source.
+ * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf will not append a
+ *				terminating NUL byte.  Knowing that it will
+ *				not need space to do so, it will fill all
+ *				dstLen bytes with encoded UTF-8 content, as
+ *				other circumstances permit.  If clear, the
+ *				default behavior is to reserve a byte in
+ *				the dst space for NUL termination, and to
+ *				append the NUL byte.
+ * TCL_ENCODING_CHAR_LIMIT -	If set and dstCharsPtr is not NULL, then
+ *				Tcl_ExternalToUtf takes the initial value
+ *				of *dstCharsPtr is taken as a limit of the
+ *				maximum number of chars to produce in the
+ *				encoded UTF-8 content.  Otherwise, the
+ *				number of chars produced is controlled only
+ *				by other limiting factors.
  */
 
 #define TCL_ENCODING_START		0x01
 #define TCL_ENCODING_END		0x02
 #define TCL_ENCODING_STOPONERROR	0x04
+#define TCL_ENCODING_NO_TERMINATE	0x08
+#define TCL_ENCODING_CHAR_LIMIT		0x10
 
 /*
  * The following definitions are the error codes returned by the conversion
@@ -2066,6 +2036,8 @@ typedef struct mp_int mp_int;
 #define MP_INT_DECLARED
 typedef unsigned int mp_digit;
 #define MP_DIGIT_DECLARED
+typedef unsigned TCL_WIDE_INT_TYPE mp_word;
+#define MP_WORD_DECLARED
 
 /*
  *----------------------------------------------------------------------------
@@ -2176,6 +2148,13 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 
 /*
  *----------------------------------------------------------------------------
+ * Definitions needed for the Tcl_OpenTcpServerEx function. [TIP #456]
+ */
+#define TCL_TCPSERVER_REUSEADDR (1<<0)
+#define TCL_TCPSERVER_REUSEPORT (1<<1)
+
+/*
+ *----------------------------------------------------------------------------
  * Single public declaration for NRE.
  */
 
@@ -2188,7 +2167,7 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * stubs tables.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACB + (int) sizeof(void *))
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2197,26 +2176,33 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * main library in case an extension is statically linked into an application.
  */
 
-const char *		TclInitStubs(Tcl_Interp *interp, const char *version,
-			    int exact, const char *tclversion, int magic);
+const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
+			    int exact, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
-
-/*
- * When not using stubs, make it a macro.
- */
 
 #ifdef USE_TCL_STUBS
 #if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
 #   define Tcl_InitStubs(interp, version, exact) \
-	    TclInitStubs(interp, version, exact, TCL_VERSION, TCL_STUB_MAGIC)
+	(Tcl_InitStubs)(interp, version, \
+	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
+	    TCL_STUB_MAGIC)
 #else
 #   define Tcl_InitStubs(interp, version, exact) \
-	    TclInitStubs(interp, TCL_PATCH_LEVEL, 1, TCL_VERSION, TCL_STUB_MAGIC)
+	(Tcl_InitStubs)(interp, TCL_PATCH_LEVEL, \
+	    1|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
+	    TCL_STUB_MAGIC)
 #endif
 #else
-#define Tcl_InitStubs(interp, version, exact) \
-    Tcl_PkgInitStubsCheck(interp, version, exact)
+#if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#   define Tcl_InitStubs(interp, version, exact) \
+	Tcl_PkgInitStubsCheck(interp, version, \
+		(exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
+#else
+#   define Tcl_InitStubs(interp, version, exact) \
+	Tcl_PkgInitStubsCheck(interp, TCL_PATCH_LEVEL, \
+		1|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
+#endif
 #endif
 
 /*
@@ -2225,15 +2211,18 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  */
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
-	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
+	    ((Tcl_CreateInterp)()))
 TCLAPI void		Tcl_FindExecutable(const char *argv0);
+TCLAPI void		Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc);
 TCLAPI void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
+#if defined(_WIN32) && defined(UNICODE)
+TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
+	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
+#endif
 TCLAPI const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
-#endif
 
 /*
  *----------------------------------------------------------------------------
@@ -2247,6 +2236,11 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * Include platform specific public function declarations that are accessible
  * via the stubs table.
  */
+
+#if defined(BUILD_tcl)
+#   undef TCLAPI
+#   define TCLAPI MODULE_SCOPE
+#endif
 
 #include "tclPlatDecls.h"
 
@@ -2310,15 +2304,11 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
     /*
      * Use do/while0 idiom for optimum correctness without compiler warnings.
      * http://c2.com/cgi/wiki?TrivialDoWhileLoop
-     *
-     * Decrement refCount AFTER checking it for 0 or 1 (<2), because
-     * we cannot assume anymore that refCount is a signed type; In
-     * Tcl8 it was but in Tcl9 it is subject to change.
      */
 #   define Tcl_DecrRefCount(objPtr) \
 	do { \
 	    Tcl_Obj *_objPtr = (objPtr); \
-	    if (_objPtr->refCount-- < 2) { \
+	    if ((_objPtr)->refCount-- <= 1) { \
 		TclFreeObj(_objPtr); \
 	    } \
 	} while(0)
@@ -2338,16 +2328,13 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
      Tcl_DbNewBignumObj(val, __FILE__, __LINE__)
 #  undef  Tcl_NewBooleanObj
 #  define Tcl_NewBooleanObj(val) \
-     Tcl_DbNewBooleanObj(val, __FILE__, __LINE__)
+     Tcl_DbNewLongObj((val)!=0, __FILE__, __LINE__)
 #  undef  Tcl_NewByteArrayObj
 #  define Tcl_NewByteArrayObj(bytes, len) \
      Tcl_DbNewByteArrayObj(bytes, len, __FILE__, __LINE__)
 #  undef  Tcl_NewDoubleObj
 #  define Tcl_NewDoubleObj(val) \
      Tcl_DbNewDoubleObj(val, __FILE__, __LINE__)
-#  undef  Tcl_NewIntObj
-#  define Tcl_NewIntObj(val) \
-     Tcl_DbNewLongObj(val, __FILE__, __LINE__)
 #  undef  Tcl_NewListObj
 #  define Tcl_NewListObj(objc, objv) \
      Tcl_DbNewListObj(objc, objv, __FILE__, __LINE__)
@@ -2371,7 +2358,7 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 #define Tcl_GetHashValue(h) ((h)->clientData)
-#define Tcl_SetHashValue(h, value) ((h)->clientData = (ClientData) (value))
+#define Tcl_SetHashValue(h, value) ((h)->clientData = (void *) (value))
 #define Tcl_GetHashKey(tablePtr, h) \
 	((void *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS || \
 		    (tablePtr)->keyType == TCL_CUSTOM_PTR_KEYS) \
@@ -2383,10 +2370,8 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * hash tables:
  */
 
-#undef  Tcl_FindHashEntry
 #define Tcl_FindHashEntry(tablePtr, key) \
 	(*((tablePtr)->findProc))(tablePtr, (const char *)(key))
-#undef  Tcl_CreateHashEntry
 #define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
 
@@ -2410,14 +2395,6 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #undef  Tcl_ConditionFinalize
 #define Tcl_ConditionFinalize(condPtr)
 #endif /* TCL_THREADS */
-
-/*
- *----------------------------------------------------------------------------
- * Deprecated Tcl functions:
- */
-
-#ifndef TCL_NO_DEPRECATED
-#endif /* !TCL_NO_DEPRECATED */
 
 #endif /* RC_INVOKED */
 

@@ -43,7 +43,7 @@ test split-1.8 {basic split commands} {
         foreach f [split {]\n} {}] {
             append x $f
         }
-        return $x	
+        return $x
     }
     foo
 } {]\n}

@@ -3,9 +3,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH Tcl_WrongNumArgs 3 8.0 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_WrongNumArgs \- generate standard error message for wrong number of arguments
@@ -55,7 +55,7 @@ wrong # args: should be "foo bar fileName count"
 .PP
 \fIObjc\fR is usually 1, but may be 2 or more for commands like
 \fBstring\fR and the Tk widget commands, which use the first argument
-as a subcommand.  
+as a subcommand.
 .PP
 Some of the values in the \fIobjv\fR array may be abbreviations for
 a subcommand.  The command

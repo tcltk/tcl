@@ -438,6 +438,27 @@ test appendComp-9.3 {bug 3057639, append direct eval, read trace on non-existing
 } -cleanup {
     unset -nocomplain ::env(__DUMMY__)
 } -result {0 {new value}}
+
+test appendComp-10.1 {Bug 214cc0eb22: lappend with no values} {
+    apply {lst {
+	lappend lst
+    }} "# 1 2 3"
+} "# 1 2 3"
+test appendComp-10.2 {Bug 214cc0eb22: lappend with no values} -body {
+    apply {lst {
+	lappend lst
+    }} "1 \{ 2"
+} -returnCodes error -result {unmatched open brace in list}
+test appendComp-10.3 {Bug 214cc0eb22: expanded lappend with no values} {
+    apply {lst {
+	lappend lst {*}[list]
+    }} "# 1 2 3"
+} "# 1 2 3"
+test appendComp-10.4 {Bug 214cc0eb22: expanded lappend with no values} -body {
+    apply {lst {
+	lappend lst {*}[list]
+    }} "1 \{ 2"
+} -returnCodes error -result {unmatched open brace in list}
 
 catch {unset i x result y}
 catch {rename foo ""}

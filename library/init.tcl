@@ -12,6 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
+# This test intentionally written in pre-7.5 Tcl
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
@@ -111,14 +112,17 @@ namespace eval tcl {
     }
 }
 
+namespace eval tcl::Pkg {}
+
 # Windows specific end of initialization
 
 if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
     namespace eval tcl {
 	proc EnvTraceProc {lo n1 n2 op} {
-	    set x $::env($n2)
-	    set ::env($lo) $x
-	    set ::env([string toupper $lo]) $x
+	    global env
+	    set x $env($n2)
+	    set env($lo) $x
+	    set env([string toupper $lo]) $x
 	}
 	proc InitWinEnv {} {
 	    global env tcl_platform
@@ -128,9 +132,9 @@ if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
 		    switch -- $u {
 			COMSPEC -
 			PATH {
-			    if {![info exists env($u)]} {
-				set env($u) $env($p)
-			    }
+			    set temp $env($p)
+			    unset env($p)
+			    set env($u) $temp
 			    trace add variable env($p) write \
 				    [namespace code [list EnvTraceProc $p]]
 			    trace add variable env($u) write \
@@ -140,11 +144,7 @@ if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
 		}
 	    }
 	    if {![info exists env(COMSPEC)]} {
-		if {$tcl_platform(os) eq "Windows NT"} {
-		    set env(COMSPEC) cmd.exe
-		} else {
-		    set env(COMSPEC) command.com
-		}
+		set env(COMSPEC) cmd.exe
 	    }
 	}
 	InitWinEnv
@@ -159,8 +159,8 @@ if {[interp issafe]} {
 } else {
     # Set up search for Tcl Modules (TIP #189).
     # and setup platform specific unknown package handlers
-    if {$::tcl_platform(os) eq "Darwin"
-	    && $::tcl_platform(platform) eq "unix"} {
+    if {$tcl_platform(os) eq "Darwin"
+	    && $tcl_platform(platform) eq "unix"} {
 	package unknown {::tcl::tm::UnknownHandler \
 		{::tcl::MacOSXPkgUnknown ::tclPkgUnknown}}
     } else {
@@ -171,13 +171,7 @@ if {[interp issafe]} {
 
     namespace eval ::tcl::clock [list variable TclLibDir $::tcl_library]
 
-    proc clock args {
-	namespace eval ::tcl::clock [list namespace ensemble create -command \
-		[uplevel 1 [list namespace origin [lindex [info level 0] 0]]] \
-		-subcommands {
-		    add clicks format microseconds milliseconds scan seconds
-		}]
-
+    proc ::tcl::initClock {} {
 	# Auto-loading stubs for 'clock.tcl'
 
 	foreach cmd {add format scan} {
@@ -188,8 +182,9 @@ if {[interp issafe]} {
 	    }
 	}
 
-	return [uplevel 1 [info level 0]]
+	rename ::tcl::initClock {}
     }
+    ::tcl::initClock
 }
 
 # Conditionalize for presence of exec.
@@ -233,14 +228,13 @@ if {[namespace which -command tclLog] eq ""} {
 
 proc unknown args {
     variable ::tcl::UnknownPending
-    global auto_noexec auto_noload env tcl_interactive
+    global auto_noexec auto_noload env tcl_interactive errorInfo errorCode
 
-
-    if {[info exists ::errorInfo]} {
-	set savedErrorInfo $::errorInfo
+    if {[info exists errorInfo]} {
+	set savedErrorInfo $errorInfo
     }
-    if {[info exists ::errorCode]} {
-	set savedErrorCode $::errorCode
+    if {[info exists errorCode]} {
+	set savedErrorCode $errorCode
     }
 
     set name [lindex $args 0]
@@ -271,9 +265,9 @@ proc unknown args {
 		unset -nocomplain ::errorCode
 	    }
 	    if {[info exists savedErrorInfo]} {
-		set ::errorInfo $savedErrorInfo
+		set errorInfo $savedErrorInfo
 	    } else {
-		unset -nocomplain ::errorInfo
+		unset -nocomplain errorInfo
 	    }
 	    set code [catch {uplevel 1 $args} msg opts]
 	    if {$code ==  1} {
@@ -282,8 +276,8 @@ proc unknown args {
 		# Note the dependence on how Tcl_AddErrorInfo, etc.
 		# construct the stack trace.
 		#
-		set errorInfo [dict get $opts -errorinfo]
-		set errorCode [dict get $opts -errorcode]
+		set errInfo [dict get $opts -errorinfo]
+		set errCode [dict get $opts -errorcode]
 		set cinfo $args
 		if {[string bytelength $cinfo] > 150} {
 		    set cinfo [string range $cinfo 0 150]
@@ -292,15 +286,10 @@ proc unknown args {
 		    }
 		    append cinfo ...
 		}
-		append cinfo "\"\n    (\"uplevel\" body line 1)"
-		append cinfo "\n    invoked from within"
-		append cinfo "\n\"uplevel 1 \$args\""
-		#
-		# Try each possible form of the stack trace
-		# and trim the extra contribution from the matching case
-		#
-		set expect "$msg\n    while executing\n\"$cinfo"
-		if {$errorInfo eq $expect} {
+		set tail "\n    (\"uplevel\" body line 1)\n    invoked\
+			from within\n\"uplevel 1 \$args\""
+		set expect "$msg\n    while executing\n\"$cinfo\"$tail"
+		if {$errInfo eq $expect} {
 		    #
 		    # The stack has only the eval from the expanded command
 		    # Do not generate any stack trace here.
@@ -313,21 +302,32 @@ proc unknown args {
 		# Stack trace is nested, trim off just the contribution
 		# from the extra "eval" of $args due to the "catch" above.
 		#
-		set expect "\n    invoked from within\n\"$cinfo"
-		set exlen [string length $expect]
-		set eilen [string length $errorInfo]
-		set i [expr {$eilen - $exlen - 1}]
-		set einfo [string range $errorInfo 0 $i]
-		#
-		# For now verify that $errorInfo consists of what we are about
-		# to return plus what we expected to trim off.
-		#
-		if {$errorInfo ne "$einfo$expect"} {
-		    error "Tcl bug: unexpected stack trace in \"unknown\"" {} \
-			[list CORE UNKNOWN BADTRACE $einfo $expect $errorInfo]
+		set last [string last $tail $errInfo]
+		if {$last + [string length $tail] != [string length $errInfo]} {
+		    # Very likely cannot happen
+		    return -options $opts $msg
 		}
-		return -code error -errorcode $errorCode \
-			-errorinfo $einfo $msg
+		set errInfo [string range $errInfo 0 $last-1]
+		set tail "\"$cinfo\""
+		set last [string last $tail $errInfo]
+		if {$last + [string length $tail] != [string length $errInfo]} {
+		    return -code error -errorcode $errCode \
+			    -errorinfo $errInfo $msg
+		}
+		set errInfo [string range $errInfo 0 $last-1]
+		set tail "\n    invoked from within\n"
+		set last [string last $tail $errInfo]
+		if {$last + [string length $tail] == [string length $errInfo]} {
+		    return -code error -errorcode $errCode \
+			    -errorinfo [string range $errInfo 0 $last-1] $msg
+		}
+		set tail "\n    while executing\n"
+		set last [string last $tail $errInfo]
+		if {$last + [string length $tail] == [string length $errInfo]} {
+		    return -code error -errorcode $errCode \
+			    -errorinfo [string range $errInfo 0 $last-1] $msg
+		}
+		return -options $opts $msg
 	    } else {
 		dict incr opts -level
 		return -options $opts $msg
@@ -335,7 +335,7 @@ proc unknown args {
 	}
     }
 
-    if {([info level] == 1) && ([info script] eq "") \
+    if {([info level] == 1) && ([info script] eq "")
 	    && [info exists tcl_interactive] && $tcl_interactive} {
 	if {![info exists auto_noexec]} {
 	    set new [auto_execok $name]
@@ -401,7 +401,8 @@ proc unknown args {
 	    return -code error "ambiguous command name \"$name\": [lsort $cmds]"
 	}
     }
-    return -code error "invalid command name \"$name\""
+    return -code error -errorcode [list TCL LOOKUP COMMAND $name] \
+	"invalid command name \"$name\""
 }
 
 # auto_load --
@@ -459,6 +460,22 @@ proc auto_load {cmd {namespace {}}} {
     return 0
 }
 
+# ::tcl::Pkg::source --
+# This procedure provides an alternative "source" command, which doesn't
+# register the file for the "package files" command. Safe interpreters
+# don't have to do anything special.
+#
+# Arguments:
+# filename
+
+proc ::tcl::Pkg::source {filename} {
+    if {[interp issafe]} {
+	uplevel 1 [list ::source $filename]
+    } else {
+	uplevel 1 [list ::source -nopkg $filename]
+    }
+}
+
 # auto_load_index --
 # Loads the contents of tclIndex files on the auto_path directory
 # list.  This is usually invoked within auto_load to load the index
@@ -501,7 +518,7 @@ proc auto_load_index {} {
 			}
 			set name [lindex $line 0]
 			set auto_index($name) \
-				"source [file join $dir [lindex $line 1]]"
+				"::tcl::Pkg::source [file join $dir [lindex $line 1]]"
 		    }
 		} else {
 		    error "[file join $dir tclIndex] isn't a proper Tcl index file"
@@ -625,7 +642,7 @@ proc auto_import {pattern} {
 if {$tcl_platform(platform) eq "windows"} {
 # Windows version.
 #
-# Note that info executable doesn't work under Windows, so we have to
+# Note that file executable doesn't work under Windows, so we have to
 # look for files with .exe, .com, or .bat extensions.  Also, the path
 # may be in the Path or PATH environment variables, and path
 # components are separated with semicolons, not colons as under Unix.
@@ -638,12 +655,9 @@ proc auto_execok name {
     }
     set auto_execs($name) ""
 
-    set shellBuiltins [list cls copy date del erase dir echo mkdir \
-	    md rename ren rmdir rd time type ver vol]
-    if {$tcl_platform(os) eq "Windows NT"} {
-	# NT includes the 'start' built-in
-	lappend shellBuiltins "start"
-    }
+    set shellBuiltins [list assoc cls copy date del dir echo erase ftype \
+                           md mkdir mklink move rd ren rename rmdir start \
+                           time type ver vol]
     if {[info exists env(PATHEXT)]} {
 	# Add an initial ; to have the {} extension check first.
 	set execExtensions [split ";$env(PATHEXT)" ";"]
@@ -788,7 +802,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    lappend existing {*}[glob -nocomplain -directory $dest \
 		    -type hidden * .*]
 	    foreach s $existing {
-		if {([file tail $s] ne ".") && ([file tail $s] ne "..")} {
+		if {[file tail $s] ni {. ..}} {
 		    return -code error "error $action \"$src\" to\
 		      \"$dest\": file already exists"
 		}
@@ -796,7 +810,7 @@ proc tcl::CopyDirectory {action src dest} {
 	}
     } else {
 	if {[string first $nsrc $ndest] != -1} {
-	    set srclen [expr {[llength [file split $nsrc]] -1}]
+	    set srclen [expr {[llength [file split $nsrc]] - 1}]
 	    set ndest [lindex [file split $ndest] $srclen]
 	    if {$ndest eq [file tail $nsrc]} {
 		return -code error "error $action \"$src\" to\
@@ -816,37 +830,9 @@ proc tcl::CopyDirectory {action src dest} {
       [glob -nocomplain -directory $src -types hidden *]]
 
     foreach s [lsort -unique $filelist] {
-	if {([file tail $s] ne ".") && ([file tail $s] ne "..")} {
-	    file copy -force $s [file join $dest [file tail $s]]
+	if {[file tail $s] ni {. ..}} {
+	    file copy -force -- $s [file join $dest [file tail $s]]
 	}
     }
     return
-}
-
-# TIP 131
-if 0 {
-proc tcl::rmmadwiw {} {
-    set magic {
-        42 83 fe f6 ff f8 f1 e5 c6 f9 eb fd ff fb f1 e5 cc f5 ec f5 e3 fd fe
-        ff f5 fa f3 e1 c7 f9 f2 fd ff f9 fe f9 ed f4 fa f6 e6 f9 f2 e6 fd f9
-        ff f9 f6 e6 fa fd ff fc fb fc f9 f1 ed
-    }
-    foreach mystic [lassign $magic tragic] {
-        set comic [expr (0x$mystic ^ 0x$tragic) - 255 + 0x$tragic]
-        append logic [format %x $comic]
-        set tragic $mystic
-    }
-    binary format H* $logic
-}
-
-proc tcl::mathfunc::rmmadwiw {} {
-    set age [expr {9*6}]
-    set mind ""
-    while {$age} {
-        lappend mind [expr {$age%13}]
-        set age [expr {$age/13}]
-    }
-    set matter [lreverse $mind]
-    return [join $matter ""]
-}
 }

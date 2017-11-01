@@ -72,17 +72,17 @@ BuildCharSet(
     CharSet *cset,
     const char *format)		/* Points to first char of set. */
 {
-    Tcl_UniChar ch, start;
+    Tcl_UniChar ch = 0, start;
     int offset, nranges;
     const char *end;
 
     memset(cset, 0, sizeof(CharSet));
 
-    offset = Tcl_UtfToUniChar(format, &ch);
+    offset = TclUtfToUniChar(format, &ch);
     if (ch == '^') {
 	cset->exclude = 1;
 	format += offset;
-	offset = Tcl_UtfToUniChar(format, &ch);
+	offset = TclUtfToUniChar(format, &ch);
     }
     end = format + offset;
 
@@ -91,14 +91,14 @@ BuildCharSet(
      */
 
     if (ch == ']') {
-	end += Tcl_UtfToUniChar(end, &ch);
+	end += TclUtfToUniChar(end, &ch);
     }
     nranges = 0;
     while (ch != ']') {
 	if (ch == '-') {
 	    nranges++;
 	}
-	end += Tcl_UtfToUniChar(end, &ch);
+	end += TclUtfToUniChar(end, &ch);
     }
 
     cset->chars = ckalloc(sizeof(Tcl_UniChar) * (end - format - 1));
@@ -113,11 +113,11 @@ BuildCharSet(
      */
 
     cset->nchars = cset->nranges = 0;
-    format += Tcl_UtfToUniChar(format, &ch);
+    format += TclUtfToUniChar(format, &ch);
     start = ch;
     if (ch == ']' || ch == '-') {
 	cset->chars[cset->nchars++] = ch;
-	format += Tcl_UtfToUniChar(format, &ch);
+	format += TclUtfToUniChar(format, &ch);
     }
     while (ch != ']') {
 	if (*format == '-') {
@@ -138,7 +138,7 @@ BuildCharSet(
 		cset->chars[cset->nchars++] = start;
 		cset->chars[cset->nchars++] = ch;
 	    } else {
-		format += Tcl_UtfToUniChar(format, &ch);
+		format += TclUtfToUniChar(format, &ch);
 
 		/*
 		 * Check to see if the range is in reverse order.
@@ -156,7 +156,7 @@ BuildCharSet(
 	} else {
 	    cset->chars[cset->nchars++] = ch;
 	}
-	format += Tcl_UtfToUniChar(format, &ch);
+	format += TclUtfToUniChar(format, &ch);
     }
     return format;
 }
@@ -257,7 +257,7 @@ ValidateFormat(
 {
     int gotXpg, gotSequential, value, i, flags;
     char *end;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
     int *nassign = TclStackAlloc(interp, nspace * sizeof(int));
     char buf[TCL_UTF_MAX+1];
@@ -279,20 +279,20 @@ ValidateFormat(
     xpgSize = objIndex = gotXpg = gotSequential = 0;
 
     while (*format != '\0') {
-	format += Tcl_UtfToUniChar(format, &ch);
+	format += TclUtfToUniChar(format, &ch);
 
 	flags = 0;
 
 	if (ch != '%') {
 	    continue;
 	}
-	format += Tcl_UtfToUniChar(format, &ch);
+	format += TclUtfToUniChar(format, &ch);
 	if (ch == '%') {
 	    continue;
 	}
 	if (ch == '*') {
 	    flags |= SCAN_SUPPRESS;
-	    format += Tcl_UtfToUniChar(format, &ch);
+	    format += TclUtfToUniChar(format, &ch);
 	    goto xpgCheckDone;
 	}
 
@@ -308,7 +308,7 @@ ValidateFormat(
 		goto notXpg;
 	    }
 	    format = end+1;
-	    format += Tcl_UtfToUniChar(format, &ch);
+	    format += TclUtfToUniChar(format, &ch);
 	    gotXpg = 1;
 	    if (gotSequential) {
 		goto mixedXPG;
@@ -347,7 +347,7 @@ ValidateFormat(
 	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
 	    value = strtoul(format-1, (char **) &format, 10);	/* INTL: "C" locale. */
 	    flags |= SCAN_WIDTH;
-	    format += Tcl_UtfToUniChar(format, &ch);
+	    format += TclUtfToUniChar(format, &ch);
 	}
 
 	/*
@@ -359,13 +359,13 @@ ValidateFormat(
 	    if (*format == 'l') {
 		flags |= SCAN_BIG;
 		format += 1;
-		format += Tcl_UtfToUniChar(format, &ch);
+		format += TclUtfToUniChar(format, &ch);
 		break;
 	    }
 	case 'L':
 	    flags |= SCAN_LONGER;
 	case 'h':
-	    format += Tcl_UtfToUniChar(format, &ch);
+	    format += TclUtfToUniChar(format, &ch);
 	}
 
 	if (!(flags & SCAN_SUPPRESS) && numVars && (objIndex >= numVars)) {
@@ -406,11 +406,14 @@ ValidateFormat(
 	     */
 	case 'd':
 	case 'e':
+	case 'E':
 	case 'f':
 	case 'g':
+	case 'G':
 	case 'i':
 	case 'o':
 	case 'x':
+	case 'X':
 	case 'b':
 	    break;
 	case 'u':
@@ -431,24 +434,24 @@ ValidateFormat(
 	    if (*format == '\0') {
 		goto badSet;
 	    }
-	    format += Tcl_UtfToUniChar(format, &ch);
+	    format += TclUtfToUniChar(format, &ch);
 	    if (ch == '^') {
 		if (*format == '\0') {
 		    goto badSet;
 		}
-		format += Tcl_UtfToUniChar(format, &ch);
+		format += TclUtfToUniChar(format, &ch);
 	    }
 	    if (ch == ']') {
 		if (*format == '\0') {
 		    goto badSet;
 		}
-		format += Tcl_UtfToUniChar(format, &ch);
+		format += TclUtfToUniChar(format, &ch);
 	    }
 	    while (ch != ']') {
 		if (*format == '\0') {
 		    goto badSet;
 		}
-		format += Tcl_UtfToUniChar(format, &ch);
+		format += TclUtfToUniChar(format, &ch);
 	    }
 	    break;
 	badSet:
@@ -579,7 +582,7 @@ Tcl_ScanObjCmd(
     char op = 0;
     int width, underflow = 0;
     Tcl_WideInt wideValue;
-    Tcl_UniChar ch, sch;
+    Tcl_UniChar ch = 0, sch = 0;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
     int flags;
     char buf[513];		/* Temporary buffer to hold scanned number
@@ -592,7 +595,7 @@ Tcl_ScanObjCmd(
 	return TCL_ERROR;
     }
 
-    format = Tcl_GetStringFromObj(objv[2], NULL);
+    format = Tcl_GetString(objv[2]);
     numVars = objc-3;
 
     /*
@@ -614,7 +617,7 @@ Tcl_ScanObjCmd(
 	}
     }
 
-    string = Tcl_GetStringFromObj(objv[1], NULL);
+    string = Tcl_GetString(objv[1]);
     baseString = string;
 
     /*
@@ -627,7 +630,7 @@ Tcl_ScanObjCmd(
     nconversions = 0;
     while (*format != '\0') {
 	int parseFlag = TCL_PARSE_NO_WHITESPACE;
-	format += Tcl_UtfToUniChar(format, &ch);
+	format += TclUtfToUniChar(format, &ch);
 
 	flags = 0;
 
@@ -636,13 +639,13 @@ Tcl_ScanObjCmd(
 	 */
 
 	if (Tcl_UniCharIsSpace(ch)) {
-	    offset = Tcl_UtfToUniChar(string, &sch);
+	    offset = TclUtfToUniChar(string, &sch);
 	    while (Tcl_UniCharIsSpace(sch)) {
 		if (*string == '\0') {
 		    goto done;
 		}
 		string += offset;
-		offset = Tcl_UtfToUniChar(string, &sch);
+		offset = TclUtfToUniChar(string, &sch);
 	    }
 	    continue;
 	}
@@ -653,14 +656,14 @@ Tcl_ScanObjCmd(
 		underflow = 1;
 		goto done;
 	    }
-	    string += Tcl_UtfToUniChar(string, &sch);
+	    string += TclUtfToUniChar(string, &sch);
 	    if (ch != sch) {
 		goto done;
 	    }
 	    continue;
 	}
 
-	format += Tcl_UtfToUniChar(format, &ch);
+	format += TclUtfToUniChar(format, &ch);
 	if (ch == '%') {
 	    goto literal;
 	}
@@ -672,13 +675,13 @@ Tcl_ScanObjCmd(
 
 	if (ch == '*') {
 	    flags |= SCAN_SUPPRESS;
-	    format += Tcl_UtfToUniChar(format, &ch);
+	    format += TclUtfToUniChar(format, &ch);
 	} else if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
 	    char *formatEnd;
 	    value = strtoul(format-1, &formatEnd, 10);/* INTL: "C" locale. */
 	    if (*formatEnd == '$') {
 		format = formatEnd+1;
-		format += Tcl_UtfToUniChar(format, &ch);
+		format += TclUtfToUniChar(format, &ch);
 		objIndex = (int) value - 1;
 	    }
 	}
@@ -689,7 +692,7 @@ Tcl_ScanObjCmd(
 
 	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
 	    width = (int) strtoul(format-1, (char **) &format, 10);/* INTL: "C" locale. */
-	    format += Tcl_UtfToUniChar(format, &ch);
+	    format += TclUtfToUniChar(format, &ch);
 	} else {
 	    width = 0;
 	}
@@ -703,7 +706,7 @@ Tcl_ScanObjCmd(
 	    if (*format == 'l') {
 		flags |= SCAN_BIG;
 		format += 1;
-		format += Tcl_UtfToUniChar(format, &ch);
+		format += TclUtfToUniChar(format, &ch);
 		break;
 	    }
 	case 'L':
@@ -712,7 +715,7 @@ Tcl_ScanObjCmd(
 	     * Fall through so we skip to the next character.
 	     */
 	case 'h':
-	    format += Tcl_UtfToUniChar(format, &ch);
+	    format += TclUtfToUniChar(format, &ch);
 	}
 
 	/*
@@ -743,6 +746,7 @@ Tcl_ScanObjCmd(
 	    parseFlag |= TCL_PARSE_OCTAL_ONLY | TCL_PARSE_SCAN_PREFIXES;
 	    break;
 	case 'x':
+	case 'X':
 	    op = 'i';
 	    parseFlag |= TCL_PARSE_HEXADECIMAL_ONLY;
 	    break;
@@ -758,7 +762,9 @@ Tcl_ScanObjCmd(
 
 	case 'f':
 	case 'e':
+	case 'E':
 	case 'g':
+	case 'G':
 	    op = 'f';
 	    break;
 
@@ -793,7 +799,7 @@ Tcl_ScanObjCmd(
 
 	if (!(flags & SCAN_NOSKIP)) {
 	    while (*string != '\0') {
-		offset = Tcl_UtfToUniChar(string, &sch);
+		offset = TclUtfToUniChar(string, &sch);
 		if (!Tcl_UniCharIsSpace(sch)) {
 		    break;
 		}
@@ -820,7 +826,7 @@ Tcl_ScanObjCmd(
 	    }
 	    end = string;
 	    while (*end != '\0') {
-		offset = Tcl_UtfToUniChar(end, &sch);
+		offset = TclUtfToUniChar(end, &sch);
 		if (Tcl_UniCharIsSpace(sch)) {
 		    break;
 		}
@@ -848,7 +854,7 @@ Tcl_ScanObjCmd(
 
 	    format = BuildCharSet(&cset, format);
 	    while (*end != '\0') {
-		offset = Tcl_UtfToUniChar(end, &sch);
+		offset = TclUtfToUniChar(end, &sch);
 		if (!CharInSet(&cset, (int)sch)) {
 		    break;
 		}
@@ -879,7 +885,7 @@ Tcl_ScanObjCmd(
 	     * Scan a single Unicode character.
 	     */
 
-	    string += Tcl_UtfToUniChar(string, &sch);
+	    string += TclUtfToUniChar(string, &sch);
 	    if (!(flags & SCAN_SUPPRESS)) {
 		objPtr = Tcl_NewIntObj((int)sch);
 		Tcl_IncrRefCount(objPtr);

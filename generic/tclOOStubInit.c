@@ -9,6 +9,7 @@
 #include "tclOOInt.h"
 
 MODULE_SCOPE const TclOOStubs tclOOStubs;
+MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 
 #ifdef __GNUC__
 #pragma GCC dependency "tclOO.decls"
@@ -16,7 +17,7 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 
 /* !BEGIN!: Do not edit below this line. */
 
-static const TclOOIntStubs tclOOIntStubs = {
+const TclOOIntStubs tclOOIntStubs = {
     TCL_STUB_MAGIC,
     0,
     TclOOGetDefineCmdContext, /* 0 */
@@ -38,7 +39,7 @@ static const TclOOIntStubs tclOOIntStubs = {
 };
 
 static const TclOOStubHooks tclOOStubHooks = {
-    &tclOOIntStubs
+    &tclOOPrivateStubs
 };
 
 const TclOOStubs tclOOStubs = {

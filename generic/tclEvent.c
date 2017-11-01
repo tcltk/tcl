@@ -89,7 +89,7 @@ static int subsystemsInitialized = 0;
  * non-NULL value.
  */
 
-static Tcl_ExitProc *appExitPtr = NULL;
+static TCL_NORETURN1 Tcl_ExitProc *appExitPtr = NULL;
 
 typedef struct ThreadSpecificData {
     ExitHandler *firstExitPtr;	/* First in list of all exit handlers for this
@@ -119,6 +119,7 @@ static char *		VwaitVarProc(ClientData clientData,
 			    Tcl_Interp *interp, const char *name1,
 			    const char *name2, int flags);
 static void		InvokeExitHandlers(void);
+static void		FinalizeThread(int quick);
 
 /*
  *----------------------------------------------------------------------
@@ -262,7 +263,7 @@ HandleBgErrors(
 
 	    if (errChannel != NULL) {
 		Tcl_Obj *options = Tcl_GetReturnOptions(interp, code);
-		Tcl_Obj *keyPtr, *valuePtr;
+		Tcl_Obj *keyPtr, *valuePtr = NULL;
 
 		TclNewLiteralStringObj(keyPtr, "-errorinfo");
 		Tcl_IncrRefCount(keyPtr);
@@ -314,7 +315,7 @@ TclDefaultBgErrorHandlerObjCmd(
 {
     Tcl_Obj *keyPtr, *valuePtr;
     Tcl_Obj *tempObjv[2];
-    int code, level;
+    int result, code, level;
     Tcl_InterpState saved;
 
     if (objc != 3) {
@@ -328,9 +329,9 @@ TclDefaultBgErrorHandlerObjCmd(
 
     TclNewLiteralStringObj(keyPtr, "-level");
     Tcl_IncrRefCount(keyPtr);
-    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
     Tcl_DecrRefCount(keyPtr);
-    if (valuePtr == NULL) {
+    if (result != TCL_OK || valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-level\"", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
@@ -341,9 +342,9 @@ TclDefaultBgErrorHandlerObjCmd(
     }
     TclNewLiteralStringObj(keyPtr, "-code");
     Tcl_IncrRefCount(keyPtr);
-    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
     Tcl_DecrRefCount(keyPtr);
-    if (valuePtr == NULL) {
+    if (result != TCL_OK || valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-code\"", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
@@ -406,17 +407,17 @@ TclDefaultBgErrorHandlerObjCmd(
 
     TclNewLiteralStringObj(keyPtr, "-errorcode");
     Tcl_IncrRefCount(keyPtr);
-    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
     Tcl_DecrRefCount(keyPtr);
-    if (valuePtr) {
+    if (result == TCL_OK && valuePtr != NULL) {
 	Tcl_SetObjErrorCode(interp, valuePtr);
     }
 
     TclNewLiteralStringObj(keyPtr, "-errorinfo");
     Tcl_IncrRefCount(keyPtr);
-    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
     Tcl_DecrRefCount(keyPtr);
-    if (valuePtr) {
+    if (result == TCL_OK && valuePtr != NULL) {
 	Tcl_AppendObjToErrorInfo(interp, valuePtr);
     }
 
@@ -856,7 +857,7 @@ Tcl_DeleteThreadExitHandler(
 
 Tcl_ExitProc *
 Tcl_SetExitProc(
-    Tcl_ExitProc *proc)		/* New exit handler for app or NULL */
+    TCL_NORETURN1 Tcl_ExitProc *proc)		/* New exit handler for app or NULL */
 {
     Tcl_ExitProc *prevExitProc;
 
@@ -891,7 +892,7 @@ Tcl_SetExitProc(
  *----------------------------------------------------------------------
  */
 static void
-InvokeExitHandlers(void) 
+InvokeExitHandlers(void)
 {
     ExitHandler *exitPtr;
 
@@ -932,12 +933,12 @@ InvokeExitHandlers(void)
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 Tcl_Exit(
     int status)			/* Exit status for application; typically 0
 				 * for normal return, 1 for error return. */
 {
-    Tcl_ExitProc *currentAppExitPtr;
+    TCL_NORETURN1 Tcl_ExitProc *currentAppExitPtr;
 
     Tcl_MutexLock(&exitMutex);
     currentAppExitPtr = appExitPtr;
@@ -967,23 +968,23 @@ Tcl_Exit(
 	    /*
 	     * Fast and deterministic exit (default behavior)
 	     */
-	    
+
 	    InvokeExitHandlers();
-	    
+
 	    /*
 	     * Ensure the thread-specific data is initialised as it is used in
 	     * Tcl_FinalizeThread()
 	     */
-	    
+
 	    (void) TCL_TSD_INIT(&dataKey);
-	    
+
 	    /*
 	     * Now finalize the calling thread only (others are not safely
 	     * reachable).  Among other things, this triggers a flush of the
 	     * Tcl_Channels that may have data enqueued.
 	     */
-	    
-	    Tcl_FinalizeThread();
+
+	    FinalizeThread(/* quick */ 1);
 	}
 	TclpExit(status);
 	Tcl_Panic("OS exit failed!");
@@ -1030,14 +1031,8 @@ TclInitSubsystems(void)
 
 	TclpInitLock();
 	if (subsystemsInitialized == 0) {
-	    /*
-	     * Have to set this bit here to avoid deadlock with the routines
-	     * below us that call into TclInitSubsystems.
-	     */
 
-	    subsystemsInitialized = 1;
-
-	    /*
+		/*
 	     * Initialize locks used by the memory allocators before anything
 	     * interesting happens so we can use the allocators in the
 	     * implementation of self-initializing locks.
@@ -1047,6 +1042,9 @@ TclInitSubsystems(void)
 					 * thread local storage */
 #if USE_TCLALLOC
 	    TclInitAlloc();		/* Process wide mutex init */
+#endif
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+	    TclInitThreadAlloc();	/* Setup thread allocator caches */
 #endif
 #ifdef TCL_MEM_DEBUG
 	    TclInitDbCkalloc();		/* Process wide mutex init */
@@ -1061,6 +1059,7 @@ TclInitSubsystems(void)
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclpSetInterfaces();
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
+	    subsystemsInitialized = 1;
 	}
 	TclpInitUnlock();
     }
@@ -1094,7 +1093,7 @@ Tcl_Finalize(void)
      * Invoke exit handlers first.
      */
 
-    InvokeExitHandlers();   
+    InvokeExitHandlers();
 
     TclpInitLock();
     if (subsystemsInitialized == 0) {
@@ -1176,8 +1175,6 @@ Tcl_Finalize(void)
 
     TclFinalizeEncodingSubsystem();
 
-    Tcl_SetPanicProc(NULL);
-
     /*
      * Repeat finalization of the thread local storage once more. Although
      * this step is already done by the Tcl_FinalizeThread call above, series
@@ -1190,7 +1187,7 @@ Tcl_Finalize(void)
      * This fixes the Tcl Bug #990552.
      */
 
-    TclFinalizeThreadData();
+    TclFinalizeThreadData(/* quick */ 0);
 
     /*
      * Now we can free constants for conversions to/from double.
@@ -1276,6 +1273,13 @@ Tcl_Finalize(void)
 void
 Tcl_FinalizeThread(void)
 {
+    FinalizeThread(/* quick */ 0);
+}
+
+void
+FinalizeThread(
+    int quick)
+{
     ExitHandler *exitPtr;
     ThreadSpecificData *tsdPtr;
 
@@ -1316,8 +1320,7 @@ Tcl_FinalizeThread(void)
      *
      * Fix [Bug #571002]
      */
-
-    TclFinalizeThreadData();
+    TclFinalizeThreadData(quick);
 }
 
 /*
@@ -1402,7 +1405,7 @@ Tcl_VwaitObjCmd(
 	return TCL_ERROR;
     }
     nameString = Tcl_GetString(objv[1]);
-    if (Tcl_TraceVar(interp, nameString,
+    if (Tcl_TraceVar2(interp, nameString, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, &done) != TCL_OK) {
 	return TCL_ERROR;
@@ -1420,7 +1423,7 @@ Tcl_VwaitObjCmd(
 	    break;
 	}
     }
-    Tcl_UntraceVar(interp, nameString,
+    Tcl_UntraceVar2(interp, nameString, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, &done);
 
@@ -1462,6 +1465,8 @@ VwaitVarProc(
     int *donePtr = clientData;
 
     *donePtr = 1;
+    Tcl_UntraceVar(interp, name1, TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+	    VwaitVarProc, clientData);
     return NULL;
 }
 
@@ -1498,8 +1503,8 @@ Tcl_UpdateObjCmd(
     if (objc == 1) {
 	flags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
     } else if (objc == 2) {
-	if (Tcl_GetIndexFromObj(interp, objv[1], updateOptions,
-		"option", 0, &optionIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[1], updateOptions,
+		sizeof(char *), "option", 0, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum updateOptions) optionIndex) {

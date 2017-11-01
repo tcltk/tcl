@@ -10,7 +10,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <sys/stat.h>
 #include "tclInt.h"
 
 #ifdef HAVE_GETATTRLIST
@@ -107,7 +106,7 @@ typedef	struct finderinfo {
     u_int32_t extendedFileInfo[4];
 } __attribute__ ((__packed__)) finderinfo;
 
-typedef struct fileinfobuf {
+typedef struct {
     u_int32_t info_length;
     u_int32_t data[8];
 } fileinfobuf;
@@ -193,7 +192,7 @@ TclMacOSXGetFileAttribute(
 		OSSwapBigToHostInt32(finder->type));
 	break;
     case MACOSX_HIDDEN_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewBooleanObj(
+	*attributePtrPtr = Tcl_NewLongObj(
 		(finder->fdFlags & kFinfoIsInvisible) != 0);
 	break;
     case MACOSX_RSRCLENGTH_ATTRIBUTE:
@@ -320,7 +319,7 @@ TclMacOSXSetFileAttribute(
     } else {
 	Tcl_WideInt newRsrcForkSize;
 
-	if (Tcl_GetWideIntFromObj(interp, attributePtr,
+	if (TclGetWideIntFromObj(interp, attributePtr,
 		&newRsrcForkSize) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -579,7 +578,7 @@ GetOSTypeFromObj(
     int result = TCL_OK;
 
     if (objPtr->typePtr != &tclOSTypeType) {
-	result = tclOSTypeType.setFromAnyProc(interp, objPtr);
+	result = SetOSTypeFromAny(interp, objPtr);
     }
     *osTypePtr = (OSType) objPtr->internalRep.longValue;
     return result;
@@ -609,7 +608,7 @@ NewOSTypeObj(
     Tcl_Obj *objPtr;
 
     TclNewObj(objPtr);
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
     objPtr->internalRep.longValue = (long) osType;
     objPtr->typePtr = &tclOSTypeType;
     return objPtr;
@@ -637,12 +636,12 @@ SetOSTypeFromAny(
     Tcl_Obj *objPtr)		/* Pointer to the object to convert */
 {
     const char *string;
-    int length, result = TCL_OK;
+    int result = TCL_OK;
     Tcl_DString ds;
     Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
 
-    string = Tcl_GetStringFromObj(objPtr, &length);
-    Tcl_UtfToExternalDString(encoding, string, length, &ds);
+    string = TclGetString(objPtr);
+    Tcl_UtfToExternalDString(encoding, string, objPtr->length, &ds);
 
     if (Tcl_DStringLength(&ds) > 4) {
 	if (interp) {

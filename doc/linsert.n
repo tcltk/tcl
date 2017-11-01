@@ -5,9 +5,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH linsert n 8.2 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -45,7 +45,7 @@ set newList [\fBlinsert\fR $midList end-1 lazy]
 set newerList [\fBlinsert\fR [\fBlinsert\fR $oldList end-1 quick] 1 lazy]
 .CE
 .SH "SEE ALSO"
-list(n), lappend(n), lindex(n), llength(n), lsearch(n), 
+list(n), lappend(n), lindex(n), llength(n), lsearch(n),
 lset(n), lsort(n), lrange(n), lreplace(n),
 string(n)
 .SH KEYWORDS
