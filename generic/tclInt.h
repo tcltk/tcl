@@ -2451,12 +2451,13 @@ typedef struct List {
  * WARNING: these macros eval their args more than once.
  */
 
-#define TclGetLongFromObj(interp, objPtr, longPtr) \
+#define TclGetLongFromObj(interp, objPtr, longPtr) Tcl_GetLongFromObj(interp, objPtr, longPtr)
+#define TclGetLongFromObjX(interp, objPtr, longPtr) \
     (((objPtr)->typePtr == &tclIntType)	\
 	    ? ((*(longPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetLongFromObj((interp), (objPtr), (longPtr)))
 
-#if (LONG_MAX == INT_MAX)
+#if 0
 #define TclGetIntFromObj(interp, objPtr, intPtr) \
     (((objPtr)->typePtr == &tclIntType)	\
 	    ? ((*(intPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
@@ -2480,21 +2481,11 @@ typedef struct List {
  *			Tcl_WideInt *wideIntPtr);
  */
 
-#ifdef TCL_WIDE_INT_IS_LONG
 #define TclGetWideIntFromObj(interp, objPtr, wideIntPtr) \
     (((objPtr)->typePtr == &tclIntType)					\
 	? (*(wideIntPtr) = (Tcl_WideInt)				\
 		((objPtr)->internalRep.wideValue), TCL_OK) :		\
 	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
-#else /* !TCL_WIDE_INT_IS_LONG */
-#define TclGetWideIntFromObj(interp, objPtr, wideIntPtr)		\
-    (((objPtr)->typePtr == &tclWideIntType)				\
-	? (*(wideIntPtr) = (objPtr)->internalRep.wideValue, TCL_OK) :	\
-    ((objPtr)->typePtr == &tclIntType)					\
-	? (*(wideIntPtr) = (Tcl_WideInt)				\
-		((objPtr)->internalRep.wideValue), TCL_OK) :		\
-	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
-#endif /* TCL_WIDE_INT_IS_LONG */
 
 /*
  * Flag values for TclTraceDictPath().
@@ -2720,7 +2711,6 @@ MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
 MODULE_SCOPE const Tcl_ObjType tclEnsembleCmdType;
-MODULE_SCOPE const Tcl_ObjType tclWideIntType;
 MODULE_SCOPE const Tcl_ObjType tclRegexpType;
 MODULE_SCOPE Tcl_ObjType tclCmdNameType;
 
@@ -4533,31 +4523,18 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  * core. They should only be called on unshared objects. The ANSI C
  * "prototypes" for these macros are:
  *
- * MODULE_SCOPE void	TclSetLongObj(Tcl_Obj *objPtr, long longValue);
- * MODULE_SCOPE void	TclSetWideIntObj(Tcl_Obj *objPtr, Tcl_WideInt w);
+ * MODULE_SCOPE void	TclSetWideObj(Tcl_Obj *objPtr, Tcl_WideInt w);
  * MODULE_SCOPE void	TclSetDoubleObj(Tcl_Obj *objPtr, double d);
  *----------------------------------------------------------------
  */
 
-#define TclSetLongObj(objPtr, i) \
+#define TclSetWideObj(objPtr, i) \
     do {						\
 	TclInvalidateStringRep(objPtr);			\
 	TclFreeIntRep(objPtr);				\
 	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(i);	\
 	(objPtr)->typePtr = &tclIntType;		\
     } while (0)
-
-#ifdef TCL_WIDE_INT_IS_LONG
-#define TclSetWideIntObj(objPtr, w) TclSetLongObj(objPtr, w)
-#else
-#define TclSetWideIntObj(objPtr, w) \
-    do {							\
-	TclInvalidateStringRep(objPtr);				\
-	TclFreeIntRep(objPtr);					\
-	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(w);	\
-	(objPtr)->typePtr = &tclWideIntType;			\
-    } while (0)
-#endif
 
 #define TclSetDoubleObj(objPtr, d) \
     do {							\
@@ -4573,7 +4550,6 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  * types, avoiding the corresponding function calls in time critical parts of
  * the core. The ANSI C "prototypes" for these macros are:
  *
- * MODULE_SCOPE void	TclNewLongObj(Tcl_Obj *objPtr, long l);
  * MODULE_SCOPE void	TclNewWideObj(Tcl_Obj *objPtr, Tcl_WideInt w);
  * MODULE_SCOPE void	TclNewDoubleObj(Tcl_Obj *objPtr, double d);
  * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, int len);
@@ -4583,7 +4559,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  */
 
 #ifndef TCL_MEM_DEBUG
-#define TclNewLongObj(objPtr, i) \
+#define TclNewWideObj(objPtr, i) \
     do {						\
 	TclIncrObjsAllocated();				\
 	TclAllocObjStorage(objPtr);			\
@@ -4594,20 +4570,6 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
-#ifndef TCL_WIDE_INT_IS_LONG
-#define TclNewWideObj(objPtr, i) \
-    do {						\
-	TclIncrObjsAllocated();				\
-	TclAllocObjStorage(objPtr);			\
-	(objPtr)->refCount = 0;				\
-	(objPtr)->bytes = NULL;				\
-	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(i);	\
-	(objPtr)->typePtr = &tclWideIntType;		\
-	TCL_DTRACE_OBJ_CREATE(objPtr);			\
-    } while (0)
-#else
-#define TclNewWideObj(objPtr, i) TclNewLongObj(objPtr, i)
-#endif
 #define TclNewDoubleObj(objPtr, d) \
     do {							\
 	TclIncrObjsAllocated();					\
@@ -4630,9 +4592,6 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     } while (0)
 
 #else /* TCL_MEM_DEBUG */
-#define TclNewLongObj(objPtr, l) \
-    (objPtr) = Tcl_NewLongObj(l)
-
 #define TclNewWideObj(objPtr, w) \
     (objPtr) = Tcl_NewWideIntObj(w)
 
