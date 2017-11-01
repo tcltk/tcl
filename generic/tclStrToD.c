@@ -1272,7 +1272,7 @@ TclParseNumber(
 			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
 #ifndef TCL_WIDE_INT_IS_LONG
 		    if (octalSignificandWide <= (MOST_BITS + signum)) {
-			objPtr->typePtr = &tclWideIntType;
+			objPtr->typePtr = &tclIntType;
 			if (signum) {
 			    objPtr->internalRep.wideValue =
 				    - (Tcl_WideInt) octalSignificandWide;
@@ -1319,7 +1319,7 @@ TclParseNumber(
 			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
 #ifndef TCL_WIDE_INT_IS_LONG
 		    if (significandWide <= MOST_BITS+signum) {
-			objPtr->typePtr = &tclWideIntType;
+			objPtr->typePtr = &tclIntType;
 			if (signum) {
 			    objPtr->internalRep.wideValue =
 				    - (Tcl_WideInt) significandWide;

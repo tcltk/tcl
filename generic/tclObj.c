@@ -266,13 +266,6 @@ const Tcl_ObjType tclIntType = {
     UpdateStringOfInt,		/* updateStringProc */
     SetIntFromAny		/* setFromAnyProc */
 };
-const Tcl_ObjType tclWideIntType = {
-    "wideInt",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    UpdateStringOfInt,	/* updateStringProc */
-    SetIntFromAny		/* setFromAnyProc */
-};
 const Tcl_ObjType tclBignumType = {
     "bignum",			/* name */
     FreeBignum,			/* freeIntRepProc */
@@ -1753,7 +1746,7 @@ Tcl_NewBooleanObj(
 {
     register Tcl_Obj *objPtr;
 
-    TclNewLongObj(objPtr, boolValue!=0);
+    TclNewWideObj(objPtr, boolValue!=0);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -1848,7 +1841,7 @@ Tcl_SetBooleanObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetBooleanObj");
     }
 
-    TclSetLongObj(objPtr, boolValue!=0);
+    TclSetWideObj(objPtr, boolValue!=0);
 }
 #endif /* TCL_NO_DEPRECATED */
 
@@ -1907,10 +1900,6 @@ Tcl_GetBooleanFromObj(
 	    *boolPtr = 1;
 	    return TCL_OK;
 	}
-	if (objPtr->typePtr == &tclWideIntType) {
-	    *boolPtr = (objPtr->internalRep.wideValue != 0);
-	    return TCL_OK;
-	}
     } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
 	    TclParseNumber(interp, objPtr, "boolean value", NULL,-1,NULL,0)));
     return TCL_ERROR;
@@ -1957,10 +1946,6 @@ TclSetBooleanFromAny(
 	}
 
 	if (objPtr->typePtr == &tclBignumType) {
-	    goto badBoolean;
-	}
-
-	if (objPtr->typePtr == &tclWideIntType) {
 	    goto badBoolean;
 	}
 
@@ -2281,7 +2266,7 @@ Tcl_GetDoubleFromObj(
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclIntType) {
-	    *dblPtr = objPtr->internalRep.wideValue;
+	    *dblPtr = (double) objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclBignumType) {
@@ -2289,10 +2274,6 @@ Tcl_GetDoubleFromObj(
 
 	    UNPACK_BIGNUM(objPtr, big);
 	    *dblPtr = TclBignumToDouble(&big);
-	    return TCL_OK;
-	}
-	if (objPtr->typePtr == &tclWideIntType) {
-	    *dblPtr = (double) objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
     } while (SetDoubleFromAny(interp, objPtr) == TCL_OK);
@@ -2412,7 +2393,7 @@ Tcl_NewIntObj(
 {
     register Tcl_Obj *objPtr;
 
-    TclNewLongObj(objPtr, intValue);
+    TclNewWideObj(objPtr, intValue);
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -2445,7 +2426,7 @@ Tcl_SetIntObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetIntObj");
     }
 
-    TclSetLongObj(objPtr, intValue);
+    TclSetWideObj(objPtr, intValue);
 }
 
 /*
@@ -2610,7 +2591,7 @@ Tcl_NewLongObj(
 {
     register Tcl_Obj *objPtr;
 
-    TclNewLongObj(objPtr, longValue);
+    TclNewWideObj(objPtr, longValue);
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -2711,7 +2692,7 @@ Tcl_SetLongObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetLongObj");
     }
 
-    TclSetLongObj(objPtr, longValue);
+    TclSetWideObj(objPtr, longValue);
 }
 
 /*
@@ -2742,11 +2723,13 @@ Tcl_GetLongFromObj(
     register long *longPtr)	/* Place to store resulting long. */
 {
     do {
+#if (LONG_MAX == LLONG_MAX)
 	if (objPtr->typePtr == &tclIntType) {
 	    *longPtr = objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
-	if (objPtr->typePtr == &tclWideIntType) {
+#else
+	if (objPtr->typePtr == &tclIntType) {
 	    /*
 	     * We return any integer in the range -ULONG_MAX to ULONG_MAX
 	     * converted to a long, ignoring overflow. The rule preserves
@@ -2764,6 +2747,7 @@ Tcl_GetLongFromObj(
 	    }
 	    goto tooLarge;
 	}
+#endif
 	if (objPtr->typePtr == &tclDoubleType) {
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2802,7 +2786,9 @@ Tcl_GetLongFromObj(
 		    return TCL_OK;
 		}
 	    }
+#if (LONG_MAX != LLONG_MAX)
 	tooLarge:
+#endif
 	    if (interp != NULL) {
 		const char *s = "integer value too large to represent";
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
@@ -2966,12 +2952,7 @@ Tcl_SetWideIntObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetWideIntObj");
     }
 
-    if ((wideValue >= (Tcl_WideInt) LONG_MIN)
-	    && (wideValue <= (Tcl_WideInt) LONG_MAX)) {
-	TclSetLongObj(objPtr, wideValue);
-    } else {
-	TclSetWideIntObj(objPtr, wideValue);
-    }
+    TclSetWideObj(objPtr, wideValue);
 }
 
 /*
@@ -3003,12 +2984,8 @@ Tcl_GetWideIntFromObj(
 				/* Place to store resulting long. */
 {
     do {
-	if (objPtr->typePtr == &tclWideIntType) {
-	    *wideIntPtr = objPtr->internalRep.wideValue;
-	    return TCL_OK;
-	}
 	if (objPtr->typePtr == &tclIntType) {
-	    *wideIntPtr = (Tcl_WideInt) objPtr->internalRep.wideValue;
+	    *wideIntPtr = objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclDoubleType) {
@@ -3303,10 +3280,6 @@ GetBignumFromObj(
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclIntType) {
-	    TclInitBignumFromLong(bignumValue, objPtr->internalRep.wideValue);
-	    return TCL_OK;
-	}
-	if (objPtr->typePtr == &tclWideIntType) {
 	    TclInitBignumFromWideInt(bignumValue,
 		    objPtr->internalRep.wideValue);
 	    return TCL_OK;
@@ -3435,9 +3408,9 @@ Tcl_SetBignumObj(
 	    goto tooLargeForLong;
 	}
 	if (bignumValue->sign) {
-	    TclSetLongObj(objPtr, -(long)value);
+	    TclSetWideObj(objPtr, -(long)value);
 	} else {
-	    TclSetLongObj(objPtr, (long)value);
+	    TclSetWideObj(objPtr, (long)value);
 	}
 	mp_clear(bignumValue);
 	return;
@@ -3461,9 +3434,9 @@ Tcl_SetBignumObj(
 	    goto tooLargeForWide;
 	}
 	if (bignumValue->sign) {
-	    TclSetWideIntObj(objPtr, -(Tcl_WideInt)value);
+	    TclSetWideObj(objPtr, -(Tcl_WideInt)value);
 	} else {
-	    TclSetWideIntObj(objPtr, (Tcl_WideInt)value);
+	    TclSetWideObj(objPtr, (Tcl_WideInt)value);
 	}
 	mp_clear(bignumValue);
 	return;
@@ -3550,7 +3523,7 @@ TclGetNumberFromObj(
 	    *clientDataPtr = &objPtr->internalRep.doubleValue;
 	    return TCL_OK;
 	}
-	if (objPtr->typePtr == &tclIntType || objPtr->typePtr == &tclWideIntType) {
+	if (objPtr->typePtr == &tclIntType) {
 	    *typePtr = TCL_NUMBER_WIDE;
 	    *clientDataPtr = &objPtr->internalRep.wideValue;
 	    return TCL_OK;

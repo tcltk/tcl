@@ -819,7 +819,6 @@ Tcl_AfterObjCmd(
      */
 
     if (objv[1]->typePtr == &tclIntType
-	    || objv[1]->typePtr == &tclWideIntType
 	    || objv[1]->typePtr == &tclBignumType
 	    || (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0,
 		    &index) != TCL_OK)) {

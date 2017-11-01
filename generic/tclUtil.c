@@ -3768,9 +3768,7 @@ SetEndOffsetFromAny(
 		TCL_PARSE_INTEGER_ONLY) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if ((objPtr->typePtr != &tclIntType)
-		    && (objPtr->typePtr != &tclWideIntType)
-		) {
+	if (objPtr->typePtr != &tclIntType) {
 		goto badIndexFormat;
 	}
 	offset = objPtr->internalRep.wideValue;

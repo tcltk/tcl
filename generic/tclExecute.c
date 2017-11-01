@@ -325,7 +325,7 @@ VarHashCreateVar(
 	    NEXT_INST_F(((condition)? TclGetInt4AtPtr(pc+1) : 5), (cleanup), 0); \
 	default:							\
 	    if ((condition) < 0) {					\
-		TclNewLongObj(objResultPtr, -1);				\
+		TclNewWideObj(objResultPtr, -1);				\
 	    } else {							\
 		objResultPtr = TCONST((condition) > 0);			\
 	    }								\
@@ -346,7 +346,7 @@ VarHashCreateVar(
 	    NEXT_INST_V(((condition)? TclGetInt4AtPtr(pc+1) : 5), (cleanup), 0); \
 	default:							\
 	    if ((condition) < 0) {					\
-		TclNewLongObj(objResultPtr, -1);				\
+		TclNewWideObj(objResultPtr, -1);				\
 	    } else {							\
 		objResultPtr = TCONST((condition) > 0);			\
 	    }								\
@@ -357,7 +357,7 @@ VarHashCreateVar(
 #define JUMP_PEEPHOLE_F(condition, pcAdjustment, cleanup) \
     do{									\
 	if ((condition) < 0) {						\
-	    TclNewLongObj(objResultPtr, -1);				\
+	    TclNewWideObj(objResultPtr, -1);				\
 	} else {							\
 	    objResultPtr = TCONST((condition) > 0);			\
 	}								\
@@ -366,7 +366,7 @@ VarHashCreateVar(
 #define JUMP_PEEPHOLE_V(condition, pcAdjustment, cleanup) \
     do{									\
 	if ((condition) < 0) {						\
-	    TclNewLongObj(objResultPtr, -1);				\
+	    TclNewWideObj(objResultPtr, -1);				\
 	} else {							\
 	    objResultPtr = TCONST((condition) > 0);			\
 	}								\
@@ -498,7 +498,6 @@ VarHashCreateVar(
  *			ClientData *ptrPtr, int *tPtr);
  */
 
-#ifdef TCL_WIDE_INT_IS_LONG
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
     (((objPtr)->typePtr == &tclIntType)					\
 	?	(*(tPtr) = TCL_NUMBER_WIDE,				\
@@ -513,26 +512,6 @@ VarHashCreateVar(
     (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
 	? TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
-#else /* !TCL_WIDE_INT_IS_LONG */
-#define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
-    (((objPtr)->typePtr == &tclIntType)					\
-	?	(*(tPtr) = TCL_NUMBER_WIDE,				\
-		*(ptrPtr) = (ClientData)				\
-		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
-    ((objPtr)->typePtr == &tclWideIntType)				\
-	?	(*(tPtr) = TCL_NUMBER_WIDE,				\
-		*(ptrPtr) = (ClientData)				\
-		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
-    ((objPtr)->typePtr == &tclDoubleType)				\
-	?	(((TclIsNaN((objPtr)->internalRep.doubleValue))		\
-		    ?	(*(tPtr) = TCL_NUMBER_NAN)			\
-		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
-		*(ptrPtr) = (ClientData)				\
-		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
-    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
-	? TCL_ERROR :			\
-    TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
-#endif /* TCL_WIDE_INT_IS_LONG */
 
 /*
  * Macro used in this file to save a function call for common uses of
@@ -873,9 +852,9 @@ TclCreateExecEnv(
 	    + (size_t) (size-1) * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
-    TclNewLongObj(eePtr->constants[0], 0);
+    TclNewWideObj(eePtr->constants[0], 0);
     Tcl_IncrRefCount(eePtr->constants[0]);
-    TclNewLongObj(eePtr->constants[1], 1);
+    TclNewWideObj(eePtr->constants[1], 1);
     Tcl_IncrRefCount(eePtr->constants[1]);
     eePtr->interp = interp;
     eePtr->callbackPtr = NULL;
@@ -3676,7 +3655,7 @@ TEBCresume(
 			    varPtr->value.objPtr = objResultPtr;
 			} else {
 			    objResultPtr = objPtr;
-			    TclSetWideIntObj(objPtr, sum);
+			    TclSetWideObj(objPtr, sum);
 			}
 			goto doneIncr;
 		    }
@@ -3696,7 +3675,7 @@ TEBCresume(
 			 * use macro form that doesn't range test again.
 			 */
 
-			TclSetWideIntObj(objPtr, w+increment);
+			TclSetWideObj(objPtr, w+increment);
 		    }
 		    goto doneIncr;
 		}	/* end if (type == TCL_NUMBER_WIDE) */
@@ -3709,7 +3688,7 @@ TEBCresume(
 	    } else {
 		objResultPtr = objPtr;
 	    }
-	    TclNewLongObj(incrPtr, increment);
+	    TclNewWideObj(incrPtr, increment);
 	    if (TclIncrObj(interp, objResultPtr, incrPtr) != TCL_OK) {
 		Tcl_DecrRefCount(incrPtr);
 		TRACE_ERROR(interp);
@@ -3723,7 +3702,7 @@ TEBCresume(
 	 * All other cases, flow through to generic handling.
 	 */
 
-	TclNewLongObj(incrPtr, increment);
+	TclNewWideObj(incrPtr, increment);
 	Tcl_IncrRefCount(incrPtr);
 
     doIncrScalar:
@@ -4421,7 +4400,7 @@ TEBCresume(
 	NEXT_INST_F(1, 0, 1);
     }
     case INST_INFO_LEVEL_NUM:
-	TclNewLongObj(objResultPtr, iPtr->varFramePtr->level);
+	TclNewWideObj(objResultPtr, iPtr->varFramePtr->level);
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
     case INST_INFO_LEVEL_ARGS: {
@@ -4790,7 +4769,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	TclNewLongObj(objResultPtr, length);
+	TclNewWideObj(objResultPtr, length);
 	TRACE_APPEND(("%d\n", length));
 	NEXT_INST_F(1, 1, 1);
 
@@ -5261,7 +5240,7 @@ TEBCresume(
     case INST_STR_LEN:
 	valuePtr = OBJ_AT_TOS;
 	length = Tcl_GetCharLength(valuePtr);
-	TclNewLongObj(objResultPtr, length);
+	TclNewWideObj(objResultPtr, length);
 	TRACE(("\"%.20s\" => %d\n", O2S(valuePtr), length));
 	NEXT_INST_F(1, 1, 1);
 
@@ -5616,7 +5595,7 @@ TEBCresume(
 
 	TRACE(("%.20s %.20s => %d\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
-	TclNewLongObj(objResultPtr, match);
+	TclNewWideObj(objResultPtr, match);
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_FIND_LAST:
@@ -5624,7 +5603,7 @@ TEBCresume(
 
 	TRACE(("%.20s %.20s => %d\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
-	TclNewLongObj(objResultPtr, match);
+	TclNewWideObj(objResultPtr, match);
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_CLASS:
@@ -5822,7 +5801,7 @@ TEBCresume(
 		type1 = TCL_NUMBER_WIDE;
 	    }
 	}
-	TclNewLongObj(objResultPtr, type1);
+	TclNewWideObj(objResultPtr, type1);
 	TRACE(("\"%.20s\" => %d\n", O2S(OBJ_AT_TOS), type1));
 	NEXT_INST_F(1, 1, 1);
 
@@ -6015,7 +5994,7 @@ TEBCresume(
 			if (w1 > 0L) {
 			    objResultPtr = TCONST(0);
 			} else {
-			    TclNewLongObj(objResultPtr, -1);
+			    TclNewWideObj(objResultPtr, -1);
 			}
 			TRACE(("%s\n", O2S(objResultPtr)));
 			NEXT_INST_F(1, 2, 1);
@@ -6326,7 +6305,7 @@ TEBCresume(
 		TRACE_APPEND(("%s\n", O2S(objResultPtr)));
 		NEXT_INST_F(1, 1, 1);
 	    }
-	    TclSetWideIntObj(valuePtr, ~w1);
+	    TclSetWideObj(valuePtr, ~w1);
 	    TRACE_APPEND(("%s\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
@@ -6364,7 +6343,7 @@ TEBCresume(
 		    TRACE_APPEND(("%s\n", O2S(objResultPtr)));
 		    NEXT_INST_F(1, 1, 1);
 		}
-		TclSetWideIntObj(valuePtr, -w1);
+		TclSetWideObj(valuePtr, -w1);
 		TRACE_APPEND(("%s\n", O2S(valuePtr)));
 		NEXT_INST_F(1, 0, 0);
 	    }
@@ -6525,10 +6504,10 @@ TEBCresume(
 	oldValuePtr = iterVarPtr->value.objPtr;
 
 	if (oldValuePtr == NULL) {
-	    TclNewLongObj(iterVarPtr->value.objPtr, -1);
+	    TclNewWideObj(iterVarPtr->value.objPtr, -1);
 	    Tcl_IncrRefCount(iterVarPtr->value.objPtr);
 	} else {
-	    TclSetLongObj(oldValuePtr, -1);
+	    TclSetWideObj(oldValuePtr, -1);
 	}
 	TRACE(("%u => loop iter count temp %d\n", opnd, iterTmpIndex));
 
@@ -6563,7 +6542,7 @@ TEBCresume(
 	iterVarPtr = LOCAL(infoPtr->loopCtTemp);
 	valuePtr = iterVarPtr->value.objPtr;
 	iterNum = valuePtr->internalRep.wideValue + 1;
-	TclSetLongObj(valuePtr, iterNum);
+	TclSetWideObj(valuePtr, iterNum);
 
 	/*
 	 * Check whether all value lists are exhausted and we should stop the
@@ -6896,7 +6875,7 @@ TEBCresume(
 	NEXT_INST_F(1, 0, -1);
 
     case INST_PUSH_RETURN_CODE:
-	TclNewLongObj(objResultPtr, result);
+	TclNewWideObj(objResultPtr, result);
 	TRACE(("=> %u\n", result));
 	NEXT_INST_F(1, 0, 1);
 
@@ -7562,7 +7541,6 @@ TEBCresume(
 	    default:
 		Tcl_Panic("clockRead instruction with unknown clock#");
 	    }
-	    /* TclNewWideObj(objResultPtr, wval); doesn't exist */
 	    objResultPtr = Tcl_NewWideIntObj(wval);
 	    TRACE_WITH_OBJ(("=> "), objResultPtr);
 	    NEXT_INST_F(2, 0, 1);
