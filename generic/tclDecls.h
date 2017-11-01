@@ -811,12 +811,8 @@ EXTERN void		Tcl_WrongNumArgs(Tcl_Interp *interp, int objc,
 EXTERN int		Tcl_DumpActiveMemory(const char *fileName);
 /* 266 */
 EXTERN void		Tcl_ValidateAllMemory(const char *file, int line);
-/* 267 */
-EXTERN void		Tcl_AppendResultVA(Tcl_Interp *interp,
-				va_list argList);
-/* 268 */
-EXTERN void		Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr,
-				va_list argList);
+/* Slot 267 is reserved */
+/* Slot 268 is reserved */
 /* 269 */
 EXTERN char *		Tcl_HashStats(Tcl_HashTable *tablePtr);
 /* 270 */
@@ -837,15 +833,12 @@ EXTERN int		Tcl_PkgProvide(Tcl_Interp *interp, const char *name,
 EXTERN CONST84_RETURN char * Tcl_PkgRequire(Tcl_Interp *interp,
 				const char *name, const char *version,
 				int exact);
-/* 275 */
-EXTERN void		Tcl_SetErrorCodeVA(Tcl_Interp *interp,
-				va_list argList);
+/* Slot 275 is reserved */
 /* 276 */
 EXTERN int		Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList);
 /* 277 */
 EXTERN Tcl_Pid		Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options);
-/* 278 */
-EXTERN TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList);
+/* Slot 278 is reserved */
 /* 279 */
 EXTERN void		Tcl_GetVersion(int *major, int *minor,
 				int *patchLevel, int *type);
@@ -2133,18 +2126,18 @@ typedef struct TclStubs {
     void (*tcl_WrongNumArgs) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], const char *message); /* 264 */
     int (*tcl_DumpActiveMemory) (const char *fileName); /* 265 */
     void (*tcl_ValidateAllMemory) (const char *file, int line); /* 266 */
-    void (*tcl_AppendResultVA) (Tcl_Interp *interp, va_list argList); /* 267 */
-    void (*tcl_AppendStringsToObjVA) (Tcl_Obj *objPtr, va_list argList); /* 268 */
+    void (*reserved267)(void);
+    void (*reserved268)(void);
     char * (*tcl_HashStats) (Tcl_HashTable *tablePtr); /* 269 */
     CONST84_RETURN char * (*tcl_ParseVar) (Tcl_Interp *interp, const char *start, CONST84 char **termPtr); /* 270 */
     CONST84_RETURN char * (*tcl_PkgPresent) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 271 */
     CONST84_RETURN char * (*tcl_PkgPresentEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 272 */
     int (*tcl_PkgProvide) (Tcl_Interp *interp, const char *name, const char *version); /* 273 */
     CONST84_RETURN char * (*tcl_PkgRequire) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 274 */
-    void (*tcl_SetErrorCodeVA) (Tcl_Interp *interp, va_list argList); /* 275 */
+    void (*reserved275)(void);
     int (*tcl_VarEvalVA) (Tcl_Interp *interp, va_list argList); /* 276 */
     Tcl_Pid (*tcl_WaitPid) (Tcl_Pid pid, int *statPtr, int options); /* 277 */
-    TCL_NORETURN1 void (*tcl_PanicVA) (const char *format, va_list argList); /* 278 */
+    void (*reserved278)(void);
     void (*tcl_GetVersion) (int *major, int *minor, int *patchLevel, int *type); /* 279 */
     void (*tcl_InitMemory) (Tcl_Interp *interp); /* 280 */
     Tcl_Channel (*tcl_StackChannel) (Tcl_Interp *interp, const Tcl_ChannelType *typePtr, ClientData instanceData, int mask, Tcl_Channel prevChan); /* 281 */
@@ -3063,10 +3056,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DumpActiveMemory) /* 265 */
 #define Tcl_ValidateAllMemory \
 	(tclStubsPtr->tcl_ValidateAllMemory) /* 266 */
-#define Tcl_AppendResultVA \
-	(tclStubsPtr->tcl_AppendResultVA) /* 267 */
-#define Tcl_AppendStringsToObjVA \
-	(tclStubsPtr->tcl_AppendStringsToObjVA) /* 268 */
+/* Slot 267 is reserved */
+/* Slot 268 is reserved */
 #define Tcl_HashStats \
 	(tclStubsPtr->tcl_HashStats) /* 269 */
 #define Tcl_ParseVar \
@@ -3079,14 +3070,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_PkgProvide) /* 273 */
 #define Tcl_PkgRequire \
 	(tclStubsPtr->tcl_PkgRequire) /* 274 */
-#define Tcl_SetErrorCodeVA \
-	(tclStubsPtr->tcl_SetErrorCodeVA) /* 275 */
+/* Slot 275 is reserved */
 #define Tcl_VarEvalVA \
 	(tclStubsPtr->tcl_VarEvalVA) /* 276 */
 #define Tcl_WaitPid \
 	(tclStubsPtr->tcl_WaitPid) /* 277 */
-#define Tcl_PanicVA \
-	(tclStubsPtr->tcl_PanicVA) /* 278 */
+/* Slot 278 is reserved */
 #define Tcl_GetVersion \
 	(tclStubsPtr->tcl_GetVersion) /* 279 */
 #define Tcl_InitMemory \
