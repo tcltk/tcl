@@ -1881,7 +1881,7 @@ TclGlob(
     }
 
     /*
-     * To process a [glob] invokation, this function may be called multiple
+     * To process a [glob] invocation, this function may be called multiple
      * times. Each time, the previously discovered filenames are in the
      * interpreter result. We stash that away here so the result is free for
      * error messsages.
