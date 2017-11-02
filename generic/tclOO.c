@@ -881,7 +881,7 @@ ObjectRenamedTrace(
      * 2950259]
      */
 
-    if (((Namespace *) oPtr->namespacePtr)->earlyDeleteProc != NULL) {
+    if (oPtr->namespacePtr && ((Namespace *) oPtr->namespacePtr)->earlyDeleteProc != NULL) {
 	Tcl_DeleteNamespace(oPtr->namespacePtr);
     }
     if (oPtr->classPtr) {
@@ -1007,8 +1007,18 @@ ReleaseClassContents(
 	    }
 	    for(j=0 ; j<instancePtr->mixins.num ; j++) {
 		Class *mixin = instancePtr->mixins.list[j];
+		Class *nextMixin = NULL;
 		if (mixin == clsPtr) {
-		    instancePtr->mixins.list[j] = NULL;
+		    if (j < instancePtr->mixins.num - 1) {
+			nextMixin = instancePtr->mixins.list[j+1];
+		    }
+		    if (j == 0) {
+			instancePtr->mixins.num = 0;
+			instancePtr->mixins.list = NULL;
+		    } else {
+			instancePtr->mixins.list[j-1] = nextMixin;
+		    }
+		    instancePtr->mixins.num -= 1;
 		}
 	    }
 	    if (instancePtr != NULL && !IsRoot(instancePtr)) {
@@ -1169,7 +1179,7 @@ ObjectNamespaceDeleted(
     Class *clsPtr = oPtr->classPtr, *mixinPtr;
     Method *mPtr;
     Tcl_Obj *filterObj, *variableObj;
-    int i;
+    int deleteAlreadyInProgress = 0, i;
 
     /*
      * Instruct everyone to no longer use any allocated fields of the object.
@@ -1179,6 +1189,15 @@ ObjectNamespaceDeleted(
      */
 
     if (oPtr->command) {
+	if ((((Command *)oPtr->command)->flags && CMD_IS_DELETED)) {
+	    /*
+	     * Namespace deletion must have been triggered by a trace on command
+	     * deletion , meaning that ObjectRenamedTrace() is eventually going
+	     * to be called .
+	     */
+	    deleteAlreadyInProgress = 1;
+	}
+
 	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->command);
     }
     if (oPtr->myCommand) {
@@ -1274,14 +1293,17 @@ ObjectNamespaceDeleted(
 
 	if (clsPtr->subclasses.list) {
 	    ckfree(clsPtr->subclasses.list);
+	    clsPtr->subclasses.list = NULL;
 	    clsPtr->subclasses.num = 0;
 	}
 	if (clsPtr->instances.list) {
 	    ckfree(clsPtr->instances.list);
+	    clsPtr->instances.list = NULL;
 	    clsPtr->instances.num = 0;
 	}
 	if (clsPtr->mixinSubs.list) {
 	    ckfree(clsPtr->mixinSubs.list);
+	    clsPtr->mixinSubs.list = NULL;
 	    clsPtr->mixinSubs.num = 0;
 	}
 
@@ -1306,7 +1328,13 @@ ObjectNamespaceDeleted(
      * Delete the object structure itself.
      */
 
-    DelRef(oPtr);
+    if (deleteAlreadyInProgress) {
+	oPtr->classPtr = NULL;
+	oPtr->namespacePtr = NULL;
+    } else {
+	DelRef(oPtr);
+    }
+
 }
 
 /*
@@ -2434,7 +2462,7 @@ Tcl_ObjectSetMetadata(
  *
  * PublicObjectCmd, PrivateObjectCmd, TclOOInvokeObject --
  *
- *	Main entry point for object invokations. The Public* and Private*
+ *	Main entry point for object invocations. The Public* and Private*
  *	wrapper functions (implementations of both object instance commands
  *	and [my]) are just thin wrappers round the main TclOOObjectCmdCore
  *	function. Note that the core is function is NRE-aware.
@@ -2519,8 +2547,8 @@ TclOOInvokeObject(
  *
  * TclOOObjectCmdCore, FinalizeObjectCall --
  *
- *	Main function for object invokations. Does call chain creation,
- *	management and invokation. The function FinalizeObjectCall exists to
+ *	Main function for object invocations. Does call chain creation,
+ *	management and invocation. The function FinalizeObjectCall exists to
  *	clean up after the non-recursive processing of TclOOObjectCmdCore.
  *
  * ----------------------------------------------------------------------
@@ -2532,7 +2560,7 @@ TclOOObjectCmdCore(
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     int objc,			/* How many arguments are being passed in. */
     Tcl_Obj *const *objv,	/* The array of arguments. */
-    int flags,			/* Whether this is an invokation through the
+    int flags,			/* Whether this is an invocation through the
 				 * public or the private command interface. */
     Class *startCls)		/* Where to start in the call chain, or NULL
 				 * if we are to start at the front with
@@ -2721,7 +2749,7 @@ Tcl_ObjectContextInvokeNext(
      * call context while we process the body. However, need to adjust the
      * argument-skip control because we're guaranteed to have a single prefix
      * arg (i.e., 'next') and not the variable amount that can happen because
-     * method invokations (i.e., '$obj meth' and 'my meth'), constructors
+     * method invocations (i.e., '$obj meth' and 'my meth'), constructors
      * (i.e., '$cls new' and '$cls create obj') and destructors (no args at
      * all) come through the same code.
      */
@@ -2790,7 +2818,7 @@ TclNRObjectContextInvokeNext(
      * call context while we process the body. However, need to adjust the
      * argument-skip control because we're guaranteed to have a single prefix
      * arg (i.e., 'next') and not the variable amount that can happen because
-     * method invokations (i.e., '$obj meth' and 'my meth'), constructors
+     * method invocations (i.e., '$obj meth' and 'my meth'), constructors
      * (i.e., '$cls new' and '$cls create obj') and destructors (no args at
      * all) come through the same code.
      */
