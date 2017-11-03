@@ -1006,8 +1006,18 @@ ReleaseClassContents(
 	    }
 	    for(j=0 ; j<instancePtr->mixins.num ; j++) {
 		Class *mixin = instancePtr->mixins.list[j];
+		Class *nextMixin = NULL;
 		if (mixin == clsPtr) {
-		    instancePtr->mixins.list[j] = NULL;
+		    if (j < instancePtr->mixins.num - 1) {
+			nextMixin = instancePtr->mixins.list[j+1];
+		    }
+		    if (j == 0) {
+			instancePtr->mixins.num = 0;
+			instancePtr->mixins.list = NULL;
+		    } else {
+			instancePtr->mixins.list[j-1] = nextMixin;
+		    }
+		    instancePtr->mixins.num -= 1;
 		}
 	    }
 	    if (instancePtr != NULL && !IsRoot(instancePtr)) {
@@ -1181,7 +1191,8 @@ ObjectNamespaceDeleted(
 	if ((((Command *)oPtr->command)->flags && CMD_IS_DELETED)) {
 	    /*
 	     * Namespace deletion must have been triggered by a trace on command
-	     * deletion , meaning that 
+	     * deletion , meaning that ObjectRenamedTrace() is eventually going
+	     * to be called .
 	     */
 	    deleteAlreadyInProgress = 1;
 	}
