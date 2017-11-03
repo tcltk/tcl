@@ -2445,33 +2445,38 @@ typedef struct List {
 #define TCL_EACH_COLLECT    1	/* Collect iteration result like [lmap] */
 
 /*
- * Macros providing a faster path to integers: Tcl_GetLongFromObj everywhere,
- * Tcl_GetIntFromObj and TclGetIntForIndex on platforms where longs are ints.
+ * Macros providing a faster path to integers: Tcl_GetLongFromObj,
+ * Tcl_GetIntFromObj and TclGetIntForIndex.
  *
  * WARNING: these macros eval their args more than once.
  */
 
-#define TclGetLongFromObj(interp, objPtr, longPtr) Tcl_GetLongFromObj(interp, objPtr, longPtr)
-#define TclGetLongFromObjX(interp, objPtr, longPtr) \
+#if (LONG_MAX == LLONG_MAX)
+#define TclGetLongFromObj(interp, objPtr, longPtr) \
     (((objPtr)->typePtr == &tclIntType)	\
 	    ? ((*(longPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetLongFromObj((interp), (objPtr), (longPtr)))
+#else
+#define TclGetLongFromObj(interp, objPtr, longPtr) \
+    (((objPtr)->typePtr == &tclIntType \
+	    && (objPtr)->internalRep.wideValue >= -(Tcl_WideInt)(ULONG_MAX) \
+	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(ULONG_MAX))	\
+	    ? ((*(longPtr) = (long)(objPtr)->internalRep.wideValue), TCL_OK) \
+	    : Tcl_GetLongFromObj((interp), (objPtr), (longPtr)))
+#endif
 
-#if 0
 #define TclGetIntFromObj(interp, objPtr, intPtr) \
-    (((objPtr)->typePtr == &tclIntType)	\
+    (((objPtr)->typePtr == &tclIntType \
+	    && (objPtr)->internalRep.wideValue >= -(Tcl_WideInt)(UINT_MAX) \
+	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(UINT_MAX))	\
 	    ? ((*(intPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
-    (((objPtr)->typePtr == &tclIntType)	\
+    (((objPtr)->typePtr == &tclIntType \
+	    && (objPtr)->internalRep.wideValue >= INT_MIN \
+	    && (objPtr)->internalRep.wideValue <= INT_MAX)	\
 	    ? ((*(idxPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
 	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
-#else
-#define TclGetIntFromObj(interp, objPtr, intPtr) \
-    Tcl_GetIntFromObj((interp), (objPtr), (intPtr))
-#define TclGetIntForIndexM(interp, objPtr, ignore, idxPtr)	\
-    TclGetIntForIndex(interp, objPtr, ignore, idxPtr)
-#endif
 
 /*
  * Macro used to save a function call for common uses of
