@@ -11,7 +11,7 @@
 package require Tcl 8.2-
 # When this version number changes, update the pkgIndex.tcl file
 # and the install directory in the Makefiles.
-package provide opt 0.4.6
+package provide opt 0.4.7
 
 namespace eval ::tcl {
 
