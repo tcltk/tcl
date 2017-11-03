@@ -391,7 +391,7 @@ catch {rename t ""}
 
 
 test proc-8.0 {Named parameters tip-479 map named parameters to local vars} -body {
-    proc p {{args {color {default red} flavor {default strawberry}}}} {
+    proc p {{args {color {default: red} flavor {default: strawberry}}}} {
        return [list $color $flavor]
     }
     p
@@ -400,7 +400,7 @@ test proc-8.0 {Named parameters tip-479 map named parameters to local vars} -bod
 }
 
 test proc-8.1 {Named parameters tip-479 map named parameters to args} -body {
-    proc p {{args {color {default red} flavor {default strawberry}}}} {
+    proc p {{args {color {default: red} flavor {default: strawberry}}}} {
        return $args
     }
     p
@@ -409,25 +409,25 @@ test proc-8.1 {Named parameters tip-479 map named parameters to args} -body {
 }
 
 test proc-8.2 {Named parameters tip-479 present in info locals} -body {
-    proc p {{args {color {default red} flavor {default strawberry}}}} {
+    proc p {{args {color {default: red} flavor {default: strawberry}}}} {
        return [info locals]
     }
     p
-} -result {args flavor color @spec} -cleanup {
+} -result {args flavor color} -cleanup {
   rename p ""
 }
 
 test proc-8.3 {Named parameters tip-479 fail on lack of a named parameter} -body {
-    proc p {{args {color {} flavor {default strawberry}}}} {
+    proc p {{args {color {} flavor {default: strawberry}}}} {
        return $args
     }
     p
-} -returnCodes 1 -result {wrong # args: should be "p color {} flavor {default strawberry}"} -cleanup {
+} -returnCodes 1 -result {wrong # args: should be "p ?args?"} -cleanup {
   rename p ""
 }
 
 test proc-8.4 {Named parameters tip-479 accept additional named parameters} -body {
-    proc p {{args {color {default red} flavor {default strawberry}}}} {
+    proc p {{args {color {default: red} flavor {default: strawberry}}}} {
        return $args
     }
     p shape oval
@@ -436,25 +436,25 @@ test proc-8.4 {Named parameters tip-479 accept additional named parameters} -bod
 }
 
 test proc-8.5 {Named parameters tip-479 do not map fields outside of the spec} -body {
-    proc p {{args {color {default red} flavor {default strawberry}}}} {
+    proc p {{args {color {default: red} flavor {default: strawberry}}}} {
        return [info locals]
     }
     p shape oval
-} -result {args flavor color @spec} -cleanup {
+} -result {args flavor color} -cleanup {
   rename p ""
 }
 
 test proc-8.6 {Named parameters tip-479 non-manditory fields are not mapped} -body {
-    proc p {{args {color {default red} flavor {mandatory 0}}}} {
+    proc p {{args {color {default: red} flavor {mandatory: 0}}}} {
        return [info locals]
     }
     p
-} -result {args color @spec} -cleanup {
+} -result {args color} -cleanup {
   rename p ""
 }
 
 test proc-8.7 {Named parameters tip-479 named parameters can be in any order} -body {
-    proc p {{args {color {default red} flavor {default strawberry}}}} {
+    proc p {{args {color {default: red} flavor {default: strawberry}}}} {
        return [list $color $flavor]
     }
     p flavor cherry color blue
@@ -463,7 +463,7 @@ test proc-8.7 {Named parameters tip-479 named parameters can be in any order} -b
 }
 
 test proc-8.8 {Named parameters tip-479 order of parameters preserved in args} -body {
-    proc p {{args {color {default red} flavor {default strawberry}}}} {
+    proc p {{args {color {default: red} flavor {default: strawberry}}}} {
        return $args
     }
     p flavor cherry color blue
@@ -471,21 +471,21 @@ test proc-8.8 {Named parameters tip-479 order of parameters preserved in args} -
   rename p ""
 }
 
-test proc-8.9 {Named parameters tip-479 can introspecs argument specs via the @spec variable} -body {
-    proc p {{args {color {default red} flavor {default strawberry}}}} {
-       return ${@spec}
+test proc-8.9 {Named parameters tip-479 spec available in [info argspec]} -body {
+    proc p {{args {color {default: red} flavor {default: strawberry}}}} {
+       return [info argspec]
     }
-    p flavor cherry color blue
-} -result {color {default red} flavor {default strawberry}} -cleanup {
+    info argspec p
+} -result {color {default: red} flavor {default: strawberry}} -cleanup {
   rename p ""
 }
 
-test proc-8.10 {Named parameters tip-479 spec available in [info args]} -body {
-    proc p {{args {color {default red} flavor {default strawberry}}}} {
-       return ${@spec}
+test proc-8.10 {Named parameters tip-479 spec available in [info argspec]} -body {
+    proc p {{args {color {default: red} flavor {default: strawberry}}}} {
+       return [info argspec]
     }
-    info args p
-} -result {args @spec color flavor} -cleanup {
+    p
+} -result {color {default: red} flavor {default: strawberry}} -cleanup {
   rename p ""
 }
 

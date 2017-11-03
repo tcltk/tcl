@@ -200,7 +200,7 @@ static const CmdInfo builtInCmds[] = {
      * Commands in the generic core.
      */
 
-    {"@args",           Tcl_AtArgsObjCmd,       NULL,                   NULL,   CMD_IS_SAFE},
+    {"argsx",           Tcl_ArgsxObjCmd,       NULL,                   NULL,   CMD_IS_SAFE},
     {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	NULL,	CMD_IS_SAFE},
     {"apply",		Tcl_ApplyObjCmd,	NULL,			TclNRApplyObjCmd,	CMD_IS_SAFE},
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	NULL,	CMD_IS_SAFE},
@@ -823,7 +823,7 @@ Tcl_CreateInterp(void)
 
     TclClockInit(interp);
 
-    /* Tip 479 - Register literals for the @args command */
+    /* Tip 479 - Register literals for the argsx command */
     TclProcInit(interp);
 
 
@@ -7727,7 +7727,7 @@ ExprRandFunc(
 	iPtr->flags |= RAND_SEED_INITIALIZED;
 
 	/*
-	 * To ensure different seeds in different threads (bug #416643), 
+	 * To ensure different seeds in different threads (bug #416643),
 	 * take into consideration the thread this interp is running in.
 	 */
 

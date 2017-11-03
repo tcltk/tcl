@@ -837,8 +837,8 @@ proc tcl::CopyDirectory {action src dest} {
     return
 }
 
-proc @proc {name argspec body} { proc $name [list [list args $argspec]] $body }
-proc ::oo::define::@method {name argspec body} {
+proc procx {name argspec body} { proc $name [list [list args $argspec]] $body }
+proc ::oo::define::methodx {name argspec body} {
   set class [lindex [::info level -1] 1]
   oo::define $class method $name [list [list args $argspec]] $body
 }

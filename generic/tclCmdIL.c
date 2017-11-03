@@ -108,6 +108,8 @@ static int		DictionaryCompare(const char *left, const char *right);
 static Tcl_NRPostProc	IfConditionCallback;
 static int		InfoArgsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		InfoArgSpecCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 static int		InfoBodyCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoCmdCountCmd(ClientData dummy, Tcl_Interp *interp,
@@ -161,6 +163,7 @@ static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
 
 static const EnsembleImplMap defaultInfoMap[] = {
     {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"argspec",		   InfoArgSpecCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
     {"commands",	   InfoCommandsCmd,	    TclCompileInfoCommandsCmd, NULL, NULL, 0},
@@ -512,6 +515,72 @@ InfoArgsCmd(
 	}
     }
     Tcl_SetObjResult(interp, listObjPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InfoArgspecCmd --
+ *
+ *	Called to implement the "info argspec" command that returns the argument
+ *	list for a procedure. Handles the following syntax:
+ *
+ *	    info argspec procName
+ *
+ * Results:
+ *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
+ *
+ * Side effects:
+ *	Returns a result in the interpreter's result object. If there is an
+ *	error, the result is an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+InfoArgSpecCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    register Interp *iPtr = (Interp *) interp;
+    const char *name;
+    Proc *procPtr;
+    CompiledLocal *localPtr;
+    Tcl_Obj *resultObjPtr=NULL;
+
+    if (objc != 1 && objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "procname");
+	return TCL_ERROR;
+    }
+    if(objc==2) {
+            name = TclGetString(objv[1]);
+        procPtr = TclFindProc(iPtr, name);
+    } else {
+        procPtr = iPtr->framePtr->procPtr;
+    }
+    if (procPtr == NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"\"%s\" isn't a procedure", name));
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", name, NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Build a return list containing the arguments.
+     */
+
+    for (localPtr = procPtr->firstLocalPtr;  localPtr != NULL;
+	    localPtr = localPtr->nextPtr) {
+	if (localPtr->flags & VAR_IS_ARGS) {
+	    if(localPtr->defValuePtr) {
+  	        Tcl_IncrRefCount(localPtr->defValuePtr);
+	        Tcl_SetObjResult(interp, localPtr->defValuePtr);
+	    }
+	}
+    }
     return TCL_OK;
 }
 

@@ -103,23 +103,20 @@ static Tcl_Obj *obj_const_aliases;
 static Tcl_Obj *obj_const_args;
 static Tcl_Obj *obj_const_default;
 static Tcl_Obj *obj_const_mandatory;
-static Tcl_Obj *obj_const_variable;
 static Tcl_Obj *obj_const_atspec;
 
 int TclProcInit(Tcl_Interp *interp) {
   static int once=0;
   if(!once) {
-    obj_const_aliases=Tcl_NewStringObj("aliases",-1);
+    obj_const_aliases=Tcl_NewStringObj("aliases:",-1);
     Tcl_IncrRefCount(obj_const_aliases);
     obj_const_args=Tcl_NewStringObj("args",-1);
     Tcl_IncrRefCount(obj_const_args);
-    obj_const_default=Tcl_NewStringObj("default",-1);
+    obj_const_default=Tcl_NewStringObj("default:",-1);
     Tcl_IncrRefCount(obj_const_default);
-    obj_const_mandatory=Tcl_NewStringObj("mandatory",-1);
+    obj_const_mandatory=Tcl_NewStringObj("mandatory:",-1);
     Tcl_IncrRefCount(obj_const_mandatory);
-    obj_const_variable=Tcl_NewStringObj("variable",-1);
-    Tcl_IncrRefCount(obj_const_variable);
-    obj_const_atspec=Tcl_NewStringObj("@spec",-1);
+    obj_const_atspec=Tcl_NewStringObj("argspec",-1);
     Tcl_IncrRefCount(obj_const_atspec);
     once=1;
   }
@@ -197,7 +194,7 @@ void ProcSetLocalVar (
         }
         varPtr = VarHashCreateVar(tablePtr, varNamePtr, &isNew);
     }
-    varPtr->flags=VAR_ARGUMENT;
+    varPtr->flags=VAR_NAMED_ARGUMENT;
     varPtr->value.objPtr=valuePtr;
     Tcl_IncrRefCount(valuePtr);
 }
@@ -216,9 +213,6 @@ int ProcEatArgs(
         &fieldname, &fieldspec, &done) != TCL_OK) {
         return TCL_ERROR;
     }
-    ProcSetLocalVar(framePtr,obj_const_atspec,argspec);
-
-    Tcl_IncrRefCount(argspec);	/* Local var is a reference. */
     for (; !done ; Tcl_DictObjNext(&search, &fieldname, &fieldspec, &done)) {
         Tcl_Obj *iVal;
         Tcl_Obj *aliases,*defaultObj,*mandatoryObj;
@@ -264,7 +258,7 @@ int ProcEatArgs(
     return TCL_OK;
 }
 
-int Tcl_AtArgsObjCmd(
+int Tcl_ArgsxObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
@@ -912,33 +906,14 @@ TclCreateProc(
                     */
                     argspec=localPtr->defValuePtr;
                     if(Tcl_DictObjFirst(NULL, argspec, &search,&fieldname, &fieldspec, &done) != TCL_OK) goto procError;
-                    /* Allocate one slot for the @procs variable */
-                    procPtr->numCompiledLocals++;
-                    Fieldname=Tcl_GetStringFromObj(obj_const_atspec,&FieldLen);
-  	            localPtr = ckalloc(TclOffset(CompiledLocal, name) + FieldLen+1);
-                    procPtr->lastLocalPtr->nextPtr = localPtr;
-                    procPtr->lastLocalPtr = localPtr;
- 	            memcpy(localPtr->name, Fieldname, FieldLen + 1);
 
-                    localPtr->nextPtr = NULL;
-                    localPtr->nameLength = FieldLen;
-                    localPtr->frameIndex = i;
-	            localPtr->flags = VAR_ARGUMENT;
-                    localPtr->resolveInfo = NULL;
-		    localPtr->defValuePtr = argspec;
-		    Tcl_IncrRefCount(localPtr->defValuePtr);
                     for (; !done ; Tcl_DictObjNext(&search, &fieldname, &fieldspec, &done)) {
                         /* Allocate one slot for each of the other named parameters */
-                        Tcl_Obj *variable,*defaultObj,*mandatoryObj;
+                        Tcl_Obj *defaultObj,*mandatoryObj;
                         int mandatory=1;
 
-                        variable=NULL;
                         defaultObj=NULL;
                         mandatoryObj=NULL;
-                        Tcl_DictObjGet(NULL,fieldspec,obj_const_variable,&variable);
-                        if(!variable) {
-                            variable=fieldname;
-                        }
                         Tcl_DictObjGet(NULL,fieldspec,obj_const_default,&defaultObj);
                         Tcl_DictObjGet(NULL,fieldspec,obj_const_mandatory,&mandatoryObj);
                         if(mandatoryObj) {
@@ -950,7 +925,7 @@ TclCreateProc(
                         if(!defaultObj && !mandatory) continue;
 
                         procPtr->numCompiledLocals++;
-                        Fieldname=Tcl_GetStringFromObj(variable,&FieldLen);
+                        Fieldname=Tcl_GetStringFromObj(fieldname,&FieldLen);
      	                localPtr = ckalloc(TclOffset(CompiledLocal, name) + FieldLen+1);
         	        procPtr->lastLocalPtr->nextPtr = localPtr;
  		        procPtr->lastLocalPtr = localPtr;
@@ -958,7 +933,7 @@ TclCreateProc(
                         localPtr->nextPtr = NULL;
                         localPtr->nameLength = FieldLen;
                         localPtr->frameIndex = i;
-	                localPtr->flags = VAR_ARGUMENT;
+	                localPtr->flags = VAR_NAMED_ARGUMENT;
                         localPtr->resolveInfo = NULL;
                         if(defaultObj) {
                             localPtr->defValuePtr=defaultObj;
@@ -1408,17 +1383,14 @@ ProcWrongNumArgs(
     for (i=1 ; i<=numArgs ; i++, defPtr++) {
 	Tcl_Obj *argObj;
 	Tcl_Obj *namePtr = localName(framePtr, i-1);
-	if (defPtr->flags & VAR_IS_ARGS) {
-	    numArgs--;
-       	    if (defPtr->value.objPtr) {
-	       final = TclGetString(defPtr->value.objPtr);
-            } else {
-	       final = "?arg ...?";
-            }
-	    break;
-	} else if (defPtr->value.objPtr != NULL) {
+
+	if (defPtr->value.objPtr != NULL) {
 	    TclNewObj(argObj);
 	    Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?", NULL);
+	} else if (defPtr->flags & VAR_IS_ARGS) {
+	    numArgs--;
+	    final = "?arg ...?";
+	    break;
 	} else {
 	    argObj = namePtr;
 	    Tcl_IncrRefCount(namePtr);
@@ -1544,7 +1516,7 @@ InitResolvedLocals(
 	localPtr->flags &= ~VAR_RESOLVED;
 
 	if (haveResolvers &&
-		!(localPtr->flags & (VAR_ARGUMENT|VAR_TEMPORARY))) {
+		!(localPtr->flags & (VAR_ARGUMENT|VAR_TEMPORARY|VAR_NAMED_ARGUMENT))) {
 	    ResolverScheme *resPtr = iPtr->resolverPtr;
 	    Tcl_ResolvedVarInfo *vinfo;
 	    int result;
@@ -1663,9 +1635,7 @@ InitLocalCache(
 		    &new, /* nsPtr */ NULL, 0, NULL);
 	    Tcl_IncrRefCount(*namePtr);
 	}
-/* TIP 479 - There are now arguments past numArgs */
-/*	if (i < numArgs) */
-	if(localPtr->flags & VAR_ARGUMENT) {
+	if (i < numArgs) {
 	    varPtr->flags = (localPtr->flags & VAR_IS_ARGS);
 	    varPtr->value.objPtr = localPtr->defValuePtr;
 	    varPtr++;

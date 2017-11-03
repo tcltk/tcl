@@ -739,6 +739,7 @@ typedef struct VarInHash {
 #define VAR_TEMPORARY		0x200	/* KEEP OLD VALUE! See tclProc.c */
 #define VAR_IS_ARGS		0x400
 #define VAR_RESOLVED		0x8000
+#define VAR_NAMED_ARGUMENT	0x10000
 
 /*
  * Macros to ensure that various flag bits are set properly for variables.
@@ -3285,7 +3286,7 @@ MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
 			    Tcl_Obj *const objv[]);
 /* Tip 479 */
 MODULE_SCOPE int	TclProcInit(Tcl_Interp *interp);
-MODULE_SCOPE int	Tcl_AtArgsObjCmd(ClientData clientData,
+MODULE_SCOPE int	Tcl_ArgsxObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
