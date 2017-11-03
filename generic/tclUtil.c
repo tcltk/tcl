@@ -111,7 +111,6 @@ static void		FreeThreadHash(ClientData clientData);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		SetEndOffsetFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
-static void		UpdateStringOfEndOffset(Tcl_Obj *objPtr);
 static int		FindElement(Tcl_Interp *interp, const char *string,
 			    int stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
@@ -128,7 +127,7 @@ const Tcl_ObjType tclEndOffsetType = {
     "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
-    UpdateStringOfEndOffset,		/* updateStringProc */
+    NULL,				/* updateStringProc */
     SetEndOffsetFromAny
 };
 
@@ -3594,16 +3593,16 @@ TclGetIntForIndex(
 
     if (TclGetWideIntFromObj(NULL, objPtr, &value) == TCL_OK) {
 	if (objPtr->typePtr == &tclIntType) {
-	    if ((objPtr)->internalRep.longValue < INT_MIN) {
-		value = INT_MIN;
+	    if ((objPtr)->internalRep.longValue < -1) {
+		value = -1;
 	    } else if ((objPtr)->internalRep.longValue > INT_MAX) {
 		value = INT_MAX;
 	    }
 	}
 #ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
-	    if ((objPtr)->internalRep.wideValue < INT_MIN) {
-		value = INT_MIN;
+	    if ((objPtr)->internalRep.wideValue < -1) {
+		value = -1;
 	    } else if ((objPtr)->internalRep.wideValue > INT_MAX) {
 		value = INT_MAX;
 	    }
@@ -3618,7 +3617,7 @@ TclGetIntForIndex(
 
 		Tcl_GetBignumFromObj(NULL, objPtr, &big);
 		if (mp_isneg(&big)) {
-		    *indexPtr = INT_MIN;
+		    *indexPtr = -1;
 		} else {
 		    *indexPtr = INT_MAX;
 		}
@@ -3633,7 +3632,11 @@ TclGetIntForIndex(
 	 * be converted to one, use it.
 	 */
 
-	*indexPtr = endValue + objPtr->internalRep.longValue;
+	if (objPtr->internalRep.wideValue > (INT_MAX-(Tcl_WideInt)endValue)) {
+	    *indexPtr = INT_MAX;
+	} else {
+	    *indexPtr = endValue + objPtr->internalRep.wideValue;
+	}
 	return TCL_OK;
     }
 
@@ -3700,43 +3703,6 @@ TclGetIntForIndex(
 /*
  *----------------------------------------------------------------------
  *
- * UpdateStringOfEndOffset --
- *
- *	Update the string rep of a Tcl object holding an "end-offset"
- *	expression.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Stores a valid string in the object's string rep.
- *
- * This function does NOT free any earlier string rep. If it is called on an
- * object that already has a valid string rep, it will leak memory.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-UpdateStringOfEndOffset(
-    register Tcl_Obj *objPtr)
-{
-    char buffer[TCL_INTEGER_SPACE + 5];
-    register int len = 3;
-
-    memcpy(buffer, "end", 4);
-    if (objPtr->internalRep.longValue != 0) {
-	buffer[len++] = '-';
-	len += TclFormatInt(buffer+len, -(objPtr->internalRep.longValue));
-    }
-    objPtr->bytes = ckalloc((unsigned) len+1);
-    memcpy(objPtr->bytes, buffer, (unsigned) len+1);
-    objPtr->length = len;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * SetEndOffsetFromAny --
  *
  *	Look for a string of the form "end[+-]offset" and convert it to an
@@ -3757,9 +3723,10 @@ SetEndOffsetFromAny(
     Tcl_Interp *interp,		/* Tcl interpreter or NULL */
     Tcl_Obj *objPtr)		/* Pointer to the object to parse */
 {
-    int offset;			/* Offset in the "end-offset" expression */
+    Tcl_WideInt offset;		/* Offset in the "end-offset" expression */
     register const char *bytes;	/* String rep of the object */
     int length;			/* Length of the object's string rep */
+    Tcl_Obj obj;
 
     /*
      * If it's already the right type, we're fine.
@@ -3799,7 +3766,13 @@ SetEndOffsetFromAny(
 	if (TclIsSpaceProc(bytes[4])) {
 	    goto badIndexFormat;
 	}
-	if (Tcl_GetInt(interp, bytes+4, &offset) != TCL_OK) {
+	obj.refCount = 1;
+	obj.bytes = (char *) (bytes) + 4;
+	obj.length = strlen((char *)(bytes) + 4);
+	obj.typePtr = NULL;
+
+	if (Tcl_GetWideIntFromObj(interp, &obj, &offset) != TCL_OK) {
+	    TclFreeIntRep(&obj);
 	    return TCL_ERROR;
 	}
 	if (bytes[3] == '-') {
@@ -3825,7 +3798,7 @@ SetEndOffsetFromAny(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.longValue = offset;
+    objPtr->internalRep.wideValue = offset;
     objPtr->typePtr = &tclEndOffsetType;
 
     return TCL_OK;
