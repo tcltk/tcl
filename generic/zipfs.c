@@ -3998,7 +3998,7 @@ Zip_FSFilesystemPathTypeProc(Tcl_Obj *pathPtr)
  *	relative to the executable and loaded from there when available.
  *
  * Results:
- *	TCL_OK on success, -1 otherwise with error number set.
+ *	TCL_OK on success, TCL_ERROR otherwise with error message left.
  *
  * Side effects:
  *	Loads native code into the process address space.
@@ -4023,16 +4023,24 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 	return loadFileProc(interp, path, loadHandle, unloadProcPtr, flags);
     }
     Tcl_SetErrno(ENOENT);
-    return -1;
+    if (interp != NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_PosixError(interp), -1));
+    }
+    return TCL_ERROR;
 #else
     Tcl_Obj *altPath = NULL;
-    int ret = -1;
+    int ret = TCL_ERROR;
 
     if (Tcl_FSAccess(path, R_OK) == 0) {
 	/*
 	 * EXDEV should trigger loading by copying to temp store.
 	 */
+
 	Tcl_SetErrno(EXDEV);
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_NewStringObj(Tcl_PosixError(interp), -1));
+	}
 	return ret;
     } else {
 	Tcl_Obj *objs[2] = { NULL, NULL };
@@ -4087,6 +4095,10 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 	ret = loadFileProc(interp, path, loadHandle, unloadProcPtr, flags);
     } else {
 	Tcl_SetErrno(ENOENT);
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_NewStringObj(Tcl_PosixError(interp), -1));
+	}
     }
     if (altPath != NULL) {
 	Tcl_DecrRefCount(altPath);
