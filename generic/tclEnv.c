@@ -132,6 +132,7 @@ TclSetupEnv(
 		 * '='; ignore the entry.
 		 */
 
+		Tcl_DStringFree(&envString);
 		continue;
 	    }
 	    p2++;
