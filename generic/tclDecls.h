@@ -3733,6 +3733,7 @@ extern const TclStubs *tclStubsPtr;
 	} while(0)
 #define Tcl_DiscardResult(statePtr) \
 	Tcl_DecrRefCount(*(statePtr))
+#undef Tcl_SetResult
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
 	    char *__result = result; \
