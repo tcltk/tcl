@@ -90,6 +90,26 @@ test lrange-3.1 {Bug 3588366: end-offsets before start} {
 	lrange $l 0 end-5
     }} {1 2 3 4 5}
 } {}
+test lrange-3.2 {Bug aaa02c55b9: lrange with huge index, weird results} {
+    apply {l {
+	lrange $l 2147483649 end
+    }} {1 2 3 4 5}
+} {}
+test lrange-3.3 {Bug aaa02c55b9: lrange with huge index, weird results} {
+    apply {l {
+	lrange $l -21474836492147483649 end
+    }} {1 2 3 4 5}
+} {1 2 3 4 5}
+test lrange-3.4 {Bug aaa02c55b9: lrange with huge index, weird results} {
+    apply {l {
+	lrange $l -1 -2147483649
+    }} {1 2 3 4 5}
+} {}
+test lrange-3.5 {Bug aaa02c55b9: lrange with huge index, weird results} {
+    apply {l {
+	lrange $l -1 21474836492147483649
+    }} {1 2 3 4 5}
+} {1 2 3 4 5}
 
 # cleanup
 ::tcltest::cleanupTests

@@ -13,6 +13,7 @@
  */
 
 #include "tclInt.h"
+#include "tclTomMath.h"
 #include "tclParse.h"
 #include "tclStringTrim.h"
 #include <math.h>
@@ -3563,11 +3564,13 @@ TclFormatInt(
  *	Tcl object referenced by "objPtr" has the value "end", the value
  *	stored is "endValue". If "objPtr"s values is not of one of the
  *	expected formats, TCL_ERROR is returned and, if "interp" is non-NULL,
- *	an error message is left in the interpreter's result object.
+ *	an error message is left in the interpreter's result object. If the
+ *	index is valid but < INT_MIN (normally -2147483648), then the index
+ *	value will be set to INT_MIN. The same happens for values > INT_MAX.
  *
  * Side effects:
  *	The object referenced by "objPtr" might be converted to an integer,
- *	wide integer, or end-based-index object.
+ *	wide integer, bignum or end-based-index object.
  *
  *----------------------------------------------------------------------
  */
@@ -3587,9 +3590,41 @@ TclGetIntForIndex(
     size_t length;
     char *opPtr;
     const char *bytes;
+    Tcl_WideInt value;
 
-    if (TclGetIntFromObj(NULL, objPtr, indexPtr) == TCL_OK) {
+    if (TclGetWideIntFromObj(NULL, objPtr, &value) == TCL_OK) {
+	if (objPtr->typePtr == &tclIntType) {
+	    if ((objPtr)->internalRep.longValue < INT_MIN) {
+		value = INT_MIN;
+	    } else if ((objPtr)->internalRep.longValue > INT_MAX) {
+		value = INT_MAX;
+	    }
+	}
+#ifndef TCL_WIDE_INT_IS_LONG
+	if (objPtr->typePtr == &tclWideIntType) {
+	    if ((objPtr)->internalRep.wideValue < INT_MIN) {
+		value = INT_MIN;
+	    } else if ((objPtr)->internalRep.wideValue > INT_MAX) {
+		value = INT_MAX;
+	    }
+	}
+#endif
+	*indexPtr = (int) value;
 	return TCL_OK;
+    } else {
+	mp_int big;
+	if (Tcl_GetBignumFromObj(NULL, objPtr, &big) == TCL_OK) {
+	    if (objPtr->typePtr == &tclBignumType) {
+
+		Tcl_GetBignumFromObj(NULL, objPtr, &big);
+		if (mp_isneg(&big)) {
+		    *indexPtr = INT_MIN;
+		} else {
+		    *indexPtr = INT_MAX;
+		}
+	    }
+	    return TCL_OK;
+	}
     }
 
     if (SetEndOffsetFromAny(NULL, objPtr) == TCL_OK) {
