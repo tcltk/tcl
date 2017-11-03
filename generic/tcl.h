@@ -52,13 +52,13 @@ extern "C" {
  * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  */
 
-#define TCL_MAJOR_VERSION   8
-#define TCL_MINOR_VERSION   7
+#define TCL_MAJOR_VERSION   9
+#define TCL_MINOR_VERSION   0
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  2
+#define TCL_RELEASE_SERIAL  0
 
-#define TCL_VERSION	    "8.7"
-#define TCL_PATCH_LEVEL	    "8.7a2"
+#define TCL_VERSION	    "9.0"
+#define TCL_PATCH_LEVEL	    "9.0a0"
 
 #if !defined(TCL_NO_DEPRECATED) || defined(RC_INVOKED)
 /*
