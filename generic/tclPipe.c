@@ -313,9 +313,9 @@ TclCleanupChildren(
 		Tcl_SetObjErrorCode(interp, error);
 		Tcl_SetObjResult(interp, msg);
 	    }
+	    Tcl_DecrRefCount(error);
+	    Tcl_DecrRefCount(msg);
 	}
-	Tcl_DecrRefCount(error);
-	Tcl_DecrRefCount(msg);
     }
 
     /*
