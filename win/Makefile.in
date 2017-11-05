@@ -324,6 +324,7 @@ TOMMATH_OBJS = \
 	bn_mp_expt_d.${OBJEXT} \
 	bn_mp_expt_d_ex.${OBJEXT} \
 	bn_mp_get_int.${OBJEXT} \
+	bn_mp_get_long.${OBJEXT} \
 	bn_mp_get_long_long.${OBJEXT} \
 	bn_mp_grow.${OBJEXT} \
 	bn_mp_init.${OBJEXT} \
@@ -349,6 +350,7 @@ TOMMATH_OBJS = \
 	bn_mp_rshd.${OBJEXT} \
 	bn_mp_set.${OBJEXT} \
 	bn_mp_set_int.${OBJEXT} \
+	bn_mp_set_long.${OBJEXT} \
 	bn_mp_set_long_long.${OBJEXT} \
 	bn_mp_shrink.${OBJEXT} \
 	bn_mp_sqr.${OBJEXT} \
@@ -658,8 +660,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package msgcat 1.6.1 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/msgcat-1.6.1.tm;
-	@echo "Installing package tcltest 2.4.0 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/tcltest-2.4.0.tm;
+	@echo "Installing package tcltest 2.4.1 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/tcltest-2.4.1.tm;
 	@echo "Installing package platform 1.0.14 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/platform-1.0.14.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
