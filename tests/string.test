@@ -28,6 +28,11 @@ testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
 
+proc representationpoke s {
+    set r [::tcl::unsupported::representation $s]
+    list [lindex $r 3] [string match {*, string representation "*"} $r]
+}
+
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
 } {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
@@ -224,6 +229,13 @@ test string-4.15 {string first, ability to two-byte encoded utf-8 chars} {
     set uchar \u057e    ;# character with two-byte encoding in utf-8
     string first % %#$uchar$uchar#$uchar$uchar#% 3
 } 8
+test string-4.16 {string first, normal string vs pure unicode string} {
+    set s hello
+    regexp ll $s m
+    # Representation checks are canaries
+    list [representationpoke $s] [representationpoke $m] \
+	[string first $m $s]
+} {{string 1} {string 0} 2}
 
 test string-5.1 {string index} {
     list [catch {string index} msg] $msg
@@ -2042,9 +2054,7 @@ test string-29.15 {string cat, efficiency} -setup {
 } -body {
     tcl::unsupported::representation [string cat $e $f $e $f [list x]]
 } -match glob -result {*no string representation}
-
-
-
+
 # cleanup
 rename MemStress {}
 catch {rename foo {}}
