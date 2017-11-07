@@ -1646,7 +1646,7 @@ Tcl_Backslash(
 				 * src, unless NULL. */
 {
     char buf[TCL_UTF_MAX];
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
 
     Tcl_UtfBackslash(src, readPtr, buf);
     TclUtfToUniChar(buf, &ch);
@@ -3153,7 +3153,7 @@ Tcl_PrintDouble(
     int signum;
     char *digits;
     char *end;
-    int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int) sizeof(int));
+    int *precisionPtr = Tcl_GetThreadData(&precisionKey, sizeof(int));
 
     /*
      * Handle NaN.
@@ -3326,7 +3326,7 @@ TclPrecTraceProc(
 {
     Tcl_Obj *value;
     int prec;
-    int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int) sizeof(int));
+    int *precisionPtr = Tcl_GetThreadData(&precisionKey, sizeof(int));
 
     /*
      * If the variable is unset, then recreate the trace.

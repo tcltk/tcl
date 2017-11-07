@@ -1072,7 +1072,7 @@ Tcl_CallWhenDeleted(
     Interp *iPtr = (Interp *) interp;
     static Tcl_ThreadDataKey assocDataCounterKey;
     int *assocDataCounterPtr =
-	    Tcl_GetThreadData(&assocDataCounterKey, (int)sizeof(int));
+	    Tcl_GetThreadData(&assocDataCounterKey, sizeof(int));
     int isNew;
     char buffer[32 + TCL_INTEGER_SPACE];
     AssocData *dPtr = ckalloc(sizeof(AssocData));
@@ -2054,11 +2054,11 @@ Tcl_CreateCommand(
 {
     Interp *iPtr = (Interp *) interp;
     ImportRef *oldRefPtr = NULL;
-    Namespace *nsPtr, *dummy1, *dummy2;
-    Command *cmdPtr, *refCmdPtr;
+    Namespace *nsPtr;
+    Command *cmdPtr;
     Tcl_HashEntry *hPtr;
     const char *tail;
-    int isNew;
+    int isNew = 0, deleted = 0;
     ImportedCmdData *dataPtr;
 
     if (iPtr->flags & DELETED) {
@@ -2071,32 +2071,52 @@ Tcl_CreateCommand(
     }
 
     /*
-     * Determine where the command should reside. If its name contains
-     * namespace qualifiers, we put it in the specified namespace; otherwise,
-     * we always put it in the global namespace.
+     * If the command name we seek to create already exists, we need to
+     * delete that first.  That can be tricky in the presence of traces.
+     * Loop until we no longer find an existing command in the way, or
+     * until we've deleted one command and that didn't finish the job.
      */
 
-    if (strstr(cmdName, "::") != NULL) {
-	TclGetNamespaceForQualName(interp, cmdName, NULL,
-		TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
-	if ((nsPtr == NULL) || (tail == NULL)) {
-	    return (Tcl_Command) NULL;
-	}
-    } else {
-	nsPtr = iPtr->globalNsPtr;
-	tail = cmdName;
-    }
+    while (1) {
+        /*
+         * Determine where the command should reside. If its name contains
+         * namespace qualifiers, we put it in the specified namespace;
+	 * otherwise, we always put it in the global namespace.
+         */
 
-    hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
-    if (!isNew) {
+        if (strstr(cmdName, "::") != NULL) {
+	    Namespace *dummy1, *dummy2;
+
+	    TclGetNamespaceForQualName(interp, cmdName, NULL,
+		    TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
+	    if ((nsPtr == NULL) || (tail == NULL)) {
+	        return (Tcl_Command) NULL;
+	    }
+        } else {
+	    nsPtr = iPtr->globalNsPtr;
+	    tail = cmdName;
+        }
+
+        hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
+
+        if (isNew || deleted) {
+	    /*
+	     * isNew - No conflict with existing command.
+	     * deleted - We've already deleted a conflicting command
+	     */
+	    break;
+        }
+
+	/* An existing command conflicts. Try to delete it.. */
+	cmdPtr = Tcl_GetHashValue(hPtr);
+
 	/*
-	 * Command already exists. Delete the old one. Be careful to preserve
+	 * Be careful to preserve
 	 * any existing import links so we can restore them down below. That
 	 * way, you can redefine a command and its import status will remain
 	 * intact.
 	 */
 
-	cmdPtr = Tcl_GetHashValue(hPtr);
 	cmdPtr->refCount++;
 	if (cmdPtr->importRefPtr) {
 	    cmdPtr->flags |= CMD_REDEF_IN_PROGRESS;
@@ -2109,18 +2129,21 @@ Tcl_CreateCommand(
 	    cmdPtr->importRefPtr = NULL;
 	}
 	TclCleanupCommandMacro(cmdPtr);
+	deleted = 1;
+    }
 
-	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
-	if (!isNew) {
-	    /*
-	     * If the deletion callback recreated the command, just throw away
-	     * the new command (if we try to delete it again, we could get
-	     * stuck in an infinite loop).
-	     */
+    if (!isNew) {
+	/*
+	 * If the deletion callback recreated the command, just throw away
+	 * the new command (if we try to delete it again, we could get
+	 * stuck in an infinite loop).
+	 */
 
-	    ckfree(Tcl_GetHashValue(hPtr));
-	}
-    } else {
+	ckfree(Tcl_GetHashValue(hPtr));
+    }
+
+    if (!deleted) {
+
 	/*
 	 * Command resolvers (per-interp, per-namespace) might have resolved
 	 * to a command for the given namespace scope with this command not
@@ -2168,7 +2191,7 @@ Tcl_CreateCommand(
     if (oldRefPtr != NULL) {
 	cmdPtr->importRefPtr = oldRefPtr;
 	while (oldRefPtr != NULL) {
-	    refCmdPtr = oldRefPtr->importedCmdPtr;
+	    Command *refCmdPtr = oldRefPtr->importedCmdPtr;
 	    dataPtr = refCmdPtr->objClientData;
 	    dataPtr->realCmdPtr = cmdPtr;
 	    oldRefPtr = oldRefPtr->nextPtr;
@@ -2229,11 +2252,11 @@ Tcl_CreateObjCommand(
 {
     Interp *iPtr = (Interp *) interp;
     ImportRef *oldRefPtr = NULL;
-    Namespace *nsPtr, *dummy1, *dummy2;
-    Command *cmdPtr, *refCmdPtr;
+    Namespace *nsPtr;
+    Command *cmdPtr;
     Tcl_HashEntry *hPtr;
     const char *tail;
-    int isNew;
+    int isNew = 0, deleted = 0;
     ImportedCmdData *dataPtr;
 
     if (iPtr->flags & DELETED) {
@@ -2246,28 +2269,44 @@ Tcl_CreateObjCommand(
     }
 
     /*
-     * Determine where the command should reside. If its name contains
-     * namespace qualifiers, we put it in the specified namespace; otherwise,
-     * we always put it in the global namespace.
+     * If the command name we seek to create already exists, we need to
+     * delete that first.  That can be tricky in the presence of traces.
+     * Loop until we no longer find an existing command in the way, or
+     * until we've deleted one command and that didn't finish the job.
      */
 
-    if (strstr(cmdName, "::") != NULL) {
-	TclGetNamespaceForQualName(interp, cmdName, NULL,
+    while (1) {
+        /*
+         * Determine where the command should reside. If its name contains
+         * namespace qualifiers, we put it in the specified namespace;
+	 * otherwise, we always put it in the global namespace.
+         */
+
+        if (strstr(cmdName, "::") != NULL) {
+	    Namespace *dummy1, *dummy2;
+
+	    TclGetNamespaceForQualName(interp, cmdName, NULL,
 		TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
-	if ((nsPtr == NULL) || (tail == NULL)) {
-	    return (Tcl_Command) NULL;
-	}
-    } else {
-	nsPtr = iPtr->globalNsPtr;
-	tail = cmdName;
-    }
+	    if ((nsPtr == NULL) || (tail == NULL)) {
+	        return (Tcl_Command) NULL;
+	    }
+        } else {
+	    nsPtr = iPtr->globalNsPtr;
+	    tail = cmdName;
+        }
 
-    hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
-    TclInvalidateNsPath(nsPtr);
-    if (!isNew) {
+        hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
+
+        if (isNew || deleted) {
+	    /*
+	     * isNew - No conflict with existing command.
+	     * deleted - We've already deleted a conflicting command
+	     */
+	    break;
+        }
+
+	/* An existing command conflicts. Try to delete it.. */
 	cmdPtr = Tcl_GetHashValue(hPtr);
-
-	/* Command already exists. */
 
 	/*
 	 * [***] This is wrong.  See Tcl Bug a16752c252.
@@ -2305,18 +2344,20 @@ Tcl_CreateObjCommand(
 	    cmdPtr->importRefPtr = NULL;
 	}
 	TclCleanupCommandMacro(cmdPtr);
+	deleted = 1;
+    }
 
-	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
-	if (!isNew) {
-	    /*
-	     * If the deletion callback recreated the command, just throw away
-	     * the new command (if we try to delete it again, we could get
-	     * stuck in an infinite loop).
-	     */
+    if (!isNew) {
+	/*
+	 * If the deletion callback recreated the command, just throw away
+	 * the new command (if we try to delete it again, we could get
+	 * stuck in an infinite loop).
+	 */
 
-	    ckfree(Tcl_GetHashValue(hPtr));
-	}
-    } else {
+	ckfree(Tcl_GetHashValue(hPtr));
+    }
+
+    if (!deleted) {
 	/*
 	 * Command resolvers (per-interp, per-namespace) might have resolved
 	 * to a command for the given namespace scope with this command not
@@ -2336,6 +2377,7 @@ Tcl_CreateObjCommand(
 	 */
 
 	TclInvalidateNsCmdLookup(nsPtr);
+	TclInvalidateNsPath(nsPtr);
     }
     cmdPtr = ckalloc(sizeof(Command));
     Tcl_SetHashValue(hPtr, cmdPtr);
@@ -2363,7 +2405,7 @@ Tcl_CreateObjCommand(
     if (oldRefPtr != NULL) {
 	cmdPtr->importRefPtr = oldRefPtr;
 	while (oldRefPtr != NULL) {
-	    refCmdPtr = oldRefPtr->importedCmdPtr;
+	    Command *refCmdPtr = oldRefPtr->importedCmdPtr;
 	    dataPtr = refCmdPtr->objClientData;
 	    dataPtr->realCmdPtr = cmdPtr;
 	    oldRefPtr = oldRefPtr->nextPtr;
@@ -3071,7 +3113,7 @@ Tcl_DeleteCommandFromToken(
     /*
      * We must delete this command, even though both traces and delete procs
      * may try to avoid this (renaming the command etc). Also traces and
-     * delete procs may try to delete the command themsevles. This flag
+     * delete procs may try to delete the command themselves. This flag
      * declares that a delete is in progress and that recursive deletes should
      * be ignored.
      */
@@ -3562,7 +3604,7 @@ OldMathFuncProc(
 		args[k].type = TCL_INT;
 		break;
 	    }
-	    if (Tcl_GetWideIntFromObj(interp, valuePtr, &args[k].wideValue)
+	    if (TclGetWideIntFromObj(interp, valuePtr, &args[k].wideValue)
 		    == TCL_OK) {
 		args[k].type = TCL_WIDE_INT;
 		break;
@@ -3588,7 +3630,7 @@ OldMathFuncProc(
 		return TCL_ERROR;
 	    }
 	    valuePtr = Tcl_GetObjResult(interp);
-	    Tcl_GetWideIntFromObj(NULL, valuePtr, &args[k].wideValue);
+	    TclGetWideIntFromObj(NULL, valuePtr, &args[k].wideValue);
 	    Tcl_ResetResult(interp);
 	    break;
 	}
@@ -5881,7 +5923,6 @@ Tcl_Eval(
     (void) Tcl_GetStringResult(interp);
     return code;
 }
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -5916,6 +5957,7 @@ Tcl_GlobalEvalObj(
 {
     return Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -7197,7 +7239,7 @@ ExprIsqrtFunc(
 	}
 	break;
     default:
-	if (Tcl_GetWideIntFromObj(interp, objv[1], &w) != TCL_OK) {
+	if (TclGetWideIntFromObj(interp, objv[1], &w) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (w < 0) {
@@ -7419,7 +7461,7 @@ ExprAbsFunc(
 	    }
 	    goto unChanged;
 	} else if (l == LONG_MIN) {
-	    TclBNInitBignumFromLong(&big, l);
+	    TclInitBignumFromLong(&big, l);
 	    goto tooLarge;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewLongObj(-l));
@@ -7454,7 +7496,7 @@ ExprAbsFunc(
 	    goto unChanged;
 	}
 	if (w == LLONG_MIN) {
-	    TclBNInitBignumFromWideInt(&big, w);
+	    TclInitBignumFromWideInt(&big, w);
 	    goto tooLarge;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-w));
@@ -7640,7 +7682,7 @@ ExprWideFunc(
 	return TCL_ERROR;
     }
     objPtr = Tcl_GetObjResult(interp);
-    if (Tcl_GetWideIntFromObj(NULL, objPtr, &wResult) != TCL_OK) {
+    if (TclGetWideIntFromObj(NULL, objPtr, &wResult) != TCL_OK) {
 	/*
 	 * Truncate the bignum; keep only bits in wide int range.
 	 */
@@ -7651,7 +7693,7 @@ ExprWideFunc(
 	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(Tcl_WideInt), &big);
 	objPtr = Tcl_NewBignumObj(&big);
 	Tcl_IncrRefCount(objPtr);
-	Tcl_GetWideIntFromObj(NULL, objPtr, &wResult);
+	TclGetWideIntFromObj(NULL, objPtr, &wResult);
 	Tcl_DecrRefCount(objPtr);
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wResult));
@@ -7681,8 +7723,8 @@ ExprRandFunc(
 	iPtr->flags |= RAND_SEED_INITIALIZED;
 
 	/*
-	 * Take into consideration the thread this interp is running in order
-	 * to insure different seeds in different threads (bug #416643)
+	 * To ensure different seeds in different threads (bug #416643), 
+	 * take into consideration the thread this interp is running in.
 	 */
 
 	iPtr->randSeed = TclpGetClicks() + (PTR2INT(Tcl_GetCurrentThread())<<12);
@@ -8771,6 +8813,35 @@ TclNRCoroutineActivateCallback(
 /*
  *----------------------------------------------------------------------
  *
+ * TclNREvalList --
+ *
+ *      Callback to invoke command as list, used in order to delayed
+ *	processing of canonical list command in sane environment.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TclNREvalList(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    int objc;
+    Tcl_Obj **objv;
+    Tcl_Obj *listPtr = data[0];
+
+    Tcl_IncrRefCount(listPtr);
+
+    TclMarkTailcall(interp);
+    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
+    TclListObjGetElements(NULL, listPtr, &objc, &objv);
+    return TclNREvalObjv(interp, objc, objv, 0, NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NRCoroInjectObjCmd --
  *
  *      Implementation of [::tcl::unsupported::inject] command.
@@ -8822,7 +8893,8 @@ NRCoroInjectObjCmd(
      */
 
     iPtr->execEnvPtr = corPtr->eePtr;
-    TclNREvalObjEx(interp, Tcl_NewListObj(objc-2, objv+2), 0, NULL, INT_MIN);
+    TclNRAddCallback(interp, TclNREvalList, Tcl_NewListObj(objc-2, objv+2),
+	NULL, NULL, NULL);
     iPtr->execEnvPtr = savedEEPtr;
 
     return TCL_OK;
@@ -9020,7 +9092,7 @@ TclNRCoroutineObjCmd(
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
 	    NULL, NULL, NULL);
 
-    /* insure that the command is looked up in the correct namespace */
+    /* ensure that the command is looked up in the correct namespace */
     iPtr->lookupNsPtr = lookupNsPtr;
     Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), 0);
     iPtr->numLevels--;

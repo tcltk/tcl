@@ -16,19 +16,19 @@
  */
 #include <stdarg.h>
 
-void mp_clear_multi(mp_int *mp, ...) 
+void mp_clear_multi(mp_int *mp, ...)
 {
-    mp_int* next_mp = mp;
-    va_list args;
-    va_start(args, mp);
-    while (next_mp != NULL) {
-        mp_clear(next_mp);
-        next_mp = va_arg(args, mp_int*);
-    }
-    va_end(args);
+   mp_int *next_mp = mp;
+   va_list args;
+   va_start(args, mp);
+   while (next_mp != NULL) {
+      mp_clear(next_mp);
+      next_mp = va_arg(args, mp_int *);
+   }
+   va_end(args);
 }
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

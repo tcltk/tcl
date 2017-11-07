@@ -16,26 +16,26 @@
  */
 
 /* read signed bin, big endian, first byte is 0==positive or 1==negative */
-int mp_read_signed_bin (mp_int * a, const unsigned char *b, int c)
+int mp_read_signed_bin(mp_int *a, const unsigned char *b, int c)
 {
-  int     res;
+   int     res;
 
-  /* read magnitude */
-  if ((res = mp_read_unsigned_bin (a, b + 1, c - 1)) != MP_OKAY) {
-    return res;
-  }
+   /* read magnitude */
+   if ((res = mp_read_unsigned_bin(a, b + 1, c - 1)) != MP_OKAY) {
+      return res;
+   }
 
-  /* first byte is 0 for positive, non-zero for negative */
-  if (b[0] == 0) {
-     a->sign = MP_ZPOS;
-  } else {
-     a->sign = MP_NEG;
-  }
+   /* first byte is 0 for positive, non-zero for negative */
+   if (b[0] == 0) {
+      a->sign = MP_ZPOS;
+   } else {
+      a->sign = MP_NEG;
+   }
 
-  return MP_OKAY;
+   return MP_OKAY;
 }
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

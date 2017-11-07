@@ -563,7 +563,7 @@ TclInitEncodingSubsystem(void)
      * formed UTF-8 into a properly formed stream.
      */
 
-    type.encodingName	= "identity";
+    type.encodingName	= NULL;
     type.toUtfProc	= BinaryProc;
     type.fromUtfProc	= BinaryProc;
     type.freeProc	= NULL;
@@ -851,7 +851,9 @@ FreeEncoding(
 	if (encodingPtr->hPtr != NULL) {
 	    Tcl_DeleteHashEntry(encodingPtr->hPtr);
 	}
-	ckfree(encodingPtr->name);
+	if (encodingPtr->name) {
+	    ckfree(encodingPtr->name);
+	}
 	ckfree(encodingPtr);
     }
 }
@@ -1040,27 +1042,8 @@ Tcl_CreateEncoding(
     const Tcl_EncodingType *typePtr)
 				/* The encoding type. */
 {
-    Tcl_HashEntry *hPtr;
-    int isNew;
-    Encoding *encodingPtr;
-    char *name;
-
-    Tcl_MutexLock(&encodingMutex);
-    hPtr = Tcl_CreateHashEntry(&encodingTable, typePtr->encodingName, &isNew);
-    if (isNew == 0) {
-	/*
-	 * Remove old encoding from hash table, but don't delete it until last
-	 * reference goes away.
-	 */
-
-	encodingPtr = Tcl_GetHashValue(hPtr);
-	encodingPtr->hPtr = NULL;
-    }
-
-    name = ckalloc(strlen(typePtr->encodingName) + 1);
-
-    encodingPtr = ckalloc(sizeof(Encoding));
-    encodingPtr->name		= strcpy(name, typePtr->encodingName);
+    Encoding *encodingPtr = ckalloc(sizeof(Encoding));
+    encodingPtr->name		= NULL;
     encodingPtr->toUtfProc	= typePtr->toUtfProc;
     encodingPtr->fromUtfProc	= typePtr->fromUtfProc;
     encodingPtr->freeProc	= typePtr->freeProc;
@@ -1072,11 +1055,32 @@ Tcl_CreateEncoding(
 	encodingPtr->lengthProc = (LengthProc *) unilen;
     }
     encodingPtr->refCount	= 1;
+    encodingPtr->hPtr		= NULL;
+
+  if (typePtr->encodingName) {
+    Tcl_HashEntry *hPtr;
+    int isNew;
+    char *name;
+
+    Tcl_MutexLock(&encodingMutex);
+    hPtr = Tcl_CreateHashEntry(&encodingTable, typePtr->encodingName, &isNew);
+    if (isNew == 0) {
+	/*
+	 * Remove old encoding from hash table, but don't delete it until last
+	 * reference goes away.
+	 */
+
+	Encoding *replaceMe = Tcl_GetHashValue(hPtr);
+	replaceMe->hPtr = NULL;
+    }
+
+    name = ckalloc(strlen(typePtr->encodingName) + 1);
+    encodingPtr->name		= strcpy(name, typePtr->encodingName);
     encodingPtr->hPtr		= hPtr;
     Tcl_SetHashValue(hPtr, encodingPtr);
 
     Tcl_MutexUnlock(&encodingMutex);
-
+  }
     return (Tcl_Encoding) encodingPtr;
 }
 
@@ -2293,8 +2297,11 @@ UtfToUtfProc(
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd;
     int result, numChars, charLimit = INT_MAX;
-    Tcl_UniChar ch;
+    Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
 
+    if (flags & TCL_ENCODING_START) {
+    	*statePtr = 0;
+    }
     result = TCL_OK;
 
     srcStart = src;
@@ -2326,7 +2333,7 @@ UtfToUtfProc(
 	}
 	if (UCHAR(*src) < 0x80 && !(UCHAR(*src) == 0 && pureNullMode == 0)) {
 	    /*
-	     * Copy 7bit chatacters, but skip null-bytes when we are in input
+	     * Copy 7bit characters, but skip null-bytes when we are in input
 	     * mode, so that they get converted to 0xc080.
 	     */
 
@@ -2341,17 +2348,17 @@ UtfToUtfProc(
 	    src += 2;
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
-	     * Always check before using Tcl_UtfToUniChar. Not doing can so
-	     * cause it run beyond the endof the buffer! If we happen such an
-	     * incomplete char its byts are made to represent themselves.
+	     * Always check before using TclUtfToUniChar. Not doing can so
+	     * cause it run beyond the end of the buffer! If we happen such an
+	     * incomplete char its bytes are made to represent themselves.
 	     */
 
-	    ch = (unsigned char) *src;
+	    *chPtr = (unsigned char) *src;
 	    src += 1;
-	    dst += Tcl_UniCharToUtf(ch, dst);
+	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	} else {
-	    src += Tcl_UtfToUniChar(src, &ch);
-	    dst += Tcl_UniCharToUtf(ch, dst);
+	    src += TclUtfToUniChar(src, chPtr);
+	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	}
     }
 
@@ -2407,8 +2414,11 @@ UnicodeToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    Tcl_UniChar ch;
+    Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
 
+    if (flags & TCL_ENCODING_START) {
+    	*statePtr = 0;
+    }
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
     }
@@ -2436,11 +2446,11 @@ UnicodeToUtfProc(
 	 * Tcl_UniChar-size data.
 	 */
 
-	ch = *(Tcl_UniChar *)src;
-	if (ch && ch < 0x80) {
-	    *dst++ = (ch & 0xFF);
+	*chPtr = *(Tcl_UniChar *)src;
+	if (*chPtr && *chPtr < 0x80) {
+	    *dst++ = (*chPtr & 0xFF);
 	} else {
-	    dst += Tcl_UniCharToUtf(ch, dst);
+	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	}
 	src += sizeof(Tcl_UniChar);
     }
@@ -2497,8 +2507,11 @@ UtfToUnicodeProc(
 {
     const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
     int result, numChars;
-    Tcl_UniChar ch;
+    Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
 
+    if (flags & TCL_ENCODING_START) {
+    	*statePtr = 0;
+    }
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
@@ -2524,7 +2537,7 @@ UtfToUnicodeProc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	src += TclUtfToUniChar(src, &ch);
+	src += TclUtfToUniChar(src, chPtr);
 
 	/*
 	 * Need to handle this in a way that won't cause misalignment by
@@ -2533,23 +2546,23 @@ UtfToUnicodeProc(
 
 #ifdef WORDS_BIGENDIAN
 #if TCL_UTF_MAX > 4
-	*dst++ = (ch >> 24);
-	*dst++ = ((ch >> 16) & 0xFF);
-	*dst++ = ((ch >> 8) & 0xFF);
-	*dst++ = (ch & 0xFF);
+	*dst++ = (*chPtr >> 24);
+	*dst++ = ((*chPtr >> 16) & 0xFF);
+	*dst++ = ((*chPtr >> 8) & 0xFF);
+	*dst++ = (*chPtr & 0xFF);
 #else
-	*dst++ = (ch >> 8);
-	*dst++ = (ch & 0xFF);
+	*dst++ = (*chPtr >> 8);
+	*dst++ = (*chPtr & 0xFF);
 #endif
 #else
 #if TCL_UTF_MAX > 4
-	*dst++ = (ch & 0xFF);
-	*dst++ = ((ch >> 8) & 0xFF);
-	*dst++ = ((ch >> 16) & 0xFF);
-	*dst++ = (ch >> 24);
+	*dst++ = (*chPtr & 0xFF);
+	*dst++ = ((*chPtr >> 8) & 0xFF);
+	*dst++ = ((*chPtr >> 16) & 0xFF);
+	*dst++ = (*chPtr >> 24);
 #else
-	*dst++ = (ch & 0xFF);
-	*dst++ = (ch >> 8);
+	*dst++ = (*chPtr & 0xFF);
+	*dst++ = (*chPtr >> 8);
 #endif
 #endif
     }
@@ -2607,7 +2620,7 @@ TableToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart, *prefixBytes;
     int result, byte, numChars, charLimit = INT_MAX;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     const unsigned short *const *toUnicode;
     const unsigned short *pageZero;
     TableEncodingData *dataPtr = clientData;
@@ -2719,7 +2732,7 @@ TableFromUtfProc(
 {
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd, *prefixBytes;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     int result, len, word, numChars;
     TableEncodingData *dataPtr = clientData;
     const unsigned short *const *fromUnicode;
@@ -2853,7 +2866,7 @@ Iso88591ToUtfProc(
 
     result = TCL_OK;
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
-	Tcl_UniChar ch;
+	Tcl_UniChar ch = 0;
 
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
@@ -2939,7 +2952,7 @@ Iso88591FromUtfProc(
     dstEnd = dst + dstLen - 1;
 
     for (numChars = 0; src < srcEnd; numChars++) {
-	Tcl_UniChar ch;
+	Tcl_UniChar ch = 0;
 	int len;
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
@@ -3326,7 +3339,7 @@ EscapeFromUtfProc(
     for (numChars = 0; src < srcEnd; numChars++) {
 	unsigned len;
 	int word;
-	Tcl_UniChar ch;
+	Tcl_UniChar ch = 0;
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*
@@ -3371,7 +3384,7 @@ EscapeFromUtfProc(
 
 	    /*
 	     * The state variable has the value of oldState when word is 0.
-	     * In this case, the escape sequense should not be copied to dst
+	     * In this case, the escape sequence should not be copied to dst
 	     * because the current character set is not changed.
 	     */
 

@@ -13,6 +13,7 @@
 
 #include "tclInt.h"
 #include "tclFileSystem.h"
+#include <assert.h>
 
 /*
  * Prototypes for functions defined later in this file.
@@ -849,18 +850,20 @@ TclJoinPath(
     int elements,
     Tcl_Obj * const objv[])
 {
-    Tcl_Obj *res;
+    Tcl_Obj *res = NULL;
     int i;
     const Tcl_Filesystem *fsPtr = NULL;
 
-    res = NULL;
+    assert ( elements >= 0 );
 
-    for (i = 0; i < elements; i++) {
-	int driveNameLength, strEltLen, length;
-	Tcl_PathType type;
-	char *strElt, *ptr;
-	Tcl_Obj *driveName = NULL;
-	Tcl_Obj *elt = objv[i];
+    if (elements == 0) {
+	return Tcl_NewObj();
+    }
+
+    assert ( elements > 0 );
+
+    if (elements == 2) {
+	Tcl_Obj *elt = objv[0];
 
 	/*
 	 * This is a special case where we can be much more efficient, where
@@ -869,18 +872,17 @@ TclJoinPath(
 	 * object which can be normalized more efficiently. Currently we only
 	 * use the special case when we have exactly two elements, but we
 	 * could expand that in the future.
-         *
-         * Bugfix [a47641a0]. TclNewFSPathObj requires first argument
-         * to be an absolute path. Added a check for that elt is absolute.
+	 *
+	 * Bugfix [a47641a0]. TclNewFSPathObj requires first argument
+	 * to be an absolute path. Added a check for that elt is absolute.
 	 */
 
-	if ((i == (elements-2)) && (i == 0)
-                && (elt->typePtr == &tclFsPathType)
+	if ((elt->typePtr == &tclFsPathType)
 		&& !((elt->bytes != NULL) && (elt->bytes[0] == '\0'))
                 && TclGetPathType(elt, NULL, NULL, NULL) == TCL_PATH_ABSOLUTE) {
-            Tcl_Obj *tailObj = objv[i+1];
+            Tcl_Obj *tailObj = objv[1];
+	    Tcl_PathType type = TclGetPathType(tailObj, NULL, NULL, NULL);
 
-	    type = TclGetPathType(tailObj, NULL, NULL, NULL);
 	    if (type == TCL_PATH_RELATIVE) {
 		const char *str;
 		int len;
@@ -893,9 +895,6 @@ TclJoinPath(
 		     * the base itself is just fine!
 		     */
 
-		    if (res != NULL) {
-			TclDecrRefCount(res);
-		    }
 		    return elt;
 		}
 
@@ -918,10 +917,17 @@ TclJoinPath(
 
 		    if ((tclPlatform != TCL_PLATFORM_WINDOWS)
 			    || (strchr(Tcl_GetString(elt), '\\') == NULL)) {
-			if (res != NULL) {
-			    TclDecrRefCount(res);
+
+			if (PATHFLAGS(elt)) {
+			    return TclNewFSPathObj(elt, str, len);
 			}
-			return TclNewFSPathObj(elt, str, len);
+			if (TCL_PATH_ABSOLUTE != Tcl_FSGetPathType(elt)) {
+			    return TclNewFSPathObj(elt, str, len);
+			}
+			(void) Tcl_FSGetNormalizedPath(NULL, elt);
+			if (elt == PATHOBJ(elt)->normPathPtr) {
+			    return TclNewFSPathObj(elt, str, len);
+			}
 		    }
 		}
 
@@ -930,24 +936,30 @@ TclJoinPath(
 		 * more general code below handle things.
 		 */
 	    } else if (tclPlatform == TCL_PLATFORM_UNIX) {
-		if (res != NULL) {
-		    TclDecrRefCount(res);
-		}
 		return tailObj;
 	    } else {
 		const char *str = TclGetString(tailObj);
 
 		if (tclPlatform == TCL_PLATFORM_WINDOWS) {
 		    if (strchr(str, '\\') == NULL) {
-			if (res != NULL) {
-			    TclDecrRefCount(res);
-			}
 			return tailObj;
 		    }
 		}
 	    }
 	}
+    }
+
+    assert ( res == NULL );
+
+    for (i = 0; i < elements; i++) {
+	int driveNameLength, strEltLen, length;
+	Tcl_PathType type;
+	char *strElt, *ptr;
+	Tcl_Obj *driveName = NULL;
+	Tcl_Obj *elt = objv[i];
+
 	strElt = TclGetStringFromObj(elt, &strEltLen);
+	driveNameLength = 0;
 	type = TclGetPathType(elt, &fsPtr, &driveNameLength, &driveName);
 	if (type != TCL_PATH_RELATIVE) {
 	    /*
@@ -1003,6 +1015,12 @@ TclJoinPath(
 		}
 	    }
 	    ptr = strElt;
+	    /* [Bug f34cf83dd0] */
+	    if (driveNameLength > 0) {
+		if (ptr[0] == '/' && ptr[-1] == '/') {
+		    goto noQuickReturn;
+		}
+	    }
 	    while (*ptr != '\0') {
 		if (*ptr == '/' && (ptr[1] == '/' || ptr[1] == '\0')) {
 		    /*
@@ -1034,10 +1052,8 @@ TclJoinPath(
     noQuickReturn:
 	if (res == NULL) {
 	    res = Tcl_NewObj();
-	    ptr = TclGetStringFromObj(res, &length);
-	} else {
-	    ptr = TclGetStringFromObj(res, &length);
 	}
+	ptr = TclGetStringFromObj(res, &length);
 
 	/*
 	 * Strip off any './' before a tilde, unless this is the beginning of
@@ -1070,6 +1086,7 @@ TclJoinPath(
 
 		if (sep != NULL) {
 		    separator = TclGetString(sep)[0];
+		    TclDecrRefCount(sep);
 		}
 		/* Safety check in case the VFS driver caused sharing */
 		if (Tcl_IsShared(res)) {
@@ -1105,9 +1122,7 @@ TclJoinPath(
 	    Tcl_SetObjLength(res, length);
 	}
     }
-    if (res == NULL) {
-	res = Tcl_NewObj();
-    }
+    assert ( res != NULL );
     return res;
 }
 

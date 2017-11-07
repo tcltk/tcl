@@ -16,26 +16,25 @@
  */
 
 /* c = a * a (mod b) */
-int
-mp_sqrmod (mp_int * a, mp_int * b, mp_int * c)
+int mp_sqrmod(const mp_int *a, const mp_int *b, mp_int *c)
 {
-  int     res;
-  mp_int  t;
+   int     res;
+   mp_int  t;
 
-  if ((res = mp_init (&t)) != MP_OKAY) {
-    return res;
-  }
+   if ((res = mp_init(&t)) != MP_OKAY) {
+      return res;
+   }
 
-  if ((res = mp_sqr (a, &t)) != MP_OKAY) {
-    mp_clear (&t);
-    return res;
-  }
-  res = mp_mod (&t, b, c);
-  mp_clear (&t);
-  return res;
+   if ((res = mp_sqr(a, &t)) != MP_OKAY) {
+      mp_clear(&t);
+      return res;
+   }
+   res = mp_mod(&t, b, c);
+   mp_clear(&t);
+   return res;
 }
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

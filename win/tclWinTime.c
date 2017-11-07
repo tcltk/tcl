@@ -27,6 +27,7 @@
  * month, where index 1 is January.
  */
 
+#ifndef TCL_NO_DEPRECATED
 static const int normalDays[] = {
     -1, 30, 58, 89, 119, 150, 180, 211, 242, 272, 303, 333, 364
 };
@@ -40,6 +41,7 @@ typedef struct {
     struct tm tm;		/* time information */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Data for managing high-resolution timers.
@@ -113,7 +115,9 @@ static TimeInfo timeInfo = {
  * Declarations for functions defined later in this file.
  */
 
+#ifndef TCL_NO_DEPRECATED
 static struct tm *	ComputeGMT(const time_t *tp);
+#endif /* TCL_NO_DEPRECATED */
 static void		StopCalibration(ClientData clientData);
 static DWORD WINAPI	CalibrationThread(LPVOID arg);
 static void 		UpdateTimeEachSecond(void);
@@ -522,6 +526,7 @@ StopCalibration(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 struct tm *
 TclpGetDate(
     const time_t *t,
@@ -724,6 +729,7 @@ ComputeGMT(
 
     return tmPtr;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -1068,6 +1074,7 @@ AccumulateSample(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 struct tm *
 TclpGmtime(
     const time_t *timePtr)	/* Pointer to the number of seconds since the
@@ -1112,6 +1119,7 @@ TclpLocaltime(
 
     return localtime(timePtr);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
