@@ -117,7 +117,6 @@ Visual C++ compiler environment not initialized.
 #----------------------------------------------------------
 
 RMDIR	= rmdir /S /Q
-ERRNULL  = 2>NUL
 CPY	= xcopy /i /y >NUL
 CPYDIR  = xcopy /e /i /y >NUL
 COPY	= copy /y >NUL
@@ -197,6 +196,7 @@ DEMODIR		= $(ROOT)\demos
 # TBD - This is a potentially dangerous conflict, rename WINDIR to
 # something else
 WINDIR		= $(ROOT)\win
+
 !ifndef RCDIR
 !if exist("$(WINDIR)\rc")
 RCDIR           = $(WINDIR)\rc
@@ -388,7 +388,7 @@ VCVER=0
     && ![echo $(_HASH)elif defined(_M_AMD64) >> vercl.x] \
     && ![echo ARCH=AMD64 >> vercl.x] \
     && ![echo $(_HASH)endif >> vercl.x] \
-    && ![$(cc32) -nologo -TC -P vercl.x $(ERRNULL)]
+    && ![$(cc32) -nologo -TC -P vercl.x 2>NUL]
 !include vercl.i
 !if $(VCVERSION) < 1900
 !if ![echo VCVER= ^\> vercl.vc] \
@@ -402,7 +402,7 @@ VCVER = $(VCVERSION)
 !endif
 !endif
 
-!if ![del $(ERRNUL) /q/f vercl.x vercl.i vercl.vc]
+!if ![del 2>NUL /q/f vercl.x vercl.i vercl.vc]
 !endif
 
 #----------------------------------------------------------------
@@ -829,7 +829,7 @@ WARNINGS		    = $(WARNINGS) -Wp64
 
 ################################################################
 # 9. Extract various version numbers
-# For Tcl and Tk, version numbers are exctracted from tcl.h and tk.h
+# For Tcl and Tk, version numbers are extracted from tcl.h and tk.h
 # respectively. For extensions, versions are extracted from the
 # configure.in or configure.ac from the TEA configuration if it
 # exists, and unset otherwise.
@@ -1106,8 +1106,8 @@ PRJSTUBLIB	= $(OUT_DIR)\$(PRJSTUBLIBNAME)
 # If extension parent makefile has not defined a resource definition file,
 # we will generate one from standard template.
 !if !$(DOING_TCL) && !$(DOING_TK) && !$(STATIC_BUILD)
-!ifdef PRJ_RCFILE
-RESFILE = $(TMP_DIR)\$(PRJ_RCFILE:.rc=.res)
+!ifdef RCFILE
+RESFILE = $(TMP_DIR)\$(RCFILE:.rc=.res)
 !else
 RESFILE = $(TMP_DIR)\$(PROJECT).res
 !endif
@@ -1499,10 +1499,13 @@ default-shell: default-setup $(PROJECT)
 	$(DEBUGGER) $(TCLSH)
 
 # Generation of Windows version resource 
-!ifdef PRJ_RCFILE
+!ifdef RCFILE
 
+# Note: don't use $** in below rule because there may be other dependencies
+# and only the "master" rc must be passed to the resource compiler
 $(TMP_DIR)\$(PROJECT).res: $(RCDIR)\$(PROJECT).rc
-	$(RESCMD) $**
+	$(RESCMD) $(RCDIR)\$(PROJECT).rc
+
 !else
 
 # If parent makefile has not defined a resource definition file,
@@ -1545,7 +1548,7 @@ END
 
 <<
 
-!endif # ifdef PRJ_RCFILE
+!endif # ifdef RCFILE
 
 !ifndef DISABLE_IMPLICIT_RULES
 DISABLE_IMPLICIT_RULES = 0
