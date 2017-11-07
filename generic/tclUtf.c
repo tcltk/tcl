@@ -699,7 +699,7 @@ Tcl_UtfPrev(
  *---------------------------------------------------------------------------
  */
 
-Tcl_UniChar
+int
 Tcl_UniCharAtIndex(
     register const char *src,	/* The UTF-8 string to dereference. */
     register int index)		/* The position of the desired character. */
@@ -819,7 +819,8 @@ int
 Tcl_UtfToUpper(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch = 0, upChar;
+    Tcl_UniChar ch = 0;
+    int upChar;
     char *src, *dst;
     int bytes;
 
@@ -830,7 +831,14 @@ Tcl_UtfToUpper(
     src = dst = str;
     while (*src) {
 	bytes = TclUtfToUniChar(src, &ch);
-	upChar = Tcl_UniCharToUpper(ch);
+	upChar = ch;
+	if (!bytes) {
+	    /* TclUtfToUniChar only returns 0 for chars > 0xffff ! */
+	    bytes = TclUtfToUniChar(src, &ch);
+	    /* Combine surrogates */
+	    upChar = (((upChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	}
+	upChar = Tcl_UniCharToUpper(upChar);
 
 	/*
 	 * To keep badly formed Utf strings from getting inflated by the
@@ -872,7 +880,8 @@ int
 Tcl_UtfToLower(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch = 0, lowChar;
+    Tcl_UniChar ch = 0;
+    int lowChar;
     char *src, *dst;
     int bytes;
 
@@ -883,7 +892,14 @@ Tcl_UtfToLower(
     src = dst = str;
     while (*src) {
 	bytes = TclUtfToUniChar(src, &ch);
-	lowChar = Tcl_UniCharToLower(ch);
+	lowChar = ch;
+	if (!bytes) {
+	    /* TclUtfToUniChar only returns 0 for chars > 0xffff ! */
+	    bytes = TclUtfToUniChar(src, &ch);
+	    /* Combine surrogates */
+	    lowChar = (((lowChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	}
+	lowChar = Tcl_UniCharToLower(lowChar);
 
 	/*
 	 * To keep badly formed Utf strings from getting inflated by the
@@ -926,7 +942,8 @@ int
 Tcl_UtfToTitle(
     char *str)			/* String to convert in place. */
 {
-    Tcl_UniChar ch = 0, titleChar, lowChar;
+    Tcl_UniChar ch = 0;
+    int titleChar, lowChar;
     char *src, *dst;
     int bytes;
 
@@ -939,7 +956,14 @@ Tcl_UtfToTitle(
 
     if (*src) {
 	bytes = TclUtfToUniChar(src, &ch);
-	titleChar = Tcl_UniCharToTitle(ch);
+	titleChar = ch;
+	if (!bytes) {
+	    /* TclUtfToUniChar only returns 0 for chars > 0xffff ! */
+	    bytes = TclUtfToUniChar(src, &ch);
+	    /* Combine surrogates */
+	    titleChar = (((titleChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	}
+	titleChar = Tcl_UniCharToTitle(titleChar);
 
 	if (bytes < TclUtfCount(titleChar)) {
 	    memcpy(dst, src, (size_t) bytes);
@@ -951,7 +975,14 @@ Tcl_UtfToTitle(
     }
     while (*src) {
 	bytes = TclUtfToUniChar(src, &ch);
-	lowChar = Tcl_UniCharToLower(ch);
+	lowChar = ch;
+	if (!bytes) {
+	    /* TclUtfToUniChar only returns 0 for chars > 0xffff ! */
+	    bytes = TclUtfToUniChar(src, &ch);
+	    /* Combine surrogates */
+	    lowChar = (((lowChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	}
+	lowChar = Tcl_UniCharToLower(lowChar);
 
 	if (bytes < TclUtfCount(lowChar)) {
 	    memcpy(dst, src, (size_t) bytes);
@@ -1159,16 +1190,18 @@ TclUtfCasecmp(
  *----------------------------------------------------------------------
  */
 
-Tcl_UniChar
+int
 Tcl_UniCharToUpper(
     int ch)			/* Unicode character to convert. */
 {
-    int info = GetUniCharInfo(ch);
+    if (!UNICODE_OUT_OF_RANGE(ch)) {
+	int info = GetUniCharInfo(ch);
 
-    if (GetCaseType(info) & 0x04) {
-	ch -= GetDelta(info);
+	if (GetCaseType(info) & 0x04) {
+	    ch -= GetDelta(info);
+	}
     }
-    return (Tcl_UniChar) ch;
+    return ch & 0x1FFFFF;
 }
 
 /*
@@ -1187,16 +1220,18 @@ Tcl_UniCharToUpper(
  *----------------------------------------------------------------------
  */
 
-Tcl_UniChar
+int
 Tcl_UniCharToLower(
     int ch)			/* Unicode character to convert. */
 {
-    int info = GetUniCharInfo(ch);
+    if (!UNICODE_OUT_OF_RANGE(ch)) {
+	int info = GetUniCharInfo(ch);
 
-    if (GetCaseType(info) & 0x02) {
-	ch += GetDelta(info);
+	if (GetCaseType(info) & 0x02) {
+	    ch += GetDelta(info);
+	}
     }
-    return (Tcl_UniChar) ch;
+    return ch & 0x1FFFFF;
 }
 
 /*
@@ -1215,23 +1250,25 @@ Tcl_UniCharToLower(
  *----------------------------------------------------------------------
  */
 
-Tcl_UniChar
+int
 Tcl_UniCharToTitle(
     int ch)			/* Unicode character to convert. */
 {
-    int info = GetUniCharInfo(ch);
-    int mode = GetCaseType(info);
+    if (!UNICODE_OUT_OF_RANGE(ch)) {
+	int info = GetUniCharInfo(ch);
+	int mode = GetCaseType(info);
 
-    if (mode & 0x1) {
-	/*
-	 * Subtract or add one depending on the original case.
-	 */
+	if (mode & 0x1) {
+	    /*
+	     * Subtract or add one depending on the original case.
+	     */
 
-	ch += ((mode & 0x4) ? -1 : 1);
-    } else if (mode == 0x4) {
-	ch -= GetDelta(info);
+	    ch += ((mode & 0x4) ? -1 : 1);
+	} else if (mode == 0x4) {
+	    ch -= GetDelta(info);
+	}
     }
-    return (Tcl_UniChar) ch;
+    return ch & 0x1FFFFF;
 }
 
 /*

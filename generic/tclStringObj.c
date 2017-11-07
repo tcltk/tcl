@@ -466,7 +466,7 @@ Tcl_GetCharLength(
  *----------------------------------------------------------------------
  */
 
-Tcl_UniChar
+int
 Tcl_GetUniChar(
     Tcl_Obj *objPtr,		/* The object to get the Unicode charater
 				 * from. */
@@ -483,7 +483,7 @@ Tcl_GetUniChar(
     if (TclIsPureByteArray(objPtr)) {
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
 
-	return (Tcl_UniChar) bytes[index];
+	return (int) bytes[index];
     }
 
     /*
@@ -507,7 +507,7 @@ Tcl_GetUniChar(
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
-    return stringPtr->unicode[index];
+    return (int) stringPtr->unicode[index];
 }
 
 /*
@@ -3462,7 +3462,6 @@ TclStringObjReverse(
 	     * Tcl_SetObjLength into growing the unicode rep buffer.
 	     */
 
-	    ch = 0;
 	    objPtr = Tcl_NewUnicodeObj(&ch, 1);
 	    Tcl_SetObjLength(objPtr, stringPtr->numChars);
 	    to = Tcl_GetUnicode(objPtr);
@@ -3565,7 +3564,7 @@ ExtendUnicodeRepWithString(
 {
     String *stringPtr = GET_STRING(objPtr);
     int needed, numOrigChars = 0;
-    Tcl_UniChar *dst;
+    Tcl_UniChar *dst, unichar = 0;
 
     if (stringPtr->hasUnicode) {
 	numOrigChars = stringPtr->numChars;
@@ -3588,7 +3587,8 @@ ExtendUnicodeRepWithString(
 	numAppendChars = 0;
     }
     for (dst=stringPtr->unicode + numOrigChars; numAppendChars-- > 0; dst++) {
-	bytes += TclUtfToUniChar(bytes, dst);
+	bytes += TclUtfToUniChar(bytes, &unichar);
+	*dst = unichar;
     }
     *dst = 0;
 }
