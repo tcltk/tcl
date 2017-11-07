@@ -1482,6 +1482,36 @@ test oo-11.4 {OO: cleanup} {
     lappend result [bar0 destroy] [oo::object create foo] [foo destroy] \
 	[oo::object create bar2] [bar2 destroy]
 } {1 {can't create object "foo": command already exists with that name} destroyed {} ::foo {} ::bar2 {}}
+test oo-11.5 {OO: cleanup} {
+    oo::class create obj1
+
+    trace add command obj1 delete {apply {{name1 name2 action} {
+	set namespace [info object namespace $name1]
+	namespace delete $namespace
+    }}}
+
+    rename obj1 {}
+    # No segmentation fault
+    return done
+} done
+
+test oo-11.6 {
+    OO: cleanup ReleaseClassContents() where class is mixed into one of its
+    instances
+} {
+    oo::class create obj1
+    ::oo::define obj1 {self mixin [self]}
+
+    ::oo::copy obj1 obj2
+    ::oo::objdefine obj2 {mixin [self]}
+
+    ::oo::copy obj2 obj3
+    trace add command obj3 delete [list obj3 dying]
+    rename obj2 {}
+
+    # No segmentation fault
+    return done
+} done
 
 test oo-12.1 {OO: filters} {
     oo::class create Aclass
@@ -2013,6 +2043,52 @@ test oo-15.10 {variable binding must not bleed through oo::copy} -setup {
 } -cleanup {
     FooClass destroy
 } -result {foo bar grill bar}
+test oo-15.11 {OO: object cloning} -returnCodes error -body {
+    oo::copy
+} -result {wrong # args: should be "oo::copy sourceName ?targetName? ?targetNamespace?"}
+test oo-15.12 {OO: object cloning with target NS} -setup {
+    oo::class create Super
+    oo::class create Cls {superclass Super}
+} -body {
+    namespace eval ::existing {}
+    oo::copy Cls {} ::existing
+} -returnCodes error -cleanup {
+    Super destroy
+    catch {namespace delete ::existing}
+} -result {::existing refers to an existing namespace}
+test oo-15.13 {OO: object cloning with target NS} -setup {
+    oo::class create Super
+    oo::class create Cls {superclass Super}
+} -body {
+    list [namespace exist ::dupens] [oo::copy Cls Cls2 ::dupens] [namespace exist ::dupens]
+} -cleanup {
+    Super destroy
+} -result {0 ::Cls2 1}
+test oo-15.14 {OO: object cloning with target NS} -setup {
+    oo::class create Cls {export eval}
+    set result {}
+} -body {
+    Cls create obj
+    obj eval {
+	proc test-15.14 {} {}
+    }
+    lappend result [info commands ::dupens::t*]
+    oo::copy obj obj2 ::dupens
+    lappend result [info commands ::dupens::t*]
+} -cleanup {
+    Cls destroy
+} -result {{} ::dupens::test-15.14}
+test oo-15.15 {method cloning must ensure that there is a string representation of bodies} -setup {
+    oo::class create cls
+} -body {
+    cls create foo
+    oo::objdefine foo {
+	method m1 {} [string map {a b} {return hello}]
+    }
+    [oo::copy foo] m1
+} -cleanup {
+    cls destroy
+} -result hello
 
 test oo-16.1 {OO: object introspection} -body {
     info object
@@ -2241,6 +2317,44 @@ test oo-17.10 {OO: class introspection} -setup {
     oo::define foo unexport {*}[info class methods foo -all]
     info class methods foo -all
 } -result {}
+set stdmethods {<cloned> destroy eval unknown variable varname}
+test oo-17.11 {OO: object method unexport (bug 900cb0284bc)} -setup {
+    oo::object create o
+    oo::objdefine o unexport m
+} -body {
+    lsort [info object methods o -all -private]
+} -cleanup {
+    o destroy
+} -result $stdmethods
+test oo-17.12 {OO: instance method unexport (bug 900cb0284bc)} -setup {
+    oo::class create c
+    c create o
+    oo::objdefine o unexport m
+} -body {
+    lsort [info object methods o -all -private]
+} -cleanup {
+    o destroy
+    c destroy
+} -result $stdmethods
+test oo-17.13 {OO: class method unexport (bug 900cb0284bc)} -setup {
+    oo::class create c
+    oo::define c unexport m
+} -body {
+    lsort [info class methods c -all -private]
+} -cleanup {
+    c destroy
+} -result $stdmethods
+test oo-17.14 {OO: instance method unexport (bug 900cb0284bc)} -setup {
+    oo::class create c
+    oo::define c unexport m
+    c create o
+} -body {
+    lsort [info object methods o -all -private]
+} -cleanup {
+    o destroy
+    c destroy
+} -result $stdmethods
+
 
 test oo-18.1 {OO: define command support} {
     list [catch {oo::define oo::object {error foo}} msg] $msg $errorInfo
@@ -3727,7 +3841,136 @@ test oo-35.4 {Bug 593baa032c: mixins list teardown} {
     oo::class create D {mixin B}
     namespace eval [info object namespace D] [list [namespace which B] destroy]
 } {}
-
+test oo-35.5 {Bug 1a56550e96: introspectors must traverse mixin links correctly} -setup {
+    oo::class create base {
+	unexport destroy
+    }
+} -body {
+    oo::class create C {
+	superclass base
+	method c {} {}
+    }
+    oo::class create D {
+	superclass base
+	mixin C
+	method d {} {}
+    }
+    oo::class create E {
+	superclass D
+	method e {} {}
+    }
+    E create e1
+    list [lsort [info class methods E -all]] [lsort [info object methods e1 -all]]
+} -cleanup {
+    base destroy
+} -result {{c d e} {c d e}}
+test oo-36.1 {TIP #470: introspection within oo::define} {
+    oo::define oo::object self
+} ::oo::object
+test oo-36.2 {TIP #470: introspection within oo::define} -setup {
+    oo::class create Cls
+} -body {
+    oo::define Cls self
+} -cleanup {
+    Cls destroy
+} -result ::Cls
+test oo-36.3 {TIP #470: introspection within oo::define} -setup {
+    oo::class create Super
+    set result uncalled
+} -body {
+    oo::class create Sub {
+	superclass Super
+	::set ::result [self]
+    }
+    return $result
+} -cleanup {
+    Super destroy
+} -result ::Sub
+test oo-36.4 {TIP #470: introspection within oo::define} -setup {
+    oo::class create Super
+    set result uncalled
+} -body {
+    oo::class create Sub {
+	superclass Super
+	::set ::result [self {}]
+    }
+    return $result
+} -cleanup {
+    Super destroy
+} -result {}
+test oo-36.5 {TIP #470: introspection within oo::define} -setup {
+    oo::class create Super
+    set result uncalled
+} -body {
+    oo::class create Sub {
+	superclass Super
+	::set ::result [self self]
+    }
+} -cleanup {
+    Super destroy
+} -result ::Sub
+test oo-36.6 {TIP #470: introspection within oo::objdefine} -setup {
+    oo::class create Cls
+    set result uncalled
+} -body {
+    Cls create obj
+    oo::objdefine obj {
+	::set ::result [self]
+    }
+} -cleanup {
+    Cls destroy
+} -result ::obj
+test oo-36.7 {TIP #470: introspection within oo::objdefine} -setup {
+    oo::class create Cls
+} -body {
+    Cls create obj
+    oo::objdefine obj {
+	self
+    }
+} -cleanup {
+    Cls destroy
+} -result ::obj
+test oo-36.8 {TIP #470: introspection within oo::objdefine} -setup {
+    oo::class create Cls
+} -body {
+    Cls create obj
+    oo::objdefine obj {
+	self anything
+    }
+} -returnCodes error -cleanup {
+    Cls destroy
+} -result {wrong # args: should be "self"}
+test oo-36.9 {TIP #470: introspection within oo::define} -setup {
+    oo::class create Cls
+    set result uncalled
+} -body {
+    proc oo::define::testself {} {
+	global result
+	set result [list [catch {self} msg] $msg \
+			[catch {uplevel 1 self} msg] $msg]
+	return
+    }
+    list [oo::define Cls testself] $result
+} -cleanup {
+    Cls destroy
+    catch {rename oo::define::testself {}}
+} -result {{} {1 {this command may only be called from within the context of an ::oo::define or ::oo::objdefine command} 0 ::Cls}}
+test oo-36.10 {TIP #470: introspection within oo::define} -setup {
+    oo::class create Cls
+    set result uncalled
+} -body {
+    proc oo::objdefine::testself {} {
+	global result
+	set result [list [catch {self} msg] $msg \
+			[catch {uplevel 1 self} msg] $msg]
+	return
+    }
+    Cls create obj
+    list [oo::objdefine obj testself] $result
+} -cleanup {
+    Cls destroy
+    catch {rename oo::objdefine::testself {}}
+} -result {{} {1 {this command may only be called from within the context of an ::oo::define or ::oo::objdefine command} 0 ::obj}}
 
 cleanupTests
 return

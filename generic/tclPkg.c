@@ -224,6 +224,7 @@ static void PkgFilesCleanupProc(ClientData clientData,
 	entry = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(&pkgFiles->table);
+    ckfree(pkgFiles);
     return;
 }
 
@@ -330,8 +331,8 @@ Tcl_PkgRequireEx(
 	 *
 	 * Second, how does this work? If we reach this point, then the global
 	 * variable tclEmptyStringRep has the value NULL. Compare that with
-	 * the definition of tclEmptyStringRep near the top of the file
-	 * generic/tclObj.c. It clearly should not have the value NULL; it
+	 * the definition of tclEmptyStringRep near the top of this file.
+	 * It clearly should not have the value NULL; it
 	 * should point to the char tclEmptyString. If we see it having the
 	 * value NULL, then somehow we are seeing a Tcl library that isn't
 	 * completely initialized, and that's an indicator for the error
@@ -347,18 +348,11 @@ Tcl_PkgRequireEx(
 	 * After all, two Tcl libraries can't be a good thing!)
 	 *
 	 * Trouble is that's going to be tricky. We're now using a Tcl library
-	 * that's not fully initialized. In particular, it doesn't have a
-	 * proper value for tclEmptyStringRep. The Tcl_Obj system heavily
-	 * depends on the value of tclEmptyStringRep and all of Tcl depends
-	 * (increasingly) on the Tcl_Obj system, we need to correct that flaw
-	 * before making the calls to set the interpreter result to the error
-	 * message. That's the only flaw corrected; other problems with
-	 * initialization of the Tcl library are not remedied, so be very
-	 * careful about adding any other calls here without checking how they
-	 * behave when initialization is incomplete.
+	 * that's not fully initialized. Functions in it may not work
+	 * reliably, so be very careful about adding any other calls here
+	 * without checking how they behave when initialization is incomplete.
 	 */
 
-	tclEmptyStringRep = &tclEmptyString;
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Cannot load package \"%s\" in standalone executable:"
 		" This package is not compiled with stub support", name));

@@ -21,6 +21,7 @@ testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
 testConstraint wideIs64bit \
 	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
 testConstraint wideBiggerThanInt [expr {wide(0x80000000) != int(0x80000000)}]
+testConstraint pointerIs64bit [expr {$tcl_platform(pointerSize) >= 8}]
 
 test format-1.1 {integer formatting} {
     format "%*d %d %d %d" 6 34 16923 -12 -1
@@ -52,32 +53,42 @@ test format-1.7.1 {integer formatting} longIs64bit {
     format "%4x %4x %4x %4x" 6 34 16923 -12 -1
 } {   6   22 421b fffffffffffffff4}
 test format-1.8 {integer formatting} longIs32bit {
-    format "%#x %#X %#X %#x" 6 34 16923 -12 -1
-} {0x6 0X22 0X421B 0xfffffff4}
+    format "%#x %#x %#X %#X %#x" 0 6 34 16923 -12 -1
+} {0x0 0x6 0X22 0X421B 0xfffffff4}
 test format-1.8.1 {integer formatting} longIs64bit {
-    format "%#x %#X %#X %#x" 6 34 16923 -12 -1
-} {0x6 0X22 0X421B 0xfffffffffffffff4}
+    format "%#x %#x %#X %#X %#x" 0 6 34 16923 -12 -1
+} {0x0 0x6 0X22 0X421B 0xfffffffffffffff4}
 test format-1.9 {integer formatting} longIs32bit {
-    format "%#20x %#20x %#20x %#20x" 6 34 16923 -12 -1
-} {                 0x6                 0x22               0x421b           0xfffffff4}
+    format "%#5x %#20x %#20x %#20x %#20x" 0 6 34 16923 -12 -1
+} {  0x0                  0x6                 0x22               0x421b           0xfffffff4}
 test format-1.9.1 {integer formatting} longIs64bit {
-    format "%#20x %#20x %#20x %#20x" 6 34 16923 -12 -1
-} {                 0x6                 0x22               0x421b   0xfffffffffffffff4}
+    format "%#5x %#20x %#20x %#20x %#20x" 0 6 34 16923 -12 -1
+} {  0x0                  0x6                 0x22               0x421b   0xfffffffffffffff4}
 test format-1.10 {integer formatting} longIs32bit {
-    format "%-#20x %-#20x %-#20x %-#20x" 6 34 16923 -12 -1
-} {0x6                  0x22                 0x421b               0xfffffff4          }
+    format "%-#5x %-#20x %-#20x %-#20x %-#20x" 0 6 34 16923 -12 -1
+} {0x0   0x6                  0x22                 0x421b               0xfffffff4          }
 test format-1.10.1 {integer formatting} longIs64bit {
-    format "%-#20x %-#20x %-#20x %-#20x" 6 34 16923 -12 -1
-} {0x6                  0x22                 0x421b               0xfffffffffffffff4  }
+    format "%-#5x %-#20x %-#20x %-#20x %-#20x" 0 6 34 16923 -12 -1
+} {0x0   0x6                  0x22                 0x421b               0xfffffffffffffff4  }
 test format-1.11 {integer formatting} longIs32bit {
-    format "%-#20o %#-20o %#-20o %#-20o" 6 34 16923 -12 -1
-} {06                   042                  041033               037777777764        }
+    format "%-#5o %-#20o %#-20o %#-20o %#-20o" 0 6 34 16923 -12 -1
+} {0     06                   042                  041033               037777777764        }
 test format-1.11.1 {integer formatting} longIs64bit {
-    format "%-#20o %#-20o %#-20o %#-20o" 6 34 16923 -12 -1
-} {06                   042                  041033               01777777777777777777764}
+    format "%-#5o %-#20o %#-20o %#-20o %#-20o" 0 6 34 16923 -12 -1
+} {0     06                   042                  041033               01777777777777777777764}
 test format-1.12 {integer formatting} {
-    format "%b %#b %llb" 5 5 [expr {2**100}]
-} {101 0b101 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}
+    format "%b %#b %#b %llb" 5 0 5 [expr {2**100}]
+} {101 0b0 0b101 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}
+test format-1.13 {integer formatting} {
+    format "%#d %#d %#d %#d %#d" 0 6 34 16923 -12 -1
+} {0d0 0d6 0d34 0d16923 -0d12}
+test format-1.14 {integer formatting} {
+    format "%#5d %#20d %#20d %#20d %#20d" 0 6 34 16923 -12 -1
+} {  0d0                  0d6                 0d34              0d16923                -0d12}
+test format-1.15 {integer formatting} {
+    format "%-#5d %-#20d %-#20d %-#20d %-#20d" 0 6 34 16923 -12 -1
+} {0d0   0d6                  0d34                 0d16923              -0d12               }
+
 
 test format-2.1 {string formatting} {
     format "%s %s %c %s" abcd {This is a very long test string.} 120 x
@@ -349,9 +360,9 @@ test format-8.19 {error conditions} {
     catch {format %q x}
 } 1
 test format-8.20 {error conditions} {
-    catch {format %q x} msg
+    catch {format %r x} msg
     set msg
-} {bad field specifier "q"}
+} {bad field specifier "r"}
 test format-8.21 {error conditions} {
     catch {format %d}
 } 1
@@ -363,6 +374,26 @@ test format-8.23 {error conditions} {
     catch {format "%d %d" 24 xyz} msg
     set msg
 } {expected integer but got "xyz"}
+# Since "%zd" and "%td" are equivalent to "%lld" in 64-bit platforms and
+# equivalent to "%d" in 32-bit platforms, they are really not useful in
+# scripts, therefore they are not documented. It's intended use is through
+# the function Tcl_AppendPrintfToObj (et al).
+test format-8.24 {Undocumented formats} -body {
+    format "%zd %td %d" [expr 2**30] [expr 2**30] [expr 2**30]
+} -result {1073741824 1073741824 1073741824}
+test format-8.25 {Undocumented formats} -constraints pointerIs64bit -body {
+    format "%zd %td %lld" [expr 2**33] [expr 2**33] [expr 2**33]
+} -result {8589934592 8589934592 8589934592}
+# Since "%p" is equivalent to "%#llx" in 64-bit platforms and equivalent
+# to "%#x" in 32-bit platforms, it are really not useful in scripts,
+# therefore they are not documented. It's intended use is through the
+# function Tcl_AppendPrintfToObj (et al).
+test format-8.26 {Undocumented formats} -body {
+    format "%p %#x" [expr 2**31] [expr 2**31]
+} -result {0x80000000 0x80000000}
+test format-8.27 {Undocumented formats} -constraints pointerIs64bit -body {
+    format "%p %#llx" [expr 2**33] [expr 2**33]
+} -result {0x200000000 0x200000000}
 
 test format-9.1 {long result} {
     set a {1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ 1 2 3 4 5 6 7 8 9 0 a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
@@ -528,6 +559,12 @@ test format-17.3 {testing %ld with non-wide} {wideIs64bit} {
 test format-17.4 {testing %l with non-integer} {
     format %lf 1
 } 1.000000
+test format-17.5 {testing %llu with positive bignum} -body {
+    format %llu 0xabcdef0123456789abcdef
+} -returnCodes 1 -result {unsigned bignum format is invalid}
+test format-17.6 {testing %llu with negative number} -body {
+    format %llu -1
+} -returnCodes 1 -result {unsigned bignum format is invalid}
 
 test format-18.1 {do not demote existing numeric values} {
     set a 0xaaaaaaaa
