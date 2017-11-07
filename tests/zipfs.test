@@ -17,9 +17,10 @@ if {"::tcltest" ni [namespace children]} {
 
 testConstraint zipfs [expr {[llength [info commands zlib]] && [regexp tcltest [info nameofexecutable]]}]
 
-test zipfs-1.1 {zipfs basics} -constraints zipfs -body {
-    load {} zipfs
-} -result {}
+# Removed in tip430 - zipfs is no longer a static package
+#test zipfs-1.1 {zipfs basics} -constraints zipfs -body {
+#    load {} zipfs
+#} -result {}
 
 test zipfs-1.2 {zipfs basics} -constraints zipfs -body {
     package require zipfs
@@ -66,18 +67,18 @@ test zipfs-2.2 {zipfs mkzip} -constraints zipfs -body {
     set pwd [pwd]
     cd $tcl_library/encoding
     zipfs mkzip abc.zip .
-    zipfs mount abc.zip /abc
-    zipfs list -glob /abc/cp850.*
+    zipfs mount abc.zip zipfs:/abc
+    zipfs list -glob zipfs:/abc/cp850.*
 } -cleanup {
     cd $pwd
-} -result {/abc/cp850.enc}
+} -result {zipfs:/abc/cp850.enc}
 
 test zipfs-2.3 {zipfs unmount} -constraints zipfs -body {
-    zipfs info /abc/cp850.enc
+    zipfs info zipfs:/abc/cp850.enc
 } -result [list $tcl_library/encoding/abc.zip 1090 527 39434]
 
 test zipfs-2.4 {zipfs unmount} -constraints zipfs -body {
-    set f [open /abc/cp850.enc]
+    set f [open zipfs:/abc/cp850.enc]
     read $f
 } -result {# Encoding file: cp850, single-byte
 S
