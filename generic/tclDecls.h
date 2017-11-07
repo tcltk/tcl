@@ -812,10 +812,12 @@ EXTERN int		Tcl_DumpActiveMemory(const char *fileName);
 /* 266 */
 EXTERN void		Tcl_ValidateAllMemory(const char *file, int line);
 /* 267 */
-EXTERN void		Tcl_AppendResultVA(Tcl_Interp *interp,
+TCL_DEPRECATED("see TIP #422")
+void			Tcl_AppendResultVA(Tcl_Interp *interp,
 				va_list argList);
 /* 268 */
-EXTERN void		Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr,
+TCL_DEPRECATED("see TIP #422")
+void			Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr,
 				va_list argList);
 /* 269 */
 EXTERN char *		Tcl_HashStats(Tcl_HashTable *tablePtr);
@@ -838,14 +840,17 @@ EXTERN CONST84_RETURN char * Tcl_PkgRequire(Tcl_Interp *interp,
 				const char *name, const char *version,
 				int exact);
 /* 275 */
-EXTERN void		Tcl_SetErrorCodeVA(Tcl_Interp *interp,
+TCL_DEPRECATED("see TIP #422")
+void			Tcl_SetErrorCodeVA(Tcl_Interp *interp,
 				va_list argList);
 /* 276 */
-EXTERN int		Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList);
+TCL_DEPRECATED("see TIP #422")
+int			Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList);
 /* 277 */
 EXTERN Tcl_Pid		Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options);
 /* 278 */
-EXTERN TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList);
+TCL_DEPRECATED("see TIP #422")
+TCL_NORETURN void	Tcl_PanicVA(const char *format, va_list argList);
 /* 279 */
 EXTERN void		Tcl_GetVersion(int *major, int *minor,
 				int *patchLevel, int *type);
@@ -2133,18 +2138,18 @@ typedef struct TclStubs {
     void (*tcl_WrongNumArgs) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], const char *message); /* 264 */
     int (*tcl_DumpActiveMemory) (const char *fileName); /* 265 */
     void (*tcl_ValidateAllMemory) (const char *file, int line); /* 266 */
-    void (*tcl_AppendResultVA) (Tcl_Interp *interp, va_list argList); /* 267 */
-    void (*tcl_AppendStringsToObjVA) (Tcl_Obj *objPtr, va_list argList); /* 268 */
+    TCL_DEPRECATED_API("see TIP #422") void (*tcl_AppendResultVA) (Tcl_Interp *interp, va_list argList); /* 267 */
+    TCL_DEPRECATED_API("see TIP #422") void (*tcl_AppendStringsToObjVA) (Tcl_Obj *objPtr, va_list argList); /* 268 */
     char * (*tcl_HashStats) (Tcl_HashTable *tablePtr); /* 269 */
     CONST84_RETURN char * (*tcl_ParseVar) (Tcl_Interp *interp, const char *start, CONST84 char **termPtr); /* 270 */
     CONST84_RETURN char * (*tcl_PkgPresent) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 271 */
     CONST84_RETURN char * (*tcl_PkgPresentEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 272 */
     int (*tcl_PkgProvide) (Tcl_Interp *interp, const char *name, const char *version); /* 273 */
     CONST84_RETURN char * (*tcl_PkgRequire) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 274 */
-    void (*tcl_SetErrorCodeVA) (Tcl_Interp *interp, va_list argList); /* 275 */
-    int (*tcl_VarEvalVA) (Tcl_Interp *interp, va_list argList); /* 276 */
+    TCL_DEPRECATED_API("see TIP #422") void (*tcl_SetErrorCodeVA) (Tcl_Interp *interp, va_list argList); /* 275 */
+    TCL_DEPRECATED_API("see TIP #422") int (*tcl_VarEvalVA) (Tcl_Interp *interp, va_list argList); /* 276 */
     Tcl_Pid (*tcl_WaitPid) (Tcl_Pid pid, int *statPtr, int options); /* 277 */
-    TCL_NORETURN1 void (*tcl_PanicVA) (const char *format, va_list argList); /* 278 */
+    TCL_DEPRECATED_API("see TIP #422") TCL_NORETURN1 void (*tcl_PanicVA) (const char *format, va_list argList); /* 278 */
     void (*tcl_GetVersion) (int *major, int *minor, int *patchLevel, int *type); /* 279 */
     void (*tcl_InitMemory) (Tcl_Interp *interp); /* 280 */
     Tcl_Channel (*tcl_StackChannel) (Tcl_Interp *interp, const Tcl_ChannelType *typePtr, ClientData instanceData, int mask, Tcl_Channel prevChan); /* 281 */
