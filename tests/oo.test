@@ -1482,6 +1482,36 @@ test oo-11.4 {OO: cleanup} {
     lappend result [bar0 destroy] [oo::object create foo] [foo destroy] \
 	[oo::object create bar2] [bar2 destroy]
 } {1 {can't create object "foo": command already exists with that name} destroyed {} ::foo {} ::bar2 {}}
+test oo-11.5 {OO: cleanup} {
+    oo::class create obj1
+
+    trace add command obj1 delete {apply {{name1 name2 action} {
+	set namespace [info object namespace $name1]
+	namespace delete $namespace
+    }}}
+
+    rename obj1 {}
+    # No segmentation fault
+    return done
+} done
+
+test oo-11.6 {
+    OO: cleanup ReleaseClassContents() where class is mixed into one of its
+    instances
+} {
+    oo::class create obj1
+    ::oo::define obj1 {self mixin [self]}
+
+    ::oo::copy obj1 obj2
+    ::oo::objdefine obj2 {mixin [self]}
+
+    ::oo::copy obj2 obj3
+    trace add command obj3 delete [list obj3 dying]
+    rename obj2 {}
+
+    # No segmentation fault
+    return done
+} done
 
 test oo-12.1 {OO: filters} {
     oo::class create Aclass
@@ -2048,6 +2078,17 @@ test oo-15.14 {OO: object cloning with target NS} -setup {
 } -cleanup {
     Cls destroy
 } -result {{} ::dupens::test-15.14}
+test oo-15.15 {method cloning must ensure that there is a string representation of bodies} -setup {
+    oo::class create cls
+} -body {
+    cls create foo
+    oo::objdefine foo {
+	method m1 {} [string map {a b} {return hello}]
+    }
+    [oo::copy foo] m1
+} -cleanup {
+    cls destroy
+} -result hello
 
 test oo-16.1 {OO: object introspection} -body {
     info object
@@ -3800,7 +3841,29 @@ test oo-35.4 {Bug 593baa032c: mixins list teardown} {
     oo::class create D {mixin B}
     namespace eval [info object namespace D] [list [namespace which B] destroy]
 } {}
-
+test oo-35.5 {Bug 1a56550e96: introspectors must traverse mixin links correctly} -setup {
+    oo::class create base {
+	unexport destroy
+    }
+} -body {
+    oo::class create C {
+	superclass base
+	method c {} {}
+    }
+    oo::class create D {
+	superclass base
+	mixin C
+	method d {} {}
+    }
+    oo::class create E {
+	superclass D
+	method e {} {}
+    }
+    E create e1
+    list [lsort [info class methods E -all]] [lsort [info object methods e1 -all]]
+} -cleanup {
+    base destroy
+} -result {{c d e} {c d e}}
 test oo-36.1 {TIP #470: introspection within oo::define} {
     oo::define oo::object self
 } ::oo::object
