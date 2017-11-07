@@ -72,7 +72,7 @@ PROJECT = tcl
 DEFAULT_BUILD_TARGET = release
 
 # We want to use our own resource file, not the standard template one.
-PRJ_RCFILE = tcl.rc
+RCFILE = tcl.rc
 
 # The rules.vc file does most of the hard work in terms of defining
 # the build configuration, macros, output directories etc.
