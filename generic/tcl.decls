@@ -945,10 +945,10 @@ declare 265 {
 declare 266 {
     void Tcl_ValidateAllMemory(const char *file, int line)
 }
-declare 267 {
+declare 267 {deprecated {see TIP #422}} {
     void Tcl_AppendResultVA(Tcl_Interp *interp, va_list argList)
 }
-declare 268 {
+declare 268 {deprecated {see TIP #422}} {
     void Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr, va_list argList)
 }
 declare 269 {
@@ -976,16 +976,16 @@ declare 274 {
     CONST84_RETURN char *Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
 	    const char *version, int exact)
 }
-declare 275 {
+declare 275 {deprecated {see TIP #422}} {
     void Tcl_SetErrorCodeVA(Tcl_Interp *interp, va_list argList)
 }
-declare 276 {
+declare 276 {deprecated {see TIP #422}} {
     int  Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList)
 }
 declare 277 {
     Tcl_Pid Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options)
 }
-declare 278 {
+declare 278 {deprecated {see TIP #422}} {
     TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList)
 }
 declare 279 {
