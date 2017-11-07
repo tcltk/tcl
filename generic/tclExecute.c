@@ -5776,7 +5776,7 @@ TEBCresume(
     {
 	ClientData ptr1, ptr2;
 	int type1, type2;
-    Tcl_WideInt w1, w2, wResult;
+	Tcl_WideInt w1, w2, wResult;
 
     case INST_NUM_TYPE:
 	if (GetNumberFromObj(NULL, OBJ_AT_TOS, &ptr1, &type1) != TCL_OK) {
@@ -5787,9 +5787,7 @@ TEBCresume(
 	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
 	    int i;
 
-	    if (Tcl_GetIntFromObj(NULL, OBJ_AT_TOS, &i) != TCL_OK) {
-		type1 = TCL_NUMBER_WIDE;
-	    } else {
+	    if (Tcl_GetIntFromObj(NULL, OBJ_AT_TOS, &i) == TCL_OK) {
 		type1 = TCL_NUMBER_LONG;
 	    }
 	} else if (type1 == TCL_NUMBER_BIG) {

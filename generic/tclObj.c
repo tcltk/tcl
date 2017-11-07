@@ -3393,36 +3393,10 @@ Tcl_SetBignumObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetBignumObj");
     }
     if ((size_t) bignumValue->used
-	    <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT) {
-	unsigned long value = 0, numBytes = sizeof(long);
-	long scratch;
+	    <= (CHAR_BIT * sizeof(Tcl_WideUInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
+	Tcl_WideUInt value = 0, numBytes = sizeof(Tcl_WideUInt);
+	Tcl_WideUInt scratch;
 	unsigned char *bytes = (unsigned char *) &scratch;
-
-	if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
-	    goto tooLargeForLong;
-	}
-	while (numBytes-- > 0) {
-	    value = (value << CHAR_BIT) | *bytes++;
-	}
-	if (value > (((~(unsigned long)0) >> 1) + bignumValue->sign)) {
-	    goto tooLargeForLong;
-	}
-	if (bignumValue->sign) {
-	    TclSetWideObj(objPtr, -(long)value);
-	} else {
-	    TclSetWideObj(objPtr, (long)value);
-	}
-	mp_clear(bignumValue);
-	return;
-    }
-  tooLargeForLong:
-#ifndef TCL_WIDE_INT_IS_LONG
-    if ((size_t) bignumValue->used
-	    <= (CHAR_BIT * sizeof(Tcl_WideInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
-	Tcl_WideUInt value = 0;
-	unsigned long numBytes = sizeof(Tcl_WideInt);
-	Tcl_WideInt scratch;
-	unsigned char *bytes = (unsigned char *)&scratch;
 
 	if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
 	    goto tooLargeForWide;
@@ -3442,7 +3416,6 @@ Tcl_SetBignumObj(
 	return;
     }
   tooLargeForWide:
-#endif
     TclInvalidateStringRep(objPtr);
     TclFreeIntRep(objPtr);
     TclSetBignumIntRep(objPtr, bignumValue);
