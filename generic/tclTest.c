@@ -67,6 +67,18 @@ typedef struct TestAsyncHandler {
 				/* Next is list of handlers. */
 } TestAsyncHandler;
 
+/*
+ * Start of the socket driver state structure to acces field testFlags
+ */
+
+typedef struct TcpState TcpState;
+
+struct TcpState {
+    Tcl_Channel channel;	/* Channel associated with this socket. */
+    int testFlags;              /* bit field for tests. Is set by testsocket
+                                 * test procedure */
+};
+
 TCL_DECLARE_MUTEX(asyncTestMutex)
 
 static TestAsyncHandler *firstHandler = NULL;
@@ -213,6 +225,9 @@ static int		StaticInitProc(Tcl_Interp *interp);
 static int		TestasyncCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestbytestringObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+static int		TeststringbytesObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static int		TestcmdinfoCmd(ClientData dummy,
@@ -363,6 +378,8 @@ static int		TestGetIndexFromObjStructObjCmd(
 static int		TestChannelCmd(ClientData clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestChannelEventCmd(ClientData clientData,
+			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestSocketCmd(ClientData clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestFilesystemObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
@@ -567,6 +584,7 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "noop", NoopCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "teststringbytes", TeststringbytesObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfilesystem", TestFilesystemObjCmd,
@@ -675,6 +693,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testnumutfchars",
 	    TestNumUtfCharsCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testsetplatform", TestsetplatformCmd,
+	    NULL, NULL);
+    Tcl_CreateCommand(interp, "testsocket", TestSocketCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "teststaticpkg", TeststaticpkgCmd,
 	    NULL, NULL);
@@ -1969,9 +1989,12 @@ TestencodingObjCmd(
 	if (objc != 3) {
 	    return TCL_ERROR;
 	}
-	encoding = Tcl_GetEncoding(NULL, Tcl_GetString(objv[2]));
-	Tcl_FreeEncoding(encoding);
-	Tcl_FreeEncoding(encoding);
+	if (TCL_OK != Tcl_GetEncodingFromObj(interp, objv[2], &encoding)) {
+	    return TCL_ERROR;
+	}
+	Tcl_FreeEncoding(encoding);	/* Free returned reference */
+	Tcl_FreeEncoding(encoding);	/* Free to match CREATE */
+	TclFreeIntRep(objv[2]);		/* Free the cached ref */
 	break;
     }
     return TCL_OK;
@@ -5030,6 +5053,40 @@ NoopObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TeststringbytesObjCmd --
+ *	Returns bytearray value of the bytes in argument string rep
+ *
+ * Results:
+ *	Returns the TCL_OK result code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TeststringbytesObjCmd(
+    ClientData unused,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    int n;
+    const unsigned char *p;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value");
+	return TCL_ERROR;
+    }
+    p = (const unsigned char *)Tcl_GetStringFromObj(objv[1], &n);
+    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(p, n));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestbytestringObjCmd --
  *
  *	This object-based procedure constructs a string which can
@@ -6081,6 +6138,75 @@ TestChannelEventCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TestSocketCmd --
+ *
+ *	Implements the Tcl "testsocket" debugging command and its
+ *	subcommands. This is part of the testing environment.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+static int
+TestSocketCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Interpreter for result. */
+    int argc,			/* Count of additional args. */
+    const char **argv)		/* Additional arg strings. */
+{
+    const char *cmdName;	/* Sub command. */
+    size_t len;			/* Length of subcommand string. */
+
+    if (argc < 2) {
+	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+		" subcommand ?additional args..?\"", NULL);
+	return TCL_ERROR;
+    }
+    cmdName = argv[1];
+    len = strlen(cmdName);
+
+    if ((cmdName[0] == 't') && (strncmp(cmdName, "testflags", len) == 0)) {
+        Tcl_Channel hChannel;
+        int modePtr;
+        TcpState *statePtr;
+        /* Set test value in the socket driver
+         */
+        /* Check for argument "channel name"
+         */
+        if (argc < 4) {
+            Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                    " testflags channel flags\"", NULL);
+            return TCL_ERROR;
+        }
+        hChannel = Tcl_GetChannel(interp, argv[2], &modePtr);
+        if ( NULL == hChannel ) {
+            Tcl_AppendResult(interp, "unknown channel:", argv[2], NULL);
+            return TCL_ERROR;
+        }
+        statePtr = (TcpState *)Tcl_GetChannelInstanceData(hChannel);
+        if ( NULL == statePtr) {
+            Tcl_AppendResult(interp, "No channel instance data:", argv[2],
+                    NULL);
+            return TCL_ERROR;
+        }
+        statePtr->testFlags = atoi(argv[3]);
+        return TCL_OK;
+    }
+
+    Tcl_AppendResult(interp, "bad option \"", cmdName, "\": should be "
+	    "testflags", NULL);
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestWrongNumArgsObjCmd --
  *
  *	Test the Tcl_WrongNumArgs function.
@@ -6751,7 +6877,7 @@ TestNumUtfCharsCmd(
 	int len = -1;
 
 	if (objc > 2) {
-	    (void) Tcl_GetStringFromObj(objv[1], &len);
+	    (void) Tcl_GetIntFromObj(interp, objv[2], &len);
 	}
 	len = Tcl_NumUtfChars(Tcl_GetString(objv[1]), len);
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(len));

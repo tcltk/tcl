@@ -16,13 +16,13 @@
  */
 
 /* get the size for an unsigned equivalent */
-int mp_unsigned_bin_size (mp_int * a)
+int mp_unsigned_bin_size(const mp_int *a)
 {
-  int     size = mp_count_bits (a);
-  return (size / 8) + (((size & 7) != 0) ? 1 : 0);
+   int     size = mp_count_bits(a);
+   return (size / 8) + (((size & 7) != 0) ? 1 : 0);
 }
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

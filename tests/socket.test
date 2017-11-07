@@ -60,8 +60,13 @@
 # listening at port 2048. If all fails, a message is printed and the tests
 # using the remote server are not performed.
 
-package require tcltest 2
-namespace import -force ::tcltest::*
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
 
 # Some tests require the Thread package or exec command
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
@@ -69,7 +74,30 @@ testConstraint exec [llength [info commands exec]]
 
 # Produce a random port number in the Dynamic/Private range
 # from 49152 through 65535.
-proc randport {} { expr {int(rand()*16383+49152)} }
+proc randport {} {
+    # firstly try dynamic port via server-socket(0):
+    set port 0x7fffffff
+    catch {
+	set port [lindex [fconfigure [set s [socket -server {} 0]] -sockname] 2]
+	close $s
+    }
+    while {[catch {
+	close [socket -server {} $port]
+    } msg]} {
+	if {[incr i] > 1000} {return -code error "too many iterations to get free random port: $msg"}
+	# try random port:
+	set port [expr {int(rand()*16383+49152)}]
+    }
+    return $port
+}
+
+# Check if testsocket testflags is available
+testConstraint testsocket_testflags [expr {![catch {
+        set h [socket -async localhost [randport]]
+        testsocket testflags $h 0
+        close $h
+    }]}]
+
 
 # Test the latency of tcp connections over the loopback interface. Some OSes
 # (e.g. NetBSD) seem to use the Nagle algorithm and delayed ACKs, so it takes
@@ -2266,12 +2294,17 @@ test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener
         unset x
     } -result {socket is not connected} -returnCodes 1
 test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener, flush} \
-    -constraints {socket nonPortable} \
+    -constraints {socket testsocket_testflags} \
     -body {
         set sock [socket -async localhost [randport]]
+        # Set the socket in async test mode.
+        # The async connect will not be continued on the following fconfigure
+        # and puts/flush. Thus, the connect will fail after them.
+        testsocket testflags $sock 1
         fconfigure $sock -blocking 0
         puts $sock ok
         flush $sock
+        testsocket testflags $sock 0
         fileevent $sock writable {set x 1}
         vwait x
         close $sock

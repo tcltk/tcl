@@ -15,7 +15,7 @@
  * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
-static const int lnz[16] = { 
+static const int lnz[16] = {
    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0
 };
 
@@ -48,6 +48,6 @@ int mp_cnt_lsb(const mp_int *a)
 
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

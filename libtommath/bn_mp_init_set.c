@@ -16,17 +16,17 @@
  */
 
 /* initialize and set a digit */
-int mp_init_set (mp_int * a, mp_digit b)
+int mp_init_set(mp_int *a, mp_digit b)
 {
-  int err;
-  if ((err = mp_init(a)) != MP_OKAY) {
-     return err;
-  }
-  mp_set(a, b);
-  return err;
+   int err;
+   if ((err = mp_init(a)) != MP_OKAY) {
+      return err;
+   }
+   mp_set(a, b);
+   return err;
 }
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */
