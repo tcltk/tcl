@@ -6781,53 +6781,6 @@ Tcl_AddObjErrorInfo(
 }
 
 /*
- *---------------------------------------------------------------------------
- *
- * Tcl_VarEvalVA --
- *
- *	Given a variable number of string arguments, concatenate them all
- *	together and execute the result as a Tcl command.
- *
- * Results:
- *	A standard Tcl return result. An error message or other result may be
- *	left in the interp's result.
- *
- * Side effects:
- *	Depends on what was done by the command.
- *
- *---------------------------------------------------------------------------
- */
-
-int
-Tcl_VarEvalVA(
-    Tcl_Interp *interp,		/* Interpreter in which to evaluate command */
-    va_list argList)		/* Variable argument list. */
-{
-    Tcl_DString buf;
-    char *string;
-    int result;
-
-    /*
-     * Copy the strings one after the other into a single larger string. Use
-     * stack-allocated space for small commands, but if the command gets too
-     * large than call ckalloc to create the space.
-     */
-
-    Tcl_DStringInit(&buf);
-    while (1) {
-	string = va_arg(argList, char *);
-	if (string == NULL) {
-	    break;
-	}
-	Tcl_DStringAppend(&buf, string, -1);
-    }
-
-    result = Tcl_EvalEx(interp, Tcl_DStringValue(&buf), -1, 0);
-    Tcl_DStringFree(&buf);
-    return result;
-}
-
-/*
  *----------------------------------------------------------------------
  *
  * Tcl_VarEval --
@@ -6852,11 +6805,27 @@ Tcl_VarEval(
 {
     va_list argList;
     int result;
+    Tcl_DString buf;
+    char *string;
 
     va_start(argList, interp);
-    result = Tcl_VarEvalVA(interp, argList);
-    va_end(argList);
+    /*
+     * Copy the strings one after the other into a single larger string. Use
+     * stack-allocated space for small commands, but if the command gets too
+     * large than call ckalloc to create the space.
+     */
 
+    Tcl_DStringInit(&buf);
+    while (1) {
+	string = va_arg(argList, char *);
+	if (string == NULL) {
+	    break;
+	}
+	Tcl_DStringAppend(&buf, string, -1);
+    }
+
+    result = Tcl_EvalEx(interp, Tcl_DStringValue(&buf), -1, 0);
+    Tcl_DStringFree(&buf);
     return result;
 }
 
