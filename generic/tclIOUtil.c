@@ -190,8 +190,6 @@ const Tcl_Filesystem tclNativeFilesystem = {
     TclpObjChdir
 };
 
-MODULE_SCOPE Tcl_Filesystem zipfsFilesystem;
-
 /*
  * Define the tail of the linked list. Note that for unconventional uses of
  * Tcl without a native filesystem, we may in the future wish to modify the
@@ -1414,22 +1412,6 @@ TclFSNormalizeToUniquePath(
 
     Claim();
     for (fsRecPtr=firstFsRecPtr; fsRecPtr!=NULL; fsRecPtr=fsRecPtr->nextPtr) {
-	if (fsRecPtr->fsPtr == &zipfsFilesystem) {
-	    ClientData clientData = NULL;
-	    /*
-	     * Allow mounted zipfs filesystem to overtake entire normalisation.
-	     * This is needed on unix for mounts on symlinks right below root.
-	     */
-
-	    if (fsRecPtr->fsPtr->pathInFilesystemProc != NULL) {
-		if (fsRecPtr->fsPtr->pathInFilesystemProc(pathPtr,
-			&clientData)!=-1) {
-		    TclFSSetPathDetails(pathPtr, fsRecPtr->fsPtr, clientData);
-		    break;
-		}
-	    }
-	    continue;
-	}
 	if (fsRecPtr->fsPtr != &tclNativeFilesystem) {
 	    continue;
 	}
@@ -1452,9 +1434,6 @@ TclFSNormalizeToUniquePath(
 	 */
 
 	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
-	    continue;
-	}
-	if (fsRecPtr->fsPtr == &zipfsFilesystem) {
 	    continue;
 	}
 
@@ -2939,19 +2918,6 @@ Tcl_FSChdir(
     }
 
     fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
-
-    if ((fsPtr != NULL) && (fsPtr != &tclNativeFilesystem)) {
-	/*
-	 * Watch out for tilde substitution.
-	 * Only valid in native filesystem.
-	 */
-	char *name = Tcl_GetString(pathPtr);
-
-	if ((name != NULL) && (*name == '~')) {
-	    fsPtr = &tclNativeFilesystem;
-	}
-    }
-
     if (fsPtr != NULL) {
 	if (fsPtr->chdirProc != NULL) {
 	    /*
