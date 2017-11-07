@@ -462,7 +462,10 @@ PlatformEventsWait(
     } else if (!timePtr->tv_sec && !timePtr->tv_usec) {
 	timeout = 0;
     } else {
-	timeout = (int)timePtr->tv_sec;
+	timeout = (int)timePtr->tv_sec * 1000;
+	if (timePtr->tv_usec) {
+	    timeout += (int)timePtr->tv_usec / 1000;
+	}
     }
 
     /*
