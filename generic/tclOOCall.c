@@ -53,7 +53,8 @@ static void		AddClassFiltersToCallContext(Object *const oPtr,
 			    Class *clsPtr, struct ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters, int flags);
 static void		AddClassMethodNames(Class *clsPtr, const int flags,
-			    Tcl_HashTable *const namesPtr);
+			    Tcl_HashTable *const namesPtr,
+			    Tcl_HashTable *const examinedClassesPtr);
 static inline void	AddMethodToCallChain(Method *const mPtr,
 			    struct ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters,
@@ -232,7 +233,7 @@ FreeMethodNameRep(
  * TclOOInvokeContext --
  *
  *	Invokes a single step along a method call-chain context. Note that the
- *	invokation of a step along the chain can cause further steps along the
+ *	invocation of a step along the chain can cause further steps along the
  *	chain to be invoked. Note that this function is written to be as light
  *	in stack usage as possible.
  *
@@ -367,6 +368,10 @@ TclOOGetSortedMethodList(
 {
     Tcl_HashTable names;	/* Tcl_Obj* method name to "wanted in list"
 				 * mapping. */
+    Tcl_HashTable examinedClasses;
+				/* Used to track what classes have been looked
+				 * at. Is set-like in nature and keyed by
+				 * pointer to class. */
     FOREACH_HASH_DECLS;
     int i;
     Class *mixinPtr;
@@ -376,6 +381,7 @@ TclOOGetSortedMethodList(
     void *isWanted;
 
     Tcl_InitObjHashTable(&names);
+    Tcl_InitHashTable(&examinedClasses, TCL_ONE_WORD_KEYS);
 
     /*
      * Name the bits used in the names table values.
@@ -436,10 +442,13 @@ TclOOGetSortedMethodList(
      * hierarchy.
      */
 
-    AddClassMethodNames(oPtr->selfCls, flags, &names);
+    AddClassMethodNames(oPtr->selfCls, flags, &names, &examinedClasses);
     FOREACH(mixinPtr, oPtr->mixins) {
-	AddClassMethodNames(mixinPtr, flags|TRAVERSED_MIXIN, &names);
+	AddClassMethodNames(mixinPtr, flags|TRAVERSED_MIXIN, &names,
+		&examinedClasses);
     }
+
+    Tcl_DeleteHashTable(&examinedClasses);
 
     /*
      * See how many (visible) method names there are. If none, we do not (and
@@ -495,18 +504,24 @@ TclOOGetSortedClassMethodList(
 {
     Tcl_HashTable names;	/* Tcl_Obj* method name to "wanted in list"
 				 * mapping. */
+    Tcl_HashTable examinedClasses;
+				/* Used to track what classes have been looked
+				 * at. Is set-like in nature and keyed by
+				 * pointer to class. */
     FOREACH_HASH_DECLS;
     int i;
     Tcl_Obj *namePtr;
     void *isWanted;
 
     Tcl_InitObjHashTable(&names);
+    Tcl_InitHashTable(&examinedClasses, TCL_ONE_WORD_KEYS);
 
     /*
      * Process method names from the class hierarchy and the mixin hierarchy.
      */
 
-    AddClassMethodNames(clsPtr, flags, &names);
+    AddClassMethodNames(clsPtr, flags, &names, &examinedClasses);
+    Tcl_DeleteHashTable(&examinedClasses);
 
     /*
      * See how many (visible) method names there are. If none, we do not (and
@@ -581,14 +596,28 @@ AddClassMethodNames(
     Class *clsPtr,		/* Class to get method names from. */
     const int flags,		/* Whether we are interested in just the
 				 * public method names. */
-    Tcl_HashTable *const namesPtr)
+    Tcl_HashTable *const namesPtr,
 				/* Reference to the hash table to put the
 				 * information in. The hash table maps the
 				 * Tcl_Obj * method name to an integral value
 				 * describing whether the method is wanted.
 				 * This ensures that public/private override
-				 * semantics are handled correctly.*/
+				 * semantics are handled correctly. */
+    Tcl_HashTable *const examinedClassesPtr)
+				/* Hash table that tracks what classes have
+				 * already been looked at. The keys are the
+				 * pointers to the classes, and the values are
+				 * immaterial. */
 {
+    /*
+     * If we've already started looking at this class, stop working on it now
+     * to prevent repeated work.
+     */
+
+    if (Tcl_FindHashEntry(examinedClassesPtr, (char *) clsPtr)) {
+	return;
+    }
+
     /*
      * Scope all declarations so that the compiler can stand a good chance of
      * making the recursive step highly efficient. We also hand-implement the
@@ -596,24 +625,31 @@ AddClassMethodNames(
      * tail-recursion optimization usefully.
      */
 
-    if (clsPtr->mixins.num != 0) {
-	Class *mixinPtr;
-	int i;
-
-	/* TODO: Beware of infinite loops! */
-	FOREACH(mixinPtr, clsPtr->mixins) {
-	    AddClassMethodNames(mixinPtr, flags|TRAVERSED_MIXIN, namesPtr);
-	}
-    }
-
     while (1) {
 	FOREACH_HASH_DECLS;
 	Tcl_Obj *namePtr;
 	Method *mPtr;
+	int isNew;
+
+	(void) Tcl_CreateHashEntry(examinedClassesPtr, (char *) clsPtr,
+		&isNew);
+	if (!isNew) {
+	    break;
+	}
+
+	if (clsPtr->mixins.num != 0) {
+	    Class *mixinPtr;
+	    int i;
+
+	    FOREACH(mixinPtr, clsPtr->mixins) {
+		if (mixinPtr != clsPtr) {
+		    AddClassMethodNames(mixinPtr, flags|TRAVERSED_MIXIN,
+			    namesPtr, examinedClassesPtr);
+		}
+	    }
+	}
 
 	FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
-	    int isNew;
-
 	    hPtr = Tcl_CreateHashEntry(namesPtr, (char *) namePtr, &isNew);
 	    if (isNew) {
 		int isWanted = (!(flags & PUBLIC_METHOD)
@@ -640,7 +676,8 @@ AddClassMethodNames(
 	int i;
 
 	FOREACH(superPtr, clsPtr->superclasses) {
-	    AddClassMethodNames(superPtr, flags, namesPtr);
+	    AddClassMethodNames(superPtr, flags, namesPtr,
+		    examinedClassesPtr);
 	}
     }
 }
@@ -793,7 +830,7 @@ AddMethodToCallChain(
 	     * Call chain semantics states that methods come as *late* in the
 	     * call chain as possible. This is done by copying down the
 	     * following methods. Note that this does not change the number of
-	     * method invokations in the call chain; it just rearranges them.
+	     * method invocations in the call chain; it just rearranges them.
 	     */
 
 	    Class *declCls = callPtr->chain[i].filterDeclarer;
@@ -898,7 +935,7 @@ IsStillValid(
  * TclOOGetCallContext --
  *
  *	Responsible for constructing the call context, an ordered list of all
- *	method implementations to be called as part of a method invokation.
+ *	method implementations to be called as part of a method invocation.
  *	This method is central to the whole operation of the OO system.
  *
  * ----------------------------------------------------------------------
@@ -1480,7 +1517,7 @@ TclOORenderCallChain(
     /*
      * Do the actual construction of the descriptions. They consist of a list
      * of triples that describe the details of how a method is understood. For
-     * each triple, the first word is the type of invokation ("method" is
+     * each triple, the first word is the type of invocation ("method" is
      * normal, "unknown" is special because it adds the method name as an
      * extra argument when handled by some method types, and "filter" is
      * special because it's a filter method). The second word is the name of
