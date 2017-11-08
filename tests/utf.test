@@ -68,10 +68,10 @@ test utf-2.7 {Tcl_UtfToUniChar: lead (3-byte) followed by 2 trail} testbytestrin
 } {1}
 test utf-2.8 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {fullutf testbytestring} -body {
     string length [testbytestring "\xF0\x90\x80\x80"]
-} -result {1}
+} -result {2}
 test utf-2.9 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {fullutf testbytestring} -body {
     string length [testbytestring "\xF4\x8F\xBF\xBF"]
-} -result {1}
+} -result {2}
 test utf-2.10 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, underflow} testbytestring {
     string length [testbytestring "\xF0\x8F\xBF\xBF"]
 } {4}
