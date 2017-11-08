@@ -72,6 +72,14 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define TclBNInitBignumFromWideUInt 0
 #   define TclBNInitBignumFromWideInt 0
 #   define TclBNInitBignumFromLong 0
+#   define Tcl_BackSlash 0
+#   define Tcl_EvalFile 0
+#   define Tcl_GetDefaultEncodingDir 0
+#   define Tcl_SetDefaultEncodingDir 0
+#   define Tcl_EvalTokens 0
+#   define Tcl_CreateMathFunc 0
+#   define Tcl_GetMathFuncInfo 0
+#   define Tcl_ListMathFuncs 0
 #else
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
