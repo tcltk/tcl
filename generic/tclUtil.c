@@ -4078,31 +4078,6 @@ Tcl_GetNameOfExecutable(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetTime --
- *
- *	Deprecated synonym for Tcl_GetTime. This function is provided for the
- *	benefit of extensions written before Tcl_GetTime was exported from the
- *	library.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Stores current time in the buffer designated by "timePtr"
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpGetTime(
-    Tcl_Time *timePtr)
-{
-    Tcl_GetTime(timePtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclGetPlatform --
  *
  *	This is a kludge that allows the test library to get access the

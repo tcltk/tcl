@@ -50,7 +50,7 @@ declare 6 {
 declare 7 {
     int TclCopyAndCollapse(int count, const char *src, char *dst)
 }
-# Removed in 9.0:
+# Removed in Tcl 9
 #declare 8 {
 #    int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
 #	    Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr)
@@ -315,10 +315,10 @@ declare 76 {
     unsigned long TclpGetSeconds(void)
 }
 
-# deprecated
-declare 77 {
-    void TclpGetTime(Tcl_Time *time)
-}
+# Removed in 9.0:
+#declare 77 {
+#    void TclpGetTime(Tcl_Time *time)
+#}
 # Removed in 8.6:
 #declare 78 {
 #    int TclpGetTimeZone(unsigned long time)
@@ -420,7 +420,7 @@ declare 103 {
     int TclSockGetPort(Tcl_Interp *interp, const char *str, const char *proto,
 	    int *portPtr)
 }
-# Removed in 9.0:
+# Removed in Tcl 9
 #declare 104 {
 #    int TclSockMinimumBuffersOld(int sock, int size)
 #}
@@ -640,11 +640,11 @@ declare 156 {
 declare 157 {
     Var *TclVarTraceExists(Tcl_Interp *interp, const char *varName)
 }
-# Removed in 9.0:
+# REMOVED - use public Tcl_SetStartupScript()
 #declare 158 {
 #    void TclSetStartupScriptFileName(const char *filename)
 #}
-# Removed in 9.0:
+# REMOVED - use public Tcl_GetStartupScript()
 #declare 159 {
 #    const char *TclGetStartupScriptFileName(void)
 #}
@@ -692,11 +692,11 @@ declare 166 {
 }
 
 # VFS-aware versions of Tcl*StartupScriptFileName (158 and 159 above)
-# Removed from 9.0:
+# REMOVED - use public Tcl_SetStartupScript()
 #declare 167 {
 #    void TclSetStartupScriptPath(Tcl_Obj *pathPtr)
 #}
-# Removed from 9.0:
+# REMOVED - use public Tcl_GetStartupScript()
 #declare 168 {
 #    Tcl_Obj *TclGetStartupScriptPath(void)
 #}
@@ -745,7 +745,7 @@ declare 177 {
     void TclVarErrMsg(Tcl_Interp *interp, const char *part1, const char *part2,
 	    const char *operation, const char *reason)
 }
-# TIP 338 moved those to the public API
+# TIP 338 made these public - now declared in tcl.h
 #declare 178 {
 #    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
 #}
@@ -955,7 +955,6 @@ declare 235 {
 
 
 # TIP 337 made this one public
-# Removed in 9.0
 #declare 236 {
 #    void TclBackgroundException(Tcl_Interp *interp, int code)
 #}
@@ -1067,16 +1066,16 @@ interface tclIntPlat
 declare 0 win {
     void TclWinConvertError(DWORD errCode)
 }
-# Removed in 9.0:
+# Removed in Tcl 9.0
 #declare 1 win {
 #    void TclWinConvertWSAError(DWORD errCode)
 #}
-# Removed in 9.0:
+# Removed in Tcl 9.0
 #declare 2 win {
 #    struct servent *TclWinGetServByName(const char *nm,
 #	    const char *proto)
 #}
-# Removed in 9.0:
+# Removed in Tcl 9.0
 #declare 3 win {
 #    int TclWinGetSockOpt(SOCKET s, int level, int optname,
 #	    char *optval, int *optlen)
@@ -1092,11 +1091,11 @@ declare 5 win {
 #  declare 5 win {
 #      HINSTANCE TclWinLoadLibrary(char *name)
 #  }
-# Removed in 9.0:
+# Removed in Tcl 9.0:
 #declare 6 win {
 #    unsigned short TclWinNToHS(unsigned short ns)
 #}
-# Removed in 9.0:
+# Removed in Tcl 9.0
 #declare 7 win {
 #    int TclWinSetSockOpt(SOCKET s, int level, int optname,
 #	    const char *optval, int optlen)
@@ -1107,7 +1106,7 @@ declare 8 win {
 declare 9 win {
     int TclWinGetPlatformId(void)
 }
-# Removed in 9.0:
+# Removed in Tcl 9.0
 #declare 10 win {
 #    Tcl_DirEntry *TclpReaddir(DIR *dir)
 #}
@@ -1161,7 +1160,7 @@ declare 19 win {
 declare 20 win {
     void TclWinAddProcess(HANDLE hProcess, DWORD id)
 }
-# Removed in 9.0:
+# Removed in Tcl 9.0
 #declare 21 win {
 #    char *TclpInetNtoa(struct in_addr addr)
 #}
@@ -1185,7 +1184,7 @@ declare 24 win {
 #declare 25 win {
 #    TclPlatformType *TclWinGetPlatform(void)
 #}
-# Removed in 9.0:
+# Removed in Tcl 9.0
 #declare 26 win {
 #    void TclWinSetInterfaces(int wide)
 #}
@@ -1247,18 +1246,19 @@ declare 9 unix {
 
 # Added in 8.4:
 
-declare 10 unix {
-    Tcl_DirEntry *TclpReaddir(DIR *dir)
-}
-# Removed in 9.0:
+# Removed in Tcl 9.0
+#declare 10 unix {
+#    Tcl_DirEntry *TclpReaddir(DIR *dir)
+#}
+# Removed in Tcl 9.0
 #declare 11 unix {
 #    struct tm *TclpLocaltime_unix(const time_t *clock)
 #}
-# Removed in 9.0:
+# Removed in Tcl 9.0
 #declare 12 unix {
 #    struct tm *TclpGmtime_unix(const time_t *clock)
 #}
-# Removed in 9.0:
+# Removed in Tcl 9.0
 #declare 13 unix {
 #    char *TclpInetNtoa(struct in_addr addr)
 #}
