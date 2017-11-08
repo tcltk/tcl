@@ -502,6 +502,11 @@ testMain.${OBJEXT}: tclAppInit.c
 tclMain2.${OBJEXT}: tclMain.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DTCL_ASCII_MAIN @DEPARG@ $(CC_OBJNAME)
 
+# TIP #430, ZipFS Support
+tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
+	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) -I$(ZLIB_DIR)/contrib/minizip $(GENERIC_DIR)/tclZipfs.c
+
+
 # TIP #59, embedding of configuration information into the binary library.
 #
 # Part of Tcl's configuration information are the paths where it was installed
@@ -642,7 +647,6 @@ install-libraries: libraries install-tzdata install-msgs
 	@echo "Installing header files";
 	@for i in "$(GENERIC_DIR)/tcl.h" "$(GENERIC_DIR)/tclDecls.h" \
 		"$(GENERIC_DIR)/tclOO.h" "$(GENERIC_DIR)/tclOODecls.h" \
-		"$(GENERIC_DIR)/tclZipfs.h" \
 		"$(GENERIC_DIR)/tclPlatDecls.h" \
 		"$(GENERIC_DIR)/tclTomMath.h" \
 		"$(GENERIC_DIR)/tclTomMathDecls.h"; \

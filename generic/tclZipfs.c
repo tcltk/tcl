@@ -4,7 +4,7 @@
  *	Implementation of the ZIP filesystem used in TIP 430
  *	Adapted from the implentation for AndroWish.
  *
- * Coptright (c) 2016 Sean Woods <yoda@etoyoc.com>
+ * Coptright (c) 2016-2017 Sean Woods <yoda@etoyoc.com>
  * Copyright (c) 2013-2015 Christian Werner <chw@ch-werner.de>
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -26,7 +26,7 @@
 
 #ifdef HAVE_ZLIB
 #include "zlib.h"
-#include "zcrypt.h"
+#include "crypt.h"
 
 #define ZIPFS_VOLUME "zipfs:/"
 #define ZIPFS_VOLUME_LEN 7
@@ -235,7 +235,7 @@ static const char pwrot[16] = {
  * Table to compute CRC32.
  */
 
-static const unsigned int crc32tab[256] = {
+static const unsigned long crc32tab[256] = {
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
     0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4,
     0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07,
