@@ -855,7 +855,7 @@ genstubs:
 # This target creates the HTML folder for Tcl & Tk and places it in
 # DISTDIR/html. It uses the tcltk-man2html.tcl tool from the Tcl group's tool
 # workspace. It depends on the Tcl & Tk being in directories called tcl9.* &
-# tk9.* up two directories from the TOOL_DIR.
+# tk8.* up two directories from the TOOL_DIR.
 #
 
 TOOL_DIR=$(ROOT_DIR)/tools
