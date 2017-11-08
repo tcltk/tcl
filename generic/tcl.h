@@ -2574,7 +2574,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #if !defined(__APPLE__) /* On OSX, there is a conflict with "mach/mach.h" */
 #   define panic		Tcl_Panic
 #endif
-#   define panicVA		Tcl_PanicVA
 
 /*
  *----------------------------------------------------------------------------
