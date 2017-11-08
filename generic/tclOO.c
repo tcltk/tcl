@@ -538,7 +538,8 @@ KillFoundation(
  * AllocObject --
  *
  *	Allocate an object of basic type. Does not splice the object into its
- *	class's instance list.
+ *	class's instance list.  The caller must set the classPtr on the object,
+ *	either to a class or to NULL.
  *
  * ----------------------------------------------------------------------
  */
@@ -1701,6 +1702,8 @@ Tcl_NewObjectInstance(
 	AllocClass(interp, oPtr);
 	oPtr->selfCls = classPtr;
 	TclOOAddToSubclasses(oPtr->classPtr, fPtr->objectCls);
+    } else {
+	oPtr->classPtr = NULL;
     }
 
     /*
