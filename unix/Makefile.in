@@ -373,7 +373,6 @@ GENERIC_HDRS = \
 	$(GENERIC_DIR)/tclInt.h \
 	$(GENERIC_DIR)/tclIntDecls.h \
 	$(GENERIC_DIR)/tclIntPlatDecls.h \
-	$(GENERIC_DIR)/tclZipfs.h \
 	$(GENERIC_DIR)/tclTomMath.h \
 	$(GENERIC_DIR)/tclTomMathDecls.h \
 	$(GENERIC_DIR)/tclOO.h \
@@ -962,7 +961,6 @@ install-headers:
 	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
 		$(GENERIC_DIR)/tclOO.h $(GENERIC_DIR)/tclOODecls.h \
 		$(GENERIC_DIR)/tclPlatDecls.h \
-		$(GENERIC_DIR)/tclZipfs.h \
 		$(GENERIC_DIR)/tclTomMath.h \
 		$(GENERIC_DIR)/tclTomMathDecls.h ; \
 	    do \
@@ -1333,7 +1331,7 @@ tclZlib.o: $(GENERIC_DIR)/tclZlib.c
 	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
 
 tclZipfs.o: $(GENERIC_DIR)/tclZipfs.c
-	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZipfs.c
+	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) -I$(ZLIB_DIR)/contrib/minizip $(GENERIC_DIR)/tclZipfs.c
 
 tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS)
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c

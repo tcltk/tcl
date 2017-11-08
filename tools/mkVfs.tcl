@@ -11,13 +11,13 @@ proc pkgIndexDir {root fout d1} {
 	      [file tail $d1]]
     set idx [string length $root]
     foreach ftail [glob -directory $d1 -nocomplain -tails *] {
-	set f [file join $d1 $ftail]
-	if {[file isdirectory $f] && [string compare CVS $ftail]} {
-	    pkgIndexDir $root $fout $f
-	} elseif {[file tail $f] eq "pkgIndex.tcl"} {
-	    puts $fout "set dir \${VFSROOT}[string range $d1 $idx end]"
-	    puts $fout [cat $f]
-	}
+        set f [file join $d1 $ftail]
+        if {[file isdirectory $f] && [string compare CVS $ftail]} {
+            pkgIndexDir $root $fout $f
+        } elseif {[file tail $f] eq "pkgIndex.tcl"} {
+      	    puts $fout "set dir \${VFSROOT}[string range $d1 $idx end]"
+	          puts $fout [cat $f]
+	      }
     }
 }
 
@@ -33,23 +33,23 @@ proc copyDir {d1 d2} {
     file mkdir $d2
 
     foreach ftail [glob -directory $d1 -nocomplain -tails *] {
-	set f [file join $d1 $ftail]
-	if {[file isdirectory $f] && [string compare CVS $ftail]} {
-	    copyDir $f [file join $d2 $ftail]
-	} elseif {[file isfile $f]} {
-	    file copy -force $f [file join $d2 $ftail]
-	    if {$::tcl_platform(platform) eq {unix}} {
-		file attributes [file join $d2 $ftail] -permissions 0644
-	    } else {
-		file attributes [file join $d2 $ftail] -readonly 1
-	    }
-	}
+        set f [file join $d1 $ftail]
+        if {[file isdirectory $f] && [string compare CVS $ftail]} {
+            copyDir $f [file join $d2 $ftail]
+        } elseif {[file isfile $f]} {
+      	    file copy -force $f [file join $d2 $ftail]
+	          if {$::tcl_platform(platform) eq {unix}} {
+            		file attributes [file join $d2 $ftail] -permissions 0644
+      	    } else {
+            		file attributes [file join $d2 $ftail] -readonly 1
+	          }
+	      }
     }
 
     if {$::tcl_platform(platform) eq {unix}} {
-	file attributes $d2 -permissions 0755
+      	file attributes $d2 -permissions 0755
     } else {
-	file attributes $d2 -readonly 1
+	      file attributes $d2 -readonly 1
     }
 }
 
@@ -70,12 +70,12 @@ if {$PLATFORM == "windows"} {
     set ddedll [glob -nocomplain ${TCLSRC_ROOT}/win/tcldde*.dll]
     puts "DDE DLL $ddedll"
     if {$ddedll != {}} {
-	file copy $ddedll ${TCL_SCRIPT_DIR}/dde
+      	file copy $ddedll ${TCL_SCRIPT_DIR}/dde
     }
     set regdll [glob -nocomplain ${TCLSRC_ROOT}/win/tclreg*.dll]
     puts "REG DLL $ddedll"
     if {$regdll != {}} {
-	file copy $regdll ${TCL_SCRIPT_DIR}/reg
+      	file copy $regdll ${TCL_SCRIPT_DIR}/reg
     }
 } else {
     # Remove the dde and reg package paths
