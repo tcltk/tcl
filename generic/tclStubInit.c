@@ -369,7 +369,7 @@ static const TclIntStubs tclIntStubs = {
     TclpFree, /* 74 */
     TclpGetClicks, /* 75 */
     TclpGetSeconds, /* 76 */
-    TclpGetTime, /* 77 */
+    0, /* 77 */
     0, /* 78 */
     0, /* 79 */
     0, /* 80 */
@@ -565,7 +565,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
-    TclpReaddir, /* 10 */
+    0, /* 10 */
     0, /* 11 */
     0, /* 12 */
     0, /* 13 */
@@ -631,7 +631,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
-    TclpReaddir, /* 10 */
+    0, /* 10 */
     0, /* 11 */
     0, /* 12 */
     0, /* 13 */

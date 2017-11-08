@@ -71,8 +71,7 @@ EXTERN TclFile		TclpOpenFile(const char *fname, int mode);
 EXTERN int		TclUnixWaitForFile(int fd, int mask, int timeout);
 /* 9 */
 EXTERN TclFile		TclpCreateTempFile(const char *contents);
-/* 10 */
-EXTERN Tcl_DirEntry *	TclpReaddir(DIR *dir);
+/* Slot 10 is reserved */
 /* Slot 11 is reserved */
 /* Slot 12 is reserved */
 /* Slot 13 is reserved */
@@ -191,8 +190,7 @@ EXTERN TclFile		TclpOpenFile(const char *fname, int mode);
 EXTERN int		TclUnixWaitForFile(int fd, int mask, int timeout);
 /* 9 */
 EXTERN TclFile		TclpCreateTempFile(const char *contents);
-/* 10 */
-EXTERN Tcl_DirEntry *	TclpReaddir(DIR *dir);
+/* Slot 10 is reserved */
 /* Slot 11 is reserved */
 /* Slot 12 is reserved */
 /* Slot 13 is reserved */
@@ -252,7 +250,7 @@ typedef struct TclIntPlatStubs {
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 7 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 8 */
     TclFile (*tclpCreateTempFile) (const char *contents); /* 9 */
-    Tcl_DirEntry * (*tclpReaddir) (DIR *dir); /* 10 */
+    void (*reserved10)(void);
     void (*reserved11)(void);
     void (*reserved12)(void);
     void (*reserved13)(void);
@@ -318,7 +316,7 @@ typedef struct TclIntPlatStubs {
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 7 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 8 */
     TclFile (*tclpCreateTempFile) (const char *contents); /* 9 */
-    Tcl_DirEntry * (*tclpReaddir) (DIR *dir); /* 10 */
+    void (*reserved10)(void);
     void (*reserved11)(void);
     void (*reserved12)(void);
     void (*reserved13)(void);
@@ -374,8 +372,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclUnixWaitForFile) /* 8 */
 #define TclpCreateTempFile \
 	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 9 */
-#define TclpReaddir \
-	(tclIntPlatStubsPtr->tclpReaddir) /* 10 */
+/* Slot 10 is reserved */
 /* Slot 11 is reserved */
 /* Slot 12 is reserved */
 /* Slot 13 is reserved */
@@ -474,8 +471,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclUnixWaitForFile) /* 8 */
 #define TclpCreateTempFile \
 	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 9 */
-#define TclpReaddir \
-	(tclIntPlatStubsPtr->tclpReaddir) /* 10 */
+/* Slot 10 is reserved */
 /* Slot 11 is reserved */
 /* Slot 12 is reserved */
 /* Slot 13 is reserved */
