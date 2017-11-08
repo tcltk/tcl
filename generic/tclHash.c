@@ -992,7 +992,7 @@ RebuildTable(
     const Tcl_HashKeyType *typePtr;
 
     /* Avoid outgrowing capability of the memory allocators */
-    if (oldSize > UINT_MAX / (4 * sizeof(Tcl_HashEntry *))) {
+    if (oldSize > (int)(UINT_MAX / (4 * sizeof(Tcl_HashEntry *)))) {
 	tablePtr->rebuildSize = INT_MAX;
 	return;
     }
