@@ -247,10 +247,11 @@ test var-3.4 {MakeUpvar, my var has TCL_NAMESPACE_ONLY specified} -setup {
 	catch {unset ::test_ns_var::vv}
 	proc p {} {
 	    # create namespace var vv linked to global a
-	    testupvar 1 a {} vv namespace
+	    testupvar 2 a {} vv namespace 
 	}
 	p
     }
+    # Modified: that should create a global var according to the docs!
     list $test_ns_var::vv [set test_ns_var::vv 123] $a
 } -result {456 123 123}
 test var-3.5 {MakeUpvar, no call frame so my var will be in global :: ns} -setup {
@@ -442,7 +443,7 @@ test var-7.5 {Tcl_VariableObjCmd, value for last var is optional} -setup {
     set six  666
     namespace eval test_ns_var {
         variable five 5 six
-        lappend a $five
+        lappend ::a $five
     }
     lappend a $test_ns_var::five \
         [set test_ns_var::six 6] [set test_ns_var::six] $six
@@ -469,9 +470,9 @@ test var-7.8 {Tcl_VariableObjCmd, if var already exists and no value is given, l
     set a ""
     namespace eval test_ns_var {
         variable eight 8
-        lappend a $eight
+        lappend ::a $eight
         variable eight
-        lappend a $eight
+        lappend ::a $eight
     }
     set a
 } {8 8}

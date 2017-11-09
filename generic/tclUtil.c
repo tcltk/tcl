@@ -2923,86 +2923,12 @@ Tcl_DStringGetResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the result
 				 * of interp. */
 {
-#ifdef TCL_NO_DEPRECATED
-    Tcl_Obj *obj = Tcl_GetObjResult(interp);
-    const char *bytes = TclGetString(obj);
+    int length;
+    char *bytes = TclGetStringFromObj(Tcl_GetObjResult(interp), &length);
 
     Tcl_DStringFree(dsPtr);
-    Tcl_DStringAppend(dsPtr, bytes, obj->length);
+    Tcl_DStringAppend(dsPtr, bytes, length);
     Tcl_ResetResult(interp);
-#else
-    Interp *iPtr = (Interp *) interp;
-
-    if (dsPtr->string != dsPtr->staticSpace) {
-	ckfree(dsPtr->string);
-    }
-
-    /*
-     * Do more efficient transfer when we know the result is a Tcl_Obj. When
-     * there's no string result, we only have to deal with two cases:
-     *
-     *  1. When the string rep is the empty string, when we don't copy but
-     *     instead use the staticSpace in the DString to hold an empty string.
-
-     *  2. When the string rep is not there or there's a real string rep, when
-     *     we use Tcl_GetString to fetch (or generate) the string rep - which
-     *     we know to have been allocated with ckalloc() - and use it to
-     *     populate the DString space. Then, we free the internal rep. and set
-     *     the object's string representation back to the canonical empty
-     *     string.
-     */
-
-    if (!iPtr->result[0] && iPtr->objResultPtr
-	    && !Tcl_IsShared(iPtr->objResultPtr)) {
-	if (iPtr->objResultPtr->bytes == &tclEmptyString) {
-	    dsPtr->string = dsPtr->staticSpace;
-	    dsPtr->string[0] = 0;
-	    dsPtr->length = 0;
-	    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
-	} else {
-	    dsPtr->string = TclGetString(iPtr->objResultPtr);
-	    dsPtr->length = iPtr->objResultPtr->length;
-	    dsPtr->spaceAvl = dsPtr->length + 1;
-	    TclFreeIntRep(iPtr->objResultPtr);
-	    iPtr->objResultPtr->bytes = &tclEmptyString;
-	    iPtr->objResultPtr->length = 0;
-	}
-	return;
-    }
-
-    /*
-     * If the string result is empty, move the object result to the string
-     * result, then reset the object result.
-     */
-
-    (void) Tcl_GetStringResult(interp);
-
-    dsPtr->length = strlen(iPtr->result);
-    if (iPtr->freeProc != NULL) {
-	if (iPtr->freeProc == TCL_DYNAMIC) {
-	    dsPtr->string = iPtr->result;
-	    dsPtr->spaceAvl = dsPtr->length+1;
-	} else {
-	    dsPtr->string = ckalloc(dsPtr->length+1);
-	    memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
-	    iPtr->freeProc(iPtr->result);
-	}
-	dsPtr->spaceAvl = dsPtr->length+1;
-	iPtr->freeProc = NULL;
-    } else {
-	if (dsPtr->length < TCL_DSTRING_STATIC_SIZE) {
-	    dsPtr->string = dsPtr->staticSpace;
-	    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
-	} else {
-	    dsPtr->string = ckalloc(dsPtr->length+1);
-	    dsPtr->spaceAvl = dsPtr->length + 1;
-	}
-	memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
-    }
-
-    iPtr->result = iPtr->resultSpace;
-    iPtr->resultSpace[0] = 0;
-#endif /* !TCL_NO_DEPRECATED */
 }
 
 /*
@@ -3553,22 +3479,27 @@ TclFormatInt(
  *
  * TclGetIntForIndex --
  *
- *	This function returns an integer corresponding to the list index held
- *	in a Tcl object. The Tcl object's value is expected to be in the
- *	format integer([+-]integer)? or the format end([+-]integer)?.
+ *	Provides an integer corresponding to the list index held in a Tcl
+ *	object. The string value 'objPtr' is expected have the format
+ *	integer([+-]integer)? or end([+-]integer)?.
  *
- * Results:
- *	The return value is normally TCL_OK, which means that the index was
- *	successfully stored into the location referenced by "indexPtr". If the
- *	Tcl object referenced by "objPtr" has the value "end", the value
- *	stored is "endValue". If "objPtr"s values is not of one of the
- *	expected formats, TCL_ERROR is returned and, if "interp" is non-NULL,
- *	an error message is left in the interpreter's result object.
- *
- * Side effects:
- *	The object referenced by "objPtr" might be converted to an integer,
- *	wide integer, or end-based-index object.
- *
+ * Value
+ * 	TCL_OK
+ *      
+ * 	    The index is stored at the address given by by 'indexPtr'. If
+ * 	    'objPtr' has the value "end", the value stored is 'endValue'.
+ * 
+ * 	TCL_ERROR
+ *      
+ * 	    The value of 'objPtr' does not have one of the expected formats. If
+ * 	    'interp' is non-NULL, an error message is left in the interpreter's
+ * 	    result object.
+ * 
+ * Effect
+ * 
+ * 	The object referenced by 'objPtr' is converted, as needed, to an
+ * 	integer, wide integer, or end-based-index object.
+ * 
  *----------------------------------------------------------------------
  */
 
@@ -3655,7 +3586,6 @@ TclGetIntForIndex(
 	if (!strncmp(bytes, "end-", 4)) {
 	    bytes += 4;
 	}
-	TclCheckBadOctal(interp, bytes);
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
     }
 
@@ -3799,73 +3729,6 @@ SetEndOffsetFromAny(
     objPtr->typePtr = &tclEndOffsetType;
 
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCheckBadOctal --
- *
- *	This function checks for a bad octal value and appends a meaningful
- *	error to the interp's result.
- *
- * Results:
- *	1 if the argument was a bad octal, else 0.
- *
- * Side effects:
- *	The interpreter's result is modified.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclCheckBadOctal(
-    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
-				 * NULL, then no error message is left after
-				 * errors. */
-    const char *value)		/* String to check. */
-{
-    register const char *p = value;
-
-    /*
-     * A frequent mistake is invalid octal values due to an unwanted leading
-     * zero. Try to generate a meaningful error message.
-     */
-
-    while (TclIsSpaceProc(*p)) {
-	p++;
-    }
-    if (*p == '+' || *p == '-') {
-	p++;
-    }
-    if (*p == '0') {
-	if ((p[1] == 'o') || p[1] == 'O') {
-	    p += 2;
-	}
-	while (isdigit(UCHAR(*p))) {	/* INTL: digit. */
-	    p++;
-	}
-	while (TclIsSpaceProc(*p)) {
-	    p++;
-	}
-	if (*p == '\0') {
-	    /*
-	     * Reached end of string.
-	     */
-
-	    if (interp != NULL) {
-		/*
-		 * Don't reset the result here because we want this result to
-		 * be added to an existing error message as extra info.
-		 */
-
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-			" (looks like invalid octal number)", -1);
-	    }
-	    return 1;
-	}
-    }
-    return 0;
 }
 
 /*
