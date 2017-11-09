@@ -3984,5 +3984,8 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GlobalEvalObj
 #define Tcl_GlobalEvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
+#undef Tcl_EvalFile
+#define Tcl_EvalFile(interp, fileName) \
+    Tcl_FSEvalFileEx(interp, Tcl_NewStringObj(filename, -1), NULL);
 
 #endif /* _TCLDECLS */
