@@ -50,7 +50,7 @@ declare 6 {
 declare 7 {
     int TclCopyAndCollapse(int count, const char *src, char *dst)
 }
-# Removed in Tcl 9
+# Removed in 9.0:
 #declare 8 {
 #    int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
 #	    Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr)
@@ -74,7 +74,7 @@ declare 11 {
 declare 12 {
     void TclDeleteVars(Interp *iPtr, TclVarHashTable *tablePtr)
 }
-# Removed in 8.5
+# Removed in 8.5:
 #declare 13 {
 #    int TclDoGlob(Tcl_Interp *interp, char *separators,
 #	    Tcl_DString *headPtr, char *tail, Tcl_GlobTypeData *types)
@@ -89,7 +89,7 @@ declare 14 {
 declare 16 {
     void TclExprFloatError(Tcl_Interp *interp, double value)
 }
-# Removed in 8.4
+# Removed in 8.4:
 #declare 17 {
 #    int TclFileAttrsCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 #}
@@ -124,7 +124,7 @@ declare 25 {
 #  declare 26 {
 #      char *TclGetCwd(Tcl_Interp *interp)
 #  }
-# Removed in 8.5
+# Removed in 8.5:
 #declare 27 {
 #    int TclGetDate(char *p, unsigned long now, long zone,
 #	    unsigned long *timePtr)
@@ -148,7 +148,7 @@ declare 32 {
     int TclGetFrame(Tcl_Interp *interp, const char *str,
 	    CallFrame **framePtrPtr)
 }
-# Removed in Tcl 8.5
+# Removed in 8.5:
 #declare 33 {
 #    TclCmdProcType TclGetInterpProc(void)
 #}
@@ -161,7 +161,7 @@ declare 34 {
 #    Tcl_Obj *TclGetIndexedScalar(Tcl_Interp *interp, int localIndex,
 #	    int flags)
 #}
-# Removed in 8.6a2
+# Removed in 8.6a2:
 #declare 36 {
 #    int TclGetLong(Tcl_Interp *interp, const char *str, long *longPtr)
 #}
@@ -186,7 +186,7 @@ declare 41 {
 declare 42 {
     CONST86 char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
 }
-# Removed in Tcl 8.5a2
+# Removed in 8.5a2:
 #declare 43 {
 #    int TclGlobalInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
 #	    int flags)
@@ -221,7 +221,7 @@ declare 50 {
 declare 51 {
     int TclInterpInit(Tcl_Interp *interp)
 }
-# Removed in Tcl 8.5a2
+# Removed in 8.5a2:
 #declare 52 {
 #    int TclInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
 #	    int flags)
@@ -274,7 +274,7 @@ declare 64 {
     int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
 	    int flags)
 }
-# Removed in Tcl 8.5a2
+# Removed in 8.5a2:
 #declare 65 {
 #    int TclObjInvokeGlobal(Tcl_Interp *interp, int objc,
 #	    Tcl_Obj *const objv[], int flags)
@@ -381,7 +381,7 @@ declare 92 {
 declare 93 {
     void TclProcDeleteProc(ClientData clientData)
 }
-# Removed in Tcl 8.5:
+# Removed in 8.5:
 #declare 94 {
 #    int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp,
 #	    int argc, const char **argv)
@@ -420,7 +420,7 @@ declare 103 {
     int TclSockGetPort(Tcl_Interp *interp, const char *str, const char *proto,
 	    int *portPtr)
 }
-# Removed in Tcl 9
+# Removed in 9.0:
 #declare 104 {
 #    int TclSockMinimumBuffersOld(int sock, int size)
 #}
@@ -1066,16 +1066,16 @@ interface tclIntPlat
 declare 0 win {
     void TclWinConvertError(DWORD errCode)
 }
-# Removed in Tcl 9.0
+# Removed in 9.0:
 #declare 1 win {
 #    void TclWinConvertWSAError(DWORD errCode)
 #}
-# Removed in Tcl 9.0
+# Removed in 9.0:
 #declare 2 win {
 #    struct servent *TclWinGetServByName(const char *nm,
 #	    const char *proto)
 #}
-# Removed in Tcl 9.0
+# Removed in 9.0:
 #declare 3 win {
 #    int TclWinGetSockOpt(SOCKET s, int level, int optname,
 #	    char *optval, int *optlen)
@@ -1091,11 +1091,11 @@ declare 5 win {
 #  declare 5 win {
 #      HINSTANCE TclWinLoadLibrary(char *name)
 #  }
-# Removed in Tcl 9.0:
+# Removed in 9.0:
 #declare 6 win {
 #    unsigned short TclWinNToHS(unsigned short ns)
 #}
-# Removed in Tcl 9.0
+# Removed in 9.0:
 #declare 7 win {
 #    int TclWinSetSockOpt(SOCKET s, int level, int optname,
 #	    const char *optval, int optlen)
@@ -1106,11 +1106,11 @@ declare 8 win {
 declare 9 win {
     int TclWinGetPlatformId(void)
 }
-# Removed in Tcl 9.0
+# Removed in 9.0:
 #declare 10 win {
 #    Tcl_DirEntry *TclpReaddir(DIR *dir)
 #}
-# Removed in 8.3.1 (for Win32s only)
+# Removed in 8.3.1 (for Win32s only):
 #declare 10 win {
 #    int TclWinSynchSpawn(void *args, int type, void **trans, Tcl_Pid *pidPtr)
 #}
@@ -1160,7 +1160,7 @@ declare 19 win {
 declare 20 win {
     void TclWinAddProcess(HANDLE hProcess, DWORD id)
 }
-# Removed in Tcl 9.0
+# Removed in 9.0:
 #declare 21 win {
 #    char *TclpInetNtoa(struct in_addr addr)
 #}
@@ -1184,7 +1184,7 @@ declare 24 win {
 #declare 25 win {
 #    TclPlatformType *TclWinGetPlatform(void)
 #}
-# Removed in Tcl 9.0
+# Removed in 9.0:
 #declare 26 win {
 #    void TclWinSetInterfaces(int wide)
 #}
@@ -1246,19 +1246,19 @@ declare 9 unix {
 
 # Added in 8.4:
 
-# Removed in Tcl 9.0
+# Removed in 9.0:
 #declare 10 unix {
 #    Tcl_DirEntry *TclpReaddir(DIR *dir)
 #}
-# Removed in Tcl 9.0
+# Removed in 9.0:
 #declare 11 unix {
 #    struct tm *TclpLocaltime_unix(const time_t *clock)
 #}
-# Removed in Tcl 9.0
+# Removed in 9.0:
 #declare 12 unix {
 #    struct tm *TclpGmtime_unix(const time_t *clock)
 #}
-# Removed in Tcl 9.0
+# Removed in 9.0:
 #declare 13 unix {
 #    char *TclpInetNtoa(struct in_addr addr)
 #}
