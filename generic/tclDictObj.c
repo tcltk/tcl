@@ -141,7 +141,7 @@ typedef struct Dict {
 				 * the dictionary. Used for doing traversal of
 				 * the entries in the order that they are
 				 * created. */
-    int epoch;			/* Epoch counter */
+    unsigned int epoch; 	/* Epoch counter */
     size_t refCount;		/* Reference counter (see above) */
     Tcl_Obj *chain;		/* Linked list used for invalidating the
 				 * string representations of updated nested
@@ -390,7 +390,7 @@ DupDictInternalRep(
      * Initialise other fields.
      */
 
-    newDict->epoch = 0;
+    newDict->epoch = 1;
     newDict->chain = NULL;
     newDict->refCount = 1;
 
@@ -710,7 +710,7 @@ SetDictFromAny(
      */
 
     TclFreeIntRep(objPtr);
-    dict->epoch = 0;
+    dict->epoch = 1;
     dict->chain = NULL;
     dict->refCount = 1;
     DICT(objPtr) = dict;
@@ -1109,7 +1109,7 @@ Tcl_DictObjFirst(
     dict = DICT(dictPtr);
     cPtr = dict->entryChainHead;
     if (cPtr == NULL) {
-	searchPtr->epoch = -1;
+	searchPtr->epoch = 0;
 	*donePtr = 1;
     } else {
 	*donePtr = 0;
@@ -1170,7 +1170,7 @@ Tcl_DictObjNext(
      * If the searh is done; we do no work.
      */
 
-    if (searchPtr->epoch == -1) {
+    if (!searchPtr->epoch) {
 	*donePtr = 1;
 	return;
     }
@@ -1227,8 +1227,8 @@ Tcl_DictObjDone(
 {
     Dict *dict;
 
-    if (searchPtr->epoch != -1) {
-	searchPtr->epoch = -1;
+    if (searchPtr->epoch) {
+	searchPtr->epoch = 0;
 	dict = (Dict *) searchPtr->dictionaryPtr;
 	if (dict->refCount-- <= 1) {
 	    DeleteDict(dict);
@@ -1380,7 +1380,7 @@ Tcl_NewDictObj(void)
     TclInvalidateStringRep(dictPtr);
     dict = ckalloc(sizeof(Dict));
     InitChainTable(dict);
-    dict->epoch = 0;
+    dict->epoch = 1;
     dict->chain = NULL;
     dict->refCount = 1;
     DICT(dictPtr) = dict;
@@ -1430,7 +1430,7 @@ Tcl_DbNewDictObj(
     TclInvalidateStringRep(dictPtr);
     dict = ckalloc(sizeof(Dict));
     InitChainTable(dict);
-    dict->epoch = 0;
+    dict->epoch = 1;
     dict->chain = NULL;
     dict->refCount = 1;
     DICT(dictPtr) = dict;

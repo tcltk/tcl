@@ -1277,12 +1277,12 @@ TclStackAlloc(
     int numBytes)
 {
     Interp *iPtr = (Interp *) interp;
-    int numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
+    int numWords;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return (void *) ckalloc(numBytes);
     }
-
+    numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
     return (void *) StackAllocWords(interp, numWords);
 }
 
@@ -9272,16 +9272,7 @@ IllegalExprOperandType(
     }
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
-	int numBytes;
-	const char *bytes = TclGetStringFromObj(opndPtr, &numBytes);
-
-	if (numBytes == 0) {
-	    description = "empty string";
-	} else if (TclCheckBadOctal(NULL, bytes)) {
-	    description = "invalid octal number";
-	} else {
-	    description = "non-numeric string";
-	}
+	description = "non-numeric string";
     } else if (type == TCL_NUMBER_NAN) {
 	description = "non-numeric floating-point value";
     } else if (type == TCL_NUMBER_DOUBLE) {
@@ -9292,7 +9283,8 @@ IllegalExprOperandType(
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "can't use %s as operand of \"%s\"", description, operator));
+	    "can't use %s \"%s\" as operand of \"%s\"", description,
+	    Tcl_GetString(opndPtr), operator));
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, NULL);
 }
 
