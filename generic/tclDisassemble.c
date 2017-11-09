@@ -281,7 +281,7 @@ DisassembleByteCodeObj(
     Tcl_AppendPrintfToObj(bufferObj,
 	    "\n  Cmds %d, src %d, inst %d, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
 	    numCmds, codePtr->numSrcBytes, codePtr->numCodeBytes,
-	    codePtr->numLitObjects, codePtr->numAuxDataItems,
+	    codePtr->numLitObjects, (int) BA_AuxData_Size(codePtr->auxData),
 	    codePtr->maxStackDepth,
 #ifdef TCL_COMPILE_STATS
 	    codePtr->numSrcBytes?
@@ -297,7 +297,7 @@ DisassembleByteCodeObj(
 	    codePtr->numCodeBytes,
 	    (unsigned long) (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
 	    (unsigned long) (codePtr->numExceptRanges*sizeof(ExceptionRange)),
-	    (unsigned long) (codePtr->numAuxDataItems * sizeof(AuxData)),
+	    (unsigned long) (BA_AuxData_Size(codePtr->auxData) * sizeof(AuxData)),
 	    codePtr->numCmdLocBytes);
 #endif /* TCL_COMPILE_STATS */
 
@@ -592,7 +592,7 @@ FormatInstruction(
 	case OPERAND_AUX4:
 	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
-	    auxPtr = &codePtr->auxDataArrayPtr[opnd];
+	    auxPtr = BA_AuxData_At(codePtr->auxData,opnd);
 	    break;
 	case OPERAND_IDX4:
 	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
@@ -1114,24 +1114,30 @@ DisassembleByteCodeAsDicts(
      */
 
     aux = Tcl_NewObj();
-    for (i=0 ; i<codePtr->numAuxDataItems ; i++) {
-	AuxData *auxData = &codePtr->auxDataArrayPtr[i];
-	Tcl_Obj *auxDesc = Tcl_NewStringObj(auxData->type->name, -1);
+    if (codePtr->auxData) {
+	BP_AuxData ptr;
+	AuxData *auxData = BA_AuxData_First(codePtr->auxData, &ptr);
 
-	if (auxData->type->disassembleProc) {
-	    Tcl_Obj *desc = Tcl_NewObj();
+	while (auxData) {
+	    Tcl_Obj *auxDesc = Tcl_NewStringObj(auxData->type->name, -1);
 
-	    Tcl_DictObjPut(NULL, desc, Tcl_NewStringObj("name", -1), auxDesc);
-	    auxDesc = desc;
-	    auxData->type->disassembleProc(auxData->clientData, auxDesc,
-		    codePtr, 0);
-	} else if (auxData->type->printProc) {
-	    Tcl_Obj *desc = Tcl_NewObj();
+	    if (auxData->type->disassembleProc) {
+		Tcl_Obj *desc = Tcl_NewObj();
 
-	    auxData->type->printProc(auxData->clientData, desc, codePtr, 0);
-	    Tcl_ListObjAppendElement(NULL, auxDesc, desc);
+		Tcl_DictObjPut(NULL, desc, Tcl_NewStringObj("name", -1),
+			auxDesc);
+		auxDesc = desc;
+		auxData->type->disassembleProc(auxData->clientData, auxDesc,
+			codePtr, 0);
+	    } else if (auxData->type->printProc) {
+		Tcl_Obj *desc = Tcl_NewObj();
+
+		auxData->type->printProc(auxData->clientData, desc, codePtr, 0);
+		Tcl_ListObjAppendElement(NULL, auxDesc, desc);
+	    }
+	    Tcl_ListObjAppendElement(NULL, aux, auxDesc);
+	    auxData = BP_AuxData_Next(&ptr);
 	}
-	Tcl_ListObjAppendElement(NULL, aux, auxDesc);
     }
 
     /*

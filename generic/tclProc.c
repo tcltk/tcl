@@ -1318,7 +1318,6 @@ InitLocalCache(
     Var *varPtr;
     LocalCache *localCachePtr;
     CompiledLocal *localPtr;
-    int new;
 
     /*
      * Cache the names and initial values of local variables; store the
@@ -1337,9 +1336,8 @@ InitLocalCache(
 	if (TclIsVarTemporary(localPtr)) {
 	    *namePtr = NULL;
 	} else {
-	    *namePtr = TclCreateLiteral(iPtr, localPtr->name,
-		    localPtr->nameLength, /* hash */ (unsigned int) -1,
-		    &new, /* nsPtr */ NULL, 0, NULL);
+	    *namePtr = TclCreateLiteral(iPtr,
+		    localPtr->name, localPtr->nameLength);
 	    Tcl_IncrRefCount(*namePtr);
 	}
 

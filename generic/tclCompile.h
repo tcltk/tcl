@@ -155,21 +155,6 @@ typedef struct ExceptionAux {
 } ExceptionAux;
 
 /*
- * Structure used to map between instruction pc and source locations. It
- * defines for each compiled Tcl command its code's starting offset and its
- * source's starting offset and length. Note that the code offset increases
- * monotonically: that is, the table is sorted in code offset order. The
- * source offset is not monotonic.
- */
-
-typedef struct CmdLocation {
-    int codeOffset;		/* Offset of first byte of command code. */
-    int numCodeBytes;		/* Number of bytes for command's code. */
-    int srcOffset;		/* Offset of first char of the command. */
-    int numSrcBytes;		/* Number of command source chars. */
-} CmdLocation;
-
-/*
  * TIP #280
  * Structure to record additional location information for byte code. This
  * information is internal and not saved. i.e. tbcload'ed code will not have
@@ -269,6 +254,10 @@ typedef struct AuxData {
     ClientData clientData;	/* The compilation data itself. */
 } AuxData;
 
+/* Forward declarations for fields below */
+struct BrodnikArray_CmdLocation;
+TclBrodnikArrayDeclare(AuxData,MODULE_SCOPE);
+
 /*
  * Structure defining the compilation environment. After compilation, fields
  * describing bytecode instructions are copied out into the more compact
@@ -278,8 +267,6 @@ typedef struct AuxData {
 #define COMPILEENV_INIT_CODE_BYTES    250
 #define COMPILEENV_INIT_NUM_OBJECTS    60
 #define COMPILEENV_INIT_EXCEPT_RANGES   5
-#define COMPILEENV_INIT_CMD_MAP_SIZE   40
-#define COMPILEENV_INIT_AUX_DATA_SIZE   5
 
 typedef struct CompileEnv {
     Interp *iPtr;		/* Interpreter containing the code being
@@ -305,19 +292,17 @@ typedef struct CompileEnv {
 				 * execute the code. Set by compilation
 				 * procedures before returning. */
     int currStackDepth;		/* Current stack depth. */
-    LiteralTable localLitTable;	/* Contains LiteralEntry's describing all Tcl
-				 * objects referenced by this compiled code.
-				 * Indexed by the string representations of
-				 * the literals. Used to avoid creating
-				 * duplicate objects. */
+    Tcl_HashTable litMap;	/* Map from literal value to int index where
+				 * that value is stored in literalArrayPtr.
+				 * Used to prevent dup value refs. */
     unsigned char *codeStart;	/* Points to the first byte of the code. */
     unsigned char *codeNext;	/* Points to next code array byte to use. */
     unsigned char *codeEnd;	/* Points just after the last allocated code
 				 * array byte. */
     int mallocedCodeArray;	/* Set 1 if code array was expanded and
 				 * codeStart points into the heap.*/
-    LiteralEntry *literalArrayPtr;
-    				/* Points to start of LiteralEntry array. */
+    Tcl_Obj **literalArrayPtr;
+    				/* Points of array of literal values. */
     int literalArrayNext;	/* Index of next free object array entry. */
     int literalArrayEnd;	/* Index just after last obj array entry. */
     int mallocedLiteralArray;	/* 1 if object array was expanded and objArray
@@ -338,34 +323,21 @@ typedef struct CompileEnv {
 				 * state when processing BREAK/CONTINUE
 				 * exceptions. Must be the same size as the
 				 * exceptArrayPtr. */
-    CmdLocation *cmdMapPtr;	/* Points to start of CmdLocation array.
+    struct BrodnikArray_CmdLocation *cmdMap;
+				/* Points to array of CmdLocation.
 				 * numCommands is the index of the next entry
 				 * to use; (numCommands-1) is the entry index
 				 * for the last command. */
-    int cmdMapEnd;		/* Index after last CmdLocation entry. */
-    int mallocedCmdMap;		/* 1 if command map array was expanded and
-				 * cmdMapPtr points in the heap, else 0. */
-    AuxData *auxDataArrayPtr;	/* Points to auxiliary data array start. */
-    int auxDataArrayNext;	/* Next free compile aux data array index.
-				 * auxDataArrayNext is the number of aux data
-				 * items and (auxDataArrayNext-1) is index of
-				 * current aux data array entry. */
-    int auxDataArrayEnd;	/* Index after last aux data array entry. */
-    int mallocedAuxDataArray;	/* 1 if aux data array was expanded and
-				 * auxDataArrayPtr points in heap else 0. */
+    BA_AuxData *auxData;	/* Points to array of AuxData */
     unsigned char staticCodeSpace[COMPILEENV_INIT_CODE_BYTES];
 				/* Initial storage for code. */
-    LiteralEntry staticLiteralSpace[COMPILEENV_INIT_NUM_OBJECTS];
-				/* Initial storage of LiteralEntry array. */
+    Tcl_Obj *staticLiteralSpace[COMPILEENV_INIT_NUM_OBJECTS];
+				/* Initial storage of literal value array. */
     ExceptionRange staticExceptArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
 				/* Initial ExceptionRange array storage. */
     ExceptionAux staticExAuxArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
 				/* Initial static except auxiliary info array
 				 * storage. */
-    CmdLocation staticCmdMapSpace[COMPILEENV_INIT_CMD_MAP_SIZE];
-				/* Initial storage for cmd location map. */
-    AuxData staticAuxDataArraySpace[COMPILEENV_INIT_AUX_DATA_SIZE];
-				/* Initial storage for aux data array. */
     /* TIP #280 */
     ExtCmdLoc *extCmdMapPtr;	/* Extended command location information for
 				 * 'info frame'. */
@@ -411,6 +383,8 @@ typedef struct CompileEnv {
 
 #define TCL_BYTECODE_RECOMPILE			0x0004
 
+#define TCL_BYTECODE_FREE_LITERALS		0x0008
+
 typedef struct ByteCode {
     TclHandle interpHandle;	/* Handle for interpreter containing the
 				 * compiled code. Commands and their compile
@@ -454,7 +428,6 @@ typedef struct ByteCode {
     int numCodeBytes;		/* Number of code bytes. */
     int numLitObjects;		/* Number of objects in literal array. */
     int numExceptRanges;	/* Number of ExceptionRange array elems. */
-    int numAuxDataItems;	/* Number of AuxData items. */
     int numCmdLocBytes;		/* Number of bytes needed for encoded command
 				 * location information. */
     int maxExceptDepth;		/* Maximum nesting level of ExceptionRanges;
@@ -471,9 +444,7 @@ typedef struct ByteCode {
     				/* Points to the start of the ExceptionRange
 				 * array. This is just after the last object
 				 * in the object array. */
-    AuxData *auxDataArrayPtr;	/* Points to the start of the auxiliary data
-				 * array. This is just after the last entry in
-				 * the ExceptionRange array. */
+    BA_AuxData *auxData;	/* Array of auxiliary data. */
     unsigned char *codeDeltaStart;
 				/* Points to the first of a sequence of bytes
 				 * that encode the change in the starting
@@ -944,18 +915,7 @@ typedef struct JumpFixup {
 				 * records when a jump is grown from 2 bytes
 				 * to 5 bytes. */
 } JumpFixup;
-
-#define JUMPFIXUP_INIT_ENTRIES	10
-
-typedef struct JumpFixupArray {
-    JumpFixup *fixup;		/* Points to start of jump fixup array. */
-    int next;			/* Index of next free array entry. */
-    int end;			/* Index of last usable entry in array. */
-    int mallocedArray;		/* 1 if array was expanded and fixups points
-				 * into the heap, else 0. */
-    JumpFixup staticFixupSpace[JUMPFIXUP_INIT_ENTRIES];
-				/* Initial storage for jump fixup array. */
-} JumpFixupArray;
+TclBrodnikArrayDeclare(JumpFixup,MODULE_SCOPE);
 
 /*
  * The structure describing one variable list of a foreach command. Note that
@@ -1011,7 +971,7 @@ typedef struct JumptableInfo {
 MODULE_SCOPE const AuxDataType tclJumptableInfoType;
 
 #define JUMPTABLEINFO(envPtr, index) \
-    ((JumptableInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
+    ((JumptableInfo*)(TclFetchAuxData(envPtr, TclGetUInt4AtPtr(index))))
 
 /*
  * Structure used to hold information about a [dict update] command that is
@@ -1071,6 +1031,7 @@ MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
+MODULE_SCOPE void *	TclCmdStartAddress(CompileEnv *envPtr, int i);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
@@ -1079,7 +1040,7 @@ MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
 			    CompileEnv *envPtr);
-MODULE_SCOPE void	TclCompileInvocation(Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Token *TclCompileInvocation(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj, int numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
@@ -1098,35 +1059,32 @@ MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, const char *bytes,
-			    int length, unsigned int hash, int *newPtr,
-			    Namespace *nsPtr, int flags,
-			    LiteralEntry **globalPtrPtr);
+			    int length);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
 MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
+MODULE_SCOPE void	TclDisposeFailedCompile(CompileEnv *envPtr, int num);
 MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
 			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
 MODULE_SCOPE void	TclEmitInvoke(CompileEnv *envPtr, int opcode, ...);
 MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
 			    int catchOnly, ByteCode *codePtr);
-MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
-MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, unsigned int index);
+MODULE_SCOPE ClientData	TclFetchAuxData(CompileEnv *envPtr, int index);
+MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, size_t index);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, int jumpDist,
 			    int distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
-MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE ByteCode *	TclInitByteCode(CompileEnv *envPtr);
 MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
 			    int numBytes, const CmdFrame *invoker, int word);
-MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
 			    int returnCode, ExceptionAux **auxPtrPtr);
@@ -1200,15 +1158,6 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * modules inside the Tcl core but not used outside.
  *----------------------------------------------------------------
  */
-
-/*
- * Simplified form to access AuxData.
- *
- * ClientData TclFetchAuxData(CompileEng *envPtr, int index);
- */
-
-#define TclFetchAuxData(envPtr, index) \
-    (envPtr)->auxDataArrayPtr[(index)].clientData
 
 #define LITERAL_ON_HEAP		0x01
 #define LITERAL_CMD_NAME	0x02

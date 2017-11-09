@@ -16,6 +16,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "tclBrodnik.h"
 #include <assert.h>
 
 /*
@@ -178,6 +179,8 @@ TclCompileGlobalCmd(
  *----------------------------------------------------------------------
  */
 
+TclBrodnikArrayDefine(JumpFixup,MODULE_SCOPE);
+
 int
 TclCompileIfCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
@@ -187,16 +190,16 @@ TclCompileIfCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    JumpFixupArray jumpFalseFixupArray;
+    BA_JumpFixup *jumpFalseFixup;
 				/* Used to fix the ifFalse jump after each
 				 * test when its target PC is determined. */
-    JumpFixupArray jumpEndFixupArray;
+    BA_JumpFixup *jumpEndFixup;
 				/* Used to fix the jump after each "then" body
 				 * to the end of the "if" when that PC is
 				 * determined. */
+    JumpFixup *falseFixupPtr = NULL, *endFixupPtr = NULL;
     Tcl_Token *tokenPtr, *testTokenPtr;
-    int jumpIndex = 0;		/* Avoid compiler warning. */
-    int jumpFalseDist, numWords, wordIdx, numBytes, j, code;
+    int jumpFalseDist, numWords, wordIdx, numBytes, code;
     const char *word;
     int realCond = 1;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
@@ -220,8 +223,8 @@ TclCompileIfCmd(
 	tokenPtr = TokenAfter(tokenPtr);
     }
 
-    TclInitJumpFixupArray(&jumpFalseFixupArray);
-    TclInitJumpFixupArray(&jumpEndFixupArray);
+    jumpFalseFixup = BA_JumpFixup_Create();
+    jumpEndFixup = BA_JumpFixup_Create();
     code = TCL_OK;
 
     /*
@@ -281,13 +284,8 @@ TclCompileIfCmd(
 		SetLineInformation(wordIdx);
 		Tcl_ResetResult(interp);
 		TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-		if (jumpFalseFixupArray.next >= jumpFalseFixupArray.end) {
-		    TclExpandJumpFixupArray(&jumpFalseFixupArray);
-		}
-		jumpIndex = jumpFalseFixupArray.next;
-		jumpFalseFixupArray.next++;
-		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
-			jumpFalseFixupArray.fixup+jumpIndex);
+		falseFixupPtr = BA_JumpFixup_Append(jumpFalseFixup);
+		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, falseFixupPtr);
 	    }
 	    code = TCL_OK;
 	}
@@ -324,17 +322,8 @@ TclCompileIfCmd(
 	}
 
 	if (realCond) {
-	    /*
-	     * Jump to the end of the "if" command. Both jumpFalseFixupArray
-	     * and jumpEndFixupArray are indexed by "jumpIndex".
-	     */
-
-	    if (jumpEndFixupArray.next >= jumpEndFixupArray.end) {
-		TclExpandJumpFixupArray(&jumpEndFixupArray);
-	    }
-	    jumpEndFixupArray.next++;
-	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-		    jumpEndFixupArray.fixup+jumpIndex);
+	    endFixupPtr = BA_JumpFixup_Append(jumpEndFixup);
+	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, endFixupPtr);
 
 	    /*
 	     * Fix the target of the jumpFalse after the test. Generate a 4
@@ -345,14 +334,13 @@ TclCompileIfCmd(
 	     */
 
 	    TclAdjustStackDepth(-1, envPtr);
-	    if (TclFixupForwardJumpToHere(envPtr,
-		    jumpFalseFixupArray.fixup+jumpIndex, 120)) {
+	    if (TclFixupForwardJumpToHere(envPtr, falseFixupPtr, 120)) {
 		/*
 		 * Adjust the code offset for the proceeding jump to the end
 		 * of the "if" command.
 		 */
 
-		jumpEndFixupArray.fixup[jumpIndex].codeOffset += 3;
+		endFixupPtr->codeOffset += 3;
 	    }
 	} else if (boolVal) {
 	    /*
@@ -426,17 +414,18 @@ TclCompileIfCmd(
      * Fix the unconditional jumps to the end of the "if" command.
      */
 
-    for (j = jumpEndFixupArray.next;  j > 0;  j--) {
-	jumpIndex = (j - 1);	/* i.e. process the closest jump first. */
-	if (TclFixupForwardJumpToHere(envPtr,
-		jumpEndFixupArray.fixup+jumpIndex, 127)) {
+    endFixupPtr = BA_JumpFixup_Detach(jumpEndFixup);
+    falseFixupPtr = BA_JumpFixup_Detach(jumpFalseFixup);
+
+    while (endFixupPtr) {
+	if (TclFixupForwardJumpToHere(envPtr, endFixupPtr, 127)) {
 	    /*
 	     * Adjust the immediately preceeding "ifFalse" jump. We moved it's
 	     * target (just after this jump) down three bytes.
 	     */
 
 	    unsigned char *ifFalsePc = envPtr->codeStart
-		    + jumpFalseFixupArray.fixup[jumpIndex].codeOffset;
+		    + falseFixupPtr->codeOffset;
 	    unsigned char opCode = *ifFalsePc;
 
 	    if (opCode == INST_JUMP_FALSE1) {
@@ -451,6 +440,9 @@ TclCompileIfCmd(
 		Tcl_Panic("TclCompileIfCmd: unexpected opcode \"%d\" updating ifFalse jump", (int) opCode);
 	    }
 	}
+
+	endFixupPtr = BA_JumpFixup_Detach(jumpEndFixup);
+	falseFixupPtr = BA_JumpFixup_Detach(jumpFalseFixup);
     }
 
     /*
@@ -458,8 +450,8 @@ TclCompileIfCmd(
      */
 
   done:
-    TclFreeJumpFixupArray(&jumpFalseFixupArray);
-    TclFreeJumpFixupArray(&jumpEndFixupArray);
+    BA_JumpFixup_Destroy(jumpFalseFixup);
+    BA_JumpFixup_Destroy(jumpEndFixup);
     return code;
 }
 

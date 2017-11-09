@@ -1732,7 +1732,7 @@ Tcl_FSEvalFileEx(
     const char *encodingName)	/* If non-NULL, then use this encoding for the
 				 * file. NULL means use the system encoding. */
 {
-    int length, result = TCL_ERROR;
+    int result = TCL_ERROR;
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile;
     Interp *iPtr;
@@ -1818,14 +1818,13 @@ Tcl_FSEvalFileEx(
     oldScriptFile = iPtr->scriptFile;
     iPtr->scriptFile = pathPtr;
     Tcl_IncrRefCount(iPtr->scriptFile);
-    string = TclGetStringFromObj(objPtr, &length);
 
     /*
      * TIP #280 Force the evaluator to open a frame for a sourced file.
      */
 
     iPtr->evalFlags |= TCL_EVAL_FILE;
-    result = TclEvalEx(interp, string, length, 0, 1, NULL, string);
+    result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
 
     /*
      * Now we have to be careful; the script may have changed the
@@ -1845,6 +1844,7 @@ Tcl_FSEvalFileEx(
 	 * Record information telling where the error occurred.
 	 */
 
+	int length;
 	const char *pathString = TclGetStringFromObj(pathPtr, &length);
 	int limit = 150;
 	int overflow = (length > limit);

@@ -1426,12 +1426,9 @@ TclSubstCompile(
     Tcl_Token *endTokenPtr, *tokenPtr;
     int breakOffset = 0, count = 0, bline = line;
     Tcl_Parse parse;
-    Tcl_InterpState state = NULL;
 
-    TclSubstParse(interp, bytes, numBytes, flags, &parse, &state);
-    if (state != NULL) {
-	Tcl_ResetResult(interp);
-    }
+    parse.commandStart = NULL;
+    TclSubstParse(interp, bytes, numBytes, flags, &parse);
 
     /*
      * Tricky point! If the first token does not result in a *guaranteed* push
@@ -1483,7 +1480,7 @@ TclSubstCompile(
 		int i, foundCommand = 0;
 
 		for (i=2 ; i<=tokenPtr->numComponents ; i++) {
-		    if (tokenPtr[i].type == TCL_TOKEN_COMMAND) {
+		    if (tokenPtr[i].type == TCL_TOKEN_SCRIPT_SUBST) {
 			foundCommand = 1;
 			break;
 		    }
@@ -1530,14 +1527,17 @@ TclSubstCompile(
 	ExceptionRangeStarts(envPtr, catchRange);
 
 	switch (tokenPtr->type) {
-	case TCL_TOKEN_COMMAND:
-	    TclCompileScript(interp, tokenPtr->start+1, tokenPtr->size-2,
+	case TCL_TOKEN_SCRIPT_SUBST:
+	    TclCompileTokens(interp, tokenPtr, tokenPtr->numComponents + 1,
 		    envPtr);
 	    count++;
 	    break;
 	case TCL_TOKEN_VARIABLE:
 	    TclCompileVarSubst(interp, tokenPtr, envPtr);
 	    count++;
+	    break;
+	case TCL_TOKEN_ERROR:
+	    TclCompileTokens(interp, tokenPtr, 1, envPtr);
 	    break;
 	default:
 	    Tcl_Panic("unexpected token type in TclCompileSubstCmd: %d",
@@ -1645,13 +1645,19 @@ TclSubstCompile(
 	OP1(	STR_CONCAT1, count);
     }
 
-    Tcl_FreeParse(&parse);
-
-    if (state != NULL) {
-	Tcl_RestoreInterpState(interp, state);
-	TclCompileSyntaxError(interp, envPtr);
-	TclAdjustStackDepth(-1, envPtr);
+    if (endTokenPtr[-1].type == TCL_TOKEN_ERROR) {
+	/*
+	 * Bytecode execution will only reach this point after a
+	 * TCL_RETURN, TCL_CONTINUE, or other exception is raised.
+	 * In those cases, we're at a +1 status in stack depth, so
+	 * we POP before continuing with instructions to raise the
+	 * syntax error message.
+	 */
+	OP(	POP);
+	TclCompileTokens(interp, endTokenPtr - 1, 1, envPtr);
     }
+
+    Tcl_FreeParse(&parse);
 
     /* Final target of the multi-jump from all BREAKs */
     if (breakOffset > 0) {

@@ -65,8 +65,7 @@ LocateTargetAddresses(
      */
 
     for (i=0 ; i<envPtr->numCommands ; i++) {
-	DefineTargetAddress(tablePtr,
-		envPtr->codeStart + envPtr->cmdMapPtr[i].codeOffset);
+	DefineTargetAddress(tablePtr, TclCmdStartAddress(envPtr, i));
     }
 
     /*

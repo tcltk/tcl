@@ -2600,53 +2600,7 @@ BuildEnsembleConfig(
 	    Tcl_DictObjNext(&dictSearch, &keyObj, &valueObj, &done);
 	}
     } else {
-	/*
-	 * Discover what commands are actually exported by the namespace.
-	 * What we have is an array of patterns and a hash table whose keys
-	 * are the command names exported by the namespace (the contents do
-	 * not matter here.) We must find out what commands are actually
-	 * exported by filtering each command in the namespace against each of
-	 * the patterns in the export list. Note that we use an intermediate
-	 * hash table to make memory management easier, and because that makes
-	 * exact matching far easier too.
-	 *
-	 * Suggestion for future enhancement: compute the unique prefixes and
-	 * place them in the hash too, which should make for even faster
-	 * matching.
-	 */
-
-	hPtr = Tcl_FirstHashEntry(&ensemblePtr->nsPtr->cmdTable, &search);
-	for (; hPtr!= NULL ; hPtr=Tcl_NextHashEntry(&search)) {
-	    char *nsCmdName =		/* Name of command in namespace. */
-		    Tcl_GetHashKey(&ensemblePtr->nsPtr->cmdTable, hPtr);
-
-	    for (i=0 ; i<ensemblePtr->nsPtr->numExportPatterns ; i++) {
-		if (Tcl_StringMatch(nsCmdName,
-			ensemblePtr->nsPtr->exportArrayPtr[i])) {
-		    hPtr = Tcl_CreateHashEntry(hash, nsCmdName, &isNew);
-
-		    /*
-		     * Remember, hash entries have a full reference to the
-		     * substituted part of the command (as a list) as their
-		     * content!
-		     */
-
-		    if (isNew) {
-			Tcl_Obj *cmdObj, *cmdPrefixObj;
-
-			TclNewObj(cmdObj);
-			Tcl_AppendStringsToObj(cmdObj,
-				ensemblePtr->nsPtr->fullName,
-				(ensemblePtr->nsPtr->parentPtr ? "::" : ""),
-				nsCmdName, NULL);
-			cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
-			Tcl_SetHashValue(hPtr, cmdPrefixObj);
-			Tcl_IncrRefCount(cmdPrefixObj);
-		    }
-		    break;
-		}
-	    }
-	}
+	TclFillTableWithExports(ensemblePtr->nsPtr, hash);
     }
 
     if (hash->numEntries == 0) {
@@ -3174,7 +3128,7 @@ TclAttemptCompileProc(
     Tcl_Token *saveTokenPtr = parsePtr->tokenPtr;
     int savedStackDepth = envPtr->currStackDepth;
     unsigned savedCodeNext = envPtr->codeNext - envPtr->codeStart;
-    int savedAuxDataArrayNext = envPtr->auxDataArrayNext;
+    size_t savedAuxDataSize = BA_AuxData_Size(envPtr->auxData);
     int savedExceptArrayNext = envPtr->exceptArrayNext;
 #ifdef TCL_COMPILE_DEBUG
     int savedExceptDepth = envPtr->exceptDepth;
@@ -3251,21 +3205,13 @@ TclAttemptCompileProc(
 	}
 	envPtr->exceptArrayNext = savedExceptArrayNext;
 
-	if (savedAuxDataArrayNext != envPtr->auxDataArrayNext) {
-	    AuxData *auxDataPtr = envPtr->auxDataArrayPtr;
-	    AuxData *auxDataEnd = auxDataPtr;
-
-	    auxDataPtr += savedAuxDataArrayNext;
-	    auxDataEnd += envPtr->auxDataArrayNext;
-
-	    while (auxDataPtr < auxDataEnd) {
-		if (auxDataPtr->type->freeProc != NULL) {
-		    auxDataPtr->type->freeProc(auxDataPtr->clientData);
-		}
-		auxDataPtr++;
+	while (savedAuxDataSize < BA_AuxData_Size(envPtr->auxData)) {
+	    AuxData *auxDataPtr = BA_AuxData_Detach(envPtr->auxData);
+	    if (auxDataPtr->type->freeProc != NULL) {
+		auxDataPtr->type->freeProc(auxDataPtr->clientData);
 	    }
-	    envPtr->auxDataArrayNext = savedAuxDataArrayNext;
 	}
+
 	envPtr->currStackDepth = savedStackDepth;
 	envPtr->codeNext = envPtr->codeStart + savedCodeNext;
 #ifdef TCL_COMPILE_DEBUG
@@ -3389,7 +3335,7 @@ CompileBasicNArgCommand(
 
     Tcl_IncrRefCount(objPtr);
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
-    TclCompileInvocation(interp, parsePtr->tokenPtr, objPtr,
+    (void) TclCompileInvocation(interp, parsePtr->tokenPtr, objPtr,
 	    parsePtr->numWords, envPtr);
     Tcl_DecrRefCount(objPtr);
     return TCL_OK;
