@@ -5228,7 +5228,6 @@ TestsaveresultCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    Interp* iPtr = (Interp*) interp;
     int discard, result, index;
     Tcl_SavedResult state;
     Tcl_Obj *objPtr;
@@ -5296,12 +5295,9 @@ TestsaveresultCmd(
     }
 
     switch ((enum options) index) {
-    case RESULT_DYNAMIC: {
-	int presentOrFreed = (iPtr->freeProc == TestsaveresultFree) ^ freeCount;
-
-	Tcl_AppendElement(interp, presentOrFreed ? "presentOrFreed" : "missingOrLeak");
+    case RESULT_DYNAMIC:
+	Tcl_AppendElement(interp, freeCount ? "freed" : "leak");
 	break;
-    }
     case RESULT_OBJECT:
 	Tcl_AppendElement(interp, Tcl_GetObjResult(interp) == objPtr
 		? "same" : "different");
