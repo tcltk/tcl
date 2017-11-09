@@ -3805,7 +3805,8 @@ SetEndOffsetFromAny(
 	if (TclIsSpaceProc(bytes[4])) {
 	    goto badIndexFormat;
 	}
-	if (TclParseNumber(NULL, objPtr, "number", (char *) (bytes) + 4, -1, NULL, 0) != TCL_OK) {
+	if (TclParseNumber(NULL, objPtr, "number", (char *) (bytes) + 4, -1,
+		NULL, TCL_PARSE_INTEGER_ONLY | TCL_PARSE_NO_WHITESPACE) != TCL_OK) {
 	    TclFreeIntRep(objPtr);
 	    goto badIndexFormat;
 	}
