@@ -111,6 +111,7 @@ static void		FreeThreadHash(ClientData clientData);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		SetEndOffsetFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
+static void		UpdateStringOfEndOffset(Tcl_Obj *objPtr);
 static int		FindElement(Tcl_Interp *interp, const char *string,
 			    int stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
@@ -127,7 +128,7 @@ const Tcl_ObjType tclEndOffsetType = {
     "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
-    NULL,				/* updateStringProc */
+    UpdateStringOfEndOffset,		/* updateStringProc */
     SetEndOffsetFromAny
 };
 
@@ -3703,6 +3704,45 @@ TclGetIntForIndex(
 /*
  *----------------------------------------------------------------------
  *
+ * UpdateStringOfEndOffset --
+ *
+ *	Update the string rep of a Tcl object holding an "end-offset"
+ *	expression.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stores a valid string in the object's string rep.
+ *
+ * This function does NOT free any earlier string rep. If it is called on an
+ * object that already has a valid string rep, it will leak memory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+UpdateStringOfEndOffset(
+    register Tcl_Obj *objPtr)
+{
+    char buffer[TCL_INTEGER_SPACE + 5];
+    register int len = 3;
+
+    memcpy(buffer, "end", 4);
+    if (objPtr->internalRep.wideValue != 0) {
+	if (objPtr->internalRep.wideValue > 0) {
+	    buffer[len++] = '+';
+	}
+	len += sprintf(buffer+len, "%" TCL_LL_MODIFIER "d", objPtr->internalRep.wideValue);
+    }
+    objPtr->bytes = ckalloc((unsigned) len+1);
+    memcpy(objPtr->bytes, buffer, (unsigned) len+1);
+    objPtr->length = len;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * SetEndOffsetFromAny --
  *
  *	Look for a string of the form "end[+-]offset" and convert it to an
@@ -3726,7 +3766,6 @@ SetEndOffsetFromAny(
     Tcl_WideInt offset;		/* Offset in the "end-offset" expression */
     register const char *bytes;	/* String rep of the object */
     int length;			/* Length of the object's string rep */
-    Tcl_Obj obj;
 
     /*
      * If it's already the right type, we're fine.
@@ -3760,23 +3799,33 @@ SetEndOffsetFromAny(
     } else if ((length > 4) && ((bytes[3] == '-') || (bytes[3] == '+'))) {
 	/*
 	 * This is our limited string expression evaluator. Pass everything
-	 * after "end-" to Tcl_GetInt, then reverse for offset.
+	 * after "end-" to TclParseNumber, then reverse for offset.
 	 */
 
 	if (TclIsSpaceProc(bytes[4])) {
 	    goto badIndexFormat;
 	}
-	obj.refCount = 1;
-	obj.bytes = (char *) (bytes) + 4;
-	obj.length = strlen((char *)(bytes) + 4);
-	obj.typePtr = NULL;
-
-	if (Tcl_GetWideIntFromObj(interp, &obj, &offset) != TCL_OK) {
-	    TclFreeIntRep(&obj);
-	    return TCL_ERROR;
+	if (TclParseNumber(NULL, objPtr, "number", (char *) (bytes) + 4, -1, NULL, 0) != TCL_OK) {
+	    TclFreeIntRep(objPtr);
+	    goto badIndexFormat;
+	}
+	if (objPtr->typePtr == &tclIntType
+#ifndef TCL_WIDE_INT_IS_LONG
+		    || objPtr->typePtr == &tclWideIntType
+#endif
+		) {
+	    TclGetWideIntFromObj(interp, objPtr, &offset);
+	} else if (objPtr->typePtr == &tclBignumType) {
+	    mp_int big;
+	    Tcl_GetBignumFromObj(interp, objPtr, &big);
+	    TclFreeIntRep(objPtr);
+	    offset = mp_isneg(&big) ? -LLONG_MAX : LLONG_MAX;
+	} else {
+	    TclFreeIntRep(objPtr);
+	    goto badIndexFormat;
 	}
 	if (bytes[3] == '-') {
-	    offset = -offset;
+	    offset = (offset == LLONG_MIN) ? LLONG_MAX : -offset;
 	}
     } else {
 	/*
