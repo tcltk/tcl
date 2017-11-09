@@ -50,10 +50,11 @@ declare 6 {
 declare 7 {
     int TclCopyAndCollapse(int count, const char *src, char *dst)
 }
-declare 8 {
-    int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
-	    Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr)
-}
+# Removed in 9.0:
+#declare 8 {
+#    int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
+#	    Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr)
+#}
 
 # TclCreatePipeline unofficially exported for use by BLT.
 
@@ -73,7 +74,7 @@ declare 11 {
 declare 12 {
     void TclDeleteVars(Interp *iPtr, TclVarHashTable *tablePtr)
 }
-# Removed in 8.5
+# Removed in 8.5:
 #declare 13 {
 #    int TclDoGlob(Tcl_Interp *interp, char *separators,
 #	    Tcl_DString *headPtr, char *tail, Tcl_GlobTypeData *types)
@@ -88,7 +89,7 @@ declare 14 {
 declare 16 {
     void TclExprFloatError(Tcl_Interp *interp, double value)
 }
-# Removed in 8.4
+# Removed in 8.4:
 #declare 17 {
 #    int TclFileAttrsCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 #}
@@ -123,7 +124,7 @@ declare 25 {
 #  declare 26 {
 #      char *TclGetCwd(Tcl_Interp *interp)
 #  }
-# Removed in 8.5
+# Removed in 8.5:
 #declare 27 {
 #    int TclGetDate(char *p, unsigned long now, long zone,
 #	    unsigned long *timePtr)
@@ -147,7 +148,7 @@ declare 32 {
     int TclGetFrame(Tcl_Interp *interp, const char *str,
 	    CallFrame **framePtrPtr)
 }
-# Removed in Tcl 8.5
+# Removed in 8.5:
 #declare 33 {
 #    TclCmdProcType TclGetInterpProc(void)
 #}
@@ -160,7 +161,7 @@ declare 34 {
 #    Tcl_Obj *TclGetIndexedScalar(Tcl_Interp *interp, int localIndex,
 #	    int flags)
 #}
-# Removed in 8.6a2
+# Removed in 8.6a2:
 #declare 36 {
 #    int TclGetLong(Tcl_Interp *interp, const char *str, long *longPtr)
 #}
@@ -185,7 +186,7 @@ declare 41 {
 declare 42 {
     CONST86 char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
 }
-# Removed in Tcl 8.5a2
+# Removed in 8.5a2:
 #declare 43 {
 #    int TclGlobalInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
 #	    int flags)
@@ -220,7 +221,7 @@ declare 50 {
 declare 51 {
     int TclInterpInit(Tcl_Interp *interp)
 }
-# Removed in Tcl 8.5a2
+# Removed in 8.5a2:
 #declare 52 {
 #    int TclInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
 #	    int flags)
@@ -273,7 +274,7 @@ declare 64 {
     int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
 	    int flags)
 }
-# Removed in Tcl 8.5a2
+# Removed in 8.5a2:
 #declare 65 {
 #    int TclObjInvokeGlobal(Tcl_Interp *interp, int objc,
 #	    Tcl_Obj *const objv[], int flags)
@@ -314,10 +315,10 @@ declare 76 {
     unsigned long TclpGetSeconds(void)
 }
 
-# deprecated
-declare 77 {
-    void TclpGetTime(Tcl_Time *time)
-}
+# Removed in 9.0:
+#declare 77 {
+#    void TclpGetTime(Tcl_Time *time)
+#}
 # Removed in 8.6:
 #declare 78 {
 #    int TclpGetTimeZone(unsigned long time)
@@ -380,7 +381,7 @@ declare 92 {
 declare 93 {
     void TclProcDeleteProc(ClientData clientData)
 }
-# Removed in Tcl 8.5:
+# Removed in 8.5:
 #declare 94 {
 #    int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp,
 #	    int argc, const char **argv)
@@ -419,9 +420,10 @@ declare 103 {
     int TclSockGetPort(Tcl_Interp *interp, const char *str, const char *proto,
 	    int *portPtr)
 }
-declare 104 {
-    int TclSockMinimumBuffersOld(int sock, int size)
-}
+# Removed in 9.0:
+#declare 104 {
+#    int TclSockMinimumBuffersOld(int sock, int size)
+#}
 # Replaced by Tcl_FSStat in 8.4:
 #declare 105 {
 #    int TclStat(const char *path, Tcl_StatBuf *buf)
@@ -454,29 +456,35 @@ declare 111 {
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc,
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
-declare 112 {
-    int Tcl_AppendExportList(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-	    Tcl_Obj *objPtr)
-}
-declare 113 {
-    Tcl_Namespace *Tcl_CreateNamespace(Tcl_Interp *interp, const char *name,
-	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
-}
-declare 114 {
-    void Tcl_DeleteNamespace(Tcl_Namespace *nsPtr)
-}
-declare 115 {
-    int Tcl_Export(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-	    const char *pattern, int resetListFirst)
-}
-declare 116 {
-    Tcl_Command Tcl_FindCommand(Tcl_Interp *interp, const char *name,
-	    Tcl_Namespace *contextNsPtr, int flags)
-}
-declare 117 {
-    Tcl_Namespace *Tcl_FindNamespace(Tcl_Interp *interp, const char *name,
-	    Tcl_Namespace *contextNsPtr, int flags)
-}
+# Removed in 9.0:
+#declare 112 {
+#    int Tcl_AppendExportList(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    Tcl_Obj *objPtr)
+#}
+# Removed in 9.0:
+#declare 113 {
+#    Tcl_Namespace *Tcl_CreateNamespace(Tcl_Interp *interp, const char *name,
+#	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
+#}
+# Removed in 9.0:
+#declare 114 {
+#    void Tcl_DeleteNamespace(Tcl_Namespace *nsPtr)
+#}
+# Removed in 9.0:
+#declare 115 {
+#    int Tcl_Export(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    const char *pattern, int resetListFirst)
+#}
+# Removed in 9.0:
+#declare 116 {
+#    Tcl_Command Tcl_FindCommand(Tcl_Interp *interp, const char *name,
+#	    Tcl_Namespace *contextNsPtr, int flags)
+#}
+# Removed in 9.0:
+#declare 117 {
+#    Tcl_Namespace *Tcl_FindNamespace(Tcl_Interp *interp, const char *name,
+#	    Tcl_Namespace *contextNsPtr, int flags)
+#}
 declare 118 {
     int Tcl_GetInterpResolvers(Tcl_Interp *interp, const char *name,
 	    Tcl_ResolverInfo *resInfo)
@@ -489,31 +497,37 @@ declare 120 {
     Tcl_Var Tcl_FindNamespaceVar(Tcl_Interp *interp, const char *name,
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
-declare 121 {
-    int Tcl_ForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-	    const char *pattern)
-}
-declare 122 {
-    Tcl_Command Tcl_GetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
-}
-declare 123 {
-    void Tcl_GetCommandFullName(Tcl_Interp *interp, Tcl_Command command,
-	    Tcl_Obj *objPtr)
-}
-declare 124 {
-    Tcl_Namespace *Tcl_GetCurrentNamespace(Tcl_Interp *interp)
-}
-declare 125 {
-    Tcl_Namespace *Tcl_GetGlobalNamespace(Tcl_Interp *interp)
-}
+# Removed in 9.0:
+#declare 121 {
+#    int Tcl_ForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    const char *pattern)
+#}
+# Removed in 9.0:
+#declare 122 {
+#    Tcl_Command Tcl_GetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+#}
+# Removed in 9.0:
+#declare 123 {
+#    void Tcl_GetCommandFullName(Tcl_Interp *interp, Tcl_Command command,
+#	    Tcl_Obj *objPtr)
+#}
+# Removed in 9.0:
+#declare 124 {
+#    Tcl_Namespace *Tcl_GetCurrentNamespace(Tcl_Interp *interp)
+#}
+# Removed in 9.0:
+#declare 125 {
+#    Tcl_Namespace *Tcl_GetGlobalNamespace(Tcl_Interp *interp)
+#}
 declare 126 {
     void Tcl_GetVariableFullName(Tcl_Interp *interp, Tcl_Var variable,
 	    Tcl_Obj *objPtr)
 }
-declare 127 {
-    int Tcl_Import(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-	    const char *pattern, int allowOverwrite)
-}
+# Removed in 9.0:
+#declare 127 {
+#    int Tcl_Import(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    const char *pattern, int allowOverwrite)
+#}
 declare 128 {
     void Tcl_PopCallFrame(Tcl_Interp *interp)
 }
@@ -532,9 +546,10 @@ declare 131 {
 declare 132 {
     int TclpHasSockets(Tcl_Interp *interp)
 }
-declare 133 {
-    struct tm *TclpGetDate(const time_t *time, int useGMT)
-}
+# Removed in 9.0
+#declare 133 {
+#    struct tm *TclpGetDate(const time_t *time, int useGMT)
+#}
 # Removed in 8.5
 #declare 134 {
 #    size_t TclpStrftime(char *s, size_t maxsize, const char *format,
@@ -625,14 +640,14 @@ declare 156 {
 declare 157 {
     Var *TclVarTraceExists(Tcl_Interp *interp, const char *varName)
 }
-# REMOVED (except from stub table) - use public Tcl_SetStartupScript()
-declare 158 {
-    void TclSetStartupScriptFileName(const char *filename)
-}
-# REMOVED (except from stub table) - use public Tcl_GetStartupScript()
-declare 159 {
-    const char *TclGetStartupScriptFileName(void)
-}
+# REMOVED - use public Tcl_SetStartupScript()
+#declare 158 {
+#    void TclSetStartupScriptFileName(const char *filename)
+#}
+# REMOVED - use public Tcl_GetStartupScript()
+#declare 159 {
+#    const char *TclGetStartupScriptFileName(void)
+#}
 #declare 160 {
 #    int TclpMatchFilesTypes(Tcl_Interp *interp, char *separators,
 #	    Tcl_DString *dirPtr, char *pattern, char *tail,
@@ -677,14 +692,14 @@ declare 166 {
 }
 
 # VFS-aware versions of Tcl*StartupScriptFileName (158 and 159 above)
-# REMOVED (except from stub table) - use public Tcl_SetStartupScript()
-declare 167 {
-    void TclSetStartupScriptPath(Tcl_Obj *pathPtr)
-}
-# REMOVED (except from stub table) - use public Tcl_GetStartupScript()
-declare 168 {
-    Tcl_Obj *TclGetStartupScriptPath(void)
-}
+# REMOVED - use public Tcl_SetStartupScript()
+#declare 167 {
+#    void TclSetStartupScriptPath(Tcl_Obj *pathPtr)
+#}
+# REMOVED - use public Tcl_GetStartupScript()
+#declare 168 {
+#    Tcl_Obj *TclGetStartupScriptPath(void)
+#}
 # variant of Tcl_UtfNCmp that takes n as bytes, not chars
 declare 169 {
     int TclpUtfNcmp2(const char *s1, const char *s2, unsigned long n)
@@ -730,13 +745,13 @@ declare 177 {
     void TclVarErrMsg(Tcl_Interp *interp, const char *part1, const char *part2,
 	    const char *operation, const char *reason)
 }
-# TIP 338 made these public - now declared in tcl.h too
-declare 178 {
-    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
-}
-declare 179 {
-    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
-}
+# TIP 338 made these public - now declared in tcl.h
+#declare 178 {
+#    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
+#}
+#declare 179 {
+#    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
+#}
 
 # REMOVED
 # Allocate lists without copying arrays
@@ -748,14 +763,14 @@ declare 179 {
 #	    const char *file, int line)
 #}
 
-# TclpGmtime and TclpLocaltime promoted to the generic interface from unix
-
-declare 182 {
-     struct tm *TclpLocaltime(const time_t *clock)
-}
-declare 183 {
-     struct tm *TclpGmtime(const time_t *clock)
-}
+# Removed in 9.0
+#declare 182 {
+#     struct tm *TclpLocaltime(const time_t *clock)
+#}
+# Removed in 9.0
+#declare 183 {
+#     struct tm *TclpGmtime(const time_t *clock)
+#}
 
 # For the new "Thread Storage" subsystem.
 
@@ -940,9 +955,9 @@ declare 235 {
 
 
 # TIP 337 made this one public
-declare 236 {
-    void TclBackgroundException(Tcl_Interp *interp, int code)
-}
+#declare 236 {
+#    void TclBackgroundException(Tcl_Interp *interp, int code)
+#}
 
 # TIP #285: Script cancellation support.
 declare 237 {
@@ -1051,17 +1066,20 @@ interface tclIntPlat
 declare 0 win {
     void TclWinConvertError(DWORD errCode)
 }
-declare 1 win {
-    void TclWinConvertWSAError(DWORD errCode)
-}
-declare 2 win {
-    struct servent *TclWinGetServByName(const char *nm,
-	    const char *proto)
-}
-declare 3 win {
-    int TclWinGetSockOpt(SOCKET s, int level, int optname,
-	    char *optval, int *optlen)
-}
+# Removed in 9.0:
+#declare 1 win {
+#    void TclWinConvertWSAError(DWORD errCode)
+#}
+# Removed in 9.0:
+#declare 2 win {
+#    struct servent *TclWinGetServByName(const char *nm,
+#	    const char *proto)
+#}
+# Removed in 9.0:
+#declare 3 win {
+#    int TclWinGetSockOpt(SOCKET s, int level, int optname,
+#	    char *optval, int *optlen)
+#}
 declare 4 win {
     HINSTANCE TclWinGetTclInstance(void)
 }
@@ -1073,24 +1091,26 @@ declare 5 win {
 #  declare 5 win {
 #      HINSTANCE TclWinLoadLibrary(char *name)
 #  }
-declare 6 win {
-    unsigned short TclWinNToHS(unsigned short ns)
-}
-declare 7 win {
-    int TclWinSetSockOpt(SOCKET s, int level, int optname,
-	    const char *optval, int optlen)
-}
+# Removed in 9.0:
+#declare 6 win {
+#    unsigned short TclWinNToHS(unsigned short ns)
+#}
+# Removed in 9.0:
+#declare 7 win {
+#    int TclWinSetSockOpt(SOCKET s, int level, int optname,
+#	    const char *optval, int optlen)
+#}
 declare 8 win {
     int TclpGetPid(Tcl_Pid pid)
 }
 declare 9 win {
     int TclWinGetPlatformId(void)
 }
-# new for 8.4.20+/8.5.12+ Cygwin only
-declare 10 win {
-    Tcl_DirEntry *TclpReaddir(DIR *dir)
-}
-# Removed in 8.3.1 (for Win32s only)
+# Removed in 9.0:
+#declare 10 win {
+#    Tcl_DirEntry *TclpReaddir(DIR *dir)
+#}
+# Removed in 8.3.1 (for Win32s only):
 #declare 10 win {
 #    int TclWinSynchSpawn(void *args, int type, void **trans, Tcl_Pid *pidPtr)
 #}
@@ -1140,10 +1160,10 @@ declare 19 win {
 declare 20 win {
     void TclWinAddProcess(HANDLE hProcess, DWORD id)
 }
-# new for 8.4.20+/8.5.12+
-declare 21 win {
-    char *TclpInetNtoa(struct in_addr addr)
-}
+# Removed in 9.0:
+#declare 21 win {
+#    char *TclpInetNtoa(struct in_addr addr)
+#}
 # removed permanently for 8.4
 #declare 21 win {
 #    void TclpAsyncMark(Tcl_AsyncHandler async)
@@ -1164,9 +1184,10 @@ declare 24 win {
 #declare 25 win {
 #    TclPlatformType *TclWinGetPlatform(void)
 #}
-declare 26 win {
-    void TclWinSetInterfaces(int wide)
-}
+# Removed in 9.0:
+#declare 26 win {
+#    void TclWinSetInterfaces(int wide)
+#}
 
 # Added in Tcl 8.3.3 / 8.4
 
@@ -1225,20 +1246,22 @@ declare 9 unix {
 
 # Added in 8.4:
 
-declare 10 unix {
-    Tcl_DirEntry *TclpReaddir(DIR *dir)
-}
-# Slots 11 and 12 are forwarders for functions that were promoted to
-# generic Stubs
-declare 11 unix {
-    struct tm *TclpLocaltime_unix(const time_t *clock)
-}
-declare 12 unix {
-    struct tm *TclpGmtime_unix(const time_t *clock)
-}
-declare 13 unix {
-    char *TclpInetNtoa(struct in_addr addr)
-}
+# Removed in 9.0:
+#declare 10 unix {
+#    Tcl_DirEntry *TclpReaddir(DIR *dir)
+#}
+# Removed in 9.0:
+#declare 11 unix {
+#    struct tm *TclpLocaltime_unix(const time_t *clock)
+#}
+# Removed in 9.0:
+#declare 12 unix {
+#    struct tm *TclpGmtime_unix(const time_t *clock)
+#}
+# Removed in 9.0:
+#declare 13 unix {
+#    char *TclpInetNtoa(struct in_addr addr)
+#}
 
 # Added in 8.5:
 
