@@ -2366,14 +2366,27 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
 #ifdef USE_TCL_STUBS
-#define Tcl_InitStubs(interp, version, exact) \
-    (Tcl_InitStubs)(interp, version, \
+#if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#   define Tcl_InitStubs(interp, version, exact) \
+	(Tcl_InitStubs)(interp, version, \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
 	    TCL_STUB_MAGIC)
 #else
-#define Tcl_InitStubs(interp, version, exact) \
-    Tcl_PkgInitStubsCheck(interp, version, \
-	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
+#   define Tcl_InitStubs(interp, version, exact) \
+	(Tcl_InitStubs)(interp, TCL_PATCH_LEVEL, \
+	    1|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
+	    TCL_STUB_MAGIC)
+#endif
+#else
+#if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#   define Tcl_InitStubs(interp, version, exact) \
+	Tcl_PkgInitStubsCheck(interp, version, \
+		(exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
+#else
+#   define Tcl_InitStubs(interp, version, exact) \
+	Tcl_PkgInitStubsCheck(interp, TCL_PATCH_LEVEL, \
+		1|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
+#endif
 #endif
 
 /*
