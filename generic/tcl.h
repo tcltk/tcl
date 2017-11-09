@@ -997,7 +997,7 @@ typedef struct Tcl_DString {
 
 #define Tcl_DStringLength(dsPtr) ((dsPtr)->length)
 #define Tcl_DStringValue(dsPtr) ((dsPtr)->string)
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #   define Tcl_DStringTrunc Tcl_DStringSetLength
 #endif /* !TCL_NO_DEPRECATED */
 
@@ -2615,7 +2615,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * Deprecated Tcl functions:
  */
 
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 /*
  * These function have been renamed. The old names are deprecated, but we
  * define these macros for backwards compatibilty.
