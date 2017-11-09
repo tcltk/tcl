@@ -293,13 +293,12 @@ namespace eval test_ns_hier1 {
     namespace eval test_ns_hier2a {}
     namespace eval test_ns_hier2b {}
 }
-# TIP 278: secondary lookup disabled for vars, tests disabled with #
 test namespace-old-5.4 {nested namespaces can access global namespace} {
-    list [namespace eval test_ns_hier1 {#set test_ns_var_global}] \
+    list [namespace eval test_ns_hier1 {set test_ns_var_global}] \
          [namespace eval test_ns_hier1 {test_ns_cmd_global}] \
-         [namespace eval test_ns_hier1::test_ns_hier2 {#set test_ns_var_global}] \
+         [namespace eval test_ns_hier1::test_ns_hier2 {set test_ns_var_global}] \
          [namespace eval test_ns_hier1::test_ns_hier2 {test_ns_cmd_global}]
-} {{} {cmd in ::} {} {cmd in ::}}
+} {{var in ::} {cmd in ::} {var in ::} {cmd in ::}}
 test namespace-old-5.5 {variables in different namespaces don't conflict} {
     list [set test_ns_hier1::test_ns_level] \
          [set test_ns_hier1::test_ns_hier2::test_ns_level]
@@ -469,12 +468,11 @@ test namespace-old-6.11 {commands affect all parent namespaces} {
     }
     list [test_ns_cache1::trigger] [test_ns_cache1::test_ns_cache2::trigger]
 } {{cache2 version} {cache2 version}}
-# TIP 278: secondary lookup disabled, catch added, result changed from {global version}
 test namespace-old-6.12 {define test variables} {
     variable test_ns_cache_var "global version"
     set trigger {set test_ns_cache_var}
-    list [catch {namespace eval test_ns_cache1 $trigger} msg] $msg
-} {1 {can't read "test_ns_cache_var": no such variable}}
+    namespace eval test_ns_cache1 $trigger
+} {global version}
     set trigger {set test_ns_cache_var}
 test namespace-old-6.13 {one-level check for variable shadowing} {
     namespace eval test_ns_cache1 {
@@ -483,24 +481,22 @@ test namespace-old-6.13 {one-level check for variable shadowing} {
     namespace eval test_ns_cache1 $trigger
 } {cache1 version}
 variable ::test_ns_cache_var "global version"
-# TIP 278: secondary lookup disabled, catch added, result changed from {global version}
 test namespace-old-6.14 {deleting variables changes variable epoch} {
     namespace eval test_ns_cache1 {
         variable test_ns_cache_var "cache1 version"
     }
     list [namespace eval test_ns_cache1 $trigger] \
 	[namespace eval test_ns_cache1 {unset test_ns_cache_var}] \
-	[catch {namespace eval test_ns_cache1 $trigger}]
-} {{cache1 version} {} 1}
-# TIP 278: secondary lookup disabled, catch added, result changed
+	[namespace eval test_ns_cache1 $trigger]
+} {{cache1 version} {} {global version}}
 test namespace-old-6.15 {define test namespaces} {
     namespace eval test_ns_cache2 {
         variable test_ns_cache_var "global cache2 version"
     }
     set trigger2 {set test_ns_cache2::test_ns_cache_var}
-    catch {list [namespace eval test_ns_cache1 $trigger2] \
-	       [namespace eval test_ns_cache1::test_ns_cache2 $trigger]}
-} 1
+    list [namespace eval test_ns_cache1 $trigger2] \
+         [namespace eval test_ns_cache1::test_ns_cache2 $trigger]
+} {{global cache2 version} {global version}}
 set trigger2 {set test_ns_cache2::test_ns_cache_var}
 test namespace-old-6.16 {public variables affect all parent namespaces} {
     variable test_ns_cache1::test_ns_cache2::test_ns_cache_var "cache2 version"

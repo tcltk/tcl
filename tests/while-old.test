@@ -92,7 +92,7 @@ test while-old-4.3 {errors in while loops} {
 test while-old-4.4 {errors in while loops} {
     set err [catch {while {"a"+"b"} {error "loop aborted"}} msg]
     list $err $msg
-} {1 {can't use non-numeric string "a" as operand of "+"}}
+} {1 {can't use non-numeric string as operand of "+"}}
 test while-old-4.5 {errors in while loops} {
     catch {unset x}
     set x 1

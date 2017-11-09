@@ -3888,20 +3888,20 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_SaveResult
 #define Tcl_SaveResult(interp, statePtr) \
 	do { \
-	    *(statePtr) = Tcl_GetObjResult(interp); \
-	    Tcl_IncrRefCount(*(statePtr)); \
+	    (statePtr)->objResultPtr = Tcl_GetObjResult(interp); \
+	    Tcl_IncrRefCount((statePtr)->objResultPtr); \
 	    Tcl_SetObjResult(interp, Tcl_NewObj()); \
 	} while(0)
 #undef Tcl_RestoreResult
 #define Tcl_RestoreResult(interp, statePtr) \
 	do { \
 	    Tcl_ResetResult(interp); \
-   	    Tcl_SetObjResult(interp, *(statePtr)); \
-   	    Tcl_DecrRefCount(*(statePtr)); \
+   	    Tcl_SetObjResult(interp, (statePtr)->objResultPtr); \
+   	    Tcl_DecrRefCount((statePtr)->objResultPtr); \
 	} while(0)
 #undef Tcl_DiscardResult
 #define Tcl_DiscardResult(statePtr) \
-	Tcl_DecrRefCount(*(statePtr))
+	Tcl_DecrRefCount((statePtr)->objResultPtr)
 #undef Tcl_SetResult
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
