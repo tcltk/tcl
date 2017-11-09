@@ -370,8 +370,6 @@ static int formatInt(char *buffer, int n){
 #   define Tcl_EvalObj 0
 #   undef Tcl_GlobalEvalObj
 #   define Tcl_GlobalEvalObj 0
-#   undef Tcl_EvalFile
-#   define Tcl_EvalFile 0
 #   define TclBackgroundException 0
 #   undef TclpReaddir
 #   define TclpReaddir 0
