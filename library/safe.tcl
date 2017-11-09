@@ -113,7 +113,7 @@ proc ::safe::CheckInterp {slave} {
 # we had the bad idea to support for the sake of user simplicity in
 # create/init but which makes life hard in configure...
 # So this will be hopefully written and some integrated with opt1.0
-# (hopefully for tcl9.0 ?)
+# (hopefully for tcl8.1 ?)
 proc ::safe::interpConfigure {args} {
     switch [llength $args] {
 	1 {

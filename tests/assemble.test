@@ -781,7 +781,7 @@ test assemble-7.43 {uplus} {
 	}
     }
     -returnCodes error
-    -result {can't use non-numeric floating-point value "NaN" as operand of "+"}
+    -result {can't use non-numeric floating-point value as operand of "+"}
 }
 test assemble-7.43.1 {tryCvtToNumeric} {
     -body {

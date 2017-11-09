@@ -64,9 +64,12 @@ if the first such characters are
 then \fIsrc\fR is expected to be in octal form;  otherwise,
 if the first such characters are
 .QW \fB0b\fR
+then \fIsrc\fR is expected to be in binary form;  otherwise,
+if the first such character is
+.QW \fB0\fR
 then \fIsrc\fR
-is expected to be in binary form;  otherwise, \fIsrc\fR is
-expected to be in decimal form.
+is expected to be in octal form;  otherwise, \fIsrc\fR
+is expected to be in decimal form.
 .PP
 \fBTcl_GetDouble\fR expects \fIsrc\fR to consist of a floating-point
 number, which is:  white space;  a sign; a sequence of digits;  a

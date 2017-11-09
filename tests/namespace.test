@@ -46,9 +46,9 @@ test namespace-2.2 {Tcl_GetCurrentNamespace} {
     set l {}
     lappend l [namespace current]
     namespace eval test_ns_1 {
-        lappend ::l [namespace current]
+        lappend l [namespace current]
         namespace eval foo {
-            lappend ::l [namespace current]
+            lappend l [namespace current]
         }
     }
     lappend l [namespace current]
@@ -633,8 +633,6 @@ test namespace-14.2 {TclGetNamespaceForQualName, invalid absolute names} -setup 
              [catch {namespace children test_ns_777} msg] $msg
     }
 } -result {1 {can't read "::test_ns_777::v": no such variable} 1 {namespace "test_ns_777" not found in "::test_ns_1"}}
-
-# TIP 278: secondary lookup disabled, results changed from {10 20}
 test namespace-14.3 {TclGetNamespaceForQualName, relative names} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
     variable v 10
@@ -646,11 +644,9 @@ test namespace-14.3 {TclGetNamespaceForQualName, relative names} -setup {
     }
 } -body {
     namespace eval test_ns_1 {
-        # list $v $test_ns_2::v
-        list [catch {set v} msg] $msg  [catch {set test_ns_2::v} msg] $msg
+        list $v $test_ns_2::v
     }
-} -result {1 {can't read "v": no such variable} 0 20}
-
+} -result {10 20}
 test namespace-14.4 {TclGetNamespaceForQualName, relative ns names looked up only in current ns} {
     namespace eval test_ns_1::test_ns_2 {
         namespace eval foo {}
@@ -711,17 +707,15 @@ test namespace-14.11 {TclGetNamespaceForQualName, extra ::s are significant for 
     proc test_ns_1::test_ns_2:: {args} {return "\{\}: $args"}
     lappend l [test_ns_1::test_ns_2:: hello]
 } -result {1 {invalid command name "test_ns_1::test_ns_2::"} {{}: hello}}
-
-# TIP 278: secondary lookup disabled, added catch, result changed from y
 test namespace-14.12 {TclGetNamespaceForQualName, extra ::s are significant for vars} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
 } -body {
     namespace eval test_ns_1 {
         variable {}
-        catch {set test_ns_1::(x) y} ::msg
+        set test_ns_1::(x) y
     }
-    list $::msg [catch {set test_ns_1::(x)} msg] $msg
-} -result {{can't set "test_ns_1::(x)": parent namespace doesn't exist} 1 {can't read "test_ns_1::(x)": no such variable}}
+    set test_ns_1::(x)
+} -result y
 test namespace-14.13 {TclGetNamespaceForQualName, namespace other than global ns can't have empty name} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
 } -returnCodes error -body {
@@ -894,15 +888,13 @@ test namespace-17.6 {Tcl_FindNamespaceVar, relative name found} -setup {
         set x
     }
 } -result {777}
-
-# TIP 278: secondary lookup disabled, catch added, result changed from 314159
 test namespace-17.7 {Tcl_FindNamespaceVar, relative name found} {
     namespace eval test_ns_1 {
 	variable x 777
         unset x
-        list [catch {set x} msg] $msg  ;# must not be global x now
+        set x  ;# must be global x now
     }
-} {1 {can't read "x": no such variable}}
+} {314159}
 test namespace-17.8 {Tcl_FindNamespaceVar, relative name not found} -body {
     namespace eval test_ns_1 {
         set wuzzat
@@ -914,8 +906,6 @@ test namespace-17.9 {Tcl_FindNamespaceVar, relative name and TCL_GLOBAL_ONLY} {
     }
     set test_ns_1::a
 } {hello}
-
-# TIP 278: secondary lookup disabled, result changed from 1
 test namespace-17.10 {Tcl_FindNamespaceVar, interference with cached varNames} -setup {
     namespace eval test_ns_1 {}
 } -body {
@@ -929,7 +919,7 @@ test namespace-17.10 {Tcl_FindNamespaceVar, interference with cached varNames} -
     namespace eval test_ns_1 set a 1
     namespace delete test_ns_1
     return $a
-} -result 0
+} -result 1
 catch {unset a}
 catch {unset x}
 
@@ -1550,8 +1540,6 @@ test namespace-34.6 {NamespaceWhichCmd, -command is default} -setup {
              [namespace which ::test_ns_2::cmd2]
     }
 } -result {::foreach ::test_ns_3::p ::test_ns_3::cmd1 ::test_ns_2::cmd2}
-
-# TIP 278: secondary lookup disabled, catch added, result changed
 test namespace-34.7 {NamespaceWhichCmd, variable lookup} -setup {
     catch {namespace delete {*}[namespace children test_ns_*]}
     namespace eval test_ns_1 {
@@ -1571,12 +1559,12 @@ test namespace-34.7 {NamespaceWhichCmd, variable lookup} -setup {
     }
 } -body {
     namespace eval test_ns_3 {
-        list [catch {namespace which -variable env } msg] $msg \
+        list [namespace which -variable env] \
              [namespace which -variable v3] \
              [namespace which -variable ::test_ns_2::v2] \
              [catch {namespace which -variable ::test_ns_2::noSuchVar} msg] $msg
     }
-} -result {0 {} ::test_ns_3::v3 ::test_ns_2::v2 0 {}}
+} -result {::env ::test_ns_3::v3 ::test_ns_2::v2 0 {}}
 
 test namespace-35.1 {FreeNsNameInternalRep, resulting ref count > 0} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
