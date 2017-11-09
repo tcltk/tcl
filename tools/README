@@ -12,7 +12,7 @@ Generating HTML files.
 The tcl-tk-man-html.tcl script from Robert Critchlow
 generates a nice set of HTML with good cross references.
 Use it like
-    tclsh tcl-tk-man-html.tcl --htmldir=/tmp/tcl9.0
+    tclsh tcl-tk-man-html.tcl --htmldir=/tmp/tcl8.2
 This script is very picky about the organization of man pages,
 effectively acting as a style enforcer.
 

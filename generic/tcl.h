@@ -52,13 +52,13 @@ extern "C" {
  * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  */
 
-#define TCL_MAJOR_VERSION   9
-#define TCL_MINOR_VERSION   0
+#define TCL_MAJOR_VERSION   8
+#define TCL_MINOR_VERSION   7
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  0
+#define TCL_RELEASE_SERIAL  2
 
-#define TCL_VERSION	    "9.0"
-#define TCL_PATCH_LEVEL	    "9.0a0"
+#define TCL_VERSION	    "8.7"
+#define TCL_PATCH_LEVEL	    "8.7a2"
 
 #if !defined(TCL_NO_DEPRECATED) || defined(RC_INVOKED)
 /*
@@ -492,7 +492,39 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
  * accessed with Tcl_GetObjResult() and Tcl_SetObjResult().
  */
 
-typedef struct Tcl_Interp Tcl_Interp;
+typedef struct Tcl_Interp
+#ifndef TCL_NO_DEPRECATED
+{
+    /* TIP #330: Strongly discourage extensions from using the string
+     * result. */
+#ifdef USE_INTERP_RESULT
+    char *result TCL_DEPRECATED_API("use Tcl_GetStringResult/Tcl_SetResult");
+				/* If the last command returned a string
+				 * result, this points to it. */
+    void (*freeProc) (char *blockPtr)
+	    TCL_DEPRECATED_API("use Tcl_GetStringResult/Tcl_SetResult");
+				/* Zero means the string result is statically
+				 * allocated. TCL_DYNAMIC means it was
+				 * allocated with ckalloc and should be freed
+				 * with ckfree. Other values give the address
+				 * of function to invoke to free the result.
+				 * Tcl_Eval must free it before executing next
+				 * command. */
+#else
+    char *resultDontUse; /* Don't use in extensions! */
+    void (*freeProcDontUse) (char *); /* Don't use in extensions! */
+#endif
+#ifdef USE_INTERP_ERRORLINE
+    int errorLine TCL_DEPRECATED_API("use Tcl_GetErrorLine/Tcl_SetErrorLine");
+				/* When TCL_ERROR is returned, this gives the
+				 * line number within the command where the
+				 * error occurred (1 if first line). */
+#else
+    int errorLineDontUse; /* Don't use in extensions! */
+#endif
+}
+#endif /* !TCL_NO_DEPRECATED */
+Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
 typedef struct Tcl_Channel_ *Tcl_Channel;
@@ -640,6 +672,8 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_RETURN		2
 #define TCL_BREAK		3
 #define TCL_CONTINUE		4
+
+#define TCL_RESULT_SIZE		200
 
 /*
  *----------------------------------------------------------------------------
@@ -825,11 +859,20 @@ int		Tcl_IsShared(Tcl_Obj *objPtr);
 
 /*
  *----------------------------------------------------------------------------
- * The following type contains the state needed by Tcl_SaveResult. It
- * is typically allocated on the stack.
+ * The following structure contains the state needed by Tcl_SaveResult. No-one
+ * outside of Tcl should access any of these fields. This structure is
+ * typically allocated on the stack.
  */
 
-typedef Tcl_Obj *Tcl_SavedResult;
+typedef struct Tcl_SavedResult {
+    char *result;
+    Tcl_FreeProc *freeProc;
+    Tcl_Obj *objResultPtr;
+    char *appendResult;
+    int appendAvl;
+    int appendUsed;
+    char resultSpace[TCL_RESULT_SIZE+1];
+} Tcl_SavedResult;
 
 /*
  *----------------------------------------------------------------------------
