@@ -412,18 +412,21 @@ Tcl_GetCwd(
     return Tcl_DStringValue(cwdPtr);
 }
 
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 /* Obsolete */
-#undef Tcl_EvalFile
 int
 Tcl_EvalFile(
     Tcl_Interp *interp,		/* Interpreter in which to process file. */
     const char *fileName)	/* Name of file to process. Tilde-substitution
 				 * will be performed on this name. */
 {
-    return Tcl_FSEvalFileEx(interp, Tcl_NewStringObj(fileName, -1), NULL);
+    int ret;
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName,-1);
+
+    Tcl_IncrRefCount(pathPtr);
+    ret = Tcl_FSEvalFile(interp, pathPtr);
+    Tcl_DecrRefCount(pathPtr);
+    return ret;
 }
-#endif
 
 /*
  * Now move on to the basic filesystem implementation.
@@ -1737,11 +1740,8 @@ Tcl_FSEvalFileEx(
     Tcl_Channel chan;
     Tcl_Obj *objPtr;
 
-    Tcl_IncrRefCount(pathPtr);
-    objPtr = Tcl_NewObj();
-    Tcl_IncrRefCount(objPtr);
     if (Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
-	goto end;
+	return result;
     }
 
     if (Tcl_FSStat(pathPtr, &statBuf) == -1) {
@@ -1756,7 +1756,7 @@ Tcl_FSEvalFileEx(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
 		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
-	goto end;
+	return result;
     }
 
     /*
@@ -1775,9 +1775,12 @@ Tcl_FSEvalFileEx(
 	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
 		!= TCL_OK) {
 	    Tcl_Close(interp,chan);
-	    goto end;
+	    return result;
 	}
     }
+
+    objPtr = Tcl_NewObj();
+    Tcl_IncrRefCount(objPtr);
 
     /*
      * Try to read first character of stream, so we can check for utf-8 BOM to
@@ -1854,7 +1857,6 @@ Tcl_FSEvalFileEx(
 
   end:
     Tcl_DecrRefCount(objPtr);
-    Tcl_DecrRefCount(pathPtr);
     return result;
 }
 
