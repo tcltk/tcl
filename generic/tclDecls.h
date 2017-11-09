@@ -420,8 +420,7 @@ EXTERN CONST84_RETURN char * Tcl_ErrnoMsg(int err);
 /* 129 */
 EXTERN int		Tcl_Eval(Tcl_Interp *interp, const char *script);
 /* 130 */
-TCL_DEPRECATED("Use Tcl_FSEvalFile")
-int			Tcl_EvalFile(Tcl_Interp *interp,
+EXTERN int		Tcl_EvalFile(Tcl_Interp *interp,
 				const char *fileName);
 /* 131 */
 EXTERN int		Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -1996,7 +1995,7 @@ typedef struct TclStubs {
     CONST84_RETURN char * (*tcl_ErrnoId) (void); /* 127 */
     CONST84_RETURN char * (*tcl_ErrnoMsg) (int err); /* 128 */
     int (*tcl_Eval) (Tcl_Interp *interp, const char *script); /* 129 */
-    TCL_DEPRECATED_API("Use Tcl_FSEvalFile") int (*tcl_EvalFile) (Tcl_Interp *interp, const char *fileName); /* 130 */
+    int (*tcl_EvalFile) (Tcl_Interp *interp, const char *fileName); /* 130 */
     int (*tcl_EvalObj) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 131 */
     void (*tcl_EventuallyFree) (ClientData clientData, Tcl_FreeProc *freeProc); /* 132 */
     TCL_NORETURN1 void (*tcl_Exit) (int status); /* 133 */
