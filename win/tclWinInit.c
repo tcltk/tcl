@@ -498,12 +498,6 @@ TclpSetInitialEncodings(void)
     Tcl_DStringFree(&encodingName);
 }
 
-void TclWinSetInterfaces(
-    int dummy)			/* Not used. */
-{
-    TclpSetInterfaces();
-}
-
 const char *
 Tcl_GetEncodingNameFromEnvironment(
     Tcl_DString *bufPtr)
