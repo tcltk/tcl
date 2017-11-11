@@ -30,6 +30,7 @@ VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
 EXTRA_BUILD_HTML=${EXTRA_BUILD_HTML:-"@:"}
+TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
 
 #------------------------------------------------------------------------
 # Setup configure arguments for bundled packages
@@ -85,6 +86,7 @@ fi
 
 AC_PROG_CC
 AC_C_INLINE
+
 
 #--------------------------------------------------------------------
 # Supply substitutes for missing POSIX header files.  Special notes:
@@ -152,6 +154,28 @@ SC_PROG_TCLSH
 if test "$TCLSH_PROG" = ""; then
   TCLSH_PROG='./${TCL_EXE}'
 fi
+
+#
+# Check for --enable-zipfs flag
+#
+SC_ENABLE_ZIPFS
+
+#
+# Find a native zip implementation
+#
+SC_PROG_ZIP
+
+#
+# Find a native compiler
+#
+AX_CC_FOR_BUILD
+
+if test "$ZIP_PROG" = ""; then
+  ZIP_PROG='./minizip${EXEEXT_FOR_BUILD}'
+fi
+
+
+
 
 #------------------------------------------------------------------------
 #	Add stuff for zlib
@@ -791,6 +815,42 @@ fi
 AC_MSG_RESULT([$tcl_ok])
 
 #--------------------------------------------------------------------
+#	Zipfs support
+#--------------------------------------------------------------------
+
+AC_ARG_ENABLE(zipfs,
+    AC_HELP_STRING([--enable-zipfs],
+	[build with Zipfs support (default: on)]),
+    [tcl_ok=$enableval], [tcl_ok=yes])
+    if test "$tcl_ok" = "yes" -o "${TCL_THREADS}" = 1; then
+	ZIPFS_BUILD=1
+    else
+	ZIPFS_BUILD=0
+    fi
+    # Do checking message here to not mess up interleaved configure output
+    AC_MSG_CHECKING([for building with zipfs])
+    if test "${ZIPFS_BUILD}" = 1; then
+        if test "${SHARED_BUILD}" = 0; then
+           ZIPFS_BUILD=2;
+           AC_DEFINE(ZIPFS_BUILD, 2, [Are we building with zipfs enabled?])
+           INSTALL_LIBRARIES=install-libraries-zipfs-static
+           AC_MSG_RESULT([yes])
+         else
+           AC_DEFINE(ZIPFS_BUILD, 1, [Are we building with zipfs enabled?])\
+           INSTALL_LIBRARIES=install-libraries-zipfs-shared
+           AC_MSG_RESULT([yes])
+        fi
+    else
+	AC_MSG_RESULT([no])
+	INSTALL_LIBRARIES=install-libraries
+	INSTALL_MSGS=install-msgs
+    fi
+    AC_SUBST(ZIPFS_BUILD)
+    AC_SUBST(INSTALL_LIBRARIES)
+    AC_SUBST(INSTALL_MSGS)
+
+
+#--------------------------------------------------------------------
 # The check below checks whether the cpuid instruction is usable.
 #--------------------------------------------------------------------
 
@@ -960,6 +1020,7 @@ AC_SUBST(TCL_PATCH_LEVEL)
 AC_SUBST(TCL_YEAR)
 AC_SUBST(PKG_CFG_ARGS)
 
+AC_SUBST(TCL_ZIP_FILE)
 AC_SUBST(TCL_LIB_FILE)
 AC_SUBST(TCL_LIB_FLAG)
 AC_SUBST(TCL_LIB_SPEC)

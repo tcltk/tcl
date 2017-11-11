@@ -2343,7 +2343,9 @@ declare 632 {
 declare 633 {
     int TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
 }
-
+declare 634 {
+    int TclZipfs_AppHook(int *argc, char ***argv)
+}
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only
