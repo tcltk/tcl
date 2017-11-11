@@ -1538,6 +1538,7 @@ const TclStubs tclStubs = {
     Tcl_OpenTcpServerEx, /* 631 */
     TclZipfs_Mount, /* 632 */
     TclZipfs_Unmount, /* 633 */
+    TclZipfs_AppHook, /* 634 */
 };
 
 /* !END!: Do not edit above this line. */
