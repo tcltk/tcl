@@ -28,7 +28,10 @@
 #include "zlib.h"
 #include "crypt.h"
 
-#define ZIPFS_VOLUME "zipfs:/"
+#define ZIPFS_VOLUME      "zipfs:/"
+#define ZIPFS_APP_MOUNT   "zipfs:/app"
+#define ZIPFS_ZIP_MOUNT   "zipfs:/lib/tcl"
+
 #define ZIPFS_VOLUME_LEN 7
 
 /*
@@ -3807,7 +3810,7 @@ const Tcl_Filesystem zipfsFilesystem = {
  *-------------------------------------------------------------------------
  */
 
-int
+MODULE_SCOPE int
 TclZipfs_Init(Tcl_Interp *interp)
 {
 #ifdef HAVE_ZLIB
@@ -3876,6 +3879,72 @@ TclZipfs_Init(Tcl_Interp *interp)
     }
     return TCL_ERROR;
 #endif
+}
+
+static int TclZipfs_AppHook_FindTclInit(const char *archive){
+    Tcl_Obj *vfsinitscript;
+    int found;
+    if(TclZipfs_Mount(NULL, archive, ZIPFS_ZIP_MOUNT, NULL)) {
+        /* Either the file doesn't exist or it is not a zip archive */
+        return TCL_ERROR;
+    }
+    vfsinitscript=Tcl_NewStringObj(ZIPFS_ZIP_MOUNT "/init.tcl",-1);
+    Tcl_IncrRefCount(vfsinitscript);
+    found=Tcl_FSAccess(vfsinitscript,F_OK);
+    if(found==0) {
+        return TCL_OK;
+    }
+    Tcl_DecrRefCount(vfsinitscript);
+    vfsinitscript=Tcl_NewStringObj(ZIPFS_ZIP_MOUNT "/tcl_library/init.tcl",-1);
+    Tcl_IncrRefCount(vfsinitscript);
+    found=Tcl_FSAccess(vfsinitscript,F_OK);
+    if(found==0) {
+        return TCL_OK;
+    }
+    return TCL_ERROR;
+}
+
+int TclZipfs_AppHook(int *argc, char ***argv){
+    /*
+     * Tclkit_MainHook --
+     * Performs the argument munging for the shell
+     */
+
+    CONST char *archive;
+    Tcl_FindExecutable(*argv[0]);
+    archive=Tcl_GetNameOfExecutable();
+    TclZipfs_Init(NULL);
+    if(!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
+        int found;
+        Tcl_Obj *vfsinitscript;
+        vfsinitscript=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/main.tcl",-1);
+        Tcl_IncrRefCount(vfsinitscript);
+        if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
+            /* Startup script should be set before calling Tcl_AppInit */
+            Tcl_SetStartupScript(vfsinitscript,NULL);
+        } else {
+            Tcl_DecrRefCount(vfsinitscript);
+        }
+        /* Set Tcl Encodings */
+        vfsinitscript=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library/init.tcl",-1);
+        Tcl_IncrRefCount(vfsinitscript);
+        found=Tcl_FSAccess(vfsinitscript,F_OK);
+        Tcl_DecrRefCount(vfsinitscript);
+        if(found==TCL_OK) {
+            return TCL_OK;
+        }
+    }
+    /* Mount zip file and dll before releasing to search */
+    if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_ZIPFILE)==TCL_OK) {
+        return TCL_OK;
+    }
+    if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
+        return TCL_OK;
+    }
+    if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_DLLFILE)==TCL_OK) {
+        return TCL_OK;
+    }
+    return TCL_OK;
 }
 
 
