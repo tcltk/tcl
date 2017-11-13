@@ -10,13 +10,16 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_EvalObjEx, Tcl_EvalObjv, Tcl_Eval, Tcl_EvalEx \- execute Tcl scripts
+Tcl_EvalObjEx, Tcl_EvalFile, Tcl_EvalObjv, Tcl_Eval, Tcl_EvalEx \- execute Tcl scripts
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
 .sp
 int
 \fBTcl_EvalObjEx\fR(\fIinterp, objPtr, flags\fR)
+.sp
+int
+\fBTcl_EvalFile\fR(\fIinterp, fileName\fR)
 .sp
 int
 \fBTcl_EvalObjv\fR(\fIinterp, objc, objv, flags\fR)
@@ -77,6 +80,22 @@ one of the values \fBTCL_OK\fR, \fBTCL_ERROR\fR, \fBTCL_RETURN\fR,
 integer value originating in an extension.
 In addition, a result value or error message is left in \fIinterp\fR's
 result; it can be retrieved using \fBTcl_GetObjResult\fR.
+.PP
+\fBTcl_EvalFile\fR reads the file given by \fIfileName\fR and evaluates
+its contents as a Tcl script.  It returns the same information as
+\fBTcl_EvalObjEx\fR.
+If the file could not be read then a Tcl error is returned to describe
+why the file could not be read.
+The eofchar for files is
+.QW \e32
+(^Z) for all platforms. If you require a
+.QW ^Z
+in code for string comparison, you can use
+.QW \e032
+or
+.QW \eu001a ,
+which will be safely substituted by the Tcl interpreter into
+.QW ^Z .
 .PP
 \fBTcl_EvalObjv\fR executes a single pre-parsed command instead of a
 script.  The \fIobjc\fR and \fIobjv\fR arguments contain the values
