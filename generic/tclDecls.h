@@ -668,8 +668,7 @@ EXTERN int		Tcl_ScanElement(const char *src, int *flagPtr);
 /* 219 */
 EXTERN int		Tcl_ScanCountedElement(const char *src, int length,
 				int *flagPtr);
-/* 220 */
-EXTERN int		Tcl_SeekOld(Tcl_Channel chan, int offset, int mode);
+/* Slot 220 is reserved */
 /* 221 */
 EXTERN int		Tcl_ServiceAll(void);
 /* 222 */
@@ -740,8 +739,7 @@ EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
 				Tcl_PackageInitProc *safeInitProc);
 /* 245 */
 EXTERN int		Tcl_StringMatch(const char *str, const char *pattern);
-/* 246 */
-EXTERN int		Tcl_TellOld(Tcl_Channel chan);
+/* Slot 246 is reserved */
 /* 247 */
 EXTERN int		Tcl_TraceVar(Tcl_Interp *interp, const char *varName,
 				int flags, Tcl_VarTraceProc *proc,
@@ -2086,7 +2084,7 @@ typedef struct TclStubs {
     void (*tcl_ResetResult) (Tcl_Interp *interp); /* 217 */
     int (*tcl_ScanElement) (const char *src, int *flagPtr); /* 218 */
     int (*tcl_ScanCountedElement) (const char *src, int length, int *flagPtr); /* 219 */
-    int (*tcl_SeekOld) (Tcl_Channel chan, int offset, int mode); /* 220 */
+    void (*reserved220)(void);
     int (*tcl_ServiceAll) (void); /* 221 */
     int (*tcl_ServiceEvent) (int flags); /* 222 */
     void (*tcl_SetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc *proc, ClientData clientData); /* 223 */
@@ -2112,7 +2110,7 @@ typedef struct TclStubs {
     void (*tcl_SplitPath) (const char *path, int *argcPtr, CONST84 char ***argvPtr); /* 243 */
     void (*tcl_StaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 244 */
     int (*tcl_StringMatch) (const char *str, const char *pattern); /* 245 */
-    int (*tcl_TellOld) (Tcl_Channel chan); /* 246 */
+    void (*reserved246)(void);
     int (*tcl_TraceVar) (Tcl_Interp *interp, const char *varName, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 247 */
     int (*tcl_TraceVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 248 */
     char * (*tcl_TranslateFileName) (Tcl_Interp *interp, const char *name, Tcl_DString *bufferPtr); /* 249 */
@@ -2969,8 +2967,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ScanElement) /* 218 */
 #define Tcl_ScanCountedElement \
 	(tclStubsPtr->tcl_ScanCountedElement) /* 219 */
-#define Tcl_SeekOld \
-	(tclStubsPtr->tcl_SeekOld) /* 220 */
+/* Slot 220 is reserved */
 #define Tcl_ServiceAll \
 	(tclStubsPtr->tcl_ServiceAll) /* 221 */
 #define Tcl_ServiceEvent \
@@ -3021,8 +3018,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_StaticPackage) /* 244 */
 #define Tcl_StringMatch \
 	(tclStubsPtr->tcl_StringMatch) /* 245 */
-#define Tcl_TellOld \
-	(tclStubsPtr->tcl_TellOld) /* 246 */
+/* Slot 246 is reserved */
 #define Tcl_TraceVar \
 	(tclStubsPtr->tcl_TraceVar) /* 247 */
 #define Tcl_TraceVar2 \
@@ -3825,9 +3821,6 @@ extern const TclStubs *tclStubsPtr;
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
-
-#undef Tcl_SeekOld
-#undef Tcl_TellOld
 
 #undef Tcl_PkgPresent
 #define Tcl_PkgPresent(interp, name, version, exact) \
