@@ -387,7 +387,9 @@ TCLAPI const char *	Tcl_ErrnoId(void);
 /* 128 */
 TCLAPI const char *	Tcl_ErrnoMsg(int err);
 /* Slot 129 is reserved */
-/* Slot 130 is reserved */
+/* 130 */
+TCLAPI int		Tcl_EvalFile(Tcl_Interp *interp,
+				const char *fileName);
 /* Slot 131 is reserved */
 /* 132 */
 TCLAPI void		Tcl_EventuallyFree(ClientData clientData,
@@ -1891,7 +1893,7 @@ typedef struct TclStubs {
     const char * (*tcl_ErrnoId) (void); /* 127 */
     const char * (*tcl_ErrnoMsg) (int err); /* 128 */
     void (*reserved129)(void);
-    void (*reserved130)(void);
+    int (*tcl_EvalFile) (Tcl_Interp *interp, const char *fileName); /* 130 */
     void (*reserved131)(void);
     void (*tcl_EventuallyFree) (ClientData clientData, Tcl_FreeProc *freeProc); /* 132 */
     TCL_NORETURN1 void (*tcl_Exit) (int status); /* 133 */
@@ -2678,7 +2680,8 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_ErrnoMsg \
 	(tclStubsPtr->tcl_ErrnoMsg) /* 128 */
 /* Slot 129 is reserved */
-/* Slot 130 is reserved */
+#define Tcl_EvalFile \
+	(tclStubsPtr->tcl_EvalFile) /* 130 */
 /* Slot 131 is reserved */
 #define Tcl_EventuallyFree \
 	(tclStubsPtr->tcl_EventuallyFree) /* 132 */

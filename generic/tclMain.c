@@ -266,18 +266,14 @@ Tcl_SourceRCFile(
 
 	    c = Tcl_OpenFileChannel(NULL, fullName, "r", 0);
 	    if (c != NULL) {
-		Tcl_Obj *fullNameObj = Tcl_NewStringObj(fullName, -1);
-
 		Tcl_Close(NULL, c);
-		Tcl_IncrRefCount(fullNameObj);
-		if (Tcl_FSEvalFileEx(interp, fullNameObj, NULL) != TCL_OK) {
+		if (Tcl_EvalFile(interp, fullName) != TCL_OK) {
 		    chan = Tcl_GetStdChannel(TCL_STDERR);
 		    if (chan) {
 			Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
 			Tcl_WriteChars(chan, "\n", 1);
 		    }
 		}
-		Tcl_DecrRefCount(fullNameObj);
 	    }
 	}
 	Tcl_DStringFree(&temp);

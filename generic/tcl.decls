@@ -478,10 +478,9 @@ declare 128 {
 #declare 129 {
 #    int Tcl_Eval(Tcl_Interp *interp, const char *script)
 #}
-# Removed in 9.0:
-#declare 130 {
-#    int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
-#}
+declare 130 {
+    int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
+}
 # Removed in 9.0:
 #declare 131 {
 #    int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
