@@ -780,8 +780,7 @@ declare 218 {
 declare 219 {
     int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
 }
-# Obsolete
-declare 220 {
+declare 220 {deprecated {}} {
     int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
 }
 declare 221 {
@@ -868,8 +867,7 @@ declare 244 {
 declare 245 {
     int Tcl_StringMatch(const char *str, const char *pattern)
 }
-# Obsolete
-declare 246 {
+declare 246 {deprecated {}} {
     int Tcl_TellOld(Tcl_Channel chan)
 }
 declare 247 {
