@@ -75,7 +75,6 @@ static int TclPkgProvide(
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
 #   define TclpIsAtty TclPlatIsAtty
-#   define TclWinSetInterfaces (void (*) (int)) doNothing
 #   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
 #   define TclWinResetInterfaces doNothing
@@ -562,7 +561,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 23 */
     TclWinNoBackslash, /* 24 */
     0, /* 25 */
-    TclWinSetInterfaces, /* 26 */
+    0, /* 26 */
     TclWinFlushDirtyChannels, /* 27 */
     TclWinResetInterfaces, /* 28 */
     TclWinCPUID, /* 29 */
@@ -850,7 +849,7 @@ const TclStubs tclStubs = {
     Tcl_ErrnoId, /* 127 */
     Tcl_ErrnoMsg, /* 128 */
     0, /* 129 */
-    0, /* 130 */
+    Tcl_EvalFile, /* 130 */
     0, /* 131 */
     Tcl_EventuallyFree, /* 132 */
     Tcl_Exit, /* 133 */

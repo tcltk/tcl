@@ -412,6 +412,21 @@ Tcl_GetCwd(
     return Tcl_DStringValue(cwdPtr);
 }
 
+int
+Tcl_EvalFile(
+    Tcl_Interp *interp,		/* Interpreter in which to process file. */
+    const char *fileName)	/* Name of file to process. Tilde-substitution
+				 * will be performed on this name. */
+{
+    int ret;
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName,-1);
+
+    Tcl_IncrRefCount(pathPtr);
+    ret = Tcl_FSEvalFile(interp, pathPtr);
+    Tcl_DecrRefCount(pathPtr);
+    return ret;
+}
+
 /*
  * Now move on to the basic filesystem implementation.
  */

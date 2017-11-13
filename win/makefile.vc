@@ -1114,6 +1114,8 @@ install-libraries: tclConfig install-msgs install-tzdata
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl9"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl9\9.0$(NULL)" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl9\9.0"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl9\9.0\platform$(NULL)" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl9\9.0\platform"
 	@echo Installing header files
 	@$(CPY) "$(GENERICDIR)\tcl.h"             "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclDecls.h"        "$(INCLUDE_INSTALL_DIR)\"
