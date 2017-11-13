@@ -849,7 +849,7 @@ const TclStubs tclStubs = {
     Tcl_ErrnoId, /* 127 */
     Tcl_ErrnoMsg, /* 128 */
     0, /* 129 */
-    0, /* 130 */
+    Tcl_EvalFile, /* 130 */
     0, /* 131 */
     Tcl_EventuallyFree, /* 132 */
     Tcl_Exit, /* 133 */
