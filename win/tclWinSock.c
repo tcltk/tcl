@@ -3404,68 +3404,6 @@ FindFDInList(
 /*
  *----------------------------------------------------------------------
  *
- * TclWinGetSockOpt, et al. --
- *
- *	Those functions are historically exported by the stubs table and
- *	just use the original system calls now.
- *
- * Warning:
- *	Those functions are depreciated and will be removed with TCL 9.0.
- *
- * Results:
- *	As defined for each function.
- *
- * Side effects:
- *	As defined for each function.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-#undef TclWinGetSockOpt
-int
-TclWinGetSockOpt(
-    SOCKET s,
-    int level,
-    int optname,
-    char *optval,
-    int *optlen)
-{
-
-    return getsockopt(s, level, optname, optval, optlen);
-}
-#undef TclWinSetSockOpt
-int
-TclWinSetSockOpt(
-    SOCKET s,
-    int level,
-    int optname,
-    const char *optval,
-    int optlen)
-{
-    return setsockopt(s, level, optname, optval, optlen);
-}
-
-#undef TclpInetNtoa
-char *
-TclpInetNtoa(
-    struct in_addr addr)
-{
-    return inet_ntoa(addr);
-}
-#undef TclWinGetServByName
-struct servent *
-TclWinGetServByName(
-    const char *name,
-    const char *proto)
-{
-    return getservbyname(name, proto);
-}
-#endif /* TCL_NO_DEPRECATED */
-
-/*
- *----------------------------------------------------------------------
- *
  * TcpThreadActionProc --
  *
  *	Insert or remove any thread local refs to this channel.
