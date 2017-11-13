@@ -1161,7 +1161,7 @@ Tcl_DictObjNext(
      * If the searh is done; we do no work.
      */
 
-    if (searchPtr->epoch == 0) {
+    if (!searchPtr->epoch) {
 	*donePtr = 1;
 	return;
     }
@@ -1218,7 +1218,7 @@ Tcl_DictObjDone(
 {
     Dict *dict;
 
-    if (searchPtr->epoch != 0) {
+    if (searchPtr->epoch) {
 	searchPtr->epoch = 0;
 	dict = (Dict *) searchPtr->dictionaryPtr;
 	if (dict->refCount-- <= 1) {
@@ -2322,7 +2322,9 @@ DictAppendCmd(
 		valuePtr = Tcl_DuplicateObj(valuePtr);
 	    }
 
+	    Tcl_IncrRefCount(appendObjPtr);
 	    Tcl_AppendObjToObj(valuePtr, appendObjPtr);
+	    Tcl_DecrRefCount(appendObjPtr);
 	}
 
 	Tcl_DictObjPut(NULL, dictPtr, objv[2], valuePtr);
