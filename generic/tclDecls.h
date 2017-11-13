@@ -238,7 +238,8 @@ TCLAPI void		Tcl_AsyncMark(Tcl_AsyncHandler async);
 TCLAPI int		Tcl_AsyncReady(void);
 /* 76 */
 TCLAPI void		Tcl_BackgroundError(Tcl_Interp *interp);
-/* Slot 77 is reserved */
+/* 77 */
+TCLAPI char		Tcl_Backslash(const char *src, int *readPtr);
 /* 78 */
 TCLAPI int		Tcl_BadChannelOption(Tcl_Interp *interp,
 				const char *optionName,
@@ -955,7 +956,8 @@ TCLAPI int		Tcl_UniCharIsWordChar(int ch);
 TCLAPI int		Tcl_UniCharLen(const Tcl_UniChar *uniStr);
 /* 353 */
 TCLAPI int		Tcl_UniCharNcmp(const Tcl_UniChar *ucs,
-				const Tcl_UniChar *uct, size_t numChars);
+				const Tcl_UniChar *uct,
+				unsigned long numChars);
 /* 354 */
 TCLAPI char *		Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
 				int uniLength, Tcl_DString *dsPtr);
@@ -1002,10 +1004,11 @@ TCLAPI int		Tcl_Access(const char *path, int mode);
 /* 368 */
 TCLAPI int		Tcl_Stat(const char *path, struct stat *bufPtr);
 /* 369 */
-TCLAPI int		Tcl_UtfNcmp(const char *s1, const char *s2, size_t n);
+TCLAPI int		Tcl_UtfNcmp(const char *s1, const char *s2,
+				unsigned long n);
 /* 370 */
 TCLAPI int		Tcl_UtfNcasecmp(const char *s1, const char *s2,
-				size_t n);
+				unsigned long n);
 /* 371 */
 TCLAPI int		Tcl_StringCaseMatch(const char *str,
 				const char *pattern, int nocase);
@@ -1134,7 +1137,8 @@ TCLAPI void		Tcl_ClearChannelHandlers(Tcl_Channel channel);
 TCLAPI int		Tcl_IsChannelExisting(const char *channelName);
 /* 419 */
 TCLAPI int		Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs,
-				const Tcl_UniChar *uct, size_t numChars);
+				const Tcl_UniChar *uct,
+				unsigned long numChars);
 /* 420 */
 TCLAPI int		Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
 				const Tcl_UniChar *uniPattern, int nocase);
@@ -1840,7 +1844,7 @@ typedef struct TclStubs {
     void (*tcl_AsyncMark) (Tcl_AsyncHandler async); /* 74 */
     int (*tcl_AsyncReady) (void); /* 75 */
     void (*tcl_BackgroundError) (Tcl_Interp *interp); /* 76 */
-    void (*reserved77)(void);
+    char (*tcl_Backslash) (const char *src, int *readPtr); /* 77 */
     int (*tcl_BadChannelOption) (Tcl_Interp *interp, const char *optionName, const char *optionList); /* 78 */
     void (*tcl_CallWhenDeleted) (Tcl_Interp *interp, Tcl_InterpDeleteProc *proc, ClientData clientData); /* 79 */
     void (*tcl_CancelIdleCall) (Tcl_IdleProc *idleProc, ClientData clientData); /* 80 */
@@ -2124,7 +2128,7 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsUpper) (int ch); /* 350 */
     int (*tcl_UniCharIsWordChar) (int ch); /* 351 */
     int (*tcl_UniCharLen) (const Tcl_UniChar *uniStr); /* 352 */
-    int (*tcl_UniCharNcmp) (const Tcl_UniChar *ucs, const Tcl_UniChar *uct, size_t numChars); /* 353 */
+    int (*tcl_UniCharNcmp) (const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned long numChars); /* 353 */
     char * (*tcl_UniCharToUtfDString) (const Tcl_UniChar *uniStr, int uniLength, Tcl_DString *dsPtr); /* 354 */
     Tcl_UniChar * (*tcl_UtfToUniCharDString) (const char *src, int length, Tcl_DString *dsPtr); /* 355 */
     Tcl_RegExp (*tcl_GetRegExpFromObj) (Tcl_Interp *interp, Tcl_Obj *patObj, int flags); /* 356 */
@@ -2140,8 +2144,8 @@ typedef struct TclStubs {
     int (*tcl_Chdir) (const char *dirName); /* 366 */
     int (*tcl_Access) (const char *path, int mode); /* 367 */
     int (*tcl_Stat) (const char *path, struct stat *bufPtr); /* 368 */
-    int (*tcl_UtfNcmp) (const char *s1, const char *s2, size_t n); /* 369 */
-    int (*tcl_UtfNcasecmp) (const char *s1, const char *s2, size_t n); /* 370 */
+    int (*tcl_UtfNcmp) (const char *s1, const char *s2, unsigned long n); /* 369 */
+    int (*tcl_UtfNcasecmp) (const char *s1, const char *s2, unsigned long n); /* 370 */
     int (*tcl_StringCaseMatch) (const char *str, const char *pattern, int nocase); /* 371 */
     int (*tcl_UniCharIsControl) (int ch); /* 372 */
     int (*tcl_UniCharIsGraph) (int ch); /* 373 */
@@ -2190,7 +2194,7 @@ typedef struct TclStubs {
     void (*tcl_SpliceChannel) (Tcl_Channel channel); /* 416 */
     void (*tcl_ClearChannelHandlers) (Tcl_Channel channel); /* 417 */
     int (*tcl_IsChannelExisting) (const char *channelName); /* 418 */
-    int (*tcl_UniCharNcasecmp) (const Tcl_UniChar *ucs, const Tcl_UniChar *uct, size_t numChars); /* 419 */
+    int (*tcl_UniCharNcasecmp) (const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned long numChars); /* 419 */
     int (*tcl_UniCharCaseMatch) (const Tcl_UniChar *uniStr, const Tcl_UniChar *uniPattern, int nocase); /* 420 */
     void (*reserved421)(void);
     void (*reserved422)(void);
@@ -2577,7 +2581,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_AsyncReady) /* 75 */
 #define Tcl_BackgroundError \
 	(tclStubsPtr->tcl_BackgroundError) /* 76 */
-/* Slot 77 is reserved */
+#define Tcl_Backslash \
+	(tclStubsPtr->tcl_Backslash) /* 77 */
 #define Tcl_BadChannelOption \
 	(tclStubsPtr->tcl_BadChannelOption) /* 78 */
 #define Tcl_CallWhenDeleted \

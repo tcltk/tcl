@@ -937,9 +937,9 @@ Tcl_SplitList(
 
 int
 Tcl_ScanElement(
-    const char *src,	/* String to convert to list element. */
-    int *flagPtr)	/* Where to store information to guide
-			 * Tcl_ConvertCountedElement. */
+    register const char *src,	/* String to convert to list element. */
+    register int *flagPtr)	/* Where to store information to guide
+				 * Tcl_ConvertCountedElement. */
 {
     return Tcl_ScanCountedElement(src, -1, flagPtr);
 }
@@ -1300,9 +1300,9 @@ TclScanElement(
 
 int
 Tcl_ConvertElement(
-    const char *src,	/* Source information for list element. */
-    char *dst,		/* Place to put list-ified element. */
-    int flags)		/* Flags produced by Tcl_ScanElement. */
+    register const char *src,	/* Source information for list element. */
+    register char *dst,		/* Place to put list-ified element. */
+    register int flags)		/* Flags produced by Tcl_ScanElement. */
 {
     return Tcl_ConvertCountedElement(src, -1, dst, flags);
 }
@@ -1551,6 +1551,7 @@ Tcl_Merge(
     char localFlags[LOCAL_SIZE];
     int i, bytesNeeded = 0;
     char *result, *dst, *flagPtr = NULL;
+    const int maxFlags = UINT_MAX / sizeof(int);
 
     /*
      * Handle empty list case first, so logic of the general case can be
@@ -1569,6 +1570,20 @@ Tcl_Merge(
 
     if (argc <= LOCAL_SIZE) {
 	flagPtr = localFlags;
+    } else if (argc > maxFlags) {
+	/*
+	 * We cannot allocate a large enough flag array to format this list in
+	 * one pass.  We could imagine converting this routine to a multi-pass
+	 * implementation, but for sizeof(int) == 4, the limit is a max of
+	 * 2^30 list elements and since each element is at least one byte
+	 * formatted, and requires one byte space between it and the next one,
+	 * that a minimum space requirement of 2^31 bytes, which is already
+	 * INT_MAX. If we tried to format a list of > maxFlags elements, we're
+	 * just going to overflow the size limits on the formatted string
+	 * anyway, so just issue that same panic early.
+	 */
+
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     } else {
 	flagPtr = ckalloc(argc);
     }
@@ -1602,6 +1617,40 @@ Tcl_Merge(
 	ckfree(flagPtr);
     }
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Backslash --
+ *
+ *	Figure out how to handle a backslash sequence.
+ *
+ * Results:
+ *	The return value is the character that should be substituted in place
+ *	of the backslash sequence that starts at src. If readPtr isn't NULL
+ *	then it is filled in with a count of the number of characters in the
+ *	backslash sequence.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char
+Tcl_Backslash(
+    const char *src,		/* Points to the backslash character of a
+				 * backslash sequence. */
+    int *readPtr)		/* Fill in with number of characters read from
+				 * src, unless NULL. */
+{
+    char buf[TCL_UTF_MAX];
+    Tcl_UniChar ch = 0;
+
+    Tcl_UtfBackslash(src, readPtr, buf);
+    TclUtfToUniChar(buf, &ch);
+    return (char) ch;
 }
 
 /*
@@ -3226,7 +3275,7 @@ TclPrecTraceProc(
 
 
     if (flags & TCL_TRACE_READS) {
-	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewLongObj(*precisionPtr),
+	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewIntObj(*precisionPtr),
 		flags & TCL_GLOBAL_ONLY);
 	return NULL;
     }
