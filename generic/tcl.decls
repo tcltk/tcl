@@ -794,7 +794,7 @@ declare 218 {
 declare 219 {
     int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
 }
-# Removed in Tcl 9
+# Removed in 9.0:
 #declare 220 {
 #    int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
 #}
@@ -885,11 +885,11 @@ declare 244 {
 declare 245 {
     int Tcl_StringMatch(const char *str, const char *pattern)
 }
-# Removed in Tcl 9
+# Removed in 9.0:
 #declare 246 {
 #    int Tcl_TellOld(Tcl_Channel chan)
 #}
-# Removed in Tcl 9
+# Removed in 9.0:
 #declare 247 {
 #    int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
 #	    Tcl_VarTraceProc *proc, ClientData clientData)
