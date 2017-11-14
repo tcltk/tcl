@@ -469,7 +469,6 @@ declare 128 {
 declare 129 {
     int Tcl_Eval(Tcl_Interp *interp, const char *script)
 }
-# This is obsolete, use Tcl_FSEvalFile
 declare 130 {
     int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
 }
@@ -780,10 +779,10 @@ declare 218 {
 declare 219 {
     int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
 }
-# Obsolete
-declare 220 {
-    int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
-}
+# Removed in 9.0:
+#declare 220 {
+#    int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
+#}
 declare 221 {
     int Tcl_ServiceAll(void)
 }
@@ -868,10 +867,10 @@ declare 244 {
 declare 245 {
     int Tcl_StringMatch(const char *str, const char *pattern)
 }
-# Obsolete
-declare 246 {
-    int Tcl_TellOld(Tcl_Channel chan)
-}
+# Removed in 9.0:
+#declare 246 {
+#    int Tcl_TellOld(Tcl_Channel chan)
+#}
 declare 247 {
     int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
 	    Tcl_VarTraceProc *proc, ClientData clientData)

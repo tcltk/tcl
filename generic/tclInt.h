@@ -1810,15 +1810,7 @@ typedef struct Interp {
     ClientData interpInfo;	/* Information used by tclInterp.c to keep
 				 * track of master/slave interps on a
 				 * per-interp basis. */
-    union {
-	void (*optimizer)(void *envPtr);
-	Tcl_HashTable unused2;	/* No longer used (was mathFuncTable). The
-				 * unused space in interp was repurposed for
-				 * pluggable bytecode optimizers. The core
-				 * contains one optimizer, which can be
-				 * selectively overriden by extensions. */
-    } extra;
-
+    void (*optimizer)(void *envPtr);
     /*
      * Information related to procedures and variables. See tclProc.c and
      * tclVar.c for usage.
