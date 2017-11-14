@@ -872,8 +872,8 @@ TclSetByteCodeFromAny(
      * instruction generator boundaries.
      */
 
-    if (iPtr->extra.optimizer) {
-	(iPtr->extra.optimizer)(&compEnv);
+    if (iPtr->optimizer) {
+	(iPtr->optimizer)(&compEnv);
     }
 
     /*
