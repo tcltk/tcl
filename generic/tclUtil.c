@@ -1366,9 +1366,9 @@ TclConvertElement(
     register const char *src,	/* Source information for list element. */
     int length,			/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
-    char flags)			/* Flags produced by Tcl_ScanElement. */
+    int flags)			/* Flags produced by Tcl_ScanElement. */
 {
-    char conversion = flags & CONVERT_MASK;
+    int conversion = flags & CONVERT_MASK;
     char *p = dst;
 
     /*
@@ -1548,10 +1548,9 @@ Tcl_Merge(
     const char *const *argv)	/* Array of string values. */
 {
 #define LOCAL_SIZE 64
-    char localFlags[LOCAL_SIZE];
+    char localFlags[LOCAL_SIZE], *flagPtr = NULL;
     int i, bytesNeeded = 0;
-    char *result, *dst, *flagPtr = NULL;
-    const int maxFlags = UINT_MAX / sizeof(int);
+    char *result, *dst;
 
     /*
      * Handle empty list case first, so logic of the general case can be
@@ -1570,20 +1569,6 @@ Tcl_Merge(
 
     if (argc <= LOCAL_SIZE) {
 	flagPtr = localFlags;
-    } else if (argc > maxFlags) {
-	/*
-	 * We cannot allocate a large enough flag array to format this list in
-	 * one pass.  We could imagine converting this routine to a multi-pass
-	 * implementation, but for sizeof(int) == 4, the limit is a max of
-	 * 2^30 list elements and since each element is at least one byte
-	 * formatted, and requires one byte space between it and the next one,
-	 * that a minimum space requirement of 2^31 bytes, which is already
-	 * INT_MAX. If we tried to format a list of > maxFlags elements, we're
-	 * just going to overflow the size limits on the formatted string
-	 * anyway, so just issue that same panic early.
-	 */
-
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     } else {
 	flagPtr = ckalloc(argc);
     }
