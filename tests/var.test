@@ -247,7 +247,7 @@ test var-3.4 {MakeUpvar, my var has TCL_NAMESPACE_ONLY specified} -setup {
 	catch {unset ::test_ns_var::vv}
 	proc p {} {
 	    # create namespace var vv linked to global a
-	    testupvar 2 a {} vv namespace 
+	    testupvar 2 a {} vv namespace
 	}
 	p
     }

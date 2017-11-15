@@ -7617,7 +7617,7 @@ ExprRandFunc(
 	iPtr->flags |= RAND_SEED_INITIALIZED;
 
 	/*
-	 * To ensure different seeds in different threads (bug #416643), 
+	 * To ensure different seeds in different threads (bug #416643),
 	 * take into consideration the thread this interp is running in.
 	 */
 
