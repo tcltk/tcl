@@ -292,9 +292,6 @@
 /* Do we have fd_set? */
 #undef NO_FD_SET
 
-/* Do we have <float.h>? */
-#undef NO_FLOAT_H
-
 /* Do we have fstatfs()? */
 #undef NO_FSTATFS
 
