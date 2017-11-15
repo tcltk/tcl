@@ -3470,21 +3470,21 @@ TclFormatInt(
  *
  * Value
  * 	TCL_OK
- *      
+ *
  * 	    The index is stored at the address given by by 'indexPtr'. If
  * 	    'objPtr' has the value "end", the value stored is 'endValue'.
- * 
+ *
  * 	TCL_ERROR
- *      
+ *
  * 	    The value of 'objPtr' does not have one of the expected formats. If
  * 	    'interp' is non-NULL, an error message is left in the interpreter's
  * 	    result object.
- * 
+ *
  * Effect
- * 
+ *
  * 	The object referenced by 'objPtr' is converted, as needed, to an
  * 	integer, wide integer, or end-based-index object.
- * 
+ *
  *----------------------------------------------------------------------
  */
 
