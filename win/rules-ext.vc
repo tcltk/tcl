@@ -1,10 +1,5 @@
-#------------------------------------------------------------- -*- makefile -*-
-# rules-ext.vc --
-#
-# Part of the nmake based build system for Tcl and its extensions.
 # This file should only be included in makefiles for Tcl extensions,
 # NOT in the makefile for Tcl itself.
-# See TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md) for docs.
 
 !ifndef _RULES_EXT_VC
 
@@ -48,10 +43,13 @@ _RULESDIR = .
 !endif
 
 !if "$(_RULESDIR)" != "."
-# Potentially using Tcl's support files. Need to compare the versions.
-# We extract version numbers using the nmakehlp program. For this
-# purpose, we use the version of nmakehlp that we have. 
-!if [$(CC) -nologo nmakehlp.c -link -subsystem:console > nul]
+# Potentially using Tcl's support files. If this extension has its own
+# nmake support files, need to compare the versions and pick newer.
+
+!if exist("rules.vc") # The extension has its own copy
+
+# We extract version numbers using the nmakehlp program.
+!if [$(CC) -nologo "$(_RULESDIR)\nmakehlp.c" -link -subsystem:console > nul]
 !endif
 
 !if [echo TCL_RULES_MAJOR = \> versions.vc] \
@@ -73,7 +71,9 @@ _RULESDIR = .
 _RULESDIR = .
 !endif
 
-!endif # $(_RULESDIR) != "."
+!endif # if exist("rules.vc")
+
+!endif # if $(_RULESDIR) != "."
 
 # Let rules.vc know what copy of nmakehlp.c to use.
 NMAKEHLPC = $(_RULESDIR)\nmakehlp.c
@@ -84,7 +84,11 @@ NMAKEHLPC = $(_RULESDIR)\nmakehlp.c
 !undef OUR_RULES_MAJOR
 !undef OUR_RULES_MINOR
 
+!if exist("$(_RULESDIR)\rules.vc")
 !message *** Using $(_RULESDIR)\rules.vc
 !include "$(_RULESDIR)\rules.vc"
+!else
+!error *** Could not locate rules.vc
+!endif
 
 !endif # _RULES_EXT_VC
