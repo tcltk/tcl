@@ -2476,7 +2476,7 @@ Tcl_SetIntObj(
  *	    Success.
  *
  *	TCL_ERROR
- *	
+ *
  *	    An error occurred during conversion or the integral value can not
  *	    be represented as an integer (it might be too large). An error
  *	    message is left in the interpreter's result if 'interp' is not
