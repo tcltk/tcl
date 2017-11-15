@@ -238,6 +238,7 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * implementations.
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 static const Tcl_ObjType oldBooleanType = {
     "boolean",			/* name */
     NULL,			/* freeIntRepProc */
@@ -245,6 +246,7 @@ static const Tcl_ObjType oldBooleanType = {
     NULL,			/* updateStringProc */
     TclSetBooleanFromAny		/* setFromAnyProc */
 };
+#endif
 const Tcl_ObjType tclBooleanType = {
     "booleanString",		/* name */
     NULL,			/* freeIntRepProc */
@@ -260,7 +262,11 @@ const Tcl_ObjType tclDoubleType = {
     SetDoubleFromAny		/* setFromAnyProc */
 };
 const Tcl_ObjType tclIntType = {
+#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
     "int",			/* name */
+#else
+    "wideInt",		/* name, keeping maximum compatibility with Tcl 8.6 */
+#endif
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     UpdateStringOfInt,		/* updateStringProc */
@@ -383,7 +389,6 @@ TclInitObjSubsystem(void)
     Tcl_RegisterObjType(&tclByteArrayType);
     Tcl_RegisterObjType(&tclDoubleType);
     Tcl_RegisterObjType(&tclEndOffsetType);
-    Tcl_RegisterObjType(&tclIntType);
     Tcl_RegisterObjType(&tclStringType);
     Tcl_RegisterObjType(&tclListType);
     Tcl_RegisterObjType(&tclDictType);
@@ -393,7 +398,10 @@ TclInitObjSubsystem(void)
     Tcl_RegisterObjType(&tclProcBodyType);
 
     /* For backward compatibility only ... */
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+    Tcl_RegisterObjType(&tclIntType);
     Tcl_RegisterObjType(&oldBooleanType);
+#endif
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
@@ -1876,7 +1884,7 @@ Tcl_GetBooleanFromObj(
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclBooleanType) {
-	    *boolPtr = (int) objPtr->internalRep.wideValue;
+	    *boolPtr = (int) objPtr->internalRep.longValue;
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclDoubleType) {
@@ -2079,7 +2087,7 @@ ParseBoolean(
 
   goodBoolean:
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.wideValue = newBool;
+    objPtr->internalRep.longValue = newBool;
     objPtr->typePtr = &tclBooleanType;
     return TCL_OK;
 
@@ -3394,7 +3402,8 @@ Tcl_SetBignumObj(
     }
     if ((size_t) bignumValue->used
 	    <= (CHAR_BIT * sizeof(Tcl_WideUInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
-	Tcl_WideUInt value = 0, numBytes = sizeof(Tcl_WideUInt);
+	Tcl_WideUInt value = 0;
+	unsigned long numBytes = sizeof(Tcl_WideUInt);
 	Tcl_WideUInt scratch;
 	unsigned char *bytes = (unsigned char *) &scratch;
 

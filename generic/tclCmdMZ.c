@@ -1589,9 +1589,9 @@ StringIsCmd(
 		result = length1 == 0;
 	    }
 	} else if (((index == STR_IS_TRUE) &&
-		objPtr->internalRep.wideValue == 0)
+		objPtr->internalRep.longValue == 0)
 	    || ((index == STR_IS_FALSE) &&
-		objPtr->internalRep.wideValue != 0)) {
+		objPtr->internalRep.longValue != 0)) {
 	    result = 0;
 	}
 	break;
