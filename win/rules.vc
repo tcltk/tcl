@@ -1441,6 +1441,11 @@ default-install-libraries: $(OUT_DIR)\pkgIndex.tcl
 	@echo Installing package index in '$(SCRIPT_INSTALL_DIR)'
 	@$(CPY) $(OUT_DIR)\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)
 
+default-install-stubs:
+	@echo Installing stubs library to '$(SCRIPT_INSTALL_DIR)'
+	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
+	@$(CPY) $(PRJSTUBLIB) "$(SCRIPT_INSTALL_DIR)" >NUL
+
 default-install-docs-html:
 	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
 	@if not exist "$(DOC_INSTALL_DIR)" mkdir "$(DOC_INSTALL_DIR)"
