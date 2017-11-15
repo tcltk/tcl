@@ -136,8 +136,8 @@ NewListIntRep(
  *
  *  AttemptNewList --
  *
- *	Like NewListIntRep, but additionally sets an error message on failure. 
- * 
+ *	Like NewListIntRep, but additionally sets an error message on failure.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -234,12 +234,12 @@ Tcl_NewListObj(
  *----------------------------------------------------------------------
  *
  *  Tcl_DbNewListObj --
- * 
+ *
  *	Like 'Tcl_NewListObj', but it calls Tcl_DbCkalloc directly with the
  *	file name and line number from its caller.  This simplifies debugging
  *	since the [memory active] command will report the correct file
  *	name and line number when reporting objects that haven't been freed.
- * 
+ *
  *	When TCL_MEM_DEBUG is not defined, 'Tcl_NewListObj' is called instead.
  *
  *----------------------------------------------------------------------
@@ -695,7 +695,7 @@ Tcl_ListObjAppendElement(
  *	    object should be treated as readonly and its 'refCount' is _not_
  *	    incremented. The caller must do that if it holds on to the
  *	    reference.
- * 
+ *
  * 	TCL_ERROR
  *
  * 	    'listPtr' is not a valid list. An an error message is left in the
@@ -1337,9 +1337,9 @@ TclLsetList(
  *	    reference. The caller is expected to store the result in the
  *	    variable and decrement its reference count. (INST_STORE_* does
  *	    exactly this.)
- * 
+ *
  *	NULL
- *	
+ *
  *	    An error occurred.  If 'listPtr' was duplicated, the reference
  *	    count on the duplicate is decremented so that it is 0, causing any
  *	    memory allocated by this function to be freed.
