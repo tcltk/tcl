@@ -3,11 +3,25 @@
 
 !ifndef _RULES_EXT_VC
 
-!if !exist("rules-ext.vc")
+# We need to run from the directory the parent makefile is located in.
+# nmake does not tell us what makefile was used to invoke it so parent
+# makefile has to set the MAKEFILEVC macro or we just make a guess and
+# warn if we think that is not the case.
+!if "$(MAKEFILEVC)" == ""
+
+!if exist("$(PROJECT).vc")
+MAKEFILEVC = $(PROJECT).vc
+!elseif exist("makefile.vc")
+MAKEFILEVC = makefile.vc
+!endif
+!endif # "$(MAKEFILEVC)" == ""
+
+!if !exist("$(MAKEFILEVC)")
 MSG = ^
-You must run this makefile only from the directory it is in.^
-Please `cd` to its location first.
-!error $(MSG)
+You must run nmake from the directory containing the project makefile.^
+If you are doing that and getting this message, set the MAKEFILEVC^
+macro to the name of the project makefile.
+!message WARNING: $(MSG)
 !endif
 
 !if "$(PROJECT)" == "tcl"
