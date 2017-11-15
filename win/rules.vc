@@ -52,7 +52,11 @@ NEED_TK = 0
 NEED_TCL_SOURCE = 0
 !endif
 
-!ifndef NEED_TK_SOURCE
+!ifdef NEED_TK_SOURCE
+!if $(NEED_TK_SOURCE)
+NEED_TK = 1
+!endif
+!else
 NEED_TK_SOURCE = 0
 !endif
 
@@ -91,13 +95,6 @@ NEED_TK_SOURCE = 0
 
 # 0. Sanity check compiler environment
 
-!if !exist("rules-ext.vc")
-MSG = ^
-You must run nmake from the directory containing the makefile and rules-ext.vc.^
-Please `cd` to its location first.
-!error $(MSG)
-!endif
-
 # Check to see we are configured to build with MSVC (MSDEVDIR, MSVCDIR or
 # VCINSTALLDIR) or with the MS Platform SDK (MSSDK or WindowsSDKDir)
 
@@ -106,6 +103,28 @@ MSG = ^
 Visual C++ compiler environment not initialized.
 !error $(MSG)
 !endif
+
+# We need to run from the directory the parent makefile is located in.
+# nmake does not tell us what makefile was used to invoke it so parent
+# makefile has to set the MAKEFILEVC macro or we just make a guess and
+# warn if we think that is not the case.
+!if "$(MAKEFILEVC)" == ""
+
+!if exist("$(PROJECT).vc")
+MAKEFILEVC = $(PROJECT).vc
+!elseif exist("makefile.vc")
+MAKEFILEVC = makefile.vc
+!endif
+!endif # "$(MAKEFILEVC)" == ""
+
+!if !exist("$(MAKEFILEVC)")
+MSG = ^
+You must run nmake from the directory containing the project makefile.^
+If you are doing that and getting this message, set the MAKEFILEVC^
+macro to the name of the project makefile.
+!message WARNING: $(MSG)
+!endif
+
 
 ################################################################
 # 1. Define external programs being used
