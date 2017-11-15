@@ -974,7 +974,7 @@ Tcl_ScanCountedElement(
     int *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
-    int flags = CONVERT_ANY;
+    char flags = CONVERT_ANY;
     int numBytes = TclScanElement(src, length, &flags);
 
     *flagPtr = flags;
@@ -1015,7 +1015,7 @@ int
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
     int length,			/* Number of bytes in src, or -1. */
-    int *flagPtr)		/* Where to store information to guide
+    char *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
     const char *p = src;
@@ -1547,11 +1547,10 @@ Tcl_Merge(
     int argc,			/* How many strings to merge. */
     const char *const *argv)	/* Array of string values. */
 {
-#define LOCAL_SIZE 20
-    int localFlags[LOCAL_SIZE], *flagPtr = NULL;
+#define LOCAL_SIZE 64
+    char localFlags[LOCAL_SIZE], *flagPtr = NULL;
     int i, bytesNeeded = 0;
     char *result, *dst;
-    const int maxFlags = UINT_MAX / sizeof(int);
 
     /*
      * Handle empty list case first, so logic of the general case can be
@@ -1570,22 +1569,8 @@ Tcl_Merge(
 
     if (argc <= LOCAL_SIZE) {
 	flagPtr = localFlags;
-    } else if (argc > maxFlags) {
-	/*
-	 * We cannot allocate a large enough flag array to format this list in
-	 * one pass.  We could imagine converting this routine to a multi-pass
-	 * implementation, but for sizeof(int) == 4, the limit is a max of
-	 * 2^30 list elements and since each element is at least one byte
-	 * formatted, and requires one byte space between it and the next one,
-	 * that a minimum space requirement of 2^31 bytes, which is already
-	 * INT_MAX. If we tried to format a list of > maxFlags elements, we're
-	 * just going to overflow the size limits on the formatted string
-	 * anyway, so just issue that same panic early.
-	 */
-
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     } else {
-	flagPtr = ckalloc(argc * sizeof(int));
+	flagPtr = ckalloc(argc);
     }
     for (i = 0; i < argc; i++) {
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
@@ -2717,7 +2702,7 @@ Tcl_DStringAppendElement(
 {
     char *dst = dsPtr->string + dsPtr->length;
     int needSpace = TclNeedSpace(dsPtr->string, dst);
-    int flags = needSpace ? TCL_DONT_QUOTE_HASH : 0;
+    char flags = needSpace ? TCL_DONT_QUOTE_HASH : 0;
     int newSize = dsPtr->length + needSpace
 	    + TclScanElement(element, -1, &flags);
 
