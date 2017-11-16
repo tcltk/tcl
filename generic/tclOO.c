@@ -334,7 +334,7 @@ InitFoundation(
 	    DeletedObjdefNamespace);
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", fPtr,
 	    DeletedHelpersNamespace);
-    fPtr->epoch = 0;
+    fPtr->epoch = 1;
     fPtr->tsdPtr = tsdPtr;
     TclNewLiteralStringObj(fPtr->unknownMethodNameObj, "unknown");
     TclNewLiteralStringObj(fPtr->constructorName, "<constructor>");
@@ -562,7 +562,8 @@ AllocObject(
     Object *oPtr;
     Command *cmdPtr;
     CommandTrace *tracePtr;
-    int creationEpoch, ignored;
+    size_t creationEpoch;
+    int ignored;
 
     oPtr = ckalloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
@@ -592,7 +593,7 @@ AllocObject(
     while (1) {
 	char objName[10 + TCL_INTEGER_SPACE];
 
-	sprintf(objName, "::oo::Obj%d", ++fPtr->tsdPtr->nsCount);
+	sprintf(objName, "::oo::Obj%" TCL_LL_MODIFIER "d", (Tcl_WideInt)++fPtr->tsdPtr->nsCount);
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, objName, oPtr,
 		ObjectNamespaceDeleted);
 	if (oPtr->namespacePtr != NULL) {
