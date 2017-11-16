@@ -123,7 +123,7 @@ TclpFindExecutable(
     }
 #endif /* __APPLE__ */
 
-#if !defined(__APPLE__) && !defined(DJGPP) && 0
+#if !defined(__APPLE__) && !defined(DJGPP)
     pid = getpid();
     for (i=0 ; i<sizeof(exepaths)/sizeof(*exepaths) ; i++) {
 	sprintf(buf2, exepaths[i], pid);
