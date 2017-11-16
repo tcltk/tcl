@@ -31,19 +31,19 @@ int
 \fBTcl_UniCharLen\fR(\fIuniStr\fR)
 .sp
 int
-\fBTcl_UniCharNcmp\fR(\fIucs, uct, numChars\fR)
+\fBTcl_UniCharNcmp\fR(\fIucs, uct, length\fR)
 .sp
 int
-\fBTcl_UniCharNcasecmp\fR(\fIucs, uct, numChars\fR)
+\fBTcl_UniCharNcasecmp\fR(\fIucs, uct, length\fR)
 .sp
 int
 \fBTcl_UniCharCaseMatch\fR(\fIuniStr, uniPattern, nocase\fR)
 .sp
 int
-\fBTcl_UtfNcmp\fR(\fIcs, ct, numChars\fR)
+\fBTcl_UtfNcmp\fR(\fIcs, ct, length\fR)
 .sp
 int
-\fBTcl_UtfNcasecmp\fR(\fIcs, ct, numChars\fR)
+\fBTcl_UtfNcasecmp\fR(\fIcs, ct, length\fR)
 .sp
 int
 \fBTcl_UtfCharComplete\fR(\fIsrc, length\fR)
@@ -94,16 +94,14 @@ A null-terminated Unicode string.
 A null-terminated Unicode string.
 .AP "const Tcl_UniChar" *uniPattern in
 A null-terminated Unicode string.
-.AP int length in
+.AP size_t length in
 The length of the UTF-8 string in bytes (not UTF-8 characters).  If
 negative, all bytes up to the first null byte are used.
-.AP int uniLength in
+.AP size_t uniLength in
 The length of the Unicode string in characters.  Must be greater than or
 equal to 0.
 .AP "Tcl_DString" *dsPtr in/out
 A pointer to a previously initialized \fBTcl_DString\fR.
-.AP "unsigned long" numChars in
-The number of characters to compare.
 .AP "const char" *start in
 Pointer to the beginning of a UTF-8 string.
 .AP int index in
@@ -169,7 +167,7 @@ the number of Unicode characters (not bytes) in that string.
 \fBTcl_UniCharNcmp\fR and \fBTcl_UniCharNcasecmp\fR correspond to
 \fBstrncmp\fR and \fBstrncasecmp\fR, respectively, for Unicode characters.
 They accept two null-terminated Unicode strings and the number of characters
-to compare.  Both strings are assumed to be at least \fInumChars\fR characters
+to compare.  Both strings are assumed to be at least \fIlength\fR characters
 long. \fBTcl_UniCharNcmp\fR  compares the two strings character-by-character
 according to the Unicode character ordering.  It returns an integer greater
 than, equal to, or less than 0 if the first string is greater than, equal
@@ -183,7 +181,7 @@ be case sensitive and returns whether the string matches the pattern.
 .PP
 \fBTcl_UtfNcmp\fR corresponds to \fBstrncmp\fR for UTF-8 strings. It
 accepts two null-terminated UTF-8 strings and the number of characters
-to compare.  (Both strings are assumed to be at least \fInumChars\fR
+to compare.  (Both strings are assumed to be at least \fIlength\fR
 characters long.)  \fBTcl_UtfNcmp\fR compares the two strings
 character-by-character according to the Unicode character ordering.
 It returns an integer greater than, equal to, or less than 0 if the

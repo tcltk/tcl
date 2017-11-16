@@ -937,9 +937,9 @@ Tcl_SplitList(
 
 int
 Tcl_ScanElement(
-    register const char *src,	/* String to convert to list element. */
-    register int *flagPtr)	/* Where to store information to guide
-				 * Tcl_ConvertCountedElement. */
+    const char *src,	/* String to convert to list element. */
+    int *flagPtr)	/* Where to store information to guide
+			 * Tcl_ConvertCountedElement. */
 {
     return Tcl_ScanCountedElement(src, -1, flagPtr);
 }
@@ -1300,9 +1300,9 @@ TclScanElement(
 
 int
 Tcl_ConvertElement(
-    register const char *src,	/* Source information for list element. */
-    register char *dst,		/* Place to put list-ified element. */
-    register int flags)		/* Flags produced by Tcl_ScanElement. */
+    const char *src,	/* Source information for list element. */
+    char *dst,		/* Place to put list-ified element. */
+    int flags)		/* Flags produced by Tcl_ScanElement. */
 {
     return Tcl_ConvertCountedElement(src, -1, dst, flags);
 }
@@ -1549,7 +1549,8 @@ Tcl_Merge(
 {
 #define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    int i, bytesNeeded = 0;
+    int i;
+    size_t bytesNeeded = 0;
     char *result, *dst;
 
     /*
@@ -1575,12 +1576,6 @@ Tcl_Merge(
     for (i = 0; i < argc; i++) {
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	bytesNeeded += TclScanElement(argv[i], -1, &flagPtr[i]);
-	if (bytesNeeded < 0) {
-	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-	}
-    }
-    if (bytesNeeded > INT_MAX - argc + 1) {
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
     bytesNeeded += argc;
 
@@ -1602,40 +1597,6 @@ Tcl_Merge(
 	ckfree(flagPtr);
     }
     return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_Backslash --
- *
- *	Figure out how to handle a backslash sequence.
- *
- * Results:
- *	The return value is the character that should be substituted in place
- *	of the backslash sequence that starts at src. If readPtr isn't NULL
- *	then it is filled in with a count of the number of characters in the
- *	backslash sequence.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-char
-Tcl_Backslash(
-    const char *src,		/* Points to the backslash character of a
-				 * backslash sequence. */
-    int *readPtr)		/* Fill in with number of characters read from
-				 * src, unless NULL. */
-{
-    char buf[TCL_UTF_MAX];
-    Tcl_UniChar ch = 0;
-
-    Tcl_UtfBackslash(src, readPtr, buf);
-    TclUtfToUniChar(buf, &ch);
-    return (char) ch;
 }
 
 /*
@@ -1936,7 +1897,8 @@ Tcl_ConcatObj(
     int objc,			/* Number of objects to concatenate. */
     Tcl_Obj *const objv[])	/* Array of objects to concatenate. */
 {
-    int i, elemLength, needSpace = 0, bytesNeeded = 0;
+    int i, needSpace = 0;
+    size_t bytesNeeded = 0, elemLength;
     const char *element;
     Tcl_Obj *objPtr, *resPtr;
 
@@ -1947,13 +1909,14 @@ Tcl_ConcatObj(
      */
 
     for (i = 0;  i < objc;  i++) {
-	int length;
+	size_t length;
 
 	objPtr = objv[i];
 	if (TclListObjIsCanonical(objPtr)) {
 	    continue;
 	}
-	TclGetStringFromObj(objPtr, &length);
+	TclGetString(objPtr);
+	length = objPtr->length;
 	if (length > 0) {
 	    break;
 	}
@@ -1990,11 +1953,9 @@ Tcl_ConcatObj(
      */
 
     for (i = 0;  i < objc;  i++) {
-	element = TclGetStringFromObj(objv[i], &elemLength);
+	element = TclGetString(objv[i]);
+	elemLength = objv[i]->length;
 	bytesNeeded += elemLength;
-	if (bytesNeeded < 0) {
-	    break;
-	}
     }
 
     /*
@@ -2008,9 +1969,10 @@ Tcl_ConcatObj(
     Tcl_SetObjLength(resPtr, 0);
 
     for (i = 0;  i < objc;  i++) {
-	int trim;
+	size_t trim;
 
-	element = TclGetStringFromObj(objv[i], &elemLength);
+	element = TclGetString(objv[i]);
+	elemLength = objv[i]->length;
 
 	/*
 	 * Trim away the leading whitespace.
@@ -2594,13 +2556,13 @@ Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
     const char *bytes,		/* String to append. If length is -1 then this
 				 * must be null-terminated. */
-    int length)			/* Number of bytes from "bytes" to append. If
-				 * < 0, then append all of bytes, up to null
+    size_t length)			/* Number of bytes from "bytes" to append. If
+				 * (size_t)-1, then append all of bytes, up to null
 				 * at end. */
 {
     int newSize;
 
-    if (length < 0) {
+    if (length == (size_t)-1) {
 	length = strlen(bytes);
     }
     newSize = length + dsPtr->length;
@@ -2661,10 +2623,9 @@ TclDStringAppendObj(
     Tcl_DString *dsPtr,
     Tcl_Obj *objPtr)
 {
-    int length;
-    char *bytes = TclGetStringFromObj(objPtr, &length);
+    char *bytes = TclGetString(objPtr);
 
-    return Tcl_DStringAppend(dsPtr, bytes, length);
+    return Tcl_DStringAppend(dsPtr, bytes, objPtr->length);
 }
 
 char *
@@ -2908,11 +2869,11 @@ Tcl_DStringGetResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the result
 				 * of interp. */
 {
-    int length;
-    char *bytes = TclGetStringFromObj(Tcl_GetObjResult(interp), &length);
+    Tcl_Obj *obj = Tcl_GetObjResult(interp);
+    char *bytes = TclGetString(obj);
 
     Tcl_DStringFree(dsPtr);
-    Tcl_DStringAppend(dsPtr, bytes, length);
+    Tcl_DStringAppend(dsPtr, bytes, obj->length);
     Tcl_ResetResult(interp);
 }
 
@@ -3260,7 +3221,7 @@ TclPrecTraceProc(
 
 
     if (flags & TCL_TRACE_READS) {
-	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewIntObj(*precisionPtr),
+	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewLongObj(*precisionPtr),
 		flags & TCL_GLOBAL_ONLY);
 	return NULL;
     }

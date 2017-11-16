@@ -1525,7 +1525,7 @@ int
 TclObjBeingDeleted(
     Tcl_Obj *objPtr)
 {
-    return (objPtr->length == -1);
+    return (objPtr->length == (size_t)-1);
 }
 
 /*
@@ -1690,7 +1690,7 @@ Tcl_GetStringFromObj(
     (void) TclGetString(objPtr);
 
     if (lengthPtr != NULL) {
-	*lengthPtr = objPtr->length;
+	*lengthPtr = (objPtr->length < INT_MAX)? objPtr->length: INT_MAX;
     }
     return objPtr->bytes;
 }
@@ -4474,7 +4474,7 @@ Tcl_RepresentationCmd(
     descObj = Tcl_ObjPrintf("value is a %s with a refcount of %d,"
 	    " object pointer at %p",
 	    objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
-	    objv[1]->refCount, objv[1]);
+	    (int) objv[1]->refCount, objv[1]);
 
     if (objv[1]->typePtr) {
 	if (objv[1]->typePtr == &tclDoubleType) {

@@ -1265,8 +1265,8 @@ TeststringobjCmd(
 	    if (objc != 3) {
 		goto wrongNumArgs;
 	    }
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), (varPtr[varIndex] != NULL)
-		    ? varPtr[varIndex]->length : -1);
+	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), (varPtr[varIndex] != NULL)
+		    ? (Tcl_WideInt)varPtr[varIndex]->length : (Tcl_WideInt)-1);
 	    break;
 	case 5:				/* length2 */
 	    if (objc != 3) {

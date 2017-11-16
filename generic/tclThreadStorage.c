@@ -85,14 +85,14 @@ TSDTableCreate(void)
     TSDTable *tsdTablePtr;
     sig_atomic_t i;
 
-    tsdTablePtr = TclpSysAlloc(sizeof(TSDTable), 0);
+    tsdTablePtr = TclpSysAlloc(sizeof(TSDTable));
     if (tsdTablePtr == NULL) {
 	Tcl_Panic("unable to allocate TSDTable");
     }
 
     tsdTablePtr->allocated = 8;
     tsdTablePtr->tablePtr =
-	    TclpSysAlloc(sizeof(void *) * tsdTablePtr->allocated, 0);
+	    TclpSysAlloc(sizeof(void *) * tsdTablePtr->allocated);
     if (tsdTablePtr->tablePtr == NULL) {
 	Tcl_Panic("unable to allocate TSDTable");
     }

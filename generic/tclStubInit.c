@@ -22,9 +22,9 @@
  * Remove macros that will interfere with the definitions below.
  */
 
-#undef Tcl_Alloc
-#undef Tcl_Free
-#undef Tcl_Realloc
+#undef Tcl_MemAlloc
+#undef Tcl_MemFree
+#undef Tcl_MemRealloc
 #undef Tcl_NewBooleanObj
 #undef Tcl_NewByteArrayObj
 #undef Tcl_NewDoubleObj
@@ -757,9 +757,9 @@ const TclStubs tclStubs = {
     Tcl_PkgProvideEx, /* 0 */
     Tcl_PkgRequireEx, /* 1 */
     Tcl_Panic, /* 2 */
-    Tcl_Alloc, /* 3 */
-    Tcl_Free, /* 4 */
-    Tcl_Realloc, /* 5 */
+    Tcl_MemAlloc, /* 3 */
+    Tcl_MemFree, /* 4 */
+    Tcl_MemRealloc, /* 5 */
     Tcl_DbCkalloc, /* 6 */
     Tcl_DbCkfree, /* 7 */
     Tcl_DbCkrealloc, /* 8 */
@@ -847,7 +847,7 @@ const TclStubs tclStubs = {
     Tcl_AsyncMark, /* 74 */
     Tcl_AsyncReady, /* 75 */
     Tcl_BackgroundError, /* 76 */
-    Tcl_Backslash, /* 77 */
+    0, /* 77 */
     Tcl_BadChannelOption, /* 78 */
     Tcl_CallWhenDeleted, /* 79 */
     Tcl_CancelIdleCall, /* 80 */
@@ -1206,9 +1206,9 @@ const TclStubs tclStubs = {
     Tcl_CommandTraceInfo, /* 425 */
     Tcl_TraceCommand, /* 426 */
     Tcl_UntraceCommand, /* 427 */
-    Tcl_AttemptAlloc, /* 428 */
+    Tcl_AttemptMemAlloc, /* 428 */
     Tcl_AttemptDbCkalloc, /* 429 */
-    Tcl_AttemptRealloc, /* 430 */
+    Tcl_AttemptMemRealloc, /* 430 */
     Tcl_AttemptDbCkrealloc, /* 431 */
     Tcl_AttemptSetObjLength, /* 432 */
     Tcl_GetChannelThread, /* 433 */

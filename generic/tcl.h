@@ -699,16 +699,16 @@ typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 typedef int (Tcl_EncodingConvertProc) (ClientData clientData, const char *src,
 	int srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
 	int dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr);
-typedef void (Tcl_EncodingFreeProc) (ClientData clientData);
+#define Tcl_EncodingFreeProc Tcl_FreeProc
 typedef int (Tcl_EventProc) (Tcl_Event *evPtr, int flags);
 typedef void (Tcl_EventCheckProc) (ClientData clientData, int flags);
 typedef int (Tcl_EventDeleteProc) (Tcl_Event *evPtr, ClientData clientData);
 typedef void (Tcl_EventSetupProc) (ClientData clientData, int flags);
-typedef void (Tcl_ExitProc) (ClientData clientData);
+#define Tcl_ExitProc Tcl_FreeProc
 typedef void (Tcl_FileProc) (ClientData clientData, int mask);
-typedef void (Tcl_FileFreeProc) (ClientData clientData);
+#define Tcl_FileFreeProc Tcl_FreeProc
 typedef void (Tcl_FreeInternalRepProc) (struct Tcl_Obj *objPtr);
-typedef void (Tcl_FreeProc) (char *blockPtr);
+typedef void (Tcl_FreeProc) (void *blockPtr);
 typedef void (Tcl_IdleProc) (ClientData clientData);
 typedef void (Tcl_InterpDeleteProc) (ClientData clientData,
 	Tcl_Interp *interp);
@@ -770,7 +770,7 @@ typedef struct Tcl_ObjType {
  */
 
 typedef struct Tcl_Obj {
-    int refCount;		/* When 0 the object will be freed. */
+    size_t refCount;		/* When 0 the object will be freed. */
     char *bytes;		/* This points to the first byte of the
 				 * object's string representation. The array
 				 * must be followed by a null byte (i.e., at
@@ -782,7 +782,7 @@ typedef struct Tcl_Obj {
 				 * should use Tcl_GetStringFromObj or
 				 * Tcl_GetString to get a pointer to the byte
 				 * array as a readonly value. */
-    int length;			/* The number of bytes at *bytes, not
+    size_t length;		/* The number of bytes at *bytes, not
 				 * including the terminating null. */
     const Tcl_ObjType *typePtr;	/* Denotes the object's type. Always
 				 * corresponds to the type of the object's
@@ -1139,10 +1139,8 @@ struct Tcl_HashEntry {
     Tcl_HashEntry *nextPtr;	/* Pointer to next entry in this hash bucket,
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
-    void *hash;			/* Hash value, stored as pointer to ensure
-				 * that the offsets of the fields in this
-				 * structure are not changed. */
-    ClientData clientData;	/* Application stores something here with
+    size_t hash;		/* Hash value. */
+    void *clientData;		/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */
 	char *oneWordValue;	/* One-word value for key. */
@@ -1230,16 +1228,16 @@ struct Tcl_HashTable {
     Tcl_HashEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables (to
 				 * avoid mallocs and frees). */
-    int numBuckets;		/* Total number of buckets allocated at
+    size_t numBuckets1;		/* Total number of buckets allocated at
 				 * **bucketPtr. */
-    int numEntries;		/* Total number of entries present in
+    size_t numEntries;		/* Total number of entries present in
 				 * table. */
-    int rebuildSize;		/* Enlarge table when numEntries gets to be
+    size_t rebuildSize1;		/* Enlarge table when numEntries gets to be
 				 * this large. */
+    size_t mask1;		/* Mask value used in hashing function. */
     int downShift;		/* Shift count used in hashing function.
 				 * Designed to use high-order bits of
 				 * randomized keys. */
-    int mask;			/* Mask value used in hashing function. */
     int keyType;		/* Type of keys used in this table. It's
 				 * either TCL_CUSTOM_KEYS, TCL_STRING_KEYS,
 				 * TCL_ONE_WORD_KEYS, or an integer giving the
@@ -1260,7 +1258,7 @@ struct Tcl_HashTable {
 
 typedef struct Tcl_HashSearch {
     Tcl_HashTable *tablePtr;	/* Table being searched. */
-    int nextIndex;		/* Index of next bucket to be enumerated after
+    size_t nextIndex1;		/* Index of next bucket to be enumerated after
 				 * present one. */
     Tcl_HashEntry *nextEntryPtr;/* Next entry to be enumerated in the current
 				 * bucket. */
@@ -1301,7 +1299,7 @@ typedef struct Tcl_HashSearch {
 typedef struct {
     void *next;			/* Search position for underlying hash
 				 * table. */
-    unsigned int epoch; 	/* Epoch marker for dictionary being searched,
+    size_t epoch;		/* Epoch marker for dictionary being searched,
 				 * or 0 if search has terminated. */
     Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
 } Tcl_DictSearch;
@@ -1645,7 +1643,7 @@ typedef int (Tcl_FSPathInFilesystemProc) (Tcl_Obj *pathPtr,
 	ClientData *clientDataPtr);
 typedef Tcl_Obj * (Tcl_FSFilesystemPathTypeProc) (Tcl_Obj *pathPtr);
 typedef Tcl_Obj * (Tcl_FSFilesystemSeparatorProc) (Tcl_Obj *pathPtr);
-typedef void (Tcl_FSFreeInternalRepProc) (ClientData clientData);
+#define Tcl_FSFreeInternalRepProc Tcl_FreeProc
 typedef ClientData (Tcl_FSDupInternalRepProc) (ClientData clientData);
 typedef Tcl_Obj * (Tcl_FSInternalToNormalizedProc) (ClientData clientData);
 typedef ClientData (Tcl_FSCreateInternalRepProc) (Tcl_Obj *pathPtr);
@@ -2051,7 +2049,7 @@ typedef struct Tcl_EncodingType {
     Tcl_EncodingConvertProc *fromUtfProc;
 				/* Function to convert from UTF-8 into
 				 * external encoding. */
-    Tcl_EncodingFreeProc *freeProc;
+    Tcl_FreeProc *freeProc;
 				/* If non-NULL, function to call when this
 				 * encoding is deleted. */
     ClientData clientData;	/* Arbitrary value associated with encoding
@@ -2351,7 +2349,7 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * stubs tables.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACB + (int) sizeof(void *))
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2430,37 +2428,43 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * defined in tclCkalloc.c.
  */
 
+#define Tcl_Alloc ckalloc
+#define Tcl_Free ckfree
+#define Tcl_Realloc ckrealloc
+#define Tcl_AttemptAlloc attemptckalloc
+#define Tcl_AttemptRealloc attemptckrealloc
+
 #ifdef TCL_MEM_DEBUG
 
 #   define ckalloc(x) \
-    ((void *) Tcl_DbCkalloc((unsigned)(x), __FILE__, __LINE__))
+    (Tcl_DbCkalloc((x), __FILE__, __LINE__))
 #   define ckfree(x) \
-    Tcl_DbCkfree((char *)(x), __FILE__, __LINE__)
+    Tcl_DbCkfree((x), __FILE__, __LINE__)
 #   define ckrealloc(x,y) \
-    ((void *) Tcl_DbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
+    (Tcl_DbCkrealloc((x), (y), __FILE__, __LINE__))
 #   define attemptckalloc(x) \
-    ((void *) Tcl_AttemptDbCkalloc((unsigned)(x), __FILE__, __LINE__))
+    (Tcl_AttemptDbCkalloc((x), __FILE__, __LINE__))
 #   define attemptckrealloc(x,y) \
-    ((void *) Tcl_AttemptDbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
+    (Tcl_AttemptDbCkrealloc((x), (y), __FILE__, __LINE__))
 
 #else /* !TCL_MEM_DEBUG */
 
 /*
- * If we are not using the debugging allocator, we should call the Tcl_Alloc,
+ * If we are not using the debugging allocator, we should call the Tcl_MemAlloc,
  * et al. routines in order to guarantee that every module is using the same
  * memory allocator both inside and outside of the Tcl library.
  */
 
-#   define ckalloc(x) \
-    ((void *) Tcl_Alloc((unsigned)(x)))
-#   define ckfree(x) \
-    Tcl_Free((char *)(x))
-#   define ckrealloc(x,y) \
-    ((void *) Tcl_Realloc((char *)(x), (unsigned)(y)))
-#   define attemptckalloc(x) \
-    ((void *) Tcl_AttemptAlloc((unsigned)(x)))
-#   define attemptckrealloc(x,y) \
-    ((void *) Tcl_AttemptRealloc((char *)(x), (unsigned)(y)))
+#   define ckalloc \
+    Tcl_MemAlloc
+#   define ckfree \
+    Tcl_MemFree
+#   define ckrealloc \
+    Tcl_MemRealloc
+#   define attemptckalloc \
+    Tcl_AttemptMemAlloc
+#   define attemptckrealloc \
+    Tcl_AttemptMemRealloc
 #   undef  Tcl_InitMemory
 #   define Tcl_InitMemory(x)
 #   undef  Tcl_DumpActiveMemory
@@ -2540,7 +2544,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 #define Tcl_GetHashValue(h) ((h)->clientData)
-#define Tcl_SetHashValue(h, value) ((h)->clientData = (ClientData) (value))
+#define Tcl_SetHashValue(h, value) ((h)->clientData = (void *) (value))
 #define Tcl_GetHashKey(tablePtr, h) \
 	((void *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS || \
 		    (tablePtr)->keyType == TCL_CUSTOM_PTR_KEYS) \

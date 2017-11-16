@@ -290,7 +290,7 @@ declare 64 {
 #    int TclpAccess(const char *path, int mode)
 #}
 declare 69 {
-    char *TclpAlloc(unsigned int size)
+    void *TclpAlloc(size_t size)
 }
 #declare 70 {
 #    int TclpCopyFile(const char *source, const char *dest)
@@ -306,7 +306,7 @@ declare 69 {
 #    int TclpDeleteFile(const char *path)
 #}
 declare 74 {
-    void TclpFree(char *ptr)
+    void TclpFree(void *ptr)
 }
 declare 75 {
     unsigned long TclpGetClicks(void)
@@ -333,7 +333,7 @@ declare 76 {
 #	    char *modeString, int permissions)
 #}
 declare 81 {
-    char *TclpRealloc(char *ptr, unsigned int size)
+    void *TclpRealloc(void *ptr, size_t size)
 }
 #declare 82 {
 #    int TclpRemoveDirectory(const char *path, int recursive,
@@ -702,7 +702,7 @@ declare 166 {
 #}
 # variant of Tcl_UtfNCmp that takes n as bytes, not chars
 declare 169 {
-    int TclpUtfNcmp2(const char *s1, const char *s2, unsigned long n)
+    int TclpUtfNcmp2(const char *s1, const char *s2, size_t n)
 }
 declare 170 {
     int TclCheckInterpTraces(Tcl_Interp *interp, const char *command,
@@ -1000,8 +1000,8 @@ declare 245 {
     Tcl_HashTable *TclGetNamespaceCommandTable(Tcl_Namespace *nsPtr)
 }
 declare 246 {
-    int TclInitRewriteEnsemble(Tcl_Interp *interp, int numRemoved,
-	    int numInserted, Tcl_Obj *const *objv)
+    int TclInitRewriteEnsemble(Tcl_Interp *interp, size_t numRemoved,
+	    size_t numInserted, Tcl_Obj *const *objv)
 }
 declare 247 {
     void TclResetRewriteEnsemble(Tcl_Interp *interp, int isRootEnsemble)
@@ -1024,7 +1024,7 @@ declare 250 {
 # Allow extensions for optimization
 declare 251 {
     int TclRegisterLiteral(void *envPtr,
-	    const char *bytes, int length, int flags)
+	    const char *bytes, size_t length, int flags)
 }
 
 # Exporting of the internal API to variables.
