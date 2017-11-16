@@ -76,6 +76,7 @@ TclpFindExecutable(
 	"/proc/curproc/file"
     };
     char buf1[PATH_MAX+1], buf2[64];
+    ssize_t readlink_res;
 #endif
 #if !defined(NO_DLADDR) && !defined(NO_DLFCN_H)
     Dl_info dlinfoBuffer;
@@ -122,11 +123,13 @@ TclpFindExecutable(
     }
 #endif /* __APPLE__ */
 
-#if !defined(__APPLE__) && !defined(DJGPP)
+#if !defined(__APPLE__) && !defined(DJGPP) && 0
     pid = getpid();
     for (i=0 ; i<sizeof(exepaths)/sizeof(*exepaths) ; i++) {
 	sprintf(buf2, exepaths[i], pid);
-	if (readlink(buf2, buf1, PATH_MAX) > 0 && buf1[0] == '/') {
+	readlink_res = readlink(buf2, buf1, PATH_MAX);
+	if (readlink_res > 0 && buf1[0] == '/') {
+	    buf1[readlink_res] = '\0';
 	    name = buf1;
 	    goto gotName;
 	}
