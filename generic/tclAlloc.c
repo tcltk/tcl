@@ -275,7 +275,7 @@ TclpAlloc(
     if (numBytes >= MAXMALLOC - OVERHEAD) {
 	if (numBytes <= UINT_MAX - OVERHEAD -sizeof(struct block)) {
 	    bigBlockPtr = (struct block *) TclpSysAlloc((unsigned)
-		    (sizeof(struct block) + OVERHEAD + numBytes), 0);
+		    (sizeof(struct block) + OVERHEAD + numBytes));
 	}
 	if (bigBlockPtr == NULL) {
 	    Tcl_MutexUnlock(allocMutexPtr);
@@ -406,7 +406,7 @@ MoreCore(
     ASSERT(numBlocks*size == amount);
 
     blockPtr = (struct block *) TclpSysAlloc(
-	    (sizeof(struct block) + amount), 1);
+	    (sizeof(struct block) + amount));
     /* no more room! */
     if (blockPtr == NULL) {
 	return;

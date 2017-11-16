@@ -274,7 +274,7 @@ typedef struct Namespace {
 				 * frames for this namespace that are on the
 				 * Tcl call stack. The namespace won't be
 				 * freed until activationCount becomes zero. */
-    int refCount;		/* Count of references by namespaceName
+    size_t refCount;		/* Count of references by namespaceName
 				 * objects. The namespace can't be freed until
 				 * refCount becomes zero. */
     Tcl_HashTable cmdTable;	/* Contains all the commands currently
@@ -295,9 +295,9 @@ typedef struct Namespace {
 				 * commands; however, no namespace qualifiers
 				 * are allowed. NULL if no export patterns are
 				 * registered. */
-    int numExportPatterns;	/* Number of export patterns currently
+    size_t numExportPatterns;	/* Number of export patterns currently
 				 * registered using "namespace export". */
-    int maxExportPatterns;	/* Mumber of export patterns for which space
+    size_t maxExportPatterns;	/* Number of export patterns for which space
 				 * is currently allocated. */
     size_t cmdRefEpoch;		/* Incremented if a newly added command
 				 * shadows a command for which this namespace
@@ -545,7 +545,7 @@ typedef struct CommandTrace {
     struct CommandTrace *nextPtr;
 				/* Next in list of traces associated with a
 				 * particular command. */
-    int refCount;		/* Used to ensure this structure is not
+    size_t refCount;		/* Used to ensure this structure is not
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
@@ -618,7 +618,7 @@ typedef struct Var {
 
 typedef struct VarInHash {
     Var var;
-    int refCount;		/* Counts number of active uses of this
+    size_t refCount;		/* Counts number of active uses of this
 				 * variable: 1 for the entry in the hash
 				 * table, 1 for each additional variable whose
 				 * linkPtr points here, 1 for each nested
@@ -950,7 +950,7 @@ typedef struct CompiledLocal {
 typedef struct Proc {
     struct Interp *iPtr;	/* Interpreter for which this command is
 				 * defined. */
-    int refCount;		/* Reference count: 1 if still present in
+    size_t refCount;		/* Reference count: 1 if still present in
 				 * command table plus 1 for each call to the
 				 * procedure that is currently active. This
 				 * structure can be freed when refCount
@@ -1067,7 +1067,7 @@ typedef struct AssocData {
  */
 
 typedef struct LocalCache {
-    int refCount;
+    size_t refCount;
     int numVars;
     Tcl_Obj *varName0;
 } LocalCache;
@@ -1229,7 +1229,7 @@ typedef struct CmdFrame {
 typedef struct CFWord {
     CmdFrame *framePtr;		/* CmdFrame to access. */
     int word;			/* Index of the word in the command. */
-    int refCount;		/* Number of times the word is on the
+    size_t refCount;		/* Number of times the word is on the
 				 * stack. */
 } CFWord;
 
@@ -1492,11 +1492,11 @@ typedef struct LiteralEntry {
 				 * NULL if end of chain. */
     Tcl_Obj *objPtr;		/* Points to Tcl object that holds the
 				 * literal's bytes and length. */
-    int refCount;		/* If in an interpreter's global literal
+    size_t refCount;		/* If in an interpreter's global literal
 				 * table, the number of ByteCode structures
 				 * that share the literal object; the literal
 				 * entry can be freed when refCount drops to
-				 * 0. If in a local literal table, -1. */
+				 * 0. If in a local literal table, (size_t) -1. */
     Namespace *nsPtr;		/* Namespace in which this literal is used. We
 				 * try to avoid sharing literal non-FQ command
 				 * names among different namespaces to reduce
@@ -1510,13 +1510,13 @@ typedef struct LiteralTable {
     LiteralEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables to avoid
 				 * mallocs and frees. */
-    int numBuckets;		/* Total number of buckets allocated at
+    size_t numBuckets;		/* Total number of buckets allocated at
 				 * **buckets. */
-    int numEntries;		/* Total number of entries present in
+    size_t numEntries;		/* Total number of entries present in
 				 * table. */
-    int rebuildSize;		/* Enlarge table when numEntries gets to be
+    size_t rebuildSize;		/* Enlarge table when numEntries gets to be
 				 * this large. */
-    int mask;			/* Mask value used in hashing function. */
+    TCL_HASH_TYPE mask;			/* Mask value used in hashing function. */
 } LiteralTable;
 
 /*
@@ -1634,7 +1634,7 @@ typedef struct Command {
 				 * recreated). */
     Namespace *nsPtr;		/* Points to the namespace containing this
 				 * command. */
-    int refCount;		/* 1 if in command hashtable plus 1 for each
+    size_t refCount;		/* 1 if in command hashtable plus 1 for each
 				 * reference from a CmdName Tcl object
 				 * representing a command's name in a ByteCode
 				 * instruction sequence. This structure can be
@@ -1866,7 +1866,7 @@ typedef struct Interp {
 				 * compiled by the interpreter. Indexed by the
 				 * string representations of literals. Used to
 				 * avoid creating duplicate objects. */
-    unsigned int compileEpoch;	/* Holds the current "compilation epoch" for
+    size_t compileEpoch;	/* Holds the current "compilation epoch" for
 				 * this interpreter. This is incremented to
 				 * invalidate existing ByteCodes when, e.g., a
 				 * command with a compile procedure is
@@ -1976,9 +1976,9 @@ typedef struct Interp {
 				 * *root* ensemble command? (Nested ensembles
 				 * don't rewrite this.) NULL if we're not
 				 * processing an ensemble. */
-	int numRemovedObjs;	/* How many arguments have been stripped off
+	size_t numRemovedObjs;	/* How many arguments have been stripped off
 				 * because of ensemble processing. */
-	int numInsertedObjs;	/* How many of the current arguments were
+	size_t numInsertedObjs;	/* How many of the current arguments were
 				 * inserted by an ensemble. */
     } ensembleRewrite;
 
@@ -2340,7 +2340,7 @@ typedef enum TclEolTranslation {
  */
 
 typedef struct List {
-    int refCount;
+    size_t refCount;
     int maxElemCount;		/* Total number of element array slots. */
     int elemCount;		/* Current number of list elements. */
     int canonicalFlag;		/* Set if the string representation was
@@ -2831,7 +2831,7 @@ struct Tcl_LoadHandle_ {
  */
 
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
-			    const unsigned char *bytes, int len);
+			    const unsigned char *bytes, size_t len);
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
 MODULE_SCOPE void	TclAdvanceContinuations(int *line, int **next,
@@ -3112,7 +3112,7 @@ MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
 			    Tcl_Obj *newValue, Tcl_Encoding encoding);
 MODULE_SCOPE void	TclSignalExitThread(Tcl_ThreadId id, int result);
 MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
-			    Tcl_Obj *const *objv, int objc, int subIdx,
+			    Tcl_Obj *const *objv, int objc, size_t subIdx,
 			    Tcl_Obj *bad, Tcl_Obj *fix);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 			    int numBytes);
@@ -4066,7 +4066,7 @@ typedef const char *TclDTraceStr;
 		    && ((objPtr)->bytes != &tclEmptyString)) { \
 		ckfree((objPtr)->bytes); \
 	    } \
-	    (objPtr)->length = -1; \
+	    (objPtr)->length = (size_t)-1; \
 	    TclFreeObjStorage(objPtr); \
 	    TclIncrObjsFreed(); \
 	} else { \
@@ -4215,7 +4215,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  * is referenced multiple times, it should be as simple an expression as
  * possible. The ANSI C "prototype" for this macro is:
  *
- * MODULE_SCOPE void TclInitStringRep(Tcl_Obj *objPtr, char *bytePtr, int len);
+ * MODULE_SCOPE void TclInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
  *
  * This macro should only be called on an unshared objPtr where
  *  objPtr->typePtr->freeIntRepProc == NULL
@@ -4227,8 +4227,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1)); \
-	memcpy((objPtr)->bytes, (bytePtr), (unsigned) (len)); \
+	(objPtr)->bytes = ckalloc((len) + 1); \
+	memcpy((objPtr)->bytes, (bytePtr), (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
     }
@@ -4384,13 +4384,13 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  * "prototype" for this macro is:
  *
  * MODULE_SCOPE void	TclNumUtfChars(int numChars, const char *bytes,
- *				int numBytes);
+ *				size_t numBytes);
  *----------------------------------------------------------------
  */
 
 #define TclNumUtfChars(numChars, bytes, numBytes) \
     do { \
-	int _count, _i = (numBytes); \
+	size_t _count, _i = (numBytes); \
 	unsigned char *_str = (unsigned char *) (bytes); \
 	while (_i && (*_str < 0xC0)) { _i--; _str++; } \
 	_count = (numBytes) - _i; \
@@ -4538,7 +4538,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  * MODULE_SCOPE void	TclNewLongObj(Tcl_Obj *objPtr, long l);
  * MODULE_SCOPE void	TclNewWideObj(Tcl_Obj *objPtr, Tcl_WideInt w);
  * MODULE_SCOPE void	TclNewDoubleObj(Tcl_Obj *objPtr, double d);
- * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, int len);
+ * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, size_t len);
  * MODULE_SCOPE void	TclNewLiteralStringObj(Tcl_Obj*objPtr, const char *sLiteral);
  *
  *----------------------------------------------------------------
@@ -4593,7 +4593,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  * sizeof(sLiteral "") will fail to compile otherwise.
  */
 #define TclNewLiteralStringObj(objPtr, sLiteral) \
-    TclNewStringObj((objPtr), (sLiteral), (int) (sizeof(sLiteral "") - 1))
+    TclNewStringObj((objPtr), (sLiteral), sizeof(sLiteral "") - 1)
 
 /*
  *----------------------------------------------------------------
@@ -4606,7 +4606,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  */
 
 #define TclDStringAppendLiteral(dsPtr, sLiteral) \
-    Tcl_DStringAppend((dsPtr), (sLiteral), (int) (sizeof(sLiteral "") - 1))
+    Tcl_DStringAppend((dsPtr), (sLiteral), sizeof(sLiteral "") - 1)
 #define TclDStringClear(dsPtr) \
     Tcl_DStringSetLength((dsPtr), 0)
 
@@ -4638,9 +4638,9 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  */
 
 #ifdef offsetof
-#define TclOffset(type, field) ((int) offsetof(type, field))
+#define TclOffset(type, field) (offsetof(type, field))
 #else
-#define TclOffset(type, field) ((int) ((char *) &((type *) 0)->field))
+#define TclOffset(type, field) (((char *) &((type *) 0)->field))
 #endif
 
 /*
@@ -4819,7 +4819,7 @@ typedef struct NRE_callback {
 #define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
 #else
 #define TCLNR_ALLOC(interp, ptr) \
-    (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
+    (ptr = (ckalloc(sizeof(NRE_callback))))
 #define TCLNR_FREE(interp, ptr)  ckfree(ptr)
 #endif
 
@@ -4834,9 +4834,9 @@ typedef struct NRE_callback {
 #include "tclTomMathDecls.h"
 
 #if !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
-#define Tcl_AttemptAlloc(size)        TclpAlloc(size)
-#define Tcl_AttemptRealloc(ptr, size) TclpRealloc((ptr), (size))
-#define Tcl_Free(ptr)                 TclpFree(ptr)
+#define Tcl_AttemptMemAlloc(size)        TclpAlloc(size)
+#define Tcl_AttemptMemRealloc(ptr, size) TclpRealloc((ptr), (size))
+#define Tcl_MemFree(ptr)                 TclpFree(ptr)
 #endif
 
 #endif /* _TCLINT */

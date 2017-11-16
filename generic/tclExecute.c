@@ -5161,7 +5161,8 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 
-	s1 = TclGetStringFromObj(valuePtr, &s1len);
+	s1 = TclGetString(valuePtr);
+	s1len = valuePtr->length;
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 	if (TclListObjLength(interp, value2Ptr, &length) != TCL_OK) {
 	    TRACE_ERROR(interp);
@@ -5179,7 +5180,8 @@ TEBCresume(
 	    do {
 		Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
 		if (o != NULL) {
-		    s2 = TclGetStringFromObj(o, &s2len);
+		    s2 = TclGetString(o);
+		    s2len = o->length;
 		} else {
 		    s2 = "";
 		    s2len = 0;
@@ -5271,9 +5273,9 @@ TEBCresume(
 
 		s1len = Tcl_GetCharLength(valuePtr);
 		s2len = Tcl_GetCharLength(value2Ptr);
-		if ((s1len == valuePtr->length)
+		if (((size_t)s1len == valuePtr->length)
 			&& (valuePtr->bytes != NULL)
-			&& (s2len == value2Ptr->length)
+			&& ((size_t)s2len == value2Ptr->length)
 			&& (value2Ptr->bytes != NULL)) {
 		    s1 = valuePtr->bytes;
 		    s2 = value2Ptr->bytes;
@@ -5442,7 +5444,7 @@ TEBCresume(
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
 		    Tcl_GetByteArrayFromObj(valuePtr, NULL)+index, 1);
-	} else if (valuePtr->bytes && length == valuePtr->length) {
+	} else if (valuePtr->bytes && (size_t)length == valuePtr->length) {
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
 	} else {

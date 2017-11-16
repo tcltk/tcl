@@ -220,7 +220,7 @@ static int		ObjTraceProc(ClientData clientData,
 			    Tcl_Obj *const objv[]);
 static void		ObjTraceDeleteProc(ClientData clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
-static void		SpecialFree(char *blockPtr);
+static void		SpecialFree(void *blockPtr);
 static int		StaticInitProc(Tcl_Interp *interp);
 static int		TestasyncCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
@@ -349,7 +349,7 @@ static void		TestregexpXflags(const char *string,
 static int		TestsaveresultCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static void		TestsaveresultFree(char *blockPtr);
+static void		TestsaveresultFree(void *blockPtr);
 static int		TestsetassocdataCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestsetCmd(ClientData dummy,
@@ -963,7 +963,8 @@ AsyncHandlerProc(
 {
     TestAsyncHandler *asyncPtr;
     int id = PTR2INT(clientData);
-    const char *listArgv[4], *cmd;
+    const char *listArgv[4];
+    char *cmd;
     char string[TCL_INTEGER_SPACE];
 
     Tcl_MutexLock(&asyncTestMutex);
@@ -1909,9 +1910,9 @@ TestdstringCmd(
  */
 
 static void SpecialFree(blockPtr)
-    char *blockPtr;			/* Block to free. */
+    void *blockPtr;			/* Block to free. */
 {
-    ckfree(blockPtr - 16);
+    ckfree(((char *)blockPtr) - 16);
 }
 
 /*
@@ -5326,7 +5327,7 @@ TestsaveresultCmd(
 
 static void
 TestsaveresultFree(
-    char *blockPtr)
+    void *blockPtr)
 {
     freeCount++;
 }
@@ -6979,7 +6980,7 @@ TestHashSystemHashCmd(
 	Tcl_SetHashValue(hPtr, INT2PTR(i+42));
     }
 
-    if (hash.numEntries != limit) {
+    if (hash.numEntries != (size_t)limit) {
 	Tcl_AppendResult(interp, "unexpected maximal size", NULL);
 	Tcl_DeleteHashTable(&hash);
 	return TCL_ERROR;

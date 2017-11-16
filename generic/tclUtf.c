@@ -208,14 +208,14 @@ three:
 char *
 Tcl_UniCharToUtfDString(
     const Tcl_UniChar *uniStr,	/* Unicode string to convert to UTF-8. */
-    int uniLength,		/* Length of Unicode string in Tcl_UniChars
+    size_t uniLength,		/* Length of Unicode string in Tcl_UniChars
 				 * (must be >= 0). */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
     const Tcl_UniChar *w, *wEnd;
     char *p, *string;
-    int oldLength;
+    size_t oldLength;
 
     /*
      * UTF-8 string length in bytes will be <= Unicode string length *
@@ -392,7 +392,7 @@ Tcl_UtfToUniChar(
 Tcl_UniChar *
 Tcl_UtfToUniCharDString(
     const char *src,		/* UTF-8 string to convert to Unicode. */
-    int length,			/* Length of UTF-8 string in bytes, or -1 for
+    size_t length,			/* Length of UTF-8 string in bytes, or -1 for
 				 * strlen(). */
     Tcl_DString *dsPtr)		/* Unicode representation of string is
 				 * appended to this previously initialized
@@ -400,9 +400,9 @@ Tcl_UtfToUniCharDString(
 {
     Tcl_UniChar ch, *w, *wString;
     const char *p, *end;
-    int oldLength;
+    size_t oldLength;
 
-    if (length < 0) {
+    if (length == (size_t)-1) {
 	length = strlen(src);
     }
 
@@ -453,9 +453,9 @@ int
 Tcl_UtfCharComplete(
     const char *src,		/* String to check if first few bytes contain
 				 * a complete UTF-8 character. */
-    int length)			/* Length of above string in bytes. */
+    size_t length)			/* Length of above string in bytes. */
 {
-    return length >= totalBytes[(unsigned char)*src];
+   return length >= totalBytes[(unsigned char)*src];
 }
 
 /*
@@ -476,14 +476,14 @@ Tcl_UtfCharComplete(
  *---------------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_NumUtfChars(
     register const char *src,	/* The UTF-8 string to measure. */
-    int length)			/* The length of the string in bytes, or -1
+    size_t length)			/* The length of the string in bytes, or -1
 				 * for strlen(string). */
 {
     Tcl_UniChar ch = 0;
-    register int i = 0;
+    register size_t i = 0;
 
     /*
      * The separate implementations are faster.
@@ -492,12 +492,11 @@ Tcl_NumUtfChars(
      * single-byte char case specially.
      */
 
-    if (length < 0) {
+    if (length == (size_t)-1) {
 	while (*src != '\0') {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
-	if (i < 0) i = INT_MAX; /* Bug [2738427] */
     } else {
 	register const char *endPtr = src + length - TCL_UTF_MAX;
 
@@ -986,7 +985,7 @@ int
 TclpUtfNcmp2(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    unsigned long numBytes)	/* Number of *bytes* to compare. */
+    size_t numBytes)	/* Number of *bytes* to compare. */
 {
     /*
      * We can't simply call 'memcmp(cs, ct, numBytes);' because we need to
@@ -1033,7 +1032,7 @@ int
 Tcl_UtfNcmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    unsigned long numChars)	/* Number of UTF chars to compare. */
+    size_t numChars)	/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
@@ -1081,7 +1080,7 @@ int
 Tcl_UtfNcasecmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    unsigned long numChars)	/* Number of UTF chars to compare. */
+    size_t numChars)	/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
     while (numChars-- > 0) {
@@ -1285,7 +1284,7 @@ int
 Tcl_UniCharNcmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    unsigned long numChars)	/* Number of unichars to compare. */
+    size_t numChars)	/* Number of unichars to compare. */
 {
 #ifdef WORDS_BIGENDIAN
     /*
@@ -1330,7 +1329,7 @@ int
 Tcl_UniCharNcasecmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    unsigned long numChars)	/* Number of unichars to compare. */
+    size_t numChars)	/* Number of unichars to compare. */
 {
     for ( ; numChars != 0; numChars--, ucs++, uct++) {
 	if (*ucs != *uct) {
