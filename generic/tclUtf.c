@@ -701,12 +701,11 @@ Tcl_UtfPrev(
 Tcl_UniChar
 Tcl_UniCharAtIndex(
     register const char *src,	/* The UTF-8 string to dereference. */
-    register int index)		/* The position of the desired character. */
+    register size_t index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
 
-    while (index >= 0) {
-	index--;
+    while (index--) {
 	src += TclUtfToUniChar(src, &ch);
     }
     return ch;
@@ -732,13 +731,14 @@ Tcl_UniCharAtIndex(
 const char *
 Tcl_UtfAtIndex(
     register const char *src,	/* The UTF-8 string. */
-    register int index)		/* The position of the desired character. */
+    register size_t index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
 
-    while (index > 0) {
-	index--;
-	src += TclUtfToUniChar(src, &ch);
+    if (index != (size_t)-1) {
+	while (index--) {
+	    src += TclUtfToUniChar(src, &ch);
+	}
     }
     return src;
 }

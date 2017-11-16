@@ -48,7 +48,7 @@
 
 typedef struct {
     size_t numChars;		/* The number of chars in the string. (size_t)-1 means
-				 * this value has not been calculated. >= 0
+				 * this value has not been calculated. Any other
 				 * means that there is a valid Unicode rep, or
 				 * that the number of UTF bytes == the number
 				 * of chars. */
@@ -65,14 +65,14 @@ typedef struct {
 } String;
 
 #define STRING_MAXCHARS \
-    (int)(((size_t)UINT_MAX - sizeof(String))/sizeof(Tcl_UniChar))
+    ((UINT_MAX - sizeof(String))/sizeof(Tcl_UniChar))
 #define STRING_SIZE(numChars) \
     (sizeof(String) + ((numChars) * sizeof(Tcl_UniChar)))
 #define stringCheckLimits(numChars) \
     do {								\
-	if ((numChars) < 0 || (numChars) > STRING_MAXCHARS) {		\
-	    Tcl_Panic("max length for a Tcl unicode value (%d chars) exceeded", \
-		      (int)STRING_MAXCHARS);					\
+	if ((size_t)(numChars) > STRING_MAXCHARS) {		\
+	    Tcl_Panic("max length for a Tcl unicode value (%" TCL_LL_MODIFIER "d chars) exceeded", \
+		      (Tcl_WideInt)STRING_MAXCHARS);					\
 	}								\
     } while (0)
 #define stringAttemptAlloc(numChars) \
