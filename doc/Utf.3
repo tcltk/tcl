@@ -104,7 +104,7 @@ equal to 0.
 A pointer to a previously initialized \fBTcl_DString\fR.
 .AP "const char" *start in
 Pointer to the beginning of a UTF-8 string.
-.AP int index in
+.AP size_t index in
 The index of a character (not byte) in the UTF-8 string.
 .AP int *readPtr out
 If non-NULL, filled with the number of bytes in the backslash sequence,
@@ -233,12 +233,12 @@ return value will be \fIstart\fR.
 Pascal Ord() function.  It returns the Tcl_UniChar represented at the
 specified character (not byte) \fIindex\fR in the UTF-8 string
 \fIsrc\fR.  The source string must contain at least \fIindex\fR
-characters.  Behavior is undefined if a negative \fIindex\fR is given.
+characters.
 .PP
 \fBTcl_UtfAtIndex\fR returns a pointer to the specified character (not
 byte) \fIindex\fR in the UTF-8 string \fIsrc\fR.  The source string must
 contain at least \fIindex\fR characters.  This is equivalent to calling
-\fBTcl_UtfNext\fR \fIindex\fR times.  If a negative \fIindex\fR is given,
+\fBTcl_UtfNext\fR \fIindex\fR times.  If \fIindex\fR is -1,
 the return pointer points to the first character in the source string.
 .PP
 \fBTcl_UtfBackslash\fR is a utility procedure used by several of the Tcl

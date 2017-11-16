@@ -1148,7 +1148,7 @@ declare 319 {
 	    Tcl_QueuePosition position)
 }
 declare 320 {
-    Tcl_UniChar Tcl_UniCharAtIndex(const char *src, int index)
+    Tcl_UniChar Tcl_UniCharAtIndex(const char *src, size_t index)
 }
 declare 321 {
     Tcl_UniChar Tcl_UniCharToLower(int ch)
@@ -1163,7 +1163,7 @@ declare 324 {
     int Tcl_UniCharToUtf(int ch, char *buf)
 }
 declare 325 {
-    CONST84_RETURN char *Tcl_UtfAtIndex(const char *src, int index)
+    CONST84_RETURN char *Tcl_UtfAtIndex(const char *src, size_t index)
 }
 declare 326 {
     int Tcl_UtfCharComplete(const char *src, size_t length)

@@ -266,11 +266,11 @@ typedef struct Namespace {
 				 * NULL, there are no children. */
 #endif
     size_t nsId;		/* Unique id for the namespace. */
-    Tcl_Interp *interp;		/* The interpreter containing this
+    Tcl_Interp *interp;	/* The interpreter containing this
 				 * namespace. */
     int flags;			/* OR-ed combination of the namespace status
 				 * flags NS_DYING and NS_DEAD listed below. */
-    int activationCount;	/* Number of "activations" or active call
+    size_t activationCount;	/* Number of "activations" or active call
 				 * frames for this namespace that are on the
 				 * Tcl call stack. The namespace won't be
 				 * freed until activationCount becomes zero. */
@@ -1516,7 +1516,7 @@ typedef struct LiteralTable {
 				 * table. */
     size_t rebuildSize;		/* Enlarge table when numEntries gets to be
 				 * this large. */
-    TCL_HASH_TYPE mask;			/* Mask value used in hashing function. */
+    size_t mask;		/* Mask value used in hashing function. */
 } LiteralTable;
 
 /*
