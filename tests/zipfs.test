@@ -55,14 +55,18 @@ test zipfs-0.5 {zipfs basics: glob} -constraints zipfs -body {
 } -result [list $tcl_library/http $tcl_library/http1.0]
 
 test zipfs-0.6 {zipfs basics: glob} -constraints zipfs -body {
+    lsort [glob $tcl_library/http*]
+} -result [list $tcl_library/http $tcl_library/http1.0]
+
+test zipfs-0.7 {zipfs basics: glob} -constraints zipfs -body {
     lsort [glob -tails -dir $tcl_library http*]
 } -result {http http1.0}
 
-test zipfs-0.7 {zipfs basics: glob} -constraints zipfs -body {
+test zipfs-0.8 {zipfs basics: glob} -constraints zipfs -body {
     lsort [glob -nocomplain -tails -types d -dir $tcl_library http*]
 } -result {http http1.0}
 
-test zipfs-0.8 {zipfs basics: glob} -constraints zipfs -body {
+test zipfs-0.9 {zipfs basics: glob} -constraints zipfs -body {
     lsort [glob -nocomplain -tails -types f -dir $tcl_library http*]
 } -result {}
 
