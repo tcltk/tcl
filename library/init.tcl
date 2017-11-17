@@ -836,3 +836,7 @@ proc tcl::CopyDirectory {action src dest} {
     }
     return
 }
+if {[file exists [file join $::tcl_library pkgIndex.tcl]]} {
+  set dir $::tcl_library
+  source [file join $::tcl_library pkgIndex.tcl]
+}
