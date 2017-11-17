@@ -18,69 +18,112 @@ if {"::tcltest" ni [namespace children]} {
 testConstraint zipfs [expr {[llength [info commands zlib]] && [regexp tcltest [info nameofexecutable]]}]
 
 # Removed in tip430 - zipfs is no longer a static package
-#test zipfs-1.1 {zipfs basics} -constraints zipfs -body {
+#test zipfs-0.0 {zipfs basics} -constraints zipfs -body {
 #    load {} zipfs
 #} -result {}
 
-test zipfs-1.2 {zipfs basics} -constraints zipfs -body {
+test zipfs-0.1 {zipfs basics} -constraints zipfs -body {
     package require zipfs
 } -result {1.0}
 
-test zipfs-1.3 {zipfs basics} -constraints zipfs -returnCodes error -body {
+test zipfs-0.1 {zipfs basics} -constraints zipfs -body {
+    expr {"//zipfs:/" in [file volumes]}
+} -result 1
+
+test zipfs-0.2 {zipfs basics} -constraints zipfs -body {
+    string match //zipfs:/* $tcl_library
+} -result 1
+
+test zipfs-0.3 {zipfs basics: glob} -constraints zipfs -body {
+    set pwd [pwd]
+    cd $tcl_library
+    lsort [glob -dir . http*]
+} -cleanup {
+    cd $pwd
+} -result {./http ./http1.0}
+
+test zipfs-0.4 {zipfs basics: glob} -constraints zipfs -body {
+    set pwd [pwd]
+    cd $tcl_library
+    lsort [glob -dir [pwd] http*]
+} -cleanup {
+    cd $pwd
+} -result [list $tcl_library/http $tcl_library/http1.0]
+
+test zipfs-0.5 {zipfs basics: glob} -constraints zipfs -body {
+    lsort [glob -dir $tcl_library http*]
+} -result [list $tcl_library/http $tcl_library/http1.0]
+
+test zipfs-0.6 {zipfs basics: glob} -constraints zipfs -body {
+    lsort [glob $tcl_library/http*]
+} -result [list $tcl_library/http $tcl_library/http1.0]
+
+test zipfs-0.7 {zipfs basics: glob} -constraints zipfs -body {
+    lsort [glob -tails -dir $tcl_library http*]
+} -result {http http1.0}
+
+test zipfs-0.8 {zipfs basics: glob} -constraints zipfs -body {
+    lsort [glob -nocomplain -tails -types d -dir $tcl_library http*]
+} -result {http http1.0}
+
+test zipfs-0.9 {zipfs basics: glob} -constraints zipfs -body {
+    lsort [glob -nocomplain -tails -types f -dir $tcl_library http*]
+} -result {}
+
+
+test zipfs-1.3 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs mount a b c d e f
 } -result {wrong # args: should be "zipfs mount ?zipfile? ?mountpoint? ?password?"}
 
-test zipfs-1.4 {zipfs basics} -constraints zipfs -returnCodes error -body {
+test zipfs-1.4 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs unmount a b c d e f
 } -result {wrong # args: should be "zipfs unmount zipfile"}
 
-test zipfs-1.5 {zipfs basics} -constraints zipfs -returnCodes error -body {
+test zipfs-1.5 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs mkkey a b c d e f
 } -result {wrong # args: should be "zipfs mkkey password"}
 
-test zipfs-1.6 {zipfs basics} -constraints zipfs -returnCodes error -body {
+test zipfs-1.6 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs mkimg a b c d e f
 } -result {wrong # args: should be "zipfs mkimg outfile indir ?strip? ?password? ?infile?"}
 
-test zipfs-1.7 {zipfs basics} -constraints zipfs -returnCodes error -body {
+test zipfs-1.7 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs mkzip a b c d e f
 } -result {wrong # args: should be "zipfs mkzip outfile indir ?strip? ?password?"}
 
-test zipfs-1.8 {zipfs basics} -constraints zipfs -returnCodes error -body {
+test zipfs-1.8 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs exists a b c d e f
 } -result {wrong # args: should be "zipfs exists filename"}
 
-test zipfs-1.9 {zipfs basics} -constraints zipfs -returnCodes error -body {
+test zipfs-1.9 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs info a b c d e f
 } -result {wrong # args: should be "zipfs info filename"}
 
-test zipfs-1.10 {zipfs basics} -constraints zipfs -returnCodes error -body {
+test zipfs-1.10 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs list a b c d e f
 } -result {wrong # args: should be "zipfs list ?(-glob|-regexp)? ?pattern?"}
 
-set ntcl_library [file normalize $tcl_library]
-
 test zipfs-2.1 {zipfs mkzip empty archive} -constraints zipfs -returnCodes error -body {
-    zipfs mkzip abc.zip $ntcl_library/xxxx
+    zipfs mkzip /tmp/abc.zip $tcl_library/xxxx      ;# FIXME: test independence
 } -result {empty archive}
 
 test zipfs-2.2 {zipfs mkzip} -constraints zipfs -body {
     set pwd [pwd]
-    cd $ntcl_library/encoding
-    zipfs mkzip abc.zip .
-    zipfs mount abc.zip zipfs:/abc
-    zipfs list -glob zipfs:/abc/cp850.*
+    cd $tcl_library/encoding
+    zipfs mkzip /tmp/abc.zip .
+    zipfs mount /tmp/abc.zip //zipfs:/abc       ;# FIXME: test independence
+    zipfs list -glob //zipfs:/abc/cp850.*
 } -cleanup {
     cd $pwd
-} -result {zipfs:/abc/cp850.enc}
+} -result {//zipfs:/abc/cp850.enc}
 
-test zipfs-2.3 {zipfs unmount} -constraints zipfs -body {
-    zipfs info zipfs:/abc/cp850.enc
-} -result [list $ntcl_library/encoding/abc.zip 1090 527 39434]
+test zipfs-2.3 {zipfs info} -constraints zipfs -body {
+    zipfs info //zipfs:/abc/cp850.enc
+} -result [list /tmp/abc.zip 1090 527 39318] ;# FIXME: result depends on content of encodings dir
 
-test zipfs-2.4 {zipfs unmount} -constraints zipfs -body {
-    set f [open zipfs:/abc/cp850.enc]
-    read $f
+test zipfs-2.4 {zipfs data} -constraints zipfs -body {
+    set zipfd [open //zipfs:/abc/cp850.enc]	;# FIXME: leave open - see later test
+    read $zipfd
 } -result {# Encoding file: cp850, single-byte
 S
 003F 0 1
@@ -101,14 +144,23 @@ S
 00F000D000CA00CB00C8013100CD00CE00CF2518250C2588258400A600CC2580
 00D300DF00D400D200F500D500B500FE00DE00DA00DB00D900FD00DD00AF00B4
 00AD00B1201700BE00B600A700F700B800B000A800B700B900B300B225A000A0
-}
+} ;# FIXME: result depends on content of encodings dir
 
 test zipfs-2.5 {zipfs exists} -constraints zipfs -body {
-    zipfs unmount abc.zip
+    zipfs exists /abc/cp850.enc
+} -result 1
+
+test zipfs-2.6 {zipfs unmount while busy} -constraints zipfs -body {
+    zipfs unmount /tmp/abc.zip
+} -returnCodes error -result {filesystem is busy}
+
+test zipfs-2.7 {zipfs unmount} -constraints zipfs -body {
+    close $zipfd
+    zipfs unmount /tmp/abc.zip
     zipfs exists /abc/cp850.enc
 } -cleanup {
-    file delete abc.zip
-} -result 1
+    file delete /tmp/abc.zip        ;# FIXME: test independence
+} -result 0
 
 ::tcltest::cleanupTests
 return
