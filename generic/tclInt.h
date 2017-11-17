@@ -2917,6 +2917,19 @@ MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 			    Tcl_Obj *originObjPtr);
 MODULE_SCOPE int	TclConvertElement(const char *src, int length,
 			    char *dst, int flags);
+MODULE_SCOPE Tcl_Command tclCreateObjCommandInNs (
+			    Tcl_Interp *interp,
+			    const char *cmdName,
+			    Tcl_Namespace *nsPtr,
+			    Tcl_ObjCmdProc *proc,
+			    ClientData clientData,
+			    Tcl_CmdDeleteProc *deleteProc);
+MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(
+			    Tcl_Interp *interp,
+			    const char *name,
+			    Tcl_Namespace *nameNamespacePtr,
+			    Tcl_Namespace *ensembleNamespacePtr,
+			    int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, int dictLength,
@@ -2945,6 +2958,10 @@ MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
 MODULE_SCOPE Tcl_Obj *const *	TclFetchEnsembleRoot(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, int objc, int *objcPtr);
+Tcl_Namespace * 	TclEnsureNamespace(
+			    Tcl_Interp *interp,
+			    Tcl_Namespace *namespacePtr);
+
 MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
 MODULE_SCOPE void	TclFinalizeAsync(void);
 MODULE_SCOPE void	TclFinalizeDoubleConversion(void);
@@ -2971,6 +2988,15 @@ MODULE_SCOPE double	TclFloor(const mp_int *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    const char *attributeName, int *indexPtr);
+MODULE_SCOPE Tcl_Command tclNRCreateCommandInNs (
+			    Tcl_Interp *interp,
+			    const char *cmdName,
+			    Tcl_Namespace *nsPtr,
+			    Tcl_ObjCmdProc *proc,
+			    Tcl_ObjCmdProc *nreProc,
+			    ClientData clientData,
+			    Tcl_CmdDeleteProc *deleteProc);
+
 MODULE_SCOPE int	TclNREvalFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    const char *encodingName);
 MODULE_SCOPE void	TclFSUnloadTempFile(Tcl_LoadHandle loadHandle);
