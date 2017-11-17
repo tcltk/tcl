@@ -229,6 +229,7 @@ MINIZIP_OBJS = \
         inflate.$(HOST_OBJEXT) \
         inftrees.$(HOST_OBJEXT) \
         ioapi.$(HOST_OBJEXT) \
+        iowin32.$(HOST_OBJEXT)  \
         trees.$(HOST_OBJEXT) \
         uncompr.$(HOST_OBJEXT) \
         zip.$(HOST_OBJEXT) \
@@ -556,7 +557,11 @@ tclMain2.${OBJEXT}: tclMain.c
 
 # TIP #430, ZipFS Support
 tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
-	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) -I$(ZLIB_DIR)/contrib/minizip $(GENERIC_DIR)/tclZipfs.c
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl \
+	-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
+	-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
+	-DCFG_RUNTIME_PATH="\"$(DLL_INSTALL_DIR)\"" \
+	$(ZLIB_INCLUDE) -I$(ZLIB_DIR)/contrib/minizip  @DEPARG@ $(CC_OBJNAME)
 
 
 # TIP #59, embedding of configuration information into the binary library.
@@ -624,6 +629,9 @@ deflate.$(HOST_OBJEXT):
 
 ioapi.$(HOST_OBJEXT):
 	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/ioapi.c
+
+iowin32.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/iowin32.c
 
 infback.$(HOST_OBJEXT):
 	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/infback.c

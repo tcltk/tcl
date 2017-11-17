@@ -182,11 +182,6 @@ AC_CHECK_TYPE([uintptr_t], [
 #--------------------------------------------------------------------
 
 #
-# Check for --enable-zipfs flag
-#
-SC_ENABLE_ZIPFS
-
-#
 # Find a native zip implementation
 #
 SC_PROG_ZIP
