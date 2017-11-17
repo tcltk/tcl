@@ -199,10 +199,6 @@ LD_SEARCH_FLAGS	= @LD_SEARCH_FLAGS@
 BUILD_DLTEST		= @BUILD_DLTEST@
 #BUILD_DLTEST		=
 
-TCL_ZIP_FILE		= @TCL_ZIP_FILE@
-TCL_VFS_PATH		= libtcl.vfs/tcl_library
-TCL_VFS_ROOT		= libtcl.vfs
-
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 #TCL_LIB_FILE		= libtcl.a
 
@@ -247,12 +243,6 @@ ZLIB_INCLUDE		= @ZLIB_INCLUDE@
 
 CC			= @CC@
 OBJEXT		        = @OBJEXT@
-HOST_CC		        = @CC_FOR_BUILD@
-HOST_EXEEXT             = @EXEEXT_FOR_BUILD@
-HOST_OBJEXT             = @OBJEXT_FOR_BUILD@
-ZIPFS_BUILD	        = @ZIPFS_BUILD@
-NATIVE_ZIP		= @ZIP_PROG@
-SHARED_BUILD		= @SHARED_BUILD@
 
 #CC			= purify -best-effort @CC@ -DPURIFY
 
@@ -263,10 +253,6 @@ MAN_FLAGS               = @MAN_FLAGS@
 # If non-empty, install the timezone files that are included with Tcl,
 # otherwise use the ones that ship with the OS.
 INSTALL_TZDATA		= @INSTALL_TZDATA@
-INSTALL_LIBRARIES       = @INSTALL_LIBRARIES@
-INSTALL_MSGS            = @INSTALL_MSGS@
-
-
 
 #--------------------------------------------------------------------------
 # The information below is usually usable as is. The configure script won't
@@ -633,6 +619,23 @@ ZLIB_SRCS = \
 SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
 	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@
 
+###
+# Tip 430 - ZipFS Modifications
+###
+
+TCL_ZIP_FILE		= @TCL_ZIP_FILE@
+TCL_VFS_PATH		= libtcl.vfs/tcl_library
+TCL_VFS_ROOT		= libtcl.vfs
+
+HOST_CC		        = @CC_FOR_BUILD@
+HOST_EXEEXT             = @EXEEXT_FOR_BUILD@
+HOST_OBJEXT             = @OBJEXT_FOR_BUILD@
+ZIPFS_BUILD	        = @ZIPFS_BUILD@
+NATIVE_ZIP		= @ZIP_PROG@
+SHARED_BUILD		= @SHARED_BUILD@
+INSTALL_LIBRARIES       = @INSTALL_LIBRARIES@
+INSTALL_MSGS            = @INSTALL_MSGS@
+
 # Minizip
 MINIZIP_OBJS = \
         adler32.$(HOST_OBJEXT) \
@@ -651,7 +654,6 @@ MINIZIP_OBJS = \
         minizip.$(HOST_OBJEXT)
 
 ZIP_INSTALL_OBJS =  minizip${EXEEXT_FOR_BUILD}
-
 
 #--------------------------------------------------------------------------
 # Start of rules
