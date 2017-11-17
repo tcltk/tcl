@@ -10159,11 +10159,6 @@ $as_echo "$tcl_ok" >&6; }
 #--------------------------------------------------------------------
 
 #
-# Check for --enable-zipfs flag
-#
-SC_ENABLE_ZIPFS
-
-#
 # Find a native zip implementation
 #
 
