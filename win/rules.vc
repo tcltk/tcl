@@ -704,7 +704,12 @@ TCL_USE_STATIC_PACKAGES	= 0
 !endif
 
 !if [nmakehlp -f $(OPTS) "nothreads"]
-!error Option "nothreads" no longer supported. Threads required for sockets, registry and dde to work.
+!message *** Compile explicitly for non-threaded tcl
+TCL_THREADS	= 0
+USE_THREAD_ALLOC= 0
+!else
+TCL_THREADS	= 1
+USE_THREAD_ALLOC= 1
 !endif
 
 !if [nmakehlp -f $(OPTS) "symbols"]
@@ -749,7 +754,6 @@ USE_THREAD_ALLOC = 1
 !endif
 
 !if [nmakehlp -f $(OPTS) "tclalloc"]
-!error *** Option `tclalloc` is 
 USE_THREAD_ALLOC = 0
 !endif
 
