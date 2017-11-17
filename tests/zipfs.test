@@ -109,6 +109,42 @@ test zipfs-2.5 {zipfs exists} -constraints zipfs -body {
 } -cleanup {
     file delete abc.zip
 } -result 1
+
+
+test zipfs-99.1 {zipfs: bad volume name on unix} -constraints zipfs -body {
+    # this works, as it should
+    set pwd [pwd]
+    cd $tcl_library
+    pwd
+} -cleanup {
+    cd $pwd
+} -result $tcl_library
+
+# these fail with bizarre results using zipfs:/ or zipfs://
+# with //zipfs:/ there are no surprises
+test zipfs-99.2 {zipfs: bad volume name on unix} -constraints zipfs -body {
+    # the same as before, but ./zipfs: exists
+    set pwd [pwd]
+    regexp {^(.*?[^/].*)/} $tcl_library -> base     ;# zipfs:
+    file mkdir $base
+    cd $tcl_library
+    pwd
+} -cleanup {
+    cd $pwd
+    file delete $base
+} -result $tcl_library
+
+test zipfs-99.3 {zipfs: bad volume name on unix} -constraints zipfs -body {
+    regexp {^(.*?[^/].*)/} $tcl_library -> base     ;# zipfs:
+    file delete $base
+    file mkdir $tcl_library
+    file exists $base
+} -cleanup {
+    # only two levels get created
+    file delete $base/lib
+    file delete $base
+} -result 0
+
 
 ::tcltest::cleanupTests
 return
