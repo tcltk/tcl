@@ -44,4 +44,5 @@ unix/pkgs/*
 win/Debug*
 win/Release*
 win/pkgs/*
-win/tcl.hpjwin/nmhlp-out.txt
+win/tcl.hpj
+win/nmhlp-out.txt
