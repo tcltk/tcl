@@ -966,12 +966,14 @@ declare 265 {
 declare 266 {
     void Tcl_ValidateAllMemory(const char *file, int line)
 }
-declare 267 {
-    void Tcl_AppendResultVA(Tcl_Interp *interp, va_list argList)
-}
-declare 268 {
-    void Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr, va_list argList)
-}
+# Removed in 9.0
+#declare 267 {
+#    void Tcl_AppendResultVA(Tcl_Interp *interp, va_list argList)
+#}
+# Removed in 9.0
+#declare 268 {
+#    void Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr, va_list argList)
+#}
 declare 269 {
     char *Tcl_HashStats(Tcl_HashTable *tablePtr)
 }
@@ -1000,9 +1002,10 @@ declare 273 {
 #    const char *Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
 #	    const char *version, int exact)
 #}
-declare 275 {
-    void Tcl_SetErrorCodeVA(Tcl_Interp *interp, va_list argList)
-}
+# Removed in 9.0
+#declare 275 {
+#    void Tcl_SetErrorCodeVA(Tcl_Interp *interp, va_list argList)
+#}
 # Removed in 9.0
 #declare 276 {
 #    int  Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList)
@@ -1010,9 +1013,10 @@ declare 275 {
 declare 277 {
     Tcl_Pid Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options)
 }
-declare 278 {
-    TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList)
-}
+# Removed in 9.0
+#declare 278 {
+#    TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList)
+#}
 declare 279 {
     void Tcl_GetVersion(int *major, int *minor, int *patchLevel, int *type)
 }

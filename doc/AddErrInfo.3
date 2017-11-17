@@ -28,8 +28,6 @@ int
 .sp
 \fBTcl_SetErrorCode\fR(\fIinterp, element, element, ... \fB(char *) NULL\fR)
 .sp
-\fBTcl_SetErrorCodeVA\fR(\fIinterp, argList\fR)
-.sp
 \fBTcl_GetErrorLine\fR(\fIinterp\fR)
 .sp
 \fBTcl_SetErrorLine\fR(\fIinterp, lineNum\fR)
@@ -228,9 +226,6 @@ The procedure \fBTcl_SetErrorCode\fR is also used to set the
 \fB\-errorcode\fR return option. However, it takes one or more strings to
 record instead of a value. Otherwise, it is similar to
 \fBTcl_SetObjErrorCode\fR in behavior.
-.PP
-\fBTcl_SetErrorCodeVA\fR is the same as \fBTcl_SetErrorCode\fR except that
-instead of taking a variable number of arguments it takes an argument list.
 .PP
 The procedure \fBTcl_GetErrorLine\fR is used to read the integer value
 of the \fB\-errorline\fR return option without the overhead of a full

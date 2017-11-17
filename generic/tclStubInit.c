@@ -994,18 +994,18 @@ const TclStubs tclStubs = {
     Tcl_WrongNumArgs, /* 264 */
     Tcl_DumpActiveMemory, /* 265 */
     Tcl_ValidateAllMemory, /* 266 */
-    Tcl_AppendResultVA, /* 267 */
-    Tcl_AppendStringsToObjVA, /* 268 */
+    0, /* 267 */
+    0, /* 268 */
     Tcl_HashStats, /* 269 */
     Tcl_ParseVar, /* 270 */
     0, /* 271 */
     Tcl_PkgPresentEx, /* 272 */
     TclPkgProvide, /* 273 */
     0, /* 274 */
-    Tcl_SetErrorCodeVA, /* 275 */
+    0, /* 275 */
     0, /* 276 */
     Tcl_WaitPid, /* 277 */
-    Tcl_PanicVA, /* 278 */
+    0, /* 278 */
     Tcl_GetVersion, /* 279 */
     Tcl_InitMemory, /* 280 */
     Tcl_StackChannel, /* 281 */
