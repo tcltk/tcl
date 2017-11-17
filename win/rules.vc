@@ -27,10 +27,15 @@ RULES_VERSION_MAJOR = 1
 RULES_VERSION_MINOR = 0
 
 # The PROJECT macro must be defined by parent makefile.
-# Also special case Tcl and Tk to save some typing later
-!ifndef PROJECT
+!if "$(PROJECT)" == ""
 !error *** Error: Macro PROJECT not defined! Please define it before including rules.vc
 !endif
+
+!if "$(PRJ_PACKAGE_TCLNAME)" == ""
+PRJ_PACKAGE_TCLNAME = $(PROJECT)
+!endif
+
+# Also special case Tcl and Tk to save some typing later
 DOING_TCL = 0
 DOING_TK  = 0
 !if "$(PROJECT)" == "tcl"
@@ -250,7 +255,7 @@ _TCL_H = ..\generic\tcl.h
 # BEGIN Case 2(b) - Building Tk
 
 TCLINSTALL = 0 # Tk always builds against Tcl source, not an installed Tcl
-!ifndef TCLDIR
+!if "$(TCLDIR)" == ""
 TCLDIR  = ../../tcl
 !endif
 _TCLDIR	= $(TCLDIR:/=\)
@@ -269,7 +274,7 @@ _TK_H = ..\generic\tk.h
 
 # If command line has specified Tcl location through TCLDIR, use it
 # else default to the INSTALLDIR setting
-!ifdef TCLDIR
+!if "$(TCLDIR)" != ""
 
 _TCLDIR	= $(TCLDIR:/=\)
 !if exist("$(_TCLDIR)\include\tcl.h") # Case 2(c) with TCLDIR defined
@@ -307,7 +312,7 @@ Failed to find tcl.h. The TCLDIR macro is set incorrectly or is not set and defa
 # Now do the same to locate Tk headers and libs if project requires Tk
 !if $(NEED_TK)
 
-!ifdef TKDIR
+!if "$(TKDIR)" != ""
 
 _TKDIR = $(TKDIR:/=\)
 !if exist("$(_TKDIR)\include\tk.h")
@@ -1259,6 +1264,7 @@ COMPILERFLAGS = $(COMPILERFLAGS) /DUNICODE /D_UNICODE
 # Like the TEA system only set this non empty for non-Tk extensions
 !if !$(DOING_TCL) && !$(DOING_TK)
 PKGNAMEFLAGS = -DPACKAGE_NAME="\"$(PROJECT)\"" \
+               -DPACKAGE_TCLNAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
                -DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
                -DMODULE_SCOPE=extern 
 !endif
@@ -1312,7 +1318,7 @@ cwarn = $(cwarn) -WX
 
 INCLUDES = $(TCL_INCLUDES) $(TK_INCLUDES) $(PRJ_INCLUDES)
 !if !$(DOING_TCL) && !$(DOING_TK)
-INCLUDES = $(INCLUDES) -I$(GENERICDIR) -I$(WINDIR) -I(COMPATDIR)
+INCLUDES = $(INCLUDES) -I"$(GENERICDIR)" -I"$(WINDIR)" -I"$(COMPATDIR)"
 !endif
 
 # These flags are defined roughly in the order of the pre-reform
@@ -1436,13 +1442,14 @@ DEFAULT_BUILD_TARGET = $(PROJECT)
 default-target: $(DEFAULT_BUILD_TARGET)
 
 default-pkgindex:
-	@echo package ifneeded $(PROJECT) $(DOTVERSION) \
-	    [list load [file join $$dir $(PRJLIBNAME)]] >> $(OUT_DIR)\pkgIndex.tcl
+	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
+	    [list load [file join $$dir $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
 
 default-pkgindex-tea:
 	@if exist $(ROOT)\pkgIndex.tcl.in nmakehlp -s << $(ROOT)\pkgIndex.tcl.in > $(OUT_DIR)\pkgIndex.tcl
 @PACKAGE_VERSION@    $(DOTVERSION)
 @PACKAGE_NAME@       $(PROJECT)
+@PACKAGE_TCLNAME@    $(PRJ_PACKAGE_TCLNAME)
 @PKG_LIB_FILE@       $(PRJLIBNAME)
 <<
 
