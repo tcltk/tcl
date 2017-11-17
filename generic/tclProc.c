@@ -128,7 +128,6 @@ Tcl_ProcObjCmd(
     const char *procName, *procArgs, *procBody;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_Command cmd;
-    Tcl_DString ds;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name args body");
@@ -180,23 +179,8 @@ Tcl_ProcObjCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * Now create a command for the procedure. This will initially be in the
-     * current namespace unless the procedure's name included namespace
-     * qualifiers. To create the new command in the right namespace, we
-     * generate a fully qualified name for it.
-     */
-
-    Tcl_DStringInit(&ds);
-    if (nsPtr != iPtr->globalNsPtr) {
-	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
-	TclDStringAppendLiteral(&ds, "::");
-    }
-    Tcl_DStringAppend(&ds, procName, -1);
-
-    cmd = Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds), TclObjInterpProc,
-	    TclNRInterpProc, procPtr, TclProcDeleteProc);
-    Tcl_DStringFree(&ds);
+    cmd = tclNRCreateCommandInNs(interp, procName, (Tcl_Namespace *) nsPtr,
+	TclObjInterpProc, TclNRInterpProc, procPtr, TclProcDeleteProc);
 
     /*
      * Now initialize the new procedure's cmdPtr field. This will be used
