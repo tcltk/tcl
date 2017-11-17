@@ -4848,11 +4848,6 @@ fi
 #--------------------------------------------------------------------
 
 #
-# Check for --enable-zipfs flag
-#
-SC_ENABLE_ZIPFS
-
-#
 # Find a native zip implementation
 #
 
