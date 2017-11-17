@@ -645,50 +645,6 @@ CanonicalPath(const char *root, const char *tail, Tcl_DString *dsPtr,int ZIPFSPA
 /*
  *-------------------------------------------------------------------------
  *
- * AbsolutePath --
- *
- *	This function computes the absolute path from a given
- *	(relative) path name into the specified Tcl_DString.
- *
- * Results:
- *	Returns the pointer to the absolute path contained in the
- *	specified Tcl_DString.
- *
- * Side effects:
- *	Modifies the specified Tcl_DString.
- *
- *-------------------------------------------------------------------------
- */
-
-static char *
-AbsolutePath(const char *path,
-	Tcl_DString *dsPtr,
-  int ZIPFSPATH)
-{
-  char *result;
-  if (*path == '~') {
-    Tcl_DStringAppend(dsPtr, path, -1);
-    return Tcl_DStringValue(dsPtr);
-  }
-  if (*path != '/') {
-    Tcl_DString pwd;
-
-    /* relative path */
-    Tcl_DStringInit(&pwd);
-    Tcl_GetCwd(NULL, &pwd);
-    result = Tcl_DStringValue(&pwd);
-    result = CanonicalPath(result, path, dsPtr,ZIPFSPATH);
-    Tcl_DStringFree(&pwd);
-  } else {
-    /* absolute path */
-    result = CanonicalPath("", path, dsPtr,ZIPFSPATH);
-  }
-  return result;
-}
-
-/*
- *-------------------------------------------------------------------------
- *
  * ZipFSLookup --
  *
  *	This function returns the ZIP entry struct corresponding to
@@ -708,14 +664,11 @@ AbsolutePath(const char *path,
 static ZipEntry *
 ZipFSLookup(char *filename)
 {
-  char *realname;
-
   Tcl_HashEntry *hPtr;
   ZipEntry *z;
   Tcl_DString ds;
   Tcl_DStringInit(&ds);
-  realname = AbsolutePath(filename, &ds, 1);
-  hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, realname);
+  hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, filename);
   z = hPtr ? (ZipEntry *) Tcl_GetHashValue(hPtr) : NULL;
   Tcl_DStringFree(&ds);
   return z;
@@ -743,18 +696,16 @@ ZipFSLookup(char *filename)
 static int
 ZipFSLookupMount(char *filename)
 {
-  char *realname;
   Tcl_HashEntry *hPtr;
   Tcl_HashSearch search;
   ZipFile *zf;
   Tcl_DString ds;
   int match = 0;
   Tcl_DStringInit(&ds);
-  realname = AbsolutePath(filename, &ds, 1);
   hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
   while (hPtr != NULL) {
     if ((zf = (ZipFile *) Tcl_GetHashValue(hPtr)) != NULL) {
-      if (strcmp(zf->mntpt, realname) == 0) {
+      if (strcmp(zf->mntpt, filename) == 0) {
         match = 1;
         break;
       }
@@ -1052,12 +1003,11 @@ int
 TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	    const char *passwd)
 {
-  char *realname, *p;
   int i, pwlen, isNew;
   ZipFile *zf, zf0;
   ZipEntry *z;
   Tcl_HashEntry *hPtr;
-  Tcl_DString ds, dsm, fpBuf;
+  Tcl_DString ds, fpBuf;
   unsigned char *q;
 
   ReadLock();
@@ -1096,9 +1046,7 @@ TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	    Unlock();
 	    return TCL_OK;
     }
-    Tcl_DStringInit(&ds);
-    p = AbsolutePath(zipname, &ds, 0);
-    hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, p);
+    hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, zipname);
     if (hPtr != NULL) {
       if ((zf = Tcl_GetHashValue(hPtr)) != NULL) {
         Tcl_SetObjResult(interp,
@@ -1106,7 +1054,6 @@ TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
       }
     }
     Unlock();
-    Tcl_DStringFree(&ds);
     return TCL_OK;
   }
   Unlock();
@@ -1124,18 +1071,13 @@ TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
   if (ZipFSOpenArchive(interp, zipname, 1, &zf0) != TCL_OK) {
     return TCL_ERROR;
   }
-  Tcl_DStringInit(&ds);
-  realname = AbsolutePath(zipname, &ds, 0);
   /*
    * Mount point can come from Tcl_GetNameOfExecutable()
    * which sometimes is a relative or otherwise denormalized path.
    * But an absolute name is needed as mount point here.
    */
-  Tcl_DStringInit(&dsm);
-  mntpt = CanonicalPath("", mntpt, &dsm, 1);
   WriteLock();
-  hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, realname, &isNew);
-  Tcl_DStringSetLength(&ds, 0);
+  hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, zipname, &isNew);
   if (!isNew) {
     zf = (ZipFile *) Tcl_GetHashValue(hPtr);
     if (interp != NULL) {
@@ -1143,8 +1085,6 @@ TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
          zf->mntpt : "/", "\"", (char *) NULL);
     }
     Unlock();
-    Tcl_DStringFree(&ds);
-    Tcl_DStringFree(&dsm);
     ZipFSCloseArchive(interp, &zf0);
     return TCL_ERROR;
   }
@@ -1157,8 +1097,6 @@ TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
       Tcl_AppendResult(interp, "out of memory", (char *) NULL);
     }
     Unlock();
-    Tcl_DStringFree(&ds);
-    Tcl_DStringFree(&dsm);
     ZipFSCloseArchive(interp, &zf0);
     return TCL_ERROR;
   }
@@ -1209,6 +1147,7 @@ TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
   }
   q = zf->data + zf->centoffs;
   Tcl_DStringInit(&fpBuf);
+  Tcl_DStringInit(&ds);
   for (i = 0; i < zf->nfiles; i++) {
     int pathlen, comlen, extra, isdir = 0, dosTime, dosDate, nbcompr, offs;
     unsigned char *lq, *gq = NULL;
@@ -1374,7 +1313,6 @@ nextent:
   Unlock();
   Tcl_DStringFree(&fpBuf);
   Tcl_DStringFree(&ds);
-  Tcl_DStringFree(&dsm);
   Tcl_FSMountsChanged(NULL);
   return TCL_OK;
 }
@@ -1398,7 +1336,6 @@ nextent:
 int
 TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
 {
-  char *realname;
   ZipFile *zf;
   ZipEntry *z, *znext;
   Tcl_HashEntry *hPtr;
@@ -1406,12 +1343,11 @@ TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
   int ret = TCL_OK, unmounted = 0;
 
   Tcl_DStringInit(&ds);
-  realname = AbsolutePath(zipname, &ds, 0);
   WriteLock();
   if (!ZipFS.initialized) {
   	goto done;
   }
-  hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, realname);
+  hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, zipname);
   if (hPtr == NULL) {
     /* don't report error */
   	goto done;
@@ -2304,15 +2240,24 @@ ZipFSExistsObjCmd(ClientData clientData, Tcl_Interp *interp,
 {
     char *filename;
     int exists;
+    Tcl_DString ds;
 
     if (objc != 2) {
       Tcl_WrongNumArgs(interp, 1, objv, "filename");
       return TCL_ERROR;
     }
+
+    /* prepend ZIPFS_VOLUME to filename, eliding the final / */
     filename = Tcl_GetStringFromObj(objv[1], 0);
+    Tcl_DStringInit(&ds);
+    Tcl_DStringAppend(&ds, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN-1);
+    Tcl_DStringAppend(&ds, filename, -1);
+    filename = Tcl_DStringValue(&ds);
+
     ReadLock();
     exists = ZipFSLookup(filename) != NULL;
     Unlock();
+
     Tcl_SetObjResult(interp,Tcl_NewBooleanObj(exists));
     return TCL_OK;
 }
@@ -3157,7 +3102,7 @@ Zip_FSOpenFileChannelProc(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 {
     int len;
 
-    if (!(pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr))) return -1;
+    if (!(pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr))) return NULL;
 
     return ZipChannelOpen(interp, Tcl_GetStringFromObj(pathPtr, &len),
 			  mode, permissions);
@@ -3267,19 +3212,26 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 {
   Tcl_HashEntry *hPtr;
   Tcl_HashSearch search;
+  Tcl_Obj *normPathPtr;
   int scnt, len, l, dirOnly = -1, prefixLen, strip = 0;
   char *pat, *prefix, *path;
-  Tcl_DString ds, dsPref;
+  Tcl_DString dsPref;
+
+  if (!(normPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr))) return -1;
+
   if (types != NULL) {
     dirOnly = (types->type & TCL_GLOB_TYPE_DIR) == TCL_GLOB_TYPE_DIR;
   }
-  Tcl_DStringInit(&ds);
-  Tcl_DStringInit(&dsPref);
+
+  /* the prefix that gets prepended to results */
   prefix = Tcl_GetStringFromObj(pathPtr, &prefixLen);
+
+  /* the (normalized) path we're searching */
+  path = Tcl_GetStringFromObj(normPathPtr, &len);
+
+  Tcl_DStringInit(&dsPref);
   Tcl_DStringAppend(&dsPref, prefix, prefixLen);
-  prefix = Tcl_DStringValue(&dsPref);
-  path = AbsolutePath(prefix, &ds, 1);
-  len = Tcl_DStringLength(&ds);
+
   if (strcmp(prefix, path) == 0) {
     prefix = NULL;
   } else {
@@ -3405,7 +3357,6 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 end:
   Unlock();
   Tcl_DStringFree(&dsPref);
-  Tcl_DStringFree(&ds);
   return TCL_OK;
 }
 
@@ -3434,7 +3385,6 @@ Zip_FSPathInFilesystemProc(Tcl_Obj *pathPtr, ClientData *clientDataPtr)
     ZipFile *zf;
     int ret = -1, len;
     char *path;
-    Tcl_DString ds;
 
     if (!(pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr))) return -1;
 
@@ -3443,9 +3393,8 @@ Zip_FSPathInFilesystemProc(Tcl_Obj *pathPtr, ClientData *clientDataPtr)
       return -1;
     }
 
-    Tcl_DStringInit(&ds);
-    path = CanonicalPath("",path, &ds, 1);
-    len = Tcl_DStringLength(&ds);
+    len = strlen(path);
+
     ReadLock();
     hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, path);
     if (hPtr != NULL) {
@@ -3476,7 +3425,6 @@ Zip_FSPathInFilesystemProc(Tcl_Obj *pathPtr, ClientData *clientDataPtr)
     }
 endloop:
     Unlock();
-    Tcl_DStringFree(&ds);
     return ret;
 }
 
