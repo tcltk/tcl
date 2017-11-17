@@ -669,7 +669,8 @@ EXTERN int		Tcl_ScanElement(const char *src, int *flagPtr);
 EXTERN int		Tcl_ScanCountedElement(const char *src, int length,
 				int *flagPtr);
 /* 220 */
-EXTERN int		Tcl_SeekOld(Tcl_Channel chan, int offset, int mode);
+TCL_DEPRECATED("")
+int			Tcl_SeekOld(Tcl_Channel chan, int offset, int mode);
 /* 221 */
 EXTERN int		Tcl_ServiceAll(void);
 /* 222 */
@@ -741,7 +742,8 @@ EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
 /* 245 */
 EXTERN int		Tcl_StringMatch(const char *str, const char *pattern);
 /* 246 */
-EXTERN int		Tcl_TellOld(Tcl_Channel chan);
+TCL_DEPRECATED("")
+int			Tcl_TellOld(Tcl_Channel chan);
 /* 247 */
 EXTERN int		Tcl_TraceVar(Tcl_Interp *interp, const char *varName,
 				int flags, Tcl_VarTraceProc *proc,
@@ -812,10 +814,12 @@ EXTERN int		Tcl_DumpActiveMemory(const char *fileName);
 /* 266 */
 EXTERN void		Tcl_ValidateAllMemory(const char *file, int line);
 /* 267 */
-EXTERN void		Tcl_AppendResultVA(Tcl_Interp *interp,
+TCL_DEPRECATED("see TIP #422")
+void			Tcl_AppendResultVA(Tcl_Interp *interp,
 				va_list argList);
 /* 268 */
-EXTERN void		Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr,
+TCL_DEPRECATED("see TIP #422")
+void			Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr,
 				va_list argList);
 /* 269 */
 EXTERN char *		Tcl_HashStats(Tcl_HashTable *tablePtr);
@@ -838,14 +842,17 @@ EXTERN CONST84_RETURN char * Tcl_PkgRequire(Tcl_Interp *interp,
 				const char *name, const char *version,
 				int exact);
 /* 275 */
-EXTERN void		Tcl_SetErrorCodeVA(Tcl_Interp *interp,
+TCL_DEPRECATED("see TIP #422")
+void			Tcl_SetErrorCodeVA(Tcl_Interp *interp,
 				va_list argList);
 /* 276 */
-EXTERN int		Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList);
+TCL_DEPRECATED("see TIP #422")
+int			Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList);
 /* 277 */
 EXTERN Tcl_Pid		Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options);
 /* 278 */
-EXTERN TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList);
+TCL_DEPRECATED("see TIP #422")
+TCL_NORETURN void	Tcl_PanicVA(const char *format, va_list argList);
 /* 279 */
 EXTERN void		Tcl_GetVersion(int *major, int *minor,
 				int *patchLevel, int *type);
@@ -2095,7 +2102,7 @@ typedef struct TclStubs {
     void (*tcl_ResetResult) (Tcl_Interp *interp); /* 217 */
     int (*tcl_ScanElement) (const char *src, int *flagPtr); /* 218 */
     int (*tcl_ScanCountedElement) (const char *src, int length, int *flagPtr); /* 219 */
-    int (*tcl_SeekOld) (Tcl_Channel chan, int offset, int mode); /* 220 */
+    TCL_DEPRECATED_API("") int (*tcl_SeekOld) (Tcl_Channel chan, int offset, int mode); /* 220 */
     int (*tcl_ServiceAll) (void); /* 221 */
     int (*tcl_ServiceEvent) (int flags); /* 222 */
     void (*tcl_SetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc *proc, ClientData clientData); /* 223 */
@@ -2121,7 +2128,7 @@ typedef struct TclStubs {
     void (*tcl_SplitPath) (const char *path, int *argcPtr, CONST84 char ***argvPtr); /* 243 */
     void (*tcl_StaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 244 */
     int (*tcl_StringMatch) (const char *str, const char *pattern); /* 245 */
-    int (*tcl_TellOld) (Tcl_Channel chan); /* 246 */
+    TCL_DEPRECATED_API("") int (*tcl_TellOld) (Tcl_Channel chan); /* 246 */
     int (*tcl_TraceVar) (Tcl_Interp *interp, const char *varName, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 247 */
     int (*tcl_TraceVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 248 */
     char * (*tcl_TranslateFileName) (Tcl_Interp *interp, const char *name, Tcl_DString *bufferPtr); /* 249 */
@@ -2142,18 +2149,18 @@ typedef struct TclStubs {
     void (*tcl_WrongNumArgs) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], const char *message); /* 264 */
     int (*tcl_DumpActiveMemory) (const char *fileName); /* 265 */
     void (*tcl_ValidateAllMemory) (const char *file, int line); /* 266 */
-    void (*tcl_AppendResultVA) (Tcl_Interp *interp, va_list argList); /* 267 */
-    void (*tcl_AppendStringsToObjVA) (Tcl_Obj *objPtr, va_list argList); /* 268 */
+    TCL_DEPRECATED_API("see TIP #422") void (*tcl_AppendResultVA) (Tcl_Interp *interp, va_list argList); /* 267 */
+    TCL_DEPRECATED_API("see TIP #422") void (*tcl_AppendStringsToObjVA) (Tcl_Obj *objPtr, va_list argList); /* 268 */
     char * (*tcl_HashStats) (Tcl_HashTable *tablePtr); /* 269 */
     CONST84_RETURN char * (*tcl_ParseVar) (Tcl_Interp *interp, const char *start, CONST84 char **termPtr); /* 270 */
     CONST84_RETURN char * (*tcl_PkgPresent) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 271 */
     CONST84_RETURN char * (*tcl_PkgPresentEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 272 */
     int (*tcl_PkgProvide) (Tcl_Interp *interp, const char *name, const char *version); /* 273 */
     CONST84_RETURN char * (*tcl_PkgRequire) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 274 */
-    void (*tcl_SetErrorCodeVA) (Tcl_Interp *interp, va_list argList); /* 275 */
-    int (*tcl_VarEvalVA) (Tcl_Interp *interp, va_list argList); /* 276 */
+    TCL_DEPRECATED_API("see TIP #422") void (*tcl_SetErrorCodeVA) (Tcl_Interp *interp, va_list argList); /* 275 */
+    TCL_DEPRECATED_API("see TIP #422") int (*tcl_VarEvalVA) (Tcl_Interp *interp, va_list argList); /* 276 */
     Tcl_Pid (*tcl_WaitPid) (Tcl_Pid pid, int *statPtr, int options); /* 277 */
-    TCL_NORETURN1 void (*tcl_PanicVA) (const char *format, va_list argList); /* 278 */
+    TCL_DEPRECATED_API("see TIP #422") TCL_NORETURN1 void (*tcl_PanicVA) (const char *format, va_list argList); /* 278 */
     void (*tcl_GetVersion) (int *major, int *minor, int *patchLevel, int *type); /* 279 */
     void (*tcl_InitMemory) (Tcl_Interp *interp); /* 280 */
     Tcl_Channel (*tcl_StackChannel) (Tcl_Interp *interp, const Tcl_ChannelType *typePtr, ClientData instanceData, int mask, Tcl_Channel prevChan); /* 281 */
