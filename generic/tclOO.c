@@ -41,6 +41,7 @@ static const struct {
     {"forward", TclOODefineForwardObjCmd, 1},
     {"method", TclOODefineMethodObjCmd, 1},
     {"renamemethod", TclOODefineRenameMethodObjCmd, 1},
+    {"self", TclOODefineObjSelfObjCmd, 0},
     {"unexport", TclOODefineUnexportObjCmd, 1},
     {NULL, NULL, 0}
 };
@@ -58,6 +59,8 @@ static const struct {
 static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj);
 static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr,
 			    const char *nsNameStr);
+static void		ClearMixins(Class *clsPtr);
+static void		ClearSuperclasses(Class *clsPtr);
 static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method *mPtr, Tcl_Obj *namePtr,
 			    Method **newMPtrPtr);
@@ -66,12 +69,9 @@ static int		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 static void		DeletedDefineNamespace(ClientData clientData);
 static void		DeletedObjdefNamespace(ClientData clientData);
 static void		DeletedHelpersNamespace(ClientData clientData);
-static int		FinalizeAlloc(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		FinalizeNext(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		FinalizeObjectCall(ClientData data[],
-			    Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	FinalizeAlloc;
+static Tcl_NRPostProc	FinalizeNext;
+static Tcl_NRPostProc	FinalizeObjectCall;
 static int		InitFoundation(Tcl_Interp *interp);
 static void		KillFoundation(ClientData clientData,
 			    Tcl_Interp *interp);
@@ -267,7 +267,7 @@ TclOOInit(
      * to be fully provided.
      */
 
-    if (Tcl_Eval(interp, initScript) != TCL_OK) {
+    if (Tcl_EvalEx(interp, initScript, -1, 0) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -461,7 +461,7 @@ InitFoundation(
     if (TclOODefineSlots(fPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
-    return Tcl_Eval(interp, slotScript);
+    return Tcl_EvalEx(interp, slotScript, -1, 0);
 }
 
 /*
@@ -538,7 +538,8 @@ KillFoundation(
  * AllocObject --
  *
  *	Allocate an object of basic type. Does not splice the object into its
- *	class's instance list.
+ *	class's instance list.  The caller must set the classPtr on the object,
+ *	either to a class or to NULL.
  *
  * ----------------------------------------------------------------------
  */
@@ -793,7 +794,7 @@ ObjectRenamedTrace(
     ClientData clientData,	/* The object being deleted. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     const char *oldName,	/* What the object was (last) called. */
-    const char *newName,	/* Always NULL. */
+    const char *newName,	/* What it's getting renamed to. (unused) */
     int flags)			/* Why was the object deleted? */
 {
     Object *oPtr = clientData;
@@ -880,7 +881,7 @@ ObjectRenamedTrace(
      * 2950259]
      */
 
-    if (((Namespace *) oPtr->namespacePtr)->earlyDeleteProc != NULL) {
+    if (oPtr->namespacePtr && ((Namespace *) oPtr->namespacePtr)->earlyDeleteProc != NULL) {
 	Tcl_DeleteNamespace(oPtr->namespacePtr);
     }
     if (oPtr->classPtr) {
@@ -891,6 +892,55 @@ ObjectRenamedTrace(
     DelRef(fPtr->classCls);
     DelRef(fPtr->objectCls);
     DelRef(oPtr);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ClearMixins, ClearSuperclasses --
+ *
+ *	Utility functions for correctly clearing the list of mixins or
+ *	superclasses of a class. Will ckfree() the list storage.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+ClearMixins(
+    Class *clsPtr)
+{
+    int i;
+    Class *mixinPtr;
+
+    if (clsPtr->mixins.num == 0) {
+	return;
+    }
+
+    FOREACH(mixinPtr, clsPtr->mixins) {
+	TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
+    }
+    ckfree(clsPtr->mixins.list);
+    clsPtr->mixins.list = NULL;
+    clsPtr->mixins.num = 0;
+}
+
+static void
+ClearSuperclasses(
+    Class *clsPtr)
+{
+    int i;
+    Class *superPtr;
+
+    if (clsPtr->superclasses.num == 0) {
+	return;
+    }
+
+    FOREACH(superPtr, clsPtr->superclasses) {
+	TclOORemoveFromSubclasses(clsPtr, superPtr);
+    }
+    ckfree(clsPtr->superclasses.list);
+    clsPtr->superclasses.list = NULL;
+    clsPtr->superclasses.num = 0;
 }
 
 /*
@@ -951,6 +1001,26 @@ ReleaseClassContents(
     }
     if (!IsRootClass(oPtr)) {
 	FOREACH(instancePtr, clsPtr->instances) {
+	    int j;
+	    if (instancePtr->selfCls == clsPtr) {
+		instancePtr->flags |= CLASS_GONE;
+	    }
+	    for(j=0 ; j<instancePtr->mixins.num ; j++) {
+		Class *mixin = instancePtr->mixins.list[j];
+		Class *nextMixin = NULL;
+		if (mixin == clsPtr) {
+		    if (j < instancePtr->mixins.num - 1) {
+			nextMixin = instancePtr->mixins.list[j+1];
+		    }
+		    if (j == 0) {
+			instancePtr->mixins.num = 0;
+			instancePtr->mixins.list = NULL;
+		    } else {
+			instancePtr->mixins.list[j-1] = nextMixin;
+		    }
+		    instancePtr->mixins.num -= 1;
+		}
+	    }
 	    if (instancePtr != NULL && !IsRoot(instancePtr)) {
 		AddRef(instancePtr);
 	    }
@@ -962,13 +1032,11 @@ ReleaseClassContents(
      */
 
     FOREACH(mixinSubclassPtr, clsPtr->mixinSubs) {
-	if (mixinSubclassPtr == NULL) {
-	    continue;
-	}
 	if (!Deleted(mixinSubclassPtr->thisPtr)) {
 	    Tcl_DeleteCommandFromToken(interp,
 		    mixinSubclassPtr->thisPtr->command);
 	}
+	ClearMixins(mixinSubclassPtr);
 	DelRef(mixinSubclassPtr->thisPtr);
 	DelRef(mixinSubclassPtr);
     }
@@ -983,12 +1051,13 @@ ReleaseClassContents(
      */
 
     FOREACH(subclassPtr, clsPtr->subclasses) {
-	if (subclassPtr == NULL || IsRoot(subclassPtr)) {
+	if (IsRoot(subclassPtr)) {
 	    continue;
 	}
 	if (!Deleted(subclassPtr->thisPtr)) {
 	    Tcl_DeleteCommandFromToken(interp, subclassPtr->thisPtr->command);
 	}
+	ClearSuperclasses(subclassPtr);
 	DelRef(subclassPtr->thisPtr);
 	DelRef(subclassPtr);
     }
@@ -1110,7 +1179,7 @@ ObjectNamespaceDeleted(
     Class *clsPtr = oPtr->classPtr, *mixinPtr;
     Method *mPtr;
     Tcl_Obj *filterObj, *variableObj;
-    int i;
+    int deleteAlreadyInProgress = 0, i;
 
     /*
      * Instruct everyone to no longer use any allocated fields of the object.
@@ -1120,6 +1189,15 @@ ObjectNamespaceDeleted(
      */
 
     if (oPtr->command) {
+	if ((((Command *)oPtr->command)->flags && CMD_IS_DELETED)) {
+	    /*
+	     * Namespace deletion must have been triggered by a trace on command
+	     * deletion , meaning that ObjectRenamedTrace() is eventually going
+	     * to be called .
+	     */
+	    deleteAlreadyInProgress = 1;
+	}
+
 	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->command);
     }
     if (oPtr->myCommand) {
@@ -1131,12 +1209,14 @@ ObjectNamespaceDeleted(
      * methods on the object.
      */
 
-    if (!IsRootObject(oPtr)) {
+    if (!IsRootObject(oPtr) && !(oPtr->flags & CLASS_GONE)) {
 	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
     }
 
     FOREACH(mixinPtr, oPtr->mixins) {
-	TclOORemoveFromInstances(oPtr, mixinPtr);
+	if (mixinPtr) {
+	    TclOORemoveFromInstances(oPtr, mixinPtr);
+	}
     }
     if (i) {
 	ckfree(oPtr->mixins.list);
@@ -1182,8 +1262,11 @@ ObjectNamespaceDeleted(
 	oPtr->metadataPtr = NULL;
     }
 
+    /*
+     * If this was a class, there's additional deletion work to do.
+     */
+
     if (clsPtr != NULL) {
-	Class *superPtr;
 	Tcl_ObjectMetadataType *metadataTypePtr;
 	ClientData value;
 
@@ -1203,34 +1286,24 @@ ObjectNamespaceDeleted(
 	    ckfree(clsPtr->filters.list);
 	    clsPtr->filters.num = 0;
 	}
-	FOREACH(mixinPtr, clsPtr->mixins) {
-	    if (!Deleted(mixinPtr->thisPtr)) {
-		TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
-	    }
-	}
-	if (i) {
-	    ckfree(clsPtr->mixins.list);
-	    clsPtr->mixins.num = 0;
-	}
-	FOREACH(superPtr, clsPtr->superclasses) {
-	    if (!Deleted(superPtr->thisPtr)) {
-		TclOORemoveFromSubclasses(clsPtr, superPtr);
-	    }
-	}
-	if (i) {
-	    ckfree(clsPtr->superclasses.list);
-	    clsPtr->superclasses.num = 0;
-	}
+
+	ClearMixins(clsPtr);
+
+	ClearSuperclasses(clsPtr);
+
 	if (clsPtr->subclasses.list) {
 	    ckfree(clsPtr->subclasses.list);
+	    clsPtr->subclasses.list = NULL;
 	    clsPtr->subclasses.num = 0;
 	}
 	if (clsPtr->instances.list) {
 	    ckfree(clsPtr->instances.list);
+	    clsPtr->instances.list = NULL;
 	    clsPtr->instances.num = 0;
 	}
 	if (clsPtr->mixinSubs.list) {
 	    ckfree(clsPtr->mixinSubs.list);
+	    clsPtr->mixinSubs.list = NULL;
 	    clsPtr->mixinSubs.num = 0;
 	}
 
@@ -1255,7 +1328,13 @@ ObjectNamespaceDeleted(
      * Delete the object structure itself.
      */
 
-    DelRef(oPtr);
+    if (deleteAlreadyInProgress) {
+	oPtr->classPtr = NULL;
+	oPtr->namespacePtr = NULL;
+    } else {
+	DelRef(oPtr);
+    }
+
 }
 
 /*
@@ -1362,9 +1441,7 @@ TclOORemoveFromSubclasses(
     return;
 
   removeSubclass:
-    if (Deleted(superPtr->thisPtr)) {
-	superPtr->subclasses.list[i] = NULL;
-    } else {
+    if (!Deleted(superPtr->thisPtr)) {
 	superPtr->subclasses.num--;
 	if (i < superPtr->subclasses.num) {
 	    superPtr->subclasses.list[i] =
@@ -1435,9 +1512,7 @@ TclOORemoveFromMixinSubs(
     return;
 
   removeSubclass:
-    if (Deleted(superPtr->thisPtr)) {
-	superPtr->mixinSubs.list[i] = NULL;
-    } else {
+    if (!Deleted(superPtr->thisPtr)) {
 	superPtr->mixinSubs.num--;
 	if (i < superPtr->mixinSubs.num) {
 	    superPtr->mixinSubs.list[i] =
@@ -1627,6 +1702,8 @@ Tcl_NewObjectInstance(
 	AllocClass(interp, oPtr);
 	oPtr->selfCls = classPtr;
 	TclOOAddToSubclasses(oPtr->classPtr, fPtr->objectCls);
+    } else {
+	oPtr->classPtr = NULL;
     }
 
     /*
@@ -1639,7 +1716,7 @@ Tcl_NewObjectInstance(
 		TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL);
 
 	if (contextPtr != NULL) {
-	    int result;
+	    int isRoot, result;
 	    Tcl_InterpState state;
 
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
@@ -1650,12 +1727,13 @@ Tcl_NewObjectInstance(
 	     * Adjust the ensmble tracking record if necessary. [Bug 3514761]
 	     */
 
-	    if (((Interp*) interp)->ensembleRewrite.sourceObjs) {
-		((Interp*) interp)->ensembleRewrite.numInsertedObjs += skip-1;
-		((Interp*) interp)->ensembleRewrite.numRemovedObjs += skip-1;
-	    }
+	    isRoot = TclInitRewriteEnsemble(interp, skip, skip, objv);
 	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
 		    objc, objv);
+
+	    if (isRoot) {
+		TclResetRewriteEnsemble(interp, 1);
+	    }
 
 	    /*
 	     * It's an error if the object was whacked in the constructor.
@@ -1675,10 +1753,13 @@ Tcl_NewObjectInstance(
 
 		/*
 		 * Take care to not delete a deleted object; that would be
-		 * bad. [Bug 2903011]
+		 * bad. [Bug 2903011] Also take care to make sure that we have
+		 * the name of the command before we delete it. [Bug
+		 * 9dd1bd7a74]
 		 */
 
 		if (!Deleted(oPtr)) {
+		    (void) TclOOObjectName(interp, oPtr);
 		    Tcl_DeleteCommandFromToken(interp, oPtr->command);
 		}
 		return NULL;
@@ -1776,9 +1857,8 @@ TclNRNewObjectInstance(
      * Adjust the ensmble tracking record if necessary. [Bug 3514761]
      */
 
-    if (((Interp *) interp)->ensembleRewrite.sourceObjs) {
-	((Interp *) interp)->ensembleRewrite.numInsertedObjs += skip - 1;
-	((Interp *) interp)->ensembleRewrite.numRemovedObjs += skip - 1;
+    if (TclInitRewriteEnsemble(interp, skip, skip, objv)) {
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
 
     /*
@@ -1821,10 +1901,12 @@ FinalizeAlloc(
 
 	/*
 	 * Take care to not delete a deleted object; that would be bad. [Bug
-	 * 2903011]
+	 * 2903011] Also take care to make sure that we have the name of the
+	 * command before we delete it. [Bug 9dd1bd7a74]
 	 */
 
 	if (!Deleted(oPtr)) {
+	    (void) TclOOObjectName(interp, oPtr);
 	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
 	}
 	DelRef(oPtr);
@@ -1903,13 +1985,13 @@ Tcl_CopyObjectInstance(
      */
 
     FOREACH(mixinPtr, o2Ptr->mixins) {
-	if (mixinPtr != o2Ptr->selfCls) {
+	if (mixinPtr && mixinPtr != o2Ptr->selfCls) {
 	    TclOORemoveFromInstances(o2Ptr, mixinPtr);
 	}
     }
     DUPLICATE(o2Ptr->mixins, oPtr->mixins, Class *);
     FOREACH(mixinPtr, o2Ptr->mixins) {
-	if (mixinPtr != o2Ptr->selfCls) {
+	if (mixinPtr && mixinPtr != o2Ptr->selfCls) {
 	    TclOOAddToInstances(o2Ptr, mixinPtr);
 	}
     }
@@ -2382,7 +2464,7 @@ Tcl_ObjectSetMetadata(
  *
  * PublicObjectCmd, PrivateObjectCmd, TclOOInvokeObject --
  *
- *	Main entry point for object invokations. The Public* and Private*
+ *	Main entry point for object invocations. The Public* and Private*
  *	wrapper functions (implementations of both object instance commands
  *	and [my]) are just thin wrappers round the main TclOOObjectCmdCore
  *	function. Note that the core is function is NRE-aware.
@@ -2467,8 +2549,8 @@ TclOOInvokeObject(
  *
  * TclOOObjectCmdCore, FinalizeObjectCall --
  *
- *	Main function for object invokations. Does call chain creation,
- *	management and invokation. The function FinalizeObjectCall exists to
+ *	Main function for object invocations. Does call chain creation,
+ *	management and invocation. The function FinalizeObjectCall exists to
  *	clean up after the non-recursive processing of TclOOObjectCmdCore.
  *
  * ----------------------------------------------------------------------
@@ -2480,7 +2562,7 @@ TclOOObjectCmdCore(
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     int objc,			/* How many arguments are being passed in. */
     Tcl_Obj *const *objv,	/* The array of arguments. */
-    int flags,			/* Whether this is an invokation through the
+    int flags,			/* Whether this is an invocation through the
 				 * public or the private command interface. */
     Class *startCls)		/* Where to start in the call chain, or NULL
 				 * if we are to start at the front with
@@ -2669,7 +2751,7 @@ Tcl_ObjectContextInvokeNext(
      * call context while we process the body. However, need to adjust the
      * argument-skip control because we're guaranteed to have a single prefix
      * arg (i.e., 'next') and not the variable amount that can happen because
-     * method invokations (i.e., '$obj meth' and 'my meth'), constructors
+     * method invocations (i.e., '$obj meth' and 'my meth'), constructors
      * (i.e., '$cls new' and '$cls create obj') and destructors (no args at
      * all) come through the same code.
      */
@@ -2738,7 +2820,7 @@ TclNRObjectContextInvokeNext(
      * call context while we process the body. However, need to adjust the
      * argument-skip control because we're guaranteed to have a single prefix
      * arg (i.e., 'next') and not the variable amount that can happen because
-     * method invokations (i.e., '$obj meth' and 'my meth'), constructors
+     * method invocations (i.e., '$obj meth' and 'my meth'), constructors
      * (i.e., '$cls new' and '$cls create obj') and destructors (no args at
      * all) come through the same code.
      */

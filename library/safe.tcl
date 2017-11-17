@@ -113,7 +113,7 @@ proc ::safe::CheckInterp {slave} {
 # we had the bad idea to support for the sake of user simplicity in
 # create/init but which makes life hard in configure...
 # So this will be hopefully written and some integrated with opt1.0
-# (hopefully for tcl8.1 ?)
+# (hopefully for tcl9.0 ?)
 proc ::safe::interpConfigure {args} {
     switch [llength $args] {
 	1 {
@@ -853,7 +853,7 @@ proc ::safe::AliasSource {slave args} {
 	return -code error $msg
     }
     set file [lindex $args $at]
-    
+
     # get the real path from the virtual one.
     if {[catch {
 	set realfile [TranslatePath $slave $file]
@@ -861,7 +861,7 @@ proc ::safe::AliasSource {slave args} {
 	Log $slave $msg
 	return -code error "permission denied"
     }
-    
+
     # check that the path is in the access path of that slave
     if {[catch {
 	FileInAccessPath $slave $realfile

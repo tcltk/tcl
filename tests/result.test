@@ -31,7 +31,7 @@ test result-1.2 {Tcl_SaveInterpResult} {testsaveresult} {
 } {append result}
 test result-1.3 {Tcl_SaveInterpResult} {testsaveresult} {
     testsaveresult dynamic {set x 42} 0
-} {dynamic result notCalled present}
+} {dynamic result freed}
 test result-1.4 {Tcl_SaveInterpResult} {testsaveresult} {
     testsaveresult object {set x 42} 0
 } {object result same}
@@ -43,7 +43,7 @@ test result-1.6 {Tcl_SaveInterpResult} {testsaveresult} {
 } {42}
 test result-1.7 {Tcl_SaveInterpResult} {testsaveresult} {
     testsaveresult dynamic {set x 42} 1
-} {42 called missing}
+} {42 freed}
 test result-1.8 {Tcl_SaveInterpResult} {testsaveresult} {
     testsaveresult object {set x 42} 1
 } {42 different}

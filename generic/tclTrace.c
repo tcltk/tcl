@@ -52,7 +52,7 @@ typedef struct {
 				 * invoked step trace */
     int curFlags;		/* Trace flags for the current command */
     int curCode;		/* Return code for the current command */
-    int refCount;		/* Used to ensure this structure is not
+    size_t refCount;		/* Used to ensure this structure is not
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
@@ -143,7 +143,7 @@ static int		TraceVarEx(Tcl_Interp *interp, const char *part1,
  * trace procs
  */
 
-typedef struct StringTraceData {
+typedef struct {
     ClientData clientData;	/* Client data from Tcl_CreateTrace */
     Tcl_CmdTraceProc *proc;	/* Trace function from Tcl_CreateTrace */
 } StringTraceData;
@@ -278,7 +278,7 @@ Tcl_TraceObjCmd(
 
 	opsList = Tcl_NewObj();
 	Tcl_IncrRefCount(opsList);
-	flagOps = Tcl_GetStringFromObj(objv[3], &numFlags);
+	flagOps = TclGetStringFromObj(objv[3], &numFlags);
 	if (numFlags == 0) {
 	    Tcl_DecrRefCount(opsList);
 	    goto badVarOps;
@@ -462,7 +462,7 @@ TraceExecutionObjCmd(
 		break;
 	    }
 	}
-	command = Tcl_GetStringFromObj(objv[5], &commandLength);
+	command = TclGetStringFromObj(objv[5], &commandLength);
 	length = (size_t) commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = ckalloc(
@@ -544,7 +544,7 @@ TraceExecutionObjCmd(
 
 			tcmdPtr->flags = 0;
 		    }
-		    if ((--tcmdPtr->refCount) <= 0) {
+		    if (tcmdPtr->refCount-- <= 1) {
 			ckfree(tcmdPtr);
 		    }
 		    break;
@@ -701,7 +701,7 @@ TraceCommandObjCmd(
 	    }
 	}
 
-	command = Tcl_GetStringFromObj(objv[5], &commandLength);
+	command = TclGetStringFromObj(objv[5], &commandLength);
 	length = (size_t) commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = ckalloc(
@@ -748,7 +748,7 @@ TraceCommandObjCmd(
 		    Tcl_UntraceCommand(interp, name, flags | TCL_TRACE_DELETE,
 			    TraceCommandProc, clientData);
 		    tcmdPtr->flags |= TCL_TRACE_DESTROYED;
-		    if ((--tcmdPtr->refCount) <= 0) {
+		    if (tcmdPtr->refCount-- <= 1) {
 			ckfree(tcmdPtr);
 		    }
 		    break;
@@ -904,7 +904,7 @@ TraceVariableObjCmd(
 		break;
 	    }
 	}
-	command = Tcl_GetStringFromObj(objv[5], &commandLength);
+	command = TclGetStringFromObj(objv[5], &commandLength);
 	length = (size_t) commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    CombinedTraceVarInfo *ctvarPtr = ckalloc(
@@ -1130,7 +1130,7 @@ Tcl_TraceCommand(
 	/*
 	 * Bug 3484621: up the interp's epoch if this is a BC'ed command
 	 */
-	
+
 	if ((cmdPtr->compileProc != NULL) && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)){
 	    Interp *iPtr = (Interp *) interp;
 	    iPtr->compileEpoch++;
@@ -1138,7 +1138,7 @@ Tcl_TraceCommand(
 	cmdPtr->flags |= CMD_HAS_EXEC_TRACES;
     }
 
-    
+
     return TCL_OK;
 }
 
@@ -1223,7 +1223,7 @@ Tcl_UntraceCommand(
     }
     tracePtr->flags = 0;
 
-    if ((--tracePtr->refCount) <= 0) {
+    if (tracePtr->refCount-- <= 1) {
 	ckfree(tracePtr);
     }
 
@@ -1245,7 +1245,7 @@ Tcl_UntraceCommand(
         /*
 	 * Bug 3484621: up the interp's epoch if this is a BC'ed command
 	 */
-	
+
 	if (cmdPtr->compileProc != NULL) {
 	    Interp *iPtr = (Interp *) interp;
 	    iPtr->compileEpoch++;
@@ -1382,7 +1382,7 @@ TraceCommandProc(
 	Tcl_RestoreInterpState(interp, state);
 	tcmdPtr->refCount--;
     }
-    if ((--tcmdPtr->refCount) <= 0) {
+    if (tcmdPtr->refCount-- <= 1) {
 	ckfree(tcmdPtr);
     }
 }
@@ -1474,7 +1474,7 @@ TclCheckExecutionTraces(
 		}
 		traceCode = TraceExecutionProc(tcmdPtr, interp, curLevel,
 			command, (Tcl_Command) cmdPtr, objc, objv);
-		if ((--tcmdPtr->refCount) <= 0) {
+		if (tcmdPtr->refCount-- <= 1) {
 		    ckfree(tcmdPtr);
 		}
 	    }
@@ -1721,7 +1721,7 @@ CommandObjTraceDeleted(
 {
     TraceCommandInfo *tcmdPtr = clientData;
 
-    if ((--tcmdPtr->refCount) <= 0) {
+    if (tcmdPtr->refCount-- <= 1) {
 	ckfree(tcmdPtr);
     }
 }
@@ -1889,7 +1889,8 @@ TraceExecutionProc(
 	     * interpreter.
 	     */
 
-	    traceCode = Tcl_Eval(interp, Tcl_DStringValue(&cmd));
+	    traceCode = Tcl_EvalEx(interp, Tcl_DStringValue(&cmd),
+		    Tcl_DStringLength(&cmd), 0);
 	    tcmdPtr->flags &= ~TCL_TRACE_EXEC_IN_PROGRESS;
 
 	    /*
@@ -1936,7 +1937,7 @@ TraceExecutionProc(
 	}
     }
     if (call) {
-	if ((--tcmdPtr->refCount) <= 0) {
+	if (tcmdPtr->refCount-- <= 1) {
 	    ckfree(tcmdPtr);
 	}
     }
@@ -2818,6 +2819,7 @@ DisposeTraceResult(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_UntraceVar
 void
 Tcl_UntraceVar(
@@ -2833,6 +2835,7 @@ Tcl_UntraceVar(
 {
     Tcl_UntraceVar2(interp, varName, NULL, flags, proc, clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2987,6 +2990,7 @@ Tcl_UntraceVar2(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_VarTraceInfo
 ClientData
 Tcl_VarTraceInfo(
@@ -3004,6 +3008,7 @@ Tcl_VarTraceInfo(
     return Tcl_VarTraceInfo2(interp, varName, NULL, flags, proc,
 	    prevClientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -3096,6 +3101,7 @@ Tcl_VarTraceInfo2(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_TraceVar
 int
 Tcl_TraceVar(
@@ -3113,6 +3119,7 @@ Tcl_TraceVar(
 {
     return Tcl_TraceVar2(interp, varName, NULL, flags, proc, clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

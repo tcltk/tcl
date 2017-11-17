@@ -2,8 +2,8 @@
 #
 #	This file contains the declarations for all supported public
 #	functions that are exported by the Tcl library via the stubs table.
-#	This file is used to generate the tclDecls.h, tclPlatDecls.h,
-#	tclStub.c, and tclPlatStub.c files.
+#	This file is used to generate the tclDecls.h, tclPlatDecls.h
+#	and tclStubInit.c files.
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
@@ -37,7 +37,7 @@ declare 1 {
 	    void *clientDataPtr)
 }
 declare 2 {
-    void Tcl_Panic(const char *format, ...)
+    TCL_NORETURN void Tcl_Panic(const char *format, ...)
 }
 declare 3 {
     char *Tcl_Alloc(unsigned int size)
@@ -469,7 +469,6 @@ declare 128 {
 declare 129 {
     int Tcl_Eval(Tcl_Interp *interp, const char *script)
 }
-# This is obsolete, use Tcl_FSEvalFile
 declare 130 {
     int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
 }
@@ -480,7 +479,7 @@ declare 132 {
     void Tcl_EventuallyFree(ClientData clientData, Tcl_FreeProc *freeProc)
 }
 declare 133 {
-    void Tcl_Exit(int status)
+    TCL_NORETURN void Tcl_Exit(int status)
 }
 declare 134 {
     int Tcl_ExposeCommand(Tcl_Interp *interp, const char *hiddenCmdToken,
@@ -780,10 +779,10 @@ declare 218 {
 declare 219 {
     int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
 }
-# Obsolete
-declare 220 {
-    int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
-}
+# Removed in 9.0:
+#declare 220 {
+#    int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
+#}
 declare 221 {
     int Tcl_ServiceAll(void)
 }
@@ -815,7 +814,7 @@ declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
 declare 230 {
-    void Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
+    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 }
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
@@ -868,10 +867,10 @@ declare 244 {
 declare 245 {
     int Tcl_StringMatch(const char *str, const char *pattern)
 }
-# Obsolete
-declare 246 {
-    int Tcl_TellOld(Tcl_Channel chan)
-}
+# Removed in 9.0:
+#declare 246 {
+#    int Tcl_TellOld(Tcl_Channel chan)
+#}
 declare 247 {
     int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
 	    Tcl_VarTraceProc *proc, ClientData clientData)
@@ -986,7 +985,7 @@ declare 277 {
     Tcl_Pid Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options)
 }
 declare 278 {
-    void Tcl_PanicVA(const char *format, va_list argList)
+    TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList)
 }
 declare 279 {
     void Tcl_GetVersion(int *major, int *minor, int *patchLevel, int *type)
@@ -1059,7 +1058,7 @@ declare 293 {
     int Tcl_EvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 declare 294 {
-    void Tcl_ExitThread(int status)
+    TCL_NORETURN void Tcl_ExitThread(int status)
 }
 declare 295 {
     int Tcl_ExternalToUtf(Tcl_Interp *interp, Tcl_Encoding encoding,
@@ -1872,7 +1871,7 @@ declare 518 {
 
 # TIP#121 (exit handler) dkf for Joe Mistachkin
 declare 519 {
-    Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc)
+    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
 }
 
 # TIP#143 (resource limits) dkf
@@ -2325,6 +2324,17 @@ declare 630 {
 }
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
+
+# TIP #456
+declare 631 {
+    Tcl_Channel Tcl_OpenTcpServerEx(Tcl_Interp *interp, const char *service,
+	    const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc,
+	    ClientData callbackData)
+}
+
+# ----- BASELINE -- FOR -- 8.7.0 ----- #
+
+
 
 ##############################################################################
 

@@ -29,7 +29,7 @@ static int platformId;		/* Running under NT, or 95/98? */
  * VC++ 5.x has no 'cpuid' assembler instruction, so we must emulate it
  */
 
-#if defined(_MSC_VER) && (_MSC_VER <= 1100)
+#if defined(_MSC_VER) && (_MSC_VER <= 1100) && defined (_M_IX86)
 #define cpuid	__asm __emit 0fh __asm __emit 0a2h
 #endif
 
@@ -49,7 +49,7 @@ BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
  */
 
 typedef struct MountPointMap {
-    const TCHAR *volumeName;	/* Native wide string volume name. */
+    TCHAR *volumeName;		/* Native wide string volume name. */
     TCHAR driveLetter;		/* Drive letter corresponding to the volume
 				 * name. */
     struct MountPointMap *nextPtr;
@@ -603,8 +603,8 @@ Tcl_WinTCharToUtf(
 
 int
 TclWinCPUID(
-    unsigned int index,		/* Which CPUID value to retrieve. */
-    unsigned int *regsPtr)	/* Registers after the CPUID. */
+    int index,		/* Which CPUID value to retrieve. */
+    int *regsPtr)	/* Registers after the CPUID. */
 {
     int status = TCL_ERROR;
 
@@ -735,7 +735,7 @@ TclWinCPUID(
     __cpuid(regsPtr, index);
     status = TCL_OK;
 
-#   else
+#   elif defined (_M_IX86)
     /*
      * Define a structure in the stack frame to hold the registers.
      */

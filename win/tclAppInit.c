@@ -16,7 +16,9 @@
 
 #include "tcl.h"
 #define WIN32_LEAN_AND_MEAN
+#define STRICT			/* See MSDN Article Q83456 */
 #include <windows.h>
+#undef STRICT
 #undef WIN32_LEAN_AND_MEAN
 #include <locale.h>
 #include <stdlib.h>
@@ -261,8 +263,8 @@ setargv(
     }
 
     /* Make sure we don't call ckalloc through the (not yet initialized) stub table */
-    #undef Tcl_Alloc
-    #undef Tcl_DbCkalloc
+#   undef Tcl_Alloc
+#   undef Tcl_DbCkalloc
 
     argSpace = ckalloc(size * sizeof(char *)
 	    + (_tcslen(cmdLine) * sizeof(TCHAR)) + sizeof(TCHAR));

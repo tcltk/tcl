@@ -355,11 +355,11 @@ test stringComp-5.16 {string index, bytearray object with string obj shimmering}
 test stringComp-5.17 {string index, bad integer} -body {
     proc foo {} {string index "abc" 0o8}
     list [catch {foo} msg] $msg
-} -match glob -result {1 {*invalid octal number*}}
+} -match glob -result {1 {*}}
 test stringComp-5.18 {string index, bad integer} -body {
     proc foo {} {string index "abc" end-0o0289}
     list [catch {foo} msg] $msg
-} -match glob -result {1 {*invalid octal number*}}
+} -match glob -result {1 {*}}
 test stringComp-5.19 {string index, bytearray object out of bounds} {
     proc foo {} {string index [binary format I* {0x50515253 0x52}] -1}
     foo
@@ -728,6 +728,19 @@ test stringComp-14.3 {Bug 0dca3bfa8f} {
 	expr {$arg ne $argCopy}
     }} abcde
 } 1
+test stringComp-14.4 {Bug 1af8de570511} {
+    apply {{x y} {
+	# Generate an unshared string value
+	set val ""
+	for { set i 0 } { $i < $x } { incr i } {
+	    set val [format "0%s" $val]
+	}
+	string replace $val[unset val] 1 1 $y
+    }} 4 x
+} 0x00
+test stringComp-14.5 {} {
+    string length [string replace [string repeat a\u00fe 2] 3 end {}]
+} 3
 
 ## string tolower
 ## not yet bc

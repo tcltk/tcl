@@ -127,9 +127,6 @@
 /* Define to 1 if you have the <libkern/OSAtomic.h> header file. */
 #undef HAVE_LIBKERN_OSATOMIC_H
 
-/* Do we have <limits.h>? */
-#undef HAVE_LIMITS_H
-
 /* Define to 1 if you have the `localtime_r' function. */
 #undef HAVE_LOCALTIME_R
 
@@ -298,9 +295,6 @@
 /* Do we have fd_set? */
 #undef NO_FD_SET
 
-/* Do we have <float.h>? */
-#undef NO_FLOAT_H
-
 /* Do we have fstatfs()? */
 #undef NO_FSTATFS
 
@@ -312,9 +306,6 @@
 
 /* Do we have a usable 'isnan'? */
 #undef NO_ISNAN
-
-/* Do we have <limits.h>? */
-#undef NO_LIMITS_H
 
 /* Do we have memmove()? */
 #undef NO_MEMMOVE
@@ -399,9 +390,6 @@
 
 /* Are we building with threads enabled? */
 #undef TCL_THREADS
-
-/* Build libtommath? */
-#undef TCL_TOMMATH
 
 /* Do we allow unloading of shared libraries? */
 #undef TCL_UNLOAD_DLLS

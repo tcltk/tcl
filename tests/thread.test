@@ -564,7 +564,7 @@ test thread-7.14 {cancel: vwait} -constraints {thread drainEventQueue} -setup {
     unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
-	    [string map [list %ID [thread::id]] {
+	    [string map [list %ID% [thread::id]] {
 	if {![info exists foo]} then {
 	    # signal the primary thread that we are ready
 	    # to be canceled now (we are running).
@@ -616,7 +616,7 @@ test thread-7.16 {cancel: expr} -constraints {thread drainEventQueue} -setup {
     unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
-	    [string map [list %ID [thread::id]] {
+	    [string map [list %ID% [thread::id]] {
 	set i [interp create]
 	$i eval "package require -exact Thread [package present Thread]"
 	$i eval {
@@ -1372,7 +1372,7 @@ test thread-7.37 {cancel: send async thread cancel nested catch inside pure insi
     unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
-	    [string map [list %ID [thread::id]] {
+	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    set catch catch
 	    set while while
@@ -1411,6 +1411,32 @@ test thread-7.37 {cancel: send async thread cancel nested catch inside pure insi
 } -cleanup {
     unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
+
+test thread-8.1 {threaded fork stress} -constraints {thread} -setup {
+    unset -nocomplain ::threadCount ::execCount ::threads ::thread
+    set ::threadCount 10
+    set ::execCount 10
+} -body {
+    set ::threads [list]
+    for {set i 0} {$i < $::threadCount} {incr i} {
+	lappend ::threads [thread::create -joinable [string map \
+		[list %execCount% $::execCount] {
+	    proc execLs {} {
+		if {$::tcl_platform(platform) eq "windows"} then {
+		    return [exec $::env(COMSPEC) /c DIR]
+		} else {
+		    return [exec /bin/ls]
+		}
+	    }
+	    set j {%execCount%}; while {[incr j -1]} {execLs}
+	}]]
+    }
+    foreach ::thread $::threads {
+	thread::join $::thread
+    }
+} -cleanup {
+    unset -nocomplain ::threadCount ::execCount ::threads ::thread
+} -result {}
 
 # cleanup
 ::tcltest::cleanupTests

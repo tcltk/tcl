@@ -19,7 +19,7 @@
 # access to the Registry on Windows systems.
 
 uplevel \#0 {
-    package require msgcat 1.4
+    package require msgcat 1.6
     if { $::tcl_platform(platform) eq {windows} } {
 	if { [catch { package require registry 1.1 }] } {
 	    namespace eval ::tcl::clock [list variable NoRegistry {}]
@@ -60,6 +60,8 @@ namespace eval ::tcl::clock {
 
     namespace import ::msgcat::mcload
     namespace import ::msgcat::mclocale
+    namespace import ::msgcat::mc
+    namespace import ::msgcat::mcpackagelocale
 
 }
 
@@ -105,6 +107,11 @@ proc ::tcl::clock::Initialize {} {
 	set TZData(:localtime) {}
     }
     InitTZData
+
+    mcpackagelocale set {}
+    ::msgcat::mcpackageconfig set mcfolder [file join $LibDir msgs]
+    ::msgcat::mcpackageconfig set unknowncmd ""
+    ::msgcat::mcpackageconfig set changecmd ChangeCurrentLocale
 
     # Define the message catalog for the root locale.
 
@@ -249,7 +256,6 @@ proc ::tcl::clock::Initialize {} {
     # Define the directories for time zone data and message catalogs.
 
     variable DataDir [file join $LibDir tzdata]
-    variable MsgDir [file join $LibDir msgs]
 
     # Number of days in the months, in common years and leap years.
 
@@ -623,11 +629,6 @@ proc ::tcl::clock::Initialize {} {
 					# in the given locales and dictionaries
 					# mapping the numerals to their numeric
 					# values.
-    variable McLoaded {};		# Dictionary whose keys are locales
-					# in which [mcload] has been executed
-					# and whose values are second-level
-    					# dictionaries indexed by message
-    					# name and giving message text.
     # variable CachedSystemTimeZone;    # If 'CachedSystemTimeZone' exists,
 					# it contains the value of the
 					# system time zone, as determined from
@@ -659,6 +660,7 @@ proc ::tcl::clock::Initialize {} {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::format { args } {
+
     variable FormatProc
     variable TZData
 
@@ -692,6 +694,7 @@ proc ::tcl::clock::format { args } {
     }
 
     return [$procName $clockval $timezone]
+
 }
 
 #----------------------------------------------------------------------
@@ -710,13 +713,14 @@ proc ::tcl::clock::format { args } {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::ParseClockFormatFormat {procName format locale} {
+
     if {[namespace which $procName] ne {}} {
 	return $procName
     }
 
     # Map away the locale-dependent composite format groups
 
-    EnterLocale $locale oldLocale
+    EnterLocale $locale
 
     # Change locale if a fresh locale has been given on the command line.
 
@@ -725,12 +729,6 @@ proc ::tcl::clock::ParseClockFormatFormat {procName format locale} {
     } trap CLOCK {result opts} {
 	dict unset opts -errorinfo
 	return -options $opts $result
-    } finally {
-	# Restore the locale
-
-	if { [info exists oldLocale] } {
-	    mclocale $oldLocale
-	}
     }
 }
 
@@ -1181,6 +1179,7 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::scan { args } {
+
     set format {}
 
     # Check the count of args
@@ -1264,7 +1263,7 @@ proc ::tcl::clock::scan { args } {
 
     # Change locale if a fresh locale has been given on the command line.
 
-    EnterLocale $locale oldLocale
+    EnterLocale $locale
 
     try {
 	# Map away the locale-dependent composite format groups
@@ -1273,15 +1272,8 @@ proc ::tcl::clock::scan { args } {
 	return [$scanner $string $base $timezone]
     } trap CLOCK {result opts} {
 	# Conceal location of generation of expected errors
-
 	dict unset opts -errorinfo
 	return -options $opts $result
-    } finally {
-	# Restore the locale
-
-	if { [info exists oldLocale] } {
-	    mclocale $oldLocale
-	}
     }
 }
 
@@ -1304,6 +1296,7 @@ proc ::tcl::clock::scan { args } {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::FreeScan { string base timezone locale } {
+
     variable TZData
 
     # Get the data for time changes in the given zone
@@ -1431,6 +1424,7 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 	set date2 [ConvertLocalToUTC $date2[set date2 {}] $TZData($timezone) \
 		       2361222]
 	set seconds [dict get $date2 seconds]
+
     }
 
     # Do relative month
@@ -2155,6 +2149,7 @@ proc ::tcl::clock::UniquePrefixRegexp { data } {
 proc ::tcl::clock::MakeUniquePrefixRegexp { successors
 					  uniquePrefixMapping
 					  prefixString } {
+
     # Get the characters that may follow the current prefix string
 
     set schars [lsort -ascii [dict keys [dict get $successors $prefixString]]]
@@ -2224,6 +2219,7 @@ proc ::tcl::clock::MakeUniquePrefixRegexp { successors
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::MakeParseCodeFromFields { dateFields parseActions } {
+
     set currPrio 999
     set currFieldPos [list]
     set currCodeBurst {
@@ -2297,26 +2293,16 @@ proc ::tcl::clock::MakeParseCodeFromFields { dateFields parseActions } {
 #
 # Parameters:
 #	locale -- Desired locale
-#	oldLocaleVar -- Name of a variable in caller's scope that
-#		        tracks the previous locale name.
 #
 # Results:
 #	Returns the locale that was previously current.
 #
 # Side effects:
-#	Does [mclocale].  If necessary, uses [mcload] to load the designated
-#	locale's files, and tracks that it has done so in the 'McLoaded'
-#	variable.
+#	Does [mclocale].  If necessary, loades the designated locale's files.
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::EnterLocale { locale oldLocaleVar } {
-    upvar 1 $oldLocaleVar oldLocale
-
-    variable MsgDir
-    variable McLoaded
-
-    set oldLocale [mclocale]
+proc ::tcl::clock::EnterLocale { locale } {
     if { $locale eq {system} } {
 	if { $::tcl_platform(platform) ne {windows} } {
 	    # On a non-windows platform, the 'system' locale is the same as
@@ -2329,33 +2315,22 @@ proc ::tcl::clock::EnterLocale { locale oldLocaleVar } {
 	    # Control Panel.  First, load the 'current' locale if it's not yet
 	    # loaded
 
-	    if {![dict exists $McLoaded $oldLocale] } {
-		mcload $MsgDir
-		dict set McLoaded $oldLocale {}
-	    }
+	    mcpackagelocale set [mclocale]
 
 	    # Make a new locale string for the system locale, and get the
 	    # Control Panel information
 
-	    set locale ${oldLocale}_windows
-	    if { ![dict exists $McLoaded $locale] } {
+	    set locale [mclocale]_windows
+	    if { ! [mcpackagelocale present $locale] } {
 		LoadWindowsDateTimeFormats $locale
-		dict set McLoaded $locale {}
 	    }
 	}
     }
     if { $locale eq {current}} {
-	set locale $oldLocale
-	unset oldLocale
-    } elseif { $locale eq $oldLocale } {
-	unset oldLocale
-    } else {
-	mclocale $locale
+	set locale [mclocale]
     }
-    if { ![dict exists $McLoaded $locale] } {
-	mcload $MsgDir
-	dict set McLoaded $locale {}
-    }
+    # Eventually load the locale
+    mcpackagelocale set $locale
 }
 
 #----------------------------------------------------------------------
@@ -2482,6 +2457,7 @@ proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
     }
 
     return
+
 }
 
 #----------------------------------------------------------------------
@@ -2505,13 +2481,13 @@ proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::LocalizeFormat { locale format } {
-    variable McLoaded
 
-    if { [dict exists $McLoaded $locale FORMAT $format] } {
-	return [dict get $McLoaded $locale FORMAT $format]
+    # message catalog key to cache this format
+    set key FORMAT_$format
+
+    if { [::msgcat::mcexists -exactlocale -exactnamespace $key] } {
+	return [mc $key]
     }
-    set inFormat $format
-
     # Handle locale-dependent format groups by mapping them out of the format
     # string.  Note that the order of the [string map] operations is
     # significant because later formats can refer to later ones; for example
@@ -2534,7 +2510,7 @@ proc ::tcl::clock::LocalizeFormat { locale format } {
     lappend list %Ec [string map $list [mc LOCALE_DATE_TIME_FORMAT]]
     set format [string map $list $format]
 
-    dict set McLoaded $locale FORMAT $inFormat $format
+    ::msgcat::mcset $locale $key $format
     return $format
 }
 
@@ -3133,7 +3109,6 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 		    -errorcode [list CLOCK badTimeZone $timezone] \
 		    "time zone \"$timezone\" not found"
 	    }
-
 	} elseif { ![catch {ParsePosixTimeZone $timezone} tzfields] } {
 	    # This looks like a POSIX time zone - try to process it
 
@@ -3901,6 +3876,7 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
+
     variable FEB_28
 
     # Determine the start or end day of DST
@@ -3908,6 +3884,7 @@ proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
     set date [dict create era CE year $y]
     set doy [dict get $z ${bound}DayOfYear]
     if { $doy ne {} } {
+
 	# Time was specified as a day of the year
 
 	if { [dict get $z ${bound}J] ne {}
@@ -4319,7 +4296,7 @@ proc ::tcl::clock::add { clockval args } {
 	set timezone :GMT
     }
 
-    EnterLocale $locale oldLocale
+    EnterLocale $locale
 
     set changeover [mc GREGORIAN_CHANGE_DATE]
 
@@ -4371,12 +4348,6 @@ proc ::tcl::clock::add { clockval args } {
 	# Conceal the innards of [clock] when it's an expected error
 	dict unset opts -errorinfo
 	return -options $opts $result
-    } finally {
-	# Restore the locale
-
-	if { [info exists oldLocale] } {
-	    mclocale $oldLocale
-	}
     }
 }
 
@@ -4449,6 +4420,7 @@ proc ::tcl::clock::AddMonths { months clockval timezone changeover } {
 		 $changeover]
 
     return [dict get $date seconds]
+
 }
 
 #----------------------------------------------------------------------
@@ -4499,38 +4471,42 @@ proc ::tcl::clock::AddDays { days clockval timezone changeover } {
 		  $changeover]
 
     return [dict get $date seconds]
+
 }
 
 #----------------------------------------------------------------------
 #
-# mc --
+# ChangeCurrentLocale --
 #
-#	Wrapper around ::msgcat::mc that caches the result according to the
-#	locale.
+#        The global locale was changed within msgcat.
+#        Clears the buffered parse functions of the current locale.
 #
 # Parameters:
-#	Accepts the name of the message to retrieve.
+#        loclist (ignored)
 #
 # Results:
-#	Returns the message text.
+#        None.
 #
 # Side effects:
-#	Caches the message text.
-#
-# Notes:
-#	Only the single-argument version of [mc] is supported.
+#        Buffered parse functions are cleared.
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::mc { name } {
-    variable McLoaded
-    set Locale [mclocale]
-    if { [dict exists $McLoaded $Locale $name] } {
-	return [dict get $McLoaded $Locale $name]
+proc ::tcl::clock::ChangeCurrentLocale {args} {
+    variable FormatProc
+    variable LocaleNumeralCache
+    variable CachedSystemTimeZone
+    variable TimeZoneBad
+
+    foreach p [info procs [namespace current]::scanproc'*'current] {
+        rename $p {}
     }
-    set val [::msgcat::mc $name]
-    dict set McLoaded $Locale $name $val
-    return $val
+    foreach p [info procs [namespace current]::formatproc'*'current] {
+        rename $p {}
+    }
+
+    catch {array unset FormatProc *'current}
+    set LocaleNumeralCache {}
 }
 
 #----------------------------------------------------------------------
@@ -4553,7 +4529,6 @@ proc ::tcl::clock::mc { name } {
 proc ::tcl::clock::ClearCaches {} {
     variable FormatProc
     variable LocaleNumeralCache
-    variable McLoaded
     variable CachedSystemTimeZone
     variable TimeZoneBad
 
@@ -4566,7 +4541,6 @@ proc ::tcl::clock::ClearCaches {} {
 
     catch {unset FormatProc}
     set LocaleNumeralCache {}
-    set McLoaded {}
     catch {unset CachedSystemTimeZone}
     set TimeZoneBad {}
     InitTZData

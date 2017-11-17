@@ -60,7 +60,7 @@ static TclFile		FileForRedirect(Tcl_Interp *interp, const char *spec,
 
 static TclFile
 FileForRedirect(
-    Tcl_Interp *interp,		/* Intepreter to use for error reporting. */
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
     const char *spec,		/* Points to character just after redirection
 				 * character. */
     int atOK,			/* Non-zero means that '@' notation can be
@@ -668,7 +668,13 @@ TclCreatePipeline(
 	    if (*p == '>') {
 		p++;
 		atOK = 0;
-		flags = O_WRONLY | O_CREAT;
+
+		/*
+		 * Note that the O_APPEND flag only has an effect on POSIX
+		 * platforms. On Windows, we just have to carry on regardless.
+		 */
+
+		flags = O_WRONLY | O_CREAT | O_APPEND;
 	    }
 	    if (errorClose != 0) {
 		errorClose = 0;

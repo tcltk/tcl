@@ -23,29 +23,10 @@
 #define SAMPLES		64
 
 /*
- * The following arrays contain the day of year for the last day of each
- * month, where index 1 is January.
- */
-
-static const int normalDays[] = {
-    -1, 30, 58, 89, 119, 150, 180, 211, 242, 272, 303, 333, 364
-};
-
-static const int leapDays[] = {
-    -1, 30, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
-};
-
-typedef struct ThreadSpecificData {
-    char tzName[64];		/* Time zone name */
-    struct tm tm;		/* time information */
-} ThreadSpecificData;
-static Tcl_ThreadDataKey dataKey;
-
-/*
  * Data for managing high-resolution timers.
  */
 
-typedef struct TimeInfo {
+typedef struct {
     CRITICAL_SECTION cs;	/* Mutex guarding this structure. */
     int initialized;		/* Flag == 1 if this structure is
 				 * initialized. */
@@ -113,7 +94,6 @@ static TimeInfo timeInfo = {
  * Declarations for functions defined later in this file.
  */
 
-static struct tm *	ComputeGMT(const time_t *tp);
 static void		StopCalibration(ClientData clientData);
 static DWORD WINAPI	CalibrationThread(LPVOID arg);
 static void 		UpdateTimeEachSecond(void);
@@ -281,8 +261,6 @@ NativeGetTime(
     ClientData clientData)
 {
     struct _timeb t;
-    int useFtime = 1;		/* Flag == TRUE if we need to fall back on
-				 * ftime rather than using the perf counter. */
 
     /*
      * Initialize static storage on the first trip through.
@@ -341,7 +319,7 @@ NativeGetTime(
 		 */
 
 		SYSTEM_INFO systemInfo;
-		unsigned int regs[4];
+		int regs[4];
 
 		GetSystemInfo(&systemInfo);
 		if (TclWinCPUID(0, regs) == TCL_OK
@@ -353,7 +331,7 @@ NativeGetTime(
 			|| ((regs[0] & 0x00F00000)	/* Extended family */
 			&& (regs[3] & 0x10000000)))	/* Hyperthread */
 			&& (((regs[1]&0x00FF0000) >> 16)/* CPU count */
-			    == systemInfo.dwNumberOfProcessors)) {
+			    == (int)systemInfo.dwNumberOfProcessors)) {
 		    timeInfo.perfCounterAvailable = TRUE;
 		} else {
 		    timeInfo.perfCounterAvailable = FALSE;
@@ -398,6 +376,10 @@ NativeGetTime(
 	 * time.
 	 */
 
+	ULARGE_INTEGER fileTimeLastCall;
+	LARGE_INTEGER perfCounterLastCall, curCounterFreq;
+				/* Copy with current data of calibration cycle */
+
 	LARGE_INTEGER curCounter;
 				/* Current performance counter. */
 	Tcl_WideInt curFileTime;/* Current estimated time, expressed as 100-ns
@@ -411,9 +393,29 @@ NativeGetTime(
 	posixEpoch.LowPart = 0xD53E8000;
 	posixEpoch.HighPart = 0x019DB1DE;
 
+	QueryPerformanceCounter(&curCounter);
+
+	/*
+	 * Hold time section locked as short as possible
+	 */
 	EnterCriticalSection(&timeInfo.cs);
 
-	QueryPerformanceCounter(&curCounter);
+	fileTimeLastCall.QuadPart = timeInfo.fileTimeLastCall.QuadPart;
+	perfCounterLastCall.QuadPart = timeInfo.perfCounterLastCall.QuadPart;
+	curCounterFreq.QuadPart = timeInfo.curCounterFreq.QuadPart;
+
+	LeaveCriticalSection(&timeInfo.cs);
+
+	/*
+	 * If calibration cycle occurred after we get curCounter
+	 */
+	if (curCounter.QuadPart <= perfCounterLastCall.QuadPart) {
+	    usecSincePosixEpoch =
+		(fileTimeLastCall.QuadPart - posixEpoch.QuadPart) / 10;
+	    timePtr->sec = (long) (usecSincePosixEpoch / 1000000);
+	    timePtr->usec = (unsigned long) (usecSincePosixEpoch % 1000000);
+	    return;
+	}
 
 	/*
 	 * If it appears to be more than 1.1 seconds since the last trip
@@ -425,31 +427,27 @@ NativeGetTime(
 	 * loop should recover.
 	 */
 
-	if (curCounter.QuadPart - timeInfo.perfCounterLastCall.QuadPart <
-		11 * timeInfo.curCounterFreq.QuadPart / 10) {
-	    curFileTime = timeInfo.fileTimeLastCall.QuadPart +
-		 ((curCounter.QuadPart - timeInfo.perfCounterLastCall.QuadPart)
-		    * 10000000 / timeInfo.curCounterFreq.QuadPart);
-	    timeInfo.fileTimeLastCall.QuadPart = curFileTime;
-	    timeInfo.perfCounterLastCall.QuadPart = curCounter.QuadPart;
+	if (curCounter.QuadPart - perfCounterLastCall.QuadPart <
+		11 * curCounterFreq.QuadPart / 10
+	) {
+	    curFileTime = fileTimeLastCall.QuadPart +
+		 ((curCounter.QuadPart - perfCounterLastCall.QuadPart)
+		    * 10000000 / curCounterFreq.QuadPart);
+
 	    usecSincePosixEpoch = (curFileTime - posixEpoch.QuadPart) / 10;
 	    timePtr->sec = (long) (usecSincePosixEpoch / 1000000);
 	    timePtr->usec = (unsigned long) (usecSincePosixEpoch % 1000000);
-	    useFtime = 0;
+	    return;
 	}
-
-	LeaveCriticalSection(&timeInfo.cs);
     }
 
-    if (useFtime) {
-	/*
-	 * High resolution timer is not available. Just use ftime.
-	 */
+    /*
+     * High resolution timer is not available. Just use ftime.
+     */
 
-	_ftime(&t);
-	timePtr->sec = (long)t.time;
-	timePtr->usec = t.millitm * 1000;
-    }
+    _ftime(&t);
+    timePtr->sec = (long)t.time;
+    timePtr->usec = t.millitm * 1000;
 }
 
 /*
@@ -484,227 +482,6 @@ StopCalibration(
     WaitForSingleObject(timeInfo.calibrationThread, 100);
     CloseHandle(timeInfo.exitEvent);
     CloseHandle(timeInfo.calibrationThread);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpGetDate --
- *
- *	This function converts between seconds and struct tm. If useGMT is
- *	true, then the returned date will be in Greenwich Mean Time (GMT).
- *	Otherwise, it will be in the local time zone.
- *
- * Results:
- *	Returns a static tm structure.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-struct tm *
-TclpGetDate(
-    const time_t *t,
-    int useGMT)
-{
-    struct tm *tmPtr;
-    time_t time;
-
-    if (!useGMT) {
-	tzset();
-
-	/*
-	 * If we are in the valid range, let the C run-time library handle it.
-	 * Otherwise we need to fake it. Note that this algorithm ignores
-	 * daylight savings time before the epoch.
-	 */
-
-	/*
-	 * Hm, Borland's localtime manages to return NULL under certain
-	 * circumstances (e.g. wintime.test, test 1.2). Nobody tests for this,
-	 * since 'localtime' isn't supposed to do this, possibly leading to
-	 * crashes.
-	 *
-	 * Patch: We only call this function if we are at least one day into
-	 * the epoch, else we handle it ourselves (like we do for times < 0).
-	 * H. Giese, June 2003
-	 */
-
-#ifdef __BORLANDC__
-#define LOCALTIME_VALIDITY_BOUNDARY	SECSPERDAY
-#else
-#define LOCALTIME_VALIDITY_BOUNDARY	0
-#endif
-
-	if (*t >= LOCALTIME_VALIDITY_BOUNDARY) {
-	    return TclpLocaltime(t);
-	}
-
-	time = *t - timezone;
-
-	/*
-	 * If we aren't near to overflowing the long, just add the bias and
-	 * use the normal calculation. Otherwise we will need to adjust the
-	 * result at the end.
-	 */
-
-	if (*t < (LONG_MAX - 2*SECSPERDAY) && *t > (LONG_MIN + 2*SECSPERDAY)) {
-	    tmPtr = ComputeGMT(&time);
-	} else {
-	    tmPtr = ComputeGMT(t);
-
-	    tzset();
-
-	    /*
-	     * Add the bias directly to the tm structure to avoid overflow.
-	     * Propagate seconds overflow into minutes, hours and days.
-	     */
-
-	    time = tmPtr->tm_sec - timezone;
-	    tmPtr->tm_sec = (int)(time % 60);
-	    if (tmPtr->tm_sec < 0) {
-		tmPtr->tm_sec += 60;
-		time -= 60;
-	    }
-
-	    time = tmPtr->tm_min + time/60;
-	    tmPtr->tm_min = (int)(time % 60);
-	    if (tmPtr->tm_min < 0) {
-		tmPtr->tm_min += 60;
-		time -= 60;
-	    }
-
-	    time = tmPtr->tm_hour + time/60;
-	    tmPtr->tm_hour = (int)(time % 24);
-	    if (tmPtr->tm_hour < 0) {
-		tmPtr->tm_hour += 24;
-		time -= 24;
-	    }
-
-	    time /= 24;
-	    tmPtr->tm_mday += (int)time;
-	    tmPtr->tm_yday += (int)time;
-	    tmPtr->tm_wday = (tmPtr->tm_wday + (int)time) % 7;
-	}
-    } else {
-	tmPtr = ComputeGMT(t);
-    }
-    return tmPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ComputeGMT --
- *
- *	This function computes GMT given the number of seconds since the epoch
- *	(midnight Jan 1 1970).
- *
- * Results:
- *	Returns a (per thread) statically allocated struct tm.
- *
- * Side effects:
- *	Updates the values of the static struct tm.
- *
- *----------------------------------------------------------------------
- */
-
-static struct tm *
-ComputeGMT(
-    const time_t *tp)
-{
-    struct tm *tmPtr;
-    long tmp, rem;
-    int isLeap;
-    const int *days;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-    tmPtr = &tsdPtr->tm;
-
-    /*
-     * Compute the 4 year span containing the specified time.
-     */
-
-    tmp = (long)(*tp / SECSPER4YEAR);
-    rem = (long)(*tp % SECSPER4YEAR);
-
-    /*
-     * Correct for weird mod semantics so the remainder is always positive.
-     */
-
-    if (rem < 0) {
-	tmp--;
-	rem += SECSPER4YEAR;
-    }
-
-    /*
-     * Compute the year after 1900 by taking the 4 year span and adjusting for
-     * the remainder. This works because 2000 is a leap year, and 1900/2100
-     * are out of the range.
-     */
-
-    tmp = (tmp * 4) + 70;
-    isLeap = 0;
-    if (rem >= SECSPERYEAR) {			  /* 1971, etc. */
-	tmp++;
-	rem -= SECSPERYEAR;
-	if (rem >= SECSPERYEAR) {		  /* 1972, etc. */
-	    tmp++;
-	    rem -= SECSPERYEAR;
-	    if (rem >= SECSPERYEAR + SECSPERDAY) { /* 1973, etc. */
-		tmp++;
-		rem -= SECSPERYEAR + SECSPERDAY;
-	    } else {
-		isLeap = 1;
-	    }
-	}
-    }
-    tmPtr->tm_year = tmp;
-
-    /*
-     * Compute the day of year and leave the seconds in the current day in the
-     * remainder.
-     */
-
-    tmPtr->tm_yday = rem / SECSPERDAY;
-    rem %= SECSPERDAY;
-
-    /*
-     * Compute the time of day.
-     */
-
-    tmPtr->tm_hour = rem / 3600;
-    rem %= 3600;
-    tmPtr->tm_min = rem / 60;
-    tmPtr->tm_sec = rem % 60;
-
-    /*
-     * Compute the month and day of month.
-     */
-
-    days = (isLeap) ? leapDays : normalDays;
-    for (tmp = 1; days[tmp] < tmPtr->tm_yday; tmp++) {
-	/* empty body */
-    }
-    tmPtr->tm_mon = --tmp;
-    tmPtr->tm_mday = tmPtr->tm_yday - days[tmp];
-
-    /*
-     * Compute day of week.  Epoch started on a Thursday.
-     */
-
-    tmPtr->tm_wday = (long)(*tp / SECSPERDAY) + 4;
-    if ((*tp % SECSPERDAY) < 0) {
-	tmPtr->tm_wday--;
-    }
-    tmPtr->tm_wday %= 7;
-    if (tmPtr->tm_wday < 0) {
-	tmPtr->tm_wday += 7;
-    }
-
-    return tmPtr;
 }
 
 /*
@@ -1032,67 +809,6 @@ AccumulateSample(
 
 	return estFreq;
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpGmtime --
- *
- *	Wrapper around the 'gmtime' library function to make it thread safe.
- *
- * Results:
- *	Returns a pointer to a 'struct tm' in thread-specific data.
- *
- * Side effects:
- *	Invokes gmtime or gmtime_r as appropriate.
- *
- *----------------------------------------------------------------------
- */
-
-struct tm *
-TclpGmtime(
-    const time_t *timePtr)	/* Pointer to the number of seconds since the
-				 * local system's epoch */
-{
-    /*
-     * The MS implementation of gmtime is thread safe because it returns the
-     * time in a block of thread-local storage, and Windows does not provide a
-     * Posix gmtime_r function.
-     */
-
-    return gmtime(timePtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpLocaltime --
- *
- *	Wrapper around the 'localtime' library function to make it thread
- *	safe.
- *
- * Results:
- *	Returns a pointer to a 'struct tm' in thread-specific data.
- *
- * Side effects:
- *	Invokes localtime or localtime_r as appropriate.
- *
- *----------------------------------------------------------------------
- */
-
-struct tm *
-TclpLocaltime(
-    const time_t *timePtr)	/* Pointer to the number of seconds since the
-				 * local system's epoch */
-{
-    /*
-     * The MS implementation of localtime is thread safe because it returns
-     * the time in a block of thread-local storage, and Windows does not
-     * provide a Posix localtime_r function.
-     */
-
-    return localtime(timePtr);
 }
 
 /*

@@ -19,7 +19,7 @@ GCC_NO_COMMON_BLOCKS = YES
 GCC_DYNAMIC_NO_PIC = YES
 GCC_VERSION = 4.2
 GCC = gcc-$(GCC_VERSION)
-WARNING_CFLAGS = -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unused-value -Winit-self -Wpointer-arith -Wcast-align -Wdisabled-optimization -Winline $(WARNING_CFLAGS)
+WARNING_CFLAGS = -Wall -Wwrite-strings -Wextra -Wdeclaration-after-statement -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unused-value -Winit-self -Wpointer-arith -Wcast-align -Wdisabled-optimization -Winline $(WARNING_CFLAGS)
 BINDIR = $(PREFIX)/bin
 CFLAGS = $(CFLAGS)
 CPPFLAGS = -mmacosx-version-min=$(MACOSX_DEPLOYMENT_TARGET) $(CPPFLAGS)
@@ -34,4 +34,4 @@ TCL_CONFIGURE_ARGS = --enable-threads --enable-dtrace
 TCL_LIBRARY = $(LIBDIR)/tcl$(VERSION)
 TCL_PACKAGE_PATH = "$(LIBDIR)"
 TCL_DEFS = HAVE_TCL_CONFIG_H
-VERSION = 8.6
+VERSION = 9.0

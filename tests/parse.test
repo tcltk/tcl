@@ -369,19 +369,19 @@ test parse-8.8 {Tcl_EvalObjv procedure, async handlers} -constraints {
     variable ::aresult
     variable ::acode
     proc async1 {result code} {
-	variable ::aresult 
+	variable ::aresult
 	variable ::acode
 	set aresult $result
 	set acode $code
 	return "new result"
     }
     set handler1 [testasync create async1]
-    set aresult xxx
-    set acode yyy
+    set ::aresult xxx
+    set ::acode yyy
 } -cleanup {
     testasync delete
 } -body {
-    list [testevalobjv 0 testasync mark $handler1 original 0] $acode $aresult
+    list [testevalobjv 0 testasync mark $handler1 original 0] $::acode $::aresult
 } -result {{new result} 0 original}
 test parse-8.9 {Tcl_EvalObjv procedure, exceptional return} testevalobjv {
     list [catch {testevalobjv 0 error message} msg] $msg

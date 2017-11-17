@@ -1,4 +1,4 @@
-/* 
+/*
  * opendir.c --
  *
  *	This file provides dirent-style directory-reading procedures for V7
@@ -106,5 +106,5 @@ closedir(
     close(dirp->dd_fd);
     dirp->dd_fd = -1;
     dirp->dd_loc = 0;
-    ckfree((char *) dirp);
+    ckfree(dirp);
 }

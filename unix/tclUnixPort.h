@@ -98,9 +98,6 @@ typedef off_t		Tcl_SeekOffset;
     __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
 
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
-    __declspec(dllimport) extern int cygwin_conv_path_list(int, const void *, void *, int);
-#   define USE_PUTENV 1
-#   define USE_PUTENV_FOR_UNSET 1
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
 #ifndef __x86_64__
 #   define environ __cygwin_environ
@@ -128,11 +125,11 @@ typedef off_t		Tcl_SeekOffset;
 #   include <sys/select.h>
 #endif
 #include <sys/stat.h>
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 #   include <sys/time.h>
 #   include <time.h>
 #else
-#if HAVE_SYS_TIME_H
+#ifdef HAVE_SYS_TIME_H
 #   include <sys/time.h>
 #else
 #   include <time.h>
@@ -141,15 +138,11 @@ typedef off_t		Tcl_SeekOffset;
 #ifndef NO_SYS_WAIT_H
 #   include <sys/wait.h>
 #endif
-#if HAVE_INTTYPES_H
+#ifdef HAVE_INTTYPES_H
 #   include <inttypes.h>
 #endif
-#ifdef NO_LIMITS_H
-#   include "../compat/limits.h"
-#else
-#   include <limits.h>
-#endif
-#if HAVE_STDINT_H
+#include <limits.h>
+#ifdef HAVE_STDINT_H
 #   include <stdint.h>
 #endif
 #ifdef HAVE_UNISTD_H
@@ -188,12 +181,9 @@ extern int TclUnixSetBlockingMode(int fd, int mode);
  *---------------------------------------------------------------------------
  */
 
-#ifndef NO_FLOAT_H
-#   include <float.h>
-#else
+#include <float.h>
 #ifndef NO_VALUES_H
 #   include <values.h>
-#endif
 #endif
 
 #ifndef FLT_MAX
@@ -446,16 +436,6 @@ extern int	gettimeofday(struct timeval *tp,
 #   else
 #	define MAXNAMLEN	255
 #   endif
-#endif
-
-/*
- *---------------------------------------------------------------------------
- * Make sure that L_tmpnam is defined.
- *---------------------------------------------------------------------------
- */
-
-#ifndef L_tmpnam
-#   define L_tmpnam	100
 #endif
 
 /*
