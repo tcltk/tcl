@@ -45,13 +45,14 @@ _RULESDIR = ..\..\tcl
 
 !endif # ifndef TCLDIR
 
-# Now look for the rules.vc file under the Tcl root
-!if exist("$(_RULESDIR)\lib\nmake\rules.vc") # Building against installed Tcl
+# Now look for the targets.vc file under the Tcl root. Note we check this
+# file and not rules.vc because the latter also exists on older systems.
+!if exist("$(_RULESDIR)\lib\nmake\targets.vc") # Building against installed Tcl
 _RULESDIR = $(_RULESDIR)\lib\nmake
-!elseif exist("$(_RULESDIR)\win\rules.vc")   # Building against Tcl sources
+!elseif exist("$(_RULESDIR)\win\targets.vc")   # Building against Tcl sources
 _RULESDIR = $(_RULESDIR)\win
 !else
-# If we have not located Tcl's rules file, most likely we are compiling
+# If we have not located Tcl's targets file, most likely we are compiling
 # against an older version of Tcl and so must use our own support files.
 _RULESDIR = .
 !endif
@@ -102,7 +103,7 @@ NMAKEHLPC = $(_RULESDIR)\nmakehlp.c
 !message *** Using $(_RULESDIR)\rules.vc
 !include "$(_RULESDIR)\rules.vc"
 !else
-!error *** Could not locate rules.vc
+!error *** Could not locate rules.vc in $(_RULESDIR)
 !endif
 
 !endif # _RULES_EXT_VC
