@@ -3139,7 +3139,7 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 #ifdef ANDROID
     /*
      * Force loadFileProc to native implementation since the
-     * package manger already extracted the shared libraries
+     * package manager already extracted the shared libraries
      * from the APK at install time.
      */
 
