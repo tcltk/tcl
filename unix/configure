@@ -3746,16 +3746,6 @@ $as_echo "#define NO_DIRENT_H 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_header_mongrel "$LINENO" "float.h" "ac_cv_header_float_h" "$ac_includes_default"
-if test "x$ac_cv_header_float_h" = xyes; then :
-
-else
-
-$as_echo "#define NO_FLOAT_H 1" >>confdefs.h
-
-fi
-
-
     ac_fn_c_check_header_mongrel "$LINENO" "values.h" "ac_cv_header_values_h" "$ac_includes_default"
 if test "x$ac_cv_header_values_h" = xyes; then :
 
