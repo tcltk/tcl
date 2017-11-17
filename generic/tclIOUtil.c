@@ -412,7 +412,6 @@ Tcl_GetCwd(
     return Tcl_DStringValue(cwdPtr);
 }
 
-/* Obsolete */
 int
 Tcl_EvalFile(
     Tcl_Interp *interp,		/* Interpreter in which to process file. */
@@ -1762,7 +1761,7 @@ Tcl_FSEvalFileEx(
      * this cross-platform to allow for scripted documents. [Bug: 2040]
      */
 
-    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32");
+    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32 {}");
 
     /*
      * If the encoding is specified, set it for the channel. Else don't touch
@@ -1896,7 +1895,7 @@ TclNREvalFile(
      * this cross-platform to allow for scripted documents. [Bug: 2040]
      */
 
-    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32");
+    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32 {}");
 
     /*
      * If the encoding is specified, set it for the channel. Else don't touch
