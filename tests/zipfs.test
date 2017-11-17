@@ -147,12 +147,12 @@ test zipfs-2.5 {zipfs exists} -constraints zipfs -body {
 } -result 1
 
 test zipfs-2.6 {zipfs unmount while busy} -constraints zipfs -body {
-    zipfs unmount /tmp/abc.zip
+    zipfs unmount //zipfs:/abc
 } -returnCodes error -result {filesystem is busy}
 
 test zipfs-2.7 {zipfs unmount} -constraints zipfs -body {
     close $zipfd
-    zipfs unmount /tmp/abc.zip
+    zipfs unmount //zipfs:/abc
     zipfs exists /abc/cp850.enc
 } -cleanup {
     file delete /tmp/abc.zip        ;# FIXME: test independence

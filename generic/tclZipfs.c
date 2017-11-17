@@ -157,8 +157,7 @@ typedef struct ZipFile {
 #if HAS_DRIVES
     int mntdrv;	              /* Drive letter of mount point */
 #endif
-    int mntptlen;             /* Length of mount point */
-    char mntpt[1];            /* Mount point */
+    char *mntpt;              /* Mount point */
 } ZipFile;
 
 /*
@@ -1016,7 +1015,7 @@ TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	Unlock();
 	return TCL_ERROR;
     }
-    if (zipname == NULL) {
+    if (mntpt == NULL) {
 	Tcl_HashSearch search;
 	int ret = TCL_OK;
 
@@ -1038,16 +1037,16 @@ TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	Unlock();
 	return ret;
     }
-    if (mntpt == NULL) {
+    if (zipname == NULL) {
 	if (interp == NULL) {
 	    Unlock();
 	    return TCL_OK;
 	}
-	hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, zipname);
+	hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, mntpt);
 	if (hPtr != NULL) {
 	    if ((zf = Tcl_GetHashValue(hPtr)) != NULL) {
 		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj(zf->mntpt, zf->mntptlen));
+			Tcl_NewStringObj(zf->mntpt, -1));
 	    }
 	}
 	Unlock();
@@ -1074,12 +1073,11 @@ TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
      * But an absolute name is needed as mount point here.
      */
     WriteLock();
-    hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, zipname, &isNew);
+    hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, mntpt, &isNew);
     if (!isNew) {
 	zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "already mounted on \"", zf->mntptlen ?
-		    zf->mntpt : "/", "\"", (char *) NULL);
+	    Tcl_AppendResult(interp, "\"", zipname, "\" is already mounted on \"", zf->mntpt, "\"");
 	}
 	Unlock();
 	ZipFSCloseArchive(interp, &zf0);
@@ -1088,7 +1086,7 @@ TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
     if (strcmp(mntpt, "/") == 0) {
 	mntpt = "";
     }
-    zf = (ZipFile *) Tcl_AttemptAlloc(sizeof (*zf) + strlen(mntpt) + 1);
+    zf = (ZipFile *) Tcl_AttemptAlloc(sizeof (*zf));
     if (zf == NULL) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "out of memory", (char *) NULL);
@@ -1098,9 +1096,8 @@ TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	return TCL_ERROR;
     }
     *zf = zf0;
-    zf->name = Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
-    strcpy(zf->mntpt, mntpt);
-    zf->mntptlen = strlen(zf->mntpt);
+    zf->mntpt = Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
+    zf->name = strdup(zipname);
     zf->entries = NULL;
     zf->topents = NULL;
     zf->nopen = 0;
@@ -1331,7 +1328,7 @@ nextent:
  */
 
 int
-TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
+TclZipfs_Unmount(Tcl_Interp *interp, const char *mntpt)
 {
     ZipFile *zf;
     ZipEntry *z, *znext;
@@ -1342,9 +1339,9 @@ TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
     if (!ZipFS.initialized) {
 	goto done;
     }
-    hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, zipname);
+    hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, mntpt);
     if (hPtr == NULL) {
-	/* don't report error */
+	/* don't report error .. why not? */
 	goto done;
     }
     zf = (ZipFile *) Tcl_GetHashValue(hPtr);
@@ -1356,6 +1353,7 @@ TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
 	ret = TCL_ERROR;
 	goto done;
     }
+    free(zf->name);	// allocated by strdup()
     Tcl_DeleteHashEntry(hPtr);
     for (z = zf->entries; z; z = znext) {
 	znext = z->next;
@@ -1399,14 +1397,26 @@ static int
 ZipFSMountObjCmd(ClientData clientData, Tcl_Interp *interp,
 		 int objc, Tcl_Obj *const objv[])
 {
-    if (objc > 4) {
+    if (objc > 4 || objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 			 "?zipfile? ?mountpoint? ?password?");
 	return TCL_ERROR;
+    } else if (objc == 4) {
+	return TclZipfs_Mount(interp, Tcl_GetString(objv[1]),	 // zipname
+				      Tcl_GetString(objv[2]),	 // mntpt
+				      Tcl_GetString(objv[3])); // passwd
+    } else if (objc == 3) {
+	return TclZipfs_Mount(interp, Tcl_GetString(objv[1]),	 // zipname
+				      Tcl_GetString(objv[2]),	 // mntpt
+				      NULL);
+    } else if (objc == 2) {
+	return TclZipfs_Mount(interp, NULL,
+				      Tcl_GetString(objv[2]),	 // mntpt
+				      NULL);
+    } else if (objc == 1) {
+	return TclZipfs_Mount(interp, NULL, NULL, NULL);
     }
-    return TclZipfs_Mount(interp, (objc > 1) ? Tcl_GetString(objv[1]) : NULL,
-		       (objc > 2) ? Tcl_GetString(objv[2]) : NULL,
-		       (objc > 3) ? Tcl_GetString(objv[3]) : NULL);
+    return TCL_ERROR;	/* unused */
 }
 
 /*
@@ -3251,7 +3261,7 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 	while (hPtr != NULL) {
 	    ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 
-	    if (zf->mntptlen == 0) {
+	    if ((zf->mntpt == NULL) || (zf->mntpt[0]=='\0')) {
 		ZipEntry *z = zf->topents;
 		while (z != NULL) {
 		    int lenz = strlen(z->name);
@@ -3259,7 +3269,7 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 			    (strncmp(z->name, path, len) == 0) &&
 			    (z->name[len] == '/') &&
 			    (CountSlashes(z->name) == l) &&
-			    Tcl_StringCaseMatch(z->name + len + 1, pattern, 0)) {
+			    Tcl_StringCaseMatch(&z->name[len + 1], pattern, 0)) {
 			if (prefix != NULL) {
 			    Tcl_DStringAppend(&dsPref, z->name, lenz);
 			    Tcl_ListObjAppendElement(NULL, result,
@@ -3273,20 +3283,19 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 		    }
 		    z = z->tnext;
 		}
-	    } else if ((zf->mntptlen > len + 1) &&
-		    (strncmp(zf->mntpt, path, len) == 0) &&
-		    (zf->mntpt[len] == '/') &&
-		    (CountSlashes(zf->mntpt) == l) &&
-		    Tcl_StringCaseMatch(zf->mntpt + len + 1, pattern, 0)) {
+	    } else if ( (strncmp(zf->mntpt, path, len) == 0) &&
+			(zf->mntpt[len] == '/') &&
+			(CountSlashes(zf->mntpt) == l) &&
+			Tcl_StringCaseMatch(&zf->mntpt[len + 1], pattern, 0)) {
 		if (prefix != NULL) {
-		    Tcl_DStringAppend(&dsPref, zf->mntpt, zf->mntptlen);
+		    Tcl_DStringAppend(&dsPref, zf->mntpt, -1);
 		    Tcl_ListObjAppendElement(NULL, result,
 			    Tcl_NewStringObj(Tcl_DStringValue(&dsPref),
 				Tcl_DStringLength(&dsPref)));
 		    Tcl_DStringSetLength(&dsPref, prefixLen);
 		} else {
 		    Tcl_ListObjAppendElement(NULL, result,
-			    Tcl_NewStringObj(zf->mntpt, zf->mntptlen));
+			    Tcl_NewStringObj(zf->mntpt, -1));
 		}
 	    }
 	    hPtr = Tcl_NextHashEntry(&search);
@@ -3398,7 +3407,7 @@ Zip_FSPathInFilesystemProc(Tcl_Obj *pathPtr, ClientData *clientDataPtr)
     hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
     while (hPtr != NULL) {
       zf = (ZipFile *) Tcl_GetHashValue(hPtr);
-      if (zf->mntptlen == 0) {
+      if ((zf->mntpt == NULL) || (zf->mntpt[0]=='\0')) {
         ZipEntry *z = zf->topents;
         while (z != NULL) {
           int lenz = strlen(z->name);
@@ -3410,8 +3419,8 @@ Zip_FSPathInFilesystemProc(Tcl_Obj *pathPtr, ClientData *clientDataPtr)
           }
           z = z->tnext;
         }
-      } else if ((len >= zf->mntptlen) &&
-        (strncmp(path, zf->mntpt, zf->mntptlen) == 0)) {
+      } else if ((len >= strlen(zf->mntpt)) &&
+        (strncmp(path, zf->mntpt, strlen(zf->mntpt)) == 0)) {
         ret = TCL_OK;
         goto endloop;
       }
@@ -3921,7 +3930,7 @@ TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 }
 
 int
-TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
+TclZipfs_Unmount(Tcl_Interp *interp, const char *mntpt)
 {
     return TclZipfs_Init(interp, 1);
 }
