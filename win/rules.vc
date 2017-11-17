@@ -1311,6 +1311,13 @@ cwarn = $(WARNINGS)
 cwarn = $(cwarn) -wd4311 -wd4312
 !endif
 
+### Common compiler options that are architecture specific
+!if "$(MACHINE)" == "ARM"
+carch = -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
+!else
+carch =
+!endif
+
 !if $(DEBUG)
 # Turn warnings into errors
 cwarn = $(cwarn) -WX
@@ -1326,7 +1333,7 @@ INCLUDES = $(INCLUDES) -I"$(GENERICDIR)" -I"$(WINDIR)" -I"$(COMPATDIR)"
 # post-reform build logs
 
 # cflags contains generic flags used for building practically all object files
-cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\ $(cdebug)
+cflags = -nologo -c $(COMPILERFLAGS) $(carch) $(cwarn) -Fp$(TMP_DIR)^\ $(cdebug)
 
 # appcflags contains $(cflags) and flags for building the application
 # object files (e.g. tclsh, or wish) pkgcflags contains $(cflags) plus
@@ -1494,6 +1501,8 @@ default-clean:
 	@if exist $(WINDIR)\nmakehlp.obj del $(WINDIR)\nmakehlp.obj
 	@if exist $(WINDIR)\nmakehlp.exe del $(WINDIR)\nmakehlp.exe
 	@if exist $(WINDIR)\nmakehlp.out del $(WINDIR)\nmakehlp.out
+	@echo Cleaning $(WINDIR)\nmhlp-out.txt ...
+	@if exist $(WINDIR)\nmhlp-out.txt del $(WINDIR)\nmhlp-out.txt
 	@echo Cleaning $(WINDIR)\_junk.pch ...
 	@if exist $(WINDIR)\_junk.pch del $(WINDIR)\_junk.pch
 	@echo Cleaning $(WINDIR)\vercl.x, vercl.i ...

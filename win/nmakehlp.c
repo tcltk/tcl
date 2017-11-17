@@ -160,7 +160,7 @@ main(
 		return 0;
 	    } else
 		return 1; /* Version not found. Return non-0 exit code */
-		
+
 	case 'Q':
 	    if (argc != 3) {
 		chars = snprintf(msg, sizeof(msg) - 1,

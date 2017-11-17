@@ -2296,7 +2296,7 @@ UtfToUtfProc(
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd;
     int result, numChars, charLimit = INT_MAX;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
 
     result = TCL_OK;
 
@@ -2329,7 +2329,7 @@ UtfToUtfProc(
 	}
 	if (UCHAR(*src) < 0x80 && !(UCHAR(*src) == 0 && pureNullMode == 0)) {
 	    /*
-	     * Copy 7bit chatacters, but skip null-bytes when we are in input
+	     * Copy 7bit characters, but skip null-bytes when we are in input
 	     * mode, so that they get converted to 0xc080.
 	     */
 
@@ -2345,8 +2345,8 @@ UtfToUtfProc(
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
 	     * Always check before using TclUtfToUniChar. Not doing can so
-	     * cause it run beyond the endof the buffer! If we happen such an
-	     * incomplete char its byts are made to represent themselves.
+	     * cause it run beyond the end of the buffer! If we happen such an
+	     * incomplete char its bytes are made to represent themselves.
 	     */
 
 	    ch = (unsigned char) *src;
@@ -2410,7 +2410,7 @@ UnicodeToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
 
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
@@ -2500,7 +2500,7 @@ UtfToUnicodeProc(
 {
     const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
     int result, numChars;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
 
     srcStart = src;
     srcEnd = src + srcLen;
@@ -2610,7 +2610,7 @@ TableToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart, *prefixBytes;
     int result, byte, numChars, charLimit = INT_MAX;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     const unsigned short *const *toUnicode;
     const unsigned short *pageZero;
     TableEncodingData *dataPtr = clientData;
@@ -2722,7 +2722,7 @@ TableFromUtfProc(
 {
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd, *prefixBytes;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     int result, len, word, numChars;
     TableEncodingData *dataPtr = clientData;
     const unsigned short *const *fromUnicode;
@@ -2856,7 +2856,7 @@ Iso88591ToUtfProc(
 
     result = TCL_OK;
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
-	Tcl_UniChar ch;
+	Tcl_UniChar ch = 0;
 
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
@@ -2942,7 +2942,7 @@ Iso88591FromUtfProc(
     dstEnd = dst + dstLen - 1;
 
     for (numChars = 0; src < srcEnd; numChars++) {
-	Tcl_UniChar ch;
+	Tcl_UniChar ch = 0;
 	int len;
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
@@ -3329,7 +3329,7 @@ EscapeFromUtfProc(
     for (numChars = 0; src < srcEnd; numChars++) {
 	unsigned len;
 	int word;
-	Tcl_UniChar ch;
+	Tcl_UniChar ch = 0;
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*
@@ -3374,7 +3374,7 @@ EscapeFromUtfProc(
 
 	    /*
 	     * The state variable has the value of oldState when word is 0.
-	     * In this case, the escape sequense should not be copied to dst
+	     * In this case, the escape sequence should not be copied to dst
 	     * because the current character set is not changed.
 	     */
 
