@@ -398,7 +398,7 @@ Tcl_UtfToUniCharDString(
 				 * appended to this previously initialized
 				 * DString. */
 {
-    Tcl_UniChar ch, *w, *wString;
+    Tcl_UniChar ch = 0, *w, *wString;
     const char *p, *end;
     int oldLength;
 
@@ -522,12 +522,12 @@ Tcl_NumUtfChars(
  *
  * Tcl_UtfFindFirst --
  *
- *	Returns a pointer to the first occurance of the given Tcl_UniChar in
+ *	Returns a pointer to the first occurance of the given character in
  *	the NULL-terminated UTF-8 string. The NULL terminator is considered
  *	part of the UTF-8 string. Equivalent to Plan 9 utfrune().
  *
  * Results:
- *	As above. If the Tcl_UniChar does not exist in the given string, the
+ *	As above. If the character does not exist in the given string, the
  *	return value is NULL.
  *
  * Side effects:
@@ -539,14 +539,21 @@ Tcl_NumUtfChars(
 const char *
 Tcl_UtfFindFirst(
     const char *src,		/* The UTF-8 string to be searched. */
-    int ch)			/* The Tcl_UniChar to search for. */
+    int ch)			/* The character to search for. */
 {
-    int len;
+    int len, fullchar;
     Tcl_UniChar find = 0;
 
     while (1) {
 	len = TclUtfToUniChar(src, &find);
-	if (find == ch) {
+	fullchar = find;
+#if TCL_UTF_MAX == 4
+	if (!len) {
+	    len += TclUtfToUniChar(stringPtr, &find);
+	    fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	}
+#endif
+	if (find == fullchar) {
 	    return src;
 	}
 	if (*src == '\0') {
@@ -578,16 +585,23 @@ Tcl_UtfFindFirst(
 const char *
 Tcl_UtfFindLast(
     const char *src,		/* The UTF-8 string to be searched. */
-    int ch)			/* The Tcl_UniChar to search for. */
+    int ch)			/* The character to search for. */
 {
-    int len;
+    int len, fullchar;
     Tcl_UniChar find = 0;
     const char *last;
 
     last = NULL;
     while (1) {
 	len = TclUtfToUniChar(src, &find);
-	if (find == ch) {
+	fullchar = find;
+#if TCL_UTF_MAX == 4
+	if (!len) {
+	    len += TclUtfToUniChar(stringPtr, &find);
+	    fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	}
+#endif
+	if (find == fullchar) {
 	    last = src;
 	}
 	if (*src == '\0') {
@@ -1158,7 +1172,7 @@ TclUtfCasecmp(
     const char *ct)		/* UTF string cs is compared to. */
 {
     while (*cs && *ct) {
-	Tcl_UniChar ch1, ch2;
+	Tcl_UniChar ch1 = 0, ch2 = 0;
 
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
