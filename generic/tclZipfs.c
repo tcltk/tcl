@@ -699,9 +699,7 @@ ZipFSLookupMount(char *filename)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     ZipFile *zf;
-    Tcl_DString ds;
     int match = 0;
-    Tcl_DStringInit(&ds);
     hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
     while (hPtr != NULL) {
 	if ((zf = (ZipFile *) Tcl_GetHashValue(hPtr)) != NULL) {
@@ -712,7 +710,6 @@ ZipFSLookupMount(char *filename)
 	}
 	hPtr = Tcl_NextHashEntry(&search);
     }
-    Tcl_DStringFree(&ds);
     return match;
 }
 #endif
@@ -1339,10 +1336,8 @@ TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
     ZipFile *zf;
     ZipEntry *z, *znext;
     Tcl_HashEntry *hPtr;
-    Tcl_DString ds;
     int ret = TCL_OK, unmounted = 0;
 
-    Tcl_DStringInit(&ds);
     WriteLock();
     if (!ZipFS.initialized) {
 	goto done;
@@ -1378,7 +1373,6 @@ TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
     unmounted = 1;
 done:
     Unlock();
-    Tcl_DStringFree(&ds);
     if (unmounted) {
 	Tcl_FSMountsChanged(NULL);
     }
