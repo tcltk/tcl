@@ -28,11 +28,11 @@
 #include "zlib.h"
 #include "crypt.h"
 
-#define ZIPFS_VOLUME      "zipfs:/"
-#define ZIPFS_APP_MOUNT   "zipfs:/app"
-#define ZIPFS_ZIP_MOUNT   "zipfs:/lib/tcl"
+#define ZIPFS_VOLUME      "//zipfs:/"
+#define ZIPFS_APP_MOUNT   "//zipfs:/app"
+#define ZIPFS_ZIP_MOUNT   "//zipfs:/lib/tcl"
 
-#define ZIPFS_VOLUME_LEN 7
+#define ZIPFS_VOLUME_LEN 9
 
 /*
  * Various constants and offsets found in ZIP archive files
@@ -2775,6 +2775,7 @@ ZipChannelOpen(Tcl_Interp *interp, char *filename, int mode, int permissions)
     if (z == NULL) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("file not found", -1));
+	    Tcl_AppendResult(interp, " \"", filename, "\"", NULL);
 	}
 	goto error;
     }
@@ -3156,6 +3157,8 @@ Zip_FSOpenFileChannelProc(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 {
     int len;
 
+    if (!(pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr))) return -1;
+
     return ZipChannelOpen(interp, Tcl_GetStringFromObj(pathPtr, &len),
 			  mode, permissions);
 }
@@ -3182,6 +3185,8 @@ Zip_FSStatProc(Tcl_Obj *pathPtr, Tcl_StatBuf *buf)
 {
     int len;
 
+    if (!(pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr))) return -1;
+
     return ZipEntryStat(Tcl_GetStringFromObj(pathPtr, &len), buf);
 }
 
@@ -3206,6 +3211,8 @@ static int
 Zip_FSAccessProc(Tcl_Obj *pathPtr, int mode)
 {
     int len;
+
+    if (!(pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr))) return -1;
 
     return ZipEntryAccess(Tcl_GetStringFromObj(pathPtr, &len), mode);
 }
@@ -3429,6 +3436,8 @@ Zip_FSPathInFilesystemProc(Tcl_Obj *pathPtr, ClientData *clientDataPtr)
     char *path;
     Tcl_DString ds;
 
+    if (!(pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr))) return -1;
+
     path = Tcl_GetStringFromObj(pathPtr, &len);
     if(strncmp(path,ZIPFS_VOLUME,ZIPFS_VOLUME_LEN)!=0) {
       return -1;
@@ -3551,6 +3560,8 @@ Zip_FSFileAttrsGetProc(Tcl_Interp *interp, int index, Tcl_Obj *pathPtr,
     int len, ret = TCL_OK;
     char *path;
     ZipEntry *z;
+
+    if (!(pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr))) return -1;
 
     path = Tcl_GetStringFromObj(pathPtr, &len);
     ReadLock();
