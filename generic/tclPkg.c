@@ -418,7 +418,7 @@ PkgRequireCore(
     Interp *iPtr = (Interp *) interp;
     Package *pkgPtr;
     PkgAvail *availPtr, *bestPtr, *bestStablePtr;
-    char *availVersion, *bestVersion;
+    char *availVersion, *bestVersion, *bestStableVersion;
 				/* Internal rep. of versions */
     int availStable, code, satisfies, pass;
     char *script, *pkgVersionI;
@@ -466,6 +466,7 @@ PkgRequireCore(
 	bestPtr = NULL;
 	bestStablePtr = NULL;
 	bestVersion = NULL;
+	bestStableVersion = NULL;
 
 	for (availPtr = pkgPtr->availPtr; availPtr != NULL;
 		availPtr = availPtr->nextPtr) {
@@ -480,32 +481,8 @@ PkgRequireCore(
 		continue;
 	    }
 
-	    if (bestPtr != NULL) {
-		int res = CompareVersions(availVersion, bestVersion, NULL);
-
-		/*
-		 * Note: Use internal reps!
-		 */
-
-		if (res <= 0) {
-		    /*
-		     * The version of the package sought is not as good as the
-		     * currently selected version. Ignore it.
-		     */
-
-		    ckfree(availVersion);
-		    availVersion = NULL;
-		    continue;
-		}
-	    }
-
-	    /*
-	     * We have found a version which is better than our max.
-	     */
-
+	    /* Check satisfaction of requirements before considering the current version further. */
 	    if (reqc > 0) {
-		/* Check satisfaction of requirements. */
-
 		satisfies = SomeRequirementSatisfied(availVersion, reqc, reqv);
 		if (!satisfies) {
 		    ckfree(availVersion);
@@ -514,25 +491,71 @@ PkgRequireCore(
 		}
 	    }
 
-	    bestPtr = availPtr;
+	    if (bestPtr != NULL) {
+		int res = CompareVersions(availVersion, bestVersion, NULL);
 
-	    if (bestVersion != NULL) {
-		ckfree(bestVersion);
+		/*
+		 * Note: Used internal reps in the comparison!
+		 */
+
+		if (res > 0) {
+		    /*
+		     * The version of the package sought is better than the
+		     * currently selected version.
+		     */
+		    goto newbest;
+		}
+	    } else {
+	    newbest:
+		/* We have found a version which is better than our max. */
+
+		bestPtr = availPtr;
+		CheckVersionAndConvert(interp, bestPtr->version, &bestVersion, NULL);
 	    }
-	    bestVersion = availVersion;
 
-	    /*
-	     * If this new best version is stable then it also has to be
-	     * better than the max stable version found so far.
-	     */
+	    if (!availStable) {
+		ckfree(availVersion);
+		availVersion = NULL;
+		continue;
+	    }
 
-	    if (availStable) {
+	    if (bestStablePtr != NULL) {
+		int res = CompareVersions(availVersion, bestStableVersion, NULL);
+
+		/*
+		 * Note: Used internal reps in the comparison!
+		 */
+
+		if (res > 0) {
+		    /*
+		     * This stable version of the package sought is better
+		     * than the currently selected stable version.
+		     */
+		    goto newstable;
+		}
+	    } else {
+	    newstable:
+		/* We have found a stable version which is better than our max stable. */
 		bestStablePtr = availPtr;
+		CheckVersionAndConvert(interp, bestStablePtr->version, &bestStableVersion, NULL);
 	    }
-	}
+
+	    ckfree(availVersion);
+	    availVersion = NULL;
+	} /* end for */
+
+	/*
+	 * Clean up memorized internal reps, if any.
+	 */
 
 	if (bestVersion != NULL) {
 	    ckfree(bestVersion);
+	    bestVersion = NULL;
+	}
+
+	if (bestStableVersion != NULL) {
+	    ckfree(bestStableVersion);
+	    bestStableVersion = NULL;
 	}
 
 	/*
