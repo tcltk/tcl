@@ -158,14 +158,6 @@ Tcl_ProcObjCmd(
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", NULL);
 	return TCL_ERROR;
     }
-    if ((nsPtr != iPtr->globalNsPtr)
-	    && (procName != NULL) && (procName[0] == ':')) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't create procedure \"%s\" in non-global namespace with"
-		" name starting with \":\"", procName));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", NULL);
-	return TCL_ERROR;
-    }
 
     /*
      * Create the data structure to represent the procedure.
