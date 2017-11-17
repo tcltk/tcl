@@ -402,8 +402,6 @@ Tcl_Init(
 "	set scripts {{set tcl_library}}\n"
 "    } else {\n"
 "	set scripts {}\n"
-"       lappend scripts {set temp zipfs:/lib/tcl/tcl_library}\n"
-"       lappend scripts {set temp zipfs:/app/tcl_library}\n"
 "	if {[info exists env(TCL_LIBRARY)] && ($env(TCL_LIBRARY) ne {})} {\n"
 "	    lappend scripts {set env(TCL_LIBRARY)}\n"
 "	    lappend scripts {\n"
