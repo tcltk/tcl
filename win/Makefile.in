@@ -137,6 +137,11 @@ DDEDOTVER		= @TCL_DDE_MAJOR_VERSION@.@TCL_DDE_MINOR_VERSION@
 REGVER			= @TCL_REG_MAJOR_VERSION@@TCL_REG_MINOR_VERSION@
 REGDOTVER		= @TCL_REG_MAJOR_VERSION@.@TCL_REG_MINOR_VERSION@
 
+TCL_ZIP_FILE		= @TCL_ZIP_FILE@
+TCL_VFS_PATH		= libtcl.vfs/tcl_library
+TCL_VFS_ROOT		= libtcl.vfs
+
+
 TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 TCL_DLL_FILE		= @TCL_DLL_FILE@
 TCL_LIB_FILE		= @TCL_LIB_FILE@
@@ -195,6 +200,43 @@ MKDIR		= mkdir -p
 SHELL		= @SHELL@
 RM		= rm -f
 COPY		= cp
+
+###
+# Tip 430 - ZipFS Modifications
+###
+
+TCL_ZIP_FILE		= @TCL_ZIP_FILE@
+TCL_VFS_PATH		= libtcl.vfs/tcl_library
+TCL_VFS_ROOT		= libtcl.vfs
+
+HOST_CC		        = @CC_FOR_BUILD@
+HOST_EXEEXT             = @EXEEXT_FOR_BUILD@
+HOST_OBJEXT             = @OBJEXT_FOR_BUILD@
+ZIPFS_BUILD	        = @ZIPFS_BUILD@
+NATIVE_ZIP		= @ZIP_PROG@
+SHARED_BUILD		= @SHARED_BUILD@
+INSTALL_MSGS            = @INSTALL_MSGS@
+INSTALL_LIBRARIES       = @INSTALL_LIBRARIES@
+
+# Minizip
+MINIZIP_OBJS = \
+        adler32.$(HOST_OBJEXT) \
+        compress.$(HOST_OBJEXT) \
+        crc32.$(HOST_OBJEXT) \
+        deflate.$(HOST_OBJEXT) \
+        infback.$(HOST_OBJEXT) \
+        inffast.$(HOST_OBJEXT) \
+        inflate.$(HOST_OBJEXT) \
+        inftrees.$(HOST_OBJEXT) \
+        ioapi.$(HOST_OBJEXT) \
+        iowin32.$(HOST_OBJEXT)  \
+        trees.$(HOST_OBJEXT) \
+        uncompr.$(HOST_OBJEXT) \
+        zip.$(HOST_OBJEXT) \
+        zutil.$(HOST_OBJEXT) \
+        minizip.$(HOST_OBJEXT)
+
+ZIP_INSTALL_OBJS =  minizip${EXEEXT_FOR_BUILD}
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} \
 -I"${ZLIB_DIR_NATIVE}" -I"${GENERIC_DIR_NATIVE}" \
@@ -434,9 +476,17 @@ libraries:
 
 doc:
 
+tclzipfile: ${TCL_ZIP_FILE}
+
+${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS}
+	rm -rf ${TCL_VFS_ROOT}
+	mkdir -p ${TCL_VFS_PATH}
+	cp -a ../library/* ${TCL_VFS_PATH}
+	cd  ${TCL_VFS_ROOT} ; ../minizip${EXEEXT_FOR_BUILD} -o ../${TCL_ZIP_FILE} `find . -type f`
+
 $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
-        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+	tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
 
 cat32.$(OBJEXT): cat.c
@@ -453,10 +503,13 @@ ${TCL_STUB_LIB_FILE}: ${STUB_OBJS}
 	@MAKE_STUB_LIB@ ${STUB_OBJS}
 	@POST_MAKE_LIB@
 
-${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@
+${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ ${TCL_ZIP_FILE}
 	@$(RM) ${TCL_DLL_FILE} $(TCL_LIB_FILE)
 	@MAKE_DLL@ ${TCL_OBJS} tcl.$(RES) $(SHLIB_LD_LIBS)
 	@VC_MANIFEST_EMBED_DLL@
+ifeq (${ZIPFS_BUILD},1)
+	cat ${TCL_ZIP_FILE} >> ${TCL_DLL_FILE}
+endif
 
 ${TCL_LIB_FILE}: ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@$(RM) ${TCL_LIB_FILE}
@@ -504,7 +557,11 @@ tclMain2.${OBJEXT}: tclMain.c
 
 # TIP #430, ZipFS Support
 tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
-	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) -I$(ZLIB_DIR)/contrib/minizip $(GENERIC_DIR)/tclZipfs.c
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl \
+	-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
+	-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
+	-DCFG_RUNTIME_PATH="\"$(DLL_INSTALL_DIR)\"" \
+	$(ZLIB_INCLUDE) -I$(ZLIB_DIR)/contrib/minizip  @DEPARG@ $(CC_OBJNAME)
 
 
 # TIP #59, embedding of configuration information into the binary library.
@@ -528,6 +585,8 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DCFG_RUNTIME_SCRDIR=\"$(TCL_LIBRARY_NATIVE)\" \
 		-DCFG_RUNTIME_INCDIR=\"$(includedir_native)\" \
 		-DCFG_RUNTIME_DOCDIR=\"$(mandir_native)\" \
+		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
+		-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
 
@@ -550,6 +609,79 @@ tclOOStubLib.${OBJEXT}: tclOOStubLib.c
 
 .rc.$(RES):
 	$(RC) @RC_OUT@ $@ @RC_TYPE@ @RC_DEFINES@ @RC_INCLUDE@ "$(GENERIC_DIR_NATIVE)" @RC_INCLUDE@ "$(WIN_DIR_NATIVE)" @DEPARG@
+
+
+
+#--------------------------------------------------------------------------
+# Minizip implementation
+#--------------------------------------------------------------------------
+adler32.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/adler32.c
+
+compress.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/compress.c
+
+crc32.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/crc32.c
+
+deflate.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/deflate.c
+
+ioapi.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/ioapi.c
+
+iowin32.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/iowin32.c
+
+infback.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/infback.c
+
+inffast.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inffast.c
+
+inflate.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inflate.c
+
+inftrees.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/inftrees.c
+
+trees.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/trees.c
+
+uncompr.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/uncompr.c
+
+zip.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/zip.c
+
+zutil.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/zutil.c
+
+minizip.$(HOST_OBJEXT):
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR)  -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/minizip.c
+
+minizip${EXEEXT_FOR_BUILD}: $(MINIZIP_OBJS)
+	$(HOST_CC) -o $@ $(MINIZIP_OBJS)
+
+tclvfs.zip: minizip${EXEEXT_FOR_BUILD}
+	rm -rf $(TCL_VFS_ROOT)
+	mkdir -p $(TCL_VFS_PATH)
+	@for i in "$(TCL_VFS_PATH)"; \
+	    do \
+	    if [ ! -d "$$i" ] ; then \
+		echo "Making directory $$i"; \
+		$(INSTALL_DATA_DIR) "$$i"; \
+		else true; \
+		fi; \
+	    done;
+	cp -a ../library/* $(TCL_VFS_PATH)
+	(cd $TCL_VFS ROOT ; ./minizip${EXEEXT_FOR_BUILD} -o ../tclvfs.zip `find . -type f`)
+
+zipsetupstub.$(HOST_OBJEXT): $(COMPAT_DIR)/zipsetupstub.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(COMPAT_DIR)/zipsetupstub.c
+
+zipsetupstub${EXEEXT_FOR_BUILD}: zipsetupstub.$(HOST_OBJEXT)
+	$(HOST_CC) -o $@ zipsetupstub.$(HOST_OBJEXT)
 
 # The following target generates the file generic/tclDate.c from the yacc
 # grammar found in generic/tclGetDate.y. This is only run by hand as yacc is
@@ -625,6 +757,25 @@ install-binaries: binaries
 	    echo Installing $(REG_LIB_FILE); \
 	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
 	    fi
+
+install-libraries-zipfs-shared: libraries
+	@for i in "$(SCRIPT_INSTALL_DIR)"; \
+	    do \
+	    if [ ! -d "$$i" ] ; then \
+		echo "Making directory $$i"; \
+		$(INSTALL_DATA_DIR) "$$i"; \
+		else true; \
+		fi; \
+	    done;
+	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)/";
+	@for i in \
+		$(UNIX_DIR)/tclAppInit.c @LDAIX_SRC@ @DTRACE_SRC@; \
+	    do \
+	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"; \
+	    done;
+
+install-libraries-zipfs-static: install-libraries-zipfs-shared
+	$(INSTALL_DATA) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)" ;\
 
 install-libraries: libraries install-tzdata install-msgs
 	@for i in "$$($(CYGPATH) $(prefix)/lib)" "$(INCLUDE_INSTALL_DIR)" \
@@ -758,6 +909,7 @@ clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
 	$(RM) $(TCLSH) $(CAT32)
 	$(RM) *.pch *.ilk *.pdb
+	minizip${EXEEXT_FOR_BUILD} *.${HOST_OBJEXT}
 
 distclean: distclean-packages clean
 	$(RM) Makefile config.status config.cache config.log tclConfig.sh \
@@ -890,5 +1042,6 @@ html-tk: $(TCLSH)
 .PHONY: gdb depend cleanhelp clean distclean packages install-packages
 .PHONY: test-packages clean-packages distclean-packages genstubs html
 .PHONY: html-tcl html-tk
+.PHONY: iinstall-libraries-zipfs-shared install-libraries-zipfs-static tclzipfile
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

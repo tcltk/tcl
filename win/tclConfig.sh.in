@@ -41,6 +41,9 @@ TCL_SHARED_BUILD=@TCL_SHARED_BUILD@
 # The name of the Tcl library (may be either a .a file or a shared library):
 TCL_LIB_FILE='@TCL_LIB_FILE@'
 
+# The name of a zip containing the /library and /encodings (may be either a .zip file or a shared library):
+TCL_ZIP_FILE='@TCL_ZIP_FILE@'
+
 # Flag to indicate whether shared libraries need export files.
 TCL_NEEDS_EXP_FILE=@TCL_NEEDS_EXP_FILE@
 

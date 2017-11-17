@@ -3769,6 +3769,7 @@ TclZipfs_Init(Tcl_Interp *interp)
 #ifdef HAVE_ZLIB
     /* one-time initialization */
     WriteLock();
+    Tcl_StaticPackage(interp, "zipfs", TclZipfs_Init, TclZipfs_Init);
     if (!ZipFS.initialized) {
 #ifdef TCL_THREADS
 	static const Tcl_Time t = { 0, 0 };
@@ -3823,7 +3824,7 @@ TclZipfs_Init(Tcl_Interp *interp)
         Tcl_LinkVar(interp, "::zipfs::wrmax", (char *) &ZipFS.wrmax,
             TCL_LINK_INT);
         TclMakeEnsemble(interp, "zipfs", initMap);
-        Tcl_PkgProvide(interp, "zipfs", "1.0");
+        Tcl_PkgProvide(interp, "zipfs", "2.0");
     }
     return TCL_OK;
 #else
@@ -3867,6 +3868,25 @@ int TclZipfs_AppHook(int *argc, char ***argv){
     Tcl_FindExecutable(*argv[0]);
     archive=Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);
+    TclSetPreInitScript(
+"foreach {path} {\n"
+"  {" ZIPFS_APP_MOUNT "/tcl_library}\n"
+"  {" ZIPFS_ZIP_MOUNT "/tcl_library}\n"
+"} {\n"
+"  if {![file exists [file join $path init.tcl]]} continue\n"
+"  set ::tcl_library $path\n"
+"  break\n"
+"}\n"
+"foreach {path} {\n"
+"  {" ZIPFS_APP_MOUNT "/tk_library}\n"
+"  {" ZIPFS_ZIP_MOUNT "/tk_library}\n"
+"  {" ZIPFS_VOLUME "lib/tk/tk_library}\n"
+"} {\n"
+"  if {[file exists [file join $path init.tcl]]} continue\n"
+"  set ::tk_library $path\n"
+"  break\n"
+"}\n"
+    );
     if(!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
         int found;
         Tcl_Obj *vfsinitscript;
