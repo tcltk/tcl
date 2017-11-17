@@ -9042,14 +9042,6 @@ TclNRCoroutineObjCmd(
         Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", fullName, NULL);
 	return TCL_ERROR;
     }
-    if ((nsPtr != iPtr->globalNsPtr)
-	    && (procName != NULL) && (procName[0] == ':')) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "can't create procedure \"%s\" in non-global namespace with"
-                " name starting with \":\"", procName));
-        Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", procName, NULL);
-	return TCL_ERROR;
-    }
 
     /*
      * We ARE creating the coroutine command: allocate the corresponding
