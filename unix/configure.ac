@@ -155,28 +155,6 @@ if test "$TCLSH_PROG" = ""; then
   TCLSH_PROG='./${TCL_EXE}'
 fi
 
-#
-# Check for --enable-zipfs flag
-#
-SC_ENABLE_ZIPFS
-
-#
-# Find a native zip implementation
-#
-SC_PROG_ZIP
-
-#
-# Find a native compiler
-#
-AX_CC_FOR_BUILD
-
-if test "$ZIP_PROG" = ""; then
-  ZIP_PROG='./minizip${EXEEXT_FOR_BUILD}'
-fi
-
-
-
-
 #------------------------------------------------------------------------
 #	Add stuff for zlib
 #------------------------------------------------------------------------
@@ -817,6 +795,25 @@ AC_MSG_RESULT([$tcl_ok])
 #--------------------------------------------------------------------
 #	Zipfs support
 #--------------------------------------------------------------------
+
+#
+# Check for --enable-zipfs flag
+#
+SC_ENABLE_ZIPFS
+
+#
+# Find a native zip implementation
+#
+SC_PROG_ZIP
+
+#
+# Find a native compiler
+#
+AX_CC_FOR_BUILD
+
+if test "$ZIP_PROG" = ""; then
+  ZIP_PROG='./minizip${EXEEXT_FOR_BUILD}'
+fi
 
 AC_ARG_ENABLE(zipfs,
     AC_HELP_STRING([--enable-zipfs],
