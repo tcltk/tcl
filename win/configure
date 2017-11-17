@@ -687,6 +687,7 @@ TCL_STATIC_LIB_FLAG
 TCL_STATIC_LIB_FILE
 TCL_LIB_FLAG
 TCL_LIB_FILE
+TCL_ZIP_FILE
 TCL_EXE
 PKG_CFG_ARGS
 TCL_PATCH_LEVEL
@@ -699,6 +700,12 @@ VC_MANIFEST_EMBED_EXE
 VC_MANIFEST_EMBED_DLL
 LDFLAGS_DEFAULT
 CFLAGS_DEFAULT
+INSTALL_MSGS
+INSTALL_LIBRARIES
+ZIPFS_BUILD
+EXEEXT_FOR_BUILD
+CC_FOR_BUILD
+ZIP_PROG
 ZLIB_OBJS
 ZLIB_LIBS
 ZLIB_DLL_FILE
@@ -708,6 +715,7 @@ CFLAGS_DEBUG
 DL_LIBS
 CELIB_DIR
 CYGPATH
+SHARED_BUILD
 TCL_THREADS
 SET_MAKE
 RC
@@ -760,7 +768,8 @@ PACKAGE_VERSION
 PACKAGE_TARNAME
 PACKAGE_NAME
 PATH_SEPARATOR
-SHELL'
+SHELL
+OBJEXT_FOR_BUILD'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
@@ -770,6 +779,7 @@ enable_shared
 enable_64bit
 enable_wince
 with_celib
+enable_zipfs
 enable_symbols
 enable_embedded_manifest
 '
@@ -1393,6 +1403,7 @@ Optional Features:
   --enable-shared         build and link with shared libraries (default: on)
   --enable-64bit          enable 64bit support (where applicable)
   --enable-wince          enable Win/CE support (where applicable)
+  --enable-zipfs          build with Zipfs support (default: on)
   --enable-symbols        build with debugging symbols (default: off)
   --enable-embedded-manifest
                           embed manifest if possible (default: yes)
@@ -2116,6 +2127,8 @@ TCL_REG_MINOR_VERSION=3
 REGVER=$TCL_REG_MAJOR_VERSION$TCL_REG_MINOR_VERSION
 
 PKG_CFG_ARGS=$@
+
+TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
 
 #------------------------------------------------------------------------
 # Empty slate for bundled packages, to avoid stale configuration
@@ -3772,6 +3785,7 @@ $as_echo "#define STATIC_BUILD 1" >>confdefs.h
     fi
 
 
+
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This
 # macro depends on the value of SHARED_BUILD, and should be called
@@ -4828,6 +4842,160 @@ _ACEOF
 fi
 
 
+
+#--------------------------------------------------------------------
+#	Zipfs support
+#--------------------------------------------------------------------
+
+#
+# Find a native zip implementation
+#
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for zip" >&5
+$as_echo_n "checking for zip... " >&6; }
+    if ${ac_cv_path_zip+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+	for dir in $search_path ; do
+	    for j in `ls -r $dir/zip 2> /dev/null` \
+		    `ls -r $dir/zip 2> /dev/null` ; do
+		if test x"$ac_cv_path_zip" = x ; then
+		    if test -f "$j" ; then
+			ac_cv_path_zip=$j
+			break
+		    fi
+		fi
+	    done
+	done
+
+fi
+
+
+    if test -f "$ac_cv_path_zip" ; then
+	ZIP_PROG="$ac_cv_path_zip"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP_PROG" >&5
+$as_echo "$ZIP_PROG" >&6; }
+    else
+	# It is not an error if an installed version of Zip can't be located.
+	ZIP_PROG=""
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: No zip found on PATH" >&5
+$as_echo "No zip found on PATH" >&6; }
+    fi
+
+
+
+#
+# Find a native compiler
+#
+# Put a plausible default for CC_FOR_BUILD in Makefile.
+if test -z "$CC_FOR_BUILD"; then
+  if test "x$cross_compiling" = "xno"; then
+    CC_FOR_BUILD='$(CC)'
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gcc" >&5
+$as_echo_n "checking for gcc... " >&6; }
+    if ${ac_cv_path_cc+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+	for dir in $search_path ; do
+	    for j in `ls -r $dir/gcc 2> /dev/null` \
+		    `ls -r $dir/gcc 2> /dev/null` ; do
+		if test x"$ac_cv_path_cc" = x ; then
+		    if test -f "$j" ; then
+			ac_cv_path_cc=$j
+			break
+		    fi
+		fi
+	    done
+	done
+
+fi
+
+  fi
+fi
+
+# Also set EXEEXT_FOR_BUILD.
+if test "x$cross_compiling" = "xno"; then
+  EXEEXT_FOR_BUILD='$(EXEEXT)'
+  OBJEXT_FOR_BUILD='$(OBJEXT)'
+else
+  OBJEXT_FOR_BUILD='.no'
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for build system executable suffix" >&5
+$as_echo_n "checking for build system executable suffix... " >&6; }
+if ${bfd_cv_build_exeext+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  rm -f conftest*
+     echo 'int main () { return 0; }' > conftest.c
+     bfd_cv_build_exeext=
+     ${CC_FOR_BUILD} -o conftest conftest.c 1>&5 2>&5
+     for file in conftest.*; do
+       case $file in
+       *.c | *.o | *.obj | *.ilk | *.pdb) ;;
+       *) bfd_cv_build_exeext=`echo $file | sed -e s/conftest//` ;;
+       esac
+     done
+     rm -f conftest*
+     test x"${bfd_cv_build_exeext}" = x && bfd_cv_build_exeext=no
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $bfd_cv_build_exeext" >&5
+$as_echo "$bfd_cv_build_exeext" >&6; }
+  EXEEXT_FOR_BUILD=""
+  test x"${bfd_cv_build_exeext}" != xno && EXEEXT_FOR_BUILD=${bfd_cv_build_exeext}
+fi
+
+
+if test "$ZIP_PROG" = ""; then
+  ZIP_PROG='./minizip${EXEEXT_FOR_BUILD}'
+fi
+
+# Check whether --enable-zipfs was given.
+if test "${enable_zipfs+set}" = set; then :
+  enableval=$enable_zipfs; tcl_ok=$enableval
+else
+  tcl_ok=yes
+fi
+
+    if test "$tcl_ok" = "yes" -o "${TCL_THREADS}" = 1; then
+	ZIPFS_BUILD=1
+    else
+	ZIPFS_BUILD=0
+    fi
+    # Do checking message here to not mess up interleaved configure output
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for building with zipfs" >&5
+$as_echo_n "checking for building with zipfs... " >&6; }
+    if test "${ZIPFS_BUILD}" = 1; then
+        if test "${SHARED_BUILD}" = 0; then
+           ZIPFS_BUILD=2;
+
+$as_echo "#define ZIPFS_BUILD 2" >>confdefs.h
+
+           INSTALL_LIBRARIES=install-libraries-zipfs-static
+           { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+         else
+
+$as_echo "#define ZIPFS_BUILD 1" >>confdefs.h
+\
+           INSTALL_LIBRARIES=install-libraries-zipfs-shared
+           { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        fi
+    else
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	INSTALL_LIBRARIES=install-libraries
+	INSTALL_MSGS=install-msgs
+    fi
+
+
+
+
+
 #--------------------------------------------------------------------
 # Perform additinal compiler tests.
 #--------------------------------------------------------------------
@@ -5205,6 +5373,7 @@ esac
 TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d ab.`"
 
 # X86|AMD64|IA64 for manifest
+
 
 
 
