@@ -24,6 +24,7 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fBzipfs mkkey\fR \fIpassword\fR
 \fBzipfs mkzip\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR
 \fBzipfs mount\fR \fI?zipfile?\fR \fI?mountpoint?\fR \fI?password?\fR
+\fBzipfs root\fR
 \fBzipfs unmount\fR \fIzipfile\fR
 .fi
 .BE
@@ -41,7 +42,7 @@ Return 1 if the given filename exists in the mounted zipfs and 0 if it does not.
 Recursively lists files including and below the directory \fIdir\fR.
 The result list consists of relative path names starting from the
 given directory. This command is also used by the \fBzipfs mkzip\fR
-and \fBzipfs mkimg\fR commands. 
+and \fBzipfs mkimg\fR commands.
 .TP
 \fBzipfs info\fR \fIfile\fR
 .
@@ -92,7 +93,7 @@ of the respective file name.
 .PP
 Caution: the choice of the \fIindir\fR parameter
 (less the optional stripped prefix) determines the later root name of the
-archive's content. 
+archive's content.
 .RE
 .TP
 \fBzipfs mount ?\fIzipfile\fR? ?\fImountpoint\fR? ?\fIpassword\fR?
@@ -105,6 +106,11 @@ will appear to Tcl to be regular files at the mount point.
 With no \fImountpoint\fR, returns the mount point for \fIzipfile\fR.
 With no \fIzipfile\fR, return all zipfile/mount pairs.
 If \fImountpoint\fR is specified as an empty string, mount on file path.
+.RE
+.TP
+\fBzipfs root\fR
+Returns a constant string which indicates the mount point for zipfs volumes
+for the current platform. On Windows, this value is zipfs:/. On Unux, //zipfs:/
 .RE
 .TP
 \fBzipfs unmount \fIzipfile\fR
