@@ -32,17 +32,10 @@
 ** On windows we need VFS to look like a volume
 ** On Unix we need it to look like a UNC path
 */
-#if defined(_WIN32) || defined(_WIN64)
-#define ZIPFS_VOLUME      "zipfs:/"
-#define ZIPFS_VOLUME_LEN 7
-#define ZIPFS_APP_MOUNT   "zipfs:/app"
-#define ZIPFS_ZIP_MOUNT   "zipfs:/lib/tcl"
-#else
 #define ZIPFS_VOLUME      "//zipfs:/"
 #define ZIPFS_VOLUME_LEN 9
 #define ZIPFS_APP_MOUNT   "//zipfs:/app"
 #define ZIPFS_ZIP_MOUNT   "//zipfs:/lib/tcl"
-#endif
 /*
  * Various constants and offsets found in ZIP archive files
  */
