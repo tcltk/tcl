@@ -10,9 +10,12 @@
 .so man.macros
 .BS
 .SH NAME
-Tclzipfs_Mount, Tclzipfs_Unmount \- handle ZIP files as VFS
+TclZipfs_AppHook, Tclzipfs_Mount, Tclzipfs_Unmount,  \- handle ZIP files as VFS
 .SH SYNOPSIS
 .nf
+.sp
+int
+\fBTclZipfs_AppHook(\fIint *argc, char ***argv\fR)
 .sp
 int
 \fBTclzipfs_Mount\fR(\fIinterp, zipname, mntpt, passwd\fR)
@@ -20,6 +23,11 @@ int
 int
 \fBTclzipfs_Unmount\fR(\fIinterp, zipname\fR)
 .SH ARGUMENTS
+.AP "int" *argc in
+Number of command line arguments from main()
+.AP "char" ***argv in
+Pointer to an array of strings containing the command
+line arguments to main()
 .AS Tcl_Interp **termPtr
 .AP Tcl_Interp *interp in
 Interpreter in which the zip file system is mounted.  The interpreter's result is
@@ -32,6 +40,18 @@ Name of a mount point.
 An (optional) password.
 .BE
 .SH DESCRIPTION
+\fBTclZipfs_AppHook()\fR is a utility function to perform standard
+application initialization procedures. If the current application has
+a mountable zip file system, that file system is mounted under \fIZIPROOT\fR\fB/app\fR.
+If a file named \fBmain.tcl\fR is located in that file system, it is treated
+as the startup script for the process. If the file \fIZIPROOT\fR\fB/app/tcl_library/init.tcl\fR
+is present, \fBtcl_library\fR is set to  \fIZIPROOT\fR\fB/app/tcl_library.
+.PP
+If the \fBtcl_library\fR was not found in the application, the system will then search for it
+as either a VFS attached to the application dynamic library, or as a zip archive named
+libtcl_\fIMAJOR\fR_\fIMINOR\fR_\fIpatchLevel\fR.zip either in the present working directory
+or in the standard tcl install location.
+.PP
 \fBTclzipfs_Mount()\fR mount the ZIP archive \fIzipname\fR on the mount
 point given in \fImntpt\fR using the optional ZIP password \fIpasswd\fR.
 Errors during that process are reported in the interpreter \fIinterp\fR.
