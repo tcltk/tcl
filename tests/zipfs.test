@@ -113,14 +113,14 @@ test zipfs-2.2 {zipfs mkzip} -constraints zipfs -body {
     set pwd [pwd]
     cd $tcl_library/encoding
     zipfs mkzip /tmp/abc.zip .
-    zipfs mount /tmp/abc.zip /abc       ;# FIXME: test independence
-    zipfs list -glob ${ziproot}/abc/cp850.*
+    zipfs mount /tmp/abc.zip ${ziproot}abc       ;# FIXME: test independence
+    zipfs list -glob ${ziproot}abc/cp850.*
 } -cleanup {
     cd $pwd
-} -result {[zipfs root]/abc/cp850.enc}
+} -result "[zipfs root]abc/cp850.enc"
 
 test zipfs-2.3 {zipfs info} -constraints zipfs -body {
-    zipfs info ${ziproot}/abc/cp850.enc
+    zipfs info ${ziproot}abc/cp850.enc
 } -result [list /tmp/abc.zip 1090 527 39318] ;# FIXME: result depends on content of encodings dir
 
 test zipfs-2.4 {zipfs data} -constraints zipfs -body {
