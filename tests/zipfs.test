@@ -72,6 +72,17 @@ test zipfs-0.9 {zipfs basics: glob} -constraints zipfs -body {
     lsort [glob -nocomplain -tails -types f -dir $tcl_library http*]
 } -result {}
 
+test zipfs-0.10 {zipfs basics: join} -constraints zipfs -body {
+    file join [zipfs root] bar baz
+} -result "[zipfs root]bar/baz"
+
+test zipfs-0.11 {zipfs basics: join} -constraints zipfs -body {
+    file normalize [zipfs root]
+} -result "[zipfs root]"
+
+test zipfs-0.12 {zipfs basics: join} -constraints zipfs -body {
+    file normalize [zipfs root]//bar/baz//qux/../
+} -result "[zipfs root]bar/baz"
 
 test zipfs-1.3 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs mount a b c d e f
