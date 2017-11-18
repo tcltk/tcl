@@ -3928,6 +3928,11 @@ int TclZipfs_AppHook(int *argc, char ***argv){
     Tcl_FindExecutable(*argv[0]);
     archive=Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);
+    /*
+    ** Look for init.tcl in one of the locations mounted later in this function
+    ** and failing that, look for a file name CFG_RUNTIME_ZIPFILE adjacent to the
+    ** executable
+    */
     TclSetPreInitScript(
 "foreach {path} {\n"
 "  {" ZIPFS_APP_MOUNT "/tcl_library}\n"
@@ -3936,6 +3941,17 @@ int TclZipfs_AppHook(int *argc, char ***argv){
 "  if {![file exists [file join $path init.tcl]]} continue\n"
 "  set ::tcl_library $path\n"
 "  break\n"
+"}\n"
+"if {![info exists ::tcl_library] || $::tcl_library eq {}} {\n"
+"  set zipfile [file join [file dirname [info nameofexecutable]] " CFG_RUNTIME_ZIPFILE "]\n"
+"  if {[file exists $zipfile]} {\n"
+"    zipfs mount $zipfile {" ZIPFS_ZIP_MOUNT "}\n"
+"    if {[file exists [file join {" ZIPFS_ZIP_MOUNT "} init.tcl]]} \{\n"
+"      set ::tcl_library {" ZIPFS_ZIP_MOUNT "}\n"
+"    } else {\n"
+"      zipfs unmount {" ZIPFS_ZIP_MOUNT "}\n"
+"    }\n"
+"  }\n"
 "}\n"
 "foreach {path} {\n"
 "  {" ZIPFS_APP_MOUNT "/tk_library}\n"
@@ -3968,13 +3984,10 @@ int TclZipfs_AppHook(int *argc, char ***argv){
         }
     }
     /* Mount zip file and dll before releasing to search */
-    if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_ZIPFILE)==TCL_OK) {
+    if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_DLLFILE)==TCL_OK) {
         return TCL_OK;
     }
     if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
-        return TCL_OK;
-    }
-    if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_DLLFILE)==TCL_OK) {
         return TCL_OK;
     }
     return TCL_OK;
