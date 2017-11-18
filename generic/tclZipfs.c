@@ -28,12 +28,21 @@
 #include "zlib.h"
 #include "crypt.h"
 
+/*
+** On windows we need VFS to look like a volume
+** On Unix we need it to look like a UNC path
+*/
+#if defined(_WIN32) || defined(_WIN64)
+#define ZIPFS_VOLUME      "zipfs:/"
+#define ZIPFS_VOLUME_LEN 7
+#define ZIPFS_APP_MOUNT   "zipfs:/app"
+#define ZIPFS_ZIP_MOUNT   "zipfs:/lib/tcl"
+#else
 #define ZIPFS_VOLUME      "//zipfs:/"
+#define ZIPFS_VOLUME_LEN 9
 #define ZIPFS_APP_MOUNT   "//zipfs:/app"
 #define ZIPFS_ZIP_MOUNT   "//zipfs:/lib/tcl"
-
-#define ZIPFS_VOLUME_LEN 9
-
+#endif
 /*
  * Various constants and offsets found in ZIP archive files
  */
@@ -292,6 +301,11 @@ static const unsigned long crc32tab[256] = {
     0x5d681b02, 0x2a6f2b94, 0xb40bbe37, 0xc30c8ea1, 0x5a05df1b,
     0x2d02ef8d,
 };
+
+static Tcl_Obj *zipfs_literal_fstype=NULL;
+static Tcl_Obj *zipfs_literal_fsroot=NULL;
+static Tcl_Obj *zipfs_literal_fsseparator=NULL;
+
 
 /*
  *-------------------------------------------------------------------------
@@ -1407,6 +1421,35 @@ ZipFSMountObjCmd(ClientData clientData, Tcl_Interp *interp,
     return TclZipfs_Mount(interp, (objc > 1) ? Tcl_GetString(objv[1]) : NULL,
 		       (objc > 2) ? Tcl_GetString(objv[2]) : NULL,
 		       (objc > 3) ? Tcl_GetString(objv[3]) : NULL);
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSRootObjCmd --
+ *
+ *      This procedure is invoked to process the "zipfs::root" command. It
+ *      returns the root that all zipfs file systems are mounted under.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static int
+ZipFSRootObjCmd(ClientData clientData, Tcl_Interp *interp,
+		 int objc, Tcl_Obj *const objv[])
+{
+    if(!zipfs_literal_fsroot) {
+        zipfs_literal_fsroot=Tcl_NewStringObj(ZIPFS_VOLUME, -1);
+        Tcl_IncrRefCount(zipfs_literal_fsroot);
+    }
+    Tcl_IncrRefCount(zipfs_literal_fsroot);
+    Tcl_SetObjResult(interp,zipfs_literal_fsroot);
+    return TCL_OK;
 }
 
 /*
@@ -3178,7 +3221,12 @@ Zip_FSAccessProc(Tcl_Obj *pathPtr, int mode)
 static Tcl_Obj *
 Zip_FSFilesystemSeparatorProc(Tcl_Obj *pathPtr)
 {
-    return Tcl_NewStringObj("/", -1);
+    if(!zipfs_literal_fsseparator) {
+        zipfs_literal_fsseparator=Tcl_NewStringObj("/", -1);
+        Tcl_IncrRefCount(zipfs_literal_fsseparator);
+    }
+    Tcl_IncrRefCount(zipfs_literal_fsseparator);
+    return zipfs_literal_fsseparator;
 }
 
 /*
@@ -3439,7 +3487,12 @@ endloop:
  */
 static Tcl_Obj *
 Zip_FSListVolumesProc(void) {
-    return Tcl_NewStringObj(ZIPFS_VOLUME, -1);
+    if(!zipfs_literal_fsroot) {
+        zipfs_literal_fsroot=Tcl_NewStringObj(ZIPFS_VOLUME, -1);
+        Tcl_IncrRefCount(zipfs_literal_fsroot);
+    }
+    Tcl_IncrRefCount(zipfs_literal_fsroot);
+    return zipfs_literal_fsroot;
 }
 
 /*
@@ -3586,7 +3639,12 @@ Zip_FSFileAttrsSetProc(Tcl_Interp *interp, int index, Tcl_Obj *pathPtr,
 static Tcl_Obj *
 Zip_FSFilesystemPathTypeProc(Tcl_Obj *pathPtr)
 {
-    return Tcl_NewStringObj("zip", -1);
+    if(!zipfs_literal_fstype) {
+        zipfs_literal_fstype=Tcl_NewStringObj("zip", -1);
+        Tcl_IncrRefCount(zipfs_literal_fstype);
+    }
+    Tcl_IncrRefCount(zipfs_literal_fstype);
+    return zipfs_literal_fstype;
 }
 
 
@@ -3788,17 +3846,19 @@ TclZipfs_Init(Tcl_Interp *interp)
     Unlock();
     if(interp != NULL) {
         static const EnsembleImplMap initMap[] = {
-            {"mount",	ZipFSMountObjCmd,	NULL, NULL, NULL, 0},
-            {"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, 0},
-            {"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 0},
-            {"mkimg",	ZipFSMkImgObjCmd,	NULL, NULL, NULL, 0},
-            {"mkzip",	ZipFSMkZipObjCmd,	NULL, NULL, NULL, 0},
-            {"lmkimg",	ZipFSLMkImgObjCmd,	NULL, NULL, NULL, 0},
-            {"lmkzip",	ZipFSLMkZipObjCmd,	NULL, NULL, NULL, 0},
-            {"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 1},
-            {"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 1},
-            {"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 1},
+            {"mount",	  ZipFSMountObjCmd,	NULL, NULL, NULL, 0},
+            {"unmount",	  ZipFSUnmountObjCmd,	NULL, NULL, NULL, 0},
+            {"mkkey",	  ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 0},
+            {"mkimg",	  ZipFSMkImgObjCmd,	NULL, NULL, NULL, 0},
+            {"mkzip",	  ZipFSMkZipObjCmd,	NULL, NULL, NULL, 0},
+            {"lmkimg",	  ZipFSLMkImgObjCmd,	NULL, NULL, NULL, 0},
+            {"lmkzip",	  ZipFSLMkZipObjCmd,	NULL, NULL, NULL, 0},
+            {"exists",	  ZipFSExistsObjCmd,	NULL, NULL, NULL, 1},
+            {"info",	  ZipFSInfoObjCmd,	NULL, NULL, NULL, 1},
+            {"list",	  ZipFSListObjCmd,	NULL, NULL, NULL, 1},
             {"canonical", ZipFSCanonicalObjCmd, NULL, NULL, NULL, 1},
+            {"root",      ZipFSRootObjCmd, NULL, NULL, NULL, 1},
+
             {NULL, NULL, NULL, NULL, NULL, 0}
         };
         static const char findproc[] =
