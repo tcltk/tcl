@@ -3975,6 +3975,29 @@ int TclZipfs_AppHook(int *argc, char ***argv){
         if(found==TCL_OK) {
             return TCL_OK;
         }
+    } else if (*argc>1) {
+        archive=(*argv)[1];
+        fflush(stdout);
+        if(!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
+            int found;
+            Tcl_Obj *vfsinitscript;
+            vfsinitscript=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/main.tcl",-1);
+            Tcl_IncrRefCount(vfsinitscript);
+            if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
+                /* Startup script should be set before calling Tcl_AppInit */
+                Tcl_SetStartupScript(vfsinitscript,NULL);
+            } else {
+                Tcl_DecrRefCount(vfsinitscript);
+            }
+            /* Set Tcl Encodings */
+            vfsinitscript=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library/init.tcl",-1);
+            Tcl_IncrRefCount(vfsinitscript);
+            found=Tcl_FSAccess(vfsinitscript,F_OK);
+            Tcl_DecrRefCount(vfsinitscript);
+            if(found==TCL_OK) {
+                return TCL_OK;
+            }
+        }
     }
     /* Mount zip file and dll before releasing to search */
     if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_DLLFILE)==TCL_OK) {
