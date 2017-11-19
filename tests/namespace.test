@@ -1920,7 +1920,7 @@ test namespace-44.5 {ensemble: errors} -setup {
     foobar foobarcon
 } -cleanup {
     rename foobar {}
-} -returnCodes error -result {invalid command name "::foobarconfigure"}
+} -returnCodes error -result {invalid command name "foobarconfigure"}
 test namespace-44.6 {ensemble: errors} -returnCodes error -body {
     namespace ensemble create gorp
 } -result {wrong # args: should be "namespace ensemble create ?option value ...?"}

@@ -562,7 +562,10 @@ AllocObject(
     Object *oPtr;
     Command *cmdPtr;
     CommandTrace *tracePtr;
+    Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
+    Tcl_Namespace *inNsPtr;
     int creationEpoch, ignored;
+    const char *simpleName;
 
     oPtr = ckalloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
@@ -652,24 +655,18 @@ AllocObject(
      * command is deleted).
      */
 
-    if (!nameStr) {
-	oPtr->command = Tcl_CreateObjCommand(interp,
-		oPtr->namespacePtr->fullName, PublicObjectCmd, oPtr, NULL);
-    } else if (nameStr[0] == ':' && nameStr[1] == ':') {
-	oPtr->command = Tcl_CreateObjCommand(interp, nameStr,
-		PublicObjectCmd, oPtr, NULL);
+    if (nameStr) {
+	inNsPtr = TclGetCurrentNamespace(interp);
     } else {
-	Tcl_DString buffer;
-
-	Tcl_DStringInit(&buffer);
-	Tcl_DStringAppend(&buffer,
-		Tcl_GetCurrentNamespace(interp)->fullName, -1);
-	TclDStringAppendLiteral(&buffer, "::");
-	Tcl_DStringAppend(&buffer, nameStr, -1);
-	oPtr->command = Tcl_CreateObjCommand(interp,
-		Tcl_DStringValue(&buffer), PublicObjectCmd, oPtr, NULL);
-	Tcl_DStringFree(&buffer);
+	nameStr = oPtr->namespacePtr->name;
+	inNsPtr = oPtr->namespacePtr;
     }
+    
+    TclGetNamespaceForQualName(interp, nameStr, (Namespace *) inNsPtr, 0,
+	    &nsPtr, &altNsPtr, &cxtNsPtr, &simpleName);
+
+    oPtr->command = TclCreateObjCommandInNs(interp, simpleName,
+	(Tcl_Namespace *)nsPtr, PublicObjectCmd, oPtr, NULL);
 
     /*
      * Add the NRE command and trace directly. While this breaks a number of
@@ -1795,6 +1792,11 @@ TclNRNewObjectInstance(
     Object *oPtr;
 
     /*
+     * Protect classPtr from getting cleaned up when the command is created.
+     */
+    AddRef(classPtr);
+
+    /*
      * Check if we're going to create an object over an existing command;
      * that's not allowed.
      */
@@ -1841,11 +1843,13 @@ TclNRNewObjectInstance(
 
     if (objc < 0) {
 	*objectPtr = (Tcl_Object) oPtr;
+	DelRef(classPtr);
 	return TCL_OK;
     }
     contextPtr = TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL);
     if (contextPtr == NULL) {
 	*objectPtr = (Tcl_Object) oPtr;
+	DelRef(classPtr);
 	return TCL_OK;
     }
 
@@ -1869,6 +1873,7 @@ TclNRNewObjectInstance(
     TclNRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, state,
 	    objectPtr);
     TclPushTailcallPoint(interp);
+    DelRef(classPtr);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 
