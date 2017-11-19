@@ -665,7 +665,7 @@ TclCreateEnsembleInNs(
     Tcl_Command token;
 
     ensemblePtr = ckalloc(sizeof(EnsembleConfig));
-    token = tclNRCreateCommandInNs(interp, name,
+    token = TclNRCreateCommandInNs(interp, name,
 	(Tcl_Namespace *) nameNsPtr, NsEnsembleImplementationCmd,
 	NsEnsembleImplementationCmdNR, ensemblePtr, DeleteEnsembleConfig);
     if (token == NULL) {
@@ -2605,12 +2605,7 @@ BuildEnsembleConfig(
 	     * the programmer's responsibility (or [::unknown] of course).
 	     */
 
-	    cmdObj = NewNsObj((Tcl_Namespace *) ensemblePtr->nsPtr);
-	    if (ensemblePtr->nsPtr->parentPtr != NULL) {
-		Tcl_AppendStringsToObj(cmdObj, "::", name, NULL);
-	    } else {
-		Tcl_AppendStringsToObj(cmdObj, name, NULL);
-	    }
+	    cmdObj = Tcl_NewStringObj(name, -1);
 	    cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
 	    Tcl_SetHashValue(hPtr, cmdPrefixObj);
 	    Tcl_IncrRefCount(cmdPrefixObj);
@@ -2671,8 +2666,7 @@ BuildEnsembleConfig(
 		    if (isNew) {
 			Tcl_Obj *cmdObj, *cmdPrefixObj;
 
-			TclNewObj(cmdObj);
-			Tcl_AppendStringsToObj(cmdObj, nsCmdName, NULL);
+			cmdObj = Tcl_NewStringObj(nsCmdName, -1);
 			cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
 			Tcl_SetHashValue(hPtr, cmdPrefixObj);
 			Tcl_IncrRefCount(cmdPrefixObj);
