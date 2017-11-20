@@ -3933,13 +3933,18 @@ static int TclZipfs_AppHook_FindTclInit(const char *archive){
     return TCL_ERROR;
 }
 
-int TclZipfs_AppHook(int *argc, char ***argv){
+#if defined(_WIN32) || defined(_WIN64)
+int TclZipfs_AppHook(int *argc, TCHAR ***argv)
+#else
+int TclZipfs_AppHook(int *argc, char ***argv)
+#endif
+{
     /*
      * Tclkit_MainHook --
      * Performs the argument munging for the shell
      */
 
-    CONST char *archive;
+    char *archive;
 #if defined(_WIN32) || defined(_WIN64)
   HMODULE hModule = TclWinGetTclInstance();
   WCHAR wName[MAX_PATH + LIBRARY_SIZE];
@@ -4004,13 +4009,33 @@ int TclZipfs_AppHook(int *argc, char ***argv){
             return TCL_OK;
         }
     } else if (*argc>1) {
+        Tcl_DString ds;
+#if defined(_WIN32) || defined(_WIN64)
+      	strcpy(archive, Tcl_WinTCharToUtf((*argv)[1], -1, &ds));
+        Tcl_DStringFree(&ds);
+#else
         archive=(*argv)[1];
+#endif
+        printf(" arg1 %s\n",archive); fflush(stdout);
         if(strcmp(archive,"install")==0) {
             /* If the first argument is mkzip, run the mkzip program */
             Tcl_Obj *vfsinitscript;
+
             vfsinitscript=Tcl_NewStringObj(ZIPFS_ZIP_MOUNT "/tcl_library/install.tcl",-1);
             Tcl_IncrRefCount(vfsinitscript);
-            Tcl_SetStartupScript(vfsinitscript,NULL);
+            printf(" startup script %s\n",Tcl_GetString(vfsinitscript)); fflush(stdout);
+#if defined(_WIN32) || defined(_WIN64)
+            if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
+              GetModuleFileNameA(hModule, dllname, MAX_PATH);
+            } else {
+              ToUtf(wName, dllname);
+            }
+            /* Mount zip file and dll before releasing to search */
+            if(TclZipfs_AppHook_FindTclInit(dllname)==TCL_OK) {
+                Tcl_SetStartupScript(vfsinitscript,NULL);
+                return TCL_OK;
+            }
+#endif
         } else {
             if(!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
                 int found;
