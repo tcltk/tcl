@@ -806,7 +806,7 @@ if test "$tcl_ok" = "yes" ; then
     #
     # Find a native zip implementation
     #
-    SC_PROG_ZIP
+    SC_ZIPFS_SUPPORT
 	ZIPFS_BUILD=1
 	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
 else
