@@ -4040,7 +4040,6 @@ int TclZipfs_AppHook(int *argc, char ***argv){
     } else {
       ToUtf(wName, dllname);
     }
-    printf("DLL FILE: %s\n",dllname); fflush(stdout);
     /* Mount zip file and dll before releasing to search */
     if(TclZipfs_AppHook_FindTclInit(dllname)==TCL_OK) {
         return TCL_OK;
