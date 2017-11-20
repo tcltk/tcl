@@ -37,7 +37,7 @@
  * exercised by the "testfilehandler" command.
  */
 
-typedef struct Pipe {
+typedef struct {
     TclFile readFile;		/* File handle for reading from the pipe. NULL
 				 * means pipe doesn't exist yet. */
     TclFile writeFile;		/* File handle for writing from the pipe. */
@@ -68,10 +68,10 @@ static Tcl_CmdProc TestfilehandlerCmd;
 static Tcl_CmdProc TestfilewaitCmd;
 static Tcl_CmdProc TestfindexecutableCmd;
 static Tcl_ObjCmdProc TestforkObjCmd;
-static Tcl_CmdProc TestgetdefencdirCmd;
+static Tcl_ObjCmdProc TestgetencpathObjCmd;
 static Tcl_CmdProc TestgetopenfileCmd;
 static Tcl_CmdProc TestgotsigCmd;
-static Tcl_CmdProc TestsetdefencdirCmd;
+static Tcl_ObjCmdProc TestsetencpathObjCmd;
 static Tcl_FileProc TestFileHandlerProc;
 static void AlarmHandler(int signum);
 
@@ -108,9 +108,9 @@ TclplatformtestInit(
         NULL, NULL);
     Tcl_CreateCommand(interp, "testgetopenfile", TestgetopenfileCmd,
 	    NULL, NULL);
-    Tcl_CreateCommand(interp, "testgetdefenc", TestgetdefencdirCmd,
+    Tcl_CreateObjCommand(interp, "testgetencpath", TestgetencpathObjCmd,
 	    NULL, NULL);
-    Tcl_CreateCommand(interp, "testsetdefenc", TestsetdefencdirCmd,
+    Tcl_CreateObjCommand(interp, "testsetencpath", TestsetencpathObjCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testalarm", TestalarmCmd,
 	    NULL, NULL);
@@ -499,9 +499,9 @@ TestgetopenfileCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestsetdefencdirCmd --
+ * TestsetencpathCmd --
  *
- *	This function implements the "testsetdefenc" command. It is used to
+ *	This function implements the "testsetencpath" command. It is used to
  *	test Tcl_SetDefaultEncodingDir().
  *
  * Results:
@@ -514,19 +514,18 @@ TestgetopenfileCmd(
  */
 
 static int
-TestsetdefencdirCmd(
+TestsetencpathObjCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument strings. */
 {
-    if (argc != 2) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" defaultDir\"", NULL);
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "defaultDir");
         return TCL_ERROR;
     }
 
-    Tcl_SetDefaultEncodingDir(argv[1]);
+    Tcl_SetEncodingSearchPath(objv[1]);
     return TCL_OK;
 }
 
@@ -552,7 +551,7 @@ TestforkObjCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)		/* Argument strings. */
+    Tcl_Obj *const *objv)	/* Argument strings. */
 {
     pid_t pid;
 
@@ -578,10 +577,10 @@ TestforkObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestgetdefencdirCmd --
+ * TestgetencpathObjCmd --
  *
- *	This function implements the "testgetdefenc" command. It is used to
- *	test Tcl_GetDefaultEncodingDir().
+ *	This function implements the "testgetencpath" command. It is used to
+ *	test Tcl_GetEncodingSearchPath().
  *
  * Results:
  *	A standard Tcl result.
@@ -593,18 +592,18 @@ TestforkObjCmd(
  */
 
 static int
-TestgetdefencdirCmd(
+TestgetencpathObjCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)		/* Argument strings. */
 {
-    if (argc != 1) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], NULL);
+    if (objc != 1) {
+        Tcl_WrongNumArgs(interp, 1, objv, "");
         return TCL_ERROR;
     }
 
-    Tcl_AppendResult(interp, Tcl_GetDefaultEncodingDir(), NULL);
+    Tcl_SetObjResult(interp, Tcl_GetEncodingSearchPath());
     return TCL_OK;
 }
 

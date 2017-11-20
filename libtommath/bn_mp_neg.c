@@ -1,4 +1,4 @@
-#include <tommath.h>
+#include <tommath_private.h>
 #ifdef BN_MP_NEG_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,25 +12,29 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
 /* b = -a */
-int mp_neg (const mp_int * a, mp_int * b)
+int mp_neg(const mp_int *a, mp_int *b)
 {
-  int     res;
-  if (a != b) {
-     if ((res = mp_copy (a, b)) != MP_OKAY) {
-        return res;
-     }
-  }
+   int     res;
+   if (a != b) {
+      if ((res = mp_copy(a, b)) != MP_OKAY) {
+         return res;
+      }
+   }
 
-  if (mp_iszero(b) != MP_YES) {
-     b->sign = (a->sign == MP_ZPOS) ? MP_NEG : MP_ZPOS;
-  } else {
-     b->sign = MP_ZPOS;
-  }
+   if (mp_iszero(b) != MP_YES) {
+      b->sign = (a->sign == MP_ZPOS) ? MP_NEG : MP_ZPOS;
+   } else {
+      b->sign = MP_ZPOS;
+   }
 
-  return MP_OKAY;
+   return MP_OKAY;
 }
 #endif
+
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

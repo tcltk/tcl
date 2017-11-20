@@ -164,7 +164,7 @@ Tcl_BreakObjCmd(
  *
  *----------------------------------------------------------------------
  */
-
+#ifndef TCL_NO_DEPRECATED
 	/* ARGSUSED */
 int
 Tcl_CaseObjCmd(
@@ -282,6 +282,7 @@ Tcl_CaseObjCmd(
 
     return TCL_OK;
 }
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

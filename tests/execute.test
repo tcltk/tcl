@@ -698,7 +698,7 @@ test execute-6.12 {Tcl_ExprObj: exprcode interp validation} -setup {
     lappend result [e $e]
     interp delete slave
     interp create slave
-    interp alias {} e slave expr 
+    interp alias {} e slave expr
     lappend result [e $e]
 } -cleanup {
     interp delete slave
@@ -1013,8 +1013,8 @@ test execute-10.3 {Bug 3072640} -setup {
 	    yield $i
 	}
     }
-    proc t {args} { 
-	incr ::foo 
+    proc t {args} {
+	incr ::foo
     }
     trace add execution ::generate enterstep ::t
 } -body {

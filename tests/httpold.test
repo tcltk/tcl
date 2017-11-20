@@ -1,3 +1,4 @@
+# -*- tcl -*-
 # Commands covered:  http_config, http_get, http_wait, http_reset
 #
 # This file contains a collection of tests for the http script library.
@@ -48,10 +49,9 @@ catch {unset data}
 ##
 source [file join [file dirname [info script]] httpd]
 
-set port 8010
-if [catch {httpd_init $port} listen] {
+if [catch {httpd_init 0} listen] {
     puts "Cannot start http server, http test skipped"
-    unset port
+    catch {unset port}
     ::tcltest::cleanupTests
     return
 }

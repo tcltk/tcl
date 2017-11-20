@@ -779,8 +779,7 @@ declare 218 {
 declare 219 {
     int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
 }
-# Obsolete
-declare 220 {
+declare 220 {deprecated {}} {
     int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
 }
 declare 221 {
@@ -867,8 +866,7 @@ declare 244 {
 declare 245 {
     int Tcl_StringMatch(const char *str, const char *pattern)
 }
-# Obsolete
-declare 246 {
+declare 246 {deprecated {}} {
     int Tcl_TellOld(Tcl_Channel chan)
 }
 declare 247 {
@@ -944,10 +942,10 @@ declare 265 {
 declare 266 {
     void Tcl_ValidateAllMemory(const char *file, int line)
 }
-declare 267 {
+declare 267 {deprecated {see TIP #422}} {
     void Tcl_AppendResultVA(Tcl_Interp *interp, va_list argList)
 }
-declare 268 {
+declare 268 {deprecated {see TIP #422}} {
     void Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr, va_list argList)
 }
 declare 269 {
@@ -975,16 +973,16 @@ declare 274 {
     CONST84_RETURN char *Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
 	    const char *version, int exact)
 }
-declare 275 {
+declare 275 {deprecated {see TIP #422}} {
     void Tcl_SetErrorCodeVA(Tcl_Interp *interp, va_list argList)
 }
-declare 276 {
+declare 276 {deprecated {see TIP #422}} {
     int  Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList)
 }
 declare 277 {
     Tcl_Pid Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options)
 }
-declare 278 {
+declare 278 {deprecated {see TIP #422}} {
     TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList)
 }
 declare 279 {
@@ -1058,7 +1056,7 @@ declare 293 {
     int Tcl_EvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 declare 294 {
-    void Tcl_ExitThread(int status)
+    TCL_NORETURN void Tcl_ExitThread(int status)
 }
 declare 295 {
     int Tcl_ExternalToUtf(Tcl_Interp *interp, Tcl_Encoding encoding,
@@ -2324,6 +2322,17 @@ declare 630 {
 }
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
+
+# TIP #456
+declare 631 {
+    Tcl_Channel Tcl_OpenTcpServerEx(Tcl_Interp *interp, const char *service,
+	    const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc,
+	    ClientData callbackData)
+}
+
+# ----- BASELINE -- FOR -- 8.7.0 ----- #
+
+
 
 ##############################################################################
 

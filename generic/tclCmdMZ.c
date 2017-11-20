@@ -323,7 +323,7 @@ Tcl_RegexpObjCmd(
 
 	if (match == 0) {
 	    /*
-	     * We want to set the value of the intepreter result only when
+	     * We want to set the value of the interpreter result only when
 	     * this is the first time through the loop.
 	     */
 
@@ -487,26 +487,27 @@ Tcl_RegsubObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int idx, result, cflags, all, wlen, wsublen, numMatches, offset;
-    int start, end, subStart, subEnd, match;
+    int start, end, subStart, subEnd, match, command, numParts;
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
     Tcl_Obj *resultPtr, *subPtr, *objPtr, *startIndex = NULL;
     Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
 
     static const char *const options[] = {
-	"-all",		"-nocase",	"-expanded",
-	"-line",	"-linestop",	"-lineanchor",	"-start",
+	"-all",		"-command",	"-expanded",	"-line",
+	"-linestop",	"-lineanchor",	"-nocase",	"-start",
 	"--",		NULL
     };
     enum options {
-	REGSUB_ALL,	REGSUB_NOCASE,	REGSUB_EXPANDED,
-	REGSUB_LINE,	REGSUB_LINESTOP, REGSUB_LINEANCHOR,	REGSUB_START,
+	REGSUB_ALL,	 REGSUB_COMMAND,    REGSUB_EXPANDED, REGSUB_LINE,
+	REGSUB_LINESTOP, REGSUB_LINEANCHOR, REGSUB_NOCASE,   REGSUB_START,
 	REGSUB_LAST
     };
 
     cflags = TCL_REG_ADVANCED;
     all = 0;
     offset = 0;
+    command = 0;
     resultPtr = NULL;
 
     for (idx = 1; idx < objc; idx++) {
@@ -527,6 +528,9 @@ Tcl_RegsubObjCmd(
 	    break;
 	case REGSUB_NOCASE:
 	    cflags |= TCL_REG_NOCASE;
+	    break;
+	case REGSUB_COMMAND:
+	    command = 1;
 	    break;
 	case REGSUB_EXPANDED:
 	    cflags |= TCL_REG_EXPANDED;
@@ -585,7 +589,7 @@ Tcl_RegsubObjCmd(
 	}
     }
 
-    if (all && (offset == 0)
+    if (all && (offset == 0) && (command == 0)
 	    && (strpbrk(TclGetString(objv[2]), "&\\") == NULL)
 	    && (strpbrk(TclGetString(objv[0]), "*+?{}()[].\\|^$") == NULL)) {
 	/*
@@ -661,6 +665,28 @@ Tcl_RegsubObjCmd(
 	return TCL_ERROR;
     }
 
+    if (command) {
+	/*
+	 * In command-prefix mode, we require that the third non-option
+	 * argument be a list, so we enforce that here. Afterwards, we fetch
+	 * the RE compilation again in case objv[0] and objv[2] are the same
+	 * object. (If they aren't, that's cheap to do.)
+	 */
+
+	if (Tcl_ListObjLength(interp, objv[2], &numParts) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (numParts < 1) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "command prefix must be a list of at least one element",
+		    -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "REGSUB",
+		    "CMDEMPTY", NULL);
+	    return TCL_ERROR;
+	}
+	regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
+    }
+
     /*
      * Make sure to avoid problems where the objects are shared. This can
      * cause RegExpObj <> UnicodeObj shimmering that causes data corruption.
@@ -678,7 +704,9 @@ Tcl_RegsubObjCmd(
     } else {
 	subPtr = objv[2];
     }
-    wsubspec = Tcl_GetUnicodeFromObj(subPtr, &wsublen);
+    if (!command) {
+	wsubspec = Tcl_GetUnicodeFromObj(subPtr, &wsublen);
+    }
 
     result = TCL_OK;
 
@@ -735,6 +763,90 @@ Tcl_RegsubObjCmd(
 	start = info.matches[0].start;
 	end = info.matches[0].end;
 	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, start);
+
+	/*
+	 * In command-prefix mode, the substitutions are added as quoted
+	 * arguments to the subSpec to form a command, that is then executed
+	 * and the result used as the string to substitute in. Actually,
+	 * everything is passed through Tcl_EvalObjv, as that's much faster.
+	 */
+
+	if (command) {
+	    Tcl_Obj **args = NULL, **parts;
+	    int numArgs;
+
+	    Tcl_ListObjGetElements(interp, subPtr, &numParts, &parts);
+	    numArgs = numParts + info.nsubs + 1;
+	    args = ckalloc(sizeof(Tcl_Obj*) * numArgs);
+	    memcpy(args, parts, sizeof(Tcl_Obj*) * numParts);
+
+	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
+		subStart = info.matches[idx].start;
+		subEnd = info.matches[idx].end;
+		if ((subStart >= 0) && (subEnd >= 0)) {
+		    args[idx + numParts] = Tcl_NewUnicodeObj(
+			    wstring + offset + subStart, subEnd - subStart);
+		} else {
+		    args[idx + numParts] = Tcl_NewObj();
+		}
+		Tcl_IncrRefCount(args[idx + numParts]);
+	    }
+
+	    /*
+	     * At this point, we're locally holding the references to the
+	     * argument words we added for this time round the loop, and the
+	     * subPtr is holding the references to the words that the user
+	     * supplied directly. None are zero-refcount, which is important
+	     * because Tcl_EvalObjv is "hairy monster" in terms of refcount
+	     * handling, being able to optionally add references to any of its
+	     * argument words. We'll drop the local refs immediately
+	     * afterwards; subPtr is handled in the main exit stanza.
+	     */
+
+	    result = Tcl_EvalObjv(interp, numArgs, args, 0);
+	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
+		TclDecrRefCount(args[idx + numParts]);
+	    }
+	    ckfree(args);
+	    if (result != TCL_OK) {
+		if (result == TCL_ERROR) {
+		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+			    "\n    (%s substitution computation script)",
+			    options[REGSUB_COMMAND]));
+		}
+		goto done;
+	    }
+
+	    Tcl_AppendObjToObj(resultPtr, Tcl_GetObjResult(interp));
+	    Tcl_ResetResult(interp);
+
+	    /*
+	     * Refetch the unicode, in case the representation was smashed by
+	     * the user code.
+	     */
+
+	    wstring = Tcl_GetUnicodeFromObj(objPtr, &wlen);
+
+	    offset += end;
+	    if (end == 0 || start == end) {
+		/*
+		 * Always consume at least one character of the input string
+		 * in order to prevent infinite loops, even when we
+		 * technically matched the empty string; we must not match
+		 * again at the same spot.
+		 */
+
+		if (offset < wlen) {
+		    Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
+		}
+		offset++;
+	    }
+	    if (all) {
+		continue;
+	    } else {
+		break;
+	    }
+	}
 
 	/*
 	 * Append the subSpec argument to the variable, making appropriate
@@ -989,8 +1101,11 @@ TclNRSourceObjCmd(
 {
     const char *encodingName = NULL;
     Tcl_Obj *fileName;
+    int result;
+    void **pkgFiles = NULL;
+    void *names = NULL;
 
-    if (objc != 2 && objc !=4) {
+    if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-encoding name? fileName");
 	return TCL_ERROR;
     }
@@ -1008,9 +1123,30 @@ TclNRSourceObjCmd(
 	    return TCL_ERROR;
 	}
 	encodingName = TclGetString(objv[2]);
-    }
+    } else if (objc == 3) {
+	/* Handle undocumented -nopkg option. This should only be
+	 * used by the internal ::tcl::Pkg::source utility function. */
+	static const char *const nopkgoptions[] = {
+	    "-nopkg", NULL
+	};
+	int index;
 
-    return TclNREvalFile(interp, fileName, encodingName);
+	if (TCL_ERROR == Tcl_GetIndexFromObj(interp, objv[1], nopkgoptions,
+		"option", TCL_EXACT, &index)) {
+	    return TCL_ERROR;
+	}
+	pkgFiles = Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+	/* Make sure that during the following TclNREvalFile no filenames
+	 * are recorded for inclusion in the "package files" command */
+	names = *pkgFiles;
+	*pkgFiles = NULL;
+    }
+    result = TclNREvalFile(interp, fileName, encodingName);
+    if (pkgFiles) {
+	/* restore "tclPkgFiles" assocdata to how it was. */
+	*pkgFiles = names;
+    }
+    return result;
 }
 
 /*
@@ -1185,8 +1321,7 @@ StringFirstCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *needleStr, *haystackStr;
-    int match, start, needleLen, haystackLen;
+    int start = 0;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1194,82 +1329,23 @@ StringFirstCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * We are searching haystackStr for the sequence needleStr.
-     */
-
-    match = -1;
-    start = 0;
-    haystackLen = -1;
-
-    needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
-    haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
-
     if (objc == 4) {
-	/*
-	 * If a startIndex is specified, we will need to fast forward to that
-	 * point in the string before we think about a match.
-	 */
+	int size = Tcl_GetCharLength(objv[2]);
 
-	if (TclGetIntForIndexM(interp, objv[3], haystackLen-1,
-		&start) != TCL_OK){
+	if (TCL_OK != TclGetIntForIndexM(interp, objv[3], size - 1, &start)) {
 	    return TCL_ERROR;
 	}
 
-	/*
-	 * Reread to prevent shimmering problems.
-	 */
-
-	needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
-	haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
-
-	if (start >= haystackLen) {
-	    goto str_first_done;
-	} else if (start > 0) {
-	    haystackStr += start;
-	    haystackLen -= start;
-	} else if (start < 0) {
-	    /*
-	     * Invalid start index mapped to string start; Bug #423581
-	     */
-
+	if (start < 0) {
 	    start = 0;
 	}
-    }
-
-    /*
-     * If the length of the needle is more than the length of the haystack, it
-     * cannot be contained in there so we can avoid searching. [Bug 2960021]
-     */
-
-    if (needleLen > 0 && needleLen <= haystackLen) {
-	register Tcl_UniChar *p, *end;
-
-	end = haystackStr + haystackLen - needleLen + 1;
-	for (p = haystackStr;  p < end;  p++) {
-	    /*
-	     * Scan forward to find the first character.
-	     */
-
-	    if ((*p == *needleStr) && (TclUniCharNcmp(needleStr, p,
-		    (unsigned long) needleLen) == 0)) {
-		match = p - haystackStr;
-		break;
-	    }
+	if (start >= size) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+	    return TCL_OK;
 	}
     }
-
-    /*
-     * Compute the character index of the matching string by counting the
-     * number of characters before the match.
-     */
-
-    if ((match != -1) && (objc == 4)) {
-	match += start;
-    }
-
-  str_first_done:
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringFind(objv[1],
+	    objv[2], start)));
     return TCL_OK;
 }
 
@@ -1298,76 +1374,31 @@ StringLastCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *needleStr, *haystackStr, *p;
-    int match, start, needleLen, haystackLen;
+    int last = INT_MAX - 1;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"needleString haystackString ?startIndex?");
+		"needleString haystackString ?lastIndex?");
 	return TCL_ERROR;
     }
 
-    /*
-     * We are searching haystackString for the sequence needleString.
-     */
-
-    match = -1;
-    start = 0;
-    haystackLen = -1;
-
-    needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
-    haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
-
     if (objc == 4) {
-	/*
-	 * If a startIndex is specified, we will need to restrict the string
-	 * range to that char index in the string
-	 */
+	int size = Tcl_GetCharLength(objv[2]);
 
-	if (TclGetIntForIndexM(interp, objv[3], haystackLen-1,
-		&start) != TCL_OK){
+	if (TCL_OK != TclGetIntForIndexM(interp, objv[3], size - 1, &last)) {
 	    return TCL_ERROR;
 	}
 
-	/*
-	 * Reread to prevent shimmering problems.
-	 */
-
-	needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
-	haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
-
-	if (start < 0) {
-	    goto str_last_done;
-	} else if (start < haystackLen) {
-	    p = haystackStr + start + 1 - needleLen;
-	} else {
-	    p = haystackStr + haystackLen - needleLen;
+	if (last < 0) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+	    return TCL_OK;
 	}
-    } else {
-	p = haystackStr + haystackLen - needleLen;
-    }
-
-    /*
-     * If the length of the needle is more than the length of the haystack, it
-     * cannot be contained in there so we can avoid searching. [Bug 2960021]
-     */
-
-    if (needleLen > 0 && needleLen <= haystackLen) {
-	for (; p >= haystackStr; p--) {
-	    /*
-	     * Scan backwards to find the first character.
-	     */
-
-	    if ((*p == *needleStr) && !memcmp(needleStr, p,
-		    sizeof(Tcl_UniChar) * (size_t)needleLen)) {
-		match = p - haystackStr;
-		break;
-	    }
+	if (last >= size) {
+	    last = size - 1;
 	}
     }
-
-  str_last_done:
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringLast(objv[1],
+	    objv[2], last)));
     return TCL_OK;
 }
 
@@ -1890,7 +1921,7 @@ StringMapCmd(
 
     /*
      * This test is tricky, but has to be that way or you get other strange
-     * inconsistencies (see test string-10.20 for illustration why!)
+     * inconsistencies (see test string-10.20.1 for illustration why!)
      */
 
     if (objv[objc-2]->typePtr == &tclDictType && objv[objc-2]->bytes == NULL){
@@ -2240,9 +2271,7 @@ StringReptCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *string1;
-    char *string2;
-    int count, index, length1, length2;
+    int count;
     Tcl_Obj *resultPtr;
 
     if (objc != 3) {
@@ -2260,70 +2289,15 @@ StringReptCmd(
 
     if (count == 1) {
 	Tcl_SetObjResult(interp, objv[1]);
-	goto done;
+	return TCL_OK;
     } else if (count < 1) {
-	goto done;
-    }
-    string1 = TclGetStringFromObj(objv[1], &length1);
-    if (length1 <= 0) {
-	goto done;
+	return TCL_OK;
     }
 
-    /*
-     * Only build up a string that has data. Instead of building it up with
-     * repeated appends, we just allocate the necessary space once and copy
-     * the string value in.
-     *
-     * We have to worry about overflow [Bugs 714106, 2561746].
-     * At this point we know 1 <= length1 <= INT_MAX and 2 <= count <= INT_MAX.
-     * We need to keep 2 <= length2 <= INT_MAX.
-     */
-
-    if (count > INT_MAX/length1) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"result exceeds max size for a Tcl value (%d bytes)",
-		INT_MAX));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+    if (TCL_OK != TclStringRepeat(interp, objv[1], count, &resultPtr)) {
 	return TCL_ERROR;
     }
-    length2 = length1 * count;
-
-    /*
-     * Include space for the NUL.
-     */
-
-    string2 = attemptckalloc((unsigned) length2 + 1);
-    if (string2 == NULL) {
-	/*
-	 * Alloc failed. Note that in this case we try to do an error message
-	 * since this is a case that's most likely when the alloc is large and
-	 * that's easy to do with this API. Note that if we fail allocating a
-	 * short string, this will likely keel over too (and fatally).
-	 */
-
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"string size overflow, out of memory allocating %u bytes",
-		length2 + 1));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
-	return TCL_ERROR;
-    }
-    for (index = 0; index < count; index++) {
-	memcpy(string2 + (length1 * index), string1, (size_t) length1);
-    }
-    string2[length2] = '\0';
-
-    /*
-     * We have to directly assign this instead of using Tcl_SetStringObj (and
-     * indirectly TclInitStringRep) because that makes another copy of the
-     * data.
-     */
-
-    TclNewObj(resultPtr);
-    resultPtr->bytes = string2;
-    resultPtr->length = length2;
     Tcl_SetObjResult(interp, resultPtr);
-
-  done:
     return TCL_OK;
 }
 
@@ -2872,7 +2846,7 @@ StringCatCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i;
+    int code;
     Tcl_Obj *objResultPtr;
 
     if (objc < 2) {
@@ -2889,16 +2863,16 @@ StringCatCmd(
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
     }
-    objResultPtr = objv[1];
-    if (Tcl_IsShared(objResultPtr)) {
-	objResultPtr = Tcl_DuplicateObj(objResultPtr);
-    }
-    for(i = 2;i < objc;i++) {
-	Tcl_AppendObjToObj(objResultPtr, objv[i]);
-    }
-    Tcl_SetObjResult(interp, objResultPtr);
 
-    return TCL_OK;
+    code = TclStringCatObjv(interp, /* inPlace */ 1, objc-1, objv+1,
+	    &objResultPtr);
+
+    if (code == TCL_OK) {
+	Tcl_SetObjResult(interp, objResultPtr);
+	return TCL_OK;
+    }
+
+    return code;
 }
 
 /*
@@ -4336,7 +4310,7 @@ TclNRTryObjCmd(
 	    }
 
 	    info[0] = objv[i];			/* type */
-	    TclNewIntObj(info[1], code);	/* returnCode */
+	    TclNewLongObj(info[1], code);	/* returnCode */
 	    if (info[2] == NULL) {		/* errorCodePrefix */
 		TclNewObj(info[2]);
 	    }
