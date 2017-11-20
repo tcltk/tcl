@@ -160,13 +160,13 @@ typedef struct Tcl_ResolvedVarInfo {
 } Tcl_ResolvedVarInfo;
 
 typedef int (Tcl_ResolveCompiledVarProc)(Tcl_Interp *interp,
-	CONST84 char *name, int length, Tcl_Namespace *context,
+	const char *name, int length, Tcl_Namespace *context,
 	Tcl_ResolvedVarInfo **rPtr);
 
-typedef int (Tcl_ResolveVarProc)(Tcl_Interp *interp, CONST84 char *name,
+typedef int (Tcl_ResolveVarProc)(Tcl_Interp *interp, const char *name,
 	Tcl_Namespace *context, int flags, Tcl_Var *rPtr);
 
-typedef int (Tcl_ResolveCmdProc)(Tcl_Interp *interp, CONST84 char *name,
+typedef int (Tcl_ResolveCmdProc)(Tcl_Interp *interp, const char *name,
 	Tcl_Namespace *context, int flags, Tcl_Command *rPtr);
 
 typedef struct Tcl_ResolverInfo {
