@@ -2340,9 +2340,7 @@ declare 632 {
 declare 633 {
     int TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
 }
-declare 634 {
-    int TclZipfs_AppHook(int *argc, char ***argv)
-}
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only
@@ -2353,6 +2351,9 @@ interface tclPlat
 ################################
 # Unix specific functions
 #   (none)
+declare 0 unix {
+    int TclZipfs_AppHook(int *argc, char ***argv)
+}
 
 ################################
 # Windows specific functions
@@ -2365,7 +2366,9 @@ declare 0 win {
 declare 1 win {
     char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
 }
-
+declare 2 win {
+    int TclZipfs_AppHook(int *argc, TCHAR ***argv)
+}
 ################################
 # Mac OS X specific functions
 
