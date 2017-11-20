@@ -331,9 +331,6 @@
 /* Do we have a usable 'union wait'? */
 #undef NO_UNION_WAIT
 
-/* Do we have <values.h>? */
-#undef NO_VALUES_H
-
 /* Do we have wait3() */
 #undef NO_WAIT3
 
