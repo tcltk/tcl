@@ -16,6 +16,8 @@
 
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <sys/mman.h>
+#else
+#include <winbase.h>
 #endif
 #include <errno.h>
 #include <string.h>
@@ -3888,6 +3890,26 @@ TclZipfs_Init(Tcl_Interp *interp)
 #endif
 }
 
+#if defined(_WIN32) || defined(_WIN64)
+#define LIBRARY_SIZE	    64
+static int
+ToUtf(
+    const WCHAR *wSrc,
+    char *dst)
+{
+    char *start;
+
+    start = dst;
+    while (*wSrc != '\0') {
+	dst += Tcl_UniCharToUtf(*wSrc, dst);
+	wSrc++;
+    }
+    *dst = '\0';
+    return (int) (dst - start);
+}
+
+#endif
+
 static int TclZipfs_AppHook_FindTclInit(const char *archive){
     Tcl_Obj *vfsinitscript;
     int found;
@@ -3918,6 +3940,12 @@ int TclZipfs_AppHook(int *argc, char ***argv){
      */
 
     CONST char *archive;
+#if defined(_WIN32) || defined(_WIN64)
+  HMODULE hModule = TclWinGetTclInstance();
+  WCHAR wName[MAX_PATH + LIBRARY_SIZE];
+  char dllname[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
+#endif
+    
     Tcl_FindExecutable(*argv[0]);
     archive=Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);
@@ -4006,10 +4034,23 @@ int TclZipfs_AppHook(int *argc, char ***argv){
             }
         }
     }
+#if defined(_WIN32) || defined(_WIN64)
+    if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
+      GetModuleFileNameA(hModule, dllname, MAX_PATH);
+    } else {
+      ToUtf(wName, dllname);
+    }
+    printf("DLL FILE: %s\n",dllname); fflush(stdout);
+    /* Mount zip file and dll before releasing to search */
+    if(TclZipfs_AppHook_FindTclInit(dllname)==TCL_OK) {
+        return TCL_OK;
+    }
+#else
     /* Mount zip file and dll before releasing to search */
     if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_DLLFILE)==TCL_OK) {
         return TCL_OK;
     }
+#endif
     if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
         return TCL_OK;
     }
