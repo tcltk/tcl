@@ -94,7 +94,7 @@ static const unsigned char totalBytes[256] = {
 
 int
 TclUtfCount(
-    int ch)			/* The Tcl_UniChar whose size is returned. */
+    int ch)			/* The Unicode character whose size is returned. */
 {
     if ((unsigned)(ch - 1) < (UNICODE_SELF - 1)) {
 	return 1;
@@ -522,24 +522,23 @@ Tcl_NumUtfChars(
  *
  * Tcl_UtfFindFirst --
  *
- *	Returns a pointer to the first occurance of the given character in
- *	the NULL-terminated UTF-8 string. The NULL terminator is considered
+ *	Returns a pointer to the first occurance of the given Unicode character
+ *	in the NULL-terminated UTF-8 string. The NULL terminator is considered
  *	part of the UTF-8 string. Equivalent to Plan 9 utfrune().
  *
  * Results:
- *	As above. If the character does not exist in the given string, the
- *	return value is NULL.
+ *	As above. If the Unicode character does not exist in the given string,
+ *	the return value is NULL.
  *
  * Side effects:
  *	None.
  *
  *---------------------------------------------------------------------------
  */
-
 const char *
 Tcl_UtfFindFirst(
     const char *src,		/* The UTF-8 string to be searched. */
-    int ch)			/* The character to search for. */
+    int ch)			/* The Unicode character to search for. */
 {
     int len, fullchar;
     Tcl_UniChar find = 0;
@@ -549,7 +548,7 @@ Tcl_UtfFindFirst(
 	fullchar = find;
 #if TCL_UTF_MAX == 4
 	if (!len) {
-	    len += TclUtfToUniChar(stringPtr, &find);
+	    len += TclUtfToUniChar(src, &find);
 	    fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	}
 #endif
@@ -568,8 +567,8 @@ Tcl_UtfFindFirst(
  *
  * Tcl_UtfFindLast --
  *
- *	Returns a pointer to the last occurance of the given Tcl_UniChar in
- *	the NULL-terminated UTF-8 string. The NULL terminator is considered
+ *	Returns a pointer to the last occurance of the given Unicode character
+ *	in the NULL-terminated UTF-8 string. The NULL terminator is considered
  *	part of the UTF-8 string. Equivalent to Plan 9 utfrrune().
  *
  * Results:
@@ -585,7 +584,7 @@ Tcl_UtfFindFirst(
 const char *
 Tcl_UtfFindLast(
     const char *src,		/* The UTF-8 string to be searched. */
-    int ch)			/* The character to search for. */
+    int ch)			/* The Unicode character to search for. */
 {
     int len, fullchar;
     Tcl_UniChar find = 0;
@@ -597,7 +596,7 @@ Tcl_UtfFindLast(
 	fullchar = find;
 #if TCL_UTF_MAX == 4
 	if (!len) {
-	    len += TclUtfToUniChar(stringPtr, &find);
+	    len += TclUtfToUniChar(src, &find);
 	    fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	}
 #endif
@@ -630,7 +629,6 @@ Tcl_UtfFindLast(
  *
  *---------------------------------------------------------------------------
  */
-
 const char *
 Tcl_UtfNext(
     const char *src)		/* The current location in the string. */
