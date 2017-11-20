@@ -1425,7 +1425,7 @@ AC_DEFUN([SC_ZIPFS_SUPPORT], [
             # We can use the locally distributed minizip instead
             ZIP_PROG="../minizip${EXEEXT_FOR_BUILD}"
             ZIP_PROG_OPTIONS="\"-o\""
-            ZIP_PROG_VFSSEARCH="'find . -type f'"
+            ZIP_PROG_VFSSEARCH="\"`find . -type f`\""
             ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
             AC_MSG_RESULT([No zip found on PATH building minizip])
         fi
