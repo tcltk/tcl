@@ -181,13 +181,7 @@ extern int TclUnixSetBlockingMode(int fd, int mode);
  *---------------------------------------------------------------------------
  */
 
-#ifndef NO_FLOAT_H
-#   include <float.h>
-#else
-#ifndef NO_VALUES_H
-#   include <values.h>
-#endif
-#endif
+#include <float.h>
 
 #ifndef FLT_MAX
 #   ifdef MAXFLOAT
