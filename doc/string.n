@@ -386,8 +386,8 @@ store the representation is of very low value (except to C extension
 code, which has direct access for the purpose of memory management,
 etc.)
 .PP
-\fICompatibility note:\fR it is likely that this subcommand will be
-withdrawn in a future version of Tcl. It is better to use the
+\fICompatibility note:\fR this subcommand will be gone in
+Tcl 9.0. It is better to use the
 \fBencoding convertto\fR command to convert a string to a known
 encoding and then apply \fBstring length\fR to that.
 .PP
