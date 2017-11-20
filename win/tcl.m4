@@ -1302,47 +1302,6 @@ print("manifest needed")
     AC_SUBST(VC_MANIFEST_EMBED_EXE)
 ])
 
-
-#------------------------------------------------------------------------
-# SC_PROG_ZIP
-#	Locate a zip encoder installed on the system path, or none.
-#
-# Arguments:
-#	none
-#
-# Results:
-#	Substitutes the following vars:
-#		ZIP_PROG
-#------------------------------------------------------------------------
-
-AC_DEFUN([SC_PROG_ZIP], [
-    AC_MSG_CHECKING([for zip])
-    AC_CACHE_VAL(ac_cv_path_zip, [
-	search_path=`echo ${PATH} | sed -e 's/:/ /g'`
-	for dir in $search_path ; do
-	    for j in `ls -r $dir/zip 2> /dev/null` \
-		    `ls -r $dir/zip 2> /dev/null` ; do
-		if test x"$ac_cv_path_zip" = x ; then
-		    if test -f "$j" ; then
-			ac_cv_path_zip=$j
-			break
-		    fi
-		fi
-	    done
-	done
-    ])
-
-    if test -f "$ac_cv_path_zip" ; then
-	ZIP_PROG="$ac_cv_path_zip"
-	AC_MSG_RESULT([$ZIP_PROG])
-    else
-	# It is not an error if an installed version of Zip can't be located.
-	ZIP_PROG=""
-	AC_MSG_RESULT([No zip found on PATH])
-    fi
-    AC_SUBST(ZIP_PROG)
-])
-
 #------------------------------------------------------------------------
 # SC_CC_FOR_BUILD
 #	For cross compiles, locate a C compiler that can generate native binaries.
@@ -1405,3 +1364,74 @@ else
 fi
 AC_SUBST(EXEEXT_FOR_BUILD)])dnl
 AC_SUBST(OBJEXT_FOR_BUILD)])dnl
+
+
+
+#------------------------------------------------------------------------
+# SC_ZIPFS_SUPPORT
+#	Locate a zip encoder installed on the system path, or none.
+#
+# Arguments:
+#	none
+#
+# Results:
+#	Substitutes the following vars:
+#		ZIP_PROG
+#       ZIP_PROG_OPTIONS
+#       ZIP_PROG_VFSSEARCH
+#       ZIP_INSTALL_OBJS
+#------------------------------------------------------------------------
+
+AC_DEFUN([SC_ZIPFS_SUPPORT], [
+    ZIP_PROG=""
+    ZIP_PROG_OPTIONS=""
+    ZIP_PROG_VFSSEARCH=""
+    ZIP_INSTALL_OBJS=""
+    AC_MSG_CHECKING([for zip])
+    # If our native tclsh processes the "install" command line option
+    # we can use it to mint zip files
+    AS_IF([$TCLSH_PROG install],[
+      ZIP_PROG=${TCLSH_PROG}
+      ZIP_PROG_OPTIONS="install mkzip"
+      ZIP_PROG_VFSSEARCH="."
+      AC_MSG_RESULT([Can use Native Tclsh for Zip encoding])
+    ])
+
+    if test "x$ZIP_PROG" = "x" ; then
+        AC_MSG_CHECKING([for zip])
+        AC_CACHE_VAL(ac_cv_path_zip, [
+        search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+        for dir in $search_path ; do
+            for j in `ls -r $dir/zip 2> /dev/null` \
+                `ls -r $dir/zip 2> /dev/null` ; do
+            if test x"$ac_cv_path_zip" = x ; then
+                if test -f "$j" ; then
+                ac_cv_path_zip=$j
+                break
+                fi
+            fi
+            done
+        done
+        ])
+        if test -f "$ac_cv_path_zip" ; then
+            ZIP_PROG="$ac_cv_path_zip "
+            AC_MSG_RESULT([$ZIP_PROG])
+            ZIP_PROG_OPTIONS="-rq"
+            ZIP_PROG_VFSSEARCH="."
+            AC_MSG_RESULT([Found INFO Zip in environment])
+            # Use standard arguments for zip
+        else
+            # It is not an error if an installed version of Zip can't be located.
+            # We can use the locally distributed minizip instead
+            ZIP_PROG="../minizip${EXEEXT_FOR_BUILD}"
+            ZIP_PROG_OPTIONS="\"-o\""
+            ZIP_PROG_VFSSEARCH="\`find . -type f\'"
+            ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
+            AC_MSG_RESULT([No zip found on PATH building minizip])
+        fi
+    fi
+    AC_SUBST(ZIP_PROG)
+    AC_SUBST(ZIP_PROG_OPTIONS)
+    AC_SUBST(ZIP_PROG_VFSSEARCH)
+    AC_SUBST(ZIP_INSTALL_OBJS)
+])
