@@ -197,7 +197,7 @@ RM		= rm -f
 COPY		= cp
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} \
--I"${ZLIB_DIR_NATIVE}" -I"${GENERIC_DIR_NATIVE}" -DTCL_TOMMATH \
+-I"${ZLIB_DIR_NATIVE}" -I"${GENERIC_DIR_NATIVE}" \
 -DMP_PREC=4 -I"${TOMMATH_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" \
 ${AC_FLAGS} ${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS}
 
@@ -205,7 +205,7 @@ CC_OBJNAME = @CC_OBJNAME@
 CC_EXENAME = @CC_EXENAME@
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I"${GENERIC_DIR_NATIVE}" -DTCL_TOMMATH -DMP_PREC=4 -I"${TOMMATH_DIR_NATIVE}" \
+-I"${GENERIC_DIR_NATIVE}" -DMP_PREC=4 -I"${TOMMATH_DIR_NATIVE}" \
 -I"${WIN_DIR_NATIVE}" ${AC_FLAGS} \
 ${COMPILE_DEBUG_FLAGS}
 
@@ -328,6 +328,10 @@ TOMMATH_OBJS = \
 	bn_mp_div_3.${OBJEXT} \
 	bn_mp_exch.${OBJEXT} \
 	bn_mp_expt_d.${OBJEXT} \
+	bn_mp_expt_d_ex.${OBJEXT} \
+	bn_mp_get_int.${OBJEXT} \
+	bn_mp_get_long.${OBJEXT} \
+	bn_mp_get_long_long.${OBJEXT} \
 	bn_mp_grow.${OBJEXT} \
 	bn_mp_init.${OBJEXT} \
 	bn_mp_init_copy.${OBJEXT} \
@@ -352,6 +356,8 @@ TOMMATH_OBJS = \
 	bn_mp_rshd.${OBJEXT} \
 	bn_mp_set.${OBJEXT} \
 	bn_mp_set_int.${OBJEXT} \
+	bn_mp_set_long.${OBJEXT} \
+	bn_mp_set_long_long.${OBJEXT} \
 	bn_mp_shrink.${OBJEXT} \
 	bn_mp_sqr.${OBJEXT} \
 	bn_mp_sqrt.${OBJEXT} \
@@ -660,8 +666,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package msgcat 1.6.1 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.6.1.tm;
-	@echo "Installing package tcltest 2.4.1 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.4.1.tm;
+	@echo "Installing package tcltest 2.4.0 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.4.0.tm;
 	@echo "Installing package platform 1.0.14 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.14.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";

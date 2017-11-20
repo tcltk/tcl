@@ -373,7 +373,7 @@ ConvertErrorToList(
 
     default:
 	TclNewLiteralStringObj(objv[2], "UNKNOWN");
-	TclNewIntObj(objv[3], code);
+	TclNewLongObj(objv[3], code);
 	return Tcl_NewListObj(4, objv);
     }
 }
@@ -440,7 +440,7 @@ GenerateHeader(
     if (GetValue(interp, dictObj, "comment", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL) {
-	valueStr = Tcl_GetStringFromObj(value, &len);
+	valueStr = TclGetStringFromObj(value, &len);
 	Tcl_UtfToExternal(NULL, latin1enc, valueStr, len, 0, NULL,
 		headerPtr->nativeCommentBuf, MAX_COMMENT_LEN-1, NULL, &len,
 		NULL);
@@ -461,7 +461,7 @@ GenerateHeader(
     if (GetValue(interp, dictObj, "filename", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL) {
-	valueStr = Tcl_GetStringFromObj(value, &len);
+	valueStr = TclGetStringFromObj(value, &len);
 	Tcl_UtfToExternal(NULL, latin1enc, valueStr, len, 0, NULL,
 		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len, NULL);
 	headerPtr->nativeFilenameBuf[len] = '\0';
@@ -3387,7 +3387,7 @@ ZlibTransformGetOption(
 	} else {
 	    if (cd->compDictObj) {
 		int len;
-		const char *str = Tcl_GetStringFromObj(cd->compDictObj, &len);
+		const char *str = TclGetStringFromObj(cd->compDictObj, &len);
 
 		Tcl_DStringAppend(dsPtr, str, len);
 	    }

@@ -900,7 +900,7 @@ TclCompileConcatCmd(
 	Tcl_ListObjGetElements(NULL, listObj, &len, &objs);
 	objPtr = Tcl_ConcatObj(len, objs);
 	Tcl_DecrRefCount(listObj);
-	bytes = Tcl_GetStringFromObj(objPtr, &len);
+	bytes = TclGetStringFromObj(objPtr, &len);
 	PushLiteral(envPtr, bytes, len);
 	Tcl_DecrRefCount(objPtr);
 	return TCL_OK;
@@ -1308,7 +1308,7 @@ TclCompileDictCreateCmd(
      * We did! Excellent. The "verifyDict" is to do type forcing.
      */
 
-    bytes = Tcl_GetStringFromObj(dictObj, &len);
+    bytes = TclGetStringFromObj(dictObj, &len);
     PushLiteral(envPtr, bytes, len);
     TclEmitOpcode(		INST_DUP,			envPtr);
     TclEmitOpcode(		INST_DICT_VERIFY,		envPtr);
@@ -2749,7 +2749,7 @@ CompileEachloopCmd(
 	    int numBytes, varIndex;
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
-	    bytes = Tcl_GetStringFromObj(varNameObj, &numBytes);
+	    bytes = TclGetStringFromObj(varNameObj, &numBytes);
 	    varIndex = LocalScalar(bytes, numBytes, envPtr);
 	    if (varIndex < 0) {
 		code = TCL_ERROR;
@@ -3186,7 +3186,7 @@ TclCompileFormatCmd(
      * literal. Job done.
      */
 
-    bytes = Tcl_GetStringFromObj(tmpObj, &len);
+    bytes = TclGetStringFromObj(tmpObj, &len);
     PushLiteral(envPtr, bytes, len);
     Tcl_DecrRefCount(tmpObj);
     return TCL_OK;
@@ -3257,7 +3257,7 @@ TclCompileFormatCmd(
 	    if (*++bytes == '%') {
 		Tcl_AppendToObj(tmpObj, "%", 1);
 	    } else {
-		char *b = Tcl_GetStringFromObj(tmpObj, &len);
+		char *b = TclGetStringFromObj(tmpObj, &len);
 
 		/*
 		 * If there is a non-empty literal from the format string,
@@ -3291,7 +3291,7 @@ TclCompileFormatCmd(
      */
 
     Tcl_AppendToObj(tmpObj, start, bytes - start);
-    bytes = Tcl_GetStringFromObj(tmpObj, &len);
+    bytes = TclGetStringFromObj(tmpObj, &len);
     if (len > 0) {
 	PushLiteral(envPtr, bytes, len);
 	i++;

@@ -211,7 +211,7 @@ struct TransformChannelData {
 				 * a transformation of incoming data. Also
 				 * serves as buffer of all data not yet
 				 * consumed by the reader. */
-    int refCount;
+    size_t refCount;
 };
 
 static void
@@ -225,7 +225,7 @@ static void
 ReleaseData(
     TransformChannelData *dataPtr)
 {
-    if (--dataPtr->refCount) {
+    if (dataPtr->refCount-- > 1) {
 	return;
     }
     ResultClear(&dataPtr->result);

@@ -8234,7 +8234,7 @@ Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 
 2013-05-16 (platform support) mingw-4.0 (nijtmans)
 
-2013-05-19 (platform support) FreeBSD updates (cerutti)
+2013-05-19 (platform support) FreeBSD updates (gahr)
 
 2013-05-20 (bug fix)[3613567] access error temp file creation (keene)
 
@@ -8657,7 +8657,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2016-05-21 (bug)[f7d4e] [namespace delete] performance (fellows)
 
-2016-06-02 (TIP 447) execution time verbosity option (cerutti)
+2016-06-02 (TIP 447) execution time verbosity option (gahr)
 => tcltest 2.4.0
 
 2016-06-16 (bug)[16828b] crash due to [vwait] trace undo fail (dah,porter)
@@ -8796,5 +8796,48 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 --- Released 8.6.7, August 9, 2017 --- http://core.tcl.tk/tcl/ for details
 
+2016-03-17 (bug)[0b8c38] socket accept callbacks always in global ns (porter)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-07-01 Hack accommodations for legacy Itcl 3 disabled (porter)
+
+2016-07-12 Make TCL_HASH_TYPE build-time configurable (nijtmans)
+
+2016-07-19 (bug)[0363f0] Partial array search ID reform (porter)
+
+2016-07-19 (feature removed) Tcl_ObjType "array search" unregistered (porter)
+	*** POTENTIAL INCOMPATIBILITY for Tcl_GetObjType("array search") ***
+
+2016-10-04 Server socket on port 0 chooses port supporting IPv4 * IPv6 (max)
+
+2016-11-25 [array named -regexp] supports backrefs (goth)
+
+2017-01-04 (TIP 456) New routine Tcl_OpenTcpServerEx() (limeboy)
+
+2017-01-04 (TIP 459) New subcommand [package files] (nijtmans)
+
+2017-01-16 threaded allocator initialization repair (vasiljevic,nijtmans)
+
+2017-01-30 Add to Win shell builtins: assoc ftype move (ashok)
+
+2017-03-31 TCL_MEM_DEBUG facilities better support 64-bit memory (nijtmans)
+
+2017-04-13 \u escaped content in msg files converted to true utf-8 (nijtmans)
+
+2017-05-18 (TIP 458) New epoll or kqueue notifiers are default (alborboz)
+
+2017-05-31 Purge build support for SunOS-4.* (stu)
+
+2017-06-22 (TIP 463) New option [regsub ... -command ...] (fellows)
+
+2017-06-22 (TIP 470) Tcl_GetDefineContextObject();[oo::define [self]] (fellows)
+=> TclOO 1.2.0
+
+2017-06-23 (TIP 472) Support 0d as prefix of decimal numbers (iyer,griffin)
+
 2017-08-31 (bug)[2a9465] http state 100 continue handling broken (oehlmann)
 => http 2.8.12
+
+2017-09-02 (bug)[0e4d88] replace command, delete trace kills namespace (porter)
+
+--- Released 8.7a1, September 8, 2017 --- http://core.tcl.tk/tcl/ for details

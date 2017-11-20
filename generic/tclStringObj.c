@@ -39,15 +39,6 @@
 #include "tclStringRep.h"
 
 /*
- * Set COMPAT to 1 to restore the shimmering patterns to those of Tcl 8.5.
- * This is an escape hatch in case the changes have some unexpected unwelcome
- * impact on performance. If things go well, this mechanism can go away when
- * post-8.6 development begins.
- */
-
-#define COMPAT 0
-
-/*
  * Prototypes for functions defined later in this file:
  */
 
@@ -145,7 +136,7 @@ GrowStringBuffer(
     char *ptr = NULL;
     int attempt;
 
-    if (objPtr->bytes == tclEmptyStringRep) {
+    if (objPtr->bytes == &tclEmptyString) {
 	objPtr->bytes = NULL;
     }
     if (flag == 0 || stringPtr->allocated > 0) {
@@ -418,6 +409,15 @@ Tcl_GetCharLength(
     int numChars;
 
     /*
+     * Quick, no-shimmer return for short string reps.
+     */
+
+    if ((objPtr->bytes) && (objPtr->length < 2)) {
+	/* 0 bytes -> 0 chars; 1 byte -> 1 char */
+	return objPtr->length;
+    }
+
+    /*
      * Optimize the case where we're really dealing with a bytearray object
      * without string representation; we don't need to convert to a string to
      * perform the get-length operation.
@@ -445,18 +445,6 @@ Tcl_GetCharLength(
     if (numChars == -1) {
 	TclNumUtfChars(numChars, objPtr->bytes, objPtr->length);
 	stringPtr->numChars = numChars;
-
-#if COMPAT
-	if (numChars < objPtr->length) {
-	    /*
-	     * Since we've just computed the number of chars, and not all UTF
-	     * chars are 1-byte long, go ahead and populate the unicode
-	     * string.
-	     */
-
-	    FillUnicodeRep(objPtr);
-	}
-#endif
     }
     return numChars;
 }
@@ -779,7 +767,7 @@ Tcl_SetObjLength(
 	    /*
 	     * Need to enlarge the buffer.
 	     */
-	    if (objPtr->bytes == tclEmptyStringRep) {
+	    if (objPtr->bytes == &tclEmptyString) {
 		objPtr->bytes = ckalloc(length + 1);
 	    } else {
 		objPtr->bytes = ckrealloc(objPtr->bytes, length + 1);
@@ -885,7 +873,7 @@ Tcl_AttemptSetObjLength(
 
 	    char *newBytes;
 
-	    if (objPtr->bytes == tclEmptyStringRep) {
+	    if (objPtr->bytes == &tclEmptyString) {
 		newBytes = attemptckalloc(length + 1);
 	    } else {
 		newBytes = attemptckrealloc(objPtr->bytes, length + 1);
@@ -1173,11 +1161,7 @@ Tcl_AppendUnicodeToObj(
      * objPtr's string rep.
      */
 
-    if (stringPtr->hasUnicode
-#if COMPAT
-		&& stringPtr->numChars > 0
-#endif
-	    ) {
+    if (stringPtr->hasUnicode) {
 	AppendUnicodeToUnicodeRep(objPtr, unicode, length);
     } else {
 	AppendUnicodeToUtfRep(objPtr, unicode, length);
@@ -1218,7 +1202,7 @@ Tcl_AppendObjToObj(
      * that appending nothing to anything leaves that starting anything...
      */
 
-    if (appendObjPtr->bytes == tclEmptyStringRep) {
+    if (appendObjPtr->bytes == &tclEmptyString) {
 	return;
     }
 
@@ -1229,7 +1213,7 @@ Tcl_AppendObjToObj(
      * information; this is a special-case optimization only.
      */
 
-    if ((TclIsPureByteArray(objPtr) || objPtr->bytes == tclEmptyStringRep)
+    if ((TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)
 	    && TclIsPureByteArray(appendObjPtr)) {
 
 	/*
@@ -1283,11 +1267,7 @@ Tcl_AppendObjToObj(
      * appendObjPtr and append it.
      */
 
-    if (stringPtr->hasUnicode
-#if COMPAT
-		&& stringPtr->numChars > 0
-#endif
-	    ) {
+    if (stringPtr->hasUnicode) {
 	/*
 	 * If appendObjPtr is not of the "String" type, don't convert it.
 	 */
@@ -1320,11 +1300,7 @@ Tcl_AppendObjToObj(
 
     AppendUtfToUtfRep(objPtr, bytes, length);
 
-    if (numChars >= 0 && appendNumChars >= 0
-#if COMPAT
-		&& appendNumChars == length
-#endif
-	    ) {
+    if (numChars >= 0 && appendNumChars >= 0) {
 	stringPtr->numChars = numChars + appendNumChars;
     }
 }
@@ -1448,14 +1424,6 @@ AppendUnicodeToUtfRep(
     if (stringPtr->numChars != -1) {
 	stringPtr->numChars += numChars;
     }
-
-#if COMPAT
-    /*
-     * Invalidate the unicode rep.
-     */
-
-    stringPtr->hasUnicode = 0;
-#endif
 }
 
 /*
@@ -1898,6 +1866,34 @@ Tcl_AppendFormatToObj(
 		useWide = 1;
 #endif
 	    }
+	} else if (ch == 'I') {
+	    if ((format[1] == '6') && (format[2] == '4')) {
+		format += (step + 2);
+		step = Tcl_UtfToUniChar(format, &ch);
+#ifndef TCL_WIDE_INT_IS_LONG
+		useWide = 1;
+#endif
+	    } else if ((format[1] == '3') && (format[2] == '2')) {
+		format += (step + 2);
+		step = Tcl_UtfToUniChar(format, &ch);
+	    } else {
+		format += step;
+		step = Tcl_UtfToUniChar(format, &ch);
+	    }
+	} else if ((ch == 't') || (ch == 'z')) {
+	    format += step;
+	    step = Tcl_UtfToUniChar(format, &ch);
+#ifndef TCL_WIDE_INT_IS_LONG
+	    if (sizeof(size_t) > sizeof(int)) {
+		useWide = 1;
+	    }
+#endif
+	} else if ((ch == 'q') ||(ch == 'j')) {
+	    format += step;
+	    step = Tcl_UtfToUniChar(format, &ch);
+#ifndef TCL_WIDE_INT_IS_LONG
+	    useWide = 1;
+#endif
 	}
 
 	format += step;
@@ -1950,6 +1946,7 @@ Tcl_AppendFormatToObj(
 	    }
 	case 'd':
 	case 'o':
+	case 'p':
 	case 'x':
 	case 'X':
 	case 'b': {
@@ -1960,6 +1957,11 @@ Tcl_AppendFormatToObj(
 	    mp_int big;
 	    int toAppend, isNegative = 0;
 
+#ifndef TCL_WIDE_INT_IS_LONG
+	    if (ch == 'p') {
+		useWide = 1;
+	    }
+#endif
 	    if (useBig) {
 		if (Tcl_GetBignumFromObj(interp, segment, &big) != TCL_OK) {
 		    goto error;
@@ -2020,7 +2022,7 @@ Tcl_AppendFormatToObj(
 		segmentLimit -= 1;
 	    }
 
-	    if (gotHash) {
+	    if (gotHash || (ch == 'p')) {
 		switch (ch) {
 		case 'o':
 		    Tcl_AppendToObj(segment, "0", 1);
@@ -2031,12 +2033,17 @@ Tcl_AppendFormatToObj(
 		    Tcl_AppendToObj(segment, "0X", 2);
 		    segmentLimit -= 2;
 		    break;
+		case 'p':
 		case 'x':
 		    Tcl_AppendToObj(segment, "0x", 2);
 		    segmentLimit -= 2;
 		    break;
 		case 'b':
 		    Tcl_AppendToObj(segment, "0b", 2);
+		    segmentLimit -= 2;
+		    break;
+		case 'd':
+		    Tcl_AppendToObj(segment, "0d", 2);
 		    segmentLimit -= 2;
 		    break;
 		}
@@ -2110,6 +2117,7 @@ Tcl_AppendFormatToObj(
 
 	    case 'u':
 	    case 'o':
+	    case 'p':
 	    case 'x':
 	    case 'X':
 	    case 'b': {
@@ -2497,6 +2505,7 @@ AppendPrintfToObjVA(
 	    case 'u':
 	    case 'd':
 	    case 'o':
+	    case 'p':
 	    case 'x':
 	    case 'X':
 		seekingConversion = 0;
@@ -2509,6 +2518,10 @@ AppendPrintfToObjVA(
 		case 1:
 		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
 			    va_arg(argList, long)));
+		    break;
+		case 2:
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewWideIntObj(
+			    va_arg(argList, Tcl_WideInt)));
 		    break;
 		}
 		break;
@@ -2538,9 +2551,32 @@ AppendPrintfToObjVA(
 		gotPrecision = 1;
 		p++;
 		break;
-	    /* TODO: support for wide (and bignum?) arguments */
+	    /* TODO: support for bignum arguments */
 	    case 'l':
-		size = 1;
+		++size;
+		p++;
+		break;
+	    case 't':
+	    case 'z':
+		if (sizeof(size_t) == sizeof(Tcl_WideInt)) {
+		    size = 2;
+		}
+		p++;
+		break;
+	    case 'j':
+	    case 'q':
+		size = 2;
+		p++;
+		break;
+	    case 'I':
+		if (p[1]=='6' && p[2]=='4') {
+		    p += 2;
+		    size = 2;
+		} else if (p[1]=='3' && p[2]=='2') {
+		    p += 2;
+		} else if (sizeof(size_t) == sizeof(Tcl_WideInt)) {
+		    size = 2;
+		}
 		p++;
 		break;
 	    case 'h':
@@ -2647,6 +2683,712 @@ TclGetStringStorage(
     *sizePtr = stringPtr->allocated;
     return objPtr->bytes;
 }
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclStringRepeat --
+ *
+ *	Performs the [string repeat] function.
+ *
+ * Results:
+ * 	A standard Tcl result.
+ *
+ * Side effects:
+ * 	Writes to *objPtrPtr the address of Tcl_Obj that is concatenation
+ * 	of count copies of the value in objPtr.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclStringRepeat(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    int count,
+    Tcl_Obj **objPtrPtr)
+{
+    Tcl_Obj *objResultPtr;
+    int length = 0, unichar = 0, done = 1;
+    int binary = TclIsPureByteArray(objPtr);
+
+    /* assert (count >= 2) */
+
+    /*
+     * Analyze to determine what representation result should be.
+     * GOALS:	Avoid shimmering & string rep generation.
+     * 		Produce pure bytearray when possible.
+     * 		Error on overflow.
+     */
+
+    if (!binary) {
+	if (objPtr->typePtr == &tclStringType) {
+	    String *stringPtr = GET_STRING(objPtr);
+	    if (stringPtr->hasUnicode) {
+		unichar = 1;
+	    }
+	}
+    }
+
+    if (binary) {
+	/* Result will be pure byte array. Pre-size it */
+	Tcl_GetByteArrayFromObj(objPtr, &length);
+    } else if (unichar) {
+	/* Result will be pure Tcl_UniChar array. Pre-size it. */
+	Tcl_GetUnicodeFromObj(objPtr, &length);
+    } else {
+	/* Result will be concat of string reps. Pre-size it. */
+	Tcl_GetStringFromObj(objPtr, &length);
+    }
+
+    if (length == 0) {
+	/* Any repeats of empty is empty. */
+	*objPtrPtr = objPtr;
+	return TCL_OK;
+    }
+
+    if (count > INT_MAX/length) {
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	}
+	return TCL_ERROR;
+    }
+
+    if (binary) {
+	/* Efficiently produce a pure byte array result */
+	objResultPtr = Tcl_IsShared(objPtr) ? Tcl_DuplicateObj(objPtr)
+		: objPtr;
+
+	Tcl_SetByteArrayLength(objResultPtr, count*length); /* PANIC? */
+	Tcl_SetByteArrayLength(objResultPtr, length);
+	while (count - done > done) {
+	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
+	    done *= 2;
+	}
+	TclAppendBytesToByteArray(objResultPtr,
+		Tcl_GetByteArrayFromObj(objResultPtr, NULL),
+		(count - done) * length);
+    } else if (unichar) {
+	/* Efficiently produce a pure Tcl_UniChar array result */
+	if (Tcl_IsShared(objPtr)) {
+	    objResultPtr = Tcl_NewUnicodeObj(Tcl_GetUnicode(objPtr), length);
+	} else {
+	    TclInvalidateStringRep(objPtr);
+	    objResultPtr = objPtr;
+	}
+
+        if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"string size overflow: unable to alloc %"
+			TCL_LL_MODIFIER "d bytes",
+			(Tcl_WideUInt)STRING_SIZE(count*length)));
+		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjLength(objResultPtr, length);
+	while (count - done > done) {
+	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
+	    done *= 2;
+	}
+	Tcl_AppendUnicodeToObj(objResultPtr, Tcl_GetUnicode(objResultPtr),
+		(count - done) * length);
+    } else {
+	/* Efficiently concatenate string reps */
+	if (Tcl_IsShared(objPtr)) {
+	    objResultPtr = Tcl_NewStringObj(Tcl_GetString(objPtr), length);
+	} else {
+	    TclFreeIntRep(objPtr);
+	    objResultPtr = objPtr;
+	}
+        if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"string size overflow: unable to alloc %u bytes",
+			count*length));
+		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjLength(objResultPtr, length);
+	while (count - done > done) {
+	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
+	    done *= 2;
+	}
+	Tcl_AppendToObj(objResultPtr, Tcl_GetString(objResultPtr),
+		(count - done) * length);
+    }
+    *objPtrPtr = objResultPtr;
+    return TCL_OK;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclStringCatObjv --
+ *
+ *	Performs the [string cat] function.
+ *
+ * Results:
+ * 	A standard Tcl result.
+ *
+ * Side effects:
+ * 	Writes to *objPtrPtr the address of Tcl_Obj that is concatenation
+ * 	of all objc values in objv.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclStringCatObjv(
+    Tcl_Interp *interp,
+    int inPlace,
+    int objc,
+    Tcl_Obj * const objv[],
+    Tcl_Obj **objPtrPtr)
+{
+    Tcl_Obj *objResultPtr, * const *ov;
+    int oc, length = 0, binary = 1;
+    int allowUniChar = 1, requestUniChar = 0;
+    int first = objc - 1;	/* Index of first value possibly not empty */
+    int last = 0;		/* Index of last value possibly not empty */
+
+    /* assert ( objc >= 0 ) */
+
+    if (objc <= 1) {
+	/* Only one or no objects; return first or empty */
+	*objPtrPtr = objc ? objv[0] : Tcl_NewObj();
+	return TCL_OK;
+    }
+
+    /* assert ( objc >= 2 ) */
+
+    /*
+     * Analyze to determine what representation result should be.
+     * GOALS:	Avoid shimmering & string rep generation.
+     * 		Produce pure bytearray when possible.
+     * 		Error on overflow.
+     */
+
+    ov = objv, oc = objc;
+    do {
+	Tcl_Obj *objPtr = *ov++;
+
+	if (objPtr->bytes) {
+	    /* Value has a string rep. */
+	    if (objPtr->length) {
+		/*
+		 * Non-empty string rep. Not a pure bytearray, so we
+		 * won't create a pure bytearray
+		 */
+	 	binary = 0;
+		if ((objPtr->typePtr) && (objPtr->typePtr != &tclStringType)) {
+		    /* Prevent shimmer of non-string types. */
+		    allowUniChar = 0;
+		}
+	    }
+	} else {
+	    /* assert (objPtr->typePtr != NULL) -- stork! */
+	    if (TclIsPureByteArray(objPtr)) {
+		allowUniChar = 0;
+	    } else {
+		binary = 0;
+		if (objPtr->typePtr == &tclStringType) {
+		    /* Have a pure Unicode value; ask to preserve it */
+		    requestUniChar = 1;
+		} else {
+		    /* Have another type; prevent shimmer */
+		    allowUniChar = 0;
+		}
+	    }
+	}
+    } while (--oc && (binary || allowUniChar));
+
+    if (binary) {
+	/* Result will be pure byte array. Pre-size it */
+	ov = objv; oc = objc;
+	do {
+	    Tcl_Obj *objPtr = *ov++;
+
+	    if (objPtr->bytes == NULL) {
+		int numBytes;
+
+		Tcl_GetByteArrayFromObj(objPtr, &numBytes); /* PANIC? */
+		if (numBytes) {
+		    last = objc - oc;
+		    if (length == 0) {
+			first = last;
+		    } else if (numBytes > INT_MAX - length) {
+			goto overflow;
+		    }
+		    length += numBytes;
+		}
+	    }
+	} while (--oc);
+    } else if (allowUniChar && requestUniChar) {
+	/* Result will be pure Tcl_UniChar array. Pre-size it. */
+	ov = objv; oc = objc;
+	do {
+	    Tcl_Obj *objPtr = *ov++;
+
+	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
+		int numChars;
+
+		Tcl_GetUnicodeFromObj(objPtr, &numChars); /* PANIC? */
+		if (numChars) {
+		    last = objc - oc;
+		    if (length == 0) {
+			first = last;
+		    } else if (numChars > INT_MAX - length) {
+			goto overflow;
+		    }
+		    length += numChars;
+		}
+	    }
+	} while (--oc);
+    } else {
+	/* Result will be concat of string reps. Pre-size it. */
+	ov = objv; oc = objc;
+	do {
+	    Tcl_Obj *pendingPtr = NULL;
+
+	    /*
+	     * Loop until a possibly non-empty value is reached.
+	     * Keep string rep generation pending when possible.
+	     */
+
+	    do {
+		/* assert ( pendingPtr == NULL ) */
+		/* assert ( length == 0 ) */
+
+		Tcl_Obj *objPtr = *ov++;
+
+		if (objPtr->bytes == NULL) {
+		    /* No string rep; Take the chance we can avoid making it */
+		    pendingPtr = objPtr;
+		} else {
+		    Tcl_GetStringFromObj(objPtr, &length); /* PANIC? */
+		}
+	    } while (--oc && (length == 0) && (pendingPtr == NULL));
+
+	    /*
+ 	     * Either we found a possibly non-empty value, and we
+ 	     * remember this index as the first and last such value so
+ 	     * far seen, or (oc == 0) and all values are known empty,
+ 	     * so first = last = objc - 1 signals the right quick return.
+ 	     */
+
+	    first = last = objc - oc - 1;
+
+	    if (oc && (length == 0)) {
+		int numBytes;
+
+		/* assert ( pendingPtr != NULL ) */
+
+		/*
+		 * There's a pending value followed by more values.
+		 * Loop over remaining values generating strings until
+		 * a non-empty value is found, or the pending value gets
+		 * its string generated.
+		 */
+
+		do {
+		    Tcl_Obj *objPtr = *ov++;
+		    Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
+		} while (--oc && numBytes == 0 && pendingPtr->bytes == NULL);
+
+		if (numBytes) {
+		    last = objc -oc -1;
+		}
+		if (oc || numBytes) {
+		    Tcl_GetStringFromObj(pendingPtr, &length);
+		}
+		if (length == 0) {
+		    if (numBytes) {
+			first = last;
+		    }
+		} else if (numBytes > INT_MAX - length) {
+		    goto overflow;
+		}
+		length += numBytes;
+	    }
+	} while (oc && (length == 0));
+
+	while (oc) {
+	    int numBytes;
+	    Tcl_Obj *objPtr = *ov++;
+
+	    /* assert ( length > 0 && pendingPtr == NULL )  */
+
+	    Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
+	    if (numBytes) {
+		last = objc - oc;
+		if (numBytes > INT_MAX - length) {
+		    goto overflow;
+		}
+		length += numBytes;
+	    }
+	    --oc;
+	}
+    }
+
+    if (last <= first /*|| length == 0 */) {
+	/* Only one non-empty value or zero length; return first */
+	/* NOTE: (length == 0) implies (last <= first) */
+	*objPtrPtr = objv[first];
+	return TCL_OK;
+    }
+
+    objv += first; objc = (last - first + 1);
+
+    if (binary) {
+	/* Efficiently produce a pure byte array result */
+	unsigned char *dst;
+
+	/*
+	 * Broken interface! Byte array value routines offer no way
+	 * to handle failure to allocate enough space. Following
+	 * stanza may panic.
+	 */
+	if (inPlace && !Tcl_IsShared(*objv)) {
+	    int start;
+
+	    objResultPtr = *objv++; objc--;
+	    Tcl_GetByteArrayFromObj(objResultPtr, &start);
+	    dst = Tcl_SetByteArrayLength(objResultPtr, length) + start;
+	} else {
+	    objResultPtr = Tcl_NewByteArrayObj(NULL, length);
+	    dst = Tcl_SetByteArrayLength(objResultPtr, length);
+	}
+	while (objc--) {
+	    Tcl_Obj *objPtr = *objv++;
+
+	    if (objPtr->bytes == NULL) {
+		int more;
+		unsigned char *src = Tcl_GetByteArrayFromObj(objPtr, &more);
+		memcpy(dst, src, (size_t) more);
+		dst += more;
+	    }
+	}
+    } else if (allowUniChar && requestUniChar) {
+	/* Efficiently produce a pure Tcl_UniChar array result */
+	Tcl_UniChar *dst;
+
+	if (inPlace && !Tcl_IsShared(*objv)) {
+	    int start;
+
+	    objResultPtr = *objv++; objc--;
+
+	    /* Ugly interface! Force resize of the unicode array. */
+	    Tcl_GetUnicodeFromObj(objResultPtr, &start);
+	    Tcl_InvalidateStringRep(objResultPtr);
+	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    	"concatenation failed: unable to alloc %"
+			TCL_LL_MODIFIER "d bytes",
+			(Tcl_WideUInt)STRING_SIZE(length)));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		}
+		return TCL_ERROR;
+	    }
+	    dst = Tcl_GetUnicode(objResultPtr) + start;
+	} else {
+	    Tcl_UniChar ch = 0;
+
+	    /* Ugly interface! No scheme to init array size. */
+	    objResultPtr = Tcl_NewUnicodeObj(&ch, 0);	/* PANIC? */
+	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		Tcl_DecrRefCount(objResultPtr);
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    	"concatenation failed: unable to alloc %"
+			TCL_LL_MODIFIER "d bytes",
+			(Tcl_WideUInt)STRING_SIZE(length)));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		}
+		return TCL_ERROR;
+	    }
+	    dst = Tcl_GetUnicode(objResultPtr);
+	}
+	while (objc--) {
+	    Tcl_Obj *objPtr = *objv++;
+
+	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
+		int more;
+		Tcl_UniChar *src = Tcl_GetUnicodeFromObj(objPtr, &more);
+		memcpy(dst, src, more * sizeof(Tcl_UniChar));
+		dst += more;
+	    }
+	}
+    } else {
+	/* Efficiently concatenate string reps */
+	char *dst;
+
+	if (inPlace && !Tcl_IsShared(*objv)) {
+	    int start;
+
+	    objResultPtr = *objv++; objc--;
+
+	    Tcl_GetStringFromObj(objResultPtr, &start);
+	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    	"concatenation failed: unable to alloc %u bytes",
+			length));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		}
+		return TCL_ERROR;
+	    }
+	    dst = Tcl_GetString(objResultPtr) + start;
+
+	    /* assert ( length > start ) */
+	    TclFreeIntRep(objResultPtr);
+	} else {
+	    objResultPtr = Tcl_NewObj();	/* PANIC? */
+	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		Tcl_DecrRefCount(objResultPtr);
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    	"concatenation failed: unable to alloc %u bytes",
+			length));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		}
+		return TCL_ERROR;
+	    }
+	    dst = Tcl_GetString(objResultPtr);
+	}
+	while (objc--) {
+	    Tcl_Obj *objPtr = *objv++;
+
+	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
+		int more;
+		char *src = Tcl_GetStringFromObj(objPtr, &more);
+		memcpy(dst, src, (size_t) more);
+		dst += more;
+	    }
+	}
+    }
+    *objPtrPtr = objResultPtr;
+    return TCL_OK;
+
+  overflow:
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+    }
+    return TCL_ERROR;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclStringFind --
+ *
+ *	Implements the [string first] operation.
+ *
+ * Results:
+ *	If needle is found as a substring of haystack, the index of the
+ *	first instance of such a find is returned.  If needle is not present
+ *	as a substring of haystack, -1 is returned.
+ *
+ * Side effects:
+ *	needle and haystack may have their Tcl_ObjType changed.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclStringFind(
+    Tcl_Obj *needle,
+    Tcl_Obj *haystack,
+    int start)
+{
+    int lh, ln = Tcl_GetCharLength(needle);
+
+    if (ln == 0) {
+	/*
+	 * 	We don't find empty substrings.  Bizarre!
+	 *
+	 * 	TODO: When we one day make this a true substring
+	 * 	finder, change this to "return 0"
+	 */
+	return -1;
+    }
+
+    if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
+	unsigned char *end, *try, *bh;
+	unsigned char *bn = Tcl_GetByteArrayFromObj(needle, &ln);
+
+	bh = Tcl_GetByteArrayFromObj(haystack, &lh);
+	end = bh + lh;
+
+	try = bh + start;
+	while (try + ln <= end) {
+	    try = memchr(try, bn[0], end - try);
+
+	    if (try == NULL) {
+		return -1;
+	    }
+	    if (0 == memcmp(try+1, bn+1, ln-1)) {
+		return (try - bh);
+	    }
+	    try++;
+	}
+	return -1;
+    }
+
+    /*
+     * Check if we have two strings of single-byte characters. If we have, we
+     * can use strstr() to do the search. Note that we can sometimes have
+     * multibyte characters when the string could be minimally represented
+     * using single byte characters; we can't assume that a mismatch here
+     * means no match.
+     */
+
+    lh = Tcl_GetCharLength(haystack);
+    if (haystack->bytes && (lh == haystack->length) && needle->bytes
+		&& (ln == needle->length)) {
+	/*
+	 * Both haystack and needle are all single-byte chars.
+	 */
+
+	char *found = strstr(haystack->bytes + start, needle->bytes);
+
+	if (found) {
+	    return (found - haystack->bytes);
+	} else {
+	    return -1;
+	}
+    } else {
+	/*
+	 * Do the search on the unicode representation for simplicity.
+	 */
+
+	Tcl_UniChar *try, *end, *uh;
+	Tcl_UniChar *un = Tcl_GetUnicodeFromObj(needle, &ln);
+
+	uh = Tcl_GetUnicodeFromObj(haystack, &lh);
+	end = uh + lh;
+
+	for (try = uh + start; try + ln <= end; try++) {
+	    if ((*try == *un) && (0 ==
+		    memcmp(try + 1, un + 1, (ln-1) * sizeof(Tcl_UniChar)))) {
+		return (try - uh);
+	    }
+	}
+	return -1;
+    }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclStringLast --
+ *
+ *	Implements the [string last] operation.
+ *
+ * Results:
+ *	If needle is found as a substring of haystack, the index of the
+ *	last instance of such a find is returned.  If needle is not present
+ *	as a substring of haystack, -1 is returned.
+ *
+ * Side effects:
+ *	needle and haystack may have their Tcl_ObjType changed.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclStringLast(
+    Tcl_Obj *needle,
+    Tcl_Obj *haystack,
+    int last)
+{
+    int lh, ln = Tcl_GetCharLength(needle);
+
+    if (ln == 0) {
+	/*
+	 * 	We don't find empty substrings.  Bizarre!
+	 *
+	 * 	TODO: When we one day make this a true substring
+	 * 	finder, change this to "return 0"
+	 */
+	return -1;
+    }
+
+    if (ln > last + 1) {
+	return -1;
+    }
+
+    if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
+	unsigned char *try, *bh;
+	unsigned char *bn = Tcl_GetByteArrayFromObj(needle, &ln);
+
+	bh = Tcl_GetByteArrayFromObj(haystack, &lh);
+
+	if (last + 1 > lh) {
+	    last = lh - 1;
+	}
+	try = bh + last + 1 - ln;
+	while (try >= bh) {
+	    if ((*try == bn[0])
+		    && (0 == memcmp(try+1, bn+1, ln-1))) {
+		return (try - bh);
+	    }
+	    try--;
+	}
+	return -1;
+    }
+
+    lh = Tcl_GetCharLength(haystack);
+    if (last + 1 > lh) {
+	last = lh - 1;
+    }
+    if (haystack->bytes && (lh == haystack->length)) {
+	/* haystack is all single-byte chars */
+
+	if (needle->bytes && (ln == needle->length)) {
+	    /* needle is also all single-byte chars */
+
+	    char *try = haystack->bytes + last + 1 - ln;
+	    while (try >= haystack->bytes) {
+		if ((*try == needle->bytes[0])
+			&& (0 == memcmp(try+1, needle->bytes + 1, ln - 1))) {
+		    return (try - haystack->bytes);
+		}
+		try--;
+	    }
+	    return -1;
+	} else {
+	    /*
+	     * Cannot find substring with a multi-byte char inside
+	     * a string with no multi-byte chars.
+	     */
+	    return -1;
+	}
+    } else {
+	Tcl_UniChar *try, *uh;
+	Tcl_UniChar *un = Tcl_GetUnicodeFromObj(needle, &ln);
+
+	uh = Tcl_GetUnicodeFromObj(haystack, &lh);
+
+	try = uh + last + 1 - ln;
+	while (try >= uh) {
+	    if ((*try == un[0])
+		    && (0 == memcmp(try+1, un+1, (ln-1)*sizeof(Tcl_UniChar)))) {
+		return (try - uh);
+	    }
+	    try--;
+	}
+	return -1;
+    }
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -2879,7 +3621,6 @@ DupStringInternalRep(
     String *srcStringPtr = GET_STRING(srcPtr);
     String *copyStringPtr = NULL;
 
-#if COMPAT==0
     if (srcStringPtr->numChars == -1) {
 	/*
 	 * The String struct in the source value holds zero useful data. Don't
@@ -2922,41 +3663,6 @@ DupStringInternalRep(
      */
 
     copyStringPtr->allocated = copyPtr->bytes ? copyPtr->length : 0;
-#else /* COMPAT!=0 */
-    /*
-     * If the src obj is a string of 1-byte Utf chars, then copy the string
-     * rep of the source object and create an "empty" Unicode internal rep for
-     * the new object. Otherwise, copy Unicode internal rep, and invalidate
-     * the string rep of the new object.
-     */
-
-    if (srcStringPtr->hasUnicode && srcStringPtr->numChars > 0) {
-	/*
-	 * Copy the full allocation for the Unicode buffer.
-	 */
-
-	copyStringPtr = stringAlloc(srcStringPtr->maxChars);
-	copyStringPtr->maxChars = srcStringPtr->maxChars;
-	memcpy(copyStringPtr->unicode, srcStringPtr->unicode,
-		srcStringPtr->numChars * sizeof(Tcl_UniChar));
-	copyStringPtr->unicode[srcStringPtr->numChars] = 0;
-	copyStringPtr->allocated = 0;
-    } else {
-	copyStringPtr = stringAlloc(0);
-	copyStringPtr->unicode[0] = 0;
-	copyStringPtr->maxChars = 0;
-
-	/*
-	 * Tricky point: the string value was copied by generic object
-	 * management code, so it doesn't contain any extra bytes that might
-	 * exist in the source object.
-	 */
-
-	copyStringPtr->allocated = copyPtr->length;
-    }
-    copyStringPtr->numChars = srcStringPtr->numChars;
-    copyStringPtr->hasUnicode = srcStringPtr->hasUnicode;
-#endif /* COMPAT==0 */
 
     SET_STRING(copyPtr, copyStringPtr);
     copyPtr->typePtr = &tclStringType;
@@ -3044,7 +3750,7 @@ UpdateStringOfString(
     stringPtr->allocated = 0;
 
     if (stringPtr->numChars == 0) {
-	TclInitStringRep(objPtr, tclEmptyStringRep, 0);
+	TclInitStringRep(objPtr, &tclEmptyString, 0);
     } else {
 	(void) ExtendStringRepWithUnicode(objPtr, stringPtr->unicode,
 		stringPtr->numChars);
@@ -3062,7 +3768,7 @@ ExtendStringRepWithUnicode(
      */
 
     int i, origLength, size = 0;
-    char *dst, buf[TCL_UTF_MAX];
+    char *dst;
     String *stringPtr = GET_STRING(objPtr);
 
     if (numChars < 0) {
@@ -3088,7 +3794,7 @@ ExtendStringRepWithUnicode(
     }
 
     for (i = 0; i < numChars && size >= 0; i++) {
-	size += Tcl_UniCharToUtf((int) unicode[i], buf);
+	size += TclUtfCount(unicode[i]);
     }
     if (size < 0) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);

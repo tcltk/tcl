@@ -528,7 +528,7 @@ TclOOUnknownDefinition(
 	return TCL_ERROR;
     }
 
-    soughtStr = Tcl_GetStringFromObj(objv[1], &soughtLen);
+    soughtStr = TclGetStringFromObj(objv[1], &soughtLen);
     if (soughtLen == 0) {
 	goto noMatch;
     }
@@ -588,7 +588,7 @@ FindCommand(
     Tcl_Namespace *const namespacePtr)
 {
     int length;
-    const char *nameStr, *string = Tcl_GetStringFromObj(stringObj, &length);
+    const char *nameStr, *string = TclGetStringFromObj(stringObj, &length);
     register Namespace *const nsPtr = (Namespace *) namespacePtr;
     FOREACH_HASH_DECLS;
     Tcl_Command cmd, cmd2;
@@ -777,7 +777,7 @@ GenerateErrorInfo(
     int length;
     Tcl_Obj *realNameObj = Tcl_ObjectDeleted((Tcl_Object) oPtr)
 	    ? savedNameObj : TclOOObjectName(interp, oPtr);
-    const char *objName = Tcl_GetStringFromObj(realNameObj, &length);
+    const char *objName = TclGetStringFromObj(realNameObj, &length);
     int limit = OBJNAME_LENGTH_IN_ERRORINFO_LIMIT;
     int overflow = (length > limit);
 
@@ -1015,14 +1015,14 @@ TclOODefineSelfObjCmd(
     Object *oPtr;
     int result;
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
-	return TCL_ERROR;
-    }
-
     oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
+    }
+
+    if (objc < 2) {
+	Tcl_SetObjResult(interp, TclOOObjectName(interp, oPtr));
+	return TCL_OK;
     }
 
     /*
@@ -1056,6 +1056,39 @@ TclOODefineSelfObjCmd(
 
     TclPopStackFrame(interp);
     return result;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOODefineObjSelfObjCmd --
+ *	Implementation of the "self" subcommand of the "oo::objdefine"
+ *	command.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOODefineObjSelfObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr;
+
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	return TCL_ERROR;
+    }
+
+    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, TclOOObjectName(interp, oPtr));
+    return TCL_OK;
 }
 
 /*
@@ -1187,7 +1220,7 @@ TclOODefineConstructorObjCmd(
     }
     clsPtr = oPtr->classPtr;
 
-    Tcl_GetStringFromObj(objv[2], &bodyLength);
+    TclGetStringFromObj(objv[2], &bodyLength);
     if (bodyLength > 0) {
 	/*
 	 * Create the method structure.
@@ -1306,7 +1339,7 @@ TclOODefineDestructorObjCmd(
     }
     clsPtr = oPtr->classPtr;
 
-    Tcl_GetStringFromObj(objv[1], &bodyLength);
+    TclGetStringFromObj(objv[1], &bodyLength);
     if (bodyLength > 0) {
 	/*
 	 * Create the method structure.
@@ -2165,7 +2198,7 @@ ClassSuperSet(
 			"attempt to form circular dependency graph", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OO", "CIRCULARITY", NULL);
 	    failedAfterAlloc:
-		ckfree((char *) superclasses);
+		ckfree(superclasses);
 		return TCL_ERROR;
 	    }
 	}
@@ -2182,7 +2215,7 @@ ClassSuperSet(
 	FOREACH(superPtr, oPtr->classPtr->superclasses) {
 	    TclOORemoveFromSubclasses(oPtr->classPtr, superPtr);
 	}
-	ckfree((char *) oPtr->classPtr->superclasses.list);
+	ckfree(oPtr->classPtr->superclasses.list);
     }
     oPtr->classPtr->superclasses.list = superclasses;
     oPtr->classPtr->superclasses.num = superc;
@@ -2271,7 +2304,7 @@ ClassVarsSet(
     }
 
     for (i=0 ; i<varc ; i++) {
-	const char *varName = Tcl_GetString(varv[i]);
+	const char *varName = TclGetString(varv[i]);
 
 	if (strstr(varName, "::") != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2297,7 +2330,7 @@ ClassVarsSet(
     }
     if (i != varc) {
 	if (varc == 0) {
-	    ckfree((char *) oPtr->classPtr->variables.list);
+	    ckfree(oPtr->classPtr->variables.list);
 	} else if (i) {
 	    oPtr->classPtr->variables.list = (Tcl_Obj **)
 		    ckrealloc((char *) oPtr->classPtr->variables.list,
@@ -2552,7 +2585,7 @@ ObjVarsSet(
     }
 
     for (i=0 ; i<varc ; i++) {
-	const char *varName = Tcl_GetString(varv[i]);
+	const char *varName = TclGetString(varv[i]);
 
 	if (strstr(varName, "::") != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2578,7 +2611,7 @@ ObjVarsSet(
     }
     if (i != varc) {
 	if (varc == 0) {
-	    ckfree((char *) oPtr->variables.list);
+	    ckfree(oPtr->variables.list);
 	} else if (i) {
 	    oPtr->variables.list = (Tcl_Obj **)
 		    ckrealloc((char *) oPtr->variables.list,

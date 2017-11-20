@@ -28,6 +28,11 @@ testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
 
+proc representationpoke s {
+    set r [::tcl::unsupported::representation $s]
+    list [lindex $r 3] [string match {*, string representation "*"} $r]
+}
+
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
 } {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
@@ -224,6 +229,13 @@ test string-4.15 {string first, ability to two-byte encoded utf-8 chars} {
     set uchar \u057e    ;# character with two-byte encoding in utf-8
     string first % %#$uchar$uchar#$uchar$uchar#% 3
 } 8
+test string-4.16 {string first, normal string vs pure unicode string} {
+    set s hello
+    regexp ll $s m
+    # Representation checks are canaries
+    list [representationpoke $s] [representationpoke $m] \
+	[string first $m $s]
+} {{string 1} {string 0} 2}
 
 test string-5.1 {string index} {
     list [catch {string index} msg] $msg
@@ -756,13 +768,13 @@ catch {rename largest_int {}}
 
 test string-7.1 {string last, too few args} {
     list [catch {string last a} msg] $msg
-} {1 {wrong # args: should be "string last needleString haystackString ?startIndex?"}}
+} {1 {wrong # args: should be "string last needleString haystackString ?lastIndex?"}}
 test string-7.2 {string last, bad args} {
     list [catch {string last a b c} msg] $msg
 } {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
 test string-7.3 {string last, too many args} {
     list [catch {string last a b c d} msg] $msg
-} {1 {wrong # args: should be "string last needleString haystackString ?startIndex?"}}
+} {1 {wrong # args: should be "string last needleString haystackString ?lastIndex?"}}
 test string-7.4 {string last} {
     string la xxx xxxx123xx345x678
 } 1
@@ -1370,6 +1382,9 @@ test string-14.16 {string replace} {
 } {foo}
 test string-14.17 {string replace} {
     string replace abcdefghijklmnop end end-1
+} {abcdefghijklmnop}
+test string-14.18 {string replace} {
+    string replace abcdefghijklmnop 10 9 XXX
 } {abcdefghijklmnop}
 
 test string-15.1 {string tolower too few args} {
@@ -1994,9 +2009,52 @@ test string-29.4 {string cat, many args} {
     set r2 [string compare $xx [eval "string cat $vvs"]]
     list $r1 $r2
 } {0 0}
-
-
-
+test string-29.5 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list x] [list]]
+} -match glob -result {*no string representation}
+test string-29.6 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list] [list x]]
+} -match glob -result {*no string representation}
+test string-29.7 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list x] [list] [list]]
+} -match glob -result {*no string representation}
+test string-29.8 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list] [list x] [list]]
+} -match glob -result {*no string representation}
+test string-29.9 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list] [list] [list x]]
+} -match glob -result {*no string representation}
+test string-29.10 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list x] [list x]]
+} -match glob -result {*, string representation "xx"}
+test string-29.11 {string cat, efficiency} -body {
+    tcl::unsupported::representation \
+	[string cat [list x] [encoding convertto utf-8 {}]]
+} -match glob -result {*no string representation}
+test string-29.12 {string cat, efficiency} -body {
+    tcl::unsupported::representation \
+	[string cat [encoding convertto utf-8 {}] [list x]]
+} -match glob -result {*, string representation "x"}
+test string-29.13 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat \
+	[encoding convertto utf-8 {}] [encoding convertto utf-8 {}] [list x]]
+} -match glob -result {*, string representation "x"}
+test string-29.14 {string cat, efficiency} -setup {
+    set e [encoding convertto utf-8 {}]
+} -cleanup {
+    unset e
+} -body {
+    tcl::unsupported::representation [string cat $e $e [list x]]
+} -match glob -result {*no string representation}
+test string-29.15 {string cat, efficiency} -setup {
+    set e [encoding convertto utf-8 {}]
+    set f [encoding convertto utf-8 {}]
+} -cleanup {
+    unset e f
+} -body {
+    tcl::unsupported::representation [string cat $e $f $e $f [list x]]
+} -match glob -result {*no string representation}
+
 # cleanup
 rename MemStress {}
 catch {rename foo {}}
