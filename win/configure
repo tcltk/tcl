@@ -5012,7 +5012,7 @@ $as_echo "Found INFO Zip in environment" >&6; }
             # We can use the locally distributed minizip instead
             ZIP_PROG="../minizip${EXEEXT_FOR_BUILD}"
             ZIP_PROG_OPTIONS="\"-o\""
-            ZIP_PROG_VFSSEARCH="\`find . -type f\'"
+            ZIP_PROG_VFSSEARCH="'find . -type f'"
             ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: No zip found on PATH building minizip" >&5
 $as_echo "No zip found on PATH building minizip" >&6; }
