@@ -105,6 +105,13 @@ static const char *TclGetStartupScriptFileName(void)
 static unsigned short TclWinNToHS(unsigned short ns) {
 	return ntohs(ns);
 }
+#undef TclWinGetPlatformId
+#define TclWinGetPlatformId winGetPlatformId
+static int
+TclWinGetPlatformId()
+{
+    return 2; /* VER_PLATFORM_WIN32_NT */;
+}
 #endif
 #   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
 #   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
@@ -130,15 +137,6 @@ static int
 TclpIsAtty(int fd)
 {
     return isatty(fd);
-}
-
-#define TclWinGetPlatformId winGetPlatformId
-static int
-TclWinGetPlatformId()
-{
-    /* Don't bother to determine the real platform on cygwin,
-     * because VER_PLATFORM_WIN32_NT is the only supported platform */
-    return 2; /* VER_PLATFORM_WIN32_NT */;
 }
 
 void *TclWinGetTclInstance()
@@ -394,6 +392,8 @@ static int formatInt(char *buffer, int n){
 #   define TclpGmtime 0
 #   define TclpLocaltime_unix 0
 #   define TclpGmtime_unix 0
+#   undef TclWinGetPlatformId
+#   define TclWinGetPlatformId 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
