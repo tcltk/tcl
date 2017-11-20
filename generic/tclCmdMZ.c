@@ -309,7 +309,7 @@ Tcl_RegexpObjCmd(
 	    eflags = 0;
 	} else if (offset > stringLength) {
 	    eflags = TCL_REG_NOTBOL;
-	} else if (Tcl_GetUniChar(objPtr, offset-1) == (Tcl_UniChar)'\n') {
+	} else if (Tcl_GetUniChar(objPtr, offset-1) == '\n') {
 	    eflags = 0;
 	} else {
 	    eflags = TCL_REG_NOTBOL;
@@ -1216,13 +1216,22 @@ Tcl_SplitObjCmd(
 	Tcl_InitHashTable(&charReuseTable, TCL_ONE_WORD_KEYS);
 
 	for ( ; stringPtr < end; stringPtr += len) {
+		int fullchar;
 	    len = TclUtfToUniChar(stringPtr, &ch);
+	    fullchar = ch;
+
+#if TCL_UTF_MAX == 4
+	    if (!len) {
+		len += TclUtfToUniChar(stringPtr, &ch);
+		fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	    }
+#endif
 
 	    /*
 	     * Assume Tcl_UniChar is an integral type...
 	     */
 
-	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR((int) ch),
+	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(fullchar),
 		    &isNew);
 	    if (isNew) {
 		TclNewStringObj(objPtr, stringPtr, len);
@@ -1814,8 +1823,16 @@ StringIsCmd(
 	}
 	end = string1 + length1;
 	for (; string1 < end; string1 += length2, failat++) {
+	    int fullchar;
 	    length2 = TclUtfToUniChar(string1, &ch);
-	    if (!chcomp(ch)) {
+	    fullchar = ch;
+#if TCL_UTF_MAX == 4
+	    if (!length2) {
+	    	length2 = TclUtfToUniChar(string1, &ch);
+	    	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	    }
+#endif
+	    if (!chcomp(fullchar)) {
 		result = 0;
 		break;
 	    }
@@ -2876,7 +2893,7 @@ StringCatCmd(
  *
  *----------------------------------------------------------------------
  */
-
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 static int
 StringBytesCmd(
     ClientData dummy,		/* Not used. */
@@ -2895,6 +2912,7 @@ StringBytesCmd(
     Tcl_SetObjResult(interp, Tcl_NewIntObj(length));
     return TCL_OK;
 }
+#endif /* !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9 */
 
 /*
  *----------------------------------------------------------------------
@@ -3352,7 +3370,9 @@ TclInitStringCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap stringImplMap[] = {
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 	{"bytelength",	StringBytesCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+#endif
 	{"cat",		StringCatCmd,	TclCompileStringCatCmd, NULL, NULL, 0},
 	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, 0},
 	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},

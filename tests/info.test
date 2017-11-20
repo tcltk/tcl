@@ -103,8 +103,8 @@ test info-2.5 {info body option, returning bytecompiled bodies} -body {
 # causing an empty string to be returned [Bug #545644]
 test info-2.6 {info body option, returning list bodies} {
     proc foo args [list subst bar]
-    list [string bytelength [info body foo]] \
-	    [foo; string bytelength [info body foo]]
+    list [string length [info body foo]] \
+	    [foo; string length [info body foo]]
 } {9 9}
 
 proc testinfocmdcount {} {

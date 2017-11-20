@@ -1142,8 +1142,8 @@ test expr-old-40.2 {min math function} -body {
     expr {min(0.0)}
 } -result 0.0
 test expr-old-40.3 {min math function} -body {
-    list [catch {expr {min()}} msg] $msg
-} -result {1 {too few arguments to math function "min"}}
+    expr {min()}
+} -returnCodes error -result {too few arguments for math function "min"}
 test expr-old-40.4 {min math function} -body {
     expr {min(wide(-1) << 30, 4.5, -10)}
 } -result [expr {wide(-1) << 30}]
@@ -1153,6 +1153,12 @@ test expr-old-40.5 {min math function} -body {
 test expr-old-40.6 {min math function} -body {
     expr {min(300, "0xFF")}
 } -result 255
+test expr-old-40.7 {min math function} -body {
+    expr min(1[string repeat 0 10000], 1e300)
+} -result 1e+300
+test expr-old-40.8 {min math function} -body {
+    expr {min(0, "a")}
+} -returnCodes error -match glob -result *
 
 test expr-old-41.1 {max math function} -body {
     expr {max(0)}
@@ -1161,8 +1167,8 @@ test expr-old-41.2 {max math function} -body {
     expr {max(0.0)}
 } -result 0.0
 test expr-old-41.3 {max math function} -body {
-    list [catch {expr {max()}} msg] $msg
-} -result {1 {too few arguments to math function "max"}}
+    expr {max()}
+} -returnCodes error -result {too few arguments for math function "max"}
 test expr-old-41.4 {max math function} -body {
     expr {max(wide(1) << 30, 4.5, -10)}
 } -result [expr {wide(1) << 30}]
@@ -1172,6 +1178,12 @@ test expr-old-41.5 {max math function} -body {
 test expr-old-41.6 {max math function} -body {
     expr {max(200, "0xFF")}
 } -result 255
+test expr-old-41.7 {max math function} -body {
+    expr max(1[string repeat 0 10000], 1e300)
+} -result 1[string repeat 0 10000]
+test expr-old-41.8 {max math function} -body {
+    expr {max(0, "a")}
+} -returnCodes error -match glob -result *
 
 # Special test for Pentium arithmetic bug of 1994:
 
