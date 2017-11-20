@@ -4,7 +4,7 @@
 
 Name:          tcl
 Summary:       Tcl scripting language development environment
-Version:       8.6.7
+Version:       8.7a2
 Release:       2
 License:       BSD
 Group:         Development/Languages

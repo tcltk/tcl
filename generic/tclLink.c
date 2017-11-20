@@ -36,8 +36,10 @@ typedef struct Link {
 	unsigned int ui;
 	short s;
 	unsigned short us;
+#if !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__CYGWIN__)
 	long l;
 	unsigned long ul;
+#endif
 	Tcl_WideInt w;
 	Tcl_WideUInt uw;
 	float f;
@@ -129,6 +131,14 @@ Tcl_LinkVar(
     Tcl_IncrRefCount(linkPtr->varName);
     linkPtr->addr = addr;
     linkPtr->type = type & ~TCL_LINK_READ_ONLY;
+#if !defined(TCL_NO_DEPRECATED) && (defined(TCL_WIDE_INT_IS_LONG) \
+	|| defined(_WIN32) || defined(__CYGWIN__))
+    if (linkPtr->type == 11 /* legacy TCL_LINK_LONG */) {
+	linkPtr->type = TCL_LINK_LONG;
+    } else if (linkPtr->type == 12 /* legacy TCL_LINK_ULONG */) {
+	linkPtr->type = TCL_LINK_ULONG;
+    }
+#endif
     if (type & TCL_LINK_READ_ONLY) {
 	linkPtr->flags = LINK_READ_ONLY;
     } else {
@@ -335,12 +345,14 @@ LinkTraceProc(
 	case TCL_LINK_UINT:
 	    changed = (LinkedVar(unsigned int) != linkPtr->lastValue.ui);
 	    break;
+#if !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__CYGWIN__)
 	case TCL_LINK_LONG:
 	    changed = (LinkedVar(long) != linkPtr->lastValue.l);
 	    break;
 	case TCL_LINK_ULONG:
 	    changed = (LinkedVar(unsigned long) != linkPtr->lastValue.ul);
 	    break;
+#endif
 	case TCL_LINK_FLOAT:
 	    changed = (LinkedVar(float) != linkPtr->lastValue.f);
 	    break;
@@ -483,6 +495,7 @@ LinkTraceProc(
 	LinkedVar(unsigned int) = linkPtr->lastValue.ui = (unsigned int)valueWide;
 	break;
 
+#if !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__CYGWIN__)
     case TCL_LINK_LONG:
 	if ((Tcl_GetWideIntFromObj(NULL, valueObj, &valueWide) != TCL_OK
 		&& GetInvalidWideFromObj(valueObj, &valueWide) != TCL_OK)
@@ -504,6 +517,7 @@ LinkTraceProc(
 	}
 	LinkedVar(unsigned long) = linkPtr->lastValue.ul = (unsigned long)valueWide;
 	break;
+#endif
 
     case TCL_LINK_WIDE_UINT:
 	/*
@@ -581,7 +595,7 @@ ObjValue(
 	return Tcl_NewDoubleObj(linkPtr->lastValue.d);
     case TCL_LINK_BOOLEAN:
 	linkPtr->lastValue.i = LinkedVar(int);
-	return Tcl_NewBooleanObj(linkPtr->lastValue.i != 0);
+	return Tcl_NewBooleanObj(linkPtr->lastValue.i);
     case TCL_LINK_CHAR:
 	linkPtr->lastValue.c = LinkedVar(char);
 	return Tcl_NewIntObj(linkPtr->lastValue.c);
@@ -597,12 +611,14 @@ ObjValue(
     case TCL_LINK_UINT:
 	linkPtr->lastValue.ui = LinkedVar(unsigned int);
 	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.ui);
+#if !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__CYGWIN__)
     case TCL_LINK_LONG:
 	linkPtr->lastValue.l = LinkedVar(long);
 	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.l);
     case TCL_LINK_ULONG:
 	linkPtr->lastValue.ul = LinkedVar(unsigned long);
 	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.ul);
+#endif
     case TCL_LINK_FLOAT:
 	linkPtr->lastValue.f = LinkedVar(float);
 	return Tcl_NewDoubleObj(linkPtr->lastValue.f);
@@ -643,17 +659,16 @@ static Tcl_ObjType invalidRealType = {
 
 static int
 SetInvalidRealFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
-    int length;
     const char *str;
     const char *endPtr;
 
-    str = TclGetStringFromObj(objPtr, &length);
-    if ((length == 1) && (str[0] == '.')){
+    str = TclGetString(objPtr);
+    if ((objPtr->length == 1) && (str[0] == '.')){
 	objPtr->typePtr = &invalidRealType;
 	objPtr->internalRep.doubleValue = 0.0;
 	return TCL_OK;
     }
-    if (TclParseNumber(NULL, objPtr, NULL, str, length, &endPtr,
+    if (TclParseNumber(NULL, objPtr, NULL, str, objPtr->length, &endPtr,
 	    TCL_PARSE_DECIMAL_ONLY) == TCL_OK) {
 	/* If number is followed by [eE][+-]?, then it is an invalid
 	 * double, but it could be the start of a valid double. */
@@ -663,7 +678,7 @@ SetInvalidRealFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
 	    if (*endPtr == 0) {
 		double doubleValue = 0.0;
 		Tcl_GetDoubleFromObj(NULL, objPtr, &doubleValue);
-		if (objPtr->typePtr->freeIntRepProc) objPtr->typePtr->freeIntRepProc(objPtr);
+		TclFreeIntRep(objPtr);
 		objPtr->typePtr = &invalidRealType;
 		objPtr->internalRep.doubleValue = doubleValue;
 		return TCL_OK;
@@ -677,17 +692,16 @@ SetInvalidRealFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
 /*
  * This function checks for integer representations, which are valid
  * when linking with C variables, but which are invalid in other
- * contexts in Tcl. Handled are "+", "-", "", "0x", "0b" and "0o"
+ * contexts in Tcl. Handled are "+", "-", "", "0x", "0b", "0d" and "0o"
  * (upperand lowercase). See bug [39f6304c2e].
  */
 int
-GetInvalidIntFromObj(Tcl_Obj *objPtr,
-				int *intPtr)
+GetInvalidIntFromObj(Tcl_Obj *objPtr, int *intPtr)
 {
     const char *str = TclGetString(objPtr);
 
     if ((objPtr->length == 0) ||
-	    ((objPtr->length == 2) && (str[0] == '0') && strchr("xXbBoO", str[1]))) {
+	    ((objPtr->length == 2) && (str[0] == '0') && strchr("xXbBoOdD", str[1]))) {
 	*intPtr = 0;
 	return TCL_OK;
     } else if ((objPtr->length == 1) && strchr("+-", str[0])) {
@@ -716,8 +730,7 @@ GetInvalidWideFromObj(Tcl_Obj *objPtr, Tcl_WideInt *widePtr)
  * (upper- and lowercase) and sequences like "1e-". See bug [39f6304c2e].
  */
 int
-GetInvalidDoubleFromObj(Tcl_Obj *objPtr,
-				double *doublePtr)
+GetInvalidDoubleFromObj(Tcl_Obj *objPtr, double *doublePtr)
 {
     int intValue;
 

@@ -295,9 +295,6 @@
 /* Do we have fd_set? */
 #undef NO_FD_SET
 
-/* Do we have <float.h>? */
-#undef NO_FLOAT_H
-
 /* Do we have fstatfs()? */
 #undef NO_FSTATFS
 
@@ -333,9 +330,6 @@
 
 /* Do we have a usable 'union wait'? */
 #undef NO_UNION_WAIT
-
-/* Do we have <values.h>? */
-#undef NO_VALUES_H
 
 /* Do we have wait3() */
 #undef NO_WAIT3
@@ -393,9 +387,6 @@
 
 /* Are we building with threads enabled? */
 #undef TCL_THREADS
-
-/* Build libtommath? */
-#undef TCL_TOMMATH
 
 /* Do we allow unloading of shared libraries? */
 #undef TCL_UNLOAD_DLLS

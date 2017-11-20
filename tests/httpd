@@ -18,7 +18,12 @@ if {$::tcl_platform(os) eq "Darwin"} {
 }
 
 proc httpd_init {{port 8015}} {
-    socket -server httpdAccept $port
+    set s [socket -server httpdAccept $port]
+    # Save the actual port number in a global variable.
+    # This is important when we're called with port 0
+    # for picking an unused port at random.
+    set ::port [lindex [chan configure $s -sockname] 2]
+    return $s
 }
 proc httpd_log {args} {
     global httpLog
@@ -216,7 +221,7 @@ proc httpdRespond { sock } {
     }
 
     # Catch errors from premature client closes
-    
+
     catch {
 	if {$data(proto) == "HEAD"} {
 	    puts $sock "HTTP/1.0 200 OK"
