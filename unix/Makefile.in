@@ -632,6 +632,8 @@ HOST_EXEEXT             = @EXEEXT_FOR_BUILD@
 HOST_OBJEXT             = @OBJEXT_FOR_BUILD@
 ZIPFS_BUILD	        = @ZIPFS_BUILD@
 NATIVE_ZIP		= @ZIP_PROG@
+ZIP_PROG_OPTIONS		= @ZIP_PROG_OPTIONS@
+ZIP_PROG_VFSSEARCH  = @ZIP_PROG_VFSSEARCH@
 SHARED_BUILD		= @SHARED_BUILD@
 INSTALL_LIBRARIES       = @INSTALL_LIBRARIES@
 INSTALL_MSGS            = @INSTALL_MSGS@
@@ -653,7 +655,7 @@ MINIZIP_OBJS = \
         zutil.$(HOST_OBJEXT) \
         minizip.$(HOST_OBJEXT)
 
-ZIP_INSTALL_OBJS =  minizip${EXEEXT_FOR_BUILD}
+ZIP_INSTALL_OBJS =  @ZIP_INSTALL_OBJS@
 
 #--------------------------------------------------------------------------
 # Start of rules
@@ -674,7 +676,7 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS}
 	rm -rf ${TCL_VFS_ROOT}
 	mkdir -p ${TCL_VFS_PATH}
 	cp -a ../library/* ${TCL_VFS_PATH}
-	cd  ${TCL_VFS_ROOT} ; ../minizip${EXEEXT_FOR_BUILD} -o ../${TCL_ZIP_FILE} `find . -type f`
+	cd  ${TCL_VFS_ROOT} ; ${NATIVE_ZIP} ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH}
 
 # The following target is configured by autoconf to generate either a shared
 # library or non-shared library for Tcl.
