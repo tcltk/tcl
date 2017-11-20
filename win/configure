@@ -687,7 +687,6 @@ TCL_STATIC_LIB_FLAG
 TCL_STATIC_LIB_FILE
 TCL_LIB_FLAG
 TCL_LIB_FILE
-TCL_ZIP_FILE
 TCL_EXE
 PKG_CFG_ARGS
 TCL_PATCH_LEVEL
@@ -702,10 +701,10 @@ LDFLAGS_DEFAULT
 CFLAGS_DEFAULT
 INSTALL_MSGS
 INSTALL_LIBRARIES
+TCL_ZIP_FILE
 ZIPFS_BUILD
 EXEEXT_FOR_BUILD
 CC_FOR_BUILD
-ZIP_PROG
 ZLIB_OBJS
 ZLIB_LIBS
 ZLIB_DLL_FILE
@@ -2127,8 +2126,6 @@ TCL_REG_MINOR_VERSION=3
 REGVER=$TCL_REG_MAJOR_VERSION$TCL_REG_MINOR_VERSION
 
 PKG_CFG_ARGS=$@
-
-TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
 
 #------------------------------------------------------------------------
 # Empty slate for bundled packages, to avoid stale configuration
@@ -4844,52 +4841,20 @@ fi
 
 
 #--------------------------------------------------------------------
-#	Zipfs support
+#	Zipfs support - Tip 430
 #--------------------------------------------------------------------
-
-#
-# Find a native zip implementation
-#
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for zip" >&5
-$as_echo_n "checking for zip... " >&6; }
-    if ${ac_cv_path_zip+:} false; then :
-  $as_echo_n "(cached) " >&6
+# Check whether --enable-zipfs was given.
+if test "${enable_zipfs+set}" = set; then :
+  enableval=$enable_zipfs; tcl_ok=$enableval
 else
-
-	search_path=`echo ${PATH} | sed -e 's/:/ /g'`
-	for dir in $search_path ; do
-	    for j in `ls -r $dir/zip 2> /dev/null` \
-		    `ls -r $dir/zip 2> /dev/null` ; do
-		if test x"$ac_cv_path_zip" = x ; then
-		    if test -f "$j" ; then
-			ac_cv_path_zip=$j
-			break
-		    fi
-		fi
-	    done
-	done
-
+  tcl_ok=yes
 fi
 
-
-    if test -f "$ac_cv_path_zip" ; then
-	ZIP_PROG="$ac_cv_path_zip"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP_PROG" >&5
-$as_echo "$ZIP_PROG" >&6; }
-    else
-	# It is not an error if an installed version of Zip can't be located.
-	ZIP_PROG=""
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: No zip found on PATH" >&5
-$as_echo "No zip found on PATH" >&6; }
-    fi
-
-
-
-#
-# Find a native compiler
-#
-# Put a plausible default for CC_FOR_BUILD in Makefile.
+if test "$tcl_ok" = "yes" ; then
+    #
+    # Find a native compiler
+    #
+    # Put a plausible default for CC_FOR_BUILD in Makefile.
 if test -z "$CC_FOR_BUILD"; then
   if test "x$cross_compiling" = "xno"; then
     CC_FOR_BUILD='$(CC)'
@@ -4948,49 +4913,43 @@ $as_echo "$bfd_cv_build_exeext" >&6; }
   test x"${bfd_cv_build_exeext}" != xno && EXEEXT_FOR_BUILD=${bfd_cv_build_exeext}
 fi
 
-
-if test "$ZIP_PROG" = ""; then
-  ZIP_PROG='./minizip${EXEEXT_FOR_BUILD}'
-fi
-
-# Check whether --enable-zipfs was given.
-if test "${enable_zipfs+set}" = set; then :
-  enableval=$enable_zipfs; tcl_ok=$enableval
-else
-  tcl_ok=yes
-fi
-
-    if test "$tcl_ok" = "yes" -o "${TCL_THREADS}" = 1; then
+    #
+    # Find a native zip implementation
+    #
+    SC_PROG_ZIP
 	ZIPFS_BUILD=1
-    else
+	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
+else
 	ZIPFS_BUILD=0
-    fi
-    # Do checking message here to not mess up interleaved configure output
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for building with zipfs" >&5
+	TCL_ZIP_FILE=
+fi
+# Do checking message here to not mess up interleaved configure output
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for building with zipfs" >&5
 $as_echo_n "checking for building with zipfs... " >&6; }
-    if test "${ZIPFS_BUILD}" = 1; then
-        if test "${SHARED_BUILD}" = 0; then
-           ZIPFS_BUILD=2;
+if test "${ZIPFS_BUILD}" = 1; then
+    if test "${SHARED_BUILD}" = 0; then
+       ZIPFS_BUILD=2;
 
 $as_echo "#define ZIPFS_BUILD 2" >>confdefs.h
 
-           INSTALL_LIBRARIES=install-libraries-zipfs-static
-           { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+       INSTALL_LIBRARIES=install-libraries-zipfs-static
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-         else
+     else
 
 $as_echo "#define ZIPFS_BUILD 1" >>confdefs.h
 \
-           INSTALL_LIBRARIES=install-libraries-zipfs-shared
-           { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+       INSTALL_LIBRARIES=install-libraries-zipfs-shared
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        fi
-    else
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-	INSTALL_LIBRARIES=install-libraries
-	INSTALL_MSGS=install-msgs
     fi
+else
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+INSTALL_LIBRARIES=install-libraries
+INSTALL_MSGS=install-msgs
+fi
+
 
 
 
@@ -5373,7 +5332,6 @@ esac
 TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d ab.`"
 
 # X86|AMD64|IA64 for manifest
-
 
 
 

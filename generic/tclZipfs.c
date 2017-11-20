@@ -3977,25 +3977,32 @@ int TclZipfs_AppHook(int *argc, char ***argv){
         }
     } else if (*argc>1) {
         archive=(*argv)[1];
-        fflush(stdout);
-        if(!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
-            int found;
+        if(strcmp(archive,"install")==0) {
+            /* If the first argument is mkzip, run the mkzip program */
             Tcl_Obj *vfsinitscript;
-            vfsinitscript=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/main.tcl",-1);
+            vfsinitscript=Tcl_NewStringObj(ZIPFS_ZIP_MOUNT "/tcl_library/install.tcl",-1);
             Tcl_IncrRefCount(vfsinitscript);
-            if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
-                /* Startup script should be set before calling Tcl_AppInit */
-                Tcl_SetStartupScript(vfsinitscript,NULL);
-            } else {
+            Tcl_SetStartupScript(vfsinitscript,NULL);
+        } else {
+            if(!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
+                int found;
+                Tcl_Obj *vfsinitscript;
+                vfsinitscript=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/main.tcl",-1);
+                Tcl_IncrRefCount(vfsinitscript);
+                if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
+                    /* Startup script should be set before calling Tcl_AppInit */
+                    Tcl_SetStartupScript(vfsinitscript,NULL);
+                } else {
+                    Tcl_DecrRefCount(vfsinitscript);
+                }
+                /* Set Tcl Encodings */
+                vfsinitscript=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library/init.tcl",-1);
+                Tcl_IncrRefCount(vfsinitscript);
+                found=Tcl_FSAccess(vfsinitscript,F_OK);
                 Tcl_DecrRefCount(vfsinitscript);
-            }
-            /* Set Tcl Encodings */
-            vfsinitscript=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library/init.tcl",-1);
-            Tcl_IncrRefCount(vfsinitscript);
-            found=Tcl_FSAccess(vfsinitscript,F_OK);
-            Tcl_DecrRefCount(vfsinitscript);
-            if(found==TCL_OK) {
-                return TCL_OK;
+                if(found==TCL_OK) {
+                    return TCL_OK;
+                }
             }
         }
     }
