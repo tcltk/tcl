@@ -257,7 +257,7 @@ The \fBincr\fR command first gets an integer from \fIx\fR's value
 by calling \fBTcl_GetIntFromObj\fR.
 This procedure checks whether the value is already an integer value.
 Since it is not, it converts the value
-by setting the value's \fIinternalRep.longValue\fR member
+by setting the value's internal representation
 to the integer \fB123\fR
 and setting the value's \fItypePtr\fR
 to point to the integer Tcl_ObjType structure.

@@ -51,6 +51,7 @@
 #include <stdio.h>
 
 #include <ctype.h>
+#include <stdarg.h>
 #ifdef NO_STDLIB_H
 #   include "../compat/stdlib.h"
 #else

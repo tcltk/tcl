@@ -125,18 +125,6 @@ extern "C" {
 
 #include <stdio.h>
 
-/*
- *----------------------------------------------------------------------------
- * Support for functions with a variable number of arguments.
- *
- * The following TCL_VARARGS* macros are to support old extensions
- * written for older versions of Tcl where the macros permitted
- * support for the varargs.h system as well as stdarg.h .
- *
- * New code should just directly be written to use stdarg.h conventions.
- */
-
-#include <stdarg.h>
 #ifndef TCL_NO_DEPRECATED
 #    define TCL_VARARGS(type, name) (type name, ...)
 #    define TCL_VARARGS_DEF(type, name) (type name, ...)
@@ -2603,7 +2591,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #if !defined(__APPLE__) /* On OSX, there is a conflict with "mach/mach.h" */
 #   define panic		Tcl_Panic
 #endif
-#   define panicVA		Tcl_PanicVA
 
 /*
  *----------------------------------------------------------------------------

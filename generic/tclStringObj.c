@@ -1536,43 +1536,6 @@ AppendUtfToUtfRep(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_AppendStringsToObjVA --
- *
- *	This function appends one or more null-terminated strings to an
- *	object.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The contents of all the string arguments are appended to the string
- *	representation of objPtr.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_AppendStringsToObjVA(
-    Tcl_Obj *objPtr,		/* Points to the object to append to. */
-    va_list argList)		/* Variable argument list. */
-{
-    if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("%s called with shared object", "Tcl_AppendStringsToObj");
-    }
-
-    while (1) {
-	const char *bytes = va_arg(argList, char *);
-
-	if (bytes == NULL) {
-	    break;
-	}
-	Tcl_AppendToObj(objPtr, bytes, -1);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_AppendStringsToObj --
  *
  *	This function appends one or more null-terminated strings to an
@@ -1596,7 +1559,18 @@ Tcl_AppendStringsToObj(
     va_list argList;
 
     va_start(argList, objPtr);
-    Tcl_AppendStringsToObjVA(objPtr, argList);
+    if (Tcl_IsShared(objPtr)) {
+	Tcl_Panic("%s called with shared object", "Tcl_AppendStringsToObj");
+    }
+
+    while (1) {
+	const char *bytes = va_arg(argList, char *);
+
+	if (bytes == NULL) {
+	    break;
+	}
+	Tcl_AppendToObj(objPtr, bytes, -1);
+    }
     va_end(argList);
 }
 
