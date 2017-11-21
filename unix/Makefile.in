@@ -720,7 +720,7 @@ Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 clean: clean-packages
 	rm -rf *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
 		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl @DTRACE_HDR@ \
-		minizip${EXEEXT_FOR_BUILD} *.${HOST_OBJEXT}
+		minizip${HOST_EXEEXT} *.${HOST_OBJEXT} *.zip *.vfs
 	cd dltest ; $(MAKE) clean
 
 distclean: distclean-packages clean
@@ -1864,28 +1864,8 @@ zutil.$(HOST_OBJEXT):
 minizip.$(HOST_OBJEXT):
 	$(HOST_CC) -o $@ -I$(ZLIB_DIR)  -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/minizip.c
 
-minizip${EXEEXT_FOR_BUILD}: $(MINIZIP_OBJS)
+minizip${HOST_EXEEXT}: $(MINIZIP_OBJS)
 	$(HOST_CC) -o $@ $(MINIZIP_OBJS)
-
-tclvfs.zip: minizip${EXEEXT_FOR_BUILD}
-	rm -rf $(TCL_VFS_ROOT)
-	mkdir -p $(TCL_VFS_PATH)
-	@for i in "$(TCL_VFS_PATH)"; \
-	    do \
-	    if [ ! -d "$$i" ] ; then \
-		echo "Making directory $$i"; \
-		$(INSTALL_DATA_DIR) "$$i"; \
-		else true; \
-		fi; \
-	    done;
-	cp -a ../library/* $(TCL_VFS_PATH)
-	(cd $TCL_VFS ROOT ; ./minizip${EXEEXT_FOR_BUILD} -o ../tclvfs.zip `find . -type f`)
-
-zipsetupstub.$(HOST_OBJEXT): $(COMPAT_DIR)/zipsetupstub.c
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(COMPAT_DIR)/zipsetupstub.c
-
-zipsetupstub${EXEEXT_FOR_BUILD}: zipsetupstub.$(HOST_OBJEXT)
-	$(HOST_CC) -o $@ zipsetupstub.$(HOST_OBJEXT)
 
 #--------------------------------------------------------------------------
 # Bundled Package targets
