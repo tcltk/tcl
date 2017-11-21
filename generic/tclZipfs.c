@@ -300,6 +300,8 @@ static const unsigned long crc32tab[256] = {
 static Tcl_Obj *zipfs_literal_fstype=NULL;
 static Tcl_Obj *zipfs_literal_fsroot=NULL;
 static Tcl_Obj *zipfs_literal_fsseparator=NULL;
+static Tcl_Obj *zipfs_literal_null=NULL;
+static Tcl_Obj *zipfs_literal_tcl_library=NULL;
 
 
 /*
@@ -2424,6 +2426,40 @@ ZipFSListObjCmd(ClientData clientData, Tcl_Interp *interp,
     Unlock();
     return TCL_OK;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSTclLibraryObjCmd --
+ *
+ *      This procedure is invoked to process the "zipfs::root" command. It
+ *      returns the root that all zipfs file systems are mounted under.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static int
+ZipFSTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp,
+		 int objc, Tcl_Obj *const objv[])
+{
+    Tcl_Obj *pResult;
+    pResult=TclZipfs_TclLibrary();
+    if(!pResult) {
+        if(!zipfs_literal_null) {
+            zipfs_literal_null=Tcl_NewObj();
+            Tcl_IncrRefCount(zipfs_literal_null);
+        }
+        pResult=zipfs_literal_null;
+        Tcl_IncrRefCount(zipfs_literal_null);
+    }
+    Tcl_SetObjResult(interp,pResult);
+    return TCL_OK;
+}
 
 /*
  *-------------------------------------------------------------------------
@@ -3853,6 +3889,7 @@ TclZipfs_Init(Tcl_Interp *interp)
             {"list",	  ZipFSListObjCmd,	NULL, NULL, NULL, 1},
             {"canonical", ZipFSCanonicalObjCmd, NULL, NULL, NULL, 1},
             {"root",      ZipFSRootObjCmd, NULL, NULL, NULL, 1},
+            {"tcl_library",	  ZipFSTclLibraryObjCmd,	NULL, NULL, NULL, 0},
 
             {NULL, NULL, NULL, NULL, NULL, 0}
         };
@@ -3920,14 +3957,19 @@ static int TclZipfs_AppHook_FindTclInit(const char *archive){
     vfsinitscript=Tcl_NewStringObj(ZIPFS_ZIP_MOUNT "/init.tcl",-1);
     Tcl_IncrRefCount(vfsinitscript);
     found=Tcl_FSAccess(vfsinitscript,F_OK);
+    Tcl_DecrRefCount(vfsinitscript);
     if(found==0) {
+        zipfs_literal_tcl_library=Tcl_NewStringObj(ZIPFS_ZIP_MOUNT,-1);
+        Tcl_IncrRefCount(zipfs_literal_tcl_library);
         return TCL_OK;
     }
-    Tcl_DecrRefCount(vfsinitscript);
     vfsinitscript=Tcl_NewStringObj(ZIPFS_ZIP_MOUNT "/tcl_library/init.tcl",-1);
     Tcl_IncrRefCount(vfsinitscript);
     found=Tcl_FSAccess(vfsinitscript,F_OK);
+    Tcl_DecrRefCount(vfsinitscript);
     if(found==0) {
+        zipfs_literal_tcl_library=Tcl_NewStringObj(ZIPFS_ZIP_MOUNT "/tcl_library",-1);
+        Tcl_IncrRefCount(zipfs_literal_tcl_library);
         return TCL_OK;
     }
     return TCL_ERROR;
@@ -3943,14 +3985,8 @@ int TclZipfs_AppHook(int *argc, char ***argv)
      * Tclkit_MainHook --
      * Performs the argument munging for the shell
      */
-
     char *archive;
-#if defined(_WIN32) || defined(_WIN64)
-  HMODULE hModule = TclWinGetTclInstance();
-  WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-  char dllname[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
-#endif
-    
+
     Tcl_FindExecutable(*argv[0]);
     archive=Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);
@@ -4001,41 +4037,34 @@ int TclZipfs_AppHook(int *argc, char ***argv)
             Tcl_DecrRefCount(vfsinitscript);
         }
         /* Set Tcl Encodings */
-        vfsinitscript=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library/init.tcl",-1);
-        Tcl_IncrRefCount(vfsinitscript);
-        found=Tcl_FSAccess(vfsinitscript,F_OK);
-        Tcl_DecrRefCount(vfsinitscript);
-        if(found==TCL_OK) {
-            return TCL_OK;
+        if(!zipfs_literal_tcl_library) {
+            vfsinitscript=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library/init.tcl",-1);
+            Tcl_IncrRefCount(vfsinitscript);
+            found=Tcl_FSAccess(vfsinitscript,F_OK);
+            Tcl_DecrRefCount(vfsinitscript);
+            if(found==TCL_OK) {
+                zipfs_literal_tcl_library=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library",-1);
+                Tcl_IncrRefCount(zipfs_literal_tcl_library);
+                return TCL_OK;
+            }
         }
     } else if (*argc>1) {
-        Tcl_DString ds;
 #if defined(_WIN32) || defined(_WIN64)
+        Tcl_DString ds;
       	strcpy(archive, Tcl_WinTCharToUtf((*argv)[1], -1, &ds));
         Tcl_DStringFree(&ds);
 #else
         archive=(*argv)[1];
 #endif
-        printf(" arg1 %s\n",archive); fflush(stdout);
         if(strcmp(archive,"install")==0) {
             /* If the first argument is mkzip, run the mkzip program */
             Tcl_Obj *vfsinitscript;
 
             vfsinitscript=Tcl_NewStringObj(ZIPFS_ZIP_MOUNT "/tcl_library/install.tcl",-1);
             Tcl_IncrRefCount(vfsinitscript);
-            printf(" startup script %s\n",Tcl_GetString(vfsinitscript)); fflush(stdout);
-#if defined(_WIN32) || defined(_WIN64)
-            if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
-              GetModuleFileNameA(hModule, dllname, MAX_PATH);
-            } else {
-              ToUtf(wName, dllname);
-            }
-            /* Mount zip file and dll before releasing to search */
-            if(TclZipfs_AppHook_FindTclInit(dllname)==TCL_OK) {
-                Tcl_SetStartupScript(vfsinitscript,NULL);
-                return TCL_OK;
-            }
-#endif
+            /* Run this now to ensure the file is present by the time Tcl_Main wants it */
+            TclZipfs_TclLibrary();
+            return TCL_OK;
         } else {
             if(!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
                 int found;
@@ -4054,31 +4083,50 @@ int TclZipfs_AppHook(int *argc, char ***argv)
                 found=Tcl_FSAccess(vfsinitscript,F_OK);
                 Tcl_DecrRefCount(vfsinitscript);
                 if(found==TCL_OK) {
+                    zipfs_literal_tcl_library=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library",-1);
+                    Tcl_IncrRefCount(zipfs_literal_tcl_library);
+                    zipfs_literal_tcl_library=vfsinitscript;
                     return TCL_OK;
                 }
             }
         }
     }
-#if defined(_WIN32) || defined(_WIN64)
-    if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
-      GetModuleFileNameA(hModule, dllname, MAX_PATH);
-    } else {
-      ToUtf(wName, dllname);
-    }
-    /* Mount zip file and dll before releasing to search */
-    if(TclZipfs_AppHook_FindTclInit(dllname)==TCL_OK) {
-        return TCL_OK;
-    }
-#else
-    /* Mount zip file and dll before releasing to search */
-    if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_DLLFILE)==TCL_OK) {
-        return TCL_OK;
-    }
-#endif
-    if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
-        return TCL_OK;
-    }
     return TCL_OK;
+}
+
+Tcl_Obj *TclZipfs_TclLibrary(void) {
+    if(zipfs_literal_tcl_library) {
+        Tcl_IncrRefCount(zipfs_literal_tcl_library);
+        return zipfs_literal_tcl_library;
+    } else {
+#if defined(_WIN32) || defined(_WIN64)
+        HMODULE hModule = TclWinGetTclInstance();
+        WCHAR wName[MAX_PATH + LIBRARY_SIZE];
+        char dllname[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
+
+        if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
+            GetModuleFileNameA(hModule, dllname, MAX_PATH);
+        } else {
+            ToUtf(wName, dllname);
+        }
+        /* Mount zip file and dll before releasing to search */
+        if(TclZipfs_AppHook_FindTclInit(dllname)==TCL_OK) {
+            Tcl_IncrRefCount(zipfs_literal_tcl_library);
+            return zipfs_literal_tcl_library;
+        }
+#else
+        /* Mount zip file and dll before releasing to search */
+        if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_DLLFILE)==TCL_OK) {
+            Tcl_IncrRefCount(zipfs_literal_tcl_library);
+            return zipfs_literal_tcl_library;
+        }
+#endif
+    }
+    if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
+         Tcl_IncrRefCount(zipfs_literal_tcl_library);
+        return zipfs_literal_tcl_library;
+    }
+    return NULL;
 }
 
 
