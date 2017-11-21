@@ -1845,6 +1845,8 @@ EXTERN int		TclZipfs_Mount(Tcl_Interp *interp,
 /* 633 */
 EXTERN int		TclZipfs_Unmount(Tcl_Interp *interp,
 				const char *zipname);
+/* 634 */
+EXTERN Tcl_Obj *	TclZipfs_TclLibrary(void);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2514,6 +2516,7 @@ typedef struct TclStubs {
     Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc, ClientData callbackData); /* 631 */
     int (*tclZipfs_Mount) (Tcl_Interp *interp, const char *zipname, const char *mntpt, const char *passwd); /* 632 */
     int (*tclZipfs_Unmount) (Tcl_Interp *interp, const char *zipname); /* 633 */
+    Tcl_Obj * (*tclZipfs_TclLibrary) (void); /* 634 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3812,6 +3815,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclZipfs_Mount) /* 632 */
 #define TclZipfs_Unmount \
 	(tclStubsPtr->tclZipfs_Unmount) /* 633 */
+#define TclZipfs_TclLibrary \
+	(tclStubsPtr->tclZipfs_TclLibrary) /* 634 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
