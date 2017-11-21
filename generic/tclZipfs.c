@@ -1013,7 +1013,6 @@ TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
     Tcl_HashEntry *hPtr;
     Tcl_DString ds, fpBuf;
     unsigned char *q;
-
     ReadLock();
     if (!ZipFS.initialized) {
 	if (interp != NULL) {
@@ -1436,7 +1435,8 @@ static int
 ZipFSRootObjCmd(ClientData clientData, Tcl_Interp *interp,
 		 int objc, Tcl_Obj *const objv[])
 {
-    return Tcl_NewStringObj(ZIPFS_VOLUME, -1);
+    Tcl_SetObjResult(interp,Tcl_NewStringObj(ZIPFS_VOLUME, -1));
+    return TCL_OK;
 }
 
 /*
@@ -3920,6 +3920,9 @@ ToUtf(
 static int TclZipfs_AppHook_FindTclInit(const char *archive){
     Tcl_Obj *vfsinitscript;
     int found;
+    if(zipfs_literal_tcl_library) {
+        return TCL_ERROR;
+    }
     if(TclZipfs_Mount(NULL, archive, ZIPFS_ZIP_MOUNT, NULL)) {
         /* Either the file doesn't exist or it is not a zip archive */
         return TCL_ERROR;
@@ -3963,36 +3966,6 @@ int TclZipfs_AppHook(int *argc, char ***argv)
     ** and failing that, look for a file name CFG_RUNTIME_ZIPFILE adjacent to the
     ** executable
     */
-    TclSetPreInitScript(
-"foreach {path} {\n"
-"  {" ZIPFS_APP_MOUNT "/tcl_library}\n"
-"  {" ZIPFS_ZIP_MOUNT "/tcl_library}\n"
-"} {\n"
-"  if {![file exists [file join $path init.tcl]]} continue\n"
-"  set ::tcl_library $path\n"
-"  break\n"
-"}\n"
-"if {![info exists ::tcl_library] || $::tcl_library eq {}} {\n"
-"  set zipfile [file join [file dirname [info nameofexecutable]] " CFG_RUNTIME_ZIPFILE "]\n"
-"  if {[file exists $zipfile]} {\n"
-"    zipfs mount $zipfile {" ZIPFS_ZIP_MOUNT "}\n"
-"    if {[file exists [file join {" ZIPFS_ZIP_MOUNT "} init.tcl]]} \{\n"
-"      set ::tcl_library {" ZIPFS_ZIP_MOUNT "}\n"
-"    } else {\n"
-"      zipfs unmount {" ZIPFS_ZIP_MOUNT "}\n"
-"    }\n"
-"  }\n"
-"}\n"
-"foreach {path} {\n"
-"  {" ZIPFS_APP_MOUNT "/tk_library}\n"
-"  {" ZIPFS_ZIP_MOUNT "/tk_library}\n"
-"  {" ZIPFS_VOLUME "lib/tk/tk_library}\n"
-"} {\n"
-"  if {![file exists [file join $path init.tcl]]} continue\n"
-"  set ::tk_library $path\n"
-"  break\n"
-"}\n"
-    );
     if(!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
         int found;
         Tcl_Obj *vfsinitscript;
@@ -4062,7 +4035,9 @@ int TclZipfs_AppHook(int *argc, char ***argv)
 }
 
 Tcl_Obj *TclZipfs_TclLibrary(void) {
-    if(!zipfs_literal_tcl_library) {
+    if(zipfs_literal_tcl_library) {
+        return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
+    } else {
 #if defined(_WIN32) || defined(_WIN64)
         HMODULE hModule = TclWinGetTclInstance();
         WCHAR wName[MAX_PATH + LIBRARY_SIZE];
