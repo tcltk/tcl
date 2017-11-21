@@ -4059,11 +4059,13 @@ int TclZipfs_AppHook(int *argc, char ***argv)
         if(strcmp(archive,"install")==0) {
             /* If the first argument is mkzip, run the mkzip program */
             Tcl_Obj *vfsinitscript;
-
-            vfsinitscript=Tcl_NewStringObj(ZIPFS_ZIP_MOUNT "/tcl_library/install.tcl",-1);
-            Tcl_IncrRefCount(vfsinitscript);
             /* Run this now to ensure the file is present by the time Tcl_Main wants it */
             TclZipfs_TclLibrary();
+            vfsinitscript=Tcl_NewStringObj(ZIPFS_ZIP_MOUNT "/tcl_library/install.tcl",-1);
+            Tcl_IncrRefCount(vfsinitscript);
+            if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
+             Tcl_SetStartupScript(vfsinitscript,NULL);
+            }
             return TCL_OK;
         } else {
             if(!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
