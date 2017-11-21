@@ -798,9 +798,9 @@ test regexpComp-20.1 {regsub shared object shimmering} {
 	set b $a
 	set c abcdefghijklmnopqurstuvwxyz0123456789
 	regsub $a $c $b d
-	list $d [string length $d]
+	list $d [string length $d] [string bytelength $d]
     }
-} [list abcdefghijklmnopqurstuvwxyz0123456789 37]
+} [list abcdefghijklmnopqurstuvwxyz0123456789 37 37]
 test regexpComp-20.2 {regsub shared object shimmering with -about} {
     evalInProc {
 	eval regexp -about abc
