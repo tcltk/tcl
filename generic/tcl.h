@@ -299,6 +299,7 @@ extern "C" {
  * VOID. This block is skipped under Cygwin and Mingw.
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #if defined(_WIN32) && !defined(HAVE_WINNT_IGNORE_VOID)
 #ifndef VOID
 #define VOID void
@@ -314,23 +315,16 @@ typedef long LONG;
  */
 
 #ifndef __VXWORKS__
-#   ifndef NO_VOID
-#	define VOID void
-#   else
-#	define VOID char
-#   endif
+#   define VOID void
 #endif
+#endif /* !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9 */
 
 /*
  * Miscellaneous declarations.
  */
 
 #ifndef _CLIENTDATA
-#   ifndef NO_VOID
-	typedef void *ClientData;
-#   else
-	typedef int *ClientData;
-#   endif
+    typedef void *ClientData;
 #   define _CLIENTDATA
 #endif
 
