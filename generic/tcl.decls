@@ -2340,7 +2340,9 @@ declare 632 {
 declare 633 {
     int TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
 }
-
+declare 634 {
+    Tcl_Obj *TclZipfs_TclLibrary(void)
+}
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only
