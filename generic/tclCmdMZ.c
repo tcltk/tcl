@@ -2893,7 +2893,6 @@ StringCatCmd(
  *
  *----------------------------------------------------------------------
  */
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 static int
 StringBytesCmd(
     ClientData dummy,		/* Not used. */
@@ -2912,7 +2911,6 @@ StringBytesCmd(
     Tcl_SetObjResult(interp, Tcl_NewIntObj(length));
     return TCL_OK;
 }
-#endif /* !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9 */
 
 /*
  *----------------------------------------------------------------------
@@ -3370,9 +3368,7 @@ TclInitStringCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap stringImplMap[] = {
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 	{"bytelength",	StringBytesCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-#endif
 	{"cat",		StringCatCmd,	TclCompileStringCatCmd, NULL, NULL, 0},
 	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, 0},
 	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},
