@@ -297,11 +297,7 @@ static const unsigned long crc32tab[256] = {
     0x2d02ef8d,
 };
 
-static Tcl_Obj *zipfs_literal_fstype=NULL;
-static Tcl_Obj *zipfs_literal_fsroot=NULL;
-static Tcl_Obj *zipfs_literal_fsseparator=NULL;
-static Tcl_Obj *zipfs_literal_null=NULL;
-static Tcl_Obj *zipfs_literal_tcl_library=NULL;
+const char *zipfs_literal_tcl_library=NULL;
 
 
 /*
@@ -1440,13 +1436,7 @@ static int
 ZipFSRootObjCmd(ClientData clientData, Tcl_Interp *interp,
 		 int objc, Tcl_Obj *const objv[])
 {
-    if(!zipfs_literal_fsroot) {
-        zipfs_literal_fsroot=Tcl_NewStringObj(ZIPFS_VOLUME, -1);
-        Tcl_IncrRefCount(zipfs_literal_fsroot);
-    }
-    Tcl_IncrRefCount(zipfs_literal_fsroot);
-    Tcl_SetObjResult(interp,zipfs_literal_fsroot);
-    return TCL_OK;
+    return Tcl_NewStringObj(ZIPFS_VOLUME, -1);
 }
 
 /*
@@ -2450,12 +2440,7 @@ ZipFSTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp,
     Tcl_Obj *pResult;
     pResult=TclZipfs_TclLibrary();
     if(!pResult) {
-        if(!zipfs_literal_null) {
-            zipfs_literal_null=Tcl_NewObj();
-            Tcl_IncrRefCount(zipfs_literal_null);
-        }
-        pResult=zipfs_literal_null;
-        Tcl_IncrRefCount(zipfs_literal_null);
+        pResult=Tcl_NewObj();
     }
     Tcl_SetObjResult(interp,pResult);
     return TCL_OK;
@@ -3252,12 +3237,7 @@ Zip_FSAccessProc(Tcl_Obj *pathPtr, int mode)
 static Tcl_Obj *
 Zip_FSFilesystemSeparatorProc(Tcl_Obj *pathPtr)
 {
-    if(!zipfs_literal_fsseparator) {
-        zipfs_literal_fsseparator=Tcl_NewStringObj("/", -1);
-        Tcl_IncrRefCount(zipfs_literal_fsseparator);
-    }
-    Tcl_IncrRefCount(zipfs_literal_fsseparator);
-    return zipfs_literal_fsseparator;
+    return Tcl_NewStringObj("/", -1);
 }
 
 /*
@@ -3518,12 +3498,7 @@ endloop:
  */
 static Tcl_Obj *
 Zip_FSListVolumesProc(void) {
-    if(!zipfs_literal_fsroot) {
-        zipfs_literal_fsroot=Tcl_NewStringObj(ZIPFS_VOLUME, -1);
-        Tcl_IncrRefCount(zipfs_literal_fsroot);
-    }
-    Tcl_IncrRefCount(zipfs_literal_fsroot);
-    return zipfs_literal_fsroot;
+    return Tcl_NewStringObj(ZIPFS_VOLUME, -1);
 }
 
 /*
@@ -3670,12 +3645,7 @@ Zip_FSFileAttrsSetProc(Tcl_Interp *interp, int index, Tcl_Obj *pathPtr,
 static Tcl_Obj *
 Zip_FSFilesystemPathTypeProc(Tcl_Obj *pathPtr)
 {
-    if(!zipfs_literal_fstype) {
-        zipfs_literal_fstype=Tcl_NewStringObj("zip", -1);
-        Tcl_IncrRefCount(zipfs_literal_fstype);
-    }
-    Tcl_IncrRefCount(zipfs_literal_fstype);
-    return zipfs_literal_fstype;
+    return Tcl_NewStringObj("zip", -1);
 }
 
 
@@ -3959,8 +3929,7 @@ static int TclZipfs_AppHook_FindTclInit(const char *archive){
     found=Tcl_FSAccess(vfsinitscript,F_OK);
     Tcl_DecrRefCount(vfsinitscript);
     if(found==0) {
-        zipfs_literal_tcl_library=Tcl_NewStringObj(ZIPFS_ZIP_MOUNT,-1);
-        Tcl_IncrRefCount(zipfs_literal_tcl_library);
+        zipfs_literal_tcl_library=ZIPFS_ZIP_MOUNT;
         return TCL_OK;
     }
     vfsinitscript=Tcl_NewStringObj(ZIPFS_ZIP_MOUNT "/tcl_library/init.tcl",-1);
@@ -3968,8 +3937,7 @@ static int TclZipfs_AppHook_FindTclInit(const char *archive){
     found=Tcl_FSAccess(vfsinitscript,F_OK);
     Tcl_DecrRefCount(vfsinitscript);
     if(found==0) {
-        zipfs_literal_tcl_library=Tcl_NewStringObj(ZIPFS_ZIP_MOUNT "/tcl_library",-1);
-        Tcl_IncrRefCount(zipfs_literal_tcl_library);
+        zipfs_literal_tcl_library=ZIPFS_ZIP_MOUNT "/tcl_library";
         return TCL_OK;
     }
     return TCL_ERROR;
@@ -4020,7 +3988,7 @@ int TclZipfs_AppHook(int *argc, char ***argv)
 "  {" ZIPFS_ZIP_MOUNT "/tk_library}\n"
 "  {" ZIPFS_VOLUME "lib/tk/tk_library}\n"
 "} {\n"
-"  if {[file exists [file join $path init.tcl]]} continue\n"
+"  if {![file exists [file join $path init.tcl]]} continue\n"
 "  set ::tk_library $path\n"
 "  break\n"
 "}\n"
@@ -4043,8 +4011,7 @@ int TclZipfs_AppHook(int *argc, char ***argv)
             found=Tcl_FSAccess(vfsinitscript,F_OK);
             Tcl_DecrRefCount(vfsinitscript);
             if(found==TCL_OK) {
-                zipfs_literal_tcl_library=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library",-1);
-                Tcl_IncrRefCount(zipfs_literal_tcl_library);
+                zipfs_literal_tcl_library=ZIPFS_APP_MOUNT "/tcl_library";
                 return TCL_OK;
             }
         }
@@ -4085,9 +4052,7 @@ int TclZipfs_AppHook(int *argc, char ***argv)
                 found=Tcl_FSAccess(vfsinitscript,F_OK);
                 Tcl_DecrRefCount(vfsinitscript);
                 if(found==TCL_OK) {
-                    zipfs_literal_tcl_library=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library",-1);
-                    Tcl_IncrRefCount(zipfs_literal_tcl_library);
-                    zipfs_literal_tcl_library=vfsinitscript;
+                    zipfs_literal_tcl_library=ZIPFS_APP_MOUNT "/tcl_library";
                     return TCL_OK;
                 }
             }
@@ -4097,10 +4062,7 @@ int TclZipfs_AppHook(int *argc, char ***argv)
 }
 
 Tcl_Obj *TclZipfs_TclLibrary(void) {
-    if(zipfs_literal_tcl_library) {
-        Tcl_IncrRefCount(zipfs_literal_tcl_library);
-        return zipfs_literal_tcl_library;
-    } else {
+    if(!zipfs_literal_tcl_library) {
 #if defined(_WIN32) || defined(_WIN64)
         HMODULE hModule = TclWinGetTclInstance();
         WCHAR wName[MAX_PATH + LIBRARY_SIZE];
@@ -4113,20 +4075,20 @@ Tcl_Obj *TclZipfs_TclLibrary(void) {
         }
         /* Mount zip file and dll before releasing to search */
         if(TclZipfs_AppHook_FindTclInit(dllname)==TCL_OK) {
-            Tcl_IncrRefCount(zipfs_literal_tcl_library);
-            return zipfs_literal_tcl_library;
+            return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
         }
 #else
         /* Mount zip file and dll before releasing to search */
         if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_DLLFILE)==TCL_OK) {
-            Tcl_IncrRefCount(zipfs_literal_tcl_library);
-            return zipfs_literal_tcl_library;
+            return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
         }
 #endif
+        if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
+            return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
+        }
     }
-    if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
-         Tcl_IncrRefCount(zipfs_literal_tcl_library);
-        return zipfs_literal_tcl_library;
+    if(zipfs_literal_tcl_library) {
+        return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
     }
     return NULL;
 }

@@ -483,7 +483,7 @@ tclzipfile: ${TCL_ZIP_FILE}
 ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS}
 	rm -rf ${TCL_VFS_ROOT}
 	mkdir -p ${TCL_VFS_PATH}
-	cp -a ../library/* ${TCL_VFS_PATH}
+	$(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}
 	cd  ${TCL_VFS_ROOT} ; ${NATIVE_ZIP} ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH}
 
 $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
