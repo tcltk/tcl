@@ -118,6 +118,8 @@ static Tcl_ObjCmdProc	ExprEntierFunc;
 static Tcl_ObjCmdProc	ExprFloorFunc;
 static Tcl_ObjCmdProc	ExprIntFunc;
 static Tcl_ObjCmdProc	ExprIsqrtFunc;
+static Tcl_ObjCmdProc	ExprMaxFunc;
+static Tcl_ObjCmdProc	ExprMinFunc;
 static Tcl_ObjCmdProc	ExprRandFunc;
 static Tcl_ObjCmdProc	ExprRoundFunc;
 static Tcl_ObjCmdProc	ExprSqrtFunc;
@@ -130,8 +132,10 @@ static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRCommand;
 
+#if !defined(TCL_NO_DEPRECATED)
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
+#endif /* !defined(TCL_NO_DEPRECATED) */
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
 			    int returnCode);
 static int		RewindCoroutine(CoroutineData *corPtr, int result);
@@ -321,6 +325,8 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "isqrt",	ExprIsqrtFunc,	NULL			},
     { "log",	ExprUnaryFunc,	(ClientData) log	},
     { "log10",	ExprUnaryFunc,	(ClientData) log10	},
+    { "max",	ExprMaxFunc,	NULL			},
+    { "min",	ExprMinFunc,	NULL			},
     { "pow",	ExprBinaryFunc,	(ClientData) pow	},
     { "rand",	ExprRandFunc,	NULL			},
     { "round",	ExprRoundFunc,	NULL			},
@@ -3488,6 +3494,7 @@ TclCleanupCommand(
  *----------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED)
 void
 Tcl_CreateMathFunc(
     Tcl_Interp *interp,		/* Interpreter in which function is to be
@@ -3538,7 +3545,7 @@ Tcl_CreateMathFunc(
 
 static int
 OldMathFuncProc(
-    ClientData clientData,	/* Ponter to OldMathFuncData describing the
+    ClientData clientData,	/* Pointer to OldMathFuncData describing the
 				 * function being called */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Actual parameter count */
@@ -3819,6 +3826,7 @@ Tcl_ListMathFuncs(
 
     return result;
 }
+#endif /* !defined(TCL_NO_DEPRECATED) */
 
 /*
  *----------------------------------------------------------------------
@@ -7697,6 +7705,71 @@ ExprWideFunc(
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wResult));
     return TCL_OK;
+}
+
+/*
+ * Common implmentation of max() and min().
+ */
+static int
+ExprMaxMinFunc(
+    ClientData clientData,	/* Ignored. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    int objc,			/* Actual parameter count. */
+    Tcl_Obj *const *objv,	/* Actual parameter vector. */
+    int op)			/* Comparison direction */
+{
+    Tcl_Obj *res;
+    double d;
+    int type, i;
+    ClientData ptr;
+
+    if (objc < 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+    res = objv[1];
+    for (i = 1; i < objc; i++) {
+        if (TclGetNumberFromObj(interp, objv[i], &ptr, &type) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        if (type == TCL_NUMBER_NAN) {
+            /*
+             * Get the error message for NaN.
+             */
+
+            Tcl_GetDoubleFromObj(interp, objv[i], &d);
+            return TCL_ERROR;
+        }
+        if (TclCompareTwoNumbers(objv[i], res) == op)  {
+            res = objv[i];
+        }
+    }
+
+    Tcl_SetObjResult(interp, res);
+    return TCL_OK;
+}
+
+static int
+ExprMaxFunc(
+    ClientData clientData,	/* Ignored. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    int objc,			/* Actual parameter count. */
+    Tcl_Obj *const *objv)	/* Actual parameter vector. */
+{
+    return ExprMaxMinFunc(clientData, interp, objc, objv, MP_GT);
+}
+
+static int
+ExprMinFunc(
+    ClientData clientData,	/* Ignored. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    int objc,			/* Actual parameter count. */
+    Tcl_Obj *const *objv)	/* Actual parameter vector. */
+{
+    return ExprMaxMinFunc(clientData, interp, objc, objv, MP_LT);
 }
 
 static int
