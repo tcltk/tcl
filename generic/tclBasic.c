@@ -2285,7 +2285,8 @@ Tcl_CreateObjCommand(
 	proc, clientData, deleteProc);
 }
 
-Tcl_Command TclCreateObjCommandInNs (
+Tcl_Command
+TclCreateObjCommandInNs (
     Tcl_Interp *interp,
     const char *cmdName,	/* Name of command, without any namespace components */
     Tcl_Namespace *namespace,   /* The namespace to create the command in */
@@ -8210,7 +8211,8 @@ Tcl_NRCreateCommand(
     return (Tcl_Command) cmdPtr;
 }
 
-Tcl_Command TclNRCreateCommandInNs (
+Tcl_Command
+TclNRCreateCommandInNs (
     Tcl_Interp *interp,
     const char *cmdName,
     Tcl_Namespace *nsPtr,
