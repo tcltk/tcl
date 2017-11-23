@@ -72,15 +72,6 @@ TclpIsAtty(int fd)
     return isatty(fd);
 }
 
-#define TclWinGetPlatformId winGetPlatformId
-static int
-TclWinGetPlatformId()
-{
-    /* Don't bother to determine the real platform on cygwin,
-     * because VER_PLATFORM_WIN32_NT is the only supported platform */
-    return 2; /* VER_PLATFORM_WIN32_NT */;
-}
-
 void *TclWinGetTclInstance()
 {
     void *hInstance = NULL;
@@ -597,7 +588,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 6 */
     0, /* 7 */
     TclpGetPid, /* 8 */
-    TclWinGetPlatformId, /* 9 */
+    0, /* 9 */
     0, /* 10 */
     TclGetAndDetachPids, /* 11 */
     TclpCloseFile, /* 12 */

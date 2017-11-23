@@ -1103,9 +1103,10 @@ declare 5 win {
 declare 8 win {
     int TclpGetPid(Tcl_Pid pid)
 }
-declare 9 win {
-    int TclWinGetPlatformId(void)
-}
+# Removed in 9.0:
+#declare 9 win {
+#    int TclWinGetPlatformId(void)
+#}
 # Removed in 9.0:
 #declare 10 win {
 #    Tcl_DirEntry *TclpReaddir(DIR *dir)

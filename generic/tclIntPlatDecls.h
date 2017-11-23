@@ -114,8 +114,7 @@ EXTERN int		TclUnixWaitForFile(int fd, int mask, int timeout);
 /* Slot 7 is reserved */
 /* 8 */
 EXTERN int		TclpGetPid(Tcl_Pid pid);
-/* 9 */
-EXTERN int		TclWinGetPlatformId(void);
+/* Slot 9 is reserved */
 /* Slot 10 is reserved */
 /* 11 */
 EXTERN void		TclGetAndDetachPids(Tcl_Interp *interp,
@@ -282,7 +281,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved6)(void);
     void (*reserved7)(void);
     int (*tclpGetPid) (Tcl_Pid pid); /* 8 */
-    int (*tclWinGetPlatformId) (void); /* 9 */
+    void (*reserved9)(void);
     void (*reserved10)(void);
     void (*tclGetAndDetachPids) (Tcl_Interp *interp, Tcl_Channel chan); /* 11 */
     int (*tclpCloseFile) (TclFile file); /* 12 */
@@ -411,8 +410,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 /* Slot 7 is reserved */
 #define TclpGetPid \
 	(tclIntPlatStubsPtr->tclpGetPid) /* 8 */
-#define TclWinGetPlatformId \
-	(tclIntPlatStubsPtr->tclWinGetPlatformId) /* 9 */
+/* Slot 9 is reserved */
 /* Slot 10 is reserved */
 #define TclGetAndDetachPids \
 	(tclIntPlatStubsPtr->tclGetAndDetachPids) /* 11 */

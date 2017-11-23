@@ -1095,40 +1095,23 @@ TclpCreateProcess(
      * detached processes. The GUI window will still pop up to the foreground.
      */
 
-    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_NT) {
-	if (HasConsole()) {
+    if (HasConsole()) {
 	    createFlags = 0;
-	} else if (applType == APPL_DOS) {
-	    /*
-	     * Under NT, 16-bit DOS applications will not run unless they can
-	     * be attached to a console. If we are running without a console,
-	     * run the 16-bit program as an normal process inside of a hidden
-	     * console application, and then run that hidden console as a
-	     * detached process.
-	     */
+    } else if (applType == APPL_DOS) {
+	/*
+	 * Under NT, 16-bit DOS applications will not run unless they can
+	 * be attached to a console. If we are running without a console,
+	 * run the 16-bit program as an normal process inside of a hidden
+	 * console application, and then run that hidden console as a
+	 * detached process.
+	 */
 
-	    startInfo.wShowWindow = SW_HIDE;
-	    startInfo.dwFlags |= STARTF_USESHOWWINDOW;
-	    createFlags = CREATE_NEW_CONSOLE;
-	    TclDStringAppendLiteral(&cmdLine, "cmd.exe /c");
-	} else {
-	    createFlags = DETACHED_PROCESS;
-	}
+	startInfo.wShowWindow = SW_HIDE;
+	startInfo.dwFlags |= STARTF_USESHOWWINDOW;
+	createFlags = CREATE_NEW_CONSOLE;
+	TclDStringAppendLiteral(&cmdLine, "cmd.exe /c");
     } else {
-	if (HasConsole()) {
-	    createFlags = 0;
-	} else {
-	    createFlags = DETACHED_PROCESS;
-	}
-
-	if (applType == APPL_DOS) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "DOS application process not supported on this platform",
-		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "DOS_APP",
-		    NULL);
-	    goto end;
-	}
+	createFlags = DETACHED_PROCESS;
     }
 
     /*
@@ -3328,9 +3311,7 @@ TclPipeThreadStop(
 	    /*
 	     * Cancel all sync-IO of this thread (may be blocked there).
 	     */
-	    if (tclWinProcs.cancelSynchronousIo) {
-		tclWinProcs.cancelSynchronousIo(hThread);
-	    }
+	    CancelSynchronousIo(hThread);
 
 	    /*
 	     * Wait at most 20 milliseconds for the reader thread to
