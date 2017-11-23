@@ -69,6 +69,7 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define TclWinGetSockOpt 0
 #   define TclWinSetSockOpt 0
 #   define TclWinNToHS 0
+#   define TclWinGetPlatformId 0
 #   define TclBNInitBignumFromWideUInt 0
 #   define TclBNInitBignumFromWideInt 0
 #   define TclBNInitBignumFromLong 0
@@ -101,17 +102,22 @@ static const char *TclGetStartupScriptFileName(void)
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
+#undef TclWinGetPlatformId
+#ifndef TCL_NO_DEPRECATED
 #define TclWinNToHS winNToHS
 static unsigned short TclWinNToHS(unsigned short ns) {
 	return ntohs(ns);
 }
-#undef TclWinGetPlatformId
 #define TclWinGetPlatformId winGetPlatformId
 static int
 TclWinGetPlatformId()
 {
     return 2; /* VER_PLATFORM_WIN32_NT */;
 }
+#else
+#define TclWinNToHS 0
+#define TclWinGetPlatformId 0
+#endif
 #endif
 #   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
 #   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
