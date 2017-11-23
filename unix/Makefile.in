@@ -1409,7 +1409,8 @@ tclZipfs.o: $(GENERIC_DIR)/tclZipfs.c
 	$(CC) -c $(CC_SWITCHES) \
 	-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
 	-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
-	-DCFG_RUNTIME_PATH="\"$(DLL_INSTALL_DIR)\"" \
+	-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
+	-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
 	$(ZLIB_INCLUDE) -I$(ZLIB_DIR)/contrib/minizip $(GENERIC_DIR)/tclZipfs.c
 
 tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS)
