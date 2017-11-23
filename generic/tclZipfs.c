@@ -4054,11 +4054,14 @@ Tcl_Obj *TclZipfs_TclLibrary(void) {
         }
 #else
         /* Mount zip file and dll before releasing to search */
-        if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_DLLFILE)==TCL_OK) {
+        if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE)==TCL_OK) {
             return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
         }
 #endif
-        if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_PATH "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
+        if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
+            return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
+        }
+        if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_SRCDIR "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
             return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
         }
     }
