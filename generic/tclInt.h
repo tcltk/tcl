@@ -1937,10 +1937,10 @@ typedef struct Interp {
 				 * variable traces change a variable in a
 				 * gross way. */
 #ifndef TCL_NO_DEPRECATED
-    char resultSpace[TCL_RESULT_SIZE+1];
+    char resultSpace[TCL_DSTRING_STATIC_SIZE+1];
 				/* Static space holding small results. */
 #else
-    char resultSpaceDontUse[TCL_RESULT_SIZE+1];
+    char resultSpaceDontUse[TCL_DSTRING_STATIC_SIZE+1];
 #endif
     Tcl_Obj *objResultPtr;	/* If the last command returned an object
 				 * result, this points to it. Should not be
@@ -2908,6 +2908,8 @@ MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
 MODULE_SCOPE Tcl_NRPostProc TclClearRootEnsemble;
+MODULE_SCOPE int	TclCompareTwoNumbers(Tcl_Obj *valuePtr,
+			    Tcl_Obj *value2Ptr);
 MODULE_SCOPE ContLineLoc *TclContinuationsEnter(Tcl_Obj *objPtr, int num,
 			    int *loc);
 MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
