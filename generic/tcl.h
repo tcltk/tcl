@@ -648,7 +648,9 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_BREAK		3
 #define TCL_CONTINUE		4
 
+#if !defined(TCL_NO_DEPRECATED)
 #define TCL_RESULT_SIZE		200
+#endif
 
 /*
  *----------------------------------------------------------------------------
@@ -664,6 +666,7 @@ typedef struct stat *Tcl_OldStat_;
  * Argument descriptors for math function callbacks in expressions:
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 typedef enum {
     TCL_INT, TCL_DOUBLE, TCL_EITHER, TCL_WIDE_INT
 } Tcl_ValueType;
@@ -675,6 +678,10 @@ typedef struct Tcl_Value {
     double doubleValue;		/* Double-precision floating value. */
     Tcl_WideInt wideValue;	/* Wide (min. 64-bit) integer value. */
 } Tcl_Value;
+#else
+#define Tcl_ValueType void /* Just enough to prevent compilation error in Tcl */
+#define Tcl_Value void /* Just enough to prevent compilation error in Tcl */
+#endif
 
 /*
  * Forward declaration of Tcl_Obj to prevent an error when the forward
@@ -846,7 +853,7 @@ typedef struct Tcl_SavedResult {
     char *appendResult;
     int appendAvl;
     int appendUsed;
-    char resultSpace[TCL_RESULT_SIZE+1];
+    char resultSpace[200+1];
 } Tcl_SavedResult;
 
 /*
