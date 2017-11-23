@@ -136,8 +136,6 @@ TclpIsAtty(int fd)
 static int
 TclWinGetPlatformId()
 {
-    /* Don't bother to determine the real platform on cygwin,
-     * because VER_PLATFORM_WIN32_NT is the only supported platform */
     return 2; /* VER_PLATFORM_WIN32_NT */;
 }
 
