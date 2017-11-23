@@ -199,30 +199,6 @@ TclWinInit(
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * TclWinGetPlatformId --
- *
- *	Determines whether running under NT, 95, or Win32s, to allow runtime
- *	conditional code.
- *
- * Results:
- *	The return value is:
- *	VER_PLATFORM_WIN32_NT	Win32 on Windows NT, 2000, XP, 7, 8, 8.1, 10
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-#undef TclWinGetPlatformId
-int
-TclWinGetPlatformId(void)
-{
-    return VER_PLATFORM_WIN32_NT;
-}
-
-/*
  *-------------------------------------------------------------------------
  *
  * TclWinNoBackslash --
