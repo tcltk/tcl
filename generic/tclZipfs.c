@@ -35,11 +35,10 @@
 #include "crypt.h"
 
 /*
-** On windows we need VFS to look like a volume
-** On Unix we need it to look like a UNC path
+** TIP430 style zipfs prefix
 */
 #define ZIPFS_VOLUME      "//zipfs:/"
-#define ZIPFS_VOLUME_LEN 9
+#define ZIPFS_VOLUME_LEN  9
 #define ZIPFS_APP_MOUNT   "//zipfs:/app"
 #define ZIPFS_ZIP_MOUNT   "//zipfs:/lib/tcl"
 /*
@@ -659,8 +658,88 @@ CanonicalPath(const char *root, const char *tail, Tcl_DString *dsPtr,int ZIPFSPA
     result=Tcl_DStringValue(dsPtr);
     return result;
 }
+
 
+/*
+ *-------------------------------------------------------------------------
+ *
+ * AbsolutePath --
+ *
+ *        This function computes the absolute path from a given
+ *        (relative) path name into the specified Tcl_DString.
+ *
+ * Results:
+ *        Returns the pointer to the absolute path contained in the
+ *        specified Tcl_DString.
+ *
+ * Side effects:
+ *        Modifies the specified Tcl_DString.
+ *
+ *-------------------------------------------------------------------------
+ */
 
+static char *
+AbsolutePath(const char *path,
+#if HAS_DRIVES
+             int *drvPtr,
+#endif
+             Tcl_DString *dsPtr)
+{
+    char *result;
+
+#if HAS_DRIVES
+    if (drvPtr != NULL) {
+        *drvPtr = 0;
+    }
+#endif
+    if (*path == '~') {
+        Tcl_DStringAppend(dsPtr, path, -1);
+        return Tcl_DStringValue(dsPtr);
+    }
+    if ((*path != '/')
+#if HAS_DRIVES
+        && (*path != '\\') &&
+        (((*path != '\0') && (strchr(drvletters, *path) == NULL)) ||
+         (path[1] != ':'))
+#endif
+        ) {
+        Tcl_DString pwd;
+
+        /* relative path */
+        Tcl_DStringInit(&pwd);
+        Tcl_GetCwd(NULL, &pwd);
+        result = Tcl_DStringValue(&pwd);
+#if HAS_DRIVES
+        if ((result[0] != '\0') && (strchr(drvletters, result[0]) != NULL) &&
+            (result[1] == ':')) {
+            if (drvPtr != NULL) {
+                drvPtr[0] = result[0];
+                if ((drvPtr[0] >= 'a') && (drvPtr[0] <= 'z')) {
+                    drvPtr[0] -= 'a' - 'A';
+                }
+            }
+            result += 2;
+        }
+#endif
+        result = CanonicalPath(result, path, dsPtr, 0);
+        Tcl_DStringFree(&pwd);
+    } else {
+        /* absolute path */
+#if HAS_DRIVES
+        if ((path[0] != '\0') && (strchr(drvletters, path[0]) != NULL) &&
+            (path[1] == ':')) {
+            if (drvPtr != NULL) {
+                drvPtr[0] = path[0];
+                if ((drvPtr[0] >= 'a') && (drvPtr[0] <= 'z')) {
+                    drvPtr[0] -= 'a' - 'A';
+                }
+            }
+        }
+#endif
+        result = CanonicalPath("", path, dsPtr, 0);
+    }
+    return result;
+}
 
 /*
  *-------------------------------------------------------------------------
@@ -985,12 +1064,17 @@ TclZipfs_Mount(
     const char *mntpt,
     const char *passwd
 ) {
+    char *realname, *p;
     int i, pwlen, isNew;
     ZipFile *zf, zf0;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
-    Tcl_DString ds, fpBuf;
+    Tcl_DString ds, dsm, fpBuf;
     unsigned char *q;
+#if HAS_DRIVES
+    int drive = 0;
+#endif
+
     ReadLock();
     if (!ZipFS.initialized) {
         ZIPFS_ERROR(interp,"not initialized");
@@ -1024,11 +1108,31 @@ TclZipfs_Mount(
             Unlock();
             return TCL_OK;
         }
-        hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, zipname);
+        Tcl_DStringInit(&ds);
+#if HAS_DRIVES
+        p = AbsolutePath(zipname, &drive, &ds);
+#else
+        p = AbsolutePath(zipname, &ds);
+#endif
+        hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, p);
         if (hPtr != NULL) {
+#if HAS_DRIVES
+                if (drive == zf->mntdrv) {
+                    Tcl_Obj *string;
+                    char drvbuf[3];
+
+                    drvbuf[0] = zf->mntdrv;
+                    drvbuf[1] = ':';
+                    drvbuf[2] = '\0';
+                    string = Tcl_NewStringObj(drvbuf, 2);
+                    Tcl_AppendToObj(string, zf->mntpt, zf->mntptlen);
+                    Tcl_SetObjResult(interp, string);
+                }
+#else
             if ((zf = Tcl_GetHashValue(hPtr)) != NULL) {
                 Tcl_SetObjResult(interp,Tcl_NewStringObj(zf->mntpt, zf->mntptlen));
             }
+#endif
         }
         Unlock();
         return TCL_OK;
@@ -1036,23 +1140,31 @@ TclZipfs_Mount(
     Unlock();
     pwlen = 0;
     if (passwd != NULL) {
-    pwlen = strlen(passwd);
-    if ((pwlen > 255) || (strchr(passwd, 0xff) != NULL)) {
-        if (interp) {
-        Tcl_SetObjResult(interp,
-            Tcl_NewStringObj("illegal password", -1));
+        pwlen = strlen(passwd);
+        if ((pwlen > 255) || (strchr(passwd, 0xff) != NULL)) {
+            if (interp) {
+            Tcl_SetObjResult(interp,
+                Tcl_NewStringObj("illegal password", -1));
+            }
+            return TCL_ERROR;
         }
-        return TCL_ERROR;
-    }
     }
     if (ZipFSOpenArchive(interp, zipname, 1, &zf0) != TCL_OK) {
         return TCL_ERROR;
     }
+    Tcl_DStringInit(&ds);
+#if HAS_DRIVES
+    realname = AbsolutePath(zipname, NULL, &ds);
+#else
+    realname = AbsolutePath(zipname, &ds);
+#endif
     /*
-     * Mount point can come from Tcl_GetNameOfExecutable()
-     * which sometimes is a relative or otherwise denormalized path.
+     * Mount point sometimes is a relative or otherwise denormalized path.
      * But an absolute name is needed as mount point here.
      */
+    Tcl_DStringInit(&dsm);
+    mntpt = CanonicalPath("",mntpt, &dsm, 1);
+
     WriteLock();
     hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, zipname, &isNew);
     if (!isNew) {
