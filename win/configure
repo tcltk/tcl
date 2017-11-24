@@ -770,6 +770,7 @@ enable_shared
 enable_64bit
 enable_wince
 with_celib
+with_dbgx
 enable_symbols
 enable_embedded_manifest
 '
@@ -1402,6 +1403,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-encoding         encoding for configuration values
   --with-celib=DIR        use Windows/CE support library from DIR
+  --with-dbgx             debug extension for binaries
 
 Some influential environment variables:
   CC          C compiler command
@@ -2102,8 +2104,8 @@ SHELL=/bin/sh
 TCL_VERSION=8.7
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=7
-TCL_PATCH_LEVEL="a2"
-VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
+TCL_PATCH_LEVEL=".0-alpha.2"
+VER=$TCL_MAJOR_VERSION
 
 TCL_DDE_VERSION=1.4
 TCL_DDE_MAJOR_VERSION=1
@@ -3883,6 +3885,13 @@ fi
 
 
 
+
+# Check whether --with-dbgx was given.
+if test "${with_dbgx+set}" = set; then :
+  withval=$with_dbgx; with_dbgx=${withval}
+fi
+
+
     SHLIB_SUFFIX=".dll"
 
     # MACHINE is IX86 for LINK, but this is used by the manifest,
@@ -4131,7 +4140,7 @@ $as_echo_n "checking compiler flags... " >&6; }
 $as_echo "using static flags" >&6; }
 	    runtime=
 	    LIBRARIES="\${STATIC_LIBRARIES}"
-	    EXESUFFIX="s\${DBGX}.exe"
+	    EXESUFFIX="${with_dbgx}.exe"
 	else
 	    # dynamic
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: using shared flags" >&5
@@ -4146,7 +4155,7 @@ $as_echo "using shared flags" >&6; }
 	    runtime=
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 
-	    EXESUFFIX="\${DBGX}.exe"
+	    EXESUFFIX="${with_dbgx}.exe"
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	fi
 	# Link with gcc since ld does not link to default libs like
@@ -4157,9 +4166,9 @@ $as_echo "using shared flags" >&6; }
 	    -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\$@)"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
-	DLLSUFFIX="\${DBGX}.dll"
-	LIBSUFFIX="\${DBGX}.a"
-	LIBFLAGSUFFIX="\${DBGX}"
+	DLLSUFFIX="${with_dbgx}.dll"
+	LIBSUFFIX="${with_dbgx}.a"
+	LIBFLAGSUFFIX="${with_dbgx}"
 	SHLIB_SUFFIX=.dll
 
 	EXTRA_CFLAGS="${extra_cflags}"
@@ -4240,7 +4249,7 @@ $as_echo "   Using 64-bit $MACHINE mode" >&6; }
 $as_echo "using static flags" >&6; }
 	    runtime=-MT
 	    LIBRARIES="\${STATIC_LIBRARIES}"
-	    EXESUFFIX="s\${DBGX}.exe"
+	    EXESUFFIX="${with_dbgx}.exe"
 	else
 	    # dynamic
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: using shared flags" >&5
@@ -4248,7 +4257,7 @@ $as_echo "using shared flags" >&6; }
 	    runtime=-MD
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 	    LIBRARIES="\${SHARED_LIBRARIES}"
-	    EXESUFFIX="\${DBGX}.exe"
+	    EXESUFFIX="${with_dbgx}.exe"
 	    case "x`echo \${VisualStudioVersion}`" in
 		x1[4-9]*)
 		    lflags="${lflags} -nodefaultlib:libucrt.lib"
@@ -4260,9 +4269,9 @@ $as_echo "using shared flags" >&6; }
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -out:\$@"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
-	DLLSUFFIX="\${DBGX}.dll"
-	LIBSUFFIX="\${DBGX}.lib"
-	LIBFLAGSUFFIX="\${DBGX}"
+	DLLSUFFIX="${with_dbgx}.dll"
+	LIBSUFFIX="${with_dbgx}.lib"
+	LIBFLAGSUFFIX="${with_dbgx}"
 
 	# This is a 2-stage check to make sure we have the 64-bit SDK
 	# We have to know where the SDK is installed.
@@ -5016,7 +5025,6 @@ fi
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
-	DBGX=""
 
 $as_echo "#define NDEBUG 1" >>confdefs.h
 
@@ -5028,7 +5036,6 @@ $as_echo "no" >&6; }
     else
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
-	DBGX=g
 	if test "$tcl_ok" = "yes"; then
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (standard debugging)" >&5
 $as_echo "yes (standard debugging)" >&6; }
@@ -5063,7 +5070,7 @@ $as_echo "enabled $tcl_ok debugging" >&6; }
     fi
 
 
-TCL_DBGX=${DBGX}
+TCL_DBGX=""
 
 #--------------------------------------------------------------------
 # Embed the manifest if we can determine how
@@ -5168,17 +5175,9 @@ CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}
 #--------------------------------------------------------------------
 
 if test ${SHARED_BUILD} = 0 ; then
-    if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD ${RC_DEFINE} DEBUG"
-    else
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
-    fi
+    RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
 else
-    if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} DEBUG"
-    else
-        RC_DEFINES=""
-    fi
+    RC_DEFINES=""
 fi
 
 #--------------------------------------------------------------------
@@ -5198,11 +5197,11 @@ fi
 # TCL_WIN_VERSION is the 4 dotted pair Windows version format which needs
 # the release level, and must account for interim release versioning
 case "$TCL_PATCH_LEVEL" in
-     *a*) TCL_RELEASE_LEVEL=0 ;;
-     *b*) TCL_RELEASE_LEVEL=1 ;;
+     *alpha*) TCL_RELEASE_LEVEL=0 ;;
+     *beta*) TCL_RELEASE_LEVEL=1 ;;
      *)   TCL_RELEASE_LEVEL=2 ;;
 esac
-TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d ab.`"
+TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.0`echo $TCL_PATCH_LEVEL | tr -d 0abehlpt\\\\-.`"
 
 # X86|AMD64|IA64 for manifest
 

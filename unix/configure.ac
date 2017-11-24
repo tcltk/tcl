@@ -4,7 +4,7 @@ dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 
 AC_INIT([tcl],[8.7])
-AC_PREREQ(2.69)
+AC_PREREQ(2.59)
 
 dnl This is only used when included from macosx/configure.ac
 m4_ifdef([SC_USE_CONFIG_HEADERS], [
@@ -25,8 +25,8 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=8.7
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=7
-TCL_PATCH_LEVEL="a2"
-VERSION=${TCL_VERSION}
+TCL_PATCH_LEVEL=".0-alpha.2"
+VERSION=${TCL_MAJOR_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
 EXTRA_BUILD_HTML=${EXTRA_BUILD_HTML:-"@:"}
@@ -819,11 +819,11 @@ eval "TCL_LIB_FILE=libtcl${LIB_SUFFIX}"
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
 # since on some platforms TCL_LIB_FILE contains shell escapes.
-# (See also: TCL_TRIM_DOTS).
+# (See also: TCL_TRIM_DOTS, which is deprecated).
 
 eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
 
-TCL_LIBRARY='$(prefix)/lib/tcl$(VERSION)'
+TCL_LIBRARY='$(prefix)/share/tcl$(MAJOR_VERSION)'
 PRIVATE_INCLUDE_DIR='$(includedir)'
 HTML_DIR='$(DISTDIR)/html'
 
@@ -890,11 +890,7 @@ else
     eval libdir="$libdir"
     # default install directory for bundled packages
     PACKAGE_DIR="$libdir"
-    if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-        TCL_LIB_FLAG="-ltcl${TCL_VERSION}"
-    else
-        TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
-    fi
+    TCL_LIB_FLAG="-ltcl${TCL_MAJOR_VERSION}${with_dbgx}"
     TCL_BUILD_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_LIB_FLAG}"
     TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
 fi
@@ -926,18 +922,13 @@ fi
 #       stub support.
 #--------------------------------------------------------------------
 
-# Replace ${VERSION} with contents of ${TCL_VERSION}
-# double-eval to account for TCL_TRIM_DOTS.
+# Replace ${VERSION} with contents of ${TCL_MAJOR_VERSION}
 #
 eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
 eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_DIR=${libdir}"
 
-if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-    TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}"
-else
-    TCL_STUB_LIB_FLAG="-ltclstub`echo ${TCL_VERSION} | tr -d .`"
-fi
+TCL_STUB_LIB_FLAG="-ltclstub${TCL_MAJOR_VERSION}${with_dbgx}"
 
 TCL_BUILD_STUB_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_STUB_LIB_FLAG}"
 TCL_STUB_LIB_SPEC="-L${TCL_STUB_LIB_DIR} ${TCL_STUB_LIB_FLAG}"

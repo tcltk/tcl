@@ -46,7 +46,7 @@ proc auto_reset {} {
 #
 # Arguments:
 # 	basename	Prefix of the directory name, (e.g., "tk")
-#	version		Version number of the package, (e.g., "8.0")
+#	version		Version number of the package, (e.g., "8")
 #	patch		Patchlevel of the package, (e.g., "8.0.3")
 #	initScript	Initialization script to source (e.g., tk.tcl)
 #	enVarName	environment variable to honor (e.g., TK_LIBRARY)
@@ -94,8 +94,8 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 	}
 
 	# 3. Various locations relative to the executable
-	# ../lib/foo1.0		(From bin directory in install hierarchy)
-	# ../../lib/foo1.0	(From bin/arch directory in install hierarchy)
+	# ../share/foo1.0		(From bin directory in install hierarchy)
+	# ../../share/foo1.0	(From bin/arch directory in install hierarchy)
 	# ../library		(From unix directory in build hierarchy)
 	#
 	# Remaining locations are out of date (when relevant, they ought to be
@@ -109,8 +109,10 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 
         set parentDir [file dirname [file dirname [info nameofexecutable]]]
         set grandParentDir [file dirname $parentDir]
-        lappend dirs [file join $parentDir lib $basename$version]
-        lappend dirs [file join $grandParentDir lib $basename$version]
+        lappend dirs [file join $parentDir share $basename$version]
+        lappend dirs [file join $grandParentDir share $basename$version]
+        lappend dirs [file join $parentDir share tcl8 $basename$version]
+        lappend dirs [file join $grandParentDir share tcl8 $basename$version]
         lappend dirs [file join $parentDir library]
 	if {0} {
 	    lappend dirs [file join $grandParentDir library]

@@ -14,8 +14,8 @@ SHELL=/bin/sh
 TCL_VERSION=8.7
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=7
-TCL_PATCH_LEVEL="a2"
-VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
+TCL_PATCH_LEVEL=".0-alpha.2"
+VER=$TCL_MAJOR_VERSION
 
 TCL_DDE_VERSION=1.4
 TCL_DDE_MAJOR_VERSION=1
@@ -268,7 +268,7 @@ fi
 
 SC_ENABLE_SYMBOLS
 
-TCL_DBGX=${DBGX}
+TCL_DBGX=""
 
 #--------------------------------------------------------------------
 # Embed the manifest if we can determine how
@@ -324,17 +324,9 @@ CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}
 #--------------------------------------------------------------------
 
 if test ${SHARED_BUILD} = 0 ; then
-    if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD ${RC_DEFINE} DEBUG"
-    else
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
-    fi
+    RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
 else
-    if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} DEBUG"
-    else
-        RC_DEFINES=""
-    fi
+    RC_DEFINES=""
 fi
 
 #--------------------------------------------------------------------
@@ -354,11 +346,11 @@ fi
 # TCL_WIN_VERSION is the 4 dotted pair Windows version format which needs
 # the release level, and must account for interim release versioning
 case "$TCL_PATCH_LEVEL" in
-     *a*) TCL_RELEASE_LEVEL=0 ;;
-     *b*) TCL_RELEASE_LEVEL=1 ;;
+     *alpha*) TCL_RELEASE_LEVEL=0 ;;
+     *beta*) TCL_RELEASE_LEVEL=1 ;;
      *)   TCL_RELEASE_LEVEL=2 ;;
 esac
-TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d ab.`"
+TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.0`echo $TCL_PATCH_LEVEL | tr -d 0abehlpt\\\\-.`"
 AC_SUBST(TCL_WIN_VERSION)
 # X86|AMD64|IA64 for manifest
 AC_SUBST(MACHINE)

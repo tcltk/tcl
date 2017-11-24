@@ -25,7 +25,8 @@ The patch level of the Tcl library (or alpha or beta number).
 .AP Tcl_ReleaseType *type out
 The type of release, also indicates the type of patch level. Can be
 one of \fBTCL_ALPHA_RELEASE\fR, \fBTCL_BETA_RELEASE\fR, or
-\fBTCL_FINAL_RELEASE\fR.
+\fBTCL_FINAL_RELEASE\fR. This function cannot distinguish between
+final and rc releases, both will be considered final.
 .BE
 
 .SH DESCRIPTION

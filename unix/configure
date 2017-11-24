@@ -761,6 +761,7 @@ enable_shared
 enable_64bit
 enable_64bit_vis
 enable_rpath
+with_dbgx
 enable_corefoundation
 enable_load
 enable_symbols
@@ -1416,6 +1417,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-encoding         encoding for configuration values (default:
                           iso8859-1)
+  --with-dbgx             debug extension for binaries
   --with-tzdata           install timezone data (default: autodetect)
 
 Some influential environment variables:
@@ -2325,8 +2327,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=8.7
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=7
-TCL_PATCH_LEVEL="a2"
-VERSION=${TCL_VERSION}
+TCL_PATCH_LEVEL=".0-alpha.2"
+VERSION=${TCL_MAJOR_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
 EXTRA_BUILD_HTML=${EXTRA_BUILD_HTML:-"@:"}
@@ -4943,6 +4945,13 @@ fi
 
     # Step 3: set configuration options based on system name and version.
 
+
+# Check whether --with-dbgx was given.
+if test "${with_dbgx+set}" = set; then :
+  withval=$with_dbgx; with_dbgx=${withval}
+fi
+
+
     do64bit_ok=no
     # default to '{$LIBS}' and set to "" on per-platform necessary basis
     SHLIB_LD_LIBS='${LIBS}'
@@ -4952,9 +4961,7 @@ fi
     # is disabled by the user. [Bug 1016796]
     LDFLAGS_ARCH=""
     UNSHARED_LIB_SUFFIX=""
-    TCL_TRIM_DOTS='`echo ${VERSION} | tr -d .`'
     ECHO_VERSION='`echo ${VERSION}`'
-    TCL_LIB_VERSIONS_OK=ok
     CFLAGS_DEBUG=-g
     if test "$GCC" = yes; then :
 
@@ -5236,7 +5243,7 @@ fi
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    TCL_NEEDS_EXP_FILE=1
-	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.dll.a'
+	    TCL_EXPORT_FILE_SUFFIX='${VERSION}${with_dbgx}.dll.a'
 	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,--out-implib,\$@.a"
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Cygwin version of gcc" >&5
 $as_echo_n "checking for Cygwin version of gcc... " >&6; }
@@ -5729,8 +5736,7 @@ fi
 
 fi
 	    # OpenBSD doesn't do version numbers with dots.
-	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-	    TCL_LIB_VERSIONS_OK=nodots
+	    UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.a'
 	    ;;
 	NetBSD-*)
 	    # NetBSD has ELF and can use 'cc -shared' to build shared libs
@@ -5778,10 +5784,8 @@ fi
 	    case $system in
 	    FreeBSD-3.*)
 		# Version numbers are dot-stripped by system policy.
-		TCL_TRIM_DOTS=`echo ${VERSION} | tr -d .`
-		UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so'
-		TCL_LIB_VERSIONS_OK=nodots
+		UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.a'
+		SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.so'
 		;;
 	    esac
 	    ;;
@@ -6519,11 +6523,11 @@ fi
 
     if test "$SHARED_LIB_SUFFIX" = ""; then :
 
-	SHARED_LIB_SUFFIX='${VERSION}${SHLIB_SUFFIX}'
+	SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}${SHLIB_SUFFIX}'
 fi
     if test "$UNSHARED_LIB_SUFFIX" = ""; then :
 
-	UNSHARED_LIB_SUFFIX='${VERSION}.a'
+	UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.a'
 fi
     DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
 
@@ -6671,7 +6675,6 @@ else
 fi
 
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
-    DBGX=""
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
@@ -10186,11 +10189,11 @@ eval "TCL_LIB_FILE=libtcl${LIB_SUFFIX}"
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
 # since on some platforms TCL_LIB_FILE contains shell escapes.
-# (See also: TCL_TRIM_DOTS).
+# (See also: TCL_TRIM_DOTS, which is deprecated).
 
 eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
 
-TCL_LIBRARY='$(prefix)/lib/tcl$(VERSION)'
+TCL_LIBRARY='$(prefix)/share/tcl$(MAJOR_VERSION)'
 PRIVATE_INCLUDE_DIR='$(includedir)'
 HTML_DIR='$(DISTDIR)/html'
 
@@ -10293,11 +10296,7 @@ else
     eval libdir="$libdir"
     # default install directory for bundled packages
     PACKAGE_DIR="$libdir"
-    if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-        TCL_LIB_FLAG="-ltcl${TCL_VERSION}"
-    else
-        TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
-    fi
+    TCL_LIB_FLAG="-ltcl${TCL_MAJOR_VERSION}${with_dbgx}"
     TCL_BUILD_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_LIB_FLAG}"
     TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
 fi
@@ -10329,18 +10328,13 @@ fi
 #       stub support.
 #--------------------------------------------------------------------
 
-# Replace ${VERSION} with contents of ${TCL_VERSION}
-# double-eval to account for TCL_TRIM_DOTS.
+# Replace ${VERSION} with contents of ${TCL_MAJOR_VERSION}
 #
 eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
 eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_DIR=${libdir}"
 
-if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-    TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}"
-else
-    TCL_STUB_LIB_FLAG="-ltclstub`echo ${TCL_VERSION} | tr -d .`"
-fi
+TCL_STUB_LIB_FLAG="-ltclstub${TCL_MAJOR_VERSION}${with_dbgx}"
 
 TCL_BUILD_STUB_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_STUB_LIB_FLAG}"
 TCL_STUB_LIB_SPEC="-L${TCL_STUB_LIB_DIR} ${TCL_STUB_LIB_FLAG}"

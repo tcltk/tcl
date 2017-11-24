@@ -736,7 +736,6 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 	    [build with debugging symbols (default: off)]),
 	[tcl_ok=$enableval], [tcl_ok=no])
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
-    DBGX=""
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
@@ -1072,6 +1071,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     # Step 3: set configuration options based on system name and version.
 
+    AC_ARG_WITH(dbgx, [  --with-dbgx             debug extension for binaries], with_dbgx=${withval})
+
     do64bit_ok=no
     # default to '{$LIBS}' and set to "" on per-platform necessary basis
     SHLIB_LD_LIBS='${LIBS}'
@@ -1081,9 +1082,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     # is disabled by the user. [Bug 1016796]
     LDFLAGS_ARCH=""
     UNSHARED_LIB_SUFFIX=""
-    TCL_TRIM_DOTS='`echo ${VERSION} | tr -d .`'
     ECHO_VERSION='`echo ${VERSION}`'
-    TCL_LIB_VERSIONS_OK=ok
     CFLAGS_DEBUG=-g
     AS_IF([test "$GCC" = yes], [
 	CFLAGS_OPTIMIZE=-O2
@@ -1207,7 +1206,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    TCL_NEEDS_EXP_FILE=1
-	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.dll.a'
+	    TCL_EXPORT_FILE_SUFFIX='${VERSION}${with_dbgx}.dll.a'
 	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,--out-implib,\$[@].a"
 	    AC_CACHE_CHECK(for Cygwin version of gcc,
 		ac_cv_cygwin,
@@ -1461,8 +1460,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		CFLAGS="$CFLAGS -pthread"
 	    ])
 	    # OpenBSD doesn't do version numbers with dots.
-	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-	    TCL_LIB_VERSIONS_OK=nodots
+	    UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.a'
 	    ;;
 	NetBSD-*)
 	    # NetBSD has ELF and can use 'cc -shared' to build shared libs
@@ -1502,10 +1500,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    case $system in
 	    FreeBSD-3.*)
 		# Version numbers are dot-stripped by system policy.
-		TCL_TRIM_DOTS=`echo ${VERSION} | tr -d .`
-		UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so'
-		TCL_LIB_VERSIONS_OK=nodots
+		UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.a'
+		SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.so'
 		;;
 	    esac
 	    ;;
@@ -1926,9 +1922,9 @@ dnl # preprocessing tests use only CPPFLAGS.
     ])
 
     AS_IF([test "$SHARED_LIB_SUFFIX" = ""], [
-	SHARED_LIB_SUFFIX='${VERSION}${SHLIB_SUFFIX}'])
+	SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}${SHLIB_SUFFIX}'])
     AS_IF([test "$UNSHARED_LIB_SUFFIX" = ""], [
-	UNSHARED_LIB_SUFFIX='${VERSION}.a'])
+	UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${with_dbgx}.a'])
     DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
 
     AS_IF([test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""], [

@@ -488,7 +488,7 @@ TclpInitLibraryPath(
 	 * installed.
 	 */
 
-	sprintf(installLib, "lib/tcl%s", TCL_VERSION);
+	sprintf(installLib, "lib/tcl%d", TCL_MAJOR_VERSION);
 
 	/*
 	 * If TCL_LIBRARY is set, search there.
