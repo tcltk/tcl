@@ -2505,6 +2505,7 @@ BuildEnsembleConfig(
     int i, j, isNew;
     Tcl_HashTable *hash = &ensemblePtr->subcommandTable;
     Tcl_HashEntry *hPtr;
+    Tcl_Obj *subcmdDictCopy = NULL ;
 
     if (hash->numEntries != 0) {
 	/*
@@ -2553,7 +2554,15 @@ BuildEnsembleConfig(
 	     */
 
 	    if (ensemblePtr->subcommandDict != NULL) {
-		Tcl_DictObjGet(NULL, ensemblePtr->subcommandDict, subcmdv[i],
+		if (subcmdDictCopy == NULL) {
+		    if (ensemblePtr->subcmdList == ensemblePtr->subcommandDict) {
+			subcmdDictCopy = Tcl_DuplicateObj(ensemblePtr->subcommandDict);
+		    } else {
+			subcmdDictCopy = ensemblePtr->subcommandDict; 
+		    }
+		    Tcl_IncrRefCount(subcmdDictCopy);
+		}
+		Tcl_DictObjGet(NULL, subcmdDictCopy, subcmdv[i],
 			&target);
 		if (target != NULL) {
 		    Tcl_SetHashValue(hPtr, target);
@@ -2577,6 +2586,9 @@ BuildEnsembleConfig(
 	    cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
 	    Tcl_SetHashValue(hPtr, cmdPrefixObj);
 	    Tcl_IncrRefCount(cmdPrefixObj);
+	}
+	if (subcmdDictCopy != NULL) {
+	    Tcl_DecrRefCount(subcmdDictCopy);
 	}
     } else if (ensemblePtr->subcommandDict != NULL) {
 	/*
