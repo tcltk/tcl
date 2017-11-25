@@ -2444,7 +2444,7 @@ TclEnsureNamespace(
     Tcl_Namespace *namespacePtr)
 {
     Namespace *nsPtr = (Namespace *) namespacePtr;
-    if (!nsPtr->flags & NS_DYING) {
+    if (!(nsPtr->flags & NS_DYING)) {
 	    return namespacePtr;
     }
     return Tcl_CreateNamespace(interp, nsPtr->fullName, NULL, NULL);
