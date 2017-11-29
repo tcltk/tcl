@@ -6608,7 +6608,7 @@ BuildEnsembleConfig(
      */
 
     if (ensemblePtr->subcmdList != NULL) {
-	Tcl_Obj **subcmdv, *target, *cmdObj, *cmdPrefixObj;
+	Tcl_Obj **subcmdv, *target;
 	int subcmdc;
 
 	TclListObjGetElements(NULL, ensemblePtr->subcmdList, &subcmdc,
@@ -6617,6 +6617,33 @@ BuildEnsembleConfig(
 	    char *name = TclGetString(subcmdv[i]);
 
 	    hPtr = Tcl_CreateHashEntry(hash, name, &isNew);
+
+	    /*
+	     * In the obscure case the list and dict are the same, avoid 
+	     * segfault by switch of type.
+	     */
+	    if (ensemblePtr->subcmdList == ensemblePtr->subcommandDict) {
+		/* 
+		 * We should repeat to consider the dict's like: {one ::two one ::three}
+		 */
+		if (!isNew) {
+		    target = (Tcl_Obj*)Tcl_GetHashValue(hPtr);
+		    Tcl_DecrRefCount(target);
+		    Tcl_SetHashValue(hPtr, NULL);
+		}
+		/*
+		 * In case of !(i & 1) we've a key, and i+1 points to value,
+		 * the dict is already checked as valid by set with "-map"
+		 * ("missing value to go with key" if odd), but just to be
+		 * sure check the length also.
+		 */
+		if (!(i & 1) && i < subcmdc-1) {
+		    target = subcmdv[i+1];
+		    goto set_target;
+		} else {
+		    goto set_nsmapped;
+		}
+	    }
 
 	    /*
 	     * Skip non-unique cases.
@@ -6634,27 +6661,27 @@ BuildEnsembleConfig(
 		Tcl_DictObjGet(NULL, ensemblePtr->subcommandDict, subcmdv[i],
 			&target);
 		if (target != NULL) {
-		    Tcl_SetHashValue(hPtr, target);
-		    Tcl_IncrRefCount(target);
-		    continue;
+		    goto set_target;
 		}
 	    }
 
+	set_nsmapped:
 	    /*
 	     * Not there, so map onto the namespace. Note in this case that we
 	     * do not guarantee that the command is actually there; that is
 	     * the programmer's responsibility (or [::unknown] of course).
 	     */
 
-	    cmdObj = Tcl_NewStringObj(ensemblePtr->nsPtr->fullName, -1);
+	    target = Tcl_NewStringObj(ensemblePtr->nsPtr->fullName, -1);
 	    if (ensemblePtr->nsPtr->parentPtr != NULL) {
-		Tcl_AppendStringsToObj(cmdObj, "::", name, NULL);
+		Tcl_AppendStringsToObj(target, "::", name, NULL);
 	    } else {
-		Tcl_AppendStringsToObj(cmdObj, name, NULL);
+		Tcl_AppendStringsToObj(target, name, NULL);
 	    }
-	    cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
-	    Tcl_SetHashValue(hPtr, cmdPrefixObj);
-	    Tcl_IncrRefCount(cmdPrefixObj);
+	    target = Tcl_NewListObj(1, &target);
+	set_target:
+	    Tcl_SetHashValue(hPtr, target);
+	    Tcl_IncrRefCount(target);
 	}
     } else if (ensemblePtr->subcommandDict != NULL) {
 	/*
