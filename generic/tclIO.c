@@ -9041,18 +9041,6 @@ ZeroTransferTimerProc(
  */
 
 int
-TclCopyChannelOld(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Channel inChan,		/* Channel to read from. */
-    Tcl_Channel outChan,	/* Channel to write to. */
-    int toRead,			/* Amount of data to copy, or -1 for all. */
-    Tcl_Obj *cmdPtr)		/* Pointer to script to execute or NULL. */
-{
-    return TclCopyChannel(interp, inChan, outChan, (Tcl_WideInt) toRead,
-            cmdPtr);
-}
-
-int
 TclCopyChannel(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Channel inChan,		/* Channel to read from. */
