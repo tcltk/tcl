@@ -562,10 +562,10 @@ Tcl_UtfFindFirst(
 #if TCL_UTF_MAX == 4
 	if (!len) {
 	    len += TclUtfToUniChar(src, &find);
-	    fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
 	}
 #endif
-	if (find == fullchar) {
+	if (fullchar == ch) {
 	    return src;
 	}
 	if (*src == '\0') {
@@ -610,10 +610,10 @@ Tcl_UtfFindLast(
 #if TCL_UTF_MAX == 4
 	if (!len) {
 	    len += TclUtfToUniChar(src, &find);
-	    fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
 	}
 #endif
-	if (find == fullchar) {
+	if (fullchar == ch) {
 	    last = src;
 	}
 	if (*src == '\0') {
@@ -730,12 +730,27 @@ Tcl_UniCharAtIndex(
     register int index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
+    int fullchar = 0;
+#if TCL_UTF_MAX == 4
+	int len = 1;
+#endif
 
-    while (index >= 0) {
-	index--;
+    while (index-- >= 0) {
+#if TCL_UTF_MAX == 4
+	src += (len = TclUtfToUniChar(src, &ch));
+#else
 	src += TclUtfToUniChar(src, &ch);
+#endif
     }
-    return ch;
+    fullchar = ch;
+#if TCL_UTF_MAX == 4
+     if (!len) {
+	/* If last Tcl_UniChar was an upper surrogate, combine with lower surrogate */
+	(void)TclUtfToUniChar(src, &ch);
+	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+    }
+#endif
+    return fullchar;
 }
 
 /*
@@ -762,8 +777,7 @@ Tcl_UtfAtIndex(
 {
     Tcl_UniChar ch = 0;
 
-    while (index > 0) {
-	index--;
+    while (index-- > 0) {
 	src += TclUtfToUniChar(src, &ch);
     }
     return src;
