@@ -94,7 +94,7 @@ static const unsigned char totalBytes[256] = {
 
 int
 TclUtfCount(
-    int ch)			/* The Tcl_UniChar whose size is returned. */
+    int ch)			/* The Unicode character whose size is returned. */
 {
     if ((unsigned)(ch - 1) < (UNICODE_SELF - 1)) {
 	return 1;
@@ -550,10 +550,10 @@ Tcl_UtfFindFirst(
 #if TCL_UTF_MAX == 4
 	if (!len) {
 	    len += TclUtfToUniChar(src, &find);
-	    fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
 	}
 #endif
-	if (find == fullchar) {
+	if (fullchar == ch) {
 	    return src;
 	}
 	if (*src == '\0') {
@@ -573,7 +573,7 @@ Tcl_UtfFindFirst(
  *	part of the UTF-8 string. Equivalent to Plan 9 utfrrune().
  *
  * Results:
- *	As above. If the Tcl_UniChar does not exist in the given string, the
+ *	As above. If the Unicode character does not exist in the given string, the
  *	return value is NULL.
  *
  * Side effects:
@@ -598,10 +598,10 @@ Tcl_UtfFindLast(
 #if TCL_UTF_MAX == 4
 	if (!len) {
 	    len += TclUtfToUniChar(src, &find);
-	    fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	    fullchar = (((fullchar & 0x3ff) << 10) | (find & 0x3ff)) + 0x10000;
 	}
 #endif
-	if (find == fullchar) {
+	if (fullchar == ch) {
 	    last = src;
 	}
 	if (*src == '\0') {
@@ -701,7 +701,7 @@ Tcl_UtfPrev(
  *
  * Tcl_UniCharAtIndex --
  *
- *	Returns the Unicode character represented at the specified character
+ *	Returns the Tcl_UniChar represented at the specified character
  *	(not byte) position in the UTF-8 string.
  *
  * Results:
