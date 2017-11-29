@@ -1108,6 +1108,15 @@ Tcl_UtfNcmp(
 
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
+#if TCL_UTF_MAX == 4
+    /* map high surrogate characters to values > 0xffff */
+    if ((ch1 & 0xFC00) == 0xD800) {
+	ch1 += 0x4000;
+    }
+    if ((ch2 & 0xFC00) == 0xD800) {
+	ch2 += 0x4000;
+    }
+#endif
 	if (ch1 != ch2) {
 	    return (ch1 - ch2);
 	}
@@ -1140,6 +1149,7 @@ Tcl_UtfNcasecmp(
     unsigned long numChars)	/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
+
     while (numChars-- > 0) {
 	/*
 	 * n must be interpreted as chars, not bytes.
@@ -1148,6 +1158,15 @@ Tcl_UtfNcasecmp(
 	 */
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
+#if TCL_UTF_MAX == 4
+    /* map high surrogate characters to values > 0xffff */
+    if ((ch1 & 0xFC00) == 0xD800) {
+	ch1 += 0x4000;
+    }
+    if ((ch2 & 0xFC00) == 0xD800) {
+	ch2 += 0x4000;
+    }
+#endif
 	if (ch1 != ch2) {
 	    ch1 = Tcl_UniCharToLower(ch1);
 	    ch2 = Tcl_UniCharToLower(ch2);
@@ -1158,11 +1177,56 @@ Tcl_UtfNcasecmp(
     }
     return 0;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UtfCmp --
+ *
+ *	Compare UTF chars of string cs to string ct case sensitively.
+ *	Replacement for strcmp in Tcl core, in places where UTF-8 should
+ *	be handled.
+ *
+ * Results:
+ *	Return <0 if cs < ct, 0 if cs == ct, or >0 if cs > ct.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclUtfCmp(
+    const char *cs,		/* UTF string to compare to ct. */
+    const char *ct)		/* UTF string cs is compared to. */
+{
+    Tcl_UniChar ch1 = 0, ch2 = 0;
+
+    while (*cs && *ct) {
+	cs += TclUtfToUniChar(cs, &ch1);
+	ct += TclUtfToUniChar(ct, &ch2);
+#if TCL_UTF_MAX == 4
+    /* map high surrogate characters to values > 0xffff */
+    if ((ch1 & 0xFC00) == 0xD800) {
+	ch1 += 0x4000;
+    }
+    if ((ch2 & 0xFC00) == 0xD800) {
+	ch2 += 0x4000;
+    }
+#endif
+	if (ch1 != ch2) {
+	    return ch1 - ch2;
+	}
+    }
+    return UCHAR(*cs) - UCHAR(*ct);
+}
+
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UtfNcasecmp --
+ * TclUtfCasecmp --
  *
  *	Compare UTF chars of string cs to string ct case insensitively.
  *	Replacement for strcasecmp in Tcl core, in places where UTF-8 should
@@ -1182,11 +1246,20 @@ TclUtfCasecmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct)		/* UTF string cs is compared to. */
 {
-    while (*cs && *ct) {
-	Tcl_UniChar ch1 = 0, ch2 = 0;
+    Tcl_UniChar ch1 = 0, ch2 = 0;
 
+    while (*cs && *ct) {
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
+#if TCL_UTF_MAX == 4
+    /* map high surrogate characters to values > 0xffff */
+    if ((ch1 & 0xFC00) == 0xD800) {
+	ch1 += 0x4000;
+    }
+    if ((ch2 & 0xFC00) == 0xD800) {
+	ch2 += 0x4000;
+    }
+#endif
 	if (ch1 != ch2) {
 	    ch1 = Tcl_UniCharToLower(ch1);
 	    ch2 = Tcl_UniCharToLower(ch2);
