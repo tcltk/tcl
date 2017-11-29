@@ -2391,10 +2391,10 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------------
  * The following constant is used to test for older versions of Tcl in the
- * stubs tables.
+ * stubs tables. If TCL_UTF_MAX>4 use a different value.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACF + (TCL_UTF_MAX>4))
 
 /*
  * The following function is required to be defined in all stubs aware
