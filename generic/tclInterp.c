@@ -3209,10 +3209,6 @@ Tcl_MakeSafe(
 
 	(void) Tcl_EvalEx(interp,
 		"namespace eval ::tcl {namespace eval mathfunc {}}", -1, 0);
-	(void) Tcl_CreateAlias(interp, "::tcl::mathfunc::min", master,
-		"::tcl::mathfunc::min", 0, NULL);
-	(void) Tcl_CreateAlias(interp, "::tcl::mathfunc::max", master,
-		"::tcl::mathfunc::max", 0, NULL);
     }
 
     iPtr->flags |= SAFE_INTERP;
