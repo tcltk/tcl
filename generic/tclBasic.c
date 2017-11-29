@@ -2105,13 +2105,13 @@ Tcl_CreateCommand(
 
         hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
 
-        if (isNew || deleted) {
+	if (isNew || deleted) {
 	    /*
 	     * isNew - No conflict with existing command.
 	     * deleted - We've already deleted a conflicting command
 	     */
 	    break;
-        }
+	}
 
 	/* An existing command conflicts. Try to delete it.. */
 	cmdPtr = Tcl_GetHashValue(hPtr);
@@ -2252,64 +2252,82 @@ Tcl_CreateObjCommand(
 				 * name. */
     ClientData clientData,	/* Arbitrary value to pass to object
 				 * function. */
-    Tcl_CmdDeleteProc *deleteProc)
+    Tcl_CmdDeleteProc *deleteProc
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
+)
 {
     Interp *iPtr = (Interp *) interp;
-    ImportRef *oldRefPtr = NULL;
     Namespace *nsPtr;
-    Command *cmdPtr;
-    Tcl_HashEntry *hPtr;
     const char *tail;
-    int isNew = 0, deleted = 0;
-    ImportedCmdData *dataPtr;
 
     if (iPtr->flags & DELETED) {
 	/*
 	 * The interpreter is being deleted. Don't create any new commands;
 	 * it's not safe to muck with the interpreter anymore.
 	 */
-
 	return (Tcl_Command) NULL;
     }
 
+    /*
+     * Determine where the command should reside. If its name contains
+     * namespace qualifiers, we put it in the specified namespace;
+     * otherwise, we always put it in the global namespace.
+     */
+
+    if (strstr(cmdName, "::") != NULL) {
+	Namespace *dummy1, *dummy2;
+
+	TclGetNamespaceForQualName(interp, cmdName, NULL,
+	    TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
+	if ((nsPtr == NULL) || (tail == NULL)) {
+	    return (Tcl_Command) NULL;
+	}
+    } else {
+	nsPtr = iPtr->globalNsPtr;
+	tail = cmdName;
+    }
+
+    return TclCreateObjCommandInNs(interp, tail, (Tcl_Namespace *) nsPtr,
+	proc, clientData, deleteProc);
+}
+
+Tcl_Command
+TclCreateObjCommandInNs (
+    Tcl_Interp *interp,
+    const char *cmdName,	/* Name of command, without any namespace components */
+    Tcl_Namespace *namespace,   /* The namespace to create the command in */
+    Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
+				 * name. */
+    ClientData clientData,	/* Arbitrary value to pass to object
+				 * function. */
+    Tcl_CmdDeleteProc *deleteProc
+				/* If not NULL, gives a function to call when
+				 * this command is deleted. */
+) {
+    int deleted = 0, isNew = 0;
+    Command *cmdPtr;
+    ImportRef *oldRefPtr = NULL;
+    ImportedCmdData *dataPtr;
+    Tcl_HashEntry *hPtr;
+    Namespace *nsPtr = (Namespace *) namespace;
     /*
      * If the command name we seek to create already exists, we need to
      * delete that first.  That can be tricky in the presence of traces.
      * Loop until we no longer find an existing command in the way, or
      * until we've deleted one command and that didn't finish the job.
      */
-
     while (1) {
-        /*
-         * Determine where the command should reside. If its name contains
-         * namespace qualifiers, we put it in the specified namespace;
-	 * otherwise, we always put it in the global namespace.
-         */
+	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, cmdName, &isNew);
 
-        if (strstr(cmdName, "::") != NULL) {
-	    Namespace *dummy1, *dummy2;
-
-	    TclGetNamespaceForQualName(interp, cmdName, NULL,
-		TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
-	    if ((nsPtr == NULL) || (tail == NULL)) {
-	        return (Tcl_Command) NULL;
-	    }
-        } else {
-	    nsPtr = iPtr->globalNsPtr;
-	    tail = cmdName;
-        }
-
-        hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
-
-        if (isNew || deleted) {
+	if (isNew || deleted) {
 	    /*
 	     * isNew - No conflict with existing command.
 	     * deleted - We've already deleted a conflicting command
 	     */
 	    break;
-        }
+	}
+
 
 	/* An existing command conflicts. Try to delete it.. */
 	cmdPtr = Tcl_GetHashValue(hPtr);
@@ -2343,7 +2361,13 @@ Tcl_CreateObjCommand(
 	    cmdPtr->flags |= CMD_REDEF_IN_PROGRESS;
 	}
 
+	/* Make sure namespace doesn't get deallocated. */
+	cmdPtr->nsPtr->refCount++;
+
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
+	nsPtr = (Namespace *) TclEnsureNamespace(interp,
+	    (Tcl_Namespace *)cmdPtr->nsPtr);
+	TclNsDecrRefCount(cmdPtr->nsPtr);
 
 	if (cmdPtr->flags & CMD_REDEF_IN_PROGRESS) {
 	    oldRefPtr = cmdPtr->importRefPtr;
@@ -2352,7 +2376,6 @@ Tcl_CreateObjCommand(
 	TclCleanupCommandMacro(cmdPtr);
 	deleted = 1;
     }
-
     if (!isNew) {
 	/*
 	 * If the deletion callback recreated the command, just throw away
@@ -2374,7 +2397,7 @@ Tcl_CreateObjCommand(
 	 * commands.
 	 */
 
-	TclInvalidateCmdLiteral(interp, tail, nsPtr);
+	TclInvalidateCmdLiteral(interp, cmdName, nsPtr);
 
 	/*
 	 * The list of command exported from the namespace might have changed.
@@ -8259,6 +8282,22 @@ Tcl_NRCreateCommand(
     cmdPtr->nreProc = nreProc;
     return (Tcl_Command) cmdPtr;
 }
+
+Tcl_Command
+TclNRCreateCommandInNs (
+    Tcl_Interp *interp,
+    const char *cmdName,
+    Tcl_Namespace *nsPtr,
+    Tcl_ObjCmdProc *proc,
+    Tcl_ObjCmdProc *nreProc,
+    ClientData clientData,
+    Tcl_CmdDeleteProc *deleteProc) {
+    Command *cmdPtr = (Command *)
+	TclCreateObjCommandInNs(interp,cmdName,nsPtr,proc,clientData,deleteProc);
+
+    cmdPtr->nreProc = nreProc;
+    return (Tcl_Command) cmdPtr;
+}
 
 /****************************************************************************
  * Stuff for the public api
@@ -9044,9 +9083,9 @@ TclNRCoroutineObjCmd(
 {
     Command *cmdPtr;
     CoroutineData *corPtr;
-    const char *fullName, *procName;
-    Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
-    Tcl_DString ds;
+    const char *procName, *simpleName;
+    Namespace *nsPtr, *altNsPtr, *cxtNsPtr,
+	*inNsPtr = (Namespace *)TclGetCurrentNamespace(interp);
     Namespace *lookupNsPtr = iPtr->varFramePtr->nsPtr;
 
     if (objc < 3) {
@@ -9054,34 +9093,21 @@ TclNRCoroutineObjCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * FIXME: this is copy/pasted from Tcl_ProcObjCommand. Should have
-     * something in tclUtil.c to find the FQ name.
-     */
-
-    fullName = TclGetString(objv[1]);
-    TclGetNamespaceForQualName(interp, fullName, NULL, 0,
-	    &nsPtr, &altNsPtr, &cxtNsPtr, &procName);
+    procName = TclGetString(objv[1]);
+    TclGetNamespaceForQualName(interp, procName, inNsPtr, 0,
+	    &nsPtr, &altNsPtr, &cxtNsPtr, &simpleName);
 
     if (nsPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "can't create procedure \"%s\": unknown namespace",
-                fullName));
+                procName));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NAMESPACE", NULL);
 	return TCL_ERROR;
     }
-    if (procName == NULL) {
+    if (simpleName == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "can't create procedure \"%s\": bad procedure name",
-                fullName));
-        Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", fullName, NULL);
-	return TCL_ERROR;
-    }
-    if ((nsPtr != iPtr->globalNsPtr)
-	    && (procName != NULL) && (procName[0] == ':')) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "can't create procedure \"%s\" in non-global namespace with"
-                " name starting with \":\"", procName));
+                procName));
         Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", procName, NULL);
 	return TCL_ERROR;
     }
@@ -9093,16 +9119,9 @@ TclNRCoroutineObjCmd(
 
     corPtr = ckalloc(sizeof(CoroutineData));
 
-    Tcl_DStringInit(&ds);
-    if (nsPtr != iPtr->globalNsPtr) {
-	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
-	TclDStringAppendLiteral(&ds, "::");
-    }
-    Tcl_DStringAppend(&ds, procName, -1);
-
-    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
-	    /*objProc*/ NULL, TclNRInterpCoroutine, corPtr, DeleteCoroutine);
-    Tcl_DStringFree(&ds);
+    cmdPtr = (Command *) TclNRCreateCommandInNs(interp, simpleName,
+	    (Tcl_Namespace *)nsPtr, /*objProc*/ NULL, TclNRInterpCoroutine,
+	    corPtr, DeleteCoroutine);
 
     corPtr->cmdPtr = cmdPtr;
     cmdPtr->refCount++;
