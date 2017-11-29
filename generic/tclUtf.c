@@ -272,6 +272,13 @@ Tcl_UniCharToUtfDString(
  *---------------------------------------------------------------------------
  */
 
+static const unsigned short cp1252[32] = {
+  0x20ac,   0x81, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021,
+  0x02C6, 0x2030, 0x0160, 0x2039, 0x0152,   0x8D, 0x017D,   0x8F,
+    0x90, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
+   0x2DC, 0x2122, 0x0161, 0x203A, 0x0153,   0x9D, 0x017E, 0x0178
+};
+
 int
 Tcl_UtfToUniChar(
     register const char *src,	/* The UTF-8 string. */
@@ -288,11 +295,17 @@ Tcl_UtfToUniChar(
     if (byte < 0xC0) {
 	/*
 	 * Handles properly formed UTF-8 characters between 0x01 and 0x7F.
-	 * Also treats \0 and naked trail bytes 0x80 to 0xBF as valid
+	 * Treats naked trail bytes 0x80 to 0x9F as valid characters from
+	 * the cp1252 table. See: <https://en.wikipedia.org/wiki/UTF-8>
+	 * Also treats \0 and other naked trail bytes 0xA0 to 0xBF as valid
 	 * characters representing themselves.
 	 */
 
-	*chPtr = (Tcl_UniChar) byte;
+	if ((unsigned)(byte-0x80) < (unsigned) 0x20) {
+	    *chPtr = (Tcl_UniChar) cp1252[byte-0x80];
+	} else {
+	    *chPtr = (Tcl_UniChar) byte;
+	}
 	return 1;
     } else if (byte < 0xE0) {
 	if ((src[1] & 0xC0) == 0x80) {
