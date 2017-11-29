@@ -9044,6 +9044,7 @@ ZeroTransferTimerProc(
  *----------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED)
 int
 TclCopyChannelOld(
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -9055,6 +9056,7 @@ TclCopyChannelOld(
     return TclCopyChannel(interp, inChan, outChan, (Tcl_WideInt) toRead,
             cmdPtr);
 }
+#endif
 
 int
 TclCopyChannel(
