@@ -1354,31 +1354,70 @@ extern const TclIntStubs *tclIntStubsPtr;
 #   undef TclSetStartupScript
 #   undef TclGetStartupScript
 #   undef TclCreateNamespace
-#   define tcl_CreateNamespace tclCreateNamespace
 #   undef TclDeleteNamespace
-#   define tcl_DeleteNamespace tclDeleteNamespace
 #   undef TclAppendExportList
-#   define tcl_AppendExportList tclAppendExportList
 #   undef TclExport
-#   define tcl_Export tclExport
 #   undef TclImport
-#   define tcl_Import tclImport
 #   undef TclForgetImport
-#   define tcl_ForgetImport tclForgetImport
 #   undef TclGetCurrentNamespace_
-#   define tcl_GetCurrentNamespace tclGetCurrentNamespace_
 #   undef TclGetGlobalNamespace_
-#   define tcl_GetGlobalNamespace tclGetGlobalNamespace_
 #   undef TclFindNamespace
-#   define tcl_FindNamespace tclFindNamespace
 #   undef TclFindCommand
-#   define tcl_FindCommand tclFindCommand
 #   undef TclGetCommandFromObj
-#   define tcl_GetCommandFromObj tclGetCommandFromObj
 #   undef TclGetCommandFullName
-#   define tcl_GetCommandFullName tclGetCommandFullName
 #   undef TclCopyChannelOld
 #   undef TclSockMinimumBuffersOld
+
+#if !defined(TCL_NO_DEPRECATED)
+#   undef Tcl_CreateNamespace
+#   define Tcl_CreateNamespace \
+	    (tclIntStubsPtr->tclCreateNamespace) /* 113 */
+#   define tcl_CreateNamespace tclCreateNamespace
+#   undef Tcl_DeleteNamespace
+#   define Tcl_DeleteNamespace \
+	    (tclIntStubsPtr->tclDeleteNamespace) /* 114 */
+#   define tcl_DeleteNamespace tclDeleteNamespace
+#   undef Tcl_AppendExportList
+#   define Tcl_AppendExportList \
+	    (tclIntStubsPtr->tclAppendExportList) /* 112 */
+#   define tcl_AppendExportList tclAppendExportList
+#   undef Tcl_Export
+#   define Tcl_Export \
+	    (tclIntStubsPtr->tclExport) /* 115 */
+#   define tcl_Export tclExport
+#   undef Tcl_Import
+#   define Tcl_Import \
+	    (tclIntStubsPtr->tclImport) /* 127 */
+#   define tcl_Import tclImport
+#   undef Tcl_ForgetImport
+#   define Tcl_ForgetImport \
+	    (tclIntStubsPtr->tclForgetImport) /* 121 */
+#   define tcl_ForgetImport tclForgetImport
+#   undef Tcl_GetCurrentNamespace
+#   define Tcl_GetCurrentNamespace \
+	    (tclIntStubsPtr->tclGetCurrentNamespace_) /* 124 */
+#   define tcl_GetCurrentNamespace tclGetCurrentNamespace_
+#   undef Tcl_GetGlobalNamespace
+#   define Tcl_GetGlobalNamespace \
+	    (tclIntStubsPtr->tclGetGlobalNamespace_) /* 125 */
+#   define tcl_GetGlobalNamespace tclGetGlobalNamespace_
+#   undef Tcl_FindNamespace
+#   define Tcl_FindNamespace \
+	    (tclIntStubsPtr->tclFindNamespace) /* 117 */
+#   define tcl_FindNamespace tclFindNamespace
+#   undef Tcl_FindCommand
+#   define Tcl_FindCommand \
+	    (tclIntStubsPtr->tclFindCommand) /* 116 */
+#   define tcl_FindCommand tclFindCommand
+#   undef Tcl_GetCommandFromObj
+#   define Tcl_GetCommandFromObj \
+	    (tclIntStubsPtr->tclGetCommandFromObj) /* 122 */
+#   define tcl_GetCommandFromObj tclGetCommandFromObj
+#   undef Tcl_GetCommandFullName
+#   define Tcl_GetCommandFullName \
+	    (tclIntStubsPtr->tclGetCommandFullName) /* 123 */
+#   define tcl_GetCommandFullName tclGetCommandFullName
+#endif /* !defined(TCL_NO_DEPRECATED) */
 #endif
 
 #endif /* _TCLINTDECLS */
