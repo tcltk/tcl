@@ -1354,17 +1354,29 @@ extern const TclIntStubs *tclIntStubsPtr;
 #   undef TclSetStartupScript
 #   undef TclGetStartupScript
 #   undef TclCreateNamespace
+#   define tcl_CreateNamespace tclCreateNamespace
 #   undef TclDeleteNamespace
+#   define tcl_DeleteNamespace tclDeleteNamespace
 #   undef TclAppendExportList
+#   define tcl_AppendExportList tclAppendExportList
 #   undef TclExport
+#   define tcl_Export tclExport
 #   undef TclImport
+#   define tcl_Import tclImport
 #   undef TclForgetImport
+#   define tcl_ForgetImport tclForgetImport
 #   undef TclGetCurrentNamespace_
+#   define tcl_GetCurrentNamespace tclGetCurrentNamespace_
 #   undef TclGetGlobalNamespace_
+#   define tcl_GetGlobalNamespace tclGetGlobalNamespace_
 #   undef TclFindNamespace
+#   define tcl_FindNamespace tclFindNamespace
 #   undef TclFindCommand
+#   define tcl_FindCommand tclFindCommand
 #   undef TclGetCommandFromObj
+#   define tcl_GetCommandFromObj tclGetCommandFromObj
 #   undef TclGetCommandFullName
+#   define tcl_GetCommandFullName tclGetCommandFullName
 #   undef TclCopyChannelOld
 #   undef TclSockMinimumBuffersOld
 #endif
