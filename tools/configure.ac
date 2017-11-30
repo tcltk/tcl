@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(man2tcl.c)
-AC_PREREQ(2.59)
+AC_PREREQ(2.69)
 
 # Recover information that Tcl computed with its configure script.
 
