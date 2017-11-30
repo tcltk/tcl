@@ -889,7 +889,7 @@ Tcl_ScanObjCmd(
 	    i = (int)sch;
 #if TCL_UTF_MAX == 4
 	    if (!offset) {
-		offset = Tcl_UtfToUniChar(string, &sch);
+		offset = TclUtfToUniChar(string, &sch);
 		i = (((i<<10) & 0x0FFC00) + 0x10000) + (sch & 0x3FF);
 	    }
 #endif
