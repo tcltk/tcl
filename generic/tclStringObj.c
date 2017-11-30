@@ -418,12 +418,16 @@ Tcl_GetCharLength(
     int numChars;
 
     /*
-     * Optimize the case where we're really dealing with a bytearray object
-     * without string representation; we don't need to convert to a string to
-     * perform the get-length operation.
+     * Optimize the case where we're really dealing with a bytearray object;
+     * we don't need to convert to a string to perform the get-length operation.
+     *
+     * NOTE that we do not need the bytearray to be "pure".  A ByteArray value
+     * with a string rep cannot be trusted to represent the same value as the
+     * string rep, but it *can* be trusted to have the same character length
+     * as the string rep, which is all this routine cares about.
      */
 
-    if (TclIsPureByteArray(objPtr)) {
+    if (objPtr->typePtr == &tclByteArrayType) {
 	int length;
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
