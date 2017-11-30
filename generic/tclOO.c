@@ -1091,8 +1091,8 @@ ReleaseClassContents(
     }
 
     /* Tell oPtr that it's class is gone so that it doesn't try to remove
-     * itself from it's classe's list of instances 
-     */ 
+     * itself from it's classe's list of instances
+     */
     oPtr->flags |= CLASS_GONE;
     DelRef(clsPtr);
 
@@ -1247,7 +1247,7 @@ ObjectNamespaceDeleted(
     /*
      *  Because an object can be a class that is an instance of itself, the
      *  A class object's class structure should only be cleaned after most of
-     *  the cleanup on the object is done. 
+     *  the cleanup on the object is done.
      */
 
 
