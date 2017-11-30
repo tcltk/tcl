@@ -649,12 +649,12 @@ TclNamespaceEnsembleCmd(
 
 Tcl_Command
 TclCreateEnsembleInNs(
-    Tcl_Interp *interp, 
-			
+    Tcl_Interp *interp,
+
     const char *name,   /* Simple name of command to create (no */
 			/* namespace components). */
-    Tcl_Namespace       /* Name of namespace to create the command in. */ 
-    *nameNsPtr,	
+    Tcl_Namespace       /* Name of namespace to create the command in. */
+    *nameNsPtr,
     Tcl_Namespace
     *ensembleNsPtr,	/* Name of the namespace for the ensemble. */
     int flags
@@ -2591,7 +2591,7 @@ BuildEnsembleConfig(
 		    if (ensemblePtr->subcmdList == ensemblePtr->subcommandDict) {
 			subcmdDictCopy = Tcl_DuplicateObj(ensemblePtr->subcommandDict);
 		    } else {
-			subcmdDictCopy = ensemblePtr->subcommandDict; 
+			subcmdDictCopy = ensemblePtr->subcommandDict;
 		    }
 		    Tcl_IncrRefCount(subcmdDictCopy);
 		}
