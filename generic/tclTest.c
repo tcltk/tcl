@@ -416,6 +416,12 @@ static Tcl_FSMatchInDirectoryProc SimpleMatchInDirectory;
 static int		TestNumUtfCharsCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+static int		TestFindFirstCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+static int		TestFindLastCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -680,6 +686,10 @@ Tcltest_Init(
 	    TestsetobjerrorcodeCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testnumutfchars",
 	    TestNumUtfCharsCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testfindfirst",
+	    TestFindFirstCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testfindlast",
+	    TestFindLastCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testsetplatform", TestsetplatformCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsocket", TestSocketCmd,
@@ -6718,6 +6728,50 @@ TestNumUtfCharsCmd(
 	}
 	len = Tcl_NumUtfChars(Tcl_GetString(objv[1]), len);
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(len));
+    }
+    return TCL_OK;
+}
+
+/*
+ * Used to check correct operation of Tcl_UtfFindFirst
+ */
+
+static int
+TestFindFirstCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc > 1) {
+	int len = -1;
+
+	if (objc > 2) {
+	    (void) Tcl_GetIntFromObj(interp, objv[2], &len);
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_UtfFindFirst(Tcl_GetString(objv[1]), len), -1));
+    }
+    return TCL_OK;
+}
+
+/*
+ * Used to check correct operation of Tcl_UtfFindLast
+ */
+
+static int
+TestFindLastCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc > 1) {
+	int len = -1;
+
+	if (objc > 2) {
+	    (void) Tcl_GetIntFromObj(interp, objv[2], &len);
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_UtfFindLast(Tcl_GetString(objv[1]), len), -1));
     }
     return TCL_OK;
 }
