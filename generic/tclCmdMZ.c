@@ -3546,7 +3546,7 @@ TclNRSwitchObjCmd(
 	OPT_LAST
     };
     typedef int (*strCmpFn_t)(const char *, const char *);
-    strCmpFn_t strCmpFn = strcmp;
+    strCmpFn_t strCmpFn = TclUtfCmp;
 
     mode = OPT_EXACT;
     foundmode = 0;
