@@ -129,7 +129,7 @@ test oo-1.4 {basic test of OO functionality} -body {
     oo::object create {}
 } -returnCodes 1 -result {object name must not be empty}
 test oo-1.4.1 {fully-qualified nested name} -body {
-    oo::object create ::one::two::three 
+    oo::object create ::one::two::three
 } -result {::one::two::three}
 test oo-1.5 {basic test of OO functionality} -body {
     oo::object doesnotexist
@@ -3889,7 +3889,7 @@ test oo-35.6 {
     return done
 } -cleanup {
     rename obj {}
-} -result done 
+} -result done
 
 
 
