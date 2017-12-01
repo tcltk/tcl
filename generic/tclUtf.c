@@ -548,6 +548,7 @@ Tcl_NumUtfChars(
  *
  *---------------------------------------------------------------------------
  */
+
 const char *
 Tcl_UtfFindFirst(
     const char *src,		/* The UTF-8 string to be searched. */
@@ -585,7 +586,7 @@ Tcl_UtfFindFirst(
  *	part of the UTF-8 string. Equivalent to Plan 9 utfrrune().
  *
  * Results:
- *	As above. If the Tcl_UniChar does not exist in the given string, the
+ *	As above. If the Unicode character does not exist in the given string, the
  *	return value is NULL.
  *
  * Side effects:
@@ -642,6 +643,7 @@ Tcl_UtfFindLast(
  *
  *---------------------------------------------------------------------------
  */
+
 const char *
 Tcl_UtfNext(
     const char *src)		/* The current location in the string. */
@@ -712,7 +714,7 @@ Tcl_UtfPrev(
  *
  * Tcl_UniCharAtIndex --
  *
- *	Returns the Unicode character represented at the specified character
+ *	Returns the Tcl_UniChar represented at the specified character
  *	(not byte) position in the UTF-8 string.
  *
  * Results:
@@ -1122,16 +1124,17 @@ Tcl_UtfNcmp(
 
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
-#if TCL_UTF_MAX == 4
-    /* map high surrogate characters to values > 0xffff */
-    if ((ch1 & 0xFC00) == 0xD800) {
-	ch1 += 0x4000;
-    }
-    if ((ch2 & 0xFC00) == 0xD800) {
-	ch2 += 0x4000;
-    }
-#endif
 	if (ch1 != ch2) {
+#if TCL_UTF_MAX == 4
+	    /* Surrogates always report higher than non-surrogates */
+	    if (((ch1 & 0xFC00) == 0xD800)) {
+	    if ((ch2 & 0xFC00) != 0xD800) {
+		return ch1;
+	    }
+	    } else if ((ch2 & 0xFC00) == 0xD800) {
+		return -ch2;
+	    }
+#endif
 	    return (ch1 - ch2);
 	}
     }
@@ -1172,16 +1175,17 @@ Tcl_UtfNcasecmp(
 	 */
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
-#if TCL_UTF_MAX == 4
-    /* map high surrogate characters to values > 0xffff */
-    if ((ch1 & 0xFC00) == 0xD800) {
-	ch1 += 0x4000;
-    }
-    if ((ch2 & 0xFC00) == 0xD800) {
-	ch2 += 0x4000;
-    }
-#endif
 	if (ch1 != ch2) {
+#if TCL_UTF_MAX == 4
+	    /* Surrogates always report higher than non-surrogates */
+	    if (((ch1 & 0xFC00) == 0xD800)) {
+	    if ((ch2 & 0xFC00) != 0xD800) {
+		return ch1;
+	    }
+	    } else if ((ch2 & 0xFC00) == 0xD800) {
+		return -ch2;
+	    }
+#endif
 	    ch1 = Tcl_UniCharToLower(ch1);
 	    ch2 = Tcl_UniCharToLower(ch2);
 	    if (ch1 != ch2) {
@@ -1220,16 +1224,17 @@ TclUtfCmp(
     while (*cs && *ct) {
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
-#if TCL_UTF_MAX == 4
-    /* map high surrogate characters to values > 0xffff */
-    if ((ch1 & 0xFC00) == 0xD800) {
-	ch1 += 0x4000;
-    }
-    if ((ch2 & 0xFC00) == 0xD800) {
-	ch2 += 0x4000;
-    }
-#endif
 	if (ch1 != ch2) {
+#if TCL_UTF_MAX == 4
+	    /* Surrogates always report higher than non-surrogates */
+	    if (((ch1 & 0xFC00) == 0xD800)) {
+	    if ((ch2 & 0xFC00) != 0xD800) {
+		return ch1;
+	    }
+	    } else if ((ch2 & 0xFC00) == 0xD800) {
+		return -ch2;
+	    }
+#endif
 	    return ch1 - ch2;
 	}
     }
@@ -1265,16 +1270,17 @@ TclUtfCasecmp(
     while (*cs && *ct) {
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
-#if TCL_UTF_MAX == 4
-    /* map high surrogate characters to values > 0xffff */
-    if ((ch1 & 0xFC00) == 0xD800) {
-	ch1 += 0x4000;
-    }
-    if ((ch2 & 0xFC00) == 0xD800) {
-	ch2 += 0x4000;
-    }
-#endif
 	if (ch1 != ch2) {
+#if TCL_UTF_MAX == 4
+	    /* Surrogates always report higher than non-surrogates */
+	    if (((ch1 & 0xFC00) == 0xD800)) {
+	    if ((ch2 & 0xFC00) != 0xD800) {
+		return ch1;
+	    }
+	    } else if ((ch2 & 0xFC00) == 0xD800) {
+		return -ch2;
+	    }
+#endif
 	    ch1 = Tcl_UniCharToLower(ch1);
 	    ch2 = Tcl_UniCharToLower(ch2);
 	    if (ch1 != ch2) {
