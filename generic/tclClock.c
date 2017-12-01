@@ -100,7 +100,7 @@ typedef struct {
  * Structure containing the fields used in [clock format] and [clock scan]
  */
 
-typedef struct TclDateFields {
+typedef struct {
     Tcl_WideInt seconds;	/* Time expressed in seconds from the Posix
 				 * epoch */
     Tcl_WideInt localSeconds;	/* Local time expressed in nominal seconds
