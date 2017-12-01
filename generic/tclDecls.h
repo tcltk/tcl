@@ -3785,11 +3785,9 @@ extern const TclStubs *tclStubsPtr;
  * Deprecated Tcl procedures:
  */
 
-#ifndef TCL_NO_DEPRECATED
-#   define Tcl_EvalObj(interp, objPtr) \
-	    Tcl_EvalObjEx(interp, objPtr, 0)
-#   define Tcl_GlobalEvalObj(interp, objPtr) \
-	    Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
-#endif /* !TCL_NO_DEPRECATED */
+#define Tcl_EvalObj(interp, objPtr) \
+    Tcl_EvalObjEx(interp, objPtr, 0)
+#define Tcl_GlobalEvalObj(interp, objPtr) \
+    Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
 
 #endif /* _TCLDECLS */

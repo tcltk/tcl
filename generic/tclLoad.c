@@ -463,6 +463,7 @@ Tcl_LoadObjCmd(
 	}
 	code = pkgPtr->initProc(target);
     }
+
     /*
      * Test for whether the initialization failed. If so, transfer the error
      * from the target interpreter to the originating one.

@@ -828,8 +828,8 @@ FileForceOption(
 	if (TclGetString(objv[i])[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
-		sizeof(char *), "option", TCL_EXACT, &idx) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", TCL_EXACT,
+		&idx) != TCL_OK) {
 	    return -1;
 	}
 	if (idx == 0 /* -force */) {
@@ -1078,8 +1078,8 @@ TclFileAttrsCmd(
 	    goto end;
 	}
 
-	if (Tcl_GetIndexFromObjStruct(interp, objv[0], attributeStrings,
-		sizeof(char *), "option", INDEX_TEMP_TABLE, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[0], attributeStrings,
+		"option", INDEX_TEMP_TABLE, &index) != TCL_OK) {
 	    goto end;
 	}
 	if (Tcl_FSFileAttrsGet(interp, index, filePtr,
@@ -1103,9 +1103,8 @@ TclFileAttrsCmd(
 	}
 
 	for (i = 0; i < objc ; i += 2) {
-	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], attributeStrings,
-		    sizeof(char *), "option", INDEX_TEMP_TABLE, &index)
-		    != TCL_OK) {
+	    if (Tcl_GetIndexFromObj(interp, objv[i], attributeStrings,
+		    "option", INDEX_TEMP_TABLE, &index) != TCL_OK) {
 		goto end;
 	    }
 	    if (i + 1 == objc) {

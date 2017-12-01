@@ -364,7 +364,7 @@ Tcl_MainEx(
     argc--;
     argv++;
 
-    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewLongObj(argc), TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
 
     argvPtr = Tcl_NewListObj(0, NULL);
     while (argc--) {
@@ -378,7 +378,7 @@ Tcl_MainEx(
 
     is.tty = isatty(0);
     Tcl_SetVar2Ex(interp, "tcl_interactive", NULL,
-	    Tcl_NewLongObj(!path && is.tty), TCL_GLOBAL_ONLY);
+	    Tcl_NewIntObj(!path && is.tty), TCL_GLOBAL_ONLY);
 
     /*
      * Invoke application-specific initialization.

@@ -30,7 +30,7 @@ New limit for nested calls to \fBTcl_Eval\fR for \fIinterp\fR.
 At any given time Tcl enforces a limit on the number of recursive
 calls that may be active for \fBTcl_Eval\fR and related procedures
 such as \fBTcl_EvalEx\fR.
-Any call to \fBTcl_EvalEx\fR that exceeds this depth is aborted with
+Any call to \fBTcl_Eval\fR that exceeds this depth is aborted with
 an error.
 By default the recursion limit is 1000.
 .PP

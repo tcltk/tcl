@@ -8928,8 +8928,8 @@ Tcl_FileEventObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId event ?script?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObjStruct(interp, objv[2], modeOptions,
-	    sizeof(char *), "event name", 0, &modeIndex) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[2], modeOptions, "event name", 0,
+	    &modeIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     mask = maskArray[modeIndex];

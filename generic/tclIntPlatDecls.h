@@ -490,7 +490,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
-#if !defined(_WIN32) && !defined(__CYGWIN__)
+#if !defined(_WIN32)
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((unsigned long) (pid))
 #endif

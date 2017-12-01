@@ -985,8 +985,8 @@ TclOOSelfObjCmd(
 	return TCL_ERROR;
     } else if (objc == 1) {
 	index = SELF_OBJECT;
-    } else if (Tcl_GetIndexFromObjStruct(interp, objv[1], subcmds,
-	    sizeof(char *), "subcommand", 0, &index) != TCL_OK) {
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "subcommand", 0,
+	    &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1155,7 +1155,7 @@ TclOOSelfObjCmd(
 	}
     case SELF_CALL:
 	result[0] = TclOORenderCallChain(interp, contextPtr->callPtr);
-	result[1] = Tcl_NewLongObj(contextPtr->index);
+	result[1] = Tcl_NewIntObj(contextPtr->index);
 	Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	return TCL_OK;
     }

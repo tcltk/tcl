@@ -2507,8 +2507,8 @@ TclFSFileAttrIndex(
 	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, -1);
 	int result;
 
-	result = Tcl_GetIndexFromObjStruct(NULL, tmpObj, attrTable,
-		sizeof(char *), NULL, TCL_EXACT, indexPtr);
+	result = Tcl_GetIndexFromObj(NULL, tmpObj, attrTable, NULL, TCL_EXACT,
+		indexPtr);
 	TclDecrRefCount(tmpObj);
 	if (listObj != NULL) {
 	    TclDecrRefCount(listObj);

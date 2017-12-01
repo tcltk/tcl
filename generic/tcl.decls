@@ -480,7 +480,7 @@ declare 128 {
 declare 130 {
     int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
 }
-# Removed in 9.0:
+# Removed in 9.0, replaced by macro.
 #declare 131 {
 #    int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 #}
@@ -647,7 +647,7 @@ declare 176 {
 #declare 177 {
 #    int Tcl_GlobalEval(Tcl_Interp *interp, const char *command)
 #}
-# Removed in 9.0
+# Removed in 9.0, replaced by macro.
 #declare 178 {
 #    int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 #}

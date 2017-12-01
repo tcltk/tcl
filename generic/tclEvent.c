@@ -1503,8 +1503,8 @@ Tcl_UpdateObjCmd(
     if (objc == 1) {
 	flags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
     } else if (objc == 2) {
-	if (Tcl_GetIndexFromObjStruct(interp, objv[1], updateOptions,
-		sizeof(char *), "option", 0, &optionIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[1], updateOptions,
+		"option", 0, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum updateOptions) optionIndex) {
