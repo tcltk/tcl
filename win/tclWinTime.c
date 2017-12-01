@@ -12,10 +12,6 @@
 
 #include "tclInt.h"
 
-#define SECSPERDAY	(60L * 60L * 24L)
-#define SECSPERYEAR	(SECSPERDAY * 365L)
-#define SECSPER4YEAR	(SECSPERYEAR * 4L + SECSPERDAY)
-
 /*
  * Number of samples over which to estimate the performance counter.
  */

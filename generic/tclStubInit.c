@@ -272,10 +272,6 @@ static int formatInt(char *buffer, int n){
 #   define Tcl_DiscardResult 0
 #   undef Tcl_SetResult
 #   define Tcl_SetResult 0
-#   undef Tcl_EvalObj
-#   define Tcl_EvalObj 0
-#   undef Tcl_GlobalEvalObj
-#   define Tcl_GlobalEvalObj 0
 #endif /* !TCL_NO_DEPRECATED */
 
 /*
@@ -901,7 +897,7 @@ const TclStubs tclStubs = {
     Tcl_ErrnoMsg, /* 128 */
     Tcl_Eval, /* 129 */
     Tcl_EvalFile, /* 130 */
-    Tcl_EvalObj, /* 131 */
+    0, /* 131 */
     Tcl_EventuallyFree, /* 132 */
     Tcl_Exit, /* 133 */
     Tcl_ExposeCommand, /* 134 */
@@ -956,7 +952,7 @@ const TclStubs tclStubs = {
     Tcl_GetVar, /* 175 */
     Tcl_GetVar2, /* 176 */
     Tcl_GlobalEval, /* 177 */
-    Tcl_GlobalEvalObj, /* 178 */
+    0, /* 178 */
     Tcl_HideCommand, /* 179 */
     Tcl_Init, /* 180 */
     Tcl_InitHashTable, /* 181 */

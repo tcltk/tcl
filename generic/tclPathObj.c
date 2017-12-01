@@ -72,7 +72,7 @@ static const Tcl_ObjType tclFsPathType = {
  *
  */
 
-typedef struct FsPath {
+typedef struct {
     Tcl_Obj *translatedPathPtr; /* Name without any ~user sequences. If this
 				 * is NULL, then this is a pure normalized,
 				 * absolute path object, in which the parent
@@ -91,7 +91,7 @@ typedef struct FsPath {
 				 * below. */
     ClientData nativePathPtr;	/* Native representation of this path, which
 				 * is filesystem dependent. */
-    int filesystemEpoch;	/* Used to ensure the path representation was
+    size_t filesystemEpoch;	/* Used to ensure the path representation was
 				 * generated during the correct filesystem
 				 * epoch. The epoch changes when
 				 * filesystem-mounts are changed. */

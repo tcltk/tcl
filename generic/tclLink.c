@@ -21,7 +21,7 @@
  * variable.
  */
 
-typedef struct Link {
+typedef struct {
     Tcl_Interp *interp;		/* Interpreter containing Tcl variable. */
     Tcl_Obj *varName;		/* Name of variable (must be global). This is
 				 * needed during trace callbacks, since the
@@ -654,7 +654,7 @@ static Tcl_ObjType invalidRealType = {
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
-    SetInvalidRealFromAny		/* setFromAnyProc */
+    NULL				/* setFromAnyProc */
 };
 
 static int

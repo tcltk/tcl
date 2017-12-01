@@ -55,7 +55,7 @@ typedef struct PkgFiles {
  * "Tk" (no version number).
  */
 
-typedef struct Package {
+typedef struct {
     char *version;		/* Version that has been supplied in this
 				 * interpreter via "package provide"
 				 * (malloc'ed). NULL means the package doesn't

@@ -1626,6 +1626,7 @@ TclTrimRight(
 {
     const char *p = bytes + numBytes;
     int pInc;
+    Tcl_UniChar ch1 = 0, ch2 = 0;
 
     if ((bytes[numBytes] != '\0') || (trim[numTrim] != '\0')) {
 	Tcl_Panic("TclTrimRight works only on null-terminated strings");
@@ -1644,7 +1645,6 @@ TclTrimRight(
      */
 
     do {
-	Tcl_UniChar ch1;
 	const char *q = trim;
 	int bytesLeft = numTrim;
 
@@ -1656,7 +1656,6 @@ TclTrimRight(
 	 */
 
 	do {
-	    Tcl_UniChar ch2;
 	    int qInc = TclUtfToUniChar(q, &ch2);
 
 	    if (ch1 == ch2) {
@@ -1706,6 +1705,7 @@ TclTrimLeft(
     int numTrim)		/* ...and its length in bytes */
 {
     const char *p = bytes;
+	Tcl_UniChar ch1 = 0, ch2 = 0;
 
     if ((bytes[numBytes] != '\0') || (trim[numTrim] != '\0')) {
 	Tcl_Panic("TclTrimLeft works only on null-terminated strings");
@@ -1724,7 +1724,6 @@ TclTrimLeft(
      */
 
     do {
-	Tcl_UniChar ch1;
 	int pInc = TclUtfToUniChar(p, &ch1);
 	const char *q = trim;
 	int bytesLeft = numTrim;
@@ -1734,7 +1733,6 @@ TclTrimLeft(
 	 */
 
 	do {
-	    Tcl_UniChar ch2;
 	    int qInc = TclUtfToUniChar(q, &ch2);
 
 	    if (ch1 == ch2) {
@@ -2069,7 +2067,7 @@ Tcl_StringCaseMatch(
 {
     int p, charLen;
     const char *pstart = pattern;
-    Tcl_UniChar ch1, ch2;
+    Tcl_UniChar ch1 = 0, ch2 = 0;
 
     while (1) {
 	p = *pattern;
@@ -2179,7 +2177,7 @@ Tcl_StringCaseMatch(
 	 */
 
 	if (p == '[') {
-	    Tcl_UniChar startChar, endChar;
+	    Tcl_UniChar startChar = 0, endChar = 0;
 
 	    pattern++;
 	    if (UCHAR(*str) < 0x80) {
