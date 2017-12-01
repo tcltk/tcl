@@ -473,9 +473,10 @@ declare 129 {
 declare 130 {
     int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
 }
-declare 131 {
-    int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
-}
+# Removed in 9.0, replaced by macro.
+#declare 131 {
+#    int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+#}
 declare 132 {
     void Tcl_EventuallyFree(ClientData clientData, Tcl_FreeProc *freeProc)
 }
@@ -636,9 +637,10 @@ declare 176 {
 declare 177 {
     int Tcl_GlobalEval(Tcl_Interp *interp, const char *command)
 }
-declare 178 {
-    int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
-}
+# Removed in 9.0, replaced by macro.
+#declare 178 {
+#    int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+#}
 declare 179 {
     int Tcl_HideCommand(Tcl_Interp *interp, const char *cmdName,
 	    const char *hiddenCmdToken)

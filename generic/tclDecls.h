@@ -420,8 +420,7 @@ EXTERN int		Tcl_Eval(Tcl_Interp *interp, const char *script);
 /* 130 */
 EXTERN int		Tcl_EvalFile(Tcl_Interp *interp,
 				const char *fileName);
-/* 131 */
-EXTERN int		Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
+/* Slot 131 is reserved */
 /* 132 */
 EXTERN void		Tcl_EventuallyFree(ClientData clientData,
 				Tcl_FreeProc *freeProc);
@@ -557,9 +556,7 @@ EXTERN CONST84_RETURN char * Tcl_GetVar2(Tcl_Interp *interp,
 /* 177 */
 EXTERN int		Tcl_GlobalEval(Tcl_Interp *interp,
 				const char *command);
-/* 178 */
-EXTERN int		Tcl_GlobalEvalObj(Tcl_Interp *interp,
-				Tcl_Obj *objPtr);
+/* Slot 178 is reserved */
 /* 179 */
 EXTERN int		Tcl_HideCommand(Tcl_Interp *interp,
 				const char *cmdName,
@@ -1977,7 +1974,7 @@ typedef struct TclStubs {
     CONST84_RETURN char * (*tcl_ErrnoMsg) (int err); /* 128 */
     int (*tcl_Eval) (Tcl_Interp *interp, const char *script); /* 129 */
     int (*tcl_EvalFile) (Tcl_Interp *interp, const char *fileName); /* 130 */
-    int (*tcl_EvalObj) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 131 */
+    void (*reserved131)(void);
     void (*tcl_EventuallyFree) (ClientData clientData, Tcl_FreeProc *freeProc); /* 132 */
     TCL_NORETURN1 void (*tcl_Exit) (int status); /* 133 */
     int (*tcl_ExposeCommand) (Tcl_Interp *interp, const char *hiddenCmdToken, const char *cmdName); /* 134 */
@@ -2032,7 +2029,7 @@ typedef struct TclStubs {
     CONST84_RETURN char * (*tcl_GetVar) (Tcl_Interp *interp, const char *varName, int flags); /* 175 */
     CONST84_RETURN char * (*tcl_GetVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags); /* 176 */
     int (*tcl_GlobalEval) (Tcl_Interp *interp, const char *command); /* 177 */
-    int (*tcl_GlobalEvalObj) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 178 */
+    void (*reserved178)(void);
     int (*tcl_HideCommand) (Tcl_Interp *interp, const char *cmdName, const char *hiddenCmdToken); /* 179 */
     int (*tcl_Init) (Tcl_Interp *interp); /* 180 */
     void (*tcl_InitHashTable) (Tcl_HashTable *tablePtr, int keyType); /* 181 */
@@ -2773,8 +2770,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_Eval) /* 129 */
 #define Tcl_EvalFile \
 	(tclStubsPtr->tcl_EvalFile) /* 130 */
-#define Tcl_EvalObj \
-	(tclStubsPtr->tcl_EvalObj) /* 131 */
+/* Slot 131 is reserved */
 #define Tcl_EventuallyFree \
 	(tclStubsPtr->tcl_EventuallyFree) /* 132 */
 #define Tcl_Exit \
@@ -2873,8 +2869,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetVar2) /* 176 */
 #define Tcl_GlobalEval \
 	(tclStubsPtr->tcl_GlobalEval) /* 177 */
-#define Tcl_GlobalEvalObj \
-	(tclStubsPtr->tcl_GlobalEvalObj) /* 178 */
+/* Slot 178 is reserved */
 #define Tcl_HideCommand \
 	(tclStubsPtr->tcl_HideCommand) /* 179 */
 #define Tcl_Init \
@@ -3947,10 +3942,8 @@ extern const TclStubs *tclStubsPtr;
  * Deprecated Tcl procedures:
  */
 
-#undef Tcl_EvalObj
 #define Tcl_EvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, 0)
-#undef Tcl_GlobalEvalObj
 #define Tcl_GlobalEvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
 

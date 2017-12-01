@@ -31,7 +31,7 @@
  * "memory tag" command is invoked, to hold the current tag.
  */
 
-typedef struct MemTag {
+typedef struct {
     size_t refCount;		/* Number of mem_headers referencing this
 				 * tag. */
     char string[1];		/* Actual size of string will be as large as
