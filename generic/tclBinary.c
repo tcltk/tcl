@@ -267,7 +267,7 @@ const Tcl_ObjType tclByteArrayType = {
  * fewer mallocs.
  */
 
-typedef struct ByteArray {
+typedef struct {
     int used;			/* The number of bytes used in the byte
 				 * array. */
     int allocated;		/* The amount of space actually allocated

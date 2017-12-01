@@ -52,7 +52,7 @@ static Tcl_ThreadDataKey dataKey;
  * with some information that is used to check the cached pointer's validity.
  */
 
-typedef struct ResolvedNsName {
+typedef struct {
     Namespace *nsPtr;		/* A cached pointer to the Namespace that the
 				 * name resolved to. */
     Namespace *refNsPtr;	/* Points to the namespace context in which
