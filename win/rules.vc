@@ -1266,8 +1266,10 @@ COMPILERFLAGS = $(COMPILERFLAGS) /DUNICODE /D_UNICODE
 !endif
 
 # Like the TEA system only set this non empty for non-Tk extensions
+# Note: some extensions use PACKAGE_NAME and others use PACKAGE_TCLNAME
+# so we pass both
 !if !$(DOING_TCL) && !$(DOING_TK)
-PKGNAMEFLAGS = -DPACKAGE_NAME="\"$(PROJECT)\"" \
+PKGNAMEFLAGS = -DPACKAGE_NAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
                -DPACKAGE_TCLNAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
                -DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
                -DMODULE_SCOPE=extern 
@@ -1459,7 +1461,7 @@ default-pkgindex:
 default-pkgindex-tea:
 	@if exist $(ROOT)\pkgIndex.tcl.in nmakehlp -s << $(ROOT)\pkgIndex.tcl.in > $(OUT_DIR)\pkgIndex.tcl
 @PACKAGE_VERSION@    $(DOTVERSION)
-@PACKAGE_NAME@       $(PROJECT)
+@PACKAGE_NAME@       $(PRJ_PACKAGE_TCLNAME)
 @PACKAGE_TCLNAME@    $(PRJ_PACKAGE_TCLNAME)
 @PKG_LIB_FILE@       $(PRJLIBNAME)
 <<
