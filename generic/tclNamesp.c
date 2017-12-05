@@ -6480,13 +6480,31 @@ MakeCachedEnsembleCommand(
  */
 
 static void
+ClearTable(
+    EnsembleConfig *ensemblePtr)
+{
+    Tcl_HashTable *hash = &ensemblePtr->subcommandTable;
+
+    if (hash->numEntries != 0) {
+	Tcl_HashSearch search;
+	Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(hash, &search);
+
+	while (hPtr != NULL) {
+	    Tcl_Obj *prefixObj = Tcl_GetHashValue(hPtr);
+	    Tcl_DecrRefCount(prefixObj);
+	    hPtr = Tcl_NextHashEntry(&search);
+	}
+	ckfree((char *) ensemblePtr->subcommandArrayPtr);
+    }
+    Tcl_DeleteHashTable(hash);
+}
+
+static void
 DeleteEnsembleConfig(
     ClientData clientData)
 {
     EnsembleConfig *ensemblePtr = clientData;
     Namespace *nsPtr = ensemblePtr->nsPtr;
-    Tcl_HashSearch search;
-    Tcl_HashEntry *hEnt;
 
     /*
      * Unlink from the ensemble chain if it has not been marked as having been
@@ -6519,17 +6537,8 @@ DeleteEnsembleConfig(
      * Kill the pointer-containing fields.
      */
 
-    if (ensemblePtr->subcommandTable.numEntries != 0) {
-	ckfree((char *) ensemblePtr->subcommandArrayPtr);
-    }
-    hEnt = Tcl_FirstHashEntry(&ensemblePtr->subcommandTable, &search);
-    while (hEnt != NULL) {
-	Tcl_Obj *prefixObj = Tcl_GetHashValue(hEnt);
+    ClearTable(ensemblePtr);
 
-	Tcl_DecrRefCount(prefixObj);
-	hEnt = Tcl_NextHashEntry(&search);
-    }
-    Tcl_DeleteHashTable(&ensemblePtr->subcommandTable);
     if (ensemblePtr->subcmdList != NULL) {
 	Tcl_DecrRefCount(ensemblePtr->subcmdList);
     }
@@ -6585,23 +6594,8 @@ BuildEnsembleConfig(
     Tcl_Obj *mapDict = ensemblePtr->subcommandDict;
     Tcl_Obj *subList = ensemblePtr->subcmdList;
 
-    if (hash->numEntries != 0) {
-	/*
-	 * Remove pre-existing table.
-	 */
-
-	Tcl_HashSearch search;
-
-	ckfree((char *) ensemblePtr->subcommandArrayPtr);
-	hPtr = Tcl_FirstHashEntry(hash, &search);
-	while (hPtr != NULL) {
-	    Tcl_Obj *prefixObj = Tcl_GetHashValue(hPtr);
-	    Tcl_DecrRefCount(prefixObj);
-	    hPtr = Tcl_NextHashEntry(&search);
-	}
-	Tcl_DeleteHashTable(hash);
-	Tcl_InitHashTable(hash, TCL_STRING_KEYS);
-    }
+    ClearTable(ensemblePtr);
+    Tcl_InitHashTable(hash, TCL_STRING_KEYS);
 
     if (subList) {
 	int subc;
