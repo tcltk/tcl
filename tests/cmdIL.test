@@ -19,6 +19,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
 testConstraint testobj [llength [info commands testobj]]
+testConstraint fullutf [expr {[format %c 0x010000] != "\ufffd"}]
 
 test cmdIL-1.1 {Tcl_LsortObjCmd procedure} -returnCodes error -body {
     lsort
@@ -147,6 +148,18 @@ test cmdIL-1.36 {lsort -stride and -index: Bug 2918962} {
 	{{b i g} 12345} {{d e m o} 34512}
     }
 } {{{b i g} 12345} {{d e m o} 34512} {{c o d e} 54321} {{b l a h} 94729}}
+test cmdIL-1.37 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
+    lsort -ascii [list \0 \x7f \x80 \uffff]
+} [list \0 \x7f \x80 \uffff]
+test cmdIL-1.38 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
+    lsort -ascii -nocase [list \0 \x7f \x80 \uffff]
+} [list \0 \x7f \x80 \uffff]
+test cmdIL-1.39 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} fullutf {
+    lsort -ascii [list \0 \x7f \x80 \U01ffff \uffff]
+} [list \0 \x7f \x80 \uffff \U01ffff]
+test cmdIL-1.40 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} fullutf {
+    lsort -ascii -nocase [list \0 \x7f \x80 \U01ffff \uffff]
+} [list \0 \x7f \x80 \uffff \U01ffff]
 
 # Can't think of any good tests for the MergeSort and MergeLists procedures,
 # except a bunch of random lists to sort.

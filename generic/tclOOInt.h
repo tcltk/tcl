@@ -495,6 +495,10 @@ MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
 			    const char *nsNameStr, int objc,
 			    Tcl_Obj *const *objv, int skip,
 			    Tcl_Object *objectPtr);
+MODULE_SCOPE Object *	TclNewObjectInstanceCommon(Tcl_Interp *interp,
+			    Class *classPtr,
+			    const char *nameStr,
+			    const char *nsNameStr);
 MODULE_SCOPE int	TclOODefineSlots(Foundation *fPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
 MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);
