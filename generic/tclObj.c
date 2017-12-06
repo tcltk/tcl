@@ -57,7 +57,7 @@ char tclEmptyString = '\0';
  * for sanity checking purposes.
  */
 
-typedef struct ObjData {
+typedef struct {
     Tcl_Obj *objPtr;		/* The pointer to the allocated Tcl_Obj. */
     const char *file;		/* The name of the source file calling this
 				 * function; used for debugging. */
