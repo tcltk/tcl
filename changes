@@ -8796,5 +8796,25 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 --- Released 8.6.7, August 9, 2017 --- http://core.tcl.tk/tcl/ for details
 
+2017-08-10 [array names -regexp] supports backrefs (goth)
+
+2017-08-10 Fix gcc build failures due to #pragma placement (cassoff,fellows)
+
+2017-08-29 (bug)[b50fb2] exec redir append stdout and stderr to file (coulter)
+
 2017-08-31 (bug)[2a9465] http state 100 continue handling broken (oehlmann)
 => http 2.8.12
+
+2017-09-02 (bug)[0e4d88] replace command, delete trace kills namespace (porter)
+
+2017-10-19 (bug)[1a5655] [info * methods] includes mixins (fellows)
+
+2017-10-23 tzdata updated to Olson's tzdata2017c (jima)
+
+2017-10-24 (bug)[fc1409] segfault in method cloning, oo-15.15 (coulter,fellows)
+
+2017-11-03 (bug)[6f2f83] More robust [load] for ReactOS 
+
+
+
+--- Released 8.6.8, December XX, 2017 --- http://core.tcl.tk/tcl/ for details
