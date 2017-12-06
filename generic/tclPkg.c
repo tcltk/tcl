@@ -432,6 +432,8 @@ PkgRequireCore(
 		     * The version of the package sought is better than the
 		     * currently selected version.
 		     */
+		    ckfree(bestVersion);
+		    bestVersion = NULL;
 		    goto newbest;
 		}
 	    } else {
@@ -460,6 +462,8 @@ PkgRequireCore(
 		     * This stable version of the package sought is better
 		     * than the currently selected stable version.
 		     */
+		    ckfree(bestStableVersion);
+		    bestStableVersion = NULL;
 		    goto newstable;
 		}
 	    } else {
