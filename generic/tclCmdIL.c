@@ -2945,7 +2945,7 @@ Tcl_LsearchObjCmd(
     double patDouble, objDouble;
     SortInfo sortInfo;
     Tcl_Obj *patObj, **listv, *listPtr, *startPtr, *itemPtr;
-    SortStrCmpFn_t strCmpFn = strcmp;
+    SortStrCmpFn_t strCmpFn = TclUtfCmp;
     Tcl_RegExp regexp = NULL;
     static const char *const options[] = {
 	"-all",	    "-ascii",   "-bisect", "-decreasing", "-dictionary",
@@ -4263,7 +4263,7 @@ SortCompare(
     int order = 0;
 
     if (infoPtr->sortMode == SORTMODE_ASCII) {
-	order = strcmp(elemPtr1->collationKey.strValuePtr,
+	order = TclUtfCmp(elemPtr1->collationKey.strValuePtr,
 		elemPtr2->collationKey.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_ASCII_NC) {
 	order = TclUtfCasecmp(elemPtr1->collationKey.strValuePtr,
