@@ -1869,7 +1869,6 @@ Tcl_FSGetNormalizedPath(
 	 */
 
 	(void) Tcl_GetStringFromObj(dir, &cwdLen);
-	cwdLen += (Tcl_GetString(copy)[cwdLen] == '/');
 
 	/* Normalize the combined string. */
 
@@ -1890,13 +1889,13 @@ Tcl_FSGetNormalizedPath(
 	     * to a normalized head, we can more efficiently normalize the
 	     * combined path by passing over only the unnormalized tail
 	     * portion.  When this is sufficient, prior developers claim
-	     * this should be much faster.  We use 'cwdLen-1' so that we are
+	     * this should be much faster.  We use 'cwdLen' so that we are
 	     * already pointing at the dir-separator that we know about.
 	     * The normalization code will actually start off directly
 	     * after that separator.
 	     */
 
-	    TclFSNormalizeToUniquePath(interp, copy, cwdLen-1);
+	    TclFSNormalizeToUniquePath(interp, copy, cwdLen);
 	}
 
 	/* Now we need to construct the new path object. */
