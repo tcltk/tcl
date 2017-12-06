@@ -1968,7 +1968,6 @@ Tcl_AppendFormatToObj(
 			ch = 'd';
 		    }
 		}
-		if (mp_cmp_d(&big, 0) == MP_EQ) gotHash = 0;
 #ifndef TCL_WIDE_INT_IS_LONG
 	    } else if (useWide) {
 		if (TclGetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
