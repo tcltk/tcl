@@ -46,19 +46,6 @@ static int		CompareArrayKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 static TCL_HASH_TYPE	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
- * Prototypes for the one word hash key methods. Not actually declared because
- * this is a critical path that is implemented in the core hash table access
- * function.
- */
-
-#if 0
-static Tcl_HashEntry *	AllocOneWordEntry(Tcl_HashTable *tablePtr,
-			    void *keyPtr);
-static int		CompareOneWordKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static unsigned int	HashOneWordKey(Tcl_HashTable *tablePtr, void *keyPtr);
-#endif
-
-/*
  * Prototypes for the string hash key methods.
  */
 
@@ -998,11 +985,17 @@ static void
 RebuildTable(
     register Tcl_HashTable *tablePtr)	/* Table to enlarge. */
 {
-    int oldSize, count, index;
-    Tcl_HashEntry **oldBuckets;
+    int count, index, oldSize = tablePtr->numBuckets;
+    Tcl_HashEntry **oldBuckets = tablePtr->buckets;
     register Tcl_HashEntry **oldChainPtr, **newChainPtr;
     register Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
+
+    /* Avoid outgrowing capability of the memory allocators */
+    if (oldSize > (int)(UINT_MAX / (4 * sizeof(Tcl_HashEntry *)))) {
+	tablePtr->rebuildSize = INT_MAX;
+	return;
+    }
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
@@ -1014,9 +1007,6 @@ RebuildTable(
     } else {
 	typePtr = &tclArrayHashKeyType;
     }
-
-    oldSize = tablePtr->numBuckets;
-    oldBuckets = tablePtr->buckets;
 
     /*
      * Allocate and initialize the new bucket array, and set up hashing

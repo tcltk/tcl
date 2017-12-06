@@ -28,6 +28,11 @@ testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
 
+proc representationpoke s {
+    set r [::tcl::unsupported::representation $s]
+    list [lindex $r 3] [string match {*, string representation "*"} $r]
+}
+
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
 } {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
@@ -224,6 +229,13 @@ test string-4.15 {string first, ability to two-byte encoded utf-8 chars} {
     set uchar \u057e    ;# character with two-byte encoding in utf-8
     string first % %#$uchar$uchar#$uchar$uchar#% 3
 } 8
+test string-4.16 {string first, normal string vs pure unicode string} {
+    set s hello
+    regexp ll $s m
+    # Representation checks are canaries
+    list [representationpoke $s] [representationpoke $m] \
+	[string first $m $s]
+} {{string 1} {string 0} 2}
 
 test string-5.1 {string index} {
     list [catch {string index} msg] $msg
@@ -576,12 +588,12 @@ test string-6.85 {string is control} {
 } 0
 test string-6.86 {string is graph} {
     ## graph is any print char, except space
-    list [string is gra -fail var "0123abc!@#\$\u0100 "] $var
-} {0 12}
+    list [string is gra -fail var "0123abc!@#\$\u0100\UE0100\UE01EF "] $var
+} {0 14}
 test string-6.87 {string is print} {
     ## basically any printable char
-    list [string is print -fail var "0123abc!@#\$\u0100 \u0010"] $var
-} {0 13}
+    list [string is print -fail var "0123abc!@#\$\u0100 \UE0100\UE01EF\u0010"] $var
+} {0 15}
 test string-6.88 {string is punct} {
     ## any graph char that isn't alnum
     list [string is punct -fail var "_!@#\u00beq0"] $var
@@ -1371,6 +1383,9 @@ test string-14.16 {string replace} {
 test string-14.17 {string replace} {
     string replace abcdefghijklmnop end end-1
 } {abcdefghijklmnop}
+test string-14.18 {string replace} {
+    string replace abcdefghijklmnop 10 9 XXX
+} {abcdefghijklmnop}
 
 test string-15.1 {string tolower too few args} {
     list [catch {string tolower} msg] $msg
@@ -1682,40 +1697,40 @@ test string-24.4 {string reverse command - unshared string} {
     string reverse $x$y
 } edcba
 test string-24.5 {string reverse command - shared unicode string} {
-    set x abcde\udead
+    set x abcde\ud0ad
     string reverse $x
-} \udeadedcba
+} \ud0adedcba
 test string-24.6 {string reverse command - unshared string} {
     set x abc
-    set y de\udead
+    set y de\ud0ad
     string reverse $x$y
-} \udeadedcba
+} \ud0adedcba
 test string-24.7 {string reverse command - simple case} {
     string reverse a
 } a
 test string-24.8 {string reverse command - simple case} {
-    string reverse \udead
-} \udead
+    string reverse \ud0ad
+} \ud0ad
 test string-24.9 {string reverse command - simple case} {
     string reverse {}
 } {}
 test string-24.10 {string reverse command - corner case} {
-    set x \ubeef\udead
+    set x \ubeef\ud0ad
     string reverse $x
-} \udead\ubeef
+} \ud0ad\ubeef
 test string-24.11 {string reverse command - corner case} {
     set x \ubeef
-    set y \udead
+    set y \ud0ad
     string reverse $x$y
-} \udead\ubeef
+} \ud0ad\ubeef
 test string-24.12 {string reverse command - corner case} {
     set x \ubeef
-    set y \udead
+    set y \ud0ad
     string is ascii [string reverse $x$y]
 } 0
 test string-24.13 {string reverse command - pure Unicode string} {
-    string reverse [string range \ubeef\udead\ubeef\udead\ubeef\udead 1 5]
-} \udead\ubeef\udead\ubeef\udead
+    string reverse [string range \ubeef\ud0ad\ubeef\ud0ad\ubeef\ud0ad 1 5]
+} \ud0ad\ubeef\ud0ad\ubeef\ud0ad
 test string-24.14 {string reverse command - pure bytearray} {
     binary scan [string reverse [binary format H* 010203]] H* x
     set x
@@ -1994,9 +2009,52 @@ test string-29.4 {string cat, many args} {
     set r2 [string compare $xx [eval "string cat $vvs"]]
     list $r1 $r2
 } {0 0}
-
-
-
+test string-29.5 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list x] [list]]
+} -match glob -result {*no string representation}
+test string-29.6 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list] [list x]]
+} -match glob -result {*no string representation}
+test string-29.7 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list x] [list] [list]]
+} -match glob -result {*no string representation}
+test string-29.8 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list] [list x] [list]]
+} -match glob -result {*no string representation}
+test string-29.9 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list] [list] [list x]]
+} -match glob -result {*no string representation}
+test string-29.10 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat [list x] [list x]]
+} -match glob -result {*, string representation "xx"}
+test string-29.11 {string cat, efficiency} -body {
+    tcl::unsupported::representation \
+	[string cat [list x] [encoding convertto utf-8 {}]]
+} -match glob -result {*no string representation}
+test string-29.12 {string cat, efficiency} -body {
+    tcl::unsupported::representation \
+	[string cat [encoding convertto utf-8 {}] [list x]]
+} -match glob -result {*, string representation "x"}
+test string-29.13 {string cat, efficiency} -body {
+    tcl::unsupported::representation [string cat \
+	[encoding convertto utf-8 {}] [encoding convertto utf-8 {}] [list x]]
+} -match glob -result {*, string representation "x"}
+test string-29.14 {string cat, efficiency} -setup {
+    set e [encoding convertto utf-8 {}]
+} -cleanup {
+    unset e
+} -body {
+    tcl::unsupported::representation [string cat $e $e [list x]]
+} -match glob -result {*no string representation}
+test string-29.15 {string cat, efficiency} -setup {
+    set e [encoding convertto utf-8 {}]
+    set f [encoding convertto utf-8 {}]
+} -cleanup {
+    unset e f
+} -body {
+    tcl::unsupported::representation [string cat $e $f $e $f [list x]]
+} -match glob -result {*no string representation}
+
 # cleanup
 rename MemStress {}
 catch {rename foo {}}

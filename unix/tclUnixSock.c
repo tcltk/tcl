@@ -646,7 +646,7 @@ TcpCloseProc(
     while (fds != NULL) {
 	TcpFdList *next = fds->next;
 
-        ckfree(fds);
+	ckfree(fds);
 	fds = next;
     }
     if (statePtr->addrlist != NULL) {
@@ -728,6 +728,37 @@ TcpClose2Proc(
  *
  *----------------------------------------------------------------------
  */
+
+#ifndef NEED_FAKE_RFC2553
+#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
+static inline int
+IPv6AddressNeedsNumericRendering(
+    struct in6_addr addr)
+{
+    if (IN6_ARE_ADDR_EQUAL(&addr, &in6addr_any)) {
+        return 1;
+    }
+
+    /*
+     * The IN6_IS_ADDR_V4MAPPED macro has a problem with aliasing warnings on
+     * at least some versions of OSX.
+     */
+
+    if (!IN6_IS_ADDR_V4MAPPED(&addr)) {
+        return 0;
+    }
+
+    return (addr.s6_addr[12] == 0 && addr.s6_addr[13] == 0
+            && addr.s6_addr[14] == 0 && addr.s6_addr[15] == 0);
+}
+#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#pragma GCC diagnostic pop
+#endif
+#endif /* NEED_FAKE_RFC2553 */
+
 static void
 TcpHostPortList(
     Tcl_Interp *interp,
@@ -754,12 +785,7 @@ TcpHostPortList(
         }
 #ifndef NEED_FAKE_RFC2553
     } else if (addr.sa.sa_family == AF_INET6) {
-        if ((IN6_ARE_ADDR_EQUAL(&addr.sa6.sin6_addr, &in6addr_any))
-            || (IN6_IS_ADDR_V4MAPPED(&addr.sa6.sin6_addr) &&
-                addr.sa6.sin6_addr.s6_addr[12] == 0 &&
-                addr.sa6.sin6_addr.s6_addr[13] == 0 &&
-                addr.sa6.sin6_addr.s6_addr[14] == 0 &&
-                addr.sa6.sin6_addr.s6_addr[15] == 0)) {
+        if (IPv6AddressNeedsNumericRendering(addr.sa6.sin6_addr)) {
             flags |= NI_NUMERICHOST;
         }
 #endif /* NEED_FAKE_RFC2553 */

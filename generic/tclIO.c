@@ -6708,7 +6708,7 @@ Tcl_Flush(
     chanPtr = statePtr->topChanPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
-	return -1;
+	return TCL_ERROR;
     }
 
     result = FlushChannel(NULL, chanPtr, 0);
@@ -9032,6 +9032,7 @@ ZeroTransferTimerProc(
  *----------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED)
 int
 TclCopyChannelOld(
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -9043,6 +9044,7 @@ TclCopyChannelOld(
     return TclCopyChannel(interp, inChan, outChan, (Tcl_WideInt) toRead,
             cmdPtr);
 }
+#endif
 
 int
 TclCopyChannel(

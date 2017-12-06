@@ -224,6 +224,7 @@ static void PkgFilesCleanupProc(ClientData clientData,
 	entry = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(&pkgFiles->table);
+    ckfree(pkgFiles);
     return;
 }
 
@@ -330,8 +331,8 @@ Tcl_PkgRequireEx(
 	 *
 	 * Second, how does this work? If we reach this point, then the global
 	 * variable tclEmptyStringRep has the value NULL. Compare that with
-	 * the definition of tclEmptyStringRep near the top of the file
-	 * generic/tclObj.c. It clearly should not have the value NULL; it
+	 * the definition of tclEmptyStringRep near the top of this file.
+	 * It clearly should not have the value NULL; it
 	 * should point to the char tclEmptyString. If we see it having the
 	 * value NULL, then somehow we are seeing a Tcl library that isn't
 	 * completely initialized, and that's an indicator for the error
@@ -347,18 +348,11 @@ Tcl_PkgRequireEx(
 	 * After all, two Tcl libraries can't be a good thing!)
 	 *
 	 * Trouble is that's going to be tricky. We're now using a Tcl library
-	 * that's not fully initialized. In particular, it doesn't have a
-	 * proper value for tclEmptyStringRep. The Tcl_Obj system heavily
-	 * depends on the value of tclEmptyStringRep and all of Tcl depends
-	 * (increasingly) on the Tcl_Obj system, we need to correct that flaw
-	 * before making the calls to set the interpreter result to the error
-	 * message. That's the only flaw corrected; other problems with
-	 * initialization of the Tcl library are not remedied, so be very
-	 * careful about adding any other calls here without checking how they
-	 * behave when initialization is incomplete.
+	 * that's not fully initialized. Functions in it may not work
+	 * reliably, so be very careful about adding any other calls here
+	 * without checking how they behave when initialization is incomplete.
 	 */
 
-	tclEmptyStringRep = &tclEmptyString;
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Cannot load package \"%s\" in standalone executable:"
 		" This package is not compiled with stub support", name));
@@ -424,7 +418,7 @@ PkgRequireCore(
     Interp *iPtr = (Interp *) interp;
     Package *pkgPtr;
     PkgAvail *availPtr, *bestPtr, *bestStablePtr;
-    char *availVersion, *bestVersion;
+    char *availVersion, *bestVersion, *bestStableVersion;
 				/* Internal rep. of versions */
     int availStable, code, satisfies, pass;
     char *script, *pkgVersionI;
@@ -472,6 +466,7 @@ PkgRequireCore(
 	bestPtr = NULL;
 	bestStablePtr = NULL;
 	bestVersion = NULL;
+	bestStableVersion = NULL;
 
 	for (availPtr = pkgPtr->availPtr; availPtr != NULL;
 		availPtr = availPtr->nextPtr) {
@@ -486,32 +481,8 @@ PkgRequireCore(
 		continue;
 	    }
 
-	    if (bestPtr != NULL) {
-		int res = CompareVersions(availVersion, bestVersion, NULL);
-
-		/*
-		 * Note: Use internal reps!
-		 */
-
-		if (res <= 0) {
-		    /*
-		     * The version of the package sought is not as good as the
-		     * currently selected version. Ignore it.
-		     */
-
-		    ckfree(availVersion);
-		    availVersion = NULL;
-		    continue;
-		}
-	    }
-
-	    /*
-	     * We have found a version which is better than our max.
-	     */
-
+	    /* Check satisfaction of requirements before considering the current version further. */
 	    if (reqc > 0) {
-		/* Check satisfaction of requirements. */
-
 		satisfies = SomeRequirementSatisfied(availVersion, reqc, reqv);
 		if (!satisfies) {
 		    ckfree(availVersion);
@@ -520,25 +491,71 @@ PkgRequireCore(
 		}
 	    }
 
-	    bestPtr = availPtr;
+	    if (bestPtr != NULL) {
+		int res = CompareVersions(availVersion, bestVersion, NULL);
 
-	    if (bestVersion != NULL) {
-		ckfree(bestVersion);
+		/*
+		 * Note: Used internal reps in the comparison!
+		 */
+
+		if (res > 0) {
+		    /*
+		     * The version of the package sought is better than the
+		     * currently selected version.
+		     */
+		    goto newbest;
+		}
+	    } else {
+	    newbest:
+		/* We have found a version which is better than our max. */
+
+		bestPtr = availPtr;
+		CheckVersionAndConvert(interp, bestPtr->version, &bestVersion, NULL);
 	    }
-	    bestVersion = availVersion;
 
-	    /*
-	     * If this new best version is stable then it also has to be
-	     * better than the max stable version found so far.
-	     */
+	    if (!availStable) {
+		ckfree(availVersion);
+		availVersion = NULL;
+		continue;
+	    }
 
-	    if (availStable) {
+	    if (bestStablePtr != NULL) {
+		int res = CompareVersions(availVersion, bestStableVersion, NULL);
+
+		/*
+		 * Note: Used internal reps in the comparison!
+		 */
+
+		if (res > 0) {
+		    /*
+		     * This stable version of the package sought is better
+		     * than the currently selected stable version.
+		     */
+		    goto newstable;
+		}
+	    } else {
+	    newstable:
+		/* We have found a stable version which is better than our max stable. */
 		bestStablePtr = availPtr;
+		CheckVersionAndConvert(interp, bestStablePtr->version, &bestStableVersion, NULL);
 	    }
-	}
+
+	    ckfree(availVersion);
+	    availVersion = NULL;
+	} /* end for */
+
+	/*
+	 * Clean up memorized internal reps, if any.
+	 */
 
 	if (bestVersion != NULL) {
 	    ckfree(bestVersion);
+	    bestVersion = NULL;
+	}
+
+	if (bestStableVersion != NULL) {
+	    ckfree(bestStableVersion);
+	    bestStableVersion = NULL;
 	}
 
 	/*
