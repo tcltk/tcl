@@ -31,10 +31,10 @@ int
 \fBTcl_UniCharLen\fR(\fIuniStr\fR)
 .sp
 int
-\fBTcl_UniCharNcmp\fR(\fIucs, uct, length\fR)
+\fBTcl_UniCharNcmp\fR(\fIucs, uct, uniLength\fR)
 .sp
 int
-\fBTcl_UniCharNcasecmp\fR(\fIucs, uct, length\fR)
+\fBTcl_UniCharNcasecmp\fR(\fIucs, uct, uniLength\fR)
 .sp
 int
 \fBTcl_UniCharCaseMatch\fR(\fIuniStr, uniPattern, nocase\fR)
@@ -96,7 +96,7 @@ A null-terminated Unicode string.
 A null-terminated Unicode string.
 .AP size_t length in
 The length of the UTF-8 string in bytes (not UTF-8 characters).  If
-negative, all bytes up to the first null byte are used.
+-1, all bytes up to the first null byte are used.
 .AP size_t uniLength in
 The length of the Unicode string in characters.  Must be greater than or
 equal to 0.
@@ -167,7 +167,7 @@ the number of Unicode characters (not bytes) in that string.
 \fBTcl_UniCharNcmp\fR and \fBTcl_UniCharNcasecmp\fR correspond to
 \fBstrncmp\fR and \fBstrncasecmp\fR, respectively, for Unicode characters.
 They accept two null-terminated Unicode strings and the number of characters
-to compare.  Both strings are assumed to be at least \fIlength\fR characters
+to compare.  Both strings are assumed to be at least \fIuniLength\fR characters
 long. \fBTcl_UniCharNcmp\fR  compares the two strings character-by-character
 according to the Unicode character ordering.  It returns an integer greater
 than, equal to, or less than 0 if the first string is greater than, equal
