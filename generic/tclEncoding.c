@@ -18,7 +18,7 @@ typedef size_t (LengthProc)(const char *src);
  * convert between various character sets and UTF-8.
  */
 
-typedef struct Encoding {
+typedef struct {
     char *name;			/* Name of encoding. Malloced because (1) hash
 				 * table entry that owns this encoding may be
 				 * freed prior to this encoding being freed,
@@ -57,7 +57,7 @@ typedef struct Encoding {
  * encoding.
  */
 
-typedef struct TableEncodingData {
+typedef struct {
     int fallback;		/* Character (in this encoding) to substitute
 				 * when this encoding cannot represent a UTF-8
 				 * character. */
@@ -91,7 +91,7 @@ typedef struct TableEncodingData {
  * for switching character sets.
  */
 
-typedef struct EscapeSubTable {
+typedef struct {
     unsigned sequenceLen;	/* Length of following string. */
     char sequence[16];		/* Escape code that marks this encoding. */
     char name[32];		/* Name for encoding. */
@@ -100,7 +100,7 @@ typedef struct EscapeSubTable {
 				 * yet. */
 } EscapeSubTable;
 
-typedef struct EscapeEncodingData {
+typedef struct {
     int fallback;		/* Character (in this encoding) to substitute
 				 * when this encoding cannot represent a UTF-8
 				 * character. */
@@ -563,7 +563,7 @@ TclInitEncodingSubsystem(void)
      * formed UTF-8 into a properly formed stream.
      */
 
-    type.encodingName	= "identity";
+    type.encodingName	= NULL;
     type.toUtfProc	= BinaryProc;
     type.fromUtfProc	= BinaryProc;
     type.freeProc	= NULL;
@@ -851,7 +851,9 @@ FreeEncoding(
 	if (encodingPtr->hPtr != NULL) {
 	    Tcl_DeleteHashEntry(encodingPtr->hPtr);
 	}
-	ckfree(encodingPtr->name);
+	if (encodingPtr->name) {
+	    ckfree(encodingPtr->name);
+	}
 	ckfree(encodingPtr);
     }
 }
@@ -1040,27 +1042,8 @@ Tcl_CreateEncoding(
     const Tcl_EncodingType *typePtr)
 				/* The encoding type. */
 {
-    Tcl_HashEntry *hPtr;
-    int isNew;
-    Encoding *encodingPtr;
-    char *name;
-
-    Tcl_MutexLock(&encodingMutex);
-    hPtr = Tcl_CreateHashEntry(&encodingTable, typePtr->encodingName, &isNew);
-    if (isNew == 0) {
-	/*
-	 * Remove old encoding from hash table, but don't delete it until last
-	 * reference goes away.
-	 */
-
-	encodingPtr = Tcl_GetHashValue(hPtr);
-	encodingPtr->hPtr = NULL;
-    }
-
-    name = ckalloc(strlen(typePtr->encodingName) + 1);
-
-    encodingPtr = ckalloc(sizeof(Encoding));
-    encodingPtr->name		= strcpy(name, typePtr->encodingName);
+    Encoding *encodingPtr = ckalloc(sizeof(Encoding));
+    encodingPtr->name		= NULL;
     encodingPtr->toUtfProc	= typePtr->toUtfProc;
     encodingPtr->fromUtfProc	= typePtr->fromUtfProc;
     encodingPtr->freeProc	= typePtr->freeProc;
@@ -1072,11 +1055,32 @@ Tcl_CreateEncoding(
 	encodingPtr->lengthProc = (LengthProc *) unilen;
     }
     encodingPtr->refCount	= 1;
+    encodingPtr->hPtr		= NULL;
+
+  if (typePtr->encodingName) {
+    Tcl_HashEntry *hPtr;
+    int isNew;
+    char *name;
+
+    Tcl_MutexLock(&encodingMutex);
+    hPtr = Tcl_CreateHashEntry(&encodingTable, typePtr->encodingName, &isNew);
+    if (isNew == 0) {
+	/*
+	 * Remove old encoding from hash table, but don't delete it until last
+	 * reference goes away.
+	 */
+
+	Encoding *replaceMe = Tcl_GetHashValue(hPtr);
+	replaceMe->hPtr = NULL;
+    }
+
+    name = ckalloc(strlen(typePtr->encodingName) + 1);
+    encodingPtr->name		= strcpy(name, typePtr->encodingName);
     encodingPtr->hPtr		= hPtr;
     Tcl_SetHashValue(hPtr, encodingPtr);
 
     Tcl_MutexUnlock(&encodingMutex);
-
+  }
     return (Tcl_Encoding) encodingPtr;
 }
 

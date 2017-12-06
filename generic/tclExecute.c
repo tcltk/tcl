@@ -744,8 +744,6 @@ static ByteCode *	CompileExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		DeleteExecStack(ExecStack *esPtr);
 static void		DupExprCodeInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
-MODULE_SCOPE int	TclCompareTwoNumbers(Tcl_Obj *valuePtr,
-			    Tcl_Obj *value2Ptr);
 static Tcl_Obj *	ExecuteExtendedBinaryMathOp(Tcl_Interp *interp,
 			    int opcode, Tcl_Obj **constants,
 			    Tcl_Obj *valuePtr, Tcl_Obj *value2Ptr);
@@ -1333,12 +1331,12 @@ TclStackAlloc(
     int numBytes)
 {
     Interp *iPtr = (Interp *) interp;
-    int numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
+    int numWords;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return (void *) ckalloc(numBytes);
     }
-
+    numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
     return (void *) StackAllocWords(interp, numWords);
 }
 

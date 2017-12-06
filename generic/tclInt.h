@@ -2445,8 +2445,8 @@ typedef struct List {
 #define TCL_EACH_COLLECT    1	/* Collect iteration result like [lmap] */
 
 /*
- * Macros providing a faster path to integers: Tcl_GetLongFromObj everywhere,
- * Tcl_GetIntFromObj and TclGetIntForIndex on platforms where longs are ints.
+ * Macros providing a faster path to integers: Tcl_GetLongFromObj,
+ * Tcl_GetIntFromObj and TclGetIntForIndex.
  *
  * WARNING: these macros eval their args more than once.
  */
@@ -2467,9 +2467,17 @@ typedef struct List {
 	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 #else
 #define TclGetIntFromObj(interp, objPtr, intPtr) \
-    Tcl_GetIntFromObj((interp), (objPtr), (intPtr))
-#define TclGetIntForIndexM(interp, objPtr, ignore, idxPtr)	\
-    TclGetIntForIndex(interp, objPtr, ignore, idxPtr)
+    (((objPtr)->typePtr == &tclIntType \
+	    && (objPtr)->internalRep.longValue >= -(Tcl_WideInt)(UINT_MAX) \
+	    && (objPtr)->internalRep.longValue <= (Tcl_WideInt)(UINT_MAX))	\
+	    ? ((*(intPtr) = (objPtr)->internalRep.longValue), TCL_OK) \
+	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
+#define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
+    (((objPtr)->typePtr == &tclIntType \
+	    && (objPtr)->internalRep.longValue >= INT_MIN \
+	    && (objPtr)->internalRep.longValue <= INT_MAX)	\
+	    ? ((*(idxPtr) = (objPtr)->internalRep.longValue), TCL_OK) \
+	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 #endif
 
 /*
@@ -2900,6 +2908,8 @@ MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
 MODULE_SCOPE Tcl_NRPostProc TclClearRootEnsemble;
+MODULE_SCOPE int	TclCompareTwoNumbers(Tcl_Obj *valuePtr,
+			    Tcl_Obj *value2Ptr);
 MODULE_SCOPE ContLineLoc *TclContinuationsEnter(Tcl_Obj *objPtr, int num,
 			    int *loc);
 MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
@@ -2909,12 +2919,25 @@ MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 			    Tcl_Obj *originObjPtr);
 MODULE_SCOPE int	TclConvertElement(const char *src, int length,
 			    char *dst, int flags);
+MODULE_SCOPE Tcl_Command TclCreateObjCommandInNs (
+			    Tcl_Interp *interp,
+			    const char *cmdName,
+			    Tcl_Namespace *nsPtr,
+			    Tcl_ObjCmdProc *proc,
+			    ClientData clientData,
+			    Tcl_CmdDeleteProc *deleteProc);
+MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(
+			    Tcl_Interp *interp,
+			    const char *name,
+			    Tcl_Namespace *nameNamespacePtr,
+			    Tcl_Namespace *ensembleNamespacePtr,
+			    int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, int dictLength,
 			    const char **elementPtr, const char **nextPtr,
 			    int *sizePtr, int *literalPtr);
-/* TIP #280 - Modified token based evulation, with line information. */
+/* TIP #280 - Modified token based evaluation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags, int line,
 			    int *clNextOuter, const char *outerScript);
@@ -2937,6 +2960,10 @@ MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
 MODULE_SCOPE Tcl_Obj *const *	TclFetchEnsembleRoot(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, int objc, int *objcPtr);
+Tcl_Namespace * 	TclEnsureNamespace(
+			    Tcl_Interp *interp,
+			    Tcl_Namespace *namespacePtr);
+
 MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
 MODULE_SCOPE void	TclFinalizeAsync(void);
 MODULE_SCOPE void	TclFinalizeDoubleConversion(void);
@@ -2963,6 +2990,15 @@ MODULE_SCOPE double	TclFloor(const mp_int *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    const char *attributeName, int *indexPtr);
+MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs (
+			    Tcl_Interp *interp,
+			    const char *cmdName,
+			    Tcl_Namespace *nsPtr,
+			    Tcl_ObjCmdProc *proc,
+			    Tcl_ObjCmdProc *nreProc,
+			    ClientData clientData,
+			    Tcl_CmdDeleteProc *deleteProc);
+
 MODULE_SCOPE int	TclNREvalFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    const char *encodingName);
 MODULE_SCOPE void	TclFSUnloadTempFile(Tcl_LoadHandle loadHandle);
@@ -3137,7 +3173,7 @@ MODULE_SCOPE int	TclReToGlob(Tcl_Interp *interp, const char *reStr,
 			    int reStrLen, Tcl_DString *dsPtr, int *flagsPtr,
 			    int *quantifiersFoundPtr);
 MODULE_SCOPE int	TclScanElement(const char *string, int length,
-			    int *flagPtr);
+			    char *flagPtr);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);
 MODULE_SCOPE void	TclSetBignumIntRep(Tcl_Obj *objPtr,
@@ -3183,6 +3219,7 @@ MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
+MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCount(int ch);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
@@ -4410,7 +4447,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclUtfToUniChar(str, chPtr) \
-	((((unsigned char) *(str)) < 0xC0) ?		\
+	((((unsigned char) *(str)) < 0x80) ?		\
 	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
 
@@ -4475,7 +4512,7 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 
 /*
  *----------------------------------------------------------------
- * Macro used by the Tcl core to increment a namespace's export export epoch
+ * Macro used by the Tcl core to increment a namespace's export epoch
  * counter. The ANSI C "prototype" for this macro is:
  *
  * MODULE_SCOPE void	TclInvalidateNsCmdLookup(Namespace *nsPtr);
