@@ -859,7 +859,7 @@ MemoryCmd(
     }
     if (strcmp(argv[1],"info") == 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%-25s %10u\n%-25s %10u\n%-25s %10u\n%-25s %10" TCL_LL_MODIFIER"u\n%-25s %10u\n%-25s %10" TCL_LL_MODIFIER "u\n",
+		"%-25s %10u\n%-25s %10u\n%-25s %10u\n%-25s %10" TCL_LL_MODIFIER"d\n%-25s %10u\n%-25s %10" TCL_LL_MODIFIER "d\n",
 		"total mallocs", total_mallocs, "total frees", total_frees,
 		"current packets allocated", current_malloc_packets,
 		"current bytes allocated", (Tcl_WideInt)current_bytes_malloced,

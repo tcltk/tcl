@@ -121,7 +121,7 @@ the build instructions.
 #		nodep	 = Turns off compatibility macros to ensure the core
 #			    isn't being built with deprecated functions.
 #
-#	MACHINE=(ALPHA|AMD64|IA64|IX86)
+#	MACHINE=(ARM|AMD64|IA64|IX86)
 #		Set the machine type used for the compiler, linker, and
 #		resource compiler.  This hook is needed to tell the tools
 #		when alternate platforms are requested.  IX86 is the default
@@ -384,6 +384,9 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_exch.obj \
 	$(TMP_DIR)\bn_mp_expt_d.obj \
 	$(TMP_DIR)\bn_mp_expt_d_ex.obj \
+	$(TMP_DIR)\bn_mp_get_int.obj \
+	$(TMP_DIR)\bn_mp_get_long.obj \
+	$(TMP_DIR)\bn_mp_get_long_long.obj \
 	$(TMP_DIR)\bn_mp_grow.obj \
 	$(TMP_DIR)\bn_mp_init.obj \
 	$(TMP_DIR)\bn_mp_init_copy.obj \
@@ -408,6 +411,8 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_rshd.obj \
 	$(TMP_DIR)\bn_mp_set.obj \
 	$(TMP_DIR)\bn_mp_set_int.obj \
+	$(TMP_DIR)\bn_mp_set_long.obj \
+	$(TMP_DIR)\bn_mp_set_long_long.obj \
 	$(TMP_DIR)\bn_mp_shrink.obj \
 	$(TMP_DIR)\bn_mp_sqr.obj \
 	$(TMP_DIR)\bn_mp_sqrt.obj \
@@ -485,9 +490,16 @@ cdebug	= -Zi -Od $(DEBUGFLAGS)
 cdebug	= -Zi -WX $(DEBUGFLAGS)
 !endif
 
+### Common compiler options that are architecture specific
+!if "$(MACHINE)" == "ARM"
+carch = -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
+!else
+carch =
+!endif
+
 ### Declarations common to all compiler options
 cwarn = $(WARNINGS) -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
-cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\
+cflags = -nologo -c $(COMPILERFLAGS) $(carch) $(cwarn) -Fp$(TMP_DIR)^\
 
 !if $(MSVCRT)
 !if $(DEBUG) && !$(UNCHECKED)
@@ -879,6 +891,7 @@ $(OUT_DIR)\tclConfig.sh: $(WINDIR)\tclConfig.sh.in
 @SHLIB_SUFFIX@       .dll
 @DL_LIBS@
 @LDFLAGS@
+@TCL_CC_SEARCH_FLAGS@
 @TCL_LD_SEARCH_FLAGS@
 @LIBOBJS@
 @RANLIB@
@@ -1222,6 +1235,8 @@ clean: clean-pkgs
 	@if exist $(WINDIR)\nmakehlp.obj del $(WINDIR)\nmakehlp.obj
 	@echo Cleaning $(WINDIR)\nmakehlp.exe ...
 	@if exist $(WINDIR)\nmakehlp.exe del $(WINDIR)\nmakehlp.exe
+	@echo Cleaning $(WINDIR)\nmhlp-out.txt ...
+	@if exist $(WINDIR)\nmhlp-out.txt del $(WINDIR)\nmhlp-out.txt
 	@echo Cleaning $(WINDIR)\_junk.pch ...
 	@if exist $(WINDIR)\_junk.pch del $(WINDIR)\_junk.pch
 	@echo Cleaning $(WINDIR)\vercl.x ...

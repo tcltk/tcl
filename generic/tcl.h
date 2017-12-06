@@ -55,11 +55,12 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   7
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  0
+#define TCL_RELEASE_SERIAL  2
 
 #define TCL_VERSION	    "8.7"
-#define TCL_PATCH_LEVEL	    "8.7a0"
+#define TCL_PATCH_LEVEL	    "8.7a2"
 
+#if !defined(TCL_NO_DEPRECATED) || defined(RC_INVOKED)
 /*
  *----------------------------------------------------------------------------
  * The following definitions set up the proper options for Windows compilers.
@@ -88,6 +89,7 @@ extern "C" {
 #  define JOIN(a,b) JOIN1(a,b)
 #  define JOIN1(a,b) a##b
 #endif
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * A special definition used to allow this header file to be included from
@@ -139,7 +141,7 @@ extern "C" {
 #    define TCL_VARARGS(type, name) (type name, ...)
 #    define TCL_VARARGS_DEF(type, name) (type name, ...)
 #    define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
-#endif
+#endif /* !TCL_NO_DEPRECATED */
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #   define TCL_NORETURN __attribute__ ((noreturn))
@@ -255,7 +257,7 @@ extern "C" {
 #ifndef TCL_NO_DEPRECATED
 #   undef _ANSI_ARGS_
 #   define _ANSI_ARGS_(x)	x
-#endif
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Definitions that allow this header file to be used either with or without
@@ -521,7 +523,7 @@ typedef struct Tcl_Interp
     int errorLineDontUse; /* Don't use in extensions! */
 #endif
 }
-#endif /* TCL_NO_DEPRECATED */
+#endif /* !TCL_NO_DEPRECATED */
 Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
@@ -995,7 +997,9 @@ typedef struct Tcl_DString {
 
 #define Tcl_DStringLength(dsPtr) ((dsPtr)->length)
 #define Tcl_DStringValue(dsPtr) ((dsPtr)->string)
-#define Tcl_DStringTrunc Tcl_DStringSetLength
+#ifndef TCL_NO_DEPRECATED
+#   define Tcl_DStringTrunc Tcl_DStringSetLength
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Definitions for the maximum number of digits of precision that may be
@@ -1123,7 +1127,7 @@ typedef struct Tcl_DString {
 
 #ifndef TCL_NO_DEPRECATED
 #   define TCL_PARSE_PART1	0x400
-#endif
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Types for linked variables:
@@ -1340,8 +1344,8 @@ typedef struct Tcl_HashSearch {
 typedef struct {
     void *next;			/* Search position for underlying hash
 				 * table. */
-    int epoch;			/* Epoch marker for dictionary being searched,
-				 * or -1 if search has terminated. */
+    unsigned int epoch; 	/* Epoch marker for dictionary being searched,
+				 * or 0 if search has terminated. */
     Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
 } Tcl_DictSearch;
 
@@ -2259,6 +2263,8 @@ typedef struct mp_int mp_int;
 #define MP_INT_DECLARED
 typedef unsigned int mp_digit;
 #define MP_DIGIT_DECLARED
+typedef unsigned TCL_WIDE_INT_TYPE mp_word;
+#define MP_WORD_DECLARED
 
 /*
  *----------------------------------------------------------------------------
@@ -2403,14 +2409,27 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
 #ifdef USE_TCL_STUBS
-#define Tcl_InitStubs(interp, version, exact) \
-    (Tcl_InitStubs)(interp, version, \
+#if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#   define Tcl_InitStubs(interp, version, exact) \
+	(Tcl_InitStubs)(interp, version, \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
 	    TCL_STUB_MAGIC)
 #else
-#define Tcl_InitStubs(interp, version, exact) \
-    Tcl_PkgInitStubsCheck(interp, version, \
-	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
+#   define Tcl_InitStubs(interp, version, exact) \
+	(Tcl_InitStubs)(interp, TCL_PATCH_LEVEL, \
+	    1|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
+	    TCL_STUB_MAGIC)
+#endif
+#else
+#if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#   define Tcl_InitStubs(interp, version, exact) \
+	Tcl_PkgInitStubsCheck(interp, version, \
+		(exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
+#else
+#   define Tcl_InitStubs(interp, version, exact) \
+	Tcl_PkgInitStubsCheck(interp, TCL_PATCH_LEVEL, \
+		1|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
+#endif
 #endif
 
 /* Tcl_InitSubsystems, see TIP #414 */
@@ -2630,7 +2649,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #   define panic		Tcl_Panic
 #endif
 #   define panicVA		Tcl_PanicVA
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------------
@@ -2640,6 +2658,8 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 extern Tcl_AppInitProc Tcl_AppInit;
+
+#endif /* !TCL_NO_DEPRECATED */
 
 #endif /* RC_INVOKED */
 
