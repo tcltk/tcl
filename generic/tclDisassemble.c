@@ -267,9 +267,9 @@ DisassembleByteCodeObj(
      */
 
     Tcl_AppendPrintfToObj(bufferObj,
-	    "ByteCode %p, refCt %u, epoch %u, interp %p (epoch %u)\n",
-	    codePtr, codePtr->refCount, codePtr->compileEpoch, iPtr,
-	    iPtr->compileEpoch);
+	    "ByteCode %p, refCt %u, epoch %" TCL_LL_MODIFIER "d, interp %p (epoch %" TCL_LL_MODIFIER "d)\n",
+	    codePtr, codePtr->refCount, (Tcl_WideUInt)codePtr->compileEpoch, iPtr,
+		(Tcl_WideUInt)iPtr->compileEpoch);
     Tcl_AppendToObj(bufferObj, "  Source ", -1);
     PrintSourceToObj(bufferObj, codePtr->source,
 	    TclMin(codePtr->numSrcBytes, 55));

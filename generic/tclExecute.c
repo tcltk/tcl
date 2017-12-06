@@ -166,7 +166,7 @@ static BuiltinFunc const tclBuiltinFuncTable[] = {
  * Minimal data required to fully reconstruct the execution state.
  */
 
-typedef struct TEBCdata {
+typedef struct {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
     ptrdiff_t *catchTop;	/* These fields are used on return TO this */

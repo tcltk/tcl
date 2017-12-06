@@ -72,7 +72,7 @@ static const Tcl_ObjType tclFsPathType = {
  *
  */
 
-typedef struct FsPath {
+typedef struct {
     Tcl_Obj *translatedPathPtr; /* Name without any ~user sequences. If this
 				 * is NULL, then this is a pure normalized,
 				 * absolute path object, in which the parent
@@ -91,7 +91,7 @@ typedef struct FsPath {
 				 * below. */
     ClientData nativePathPtr;	/* Native representation of this path, which
 				 * is filesystem dependent. */
-    int filesystemEpoch;	/* Used to ensure the path representation was
+    size_t filesystemEpoch;	/* Used to ensure the path representation was
 				 * generated during the correct filesystem
 				 * epoch. The epoch changes when
 				 * filesystem-mounts are changed. */
@@ -1809,7 +1809,6 @@ Tcl_FSGetNormalizedPath(
 	 */
 
 	(void) TclGetStringFromObj(dir, &cwdLen);
-	cwdLen += (Tcl_GetString(copy)[cwdLen] == '/');
 
 	/* Normalize the combined string. */
 
@@ -1831,12 +1830,12 @@ Tcl_FSGetNormalizedPath(
 	     * normalized head, we can more efficiently normalize the combined
 	     * path by passing over only the unnormalized tail portion. When
 	     * this is sufficient, prior developers claim this should be much
-	     * faster. We use 'cwdLen-1' so that we are already pointing at
+	     * faster. We use 'cwdLen' so that we are already pointing at
 	     * the dir-separator that we know about. The normalization code
 	     * will actually start off directly after that separator.
 	     */
 
-	    TclFSNormalizeToUniquePath(interp, copy, cwdLen-1);
+	    TclFSNormalizeToUniquePath(interp, copy, cwdLen);
 	}
 
 	/* Now we need to construct the new path object. */

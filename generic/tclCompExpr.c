@@ -22,7 +22,7 @@
  * The tree is composed of OpNodes.
  */
 
-typedef struct OpNode {
+typedef struct {
     int left;			/* "Pointer" to the left operand. */
     int right;			/* "Pointer" to the right operand. */
     union {

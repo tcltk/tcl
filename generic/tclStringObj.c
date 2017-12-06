@@ -418,12 +418,16 @@ Tcl_GetCharLength(
     }
 
     /*
-     * Optimize the case where we're really dealing with a bytearray object
-     * without string representation; we don't need to convert to a string to
-     * perform the get-length operation.
+     * Optimize the case where we're really dealing with a bytearray object;
+     * we don't need to convert to a string to perform the get-length operation.
+     *
+     * NOTE that we do not need the bytearray to be "pure".  A ByteArray value
+     * with a string rep cannot be trusted to represent the same value as the
+     * string rep, but it *can* be trusted to have the same character length
+     * as the string rep, which is all this routine cares about.
      */
 
-    if (TclIsPureByteArray(objPtr)) {
+    if (objPtr->typePtr == &tclByteArrayType) {
 	int length;
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
@@ -1843,20 +1847,20 @@ Tcl_AppendFormatToObj(
 	} else if (ch == 'I') {
 	    if ((format[1] == '6') && (format[2] == '4')) {
 		format += (step + 2);
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 #ifndef TCL_WIDE_INT_IS_LONG
 		useWide = 1;
 #endif
 	    } else if ((format[1] == '3') && (format[2] == '2')) {
 		format += (step + 2);
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 	    } else {
 		format += step;
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 	    }
 	} else if ((ch == 't') || (ch == 'z')) {
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 #ifndef TCL_WIDE_INT_IS_LONG
 	    if (sizeof(size_t) > sizeof(int)) {
 		useWide = 1;
@@ -1864,7 +1868,7 @@ Tcl_AppendFormatToObj(
 #endif
 	} else if ((ch == 'q') ||(ch == 'j')) {
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 #ifndef TCL_WIDE_INT_IS_LONG
 	    useWide = 1;
 #endif

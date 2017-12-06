@@ -245,7 +245,7 @@ static Tcl_ThreadDataKey fsDataKey;
  * code.
  */
 
-typedef struct FsDivertLoad {
+typedef struct {
     Tcl_LoadHandle loadHandle;
     Tcl_FSUnloadFileProc *unloadProcPtr;
     Tcl_Obj *divertedFile;

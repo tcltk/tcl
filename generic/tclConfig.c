@@ -31,7 +31,7 @@
  * the (Tcl_Interp *) in which it is stored, and the encoding.
  */
 
-typedef struct QCCD {
+typedef struct {
     Tcl_Obj *pkg;
     Tcl_Interp *interp;
     char *encoding;
