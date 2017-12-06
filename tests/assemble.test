@@ -852,7 +852,7 @@ test assemble-8.5 {bad context} {
     -body {
 	namespace eval assem {
 	    set x 1
-	    list [catch {assemble {load x}} result] $result $errorCode
+	    list [catch {assemble {load x}} result opts] $result [dict get $opts -errorcode]
 	}
     }
     -result {1 {cannot use this instruction to create a variable in a non-proc context} {TCL ASSEM LVT}}

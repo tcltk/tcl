@@ -418,12 +418,16 @@ Tcl_GetCharLength(
     }
 
     /*
-     * Optimize the case where we're really dealing with a bytearray object
-     * without string representation; we don't need to convert to a string to
-     * perform the get-length operation.
+     * Optimize the case where we're really dealing with a bytearray object;
+     * we don't need to convert to a string to perform the get-length operation.
+     *
+     * NOTE that we do not need the bytearray to be "pure".  A ByteArray value
+     * with a string rep cannot be trusted to represent the same value as the
+     * string rep, but it *can* be trusted to have the same character length
+     * as the string rep, which is all this routine cares about.
      */
 
-    if (TclIsPureByteArray(objPtr)) {
+    if (objPtr->typePtr == &tclByteArrayType) {
 	int length;
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
@@ -1869,20 +1873,20 @@ Tcl_AppendFormatToObj(
 	} else if (ch == 'I') {
 	    if ((format[1] == '6') && (format[2] == '4')) {
 		format += (step + 2);
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 #ifndef TCL_WIDE_INT_IS_LONG
 		useWide = 1;
 #endif
 	    } else if ((format[1] == '3') && (format[2] == '2')) {
 		format += (step + 2);
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 	    } else {
 		format += step;
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 	    }
 	} else if ((ch == 't') || (ch == 'z')) {
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 #ifndef TCL_WIDE_INT_IS_LONG
 	    if (sizeof(size_t) > sizeof(int)) {
 		useWide = 1;
@@ -1890,7 +1894,7 @@ Tcl_AppendFormatToObj(
 #endif
 	} else if ((ch == 'q') ||(ch == 'j')) {
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 #ifndef TCL_WIDE_INT_IS_LONG
 	    useWide = 1;
 #endif
@@ -3242,40 +3246,44 @@ TclStringFind(
 	return -1;
     }
 
+    /*
+     * Check if we have two strings of single-byte characters. If we have, we
+     * can use strstr() to do the search. Note that we can sometimes have
+     * multibyte characters when the string could be minimally represented
+     * using single byte characters; we can't assume that a mismatch here
+     * means no match.
+     */
+
     lh = Tcl_GetCharLength(haystack);
-    if (haystack->bytes && (lh == haystack->length)) {
-	/* haystack is all single-byte chars */
+    if (haystack->bytes && (lh == haystack->length) && needle->bytes
+		&& (ln == needle->length)) {
+	/*
+	 * Both haystack and needle are all single-byte chars.
+	 */
 
-	if (needle->bytes && (ln == needle->length)) {
-	    /* needle is also all single-byte chars */
-	    char *found = strstr(haystack->bytes + start, needle->bytes);
+	char *found = strstr(haystack->bytes + start, needle->bytes);
 
-	    if (found) {
-		return (found - haystack->bytes);
-	    } else {
-		return -1;
-	    }
+	if (found) {
+	    return (found - haystack->bytes);
 	} else {
-	    /*
-	     * Cannot find substring with a multi-byte char inside
-	     * a string with no multi-byte chars.
-	     */
 	    return -1;
 	}
     } else {
+	/*
+	 * Do the search on the unicode representation for simplicity.
+	 */
+
 	Tcl_UniChar *try, *end, *uh;
 	Tcl_UniChar *un = Tcl_GetUnicodeFromObj(needle, &ln);
 
 	uh = Tcl_GetUnicodeFromObj(haystack, &lh);
 	end = uh + lh;
 
-	try = uh + start;
-	while (try + ln <= end) {
-	    if ((*try == *un)
-		    && (0 == memcmp(try+1, un+1, (ln-1)*sizeof(Tcl_UniChar)))) {
+	for (try = uh + start; try + ln <= end; try++) {
+	    if ((*try == *un) && (0 ==
+		    memcmp(try + 1, un + 1, (ln-1) * sizeof(Tcl_UniChar)))) {
 		return (try - uh);
 	    }
-	    try++;
 	}
 	return -1;
     }
@@ -3458,7 +3466,6 @@ TclStringObjReverse(
 	     * Tcl_SetObjLength into growing the unicode rep buffer.
 	     */
 
-	    ch = 0;
 	    objPtr = Tcl_NewUnicodeObj(&ch, 1);
 	    Tcl_SetObjLength(objPtr, stringPtr->numChars);
 	    to = Tcl_GetUnicode(objPtr);
@@ -3561,7 +3568,7 @@ ExtendUnicodeRepWithString(
 {
     String *stringPtr = GET_STRING(objPtr);
     int needed, numOrigChars = 0;
-    Tcl_UniChar *dst;
+    Tcl_UniChar *dst, unichar = 0;
 
     if (stringPtr->hasUnicode) {
 	numOrigChars = stringPtr->numChars;
@@ -3584,7 +3591,8 @@ ExtendUnicodeRepWithString(
 	numAppendChars = 0;
     }
     for (dst=stringPtr->unicode + numOrigChars; numAppendChars-- > 0; dst++) {
-	bytes += TclUtfToUniChar(bytes, dst);
+	bytes += TclUtfToUniChar(bytes, &unichar);
+	*dst = unichar;
     }
     *dst = 0;
 }

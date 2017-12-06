@@ -1738,7 +1738,7 @@ SerialSetOptionProc(
 	dcb.XonChar = argv[0][0];
 	dcb.XoffChar = argv[1][0];
 	if (argv[0][0] & 0x80 || argv[1][0] & 0x80) {
-	    Tcl_UniChar character;
+	    Tcl_UniChar character = 0;
 	    int charLen;
 
 	    charLen = Tcl_UtfToUniChar(argv[0], &character);
