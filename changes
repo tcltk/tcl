@@ -8813,8 +8813,16 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2017-10-24 (bug)[fc1409] segfault in method cloning, oo-15.15 (coulter,fellows)
 
-2017-11-03 (bug)[6f2f83] More robust [load] for ReactOS 
+2017-11-03 (bug)[6f2f83] More robust [load] for ReactOS (werner)
 
+2017-11-08 (bug)[3298012] Stop crash when hash tables overflow 32 bits (porter)
 
+2017-11-14 (bug)[5d6de6] Close failing case of [package prefer stable] (kupries)
+
+2017-11-17 (bug)[fab924] Fix misleading [load] message on Windows (oehlmann)
+
+2017-12-05 (bug)[4f6a1e] Crash when ensemble map and list are same (sebres)
+
+2017-12-06 (bug)[ce3a21] file normalize failure when tail is empty (porter)
 
 --- Released 8.6.8, December XX, 2017 --- http://core.tcl.tk/tcl/ for details
