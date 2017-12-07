@@ -43,7 +43,8 @@
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
 
-#if defined(TCL_NO_DEPRECATED)
+#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
+#   define TclWinGetPlatformId 0
 #   define TclBNInitBignumFromWideUInt 0
 #   define TclBNInitBignumFromWideInt 0
 #   define TclBNInitBignumFromLong 0
@@ -70,15 +71,6 @@ static int
 TclpIsAtty(int fd)
 {
     return isatty(fd);
-}
-
-#define TclWinGetPlatformId winGetPlatformId
-static int
-TclWinGetPlatformId()
-{
-    /* Don't bother to determine the real platform on cygwin,
-     * because VER_PLATFORM_WIN32_NT is the only supported platform */
-    return 2; /* VER_PLATFORM_WIN32_NT */;
 }
 
 void *TclWinGetTclInstance()
@@ -226,7 +218,7 @@ static int formatInt(char *buffer, int n){
 
 #endif /* __CYGWIN__ */
 
-#ifdef TCL_NO_DEPRECATED
+#if defined(TCL_NO_DEPRECATED)
 #   undef Tcl_SetBooleanObj
 #   define Tcl_SetBooleanObj 0
 #   undef Tcl_PkgPresent
