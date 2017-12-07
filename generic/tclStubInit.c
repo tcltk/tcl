@@ -45,6 +45,7 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #undef TclPkgProvide
 #undef Tcl_SetIntObj
 
+#define TclWinGetPlatformId 0
 #define TclPkgProvide pkgProvide
 static int TclPkgProvide(
     Tcl_Interp *interp,		/* Interpreter in which package is now
@@ -85,15 +86,6 @@ static int
 TclpIsAtty(int fd)
 {
     return isatty(fd);
-}
-
-#define TclWinGetPlatformId winGetPlatformId
-static int
-TclWinGetPlatformId()
-{
-    /* Don't bother to determine the real platform on cygwin,
-     * because VER_PLATFORM_WIN32_NT is the only supported platform */
-    return 2; /* VER_PLATFORM_WIN32_NT */;
 }
 
 void *TclWinGetTclInstance()
