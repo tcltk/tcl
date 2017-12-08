@@ -541,17 +541,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     AC_ARG_ENABLE(64bit,[  --enable-64bit          enable 64bit support (where applicable)], [do64bit=$enableval], [do64bit=no])
     AC_MSG_RESULT($do64bit)
 
-    # Cross-compiling options for Windows/CE builds
-
-    AC_MSG_CHECKING([if Windows/CE build is requested])
-    AC_ARG_ENABLE(wince,[  --enable-wince          enable Win/CE support (where applicable)], [doWince=$enableval], [doWince=no])
-    AC_MSG_RESULT($doWince)
-
-    AC_MSG_CHECKING([for Windows/CE celib directory])
-    AC_ARG_WITH(celib,[  --with-celib=DIR        use Windows/CE support library from DIR],
-	    CELIB_DIR=$withval, CELIB_DIR=NO_CELIB)
-    AC_MSG_RESULT([$CELIB_DIR])
-
     # Set some defaults (may get changed below)
     EXTRA_CFLAGS=""
 	AC_DEFINE(MODULE_SCOPE, [extern], [No need to mark inidividual symbols as hidden])
@@ -870,98 +859,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LINKBIN="link"
 	fi
 
-	if test "$doWince" != "no" ; then
-	    # Set defaults for common evc4/PPC2003 setup
-	    # Currently Tcl requires 300+, possibly 420+ for sockets
-	    CEVERSION=420; 		# could be 211 300 301 400 420 ...
-	    TARGETCPU=ARMV4;	# could be ARMV4 ARM MIPS SH3 X86 ...
-	    ARCH=ARM;		# could be ARM MIPS X86EM ...
-	    PLATFORM="Pocket PC 2003"; # or "Pocket PC 2002"
-	    if test "$doWince" != "yes"; then
-		# If !yes then the user specified something
-		# Reset ARCH to allow user to skip specifying it
-		ARCH=
-		eval `echo $doWince | awk -F "," '{ \
-	if (length([$]1)) { printf "CEVERSION=\"%s\"\n", [$]1; \
-	if ([$]1 < 400)	  { printf "PLATFORM=\"Pocket PC 2002\"\n" } }; \
-	if (length([$]2)) { printf "TARGETCPU=\"%s\"\n", toupper([$]2) }; \
-	if (length([$]3)) { printf "ARCH=\"%s\"\n", toupper([$]3) }; \
-	if (length([$]4)) { printf "PLATFORM=\"%s\"\n", [$]4 }; \
-		}'`
-		if test "x${ARCH}" = "x" ; then
-		    ARCH=$TARGETCPU;
-		fi
-	    fi
-	    OSVERSION=WCE$CEVERSION;
-	    if test "x${WCEROOT}" = "x" ; then
-		WCEROOT="C:/Program Files/Microsoft eMbedded C++ 4.0"
-		if test ! -d "${WCEROOT}" ; then
-		    WCEROOT="C:/Program Files/Microsoft eMbedded Tools"
-		fi
-	    fi
-	    if test "x${SDKROOT}" = "x" ; then
-		SDKROOT="C:/Program Files/Windows CE Tools"
-		if test ! -d "${SDKROOT}" ; then
-		    SDKROOT="C:/Windows CE Tools"
-		fi
-	    fi
-	    # The space-based-path will work for the Makefile, but will
-	    # not work if AC_TRY_COMPILE is called.
-	    WCEROOT=`echo "$WCEROOT" | sed -e 's!\\\!/!g'`
-	    SDKROOT=`echo "$SDKROOT" | sed -e 's!\\\!/!g'`
-	    CELIB_DIR=`echo "$CELIB_DIR" | sed -e 's!\\\!/!g'`
-	    if test ! -d "${CELIB_DIR}/inc"; then
-		AC_MSG_ERROR([Invalid celib directory "${CELIB_DIR}"])
-	    fi
-	    if test ! -d "${SDKROOT}/${OSVERSION}/${PLATFORM}/Lib/${TARGETCPU}"\
-		-o ! -d "${WCEROOT}/EVC/${OSVERSION}/bin"; then
-		AC_MSG_ERROR([could not find PocketPC SDK or target compiler to enable WinCE mode [$CEVERSION,$TARGETCPU,$ARCH,$PLATFORM]])
-	    else
-		CEINCLUDE="${SDKROOT}/${OSVERSION}/${PLATFORM}/include"
-		if test -d "${CEINCLUDE}/${TARGETCPU}" ; then
-		    CEINCLUDE="${CEINCLUDE}/${TARGETCPU}"
-		fi
-		CELIBPATH="${SDKROOT}/${OSVERSION}/${PLATFORM}/Lib/${TARGETCPU}"
-	    fi
-	fi
-
-	if test "$doWince" != "no" ; then
-	    CEBINROOT="${WCEROOT}/EVC/${OSVERSION}/bin"
-	    if test "${TARGETCPU}" = "X86"; then
-		CC="${CEBINROOT}/cl.exe"
-	    else
-		CC="${CEBINROOT}/cl${ARCH}.exe"
-	    fi
-	    CC="\"${CC}\" -I\"${CELIB_DIR}/inc\" -I\"${CEINCLUDE}\""
-	    RC="\"${WCEROOT}/Common/EVC/bin/rc.exe\""
-	    arch=`echo ${ARCH} | awk '{print tolower([$]0)}'`
-	    defs="${ARCH} _${ARCH}_ ${arch} PALM_SIZE _MT _DLL _WINDOWS"
-	    for i in $defs ; do
-		AC_DEFINE_UNQUOTED($i)
-	    done
-#	    if test "${ARCH}" = "X86EM"; then
-#		AC_DEFINE_UNQUOTED(_WIN32_WCE_EMULATION)
-#	    fi
-	    AC_DEFINE_UNQUOTED(_WIN32_WCE, $CEVERSION)
-	    AC_DEFINE_UNQUOTED(UNDER_CE, $CEVERSION)
-	    CFLAGS_DEBUG="-nologo -Zi -Od"
-	    CFLAGS_OPTIMIZE="-nologo -O2"
-	    lversion=`echo ${CEVERSION} | sed -e 's/\(.\)\(..\)/\1\.\2/'`
-	    lflags="-nodefaultlib -MACHINE:${ARCH} -LIBPATH:\"${CELIBPATH}\" -subsystem:windowsce,${lversion} -nologo"
-	    LINKBIN="\"${CEBINROOT}/link.exe\""
-	    AC_SUBST(CELIB_DIR)
-	    if test "${CEVERSION}" -lt 400 ; then
-		LIBS="coredll.lib corelibc.lib winsock.lib"
-	    else
-		LIBS="coredll.lib corelibc.lib ws2.lib"
-	    fi
-	    # celib currently stuck at wce300 status
-	    #LIBS="$LIBS \${CELIB_DIR}/wince-${ARCH}-pocket-${OSVERSION}-release/celib.lib"
-	    LIBS="$LIBS \"\${CELIB_DIR}/wince-${ARCH}-pocket-wce300-release/celib.lib\""
-	    LIBS_GUI="commctrl.lib commdlg.lib"
-	else
-	    LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib uuid.lib"
-	fi
+	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib uuid.lib"
 
 	SHLIB_LD="${LINKBIN} -dll -incremental:no ${lflags}"
 	SHLIB_LD_LIBS='${LIBS}'
@@ -992,7 +890,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	# Specify linker flags depending on the type of app being
 	# built -- Console vs. Window.
-	if test "$doWince" != "no" -a "${TARGETCPU}" != "X86"; then
+	if test "${TARGETCPU}" != "X86"; then
 	    LDFLAGS_CONSOLE="-link ${lflags}"
 	    LDFLAGS_WINDOW=${LDFLAGS_CONSOLE}
 	else

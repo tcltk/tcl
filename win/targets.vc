@@ -1,0 +1,52 @@
+#------------------------------------------------------------- -*- makefile -*-
+# targets.vc --
+#
+# Part of the nmake based build system for Tcl and its extensions.
+# This file defines some standard targets for the convenience of extensions
+# and can be optionally included by the extension makefile.
+# See TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md) for docs.
+
+$(PROJECT): setup pkgindex $(PRJLIB)
+
+!ifdef PRJ_STUBOBJS
+$(PROJECT): $(PRJSTUBLIB)
+$(PRJSTUBLIB): $(PRJ_STUBOBJS)
+	$(LIBCMD) $**
+
+$(PRJ_STUBOBJS):
+	$(CCSTUBSCMD) %s
+!endif # PRJ_STUBOBJS
+
+!ifdef PRJ_MANIFEST
+$(PROJECT): $(PRJLIB).manifest
+$(PRJLIB).manifest: $(PRJ_MANIFEST)
+	@nmakehlp -s << $** >$@
+@MACHINE@	  $(MACHINE:IX86=X86)
+<<
+!endif
+
+!if "$(PROJECT)" != "tcl" && "$(PROJECT)" != "tk"
+$(PRJLIB): $(PRJ_OBJS) $(RESFILE)
+!if $(STATIC_BUILD)
+       $(LIBCMD) $**
+!else
+       $(DLLCMD) $**
+       $(_VC_MANIFEST_EMBED_DLL)
+!endif
+       -@del $*.exp
+!endif
+
+!ifndef DISABLE_STANDARD_TARGETS
+DISABLE_STANDARD_TARGETS = 0
+!endif
+
+!if !$(DISABLE_STANDARD_TARGETS)
+setup: default-setup
+install: default-install
+clean: default-clean
+realclean: hose
+hose: default-hose
+distclean: realclean default-distclean
+test: default-test
+shell: default-shell
+!endif
