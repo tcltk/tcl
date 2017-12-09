@@ -45,7 +45,6 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #undef TclPkgProvide
 #undef Tcl_SetIntObj
 
-#define TclWinGetPlatformId 0
 #define TclPkgProvide pkgProvide
 static int TclPkgProvide(
     Tcl_Interp *interp,		/* Interpreter in which package is now
@@ -536,7 +535,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 6 */
     0, /* 7 */
     TclpGetPid, /* 8 */
-    TclWinGetPlatformId, /* 9 */
+    0, /* 9 */
     0, /* 10 */
     TclGetAndDetachPids, /* 11 */
     TclpCloseFile, /* 12 */
