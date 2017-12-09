@@ -44,7 +44,6 @@
 #undef Tcl_SetIntObj
 
 #if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
-#   define TclWinGetPlatformId 0
 #   define TclBNInitBignumFromWideUInt 0
 #   define TclBNInitBignumFromWideInt 0
 #   define TclBNInitBignumFromLong 0
@@ -585,7 +584,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 6 */
     0, /* 7 */
     TclpGetPid, /* 8 */
-    TclWinGetPlatformId, /* 9 */
+    0, /* 9 */
     0, /* 10 */
     TclGetAndDetachPids, /* 11 */
     TclpCloseFile, /* 12 */
