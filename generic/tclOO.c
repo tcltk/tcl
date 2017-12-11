@@ -236,8 +236,10 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 #define IsRoot(ocPtr)		((ocPtr)->flags & (ROOT_OBJECT|ROOT_CLASS))
 
 #define RemoveItem(type, lst, i) \
+    do { \
 	Remove ## type ((lst).list, (lst).num, i); \
-	(lst).num--
+	(lst).num-- \
+    } while 0
 
 /*
  * ----------------------------------------------------------------------
