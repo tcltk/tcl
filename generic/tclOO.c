@@ -656,6 +656,9 @@ AllocObject(
     if (!nameStr) {
 	nameStr = oPtr->namespacePtr->name;
 	nsPtr = (Namespace *)oPtr->namespacePtr;
+	if (nsPtr->parentPtr != NULL) {
+	    nsPtr = nsPtr->parentPtr;
+	}
     }
     oPtr->command = TclCreateObjCommandInNs(interp, nameStr,
 	(Tcl_Namespace *)nsPtr, PublicObjectCmd, oPtr, NULL);
