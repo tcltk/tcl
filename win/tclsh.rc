@@ -8,12 +8,6 @@
 //
 // build-up the name suffix that defines the type of build this is.
 //
-#if TCL_THREADS
-#define SUFFIX_THREADS	    "t"
-#else
-#define SUFFIX_THREADS	    ""
-#endif
-
 #if STATIC_BUILD
 #define SUFFIX_STATIC	    "s"
 #else
@@ -26,7 +20,7 @@
 #define SUFFIX_DEBUG	    ""
 #endif
 
-#define SUFFIX		    SUFFIX_THREADS SUFFIX_STATIC SUFFIX_DEBUG
+#define SUFFIX		    SUFFIX_STATIC SUFFIX_DEBUG
 
 
 LANGUAGE 0x9, 0x1	/* LANG_ENGLISH, SUBLANG_DEFAULT */
