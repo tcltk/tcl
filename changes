@@ -8841,3 +8841,5 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2017-09-02 (bug)[0e4d88] replace command, delete trace kills namespace (porter)
 
 --- Released 8.7a1, September 8, 2017 --- http://core.tcl.tk/tcl/ for details
+
+2017-12-11 (TIP490) add oo support for msgcat

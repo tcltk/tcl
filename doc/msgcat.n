@@ -50,6 +50,8 @@ msgcat \- Tcl message catalog
 .sp
 \fB::msgcat::mcforgetpackage\fR
 .VE "TIP 412"
+.sp
+\fBmixin msgcat::MessageCatalogAware\fR
 .BE
 .SH DESCRIPTION
 .PP
@@ -231,6 +233,27 @@ Note that this routine is only called if the concerned package did not set a pac
 .
 The calling package clears all its state within the \fBmsgcat\fR package including all settings and translations.
 .VE "TIP 412"
+.RE
+.TP
+.VS "TIP 490"
+\fBmixin msgcat::MessageCatalogAware\fR
+.
+A class within a package should include this line to make message catalog commands (mc, mcmax, mcexists) work.
+.PP
+.CS
+namespace eval ::foo {
+    msgcat::mcload $dir/msgs
+    oo::class create Foo {
+        mixin msgcat::MessageCatalogAware
+        # ...
+    }
+    oo::class create Bar {
+        mixin msgcat::MessageCatalogAware
+        # ...
+    }
+}
+package provide foo 1.0 .CE
+.VE "TIP 490"
 .PP
 .SH "LOCALE SPECIFICATION"
 .PP

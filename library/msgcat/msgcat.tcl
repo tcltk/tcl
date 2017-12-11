@@ -14,7 +14,7 @@
 package require Tcl 8.5-
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.6.1
+package provide msgcat 1.6.2
 
 namespace eval msgcat {
     namespace export mc mcexists mcload mclocale mcmax mcmset mcpreferences mcset\
@@ -1106,6 +1106,31 @@ proc msgcat::ConvertLocale {value} {
     return $ret
 }
 
+# Make oo classes message catalog aware
+namespace eval ::msgcat {
+	oo::class create MessageCatalogAware {
+		forward mc       ::msgcat::OOBridge ::msgcat::mc
+		forward mcmax    ::msgcat::OOBridge ::msgcat::mcmax
+		forward mcexists ::msgcat::OOBridge ::msgcat::mcexists
+		# Tricky point: methods are not usefully callable from outside the
+		# class hierarchy
+		unexport mc mcmax mcexists
+	}
+}
+
+# helper function to find package namespace and evaluate mc commands within
+# this namespace
+proc ::msgcat::OOBridge {cmd args} {
+	if {[catch {
+		# Tricky point: [self class] needs to run in the caller
+		set ns [namespace qualifiers [uplevel 1 {self class}]]
+	}]} {
+		# Not a class-defined method (so we got an error); use instance instead
+		set ns [namespace qualifiers [uplevel 1 self]]
+	}
+	tailcall apply [list {cmd args} {tailcall $cmd {*}$args} $ns] $cmd
+}
+  
 # Initialize the default locale
 proc msgcat::Init {} {
     global env
