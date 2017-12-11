@@ -1681,8 +1681,8 @@ TCLNMAKECONFIG = "$(OUT_DIR)\tcl.nmake"
 
 !message *** Intermediate directory will be '$(TMP_DIR)'
 !message *** Output directory will be '$(OUT_DIR)'
+!message *** Installation, if selected, will be in '$(_INSTALLDIR)'
 !message *** Suffix for binaries will be '$(SUFX)'
-!message *** Optional defines are '$(OPTDEFINES)'
 !message *** Compiler version $(VCVER). Target machine is $(MACHINE)
 !message *** Host architecture is $(NATIVE_ARCH)
 
