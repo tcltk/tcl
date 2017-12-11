@@ -4149,6 +4149,10 @@ typedef const char *TclDTraceStr;
 	} \
     }
 
+#if TCL_THREADS && !defined(USE_THREAD_ALLOC)
+#   define USE_THREAD_ALLOC 1
+#endif
+
 #if defined(PURIFY)
 
 /*

@@ -91,6 +91,10 @@ extern "C" {
 #endif
 #endif /* !TCL_NO_DEPRECATED */
 
+#ifndef TCL_THREADS
+#   define TCL_THREADS 1
+#endif
+
 /*
  * A special definition used to allow this header file to be included from
  * windows resource files so that they can obtain version information.
