@@ -1128,7 +1128,9 @@ proc ::msgcat::OOBridge {cmd args} {
 		# Not a class-defined method (so we got an error); use instance instead
 		set ns [namespace qualifiers [uplevel 1 self]]
 	}
-	tailcall apply [list {cmd args} {tailcall $cmd {*}$args} $ns] $cmd
+	apply [list {cmd args} {$cmd {*}$args} $ns] $cmd {*}$args
+	# DKF: alternative - one may give a better error trace
+	# namespace eval ::$ns [list $cmd {*}$args]
 }
   
 # Initialize the default locale

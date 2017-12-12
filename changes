@@ -8842,4 +8842,4 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 --- Released 8.7a1, September 8, 2017 --- http://core.tcl.tk/tcl/ for details
 
-2017-12-11 (TIP490) add oo support for msgcat
+2017-12-11 (TIP 490) add oo support for msgcat (fellows)

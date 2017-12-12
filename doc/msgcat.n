@@ -245,11 +245,10 @@ namespace eval ::foo {
     msgcat::mcload $dir/msgs
     oo::class create Foo {
         mixin msgcat::MessageCatalogAware
-        # ...
-    }
-    oo::class create Bar {
-        mixin msgcat::MessageCatalogAware
-        # ...
+        
+        method printMessage {x y} {
+            puts [my mc "FooPrintMessage(%d,%d)" $x $y]
+        }
     }
 }
 package provide foo 1.0 .CE
