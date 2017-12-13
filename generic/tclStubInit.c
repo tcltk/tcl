@@ -49,7 +49,7 @@
 #undef TclWinNToHS
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
-#if defined(_WIN64) || defined(TCL_NO_DEPRECATED)
+#if defined(_WIN64) || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
 #   define TclSockMinimumBuffersOld 0
 #else
 #define TclSockMinimumBuffersOld sockMinimumBuffersOld
@@ -59,7 +59,7 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 }
 #endif
 
-#if defined(TCL_NO_DEPRECATED)
+#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
 #   define TclSetStartupScriptPath 0
 #   define TclGetStartupScriptPath 0
 #   define TclSetStartupScriptFileName 0
@@ -69,6 +69,7 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define TclWinGetSockOpt 0
 #   define TclWinSetSockOpt 0
 #   define TclWinNToHS 0
+#   define TclWinGetPlatformId 0
 #   define TclBNInitBignumFromWideUInt 0
 #   define TclBNInitBignumFromWideInt 0
 #   define TclBNInitBignumFromLong 0
@@ -101,10 +102,22 @@ static const char *TclGetStartupScriptFileName(void)
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
+#undef TclWinGetPlatformId
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #define TclWinNToHS winNToHS
 static unsigned short TclWinNToHS(unsigned short ns) {
 	return ntohs(ns);
 }
+#define TclWinGetPlatformId winGetPlatformId
+static int
+TclWinGetPlatformId()
+{
+    return 2; /* VER_PLATFORM_WIN32_NT */;
+}
+#else
+#define TclWinNToHS 0
+#define TclWinGetPlatformId 0
+#endif
 #endif
 #   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
 #   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
@@ -132,15 +145,6 @@ TclpIsAtty(int fd)
     return isatty(fd);
 }
 
-#define TclWinGetPlatformId winGetPlatformId
-static int
-TclWinGetPlatformId()
-{
-    /* Don't bother to determine the real platform on cygwin,
-     * because VER_PLATFORM_WIN32_NT is the only supported platform */
-    return 2; /* VER_PLATFORM_WIN32_NT */;
-}
-
 void *TclWinGetTclInstance()
 {
     void *hInstance = NULL;
@@ -149,7 +153,7 @@ void *TclWinGetTclInstance()
     return hInstance;
 }
 
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #define TclWinSetSockOpt winSetSockOpt
 static int
 TclWinSetSockOpt(SOCKET s, int level, int optname,
@@ -311,7 +315,7 @@ static int formatInt(char *buffer, int n){
 
 #endif /* __CYGWIN__ */
 
-#ifdef TCL_NO_DEPRECATED
+#if defined(TCL_NO_DEPRECATED)
 #   define Tcl_SeekOld 0
 #   define Tcl_TellOld 0
 #   undef Tcl_SetBooleanObj

@@ -913,28 +913,30 @@ ReleaseClassContents(
     }
     if (!IsRootClass(oPtr)) {
 	FOREACH(instancePtr, clsPtr->instances) {
-	    int j;
-	    if (instancePtr->selfCls == clsPtr) {
-		instancePtr->flags |= CLASS_GONE;
-	    }
-	    for(j=0 ; j<instancePtr->mixins.num ; j++) {
-		Class *mixin = instancePtr->mixins.list[j];
-		Class *nextMixin = NULL;
-		if (mixin == clsPtr) {
-		    if (j < instancePtr->mixins.num - 1) {
-			nextMixin = instancePtr->mixins.list[j+1];
-		    }
-		    if (j == 0) {
-			instancePtr->mixins.num = 0;
-			instancePtr->mixins.list = NULL;
-		    } else {
-			instancePtr->mixins.list[j-1] = nextMixin;
-		    }
-		    instancePtr->mixins.num -= 1;
+	    if (instancePtr != oPtr) {
+		int j;
+		if (instancePtr->selfCls == clsPtr) {
+		    instancePtr->flags |= CLASS_GONE;
 		}
-	    }
-	    if (instancePtr != NULL && !IsRoot(instancePtr)) {
-		AddRef(instancePtr);
+		for(j=0 ; j<instancePtr->mixins.num ; j++) {
+		    Class *mixin = instancePtr->mixins.list[j];
+		    Class *nextMixin = NULL;
+		    if (mixin == clsPtr) {
+			if (j < instancePtr->mixins.num - 1) {
+			    nextMixin = instancePtr->mixins.list[j+1];
+			}
+			if (j == 0) {
+			    instancePtr->mixins.num = 0;
+			    instancePtr->mixins.list = NULL;
+			} else {
+			    instancePtr->mixins.list[j-1] = nextMixin;
+			}
+			instancePtr->mixins.num -= 1;
+		    }
+		}
+		if (instancePtr != NULL && !IsRoot(instancePtr)) {
+		    AddRef(instancePtr);
+		}
 	    }
 	}
     }
@@ -944,13 +946,15 @@ ReleaseClassContents(
      */
 
     FOREACH(mixinSubclassPtr, clsPtr->mixinSubs) {
-	if (!Deleted(mixinSubclassPtr->thisPtr)) {
-	    Tcl_DeleteCommandFromToken(interp,
-		    mixinSubclassPtr->thisPtr->command);
+	if (mixinSubclassPtr != clsPtr) {
+	    if (!Deleted(mixinSubclassPtr->thisPtr)) {
+		Tcl_DeleteCommandFromToken(interp,
+			mixinSubclassPtr->thisPtr->command);
+	    }
+	    ClearMixins(mixinSubclassPtr);
+	    DelRef(mixinSubclassPtr->thisPtr);
+	    DelRef(mixinSubclassPtr);
 	}
-	ClearMixins(mixinSubclassPtr);
-	DelRef(mixinSubclassPtr->thisPtr);
-	DelRef(mixinSubclassPtr);
     }
     if (clsPtr->mixinSubs.list != NULL) {
 	ckfree(clsPtr->mixinSubs.list);
@@ -985,19 +989,21 @@ ReleaseClassContents(
 
     if (!IsRootClass(oPtr)) {
 	FOREACH(instancePtr, clsPtr->instances) {
-	    if (instancePtr == NULL || IsRoot(instancePtr)) {
-		continue;
+	    if (instancePtr != oPtr) {
+		if (instancePtr == NULL || IsRoot(instancePtr)) {
+		    continue;
+		}
+		if (!Deleted(instancePtr)) {
+		    Tcl_DeleteCommandFromToken(interp, instancePtr->command);
+		    /*
+		     * Tcl_DeleteCommandFromToken() may have done to whole
+		     * job for us.  Roll back and check again.
+		     */
+		    i--;
+		    continue;
+		}
+		DelRef(instancePtr);
 	    }
-	    if (!Deleted(instancePtr)) {
-		Tcl_DeleteCommandFromToken(interp, instancePtr->command);
-		/*
-		 * Tcl_DeleteCommandFromToken() may have done to whole
-		 * job for us.  Roll back and check again.
-		 */
-		i--;
-		continue;
-	    }
-	    DelRef(instancePtr);
 	}
     }
     if (clsPtr->instances.list != NULL) {
@@ -1084,6 +1090,10 @@ ReleaseClassContents(
 	ckfree(clsPtr->variables.list);
     }
 
+    /* Tell oPtr that it's class is gone so that it doesn't try to remove
+     * itself from it's classe's list of instances
+     */
+    oPtr->flags |= CLASS_GONE;
     DelRef(clsPtr);
 
 }
@@ -1177,22 +1187,6 @@ ObjectNamespaceDeleted(
     }
 
     /*
-     * The class of objects needs some special care; if it is deleted (and
-     * we're not killing the whole interpreter) we force the delete of the
-     * class of classes now as well. Due to the incestuous nature of those two
-     * classes, if one goes the other must too and yet the tangle can
-     * sometimes not go away automatically; we force it here. [Bug 2962664]
-     */
-    if (!Tcl_InterpDeleted(interp) && IsRootObject(oPtr)
-	    && !Deleted(fPtr->classCls->thisPtr)) {
-	Tcl_DeleteCommandFromToken(interp, fPtr->classCls->thisPtr->command);
-    }
-
-    if (oPtr->classPtr != NULL) {
-	ReleaseClassContents(interp, oPtr);
-    }
-
-    /*
      * Splice the object out of its context. After this, we must *not* call
      * methods on the object.
      */
@@ -1202,7 +1196,7 @@ ObjectNamespaceDeleted(
     }
 
     FOREACH(mixinPtr, oPtr->mixins) {
-	if (mixinPtr) {
+	if (mixinPtr && mixinPtr != oPtr->classPtr) {
 	    TclOORemoveFromInstances(oPtr, mixinPtr);
 	}
     }
@@ -1249,6 +1243,30 @@ ObjectNamespaceDeleted(
 	ckfree(oPtr->metadataPtr);
 	oPtr->metadataPtr = NULL;
     }
+
+    /*
+     *  Because an object can be a class that is an instance of itself, the
+     *  A class object's class structure should only be cleaned after most of
+     *  the cleanup on the object is done.
+     */
+
+
+    /*
+     * The class of objects needs some special care; if it is deleted (and
+     * we're not killing the whole interpreter) we force the delete of the
+     * class of classes now as well. Due to the incestuous nature of those two
+     * classes, if one goes the other must too and yet the tangle can
+     * sometimes not go away automatically; we force it here. [Bug 2962664]
+     */
+    if (!Tcl_InterpDeleted(interp) && IsRootObject(oPtr)
+	    && !Deleted(fPtr->classCls->thisPtr)) {
+	Tcl_DeleteCommandFromToken(interp, fPtr->classCls->thisPtr->command);
+    }
+
+    if (oPtr->classPtr != NULL) {
+	ReleaseClassContents(interp, oPtr);
+    }
+
 
     /*
      * Delete the object structure itself.
