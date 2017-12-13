@@ -256,8 +256,13 @@ _TCL_H = ..\generic\tcl.h
 
 TCLINSTALL = 0 # Tk always builds against Tcl source, not an installed Tcl
 !if "$(TCLDIR)" == ""
-TCLDIR  = ../../tcl
+!if [echo TCLDIR = \> nmakehlp.out] \
+   || [nmakehlp -L generic\tcl.h >> nmakehlp.out]
+!error *** Could not locate Tcl source directory.
 !endif
+!include nmakehlp.out
+!endif # TCLDIR == ""
+
 _TCLDIR	= $(TCLDIR:/=\)
 _TCL_H  = $(_TCLDIR)\generic\tcl.h
 !if !exist("$(_TCL_H)")
@@ -285,21 +290,32 @@ TCLINSTALL	= 0
 _TCL_H          = $(_TCLDIR)\generic\tcl.h
 !endif
 
-!else  # TCLDIR is not defined
+!else  #  # Case 2(c) for extensions with TCLDIR undefined
 
-!if exist("$(_INSTALLDIR)\include\tcl.h") # Case 2(c) for extensions with TCLDIR undefined
+# Need to locate Tcl depending on whether it needs Tcl source or not.
+# If we don't, check the INSTALLDIR for an installed Tcl first
+
+!if exist("$(_INSTALLDIR)\include\tcl.h") && !$(NEED_TCL_SOURCE)
+
 TCLINSTALL	= 1
 TCLDIR          = $(_INSTALLDIR)\..
 # NOTE: we will be resetting _INSTALLDIR to _INSTALLDIR/lib for extensions
 # later so the \.. accounts for the /lib
 _TCLDIR		= $(_INSTALLDIR)\..
 _TCL_H          = $(_TCLDIR)\include\tcl.h
-!elseif exist("..\..\tcl\generic\tcl.h")
-TCLINSTALL      = 0
-TCLDIR          = ..\..\tcl
-_TCLDIR         = $(TCLDIR)
-_TCL_H          = $(_TCLDIR)\generic\tcl.h
+
+!else # exist(...) && ! $(NEED_TCL_SOURCE)
+
+!if [echo _TCLDIR = \> nmakehlp.out] \
+   || [nmakehlp -L generic\tcl.h >> nmakehlp.out]
+!error *** Could not locate Tcl source directory.
 !endif
+!include nmakehlp.out
+TCLINSTALL      = 0
+TCLDIR         = $(_TCLDIR)
+_TCL_H          = $(_TCLDIR)\generic\tcl.h
+
+!endif # exist(...) && ! $(NEED_TCL_SOURCE)
 
 !endif # TCLDIR
 
@@ -325,17 +341,30 @@ _TK_H          = $(_TKDIR)\generic\tk.h
 
 !else # TKDIR not defined
 
-!if exist("$(_INSTALLDIR)\..\include\tk.h")
+# Need to locate Tcl depending on whether it needs Tcl source or not.
+# If we don't, check the INSTALLDIR for an installed Tcl first
+
+!if exist("$(_INSTALLDIR)\include\tk.h") && !$(NEED_TK_SOURCE)
+
 TKINSTALL      = 1
+# NOTE: we will be resetting _INSTALLDIR to _INSTALLDIR/lib for extensions
+# later so the \.. accounts for the /lib
 _TKDIR         = $(_INSTALLDIR)\..
 _TK_H          = $(_TKDIR)\include\tk.h
 TKDIR          = $(_TKDIR)
-!elseif exist("$(_TCLDIR)\include\tk.h")
-TKINSTALL      = 1
-_TKDIR         = $(_TCLDIR)
-_TK_H          = $(_TKDIR)\include\tk.h
-TKDIR          = $(_TKDIR)
+
+!else # exist("$(_INSTALLDIR)\include\tk.h") && !$(NEED_TK_SOURCE)
+
+!if [echo _TKDIR = \> nmakehlp.out] \
+   || [nmakehlp -L generic\tk.h >> nmakehlp.out]
+!error *** Could not locate Tk source directory.
 !endif
+!include nmakehlp.out
+TKINSTALL      = 0
+TKDIR          = $(_TKDIR)
+_TK_H          = $(_TKDIR)\generic\tk.h
+
+!endif # exist("$(_INSTALLDIR)\include\tk.h") && !$(NEED_TK_SOURCE)
 
 !endif # TKDIR
 
@@ -1518,13 +1547,12 @@ default-clean:
 	@if exist $(WINDIR)\versions.vc del $(WINDIR)\versions.vc
 	@if exist $(WINDIR)\version.vc del $(WINDIR)\version.vc
 
-default-hose:
+default-hose: default-clean
 	@echo Hosing $(OUT_DIR)\* ...
 	@if exist $(OUT_DIR)\nul $(RMDIR) $(OUT_DIR)
 
+# Only for backward compatibility
 default-distclean: default-hose
-	@if exist $(WINDIR)\nmakehlp.exe del $(WINDIR)\nmakehlp.exe
-	@if exist $(WINDIR)\nmakehlp.obj del $(WINDIR)\nmakehlp.obj
 
 default-setup:
 	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
@@ -1679,6 +1707,12 @@ TCLNMAKECONFIG = "$(OUT_DIR)\tcl.nmake"
 # Display stats being used.
 #----------------------------------------------------------
 
+!if !$(DOING_TCL)
+!message *** Building against Tcl at '$(_TCLDIR)'
+!endif
+!if !$(DOING_TK) && $(NEED_TK)
+!message *** Building against Tk at '$(_TKDIR)'
+!endif
 !message *** Intermediate directory will be '$(TMP_DIR)'
 !message *** Output directory will be '$(OUT_DIR)'
 !message *** Installation, if selected, will be in '$(_INSTALLDIR)'
