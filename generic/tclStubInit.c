@@ -110,7 +110,7 @@ static unsigned short TclWinNToHS(unsigned short ns) {
 }
 #define TclWinGetPlatformId winGetPlatformId
 static int
-TclWinGetPlatformId()
+TclWinGetPlatformId(void)
 {
     return 2; /* VER_PLATFORM_WIN32_NT */;
 }
