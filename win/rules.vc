@@ -957,7 +957,7 @@ VERSION         = $(DOTVERSION:.=)
 # different compilers, build configurations etc.,
 #
 # Naming convention (suffixes):
-#   t = full thread support. (Not used for Tcl >= 8.6)
+#   t = full thread support. (Not used for Tcl >= 8.7)
 #   s = static library (as opposed to an import library)
 #   g = linked to the debug enabled C run-time.
 #   x = special static build when it links to the dynamic C run-time.
@@ -1048,7 +1048,7 @@ STUBPREFIX      = $(PROJECT)stub
 # Set up paths to various Tcl executables and libraries needed by extensions
 !if $(DOING_TCL)
 
-TCLSHNAME       = $(PROJECT)sh$(TCL_VERSION)$(SUFX).exe
+TCLSHNAME       = $(PROJECT)sh$(VERSION)$(SUFX).exe
 TCLSH		= $(OUT_DIR)\$(TCLSHNAME)
 TCLIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 TCLLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
