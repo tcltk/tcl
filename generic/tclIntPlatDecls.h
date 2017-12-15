@@ -559,6 +559,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #   define TclWinGetServByName getservbyname
 #   define TclWinGetSockOpt getsockopt
 #   define TclWinSetSockOpt setsockopt
+#   undef TclWinGetPlatformId
+#   define TclWinGetPlatformId() (2) /* VER_PLATFORM_WIN32_NT */
 #else
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((unsigned long) (pid))
