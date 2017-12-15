@@ -131,6 +131,10 @@ test oo-1.4 {basic test of OO functionality} -body {
 test oo-1.4.1 {fully-qualified nested name} -body {
     oo::object create ::one::two::three
 } -result {::one::two::three}
+test oo-1.4.2 {automatic command name has same name as namespace} -body {
+    set obj [oo::object new]
+    expr {[info object namespace $obj] == $obj}
+} -result 1
 test oo-1.5 {basic test of OO functionality} -body {
     oo::object doesnotexist
 } -returnCodes 1 -result {unknown method "doesnotexist": must be create, destroy or new}
