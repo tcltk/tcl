@@ -354,7 +354,7 @@ typedef struct ResolvedCmdName {
 				 * Before using the cached pointer, we check
 				 * if the namespace's epoch was incremented;
 				 * if so, this cached pointer is invalid. */
-    size_t cmdEpoch;		/* Value of the command's cmdEpoch when this
+    int cmdEpoch;		/* Value of the command's cmdEpoch when this
 				 * pointer was cached. Before using the cached
 				 * pointer, we check if the cmd's epoch was
 				 * incremented; if so, the cmd was renamed,
