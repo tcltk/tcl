@@ -223,15 +223,18 @@ declare 63 {
 
 # Formerly internal API to allow initialisation of bignums without knowing the
 # typedefs of how a bignum works internally.
-declare 64 {deprecated {Use mp_init() + mp_set_long_long()}} {
-    void TclBNInitBignumFromLong(mp_int *bignum, long initVal)
-}
-declare 65 {deprecated {Use mp_init() + mp_set_long_long()}} {
-    void TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
-}
-declare 66 {deprecated {Use mp_init() + mp_set_long_long()}} {
-    void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
-}
+# Removed in 9.0
+#declare 64 {
+#    void TclBNInitBignumFromLong(mp_int *bignum, long initVal)
+#}
+# Removed in 9.0
+#declare 65 {
+#    void TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
+#}
+# Removed in 9.0
+#declare 66 {
+#    void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
+#}
 
 # Added in libtommath 1.0
 declare 67 {
