@@ -1639,7 +1639,7 @@ typedef struct Command {
 				 * representing a command's name in a ByteCode
 				 * instruction sequence. This structure can be
 				 * freed when refCount becomes zero. */
-    size_t cmdEpoch;		/* Incremented to invalidate any references
+    int cmdEpoch;		/* Incremented to invalidate any references
 				 * that point to this command when it is
 				 * renamed, deleted, hidden, or exposed. */
     CompileProc *compileProc;	/* Procedure called to compile command. NULL
