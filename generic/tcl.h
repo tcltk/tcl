@@ -764,7 +764,7 @@ typedef struct Tcl_Obj {
 				 * must be followed by a null byte (i.e., at
 				 * offset length) but may also contain
 				 * embedded null characters. The array's
-				 * storage is allocated by ckalloc. NULL means
+				 * storage is allocated by Tcl_Alloc. NULL means
 				 * the string rep is invalid and must be
 				 * regenerated from the internal rep.  Clients
 				 * should use Tcl_GetStringFromObj or
@@ -948,8 +948,8 @@ typedef struct Tcl_DString {
 
 /*
  * Definitions for the maximum number of digits of precision that may be
- * specified in the "tcl_precision" variable, and the number of bytes of
- * buffer space required by Tcl_PrintDouble.
+ * produced by Tcl_PrintDouble, and the number of bytes of buffer space
+ * required by Tcl_PrintDouble.
  */
 
 #define TCL_MAX_PREC		17
@@ -2411,28 +2411,30 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 
 /*
  *----------------------------------------------------------------------------
- * The following declarations either map ckalloc and ckfree to malloc and
+ * The following declarations either map Tcl_Alloc and Tcl_Free to malloc and
  * free, or they map them to functions with all sorts of debugging hooks
  * defined in tclCkalloc.c.
  */
 
-#define Tcl_Alloc ckalloc
-#define Tcl_Free ckfree
-#define Tcl_Realloc ckrealloc
-#define Tcl_AttemptAlloc attemptckalloc
-#define Tcl_AttemptRealloc attemptckrealloc
+#if !defined(TCL_NO_DEPRECATED) || defined(BUILD_tcl)
+#   define ckalloc Tcl_Alloc
+#   define ckfree Tcl_Free
+#   define ckrealloc Tcl_Realloc
+#   define attemptckalloc Tcl_AttemptAlloc
+#   define attemptckrealloc Tcl_AttemptRealloc
+#endif
 
 #ifdef TCL_MEM_DEBUG
 
-#   define ckalloc(x) \
+#   define Tcl_Alloc(x) \
     (Tcl_DbCkalloc((x), __FILE__, __LINE__))
-#   define ckfree(x) \
+#   define Tcl_Free(x) \
     Tcl_DbCkfree((x), __FILE__, __LINE__)
-#   define ckrealloc(x,y) \
+#   define Tcl_Realloc(x,y) \
     (Tcl_DbCkrealloc((x), (y), __FILE__, __LINE__))
-#   define attemptckalloc(x) \
+#   define Tcl_AttemptAlloc(x) \
     (Tcl_AttemptDbCkalloc((x), __FILE__, __LINE__))
-#   define attemptckrealloc(x,y) \
+#   define Tcl_AttemptRealloc(x,y) \
     (Tcl_AttemptDbCkrealloc((x), (y), __FILE__, __LINE__))
 
 #else /* !TCL_MEM_DEBUG */
@@ -2443,15 +2445,15 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * memory allocator both inside and outside of the Tcl library.
  */
 
-#   define ckalloc \
+#   define Tcl_Alloc \
     Tcl_MemAlloc
-#   define ckfree \
+#   define Tcl_Free \
     Tcl_MemFree
-#   define ckrealloc \
+#   define Tcl_Realloc \
     Tcl_MemRealloc
-#   define attemptckalloc \
+#   define Tcl_AttemptAlloc \
     Tcl_AttemptMemAlloc
-#   define attemptckrealloc \
+#   define Tcl_AttemptRealloc \
     Tcl_AttemptMemRealloc
 #   undef  Tcl_InitMemory
 #   define Tcl_InitMemory(x)

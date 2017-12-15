@@ -586,7 +586,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
     do { \
 	register unsigned len = sizeof(type) * ((target).num=(source).num);\
 	if (len != 0) { \
-	    memcpy(((target).list=(type*)ckalloc(len)), (source).list, len); \
+	    memcpy(((target).list=(type*)Tcl_Alloc(len)), (source).list, len); \
 	} else { \
 	    (target).list = NULL; \
 	} \
@@ -599,7 +599,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 #define AddRef(ptr) ((ptr)->refCount++)
 #define DelRef(ptr) do {			\
 	if ((ptr)->refCount-- <= 1) {		\
-	    ckfree(ptr);			\
+	    Tcl_Free(ptr);			\
 	}					\
     } while(0)
 

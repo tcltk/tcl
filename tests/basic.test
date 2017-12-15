@@ -893,10 +893,7 @@ test basic-48.16.$noComp {expansion: testing for leaks} -setup {
 	rename stress {}
 } -result 0
 
-test basic-48.17.$noComp {expansion: object safety} -setup {
-        set old_precision $::tcl_precision
-        set ::tcl_precision 4
-    } -constraints $constraints -body {
+test basic-48.17.$noComp {expansion: object safety} -constraints $constraints -body {
             set third [expr {1.0/3.0}]
             set l [list $third $third]
             set x [run {list $third {*}$l $third}]
@@ -906,8 +903,7 @@ test basic-48.17.$noComp {expansion: object safety} -setup {
             }
             set res
     } -cleanup {
-        set ::tcl_precision $old_precision
-        unset old_precision res t l x third
+        unset res t l x third
 } -result {1.0 1.0 1.0 1.0}
 
 test basic-48.18.$noComp {expansion: list semantics} -constraints $constraints -body {

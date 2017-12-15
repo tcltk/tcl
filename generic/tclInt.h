@@ -609,7 +609,7 @@ typedef struct Var {
 	TclVarHashTable *tablePtr;/* For array variables, this points to
 				 * information about the hash table used to
 				 * implement the associative array. Points to
-				 * ckalloc-ed data. */
+				 * Tcl_Alloc-ed data. */
 	struct Var *linkPtr;	/* If this is a global variable being referred
 				 * to in a procedure, or a variable created by
 				 * "upvar", this field points to the
@@ -4092,7 +4092,7 @@ typedef const char *TclDTraceStr;
 	    TCL_DTRACE_OBJ_FREE(objPtr); \
 	    if ((objPtr)->bytes \
 		    && ((objPtr)->bytes != &tclEmptyString)) { \
-		ckfree((objPtr)->bytes); \
+		Tcl_Free((objPtr)->bytes); \
 	    } \
 	    (objPtr)->length = (size_t)-1; \
 	    TclFreeObjStorage(objPtr); \
@@ -4112,10 +4112,10 @@ typedef const char *TclDTraceStr;
  */
 
 #  define TclAllocObjStorageEx(interp, objPtr) \
-	(objPtr) = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj))
+	(objPtr) = (Tcl_Obj *) Tcl_Alloc(sizeof(Tcl_Obj))
 
 #  define TclFreeObjStorageEx(interp, objPtr) \
-	ckfree(objPtr)
+	Tcl_Free(objPtr)
 
 #undef USE_THREAD_ALLOC
 #undef USE_TCLALLOC
@@ -4255,7 +4255,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = ckalloc((len) + 1); \
+	(objPtr)->bytes = Tcl_Alloc((len) + 1); \
 	memcpy((objPtr)->bytes, (bytePtr), (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
@@ -4311,7 +4311,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #define TclInvalidateStringRep(objPtr) \
     if ((objPtr)->bytes != NULL) { \
 	if ((objPtr)->bytes != &tclEmptyString) { \
-	    ckfree((objPtr)->bytes); \
+	    Tcl_Free((objPtr)->bytes); \
 	} \
 	(objPtr)->bytes = NULL; \
     }
@@ -4363,14 +4363,14 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	    if (allocated > TCL_MAX_TOKENS) {				\
 		allocated = TCL_MAX_TOKENS;				\
 	    }								\
-	    newPtr = (Tcl_Token *) attemptckrealloc((char *) oldPtr,	\
+	    newPtr = (Tcl_Token *) Tcl_AttemptRealloc((char *) oldPtr,	\
 		    (unsigned int) (allocated * sizeof(Tcl_Token)));	\
 	    if (newPtr == NULL) {					\
 		allocated = _needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
 		if (allocated > TCL_MAX_TOKENS) {			\
 		    allocated = TCL_MAX_TOKENS;				\
 		}							\
-		newPtr = (Tcl_Token *) ckrealloc((char *) oldPtr,	\
+		newPtr = (Tcl_Token *) Tcl_Realloc((char *) oldPtr,	\
 			(unsigned int) (allocated * sizeof(Tcl_Token))); \
 	    }								\
 	    (available) = allocated;					\
@@ -4690,7 +4690,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 #define TclCleanupCommandMacro(cmdPtr) \
     if ((cmdPtr)->refCount-- <= 1) { \
-	ckfree(cmdPtr);\
+	Tcl_Free(cmdPtr);\
     }
 
 /*
@@ -4847,8 +4847,8 @@ typedef struct NRE_callback {
 #define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
 #else
 #define TCLNR_ALLOC(interp, ptr) \
-    (ptr = (ckalloc(sizeof(NRE_callback))))
-#define TCLNR_FREE(interp, ptr)  ckfree(ptr)
+    (ptr = (Tcl_Alloc(sizeof(NRE_callback))))
+#define TCLNR_FREE(interp, ptr)  Tcl_Free(ptr)
 #endif
 
 #if NRE_ENABLE_ASSERTS

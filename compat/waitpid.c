@@ -156,7 +156,7 @@ waitpid(
 		goto waitAgain;
 	    }
 	}
-	waitPtr = (WaitInfo *) ckalloc(sizeof(WaitInfo));
+	waitPtr = (WaitInfo *) Tcl_Alloc(sizeof(WaitInfo));
 	waitPtr->pid = result;
 	waitPtr->status = status;
 	waitPtr->nextPtr = deadList;

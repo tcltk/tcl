@@ -28,7 +28,7 @@ opendir(
     if ((fd = open(myname, 0, 0)) == -1) {
 	return NULL;
     }
-    dirp = (DIR *) ckalloc(sizeof(DIR));
+    dirp = (DIR *) Tcl_Alloc(sizeof(DIR));
     if (dirp == NULL) {
 	/* unreachable? */
 	close(fd);

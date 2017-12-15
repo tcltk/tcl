@@ -3882,7 +3882,7 @@ extern const TclStubs *tclStubsPtr;
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(__result, -1)); \
 	    if (__result != NULL && __freeProc != NULL && __freeProc != TCL_VOLATILE) { \
 		if (__freeProc == TCL_DYNAMIC) { \
-		    ckfree(__result); \
+		    Tcl_Free(__result); \
 		} else { \
 		    (*__freeProc)(__result); \
 		} \

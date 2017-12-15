@@ -94,13 +94,6 @@ static ProcessGlobalValue executableName = {
 #define CONVERT_ANY	16
 
 /*
- * The following key is used by Tcl_PrintDouble and TclPrecTraceProc to
- * access the precision to be used for double formatting.
- */
-
-static Tcl_ThreadDataKey precisionKey;
-
-/*
  * Prototypes for functions defined later in this file.
  */
 
@@ -2998,10 +2991,9 @@ Tcl_DStringEndSublist(
  *	string using.
  *
  * Results:
- *	The ASCII equivalent of "value" is written at "dst". It is written
- *	using the current precision, and it is guaranteed to contain a decimal
- *	point or exponent, so that it looks like a floating-point value and
- *	not an integer.
+ *	The ASCII equivalent of "value" is written at "dst". It is guaranteed
+ *	to contain a decimal point or exponent, so that it looks like a
+ *	floating-point value and not an integer.
  *
  * Side effects:
  *	None.
@@ -3011,9 +3003,7 @@ Tcl_DStringEndSublist(
 
 void
 Tcl_PrintDouble(
-    Tcl_Interp *interp,		/* Interpreter whose tcl_precision variable
-				 * used to be used to control printing. It's
-				 * ignored now. */
+    Tcl_Interp *interp,		/* Not used */
     double value,		/* Value to print as string. */
     char *dst)			/* Where to store converted value; must have
 				 * at least TCL_DOUBLE_SPACE characters. */
@@ -3023,7 +3013,6 @@ Tcl_PrintDouble(
     int signum;
     char *digits;
     char *end;
-    int *precisionPtr = Tcl_GetThreadData(&precisionKey, sizeof(int));
 
     /*
      * Handle NaN.
@@ -3055,53 +3044,8 @@ Tcl_PrintDouble(
      * Ordinary (normal and denormal) values.
      */
 
-    if (*precisionPtr == 0) {
-	digits = TclDoubleDigits(value, -1, TCL_DD_SHORTEST,
-		&exponent, &signum, &end);
-    } else {
-	/*
-	 * There are at least two possible interpretations for tcl_precision.
-	 *
-	 * The first is, "choose the decimal representation having
-	 * $tcl_precision digits of significance that is nearest to the given
-	 * number, breaking ties by rounding to even, and then trimming
-	 * trailing zeros." This gives the greatest possible precision in the
-	 * decimal string, but offers the anomaly that [expr 0.1] will be
-	 * "0.10000000000000001".
-	 *
-	 * The second is "choose the decimal representation having at most
-	 * $tcl_precision digits of significance that is nearest to the given
-	 * number. If no such representation converts exactly to the given
-	 * number, choose the one that is closest, breaking ties by rounding
-	 * to even. If more than one such representation converts exactly to
-	 * the given number, choose the shortest, breaking ties in favour of
-	 * the nearest, breaking remaining ties in favour of the one ending in
-	 * an even digit."
-	 *
-	 * Tcl 8.4 implements the first of these, which gives rise to
-	 * anomalies in formatting:
-	 *
-	 *	% expr 0.1
-	 *	0.10000000000000001
-	 *	% expr 0.01
-	 *	0.01
-	 *	% expr 1e-7
-	 *	9.9999999999999995e-08
-	 *
-	 * For human readability, it appears better to choose the second rule,
-	 * and let [expr 0.1] return 0.1. But for 8.4 compatibility, we prefer
-	 * the first (the recommended zero value for tcl_precision avoids the
-	 * problem entirely).
-	 *
-	 * Uncomment TCL_DD_SHORTEN_FLAG in the next call to prefer the method
-	 * that allows floating point values to be shortened if it can be done
-	 * without loss of precision.
-	 */
-
-	digits = TclDoubleDigits(value, *precisionPtr,
-		TCL_DD_E_FORMAT /* | TCL_DD_SHORTEN_FLAG */,
-		&exponent, &signum, &end);
-    }
+    digits = TclDoubleDigits(value, -1, TCL_DD_SHORTEST,
+	    &exponent, &signum, &end);
     if (signum) {
 	*dst++ = '-';
     }
@@ -3121,16 +3065,7 @@ Tcl_PrintDouble(
 	    }
 	}
 
-	/*
-	 * Tcl 8.4 appears to format with at least a two-digit exponent;
-	 * preserve that behaviour when tcl_precision != 0
-	 */
-
-	if (*precisionPtr == 0) {
-	    sprintf(dst, "e%+d", exponent);
-	} else {
-	    sprintf(dst, "e%+03d", exponent);
-	}
+	sprintf(dst, "e%+d", exponent);
     } else {
 	/*
 	 * F format for others.
@@ -3163,84 +3098,6 @@ Tcl_PrintDouble(
 	*dst++ = '\0';
     }
     ckfree(digits);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclPrecTraceProc --
- *
- *	This function is invoked whenever the variable "tcl_precision" is
- *	written.
- *
- * Results:
- *	Returns NULL if all went well, or an error message if the new value
- *	for the variable doesn't make sense.
- *
- * Side effects:
- *	If the new value doesn't make sense then this function undoes the
- *	effect of the variable modification. Otherwise it modifies the format
- *	string that's used by Tcl_PrintDouble.
- *
- *----------------------------------------------------------------------
- */
-
-	/* ARGSUSED */
-char *
-TclPrecTraceProc(
-    ClientData clientData,	/* Not used. */
-    Tcl_Interp *interp,		/* Interpreter containing variable. */
-    const char *name1,		/* Name of variable. */
-    const char *name2,		/* Second part of variable name. */
-    int flags)			/* Information about what happened. */
-{
-    Tcl_Obj *value;
-    int prec;
-    int *precisionPtr = Tcl_GetThreadData(&precisionKey, sizeof(int));
-
-    /*
-     * If the variable is unset, then recreate the trace.
-     */
-
-    if (flags & TCL_TRACE_UNSETS) {
-	if ((flags & TCL_TRACE_DESTROYED) && !Tcl_InterpDeleted(interp)) {
-	    Tcl_TraceVar2(interp, name1, name2,
-		    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES
-		    |TCL_TRACE_UNSETS, TclPrecTraceProc, clientData);
-	}
-	return NULL;
-    }
-
-    /*
-     * When the variable is read, reset its value from our shared value. This
-     * is needed in case the variable was modified in some other interpreter
-     * so that this interpreter's value is out of date.
-     */
-
-
-    if (flags & TCL_TRACE_READS) {
-	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewLongObj(*precisionPtr),
-		flags & TCL_GLOBAL_ONLY);
-	return NULL;
-    }
-
-    /*
-     * The variable is being written. Check the new value and disallow it if
-     * it isn't reasonable or if this is a safe interpreter (we don't want
-     * safe interpreters messing up the precision of other interpreters).
-     */
-
-    if (Tcl_IsSafe(interp)) {
-	return (char *) "can't modify precision from a safe interpreter";
-    }
-    value = Tcl_GetVar2Ex(interp, name1, name2, flags & TCL_GLOBAL_ONLY);
-    if (value == NULL
-	    || Tcl_GetIntFromObj(NULL, value, &prec) != TCL_OK
-	    || prec < 0 || prec > TCL_MAX_PREC) {
-	return (char *) "improper value for precision";
-    }
-    *precisionPtr = prec;
-    return NULL;
 }
 
 /*
