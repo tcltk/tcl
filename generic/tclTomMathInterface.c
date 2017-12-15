@@ -125,7 +125,7 @@ TclInitBignumFromLong(
 /*
  *----------------------------------------------------------------------
  *
- * TclBNInitBignumFromWideInt --
+ * TclInitBignumFromWideInt --
  *
  *	Allocate and initialize a 'bignum' from a Tcl_WideInt
  *
@@ -157,7 +157,7 @@ TclInitBignumFromWideInt(
 /*
  *----------------------------------------------------------------------
  *
- * TclBNInitBignumFromWideUInt --
+ * TclInitBignumFromWideUInt --
  *
  *	Allocate and initialize a 'bignum' from a Tcl_WideUInt
  *

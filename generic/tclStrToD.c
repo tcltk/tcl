@@ -3996,8 +3996,8 @@ StrictBignumConversion(
  * This function is a service routine that produces the string of digits for
  * floating-point-to-decimal conversion. It can do a number of things
  * according to the 'flags' argument. Valid values for 'flags' include:
- *	TCL_DD_SHORTEST - This is the default for floating point conversion if
- *		::tcl_precision is 0. It constructs the shortest string of
+ *	TCL_DD_SHORTEST - This is the default for floating point conversion.
+ *		It constructs the shortest string of
  *		digits that will reconvert to the given number when scanned.
  *		For floating point numbers that are exactly between two
  *		decimal numbers, it resolves using the 'round to even' rule.
@@ -4012,8 +4012,7 @@ StrictBignumConversion(
  *		subsequent input conversion is 'round up' or 'round down'
  *		rather than 'round to nearest', but is surprising otherwise.
  *	TCL_DD_E_FORMAT - This value is used to prepare numbers for %e format
- *		conversion (or for default floating->string if tcl_precision
- *		is not 0). It constructs a string of at most 'ndigits' digits,
+ *		conversion. It constructs a string of at most 'ndigits' digits,
  *		choosing the one that is closest to the given number (and
  *		resolving ties with 'round to even').  It is allowed to return
  *		fewer than 'ndigits' if the number converts exactly; if the
