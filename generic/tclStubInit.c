@@ -64,6 +64,7 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define TclGetStartupScriptPath 0
 #   define TclSetStartupScriptFileName 0
 #   define TclGetStartupScriptFileName 0
+#   define TclPrecTraceProc 0
 #   define TclpInetNtoa 0
 #   define TclWinGetServByName 0
 #   define TclWinGetSockOpt 0

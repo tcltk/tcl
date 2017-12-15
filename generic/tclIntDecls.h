@@ -233,7 +233,8 @@ EXTERN char *		TclpRealloc(char *ptr, unsigned int size);
 /* Slot 86 is reserved */
 /* Slot 87 is reserved */
 /* 88 */
-EXTERN char *		TclPrecTraceProc(ClientData clientData,
+TCL_DEPRECATED("")
+char *			TclPrecTraceProc(ClientData clientData,
 				Tcl_Interp *interp, const char *name1,
 				const char *name2, int flags);
 /* 89 */
@@ -743,7 +744,7 @@ typedef struct TclIntStubs {
     void (*reserved85)(void);
     void (*reserved86)(void);
     void (*reserved87)(void);
-    char * (*tclPrecTraceProc) (ClientData clientData, Tcl_Interp *interp, const char *name1, const char *name2, int flags); /* 88 */
+    TCL_DEPRECATED_API("") char * (*tclPrecTraceProc) (ClientData clientData, Tcl_Interp *interp, const char *name1, const char *name2, int flags); /* 88 */
     int (*tclPreventAliasLoop) (Tcl_Interp *interp, Tcl_Interp *cmdInterp, Tcl_Command cmd); /* 89 */
     void (*reserved90)(void);
     void (*tclProcCleanupProc) (Proc *procPtr); /* 91 */
