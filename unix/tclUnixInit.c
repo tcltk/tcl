@@ -453,7 +453,7 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    size_t *lengthPtr,
+    unsigned int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    32
