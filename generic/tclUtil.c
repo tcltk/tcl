@@ -3298,6 +3298,7 @@ Tcl_PrintDouble(
  *----------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 	/* ARGSUSED */
 char *
 TclPrecTraceProc(
@@ -3355,6 +3356,7 @@ TclPrecTraceProc(
     *precisionPtr = prec;
     return NULL;
 }
+#endif /* !TCL_NO_DEPRECATED)*/
 
 /*
  *----------------------------------------------------------------------
