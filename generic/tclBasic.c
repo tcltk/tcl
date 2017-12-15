@@ -4789,7 +4789,7 @@ TEOV_RunEnterTraces(
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr = *cmdPtrPtr;
-    int newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
+    unsigned int newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
     int length, traceCode = TCL_OK;
     const char *command = TclGetStringFromObj(commandPtr, &length);
 
