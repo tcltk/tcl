@@ -43,16 +43,6 @@
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
 
-#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
-#   define TclBNInitBignumFromWideUInt 0
-#   define TclBNInitBignumFromWideInt 0
-#   define TclBNInitBignumFromLong 0
-#else
-#   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
-#   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
-#   define TclBNInitBignumFromLong TclInitBignumFromLong
-#endif /* TCL_NO_DEPRECATED */
-
 #ifdef _WIN32
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
@@ -367,7 +357,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 85 */
     0, /* 86 */
     0, /* 87 */
-    TclPrecTraceProc, /* 88 */
+    0, /* 88 */
     TclPreventAliasLoop, /* 89 */
     0, /* 90 */
     TclProcCleanupProc, /* 91 */
@@ -722,9 +712,9 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_init_set_int, /* 61 */
     TclBN_mp_set_int, /* 62 */
     TclBN_mp_cnt_lsb, /* 63 */
-    TclBNInitBignumFromLong, /* 64 */
-    TclBNInitBignumFromWideInt, /* 65 */
-    TclBNInitBignumFromWideUInt, /* 66 */
+    0, /* 64 */
+    0, /* 65 */
+    0, /* 66 */
     TclBN_mp_expt_d_ex, /* 67 */
     TclBN_mp_set_long_long, /* 68 */
     TclBN_mp_get_long_long, /* 69 */
