@@ -922,9 +922,6 @@ Tcl_CreateInterp(void)
 
     Tcl_SetVar(interp, "tcl_patchLevel", TCL_PATCH_LEVEL, TCL_GLOBAL_ONLY);
     Tcl_SetVar(interp, "tcl_version", TCL_VERSION, TCL_GLOBAL_ONLY);
-    Tcl_TraceVar2(interp, "tcl_precision", NULL,
-	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-	    TclPrecTraceProc, NULL);
     TclpSetVariables(interp);
 
 #ifdef TCL_THREADS

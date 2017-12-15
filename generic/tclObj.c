@@ -2209,8 +2209,7 @@ SetDoubleFromAny(
  * UpdateStringOfDouble --
  *
  *	Update the string representation for a double-precision floating point
- *	object. This must obey the current tcl_precision value for
- *	double-to-string conversions. Note: This function does not free an
+ *	object. Note: This function does not free an
  *	existing old string rep so storage will be lost if this has not
  *	already been done.
  *

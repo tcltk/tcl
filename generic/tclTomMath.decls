@@ -221,15 +221,17 @@ declare 63 {
     int TclBN_mp_cnt_lsb(const mp_int *a)
 }
 
-# Removed in Tcl 9.0
+# Formerly internal API to allow initialisation of bignums without knowing the
+# typedefs of how a bignum works internally.
+# Removed in 9.0
 #declare 64 {
 #    void TclBNInitBignumFromLong(mp_int *bignum, long initVal)
 #}
-# Removed in Tcl 9.0
+# Removed in 9.0
 #declare 65 {
 #    void TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
 #}
-# Removed in Tcl 9.0
+# Removed in 9.0
 #declare 66 {
 #    void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
 #}

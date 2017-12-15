@@ -318,7 +318,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 85 */
     0, /* 86 */
     0, /* 87 */
-    TclPrecTraceProc, /* 88 */
+    0, /* 88 */
     TclPreventAliasLoop, /* 89 */
     0, /* 90 */
     TclProcCleanupProc, /* 91 */
