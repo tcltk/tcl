@@ -32,7 +32,7 @@
  */
 
 typedef struct {
-    size_t numNsCreated;	/* Count of the number of namespaces created
+    unsigned long numNsCreated;	/* Count of the number of namespaces created
 				 * within the thread. This value is used as a
 				 * unique id for each namespace. Cannot be
 				 * per-interp because the nsId is used to
