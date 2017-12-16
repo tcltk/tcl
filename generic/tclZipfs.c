@@ -4035,7 +4035,7 @@ TclZipfs_Init(Tcl_Interp *interp)
 #ifdef HAVE_ZLIB
     /* one-time initialization */
     WriteLock();
-    Tcl_StaticPackage(interp, "zipfs", TclZipfs_Init, TclZipfs_Init);
+    /* Tcl_StaticPackage(interp, "zipfs", TclZipfs_Init, TclZipfs_Init); */
     if (!ZipFS.initialized) {
         TclZipfs_C_Init();
     }
