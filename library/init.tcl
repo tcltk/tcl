@@ -653,10 +653,7 @@ proc auto_execok name {
 	set windir $env(WINDIR)
     }
     if {[info exists windir]} {
-	if {$tcl_platform(os) eq "Windows NT"} {
-	    append path "$windir/system32;"
-	}
-	append path "$windir/system;$windir;"
+	append path "$windir/system32;$windir/system;$windir;"
     }
 
     foreach var {PATH Path path} {
