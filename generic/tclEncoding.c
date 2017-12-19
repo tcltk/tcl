@@ -3609,7 +3609,7 @@ unilen(
 static void
 InitializeEncodingSearchPath(
     char **valuePtr,
-    size_t *lengthPtr,
+    unsigned int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     const char *bytes;
