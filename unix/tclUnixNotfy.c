@@ -532,13 +532,13 @@ TclUnixWaitForFile(
 	numFound = poll(pollFds, 1, pollTimeout);
 	if (numFound == 1) {
 	    result = 0;
-	    if (pollFds[0].events & (POLLIN | POLLHUP)) {
+	    if (pollFds[0].revents & (POLLIN | POLLHUP)) {
 		result |= TCL_READABLE;
 	    }
-	    if (pollFds[0].events & POLLOUT) {
+	    if (pollFds[0].revents & POLLOUT) {
 		result |= TCL_WRITABLE;
 	    }
-	    if (pollFds[0].events & POLLERR) {
+	    if (pollFds[0].revents & POLLERR) {
 		result |= TCL_EXCEPTION;
 	    }
 	    if (result) {
