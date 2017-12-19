@@ -9476,9 +9476,9 @@ PrintByteCodeInfo(
     Proc *procPtr = codePtr->procPtr;
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
 
-    fprintf(stdout, "\nExecuting ByteCode 0x%p, refCt %" TCL_Z_MODIFIER "u, epoch %" TCL_Z_MODIFIER "u, interp 0x%p (epoch %" TCL_Z_MODIFIER "u)\n",
-	    codePtr, codePtr->refCount, codePtr->compileEpoch, iPtr,
-	    (size_t)iPtr->compileEpoch);
+    fprintf(stdout, "\nExecuting ByteCode 0x%p, refCt %" TCL_Z_MODIFIER "u, epoch %u, interp 0x%p (epoch %u)\n",
+	    codePtr, (size_t)codePtr->refCount, codePtr->compileEpoch, iPtr,
+	    iPtr->compileEpoch);
 
     fprintf(stdout, "  Source: ");
     TclPrintSource(stdout, codePtr->source, 60);
