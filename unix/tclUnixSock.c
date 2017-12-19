@@ -217,7 +217,7 @@ printaddrinfo(
 static void
 InitializeHostName(
     char **valuePtr,
-    size_t *lengthPtr,
+    unsigned int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     const char *native = NULL;

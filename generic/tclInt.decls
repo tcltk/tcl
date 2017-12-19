@@ -355,7 +355,7 @@ declare 81 {
 #  declare 87 {
 #      void TclPlatformInit(Tcl_Interp *interp)
 #  }
-declare 88 {
+declare 88 {deprecated {}} {
     char *TclPrecTraceProc(ClientData clientData, Tcl_Interp *interp,
 	    const char *name1, const char *name2, int flags)
 }

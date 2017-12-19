@@ -2425,7 +2425,7 @@ FreeLambdaInternalRep(
     LambdaGetIntRep(objPtr, procPtr, nsObjPtr);
     assert(procPtr != NULL);
 
-    if (procPtr->refCount-- == 1) {
+    if (procPtr->refCount-- <= 1) {
 	TclProcCleanupProc(procPtr);
     }
     TclDecrRefCount(nsObjPtr);
