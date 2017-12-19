@@ -429,7 +429,7 @@ typedef struct ByteCode {
 				 * ByteCode was compiled. Used to invalidate
 				 * code when new namespace resolution rules
 				 * are put into effect. */
-    int refCount;		/* Reference count: set 1 when created plus 1
+    size_t refCount;		/* Reference count: set 1 when created plus 1
 				 * for each execution of the code currently
 				 * active. This structure can be freed when
 				 * refCount becomes zero. */
