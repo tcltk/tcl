@@ -2378,7 +2378,7 @@ FreeLambdaInternalRep(
     Proc *procPtr = objPtr->internalRep.twoPtrValue.ptr1;
     Tcl_Obj *nsObjPtr = objPtr->internalRep.twoPtrValue.ptr2;
 
-    if (procPtr->refCount-- == 1) {
+    if (procPtr->refCount-- <= 1) {
 	TclProcCleanupProc(procPtr);
     }
     TclDecrRefCount(nsObjPtr);
