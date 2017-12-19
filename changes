@@ -8825,4 +8825,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2017-12-06 (bug)[ce3a21] file normalize failure when tail is empty (porter)
 
---- Released 8.6.8, December XX, 2017 --- http://core.tcl.tk/tcl/ for details
+2017-12-08 (new)[TIP 477] nmake build system reform (nadkarni)
+
+--- Released 8.6.8, December 22, 2017 --- http://core.tcl.tk/tcl/ for details
