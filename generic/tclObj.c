@@ -262,10 +262,10 @@ const Tcl_ObjType tclDoubleType = {
     SetDoubleFromAny		/* setFromAnyProc */
 };
 const Tcl_ObjType tclIntType = {
-#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
+#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8 || defined(TCL_WIDE_INT_IS_LONG)
     "int",			/* name */
 #else
-    "wideInt",		/* name, keeping maximum compatibility with Tcl 8.6 */
+    "wideInt",		/* name, keeping maximum compatibility with Tcl 8.6 on 32-bit platforms*/
 #endif
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
