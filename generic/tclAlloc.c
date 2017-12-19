@@ -661,13 +661,13 @@ mstats(
 
     fprintf(stderr, "\nused:\t");
     for (i = 0; i < NBUCKETS; i++) {
-	fprintf(stderr, " %" TCL_Z_MODIFIER "d", numMallocs[i]);
+	fprintf(stderr, " %" TCL_Z_MODIFIER "u", numMallocs[i]);
 	totalUsed += numMallocs[i] * (1 << (i + 3));
     }
 
-    fprintf(stderr, "\n\tTotal small in use: %" TCL_Z_MODIFIER "d, total free: %" TCL_Z_MODIFIER "d\n",
+    fprintf(stderr, "\n\tTotal small in use: %" TCL_Z_MODIFIER "u, total free: %" TCL_Z_MODIFIER "u\n",
 	totalUsed, totalFree);
-    fprintf(stderr, "\n\tNumber of big (>%d) blocks in use: %" TCL_Z_MODIFIER "d\n",
+    fprintf(stderr, "\n\tNumber of big (>%d) blocks in use: %" TCL_Z_MODIFIER "u\n",
 	    MAXMALLOC, numMallocs[NBUCKETS]);
 
     Tcl_MutexUnlock(allocMutexPtr);
