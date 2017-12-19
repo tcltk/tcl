@@ -302,17 +302,9 @@ EXTERN int		TclBN_mp_init_set_int(mp_int *a, unsigned long i);
 EXTERN int		TclBN_mp_set_int(mp_int *a, unsigned long i);
 /* 63 */
 EXTERN int		TclBN_mp_cnt_lsb(const mp_int *a);
-/* 64 */
-TCL_DEPRECATED("Use mp_init() + mp_set_long_long()")
-void			TclBNInitBignumFromLong(mp_int *bignum, long initVal);
-/* 65 */
-TCL_DEPRECATED("Use mp_init() + mp_set_long_long()")
-void			TclBNInitBignumFromWideInt(mp_int *bignum,
-				Tcl_WideInt initVal);
-/* 66 */
-TCL_DEPRECATED("Use mp_init() + mp_set_long_long()")
-void			TclBNInitBignumFromWideUInt(mp_int *bignum,
-				Tcl_WideUInt initVal);
+/* Slot 64 is reserved */
+/* Slot 65 is reserved */
+/* Slot 66 is reserved */
 /* 67 */
 EXTERN int		TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b,
 				mp_int *c, int fast);
@@ -393,9 +385,9 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_init_set_int) (mp_int *a, unsigned long i); /* 61 */
     int (*tclBN_mp_set_int) (mp_int *a, unsigned long i); /* 62 */
     int (*tclBN_mp_cnt_lsb) (const mp_int *a); /* 63 */
-    TCL_DEPRECATED_API("Use mp_init() + mp_set_long_long()") void (*tclBNInitBignumFromLong) (mp_int *bignum, long initVal); /* 64 */
-    TCL_DEPRECATED_API("Use mp_init() + mp_set_long_long()") void (*tclBNInitBignumFromWideInt) (mp_int *bignum, Tcl_WideInt initVal); /* 65 */
-    TCL_DEPRECATED_API("Use mp_init() + mp_set_long_long()") void (*tclBNInitBignumFromWideUInt) (mp_int *bignum, Tcl_WideUInt initVal); /* 66 */
+    void (*reserved64)(void);
+    void (*reserved65)(void);
+    void (*reserved66)(void);
     int (*tclBN_mp_expt_d_ex) (const mp_int *a, mp_digit b, mp_int *c, int fast); /* 67 */
     int (*tclBN_mp_set_long_long) (mp_int *a, Tcl_WideUInt i); /* 68 */
     Tcl_WideUInt (*tclBN_mp_get_long_long) (const mp_int *a); /* 69 */
@@ -543,12 +535,9 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_set_int) /* 62 */
 #define TclBN_mp_cnt_lsb \
 	(tclTomMathStubsPtr->tclBN_mp_cnt_lsb) /* 63 */
-#define TclBNInitBignumFromLong \
-	(tclTomMathStubsPtr->tclBNInitBignumFromLong) /* 64 */
-#define TclBNInitBignumFromWideInt \
-	(tclTomMathStubsPtr->tclBNInitBignumFromWideInt) /* 65 */
-#define TclBNInitBignumFromWideUInt \
-	(tclTomMathStubsPtr->tclBNInitBignumFromWideUInt) /* 66 */
+/* Slot 64 is reserved */
+/* Slot 65 is reserved */
+/* Slot 66 is reserved */
 #define TclBN_mp_expt_d_ex \
 	(tclTomMathStubsPtr->tclBN_mp_expt_d_ex) /* 67 */
 #define TclBN_mp_set_long_long \

@@ -275,7 +275,7 @@ typedef struct Namespace {
 				 * frames for this namespace that are on the
 				 * Tcl call stack. The namespace won't be
 				 * freed until activationCount becomes zero. */
-    int refCount;		/* Count of references by namespaceName
+    size_t refCount;		/* Count of references by namespaceName
 				 * objects. The namespace can't be freed until
 				 * refCount becomes zero. */
     Tcl_HashTable cmdTable;	/* Contains all the commands currently
@@ -546,7 +546,7 @@ typedef struct CommandTrace {
     struct CommandTrace *nextPtr;
 				/* Next in list of traces associated with a
 				 * particular command. */
-    int refCount;		/* Used to ensure this structure is not
+    size_t refCount;		/* Used to ensure this structure is not
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
@@ -619,7 +619,7 @@ typedef struct Var {
 
 typedef struct VarInHash {
     Var var;
-    int refCount;		/* Counts number of active uses of this
+    size_t refCount;		/* Counts number of active uses of this
 				 * variable: 1 for the entry in the hash
 				 * table, 1 for each additional variable whose
 				 * linkPtr points here, 1 for each nested
@@ -951,7 +951,7 @@ typedef struct CompiledLocal {
 typedef struct Proc {
     struct Interp *iPtr;	/* Interpreter for which this command is
 				 * defined. */
-    int refCount;		/* Reference count: 1 if still present in
+    size_t refCount;		/* Reference count: 1 if still present in
 				 * command table plus 1 for each call to the
 				 * procedure that is currently active. This
 				 * structure can be freed when refCount
@@ -1068,7 +1068,7 @@ typedef struct AssocData {
  */
 
 typedef struct LocalCache {
-    int refCount;
+    size_t refCount;
     int numVars;
     Tcl_Obj *varName0;
 } LocalCache;
@@ -1230,7 +1230,7 @@ typedef struct CmdFrame {
 typedef struct CFWord {
     CmdFrame *framePtr;		/* CmdFrame to access. */
     int word;			/* Index of the word in the command. */
-    int refCount;		/* Number of times the word is on the
+    size_t refCount;		/* Number of times the word is on the
 				 * stack. */
 } CFWord;
 
@@ -1635,7 +1635,7 @@ typedef struct Command {
 				 * recreated). */
     Namespace *nsPtr;		/* Points to the namespace containing this
 				 * command. */
-    int refCount;		/* 1 if in command hashtable plus 1 for each
+    size_t refCount;		/* 1 if in command hashtable plus 1 for each
 				 * reference from a CmdName Tcl object
 				 * representing a command's name in a ByteCode
 				 * instruction sequence. This structure can be
@@ -2341,7 +2341,7 @@ typedef enum TclEolTranslation {
  */
 
 typedef struct List {
-    int refCount;
+    size_t refCount;
     int maxElemCount;		/* Total number of element array slots. */
     int elemCount;		/* Current number of list elements. */
     int canonicalFlag;		/* Set if the string representation was

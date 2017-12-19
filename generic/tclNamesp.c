@@ -402,7 +402,7 @@ Tcl_PopCallFrame(
     }
     if (framePtr->numCompiledLocals > 0) {
 	TclDeleteCompiledLocalVars(iPtr, framePtr);
-	if (--framePtr->localCachePtr->refCount == 0) {
+	if (framePtr->localCachePtr->refCount-- <= 1) {
 	    TclFreeLocalCache(interp, framePtr->localCachePtr);
 	}
 	framePtr->localCachePtr = NULL;
@@ -1052,7 +1052,7 @@ Tcl_DeleteNamespace(
 	     * Otherwise, mark it as "dead" so that it can't be used.
 	     */
 
-	    if (nsPtr->refCount == 0) {
+	    if (!nsPtr->refCount) {
 		NamespaceFree(nsPtr);
 	    } else {
 		nsPtr->flags |= NS_DEAD;
