@@ -196,6 +196,19 @@ test namespace-7.7 {Bug 1655305} -setup {
     interp delete slave
 } -result {}
 
+test namespace-7.8 {Bug ba1419303b4c} -setup {
+    namespace eval ns1 {
+	namespace ensemble create
+    }
+
+    trace add command ns1 delete {
+	namespace delete ns1
+    }
+} -body {
+    # No segmentation fault given --enable-symbols=mem. 
+    namespace delete ns1
+} -result {}
+
 test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
     catch {interp delete test_interp}
     interp create test_interp

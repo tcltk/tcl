@@ -28,7 +28,7 @@
  */
 
 #define RANDOM_INDEX(tablePtr, i) \
-    ((((i)*1103515245L) >> (tablePtr)->downShift) & (tablePtr)->mask)
+    ((((i)*1103515245UL) >> (tablePtr)->downShift) & (tablePtr)->mask)
 
 /*
  * Prototypes for the array hash key methods.
@@ -202,7 +202,7 @@ FindHashEntry(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_CreateHashEntry --
+ * CreateHashEntry --
  *
  *	Given a hash table with string keys, and a string key, find the entry
  *	with a matching key. If there is no matching entry, then create a new
@@ -230,7 +230,8 @@ CreateHashEntry(
 {
     register Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
-    size_t hash, index;
+    unsigned int hash;
+    unsigned int index;
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
@@ -349,7 +350,7 @@ Tcl_DeleteHashEntry(
     const Tcl_HashKeyType *typePtr;
     Tcl_HashTable *tablePtr;
     Tcl_HashEntry **bucketPtr;
-    size_t index;
+    unsigned int index;
 
     tablePtr = entryPtr->tablePtr;
 
@@ -756,7 +757,7 @@ AllocStringEntry(
 {
     const char *string = (const char *) keyPtr;
     Tcl_HashEntry *hPtr;
-    unsigned int size, allocsize;
+    size_t size, allocsize;
 
     allocsize = size = strlen(string) + 1;
     if (size < sizeof(hPtr->key)) {

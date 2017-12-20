@@ -966,11 +966,11 @@ declare 265 {
 declare 266 {
     void Tcl_ValidateAllMemory(const char *file, int line)
 }
-# Removed in 9.0
+# Removed in 9.0:
 #declare 267 {
 #    void Tcl_AppendResultVA(Tcl_Interp *interp, va_list argList)
 #}
-# Removed in 9.0
+# Removed in 9.0:
 #declare 268 {
 #    void Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr, va_list argList)
 #}
@@ -1002,18 +1002,18 @@ declare 273 {
 #    const char *Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
 #	    const char *version, int exact)
 #}
-# Removed in 9.0
+# Removed in 9.0:
 #declare 275 {
 #    void Tcl_SetErrorCodeVA(Tcl_Interp *interp, va_list argList)
 #}
-# Removed in 9.0
+# Removed in 9.0:
 #declare 276 {
 #    int  Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList)
 #}
 declare 277 {
     Tcl_Pid Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options)
 }
-# Removed in 9.0
+# Removed in 9.0:
 #declare 278 {
 #    TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList)
 #}
@@ -1528,9 +1528,11 @@ declare 420 {
     int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
 	    const Tcl_UniChar *uniPattern, int nocase)
 }
+# Removed in 9.0, as it is actually a macro:
 #declare 421 {
 #    Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const void *key)
 #}
+# Removed in 9.0, as it is actually a macro:
 #declare 422 {
 #    Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
 #	    const void *key, int *newPtr)
