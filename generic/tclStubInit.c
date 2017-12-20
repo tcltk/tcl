@@ -1176,8 +1176,8 @@ const TclStubs tclStubs = {
     Tcl_IsChannelExisting, /* 418 */
     Tcl_UniCharNcasecmp, /* 419 */
     Tcl_UniCharCaseMatch, /* 420 */
-    Tcl_FindHashEntry, /* 421 */
-    Tcl_CreateHashEntry, /* 422 */
+    0, /* 421 */
+    0, /* 422 */
     Tcl_InitCustomHashTable, /* 423 */
     Tcl_InitObjHashTable, /* 424 */
     Tcl_CommandTraceInfo, /* 425 */
