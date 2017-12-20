@@ -284,6 +284,9 @@ extern "C" {
 #ifndef CONST86
 #      define CONST86 CONST84
 #endif
+#ifndef CONST90
+#      define CONST90 const
+#endif
 
 /*
  * Make sure EXTERN isn't defined elsewhere.
@@ -1105,17 +1108,17 @@ typedef struct Tcl_DString {
  */
 
 #ifndef TCL_HASH_TYPE
-#  define TCL_HASH_TYPE unsigned
+#  define TCL_HASH_TYPE size_t
 #endif
 
 typedef struct Tcl_HashKeyType Tcl_HashKeyType;
 typedef struct Tcl_HashTable Tcl_HashTable;
 typedef struct Tcl_HashEntry Tcl_HashEntry;
 
-typedef TCL_HASH_TYPE (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
-typedef int (Tcl_CompareHashKeysProc) (void *keyPtr, Tcl_HashEntry *hPtr);
+typedef TCL_HASH_TYPE (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, CONST90 void *keyPtr);
+typedef int (Tcl_CompareHashKeysProc) (CONST90 void *keyPtr, Tcl_HashEntry *hPtr);
 typedef Tcl_HashEntry * (Tcl_AllocHashEntryProc) (Tcl_HashTable *tablePtr,
-	void *keyPtr);
+	CONST90 void *keyPtr);
 typedef void (Tcl_FreeHashEntryProc) (Tcl_HashEntry *hPtr);
 
 /*
@@ -2546,10 +2549,8 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * hash tables:
  */
 
-#undef  Tcl_FindHashEntry
 #define Tcl_FindHashEntry(tablePtr, key) \
 	(*((tablePtr)->findProc))(tablePtr, (const char *)(key))
-#undef  Tcl_CreateHashEntry
 #define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
 

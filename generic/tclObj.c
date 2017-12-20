@@ -224,7 +224,7 @@ static int		GetBignumFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  * Prototypes for the array hash key methods.
  */
 
-static Tcl_HashEntry *	AllocObjEntry(Tcl_HashTable *tablePtr, void *keyPtr);
+static Tcl_HashEntry *	AllocObjEntry(Tcl_HashTable *tablePtr, CONST90 void *keyPtr);
 
 /*
  * Prototypes for the CommandName object type.
@@ -3931,9 +3931,9 @@ Tcl_InitObjHashTable(
 static Tcl_HashEntry *
 AllocObjEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    void *keyPtr)		/* Key to store in the hash table entry. */
+    CONST90 void *keyPtr)		/* Key to store in the hash table entry. */
 {
-    Tcl_Obj *objPtr = keyPtr;
+    Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     Tcl_HashEntry *hPtr = ckalloc(sizeof(Tcl_HashEntry));
 
     hPtr->key.objPtr = objPtr;
@@ -3962,10 +3962,10 @@ AllocObjEntry(
 
 int
 TclCompareObjKeys(
-    void *keyPtr,		/* New key to compare. */
+    CONST90 void *keyPtr,		/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
-    Tcl_Obj *objPtr1 = keyPtr;
+    Tcl_Obj *objPtr1 = (Tcl_Obj *) keyPtr;
     Tcl_Obj *objPtr2 = (Tcl_Obj *) hPtr->key.oneWordValue;
     register const char *p1, *p2;
     register size_t l1, l2;
@@ -4052,12 +4052,12 @@ TclFreeObjEntry(
 TCL_HASH_TYPE
 TclHashObjKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    void *keyPtr)		/* Key from which to compute hash value. */
+    CONST90 void *keyPtr)		/* Key from which to compute hash value. */
 {
-    Tcl_Obj *objPtr = keyPtr;
-    int length;
-    const char *string = TclGetStringFromObj(objPtr, &length);
-    unsigned int result = 0;
+    Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
+    const char *string = TclGetString(objPtr);
+    size_t length = objPtr->length;
+    TCL_HASH_TYPE result = 0;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -4093,13 +4093,13 @@ TclHashObjKey(
      * See [tcl-Feature Request #2958832]
      */
 
-    if (length > 0) {
+    if (length) {
 	result = UCHAR(*string);
 	while (--length) {
 	    result += (result << 3) + UCHAR(*++string);
 	}
     }
-    return (TCL_HASH_TYPE) result;
+    return result;
 }
 
 /*

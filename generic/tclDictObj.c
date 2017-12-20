@@ -64,7 +64,7 @@ static void		FreeDictInternalRep(Tcl_Obj *dictPtr);
 static void		InvalidateDictChain(Tcl_Obj *dictObj);
 static int		SetDictFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfDict(Tcl_Obj *dictPtr);
-static Tcl_HashEntry *	AllocChainEntry(Tcl_HashTable *tablePtr,void *keyPtr);
+static Tcl_HashEntry *	AllocChainEntry(Tcl_HashTable *tablePtr,CONST90 void *keyPtr);
 static inline void	InitChainTable(struct Dict *dict);
 static inline void	DeleteChainTable(struct Dict *dict);
 static inline Tcl_HashEntry *CreateChainEntry(struct Dict *dict,
@@ -227,9 +227,9 @@ typedef struct {
 static Tcl_HashEntry *
 AllocChainEntry(
     Tcl_HashTable *tablePtr,
-    void *keyPtr)
+    CONST90 void *keyPtr)
 {
-    Tcl_Obj *objPtr = keyPtr;
+    Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     ChainEntry *cPtr;
 
     cPtr = ckalloc(sizeof(ChainEntry));
