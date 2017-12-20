@@ -14,13 +14,6 @@
 #include "tclInt.h"
 
 /*
- * Prevent macros from clashing with function definitions.
- */
-
-#undef Tcl_FindHashEntry
-#undef Tcl_CreateHashEntry
-
-/*
  * When there are this many entries per bucket, on average, rebuild the hash
  * table to make it larger.
  */
@@ -200,7 +193,7 @@ Tcl_InitCustomHashTable(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_FindHashEntry --
+ * FindHashEntry --
  *
  *	Given a hash table find the entry with a matching key.
  *
@@ -214,14 +207,6 @@ Tcl_InitCustomHashTable(
  *----------------------------------------------------------------------
  */
 
-Tcl_HashEntry *
-Tcl_FindHashEntry(
-    Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
-    const void *key)		/* Key to use to find matching entry. */
-{
-    return (*((tablePtr)->findProc))(tablePtr, key);
-}
-
 static Tcl_HashEntry *
 FindHashEntry(
     Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
@@ -234,7 +219,7 @@ FindHashEntry(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_CreateHashEntry --
+ * CreateHashEntry --
  *
  *	Given a hash table with string keys, and a string key, find the entry
  *	with a matching key. If there is no matching entry, then create a new
@@ -251,17 +236,6 @@ FindHashEntry(
  *
  *----------------------------------------------------------------------
  */
-
-Tcl_HashEntry *
-Tcl_CreateHashEntry(
-    Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
-    const void *key,		/* Key to use to find or create matching
-				 * entry. */
-    int *newPtr)		/* Store info here telling whether a new entry
-				 * was created. */
-{
-    return (*((tablePtr)->createProc))(tablePtr, key, newPtr);
-}
 
 static Tcl_HashEntry *
 CreateHashEntry(
