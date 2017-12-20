@@ -2538,10 +2538,8 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * hash tables:
  */
 
-#undef  Tcl_FindHashEntry
 #define Tcl_FindHashEntry(tablePtr, key) \
 	(*((tablePtr)->findProc))(tablePtr, (const char *)(key))
-#undef  Tcl_CreateHashEntry
 #define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
 
