@@ -916,6 +916,11 @@ Tcl_DeleteNamespace(
     Command *cmdPtr;
 
     /*
+     * Ensure that this namespace doesn't get deallocated in the meantime.
+     */
+    nsPtr->refCount++;
+
+    /*
      * Give anyone interested - notably TclOO - a chance to use this namespace
      * normally despite the fact that the namespace is going to go. Allows the
      * calling of destructors. Will only be called once (unless re-established
@@ -1047,16 +1052,8 @@ Tcl_DeleteNamespace(
 #endif
 	    Tcl_DeleteHashTable(&nsPtr->cmdTable);
 
-	    /*
-	     * If the reference count is 0, then discard the namespace.
-	     * Otherwise, mark it as "dead" so that it can't be used.
-	     */
-
-	    if (!nsPtr->refCount) {
-		NamespaceFree(nsPtr);
-	    } else {
-		nsPtr->flags |= NS_DEAD;
-	    }
+	    nsPtr ->flags |= NS_DEAD;
+	    TclNsDecrRefCount(nsPtr);
 	} else {
 	    /*
 	     * Restore the ::errorInfo and ::errorCode traces.
