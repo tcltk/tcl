@@ -394,7 +394,7 @@ MSG = ^
 
 
 # If INSTALLDIR set to tcl installation root dir then reset to the
-# lib dir for installing extensions 
+# lib dir for installing extensions
 !if exist("$(_INSTALLDIR)\include\tcl.h")
 _INSTALLDIR=$(_INSTALLDIR)\lib
 !endif
@@ -547,7 +547,7 @@ NMAKEHLPC = $(_TCLDIR)\win\nmakehlp.c
 # The following macros are set:
 # OPTIMIZATIONS - the compiler flags to be used for optimized builds
 # DEBUGFLAGS - the compiler flags to be used for debug builds
-# LINKERFLAGS - Flags passed to the linker 
+# LINKERFLAGS - Flags passed to the linker
 #
 # Note that these are the compiler settings *available*, not those
 # that will be *used*. The latter depends on the OPTS macro settings
@@ -1132,8 +1132,8 @@ tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 !endif # $(DOING_TK) || $(NEED_TK)
 
 # Various output paths
-PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
-PRJLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
+PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX:t=).lib
+PRJLIBNAME	= $(PROJECT)$(VERSION)$(SUFX:t=).$(EXT)
 PRJLIB		= $(OUT_DIR)\$(PRJLIBNAME)
 
 PRJSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
@@ -1270,7 +1270,7 @@ USE_WIDECHAR_API = 0
 !endif
 
 !if $(USE_WIDECHAR_API)
-COMPILERFLAGS = $(COMPILERFLAGS) /DUNICODE /D_UNICODE 
+COMPILERFLAGS = $(COMPILERFLAGS) /DUNICODE /D_UNICODE
 !endif
 
 # Like the TEA system only set this non empty for non-Tk extensions
@@ -1280,7 +1280,7 @@ COMPILERFLAGS = $(COMPILERFLAGS) /DUNICODE /D_UNICODE
 PKGNAMEFLAGS = -DPACKAGE_NAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
                -DPACKAGE_TCLNAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
                -DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
-               -DMODULE_SCOPE=extern 
+               -DMODULE_SCOPE=extern
 !endif
 
 # crt picks the C run time based on selected OPTS
@@ -1373,7 +1373,7 @@ pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) -DBUILD_$(PROJECT)
 # compiled with another VC version. Check for this and fix accordingly.
 stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) -Zl -DSTATIC_BUILD $(INCLUDES)
 
-# Link flags 
+# Link flags
 
 !if $(DEBUG)
 ldebug	= -debug -debugtype:cv
@@ -1389,23 +1389,11 @@ ldebug	= $(ldebug) -debug -debugtype:cv
 ldebug= $(ldebug) -profile
 !endif
 
-### Declarations common to all linker versions 
+### Declarations common to all linker versions
 lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
 
 !if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
 lflags	= $(lflags) -nodefaultlib:libucrt.lib
-!endif
-
-# Old linkers (Visual C++ 6 in particular) will link for fast loading
-# on Win98. Since we do not support Win98 any more, we specify nowin98
-# as recommended for NT and later. However, this is only required by
-# IX86 on older compilers and only needed if we are not doing a static build.
-
-!if "$(MACHINE)" == "IX86" && !$(STATIC_BUILD)
-!if [nmakehlp -l -opt:nowin98 $(LINKER_TESTFLAGS)]
-# Align sections for PE size savings.
-lflags	= $(lflags) -opt:nowin98
-!endif
 !endif
 
 dlllflags = $(lflags) -dll
@@ -1452,9 +1440,9 @@ RESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
 	    -DCOMMAVERSION=$(DOTVERSION:.=,),0 \
 	    -DDOTVERSION=\"$(DOTVERSION)\" \
 	    -DVERSION=\"$(VERSION)\" \
-	    -DSUFX=\"$(SUFX)\" \
-            -DPROJECT=\"$(PROJECT)\" \
-            -DPRJLIBNAME=\"$(PRJLIBNAME)\" 
+	    -DSUFX=\"$(SUFX:t=)\" \
+	    -DPROJECT=\"$(PROJECT)\" \
+	    -DPRJLIBNAME=\"$(PRJLIBNAME)\"
 
 !ifndef DEFAULT_BUILD_TARGET
 DEFAULT_BUILD_TARGET = $(PROJECT)
@@ -1551,7 +1539,7 @@ default-shell: default-setup $(PROJECT)
 	@if exist $(LIBDIR) for %f in ("$(LIBDIR)\*.tcl") do @$(COPY) %f "$(OUT_DIR)"
 	$(DEBUGGER) $(TCLSH)
 
-# Generation of Windows version resource 
+# Generation of Windows version resource
 !ifdef RCFILE
 
 # Note: don't use $** in below rule because there may be other dependencies
@@ -1590,7 +1578,7 @@ BEGIN
             VALUE "OriginalFilename", PRJLIBNAME
             VALUE "FileVersion",      DOTVERSION
             VALUE "ProductName",      "Package " PROJECT " for Tcl"
-            VALUE "ProductVersion",   DOTVERSION 
+            VALUE "ProductVersion",   DOTVERSION
         END
     END
     BLOCK "VarFileInfo"
