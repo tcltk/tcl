@@ -265,7 +265,7 @@ typedef struct Namespace {
 				 * strings; values have type (Namespace *). If
 				 * NULL, there are no children. */
 #endif
-    size_t nsId;		/* Unique id for the namespace. */
+    unsigned long nsId;		/* Unique id for the namespace. */
     Tcl_Interp *interp;		/* The interpreter containing this
 				 * namespace. */
     int flags;			/* OR-ed combination of the namespace status
@@ -274,7 +274,7 @@ typedef struct Namespace {
 				 * frames for this namespace that are on the
 				 * Tcl call stack. The namespace won't be
 				 * freed until activationCount becomes zero. */
-    int refCount;		/* Count of references by namespaceName
+    unsigned int refCount;	/* Count of references by namespaceName
 				 * objects. The namespace can't be freed until
 				 * refCount becomes zero. */
     Tcl_HashTable cmdTable;	/* Contains all the commands currently
@@ -299,12 +299,12 @@ typedef struct Namespace {
 				 * registered using "namespace export". */
     int maxExportPatterns;	/* Mumber of export patterns for which space
 				 * is currently allocated. */
-    size_t cmdRefEpoch;		/* Incremented if a newly added command
+    unsigned int cmdRefEpoch;	/* Incremented if a newly added command
 				 * shadows a command for which this namespace
 				 * has already cached a Command* pointer; this
 				 * causes all its cached Command* pointers to
 				 * be invalidated. */
-    size_t resolverEpoch;	/* Incremented whenever (a) the name
+    unsigned int resolverEpoch;	/* Incremented whenever (a) the name
 				 * resolution rules change for this namespace
 				 * or (b) a newly added command shadows a
 				 * command that is compiled to bytecodes. This
@@ -331,7 +331,7 @@ typedef struct Namespace {
 				 * LookupCompiledLocal to resolve variable
 				 * references within the namespace at compile
 				 * time. */
-    size_t exportLookupEpoch;	/* Incremented whenever a command is added to
+    unsigned int exportLookupEpoch;	/* Incremented whenever a command is added to
 				 * a namespace, removed from a namespace or
 				 * the exports of a namespace are changed.
 				 * Allows TIP#112-driven command lists to be
@@ -432,7 +432,7 @@ typedef struct EnsembleConfig {
 				 * if the command has been deleted (or never
 				 * existed; the global namespace never has an
 				 * ensemble command.) */
-    size_t epoch;		/* The epoch at which this ensemble's table of
+    unsigned int epoch;		/* The epoch at which this ensemble's table of
 				 * exported commands is valid. */
     char **subcommandArrayPtr;	/* Array of ensemble subcommand names. At all
 				 * consistent points, this will have the same
@@ -545,7 +545,7 @@ typedef struct CommandTrace {
     struct CommandTrace *nextPtr;
 				/* Next in list of traces associated with a
 				 * particular command. */
-    int refCount;		/* Used to ensure this structure is not
+    unsigned int refCount;	/* Used to ensure this structure is not
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
@@ -618,7 +618,7 @@ typedef struct Var {
 
 typedef struct VarInHash {
     Var var;
-    int refCount;		/* Counts number of active uses of this
+    unsigned int refCount;	/* Counts number of active uses of this
 				 * variable: 1 for the entry in the hash
 				 * table, 1 for each additional variable whose
 				 * linkPtr points here, 1 for each nested
@@ -950,7 +950,7 @@ typedef struct CompiledLocal {
 typedef struct Proc {
     struct Interp *iPtr;	/* Interpreter for which this command is
 				 * defined. */
-    int refCount;		/* Reference count: 1 if still present in
+    unsigned int refCount;	/* Reference count: 1 if still present in
 				 * command table plus 1 for each call to the
 				 * procedure that is currently active. This
 				 * structure can be freed when refCount
@@ -1067,7 +1067,7 @@ typedef struct AssocData {
  */
 
 typedef struct LocalCache {
-    int refCount;
+    unsigned int refCount;
     int numVars;
     Tcl_Obj *varName0;
 } LocalCache;
@@ -1229,7 +1229,7 @@ typedef struct CmdFrame {
 typedef struct CFWord {
     CmdFrame *framePtr;		/* CmdFrame to access. */
     int word;			/* Index of the word in the command. */
-    int refCount;		/* Number of times the word is on the
+    unsigned int refCount;	/* Number of times the word is on the
 				 * stack. */
 } CFWord;
 
@@ -1634,12 +1634,12 @@ typedef struct Command {
 				 * recreated). */
     Namespace *nsPtr;		/* Points to the namespace containing this
 				 * command. */
-    int refCount;		/* 1 if in command hashtable plus 1 for each
+    unsigned int refCount;	/* 1 if in command hashtable plus 1 for each
 				 * reference from a CmdName Tcl object
 				 * representing a command's name in a ByteCode
 				 * instruction sequence. This structure can be
 				 * freed when refCount becomes zero. */
-    size_t cmdEpoch;		/* Incremented to invalidate any references
+    unsigned int cmdEpoch;	/* Incremented to invalidate any references
 				 * that point to this command when it is
 				 * renamed, deleted, hidden, or exposed. */
     CompileProc *compileProc;	/* Procedure called to compile command. NULL
@@ -2384,7 +2384,7 @@ typedef enum TclEolTranslation {
  */
 
 typedef struct List {
-    int refCount;
+    unsigned int refCount;
     int maxElemCount;		/* Total number of element array slots. */
     int elemCount;		/* Current number of list elements. */
     int canonicalFlag;		/* Set if the string representation was
@@ -2626,7 +2626,7 @@ typedef Tcl_ObjCmdProc *TclObjCmdProcType;
  *----------------------------------------------------------------
  */
 
-typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, size_t *lengthPtr,
+typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, unsigned int *lengthPtr,
 	Tcl_Encoding *encodingPtr);
 
 /*
@@ -2638,9 +2638,9 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, size_t *lengthPtr,
  */
 
 typedef struct ProcessGlobalValue {
-    size_t epoch;		/* Epoch counter to detect changes in the
+    unsigned int epoch;		/* Epoch counter to detect changes in the
 				 * master value. */
-    size_t numBytes;		/* Length of the master string. */
+    unsigned int numBytes;	/* Length of the master string. */
     char *value;		/* The master string value. */
     Tcl_Encoding encoding;	/* system encoding when master string was
 				 * initialized. */
@@ -2960,8 +2960,7 @@ MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
 MODULE_SCOPE Tcl_Obj *const *	TclFetchEnsembleRoot(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, int objc, int *objcPtr);
-Tcl_Namespace * 	TclEnsureNamespace(
-			    Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Namespace * 	TclEnsureNamespace(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr);
 
 MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
@@ -3125,7 +3124,7 @@ MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    int stackSize, int flags);
 MODULE_SCOPE int	TclpFindVariable(const char *name, int *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
-			    size_t *lengthPtr, Tcl_Encoding *encodingPtr);
+			    unsigned int *lengthPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE void	TclpInitLock(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
 MODULE_SCOPE void	TclpInitUnlock(void);
