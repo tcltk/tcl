@@ -559,7 +559,7 @@ TclHideLiteral(
 
     bytes = TclGetString(newObjPtr);
     length = newObjPtr->length;
-    localHash = (HashString(bytes, length) & localTablePtr->mask);
+    localHash = HashString(bytes, length) & localTablePtr->mask;
     nextPtrPtr = &localTablePtr->buckets[localHash];
 
     for (entryPtr=*nextPtrPtr ; entryPtr!=NULL ; entryPtr=*nextPtrPtr) {
@@ -615,7 +615,7 @@ TclAddLiteralObj(
     lPtr = &envPtr->literalArrayPtr[objIndex];
     lPtr->objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
-    lPtr->refCount = (size_t) -1; /* i.e., unused */
+    lPtr->refCount = (size_t)-1;	/* i.e., unused */
     lPtr->nextPtr = NULL;
 
     if (litPtrPtr) {
