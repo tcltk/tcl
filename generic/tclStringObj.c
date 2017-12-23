@@ -421,13 +421,14 @@ Tcl_GetCharLength(
      * Optimize the case where we're really dealing with a bytearray object;
      * we don't need to convert to a string to perform the get-length operation.
      *
-     * NOTE that we do not need the bytearray to be "pure".  A ByteArray value
-     * with a string rep cannot be trusted to represent the same value as the
-     * string rep, but it *can* be trusted to have the same character length
-     * as the string rep, which is all this routine cares about.
+     * Starting in Tcl 8.7, we check for a "pure" bytearray, because the
+     * machinery behind that test is using a proper bytearray ObjType.  We
+     * could also compute length of an improper bytearray without shimmering
+     * but there's no value in that. We *want* to shimmer an improper bytearray
+     * because improper bytearrays have worthless internal reps.
      */
 
-    if (objPtr->typePtr == &tclByteArrayType) {
+    if (TclIsPureByteArray(objPtr)) {
 	int length;
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
