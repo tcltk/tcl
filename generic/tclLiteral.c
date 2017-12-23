@@ -186,7 +186,7 @@ TclCreateLiteral(
 {
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     LiteralEntry *globalPtr;
-    int globalHash;
+    unsigned int globalHash;
     Tcl_Obj *objPtr;
 
     /*
@@ -393,7 +393,8 @@ TclRegisterLiteral(
     LiteralEntry *globalPtr, *localPtr;
     Tcl_Obj *objPtr;
     unsigned hash;
-    int localHash, objIndex, new;
+    unsigned int localHash;
+    int objIndex, new;
     Namespace *nsPtr;
 
     if (length < 0) {
@@ -537,7 +538,8 @@ TclHideLiteral(
 {
     LiteralEntry **nextPtrPtr, *entryPtr, *lPtr;
     LiteralTable *localTablePtr = &envPtr->localLitTable;
-    int localHash, length;
+    unsigned int localHash;
+    int length;
     const char *bytes;
     Tcl_Obj *newObjPtr;
 
@@ -556,7 +558,7 @@ TclHideLiteral(
     lPtr->objPtr = newObjPtr;
 
     bytes = TclGetStringFromObj(newObjPtr, &length);
-    localHash = (HashString(bytes, length) & localTablePtr->mask);
+    localHash = HashString(bytes, length) & localTablePtr->mask;
     nextPtrPtr = &localTablePtr->buckets[localHash];
 
     for (entryPtr=*nextPtrPtr ; entryPtr!=NULL ; entryPtr=*nextPtrPtr) {
@@ -612,7 +614,7 @@ TclAddLiteralObj(
     lPtr = &envPtr->literalArrayPtr[objIndex];
     lPtr->objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
-    lPtr->refCount = -1;	/* i.e., unused */
+    lPtr->refCount = (size_t)-1;	/* i.e., unused */
     lPtr->nextPtr = NULL;
 
     if (litPtrPtr) {
@@ -809,7 +811,8 @@ TclReleaseLiteral(
     LiteralTable *globalTablePtr;
     register LiteralEntry *entryPtr, *prevPtr;
     const char *bytes;
-    int length, index;
+    int length;
+    unsigned int index;
 
     if (iPtr == NULL) {
 	goto done;
@@ -828,15 +831,13 @@ TclReleaseLiteral(
     for (prevPtr=NULL, entryPtr=globalTablePtr->buckets[index];
 	    entryPtr!=NULL ; prevPtr=entryPtr, entryPtr=entryPtr->nextPtr) {
 	if (entryPtr->objPtr == objPtr) {
-	    entryPtr->refCount--;
-
 	    /*
 	     * If the literal is no longer being used by any ByteCode, delete
 	     * the entry then remove the reference corresponding to the global
 	     * literal table entry (decrement the ref count of the object).
 	     */
 
-	    if (entryPtr->refCount == 0) {
+	    if (entryPtr->refCount-- <= 1) {
 		if (prevPtr == NULL) {
 		    globalTablePtr->buckets[index] = entryPtr->nextPtr;
 		} else {
@@ -954,8 +955,8 @@ RebuildLiteralTable(
     register LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     const char *bytes;
-    unsigned int oldSize;
-    int count, index, length;
+    unsigned int oldSize, index;
+    int count, length;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;
