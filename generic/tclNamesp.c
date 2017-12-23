@@ -1047,7 +1047,6 @@ Tcl_DeleteNamespace(
 	    Tcl_DeleteHashTable(&nsPtr->cmdTable);
 
 	    nsPtr ->flags |= NS_DEAD;
-	    TclNsDecrRefCount(nsPtr);
 	} else {
 	    /*
 	     * Restore the ::errorInfo and ::errorCode traces.
@@ -1064,6 +1063,7 @@ Tcl_DeleteNamespace(
 	    nsPtr->flags &= ~(NS_DYING|NS_KILLED);
 	}
     }
+    TclNsDecrRefCount(nsPtr);
 }
 
 /*
