@@ -627,9 +627,6 @@ ${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS}
 	@MAKE_LIB@
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
-	@if test "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll"; then \
-	    (cd ${TOP_DIR}/win; ${MAKE} winextensions); \
-	fi
 	rm -f $@
 	@MAKE_STUB_LIB@
 

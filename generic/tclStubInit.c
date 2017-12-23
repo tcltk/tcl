@@ -85,7 +85,7 @@ static const char *TclGetStartupScriptFileName(void)
     return Tcl_GetString(path);
 }
 
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(_WIN32)
 #undef TclWinNToHS
 #define TclWinNToHS winNToHS
 static unsigned short TclWinNToHS(unsigned short ns) {
@@ -99,7 +99,7 @@ static unsigned short TclWinNToHS(unsigned short ns) {
 #   define TclUnixOpenTemporaryFile 0
 #   define TclpReaddir 0
 #   define TclpIsAtty 0
-#elif defined(__CYGWIN__)
+#elif 0
 #   define TclpIsAtty TclPlatIsAtty
 #   define TclWinSetInterfaces (void (*) (int)) doNothing
 #   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
@@ -570,7 +570,7 @@ static const TclIntStubs tclIntStubs = {
 static const TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     TclGetAndDetachPids, /* 0 */
     TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
@@ -603,7 +603,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinCPUID, /* 29 */
     TclUnixOpenTemporaryFile, /* 30 */
 #endif /* UNIX */
-#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) /* WIN */
     TclWinConvertError, /* 0 */
     TclWinConvertWSAError, /* 1 */
     TclWinGetServByName, /* 2 */
@@ -674,7 +674,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
 #endif /* WIN */

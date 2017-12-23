@@ -1874,7 +1874,7 @@ FileAttrIsOwnedCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-#ifdef __CYGWIN__
+#if 0
 #define geteuid() (short)(geteuid)()
 #endif
 #if !defined(_WIN32)

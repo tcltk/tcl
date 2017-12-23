@@ -785,7 +785,7 @@ void
 TclpSetVariables(
     Tcl_Interp *interp)
 {
-#ifdef __CYGWIN__
+#if 0
     SYSTEM_INFO sysInfo;
     static OSVERSIONINFOW osInfo;
     static int osInfoInitialized = 0;
@@ -882,7 +882,7 @@ TclpSetVariables(
 #endif
 
     unameOK = 0;
-#ifdef __CYGWIN__
+#if 0
 	unameOK = 1;
     if (!osInfoInitialized) {
 	HANDLE handle = GetModuleHandleW(L"NTDLL");

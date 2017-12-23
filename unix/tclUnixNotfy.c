@@ -93,7 +93,7 @@ typedef struct ThreadSpecificData {
 				 * from these pointers. You must hold the
 				 * notifierMutex lock before accessing these
 				 * fields. */
-#ifdef __CYGWIN__
+#if 0
     void *event;     /* Any other thread alerts a notifier
 	 * that an event is ready to be processed
 	 * by sending this event. */
@@ -209,7 +209,7 @@ static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
  * Import of Windows API when building threaded with Cygwin.
  */
 
-#if defined(TCL_THREADS) && defined(__CYGWIN__)
+#if 0
 typedef struct {
     void *hwnd;
     unsigned int *message;
@@ -336,7 +336,7 @@ Tcl_InitNotifier(void)
 	 * Initialize thread specific condition variable for this thread.
 	 */
 	if (tsdPtr->waitCVinitialized == 0) {
-#ifdef __CYGWIN__
+#if 0
 	    WNDCLASS class;
 
 	    class.style = 0;
@@ -454,7 +454,7 @@ Tcl_FinalizeNotifier(
 	 * Clean up any synchronization objects in the thread local storage.
 	 */
 
-#ifdef __CYGWIN__
+#if 0
 	DestroyWindow(tsdPtr->hwnd);
 	CloseHandle(tsdPtr->event);
 #else /* __CYGWIN__ */
@@ -500,7 +500,7 @@ Tcl_AlertNotifier(
 	pthread_mutex_lock(&notifierMutex);
 	tsdPtr->eventReady = 1;
 
-#   ifdef __CYGWIN__
+#   if 0
 	PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
 #   else
 	pthread_cond_broadcast(&tsdPtr->waitCV);
@@ -813,7 +813,7 @@ FileHandlerEventProc(
     return 1;
 }
 
-#if defined(TCL_THREADS) && defined(__CYGWIN__)
+#if 0
 
 static DWORD __stdcall
 NotifierProc(
@@ -868,7 +868,7 @@ Tcl_WaitForEvent(
 	Tcl_Time vTime;
 #ifdef TCL_THREADS
 	int waitForFiles;
-#   ifdef __CYGWIN__
+#   if 0
 	MSG msg;
 #   endif /* __CYGWIN__ */
 #else
@@ -984,7 +984,7 @@ Tcl_WaitForEvent(
 	FD_ZERO(&tsdPtr->readyMasks.exception);
 
 	if (!tsdPtr->eventReady) {
-#ifdef __CYGWIN__
+#if 0
 	    if (!PeekMessageW(&msg, NULL, 0, 0, 0)) {
 		DWORD timeout;
 
@@ -1014,7 +1014,7 @@ Tcl_WaitForEvent(
 	}
 	tsdPtr->eventReady = 0;
 
-#ifdef __CYGWIN__
+#if 0
 	while (PeekMessageW(&msg, NULL, 0, 0, 0)) {
 	    /*
 	     * Retrieve and dispatch the message.
@@ -1303,7 +1303,7 @@ NotifierThreadProc(
 		    tsdPtr->onList = 0;
 		    tsdPtr->pollState = 0;
 		}
-#ifdef __CYGWIN__
+#if 0
 		PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
 #else /* __CYGWIN__ */
 		pthread_cond_broadcast(&tsdPtr->waitCV);
@@ -1453,7 +1453,7 @@ AtForkChild(void)
 	     * The tsdPtr from before the fork is copied as well.  But since
 	     * we are paranoic, we don't trust its condvar and reset it.
 	     */
-#ifdef __CYGWIN__
+#if 0
 	    DestroyWindow(tsdPtr->hwnd);
 	    tsdPtr->hwnd = CreateWindowExW(NULL, NotfyClassName,
 		    NotfyClassName, 0, 0, 0, 0, 0, NULL, NULL,

@@ -40,7 +40,7 @@ TclpFindExecutable(
 				 * (native). */
 {
     Tcl_Encoding encoding;
-#ifdef __CYGWIN__
+#if 0
     int length;
     char buf[PATH_MAX * 2];
     char name[PATH_MAX * TCL_UTF_MAX + 1];
@@ -1185,7 +1185,7 @@ TclpUtime(
     return utime(Tcl_FSGetNativePath(pathPtr), tval);
 }
 
-#ifdef __CYGWIN__
+#if 0
 
 int
 TclOSstat(

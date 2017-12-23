@@ -91,7 +91,7 @@ static int		SetPermissionsAttribute(Tcl_Interp *interp,
 			    Tcl_Obj *attributePtr);
 static int		GetModeFromPermString(Tcl_Interp *interp,
 			    const char *modeStringPtr, mode_t *modePtr);
-#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE) || defined(__CYGWIN__)
+#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
 static int		GetUnixFileAttributes(Tcl_Interp *interp, int objIndex,
 			    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr);
 static int		SetUnixFileAttributes(Tcl_Interp *interp, int objIndex,
@@ -124,19 +124,10 @@ extern const char *const tclpFileAttrStrings[];
 
 #else /* !DJGPP */
 enum {
-#if defined(__CYGWIN__)
-    UNIX_ARCHIVE_ATTRIBUTE,
-#endif
     UNIX_GROUP_ATTRIBUTE,
-#if defined(__CYGWIN__)
-    UNIX_HIDDEN_ATTRIBUTE,
-#endif
     UNIX_OWNER_ATTRIBUTE, UNIX_PERMISSIONS_ATTRIBUTE,
-#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE) || defined(__CYGWIN__)
+#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
     UNIX_READONLY_ATTRIBUTE,
-#endif
-#if defined(__CYGWIN__)
-    UNIX_SYSTEM_ATTRIBUTE,
 #endif
 #ifdef MAC_OSX_TCL
     MACOSX_CREATOR_ATTRIBUTE, MACOSX_TYPE_ATTRIBUTE, MACOSX_HIDDEN_ATTRIBUTE,
@@ -147,19 +138,10 @@ enum {
 
 MODULE_SCOPE const char *const tclpFileAttrStrings[];
 const char *const tclpFileAttrStrings[] = {
-#if defined(__CYGWIN__)
-    "-archive",
-#endif
     "-group",
-#if defined(__CYGWIN__)
-    "-hidden",
-#endif
     "-owner", "-permissions",
-#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE) || defined(__CYGWIN__)
+#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
     "-readonly",
-#endif
-#if defined(__CYGWIN__)
-    "-system",
 #endif
 #ifdef MAC_OSX_TCL
     "-creator", "-type", "-hidden", "-rsrclength",
@@ -169,19 +151,10 @@ const char *const tclpFileAttrStrings[] = {
 
 MODULE_SCOPE const TclFileAttrProcs tclpFileAttrProcs[];
 const TclFileAttrProcs tclpFileAttrProcs[] = {
-#if defined(__CYGWIN__)
-    {GetUnixFileAttributes, SetUnixFileAttributes},
-#endif
     {GetGroupAttribute, SetGroupAttribute},
-#if defined(__CYGWIN__)
-    {GetUnixFileAttributes, SetUnixFileAttributes},
-#endif
     {GetOwnerAttribute, SetOwnerAttribute},
     {GetPermissionsAttribute, SetPermissionsAttribute},
-#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE) || defined(__CYGWIN__)
-    {GetUnixFileAttributes, SetUnixFileAttributes},
-#endif
-#if defined(__CYGWIN__)
+#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
     {GetUnixFileAttributes, SetUnixFileAttributes},
 #endif
 #ifdef MAC_OSX_TCL
@@ -2275,7 +2248,7 @@ DefaultTempDir(void)
     return TCL_TEMPORARY_FILE_DIRECTORY;
 }
 
-#if defined(__CYGWIN__)
+#if 0
 
 static void
 StatError(

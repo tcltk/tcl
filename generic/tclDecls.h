@@ -3856,7 +3856,7 @@ extern const TclStubs *tclStubsPtr;
 	Tcl_UpVar2(interp, frameName, varName, NULL, localName, flags)
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
-#   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)
+#   if 0
 /* On Cygwin64, long is 64-bit while on Win64 long is 32-bit. Therefore
  * we have to make sure that all stub entries on Cygwin64 follow the
  * Win64 signature. Cygwin64 stubbed extensions cannot use those stub
