@@ -954,9 +954,11 @@ Tcl_CreateInterp(void)
 
     Tcl_SetVar2(interp, "tcl_patchLevel", NULL, TCL_PATCH_LEVEL, TCL_GLOBAL_ONLY);
     Tcl_SetVar2(interp, "tcl_version", NULL, TCL_VERSION, TCL_GLOBAL_ONLY);
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
     Tcl_TraceVar2(interp, "tcl_precision", NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    TclPrecTraceProc, NULL);
+#endif /* !TCL_NO_DEPRECATED */
     TclpSetVariables(interp);
 
 #ifdef TCL_THREADS
@@ -4607,7 +4609,7 @@ TEOV_Exception(
 	if (result == TCL_RETURN) {
 	    result = TclUpdateReturnInfo(iPtr);
 	}
-	if ((result != TCL_ERROR) && !allowExceptions) {
+	if ((result != TCL_OK) && (result != TCL_ERROR) && !allowExceptions) {
 	    ProcessUnexpectedResult(interp, result);
 	    result = TCL_ERROR;
 	}
@@ -4788,7 +4790,7 @@ TEOV_RunEnterTraces(
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr = *cmdPtrPtr;
-    size_t newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
+    unsigned int newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
     int length, traceCode = TCL_OK;
     const char *command = TclGetStringFromObj(commandPtr, &length);
 

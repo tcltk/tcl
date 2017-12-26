@@ -28,20 +28,33 @@ macro to the name of the project makefile.
 !error The rules-ext.vc file is not intended for Tcl itself.
 !endif
 
+# We extract version numbers using the nmakehlp program. For now use
+# the local copy of nmakehlp. Once we locate Tcl, we will use that
+# one if it is newer.
+!if [$(CC) -nologo "nmakehlp.c" -link -subsystem:console > nul]
+!endif
+
 # First locate the Tcl directory that we are working with.
-!ifdef TCLDIR
+!if "$(TCLDIR)" != ""
 
 _RULESDIR = $(TCLDIR:/=\)
 
 !else
 
 # If an installation path is specified, that is also the Tcl directory.
-# Also, tk never builds against an installed Tcl, it needs Tcl sources
+# Also Tk never builds against an installed Tcl, it needs Tcl sources
 !if defined(INSTALLDIR) && "$(PROJECT)" != "tk"
 _RULESDIR=$(INSTALLDIR:/=\)
 !else
+# Locate Tcl sources
+!if [echo _RULESDIR = \> nmakehlp.out] \
+   || [nmakehlp -L generic\tcl.h >> nmakehlp.out]
 _RULESDIR = ..\..\tcl
+!else
+!include nmakehlp.out
 !endif
+
+!endif # defined(INSTALLDIR)....
 
 !endif # ifndef TCLDIR
 
@@ -62,10 +75,6 @@ _RULESDIR = .
 # nmake support files, need to compare the versions and pick newer.
 
 !if exist("rules.vc") # The extension has its own copy
-
-# We extract version numbers using the nmakehlp program.
-!if [$(CC) -nologo "$(_RULESDIR)\nmakehlp.c" -link -subsystem:console > nul]
-!endif
 
 !if [echo TCL_RULES_MAJOR = \> versions.vc] \
    && [nmakehlp -V "$(_RULESDIR)\rules.vc" RULES_VERSION_MAJOR >> versions.vc]
