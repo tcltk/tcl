@@ -619,8 +619,7 @@ proc auto_execok name {
     set auto_execs($name) ""
 
     set shellBuiltins [list assoc cls copy date del dir echo erase ftype \
-                           md mkdir mklink move rd ren rename rmdir start \
-                           time type ver vol]
+	    md mkdir mklink move rd ren rename rmdir start time type ver vol]
     if {[info exists env(PATHEXT)]} {
 	# Add an initial ; to have the {} extension check first.
 	set execExtensions [split ";$env(PATHEXT)" ";"]
@@ -654,10 +653,7 @@ proc auto_execok name {
 	set windir $env(WINDIR)
     }
     if {[info exists windir]} {
-	if {$tcl_platform(os) eq "Windows NT"} {
-	    append path "$windir/system32;"
-	}
-	append path "$windir/system;$windir;"
+	append path "$windir/system32;$windir/system;$windir;"
     }
 
     foreach var {PATH Path path} {
