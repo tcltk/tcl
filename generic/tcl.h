@@ -2427,37 +2427,14 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #   define attemptckrealloc Tcl_AttemptRealloc
 #endif
 
-#ifdef TCL_MEM_DEBUG
-
-#   define Tcl_Alloc(x) \
-    (Tcl_DbCkalloc((x), __FILE__, __LINE__))
-#   define Tcl_Free(x) \
-    Tcl_DbCkfree((x), __FILE__, __LINE__)
-#   define Tcl_Realloc(x,y) \
-    (Tcl_DbCkrealloc((x), (y), __FILE__, __LINE__))
-#   define Tcl_AttemptAlloc(x) \
-    (Tcl_AttemptDbCkalloc((x), __FILE__, __LINE__))
-#   define Tcl_AttemptRealloc(x,y) \
-    (Tcl_AttemptDbCkrealloc((x), (y), __FILE__, __LINE__))
-
-#else /* !TCL_MEM_DEBUG */
+#ifndef TCL_MEM_DEBUG
 
 /*
- * If we are not using the debugging allocator, we should call the Tcl_MemAlloc,
+ * If we are not using the debugging allocator, we should call the Tcl_Alloc,
  * et al. routines in order to guarantee that every module is using the same
  * memory allocator both inside and outside of the Tcl library.
  */
 
-#   define Tcl_Alloc \
-    Tcl_MemAlloc
-#   define Tcl_Free \
-    Tcl_MemFree
-#   define Tcl_Realloc \
-    Tcl_MemRealloc
-#   define Tcl_AttemptAlloc \
-    Tcl_AttemptMemAlloc
-#   define Tcl_AttemptRealloc \
-    Tcl_AttemptMemRealloc
 #   undef  Tcl_InitMemory
 #   define Tcl_InitMemory(x)
 #   undef  Tcl_DumpActiveMemory

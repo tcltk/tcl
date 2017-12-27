@@ -4862,9 +4862,9 @@ typedef struct NRE_callback {
 #include "tclTomMathDecls.h"
 
 #if !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
-#define Tcl_AttemptMemAlloc(size)        TclpAlloc(size)
-#define Tcl_AttemptMemRealloc(ptr, size) TclpRealloc((ptr), (size))
-#define Tcl_MemFree(ptr)                 TclpFree(ptr)
+#define Tcl_AttemptAlloc        TclpAlloc
+#define Tcl_AttemptRealloc      TclpRealloc
+#define Tcl_Free                TclpFree
 #endif
 
 #endif /* _TCLINT */
