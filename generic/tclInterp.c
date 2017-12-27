@@ -3527,7 +3527,7 @@ Tcl_LimitAddHandler(
      */
 
     if (deleteProc == (Tcl_LimitHandlerDeleteProc *) TCL_DYNAMIC) {
-	deleteProc = (Tcl_LimitHandlerDeleteProc *) Tcl_MemFree;
+	deleteProc = (Tcl_LimitHandlerDeleteProc *) TclpFree;
     }
 
     /*

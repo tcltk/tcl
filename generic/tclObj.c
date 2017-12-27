@@ -1012,7 +1012,7 @@ TclDbDumpActiveObjects(
     tablePtr = tsdPtr->objThreadMap;
 
     if (tablePtr != NULL) {
-	fprintf(outFile, "total objects: %d\n", tablePtr->numEntries);
+	fprintf(outFile, "total objects: %" TCL_LL_MODIFIER "d\n", (Tcl_WideInt)tablePtr->numEntries);
 	for (hPtr = Tcl_FirstHashEntry(tablePtr, &hSearch); hPtr != NULL;
 		hPtr = Tcl_NextHashEntry(&hSearch)) {
 	    ObjData *objData = Tcl_GetHashValue(hPtr);
@@ -1338,7 +1338,7 @@ TclFreeObj(
      * either from 1 to 0, or from 0 to -1.  Falling from -1 to -2, though,
      * and so on, is always a sign of a botch in the caller.
      */
-    if (objPtr->refCount < -1) {
+    if (objPtr->refCount == (size_t)-2) {
 	Tcl_Panic("Reference count for %p was negative", objPtr);
     }
     /*
@@ -1346,16 +1346,16 @@ TclFreeObj(
      * sure we do not accept a second free when falling from 0 to -1.
      * Skip that possibility so any double free will trigger the panic.
      */
-    objPtr->refCount = -1;
+    objPtr->refCount = (size_t)-1;
 
     /*
      * Invalidate the string rep first so we can use the bytes value for our
      * pointer chain, and signal an obj deletion (as opposed to shimmering)
-     * with 'length == -1'.
+     * with 'length == (size_t)-1'.
      */
 
     TclInvalidateStringRep(objPtr);
-    objPtr->length = -1;
+    objPtr->length = (size_t)-1;
 
     if (ObjDeletePending(context)) {
 	PushObjToDelete(context, objPtr);

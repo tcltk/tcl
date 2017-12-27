@@ -20,9 +20,9 @@
 #define FALSE	0
 #define TRUE	1
 
-#undef Tcl_MemFree
-#undef Tcl_AttemptMemAlloc
-#undef Tcl_AttemptMemRealloc
+#undef Tcl_Free
+#undef Tcl_AttemptAlloc
+#undef Tcl_AttemptRealloc
 
 #ifdef TCL_MEM_DEBUG
 
@@ -389,9 +389,9 @@ Tcl_DumpActiveMemory(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 Tcl_DbCkalloc(
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
@@ -409,7 +409,7 @@ Tcl_DbCkalloc(
     if (result == NULL) {
 	fflush(stdout);
 	TclDumpMemoryInfo((ClientData) stderr, 0);
-	Tcl_Panic("unable to alloc %u bytes, %s line %d", size, file, line);
+	Tcl_Panic("unable to alloc %" TCL_LL_MODIFIER "d bytes, %s line %d", (Tcl_WideInt)size, file, line);
     }
 
     /*
@@ -455,8 +455,8 @@ Tcl_DbCkalloc(
     }
 
     if (alloc_tracing) {
-	fprintf(stderr,"ckalloc %p %u %s %d\n",
-		result->body, size, file, line);
+	fprintf(stderr,"ckalloc %p %" TCL_LL_MODIFIER "d %s %d\n",
+		result->body, (Tcl_WideInt)size, file, line);
     }
 
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
@@ -479,9 +479,9 @@ Tcl_DbCkalloc(
     return result->body;
 }
 
-char *
+void *
 Tcl_AttemptDbCkalloc(
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
@@ -544,8 +544,8 @@ Tcl_AttemptDbCkalloc(
     }
 
     if (alloc_tracing) {
-	fprintf(stderr,"ckalloc %p %u %s %d\n",
-		result->body, size, file, line);
+	fprintf(stderr,"ckalloc %p %" TCL_LL_MODIFIER "d %s %d\n",
+		result->body, (Tcl_WideInt)size, file, line);
     }
 
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
@@ -588,7 +588,7 @@ Tcl_AttemptDbCkalloc(
 
 void
 Tcl_DbCkfree(
-    char *ptr,
+    void *ptr,
     const char *file,
     int line)
 {
@@ -663,10 +663,10 @@ Tcl_DbCkfree(
  *--------------------------------------------------------------------
  */
 
-char *
+void *
 Tcl_DbCkrealloc(
-    char *ptr,
-    unsigned int size,
+    void *ptr,
+    size_t size,
     const char *file,
     int line)
 {
@@ -694,10 +694,10 @@ Tcl_DbCkrealloc(
     return newPtr;
 }
 
-char *
+void *
 Tcl_AttemptDbCkrealloc(
-    char *ptr,
-    unsigned int size,
+    void *ptr,
+    size_t size,
     const char *file,
     int line)
 {
@@ -728,59 +728,6 @@ Tcl_AttemptDbCkrealloc(
     return newPtr;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_Alloc, et al. --
- *
- *	These functions are defined in terms of the debugging versions when
- *	TCL_MEM_DEBUG is set.
- *
- * Results:
- *	Same as the debug versions.
- *
- * Side effects:
- *	Same as the debug versions.
- *
- *----------------------------------------------------------------------
- */
-
-char *
-Tcl_MemAlloc(
-    unsigned int size)
-{
-    return Tcl_DbCkalloc(size, "unknown", 0);
-}
-
-char *
-Tcl_AttemptMemAlloc(
-    unsigned int size)
-{
-    return Tcl_AttemptDbCkalloc(size, "unknown", 0);
-}
-
-void
-Tcl_MemFree(
-    char *ptr)
-{
-    Tcl_DbCkfree(ptr, "unknown", 0);
-}
-
-char *
-Tcl_MemRealloc(
-    char *ptr,
-    unsigned int size)
-{
-    return Tcl_DbCkrealloc(ptr, size, "unknown", 0);
-}
-char *
-Tcl_AttemptMemRealloc(
-    char *ptr,
-    unsigned int size)
-{
-    return Tcl_AttemptDbCkrealloc(ptr, size, "unknown", 0);
-}
 
 /*
  *----------------------------------------------------------------------
@@ -1042,7 +989,7 @@ Tcl_InitMemory(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_MemAlloc --
+ * Tcl_Alloc --
  *
  *	Interface to TclpAlloc when TCL_MEM_DEBUG is disabled. It does check
  *	that memory was actually allocated.
@@ -1050,8 +997,9 @@ Tcl_InitMemory(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_Alloc
 void *
-Tcl_MemAlloc(
+Tcl_Alloc(
     size_t size)
 {
     void *result;
@@ -1104,7 +1052,7 @@ Tcl_DbCkalloc(
  */
 
 void *
-Tcl_AttemptMemAlloc(
+Tcl_AttemptAlloc(
     size_t size)
 {
     void *result;
@@ -1136,8 +1084,9 @@ Tcl_AttemptDbCkalloc(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_Realloc
 void *
-Tcl_MemRealloc(
+Tcl_Realloc(
     void *ptr,
     size_t size)
 {
@@ -1182,7 +1131,7 @@ Tcl_DbCkrealloc(
  */
 
 void *
-Tcl_AttemptMemRealloc(
+Tcl_AttemptRealloc(
     void *ptr,
     size_t size)
 {
@@ -1217,8 +1166,9 @@ Tcl_AttemptDbCkrealloc(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_Free
 void
-Tcl_MemFree(
+Tcl_Free(
     void *ptr)
 {
     TclpFree(ptr);
