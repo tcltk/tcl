@@ -195,7 +195,7 @@ CreateLiteral(
 {
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     LiteralEntry *globalPtr;
-    int globalHash;
+    unsigned int globalHash;
     Tcl_Obj *objPtr;
 
     /*
@@ -537,7 +537,6 @@ TclHideLiteral(
     newObjPtr = Tcl_DuplicateObj(*lPtr);
     Tcl_IncrRefCount(newObjPtr);
     TclReleaseLiteral(interp, *lPtr);
-    *lPtr = newObjPtr;
 }
 
 /*
@@ -674,7 +673,8 @@ TclReleaseLiteral(
     LiteralTable *globalTablePtr;
     register LiteralEntry *entryPtr, *prevPtr;
     const char *bytes;
-    int length, index;
+    int length;
+    unsigned int index;
 
     if (iPtr == NULL) {
 	goto done;
@@ -693,15 +693,13 @@ TclReleaseLiteral(
     for (prevPtr=NULL, entryPtr=globalTablePtr->buckets[index];
 	    entryPtr!=NULL ; prevPtr=entryPtr, entryPtr=entryPtr->nextPtr) {
 	if (entryPtr->objPtr == objPtr) {
-	    entryPtr->refCount--;
-
 	    /*
 	     * If the literal is no longer being used by any ByteCode, delete
 	     * the entry then remove the reference corresponding to the global
 	     * literal table entry (decrement the ref count of the object).
 	     */
 
-	    if (entryPtr->refCount == 0) {
+	    if (entryPtr->refCount-- <= 1) {
 		if (prevPtr == NULL) {
 		    globalTablePtr->buckets[index] = entryPtr->nextPtr;
 		} else {
@@ -819,8 +817,8 @@ RebuildLiteralTable(
     register LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     const char *bytes;
-    unsigned int oldSize;
-    int count, index, length;
+    unsigned int oldSize, index;
+    int count, length;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;
