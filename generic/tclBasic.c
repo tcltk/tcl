@@ -3112,6 +3112,7 @@ Tcl_DeleteCommandFromToken(
      * traces.
      */
 
+    cmdPtr->nsPtr->refCount++;
     if (cmdPtr->tracePtr != NULL) {
 	CommandTrace *tracePtr;
 	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
@@ -3139,6 +3140,7 @@ Tcl_DeleteCommandFromToken(
      */
 
     TclInvalidateNsCmdLookup(cmdPtr->nsPtr);
+    TclNsDecrRefCount(cmdPtr->nsPtr);
 
     /*
      * If the command being deleted has a compile function, increment the
@@ -4559,7 +4561,7 @@ TEOV_Exception(
 	if (result == TCL_RETURN) {
 	    result = TclUpdateReturnInfo(iPtr);
 	}
-	if ((result != TCL_ERROR) && !allowExceptions) {
+	if ((result != TCL_OK) && (result != TCL_ERROR) && !allowExceptions) {
 	    ProcessUnexpectedResult(interp, result);
 	    result = TCL_ERROR;
 	}
