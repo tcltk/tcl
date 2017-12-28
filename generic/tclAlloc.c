@@ -249,9 +249,9 @@ TclFinalizeAllocSubsystem(void)
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpAlloc(
-    unsigned int numBytes)	/* Number of bytes to allocate. */
+    size_t numBytes)	/* Number of bytes to allocate. */
 {
     register union overhead *overPtr;
     register size_t bucket;
@@ -446,7 +446,7 @@ MoreCore(
 
 void
 TclpFree(
-    char *oldPtr)		/* Pointer to memory to free. */
+    void *oldPtr)		/* Pointer to memory to free. */
 {
     register size_t size;
     register union overhead *overPtr;
@@ -509,10 +509,10 @@ TclpFree(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpRealloc(
-    char *oldPtr,		/* Pointer to alloced block. */
-    unsigned int numBytes)	/* New size of memory. */
+    void *oldPtr,		/* Pointer to alloced block. */
+    size_t numBytes)	/* New size of memory. */
 {
     int i;
     union overhead *overPtr;
