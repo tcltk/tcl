@@ -335,12 +335,8 @@ typedef long LONG;
  * Miscellaneous declarations.
  */
 
-#ifndef _CLIENTDATA
-#   ifndef NO_VOID
-	typedef void *ClientData;
-#   else
-	typedef int *ClientData;
-#   endif
+#if !defined(_CLIENTDATA) && !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 10
+    typedef void *ClientData;
 #   define _CLIENTDATA
 #endif
 
@@ -514,9 +510,9 @@ typedef struct Tcl_ZLibStream_ *Tcl_ZlibStream;
  */
 
 #if defined _WIN32
-typedef unsigned (__stdcall Tcl_ThreadCreateProc) (ClientData clientData);
+typedef unsigned (__stdcall Tcl_ThreadCreateProc) (void *clientData);
 #else
-typedef void (Tcl_ThreadCreateProc) (ClientData clientData);
+typedef void (Tcl_ThreadCreateProc) (void *clientData);
 #endif
 
 /*
@@ -671,62 +667,62 @@ struct Tcl_Obj;
  */
 
 typedef int (Tcl_AppInitProc) (Tcl_Interp *interp);
-typedef int (Tcl_AsyncProc) (ClientData clientData, Tcl_Interp *interp,
+typedef int (Tcl_AsyncProc) (void *clientData, Tcl_Interp *interp,
 	int code);
-typedef void (Tcl_ChannelProc) (ClientData clientData, int mask);
-typedef void (Tcl_CloseProc) (ClientData data);
-typedef void (Tcl_CmdDeleteProc) (ClientData clientData);
-typedef int (Tcl_CmdProc) (ClientData clientData, Tcl_Interp *interp,
+typedef void (Tcl_ChannelProc) (void *clientData, int mask);
+typedef void (Tcl_CloseProc) (void *data);
+typedef void (Tcl_CmdDeleteProc) (void *clientData);
+typedef int (Tcl_CmdProc) (void *clientData, Tcl_Interp *interp,
 	int argc, CONST84 char *argv[]);
-typedef void (Tcl_CmdTraceProc) (ClientData clientData, Tcl_Interp *interp,
+typedef void (Tcl_CmdTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
-	ClientData cmdClientData, int argc, CONST84 char *argv[]);
-typedef int (Tcl_CmdObjTraceProc) (ClientData clientData, Tcl_Interp *interp,
+	void *cmdClientData, int argc, CONST84 char *argv[]);
+typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
-typedef void (Tcl_CmdObjTraceDeleteProc) (ClientData clientData);
+typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 	struct Tcl_Obj *dupPtr);
-typedef int (Tcl_EncodingConvertProc) (ClientData clientData, const char *src,
+typedef int (Tcl_EncodingConvertProc) (void *clientData, const char *src,
 	int srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
 	int dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr);
 #define Tcl_EncodingFreeProc Tcl_FreeProc
 typedef int (Tcl_EventProc) (Tcl_Event *evPtr, int flags);
-typedef void (Tcl_EventCheckProc) (ClientData clientData, int flags);
-typedef int (Tcl_EventDeleteProc) (Tcl_Event *evPtr, ClientData clientData);
-typedef void (Tcl_EventSetupProc) (ClientData clientData, int flags);
+typedef void (Tcl_EventCheckProc) (void *clientData, int flags);
+typedef int (Tcl_EventDeleteProc) (Tcl_Event *evPtr, void *clientData);
+typedef void (Tcl_EventSetupProc) (void *clientData, int flags);
 #define Tcl_ExitProc Tcl_FreeProc
-typedef void (Tcl_FileProc) (ClientData clientData, int mask);
+typedef void (Tcl_FileProc) (void *clientData, int mask);
 #define Tcl_FileFreeProc Tcl_FreeProc
 typedef void (Tcl_FreeInternalRepProc) (struct Tcl_Obj *objPtr);
 typedef void (Tcl_FreeProc) (void *blockPtr);
-typedef void (Tcl_IdleProc) (ClientData clientData);
-typedef void (Tcl_InterpDeleteProc) (ClientData clientData,
+typedef void (Tcl_IdleProc) (void *clientData);
+typedef void (Tcl_InterpDeleteProc) (void *clientData,
 	Tcl_Interp *interp);
-typedef int (Tcl_MathProc) (ClientData clientData, Tcl_Interp *interp,
+typedef int (Tcl_MathProc) (void *clientData, Tcl_Interp *interp,
 	Tcl_Value *args, Tcl_Value *resultPtr);
-typedef void (Tcl_NamespaceDeleteProc) (ClientData clientData);
-typedef int (Tcl_ObjCmdProc) (ClientData clientData, Tcl_Interp *interp,
+typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
+typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_PackageInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_PackageUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
-typedef void (Tcl_TcpAcceptProc) (ClientData callbackData, Tcl_Channel chan,
+typedef void (Tcl_TcpAcceptProc) (void *callbackData, Tcl_Channel chan,
 	char *address, int port);
-typedef void (Tcl_TimerProc) (ClientData clientData);
+typedef void (Tcl_TimerProc) (void *clientData);
 typedef int (Tcl_SetFromAnyProc) (Tcl_Interp *interp, struct Tcl_Obj *objPtr);
 typedef void (Tcl_UpdateStringProc) (struct Tcl_Obj *objPtr);
-typedef char * (Tcl_VarTraceProc) (ClientData clientData, Tcl_Interp *interp,
+typedef char * (Tcl_VarTraceProc) (void *clientData, Tcl_Interp *interp,
 	CONST84 char *part1, CONST84 char *part2, int flags);
-typedef void (Tcl_CommandTraceProc) (ClientData clientData, Tcl_Interp *interp,
+typedef void (Tcl_CommandTraceProc) (void *clientData, Tcl_Interp *interp,
 	const char *oldName, const char *newName, int flags);
 typedef void (Tcl_CreateFileHandlerProc) (int fd, int mask, Tcl_FileProc *proc,
-	ClientData clientData);
+	void *clientData);
 typedef void (Tcl_DeleteFileHandlerProc) (int fd);
-typedef void (Tcl_AlertNotifierProc) (ClientData clientData);
+typedef void (Tcl_AlertNotifierProc) (void *clientData);
 typedef void (Tcl_ServiceModeHookProc) (int mode);
-typedef ClientData (Tcl_InitNotifierProc) (void);
-typedef void (Tcl_FinalizeNotifierProc) (ClientData clientData);
+typedef void *(Tcl_InitNotifierProc) (void);
+typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
 /*
@@ -836,7 +832,7 @@ typedef struct Tcl_Namespace {
 				 * is an synonym. */
     char *fullName;		/* The namespace's fully qualified name. This
 				 * starts with ::. */
-    ClientData clientData;	/* Arbitrary value associated with this
+    void *clientData;	/* Arbitrary value associated with this
 				 * namespace. */
     Tcl_NamespaceDeleteProc *deleteProc;
 				/* Function invoked when deleting the
@@ -908,13 +904,13 @@ typedef struct Tcl_CmdInfo {
 				 * Tcl_SetCmdInfo does not modify this
 				 * field. */
     Tcl_ObjCmdProc *objProc;	/* Command's object-based function. */
-    ClientData objClientData;	/* ClientData for object proc. */
+    void *objClientData;	/* ClientData for object proc. */
     Tcl_CmdProc *proc;		/* Command's string-based function. */
-    ClientData clientData;	/* ClientData for string proc. */
+    void *clientData;	/* ClientData for string proc. */
     Tcl_CmdDeleteProc *deleteProc;
 				/* Function to call when command is
 				 * deleted. */
-    ClientData deleteData;	/* Value to pass to deleteProc (usually the
+    void *deleteData;	/* Value to pass to deleteProc (usually the
 				 * same as clientData). */
     Tcl_Namespace *namespacePtr;/* Points to the namespace that contains this
 				 * command. Note that Tcl_SetCmdInfo will not
@@ -1356,8 +1352,8 @@ typedef int (Tcl_WaitForEventProc) (CONST86 Tcl_Time *timePtr);
  * TIP #233 (Virtualized Time)
  */
 
-typedef void (Tcl_GetTimeProc)   (Tcl_Time *timebuf, ClientData clientData);
-typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, ClientData clientData);
+typedef void (Tcl_GetTimeProc)   (Tcl_Time *timebuf, void *clientData);
+typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
 
 /*
  *----------------------------------------------------------------------------
@@ -1416,40 +1412,40 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, ClientData clientData);
  * Typedefs for the various operations in a channel type:
  */
 
-typedef int	(Tcl_DriverBlockModeProc) (ClientData instanceData, int mode);
-typedef int	(Tcl_DriverCloseProc) (ClientData instanceData,
+typedef int	(Tcl_DriverBlockModeProc) (void *instanceData, int mode);
+typedef int	(Tcl_DriverCloseProc) (void *instanceData,
 			Tcl_Interp *interp);
-typedef int	(Tcl_DriverClose2Proc) (ClientData instanceData,
+typedef int	(Tcl_DriverClose2Proc) (void *instanceData,
 			Tcl_Interp *interp, int flags);
-typedef int	(Tcl_DriverInputProc) (ClientData instanceData, char *buf,
+typedef int	(Tcl_DriverInputProc) (void *instanceData, char *buf,
 			int toRead, int *errorCodePtr);
-typedef int	(Tcl_DriverOutputProc) (ClientData instanceData,
+typedef int	(Tcl_DriverOutputProc) (void *instanceData,
 			CONST84 char *buf, int toWrite, int *errorCodePtr);
-typedef int	(Tcl_DriverSeekProc) (ClientData instanceData, long offset,
+typedef int	(Tcl_DriverSeekProc) (void *instanceData, long offset,
 			int mode, int *errorCodePtr);
-typedef int	(Tcl_DriverSetOptionProc) (ClientData instanceData,
+typedef int	(Tcl_DriverSetOptionProc) (void *instanceData,
 			Tcl_Interp *interp, const char *optionName,
 			const char *value);
-typedef int	(Tcl_DriverGetOptionProc) (ClientData instanceData,
+typedef int	(Tcl_DriverGetOptionProc) (void *instanceData,
 			Tcl_Interp *interp, CONST84 char *optionName,
 			Tcl_DString *dsPtr);
-typedef void	(Tcl_DriverWatchProc) (ClientData instanceData, int mask);
-typedef int	(Tcl_DriverGetHandleProc) (ClientData instanceData,
-			int direction, ClientData *handlePtr);
-typedef int	(Tcl_DriverFlushProc) (ClientData instanceData);
-typedef int	(Tcl_DriverHandlerProc) (ClientData instanceData,
+typedef void	(Tcl_DriverWatchProc) (void *instanceData, int mask);
+typedef int	(Tcl_DriverGetHandleProc) (void *instanceData,
+			int direction, void **handlePtr);
+typedef int	(Tcl_DriverFlushProc) (void *instanceData);
+typedef int	(Tcl_DriverHandlerProc) (void *instanceData,
 			int interestMask);
-typedef Tcl_WideInt (Tcl_DriverWideSeekProc) (ClientData instanceData,
+typedef Tcl_WideInt (Tcl_DriverWideSeekProc) (void *instanceData,
 			Tcl_WideInt offset, int mode, int *errorCodePtr);
 /*
  * TIP #218, Channel Thread Actions
  */
-typedef void	(Tcl_DriverThreadActionProc) (ClientData instanceData,
+typedef void	(Tcl_DriverThreadActionProc) (void *instanceData,
 			int action);
 /*
  * TIP #208, File Truncation (etc.)
  */
-typedef int	(Tcl_DriverTruncateProc) (ClientData instanceData,
+typedef int	(Tcl_DriverTruncateProc) (void *instanceData,
 			Tcl_WideInt length);
 
 /*
@@ -1631,13 +1627,13 @@ typedef Tcl_Obj * (Tcl_FSLinkProc) (Tcl_Obj *pathPtr, Tcl_Obj *toPtr,
 typedef int (Tcl_FSLoadFileProc) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
 	Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr);
 typedef int (Tcl_FSPathInFilesystemProc) (Tcl_Obj *pathPtr,
-	ClientData *clientDataPtr);
+	void **clientDataPtr);
 typedef Tcl_Obj * (Tcl_FSFilesystemPathTypeProc) (Tcl_Obj *pathPtr);
 typedef Tcl_Obj * (Tcl_FSFilesystemSeparatorProc) (Tcl_Obj *pathPtr);
 #define Tcl_FSFreeInternalRepProc Tcl_FreeProc
-typedef ClientData (Tcl_FSDupInternalRepProc) (ClientData clientData);
-typedef Tcl_Obj * (Tcl_FSInternalToNormalizedProc) (ClientData clientData);
-typedef ClientData (Tcl_FSCreateInternalRepProc) (Tcl_Obj *pathPtr);
+typedef void *(Tcl_FSDupInternalRepProc) (void *clientData);
+typedef Tcl_Obj * (Tcl_FSInternalToNormalizedProc) (void *clientData);
+typedef void *(Tcl_FSCreateInternalRepProc) (Tcl_Obj *pathPtr);
 
 typedef struct Tcl_FSVersion_ *Tcl_FSVersion;
 
@@ -2043,7 +2039,7 @@ typedef struct Tcl_EncodingType {
     Tcl_FreeProc *freeProc;
 				/* If non-NULL, function to call when this
 				 * encoding is deleted. */
-    ClientData clientData;	/* Arbitrary value associated with encoding
+    void *clientData;	/* Arbitrary value associated with encoding
 				 * type. Passed to conversion functions. */
     int nullSize;		/* Number of zero bytes that signify
 				 * end-of-string in this encoding. This number
@@ -2197,8 +2193,8 @@ typedef struct Tcl_Config {
  * command- or time-limit is exceeded by an interpreter.
  */
 
-typedef void (Tcl_LimitHandlerProc) (ClientData clientData, Tcl_Interp *interp);
-typedef void (Tcl_LimitHandlerDeleteProc) (ClientData clientData);
+typedef void (Tcl_LimitHandlerProc) (void *clientData, Tcl_Interp *interp);
+typedef void (Tcl_LimitHandlerDeleteProc) (void *clientData);
 
 /*
  *----------------------------------------------------------------------------
@@ -2229,7 +2225,7 @@ typedef struct {
 				 * depends on type.*/
     const char *helpStr;	/* Documentation message describing this
 				 * option. */
-    ClientData clientData;	/* Word to pass to function callbacks. */
+    void *clientData;	/* Word to pass to function callbacks. */
 } Tcl_ArgvInfo;
 
 /*
@@ -2252,9 +2248,9 @@ typedef struct {
  * argument types:
  */
 
-typedef int (Tcl_ArgvFuncProc)(ClientData clientData, Tcl_Obj *objPtr,
+typedef int (Tcl_ArgvFuncProc)(void *clientData, Tcl_Obj *objPtr,
 	void *dstPtr);
-typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
+typedef int (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
 	int objc, Tcl_Obj *const *objv, void *dstPtr);
 
 /*
@@ -2331,7 +2327,7 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
  * Single public declaration for NRE.
  */
 
-typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
+typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
 				int result);
 
 /*
