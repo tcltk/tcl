@@ -112,6 +112,7 @@ Tcl_WinUtfToTChar(
     Tcl_DStringSetLength(dsPtr, 2*size+2);
     wp = (WCHAR *)Tcl_DStringValue(dsPtr);
     MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
+    if (len == -1) --size; /* account for 0-byte at string end */
     Tcl_DStringSetLength(dsPtr, 2*size);
     wp[size] = 0;
     return (char *)wp;
@@ -142,6 +143,7 @@ Tcl_WinTCharToUtf(
     Tcl_DStringSetLength(dsPtr, size+1);
     p = (char *)Tcl_DStringValue(dsPtr);
     WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
+    if (len == -1) --size; /* account for 0-byte at string end */
     Tcl_DStringSetLength(dsPtr, size);
     p[size] = 0;
     return p;
