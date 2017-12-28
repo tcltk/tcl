@@ -192,8 +192,6 @@ TclWinInit(
     if (os.dwPlatformId != VER_PLATFORM_WIN32_NT) {
 	Tcl_Panic("Windows NT is the only supported platform");
     }
-
-    TclWinResetInterfaces();
 }
 
 /*
@@ -230,28 +228,6 @@ TclWinNoBackslash(
 /*
  *---------------------------------------------------------------------------
  *
- * TclpSetInterfaces --
- *
- *	A helper proc.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-
-void
-TclpSetInterfaces(void)
-{
-    TclWinResetInterfaces();
-}
-
-/*
- *---------------------------------------------------------------------------
- *
  * TclWinEncodingsCleanup --
  *
  *	Called during finalization to free up any encodings we use.
@@ -274,8 +250,6 @@ TclWinEncodingsCleanup(void)
 {
     MountPointMap *dlIter, *dlIter2;
 
-    TclWinResetInterfaces();
-
     /*
      * Clean up the mount point map.
      */
@@ -289,26 +263,6 @@ TclWinEncodingsCleanup(void)
 	dlIter = dlIter2;
     }
     Tcl_MutexUnlock(&mountPointMap);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclWinResetInterfaces --
- *
- *	Called during finalization to reset us to a safe state for reuse.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-void
-TclWinResetInterfaces(void)
-{
 }
 
 /*
@@ -518,7 +472,7 @@ TclWinDriveLetterForVolMountPoint(
 TCHAR *
 Tcl_WinUtfToTChar(
     const char *string,		/* Source string in UTF-8. */
-    int len,			/* Source string length in bytes, or < 0 for
+    int len,			/* Source string length in bytes, or -1 for
 				 * strlen(). */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
@@ -537,8 +491,8 @@ Tcl_WinUtfToTChar(
 
 char *
 Tcl_WinTCharToUtf(
-    const TCHAR *string,	/* Source string in Unicode when running NT. */
-    int len,			/* Source string length in bytes, or < 0 for
+    const TCHAR *string,	/* Source string in Unicode. */
+    int len,			/* Source string length in bytes, or -1 for
 				 * platform-specific string length. */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
