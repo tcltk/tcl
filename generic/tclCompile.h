@@ -217,9 +217,9 @@ typedef struct {
  * the AuxData structure.
  */
 
-typedef ClientData (AuxDataDupProc)  (ClientData clientData);
-typedef void	   (AuxDataFreeProc) (ClientData clientData);
-typedef void	   (AuxDataPrintProc)(ClientData clientData,
+typedef void *(AuxDataDupProc)  (void *clientData);
+typedef void	   (AuxDataFreeProc) (void *clientData);
+typedef void	   (AuxDataPrintProc)(void *clientData,
 			    Tcl_Obj *appendObj, struct ByteCode *codePtr,
 			    unsigned int pcOffset);
 
@@ -266,7 +266,7 @@ typedef struct AuxDataType {
 typedef struct AuxData {
     const AuxDataType *type;	/* Pointer to the AuxData type associated with
 				 * this ClientData. */
-    ClientData clientData;	/* The compilation data itself. */
+    void *clientData;	/* The compilation data itself. */
 } AuxData;
 
 /*
@@ -1092,7 +1092,7 @@ MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileVarSubst(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, CompileEnv *envPtr);
-MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
+MODULE_SCOPE int	TclCreateAuxData(void *clientData,
 			    const AuxDataType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
@@ -1164,16 +1164,16 @@ MODULE_SCOPE void	TclReleaseByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
-MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
+MODULE_SCOPE int	TclSingleOpCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclSortingOpCmd(ClientData clientData,
+MODULE_SCOPE int	TclSortingOpCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclVariadicOpCmd(ClientData clientData,
+MODULE_SCOPE int	TclVariadicOpCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclNoIdentOpCmd(ClientData clientData,
+MODULE_SCOPE int	TclNoIdentOpCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 #ifdef TCL_COMPILE_DEBUG
@@ -1189,7 +1189,7 @@ MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
-MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
+MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 			    register Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int isLambda);
 
@@ -1204,7 +1204,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 /*
  * Simplified form to access AuxData.
  *
- * ClientData TclFetchAuxData(CompileEng *envPtr, int index);
+ * void *TclFetchAuxData(CompileEng *envPtr, int index);
  */
 
 #define TclFetchAuxData(envPtr, index) \
