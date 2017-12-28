@@ -33,7 +33,9 @@ static int platformId;		/* Running under NT, or 95/98? */
 #define cpuid	__asm __emit 0fh __asm __emit 0a2h
 #endif
 
+#if TCL_UTF_MAX < 4
 static Tcl_Encoding winTCharEncoding = NULL;
+#endif
 
 /*
  * The following declaration is for the VC++ DLL entry point.
@@ -49,7 +51,7 @@ BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
  */
 
 typedef struct MountPointMap {
-    const TCHAR *volumeName;	/* Native wide string volume name. */
+    TCHAR *volumeName;		/* Native wide string volume name. */
     TCHAR driveLetter;		/* Drive letter corresponding to the volume
 				 * name. */
     struct MountPointMap *nextPtr;
@@ -266,7 +268,7 @@ TclWinNoBackslash(
  *
  * TclpSetInterfaces --
  *
- *	A helper proc that initializes winTCharEncoding.
+ *	A helper proc.
  *
  * Results:
  *	None.
@@ -280,8 +282,10 @@ TclWinNoBackslash(
 void
 TclpSetInterfaces(void)
 {
+#if TCL_UTF_MAX < 4
     TclWinResetInterfaces();
     winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
+#endif
 }
 
 /*
@@ -344,10 +348,12 @@ TclWinEncodingsCleanup(void)
 void
 TclWinResetInterfaces(void)
 {
+#if TCL_UTF_MAX < 4
     if (winTCharEncoding != NULL) {
 	Tcl_FreeEncoding(winTCharEncoding);
 	winTCharEncoding = NULL;
     }
+#endif
 }
 
 /*
@@ -532,13 +538,9 @@ TclWinDriveLetterForVolMountPoint(
  *	(NT) or "char" strings(95). This saves you the trouble of writing the
  *	following type of fragment over and over:
  *
- *		if (running NT) {
- *		    encoding <- Tcl_GetEncoding("unicode");
- *		    nativeBuffer <- UtfToExternal(encoding, utfBuffer);
- *		    Tcl_FreeEncoding(encoding);
- *		} else {
- *		    nativeBuffer <- UtfToExternal(NULL, utfBuffer);
- *		}
+ *		encoding <- Tcl_GetEncoding("unicode");
+ *		nativeBuffer <- UtfToExternal(encoding, utfBuffer);
+ *		Tcl_FreeEncoding(encoding);
  *
  *	By convention, in Windows a TCHAR is a character in the ANSI code page
  *	on Windows 95, a Unicode character on Windows NT. If you plan on
@@ -561,26 +563,55 @@ TclWinDriveLetterForVolMountPoint(
 TCHAR *
 Tcl_WinUtfToTChar(
     const char *string,		/* Source string in UTF-8. */
-    int len,			/* Source string length in bytes, or < 0 for
+    int len,			/* Source string length in bytes, or -1 for
 				 * strlen(). */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
+#if TCL_UTF_MAX > 3
+    TCHAR *wp;
+    int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
+
+    Tcl_DStringInit(dsPtr);
+    Tcl_DStringSetLength(dsPtr, 2*size+2);
+    wp = (TCHAR *)Tcl_DStringValue(dsPtr);
+    MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
+    Tcl_DStringSetLength(dsPtr, 2*size);
+    wp[size] = 0;
+    return wp;
+#else
     return (TCHAR *) Tcl_UtfToExternalDString(winTCharEncoding,
 	    string, len, dsPtr);
+#endif
 }
 
 char *
 Tcl_WinTCharToUtf(
-    const TCHAR *string,	/* Source string in Unicode when running NT,
-				 * ANSI when running 95. */
-    int len,			/* Source string length in bytes, or < 0 for
+    const TCHAR *string,	/* Source string in Unicode. */
+    int len,			/* Source string length in bytes, or -1 for
 				 * platform-specific string length. */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
+#if TCL_UTF_MAX > 3
+    char *p;
+    int size;
+
+    if (len > 0) {
+	len /= 2;
+    }
+    size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
+    Tcl_DStringInit(dsPtr);
+    Tcl_DStringSetLength(dsPtr, size+1);
+    p = (char *)Tcl_DStringValue(dsPtr);
+    WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
+    Tcl_DStringSetLength(dsPtr, size);
+    p[size] = 0;
+    return p;
+#else
     return Tcl_ExternalToUtfDString(winTCharEncoding,
 	    (const char *) string, len, dsPtr);
+#endif
 }
 
 /*
