@@ -61,8 +61,8 @@ static const Tcl_ObjType indexType = {
 
 typedef struct {
     void *tablePtr;		/* Pointer to the table of strings */
-    int offset;			/* Offset between table entries */
-    int index;			/* Selected index into table. */
+    size_t offset;			/* Offset between table entries */
+    size_t index;			/* Selected index into table. */
 } IndexRep;
 
 /*
@@ -129,7 +129,7 @@ Tcl_GetIndexFromObj(
 	 * on odd platforms like a Cray PVP...
 	 */
 
-	if (indexRep->tablePtr == (void *) tablePtr
+	if (indexRep->tablePtr == tablePtr
 		&& indexRep->offset == sizeof(char *)) {
 	    *indexPtr = indexRep->index;
 	    return TCL_OK;
@@ -254,7 +254,7 @@ Tcl_GetIndexFromObjStruct(
 				 * offset, the third plus the offset again,
 				 * etc. The last entry must be NULL and there
 				 * must not be duplicate entries. */
-    int offset,			/* The number of bytes between entries */
+    size_t offset,			/* The number of bytes between entries */
     const char *msg,		/* Identifying word to use in error
 				 * messages. */
     int flags,			/* 0 or TCL_EXACT */
@@ -268,8 +268,8 @@ Tcl_GetIndexFromObjStruct(
     IndexRep *indexRep;
 
     /* Protect against invalid values, like -1 or 0. */
-    if (offset < (int)sizeof(char *)) {
-	offset = (int)sizeof(char *);
+    if (offset+1 <= sizeof(char *)) {
+	offset = sizeof(char *);
     }
     /*
      * See if there is a valid cached result from a previous lookup.

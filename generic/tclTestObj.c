@@ -576,8 +576,8 @@ TestindexobjCmd(
      */
     struct IndexRep {
 	void *tablePtr;		/* Pointer to the table of strings. */
-	int offset;		/* Offset between table entries. */
-	int index;		/* Selected index into table. */
+	size_t offset;		/* Offset between table entries. */
+	size_t index;		/* Selected index into table. */
     };
     struct IndexRep *indexRep;
 

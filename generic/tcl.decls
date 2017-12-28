@@ -1101,7 +1101,7 @@ declare 303 {
 }
 declare 304 {
     int Tcl_GetIndexFromObjStruct(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    const void *tablePtr, int offset, const char *msg, int flags,
+	    const void *tablePtr, size_t offset, const char *msg, int flags,
 	    int *indexPtr)
 }
 declare 305 {
