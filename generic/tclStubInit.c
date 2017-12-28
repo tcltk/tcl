@@ -104,6 +104,13 @@ static const char *TclGetStartupScriptFileName(void)
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
 #undef TclWinGetPlatformId
+#undef TclWinResetInterfaces
+#undef TclWinSetInterfaces
+static void
+doNothing(void)
+{
+    /* dummy implementation, no need to do anything */
+}
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #define TclWinNToHS winNToHS
 static unsigned short TclWinNToHS(unsigned short ns) {
@@ -115,9 +122,13 @@ TclWinGetPlatformId(void)
 {
     return 2; /* VER_PLATFORM_WIN32_NT */;
 }
+#define TclWinResetInterfaces doNothing
+#define TclWinSetInterfaces (void (*) (int)) doNothing
 #else
 #define TclWinNToHS 0
 #define TclWinGetPlatformId 0
+#define TclWinResetInterfaces 0
+#define TclWinSetInterfaces 0
 #endif
 #endif
 #   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
@@ -133,10 +144,8 @@ TclWinGetPlatformId(void)
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
 #   define TclpIsAtty TclPlatIsAtty
-#   define TclWinSetInterfaces (void (*) (int)) doNothing
 #   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
-#   define TclWinResetInterfaces doNothing
 
 static int
 TclpIsAtty(int fd)
@@ -148,7 +157,7 @@ void *TclWinGetTclInstance()
 {
     void *hInstance = NULL;
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-	    (const char *)TclpIsAtty, &hInstance);
+	    (const char *)&TclpIsAtty, &hInstance);
     return hInstance;
 }
 
@@ -197,28 +206,22 @@ TclpGetPid(Tcl_Pid pid)
     return (int) (size_t) pid;
 }
 
-static void
-doNothing(void)
-{
-    /* dummy implementation, no need to do anything */
-}
-
 char *
 Tcl_WinUtfToTChar(
     const char *string,
     int len,
     Tcl_DString *dsPtr)
 {
-    TCHAR *wp;
+    WCHAR *wp;
     int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
 
     Tcl_DStringInit(dsPtr);
     Tcl_DStringSetLength(dsPtr, 2*size+2);
-    wp = (TCHAR *)Tcl_DStringValue(dsPtr);
+    wp = (WCHAR *)Tcl_DStringValue(dsPtr);
     MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
     Tcl_DStringSetLength(dsPtr, 2*size);
     wp[size] = 0;
-    return wp;
+    return (char *)wp;
 }
 
 char *
