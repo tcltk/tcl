@@ -124,8 +124,10 @@ will appear to Tcl to be regular files at the mount point.
 .RS
 .PP
 With no \fImountpoint\fR, returns the mount point for \fIzipfile\fR.
-With no \fIzipfile\fR, return all zipfile/mount pairs.
-If \fImountpoint\fR is specified as an empty string, mount on file path.
+With no \fIzipfile\fR, return all zipfile/mount point pairs.
+If \fImountpoint\fR is specified as an empty string, the mount point
+will be the current directory. If \fIpassword\fR is specified, files from
+\fIzipfile\fR are decrypted using this password when read.
 .RE
 .TP
 \fBzipfs::unmount \fIzipfile\fR

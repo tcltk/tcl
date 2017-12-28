@@ -1,3 +1,9 @@
+sdltcl8.6 (8.6.8-1) unstable; urgency=low
+
+  * Update to 8.6.8
+
+ -- Christian Werner <chw@ch-werner.de>  Fri, 22 Dec 2017 18:32:00 +0100
+
 sdltcl8.6 (8.6.7-1) unstable; urgency=low
 
   * Update to 8.6.7

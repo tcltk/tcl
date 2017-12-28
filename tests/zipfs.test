@@ -59,12 +59,12 @@ test zipfs-1.10 {zipfs basics} -constraints zipfs -returnCodes error -body {
 
 
 test zipfs-2.1 {zipfs mkzip empty archive} -constraints zipfs -returnCodes error -body {
-    zipfs mkzip abc.zip $tcl_library/xxxx
+    zipfs mkzip abc.zip [file join [file normalize $tcl_library] xxxx]
 } -result {empty archive}
 
 test zipfs-2.2 {zipfs mkzip} -constraints zipfs -body {
     set pwd [pwd]
-    cd $tcl_library/encoding
+    cd [file join [file normalize $tcl_library] encoding]
     zipfs mkzip abc.zip .
     zipfs mount abc.zip /abc
     zipfs list -glob /abc/cp850.*
@@ -74,7 +74,8 @@ test zipfs-2.2 {zipfs mkzip} -constraints zipfs -body {
 
 test zipfs-2.3 {zipfs unmount} -constraints zipfs -body {
     lrange [zipfs info /abc/cp850.enc] 0 2
-} -result [list $tcl_library/encoding/abc.zip 1090 527]
+} -result [list \
+    [file join [file normalize $tcl_library] encoding abc.zip] 1090 527]
 
 test zipfs-2.4 {zipfs unmount} -constraints zipfs -body {
     set f [open /abc/cp850.enc]
