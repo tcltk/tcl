@@ -414,7 +414,7 @@ PkgRequireCore(
 
 		continue;
 	    }
-	    
+
 	    /* Check satisfaction of requirements before considering the current version further. */
 	    if (reqc > 0) {
 		satisfies = SomeRequirementSatisfied(availVersion, reqc, reqv);
@@ -424,7 +424,7 @@ PkgRequireCore(
 		    continue;
 		}
 	    }
-	    
+
 	    if (bestPtr != NULL) {
 		int res = CompareVersions(availVersion, bestVersion, NULL);
 
@@ -485,7 +485,7 @@ PkgRequireCore(
 	/*
 	 * Clean up memorized internal reps, if any.
 	 */
-	
+
 	if (bestVersion != NULL) {
 	    ckfree(bestVersion);
 	    bestVersion = NULL;
