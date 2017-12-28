@@ -90,6 +90,108 @@ test lrange-3.1 {Bug 3588366: end-offsets before start} {
 	lrange $l 0 end-5
     }} {1 2 3 4 5}
 } {}
+
+test lrange-4.1 {lrange pure promise} -body {
+    set ll1 [list $tcl_version 2 3 4]
+    # Shared
+    set ll2 $ll1
+    # With string rep
+    string length $ll1
+    set rep1 [tcl::unsupported::representation $ll1]
+    # Get new pure object
+    set x [lrange $ll1 0 end]
+    set rep2 [tcl::unsupported::representation $x]
+    regexp {object pointer at (\S+)} $rep1 -> obj1
+    regexp {object pointer at (\S+)} $rep2 -> obj2
+    list $rep1 $rep2 [string equal $obj1 $obj2]
+    # Check for a new clean object
+} -match glob -result {*value is *refcount of 3,*, string rep*value is*refcount of 2,* no string rep* 0}
+
+test lrange-4.2 {lrange pure promise} -body {
+    set ll1 [list $tcl_version 2 3 4]
+    # Shared
+    set ll2 $ll1
+    # With string rep
+    string length $ll1
+    set rep1 [tcl::unsupported::representation $ll1]
+    # Get new pure object, not compiled
+    set x [[string cat l range] $ll1 0 end]
+    set rep2 [tcl::unsupported::representation $x]
+    regexp {object pointer at (\S+)} $rep1 -> obj1
+    regexp {object pointer at (\S+)} $rep2 -> obj2
+    list $rep1 $rep2 [string equal $obj1 $obj2]
+    # Check for a new clean object
+} -match glob -result {*value is *refcount of 3,*, string rep*value is*refcount of 2,* no string rep* 0}
+
+test lrange-4.3 {lrange pure promise} -body {
+    set ll1 [list $tcl_version 2 3 4]
+    # With string rep
+    string length $ll1
+    set rep1 [tcl::unsupported::representation $ll1]
+    # Get pure object, unshared
+    set ll2 [lrange $ll1[set ll1 {}] 0 end]
+    set rep2 [tcl::unsupported::representation $ll2]
+    regexp {object pointer at (\S+)} $rep1 -> obj1
+    regexp {object pointer at (\S+)} $rep2 -> obj2
+    list $rep1 $rep2 [string equal $obj1 $obj2]
+    # Internal optimisations should keep the same object
+} -match glob -result {*value is *refcount of 2,*, string rep*value is*refcount of 2,* no string rep* 1}
+
+test lrange-4.4 {lrange pure promise} -body {
+    set ll1 [list $tcl_version 2 3 4]
+    # With string rep
+    string length $ll1
+    set rep1 [tcl::unsupported::representation $ll1]
+    # Get pure object, unshared, not compiled
+    set ll2 [[string cat l range] $ll1[set ll1 {}] 0 end]
+    set rep2 [tcl::unsupported::representation $ll2]
+    regexp {object pointer at (\S+)} $rep1 -> obj1
+    regexp {object pointer at (\S+)} $rep2 -> obj2
+    list $rep1 $rep2 [string equal $obj1 $obj2]
+    # Internal optimisations should keep the same object
+} -match glob -result {*value is *refcount of 2,*, string rep*value is*refcount of 2,* no string rep* 1}
+
+# Testing for compiled vs non-compiled behaviour, and shared vs non-shared.
+# Far too many variations to check with spelt-out tests.
+# Note that this *just* checks whether the different versions are the same
+# not whether any of them is correct.
+apply {{} {
+    set lss     {{} {a} {a b c} {a b c d}}
+    set idxs    {-2 -1 0 1 2 3 end-3 end-2 end-1 end end+1 end+2}
+    set lrange  lrange
+
+    foreach ls $lss {
+	foreach a $idxs {
+	    foreach b $idxs {
+                # Shared, uncompiled
+                set ls2 $ls
+                set expected [list [catch {$lrange $ls $a $b} m] $m]
+                # Shared, compiled
+                set tester [list lrange $ls $a $b]
+                set script [list catch $tester m]
+                set script "list \[$script\] \$m"
+                test lrange-5.[incr n].1 {lrange shared compiled} \
+			[list apply [list {} $script]] $expected
+                # Unshared, uncompiled
+                set tester [string map [list %l [list $ls] %a $a %b $b] {
+                    [string cat l range] [lrange %l 0 end] %a %b
+                }]
+                set script [list catch $tester m]
+                set script "list \[$script\] \$m"
+                test lrange-5.$n.2 {lrange unshared uncompiled} \
+			[list apply [list {} $script]] $expected
+                # Unshared, compiled
+                set tester [string map [list %l [list $ls] %a $a %b $b] {
+                    lrange [lrange %l 0 end] %a %b
+                }]
+                set script [list catch $tester m]
+                set script "list \[$script\] \$m"
+                test lrange-5.$n.3 {lrange unshared compiled} \
+			[list apply [list {} $script]] $expected
+	    }
+	}
+    }
+}}
 
 # cleanup
 ::tcltest::cleanupTests

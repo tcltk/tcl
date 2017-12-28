@@ -5140,9 +5140,22 @@ TEBCresume(
 	    if (toIdx >= objc) {
 		toIdx = objc-1;
 	    }
+
+	    /*
+	     * If we are just removing the beginning or the end from an
+	     * unshared object, Tcl_ListObjReplace is very efficient, and also
+	     * guarantees a pure list.
+	     */
+
 	    if (fromIdx == 0 && toIdx != objc-1 && !Tcl_IsShared(valuePtr)) {
 		Tcl_ListObjReplace(interp, valuePtr,
 			toIdx + 1, LIST_MAX, 0, NULL);
+		TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
+		NEXT_INST_F(9, 0, 0);
+	    }
+	    if (toIdx == objc-1 && !Tcl_IsShared(valuePtr)) {
+		Tcl_ListObjReplace(interp, valuePtr,
+			0, fromIdx, 0, NULL);
 		TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
 		NEXT_INST_F(9, 0, 0);
 	    }
