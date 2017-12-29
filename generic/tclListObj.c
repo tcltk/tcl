@@ -423,6 +423,87 @@ TclListObjCopy(
 /*
  *----------------------------------------------------------------------
  *
+ * TclListObjRange --
+ *
+ *	Makes a slice of a list value.
+ *      *listPtr must be known to be a valid list.
+ *
+ * Results:
+ *	Returns a pointer to the sliced list.
+ *      This may be a new object or the same object if not shared.
+ *
+ * Side effects:
+ *	The possible conversion of the object referenced by listPtr
+ *	to a list object.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclListObjRange(
+    Tcl_Obj *listPtr,		/* List object to take a range from. */
+    int fromIdx,		/* Index of first element to include. */
+    int toIdx)			/* Index of last element to include. */
+{
+    Tcl_Obj **elemPtrs;
+    int listLen, i, newLen;
+    List *listRepPtr;
+
+    TclListObjGetElements(NULL, listPtr, &listLen, &elemPtrs);
+
+    if (fromIdx < 0) {
+	fromIdx = 0;
+    }
+    if (toIdx >= listLen) {
+	toIdx = listLen-1;
+    }
+    if (fromIdx > toIdx) {
+	return Tcl_NewObj();
+    }
+
+    newLen = toIdx - fromIdx + 1;
+
+    if (Tcl_IsShared(listPtr) ||
+	    ((ListRepPtr(listPtr)->refCount > 1))) {
+	return Tcl_NewListObj(newLen, &elemPtrs[fromIdx]);
+    }
+
+    /*
+     * In-place is possible.
+     */
+
+    /*
+     * Even if nothing below cause any changes, we still want the
+     * string-canonizing effect of [lrange 0 end].
+     */
+
+    TclInvalidateStringRep(listPtr);
+
+    /*
+     * Delete elements that should not be included.
+     */
+
+    for (i = 0; i < fromIdx; i++) {
+	TclDecrRefCount(elemPtrs[i]);
+    }
+    for (i = toIdx + 1; i < listLen; i++) {
+	TclDecrRefCount(elemPtrs[i]);
+    }
+
+    if (fromIdx > 0) {
+	memmove(elemPtrs, &elemPtrs[fromIdx],
+		(size_t) newLen * sizeof(Tcl_Obj*));
+    }
+
+    listRepPtr = ListRepPtr(listPtr);
+    listRepPtr->elemCount = newLen;
+
+    return listPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_ListObjGetElements --
  *
  *	This function returns an (objc,objv) array of the elements in a list
