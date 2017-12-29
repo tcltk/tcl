@@ -5087,11 +5087,11 @@ TEBCresume(
 		TclGetInt4AtPtr(pc+5)));
 
 	/*
-	 * Get the contents of the list, making sure that it really is a list
+	 * Get the length of the list, making sure that it really is a list
 	 * in the process.
 	 */
 
-	if (TclListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
+	if (TclListObjLength(interp, valuePtr, &objc) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -5128,41 +5128,7 @@ TEBCresume(
 	    toIdx = objc;
 	}
 
-	/*
-	 * Check if we are referring to a valid, non-empty list range, and if
-	 * so, build the list of elements in that range.
-	 */
-
-	if (fromIdx<=toIdx && fromIdx<objc && toIdx>=0) {
-	    if (fromIdx < 0) {
-		fromIdx = 0;
-	    }
-	    if (toIdx >= objc) {
-		toIdx = objc-1;
-	    }
-
-	    /*
-	     * If we are just removing the beginning or the end from an
-	     * unshared object, Tcl_ListObjReplace is very efficient, and also
-	     * guarantees a pure list.
-	     */
-
-	    if (fromIdx == 0 && toIdx != objc-1 && !Tcl_IsShared(valuePtr)) {
-		Tcl_ListObjReplace(interp, valuePtr,
-			toIdx + 1, LIST_MAX, 0, NULL);
-		TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
-		NEXT_INST_F(9, 0, 0);
-	    }
-	    if (toIdx == objc-1 && !Tcl_IsShared(valuePtr)) {
-		Tcl_ListObjReplace(interp, valuePtr,
-			0, fromIdx, 0, NULL);
-		TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
-		NEXT_INST_F(9, 0, 0);
-	    }
-	    objResultPtr = Tcl_NewListObj(toIdx-fromIdx+1, objv+fromIdx);
-	} else {
-	    TclNewObj(objResultPtr);
-	}
+	objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
 
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
