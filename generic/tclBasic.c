@@ -4611,7 +4611,7 @@ TEOV_Exception(
 	if (result == TCL_RETURN) {
 	    result = TclUpdateReturnInfo(iPtr);
 	}
-	if ((result != TCL_ERROR) && !allowExceptions) {
+	if ((result != TCL_OK) && (result != TCL_ERROR) && !allowExceptions) {
 	    ProcessUnexpectedResult(interp, result);
 	    result = TCL_ERROR;
 	}
