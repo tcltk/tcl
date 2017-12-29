@@ -138,7 +138,9 @@ TclWinGetPlatformId(void)
 #   define TclWinFlushDirtyChannels doNothing
 #   define TclWinResetInterfaces doNothing
 
+#if TCL_UTF_MAX < 4
 static Tcl_Encoding winTCharEncoding;
+#endif
 
 static int
 TclpIsAtty(int fd)
@@ -150,7 +152,7 @@ void *TclWinGetTclInstance()
 {
     void *hInstance = NULL;
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-	    (const char *)&winTCharEncoding, &hInstance);
+	    (const char *)&TclpIsAtty, &hInstance);
     return hInstance;
 }
 
@@ -211,11 +213,25 @@ Tcl_WinUtfToTChar(
     int len,
     Tcl_DString *dsPtr)
 {
+#if TCL_UTF_MAX > 3
+    WCHAR *wp;
+    int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
+
+    Tcl_DStringInit(dsPtr);
+    Tcl_DStringSetLength(dsPtr, 2*size+2);
+    wp = (WCHAR *)Tcl_DStringValue(dsPtr);
+    MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
+    if (len == -1) --size; /* account for 0-byte at string end */
+    Tcl_DStringSetLength(dsPtr, 2*size);
+    wp[size] = 0;
+    return (char *)wp;
+#else
     if (!winTCharEncoding) {
 	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
     }
     return Tcl_UtfToExternalDString(winTCharEncoding,
 	    string, len, dsPtr);
+#endif
 }
 
 char *
@@ -224,11 +240,29 @@ Tcl_WinTCharToUtf(
     int len,
     Tcl_DString *dsPtr)
 {
+#if TCL_UTF_MAX > 3
+    char *p;
+    int size;
+
+    if (len > 0) {
+	len /= 2;
+    }
+    size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
+    Tcl_DStringInit(dsPtr);
+    Tcl_DStringSetLength(dsPtr, size+1);
+    p = (char *)Tcl_DStringValue(dsPtr);
+    WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
+    if (len == -1) --size; /* account for 0-byte at string end */
+    Tcl_DStringSetLength(dsPtr, size);
+    p[size] = 0;
+    return p;
+#else
     if (!winTCharEncoding) {
 	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
     }
     return Tcl_ExternalToUtfDString(winTCharEncoding,
 	    string, len, dsPtr);
+#endif
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
