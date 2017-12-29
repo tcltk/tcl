@@ -155,14 +155,14 @@ typedef struct ZipFile {
     long length;              /* Length of memory mapped file */
     unsigned char *tofree;    /* Non-NULL if malloc'ed file */
     int nfiles;               /* Number of files in archive */
-    int baseoffs;             /* Archive start */
-    int baseoffsp;            /* Password start */
-    int centoffs;             /* Archive directory start */
-    char pwbuf[264];          /* Password buffer */
+    unsigned long baseoffs;             /* Archive start */
+    long baseoffsp;            /* Password start */
+    unsigned long centoffs;             /* Archive directory start */
+    unsigned char pwbuf[264];          /* Password buffer */
 #if defined(_WIN32) || defined(_WIN64)
     HANDLE mh;
 #endif
-    int nopen;                /* Number of open files on archive */
+    unsigned long nopen;                /* Number of open files on archive */
     struct ZipEntry *entries; /* List of files in archive */
     struct ZipEntry *topents; /* List of top-level dirs in archive */
 #if HAS_DRIVES
@@ -1796,7 +1796,7 @@ wrerr:
     return TCL_ERROR;
     }
     if ((len + pos[0]) & 3) {
-        char abuf[8];
+        unsigned char abuf[8];
 
         /*
          * Align payload to next 4-byte boundary using a dummy extra
@@ -1806,7 +1806,7 @@ wrerr:
         zip_write_short(abuf, 0xffff);
         zip_write_short(abuf + 2, align - 4);
         zip_write_int(abuf + 4, 0x03020100);
-        if (Tcl_Write(out, abuf, align) != align) {
+        if (Tcl_Write(out, (const char *)abuf, align) != align) {
             goto wrerr;
         }
     }
@@ -4151,7 +4151,7 @@ int TclZipfs_AppHook(int *argc, char ***argv)
     char *archive;
 
     Tcl_FindExecutable(*argv[0]);
-    archive=Tcl_GetNameOfExecutable();
+    archive=(char *)Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);
     /*
     ** Look for init.tcl in one of the locations mounted later in this function
