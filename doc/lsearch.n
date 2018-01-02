@@ -148,6 +148,18 @@ or \fB\-not\fR.
 These options are used to search lists of lists.  They may be used
 with any other options.
 .TP
+\fB\-stride\0\fIstrideLength\fR
+.
+If this option is specified, the list is treated as consisting of
+groups of \fIstrideLength\fR elements and the groups are searched by
+either their first element or, if the \fB\-index\fR option is used,
+by the element within each group given by the first index passed to
+\fB\-index\fR (which is then ignored by \fB\-index\fR). The resulting
+index always points to the first element in a group.
+.PP
+The list length must be an integer multiple of \fIstrideLength\fR, which
+in turn must be at least 2.
+.TP
 \fB\-index\fR\0\fIindexList\fR
 .
 This option is designed for use when searching within nested lists.
@@ -207,6 +219,13 @@ It is also possible to search inside elements:
 .CS
 \fBlsearch\fR -index 1 -all -inline {{a abc} {b bcd} {c cde}} *bc*
       \fI\(-> {a abc} {b bcd}\fR
+.CE
+.PP
+The same thing for a flattened list:
+.PP
+.CS
+\fBlsearch\fR -stride 2 -index 1 -all -inline {a abc b bcd c cde} *bc*
+      \fI\(-> {a abc b bcd}\fR
 .CE
 .SH "SEE ALSO"
 foreach(n), list(n), lappend(n), lindex(n), linsert(n), llength(n),
