@@ -2498,7 +2498,8 @@ TEBCresume(
 	Tcl_SetObjResult(interp, OBJ_AT_TOS);
 	goto doYield;
 
-    case INST_YIELD_TO_INVOKE:
+    case INST_YIELD_TO_INVOKE: {
+	Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
 	corPtr = iPtr->execEnvPtr->corPtr;
 	valuePtr = OBJ_AT_TOS;
 	if (!corPtr) {
@@ -2508,17 +2509,6 @@ TEBCresume(
 		    "yieldto can only be called in a coroutine", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
-		    NULL);
-	    CACHE_STACK_INFO();
-	    goto gotError;
-	}
-	if (((Namespace *)TclGetCurrentNamespace(interp))->flags & NS_DYING) {
-	    TRACE(("[%.30s] => ERROR: yield in deleted\n",
-		    O2S(valuePtr)));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "yieldto called in deleted namespace", -1));
-	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "YIELDTO_IN_DELETED",
 		    NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
@@ -2546,10 +2536,11 @@ TEBCresume(
 
 	Tcl_IncrRefCount(valuePtr);
 	iPtr->execEnvPtr = corPtr->callerEEPtr;
-	TclSetTailcall(interp, valuePtr);
+	TclSetTailcall(interp, currNsPtr, valuePtr);
 	iPtr->execEnvPtr = corPtr->eePtr;
 	yieldParameter = (PTR2INT(NULL)+1);	/*==CORO_ACTIVATE_YIELDM*/
 
+    }
     doYield:
 	/* TIP #280: Record the last piece of info needed by
 	 * 'TclGetSrcInfoForPc', and push the frame.
@@ -2571,7 +2562,7 @@ TEBCresume(
     }
 
     case INST_TAILCALL: {
-	Tcl_Obj *listPtr, *nsObjPtr;
+	Tcl_Obj *listPtr;
 
 	opnd = TclGetUInt1AtPtr(pc+1);
 
@@ -2607,12 +2598,15 @@ TEBCresume(
 	 */
 
 	listPtr = Tcl_NewListObj(opnd, &OBJ_AT_DEPTH(opnd-1));
-	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, -1);
-	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
-	if (iPtr->varFramePtr->tailcallPtr) {
-	    Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
+	if (iPtr->varFramePtr->tailcallNsPtr) {
+	    TclNsDecrRefCount(iPtr->varFramePtr->tailcallNsPtr);
+	    iPtr->varFramePtr->tailcallNsPtr = NULL;
+	    Tcl_DecrRefCount(iPtr->varFramePtr->tailcallCmdPtr);
+	    iPtr->varFramePtr->tailcallCmdPtr = NULL;
 	}
-	iPtr->varFramePtr->tailcallPtr = listPtr;
+	iPtr->varFramePtr->tailcallNsPtr = iPtr->varFramePtr->nsPtr;
+	iPtr->varFramePtr->tailcallNsPtr->refCount++;
+	iPtr->varFramePtr->tailcallCmdPtr = listPtr;
 
 	result = TCL_RETURN;
 	cleanup = opnd;

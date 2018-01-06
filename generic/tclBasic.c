@@ -763,6 +763,7 @@ Tcl_CreateInterp(void)
 	    cmdPtr = ckalloc(sizeof(Command));
 	    cmdPtr->hPtr = hPtr;
 	    cmdPtr->nsPtr = iPtr->globalNsPtr;
+	    iPtr->globalNsPtr->refCount++;
 	    cmdPtr->refCount = 1;
 	    cmdPtr->cmdEpoch = 0;
 	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
@@ -1439,7 +1440,7 @@ DeleteInterpProc(
      */
 
     TclHandleFree(iPtr->handle);
-    TclTeardownNamespace(iPtr->globalNsPtr);
+    Tcl_DeleteNamespace((Tcl_Namespace *)iPtr->globalNsPtr);
 
     /*
      * Delete all the hidden commands.
@@ -1486,18 +1487,12 @@ DeleteInterpProc(
 	ckfree(hTablePtr);
     }
 
-    /*
-     * Pop the root frame pointer and finish deleting the global
-     * namespace. The order is important [Bug 1658572].
-     */
-
     if ((iPtr->framePtr != iPtr->rootFramePtr) && !TclInExit()) {
 	Tcl_Panic("DeleteInterpProc: popping rootCallFrame with other frames on top");
     }
     Tcl_PopCallFrame(interp);
     ckfree(iPtr->rootFramePtr);
     iPtr->rootFramePtr = NULL;
-    Tcl_DeleteNamespace((Tcl_Namespace *) iPtr->globalNsPtr);
 
     /*
      * Free up the result *after* deleting variables, since variable deletion
@@ -2145,6 +2140,7 @@ Tcl_CreateCommand(
     Tcl_SetHashValue(hPtr, cmdPtr);
     cmdPtr->hPtr = hPtr;
     cmdPtr->nsPtr = nsPtr;
+    nsPtr->refCount++;
     cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
@@ -2335,6 +2331,7 @@ TclCreateObjCommandInNs (
 	cmdPtr->nsPtr->refCount++;
 
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
+
 	nsPtr = (Namespace *) TclEnsureNamespace(interp,
 	    (Tcl_Namespace *)cmdPtr->nsPtr);
 	TclNsDecrRefCount(cmdPtr->nsPtr);
@@ -2382,6 +2379,7 @@ TclCreateObjCommandInNs (
     Tcl_SetHashValue(hPtr, cmdPtr);
     cmdPtr->hPtr = hPtr;
     cmdPtr->nsPtr = nsPtr;
+    nsPtr->refCount++;
     cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
@@ -3117,7 +3115,6 @@ Tcl_DeleteCommandFromToken(
      * traces.
      */
 
-    cmdPtr->nsPtr->refCount++;
     if (cmdPtr->tracePtr != NULL) {
 	CommandTrace *tracePtr;
 	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
@@ -3145,7 +3142,6 @@ Tcl_DeleteCommandFromToken(
      */
 
     TclInvalidateNsCmdLookup(cmdPtr->nsPtr);
-    TclNsDecrRefCount(cmdPtr->nsPtr);
 
     /*
      * If the command being deleted has a compile function, increment the
@@ -3230,6 +3226,7 @@ Tcl_DeleteCommandFromToken(
      * TclNRExecuteByteCode looks up the command in the command hashtable).
      */
 
+    TclNsDecrRefCount(cmdPtr->nsPtr);
     TclCleanupCommandMacro(cmdPtr);
     return 0;
 }
@@ -4223,7 +4220,7 @@ EvalObjvCore(
     Tcl_Obj **objv = data[3];
     Interp *iPtr = (Interp *) interp;
     Namespace *lookupNsPtr = NULL;
-    int enterTracesDone = 0;
+    int enterTracesDone = 0, notFoundResult;
 
     /*
      * Push records for task to be done on return, in INVERSE order. First, if
@@ -4266,6 +4263,7 @@ EvalObjvCore(
 	iPtr->lookupNsPtr = NULL;
     } else if (flags & TCL_EVAL_INVOKE) {
 	lookupNsPtr = iPtr->globalNsPtr;
+	lookupNsPtr->refCount++;
     } else {
 
 	/*
@@ -4277,6 +4275,7 @@ EvalObjvCore(
 	if (flags & TCL_EVAL_GLOBAL) {
 	    TEOV_SwitchVarFrame(interp);
 	    lookupNsPtr = iPtr->globalNsPtr;
+	    lookupNsPtr->refCount++;
 	}
     }
 
@@ -4305,8 +4304,15 @@ EvalObjvCore(
     if (cmdPtr == NULL) {
 	cmdPtr = TEOV_LookupCmdFromObj(interp, objv[0], lookupNsPtr);
 	if (!cmdPtr) {
-	    return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
+	    notFoundResult = TEOV_NotFound(interp, objc, objv, lookupNsPtr);
+	    if (lookupNsPtr) {
+		TclNsDecrRefCount(lookupNsPtr);
+	    }
+	    return notFoundResult;
 	}
+    }
+    if (lookupNsPtr) {
+	TclNsDecrRefCount(lookupNsPtr);
     }
 
     if (enterTracesDone || iPtr->tracePtr
@@ -4448,7 +4454,7 @@ NRCommand(
       */
 
     if (data[1] && (data[1] != INT2PTR(1))) {
-        TclNRAddCallback(interp, TclNRTailcallEval, data[1], NULL, NULL, NULL);
+        TclNRAddCallback(interp, TclNRTailcallEval, data[1], data[2], NULL, NULL);
     }
 
     /* OPT ??
@@ -4691,6 +4697,8 @@ TEOV_NotFound(
     if (lookupNsPtr) {
 	savedNsPtr = varFramePtr->nsPtr;
 	varFramePtr->nsPtr = lookupNsPtr;
+	/* Corresponding TclNsDecrRefCount is in TEOV_NotFoundCallback. */
+	varFramePtr->nsPtr->refCount++;
     }
     TclSkipTailcall(interp);
     TclNRAddCallback(interp, TEOV_NotFoundCallback, INT2PTR(handlerObjc),
@@ -4712,6 +4720,7 @@ TEOV_NotFoundCallback(
     int i;
 
     if (savedNsPtr) {
+	TclNsDecrRefCount(iPtr->varFramePtr->nsPtr);
 	iPtr->varFramePtr->nsPtr = savedNsPtr;
     }
 
@@ -8256,7 +8265,9 @@ TclPushTailcallPoint(
 void
 TclSetTailcall(
     Tcl_Interp *interp,
-    Tcl_Obj *listPtr)
+    Namespace *nsPtr,
+    Tcl_Obj *listPtr
+    )
 {
     /*
      * Find the splicing spot: right before the NRCommand of the thing
@@ -8275,6 +8286,9 @@ TclSetTailcall(
         Tcl_Panic("tailcall cannot find the right splicing spot: should not happen!");
     }
     runPtr->data[1] = listPtr;
+    runPtr->data[2] = nsPtr;
+    /* Corresponding TclNsDecrRefCount is in EvalObjvCore */
+    nsPtr->refCount++;
 }
 
 
@@ -8320,9 +8334,11 @@ TclNRTailcallObjCmd(
      * with an argument replaces any previously scheduled tailcall.
      */
 
-    if (iPtr->varFramePtr->tailcallPtr) {
-        Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
-        iPtr->varFramePtr->tailcallPtr = NULL;
+    if (iPtr->varFramePtr->tailcallNsPtr) {
+        TclNsDecrRefCount(iPtr->varFramePtr->tailcallNsPtr);
+        iPtr->varFramePtr->tailcallNsPtr = NULL;
+        Tcl_DecrRefCount(iPtr->varFramePtr->tailcallCmdPtr);
+        iPtr->varFramePtr->tailcallCmdPtr = NULL;
     }
 
     /*
@@ -8332,23 +8348,16 @@ TclNRTailcallObjCmd(
      */
 
     if (objc > 1) {
-        Tcl_Obj *listPtr, *nsObjPtr;
-        Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
-        Tcl_Namespace *ns1Ptr;
+        Tcl_Obj *listPtr;
+        Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
 
         /* The tailcall data is in a Tcl list: the first element is the
          * namespace, the rest the command to be tailcalled. */
 
-        listPtr = Tcl_NewListObj(objc, objv);
-
-        nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
-        if ((TCL_OK != TclGetNamespaceFromObj(interp, nsObjPtr, &ns1Ptr))
-                || (nsPtr != ns1Ptr)) {
-            Tcl_Panic("Tailcall failed to find the proper namespace");
-        }
- 	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
-
-        iPtr->varFramePtr->tailcallPtr = listPtr;
+        listPtr = Tcl_NewListObj(objc-1, objv+1);
+        iPtr->varFramePtr->tailcallNsPtr = nsPtr;
+	nsPtr->refCount++;
+        iPtr->varFramePtr->tailcallCmdPtr = listPtr;
     }
     return TCL_RETURN;
 }
@@ -8371,27 +8380,12 @@ TclNRTailcallEval(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *listPtr = data[0], *nsObjPtr;
-    Tcl_Namespace *nsPtr;
+    Tcl_Obj *listPtr = data[0];
+    Tcl_Namespace *nsPtr = data[1];
     int objc;
     Tcl_Obj **objv;
 
     Tcl_ListObjGetElements(interp, listPtr, &objc, &objv);
-    nsObjPtr = objv[0];
-
-    if (result == TCL_OK) {
-	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
-    }
-
-    if (result != TCL_OK) {
-        /*
-         * Tailcall execution was preempted, eg by an intervening catch or by
-         * a now-gone namespace: cleanup and return.
-         */
-
-	Tcl_DecrRefCount(listPtr);
-        return result;
-    }
 
     /*
      * Perform the tailcall
@@ -8400,7 +8394,7 @@ TclNRTailcallEval(
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
-    return TclNREvalObjv(interp, objc-1, objv+1, 0, NULL);
+    return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
 
 int
@@ -8499,9 +8493,9 @@ TclNRYieldToObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    Tcl_Obj *listPtr;
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-    Tcl_Obj *listPtr, *nsObjPtr;
-    Tcl_Namespace *nsPtr = TclGetCurrentNamespace(interp);
+    Namespace *nsPtr = (Namespace *)TclGetCurrentNamespace(interp);
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
@@ -8515,30 +8509,19 @@ TclNRYieldToObjCmd(
 	return TCL_ERROR;
     }
 
-    if (((Namespace *) nsPtr)->flags & NS_DYING) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"yieldto called in deleted namespace", -1));
-        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "YIELDTO_IN_DELETED",
-		NULL);
-        return TCL_ERROR;
-    }
-
     /*
      * Add the tailcall in the caller env, then just yield.
      *
      * This is essentially code from TclNRTailcallObjCmd
      */
-
-    listPtr = Tcl_NewListObj(objc, objv);
-    nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
-    TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
+    listPtr = Tcl_NewListObj(objc-1, objv+1);
 
     /*
      * Add the callback in the caller's env, then instruct TEBC to yield.
      */
 
     iPtr->execEnvPtr = corPtr->callerEEPtr;
-    TclSetTailcall(interp, listPtr);
+    TclSetTailcall(interp, nsPtr, listPtr);
     iPtr->execEnvPtr = corPtr->eePtr;
 
     return TclNRYieldObjCmd(INT2PTR(CORO_ACTIVATE_YIELDM), interp, 1, objv);
@@ -8653,6 +8636,8 @@ NRCoroutineExitCallback(
 
     cmdPtr->deleteProc = NULL;
     Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
+
+    /* Corresponding cmdPtr->refCount ++ is in TclNRCoroutineObjCmd */ 
     TclCleanupCommandMacro(cmdPtr);
 
     corPtr->eePtr->corPtr = NULL;
@@ -9027,6 +9012,7 @@ TclNRCoroutineObjCmd(
 
     /* ensure that the command is looked up in the correct namespace */
     iPtr->lookupNsPtr = lookupNsPtr;
+    lookupNsPtr->refCount++;
     Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), 0);
     iPtr->numLevels--;
 

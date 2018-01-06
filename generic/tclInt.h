@@ -271,10 +271,6 @@ typedef struct Namespace {
 				 * namespace. */
     int flags;			/* OR-ed combination of the namespace status
 				 * flags NS_DYING and NS_DEAD listed below. */
-    int activationCount;	/* Number of "activations" or active call
-				 * frames for this namespace that are on the
-				 * Tcl call stack. The namespace won't be
-				 * freed until activationCount becomes zero. */
     size_t refCount;		/* Count of references by namespaceName
 				 * objects. The namespace can't be freed until
 				 * refCount becomes zero. */
@@ -1133,7 +1129,8 @@ typedef struct CallFrame {
 				 * meaning of the value is, which we do not
 				 * specify. */
     LocalCache *localCachePtr;
-    Tcl_Obj    *tailcallPtr;
+    Namespace * tailcallNsPtr;
+    Tcl_Obj *tailcallCmdPtr;
 				/* NULL if no tailcall is scheduled */
 } CallFrame;
 
@@ -2755,7 +2752,8 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRInvoke;
 MODULE_SCOPE Tcl_NRPostProc TclNRReleaseValues;
 
-MODULE_SCOPE void  TclSetTailcall(Tcl_Interp *interp, Tcl_Obj *tailcallPtr);
+MODULE_SCOPE void  TclSetTailcall(Tcl_Interp *interp, Namespace *nsPtr,
+			    Tcl_Obj *listPtr);
 MODULE_SCOPE void  TclPushTailcallPoint(Tcl_Interp *interp);
 
 /* These two can be considered for the public api */
@@ -4677,7 +4675,9 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  */
 
 #define TclGetCurrentNamespace(interp) \
-    (Tcl_Namespace *) ((Interp *)(interp))->varFramePtr->nsPtr
+    (Tcl_Namespace *) ((((Interp *)(interp))->varFramePtr->nsPtr->flags & NS_DEAD) \
+	? ((Interp *) (interp))->globalNsPtr \
+	: ((Interp *) (interp))->varFramePtr->nsPtr)
 
 #define TclGetGlobalNamespace(interp) \
     (Tcl_Namespace *) ((Interp *)(interp))->globalNsPtr

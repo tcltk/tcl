@@ -137,7 +137,7 @@ test namespace-7.1 {Tcl_DeleteNamespace, active call frames in ns} {
         }
     }
     list [test_ns_1::p] [catch {test_ns_1::p} msg] $msg
-} {::test_ns_1 1 {invalid command name "test_ns_1::p"}}
+} {:: 1 {invalid command name "test_ns_1::p"}}
 test namespace-7.2 {Tcl_DeleteNamespace, no active call frames in ns} {
     namespace eval test_ns_2 {
         proc p {} {
@@ -208,6 +208,18 @@ test namespace-7.8 {Bug ba1419303b4c} -setup {
     # No segmentation fault given --enable-symbols=mem. 
     namespace delete ns1
 } -result {}
+
+test namespace-7.9 {
+    Looking up a command when the current namespace is deleted
+} -body {
+    list [catch {
+	namespace eval ns1 {
+	    proc p1 {} {}
+	    namespace delete [namespace current]
+	    p1
+	}
+    } msg] $msg
+} -result {1 {invalid command name "p1"}} 
 
 test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
     catch {interp delete test_interp}
@@ -1601,7 +1613,7 @@ test namespace-35.1 {FreeNsNameInternalRep, resulting ref count > 0} -setup {
         }
     }
     test_ns_1::p
-} -result {::test_ns_1}
+} -result {::}
 test namespace-35.2 {FreeNsNameInternalRep, resulting ref count == 0} {
     namespace eval test_ns_1 {
         proc q {} {
@@ -2100,7 +2112,7 @@ test namespace-46.8 {ensemble: implementation deletes its namespace} {
 	namespace ensemble create
     }
     list [ns foo] [info exist ns::x]
-} {1 0}
+} {0 0}
 test namespace-46.9 {ensemble: configuring really configures things} {
     namespace eval ns {
 	namespace ensemble create -map {a a} -prefixes 0
@@ -2755,8 +2767,7 @@ test namespace-51.13 {name resolution path control} -body {
 	}
 	bar
     }
-    # Should the result be "2 {} {2 3 2 1}" instead?
-} -result {2 {} {2 3 1 1}} -cleanup {
+} -result {2 {} {2 3 1 1 1}} -cleanup {
     catch {namespace delete ::test_ns_1}
     catch {namespace delete ::test_ns_2}
     catch {namespace delete ::test_ns_3}
@@ -3294,15 +3305,23 @@ test namespace-56.1 {bug f97d4ee020: mutually-entangled deletion} {
     }
     namespace delete ::testing
 } {}
-test namespace-56.2 {bug f97d4ee020: mutually-entangled deletion} {
-    namespace eval ::testing {
-	namespace eval abc {proc xyz {} {}}
-	namespace eval def {proc xyz {} {}}
-	trace add command abc::xyz delete "namespace delete ::testing::def {}; #"
-	trace add command def::xyz delete "namespace delete ::testing::abc {}; #"
+test namespace-56.2 {bug f97d4ee020: mutually-entangled deletion} -setup {
+    # Since this test deletes the global namespace, isolate the carnage in a
+    # slave.
+    interp create slave
+} -body {
+    slave eval {
+	namespace eval ::testing {
+	    namespace eval abc {proc xyz {} {}}
+	    namespace eval def {proc xyz {} {}}
+	    trace add command abc::xyz delete "namespace delete ::testing::def {}; #"
+	    trace add command def::xyz delete "namespace delete ::testing::abc {}; #"
+	}
+	namespace delete ::testing
     }
-    namespace delete ::testing
-} {}
+} -cleanup {
+    interp delete slave
+} -result {}
 test namespace-56.3 {bug f97d4ee020: mutually-entangled deletion} {
     namespace eval ::testing {
 	variable gone {}

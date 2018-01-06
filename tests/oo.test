@@ -587,10 +587,10 @@ test oo-3.5a {basic test of OO functionality: destructor: evil case for Itcl} -s
 	}
 	method nuke {} {
 	    namespace delete [namespace current]
-	    return $result
+	    return $::result
 	}
 	destructor {
-	    lappend result [self] $state [info commands localcmdexists]
+	    lappend ::result [self] $state [info commands localcmdexists]
 	}
     }
     cls create obj

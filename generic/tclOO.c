@@ -684,6 +684,7 @@ AllocObject(
     cmdPtr = ckalloc(sizeof(Command));
     memset(cmdPtr, 0, sizeof(Command));
     cmdPtr->nsPtr = (Namespace *) oPtr->namespacePtr;
+    cmdPtr->nsPtr->refCount++;
     cmdPtr->hPtr = Tcl_CreateHashEntry(&cmdPtr->nsPtr->cmdTable, "my",
 	    &ignored);
     cmdPtr->refCount = 1;

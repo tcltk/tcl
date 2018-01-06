@@ -1464,6 +1464,8 @@ InvokeForwardMethod(
      */
     ((Interp *)interp)->lookupNsPtr
 	    = (Namespace *) contextPtr->oPtr->namespacePtr;
+    /* Corresponding TclNrDecrRefCount is in EvalObjvCore */ 
+    ((Namespace *)contextPtr->oPtr->namespacePtr)->refCount++;
     return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_NOERR, NULL);
 }
 

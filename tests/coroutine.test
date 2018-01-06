@@ -658,10 +658,10 @@ test coroutine-7.8 {yieldto context nuke: Bug a90d9331bc} -setup {
     lappend ::result [cotest]
     cotest
     return $result
-} -returnCodes error -cleanup {
+} -cleanup {
     catch {namespace delete ::cotest}
     catch {rename cotest ""}
-} -result {yieldto called in deleted namespace}
+} -result {a OUT b 123 c}
 test coroutine-7.9 {yieldto context nuke: Bug a90d9331bc} -setup {
     namespace eval cotest {}
     set ::result ""
@@ -681,10 +681,10 @@ test coroutine-7.9 {yieldto context nuke: Bug a90d9331bc} -setup {
     lappend ::result [cotest]
     cotest
     return $result
-} -returnCodes error -cleanup {
+} -cleanup {
     catch {namespace delete ::cotest}
     catch {rename cotest ""}
-} -result {yieldto called in deleted namespace}
+} -result {a OUT b 123 c}
 test coroutine-7.10 {yieldto context nuke: Bug a90d9331bc} -setup {
     namespace eval cotest {}
     set ::result ""
@@ -701,10 +701,10 @@ test coroutine-7.10 {yieldto context nuke: Bug a90d9331bc} -setup {
     lappend ::result [cotest]
     cotest
     return $result
-} -returnCodes error -cleanup {
+} -cleanup {
     catch {namespace delete ::cotest}
     catch {rename cotest ""}
-} -result {yieldto called in deleted namespace}
+} -result {a OUT b 123 c}
 test coroutine-7.11 {yieldto context nuke: Bug a90d9331bc} -setup {
     namespace eval cotest {}
     set ::result ""
@@ -722,10 +722,10 @@ test coroutine-7.11 {yieldto context nuke: Bug a90d9331bc} -setup {
     lappend ::result [cotest]
     cotest
     return $result
-} -returnCodes error -cleanup {
+} -cleanup {
     catch {namespace delete ::cotest}
     catch {rename cotest ""}
-} -result {yieldto called in deleted namespace}
+} -result {a OUT b 123 c}
 test coroutine-7.12 {coro floor above street level #3008307} -body {
     proc c {} {
 	yield

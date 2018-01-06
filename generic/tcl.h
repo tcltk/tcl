@@ -882,6 +882,7 @@ typedef struct Tcl_CallFrame {
     void *dummy11;
     void *dummy12;
     void *dummy13;
+    void *dummy14;
 } Tcl_CallFrame;
 
 /*
