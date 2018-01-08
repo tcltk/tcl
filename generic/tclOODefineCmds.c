@@ -326,9 +326,7 @@ TclOOObjectSetMixins(
     if (numMixins == 0) {
 	if (oPtr->mixins.num != 0) {
 	    FOREACH(mixinPtr, oPtr->mixins) {
-		if (mixinPtr) {
-		    TclOORemoveFromInstances(oPtr, mixinPtr);
-		}
+		TclOORemoveFromInstances(oPtr, mixinPtr);
 	    }
 	    ckfree(oPtr->mixins.list);
 	    oPtr->mixins.num = 0;
@@ -352,6 +350,10 @@ TclOOObjectSetMixins(
 	FOREACH(mixinPtr, oPtr->mixins) {
 	    if (mixinPtr != oPtr->selfCls) {
 		TclOOAddToInstances(oPtr, mixinPtr);
+		/* Corresponding TclOODecrRefCount() is in the caller of this
+		 * function. 
+		 */
+		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
 	}
     }
@@ -399,6 +401,10 @@ TclOOClassSetMixins(
 	memcpy(classPtr->mixins.list, mixins, sizeof(Class *) * numMixins);
 	FOREACH(mixinPtr, classPtr->mixins) {
 	    TclOOAddToMixinSubs(classPtr, mixinPtr);
+	    /* Corresponding TclOODecrRefCount() is in the caller of this
+	     * function
+	     */
+	    TclOODecrRefCount(mixinPtr->thisPtr);
 	}
     }
     BumpGlobalEpoch(interp, classPtr);
@@ -914,7 +920,7 @@ TclOODefineObjCmd(
     } else {
 	result = MagicDefinitionInvoke(interp, fPtr->defineNs, 2, objc, objv);
     }
-    DelRef(oPtr);
+    TclOODecrRefCount(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -981,7 +987,7 @@ TclOOObjDefObjCmd(
     } else {
 	result = MagicDefinitionInvoke(interp, fPtr->objdefNs, 2, objc, objv);
     }
-    DelRef(oPtr);
+    TclOODecrRefCount(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -1048,7 +1054,7 @@ TclOODefineSelfObjCmd(
     } else {
 	result = MagicDefinitionInvoke(interp, fPtr->objdefNs, 1, objc, objv);
     }
-    DelRef(oPtr);
+    TclOODecrRefCount(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -1168,11 +1174,11 @@ TclOODefineClassObjCmd(
 
     if (oPtr->selfCls != clsPtr) {
 	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
+
+	/* Reference count already incremented 3 lines up. */
 	oPtr->selfCls = clsPtr;
+
 	TclOOAddToInstances(oPtr, oPtr->selfCls);
-	if (!(clsPtr->thisPtr->flags & OBJECT_DELETED)) {
-	    oPtr->flags &= ~CLASS_GONE;
-	}
 	if (oPtr->classPtr != NULL) {
 	    BumpGlobalEpoch(interp, oPtr->classPtr);
 	} else {
@@ -1628,6 +1634,10 @@ TclOODefineMixinObjCmd(
 	    goto freeAndError;
 	}
 	mixins[i-1] = clsPtr;
+	/* Corresponding TclOODecrRefCount() is in TclOOObjectSetMixins,
+	 * TclOOClassSetMixinsk, or just below if this function fails.
+	 */
+	AddRef(mixins[i-1]->thisPtr);
     }
 
     if (isInstanceMixin) {
@@ -1640,6 +1650,9 @@ TclOODefineMixinObjCmd(
     return TCL_OK;
 
   freeAndError:
+    while (--i > 0) {
+	TclOODecrRefCount(mixins[i]->thisPtr);
+    }
     TclStackFree(interp, mixins);
     return TCL_ERROR;
 }
@@ -2055,6 +2068,7 @@ ClassMixinSet(
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
+	    i--;
 	    goto freeAndError;
 	}
 	if (TclOOIsReachable(oPtr->classPtr, mixins[i])) {
@@ -2063,6 +2077,10 @@ ClassMixinSet(
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "SELF_MIXIN", NULL);
 	    goto freeAndError;
 	}
+	/* Corresponding TclOODecrRefCount() is in TclOOClassSetMixins, or just
+	 * below if this function fails
+	 */
+	AddRef(mixins[i]->thisPtr);
     }
 
     TclOOClassSetMixins(interp, oPtr->classPtr, mixinc, mixins);
@@ -2070,6 +2088,9 @@ ClassMixinSet(
     return TCL_OK;
 
   freeAndError:
+    while (i-- > 0) {
+	TclOODecrRefCount(mixins[i]->thisPtr);
+    }
     TclStackFree(interp, mixins);
     return TCL_ERROR;
 }
@@ -2172,16 +2193,20 @@ ClassSuperSet(
 
     if (superc == 0) {
 	superclasses = ckrealloc(superclasses, sizeof(Class *));
-	superclasses[0] = oPtr->fPtr->objectCls;
-	superc = 1;
 	if (TclOOIsReachable(oPtr->fPtr->classCls, oPtr->classPtr)) {
 	    superclasses[0] = oPtr->fPtr->classCls;
+	} else {
+	    superclasses[0] = oPtr->fPtr->objectCls;
 	}
+	superc = 1;
+	/* Corresponding TclOODecrRefCount is near the end of this function */
+	AddRef(superclasses[0]->thisPtr);
     } else {
 	for (i=0 ; i<superc ; i++) {
 	    superclasses[i] = GetClassInOuterContext(interp, superv[i],
 		    "only a class can be a superclass");
 	    if (superclasses[i] == NULL) {
+		i--;
 		goto failedAfterAlloc;
 	    }
 	    for (j=0 ; j<i ; j++) {
@@ -2198,9 +2223,15 @@ ClassSuperSet(
 			"attempt to form circular dependency graph", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OO", "CIRCULARITY", NULL);
 	    failedAfterAlloc:
+		for (; i > 0; i--) {
+		    TclOODecrRefCount(superclasses[i]->thisPtr);
+		}
 		ckfree(superclasses);
 		return TCL_ERROR;
 	    }
+	    /* Corresponding TclOODecrRefCount() is near the end of this
+	     * function */
+	    AddRef(superclasses[i]->thisPtr);
 	}
     }
 
@@ -2221,6 +2252,8 @@ ClassSuperSet(
     oPtr->classPtr->superclasses.num = superc;
     FOREACH(superPtr, oPtr->classPtr->superclasses) {
 	TclOOAddToSubclasses(oPtr->classPtr, superPtr);
+	/* To account for the AddRef() earlier in this function */ 
+	TclOODecrRefCount(superPtr->thisPtr);
     }
     BumpGlobalEpoch(interp, oPtr->classPtr);
 
@@ -2511,9 +2544,16 @@ ObjMixinSet(
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
+	    while (i-- > 0) {
+		TclOODecrRefCount(mixins[i]->thisPtr);
+	    }
 	    TclStackFree(interp, mixins);
 	    return TCL_ERROR;
 	}
+	/* Corresponding TclOODecrRefCount() is in TclOOObjectSetMixins() or
+	 * just above if this function fails.
+	 */
+	AddRef(mixins[i]->thisPtr);
     }
 
     TclOOObjectSetMixins(oPtr, mixinc, mixins);

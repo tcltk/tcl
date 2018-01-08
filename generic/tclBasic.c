@@ -3154,6 +3154,7 @@ Tcl_DeleteCommandFromToken(
      */
 
     cmdPtr->nsPtr->refCount++;
+
     if (cmdPtr->tracePtr != NULL) {
 	CommandTrace *tracePtr;
 	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
