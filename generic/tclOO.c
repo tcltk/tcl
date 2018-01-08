@@ -60,8 +60,6 @@ static const struct {
 static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj);
 static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr,
 			    Namespace *nsPtr, const char *nsNameStr);
-static void		ClearMixins(Class *clsPtr);
-static void		ClearSuperclasses(Class *clsPtr);
 static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method *mPtr, Tcl_Obj *namePtr,
 			    Method **newMPtrPtr);
@@ -73,6 +71,7 @@ static void		DeletedHelpersNamespace(ClientData clientData);
 static Tcl_NRPostProc	FinalizeAlloc;
 static Tcl_NRPostProc	FinalizeNext;
 static Tcl_NRPostProc	FinalizeObjectCall;
+static void		initClassPath(Tcl_Interp * interp, Class *clsPtr);
 static int		InitFoundation(Tcl_Interp *interp);
 static void		KillFoundation(ClientData clientData,
 			    Tcl_Interp *interp);
@@ -82,6 +81,7 @@ static void		ObjectRenamedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
 static void		ReleaseClassContents(Tcl_Interp *interp,Object *oPtr);
+static void		DeleteDescendants(Tcl_Interp *interp,Object *oPtr);
 static inline void	SquelchCachedName(Object *oPtr);
 
 static int		PublicObjectCmd(ClientData clientData,
@@ -96,6 +96,8 @@ static int		PrivateObjectCmd(ClientData clientData,
 static int		PrivateNRObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+static void		RemoveClass(Class ** list, int num, int idx);
+static void		RemoveObject(Object ** list, int num, int idx);
 
 /*
  * Methods in the oo::object and oo::class classes. First, we define a helper
@@ -228,10 +230,16 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
  * ROOT_CLASS respectively.
  */
 
-#define Deleted(oPtr)		(((Object *)(oPtr))->command == NULL)
+#define Deleted(oPtr)		((oPtr)->flags & OBJECT_DELETED)
 #define IsRootObject(ocPtr)	((ocPtr)->flags & ROOT_OBJECT)
 #define IsRootClass(ocPtr)	((ocPtr)->flags & ROOT_CLASS)
 #define IsRoot(ocPtr)		((ocPtr)->flags & (ROOT_OBJECT|ROOT_CLASS))
+
+#define RemoveItem(type, lst, i) \
+    do { \
+	Remove ## type ((lst).list, (lst).num, i); \
+	(lst).num--; \
+    } while (0)
 
 /*
  * ----------------------------------------------------------------------
@@ -313,6 +321,10 @@ InitFoundation(
 	    Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
     Foundation *fPtr = ckalloc(sizeof(Foundation));
     Tcl_Obj *namePtr, *argsPtr, *bodyPtr;
+
+    Class fakeCls;
+    Object fakeObject;
+
     Tcl_DString buffer;
     Command *cmdPtr;
     int i;
@@ -379,24 +391,43 @@ InitFoundation(
      * spliced manually.
      */
 
+    /* Stand up a phony class for bootstrapping. */
+    fPtr->objectCls = &fakeCls;
+    /* referenced in AllocClass to increment the refCount. */
+    fakeCls.thisPtr = &fakeObject;
+
     fPtr->objectCls = AllocClass(interp,
 	    AllocObject(interp, "object", (Namespace *)fPtr->ooNs, NULL));
     fPtr->classCls = AllocClass(interp,
 	    AllocObject(interp, "class", (Namespace *)fPtr->ooNs, NULL));
+
+    /* Rewire bootstrapped objects. */
     fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
+    fPtr->classCls->thisPtr->selfCls = fPtr->classCls;
+
+    AddRef(fPtr->objectCls->thisPtr);
+    AddRef(fPtr->classCls->thisPtr);
+    AddRef(fPtr->classCls->thisPtr->selfCls->thisPtr);
+    AddRef(fPtr->objectCls->thisPtr->selfCls->thisPtr);
+
+    /* special initialization for the primordial objects */
     fPtr->objectCls->thisPtr->flags |= ROOT_OBJECT;
     fPtr->objectCls->flags |= ROOT_OBJECT;
+
+    /* This is why it is unnecessary in this routine to make up for the
+     * incremented reference count of fPtr->objectCls that was sallwed by
+     * fakeObject. */
     fPtr->objectCls->superclasses.num = 0;
     ckfree(fPtr->objectCls->superclasses.list);
     fPtr->objectCls->superclasses.list = NULL;
-    fPtr->classCls->thisPtr->selfCls = fPtr->classCls;
+
     fPtr->classCls->thisPtr->flags |= ROOT_CLASS;
     fPtr->classCls->flags |= ROOT_CLASS;
+
+    /* Standard initialization for new Objects */
     TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
     TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
     TclOOAddToSubclasses(fPtr->classCls, fPtr->objectCls);
-    AddRef(fPtr->objectCls->thisPtr);
-    AddRef(fPtr->objectCls);
 
     /*
      * Basic method declarations for the core classes.
@@ -522,8 +553,6 @@ KillFoundation(
 {
     Foundation *fPtr = GetFoundation(interp);
 
-    DelRef(fPtr->objectCls->thisPtr);
-    DelRef(fPtr->objectCls);
     TclDecrRefCount(fPtr->unknownMethodNameObj);
     TclDecrRefCount(fPtr->constructorName);
     TclDecrRefCount(fPtr->destructorName);
@@ -538,8 +567,11 @@ KillFoundation(
  * AllocObject --
  *
  *	Allocate an object of basic type. Does not splice the object into its
- *	class's instance list.  The caller must set the classPtr on the object,
- *	either to a class or to NULL.
+ *	class's instance list.  The caller must set the classPtr on the object
+ *	to either a class or NULL, call TclOOAddToInstances to add the object
+ *	to the class's instance list, and if the object itself is a class, use
+ *	call TclOOAddToSubclasses() to add it to the right class's list of
+ *	subclasses.
  *
  * ----------------------------------------------------------------------
  */
@@ -564,7 +596,7 @@ AllocObject(
     Object *oPtr;
     Command *cmdPtr;
     CommandTrace *tracePtr;
-    int creationEpoch, ignored;
+    int creationEpoch;
 
     oPtr = ckalloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
@@ -641,9 +673,15 @@ AllocObject(
      */
 
     oPtr->fPtr = fPtr;
-    oPtr->selfCls = fPtr->objectCls;
     oPtr->creationEpoch = creationEpoch;
-    oPtr->refCount = 1;
+
+    /*
+     * An object starts life with a refCount of 2 to mark the two stages of
+     * destruction it occur:  A call to ObjectRenamedTrace(), and a call to
+     * ObjectNamespaceDeleted(). 
+     */
+    oPtr->refCount = 2;
+
     oPtr->flags = USE_CLASS_CACHE;
 
     /*
@@ -655,6 +693,10 @@ AllocObject(
     if (!nameStr) {
 	nameStr = oPtr->namespacePtr->name;
 	nsPtr = (Namespace *)oPtr->namespacePtr;
+	if (nsPtr->parentPtr != NULL) {
+	    nsPtr = nsPtr->parentPtr;
+	}
+
     }
     oPtr->command = TclCreateObjCommandInNs(interp, nameStr,
 	(Tcl_Namespace *)nsPtr, PublicObjectCmd, oPtr, NULL);
@@ -673,26 +715,8 @@ AllocObject(
     tracePtr->nextPtr = NULL;
     tracePtr->refCount = 1;
 
-    /*
-     * Access the namespace command table directly when creating "my" to avoid
-     * a bottleneck in string manipulation. Another abstraction-buster.
-     */
-
-    cmdPtr = ckalloc(sizeof(Command));
-    memset(cmdPtr, 0, sizeof(Command));
-    cmdPtr->nsPtr = (Namespace *) oPtr->namespacePtr;
-    cmdPtr->hPtr = Tcl_CreateHashEntry(&cmdPtr->nsPtr->cmdTable, "my",
-	    &ignored);
-    cmdPtr->refCount = 1;
-    cmdPtr->objProc = PrivateObjectCmd;
-    cmdPtr->deleteProc = MyDeleted;
-    cmdPtr->objClientData = cmdPtr->deleteData = oPtr;
-    cmdPtr->proc = TclInvokeObjectCommand;
-    cmdPtr->clientData = cmdPtr;
-    cmdPtr->nreProc = PrivateNRObjectCmd;
-    Tcl_SetHashValue(cmdPtr->hPtr, cmdPtr);
-    oPtr->myCommand = (Tcl_Command) cmdPtr;
-
+    oPtr->myCommand = TclNRCreateCommandInNs(interp, "my", oPtr->namespacePtr,
+	PrivateObjectCmd, PrivateNRObjectCmd, oPtr, MyDeleted);
     return oPtr;
 }
 
@@ -774,83 +798,15 @@ ObjectRenamedTrace(
 
     /*
      * The namespace is only deleted if it hasn't already been deleted. [Bug
-     * 2950259]. If the namespace has already been deleted, then
-     * ObjectNamespaceDeleted() has already cleaned up this command.
+     * 2950259].
      */
 
-    if (oPtr->namespacePtr == NULL) {
-	/*
-	 * ObjectNamespaceDeleted() has already done all the cleanup, but
-	 * detected that the command was in the process of being deleted, and
-	 * left the pointer allocated for us.
-	 */
-	DelRef(oPtr);
-    } else {
-	if (((Namespace *) oPtr->namespacePtr)->earlyDeleteProc == NULL) {
-	    /*
-	     * ObjectNamespaceDeleted() called us, and still has some work to
-	     * do, so we leave the pointer allocated for it to finish, and then
-	     * it will deallocate the pointer.
-	     */
-	} else {
-	    Tcl_DeleteNamespace(oPtr->namespacePtr);
-	    /*
-	     * ObjectNamespaceDeleted() doesn't know it was us that just
-	     * called, so it left the pointer allocated.
-	     */
-	    DelRef(oPtr);
-	}
+    if (!Deleted(oPtr)) {
+	Tcl_DeleteNamespace(oPtr->namespacePtr);
     }
+    oPtr->command = NULL;
+    TclOODecrRefCount(oPtr);
     return;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * ClearMixins, ClearSuperclasses --
- *
- *	Utility functions for correctly clearing the list of mixins or
- *	superclasses of a class. Will ckfree() the list storage.
- *
- * ----------------------------------------------------------------------
- */
-
-static void
-ClearMixins(
-    Class *clsPtr)
-{
-    int i;
-    Class *mixinPtr;
-
-    if (clsPtr->mixins.num == 0) {
-	return;
-    }
-
-    FOREACH(mixinPtr, clsPtr->mixins) {
-	TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
-    }
-    ckfree(clsPtr->mixins.list);
-    clsPtr->mixins.list = NULL;
-    clsPtr->mixins.num = 0;
-}
-
-static void
-ClearSuperclasses(
-    Class *clsPtr)
-{
-    int i;
-    Class *superPtr;
-
-    if (clsPtr->superclasses.num == 0) {
-	return;
-    }
-
-    FOREACH(superPtr, clsPtr->superclasses) {
-	TclOORemoveFromSubclasses(clsPtr, superPtr);
-    }
-    ckfree(clsPtr->superclasses.list);
-    clsPtr->superclasses.list = NULL;
-    clsPtr->superclasses.num = 0;
 }
 
 /*
@@ -865,14 +821,65 @@ ClearSuperclasses(
  */
 
 static void
+DeleteDescendants(
+    Tcl_Interp *interp,		/* The interpreter containing the class. */
+    Object *oPtr)		/* The object representing the class. */
+{
+    Class *clsPtr = oPtr->classPtr, *subclassPtr, *mixinSubclassPtr;
+    Object *instancePtr;
+    int i;
+
+    /*
+     * Squelch classes that this class has been mixed into.
+     */
+
+    FOREACH(mixinSubclassPtr, clsPtr->mixinSubs) {
+	/* This condition also covers the case where mixinSubclassPtr ==
+	 * clsPtr
+	 */
+	if (!Deleted(mixinSubclassPtr->thisPtr)) {
+	    Tcl_DeleteCommandFromToken(interp,
+		    mixinSubclassPtr->thisPtr->command);
+	}
+	i -= TclOORemoveFromMixinSubs(mixinSubclassPtr, clsPtr);
+	TclOODecrRefCount(mixinSubclassPtr->thisPtr);
+    }
+    /*
+     * Squelch subclasses of this class.
+     */
+
+    FOREACH(subclassPtr, clsPtr->subclasses) {
+	if (!Deleted(subclassPtr->thisPtr) && !IsRoot(subclassPtr)) {
+	    Tcl_DeleteCommandFromToken(interp, subclassPtr->thisPtr->command);
+	}
+	i -= TclOORemoveFromSubclasses(subclassPtr, clsPtr);
+	TclOODecrRefCount(subclassPtr->thisPtr);
+    }
+
+    /*
+     * Squelch instances of this class (includes objects we're mixed into).
+     */
+
+    if (!IsRootClass(oPtr)) {
+	FOREACH(instancePtr, clsPtr->instances) {
+	    /* This condition also covers the case where instancePtr == oPtr */
+	    if (!Deleted(instancePtr) && !IsRoot(instancePtr)) {
+		Tcl_DeleteCommandFromToken(interp, instancePtr->command);
+	    }
+	    i -= TclOORemoveFromInstances(instancePtr, clsPtr);
+	}
+    }
+}
+	
+
+static void
 ReleaseClassContents(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Object *oPtr)		/* The object representing the class. */
 {
     FOREACH_HASH_DECLS;
-    int i;
-    Class *clsPtr = oPtr->classPtr, *mixinSubclassPtr, *subclassPtr;
-    Object *instancePtr;
+    int i; 
+    Class *clsPtr = oPtr->classPtr, *tmpClsPtr;
     Method *mPtr;
     Foundation *fPtr = oPtr->fPtr;
     Tcl_Obj *variableObj;
@@ -892,132 +899,6 @@ ReleaseClassContents(
 	    Tcl_Panic("deleting class structure for non-deleted %s",
 		    "general object");
 	}
-    }
-
-    /*
-     * Lock a number of dependent objects until we've stopped putting our
-     * fingers in them.
-     */
-
-    FOREACH(mixinSubclassPtr, clsPtr->mixinSubs) {
-	if (mixinSubclassPtr != NULL) {
-	    AddRef(mixinSubclassPtr);
-	    AddRef(mixinSubclassPtr->thisPtr);
-	}
-    }
-    FOREACH(subclassPtr, clsPtr->subclasses) {
-	if (subclassPtr != NULL && !IsRoot(subclassPtr)) {
-	    AddRef(subclassPtr);
-	    AddRef(subclassPtr->thisPtr);
-	}
-    }
-    if (!IsRootClass(oPtr)) {
-	FOREACH(instancePtr, clsPtr->instances) {
-	    if (instancePtr != oPtr) {
-		int j;
-		if (instancePtr->selfCls == clsPtr) {
-		    instancePtr->flags |= CLASS_GONE;
-		}
-		for(j=0 ; j<instancePtr->mixins.num ; j++) {
-		    Class *mixin = instancePtr->mixins.list[j];
-		    Class *nextMixin = NULL;
-		    if (mixin == clsPtr) {
-			if (j < instancePtr->mixins.num - 1) {
-			    nextMixin = instancePtr->mixins.list[j+1];
-			}
-			if (j == 0) {
-			    instancePtr->mixins.num = 0;
-			    instancePtr->mixins.list = NULL;
-			} else {
-			    instancePtr->mixins.list[j-1] = nextMixin;
-			}
-			instancePtr->mixins.num -= 1;
-		    }
-		}
-		if (instancePtr != NULL && !IsRoot(instancePtr)) {
-		    AddRef(instancePtr);
-		}
-	    }
-	}
-    }
-
-    /*
-     * Squelch classes that this class has been mixed into.
-     */
-
-    FOREACH(mixinSubclassPtr, clsPtr->mixinSubs) {
-	if (mixinSubclassPtr != clsPtr) {
-	    if (!Deleted(mixinSubclassPtr->thisPtr)) {
-		Tcl_DeleteCommandFromToken(interp,
-			mixinSubclassPtr->thisPtr->command);
-	    }
-	    ClearMixins(mixinSubclassPtr);
-	    DelRef(mixinSubclassPtr->thisPtr);
-	    DelRef(mixinSubclassPtr);
-	}
-    }
-    if (clsPtr->mixinSubs.list != NULL) {
-	ckfree(clsPtr->mixinSubs.list);
-	clsPtr->mixinSubs.list = NULL;
-	clsPtr->mixinSubs.num = 0;
-    }
-
-    /*
-     * Squelch subclasses of this class.
-     */
-
-    FOREACH(subclassPtr, clsPtr->subclasses) {
-	if (IsRoot(subclassPtr)) {
-	    continue;
-	}
-	if (!Deleted(subclassPtr->thisPtr)) {
-	    Tcl_DeleteCommandFromToken(interp, subclassPtr->thisPtr->command);
-	}
-	ClearSuperclasses(subclassPtr);
-	DelRef(subclassPtr->thisPtr);
-	DelRef(subclassPtr);
-    }
-    if (clsPtr->subclasses.list != NULL) {
-	ckfree(clsPtr->subclasses.list);
-	clsPtr->subclasses.list = NULL;
-	clsPtr->subclasses.num = 0;
-    }
-
-    /*
-     * Squelch instances of this class (includes objects we're mixed into).
-     */
-
-    if (!IsRootClass(oPtr)) {
-	FOREACH(instancePtr, clsPtr->instances) {
-	    if (instancePtr != oPtr) {
-		if (instancePtr == NULL || IsRoot(instancePtr)) {
-		    continue;
-		}
-		if (!Deleted(instancePtr)) {
-		    Tcl_DeleteCommandFromToken(interp, instancePtr->command);
-		    /*
-		     * Tcl_DeleteCommandFromToken() may have done to whole
-		     * job for us.  Roll back and check again.
-		     */
-		    i--;
-		    continue;
-		}
-		DelRef(instancePtr);
-	    }
-	}
-    }
-    if (clsPtr->instances.list != NULL) {
-	ckfree(clsPtr->instances.list);
-	clsPtr->instances.list = NULL;
-	clsPtr->instances.num = 0;
-    }
-
-    /*
-     * Special: We delete these after everything else.
-     */
-
-    if (IsRootClass(oPtr) && !Deleted(fPtr->objectCls->thisPtr)) {
-	Tcl_DeleteCommandFromToken(interp, fPtr->objectCls->thisPtr->command);
     }
 
     /*
@@ -1073,8 +954,12 @@ ReleaseClassContents(
 	clsPtr->metadataPtr = NULL;
     }
 
-    ClearMixins(clsPtr);
-    ClearSuperclasses(clsPtr);
+    FOREACH(tmpClsPtr, clsPtr->mixins) {
+	TclOORemoveFromMixinSubs(clsPtr, tmpClsPtr);
+    }
+    FOREACH(tmpClsPtr, clsPtr->superclasses) {
+	TclOORemoveFromSubclasses(clsPtr, tmpClsPtr);
+    }
 
     FOREACH_HASH_VALUE(mPtr, &clsPtr->classMethods) {
 	TclOODelMethodRef(mPtr);
@@ -1090,12 +975,9 @@ ReleaseClassContents(
 	ckfree(clsPtr->variables.list);
     }
 
-    /* Tell oPtr that it's class is gone so that it doesn't try to remove
-     * itself from it's classe's list of instances
-     */
-    oPtr->flags |= CLASS_GONE;
-    DelRef(clsPtr);
-
+    if (IsRootClass(oPtr) && !Deleted(fPtr->objectCls->thisPtr)) {
+	Tcl_DeleteCommandFromToken(interp, fPtr->objectCls->thisPtr->command);
+    }
 }
 
 /*
@@ -1123,13 +1005,26 @@ ObjectNamespaceDeleted(
     Method *mPtr;
     Tcl_Obj *filterObj, *variableObj;
     Tcl_Interp *interp = oPtr->fPtr->interp;
-    int finished = 0, i;
+    int i;
 
+    if (Deleted(oPtr)) {
+	/* To do:  Can ObjectNamespaceDeleted ever be called twice?  If not,
+	 * this guard could be removed.
+	 */
+	return;
+    }
 
-    AddRef(fPtr->classCls);
-    AddRef(fPtr->objectCls);
-    AddRef(fPtr->classCls->thisPtr);
-    AddRef(fPtr->objectCls->thisPtr);
+    /*
+     * One rule for the teardown routines is that if an object is in the
+     * process of being deleted, nothing else may modify its bookeeping
+     * records.  This is the flag that
+     */
+    oPtr->flags |= OBJECT_DELETED;
+
+    /* Let the dominoes fall */
+    if (oPtr->classPtr) {
+	DeleteDescendants(interp, oPtr);
+    }
 
     /*
      * We do not run destructors on the core class objects when the
@@ -1137,15 +1032,14 @@ ObjectNamespaceDeleted(
      * in that case when the destructor is partially deleted before the uses
      * of it have gone. [Bug 2949397]
      */
-
-    if (!(oPtr->flags & DESTRUCTOR_CALLED) && !Tcl_InterpDeleted(interp)) {
+    if (!Tcl_InterpDeleted(interp) && !(oPtr->flags & DESTRUCTOR_CALLED)) {
 	CallContext *contextPtr =
 		TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
 	int result;
 
 	Tcl_InterpState state;
-
 	oPtr->flags |= DESTRUCTOR_CALLED;
+
 	if (contextPtr != NULL) {
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
@@ -1167,7 +1061,7 @@ ObjectNamespaceDeleted(
      * points into freed memory.
      */
 
-    if ((((Command *)oPtr->command)->flags && CMD_IS_DELETED)) {
+    if (((Command *)oPtr->command)->flags && CMD_IS_DELETED) {
 	/*
 	 * Something has already started the command deletion process. We can
 	 * go ahead and clean up the the namespace,
@@ -1178,9 +1072,7 @@ ObjectNamespaceDeleted(
 	 * as well.
 	 */
 	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->command);
-	finished = 1;
     }
-    oPtr->command = NULL;
 
     if (oPtr->myCommand) {
 	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->myCommand);
@@ -1191,14 +1083,11 @@ ObjectNamespaceDeleted(
      * methods on the object.
      */
 
-    if (!IsRootObject(oPtr) && !(oPtr->flags & CLASS_GONE)) {
-	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
-    }
+    /* To do: Should this be protected with a * !IsRoot() condition?  */ 
+    TclOORemoveFromInstances(oPtr, oPtr->selfCls);
 
     FOREACH(mixinPtr, oPtr->mixins) {
-	if (mixinPtr && mixinPtr != oPtr->classPtr) {
-	    TclOORemoveFromInstances(oPtr, mixinPtr);
-	}
+	i -= TclOORemoveFromInstances(oPtr, mixinPtr);
     }
     if (i) {
 	ckfree(oPtr->mixins.list);
@@ -1258,8 +1147,9 @@ ObjectNamespaceDeleted(
      * classes, if one goes the other must too and yet the tangle can
      * sometimes not go away automatically; we force it here. [Bug 2962664]
      */
-    if (!Tcl_InterpDeleted(interp) && IsRootObject(oPtr)
-	    && !Deleted(fPtr->classCls->thisPtr)) {
+    if (IsRootObject(oPtr) && !Deleted(fPtr->classCls->thisPtr)
+	&& !Tcl_InterpDeleted(interp)) {
+
 	Tcl_DeleteCommandFromToken(interp, fPtr->classCls->thisPtr->command);
     }
 
@@ -1267,31 +1157,55 @@ ObjectNamespaceDeleted(
 	ReleaseClassContents(interp, oPtr);
     }
 
-
     /*
      * Delete the object structure itself.
      */
 
-    oPtr->classPtr = NULL;
     oPtr->namespacePtr = NULL;
-
-    DelRef(fPtr->classCls->thisPtr);
-    DelRef(fPtr->objectCls->thisPtr);
-    DelRef(fPtr->classCls);
-    DelRef(fPtr->objectCls);
-    if (finished) {
-	/*
-	 * ObjectRenamedTrace called us, and not the other way around.
-	 */
-	DelRef(oPtr);
-    } else {
-	/*
-	 * ObjectRenamedTrace will call DelRef(oPtr).
-	 */
-    }
+    oPtr->selfCls = NULL;
+    TclOODecrRefCount(oPtr);
     return;
-
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOODecrRef --
+ *
+ *	Decrement the refcount of an object and deallocate storage then object
+ *	is no longer referenced.  Returns 1 if storage was deallocated, and 0
+ *	otherwise.
+ *
+ * ----------------------------------------------------------------------
+ */
+int TclOODecrRefCount(Object *oPtr) {
+    if (oPtr->refCount-- <= 1) {
+	Class *clsPtr = oPtr->classPtr;
+	if (oPtr->classPtr != NULL) {
+	    ckfree(clsPtr->superclasses.list);
+	    ckfree(clsPtr->subclasses.list);
+	    ckfree(clsPtr->instances.list);
+	    ckfree(clsPtr->mixinSubs.list);
+	    ckfree(clsPtr->mixins.list);
+	    ckfree(oPtr->classPtr);
+	}
+	ckfree(oPtr);
+	return 1;
+    }
+    return 0;
+}
+
+/* setting the "empty" location to NULL makes debugging a little easier */
+#define REMOVEBODY { \
+    for (; idx < num - 1; idx++) { \
+	list[idx] = list[idx+1]; \
+    } \
+    list[idx] = NULL;  \
+    return; \
+}
+void RemoveClass(Class **list, int num, int idx) REMOVEBODY
+
+void RemoveObject(Object **list, int num, int idx) REMOVEBODY
 
 /*
  * ----------------------------------------------------------------------
@@ -1304,36 +1218,27 @@ ObjectNamespaceDeleted(
  * ----------------------------------------------------------------------
  */
 
-void
+int
 TclOORemoveFromInstances(
     Object *oPtr,		/* The instance to remove. */
     Class *clsPtr)		/* The class (possibly) containing the
 				 * reference to the instance. */
 {
-    int i;
+    int i, res = 0;
     Object *instPtr;
+    if (Deleted(clsPtr->thisPtr)) {
+	return res;
+    }
 
     FOREACH(instPtr, clsPtr->instances) {
 	if (oPtr == instPtr) {
-	    goto removeInstance;
+	    RemoveItem(Object, clsPtr->instances, i);
+	    TclOODecrRefCount(oPtr);
+	    res++;
+	    break;
 	}
     }
-    return;
-
-  removeInstance:
-    if (Deleted(clsPtr->thisPtr)) {
-	if (!IsRootClass(clsPtr)) {
-	    DelRef(clsPtr->instances.list[i]);
-	}
-	clsPtr->instances.list[i] = NULL;
-    } else {
-	clsPtr->instances.num--;
-	if (i < clsPtr->instances.num) {
-	    clsPtr->instances.list[i] =
-		    clsPtr->instances.list[clsPtr->instances.num];
-	}
-	clsPtr->instances.list[clsPtr->instances.num] = NULL;
-    }
+    return res;
 }
 
 /*
@@ -1354,9 +1259,6 @@ TclOOAddToInstances(
 				 * assumed that the class is not already
 				 * present as an instance in the class. */
 {
-    if (Deleted(clsPtr->thisPtr)) {
-	return;
-    }
     if (clsPtr->instances.num >= clsPtr->instances.size) {
 	clsPtr->instances.size += ALLOC_CHUNK;
 	if (clsPtr->instances.size == ALLOC_CHUNK) {
@@ -1367,6 +1269,7 @@ TclOOAddToInstances(
 	}
     }
     clsPtr->instances.list[clsPtr->instances.num++] = oPtr;
+    AddRef(oPtr);
 }
 
 /*
@@ -1375,36 +1278,31 @@ TclOOAddToInstances(
  * TclOORemoveFromSubclasses --
  *
  *	Utility function to remove a class from the list of subclasses within
- *	another class.
+ *	another class. Returns the number of removals performed.
  *
  * ----------------------------------------------------------------------
  */
 
-void
+int
 TclOORemoveFromSubclasses(
     Class *subPtr,		/* The subclass to remove. */
     Class *superPtr)		/* The superclass to possibly remove the
 				 * subclass reference from. */
 {
-    int i;
+    int i, res = 0;
     Class *subclsPtr;
+    if (Deleted(superPtr->thisPtr)) {
+	return res;
+    }
 
     FOREACH(subclsPtr, superPtr->subclasses) {
 	if (subPtr == subclsPtr) {
-	    goto removeSubclass;
+	    RemoveItem(Class, superPtr->subclasses, i);
+	    TclOODecrRefCount(subPtr->thisPtr);
+	    res++;
 	}
     }
-    return;
-
-  removeSubclass:
-    if (!Deleted(superPtr->thisPtr)) {
-	superPtr->subclasses.num--;
-	if (i < superPtr->subclasses.num) {
-	    superPtr->subclasses.list[i] =
-		    superPtr->subclasses.list[superPtr->subclasses.num];
-	}
-	superPtr->subclasses.list[superPtr->subclasses.num] = NULL;
-    }
+    return res;
 }
 
 /*
@@ -1431,13 +1329,13 @@ TclOOAddToSubclasses(
     if (superPtr->subclasses.num >= superPtr->subclasses.size) {
 	superPtr->subclasses.size += ALLOC_CHUNK;
 	if (superPtr->subclasses.size == ALLOC_CHUNK) {
-	    superPtr->subclasses.list = ckalloc(sizeof(Class*) * ALLOC_CHUNK);
+	    superPtr->subclasses.list = ckalloc(sizeof(Class *) * ALLOC_CHUNK);
 	} else {
-	    superPtr->subclasses.list = ckrealloc(superPtr->subclasses.list,
-		    sizeof(Class *) * superPtr->subclasses.size);
+	    superPtr->subclasses.list = ckrealloc(superPtr->subclasses.list, sizeof(Class *) * superPtr->subclasses.size);
 	}
     }
     superPtr->subclasses.list[superPtr->subclasses.num++] = subPtr;
+    AddRef(subPtr->thisPtr);
 }
 
 /*
@@ -1451,31 +1349,28 @@ TclOOAddToSubclasses(
  * ----------------------------------------------------------------------
  */
 
-void
+int
 TclOORemoveFromMixinSubs(
     Class *subPtr,		/* The subclass to remove. */
     Class *superPtr)		/* The superclass to possibly remove the
 				 * subclass reference from. */
 {
-    int i;
+    int i, res = 0;
     Class *subclsPtr;
+
+    if (Deleted(superPtr->thisPtr)) {
+	return res;
+    }
 
     FOREACH(subclsPtr, superPtr->mixinSubs) {
 	if (subPtr == subclsPtr) {
-	    goto removeSubclass;
+	    RemoveItem(Class, superPtr->mixinSubs, i);
+	    TclOODecrRefCount(subPtr->thisPtr);
+	    res++;
+	    break;
 	}
     }
-    return;
-
-  removeSubclass:
-    if (!Deleted(superPtr->thisPtr)) {
-	superPtr->mixinSubs.num--;
-	if (i < superPtr->mixinSubs.num) {
-	    superPtr->mixinSubs.list[i] =
-		    superPtr->mixinSubs.list[superPtr->mixinSubs.num];
-	}
-	superPtr->mixinSubs.list[superPtr->mixinSubs.num] = NULL;
-    }
+    return res;
 }
 
 /*
@@ -1509,6 +1404,7 @@ TclOOAddToMixinSubs(
 	}
     }
     superPtr->mixinSubs.list[superPtr->mixinSubs.num++] = subPtr;
+    AddRef(subPtr->thisPtr);
 }
 
 /*
@@ -1516,7 +1412,7 @@ TclOOAddToMixinSubs(
  *
  * AllocClass --
  *
- *	Allocate a basic class. Does not splice the class object into its
+ *	Allocate a basic class. Does not add class to its
  *	class's instance list.
  *
  * ----------------------------------------------------------------------
@@ -1527,44 +1423,18 @@ AllocClass(
     Tcl_Interp *interp,		/* Interpreter within which to allocate the
 				 * class. */
     Object *useThisObj)		/* Object that is to act as the class
-				 * representation, or NULL if a new object
-				 * with automatic name is to be used. */
+				 * representation. */
 {
     Foundation *fPtr = GetFoundation(interp);
     Class *clsPtr = ckalloc(sizeof(Class));
 
-    /*
-     * Make an object if we haven't been given one.
-     */
-
     memset(clsPtr, 0, sizeof(Class));
-    if (useThisObj == NULL) {
-	clsPtr->thisPtr = AllocObject(interp, NULL, NULL, NULL);
-    } else {
-	clsPtr->thisPtr = useThisObj;
-    }
+    clsPtr->thisPtr = useThisObj;
 
     /*
      * Configure the namespace path for the class's object.
      */
-
-    if (fPtr->helpersNs != NULL) {
-	Tcl_Namespace *path[2];
-
-	path[0] = fPtr->helpersNs;
-	path[1] = fPtr->ooNs;
-	TclSetNsPath((Namespace *) clsPtr->thisPtr->namespacePtr, 2, path);
-    } else {
-	TclSetNsPath((Namespace *) clsPtr->thisPtr->namespacePtr, 1,
-		&fPtr->ooNs);
-    }
-
-    /*
-     * Class objects inherit from the class of classes unless they inherit
-     * from some subclass of it. Enforce this right now.
-     */
-
-    clsPtr->thisPtr->selfCls = fPtr->classCls;
+    initClassPath(interp, clsPtr);
 
     /*
      * Classes are subclasses of oo::object, i.e. the objects they create are
@@ -1574,6 +1444,7 @@ AllocClass(
     clsPtr->superclasses.num = 1;
     clsPtr->superclasses.list = ckalloc(sizeof(Class *));
     clsPtr->superclasses.list[0] = fPtr->objectCls;
+    AddRef(fPtr->objectCls->thisPtr);
 
     /*
      * Finish connecting the class structure to the object structure.
@@ -1586,9 +1457,21 @@ AllocClass(
      * fields.
      */
 
-    clsPtr->refCount = 1;
     Tcl_InitObjHashTable(&clsPtr->classMethods);
     return clsPtr;
+}
+static void
+initClassPath(Tcl_Interp *interp, Class *clsPtr) {
+    Foundation *fPtr = GetFoundation(interp);
+    if (fPtr->helpersNs != NULL) {
+	Tcl_Namespace *path[2];
+	path[0] = fPtr->helpersNs;
+	path[1] = fPtr->ooNs;
+	TclSetNsPath((Namespace *) clsPtr->thisPtr->namespacePtr, 2, path);
+    } else {
+	TclSetNsPath((Namespace *) clsPtr->thisPtr->namespacePtr, 1,
+		&fPtr->ooNs);
+    }
 }
 
 /*
@@ -1640,7 +1523,7 @@ Tcl_NewObjectInstance(
 	    contextPtr->skip = skip;
 
 	    /*
-	     * Adjust the ensmble tracking record if necessary. [Bug 3514761]
+	     * Adjust the ensemble tracking record if necessary. [Bug 3514761]
 	     */
 
 	    isRoot = TclInitRewriteEnsemble(interp, skip, skip, objv);
@@ -1656,7 +1539,6 @@ Tcl_NewObjectInstance(
 	    clientData[2] = state;
 	    clientData[3] = &oPtr;
 
-	    AddRef(oPtr);
 	    result = FinalizeAlloc(clientData, interp, result);
 	    if (result != TCL_OK) {
 		return NULL;
@@ -1723,7 +1605,6 @@ TclNRNewObjectInstance(
      * Fire off the constructors non-recursively.
      */
 
-    AddRef(oPtr);
     TclNRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, state,
 	    objectPtr);
     TclPushTailcallPoint(interp);
@@ -1771,18 +1652,9 @@ TclNewObjectInstanceCommon(
      * Create the object.
      */
 
-    /*
-     * The command for the object could have the same name as the command
-     * associated with classPtr, so protect the structure from deallocation
-     * here.
-     */
-    AddRef(classPtr);
-
     oPtr = AllocObject(interp, simpleName, nsPtr, nsNameStr);
-    DelRef(classPtr);
     oPtr->selfCls = classPtr;
     TclOOAddToInstances(oPtr, classPtr);
-
     /*
      * Check to see if we're really creating a class. If so, allocate the
      * class structure as well.
@@ -1797,7 +1669,6 @@ TclNewObjectInstanceCommon(
 	 */
 
 	AllocClass(interp, oPtr);
-	oPtr->selfCls = classPtr;
 	TclOOAddToSubclasses(oPtr->classPtr, fPtr->objectCls);
     } else {
 	oPtr->classPtr = NULL;
@@ -1829,7 +1700,6 @@ FinalizeAlloc(
 	Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", NULL);
 	result = TCL_ERROR;
     }
-    TclOODeleteContext(contextPtr);
     if (result != TCL_OK) {
 	Tcl_DiscardInterpState(state);
 
@@ -1843,12 +1713,14 @@ FinalizeAlloc(
 	    (void) TclOOObjectName(interp, oPtr);
 	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
 	}
-	DelRef(oPtr);
+	/* This decrements the refcount of oPtr */
+	TclOODeleteContext(contextPtr);
 	return TCL_ERROR;
     }
     Tcl_RestoreInterpState(interp, state);
     *objectPtr = (Tcl_Object) oPtr;
-    DelRef(oPtr);
+    /* This decrements the refcount of oPtr */
+    TclOODeleteContext(contextPtr);
     return TCL_OK;
 }
 
@@ -1956,8 +1828,7 @@ Tcl_CopyObjectInstance(
      */
 
     o2Ptr->flags = oPtr->flags & ~(
-	    OBJECT_DELETED | ROOT_OBJECT | ROOT_CLASS | FILTER_HANDLING);
-
+	    OBJECT_DELETED | ROOT_OBJECT | ROOT_CLASS | FILTER_HANDLING); 
     /*
      * Copy the object's metadata.
      */
@@ -2969,7 +2840,7 @@ int
 Tcl_ObjectDeleted(
     Tcl_Object object)
 {
-    return Deleted(object) ? 1 : 0;
+    return ((Object *)object)->command == NULL;
 }
 
 Tcl_Object
