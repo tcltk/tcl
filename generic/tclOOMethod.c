@@ -860,6 +860,8 @@ PushMethodCallFrame(
 	ByteCode *codePtr =
 		pmPtr->procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
 
+	nsPtr->refCount++;
+	TclNsDecrRefCount(codePtr->nsPtr);
 	codePtr->nsPtr = nsPtr;
     }
     result = TclProcCompileProc(interp, pmPtr->procPtr,
