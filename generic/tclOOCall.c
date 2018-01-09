@@ -110,7 +110,11 @@ TclOODeleteContext(
     TclOODeleteChain(contextPtr->callPtr);
     if (oPtr != NULL) {
 	TclStackFree(oPtr->fPtr->interp, contextPtr);
-	/* Corresponding AddRef() in TclOO.c/TclOOObjectCmdCore */
+
+	/*
+	 * Corresponding AddRef() in TclOO.c/TclOOObjectCmdCore
+	 */
+
 	TclOODecrRefCount(oPtr);
     }
 }
@@ -901,6 +905,7 @@ InitCallChain(
  * ----------------------------------------------------------------------
  *
  * IsStillValid --
+ *
  *	Calculates whether the given call chain can be used for executing a
  *	method for the given object. The condition on a chain from a cached
  *	location being reusable is:
@@ -1172,7 +1177,11 @@ TclOOGetCallContext(
   returnContext:
     contextPtr = TclStackAlloc(oPtr->fPtr->interp, sizeof(CallContext));
     contextPtr->oPtr = oPtr;
-    /* Corresponding TclOODecrRefCount() in TclOODeleteContext */ 
+
+    /*
+     * Corresponding TclOODecrRefCount() in TclOODeleteContext
+     */
+
     AddRef(oPtr);
     contextPtr->callPtr = callPtr;
     contextPtr->skip = 2;
