@@ -860,6 +860,8 @@ PushMethodCallFrame(
 	ByteCode *codePtr =
 		pmPtr->procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
 
+	nsPtr->refCount++;
+	TclNsDecrRefCount(codePtr->nsPtr);
 	codePtr->nsPtr = nsPtr;
     }
     result = TclProcCompileProc(interp, pmPtr->procPtr,
@@ -1464,6 +1466,8 @@ InvokeForwardMethod(
      */
     ((Interp *)interp)->lookupNsPtr
 	    = (Namespace *) contextPtr->oPtr->namespacePtr;
+    /* Corresponding TclNrDecrRefCount is in EvalObjvCore */ 
+    ((Namespace *)contextPtr->oPtr->namespacePtr)->refCount++;
     return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_NOERR, NULL);
 }
 

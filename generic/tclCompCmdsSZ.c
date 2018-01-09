@@ -2575,14 +2575,11 @@ TclCompileTailcallCmd(
 	return TCL_ERROR;
     }
 
-    /* make room for the nsObjPtr */
-    /* TODO: Doesn't this have to be a known value? */
-    CompileWord(envPtr, tokenPtr, interp, 0);
     for (i=1 ; i<parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
-    TclEmitInstInt1(	INST_TAILCALL, parsePtr->numWords,	envPtr);
+    TclEmitInstInt1(	INST_TAILCALL, parsePtr->numWords - 1,	envPtr);
     return TCL_OK;
 }
 
@@ -3894,12 +3891,11 @@ TclCompileYieldToCmd(
 	return TCL_ERROR;
     }
 
-    OP(		NS_CURRENT);
     for (i = 1 ; i < parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
-    OP4(	LIST, i);
+    OP4(	LIST, i-1);
     OP(		YIELD_TO_INVOKE);
     return TCL_OK;
 }

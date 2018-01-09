@@ -995,9 +995,9 @@ test basic-50.1 {[586e71dce4] EvalObjv level #0 exception handling} -setup {
 } -result {0 {}}
 
 # Clean up after expand tests
-unset noComp l1 l2 constraints
-rename l3 {}
-rename run {}
+catch {unset noComp l1 l2 constraints}
+catch {rename l3 {}}
+catch {rename run {}}
 
  #cleanup
 catch {namespace delete {*}[namespace children :: test_ns_*]}

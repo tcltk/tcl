@@ -1918,6 +1918,7 @@ NsEnsembleImplementationCmdNR(
 	TclSkipTailcall(interp);
 	Tcl_ListObjGetElements(NULL, copyPtr, &copyObjc, &copyObjv);
 	((Interp *)interp)->lookupNsPtr = ensemblePtr->nsPtr;
+	ensemblePtr->nsPtr->refCount++;
 	return TclNREvalObjv(interp, copyObjc, copyObjv, TCL_EVAL_INVOKE, NULL);
     }
 

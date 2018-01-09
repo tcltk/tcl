@@ -324,7 +324,7 @@ Tcl_PushCallFrame(
 	}
     }
 
-    nsPtr->activationCount++;
+    nsPtr->refCount++;
     framePtr->nsPtr = nsPtr;
     framePtr->isProcCallFrame = isProcCallFrame;
     framePtr->objc = 0;
@@ -342,7 +342,8 @@ Tcl_PushCallFrame(
     framePtr->compiledLocals = NULL;
     framePtr->clientData = NULL;
     framePtr->localCachePtr = NULL;
-    framePtr->tailcallPtr = NULL;
+    framePtr->tailcallNsPtr = NULL;
+    framePtr->tailcallCmdPtr = NULL;
 
     /*
      * Push the new call frame onto the interpreter's stack of procedure call
@@ -380,7 +381,6 @@ Tcl_PopCallFrame(
 {
     register Interp *iPtr = (Interp *) interp;
     register CallFrame *framePtr = iPtr->framePtr;
-    Namespace *nsPtr;
 
     /*
      * It's important to remove the call frame from the interpreter's stack of
@@ -414,16 +414,13 @@ Tcl_PopCallFrame(
      * Tcl_DeleteNamespace to destroy it.
      */
 
-    nsPtr = framePtr->nsPtr;
-    nsPtr->activationCount--;
-    if ((nsPtr->flags & NS_DYING)
-	    && (nsPtr->activationCount - (nsPtr == iPtr->globalNsPtr) == 0)) {
-	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
-    }
+    /* Corresponds to refCount++ in Tcl_PushCallFrame */
+    TclNsDecrRefCount(framePtr->nsPtr);
     framePtr->nsPtr = NULL;
 
-    if (framePtr->tailcallPtr) {
-	TclSetTailcall(interp, framePtr->tailcallPtr);
+    if (framePtr->tailcallNsPtr) {
+	TclSetTailcall(interp, framePtr->tailcallNsPtr,
+	    framePtr->tailcallCmdPtr);
     }
 }
 
@@ -786,8 +783,8 @@ Tcl_CreateNamespace(
     nsPtr->nsId = ++(tsdPtr->numNsCreated);
     nsPtr->interp = interp;
     nsPtr->flags = 0;
-    nsPtr->activationCount = 0;
-    nsPtr->refCount = 0;
+    /* Corresponding TclNsDecrRefCount is at the end of Tcl_DeleteNamespace */
+    nsPtr->refCount = 1;
     Tcl_InitHashTable(&nsPtr->cmdTable, TCL_STRING_KEYS);
     TclInitVarHashTable(&nsPtr->varTable, nsPtr);
     nsPtr->exportArrayPtr = NULL;
@@ -907,18 +904,20 @@ void
 Tcl_DeleteNamespace(
     Tcl_Namespace *namespacePtr)/* Points to the namespace to delete. */
 {
-    register Namespace *nsPtr = (Namespace *) namespacePtr;
+    int i, newChildren;
+    register Namespace *nsPtr = (Namespace *) namespacePtr, *childPtr ;
     Interp *iPtr = (Interp *) nsPtr->interp;
     Namespace *globalNsPtr = (Namespace *)
 	    TclGetGlobalNamespace((Tcl_Interp *) iPtr);
-    Tcl_HashEntry *entryPtr;
+    register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
     Command *cmdPtr;
 
-    /*
-     * Ensure that this namespace doesn't get deallocated in the meantime.
-     */
-    nsPtr->refCount++;
+    if (nsPtr->flags & NS_DYING) {
+	return;
+    }
+
+    nsPtr->flags |= NS_DYING;
 
     /*
      * Give anyone interested - notably TclOO - a chance to use this namespace
@@ -935,50 +934,165 @@ Tcl_DeleteNamespace(
 	Tcl_NamespaceDeleteProc *earlyDeleteProc = nsPtr->earlyDeleteProc;
 
 	nsPtr->earlyDeleteProc = NULL;
-	nsPtr->activationCount++;
 	earlyDeleteProc(nsPtr->clientData);
-	nsPtr->activationCount--;
     }
 
-    /*
-     * Delete all coroutine commands now: break the circular ref cycle between
-     * the namespace and the coroutine command [Bug 2724403]. This code is
-     * essentially duplicated in TclTeardownNamespace() for all other
-     * commands. Don't optimize to Tcl_NextHashEntry() because of traces.
-     *
-     * NOTE: we could avoid traversing the ns's command list by keeping a
-     * separate list of coros.
-     */
-
-    for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-	    entryPtr != NULL;) {
-	cmdPtr = Tcl_GetHashValue(entryPtr);
-	if (cmdPtr->nreProc == TclNRInterpCoroutine) {
-	    Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr,
-		    (Tcl_Command) cmdPtr);
-	    entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-	} else {
-	    entryPtr = Tcl_NextHashEntry(&search);
-	}
-    }
-
-    /*
-     * If the namespace has associated ensemble commands, delete them first.
-     * This leaves the actual contents of the namespace alone (unless they are
-     * linked ensemble commands, of course). Note that this code is actually
-     * reentrant so command delete traces won't purturb things badly.
-     */
-
-    while (nsPtr->ensembles != NULL) {
-	EnsembleConfig *ensemblePtr = (EnsembleConfig *) nsPtr->ensembles;
-
+    do {
 	/*
-	 * Splice out and link to indicate that we've already been killed.
+	 * Delete all coroutine commands now: break the circular ref cycle between
+	 * the namespace and the coroutine command [Bug 2724403]. This code is
+	 * essentially duplicated in TclTeardownNamespace() for all other
+	 * commands. Don't optimize to Tcl_NextHashEntry() because of traces.
+	 *
+	 * NOTE: we could avoid traversing the ns's command list by keeping a
+	 * separate list of coros.
 	 */
 
-	nsPtr->ensembles = (Tcl_Ensemble *) ensemblePtr->next;
-	ensemblePtr->next = ensemblePtr;
-	Tcl_DeleteCommandFromToken(nsPtr->interp, ensemblePtr->token);
+	for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+		entryPtr != NULL;) {
+	    cmdPtr = Tcl_GetHashValue(entryPtr);
+	    if (cmdPtr->nreProc == TclNRInterpCoroutine) {
+		Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr,
+			(Tcl_Command) cmdPtr);
+		entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+	    } else {
+		entryPtr = Tcl_NextHashEntry(&search);
+	    }
+	}
+
+	/*
+	 * If the namespace has associated ensemble commands, delete them first.
+	 * This leaves the actual contents of the namespace alone (unless they are
+	 * linked ensemble commands, of course). Note that this code is actually
+	 * reentrant so command delete traces won't purturb things badly.
+	 */
+
+	while (nsPtr->ensembles != NULL) {
+	    EnsembleConfig *ensemblePtr = (EnsembleConfig *) nsPtr->ensembles;
+
+	    /*
+	     * Splice out and link to indicate that we've already been killed.
+	     */
+
+	    nsPtr->ensembles = (Tcl_Ensemble *) ensemblePtr->next;
+	    ensemblePtr->next = ensemblePtr;
+	    Tcl_DeleteCommandFromToken(nsPtr->interp, ensemblePtr->token);
+	}
+
+	/*
+	 * Delete all the child namespaces.
+	 *
+	 * BE CAREFUL: When each child is deleted, it will divorce itself from its
+	 * parent. You can't traverse a hash table properly if its elements are
+	 * being deleted.  Because of traces (and the desire to avoid the
+	 * quadratic problems of just using Tcl_FirstHashEntry over and over, [Bug
+	 * f97d4ee020]) we copy to a temporary array and then delete all those
+	 * namespaces.
+	 *
+	 * Important: leave the hash table itself still live.
+	 */
+
+#ifndef BREAK_NAMESPACE_COMPAT
+	do {
+	    int length = nsPtr->childTable.numEntries;
+	    Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
+		    sizeof(Namespace *) * length);
+	    newChildren = 0;
+
+	    i = 0;
+	    for (entryPtr = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
+		    entryPtr != NULL;
+		    entryPtr = Tcl_NextHashEntry(&search)) {
+		children[i] = Tcl_GetHashValue(entryPtr);
+		children[i]->refCount++;
+		i++;
+	    }
+	    for (i = 0 ; i < length ; i++) {
+		Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
+		TclNsDecrRefCount(children[i]);
+	    }
+	    TclStackFree((Tcl_Interp *) iPtr, children);
+	    for (entryPtr = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
+		    entryPtr != NULL;
+		    entryPtr = Tcl_NextHashEntry(&search)) {
+		childPtr = Tcl_GetHashValue(entryPtr);
+		if (!(childPtr->flags & NS_DYING)) {
+		    newChildren = 1;
+		    break;
+		}
+	    }
+
+	} while (newChildren);
+#else
+	if (nsPtr->childTablePtr != NULL) {
+	    while (nsPtr->childTablePtr->numEntries > 0) {
+		int length = nsPtr->childTablePtr->numEntries;
+		Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
+			sizeof(Namespace *) * length);
+
+		i = 0;
+		for (entryPtr = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
+			entryPtr != NULL;
+			entryPtr = Tcl_NextHashEntry(&search)) {
+		    children[i] = Tcl_GetHashValue(entryPtr);
+		    children[i]->refCount++;
+		    i++;
+		}
+		for (i = 0 ; i < length ; i++) {
+		    Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
+		    TclNsDecrRefCount(children[i]);
+		}
+		TclStackFree((Tcl_Interp *) iPtr, children);
+	    }
+	}
+#endif
+	/*
+	 * Start by destroying the namespace's variable table, since variables
+	 * might trigger traces. Variable table should be cleared but not freed!
+	 * TclDeleteNamespaceVars frees it, so we reinitialize it afterwards.
+	 */
+
+	TclDeleteNamespaceVars(nsPtr);
+	TclInitVarHashTable(&nsPtr->varTable, nsPtr);
+
+	/*
+	 * Delete all commands in this namespace. Be careful when traversing the
+	 * hash table: when each command is deleted, it removes itself from the
+	 * command table. Because of traces (and the desire to avoid the quadratic
+	 * problems of just using Tcl_FirstHashEntry over and over, [Bug
+	 * f97d4ee020]) we copy to a temporary array and then delete all those
+	 * commands.
+	 */
+
+	while (nsPtr->cmdTable.numEntries > 0) {
+	    int length = nsPtr->cmdTable.numEntries;
+	    Command **cmds = TclStackAlloc((Tcl_Interp *) iPtr,
+		    sizeof(Command *) * length);
+
+	    i = 0;
+	    for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+		    entryPtr != NULL;
+		    entryPtr = Tcl_NextHashEntry(&search)) {
+		cmds[i] = Tcl_GetHashValue(entryPtr);
+		cmds[i]->refCount++;
+		i++;
+	    }
+	    for (i = 0 ; i < length ; i++) {
+		Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr,
+			(Tcl_Command) cmds[i]);
+	    }
+	    TclStackFree((Tcl_Interp *) iPtr, cmds);
+	}
+
+    } while (nsPtr->varTable.table.numEntries > 0
+	|| newChildren || nsPtr->ensembles != NULL);
+
+    /*
+     * Free any client data associated with the namespace.
+     */
+
+    if (nsPtr->deleteProc != NULL) {
+	nsPtr->deleteProc(nsPtr->clientData);
     }
 
     /*
@@ -992,84 +1106,83 @@ Tcl_DeleteNamespace(
     }
 
     /*
-     * If the namespace is on the call frame stack, it is marked as "dying"
-     * (NS_DYING is OR'd into its flags): the namespace can't be looked up by
-     * name but its commands and variables are still usable by those active
-     * call frames. When all active call frames referring to the namespace
-     * have been popped from the Tcl stack, Tcl_PopCallFrame will call this
-     * function again to delete everything in the namespace. If no nsName
-     * objects refer to the namespace (i.e., if its refCount is zero), its
-     * commands and variables are deleted and the storage for its namespace
-     * structure is freed. Otherwise, if its refCount is nonzero, the
-     * namespace's commands and variables are deleted but the structure isn't
-     * freed. Instead, NS_DEAD is OR'd into the structure's flags to allow the
-     * namespace resolution code to recognize that the namespace is "deleted".
-     * The structure's storage is freed by FreeNsNameInternalRep when its
-     * refCount reaches 0.
+     * Remove the namespace from its parent's child hashtable.
      */
 
-    if (nsPtr->activationCount - (nsPtr == globalNsPtr) > 0) {
-	nsPtr->flags |= NS_DYING;
-	if (nsPtr->parentPtr != NULL) {
-	    entryPtr = Tcl_FindHashEntry(
-		    TclGetNamespaceChildTable((Tcl_Namespace *)
-			    nsPtr->parentPtr), nsPtr->name);
-	    if (entryPtr != NULL) {
-		Tcl_DeleteHashEntry(entryPtr);
-	    }
-	}
-	nsPtr->parentPtr = NULL;
-    } else if (!(nsPtr->flags & NS_KILLED)) {
-	/*
-	 * Delete the namespace and everything in it. If this is the global
-	 * namespace, then clear it but don't free its storage unless the
-	 * interpreter is being torn down. Set the NS_KILLED flag to avoid
-	 * recursive calls here - if the namespace is really in the process of
-	 * being deleted, ignore any second call.
-	 */
-
-	nsPtr->flags |= (NS_DYING|NS_KILLED);
-
-	TclTeardownNamespace(nsPtr);
-
-	if ((nsPtr != globalNsPtr) || (iPtr->flags & DELETED)) {
-	    /*
-	     * If this is the global namespace, then it may have residual
-	     * "errorInfo" and "errorCode" variables for errors that occurred
-	     * while it was being torn down. Try to clear the variable list
-	     * one last time.
-	     */
-
-	    TclDeleteNamespaceVars(nsPtr);
-
-#ifndef BREAK_NAMESPACE_COMPAT
-	    Tcl_DeleteHashTable(&nsPtr->childTable);
-#else
-	    if (nsPtr->childTablePtr != NULL) {
-		Tcl_DeleteHashTable(nsPtr->childTablePtr);
-		ckfree(nsPtr->childTablePtr);
-	    }
-#endif
-	    Tcl_DeleteHashTable(&nsPtr->cmdTable);
-
-	    nsPtr ->flags |= NS_DEAD;
-	} else {
-	    /*
-	     * Restore the ::errorInfo and ::errorCode traces.
-	     */
-
-	    EstablishErrorInfoTraces(NULL, nsPtr->interp, NULL, NULL, 0);
-	    EstablishErrorCodeTraces(NULL, nsPtr->interp, NULL, NULL, 0);
-
-	    /*
-	     * We didn't really kill it, so remove the KILLED marks, so it can
-	     * get killed later, avoiding mem leaks.
-	     */
-
-	    nsPtr->flags &= ~(NS_DYING|NS_KILLED);
+    if (nsPtr->parentPtr != NULL) {
+	entryPtr = Tcl_FindHashEntry(
+		TclGetNamespaceChildTable((Tcl_Namespace *)
+			nsPtr->parentPtr), nsPtr->name);
+	if (entryPtr != NULL) {
+	    Tcl_DeleteHashEntry(entryPtr);
 	}
     }
-    TclNsDecrRefCount(nsPtr);
+
+    nsPtr->parentPtr = NULL;
+
+
+    /*
+     * Delete the namespace path if one is installed.
+     */
+
+    if (nsPtr->commandPathLength != 0) {
+	UnlinkNsPath(nsPtr);
+	nsPtr->commandPathLength = 0;
+    }
+    if (nsPtr->commandPathSourceList != NULL) {
+	NamespacePathEntry *nsPathPtr = nsPtr->commandPathSourceList;
+
+	do {
+	    if (nsPathPtr->nsPtr != NULL && nsPathPtr->creatorNsPtr != NULL) {
+		nsPathPtr->creatorNsPtr->cmdRefEpoch++;
+	    }
+	    nsPathPtr->nsPtr = NULL;
+	    nsPathPtr = nsPathPtr->nextPtr;
+	} while (nsPathPtr != NULL);
+	nsPtr->commandPathSourceList = NULL;
+    }
+
+
+    /*
+     * Reset the namespace's id field to ensure that this namespace won't be
+     * interpreted as valid by, e.g., the cache validation code for cached
+     * command references in Tcl_GetCommandFromObj.
+     */
+
+    nsPtr->nsId = 0;
+
+    if ((nsPtr != globalNsPtr) || (iPtr->flags & DELETED)) {
+
+	/* No variables or commands are allowed after this point */
+	nsPtr->flags |= NS_DEAD|NS_KILLED;
+	Tcl_DeleteHashTable(&nsPtr->varTable.table);
+	Tcl_DeleteHashTable(&nsPtr->cmdTable);
+
+
+#ifndef BREAK_NAMESPACE_COMPAT
+	Tcl_DeleteHashTable(&nsPtr->childTable);
+#else
+	if (nsPtr->childTablePtr != NULL) {
+	    Tcl_DeleteHashTable(nsPtr->childTablePtr);
+	    ckfree(nsPtr->childTablePtr);
+	}
+#endif
+	TclNsDecrRefCount(nsPtr);
+    } else {
+	/*
+	 * Restore the ::errorInfo and ::errorCode traces.
+	 */
+
+	EstablishErrorInfoTraces(NULL, nsPtr->interp, NULL, NULL, 0);
+	EstablishErrorCodeTraces(NULL, nsPtr->interp, NULL, NULL, 0);
+
+	/*
+	 * We didn't really kill it, so remove the KILLED marks, so it can
+	 * get killed later, avoiding mem leaks.
+	 */
+
+	nsPtr->flags &= ~(NS_DYING|NS_KILLED);
+    }
 }
 
 /*
@@ -1099,143 +1212,7 @@ TclTeardownNamespace(
     register Namespace *nsPtr)	/* Points to the namespace to be dismantled
 				 * and unlinked from its parent. */
 {
-    Interp *iPtr = (Interp *) nsPtr->interp;
-    register Tcl_HashEntry *entryPtr;
-    Tcl_HashSearch search;
     int i;
-
-    /*
-     * Start by destroying the namespace's variable table, since variables
-     * might trigger traces. Variable table should be cleared but not freed!
-     * TclDeleteNamespaceVars frees it, so we reinitialize it afterwards.
-     */
-
-    TclDeleteNamespaceVars(nsPtr);
-    TclInitVarHashTable(&nsPtr->varTable, nsPtr);
-
-    /*
-     * Delete all commands in this namespace. Be careful when traversing the
-     * hash table: when each command is deleted, it removes itself from the
-     * command table. Because of traces (and the desire to avoid the quadratic
-     * problems of just using Tcl_FirstHashEntry over and over, [Bug
-     * f97d4ee020]) we copy to a temporary array and then delete all those
-     * commands.
-     */
-
-    while (nsPtr->cmdTable.numEntries > 0) {
-	int length = nsPtr->cmdTable.numEntries;
-	Command **cmds = TclStackAlloc((Tcl_Interp *) iPtr,
-		sizeof(Command *) * length);
-
-	i = 0;
-	for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-		entryPtr != NULL;
-		entryPtr = Tcl_NextHashEntry(&search)) {
-	    cmds[i] = Tcl_GetHashValue(entryPtr);
-	    cmds[i]->refCount++;
-	    i++;
-	}
-	for (i = 0 ; i < length ; i++) {
-	    Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr,
-		    (Tcl_Command) cmds[i]);
-	    TclCleanupCommandMacro(cmds[i]);
-	}
-	TclStackFree((Tcl_Interp *) iPtr, cmds);
-    }
-    Tcl_DeleteHashTable(&nsPtr->cmdTable);
-    Tcl_InitHashTable(&nsPtr->cmdTable, TCL_STRING_KEYS);
-
-    /*
-     * Remove the namespace from its parent's child hashtable.
-     */
-
-    if (nsPtr->parentPtr != NULL) {
-	entryPtr = Tcl_FindHashEntry(
-		TclGetNamespaceChildTable((Tcl_Namespace *)
-			nsPtr->parentPtr), nsPtr->name);
-	if (entryPtr != NULL) {
-	    Tcl_DeleteHashEntry(entryPtr);
-	}
-    }
-    nsPtr->parentPtr = NULL;
-
-    /*
-     * Delete the namespace path if one is installed.
-     */
-
-    if (nsPtr->commandPathLength != 0) {
-	UnlinkNsPath(nsPtr);
-	nsPtr->commandPathLength = 0;
-    }
-    if (nsPtr->commandPathSourceList != NULL) {
-	NamespacePathEntry *nsPathPtr = nsPtr->commandPathSourceList;
-
-	do {
-	    if (nsPathPtr->nsPtr != NULL && nsPathPtr->creatorNsPtr != NULL) {
-		nsPathPtr->creatorNsPtr->cmdRefEpoch++;
-	    }
-	    nsPathPtr->nsPtr = NULL;
-	    nsPathPtr = nsPathPtr->nextPtr;
-	} while (nsPathPtr != NULL);
-	nsPtr->commandPathSourceList = NULL;
-    }
-
-    /*
-     * Delete all the child namespaces.
-     *
-     * BE CAREFUL: When each child is deleted, it will divorce itself from its
-     * parent. You can't traverse a hash table properly if its elements are
-     * being deleted.  Because of traces (and the desire to avoid the
-     * quadratic problems of just using Tcl_FirstHashEntry over and over, [Bug
-     * f97d4ee020]) we copy to a temporary array and then delete all those
-     * namespaces.
-     *
-     * Important: leave the hash table itself still live.
-     */
-
-#ifndef BREAK_NAMESPACE_COMPAT
-    while (nsPtr->childTable.numEntries > 0) {
-	int length = nsPtr->childTable.numEntries;
-	Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
-		sizeof(Namespace *) * length);
-
-	i = 0;
-	for (entryPtr = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
-		entryPtr != NULL;
-		entryPtr = Tcl_NextHashEntry(&search)) {
-	    children[i] = Tcl_GetHashValue(entryPtr);
-	    children[i]->refCount++;
-	    i++;
-	}
-	for (i = 0 ; i < length ; i++) {
-	    Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
-	    TclNsDecrRefCount(children[i]);
-	}
-	TclStackFree((Tcl_Interp *) iPtr, children);
-    }
-#else
-    if (nsPtr->childTablePtr != NULL) {
-	while (nsPtr->childTablePtr->numEntries > 0) {
-	    int length = nsPtr->childTablePtr->numEntries;
-	    Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
-		    sizeof(Namespace *) * length);
-
-	    i = 0;
-	    for (entryPtr = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
-		    entryPtr != NULL;
-		    entryPtr = Tcl_NextHashEntry(&search)) {
-		children[i] = Tcl_GetHashValue(entryPtr);
-		children[i]->refCount++;
-		i++;
-	    }
-	    for (i = 0 ; i < length ; i++) {
-		Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
-		TclNsDecrRefCount(children[i]);
-	    }
-	    TclStackFree((Tcl_Interp *) iPtr, children);
-	}
-    }
-#endif
 
     /*
      * Free the namespace's export pattern array.
@@ -1251,23 +1228,7 @@ TclTeardownNamespace(
 	nsPtr->maxExportPatterns = 0;
     }
 
-    /*
-     * Free any client data associated with the namespace.
-     */
-
-    if (nsPtr->deleteProc != NULL) {
-	nsPtr->deleteProc(nsPtr->clientData);
-    }
-    nsPtr->deleteProc = NULL;
-    nsPtr->clientData = NULL;
-
-    /*
-     * Reset the namespace's id field to ensure that this namespace won't be
-     * interpreted as valid by, e.g., the cache validation code for cached
-     * command references in Tcl_GetCommandFromObj.
-     */
-
-    nsPtr->nsId = 0;
+    NamespaceFree(nsPtr);
 }
 
 /*
@@ -1323,8 +1284,8 @@ void
 TclNsDecrRefCount(
     Namespace *nsPtr)
 {
-    if ((nsPtr->refCount-- <= 1) && (nsPtr->flags & NS_DEAD)) {
-	NamespaceFree(nsPtr);
+    if (nsPtr->refCount-- == 1) {
+	TclTeardownNamespace(nsPtr);
     }
 }
 
@@ -2223,7 +2184,7 @@ TclGetNamespaceForQualName(
     if (flags & TCL_GLOBAL_ONLY) {
 	nsPtr = globalNsPtr;
     } else if (nsPtr == NULL) {
-	nsPtr = iPtr->varFramePtr->nsPtr;
+	nsPtr = (Namespace *)TclGetCurrentNamespace(iPtr);
     }
 
     start = qualName;			/* Points to start of qualifying
@@ -2673,15 +2634,18 @@ Tcl_FindCommand(
 	 * context and from the global namespace.
 	 */
 
-	for (search = 0;  (search < 2) && (cmdPtr == NULL);  search++) {
-	    if ((nsPtr[search] != NULL) && (simpleName != NULL)) {
-		entryPtr = Tcl_FindHashEntry(&nsPtr[search]->cmdTable,
-			simpleName);
-		if (entryPtr != NULL) {
-		    cmdPtr = Tcl_GetHashValue(entryPtr);
+	    for (search = 0;  (search < 2) && (cmdPtr == NULL);  search++) {
+		if ((nsPtr[search] != NULL) && (simpleName != NULL)
+		    && !(nsPtr[search]->flags & NS_DEAD)) {
+
+		    entryPtr = Tcl_FindHashEntry(&nsPtr[search]->cmdTable,
+			    simpleName);
+		    if (entryPtr != NULL) {
+			cmdPtr = Tcl_GetHashValue(entryPtr);
+		    }
 		}
 	    }
-	}
+
     }
 
     if (cmdPtr != NULL) {
@@ -4704,6 +4668,9 @@ FreeNsNameInternalRep(
 	 */
 
 	TclNsDecrRefCount(resNamePtr->nsPtr);
+	if (resNamePtr->refNsPtr) {
+	    TclNsDecrRefCount(resNamePtr->refNsPtr);
+	}
 	ckfree(resNamePtr);
     }
     objPtr->typePtr = NULL;
@@ -4800,13 +4767,14 @@ SetNsNameFromAny(
 	return TCL_ERROR;
     }
 
-    nsPtr->refCount++;
     resNamePtr = ckalloc(sizeof(ResolvedNsName));
     resNamePtr->nsPtr = nsPtr;
+    nsPtr->refCount++;
     if ((name[0] == ':') && (name[1] == ':')) {
 	resNamePtr->refNsPtr = NULL;
     } else {
 	resNamePtr->refNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
+	resNamePtr->refNsPtr->refCount++;
     }
     resNamePtr->refCount = 1;
     TclFreeIntRep(objPtr);

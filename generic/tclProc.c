@@ -1919,6 +1919,8 @@ TclProcCompileProc(
 		return TCL_ERROR;
 	    }
 	    codePtr->compileEpoch = iPtr->compileEpoch;
+	    nsPtr->refCount++;
+	    TclNsDecrRefCount(codePtr->nsPtr);
 	    codePtr->nsPtr = nsPtr;
 	} else {
 	    TclFreeIntRep(bodyPtr);

@@ -1137,6 +1137,7 @@ CleanupByteCode(
     }
 
     TclHandleRelease(codePtr->interpHandle);
+    TclNsDecrRefCount(codePtr->nsPtr);
     ckfree(codePtr);
 }
 
@@ -2806,6 +2807,7 @@ TclInitByteCode(
     codePtr->interpHandle = TclHandlePreserve(iPtr->handle);
     codePtr->compileEpoch = iPtr->compileEpoch;
     codePtr->nsPtr = namespacePtr;
+    codePtr->nsPtr->refCount++;
     codePtr->nsEpoch = namespacePtr->resolverEpoch;
     codePtr->refCount = 0;
     TclPreserveByteCode(codePtr);

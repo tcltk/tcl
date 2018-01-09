@@ -154,50 +154,56 @@ test var-1.15 {TclLookupVar, resurrect variable via upvar to deleted namespace: 
     }
     p
 } {0 2 1 {can't set "foo": upvar refers to variable in deleted namespace} 1 {can't set "foo(3)": upvar refers to variable in deleted namespace}}
-test var-1.16 {TclLookupVar, resurrect variable via upvar to deleted namespace: uncompiled code path} {
+test var-1.16 {TclLookupVar, resurrect variable via upvar to deleted namespace: uncompiled code path} -body {
+    variable result
     namespace eval test_ns_var {
 	variable result
         namespace eval subns {
 	    variable foo 2
 	}
 	upvar 0 subns::foo foo
-	lappend result [catch {set foo} msg] $msg
+	lappend [namespace parent]::result [catch {set foo} msg] $msg
         namespace delete subns
-	lappend result [catch {set foo 3} msg] $msg
-	lappend result [catch {set foo(3) 3} msg] $msg
+	lappend [namespace parent]::result [catch {set foo 3} msg] $msg
+	lappend [namespace parent]::result [catch {set foo(3) 3} msg] $msg
         namespace delete [namespace current]
-	set result
     }
-} {0 2 1 {can't set "foo": upvar refers to variable in deleted namespace} 1 {can't set "foo(3)": upvar refers to variable in deleted namespace}}
+    set result
+} -cleanup {
+    unset result
+} -result {0 2 1 {can't set "foo": upvar refers to variable in deleted namespace} 1 {can't set "foo(3)": upvar refers to variable in deleted namespace}}
+
 test var-1.17 {TclLookupVar, resurrect array element via upvar to deleted array: compiled code path} {
+    variable result {}
     namespace eval test_ns_var {
-	variable result
 	proc p {} {
 	    array set x {1 2 3 4}
 	    upvar 0 x(1) foo
-	    lappend result [catch {set foo} msg] $msg
+	    lappend [namespace parent]::result [catch {set foo} msg] $msg
 	    unset x
-	    lappend result [catch {set foo 3} msg] $msg
+	    lappend [namespace parent]::result [catch {set foo 3} msg] $msg
 	}
 	set result [p]
         namespace delete [namespace current]
-	set result
     }
+    set result
 } {0 2 1 {can't set "foo": upvar refers to element in deleted array}}
 test var-1.18 {TclLookupVar, resurrect array element via upvar to deleted array: uncompiled code path} -setup {
     unset -nocomplain test_ns_var::x
 } -body {
+    variable result {}
     namespace eval test_ns_var {
-	variable result {}
 	variable x
 	array set x {1 2 3 4}
 	upvar 0 x(1) foo
-	lappend result [catch {set foo} msg] $msg
+	lappend [namespace parent]::result [catch {set foo} msg] $msg
 	unset x
-	lappend result [catch {set foo 3} msg] $msg
+	lappend [namespace parent]::result [catch {set foo 3} msg] $msg
         namespace delete [namespace current]
-	set result
     }
+    set result
+} -cleanup {
+    unset result
 } -result {0 2 1 {can't set "foo": upvar refers to element in deleted array}}
 test var-1.19 {TclLookupVar, right error message when parsing variable name} -body {
     [format set] thisvar(doesntexist)
@@ -996,6 +1002,68 @@ test var-22.2 {leak in parsedVarName} -constraints memory -body {
 } -cleanup {
     unset -nocomplain i x
 } -result 0
+
+test var-23.0 {Look up command from deleted namespace} -body {
+    variable msg
+    set result [namespace eval test_ns_var {
+        namespace delete [namespace current]
+	# Doesn't result in a panic with message called Tcl_FindHashEntry on
+	# deleted table when Tcl_FindCommand is called to find resolve "catch"  
+	catch {lindex success} [namespace parent]::msg
+    }]
+    list $result $msg
+}  -result {0 success} 
+
+test var-23.1 {set a variable after deleting current namespace} {
+    variable msg {}
+    set result [namespace eval test_ns_var {
+	variable var1
+        namespace delete [namespace current]
+	set var1 one
+	namespace which -variable var1
+    }]
+} {::var1}
+
+test var-23.3 {The current namespace after deleting the current namespace} {
+    variable msg {}
+    namespace eval test_ns_var {
+	variable var1
+        namespace delete [namespace current]
+	namespace current
+    }
+} :: 
+
+test var-23.4 {
+    declare a namespace variable after deleting the current namespace
+} {
+    variable msg {}
+    namespace eval test_ns_var {
+	variable var1
+        namespace delete [namespace current]
+	variable var1
+	set var1 one
+	namespace which -variable var1
+    }
+} {::var1}
+
+test var-23.5 {
+    create a procedure after deleting the current namespace
+} {
+    namespace eval test_ns_var {
+        namespace delete [namespace current]
+	proc p1 {} {return hello}
+	list [namespace which p1] [p1]
+    } $msg
+} {::p1 hello}
+
+test var-23.6 {
+    create a namespace after deleting the current namespace
+} {
+    namespace eval test_ns_var {
+        namespace delete [namespace current]
+	namespace eval one {namespace current}
+    }
+} {::one}
 
 
 catch {namespace delete ns}

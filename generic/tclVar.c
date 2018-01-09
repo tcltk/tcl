@@ -754,6 +754,9 @@ TclLookupSimpleVar(
 	cxtNsPtr = iPtr->globalNsPtr;
     } else {
 	cxtNsPtr = iPtr->varFramePtr->nsPtr;
+	if (cxtNsPtr->flags & NS_DEAD) {
+	    cxtNsPtr = iPtr->globalNsPtr;
+	}
     }
 
     /*
@@ -763,7 +766,7 @@ TclLookupSimpleVar(
      */
 
     if ((cxtNsPtr->varResProc != NULL || iPtr->resolverPtr != NULL)
-	    && !(flags & TCL_AVOID_RESOLVERS)) {
+	    && !(flags & TCL_AVOID_RESOLVERS) && !(cxtNsPtr->flags & NS_DEAD)) {
 	resPtr = iPtr->resolverPtr;
 	if (cxtNsPtr->varResProc) {
 	    result = cxtNsPtr->varResProc(interp, varName,

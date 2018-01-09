@@ -2478,7 +2478,7 @@ test trace-34.5 {Bug 1047286} {
     trace add command ::foo::bar delete [namespace code callback]
     namespace eval ::foo namespace delete ::foo
     set x
-} {::foo::bar exists: }
+} {::foo::bar exists: ::foo::bar}
 
 test trace-34.6 {Bug 1458266} -setup {
     proc dummy {} {}
