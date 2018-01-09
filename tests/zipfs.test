@@ -23,6 +23,10 @@ testConstraint zipfs [expr {[llength [info commands zlib]] && [regexp tcltest [i
 #} -result {}
 
 set ziproot [zipfs root]
+set CWD [pwd]
+set tmpdir  [file join $CWD tmp]
+file mkdir $tmpdir
+
 
 test zipfs-0.1 {zipfs basics} -constraints zipfs -body {
     package require zipfs
@@ -31,6 +35,22 @@ test zipfs-0.1 {zipfs basics} -constraints zipfs -body {
 test zipfs-0.1 {zipfs basics} -constraints zipfs -body {
     expr {${ziproot} in [file volumes]}
 } -result 1
+
+if {![string match ${ziproot}* $tcl_library]} {
+    ###
+    # "make test" does not map tcl_library from the dynamic library on Unix
+    #
+    # Hack the environment to pretend we did pull tcl_library from a zip
+    # archive
+    ###
+    set tclzip [file join $CWD [::tcl::pkgconfig get zipfile,runtime]]
+    if {[file exists $tclzip]} {
+        zipfs mount $tclzip /lib/tcl
+        set ::tcl_library ${ziproot}lib/tcl/tcl_library
+    } else {
+        tcltest::skip zipfs-0.*
+    }
+}
 
 test zipfs-0.2 {zipfs basics} -constraints zipfs -body {
     string match ${ziproot}* $tcl_library
@@ -116,25 +136,36 @@ test zipfs-1.10 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs list a b c d e f
 } -result {wrong # args: should be "zipfs list ?(-glob|-regexp)? ?pattern?"}
 
+file mkdir tmp
+
 test zipfs-2.1 {zipfs mkzip empty archive} -constraints zipfs -returnCodes error -body {
-    zipfs mkzip /tmp/abc.zip $tcl_library/xxxx      ;# FIXME: test independence
+    zipfs mkzip [file join $tmpdir empty.zip] $tcl_library/xxxx
 } -result {empty archive}
 
-test zipfs-2.2 {zipfs mkzip} -constraints zipfs -body {
-    set pwd [pwd]
+###
+# The 2.2 series of tests operate within
+# a zipfile created a temporary directory
+###
+set zipfile [file join $tmpdir abc.zip]
+if {[file exists $zipfile]} {
+   file delete $zipfile
+}
+
+test zipfs-2.2.0 {zipfs mkzip} -constraints zipfs -body {
     cd $tcl_library/encoding
-    zipfs mkzip /tmp/abc.zip .
-    zipfs mount /tmp/abc.zip ${ziproot}abc       ;# FIXME: test independence
+    zipfs mkzip $zipfile .
+    zipfs mount $zipfile ${ziproot}abc
     zipfs list -glob ${ziproot}abc/cp850.*
 } -cleanup {
-    cd $pwd
+    cd $CWD
 } -result "[zipfs root]abc/cp850.enc"
 
-test zipfs-2.3 {zipfs info} -constraints zipfs -body {
-    zipfs info ${ziproot}abc/cp850.enc
-} -result [list /tmp/abc.zip 1090 527 39318] ;# FIXME: result depends on content of encodings dir
+test zipfs-2.2.1 {zipfs info} -constraints zipfs -body {
+    set r [zipfs info ${ziproot}abc/cp850.enc]
+    lrange $r 0 2
+} -result [list $zipfile 1090 527] ;# NOTE: Only the first 3 results are stable
 
-test zipfs-2.4 {zipfs data} -constraints zipfs -body {
+test zipfs-2.2.3 {zipfs data} -constraints zipfs -body {
     set zipfd [open ${ziproot}/abc/cp850.enc]	;# FIXME: leave open - see later test
     read $zipfd
 } -result {# Encoding file: cp850, single-byte
@@ -159,21 +190,21 @@ S
 00AD00B1201700BE00B600A700F700B800B000A800B700B900B300B225A000A0
 } ;# FIXME: result depends on content of encodings dir
 
-test zipfs-2.5 {zipfs exists} -constraints zipfs -body {
+test zipfs-2.2.4 {zipfs exists} -constraints zipfs -body {
     zipfs exists /abc/cp850.enc
 } -result 1
 
-test zipfs-2.6 {zipfs unmount while busy} -constraints zipfs -body {
-    zipfs unmount /tmp/abc.zip
+test zipfs-2.2.5 {zipfs unmount while busy} -constraints zipfs -body {
+    zipfs unmount $zipfile
 } -returnCodes error -result {filesystem is busy}
 
-test zipfs-2.7 {zipfs unmount} -constraints zipfs -body {
+test zipfs-2.2.6 {zipfs unmount} -constraints zipfs -body {
     close $zipfd
-    zipfs unmount /tmp/abc.zip
+    zipfs unmount $zipfile
     zipfs exists /abc/cp850.enc
-} -cleanup {
-    file delete /tmp/abc.zip        ;# FIXME: test independence
 } -result 0
+
+file delete -force $tmpdir
 
 ::tcltest::cleanupTests
 return
