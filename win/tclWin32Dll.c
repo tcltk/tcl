@@ -230,11 +230,8 @@ TclWinNoBackslash(
  *
  * TclWinEncodingsCleanup --
  *
- *	Called during finalization to free up any encodings we use.
- *
- *	We also clean up any memory allocated in our mount point map which is
- *	used to follow certain kinds of symlinks. That code should never be
- *	used once encodings are taken down.
+ *	Called during finalization to clean up any memory allocated in our
+ *	mount point map which is used to follow certain kinds of symlinks.
  *
  * Results:
  *	None.
