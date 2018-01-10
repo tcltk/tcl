@@ -123,6 +123,7 @@ static const struct DeclaredSlot slots[] = {
  * ----------------------------------------------------------------------
  *
  * BumpGlobalEpoch --
+ *
  *	Utility that ensures that call chains that are invalid will get thrown
  *	away at an appropriate time. Note that exactly which epoch gets
  *	advanced will depend on exactly what the class is tangled up in; in
@@ -167,6 +168,7 @@ BumpGlobalEpoch(
  * ----------------------------------------------------------------------
  *
  * RecomputeClassCacheFlag --
+ *
  *	Determine whether the object is prototypical of its class, and hence
  *	able to use the class's method chain cache.
  *
@@ -189,6 +191,7 @@ RecomputeClassCacheFlag(
  * ----------------------------------------------------------------------
  *
  * TclOOObjectSetFilters --
+ *
  *	Install a list of filter method names into an object.
  *
  * ----------------------------------------------------------------------
@@ -247,6 +250,7 @@ TclOOObjectSetFilters(
  * ----------------------------------------------------------------------
  *
  * TclOOClassSetFilters --
+ *
  *	Install a list of filter method names into a class.
  *
  * ----------------------------------------------------------------------
@@ -309,6 +313,7 @@ TclOOClassSetFilters(
  * ----------------------------------------------------------------------
  *
  * TclOOObjectSetMixins --
+ *
  *	Install a list of mixin classes into an object.
  *
  * ----------------------------------------------------------------------
@@ -326,9 +331,7 @@ TclOOObjectSetMixins(
     if (numMixins == 0) {
 	if (oPtr->mixins.num != 0) {
 	    FOREACH(mixinPtr, oPtr->mixins) {
-		if (mixinPtr) {
-		    TclOORemoveFromInstances(oPtr, mixinPtr);
-		}
+		TclOORemoveFromInstances(oPtr, mixinPtr);
 	    }
 	    ckfree(oPtr->mixins.list);
 	    oPtr->mixins.num = 0;
@@ -352,6 +355,13 @@ TclOOObjectSetMixins(
 	FOREACH(mixinPtr, oPtr->mixins) {
 	    if (mixinPtr != oPtr->selfCls) {
 		TclOOAddToInstances(oPtr, mixinPtr);
+
+		/*
+		 * Corresponding TclOODecrRefCount() is in the caller of this
+		 * function. 
+		 */
+
+		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
 	}
     }
@@ -362,6 +372,7 @@ TclOOObjectSetMixins(
  * ----------------------------------------------------------------------
  *
  * TclOOClassSetMixins --
+ *
  *	Install a list of mixin classes into a class.
  *
  * ----------------------------------------------------------------------
@@ -399,6 +410,13 @@ TclOOClassSetMixins(
 	memcpy(classPtr->mixins.list, mixins, sizeof(Class *) * numMixins);
 	FOREACH(mixinPtr, classPtr->mixins) {
 	    TclOOAddToMixinSubs(classPtr, mixinPtr);
+
+	    /*
+	     * Corresponding TclOODecrRefCount() is in the caller of this
+	     * function.
+	     */
+
+	    TclOODecrRefCount(mixinPtr->thisPtr);
 	}
     }
     BumpGlobalEpoch(interp, classPtr);
@@ -408,6 +426,7 @@ TclOOClassSetMixins(
  * ----------------------------------------------------------------------
  *
  * RenameDeleteMethod --
+ *
  *	Core of the code to rename and delete methods.
  *
  * ----------------------------------------------------------------------
@@ -497,6 +516,7 @@ RenameDeleteMethod(
  * ----------------------------------------------------------------------
  *
  * TclOOUnknownDefinition --
+ *
  *	Handles what happens when an unknown command is encountered during the
  *	processing of a definition script. Works by finding a command in the
  *	operating definition namespace that the requested command is a unique
@@ -575,6 +595,7 @@ TclOOUnknownDefinition(
  * ----------------------------------------------------------------------
  *
  * FindCommand --
+ *
  *	Specialized version of Tcl_FindCommand that handles command prefixes
  *	and disallows namespace magic.
  *
@@ -635,6 +656,7 @@ FindCommand(
  * ----------------------------------------------------------------------
  *
  * InitDefineContext --
+ *
  *	Does the magic incantations necessary to push the special stack frame
  *	used when processing object definitions. It is up to the caller to
  *	dispose of the frame (with TclPopStackFrame) when finished.
@@ -660,7 +682,9 @@ InitDefineContext(
 	return TCL_ERROR;
     }
 
-    /* framePtrPtr is needed to satisfy GCC 3.3's strict aliasing rules */
+    /*
+     * framePtrPtr is needed to satisfy GCC 3.3's strict aliasing rules.
+     */
 
     (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    namespacePtr, FRAME_IS_OO_DEFINE);
@@ -675,6 +699,7 @@ InitDefineContext(
  * ----------------------------------------------------------------------
  *
  * TclOOGetDefineCmdContext --
+ *
  *	Extracts the magic token from the current stack frame, or returns NULL
  *	(and leaves an error message) otherwise.
  *
@@ -711,6 +736,7 @@ TclOOGetDefineCmdContext(
  * ----------------------------------------------------------------------
  *
  * GetClassInOuterContext --
+ *
  *	Wrapper round Tcl_GetObjectFromObj to perform the lookup in the
  *	context that called oo::define (or equivalent). Note that this may
  *	have to go up multiple levels to get the level that we started doing
@@ -753,6 +779,7 @@ GetClassInOuterContext(
  * ----------------------------------------------------------------------
  *
  * GenerateErrorInfo --
+ *
  *	Factored out code to generate part of the error trace messages.
  *
  * ----------------------------------------------------------------------
@@ -791,6 +818,7 @@ GenerateErrorInfo(
  * ----------------------------------------------------------------------
  *
  * MagicDefinitionInvoke --
+ *
  *	Part of the implementation of the "oo::define" and "oo::objdefine"
  *	commands that is used to implement the more-than-one-argument case,
  *	applying ensemble-like tricks with dispatch so that error messages are
@@ -854,6 +882,7 @@ MagicDefinitionInvoke(
  * ----------------------------------------------------------------------
  *
  * TclOODefineObjCmd --
+ *
  *	Implementation of the "oo::define" command. Works by effectively doing
  *	the same as 'namespace eval', but with extra magic applied so that the
  *	object to be modified is known to the commands in the target
@@ -914,7 +943,7 @@ TclOODefineObjCmd(
     } else {
 	result = MagicDefinitionInvoke(interp, fPtr->defineNs, 2, objc, objv);
     }
-    DelRef(oPtr);
+    TclOODecrRefCount(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -928,6 +957,7 @@ TclOODefineObjCmd(
  * ----------------------------------------------------------------------
  *
  * TclOOObjDefObjCmd --
+ *
  *	Implementation of the "oo::objdefine" command. Works by effectively
  *	doing the same as 'namespace eval', but with extra magic applied so
  *	that the object to be modified is known to the commands in the target
@@ -981,7 +1011,7 @@ TclOOObjDefObjCmd(
     } else {
 	result = MagicDefinitionInvoke(interp, fPtr->objdefNs, 2, objc, objv);
     }
-    DelRef(oPtr);
+    TclOODecrRefCount(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -995,6 +1025,7 @@ TclOOObjDefObjCmd(
  * ----------------------------------------------------------------------
  *
  * TclOODefineSelfObjCmd --
+ *
  *	Implementation of the "self" subcommand of the "oo::define" command.
  *	Works by effectively doing the same as 'namespace eval', but with
  *	extra magic applied so that the object to be modified is known to the
@@ -1048,7 +1079,7 @@ TclOODefineSelfObjCmd(
     } else {
 	result = MagicDefinitionInvoke(interp, fPtr->objdefNs, 1, objc, objv);
     }
-    DelRef(oPtr);
+    TclOODecrRefCount(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -1062,6 +1093,7 @@ TclOODefineSelfObjCmd(
  * ----------------------------------------------------------------------
  *
  * TclOODefineObjSelfObjCmd --
+ *
  *	Implementation of the "self" subcommand of the "oo::objdefine"
  *	command.
  *
@@ -1095,6 +1127,7 @@ TclOODefineObjSelfObjCmd(
  * ----------------------------------------------------------------------
  *
  * TclOODefineClassObjCmd --
+ *
  *	Implementation of the "class" subcommand of the "oo::objdefine"
  *	command.
  *
@@ -1168,11 +1201,14 @@ TclOODefineClassObjCmd(
 
     if (oPtr->selfCls != clsPtr) {
 	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
+
+	/*
+	 * Reference count already incremented a few lines up.
+	 */
+
 	oPtr->selfCls = clsPtr;
+
 	TclOOAddToInstances(oPtr, oPtr->selfCls);
-	if (!(clsPtr->thisPtr->flags & OBJECT_DELETED)) {
-	    oPtr->flags &= ~CLASS_GONE;
-	}
 	if (oPtr->classPtr != NULL) {
 	    BumpGlobalEpoch(interp, oPtr->classPtr);
 	} else {
@@ -1186,6 +1222,7 @@ TclOODefineClassObjCmd(
  * ----------------------------------------------------------------------
  *
  * TclOODefineConstructorObjCmd --
+ *
  *	Implementation of the "constructor" subcommand of the "oo::define"
  *	command.
  *
@@ -1254,6 +1291,7 @@ TclOODefineConstructorObjCmd(
  * ----------------------------------------------------------------------
  *
  * TclOODefineDeleteMethodObjCmd --
+ *
  *	Implementation of the "deletemethod" subcommand of the "oo::define"
  *	and "oo::objdefine" commands.
  *
@@ -1310,6 +1348,7 @@ TclOODefineDeleteMethodObjCmd(
  * ----------------------------------------------------------------------
  *
  * TclOODefineDestructorObjCmd --
+ *
  *	Implementation of the "destructor" subcommand of the "oo::define"
  *	command.
  *
@@ -1374,6 +1413,7 @@ TclOODefineDestructorObjCmd(
  * ----------------------------------------------------------------------
  *
  * TclOODefineExportObjCmd --
+ *
  *	Implementation of the "export" subcommand of the "oo::define" and
  *	"oo::objdefine" commands.
  *
@@ -1468,6 +1508,7 @@ TclOODefineExportObjCmd(
  * ----------------------------------------------------------------------
  *
  * TclOODefineForwardObjCmd --
+ *
  *	Implementation of the "forward" subcommand of the "oo::define" and
  *	"oo::objdefine" commands.
  *
@@ -1528,6 +1569,7 @@ TclOODefineForwardObjCmd(
  * ----------------------------------------------------------------------
  *
  * TclOODefineMethodObjCmd --
+ *
  *	Implementation of the "method" subcommand of the "oo::define" and
  *	"oo::objdefine" commands.
  *
@@ -1585,6 +1627,7 @@ TclOODefineMethodObjCmd(
  * ----------------------------------------------------------------------
  *
  * TclOODefineMixinObjCmd --
+ *
  *	Implementation of the "mixin" subcommand of the "oo::define" and
  *	"oo::objdefine" commands.
  *
@@ -1628,6 +1671,13 @@ TclOODefineMixinObjCmd(
 	    goto freeAndError;
 	}
 	mixins[i-1] = clsPtr;
+
+	/*
+	 * Corresponding TclOODecrRefCount() is in TclOOObjectSetMixins,
+	 * TclOOClassSetMixinsk, or just below if this function fails.
+	 */
+
+	AddRef(mixins[i-1]->thisPtr);
     }
 
     if (isInstanceMixin) {
@@ -1640,6 +1690,9 @@ TclOODefineMixinObjCmd(
     return TCL_OK;
 
   freeAndError:
+    while (--i > 0) {
+	TclOODecrRefCount(mixins[i]->thisPtr);
+    }
     TclStackFree(interp, mixins);
     return TCL_ERROR;
 }
@@ -1648,6 +1701,7 @@ TclOODefineMixinObjCmd(
  * ----------------------------------------------------------------------
  *
  * TclOODefineRenameMethodObjCmd --
+ *
  *	Implementation of the "renamemethod" subcommand of the "oo::define"
  *	and "oo::objdefine" commands.
  *
@@ -1704,6 +1758,7 @@ TclOODefineRenameMethodObjCmd(
  * ----------------------------------------------------------------------
  *
  * TclOODefineUnexportObjCmd --
+ *
  *	Implementation of the "unexport" subcommand of the "oo::define" and
  *	"oo::objdefine" commands.
  *
@@ -1798,6 +1853,7 @@ TclOODefineUnexportObjCmd(
  * ----------------------------------------------------------------------
  *
  * Tcl_ClassSetConstructor, Tcl_ClassSetDestructor --
+ *
  *	How to install a constructor or destructor into a class; API to call
  *	from C.
  *
@@ -1852,6 +1908,7 @@ Tcl_ClassSetDestructor(
  * ----------------------------------------------------------------------
  *
  * TclOODefineSlots --
+ *
  *	Create the "::oo::Slot" class and its standard instances. Class
  *	definition is empty at the stage (added by scripting).
  *
@@ -1895,6 +1952,7 @@ TclOODefineSlots(
  * ----------------------------------------------------------------------
  *
  * ClassFilterGet, ClassFilterSet --
+ *
  *	Implementation of the "filter" slot accessors of the "oo::define"
  *	command.
  *
@@ -1974,6 +2032,7 @@ ClassFilterSet(
  * ----------------------------------------------------------------------
  *
  * ClassMixinGet, ClassMixinSet --
+ *
  *	Implementation of the "mixin" slot accessors of the "oo::define"
  *	command.
  *
@@ -2055,6 +2114,7 @@ ClassMixinSet(
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
+	    i--;
 	    goto freeAndError;
 	}
 	if (TclOOIsReachable(oPtr->classPtr, mixins[i])) {
@@ -2063,6 +2123,13 @@ ClassMixinSet(
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "SELF_MIXIN", NULL);
 	    goto freeAndError;
 	}
+
+	/*
+	 * Corresponding TclOODecrRefCount() is in TclOOClassSetMixins, or
+	 * just below if this function fails.
+	 */
+
+	AddRef(mixins[i]->thisPtr);
     }
 
     TclOOClassSetMixins(interp, oPtr->classPtr, mixinc, mixins);
@@ -2070,6 +2137,9 @@ ClassMixinSet(
     return TCL_OK;
 
   freeAndError:
+    while (i-- > 0) {
+	TclOODecrRefCount(mixins[i]->thisPtr);
+    }
     TclStackFree(interp, mixins);
     return TCL_ERROR;
 }
@@ -2078,6 +2148,7 @@ ClassMixinSet(
  * ----------------------------------------------------------------------
  *
  * ClassSuperGet, ClassSuperSet --
+ *
  *	Implementation of the "superclass" slot accessors of the "oo::define"
  *	command.
  *
@@ -2172,16 +2243,24 @@ ClassSuperSet(
 
     if (superc == 0) {
 	superclasses = ckrealloc(superclasses, sizeof(Class *));
-	superclasses[0] = oPtr->fPtr->objectCls;
-	superc = 1;
 	if (TclOOIsReachable(oPtr->fPtr->classCls, oPtr->classPtr)) {
 	    superclasses[0] = oPtr->fPtr->classCls;
+	} else {
+	    superclasses[0] = oPtr->fPtr->objectCls;
 	}
+	superc = 1;
+
+	/*
+	 * Corresponding TclOODecrRefCount is near the end of this function.
+	 */
+
+	AddRef(superclasses[0]->thisPtr);
     } else {
 	for (i=0 ; i<superc ; i++) {
 	    superclasses[i] = GetClassInOuterContext(interp, superv[i],
 		    "only a class can be a superclass");
 	    if (superclasses[i] == NULL) {
+		i--;
 		goto failedAfterAlloc;
 	    }
 	    for (j=0 ; j<i ; j++) {
@@ -2198,9 +2277,19 @@ ClassSuperSet(
 			"attempt to form circular dependency graph", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OO", "CIRCULARITY", NULL);
 	    failedAfterAlloc:
+		for (; i > 0; i--) {
+		    TclOODecrRefCount(superclasses[i]->thisPtr);
+		}
 		ckfree(superclasses);
 		return TCL_ERROR;
 	    }
+
+	    /*
+	     * Corresponding TclOODecrRefCount() is near the end of this
+	     * function.
+	     */
+
+	    AddRef(superclasses[i]->thisPtr);
 	}
     }
 
@@ -2221,6 +2310,12 @@ ClassSuperSet(
     oPtr->classPtr->superclasses.num = superc;
     FOREACH(superPtr, oPtr->classPtr->superclasses) {
 	TclOOAddToSubclasses(oPtr->classPtr, superPtr);
+
+	/*
+	 * To account for the AddRef() earlier in this function.
+	 */
+
+	TclOODecrRefCount(superPtr->thisPtr);
     }
     BumpGlobalEpoch(interp, oPtr->classPtr);
 
@@ -2231,6 +2326,7 @@ ClassSuperSet(
  * ----------------------------------------------------------------------
  *
  * ClassVarsGet, ClassVarsSet --
+ *
  *	Implementation of the "variable" slot accessors of the "oo::define"
  *	command.
  *
@@ -2373,6 +2469,7 @@ ClassVarsSet(
  * ----------------------------------------------------------------------
  *
  * ObjectFilterGet, ObjectFilterSet --
+ *
  *	Implementation of the "filter" slot accessors of the "oo::objdefine"
  *	command.
  *
@@ -2440,6 +2537,7 @@ ObjFilterSet(
  * ----------------------------------------------------------------------
  *
  * ObjectMixinGet, ObjectMixinSet --
+ *
  *	Implementation of the "mixin" slot accessors of the "oo::objdefine"
  *	command.
  *
@@ -2511,9 +2609,19 @@ ObjMixinSet(
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
+	    while (i-- > 0) {
+		TclOODecrRefCount(mixins[i]->thisPtr);
+	    }
 	    TclStackFree(interp, mixins);
 	    return TCL_ERROR;
 	}
+
+	/*
+	 * Corresponding TclOODecrRefCount() is in TclOOObjectSetMixins() or
+	 * just above if this function fails.
+	 */
+
+	AddRef(mixins[i]->thisPtr);
     }
 
     TclOOObjectSetMixins(oPtr, mixinc, mixins);
@@ -2525,6 +2633,7 @@ ObjMixinSet(
  * ----------------------------------------------------------------------
  *
  * ObjectVarsGet, ObjectVarsSet --
+ *
  *	Implementation of the "variable" slot accessors of the "oo::objdefine"
  *	command.
  *

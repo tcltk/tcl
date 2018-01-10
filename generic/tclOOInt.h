@@ -193,9 +193,10 @@ typedef struct Object {
 				 * destroyed. */
 #define DESTRUCTOR_CALLED 2	/* Flag to say that the destructor has been
 				 * called. */
-#define CLASS_GONE	4	/* Indicates that the class of this object has
-				 * been deleted, and so the object should not
-				 * attempt to remove itself from its class. */
+#define CLASS_GONE	4	/* Obsolete. Indicates that the class of this
+				 * object has been deleted, and so the object
+				 * should not attempt to remove itself from its
+				 * class. */
 #define ROOT_OBJECT 0x1000	/* Flag to say that this object is the root of
 				 * the class hierarchy and should be treated
 				 * specially during teardown. */
@@ -222,10 +223,6 @@ typedef struct Object {
 typedef struct Class {
     Object *thisPtr;		/* Reference to the object associated with
 				 * this class. */
-    int refCount;		/* Number of strong references to this class.
-				 * Weak references are not counted; the
-				 * purpose of this is to avoid Tcl_Preserve as
-				 * that is quite slow. */
     int flags;			/* Assorted flags. */
     LIST_STATIC(struct Class *) superclasses;
 				/* List of superclasses, used for generation
@@ -499,6 +496,7 @@ MODULE_SCOPE Object *	TclNewObjectInstanceCommon(Tcl_Interp *interp,
 			    Class *classPtr,
 			    const char *nameStr,
 			    const char *nsNameStr);
+MODULE_SCOPE int	TclOODecrRefCount(Object *oPtr);
 MODULE_SCOPE int	TclOODefineSlots(Foundation *fPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
 MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);
@@ -528,10 +526,10 @@ MODULE_SCOPE int	TclNRObjectContextInvokeNext(Tcl_Interp *interp,
 MODULE_SCOPE void	TclOONewBasicMethod(Tcl_Interp *interp, Class *clsPtr,
 			    const DeclaredClassMethod *dcm);
 MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);
-MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
-MODULE_SCOPE void	TclOORemoveFromMixinSubs(Class *subPtr,
+MODULE_SCOPE int	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
+MODULE_SCOPE int	TclOORemoveFromMixinSubs(Class *subPtr,
 			    Class *mixinPtr);
-MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
+MODULE_SCOPE int	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);
 MODULE_SCOPE Tcl_Obj *	TclOORenderCallChain(Tcl_Interp *interp,
 			    CallChain *callPtr);
@@ -546,18 +544,21 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 #include "tclOOIntDecls.h"
 
 /*
+ * Alternatives to Tcl_Preserve/Tcl_EventuallyFree/Tcl_Release.
+ */
+
+#define AddRef(ptr) ((ptr)->refCount++)
+
+/*
  * A convenience macro for iterating through the lists used in the internal
- * memory management of objects. This is a bit gnarly because we want to do
- * the assignment of the picked-out value only when the body test succeeds,
- * but we cannot rely on the assigned value being useful, forcing us to do
- * some nasty stuff with the comma operator. The compiler's optimizer should
- * be able to sort it all out!
- *
+ * memory management of objects.
  * REQUIRES DECLARATION: int i;
  */
 
 #define FOREACH(var,ary) \
-	for(i=0 ; (i<(ary).num?((var=(ary).list[i]),1):0) ; i++)
+    for(i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) { \
+	continue; \
+    } else if (var = (ary).list[i], 1) 
 
 /*
  * Convenience macros for iterating through hash tables. FOREACH_HASH_DECLS
@@ -590,17 +591,6 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 	} else { \
 	    (target).list = NULL; \
 	} \
-    } while(0)
-
-/*
- * Alternatives to Tcl_Preserve/Tcl_EventuallyFree/Tcl_Release.
- */
-
-#define AddRef(ptr) ((ptr)->refCount++)
-#define DelRef(ptr) do {			\
-	if ((ptr)->refCount-- <= 1) {		\
-	    ckfree(ptr);			\
-	}					\
     } while(0)
 
 #endif /* TCL_OO_INTERNAL_H */
