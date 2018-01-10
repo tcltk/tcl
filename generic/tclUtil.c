@@ -2223,7 +2223,7 @@ Tcl_StringCaseMatch(
 			(nocase ? tolower(UCHAR(*str)) : UCHAR(*str));
 		str++;
 	    } else {
-		str += TclUtfToUniChar(str, &ch1);
+		str += Tcl_UtfToUniChar(str, &ch1);
 		if (nocase) {
 		    ch1 = Tcl_UniCharToLower(ch1);
 		}
@@ -2252,7 +2252,7 @@ Tcl_StringCaseMatch(
 				? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
 			pattern++;
 		    } else {
-			pattern += TclUtfToUniChar(pattern, &endChar);
+			pattern += Tcl_UtfToUniChar(pattern, &endChar);
 			if (nocase) {
 			    endChar = Tcl_UniCharToLower(endChar);
 			}
