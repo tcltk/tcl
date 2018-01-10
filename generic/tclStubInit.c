@@ -104,6 +104,13 @@ static const char *TclGetStartupScriptFileName(void)
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
 #undef TclWinGetPlatformId
+#undef TclWinResetInterfaces
+#undef TclWinSetInterfaces
+static void
+doNothing(void)
+{
+    /* dummy implementation, no need to do anything */
+}
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #define TclWinNToHS winNToHS
 static unsigned short TclWinNToHS(unsigned short ns) {
@@ -115,9 +122,13 @@ TclWinGetPlatformId(void)
 {
     return 2; /* VER_PLATFORM_WIN32_NT */;
 }
+#define TclWinResetInterfaces doNothing
+#define TclWinSetInterfaces (void (*) (int)) doNothing
 #else
 #define TclWinNToHS 0
 #define TclWinGetPlatformId 0
+#define TclWinResetInterfaces 0
+#define TclWinSetInterfaces 0
 #endif
 #endif
 #   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
@@ -133,14 +144,8 @@ TclWinGetPlatformId(void)
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
 #   define TclpIsAtty TclPlatIsAtty
-#   define TclWinSetInterfaces (void (*) (int)) doNothing
 #   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
-#   define TclWinResetInterfaces doNothing
-
-#if TCL_UTF_MAX < 4
-static Tcl_Encoding winTCharEncoding;
-#endif
 
 static int
 TclpIsAtty(int fd)
@@ -201,19 +206,12 @@ TclpGetPid(Tcl_Pid pid)
     return (int) (size_t) pid;
 }
 
-static void
-doNothing(void)
-{
-    /* dummy implementation, no need to do anything */
-}
-
 char *
 Tcl_WinUtfToTChar(
     const char *string,
     int len,
     Tcl_DString *dsPtr)
 {
-#if TCL_UTF_MAX > 3
     WCHAR *wp;
     int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
 
@@ -225,13 +223,6 @@ Tcl_WinUtfToTChar(
     Tcl_DStringSetLength(dsPtr, 2*size);
     wp[size] = 0;
     return (char *)wp;
-#else
-    if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
-    }
-    return Tcl_UtfToExternalDString(winTCharEncoding,
-	    string, len, dsPtr);
-#endif
 }
 
 char *
@@ -240,7 +231,6 @@ Tcl_WinTCharToUtf(
     int len,
     Tcl_DString *dsPtr)
 {
-#if TCL_UTF_MAX > 3
     char *p;
     int size;
 
@@ -256,13 +246,6 @@ Tcl_WinTCharToUtf(
     Tcl_DStringSetLength(dsPtr, size);
     p[size] = 0;
     return p;
-#else
-    if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
-    }
-    return Tcl_ExternalToUtfDString(winTCharEncoding,
-	    string, len, dsPtr);
-#endif
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
