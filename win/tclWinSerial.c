@@ -1741,12 +1741,12 @@ SerialSetOptionProc(
 	    Tcl_UniChar character = 0;
 	    int charLen;
 
-	    charLen = TclUtfToUniChar(argv[0], &character);
+	    charLen = Tcl_UtfToUniChar(argv[0], &character);
 	    if (argv[0][charLen]) {
 		goto badXchar;
 	    }
 	    dcb.XonChar = (char) character;
-	    charLen = TclUtfToUniChar(argv[1], &character);
+	    charLen = Tcl_UtfToUniChar(argv[1], &character);
 	    if (argv[1][charLen]) {
 		goto badXchar;
 	    }
