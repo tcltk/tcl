@@ -1073,6 +1073,80 @@ namespace eval ::msgcat::test {
 	} -returnCodes 1\
 	-result {fail}
 
+
+    # Tests msgcat-15.*: tcloo coverage
+    
+    # There are 3 use-cases, where 2 must be tested now:
+    # - namespace defined, class defined oo, classless
+
+    test msgcat-15.1 {mc in class} -setup {
+	namespace eval ::bar {
+	    ::msgcat::mcset foo_BAR con2 con2bar
+	    oo::class create ClassCur
+	    oo::define ClassCur method method1 {} {::msgcat::mc con2}
+	}
+	namespace eval ::baz {
+            set ObjCur [::bar::ClassCur new]
+	}
+	variable locale [mclocale]
+	mclocale foo_BAR
+    } -cleanup {
+	mclocale $locale
+	namespace eval ::bar {::msgcat::mcforgetpackage}
+	namespace forget ::bar ::baz
+    } -body {
+	$::baz::ObjCur method1
+    } -result con2bar
+
+    test msgcat-15.2 {mc in classless object} -setup {
+	namespace eval ::bar {
+	    ::msgcat::mcset foo_BAR con2 con2bar
+	    oo::object create ObjCur
+	    oo::objdefine ObjCur method method1 {} {::msgcat::mc con2}
+	}
+	variable locale [mclocale]
+	mclocale foo_BAR
+    } -cleanup {
+	mclocale $locale
+	namespace eval ::bar {::msgcat::mcforgetpackage}
+	namespace forget ::bar
+    } -body {
+	::bar::ObjCur method1
+    } -result con2bar
+    
+    # Test msgcat-16.*: command mcpackagenamespaceget
+
+    test msgcat-16.1 {mcpackagenamespaceget in namespace procedure} -body {
+	namespace eval ::baz {msgcat::mcpackagenamespaceget}
+    } -result ::baz
+
+    test msgcat-16.2 {mcpackagenamespaceget in class} -setup {
+	namespace eval ::bar {
+	    oo::class create ClassCur
+	    oo::define ClassCur method method1 {} {msgcat::mcpackagenamespaceget}
+	}
+	namespace eval ::baz {
+            set ObjCur [::bar::ClassCur new]
+	}
+    } -cleanup {
+	namespace forget ::bar ::baz
+    } -body {
+	$::baz::ObjCur method1
+    } -result ::bar
+
+    test msgcat-16.3 {mcpackagenamespaceget in classless object} -setup {
+	namespace eval ::bar {
+	    oo::object create ObjCur
+	    oo::objdefine ObjCur method method1 {} {msgcat::mcpackagenamespaceget}
+	}
+    } -cleanup {
+	namespace forget ::bar
+    } -body {
+	::bar::ObjCur method1
+    } -result ::bar
+    
+
+
     interp bgerror {} $bgerrorsaved
 
     cleanupTests
