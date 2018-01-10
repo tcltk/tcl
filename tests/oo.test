@@ -47,7 +47,7 @@ test oo-0.2 {basic test of OO's ability to clean up its initial state} {
 } {}
 test oo-0.3 {basic test of OO's ability to clean up its initial state} -body {
     leaktest {
-	[oo::object new] destroy
+        [oo::object new] destroy
     }
 } -constraints memory -result 0
 test oo-0.4 {basic test of OO's ability to clean up its initial state} -body {
@@ -131,6 +131,10 @@ test oo-1.4 {basic test of OO functionality} -body {
 test oo-1.4.1 {fully-qualified nested name} -body {
     oo::object create ::one::two::three
 } -result {::one::two::three}
+test oo-1.4.2 {automatic command name has same name as namespace} -body {
+    set obj [oo::object new]
+    expr {[info object namespace $obj] == $obj}
+} -result 1
 test oo-1.5 {basic test of OO functionality} -body {
     oo::object doesnotexist
 } -returnCodes 1 -result {unknown method "doesnotexist": must be create, destroy or new}
@@ -1514,9 +1518,9 @@ test oo-11.6 {
 
     # No segmentation fault
     return done
-} -cleanup {
+} -result done -cleanup {
     rename obj1 {}
-} -result done
+}
 
 test oo-12.1 {OO: filters} {
     oo::class create Aclass
@@ -3890,9 +3894,6 @@ test oo-35.6 {
 } -cleanup {
     rename obj {}
 } -result done
-
-
-
 
 test oo-36.1 {TIP #470: introspection within oo::define} {
     oo::define oo::object self
