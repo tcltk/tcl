@@ -1199,9 +1199,10 @@ declare 27 win {
 
 # Added in 8.4.2
 
-declare 28 win {
-    void TclWinResetInterfaces(void)
-}
+# Removed in 9.0:
+#declare 28 win {
+#    void TclWinResetInterfaces(void)
+#}
 
 ################################
 # Unix specific functions

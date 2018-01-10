@@ -77,11 +77,11 @@ static int TclPkgProvide(
 #   define TclpIsAtty TclPlatIsAtty
 #   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
-#   define TclWinResetInterfaces doNothing
 
-#if TCL_UTF_MAX < 4
-static Tcl_Encoding winTCharEncoding;
-#endif
+static void
+doNothing(void)
+{
+}
 
 static int
 TclpIsAtty(int fd)
@@ -117,19 +117,12 @@ TclpGetPid(Tcl_Pid pid)
     return (int) (size_t) pid;
 }
 
-static void
-doNothing(void)
-{
-    /* dummy implementation, no need to do anything */
-}
-
 char *
 Tcl_WinUtfToTChar(
     const char *string,
     int len,
     Tcl_DString *dsPtr)
 {
-#if TCL_UTF_MAX > 3
     WCHAR *wp;
     int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
 
@@ -141,13 +134,6 @@ Tcl_WinUtfToTChar(
     Tcl_DStringSetLength(dsPtr, 2*size);
     wp[size] = 0;
     return (char *)wp;
-#else
-    if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
-    }
-    return Tcl_UtfToExternalDString(winTCharEncoding,
-	    string, len, dsPtr);
-#endif
 }
 
 char *
@@ -156,7 +142,6 @@ Tcl_WinTCharToUtf(
     int len,
     Tcl_DString *dsPtr)
 {
-#if TCL_UTF_MAX > 3
     char *p;
     int size;
 
@@ -172,13 +157,6 @@ Tcl_WinTCharToUtf(
     Tcl_DStringSetLength(dsPtr, size);
     p[size] = 0;
     return p;
-#else
-    if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
-    }
-    return Tcl_ExternalToUtfDString(winTCharEncoding,
-	    string, len, dsPtr);
-#endif
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -588,7 +566,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 25 */
     0, /* 26 */
     TclWinFlushDirtyChannels, /* 27 */
-    TclWinResetInterfaces, /* 28 */
+    0, /* 28 */
     TclWinCPUID, /* 29 */
     TclUnixOpenTemporaryFile, /* 30 */
 #endif /* WIN */

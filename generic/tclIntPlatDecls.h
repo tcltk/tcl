@@ -138,8 +138,7 @@ TCLAPI char *		TclWinNoBackslash(char *path);
 /* Slot 26 is reserved */
 /* 27 */
 TCLAPI void		TclWinFlushDirtyChannels(void);
-/* 28 */
-TCLAPI void		TclWinResetInterfaces(void);
+/* Slot 28 is reserved */
 /* 29 */
 TCLAPI int		TclWinCPUID(int index, int *regs);
 /* 30 */
@@ -284,7 +283,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved25)(void);
     void (*reserved26)(void);
     void (*tclWinFlushDirtyChannels) (void); /* 27 */
-    void (*tclWinResetInterfaces) (void); /* 28 */
+    void (*reserved28)(void);
     int (*tclWinCPUID) (int index, int *regs); /* 29 */
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* WIN */
@@ -426,8 +425,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 /* Slot 26 is reserved */
 #define TclWinFlushDirtyChannels \
 	(tclIntPlatStubsPtr->tclWinFlushDirtyChannels) /* 27 */
-#define TclWinResetInterfaces \
-	(tclIntPlatStubsPtr->tclWinResetInterfaces) /* 28 */
+/* Slot 28 is reserved */
 #define TclWinCPUID \
 	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
 #define TclUnixOpenTemporaryFile \
