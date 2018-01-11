@@ -24,6 +24,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testobj [expr {[info commands testobj] != {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
+testConstraint fullutf [expr {[format %c 0x010000] != "\ufffd"}]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -1276,6 +1277,9 @@ test string-12.22 {string range, shimmering binary/index} {
     binary scan $s a* x
     string range $s $s end
 } 000000001
+test string-12.23 {string range, surrogates, bug [11ae2be95dac9417]} fullutf {
+    list [string range a\U100000b 1 1] [string range a\U100000b 2 2] [string range a\U100000b 3 3]
+} [list \U100000 {} b]
 
 test string-13.1 {string repeat} {
     list [catch {string repeat} msg] $msg
