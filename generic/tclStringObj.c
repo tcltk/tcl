@@ -460,7 +460,8 @@ Tcl_GetCharLength(
  * Tcl_GetUniChar --
  *
  *	Get the index'th Unicode character from the String object. The index
- *	is assumed to be in the appropriate range.
+ *	is assumed to be in the appropriate range. If index references a lower
+ *	surrogate preceded by a higher surrogate, the result = -1;
  *
  * Results:
  *	Returns the index'th Unicode character in the Object.
@@ -478,6 +479,7 @@ Tcl_GetUniChar(
     int index)			/* Get the index'th Unicode character. */
 {
     String *stringPtr;
+    int ch;
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
@@ -512,7 +514,23 @@ Tcl_GetUniChar(
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
-    return (int) stringPtr->unicode[index];
+
+	ch = stringPtr->unicode[index];
+#if TCL_UTF_MAX == 4
+	/* See: bug [11ae2be95dac9417] */
+	if ((ch&0xF800) == 0xD800) {
+	    if (ch&0x400) {
+		if ((index > 0) && ((stringPtr->unicode[index-1]&0xFC00) == 0xD800)) {
+		    ch = -1; /* low surrogate preceded by high surrogate */
+		}
+	    } else if ((++index < stringPtr->numChars)
+		    && ((stringPtr->unicode[index]&0xFC00) == 0xDC00)) {
+		/* high surrogate followed by low surrogate */
+		ch = (((ch & 0x3FF) << 10) | (stringPtr->unicode[index] & 0x3FF)) + 0x10000;
+	    }
+	}
+#endif
+    return ch;
 }
 
 /*
@@ -656,6 +674,17 @@ Tcl_GetRange(
 	stringPtr = GET_STRING(objPtr);
     }
 
+#if TCL_UTF_MAX == 4
+	/* See: bug [11ae2be95dac9417] */
+	if ((first>0) && ((stringPtr->unicode[first]&0xFC00) == 0xDC00)
+		&& ((stringPtr->unicode[first-1]&0xFC00) == 0xD800)) {
+	    ++first;
+	}
+	if ((last+1<stringPtr->numChars) && ((stringPtr->unicode[last+1]&0xFC00) == 0xDC00)
+		&& ((stringPtr->unicode[last]&0xFC00) == 0xD800)) {
+	    ++last;
+	}
+#endif
     return Tcl_NewUnicodeObj(stringPtr->unicode + first, last-first+1);
 }
 
