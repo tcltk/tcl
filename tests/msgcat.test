@@ -1093,7 +1093,7 @@ namespace eval ::msgcat::test {
     } -cleanup {
 	mclocale $locale
 	namespace eval ::bar {::msgcat::mcforgetpackage}
-	namespace forget ::bar ::baz
+	namespace delete ::bar ::baz
     } -body {
 	$::baz::ObjCur method1
     } -result con2bar
@@ -1109,7 +1109,7 @@ namespace eval ::msgcat::test {
     } -cleanup {
 	mclocale $locale
 	namespace eval ::bar {::msgcat::mcforgetpackage}
-	namespace forget ::bar
+	namespace delete ::bar
     } -body {
 	::bar::ObjCur method1
     } -result con2bar
@@ -1129,7 +1129,7 @@ namespace eval ::msgcat::test {
             set ObjCur [::bar::ClassCur new]
 	}
     } -cleanup {
-	namespace forget ::bar ::baz
+	namespace delete ::bar ::baz
     } -body {
 	$::baz::ObjCur method1
     } -result ::bar
@@ -1140,7 +1140,7 @@ namespace eval ::msgcat::test {
 	    oo::objdefine ObjCur method method1 {} {msgcat::mcpackagenamespaceget}
 	}
     } -cleanup {
-	namespace forget ::bar
+	namespace delete ::bar
     } -body {
 	::bar::ObjCur method1
     } -result ::bar
