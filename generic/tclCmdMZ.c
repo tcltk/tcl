@@ -1435,7 +1435,7 @@ StringIndexCmd(
     }
 
     /*
-     * Get the char length to calulate what 'end' means.
+     * Get the char length to calculate what 'end' means.
      */
 
     length = Tcl_GetCharLength(objv[1]);
@@ -1444,7 +1444,15 @@ StringIndexCmd(
     }
 
     if ((index >= 0) && (index < length)) {
-	Tcl_UniChar ch = Tcl_GetUniChar(objv[1], index);
+	int ch = Tcl_GetUniChar(objv[1], index);
+
+	if (ch >= 0x10000) {
+	    printf("HI: %x\n", ch);
+	}
+	if (ch == -1) {
+	    printf("LO: %x\n", ch);
+	    return TCL_OK;
+	}
 
 	/*
 	 * If we have a ByteArray object, we're careful to generate a new
