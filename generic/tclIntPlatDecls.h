@@ -549,6 +549,10 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclWinConvertWSAError TclWinConvertError
 #undef TclpInetNtoa
 #define TclpInetNtoa inet_ntoa
+#undef TclWinResetInterfaces
+#define TclWinResetInterfaces() /* nop */
+#undef TclWinSetInterfaces
+#define TclWinSetInterfaces(dummy) /* nop */
 
 #if defined(_WIN32)
 #   undef TclWinNToHS
