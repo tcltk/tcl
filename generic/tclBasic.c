@@ -2590,10 +2590,6 @@ TclRenameCommand(
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND", oldName, NULL);
 	return TCL_ERROR;
     }
-    cmdNsPtr = cmdPtr->nsPtr;
-    oldFullName = Tcl_NewObj();
-    Tcl_IncrRefCount(oldFullName);
-    Tcl_GetCommandFullName(interp, cmd, oldFullName);
 
     /*
      * If the new command name is NULL or empty, delete the command. Do this
@@ -2602,9 +2598,13 @@ TclRenameCommand(
 
     if ((newName == NULL) || (*newName == '\0')) {
 	Tcl_DeleteCommandFromToken(interp, cmd);
-	result = TCL_OK;
-	goto done;
+	return TCL_OK;
     }
+
+    cmdNsPtr = cmdPtr->nsPtr;
+    oldFullName = Tcl_NewObj();
+    Tcl_IncrRefCount(oldFullName);
+    Tcl_GetCommandFullName(interp, cmd, oldFullName);
 
     /*
      * Make sure that the destination command does not already exist. The
@@ -3118,6 +3118,7 @@ Tcl_DeleteCommandFromToken(
      */
 
     cmdPtr->nsPtr->refCount++;
+
     if (cmdPtr->tracePtr != NULL) {
 	CommandTrace *tracePtr;
 	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);

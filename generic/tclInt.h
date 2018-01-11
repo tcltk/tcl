@@ -3112,7 +3112,6 @@ MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
 MODULE_SCOPE char *	TclpReadlink(const char *fileName,
 			    Tcl_DString *linkPtr);
-MODULE_SCOPE void	TclpSetInterfaces(void);
 MODULE_SCOPE void	TclpSetVariables(Tcl_Interp *interp);
 MODULE_SCOPE void *	TclThreadStorageKeyGet(Tcl_ThreadDataKey *keyPtr);
 MODULE_SCOPE void	TclThreadStorageKeySet(Tcl_ThreadDataKey *keyPtr,
