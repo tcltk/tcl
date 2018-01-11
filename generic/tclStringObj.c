@@ -540,7 +540,7 @@ Tcl_GetUniChar(
  *
  *	Get the Unicode form of the String object. If the object is not
  *	already a String object, it will be converted to one. If the String
- *	object does not have a Unicode rep, then one is create from the UTF
+ *	object does not have a Unicode rep, then one is created from the UTF
  *	string format.
  *
  * Results:

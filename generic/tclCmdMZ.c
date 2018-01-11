@@ -1446,11 +1446,7 @@ StringIndexCmd(
     if ((index >= 0) && (index < length)) {
 	int ch = Tcl_GetUniChar(objv[1], index);
 
-	if (ch >= 0x10000) {
-	    printf("HI: %x\n", ch);
-	}
 	if (ch == -1) {
-	    printf("LO: %x\n", ch);
 	    return TCL_OK;
 	}
 
