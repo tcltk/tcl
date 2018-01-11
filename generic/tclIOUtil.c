@@ -830,15 +830,6 @@ TclResetFilesystem(void)
     if (++theFilesystemEpoch == 0) {
 	++theFilesystemEpoch;
     }
-
-#ifdef _WIN32
-    /*
-     * Cleans up the win32 API filesystem proc lookup table. This must happen
-     * very late in finalization so that deleting of copied dlls can occur.
-     */
-
-    TclWinResetInterfaces();
-#endif
 }
 
 /*
