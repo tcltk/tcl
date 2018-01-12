@@ -17,7 +17,8 @@ package require Tcl 8.5-
 package provide msgcat 1.6.2
 
 namespace eval msgcat {
-    namespace export mc mcexists mcload mclocale mcmax mcmset mcpreferences mcset\
+    namespace export mc mcn mcexists mcload mclocale mcmax\
+	    mcmset mcpreferences mcset\
             mcunknown mcflset mcflmset mcloadedlocales mcforgetpackage\
 	    mcpackagenamespaceget mcpackageconfig mcpackagelocale
 
@@ -192,7 +193,30 @@ namespace eval msgcat {
 #	Returns the translated string.  Propagates errors thrown by the
 #	format command.
 
-proc msgcat::mc {src args} {
+proc msgcat::mc {args} {
+    tailcall mcn [PackageNamespaceGet] {*}$args
+}
+
+# msgcat::mcn --
+#
+#	Find the translation for the given string based on the current
+#	locale setting. Check the passed namespace first, then look in each
+#	parent namespace until the source is found.  If additional args are
+#	specified, use the format command to work them into the traslated
+#	string.
+#	If no catalog item is found, mcunknown is called in the caller frame
+#	and its result is returned.
+#
+# Arguments:
+#	ns	Package namespace of the translation
+#	src	The string to translate.
+#	args	Args to pass to the format command
+#
+# Results:
+#	Returns the translated string.  Propagates errors thrown by the
+#	format command.
+
+proc msgcat::mcn {ns src args} {
 
     # Check for the src in each namespace starting from the local and
     # ending in the global.
@@ -200,7 +224,6 @@ proc msgcat::mc {src args} {
     variable Msgs
     variable Loclist
 
-    set ns [PackageNamespaceGet]
     set loclist [PackagePreferences $ns]
 
     set nscur $ns
@@ -1072,8 +1095,9 @@ proc msgcat::DefaultUnknown {locale src args} {
 
 proc msgcat::mcmax {args} {
     set max 0
+    set ns [PackageNamespaceGet]
     foreach string $args {
-	set translated [uplevel 1 [list [namespace origin mc] $string]]
+	set translated [uplevel 1 [list [namespace origin mcn] $ns $string]]
 	set len [string length $translated]
 	if {$len>$max} {
 	    set max $len
