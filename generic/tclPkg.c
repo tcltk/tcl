@@ -503,6 +503,8 @@ PkgRequireCore(
 		     * The version of the package sought is better than the
 		     * currently selected version.
 		     */
+		    ckfree(bestVersion);
+		    bestVersion = NULL;
 		    goto newbest;
 		}
 	    } else {
@@ -531,6 +533,8 @@ PkgRequireCore(
 		     * This stable version of the package sought is better
 		     * than the currently selected stable version.
 		     */
+		    ckfree(bestStableVersion);
+		    bestStableVersion = NULL;
 		    goto newstable;
 		}
 	    } else {
@@ -944,6 +948,7 @@ Tcl_PackageObjCmd(
 		Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
 		if (availPtr->pkgIndex) {
 		    Tcl_EventuallyFree(availPtr->pkgIndex, TCL_DYNAMIC);
+		    availPtr->pkgIndex = NULL;
 		}
 		ckfree(availPtr);
 	    }
@@ -997,6 +1002,7 @@ Tcl_PackageObjCmd(
 		Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
 		if (availPtr->pkgIndex) {
 		    Tcl_EventuallyFree(availPtr->pkgIndex, TCL_DYNAMIC);
+		    availPtr->pkgIndex = NULL;
 		}
 		break;
 	    }
@@ -1008,7 +1014,7 @@ Tcl_PackageObjCmd(
 	}
 	if (availPtr == NULL) {
 	    availPtr = ckalloc(sizeof(PkgAvail));
-	    availPtr->pkgIndex = 0;
+	    availPtr->pkgIndex = NULL;
 	    DupBlock(availPtr->version, argv3, (unsigned) length + 1);
 
 	    if (prevPtr == NULL) {
@@ -1380,6 +1386,7 @@ TclFreePackageInfo(
 	    Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
 	    if (availPtr->pkgIndex) {
 		Tcl_EventuallyFree(availPtr->pkgIndex, TCL_DYNAMIC);
+		availPtr->pkgIndex = NULL;
 	    }
 	    ckfree(availPtr);
 	}
