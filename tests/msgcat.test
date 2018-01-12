@@ -1144,7 +1144,19 @@ namespace eval ::msgcat::test {
     } -body {
 	::bar::ObjCur method1
     } -result ::bar
+
+
+    # Test msgcat-17.*: mcn command
     
+    test msgcat-17.1 {mcn} -setup {
+	namespace eval bar {::msgcat::mcset foo_BAR con1 con1bar}
+	variable locale [mclocale]
+	mclocale foo_BAR
+    } -cleanup {
+	mclocale $locale
+    } -body {
+	::msgcat::mcn [namespace current]::bar con1
+    } -result con1bar
 
 
     interp bgerror {} $bgerrorsaved
