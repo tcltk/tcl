@@ -418,9 +418,14 @@ Tcl_GetCharLength(
     }
 
     /*
-     * Optimize the case where we're really dealing with a bytearray object
-     * without string representation; we don't need to convert to a string to
-     * perform the get-length operation.
+     * Optimize the case where we're really dealing with a bytearray object;
+     * we don't need to convert to a string to perform the get-length operation.
+     *
+     * Starting in Tcl 8.7, we check for a "pure" bytearray, because the
+     * machinery behind that test is using a proper bytearray ObjType.  We
+     * could also compute length of an improper bytearray without shimmering
+     * but there's no value in that. We *want* to shimmer an improper bytearray
+     * because improper bytearrays have worthless internal reps.
      */
 
     if (TclIsPureByteArray(objPtr)) {
@@ -517,7 +522,7 @@ Tcl_GetUniChar(
  *
  *	Get the Unicode form of the String object. If the object is not
  *	already a String object, it will be converted to one. If the String
- *	object does not have a Unicode rep, then one is create from the UTF
+ *	object does not have a Unicode rep, then one is created from the UTF
  *	string format.
  *
  * Results:
@@ -651,6 +656,17 @@ Tcl_GetRange(
 	stringPtr = GET_STRING(objPtr);
     }
 
+#if TCL_UTF_MAX == 4
+	/* See: bug [11ae2be95dac9417] */
+	if ((first>0) && ((stringPtr->unicode[first]&0xFC00) == 0xDC00)
+		&& ((stringPtr->unicode[first-1]&0xFC00) == 0xD800)) {
+	    ++first;
+	}
+	if ((last+1<stringPtr->numChars) && ((stringPtr->unicode[last+1]&0xFC00) == 0xDC00)
+		&& ((stringPtr->unicode[last]&0xFC00) == 0xD800)) {
+	    ++last;
+	}
+#endif
     return Tcl_NewUnicodeObj(stringPtr->unicode + first, last-first+1);
 }
 

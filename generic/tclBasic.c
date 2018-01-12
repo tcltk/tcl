@@ -956,9 +956,11 @@ Tcl_CreateInterp(void)
 
     Tcl_SetVar2(interp, "tcl_patchLevel", NULL, TCL_PATCH_LEVEL, TCL_GLOBAL_ONLY);
     Tcl_SetVar2(interp, "tcl_version", NULL, TCL_VERSION, TCL_GLOBAL_ONLY);
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
     Tcl_TraceVar2(interp, "tcl_precision", NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    TclPrecTraceProc, NULL);
+#endif /* !TCL_NO_DEPRECATED */
     TclpSetVariables(interp);
 
 #ifdef TCL_THREADS
@@ -2626,10 +2628,6 @@ TclRenameCommand(
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND", oldName, NULL);
 	return TCL_ERROR;
     }
-    cmdNsPtr = cmdPtr->nsPtr;
-    oldFullName = Tcl_NewObj();
-    Tcl_IncrRefCount(oldFullName);
-    Tcl_GetCommandFullName(interp, cmd, oldFullName);
 
     /*
      * If the new command name is NULL or empty, delete the command. Do this
@@ -2638,9 +2636,13 @@ TclRenameCommand(
 
     if ((newName == NULL) || (*newName == '\0')) {
 	Tcl_DeleteCommandFromToken(interp, cmd);
-	result = TCL_OK;
-	goto done;
+	return TCL_OK;
     }
+
+    cmdNsPtr = cmdPtr->nsPtr;
+    oldFullName = Tcl_NewObj();
+    Tcl_IncrRefCount(oldFullName);
+    Tcl_GetCommandFullName(interp, cmd, oldFullName);
 
     /*
      * Make sure that the destination command does not already exist. The
@@ -3153,6 +3155,8 @@ Tcl_DeleteCommandFromToken(
      * traces.
      */
 
+    cmdPtr->nsPtr->refCount++;
+
     if (cmdPtr->tracePtr != NULL) {
 	CommandTrace *tracePtr;
 	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
@@ -3180,6 +3184,7 @@ Tcl_DeleteCommandFromToken(
      */
 
     TclInvalidateNsCmdLookup(cmdPtr->nsPtr);
+    TclNsDecrRefCount(cmdPtr->nsPtr);
 
     /*
      * If the command being deleted has a compile function, increment the
@@ -4608,7 +4613,7 @@ TEOV_Exception(
 	if (result == TCL_RETURN) {
 	    result = TclUpdateReturnInfo(iPtr);
 	}
-	if ((result != TCL_ERROR) && !allowExceptions) {
+	if ((result != TCL_OK) && (result != TCL_ERROR) && !allowExceptions) {
 	    ProcessUnexpectedResult(interp, result);
 	    result = TCL_ERROR;
 	}
@@ -4789,7 +4794,7 @@ TEOV_RunEnterTraces(
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr = *cmdPtrPtr;
-    size_t newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
+    unsigned int newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
     int length, traceCode = TCL_OK;
     const char *command = TclGetStringFromObj(commandPtr, &length);
 
