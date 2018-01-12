@@ -1119,7 +1119,10 @@ proc msgcat::ConvertLocale {value} {
 proc ::msgcat::PackageNamespaceGet {} {
     uplevel 2 {
 	# Check for no object
-	if {0 == [llength [info commands self]]} {return [namespace current]}
+	# (undocumented test proposed by dkf 2018-01-12)
+	if { [namespace which self] ne "::oo::Helpers::self"} {
+	    return [namespace current]
+	}
 	set Class [info object class [self]]
 	# Check for classless defined object
 	if {$Class eq {::oo::object}} {
