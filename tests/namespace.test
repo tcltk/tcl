@@ -196,6 +196,19 @@ test namespace-7.7 {Bug 1655305} -setup {
     interp delete slave
 } -result {}
 
+test namespace-7.8 {Bug ba1419303b4c} -setup {
+    namespace eval ns1 {
+	namespace ensemble create
+    }
+
+    trace add command ns1 delete {
+	namespace delete ns1
+    }
+} -body {
+    # No segmentation fault given --enable-symbols=mem. 
+    namespace delete ns1
+} -result {}
+
 test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
     catch {interp delete test_interp}
     interp create test_interp
@@ -1808,13 +1821,28 @@ test namespace-42.9 {
     deallocated List struct.
 } -setup {
     namespace eval n {namespace ensemble create}
-    dict set list one ::two
-    namespace ensemble configure n -subcommands $list -map $list
+    set lst [dict create one ::two]
+    namespace ensemble configure n -subcommands $lst -map $lst
 } -body {
     n one
 } -cleanup {
     namespace delete n
+    unset -nocomplain lst
 } -returnCodes error -match glob -result {invalid command name*}
+
+test namespace-42.10 {
+    ensembles: [Bug 4f6a1ebd64] segmentation fault due to pointer to a
+    deallocated List struct (this time with duplicate of one in "dict").
+} -setup {
+    namespace eval n {namespace ensemble create}
+    set lst [list one ::two one ::three]
+    namespace ensemble configure n -subcommands $lst -map $lst
+} -body {
+    n one
+} -cleanup {
+    namespace delete n
+    unset -nocomplain lst
+} -returnCodes error -match glob -result {invalid command name *three*}
 
 test namespace-43.1 {ensembles: dict-driven} {
     namespace eval ns {
