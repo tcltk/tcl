@@ -216,7 +216,7 @@ proc msgcat::mc {src args} {
     # call package local or default unknown command
     set args [linsert $args 0 [lindex $loclist 0] $src]
     switch -exact -- [Invoke unknowncmd $args $ns result 1] {
-	0 { return [uplevel 1 [linsert $args 0 [namespace origin mcunknown]]] }
+	0 { tailcall mcunknown {*}$args }
 	1 { return [DefaultUnknown {*}$args] }
 	default { return $result }
     }
@@ -762,8 +762,7 @@ proc msgcat::ListComplement {list1 list2 {inlistname ""}} {
 #	Returns the number of message catalogs that were loaded.
 
 proc msgcat::mcload {langdir} {
-    return [uplevel 1 [list\
-	    [namespace origin mcpackageconfig] set mcfolder $langdir]]
+    tailcall mcpackageconfig set mcfolder $langdir
 }
 
 # msgcat::LoadAll --
@@ -957,7 +956,7 @@ proc msgcat::mcflset {src {dest ""}} {
 	return -code error "must only be used inside a message catalog loaded\
 		with ::msgcat::mcload"
     }
-    return [uplevel 1 [list [namespace origin mcset] $FileLocale $src $dest]]
+    tailcall mcset $FileLocale $src $dest
 }
 
 # msgcat::mcmset --
@@ -1008,7 +1007,7 @@ proc msgcat::mcflmset {pairs} {
 	return -code error "must only be used inside a message catalog loaded\
 		with ::msgcat::mcload"
     }
-    return [uplevel 1 [list [namespace origin mcmset] $FileLocale $pairs]]
+    tailcal mcmset $FileLocale $pairs
 }
 
 # msgcat::mcunknown --
@@ -1030,7 +1029,7 @@ proc msgcat::mcflmset {pairs} {
 #	Returns the translated value.
 
 proc msgcat::mcunknown {args} {
-    return [uplevel 1 [list [namespace origin DefaultUnknown] {*}$args]]
+    tailcall DefaultUnknown {*}$args
 }
 
 # msgcat::DefaultUnknown --
