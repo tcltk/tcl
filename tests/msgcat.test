@@ -732,7 +732,7 @@ namespace eval ::msgcat::test {
 	    }
 	} -result {0 1}
 
-	test msgcat-9.6 {mcexists -namespace - ns argument missing} -setup {
+	test msgcat-9.6 {mcexists -namespace ns parameter} -setup {
 	    mcforgetpackage
 	    variable locale [mclocale]
 	    mclocale foo_bar
@@ -747,7 +747,7 @@ namespace eval ::msgcat::test {
 	    }
 	} -result {0 1}
 
-	test msgcat-9.1 {mcexists -namespace with no parameter} -body {
+	test msgcat-9.7 {mcexists -namespace - ns argument missing} -body {
 	    mcexists -namespace src
 	} -returnCodes 1\
 	-result {Argument missing for switch "-namespace"}
