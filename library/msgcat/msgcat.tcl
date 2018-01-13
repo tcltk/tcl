@@ -265,23 +265,31 @@ proc msgcat::mcexists {args} {
     variable Loclist
     variable PackageConfig
 
-    set ns [PackageNamespaceGet]
-    set loclist [PackagePreferences $ns]
-
     while {[llength $args] != 1} {
 	set args [lassign $args option]
 	switch -glob -- $option {
-	    -exactnamespace { set exactnamespace 1 }
-	    -exactlocale { set loclist [lrange $loclist 0 0] }
+	    -exactnamespace - -exactlocale { set $option 1 }
+	    -namespace {
+		if {[llength $args] < 2} {
+		    return -code error\
+			    "Argument missing for switch \"-namespace\""
+		}
+		set args [lassign $args ns]
+	    }
 	    -* { return -code error "unknown option \"$option\"" }
 	    default {
 		return -code error "wrong # args: should be\
 			\"[lindex [info level 0] 0] ?-exactnamespace?\
-			?-exactlocale? src\""
+			?-exactlocale? ?-namespace ns? src\""
 	    }
 	}
     }
     set src [lindex $args 0]
+    
+    if {![info exists ns]} { set ns [PackageNamespaceGet] }
+
+    set loclist [PackagePreferences $ns]
+    if {[info exists -exactlocale]} { set loclist [lrange $loclist 0 0] }
 
     while {$ns ne ""} {
 	foreach loc $loclist {
@@ -289,7 +297,7 @@ proc msgcat::mcexists {args} {
 		return 1
 	    }
 	}
-	if {[info exists exactnamespace]} {return 0}
+	if {[info exists -exactnamespace]} {return 0}
 	set ns [namespace parent $ns]
     }
     return 0
