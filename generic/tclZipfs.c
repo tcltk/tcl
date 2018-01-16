@@ -9,6 +9,10 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ *
+ * This file is distributed in two ways:
+ *   generic/tclZipfs.c file in the TIP430 enabled tcl cores
+ *   compat/tclZipfs.c file in the tclconfig (TEA) file system, for pre-tip430 projects
  */
 
 #include "tclInt.h"
@@ -34,13 +38,27 @@
 #include "zlib.h"
 #include "crypt.h"
 
+#ifdef CFG_RUNTIME_DLLFILE
 /*
+** We are compiling as part of the core.
 ** TIP430 style zipfs prefix
 */
 #define ZIPFS_VOLUME      "//zipfs:/"
 #define ZIPFS_VOLUME_LEN  9
 #define ZIPFS_APP_MOUNT   "//zipfs:/app"
 #define ZIPFS_ZIP_MOUNT   "//zipfs:/lib/tcl"
+#else
+/*
+** We are compiling from the /compat folder of tclconfig
+** Pre TIP430 style zipfs prefix
+** //zipfs:/ doesn't work straight out of the box on either windows or Unix
+** without other changes made to tip 430
+*/
+#define ZIPFS_VOLUME      "zipfs:/"
+#define ZIPFS_VOLUME_LEN  7
+#define ZIPFS_APP_MOUNT   "zipfs:/app"
+#define ZIPFS_ZIP_MOUNT   "zipfs:/lib/tcl"
+#endif
 /*
  * Various constants and offsets found in ZIP archive files
  */
@@ -249,7 +267,7 @@ static const char pwrot[16] = {
  * Table to compute CRC32.
  */
 
-static const unsigned long crc32tab[256] = {
+static const z_crc_t crc32tab[256] = {
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
     0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4,
     0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07,
@@ -307,6 +325,8 @@ static const unsigned long crc32tab[256] = {
 const char *zipfs_literal_tcl_library=NULL;
 
 /* Function prototypes */
+int TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,const char *passwd);
+static int TclZipfs_AppHook_FindTclInit(const char *archive);
 static int Zip_FSPathInFilesystemProc(Tcl_Obj *pathPtr, ClientData *clientDataPtr);
 static Tcl_Obj *Zip_FSFilesystemPathTypeProc(Tcl_Obj *pathPtr);
 static Tcl_Obj *Zip_FSFilesystemSeparatorProc(Tcl_Obj *pathPtr);
@@ -2667,6 +2687,60 @@ ZipFSListObjCmd(
     return TCL_OK;
 }
 
+
+Tcl_Obj *TclZipfs_TclLibrary(void) {
+    if(zipfs_literal_tcl_library) {
+        return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
+    } else {
+        Tcl_Obj *vfsinitscript;
+        int found=0;
+        
+        /* Look for the library file system within the executable */
+        vfsinitscript=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library/init.tcl",-1);
+        Tcl_IncrRefCount(vfsinitscript);
+        found=Tcl_FSAccess(vfsinitscript,F_OK);
+        Tcl_DecrRefCount(vfsinitscript);
+        if(found==TCL_OK) {
+            zipfs_literal_tcl_library=ZIPFS_APP_MOUNT "/tcl_library";
+            return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
+        }
+#if defined(_WIN32) || defined(_WIN64)
+        HMODULE hModule = TclWinGetTclInstance();
+        WCHAR wName[MAX_PATH + LIBRARY_SIZE];
+        char dllname[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
+
+        if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
+            GetModuleFileNameA(hModule, dllname, MAX_PATH);
+        } else {
+            ToUtf(wName, dllname);
+        }
+        /* Mount zip file and dll before releasing to search */
+        if(TclZipfs_AppHook_FindTclInit(dllname)==TCL_OK) {
+            return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
+        }
+#else
+#ifdef CFG_RUNTIME_DLLFILE
+        /* Mount zip file and dll before releasing to search */
+        if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE)==TCL_OK) {
+            return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
+        }
+#endif
+#endif
+#ifdef CFG_RUNTIME_ZIPFILE
+        if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
+            return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
+        }
+        if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_SCRDIR "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
+            return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
+        }
+#endif
+    }
+    if(zipfs_literal_tcl_library) {
+        return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
+    }
+    return NULL;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -4224,42 +4298,6 @@ int TclZipfs_AppHook(int *argc, char ***argv)
     return TCL_OK;
 }
 
-Tcl_Obj *TclZipfs_TclLibrary(void) {
-    if(zipfs_literal_tcl_library) {
-        return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
-    } else {
-#if defined(_WIN32) || defined(_WIN64)
-        HMODULE hModule = TclWinGetTclInstance();
-        WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-        char dllname[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
-
-        if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
-            GetModuleFileNameA(hModule, dllname, MAX_PATH);
-        } else {
-            ToUtf(wName, dllname);
-        }
-        /* Mount zip file and dll before releasing to search */
-        if(TclZipfs_AppHook_FindTclInit(dllname)==TCL_OK) {
-            return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
-        }
-#else
-        /* Mount zip file and dll before releasing to search */
-        if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE)==TCL_OK) {
-            return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
-        }
-#endif
-        if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
-            return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
-        }
-        if(TclZipfs_AppHook_FindTclInit(CFG_RUNTIME_SCRDIR "/" CFG_RUNTIME_ZIPFILE)==TCL_OK) {
-            return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
-        }
-    }
-    if(zipfs_literal_tcl_library) {
-        return Tcl_NewStringObj(zipfs_literal_tcl_library,-1);
-    }
-    return NULL;
-}
 
 
 #ifndef HAVE_ZLIB
