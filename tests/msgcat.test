@@ -1098,10 +1098,26 @@ namespace eval ::msgcat::test {
 
     # Tests msgcat-15.*: tcloo coverage
     
-    # There are 3 use-cases, where 2 must be tested now:
-    # - namespace defined, class defined oo, classless
+    # There are 4 use-cases, where 3 must be tested now:
+    # - namespace defined, in class definition, class defined oo, classless
 
-    test msgcat-15.1 {mc in class} -setup {
+    test msgcat-15.1 {mc in class setup} -setup {
+	# full namespace is ::msgcat::test:bar
+	namespace eval bar {
+	    ::msgcat::mcset foo_BAR con2 con2bar
+	    oo::class create ClassCur
+	}
+	variable locale [mclocale]
+	mclocale foo_BAR
+    } -cleanup {
+	mclocale $locale
+	namespace eval bar {::msgcat::mcforgetpackage}
+	namespace delete bar
+    } -body {
+	oo::define bar::ClassCur msgcat::mc con2
+    } -result con2bar
+
+    test msgcat-15.2 {mc in class} -setup {
 	# full namespace is ::msgcat::test:bar
 	namespace eval bar {
 	    ::msgcat::mcset foo_BAR con2 con2bar
@@ -1122,7 +1138,7 @@ namespace eval ::msgcat::test {
 	$baz::ObjCur method1
     } -result con2bar
 
-    test msgcat-15.2 {mc in classless object} -setup {
+    test msgcat-15.3 {mc in classless object} -setup {
 	# full namespace is ::msgcat::test:bar
 	namespace eval bar {
 	    ::msgcat::mcset foo_BAR con2 con2bar
@@ -1139,7 +1155,7 @@ namespace eval ::msgcat::test {
 	bar::ObjCur method1
     } -result con2bar
     
-    test msgcat-15.3 {mc in classless object with explicite namespace eval}\
+    test msgcat-15.4 {mc in classless object with explicite namespace eval}\
     -setup {
 	# full namespace is ::msgcat::test:bar
 	namespace eval bar {
@@ -1171,7 +1187,18 @@ namespace eval ::msgcat::test {
 	namespace eval baz {msgcat::mcpackagenamespaceget}
     } -result ::msgcat::test::baz
 
-    test msgcat-16.2 {mcpackagenamespaceget in class} -setup {
+    test msgcat-16.2 {mcpackagenamespaceget in class setup} -setup {
+	namespace eval bar {
+	    oo::class create ClassCur
+	    oo::define ClassCur variable a
+	}
+    } -cleanup {
+	namespace delete bar
+    } -body {
+	oo::define bar::ClassCur msgcat::mcpackagenamespaceget
+    } -result ::msgcat::test::bar
+
+    test msgcat-16.3 {mcpackagenamespaceget in class} -setup {
 	namespace eval bar {
 	    oo::class create ClassCur
 	    oo::define ClassCur method method1 {} {msgcat::mcpackagenamespaceget}
@@ -1185,7 +1212,7 @@ namespace eval ::msgcat::test {
 	$baz::ObjCur method1
     } -result ::msgcat::test::bar
 
-    test msgcat-16.3 {mcpackagenamespaceget in classless object} -setup {
+    test msgcat-16.4 {mcpackagenamespaceget in classless object} -setup {
 	namespace eval bar {
 	    oo::object create ObjCur
 	    oo::objdefine ObjCur method method1 {} {msgcat::mcpackagenamespaceget}
@@ -1196,7 +1223,7 @@ namespace eval ::msgcat::test {
 	bar::ObjCur method1
     } -result ::msgcat::test::bar
 
-    test msgcat-16.4\
+    test msgcat-16.5\
     {mcpackagenamespaceget in classless object with explicite namespace eval}\
     -setup {
 	namespace eval bar {
@@ -1216,7 +1243,12 @@ namespace eval ::msgcat::test {
 
     # Test msgcat-17.*: mcn command
     
-    test msgcat-17.1 {mcn} -setup {
+    test msgcat-17.1 {mcn no parameters} -body {
+	mcn
+    } -returnCodes 1\
+    -result {wrong # args: should be "mcn ns src ?arg ...?"}
+
+    test msgcat-17.2 {mcn} -setup {
 	namespace eval bar {::msgcat::mcset foo_BAR con1 con1bar}
 	variable locale [mclocale]
 	mclocale foo_BAR
