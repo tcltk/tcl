@@ -1144,9 +1144,10 @@ proc msgcat::ConvertLocale {value} {
 }
 
 # helper function to find package namespace of stack-frame -2
-# There are 3 possibilities:
+# There are 4 possibilities:
 # - called from a proc
-# - called from a oo class
+# - called within a class definition script
+# - called from an class defined oo object
 # - called from a classless oo object
 proc ::msgcat::PackageNamespaceGet {} {
     uplevel 2 {
