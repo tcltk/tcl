@@ -26,7 +26,7 @@
 #if defined(__CYGWIN__)
 static TCL_NORETURN Tcl_PanicProc *panicProc = tclWinDebugPanic;
 #else
-static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
+static TCL_NORETURN Tcl_PanicProc *panicProc = NULL;
 #endif
 
 /*
@@ -47,7 +47,7 @@ static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
 
 void
 Tcl_SetPanicProc(
-    TCL_NORETURN1 Tcl_PanicProc *proc)
+    TCL_NORETURN Tcl_PanicProc *proc)
 {
 #if defined(_WIN32)
     /* tclWinDebugPanic only installs if there is no panicProc yet. */

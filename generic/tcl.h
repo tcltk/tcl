@@ -108,7 +108,6 @@ extern "C" {
 #	define TCL_NORETURN /* nothing */
 #	define TCL_NOINLINE /* nothing */
 #   endif
-#   define TCL_NORETURN1 /* nothing */
 #endif
 
 /*

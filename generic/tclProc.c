@@ -1051,7 +1051,7 @@ ProcWrongNumArgs(
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
     } else {
-	desiredObjs[0] = framePtr->objv[skip-1];
+	desiredObjs[0] = Tcl_NewListObj(1, framePtr->objv + skip - 1);
     }
     Tcl_IncrRefCount(desiredObjs[0]);
 
@@ -1310,7 +1310,7 @@ InitLocalCache(
 	    *namePtr = NULL;
 	} else {
 	    *namePtr = TclCreateLiteral(iPtr, localPtr->name,
-		    localPtr->nameLength, /* hash */ -1,
+		    localPtr->nameLength, /* hash */ (unsigned int) -1,
 		    &new, /* nsPtr */ NULL, 0, NULL);
 	    Tcl_IncrRefCount(*namePtr);
 	}

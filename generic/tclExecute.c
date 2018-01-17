@@ -101,7 +101,6 @@ long		tclObjsAlloced = 0;
 long		tclObjsFreed = 0;
 long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #endif /* TCL_COMPILE_STATS */
-
 
 /*
  * NR_TEBC
@@ -2842,16 +2841,6 @@ TEBCresume(
 	TEBC_YIELD();
 	return TclNREvalObjv(interp, objc, objv,
 		TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME, NULL);
-
-    /*
-     * INST_CALL_BUILTIN_FUNC1 and INST_CALL_FUNC1 were made obsolete by the
-     * changes to add a ::tcl::mathfunc namespace in 8.5.
-     */
-
-    case INST_CALL_BUILTIN_FUNC1:
-	Tcl_Panic("TclNRExecuteByteCode: obsolete INST_CALL_BUILTIN_FUNC1 found");
-    case INST_CALL_FUNC1:
-	Tcl_Panic("TclNRExecuteByteCode: obsolete INST_CALL_FUNC1 found");
 
     case INST_INVOKE_REPLACE:
 	objc = TclGetUInt4AtPtr(pc+1);

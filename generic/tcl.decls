@@ -1912,7 +1912,7 @@ declare 518 {
 
 # TIP#121 (exit handler) dkf for Joe Mistachkin
 declare 519 {
-    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
+    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN Tcl_ExitProc *proc)
 }
 
 # TIP#143 (resource limits) dkf
