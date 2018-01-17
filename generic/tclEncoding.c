@@ -678,68 +678,6 @@ TclFinalizeEncodingSubsystem(void)
 /*
  *-------------------------------------------------------------------------
  *
- * Tcl_GetDefaultEncodingDir --
- *
- *	Legacy public interface to retrieve first directory in the encoding
- *	searchPath.
- *
- * Results:
- *	The directory pathname, as a string, or NULL for an empty encoding
- *	search path.
- *
- * Side effects:
- *	None.
- *
- *-------------------------------------------------------------------------
- */
-
-const char *
-Tcl_GetDefaultEncodingDir(void)
-{
-    int numDirs;
-    Tcl_Obj *first, *searchPath = Tcl_GetEncodingSearchPath();
-
-    Tcl_ListObjLength(NULL, searchPath, &numDirs);
-    if (numDirs == 0) {
-	return NULL;
-    }
-    Tcl_ListObjIndex(NULL, searchPath, 0, &first);
-
-    return TclGetString(first);
-}
-
-/*
- *-------------------------------------------------------------------------
- *
- * Tcl_SetDefaultEncodingDir --
- *
- *	Legacy public interface to set the first directory in the encoding
- *	search path.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Modifies the encoding search path.
- *
- *-------------------------------------------------------------------------
- */
-
-void
-Tcl_SetDefaultEncodingDir(
-    const char *path)
-{
-    Tcl_Obj *searchPath = Tcl_GetEncodingSearchPath();
-    Tcl_Obj *directory = Tcl_NewStringObj(path, -1);
-
-    searchPath = Tcl_DuplicateObj(searchPath);
-    Tcl_ListObjReplace(NULL, searchPath, 0, 0, 1, &directory);
-    Tcl_SetEncodingSearchPath(searchPath);
-}
-
-/*
- *-------------------------------------------------------------------------
- *
  * Tcl_GetEncoding --
  *
  *	Given the name of a encoding, find the corresponding Tcl_Encoding
