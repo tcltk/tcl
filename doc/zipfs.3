@@ -18,7 +18,7 @@ int
 \fBTclZipfs_AppHook(\fIint *argc, char ***argv\fR)
 .sp
 int
-\fBTclzipfs_Mount\fR(\fIinterp, zipname, mntpt, passwd\fR)
+\fBTclzipfs_Mount\fR(\fIinterp, mntpt, zipname, passwd\fR)
 .sp
 int
 \fBTclzipfs_Unmount\fR(\fIinterp, zipname\fR)
@@ -55,12 +55,12 @@ or in the standard tcl install location.
 \fBTclzipfs_Mount()\fR mount the ZIP archive \fIzipname\fR on the mount
 point given in \fImntpt\fR using the optional ZIP password \fIpasswd\fR.
 Errors during that process are reported in the interpreter \fIinterp\fR.
-If \fIzipname\fR is a NULL pointer, information on all currently mounted
+If \fImountpoint\fR is a NULL pointer, information on all currently mounted
 ZIP file systems is written into \fIinterp\fR's result as a sequence of
 mount points and ZIP file names.
 .PP
 \fBTclzipfs_Unmount()\fR undoes the effect of \fBTclzipfs_Mount()\fR,
-i.e. it unmounts the mounted ZIP archive file \fIzipname\fR. Errors are
+i.e. it unmounts the mounted ZIP file system at \fImountpoint\fR. Errors are
 reported in the interpreter \fIinterp\fR.
 .SH KEYWORDS
 compress, filesystem, zip
