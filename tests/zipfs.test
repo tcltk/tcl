@@ -27,7 +27,6 @@ set CWD [pwd]
 set tmpdir  [file join $CWD tmp]
 file mkdir $tmpdir
 
-
 test zipfs-0.1 {zipfs basics} -constraints zipfs -body {
     package require zipfs
 } -result {2.0}
@@ -45,7 +44,7 @@ if {![string match ${ziproot}* $tcl_library]} {
     ###
     set tclzip [file join $CWD [::tcl::pkgconfig get zipfile,runtime]]
     if {[file exists $tclzip]} {
-        zipfs mount $tclzip /lib/tcl
+        zipfs mount /lib/tcl $tclzip
         set ::tcl_library ${ziproot}lib/tcl/tcl_library
     } else {
         tcltest::skip zipfs-0.*
@@ -154,7 +153,7 @@ if {[file exists $zipfile]} {
 test zipfs-2.2.0 {zipfs mkzip} -constraints zipfs -body {
     cd $tcl_library/encoding
     zipfs mkzip $zipfile .
-    zipfs mount $zipfile ${ziproot}abc
+    zipfs mount ${ziproot}abc $zipfile
     zipfs list -glob ${ziproot}abc/cp850.*
 } -cleanup {
     cd $CWD
@@ -202,12 +201,12 @@ test zipfs-2.2.4 {zipfs exists} -constraints zipfs -body {
 } -result 1
 
 test zipfs-2.2.5 {zipfs unmount while busy} -constraints zipfs -body {
-    zipfs unmount $zipfile
+    zipfs unmount /abc
 } -returnCodes error -result {filesystem is busy}
 
 test zipfs-2.2.6 {zipfs unmount} -constraints zipfs -body {
     close $zipfd
-    zipfs unmount $zipfile
+    zipfs unmount /abc
     zipfs exists /abc/cp850.enc
 } -result 0
 
