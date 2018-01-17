@@ -684,7 +684,7 @@ EXTERN void		Tcl_SetErrorCode(Tcl_Interp *interp, ...);
 EXTERN void		Tcl_SetMaxBlockTime(const Tcl_Time *timePtr);
 /* 230 */
 EXTERN void		Tcl_SetPanicProc(
-				TCL_NORETURN1 Tcl_PanicProc *panicProc);
+				TCL_NORETURN Tcl_PanicProc *panicProc);
 /* 231 */
 EXTERN int		Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth);
 /* 232 */
@@ -1469,7 +1469,7 @@ EXTERN void		Tcl_GetCommandFullName(Tcl_Interp *interp,
 EXTERN int		Tcl_FSEvalFileEx(Tcl_Interp *interp,
 				Tcl_Obj *fileName, const char *encodingName);
 /* 519 */
-EXTERN Tcl_ExitProc *	Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
+EXTERN Tcl_ExitProc *	Tcl_SetExitProc(TCL_NORETURN Tcl_ExitProc *proc);
 /* 520 */
 EXTERN void		Tcl_LimitAddHandler(Tcl_Interp *interp, int type,
 				Tcl_LimitHandlerProc *handlerProc,
@@ -1804,7 +1804,7 @@ typedef struct TclStubs {
 
     int (*tcl_PkgProvideEx) (Tcl_Interp *interp, const char *name, const char *version, const void *clientData); /* 0 */
     const char * (*tcl_PkgRequireEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 1 */
-    TCL_NORETURN1 void (*tcl_Panic) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 2 */
+    TCL_NORETURN void (*tcl_Panic) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 2 */
     char * (*tcl_Alloc) (unsigned int size); /* 3 */
     void (*tcl_Free) (char *ptr); /* 4 */
     char * (*tcl_Realloc) (char *ptr, unsigned int size); /* 5 */
@@ -1951,7 +1951,7 @@ typedef struct TclStubs {
     int (*tcl_EvalFile) (Tcl_Interp *interp, const char *fileName); /* 130 */
     void (*reserved131)(void);
     void (*tcl_EventuallyFree) (ClientData clientData, Tcl_FreeProc *freeProc); /* 132 */
-    TCL_NORETURN1 void (*tcl_Exit) (int status); /* 133 */
+    TCL_NORETURN void (*tcl_Exit) (int status); /* 133 */
     int (*tcl_ExposeCommand) (Tcl_Interp *interp, const char *hiddenCmdToken, const char *cmdName); /* 134 */
     int (*tcl_ExprBoolean) (Tcl_Interp *interp, const char *expr, int *ptr); /* 135 */
     int (*tcl_ExprBooleanObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *ptr); /* 136 */
@@ -2056,7 +2056,7 @@ typedef struct TclStubs {
     void (*tcl_SetErrno) (int err); /* 227 */
     void (*tcl_SetErrorCode) (Tcl_Interp *interp, ...); /* 228 */
     void (*tcl_SetMaxBlockTime) (const Tcl_Time *timePtr); /* 229 */
-    void (*tcl_SetPanicProc) (TCL_NORETURN1 Tcl_PanicProc *panicProc); /* 230 */
+    void (*tcl_SetPanicProc) (TCL_NORETURN Tcl_PanicProc *panicProc); /* 230 */
     int (*tcl_SetRecursionLimit) (Tcl_Interp *interp, int depth); /* 231 */
     void (*tcl_SetResult) (Tcl_Interp *interp, char *result, Tcl_FreeProc *freeProc); /* 232 */
     int (*tcl_SetServiceMode) (int mode); /* 233 */
@@ -2120,7 +2120,7 @@ typedef struct TclStubs {
     int (*tcl_EvalEx) (Tcl_Interp *interp, const char *script, int numBytes, int flags); /* 291 */
     int (*tcl_EvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 292 */
     int (*tcl_EvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 293 */
-    TCL_NORETURN1 void (*tcl_ExitThread) (int status); /* 294 */
+    TCL_NORETURN void (*tcl_ExitThread) (int status); /* 294 */
     int (*tcl_ExternalToUtf) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, int dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr); /* 295 */
     char * (*tcl_ExternalToUtfDString) (Tcl_Encoding encoding, const char *src, int srcLen, Tcl_DString *dsPtr); /* 296 */
     void (*tcl_FinalizeThread) (void); /* 297 */
@@ -2345,7 +2345,7 @@ typedef struct TclStubs {
     Tcl_Command (*tcl_GetCommandFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 516 */
     void (*tcl_GetCommandFullName) (Tcl_Interp *interp, Tcl_Command command, Tcl_Obj *objPtr); /* 517 */
     int (*tcl_FSEvalFileEx) (Tcl_Interp *interp, Tcl_Obj *fileName, const char *encodingName); /* 518 */
-    Tcl_ExitProc * (*tcl_SetExitProc) (TCL_NORETURN1 Tcl_ExitProc *proc); /* 519 */
+    Tcl_ExitProc * (*tcl_SetExitProc) (TCL_NORETURN Tcl_ExitProc *proc); /* 519 */
     void (*tcl_LimitAddHandler) (Tcl_Interp *interp, int type, Tcl_LimitHandlerProc *handlerProc, ClientData clientData, Tcl_LimitHandlerDeleteProc *deleteProc); /* 520 */
     void (*tcl_LimitRemoveHandler) (Tcl_Interp *interp, int type, Tcl_LimitHandlerProc *handlerProc, ClientData clientData); /* 521 */
     int (*tcl_LimitReady) (Tcl_Interp *interp); /* 522 */

@@ -891,18 +891,8 @@ Tcl_WrongNumArgs(
      * future...
      */
 
-#ifndef AVOID_HACKS_FOR_ITCL
-    int isFirst = 1;		/* Special flag used to inhibit the treating
-				 * of the first word as a list element so the
-				 * hacky way Itcl generates error messages for
-				 * its ensembles will still work. [Bug
-				 * 1066837] */
-#   define MAY_QUOTE_WORD	(!isFirst)
-#   define AFTER_FIRST_WORD	(isFirst = 0)
-#else /* !AVOID_HACKS_FOR_ITCL */
 #   define MAY_QUOTE_WORD	1
 #   define AFTER_FIRST_WORD	(void) 0
-#endif /* AVOID_HACKS_FOR_ITCL */
 
     TclNewObj(objPtr);
     if (iPtr->flags & INTERP_ALTERNATE_WRONG_ARGS) {
