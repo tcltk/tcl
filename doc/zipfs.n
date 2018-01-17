@@ -23,9 +23,9 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fBzipfs mkimg\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR \fI?infile?\fR
 \fBzipfs mkkey\fR \fIpassword\fR
 \fBzipfs mkzip\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR
-\fBzipfs mount\fR \fI?zipfile?\fR \fI?mountpoint?\fR \fI?password?\fR
+\fBzipfs mount\fR \fI?mountpoint?\fR \fI?zipfile?\fR \fI?password?\fR
 \fBzipfs root\fR
-\fBzipfs unmount\fR \fIzipfile\fR
+\fBzipfs unmount\fR \fImountpoint\fR
 .fi
 .BE
 .SH DESCRIPTION
@@ -96,15 +96,15 @@ Caution: the choice of the \fIindir\fR parameter
 archive's content.
 .RE
 .TP
-\fBzipfs mount ?\fIzipfile\fR? ?\fImountpoint\fR? ?\fIpassword\fR?
+\fBzipfs mount ?\fImountpoint\fR? ?\fIzipfile\fR? ?\fIpassword\fR?
 .
 The \fBzipfs mount\fR command mounts a ZIP archive file as a VFS.
 After this command executes, files contained in \fIzipfile\fR
 will appear to Tcl to be regular files at the mount point.
 .RS
 .PP
-With no \fImountpoint\fR, returns the mount point for \fIzipfile\fR.
-With no \fIzipfile\fR, return all zipfile/mount pairs.
+With no \fIzipfile\fR, returns the zipfile mounted at \fImountpoint\fR.
+With no \fImountpoint\fR, return all zipfile/mount pairs.
 If \fImountpoint\fR is specified as an empty string, mount on file path.
 .RE
 .TP
@@ -113,9 +113,9 @@ Returns a constant string which indicates the mount point for zipfs volumes
 for the current platform. On Windows, this value is zipfs:/. On Unux, //zipfs:/
 .RE
 .TP
-\fBzipfs unmount \fIzipfile\fR
+\fBzipfs unmount \fImountpoint\fR
 .
-Unmounts a previously mounted ZIP archive file \fIzipfile\fR.
+Unmounts a previously mounted ZIP archive mounted to \fImountpoint\fR.
 .SH "SEE ALSO"
 tclsh(1), file(n), zlib(n)
 .SH "KEYWORDS"
