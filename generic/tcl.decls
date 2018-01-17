@@ -2334,14 +2334,25 @@ declare 631 {
 
 # TIP #430
 declare 632 {
-    int TclZipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
-      const char *passwd)
+    int TclZipfs_Mount(
+    Tcl_Interp *interp,
+    const char *mntpt,
+    const char *zipname,
+    const char *passwd)
 }
 declare 633 {
     int TclZipfs_Unmount(Tcl_Interp *interp, const char *zipname)
 }
 declare 634 {
     Tcl_Obj *TclZipfs_TclLibrary(void)
+}
+declare 635 {
+    int TclZipfs_Mount_Buffer(
+    Tcl_Interp *interp,
+    const char *mntpt,
+    unsigned char *data,
+    size_t datalen,
+    int copy)
 }
 ##############################################################################
 

@@ -168,6 +168,8 @@ TCL_DECLARE_MUTEX(localtimeMutex)
 
 typedef struct ZipFile {
     char *name;               /* Archive name */
+    size_t namelen;
+    char is_membuf;           /* When true, not a file but a memory buffer */
     Tcl_Channel chan;         /* Channel handle or NULL */
     unsigned char *data;      /* Memory mapped or malloc'ed file */
     long length;              /* Length of memory mapped file */
@@ -186,8 +188,8 @@ typedef struct ZipFile {
 #if HAS_DRIVES
     int mntdrv;                  /* Drive letter of mount point */
 #endif
-    char *mntpt;            /* Mount point */
-    size_t mntptlen;
+    int mntptlen;
+    char *mntpt;              /* Mount point */
 } ZipFile;
 
 /*
@@ -325,7 +327,19 @@ static const z_crc_t crc32tab[256] = {
 const char *zipfs_literal_tcl_library=NULL;
 
 /* Function prototypes */
-int TclZipfs_Mount(Tcl_Interp *interp, const char *mntpt, const char *zipname, const char *passwd);
+int TclZipfs_Mount(
+    Tcl_Interp *interp,
+    const char *mntpt,
+    const char *zipname,
+    const char *passwd
+);
+int TclZipfs_Mount_Buffer(
+    Tcl_Interp *interp,
+    const char *mntpt,
+    unsigned char *data,
+    size_t datalen,
+    int copy
+);
 static int TclZipfs_AppHook_FindTclInit(const char *archive);
 static int Zip_FSPathInFilesystemProc(Tcl_Obj *pathPtr, ClientData *clientDataPtr);
 static Tcl_Obj *Zip_FSFilesystemPathTypeProc(Tcl_Obj *pathPtr);
@@ -919,6 +933,18 @@ ZipFSLookupMount(char *filename)
 static void
 ZipFSCloseArchive(Tcl_Interp *interp, ZipFile *zf)
 {
+    if(zf->namelen) {
+        free(zf->name); //Allocated by strdup
+    }
+    if(zf->is_membuf==1) {
+        /* Pointer to memory */
+        if (zf->tofree != NULL) {
+            Tcl_Free((char *) zf->tofree);
+            zf->tofree = NULL;
+        }
+        zf->data = NULL;
+        return;   
+    }   
 #if defined(_WIN32) || defined(_WIN64)
     if ((zf->data != NULL) && (zf->tofree == NULL)) {
         UnmapViewOfFile(zf->data);
@@ -946,7 +972,7 @@ ZipFSCloseArchive(Tcl_Interp *interp, ZipFile *zf)
 /*
  *-------------------------------------------------------------------------
  *
- * ZipFSIndexArchive --
+ * ZipFS_Find_TOC --
  *
  *   This function takes a memory mapped zip file and indexes the contents.
  *   When "needZip" is zero an embedded ZIP archive in an executable file is accepted.
@@ -961,7 +987,7 @@ ZipFSCloseArchive(Tcl_Interp *interp, ZipFile *zf)
  *-------------------------------------------------------------------------
  */
 static int
-ZipFSIndexArchive(Tcl_Interp *interp, int needZip, ZipFile *zf)
+ZipFS_Find_TOC(Tcl_Interp *interp, int needZip, ZipFile *zf)
 {
     int i;
     unsigned char *p, *q;
@@ -1034,6 +1060,7 @@ ZipFSIndexArchive(Tcl_Interp *interp, int needZip, ZipFile *zf)
             zf->baseoffsp -= i ? (5 + i) : 0;
         }
     }
+    
     return TCL_OK;
 
 error:
@@ -1069,7 +1096,8 @@ ZipFSOpenArchive(Tcl_Interp *interp, const char *zipname, int needZip, ZipFile *
 {
     int i;
     ClientData handle;
-
+    
+    zf->is_membuf=0;
 #if defined(_WIN32) || defined(_WIN64)
     zf->data = NULL;
     zf->mh = INVALID_HANDLE_VALUE;
@@ -1147,61 +1175,33 @@ ZipFSOpenArchive(Tcl_Interp *interp, const char *zipname, int needZip, ZipFile *
         }
 #endif
     }
-    return ZipFSIndexArchive(interp,needZip,zf);
+    return ZipFS_Find_TOC(interp,needZip,zf);
 
 error:
     ZipFSCloseArchive(interp, zf);
     return TCL_ERROR;
 }
 
-
-static void TclZipfs_C_Init(void) {
-    static const Tcl_Time t = { 0, 0 };
-    if (!ZipFS.initialized) {
-#ifdef TCL_THREADS
-        /*
-         * Inflate condition variable.
-         */
-        Tcl_MutexLock(&ZipFSMutex);
-        Tcl_ConditionWait(&ZipFSCond, &ZipFSMutex, &t);
-        Tcl_MutexUnlock(&ZipFSMutex);
-#endif
-        Tcl_FSRegister(NULL, &zipfsFilesystem);
-        Tcl_InitHashTable(&ZipFS.fileHash, TCL_STRING_KEYS);
-        Tcl_InitHashTable(&ZipFS.zipHash, TCL_STRING_KEYS);
-        ZipFS.initialized = ZipFS.idCount = 1;
-    }
-}
-
-
 /*
  *-------------------------------------------------------------------------
  *
- * TclZipfs_Mount --
+ * ZipFSRootNode --
  *
- *      This procedure is invoked to mount a given ZIP archive file on
- *    a given mountpoint with optional ZIP password.
+ *    This function generates the root node for a ZIPFS filesystem
  *
  * Results:
- *      A standard Tcl result.
+ *    TCL_OK on success, TCL_ERROR otherwise with an error message
+ *    placed into the given "interp" if it is not NULL.
  *
  * Side effects:
- *      A ZIP archive file is read, analyzed and mounted, resources are
- *    allocated.
- *
  *-------------------------------------------------------------------------
  */
 
-int
-TclZipfs_Mount(
-    Tcl_Interp *interp,
-    const char *mntpt,
-    const char *zipname,
-    const char *passwd
-) {
-    char *realname, *p;
+static int
+ZipFS_Catalogue_Filesystem(Tcl_Interp *interp, ZipFile *zf0, const char *mntpt, const char *passwd, const char *zipname)
+{
     int i, pwlen, isNew;
-    ZipFile *zf, zf0;
+    ZipFile *zf;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
     Tcl_DString ds, dsm, fpBuf;
@@ -1209,58 +1209,8 @@ TclZipfs_Mount(
 #if HAS_DRIVES
     int drive = 0;
 #endif
-
-    ReadLock();
-    if (!ZipFS.initialized) {
-        TclZipfs_C_Init();
-    }
-    if (mntpt == NULL) {
-        Tcl_HashSearch search;
-        int ret = TCL_OK;
-
-        i = 0;
-        hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
-        while (hPtr != NULL) {
-            if ((zf = (ZipFile *) Tcl_GetHashValue(hPtr)) != NULL) {
-                if (interp != NULL) {
-                    Tcl_AppendElement(interp, zf->mntpt);
-                    Tcl_AppendElement(interp, zf->name);
-                }
-                ++i;
-            }
-            hPtr = Tcl_NextHashEntry(&search);
-        }
-        if (interp == NULL) {
-            ret = (i > 0) ? TCL_OK : TCL_BREAK;
-        }
-        Unlock();
-        return ret;
-    }
-    /*
-     * Mount point sometimes is a relative or otherwise denormalized path.
-     * But an absolute name is needed as mount point here.
-     */
-    Tcl_DStringInit(&dsm);
-    mntpt = CanonicalPath("",mntpt, &dsm, 1);
+    WriteLock();
     
-    if (zipname == NULL) {
-        if (interp == NULL) {
-            Unlock();
-            return TCL_OK;
-        }
-
-        Tcl_DStringInit(&ds);
-
-        hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, mntpt);
-        if (hPtr != NULL) {
-            if ((zf = Tcl_GetHashValue(hPtr)) != NULL) {
-                Tcl_SetObjResult(interp,Tcl_NewStringObj(zf->name, -1));
-            }
-        }
-        Unlock();
-        return TCL_OK;
-    }
-    Unlock();
     pwlen = 0;
     if (passwd != NULL) {
         pwlen = strlen(passwd);
@@ -1272,17 +1222,17 @@ TclZipfs_Mount(
             return TCL_ERROR;
         }
     }
-    if (ZipFSOpenArchive(interp, zipname, 1, &zf0) != TCL_OK) {
-        return TCL_ERROR;
-    }
+    /*
+     * Mount point sometimes is a relative or otherwise denormalized path.
+     * But an absolute name is needed as mount point here.
+     */
     Tcl_DStringInit(&ds);
-#if HAS_DRIVES
-    realname = AbsolutePath(zipname, NULL, &ds);
-#else
-    realname = AbsolutePath(zipname, &ds);
-#endif
-
-    WriteLock();
+    Tcl_DStringInit(&dsm);
+    if (strcmp(mntpt, "/") == 0) {
+        mntpt = "";
+    } else {
+        mntpt = CanonicalPath("",mntpt, &dsm, 1);
+    }
     hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, mntpt, &isNew);
     if (!isNew) {
         zf = (ZipFile *) Tcl_GetHashValue(hPtr);
@@ -1290,11 +1240,8 @@ TclZipfs_Mount(
             Tcl_AppendResult(interp, zf->name, " is already mounted on ", mntpt, (char *) NULL);
         }
         Unlock();
-        ZipFSCloseArchive(interp, &zf0);
+        ZipFSCloseArchive(interp, zf0);
         return TCL_ERROR;
-    }
-    if (strcmp(mntpt, "/") == 0) {
-        mntpt = "";
     }
     zf = (ZipFile *) Tcl_AttemptAlloc(sizeof (*zf) + strlen(mntpt) + 1);
     if (zf == NULL) {
@@ -1302,18 +1249,20 @@ TclZipfs_Mount(
             Tcl_AppendResult(interp, "out of memory", (char *) NULL);
         }
         Unlock();
-        ZipFSCloseArchive(interp, &zf0);
+        ZipFSCloseArchive(interp, zf0);
         return TCL_ERROR;
-        }
-        *zf = zf0;
-        zf->mntpt = Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
-        zf->mntptlen=strlen(zf->mntpt);
-        zf->name = strdup(zipname);
-        zf->entries = NULL;
-        zf->topents = NULL;
-        zf->nopen = 0;
-        Tcl_SetHashValue(hPtr, (ClientData) zf);
-        if ((zf->pwbuf[0] == 0) && pwlen) {
+    }
+    Unlock();
+    *zf = *zf0;
+    zf->mntpt = Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
+    zf->mntptlen=strlen(zf->mntpt);
+    zf->name = strdup(zipname);
+    zf->namelen= strlen(zipname);
+    zf->entries = NULL;
+    zf->topents = NULL;
+    zf->nopen = 0;
+    Tcl_SetHashValue(hPtr, (ClientData) zf);
+    if ((zf->pwbuf[0] == 0) && pwlen) {
         int k = 0;
         i = pwlen;
         zf->pwbuf[k++] = i;
@@ -1352,7 +1301,6 @@ TclZipfs_Mount(
     }
     q = zf->data + zf->centoffs;
     Tcl_DStringInit(&fpBuf);
-    Tcl_DStringInit(&ds);
     for (i = 0; i < zf->nfiles; i++) {
         int pathlen, comlen, extra, isdir = 0, dosTime, dosDate, nbcompr, offs;
         unsigned char *lq, *gq = NULL;
@@ -1514,11 +1462,228 @@ TclZipfs_Mount(
 nextent:
         q += pathlen + comlen + extra + ZIP_CENTRAL_HEADER_LEN;
     }
-    Unlock();
     Tcl_DStringFree(&fpBuf);
     Tcl_DStringFree(&ds);
     Tcl_FSMountsChanged(NULL);
+    Unlock();
     return TCL_OK;
+}
+
+static void TclZipfs_C_Init(void) {
+    static const Tcl_Time t = { 0, 0 };
+    if (!ZipFS.initialized) {
+#ifdef TCL_THREADS
+        /*
+         * Inflate condition variable.
+         */
+        Tcl_MutexLock(&ZipFSMutex);
+        Tcl_ConditionWait(&ZipFSCond, &ZipFSMutex, &t);
+        Tcl_MutexUnlock(&ZipFSMutex);
+#endif
+        Tcl_FSRegister(NULL, &zipfsFilesystem);
+        Tcl_InitHashTable(&ZipFS.fileHash, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&ZipFS.zipHash, TCL_STRING_KEYS);
+        ZipFS.initialized = ZipFS.idCount = 1;
+    }
+}
+
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * TclZipfs_Mount --
+ *
+ *      This procedure is invoked to mount a given ZIP archive file on
+ *    a given mountpoint with optional ZIP password.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      A ZIP archive file is read, analyzed and mounted, resources are
+ *    allocated.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+int
+TclZipfs_Mount(
+    Tcl_Interp *interp,
+    const char *mntpt,
+    const char *zipname,
+    const char *passwd
+) {
+    int i, pwlen;
+    ZipFile *zf;
+
+    ReadLock();
+    if (!ZipFS.initialized) {
+        TclZipfs_C_Init();
+    }
+    if (mntpt == NULL) {
+        Tcl_HashEntry *hPtr;
+        Tcl_HashSearch search;
+        int ret = TCL_OK;
+        i = 0;
+        hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
+        while (hPtr != NULL) {
+            if ((zf = (ZipFile *) Tcl_GetHashValue(hPtr)) != NULL) {
+                if (interp != NULL) {
+                    Tcl_AppendElement(interp, zf->mntpt);
+                    Tcl_AppendElement(interp, zf->name);
+                }
+                ++i;
+            }
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        if (interp == NULL) {
+            ret = (i > 0) ? TCL_OK : TCL_BREAK;
+        }
+        Unlock();
+        return ret;
+    }
+ 
+    if (zipname == NULL) {
+        Tcl_HashEntry *hPtr;
+        if (interp == NULL) {
+            Unlock();
+            return TCL_OK;
+        }
+        hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, mntpt);
+        if (hPtr != NULL) {
+            if ((zf = Tcl_GetHashValue(hPtr)) != NULL) {
+                Tcl_SetObjResult(interp,Tcl_NewStringObj(zf->name, -1));
+            }
+        }
+        Unlock();
+        return TCL_OK;
+    }
+    Unlock();
+    pwlen = 0;
+    if (passwd != NULL) {
+        pwlen = strlen(passwd);
+        if ((pwlen > 255) || (strchr(passwd, 0xff) != NULL)) {
+            if (interp) {
+            Tcl_SetObjResult(interp,
+                Tcl_NewStringObj("illegal password", -1));
+            }
+            return TCL_ERROR;
+        }
+    }
+    zf = (ZipFile *) Tcl_AttemptAlloc(sizeof (*zf) + strlen(mntpt) + 1);
+    if (zf == NULL) {
+        if (interp != NULL) {
+            Tcl_AppendResult(interp, "out of memory", (char *) NULL);
+        }
+        return TCL_ERROR;
+    }
+    if (ZipFSOpenArchive(interp, zipname, 1, zf) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    return ZipFS_Catalogue_Filesystem(interp,zf,mntpt,passwd,zipname);
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * TclZipfs_Mount_Buffer --
+ *
+ *      This procedure is invoked to mount a given ZIP archive file on
+ *    a given mountpoint with optional ZIP password.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      A ZIP archive file is read, analyzed and mounted, resources are
+ *    allocated.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+int
+TclZipfs_Mount_Buffer(
+    Tcl_Interp *interp,
+    const char *mntpt,
+    unsigned char *data,
+    size_t datalen,
+    int copy
+) {
+    int i;
+    ZipFile *zf;
+
+    ReadLock();
+    if (!ZipFS.initialized) {
+        TclZipfs_C_Init();
+    }
+    if (mntpt == NULL) {
+        Tcl_HashEntry *hPtr;
+        Tcl_HashSearch search;
+        int ret = TCL_OK;
+
+        i = 0;
+        hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
+        while (hPtr != NULL) {
+            if ((zf = (ZipFile *) Tcl_GetHashValue(hPtr)) != NULL) {
+                if (interp != NULL) {
+                    Tcl_AppendElement(interp, zf->mntpt);
+                    Tcl_AppendElement(interp, zf->name);
+                }
+                ++i;
+            }
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        if (interp == NULL) {
+            ret = (i > 0) ? TCL_OK : TCL_BREAK;
+        }
+        Unlock();
+        return ret;
+    }
+ 
+    if (data == NULL) {
+        Tcl_HashEntry *hPtr;
+
+        if (interp == NULL) {
+            Unlock();
+            return TCL_OK;
+        }
+        hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, mntpt);
+        if (hPtr != NULL) {
+            if ((zf = Tcl_GetHashValue(hPtr)) != NULL) {
+                Tcl_SetObjResult(interp,Tcl_NewStringObj(zf->name, -1));
+            }
+        }
+        Unlock();
+        return TCL_OK;
+    }
+    Unlock();
+    zf = (ZipFile *) Tcl_AttemptAlloc(sizeof (*zf) + strlen(mntpt) + 1);
+    if (zf == NULL) {
+        if (interp != NULL) {
+            Tcl_AppendResult(interp, "out of memory", (char *) NULL);
+        }
+        return TCL_ERROR;
+    }
+    zf->is_membuf=1;
+    zf->length=datalen;
+    if(copy) {
+        zf->data=(unsigned char *)Tcl_AttemptAlloc(datalen);
+        if (zf->data == NULL) {
+            if (interp != NULL) {
+                Tcl_AppendResult(interp, "out of memory", (char *) NULL);
+            }
+            return TCL_ERROR;
+        }
+        memcpy(zf->data,data,datalen);
+        zf->tofree=zf->data;
+    } else {
+        zf->data=data;
+        zf->tofree=NULL;
+    }
+    if(ZipFS_Find_TOC(interp,0,zf)!=TCL_OK) {
+        return TCL_ERROR;
+    }
+    return ZipFS_Catalogue_Filesystem(interp,zf,mntpt,NULL,"Memory Buffer");
 }
 
 /*
@@ -1579,7 +1744,6 @@ TclZipfs_Unmount(Tcl_Interp *interp, const char *mntpt)
         Tcl_Free((char *) z);
     }
     ZipFSCloseArchive(interp, zf);
-    free(zf->name); //Allocated by strdup
     Tcl_Free((char *) zf);
     unmounted = 1;
 done:
@@ -1612,12 +1776,87 @@ ZipFSMountObjCmd(
 ) {
     if (objc > 4) {
         Tcl_WrongNumArgs(interp, 1, objv,
-                 "?zipfile? ?mountpoint? ?password?");
+                 "?mountpoint? ?zipfile? ?password?");
         return TCL_ERROR;
     }
     return TclZipfs_Mount(interp, (objc > 1) ? Tcl_GetString(objv[1]) : NULL,
                (objc > 2) ? Tcl_GetString(objv[2]) : NULL,
                (objc > 3) ? Tcl_GetString(objv[3]) : NULL);
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSMountObjCmd --
+ *
+ *      This procedure is invoked to process the "zipfs::mount" command.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      A ZIP archive file is mounted, resources are allocated.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static int
+ZipFSMountBufferObjCmd(
+    ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]
+) {
+    const char *mntpt;
+    unsigned char *data;
+    int length;
+    if (objc > 4) {
+        Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? ?data?");
+        return TCL_ERROR;
+    }
+    if(objc<2) {
+        int i;
+        Tcl_HashEntry *hPtr;
+        Tcl_HashSearch search;
+        int ret = TCL_OK;
+        ZipFile *zf;
+        
+        ReadLock();
+        i = 0;
+        hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
+        while (hPtr != NULL) {
+            if ((zf = (ZipFile *) Tcl_GetHashValue(hPtr)) != NULL) {
+                if (interp != NULL) {
+                    Tcl_AppendElement(interp, zf->mntpt);
+                    Tcl_AppendElement(interp, zf->name);
+                }
+                ++i;
+            }
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        if (interp == NULL) {
+            ret = (i > 0) ? TCL_OK : TCL_BREAK;
+        }
+        Unlock();
+        return ret;
+    }
+    mntpt=Tcl_GetString(objv[1]);
+    if(objc<3) {
+        Tcl_HashEntry *hPtr;
+        ZipFile *zf;
+
+        if (interp == NULL) {
+            Unlock();
+            return TCL_OK;
+        }
+        hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, mntpt);
+        if (hPtr != NULL) {
+            if ((zf = Tcl_GetHashValue(hPtr)) != NULL) {
+                Tcl_SetObjResult(interp,Tcl_NewStringObj(zf->name, -1));
+            }
+        }
+        Unlock();
+        return TCL_OK;
+    }
+    data=Tcl_GetByteArrayFromObj(objv[2],&length);
+    return TclZipfs_Mount_Buffer(interp, mntpt,data,length,1);
 }
 
 /*
@@ -2477,11 +2716,10 @@ ZipFSLMkImgObjCmd(ClientData clientData, Tcl_Interp *interp,
 /*
  *-------------------------------------------------------------------------
  *
- * ZipFSExistsObjCmd --
+ * ZipFSCanonicalObjCmd --
  *
- *      This procedure is invoked to process the "zipfs::exists" command.
- *    It tests for the existence of a file in the ZIP filesystem and
- *    places a boolean into the interp's result.
+ *      This procedure is invoked to process the "zipfs::canonical" command.
+ *    It returns the canonical name for a file within zipfs
  *
  * Results:
  *      Always TCL_OK.
@@ -4137,6 +4375,7 @@ TclZipfs_Init(Tcl_Interp *interp)
     if(interp != NULL) {
         static const EnsembleImplMap initMap[] = {
             {"mount",      ZipFSMountObjCmd,    NULL, NULL, NULL, 0},
+            {"mount_data",      ZipFSMountBufferObjCmd,    NULL, NULL, NULL, 0},
             {"unmount",      ZipFSUnmountObjCmd,    NULL, NULL, NULL, 0},
             {"mkkey",      ZipFSMkKeyObjCmd,    NULL, NULL, NULL, 0},
             {"mkimg",      ZipFSMkImgObjCmd,    NULL, NULL, NULL, 0},
