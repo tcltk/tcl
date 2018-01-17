@@ -101,7 +101,7 @@ the command.  The \fIfreeProc\fR field will be initialized to zero,
 and \fIinterp->result\fR will point to an empty string.  Commands that
 do not return any value can simply leave the fields alone.
 Furthermore, the empty string pointed to by \fIresult\fR is actually
-part of an array of \fBTCL_RESULT_SIZE\fR characters (approximately 200).
+part of an array of approximately 200 characters.
 If a command wishes to return a short string, it can simply copy
 it to the area pointed to by \fIinterp->result\fR.  Or, it can use
 the sprintf procedure to generate a short result string at the location
