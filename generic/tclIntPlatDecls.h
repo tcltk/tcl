@@ -504,7 +504,6 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
-#define TclWinGetPlatformId() (2) /* VER_PLATFORM_WIN32_NT */
 #define TclWinConvertWSAError TclWinConvertError
 
 #if !defined(_WIN32)
