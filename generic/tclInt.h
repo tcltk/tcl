@@ -26,19 +26,6 @@
 #undef ACCEPT_NAN
 
 /*
- * In Tcl 8.7, stop supporting special hacks for legacy Itcl 3.
- * Itcl 4 doesn't need them. Itcl 3 can be updated to not need them
- * using the Tcl(Init|Reset)RewriteEnsemble() routines in all Tcl 8.6+
- * releases.  Perhaps Tcl 8.7 will add even better public interfaces
- * supporting all the re-invocation mechanisms extensions like Itcl 3
- * need.  As an absolute last resort, folks who must make Itcl 3 work
- * unchanged with Tcl 8.7 can remove this line to regain the migration
- * support.  Tcl 9 will no longer offer even that option.
- */
-
-#define AVOID_HACKS_FOR_ITCL 1
-
-/*
  * Common include files needed by most of the Tcl source files are included
  * here, so that system-dependent personalizations for the include files only
  * have to be made in once place. This results in a few extra includes, but

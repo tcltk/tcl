@@ -74,7 +74,7 @@ extern "C" {
 #  define JOIN(a,b) JOIN1(a,b)
 #  define JOIN1(a,b) a##b
 #endif
-#endif /* !RC_INVOKED */
+#endif /* RC_INVOKED */
 
 /*
  * A special definition used to allow this header file to be included from
@@ -114,11 +114,6 @@ extern "C" {
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #   define TCL_NORETURN __attribute__ ((noreturn))
 #   define TCL_NOINLINE __attribute__ ((noinline))
-#   if defined(BUILD_tcl) || defined(BUILD_tk)
-#	define TCL_NORETURN1 __attribute__ ((noreturn))
-#   else
-#	define TCL_NORETURN1 /* nothing */
-#   endif
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER) && (_MSC_VER >= 1310)
@@ -128,7 +123,6 @@ extern "C" {
 #	define TCL_NORETURN /* nothing */
 #	define TCL_NOINLINE /* nothing */
 #   endif
-#   define TCL_NORETURN1 /* nothing */
 #endif
 
 /*
@@ -233,46 +227,10 @@ extern "C" {
 #endif
 
 /*
- *----------------------------------------------------------------------------
- * The following code is copied from winnt.h. If we don't replicate it here,
- * then <windows.h> can't be included after tcl.h, since tcl.h also defines
- * VOID. This block is skipped under Cygwin and Mingw.
- */
-
-#if defined(_WIN32) && !defined(HAVE_WINNT_IGNORE_VOID)
-#ifndef VOID
-#define VOID void
-typedef char CHAR;
-typedef short SHORT;
-typedef long LONG;
-#endif
-#endif /* _WIN32 && !HAVE_WINNT_IGNORE_VOID */
-
-/*
- * Macro to use instead of "void" for arguments that must have type "void *"
- * in ANSI C; maps them to type "char *" in non-ANSI systems.
- */
-
-#ifndef __VXWORKS__
-#   ifndef NO_VOID
-#	define VOID void
-#   else
-#	define VOID char
-#   endif
-#endif
-
-/*
  * Miscellaneous declarations.
  */
 
-#ifndef _CLIENTDATA
-#   ifndef NO_VOID
-	typedef void *ClientData;
-#   else
-	typedef int *ClientData;
-#   endif
-#   define _CLIENTDATA
-#endif
+typedef void *ClientData;
 
 /*
  * Darwin specific configure overrides (to support fat compiles, where
@@ -573,22 +531,6 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_SUBST_ALL		007
 
 /*
- * Argument descriptors for math function callbacks in expressions:
- */
-
-typedef enum {
-    TCL_INT, TCL_DOUBLE, TCL_EITHER, TCL_WIDE_INT
-} Tcl_ValueType;
-
-typedef struct Tcl_Value {
-    Tcl_ValueType type;		/* Indicates intValue or doubleValue is valid,
-				 * or both. */
-    long intValue;		/* Integer value. */
-    double doubleValue;		/* Double-precision floating value. */
-    Tcl_WideInt wideValue;	/* Wide (min. 64-bit) integer value. */
-} Tcl_Value;
-
-/*
  * Forward declaration of Tcl_Obj to prevent an error when the forward
  * reference to Tcl_Obj is encountered in the function types declared below.
  */
@@ -633,8 +575,6 @@ typedef void (Tcl_FreeProc) (char *blockPtr);
 typedef void (Tcl_IdleProc) (ClientData clientData);
 typedef void (Tcl_InterpDeleteProc) (ClientData clientData,
 	Tcl_Interp *interp);
-typedef int (Tcl_MathProc) (ClientData clientData, Tcl_Interp *interp,
-	Tcl_Value *args, Tcl_Value *resultPtr);
 typedef void (Tcl_NamespaceDeleteProc) (ClientData clientData);
 typedef int (Tcl_ObjCmdProc) (ClientData clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);

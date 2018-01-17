@@ -818,7 +818,7 @@ declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
 declare 230 {
-    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+    void Tcl_SetPanicProc(TCL_NORETURN Tcl_PanicProc *panicProc)
 }
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
@@ -1887,7 +1887,7 @@ declare 518 {
 
 # TIP#121 (exit handler) dkf for Joe Mistachkin
 declare 519 {
-    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
+    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN Tcl_ExitProc *proc)
 }
 
 # TIP#143 (resource limits) dkf
@@ -2393,9 +2393,6 @@ declare 1 macosx {
 
 # Public functions that are not accessible via the stubs table.
 
-export {
-    void Tcl_Main(int argc, char **argv, Tcl_AppInitProc *appInitProc)
-}
 export {
     const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 	int exact)
