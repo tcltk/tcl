@@ -60,22 +60,7 @@ extern "C" {
 #define TCL_VERSION	    "9.0"
 #define TCL_PATCH_LEVEL	    "9.0a0"
 
-#if !defined(TCL_NO_DEPRECATED) || defined(RC_INVOKED)
-/*
- *----------------------------------------------------------------------------
- * The following definitions set up the proper options for Windows compilers.
- * We use this method because there is no autoconf equivalent.
- */
-
-#ifdef _WIN32
-#   ifndef __WIN32__
-#	define __WIN32__
-#   endif
-#   ifndef WIN32
-#	define WIN32
-#   endif
-#endif
-
+#if defined(RC_INVOKED)
 /*
  * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
  * quotation marks), JOIN joins two arguments.
@@ -89,7 +74,7 @@ extern "C" {
 #  define JOIN(a,b) JOIN1(a,b)
 #  define JOIN1(a,b) a##b
 #endif
-#endif /* !TCL_NO_DEPRECATED */
+#endif /* !RC_INVOKED */
 
 /*
  * A special definition used to allow this header file to be included from
@@ -125,11 +110,6 @@ extern "C" {
 
 #include <stdio.h>
 
-#ifndef TCL_NO_DEPRECATED
-#    define TCL_VARARGS(type, name) (type name, ...)
-#    define TCL_VARARGS_DEF(type, name) (type name, ...)
-#    define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
-#endif /* !TCL_NO_DEPRECATED */
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #   define TCL_NORETURN __attribute__ ((noreturn))
@@ -213,7 +193,7 @@ extern "C" {
  * to be included in a shared library, then it should have the DLLEXPORT
  * storage class. If is being declared for use by a module that is going to
  * link against the shared library, then it should have the DLLIMPORT storage
- * class. If the symbol is beind declared for a static build or for use from a
+ * class. If the symbol is being declared for a static build or for use from a
  * stub library, then the storage class should be empty.
  *
  * The convention is that a macro called BUILD_xxxx, where xxxx is the name of
@@ -234,55 +214,8 @@ extern "C" {
 #   endif
 #endif
 
-/*
- * The following _ANSI_ARGS_ macro is to support old extensions
- * written for older versions of Tcl where it permitted support
- * for compilers written in the pre-prototype era of C.
- *
- * New code should use prototypes.
- */
-
-#ifndef TCL_NO_DEPRECATED
-#   undef _ANSI_ARGS_
-#   define _ANSI_ARGS_(x)	x
-#endif /* !TCL_NO_DEPRECATED */
-
-/*
- * Definitions that allow this header file to be used either with or without
- * ANSI C features.
- */
-
-#ifndef INLINE
-#   define INLINE
-#endif
-
-#ifdef NO_CONST
-#   ifndef const
-#      define const
-#   endif
-#endif
-#ifndef CONST
-#   define CONST const
-#endif
-
-#ifdef USE_NON_CONST
-#   ifdef USE_COMPAT_CONST
-#      error define at most one of USE_NON_CONST and USE_COMPAT_CONST
-#   endif
-#   define CONST84
-#   define CONST84_RETURN
-#else
-#   ifdef USE_COMPAT_CONST
-#      define CONST84
-#      define CONST84_RETURN const
-#   else
-#      define CONST84 const
-#      define CONST84_RETURN const
-#   endif
-#endif
-
 #ifndef CONST86
-#      define CONST86 CONST84
+#      define CONST86 const
 #endif
 
 /*
@@ -674,10 +607,10 @@ typedef void (Tcl_ChannelProc) (ClientData clientData, int mask);
 typedef void (Tcl_CloseProc) (ClientData data);
 typedef void (Tcl_CmdDeleteProc) (ClientData clientData);
 typedef int (Tcl_CmdProc) (ClientData clientData, Tcl_Interp *interp,
-	int argc, CONST84 char *argv[]);
+	int argc, const char *argv[]);
 typedef void (Tcl_CmdTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
-	ClientData cmdClientData, int argc, CONST84 char *argv[]);
+	ClientData cmdClientData, int argc, const char *argv[]);
 typedef int (Tcl_CmdObjTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
@@ -714,7 +647,7 @@ typedef void (Tcl_TimerProc) (ClientData clientData);
 typedef int (Tcl_SetFromAnyProc) (Tcl_Interp *interp, struct Tcl_Obj *objPtr);
 typedef void (Tcl_UpdateStringProc) (struct Tcl_Obj *objPtr);
 typedef char * (Tcl_VarTraceProc) (ClientData clientData, Tcl_Interp *interp,
-	CONST84 char *part1, CONST84 char *part2, int flags);
+	const char *part1, const char *part2, int flags);
 typedef void (Tcl_CommandTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	const char *oldName, const char *newName, int flags);
 typedef void (Tcl_CreateFileHandlerProc) (int fd, int mask, Tcl_FileProc *proc,
@@ -942,9 +875,6 @@ typedef struct Tcl_DString {
 
 #define Tcl_DStringLength(dsPtr) ((dsPtr)->length)
 #define Tcl_DStringValue(dsPtr) ((dsPtr)->string)
-#ifndef TCL_NO_DEPRECATED
-#   define Tcl_DStringTrunc Tcl_DStringSetLength
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Definitions for the maximum number of digits of precision that may be
@@ -1062,17 +992,6 @@ typedef struct Tcl_DString {
 #define TCL_TRACE_DELETE	0x4000
 
 #define TCL_ALLOW_INLINE_COMPILATION 0x20000
-
-/*
- * The TCL_PARSE_PART1 flag is deprecated and has no effect. The part1 is now
- * always parsed whenever the part2 is NULL. (This is to avoid a common error
- * when converting code to use the new object based APIs and forgetting to
- * give the flag)
- */
-
-#ifndef TCL_NO_DEPRECATED
-#   define TCL_PARSE_PART1	0x400
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Types for linked variables:
@@ -1421,14 +1340,14 @@ typedef int	(Tcl_DriverClose2Proc) (ClientData instanceData,
 typedef int	(Tcl_DriverInputProc) (ClientData instanceData, char *buf,
 			int toRead, int *errorCodePtr);
 typedef int	(Tcl_DriverOutputProc) (ClientData instanceData,
-			CONST84 char *buf, int toWrite, int *errorCodePtr);
+			const char *buf, int toWrite, int *errorCodePtr);
 typedef int	(Tcl_DriverSeekProc) (ClientData instanceData, long offset,
 			int mode, int *errorCodePtr);
 typedef int	(Tcl_DriverSetOptionProc) (ClientData instanceData,
 			Tcl_Interp *interp, const char *optionName,
 			const char *value);
 typedef int	(Tcl_DriverGetOptionProc) (ClientData instanceData,
-			Tcl_Interp *interp, CONST84 char *optionName,
+			Tcl_Interp *interp, const char *optionName,
 			Tcl_DString *dsPtr);
 typedef void	(Tcl_DriverWatchProc) (ClientData instanceData, int mask);
 typedef int	(Tcl_DriverGetHandleProc) (ClientData instanceData,
@@ -2563,37 +2482,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #undef  Tcl_ConditionFinalize
 #define Tcl_ConditionFinalize(condPtr)
 #endif /* TCL_THREADS */
-
-/*
- *----------------------------------------------------------------------------
- * Deprecated Tcl functions:
- */
-
-#ifndef TCL_NO_DEPRECATED
-/*
- * These function have been renamed. The old names are deprecated, but we
- * define these macros for backwards compatibilty.
- */
-
-#   define Tcl_Ckalloc		Tcl_Alloc
-#   define Tcl_Ckfree		Tcl_Free
-#   define Tcl_Ckrealloc	Tcl_Realloc
-#   define Tcl_Return		Tcl_SetResult
-#   define Tcl_TildeSubst	Tcl_TranslateFileName
-#if !defined(__APPLE__) /* On OSX, there is a conflict with "mach/mach.h" */
-#   define panic		Tcl_Panic
-#endif
-
-/*
- *----------------------------------------------------------------------------
- * Convenience declaration of Tcl_AppInit for backwards compatibility. This
- * function is not *implemented* by the tcl library, so the storage class is
- * neither DLLEXPORT nor DLLIMPORT.
- */
-
-extern Tcl_AppInitProc Tcl_AppInit;
-
-#endif /* !TCL_NO_DEPRECATED */
 
 #endif /* RC_INVOKED */
 
