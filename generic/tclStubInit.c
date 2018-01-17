@@ -50,14 +50,13 @@
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
 #   define TclpIsAtty TclPlatIsAtty
-#   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
-#   define TclWinFlushDirtyChannels doNothing
-
 static void
 doNothing(void)
 {
+    /* dummy implementation, no need to do anything */
 }
-
+#   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
+#   define TclWinFlushDirtyChannels doNothing
 static int
 TclpIsAtty(int fd)
 {
@@ -836,7 +835,7 @@ const TclStubs tclStubs = {
     Tcl_AsyncMark, /* 74 */
     Tcl_AsyncReady, /* 75 */
     Tcl_BackgroundError, /* 76 */
-    Tcl_Backslash, /* 77 */
+    0, /* 77 */
     Tcl_BadChannelOption, /* 78 */
     Tcl_CallWhenDeleted, /* 79 */
     Tcl_CancelIdleCall, /* 80 */
@@ -854,7 +853,7 @@ const TclStubs tclStubs = {
     Tcl_CreateEventSource, /* 92 */
     Tcl_CreateExitHandler, /* 93 */
     Tcl_CreateInterp, /* 94 */
-    Tcl_CreateMathFunc, /* 95 */
+    0, /* 95 */
     Tcl_CreateObjCommand, /* 96 */
     Tcl_CreateSlave, /* 97 */
     Tcl_CreateTimerHandler, /* 98 */
@@ -1108,8 +1107,8 @@ const TclStubs tclStubs = {
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
     Tcl_GetString, /* 340 */
-    Tcl_GetDefaultEncodingDir, /* 341 */
-    Tcl_SetDefaultEncodingDir, /* 342 */
+    0, /* 341 */
+    0, /* 342 */
     Tcl_AlertNotifier, /* 343 */
     Tcl_ServiceModeHook, /* 344 */
     Tcl_UniCharIsAlnum, /* 345 */
@@ -1124,7 +1123,7 @@ const TclStubs tclStubs = {
     Tcl_UniCharToUtfDString, /* 354 */
     Tcl_UtfToUniCharDString, /* 355 */
     Tcl_GetRegExpFromObj, /* 356 */
-    Tcl_EvalTokens, /* 357 */
+    0, /* 357 */
     Tcl_FreeParse, /* 358 */
     Tcl_LogCommandInfo, /* 359 */
     Tcl_ParseBraces, /* 360 */
@@ -1202,8 +1201,8 @@ const TclStubs tclStubs = {
     Tcl_AttemptSetObjLength, /* 432 */
     Tcl_GetChannelThread, /* 433 */
     Tcl_GetUnicodeFromObj, /* 434 */
-    Tcl_GetMathFuncInfo, /* 435 */
-    Tcl_ListMathFuncs, /* 436 */
+    0, /* 435 */
+    0, /* 436 */
     Tcl_SubstObj, /* 437 */
     Tcl_DetachChannel, /* 438 */
     Tcl_IsStandardChannel, /* 439 */
