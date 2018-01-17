@@ -426,7 +426,7 @@ struct NamespacePathEntry {
  */
 
 typedef struct EnsembleConfig {
-    Namespace *nsPtr;		/* The namspace backing this ensemble up. */
+    Namespace *nsPtr;		/* The namespace backing this ensemble up. */
     Tcl_Command token;		/* The token for the command that provides
 				 * ensemble support for the namespace, or NULL
 				 * if the command has been deleted (or never
@@ -1826,7 +1826,7 @@ typedef struct Interp {
 				 * unused space in interp was repurposed for
 				 * pluggable bytecode optimizers. The core
 				 * contains one optimizer, which can be
-				 * selectively overriden by extensions. */
+				 * selectively overridden by extensions. */
     } extra;
 
     /*
@@ -2251,7 +2251,7 @@ typedef struct Interp {
  *			use the rand() or srand() functions.
  * SAFE_INTERP:		Non zero means that the current interp is a safe
  *			interp (i.e. it has only the safe commands installed,
- *			less priviledge than a regular interp).
+ *			less privilege than a regular interp).
  * INTERP_DEBUG_FRAME:	Used for switching on various extra interpreter
  *			debug/info mechanisms (e.g. info frame eval/uplevel
  *			tracing) which are performance intensive.
@@ -2392,7 +2392,7 @@ typedef struct List {
 				 * be ignored if there is no string rep at
 				 * all.*/
     Tcl_Obj *elements;		/* First list element; the struct is grown to
-				 * accomodate all elements. */
+				 * accommodate all elements. */
 } List;
 
 #define LIST_MAX \
@@ -2514,13 +2514,13 @@ typedef struct List {
  * tip of the path, so duplication of shared objects should be done along the
  * way.
  *
- * DICT_PATH_EXISTS indicates that we are performing an existance test and a
+ * DICT_PATH_EXISTS indicates that we are performing an existence test and a
  * lookup failure should therefore not be an error. If (and only if) this flag
  * is set, TclTraceDictPath() will return the special value
  * DICT_PATH_NON_EXISTENT if the path is not traceable.
  *
  * DICT_PATH_CREATE (which also requires the DICT_PATH_UPDATE bit to be set)
- * indicates that we are to create non-existant dictionaries on the path.
+ * indicates that we are to create non-existent dictionaries on the path.
  */
 
 #define DICT_PATH_READ		0
