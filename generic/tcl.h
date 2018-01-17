@@ -1978,7 +1978,7 @@ typedef struct Tcl_Token {
  * TCL_TOKEN_OPERATOR -		The token describes one expression operator.
  *				An operator might be the name of a math
  *				function such as "abs". A TCL_TOKEN_OPERATOR
- *				token is always preceeded by one
+ *				token is always preceded by one
  *				TCL_TOKEN_SUB_EXPR token for the operator's
  *				subexpression, and is followed by zero or more
  *				TCL_TOKEN_SUB_EXPR tokens for the operator's
@@ -2631,7 +2631,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #ifndef TCL_NO_DEPRECATED
 /*
  * These function have been renamed. The old names are deprecated, but we
- * define these macros for backwards compatibilty.
+ * define these macros for backwards compatibility.
  */
 
 #   define Tcl_Ckalloc		Tcl_Alloc
