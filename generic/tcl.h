@@ -173,7 +173,7 @@ extern "C" {
  * to be included in a shared library, then it should have the DLLEXPORT
  * storage class. If is being declared for use by a module that is going to
  * link against the shared library, then it should have the DLLIMPORT storage
- * class. If the symbol is beind declared for a static build or for use from a
+ * class. If the symbol is being declared for a static build or for use from a
  * stub library, then the storage class should be empty.
  *
  * The convention is that a macro called BUILD_xxxx, where xxxx is the name of

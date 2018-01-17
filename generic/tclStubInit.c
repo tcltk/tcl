@@ -75,14 +75,13 @@ static int TclPkgProvide(
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
 #   define TclpIsAtty TclPlatIsAtty
-#   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
-#   define TclWinFlushDirtyChannels doNothing
-
 static void
 doNothing(void)
 {
+    /* dummy implementation, no need to do anything */
 }
-
+#   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
+#   define TclWinFlushDirtyChannels doNothing
 static int
 TclpIsAtty(int fd)
 {
@@ -799,7 +798,7 @@ const TclStubs tclStubs = {
     Tcl_AsyncMark, /* 74 */
     Tcl_AsyncReady, /* 75 */
     Tcl_BackgroundError, /* 76 */
-    Tcl_Backslash, /* 77 */
+    0, /* 77 */
     Tcl_BadChannelOption, /* 78 */
     Tcl_CallWhenDeleted, /* 79 */
     Tcl_CancelIdleCall, /* 80 */

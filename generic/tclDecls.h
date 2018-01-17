@@ -238,8 +238,7 @@ TCLAPI void		Tcl_AsyncMark(Tcl_AsyncHandler async);
 TCLAPI int		Tcl_AsyncReady(void);
 /* 76 */
 TCLAPI void		Tcl_BackgroundError(Tcl_Interp *interp);
-/* 77 */
-TCLAPI char		Tcl_Backslash(const char *src, int *readPtr);
+/* Slot 77 is reserved */
 /* 78 */
 TCLAPI int		Tcl_BadChannelOption(Tcl_Interp *interp,
 				const char *optionName,
@@ -1837,7 +1836,7 @@ typedef struct TclStubs {
     void (*tcl_AsyncMark) (Tcl_AsyncHandler async); /* 74 */
     int (*tcl_AsyncReady) (void); /* 75 */
     void (*tcl_BackgroundError) (Tcl_Interp *interp); /* 76 */
-    char (*tcl_Backslash) (const char *src, int *readPtr); /* 77 */
+    void (*reserved77)(void);
     int (*tcl_BadChannelOption) (Tcl_Interp *interp, const char *optionName, const char *optionList); /* 78 */
     void (*tcl_CallWhenDeleted) (Tcl_Interp *interp, Tcl_InterpDeleteProc *proc, ClientData clientData); /* 79 */
     void (*tcl_CancelIdleCall) (Tcl_IdleProc *idleProc, ClientData clientData); /* 80 */
@@ -2574,8 +2573,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_AsyncReady) /* 75 */
 #define Tcl_BackgroundError \
 	(tclStubsPtr->tcl_BackgroundError) /* 76 */
-#define Tcl_Backslash \
-	(tclStubsPtr->tcl_Backslash) /* 77 */
+/* Slot 77 is reserved */
 #define Tcl_BadChannelOption \
 	(tclStubsPtr->tcl_BadChannelOption) /* 78 */
 #define Tcl_CallWhenDeleted \

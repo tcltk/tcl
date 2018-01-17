@@ -292,9 +292,10 @@ declare 75 {
 declare 76 {
     void Tcl_BackgroundError(Tcl_Interp *interp)
 }
-declare 77 {
-    char Tcl_Backslash(const char *src, int *readPtr)
-}
+# Removed in 9.0:
+#declare 77 {deprecated {Use Tcl_UtfBackslash}} {
+#    char Tcl_Backslash(const char *src, int *readPtr)
+#}
 declare 78 {
     int Tcl_BadChannelOption(Tcl_Interp *interp, const char *optionName,
 	    const char *optionList)
@@ -359,7 +360,8 @@ declare 93 {
 declare 94 {
     Tcl_Interp *Tcl_CreateInterp(void)
 }
-#declare 95 {
+# Removed in 9.0:
+#declare 95 {deprecated {}} {
 #    void Tcl_CreateMathFunc(Tcl_Interp *interp, const char *name,
 #	    int numArgs, Tcl_ValueType *argTypes,
 #	    Tcl_MathProc *proc, ClientData clientData)
@@ -1246,12 +1248,12 @@ declare 339 {
 declare 340 {
     char *Tcl_GetString(Tcl_Obj *objPtr)
 }
-# Removed in 9.0
-#declare 341 {
+# Removed in 9.0:
+#declare 341 {deprecated {Use Tcl_GetEncodingSearchPath}} {
 #    const char *Tcl_GetDefaultEncodingDir(void)
 #}
-# Removed in 9.0
-#declare 342 {
+# Removed in 9.0:
+#declare 342 {deprecated {Use Tcl_SetEncodingSearchPath}} {
 #    void Tcl_SetDefaultEncodingDir(const char *path)
 #}
 declare 343 {
@@ -1301,7 +1303,7 @@ declare 356 {
 	    int flags)
 }
 # Removed in 9.0:
-#declare 357 {
+#declare 357 {deprecated {Use Tcl_EvalTokensStandard}} {
 #    Tcl_Obj *Tcl_EvalTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 #	    int count)
 #}
@@ -1585,15 +1587,16 @@ declare 434 {
 }
 
 # TIP#15 (math function introspection) dkf
-#declare 435 {
+# Removed in 9.0:
+#declare 435 {deprecated {}} {
 #    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, const char *name,
 #	    int *numArgsPtr, Tcl_ValueType **argTypesPtr,
 #	    Tcl_MathProc **procPtr, ClientData *clientDataPtr)
 #}
-#declare 436 {
+# Removed in 9.0:
+#declare 436 {deprecated {}} {
 #    Tcl_Obj *Tcl_ListMathFuncs(Tcl_Interp *interp, const char *pattern)
 #}
-
 # TIP#36 (better access to 'subst') dkf
 declare 437 {
     Tcl_Obj *Tcl_SubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
