@@ -164,7 +164,7 @@ Tcl_BreakObjCmd(
  *
  *----------------------------------------------------------------------
  */
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 	/* ARGSUSED */
 int
 Tcl_CaseObjCmd(
