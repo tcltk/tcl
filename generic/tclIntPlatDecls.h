@@ -549,22 +549,24 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclWinConvertWSAError TclWinConvertError
 #undef TclpInetNtoa
 #define TclpInetNtoa inet_ntoa
-#undef TclWinResetInterfaces
-#define TclWinResetInterfaces() /* nop */
-#undef TclWinSetInterfaces
-#define TclWinSetInterfaces(dummy) /* nop */
 
 #if defined(_WIN32)
 #   undef TclWinNToHS
 #   undef TclWinGetServByName
 #   undef TclWinGetSockOpt
 #   undef TclWinSetSockOpt
-#   define TclWinNToHS ntohs
-#   define TclWinGetServByName getservbyname
-#   define TclWinGetSockOpt getsockopt
-#   define TclWinSetSockOpt setsockopt
 #   undef TclWinGetPlatformId
-#   define TclWinGetPlatformId() (2) /* VER_PLATFORM_WIN32_NT */
+#   undef TclWinResetInterfaces
+#   undef TclWinSetInterfaces
+#   if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#	define TclWinNToHS ntohs
+#	define TclWinGetServByName getservbyname
+#	define TclWinGetSockOpt getsockopt
+#	define TclWinSetSockOpt setsockopt
+#	define TclWinGetPlatformId() (2) /* VER_PLATFORM_WIN32_NT */
+#	define TclWinResetInterfaces() /* nop */
+#	define TclWinSetInterfaces(dummy) /* nop */
+#   endif /* TCL_NO_DEPRECATED */
 #else
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((unsigned long) (pid))
