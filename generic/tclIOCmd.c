@@ -137,7 +137,7 @@ Tcl_PutsObjCmd(
 	    chanObjPtr = objv[2];
 	    string = objv[3];
 	    break;
-#if TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 	} else if (strcmp(TclGetString(objv[3]), "nonewline") == 0) {
 	    /*
 	     * The code below provides backwards compatibility with an old
@@ -439,7 +439,7 @@ Tcl_ReadObjCmd(
     if (i < objc) {
 	if ((TclGetIntFromObj(interp, objv[i], &toRead) != TCL_OK)
 		|| (toRead < 0)) {
-#if TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 	    /*
 	     * The code below provides backwards compatibility with an old
 	     * form of the command that is no longer recommended or
@@ -454,7 +454,7 @@ Tcl_ReadObjCmd(
 			TclGetString(objv[i])));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
 		return TCL_ERROR;
-#if TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 	    }
 	    newline = 1;
 #endif
