@@ -222,7 +222,7 @@ TclCreateSocketAddress(
      * using AI_ADDRCONFIG is probably low even in situations where it works,
      * we'll leave it out for now. After all, it is just an optimisation.
      *
-     * Missing on: OpenBSD, NetBSD.
+     * Missing on NetBSD.
      * Causes failure when used on AIX 5.1 and HP-UX
      */
 
