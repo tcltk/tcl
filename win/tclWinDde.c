@@ -152,13 +152,6 @@ Dde_Init(
 	return TCL_ERROR;
     }
 
-#ifdef UNICODE
-    if (TclWinGetPlatformId() < VER_PLATFORM_WIN32_NT) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Win32s and Windows 9x are not supported platforms", -1));
-	return TCL_ERROR;
-    }
-#endif
     Tcl_CreateObjCommand(interp, "dde", DdeObjCmd, NULL, NULL);
     Tcl_CreateExitHandler(DdeExitProc, NULL);
     return Tcl_PkgProvide(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION);
