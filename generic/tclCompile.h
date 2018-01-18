@@ -565,8 +565,6 @@ typedef struct ByteCode {
 #define INST_UMINUS			59
 #define INST_BITNOT			60
 #define INST_LNOT			61
-#define INST_CALL_BUILTIN_FUNC1		62
-#define INST_CALL_FUNC1			63
 #define INST_TRY_CVT_TO_NUMERIC		64
 
 /* Opcodes 65 to 66 */

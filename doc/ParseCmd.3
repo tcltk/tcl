@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_ParseCommand, Tcl_ParseExpr, Tcl_ParseBraces, Tcl_ParseQuotedString, Tcl_ParseVarName, Tcl_ParseVar, Tcl_FreeParse, Tcl_EvalTokens, Tcl_EvalTokensStandard \- parse Tcl scripts and expressions
+Tcl_ParseCommand, Tcl_ParseExpr, Tcl_ParseBraces, Tcl_ParseQuotedString, Tcl_ParseVarName, Tcl_ParseVar, Tcl_FreeParse, Tcl_EvalTokensStandard \- parse Tcl scripts and expressions
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -33,20 +33,16 @@ const char *
 .sp
 \fBTcl_FreeParse\fR(\fIusedParsePtr\fR)
 .sp
-Tcl_Obj *
-\fBTcl_EvalTokens\fR(\fIinterp, tokenPtr, numTokens\fR)
-.sp
 int
 \fBTcl_EvalTokensStandard\fR(\fIinterp, tokenPtr, numTokens\fR)
 .SH ARGUMENTS
 .AS Tcl_Interp *usedParsePtr out
 .AP Tcl_Interp *interp out
-For procedures other than \fBTcl_FreeParse\fR, \fBTcl_EvalTokens\fR
-and \fBTcl_EvalTokensStandard\fR, used only for error reporting;
+For procedures other than \fBTcl_FreeParse\fR and
+\fBTcl_EvalTokensStandard\fR, used only for error reporting;
 if NULL, then no error messages are left after errors.
-For \fBTcl_EvalTokens\fR and \fBTcl_EvalTokensStandard\fR,
-determines the context for evaluating the
-script and also is used for error reporting; must not be NULL.
+For \fBTcl_EvalTokensStandard\fR, determines the context for evaluating
+the script and also is used for error reporting; must not be NULL.
 .AP "const char" *start in
 Pointer to first character in string to parse.
 .AP int numBytes in
@@ -191,16 +187,6 @@ code with one of the values \fBTCL_OK\fR, \fBTCL_ERROR\fR,
 some other integer value originating in an extension.
 In addition, a result value or error message is left in \fIinterp\fR's
 result; it can be retrieved using \fBTcl_GetObjResult\fR.
-.PP
-\fBTcl_EvalTokens\fR differs from \fBTcl_EvalTokensStandard\fR only in
-the return convention used: it returns the result in a new Tcl_Obj.
-The reference count of the value returned as result has been
-incremented, so the caller must
-invoke \fBTcl_DecrRefCount\fR when it is finished with the value.
-If an error or other exception occurs while evaluating the tokens
-(such as a reference to a non-existent variable) then the return value
-is NULL and an error message is left in \fIinterp\fR's result. The use
-of \fBTcl_EvalTokens\fR is deprecated.
 .SH "TCL_PARSE STRUCTURE"
 .PP
 \fBTcl_ParseCommand\fR, \fBTcl_ParseExpr\fR, \fBTcl_ParseBraces\fR,
