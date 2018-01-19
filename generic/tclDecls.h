@@ -171,7 +171,7 @@ EXTERN int		Tcl_GetIntFromObj(Tcl_Interp *interp,
 EXTERN int		Tcl_GetLongFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, long *longPtr);
 /* 40 */
-EXTERN CONST86 Tcl_ObjType * Tcl_GetObjType(const char *typeName);
+EXTERN const Tcl_ObjType * Tcl_GetObjType(const char *typeName);
 /* 41 */
 EXTERN char *		Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr);
 /* 42 */
@@ -493,7 +493,7 @@ EXTERN int		Tcl_GetChannelOption(Tcl_Interp *interp,
 				Tcl_Channel chan, const char *optionName,
 				Tcl_DString *dsPtr);
 /* 158 */
-EXTERN CONST86 Tcl_ChannelType * Tcl_GetChannelType(Tcl_Channel chan);
+EXTERN const Tcl_ChannelType * Tcl_GetChannelType(Tcl_Channel chan);
 /* 159 */
 EXTERN int		Tcl_GetCommandInfo(Tcl_Interp *interp,
 				const char *cmdName, Tcl_CmdInfo *infoPtr);
@@ -1285,7 +1285,7 @@ EXTERN int		Tcl_FSFileAttrsGet(Tcl_Interp *interp, int index,
 EXTERN int		Tcl_FSFileAttrsSet(Tcl_Interp *interp, int index,
 				Tcl_Obj *pathPtr, Tcl_Obj *objPtr);
 /* 453 */
-EXTERN const char *CONST86 * Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr,
+EXTERN const char *const * Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr,
 				Tcl_Obj **objPtrRef);
 /* 454 */
 EXTERN int		Tcl_FSStat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
@@ -1346,7 +1346,7 @@ EXTERN ClientData	Tcl_FSData(const Tcl_Filesystem *fsPtr);
 EXTERN const char *	Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp,
 				Tcl_Obj *pathPtr);
 /* 477 */
-EXTERN CONST86 Tcl_Filesystem * Tcl_FSGetFileSystemForPath(Tcl_Obj *pathPtr);
+EXTERN const Tcl_Filesystem * Tcl_FSGetFileSystemForPath(Tcl_Obj *pathPtr);
 /* 478 */
 EXTERN Tcl_PathType	Tcl_FSGetPathType(Tcl_Obj *pathPtr);
 /* 479 */
@@ -1858,7 +1858,7 @@ typedef struct TclStubs {
     int (*tcl_GetInt) (Tcl_Interp *interp, const char *src, int *intPtr); /* 37 */
     int (*tcl_GetIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *intPtr); /* 38 */
     int (*tcl_GetLongFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, long *longPtr); /* 39 */
-    CONST86 Tcl_ObjType * (*tcl_GetObjType) (const char *typeName); /* 40 */
+    const Tcl_ObjType * (*tcl_GetObjType) (const char *typeName); /* 40 */
     char * (*tcl_GetStringFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 41 */
     void (*tcl_InvalidateStringRep) (Tcl_Obj *objPtr); /* 42 */
     int (*tcl_ListObjAppendList) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Obj *elemListPtr); /* 43 */
@@ -1976,7 +1976,7 @@ typedef struct TclStubs {
     int (*tcl_GetChannelMode) (Tcl_Channel chan); /* 155 */
     const char * (*tcl_GetChannelName) (Tcl_Channel chan); /* 156 */
     int (*tcl_GetChannelOption) (Tcl_Interp *interp, Tcl_Channel chan, const char *optionName, Tcl_DString *dsPtr); /* 157 */
-    CONST86 Tcl_ChannelType * (*tcl_GetChannelType) (Tcl_Channel chan); /* 158 */
+    const Tcl_ChannelType * (*tcl_GetChannelType) (Tcl_Channel chan); /* 158 */
     int (*tcl_GetCommandInfo) (Tcl_Interp *interp, const char *cmdName, Tcl_CmdInfo *infoPtr); /* 159 */
     const char * (*tcl_GetCommandName) (Tcl_Interp *interp, Tcl_Command command); /* 160 */
     int (*tcl_GetErrno) (void); /* 161 */
@@ -2279,7 +2279,7 @@ typedef struct TclStubs {
     int (*tcl_FSUtime) (Tcl_Obj *pathPtr, struct utimbuf *tval); /* 450 */
     int (*tcl_FSFileAttrsGet) (Tcl_Interp *interp, int index, Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef); /* 451 */
     int (*tcl_FSFileAttrsSet) (Tcl_Interp *interp, int index, Tcl_Obj *pathPtr, Tcl_Obj *objPtr); /* 452 */
-    const char *CONST86 * (*tcl_FSFileAttrStrings) (Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef); /* 453 */
+    const char *const * (*tcl_FSFileAttrStrings) (Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef); /* 453 */
     int (*tcl_FSStat) (Tcl_Obj *pathPtr, Tcl_StatBuf *buf); /* 454 */
     int (*tcl_FSAccess) (Tcl_Obj *pathPtr, int mode); /* 455 */
     Tcl_Channel (*tcl_FSOpenFileChannel) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *modeString, int permissions); /* 456 */
@@ -2303,7 +2303,7 @@ typedef struct TclStubs {
     int (*tcl_FSUnregister) (const Tcl_Filesystem *fsPtr); /* 474 */
     ClientData (*tcl_FSData) (const Tcl_Filesystem *fsPtr); /* 475 */
     const char * (*tcl_FSGetTranslatedStringPath) (Tcl_Interp *interp, Tcl_Obj *pathPtr); /* 476 */
-    CONST86 Tcl_Filesystem * (*tcl_FSGetFileSystemForPath) (Tcl_Obj *pathPtr); /* 477 */
+    const Tcl_Filesystem * (*tcl_FSGetFileSystemForPath) (Tcl_Obj *pathPtr); /* 477 */
     Tcl_PathType (*tcl_FSGetPathType) (Tcl_Obj *pathPtr); /* 478 */
     int (*tcl_OutputBuffered) (Tcl_Channel chan); /* 479 */
     void (*tcl_FSMountsChanged) (const Tcl_Filesystem *fsPtr); /* 480 */
