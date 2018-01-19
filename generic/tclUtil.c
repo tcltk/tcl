@@ -1600,40 +1600,6 @@ Tcl_Merge(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Backslash --
- *
- *	Figure out how to handle a backslash sequence.
- *
- * Results:
- *	The return value is the character that should be substituted in place
- *	of the backslash sequence that starts at src. If readPtr isn't NULL
- *	then it is filled in with a count of the number of characters in the
- *	backslash sequence.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-char
-Tcl_Backslash(
-    const char *src,		/* Points to the backslash character of a
-				 * backslash sequence. */
-    int *readPtr)		/* Fill in with number of characters read from
-				 * src, unless NULL. */
-{
-    char buf[TCL_UTF_MAX];
-    Tcl_UniChar ch = 0;
-
-    Tcl_UtfBackslash(src, readPtr, buf);
-    TclUtfToUniChar(buf, &ch);
-    return (char) ch;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclTrimRight --
  *
  *	Takes two counted strings in the Tcl encoding which must both be null
