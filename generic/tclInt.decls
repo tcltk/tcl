@@ -184,7 +184,7 @@ declare 41 {
     Tcl_Command TclGetOriginalCommand(Tcl_Command command)
 }
 declare 42 {
-    CONST86 char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
+    const char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
 }
 # Removed in 8.5a2:
 #declare 43 {
@@ -412,7 +412,7 @@ declare 98 {
 #	    Tcl_Obj *objPtr, int flags)
 #}
 declare 101 {
-    CONST86 char *TclSetPreInitScript(const char *string)
+    const char *TclSetPreInitScript(const char *string)
 }
 declare 102 {
     void TclSetupEnv(Tcl_Interp *interp)
