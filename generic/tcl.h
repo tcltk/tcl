@@ -188,6 +188,10 @@ extern "C" {
 #   define TCLAPI extern DLLIMPORT
 #endif
 
+#if !defined(CONST86)
+#      define CONST86 const
+#endif
+
 /*
  * Miscellaneous declarations.
  */
