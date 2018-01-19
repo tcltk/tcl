@@ -208,7 +208,7 @@ extern "C" {
 #   endif
 #endif
 
-#ifndef CONST86
+#if !defined(CONST86)
 #      define CONST86 const
 #endif
 
@@ -1205,8 +1205,8 @@ typedef struct Tcl_Time {
     long usec;			/* Microseconds. */
 } Tcl_Time;
 
-typedef void (Tcl_SetTimerProc) (CONST86 Tcl_Time *timePtr);
-typedef int (Tcl_WaitForEventProc) (CONST86 Tcl_Time *timePtr);
+typedef void (Tcl_SetTimerProc) (const Tcl_Time *timePtr);
+typedef int (Tcl_WaitForEventProc) (const Tcl_Time *timePtr);
 
 /*
  * TIP #233 (Virtualized Time)
@@ -1478,7 +1478,7 @@ typedef int (Tcl_FSNormalizePathProc) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
 	int nextCheckpoint);
 typedef int (Tcl_FSFileAttrsGetProc) (Tcl_Interp *interp, int index,
 	Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef);
-typedef const char *CONST86 * (Tcl_FSFileAttrStringsProc) (Tcl_Obj *pathPtr,
+typedef const char *const * (Tcl_FSFileAttrStringsProc) (Tcl_Obj *pathPtr,
 	Tcl_Obj **objPtrRef);
 typedef int (Tcl_FSFileAttrsSetProc) (Tcl_Interp *interp, int index,
 	Tcl_Obj *pathPtr, Tcl_Obj *objPtr);

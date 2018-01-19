@@ -166,7 +166,7 @@ declare 39 {
     int Tcl_GetLongFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, long *longPtr)
 }
 declare 40 {
-    CONST86 Tcl_ObjType *Tcl_GetObjType(const char *typeName)
+    const Tcl_ObjType *Tcl_GetObjType(const char *typeName)
 }
 declare 41 {
     char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
@@ -568,7 +568,7 @@ declare 157 {
 	    const char *optionName, Tcl_DString *dsPtr)
 }
 declare 158 {
-    CONST86 Tcl_ChannelType *Tcl_GetChannelType(Tcl_Channel chan)
+    const Tcl_ChannelType *Tcl_GetChannelType(Tcl_Channel chan)
 }
 declare 159 {
     int Tcl_GetCommandInfo(Tcl_Interp *interp, const char *cmdName,
@@ -1632,7 +1632,7 @@ declare 452 {
 	    int index, Tcl_Obj *pathPtr, Tcl_Obj *objPtr)
 }
 declare 453 {
-    const char *CONST86 *Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr,
+    const char *const *Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr,
 	    Tcl_Obj **objPtrRef)
 }
 declare 454 {
@@ -1710,7 +1710,7 @@ declare 476 {
 	    Tcl_Obj *pathPtr)
 }
 declare 477 {
-    CONST86 Tcl_Filesystem *Tcl_FSGetFileSystemForPath(Tcl_Obj *pathPtr)
+    const Tcl_Filesystem *Tcl_FSGetFileSystemForPath(Tcl_Obj *pathPtr)
 }
 declare 478 {
     Tcl_PathType Tcl_FSGetPathType(Tcl_Obj *pathPtr)
