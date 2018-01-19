@@ -389,11 +389,11 @@ struct NamespacePathEntry {
  *		unit that refers to the namespace has been freed (i.e., when
  *		the namespace's refCount is 0), the namespace's storage will
  *		be freed.
- * NS_KILLED -	1 means that TclTeardownNamespace has already been called on
- *		this namespace and it should not be called again [Bug 1355942]
- * NS_SUPPRESS_COMPILATION -
- *		Marks the commands in this namespace for not being compiled,
- *		forcing them to be looked up every time.
+ * NS_KILLED -	Obsolete. Previously, 1 meant that TclTeardownNamespace has
+ *		already been called on this namespace and it should not be
+ *		called again [Bug 1355942] NS_SUPPRESS_COMPILATION - Marks the
+ *		commands in this namespace for not being compiled, forcing them
+ *		to be looked up every time.
  */
 
 #define NS_DYING	0x01

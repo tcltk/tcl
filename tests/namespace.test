@@ -221,6 +221,41 @@ test namespace-7.9 {
     } msg] $msg
 } -result {1 {invalid command name "p1"}} 
 
+test namespace-7.10 {
+    A namespace can be looked up during the delete process.
+} -body {
+    variable res failure 
+    namespace eval ns1 {
+	namespace ensemble create
+	trace add command [namespace current] delete [list ::apply [list args {
+	    set [namespace parent]::res triggered
+	} [namespace current]]]
+	namespace delete [namespace current]
+    }
+    return $res
+} -cleanup {
+    unset res
+} -result triggered 
+
+test namespace-7.11 {
+    Commands are deleted before variables.
+} -body {
+    variable res failure 
+    namespace eval ns1 {
+	namespace ensemble create
+	namespace upvar [namespace parent] res res
+	proc p1 {} {}
+	trace add command p1 delete [list ::apply [list args {
+	    variable res
+	    set res triggered
+	} [namespace current]]]
+	namespace delete [namespace current]
+    }
+    return $res
+} -cleanup {
+    unset res
+} -result triggered
+
 test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
     catch {interp delete test_interp}
     interp create test_interp
@@ -2755,7 +2790,7 @@ test namespace-51.13 {name resolution path control} -body {
 	}
 	bar
     }
-} -result {2 {} {2 3 1 1 1}} -cleanup {
+} -result {2 {} {2 3 2 2 1}} -cleanup {
     catch {namespace delete ::test_ns_1}
     catch {namespace delete ::test_ns_2}
     catch {namespace delete ::test_ns_3}

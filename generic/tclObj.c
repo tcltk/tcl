@@ -4156,7 +4156,7 @@ Tcl_GetCommandFromObj(
 
         if ((cmdPtr->cmdEpoch == resPtr->cmdEpoch)
                 && (interp == cmdPtr->nsPtr->interp)
-                && !(cmdPtr->nsPtr->flags & NS_DYING)) {
+                && !(cmdPtr->nsPtr->flags & NS_DEAD)) {
             register Namespace *refNsPtr = (Namespace *)
                     TclGetCurrentNamespace(interp);
 

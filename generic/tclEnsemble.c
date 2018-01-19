@@ -154,7 +154,7 @@ TclNamespaceEnsembleCmd(
     const char *simpleName;
     int index, done;
 
-    if (nsPtr == NULL || nsPtr->flags & NS_DYING) {
+    if (nsPtr == NULL || nsPtr->flags & NS_DEAD) {
 	if (!Tcl_InterpDeleted(interp)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "tried to manipulate ensemble of deleted namespace",
@@ -1722,7 +1722,7 @@ NsEnsembleImplementationCmdNR(
 	return TCL_ERROR;
     }
 
-    if (ensemblePtr->nsPtr->flags & NS_DYING) {
+    if (ensemblePtr->nsPtr->flags & NS_DEAD) {
 	/*
 	 * Don't know how we got here, but make things give up quickly.
 	 */
