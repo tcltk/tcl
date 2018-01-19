@@ -235,7 +235,7 @@ AllocChainEntry(
     cPtr = ckalloc(sizeof(ChainEntry));
     cPtr->entry.key.objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
-    cPtr->entry.clientData = NULL;
+    Tcl_SetHashValue(&cPtr->entry, NULL);
     cPtr->prevPtr = cPtr->nextPtr = NULL;
 
     return &cPtr->entry;
