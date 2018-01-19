@@ -2945,6 +2945,24 @@ ZipFSListObjCmd(
     return TCL_OK;
 }
 
+#if defined(_WIN32) || defined(_WIN64)
+#define LIBRARY_SIZE        64
+static int
+ToUtf(
+    const WCHAR *wSrc,
+    char *dst)
+{
+    char *start;
+
+    start = dst;
+    while (*wSrc != '\0') {
+    dst += Tcl_UniCharToUtf(*wSrc, dst);
+    wSrc++;
+    }
+    *dst = '\0';
+    return (int) (dst - start);
+}
+#endif
 
 Tcl_Obj *TclZipfs_TclLibrary(void) {
     if(zipfs_literal_tcl_library) {
@@ -4421,26 +4439,6 @@ TclZipfs_Init(Tcl_Interp *interp)
     return TCL_ERROR;
 #endif
 }
-
-#if defined(_WIN32) || defined(_WIN64)
-#define LIBRARY_SIZE        64
-static int
-ToUtf(
-    const WCHAR *wSrc,
-    char *dst)
-{
-    char *start;
-
-    start = dst;
-    while (*wSrc != '\0') {
-    dst += Tcl_UniCharToUtf(*wSrc, dst);
-    wSrc++;
-    }
-    *dst = '\0';
-    return (int) (dst - start);
-}
-
-#endif
 
 static int TclZipfs_AppHook_FindTclInit(const char *archive){
     Tcl_Obj *vfsinitscript;
