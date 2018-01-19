@@ -31,7 +31,8 @@ the command at global level instead of the current stack level.
 .SH DESCRIPTION
 .PP
 \fBTcl_RecordAndEval\fR is invoked to record a command as an event
-on the history list and then execute it using \fBTcl_Eval\fR.
+on the history list and then execute it using \fBTcl_Eval\fR
+(or \fBTcl_GlobalEval\fR if the \fBTCL_EVAL_GLOBAL\fR bit is set in \fIflags\fR).
 It returns a completion code such as \fBTCL_OK\fR just like \fBTcl_Eval\fR
 and it leaves information in the interpreter's result.
 If you do not want the command recorded on the history list then
