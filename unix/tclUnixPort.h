@@ -87,8 +87,8 @@ typedef off_t		Tcl_SeekOffset;
     typedef unsigned short WCHAR;
     __declspec(dllimport) extern __stdcall int GetModuleHandleExW(unsigned int, const char *, void *);
     __declspec(dllimport) extern __stdcall int GetModuleFileNameW(void *, const char *, int);
-    __declspec(dllimport) extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
-	    const char *, int, const char *, const char *);
+    __declspec(dllimport) extern __stdcall int WideCharToMultiByte(int, int, const void *, int,
+	    char *, int, const char *, void *);
     __declspec(dllimport) extern __stdcall int MultiByteToWideChar(int, int, const char *, int,
 	    WCHAR *, int);
     __declspec(dllimport) extern __stdcall void OutputDebugStringW(const WCHAR *);

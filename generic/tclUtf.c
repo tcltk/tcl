@@ -726,8 +726,7 @@ Tcl_UniCharAtIndex(
 {
     Tcl_UniChar ch = 0;
 
-    while (index >= 0) {
-	index--;
+    while (index-- >= 0) {
 	src += TclUtfToUniChar(src, &ch);
     }
     return ch;
@@ -757,8 +756,7 @@ Tcl_UtfAtIndex(
 {
     Tcl_UniChar ch = 0;
 
-    while (index > 0) {
-	index--;
+    while (index-- > 0) {
 	src += TclUtfToUniChar(src, &ch);
     }
     return src;
@@ -1072,16 +1070,17 @@ Tcl_UtfNcmp(
 
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
-#if TCL_UTF_MAX == 4
-    /* map high surrogate characters to values > 0xffff */
-    if ((ch1 & 0xFC00) == 0xD800) {
-	ch1 += 0x4000;
-    }
-    if ((ch2 & 0xFC00) == 0xD800) {
-	ch2 += 0x4000;
-    }
-#endif
 	if (ch1 != ch2) {
+#if TCL_UTF_MAX == 4
+	    /* Surrogates always report higher than non-surrogates */
+	    if (((ch1 & 0xFC00) == 0xD800)) {
+	    if ((ch2 & 0xFC00) != 0xD800) {
+		return ch1;
+	    }
+	    } else if ((ch2 & 0xFC00) == 0xD800) {
+		return -ch2;
+	    }
+#endif
 	    return (ch1 - ch2);
 	}
     }
@@ -1122,16 +1121,17 @@ Tcl_UtfNcasecmp(
 	 */
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
-#if TCL_UTF_MAX == 4
-    /* map high surrogate characters to values > 0xffff */
-    if ((ch1 & 0xFC00) == 0xD800) {
-	ch1 += 0x4000;
-    }
-    if ((ch2 & 0xFC00) == 0xD800) {
-	ch2 += 0x4000;
-    }
-#endif
 	if (ch1 != ch2) {
+#if TCL_UTF_MAX == 4
+	    /* Surrogates always report higher than non-surrogates */
+	    if (((ch1 & 0xFC00) == 0xD800)) {
+	    if ((ch2 & 0xFC00) != 0xD800) {
+		return ch1;
+	    }
+	    } else if ((ch2 & 0xFC00) == 0xD800) {
+		return -ch2;
+	    }
+#endif
 	    ch1 = Tcl_UniCharToLower(ch1);
 	    ch2 = Tcl_UniCharToLower(ch2);
 	    if (ch1 != ch2) {
@@ -1170,16 +1170,17 @@ TclUtfCasecmp(
     while (*cs && *ct) {
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
-#if TCL_UTF_MAX == 4
-    /* map high surrogate characters to values > 0xffff */
-    if ((ch1 & 0xFC00) == 0xD800) {
-	ch1 += 0x4000;
-    }
-    if ((ch2 & 0xFC00) == 0xD800) {
-	ch2 += 0x4000;
-    }
-#endif
 	if (ch1 != ch2) {
+#if TCL_UTF_MAX == 4
+	    /* Surrogates always report higher than non-surrogates */
+	    if (((ch1 & 0xFC00) == 0xD800)) {
+	    if ((ch2 & 0xFC00) != 0xD800) {
+		return ch1;
+	    }
+	    } else if ((ch2 & 0xFC00) == 0xD800) {
+		return -ch2;
+	    }
+#endif
 	    ch1 = Tcl_UniCharToLower(ch1);
 	    ch2 = Tcl_UniCharToLower(ch2);
 	    if (ch1 != ch2) {
