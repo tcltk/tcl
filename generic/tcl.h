@@ -208,7 +208,7 @@ extern "C" {
 #   endif
 #endif
 
-#if !defined(CONST86)
+#if !defined(CONST86) && !defined(TCL_NO_DEPRECATED)
 #      define CONST86 const
 #endif
 
