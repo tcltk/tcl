@@ -4937,6 +4937,7 @@ Tcl_EvalTokensStandard(
 	    NULL, NULL);
 }
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MINOR_VERSION < 9
 /*
  *----------------------------------------------------------------------
  *
@@ -4984,6 +4985,7 @@ Tcl_EvalTokens(
     Tcl_ResetResult(interp);
     return resPtr;
 }
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
