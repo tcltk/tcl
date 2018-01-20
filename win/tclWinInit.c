@@ -182,7 +182,7 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    size_t *lengthPtr,
+    unsigned int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    64
@@ -345,7 +345,7 @@ AppendEnvironment(
 static void
 InitializeDefaultLibraryDir(
     char **valuePtr,
-    size_t *lengthPtr,
+    unsigned int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     HMODULE hModule = TclWinGetTclInstance();
@@ -396,7 +396,7 @@ InitializeDefaultLibraryDir(
 static void
 InitializeSourceLibraryDir(
     char **valuePtr,
-    size_t *lengthPtr,
+    unsigned int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     HMODULE hModule = TclWinGetTclInstance();
@@ -487,16 +487,9 @@ TclpSetInitialEncodings(void)
 {
     Tcl_DString encodingName;
 
-    TclpSetInterfaces();
     Tcl_SetSystemEncoding(NULL,
 	    Tcl_GetEncodingNameFromEnvironment(&encodingName));
     Tcl_DStringFree(&encodingName);
-}
-
-void TclWinSetInterfaces(
-    int dummy)			/* Not used. */
-{
-    TclpSetInterfaces();
 }
 
 const char *

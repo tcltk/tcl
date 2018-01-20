@@ -132,8 +132,10 @@ static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRCommand;
 
+#if !defined(TCL_NO_DEPRECATED)
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
+#endif /* !defined(TCL_NO_DEPRECATED) */
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
 			    int returnCode);
 static int		RewindCoroutine(CoroutineData *corPtr, int result);
@@ -205,7 +207,7 @@ static const CmdInfo builtInCmds[] = {
     {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	NULL,	CMD_IS_SAFE},
     {"apply",		Tcl_ApplyObjCmd,	NULL,			TclNRApplyObjCmd,	CMD_IS_SAFE},
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	NULL,	CMD_IS_SAFE},
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
     {"case",		Tcl_CaseObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
 #endif
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	CMD_IS_SAFE},
@@ -2626,10 +2628,6 @@ TclRenameCommand(
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND", oldName, NULL);
 	return TCL_ERROR;
     }
-    cmdNsPtr = cmdPtr->nsPtr;
-    oldFullName = Tcl_NewObj();
-    Tcl_IncrRefCount(oldFullName);
-    Tcl_GetCommandFullName(interp, cmd, oldFullName);
 
     /*
      * If the new command name is NULL or empty, delete the command. Do this
@@ -2638,9 +2636,13 @@ TclRenameCommand(
 
     if ((newName == NULL) || (*newName == '\0')) {
 	Tcl_DeleteCommandFromToken(interp, cmd);
-	result = TCL_OK;
-	goto done;
+	return TCL_OK;
     }
+
+    cmdNsPtr = cmdPtr->nsPtr;
+    oldFullName = Tcl_NewObj();
+    Tcl_IncrRefCount(oldFullName);
+    Tcl_GetCommandFullName(interp, cmd, oldFullName);
 
     /*
      * Make sure that the destination command does not already exist. The
@@ -3154,6 +3156,7 @@ Tcl_DeleteCommandFromToken(
      */
 
     cmdPtr->nsPtr->refCount++;
+
     if (cmdPtr->tracePtr != NULL) {
 	CommandTrace *tracePtr;
 	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
@@ -3519,6 +3522,7 @@ TclCleanupCommand(
  *----------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED)
 void
 Tcl_CreateMathFunc(
     Tcl_Interp *interp,		/* Interpreter in which function is to be
@@ -3569,7 +3573,7 @@ Tcl_CreateMathFunc(
 
 static int
 OldMathFuncProc(
-    ClientData clientData,	/* Ponter to OldMathFuncData describing the
+    ClientData clientData,	/* Pointer to OldMathFuncData describing the
 				 * function being called */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Actual parameter count */
@@ -3850,6 +3854,7 @@ Tcl_ListMathFuncs(
 
     return result;
 }
+#endif /* !defined(TCL_NO_DEPRECATED) */
 
 /*
  *----------------------------------------------------------------------
@@ -4608,7 +4613,7 @@ TEOV_Exception(
 	if (result == TCL_RETURN) {
 	    result = TclUpdateReturnInfo(iPtr);
 	}
-	if ((result != TCL_ERROR) && !allowExceptions) {
+	if ((result != TCL_OK) && (result != TCL_ERROR) && !allowExceptions) {
 	    ProcessUnexpectedResult(interp, result);
 	    result = TCL_ERROR;
 	}
@@ -4789,7 +4794,7 @@ TEOV_RunEnterTraces(
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr = *cmdPtrPtr;
-    size_t newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
+    unsigned int newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
     int length, traceCode = TCL_OK;
     const char *command = TclGetStringFromObj(commandPtr, &length);
 
