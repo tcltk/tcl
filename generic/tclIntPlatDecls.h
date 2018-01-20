@@ -555,10 +555,18 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #   undef TclWinGetServByName
 #   undef TclWinGetSockOpt
 #   undef TclWinSetSockOpt
-#   define TclWinNToHS ntohs
-#   define TclWinGetServByName getservbyname
-#   define TclWinGetSockOpt getsockopt
-#   define TclWinSetSockOpt setsockopt
+#   undef TclWinGetPlatformId
+#   undef TclWinResetInterfaces
+#   undef TclWinSetInterfaces
+#   if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#	define TclWinNToHS ntohs
+#	define TclWinGetServByName getservbyname
+#	define TclWinGetSockOpt getsockopt
+#	define TclWinSetSockOpt setsockopt
+#	define TclWinGetPlatformId() (2) /* VER_PLATFORM_WIN32_NT */
+#	define TclWinResetInterfaces() /* nop */
+#	define TclWinSetInterfaces(dummy) /* nop */
+#   endif /* TCL_NO_DEPRECATED */
 #else
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((unsigned long) (pid))
