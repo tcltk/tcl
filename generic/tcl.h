@@ -188,7 +188,7 @@ extern "C" {
 #   define TCLAPI extern DLLIMPORT
 #endif
 
-#if !defined(CONST86)
+#if !defined(CONST86) && !defined(TCL_NO_DEPRECATED)
 #      define CONST86 const
 #endif
 
@@ -502,8 +502,6 @@ typedef struct stat *Tcl_OldStat_;
  */
 
 struct Tcl_Obj;
-
-typedef struct Tcl_Obj Tcl_Value;
 
 /*
  *----------------------------------------------------------------------------
