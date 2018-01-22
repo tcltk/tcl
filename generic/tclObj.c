@@ -210,6 +210,9 @@ static int		SetDoubleFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		SetIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfDouble(Tcl_Obj *objPtr);
 static void		UpdateStringOfInt(Tcl_Obj *objPtr);
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9 && !defined(TCL_WIDE_INT_IS_LONG)
+static void		UpdateStringOfOldInt(Tcl_Obj *objPtr);
+#endif
 static void		FreeBignum(Tcl_Obj *objPtr);
 static void		DupBignum(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		UpdateStringOfBignum(Tcl_Obj *objPtr);
@@ -272,6 +275,15 @@ const Tcl_ObjType tclIntType = {
     UpdateStringOfInt,		/* updateStringProc */
     SetIntFromAny		/* setFromAnyProc */
 };
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9 && !defined(TCL_WIDE_INT_IS_LONG)
+const Tcl_ObjType tclOldIntType = {
+    "int",			/* name */
+    NULL,			/* freeIntRepProc */
+    NULL,			/* dupIntRepProc */
+    UpdateStringOfOldInt,		/* updateStringProc */
+    SetIntFromAny		/* setFromAnyProc */
+};
+#endif
 const Tcl_ObjType tclBignumType = {
     "bignum",			/* name */
     FreeBignum,			/* freeIntRepProc */
@@ -400,6 +412,9 @@ TclInitObjSubsystem(void)
     /* For backward compatibility only ... */
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
     Tcl_RegisterObjType(&tclIntType);
+#if !defined(TCL_WIDE_INT_IS_LONG)
+    Tcl_RegisterObjType(&tclOldIntType);
+#endif
     Tcl_RegisterObjType(&oldBooleanType);
 #endif
 
@@ -2548,6 +2563,22 @@ UpdateStringOfInt(
     memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
     objPtr->length = len;
 }
+
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9 && !defined(TCL_WIDE_INT_IS_LONG)
+static void
+UpdateStringOfOldInt(
+    register Tcl_Obj *objPtr)	/* Int object whose string rep to update. */
+{
+    char buffer[TCL_INTEGER_SPACE];
+    register int len;
+
+    len = TclFormatInt(buffer, objPtr->internalRep.longValue);
+
+    objPtr->bytes = ckalloc(len + 1);
+    memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
+    objPtr->length = len;
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
