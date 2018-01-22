@@ -4937,7 +4937,7 @@ Tcl_EvalTokensStandard(
 	    NULL, NULL);
 }
 
-#if !defined(TCL_NO_DEPRECATED) && TCL_MINOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 /*
  *----------------------------------------------------------------------
  *
