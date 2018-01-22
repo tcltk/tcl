@@ -2887,7 +2887,6 @@ StringCatCmd(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 StringBytesCmd(
     ClientData dummy,		/* Not used. */
