@@ -71,9 +71,19 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define TclWinSetSockOpt 0
 #   define TclWinNToHS 0
 #   define TclWinGetPlatformId 0
+#   define TclWinResetInterfaces 0
+#   define TclWinSetInterfaces 0
+#   define TclWinGetPlatformId 0
 #   define TclBNInitBignumFromWideUInt 0
 #   define TclBNInitBignumFromWideInt 0
 #   define TclBNInitBignumFromLong 0
+#   define Tcl_Backslash 0
+#   define Tcl_GetDefaultEncodingDir 0
+#   define Tcl_SetDefaultEncodingDir 0
+#   define Tcl_EvalTokens 0
+#   define Tcl_CreateMathFunc 0
+#   define Tcl_GetMathFuncInfo 0
+#   define Tcl_ListMathFuncs 0
 #else
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
@@ -100,7 +110,6 @@ static const char *TclGetStartupScriptFileName(void)
     }
     return Tcl_GetString(path);
 }
-
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
 #undef TclWinGetPlatformId
@@ -111,7 +120,6 @@ doNothing(void)
 {
     /* dummy implementation, no need to do anything */
 }
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #define TclWinNToHS winNToHS
 static unsigned short TclWinNToHS(unsigned short ns) {
 	return ntohs(ns);
@@ -124,12 +132,6 @@ TclWinGetPlatformId(void)
 }
 #define TclWinResetInterfaces doNothing
 #define TclWinSetInterfaces (void (*) (int)) doNothing
-#else
-#define TclWinNToHS 0
-#define TclWinGetPlatformId 0
-#define TclWinResetInterfaces 0
-#define TclWinSetInterfaces 0
-#endif
 #endif
 #   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
 #   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
@@ -144,6 +146,13 @@ TclWinGetPlatformId(void)
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
 #   define TclpIsAtty TclPlatIsAtty
+#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
+static void
+doNothing(void)
+{
+    /* dummy implementation, no need to do anything */
+}
+#endif
 #   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
 
