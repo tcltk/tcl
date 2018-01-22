@@ -2713,6 +2713,7 @@ MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType tclEndOffsetType;
 MODULE_SCOPE const Tcl_ObjType tclIntType;
+MODULE_SCOPE const Tcl_ObjType tclOldIntType;
 MODULE_SCOPE const Tcl_ObjType tclListType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
