@@ -276,7 +276,7 @@ const Tcl_ObjType tclIntType = {
     SetIntFromAny		/* setFromAnyProc */
 };
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9 && !defined(TCL_WIDE_INT_IS_LONG)
-const Tcl_ObjType tclOldIntType = {
+static const Tcl_ObjType oldIntType = {
     "int",			/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
@@ -413,7 +413,7 @@ TclInitObjSubsystem(void)
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
     Tcl_RegisterObjType(&tclIntType);
 #if !defined(TCL_WIDE_INT_IS_LONG)
-    Tcl_RegisterObjType(&tclOldIntType);
+    Tcl_RegisterObjType(&oldIntType);
 #endif
     Tcl_RegisterObjType(&oldBooleanType);
 #endif
