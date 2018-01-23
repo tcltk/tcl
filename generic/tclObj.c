@@ -242,15 +242,8 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * implementations.
  */
 
-static const Tcl_ObjType oldBooleanType = {
-    "boolean",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    TclSetBooleanFromAny		/* setFromAnyProc */
-};
 const Tcl_ObjType tclBooleanType = {
-    "booleanString",		/* name */
+    "boolean",			/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
@@ -406,7 +399,6 @@ TclInitObjSubsystem(void)
     Tcl_RegisterObjType(&tclProcBodyType);
 
     /* For backward compatibility only ... */
-    Tcl_RegisterObjType(&oldBooleanType);
 #ifndef TCL_WIDE_INT_IS_LONG
     Tcl_RegisterObjType(&tclWideIntType);
 #endif
