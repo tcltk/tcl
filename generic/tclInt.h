@@ -251,7 +251,7 @@ typedef struct Namespace {
 				 * NULL, there are no children. */
 #endif
     size_t nsId;		/* Unique id for the namespace. */
-    Tcl_Interp *interp;	/* The interpreter containing this
+    Tcl_Interp *interp;		/* The interpreter containing this
 				 * namespace. */
     int flags;			/* OR-ed combination of the namespace status
 				 * flags NS_DYING and NS_DEAD listed below. */
