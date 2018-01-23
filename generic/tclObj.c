@@ -242,6 +242,7 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * implementations.
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 static const Tcl_ObjType oldBooleanType = {
     "boolean",			/* name */
     NULL,			/* freeIntRepProc */
@@ -249,8 +250,13 @@ static const Tcl_ObjType oldBooleanType = {
     NULL,			/* updateStringProc */
     TclSetBooleanFromAny		/* setFromAnyProc */
 };
+#endif
 const Tcl_ObjType tclBooleanType = {
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
     "booleanString",		/* name */
+#else
+    "boolean",			/* name */
+#endif
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
@@ -406,7 +412,9 @@ TclInitObjSubsystem(void)
     Tcl_RegisterObjType(&tclProcBodyType);
 
     /* For backward compatibility only ... */
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
     Tcl_RegisterObjType(&oldBooleanType);
+#endif
 #ifndef TCL_WIDE_INT_IS_LONG
     Tcl_RegisterObjType(&tclWideIntType);
 #endif
