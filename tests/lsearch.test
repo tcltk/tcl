@@ -651,7 +651,7 @@ test lsearch-28.7 {lsearch -sorted with -stride} -body {
 test lsearch-28.8 {lsearch -sorted with -stride} -body {
     lsearch -sorted -stride 2 -index 1 -subindices {3 5 8 7 2 9} 9
 } -result 5
-test lsearch-28.8 {lsearch -sorted with -stride} -body {
+test lsearch-28.9 {lsearch -sorted with -stride} -body {
     lsearch -sorted -stride 2 -index 1 -subindices -inline {3 5 8 7 2 9} 9
 } -result 9
 
