@@ -246,12 +246,12 @@ test string-4.15.$noComp {string first, ability to two-byte encoded utf-8 chars}
     set uchar \u057e    ;# character with two-byte encoding in utf-8
     run {string first % %#$uchar$uchar#$uchar$uchar#% 3}
 } 8
-test string-4.16 {string first, normal string vs pure unicode string} {
+test string-4.16.$noComp {string first, normal string vs pure unicode string} {
     set s hello
     regexp ll $s m
     # Representation checks are canaries
-    list [representationpoke $s] [representationpoke $m] \
-	[string first $m $s]
+    run {list [representationpoke $s] [representationpoke $m] \
+	[string first $m $s]}
 } {{string 1} {string 0} 2}
 
 test string-5.1.$noComp {string index} {
@@ -1305,8 +1305,8 @@ test string-12.22.$noComp {string range, shimmering binary/index} {
     binary scan $s a* x
     run {string range $s $s end}
 } 000000001
-test string-12.23 {string range, surrogates, bug [11ae2be95dac9417]} fullutf {
-    list [string range a\U100000b 1 1] [string range a\U100000b 2 2] [string range a\U100000b 3 3]
+test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} fullutf {
+    run {list [string range a\U100000b 1 1] [string range a\U100000b 2 2] [string range a\U100000b 3 3]}
 } [list \U100000 {} b]
 
 test string-13.1.$noComp {string repeat} {
