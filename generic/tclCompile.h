@@ -425,11 +425,11 @@ typedef struct ByteCode {
 				 * compiled. If the code is executed if a
 				 * different namespace, it must be
 				 * recompiled. */
-    size_t nsEpoch;		/* Value of nsPtr->resolverEpoch when this
+    unsigned int nsEpoch;	/* Value of nsPtr->resolverEpoch when this
 				 * ByteCode was compiled. Used to invalidate
 				 * code when new namespace resolution rules
 				 * are put into effect. */
-    int refCount;		/* Reference count: set 1 when created plus 1
+    unsigned int refCount;	/* Reference count: set 1 when created plus 1
 				 * for each execution of the code currently
 				 * active. This structure can be freed when
 				 * refCount becomes zero. */

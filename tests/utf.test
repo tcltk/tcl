@@ -68,10 +68,10 @@ test utf-2.7 {Tcl_UtfToUniChar: lead (3-byte) followed by 2 trail} testbytestrin
 } {1}
 test utf-2.8 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {fullutf testbytestring} -body {
     string length [testbytestring "\xF0\x90\x80\x80"]
-} -result {1}
+} -result {2}
 test utf-2.9 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {fullutf testbytestring} -body {
     string length [testbytestring "\xF4\x8F\xBF\xBF"]
-} -result {1}
+} -result {2}
 test utf-2.10 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, underflow} testbytestring {
     string length [testbytestring "\xF0\x8F\xBF\xBF"]
 } {4}
@@ -86,6 +86,9 @@ test utf-3.1 {Tcl_UtfCharComplete} {
 } {}
 
 testConstraint testnumutfchars [llength [info commands testnumutfchars]]
+testConstraint testfindfirst [llength [info commands testfindfirst]]
+testConstraint testfindlast [llength [info commands testfindlast]]
+
 test utf-4.1 {Tcl_NumUtfChars: zero length} testnumutfchars {
     testnumutfchars ""
 } {0}
@@ -118,8 +121,12 @@ test utf-4.10 {Tcl_NumUtfChars: #u0000, calc len, overcomplete} {testnumutfchars
     testnumutfchars [testbytestring "\x00"] 2
 } {2}
 
-test utf-5.1 {Tcl_UtfFindFirsts} {
-} {}
+test utf-5.1 {Tcl_UtfFindFirst} {testfindfirst testbytestring} {
+    testfindfirst [testbytestring "abcbc"] 98
+} {bcbc}
+test utf-5.2 {Tcl_UtfFindLast} {testfindlast testbytestring} {
+    testfindlast [testbytestring "abcbc"] 98
+} {bc}
 
 test utf-6.1 {Tcl_UtfNext} {
 } {}

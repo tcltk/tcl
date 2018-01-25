@@ -245,7 +245,7 @@ static Tcl_ThreadDataKey fsDataKey;
  * code.
  */
 
-typedef struct FsDivertLoad {
+typedef struct {
     Tcl_LoadHandle loadHandle;
     Tcl_FSUnloadFileProc *unloadProcPtr;
     Tcl_Obj *divertedFile;
@@ -412,7 +412,6 @@ Tcl_GetCwd(
     return Tcl_DStringValue(cwdPtr);
 }
 
-/* Obsolete */
 int
 Tcl_EvalFile(
     Tcl_Interp *interp,		/* Interpreter in which to process file. */
@@ -831,15 +830,6 @@ TclResetFilesystem(void)
     if (++theFilesystemEpoch == 0) {
 	++theFilesystemEpoch;
     }
-
-#ifdef _WIN32
-    /*
-     * Cleans up the win32 API filesystem proc lookup table. This must happen
-     * very late in finalization so that deleting of copied dlls can occur.
-     */
-
-    TclWinResetInterfaces();
-#endif
 }
 
 /*

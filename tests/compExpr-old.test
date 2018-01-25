@@ -20,12 +20,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
-if {[catch {expr T1()} msg] && $msg eq {invalid command name "tcl::mathfunc::T1"}} {
-    testConstraint testmathfunctions 0
-} else {
-    testConstraint testmathfunctions 1
-}
-
 # Big test for correct ordering of data in [expr]
 
 proc testIEEE {} {
@@ -602,22 +596,6 @@ test compExpr-old-15.5 {CompileMathFuncCall: too few arguments} -body {
 test compExpr-old-15.6 {CompileMathFuncCall: missing ')'} -body {
     expr sin(1
 } -returnCodes error -match glob -result *
-test compExpr-old-15.7 {CompileMathFuncCall: call registered math function} testmathfunctions {
-    expr 2*T1()
-} 246
-test compExpr-old-15.8 {CompileMathFuncCall: call registered math function} testmathfunctions {
-    expr T2()*3
-} 1035
-test compExpr-old-15.9 {CompileMathFuncCall: call registered math function} testmathfunctions {
-    expr T3(21, 37)
-} 37
-test compExpr-old-15.10 {CompileMathFuncCall: call registered math function} testmathfunctions {
-    expr T3(21.2, 37)
-} 37.0
-test compExpr-old-15.11 {CompileMathFuncCall: call registered math function} testmathfunctions {
-    expr T3(-21.2, -17.5)
-} -17.5
-
 test compExpr-old-16.1 {GetToken: checks whether integer token starting with "0x" (e.g., "0x$") is invalid} {
     catch {unset a}
     set a(VALUE) ff15

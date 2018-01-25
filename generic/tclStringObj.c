@@ -418,9 +418,14 @@ Tcl_GetCharLength(
     }
 
     /*
-     * Optimize the case where we're really dealing with a bytearray object
-     * without string representation; we don't need to convert to a string to
-     * perform the get-length operation.
+     * Optimize the case where we're really dealing with a bytearray object;
+     * we don't need to convert to a string to perform the get-length operation.
+     *
+     * Starting in Tcl 8.7, we check for a "pure" bytearray, because the
+     * machinery behind that test is using a proper bytearray ObjType.  We
+     * could also compute length of an improper bytearray without shimmering
+     * but there's no value in that. We *want* to shimmer an improper bytearray
+     * because improper bytearrays have worthless internal reps.
      */
 
     if (TclIsPureByteArray(objPtr)) {
@@ -517,7 +522,7 @@ Tcl_GetUniChar(
  *
  *	Get the Unicode form of the String object. If the object is not
  *	already a String object, it will be converted to one. If the String
- *	object does not have a Unicode rep, then one is create from the UTF
+ *	object does not have a Unicode rep, then one is created from the UTF
  *	string format.
  *
  * Results:
@@ -651,6 +656,17 @@ Tcl_GetRange(
 	stringPtr = GET_STRING(objPtr);
     }
 
+#if TCL_UTF_MAX == 4
+	/* See: bug [11ae2be95dac9417] */
+	if ((first>0) && ((stringPtr->unicode[first]&0xFC00) == 0xDC00)
+		&& ((stringPtr->unicode[first-1]&0xFC00) == 0xD800)) {
+	    ++first;
+	}
+	if ((last+1<stringPtr->numChars) && ((stringPtr->unicode[last+1]&0xFC00) == 0xDC00)
+		&& ((stringPtr->unicode[last]&0xFC00) == 0xD800)) {
+	    ++last;
+	}
+#endif
     return Tcl_NewUnicodeObj(stringPtr->unicode + first, last-first+1);
 }
 
@@ -1869,20 +1885,20 @@ Tcl_AppendFormatToObj(
 	} else if (ch == 'I') {
 	    if ((format[1] == '6') && (format[2] == '4')) {
 		format += (step + 2);
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 #ifndef TCL_WIDE_INT_IS_LONG
 		useWide = 1;
 #endif
 	    } else if ((format[1] == '3') && (format[2] == '2')) {
 		format += (step + 2);
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 	    } else {
 		format += step;
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 	    }
 	} else if ((ch == 't') || (ch == 'z')) {
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 #ifndef TCL_WIDE_INT_IS_LONG
 	    if (sizeof(size_t) > sizeof(int)) {
 		useWide = 1;
@@ -1890,7 +1906,7 @@ Tcl_AppendFormatToObj(
 #endif
 	} else if ((ch == 'q') ||(ch == 'j')) {
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 #ifndef TCL_WIDE_INT_IS_LONG
 	    useWide = 1;
 #endif
@@ -3102,6 +3118,7 @@ TclStringCatObjv(
 	    /* Ugly interface! No scheme to init array size. */
 	    objResultPtr = Tcl_NewUnicodeObj(&ch, 0);	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    	"concatenation failed: unable to alloc %"
@@ -3149,6 +3166,7 @@ TclStringCatObjv(
 	} else {
 	    objResultPtr = Tcl_NewObj();	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    	"concatenation failed: unable to alloc %u bytes",
@@ -3240,40 +3258,44 @@ TclStringFind(
 	return -1;
     }
 
+    /*
+     * Check if we have two strings of single-byte characters. If we have, we
+     * can use strstr() to do the search. Note that we can sometimes have
+     * multibyte characters when the string could be minimally represented
+     * using single byte characters; we can't assume that a mismatch here
+     * means no match.
+     */
+
     lh = Tcl_GetCharLength(haystack);
-    if (haystack->bytes && (lh == haystack->length)) {
-	/* haystack is all single-byte chars */
+    if (haystack->bytes && (lh == haystack->length) && needle->bytes
+		&& (ln == needle->length)) {
+	/*
+	 * Both haystack and needle are all single-byte chars.
+	 */
 
-	if (needle->bytes && (ln == needle->length)) {
-	    /* needle is also all single-byte chars */
-	    char *found = strstr(haystack->bytes + start, needle->bytes);
+	char *found = strstr(haystack->bytes + start, needle->bytes);
 
-	    if (found) {
-		return (found - haystack->bytes);
-	    } else {
-		return -1;
-	    }
+	if (found) {
+	    return (found - haystack->bytes);
 	} else {
-	    /*
-	     * Cannot find substring with a multi-byte char inside
-	     * a string with no multi-byte chars.
-	     */
 	    return -1;
 	}
     } else {
+	/*
+	 * Do the search on the unicode representation for simplicity.
+	 */
+
 	Tcl_UniChar *try, *end, *uh;
 	Tcl_UniChar *un = Tcl_GetUnicodeFromObj(needle, &ln);
 
 	uh = Tcl_GetUnicodeFromObj(haystack, &lh);
 	end = uh + lh;
 
-	try = uh + start;
-	while (try + ln <= end) {
-	    if ((*try == *un)
-		    && (0 == memcmp(try+1, un+1, (ln-1)*sizeof(Tcl_UniChar)))) {
+	for (try = uh + start; try + ln <= end; try++) {
+	    if ((*try == *un) && (0 ==
+		    memcmp(try + 1, un + 1, (ln-1) * sizeof(Tcl_UniChar)))) {
 		return (try - uh);
 	    }
-	    try++;
 	}
 	return -1;
     }
@@ -3786,7 +3808,6 @@ TclStringObjReverse(
 	     * Tcl_SetObjLength into growing the unicode rep buffer.
 	     */
 
-	    ch = 0;
 	    objPtr = Tcl_NewUnicodeObj(&ch, 1);
 	    Tcl_SetObjLength(objPtr, stringPtr->numChars);
 	    to = Tcl_GetUnicode(objPtr);
@@ -3889,7 +3910,7 @@ ExtendUnicodeRepWithString(
 {
     String *stringPtr = GET_STRING(objPtr);
     int needed, numOrigChars = 0;
-    Tcl_UniChar *dst;
+    Tcl_UniChar *dst, unichar = 0;
 
     if (stringPtr->hasUnicode) {
 	numOrigChars = stringPtr->numChars;
@@ -3912,7 +3933,8 @@ ExtendUnicodeRepWithString(
 	numAppendChars = 0;
     }
     for (dst=stringPtr->unicode + numOrigChars; numAppendChars-- > 0; dst++) {
-	bytes += TclUtfToUniChar(bytes, dst);
+	bytes += TclUtfToUniChar(bytes, &unichar);
+	*dst = unichar;
     }
     *dst = 0;
 }
