@@ -83,7 +83,7 @@ Specifies that the number should be padded on the left with
 zeroes instead of spaces.
 .TP 10
 \fB#\fR
-Requests an alternate output form. For \fBo\fR and \fBO\fR
+Requests an alternate output form. For \fBo\fR
 conversions it guarantees that the first digit is always \fB0\fR.
 For \fBx\fR or \fBX\fR conversions, \fB0x\fR or \fB0X\fR (respectively)
 will be added to the beginning of the result unless it is zero.
@@ -171,7 +171,7 @@ for \fBx\fR and
 for \fBX\fR).
 .TP 10
 \fBb\fR
-Convert integer to binary string, using digits 0 and 1.
+Convert integer to unsigned binary string, using digits 0 and 1.
 .TP 10
 \fBc\fR
 Convert integer to the Unicode character it represents.
