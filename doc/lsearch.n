@@ -158,7 +158,8 @@ by the element within each group given by the first index passed to
 index always points to the first element in a group.
 .PP
 The list length must be an integer multiple of \fIstrideLength\fR, which
-in turn must be at least 2.
+in turn must be at least 1. A \fIstrideLength\fR of 1 is the default and
+indicates no grouping.
 .TP
 \fB\-index\fR\0\fIindexList\fR
 .
