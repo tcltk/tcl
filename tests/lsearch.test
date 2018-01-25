@@ -518,7 +518,7 @@ test lsearch-23.1 {lsearch -stride option, errors} -body {
 } -returnCodes error -result {"-stride" option must be followed by stride length}
 test lsearch-23.2 {lsearch -stride option, errors} -body {
     lsearch -stride 0 {a b} a
-} -returnCodes error -result {stride length must be at least 2}
+} -returnCodes error -result {stride length must be at least 1}
 test lsearch-23.3 {lsearch -stride option, errors} -body {
     lsearch -stride 2 {a b c} a
 } -returnCodes error -result {list size must be a multiple of the stride length}
@@ -562,6 +562,10 @@ test lsearch-24.9 {lsearch -stride option} -body {
 test lsearch-24.10 {lsearch -stride option} -body {
     lsearch -all -inline -stride 3 -index 0 {a b c d e f a e i} a
 } -result "a b c a e i"
+test lsearch-24.11 {lsearch -stride option} -body {
+    # Stride 1 is same as no stride
+    lsearch -stride 1 {a b c d e f g h} d
+} -result 3
 
 # 25* mimics 19* but with -inline added to -subindices
 test lsearch-25.1 {lsearch -subindices option} {
