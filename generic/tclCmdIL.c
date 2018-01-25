@@ -3101,9 +3101,9 @@ Tcl_LsearchObjCmd(
 		result = TCL_ERROR;
 		goto done;
 	    }
-	    if (groupSize < 2) {
+	    if (groupSize < 1) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"stride length must be at least 2", -1));
+			"stride length must be at least 1", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
 			"BADSTRIDE", NULL);
 		result = TCL_ERROR;
