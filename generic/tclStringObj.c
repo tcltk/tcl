@@ -459,9 +459,9 @@ Tcl_GetCharLength(
  *
  * Tcl_GetUniChar --
  *
- *	Get the index'th Unicode character from the String object. The index
- *	is assumed to be in the appropriate range. If index references a lower
- *	surrogate preceded by a higher surrogate, the result = -1;
+ *	Get the index'th Unicode character from the String object. If index
+ *	is out of range or it references a low surrogate preceded by a high
+ *	surrogate, the result = -1;
  *
  * Results:
  *	Returns the index'th Unicode character in the Object.
@@ -479,7 +479,11 @@ Tcl_GetUniChar(
     int index)			/* Get the index'th Unicode character. */
 {
     String *stringPtr;
-    int ch;
+    int ch, length;
+
+    if (index < 0) {
+	return -1;
+    }
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
@@ -488,7 +492,10 @@ Tcl_GetUniChar(
      */
 
     if (TclIsPureByteArray(objPtr)) {
-	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+	if (index >- length) {
+		return -1;
+	}
 
 	return (int) bytes[index];
     }
@@ -515,6 +522,9 @@ Tcl_GetUniChar(
 	stringPtr = GET_STRING(objPtr);
     }
 
+    if (index >= stringPtr->numChars) {
+	return -1;
+    }
 	ch = stringPtr->unicode[index];
 #if TCL_UTF_MAX == 4
 	/* See: bug [11ae2be95dac9417] */
@@ -630,7 +640,11 @@ Tcl_GetRange(
 {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
+    int length;
 
+    if (first < 0) {
+	first = 0;
+	}
     /*
      * Optimize the case where we're really dealing with a bytearray object
      * without string representation; we don't need to convert to a string to
@@ -638,8 +652,13 @@ Tcl_GetRange(
      */
 
     if (TclIsPureByteArray(objPtr)) {
-	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
-
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+	if (last >= length) {
+	    last = length - 1;
+	}
+	if (last < first) {
+	    return Tcl_NewObj();
+	}
 	return Tcl_NewByteArrayObj(bytes+first, last-first+1);
     }
 
@@ -659,6 +678,12 @@ Tcl_GetRange(
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
+	    if (last >= stringPtr->numChars) {
+		last = stringPtr->numChars - 1;
+	    }
+	    if (last < first) {
+		return Tcl_NewObj();
+	    }
 	    newObjPtr = Tcl_NewStringObj(objPtr->bytes + first, last-first+1);
 
 	    /*
@@ -673,7 +698,12 @@ Tcl_GetRange(
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
-
+	if (last > stringPtr->numChars) {
+	    last = stringPtr->numChars;
+	}
+	if (last < first) {
+	    return Tcl_NewObj();
+	}
 #if TCL_UTF_MAX == 4
 	/* See: bug [11ae2be95dac9417] */
 	if ((first>0) && ((stringPtr->unicode[first]&0xFC00) == 0xDC00)

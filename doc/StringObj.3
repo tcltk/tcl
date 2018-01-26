@@ -204,7 +204,8 @@ where the caller does not need the length of the unicode string
 representation.
 .PP
 \fBTcl_GetUniChar\fR returns the \fIindex\fR'th character in the
-value's Unicode representation.
+value's Unicode representation. If the index is out of range or
+it references a low surrogate preceded by a high surrogate, it returns -1;
 .PP
 \fBTcl_GetRange\fR returns a newly created value comprised of the
 characters between \fIfirst\fR and \fIlast\fR (inclusive) in the
