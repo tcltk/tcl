@@ -73,43 +73,6 @@ namespace eval tcl {
 	    encoding dirs $Path
         }
     }
-
-    # TIP #255 min and max functions
-    namespace eval mathfunc {
-	proc min {args} {
-	    if {![llength $args]} {
-		return -code error \
-		    "too few arguments to math function \"min\""
-	    }
-	    set val Inf
-	    foreach arg $args {
-		# This will handle forcing the numeric value without
-		# ruining the internal type of a numeric object
-		if {[catch {expr {double($arg)}} err]} {
-		    return -code error $err
-		}
-		if {$arg < $val} {set val $arg}
-	    }
-	    return $val
-	}
-	proc max {args} {
-	    if {![llength $args]} {
-		return -code error \
-		    "too few arguments to math function \"max\""
-	    }
-	    set val -Inf
-	    foreach arg $args {
-		# This will handle forcing the numeric value without
-		# ruining the internal type of a numeric object
-		if {[catch {expr {double($arg)}} err]} {
-		    return -code error $err
-		}
-		if {$arg > $val} {set val $arg}
-	    }
-	    return $val
-	}
-	namespace export min max
-    }
 }
 
 namespace eval tcl::Pkg {}
@@ -656,8 +619,7 @@ proc auto_execok name {
     set auto_execs($name) ""
 
     set shellBuiltins [list assoc cls copy date del dir echo erase ftype \
-                           md mkdir mklink move rd ren rename rmdir start \
-                           time type ver vol]
+	    md mkdir mklink move rd ren rename rmdir start time type ver vol]
     if {[info exists env(PATHEXT)]} {
 	# Add an initial ; to have the {} extension check first.
 	set execExtensions [split ";$env(PATHEXT)" ";"]
@@ -691,10 +653,7 @@ proc auto_execok name {
 	set windir $env(WINDIR)
     }
     if {[info exists windir]} {
-	if {$tcl_platform(os) eq "Windows NT"} {
-	    append path "$windir/system32;"
-	}
-	append path "$windir/system;$windir;"
+	append path "$windir/system32;$windir/system;$windir;"
     }
 
     foreach var {PATH Path path} {
