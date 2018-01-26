@@ -43,6 +43,7 @@
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
+#undef Tcl_SetLongObj
 #undef TclpInetNtoa
 #undef TclWinGetServByName
 #undef TclWinGetSockOpt
