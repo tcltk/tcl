@@ -5552,8 +5552,8 @@ TEBCresume(
 	toIdx = 0;
 	if (TclGetIntForIndexM(interp, valuePtr, length,
 		    &fromIdx) != TCL_OK
-	    || value2Ptr && TclGetIntForIndexM(interp, value2Ptr, length,
-		    &toIdx) != TCL_OK) {
+	    || (value2Ptr && TclGetIntForIndexM(interp, value2Ptr, length,
+		    &toIdx) != TCL_OK)) {
 	    if (value3Ptr) {
 		TclDecrRefCount(value3Ptr); /* not in stack */
 	    }
