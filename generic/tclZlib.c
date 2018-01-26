@@ -373,7 +373,7 @@ ConvertErrorToList(
 
     default:
 	TclNewLiteralStringObj(objv[2], "UNKNOWN");
-	TclNewWideObj(objv[3], code);
+	TclNewIntObj(objv[3], code);
 	return Tcl_NewListObj(4, objv);
     }
 }

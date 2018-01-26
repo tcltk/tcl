@@ -3686,7 +3686,7 @@ OldMathFuncProc(
      */
 
     if (funcResult.type == TCL_INT) {
-	TclNewWideObj(valuePtr, funcResult.intValue);
+	TclNewIntObj(valuePtr, funcResult.intValue);
     } else if (funcResult.type == TCL_WIDE_INT) {
 	valuePtr = Tcl_NewWideIntObj(funcResult.wideValue);
     } else {
