@@ -1769,7 +1769,7 @@ Tcl_NewBooleanObj(
 {
     register Tcl_Obj *objPtr;
 
-    TclNewWideObj(objPtr, boolValue!=0);
+    TclNewIntObj(objPtr, boolValue!=0);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -2416,7 +2416,7 @@ Tcl_NewIntObj(
 {
     register Tcl_Obj *objPtr;
 
-    TclNewWideObj(objPtr, intValue);
+    TclNewIntObj(objPtr, intValue);
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -2630,7 +2630,7 @@ Tcl_NewLongObj(
 {
     register Tcl_Obj *objPtr;
 
-    TclNewWideObj(objPtr, longValue);
+    TclNewIntObj(objPtr, longValue);
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -2722,6 +2722,7 @@ Tcl_DbNewLongObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetLongObj
 void
 Tcl_SetLongObj(
     register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
@@ -2891,7 +2892,7 @@ Tcl_NewWideIntObj(
     register Tcl_Obj *objPtr;
 
     TclNewObj(objPtr);
-    Tcl_SetWideIntObj(objPtr, wideValue);
+    TclSetIntObj(objPtr, wideValue);
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -2943,7 +2944,7 @@ Tcl_DbNewWideIntObj(
     register Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
-    Tcl_SetWideIntObj(objPtr, wideValue);
+    TclSetIntObj(objPtr, wideValue);
     return objPtr;
 }
 
