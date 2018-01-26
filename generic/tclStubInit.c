@@ -31,6 +31,7 @@
 #undef Tcl_NewIntObj
 #undef Tcl_NewListObj
 #undef Tcl_NewLongObj
+#undef Tcl_DbNewLongObj
 #undef Tcl_NewObj
 #undef Tcl_NewStringObj
 #undef Tcl_DumpActiveMemory

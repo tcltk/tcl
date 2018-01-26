@@ -4556,12 +4556,12 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  * core. They should only be called on unshared objects. The ANSI C
  * "prototypes" for these macros are:
  *
- * MODULE_SCOPE void	TclSetWideObj(Tcl_Obj *objPtr, Tcl_WideInt w);
+ * MODULE_SCOPE void	TclSetIntObj(Tcl_Obj *objPtr, Tcl_WideInt w);
  * MODULE_SCOPE void	TclSetDoubleObj(Tcl_Obj *objPtr, double d);
  *----------------------------------------------------------------
  */
 
-#define TclSetWideObj(objPtr, i) \
+#define TclSetIntObj(objPtr, i) \
     do {						\
 	TclInvalidateStringRep(objPtr);			\
 	TclFreeIntRep(objPtr);				\
