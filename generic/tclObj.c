@@ -1864,7 +1864,7 @@ Tcl_SetBooleanObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetBooleanObj");
     }
 
-    TclSetWideObj(objPtr, boolValue!=0);
+    TclSetIntObj(objPtr, boolValue!=0);
 }
 #endif /* TCL_NO_DEPRECATED */
 
@@ -2449,7 +2449,7 @@ Tcl_SetIntObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetIntObj");
     }
 
-    TclSetWideObj(objPtr, intValue);
+    TclSetIntObj(objPtr, intValue);
 }
 
 /*
@@ -2610,8 +2610,8 @@ UpdateStringOfOldInt(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 #undef Tcl_NewLongObj
+#ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
 Tcl_NewLongObj(
@@ -2667,6 +2667,7 @@ Tcl_NewLongObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_DbNewLongObj
 #ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
@@ -2731,7 +2732,7 @@ Tcl_SetLongObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetLongObj");
     }
 
-    TclSetWideObj(objPtr, longValue);
+    TclSetIntObj(objPtr, longValue);
 }
 
 /*
@@ -2991,7 +2992,7 @@ Tcl_SetWideIntObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetWideIntObj");
     }
 
-    TclSetWideObj(objPtr, wideValue);
+    TclSetIntObj(objPtr, wideValue);
 }
 
 /*
@@ -3448,9 +3449,9 @@ Tcl_SetBignumObj(
 	    goto tooLargeForWide;
 	}
 	if (bignumValue->sign) {
-	    TclSetWideObj(objPtr, -(Tcl_WideInt)value);
+	    TclSetIntObj(objPtr, -(Tcl_WideInt)value);
 	} else {
-	    TclSetWideObj(objPtr, (Tcl_WideInt)value);
+	    TclSetIntObj(objPtr, (Tcl_WideInt)value);
 	}
 	mp_clear(bignumValue);
 	return;
