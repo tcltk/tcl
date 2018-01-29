@@ -154,8 +154,7 @@ EXTERN char *		TclWinNoBackslash(char *path);
 /* Slot 26 is reserved */
 /* 27 */
 EXTERN void		TclWinFlushDirtyChannels(void);
-/* 28 */
-EXTERN void		TclWinResetInterfaces(void);
+/* Slot 28 is reserved */
 /* 29 */
 EXTERN int		TclWinCPUID(int index, int *regs);
 /* 30 */
@@ -300,7 +299,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved25)(void);
     void (*reserved26)(void);
     void (*tclWinFlushDirtyChannels) (void); /* 27 */
-    void (*tclWinResetInterfaces) (void); /* 28 */
+    void (*reserved28)(void);
     int (*tclWinCPUID) (int index, int *regs); /* 29 */
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* WIN */
@@ -442,8 +441,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 /* Slot 26 is reserved */
 #define TclWinFlushDirtyChannels \
 	(tclIntPlatStubsPtr->tclWinFlushDirtyChannels) /* 27 */
-#define TclWinResetInterfaces \
-	(tclIntPlatStubsPtr->tclWinResetInterfaces) /* 28 */
+/* Slot 28 is reserved */
 #define TclWinCPUID \
 	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
 #define TclUnixOpenTemporaryFile \
@@ -506,7 +504,6 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
-#define TclWinGetPlatformId() (2) /* VER_PLATFORM_WIN32_NT */
 #define TclWinConvertWSAError TclWinConvertError
 
 #if !defined(_WIN32)

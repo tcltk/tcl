@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_DStringInit, Tcl_DStringAppend, Tcl_DStringAppendElement, Tcl_DStringStartSublist, Tcl_DStringEndSublist, Tcl_DStringLength, Tcl_DStringValue, Tcl_DStringSetLength, Tcl_DStringTrunc, Tcl_DStringFree, Tcl_DStringResult, Tcl_DStringGetResult \- manipulate dynamic strings
+Tcl_DStringInit, Tcl_DStringAppend, Tcl_DStringAppendElement, Tcl_DStringStartSublist, Tcl_DStringEndSublist, Tcl_DStringLength, Tcl_DStringValue, Tcl_DStringSetLength, Tcl_DStringFree, Tcl_DStringResult, Tcl_DStringGetResult \- manipulate dynamic strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -33,8 +33,6 @@ char *
 \fBTcl_DStringValue\fR(\fIdsPtr\fR)
 .sp
 \fBTcl_DStringSetLength\fR(\fIdsPtr, newLength\fR)
-.sp
-\fBTcl_DStringTrunc\fR(\fIdsPtr, newLength\fR)
 .sp
 \fBTcl_DStringFree\fR(\fIdsPtr\fR)
 .sp
@@ -127,10 +125,6 @@ caller to fill in the new space.
 \fBTcl_DStringSetLength\fR does not free up the string's storage space
 even if the string is truncated to zero length, so \fBTcl_DStringFree\fR
 will still need to be called.
-.PP
-\fBTcl_DStringTrunc\fR changes the length of a dynamic string.
-This procedure is now deprecated.  \fBTcl_DStringSetLength\fR  should
-be used instead.
 .PP
 \fBTcl_DStringFree\fR should be called when you are finished using
 the string.  It frees up any memory that was allocated for the string

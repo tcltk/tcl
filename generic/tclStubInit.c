@@ -60,14 +60,13 @@
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
 #   define TclpIsAtty TclPlatIsAtty
+static void
+doNothing(void)
+{
+    /* dummy implementation, no need to do anything */
+}
 #   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
-#   define TclWinResetInterfaces doNothing
-
-#if TCL_UTF_MAX < 4
-static Tcl_Encoding winTCharEncoding;
-#endif
-
 static int
 TclpIsAtty(int fd)
 {
@@ -102,19 +101,12 @@ TclpGetPid(Tcl_Pid pid)
     return (int) (size_t) pid;
 }
 
-static void
-doNothing(void)
-{
-    /* dummy implementation, no need to do anything */
-}
-
 char *
 Tcl_WinUtfToTChar(
     const char *string,
     int len,
     Tcl_DString *dsPtr)
 {
-#if TCL_UTF_MAX > 3
     WCHAR *wp;
     int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
 
@@ -126,13 +118,6 @@ Tcl_WinUtfToTChar(
     Tcl_DStringSetLength(dsPtr, 2*size);
     wp[size] = 0;
     return (char *)wp;
-#else
-    if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
-    }
-    return Tcl_UtfToExternalDString(winTCharEncoding,
-	    string, len, dsPtr);
-#endif
 }
 
 char *
@@ -141,7 +126,6 @@ Tcl_WinTCharToUtf(
     int len,
     Tcl_DString *dsPtr)
 {
-#if TCL_UTF_MAX > 3
     char *p;
     int size;
 
@@ -157,13 +141,6 @@ Tcl_WinTCharToUtf(
     Tcl_DStringSetLength(dsPtr, size);
     p[size] = 0;
     return p;
-#else
-    if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
-    }
-    return Tcl_ExternalToUtfDString(winTCharEncoding,
-	    string, len, dsPtr);
-#endif
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -637,7 +614,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 25 */
     0, /* 26 */
     TclWinFlushDirtyChannels, /* 27 */
-    TclWinResetInterfaces, /* 28 */
+    0, /* 28 */
     TclWinCPUID, /* 29 */
     TclUnixOpenTemporaryFile, /* 30 */
 #endif /* WIN */
@@ -886,7 +863,7 @@ const TclStubs tclStubs = {
     Tcl_CreateEventSource, /* 92 */
     Tcl_CreateExitHandler, /* 93 */
     Tcl_CreateInterp, /* 94 */
-    Tcl_CreateMathFunc, /* 95 */
+    0, /* 95 */
     Tcl_CreateObjCommand, /* 96 */
     Tcl_CreateSlave, /* 97 */
     Tcl_CreateTimerHandler, /* 98 */
@@ -1140,8 +1117,8 @@ const TclStubs tclStubs = {
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
     Tcl_GetString, /* 340 */
-    Tcl_GetDefaultEncodingDir, /* 341 */
-    Tcl_SetDefaultEncodingDir, /* 342 */
+    0, /* 341 */
+    0, /* 342 */
     Tcl_AlertNotifier, /* 343 */
     Tcl_ServiceModeHook, /* 344 */
     Tcl_UniCharIsAlnum, /* 345 */
@@ -1156,7 +1133,7 @@ const TclStubs tclStubs = {
     Tcl_UniCharToUtfDString, /* 354 */
     Tcl_UtfToUniCharDString, /* 355 */
     Tcl_GetRegExpFromObj, /* 356 */
-    Tcl_EvalTokens, /* 357 */
+    0, /* 357 */
     Tcl_FreeParse, /* 358 */
     Tcl_LogCommandInfo, /* 359 */
     Tcl_ParseBraces, /* 360 */
@@ -1234,8 +1211,8 @@ const TclStubs tclStubs = {
     Tcl_AttemptSetObjLength, /* 432 */
     Tcl_GetChannelThread, /* 433 */
     Tcl_GetUnicodeFromObj, /* 434 */
-    Tcl_GetMathFuncInfo, /* 435 */
-    Tcl_ListMathFuncs, /* 436 */
+    0, /* 435 */
+    0, /* 436 */
     Tcl_SubstObj, /* 437 */
     Tcl_DetachChannel, /* 438 */
     Tcl_IsStandardChannel, /* 439 */

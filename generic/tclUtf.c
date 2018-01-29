@@ -68,11 +68,7 @@ static const unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#if TCL_UTF_MAX > 3
     4,4,4,4,4,4,4,4,
-#else
-    1,1,1,1,1,1,1,1,
-#endif
     1,1,1,1,1,1,1,1
 };
 
@@ -328,13 +324,22 @@ Tcl_UtfToUniChar(
 	 * represents itself.
 	 */
     }
-#if TCL_UTF_MAX > 3
     else if (byte < 0xF8) {
 	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80) && ((src[3] & 0xC0) == 0x80)) {
 	    /*
 	     * Four-byte-character lead byte followed by three trail bytes.
 	     */
-#if TCL_UTF_MAX == 4
+#if TCL_UTF_MAX == 3
+	    byte = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
+		    | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F)) - 0x10000;
+	    if (byte & 0x100000) {
+		/* out of range, < 0x10000 or > 0x10ffff */
+	    } else {
+		/* produce replacement character, and advance source pointer */
+		*chPtr = (Tcl_UniChar) 0xFFFD;
+		return 4;
+	    }
+#elif TCL_UTF_MAX == 4
 	    Tcl_UniChar surrogate;
 
 	    byte = (((byte & 0x07) << 18) | ((src[1] & 0x3F) << 12)
@@ -365,7 +370,6 @@ Tcl_UtfToUniChar(
 	 * represents itself.
 	 */
     }
-#endif
 
     *chPtr = (Tcl_UniChar) byte;
     return 1;
@@ -498,13 +502,13 @@ Tcl_NumUtfChars(
 	    i++;
 	}
     } else {
-	register const char *endPtr = src + length - TCL_UTF_MAX;
+	register const char *endPtr = src + length - 4;
 
 	while (src < endPtr) {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
 	}
-	endPtr += TCL_UTF_MAX;
+	endPtr += 4;
 	while ((src < endPtr) && Tcl_UtfCharComplete(src, endPtr - src)) {
 	    src += TclUtfToUniChar(src, &ch);
 	    i++;
@@ -676,7 +680,7 @@ Tcl_UtfPrev(
     int i, byte;
 
     look = --src;
-    for (i = 0; i < TCL_UTF_MAX; i++) {
+    for (i = 0; i < 4; i++) {
 	if (look < start) {
 	    if (src < start) {
 		src = start;
