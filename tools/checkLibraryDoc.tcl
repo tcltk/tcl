@@ -50,8 +50,6 @@ set StructList {
     Tcl_TimerToken \
     Tcl_Token \
     Tcl_Trace \
-    Tcl_Value \
-    Tcl_ValueType \
     Tcl_Var \
     Tk_3DBorder \
     Tk_ArgvInfo \
