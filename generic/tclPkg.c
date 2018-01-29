@@ -85,7 +85,7 @@ static void		AddRequirementsToResult(Tcl_Interp *interp, int reqc,
 static void		AddRequirementsToDString(Tcl_DString *dstring,
 			    int reqc, Tcl_Obj *const reqv[]);
 static Package *	FindPackage(Tcl_Interp *interp, const char *name);
-static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
+static int		PkgRequireCore(Tcl_Interp *interp, const char *name,
 			    int reqc, Tcl_Obj *const reqv[],
 			    void *clientDataPtr);
 
@@ -339,7 +339,10 @@ Tcl_PkgRequireEx(
      */
 
     if (version == NULL) {
-	result = PkgRequireCore(interp, name, 0, NULL, clientDataPtr);
+	if (Tcl_PkgRequireProc(interp, name, 0, NULL, clientDataPtr) == TCL_OK) {
+	    result = Tcl_GetStringResult(interp);
+	    Tcl_ResetResult(interp);
+	}
     } else {
 	if (exact && TCL_OK
 		!= CheckVersionAndConvert(interp, version, NULL, NULL)) {
@@ -350,10 +353,12 @@ Tcl_PkgRequireEx(
 	    Tcl_AppendStringsToObj(ov, "-", version, NULL);
 	}
 	Tcl_IncrRefCount(ov);
-	result = PkgRequireCore(interp, name, 1, &ov, clientDataPtr);
+	if (Tcl_PkgRequireProc(interp, name, 1, &ov, clientDataPtr) == TCL_OK) {
+	    result = Tcl_GetStringResult(interp);
+	    Tcl_ResetResult(interp);
+	}
 	TclDecrRefCount(ov);
     }
-
     return result;
 }
 
@@ -368,17 +373,14 @@ Tcl_PkgRequireProc(
 				 * available. */
     void *clientDataPtr)
 {
-    const char *result =
-	    PkgRequireCore(interp, name, reqc, reqv, clientDataPtr);
-
-    if (result == NULL) {
-	return TCL_ERROR;
+    int code = CheckAllRequirements(interp, reqc, reqv);
+    if (code != TCL_OK) {
+	return code;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(result, -1));
-    return TCL_OK;
+    return PkgRequireCore(interp, name, reqc, reqv, clientDataPtr);
 }
 
-static const char *
+int
 PkgRequireCore(
     Tcl_Interp *interp,		/* Interpreter in which package is now
 				 * available. */
@@ -397,10 +399,6 @@ PkgRequireCore(
     int availStable, code, satisfies, pass;
     char *script, *pkgVersionI;
     Tcl_DString command;
-
-    if (TCL_OK != CheckAllRequirements(interp, reqc, reqv)) {
-	return NULL;
-    }
 
     /*
      * It can take up to three passes to find the package: one pass to run the
@@ -427,7 +425,7 @@ PkgRequireCore(
 		    name, (char *) pkgPtr->clientData, name));
 	    AddRequirementsToResult(interp, reqc, reqv);
 	    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "CIRCULARITY", NULL);
-	    return NULL;
+	    return TCL_ERROR;
 	}
 
 	/*
@@ -652,7 +650,7 @@ PkgRequireCore(
 		    pkgPtr->version = NULL;
 		}
 		pkgPtr->clientData = NULL;
-		return NULL;
+		return code;
 	    }
 
 	    break;
@@ -688,7 +686,7 @@ PkgRequireCore(
 	    if (code == TCL_ERROR) {
 		Tcl_AddErrorInfo(interp,
 			"\n    (\"package unknown\" script)");
-		return NULL;
+		return code;
 	    }
 	    Tcl_ResetResult(interp);
 	}
@@ -699,7 +697,7 @@ PkgRequireCore(
 		"can't find package %s", name));
 	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNFOUND", NULL);
 	AddRequirementsToResult(interp, reqc, reqv);
-	return NULL;
+	return TCL_ERROR;
     }
 
     /*
@@ -720,7 +718,7 @@ PkgRequireCore(
 	    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "VERSIONCONFLICT",
 		    NULL);
 	    AddRequirementsToResult(interp, reqc, reqv);
-	    return NULL;
+	    return TCL_ERROR;
 	}
     }
 
@@ -729,7 +727,8 @@ PkgRequireCore(
 
 	*ptr = pkgPtr->clientData;
     }
-    return pkgPtr->version;
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(pkgPtr->version, -1));
+    return TCL_OK;
 }
 
 /*
