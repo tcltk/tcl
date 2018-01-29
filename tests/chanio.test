@@ -5866,6 +5866,8 @@ test chan-io-47.6 {file events on shared files, deleting file events} -setup {
     testfevent delete
     chan close $f
 } -result {{script 1} {}}
+unset path(foo)
+removeFile foo
 
 set path(bar) [makeFile {} bar]
 
@@ -5961,6 +5963,9 @@ test chan-io-48.3 {testing readability conditions} -setup {
 } -cleanup {
     chan close $f
 } -result {done {0 1 0 1 0 1 0 1 0 1 0 1 0 0}}
+unset path(bar)
+removeFile bar 
+
 test chan-io-48.4 {lf write, testing readability, ^Z termination, auto read mode} -setup {
     file delete $path(test1)
     set c 0
@@ -6790,8 +6795,6 @@ test chan-io-52.11 {TclCopyChannel & encodings} -setup {
     chan close $in
     chan close $out
     file size $path(kyrillic.txt)
-} -cleanup {
-    file delete $path(utf8-fcopy.txt)
 } -result 3
 
 test chan-io-53.1 {CopyData} -setup {
