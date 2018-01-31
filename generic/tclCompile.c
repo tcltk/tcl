@@ -2276,8 +2276,8 @@ TclCompileVarSubst(
     CompileEnv *envPtr)
 {
     const char *p, *name = tokenPtr[1].start;
-    int nameBytes = tokenPtr[1].size;
-    int i, localVar, localVarName = 1;
+    size_t i, nameBytes = tokenPtr[1].size;
+    int localVar, localVarName = 1;
 
     /*
      * Determine how the variable name should be handled: if it contains any
@@ -2485,7 +2485,7 @@ TclCompileTokens(
 
 	default:
 	    Tcl_Panic("Unexpected token type in TclCompileTokens: %d; %.*s",
-		    tokenPtr->type, tokenPtr->size, tokenPtr->start);
+		    tokenPtr->type, (int)tokenPtr->size, tokenPtr->start);
 	}
     }
 

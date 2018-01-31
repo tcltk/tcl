@@ -208,8 +208,8 @@ typedef struct Tcl_Parse {
 typedef struct Tcl_Token {
     int \fItype\fR;
     const char *\fIstart\fR;
-    int \fIsize\fR;
-    int \fInumComponents\fR;
+    size_t \fIsize\fR;
+    size_t \fInumComponents\fR;
 } \fBTcl_Token\fR;
 .CE
 .PP

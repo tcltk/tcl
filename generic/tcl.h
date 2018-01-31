@@ -1716,8 +1716,8 @@ typedef struct Tcl_Token {
     int type;			/* Type of token, such as TCL_TOKEN_WORD; see
 				 * below for valid types. */
     const char *start;		/* First character in token. */
-    int size;			/* Number of bytes in token. */
-    int numComponents;		/* If this token is composed of other tokens,
+    size_t size;			/* Number of bytes in token. */
+    size_t numComponents;		/* If this token is composed of other tokens,
 				 * this field tells how many of them there are
 				 * (including components of components, etc.).
 				 * The component tokens immediately follow

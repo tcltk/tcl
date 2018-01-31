@@ -789,7 +789,8 @@ TclCompileStringMatchCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, length, exactMatch = 0, nocase = 0;
+	size_t length;
+    int i, exactMatch = 0, nocase = 0;
     const char *str;
 
     if (parsePtr->numWords < 3 || parsePtr->numWords > 4) {
@@ -1480,7 +1481,8 @@ TclSubstCompile(
 	     */
 
 	    if (tokenPtr->numComponents > 1) {
-		int i, foundCommand = 0;
+		size_t i;	
+		int foundCommand = 0;
 
 		for (i=2 ; i<=tokenPtr->numComponents ; i++) {
 		    if (tokenPtr[i].type == TCL_TOKEN_COMMAND) {
@@ -1753,7 +1755,7 @@ TclCompileSwitchCmd(
      */
 
     for (; numWords>=3 ; tokenPtr=TokenAfter(tokenPtr),numWords--) {
-	register unsigned size = tokenPtr[1].size;
+	register size_t size = tokenPtr[1].size;
 	register const char *chrs = tokenPtr[1].start;
 
 	/*
@@ -1844,7 +1846,7 @@ TclCompileSwitchCmd(
 
     if (numWords == 1) {
 	const char *bytes;
-	int maxLen, numBytes;
+	size_t maxLen, numBytes;
 	int bline;		/* TIP #280: line of the pattern/action list,
 				 * and start of list for when tracking the
 				 * location. This list comes immediately after

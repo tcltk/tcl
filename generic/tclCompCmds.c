@@ -1084,7 +1084,8 @@ TclCompileDictIncrCmd(
 
     if (parsePtr->numWords == 4) {
 	const char *word;
-	int numBytes, code;
+	size_t numBytes;
+	int code;
 	Tcl_Token *incrTokenPtr;
 	Tcl_Obj *intObj;
 
@@ -3346,7 +3347,7 @@ TclLocalScalarFromToken(
 int
 TclLocalScalar(
     const char *bytes,
-    int numBytes,
+    size_t numBytes,
     CompileEnv *envPtr)
 {
     Tcl_Token token[2] =        {{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},
@@ -3397,9 +3398,10 @@ TclPushVarName(
 {
     register const char *p;
     const char *name, *elName;
-    register int i, n;
+    register size_t i, n;
     Tcl_Token *elemTokenPtr = NULL;
-    int nameChars, elNameChars, simpleVarName, localIndex;
+    size_t nameChars, elNameChars;
+    int simpleVarName, localIndex;
     int elemTokenCount = 0, allocedTokens = 0, removedParen = 0;
 
     /*
@@ -3471,7 +3473,7 @@ TclPushVarName(
 	    }
 	}
 	if (simpleVarName) {
-	    int remainingChars;
+	    size_t remainingChars;
 
 	    /*
 	     * Check the last token: if it is just ')', do not count it.

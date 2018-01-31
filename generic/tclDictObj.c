@@ -642,7 +642,8 @@ SetDictFromAny(
 	while (nextElem < limit) {
 	    Tcl_Obj *keyPtr, *valuePtr;
 	    const char *elemStart;
-	    int elemSize, literal;
+	    size_t elemSize;
+	    int literal;
 
 	    if (TclFindDictElement(interp, nextElem, (limit - nextElem),
 		    &elemStart, &nextElem, &elemSize, &literal) != TCL_OK) {

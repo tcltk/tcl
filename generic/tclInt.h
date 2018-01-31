@@ -2875,7 +2875,7 @@ MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, int dictLength,
 			    const char **elementPtr, const char **nextPtr,
-			    int *sizePtr, int *literalPtr);
+			    size_t *sizePtr, int *literalPtr);
 /* TIP #280 - Modified token based evaluation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags, int line,
@@ -3032,7 +3032,7 @@ MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags);
 MODULE_SCOPE int	TclParseBackslash(const char *src,
-			    int numBytes, int *readPtr, char *dst);
+			    int numBytes, size_t *readPtr, char *dst);
 MODULE_SCOPE int	TclParseHex(const char *src, int numBytes,
 			    int *resultPtr);
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,

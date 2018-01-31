@@ -196,7 +196,8 @@ TclCompileIfCmd(
 				 * determined. */
     Tcl_Token *tokenPtr, *testTokenPtr;
     int jumpIndex = 0;		/* Avoid compiler warning. */
-    int jumpFalseDist, numWords, wordIdx, numBytes, j, code;
+	size_t numBytes;
+    int jumpFalseDist, numWords, wordIdx, j, code;
     const char *word;
     int realCond = 1;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
@@ -514,7 +515,7 @@ TclCompileIncrCmd(
 	incrTokenPtr = TokenAfter(varTokenPtr);
 	if (incrTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    const char *word = incrTokenPtr[1].start;
-	    int numBytes = incrTokenPtr[1].size;
+	    size_t numBytes = incrTokenPtr[1].size;
 	    int code;
 	    Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
 
@@ -2204,7 +2205,8 @@ TclCompileRegexpCmd(
 {
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
 				 * parse of the RE or string. */
-    int i, len, nocase, exact, sawLast, simple;
+    size_t len;
+    int i, nocase, exact, sawLast, simple;
     const char *str;
     DefineLineInformation;	/* TIP #280 */
 

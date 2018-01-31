@@ -798,7 +798,7 @@ Tcl_UtfBackslash(
 				 * backslash sequence. */
 {
 #define LINE_LENGTH 128
-    int numRead;
+    size_t numRead;
     int result;
 
     result = TclParseBackslash(src, LINE_LENGTH, &numRead, dst);

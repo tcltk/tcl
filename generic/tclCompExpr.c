@@ -571,7 +571,7 @@ ParseExpr(
 				 * no need for array growth and
 				 * reallocation. */
     unsigned int nodesUsed = 0;	/* Number of OpNodes filled. */
-    int scanned = 0;		/* Capture number of byte scanned by parsing
+    size_t scanned = 0;		/* Capture number of byte scanned by parsing
 				 * routines. */
     int lastParsed;		/* Stores info about what the lexeme parsed
 				 * the previous pass through the parsing loop
@@ -615,7 +615,7 @@ ParseExpr(
 				 * error in the expression. */
     int insertMark = 0;		/* A boolean controlling whether the "mark"
 				 * should be inserted. */
-    const int limit = 25;	/* Portions of the error message are
+    const unsigned limit = 25;	/* Portions of the error message are
 				 * constructed out of substrings of the
 				 * original expression. In order to keep the
 				 * error message readable, we impose this
@@ -1406,7 +1406,7 @@ ParseExpr(
 	Tcl_AppendPrintfToObj(msg, "\nin expression \"%s%.*s%.*s%s%s%.*s%s\"",
 		((start - limit) < parsePtr->string) ? "" : "...",
 		((start - limit) < parsePtr->string)
-			? (int) (start - parsePtr->string) : limit - 3,
+			? (int) (start - parsePtr->string) : (int)limit - 3,
 		((start - limit) < parsePtr->string)
 			? parsePtr->string : start - limit + 3,
 		(scanned < limit) ? scanned : limit - 3, start,
@@ -1434,8 +1434,8 @@ ParseExpr(
 	numBytes = parsePtr->end - parsePtr->string;
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (parsing expression \"%.*s%s\")",
-		(numBytes < limit) ? numBytes : limit - 3,
-		parsePtr->string, (numBytes < limit) ? "" : "..."));
+		(numBytes < (int)limit) ? numBytes : (int)limit - 3,
+		parsePtr->string, (numBytes < (int)limit) ? "" : "..."));
 	if (errCode) {
 	    Tcl_SetErrorCode(interp, "TCL", "PARSE", "EXPR", errCode,
 		    subErrCode, NULL);
