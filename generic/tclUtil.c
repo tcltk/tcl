@@ -107,7 +107,7 @@ static void		UpdateStringOfEndOffset(Tcl_Obj *objPtr);
 static int		FindElement(Tcl_Interp *interp, const char *string,
 			    int stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
-			    const char **nextPtr, int *sizePtr,
+			    const char **nextPtr, size_t *sizePtr,
 			    int *literalPtr);
 /*
  * The following is the Tcl object type definition for an object that
@@ -493,7 +493,7 @@ TclFindElement(
     const char **nextPtr,	/* Fill in with location of character just
 				 * after all white space following end of
 				 * argument (next arg or end of list). */
-    int *sizePtr,		/* If non-zero, fill in with size of
+    size_t *sizePtr,		/* If non-zero, fill in with size of
 				 * element. */
     int *literalPtr)		/* If non-zero, fill in with non-zero/zero to
 				 * indicate that the substring of *sizePtr
@@ -522,7 +522,7 @@ TclFindDictElement(
     const char **nextPtr,	/* Fill in with location of character just
 				 * after all white space following end of
 				 * element (next arg or end of list). */
-    int *sizePtr,		/* If non-zero, fill in with size of
+    size_t *sizePtr,		/* If non-zero, fill in with size of
 				 * element. */
     int *literalPtr)		/* If non-zero, fill in with non-zero/zero to
 				 * indicate that the substring of *sizePtr
@@ -554,7 +554,7 @@ FindElement(
     const char **nextPtr,	/* Fill in with location of character just
 				 * after all white space following end of
 				 * argument (next arg or end of list/dict). */
-    int *sizePtr,		/* If non-zero, fill in with size of
+    size_t *sizePtr,		/* If non-zero, fill in with size of
 				 * element. */
     int *literalPtr)		/* If non-zero, fill in with non-zero/zero to
 				 * indicate that the substring of *sizePtr
@@ -569,7 +569,7 @@ FindElement(
     int openBraces = 0;		/* Brace nesting level during parse. */
     int inQuotes = 0;
     int size = 0;		/* lint. */
-    int numChars;
+    size_t numChars;
     int literal = 1;
     const char *p2;
 
@@ -792,7 +792,7 @@ TclCopyAndCollapse(
 	char c = *src;
 
 	if (c == '\\') {
-	    int numRead;
+	    size_t numRead;
 	    int backslashCount = TclParseBackslash(src, count, &numRead, dst);
 
 	    dst += backslashCount;
@@ -851,7 +851,8 @@ Tcl_SplitList(
 {
     const char **argv, *end, *element;
     char *p;
-    int length, size, i, result, elSize;
+    int length, size, i, result;
+    size_t elSize;
 
     /*
      * Allocate enough space to work in. A (const char *) for each (possible)

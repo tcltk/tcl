@@ -385,7 +385,7 @@ Tcl_ParseCommand(
 		    /* Haven't seen prefix already */
 		    && (1 == parsePtr->numTokens - expIdx)
 		    /* Only one token */
-		    && (((1 == (size_t) expPtr->size)
+		    && (((1 == expPtr->size)
 			    /* Same length as prefix */
 			    && (expPtr->start[0] == '*')))
 			    /* Is the prefix */
@@ -466,7 +466,7 @@ Tcl_ParseCommand(
 		 */
 
 		while (nextElem < listEnd) {
-		    int size;
+		    size_t size;
 
 		    code = TclFindElement(NULL, nextElem, listEnd - nextElem,
 			    &elemStart, &nextElem, &size, &literal);
@@ -821,7 +821,7 @@ TclParseBackslash(
     const char *src,		/* Points to the backslash character of a a
 				 * backslash sequence. */
     int numBytes,		/* Max number of bytes to scan. */
-    int *readPtr,		/* NULL, or points to storage where the number
+    size_t *readPtr,		/* NULL, or points to storage where the number
 				 * of bytes scanned should be written. */
     char *dst)			/* NULL, or points to buffer where the UTF-8
 				 * encoding of the backslash sequence is to be
@@ -1649,7 +1649,8 @@ Tcl_ParseBraces(
 {
     Tcl_Token *tokenPtr;
     register const char *src;
-    int startIndex, level, length;
+    int startIndex, level;
+    size_t length;
 
     if ((numBytes == 0) || (start == NULL)) {
 	return TCL_ERROR;
