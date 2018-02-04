@@ -3976,6 +3976,11 @@ TclCompareObjKeys(
     register const char *p1, *p2;
     register size_t l1, l2;
 
+    // Optimisation for comparing small integers
+    if (objPtr1->typePtr == &tclIntType && objPtr1->bytes == NULL && objPtr2->typePtr == &tclIntType && objPtr2->bytes == NULL) {
+        return objPtr1->internalRep.longValue == objPtr2->internalRep.longValue;
+    }
+
     /*
      * If the object pointers are the same then they match.
      * OPT: this comparison was moved to the caller
@@ -4061,9 +4066,53 @@ TclHashObjKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = keyPtr;
-    int length;
-    const char *string = TclGetStringFromObj(objPtr, &length);
     unsigned int result = 0;
+    int length;
+    const char *string;
+
+    // Special case: we can compute the hash of integers numerically.
+    if (objPtr->typePtr == &tclIntType && objPtr->bytes == NULL) {
+        long value = objPtr->internalRep.longValue;
+        int negative = value < 0;
+
+        if (negative) {
+            if (value == LONG_MIN) {
+                // Punt on the special case!
+                goto stringForm;
+            }
+            value = -value;
+        }
+        while (value > 0) {
+            result += (result << 3) + (value % 10 + UCHAR('0'));
+            value /= 10;
+        }
+        if (negative) {
+            result += (result << 3) + UCHAR('-');
+        }
+        return (TCL_HASH_TYPE) result;
+#ifndef TCL_WIDE_INT_IS_LONG
+    } else if (objPtr->typePtr == &tclWideIntType && objPtr->bytes == NULL) {
+        Tcl_WideInt value = objPtr->internalRep.wideValue;
+
+        if (value < 0) {
+            if (value == LONG_MIN) {//FIXME
+                // Punt on the special case!
+                goto stringForm;
+            }
+            result = UCHAR('-');
+            value = -value;
+        }
+        while (value > 0) {
+            result += (result << 3) + (value % 10 + UCHAR('0'));
+            value /= 10;
+        }
+        return (TCL_HASH_TYPE) result;
+#endif // !TCL_WIDE_INT_IS_LONG
+    }
+
+ stringForm:
+    string = TclGetString(objPtr);
+    length = objPtr->length;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -4100,10 +4149,10 @@ TclHashObjKey(
      */
 
     if (length > 0) {
-	result = UCHAR(*string);
-	while (--length) {
-	    result += (result << 3) + UCHAR(*++string);
-	}
+        const unsigned char *bytes = ((unsigned char *) string) + length;
+        do {
+            result += (result << 3) + *--bytes;
+        } while (bytes != (unsigned char *) string);
     }
     return (TCL_HASH_TYPE) result;
 }

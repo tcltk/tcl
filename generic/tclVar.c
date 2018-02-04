@@ -6286,6 +6286,11 @@ CompareVarKeys(
     register const char *p1, *p2;
     register int l1, l2;
 
+    // Optimisation for comparing small integers
+    if (objPtr1->typePtr == &tclIntType && objPtr1->bytes == NULL && objPtr2->typePtr == &tclIntType && objPtr2->bytes == NULL) {
+        return objPtr1->internalRep.longValue == objPtr2->internalRep.longValue;
+    }
+
     /*
      * If the object pointers are the same then they match.
      * OPT: this comparison was moved to the caller
