@@ -243,10 +243,12 @@ PlatformEventsControl(
      *		cases simply added or deleted from the list of FileHandlers
      *		associated with regular files belonging to tsdPtr.
      */
-
-    if (0 && fstat(filePtr->fd, &fdStat) == -1) {
+    
+    if (newEvent.events & EPOLLERR) {
+	/* if exceptions are requested, ignore file type */
+    } else if (fstat(filePtr->fd, &fdStat) == -1) {
 	Tcl_Panic("fstat: %s", strerror(errno));
-    } else if (0 && (fdStat.st_mode & S_IFMT) == S_IFREG) {
+    } else if ((fdStat.st_mode & S_IFMT) == S_IFREG) {
 	switch (op) {
 	case EPOLL_CTL_ADD:
 	    if (isNew) {
@@ -258,7 +260,8 @@ PlatformEventsControl(
 	    break;
 	}
 	return;
-   } else if (epoll_ctl(tsdPtr->eventsFd, op, filePtr->fd, &newEvent) == -1) {
+   }
+   if (epoll_ctl(tsdPtr->eventsFd, op, filePtr->fd, &newEvent) == -1) {
 	Tcl_Panic("epoll_ctl: %s", strerror(errno));
    }
 }

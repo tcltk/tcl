@@ -5505,7 +5505,7 @@ test chan-io-41.4 {Tcl_FileeventCmd: errors} -constraints fileevent -body {
 } -returnCodes error -result {can not find channel named "gorp"}
 test chan-io-41.5 {Tcl_FileeventCmd: errors} -constraints fileevent -body {
     chan event gorp who-knows
-} -returnCodes error -result {bad event name "who-knows": must be readable or writable}
+} -returnCodes error -result {bad event name "who-knows": must be readable, writable, or exception}
 
 #
 # Test chan event on a file
