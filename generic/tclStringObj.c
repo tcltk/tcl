@@ -2843,40 +2843,39 @@ TclStringRepeat(
 /*
  *---------------------------------------------------------------------------
  *
- * TclStringCatObjv --
+ * TclStringCat --
  *
  *	Performs the [string cat] function.
  *
  * Results:
- * 	A standard Tcl result.
+ * 	A (Tcl_Obj *) pointing to the result value, or NULL in case of an
+ * 	error.
  *
  * Side effects:
- * 	Writes to *objPtrPtr the address of Tcl_Obj that is concatenation
- * 	of all objc values in objv.
+ * 	On error, when interp is not NULL, error information is left in it.
  *
  *---------------------------------------------------------------------------
  */
 
-int
-TclStringCatObjv(
+Tcl_Obj *
+TclStringCat(
     Tcl_Interp *interp,
-    int inPlace,
     int objc,
     Tcl_Obj * const objv[],
-    Tcl_Obj **objPtrPtr)
+    int flags)
 {
     Tcl_Obj *objResultPtr, * const *ov;
     int oc, length = 0, binary = 1;
     int allowUniChar = 1, requestUniChar = 0;
     int first = objc - 1;	/* Index of first value possibly not empty */
     int last = 0;		/* Index of last value possibly not empty */
+    int inPlace = flags & TCL_STRING_IN_PLACE;
 
     /* assert ( objc >= 0 ) */
 
     if (objc <= 1) {
 	/* Only one or no objects; return first or empty */
-	*objPtrPtr = objc ? objv[0] : Tcl_NewObj();
-	return TCL_OK;
+	return objc ? objv[0] : Tcl_NewObj();
     }
 
     /* assert ( objc >= 2 ) */
@@ -3053,8 +3052,7 @@ TclStringCatObjv(
     if (last <= first /*|| length == 0 */) {
 	/* Only one non-empty value or zero length; return first */
 	/* NOTE: (length == 0) implies (last <= first) */
-	*objPtrPtr = objv[first];
-	return TCL_OK;
+	return objv[first];
     }
 
     objv += first; objc = (last - first + 1);
@@ -3108,7 +3106,7 @@ TclStringCatObjv(
 			(Tcl_WideUInt)STRING_SIZE(length)));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
-		return TCL_ERROR;
+		return NULL;
 	    }
 	    dst = Tcl_GetUnicode(objResultPtr) + start;
 	} else {
@@ -3125,7 +3123,7 @@ TclStringCatObjv(
 			(Tcl_WideUInt)STRING_SIZE(length)));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
-		return TCL_ERROR;
+		return NULL;
 	    }
 	    dst = Tcl_GetUnicode(objResultPtr);
 	}
@@ -3156,7 +3154,7 @@ TclStringCatObjv(
 			length));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
-		return TCL_ERROR;
+		return NULL;
 	    }
 	    dst = Tcl_GetString(objResultPtr) + start;
 
@@ -3172,7 +3170,7 @@ TclStringCatObjv(
 			length));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
-		return TCL_ERROR;
+		return NULL;
 	    }
 	    dst = Tcl_GetString(objResultPtr);
 	}
@@ -3187,8 +3185,7 @@ TclStringCatObjv(
 	    }
 	}
     }
-    *objPtrPtr = objResultPtr;
-    return TCL_OK;
+    return objResultPtr;
 
   overflow:
     if (interp) {
@@ -3196,7 +3193,7 @@ TclStringCatObjv(
 		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
     }
-    return TCL_ERROR;
+    return NULL;
 }
 
 /*

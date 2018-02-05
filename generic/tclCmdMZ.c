@@ -2847,7 +2847,6 @@ StringCatCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int code;
     Tcl_Obj *objResultPtr;
 
     if (objc < 2) {
@@ -2857,23 +2856,15 @@ StringCatCmd(
 	 */
 	return TCL_OK;
     }
-    if (objc == 2) {
-	/*
-	 * Other trivial case, single arg, just return it.
-	 */
-	Tcl_SetObjResult(interp, objv[1]);
-	return TCL_OK;
-    }
 
-    code = TclStringCatObjv(interp, /* inPlace */ 1, objc-1, objv+1,
-	    &objResultPtr);
+    objResultPtr = TclStringCat(interp, objc-1, objv+1, TCL_STRING_IN_PLACE);
 
-    if (code == TCL_OK) {
+    if (objResultPtr) {
 	Tcl_SetObjResult(interp, objResultPtr);
 	return TCL_OK;
     }
 
-    return code;
+    return TCL_ERROR;
 }
 
 /*
