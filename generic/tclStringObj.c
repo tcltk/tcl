@@ -2708,23 +2708,24 @@ TclGetStringStorage(
  *	Performs the [string repeat] function.
  *
  * Results:
- * 	A standard Tcl result.
+ * 	A (Tcl_Obj *) pointing to the result value, or NULL in case of an
+ * 	error.
  *
  * Side effects:
- * 	Writes to *objPtrPtr the address of Tcl_Obj that is concatenation
- * 	of count copies of the value in objPtr.
+ * 	On error, when interp is not NULL, error information is left in it.
  *
  *---------------------------------------------------------------------------
  */
 
-int
+Tcl_Obj *
 TclStringRepeat(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     int count,
-    Tcl_Obj **objPtrPtr)
+    int flags)
 {
     Tcl_Obj *objResultPtr;
+    int inPlace = flags & TCL_STRING_IN_PLACE;
     int length = 0, unichar = 0, done = 1;
     int binary = TclIsPureByteArray(objPtr);
 
@@ -2759,8 +2760,7 @@ TclStringRepeat(
 
     if (length == 0) {
 	/* Any repeats of empty is empty. */
-	*objPtrPtr = objPtr;
-	return TCL_OK;
+	return objPtr;
     }
 
     if (count > INT_MAX/length) {
@@ -2769,13 +2769,13 @@ TclStringRepeat(
 		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	}
-	return TCL_ERROR;
+	return NULL;
     }
 
     if (binary) {
 	/* Efficiently produce a pure byte array result */
-	objResultPtr = Tcl_IsShared(objPtr) ? Tcl_DuplicateObj(objPtr)
-		: objPtr;
+	objResultPtr = (!inPlace || Tcl_IsShared(objPtr)) ?
+		Tcl_DuplicateObj(objPtr) : objPtr;
 
 	Tcl_SetByteArrayLength(objResultPtr, count*length); /* PANIC? */
 	Tcl_SetByteArrayLength(objResultPtr, length);
@@ -2788,7 +2788,7 @@ TclStringRepeat(
 		(count - done) * length);
     } else if (unichar) {
 	/* Efficiently produce a pure Tcl_UniChar array result */
-	if (Tcl_IsShared(objPtr)) {
+	if (!inPlace || Tcl_IsShared(objPtr)) {
 	    objResultPtr = Tcl_NewUnicodeObj(Tcl_GetUnicode(objPtr), length);
 	} else {
 	    TclInvalidateStringRep(objPtr);
@@ -2803,7 +2803,7 @@ TclStringRepeat(
 			(Tcl_WideUInt)STRING_SIZE(count*length)));
 		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	    }
-	    return TCL_ERROR;
+	    return NULL;
 	}
 	Tcl_SetObjLength(objResultPtr, length);
 	while (count - done > done) {
@@ -2814,7 +2814,7 @@ TclStringRepeat(
 		(count - done) * length);
     } else {
 	/* Efficiently concatenate string reps */
-	if (Tcl_IsShared(objPtr)) {
+	if (!inPlace || Tcl_IsShared(objPtr)) {
 	    objResultPtr = Tcl_NewStringObj(Tcl_GetString(objPtr), length);
 	} else {
 	    TclFreeIntRep(objPtr);
@@ -2827,7 +2827,7 @@ TclStringRepeat(
 			count*length));
 		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	    }
-	    return TCL_ERROR;
+	    return NULL;
 	}
 	Tcl_SetObjLength(objResultPtr, length);
 	while (count - done > done) {
@@ -2837,8 +2837,7 @@ TclStringRepeat(
 	Tcl_AppendToObj(objResultPtr, Tcl_GetString(objResultPtr),
 		(count - done) * length);
     }
-    *objPtrPtr = objResultPtr;
-    return TCL_OK;
+    return objResultPtr;
 }
 
 /*
