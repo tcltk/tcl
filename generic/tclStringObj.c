@@ -190,8 +190,8 @@ GrowUnicodeBuffer(
 	 * Subsequent appends - apply the growth algorithm.
 	 */
 
-	attempt = 2 * needed;
-	if (attempt >= 0 && attempt <= STRING_MAXCHARS) {
+	if (needed <= STRING_MAXCHARS / 2) {
+	    attempt = 2 * needed;
 	    ptr = stringAttemptRealloc(stringPtr, attempt);
 	}
 	if (ptr == NULL) {
