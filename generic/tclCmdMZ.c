@@ -2294,11 +2294,12 @@ StringReptCmd(
 	return TCL_OK;
     }
 
-    if (TCL_OK != TclStringRepeat(interp, objv[1], count, &resultPtr)) {
-	return TCL_ERROR;
+    resultPtr = TclStringRepeat(interp, objv[1], count, TCL_STRING_IN_PLACE);
+    if (resultPtr) {
+	Tcl_SetObjResult(interp, resultPtr);
+	return TCL_OK;
     }
-    Tcl_SetObjResult(interp, resultPtr);
-    return TCL_OK;
+    return TCL_ERROR;
 }
 
 /*
