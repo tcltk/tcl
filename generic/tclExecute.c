@@ -2682,9 +2682,9 @@ TEBCresume(
     case INST_STR_CONCAT1:
 
 	opnd = TclGetUInt1AtPtr(pc+1);
-
-	if (TCL_OK != TclStringCatObjv(interp, /* inPlace */ 1,
-		opnd, &OBJ_AT_DEPTH(opnd-1), &objResultPtr)) {
+	objResultPtr = TclStringCat(interp, opnd, &OBJ_AT_DEPTH(opnd-1),
+		TCL_STRING_IN_PLACE);
+	if (objResultPtr == NULL) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
