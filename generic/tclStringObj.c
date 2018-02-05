@@ -140,8 +140,8 @@ GrowStringBuffer(
 	objPtr->bytes = NULL;
     }
     if (flag == 0 || stringPtr->allocated > 0) {
-	attempt = 2 * needed;
-	if (attempt >= 0) {
+	if (needed <= INT_MAX / 2) {
+	    attempt = 2 * needed;
 	    ptr = attemptckrealloc(objPtr->bytes, attempt + 1);
 	}
 	if (ptr == NULL) {
