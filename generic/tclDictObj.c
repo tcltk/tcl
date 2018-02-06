@@ -2307,9 +2307,12 @@ DictAppendCmd(
 
 	    if (objc == 4) {
 		appendObjPtr = objv[3];
-	    } else if (TCL_OK != TclStringCatObjv(interp, /* inPlace */ 1,
-		    objc-3, objv+3, &appendObjPtr)) {
-		return TCL_ERROR;
+	    } else {
+		appendObjPtr = TclStringCat(interp, objc-3, objv+3,
+			TCL_STRING_IN_PLACE);
+		if (appendObjPtr == NULL) {
+		    return TCL_ERROR;
+		}
 	    }
 	}
 
