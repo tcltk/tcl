@@ -1589,9 +1589,6 @@ StringIsCmd(
 	/* TODO */
 	if ((objPtr->typePtr == &tclDoubleType) ||
 		(objPtr->typePtr == &tclIntType) ||
-#ifndef TCL_WIDE_INT_IS_LONG
-		(objPtr->typePtr == &tclWideIntType) ||
-#endif
 		(objPtr->typePtr == &tclBignumType)) {
 	    break;
 	}
@@ -1626,9 +1623,6 @@ StringIsCmd(
 	goto failedIntParse;
     case STR_IS_ENTIER:
 	if ((objPtr->typePtr == &tclIntType) ||
-#ifndef TCL_WIDE_INT_IS_LONG
-		(objPtr->typePtr == &tclWideIntType) ||
-#endif
 		(objPtr->typePtr == &tclBignumType)) {
 	    break;
 	}
@@ -4285,7 +4279,7 @@ TclNRTryObjCmd(
 	    }
 
 	    info[0] = objv[i];			/* type */
-	    TclNewLongObj(info[1], code);	/* returnCode */
+	    TclNewIntObj(info[1], code);	/* returnCode */
 	    if (info[2] == NULL) {		/* errorCodePrefix */
 		TclNewObj(info[2]);
 	    }

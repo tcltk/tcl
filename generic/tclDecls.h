@@ -3934,20 +3934,14 @@ extern const TclStubs *tclStubsPtr;
  * possible. Tcl 9 must find a better solution, but that cannot be done
  * without introducing a binary incompatibility.
  */
-#	undef Tcl_DbNewLongObj
 #	undef Tcl_GetLongFromObj
-#	undef Tcl_NewLongObj
-#	undef Tcl_SetLongObj
 #	undef Tcl_ExprLong
 #	undef Tcl_ExprLongObj
 #	undef Tcl_UniCharNcmp
 #	undef Tcl_UtfNcmp
 #	undef Tcl_UtfNcasecmp
 #	undef Tcl_UniCharNcasecmp
-#	define Tcl_DbNewLongObj ((Tcl_Obj*(*)(long,const char*,int))Tcl_DbNewWideIntObj)
 #	define Tcl_GetLongFromObj ((int(*)(Tcl_Interp*,Tcl_Obj*,long*))Tcl_GetWideIntFromObj)
-#	define Tcl_NewLongObj ((Tcl_Obj*(*)(long))Tcl_NewWideIntObj)
-#	define Tcl_SetLongObj ((void(*)(Tcl_Obj*,long))Tcl_SetWideIntObj)
 #	define Tcl_ExprLong TclExprLong
 	static inline int TclExprLong(Tcl_Interp *interp, const char *string, long *ptr){
 	    int intValue;
@@ -3972,6 +3966,17 @@ extern const TclStubs *tclStubsPtr;
 		((int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned int))tclStubsPtr->tcl_UniCharNcasecmp)(ucs,uct,(unsigned int)(n))
 #   endif
 #endif
+
+#undef Tcl_NewLongObj
+#define Tcl_NewLongObj(value) Tcl_NewWideIntObj((long)(value))
+#undef Tcl_NewIntObj
+#define Tcl_NewIntObj(value) Tcl_NewWideIntObj((int)(value))
+#undef Tcl_DbNewLongObj
+#define Tcl_DbNewLongObj(value, file, line) Tcl_DbNewWideIntObj((long)(value), file, line)
+#undef Tcl_SetIntObj
+#define Tcl_SetIntObj(objPtr, value)	Tcl_SetWideIntObj(objPtr, (int)(value))
+#undef Tcl_SetLongObj
+#define Tcl_SetLongObj(objPtr, value)	Tcl_SetWideIntObj(objPtr, (long)(value))
 
 /*
  * Deprecated Tcl procedures:
