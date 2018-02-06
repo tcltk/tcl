@@ -3475,9 +3475,9 @@ int
 TclFormatInt(
     char *buffer,		/* Points to the storage into which the
 				 * formatted characters are written. */
-    long n)			/* The integer to format. */
+    Tcl_WideInt n)			/* The integer to format. */
 {
-    long intVal;
+	Tcl_WideInt intVal;
     int i;
     int numFormatted, j;
     const char *digits = "0123456789";
@@ -3500,7 +3500,7 @@ TclFormatInt(
 
     intVal = -n;			/* [Bug 3390638] Workaround for*/
     if (n == -n || intVal == n) {	/* broken compiler optimizers. */
-	return sprintf(buffer, "%ld", n);
+	return sprintf(buffer, "%" TCL_LL_MODIFIER "d", n);
     }
 
     /*
@@ -3688,10 +3688,10 @@ GetEndOffsetFromObj(
 		offset = -offset;
 	    }
 	}
-	ir.longValue = offset;
+	ir.wideValue = offset;
 	Tcl_StoreIntRep(objPtr, &endOffsetType, &ir);
     }
-    *indexPtr = endValue + irPtr->longValue;
+    *indexPtr = endValue + irPtr->wideValue;
     return TCL_OK;
 }
 

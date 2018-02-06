@@ -826,7 +826,7 @@ TclObjGetFrame(
 	level = curLevel - level;
 	result = 1;
     } else if ((irPtr = Tcl_FetchIntRep(objPtr, &levelReferenceType))) {
-	level = irPtr->longValue;
+	level = irPtr->wideValue;
 	result = 1;
     } else {
 	name = TclGetString(objPtr);
@@ -834,7 +834,7 @@ TclObjGetFrame(
 	    if (TCL_OK == Tcl_GetInt(NULL, name+1, &level) && level >= 0) {
 		Tcl_ObjIntRep ir;
 
-		ir.longValue = level;
+		ir.wideValue = level;
 		Tcl_StoreIntRep(objPtr, &levelReferenceType, &ir);
 		result = 1;
 	    } else {
