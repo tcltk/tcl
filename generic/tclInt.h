@@ -3189,13 +3189,10 @@ MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
 			    Tcl_Obj *bad, Tcl_Obj *fix);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 			    int numBytes);
-MODULE_SCOPE int	TclStringLast(Tcl_Obj *needle, Tcl_Obj *haystack,
-			    int last);
 MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
 			    const char *pattern, int ptnLen, int flags);
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
 			    Tcl_Obj *patternObj, int flags);
-MODULE_SCOPE Tcl_Obj *	TclStringObjReverse(Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclSubstCompile(Tcl_Interp *interp, const char *bytes,
 			    int numBytes, int flags, int line,
 			    struct CompileEnv *envPtr);
@@ -4009,8 +4006,11 @@ MODULE_SCOPE Tcl_Obj *	TclStringCat(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int flags);
 MODULE_SCOPE int	TclStringFirst(Tcl_Obj *needle, Tcl_Obj *haystack,
 			    int start);
+MODULE_SCOPE int	TclStringLast(Tcl_Obj *needle, Tcl_Obj *haystack,
+			    int last);
 MODULE_SCOPE Tcl_Obj *	TclStringRepeat(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int count, int flags);
+MODULE_SCOPE Tcl_Obj *	TclStringReverse(Tcl_Obj *objPtr, int flags);
 
 /* Flag values for the [string] ensemble functions. */
 

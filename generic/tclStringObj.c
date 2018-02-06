@@ -3371,14 +3371,14 @@ TclStringLast(
 /*
  *---------------------------------------------------------------------------
  *
- * TclStringObjReverse --
+ * TclStringReverse --
  *
  *	Implements the [string reverse] operation.
  *
  * Results:
- *	An unshared Tcl value which is the [string reverse] of the argument
- *	supplied. When sharing rules permit, the returned value might be the
- *	argument with modifications done in place.
+ *	A Tcl value which is the [string reverse] of the argument supplied.
+ *	When sharing rules permit and the caller requests, the returned value
+ *	might be the argument with modifications done in place.
  *
  * Side effects:
  *	May allocate a new Tcl_Obj.
@@ -3409,17 +3409,19 @@ ReverseBytes(
 }
 
 Tcl_Obj *
-TclStringObjReverse(
-    Tcl_Obj *objPtr)
+TclStringReverse(
+    Tcl_Obj *objPtr,
+    int flags)
 {
     String *stringPtr;
     Tcl_UniChar ch = 0;
+    int inPlace = flags & TCL_STRING_IN_PLACE;
 
     if (TclIsPureByteArray(objPtr)) {
 	int numBytes;
 	unsigned char *from = Tcl_GetByteArrayFromObj(objPtr, &numBytes);
 
-	if (Tcl_IsShared(objPtr)) {
+	if (!inPlace || Tcl_IsShared(objPtr)) {
 	    objPtr = Tcl_NewByteArrayObj(NULL, numBytes);
 	}
 	ReverseBytes(Tcl_GetByteArrayFromObj(objPtr, NULL), from, numBytes);
@@ -3433,7 +3435,7 @@ TclStringObjReverse(
 	Tcl_UniChar *from = Tcl_GetUnicode(objPtr);
 	Tcl_UniChar *src = from + stringPtr->numChars;
 
-	if (Tcl_IsShared(objPtr)) {
+	if (!inPlace || Tcl_IsShared(objPtr)) {
 	    Tcl_UniChar *to;
 
 	    /*
@@ -3462,7 +3464,7 @@ TclStringObjReverse(
 	int numBytes = objPtr->length;
 	char *to, *from = objPtr->bytes;
 
-	if (Tcl_IsShared(objPtr)) {
+	if (!inPlace || Tcl_IsShared(objPtr)) {
 	    objPtr = Tcl_NewObj();
 	    Tcl_SetObjLength(objPtr, numBytes);
 	}

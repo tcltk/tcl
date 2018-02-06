@@ -2382,7 +2382,7 @@ StringRevCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, TclStringObjReverse(objv[1]));
+    Tcl_SetObjResult(interp, TclStringReverse(objv[1], TCL_STRING_IN_PLACE));
     return TCL_OK;
 }
 
