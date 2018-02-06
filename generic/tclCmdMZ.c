@@ -1380,14 +1380,6 @@ StringLastCmd(
 	if (TCL_OK != TclGetIntForIndexM(interp, objv[3], size - 1, &last)) {
 	    return TCL_ERROR;
 	}
-
-	if (last < 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
-	    return TCL_OK;
-	}
-	if (last >= size) {
-	    last = size - 1;
-	}
     }
     Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringLast(objv[1],
 	    objv[2], last)));
