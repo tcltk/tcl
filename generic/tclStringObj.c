@@ -3323,24 +3323,24 @@ TclStringLast(
 	 * 	We don't find empty substrings.  Bizarre!
 	 *
 	 * 	TODO: When we one day make this a true substring
-	 * 	finder, change this to "return 0"
+	 * 	finder, change this to "return last", after limitation.
 	 */
 	return -1;
     }
 
-    if (ln > last + 1) {
+    lh = Tcl_GetCharLength(haystack);
+    if (last >= lh) {
+	last = lh - 1;
+    }
+
+    if (last < ln - 1) {
 	return -1;
     }
 
     if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
-	unsigned char *try, *bh;
+	unsigned char *try, *bh = Tcl_GetByteArrayFromObj(haystack, &lh);
 	unsigned char *bn = Tcl_GetByteArrayFromObj(needle, &ln);
 
-	bh = Tcl_GetByteArrayFromObj(haystack, &lh);
-
-	if (last + 1 > lh) {
-	    last = lh - 1;
-	}
 	try = bh + last + 1 - ln;
 	while (try >= bh) {
 	    if ((*try == bn[0])
@@ -3352,37 +3352,9 @@ TclStringLast(
 	return -1;
     }
 
-    lh = Tcl_GetCharLength(haystack);
-    if (last + 1 > lh) {
-	last = lh - 1;
-    }
-    if (haystack->bytes && (lh == haystack->length)) {
-	/* haystack is all single-byte chars */
-
-	if (needle->bytes && (ln == needle->length)) {
-	    /* needle is also all single-byte chars */
-
-	    char *try = haystack->bytes + last + 1 - ln;
-	    while (try >= haystack->bytes) {
-		if ((*try == needle->bytes[0])
-			&& (0 == memcmp(try+1, needle->bytes + 1, ln - 1))) {
-		    return (try - haystack->bytes);
-		}
-		try--;
-	    }
-	    return -1;
-	} else {
-	    /*
-	     * Cannot find substring with a multi-byte char inside
-	     * a string with no multi-byte chars.
-	     */
-	    return -1;
-	}
-    } else {
-	Tcl_UniChar *try, *uh;
+    {
+	Tcl_UniChar *try, *uh = Tcl_GetUnicodeFromObj(haystack, &lh);
 	Tcl_UniChar *un = Tcl_GetUnicodeFromObj(needle, &ln);
-
-	uh = Tcl_GetUnicodeFromObj(haystack, &lh);
 
 	try = uh + last + 1 - ln;
 	while (try >= uh) {
