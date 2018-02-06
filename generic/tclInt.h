@@ -3189,8 +3189,6 @@ MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
 			    Tcl_Obj *bad, Tcl_Obj *fix);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 			    int numBytes);
-MODULE_SCOPE int	TclStringFind(Tcl_Obj *needle, Tcl_Obj *haystack,
-			    int start);
 MODULE_SCOPE int	TclStringLast(Tcl_Obj *needle, Tcl_Obj *haystack,
 			    int last);
 MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
@@ -4009,6 +4007,8 @@ MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 
 MODULE_SCOPE Tcl_Obj *	TclStringCat(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int flags);
+MODULE_SCOPE int	TclStringFirst(Tcl_Obj *needle, Tcl_Obj *haystack,
+			    int start);
 MODULE_SCOPE Tcl_Obj *	TclStringRepeat(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int count, int flags);
 

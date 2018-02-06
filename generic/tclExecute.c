@@ -5715,7 +5715,7 @@ TEBCresume(
 	NEXT_INST_V(1, 3, 1);
 
     case INST_STR_FIND:
-	match = TclStringFind(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
+	match = TclStringFirst(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
 
 	TRACE(("%.20s %.20s => %d\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
