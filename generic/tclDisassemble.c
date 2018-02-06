@@ -49,7 +49,7 @@ static const Tcl_ObjType instNameType = {
 #define InstNameSetIntRep(objPtr, inst)				\
     do {							\
 	Tcl_ObjIntRep ir;					\
-	ir.longValue = (inst);					\
+	ir.wideValue = (inst);					\
 	Tcl_StoreIntRep((objPtr), &instNameType, &ir);		\
     } while (0)
 
@@ -58,7 +58,7 @@ static const Tcl_ObjType instNameType = {
 	const Tcl_ObjIntRep *irPtr;				\
 	irPtr = Tcl_FetchIntRep((objPtr), &instNameType);	\
 	assert(irPtr != NULL);					\
-	(inst) = irPtr->longValue;				\
+	(inst) = irPtr->wideValue;				\
     } while (0)
 
 
