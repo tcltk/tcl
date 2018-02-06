@@ -797,7 +797,7 @@ TclNewInstNameObj(
     Tcl_Obj *objPtr = Tcl_NewObj();
 
     objPtr->typePtr = &tclInstNameType;
-    objPtr->internalRep.longValue = (long) inst;
+    objPtr->internalRep.wideValue = (long) inst;
     objPtr->bytes = NULL;
 
     return objPtr;
@@ -817,7 +817,7 @@ static void
 UpdateStringOfInstName(
     Tcl_Obj *objPtr)
 {
-    int inst = objPtr->internalRep.longValue;
+    int inst = objPtr->internalRep.wideValue;
     char *s, buf[20];
     int len;
 
@@ -825,7 +825,7 @@ UpdateStringOfInstName(
         sprintf(buf, "inst_%d", inst);
         s = buf;
     } else {
-        s = (char *) tclInstructionTable[objPtr->internalRep.longValue].name;
+        s = (char *) tclInstructionTable[objPtr->internalRep.wideValue].name;
     }
     len = strlen(s);
     objPtr->bytes = ckalloc(len + 1);

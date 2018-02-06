@@ -1208,32 +1208,18 @@ TclParseNumber(
 		}
 	    }
 	    if (!octalSignificandOverflow) {
-		if (octalSignificandWide >
-			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
-#ifndef TCL_WIDE_INT_IS_LONG
-		    if (octalSignificandWide <= (MOST_BITS + signum)) {
-			objPtr->typePtr = &tclWideIntType;
-			if (signum) {
-			    objPtr->internalRep.wideValue =
-				    - (Tcl_WideInt) octalSignificandWide;
-			} else {
-			    objPtr->internalRep.wideValue =
-				    (Tcl_WideInt) octalSignificandWide;
-			}
-			break;
-		    }
-#endif
+		if (octalSignificandWide > (MOST_BITS + signum)) {
 		    TclInitBignumFromWideUInt(&octalSignificandBig,
 			    octalSignificandWide);
 		    octalSignificandOverflow = 1;
 		} else {
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
-			objPtr->internalRep.longValue =
-				- (long) octalSignificandWide;
+			objPtr->internalRep.wideValue =
+				- (Tcl_WideInt) octalSignificandWide;
 		    } else {
-			objPtr->internalRep.longValue =
-				(long) octalSignificandWide;
+			objPtr->internalRep.wideValue =
+				(Tcl_WideInt) octalSignificandWide;
 		    }
 		}
 	    }
@@ -1255,32 +1241,18 @@ TclParseNumber(
 	    }
 	returnInteger:
 	    if (!significandOverflow) {
-		if (significandWide >
-			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
-#ifndef TCL_WIDE_INT_IS_LONG
-		    if (significandWide <= MOST_BITS+signum) {
-			objPtr->typePtr = &tclWideIntType;
-			if (signum) {
-			    objPtr->internalRep.wideValue =
-				    - (Tcl_WideInt) significandWide;
-			} else {
-			    objPtr->internalRep.wideValue =
-				    (Tcl_WideInt) significandWide;
-			}
-			break;
-		    }
-#endif
+		if (significandWide > MOST_BITS+signum) {
 		    TclInitBignumFromWideUInt(&significandBig,
 			    significandWide);
 		    significandOverflow = 1;
 		} else {
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
-			objPtr->internalRep.longValue =
-				- (long) significandWide;
+			objPtr->internalRep.wideValue =
+				- (Tcl_WideInt) significandWide;
 		    } else {
-			objPtr->internalRep.longValue =
-				(long) significandWide;
+			objPtr->internalRep.wideValue =
+				(Tcl_WideInt) significandWide;
 		    }
 		}
 	    }
