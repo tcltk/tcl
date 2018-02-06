@@ -3199,7 +3199,7 @@ TclStringCat(
 /*
  *---------------------------------------------------------------------------
  *
- * TclStringFind --
+ * TclStringFirst --
  *
  *	Implements the [string first] operation.
  *
@@ -3215,20 +3215,20 @@ TclStringCat(
  */
 
 int
-TclStringFind(
+TclStringFirst(
     Tcl_Obj *needle,
     Tcl_Obj *haystack,
     int start)
 {
     int lh, ln = Tcl_GetCharLength(needle);
 
+    if (start < 0) {
+	start = 0;
+    }
     if (ln == 0) {
-	/*
-	 * 	We don't find empty substrings.  Bizarre!
-	 *
-	 * 	TODO: When we one day make this a true substring
-	 * 	finder, change this to "return 0"
-	 */
+	/* We don't find empty substrings.  Bizarre! 
+	 * Whenever this routine is turned into a proper substring
+	 * finder, change to `return start` after limits imposed. */
 	return -1;
     }
 
@@ -3236,51 +3236,46 @@ TclStringFind(
 	unsigned char *end, *try, *bh;
 	unsigned char *bn = Tcl_GetByteArrayFromObj(needle, &ln);
 
+	/* Find bytes in bytes */
 	bh = Tcl_GetByteArrayFromObj(haystack, &lh);
 	end = bh + lh;
 
 	try = bh + start;
 	while (try + ln <= end) {
-	    try = memchr(try, bn[0], end - try);
-
+	    /*
+	     * Look for the leading byte of the needle in the haystack
+	     * starting at try and stopping when there's not enough room
+	     * for the needle left.
+	     */
+	    try = memchr(try, bn[0], (end + 1 - ln) - try);
 	    if (try == NULL) {
+		/* Leading byte not found -> needle cannot be found. */
 		return -1;
 	    }
+	    /* Leading byte found, check rest of needle. */
 	    if (0 == memcmp(try+1, bn+1, ln-1)) {
+		/* Checks! Return the successful index. */
 		return (try - bh);
 	    }
+	    /* Rest of needle match failed; Iterate to continue search. */
 	    try++;
 	}
 	return -1;
     }
 
     /*
-     * Check if we have two strings of single-byte characters. If we have, we
-     * can use strstr() to do the search. Note that we can sometimes have
-     * multibyte characters when the string could be minimally represented
-     * using single byte characters; we can't assume that a mismatch here
-     * means no match.
+     * TODO: It might be nice to support some cases where it is not
+     * necessary to shimmer to &tclStringType to compute the result,
+     * and instead operate just on the objPtr->bytes values directly.
+     * However, we also do not want the answer to change based on the
+     * code pathway, or if it does we want that to be for some values
+     * we explicitly decline to support.  Getting there will involve
+     * locking down in practice more firmly just what encodings produce
+     * what supported results for the objPtr->bytes values.  For now,
+     * do only the well-defined Tcl_UniChar array search.
      */
 
-    lh = Tcl_GetCharLength(haystack);
-    if (haystack->bytes && (lh == haystack->length) && needle->bytes
-		&& (ln == needle->length)) {
-	/*
-	 * Both haystack and needle are all single-byte chars.
-	 */
-
-	char *found = strstr(haystack->bytes + start, needle->bytes);
-
-	if (found) {
-	    return (found - haystack->bytes);
-	} else {
-	    return -1;
-	}
-    } else {
-	/*
-	 * Do the search on the unicode representation for simplicity.
-	 */
-
+    {
 	Tcl_UniChar *try, *end, *uh;
 	Tcl_UniChar *un = Tcl_GetUnicodeFromObj(needle, &ln);
 

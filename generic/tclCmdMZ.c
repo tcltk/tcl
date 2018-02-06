@@ -1335,16 +1335,8 @@ StringFirstCmd(
 	if (TCL_OK != TclGetIntForIndexM(interp, objv[3], size - 1, &start)) {
 	    return TCL_ERROR;
 	}
-
-	if (start < 0) {
-	    start = 0;
-	}
-	if (start >= size) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
-	    return TCL_OK;
-	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringFind(objv[1],
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringFirst(objv[1],
 	    objv[2], start)));
     return TCL_OK;
 }
