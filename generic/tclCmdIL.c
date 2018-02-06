@@ -2183,8 +2183,7 @@ Tcl_JoinObjCmd(
 
     (void) Tcl_GetStringFromObj(joinObjPtr, &length);
     if (length == 0) {
-	TclStringCatObjv(interp, /* inPlace */ 0, listLen, elemPtrs,
-		&resObjPtr);
+	resObjPtr = TclStringCat(interp, listLen, elemPtrs, 0);
     } else {
 	int i;
 
