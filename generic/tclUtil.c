@@ -3217,9 +3217,9 @@ int
 TclFormatInt(
     char *buffer,		/* Points to the storage into which the
 				 * formatted characters are written. */
-    long n)			/* The integer to format. */
+    Tcl_WideInt n)			/* The integer to format. */
 {
-    long intVal;
+	Tcl_WideInt intVal;
     int i;
     int numFormatted, j;
     const char *digits = "0123456789";
@@ -3242,7 +3242,7 @@ TclFormatInt(
 
     intVal = -n;			/* [Bug 3390638] Workaround for*/
     if (n == -n || intVal == n) {	/* broken compiler optimizers. */
-	return sprintf(buffer, "%ld", n);
+	return sprintf(buffer, "%" TCL_LL_MODIFIER "d", n);
     }
 
     /*
@@ -3331,7 +3331,7 @@ TclGetIntForIndex(
 	 * be converted to one, use it.
 	 */
 
-	*indexPtr = endValue + objPtr->internalRep.longValue;
+	*indexPtr = endValue + objPtr->internalRep.wideValue;
 	return TCL_OK;
     }
 
@@ -3422,9 +3422,9 @@ UpdateStringOfEndOffset(
     register int len = 3;
 
     memcpy(buffer, "end", 4);
-    if (objPtr->internalRep.longValue != 0) {
+    if (objPtr->internalRep.wideValue != 0) {
 	buffer[len++] = '-';
-	len += TclFormatInt(buffer+len, -(objPtr->internalRep.longValue));
+	len += TclFormatInt(buffer+len, -(objPtr->internalRep.wideValue));
     }
     objPtr->bytes = ckalloc((unsigned) len+1);
     memcpy(objPtr->bytes, buffer, (unsigned) len+1);
@@ -3454,7 +3454,7 @@ SetEndOffsetFromAny(
     Tcl_Interp *interp,		/* Tcl interpreter or NULL */
     Tcl_Obj *objPtr)		/* Pointer to the object to parse */
 {
-    int offset;			/* Offset in the "end-offset" expression */
+    Tcl_WideInt offset;			/* Offset in the "end-offset" expression */
     register const char *bytes;	/* String rep of the object */
     int length;			/* Length of the object's string rep */
 
@@ -3490,15 +3490,20 @@ SetEndOffsetFromAny(
     } else if ((length > 4) && ((bytes[3] == '-') || (bytes[3] == '+'))) {
 	/*
 	 * This is our limited string expression evaluator. Pass everything
-	 * after "end-" to Tcl_GetInt, then reverse for offset.
+	 * after "end-" to TclParseNumber.
 	 */
 
 	if (TclIsSpaceProc(bytes[4])) {
 	    goto badIndexFormat;
 	}
-	if (Tcl_GetInt(interp, bytes+4, &offset) != TCL_OK) {
+	if (TclParseNumber(NULL, objPtr, NULL, bytes+4, length-4, NULL,
+		TCL_PARSE_INTEGER_ONLY) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+	if (objPtr->typePtr != &tclIntType) {
+		goto badIndexFormat;
+	}
+	offset = objPtr->internalRep.wideValue;
 	if (bytes[3] == '-') {
 	    offset = -offset;
 	}
@@ -3522,7 +3527,7 @@ SetEndOffsetFromAny(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.longValue = offset;
+    objPtr->internalRep.wideValue = offset;
     objPtr->typePtr = &tclEndOffsetType;
 
     return TCL_OK;
