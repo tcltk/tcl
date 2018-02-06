@@ -850,7 +850,7 @@ EXTERN void		Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc,
 EXTERN void		Tcl_DiscardResult(Tcl_SavedResult *statePtr);
 /* 291 */
 EXTERN int		Tcl_EvalEx(Tcl_Interp *interp, const char *script,
-				int numBytes, int flags);
+				size_t numBytes, int flags);
 /* 292 */
 EXTERN int		Tcl_EvalObjv(Tcl_Interp *interp, int objc,
 				Tcl_Obj *const objv[], int flags);
@@ -2103,7 +2103,7 @@ typedef struct TclStubs {
     void (*tcl_CreateThreadExitHandler) (Tcl_ExitProc *proc, void *clientData); /* 288 */
     void (*tcl_DeleteThreadExitHandler) (Tcl_ExitProc *proc, void *clientData); /* 289 */
     void (*tcl_DiscardResult) (Tcl_SavedResult *statePtr); /* 290 */
-    int (*tcl_EvalEx) (Tcl_Interp *interp, const char *script, int numBytes, int flags); /* 291 */
+    int (*tcl_EvalEx) (Tcl_Interp *interp, const char *script, size_t numBytes, int flags); /* 291 */
     int (*tcl_EvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 292 */
     int (*tcl_EvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 293 */
     TCL_NORETURN void (*tcl_ExitThread) (int status); /* 294 */

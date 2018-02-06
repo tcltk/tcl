@@ -190,7 +190,7 @@ void
 TclParseInit(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting */
     const char *start,		/* Start of string to be parsed. */
-    int numBytes,		/* Total number of bytes in string. If < 0,
+    size_t numBytes,		/* Total number of bytes in string. If (size_t)-1,
 				 * the script consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr)	/* Points to struct to initialize */
@@ -420,7 +420,8 @@ Tcl_ParseCommand(
 	tokenPtr->size = src - tokenPtr->start;
 	tokenPtr->numComponents = parsePtr->numTokens - (wordIndex + 1);
 	if (expandWord) {
-	    int i, isLiteral = 1;
+	    size_t i;
+	    int isLiteral = 1;
 
 	    /*
 	     * When a command includes a word that is an expanded literal; for
