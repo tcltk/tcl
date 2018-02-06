@@ -238,7 +238,7 @@ static const CmdInfo builtInCmds[] = {
     {"lsearch",		Tcl_LsearchObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	CMD_IS_SAFE},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
-    {"package",		Tcl_PackageObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"package",		Tcl_PackageObjCmd,	NULL,			TclNRPackageObjCmd,	CMD_IS_SAFE},
     {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	CMD_IS_SAFE},
     {"regsub",		Tcl_RegsubObjCmd,	TclCompileRegsubCmd,	NULL,	CMD_IS_SAFE},
@@ -4479,6 +4479,8 @@ TclNRRunCallbacks(
     if (*(iPtr->result) != 0) {
 	(void) Tcl_GetObjResult(interp);
     }
+
+    /* This is the trampoline. */
 
     while (TOP_CB(interp) != rootPtr) {
 	callbackPtr = TOP_CB(interp);
