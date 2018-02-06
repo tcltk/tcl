@@ -94,7 +94,7 @@ EXTERN int		TclFindElement(Tcl_Interp *interp,
 /* 23 */
 EXTERN Proc *		TclFindProc(Interp *iPtr, const char *procName);
 /* 24 */
-EXTERN int		TclFormatInt(char *buffer, long n);
+EXTERN int		TclFormatInt(char *buffer, Tcl_WideInt n);
 /* 25 */
 EXTERN void		TclFreePackageInfo(Interp *iPtr);
 /* Slot 26 is reserved */
@@ -608,7 +608,7 @@ typedef struct TclIntStubs {
     void (*reserved21)(void);
     int (*tclFindElement) (Tcl_Interp *interp, const char *listStr, int listLength, const char **elementPtr, const char **nextPtr, int *sizePtr, int *bracePtr); /* 22 */
     Proc * (*tclFindProc) (Interp *iPtr, const char *procName); /* 23 */
-    int (*tclFormatInt) (char *buffer, long n); /* 24 */
+    int (*tclFormatInt) (char *buffer, Tcl_WideInt n); /* 24 */
     void (*tclFreePackageInfo) (Interp *iPtr); /* 25 */
     void (*reserved26)(void);
     void (*reserved27)(void);
