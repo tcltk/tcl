@@ -14,11 +14,11 @@
 package require Tcl 8.5-
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.6.1
+package provide msgcat 1.7.0
 
 namespace eval msgcat {
-    namespace export mc mcexists mcload mclocale mcmax mcmset mcpreferences mcset\
-            mcunknown mcflset mcflmset mcloadedlocales mcforgetpackage\
+    namespace export mc mcexists mcload mclocale mcmax mcmset mcpreferences\
+	    mcset mcunknown mcflset mcflmset mcloadedlocales mcforgetpackage\
 	    mcpackageconfig mcpackagelocale
 
     # Records the list of locales to search
@@ -303,14 +303,7 @@ proc msgcat::mclocale {args} {
 	    return -code error "invalid newLocale value \"$newLocale\":\
 		    could be path to unsafe code."
 	}
-	if {[lindex $Loclist 0] ne $newLocale} {
-	    set Loclist [GetPreferences $newLocale]
-
-	    # locale not loaded jet
-	    LoadAll $Loclist
-	    # Invoke callback
-	    Invoke changecmd $Loclist
-	}
+	mcpreferences {*}[GetPreferences $newLocale]
     }
     return [lindex $Loclist 0]
 }
@@ -349,14 +342,49 @@ proc msgcat::GetPreferences {locale} {
 #	most preferred to least preferred.
 #
 # Arguments:
-#	None.
+#	New location list
 #
 # Results:
 #	Returns an ordered list of the locales preferred by the user.
 
-proc msgcat::mcpreferences {} {
+proc msgcat::mcpreferences {args} {
     variable Loclist
+
+    if {[llength $args] > 0} {
+	# args is the new loclist
+	if {![ListEqualString $args $Loclist]} {
+	    set Loclist $args
+
+	    # locale not loaded jet
+	    LoadAll $Loclist
+	    # Invoke callback
+	    Invoke changecmd $Loclist
+	}
+    }
     return $Loclist
+}
+
+# msgcat::ListStringEqual --
+#
+#	Compare two strings for equal string contents
+#
+# Arguments:
+#	list1		first list
+#	list2		second list
+#
+# Results:
+#	1 if lists of strings are identical, 0 otherwise
+
+proc msgcat::ListEqualString {list1 list2} {
+    if {[llength $list1] != [llength $list2]} {
+	return 0
+    }
+    foreach item1 $list1 item2 $list2 {
+	if {$item1 ne $item2} {
+	    return 0
+	}
+    }
+    return 1
 }
 
 # msgcat::mcloadedlocales --
@@ -442,7 +470,7 @@ proc msgcat::mcloadedlocales {subcommand} {
 # Results:
 #	Empty string, if not stated differently for the subcommand
 
-proc msgcat::mcpackagelocale {subcommand {locale ""}} {
+proc msgcat::mcpackagelocale {subcommand args} {
     # todo: implement using an ensemble
     variable Loclist
     variable LoadedLocales
@@ -450,27 +478,39 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
     variable PackageConfig
     # Check option
     # check if required item is exactly provided
-    if {[llength [info level 0]] == 2} {
-	# locale not given
-	unset locale
-    } else {
-	# locale given
-	if {$subcommand in
-		{"get" "isset" "unset" "preferences" "loaded" "clear"} } {
-	    return -code error "wrong # args: should be\
-		    \"[lrange [info level 0] 0 1]\""
-	}
-        set locale [string tolower $locale]
+    if {    [llength $args] > 0
+	    && $subcommand in {"get" "isset" "unset" "loaded" "clear"} } {
+	return -code error "wrong # args: should be\
+		\"[lrange [info level 0] 0 1]\""
     }
     set ns [uplevel 1 {::namespace current}]
 
     switch -exact -- $subcommand {
 	get { return [lindex [PackagePreferences $ns] 0] }
-	preferences { return [PackagePreferences $ns] }
 	loaded { return [PackageLocales $ns] }
-	present { return [expr {$locale in [PackageLocales $ns]} ]}
+	present {
+	    if {[llength $args] != 1} {
+		return -code error "wrong # args: should be\
+			\"[lrange [info level 0] 0 1] locale\""
+	    }
+	    return [expr {[string tolower [lindex $args 0]]
+		    in [PackageLocales $ns]} ]
+	}
 	isset { return [dict exists $PackageConfig loclist $ns] }
-	set { # set a package locale or add a package locale
+	set - preferences {
+	    # set a package locale or add a package locale
+	    set fSet [expr {$subcommand eq "set"}]
+	    
+	    # Check parameter
+	    if {$fSet && 1 < [llength $args] } {
+		return -code error "wrong # args: should be\
+			\"[lrange [info level 0] 0 1] ?locale?\""
+	    }
+
+	    # > Return preferences if no parameter
+	    if {!$fSet && 0 == [llength $args] } {
+		return [PackagePreferences $ns]
+	    }
 
 	    # Copy the default locale if no package locale set so far
 	    if {![dict exists $PackageConfig loclist $ns]} {
@@ -478,25 +518,43 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
 		dict set PackageConfig loadedlocales $ns $LoadedLocales
 	    }
 
-	    # Check if changed
-	    set loclist [dict get $PackageConfig loclist $ns]
-	    if {! [info exists locale] || $locale eq [lindex $loclist 0] } {
-		return [lindex $loclist 0]
+	    # No argument for set: return current package locale
+	    # The difference to no argument and subcommand "preferences" is,
+	    # that "preferences" does not set the package locale property.
+	    # This case is processed above, so no check for fSet here
+	    if { 0 == [llength $args] } {
+		return [lindex [dict get $PackageConfig loclist $ns] 0]
+	    }
+
+	    # Get new loclist
+	    if {$fSet} {
+		set loclist [GetPreferences [string tolower [lindex $args 0]]]
+	    } else {
+		set loclist $args
+	    }
+
+	    # Check if not changed to return imediately
+	    if {    [ListEqualString $loclist\
+			[dict get $PackageConfig loclist $ns]] } {
+		if {$fSet} {
+		    return [lindex $loclist 0]
+		}
+		return $loclist
 	    }
 
 	    # Change loclist
-	    set loclist [GetPreferences $locale]
-	    set locale [lindex $loclist 0]
 	    dict set PackageConfig loclist $ns $loclist
 
 	    # load eventual missing locales
 	    set loadedLocales [dict get $PackageConfig loadedlocales $ns]
-	    if {$locale in $loadedLocales} { return $locale }
 	    set loadLocales [ListComplement $loadedLocales $loclist]
 	    dict set PackageConfig loadedlocales $ns\
 		    [concat $loadedLocales $loadLocales]
 	    Load $ns $loadLocales
-	    return $locale
+	    if {$fSet} {
+		return [lindex $loclist 0]
+	    }
+	    return $loclist
 	}
 	clear { # Remove all locales not contained in Loclist
 	    if {![dict exists $PackageConfig loclist $ns]} {
