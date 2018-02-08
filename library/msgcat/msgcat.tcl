@@ -46,7 +46,7 @@ namespace eval msgcat {
 # create ensemble namespace for mcutil command
 namespace eval msgcat::mcutil {
     namespace export getsystemlocale getpreferences
-    namespace ensemble create
+    namespace ensemble create -prefix 0
     
     # Map of language codes used in Windows registry to those of ISO-639
     if {[info sharedlibextension] eq ".dll"} {
