@@ -19,7 +19,7 @@ package provide msgcat 1.7.0
 namespace eval msgcat {
     namespace export mc mcexists mcload mclocale mcmax mcmset mcpreferences\
 	    mcset mcunknown mcflset mcflmset mcloadedlocales mcforgetpackage\
-	    mcpackageconfig mcpackagelocale
+	    mcpackageconfig mcpackagelocale mcutil
 
     # Records the list of locales to search
     variable Loclist {}
@@ -41,7 +41,13 @@ namespace eval msgcat {
     # namespace should be themselves dict values and the value is
     # the translated string.
     variable Msgs [dict create]
+}
 
+# create ensemble namespace for mcutil command
+namespace eval msgcat::mcutil {
+    namespace export getsystemlocale getpreferences
+    namespace ensemble create
+    
     # Map of language codes used in Windows registry to those of ISO-639
     if {[info sharedlibextension] eq ".dll"} {
 	variable WinRegToISO639 [dict create  {*}{
@@ -303,17 +309,19 @@ proc msgcat::mclocale {args} {
 	    return -code error "invalid newLocale value \"$newLocale\":\
 		    could be path to unsafe code."
 	}
-	mcpreferences {*}[GetPreferences $newLocale]
+	mcpreferences {*}[mcutil getpreferences $newLocale]
     }
     return [lindex $Loclist 0]
 }
 
-# msgcat::GetPreferences --
+# msgcat::mcutil::getpreferences --
 #
 #	Get list of locales from a locale.
 #	The first element is always the lowercase locale.
 #	Other elements have one component separated by "_" less.
 #	Multiple "_" are seen as one separator: de__ch_spec de__ch de {}
+#
+#	This method is part of the ensemble mcutil
 #
 # Arguments:
 #	Locale.
@@ -321,7 +329,7 @@ proc msgcat::mclocale {args} {
 # Results:
 #	Locale list
 
-proc msgcat::GetPreferences {locale} {
+proc msgcat::mcutil::getpreferences {locale} {
     set locale [string tolower $locale]
     set loclist [list $locale]
     while {-1 !=[set pos [string last "_" $locale]]} {
@@ -528,7 +536,7 @@ proc msgcat::mcpackagelocale {subcommand args} {
 
 	    # Get new loclist
 	    if {$fSet} {
-		set loclist [GetPreferences [string tolower [lindex $args 0]]]
+		set loclist [mcutil getpreferences [lindex $args 0]]
 	    } else {
 		set loclist $args
 	    }
@@ -1137,7 +1145,7 @@ proc msgcat::mcmax {args} {
 
 # Convert the locale values stored in environment variables to a form
 # suitable for passing to [mclocale]
-proc msgcat::ConvertLocale {value} {
+proc msgcat::mcutil::ConvertLocale {value} {
     # Assume $value is of form: $language[_$territory][.$codeset][@modifier]
     # Convert to form: $language[_$territory][_$modifier]
     #
@@ -1165,7 +1173,7 @@ proc msgcat::ConvertLocale {value} {
 }
 
 # Initialize the default locale
-proc msgcat::Init {} {
+proc msgcat::mcutil::getsystemlocale {} {
     global env
 
     #
@@ -1173,10 +1181,8 @@ proc msgcat::Init {} {
     #
     foreach varName {LC_ALL LC_MESSAGES LANG} {
 	if {[info exists env($varName)] && ("" ne $env($varName))} {
-	    if {![catch {
-		mclocale [ConvertLocale $env($varName)]
-	    }]} {
-		return
+	    if {![catch { ConvertLocale $env($varName) } locale]} {
+		return $locale
 	    }
 	}
     }
@@ -1184,10 +1190,8 @@ proc msgcat::Init {} {
     # On Darwin, fallback to current CFLocale identifier if available.
     #
     if {[info exists ::tcl::mac::locale] && $::tcl::mac::locale ne ""} {
-	if {![catch {
-	    mclocale [ConvertLocale $::tcl::mac::locale]
-	}]} {
-	    return
+	if {![catch { ConvertLocale $::tcl::mac::locale] } locale]} {
+	    return $locale
 	}
     }
     #
@@ -1196,8 +1200,7 @@ proc msgcat::Init {} {
     #
     if {([info sharedlibextension] ne ".dll")
 	    || [catch {package require registry}]} {
-	mclocale C
-	return
+	return C
     }
     #
     # On Windows or Cygwin, try to set locale depending on registry
@@ -1228,8 +1231,8 @@ proc msgcat::Init {} {
 	    if {[dict exists $modifierDict $script]} {
 		append locale @ [dict get $modifierDict $script]
 	    }
-	    if {![catch {mclocale [ConvertLocale $locale]}]} {
-		return
+	    if {![catch {ConvertLocale $locale} locale]} {
+		return $locale
 	    }
 	}
     }
@@ -1238,8 +1241,7 @@ proc msgcat::Init {} {
     if {[catch {
 	set locale [registry get $key "locale"]
     }]} {
-	mclocale C
-	return
+	return C
     }
     #
     # Keep trying to match against smaller and smaller suffixes
@@ -1254,15 +1256,15 @@ proc msgcat::Init {} {
     set locale [string tolower $locale]
     while {[string length $locale]} {
 	if {![catch {
-	    mclocale [ConvertLocale [dict get $WinRegToISO639 $locale]]
-	}]} {
-	    return
+	    ConvertLocale [dict get $WinRegToISO639 $locale]
+	} localeOut]} {
+	    return $localeOut
 	}
 	set locale [string range $locale 1 end]
     }
     #
     # No translation known.  Fall back on "C" locale
     #
-    mclocale C
+    return C
 }
-msgcat::Init
+msgcat::mclocale [msgcat::mcutil getsystemlocale]
