@@ -2453,7 +2453,7 @@ typedef struct List {
  * WARNING: these macros eval their args more than once.
  */
 
-#if (LONG_MAX == LLONG_MAX)
+#ifdef TCL_WIDE_INT_IS_LONG
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
     (((objPtr)->typePtr == &tclIntType)	\
 	    ? ((*(longPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
