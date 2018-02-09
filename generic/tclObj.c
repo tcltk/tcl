@@ -2959,7 +2959,7 @@ Tcl_GetLongFromObj(
     register long *longPtr)	/* Place to store resulting long. */
 {
     do {
-#if (LONG_MAX == LLONG_MAX)
+#ifdef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclIntType) {
 	    *longPtr = objPtr->internalRep.wideValue;
 	    return TCL_OK;
@@ -3022,7 +3022,7 @@ Tcl_GetLongFromObj(
 		    return TCL_OK;
 		}
 	    }
-#if (LONG_MAX != LLONG_MAX)
+#ifndef TCL_WIDE_INT_IS_LONG
 	tooLarge:
 #endif
 	    if (interp != NULL) {
