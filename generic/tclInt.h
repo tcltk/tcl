@@ -2454,7 +2454,7 @@ typedef struct List {
  * WARNING: these macros eval their args more than once.
  */
 
-#if (LONG_MAX == LLONG_MAX)
+#ifdef TCL_WIDE_INT_IS_LONG
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
     (((objPtr)->typePtr == &tclIntType)	\
 	    ? ((*(longPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
@@ -2472,13 +2472,13 @@ typedef struct List {
     (((objPtr)->typePtr == &tclIntType \
 	    && (objPtr)->internalRep.wideValue >= -(Tcl_WideInt)(UINT_MAX) \
 	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(UINT_MAX))	\
-	    ? ((*(intPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
+	    ? ((*(intPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
     (((objPtr)->typePtr == &tclIntType \
 	    && (objPtr)->internalRep.wideValue >= INT_MIN \
 	    && (objPtr)->internalRep.wideValue <= INT_MAX)	\
-	    ? ((*(idxPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
+	    ? ((*(idxPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 
 /*

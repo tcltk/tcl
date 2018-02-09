@@ -58,7 +58,7 @@ static const Tcl_ObjType instNameType = {
 	const Tcl_ObjIntRep *irPtr;				\
 	irPtr = Tcl_FetchIntRep((objPtr), &instNameType);	\
 	assert(irPtr != NULL);					\
-	(inst) = irPtr->wideValue;				\
+	(inst) = (int)irPtr->wideValue;				\
     } while (0)
 
 
