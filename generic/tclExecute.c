@@ -6538,7 +6538,7 @@ TEBCresume(
 
 	iterVarPtr = LOCAL(infoPtr->loopCtTemp);
 	valuePtr = iterVarPtr->value.objPtr;
-	iterNum = valuePtr->internalRep.wideValue + 1;
+	iterNum = (int)valuePtr->internalRep.wideValue + 1;
 	TclSetIntObj(valuePtr, iterNum);
 
 	/*
