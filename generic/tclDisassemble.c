@@ -817,7 +817,7 @@ static void
 UpdateStringOfInstName(
     Tcl_Obj *objPtr)
 {
-    int inst = objPtr->internalRep.wideValue;
+    int inst = (int)objPtr->internalRep.wideValue;
     char *s, buf[20];
     int len;
 
@@ -825,7 +825,7 @@ UpdateStringOfInstName(
         sprintf(buf, "inst_%d", inst);
         s = buf;
     } else {
-        s = (char *) tclInstructionTable[objPtr->internalRep.wideValue].name;
+        s = (char *) tclInstructionTable[inst].name;
     }
     len = strlen(s);
     objPtr->bytes = ckalloc(len + 1);
