@@ -210,9 +210,6 @@ static int		SetDoubleFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		SetIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfDouble(Tcl_Obj *objPtr);
 static void		UpdateStringOfInt(Tcl_Obj *objPtr);
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9 && !defined(TCL_WIDE_INT_IS_LONG)
-static void		UpdateStringOfOldInt(Tcl_Obj *objPtr);
-#endif
 static void		FreeBignum(Tcl_Obj *objPtr);
 static void		DupBignum(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		UpdateStringOfBignum(Tcl_Obj *objPtr);
@@ -256,25 +253,12 @@ const Tcl_ObjType tclDoubleType = {
     SetDoubleFromAny		/* setFromAnyProc */
 };
 const Tcl_ObjType tclIntType = {
-#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8 || defined(TCL_WIDE_INT_IS_LONG)
     "int",			/* name */
-#else
-    "wideInt",		/* name, keeping maximum compatibility with Tcl 8.6 on 32-bit platforms*/
-#endif
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     UpdateStringOfInt,		/* updateStringProc */
     SetIntFromAny		/* setFromAnyProc */
 };
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9 && !defined(TCL_WIDE_INT_IS_LONG)
-static const Tcl_ObjType oldIntType = {
-    "int",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    UpdateStringOfOldInt,		/* updateStringProc */
-    SetIntFromAny		/* setFromAnyProc */
-};
-#endif
 const Tcl_ObjType tclBignumType = {
     "bignum",			/* name */
     FreeBignum,			/* freeIntRepProc */
@@ -2212,90 +2196,6 @@ UpdateStringOfDouble(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_NewIntObj --
- *
- *	If a client is compiled with TCL_MEM_DEBUG defined, calls to
- *	Tcl_NewIntObj to create a new integer object end up calling the
- *	debugging function Tcl_DbNewLongObj instead.
- *
- *	Otherwise, if the client is compiled without TCL_MEM_DEBUG defined,
- *	calls to Tcl_NewIntObj result in a call to one of the two
- *	Tcl_NewIntObj implementations below. We provide two implementations so
- *	that the Tcl core can be compiled to do memory debugging of the core
- *	even if a client does not request it for itself.
- *
- *	Integer and long integer objects share the same "integer" type
- *	implementation. We store all integers as longs and Tcl_GetIntFromObj
- *	checks whether the current value of the long can be represented by an
- *	int.
- *
- * Results:
- *	The newly created object is returned. This object will have an invalid
- *	string representation. The returned object has ref count 0.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#undef Tcl_NewIntObj
-#ifdef TCL_MEM_DEBUG
-
-Tcl_Obj *
-Tcl_NewIntObj(
-    register int intValue)	/* Int used to initialize the new object. */
-{
-    return Tcl_DbNewLongObj((long)intValue, "unknown", 0);
-}
-
-#else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_NewIntObj(
-    register int intValue)	/* Int used to initialize the new object. */
-{
-    register Tcl_Obj *objPtr;
-
-    TclNewIntObj(objPtr, intValue);
-    return objPtr;
-}
-#endif /* if TCL_MEM_DEBUG */
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_SetIntObj --
- *
- *	Modify an object to be an integer and to have the specified integer
- *	value.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The object's old string rep, if any, is freed. Also, any old internal
- *	rep is freed.
- *
- *----------------------------------------------------------------------
- */
-
-#undef Tcl_SetIntObj
-void
-Tcl_SetIntObj(
-    register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
-    register int intValue)	/* Integer used to set object's value. */
-{
-    if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("%s called with shared object", "Tcl_SetIntObj");
-    }
-
-    TclSetIntObj(objPtr, intValue);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_GetIntFromObj --
  *
  *	Retrieve the integer value of 'objPtr'.
@@ -2407,178 +2307,6 @@ UpdateStringOfInt(
     memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
     objPtr->length = len;
 }
-
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9 && !defined(TCL_WIDE_INT_IS_LONG)
-static void
-UpdateStringOfOldInt(
-    register Tcl_Obj *objPtr)	/* Int object whose string rep to update. */
-{
-    char buffer[TCL_INTEGER_SPACE];
-    register int len;
-
-    len = TclFormatInt(buffer, objPtr->internalRep.longValue);
-
-    objPtr->bytes = ckalloc(len + 1);
-    memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
-    objPtr->length = len;
-}
-#endif
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_NewLongObj --
- *
- *	If a client is compiled with TCL_MEM_DEBUG defined, calls to
- *	Tcl_NewLongObj to create a new long integer object end up calling the
- *	debugging function Tcl_DbNewLongObj instead.
- *
- *	Otherwise, if the client is compiled without TCL_MEM_DEBUG defined,
- *	calls to Tcl_NewLongObj result in a call to one of the two
- *	Tcl_NewLongObj implementations below. We provide two implementations
- *	so that the Tcl core can be compiled to do memory debugging of the
- *	core even if a client does not request it for itself.
- *
- *	Integer and long integer objects share the same "integer" type
- *	implementation. We store all integers as longs and Tcl_GetIntFromObj
- *	checks whether the current value of the long can be represented by an
- *	int.
- *
- * Results:
- *	The newly created object is returned. This object will have an invalid
- *	string representation. The returned object has ref count 0.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#undef Tcl_NewLongObj
-#ifdef TCL_MEM_DEBUG
-
-Tcl_Obj *
-Tcl_NewLongObj(
-    register long longValue)	/* Long integer used to initialize the
-				 * new object. */
-{
-    return Tcl_DbNewLongObj(longValue, "unknown", 0);
-}
-
-#else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_NewLongObj(
-    register long longValue)	/* Long integer used to initialize the
-				 * new object. */
-{
-    register Tcl_Obj *objPtr;
-
-    TclNewIntObj(objPtr, longValue);
-    return objPtr;
-}
-#endif /* if TCL_MEM_DEBUG */
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_DbNewLongObj --
- *
- *	If a client is compiled with TCL_MEM_DEBUG defined, calls to
- *	Tcl_NewIntObj and Tcl_NewLongObj to create new integer or long integer
- *	objects end up calling the debugging function Tcl_DbNewLongObj
- *	instead. We provide two implementations of Tcl_DbNewLongObj so that
- *	whether the Tcl core is compiled to do memory debugging of the core is
- *	independent of whether a client requests debugging for itself.
- *
- *	When the core is compiled with TCL_MEM_DEBUG defined, Tcl_DbNewLongObj
- *	calls Tcl_DbCkalloc directly with the file name and line number from
- *	its caller. This simplifies debugging since then the [memory active]
- *	command will report the caller's file name and line number when
- *	reporting objects that haven't been freed.
- *
- *	Otherwise, when the core is compiled without TCL_MEM_DEBUG defined,
- *	this function just returns the result of calling Tcl_NewLongObj.
- *
- * Results:
- *	The newly created long integer object is returned. This object will
- *	have an invalid string representation. The returned object has ref
- *	count 0.
- *
- * Side effects:
- *	Allocates memory.
- *
- *----------------------------------------------------------------------
- */
-
-#undef Tcl_DbNewLongObj
-#ifdef TCL_MEM_DEBUG
-
-Tcl_Obj *
-Tcl_DbNewLongObj(
-    register long longValue,	/* Long integer used to initialize the new
-				 * object. */
-    const char *file,		/* The name of the source file calling this
-				 * function; used for debugging. */
-    int line)			/* Line number in the source file; used for
-				 * debugging. */
-{
-    register Tcl_Obj *objPtr;
-
-    TclDbNewObj(objPtr, file, line);
-    objPtr->bytes = NULL;
-
-    objPtr->internalRep.wideValue = longValue;
-    objPtr->typePtr = &tclIntType;
-    return objPtr;
-}
-
-#else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_DbNewLongObj(
-    register long longValue,	/* Long integer used to initialize the new
-				 * object. */
-    const char *file,		/* The name of the source file calling this
-				 * function; used for debugging. */
-    int line)			/* Line number in the source file; used for
-				 * debugging. */
-{
-    return Tcl_NewLongObj(longValue);
-}
-#endif /* TCL_MEM_DEBUG */
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_SetLongObj --
- *
- *	Modify an object to be an integer object and to have the specified
- *	long integer value.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The object's old string rep, if any, is freed. Also, any old internal
- *	rep is freed.
- *
- *----------------------------------------------------------------------
- */
-
-#undef Tcl_SetLongObj
-void
-Tcl_SetLongObj(
-    register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
-    register long longValue)	/* Long integer used to initialize the
-				 * object's value. */
-{
-    if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("%s called with shared object", "Tcl_SetLongObj");
-    }
-
-    TclSetIntObj(objPtr, longValue);
-}
 
 /*
  *----------------------------------------------------------------------
@@ -2608,7 +2336,7 @@ Tcl_GetLongFromObj(
     register long *longPtr)	/* Place to store resulting long. */
 {
     do {
-#if (LONG_MAX == LLONG_MAX)
+#ifdef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclIntType) {
 	    *longPtr = objPtr->internalRep.wideValue;
 	    return TCL_OK;
@@ -2671,7 +2399,7 @@ Tcl_GetLongFromObj(
 		    return TCL_OK;
 		}
 	    }
-#if (LONG_MAX != LLONG_MAX)
+#ifndef TCL_WIDE_INT_IS_LONG
 	tooLarge:
 #endif
 	    if (interp != NULL) {

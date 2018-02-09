@@ -116,9 +116,7 @@ TCLAPI Tcl_Obj *	Tcl_DbNewDoubleObj(double doubleValue,
 /* 25 */
 TCLAPI Tcl_Obj *	Tcl_DbNewListObj(int objc, Tcl_Obj *const *objv,
 				const char *file, int line);
-/* 26 */
-TCLAPI Tcl_Obj *	Tcl_DbNewLongObj(long longValue, const char *file,
-				int line);
+/* Slot 26 is reserved */
 /* 27 */
 TCLAPI Tcl_Obj *	Tcl_DbNewObj(const char *file, int line);
 /* 28 */
@@ -186,12 +184,10 @@ TCLAPI Tcl_Obj *	Tcl_NewByteArrayObj(const unsigned char *bytes,
 				int length);
 /* 51 */
 TCLAPI Tcl_Obj *	Tcl_NewDoubleObj(double doubleValue);
-/* 52 */
-TCLAPI Tcl_Obj *	Tcl_NewIntObj(int intValue);
+/* Slot 52 is reserved */
 /* 53 */
 TCLAPI Tcl_Obj *	Tcl_NewListObj(int objc, Tcl_Obj *const objv[]);
-/* 54 */
-TCLAPI Tcl_Obj *	Tcl_NewLongObj(long longValue);
+/* Slot 54 is reserved */
 /* 55 */
 TCLAPI Tcl_Obj *	Tcl_NewObj(void);
 /* 56 */
@@ -204,13 +200,11 @@ TCLAPI void		Tcl_SetByteArrayObj(Tcl_Obj *objPtr,
 				const unsigned char *bytes, int length);
 /* 60 */
 TCLAPI void		Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue);
-/* 61 */
-TCLAPI void		Tcl_SetIntObj(Tcl_Obj *objPtr, int intValue);
+/* Slot 61 is reserved */
 /* 62 */
 TCLAPI void		Tcl_SetListObj(Tcl_Obj *objPtr, int objc,
 				Tcl_Obj *const objv[]);
-/* 63 */
-TCLAPI void		Tcl_SetLongObj(Tcl_Obj *objPtr, long longValue);
+/* Slot 63 is reserved */
 /* 64 */
 TCLAPI void		Tcl_SetObjLength(Tcl_Obj *objPtr, int length);
 /* 65 */
@@ -1785,7 +1779,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DbNewByteArrayObj) (const unsigned char *bytes, int length, const char *file, int line); /* 23 */
     Tcl_Obj * (*tcl_DbNewDoubleObj) (double doubleValue, const char *file, int line); /* 24 */
     Tcl_Obj * (*tcl_DbNewListObj) (int objc, Tcl_Obj *const *objv, const char *file, int line); /* 25 */
-    Tcl_Obj * (*tcl_DbNewLongObj) (long longValue, const char *file, int line); /* 26 */
+    void (*reserved26)(void);
     Tcl_Obj * (*tcl_DbNewObj) (const char *file, int line); /* 27 */
     Tcl_Obj * (*tcl_DbNewStringObj) (const char *bytes, int length, const char *file, int line); /* 28 */
     Tcl_Obj * (*tcl_DuplicateObj) (Tcl_Obj *objPtr); /* 29 */
@@ -1811,18 +1805,18 @@ typedef struct TclStubs {
     void (*reserved49)(void);
     Tcl_Obj * (*tcl_NewByteArrayObj) (const unsigned char *bytes, int length); /* 50 */
     Tcl_Obj * (*tcl_NewDoubleObj) (double doubleValue); /* 51 */
-    Tcl_Obj * (*tcl_NewIntObj) (int intValue); /* 52 */
+    void (*reserved52)(void);
     Tcl_Obj * (*tcl_NewListObj) (int objc, Tcl_Obj *const objv[]); /* 53 */
-    Tcl_Obj * (*tcl_NewLongObj) (long longValue); /* 54 */
+    void (*reserved54)(void);
     Tcl_Obj * (*tcl_NewObj) (void); /* 55 */
     Tcl_Obj * (*tcl_NewStringObj) (const char *bytes, int length); /* 56 */
     void (*reserved57)(void);
     unsigned char * (*tcl_SetByteArrayLength) (Tcl_Obj *objPtr, int length); /* 58 */
     void (*tcl_SetByteArrayObj) (Tcl_Obj *objPtr, const unsigned char *bytes, int length); /* 59 */
     void (*tcl_SetDoubleObj) (Tcl_Obj *objPtr, double doubleValue); /* 60 */
-    void (*tcl_SetIntObj) (Tcl_Obj *objPtr, int intValue); /* 61 */
+    void (*reserved61)(void);
     void (*tcl_SetListObj) (Tcl_Obj *objPtr, int objc, Tcl_Obj *const objv[]); /* 62 */
-    void (*tcl_SetLongObj) (Tcl_Obj *objPtr, long longValue); /* 63 */
+    void (*reserved63)(void);
     void (*tcl_SetObjLength) (Tcl_Obj *objPtr, int length); /* 64 */
     void (*tcl_SetStringObj) (Tcl_Obj *objPtr, const char *bytes, int length); /* 65 */
     void (*reserved66)(void);
@@ -2476,8 +2470,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DbNewDoubleObj) /* 24 */
 #define Tcl_DbNewListObj \
 	(tclStubsPtr->tcl_DbNewListObj) /* 25 */
-#define Tcl_DbNewLongObj \
-	(tclStubsPtr->tcl_DbNewLongObj) /* 26 */
+/* Slot 26 is reserved */
 #define Tcl_DbNewObj \
 	(tclStubsPtr->tcl_DbNewObj) /* 27 */
 #define Tcl_DbNewStringObj \
@@ -2526,12 +2519,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_NewByteArrayObj) /* 50 */
 #define Tcl_NewDoubleObj \
 	(tclStubsPtr->tcl_NewDoubleObj) /* 51 */
-#define Tcl_NewIntObj \
-	(tclStubsPtr->tcl_NewIntObj) /* 52 */
+/* Slot 52 is reserved */
 #define Tcl_NewListObj \
 	(tclStubsPtr->tcl_NewListObj) /* 53 */
-#define Tcl_NewLongObj \
-	(tclStubsPtr->tcl_NewLongObj) /* 54 */
+/* Slot 54 is reserved */
 #define Tcl_NewObj \
 	(tclStubsPtr->tcl_NewObj) /* 55 */
 #define Tcl_NewStringObj \
@@ -2543,12 +2534,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_SetByteArrayObj) /* 59 */
 #define Tcl_SetDoubleObj \
 	(tclStubsPtr->tcl_SetDoubleObj) /* 60 */
-#define Tcl_SetIntObj \
-	(tclStubsPtr->tcl_SetIntObj) /* 61 */
+/* Slot 61 is reserved */
 #define Tcl_SetListObj \
 	(tclStubsPtr->tcl_SetListObj) /* 62 */
-#define Tcl_SetLongObj \
-	(tclStubsPtr->tcl_SetLongObj) /* 63 */
+/* Slot 63 is reserved */
 #define Tcl_SetObjLength \
 	(tclStubsPtr->tcl_SetObjLength) /* 64 */
 #define Tcl_SetStringObj \
@@ -3684,14 +3673,12 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr) \
 	Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, \
 	sizeof(char *), msg, flags, indexPtr)
-#undef Tcl_NewBooleanObj
 #define Tcl_NewBooleanObj(boolValue) \
-	Tcl_NewLongObj((boolValue)!=0)
+	Tcl_NewWideIntObj((boolValue)!=0)
 #define Tcl_DbNewBooleanObj(boolValue, file, line) \
-	Tcl_DbNewLongObj((boolValue)!=0, file, line)
-#undef Tcl_SetBooleanObj
+	Tcl_DbNewWideIntObj((boolValue)!=0, file, line)
 #define Tcl_SetBooleanObj(objPtr, boolValue) \
-	Tcl_SetLongObj(objPtr, (boolValue)!=0)
+	Tcl_SetWideIntObj(objPtr, (boolValue)!=0)
 #define Tcl_SetVar(interp, varName, newValue, flags) \
 	Tcl_SetVar2(interp, varName, NULL, newValue, flags)
 #define Tcl_UnsetVar(interp, varName, flags) \
@@ -3773,15 +3760,10 @@ extern const TclStubs *tclStubsPtr;
 #   endif
 #endif
 
-#undef Tcl_NewLongObj
 #define Tcl_NewLongObj(value) Tcl_NewWideIntObj((long)(value))
-#undef Tcl_NewIntObj
 #define Tcl_NewIntObj(value) Tcl_NewWideIntObj((int)(value))
-#undef Tcl_DbNewLongObj
 #define Tcl_DbNewLongObj(value, file, line) Tcl_DbNewWideIntObj((long)(value), file, line)
-#undef Tcl_SetIntObj
 #define Tcl_SetIntObj(objPtr, value)	Tcl_SetWideIntObj(objPtr, (int)(value))
-#undef Tcl_SetLongObj
 #define Tcl_SetLongObj(objPtr, value)	Tcl_SetWideIntObj(objPtr, (long)(value))
 
 /*

@@ -106,7 +106,7 @@ declare 20 {
 declare 21 {
     int Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file, int line)
 }
-# Removed in 9.0
+# Removed in 9.0 (changed to macro):
 #declare 22 {
 #    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
 #}
@@ -122,9 +122,10 @@ declare 25 {
     Tcl_Obj *Tcl_DbNewListObj(int objc, Tcl_Obj *const *objv,
 	    const char *file, int line)
 }
-declare 26 {
-    Tcl_Obj *Tcl_DbNewLongObj(long longValue, const char *file, int line)
-}
+# Removed in 9.0 (changed to macro):
+#declare 26 {
+#    Tcl_Obj *Tcl_DbNewLongObj(long longValue, const char *file, int line)
+#}
 declare 27 {
     Tcl_Obj *Tcl_DbNewObj(const char *file, int line)
 }
@@ -202,7 +203,7 @@ declare 48 {
     int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, int first,
 	    int count, int objc, Tcl_Obj *const objv[])
 }
-# Removed in 9.0:
+# Removed in 9.0 (changed to macro):
 #declare 49 {
 #    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
 #}
@@ -212,22 +213,24 @@ declare 50 {
 declare 51 {
     Tcl_Obj *Tcl_NewDoubleObj(double doubleValue)
 }
-declare 52 {
-    Tcl_Obj *Tcl_NewIntObj(int intValue)
-}
+# Removed in 9.0 (changed to macro):
+#declare 52 {
+#    Tcl_Obj *Tcl_NewIntObj(int intValue)
+#}
 declare 53 {
     Tcl_Obj *Tcl_NewListObj(int objc, Tcl_Obj *const objv[])
 }
-declare 54 {
-    Tcl_Obj *Tcl_NewLongObj(long longValue)
-}
+# Removed in 9.0 (changed to macro):
+#declare 54 {
+#    Tcl_Obj *Tcl_NewLongObj(long longValue)
+#}
 declare 55 {
     Tcl_Obj *Tcl_NewObj(void)
 }
 declare 56 {
     Tcl_Obj *Tcl_NewStringObj(const char *bytes, int length)
 }
-# Removed in 9.0:
+# Removed in 9.0 (changed to macro):
 #declare 57 {
 #    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
 #}
@@ -241,15 +244,17 @@ declare 59 {
 declare 60 {
     void Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue)
 }
-declare 61 {
-    void Tcl_SetIntObj(Tcl_Obj *objPtr, int intValue)
-}
+# Removed in 9.0 (changed to macro):
+#declare 61 {
+#    void Tcl_SetIntObj(Tcl_Obj *objPtr, int intValue)
+#}
 declare 62 {
     void Tcl_SetListObj(Tcl_Obj *objPtr, int objc, Tcl_Obj *const objv[])
 }
-declare 63 {
-    void Tcl_SetLongObj(Tcl_Obj *objPtr, long longValue)
-}
+# Removed in 9.0 (changed to macro):
+#declare 63 {
+#    void Tcl_SetLongObj(Tcl_Obj *objPtr, long longValue)
+#}
 declare 64 {
     void Tcl_SetObjLength(Tcl_Obj *objPtr, int length)
 }
