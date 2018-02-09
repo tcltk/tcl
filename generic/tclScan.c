@@ -942,7 +942,7 @@ Tcl_ScanObjCmd(
 			    (Tcl_WideUInt)wideValue);
 		    Tcl_SetStringObj(objPtr, buf, -1);
 		} else {
-		    Tcl_SetWideIntObj(objPtr, wideValue);
+		    TclSetIntObj(objPtr, wideValue);
 		}
 	    } else if (!(flags & SCAN_BIG)) {
 		if (TclGetLongFromObj(NULL, objPtr, &value) != TCL_OK) {
@@ -956,7 +956,7 @@ Tcl_ScanObjCmd(
 		    sprintf(buf, "%lu", value);	/* INTL: ISO digit */
 		    Tcl_SetStringObj(objPtr, buf, -1);
 		} else {
-		    Tcl_SetLongObj(objPtr, value);
+		    TclSetIntObj(objPtr, value);
 		}
 	    }
 	    objs[objIndex++] = objPtr;

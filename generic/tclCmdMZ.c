@@ -1335,16 +1335,8 @@ StringFirstCmd(
 	if (TCL_OK != TclGetIntForIndexM(interp, objv[3], size - 1, &start)) {
 	    return TCL_ERROR;
 	}
-
-	if (start < 0) {
-	    start = 0;
-	}
-	if (start >= size) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
-	    return TCL_OK;
-	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringFind(objv[1],
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringFirst(objv[1],
 	    objv[2], start)));
     return TCL_OK;
 }
@@ -1387,14 +1379,6 @@ StringLastCmd(
 
 	if (TCL_OK != TclGetIntForIndexM(interp, objv[3], size - 1, &last)) {
 	    return TCL_ERROR;
-	}
-
-	if (last < 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
-	    return TCL_OK;
-	}
-	if (last >= size) {
-	    last = size - 1;
 	}
     }
     Tcl_SetObjResult(interp, Tcl_NewIntObj(TclStringLast(objv[1],
@@ -1652,9 +1636,6 @@ StringIsCmd(
 	/* TODO */
 	if ((objPtr->typePtr == &tclDoubleType) ||
 		(objPtr->typePtr == &tclIntType) ||
-#ifndef TCL_WIDE_INT_IS_LONG
-		(objPtr->typePtr == &tclWideIntType) ||
-#endif
 		(objPtr->typePtr == &tclBignumType)) {
 	    break;
 	}
@@ -1689,9 +1670,6 @@ StringIsCmd(
 	goto failedIntParse;
     case STR_IS_ENTIER:
 	if ((objPtr->typePtr == &tclIntType) ||
-#ifndef TCL_WIDE_INT_IS_LONG
-		(objPtr->typePtr == &tclWideIntType) ||
-#endif
 		(objPtr->typePtr == &tclBignumType)) {
 	    break;
 	}
@@ -2341,11 +2319,12 @@ StringReptCmd(
 	return TCL_OK;
     }
 
-    if (TCL_OK != TclStringRepeat(interp, objv[1], count, &resultPtr)) {
-	return TCL_ERROR;
+    resultPtr = TclStringRepeat(interp, objv[1], count, TCL_STRING_IN_PLACE);
+    if (resultPtr) {
+	Tcl_SetObjResult(interp, resultPtr);
+	return TCL_OK;
     }
-    Tcl_SetObjResult(interp, resultPtr);
-    return TCL_OK;
+    return TCL_ERROR;
 }
 
 /*
@@ -2443,7 +2422,7 @@ StringRevCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, TclStringObjReverse(objv[1]));
+    Tcl_SetObjResult(interp, TclStringReverse(objv[1], TCL_STRING_IN_PLACE));
     return TCL_OK;
 }
 
@@ -2892,7 +2871,6 @@ StringCatCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int code;
     Tcl_Obj *objResultPtr;
 
     if (objc < 2) {
@@ -2902,23 +2880,15 @@ StringCatCmd(
 	 */
 	return TCL_OK;
     }
-    if (objc == 2) {
-	/*
-	 * Other trivial case, single arg, just return it.
-	 */
-	Tcl_SetObjResult(interp, objv[1]);
-	return TCL_OK;
-    }
 
-    code = TclStringCatObjv(interp, /* inPlace */ 1, objc-1, objv+1,
-	    &objResultPtr);
+    objResultPtr = TclStringCat(interp, objc-1, objv+1, TCL_STRING_IN_PLACE);
 
-    if (code == TCL_OK) {
+    if (objResultPtr) {
 	Tcl_SetObjResult(interp, objResultPtr);
 	return TCL_OK;
     }
 
-    return code;
+    return TCL_ERROR;
 }
 
 /*
@@ -4356,7 +4326,7 @@ TclNRTryObjCmd(
 	    }
 
 	    info[0] = objv[i];			/* type */
-	    TclNewLongObj(info[1], code);	/* returnCode */
+	    TclNewIntObj(info[1], code);	/* returnCode */
 	    if (info[2] == NULL) {		/* errorCodePrefix */
 		TclNewObj(info[2]);
 	    }
