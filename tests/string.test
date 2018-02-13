@@ -316,10 +316,10 @@ test string-6.4 {string is, too many args} {
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.5 {string is, class check} {
     list [catch {string is bogus str} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.6 {string is, ambiguous class} {
     list [catch {string is al str} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.7 {string is alpha, all ok} {
     string is alpha -strict -failindex var abc
 } 1
@@ -2000,6 +2000,63 @@ test string-29.4 {string cat, many args} {
 } {0 0}
 
 
+test string-30.1 {string is dict} {
+    string is dict {a b c}
+} 1
+test string-30.2 {string is dict} {
+    string is dict "a \{b c"
+} 0
+test string-30.3 {string is dict} {
+    string is dict {a {b c}d e}
+} 0
+test string-30.4 {string is dict} {
+    string is dict {}
+} 1
+test string-30.5 {string is dict} {
+    string is dict -strict {a b c}
+} 1
+test string-30.6 {string is dict} {
+    string is dict -strict "a \{b c"
+} 0
+test string-30.7 {string is dict} {
+    string is dict -strict {a {b c}d e}
+} 0
+test string-30.8 {string is dict} {
+    string is dict -strict {}
+} 1
+test string-30.9 {string is dict} {
+    set x {}
+    list [string is dict -failindex x {a b c}] $x
+} {1 {}}
+test string-30.10 {string is dict} {
+    set x {}
+    list [string is dict -failindex x "a \{b c"] $x
+} {0 2}
+test string-30.11 {string is dict} {
+    set x {}
+    list [string is dict -failindex x {a b {b c}d e}] $x
+} {0 4}
+test string-30.12 {string is dict} {
+    set x {}
+    list [string is dict -failindex x {}] $x
+} {1 {}}
+test string-30.13 {string is dict} {
+    set x {}
+    list [string is dict -failindex x {  {b c}d e}] $x
+} {0 2}
+test string-30.14 {string is dict} {
+    set x {}
+    list [string is dict -failindex x "\uabcd {b c}d e"] $x
+} {0 2}
+test string-30.15 {string is dict, valid dict} {
+    string is dict {a b c d e f}
+} 1
+test string-30.16 {string is dict, invalid dict} {
+    string is dict a
+} 0
+test string-30.17 {string is dict, valid dict packed in invalid dict} {
+    string is dict {{a b c d e f g h}}
+} 0
 
 # cleanup
 rename MemStress {}
