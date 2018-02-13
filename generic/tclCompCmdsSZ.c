@@ -764,7 +764,6 @@ TclCompileStringIsCmd(
 	ExceptionRangeStarts(envPtr, range);
 	OP(		DUP);
 	OP(		DICT_VERIFY);
-	OP(		POP);
 	ExceptionRangeEnds(envPtr, range);
 	ExceptionRangeTarget(envPtr, range, catchOffset);
 	OP(		POP);
