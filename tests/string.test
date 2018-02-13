@@ -2001,8 +2001,12 @@ test string-29.4 {string cat, many args} {
 
 
 test string-30.1 {string is dict} {
-    string is dict {a b c}
+    string is dict {a b c d}
 } 1
+test string-30.1a {string is dict} {
+    string is dict {a b c}
+} 0
+
 test string-30.2 {string is dict} {
     string is dict "a \{b c"
 } 0
@@ -2013,8 +2017,12 @@ test string-30.4 {string is dict} {
     string is dict {}
 } 1
 test string-30.5 {string is dict} {
-    string is dict -strict {a b c}
+    string is dict -strict {a b c d}
 } 1
+test string-30.5a {string is dict} {
+    string is dict -strict {a b c}
+} 0
+
 test string-30.6 {string is dict} {
     string is dict -strict "a \{b c"
 } 0
@@ -2026,16 +2034,24 @@ test string-30.8 {string is dict} {
 } 1
 test string-30.9 {string is dict} {
     set x {}
-    list [string is dict -failindex x {a b c}] $x
+    list [string is dict -failindex x {a b c d}] $x
 } {1 {}}
+test string-30.9a {string is dict} {
+    set x {}
+    list [string is dict -failindex x {a b c}] $x
+} {0 0}
 test string-30.10 {string is dict} {
     set x {}
+    list [string is dict -failindex x "a \{b c d"] $x
+} {0 0}
+test string-30.10a {string is dict} {
+    set x {}
     list [string is dict -failindex x "a \{b c"] $x
-} {0 2}
+} {0 0}
 test string-30.11 {string is dict} {
     set x {}
     list [string is dict -failindex x {a b {b c}d e}] $x
-} {0 4}
+} {0 0}
 test string-30.12 {string is dict} {
     set x {}
     list [string is dict -failindex x {}] $x
@@ -2043,11 +2059,11 @@ test string-30.12 {string is dict} {
 test string-30.13 {string is dict} {
     set x {}
     list [string is dict -failindex x {  {b c}d e}] $x
-} {0 2}
+} {0 0}
 test string-30.14 {string is dict} {
     set x {}
     list [string is dict -failindex x "\uabcd {b c}d e"] $x
-} {0 2}
+} {0 0}
 test string-30.15 {string is dict, valid dict} {
     string is dict {a b c d e f}
 } 1
