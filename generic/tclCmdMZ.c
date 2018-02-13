@@ -1468,7 +1468,7 @@ StringIsCmd(
 
     static const char *const isClasses[] = {
 	"alnum",	"alpha",	"ascii",	"control",
-	"boolean",	"digit",	"double",	"entier",
+	"boolean",	"dict", "digit",	"double",	"entier",
 	"false",	"graph",	"integer",	"list",
 	"lower",	"print",	"punct",	"space",
 	"true",		"upper",	"wideinteger",	"wordchar",
@@ -1476,7 +1476,7 @@ StringIsCmd(
     };
     enum isClasses {
 	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
-	STR_IS_BOOL,	STR_IS_DIGIT,	STR_IS_DOUBLE,	STR_IS_ENTIER,
+	STR_IS_BOOL,	STR_IS_DICT, STR_IS_DIGIT,	STR_IS_DOUBLE,	STR_IS_ENTIER,
 	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,	STR_IS_LIST,
 	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,	STR_IS_SPACE,
 	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_WIDE,	STR_IS_WORD,
@@ -1567,6 +1567,13 @@ StringIsCmd(
     case STR_IS_CONTROL:
 	chcomp = Tcl_UniCharIsControl;
 	break;
+    case STR_IS_DICT: {
+    int dresult, dsize;
+	dresult = Tcl_DictObjSize(interp, objPtr, &dsize);
+	Tcl_ResetResult(interp);
+	result = (dresult==TCL_OK) ? 1 : 0;
+	break;
+	}
     case STR_IS_DIGIT:
 	chcomp = Tcl_UniCharIsDigit;
 	break;
