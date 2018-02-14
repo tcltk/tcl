@@ -817,12 +817,11 @@ static void
 UpdateStringOfInstName(
     Tcl_Obj *objPtr)
 {
-    int inst = (int)objPtr->internalRep.wideValue;
+    size_t len, inst = (size_t)objPtr->internalRep.wideValue;
     char *s, buf[20];
-    int len;
 
-    if ((inst < 0) || (inst > LAST_INST_OPCODE)) {
-        sprintf(buf, "inst_%d", inst);
+    if (inst > LAST_INST_OPCODE) {
+        sprintf(buf, "inst_%" TCL_Z_MODIFIER "d", inst);
         s = buf;
     } else {
         s = (char *) tclInstructionTable[inst].name;
