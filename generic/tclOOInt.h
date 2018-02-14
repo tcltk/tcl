@@ -149,8 +149,8 @@ typedef struct Object {
     struct Foundation *fPtr;	/* The basis for the object system. Putting
 				 * this here allows the avoidance of quite a
 				 * lot of hash lookups on the critical path
-				 * for object invokation and creation. */
-    Tcl_Namespace *namespacePtr;/* This object's tame namespace. */
+				 * for object invocation and creation. */
+    Tcl_Namespace *namespacePtr;/* This object's namespace. */
     Tcl_Command command;	/* Reference to this object's public
 				 * command. */
     Tcl_Command myCommand;	/* Reference to this object's internal
@@ -162,12 +162,12 @@ typedef struct Object {
 				/* Classes mixed into this object. */
     LIST_STATIC(Tcl_Obj *) filters;
 				/* List of filter names. */
-    struct Class *classPtr;	/* All classes have this non-NULL; it points
-				 * to the class structure. Everything else has
-				 * this NULL. */
+    struct Class *classPtr;	/* This is non-NULL for all classes, and NULL
+				 *  for everything else. It points to the class
+				 *  structure. */
     int refCount;		/* Number of strong references to this object.
 				 * Note that there may be many more weak
-				 * references; this mechanism is there to
+				 * references; this mechanism exists to
 				 * avoid Tcl_Preserve. */
     int flags;
     int creationEpoch;		/* Unique value to make comparisons of objects
@@ -323,7 +323,7 @@ typedef struct Foundation {
 } Foundation;
 
 /*
- * A call context structure is built when a method is called. They contain the
+ * A call context structure is built when a method is called. It contains the
  * chain of method implementations that are to be invoked by a particular
  * call, and the process of calling walks the chain, with the [next] command
  * proceeding to the next entry in the chain.
@@ -334,7 +334,7 @@ typedef struct Foundation {
 struct MInvoke {
     Method *mPtr;		/* Reference to the method implementation
 				 * record. */
-    int isFilter;		/* Whether this is a filter invokation. */
+    int isFilter;		/* Whether this is a filter invocation. */
     Class *filterDeclarer;	/* What class decided to add the filter; if
 				 * NULL, it was added by the object. */
 };
