@@ -8024,6 +8024,14 @@ ExecuteExtendedBinaryMathOp(
 	}
 	if (type1 == TCL_NUMBER_WIDE) {
 	    w1 = *((const Tcl_WideInt *)ptr1);
+
+	    if (w1 == 0) {
+		/*
+		 * 0 % (non-zero) always yields remainder of 0.
+		 */
+
+		return constants[0];
+	    }
 	    if (type2 != TCL_NUMBER_BIG) {
 		Tcl_WideInt wQuotient, wRemainder;
 		Tcl_GetWideIntFromObj(NULL, value2Ptr, &w2);
