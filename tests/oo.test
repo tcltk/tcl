@@ -1495,6 +1495,24 @@ test oo-11.5 {OO: cleanup} {
     return done
 } done
 
+test oo-11.6 {
+    OO: cleanup ReleaseClassContents() where class is mixed into one of its
+    instances
+} {
+    oo::class create obj1
+    ::oo::define obj1 {self mixin [uplevel 1 {namespace which obj1}]}
+
+    ::oo::copy obj1 obj2
+    ::oo::objdefine obj2 {mixin [uplevel 1 {namespace which obj2}]}
+
+    ::oo::copy obj2 obj3
+    trace add command obj3 delete [list obj3 dying]
+    rename obj2 {}
+
+    # No segmentation fault
+    return done
+} done
+
 test oo-12.1 {OO: filters} {
     oo::class create Aclass
     Aclass create Aobject
@@ -3850,5 +3868,5 @@ cleanupTests
 return
 
 # Local Variables:
-# mode: tcl
+# MODE: Tcl
 # End:
