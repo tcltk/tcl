@@ -142,7 +142,7 @@ Tcl_GetBoolean(
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }
     if (code == TCL_OK) {
-	*boolPtr = obj.internalRep.longValue;
+	*boolPtr = (int)obj.internalRep.wideValue;
     }
     return code;
 }
