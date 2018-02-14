@@ -124,8 +124,8 @@ Tcl_ProcObjCmd(
 {
     register Interp *iPtr = (Interp *) interp;
     Proc *procPtr;
-    const char *procName;
-    const char *simpleName, *procArgs, *procBody;
+    const char *fullName;
+    const char *procName, *procArgs, *procBody;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_Command cmd;
 
@@ -140,21 +140,21 @@ Tcl_ProcObjCmd(
      * namespace.
      */
 
-    procName = TclGetString(objv[1]);
-    TclGetNamespaceForQualName(interp, procName, NULL, 0,
-	    &nsPtr, &altNsPtr, &cxtNsPtr, &simpleName);
+    fullName = TclGetString(objv[1]);
+    TclGetNamespaceForQualName(interp, fullName, NULL, 0,
+	    &nsPtr, &altNsPtr, &cxtNsPtr, &procName);
 
     if (nsPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't create procedure \"%s\": unknown namespace",
-		procName));
+		fullName));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", NULL);
 	return TCL_ERROR;
     }
-    if (simpleName == NULL) {
+    if (procName == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't create procedure \"%s\": bad procedure name",
-		procName));
+		fullName));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", NULL);
 	return TCL_ERROR;
     }
@@ -163,15 +163,15 @@ Tcl_ProcObjCmd(
      * Create the data structure to represent the procedure.
      */
 
-    if (TclCreateProc(interp, nsPtr, simpleName, objv[2], objv[3],
+    if (TclCreateProc(interp, nsPtr, procName, objv[2], objv[3],
 	    &procPtr) != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (creating proc \"");
-	Tcl_AddErrorInfo(interp, simpleName);
+	Tcl_AddErrorInfo(interp, procName);
 	Tcl_AddErrorInfo(interp, "\")");
 	return TCL_ERROR;
     }
 
-    cmd = TclNRCreateCommandInNs(interp, simpleName, (Tcl_Namespace *) nsPtr,
+    cmd = tclNRCreateCommandInNs(interp, procName, (Tcl_Namespace *) nsPtr,
 	TclObjInterpProc, TclNRInterpProc, procPtr, TclProcDeleteProc);
 
     /*
@@ -319,7 +319,7 @@ Tcl_ProcObjCmd(
 	 * The argument list is just "args"; check the body
 	 */
 
-	procBody = TclGetStringFromObj(objv[3], &numBytes);
+	procBody = Tcl_GetStringFromObj(objv[3], &numBytes);
 	if (TclParseAllWhiteSpace(procBody, numBytes) < numBytes) {
 	    goto done;
 	}
@@ -474,8 +474,7 @@ TclCreateProc(
     }
 
     for (i = 0; i < numArgs; i++) {
-	int fieldCount, nameLength;
-	size_t valueLength;
+	int fieldCount, nameLength, valueLength;
 	Tcl_Obj **fieldValues;
 
 	/*
@@ -573,8 +572,9 @@ TclCreateProc(
 	     */
 
 	    if (localPtr->defValuePtr != NULL) {
-		const char *tmpPtr = TclGetString(localPtr->defValuePtr);
-		size_t tmpLength = localPtr->defValuePtr->length;
+		int tmpLength;
+		const char *tmpPtr = TclGetStringFromObj(localPtr->defValuePtr,
+			&tmpLength);
 
 		if ((valueLength != tmpLength) ||
 			Tcl_UtfNcmp(Tcl_GetString(fieldValues[1]), tmpPtr, tmpLength)) {
@@ -2047,7 +2047,7 @@ MakeProcError(
 				 * messages and trace information. */
 {
     int overflow, limit = 60, nameLen;
-    const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
+    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
@@ -2618,6 +2618,30 @@ TclNRApplyObjCmd(
 	procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
     }
 
+#define JOE_EXTENSION 0
+/*
+ * Note: this code is NOT FUNCTIONAL due to the NR implementation; DO NOT
+ * ENABLE! Leaving here as reminder to (a) TIP the suggestion, and (b) adapt
+ * the code. (MS)
+ */
+
+#if JOE_EXTENSION
+    else {
+	/*
+	 * Joe English's suggestion to allow cmdNames to function as lambdas.
+	 */
+
+	Tcl_Obj *elemPtr;
+	int numElem;
+
+	if ((lambdaPtr->typePtr == &tclCmdNameType) ||
+		(TclListObjGetElements(interp, lambdaPtr, &numElem,
+		&elemPtr) == TCL_OK && numElem == 1)) {
+	    return Tcl_EvalObjv(interp, objc-1, objv+1, 0);
+	}
+    }
+#endif
+
     if ((procPtr == NULL) || (procPtr->iPtr != iPtr)) {
 	result = SetLambdaFromAny(interp, lambdaPtr);
 	if (result != TCL_OK) {
@@ -2704,7 +2728,7 @@ MakeLambdaError(
 				 * messages and trace information. */
 {
     int overflow, limit = 60, nameLen;
-    const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
+    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
