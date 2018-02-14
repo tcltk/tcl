@@ -1870,20 +1870,10 @@ Tcl_AppendFormatToObj(
 		format += step;
 		step = TclUtfToUniChar(format, &ch);
 	    }
-	} else if ((ch == 't') || (ch == 'z')) {
+	} else if ((ch == 't') || (ch == 'z') || (ch == 'q') || (ch == 'j') || (ch == 'L')) {
 	    format += step;
 	    step = TclUtfToUniChar(format, &ch);
-#ifndef TCL_WIDE_INT_IS_LONG
-	    if (sizeof(size_t) > sizeof(int)) {
-		useWide = 1;
-	    }
-#endif
-	} else if ((ch == 'q') ||(ch == 'j')) {
-	    format += step;
-	    step = TclUtfToUniChar(format, &ch);
-#ifndef TCL_WIDE_INT_IS_LONG
-	    useWide = 1;
-#endif
+	    useBig = 1;
 	}
 
 	format += step;
@@ -1929,11 +1919,6 @@ Tcl_AppendFormatToObj(
 	}
 
 	case 'u':
-	    if (useBig) {
-		msg = "unsigned bignum format is invalid";
-		errCode = "BADUNSIGNED";
-		goto errorMsg;
-	    }
 	case 'd':
 	case 'o':
 	case 'p':
@@ -1953,13 +1938,25 @@ Tcl_AppendFormatToObj(
 	    }
 #endif
 	    if (useBig) {
+		int cmpResult;
 		if (Tcl_GetBignumFromObj(interp, segment, &big) != TCL_OK) {
 		    goto error;
 		}
-		isNegative = (mp_cmp_d(&big, 0) == MP_LT);
+		cmpResult = mp_cmp_d(&big, 0);
+		isNegative = (cmpResult == MP_LT);
+		if (cmpResult == MP_EQ) gotHash = 0;
+		if (ch == 'u') {
+		    if (isNegative) {
+			msg = "unsigned bignum format is invalid";
+			errCode = "BADUNSIGNED";
+			goto errorMsg;
+		    } else {
+			ch = 'd';
+		    }
+		}
 #ifndef TCL_WIDE_INT_IS_LONG
 	    } else if (useWide) {
-		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
+		if (TclGetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
 		    Tcl_Obj *objPtr;
 
 		    if (Tcl_GetBignumFromObj(interp,segment,&big) != TCL_OK) {
@@ -1968,13 +1965,14 @@ Tcl_AppendFormatToObj(
 		    mp_mod_2d(&big, (int) CHAR_BIT*sizeof(Tcl_WideInt), &big);
 		    objPtr = Tcl_NewBignumObj(&big);
 		    Tcl_IncrRefCount(objPtr);
-		    Tcl_GetWideIntFromObj(NULL, objPtr, &w);
+		    TclGetWideIntFromObj(NULL, objPtr, &w);
 		    Tcl_DecrRefCount(objPtr);
 		}
 		isNegative = (w < (Tcl_WideInt) 0);
+		if (w == (Tcl_WideInt) 0) gotHash = 0;
 #endif
 	    } else if (TclGetLongFromObj(NULL, segment, &l) != TCL_OK) {
-		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
+		if (TclGetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
 		    Tcl_Obj *objPtr;
 
 		    if (Tcl_GetBignumFromObj(interp,segment,&big) != TCL_OK) {
@@ -1991,14 +1989,18 @@ Tcl_AppendFormatToObj(
 		if (useShort) {
 		    s = (short) l;
 		    isNegative = (s < (short) 0);
+		    if (s == (short) 0) gotHash = 0;
 		} else {
 		    isNegative = (l < (long) 0);
+		    if (l == (long) 0) gotHash = 0;
 		}
 	    } else if (useShort) {
 		s = (short) l;
 		isNegative = (s < (short) 0);
+		if (s == (short) 0) gotHash = 0;
 	    } else {
 		isNegative = (l < (long) 0);
+		if (l == (long) 0) gotHash = 0;
 	    }
 
 	    segment = Tcl_NewObj();
@@ -2015,16 +2017,12 @@ Tcl_AppendFormatToObj(
 	    if (gotHash || (ch == 'p')) {
 		switch (ch) {
 		case 'o':
-		    Tcl_AppendToObj(segment, "0", 1);
-		    segmentLimit -= 1;
-		    precision--;
-		    break;
-		case 'X':
-		    Tcl_AppendToObj(segment, "0X", 2);
+		    Tcl_AppendToObj(segment, "0o", 2);
 		    segmentLimit -= 2;
 		    break;
 		case 'p':
 		case 'x':
+		case 'X':
 		    Tcl_AppendToObj(segment, "0x", 2);
 		    segmentLimit -= 2;
 		    break;
@@ -2032,10 +2030,14 @@ Tcl_AppendFormatToObj(
 		    Tcl_AppendToObj(segment, "0b", 2);
 		    segmentLimit -= 2;
 		    break;
+#if TCL_MAJOR_VERSION < 9
 		case 'd':
-		    Tcl_AppendToObj(segment, "0d", 2);
-		    segmentLimit -= 2;
+		    if (gotZero) {
+			Tcl_AppendToObj(segment, "0d", 2);
+			segmentLimit -= 2;
+		    }
 		    break;
+#endif
 		}
 	    }
 
@@ -2173,7 +2175,7 @@ Tcl_AppendFormatToObj(
 		 * Need to be sure zero becomes "0", not "".
 		 */
 
-		if ((numDigits == 0) && !((ch == 'o') && gotHash)) {
+		if (numDigits == 0) {
 		    numDigits = 1;
 		}
 		pure = Tcl_NewObj();
@@ -2240,6 +2242,8 @@ Tcl_AppendFormatToObj(
 	    break;
 	}
 
+	case 'a':
+	case 'A':
 	case 'e':
 	case 'E':
 	case 'f':
@@ -2307,6 +2311,12 @@ Tcl_AppendFormatToObj(
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
+	    }
+	    if (ch == 'A') {
+		char *p = TclGetString(segment) + 1;
+		*p = 'x';
+		p = strchr(p, 'P');
+		if (p) *p = 'p';
 	    }
 	    break;
 	}
@@ -2513,15 +2523,26 @@ AppendPrintfToObjVA(
 		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewWideIntObj(
 			    va_arg(argList, Tcl_WideInt)));
 		    break;
+		case 3:
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewBignumObj(
+			    va_arg(argList, mp_int *)));
+		    break;
 		}
 		break;
+	    case 'a':
+	    case 'A':
 	    case 'e':
 	    case 'E':
 	    case 'f':
 	    case 'g':
 	    case 'G':
+		if (size > 0) {
 		Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
-			va_arg(argList, double)));
+			(double)va_arg(argList, long double)));
+		} else {
+			Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
+				va_arg(argList, double)));
+		}
 		seekingConversion = 0;
 		break;
 	    case '*':
@@ -2541,7 +2562,6 @@ AppendPrintfToObjVA(
 		gotPrecision = 1;
 		p++;
 		break;
-	    /* TODO: support for bignum arguments */
 	    case 'l':
 		++size;
 		p++;
@@ -2567,6 +2587,10 @@ AppendPrintfToObjVA(
 		} else if (sizeof(size_t) == sizeof(Tcl_WideInt)) {
 		    size = 2;
 		}
+		p++;
+		break;
+	    case 'L':
+		size = 3;
 		p++;
 		break;
 	    case 'h':
@@ -2773,8 +2797,8 @@ TclStringRepeat(
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"string size overflow: unable to alloc %"
-			TCL_LL_MODIFIER "d bytes",
-			(Tcl_WideUInt)STRING_SIZE(count*length)));
+			TCL_Z_MODIFIER "u bytes",
+			STRING_SIZE(count*length)));
 		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	    }
 	    return NULL;
@@ -3076,8 +3100,8 @@ TclStringCat(
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    	"concatenation failed: unable to alloc %"
-			TCL_LL_MODIFIER "d bytes",
-			(Tcl_WideUInt)STRING_SIZE(length)));
+			TCL_Z_MODIFIER "u bytes",
+			STRING_SIZE(length)));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
 		return NULL;
@@ -3093,8 +3117,8 @@ TclStringCat(
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    	"concatenation failed: unable to alloc %"
-			TCL_LL_MODIFIER "d bytes",
-			(Tcl_WideUInt)STRING_SIZE(length)));
+			TCL_Z_MODIFIER "u bytes",
+			STRING_SIZE(length)));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
 		return NULL;
