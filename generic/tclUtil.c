@@ -3530,22 +3530,27 @@ TclFormatInt(
  *
  * TclGetIntForIndex --
  *
- *	This function returns an integer corresponding to the list index held
- *	in a Tcl object. The Tcl object's value is expected to be in the
- *	format integer([+-]integer)? or the format end([+-]integer)?.
+ *	Provides an integer corresponding to the list index held in a Tcl
+ *	object. The string value 'objPtr' is expected have the format
+ *	integer([+-]integer)? or end([+-]integer)?.
  *
- * Results:
- *	The return value is normally TCL_OK, which means that the index was
- *	successfully stored into the location referenced by "indexPtr". If the
- *	Tcl object referenced by "objPtr" has the value "end", the value
- *	stored is "endValue". If "objPtr"s values is not of one of the
- *	expected formats, TCL_ERROR is returned and, if "interp" is non-NULL,
- *	an error message is left in the interpreter's result object.
- *
- * Side effects:
- *	The object referenced by "objPtr" might be converted to an integer,
- *	wide integer, or end-based-index object.
- *
+ * Value
+ * 	TCL_OK
+ *      
+ * 	    The index is stored at the address given by by 'indexPtr'. If
+ * 	    'objPtr' has the value "end", the value stored is 'endValue'.
+ * 
+ * 	TCL_ERROR
+ *      
+ * 	    The value of 'objPtr' does not have one of the expected formats. If
+ * 	    'interp' is non-NULL, an error message is left in the interpreter's
+ * 	    result object.
+ * 
+ * Effect
+ * 
+ * 	The object referenced by 'objPtr' is converted, as needed, to an
+ * 	integer, wide integer, or end-based-index object.
+ * 
  *----------------------------------------------------------------------
  */
 
