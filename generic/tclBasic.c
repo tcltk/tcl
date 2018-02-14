@@ -2270,11 +2270,11 @@ Tcl_CreateObjCommand(
 	tail = cmdName;
     }
 
-    return tclCreateObjCommandInNs(interp, tail, (Tcl_Namespace *) nsPtr,
+    return TclCreateObjCommandInNs(interp, tail, (Tcl_Namespace *) nsPtr,
 	proc, clientData, deleteProc);
 }
 
-Tcl_Command tclCreateObjCommandInNs (
+Tcl_Command TclCreateObjCommandInNs (
     Tcl_Interp *interp,
     const char *cmdName,	/* Name of command, without any namespace components */
     Tcl_Namespace *namespace,   /* The namespace to create the command in */
@@ -8192,7 +8192,7 @@ Tcl_NRCreateCommand(
     return (Tcl_Command) cmdPtr;
 }
 
-Tcl_Command tclNRCreateCommandInNs (
+Tcl_Command TclNRCreateCommandInNs (
     Tcl_Interp *interp,
     const char *cmdName,
     Tcl_Namespace *nsPtr,
@@ -8201,7 +8201,7 @@ Tcl_Command tclNRCreateCommandInNs (
     ClientData clientData,
     Tcl_CmdDeleteProc *deleteProc) {
     Command *cmdPtr = (Command *)
-	tclCreateObjCommandInNs(interp,cmdName,nsPtr,proc,clientData,deleteProc);
+	TclCreateObjCommandInNs(interp,cmdName,nsPtr,proc,clientData,deleteProc);
 
     cmdPtr->nreProc = nreProc;
     return (Tcl_Command) cmdPtr;
@@ -8991,9 +8991,9 @@ TclNRCoroutineObjCmd(
 {
     Command *cmdPtr;
     CoroutineData *corPtr;
-    const char *fullName, *procName;
-    Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
-    Tcl_DString ds;
+    const char *procName, *simpleName;
+    Namespace *nsPtr, *altNsPtr, *cxtNsPtr,
+	*inNsPtr = (Namespace *)TclGetCurrentNamespace(interp);
     Namespace *lookupNsPtr = iPtr->varFramePtr->nsPtr;
 
     if (objc < 3) {
@@ -9001,27 +9001,22 @@ TclNRCoroutineObjCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * FIXME: this is copy/pasted from Tcl_ProcObjCommand. Should have
-     * something in tclUtil.c to find the FQ name.
-     */
-
-    fullName = TclGetString(objv[1]);
-    TclGetNamespaceForQualName(interp, fullName, NULL, 0,
-	    &nsPtr, &altNsPtr, &cxtNsPtr, &procName);
+    procName = TclGetString(objv[1]);
+    TclGetNamespaceForQualName(interp, procName, inNsPtr, 0,
+	    &nsPtr, &altNsPtr, &cxtNsPtr, &simpleName);
 
     if (nsPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "can't create procedure \"%s\": unknown namespace",
-                fullName));
+                procName));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NAMESPACE", NULL);
 	return TCL_ERROR;
     }
-    if (procName == NULL) {
+    if (simpleName == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "can't create procedure \"%s\": bad procedure name",
-                fullName));
-        Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", fullName, NULL);
+                procName));
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", procName, NULL);
 	return TCL_ERROR;
     }
 
@@ -9032,16 +9027,9 @@ TclNRCoroutineObjCmd(
 
     corPtr = ckalloc(sizeof(CoroutineData));
 
-    Tcl_DStringInit(&ds);
-    if (nsPtr != iPtr->globalNsPtr) {
-	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
-	TclDStringAppendLiteral(&ds, "::");
-    }
-    Tcl_DStringAppend(&ds, procName, -1);
-
-    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
-	    /*objProc*/ NULL, TclNRInterpCoroutine, corPtr, DeleteCoroutine);
-    Tcl_DStringFree(&ds);
+    cmdPtr = (Command *) TclNRCreateCommandInNs(interp, simpleName,
+	    (Tcl_Namespace *)nsPtr, /*objProc*/ NULL, TclNRInterpCoroutine,
+	    corPtr, DeleteCoroutine);
 
     corPtr->cmdPtr = cmdPtr;
     cmdPtr->refCount++;
