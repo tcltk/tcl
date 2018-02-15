@@ -4,6 +4,7 @@
  *	This file contains the object-system core (NB: not Tcl_Obj, but ::oo)
  *
  * Copyright (c) 2005-2012 by Donal K. Fellows
+ * Copyright (c) 2017 by Nathan Coulter
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -81,7 +82,6 @@ static void		ObjectRenamedTrace(ClientData clientData,
 			    const char *newName, int flags);
 static void		ReleaseClassContents(Tcl_Interp *interp,Object *oPtr);
 static inline void	SquelchCachedName(Object *oPtr);
-static void		SquelchedNsFirst(ClientData clientData);
 
 static int		PublicObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
@@ -582,8 +582,7 @@ AllocObject(
      */
 
     if (nsNameStr != NULL) {
-	oPtr->namespacePtr = Tcl_CreateNamespace(interp, nsNameStr, oPtr,
-		ObjectNamespaceDeleted);
+	oPtr->namespacePtr = Tcl_CreateNamespace(interp, nsNameStr, oPtr, NULL);
 	if (oPtr->namespacePtr != NULL) {
 	    creationEpoch = ++fPtr->tsdPtr->nsCount;
 	    goto configNamespace;
@@ -595,8 +594,7 @@ AllocObject(
 	char objName[10 + TCL_INTEGER_SPACE];
 
 	sprintf(objName, "::oo::Obj%d", ++fPtr->tsdPtr->nsCount);
-	oPtr->namespacePtr = Tcl_CreateNamespace(interp, objName, oPtr,
-		ObjectNamespaceDeleted);
+	oPtr->namespacePtr = Tcl_CreateNamespace(interp, objName, oPtr, NULL);
 	if (oPtr->namespacePtr != NULL) {
 	    creationEpoch = fPtr->tsdPtr->nsCount;
 	    break;
@@ -636,7 +634,7 @@ AllocObject(
      * access variables in it. [Bug 2950259]
      */
 
-    ((Namespace *) oPtr->namespacePtr)->earlyDeleteProc = SquelchedNsFirst;
+    ((Namespace *) oPtr->namespacePtr)->earlyDeleteProc = ObjectNamespaceDeleted;
 
     /*
      * Fill in the rest of the non-zero/NULL parts of the structure.
@@ -751,30 +749,6 @@ MyDeleted(
 /*
  * ----------------------------------------------------------------------
  *
- * SquelchedNsFirst --
- *
- *	This callback is triggered when the object's namespace is deleted by
- *	any mechanism. It deletes the object's public command if it has not
- *	already been deleted, so ensuring that destructors get run at an
- *	appropriate time. [Bug 2950259]
- *
- * ----------------------------------------------------------------------
- */
-
-static void
-SquelchedNsFirst(
-    ClientData clientData)
-{
-    Object *oPtr = clientData;
-
-    if (oPtr->command) {
-	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->command);
-    }
-}
-
-/*
- * ----------------------------------------------------------------------
- *
  * ObjectRenamedTrace --
  *
  *	This callback is triggered when the object is deleted by any
@@ -794,8 +768,6 @@ ObjectRenamedTrace(
     int flags)			/* Why was the object deleted? */
 {
     Object *oPtr = clientData;
-    Foundation *fPtr = oPtr->fPtr;
-
     /*
      * If this is a rename and not a delete of the object, we just flush the
      * cache of the object name.
@@ -807,87 +779,35 @@ ObjectRenamedTrace(
     }
 
     /*
-     * Oh dear, the object really is being deleted. Handle this by running the
-     * destructors and deleting the object's namespace, which in turn causes
-     * the real object structures to be deleted.
-     *
-     * Note that it is possible for the namespace to be deleted before the
-     * command. Because of that case, we must take care here to mark the
-     * command as being deleted so that if we return here we don't run into
-     * reentrancy problems.
-     *
-     * We also do not run destructors on the core class objects when the
-     * interpreter is being deleted; their incestuous nature causes problems
-     * in that case when the destructor is partially deleted before the uses
-     * of it have gone. [Bug 2949397]
+     * The namespace is only deleted if it hasn't already been deleted. [Bug
+     * 2950259]. If the namespace has already been deleted, then
+     * ObjectNamespaceDeleted() has already cleaned up this command.
      */
 
-    AddRef(oPtr);
-    AddRef(fPtr->classCls);
-    AddRef(fPtr->objectCls);
-    AddRef(fPtr->classCls->thisPtr);
-    AddRef(fPtr->objectCls->thisPtr);
-    oPtr->command = NULL;
-
-    if (!(oPtr->flags & DESTRUCTOR_CALLED) && !Tcl_InterpDeleted(interp)) {
-	CallContext *contextPtr =
-		TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
-	int result;
-	Tcl_InterpState state;
-
-	oPtr->flags |= DESTRUCTOR_CALLED;
-	if (contextPtr != NULL) {
-	    contextPtr->callPtr->flags |= DESTRUCTOR;
-	    contextPtr->skip = 0;
-	    state = Tcl_SaveInterpState(interp, TCL_OK);
-	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext,
-		    contextPtr, 0, NULL);
-	    if (result != TCL_OK) {
-		Tcl_BackgroundException(interp, result);
-	    }
-	    Tcl_RestoreInterpState(interp, state);
-	    TclOODeleteContext(contextPtr);
+    if (oPtr->namespacePtr == NULL) {
+	/*
+	 * ObjectNamespaceDeleted() has already done all the cleanup, but
+	 * detected that the command was in the process of being deleted, and
+	 * left the pointer allocated for us.
+	 */
+	DelRef(oPtr);
+    } else {
+	if (((Namespace *) oPtr->namespacePtr)->earlyDeleteProc == NULL) {
+	    /*
+	     * ObjectNamespaceDeleted() called us, and still has some work to
+	     * do, so we leave the pointer allocated for it to finish, and then
+	     * it will deallocate the pointer.
+	     */
+	} else {
+	    Tcl_DeleteNamespace(oPtr->namespacePtr);
+	    /*
+	     * ObjectNamespaceDeleted() doesn't know it was us that just
+	     * called, so it left the pointer allocated.
+	     */
+	    DelRef(oPtr);
 	}
     }
-
-    /*
-     * OK, the destructor's been run. Time to splat the class data (if any)
-     * and nuke the namespace (which triggers the final crushing of the object
-     * structure itself).
-     *
-     * The class of objects needs some special care; if it is deleted (and
-     * we're not killing the whole interpreter) we force the delete of the
-     * class of classes now as well. Due to the incestuous nature of those two
-     * classes, if one goes the other must too and yet the tangle can
-     * sometimes not go away automatically; we force it here. [Bug 2962664]
-     */
-
-    if (!Tcl_InterpDeleted(interp) && IsRootObject(oPtr)
-	    && !Deleted(fPtr->classCls->thisPtr)) {
-	Tcl_DeleteCommandFromToken(interp, fPtr->classCls->thisPtr->command);
-    }
-
-    if (oPtr->classPtr != NULL) {
-	AddRef(oPtr->classPtr);
-	ReleaseClassContents(interp, oPtr);
-    }
-
-    /*
-     * The namespace is only deleted if it hasn't already been deleted. [Bug
-     * 2950259]
-     */
-
-    if (oPtr->namespacePtr && ((Namespace *) oPtr->namespacePtr)->earlyDeleteProc != NULL) {
-	Tcl_DeleteNamespace(oPtr->namespacePtr);
-    }
-    if (oPtr->classPtr) {
-	DelRef(oPtr->classPtr);
-    }
-    DelRef(fPtr->classCls->thisPtr);
-    DelRef(fPtr->objectCls->thisPtr);
-    DelRef(fPtr->classCls);
-    DelRef(fPtr->objectCls);
-    DelRef(oPtr);
+    return;
 }
 
 /*
@@ -959,7 +879,9 @@ ReleaseClassContents(
     int i;
     Class *clsPtr = oPtr->classPtr, *mixinSubclassPtr, *subclassPtr;
     Object *instancePtr;
+    Method *mPtr;
     Foundation *fPtr = oPtr->fPtr;
+    Tcl_Obj *variableObj;
 
     /*
      * Sanity check!
@@ -1150,6 +1072,26 @@ ReleaseClassContents(
 	ckfree(clsPtr->metadataPtr);
 	clsPtr->metadataPtr = NULL;
     }
+
+    ClearMixins(clsPtr);
+    ClearSuperclasses(clsPtr);
+
+    FOREACH_HASH_VALUE(mPtr, &clsPtr->classMethods) {
+	TclOODelMethodRef(mPtr);
+    }
+    Tcl_DeleteHashTable(&clsPtr->classMethods);
+    TclOODelMethodRef(clsPtr->constructorPtr);
+    TclOODelMethodRef(clsPtr->destructorPtr);
+
+    FOREACH(variableObj, clsPtr->variables) {
+	TclDecrRefCount(variableObj);
+    }
+    if (i) {
+	ckfree(clsPtr->variables.list);
+    }
+
+    DelRef(clsPtr);
+
 }
 
 /*
@@ -1171,33 +1113,89 @@ ObjectNamespaceDeleted(
 				 * being deleted. */
 {
     Object *oPtr = clientData;
+    Foundation *fPtr = oPtr->fPtr;
     FOREACH_HASH_DECLS;
-    Class *clsPtr = oPtr->classPtr, *mixinPtr;
+    Class *mixinPtr;
     Method *mPtr;
     Tcl_Obj *filterObj, *variableObj;
-    int deleteAlreadyInProgress = 0, i;
+    Tcl_Interp *interp = oPtr->fPtr->interp;
+    int finished = 0, i;
+
+
+    AddRef(fPtr->classCls);
+    AddRef(fPtr->objectCls);
+    AddRef(fPtr->classCls->thisPtr);
+    AddRef(fPtr->objectCls->thisPtr);
+
+    /*
+     * We do not run destructors on the core class objects when the
+     * interpreter is being deleted; their incestuous nature causes problems
+     * in that case when the destructor is partially deleted before the uses
+     * of it have gone. [Bug 2949397]
+     */
+
+    if (!(oPtr->flags & DESTRUCTOR_CALLED) && !Tcl_InterpDeleted(interp)) {
+	CallContext *contextPtr =
+		TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
+	int result;
+
+	Tcl_InterpState state;
+
+	oPtr->flags |= DESTRUCTOR_CALLED;
+	if (contextPtr != NULL) {
+	    contextPtr->callPtr->flags |= DESTRUCTOR;
+	    contextPtr->skip = 0;
+	    state = Tcl_SaveInterpState(interp, TCL_OK);
+	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext,
+		    contextPtr, 0, NULL);
+	    if (result != TCL_OK) {
+		Tcl_BackgroundException(interp, result);
+	    }
+	    Tcl_RestoreInterpState(interp, state);
+	    TclOODeleteContext(contextPtr);
+	}
+    }
 
     /*
      * Instruct everyone to no longer use any allocated fields of the object.
-     * Also delete the commands that refer to the object at this point (if
-     * they still exist) because otherwise their references to the object
-     * point into freed memory, allowing crashes.
+     * Also delete the command that refers to the object at this point (if
+     * it still exists) because otherwise its pointer to the object
+     * points into freed memory.
      */
 
-    if (oPtr->command) {
-	if ((((Command *)oPtr->command)->flags && CMD_IS_DELETED)) {
-	    /*
-	     * Namespace deletion must have been triggered by a trace on command
-	     * deletion , meaning that ObjectRenamedTrace() is eventually going
-	     * to be called .
-	     */
-	    deleteAlreadyInProgress = 1;
-	}
-
+    if ((((Command *)oPtr->command)->flags && CMD_IS_DELETED)) {
+	/*
+	 * Something has already started the command deletion process. We can
+	 * go ahead and clean up the the namespace,
+	 */
+    } else {
+	/*
+	 * The namespace must have been deleted directly.  Delete the command
+	 * as well.
+	 */
 	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->command);
+	finished = 1;
     }
+    oPtr->command = NULL;
+
     if (oPtr->myCommand) {
 	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->myCommand);
+    }
+
+    /*
+     * The class of objects needs some special care; if it is deleted (and
+     * we're not killing the whole interpreter) we force the delete of the
+     * class of classes now as well. Due to the incestuous nature of those two
+     * classes, if one goes the other must too and yet the tangle can
+     * sometimes not go away automatically; we force it here. [Bug 2962664]
+     */
+    if (!Tcl_InterpDeleted(interp) && IsRootObject(oPtr)
+	    && !Deleted(fPtr->classCls->thisPtr)) {
+	Tcl_DeleteCommandFromToken(interp, fPtr->classCls->thisPtr->command);
+    }
+
+    if (oPtr->classPtr != NULL) {
+	ReleaseClassContents(interp, oPtr);
     }
 
     /*
@@ -1259,77 +1257,27 @@ ObjectNamespaceDeleted(
     }
 
     /*
-     * If this was a class, there's additional deletion work to do.
-     */
-
-    if (clsPtr != NULL) {
-	Tcl_ObjectMetadataType *metadataTypePtr;
-	ClientData value;
-
-	if (clsPtr->metadataPtr != NULL) {
-	    FOREACH_HASH(metadataTypePtr, value, clsPtr->metadataPtr) {
-		metadataTypePtr->deleteProc(value);
-	    }
-	    Tcl_DeleteHashTable(clsPtr->metadataPtr);
-	    ckfree(clsPtr->metadataPtr);
-	    clsPtr->metadataPtr = NULL;
-	}
-
-	FOREACH(filterObj, clsPtr->filters) {
-	    TclDecrRefCount(filterObj);
-	}
-	if (i) {
-	    ckfree(clsPtr->filters.list);
-	    clsPtr->filters.num = 0;
-	}
-
-	ClearMixins(clsPtr);
-
-	ClearSuperclasses(clsPtr);
-
-	if (clsPtr->subclasses.list) {
-	    ckfree(clsPtr->subclasses.list);
-	    clsPtr->subclasses.list = NULL;
-	    clsPtr->subclasses.num = 0;
-	}
-	if (clsPtr->instances.list) {
-	    ckfree(clsPtr->instances.list);
-	    clsPtr->instances.list = NULL;
-	    clsPtr->instances.num = 0;
-	}
-	if (clsPtr->mixinSubs.list) {
-	    ckfree(clsPtr->mixinSubs.list);
-	    clsPtr->mixinSubs.list = NULL;
-	    clsPtr->mixinSubs.num = 0;
-	}
-
-	FOREACH_HASH_VALUE(mPtr, &clsPtr->classMethods) {
-	    TclOODelMethodRef(mPtr);
-	}
-	Tcl_DeleteHashTable(&clsPtr->classMethods);
-	TclOODelMethodRef(clsPtr->constructorPtr);
-	TclOODelMethodRef(clsPtr->destructorPtr);
-
-	FOREACH(variableObj, clsPtr->variables) {
-	    TclDecrRefCount(variableObj);
-	}
-	if (i) {
-	    ckfree(clsPtr->variables.list);
-	}
-
-	DelRef(clsPtr);
-    }
-
-    /*
      * Delete the object structure itself.
      */
 
-    if (deleteAlreadyInProgress) {
-	oPtr->classPtr = NULL;
-	oPtr->namespacePtr = NULL;
-    } else {
+    oPtr->classPtr = NULL;
+    oPtr->namespacePtr = NULL;
+
+    DelRef(fPtr->classCls->thisPtr);
+    DelRef(fPtr->objectCls->thisPtr);
+    DelRef(fPtr->classCls);
+    DelRef(fPtr->objectCls);
+    if (finished) {
+	/*
+	 * ObjectRenamedTrace called us, and not the other way around.
+	 */
 	DelRef(oPtr);
+    } else {
+	/*
+	 * ObjectRenamedTrace will call DelRef(oPtr).
+	 */
     }
+    return;
 
 }
 
@@ -1423,7 +1371,7 @@ TclOOAddToInstances(
 void
 TclOORemoveFromSubclasses(
     Class *subPtr,		/* The subclass to remove. */
-    Class *superPtr)		/* The superclass to (possibly) remove the
+    Class *superPtr)		/* The superclass to possibly remove the
 				 * subclass reference from. */
 {
     int i;
@@ -1494,7 +1442,7 @@ TclOOAddToSubclasses(
 void
 TclOORemoveFromMixinSubs(
     Class *subPtr,		/* The subclass to remove. */
-    Class *superPtr)		/* The superclass to (possibly) remove the
+    Class *superPtr)		/* The superclass to possibly remove the
 				 * subclass reference from. */
 {
     int i;
@@ -1568,7 +1516,7 @@ AllocClass(
 				 * class. */
     Object *useThisObj)		/* Object that is to act as the class
 				 * representation, or NULL if a new object
-				 * (with automatic name) is to be used. */
+				 * with automatic name is to be used. */
 {
     Foundation *fPtr = GetFoundation(interp);
     Class *clsPtr = ckalloc(sizeof(Class));
@@ -1640,7 +1588,6 @@ AllocClass(
  *
  * ----------------------------------------------------------------------
  */
-
 Tcl_Object
 Tcl_NewObjectInstance(
     Tcl_Interp *interp,		/* Interpreter context. */
@@ -1657,54 +1604,14 @@ Tcl_NewObjectInstance(
 				 * constructor. */
 {
     register Class *classPtr = (Class *) cls;
-    Foundation *fPtr = GetFoundation(interp);
     Object *oPtr;
 
-    /*
-     * Check if we're going to create an object over an existing command;
-     * that's not allowed.
-     */
-
-    if (nameStr && Tcl_FindCommand(interp, nameStr, NULL,
-	    TCL_NAMESPACE_ONLY)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't create object \"%s\": command already exists with"
-		" that name", nameStr));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "OVERWRITE_OBJECT", NULL);
-	return NULL;
-    }
+    oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
+    if (oPtr == NULL) {return NULL;}
 
     /*
-     * Create the object.
-     */
-
-    oPtr = AllocObject(interp, nameStr, nsNameStr);
-    oPtr->selfCls = classPtr;
-    TclOOAddToInstances(oPtr, classPtr);
-
-    /*
-     * Check to see if we're really creating a class. If so, allocate the
-     * class structure as well.
-     */
-
-    if (TclOOIsReachable(fPtr->classCls, classPtr)) {
-	/*
-	 * Is a class, so attach a class structure. Note that the AllocClass
-	 * function splices the structure into the object, so we don't have
-	 * to. Once that's done, we need to repatch the object to have the
-	 * right class since AllocClass interferes with that.
-	 */
-
-	AllocClass(interp, oPtr);
-	oPtr->selfCls = classPtr;
-	TclOOAddToSubclasses(oPtr->classPtr, fPtr->objectCls);
-    } else {
-	oPtr->classPtr = NULL;
-    }
-
-    /*
-     * Run constructors, except when objc < 0 (a special flag case used for
-     * object cloning only).
+     * Run constructors, except when objc < 0, which is a special flag case
+     * used for object cloning only.
      */
 
     if (objc >= 0) {
@@ -1732,9 +1639,8 @@ Tcl_NewObjectInstance(
 	    }
 
 	    /*
-	     * It's an error if the object was whacked in the constructor.
-	     * Force this if it isn't already an error (don't want to lose
-	     * errors by accident...) [Bug 2903011]
+	     * Ensure an error if the object was deleted in the constructor.
+	     * Don't want to lose errors by accident. [Bug 2903011]
 	     */
 
 	    if (result != TCL_ERROR && Deleted(oPtr)) {
@@ -1785,7 +1691,6 @@ TclNRNewObjectInstance(
 				 * successful allocation. */
 {
     register Class *classPtr = (Class *) cls;
-    Foundation *fPtr = GetFoundation(interp);
     CallContext *contextPtr;
     Tcl_InterpState state;
     Object *oPtr;
@@ -1795,45 +1700,8 @@ TclNRNewObjectInstance(
      */
     AddRef(classPtr);
 
-    /*
-     * Check if we're going to create an object over an existing command;
-     * that's not allowed.
-     */
-
-    if (nameStr && Tcl_FindCommand(interp, nameStr, NULL,
-	    TCL_NAMESPACE_ONLY)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't create object \"%s\": command already exists with"
-		" that name", nameStr));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "OVERWRITE_OBJECT", NULL);
-	return TCL_ERROR;
-    }
-
-    /*
-     * Create the object.
-     */
-
-    oPtr = AllocObject(interp, nameStr, nsNameStr);
-    oPtr->selfCls = classPtr;
-    TclOOAddToInstances(oPtr, classPtr);
-
-    /*
-     * Check to see if we're really creating a class. If so, allocate the
-     * class structure as well.
-     */
-
-    if (TclOOIsReachable(fPtr->classCls, classPtr)) {
-	/*
-	 * Is a class, so attach a class structure. Note that the AllocClass
-	 * function splices the structure into the object, so we don't have
-	 * to. Once that's done, we need to repatch the object to have the
-	 * right class since AllocClass interferes with that.
-	 */
-
-	AllocClass(interp, oPtr);
-	oPtr->selfCls = classPtr;
-	TclOOAddToSubclasses(oPtr->classPtr, fPtr->objectCls);
-    }
+    oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
+    if (oPtr == NULL) {return TCL_ERROR;}
 
     /*
      * Run constructors, except when objc < 0 (a special flag case used for
@@ -1875,6 +1743,62 @@ TclNRNewObjectInstance(
     DelRef(classPtr);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
+
+
+Object *
+TclNewObjectInstanceCommon(
+    Tcl_Interp *interp,
+    Class *classPtr,
+    const char *nameStr,
+    const char *nsNameStr)
+{
+    Foundation *fPtr = GetFoundation(interp);
+    Object *oPtr;
+
+    /*
+     * Disallow creation of an object over an existing command.
+     */
+
+    if (nameStr && Tcl_FindCommand(interp, nameStr, NULL,
+	    TCL_NAMESPACE_ONLY)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't create object \"%s\": command already exists with"
+		" that name", nameStr));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "OVERWRITE_OBJECT", NULL);
+	return NULL;
+    }
+
+    /*
+     * Create the object.
+     */
+
+    oPtr = AllocObject(interp, nameStr, nsNameStr);
+    oPtr->selfCls = classPtr;
+    TclOOAddToInstances(oPtr, classPtr);
+
+    /*
+     * Check to see if we're really creating a class. If so, allocate the
+     * class structure as well.
+     */
+
+    if (TclOOIsReachable(fPtr->classCls, classPtr)) {
+	/*
+	 * Is a class, so attach a class structure. Note that the AllocClass
+	 * function splices the structure into the object, so we don't have
+	 * to. Once that's done, we need to repatch the object to have the
+	 * right class since AllocClass interferes with that.
+	 */
+
+	AllocClass(interp, oPtr);
+	oPtr->selfCls = classPtr;
+	TclOOAddToSubclasses(oPtr->classPtr, fPtr->objectCls);
+    } else {
+	oPtr->classPtr = NULL;
+    }
+    return oPtr;
+}
+
+
 
 static int
 FinalizeAlloc(
