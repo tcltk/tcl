@@ -2448,11 +2448,19 @@ typedef struct List {
 #define TCL_EACH_COLLECT    1	/* Collect iteration result like [lmap] */
 
 /*
- * Macros providing a faster path to integers: Tcl_GetLongFromObj,
- * Tcl_GetIntFromObj and TclGetIntForIndex.
+ * Macros providing a faster path to booleans and integers:
+ * Tcl_GetBooleanFromObj, Tcl_GetLongFromObj, Tcl_GetIntFromObj
+ * and TclGetIntForIndex.
  *
  * WARNING: these macros eval their args more than once.
  */
+
+#define TclGetBooleanFromObj(interp, objPtr, boolPtr) \
+    (((objPtr)->typePtr == &tclIntType)			\
+	? (*(boolPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
+	: ((objPtr)->typePtr == &tclBooleanType)			\
+	? (*(boolPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
+	: Tcl_GetBooleanFromObj((interp), (objPtr), (boolPtr)))
 
 #ifdef TCL_WIDE_INT_IS_LONG
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
