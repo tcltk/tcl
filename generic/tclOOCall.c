@@ -110,7 +110,8 @@ TclOODeleteContext(
     TclOODeleteChain(contextPtr->callPtr);
     if (oPtr != NULL) {
 	TclStackFree(oPtr->fPtr->interp, contextPtr);
-	DelRef(oPtr);
+	/* Corresponding AddRef() in TclOO.c/TclOOObjectCmdCore */
+	TclOODecrRefCount(oPtr);
     }
 }
 
@@ -1171,6 +1172,7 @@ TclOOGetCallContext(
   returnContext:
     contextPtr = TclStackAlloc(oPtr->fPtr->interp, sizeof(CallContext));
     contextPtr->oPtr = oPtr;
+    /* Corresponding TclOODecrRefCount() in TclOODeleteContext */ 
     AddRef(oPtr);
     contextPtr->callPtr = callPtr;
     contextPtr->skip = 2;
