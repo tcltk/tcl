@@ -1605,6 +1605,7 @@ Tcl_NewObjectInstance(
 {
     register Class *classPtr = (Class *) cls;
     Object *oPtr;
+    ClientData clientData[4];
 
     oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
     if (oPtr == NULL) {return NULL;}
@@ -1638,35 +1639,16 @@ Tcl_NewObjectInstance(
 		TclResetRewriteEnsemble(interp, 1);
 	    }
 
-	    /*
-	     * Ensure an error if the object was deleted in the constructor.
-	     * Don't want to lose errors by accident. [Bug 2903011]
-	     */
+	    clientData[0] = contextPtr;
+	    clientData[1] = oPtr;
+	    clientData[2] = state;
+	    clientData[3] = &oPtr;
 
-	    if (result != TCL_ERROR && Deleted(oPtr)) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"object deleted in constructor", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", NULL);
-		result = TCL_ERROR;
-	    }
-	    TclOODeleteContext(contextPtr);
+	    AddRef(oPtr);
+	    result = FinalizeAlloc(clientData, interp, result);
 	    if (result != TCL_OK) {
-		Tcl_DiscardInterpState(state);
-
-		/*
-		 * Take care to not delete a deleted object; that would be
-		 * bad. [Bug 2903011] Also take care to make sure that we have
-		 * the name of the command before we delete it. [Bug
-		 * 9dd1bd7a74]
-		 */
-
-		if (!Deleted(oPtr)) {
-		    (void) TclOOObjectName(interp, oPtr);
-		    Tcl_DeleteCommandFromToken(interp, oPtr->command);
-		}
 		return NULL;
 	    }
-	    Tcl_RestoreInterpState(interp, state);
 	}
     }
 
@@ -1725,7 +1707,7 @@ TclNRNewObjectInstance(
     contextPtr->skip = skip;
 
     /*
-     * Adjust the ensmble tracking record if necessary. [Bug 3514761]
+     * Adjust the ensemble tracking record if necessary. [Bug 3514761]
      */
 
     if (TclInitRewriteEnsemble(interp, skip, skip, objv)) {
@@ -1812,9 +1794,8 @@ FinalizeAlloc(
     Tcl_Object *objectPtr = data[3];
 
     /*
-     * It's an error if the object was whacked in the constructor. Force this
-     * if it isn't already an error (don't want to lose errors by accident...)
-     * [Bug 2903011]
+     * Ensure an error if the object was deleted in the constructor.
+     * Don't want to lose errors by accident. [Bug 2903011]
      */
 
     if (result != TCL_ERROR && Deleted(oPtr)) {
