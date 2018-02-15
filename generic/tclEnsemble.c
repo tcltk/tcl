@@ -732,7 +732,6 @@ Tcl_CreateEnsemble(
     Tcl_Namespace *namespacePtr,
     int flags)
 {
-    Tcl_Obj *nameObj = NULL;
     Namespace *nsPtr = (Namespace *)namespacePtr, *foundNsPtr, *altNsPtr,
     	*actualNsPtr;
     const char * simpleName;
@@ -741,11 +740,8 @@ Tcl_CreateEnsemble(
 	nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     }
 
-    TclGetNamespaceForQualName(interp, name, nsPtr, 0,
+    TclGetNamespaceForQualName(interp, name, nsPtr, TCL_CREATE_NS_IF_UNKNOWN,
     	&foundNsPtr, &altNsPtr, &actualNsPtr, &simpleName);
-    if (nameObj != NULL) {
-    	TclDecrRefCount(nameObj);
-    }
     return TclCreateEnsembleInNs(interp, simpleName,
 	(Tcl_Namespace *) foundNsPtr, (Tcl_Namespace *) nsPtr, flags);
 }
