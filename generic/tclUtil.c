@@ -3691,6 +3691,9 @@ GetEndOffsetFromObj(
 	ir.wideValue = offset;
 	Tcl_StoreIntRep(objPtr, &endOffsetType, &ir);
     }
+
+
+
     *indexPtr = endValue + (int)irPtr->wideValue;
     return TCL_OK;
 }
