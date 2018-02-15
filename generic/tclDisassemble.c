@@ -58,7 +58,7 @@ static const Tcl_ObjType instNameType = {
 	const Tcl_ObjIntRep *irPtr;				\
 	irPtr = Tcl_FetchIntRep((objPtr), &instNameType);	\
 	assert(irPtr != NULL);					\
-	(inst) = (int)irPtr->wideValue;				\
+	(inst) = (size_t)irPtr->wideValue;			\
     } while (0)
 
 
@@ -829,19 +829,19 @@ static void
 UpdateStringOfInstName(
     Tcl_Obj *objPtr)
 {
-    int inst;
+    size_t inst;	/* NOTE: We know this is really an unsigned char */
     char *dst;
 
     InstNameGetIntRep(objPtr, inst);
 
-    if ((inst < 0) || (inst > LAST_INST_OPCODE)) {
+    if (inst > LAST_INST_OPCODE) {
 	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
 	TclOOM(dst, TCL_INTEGER_SPACE + 5);
-        sprintf(dst, "inst_%d", inst);
+        sprintf(dst, "inst_%" TCL_Z_MODIFIER "d", inst);
 	(void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
     } else {
 	const char *s = tclInstructionTable[inst].name;
-	int len = strlen(s);
+	unsigned int len = strlen(s);
 	dst = Tcl_InitStringRep(objPtr, s, len);
 	TclOOM(dst, len);
     }
