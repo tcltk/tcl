@@ -1677,11 +1677,6 @@ TclNRNewObjectInstance(
     Tcl_InterpState state;
     Object *oPtr;
 
-    /*
-     * Protect classPtr from getting cleaned up when the command is created.
-     */
-    AddRef(classPtr);
-
     oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
     if (oPtr == NULL) {return TCL_ERROR;}
 
@@ -1692,13 +1687,11 @@ TclNRNewObjectInstance(
 
     if (objc < 0) {
 	*objectPtr = (Tcl_Object) oPtr;
-	DelRef(classPtr);
 	return TCL_OK;
     }
     contextPtr = TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL);
     if (contextPtr == NULL) {
 	*objectPtr = (Tcl_Object) oPtr;
-	DelRef(classPtr);
 	return TCL_OK;
     }
 
@@ -1722,7 +1715,6 @@ TclNRNewObjectInstance(
     TclNRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, state,
 	    objectPtr);
     TclPushTailcallPoint(interp);
-    DelRef(classPtr);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 
@@ -1754,7 +1746,15 @@ TclNewObjectInstanceCommon(
      * Create the object.
      */
 
+    /*
+     * The command for the object could have the same name as the command
+     * associated with classPtr, so protect the structure from deallocation
+     * here.
+     */
+    AddRef(classPtr);
+
     oPtr = AllocObject(interp, nameStr, nsNameStr);
+    DelRef(classPtr);
     oPtr->selfCls = classPtr;
     TclOOAddToInstances(oPtr, classPtr);
 
