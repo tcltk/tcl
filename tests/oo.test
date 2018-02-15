@@ -1501,7 +1501,7 @@ test oo-11.5 {OO: cleanup} {
 test oo-11.6 {
     OO: cleanup ReleaseClassContents() where class is mixed into one of its
     instances
-} {
+} -body {
     oo::class create obj1
     ::oo::define obj1 {self mixin [uplevel 1 {namespace which obj1}]}
 
@@ -1509,12 +1509,14 @@ test oo-11.6 {
     ::oo::objdefine obj2 {mixin [uplevel 1 {namespace which obj2}]}
 
     ::oo::copy obj2 obj3
-    trace add command obj3 delete [list obj3 dying]
+    rename obj3 {}
     rename obj2 {}
 
     # No segmentation fault
     return done
-} done
+} -cleanup {
+    rename obj1 {}
+} -result done
 
 test oo-12.1 {OO: filters} {
     oo::class create Aclass
@@ -3866,6 +3868,31 @@ test oo-35.5 {Bug 1a56550e96: introspectors must traverse mixin links correctly}
 } -cleanup {
     base destroy
 } -result {{c d e} {c d e}}
+
+
+test oo-35.6 {
+    Bug : teardown of an object that is a class that is an instance of itself
+} -setup {
+    oo::class create obj
+
+    oo::copy obj obj1 obj1
+    oo::objdefine obj1 {
+	mixin obj1 obj
+    }
+    oo::copy obj1 obj2
+    oo::objdefine obj2 {
+	mixin obj2 obj1
+    }
+} -body {
+    rename obj2 {}
+    rename obj1 {}
+    # doesn't crash
+    return done
+} -cleanup {
+    rename obj {}
+} -result done 
+
+
 
 cleanupTests
 return
