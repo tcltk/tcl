@@ -340,11 +340,6 @@ TclOO_Object_Destroy(
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     CallContext *contextPtr;
 
-    if (objc != Tcl_ObjectContextSkippedArgs(context)) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
-		NULL);
-	return TCL_ERROR;
-    }
     if (!(oPtr->flags & DESTRUCTOR_CALLED)) {
 	oPtr->flags |= DESTRUCTOR_CALLED;
 	contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
