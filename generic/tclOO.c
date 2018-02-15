@@ -1082,9 +1082,7 @@ ObjectNamespaceDeleted(
      * methods on the object.
      */
 
-    /* To do: Get dkf to weigh in on wether this should be protected with a
-     * !IsRoot() condition.
-     */ 
+    /* To do: Should this be protected with a * !IsRoot() condition?  */ 
     TclOORemoveFromInstances(oPtr, oPtr->selfCls);
 
     FOREACH(mixinPtr, oPtr->mixins) {
@@ -2841,7 +2839,7 @@ int
 Tcl_ObjectDeleted(
     Tcl_Object object)
 {
-    return Deleted((Object *)object) ? 1 : 0;
+    return ((Object *)object)->command == NULL;
 }
 
 Tcl_Object
