@@ -3335,16 +3335,7 @@ TclGetIntForIndex(
 	 * be converted to one, use it.
 	 */
 
-	Tcl_WideInt value = endValue + objPtr->internalRep.wideValue;
-	if (endValue > 0 && value < objPtr->internalRep.wideValue) {
-	    *indexPtr = INT_MAX; /* numerical overflow */
-	} else if (value < INT_MIN || (endValue < 0 && value > objPtr->internalRep.wideValue)) {
-	    *indexPtr = INT_MIN; /* numerical underflow or value < INT_MIN */
-	} else if (value > INT_MAX) {
-	    *indexPtr = INT_MAX;/* value > INT_MAX */
-	} else {
-	    *indexPtr = (int) value;
-	}
+	*indexPtr = endValue + (int)objPtr->internalRep.wideValue;
 	return TCL_OK;
     }
 
