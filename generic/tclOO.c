@@ -58,7 +58,7 @@ static const struct {
 
 static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj);
 static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr,
-			    const char *nsNameStr);
+			    Namespace *nsPtr, const char *nsNameStr);
 static void		ClearMixins(Class *clsPtr);
 static void		ClearSuperclasses(Class *clsPtr);
 static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
@@ -379,9 +379,9 @@ InitFoundation(
      */
 
     fPtr->objectCls = AllocClass(interp,
-	    AllocObject(interp, "::oo::object", NULL));
+	    AllocObject(interp, "object", (Namespace *)fPtr->ooNs, NULL));
     fPtr->classCls = AllocClass(interp,
-	    AllocObject(interp, "::oo::class", NULL));
+	    AllocObject(interp, "class", (Namespace *)fPtr->ooNs, NULL));
     fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
     fPtr->objectCls->thisPtr->flags |= ROOT_OBJECT;
     fPtr->objectCls->flags |= ROOT_OBJECT;
@@ -551,6 +551,8 @@ AllocObject(
 				 * if the OO system should pick the object
 				 * name itself (equal to the namespace
 				 * name). */
+    Namespace *nsPtr,		/* The namespace to create the object in,
+				   or NULL if *nameStr is NULL */
     const char *nsNameStr)	/* The name of the namespace to create, or
 				 * NULL if the OO system should pick a unique
 				 * name itself. If this is non-NULL but names
@@ -561,10 +563,7 @@ AllocObject(
     Object *oPtr;
     Command *cmdPtr;
     CommandTrace *tracePtr;
-    Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
-    Tcl_Namespace *inNsPtr;
     int creationEpoch, ignored;
-    const char *simpleName;
 
     oPtr = ckalloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
@@ -652,17 +651,11 @@ AllocObject(
      * command is deleted).
      */
 
-    if (nameStr) {
-	inNsPtr = TclGetCurrentNamespace(interp);
-    } else {
+    if (!nameStr) {
 	nameStr = oPtr->namespacePtr->name;
-	inNsPtr = oPtr->namespacePtr;
+	nsPtr = (Namespace *)oPtr->namespacePtr;
     }
-    
-    TclGetNamespaceForQualName(interp, nameStr, (Namespace *) inNsPtr, 0,
-	    &nsPtr, &altNsPtr, &cxtNsPtr, &simpleName);
-
-    oPtr->command = TclCreateObjCommandInNs(interp, simpleName,
+    oPtr->command = TclCreateObjCommandInNs(interp, nameStr,
 	(Tcl_Namespace *)nsPtr, PublicObjectCmd, oPtr, NULL);
 
     /*
@@ -1527,7 +1520,7 @@ AllocClass(
 
     memset(clsPtr, 0, sizeof(Class));
     if (useThisObj == NULL) {
-	clsPtr->thisPtr = AllocObject(interp, NULL, NULL);
+	clsPtr->thisPtr = AllocObject(interp, NULL, NULL, NULL);
     } else {
 	clsPtr->thisPtr = useThisObj;
     }
@@ -1726,20 +1719,33 @@ TclNewObjectInstanceCommon(
     const char *nameStr,
     const char *nsNameStr)
 {
+    Tcl_HashEntry *hPtr;
     Foundation *fPtr = GetFoundation(interp);
     Object *oPtr;
+    const char *simpleName = NULL;
+    Namespace *nsPtr = NULL, *dummy,
+	*inNsPtr = (Namespace *)TclGetCurrentNamespace(interp);
+    int isNew;
 
-    /*
-     * Disallow creation of an object over an existing command.
-     */
+    if (nameStr) {
+	TclGetNamespaceForQualName(interp, nameStr, inNsPtr, TCL_CREATE_NS_IF_UNKNOWN,
+		&nsPtr, &dummy, &dummy, &simpleName);
 
-    if (nameStr && Tcl_FindCommand(interp, nameStr, NULL,
-	    TCL_NAMESPACE_ONLY)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't create object \"%s\": command already exists with"
-		" that name", nameStr));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "OVERWRITE_OBJECT", NULL);
-	return NULL;
+	/*
+	 * Disallow creation of an object over an existing command.
+	 */
+
+	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, simpleName, &isNew);
+	if (isNew) {
+	    /* Just kidding */
+	    Tcl_DeleteHashEntry(hPtr);
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "can't create object \"%s\": command already exists with"
+		    " that name", nameStr));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "OVERWRITE_OBJECT", NULL);
+	    return NULL;
+	}
     }
 
     /*
@@ -1753,7 +1759,7 @@ TclNewObjectInstanceCommon(
      */
     AddRef(classPtr);
 
-    oPtr = AllocObject(interp, nameStr, nsNameStr);
+    oPtr = AllocObject(interp, simpleName, nsPtr, nsNameStr);
     DelRef(classPtr);
     oPtr->selfCls = classPtr;
     TclOOAddToInstances(oPtr, classPtr);
