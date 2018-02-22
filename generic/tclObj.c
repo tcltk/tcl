@@ -1765,7 +1765,7 @@ Tcl_GetBooleanFromObj(
  *
  * Side effects:
  *	If no error occurs, an integer 1 or 0 is stored as "objPtr"s internal
- *	representation and the type of "objPtr" is set to boolean.
+ *	representation and the type of "objPtr" is set to boolean or int.
  *
  *----------------------------------------------------------------------
  */
@@ -1783,8 +1783,7 @@ TclSetBooleanFromAny(
 
     if (objPtr->bytes == NULL) {
 	if (objPtr->typePtr == &tclIntType) {
-	    switch (objPtr->internalRep.wideValue) {
-	    case 0L: case 1L:
+	    if ((Tcl_WideUInt)objPtr->internalRep.wideValue < 2) {
 		return TCL_OK;
 	    }
 	    goto badBoolean;
