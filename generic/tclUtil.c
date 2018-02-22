@@ -3331,7 +3331,7 @@ TclGetIntForIndex(
 	 * be converted to one, use it.
 	 */
 
-	*indexPtr = endValue + objPtr->internalRep.wideValue;
+	*indexPtr = endValue + (int)objPtr->internalRep.wideValue;
 	return TCL_OK;
     }
 
