@@ -702,12 +702,12 @@ ParseExpr(
 	    switch (lexeme) {
 	    case INVALID:
 		msg = Tcl_ObjPrintf("invalid character \"%.*s\"",
-			scanned, start);
+			(int)scanned, start);
 		errCode = "BADCHAR";
 		goto error;
 	    case INCOMPLETE:
 		msg = Tcl_ObjPrintf("incomplete operator \"%.*s\"",
-			scanned, start);
+			(int)scanned, start);
 		errCode = "PARTOP";
 		goto error;
 	    case BAREWORD:
@@ -736,16 +736,16 @@ ParseExpr(
 		} else {
 		    Tcl_DecrRefCount(literal);
 		    msg = Tcl_ObjPrintf("invalid bareword \"%.*s%s\"",
-			    (scanned < limit) ? scanned : limit - 3, start,
+			    (scanned < limit) ? (int)scanned : limit - 3, start,
 			    (scanned < limit) ? "" : "...");
 		    post = Tcl_ObjPrintf(
 			    "should be \"$%.*s%s\" or \"{%.*s%s}\"",
-			    (scanned < limit) ? scanned : limit - 3,
+			    (scanned < limit) ? (int)scanned : limit - 3,
 			    start, (scanned < limit) ? "" : "...",
-			    (scanned < limit) ? scanned : limit - 3,
+			    (scanned < limit) ? (int)scanned : limit - 3,
 			    start, (scanned < limit) ? "" : "...");
 		    Tcl_AppendPrintfToObj(post, " or \"%.*s%s(...)\" or ...",
-			    (scanned < limit) ? scanned : limit - 3,
+			    (scanned < limit) ? (int)scanned : limit - 3,
 			    start, (scanned < limit) ? "" : "...");
 		    errCode = "BAREWORD";
 		    if (start[0] == '0') {
@@ -1409,10 +1409,10 @@ ParseExpr(
 			? (int) (start - parsePtr->string) : (int)limit - 3,
 		((start - limit) < parsePtr->string)
 			? parsePtr->string : start - limit + 3,
-		(scanned < limit) ? scanned : limit - 3, start,
+		(scanned < limit) ? (int)scanned : limit - 3, start,
 		(scanned < limit) ? "" : "...", insertMark ? mark : "",
 		(start + scanned + limit > parsePtr->end)
-			? (int) (parsePtr->end - start) - scanned : limit-3,
+			? (int) (parsePtr->end - start) - (int)scanned : limit-3,
 		start + scanned,
 		(start + scanned + limit > parsePtr->end) ? "" : "...");
 
