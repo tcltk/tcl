@@ -2395,10 +2395,9 @@ typedef struct List {
  */
 
 #define TclGetBooleanFromObj(interp, objPtr, boolPtr) \
-    (((objPtr)->typePtr == &tclIntType)			\
+    (((objPtr)->typePtr == &tclIntType \
+	    || (objPtr)->typePtr == &tclBooleanType) \
 	? (*(boolPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
-	: ((objPtr)->typePtr == &tclBooleanType)			\
-	? (*(boolPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
 	: Tcl_GetBooleanFromObj((interp), (objPtr), (boolPtr)))
 
 #ifdef TCL_WIDE_INT_IS_LONG

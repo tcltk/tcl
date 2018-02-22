@@ -1720,12 +1720,8 @@ Tcl_GetBooleanFromObj(
     register int *boolPtr)	/* Place to store resulting boolean. */
 {
     do {
-	if (objPtr->typePtr == &tclIntType) {
+	if (objPtr->typePtr == &tclIntType || objPtr->typePtr == &tclBooleanType) {
 	    *boolPtr = (objPtr->internalRep.wideValue != 0);
-	    return TCL_OK;
-	}
-	if (objPtr->typePtr == &tclBooleanType) {
-	    *boolPtr = (int) objPtr->internalRep.longValue;
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclDoubleType) {
@@ -1769,7 +1765,7 @@ Tcl_GetBooleanFromObj(
  *
  * Side effects:
  *	If no error occurs, an integer 1 or 0 is stored as "objPtr"s internal
- *	representation and the type of "objPtr" is set to boolean.
+ *	representation and the type of "objPtr" is set to boolean or int.
  *
  *----------------------------------------------------------------------
  */
@@ -1787,8 +1783,7 @@ TclSetBooleanFromAny(
 
     if (objPtr->bytes == NULL) {
 	if (objPtr->typePtr == &tclIntType) {
-	    switch (objPtr->internalRep.wideValue) {
-	    case 0L: case 1L:
+	    if ((Tcl_WideUInt)objPtr->internalRep.wideValue < 2) {
 		return TCL_OK;
 	    }
 	    goto badBoolean;
@@ -1928,7 +1923,7 @@ ParseBoolean(
 
   goodBoolean:
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.longValue = newBool;
+    objPtr->internalRep.wideValue = newBool;
     objPtr->typePtr = &tclBooleanType;
     return TCL_OK;
 
