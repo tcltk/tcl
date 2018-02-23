@@ -142,7 +142,7 @@ Tcl_GetBoolean(
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }
     if (code == TCL_OK) {
-	*boolPtr = (int)obj.internalRep.wideValue;
+	TclGetBooleanFromObj(NULL, &obj, boolPtr);
     }
     return code;
 }
