@@ -1572,10 +1572,8 @@ StringIsCmd(
 		string1 = TclGetStringFromObj(objPtr, &length1);
 		result = length1 == 0;
 	    }
-	} else if (((index == STR_IS_TRUE) &&
-		objPtr->internalRep.longValue == 0)
-	    || ((index == STR_IS_FALSE) &&
-		objPtr->internalRep.longValue != 0)) {
+	} else if ((objPtr->internalRep.wideValue != 0)
+		? (index == STR_IS_FALSE) : (index == STR_IS_TRUE)) {
 	    result = 0;
 	}
 	break;
