@@ -110,7 +110,6 @@ static void		FreeThreadHash(ClientData clientData);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		SetEndOffsetFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
-static void		UpdateStringOfEndOffset(Tcl_Obj *objPtr);
 static int		FindElement(Tcl_Interp *interp, const char *string,
 			    int stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
@@ -119,15 +118,18 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
 /*
  * The following is the Tcl object type definition for an object that
  * represents a list index in the form, "end-offset". It is used as a
- * performance optimization in TclGetIntForIndex. The internal rep is an
- * integer, so no memory management is required for it.
+ * performance optimization in TclGetIntForIndex. The internal rep is 
+ * stored directly in the wideValue, so no memory management is required
+ * for it. This is a caching intrep, keeping the result of a parse
+ * around. This type is only created from a pre-existing string, so an
+ * updateStringProc will never be called and need not exist.
  */
 
-const Tcl_ObjType tclEndOffsetType = {
+static const Tcl_ObjType endOffsetType = {
     "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
-    UpdateStringOfEndOffset,		/* updateStringProc */
+    NULL,				/* updateStringProc */
     SetEndOffsetFromAny
 };
 
@@ -3652,43 +3654,6 @@ TclGetIntForIndex(
 /*
  *----------------------------------------------------------------------
  *
- * UpdateStringOfEndOffset --
- *
- *	Update the string rep of a Tcl object holding an "end-offset"
- *	expression.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Stores a valid string in the object's string rep.
- *
- * This function does NOT free any earlier string rep. If it is called on an
- * object that already has a valid string rep, it will leak memory.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-UpdateStringOfEndOffset(
-    register Tcl_Obj *objPtr)
-{
-    char buffer[TCL_INTEGER_SPACE + 5];
-    register int len = 3;
-
-    memcpy(buffer, "end", 4);
-    if (objPtr->internalRep.wideValue != 0) {
-	buffer[len++] = '-';
-	len += TclFormatInt(buffer+len, -(objPtr->internalRep.wideValue));
-    }
-    objPtr->bytes = ckalloc((unsigned) len+1);
-    memcpy(objPtr->bytes, buffer, (unsigned) len+1);
-    objPtr->length = len;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * SetEndOffsetFromAny --
  *
  *	Look for a string of the form "end[+-]offset" and convert it to an
@@ -3717,7 +3682,7 @@ SetEndOffsetFromAny(
      * If it's already the right type, we're fine.
      */
 
-    if (objPtr->typePtr == &tclEndOffsetType) {
+    if (objPtr->typePtr == &endOffsetType) {
 	return TCL_OK;
     }
 
@@ -3783,7 +3748,7 @@ SetEndOffsetFromAny(
 
     TclFreeIntRep(objPtr);
     objPtr->internalRep.wideValue = offset;
-    objPtr->typePtr = &tclEndOffsetType;
+    objPtr->typePtr = &endOffsetType;
 
     return TCL_OK;
 }
