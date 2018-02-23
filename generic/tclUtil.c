@@ -2340,7 +2340,8 @@ TclStringMatchObj(
 	udata = Tcl_GetUnicodeFromObj(strObj, &length);
 	uptn  = Tcl_GetUnicodeFromObj(ptnObj, &plen);
 	match = TclUniCharMatch(udata, length, uptn, plen, flags);
-    } else if (TclIsPureByteArray(strObj) && !flags) {
+    } else if (TclIsPureByteArray(strObj) && TclIsPureByteArray(ptnObj)
+		&& !flags) {
 	unsigned char *data, *ptn;
 
 	data = Tcl_GetByteArrayFromObj(strObj, &length);
