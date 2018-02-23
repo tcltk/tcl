@@ -118,8 +118,11 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
 /*
  * The following is the Tcl object type definition for an object that
  * represents a list index in the form, "end-offset". It is used as a
- * performance optimization in TclGetIntForIndex. The internal rep is an
- * integer, so no memory management is required for it.
+ * performance optimization in TclGetIntForIndex. The internal rep is 
+ * stored directly in the wideValue, so no memory management is required
+ * for it. This is a caching intrep, keeping the result of a parse
+ * around. This type is only created from a pre-existing string, so an
+ * updateStringProc will never be called and need not exist.
  */
 
 static const Tcl_ObjType endOffsetType = {
@@ -2529,7 +2532,8 @@ TclStringMatchObj(
 	udata = Tcl_GetUnicodeFromObj(strObj, &length);
 	uptn  = Tcl_GetUnicodeFromObj(ptnObj, &plen);
 	match = TclUniCharMatch(udata, length, uptn, plen, flags);
-    } else if (TclIsPureByteArray(strObj) && !flags) {
+    } else if (TclIsPureByteArray(strObj) && TclIsPureByteArray(ptnObj)
+		&& !flags) {
 	unsigned char *data, *ptn;
 
 	data = Tcl_GetByteArrayFromObj(strObj, &length);
@@ -3691,8 +3695,6 @@ GetEndOffsetFromObj(
 	ir.wideValue = offset;
 	Tcl_StoreIntRep(objPtr, &endOffsetType, &ir);
     }
-
-
 
     *indexPtr = endValue + (int)irPtr->wideValue;
     return TCL_OK;
