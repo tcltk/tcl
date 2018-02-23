@@ -481,8 +481,7 @@ Tcl_GetUniChar(
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
-     * without string representation; we don't need to convert to a string to
-     * perform the indexing operation.
+     * we don't need to convert to a string to perform the indexing operation.
      */
 
     if (TclIsPureByteArray(objPtr)) {
@@ -615,8 +614,7 @@ Tcl_GetRange(
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
-     * without string representation; we don't need to convert to a string to
-     * perform the substring operation.
+     * we don't need to convert to a string to perform the substring operation.
      */
 
     if (TclIsPureByteArray(objPtr)) {
@@ -1224,9 +1222,9 @@ Tcl_AppendObjToObj(
 
     /*
      * Handle append of one bytearray object to another as a special case.
-     * Note that we only do this when the objects don't have string reps; if
-     * it did, then appending the byte arrays together could well lose
-     * information; this is a special-case optimization only.
+     * Note that we only do this when the objects are pure so that the
+     * bytearray faithfully represent the true value; Otherwise
+     * appending the byte arrays together could lose information;
      */
 
     if ((TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)
@@ -2881,7 +2879,9 @@ TclStringCat(
     do {
 	Tcl_Obj *objPtr = *ov++;
 
-	if (objPtr->bytes) {
+	if (TclIsPureByteArray(objPtr)) {
+	    allowUniChar = 0;
+	} else if (objPtr->bytes) {
 	    /* Value has a string rep. */
 	    if (objPtr->length) {
 		/*
@@ -2896,17 +2896,13 @@ TclStringCat(
 	    }
 	} else {
 	    /* assert (objPtr->typePtr != NULL) -- stork! */
-	    if (TclIsPureByteArray(objPtr)) {
-		allowUniChar = 0;
+	    binary = 0;
+	    if (objPtr->typePtr == &tclStringType) {
+		/* Have a pure Unicode value; ask to preserve it */
+		requestUniChar = 1;
 	    } else {
-		binary = 0;
-		if (objPtr->typePtr == &tclStringType) {
-		    /* Have a pure Unicode value; ask to preserve it */
-		    requestUniChar = 1;
-		} else {
-		    /* Have another type; prevent shimmer */
-		    allowUniChar = 0;
-		}
+		/* Have another type; prevent shimmer */
+		allowUniChar = 0;
 	    }
 	}
     } while (--oc && (binary || allowUniChar));
