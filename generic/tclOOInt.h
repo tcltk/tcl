@@ -431,6 +431,9 @@ MODULE_SCOPE int	TclOODefineSelfObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclOODefineObjSelfObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefinePrivateObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOOUnknownDefinition(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
