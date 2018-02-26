@@ -1225,6 +1225,9 @@ test string-11.54.$noComp {string match, failure} {
 	    [run {string match *a*l*\u0000*cba* $longString}] \
 	    [run {string match *===* $longString}]
 } {0 1 1 1 0 0}
+test string-11.55 {string match, invalid binary optimization} {
+    [format string] match \u0141 [binary format c 65]
+} 0
 
 test string-12.1.$noComp {string range} {
     list [catch {run {string range}} msg] $msg
