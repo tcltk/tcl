@@ -32,10 +32,6 @@ static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
 #define cpuid	__asm __emit 0fh __asm __emit 0a2h
 #endif
 
-#if TCL_UTF_MAX < 4
-static Tcl_Encoding winTCharEncoding = NULL;
-#endif
-
 /*
  * The following declaration is for the VC++ DLL entry point.
  */
@@ -196,8 +192,6 @@ TclWinInit(
     if (os.dwPlatformId != VER_PLATFORM_WIN32_NT) {
 	Tcl_Panic("Windows NT is the only supported platform");
     }
-
-    TclWinResetInterfaces();
 }
 
 /*
@@ -234,38 +228,10 @@ TclWinNoBackslash(
 /*
  *---------------------------------------------------------------------------
  *
- * TclpSetInterfaces --
- *
- *	A helper proc.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-
-void
-TclpSetInterfaces(void)
-{
-#if TCL_UTF_MAX < 4
-    TclWinResetInterfaces();
-    winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
-#endif
-}
-
-/*
- *---------------------------------------------------------------------------
- *
  * TclWinEncodingsCleanup --
  *
- *	Called during finalization to free up any encodings we use.
- *
- *	We also clean up any memory allocated in our mount point map which is
- *	used to follow certain kinds of symlinks. That code should never be
- *	used once encodings are taken down.
+ *	Called during finalization to clean up any memory allocated in our
+ *	mount point map which is used to follow certain kinds of symlinks.
  *
  * Results:
  *	None.
@@ -281,8 +247,6 @@ TclWinEncodingsCleanup(void)
 {
     MountPointMap *dlIter, *dlIter2;
 
-    TclWinResetInterfaces();
-
     /*
      * Clean up the mount point map.
      */
@@ -296,32 +260,6 @@ TclWinEncodingsCleanup(void)
 	dlIter = dlIter2;
     }
     Tcl_MutexUnlock(&mountPointMap);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclWinResetInterfaces --
- *
- *	Called during finalization to reset us to a safe state for reuse.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-void
-TclWinResetInterfaces(void)
-{
-#if TCL_UTF_MAX < 4
-    if (winTCharEncoding != NULL) {
-	Tcl_FreeEncoding(winTCharEncoding);
-	winTCharEncoding = NULL;
-    }
-#endif
 }
 
 /*
@@ -533,7 +471,6 @@ Tcl_WinUtfToTChar(
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-#if TCL_UTF_MAX > 3
     TCHAR *wp;
     int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
 
@@ -545,10 +482,6 @@ Tcl_WinUtfToTChar(
     Tcl_DStringSetLength(dsPtr, 2*size);
     wp[size] = 0;
     return wp;
-#else
-    return (TCHAR *) Tcl_UtfToExternalDString(winTCharEncoding,
-	    string, len, dsPtr);
-#endif
 }
 
 char *
@@ -559,7 +492,6 @@ Tcl_WinTCharToUtf(
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-#if TCL_UTF_MAX > 3
     char *p;
     int size;
 
@@ -575,10 +507,6 @@ Tcl_WinTCharToUtf(
     Tcl_DStringSetLength(dsPtr, size);
     p[size] = 0;
     return p;
-#else
-    return Tcl_ExternalToUtfDString(winTCharEncoding,
-	    (const char *) string, len, dsPtr);
-#endif
 }
 
 /*

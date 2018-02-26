@@ -176,10 +176,10 @@ it is faster to execute the script directly.
 .TP 23
 \fBTCL_EVAL_GLOBAL\fR
 .
-If this flag is set, the script is processed at global level.  This
-means that it is evaluated in the global namespace and its variable
-context consists of global variables only (it ignores any Tcl
-procedures that are active).
+If this flag is set, the script is evaluated in the global namespace instead of
+the current namespace and its variable context consists of global variables
+only (it ignores any Tcl procedures that are active).
+.\" TODO: document TCL_EVAL_INVOKE and TCL_EVAL_NOERR.
 
 .SH "MISCELLANEOUS DETAILS"
 .PP

@@ -797,7 +797,7 @@ TclNewInstNameObj(
     Tcl_Obj *objPtr = Tcl_NewObj();
 
     objPtr->typePtr = &tclInstNameType;
-    objPtr->internalRep.longValue = (long) inst;
+    objPtr->internalRep.wideValue = (long) inst;
     objPtr->bytes = NULL;
 
     return objPtr;
@@ -817,17 +817,17 @@ static void
 UpdateStringOfInstName(
     Tcl_Obj *objPtr)
 {
-    int inst = objPtr->internalRep.longValue;
-    char *s, buf[20];
-    int len;
+    size_t len, inst = (size_t)objPtr->internalRep.wideValue;
+    char *s, buf[TCL_INTEGER_SPACE + 5];
 
-    if ((inst < 0) || (inst > LAST_INST_OPCODE)) {
-        sprintf(buf, "inst_%d", inst);
+    if (inst > LAST_INST_OPCODE) {
+        sprintf(buf, "inst_%" TCL_Z_MODIFIER "d", inst);
         s = buf;
     } else {
-        s = (char *) tclInstructionTable[objPtr->internalRep.longValue].name;
+        s = (char *) tclInstructionTable[inst].name;
     }
     len = strlen(s);
+    /* assert (len < UINT_MAX) */
     objPtr->bytes = ckalloc(len + 1);
     memcpy(objPtr->bytes, s, len + 1);
     objPtr->length = len;

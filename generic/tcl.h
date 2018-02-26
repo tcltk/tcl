@@ -137,7 +137,7 @@ extern "C" {
  */
 
 #include <stdarg.h>
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #    define TCL_VARARGS(type, name) (type name, ...)
 #    define TCL_VARARGS_DEF(type, name) (type name, ...)
 #    define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
@@ -254,10 +254,9 @@ extern "C" {
  * New code should use prototypes.
  */
 
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #   undef _ANSI_ARGS_
 #   define _ANSI_ARGS_(x)	x
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Definitions that allow this header file to be used either with or without
@@ -267,34 +266,16 @@ extern "C" {
 #ifndef INLINE
 #   define INLINE
 #endif
-
-#ifdef NO_CONST
-#   ifndef const
-#      define const
-#   endif
-#endif
 #ifndef CONST
 #   define CONST const
 #endif
+#define CONST84 const
+#define CONST84_RETURN const
 
-#ifdef USE_NON_CONST
-#   ifdef USE_COMPAT_CONST
-#      error define at most one of USE_NON_CONST and USE_COMPAT_CONST
-#   endif
-#   define CONST84
-#   define CONST84_RETURN
-#else
-#   ifdef USE_COMPAT_CONST
-#      define CONST84
-#      define CONST84_RETURN const
-#   else
-#      define CONST84 const
-#      define CONST84_RETURN const
-#   endif
-#endif
+#endif /* !TCL_NO_DEPRECATED */
 
 #ifndef CONST86
-#      define CONST86 CONST84
+#      define CONST86 const
 #endif
 
 /*
@@ -318,6 +299,7 @@ extern "C" {
  * VOID. This block is skipped under Cygwin and Mingw.
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #if defined(_WIN32) && !defined(HAVE_WINNT_IGNORE_VOID)
 #ifndef VOID
 #define VOID void
@@ -333,23 +315,16 @@ typedef long LONG;
  */
 
 #ifndef __VXWORKS__
-#   ifndef NO_VOID
-#	define VOID void
-#   else
-#	define VOID char
-#   endif
+#   define VOID void
 #endif
+#endif /* !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9 */
 
 /*
  * Miscellaneous declarations.
  */
 
 #ifndef _CLIENTDATA
-#   ifndef NO_VOID
-	typedef void *ClientData;
-#   else
-	typedef int *ClientData;
-#   endif
+    typedef void *ClientData;
 #   define _CLIENTDATA
 #endif
 
@@ -396,44 +371,40 @@ typedef long LONG;
 #   if defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
 #      define TCL_LL_MODIFIER	"I64"
+#      if defined(_WIN64)
+#         define TCL_Z_MODIFIER	"I"
+#      endif
 #   elif defined(__GNUC__)
-#      define TCL_WIDE_INT_TYPE long long
-#      define TCL_LL_MODIFIER	"ll"
+#      define TCL_Z_MODIFIER	"z"
 #   else /* ! _WIN32 && ! __GNUC__ */
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
  */
 #      include <limits.h>
-#      if (INT_MAX < LONG_MAX)
+#      if defined(LLONG_MAX) && (LLONG_MAX == LONG_MAX)
 #         define TCL_WIDE_INT_IS_LONG	1
-#      else
-#         define TCL_WIDE_INT_TYPE long long
 #      endif
 #   endif /* _WIN32 */
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
-#ifdef TCL_WIDE_INT_IS_LONG
-#   undef TCL_WIDE_INT_TYPE
-#   define TCL_WIDE_INT_TYPE	long
-#endif /* TCL_WIDE_INT_IS_LONG */
+
+#ifndef TCL_WIDE_INT_TYPE
+#   define TCL_WIDE_INT_TYPE		long long
+#endif /* !TCL_WIDE_INT_TYPE */
 
 typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
 typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
-#ifdef TCL_WIDE_INT_IS_LONG
-#   ifndef TCL_LL_MODIFIER
-#      define TCL_LL_MODIFIER		"l"
-#   endif /* !TCL_LL_MODIFIER */
-#else /* TCL_WIDE_INT_IS_LONG */
-/*
- * The next short section of defines are only done when not running on Windows
- * or some other strange platform.
- */
-#   ifndef TCL_LL_MODIFIER
-#      define TCL_LL_MODIFIER		"ll"
-#   endif /* !TCL_LL_MODIFIER */
-#endif /* TCL_WIDE_INT_IS_LONG */
-
+#ifndef TCL_LL_MODIFIER
+#   define TCL_LL_MODIFIER	"ll"
+#endif /* !TCL_LL_MODIFIER */
+#ifndef TCL_Z_MODIFIER
+#   if defined(__GNUC__) && !defined(_WIN32)
+#	define TCL_Z_MODIFIER	"z"
+#   else
+#	define TCL_Z_MODIFIER	""
+#   endif
+#endif /* !TCL_Z_MODIFIER */
 #define Tcl_WideAsLong(val)	((long)((Tcl_WideInt)(val)))
 #define Tcl_LongAsWide(val)	((Tcl_WideInt)((long)(val)))
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
@@ -493,7 +464,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
  */
 
 typedef struct Tcl_Interp
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 {
     /* TIP #330: Strongly discourage extensions from using the string
      * result. */
@@ -673,7 +644,9 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_BREAK		3
 #define TCL_CONTINUE		4
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #define TCL_RESULT_SIZE		200
+#endif
 
 /*
  *----------------------------------------------------------------------------
@@ -689,6 +662,7 @@ typedef struct stat *Tcl_OldStat_;
  * Argument descriptors for math function callbacks in expressions:
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 typedef enum {
     TCL_INT, TCL_DOUBLE, TCL_EITHER, TCL_WIDE_INT
 } Tcl_ValueType;
@@ -700,6 +674,10 @@ typedef struct Tcl_Value {
     double doubleValue;		/* Double-precision floating value. */
     Tcl_WideInt wideValue;	/* Wide (min. 64-bit) integer value. */
 } Tcl_Value;
+#else
+#define Tcl_ValueType void /* Just enough to prevent compilation error in Tcl */
+#define Tcl_Value void /* Just enough to prevent compilation error in Tcl */
+#endif
 
 /*
  * Forward declaration of Tcl_Obj to prevent an error when the forward
@@ -720,10 +698,10 @@ typedef void (Tcl_ChannelProc) (ClientData clientData, int mask);
 typedef void (Tcl_CloseProc) (ClientData data);
 typedef void (Tcl_CmdDeleteProc) (ClientData clientData);
 typedef int (Tcl_CmdProc) (ClientData clientData, Tcl_Interp *interp,
-	int argc, CONST84 char *argv[]);
+	int argc, const char *argv[]);
 typedef void (Tcl_CmdTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
-	ClientData cmdClientData, int argc, CONST84 char *argv[]);
+	ClientData cmdClientData, int argc, const char *argv[]);
 typedef int (Tcl_CmdObjTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
@@ -760,7 +738,7 @@ typedef void (Tcl_TimerProc) (ClientData clientData);
 typedef int (Tcl_SetFromAnyProc) (Tcl_Interp *interp, struct Tcl_Obj *objPtr);
 typedef void (Tcl_UpdateStringProc) (struct Tcl_Obj *objPtr);
 typedef char * (Tcl_VarTraceProc) (ClientData clientData, Tcl_Interp *interp,
-	CONST84 char *part1, CONST84 char *part2, int flags);
+	const char *part1, const char *part2, int flags);
 typedef void (Tcl_CommandTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	const char *oldName, const char *newName, int flags);
 typedef void (Tcl_CreateFileHandlerProc) (int fd, int mask, Tcl_FileProc *proc,
@@ -871,7 +849,7 @@ typedef struct Tcl_SavedResult {
     char *appendResult;
     int appendAvl;
     int appendUsed;
-    char resultSpace[TCL_RESULT_SIZE+1];
+    char resultSpace[200+1];
 } Tcl_SavedResult;
 
 /*
@@ -998,7 +976,7 @@ typedef struct Tcl_DString {
 
 #define Tcl_DStringLength(dsPtr) ((dsPtr)->length)
 #define Tcl_DStringValue(dsPtr) ((dsPtr)->string)
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #   define Tcl_DStringTrunc Tcl_DStringSetLength
 #endif /* !TCL_NO_DEPRECATED */
 
@@ -1126,7 +1104,7 @@ typedef struct Tcl_DString {
  * give the flag)
  */
 
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #   define TCL_PARSE_PART1	0x400
 #endif /* !TCL_NO_DEPRECATED */
 
@@ -1479,14 +1457,14 @@ typedef int	(Tcl_DriverClose2Proc) (ClientData instanceData,
 typedef int	(Tcl_DriverInputProc) (ClientData instanceData, char *buf,
 			int toRead, int *errorCodePtr);
 typedef int	(Tcl_DriverOutputProc) (ClientData instanceData,
-			CONST84 char *buf, int toWrite, int *errorCodePtr);
+			const char *buf, int toWrite, int *errorCodePtr);
 typedef int	(Tcl_DriverSeekProc) (ClientData instanceData, long offset,
 			int mode, int *errorCodePtr);
 typedef int	(Tcl_DriverSetOptionProc) (ClientData instanceData,
 			Tcl_Interp *interp, const char *optionName,
 			const char *value);
 typedef int	(Tcl_DriverGetOptionProc) (ClientData instanceData,
-			Tcl_Interp *interp, CONST84 char *optionName,
+			Tcl_Interp *interp, const char *optionName,
 			Tcl_DString *dsPtr);
 typedef void	(Tcl_DriverWatchProc) (ClientData instanceData, int mask);
 typedef int	(Tcl_DriverGetHandleProc) (ClientData instanceData,
@@ -1979,7 +1957,7 @@ typedef struct Tcl_Token {
  * TCL_TOKEN_OPERATOR -		The token describes one expression operator.
  *				An operator might be the name of a math
  *				function such as "abs". A TCL_TOKEN_OPERATOR
- *				token is always preceeded by one
+ *				token is always preceded by one
  *				TCL_TOKEN_SUB_EXPR token for the operator's
  *				subexpression, and is followed by zero or more
  *				TCL_TOKEN_SUB_EXPR tokens for the operator's
@@ -2558,15 +2536,9 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #  undef  Tcl_NewDoubleObj
 #  define Tcl_NewDoubleObj(val) \
      Tcl_DbNewDoubleObj(val, __FILE__, __LINE__)
-#  undef  Tcl_NewIntObj
-#  define Tcl_NewIntObj(val) \
-     Tcl_DbNewLongObj(val, __FILE__, __LINE__)
 #  undef  Tcl_NewListObj
 #  define Tcl_NewListObj(objc, objv) \
      Tcl_DbNewListObj(objc, objv, __FILE__, __LINE__)
-#  undef  Tcl_NewLongObj
-#  define Tcl_NewLongObj(val) \
-     Tcl_DbNewLongObj(val, __FILE__, __LINE__)
 #  undef  Tcl_NewObj
 #  define Tcl_NewObj() \
      Tcl_DbNewObj(__FILE__, __LINE__)
@@ -2629,10 +2601,10 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * Deprecated Tcl functions:
  */
 
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 /*
  * These function have been renamed. The old names are deprecated, but we
- * define these macros for backwards compatibilty.
+ * define these macros for backwards compatibility.
  */
 
 #   define Tcl_Ckalloc		Tcl_Alloc

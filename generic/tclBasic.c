@@ -132,8 +132,10 @@ static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRCommand;
 
+#if !defined(TCL_NO_DEPRECATED)
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
+#endif /* !defined(TCL_NO_DEPRECATED) */
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
 			    int returnCode);
 static int		RewindCoroutine(CoroutineData *corPtr, int result);
@@ -205,7 +207,7 @@ static const CmdInfo builtInCmds[] = {
     {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	NULL,	CMD_IS_SAFE},
     {"apply",		Tcl_ApplyObjCmd,	NULL,			TclNRApplyObjCmd,	CMD_IS_SAFE},
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	NULL,	CMD_IS_SAFE},
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
     {"case",		Tcl_CaseObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
 #endif
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	CMD_IS_SAFE},
@@ -236,7 +238,7 @@ static const CmdInfo builtInCmds[] = {
     {"lsearch",		Tcl_LsearchObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	CMD_IS_SAFE},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
-    {"package",		Tcl_PackageObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"package",		Tcl_PackageObjCmd,	NULL,			TclNRPackageObjCmd,	CMD_IS_SAFE},
     {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	CMD_IS_SAFE},
     {"regsub",		Tcl_RegsubObjCmd,	TclCompileRegsubCmd,	NULL,	CMD_IS_SAFE},
@@ -3519,6 +3521,7 @@ TclCleanupCommand(
  *----------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED)
 void
 Tcl_CreateMathFunc(
     Tcl_Interp *interp,		/* Interpreter in which function is to be
@@ -3569,7 +3572,7 @@ Tcl_CreateMathFunc(
 
 static int
 OldMathFuncProc(
-    ClientData clientData,	/* Ponter to OldMathFuncData describing the
+    ClientData clientData,	/* Pointer to OldMathFuncData describing the
 				 * function being called */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Actual parameter count */
@@ -3682,7 +3685,7 @@ OldMathFuncProc(
      */
 
     if (funcResult.type == TCL_INT) {
-	TclNewLongObj(valuePtr, funcResult.intValue);
+	TclNewIntObj(valuePtr, funcResult.intValue);
     } else if (funcResult.type == TCL_WIDE_INT) {
 	valuePtr = Tcl_NewWideIntObj(funcResult.wideValue);
     } else {
@@ -3850,6 +3853,7 @@ Tcl_ListMathFuncs(
 
     return result;
 }
+#endif /* !defined(TCL_NO_DEPRECATED) */
 
 /*
  *----------------------------------------------------------------------
@@ -4484,6 +4488,8 @@ TclNRRunCallbacks(
 	(void) Tcl_GetObjResult(interp);
     }
 
+    /* This is the trampoline. */
+
     while (TOP_CB(interp) != rootPtr) {
 	callbackPtr = TOP_CB(interp);
 	procPtr = callbackPtr->procPtr;
@@ -4944,6 +4950,7 @@ Tcl_EvalTokensStandard(
 	    NULL, NULL);
 }
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 /*
  *----------------------------------------------------------------------
  *
@@ -4991,6 +4998,7 @@ Tcl_EvalTokens(
     Tcl_ResetResult(interp);
     return resPtr;
 }
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -6509,7 +6517,6 @@ Tcl_ExprLongObj(
 	resultPtr = Tcl_NewBignumObj(&big);
 	/* FALLTHROUGH */
     }
-    case TCL_NUMBER_LONG:
     case TCL_NUMBER_WIDE:
     case TCL_NUMBER_BIG:
 	result = TclGetLongFromObj(interp, resultPtr, ptr);
@@ -7485,12 +7492,12 @@ ExprAbsFunc(
 	return TCL_ERROR;
     }
 
-    if (type == TCL_NUMBER_LONG) {
-	long l = *((const long *) ptr);
+    if (type == TCL_NUMBER_WIDE) {
+	Tcl_WideInt l = *((const Tcl_WideInt *) ptr);
 
-	if (l > (long)0) {
+	if (l > (Tcl_WideInt)0) {
 	    goto unChanged;
-	} else if (l == (long)0) {
+	} else if (l == (Tcl_WideInt)0) {
 	    const char *string = objv[1]->bytes;
 	    if (string) {
 		while (*string != '0') {
@@ -7502,11 +7509,11 @@ ExprAbsFunc(
 		}
 	    }
 	    goto unChanged;
-	} else if (l == LONG_MIN) {
-	    TclInitBignumFromLong(&big, l);
+	} else if (l == LLONG_MIN) {
+	    TclInitBignumFromWideInt(&big, l);
 	    goto tooLarge;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewLongObj(-l));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-l));
 	return TCL_OK;
     }
 
@@ -7529,22 +7536,6 @@ ExprAbsFunc(
 	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
 	return TCL_OK;
     }
-
-#ifndef TCL_WIDE_INT_IS_LONG
-    if (type == TCL_NUMBER_WIDE) {
-	Tcl_WideInt w = *((const Tcl_WideInt *) ptr);
-
-	if (w >= (Tcl_WideInt)0) {
-	    goto unChanged;
-	}
-	if (w == LLONG_MIN) {
-	    TclInitBignumFromWideInt(&big, w);
-	    goto tooLarge;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-w));
-	return TCL_OK;
-    }
-#endif
 
     if (type == TCL_NUMBER_BIG) {
 	if (mp_cmp_d((const mp_int *) ptr, 0) == MP_LT) {

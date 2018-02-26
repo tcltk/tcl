@@ -114,7 +114,7 @@ EXTERN int		TclFindElement(Tcl_Interp *interp,
 /* 23 */
 EXTERN Proc *		TclFindProc(Interp *iPtr, const char *procName);
 /* 24 */
-EXTERN int		TclFormatInt(char *buffer, long n);
+EXTERN int		TclFormatInt(char *buffer, Tcl_WideInt n);
 /* 25 */
 EXTERN void		TclFreePackageInfo(Interp *iPtr);
 /* Slot 26 is reserved */
@@ -174,7 +174,7 @@ EXTERN int		TclInterpInit(Tcl_Interp *interp);
 /* 53 */
 EXTERN int		TclInvokeObjectCommand(ClientData clientData,
 				Tcl_Interp *interp, int argc,
-				CONST84 char **argv);
+				const char **argv);
 /* 54 */
 EXTERN int		TclInvokeStringCommand(ClientData clientData,
 				Tcl_Interp *interp, int objc,
@@ -361,13 +361,11 @@ struct tm *		TclpGetDate(const time_t *time, int useGMT);
 /* Slot 136 is reserved */
 /* Slot 137 is reserved */
 /* 138 */
-EXTERN CONST84_RETURN char * TclGetEnv(const char *name,
-				Tcl_DString *valuePtr);
+EXTERN const char *	TclGetEnv(const char *name, Tcl_DString *valuePtr);
 /* Slot 139 is reserved */
 /* Slot 140 is reserved */
 /* 141 */
-EXTERN CONST84_RETURN char * TclpGetCwd(Tcl_Interp *interp,
-				Tcl_DString *cwdPtr);
+EXTERN const char *	TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr);
 /* 142 */
 EXTERN int		TclSetByteCodeFromAny(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, CompileHookProc *hookProc,
@@ -680,7 +678,7 @@ typedef struct TclIntStubs {
     void (*reserved21)(void);
     int (*tclFindElement) (Tcl_Interp *interp, const char *listStr, int listLength, const char **elementPtr, const char **nextPtr, int *sizePtr, int *bracePtr); /* 22 */
     Proc * (*tclFindProc) (Interp *iPtr, const char *procName); /* 23 */
-    int (*tclFormatInt) (char *buffer, long n); /* 24 */
+    int (*tclFormatInt) (char *buffer, Tcl_WideInt n); /* 24 */
     void (*tclFreePackageInfo) (Interp *iPtr); /* 25 */
     void (*reserved26)(void);
     void (*reserved27)(void);
@@ -709,7 +707,7 @@ typedef struct TclIntStubs {
     void (*tclInitCompiledLocals) (Tcl_Interp *interp, CallFrame *framePtr, Namespace *nsPtr); /* 50 */
     int (*tclInterpInit) (Tcl_Interp *interp); /* 51 */
     void (*reserved52)(void);
-    int (*tclInvokeObjectCommand) (ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char **argv); /* 53 */
+    int (*tclInvokeObjectCommand) (ClientData clientData, Tcl_Interp *interp, int argc, const char **argv); /* 53 */
     int (*tclInvokeStringCommand) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 54 */
     Proc * (*tclIsProc) (Command *cmdPtr); /* 55 */
     void (*reserved56)(void);
@@ -794,10 +792,10 @@ typedef struct TclIntStubs {
     void (*reserved135)(void);
     void (*reserved136)(void);
     void (*reserved137)(void);
-    CONST84_RETURN char * (*tclGetEnv) (const char *name, Tcl_DString *valuePtr); /* 138 */
+    const char * (*tclGetEnv) (const char *name, Tcl_DString *valuePtr); /* 138 */
     void (*reserved139)(void);
     void (*reserved140)(void);
-    CONST84_RETURN char * (*tclpGetCwd) (Tcl_Interp *interp, Tcl_DString *cwdPtr); /* 141 */
+    const char * (*tclpGetCwd) (Tcl_Interp *interp, Tcl_DString *cwdPtr); /* 141 */
     int (*tclSetByteCodeFromAny) (Tcl_Interp *interp, Tcl_Obj *objPtr, CompileHookProc *hookProc, ClientData clientData); /* 142 */
     int (*tclAddLiteralObj) (struct CompileEnv *envPtr, Tcl_Obj *objPtr, LiteralEntry **litPtrPtr); /* 143 */
     void (*tclHideLiteral) (Tcl_Interp *interp, struct CompileEnv *envPtr, int index); /* 144 */

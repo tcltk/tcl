@@ -2160,7 +2160,7 @@ Tcl_JoinObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int listLen;
+    int length, listLen;
     Tcl_Obj *resObjPtr = NULL, *joinObjPtr, **elemPtrs;
 
     if ((objc < 2) || (objc > 3)) {
@@ -2191,9 +2191,9 @@ Tcl_JoinObjCmd(
     joinObjPtr = (objc == 2) ? Tcl_NewStringObj(" ", 1) : objv[2];
     Tcl_IncrRefCount(joinObjPtr);
 
-    if (Tcl_GetCharLength(joinObjPtr) == 0) {
-	TclStringCatObjv(interp, /* inPlace */ 0, listLen, elemPtrs,
-		&resObjPtr);
+    (void) Tcl_GetStringFromObj(joinObjPtr, &length);
+    if (length == 0) {
+	resObjPtr = TclStringCat(interp, listLen, elemPtrs, 0);
     } else {
 	int i;
 
