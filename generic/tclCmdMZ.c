@@ -1572,11 +1572,11 @@ StringIsCmd(
 		string1 = TclGetStringFromObj(objPtr, &length1);
 		result = length1 == 0;
 	    }
-	} else if (((index == STR_IS_TRUE) &&
-		objPtr->internalRep.longValue == 0)
-	    || ((index == STR_IS_FALSE) &&
-		objPtr->internalRep.longValue != 0)) {
-	    result = 0;
+	} else if (index != STR_IS_BOOL) {
+	    TclGetBooleanFromObj(NULL, objPtr, &i);
+	    if ((index == STR_IS_TRUE) ^ i) {
+		result = 0;
+	    }
 	}
 	break;
     case STR_IS_CONTROL:
