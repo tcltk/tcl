@@ -15,6 +15,7 @@
 #include "tclInt.h"
 #include "tclParse.h"
 #include "tclStringTrim.h"
+#include "tommath.h"
 #include <math.h>
 
 /*
@@ -3560,6 +3561,67 @@ TclFormatInt(
  */
 
 int
+GetWideForIndex(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
+				 * NULL, then no error message is left after
+				 * errors. */
+    Tcl_Obj *objPtr,		/* Points to an object containing either "end"
+				 * or an integer. */
+    int endValue,		/* The value to be stored at "indexPtr" if
+				 * "objPtr" holds "end". */
+    Tcl_WideInt *widePtr)	/* Location filled in with a wide integer
+				 * representing an index. */
+{
+    int numType;
+    ClientData cd = NULL;
+    int code = TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
+
+    if (code == TCL_OK) {
+	if (numType == TCL_NUMBER_WIDE) {
+	    /* objPtr holds an integer in the signed wide range */
+	    *widePtr = (Tcl_WideInt)(*(Tcl_WideInt *)cd);
+	    return TCL_OK;
+	}
+	if (numType == TCL_NUMBER_BIG) {
+	    /* objPtr holds an integer outside the signed wide range */
+	    mp_int big;
+	    const Tcl_WideInt wideMax = ((~(Tcl_WideUInt)0) >> 1);
+
+	    Tcl_TakeBignumFromObj(NULL, objPtr, &big);
+	    if (mp_cmp_d(&big, 0) == MP_LT) {
+		*widePtr = ~wideMax;
+	    } else {
+		*widePtr = wideMax;
+	    }
+	    return TCL_OK;
+	}
+
+	/* Must be a double -> not a valid index */
+	goto parseError;
+    }
+
+    /* objPtr does not hold a number, parse for other index formats */
+ 
+
+
+    /* Report a parse error. */
+  parseError:
+    if (interp != NULL) {
+	char * bytes = TclGetString(objPtr);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad index \"%s\": must be integer?[+-]integer? or"
+		" end?[+-]integer?", bytes));
+	if (!strncmp(bytes, "end-", 4)) {
+	    bytes += 4;
+	}
+	TclCheckBadOctal(interp, bytes);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
+    }
+
+    return TCL_ERROR;
+}
+
+int
 TclGetIntForIndex(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, then no error message is left after
@@ -3571,6 +3633,21 @@ TclGetIntForIndex(
     int *indexPtr)		/* Location filled in with an integer
 				 * representing an index. */
 {
+#if 1
+    Tcl_WideInt wide;
+
+    if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    if (wide < INT_MIN) {
+	wide = INT_MIN;
+    } else if (wide > INT_MAX) {
+	wide = INT_MAX;
+    }
+    *indexPtr = (int) wide;
+    return TCL_OK;
+    
+#else
     size_t length;
     char *opPtr;
     const char *bytes;
@@ -3656,6 +3733,7 @@ TclGetIntForIndex(
     }
 
     return TCL_ERROR;
+#endif
 }
 
 /*
