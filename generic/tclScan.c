@@ -942,7 +942,7 @@ Tcl_ScanObjCmd(
 		if (flags & SCAN_UNSIGNED) {
 		    mp_int big;
 		    if ((Tcl_GetBignumFromObj(interp, objPtr, &big) != TCL_OK)
-			    || (mp_cmp_d(&big, 0) == MP_LT)) {
+			    || mp_isneg(&big)) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"unsigned bignum scans are invalid", -1));
 			Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADUNSIGNED",NULL);
