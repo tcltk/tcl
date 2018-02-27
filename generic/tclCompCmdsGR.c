@@ -55,13 +55,21 @@ GetIndexFromToken(
 {
     Tcl_Obj *tmpObj = Tcl_NewObj();
     int result, idx;
+    Tcl_WideInt wide;
 
     if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
 	Tcl_DecrRefCount(tmpObj);
 	return TCL_ERROR;
     }
 
-    result = TclGetIntFromObj(NULL, tmpObj, &idx);
+    result = TclGetWideIntFromObj(NULL, tmpObj, &wide);
+    if (wide < INT_MIN) {
+	idx = INT_MIN;
+    } else if (wide > INT_MAX) {
+	idx = INT_MAX;
+    } else {
+	idx = (int) wide;
+    }
     if (result == TCL_OK) {
 	if (idx < 0) {
 	    result = TCL_ERROR;
