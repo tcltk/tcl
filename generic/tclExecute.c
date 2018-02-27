@@ -7951,7 +7951,7 @@ ExecuteExtendedBinaryMathOp(
 	    break;
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    invalid = (mp_cmp_d(&big2, 0) == MP_LT);
+	    invalid = mp_isneg(&big2);
 	    mp_clear(&big2);
 	    break;
 	default:
@@ -8030,7 +8030,7 @@ ExecuteExtendedBinaryMathOp(
 		    break;
 		case TCL_NUMBER_BIG:
 		    Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
-		    zero = (mp_cmp_d(&big1, 0) == MP_GT);
+		    zero = (!mp_isneg(&big1));
 		    mp_clear(&big1);
 		    break;
 		default:
@@ -8068,7 +8068,7 @@ ExecuteExtendedBinaryMathOp(
 	} else {
 	    mp_init(&bigRemainder);
 	    mp_div_2d(&big1, shift, &bigResult, &bigRemainder);
-	    if (mp_cmp_d(&bigRemainder, 0) == MP_LT) {
+	    if (mp_isneg(&bigRemainder)) {
 		/*
 		 * Convert to Tcl's integer division rules.
 		 */
@@ -8095,14 +8095,14 @@ ExecuteExtendedBinaryMathOp(
 	     * arguments is negative, store it in 'Second'.
 	     */
 
-	    if (mp_cmp_d(&big1, 0) != MP_LT) {
-		numPos = 1 + (mp_cmp_d(&big2, 0) != MP_LT);
+	    if (!mp_isneg(&big1)) {
+		numPos = 1 + !mp_isneg(&big2);
 		First = &big1;
 		Second = &big2;
 	    } else {
 		First = &big2;
 		Second = &big1;
-		numPos = (mp_cmp_d(First, 0) != MP_LT);
+		numPos = (!mp_isneg(First));
 	    }
 	    mp_init(&bigResult);
 
@@ -8304,7 +8304,7 @@ ExecuteExtendedBinaryMathOp(
 	    break;
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    negativeExponent = (mp_cmp_d(&big2, 0) == MP_LT);
+	    negativeExponent = mp_isneg(&big2);
 	    mp_mod_2d(&big2, 1, &big2);
 	    oddExponent = !mp_iszero(&big2);
 	    mp_clear(&big2);
@@ -8854,7 +8854,7 @@ TclCompareTwoNumbers(
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    if (mp_cmp_d(&big2, 0) == MP_LT) {
+	    if (mp_isneg(&big2)) {
 		compare = MP_GT;
 	    } else {
 		compare = MP_LT;
@@ -8891,7 +8891,7 @@ TclCompareTwoNumbers(
 	    }
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	    if ((d1 < (double)LONG_MAX) && (d1 > (double)LONG_MIN)) {
-		if (mp_cmp_d(&big2, 0) == MP_LT) {
+		if (mp_isneg(&big2)) {
 		    compare = MP_GT;
 		} else {
 		    compare = MP_LT;
