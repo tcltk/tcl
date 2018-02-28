@@ -3593,7 +3593,7 @@ GetWideForIndex(
 	    /* objPtr holds an integer outside the signed wide range */
 	    mp_int *bigPtr = (mp_int *)cd;
 
-	    if (mp_cmp_d(bigPtr, 0) == MP_LT) {
+	    if (mp_isneg(bigPtr)) {
 		*widePtr = ~wideMax;
 	    } else {
 		*widePtr = wideMax;
@@ -3808,7 +3808,7 @@ SetEndOffsetFromAny(
 	    /* objPtr holds an integer outside the signed wide range */
 	    mp_int *bigPtr = (mp_int *)cd;
 
-	    if (mp_cmp_d(bigPtr, 0) == MP_LT) {
+	    if (mp_isneg(bigPtr)) {
 		offset = ~wideMax;
 	    } else {
 		offset = wideMax;
