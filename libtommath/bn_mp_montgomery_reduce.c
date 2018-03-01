@@ -28,9 +28,10 @@ int mp_montgomery_reduce(mp_int *x, const mp_int *n, mp_digit rho)
     * are fixed up in the inner loop.
     */
    digs = (n->used * 2) + 1;
-   if ((digs < MP_WARRAY) &&
+   if ((digs < (int)MP_WARRAY) &&
+       (x->used <= (int)MP_WARRAY) &&
        (n->used <
-        (1 << ((CHAR_BIT * sizeof(mp_word)) - (2 * DIGIT_BIT))))) {
+        (int)(1u << (((size_t)CHAR_BIT * sizeof(mp_word)) - (2u * (size_t)DIGIT_BIT))))) {
       return fast_mp_montgomery_reduce(x, n, rho);
    }
 
@@ -72,19 +73,19 @@ int mp_montgomery_reduce(mp_int *x, const mp_int *n, mp_digit rho)
          for (iy = 0; iy < n->used; iy++) {
             /* compute product and sum */
             r       = ((mp_word)mu * (mp_word)*tmpn++) +
-                      (mp_word) u + (mp_word) *tmpx;
+                      (mp_word)u + (mp_word)*tmpx;
 
             /* get carry */
-            u       = (mp_digit)(r >> ((mp_word) DIGIT_BIT));
+            u       = (mp_digit)(r >> (mp_word)DIGIT_BIT);
 
             /* fix digit */
-            *tmpx++ = (mp_digit)(r & ((mp_word) MP_MASK));
+            *tmpx++ = (mp_digit)(r & (mp_word)MP_MASK);
          }
          /* At this point the ix'th digit of x should be zero */
 
 
          /* propagate carries upwards as required*/
-         while (u != 0) {
+         while (u != 0u) {
             *tmpx   += u;
             u        = *tmpx >> DIGIT_BIT;
             *tmpx++ &= MP_MASK;
