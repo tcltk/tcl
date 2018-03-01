@@ -27,7 +27,7 @@ void mp_clamp(mp_int *a)
    /* decrease used while the most significant digit is
     * zero.
     */
-   while ((a->used > 0) && (a->dp[a->used - 1] == 0)) {
+   while ((a->used > 0) && (a->dp[a->used - 1] == 0u)) {
       --(a->used);
    }
 
