@@ -18,8 +18,6 @@
 #include "tommath.h"
 #include <math.h>
 
-const Tcl_WideInt wideMax = ((~(Tcl_WideUInt)0) >> 1);
-
 /*
  * The absolute pathname of the executable in which this Tcl library is
  * running.
@@ -3594,9 +3592,9 @@ GetWideForIndex(
 	    mp_int *bigPtr = (mp_int *)cd;
 
 	    if (mp_isneg(bigPtr)) {
-		*widePtr = ~wideMax;
+		*widePtr = LLONG_MIN;
 	    } else {
-		*widePtr = wideMax;
+		*widePtr = LLONG_MAX;
 	    }
 	    return TCL_OK;
 	}
@@ -3614,16 +3612,16 @@ GetWideForIndex(
 	    /* Different signs, sum cannot overflow */
 	    *widePtr = endValue + offset;
 	} else if (endValue >= 0) {
-	    if (endValue < wideMax - offset) {
+	    if (endValue < LLONG_MAX - offset) {
 		*widePtr = endValue + offset;
 	    } else {
-		*widePtr = wideMax;
+		*widePtr = LLONG_MAX;
 	    }
 	} else {
-	    if (endValue > ~wideMax - offset) {
+	    if (endValue > LLONG_MIN - offset) {
 		*widePtr = endValue + offset;
 	    } else {
-		*widePtr = ~wideMax;
+		*widePtr = LLONG_MIN;
 	    }
 	}
 	return TCL_OK;
@@ -3651,7 +3649,7 @@ GetWideForIndex(
 
 		    TclFreeIntRep(objPtr);
 		    if (*opPtr == '-') {
-			if (w2 == ~wideMax) {
+			if (w2 == LLONG_MIN) {
 			    /* TODO: need bignum */
 			    goto parseError;
 			}
@@ -3661,16 +3659,16 @@ GetWideForIndex(
 		    if ((w1 ^ w2) < 0) {
 			*widePtr = w1 + w2;
 		    } else if (w1 >= 0) {
-			if (w1 < wideMax - w2) {
+			if (w1 < LLONG_MAX - w2) {
 			    *widePtr = w1 + w2;
 			} else {
-			    *widePtr = wideMax;
+			    *widePtr = LLONG_MAX;
 			}
 		    } else {
-			if (w1 > ~wideMax - w2) {
+			if (w1 > LLONG_MIN - w2) {
 			    *widePtr = w1 + w2;
 			} else {
-			    *widePtr = ~wideMax;
+			    *widePtr = LLONG_MIN;
 			}
 		    }
 		    return TCL_OK;
@@ -3809,9 +3807,9 @@ SetEndOffsetFromAny(
 	    mp_int *bigPtr = (mp_int *)cd;
 
 	    if (mp_isneg(bigPtr)) {
-		offset = ~wideMax;
+		offset = LLONG_MIN;
 	    } else {
-		offset = wideMax;
+		offset = LLONG_MAX;
 	    }
 	} else if (numType == TCL_NUMBER_WIDE) {
 	    offset = (*(Tcl_WideInt *)cd);
@@ -3820,8 +3818,8 @@ SetEndOffsetFromAny(
 	    goto badIndexFormat;
 	}
 	if (bytes[3] == '-') {
-	    if (offset == ~wideMax) {
-		offset = wideMax;
+	    if (offset == LLONG_MIN) {
+		offset = LLONG_MAX;
 	    } else {
 		offset = -offset;
 	    }
