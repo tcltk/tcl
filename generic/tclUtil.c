@@ -3575,27 +3575,19 @@ GetWideForIndex(
     Tcl_WideInt *widePtr)	/* Location filled in with a wide integer
 				 * representing an index. */
 {
-    const char *opPtr;
     int length;
-    ClientData cd = NULL;
-    int numType, code = TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
+    const char *opPtr;
 
-
-    if (code == TCL_OK) {
-	if (numType == TCL_NUMBER_WIDE) {
-	    /* objPtr holds an integer in the signed wide range */
-	    *widePtr = (Tcl_WideInt)(*(Tcl_WideInt *)cd);
+    if (TclParseNumber(NULL, objPtr, NULL, NULL, -1, NULL, TCL_PARSE_INTEGER_ONLY) == TCL_OK) {
+	if (objPtr->typePtr == &tclIntType) {
+	    *widePtr = objPtr->internalRep.wideValue;
 	    return TCL_OK;
-	}
-	if (numType == TCL_NUMBER_BIG) {
+	} else if (objPtr->typePtr == &tclBignumType) {
 	    /* objPtr holds an integer outside the signed wide range */
-	    mp_int *bigPtr = (mp_int *)cd;
+	    mp_int bigPtr;
 
-	    if (mp_isneg(bigPtr)) {
-		*widePtr = LLONG_MIN;
-	    } else {
-		*widePtr = LLONG_MAX;
-	    }
+	    Tcl_GetBignumFromObj(NULL, objPtr, &bigPtr);
+	    *widePtr = mp_isneg(&bigPtr) ? LLONG_MIN : LLONG_MAX;
 	    return TCL_OK;
 	}
 
@@ -3636,18 +3628,17 @@ GetWideForIndex(
     /* check the index arithmetic format... */
     if (TCL_OK == TclParseNumber(NULL, objPtr, NULL, NULL, -1, &opPtr,
 	    TCL_PARSE_INTEGER_ONLY)) {
-	if ((*opPtr != '-') && (*opPtr != '+')) {
+	if (((*opPtr != '-') && (*opPtr != '+')) || objPtr->typePtr == &tclBignumType) {
 	    goto parseError;
 	}
-	TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
-	if (numType == TCL_NUMBER_WIDE) {
-	    Tcl_WideInt w1 = (*(Tcl_WideInt *)cd);
-
+	if (objPtr->typePtr == &tclIntType) {
+	    Tcl_WideInt w1 = objPtr->internalRep.wideValue;
 	    if (TCL_OK == TclParseNumber(NULL, objPtr, NULL, opPtr+1, -1,
 		    NULL, TCL_PARSE_INTEGER_ONLY)) {
-		TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
-		if (numType == TCL_NUMBER_WIDE) {
-		    Tcl_WideInt w2 = (*(Tcl_WideInt *)cd);
+		if (objPtr->typePtr == &tclBignumType) {
+		    goto parseError;
+		} else if (objPtr->typePtr == &tclIntType) {
+		    Tcl_WideInt w2 = objPtr->internalRep.wideValue;
 
 		    TclFreeIntRep(objPtr);
 		    if (*opPtr == '-') {
@@ -3793,8 +3784,6 @@ SetEndOffsetFromAny(
 	 * This is our limited string expression evaluator. Pass everything
 	 * after "end-" to TclParseNumber.
 	 */
-	int numType;
-	ClientData cd;
 
 	if (TclIsSpaceProc(bytes[4])) {
 	    goto badIndexFormat;
@@ -3803,18 +3792,15 @@ SetEndOffsetFromAny(
 		TCL_PARSE_INTEGER_ONLY) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
-	if (numType == TCL_NUMBER_BIG) {
+	if (objPtr->typePtr == &tclBignumType) {
 	    /* objPtr holds an integer outside the signed wide range */
-	    mp_int *bigPtr = (mp_int *)cd;
+	    mp_int bigPtr;
 
-	    if (mp_isneg(bigPtr)) {
-		offset = LLONG_MIN;
-	    } else {
-		offset = LLONG_MAX;
-	    }
-	} else if (numType == TCL_NUMBER_WIDE) {
-	    offset = (*(Tcl_WideInt *)cd);
+	    Tcl_GetBignumFromObj(NULL, objPtr, &bigPtr);
+	    offset = mp_isneg(&bigPtr) ? LLONG_MIN : LLONG_MAX;
+	    TclFreeIntRep(objPtr);
+	} else if (objPtr->typePtr == &tclIntType) {
+	    offset = objPtr->internalRep.wideValue;
 	} else {
 	    /* Can't happen? */
 	    goto badIndexFormat;
