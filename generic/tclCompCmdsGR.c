@@ -1425,7 +1425,19 @@ TclCompileLinsertCmd(
     } else if (idx == TCL_INDEX_END /*end*/) {
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
     } else {
-	if (idx < 0) {
+	/*
+	 * Here we handle two ranges for idx. First when idx > 0, we
+	 * want the first half of the split to end at index idx-1 and
+	 * the second half to start at index idx.
+	 * Second when idx < TCL_INDEX_END, indicating "end-N" indexing,
+	 * we want the first half of the split to end at index end-N and
+	 * the second half to start at index end-N+1. We accomplish this
+	 * with a pre-adjustment of the end-N value.
+	 * The root of this is that the commands [lrange] and [linsert]
+	 * differ in their interpretation of the "end" index.
+	 */
+
+	if (idx < TCL_INDEX_END) {
 	    idx++;
 	}
 	TclEmitInstInt4(	INST_OVER, 1,			envPtr);
