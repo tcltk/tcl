@@ -76,7 +76,7 @@ int s_mp_exptmod(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y, i
 void bn_reverse(unsigned char *s, int len);
 
 extern const char *mp_s_rmap;
-extern const uint8_t mp_s_rmap_reverse[];
+extern const unsigned char mp_s_rmap_reverse[];
 extern const size_t mp_s_rmap_reverse_sz;
 
 /* Fancy macro to set an MPI from another type.
