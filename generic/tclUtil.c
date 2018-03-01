@@ -3627,7 +3627,9 @@ GetWideForIndex(
 	return TCL_OK;
     }
 
-    if (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length) && (length > 1)) {
+    if ((TclMaxListLength(TclGetString(objPtr), -1, NULL) > 1)
+	    && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length))
+	    && (length > 1)) {
 	goto parseError;
     }
  
