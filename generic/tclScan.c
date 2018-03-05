@@ -926,9 +926,9 @@ Tcl_ScanObjCmd(
 	    }
 	    if (flags & SCAN_LONGER) {
 		if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
-		    wideValue = ~(Tcl_WideUInt)0 >> 1;	/* WIDE_MAX */
+		    wideValue = LLONG_MAX;
 		    if (TclGetString(objPtr)[0] == '-') {
-			wideValue++;	/* WIDE_MAX + 1 = WIDE_MIN */
+			wideValue = LLONG_MIN;
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
@@ -942,7 +942,7 @@ Tcl_ScanObjCmd(
 		if (flags & SCAN_UNSIGNED) {
 		    mp_int big;
 		    if ((Tcl_GetBignumFromObj(interp, objPtr, &big) != TCL_OK)
-			    || (mp_cmp_d(&big, 0) == MP_LT)) {
+			    || mp_isneg(&big)) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"unsigned bignum scans are invalid", -1));
 			Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADUNSIGNED",NULL);

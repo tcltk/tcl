@@ -32,7 +32,7 @@ top:
       goto ERR;
    }
 
-   if (d != 1) {
+   if (d != 1u) {
       /* q = q * d */
       if ((res = mp_mul_d(&q, d, &q)) != MP_OKAY) {
          goto ERR;
