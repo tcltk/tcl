@@ -49,7 +49,7 @@ int mp_prime_random_ex(mp_int *a, int t, int size, int flags, ltm_prime_callback
    bsize = (size>>3) + ((size&7)?1:0);
 
    /* we need a buffer of bsize bytes */
-   tmp = OPT_CAST(unsigned char) XMALLOC(bsize);
+   tmp = OPT_CAST(unsigned char) XMALLOC((size_t)bsize);
    if (tmp == NULL) {
       return MP_MEM;
    }
@@ -86,12 +86,12 @@ int mp_prime_random_ex(mp_int *a, int t, int size, int flags, ltm_prime_callback
       tmp[bsize-1]             |= maskOR_lsb;
 
       /* read it in */
-      if ((err = mp_read_unsigned_bin(a, tmp, bsize)) != MP_OKAY)     {
+      if ((err = mp_read_unsigned_bin(a, tmp, bsize)) != MP_OKAY) {
          goto error;
       }
 
       /* is it prime? */
-      if ((err = mp_prime_is_prime(a, t, &res)) != MP_OKAY)           {
+      if ((err = mp_prime_is_prime(a, t, &res)) != MP_OKAY) {
          goto error;
       }
       if (res == MP_NO) {
@@ -100,15 +100,15 @@ int mp_prime_random_ex(mp_int *a, int t, int size, int flags, ltm_prime_callback
 
       if ((flags & LTM_PRIME_SAFE) != 0) {
          /* see if (a-1)/2 is prime */
-         if ((err = mp_sub_d(a, 1, a)) != MP_OKAY)                    {
+         if ((err = mp_sub_d(a, 1uL, a)) != MP_OKAY) {
             goto error;
          }
-         if ((err = mp_div_2(a, a)) != MP_OKAY)                       {
+         if ((err = mp_div_2(a, a)) != MP_OKAY) {
             goto error;
          }
 
          /* is it prime? */
-         if ((err = mp_prime_is_prime(a, t, &res)) != MP_OKAY)        {
+         if ((err = mp_prime_is_prime(a, t, &res)) != MP_OKAY) {
             goto error;
          }
       }
@@ -116,10 +116,10 @@ int mp_prime_random_ex(mp_int *a, int t, int size, int flags, ltm_prime_callback
 
    if ((flags & LTM_PRIME_SAFE) != 0) {
       /* restore a to the original value */
-      if ((err = mp_mul_2(a, a)) != MP_OKAY)                          {
+      if ((err = mp_mul_2(a, a)) != MP_OKAY) {
          goto error;
       }
-      if ((err = mp_add_d(a, 1, a)) != MP_OKAY)                       {
+      if ((err = mp_add_d(a, 1uL, a)) != MP_OKAY) {
          goto error;
       }
    }

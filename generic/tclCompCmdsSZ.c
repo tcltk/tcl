@@ -107,58 +107,6 @@ const AuxDataType tclJumptableInfoType = {
 #define INVOKE(name) \
     TclEmitInvoke(envPtr,INST_##name)
 
-#define INDEX_END	(-2)
-
-/*
- *----------------------------------------------------------------------
- *
- * GetIndexFromToken --
- *
- *	Parse a token and get the encoded version of the index (as understood
- *	by TEBC), assuming it is at all knowable at compile time. Only handles
- *	indices that are integers or 'end' or 'end-integer'.
- *
- * Returns:
- *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed.
- *
- * Side effects:
- *	Sets *index to the index value if successful.
- *
- *----------------------------------------------------------------------
- */
-
-static inline int
-GetIndexFromToken(
-    Tcl_Token *tokenPtr,
-    int *index)
-{
-    Tcl_Obj *tmpObj = Tcl_NewObj();
-    int result, idx;
-
-    if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
-	Tcl_DecrRefCount(tmpObj);
-	return TCL_ERROR;
-    }
-
-    result = TclGetIntFromObj(NULL, tmpObj, &idx);
-    if (result == TCL_OK) {
-	if (idx < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, INDEX_END, &idx);
-	if (result == TCL_OK && idx > INDEX_END) {
-	    result = TCL_ERROR;
-	}
-    }
-    Tcl_DecrRefCount(tmpObj);
-
-    if (result == TCL_OK) {
-	*index = idx;
-    }
-
-    return result;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -986,10 +934,10 @@ TclCompileStringRangeCmd(
      * Parse the two indices.
      */
 
-    if (GetIndexFromToken(fromTokenPtr, &idx1) != TCL_OK) {
+    if (TclGetIndexFromToken(fromTokenPtr, &idx1) != TCL_OK) {
 	goto nonConstantIndices;
     }
-    if (GetIndexFromToken(toTokenPtr, &idx2) != TCL_OK) {
+    if (TclGetIndexFromToken(toTokenPtr, &idx2) != TCL_OK) {
 	goto nonConstantIndices;
     }
 
@@ -1044,18 +992,18 @@ TclCompileStringReplaceCmd(
      */
 
     tokenPtr = TokenAfter(valueTokenPtr);
-    if (GetIndexFromToken(tokenPtr, &idx1) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx1) != TCL_OK) {
 	goto genericReplace;
     }
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (GetIndexFromToken(tokenPtr, &idx2) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx2) != TCL_OK) {
 	goto genericReplace;
     }
 
     /*
      * We handle these replacements specially: first character (where
-     * idx1=idx2=0) and last character (where idx1=idx2=INDEX_END). Anything
+     * idx1=idx2=0) and last character (where idx1=idx2=TCL_INDEX_END). Anything
      * else and the semantics get rather screwy.
      */
 
@@ -1069,7 +1017,7 @@ TclCompileStringReplaceCmd(
 	CompileWord(envPtr, valueTokenPtr, interp, 1);
 	if (replacementTokenPtr == NULL) {
 	    /* Drop first */
-	    OP44(	STR_RANGE_IMM, 1, INDEX_END);
+	    OP44(	STR_RANGE_IMM, 1, TCL_INDEX_END);
 	    return TCL_OK;
 	}
 	/* Replace first */
@@ -1083,12 +1031,12 @@ TclCompileStringReplaceCmd(
 	FIXJUMP1(notEq);
 	TclAdjustStackDepth(1, envPtr);
 	OP4(		REVERSE, 2);
-	OP44(		STR_RANGE_IMM, 1, INDEX_END);
+	OP44(		STR_RANGE_IMM, 1, TCL_INDEX_END);
 	OP1(		STR_CONCAT1, 2);
 	FIXJUMP1(end);
 	return TCL_OK;
 
-    } else if (idx1 == INDEX_END && idx2 == INDEX_END) {
+    } else if (idx1 == TCL_INDEX_END && idx2 == TCL_INDEX_END) {
 	int notEq, end;
 
 	/*
@@ -1098,7 +1046,7 @@ TclCompileStringReplaceCmd(
 	CompileWord(envPtr, valueTokenPtr, interp, 1);
 	if (replacementTokenPtr == NULL) {
 	    /* Drop last */
-	    OP44(	STR_RANGE_IMM, 0, INDEX_END-1);
+	    OP44(	STR_RANGE_IMM, 0, TCL_INDEX_END-1);
 	    return TCL_OK;
 	}
 	/* Replace last */
@@ -1112,7 +1060,7 @@ TclCompileStringReplaceCmd(
 	FIXJUMP1(notEq);
 	TclAdjustStackDepth(1, envPtr);
 	OP4(		REVERSE, 2);
-	OP44(		STR_RANGE_IMM, 0, INDEX_END-1);
+	OP44(		STR_RANGE_IMM, 0, TCL_INDEX_END-1);
 	OP4(		REVERSE, 2);
 	OP1(		STR_CONCAT1, 2);
 	FIXJUMP1(end);

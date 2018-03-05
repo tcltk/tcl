@@ -24,12 +24,12 @@ int mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
    int     res, ix;
 
    /* cannot divide by zero */
-   if (b == 0) {
+   if (b == 0u) {
       return MP_VAL;
    }
 
    /* quick outs */
-   if ((b == 1) || (mp_iszero(a) == MP_YES)) {
+   if ((b == 1u) || (mp_iszero(a) == MP_YES)) {
       if (d != NULL) {
          *d = 0;
       }
@@ -47,7 +47,7 @@ int mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
          }
       }
       if (d != NULL) {
-         *d = a->dp[0] & ((((mp_digit)1)<<ix) - 1);
+         *d = a->dp[0] & (((mp_digit)1<<(mp_digit)ix) - 1uL);
       }
       if (c != NULL) {
          return mp_div_2d(a, ix, c, NULL);
@@ -57,7 +57,7 @@ int mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
 
 #ifdef BN_MP_DIV_3_C
    /* three? */
-   if (b == 3) {
+   if (b == 3u) {
       return mp_div_3(a, c, d);
    }
 #endif
@@ -71,15 +71,15 @@ int mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
    q.sign = a->sign;
    w = 0;
    for (ix = a->used - 1; ix >= 0; ix--) {
-      w = (w << ((mp_word)DIGIT_BIT)) | ((mp_word)a->dp[ix]);
+      w = (w << (mp_word)DIGIT_BIT) | (mp_word)a->dp[ix];
 
       if (w >= b) {
          t = (mp_digit)(w / b);
-         w -= ((mp_word)t) * ((mp_word)b);
+         w -= (mp_word)t * (mp_word)b;
       } else {
          t = 0;
       }
-      q.dp[ix] = (mp_digit)t;
+      q.dp[ix] = t;
    }
 
    if (d != NULL) {
