@@ -287,8 +287,6 @@ ConvertZeroEffectToNOP(
 	    case INST_INCR_ARRAY_STK:
 	    case INST_INCR_SCALAR_STK:
 	    case INST_INCR_STK:
-//	    case INST_LOR:
-//	    case INST_LAND:
 	    case INST_EQ:
 	    case INST_NEQ:
 	    case INST_LT:

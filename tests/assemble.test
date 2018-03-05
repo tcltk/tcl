@@ -532,18 +532,6 @@ test assemble-7.16 {incrStk} {
     -result 12
     -cleanup {rename x {}}
 }
-#test assemble-7.17 {land/lor} {
-#    -body {
-#	proc x {a b} {
-#	    list \
-#		[assemble {load a; load b; land}] \
-#		[assemble {load a; load b; lor}]
-#	}
-#	list [x 0 0] [x 0 23] [x 35 0] [x 47 59]
-#    }
-#    -result {{0 0} {0 1} {0 1} {1 1}}
-#    -cleanup {rename x {}}
-#}
 test assemble-7.18 {lappendArrayStk} {
     -body {
 	proc x {} {
