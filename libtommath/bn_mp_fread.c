@@ -20,13 +20,14 @@
 int mp_fread(mp_int *a, int radix, FILE *stream)
 {
    int err, ch, neg, y;
+   unsigned pos;
 
    /* clear a */
    mp_zero(a);
 
    /* if first digit is - then set negative */
    ch = fgetc(stream);
-   if (ch == '-') {
+   if (ch == (int)'-') {
       neg = MP_NEG;
       ch = fgetc(stream);
    } else {
@@ -34,27 +35,28 @@ int mp_fread(mp_int *a, int radix, FILE *stream)
    }
 
    for (;;) {
-      /* find y in the radix map */
-      for (y = 0; y < radix; y++) {
-         if (mp_s_rmap[y] == ch) {
-            break;
-         }
+      pos = (unsigned)(ch - (int)'(');
+      if (mp_s_rmap_reverse_sz < pos) {
+         break;
       }
-      if (y == radix) {
+
+      y = (int)mp_s_rmap_reverse[pos];
+
+      if ((y == 0xff) || (y >= radix)) {
          break;
       }
 
       /* shift up and add */
-      if ((err = mp_mul_d(a, radix, a)) != MP_OKAY) {
+      if ((err = mp_mul_d(a, (mp_digit)radix, a)) != MP_OKAY) {
          return err;
       }
-      if ((err = mp_add_d(a, y, a)) != MP_OKAY) {
+      if ((err = mp_add_d(a, (mp_digit)y, a)) != MP_OKAY) {
          return err;
       }
 
       ch = fgetc(stream);
    }
-   if (mp_cmp_d(a, 0) != MP_EQ) {
+   if (mp_cmp_d(a, 0uL) != MP_EQ) {
       a->sign = neg;
    }
 

@@ -2929,7 +2929,8 @@ Tcl_LsearchObjCmd(
 {
     const char *bytes, *patternBytes;
     int i, match, index, result, listc, length, elemLen, bisect;
-    int dataType, isIncreasing, lower, upper, offset;
+    int allocatedIndexVector = 0;
+    int dataType, isIncreasing, lower, upper, start, groupSize, groupOffset;
     Tcl_WideInt patWide, objWide;
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     double patDouble, objDouble;
@@ -2941,7 +2942,7 @@ Tcl_LsearchObjCmd(
 	"-all",	    "-ascii",   "-bisect", "-decreasing", "-dictionary",
 	"-exact",   "-glob",    "-increasing", "-index",
 	"-inline",  "-integer", "-nocase",     "-not",
-	"-real",    "-regexp",  "-sorted",     "-start",
+	"-real",    "-regexp",  "-sorted",     "-start", "-stride",
 	"-subindices", NULL
     };
     enum options {
@@ -2949,7 +2950,7 @@ Tcl_LsearchObjCmd(
 	LSEARCH_DICTIONARY, LSEARCH_EXACT, LSEARCH_GLOB, LSEARCH_INCREASING,
 	LSEARCH_INDEX, LSEARCH_INLINE, LSEARCH_INTEGER, LSEARCH_NOCASE,
 	LSEARCH_NOT, LSEARCH_REAL, LSEARCH_REGEXP, LSEARCH_SORTED,
-	LSEARCH_START, LSEARCH_SUBINDICES
+	LSEARCH_START, LSEARCH_STRIDE, LSEARCH_SUBINDICES
     };
     enum datatypes {
 	ASCII, DICTIONARY, INTEGER, REAL
@@ -2969,7 +2970,9 @@ Tcl_LsearchObjCmd(
     bisect = 0;
     listPtr = NULL;
     startPtr = NULL;
-    offset = 0;
+    groupSize = 1;
+    groupOffset = 0;
+    start = 0;
     noCase = 0;
     sortInfo.compareCmdPtr = NULL;
     sortInfo.isIncreasing = 1;
@@ -2987,9 +2990,6 @@ Tcl_LsearchObjCmd(
     for (i = 1; i < objc-2; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &index)
 		!= TCL_OK) {
-	    if (startPtr != NULL) {
-		Tcl_DecrRefCount(startPtr);
-	    }
 	    result = TCL_ERROR;
 	    goto done;
 	}
@@ -3054,6 +3054,7 @@ Tcl_LsearchObjCmd(
 
 	    if (startPtr != NULL) {
 		Tcl_DecrRefCount(startPtr);
+		startPtr = NULL;
 	    }
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -3074,25 +3075,47 @@ Tcl_LsearchObjCmd(
 		startPtr = Tcl_DuplicateObj(objv[i]);
 	    } else {
 		startPtr = objv[i];
-		Tcl_IncrRefCount(startPtr);
 	    }
+	    Tcl_IncrRefCount(startPtr);
+	    break;
+	case LSEARCH_STRIDE:		/* -stride */
+	    if (i > objc-4) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"\"-stride\" option must be "
+			"followed by stride length", -1));
+		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    if (Tcl_GetIntFromObj(interp, objv[i+1], &groupSize) != TCL_OK) {
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    if (groupSize < 1) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"stride length must be at least 1", -1));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
+			"BADSTRIDE", NULL);
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    i++;
 	    break;
 	case LSEARCH_INDEX: {		/* -index */
 	    Tcl_Obj **indices;
 	    int j;
 
-	    if (sortInfo.indexc > 1) {
+	    if (allocatedIndexVector) {
 		TclStackFree(interp, sortInfo.indexv);
+		allocatedIndexVector = 0;
 	    }
 	    if (i > objc-4) {
-		if (startPtr != NULL) {
-		    Tcl_DecrRefCount(startPtr);
-		}
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"\"-index\" option must be followed by list index",
 			-1));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
-		return TCL_ERROR;
+		result = TCL_ERROR;
+		goto done;
 	    }
 
 	    /*
@@ -3104,10 +3127,8 @@ Tcl_LsearchObjCmd(
 	    i++;
 	    if (TclListObjGetElements(interp, objv[i],
 		    &sortInfo.indexc, &indices) != TCL_OK) {
-		if (startPtr != NULL) {
-		    Tcl_DecrRefCount(startPtr);
-		}
-		return TCL_ERROR;
+		result = TCL_ERROR;
+		goto done;
 	    }
 	    switch (sortInfo.indexc) {
 	    case 0:
@@ -3119,6 +3140,8 @@ Tcl_LsearchObjCmd(
 	    default:
 		sortInfo.indexv =
 			TclStackAlloc(interp, sizeof(int) * sortInfo.indexc);
+		allocatedIndexVector = 1; /* Cannot use indexc field, as it
+					   * might be decreased by 1 later. */
 	    }
 
 	    /*
@@ -3146,14 +3169,12 @@ Tcl_LsearchObjCmd(
      */
 
     if (returnSubindices && sortInfo.indexc==0) {
-	if (startPtr != NULL) {
-	    Tcl_DecrRefCount(startPtr);
-	}
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"-subindices cannot be used without -index option", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH",
 		"BAD_OPTION_MIX", NULL);
-	return TCL_ERROR;
+	result = TCL_ERROR;
+	goto done;
     }
 
     if (bisect && (allMatches || negatedMatch)) {
@@ -3161,7 +3182,8 @@ Tcl_LsearchObjCmd(
 		"-bisect is not compatible with -all or -not", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH",
 		"BAD_OPTION_MIX", NULL);
-	return TCL_ERROR;
+	result = TCL_ERROR;
+	goto done;
     }
 
     if (mode == REGEXP) {
@@ -3187,9 +3209,6 @@ Tcl_LsearchObjCmd(
 	}
 
 	if (regexp == NULL) {
-	    if (startPtr != NULL) {
-		Tcl_DecrRefCount(startPtr);
-	    }
 	    result = TCL_ERROR;
 	    goto done;
 	}
@@ -3202,10 +3221,54 @@ Tcl_LsearchObjCmd(
 
     result = TclListObjGetElements(interp, objv[objc - 2], &listc, &listv);
     if (result != TCL_OK) {
-	if (startPtr != NULL) {
-	    Tcl_DecrRefCount(startPtr);
-	}
 	goto done;
+    }
+
+    /*
+     * Check for sanity when grouping elements of the overall list together
+     * because of the -stride option. [TIP #351]
+     */
+
+    if (groupSize > 1) {
+	if (listc % groupSize) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "list size must be a multiple of the stride length",
+		    -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH", "BADSTRIDE",
+		    NULL);
+	    result = TCL_ERROR;
+	    goto done;
+	}
+	if (sortInfo.indexc > 0) {
+	    /*
+	     * Use the first value in the list supplied to -index as the
+	     * offset of the element within each group by which to sort.
+	     */
+
+	    groupOffset = sortInfo.indexv[0];
+	    if (groupOffset <= SORTIDX_END) {
+		groupOffset = (groupOffset - SORTIDX_END) + groupSize - 1;
+	    }
+	    if (groupOffset < 0 || groupOffset >= groupSize) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"when used with \"-stride\", the leading \"-index\""
+			" value must be within the group", -1));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH",
+			"BADINDEX", NULL);
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    if (sortInfo.indexc == 1) {
+		sortInfo.indexc = 0;
+		sortInfo.indexv = NULL;
+	    } else {
+		sortInfo.indexc--;
+
+		for (i = 0; i < sortInfo.indexc; i++) {
+		    sortInfo.indexv[i] = sortInfo.indexv[i+1];
+		}
+	    }
+	}
     }
 
     /*
@@ -3213,13 +3276,12 @@ Tcl_LsearchObjCmd(
      */
 
     if (startPtr) {
-	result = TclGetIntForIndexM(interp, startPtr, listc-1, &offset);
-	Tcl_DecrRefCount(startPtr);
+	result = TclGetIntForIndexM(interp, startPtr, listc-1, &start);
 	if (result != TCL_OK) {
 	    goto done;
 	}
-	if (offset < 0) {
-	    offset = 0;
+	if (start < 0) {
+	    start = 0;
 	}
 
 	/*
@@ -3227,16 +3289,21 @@ Tcl_LsearchObjCmd(
 	 * "did not match anything at all" result straight away. [Bug 1374778]
 	 */
 
-	if (offset > listc-1) {
-	    if (sortInfo.indexc > 1) {
-		TclStackFree(interp, sortInfo.indexv);
-	    }
+	if (start > listc-1) {
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
 	    } else {
 		Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
 	    }
-	    return TCL_OK;
+	    goto done;
+	}
+
+	/*
+	 * If start points within a group, it points to the start of the group.
+	 */
+
+	if (groupSize > 1) {
+	    start -= (start % groupSize);
 	}
     }
 
@@ -3295,18 +3362,23 @@ Tcl_LsearchObjCmd(
 	 * sense in doing this when the match sense is inverted.
 	 */
 
-	lower = offset - 1;
+	/* 
+	 * With -stride, lower, upper and i are kept as multiples of groupSize.
+	 */
+
+	lower = start - groupSize;
 	upper = listc;
-	while (lower + 1 != upper && sortInfo.resultCode == TCL_OK) {
+	while (lower + groupSize != upper && sortInfo.resultCode == TCL_OK) {
 	    i = (lower + upper)/2;
+	    i -= i % groupSize;
 	    if (sortInfo.indexc != 0) {
-		itemPtr = SelectObjFromSublist(listv[i], &sortInfo);
+		itemPtr = SelectObjFromSublist(listv[i+groupOffset], &sortInfo);
 		if (sortInfo.resultCode != TCL_OK) {
 		    result = sortInfo.resultCode;
 		    goto done;
 		}
 	    } else {
-		itemPtr = listv[i];
+		itemPtr = listv[i+groupOffset];
 	    }
 	    switch ((enum datatypes) dataType) {
 	    case ASCII:
@@ -3395,10 +3467,10 @@ Tcl_LsearchObjCmd(
 	if (allMatches) {
 	    listPtr = Tcl_NewListObj(0, NULL);
 	}
-	for (i = offset; i < listc; i++) {
+	for (i = start; i < listc; i += groupSize) {
 	    match = 0;
 	    if (sortInfo.indexc != 0) {
-		itemPtr = SelectObjFromSublist(listv[i], &sortInfo);
+		itemPtr = SelectObjFromSublist(listv[i+groupOffset], &sortInfo);
 		if (sortInfo.resultCode != TCL_OK) {
 		    if (listPtr != NULL) {
 			Tcl_DecrRefCount(listPtr);
@@ -3407,7 +3479,7 @@ Tcl_LsearchObjCmd(
 		    goto done;
 		}
 	    } else {
-		itemPtr = listv[i];
+		itemPtr = listv[i+groupOffset];
 	    }
 
 	    switch (mode) {
@@ -3497,15 +3569,20 @@ Tcl_LsearchObjCmd(
 		 */
 
 		if (returnSubindices && (sortInfo.indexc != 0)) {
-		    itemPtr = SelectObjFromSublist(listv[i], &sortInfo);
+		    itemPtr = SelectObjFromSublist(listv[i+groupOffset],
+			    &sortInfo);
+		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
+		} else if (groupSize > 1) {
+		    Tcl_ListObjReplace(interp, listPtr, LIST_MAX, 0,
+			    groupSize, &listv[i]);
 		} else {
 		    itemPtr = listv[i];
+		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		}
-		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 	    } else if (returnSubindices) {
 		int j;
 
-		itemPtr = Tcl_NewIntObj(i);
+		itemPtr = Tcl_NewIntObj(i+groupOffset);
 		for (j=0 ; j<sortInfo.indexc ; j++) {
 		    Tcl_ListObjAppendElement(interp, itemPtr,
 			    Tcl_NewIntObj(sortInfo.indexv[j]));
@@ -3527,7 +3604,7 @@ Tcl_LsearchObjCmd(
 	if (returnSubindices) {
 	    int j;
 
-	    itemPtr = Tcl_NewIntObj(index);
+	    itemPtr = Tcl_NewIntObj(index+groupOffset);
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
 		Tcl_ListObjAppendElement(interp, itemPtr,
 			Tcl_NewIntObj(sortInfo.indexv[j]));
@@ -3544,7 +3621,14 @@ Tcl_LsearchObjCmd(
 
 	Tcl_SetObjResult(interp, Tcl_NewObj());
     } else {
-	Tcl_SetObjResult(interp, listv[index]);
+	if (returnSubindices) {
+	    Tcl_SetObjResult(interp, SelectObjFromSublist(listv[i+groupOffset],
+		    &sortInfo));
+	} else if (groupSize > 1) {
+	    Tcl_SetObjResult(interp, Tcl_NewListObj(groupSize, &listv[index]));
+	} else {
+	    Tcl_SetObjResult(interp, listv[index]);
+	}
     }
     result = TCL_OK;
 
@@ -3553,7 +3637,10 @@ Tcl_LsearchObjCmd(
      */
 
   done:
-    if (sortInfo.indexc > 1) {
+    if (startPtr != NULL) {
+	Tcl_DecrRefCount(startPtr);
+    }
+    if (allocatedIndexVector) {
 	TclStackFree(interp, sortInfo.indexv);
     }
     return result;
