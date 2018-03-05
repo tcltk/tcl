@@ -58,15 +58,15 @@ int mp_is_square(const mp_int *arg, int *ret)
    }
 
    /* First check mod 128 (suppose that DIGIT_BIT is at least 7) */
-   if (rem_128[127 & DIGIT(arg, 0)] == 1) {
+   if (rem_128[127u & DIGIT(arg, 0)] == (char)1) {
       return MP_OKAY;
    }
 
    /* Next check mod 105 (3*5*7) */
-   if ((res = mp_mod_d(arg, 105, &c)) != MP_OKAY) {
+   if ((res = mp_mod_d(arg, 105uL, &c)) != MP_OKAY) {
       return res;
    }
-   if (rem_105[c] == 1) {
+   if (rem_105[c] == (char)1) {
       return MP_OKAY;
    }
 
@@ -82,13 +82,13 @@ int mp_is_square(const mp_int *arg, int *ret)
     * free "t" so the easiest way is to goto ERR.  We know that res
     * is already equal to MP_OKAY from the mp_mod call
     */
-   if (((1L<<(r%11)) & 0x5C4L) != 0L)       goto ERR;
-   if (((1L<<(r%13)) & 0x9E4L) != 0L)       goto ERR;
-   if (((1L<<(r%17)) & 0x5CE8L) != 0L)      goto ERR;
-   if (((1L<<(r%19)) & 0x4F50CL) != 0L)     goto ERR;
-   if (((1L<<(r%23)) & 0x7ACCA0L) != 0L)    goto ERR;
-   if (((1L<<(r%29)) & 0xC2EDD0CL) != 0L)   goto ERR;
-   if (((1L<<(r%31)) & 0x6DE2B848L) != 0L)  goto ERR;
+   if (((1uL<<(r%11uL)) & 0x5C4uL) != 0uL)         goto ERR;
+   if (((1uL<<(r%13uL)) & 0x9E4uL) != 0uL)         goto ERR;
+   if (((1uL<<(r%17uL)) & 0x5CE8uL) != 0uL)        goto ERR;
+   if (((1uL<<(r%19uL)) & 0x4F50CuL) != 0uL)       goto ERR;
+   if (((1uL<<(r%23uL)) & 0x7ACCA0uL) != 0uL)      goto ERR;
+   if (((1uL<<(r%29uL)) & 0xC2EDD0CuL) != 0uL)     goto ERR;
+   if (((1uL<<(r%31uL)) & 0x6DE2B848uL) != 0uL)    goto ERR;
 
    /* Final check - is sqr(sqrt(arg)) == arg ? */
    if ((res = mp_sqrt(arg, &t)) != MP_OKAY) {
