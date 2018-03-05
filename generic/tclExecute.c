@@ -5774,17 +5774,17 @@ TEBCresume(
 	if (GetNumberFromObj(NULL, OBJ_AT_TOS, &ptr1, &type1) != TCL_OK) {
 	    type1 = 0;
 	} else if (type1 == TCL_NUMBER_WIDE) {
-	    /* value is between WIDE_MIN and WIDE_MAX */
+	    /* value is between LLONG_MIN and LLONG_MAX */
 	    /* [string is integer] is -UINT_MAX to UINT_MAX range */
-	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
+	    /* [string is wideinteger] is -ULLONG_MAX to ULLONG_MAX range */
 	    int i;
 
 	    if (Tcl_GetIntFromObj(NULL, OBJ_AT_TOS, &i) == TCL_OK) {
 		type1 = TCL_NUMBER_LONG;
 	    }
 	} else if (type1 == TCL_NUMBER_BIG) {
-	    /* value is an integer outside the WIDE_MIN to WIDE_MAX range */
-	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
+	    /* value is an integer outside the LLONG_MIN to LLONG_MAX range */
+	    /* [string is wideinteger] is -ULLONG_MAX to ULLONG_MAX range */
 	    Tcl_WideInt w;
 
 	    if (Tcl_GetWideIntFromObj(NULL, OBJ_AT_TOS, &w) == TCL_OK) {
@@ -6015,7 +6015,7 @@ TEBCresume(
 		    objResultPtr = TCONST(0);
 		    TRACE(("%s\n", O2S(objResultPtr)));
 		    NEXT_INST_F(1, 2, 1);
-		} else if (w2 > (Tcl_WideInt) INT_MAX) {
+		} else if (w2 > INT_MAX) {
 		    /*
 		     * Technically, we could hold the value (1 << (INT_MAX+1))
 		     * in an mp_int, but since we're using mp_mul_2d() to do
@@ -6194,7 +6194,7 @@ TEBCresume(
 		    goto divideByZero;
 		} else if ((w1 == LLONG_MIN) && (w2 == -1)) {
 		    /*
-		     * Can't represent (-LLONG_MIN) as a long.
+		     * Can't represent (-LLONG_MIN) as a Tcl_WideInt.
 		     */
 
 		    goto overflow;
@@ -6214,10 +6214,10 @@ TEBCresume(
 		goto wideResultOfArithmetic;
 
 	    case INST_MULT:
-		if (((sizeof(long) >= 2*sizeof(int))
+		if (((sizeof(Tcl_WideInt) >= 2*sizeof(int))
 			&& (w1 <= INT_MAX) && (w1 >= INT_MIN)
 			&& (w2 <= INT_MAX) && (w2 >= INT_MIN))
-			|| ((sizeof(long) >= 2*sizeof(short))
+			|| ((sizeof(Tcl_WideInt) >= 2*sizeof(short))
 			&& (w1 <= SHRT_MAX) && (w1 >= SHRT_MIN)
 			&& (w2 <= SHRT_MAX) && (w2 >= SHRT_MIN))) {
 		    wResult = w1 * w2;
@@ -8109,7 +8109,7 @@ ExecuteExtendedBinaryMathOp(
 	    break;
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    invalid = (mp_cmp_d(&big2, 0) == MP_LT);
+	    invalid = mp_isneg(&big2);
 	    mp_clear(&big2);
 	    break;
 	default:
@@ -8140,7 +8140,7 @@ ExecuteExtendedBinaryMathOp(
 	     */
 
 	    if ((type2 != TCL_NUMBER_WIDE)
-		    || (*((const Tcl_WideInt *)ptr2) > (long) INT_MAX)) {
+		    || (*((const Tcl_WideInt *)ptr2) > INT_MAX)) {
 		/*
 		 * Technically, we could hold the value (1 << (INT_MAX+1)) in
 		 * an mp_int, but since we're using mp_mul_2d() to do the
@@ -8188,7 +8188,7 @@ ExecuteExtendedBinaryMathOp(
 		    break;
 		case TCL_NUMBER_BIG:
 		    Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
-		    zero = (mp_cmp_d(&big1, 0) == MP_GT);
+		    zero = (!mp_isneg(&big1));
 		    mp_clear(&big1);
 		    break;
 		default:
@@ -8226,7 +8226,7 @@ ExecuteExtendedBinaryMathOp(
 	} else {
 	    mp_init(&bigRemainder);
 	    mp_div_2d(&big1, shift, &bigResult, &bigRemainder);
-	    if (mp_cmp_d(&bigRemainder, 0) == MP_LT) {
+	    if (mp_isneg(&bigRemainder)) {
 		/*
 		 * Convert to Tcl's integer division rules.
 		 */
@@ -8253,14 +8253,14 @@ ExecuteExtendedBinaryMathOp(
 	     * arguments is negative, store it in 'Second'.
 	     */
 
-	    if (mp_cmp_d(&big1, 0) != MP_LT) {
-		numPos = 1 + (mp_cmp_d(&big2, 0) != MP_LT);
+	    if (!mp_isneg(&big1)) {
+		numPos = 1 + !mp_isneg(&big2);
 		First = &big1;
 		Second = &big2;
 	    } else {
 		First = &big2;
 		Second = &big1;
-		numPos = (mp_cmp_d(First, 0) != MP_LT);
+		numPos = (!mp_isneg(First));
 	    }
 	    mp_init(&bigResult);
 
@@ -8462,7 +8462,7 @@ ExecuteExtendedBinaryMathOp(
 	    break;
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    negativeExponent = (mp_cmp_d(&big2, 0) == MP_LT);
+	    negativeExponent = mp_isneg(&big2);
 	    mp_mod_2d(&big2, 1, &big2);
 	    oddExponent = !mp_iszero(&big2);
 	    mp_clear(&big2);
@@ -9002,17 +9002,17 @@ TclCompareTwoNumbers(
 	     * integer comparison can tell the difference.
 	     */
 
-	    if (d2 < (double)LONG_MIN) {
+	    if (d2 < (double)LLONG_MIN) {
 		return MP_GT;
 	    }
-	    if (d2 > (double)LONG_MAX) {
+	    if (d2 > (double)LLONG_MAX) {
 		return MP_LT;
 	    }
 	    w2 = (Tcl_WideInt) d2;
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    if (mp_cmp_d(&big2, 0) == MP_LT) {
+	    if (mp_isneg(&big2)) {
 		compare = MP_GT;
 	    } else {
 		compare = MP_LT;
@@ -9048,8 +9048,8 @@ TclCompareTwoNumbers(
 		return (d1 > 0.0) ? MP_GT : MP_LT;
 	    }
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    if ((d1 < (double)LONG_MAX) && (d1 > (double)LONG_MIN)) {
-		if (mp_cmp_d(&big2, 0) == MP_LT) {
+	    if ((d1 < (double)LLONG_MAX) && (d1 > (double)LLONG_MIN)) {
+		if (mp_isneg(&big2)) {
 		    compare = MP_GT;
 		} else {
 		    compare = MP_LT;
@@ -9081,7 +9081,7 @@ TclCompareTwoNumbers(
 		mp_clear(&big1);
 		return compare;
 	    }
-	    if ((d2 < (double)LONG_MAX) && (d2 > (double)LONG_MIN)) {
+	    if ((d2 < (double)LLONG_MAX) && (d2 > (double)LLONG_MIN)) {
 		compare = mp_cmp_d(&big1, 0);
 		mp_clear(&big1);
 		return compare;
