@@ -24,6 +24,10 @@ int mp_lshd(mp_int *a, int b)
    if (b <= 0) {
       return MP_OKAY;
    }
+   /* no need to shift 0 around */
+   if (mp_iszero(a) == MP_YES) {
+      return MP_OKAY;
+   }
 
    /* grow to fit the new digits */
    if (a->alloc < (a->used + b)) {

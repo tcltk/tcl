@@ -897,7 +897,7 @@ test basic-48.17.$noComp {expansion: object safety} -constraints $constraints -b
             set third [expr {1.0/3.0}]
             set l [list $third $third]
             set x [run {list $third {*}$l $third}]
-	    set res [list]
+            set res [list]
             foreach t $x {
                 lappend res [expr {$t * 3.0}]
             }
