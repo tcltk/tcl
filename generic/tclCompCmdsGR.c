@@ -29,12 +29,11 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
 static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr);
 
-#define INDEX_END	(-2)
 
 /*
  *----------------------------------------------------------------------
  *
- * GetIndexFromToken --
+ * TclGetIndexFromToken --
  *
  *	Parse a token and get the encoded version of the index (as understood
  *	by TEBC), assuming it is at all knowable at compile time. Only handles
@@ -49,8 +48,8 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 
-static inline int
-GetIndexFromToken(
+int
+TclGetIndexFromToken(
     Tcl_Token *tokenPtr,
     int *index)
 {
@@ -68,8 +67,8 @@ GetIndexFromToken(
 	    result = TCL_ERROR;
 	}
     } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, INDEX_END, &idx);
-	if (result == TCL_OK && idx > INDEX_END) {
+	result = TclGetIntForIndexM(NULL, tmpObj, TCL_INDEX_END, &idx);
+	if (result == TCL_OK && idx > TCL_INDEX_END) {
 	    result = TCL_ERROR;
 	}
     }
@@ -1045,7 +1044,7 @@ TclCompileLassignCmd(
      */
 
     TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx,	envPtr);
-    TclEmitInt4(			INDEX_END,		envPtr);
+    TclEmitInt4(			TCL_INDEX_END,		envPtr);
 
     return TCL_OK;
 }
@@ -1096,7 +1095,7 @@ TclCompileLindexCmd(
     }
 
     idxTokenPtr = TokenAfter(valTokenPtr);
-    if (GetIndexFromToken(idxTokenPtr, &idx) == TCL_OK) {
+    if (TclGetIndexFromToken(idxTokenPtr, &idx) == TCL_OK) {
 	/*
 	 * All checks have been completed, and we have exactly one of these
 	 * constructs:
@@ -1250,7 +1249,7 @@ TclCompileListCmd(
 
     if (concat && numWords == 2) {
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,	envPtr);
-	TclEmitInt4(			INDEX_END,	envPtr);
+	TclEmitInt4(			TCL_INDEX_END,	envPtr);
     }
     return TCL_OK;
 }
@@ -1331,12 +1330,12 @@ TclCompileLrangeCmd(
      */
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (GetIndexFromToken(tokenPtr, &idx1) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx1) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (GetIndexFromToken(tokenPtr, &idx2) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1388,21 +1387,21 @@ TclCompileLinsertCmd(
      */
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (GetIndexFromToken(tokenPtr, &idx) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     /*
      * There are four main cases. If there are no values to insert, this is
      * just a confirm-listiness check. If the index is '0', this is a prepend.
-     * If the index is 'end' (== INDEX_END), this is an append. Otherwise,
+     * If the index is 'end' (== TCL_INDEX_END), this is an append. Otherwise,
      * this is a splice (== split, insert values as list, concat-3).
      */
 
     CompileWord(envPtr, listTokenPtr, interp, 1);
     if (parsePtr->numWords == 3) {
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
-	TclEmitInt4(			INDEX_END,		envPtr);
+	TclEmitInt4(			TCL_INDEX_END,		envPtr);
 	return TCL_OK;
     }
 
@@ -1415,10 +1414,22 @@ TclCompileLinsertCmd(
     if (idx == 0 /*start*/) {
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    } else if (idx == INDEX_END /*end*/) {
+    } else if (idx == TCL_INDEX_END /*end*/) {
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
     } else {
-	if (idx < 0) {
+	/*
+	 * Here we handle two ranges for idx. First when idx > 0, we
+	 * want the first half of the split to end at index idx-1 and
+	 * the second half to start at index idx.
+	 * Second when idx < TCL_INDEX_END, indicating "end-N" indexing,
+	 * we want the first half of the split to end at index end-N and
+	 * the second half to start at index end-N+1. We accomplish this
+	 * with a pre-adjustment of the end-N value.
+	 * The root of this is that the commands [lrange] and [linsert]
+	 * differ in their interpretation of the "end" index.
+	 */
+
+	if (idx < TCL_INDEX_END) {
 	    idx++;
 	}
 	TclEmitInstInt4(	INST_OVER, 1,			envPtr);
@@ -1426,7 +1437,7 @@ TclCompileLinsertCmd(
 	TclEmitInt4(			idx-1,			envPtr);
 	TclEmitInstInt4(	INST_REVERSE, 3,		envPtr);
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, idx,	envPtr);
-	TclEmitInt4(			INDEX_END,		envPtr);
+	TclEmitInt4(			TCL_INDEX_END,		envPtr);
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
     }
@@ -1471,12 +1482,12 @@ TclCompileLreplaceCmd(
      */
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (GetIndexFromToken(tokenPtr, &idx1) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx1) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (GetIndexFromToken(tokenPtr, &idx2) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1484,9 +1495,9 @@ TclCompileLreplaceCmd(
      * idx1, idx2 are now in canonical form:
      *
      *  - integer:	[0,len+1]
-     *  - end index:    INDEX_END
-     *  - -ive offset:  INDEX_END-[len-1,0]
-     *  - +ive offset:  INDEX_END+1
+     *  - end index:    TCL_INDEX_END
+     *  - -ive offset:  TCL_INDEX_END-[len-1,0]
+     *  - +ive offset:  TCL_INDEX_END+1
      */
 
     /*
@@ -1495,11 +1506,11 @@ TclCompileLreplaceCmd(
      * now. [Bug 47ac84309b]
      */
 
-    if ((idx1 <= INDEX_END) != (idx2 <= INDEX_END)) {
+    if ((idx1 <= TCL_INDEX_END) != (idx2 <= TCL_INDEX_END)) {
 	return TCL_ERROR;
     }
 
-    if (idx2 != INDEX_END && idx2 >= 0 && idx2 < idx1) {
+    if (idx2 != TCL_INDEX_END && idx2 >= 0 && idx2 < idx1) {
 	idx2 = idx1 - 1;
     }
 
@@ -1511,13 +1522,13 @@ TclCompileLreplaceCmd(
     CompileWord(envPtr, listTokenPtr, interp, 1);
     if (parsePtr->numWords == 4) {
 	if (idx1 == 0) {
-	    if (idx2 == INDEX_END) {
+	    if (idx2 == TCL_INDEX_END) {
 		goto dropAll;
 	    }
 	    idx1 = idx2 + 1;
-	    idx2 = INDEX_END;
+	    idx2 = TCL_INDEX_END;
 	    goto dropEnd;
-	} else if (idx2 == INDEX_END) {
+	} else if (idx2 == TCL_INDEX_END) {
 	    idx2 = idx1 - 1;
 	    idx1 = 0;
 	    goto dropEnd;
@@ -1541,13 +1552,13 @@ TclCompileLreplaceCmd(
     TclEmitInstInt4(		INST_LIST, i - 4,		envPtr);
     TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
     if (idx1 == 0) {
-	if (idx2 == INDEX_END) {
+	if (idx2 == TCL_INDEX_END) {
 	    goto replaceAll;
 	}
 	idx1 = idx2 + 1;
-	idx2 = INDEX_END;
+	idx2 = TCL_INDEX_END;
 	goto replaceHead;
-    } else if (idx2 == INDEX_END) {
+    } else if (idx2 == TCL_INDEX_END) {
 	idx2 = idx1 - 1;
 	idx1 = 0;
 	goto replaceTail;
@@ -1615,7 +1626,7 @@ TclCompileLreplaceCmd(
     TclEmitInt4(			idx1 - 1,		envPtr);
     TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
     TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx2 + 1,	envPtr);
-    TclEmitInt4(			INDEX_END,		envPtr);
+    TclEmitInt4(			TCL_INDEX_END,		envPtr);
     TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
     goto done;
 
@@ -1685,7 +1696,7 @@ TclCompileLreplaceCmd(
     TclEmitInt4(			idx1 - 1,		envPtr);
     TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
     TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx2 + 1,	envPtr);
-    TclEmitInt4(			INDEX_END,		envPtr);
+    TclEmitInt4(			TCL_INDEX_END,		envPtr);
     TclEmitInstInt4(		INST_REVERSE, 3,		envPtr);
     TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
     TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
