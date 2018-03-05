@@ -572,8 +572,6 @@ typedef struct ByteCode {
 #define INST_JUMP_FALSE4		39
 
 /* Opcodes 40 to 64 */
-//#define INST_LOR			40
-//#define INST_LAND			41
 #define INST_BITOR			42
 #define INST_BITXOR			43
 #define INST_BITAND			44
@@ -599,10 +597,6 @@ typedef struct ByteCode {
 /* Opcodes 65 to 66 */
 #define INST_BREAK			65
 #define INST_CONTINUE			66
-
-/* Opcodes 67 to 68 */
-//#define INST_FOREACH_START4		67 /* DEPRECATED */
-//#define INST_FOREACH_STEP4		68 /* DEPRECATED */
 
 /* Opcodes 69 to 72 */
 #define INST_BEGIN_CATCH4		69
@@ -694,7 +688,6 @@ typedef struct ByteCode {
 #define INST_DICT_LAPPEND		115
 #define INST_DICT_FIRST			116
 #define INST_DICT_NEXT			117
-//#define INST_DICT_DONE			118
 #define INST_DICT_UPDATE_START		119
 #define INST_DICT_UPDATE_END		120
 
