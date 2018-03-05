@@ -3844,8 +3844,8 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	}
 	NEXT_INST_F(5, 0, 0);
-    }
 #endif
+    }
 
     /*
      *	   End of INST_UNSET instructions.
