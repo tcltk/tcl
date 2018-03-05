@@ -77,7 +77,7 @@ int tclTraceExec = 0;
  */
 
 static const char *const operatorStrings[] = {
-    "||", "&&", "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
+    "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
     "+", "-", "*", "/", "%", "+", "-", "~", "!"
 };
 
@@ -3825,6 +3825,7 @@ TEBCresume(
 	 * This is really an unset operation these days. Do not issue.
 	 */
 
+#if 0
     case INST_DICT_DONE:
 	opnd = TclGetUInt4AtPtr(pc+1);
 	TRACE(("%u => OK\n", opnd));
@@ -3844,6 +3845,7 @@ TEBCresume(
 	}
 	NEXT_INST_F(5, 0, 0);
     }
+#endif
 
     /*
      *	   End of INST_UNSET instructions.
@@ -4173,6 +4175,7 @@ TEBCresume(
      * and LAND is now handled by the expression compiler.
      */
 
+#if 0
     case INST_LOR:
     case INST_LAND: {
 	/*
@@ -4211,6 +4214,7 @@ TEBCresume(
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr),O2S(value2Ptr),iResult));
 	NEXT_INST_F(1, 2, 1);
     }
+#endif
 
     /*
      * -----------------------------------------------------------------
@@ -6321,6 +6325,7 @@ TEBCresume(
 	TRACE(("=> CONTINUE!\n"));
 	goto processExceptionReturn;
 
+#if 0
     {
 	ForeachInfo *infoPtr;
 	Var *iterVarPtr, *listVarPtr;
@@ -6485,6 +6490,7 @@ TEBCresume(
 	}
 
     }
+#endif
     {
 	ForeachInfo *infoPtr;
 	Tcl_Obj *listPtr, **elements, *tmpPtr;
@@ -9118,7 +9124,7 @@ IllegalExprOperandType(
     if (opcode == INST_EXPON) {
 	operator = "**";
     } else if (opcode <= INST_LNOT) {
-	operator = operatorStrings[opcode - INST_LOR];
+	operator = operatorStrings[opcode - INST_BITOR];
     }
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
