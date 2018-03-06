@@ -5091,7 +5091,7 @@ TEBCresume(
 
 	/*
 	 * Select the list item based on the index. Negative operand means
-	 * end-based indexing.
+	 * end-based indexing (-2, ...), and -1 means out of range.
 	 */
 
 	if (opnd < -1) {
@@ -5649,7 +5649,9 @@ TEBCresume(
 	 * Adjust indices for end-based indexing.
 	 */
 
-	if (fromIdx < -1) {
+	if (fromIdx == -1) {
+	    fromIdx = 0;
+	} else if (fromIdx < -1) {
 	    fromIdx += 1 + length;
 	    if (fromIdx < 0) {
 		fromIdx = 0;
