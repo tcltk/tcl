@@ -1005,6 +1005,14 @@ TclCompileStringReplaceCmd(
      * We handle these replacements specially: first character (where
      * idx1=idx2=0) and last character (where idx1=idx2=TCL_INDEX_END). Anything
      * else and the semantics get rather screwy.
+     *
+     * TODO: These seem to be very narrow cases.  They are not even
+     * covered by the test suite, and any programming that ends up
+     * here could have been coded by the programmer using [string range]
+     * and [string cat]. [*]  Not clear at all to me that the bytecode
+     * generated here is worthwhile.
+     *
+     *  [*] Except for the empty string exceptions.  UGGGGHHHH.
      */
 
     if (idx1 == 0 && idx2 == 0) {
@@ -1022,6 +1030,14 @@ TclCompileStringReplaceCmd(
 	}
 	/* Replace first */
 	CompileWord(envPtr, replacementTokenPtr, interp, 4);
+
+	/*
+	 * NOTE: The following tower of bullshit is present because
+	 * [string replace] was boneheadedly defined not to replace
+	 * empty strings, so we actually have to detect the empty
+	 * string case and treat it differently.
+	 */
+
 	OP4(		OVER, 1);
 	PUSH(		"");
 	OP(		STR_EQ);
@@ -1051,6 +1067,9 @@ TclCompileStringReplaceCmd(
 	}
 	/* Replace last */
 	CompileWord(envPtr, replacementTokenPtr, interp, 4);
+
+	/* More bullshit; see NOTE above. */
+
 	OP4(		OVER, 1);
 	PUSH(		"");
 	OP(		STR_EQ);
