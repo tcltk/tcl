@@ -3575,13 +3575,7 @@ TclGetIntForIndex(
 	return TCL_OK;
     }
 
-    if (SetEndOffsetFromAny(NULL, objPtr) == TCL_OK) {
-	/*
-	 * If the object is already an offset from the end of the list, or can
-	 * be converted to one, use it.
-	 */
-
-	*indexPtr = endValue + objPtr->internalRep.longValue;
+    if (TclGetEndOffsetFromObj(NULL, objPtr, endValue, indexPtr) == TCL_OK) {
 	return TCL_OK;
     }
 
@@ -3684,6 +3678,42 @@ UpdateStringOfEndOffset(
 /*
  *----------------------------------------------------------------------
  *
+ * TclGetEndOffsetFromObj --
+ *
+ *      Look for a string of the form "end[+-]offset" and convert it to an
+ *      internal representation holding the offset.
+ *
+ * Results:
+ *      Tcl return code.
+ *
+ * Side effects:
+ *      May store a Tcl_ObjType.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclGetEndOffsetFromObj(
+    Tcl_Interp *interp,		/* For error reporting, may be NULL. */
+    Tcl_Obj *objPtr,            /* Pointer to the object to parse */
+    int endValue,               /* The value to be stored at "indexPtr" if
+                                 * "objPtr" holds "end". */
+    int *indexPtr)              /* Location filled in with an integer
+                                 * representing an index. */
+{
+    if (SetEndOffsetFromAny(interp, objPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /* TODO: Handle overflow cases sensibly */
+    *indexPtr = endValue + (int)objPtr->internalRep.longValue;
+    return TCL_OK;
+}
+
+    
+/*
+ *----------------------------------------------------------------------
+ *
  * SetEndOffsetFromAny --
  *
  *	Look for a string of the form "end[+-]offset" and convert it to an
@@ -3750,6 +3780,8 @@ SetEndOffsetFromAny(
 	    return TCL_ERROR;
 	}
 	if (bytes[3] == '-') {
+
+	    /* TODO: Review overflow concerns here! */
 	    offset = -offset;
 	}
     } else {
