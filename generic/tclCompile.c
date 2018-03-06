@@ -129,10 +129,6 @@ InstructionDesc const tclInstructionTable[] = {
     {"jumpFalse4",	  5,   -1,         1,	{OPERAND_OFFSET4}},
 	/* Jump relative to (pc + op4) if stktop expr object is false */
 
-//    {"lor",		  1,   -1,         0,	{OPERAND_NONE}},
-	/* Logical or:	push (stknext || stktop) */
-//    {"land",		  1,   -1,         0,	{OPERAND_NONE}},
-	/* Logical and:	push (stknext && stktop) */
     {"bitor",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Bitwise or:	push (stknext | stktop) */
     {"bitxor",		  1,   -1,         0,	{OPERAND_NONE}},
@@ -173,10 +169,6 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Bitwise not:	push ~stktop */
     {"not",		  1,   0,          0,	{OPERAND_NONE}},
 	/* Logical not:	push !stktop */
-//    {"callBuiltinFunc1",  2,   1,          1,	{OPERAND_UINT1}},
-	/* Call builtin math function with index op1; any args are on stk */
-//    {"callFunc1",	  2,   INT_MIN,    1,	{OPERAND_UINT1}},
-	/* Call non-builtin func objv[0]; <objc,objv>=<op1,top op1> */
     {"tryCvtToNumeric",	  1,   0,          0,	{OPERAND_NONE}},
 	/* Try converting stktop to first int then double if possible. */
 
@@ -185,13 +177,6 @@ InstructionDesc const tclInstructionTable[] = {
     {"continue",	  1,   0,          0,	{OPERAND_NONE}},
 	/* Skip to next iteration of closest enclosing loop; if none, return
 	 * TCL_CONTINUE code. */
-
-//    {"foreach_start4",	  5,   0,          1,	{OPERAND_AUX4}},
-	/* Initialize execution of a foreach loop. Operand is aux data index
-	 * of the ForeachInfo structure for the foreach command. */
-//    {"foreach_step4",	  5,   +1,         1,	{OPERAND_AUX4}},
-	/* "Step" or begin next iteration of foreach loop. Push 0 if to
-	 * terminate loop, else push 1. */
 
     {"beginCatch4",	  5,   0,          1,	{OPERAND_UINT4}},
 	/* Record start of catch with the operand's exception index. Push the
@@ -340,9 +325,6 @@ InstructionDesc const tclInstructionTable[] = {
     {"dictNext",	  5,	+3,	   1,	{OPERAND_LVT4}},
 	/* Get the next iteration from the iterator in op4's local scalar.
 	 * Stack:  ... => ... value key doneBool */
-//    {"dictDone",	  5,	0,	   1,	{OPERAND_LVT4}},
-	/* Terminate the iterator in op4's local scalar. Use unsetScalar
-	 * instead (with 0 for flags). */
     {"dictUpdateStart",   9,    0,	   2,	{OPERAND_LVT4, OPERAND_AUX4}},
 	/* Create the variables (described in the aux data referred to by the
 	 * second immediate argument) to mirror the state of the dictionary in
