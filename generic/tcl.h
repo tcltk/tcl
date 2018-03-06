@@ -468,31 +468,9 @@ typedef struct Tcl_Interp
 {
     /* TIP #330: Strongly discourage extensions from using the string
      * result. */
-#ifdef USE_INTERP_RESULT
-    char *result TCL_DEPRECATED_API("use Tcl_GetStringResult/Tcl_SetResult");
-				/* If the last command returned a string
-				 * result, this points to it. */
-    void (*freeProc) (char *blockPtr)
-	    TCL_DEPRECATED_API("use Tcl_GetStringResult/Tcl_SetResult");
-				/* Zero means the string result is statically
-				 * allocated. TCL_DYNAMIC means it was
-				 * allocated with ckalloc and should be freed
-				 * with ckfree. Other values give the address
-				 * of function to invoke to free the result.
-				 * Tcl_Eval must free it before executing next
-				 * command. */
-#else
     char *resultDontUse; /* Don't use in extensions! */
     void (*freeProcDontUse) (char *); /* Don't use in extensions! */
-#endif
-#ifdef USE_INTERP_ERRORLINE
-    int errorLine TCL_DEPRECATED_API("use Tcl_GetErrorLine/Tcl_SetErrorLine");
-				/* When TCL_ERROR is returned, this gives the
-				 * line number within the command where the
-				 * error occurred (1 if first line). */
-#else
     int errorLineDontUse; /* Don't use in extensions! */
-#endif
 }
 #endif /* !TCL_NO_DEPRECATED */
 Tcl_Interp;
