@@ -8772,7 +8772,7 @@ PrintByteCodeInfo(
 #endif /* TCL_COMPILE_STATS */
     if (procPtr != NULL) {
 	fprintf(stdout,
-		"  Proc 0x%p, refCt %d, args %d, compiled locals %d\n",
+		"  Proc 0x%p, refCt %zd, args %d, compiled locals %d\n",
 		procPtr, procPtr->refCount, procPtr->numArgs,
 		procPtr->numCompiledLocals);
     }
