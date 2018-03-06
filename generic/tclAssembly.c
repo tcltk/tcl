@@ -2248,16 +2248,22 @@ GetListIndexOperand(
     Tcl_Token* tokenPtr = *tokenPtrPtr;
 				/* INOUT: Pointer to the next token in the
 				 * source code */
+    Tcl_Obj *value;
+    int status;
 
-    /*
-     * Convert to an integer, advance to the next token and return.
-     */
-    int status = TclGetIndexFromToken(tokenPtr, result);
+    /* General operand validity check */
+    if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &value) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_DecrRefCount(value);
+     
+    /* Convert to an integer, advance to the next token and return. */
+    status = TclGetIndexFromToken(tokenPtr, result);
     *tokenPtrPtr = TokenAfter(tokenPtr);
     if (status == TCL_ERROR && interp) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unsupported index value: \"%.*s\"", tokenPtr->size,
-		tokenPtr->start));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad index \"%.*s\"",
+		tokenPtr->size, tokenPtr->start));
+	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADINDEX", NULL);
     }
     return status;
 }
