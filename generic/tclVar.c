@@ -177,6 +177,7 @@ static void		AppendLocals(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *patternPtr, int includeLinks);
 static void             ArrayDoneSearch (Interp *iPtr, Var *varPtr, ArraySearch *searchPtr);
 static Tcl_NRPostProc   ArrayForLoopCallback;
+static int              ArrayForNRCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *const *objv);
 static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
 			    Var *varPtr, int flags, int index);
@@ -3039,6 +3040,7 @@ TclArraySet(
 /*
  *----------------------------------------------------------------------
  *
+ * ArrayForObjCmd
  * ArrayForNRCmd
  * ArrayForLoopCallback
  * ArrayObjFirst
@@ -3048,6 +3050,8 @@ TclArraySet(
  *    array for {k v} a {}
  *  The array for command iterates over the array, setting the
  *  the specified loop variables, and executing the body each iteration.
+ *
+ *  ArrayForObjCmd() is the standard wrapper around ArrayForNRCmd().
  *
  *  ArrayForNRCmd() sets up the ArraySearch structure, sets arrayNamePtr
  *  inside the structure and calls VarHashFirstEntry to start the hash
@@ -3150,6 +3154,16 @@ ArrayObjNext(
     *valuePtrPtr = valueObj;
 
     return donerc;
+}
+
+int
+ArrayForObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    return Tcl_NRCallObjProc(interp, ArrayForNRCmd, dummy, objc, objv);
 }
 
 static int
@@ -4577,7 +4591,7 @@ TclInitArrayCmd(
 	{"anymore",	ArrayAnyMoreCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{"donesearch",	ArrayDoneSearchCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{"exists",	ArrayExistsCmd,		TclCompileArrayExistsCmd, NULL, NULL, 0},
-	{"for",		NULL,			TclCompileBasic3ArgCmd, ArrayForNRCmd, NULL, 0},
+	{"for",		ArrayForObjCmd,		TclCompileBasic3ArgCmd, ArrayForNRCmd, NULL, 0},
 	{"get",		ArrayGetCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
 	{"names",	ArrayNamesCmd,		TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
 	{"nextelement",	ArrayNextElementCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
