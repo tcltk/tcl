@@ -40,6 +40,11 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
  *
  * Returns:
  *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed.
+ *	The return value of *index is:
+ *	    >= 0	   -- constant index from start,
+ *	    == minBoundary -- (TCL_INDEX_OUT_OF_RANGE, 0) if out of range (before start)
+ *	    == maxBoundary -- (INT_MAX, TCL_INDEX_OUT_OF_RANGE) if out of range (after end)
+ *	    <= -2	   -- (<= TCL_INDEX_END) negative index from end.
  *
  * Side effects:
  *	Sets *index to the index value if successful.
@@ -50,7 +55,9 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 int
 TclGetIndexFromToken(
     Tcl_Token *tokenPtr,
-    int *index)
+    int *index,
+    int minBoundary,
+    int maxBoundary)
 {
     Tcl_Obj *tmpObj = Tcl_NewObj();
     int result, idx;
@@ -62,13 +69,26 @@ TclGetIndexFromToken(
 
     result = TclGetIntFromObj(NULL, tmpObj, &idx);
     if (result == TCL_OK) {
-	if (idx < 0) {
-	    result = TCL_ERROR;
+	/* out of range (..., -2] */
+	if (idx <= TCL_INDEX_END) {
+	    idx = minBoundary;
+	    /* before start */
 	}
     } else {
 	result = TclGetIntForIndexM(NULL, tmpObj, TCL_INDEX_END, &idx);
-	if (result == TCL_OK && idx > TCL_INDEX_END) {
-	    result = TCL_ERROR;
+	if (result == TCL_OK) {
+	    int endSyntax = (tmpObj->length >= 3 && *tmpObj->bytes == 'e');
+	    /* 
+	     * Check computed index results to out of range (after end or negative constant),
+	     * set it to -1 in order to avoid ambiguity with "end[+-integer] syntax"
+	     */
+	    if (idx > TCL_INDEX_END && endSyntax) {
+		/* after end [end+1, ...) */
+		idx = maxBoundary; /* may be TCL_INDEX_OUT_OF_RANGE or INT_MAX */
+	    } else if (idx < 0 && !endSyntax) {
+		/* before start, negative constant (..., -1-1] */
+		idx = minBoundary;
+	    }
 	}
     }
     Tcl_DecrRefCount(tmpObj);
@@ -1103,7 +1123,8 @@ TclCompileLindexCmd(
     }
 
     idxTokenPtr = TokenAfter(valTokenPtr);
-    if (TclGetIndexFromToken(idxTokenPtr, &idx) == TCL_OK) {
+    if (TclGetIndexFromToken(idxTokenPtr, &idx, 
+		TCL_INDEX_OUT_OF_RANGE, TCL_INDEX_OUT_OF_RANGE) == TCL_OK) {
 	/*
 	 * All checks have been completed, and we have exactly one of these
 	 * constructs:
@@ -1338,13 +1359,16 @@ TclCompileLrangeCmd(
      */
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx1) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx1, -1, INT_MAX) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx2) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx2, -1, INT_MAX) != TCL_OK) {
 	return TCL_ERROR;
+    }
+    if (idx1 == INT_MAX && idx2 == INT_MAX) {
+	idx2 = TCL_INDEX_OUT_OF_RANGE;
     }
 
     /*
@@ -1395,7 +1419,7 @@ TclCompileLinsertCmd(
      */
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx, 0, INT_MAX) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1490,12 +1514,12 @@ TclCompileLreplaceCmd(
      */
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx1) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx1, -1, INT_MAX) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx2) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx2, -1, TCL_INDEX_END) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1514,8 +1538,19 @@ TclCompileLreplaceCmd(
      * now. [Bug 47ac84309b]
      */
 
+    if (idx1 == INT_MAX) {
+	/* consider special handling for too large first index
+	 * "list doesn't contain element ...", so still not compiled */
+	return TCL_ERROR;
+    }
+
     if ((idx1 <= TCL_INDEX_END) != (idx2 <= TCL_INDEX_END)) {
 	return TCL_ERROR;
+    }
+
+    if (idx1 == -1) {
+	/* linsert before start or replace from start */
+	idx1 = 0;
     }
 
     if (idx2 != TCL_INDEX_END && idx2 >= 0 && idx2 < idx1) {
