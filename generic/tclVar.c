@@ -3074,6 +3074,8 @@ ArrayObjFirst(
     Tcl_HashEntry   *hPtr;
     int             isNew;
 
+    /* this code is duplicated from arraystartsearchcmd,
+       excepting that arrayNameObj is set */
     searchPtr->varPtr = varPtr;
     searchPtr->arrayNameObj = arrayNameObj;
 
@@ -3090,6 +3092,7 @@ ArrayObjFirst(
     searchPtr->nextEntry = VarHashFirstEntry(varPtr->value.tablePtr,
 	    &searchPtr->search);
     Tcl_SetHashValue(hPtr, searchPtr);
+    searchPtr->name = Tcl_ObjPrintf("s-%d-%s", searchPtr->id, TclGetString(arrayNameObj));
 }
 
 int
@@ -3307,8 +3310,10 @@ ArrayForLoopCallback(
     if (done != TCL_CONTINUE) {
 	Tcl_ResetResult(interp);
         if (done == TCL_ERROR) {
-          varPtr->flags |= TCL_LEAVE_ERR_MSG;
-          Tcl_AddErrorInfo(interp, "array changed during iteration");
+	  Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	      "array changed during iteration", -1));
+	  Tcl_SetErrorCode(interp, "TCL", "READ", "array", "for", NULL);
+	  varPtr->flags |= TCL_LEAVE_ERR_MSG;
           result = done;
         }
 	goto arrayfordone;
