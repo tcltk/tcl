@@ -8824,7 +8824,7 @@ ValidatePcAndStackTop(
 		pc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad pc");
     }
-    if ((unsigned) opCode > LAST_INST_OPCODE) {
+    if ((unsigned) opCode >= LAST_INST_OPCODE) {
 	fprintf(stderr, "\nBad opcode %d at pc %u in TclNRExecuteByteCode\n",
 		(unsigned) opCode, relativePc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad opcode");
@@ -9714,7 +9714,7 @@ EvalStatsCmd(
      */
 
     Tcl_AppendPrintfToObj(objPtr, "\nInstruction counts:\n");
-    for (i = 0;  i <= LAST_INST_OPCODE;  i++) {
+    for (i = 0;  i < LAST_INST_OPCODE;  i++) {
 	Tcl_AppendPrintfToObj(objPtr, "%20s %8ld ",
 		tclInstructionTable[i].name, statsPtr->instructionCount[i]);
 	if (statsPtr->instructionCount[i]) {
