@@ -47,12 +47,14 @@ been the return value from a previous invocation of
 Returns 1 if \fIarrayName\fR is an array variable, 0 if there
 is no variable by that name or if it is a scalar variable.
 .TP
-\fBarray for {\fIkeyVariable ?valueVariable?\fB} \fIarrayName body\fR
-The first argument is a one or two element list of variable names for the
+\fBarray for {\fIkeyVariable valueVariable\fB} \fIarrayName body\fP
+The first argument is a two element list of variable names for the
 key and value of each entry in the array.  The second argument is the
 array name to iterate over.  The third argument is the body to execute
 for each key and value returned.
 The ordering of the returned keys is undefined.
+If an array element is deleted or a new array element is inserted during
+the \fIarray for\fP process, the command will terminate with an error.
 .TP
 \fBarray get \fIarrayName\fR ?\fIpattern\fR?
 Returns a list containing pairs of elements.  The first
