@@ -34,20 +34,50 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
  *
  * TclGetIndexFromToken --
  *
- *	Parse a token and get the encoded version of the index (as understood
- *	by TEBC), assuming it is at all knowable at compile time. Only handles
- *	indices that are integers or 'end' or 'end-integer'.
+ *	Parse a token to determine if an index value is known at
+ *	compile time. Two cases are possible.  The compile time value
+ *	of the token might be parsed as an absolute index value
+ *	in the C signed int range.  Note that this includes index
+ *	values that are integers as presented as well as index
+ *	arithmetic expressions that can be fully computed at compile
+ *	time. The absolute index values that can be directly meaningful
+ *	as an index into either a list or a string are those integer
+ *	values >= 0 and < INT_MAX. The largest string supported in Tcl 8
+ *	has bytelength INT_MAX. This means the largest character supported
+ *	length is also INT_MAX, and the index of the last character in a
+ *	string of length INT_MAX is INT_MAX-1.
+ *
+ *	Any absolute index value parsed outside that range is encoded
+ *	using the minBoundary and maxBounday values passed in by the
+ *	caller as the encoding to use for indices that are either
+ *	less than or greater than the usable index range. INT_MAX
+ *	is available as a good choice for most callers to use for
+ *	maxBoundary. Likewise, the value -1 is good for most callers
+ *	to use for minBoundary.
+ *
+ *	A token can also be parsed as an end-relative index expression.
+ *	All end-relative expressions that indicate an index larger
+ *	than end (end+2, end--5) point beyond the end of the indexed
+ *	collection, and can be encoded as maxBoundary.  The end-relative
+ *	expressions that indicate an index less than or equal to end
+ *	are encoded relative to the value TCL_INDEX_END (-2).  The
+ *	index "end" is encoded as -2, down to the index "end-0x7ffffffe"
+ *	which is encoded as INT_MIN. Since the largest index into a
+ *	string possible	in Tcl 8 is 0x7ffffffe, the interpretation of
+ *	"end-0x7ffffffe" for that largest string would be 0.  Thus,
+ *	if the tokens "end-0x7fffffff" or "end+-0x80000000" are parsed,
+ *	they can be encoded with the minBoundary value.
+ *
+ *	These details will require re-examination whenever string and
+ *	list length limits are increased, but that will likely also
+ *	mean a revised routine capable of returning Tcl_WideInt values.
  *
  * Returns:
  *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed.
- *	The return value of *index is:
- *	    >= 0	   -- constant index from start,
- *	    == minBoundary -- (TCL_INDEX_OUT_OF_RANGE, 0) if out of range (before start)
- *	    == maxBoundary -- (INT_MAX, TCL_INDEX_OUT_OF_RANGE) if out of range (after end)
- *	    <= -2	   -- (<= TCL_INDEX_END) negative index from end.
  *
  * Side effects:
- *	Sets *index to the index value if successful.
+ *	When TCL_OK is returned, the encoded index value is written
+ *	to *index.
  *
  *----------------------------------------------------------------------
  */
@@ -69,25 +99,46 @@ TclGetIndexFromToken(
 
     result = TclGetIntFromObj(NULL, tmpObj, &idx);
     if (result == TCL_OK) {
-	/* out of range (..., -2] */
-	if (idx <= TCL_INDEX_END) {
+	/* We parsed a value in the range INT_MIN...INT_MAX */
+    integerEncode:
+	if (idx < 0) {
+	    /* All negative absolute indices are "before the beginning" */
 	    idx = minBoundary;
-	    /* before start */
+	} else if (idx == INT_MAX) {
+	    /* This index value is always "after the end" */
+	    idx = maxBoundary;
 	}
+	/* usual case, the absolute index value encodes itself */
     } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, TCL_INDEX_END, &idx);
+	result = TclGetEndOffsetFromObj(NULL, tmpObj, 0, &idx);
 	if (result == TCL_OK) {
-	    int endSyntax = (tmpObj->length >= 3 && *tmpObj->bytes == 'e');
-	    /* 
-	     * Check computed index results to out of range (after end or negative constant),
-	     * set it to -1 in order to avoid ambiguity with "end[+-integer] syntax"
+	    /*
+	     * We parsed an end+offset index value. 
+	     * idx holds the offset value in the range INT_MIN...INT_MAX.
 	     */
-	    if (idx > TCL_INDEX_END && endSyntax) {
-		/* after end [end+1, ...) */
-		idx = maxBoundary; /* may be TCL_INDEX_OUT_OF_RANGE or INT_MAX */
-	    } else if (idx < 0 && !endSyntax) {
-		/* before start, negative constant (..., -1-1] */
+	    if (idx > 0) {
+		/*
+		 * All end+postive or end-negative expressions 
+		 * always indicate "after the end".
+		 */
+		idx = maxBoundary;
+	    } else if (idx < INT_MIN - TCL_INDEX_END) {
+		/* These indices alwasy indicate "before the beginning */
 		idx = minBoundary;
+	    } else {
+		/* Encoded end-positive (or end+negative) are offset */
+		idx += TCL_INDEX_END;
+	    }
+	} else {
+	    result = TclGetIntForIndexM(NULL, tmpObj, 0, &idx);
+	    if (result == TCL_OK) {
+		/*
+		 * Only reach this case when the index value is a
+		 * constant index arithmetic expression, and idx
+		 * holds the result. Treat it the same as if it were
+		 * parsed as an absolute integer value.
+		 */
+		goto integerEncode;
 	    }
 	}
     }
