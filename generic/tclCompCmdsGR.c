@@ -42,18 +42,21 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
  *	arithmetic expressions that can be fully computed at compile
  *	time. The absolute index values that can be directly meaningful
  *	as an index into either a list or a string are those integer
- *	values >= 0 and < INT_MAX. The largest string supported in Tcl 8
- *	has bytelength INT_MAX. This means the largest character supported
- *	length is also INT_MAX, and the index of the last character in a
- *	string of length INT_MAX is INT_MAX-1.
+ *	values >= TCL_INDEX_START (0) and < TCL_INDEX_AFTER (INT_MAX).
+ *	The largest string supported in Tcl 8 has bytelength INT_MAX.
+ *	This means the largest character supported length is also INT_MAX,
+ *	and the index of the last character in a string of length INT_MAX
+ *	is INT_MAX-1.
  *
  *	Any absolute index value parsed outside that range is encoded
  *	using the minBoundary and maxBounday values passed in by the
  *	caller as the encoding to use for indices that are either
- *	less than or greater than the usable index range. INT_MAX
+ *	less than or greater than the usable index range. TCL_INDEX_AFTER
  *	is available as a good choice for most callers to use for
- *	maxBoundary. Likewise, the value -1 is good for most callers
- *	to use for minBoundary.
+ *	maxBoundary. Likewise, the value TCL_INDEX_BEFORE is good for
+ *	most callers to use for minBoundary.  Other values are possible
+ *	when the caller knows it is helpful in producing its own behavior
+ *	for indices before and after the indexed item.
  *
  *	A token can also be parsed as an end-relative index expression.
  *	All end-relative expressions that indicate an index larger
@@ -101,7 +104,7 @@ TclGetIndexFromToken(
     if (result == TCL_OK) {
 	/* We parsed a value in the range INT_MIN...INT_MAX */
     integerEncode:
-	if (idx < 0) {
+	if (idx < TCL_INDEX_START) {
 	    /* All negative absolute indices are "before the beginning" */
 	    idx = minBoundary;
 	} else if (idx == INT_MAX) {
@@ -123,7 +126,7 @@ TclGetIndexFromToken(
 		 */
 		idx = maxBoundary;
 	    } else if (idx < INT_MIN - TCL_INDEX_END) {
-		/* These indices alwasy indicate "before the beginning */
+		/* These indices always indicate "before the beginning */
 		idx = minBoundary;
 	    } else {
 		/* Encoded end-positive (or end+negative) are offset */
@@ -214,7 +217,7 @@ TclCompileGlobalCmd(
 	    return TCL_ERROR;
 	}
 
-	/* TODO: Consider what value can pass throug the
+	/* TODO: Consider what value can pass through the
 	 * IndexTailVarIfKnown() screen.  Full CompileWord()
 	 * likely does not apply here.  Push known value instead. */
 	CompileWord(envPtr, varTokenPtr, interp, i);
@@ -1174,15 +1177,14 @@ TclCompileLindexCmd(
     }
 
     idxTokenPtr = TokenAfter(valTokenPtr);
-    if (TclGetIndexFromToken(idxTokenPtr, &idx, 
-		TCL_INDEX_OUT_OF_RANGE, TCL_INDEX_OUT_OF_RANGE) == TCL_OK) {
+    if (TclGetIndexFromToken(idxTokenPtr, &idx, TCL_INDEX_BEFORE,
+	TCL_INDEX_BEFORE) == TCL_OK) {
 	/*
-	 * All checks have been completed, and we have exactly one of these
-	 * constructs:
-	 *	 lindex <arbitraryValue> <posInt>
-	 *	 lindex <arbitraryValue> end-<posInt>
-	 * This is best compiled as a push of the arbitrary value followed by
-	 * an "immediate lindex" which is the most efficient variety.
+	 * The idxTokenPtr parsed as a valid index value and was
+	 * encoded as expected by INST_LIST_INDEX_IMM.
+	 *
+	 * NOTE: that we rely on indexing before a list producing the
+	 * same result as indexing after a list.
 	 */
 
 	CompileWord(envPtr, valTokenPtr, interp, 1);
@@ -1403,24 +1405,25 @@ TclCompileLrangeCmd(
     }
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
+    tokenPtr = TokenAfter(listTokenPtr);
+    if (TclGetIndexFromToken(tokenPtr, &idx1, TCL_INDEX_START,
+	    TCL_INDEX_AFTER) != TCL_OK) {
+	return TCL_ERROR;
+    }
     /*
-     * Parse the indices. Will only compile if both are constants and not an
-     * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing) or an end-based index greater than 'end' itself.
+     * Token was an index value, and we treat all "first" indices
+     * before the list same as the start of the list.
      */
 
-    tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx1, -1, INT_MAX) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx2, -1, INT_MAX) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx2, TCL_INDEX_BEFORE,
+	    TCL_INDEX_END) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (idx1 == INT_MAX && idx2 == INT_MAX) {
-	idx2 = TCL_INDEX_OUT_OF_RANGE;
-    }
+    /*
+     * Token was an index value, and we treat all "last" indices
+     * after the list same as the end of the list.
+     */
 
     /*
      * Issue instructions. It's not safe to skip doing the LIST_RANGE, as
@@ -1470,7 +1473,16 @@ TclCompileLinsertCmd(
      */
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx, 0, INT_MAX) != TCL_OK) {
+
+    /*
+     * NOTE: This command treats all inserts at indices before the list
+     * the same as inserts at the start of the list, and all inserts
+     * after the list the same as inserts at the end of the list. We
+     * make that transformation here so we can use the optimized bytecode
+     * as much as possible.
+     */
+    if (TclGetIndexFromToken(tokenPtr, &idx, TCL_INDEX_START,
+	    TCL_INDEX_END) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1494,10 +1506,10 @@ TclCompileLinsertCmd(
     }
     TclEmitInstInt4(		INST_LIST, i-3,			envPtr);
 
-    if (idx == 0 /*start*/) {
+    if (idx == TCL_INDEX_START) {
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    } else if (idx == TCL_INDEX_END /*end*/) {
+    } else if (idx == TCL_INDEX_END) {
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
     } else {
 	/*
@@ -1558,41 +1570,41 @@ TclCompileLreplaceCmd(
     }
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    /*
-     * Parse the indices. Will only compile if both are constants and not an
-     * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing) or an end-based index greater than 'end' itself.
-     */
-
     tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx1, -1, INT_MAX) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx1, TCL_INDEX_START,
+	    TCL_INDEX_AFTER) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx2, -1, TCL_INDEX_END) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx2, TCL_INDEX_BEFORE,
+	    TCL_INDEX_END) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     /*
-     * idx1, idx2 are now in canonical form:
-     *
-     *  - integer:	[0,len+1]
-     *  - end index:    TCL_INDEX_END
-     *  - -ive offset:  TCL_INDEX_END-[len-1,0]
+     * idx1, idx2 are the conventional encoded forms of the tokens parsed
+     * as all forms of index values.  Values of idx1 that come before the
+     * list are treated the same as if they were the start of the list.
+     * Values of idx2 that come after the list are treated the same as if
+     * they were the end of the list.
      */
 
+    if (idx1 == TCL_INDEX_AFTER) {
+	/*
+	 * [lreplace] treats idx1 value end+1 differently from end+2, etc.
+	 * The operand encoding cannot distinguish them, so we must bail
+	 * out to direct evaluation.
+	 */
+	return TCL_ERROR;
+    }
+
+/* TODO: ...... */
     /*
      * Compilation fails when one index is end-based but the other isn't.
      * Fixing this will require more bytecodes, but this is a workaround for
      * now. [Bug 47ac84309b]
      */
-
-    if (idx1 == INT_MAX) {
-	/* consider special handling for too large first index
-	 * "list doesn't contain element ...", so still not compiled */
-	return TCL_ERROR;
-    }
 
     if ((idx1 <= TCL_INDEX_END) != (idx2 <= TCL_INDEX_END)) {
 
@@ -3049,7 +3061,7 @@ TclCompileVariableCmd(
 	    return TCL_ERROR;
 	}
 
-	/* TODO: Consider what value can pass throug the
+	/* TODO: Consider what value can pass through the
 	 * IndexTailVarIfKnown() screen.  Full CompileWord()
 	 * likely does not apply here.  Push known value instead. */
 	CompileWord(envPtr, varTokenPtr, interp, i);

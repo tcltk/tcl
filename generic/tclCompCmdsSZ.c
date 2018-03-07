@@ -934,15 +934,22 @@ TclCompileStringRangeCmd(
      * Parse the two indices.
      */
 
-    if (TclGetIndexFromToken(fromTokenPtr, &idx1, -1, INT_MAX) != TCL_OK) {
+    if (TclGetIndexFromToken(fromTokenPtr, &idx1, TCL_INDEX_START,
+	    TCL_INDEX_AFTER) != TCL_OK) {
 	goto nonConstantIndices;
     }
-    if (TclGetIndexFromToken(toTokenPtr, &idx2, -1, INT_MAX) != TCL_OK) {
+    /*
+     * Token parsed as an index expression. We treat all indices before
+     * the string the same as the start of the string.
+     */
+    if (TclGetIndexFromToken(toTokenPtr, &idx2, TCL_INDEX_BEFORE,
+	    TCL_INDEX_END) != TCL_OK) {
 	goto nonConstantIndices;
     }
-    if (idx1 == INT_MAX && idx2 == INT_MAX) {
-	idx2 = TCL_INDEX_OUT_OF_RANGE;
-    }
+    /*
+     * Token parsed as an index expression. We treat all indices after
+     * the string the same as the end of the string.
+     */
 
     /*
      * Push the operand onto the stack and then the substring operation.
@@ -987,27 +994,27 @@ TclCompileStringReplaceCmd(
 	replacementTokenPtr = TokenAfter(tokenPtr);
     }
 
+    tokenPtr = TokenAfter(valueTokenPtr);
+    if (TclGetIndexFromToken(tokenPtr, &idx1, TCL_INDEX_START,
+	    TCL_INDEX_AFTER) != TCL_OK) {
+	goto genericReplace;
+    }
     /*
-     * Parse the indices. Will only compile special cases if both are
-     * constants and not an _integer_ less than zero (since we reserve
-     * negative indices here for end-relative indexing) or an end-based index
-     * greater than 'end' itself.
+     * Token parsed as an index value. Indices before the string are
+     * treated as index of start of string.
      */
 
-    tokenPtr = TokenAfter(valueTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx1, -1, INT_MAX) != TCL_OK) {
-	goto genericReplace;
-    }
-
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx2, -1, INT_MAX) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx2, TCL_INDEX_BEFORE,
+	    TCL_INDEX_END) != TCL_OK) {
 	goto genericReplace;
     }
-    if (idx1 == INT_MAX && idx2 == INT_MAX) {
-	/* avoid replacement of last char in large string (just don't compile). */
-	goto genericReplace;
-    }
+    /*
+     * Token parsed as an index value. Indices after the string are
+     * treated as index of end of string.
+     */
 
+/* TODO...... */
     /*
      * We handle these replacements specially: first character (where
      * idx1=idx2=0) and last character (where idx1=idx2=TCL_INDEX_END). Anything

@@ -2258,8 +2258,13 @@ GetListIndexOperand(
     Tcl_DecrRefCount(value);
      
     /* Convert to an integer, advance to the next token and return. */
-    status = TclGetIndexFromToken(tokenPtr, result, TCL_INDEX_OUT_OF_RANGE,
-	    TCL_INDEX_OUT_OF_RANGE);
+    /*
+     * NOTE: Indexing a list with an index before it yields the
+     * same result as indexing after it, and might be more easily portable
+     * when list size limits grow.
+     */
+    status = TclGetIndexFromToken(tokenPtr, result, TCL_INDEX_BEFORE,
+	    TCL_INDEX_BEFORE);
     *tokenPtrPtr = TokenAfter(tokenPtr);
     if (status == TCL_ERROR && interp) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad index \"%.*s\"",
