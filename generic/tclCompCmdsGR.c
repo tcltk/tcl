@@ -1505,7 +1505,6 @@ TclCompileLreplaceCmd(
      *  - integer:	[0,len+1]
      *  - end index:    TCL_INDEX_END
      *  - -ive offset:  TCL_INDEX_END-[len-1,0]
-     *  - +ive offset:  TCL_INDEX_END+1
      */
 
     /*
@@ -1515,6 +1514,11 @@ TclCompileLreplaceCmd(
      */
 
     if ((idx1 <= TCL_INDEX_END) != (idx2 <= TCL_INDEX_END)) {
+
+	/*
+	 * NOTE: when idx1 == 0 and idx2 == TCL_INDEX_END,
+	 * we bail out here!  Yet, down below
+	 */
 	return TCL_ERROR;
     }
 
@@ -1531,9 +1535,11 @@ TclCompileLreplaceCmd(
     if (parsePtr->numWords == 4) {
 	if (idx1 == 0) {
 	    if (idx2 == TCL_INDEX_END) {
+
+		/* Here we are down below! Now look somewhere else! */
 		goto dropAll;
 	    }
-	    idx1 = idx2 + 1;
+	    idx1 = idx2 + 1;		/* TODO: Overflow? */
 	    idx2 = TCL_INDEX_END;
 	    goto dropEnd;
 	} else if (idx2 == TCL_INDEX_END) {
@@ -1561,9 +1567,10 @@ TclCompileLreplaceCmd(
     TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
     if (idx1 == 0) {
 	if (idx2 == TCL_INDEX_END) {
+	    /* Another Can't Happen. */
 	    goto replaceAll;
 	}
-	idx1 = idx2 + 1;
+	idx1 = idx2 + 1;		/* TODO: Overflow? */
 	idx2 = TCL_INDEX_END;
 	goto replaceHead;
     } else if (idx2 == TCL_INDEX_END) {
@@ -1588,6 +1595,11 @@ TclCompileLreplaceCmd(
      */
 
   dropAll:			/* This just ensures the arg is a list. */
+    /*
+     * And now we're here down below the down below where flow can never go.
+     * CONCLUSION: This code has no purpose.
+     */
+Tcl_Panic("Can not get here.");
     TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
     TclEmitOpcode(		INST_POP,			envPtr);
     PushStringLiteral(envPtr,	"");
@@ -1615,6 +1627,9 @@ TclCompileLreplaceCmd(
 	 * Emit an error if we've been given an empty list.
 	 */
 
+/* If we're generating bytecode to report an error, we've gone wrong.
+ * Just fallback to direct invocation.
+ */
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
 	offset2 = CurrentOffset(envPtr);
@@ -1646,6 +1661,7 @@ TclCompileLreplaceCmd(
      */
 
   replaceAll:
+Tcl_Panic("Can not get here.");
     TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
     TclEmitOpcode(		INST_POP,			envPtr);
     goto done;
@@ -1685,6 +1701,9 @@ TclCompileLreplaceCmd(
 	 * Emit an error if we've been given an empty list.
 	 */
 
+/* If we're generating bytecode to report an error, we've gone wrong.
+ * Just fallback to direct invocation.
+ */
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
 	offset2 = CurrentOffset(envPtr);
