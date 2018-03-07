@@ -5640,33 +5640,44 @@ TEBCresume(
 	length = Tcl_GetCharLength(valuePtr);
 	TRACE(("\"%.20s\" %d %d => ", O2S(valuePtr), fromIdx, toIdx));
 
-	/*
-	 * Adjust indices for end-based indexing.
-	 */
-
-	if (fromIdx == -1) {
-	    fromIdx = 0;
-	} else if (fromIdx < -1) {
-	    fromIdx += 1 + length;
-	    if (fromIdx < 0) {
-		fromIdx = 0;
-	    }
-	} else if (fromIdx >= length) {
-	    fromIdx = length;
+	/* Every range of an empty value is an empty value */
+	if (length == 0) {
+	    TRACE_APPEND(("\n"));
+	    NEXT_INST_F(9, 0, 0);
 	}
-	if (toIdx < -1) {
-	    toIdx += 1 + length;
+
+	/* Decode index operands. */
+
+	assert ( toIdx != TCL_INDEX_BEFORE );
+	assert ( toIdx != TCL_INDEX_AFTER);
+
+	if (toIdx <= TCL_INDEX_END) {
+	    toIdx += (length - 1 - TCL_INDEX_END);
+	    if (toIdx < 0) {
+		goto emptyRange;
+	    }
 	} else if (toIdx >= length) {
 	    toIdx = length - 1;
 	}
 
-	/*
-	 * Check if we can do a sane substring.
-	 */
+	assert ( toIdx >= 0 && toIdx < length );
+
+	assert ( fromIdx != TCL_INDEX_BEFORE );
+	assert ( fromIdx != TCL_INDEX_AFTER);
+
+	if (fromIdx <= TCL_INDEX_END) {
+	    fromIdx += (length - 1 - TCL_INDEX_END);
+	    if (fromIdx < 0) {
+		fromIdx = 0;
+	    }
+	}
+
+	assert ( fromIdx >= 0 );
 
 	if (fromIdx <= toIdx) {
 	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
 	} else {
+	emptyRange:
 	    TclNewObj(objResultPtr);
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
