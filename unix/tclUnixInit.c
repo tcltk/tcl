@@ -577,12 +577,6 @@ TclpSetInitialEncodings(void)
     Tcl_DStringFree(&encodingName);
 }
 
-void
-TclpSetInterfaces(void)
-{
-    /* do nothing */
-}
-
 static const char *
 SearchKnownEncodings(
     const char *encoding)

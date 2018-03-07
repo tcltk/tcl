@@ -1707,13 +1707,13 @@ test oo-13.2 {OO: changing an object's class} -body {
     oo::objdefine foo class oo::class
 } -cleanup {
     foo destroy
-} -returnCodes 1 -result {may not change a non-class object into a class object}
+} -result {}
 test oo-13.3 {OO: changing an object's class} -body {
     oo::class create foo
     oo::objdefine foo class oo::object
 } -cleanup {
     foo destroy
-} -returnCodes 1 -result {may not change a class object into a non-class object}
+} -result {}
 test oo-13.4 {OO: changing an object's class} -body {
     oo::class create foo {
 	method m {} {
