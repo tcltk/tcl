@@ -5090,15 +5090,10 @@ TEBCresume(
 	}
 
 	/*
-	 * Select the list item based on the index. Negative operand means
-	 * end-based indexing (-2, ...), and -1 means out of range.
+	 * Decode end-offset index values.
 	 */
 
-	if (opnd < -1) {
-	    index = opnd+1 + objc;
-	} else {
-	    index = opnd;
-	}
+	index = opnd + (opnd <= TCL_INDEX_END)*(objc - 1 - TCL_INDEX_END);
 	pcAdjustment = 5;
 
     lindexFastPath:
