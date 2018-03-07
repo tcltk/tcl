@@ -1121,7 +1121,8 @@ MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    int distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
-MODULE_SCOPE int	TclGetIndexFromToken(Tcl_Token *tokenPtr, int *index);
+MODULE_SCOPE int	TclGetIndexFromToken(Tcl_Token *tokenPtr, int *index,
+			    int minBoundary, int maxBoundary);
 MODULE_SCOPE void	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
@@ -1688,7 +1689,8 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * Special value used by TclGetIndexFromToken to encoding the "end" index.
  */
 
-#define TCL_INDEX_END	(-2)
+#define TCL_INDEX_END		(-2)
+#define TCL_INDEX_OUT_OF_RANGE	(-1)
 
 /*
  * DTrace probe macros (NOPs if DTrace support is not enabled).

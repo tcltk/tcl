@@ -2258,7 +2258,8 @@ GetListIndexOperand(
     Tcl_DecrRefCount(value);
      
     /* Convert to an integer, advance to the next token and return. */
-    status = TclGetIndexFromToken(tokenPtr, result);
+    status = TclGetIndexFromToken(tokenPtr, result, TCL_INDEX_OUT_OF_RANGE,
+	    TCL_INDEX_OUT_OF_RANGE);
     *tokenPtrPtr = TokenAfter(tokenPtr);
     if (status == TCL_ERROR && interp) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad index \"%.*s\"",
