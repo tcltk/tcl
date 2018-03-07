@@ -934,11 +934,14 @@ TclCompileStringRangeCmd(
      * Parse the two indices.
      */
 
-    if (TclGetIndexFromToken(fromTokenPtr, &idx1) != TCL_OK) {
+    if (TclGetIndexFromToken(fromTokenPtr, &idx1, -1, INT_MAX) != TCL_OK) {
 	goto nonConstantIndices;
     }
-    if (TclGetIndexFromToken(toTokenPtr, &idx2) != TCL_OK) {
+    if (TclGetIndexFromToken(toTokenPtr, &idx2, -1, INT_MAX) != TCL_OK) {
 	goto nonConstantIndices;
+    }
+    if (idx1 == INT_MAX && idx2 == INT_MAX) {
+	idx2 = TCL_INDEX_OUT_OF_RANGE;
     }
 
     /*
@@ -992,12 +995,16 @@ TclCompileStringReplaceCmd(
      */
 
     tokenPtr = TokenAfter(valueTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx1) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx1, -1, INT_MAX) != TCL_OK) {
 	goto genericReplace;
     }
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx2) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, &idx2, -1, INT_MAX) != TCL_OK) {
+	goto genericReplace;
+    }
+    if (idx1 == INT_MAX && idx2 == INT_MAX) {
+	/* avoid replacement of last char in large string (just don't compile). */
 	goto genericReplace;
     }
 
