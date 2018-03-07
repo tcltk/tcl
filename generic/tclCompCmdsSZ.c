@@ -930,6 +930,9 @@ TclCompileStringRangeCmd(
     fromTokenPtr = TokenAfter(stringTokenPtr);
     toTokenPtr = TokenAfter(fromTokenPtr);
 
+    /* Every path must push the string argument */
+    CompileWord(envPtr, stringTokenPtr,			interp, 1);
+
     /*
      * Parse the two indices.
      */
@@ -942,6 +945,14 @@ TclCompileStringRangeCmd(
      * Token parsed as an index expression. We treat all indices before
      * the string the same as the start of the string.
      */
+
+    if (idx1 == TCL_INDEX_AFTER) {
+	/* [string range $s end+1 $last] must be empty string */
+	OP(		POP);
+	PUSH(		"");
+	return TCL_OK;
+    }
+
     if (TclGetIndexFromToken(toTokenPtr, &idx2, TCL_INDEX_BEFORE,
 	    TCL_INDEX_END) != TCL_OK) {
 	goto nonConstantIndices;
@@ -950,12 +961,17 @@ TclCompileStringRangeCmd(
      * Token parsed as an index expression. We treat all indices after
      * the string the same as the end of the string.
      */
+    if (idx2 == TCL_INDEX_BEFORE) {
+	/* [string range $s $first -1] must be empty string */
+	OP(		POP);
+	PUSH(		"");
+	return TCL_OK;
+    }
 
     /*
      * Push the operand onto the stack and then the substring operation.
      */
 
-    CompileWord(envPtr, stringTokenPtr,			interp, 1);
     OP44(		STR_RANGE_IMM, idx1, idx2);
     return TCL_OK;
 
@@ -964,7 +980,6 @@ TclCompileStringRangeCmd(
      */
 
   nonConstantIndices:
-    CompileWord(envPtr, stringTokenPtr,			interp, 1);
     CompileWord(envPtr, fromTokenPtr,			interp, 2);
     CompileWord(envPtr, toTokenPtr,			interp, 3);
     OP(			STR_RANGE);
