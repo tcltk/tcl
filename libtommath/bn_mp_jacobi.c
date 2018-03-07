@@ -32,14 +32,14 @@ int mp_jacobi(const mp_int *a, const mp_int *n, int *c)
    }
 
    /* if n <= 0 return MP_VAL */
-   if (mp_cmp_d(n, 0) != MP_GT) {
+   if (mp_cmp_d(n, 0uL) != MP_GT) {
       return MP_VAL;
    }
 
    /* step 1. handle case of a == 0 */
    if (mp_iszero(a) == MP_YES) {
       /* special case of a == 0 and n == 1 */
-      if (mp_cmp_d(n, 1) == MP_EQ) {
+      if (mp_cmp_d(n, 1uL) == MP_EQ) {
          *c = 1;
       } else {
          *c = 0;
@@ -48,7 +48,7 @@ int mp_jacobi(const mp_int *a, const mp_int *n, int *c)
    }
 
    /* step 2.  if a == 1, return 1 */
-   if (mp_cmp_d(a, 1) == MP_EQ) {
+   if (mp_cmp_d(a, 1uL) == MP_EQ) {
       *c = 1;
       return MP_OKAY;
    }
@@ -72,26 +72,26 @@ int mp_jacobi(const mp_int *a, const mp_int *n, int *c)
    }
 
    /* step 4.  if e is even set s=1 */
-   if ((k & 1) == 0) {
+   if (((unsigned)k & 1u) == 0u) {
       s = 1;
    } else {
       /* else set s=1 if p = 1/7 (mod 8) or s=-1 if p = 3/5 (mod 8) */
-      residue = n->dp[0] & 7;
+      residue = n->dp[0] & 7u;
 
-      if ((residue == 1) || (residue == 7)) {
+      if ((residue == 1u) || (residue == 7u)) {
          s = 1;
-      } else if ((residue == 3) || (residue == 5)) {
+      } else if ((residue == 3u) || (residue == 5u)) {
          s = -1;
       }
    }
 
    /* step 5.  if p == 3 (mod 4) *and* a1 == 3 (mod 4) then s = -s */
-   if (((n->dp[0] & 3) == 3) && ((a1.dp[0] & 3) == 3)) {
+   if (((n->dp[0] & 3u) == 3u) && ((a1.dp[0] & 3u) == 3u)) {
       s = -s;
    }
 
    /* if a1 == 1 we're done */
-   if (mp_cmp_d(&a1, 1) == MP_EQ) {
+   if (mp_cmp_d(&a1, 1uL) == MP_EQ) {
       *c = s;
    } else {
       /* n1 = n mod a1 */

@@ -24,12 +24,6 @@ testConstraint testexprdouble [llength [info commands testexprdouble]]
 testConstraint testexprstring [llength [info commands testexprstring]]
 testConstraint longIs32bit    [expr {int(0x80000000) < 0}]
 
-if {[catch {expr T1()} msg] && $msg eq {invalid command name "tcl::mathfunc::T1"}} {
-    testConstraint testmathfunctions 0
-} else {
-    testConstraint testmathfunctions 1
-}
-
 # Big test for correct ordering of data in [expr]
 
 proc testIEEE {} {
@@ -847,12 +841,6 @@ test expr-old-32.41 {math functions in expressions} {
 test expr-old-32.42 {math functions in expressions} {
     list [catch {expr hypot(5*.8,3)} msg] $msg
 } {0 5.0}
-test expr-old-32.43 {math functions in expressions} testmathfunctions {
-    expr 2*T1()
-} 246
-test expr-old-32.44 {math functions in expressions} testmathfunctions {
-    expr T2()*3
-} 1035
 test expr-old-32.45 {math functions in expressions} {
     expr (0 <= rand()) && (rand() < 1)
 } {1}
@@ -952,11 +940,6 @@ test expr-old-34.15 {errors in math functions} {
 test expr-old-34.16 {errors in math functions} {
     expr round(-1.0e30)
 } -1000000000000000019884624838656
-test expr-old-34.17 {errors in math functions} -constraints testmathfunctions \
-    -body {
-        list [catch {expr T1(4)} msg] $msg
-    } -match glob -result {1 {too many arguments for math function*}}
-
 test expr-old-36.1 {ExprLooksLikeInt procedure} -body {
     expr 0o289
 } -returnCodes error -match glob -result {*invalid octal number*}

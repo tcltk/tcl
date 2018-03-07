@@ -31,6 +31,7 @@
 #undef Tcl_NewIntObj
 #undef Tcl_NewListObj
 #undef Tcl_NewLongObj
+#undef Tcl_DbNewLongObj
 #undef Tcl_NewObj
 #undef Tcl_NewStringObj
 #undef Tcl_DumpActiveMemory
@@ -42,6 +43,7 @@
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
+#undef Tcl_SetLongObj
 #undef TclpInetNtoa
 #undef TclWinGetServByName
 #undef TclWinGetSockOpt
@@ -71,9 +73,19 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #   define TclWinSetSockOpt 0
 #   define TclWinNToHS 0
 #   define TclWinGetPlatformId 0
+#   define TclWinResetInterfaces 0
+#   define TclWinSetInterfaces 0
+#   define TclWinGetPlatformId 0
 #   define TclBNInitBignumFromWideUInt 0
 #   define TclBNInitBignumFromWideInt 0
 #   define TclBNInitBignumFromLong 0
+#   define Tcl_Backslash 0
+#   define Tcl_GetDefaultEncodingDir 0
+#   define Tcl_SetDefaultEncodingDir 0
+#   define Tcl_EvalTokens 0
+#   define Tcl_CreateMathFunc 0
+#   define Tcl_GetMathFuncInfo 0
+#   define Tcl_ListMathFuncs 0
 #else
 #define TclSetStartupScriptPath setStartupScriptPath
 static void TclSetStartupScriptPath(Tcl_Obj *path)
@@ -100,11 +112,16 @@ static const char *TclGetStartupScriptFileName(void)
     }
     return Tcl_GetString(path);
 }
-
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
 #undef TclWinGetPlatformId
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#undef TclWinResetInterfaces
+#undef TclWinSetInterfaces
+static void
+doNothing(void)
+{
+    /* dummy implementation, no need to do anything */
+}
 #define TclWinNToHS winNToHS
 static unsigned short TclWinNToHS(unsigned short ns) {
 	return ntohs(ns);
@@ -115,10 +132,8 @@ TclWinGetPlatformId(void)
 {
     return 2; /* VER_PLATFORM_WIN32_NT */;
 }
-#else
-#define TclWinNToHS 0
-#define TclWinGetPlatformId 0
-#endif
+#define TclWinResetInterfaces doNothing
+#define TclWinSetInterfaces (void (*) (int)) doNothing
 #endif
 #   define TclBNInitBignumFromWideUInt TclInitBignumFromWideUInt
 #   define TclBNInitBignumFromWideInt TclInitBignumFromWideInt
@@ -133,14 +148,15 @@ TclWinGetPlatformId(void)
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
 #   define TclpIsAtty TclPlatIsAtty
-#   define TclWinSetInterfaces (void (*) (int)) doNothing
+#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
+static void
+doNothing(void)
+{
+    /* dummy implementation, no need to do anything */
+}
+#endif
 #   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
-#   define TclWinResetInterfaces doNothing
-
-#if TCL_UTF_MAX < 4
-static Tcl_Encoding winTCharEncoding;
-#endif
 
 static int
 TclpIsAtty(int fd)
@@ -201,19 +217,12 @@ TclpGetPid(Tcl_Pid pid)
     return (int) (size_t) pid;
 }
 
-static void
-doNothing(void)
-{
-    /* dummy implementation, no need to do anything */
-}
-
 char *
 Tcl_WinUtfToTChar(
     const char *string,
     int len,
     Tcl_DString *dsPtr)
 {
-#if TCL_UTF_MAX > 3
     WCHAR *wp;
     int size = MultiByteToWideChar(CP_UTF8, 0, string, len, 0, 0);
 
@@ -225,13 +234,6 @@ Tcl_WinUtfToTChar(
     Tcl_DStringSetLength(dsPtr, 2*size);
     wp[size] = 0;
     return (char *)wp;
-#else
-    if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
-    }
-    return Tcl_UtfToExternalDString(winTCharEncoding,
-	    string, len, dsPtr);
-#endif
 }
 
 char *
@@ -240,7 +242,6 @@ Tcl_WinTCharToUtf(
     int len,
     Tcl_DString *dsPtr)
 {
-#if TCL_UTF_MAX > 3
     char *p;
     int size;
 
@@ -256,13 +257,6 @@ Tcl_WinTCharToUtf(
     Tcl_DStringSetLength(dsPtr, size);
     p[size] = 0;
     return p;
-#else
-    if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
-    }
-    return Tcl_ExternalToUtfDString(winTCharEncoding,
-	    string, len, dsPtr);
-#endif
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -283,7 +277,7 @@ static Tcl_Obj *dbNewLongObj(
     TclDbNewObj(objPtr, file, line);
     objPtr->bytes = NULL;
 
-    objPtr->internalRep.longValue = (long) intValue;
+    objPtr->internalRep.wideValue = (long) intValue;
     objPtr->typePtr = &tclIntType;
     return objPtr;
 #else
