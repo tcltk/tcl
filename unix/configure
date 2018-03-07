@@ -4275,8 +4275,6 @@ $as_echo "#define TCL_CFGVAL_ENCODING \"iso8859-1\"" >>confdefs.h
     #--------------------------------------------------------------------
     # On a few very rare systems, all of the libm.a stuff is
     # already in libc.a.  Set compiler flags accordingly.
-    # Also, Linux requires the "ieee" library for math to work
-    # right (and it must appear before "-lm").
     #--------------------------------------------------------------------
 
     ac_fn_c_check_func "$LINENO" "sin" "ac_cv_func_sin"
@@ -4284,40 +4282,6 @@ if test "x$ac_cv_func_sin" = xyes; then :
   MATH_LIBS=""
 else
   MATH_LIBS="-lm"
-fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lieee" >&5
-$as_echo_n "checking for main in -lieee... " >&6; }
-if ${ac_cv_lib_ieee_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lieee  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_ieee_main=yes
-else
-  ac_cv_lib_ieee_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ieee_main" >&5
-$as_echo "$ac_cv_lib_ieee_main" >&6; }
-if test "x$ac_cv_lib_ieee_main" = xyes; then :
-  MATH_LIBS="-lieee $MATH_LIBS"
 fi
 
 
@@ -6924,7 +6888,7 @@ else
   tcl_type_64bit="long long"
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-	# See if we should use long anyway  Note that we substitute in the
+	# See if we could use long anyway  Note that we substitute in the
 	# type that is our current guess for a 64-bit type inside this check
 	# program, so it should be modified only carefully...
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -6950,8 +6914,8 @@ fi
 
 $as_echo "#define TCL_WIDE_INT_IS_LONG 1" >>confdefs.h
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: using long" >&5
-$as_echo "using long" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
     else
 
 cat >>confdefs.h <<_ACEOF

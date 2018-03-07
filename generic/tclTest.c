@@ -305,14 +305,6 @@ static int		TestlinkCmd(ClientData dummy,
 static int		TestlocaleCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-#ifndef TCL_NO_DEPRECATED
-static int		TestMathFunc(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_Value *args,
-			    Tcl_Value *resultPtr);
-static int		TestMathFunc2(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_Value *args,
-			    Tcl_Value *resultPtr);
-#endif /* TCL_NO_DEPRECATED */
 static int		TestmainthreadCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestsetmainloopCmd(ClientData dummy,
@@ -555,10 +547,6 @@ int
 Tcltest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-#ifndef TCL_NO_DEPRECATED
-    Tcl_ValueType t3ArgTypes[2];
-#endif /* TCL_NO_DEPRECATED */
-
     Tcl_Obj *listPtr;
     Tcl_Obj **objv;
     int objc, index;
@@ -711,10 +699,6 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testtranslatefilename",
 	    TesttranslatefilenameCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testupvar", TestupvarCmd, NULL, NULL);
-#ifndef TCL_NO_DEPRECATED
-    Tcl_CreateMathFunc(interp, "T1", 0, NULL, TestMathFunc, (ClientData) 123);
-    Tcl_CreateMathFunc(interp, "T2", 0, NULL, TestMathFunc, (ClientData) 345);
-#endif /* TCL_NO_DEPRECATED */
     Tcl_CreateCommand(interp, "testmainthread", TestmainthreadCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testsetmainloop", TestsetmainloopCmd,
@@ -725,13 +709,6 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testcpuid", TestcpuidCmd,
 	    (ClientData) 0, NULL);
 #endif
-#ifndef TCL_NO_DEPRECATED
-    t3ArgTypes[0] = TCL_EITHER;
-    t3ArgTypes[1] = TCL_EITHER;
-    Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
-	    NULL);
-#endif /* TCL_NO_DEPRECATED */
-
     Tcl_CreateObjCommand(interp, "testnreunwind", TestNREUnwind,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testnrelevels", TestNRELevels,
@@ -3357,146 +3334,6 @@ TestlocaleCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestMathFunc --
- *
- *	This is a user-defined math procedure to test out math procedures
- *	with no arguments.
- *
- * Results:
- *	A normal Tcl completion code.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-	/* ARGSUSED */
-#ifndef TCL_NO_DEPRECATED
-static int
-TestMathFunc(
-    ClientData clientData,	/* Integer value to return. */
-    Tcl_Interp *interp,		/* Not used. */
-    Tcl_Value *args,		/* Not used. */
-    Tcl_Value *resultPtr)	/* Where to store result. */
-{
-    resultPtr->type = TCL_INT;
-    resultPtr->intValue = PTR2INT(clientData);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestMathFunc2 --
- *
- *	This is a user-defined math procedure to test out math procedures
- *	that do have arguments, in this case 2.
- *
- * Results:
- *	A normal Tcl completion code.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-	/* ARGSUSED */
-static int
-TestMathFunc2(
-    ClientData clientData,	/* Integer value to return. */
-    Tcl_Interp *interp,		/* Used to report errors. */
-    Tcl_Value *args,		/* Points to an array of two Tcl_Value structs
-				 * for the two arguments. */
-    Tcl_Value *resultPtr)	/* Where to store the result. */
-{
-    int result = TCL_OK;
-
-    /*
-     * Return the maximum of the two arguments with the correct type.
-     */
-
-    if (args[0].type == TCL_INT) {
-	int i0 = args[0].intValue;
-
-	if (args[1].type == TCL_INT) {
-	    int i1 = args[1].intValue;
-
-	    resultPtr->type = TCL_INT;
-	    resultPtr->intValue = ((i0 > i1)? i0 : i1);
-	} else if (args[1].type == TCL_DOUBLE) {
-	    double d0 = i0;
-	    double d1 = args[1].doubleValue;
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else if (args[1].type == TCL_WIDE_INT) {
-	    Tcl_WideInt w0 = Tcl_LongAsWide(i0);
-	    Tcl_WideInt w1 = args[1].wideValue;
-
-	    resultPtr->type = TCL_WIDE_INT;
-	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
-	} else {
-	    Tcl_AppendResult(interp, "T3: wrong type for arg 2", NULL);
-	    result = TCL_ERROR;
-	}
-    } else if (args[0].type == TCL_DOUBLE) {
-	double d0 = args[0].doubleValue;
-
-	if (args[1].type == TCL_INT) {
-	    double d1 = args[1].intValue;
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else if (args[1].type == TCL_DOUBLE) {
-	    double d1 = args[1].doubleValue;
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else if (args[1].type == TCL_WIDE_INT) {
-	    double d1 = Tcl_WideAsDouble(args[1].wideValue);
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else {
-	    Tcl_AppendResult(interp, "T3: wrong type for arg 2", NULL);
-	    result = TCL_ERROR;
-	}
-    } else if (args[0].type == TCL_WIDE_INT) {
-	Tcl_WideInt w0 = args[0].wideValue;
-
-	if (args[1].type == TCL_INT) {
-	    Tcl_WideInt w1 = Tcl_LongAsWide(args[1].intValue);
-
-	    resultPtr->type = TCL_WIDE_INT;
-	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
-	} else if (args[1].type == TCL_DOUBLE) {
-	    double d0 = Tcl_WideAsDouble(w0);
-	    double d1 = args[1].doubleValue;
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else if (args[1].type == TCL_WIDE_INT) {
-	    Tcl_WideInt w1 = args[1].wideValue;
-
-	    resultPtr->type = TCL_WIDE_INT;
-	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
-	} else {
-	    Tcl_AppendResult(interp, "T3: wrong type for arg 2", NULL);
-	    result = TCL_ERROR;
-	}
-    } else {
-	Tcl_AppendResult(interp, "T3: wrong type for arg 1", NULL);
-	result = TCL_ERROR;
-    }
-    return result;
-}
-#endif /* TCL_NO_DEPRECATED */
-
-/*
- *----------------------------------------------------------------------
- *
  * CleanupTestSetassocdataTests --
  *
  *	This function is called when an interpreter is deleted to clean
@@ -5370,7 +5207,7 @@ TestmainthreadCmd(
     const char **argv)		/* Argument strings. */
 {
     if (argc == 1) {
-	Tcl_Obj *idObj = Tcl_NewLongObj((long)(size_t)Tcl_GetCurrentThread());
+	Tcl_Obj *idObj = Tcl_NewWideIntObj((Tcl_WideInt)(size_t)Tcl_GetCurrentThread());
 
 	Tcl_SetObjResult(interp, idObj);
 	return TCL_OK;
@@ -5767,8 +5604,8 @@ TestChannelCmd(
 	    return TCL_ERROR;
 	}
 
-	TclFormatInt(buf, (size_t) Tcl_GetChannelThread(chan));
-	Tcl_AppendResult(interp, buf, NULL);
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+		(Tcl_WideInt) (size_t) Tcl_GetChannelThread(chan)));
 	return TCL_OK;
     }
 

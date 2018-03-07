@@ -1143,7 +1143,6 @@ TclOODefineClassObjCmd(
 {
     Object *oPtr;
     Class *clsPtr;
-    Foundation *fPtr = TclOOGetFoundation(interp);
 
     /*
      * Parse the context to get the object to operate on.
@@ -1180,20 +1179,6 @@ TclOODefineClassObjCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * Apply semantic checks. In particular, classes and non-classes are not
-     * interchangable (too complicated to do the conversion!) so we must
-     * produce an error if any attempt is made to swap from one to the other.
-     */
-
-    if ((oPtr->classPtr==NULL) == TclOOIsReachable(fPtr->classCls, clsPtr)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"may not change a %sclass object into a %sclass object",
-		(oPtr->classPtr==NULL ? "non-" : ""),
-		(oPtr->classPtr==NULL ? "" : "non-")));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "TRANSMUTATION", NULL);
-	return TCL_ERROR;
-    }
 
     /*
      * Set the object's class.
