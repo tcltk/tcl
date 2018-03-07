@@ -1690,7 +1690,9 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  */
 
 #define TCL_INDEX_END		(-2)
-#define TCL_INDEX_OUT_OF_RANGE	(-1)
+#define TCL_INDEX_BEFORE	(-1)
+#define TCL_INDEX_START		(0)
+#define TCL_INDEX_AFTER		(INT_MAX)
 
 /*
  * DTrace probe macros (NOPs if DTrace support is not enabled).
