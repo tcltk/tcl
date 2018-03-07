@@ -1149,7 +1149,7 @@ TclLindexList(
 	int indexCount = -1;		/* Size of the array of list indices. */
 	Tcl_Obj **indices = NULL; 	/* Array of list indices. */
 
-	Tcl_ListObjGetElements(NULL, indexListCopy, &indexCount, &indices);
+	TclListObjGetElements(NULL, indexListCopy, &indexCount, &indices);
 	listPtr = TclLindexFlat(interp, listPtr, indexCount, indices);
     }
     Tcl_DecrRefCount(indexListCopy);
