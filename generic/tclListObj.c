@@ -1145,15 +1145,9 @@ TclLindexList(
 	return TclLindexFlat(interp, listPtr, 1, &argPtr);
     }
 
-    if (indexListCopy->typePtr == &tclListType) {
-	List *listRepPtr = ListRepPtr(indexListCopy);
-
-	listPtr = TclLindexFlat(interp, listPtr, listRepPtr->elemCount,
-		&listRepPtr->elements);
-    } else {
-	int indexCount = -1;	/* Size of the array of list indices. */
-	Tcl_Obj **indices = NULL;
-				/* Array of list indices. */
+    {
+	int indexCount = -1;		/* Size of the array of list indices. */
+	Tcl_Obj **indices = NULL; 	/* Array of list indices. */
 
 	Tcl_ListObjGetElements(NULL, indexListCopy, &indexCount, &indices);
 	listPtr = TclLindexFlat(interp, listPtr, indexCount, indices);
