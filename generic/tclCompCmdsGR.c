@@ -1563,7 +1563,7 @@ TclCompileLreplaceCmd(
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
     int idx1, idx2, i, offset, offset2;
-    int emptyPrefix, suffixStart = 0;
+    int emptyPrefix=1, suffixStart = 0;
 
     if (parsePtr->numWords < 4) {
 	return TCL_ERROR;
@@ -1625,13 +1625,35 @@ TclCompileLreplaceCmd(
     CompileWord(envPtr, listTokenPtr, interp, 1);
 
     /*
+     * Push all the replacement values next so any errors raised in
+     * creating them get raised first.
+     */
+    if (parsePtr->numWords > 4) {
+	/* Push the replacement arguments */
+	tokenPtr = TokenAfter(tokenPtr);
+	for (i=4 ; i<parsePtr->numWords ; i++) {
+	    CompileWord(envPtr, tokenPtr, interp, i);
+	    tokenPtr = TokenAfter(tokenPtr);
+	}
+
+	/* Make a list of them... */
+	TclEmitInstInt4(	INST_LIST, i - 4,		envPtr);
+
+	emptyPrefix = 0;
+    }
+     
+    /*
      * [lreplace] raises an error when idx1 points after the list, but
      * only when the list is not empty. This is maximum stupidity.
      *
      * TODO: TIP this nonsense away!
      */
     if (idx1 >= TCL_INDEX_START) {
-	TclEmitOpcode(		INST_DUP,			envPtr);
+	if (emptyPrefix) {
+	    TclEmitOpcode(	INST_DUP,			envPtr);
+	} else {
+	    TclEmitInstInt4(	INST_OVER, 1,			envPtr);
+	}
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	offset = CurrentOffset(envPtr);
@@ -1667,26 +1689,17 @@ TclCompileLreplaceCmd(
 	return TCL_OK;
     }
 
-    emptyPrefix = (idx1 == TCL_INDEX_START);
-    if (!emptyPrefix) {
+    if (idx1 != TCL_INDEX_START) {
 	/* Prefix may not be empty; generate bytecode to push it */
-	TclEmitOpcode(		INST_DUP,			envPtr);
+	if (emptyPrefix) {
+	    TclEmitOpcode(	INST_DUP,			envPtr);
+	} else {
+	    TclEmitInstInt4(	INST_OVER, 1,			envPtr);
+	}
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
 	TclEmitInt4(			idx1 - 1,		envPtr);
-    }
-
-    if (parsePtr->numWords > 4) {
-	/* Push the replacement arguments */
-	tokenPtr = TokenAfter(tokenPtr);
-	for (i=4 ; i<parsePtr->numWords ; i++) {
-	    CompileWord(envPtr, tokenPtr, interp, i);
-	    tokenPtr = TokenAfter(tokenPtr);
-	}
-
-	/* Make a list of them... */
-	TclEmitInstInt4(	INST_LIST, i - 4,		envPtr);
 	if (!emptyPrefix) {
-	    /* ...and join to the prefix, if any. */
+	    TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	    TclEmitOpcode(	INST_LIST_CONCAT,		envPtr);
 	}
 	emptyPrefix = 0;
