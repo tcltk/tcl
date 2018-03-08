@@ -1562,8 +1562,8 @@ TclCompileLreplaceCmd(
 {
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Obj *tmpObj;
     int idx1, idx2, i, offset, offset2;
+    int emptyPrefix, suffixStart = 0;
 
     if (parsePtr->numWords < 4) {
 	return TCL_ERROR;
@@ -1599,243 +1599,117 @@ TclCompileLreplaceCmd(
 	return TCL_ERROR;
     }
 
-/* TODO: ...... */
     /*
-     * Compilation fails when one index is end-based but the other isn't.
-     * Fixing this will require more bytecodes, but this is a workaround for
-     * now. [Bug 47ac84309b]
+     * General structure of the [lreplace] result is
+     *		prefix replacement suffix
+     * In a few cases we can predict various parts will be empty and
+     * take advantage.
+     *
+     * The proper suffix begins with the greater of indices idx1 or
+     * idx2 + 1. If we cannot tell at compile time which is greater,
+     * we must defer to direct evaluation.
      */
 
-    if ((idx1 <= TCL_INDEX_END) != (idx2 <= TCL_INDEX_END)) {
-
-	/*
-	 * NOTE: when idx1 == 0 and idx2 == TCL_INDEX_END,
-	 * we bail out here!  Yet, down below
-	 */
+    if (idx2 == TCL_INDEX_BEFORE) {
+	suffixStart = idx1;
+    } else if (idx2 == TCL_INDEX_END) {
+	suffixStart = TCL_INDEX_AFTER;
+    } else if (((idx2 < TCL_INDEX_END) && (idx1 <= TCL_INDEX_END))
+	    || ((idx2 >= TCL_INDEX_START) && (idx1 >= TCL_INDEX_START))) {
+	suffixStart = (idx1 > idx2 + 1) ? idx1 : idx2 + 1;
+    } else {
 	return TCL_ERROR;
     }
 
-    if (idx1 == -1) {
-	/* linsert before start or replace from start */
-	idx1 = 0;
-    }
-
-    if (idx2 != TCL_INDEX_END && idx2 >= 0 && idx2 < idx1) {
-	idx2 = idx1 - 1;
-    }
-
-    /*
-     * Work out what this [lreplace] is actually doing.
-     */
-
-    tmpObj = NULL;
+    /* All paths start with computing/pushing the original value. */
     CompileWord(envPtr, listTokenPtr, interp, 1);
-    if (parsePtr->numWords == 4) {
-	if (idx1 == 0) {
-	    if (idx2 == TCL_INDEX_END) {
 
-		/* Here we are down below! Now look somewhere else! */
-		goto dropAll;
-	    }
-	    idx1 = idx2 + 1;		/* TODO: Overflow? */
-	    idx2 = TCL_INDEX_END;
-	    goto dropEnd;
-	} else if (idx2 == TCL_INDEX_END) {
-	    idx2 = idx1 - 1;
-	    idx1 = 0;
-	    goto dropEnd;
-	} else {
-	    if (idx2 < idx1) {
-		idx2 = idx1 - 1;
-	    }
-	    if (idx1 > 0) {
-		tmpObj = Tcl_NewIntObj(idx1);
-		Tcl_IncrRefCount(tmpObj);
-	    }
-	    goto dropRange;
-	}
+    /*
+     * [lreplace] raises an error when idx1 points after the list, but
+     * only when the list is not empty. This is maximum stupidity.
+     *
+     * TODO: TIP this nonsense away!
+     */
+    if (idx1 >= TCL_INDEX_START) {
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	offset = CurrentOffset(envPtr);
+	TclEmitInstInt1(	INST_JUMP_FALSE1, 0,		envPtr);
+
+	/* List is not empty */
+	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_NewIntObj(idx1),
+							NULL),	envPtr);
+	TclEmitOpcode(		INST_GT,			envPtr);
+	offset2 = CurrentOffset(envPtr);
+	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+
+	/* Idx1 >= list length ===> raise an error */
+	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
+		"list doesn't contain element %d", idx1), NULL), envPtr);
+	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
+		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
+	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
+		envPtr->codeStart + offset + 1);
+	TclEmitOpcode(		INST_POP,			envPtr);
+	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset2,
+		envPtr->codeStart + offset2 + 1);
     }
 
-    tokenPtr = TokenAfter(tokenPtr);
-    for (i=4 ; i<parsePtr->numWords ; i++) {
-	CompileWord(envPtr, tokenPtr, interp, i);
+    if ((idx1 == suffixStart) && (parsePtr->numWords == 4)) {
+	/*
+	 * This is a "no-op". Example: [lreplace {a b c} 2 0]
+	 * We still do a list operation to get list-verification
+	 * and canonicalization side effects.
+	 */
+	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
+	TclEmitInt4(			TCL_INDEX_END,		envPtr);
+	return TCL_OK;
+    }
+
+    emptyPrefix = (idx1 == TCL_INDEX_START);
+    if (!emptyPrefix) {
+	/* Prefix may not be empty; generate bytecode to push it */
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
+	TclEmitInt4(			idx1 - 1,		envPtr);
+    }
+
+    if (parsePtr->numWords > 4) {
+	/* Push the replacement arguments */
 	tokenPtr = TokenAfter(tokenPtr);
-    }
-    TclEmitInstInt4(		INST_LIST, i - 4,		envPtr);
-    TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
-    if (idx1 == 0) {
-	if (idx2 == TCL_INDEX_END) {
-	    /* Another Can't Happen. */
-	    goto replaceAll;
+	for (i=4 ; i<parsePtr->numWords ; i++) {
+	    CompileWord(envPtr, tokenPtr, interp, i);
+	    tokenPtr = TokenAfter(tokenPtr);
 	}
-	idx1 = idx2 + 1;		/* TODO: Overflow? */
-	idx2 = TCL_INDEX_END;
-	goto replaceHead;
-    } else if (idx2 == TCL_INDEX_END) {
-	idx2 = idx1 - 1;
-	idx1 = 0;
-	goto replaceTail;
+
+	/* Make a list of them... */
+	TclEmitInstInt4(	INST_LIST, i - 4,		envPtr);
+	if (!emptyPrefix) {
+	    /* ...and join to the prefix, if any. */
+	    TclEmitOpcode(	INST_LIST_CONCAT,		envPtr);
+	}
+	emptyPrefix = 0;
+    }
+
+    if (!emptyPrefix) {
+	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
+    }
+
+    if (suffixStart == TCL_INDEX_AFTER) {
+	TclEmitOpcode(		INST_POP,			envPtr);
+	if (emptyPrefix) {
+	    PushStringLiteral(envPtr, "");
+	}
     } else {
-	if (idx2 < idx1) {
-	    idx2 = idx1 - 1;
+	/* Suffix may not be empty; generate bytecode to push it */
+	TclEmitInstInt4(	INST_LIST_RANGE_IMM, suffixStart, envPtr);
+	TclEmitInt4(			TCL_INDEX_END,		envPtr);
+	if (!emptyPrefix) {
+	    TclEmitOpcode(	INST_LIST_CONCAT,		envPtr);
 	}
-	if (idx1 > 0) {
-	    tmpObj = Tcl_NewIntObj(idx1);
-	    Tcl_IncrRefCount(tmpObj);
-	}
-	goto replaceRange;
     }
 
-    /*
-     * Issue instructions to perform the operations relating to configurations
-     * that just drop. The only argument pushed on the stack is the list to
-     * operate on.
-     */
-
-  dropAll:			/* This just ensures the arg is a list. */
-    /*
-     * And now we're here down below the down below where flow can never go.
-     * CONCLUSION: This code has no purpose.
-     */
-Tcl_Panic("Can not get here.");
-    TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
-    TclEmitOpcode(		INST_POP,			envPtr);
-    PushStringLiteral(envPtr,	"");
-    goto done;
-
-  dropEnd:
-    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx1,	envPtr);
-    TclEmitInt4(			idx2,			envPtr);
-    goto done;
-
-  dropRange:
-    if (tmpObj != NULL) {
-	/*
-	 * Emit bytecode to check the list length.
-	 */
-
-	TclEmitOpcode(		INST_DUP,			envPtr);
-	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
-	TclEmitPush(TclAddLiteralObj(envPtr, tmpObj, NULL),	envPtr);
-	TclEmitOpcode(		INST_GE,			envPtr);
-	offset = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
-
-	/*
-	 * Emit an error if we've been given an empty list.
-	 */
-
-/* If we're generating bytecode to report an error, we've gone wrong.
- * Just fallback to direct invocation.
- */
-	TclEmitOpcode(		INST_DUP,			envPtr);
-	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
-	offset2 = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_FALSE1, 0,		envPtr);
-	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
-		"list doesn't contain element %d", idx1), NULL), envPtr);
-	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
-		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
-	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
-		envPtr->codeStart + offset + 1);
-	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset2,
-		envPtr->codeStart + offset2 + 1);
-	TclAdjustStackDepth(-1, envPtr);
-    }
-    TclEmitOpcode(		INST_DUP,			envPtr);
-    TclEmitInstInt4(		INST_LIST_RANGE_IMM, 0,		envPtr);
-    TclEmitInt4(			idx1 - 1,		envPtr);
-    TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
-    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx2 + 1,	envPtr);
-    TclEmitInt4(			TCL_INDEX_END,		envPtr);
-    TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    goto done;
-
-    /*
-     * Issue instructions to perform the operations relating to configurations
-     * that do real replacement. All arguments are pushed and assembled into a
-     * pair: the list of values to replace with, and the list to do the
-     * surgery on.
-     */
-
-  replaceAll:
-Tcl_Panic("Can not get here.");
-    TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
-    TclEmitOpcode(		INST_POP,			envPtr);
-    goto done;
-
-  replaceHead:
-    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx1,	envPtr);
-    TclEmitInt4(			idx2,			envPtr);
-    TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    goto done;
-
-  replaceTail:
-    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx1,	envPtr);
-    TclEmitInt4(			idx2,			envPtr);
-    TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
-    TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    goto done;
-
-  replaceRange:
-    if (tmpObj != NULL) {
-	/*
-	 * Emit bytecode to check the list length.
-	 */
-
-	TclEmitOpcode(		INST_DUP,			envPtr);
-	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
-
-	/*
-	 * Check the list length vs idx1.
-	 */
-
-	TclEmitPush(TclAddLiteralObj(envPtr, tmpObj, NULL),	envPtr);
-	TclEmitOpcode(		INST_GE,			envPtr);
-	offset = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
-
-	/*
-	 * Emit an error if we've been given an empty list.
-	 */
-
-/* If we're generating bytecode to report an error, we've gone wrong.
- * Just fallback to direct invocation.
- */
-	TclEmitOpcode(		INST_DUP,			envPtr);
-	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
-	offset2 = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_FALSE1, 0,		envPtr);
-	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
-		"list doesn't contain element %d", idx1), NULL), envPtr);
-	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
-		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
-	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
-		envPtr->codeStart + offset + 1);
-	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset2,
-		envPtr->codeStart + offset2 + 1);
-	TclAdjustStackDepth(-1, envPtr);
-    }
-    TclEmitOpcode(		INST_DUP,			envPtr);
-    TclEmitInstInt4(		INST_LIST_RANGE_IMM, 0,		envPtr);
-    TclEmitInt4(			idx1 - 1,		envPtr);
-    TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
-    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx2 + 1,	envPtr);
-    TclEmitInt4(			TCL_INDEX_END,		envPtr);
-    TclEmitInstInt4(		INST_REVERSE, 3,		envPtr);
-    TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
-    TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    goto done;
-
-    /*
-     * Clean up the allocated memory.
-     */
-
-  done:
-    if (tmpObj != NULL) {
-	Tcl_DecrRefCount(tmpObj);
-    }
     return TCL_OK;
 }
 
