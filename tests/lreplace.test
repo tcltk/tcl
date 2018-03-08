@@ -107,6 +107,9 @@ test lreplace-1.28 {lreplace command} -body {
 test lreplace-1.29 {lreplace command} -body {
     lreplace x 1 1 [error foo]
 } -returnCodes 1 -result {foo}
+test lreplace-1.30 {lreplace command} -body {
+    lreplace {not {}alist} 0 0 [error foo]
+} -returnCodes 1 -result {foo}
 
 test lreplace-2.1 {lreplace errors} {
     list [catch lreplace msg] $msg
