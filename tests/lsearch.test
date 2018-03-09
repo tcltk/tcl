@@ -442,6 +442,9 @@ test lsearch-17.14 {lsearch -index option, encoding aliasing} -body {
 test lsearch-17.15 {lsearch -index option, encoding aliasing} -body {
     lsearch -index end+1 a a
 } -returnCodes error -result {index "end+1" cannot select an element from any list}
+test lsearch-17.16 {lsearch -index option, encoding aliasing} -body {
+    lsearch -index end+2 a a
+} -returnCodes error -result {index "end+2" cannot select an element from any list}
 
 
 test lsearch-18.1 {lsearch -index option, list as index basic functionality} {
