@@ -64,8 +64,9 @@ typedef struct SortInfo {
 				 * SORTMODE_COMMAND. Pre-initialized to hold
 				 * base of command. */
     int *indexv;		/* If the -index option was specified, this
-				 * holds the indexes contained in the list
-				 * supplied as an argument to that option.
+				 * holds an encoding of the indexes contained
+				 * in the list supplied as an argument to
+				 * that option.
 				 * NULL if no indexes supplied, and points to
 				 * singleIndex field when only one
 				 * supplied. */
@@ -2913,7 +2914,7 @@ Tcl_LsearchObjCmd(
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     const char *bytes, *patternBytes;
-    int i, match, index, result, listc, length, elemLen, bisect;
+    int i, match, index, result=TCL_OK, listc, length, elemLen, bisect;
     int dataType, isIncreasing, lower, upper, offset;
     Tcl_WideInt patWide, objWide;
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
@@ -3113,13 +3114,26 @@ Tcl_LsearchObjCmd(
 	     */
 
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		if (TclGetIntForIndexM(interp, indices[j], SORTIDX_END,
-			&sortInfo.indexv[j]) != TCL_OK) {
+		int encoded = 0;
+		if (TclIndexEncode(interp, indices[j], TCL_INDEX_BEFORE,
+			TCL_INDEX_AFTER, &encoded) != TCL_OK) {
+		    result = TCL_ERROR;
+		}
+		if ((encoded == TCL_INDEX_BEFORE)
+			|| (encoded == TCL_INDEX_AFTER)) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "index \"%s\" cannot select an element "
+			    "from any list", Tcl_GetString(indices[j])));
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
+			    "OUTOFRANGE", NULL);
+		    result = TCL_ERROR;
+		}
+		if (result == TCL_ERROR) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (-index option item number %d)", j));
-		    result = TCL_ERROR;
 		    goto done;
 		}
+		sortInfo.indexv[j] = encoded;
 	    }
 	    break;
 	}
@@ -3492,8 +3506,8 @@ Tcl_LsearchObjCmd(
 
 		itemPtr = Tcl_NewIntObj(i);
 		for (j=0 ; j<sortInfo.indexc ; j++) {
-		    Tcl_ListObjAppendElement(interp, itemPtr,
-			    Tcl_NewIntObj(sortInfo.indexv[j]));
+		    Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewIntObj(
+			    TclIndexDecode(sortInfo.indexv[j], listc)));
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 	    } else {
@@ -3514,8 +3528,8 @@ Tcl_LsearchObjCmd(
 
 	    itemPtr = Tcl_NewIntObj(index);
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		Tcl_ListObjAppendElement(interp, itemPtr,
-			Tcl_NewIntObj(sortInfo.indexv[j]));
+		Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewIntObj(
+			TclIndexDecode(sortInfo.indexv[j], listc)));
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
 	} else {
@@ -4504,15 +4518,8 @@ SelectObjFromSublist(
 	    infoPtr->resultCode = TCL_ERROR;
 	    return NULL;
 	}
-	index = infoPtr->indexv[i];
 
-	/*
-	 * Adjust for end-based indexing.
-	 */
-
-	if (index < SORTIDX_NONE) {
-	    index += listLen + 1;
-	}
+	index = TclIndexDecode(infoPtr->indexv[i], listLen - 1);
 
 	if (Tcl_ListObjIndex(infoPtr->interp, objPtr, index,
 		&currentObj) != TCL_OK) {
