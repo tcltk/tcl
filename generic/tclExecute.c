@@ -5076,8 +5076,8 @@ TEBCresume(
 	 */
 
 	valuePtr = OBJ_AT_TOS;
-	index = TclGetInt4AtPtr(pc+1);
-	TRACE(("\"%.30s\" %d => ", O2S(valuePtr), index));
+	opnd = TclGetInt4AtPtr(pc+1);
+	TRACE(("\"%.30s\" %d => ", O2S(valuePtr), opnd));
 
 	/*
 	 * Get the contents of the list, making sure that it really is a list
@@ -5089,11 +5089,9 @@ TEBCresume(
 	    goto gotError;
 	}
 
-	/*
-	 * Decode end-offset index values.
-	 */
+	/* Decode end-offset index values. */
 
-	index = TclIndexDecode(index, objc - 1);
+	index = TclIndexDecode(opnd, objc - 1);
 	pcAdjustment = 5;
 
     lindexFastPath:
