@@ -2255,7 +2255,6 @@ GetListIndexOperand(
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &value) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_DecrRefCount(value);
      
     /* Convert to an integer, advance to the next token and return. */
     /*
@@ -2263,14 +2262,11 @@ GetListIndexOperand(
      * same result as indexing after it, and might be more easily portable
      * when list size limits grow.
      */
-    status = TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE,
-	    TCL_INDEX_BEFORE, result);
+    status = TclIndexEncode(interp, value,
+	    TCL_INDEX_BEFORE,TCL_INDEX_BEFORE, result);
+
+    Tcl_DecrRefCount(value);
     *tokenPtrPtr = TokenAfter(tokenPtr);
-    if (status == TCL_ERROR && interp) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad index \"%.*s\"",
-		tokenPtr->size, tokenPtr->start));
-	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADINDEX", NULL);
-    }
     return status;
 }
 
