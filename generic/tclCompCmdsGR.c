@@ -35,45 +35,7 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
  * TclGetIndexFromToken --
  *
  *	Parse a token to determine if an index value is known at
- *	compile time. Two cases are possible.  The compile time value
- *	of the token might be parsed as an absolute index value
- *	in the C signed int range.  Note that this includes index
- *	values that are integers as presented as well as index
- *	arithmetic expressions that can be fully computed at compile
- *	time. The absolute index values that can be directly meaningful
- *	as an index into either a list or a string are those integer
- *	values >= TCL_INDEX_START (0) and < TCL_INDEX_AFTER (INT_MAX).
- *	The largest string supported in Tcl 8 has bytelength INT_MAX.
- *	This means the largest character supported length is also INT_MAX,
- *	and the index of the last character in a string of length INT_MAX
- *	is INT_MAX-1.
- *
- *	Any absolute index value parsed outside that range is encoded
- *	using the minBoundary and maxBounday values passed in by the
- *	caller as the encoding to use for indices that are either
- *	less than or greater than the usable index range. TCL_INDEX_AFTER
- *	is available as a good choice for most callers to use for
- *	maxBoundary. Likewise, the value TCL_INDEX_BEFORE is good for
- *	most callers to use for minBoundary.  Other values are possible
- *	when the caller knows it is helpful in producing its own behavior
- *	for indices before and after the indexed item.
- *
- *	A token can also be parsed as an end-relative index expression.
- *	All end-relative expressions that indicate an index larger
- *	than end (end+2, end--5) point beyond the end of the indexed
- *	collection, and can be encoded as maxBoundary.  The end-relative
- *	expressions that indicate an index less than or equal to end
- *	are encoded relative to the value TCL_INDEX_END (-2).  The
- *	index "end" is encoded as -2, down to the index "end-0x7ffffffe"
- *	which is encoded as INT_MIN. Since the largest index into a
- *	string possible	in Tcl 8 is 0x7ffffffe, the interpretation of
- *	"end-0x7ffffffe" for that largest string would be 0.  Thus,
- *	if the tokens "end-0x7fffffff" or "end+-0x80000000" are parsed,
- *	they can be encoded with the minBoundary value.
- *
- *	These details will require re-examination whenever string and
- *	list length limits are increased, but that will likely also
- *	mean a revised routine capable of returning Tcl_WideInt values.
+ *	compile time. 
  *
  * Returns:
  *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed.
@@ -88,69 +50,17 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 int
 TclGetIndexFromToken(
     Tcl_Token *tokenPtr,
-    int *index,
-    int minBoundary,
-    int maxBoundary)
+    int before,
+    int after,
+    int *indexPtr)
 {
     Tcl_Obj *tmpObj = Tcl_NewObj();
-    int result, idx;
+    int result = TCL_ERROR;
 
-    if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
-	Tcl_DecrRefCount(tmpObj);
-	return TCL_ERROR;
-    }
-
-    result = TclGetIntFromObj(NULL, tmpObj, &idx);
-    if (result == TCL_OK) {
-	/* We parsed a value in the range INT_MIN...INT_MAX */
-    integerEncode:
-	if (idx < TCL_INDEX_START) {
-	    /* All negative absolute indices are "before the beginning" */
-	    idx = minBoundary;
-	} else if (idx == INT_MAX) {
-	    /* This index value is always "after the end" */
-	    idx = maxBoundary;
-	}
-	/* usual case, the absolute index value encodes itself */
-    } else {
-	result = TclGetEndOffsetFromObj(NULL, tmpObj, 0, &idx);
-	if (result == TCL_OK) {
-	    /*
-	     * We parsed an end+offset index value. 
-	     * idx holds the offset value in the range INT_MIN...INT_MAX.
-	     */
-	    if (idx > 0) {
-		/*
-		 * All end+postive or end-negative expressions 
-		 * always indicate "after the end".
-		 */
-		idx = maxBoundary;
-	    } else if (idx < INT_MIN - TCL_INDEX_END) {
-		/* These indices always indicate "before the beginning */
-		idx = minBoundary;
-	    } else {
-		/* Encoded end-positive (or end+negative) are offset */
-		idx += TCL_INDEX_END;
-	    }
-	} else {
-	    result = TclGetIntForIndexM(NULL, tmpObj, 0, &idx);
-	    if (result == TCL_OK) {
-		/*
-		 * Only reach this case when the index value is a
-		 * constant index arithmetic expression, and idx
-		 * holds the result. Treat it the same as if it were
-		 * parsed as an absolute integer value.
-		 */
-		goto integerEncode;
-	    }
-	}
+    if (TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
+	result = TclIndexEncode(NULL, tmpObj, before, after, indexPtr);
     }
     Tcl_DecrRefCount(tmpObj);
-
-    if (result == TCL_OK) {
-	*index = idx;
-    }
-
     return result;
 }
 
@@ -1177,8 +1087,8 @@ TclCompileLindexCmd(
     }
 
     idxTokenPtr = TokenAfter(valTokenPtr);
-    if (TclGetIndexFromToken(idxTokenPtr, &idx, TCL_INDEX_BEFORE,
-	TCL_INDEX_BEFORE) == TCL_OK) {
+    if (TclGetIndexFromToken(idxTokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_BEFORE,
+	    &idx) == TCL_OK) {
 	/*
 	 * The idxTokenPtr parsed as a valid index value and was
 	 * encoded as expected by INST_LIST_INDEX_IMM.
@@ -1406,8 +1316,8 @@ TclCompileLrangeCmd(
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx1, TCL_INDEX_START,
-	    TCL_INDEX_AFTER) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
+	    &idx1) != TCL_OK) {
 	return TCL_ERROR;
     }
     /*
@@ -1416,8 +1326,8 @@ TclCompileLrangeCmd(
      */
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx2, TCL_INDEX_BEFORE,
-	    TCL_INDEX_END) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+	    &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
     /*
@@ -1481,8 +1391,8 @@ TclCompileLinsertCmd(
      * make that transformation here so we can use the optimized bytecode
      * as much as possible.
      */
-    if (TclGetIndexFromToken(tokenPtr, &idx, TCL_INDEX_START,
-	    TCL_INDEX_END) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_END,
+	    &idx) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1571,14 +1481,14 @@ TclCompileLreplaceCmd(
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx1, TCL_INDEX_START,
-	    TCL_INDEX_AFTER) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
+	    &idx1) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx2, TCL_INDEX_BEFORE,
-	    TCL_INDEX_END) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+	    &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
 

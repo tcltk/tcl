@@ -937,8 +937,8 @@ TclCompileStringRangeCmd(
      * Parse the two indices.
      */
 
-    if (TclGetIndexFromToken(fromTokenPtr, &idx1, TCL_INDEX_START,
-	    TCL_INDEX_AFTER) != TCL_OK) {
+    if (TclGetIndexFromToken(fromTokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
+	    &idx1) != TCL_OK) {
 	goto nonConstantIndices;
     }
     /*
@@ -953,8 +953,8 @@ TclCompileStringRangeCmd(
 	return TCL_OK;
     }
 
-    if (TclGetIndexFromToken(toTokenPtr, &idx2, TCL_INDEX_BEFORE,
-	    TCL_INDEX_END) != TCL_OK) {
+    if (TclGetIndexFromToken(toTokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+	    &idx2) != TCL_OK) {
 	goto nonConstantIndices;
     }
     /*
@@ -1010,8 +1010,8 @@ TclCompileStringReplaceCmd(
     }
 
     tokenPtr = TokenAfter(valueTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx1, TCL_INDEX_START,
-	    TCL_INDEX_AFTER) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
+	    &idx1) != TCL_OK) {
 	goto genericReplace;
     }
     /*
@@ -1020,8 +1020,8 @@ TclCompileStringReplaceCmd(
      */
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, &idx2, TCL_INDEX_BEFORE,
-	    TCL_INDEX_END) != TCL_OK) {
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE, TCL_INDEX_END,
+	    &idx2) != TCL_OK) {
 	goto genericReplace;
     }
     /*
