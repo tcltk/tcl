@@ -5241,7 +5241,14 @@ TEBCresume(
 
 	/* Decode index value operands. */
 
+	/* 
 	assert ( toIdx != TCL_INDEX_AFTER);
+	 *
+	 * Extra safety for legacy bytecodes:
+	 */
+	if (toIdx == TCL_INDEX_AFTER) {
+	    toIdx = TCL_INDEX_END;
+	}
 
 	if ((toIdx == TCL_INDEX_BEFORE) || (fromIdx == TCL_INDEX_AFTER)) {
 	    goto emptyList;
@@ -5254,8 +5261,14 @@ TEBCresume(
 	}
 
 	assert ( toIdx >= 0 && toIdx < objc);
+	/*
 	assert ( fromIdx != TCL_INDEX_BEFORE );
-	assert ( fromIdx != TCL_INDEX_AFTER);
+	 *
+	 * Extra safety for legacy bytecodes:
+	 */
+	if (fromIdx == TCL_INDEX_BEFORE) {
+	    fromIdx = TCL_INDEX_START;
+	}
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 	if (fromIdx < 0) {
@@ -5631,8 +5644,18 @@ TEBCresume(
 
 	/* Decode index operands. */
 
+	/*
 	assert ( toIdx != TCL_INDEX_BEFORE );
 	assert ( toIdx != TCL_INDEX_AFTER);
+	 *
+	 * Extra safety for legacy bytecodes:
+	 */
+	if (toIdx == TCL_INDEX_BEFORE) {
+	    goto emptyRange;
+	}
+	if (toIdx == TCL_INDEX_AFTER) {
+	    toIdx = TCL_INDEX_END;
+	}
 
 	toIdx = TclIndexDecode(toIdx, length - 1);
 	if (toIdx < 0) {
@@ -5643,8 +5666,18 @@ TEBCresume(
 
 	assert ( toIdx >= 0 && toIdx < length );
 
+	/*
 	assert ( fromIdx != TCL_INDEX_BEFORE );
 	assert ( fromIdx != TCL_INDEX_AFTER);
+	 *
+	 * Extra safety for legacy bytecodes:
+	 */
+	if (fromIdx == TCL_INDEX_BEFORE) {
+	    fromIdx = TCL_INDEX_START;
+	}
+	if (fromIdx == TCL_INDEX_AFTER) {
+	    goto emptyRange;
+	}
 
 	fromIdx = TclIndexDecode(fromIdx, length - 1);
 	if (fromIdx < 0) {
