@@ -94,14 +94,6 @@ typedef struct SortInfo {
 #define SORTMODE_ASCII_NC	8
 
 /*
- * Magic values for the index field of the SortInfo structure. Note that the
- * index "end-1" will be translated to SORTIDX_END-1, etc.
- */
-
-#define SORTIDX_NONE	-1	/* Not indexed; use whole value. */
-#define SORTIDX_END	-2	/* Indexed from end. */
-
-/*
  * Forward declarations for procedures defined in this file:
  */
 
@@ -3746,7 +3738,7 @@ Tcl_LsortObjCmd(
 	    sortInfo.isIncreasing = 1;
 	    break;
 	case LSORT_INDEX: {
-	    int indexc, dummy;
+	    int indexc;
 	    Tcl_Obj **indexv;
 
 	    if (i == objc-2) {
@@ -3772,8 +3764,20 @@ Tcl_LsortObjCmd(
 	     */
 
 	    for (j=0 ; j<indexc ; j++) {
-		if (TclGetIntForIndexM(interp, indexv[j], SORTIDX_END,
-			&dummy) != TCL_OK) {
+		int encoded = 0;
+		int result = TclIndexEncode(interp, indexv[j],
+			TCL_INDEX_BEFORE, TCL_INDEX_AFTER, &encoded);
+
+		if ((result == TCL_OK) && ((encoded == TCL_INDEX_BEFORE)
+			|| (encoded == TCL_INDEX_AFTER))) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "index \"%s\" cannot select an element "
+			    "from any list", Tcl_GetString(indexv[j])));
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
+			    "OUTOFRANGE", NULL);
+		    result = TCL_ERROR;
+		}
+		if (result == TCL_ERROR) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (-index option item number %d)", j));
 		    sortInfo.resultCode = TCL_ERROR;
@@ -3853,8 +3857,8 @@ Tcl_LsortObjCmd(
 					 * might be decreased by 1 later. */
 	}
 	for (j=0 ; j<sortInfo.indexc ; j++) {
-	    TclGetIntForIndexM(interp, indexv[j], SORTIDX_END,
-		    &sortInfo.indexv[j]);
+	    /* Prescreened values, no errors or out of range possible */
+	    TclIndexEncode(NULL, indexv[j], 0, 0, &sortInfo.indexv[j]);
 	}
     }
 
@@ -3925,10 +3929,7 @@ Tcl_LsortObjCmd(
 	     * offset of the element within each group by which to sort.
 	     */
 
-	    groupOffset = sortInfo.indexv[0];
-	    if (groupOffset <= SORTIDX_END) {
-		groupOffset = (groupOffset - SORTIDX_END) + groupSize - 1;
-	    }
+	    groupOffset = TclIndexDecode(sortInfo.indexv[0], groupSize - 1);
 	    if (groupOffset < 0 || groupOffset >= groupSize) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"when used with \"-stride\", the leading \"-index\""
