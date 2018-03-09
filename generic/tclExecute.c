@@ -5093,9 +5093,7 @@ TEBCresume(
 	 * Decode end-offset index values.
 	 */
 
-	if (index <= TCL_INDEX_END) {
-	    index += (objc - 1 - TCL_INDEX_END);
-	}
+	index = TclIndexDecode(index, objc - 1);
 	pcAdjustment = 5;
 
     lindexFastPath:
@@ -5250,11 +5248,9 @@ TEBCresume(
 	if ((toIdx == TCL_INDEX_BEFORE) || (fromIdx == TCL_INDEX_AFTER)) {
 	    goto emptyList;
 	}
-	if (toIdx <= TCL_INDEX_END) {
-	    toIdx += (objc - 1 - TCL_INDEX_END);
-	    if (toIdx < 0) {
-		goto emptyList;
-	    }
+	toIdx = TclIndexDecode(toIdx, objc - 1);
+	if (toIdx < 0) {
+	    goto emptyList;
 	} else if (toIdx >= objc) {
 	    toIdx = objc - 1;
 	}
@@ -5263,13 +5259,10 @@ TEBCresume(
 	assert ( fromIdx != TCL_INDEX_BEFORE );
 	assert ( fromIdx != TCL_INDEX_AFTER);
 
-	if (fromIdx <= TCL_INDEX_END) {
-	    fromIdx += (objc - 1 - TCL_INDEX_END);
-	    if (fromIdx < 0) {
-		fromIdx = 0;
-	    }
+	fromIdx = TclIndexDecode(fromIdx, objc - 1);
+	if (fromIdx < 0) {
+	    fromIdx = 0;
 	}
-	assert ( fromIdx >= 0 );
 
 	if (fromIdx <= toIdx) {
 	    /* Construct the subsquence list */
@@ -5643,11 +5636,9 @@ TEBCresume(
 	assert ( toIdx != TCL_INDEX_BEFORE );
 	assert ( toIdx != TCL_INDEX_AFTER);
 
-	if (toIdx <= TCL_INDEX_END) {
-	    toIdx += (length - 1 - TCL_INDEX_END);
-	    if (toIdx < 0) {
-		goto emptyRange;
-	    }
+	toIdx = TclIndexDecode(toIdx, length - 1);
+	if (toIdx < 0) {
+	    goto emptyRange;
 	} else if (toIdx >= length) {
 	    toIdx = length - 1;
 	}
@@ -5657,14 +5648,10 @@ TEBCresume(
 	assert ( fromIdx != TCL_INDEX_BEFORE );
 	assert ( fromIdx != TCL_INDEX_AFTER);
 
-	if (fromIdx <= TCL_INDEX_END) {
-	    fromIdx += (length - 1 - TCL_INDEX_END);
-	    if (fromIdx < 0) {
-		fromIdx = 0;
-	    }
+	fromIdx = TclIndexDecode(fromIdx, length - 1);
+	if (fromIdx < 0) {
+	    fromIdx = 0;
 	}
-
-	assert ( fromIdx >= 0 );
 
 	if (fromIdx <= toIdx) {
 	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);

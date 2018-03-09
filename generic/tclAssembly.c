@@ -2263,8 +2263,8 @@ GetListIndexOperand(
      * same result as indexing after it, and might be more easily portable
      * when list size limits grow.
      */
-    status = TclGetIndexFromToken(tokenPtr, result, TCL_INDEX_BEFORE,
-	    TCL_INDEX_BEFORE);
+    status = TclGetIndexFromToken(tokenPtr, TCL_INDEX_BEFORE,
+	    TCL_INDEX_BEFORE, result);
     *tokenPtrPtr = TokenAfter(tokenPtr);
     if (status == TCL_ERROR && interp) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad index \"%.*s\"",
