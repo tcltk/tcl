@@ -107,6 +107,8 @@ static Tcl_ThreadDataKey precisionKey;
 static void		ClearHash(Tcl_HashTable *tablePtr);
 static void		FreeProcessGlobalValue(ClientData clientData);
 static void		FreeThreadHash(ClientData clientData);
+static int		GetEndOffsetFromObj(Tcl_Obj *objPtr, int endValue,
+			    int *indexPtr);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		SetEndOffsetFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -3582,13 +3584,7 @@ TclGetIntForIndex(
 	return TCL_OK;
     }
 
-    if (SetEndOffsetFromAny(NULL, objPtr) == TCL_OK) {
-	/*
-	 * If the object is already an offset from the end of the list, or can
-	 * be converted to one, use it.
-	 */
-
-	*indexPtr = endValue + (int)objPtr->internalRep.wideValue;
+    if (GetEndOffsetFromObj(objPtr, endValue, indexPtr) == TCL_OK) {
 	return TCL_OK;
     }
 
@@ -3652,6 +3648,41 @@ TclGetIntForIndex(
     return TCL_ERROR;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetEndOffsetFromObj --
+ *
+ *      Look for a string of the form "end[+-]offset" and convert it to an
+ *      internal representation holding the offset.
+ *
+ * Results:
+ *      Tcl return code.
+ *
+ * Side effects:
+ *      May store a Tcl_ObjType.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+GetEndOffsetFromObj(
+    Tcl_Obj *objPtr,            /* Pointer to the object to parse */
+    int endValue,               /* The value to be stored at "indexPtr" if
+                                 * "objPtr" holds "end". */
+    int *indexPtr)              /* Location filled in with an integer
+                                 * representing an index. */
+{
+    if (SetEndOffsetFromAny(NULL, objPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /* TODO: Handle overflow cases sensibly */
+    *indexPtr = endValue + (int)objPtr->internalRep.wideValue;
+    return TCL_OK;
+}
+
+    
 /*
  *----------------------------------------------------------------------
  *
@@ -3726,6 +3757,8 @@ SetEndOffsetFromAny(
 	}
 	offset = objPtr->internalRep.wideValue;
 	if (bytes[3] == '-') {
+
+	    /* TODO: Review overflow concerns here! */
 	    offset = -offset;
 	}
     } else {
@@ -3752,6 +3785,143 @@ SetEndOffsetFromAny(
     objPtr->typePtr = &endOffsetType;
 
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIndexEncode --
+ *
+ *      Parse objPtr to determine if it is an index value. Two cases
+ *	are possible.  The value objPtr might be parsed as an absolute
+ *	index value in the C signed int range.  Note that this includes
+ *	index values that are integers as presented and it includes index
+ *      arithmetic expressions. The absolute index values that can be
+ *	directly meaningful as an index into either a list or a string are
+ *	those integer values >= TCL_INDEX_START (0)
+ *	and < TCL_INDEX_AFTER (INT_MAX).
+ *      The largest string supported in Tcl 8 has bytelength INT_MAX.
+ *      This means the largest supported character length is also INT_MAX,
+ *      and the index of the last character in a string of length INT_MAX
+ *      is INT_MAX-1.
+ *
+ *      Any absolute index value parsed outside that range is encoded
+ *      using the before and after values passed in by the
+ *      caller as the encoding to use for indices that are either
+ *      less than or greater than the usable index range. TCL_INDEX_AFTER
+ *      is available as a good choice for most callers to use for
+ *      after. Likewise, the value TCL_INDEX_BEFORE is good for
+ *      most callers to use for before.  Other values are possible
+ *      when the caller knows it is helpful in producing its own behavior
+ *      for indices before and after the indexed item.
+ *
+ *      A token can also be parsed as an end-relative index expression.
+ *      All end-relative expressions that indicate an index larger
+ *      than end (end+2, end--5) point beyond the end of the indexed
+ *      collection, and can be encoded as after.  The end-relative
+ *      expressions that indicate an index less than or equal to end
+ *      are encoded relative to the value TCL_INDEX_END (-2).  The
+ *      index "end" is encoded as -2, down to the index "end-0x7ffffffe"
+ *      which is encoded as INT_MIN. Since the largest index into a
+ *      string possible in Tcl 8 is 0x7ffffffe, the interpretation of
+ *      "end-0x7ffffffe" for that largest string would be 0.  Thus,
+ *      if the tokens "end-0x7fffffff" or "end+-0x80000000" are parsed,
+ *      they can be encoded with the before value.
+ *
+ *      These details will require re-examination whenever string and
+ *      list length limits are increased, but that will likely also
+ *      mean a revised routine capable of returning Tcl_WideInt values.
+ *
+ * Returns:
+ *      TCL_OK if parsing succeeded, and TCL_ERROR if it failed.
+ *
+ * Side effects:
+ *      When TCL_OK is returned, the encoded index value is written
+ *      to *indexPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclIndexEncode(
+    Tcl_Interp *interp,	/* For error reporting, may be NULL */
+    Tcl_Obj *objPtr,	/* Index value to parse */
+    int before,		/* Value to return for index before beginning */
+    int after,		/* Value to return for index after end */
+    int *indexPtr)	/* Where to write the encoded answer, not NULL */
+{
+    int idx;
+
+    if (TCL_OK == TclGetIntFromObj(NULL, objPtr, &idx)) {
+        /* We parsed a value in the range INT_MIN...INT_MAX */
+    integerEncode:
+        if (idx < TCL_INDEX_START) {
+            /* All negative absolute indices are "before the beginning" */
+            idx = before;
+        } else if (idx == INT_MAX) {
+            /* This index value is always "after the end" */
+            idx = after;
+        }
+        /* usual case, the absolute index value encodes itself */
+    } else if (TCL_OK == GetEndOffsetFromObj(objPtr, 0, &idx)) {
+        /*
+         * We parsed an end+offset index value. 
+         * idx holds the offset value in the range INT_MIN...INT_MAX.
+         */
+        if (idx > 0) {
+            /*
+             * All end+postive or end-negative expressions 
+             * always indicate "after the end".
+             */
+            idx = after;
+        } else if (idx < INT_MIN - TCL_INDEX_END) {
+            /* These indices always indicate "before the beginning */
+            idx = before;
+        } else {
+            /* Encoded end-positive (or end+negative) are offset */
+            idx += TCL_INDEX_END;
+        }
+
+    /* TODO: Consider flag to suppress repeated end-offset parse. */
+    } else if (TCL_OK == TclGetIntForIndexM(interp, objPtr, 0, &idx)) {
+        /*
+         * Only reach this case when the index value is a
+         * constant index arithmetic expression, and idx
+         * holds the result. Treat it the same as if it were
+         * parsed as an absolute integer value.
+         */
+        goto integerEncode;
+    } else {
+	return TCL_ERROR;
+    }
+    *indexPtr = idx;
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIndexDecode --
+ *
+ *	Decodes a value previously encoded by TclIndexEncode.  The argument
+ *	endValue indicates what value of "end" should be used in the
+ *	decoding.
+ *
+ * Results:
+ *	The decoded index value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclIndexDecode(
+    int encoded,	/* Value to decode */
+    int endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
+{
+    if (encoded <= TCL_INDEX_END) {
+	return (encoded - TCL_INDEX_END) + endValue;
+    }
+    return encoded;
 }
 
 /*
