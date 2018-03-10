@@ -5282,8 +5282,8 @@ TEBCresume(
 		objResultPtr = Tcl_NewListObj(toIdx-fromIdx+1, objv+fromIdx);
 	    } else {
 		if (toIdx != objc - 1) {
-		    Tcl_ListObjReplace(NULL, valuePtr, toIdx + 1,
-			    objc - 1 - toIdx, 0, NULL);
+		    Tcl_ListObjReplace(NULL, valuePtr, toIdx + 1, LIST_MAX,
+			    0, NULL);
 		}
 		Tcl_ListObjReplace(NULL, valuePtr, 0, fromIdx, 0, NULL);
 		TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
