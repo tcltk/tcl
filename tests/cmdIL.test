@@ -147,10 +147,10 @@ test cmdIL-1.36 {lsort -stride and -index: Bug 2918962} {
 	{{b i g} 12345} {{d e m o} 34512}
     }
 } {{{b i g} 12345} {{d e m o} 34512} {{c o d e} 54321} {{b l a h} 94729}}
-test cmdIL-1.37 {lsort -stride and -index} -body {
+test cmdIL-1.41 {lsort -stride and -index} -body {
     lsort -stride 2 -index -2 {a 2 b 1}
 } -returnCodes error -result {index "-2" cannot select an element from any list}
-test cmdIL-1.38 {lsort -stride and-index} -body {
+test cmdIL-1.42 {lsort -stride and-index} -body {
     lsort -stride 2 -index -1-1 {a 2 b 1}
 } -returnCodes error -result {index "-1-1" cannot select an element from any list}
 
