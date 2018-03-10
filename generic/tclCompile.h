@@ -1137,7 +1137,8 @@ MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    int distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
-MODULE_SCOPE int	TclGetIndexFromToken(Tcl_Token *tokenPtr, int *index);
+MODULE_SCOPE int	TclGetIndexFromToken(Tcl_Token *tokenPtr,
+			    int before, int after, int *indexPtr);
 MODULE_SCOPE ByteCode *	TclInitByteCode(CompileEnv *envPtr);
 MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);
@@ -1679,12 +1680,6 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
 #define TCL_NO_ELEMENT 2	/* Do not push the array element. */
-
-/*
- * Special value used by TclGetIndexFromToken to encoding the "end" index.
- */
-
-#define TCL_INDEX_END	(-2)
 
 /*
  * DTrace probe macros (NOPs if DTrace support is not enabled).
