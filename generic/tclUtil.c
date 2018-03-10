@@ -107,8 +107,8 @@ static Tcl_ThreadDataKey precisionKey;
 static void		ClearHash(Tcl_HashTable *tablePtr);
 static void		FreeProcessGlobalValue(ClientData clientData);
 static void		FreeThreadHash(ClientData clientData);
-static int		GetEndOffsetFromObj(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, int endValue, int *indexPtr);
+static int		GetEndOffsetFromObj(Tcl_Obj *objPtr, int endValue,
+			    int *indexPtr);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		SetEndOffsetFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -3577,7 +3577,7 @@ TclGetIntForIndex(
 	return TCL_OK;
     }
 
-    if (GetEndOffsetFromObj(NULL, objPtr, endValue, indexPtr) == TCL_OK) {
+    if (GetEndOffsetFromObj(objPtr, endValue, indexPtr) == TCL_OK) {
 	return TCL_OK;
     }
 
@@ -3696,14 +3696,13 @@ UpdateStringOfEndOffset(
 
 static int
 GetEndOffsetFromObj(
-    Tcl_Interp *interp,		/* For error reporting, may be NULL. */
     Tcl_Obj *objPtr,            /* Pointer to the object to parse */
     int endValue,               /* The value to be stored at "indexPtr" if
                                  * "objPtr" holds "end". */
     int *indexPtr)              /* Location filled in with an integer
                                  * representing an index. */
 {
-    if (SetEndOffsetFromAny(interp, objPtr) != TCL_OK) {
+    if (SetEndOffsetFromAny(NULL, objPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3888,7 +3887,7 @@ TclIndexEncode(
             idx = after;
         }
         /* usual case, the absolute index value encodes itself */
-    } else if (TCL_OK == GetEndOffsetFromObj(NULL, objPtr, 0, &idx)) {
+    } else if (TCL_OK == GetEndOffsetFromObj(objPtr, 0, &idx)) {
         /*
          * We parsed an end+offset index value. 
          * idx holds the offset value in the range INT_MIN...INT_MAX.
