@@ -478,10 +478,10 @@ test lsearch-19.4 {lsearch -subindices option} {
 test lsearch-19.5 {lsearch -subindices option} {
     lsearch -subindices -all -index {0 0} -exact {{{a c} {a b} {d a}} {{a c} {a b} {d a}}} a
 } {{0 0 0} {1 0 0}}
-test lsearch-19.6 {lsearch -subindices option} {
+test lsearch-19.7 {lsearch -subindices option} {
     lsearch -subindices -index end {{1 a}} a
 } {0 1}
-test lsearch-19.7 {lsearch -subindices option} {
+test lsearch-19.8 {lsearch -subindices option} {
     lsearch -subindices -all -index end {{1 a}} a
 } {{0 1}}
 
