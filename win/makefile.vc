@@ -809,6 +809,10 @@ install-binaries:
 	@echo Installing $(TCLSHNAME)
 	@$(CPY) "$(TCLSH)" "$(BIN_INSTALL_DIR)\"
 !endif
+!if $(SYMBOLS)
+	@echo Installing PDBs
+	@for %f in ("$(OUT_DIR)\tcl8*.pdb" "$(OUT_DIR)\tclsh8*.pdb") do @$(COPY) %f "$(BIN_INSTALL_DIR)"
+!endif
 	@echo Installing $(TCLSTUBLIBNAME)
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 
@@ -879,9 +883,15 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 !if $(STATIC_BUILD)
 !if !$(TCL_USE_STATIC_PACKAGES)
 	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\"
+!if $(SYMBOLS)
+	@for %f in ("$(OUT_DIR)\tcldde*.pdb") do @$(COPY) %f "$(LIB_INSTALL_DIR)"
+!endif
 !endif
 !else
 	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
+!if $(SYMBOLS)
+	@for %f in ("$(OUT_DIR)\tcldde*.pdb") do @$(COPY) %f "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)"
+!endif
 	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
 	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
 !endif
@@ -889,9 +899,15 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 !if $(STATIC_BUILD)
 !if !$(TCL_USE_STATIC_PACKAGES)
 	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\"
+!if $(SYMBOLS)
+	@for %f in ("$(OUT_DIR)\tclreg*.pdb") do @$(COPY) %f "$(LIB_INSTALL_DIR)"
+!endif
 !endif
 !else
 	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
+!if $(SYMBOLS)
+	@for %f in ("$(OUT_DIR)\tclreg*.pdb") do @$(COPY) %f "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)"
+!endif
 	@$(CPY) "$(ROOT)\library\reg\pkgIndex.tcl" \
 	    "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
 !endif

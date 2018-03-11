@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 2
+RULES_VERSION_MINOR = 3
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -746,6 +746,8 @@ DEBUG		= 1
 DEBUG		= 0
 !endif
 
+# It's very intuitive that SYMBOLS=1 is set not by OPTS=symbols but
+# by OPTS=pdbs!! That's history now and we keep compatibility.
 !if [nmakehlp -f $(OPTS) "pdbs"]
 !message *** Doing pdbs
 SYMBOLS		= 1
@@ -1532,6 +1534,9 @@ default-install-binaries: $(PRJLIB)
 	@echo Installing binaries to '$(SCRIPT_INSTALL_DIR)'
 	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
 	@$(CPY) $(PRJLIB) "$(SCRIPT_INSTALL_DIR)" >NUL
+!if $(SYMBOLS)
+	for %f in ("$(OUT_DIR)\*.pdb") do @$(COPY) %f "$(SCRIPT_INSTALL_DIR)"
+!endif
 
 default-install-libraries: $(OUT_DIR)\pkgIndex.tcl
 	@echo Installing libraries to '$(SCRIPT_INSTALL_DIR)'
