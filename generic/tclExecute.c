@@ -4960,6 +4960,12 @@ TEBCresume(
 	}
 #endif
 
+	/* Every range of an empty list is an empty list */
+	if (objc == 0) {
+	    TRACE_APPEND(("\n"));
+	    NEXT_INST_F(9, 0, 0);
+	}
+
 	/* Decode index value operands. */
 
 	/* 
