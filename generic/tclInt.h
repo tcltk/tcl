@@ -4070,6 +4070,21 @@ MODULE_SCOPE TCL_HASH_TYPE TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 MODULE_SCOPE int	TclFullFinalizationRequested(void);
 
 /*
+ * Utility routines for encoding index values as integers. Used by both
+ * some of the command compilers and by [lsort] and [lsearch].
+ */
+
+MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    int before, int after, int *indexPtr);
+MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
+
+/* Constants used in index value encoding routines. */
+#define TCL_INDEX_END           (-2)
+#define TCL_INDEX_BEFORE        (-1)
+#define TCL_INDEX_START         (0)
+#define TCL_INDEX_AFTER         (INT_MAX)
+
+/*
  *----------------------------------------------------------------
  * Macros used by the Tcl core to create and release Tcl objects.
  * TclNewObj(objPtr) creates a new object denoting an empty string.
