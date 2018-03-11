@@ -1572,6 +1572,12 @@ test assemble-15.7 {listIndexImm} {
     }
     -result c
 }
+test assemble-15.8 {listIndexImm} {
+    assemble {push {a b c}; listIndexImm end+2}
+} {}
+test assemble-15.9 {listIndexImm} {
+    assemble {push {a b c}; listIndexImm -1-1}
+} {}
 
 # assemble-16 - invokeStk
 
