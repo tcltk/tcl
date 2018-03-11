@@ -632,6 +632,15 @@ KillFoundation(
 {
     Foundation *fPtr = GetFoundation(interp);
 
+    /*
+     * Crude mechanism to avoid leaking the Object struct of the
+     * foundation components oo::object and oo::class
+     *
+     * Should probably be replaced with something more elegantly designed.
+     */
+    while (TclOODecrRefCount(fPtr->objectCls->thisPtr) == 0) {};
+    while (TclOODecrRefCount(fPtr->classCls->thisPtr) == 0) {};
+
     TclDecrRefCount(fPtr->unknownMethodNameObj);
     TclDecrRefCount(fPtr->constructorName);
     TclDecrRefCount(fPtr->destructorName);
@@ -1020,7 +1029,23 @@ ReleaseClassContents(
 	    TclDecrRefCount(filterObj);
 	}
 	ckfree(clsPtr->filters.list);
+	clsPtr->filters.list = NULL;
 	clsPtr->filters.num = 0;
+    }
+
+    /*
+     * Squelch our instances.
+     */
+
+    if (clsPtr->instances.num) {
+	Object *oPtr;
+
+	FOREACH(oPtr, clsPtr->instances) {
+	    TclOODecrRefCount(oPtr);
+	}
+	ckfree(clsPtr->instances.list);
+	clsPtr->instances.list = NULL;
+	clsPtr->instances.num = 0;
     }
 
     /*
