@@ -934,7 +934,23 @@ ReleaseClassContents(
 	    TclDecrRefCount(filterObj);
 	}
 	ckfree(clsPtr->filters.list);
+	clsPtr->filters.list = NULL;
 	clsPtr->filters.num = 0;
+    }
+
+    /*
+     * Squelch our instances.
+     */
+
+    if (clsPtr->instances.num) {
+	Object *oPtr;
+
+	FOREACH(oPtr, clsPtr->instances) {
+	    TclOODecrRefCount(oPtr);
+	}
+	ckfree(clsPtr->instances.list);
+	clsPtr->instances.list = NULL;
+	clsPtr->instances.num = 0;
     }
 
     /*
