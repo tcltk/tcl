@@ -733,18 +733,17 @@ SelectPackage(ClientData data[], Tcl_Interp *interp, int result) {
 
 	Tcl_Preserve(versionToProvide);
 	pkgPtr->clientData = versionToProvide;
+
+	pkgFiles = TclInitPkgFiles(interp);
+	/* Push "ifneeded" package name in "tclPkgFiles" assocdata. */
+	pkgName = ckalloc(sizeof(PkgName) + strlen(name));
+	pkgName->nextPtr = pkgFiles->names;
+	strcpy(pkgName->name, name);
+	pkgFiles->names = pkgName;
 	if (bestPtr->pkgIndex) {
 	    TclPkgFileSeen(interp, bestPtr->pkgIndex);
 	}
 	reqPtr->versionToProvide = versionToProvide;
-
-    pkgFiles = TclInitPkgFiles(interp);
-    /* Push "ifneeded" package name in "tclPkgFiles" assocdata. */
-    pkgName = ckalloc(sizeof(PkgName) + strlen(name));
-    pkgName->nextPtr = pkgFiles->names;
-    strcpy(pkgName->name, name);
-    pkgFiles->names = pkgName;
-
 	Tcl_NRAddCallback(interp, SelectPackageFinal, reqPtr, INT2PTR(reqc), (void *)reqv, data[3]);
 	Tcl_NREvalObj(interp, Tcl_NewStringObj(bestPtr->script, -1), TCL_EVAL_GLOBAL);
     }
@@ -758,14 +757,12 @@ SelectPackageFinal(ClientData data[], Tcl_Interp *interp, int result) {
     Tcl_Obj **const reqv = data[2];
     const char *name = reqPtr->name;
     char *versionToProvide = reqPtr->versionToProvide;
-    void *toBeRemoved;
-    PkgFiles *pkgFiles;
 
-    pkgFiles = TclInitPkgFiles(interp);
     /* Pop the "ifneeded" package name from "tclPkgFiles" assocdata*/
-    toBeRemoved = pkgFiles->names;
-    pkgFiles->names = pkgFiles->names->nextPtr;
-    ckfree(toBeRemoved);
+    PkgFiles *pkgFiles = Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+    PkgName *pkgName = pkgFiles->names;
+    pkgFiles->names = pkgName->nextPtr;
+    ckfree(pkgName);
 
     reqPtr->pkgPtr = FindPackage(interp, name);
     if (result == TCL_OK) {
@@ -1251,7 +1248,6 @@ TclNRPackageObjCmd(
 	     */
 
 	    ov = Tcl_NewStringObj(version, -1);
-	    Tcl_IncrRefCount(ov);
 	    Tcl_AppendStringsToObj(ov, "-", version, NULL);
 	    version = NULL;
 	    argv3 = TclGetString(objv[3]);
