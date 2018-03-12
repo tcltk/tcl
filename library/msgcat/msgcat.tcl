@@ -11,7 +11,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.6-
+# We use oo::define::self, which is new in Tcl 8.7
+package require Tcl 8.7-
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
 package provide msgcat 1.7.0
