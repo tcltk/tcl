@@ -869,7 +869,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6\http-$(PKG_HTTP_VER).tm"
 	@echo Installing package msgcat $(PKG_MSGCAT_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\msgcat\msgcat.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5\msgcat-$(PKG_MSGCAT_VER).tm"
+	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.7\msgcat-$(PKG_MSGCAT_VER).tm"
 	@echo Installing package tcltest $(PKG_TCLTEST_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\tcltest\tcltest.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5\tcltest-$(PKG_TCLTEST_VER).tm"
