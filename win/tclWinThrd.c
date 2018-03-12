@@ -13,8 +13,6 @@
 
 #include "tclWinInt.h"
 
-#include <float.h>
-
 /* Workaround for mingw versions which don't provide this in float.h */
 #ifndef _MCW_EM
 #   define	_MCW_EM		0x0008001F	/* Error masks */
