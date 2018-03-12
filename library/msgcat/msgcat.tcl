@@ -11,15 +11,16 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.5-
+package require Tcl 8.6-
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.6.1
+package provide msgcat 1.7.0
 
 namespace eval msgcat {
-    namespace export mc mcexists mcload mclocale mcmax mcmset mcpreferences mcset\
+    namespace export mc mcn mcexists mcload mclocale mcmax\
+	    mcmset mcpreferences mcset\
             mcunknown mcflset mcflmset mcloadedlocales mcforgetpackage\
-	    mcpackageconfig mcpackagelocale
+	    mcpackagenamespaceget mcpackageconfig mcpackagelocale
 
     # Records the list of locales to search
     variable Loclist {}
@@ -192,10 +193,30 @@ namespace eval msgcat {
 #	Returns the translated string.  Propagates errors thrown by the
 #	format command.
 
-proc msgcat::mc {src args} {
-    # this may be replaced by:
-    # return [mcget -namespace [uplevel 1 [list ::namespace current]] --\
-    #	    $src {*}$args]
+proc msgcat::mc {args} {
+    tailcall mcn [PackageNamespaceGet] {*}$args
+}
+
+# msgcat::mcn --
+#
+#	Find the translation for the given string based on the current
+#	locale setting. Check the passed namespace first, then look in each
+#	parent namespace until the source is found.  If additional args are
+#	specified, use the format command to work them into the traslated
+#	string.
+#	If no catalog item is found, mcunknown is called in the caller frame
+#	and its result is returned.
+#
+# Arguments:
+#	ns	Package namespace of the translation
+#	src	The string to translate.
+#	args	Args to pass to the format command
+#
+# Results:
+#	Returns the translated string.  Propagates errors thrown by the
+#	format command.
+
+proc msgcat::mcn {ns src args} {
 
     # Check for the src in each namespace starting from the local and
     # ending in the global.
@@ -203,7 +224,6 @@ proc msgcat::mc {src args} {
     variable Msgs
     variable Loclist
 
-    set ns [uplevel 1 [list ::namespace current]]
     set loclist [PackagePreferences $ns]
 
     set nscur $ns
@@ -219,7 +239,7 @@ proc msgcat::mc {src args} {
     # call package local or default unknown command
     set args [linsert $args 0 [lindex $loclist 0] $src]
     switch -exact -- [Invoke unknowncmd $args $ns result 1] {
-	0 { return [uplevel 1 [linsert $args 0 [namespace origin mcunknown]]] }
+	0 { tailcall mcunknown {*}$args }
 	1 { return [DefaultUnknown {*}$args] }
 	default { return $result }
     }
@@ -245,23 +265,31 @@ proc msgcat::mcexists {args} {
     variable Loclist
     variable PackageConfig
 
-    set ns [uplevel 1 [list ::namespace current]]
-    set loclist [PackagePreferences $ns]
-
     while {[llength $args] != 1} {
 	set args [lassign $args option]
 	switch -glob -- $option {
-	    -exactnamespace { set exactnamespace 1 }
-	    -exactlocale { set loclist [lrange $loclist 0 0] }
+	    -exactnamespace - -exactlocale { set $option 1 }
+	    -namespace {
+		if {[llength $args] < 2} {
+		    return -code error\
+			    "Argument missing for switch \"-namespace\""
+		}
+		set args [lassign $args ns]
+	    }
 	    -* { return -code error "unknown option \"$option\"" }
 	    default {
 		return -code error "wrong # args: should be\
 			\"[lindex [info level 0] 0] ?-exactnamespace?\
-			?-exactlocale? src\""
+			?-exactlocale? ?-namespace ns? src\""
 	    }
 	}
     }
     set src [lindex $args 0]
+    
+    if {![info exists ns]} { set ns [PackageNamespaceGet] }
+
+    set loclist [PackagePreferences $ns]
+    if {[info exists -exactlocale]} { set loclist [lrange $loclist 0 0] }
 
     while {$ns ne ""} {
 	foreach loc $loclist {
@@ -269,7 +297,7 @@ proc msgcat::mcexists {args} {
 		return 1
 	    }
 	}
-	if {[info exists exactnamespace]} {return 0}
+	if {[info exists -exactnamespace]} {return 0}
 	set ns [namespace parent $ns]
     }
     return 0
@@ -462,7 +490,7 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
 	}
         set locale [string tolower $locale]
     }
-    set ns [uplevel 1 {::namespace current}]
+    set ns [PackageNamespaceGet]
 
     switch -exact -- $subcommand {
 	get { return [lindex [PackagePreferences $ns] 0] }
@@ -551,7 +579,7 @@ proc msgcat::mcforgetpackage {} {
     # todo: this may be implemented using an ensemble
     variable PackageConfig
     variable Msgs
-    set ns [uplevel 1 {::namespace current}]
+    set ns [PackageNamespaceGet]
     # Remove MC items
     dict unset Msgs $ns
     # Remove config items
@@ -559,6 +587,15 @@ proc msgcat::mcforgetpackage {} {
 	dict unset PackageConfig $key $ns
     }
     return
+}
+
+# msgcat::mcgetmynamespace --
+#
+#	Return the package namespace of the caller
+#	This consideres to be called from a class or object.
+
+proc msgcat::mcpackagenamespaceget {} {
+    return [PackageNamespaceGet]
 }
 
 # msgcat::mcpackageconfig --
@@ -616,7 +653,7 @@ proc msgcat::mcforgetpackage {} {
 proc msgcat::mcpackageconfig {subcommand option {value ""}} {
     variable PackageConfig
     # get namespace
-    set ns [uplevel 1 {::namespace current}]
+    set ns [PackageNamespaceGet]
 
     if {$option ni {"mcfolder" "loadcmd" "changecmd" "unknowncmd"}} {
 	return -code error "bad option \"$option\": must be mcfolder, loadcmd,\
@@ -756,8 +793,7 @@ proc msgcat::ListComplement {list1 list2 {inlistname ""}} {
 #	Returns the number of message catalogs that were loaded.
 
 proc msgcat::mcload {langdir} {
-    return [uplevel 1 [list\
-	    [namespace origin mcpackageconfig] set mcfolder $langdir]]
+    tailcall mcpackageconfig set mcfolder $langdir
 }
 
 # msgcat::LoadAll --
@@ -923,7 +959,7 @@ proc msgcat::mcset {locale src {dest ""}} {
 	set dest $src
     }
 
-    set ns [uplevel 1 [list ::namespace current]]
+    set ns [PackageNamespaceGet]
 
     set locale [string tolower $locale]
 
@@ -951,7 +987,7 @@ proc msgcat::mcflset {src {dest ""}} {
 	return -code error "must only be used inside a message catalog loaded\
 		with ::msgcat::mcload"
     }
-    return [uplevel 1 [list [namespace origin mcset] $FileLocale $src $dest]]
+    tailcall mcset $FileLocale $src $dest
 }
 
 # msgcat::mcmset --
@@ -975,7 +1011,7 @@ proc msgcat::mcmset {locale pairs} {
     }
 
     set locale [string tolower $locale]
-    set ns [uplevel 1 [list ::namespace current]]
+    set ns [PackageNamespaceGet]
 
     foreach {src dest} $pairs {
 	dict set Msgs $ns $locale $src $dest
@@ -1002,7 +1038,7 @@ proc msgcat::mcflmset {pairs} {
 	return -code error "must only be used inside a message catalog loaded\
 		with ::msgcat::mcload"
     }
-    return [uplevel 1 [list [namespace origin mcmset] $FileLocale $pairs]]
+    tailcal mcmset $FileLocale $pairs
 }
 
 # msgcat::mcunknown --
@@ -1024,7 +1060,7 @@ proc msgcat::mcflmset {pairs} {
 #	Returns the translated value.
 
 proc msgcat::mcunknown {args} {
-    return [uplevel 1 [list [namespace origin DefaultUnknown] {*}$args]]
+    tailcall DefaultUnknown {*}$args
 }
 
 # msgcat::DefaultUnknown --
@@ -1067,8 +1103,9 @@ proc msgcat::DefaultUnknown {locale src args} {
 
 proc msgcat::mcmax {args} {
     set max 0
+    set ns [PackageNamespaceGet]
     foreach string $args {
-	set translated [uplevel 1 [list [namespace origin mc] $string]]
+	set translated [uplevel 1 [list [namespace origin mcn] $ns $string]]
 	set len [string length $translated]
 	if {$len>$max} {
 	    set max $len
@@ -1106,6 +1143,38 @@ proc msgcat::ConvertLocale {value} {
     return $ret
 }
 
+# helper function to find package namespace of stack-frame -2
+# There are 4 possibilities:
+# - called from a proc
+# - called within a class definition script
+# - called from an class defined oo object
+# - called from a classless oo object
+proc ::msgcat::PackageNamespaceGet {} {
+    uplevel 2 {
+	# Check for no object
+	switch -exact -- [namespace which self] {
+	    {::oo::define::self} {
+		# We are within a class definition
+		return [namespace qualifiers [self]]
+	    }
+	    {::oo::Helpers::self} {
+		# We are within an object
+		set Class [info object class [self]]
+		# Check for classless defined object
+		if {$Class eq {::oo::object}} {
+		    return [namespace qualifiers [self]]
+		}
+		# Class defined object
+		return [namespace qualifiers $Class]
+	    }
+	    default {
+		# Not in object environment
+		return [namespace current]
+	    }
+	}
+    }
+}
+  
 # Initialize the default locale
 proc msgcat::Init {} {
     global env
