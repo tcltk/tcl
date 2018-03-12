@@ -194,6 +194,28 @@ namespace eval ::msgcat::test {
 	mclocale looks/ok/../../../../but/is/path/to/evil/code
     } -returnCodes error -match glob -result {invalid newLocale value *}
 
+    test msgcat-1.14 {mcpreferences, custom locale preferences} -setup {
+	variable locale [mclocale]
+	mclocale en
+	mcpreferences fr en {}
+    } -cleanup {
+	mclocale $locale
+    } -body {
+	mcpreferences
+    } -result {fr en {}}
+
+    test msgcat-1.15 {mcpreferences, overwrite custom locale preferences}\
+    -setup {
+	variable locale [mclocale]
+	mcpreferences fr en {}
+	mclocale en
+    } -cleanup {
+	mclocale $locale
+    } -body {
+	mcpreferences
+    } -result {en {}}
+
+
     # Tests msgcat-2.*: [mcset], [mcmset], namespace partitioning
 
     test msgcat-2.1 {mcset, global scope} {
@@ -833,12 +855,17 @@ namespace eval ::msgcat::test {
 	test msgcat-12.1 {mcpackagelocale no subcommand} -body {
 	    mcpackagelocale
 	} -returnCodes 1\
-	-result {wrong # args: should be "mcpackagelocale subcommand ?locale?"}
+	-result {wrong # args: should be "mcpackagelocale subcommand ?arg ...?"}
 
 	test msgcat-12.2 {mclpackagelocale wrong subcommand} -body {
 	    mcpackagelocale junk
 	} -returnCodes 1\
 	-result {unknown subcommand "junk": must be clear, get, isset, loaded, present, set, or unset}
+
+	test msgcat-12.2.1 {mclpackagelocale set multiple args} -body {
+	    mcpackagelocale set a b
+	} -returnCodes 1\
+	-result {wrong # args: should be "mcpackagelocale set ?locale?"}
 
 	test msgcat-12.3 {mcpackagelocale set} -setup {
 	    variable locale [mclocale]
@@ -944,6 +971,30 @@ namespace eval ::msgcat::test {
 	    list [mcpackagelocale present foo] [mcpackagelocale present bar]
 	} -result {0 1}
 
+	test msgcat-12.11 {mcpackagelocale custom preferences} -setup {
+	    variable locale [mclocale]
+	} -cleanup {
+	    mclocale $locale
+	    mcforgetpackage
+	} -body {
+	    mclocale foo
+	    set res [list [mcpackagelocale preferences]]
+	    mcpackagelocale preferences bar {}
+	    lappend res [mcpackagelocale preferences]
+	} -result {{foo {}} {bar {}}}
+
+	test msgcat-12.12 {mcpackagelocale preferences -> no isset} -setup {
+	    variable locale [mclocale]
+	} -cleanup {
+	    mclocale $locale
+	    mcforgetpackage
+	} -body {
+	    mclocale foo
+	    mcpackagelocale preferences
+	    mcpackagelocale isset
+	} -result {0}
+
+	
     # Tests msgcat-13.*: [mcpackageconfig subcmds]
 
 	test msgcat-13.1 {mcpackageconfig no subcommand} -body {
@@ -1261,6 +1312,46 @@ namespace eval ::msgcat::test {
 
     interp bgerror {} $bgerrorsaved
 
+    # Tests msgcat-15.*: [mcutil]
+
+    test msgcat-15.1 {mcutil - no argument} -body {
+	mcutil
+    } -returnCodes 1\
+    -result {wrong # args: should be "mcutil subcommand ?arg ...?"}
+
+    test msgcat-15.2 {mcutil - wrong argument} -body {
+	mcutil junk
+    } -returnCodes 1\
+    -result {unknown subcommand "junk": must be getpreferences, or getsystemlocale}
+    
+    test msgcat-15.3 {mcutil - partial argument} -body {
+	mcutil getsystem
+    } -returnCodes 1\
+    -result {unknown subcommand "getsystem": must be getpreferences, or getsystemlocale}
+    
+    test msgcat-15.4 {mcutil getpreferences - no argument} -body {
+	mcutil getpreferences
+    } -returnCodes 1\
+    -result {wrong # args: should be "mcutil getpreferences locale"}
+    
+    test msgcat-15.5 {mcutil getpreferences - DE_de} -body {
+	mcutil getpreferences DE_de
+    } -result {de_de de {}}
+    
+    test msgcat-15.6 {mcutil getsystemlocale - wrong argument} -body {
+	mcutil getsystemlocale DE_de
+    } -returnCodes 1\
+    -result {wrong # args: should be "mcutil getsystemlocale"}
+    
+    # The result is system dependent
+    # So just test if it runs
+    # The environment variable version was test with test 0.x
+    test msgcat-15.7 {mcutil getsystemlocale} -body {
+	mcutil getsystemlocale
+	set ok ok
+    } -result {ok}
+    
+    
     cleanupTests
 }
 namespace delete ::msgcat::test
