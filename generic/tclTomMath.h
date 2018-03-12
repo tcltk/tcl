@@ -26,9 +26,14 @@
 extern "C" {
 #endif
 
+/* MS Visual C++ doesn't have a 128bit type for words, so fall back to 32bit MPI's (where words are 64bit) */
+#if defined(_MSC_VER) || defined(__LLP64__)
+#   define MP_32BIT
+#endif
+
 /* detect 64-bit mode if possible */
-#if defined(NEVER)  /* 128-bit ints fail in too many places */
-#   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
+#if defined(NEVER)
+#   if !(defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT) || defined(_MSC_VER))
 #      define MP_64BIT
 #   endif
 #endif
@@ -73,12 +78,7 @@ typedef uint32_t             mp_word;
 typedef uint64_t mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
-#   if defined(_WIN32)
-#ifndef MP_WORD_DECLARED
-typedef unsigned __int128    mp_word;
-#define MP_WORD_DECLARED
-#endif
-#   elif defined(__GNUC__)
+#   if defined(__GNUC__)
 typedef unsigned long        mp_word __attribute__((mode(TI)));
 #   else
 /* it seems you have a problem
@@ -124,7 +124,7 @@ typedef mp_digit mp_min_u32;
 /* use arc4random on platforms that support it */
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
 #   define MP_GEN_RANDOM()    arc4random()
-#   define MP_GEN_RANDOM_MAX  0xffffffff
+#   define MP_GEN_RANDOM_MAX  0xffffffffu
 #endif
 
 /* use rand() as fall-back if there's no better rand function */
@@ -181,7 +181,7 @@ MODULE_SCOPE int KARATSUBA_MUL_CUTOFF,
 #endif
 
 /* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
-#define MP_WARRAY               (1 << (((sizeof(mp_word) * CHAR_BIT) - (2 * DIGIT_BIT)) + 1))
+#define MP_WARRAY               (1u << (((sizeof(mp_word) * CHAR_BIT) - (2 * DIGIT_BIT)) + 1))
 
 /* the infamous mp_int structure */
 #ifndef MP_INT_DECLARED
@@ -271,9 +271,9 @@ int mp_set_int(mp_int *a, unsigned long b);
 int mp_set_long(mp_int *a, unsigned long b);
 */
 
-/* set a platform dependent unsigned long long value */
+/* set a platform dependent Tcl_WideUInt value */
 /*
-int mp_set_long_long(mp_int *a, unsigned long long b);
+int mp_set_long_long(mp_int *a, Tcl_WideUInt b);
 */
 
 /* get a 32-bit value */
@@ -286,9 +286,9 @@ unsigned long mp_get_int(const mp_int *a);
 unsigned long mp_get_long(const mp_int *a);
 */
 
-/* get a platform dependent unsigned long long value */
+/* get a platform dependent Tcl_WideUInt value */
 /*
-unsigned long long mp_get_long_long(const mp_int *a);
+Tcl_WideUInt mp_get_long_long(const mp_int *a);
 */
 
 /* initialize and set a digit */
@@ -553,7 +553,7 @@ int mp_sqrt(const mp_int *arg, mp_int *ret);
 
 /* special sqrt (mod prime) */
 /*
-int mp_sqrtmod_prime(const mp_int *arg, const mp_int *prime, mp_int *ret);
+int mp_sqrtmod_prime(const mp_int *n, const mp_int *prime, mp_int *ret);
 */
 
 /* is number a square? */
@@ -573,16 +573,16 @@ int mp_reduce_setup(mp_int *a, const mp_int *b);
 
 /* Barrett Reduction, computes a (mod b) with a precomputed value c
  *
- * Assumes that 0 < a <= b*b, note if 0 > a > -(b*b) then you can merely
- * compute the reduction as -1 * mp_reduce(mp_abs(a)) [pseudo code].
+ * Assumes that 0 < x <= m*m, note if 0 > x > -(m*m) then you can merely
+ * compute the reduction as -1 * mp_reduce(mp_abs(x)) [pseudo code].
  */
 /*
-int mp_reduce(mp_int *a, const mp_int *b, const mp_int *c);
+int mp_reduce(mp_int *x, const mp_int *m, const mp_int *mu);
 */
 
 /* setups the montgomery reduction */
 /*
-int mp_montgomery_setup(const mp_int *a, mp_digit *mp);
+int mp_montgomery_setup(const mp_int *n, mp_digit *rho);
 */
 
 /* computes a = B**n mod b without division or multiplication useful for
@@ -594,7 +594,7 @@ int mp_montgomery_calc_normalization(mp_int *a, const mp_int *b);
 
 /* computes x/R == x (mod N) via Montgomery Reduction */
 /*
-int mp_montgomery_reduce(mp_int *a, const mp_int *m, mp_digit mp);
+int mp_montgomery_reduce(mp_int *x, const mp_int *n, mp_digit rho);
 */
 
 /* returns 1 if a is a valid DR modulus */
@@ -607,9 +607,9 @@ int mp_dr_is_modulus(const mp_int *a);
 void mp_dr_setup(const mp_int *a, mp_digit *d);
 */
 
-/* reduces a modulo b using the Diminished Radix method */
+/* reduces a modulo n using the Diminished Radix method */
 /*
-int mp_dr_reduce(mp_int *a, const mp_int *b, mp_digit mp);
+int mp_dr_reduce(mp_int *x, const mp_int *n, mp_digit k);
 */
 
 /* returns true if a can be reduced with mp_reduce_2k */
@@ -642,9 +642,9 @@ int mp_reduce_2k_setup_l(const mp_int *a, mp_int *d);
 int mp_reduce_2k_l(mp_int *a, const mp_int *n, const mp_int *d);
 */
 
-/* d = a**b (mod c) */
+/* Y = G**X (mod P) */
 /*
-int mp_exptmod(const mp_int *a, const mp_int *b, const mp_int *c, mp_int *d);
+int mp_exptmod(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y);
 */
 
 /* ---> Primes <--- */

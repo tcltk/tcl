@@ -47,7 +47,7 @@ test oo-0.2 {basic test of OO's ability to clean up its initial state} {
 } {}
 test oo-0.3 {basic test of OO's ability to clean up its initial state} -body {
     leaktest {
-	[oo::object new] destroy
+        [oo::object new] destroy
     }
 } -constraints memory -result 0
 test oo-0.4 {basic test of OO's ability to clean up its initial state} -body {
@@ -128,6 +128,13 @@ test oo-1.3 {basic test of OO functionality: no classes} {
 test oo-1.4 {basic test of OO functionality} -body {
     oo::object create {}
 } -returnCodes 1 -result {object name must not be empty}
+test oo-1.4.1 {fully-qualified nested name} -body {
+    oo::object create ::one::two::three
+} -result {::one::two::three}
+test oo-1.4.2 {automatic command name has same name as namespace} -body {
+    set obj [oo::object new]
+    expr {[info object namespace $obj] == $obj}
+} -result 1
 test oo-1.5 {basic test of OO functionality} -body {
     oo::object doesnotexist
 } -returnCodes 1 -result {unknown method "doesnotexist": must be create, destroy or new}
@@ -1498,7 +1505,7 @@ test oo-11.5 {OO: cleanup} {
 test oo-11.6 {
     OO: cleanup ReleaseClassContents() where class is mixed into one of its
     instances
-} {
+} -body {
     oo::class create obj1
     ::oo::define obj1 {self mixin [self]}
 
@@ -1506,12 +1513,14 @@ test oo-11.6 {
     ::oo::objdefine obj2 {mixin [self]}
 
     ::oo::copy obj2 obj3
-    trace add command obj3 delete [list obj3 dying]
+    rename obj3 {}
     rename obj2 {}
 
     # No segmentation fault
     return done
-} done
+} -result done -cleanup {
+    rename obj1 {}
+}
 
 test oo-12.1 {OO: filters} {
     oo::class create Aclass
@@ -1698,13 +1707,13 @@ test oo-13.2 {OO: changing an object's class} -body {
     oo::objdefine foo class oo::class
 } -cleanup {
     foo destroy
-} -returnCodes 1 -result {may not change a non-class object into a class object}
+} -result {}
 test oo-13.3 {OO: changing an object's class} -body {
     oo::class create foo
     oo::objdefine foo class oo::object
 } -cleanup {
     foo destroy
-} -returnCodes 1 -result {may not change a class object into a non-class object}
+} -result {}
 test oo-13.4 {OO: changing an object's class} -body {
     oo::class create foo {
 	method m {} {
@@ -3864,6 +3873,28 @@ test oo-35.5 {Bug 1a56550e96: introspectors must traverse mixin links correctly}
 } -cleanup {
     base destroy
 } -result {{c d e} {c d e}}
+test oo-35.6 {
+    Bug : teardown of an object that is a class that is an instance of itself
+} -setup {
+    oo::class create obj
+
+    oo::copy obj obj1 obj1
+    oo::objdefine obj1 {
+	mixin obj1 obj
+    }
+    oo::copy obj1 obj2
+    oo::objdefine obj2 {
+	mixin obj2 obj1
+    }
+} -body {
+    rename obj2 {}
+    rename obj1 {}
+    # doesn't crash
+    return done
+} -cleanup {
+    rename obj {}
+} -result done
+
 test oo-36.1 {TIP #470: introspection within oo::define} {
     oo::define oo::object self
 } ::oo::object

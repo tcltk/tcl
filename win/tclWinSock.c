@@ -360,7 +360,7 @@ printaddrinfolist(
 void
 InitializeHostName(
     char **valuePtr,
-    size_t *lengthPtr,
+    unsigned int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     TCHAR tbuf[MAX_COMPUTERNAME_LENGTH + 1];

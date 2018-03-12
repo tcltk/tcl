@@ -893,21 +893,17 @@ test basic-48.16.$noComp {expansion: testing for leaks} -setup {
 	rename stress {}
 } -result 0
 
-test basic-48.17.$noComp {expansion: object safety} -setup {
-        set old_precision $::tcl_precision
-        set ::tcl_precision 4
-    } -constraints $constraints -body {
+test basic-48.17.$noComp {expansion: object safety} -constraints $constraints -body {
             set third [expr {1.0/3.0}]
             set l [list $third $third]
             set x [run {list $third {*}$l $third}]
-	    set res [list]
+            set res [list]
             foreach t $x {
                 lappend res [expr {$t * 3.0}]
             }
             set res
     } -cleanup {
-        set ::tcl_precision $old_precision
-        unset old_precision res t l x third
+        unset res t l x third
 } -result {1.0 1.0 1.0 1.0}
 
 test basic-48.18.$noComp {expansion: list semantics} -constraints $constraints -body {
@@ -983,6 +979,16 @@ test basic-49.2 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} testevalex {
     namespace delete ns
     set ::context
 } {global}
+
+test basic-50.1 {[586e71dce4] EvalObjv level #0 exception handling} -setup {
+    interp create slave
+    interp alias {} foo slave return
+} -body {
+    list [catch foo m] $m
+} -cleanup {
+    unset -nocomplain m
+    interp delete slave
+} -result {0 {}}
 
 # Clean up after expand tests
 unset noComp l1 l2 constraints
