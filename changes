@@ -8880,4 +8880,7 @@ in this changeset (new minor version) rather than bug fixes:
 
 --- Released 8.7a1, September 8, 2017 --- http://core.tcl.tk/tcl/ for details
 
-2017-12-11 (TIP 490) add oo support for msgcat => msgcat 1.7.0 (oehlmann)
+2018-03-12 (TIP 490) add oo support for msgcat => msgcat 1.7.0 (oehlmann)
+
+2018-03-12 (TIP 499) custom locale preference list (nijtmans)
+=> msgcat 1.7.0
