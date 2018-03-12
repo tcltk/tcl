@@ -8234,7 +8234,7 @@ Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 
 2013-05-16 (platform support) mingw-4.0 (nijtmans)
 
-2013-05-19 (platform support) FreeBSD updates (gahr)
+2013-05-19 (platform support) FreeBSD updates (cerutti)
 
 2013-05-20 (bug fix)[3613567] access error temp file creation (keene)
 
@@ -8657,7 +8657,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2016-05-21 (bug)[f7d4e] [namespace delete] performance (fellows)
 
-2016-06-02 (TIP 447) execution time verbosity option (gahr)
+2016-06-02 (TIP 447) execution time verbosity option (cerutti)
 => tcltest 2.4.0
 
 2016-06-16 (bug)[16828b] crash due to [vwait] trace undo fail (dah,porter)
@@ -8796,6 +8796,45 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 --- Released 8.6.7, August 9, 2017 --- http://core.tcl.tk/tcl/ for details
 
+2017-08-10 [array names -regexp] supports backrefs (goth)
+
+2017-08-10 Fix gcc build failures due to #pragma placement (cassoff,fellows)
+
+2017-08-29 (bug)[b50fb2] exec redir append stdout and stderr to file (coulter)
+
+2017-08-31 (bug)[2a9465] http state 100 continue handling broken (oehlmann)
+=> http 2.8.12
+
+2017-09-02 (bug)[0e4d88] replace command, delete trace kills namespace (porter)
+
+2017-10-19 (bug)[1a5655] [info * methods] includes mixins (fellows)
+
+2017-10-23 tzdata updated to Olson's tzdata2017c (jima)
+
+2017-10-24 (bug)[fc1409] segfault in method cloning, oo-15.15 (coulter,fellows)
+
+2017-11-03 (bug)[6f2f83] More robust [load] for ReactOS (werner)
+
+2017-11-08 (bug)[3298012] Stop crash when hash tables overflow 32 bits (porter)
+
+2017-11-14 (bug)[5d6de6] Close failing case of [package prefer stable] (kupries)
+
+2017-11-17 (bug)[fab924] Fix misleading [load] message on Windows (oehlmann)
+
+2017-12-05 (bug)[4f6a1e] Crash when ensemble map and list are same (sebres)
+
+2017-12-06 (bug)[ce3a21] file normalize failure when tail is empty (porter)
+
+2017-12-08 (new)[TIP 477] nmake build system reform (nadkarni)
+
+2017-12-19 (bug)[586e71] EvalObjv exception handling at level #0 (sebres,porter)
+
+--- Released 8.6.8, December 22, 2017 --- http://core.tcl.tk/tcl/ for details
+
+Changes to 8.7a1 include all changes to the 8.6 line through 8.6.7,
+plus the following, which focuses on the high-level feature changes
+in this changeset (new minor version) rather than bug fixes:
+
 2016-03-17 (bug)[0b8c38] socket accept callbacks always in global ns (porter)
         *** POTENTIAL INCOMPATIBILITY ***
 
@@ -8836,7 +8875,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2017-06-23 (TIP 472) Support 0d as prefix of decimal numbers (iyer,griffin)
 
 2017-08-31 (bug)[2a9465] http state 100 continue handling broken (oehlmann)
-=> http 2.8.12
 
 2017-09-02 (bug)[0e4d88] replace command, delete trace kills namespace (porter)
 

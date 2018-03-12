@@ -19,7 +19,7 @@
 int mp_unsigned_bin_size(const mp_int *a)
 {
    int     size = mp_count_bits(a);
-   return (size / 8) + (((size & 7) != 0) ? 1 : 0);
+   return (size / 8) + ((((unsigned)size & 7u) != 0u) ? 1 : 0);
 }
 #endif
 
