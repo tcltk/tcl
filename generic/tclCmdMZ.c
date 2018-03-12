@@ -2305,29 +2305,42 @@ StringRplcCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *ustring;
-    int first, last, length;
+    int first, last, length, end;
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string first last ?string?");
 	return TCL_ERROR;
     }
 
-    ustring = Tcl_GetUnicodeFromObj(objv[1], &length);
-    length--;
+    (void) Tcl_GetUnicodeFromObj(objv[1], &length);
+    end = length - 1;
 
-    if (TclGetIntForIndexM(interp, objv[2], length, &first) != TCL_OK ||
-	    TclGetIntForIndexM(interp, objv[3], length, &last) != TCL_OK){
+    if (TclGetIntForIndexM(interp, objv[2], end, &first) != TCL_OK ||
+	    TclGetIntForIndexM(interp, objv[3], end, &last) != TCL_OK){
 	return TCL_ERROR;
     }
 
-    if ((last < first) || (last < 0) || (first > length)) {
+    /*
+     * [string replace] does not replace empty strings.  This is
+     * unwise, but since it is true, here we quickly screen out
+     * index pairs that demarcate an empty substring.
+     */
+
+    if ((last < 0) ||		/* Range ends before start of string */
+	    (first > end) ||	/* Range begins after end of string */
+	    (last < first)) {	/* Range begins after it starts */
 	Tcl_SetObjResult(interp, objv[1]);
     } else {
 	Tcl_Obj *resultPtr;
 
-	ustring = Tcl_GetUnicodeFromObj(objv[1], &length);
-	length--;
+	/*
+	 * We are re-fetching in case the string argument is same value as 
+	 * an index argument, and shimmering cost us our ustring.
+	 */
+
+	Tcl_UniChar *ustring = Tcl_GetUnicodeFromObj(objv[1], &length);
+
+	end = length - 1;
 
 	if (first < 0) {
 	    first = 0;
@@ -2337,9 +2350,9 @@ StringRplcCmd(
 	if (objc == 5) {
 	    Tcl_AppendObjToObj(resultPtr, objv[4]);
 	}
-	if (last < length) {
+	if (last < end) {
 	    Tcl_AppendUnicodeToObj(resultPtr, ustring + last + 1,
-		    length - last);
+		    end - last);
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }
