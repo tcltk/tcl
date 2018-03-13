@@ -1125,12 +1125,13 @@ TclOODefineClassObjCmd(
      */
 
     if (oPtr->selfCls != clsPtr) {
+
 	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
-
-	/* Reference count already incremented 3 lines up. */
+	TclOODecrRefCount(oPtr->selfCls->thisPtr);
 	oPtr->selfCls = clsPtr;
-
+	AddRef(oPtr->selfCls->thisPtr);
 	TclOOAddToInstances(oPtr, oPtr->selfCls);
+
 	if (oPtr->classPtr != NULL) {
 	    BumpGlobalEpoch(interp, oPtr->classPtr);
 	} else {
@@ -2151,7 +2152,6 @@ ClassSuperSet(
 	    superclasses[0] = oPtr->fPtr->objectCls;
 	}
 	superc = 1;
-	/* Corresponding TclOODecrRefCount is near the end of this function */
 	AddRef(superclasses[0]->thisPtr);
     } else {
 	for (i=0 ; i<superc ; i++) {
@@ -2204,8 +2204,6 @@ ClassSuperSet(
     oPtr->classPtr->superclasses.num = superc;
     FOREACH(superPtr, oPtr->classPtr->superclasses) {
 	TclOOAddToSubclasses(oPtr->classPtr, superPtr);
-	/* To account for the AddRef() earlier in this function */ 
-	TclOODecrRefCount(superPtr->thisPtr);
     }
     BumpGlobalEpoch(interp, oPtr->classPtr);
 
