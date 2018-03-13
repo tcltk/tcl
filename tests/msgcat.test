@@ -55,8 +55,13 @@ namespace eval ::msgcat::test {
 	set result [string tolower [lindex $setVars 0]]
 	if {[string length $result] == 0} {
 	    if {[info exists ::tcl::mac::locale]} {
+if {[package vsatisfies [package provide msgcat] 1.7]} {
+		set result [string tolower \
+			[msgcat::mcutil::ConvertLocale $::tcl::mac::locale]]
+} else {
 		set result [string tolower \
 			[msgcat::ConvertLocale $::tcl::mac::locale]]
+}
 	    } else {
 		if {([info sharedlibextension] eq ".dll")
 			&& ![catch {package require registry}]} {

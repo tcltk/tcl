@@ -8882,5 +8882,5 @@ in this changeset (new minor version) rather than bug fixes:
 
 2018-03-12 (TIP 490) add oo support for msgcat => msgcat 1.7.0 (oehlmann)
 
-2018-03-12 (TIP 499) custom locale preference list (nijtmans)
+2018-03-12 (TIP 499) custom locale preference list (oehlmann)
 => msgcat 1.7.0
