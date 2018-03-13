@@ -2747,6 +2747,8 @@ MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int *clNextOuter, CONST char *outerScript);
 MODULE_SCOPE void	TclTransferResult(Tcl_Interp *sourceInterp, int result,
 			    Tcl_Interp *targetInterp);
+MODULE_SCOPE int	TclTrim(const char *bytes, int numBytes,
+			    const char *trim, int numTrim, int *trimRight);
 MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,

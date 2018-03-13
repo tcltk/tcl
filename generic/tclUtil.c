@@ -1499,9 +1499,46 @@ Tcl_Backslash(
 /*
  *----------------------------------------------------------------------
  *
+ * TclUtfWellFormedEnd --
+ *	Checks the end of utf string is malformed, if yes - wraps bytes
+ *	to the given buffer (as well-formed NTS string).
+ *
+ * Results:
+ *	The bytes with well-formed end of the string.
+ *
+ * Side effects:
+ *	Buffer (DString) may be allocated, so must be released.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline const char*
+TclUtfWellFormedEnd(
+    Tcl_DString *buffer,	/* Buffer used to hold well-formed string. */
+    CONST char *bytes,		/* Pointer to the beginning of the string. */
+    int length)			/* Length of the string. */
+{
+    CONST char *l = bytes + length;
+    CONST char *p = Tcl_UtfPrev(l, bytes);
+
+    if (Tcl_UtfCharComplete(p, l - p)) {
+	buffer->string = buffer->staticSpace;
+	return bytes;
+    }
+    /* 
+     * Malformed utf-8 end, be sure we've NTS to safe compare of end-character,
+     * avoid segfault by access violation out of range.
+     */
+    Tcl_DStringInit(buffer);
+    Tcl_DStringAppend(buffer, bytes, length);
+    return Tcl_DStringValue(buffer);
+}
+/*
+ *----------------------------------------------------------------------
+ *
  * TclTrimRight --
- *	Takes two counted strings in the Tcl encoding which must both be
- *	null terminated.  Conceptually trims from the right side of the
+ *	Takes two counted strings in the Tcl encoding.  Conceptually
+ *	finds the sub string (offset) to trim from the right side of the
  *	first string all characters found in the second string.
  *
  * Results:
@@ -1513,8 +1550,8 @@ Tcl_Backslash(
  *----------------------------------------------------------------------
  */
 
-int
-TclTrimRight(
+static inline int
+TrimRight(
     const char *bytes,	/* String to be trimmed... */
     int numBytes,	/* ...and its length in bytes */
     const char *trim,	/* String of trim characters... */
@@ -1522,15 +1559,6 @@ TclTrimRight(
 {
     const char *p = bytes + numBytes;
     int pInc;
-
-    if ((bytes[numBytes] != '\0') || (trim[numTrim] != '\0')) {
-	Tcl_Panic("TclTrimRight works only on null-terminated strings");
-    }
-
-    /* Empty strings -> nothing to do */
-    if ((numBytes == 0) || (numTrim == 0)) {
-	return 0;
-    }
 
     /* Outer loop: iterate over string to be trimmed */
     do {
@@ -1563,13 +1591,42 @@ TclTrimRight(
 
     return numBytes - (p - bytes);
 }
+
+int
+TclTrimRight(
+    const char *bytes,	/* String to be trimmed... */
+    int numBytes,	/* ...and its length in bytes */
+    const char *trim,	/* String of trim characters... */
+    int numTrim)	/* ...and its length in bytes */
+{
+    int res;
+    Tcl_DString bytesBuf, trimBuf;
+
+    /* Empty strings -> nothing to do */
+    if ((numBytes == 0) || (numTrim == 0)) {
+	return 0;
+    }
+
+    bytes = TclUtfWellFormedEnd(&bytesBuf, bytes, numBytes);
+    trim = TclUtfWellFormedEnd(&trimBuf, trim, numTrim);
+
+    res = TrimRight(bytes, numBytes, trim, numTrim);
+    if (res > numBytes) {
+	res = numBytes;
+    }
+
+    Tcl_DStringFree(&bytesBuf);
+    Tcl_DStringFree(&trimBuf);
+
+    return res;
+}
 
 /*
  *----------------------------------------------------------------------
  *
  * TclTrimLeft --
- *	Takes two counted strings in the Tcl encoding which must both be
- *	null terminated.  Conceptually trims from the left side of the
+ *	Takes two counted strings in the Tcl encoding.  Conceptually
+ *	finds the sub string (offset) to trim from the left side of the
  *	first string all characters found in the second string.
  *
  * Results:
@@ -1581,23 +1638,14 @@ TclTrimRight(
  *----------------------------------------------------------------------
  */
 
-int
-TclTrimLeft(
+static inline int
+TrimLeft(
     const char *bytes,	/* String to be trimmed... */
     int numBytes,	/* ...and its length in bytes */
     const char *trim,	/* String of trim characters... */
     int numTrim)	/* ...and its length in bytes */
 {
     const char *p = bytes;
-
-    if ((bytes[numBytes] != '\0') || (trim[numTrim] != '\0')) {
-	Tcl_Panic("TclTrimLeft works only on null-terminated strings");
-    }
-
-    /* Empty strings -> nothing to do */
-    if ((numBytes == 0) || (numTrim == 0)) {
-	return 0;
-    }
 
     /* Outer loop: iterate over string to be trimmed */
     do {
@@ -1626,9 +1674,93 @@ TclTrimLeft(
 
 	p += pInc;
 	numBytes -= pInc;
-    } while (numBytes);
+    } while (numBytes > 0);
 
     return p - bytes;
+}
+
+int
+TclTrimLeft(
+    const char *bytes,	/* String to be trimmed... */
+    int numBytes,	/* ...and its length in bytes */
+    const char *trim,	/* String of trim characters... */
+    int numTrim)	/* ...and its length in bytes */
+{
+    int res;
+    Tcl_DString bytesBuf, trimBuf;
+
+    /* Empty strings -> nothing to do */
+    if ((numBytes == 0) || (numTrim == 0)) {
+	return 0;
+    }
+
+    bytes = TclUtfWellFormedEnd(&bytesBuf, bytes, numBytes);
+    trim = TclUtfWellFormedEnd(&trimBuf, trim, numTrim);
+
+    res = TrimLeft(bytes, numBytes, trim, numTrim);
+    if (res > numBytes) {
+	res = numBytes;
+    }
+
+    Tcl_DStringFree(&bytesBuf);
+    Tcl_DStringFree(&trimBuf);
+
+    return res;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclTrim --
+ *	Finds the sub string (offset) to trim from both sides of the
+ *	first string all characters found in the second string.
+ *
+ * Results:
+ *	The number of bytes to be removed from the start of the string
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclTrim(
+    const char *bytes,	/* String to be trimmed... */
+    int numBytes,	/* ...and its length in bytes */
+    const char *trim,	/* String of trim characters... */
+    int numTrim,	/* ...and its length in bytes */
+    int *trimRight)		/* Offset from the end of the string. */
+{
+    int trimLeft;
+    Tcl_DString bytesBuf, trimBuf;
+
+    /* Empty strings -> nothing to do */
+    if ((numBytes == 0) || (numTrim == 0)) {
+	return 0;
+    }
+
+    bytes = TclUtfWellFormedEnd(&bytesBuf, bytes, numBytes);
+    trim = TclUtfWellFormedEnd(&trimBuf, trim, numTrim);
+
+    trimLeft = TrimLeft(bytes, numBytes, trim, numTrim);
+    if (trimLeft > numBytes) {
+	trimLeft = numBytes;
+    }
+    numBytes -= trimLeft;
+    *trimRight = 0;
+    if (numBytes) {
+	bytes += trimLeft;
+	*trimRight = TrimRight(bytes, numBytes, trim, numTrim);
+	if (*trimRight > numBytes) {
+	    *trimRight = numBytes;
+	}
+    }
+
+    Tcl_DStringFree(&bytesBuf);
+    Tcl_DStringFree(&trimBuf);
+
+    return trimLeft;
 }
 
 /*
@@ -1687,25 +1819,18 @@ Tcl_Concat(
     result = (char *) ckalloc((unsigned) (bytesNeeded + argc));
 
     for (p = result, i = 0;  i < argc;  i++) {
-	int trim, elemLength;
+	int triml, trimr, elemLength;
 	const char *element;
 
 	element = argv[i];
 	elemLength = strlen(argv[i]);
 
-	/* Trim away the leading whitespace */
-	trim = TclTrimLeft(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
-	element += trim;
-	elemLength -= trim;
-
-	/*
-	 * Trim away the trailing whitespace.  Do not permit trimming
-	 * to expose a final backslash character.
-	 */
-
-	trim = TclTrimRight(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
-	trim -= trim && (element[elemLength - trim - 1] == '\\');
-	elemLength -= trim;
+	/* Trim away the leading/trailing whitespace. */
+	triml = TclTrim(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE, &trimr);
+	element += triml;
+	elemLength -= triml + trimr;
+	/* Do not permit trimming to expose a final backslash character. */
+	elemLength += trimr && (element[elemLength - 1] == '\\');
 
 	/* If we're left with empty element after trimming, do nothing */
 	if (elemLength == 0) {
@@ -1832,23 +1957,16 @@ Tcl_ConcatObj(
     Tcl_SetObjLength(resPtr, 0);
 
     for (i = 0;  i < objc;  i++) {
-	int trim;
+	int triml, trimr;
 
 	element = TclGetStringFromObj(objv[i], &elemLength);
 
-	/* Trim away the leading whitespace */
-	trim = TclTrimLeft(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
-	element += trim;
-	elemLength -= trim;
-
-	/*
-	 * Trim away the trailing whitespace.  Do not permit trimming
-	 * to expose a final backslash character.
-	 */
-
-	trim = TclTrimRight(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
-	trim -= trim && (element[elemLength - trim - 1] == '\\');
-	elemLength -= trim;
+	/* Trim away the leading/trailing whitespace. */
+	triml = TclTrim(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE, &trimr);
+	element += triml;
+	elemLength -= triml + trimr;
+	/* Do not permit trimming to expose a final backslash character. */
+	elemLength += trimr && (element[elemLength - 1] == '\\');
 
 	/* If we're left with empty element after trimming, do nothing */
 	if (elemLength == 0) {
