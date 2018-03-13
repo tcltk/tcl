@@ -1008,6 +1008,7 @@ TclCompileStringReplaceCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	replacementTokenPtr = TokenAfter(tokenPtr);
     }
+	goto genericReplace;
 
     tokenPtr = TokenAfter(valueTokenPtr);
     if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_AFTER,
