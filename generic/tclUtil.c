@@ -1499,9 +1499,10 @@ Tcl_Backslash(
 /*
  *----------------------------------------------------------------------
  *
- * TclUtfWellFormedEnd --
+ * UtfWellFormedEnd --
  *	Checks the end of utf string is malformed, if yes - wraps bytes
- *	to the given buffer (as well-formed NTS string).
+ *	to the given buffer (as well-formed NTS string).  The buffer
+ *	argument should be initialized by the caller and ready to use.
  *
  * Results:
  *	The bytes with well-formed end of the string.
@@ -1513,7 +1514,7 @@ Tcl_Backslash(
  */
 
 static inline const char*
-TclUtfWellFormedEnd(
+UtfWellFormedEnd(
     Tcl_DString *buffer,	/* Buffer used to hold well-formed string. */
     CONST char *bytes,		/* Pointer to the beginning of the string. */
     int length)			/* Length of the string. */
@@ -1522,14 +1523,12 @@ TclUtfWellFormedEnd(
     CONST char *p = Tcl_UtfPrev(l, bytes);
 
     if (Tcl_UtfCharComplete(p, l - p)) {
-	buffer->string = buffer->staticSpace;
 	return bytes;
     }
     /* 
      * Malformed utf-8 end, be sure we've NTS to safe compare of end-character,
      * avoid segfault by access violation out of range.
      */
-    Tcl_DStringInit(buffer);
     Tcl_DStringAppend(buffer, bytes, length);
     return Tcl_DStringValue(buffer);
 }
@@ -1607,8 +1606,10 @@ TclTrimRight(
 	return 0;
     }
 
-    bytes = TclUtfWellFormedEnd(&bytesBuf, bytes, numBytes);
-    trim = TclUtfWellFormedEnd(&trimBuf, trim, numTrim);
+    Tcl_DStringInit(&bytesBuf);
+    Tcl_DStringInit(&trimBuf);
+    bytes = UtfWellFormedEnd(&bytesBuf, bytes, numBytes);
+    trim = UtfWellFormedEnd(&trimBuf, trim, numTrim);
 
     res = TrimRight(bytes, numBytes, trim, numTrim);
     if (res > numBytes) {
@@ -1694,8 +1695,10 @@ TclTrimLeft(
 	return 0;
     }
 
-    bytes = TclUtfWellFormedEnd(&bytesBuf, bytes, numBytes);
-    trim = TclUtfWellFormedEnd(&trimBuf, trim, numTrim);
+    Tcl_DStringInit(&bytesBuf);
+    Tcl_DStringInit(&trimBuf);
+    bytes = UtfWellFormedEnd(&bytesBuf, bytes, numBytes);
+    trim = UtfWellFormedEnd(&trimBuf, trim, numTrim);
 
     res = TrimLeft(bytes, numBytes, trim, numTrim);
     if (res > numBytes) {
@@ -1740,8 +1743,10 @@ TclTrim(
 	return 0;
     }
 
-    bytes = TclUtfWellFormedEnd(&bytesBuf, bytes, numBytes);
-    trim = TclUtfWellFormedEnd(&trimBuf, trim, numTrim);
+    Tcl_DStringInit(&bytesBuf);
+    Tcl_DStringInit(&trimBuf);
+    bytes = UtfWellFormedEnd(&bytesBuf, bytes, numBytes);
+    trim = UtfWellFormedEnd(&trimBuf, trim, numTrim);
 
     trimLeft = TrimLeft(bytes, numBytes, trim, numTrim);
     if (trimLeft > numBytes) {
