@@ -4,7 +4,7 @@
 #	message catalog facility for Tcl programs.  It should be
 #	loaded with the command "package require msgcat".
 #
-# Copyright (c) 2010-2015 by Harald Oehlmann.
+# Copyright (c) 2010-2018 by Harald Oehlmann.
 # Copyright (c) 1998-2000 by Ajuba Solutions.
 # Copyright (c) 1998 by Mark Harrison.
 #
@@ -1218,7 +1218,7 @@ proc msgcat::mcutil::ConvertLocale {value} {
 # - called from a classless oo object
 proc ::msgcat::PackageNamespaceGet {} {
     uplevel 2 {
-	# Check for no object
+	# Check self namespace to determine environment
 	switch -exact -- [namespace which self] {
 	    {::oo::define::self} {
 		# We are within a class definition
@@ -1260,7 +1260,7 @@ proc msgcat::mcutil::getsystemlocale {} {
     # On Darwin, fallback to current CFLocale identifier if available.
     #
     if {[info exists ::tcl::mac::locale] && $::tcl::mac::locale ne ""} {
-	if {![catch { ConvertLocale $::tcl::mac::locale] } locale]} {
+	if {![catch { ConvertLocale $::tcl::mac::locale } locale]} {
 	    return $locale
 	}
     }
