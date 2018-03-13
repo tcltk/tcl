@@ -1260,7 +1260,7 @@ proc msgcat::mcutil::getsystemlocale {} {
     # On Darwin, fallback to current CFLocale identifier if available.
     #
     if {[info exists ::tcl::mac::locale] && $::tcl::mac::locale ne ""} {
-	if {![catch { ConvertLocale $::tcl::mac::locale] } locale]} {
+	if {![catch { ConvertLocale $::tcl::mac::locale } locale]} {
 	    return $locale
 	}
     }
