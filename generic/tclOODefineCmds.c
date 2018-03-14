@@ -327,6 +327,7 @@ TclOOObjectSetMixins(
 	if (oPtr->mixins.num != 0) {
 	    FOREACH(mixinPtr, oPtr->mixins) {
 		TclOORemoveFromInstances(oPtr, mixinPtr);
+		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
 	    ckfree(oPtr->mixins.list);
 	    oPtr->mixins.num = 0;
@@ -338,6 +339,7 @@ TclOOObjectSetMixins(
 		if (mixinPtr && mixinPtr != oPtr->selfCls) {
 		    TclOORemoveFromInstances(oPtr, mixinPtr);
 		}
+		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
 	    oPtr->mixins.list = ckrealloc(oPtr->mixins.list,
 		    sizeof(Class *) * numMixins);
@@ -350,10 +352,8 @@ TclOOObjectSetMixins(
 	FOREACH(mixinPtr, oPtr->mixins) {
 	    if (mixinPtr != oPtr->selfCls) {
 		TclOOAddToInstances(oPtr, mixinPtr);
-		/* Corresponding TclOODecrRefCount() is in the caller of this
-		 * function. 
-		 */
-		TclOODecrRefCount(mixinPtr->thisPtr);
+		/* For the new copy created by memcpy */
+		AddRef(mixinPtr->thisPtr);
 	    }
 	}
     }
@@ -383,6 +383,7 @@ TclOOClassSetMixins(
 	if (classPtr->mixins.num != 0) {
 	    FOREACH(mixinPtr, classPtr->mixins) {
 		TclOORemoveFromMixinSubs(classPtr, mixinPtr);
+		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
 	    ckfree(classPtr->mixins.list);
 	    classPtr->mixins.num = 0;
@@ -391,6 +392,7 @@ TclOOClassSetMixins(
 	if (classPtr->mixins.num != 0) {
 	    FOREACH(mixinPtr, classPtr->mixins) {
 		TclOORemoveFromMixinSubs(classPtr, mixinPtr);
+		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
 	    classPtr->mixins.list = ckrealloc(classPtr->mixins.list,
 		    sizeof(Class *) * numMixins);
@@ -401,10 +403,8 @@ TclOOClassSetMixins(
 	memcpy(classPtr->mixins.list, mixins, sizeof(Class *) * numMixins);
 	FOREACH(mixinPtr, classPtr->mixins) {
 	    TclOOAddToMixinSubs(classPtr, mixinPtr);
-	    /* Corresponding TclOODecrRefCount() is in the caller of this
-	     * function
-	     */
-	    TclOODecrRefCount(mixinPtr->thisPtr);
+	    /* For the new copy created by memcpy */
+	    AddRef(mixinPtr->thisPtr);
 	}
     }
     BumpGlobalEpoch(interp, classPtr);
@@ -1125,7 +1125,6 @@ TclOODefineClassObjCmd(
      */
 
     if (oPtr->selfCls != clsPtr) {
-
 	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
 	TclOODecrRefCount(oPtr->selfCls->thisPtr);
 	oPtr->selfCls = clsPtr;
@@ -1587,10 +1586,6 @@ TclOODefineMixinObjCmd(
 	    goto freeAndError;
 	}
 	mixins[i-1] = clsPtr;
-	/* Corresponding TclOODecrRefCount() is in TclOOObjectSetMixins,
-	 * TclOOClassSetMixinsk, or just below if this function fails.
-	 */
-	AddRef(mixins[i-1]->thisPtr);
     }
 
     if (isInstanceMixin) {
@@ -1603,9 +1598,6 @@ TclOODefineMixinObjCmd(
     return TCL_OK;
 
   freeAndError:
-    while (--i > 0) {
-	TclOODecrRefCount(mixins[i]->thisPtr);
-    }
     TclStackFree(interp, mixins);
     return TCL_ERROR;
 }
@@ -2030,10 +2022,6 @@ ClassMixinSet(
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "SELF_MIXIN", NULL);
 	    goto freeAndError;
 	}
-	/* Corresponding TclOODecrRefCount() is in TclOOClassSetMixins, or just
-	 * below if this function fails
-	 */
-	AddRef(mixins[i]->thisPtr);
     }
 
     TclOOClassSetMixins(interp, oPtr->classPtr, mixinc, mixins);
@@ -2041,9 +2029,6 @@ ClassMixinSet(
     return TCL_OK;
 
   freeAndError:
-    while (i-- > 0) {
-	TclOODecrRefCount(mixins[i]->thisPtr);
-    }
     TclStackFree(interp, mixins);
     return TCL_ERROR;
 }
@@ -2197,6 +2182,7 @@ ClassSuperSet(
     if (oPtr->classPtr->superclasses.num != 0) {
 	FOREACH(superPtr, oPtr->classPtr->superclasses) {
 	    TclOORemoveFromSubclasses(oPtr->classPtr, superPtr);
+	    TclOODecrRefCount(superPtr->thisPtr);
 	}
 	ckfree((char *) oPtr->classPtr->superclasses.list);
     }
@@ -2494,16 +2480,9 @@ ObjMixinSet(
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
-	    while (i-- > 0) {
-		TclOODecrRefCount(mixins[i]->thisPtr);
-	    }
 	    TclStackFree(interp, mixins);
 	    return TCL_ERROR;
 	}
-	/* Corresponding TclOODecrRefCount() is in TclOOObjectSetMixins() or
-	 * just above if this function fails.
-	 */
-	AddRef(mixins[i]->thisPtr);
     }
 
     TclOOObjectSetMixins(oPtr, mixinc, mixins);
