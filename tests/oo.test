@@ -1545,7 +1545,7 @@ test oo-11.6.1 {
 test oo-11.6.2 {
     OO: cleanup ReleaseClassContents() where class is mixed into one of its
     instances
-} -body {
+} -constraints memory -body {
     leaktest {
 	interp create interp1
 	interp1 eval {
@@ -1562,7 +1562,7 @@ test oo-11.6.2 {
 test oo-11.6.3 {
     OO: cleanup ReleaseClassContents() where class is mixed into one of its
     instances
-} -body {
+} -constraints memory -body {
     leaktest {
 	interp create interp1
 	interp1 eval {
@@ -2151,6 +2151,8 @@ test oo-15.13.1 {
     oo::copy Cls Cls2 ::dupens
     return done
 } -cleanup {
+    Cls destroy
+    Cls2 destroy
 } -result done 
 test oo-15.13.2 {OO: object cloning with target NS} -setup {
     oo::class create Super
