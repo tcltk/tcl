@@ -1901,9 +1901,9 @@ TclTrim(
     int trimLeft;
     Tcl_DString bytesBuf, trimBuf;
 
+    *trimRight = 0;
     /* Empty strings -> nothing to do */
     if ((numBytes == 0) || (numTrim == 0)) {
-	*trimRight = 0;
 	return 0;
     }
 
@@ -1917,8 +1917,8 @@ TclTrim(
 	trimLeft = numBytes;
     }
     numBytes -= trimLeft;
-    *trimRight = 0;
-    if (numBytes) {
+    /* have to trim yet (first char was already verified within TrimLeft) */
+    if (numBytes > 1) {
 	bytes += trimLeft;
 	*trimRight = TrimRight(bytes, numBytes, trim, numTrim);
 	if (*trimRight > numBytes) {
