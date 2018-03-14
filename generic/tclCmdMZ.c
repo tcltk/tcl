@@ -2303,7 +2303,6 @@ StringRplcCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *ustring;
     int first, last, length, end;
 
     if (objc < 4 || objc > 5) {
@@ -2311,7 +2310,7 @@ StringRplcCmd(
 	return TCL_ERROR;
     }
 
-    ustring = Tcl_GetUnicodeFromObj(objv[1], &length);
+    length = Tcl_GetCharLength(objv[1]);
     end = length - 1;
 
     if (TclGetIntForIndexM(interp, objv[2], end, &first) != TCL_OK ||
