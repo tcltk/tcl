@@ -6022,12 +6022,7 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;		/* TrimSet */
 	string2 = TclGetStringFromObj(value2Ptr, &length2);
 	string1 = TclGetStringFromObj(valuePtr, &length);
-	trim1 = TclTrimLeft(string1, length, string2, length2);
-	if (trim1 < length) {
-	    trim2 = TclTrimRight(string1, length, string2, length2);
-	} else {
-	    trim2 = 0;
-	}
+	trim1 = TclTrim(string1, length, string2, length2, &trim2);
     createTrimmedString:
 	/*
 	 * Careful here; trim set often contains non-ASCII characters so we
