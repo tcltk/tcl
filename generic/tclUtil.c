@@ -1740,6 +1740,7 @@ TclTrim(
 
     /* Empty strings -> nothing to do */
     if ((numBytes == 0) || (numTrim == 0)) {
+	*trimRight = 0;
 	return 0;
     }
 
