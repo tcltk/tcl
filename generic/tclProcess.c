@@ -210,7 +210,7 @@ WaitProcessStatus(
     const char *msg;
 
     pid = Tcl_WaitPid(pid, &waitStatus, options);
-    if ((pid == 0)) {
+    if (pid == 0) {
 	/*
 	 * No change.
 	 */
