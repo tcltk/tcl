@@ -3285,8 +3285,7 @@ StringTrimCmd(
     }
     string1 = TclGetStringFromObj(objv[1], &length1);
 
-    triml = TclTrimLeft(string1, length1, string2, length2);
-    trimr = TclTrimRight(string1 + triml, length1 - triml, string2, length2);
+    triml = TclTrim(string1, length1, string2, length2, &trimr);
 
     Tcl_SetObjResult(interp,
 	    Tcl_NewStringObj(string1 + triml, length1 - triml - trimr));
