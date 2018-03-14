@@ -57,13 +57,7 @@ test oo-0.4 {basic test of OO's ability to clean up its initial state} -body {
 	foo destroy
     }
 } -constraints memory -result 0
-test oo-0.5.1 {testing object foundation cleanup} memory {
-    leaktest {
-	interp create foo
-	interp delete foo
-    }
-} 0
-test oo-0.5.2 {testing literal leak on interp delete} memory {
+test oo-0.5 {testing literal leak on interp delete} memory {
     leaktest {
 	interp create foo
 	foo eval {oo::object new}
