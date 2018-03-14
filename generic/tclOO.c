@@ -426,17 +426,17 @@ InitFoundation(
 
     /* Rewire bootstrapped objects. */
     fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
-    AddRef(fPtr->objectCls->thisPtr->selfCls->thisPtr);
+    AddRef(fPtr->classCls->thisPtr);
+    TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
 
     fPtr->classCls->thisPtr->selfCls = fPtr->classCls;
-    AddRef(fPtr->classCls->thisPtr->selfCls->thisPtr);
+    AddRef(fPtr->classCls->thisPtr);
+    TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
 
     fPtr->classCls->thisPtr->flags |= ROOT_CLASS;
     fPtr->classCls->flags |= ROOT_CLASS;
 
     /* Standard initialization for new Objects */
-    TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
-    TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
     TclOOAddToSubclasses(fPtr->classCls, fPtr->objectCls);
 
     /*
@@ -568,12 +568,6 @@ KillFoundation(
     TclDecrRefCount(fPtr->destructorName);
     TclDecrRefCount(fPtr->clonedName);
     TclDecrRefCount(fPtr->defineName);
-    if (fPtr->objectCls->thisPtr->selfCls != NULL) {
-	TclOODecrRefCount(fPtr->objectCls->thisPtr->selfCls->thisPtr);
-    }
-    if (fPtr->classCls->thisPtr->selfCls != NULL) {
-	TclOODecrRefCount(fPtr->classCls->thisPtr->selfCls->thisPtr);
-    }
     TclOODecrRefCount(fPtr->objectCls->thisPtr);
     TclOODecrRefCount(fPtr->classCls->thisPtr);
 
@@ -660,6 +654,9 @@ AllocObject(
 	Tcl_ResetResult(interp);
     }
 
+
+  configNamespace:
+
     ((Namespace *)oPtr->namespacePtr)->refCount++;
 
     /*
@@ -667,7 +664,6 @@ AllocObject(
      * to the [self] and [next] commands.
      */
 
-  configNamespace:
     if (fPtr->helpersNs != NULL) {
 	TclSetNsPath((Namespace *) oPtr->namespacePtr, 1, &fPtr->helpersNs);
     }
@@ -1007,8 +1003,11 @@ ReleaseClassContents(
     if (clsPtr->mixins.num) {
 	FOREACH(tmpClsPtr, clsPtr->mixins) {
 	    TclOORemoveFromMixinSubs(clsPtr, tmpClsPtr);
+	    TclOODecrRefCount(tmpClsPtr->thisPtr);
 	}
 	ckfree(clsPtr->mixins.list);
+	clsPtr->mixins.list = NULL;
+	clsPtr->mixins.num = 0;
     }
 
     if (clsPtr->superclasses.num > 0) {
@@ -1149,6 +1148,7 @@ ObjectNamespaceDeleted(
     if (oPtr->mixins.num > 0) {
 	FOREACH(mixinPtr, oPtr->mixins) {
 	    TclOORemoveFromInstances(oPtr, mixinPtr);
+	    TclOODecrRefCount(mixinPtr->thisPtr);
 	}
 	ckfree(oPtr->mixins.list);
     }
@@ -1837,16 +1837,22 @@ Tcl_CopyObjectInstance(
      * Copy the object's mixin references to the new object.
      */
 
-    FOREACH(mixinPtr, o2Ptr->mixins) {
-	if (mixinPtr && mixinPtr != o2Ptr->selfCls) {
-	    TclOORemoveFromInstances(o2Ptr, mixinPtr);
+    if (o2Ptr->mixins.num != 0) {
+	FOREACH(mixinPtr, o2Ptr->mixins) {
+	    if (mixinPtr && mixinPtr != o2Ptr->selfCls) {
+		TclOORemoveFromInstances(o2Ptr, mixinPtr);
+	    }
+	    TclOODecrRefCount(mixinPtr->thisPtr);
 	}
+	ckfree(o2Ptr->mixins.list);
     }
     DUPLICATE(o2Ptr->mixins, oPtr->mixins, Class *);
     FOREACH(mixinPtr, o2Ptr->mixins) {
 	if (mixinPtr && mixinPtr != o2Ptr->selfCls) {
 	    TclOOAddToInstances(o2Ptr, mixinPtr);
 	}
+	/* For the reference just created in DUPLICATE */
+	AddRef(mixinPtr->thisPtr);
     }
 
     /*
@@ -1924,6 +1930,7 @@ Tcl_CopyObjectInstance(
 
 	FOREACH(superPtr, cls2Ptr->superclasses) {
 	    TclOORemoveFromSubclasses(cls2Ptr, superPtr);
+	    TclOODecrRefCount(superPtr->thisPtr);
 	}
 	if (cls2Ptr->superclasses.num) {
 	    cls2Ptr->superclasses.list = ckrealloc(cls2Ptr->superclasses.list,
@@ -1967,15 +1974,18 @@ Tcl_CopyObjectInstance(
 	 * references to the duplicate).
 	 */
 
-	FOREACH(mixinPtr, cls2Ptr->mixins) {
-	    TclOORemoveFromMixinSubs(cls2Ptr, mixinPtr);
-	}
 	if (cls2Ptr->mixins.num != 0) {
+	    FOREACH(mixinPtr, cls2Ptr->mixins) {
+		TclOORemoveFromMixinSubs(cls2Ptr, mixinPtr);
+		TclOODecrRefCount(mixinPtr->thisPtr);
+	    }
 	    ckfree(clsPtr->mixins.list);
 	}
 	DUPLICATE(cls2Ptr->mixins, clsPtr->mixins, Class *);
 	FOREACH(mixinPtr, cls2Ptr->mixins) {
 	    TclOOAddToMixinSubs(cls2Ptr, mixinPtr);
+	    /* For the copy just created in DUPLICATE */
+	    AddRef(mixinPtr->thisPtr);
 	}
 
 	/*
