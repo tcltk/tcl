@@ -2337,26 +2337,17 @@ StringRplcCmd(
     } else {
 	Tcl_Obj *resultPtr;
 
-	/*
-	 * We are re-fetching in case the string argument is same value as 
-	 * an index argument, and shimmering cost us our ustring.
-	 */
-
-	ustring = Tcl_GetUnicodeFromObj(objv[1], &length);
-	end = length-1;
-
 	if (first < 0) {
 	    first = 0;
 	}
+	if (last > end) {
+	    last = end;
+	}
 
-	resultPtr = Tcl_NewUnicodeObj(ustring, first);
-	if (objc == 5) {
-	    Tcl_AppendObjToObj(resultPtr, objv[4]);
-	}
-	if (last < end) {
-	    Tcl_AppendUnicodeToObj(resultPtr, ustring + last + 1,
-		    end - last);
-	}
+	resultPtr = TclStringReplace(interp, objv[1], first,
+		last + 1 - first, (objc == 5) ? objv[4] : NULL,
+		TCL_STRING_IN_PLACE);
+
 	Tcl_SetObjResult(interp, resultPtr);
     }
     return TCL_OK;
