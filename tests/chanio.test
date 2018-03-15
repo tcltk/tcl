@@ -5338,22 +5338,22 @@ test chan-io-40.2 {POSIX open access modes: CREAT} -setup {
 } -constraints {unix} -body {
     set f [open $path(test3) {WRONLY CREAT} 0600]
     file stat $path(test3) stats
-    set x [format "0%o" [expr $stats(mode)&0o777]]
+    set x [format "%#o" [expr $stats(mode)&0o777]]
     chan puts $f "line 1"
     chan close $f
     set f [open $path(test3) r]
     lappend x [chan gets $f]
 } -cleanup {
     chan close $f
-} -result {0600 {line 1}}
+} -result {0o600 {line 1}}
 test chan-io-40.3 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
 } -constraints {unix umask} -body {
     # This test only works if your umask is 2, like ouster's.
     chan close [open $path(test3) {WRONLY CREAT}]
     file stat $path(test3) stats
-    format "0%o" [expr $stats(mode)&0o777]
-} -result [format %04o [expr {0o666 & ~ $umaskValue}]]
+    format "%#o" [expr $stats(mode)&0o777]
+} -result [format %#5o [expr {0o666 & ~ $umaskValue}]]
 test chan-io-40.4 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
 } -body {
@@ -5866,6 +5866,8 @@ test chan-io-47.6 {file events on shared files, deleting file events} -setup {
     testfevent delete
     chan close $f
 } -result {{script 1} {}}
+unset path(foo)
+removeFile foo
 
 set path(bar) [makeFile {} bar]
 
@@ -5961,6 +5963,9 @@ test chan-io-48.3 {testing readability conditions} -setup {
 } -cleanup {
     chan close $f
 } -result {done {0 1 0 1 0 1 0 1 0 1 0 1 0 0}}
+unset path(bar)
+removeFile bar 
+
 test chan-io-48.4 {lf write, testing readability, ^Z termination, auto read mode} -setup {
     file delete $path(test1)
     set c 0
@@ -6775,7 +6780,7 @@ test chan-io-52.10 {TclCopyChannel & encodings} {fcopy} {
 } 5
 test chan-io-52.11 {TclCopyChannel & encodings} -setup {
     set f [open $path(utf8-fcopy.txt) w]
-    fconfigure $f -encoding utf-8
+    fconfigure $f -encoding utf-8 -translation lf
     puts $f "\u0410\u0410"
     close $f
 } -constraints {fcopy} -body {
@@ -6790,8 +6795,6 @@ test chan-io-52.11 {TclCopyChannel & encodings} -setup {
     chan close $in
     chan close $out
     file size $path(kyrillic.txt)
-} -cleanup {
-    file delete $path(utf8-fcopy.txt)
 } -result 3
 
 test chan-io-53.1 {CopyData} -setup {

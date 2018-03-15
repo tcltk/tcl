@@ -25,7 +25,7 @@ typedef struct AcceptCallback {
  * It must be per-thread because of std channel limitations.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     int initialized;		/* Set to 1 when the module is initialized. */
     Tcl_Obj *stdoutObjPtr;	/* Cached stdout channel Tcl_Obj */
 } ThreadSpecificData;
@@ -113,7 +113,6 @@ Tcl_PutsObjCmd(
     int newline;		/* Add a newline at end? */
     int result;			/* Result of puts operation. */
     int mode;			/* Mode in which channel is opened. */
-    ThreadSpecificData *tsdPtr;
 
     switch (objc) {
     case 2:			/* [puts $x] */
@@ -138,7 +137,7 @@ Tcl_PutsObjCmd(
 	    chanObjPtr = objv[2];
 	    string = objv[3];
 	    break;
-#if TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 	} else if (strcmp(TclGetString(objv[3]), "nonewline") == 0) {
 	    /*
 	     * The code below provides backwards compatibility with an old
@@ -160,7 +159,7 @@ Tcl_PutsObjCmd(
     }
 
     if (chanObjPtr == NULL) {
-	tsdPtr = TCL_TSD_INIT(&dataKey);
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	if (!tsdPtr->initialized) {
 	    tsdPtr->initialized = 1;
@@ -440,7 +439,7 @@ Tcl_ReadObjCmd(
     if (i < objc) {
 	if ((TclGetIntFromObj(interp, objv[i], &toRead) != TCL_OK)
 		|| (toRead < 0)) {
-#if TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 	    /*
 	     * The code below provides backwards compatibility with an old
 	     * form of the command that is no longer recommended or
@@ -455,7 +454,7 @@ Tcl_ReadObjCmd(
 			TclGetString(objv[i])));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
 		return TCL_ERROR;
-#if TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 	    }
 	    newline = 1;
 #endif
@@ -1618,19 +1617,34 @@ Tcl_SocketObjCmd(
 	return TCL_ERROR;
     }
 
-    // Set the options to their default value if the user didn't override their
-    // value.
-    if (reusep == -1) reusep = 0;
-    if (reusea == -1) reusea = 1;
+    /*
+     * Set the options to their default value if the user didn't override
+     * their value.
+     */
 
-    // Build the bitset with the flags values.
-    if (reusea)
+    if (reusep == -1) {
+	reusep = 0;
+    }
+    if (reusea == -1) {
+	reusea = 1;
+    }
+
+    /*
+     * Build the bitset with the flags values.
+     */
+
+    if (reusea) {
 	flags |= TCL_TCPSERVER_REUSEADDR;
-    if (reusep)
+    }
+    if (reusep) {
 	flags |= TCL_TCPSERVER_REUSEPORT;
+    }
 
-    // All the arguments should have been parsed by now, 'a' points to the last
-    // one, the port number.
+    /*
+     * All the arguments should have been parsed by now, 'a' points to the
+     * last one, the port number.
+     */
+
     if (a != objc-1) {
 	goto wrongNumArgs;
     }
@@ -1638,15 +1652,14 @@ Tcl_SocketObjCmd(
     port = TclGetString(objv[a]);
 
     if (server) {
-	AcceptCallback *acceptCallbackPtr =
-		ckalloc(sizeof(AcceptCallback));
+	AcceptCallback *acceptCallbackPtr = ckalloc(sizeof(AcceptCallback));
 
 	Tcl_IncrRefCount(script);
 	acceptCallbackPtr->script = script;
 	acceptCallbackPtr->interp = interp;
 
-	chan = Tcl_OpenTcpServerEx(interp, port, host, flags, AcceptCallbackProc,
-				   acceptCallbackPtr);
+	chan = Tcl_OpenTcpServerEx(interp, port, host, flags,
+		AcceptCallbackProc, acceptCallbackPtr);
 	if (chan == NULL) {
 	    Tcl_DecrRefCount(script);
 	    ckfree(acceptCallbackPtr);

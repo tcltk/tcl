@@ -139,13 +139,10 @@ test resolver-1.5 {cmdNameObj sharing vs. cmd resolver: other than global NS} -s
 	variable r2 ""
     }
 } -constraints testinterpresolver -body {
-    set r0 [namespace eval ::ns2 {x}]
-    set r1 [namespace eval ::ns2 {z}]
-    namespace eval ::ns2 {
+    list [namespace eval ::ns2 {x}] [namespace eval ::ns2 {z}] [namespace eval ::ns2 {
 	namespace import ::ns1::z
-	set r2 [z]
-    }
-    list $r0 $r1 $r2
+	z
+    }]
 } -cleanup {
     testinterpresolver down
     namespace delete ::ns2

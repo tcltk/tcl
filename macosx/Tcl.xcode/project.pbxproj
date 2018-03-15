@@ -838,7 +838,6 @@
 		F96D447308F272BA004A47F5 /* coffbase.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = coffbase.txt; sourceTree = "<group>"; };
 		F96D447408F272BA004A47F5 /* configure */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = configure; sourceTree = "<group>"; };
 		F96D447508F272BA004A47F5 /* configure.ac */ = {isa = PBXFileReference; explicitFileType = text.script.sh; fileEncoding = 4; path = configure.ac; sourceTree = "<group>"; };
-		F96D447608F272BA004A47F5 /* makefile.bc */ = {isa = PBXFileReference; explicitFileType = sourcecode.make; fileEncoding = 4; path = makefile.bc; sourceTree = "<group>"; };
 		F96D447708F272BA004A47F5 /* Makefile.in */ = {isa = PBXFileReference; explicitFileType = sourcecode.make; fileEncoding = 4; path = Makefile.in; sourceTree = "<group>"; };
 		F96D447808F272BA004A47F5 /* makefile.vc */ = {isa = PBXFileReference; explicitFileType = sourcecode.make; fileEncoding = 4; path = makefile.vc; sourceTree = "<group>"; };
 		F96D447908F272BA004A47F5 /* nmakehlp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = nmakehlp.c; sourceTree = "<group>"; };
@@ -1761,7 +1760,6 @@
 				F96D447308F272BA004A47F5 /* coffbase.txt */,
 				F96D447408F272BA004A47F5 /* configure */,
 				F96D447508F272BA004A47F5 /* configure.ac */,
-				F96D447608F272BA004A47F5 /* makefile.bc */,
 				F96D447708F272BA004A47F5 /* Makefile.in */,
 				F96D447808F272BA004A47F5 /* makefile.vc */,
 				F96D447908F272BA004A47F5 /* nmakehlp.c */,

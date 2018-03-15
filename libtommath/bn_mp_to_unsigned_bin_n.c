@@ -16,16 +16,16 @@
  */
 
 /* store in unsigned [big endian] format */
-int mp_to_unsigned_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen)
+int mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen)
 {
    if (*outlen < (unsigned long)mp_unsigned_bin_size(a)) {
       return MP_VAL;
    }
-   *outlen = mp_unsigned_bin_size(a);
+   *outlen = (unsigned long)mp_unsigned_bin_size(a);
    return mp_to_unsigned_bin(a, b);
 }
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */

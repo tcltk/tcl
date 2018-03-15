@@ -3,23 +3,26 @@
 #
 
 #version of library
-VERSION=1.0
-VERSION_SO=1:0
+VERSION=1.0.1
+VERSION_PC=1.0.1
+VERSION_SO=1:1
+
+PLATFORM := $(shell uname | sed -e 's/_.*//')
 
 # default make target
 default: ${LIBNAME}
 
 # Compiler and Linker Names
-ifndef PREFIX
-  PREFIX=
+ifndef CROSS_COMPILE
+  CROSS_COMPILE=
 endif
 
 ifeq ($(CC),cc)
-  CC = $(PREFIX)gcc
+  CC = $(CROSS_COMPILE)gcc
 endif
-LD=$(PREFIX)ld
-AR=$(PREFIX)ar
-RANLIB=$(PREFIX)ranlib
+LD=$(CROSS_COMPILE)ld
+AR=$(CROSS_COMPILE)ar
+RANLIB=$(CROSS_COMPILE)ranlib
 
 ifndef MAKE
    MAKE=make
@@ -54,6 +57,16 @@ endif
 endif # COMPILE_SIZE
 endif # COMPILE_DEBUG
 
+ifneq ($(findstring clang,$(CC)),)
+CFLAGS += -Wno-typedef-redefinition -Wno-tautological-compare -Wno-builtin-requires-header
+endif
+ifneq ($(findstring mingw,$(CC)),)
+CFLAGS += -Wno-shadow
+endif
+ifeq ($(PLATFORM), Darwin)
+CFLAGS += -Wno-nullability-completeness
+endif
+
 # adjust coverage set
 ifneq ($(filter $(shell arch), i386 i686 x86_64 amd64 ia64),)
    COVERAGE = test_standalone timing
@@ -68,12 +81,14 @@ HEADERS=tommath_private.h $(HEADERS_PUB)
 
 test_standalone: CFLAGS+=-DLTM_DEMO_TEST_VS_MTEST=0
 
-#LIBPATH-The directory for libtommath to be installed to.
-#INCPATH-The directory to install the header files for libtommath.
-#DATAPATH-The directory to install the pdf docs.
-LIBPATH?=/usr/lib
-INCPATH?=/usr/include
-DATAPATH?=/usr/share/doc/libtommath/pdf
+#LIBPATH  The directory for libtommath to be installed to.
+#INCPATH  The directory to install the header files for libtommath.
+#DATAPATH The directory to install the pdf docs.
+DESTDIR  ?=
+PREFIX   ?= /usr/local
+LIBPATH  ?= $(PREFIX)/lib
+INCPATH  ?= $(PREFIX)/include
+DATAPATH ?= $(PREFIX)/share/doc/libtommath/pdf
 
 #make the code coverage of the library
 #
@@ -98,8 +113,8 @@ cleancov-clean:
 cleancov: cleancov-clean clean
 
 clean:
-	rm -f *.gcda *.gcno *.bat *.o *.a *.obj *.lib *.exe *.dll etclib/*.o demo/demo.o test ltmtest mpitest mtest/mtest mtest/mtest.exe \
+	rm -f *.gcda *.gcno *.gcov *.bat *.o *.a *.obj *.lib *.exe *.dll etclib/*.o demo/demo.o test ltmtest mpitest mtest/mtest mtest/mtest.exe \
         *.idx *.toc *.log *.aux *.dvi *.lof *.ind *.ilg *.ps *.log *.s mpi.c *.da *.dyn *.dpi tommath.tex `find . -type f | grep [~] | xargs` *.lo *.la
 	rm -rf .libs/
-	cd etc ; MAKE=${MAKE} ${MAKE} clean
-	cd pics ; MAKE=${MAKE} ${MAKE} clean
+	${MAKE} -C etc/ clean MAKE=${MAKE}
+	${MAKE} -C doc/ clean MAKE=${MAKE}

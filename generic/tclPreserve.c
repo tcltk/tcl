@@ -155,7 +155,7 @@ Tcl_Preserve(
     refPtr->clientData = clientData;
     refPtr->refCount = 1;
     refPtr->mustFree = 0;
-    refPtr->freeProc = TCL_STATIC;
+    refPtr->freeProc = 0;
     inUse += 1;
     Tcl_MutexUnlock(&preserveMutex);
 }

@@ -15,38 +15,40 @@
  * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
 
-int mp_fwrite(mp_int *a, int radix, FILE *stream)
+#ifndef LTM_NO_FILE
+int mp_fwrite(const mp_int *a, int radix, FILE *stream)
 {
    char *buf;
    int err, len, x;
-   
+
    if ((err = mp_radix_size(a, radix, &len)) != MP_OKAY) {
       return err;
    }
 
-   buf = OPT_CAST(char) XMALLOC (len);
+   buf = OPT_CAST(char) XMALLOC((size_t)len);
    if (buf == NULL) {
       return MP_MEM;
    }
-   
+
    if ((err = mp_toradix(a, buf, radix)) != MP_OKAY) {
-      XFREE (buf);
+      XFREE(buf);
       return err;
    }
-   
+
    for (x = 0; x < len; x++) {
-       if (fputc(buf[x], stream) == EOF) {
-          XFREE (buf);
-          return MP_VAL;
-       }
+      if (fputc((int)buf[x], stream) == EOF) {
+         XFREE(buf);
+         return MP_VAL;
+      }
    }
-   
-   XFREE (buf);
+
+   XFREE(buf);
    return MP_OKAY;
 }
+#endif
 
 #endif
 
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* ref:         $Format:%D$ */
+/* git commit:  $Format:%H$ */
+/* commit time: $Format:%ai$ */
