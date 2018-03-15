@@ -44,5 +44,6 @@ unix/pkgs/*
 win/Debug*
 win/Release*
 win/pkgs/*
+win/coffbase.txt
 win/tcl.hpj
 win/nmhlp-out.txt

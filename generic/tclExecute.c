@@ -77,7 +77,7 @@ int tclTraceExec = 0;
  */
 
 static const char *const operatorStrings[] = {
-    "||", "&&", "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
+    "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
     "+", "-", "*", "/", "%", "+", "-", "~", "!"
 };
 
@@ -101,7 +101,6 @@ long		tclObjsAlloced = 0;
 long		tclObjsFreed = 0;
 long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #endif /* TCL_COMPILE_STATS */
-
 
 /*
  * NR_TEBC
@@ -268,7 +267,7 @@ VarHashCreateVar(
 	    NEXT_INST_F(((condition)? TclGetInt4AtPtr(pc+1) : 5), (cleanup), 0); \
 	default:							\
 	    if ((condition) < 0) {					\
-		TclNewLongObj(objResultPtr, -1);				\
+		TclNewIntObj(objResultPtr, -1);				\
 	    } else {							\
 		objResultPtr = TCONST((condition) > 0);			\
 	    }								\
@@ -289,7 +288,7 @@ VarHashCreateVar(
 	    NEXT_INST_V(((condition)? TclGetInt4AtPtr(pc+1) : 5), (cleanup), 0); \
 	default:							\
 	    if ((condition) < 0) {					\
-		TclNewLongObj(objResultPtr, -1);				\
+		TclNewIntObj(objResultPtr, -1);				\
 	    } else {							\
 		objResultPtr = TCONST((condition) > 0);			\
 	    }								\
@@ -300,7 +299,7 @@ VarHashCreateVar(
 #define JUMP_PEEPHOLE_F(condition, pcAdjustment, cleanup) \
     do{									\
 	if ((condition) < 0) {						\
-	    TclNewLongObj(objResultPtr, -1);				\
+	    TclNewIntObj(objResultPtr, -1);				\
 	} else {							\
 	    objResultPtr = TCONST((condition) > 0);			\
 	}								\
@@ -309,7 +308,7 @@ VarHashCreateVar(
 #define JUMP_PEEPHOLE_V(condition, pcAdjustment, cleanup) \
     do{									\
 	if ((condition) < 0) {						\
-	    TclNewLongObj(objResultPtr, -1);				\
+	    TclNewIntObj(objResultPtr, -1);				\
 	} else {							\
 	    objResultPtr = TCONST((condition) > 0);			\
 	}								\
@@ -441,28 +440,8 @@ VarHashCreateVar(
  *			ClientData *ptrPtr, int *tPtr);
  */
 
-#ifdef TCL_WIDE_INT_IS_LONG
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
     (((objPtr)->typePtr == &tclIntType)					\
-	?	(*(tPtr) = TCL_NUMBER_LONG,				\
-		*(ptrPtr) = (ClientData)				\
-		    (&((objPtr)->internalRep.longValue)), TCL_OK) :	\
-    ((objPtr)->typePtr == &tclDoubleType)				\
-	?	(((TclIsNaN((objPtr)->internalRep.doubleValue))		\
-		    ?	(*(tPtr) = TCL_NUMBER_NAN)			\
-		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
-		*(ptrPtr) = (ClientData)				\
-		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
-    (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
-	? TCL_ERROR :			\
-    TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
-#else /* !TCL_WIDE_INT_IS_LONG */
-#define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
-    (((objPtr)->typePtr == &tclIntType)					\
-	?	(*(tPtr) = TCL_NUMBER_LONG,				\
-		*(ptrPtr) = (ClientData)				\
-		    (&((objPtr)->internalRep.longValue)), TCL_OK) :	\
-    ((objPtr)->typePtr == &tclWideIntType)				\
 	?	(*(tPtr) = TCL_NUMBER_WIDE,				\
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
@@ -475,21 +454,6 @@ VarHashCreateVar(
     (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
 	? TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
-#endif /* TCL_WIDE_INT_IS_LONG */
-
-/*
- * Macro used in this file to save a function call for common uses of
- * Tcl_GetBooleanFromObj(). The ANSI C "prototype" is:
- *
- * MODULE_SCOPE int TclGetBooleanFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
- *			int *boolPtr);
- */
-
-#define TclGetBooleanFromObj(interp, objPtr, boolPtr) \
-    ((((objPtr)->typePtr == &tclIntType)				\
-	|| ((objPtr)->typePtr == &tclBooleanType))			\
-	? (*(boolPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
-	: Tcl_GetBooleanFromObj((interp), (objPtr), (boolPtr)))
 
 /*
  * Macro used to make the check for type overflow more mnemonic. This works by
@@ -518,40 +482,6 @@ VarHashCreateVar(
 /*
  * Auxiliary tables used to compute powers of small integers.
  */
-
-#if (LONG_MAX == 0x7fffffff)
-
-/*
- * Maximum base that, when raised to powers 2, 3, ... 8, fits in a 32-bit
- * signed integer.
- */
-
-static const long MaxBase32[] = {46340, 1290, 215, 73, 35, 21, 14};
-static const size_t MaxBase32Size = sizeof(MaxBase32)/sizeof(long);
-
-/*
- * Table giving 3, 4, ..., 11, raised to the powers 9, 10, ..., as far as they
- * fit in a 32-bit signed integer. Exp32Index[i] gives the starting index of
- * powers of i+3; Exp32Value[i] gives the corresponding powers.
- */
-
-static const unsigned short Exp32Index[] = {
-    0, 11, 18, 23, 26, 29, 31, 32, 33
-};
-static const size_t Exp32IndexSize =
-    sizeof(Exp32Index) / sizeof(unsigned short);
-static const long Exp32Value[] = {
-    19683, 59049, 177147, 531441, 1594323, 4782969, 14348907, 43046721,
-    129140163, 387420489, 1162261467, 262144, 1048576, 4194304,
-    16777216, 67108864, 268435456, 1073741824, 1953125, 9765625,
-    48828125, 244140625, 1220703125, 10077696, 60466176, 362797056,
-    40353607, 282475249, 1977326743, 134217728, 1073741824, 387420489,
-    1000000000
-};
-static const size_t Exp32ValueSize = sizeof(Exp32Value)/sizeof(long);
-#endif /* LONG_MAX == 0x7fffffff -- 32 bit machine */
-
-#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
 
 /*
  * Maximum base that, when raised to powers 2, 3, ..., 16, fits in a
@@ -656,7 +586,6 @@ static const Tcl_WideInt Exp64Value[] = {
     (Tcl_WideInt)371293*371293*371293*13*13
 };
 static const size_t Exp64ValueSize = sizeof(Exp64Value) / sizeof(Tcl_WideInt);
-#endif /* (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG) */
 
 /*
  * Markers for ExecuteExtendedBinaryMathOp.
@@ -687,8 +616,6 @@ static ByteCode *	CompileExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		DeleteExecStack(ExecStack *esPtr);
 static void		DupExprCodeInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
-MODULE_SCOPE int	TclCompareTwoNumbers(Tcl_Obj *valuePtr,
-			    Tcl_Obj *value2Ptr);
 static Tcl_Obj *	ExecuteExtendedBinaryMathOp(Tcl_Interp *interp,
 			    int opcode, Tcl_Obj **constants,
 			    Tcl_Obj *valuePtr, Tcl_Obj *value2Ptr);
@@ -851,9 +778,9 @@ TclCreateExecEnv(
 	    + (size_t) (size-1) * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
-    TclNewLongObj(eePtr->constants[0], 0);
+    TclNewIntObj(eePtr->constants[0], 0);
     Tcl_IncrRefCount(eePtr->constants[0]);
-    TclNewLongObj(eePtr->constants[1], 1);
+    TclNewIntObj(eePtr->constants[1], 1);
     Tcl_IncrRefCount(eePtr->constants[1]);
     eePtr->interp = interp;
     eePtr->callbackPtr = NULL;
@@ -1276,12 +1203,12 @@ TclStackAlloc(
     int numBytes)
 {
     Interp *iPtr = (Interp *) interp;
-    int numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
+    int numWords;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return (void *) ckalloc(numBytes);
     }
-
+    numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
     return (void *) StackAllocWords(interp, numWords);
 }
 
@@ -1820,37 +1747,6 @@ TclIncrObj(
 	return TCL_ERROR;
     }
 
-    if ((type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
-	long augend = *((const long *) ptr1);
-	long addend = *((const long *) ptr2);
-	long sum = augend + addend;
-
-	/*
-	 * Overflow when (augend and sum have different sign) and (augend and
-	 * addend have the same sign). This is encapsulated in the Overflowing
-	 * macro.
-	 */
-
-	if (!Overflowing(augend, addend, sum)) {
-	    TclSetLongObj(valuePtr, sum);
-	    return TCL_OK;
-	}
-#ifndef TCL_WIDE_INT_IS_LONG
-	{
-	    Tcl_WideInt w1 = (Tcl_WideInt) augend;
-	    Tcl_WideInt w2 = (Tcl_WideInt) addend;
-
-	    /*
-	     * We know the sum value is outside the long range, so we use the
-	     * macro form that doesn't range test again.
-	     */
-
-	    TclSetWideIntObj(valuePtr, w1 + w2);
-	    return TCL_OK;
-	}
-#endif
-    }
-
     if ((type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
 	/*
 	 * Produce error message (reparse?!)
@@ -1868,7 +1764,6 @@ TclIncrObj(
 	return TCL_ERROR;
     }
 
-#ifndef TCL_WIDE_INT_IS_LONG
     if ((type1 != TCL_NUMBER_BIG) && (type2 != TCL_NUMBER_BIG)) {
 	Tcl_WideInt w1, w2, sum;
 
@@ -1881,11 +1776,10 @@ TclIncrObj(
 	 */
 
 	if (!Overflowing(w1, w2, sum)) {
-	    Tcl_SetWideIntObj(valuePtr, sum);
+	    TclSetIntObj(valuePtr, sum);
 	    return TCL_OK;
 	}
     }
-#endif
 
     Tcl_TakeBignumFromObj(interp, valuePtr, &value);
     Tcl_GetBignumFromObj(interp, incrPtr, &incr);
@@ -2627,9 +2521,9 @@ TEBCresume(
     case INST_STR_CONCAT1:
 
 	opnd = TclGetUInt1AtPtr(pc+1);
-
-	if (TCL_OK != TclStringCatObjv(interp, /* inPlace */ 1,
-		opnd, &OBJ_AT_DEPTH(opnd-1), &objResultPtr)) {
+	objResultPtr = TclStringCat(interp, opnd, &OBJ_AT_DEPTH(opnd-1),
+		TCL_STRING_IN_PLACE);
+	if (objResultPtr == NULL) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -2844,16 +2738,6 @@ TEBCresume(
 	TEBC_YIELD();
 	return TclNREvalObjv(interp, objc, objv,
 		TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME, NULL);
-
-    /*
-     * INST_CALL_BUILTIN_FUNC1 and INST_CALL_FUNC1 were made obsolete by the
-     * changes to add a ::tcl::mathfunc namespace in 8.5.
-     */
-
-    case INST_CALL_BUILTIN_FUNC1:
-	Tcl_Panic("TclNRExecuteByteCode: obsolete INST_CALL_BUILTIN_FUNC1 found");
-    case INST_CALL_FUNC1:
-	Tcl_Panic("TclNRExecuteByteCode: obsolete INST_CALL_FUNC1 found");
 
     case INST_INVOKE_REPLACE:
 	objc = TclGetUInt4AtPtr(pc+1);
@@ -3494,9 +3378,7 @@ TEBCresume(
 
     {
 	Tcl_Obj *incrPtr;
-#ifndef TCL_WIDE_INT_IS_LONG
 	Tcl_WideInt w;
-#endif
 	long increment;
 
     case INST_INCR_SCALAR1:
@@ -3595,9 +3477,9 @@ TEBCresume(
 
 	    objPtr = varPtr->value.objPtr;
 	    if (GetNumberFromObj(NULL, objPtr, &ptr, &type) == TCL_OK) {
-		if (type == TCL_NUMBER_LONG) {
-		    long augend = *((const long *)ptr);
-		    long sum = augend + increment;
+		if (type == TCL_NUMBER_WIDE) {
+		    Tcl_WideInt augend = *((const Tcl_WideInt *)ptr);
+		    Tcl_WideInt sum = augend + increment;
 
 		    /*
 		     * Overflow when (augend and sum have different sign) and
@@ -3609,16 +3491,15 @@ TEBCresume(
 			TRACE(("%u %ld => ", opnd, increment));
 			if (Tcl_IsShared(objPtr)) {
 			    objPtr->refCount--;	/* We know it's shared. */
-			    TclNewLongObj(objResultPtr, sum);
+			    TclNewIntObj(objResultPtr, sum);
 			    Tcl_IncrRefCount(objResultPtr);
 			    varPtr->value.objPtr = objResultPtr;
 			} else {
 			    objResultPtr = objPtr;
-			    TclSetLongObj(objPtr, sum);
+			    TclSetIntObj(objPtr, sum);
 			}
 			goto doneIncr;
 		    }
-#ifndef TCL_WIDE_INT_IS_LONG
 		    w = (Tcl_WideInt)augend;
 
 		    TRACE(("%u %ld => ", opnd, increment));
@@ -3635,44 +3516,10 @@ TEBCresume(
 			 * use macro form that doesn't range test again.
 			 */
 
-			TclSetWideIntObj(objPtr, w+increment);
+			TclSetIntObj(objPtr, w+increment);
 		    }
 		    goto doneIncr;
-#endif
-		}	/* end if (type == TCL_NUMBER_LONG) */
-#ifndef TCL_WIDE_INT_IS_LONG
-		if (type == TCL_NUMBER_WIDE) {
-		    Tcl_WideInt sum;
-
-		    w = *((const Tcl_WideInt *) ptr);
-		    sum = w + increment;
-
-		    /*
-		     * Check for overflow.
-		     */
-
-		    if (!Overflowing(w, increment, sum)) {
-			TRACE(("%u %ld => ", opnd, increment));
-			if (Tcl_IsShared(objPtr)) {
-			    objPtr->refCount--;	/* We know it's shared. */
-			    objResultPtr = Tcl_NewWideIntObj(sum);
-			    Tcl_IncrRefCount(objResultPtr);
-			    varPtr->value.objPtr = objResultPtr;
-			} else {
-			    objResultPtr = objPtr;
-
-			    /*
-			     * We *do not* know the sum value is outside the
-			     * long range (wide + long can yield long); use
-			     * the function call that checks range.
-			     */
-
-			    Tcl_SetWideIntObj(objPtr, sum);
-			}
-			goto doneIncr;
-		    }
-		}
-#endif
+		}	/* end if (type == TCL_NUMBER_WIDE) */
 	    }
 	    if (Tcl_IsShared(objPtr)) {
 		objPtr->refCount--;	/* We know it's shared */
@@ -3682,7 +3529,7 @@ TEBCresume(
 	    } else {
 		objResultPtr = objPtr;
 	    }
-	    TclNewLongObj(incrPtr, increment);
+	    TclNewIntObj(incrPtr, increment);
 	    if (TclIncrObj(interp, objResultPtr, incrPtr) != TCL_OK) {
 		Tcl_DecrRefCount(incrPtr);
 		TRACE_ERROR(interp);
@@ -3696,7 +3543,7 @@ TEBCresume(
 	 * All other cases, flow through to generic handling.
 	 */
 
-	TclNewLongObj(incrPtr, increment);
+	TclNewIntObj(incrPtr, increment);
 	Tcl_IncrRefCount(incrPtr);
 
     doIncrScalar:
@@ -3973,29 +3820,6 @@ TEBCresume(
 	CACHE_STACK_INFO();
 	TRACE_ERROR(interp);
 	goto gotError;
-
-	/*
-	 * This is really an unset operation these days. Do not issue.
-	 */
-
-    case INST_DICT_DONE:
-	opnd = TclGetUInt4AtPtr(pc+1);
-	TRACE(("%u => OK\n", opnd));
-	varPtr = LOCAL(opnd);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
-	if (TclIsVarDirectUnsettable(varPtr) && !TclIsVarInHash(varPtr)) {
-	    if (!TclIsVarUndefined(varPtr)) {
-		TclDecrRefCount(varPtr->value.objPtr);
-	    }
-	    varPtr->value.objPtr = NULL;
-	} else {
-	    DECACHE_STACK_INFO();
-	    TclPtrUnsetVarIdx(interp, varPtr, NULL, NULL, NULL, 0, opnd);
-	    CACHE_STACK_INFO();
-	}
-	NEXT_INST_F(5, 0, 0);
     }
 
     /*
@@ -4322,50 +4146,6 @@ TEBCresume(
     }
 
     /*
-     * These two instructions are now redundant: the complete logic of the LOR
-     * and LAND is now handled by the expression compiler.
-     */
-
-    case INST_LOR:
-    case INST_LAND: {
-	/*
-	 * Operands must be boolean or numeric. No int->double conversions are
-	 * performed.
-	 */
-
-	int i1, i2, iResult;
-
-	value2Ptr = OBJ_AT_TOS;
-	valuePtr = OBJ_UNDER_TOS;
-	if (TclGetBooleanFromObj(NULL, valuePtr, &i1) != TCL_OK) {
-	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
-		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
-	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, pc, valuePtr);
-	    CACHE_STACK_INFO();
-	    goto gotError;
-	}
-
-	if (TclGetBooleanFromObj(NULL, value2Ptr, &i2) != TCL_OK) {
-	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
-		    (value2Ptr->typePtr? value2Ptr->typePtr->name : "null")));
-	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, pc, value2Ptr);
-	    CACHE_STACK_INFO();
-	    goto gotError;
-	}
-
-	if (*pc == INST_LOR) {
-	    iResult = (i1 || i2);
-	} else {
-	    iResult = (i1 && i2);
-	}
-	objResultPtr = TCONST(iResult);
-	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr),O2S(value2Ptr),iResult));
-	NEXT_INST_F(1, 2, 1);
-    }
-
-    /*
      * -----------------------------------------------------------------
      *	   Start of general introspector instructions.
      */
@@ -4394,7 +4174,7 @@ TEBCresume(
 	NEXT_INST_F(1, 0, 1);
     }
     case INST_INFO_LEVEL_NUM:
-	TclNewLongObj(objResultPtr, iPtr->varFramePtr->level);
+	TclNewIntObj(objResultPtr, iPtr->varFramePtr->level);
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
     case INST_INFO_LEVEL_ARGS: {
@@ -4763,7 +4543,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	TclNewLongObj(objResultPtr, length);
+	TclNewIntObj(objResultPtr, length);
 	TRACE_APPEND(("%d\n", length));
 	NEXT_INST_F(1, 1, 1);
 
@@ -4820,16 +4600,9 @@ TEBCresume(
 	    goto gotError;
 	}
 
-	/*
-	 * Select the list item based on the index. Negative operand means
-	 * end-based indexing.
-	 */
+	/* Decode end-offset index values. */
 
-	if (opnd < -1) {
-	    index = opnd+1 + objc;
-	} else {
-	    index = opnd;
-	}
+	index = TclIndexDecode(opnd, objc - 1);
 	pcAdjustment = 5;
 
     lindexFastPath:
@@ -4977,47 +4750,64 @@ TEBCresume(
 	}
 #endif
 
-	/*
-	 * Adjust the indices for end-based handling.
-	 */
-
-	if (fromIdx < -1) {
-	    fromIdx += 1+objc;
-	    if (fromIdx < -1) {
-		fromIdx = -1;
-	    }
-	} else if (fromIdx > objc) {
-	    fromIdx = objc;
-	}
-	if (toIdx < -1) {
-	    toIdx += 1 + objc;
-	    if (toIdx < -1) {
-		toIdx = -1;
-	    }
-	} else if (toIdx > objc) {
-	    toIdx = objc;
+	/* Every range of an empty list is an empty list */
+	if (objc == 0) {
+	    TRACE_APPEND(("\n"));
+	    NEXT_INST_F(9, 0, 0);
 	}
 
-	/*
-	 * Check if we are referring to a valid, non-empty list range, and if
-	 * so, build the list of elements in that range.
-	 */
+	/* Decode index value operands. */
 
-	if (fromIdx<=toIdx && fromIdx<objc && toIdx>=0) {
-	    if (fromIdx < 0) {
-		fromIdx = 0;
-	    }
-	    if (toIdx >= objc) {
-		toIdx = objc-1;
-	    }
-	    if (fromIdx == 0 && toIdx != objc-1 && !Tcl_IsShared(valuePtr)) {
-		Tcl_ListObjReplace(interp, valuePtr,
-			toIdx + 1, LIST_MAX, 0, NULL);
+	/* 
+	assert ( toIdx != TCL_INDEX_AFTER);
+	 *
+	 * Extra safety for legacy bytecodes:
+	 */
+	if (toIdx == TCL_INDEX_AFTER) {
+	    toIdx = TCL_INDEX_END;
+	}
+
+	if ((toIdx == TCL_INDEX_BEFORE) || (fromIdx == TCL_INDEX_AFTER)) {
+	    goto emptyList;
+	}
+	toIdx = TclIndexDecode(toIdx, objc - 1);
+	if (toIdx < 0) {
+	    goto emptyList;
+	} else if (toIdx >= objc) {
+	    toIdx = objc - 1;
+	}
+
+	assert ( toIdx >= 0 && toIdx < objc);
+	/*
+	assert ( fromIdx != TCL_INDEX_BEFORE );
+	 *
+	 * Extra safety for legacy bytecodes:
+	 */
+	if (fromIdx == TCL_INDEX_BEFORE) {
+	    fromIdx = TCL_INDEX_START;
+	}
+
+	fromIdx = TclIndexDecode(fromIdx, objc - 1);
+	if (fromIdx < 0) {
+	    fromIdx = 0;
+	}
+
+	if (fromIdx <= toIdx) {
+	    /* Construct the subsquence list */
+	    /* unshared optimization */
+	    if (Tcl_IsShared(valuePtr)) {
+		objResultPtr = Tcl_NewListObj(toIdx-fromIdx+1, objv+fromIdx);
+	    } else {
+		if (toIdx != objc - 1) {
+		    Tcl_ListObjReplace(NULL, valuePtr, toIdx + 1, LIST_MAX,
+			    0, NULL);
+		}
+		Tcl_ListObjReplace(NULL, valuePtr, 0, fromIdx, 0, NULL);
 		TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
 		NEXT_INST_F(9, 0, 0);
 	    }
-	    objResultPtr = Tcl_NewListObj(toIdx-fromIdx+1, objv+fromIdx);
 	} else {
+	emptyList:
 	    TclNewObj(objResultPtr);
 	}
 
@@ -5234,7 +5024,7 @@ TEBCresume(
     case INST_STR_LEN:
 	valuePtr = OBJ_AT_TOS;
 	length = Tcl_GetCharLength(valuePtr);
-	TclNewLongObj(objResultPtr, length);
+	TclNewIntObj(objResultPtr, length);
 	TRACE(("\"%.20s\" => %d\n", O2S(valuePtr), length));
 	NEXT_INST_F(1, 1, 1);
 
@@ -5363,31 +5153,58 @@ TEBCresume(
 	length = Tcl_GetCharLength(valuePtr);
 	TRACE(("\"%.20s\" %d %d => ", O2S(valuePtr), fromIdx, toIdx));
 
-	/*
-	 * Adjust indices for end-based indexing.
-	 */
-
-	if (fromIdx < -1) {
-	    fromIdx += 1 + length;
-	    if (fromIdx < 0) {
-		fromIdx = 0;
-	    }
-	} else if (fromIdx >= length) {
-	    fromIdx = length;
+	/* Every range of an empty value is an empty value */
+	if (length == 0) {
+	    TRACE_APPEND(("\n"));
+	    NEXT_INST_F(9, 0, 0);
 	}
-	if (toIdx < -1) {
-	    toIdx += 1 + length;
+
+	/* Decode index operands. */
+
+	/*
+	assert ( toIdx != TCL_INDEX_BEFORE );
+	assert ( toIdx != TCL_INDEX_AFTER);
+	 *
+	 * Extra safety for legacy bytecodes:
+	 */
+	if (toIdx == TCL_INDEX_BEFORE) {
+	    goto emptyRange;
+	}
+	if (toIdx == TCL_INDEX_AFTER) {
+	    toIdx = TCL_INDEX_END;
+	}
+
+	toIdx = TclIndexDecode(toIdx, length - 1);
+	if (toIdx < 0) {
+	    goto emptyRange;
 	} else if (toIdx >= length) {
 	    toIdx = length - 1;
 	}
 
+	assert ( toIdx >= 0 && toIdx < length );
+
 	/*
-	 * Check if we can do a sane substring.
+	assert ( fromIdx != TCL_INDEX_BEFORE );
+	assert ( fromIdx != TCL_INDEX_AFTER);
+	 *
+	 * Extra safety for legacy bytecodes:
 	 */
+	if (fromIdx == TCL_INDEX_BEFORE) {
+	    fromIdx = TCL_INDEX_START;
+	}
+	if (fromIdx == TCL_INDEX_AFTER) {
+	    goto emptyRange;
+	}
+
+	fromIdx = TclIndexDecode(fromIdx, length - 1);
+	if (fromIdx < 0) {
+	    fromIdx = 0;
+	}
 
 	if (fromIdx <= toIdx) {
 	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
 	} else {
+	emptyRange:
 	    TclNewObj(objResultPtr);
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
@@ -5395,18 +5212,18 @@ TEBCresume(
 
     {
 	Tcl_UniChar *ustring1, *ustring2, *ustring3, *end, *p;
-	int length3;
+	int length3, endIdx;
 	Tcl_Obj *value3Ptr;
 
     case INST_STR_REPLACE:
 	value3Ptr = POP_OBJECT();
 	valuePtr = OBJ_AT_DEPTH(2);
-	length = Tcl_GetCharLength(valuePtr) - 1;
+	endIdx = Tcl_GetCharLength(valuePtr) - 1;
 	TRACE(("\"%.20s\" %s %s \"%.20s\" => ", O2S(valuePtr),
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(value3Ptr)));
-	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, length,
+	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, endIdx,
 		    &fromIdx) != TCL_OK
-	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, length,
+	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, endIdx,
 		    &toIdx) != TCL_OK) {
 	    TclDecrRefCount(value3Ptr);
 	    TRACE_ERROR(interp);
@@ -5416,103 +5233,33 @@ TEBCresume(
 	(void) POP_OBJECT();
 	TclDecrRefCount(OBJ_AT_TOS);
 	(void) POP_OBJECT();
-	if (fromIdx < 0) {
-	    fromIdx = 0;
-	}
 
-	if (fromIdx > toIdx || fromIdx > length) {
+	if ((toIdx < 0) ||
+		(fromIdx > endIdx) ||
+		(toIdx < fromIdx)) {
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
 	    TclDecrRefCount(value3Ptr);
 	    NEXT_INST_F(1, 0, 0);
 	}
 
-	if (toIdx > length) {
-	    toIdx = length;
+	if (fromIdx < 0) {
+	    fromIdx = 0;
 	}
 
-	if (fromIdx == 0 && toIdx == length) {
+	if (toIdx > endIdx) {
+	    toIdx = endIdx;
+	}
+
+	if (fromIdx == 0 && toIdx == endIdx) {
 	    TclDecrRefCount(OBJ_AT_TOS);
 	    OBJ_AT_TOS = value3Ptr;
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(value3Ptr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
 
-	length3 = Tcl_GetCharLength(value3Ptr);
+	objResultPtr = TclStringReplace(interp, valuePtr, fromIdx,
+		toIdx - fromIdx + 1, value3Ptr, TCL_STRING_IN_PLACE);
 
-	/*
-	 * See if we can splice in place. This happens when the number of
-	 * characters being replaced is the same as the number of characters
-	 * in the string to be inserted.
-	 */
-
-	if (length3 - 1 == toIdx - fromIdx) {
-	    unsigned char *bytes1, *bytes2;
-
-	    if (Tcl_IsShared(valuePtr)) {
-		objResultPtr = Tcl_DuplicateObj(valuePtr);
-	    } else {
-		objResultPtr = valuePtr;
-	    }
-	    if (TclIsPureByteArray(objResultPtr)
-		    && TclIsPureByteArray(value3Ptr)) {
-		bytes1 = Tcl_GetByteArrayFromObj(objResultPtr, NULL);
-		bytes2 = Tcl_GetByteArrayFromObj(value3Ptr, NULL);
-		memcpy(bytes1 + fromIdx, bytes2, length3);
-	    } else {
-		ustring1 = Tcl_GetUnicodeFromObj(objResultPtr, NULL);
-		ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
-		memcpy(ustring1 + fromIdx, ustring2,
-			length3 * sizeof(Tcl_UniChar));
-	    }
-	    Tcl_InvalidateStringRep(objResultPtr);
-	    TclDecrRefCount(value3Ptr);
-	    TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
-	    if (objResultPtr == valuePtr) {
-		NEXT_INST_F(1, 0, 0);
-	    } else {
-		NEXT_INST_F(1, 1, 1);
-	    }
-	}
-
-	/*
-	 * Get the unicode representation; this is where we guarantee to lose
-	 * bytearrays.
-	 */
-
-	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
-	length--;
-
-	/*
-	 * Remove substring using copying.
-	 */
-
-	objResultPtr = NULL;
-	if (fromIdx > 0) {
-	    objResultPtr = Tcl_NewUnicodeObj(ustring1, fromIdx);
-	}
-	if (length3 > 0) {
-	    if (objResultPtr) {
-		Tcl_AppendObjToObj(objResultPtr, value3Ptr);
-	    } else if (Tcl_IsShared(value3Ptr)) {
-		objResultPtr = Tcl_DuplicateObj(value3Ptr);
-	    } else {
-		objResultPtr = value3Ptr;
-	    }
-	}
-	if (toIdx < length) {
-	    if (objResultPtr) {
-		Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
-			length - toIdx);
-	    } else {
-		objResultPtr = Tcl_NewUnicodeObj(ustring1 + toIdx + 1,
-			length - toIdx);
-	    }
-	}
-	if (objResultPtr == NULL) {
-	    /* This has to be the case [string replace $s 0 end {}] */
-	    /* which has result {} which is same as value3Ptr. */
-	    objResultPtr = value3Ptr;
-	}
 	if (objResultPtr == value3Ptr) {
 	    /* See [Bug 82e7f67325] */
 	    TclDecrRefCount(OBJ_AT_TOS);
@@ -5585,11 +5332,11 @@ TEBCresume(
 	NEXT_INST_V(1, 3, 1);
 
     case INST_STR_FIND:
-	match = TclStringFind(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
+	match = TclStringFirst(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
 
 	TRACE(("%.20s %.20s => %d\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
-	TclNewLongObj(objResultPtr, match);
+	TclNewIntObj(objResultPtr, match);
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_FIND_LAST:
@@ -5597,7 +5344,7 @@ TEBCresume(
 
 	TRACE(("%.20s %.20s => %d\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
-	TclNewLongObj(objResultPtr, match);
+	TclNewIntObj(objResultPtr, match);
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_CLASS:
@@ -5687,12 +5434,7 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;		/* TrimSet */
 	string2 = TclGetStringFromObj(value2Ptr, &length2);
 	string1 = TclGetStringFromObj(valuePtr, &length);
-	trim1 = TclTrimLeft(string1, length, string2, length2);
-	if (trim1 < length) {
-	    trim2 = TclTrimRight(string1, length, string2, length2);
-	} else {
-	    trim2 = 0;
-	}
+	trim1 = TclTrim(string1, length, string2, length2, &trim2);
     createTrimmedString:
 	/*
 	 * Careful here; trim set often contains non-ASCII characters so we
@@ -5770,38 +5512,30 @@ TEBCresume(
     {
 	ClientData ptr1, ptr2;
 	int type1, type2;
-	long l1, l2, lResult;
+	Tcl_WideInt w1, w2, wResult;
 
     case INST_NUM_TYPE:
 	if (GetNumberFromObj(NULL, OBJ_AT_TOS, &ptr1, &type1) != TCL_OK) {
 	    type1 = 0;
-	} else if (type1 == TCL_NUMBER_LONG) {
-	    /* value is between LONG_MIN and LONG_MAX */
+	} else if (type1 == TCL_NUMBER_WIDE) {
+	    /* value is between LLONG_MIN and LLONG_MAX */
 	    /* [string is integer] is -UINT_MAX to UINT_MAX range */
+	    /* [string is wideinteger] is -ULLONG_MAX to ULLONG_MAX range */
 	    int i;
 
-	    if (Tcl_GetIntFromObj(NULL, OBJ_AT_TOS, &i) != TCL_OK) {
-		type1 = TCL_NUMBER_WIDE;
-	    }
-#ifndef TCL_WIDE_INT_IS_LONG
-	} else if (type1 == TCL_NUMBER_WIDE) {
-	    /* value is between WIDE_MIN and WIDE_MAX */
-	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
-	    int i;
 	    if (Tcl_GetIntFromObj(NULL, OBJ_AT_TOS, &i) == TCL_OK) {
 		type1 = TCL_NUMBER_LONG;
 	    }
-#endif
 	} else if (type1 == TCL_NUMBER_BIG) {
-	    /* value is an integer outside the WIDE_MIN to WIDE_MAX range */
-	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
+	    /* value is an integer outside the LLONG_MIN to LLONG_MAX range */
+	    /* [string is wideinteger] is -ULLONG_MAX to ULLONG_MAX range */
 	    Tcl_WideInt w;
 
 	    if (Tcl_GetWideIntFromObj(NULL, OBJ_AT_TOS, &w) == TCL_OK) {
 		type1 = TCL_NUMBER_WIDE;
 	    }
 	}
-	TclNewLongObj(objResultPtr, type1);
+	TclNewIntObj(objResultPtr, type1);
 	TRACE(("\"%.20s\" => %d\n", O2S(OBJ_AT_TOS), type1));
 	NEXT_INST_F(1, 1, 1);
 
@@ -5836,10 +5570,10 @@ TEBCresume(
 	    compare = MP_EQ;
 	    goto convertComparison;
 	}
-	if ((type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
-	    l1 = *((const long *)ptr1);
-	    l2 = *((const long *)ptr2);
-	    compare = (l1 < l2) ? MP_LT : ((l1 > l2) ? MP_GT : MP_EQ);
+	if ((type1 == TCL_NUMBER_WIDE) && (type2 == TCL_NUMBER_WIDE)) {
+	    w1 = *((const Tcl_WideInt *)ptr1);
+	    w2 = *((const Tcl_WideInt *)ptr2);
+	    compare = (w1 < w2) ? MP_LT : ((w1 > w2) ? MP_GT : MP_EQ);
 	} else {
 	    compare = TclCompareTwoNumbers(valuePtr, value2Ptr);
 	}
@@ -5915,17 +5649,17 @@ TEBCresume(
 	 * Check for common, simple case.
 	 */
 
-	if ((type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
-	    l1 = *((const long *)ptr1);
-	    l2 = *((const long *)ptr2);
+	if ((type1 == TCL_NUMBER_WIDE) && (type2 == TCL_NUMBER_WIDE)) {
+	    w1 = *((const Tcl_WideInt *)ptr1);
+	    w2 = *((const Tcl_WideInt *)ptr2);
 
 	    switch (*pc) {
 	    case INST_MOD:
-		if (l2 == 0) {
+		if (w2 == 0) {
 		    TRACE(("%s %s => DIVIDE BY ZERO\n", O2S(valuePtr),
 			    O2S(value2Ptr)));
 		    goto divideByZero;
-		} else if ((l2 == 1) || (l2 == -1)) {
+		} else if ((w2 == 1) || (w2 == -1)) {
 		    /*
 		     * Div. by |1| always yields remainder of 0.
 		     */
@@ -5934,7 +5668,7 @@ TEBCresume(
 		    objResultPtr = TCONST(0);
 		    TRACE(("%s\n", O2S(objResultPtr)));
 		    NEXT_INST_F(1, 2, 1);
-		} else if (l1 == 0) {
+		} else if (w1 == 0) {
 		    /*
 		     * 0 % (non-zero) always yields remainder of 0.
 		     */
@@ -5944,24 +5678,24 @@ TEBCresume(
 		    TRACE(("%s\n", O2S(objResultPtr)));
 		    NEXT_INST_F(1, 2, 1);
 		} else {
-		    lResult = l1 / l2;
+		    wResult = w1 / w2;
 
 		    /*
 		     * Force Tcl's integer division rules.
 		     * TODO: examine for logic simplification
 		     */
 
-		    if ((lResult < 0 || (lResult == 0 &&
-			    ((l1 < 0 && l2 > 0) || (l1 > 0 && l2 < 0)))) &&
-			    (lResult * l2 != l1)) {
-			lResult -= 1;
+		    if ((wResult < 0 || (wResult == 0 &&
+			    ((w1 < 0 && w2 > 0) || (w1 > 0 && w2 < 0)))) &&
+			    (wResult * w2 != w1)) {
+			wResult -= 1;
 		    }
-		    lResult = l1 - l2*lResult;
-		    goto longResultOfArithmetic;
+		    wResult = w1 - w2*wResult;
+		    goto wideResultOfArithmetic;
 		}
 
 	    case INST_RSHIFT:
-		if (l2 < 0) {
+		if (w2 < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "negative shift argument", -1));
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
@@ -5972,7 +5706,7 @@ TEBCresume(
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
-		} else if (l1 == 0) {
+		} else if (w1 == 0) {
 		    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 		    objResultPtr = TCONST(0);
 		    TRACE(("%s\n", O2S(objResultPtr)));
@@ -5982,7 +5716,7 @@ TEBCresume(
 		     * Quickly force large right shifts to 0 or -1.
 		     */
 
-		    if (l2 >= (long)(CHAR_BIT*sizeof(long))) {
+		    if (w2 >= (Tcl_WideInt)(CHAR_BIT*sizeof(long))) {
 			/*
 			 * We assume that INT_MAX is much larger than the
 			 * number of bits in a long. This is a pretty safe
@@ -5991,10 +5725,10 @@ TEBCresume(
 			 */
 
 			TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
-			if (l1 > 0L) {
+			if (w1 > 0L) {
 			    objResultPtr = TCONST(0);
 			} else {
-			    TclNewLongObj(objResultPtr, -1);
+			    TclNewIntObj(objResultPtr, -1);
 			}
 			TRACE(("%s\n", O2S(objResultPtr)));
 			NEXT_INST_F(1, 2, 1);
@@ -6004,12 +5738,12 @@ TEBCresume(
 		     * Handle shifts within the native long range.
 		     */
 
-		    lResult = l1 >> ((int) l2);
-		    goto longResultOfArithmetic;
+		    wResult = w1 >> ((int) w2);
+		    goto wideResultOfArithmetic;
 		}
 
 	    case INST_LSHIFT:
-		if (l2 < 0) {
+		if (w2 < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "negative shift argument", -1));
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
@@ -6020,12 +5754,12 @@ TEBCresume(
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
-		} else if (l1 == 0) {
+		} else if (w1 == 0) {
 		    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 		    objResultPtr = TCONST(0);
 		    TRACE(("%s\n", O2S(objResultPtr)));
 		    NEXT_INST_F(1, 2, 1);
-		} else if (l2 > (long) INT_MAX) {
+		} else if (w2 > INT_MAX) {
 		    /*
 		     * Technically, we could hold the value (1 << (INT_MAX+1))
 		     * in an mp_int, but since we're using mp_mul_2d() to do
@@ -6043,17 +5777,17 @@ TEBCresume(
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
 		} else {
-		    int shift = (int) l2;
+		    int shift = (int) w2;
 
 		    /*
 		     * Handle shifts within the native long range.
 		     */
 
-		    if ((size_t) shift < CHAR_BIT*sizeof(long) && (l1 != 0)
-			    && !((l1>0 ? l1 : ~l1) &
+		    if ((size_t) shift < CHAR_BIT*sizeof(long) && (w1 != 0)
+			    && !((w1>0 ? w1 : ~w1) &
 				-(1L<<(CHAR_BIT*sizeof(long) - 1 - shift)))) {
-			lResult = l1 << shift;
-			goto longResultOfArithmetic;
+			wResult = w1 << shift;
+			goto wideResultOfArithmetic;
 		    }
 		}
 
@@ -6065,23 +5799,14 @@ TEBCresume(
 		break;
 
 	    case INST_BITAND:
-		lResult = l1 & l2;
-		goto longResultOfArithmetic;
+		wResult = w1 & w2;
+		goto wideResultOfArithmetic;
 	    case INST_BITOR:
-		lResult = l1 | l2;
-		goto longResultOfArithmetic;
+		wResult = w1 | w2;
+		goto wideResultOfArithmetic;
 	    case INST_BITXOR:
-		lResult = l1 ^ l2;
-	    longResultOfArithmetic:
-		TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
-		if (Tcl_IsShared(valuePtr)) {
-		    TclNewLongObj(objResultPtr, lResult);
-		    TRACE(("%s\n", O2S(objResultPtr)));
-		    NEXT_INST_F(1, 2, 1);
-		}
-		TclSetLongObj(valuePtr, lResult);
-		TRACE(("%s\n", O2S(valuePtr)));
-		NEXT_INST_F(1, 1, 0);
+		wResult = w1 ^ w2;
+		goto wideResultOfArithmetic;
 	    }
 	}
 
@@ -6164,18 +5889,13 @@ TEBCresume(
 	 * an external function.
 	 */
 
-	if ((type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
-	    Tcl_WideInt w1, w2, wResult;
-
-	    l1 = *((const long *)ptr1);
-	    l2 = *((const long *)ptr2);
+	if ((type1 == TCL_NUMBER_WIDE) && (type2 == TCL_NUMBER_WIDE)) {
+	    w1 = *((const Tcl_WideInt *)ptr1);
+	    w2 = *((const Tcl_WideInt *)ptr2);
 
 	    switch (*pc) {
 	    case INST_ADD:
-		w1 = (Tcl_WideInt) l1;
-		w2 = (Tcl_WideInt) l2;
 		wResult = w1 + w2;
-#ifdef TCL_WIDE_INT_IS_LONG
 		/*
 		 * Check for overflow.
 		 */
@@ -6183,18 +5903,23 @@ TEBCresume(
 		if (Overflowing(w1, w2, wResult)) {
 		    goto overflow;
 		}
-#endif
 		goto wideResultOfArithmetic;
 
 	    case INST_SUB:
-		w1 = (Tcl_WideInt) l1;
-		w2 = (Tcl_WideInt) l2;
 		wResult = w1 - w2;
-#ifdef TCL_WIDE_INT_IS_LONG
+		/*
+		 * Must check for overflow. The macro tests for overflows in
+		 * sums by looking at the sign bits. As we have a subtraction
+		 * here, we are adding -w2. As -w2 could in turn overflow, we
+		 * test with ~w2 instead: it has the opposite sign bit to w2
+		 * so it does the job. Note that the only "bad" case (w2==0)
+		 * is irrelevant for this macro, as in that case w1 and
+		 * wResult have the same sign and there is no overflow anyway.
+		 */
+
 		if (Overflowing(w1, ~w2, wResult)) {
 		    goto overflow;
 		}
-#endif
 	    wideResultOfArithmetic:
 		TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 		if (Tcl_IsShared(valuePtr)) {
@@ -6202,45 +5927,45 @@ TEBCresume(
 		    TRACE(("%s\n", O2S(objResultPtr)));
 		    NEXT_INST_F(1, 2, 1);
 		}
-		Tcl_SetWideIntObj(valuePtr, wResult);
+		TclSetIntObj(valuePtr, wResult);
 		TRACE(("%s\n", O2S(valuePtr)));
 		NEXT_INST_F(1, 1, 0);
 
 	    case INST_DIV:
-		if (l2 == 0) {
+		if (w2 == 0) {
 		    TRACE(("%s %s => DIVIDE BY ZERO\n",
 			    O2S(valuePtr), O2S(value2Ptr)));
 		    goto divideByZero;
-		} else if ((l1 == LONG_MIN) && (l2 == -1)) {
+		} else if ((w1 == LLONG_MIN) && (w2 == -1)) {
 		    /*
-		     * Can't represent (-LONG_MIN) as a long.
+		     * Can't represent (-LLONG_MIN) as a Tcl_WideInt.
 		     */
 
 		    goto overflow;
 		}
-		lResult = l1 / l2;
+		wResult = w1 / w2;
 
 		/*
 		 * Force Tcl's integer division rules.
 		 * TODO: examine for logic simplification
 		 */
 
-		if (((lResult < 0) || ((lResult == 0) &&
-			((l1 < 0 && l2 > 0) || (l1 > 0 && l2 < 0)))) &&
-			((lResult * l2) != l1)) {
-		    lResult -= 1;
+		if (((wResult < 0) || ((wResult == 0) &&
+			((w1 < 0 && w2 > 0) || (w1 > 0 && w2 < 0)))) &&
+			((wResult * w2) != w1)) {
+		    wResult -= 1;
 		}
-		goto longResultOfArithmetic;
+		goto wideResultOfArithmetic;
 
 	    case INST_MULT:
-		if (((sizeof(long) >= 2*sizeof(int))
-			&& (l1 <= INT_MAX) && (l1 >= INT_MIN)
-			&& (l2 <= INT_MAX) && (l2 >= INT_MIN))
-			|| ((sizeof(long) >= 2*sizeof(short))
-			&& (l1 <= SHRT_MAX) && (l1 >= SHRT_MIN)
-			&& (l2 <= SHRT_MAX) && (l2 >= SHRT_MIN))) {
-		    lResult = l1 * l2;
-		    goto longResultOfArithmetic;
+		if (((sizeof(Tcl_WideInt) >= 2*sizeof(int))
+			&& (w1 <= INT_MAX) && (w1 >= INT_MIN)
+			&& (w2 <= INT_MAX) && (w2 >= INT_MIN))
+			|| ((sizeof(Tcl_WideInt) >= 2*sizeof(short))
+			&& (w1 <= SHRT_MAX) && (w1 >= SHRT_MIN)
+			&& (w2 <= SHRT_MAX) && (w2 >= SHRT_MIN))) {
+		    wResult = w1 * w2;
+		    goto wideResultOfArithmetic;
 		}
 	    }
 
@@ -6307,14 +6032,14 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
-	if (type1 == TCL_NUMBER_LONG) {
-	    l1 = *((const long *) ptr1);
+	if (type1 == TCL_NUMBER_WIDE) {
+	    w1 = *((const Tcl_WideInt *) ptr1);
 	    if (Tcl_IsShared(valuePtr)) {
-		TclNewLongObj(objResultPtr, ~l1);
+		TclNewIntObj(objResultPtr, ~w1);
 		TRACE_APPEND(("%s\n", O2S(objResultPtr)));
 		NEXT_INST_F(1, 1, 1);
 	    }
-	    TclSetLongObj(valuePtr, ~l1);
+	    TclSetIntObj(valuePtr, ~w1);
 	    TRACE_APPEND(("%s\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
@@ -6344,15 +6069,15 @@ TEBCresume(
 	    /* -NaN => NaN */
 	    TRACE_APPEND(("%s\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
-	case TCL_NUMBER_LONG:
-	    l1 = *((const long *) ptr1);
-	    if (l1 != LONG_MIN) {
+	case TCL_NUMBER_WIDE:
+	    w1 = *((const Tcl_WideInt *) ptr1);
+	    if (w1 != LLONG_MIN) {
 		if (Tcl_IsShared(valuePtr)) {
-		    TclNewLongObj(objResultPtr, -l1);
+		    TclNewIntObj(objResultPtr, -w1);
 		    TRACE_APPEND(("%s\n", O2S(objResultPtr)));
 		    NEXT_INST_F(1, 1, 1);
 		}
-		TclSetLongObj(valuePtr, -l1);
+		TclSetIntObj(valuePtr, -w1);
 		TRACE_APPEND(("%s\n", O2S(valuePtr)));
 		NEXT_INST_F(1, 0, 0);
 	    }
@@ -6493,173 +6218,11 @@ TEBCresume(
 
     {
 	ForeachInfo *infoPtr;
-	Var *iterVarPtr, *listVarPtr;
-	Tcl_Obj *oldValuePtr, *listPtr, **elements;
-	ForeachVarList *varListPtr;
-	int numLists, iterNum, listTmpIndex, listLen, numVars;
-	int varIndex, valIndex, continueLoop, j, iterTmpIndex;
-	long i;
-
-    case INST_FOREACH_START4: /* DEPRECATED */
-	/*
-	 * Initialize the temporary local var that holds the count of the
-	 * number of iterations of the loop body to -1.
-	 */
-
-	opnd = TclGetUInt4AtPtr(pc+1);
-	infoPtr = codePtr->auxDataArrayPtr[opnd].clientData;
-	iterTmpIndex = infoPtr->loopCtTemp;
-	iterVarPtr = LOCAL(iterTmpIndex);
-	oldValuePtr = iterVarPtr->value.objPtr;
-
-	if (oldValuePtr == NULL) {
-	    TclNewLongObj(iterVarPtr->value.objPtr, -1);
-	    Tcl_IncrRefCount(iterVarPtr->value.objPtr);
-	} else {
-	    TclSetLongObj(oldValuePtr, -1);
-	}
-	TRACE(("%u => loop iter count temp %d\n", opnd, iterTmpIndex));
-
-#ifndef TCL_COMPILE_DEBUG
-	/*
-	 * Remark that the compiler ALWAYS sets INST_FOREACH_STEP4 immediately
-	 * after INST_FOREACH_START4 - let us just fall through instead of
-	 * jumping back to the top.
-	 */
-
-	pc += 5;
-	TCL_DTRACE_INST_NEXT();
-#else
-	NEXT_INST_F(5, 0, 0);
-#endif
-
-    case INST_FOREACH_STEP4: /* DEPRECATED */
-	/*
-	 * "Step" a foreach loop (i.e., begin its next iteration) by assigning
-	 * the next value list element to each loop var.
-	 */
-
-	opnd = TclGetUInt4AtPtr(pc+1);
-	TRACE(("%u => ", opnd));
-	infoPtr = codePtr->auxDataArrayPtr[opnd].clientData;
-	numLists = infoPtr->numLists;
-
-	/*
-	 * Increment the temp holding the loop iteration number.
-	 */
-
-	iterVarPtr = LOCAL(infoPtr->loopCtTemp);
-	valuePtr = iterVarPtr->value.objPtr;
-	iterNum = valuePtr->internalRep.longValue + 1;
-	TclSetLongObj(valuePtr, iterNum);
-
-	/*
-	 * Check whether all value lists are exhausted and we should stop the
-	 * loop.
-	 */
-
-	continueLoop = 0;
-	listTmpIndex = infoPtr->firstValueTemp;
-	for (i = 0;  i < numLists;  i++) {
-	    varListPtr = infoPtr->varLists[i];
-	    numVars = varListPtr->numVars;
-
-	    listVarPtr = LOCAL(listTmpIndex);
-	    listPtr = listVarPtr->value.objPtr;
-	    if (TclListObjLength(interp, listPtr, &listLen) != TCL_OK) {
-		TRACE_APPEND(("ERROR converting list %ld, \"%.30s\": %s\n",
-			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp))));
-		goto gotError;
-	    }
-	    if (listLen > iterNum * numVars) {
-		continueLoop = 1;
-	    }
-	    listTmpIndex++;
-	}
-
-	/*
-	 * If some var in some var list still has a remaining list element
-	 * iterate one more time. Assign to var the next element from its
-	 * value list. We already checked above that each list temp holds a
-	 * valid list object (by calling Tcl_ListObjLength), but cannot rely
-	 * on that check remaining valid: one list could have been shimmered
-	 * as a side effect of setting a traced variable.
-	 */
-
-	if (continueLoop) {
-	    listTmpIndex = infoPtr->firstValueTemp;
-	    for (i = 0;  i < numLists;  i++) {
-		varListPtr = infoPtr->varLists[i];
-		numVars = varListPtr->numVars;
-
-		listVarPtr = LOCAL(listTmpIndex);
-		listPtr = TclListObjCopy(NULL, listVarPtr->value.objPtr);
-		TclListObjGetElements(interp, listPtr, &listLen, &elements);
-
-		valIndex = (iterNum * numVars);
-		for (j = 0;  j < numVars;  j++) {
-		    if (valIndex >= listLen) {
-			TclNewObj(valuePtr);
-		    } else {
-			valuePtr = elements[valIndex];
-		    }
-
-		    varIndex = varListPtr->varIndexes[j];
-		    varPtr = LOCAL(varIndex);
-		    while (TclIsVarLink(varPtr)) {
-			varPtr = varPtr->value.linkPtr;
-		    }
-		    if (TclIsVarDirectWritable(varPtr)) {
-			value2Ptr = varPtr->value.objPtr;
-			if (valuePtr != value2Ptr) {
-			    if (value2Ptr != NULL) {
-				TclDecrRefCount(value2Ptr);
-			    }
-			    varPtr->value.objPtr = valuePtr;
-			    Tcl_IncrRefCount(valuePtr);
-			}
-		    } else {
-			DECACHE_STACK_INFO();
-			if (TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL,
-				valuePtr, TCL_LEAVE_ERR_MSG, varIndex)==NULL){
-			    CACHE_STACK_INFO();
-			    TRACE_APPEND((
-				    "ERROR init. index temp %d: %s\n",
-				    varIndex, O2S(Tcl_GetObjResult(interp))));
-			    TclDecrRefCount(listPtr);
-			    goto gotError;
-			}
-			CACHE_STACK_INFO();
-		    }
-		    valIndex++;
-		}
-		TclDecrRefCount(listPtr);
-		listTmpIndex++;
-	    }
-	}
-	TRACE_APPEND(("%d lists, iter %d, %s loop\n",
-		numLists, iterNum, (continueLoop? "continue" : "exit")));
-
-	/*
-	 * Run-time peep-hole optimisation: the compiler ALWAYS follows
-	 * INST_FOREACH_STEP4 with an INST_JUMP_FALSE. We just skip that
-	 * instruction and jump direct from here.
-	 */
-
-	pc += 5;
-	if (*pc == INST_JUMP_FALSE1) {
-	    NEXT_INST_F((continueLoop? 2 : TclGetInt1AtPtr(pc+1)), 0, 0);
-	} else {
-	    NEXT_INST_F((continueLoop? 5 : TclGetInt4AtPtr(pc+1)), 0, 0);
-	}
-
-    }
-    {
-	ForeachInfo *infoPtr;
 	Tcl_Obj *listPtr, **elements, *tmpPtr;
 	ForeachVarList *varListPtr;
-	int numLists, iterMax, listLen, numVars;
-	int iterTmp, iterNum, listTmpDepth;
+	int numLists, listLen, numVars;
+	int listTmpDepth;
+	size_t iterNum, iterMax, iterTmp;
 	int varIndex, valIndex, j;
 	long i;
 
@@ -6710,8 +6273,8 @@ TEBCresume(
 	 */
 
 	TclNewObj(tmpPtr);
-	tmpPtr->internalRep.twoPtrValue.ptr1 = INT2PTR(0);
-	tmpPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(iterMax);
+	tmpPtr->internalRep.twoPtrValue.ptr1 = NULL;
+	tmpPtr->internalRep.twoPtrValue.ptr2 = (void *)iterMax;
 	PUSH_OBJECT(tmpPtr); /* iterCounts object */
 
 	/*
@@ -6743,8 +6306,8 @@ TEBCresume(
 	TRACE(("=> "));
 
 	tmpPtr = OBJ_AT_DEPTH(1);
-	iterNum = PTR2INT(tmpPtr->internalRep.twoPtrValue.ptr1);
-	iterMax = PTR2INT(tmpPtr->internalRep.twoPtrValue.ptr2);
+	iterNum = (size_t)tmpPtr->internalRep.twoPtrValue.ptr1;
+	iterMax = (size_t)tmpPtr->internalRep.twoPtrValue.ptr2;
 
 	/*
 	 * If some list still has a remaining list element iterate one more
@@ -6756,7 +6319,7 @@ TEBCresume(
 	     * Set the variables and jump back to run the body
 	     */
 
-	    tmpPtr->internalRep.twoPtrValue.ptr1 = INT2PTR(iterNum + 1);
+	    tmpPtr->internalRep.twoPtrValue.ptr1 =(void *)(iterNum + 1);
 
 	    listTmpDepth = numLists + 1;
 
@@ -6884,7 +6447,7 @@ TEBCresume(
 	NEXT_INST_F(1, 0, -1);
 
     case INST_PUSH_RETURN_CODE:
-	TclNewLongObj(objResultPtr, result);
+	TclNewIntObj(objResultPtr, result);
 	TRACE(("=> %u\n", result));
 	NEXT_INST_F(1, 0, 1);
 
@@ -7550,7 +7113,6 @@ TEBCresume(
 	    default:
 		Tcl_Panic("clockRead instruction with unknown clock#");
 	    }
-	    /* TclNewWideObj(objResultPtr, wval); doesn't exist */
 	    objResultPtr = Tcl_NewWideIntObj(wval);
 	    TRACE_WITH_OBJ(("=> "), objResultPtr);
 	    NEXT_INST_F(2, 0, 1);
@@ -7982,19 +7544,11 @@ ExecuteExtendedBinaryMathOp(
     Tcl_Obj *valuePtr,		/* The first operand on the stack. */
     Tcl_Obj *value2Ptr)		/* The second operand on the stack. */
 {
-#define LONG_RESULT(l) \
-    if (Tcl_IsShared(valuePtr)) {		\
-	TclNewLongObj(objResultPtr, l);		\
-	return objResultPtr;			\
-    } else {					\
-	Tcl_SetLongObj(valuePtr, l);		\
-	return NULL;				\
-    }
 #define WIDE_RESULT(w) \
     if (Tcl_IsShared(valuePtr)) {		\
 	return Tcl_NewWideIntObj(w);		\
     } else {					\
-	Tcl_SetWideIntObj(valuePtr, w);		\
+	TclSetIntObj(valuePtr, w);		\
 	return NULL;				\
     }
 #define BIG_RESULT(b) \
@@ -8016,7 +7570,6 @@ ExecuteExtendedBinaryMathOp(
     int type1, type2;
     ClientData ptr1, ptr2;
     double d1, d2, dResult;
-    long l1, l2, lResult;
     Tcl_WideInt w1, w2, wResult;
     mp_int big1, big2, bigResult, bigRemainder;
     Tcl_Obj *objResultPtr;
@@ -8030,13 +7583,13 @@ ExecuteExtendedBinaryMathOp(
     case INST_MOD:
 	/* TODO: Attempts to re-use unshared operands on stack */
 
-	l2 = 0;			/* silence gcc warning */
-	if (type2 == TCL_NUMBER_LONG) {
-	    l2 = *((const long *)ptr2);
-	    if (l2 == 0) {
+	w2 = 0;			/* silence gcc warning */
+	if (type2 == TCL_NUMBER_WIDE) {
+	    w2 = *((const Tcl_WideInt *)ptr2);
+	    if (w2 == 0) {
 		return DIVIDED_BY_ZERO;
 	    }
-	    if ((l2 == 1) || (l2 == -1)) {
+	    if ((w2 == 1) || (w2 == -1)) {
 		/*
 		 * Div. by |1| always yields remainder of 0.
 		 */
@@ -8044,9 +7597,16 @@ ExecuteExtendedBinaryMathOp(
 		return constants[0];
 	    }
 	}
-#ifndef TCL_WIDE_INT_IS_LONG
 	if (type1 == TCL_NUMBER_WIDE) {
 	    w1 = *((const Tcl_WideInt *)ptr1);
+
+	    if (w1 == 0) {
+		/*
+		 * 0 % (non-zero) always yields remainder of 0.
+		 */
+
+		return constants[0];
+	    }
 	    if (type2 != TCL_NUMBER_BIG) {
 		Tcl_WideInt wQuotient, wRemainder;
 		Tcl_GetWideIntFromObj(NULL, value2Ptr, &w2);
@@ -8089,7 +7649,6 @@ ExecuteExtendedBinaryMathOp(
 	    mp_clear(&big2);
 	    return NULL;
 	}
-#endif
 	Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
 	Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 	mp_init(&bigResult);
@@ -8116,17 +7675,12 @@ ExecuteExtendedBinaryMathOp(
 	 */
 
 	switch (type2) {
-	case TCL_NUMBER_LONG:
-	    invalid = (*((const long *)ptr2) < 0L);
-	    break;
-#ifndef TCL_WIDE_INT_IS_LONG
 	case TCL_NUMBER_WIDE:
 	    invalid = (*((const Tcl_WideInt *)ptr2) < (Tcl_WideInt)0);
 	    break;
-#endif
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    invalid = (mp_cmp_d(&big2, 0) == MP_LT);
+	    invalid = mp_isneg(&big2);
 	    mp_clear(&big2);
 	    break;
 	default:
@@ -8143,7 +7697,7 @@ ExecuteExtendedBinaryMathOp(
 	 * Zero shifted any number of bits is still zero.
 	 */
 
-	if ((type1==TCL_NUMBER_LONG) && (*((const long *)ptr1) == (long)0)) {
+	if ((type1==TCL_NUMBER_WIDE) && (*((const Tcl_WideInt *)ptr1) == (Tcl_WideInt)0)) {
 	    return constants[0];
 	}
 
@@ -8156,8 +7710,8 @@ ExecuteExtendedBinaryMathOp(
 	     * counterparts, leading to incorrect results.
 	     */
 
-	    if ((type2 != TCL_NUMBER_LONG)
-		    || (*((const long *)ptr2) > (long) INT_MAX)) {
+	    if ((type2 != TCL_NUMBER_WIDE)
+		    || (*((const Tcl_WideInt *)ptr2) > INT_MAX)) {
 		/*
 		 * Technically, we could hold the value (1 << (INT_MAX+1)) in
 		 * an mp_int, but since we're using mp_mul_2d() to do the
@@ -8169,7 +7723,7 @@ ExecuteExtendedBinaryMathOp(
 			"integer value too large to represent", -1));
 		return GENERAL_ARITHMETIC_ERROR;
 	    }
-	    shift = (int)(*((const long *)ptr2));
+	    shift = (int)(*((const Tcl_WideInt *)ptr2));
 
 	    /*
 	     * Handle shifts within the native wide range.
@@ -8189,8 +7743,8 @@ ExecuteExtendedBinaryMathOp(
 	     * Quickly force large right shifts to 0 or -1.
 	     */
 
-	    if ((type2 != TCL_NUMBER_LONG)
-		    || (*(const long *)ptr2 > INT_MAX)) {
+	    if ((type2 != TCL_NUMBER_WIDE)
+		    || (*(const Tcl_WideInt *)ptr2 > INT_MAX)) {
 		/*
 		 * Again, technically, the value to be shifted could be an
 		 * mp_int so huge that a right shift by (INT_MAX+1) bits could
@@ -8200,17 +7754,12 @@ ExecuteExtendedBinaryMathOp(
 		 */
 
 		switch (type1) {
-		case TCL_NUMBER_LONG:
-		    zero = (*(const long *)ptr1 > 0L);
-		    break;
-#ifndef TCL_WIDE_INT_IS_LONG
 		case TCL_NUMBER_WIDE:
 		    zero = (*(const Tcl_WideInt *)ptr1 > (Tcl_WideInt)0);
 		    break;
-#endif
 		case TCL_NUMBER_BIG:
 		    Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
-		    zero = (mp_cmp_d(&big1, 0) == MP_GT);
+		    zero = (!mp_isneg(&big1));
 		    mp_clear(&big1);
 		    break;
 		default:
@@ -8220,11 +7769,10 @@ ExecuteExtendedBinaryMathOp(
 		if (zero) {
 		    return constants[0];
 		}
-		LONG_RESULT(-1);
+		WIDE_RESULT(-1);
 	    }
-	    shift = (int)(*(const long *)ptr2);
+	    shift = (int)(*(const Tcl_WideInt *)ptr2);
 
-#ifndef TCL_WIDE_INT_IS_LONG
 	    /*
 	     * Handle shifts within the native wide range.
 	     */
@@ -8235,11 +7783,10 @@ ExecuteExtendedBinaryMathOp(
 		    if (w1 >= (Tcl_WideInt)0) {
 			return constants[0];
 		    }
-		    LONG_RESULT(-1);
+		    WIDE_RESULT(-1);
 		}
 		WIDE_RESULT(w1 >> shift);
 	    }
-#endif
 	}
 
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
@@ -8250,7 +7797,7 @@ ExecuteExtendedBinaryMathOp(
 	} else {
 	    mp_init(&bigRemainder);
 	    mp_div_2d(&big1, shift, &bigResult, &bigRemainder);
-	    if (mp_cmp_d(&bigRemainder, 0) == MP_LT) {
+	    if (mp_isneg(&bigRemainder)) {
 		/*
 		 * Convert to Tcl's integer division rules.
 		 */
@@ -8277,14 +7824,14 @@ ExecuteExtendedBinaryMathOp(
 	     * arguments is negative, store it in 'Second'.
 	     */
 
-	    if (mp_cmp_d(&big1, 0) != MP_LT) {
-		numPos = 1 + (mp_cmp_d(&big2, 0) != MP_LT);
+	    if (!mp_isneg(&big1)) {
+		numPos = 1 + !mp_isneg(&big2);
 		First = &big1;
 		Second = &big2;
 	    } else {
 		First = &big2;
 		Second = &big1;
-		numPos = (mp_cmp_d(First, 0) != MP_LT);
+		numPos = (!mp_isneg(First));
 	    }
 	    mp_init(&bigResult);
 
@@ -8407,7 +7954,6 @@ ExecuteExtendedBinaryMathOp(
 	    BIG_RESULT(&bigResult);
 	}
 
-#ifndef TCL_WIDE_INT_IS_LONG
 	if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE)) {
 	    TclGetWideIntFromObj(NULL, valuePtr, &w1);
 	    TclGetWideIntFromObj(NULL, value2Ptr, &w2);
@@ -8428,25 +7974,24 @@ ExecuteExtendedBinaryMathOp(
 	    }
 	    WIDE_RESULT(wResult);
 	}
-#endif
-	l1 = *((const long *)ptr1);
-	l2 = *((const long *)ptr2);
+	w1 = *((const Tcl_WideInt *)ptr1);
+	w2 = *((const Tcl_WideInt *)ptr2);
 
 	switch (opcode) {
 	case INST_BITAND:
-	    lResult = l1 & l2;
+	    wResult = w1 & w2;
 	    break;
 	case INST_BITOR:
-	    lResult = l1 | l2;
+	    wResult = w1 | w2;
 	    break;
 	case INST_BITXOR:
-	    lResult = l1 ^ l2;
+	    wResult = w1 ^ w2;
 	    break;
 	default:
 	    /* Unused, here to silence compiler warning. */
-	    lResult = 0;
+	    wResult = 0;
 	}
-	LONG_RESULT(lResult);
+	WIDE_RESULT(wResult);
 
     case INST_EXPON: {
 	int oddExponent = 0, negativeExponent = 0;
@@ -8462,16 +8007,16 @@ ExecuteExtendedBinaryMathOp(
 	    dResult = pow(d1, d2);
 	    goto doubleResult;
 	}
-	l1 = l2 = 0;
-	if (type2 == TCL_NUMBER_LONG) {
-	    l2 = *((const long *) ptr2);
-	    if (l2 == 0) {
+	w2 = 0;
+	if (type2 == TCL_NUMBER_WIDE) {
+	    w2 = *((const Tcl_WideInt *) ptr2);
+	    if (w2 == 0) {
 		/*
 		 * Anything to the zero power is 1.
 		 */
 
 		return constants[1];
-	    } else if (l2 == 1) {
+	    } else if (w2 == 1) {
 		/*
 		 * Anything to the first power is itself
 		 */
@@ -8481,32 +8026,26 @@ ExecuteExtendedBinaryMathOp(
 	}
 
 	switch (type2) {
-	case TCL_NUMBER_LONG:
-	    negativeExponent = (l2 < 0);
-	    oddExponent = (int) (l2 & 1);
-	    break;
-#ifndef TCL_WIDE_INT_IS_LONG
 	case TCL_NUMBER_WIDE:
 	    w2 = *((const Tcl_WideInt *)ptr2);
 	    negativeExponent = (w2 < 0);
 	    oddExponent = (int) (w2 & (Tcl_WideInt)1);
 	    break;
-#endif
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    negativeExponent = (mp_cmp_d(&big2, 0) == MP_LT);
+	    negativeExponent = mp_isneg(&big2);
 	    mp_mod_2d(&big2, 1, &big2);
 	    oddExponent = !mp_iszero(&big2);
 	    mp_clear(&big2);
 	    break;
 	}
 
-	if (type1 == TCL_NUMBER_LONG) {
-	    l1 = *((const long *)ptr1);
+	if (type1 == TCL_NUMBER_WIDE) {
+	    w1 = *((const Tcl_WideInt *)ptr1);
 	}
 	if (negativeExponent) {
-	    if (type1 == TCL_NUMBER_LONG) {
-		switch (l1) {
+	    if (type1 == TCL_NUMBER_WIDE) {
+		switch (w1) {
 		case 0:
 		    /*
 		     * Zero to a negative power is div by zero error.
@@ -8515,7 +8054,7 @@ ExecuteExtendedBinaryMathOp(
 		    return EXPONENT_OF_ZERO;
 		case -1:
 		    if (oddExponent) {
-			LONG_RESULT(-1);
+			WIDE_RESULT(-1);
 		    }
 		    /* fallthrough */
 		case 1:
@@ -8535,8 +8074,8 @@ ExecuteExtendedBinaryMathOp(
 	    return constants[0];
 	}
 
-	if (type1 == TCL_NUMBER_LONG) {
-	    switch (l1) {
+	if (type1 == TCL_NUMBER_WIDE) {
+	    switch (w1) {
 	    case 0:
 		/*
 		 * Zero to a positive power is zero.
@@ -8553,7 +8092,7 @@ ExecuteExtendedBinaryMathOp(
 		if (!oddExponent) {
 		    return constants[1];
 		}
-		LONG_RESULT(-1);
+		WIDE_RESULT(-1);
 	    }
 	}
 
@@ -8562,141 +8101,58 @@ ExecuteExtendedBinaryMathOp(
 	 * which means the max exponent value is 2**28-1 = 0x0fffffff =
 	 * 268435455, which fits into a signed 32 bit int which is within the
 	 * range of the long int type. This means any numeric Tcl_Obj value
-	 * not using TCL_NUMBER_LONG type must hold a value larger than we
+	 * not using TCL_NUMBER_WIDE type must hold a value larger than we
 	 * accept.
 	 */
 
-	if (type2 != TCL_NUMBER_LONG) {
+	if (type2 != TCL_NUMBER_WIDE) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "exponent too large", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
-	if (type1 == TCL_NUMBER_LONG) {
-	    if (l1 == 2) {
+	if (type1 == TCL_NUMBER_WIDE) {
+	    if (w1 == 2) {
 		/*
 		 * Reduce small powers of 2 to shifts.
 		 */
 
-		if ((unsigned long) l2 < CHAR_BIT * sizeof(long) - 1) {
-		    LONG_RESULT(1L << l2);
+		if ((Tcl_WideUInt) w2 < (Tcl_WideUInt) CHAR_BIT*sizeof(Tcl_WideInt) - 1) {
+		    WIDE_RESULT(((Tcl_WideInt) 1) << (int)w2);
 		}
-#if !defined(TCL_WIDE_INT_IS_LONG)
-		if ((unsigned long)l2 < CHAR_BIT*sizeof(Tcl_WideInt) - 1) {
-		    WIDE_RESULT(((Tcl_WideInt) 1) << l2);
-		}
-#endif
 		goto overflowExpon;
 	    }
-	    if (l1 == -2) {
+	    if (w1 == -2) {
 		int signum = oddExponent ? -1 : 1;
 
 		/*
 		 * Reduce small powers of 2 to shifts.
 		 */
 
-		if ((unsigned long) l2 < CHAR_BIT * sizeof(long) - 1) {
-		    LONG_RESULT(signum * (1L << l2));
+		if ((Tcl_WideUInt)w2 < CHAR_BIT*sizeof(Tcl_WideInt) - 1){
+		    WIDE_RESULT(signum * (((Tcl_WideInt) 1) << (int) w2));
 		}
-#if !defined(TCL_WIDE_INT_IS_LONG)
-		if ((unsigned long)l2 < CHAR_BIT*sizeof(Tcl_WideInt) - 1){
-		    WIDE_RESULT(signum * (((Tcl_WideInt) 1) << l2));
-		}
-#endif
 		goto overflowExpon;
 	    }
-#if (LONG_MAX == 0x7fffffff)
-	    if (l2 - 2 < (long)MaxBase32Size
-		    && l1 <= MaxBase32[l2 - 2]
-		    && l1 >= -MaxBase32[l2 - 2]) {
-		/*
-		 * Small powers of 32-bit integers.
-		 */
-
-		lResult = l1 * l1;		/* b**2 */
-		switch (l2) {
-		case 2:
-		    break;
-		case 3:
-		    lResult *= l1;		/* b**3 */
-		    break;
-		case 4:
-		    lResult *= lResult;		/* b**4 */
-		    break;
-		case 5:
-		    lResult *= lResult;		/* b**4 */
-		    lResult *= l1;		/* b**5 */
-		    break;
-		case 6:
-		    lResult *= l1;		/* b**3 */
-		    lResult *= lResult;		/* b**6 */
-		    break;
-		case 7:
-		    lResult *= l1;		/* b**3 */
-		    lResult *= lResult;		/* b**6 */
-		    lResult *= l1;		/* b**7 */
-		    break;
-		case 8:
-		    lResult *= lResult;		/* b**4 */
-		    lResult *= lResult;		/* b**8 */
-		    break;
-		}
-		LONG_RESULT(lResult);
-	    }
-
-	    if (l1 - 3 >= 0 && l1 -2 < (long)Exp32IndexSize
-		    && l2 - 2 < (long)(Exp32ValueSize + MaxBase32Size)) {
-		base = Exp32Index[l1 - 3]
-			+ (unsigned short) (l2 - 2 - MaxBase32Size);
-		if (base < Exp32Index[l1 - 2]) {
-		    /*
-		     * 32-bit number raised to intermediate power, done by
-		     * table lookup.
-		     */
-
-		    LONG_RESULT(Exp32Value[base]);
-		}
-	    }
-	    if (-l1 - 3 >= 0 && -l1 - 2 < (long)Exp32IndexSize
-		    && l2 - 2 < (long)(Exp32ValueSize + MaxBase32Size)) {
-		base = Exp32Index[-l1 - 3]
-			+ (unsigned short) (l2 - 2 - MaxBase32Size);
-		if (base < Exp32Index[-l1 - 2]) {
-		    /*
-		     * 32-bit number raised to intermediate power, done by
-		     * table lookup.
-		     */
-
-		    lResult = (oddExponent) ?
-			    -Exp32Value[base] : Exp32Value[base];
-		    LONG_RESULT(lResult);
-		}
-	    }
-#endif
 	}
-#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
-	if (type1 == TCL_NUMBER_LONG) {
-	    w1 = l1;
-#ifndef TCL_WIDE_INT_IS_LONG
-	} else if (type1 == TCL_NUMBER_WIDE) {
+	if (type1 == TCL_NUMBER_WIDE) {
 	    w1 = *((const Tcl_WideInt *) ptr1);
-#endif
 	} else {
 	    goto overflowExpon;
 	}
-	if (l2 - 2 < (long)MaxBase64Size
-		&& w1 <=  MaxBase64[l2 - 2]
-		&& w1 >= -MaxBase64[l2 - 2]) {
+	if (w2 - 2 < (long)MaxBase64Size
+		&& w1 <=  MaxBase64[w2 - 2]
+		&& w1 >= -MaxBase64[w2 - 2]) {
 	    /*
 	     * Small powers of integers whose result is wide.
 	     */
 
 	    wResult = w1 * w1;		/* b**2 */
-	    switch (l2) {
+	    switch (w2) {
 	    case 2:
 		break;
 	    case 3:
-		wResult *= l1;		/* b**3 */
+		wResult *= w1;		/* b**3 */
 		break;
 	    case 4:
 		wResult *= wResult;	/* b**4 */
@@ -8773,9 +8229,9 @@ ExecuteExtendedBinaryMathOp(
 	 */
 
 	if (w1 - 3 >= 0 && w1 - 2 < (long)Exp64IndexSize
-		&& l2 - 2 < (long)(Exp64ValueSize + MaxBase64Size)) {
+		&& w2 - 2 < (long)(Exp64ValueSize + MaxBase64Size)) {
 	    base = Exp64Index[w1 - 3]
-		    + (unsigned short) (l2 - 2 - MaxBase64Size);
+		    + (unsigned short) (w2 - 2 - MaxBase64Size);
 	    if (base < Exp64Index[w1 - 2]) {
 		/*
 		 * 64-bit number raised to intermediate power, done by
@@ -8787,9 +8243,9 @@ ExecuteExtendedBinaryMathOp(
 	}
 
 	if (-w1 - 3 >= 0 && -w1 - 2 < (long)Exp64IndexSize
-		&& l2 - 2 < (long)(Exp64ValueSize + MaxBase64Size)) {
+		&& w2 - 2 < (long)(Exp64ValueSize + MaxBase64Size)) {
 	    base = Exp64Index[-w1 - 3]
-		    + (unsigned short) (l2 - 2 - MaxBase64Size);
+		    + (unsigned short) (w2 - 2 - MaxBase64Size);
 	    if (base < Exp64Index[-w1 - 2]) {
 		/*
 		 * 64-bit number raised to intermediate power, done by
@@ -8800,7 +8256,6 @@ ExecuteExtendedBinaryMathOp(
 		WIDE_RESULT(wResult);
 	    }
 	}
-#endif
 
     overflowExpon:
 	Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
@@ -8880,9 +8335,7 @@ ExecuteExtendedBinaryMathOp(
 	    switch (opcode) {
 	    case INST_ADD:
 		wResult = w1 + w2;
-#ifndef TCL_WIDE_INT_IS_LONG
 		if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE))
-#endif
 		{
 		    /*
 		     * Check for overflow.
@@ -8896,9 +8349,7 @@ ExecuteExtendedBinaryMathOp(
 
 	    case INST_SUB:
 		wResult = w1 - w2;
-#ifndef TCL_WIDE_INT_IS_LONG
 		if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE))
-#endif
 		{
 		    /*
 		     * Must check for overflow. The macro tests for overflows
@@ -8918,8 +8369,7 @@ ExecuteExtendedBinaryMathOp(
 		break;
 
 	    case INST_MULT:
-		if ((type1 != TCL_NUMBER_LONG) || (type2 != TCL_NUMBER_LONG)
-			|| (sizeof(Tcl_WideInt) < 2*sizeof(long))) {
+		if ((w1 < INT_MIN) || (w1 > INT_MAX) || (w2 < INT_MIN) || (w2 > INT_MAX)) {
 		    goto overflowBasic;
 		}
 		wResult = w1 * w2;
@@ -9022,12 +8472,10 @@ ExecuteExtendedUnaryMathOp(
 
     switch (opcode) {
     case INST_BITNOT:
-#ifndef TCL_WIDE_INT_IS_LONG
 	if (type == TCL_NUMBER_WIDE) {
 	    w = *((const Tcl_WideInt *) ptr);
 	    WIDE_RESULT(~w);
 	}
-#endif
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big);
 	/* ~a = - a - 1 */
 	mp_neg(&big, &big);
@@ -9037,14 +8485,6 @@ ExecuteExtendedUnaryMathOp(
 	switch (type) {
 	case TCL_NUMBER_DOUBLE:
 	    DOUBLE_RESULT(-(*((const double *) ptr)));
-	case TCL_NUMBER_LONG:
-	    w = (Tcl_WideInt) (*((const long *) ptr));
-	    if (w != LLONG_MIN) {
-		WIDE_RESULT(-w);
-	    }
-	    TclInitBignumFromLong(&big, *(const long *) ptr);
-	    break;
-#ifndef TCL_WIDE_INT_IS_LONG
 	case TCL_NUMBER_WIDE:
 	    w = *((const Tcl_WideInt *) ptr);
 	    if (w != LLONG_MIN) {
@@ -9052,7 +8492,6 @@ ExecuteExtendedUnaryMathOp(
 	    }
 	    TclInitBignumFromWideInt(&big, w);
 	    break;
-#endif
 	default:
 	    Tcl_TakeBignumFromObj(NULL, valuePtr, &big);
 	}
@@ -9063,7 +8502,6 @@ ExecuteExtendedUnaryMathOp(
     Tcl_Panic("unexpected opcode");
     return NULL;
 }
-#undef LONG_RESULT
 #undef WIDE_RESULT
 #undef BIG_RESULT
 #undef DOUBLE_RESULT
@@ -9095,31 +8533,22 @@ TclCompareTwoNumbers(
     ClientData ptr1, ptr2;
     mp_int big1, big2;
     double d1, d2, tmp;
-    long l1, l2;
-#ifndef TCL_WIDE_INT_IS_LONG
     Tcl_WideInt w1, w2;
-#endif
 
     (void) GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
     (void) GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
 
     switch (type1) {
-    case TCL_NUMBER_LONG:
-	l1 = *((const long *)ptr1);
+    case TCL_NUMBER_WIDE:
+	w1 = *((const Tcl_WideInt *)ptr1);
 	switch (type2) {
-	case TCL_NUMBER_LONG:
-	    l2 = *((const long *)ptr2);
-	longCompare:
-	    return (l1 < l2) ? MP_LT : ((l1 > l2) ? MP_GT : MP_EQ);
-#ifndef TCL_WIDE_INT_IS_LONG
 	case TCL_NUMBER_WIDE:
 	    w2 = *((const Tcl_WideInt *)ptr2);
-	    w1 = (Tcl_WideInt)l1;
-	    goto wideCompare;
-#endif
+	wideCompare:
+	    return (w1 < w2) ? MP_LT : ((w1 > w2) ? MP_GT : MP_EQ);
 	case TCL_NUMBER_DOUBLE:
 	    d2 = *((const double *)ptr2);
-	    d1 = (double) l1;
+	    d1 = (double) w1;
 
 	    /*
 	     * If the double has a fractional part, or if the long can be
@@ -9127,7 +8556,7 @@ TclCompareTwoNumbers(
 	     * doubles.
 	     */
 
-	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(long) || l1 == (long) d1
+	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt) || w1 == (Tcl_WideInt) d1
 		    || modf(d2, &tmp) != 0.0) {
 		goto doubleCompare;
 	    }
@@ -9144,44 +8573,6 @@ TclCompareTwoNumbers(
 	     * integer comparison can tell the difference.
 	     */
 
-	    if (d2 < (double)LONG_MIN) {
-		return MP_GT;
-	    }
-	    if (d2 > (double)LONG_MAX) {
-		return MP_LT;
-	    }
-	    l2 = (long) d2;
-	    goto longCompare;
-	case TCL_NUMBER_BIG:
-	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    if (mp_cmp_d(&big2, 0) == MP_LT) {
-		compare = MP_GT;
-	    } else {
-		compare = MP_LT;
-	    }
-	    mp_clear(&big2);
-	    return compare;
-	}
-
-#ifndef TCL_WIDE_INT_IS_LONG
-    case TCL_NUMBER_WIDE:
-	w1 = *((const Tcl_WideInt *)ptr1);
-	switch (type2) {
-	case TCL_NUMBER_WIDE:
-	    w2 = *((const Tcl_WideInt *)ptr2);
-	wideCompare:
-	    return (w1 < w2) ? MP_LT : ((w1 > w2) ? MP_GT : MP_EQ);
-	case TCL_NUMBER_LONG:
-	    l2 = *((const long *)ptr2);
-	    w2 = (Tcl_WideInt)l2;
-	    goto wideCompare;
-	case TCL_NUMBER_DOUBLE:
-	    d2 = *((const double *)ptr2);
-	    d1 = (double) w1;
-	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt)
-		    || w1 == (Tcl_WideInt) d1 || modf(d2, &tmp) != 0.0) {
-		goto doubleCompare;
-	    }
 	    if (d2 < (double)LLONG_MIN) {
 		return MP_GT;
 	    }
@@ -9192,7 +8583,7 @@ TclCompareTwoNumbers(
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    if (mp_cmp_d(&big2, 0) == MP_LT) {
+	    if (mp_isneg(&big2)) {
 		compare = MP_GT;
 	    } else {
 		compare = MP_LT;
@@ -9200,7 +8591,6 @@ TclCompareTwoNumbers(
 	    mp_clear(&big2);
 	    return compare;
 	}
-#endif
 
     case TCL_NUMBER_DOUBLE:
 	d1 = *((const double *)ptr1);
@@ -9209,22 +8599,6 @@ TclCompareTwoNumbers(
 	    d2 = *((const double *)ptr2);
 	doubleCompare:
 	    return (d1 < d2) ? MP_LT : ((d1 > d2) ? MP_GT : MP_EQ);
-	case TCL_NUMBER_LONG:
-	    l2 = *((const long *)ptr2);
-	    d2 = (double) l2;
-	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(long) || l2 == (long) d2
-		    || modf(d1, &tmp) != 0.0) {
-		goto doubleCompare;
-	    }
-	    if (d1 < (double)LONG_MIN) {
-		return MP_LT;
-	    }
-	    if (d1 > (double)LONG_MAX) {
-		return MP_GT;
-	    }
-	    l1 = (long) d1;
-	    goto longCompare;
-#ifndef TCL_WIDE_INT_IS_LONG
 	case TCL_NUMBER_WIDE:
 	    w2 = *((const Tcl_WideInt *)ptr2);
 	    d2 = (double) w2;
@@ -9240,14 +8614,13 @@ TclCompareTwoNumbers(
 	    }
 	    w1 = (Tcl_WideInt) d1;
 	    goto wideCompare;
-#endif
 	case TCL_NUMBER_BIG:
 	    if (TclIsInfinite(d1)) {
 		return (d1 > 0.0) ? MP_GT : MP_LT;
 	    }
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    if ((d1 < (double)LONG_MAX) && (d1 > (double)LONG_MIN)) {
-		if (mp_cmp_d(&big2, 0) == MP_LT) {
+	    if ((d1 < (double)LLONG_MAX) && (d1 > (double)LLONG_MIN)) {
+		if (mp_isneg(&big2)) {
 		    compare = MP_GT;
 		} else {
 		    compare = MP_LT;
@@ -9268,10 +8641,7 @@ TclCompareTwoNumbers(
     case TCL_NUMBER_BIG:
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
 	switch (type2) {
-#ifndef TCL_WIDE_INT_IS_LONG
 	case TCL_NUMBER_WIDE:
-#endif
-	case TCL_NUMBER_LONG:
 	    compare = mp_cmp_d(&big1, 0);
 	    mp_clear(&big1);
 	    return compare;
@@ -9282,7 +8652,7 @@ TclCompareTwoNumbers(
 		mp_clear(&big1);
 		return compare;
 	    }
-	    if ((d2 < (double)LONG_MAX) && (d2 > (double)LONG_MIN)) {
+	    if ((d2 < (double)LLONG_MAX) && (d2 > (double)LLONG_MIN)) {
 		compare = mp_cmp_d(&big1, 0);
 		mp_clear(&big1);
 		return compare;
@@ -9336,10 +8706,9 @@ PrintByteCodeInfo(
     Proc *procPtr = codePtr->procPtr;
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
 
-    fprintf(stdout, "\nExecuting ByteCode 0x%p, refCt %" TCL_LL_MODIFIER "u, epoch %" TCL_LL_MODIFIER "u, interp 0x%p (epoch %" TCL_LL_MODIFIER "u)\n",
-	    codePtr, (Tcl_WideInt)codePtr->refCount, (Tcl_WideInt)codePtr->compileEpoch, iPtr,
-	    (Tcl_WideInt)iPtr->compileEpoch);
-
+    fprintf(stdout, "\nExecuting ByteCode 0x%p, refCt %" TCL_Z_MODIFIER "u, epoch %" TCL_Z_MODIFIER "u, interp 0x%p (epoch %" TCL_Z_MODIFIER "u)\n",
+	    codePtr, (size_t)codePtr->refCount, codePtr->compileEpoch, iPtr,
+	    iPtr->compileEpoch);
     fprintf(stdout, "  Source: ");
     TclPrintSource(stdout, codePtr->source, 60);
 
@@ -9365,7 +8734,7 @@ PrintByteCodeInfo(
 #endif /* TCL_COMPILE_STATS */
     if (procPtr != NULL) {
 	fprintf(stdout,
-		"  Proc 0x%p, refCt %d, args %d, compiled locals %d\n",
+		"  Proc 0x%p, refCt %zd, args %d, compiled locals %d\n",
 		procPtr, procPtr->refCount, procPtr->numArgs,
 		procPtr->numCompiledLocals);
     }
@@ -9417,7 +8786,7 @@ ValidatePcAndStackTop(
 		pc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad pc");
     }
-    if ((unsigned) opCode > LAST_INST_OPCODE) {
+    if ((unsigned) opCode >= LAST_INST_OPCODE) {
 	fprintf(stderr, "\nBad opcode %d at pc %u in TclNRExecuteByteCode\n",
 		(unsigned) opCode, relativePc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad opcode");
@@ -9480,7 +8849,7 @@ IllegalExprOperandType(
     if (opcode == INST_EXPON) {
 	operator = "**";
     } else if (opcode <= INST_LNOT) {
-	operator = operatorStrings[opcode - INST_LOR];
+	operator = operatorStrings[opcode - INST_BITOR];
     }
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
@@ -10341,7 +9710,7 @@ EvalStatsCmd(
      */
 
     Tcl_AppendPrintfToObj(objPtr, "\nInstruction counts:\n");
-    for (i = 0;  i <= LAST_INST_OPCODE;  i++) {
+    for (i = 0;  i < LAST_INST_OPCODE;  i++) {
 	Tcl_AppendPrintfToObj(objPtr, "%20s %8ld ",
 		tclInstructionTable[i].name, statsPtr->instructionCount[i]);
 	if (statsPtr->instructionCount[i]) {

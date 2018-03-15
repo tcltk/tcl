@@ -24,10 +24,16 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testobj [expr {[info commands testobj] != {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
+testConstraint fullutf [expr {[format %c 0x010000] != "\ufffd"}]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
 
+proc representationpoke s {
+    set r [::tcl::unsupported::representation $s]
+    list [lindex $r 3] [string match {*, string representation "*"} $r]
+}
+
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
 } {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
@@ -224,6 +230,13 @@ test string-4.15 {string first, ability to two-byte encoded utf-8 chars} {
     set uchar \u057e    ;# character with two-byte encoding in utf-8
     string first % %#$uchar$uchar#$uchar$uchar#% 3
 } 8
+test string-4.16 {string first, normal string vs pure unicode string} {
+    set s hello
+    regexp ll $s m
+    # Representation checks are canaries
+    list [representationpoke $s] [representationpoke $m] \
+	[string first $m $s]
+} {{string 1} {string 0} 2}
 
 test string-5.1 {string index} {
     list [catch {string index} msg] $msg
@@ -1191,6 +1204,9 @@ test string-11.54 {string match, failure} {
 	    [string match *a*l*\u0000*cba* $longString] \
 	    [string match *===* $longString]
 } {0 1 1 1 0 0}
+test string-11.55 {string match, invalid binary optimization} {
+    [format string] match \u0141 [binary format c 65]
+} 0
 
 test string-12.1 {string range} {
     list [catch {string range} msg] $msg
@@ -1276,6 +1292,9 @@ test string-12.22 {string range, shimmering binary/index} {
     binary scan $s a* x
     string range $s $s end
 } 000000001
+test string-12.23 {string range, surrogates, bug [11ae2be95dac9417]} fullutf {
+    list [string range a\U100000b 1 1] [string range a\U100000b 2 2] [string range a\U100000b 3 3]
+} [list \U100000 {} b]
 
 test string-13.1 {string repeat} {
     list [catch {string repeat} msg] $msg
@@ -1374,6 +1393,9 @@ test string-14.17 {string replace} {
 test string-14.18 {string replace} {
     string replace abcdefghijklmnop 10 9 XXX
 } {abcdefghijklmnop}
+test string-14.19 {string replace} {
+    string replace {} -1 0 A
+} A
 
 test string-15.1 {string tolower too few args} {
     list [catch {string tolower} msg] $msg
@@ -1685,40 +1707,40 @@ test string-24.4 {string reverse command - unshared string} {
     string reverse $x$y
 } edcba
 test string-24.5 {string reverse command - shared unicode string} {
-    set x abcde\udead
+    set x abcde\ud0ad
     string reverse $x
-} \udeadedcba
+} \ud0adedcba
 test string-24.6 {string reverse command - unshared string} {
     set x abc
-    set y de\udead
+    set y de\ud0ad
     string reverse $x$y
-} \udeadedcba
+} \ud0adedcba
 test string-24.7 {string reverse command - simple case} {
     string reverse a
 } a
 test string-24.8 {string reverse command - simple case} {
-    string reverse \udead
-} \udead
+    string reverse \ud0ad
+} \ud0ad
 test string-24.9 {string reverse command - simple case} {
     string reverse {}
 } {}
 test string-24.10 {string reverse command - corner case} {
-    set x \ubeef\udead
+    set x \ubeef\ud0ad
     string reverse $x
-} \udead\ubeef
+} \ud0ad\ubeef
 test string-24.11 {string reverse command - corner case} {
     set x \ubeef
-    set y \udead
+    set y \ud0ad
     string reverse $x$y
-} \udead\ubeef
+} \ud0ad\ubeef
 test string-24.12 {string reverse command - corner case} {
     set x \ubeef
-    set y \udead
+    set y \ud0ad
     string is ascii [string reverse $x$y]
 } 0
 test string-24.13 {string reverse command - pure Unicode string} {
-    string reverse [string range \ubeef\udead\ubeef\udead\ubeef\udead 1 5]
-} \udead\ubeef\udead\ubeef\udead
+    string reverse [string range \ubeef\ud0ad\ubeef\ud0ad\ubeef\ud0ad 1 5]
+} \ud0ad\ubeef\ud0ad\ubeef\ud0ad
 test string-24.14 {string reverse command - pure bytearray} {
     binary scan [string reverse [binary format H* 010203]] H* x
     set x
@@ -2042,9 +2064,7 @@ test string-29.15 {string cat, efficiency} -setup {
 } -body {
     tcl::unsupported::representation [string cat $e $f $e $f [list x]]
 } -match glob -result {*no string representation}
-
-
-
+
 # cleanup
 rename MemStress {}
 catch {rename foo {}}

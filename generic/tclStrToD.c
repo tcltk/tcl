@@ -1208,32 +1208,18 @@ TclParseNumber(
 		}
 	    }
 	    if (!octalSignificandOverflow) {
-		if (octalSignificandWide >
-			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
-#ifndef TCL_WIDE_INT_IS_LONG
-		    if (octalSignificandWide <= (MOST_BITS + signum)) {
-			objPtr->typePtr = &tclWideIntType;
-			if (signum) {
-			    objPtr->internalRep.wideValue =
-				    - (Tcl_WideInt) octalSignificandWide;
-			} else {
-			    objPtr->internalRep.wideValue =
-				    (Tcl_WideInt) octalSignificandWide;
-			}
-			break;
-		    }
-#endif
+		if (octalSignificandWide > (MOST_BITS + signum)) {
 		    TclInitBignumFromWideUInt(&octalSignificandBig,
 			    octalSignificandWide);
 		    octalSignificandOverflow = 1;
 		} else {
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
-			objPtr->internalRep.longValue =
-				- (long) octalSignificandWide;
+			objPtr->internalRep.wideValue =
+				- (Tcl_WideInt) octalSignificandWide;
 		    } else {
-			objPtr->internalRep.longValue =
-				(long) octalSignificandWide;
+			objPtr->internalRep.wideValue =
+				(Tcl_WideInt) octalSignificandWide;
 		    }
 		}
 	    }
@@ -1255,32 +1241,18 @@ TclParseNumber(
 	    }
 	returnInteger:
 	    if (!significandOverflow) {
-		if (significandWide >
-			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
-#ifndef TCL_WIDE_INT_IS_LONG
-		    if (significandWide <= MOST_BITS+signum) {
-			objPtr->typePtr = &tclWideIntType;
-			if (signum) {
-			    objPtr->internalRep.wideValue =
-				    - (Tcl_WideInt) significandWide;
-			} else {
-			    objPtr->internalRep.wideValue =
-				    (Tcl_WideInt) significandWide;
-			}
-			break;
-		    }
-#endif
+		if (significandWide > MOST_BITS+signum) {
 		    TclInitBignumFromWideUInt(&significandBig,
 			    significandWide);
 		    significandOverflow = 1;
 		} else {
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
-			objPtr->internalRep.longValue =
-				- (long) significandWide;
+			objPtr->internalRep.wideValue =
+				- (Tcl_WideInt) significandWide;
 		    } else {
-			objPtr->internalRep.longValue =
-				(long) significandWide;
+			objPtr->internalRep.wideValue =
+				(Tcl_WideInt) significandWide;
 		    }
 		}
 	    }
@@ -3996,8 +3968,8 @@ StrictBignumConversion(
  * This function is a service routine that produces the string of digits for
  * floating-point-to-decimal conversion. It can do a number of things
  * according to the 'flags' argument. Valid values for 'flags' include:
- *	TCL_DD_SHORTEST - This is the default for floating point conversion if
- *		::tcl_precision is 0. It constructs the shortest string of
+ *	TCL_DD_SHORTEST - This is the default for floating point conversion.
+ *		It constructs the shortest string of
  *		digits that will reconvert to the given number when scanned.
  *		For floating point numbers that are exactly between two
  *		decimal numbers, it resolves using the 'round to even' rule.
@@ -4012,8 +3984,7 @@ StrictBignumConversion(
  *		subsequent input conversion is 'round up' or 'round down'
  *		rather than 'round to nearest', but is surprising otherwise.
  *	TCL_DD_E_FORMAT - This value is used to prepare numbers for %e format
- *		conversion (or for default floating->string if tcl_precision
- *		is not 0). It constructs a string of at most 'ndigits' digits,
+ *		conversion. It constructs a string of at most 'ndigits' digits,
  *		choosing the one that is closest to the given number (and
  *		resolving ties with 'round to even').  It is allowed to return
  *		fewer than 'ndigits' if the number converts exactly; if the
@@ -4662,7 +4633,7 @@ TclCeil(
     mp_int b;
 
     mp_init(&b);
-    if (mp_cmp_d(a, 0) == MP_LT) {
+    if (mp_isneg(a)) {
 	mp_neg(a, &b);
 	r = -TclFloor(&b);
     } else {
@@ -4719,7 +4690,7 @@ TclFloor(
     mp_int b;
 
     mp_init(&b);
-    if (mp_cmp_d(a, 0) == MP_LT) {
+    if (mp_isneg(a)) {
 	mp_neg(a, &b);
 	r = -TclCeil(&b);
     } else {

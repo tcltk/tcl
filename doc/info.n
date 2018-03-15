@@ -357,7 +357,7 @@ namespace separator.
 \fBinfo script\fR ?\fIfilename\fR?
 .
 If a Tcl script file is currently being evaluated (i.e. there is a
-call to \fBTcl_FSEvalFile\fR active or there is an active invocation
+call to \fBTcl_EvalFile\fR active or there is an active invocation
 of the \fBsource\fR command), then this command returns the name
 of the innermost file being processed.  If \fIfilename\fR is specified,
 then the return value of this command will be modified for the

@@ -94,12 +94,6 @@ extern "C" {
 
 #include <stdio.h>
 
-/*
- *----------------------------------------------------------------------------
- * Support for functions with a variable number of arguments.
- */
-
-#include <stdarg.h>
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #   define TCL_NORETURN __attribute__ ((noreturn))
@@ -114,7 +108,6 @@ extern "C" {
 #	define TCL_NORETURN /* nothing */
 #	define TCL_NOINLINE /* nothing */
 #   endif
-#   define TCL_NORETURN1 /* nothing */
 #endif
 
 /*
@@ -179,7 +172,7 @@ extern "C" {
  * to be included in a shared library, then it should have the DLLEXPORT
  * storage class. If is being declared for use by a module that is going to
  * link against the shared library, then it should have the DLLIMPORT storage
- * class. If the symbol is beind declared for a static build or for use from a
+ * class. If the symbol is being declared for a static build or for use from a
  * stub library, then the storage class should be empty.
  *
  * The convention is that a macro called BUILD_xxxx, where xxxx is the name of
@@ -193,6 +186,10 @@ extern "C" {
 #   define TCLAPI extern DLLEXPORT
 #else
 #   define TCLAPI extern DLLIMPORT
+#endif
+
+#if !defined(CONST86) && !defined(TCL_NO_DEPRECATED)
+#      define CONST86 const
 #endif
 
 /*
@@ -244,44 +241,40 @@ typedef void *ClientData;
 #   if defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
 #      define TCL_LL_MODIFIER	"I64"
+#      if defined(_WIN64)
+#         define TCL_Z_MODIFIER	"I"
+#      endif
 #   elif defined(__GNUC__)
-#      define TCL_WIDE_INT_TYPE long long
-#      define TCL_LL_MODIFIER	"ll"
+#      define TCL_Z_MODIFIER	"z"
 #   else /* ! _WIN32 && ! __GNUC__ */
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
  */
 #      include <limits.h>
-#      if (INT_MAX < LONG_MAX)
+#      if defined(LLONG_MAX) && (LLONG_MAX == LONG_MAX)
 #         define TCL_WIDE_INT_IS_LONG	1
-#      else
-#         define TCL_WIDE_INT_TYPE long long
 #      endif
 #   endif /* _WIN32 */
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
-#ifdef TCL_WIDE_INT_IS_LONG
-#   undef TCL_WIDE_INT_TYPE
-#   define TCL_WIDE_INT_TYPE	long
-#endif /* TCL_WIDE_INT_IS_LONG */
+
+#ifndef TCL_WIDE_INT_TYPE
+#   define TCL_WIDE_INT_TYPE		long long
+#endif /* !TCL_WIDE_INT_TYPE */
 
 typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
 typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
-#ifdef TCL_WIDE_INT_IS_LONG
-#   ifndef TCL_LL_MODIFIER
-#      define TCL_LL_MODIFIER		"l"
-#   endif /* !TCL_LL_MODIFIER */
-#else /* TCL_WIDE_INT_IS_LONG */
-/*
- * The next short section of defines are only done when not running on Windows
- * or some other strange platform.
- */
-#   ifndef TCL_LL_MODIFIER
-#      define TCL_LL_MODIFIER		"ll"
-#   endif /* !TCL_LL_MODIFIER */
-#endif /* TCL_WIDE_INT_IS_LONG */
-
+#ifndef TCL_LL_MODIFIER
+#   define TCL_LL_MODIFIER	"ll"
+#endif /* !TCL_LL_MODIFIER */
+#ifndef TCL_Z_MODIFIER
+#   if defined(__GNUC__) && !defined(_WIN32)
+#	define TCL_Z_MODIFIER	"z"
+#   else
+#	define TCL_Z_MODIFIER	""
+#   endif
+#endif /* !TCL_Z_MODIFIER */
 #define Tcl_WideAsLong(val)	((long)((Tcl_WideInt)(val)))
 #define Tcl_LongAsWide(val)	((Tcl_WideInt)((long)(val)))
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
@@ -506,8 +499,6 @@ typedef struct stat *Tcl_OldStat_;
 
 struct Tcl_Obj;
 
-typedef struct Tcl_Obj Tcl_Value;
-
 /*
  *----------------------------------------------------------------------------
  * Function types defined by Tcl:
@@ -657,8 +648,8 @@ int		Tcl_IsShared(Tcl_Obj *objPtr);
 
 /*
  *----------------------------------------------------------------------------
- * The following type contains the state needed by Tcl_SaveResult. This
- * structure is typically allocated on the stack.
+ * The following type contains the state needed by Tcl_SaveResult. It
+ * is typically allocated on the stack.
  */
 
 typedef Tcl_Obj *Tcl_SavedResult;
@@ -789,8 +780,8 @@ typedef struct Tcl_DString {
 
 /*
  * Definitions for the maximum number of digits of precision that may be
- * specified in the "tcl_precision" variable, and the number of bytes of
- * buffer space required by Tcl_PrintDouble.
+ * produced by Tcl_PrintDouble, and the number of bytes of buffer space
+ * required by Tcl_PrintDouble.
  */
 
 #define TCL_MAX_PREC		17
@@ -957,8 +948,8 @@ struct Tcl_HashEntry {
     Tcl_HashEntry *nextPtr;	/* Pointer to next entry in this hash bucket,
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
-    size_t hash;		/* Hash value. */
-    void *clientData;		/* Application stores something here with
+    unsigned int hash;		/* Hash value. */
+    ClientData clientData;	/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */
 	char *oneWordValue;	/* One-word value for key. */
@@ -1117,7 +1108,7 @@ typedef struct Tcl_HashSearch {
 typedef struct {
     void *next;			/* Search position for underlying hash
 				 * table. */
-    unsigned int epoch;		/* Epoch marker for dictionary being searched,
+    unsigned int epoch; 	/* Epoch marker for dictionary being searched,
 				 * or 0 if search has terminated. */
     Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
 } Tcl_DictSearch;
@@ -2338,9 +2329,6 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #  undef  Tcl_NewListObj
 #  define Tcl_NewListObj(objc, objv) \
      Tcl_DbNewListObj(objc, objv, __FILE__, __LINE__)
-#  undef  Tcl_NewLongObj
-#  define Tcl_NewLongObj(val) \
-     Tcl_DbNewLongObj(val, __FILE__, __LINE__)
 #  undef  Tcl_NewObj
 #  define Tcl_NewObj() \
      Tcl_DbNewObj(__FILE__, __LINE__)

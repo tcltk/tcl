@@ -77,7 +77,7 @@ int
 Buffer in which the UTF-8 representation of the Tcl_UniChar is stored.  At most
 \fBTCL_UTF_MAX\fR bytes are stored in the buffer.
 .AP int ch in
-The Tcl_UniChar to be converted or examined.
+The Unicode character to be converted or examined.
 .AP Tcl_UniChar *chPtr out
 Filled with the Tcl_UniChar represented by the head of the UTF-8 string.
 .AP "const char" *src in
@@ -102,7 +102,7 @@ The length of the Unicode string in characters.  Must be greater than or
 equal to 0.
 .AP "Tcl_DString" *dsPtr in/out
 A pointer to a previously initialized \fBTcl_DString\fR.
-.AP "size_t" numChars in
+.AP "unsigned long" numChars in
 The number of characters to compare.
 .AP "const char" *start in
 Pointer to the beginning of a UTF-8 string.

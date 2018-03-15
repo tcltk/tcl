@@ -526,8 +526,8 @@ PrefixMatchObjCmd(
     }
 
     for (i = 1; i < (objc - 2); i++) {
-	if (Tcl_GetIndexFromObjStruct(interp, objv[i], matchOptions,
-		sizeof(char *), "option", 0, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], matchOptions, "option", 0,
+		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum matchOptions) index) {
@@ -596,7 +596,7 @@ PrefixMatchObjCmd(
 	}
 	Tcl_ListObjAppendElement(interp, errorPtr,
 		Tcl_NewStringObj("-code", 5));
-	Tcl_ListObjAppendElement(interp, errorPtr, Tcl_NewLongObj(result));
+	Tcl_ListObjAppendElement(interp, errorPtr, Tcl_NewIntObj(result));
 
 	return Tcl_SetReturnOptions(interp, errorPtr);
     }
@@ -1369,8 +1369,8 @@ TclGetCompletionCodeFromObj(
 	    && TclGetIntFromObj(NULL, value, codePtr) == TCL_OK) {
 	return TCL_OK;
     }
-    if (Tcl_GetIndexFromObjStruct(NULL, value, returnCodes,
-	    sizeof(char *), NULL, TCL_EXACT, codePtr) == TCL_OK) {
+    if (Tcl_GetIndexFromObj(NULL, value, returnCodes, NULL, TCL_EXACT,
+	    codePtr) == TCL_OK) {
 	return TCL_OK;
     }
 

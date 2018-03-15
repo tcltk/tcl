@@ -412,6 +412,21 @@ Tcl_GetCwd(
     return Tcl_DStringValue(cwdPtr);
 }
 
+int
+Tcl_EvalFile(
+    Tcl_Interp *interp,		/* Interpreter in which to process file. */
+    const char *fileName)	/* Name of file to process. Tilde-substitution
+				 * will be performed on this name. */
+{
+    int ret;
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName,-1);
+
+    Tcl_IncrRefCount(pathPtr);
+    ret = Tcl_FSEvalFile(interp, pathPtr);
+    Tcl_DecrRefCount(pathPtr);
+    return ret;
+}
+
 /*
  * Now move on to the basic filesystem implementation.
  */
@@ -815,15 +830,6 @@ TclResetFilesystem(void)
     if (++theFilesystemEpoch == 0) {
 	++theFilesystemEpoch;
     }
-
-#ifdef _WIN32
-    /*
-     * Cleans up the win32 API filesystem proc lookup table. This must happen
-     * very late in finalization so that deleting of copied dlls can occur.
-     */
-
-    TclWinResetInterfaces();
-#endif
 }
 
 /*
@@ -2492,8 +2498,8 @@ TclFSFileAttrIndex(
 	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, -1);
 	int result;
 
-	result = Tcl_GetIndexFromObjStruct(NULL, tmpObj, attrTable,
-		sizeof(char *), NULL, TCL_EXACT, indexPtr);
+	result = Tcl_GetIndexFromObj(NULL, tmpObj, attrTable, NULL, TCL_EXACT,
+		indexPtr);
 	TclDecrRefCount(tmpObj);
 	if (listObj != NULL) {
 	    TclDecrRefCount(listObj);

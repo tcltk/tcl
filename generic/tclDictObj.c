@@ -141,7 +141,7 @@ typedef struct Dict {
 				 * the dictionary. Used for doing traversal of
 				 * the entries in the order that they are
 				 * created. */
-    unsigned int epoch;		/* Epoch counter */
+    unsigned int epoch; 	/* Epoch counter */
     size_t refCount;		/* Reference counter (see above) */
     Tcl_Obj *chain;		/* Linked list used for invalidating the
 				 * string representations of updated nested
@@ -1165,7 +1165,7 @@ Tcl_DictObjNext(
      * If the searh is done; we do no work.
      */
 
-    if (searchPtr->epoch == 0) {
+    if (!searchPtr->epoch) {
 	*donePtr = 1;
 	return;
     }
@@ -1222,7 +1222,7 @@ Tcl_DictObjDone(
 {
     Dict *dict;
 
-    if (searchPtr->epoch != 0) {
+    if (searchPtr->epoch) {
 	searchPtr->epoch = 0;
 	dict = (Dict *) searchPtr->dictionaryPtr;
 	if (dict->refCount-- <= 1) {
@@ -2307,9 +2307,12 @@ DictAppendCmd(
 
 	    if (objc == 4) {
 		appendObjPtr = objv[3];
-	    } else if (TCL_OK != TclStringCatObjv(interp, /* inPlace */ 1,
-		    objc-3, objv+3, &appendObjPtr)) {
-		return TCL_ERROR;
+	    } else {
+		appendObjPtr = TclStringCat(interp, objc-3, objv+3,
+			TCL_STRING_IN_PLACE);
+		if (appendObjPtr == NULL) {
+		    return TCL_ERROR;
+		}
 	    }
 	}
 

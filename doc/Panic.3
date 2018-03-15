@@ -7,16 +7,13 @@
 .BS
 '\"  Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_Panic, Tcl_PanicVA, Tcl_SetPanicProc \- report fatal error and abort
+Tcl_Panic, Tcl_SetPanicProc \- report fatal error and abort
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
 .sp
 void
 \fBTcl_Panic\fR(\fIformat\fR, \fIarg\fR, \fIarg\fR, \fI...\fR)
-.sp
-void
-\fBTcl_PanicVA\fR(\fIformat\fR, \fIargList\fR)
 .sp
 void
 \fBTcl_SetPanicProc\fR(\fIpanicProc\fR)
@@ -80,9 +77,6 @@ the Tcl library, \fBTcl_Panic\fR is a public function and may be called
 by any extension or application that wishes to abort the process and
 have a panic message displayed the same way that panic messages from Tcl
 will be displayed.
-.PP
-\fBTcl_PanicVA\fR is the same as \fBTcl_Panic\fR except that instead of
-taking a variable number of arguments it takes an argument list.
 .SH "SEE ALSO"
 abort(3), printf(3), exec(n), format(n)
 .SH KEYWORDS

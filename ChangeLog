@@ -476,6 +476,13 @@ a better first place to look now.
 	created by the http package will always be operated in asynchronous
 	mode.
 
+2013-01-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls: Put back Tcl[GS]etStartupScript(Path|FileName)
+	in private stub table, so extensions using this (like Tk 8.4) will
+	continue to work in all Tcl 8.x versions. Extensions using this
+	still cannot be compiled against Tcl 8.6 headers.
+
 2013-01-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPort.h: [Bug 3598300]: unix: tcl.h does not include
@@ -518,6 +525,18 @@ a better first place to look now.
 	* doc/fileevent.n: [Bug 3436609]: Clarify readable fileevent "false
 	positives" in the case of multibyte encodings/transforms.
 
+2013-01-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIntDecls.h: If TCL_NO_DEPRECATED is defined, make sure
+	that TIP #139 functions all are taken from the public stub table, even
+	if the inclusion is through tclInt.h.
+
+2013-01-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls: Put back TclBackgroundException in internal
+	stub table, so extensions using this, compiled against 8.5 headers
+	still run in Tcl 8.6.
+
 2013-01-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* library/http/http.tcl: [Bug 3599395]: http assumes status line is a
@@ -540,9 +559,8 @@ a better first place to look now.
 2013-01-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* library/http/http.tcl: Don't depend on Spencer-specific regexp
-	* tests/env.test: syntax (/u and /U) any more.
+	* tests/env.test: syntax (/u and /U) any more in unrelated places.
 	* tests/exec.test:
-	* tests/reg.test:
 	Bump http package to 2.8.6.
 
 2013-01-04  Donal K. Fellows  <dkf@users.sf.net>
@@ -667,8 +685,8 @@ a better first place to look now.
 
 2012-12-07  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* unix/dltest/pkgb.c:  Turn pkgb.so into a Tcl8 interoperability test
-        library: Whatever Tcl9 looks like, loading pkgb.so in Tcl 8 should
+	* unix/dltest/pkgb.c:  Turn pkgb.so into a Tcl9 interoperability test
+        library: Whatever Tcl9 looks like, loading pkgb.so in Tcl 9 should
         either result in an error-message, either succeed, but never crash.
 
 2012-11-28  Donal K. Fellows  <dkf@users.sf.net>
@@ -8825,15 +8843,14 @@ a better first place to look now.
 	implementation of the mkstemp() function, which is apparently needed
 	on some platforms.
 
-        ******************************************************************
-        *** CHANGELOG ENTRIES FOR 2008 IN "ChangeLog.2008"             ***
-        *** CHANGELOG ENTRIES FOR 2006-2007 IN "ChangeLog.2007"        ***
-        *** CHANGELOG ENTRIES FOR 2005 IN "ChangeLog.2005"             ***
-        *** CHANGELOG ENTRIES FOR 2004 IN "ChangeLog.2004"             ***
-        *** CHANGELOG ENTRIES FOR 2003 IN "ChangeLog.2003"             ***
-        *** CHANGELOG ENTRIES FOR 2002 IN "ChangeLog.2002"             ***
-        *** CHANGELOG ENTRIES FOR 2001 IN "ChangeLog.2001"             ***
-        *** CHANGELOG ENTRIES FOR 2000 IN "ChangeLog.2000"             ***
-        *** CHANGELOG ENTRIES FOR 1999 AND EARLIER IN "ChangeLog.1999" ***
-        ******************************************************************
-
+	******************************************************************
+	*** CHANGELOG ENTRIES FOR 2008 IN "ChangeLog.2008"             ***
+	*** CHANGELOG ENTRIES FOR 2006-2007 IN "ChangeLog.2007"        ***
+	*** CHANGELOG ENTRIES FOR 2005 IN "ChangeLog.2005"             ***
+	*** CHANGELOG ENTRIES FOR 2004 IN "ChangeLog.2004"             ***
+	*** CHANGELOG ENTRIES FOR 2003 IN "ChangeLog.2003"             ***
+	*** CHANGELOG ENTRIES FOR 2002 IN "ChangeLog.2002"             ***
+	*** CHANGELOG ENTRIES FOR 2001 IN "ChangeLog.2001"             ***
+	*** CHANGELOG ENTRIES FOR 2000 IN "ChangeLog.2000"             ***
+	*** CHANGELOG ENTRIES FOR 1999 AND EARLIER IN "ChangeLog.1999" ***
+	******************************************************************

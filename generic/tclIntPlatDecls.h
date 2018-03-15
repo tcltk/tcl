@@ -98,8 +98,7 @@ TCLAPI int		TclUnixWaitForFile(int fd, int mask, int timeout);
 /* Slot 7 is reserved */
 /* 8 */
 TCLAPI int		TclpGetPid(Tcl_Pid pid);
-/* 9 */
-TCLAPI int		TclWinGetPlatformId(void);
+/* Slot 9 is reserved */
 /* Slot 10 is reserved */
 /* 11 */
 TCLAPI void		TclGetAndDetachPids(Tcl_Interp *interp,
@@ -136,12 +135,10 @@ TCLAPI TclFile		TclpCreateTempFile(const char *contents);
 /* 24 */
 TCLAPI char *		TclWinNoBackslash(char *path);
 /* Slot 25 is reserved */
-/* 26 */
-TCLAPI void		TclWinSetInterfaces(int wide);
+/* Slot 26 is reserved */
 /* 27 */
 TCLAPI void		TclWinFlushDirtyChannels(void);
-/* 28 */
-TCLAPI void		TclWinResetInterfaces(void);
+/* Slot 28 is reserved */
 /* 29 */
 TCLAPI int		TclWinCPUID(int index, int *regs);
 /* 30 */
@@ -267,7 +264,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved6)(void);
     void (*reserved7)(void);
     int (*tclpGetPid) (Tcl_Pid pid); /* 8 */
-    int (*tclWinGetPlatformId) (void); /* 9 */
+    void (*reserved9)(void);
     void (*reserved10)(void);
     void (*tclGetAndDetachPids) (Tcl_Interp *interp, Tcl_Channel chan); /* 11 */
     int (*tclpCloseFile) (TclFile file); /* 12 */
@@ -284,9 +281,9 @@ typedef struct TclIntPlatStubs {
     void (*reserved23)(void);
     char * (*tclWinNoBackslash) (char *path); /* 24 */
     void (*reserved25)(void);
-    void (*tclWinSetInterfaces) (int wide); /* 26 */
+    void (*reserved26)(void);
     void (*tclWinFlushDirtyChannels) (void); /* 27 */
-    void (*tclWinResetInterfaces) (void); /* 28 */
+    void (*reserved28)(void);
     int (*tclWinCPUID) (int index, int *regs); /* 29 */
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* WIN */
@@ -396,8 +393,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 /* Slot 7 is reserved */
 #define TclpGetPid \
 	(tclIntPlatStubsPtr->tclpGetPid) /* 8 */
-#define TclWinGetPlatformId \
-	(tclIntPlatStubsPtr->tclWinGetPlatformId) /* 9 */
+/* Slot 9 is reserved */
 /* Slot 10 is reserved */
 #define TclGetAndDetachPids \
 	(tclIntPlatStubsPtr->tclGetAndDetachPids) /* 11 */
@@ -426,12 +422,10 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclWinNoBackslash \
 	(tclIntPlatStubsPtr->tclWinNoBackslash) /* 24 */
 /* Slot 25 is reserved */
-#define TclWinSetInterfaces \
-	(tclIntPlatStubsPtr->tclWinSetInterfaces) /* 26 */
+/* Slot 26 is reserved */
 #define TclWinFlushDirtyChannels \
 	(tclIntPlatStubsPtr->tclWinFlushDirtyChannels) /* 27 */
-#define TclWinResetInterfaces \
-	(tclIntPlatStubsPtr->tclWinResetInterfaces) /* 28 */
+/* Slot 28 is reserved */
 #define TclWinCPUID \
 	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
 #define TclUnixOpenTemporaryFile \
@@ -492,7 +486,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
-#if !defined(_WIN32) && !defined(__CYGWIN__)
+#if !defined(_WIN32)
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((unsigned long) (pid))
 #endif

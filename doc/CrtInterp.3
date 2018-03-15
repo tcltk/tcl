@@ -108,30 +108,31 @@ uses.
 \fBInterpreter Creation And Deletion\fR
 .
 When a new interpreter is created and used in a call to \fBTcl_Eval\fR,
-\fBTcl_SetVar\fR, or \fBTcl_GetVar\fR, a pair of calls
-to \fBTcl_Preserve\fR and \fBTcl_Release\fR should be wrapped around all
-uses of the interpreter. Remember that it is unsafe to use the interpreter
-once \fBTcl_Release\fR has been called. To ensure that the interpreter is
-properly deleted when it is no longer needed, call \fBTcl_InterpDeleted\fR
-to test if some other code already called \fBTcl_DeleteInterp\fR; if not,
-call \fBTcl_DeleteInterp\fR before calling \fBTcl_Release\fR in your own
-code.
+\fBTcl_VarEval\fR, \fBTcl_GlobalEval\fR, \fBTcl_SetVar\fR, or
+\fBTcl_GetVar\fR, a pair of calls to \fBTcl_Preserve\fR and
+\fBTcl_Release\fR should be wrapped around all uses of the interpreter.
+Remember that it is unsafe to use the interpreter once \fBTcl_Release\fR
+has been called. To ensure that the interpreter is properly deleted when
+it is no longer needed, call \fBTcl_InterpDeleted\fR to test if some other
+code already called \fBTcl_DeleteInterp\fR; if not, call
+\fBTcl_DeleteInterp\fR before calling \fBTcl_Release\fR in your own code.
 .TP
 \fBRetrieving An Interpreter From A Data Structure\fR
 .
 When an interpreter is retrieved from a data structure (e.g. the client
 data of a callback) for use in one of the evaluation functions
-(\fBTcl_Eval\fR, \fBTcl_EvalObjv\fR etc.) or variable
-access functions (\fBTcl_SetVar\fR, \fBTcl_GetVar\fR, \fBTcl_SetVar2Ex\fR,
-etc.), a pair of calls to \fBTcl_Preserve\fR and \fBTcl_Release\fR should
-be wrapped around all uses of the interpreter; it is unsafe to reuse the
-interpreter once \fBTcl_Release\fR has been called. If an interpreter is
-stored inside a callback data structure, an appropriate deletion cleanup
-mechanism should be set up by the code that creates the data structure so
-that the interpreter is removed from the data structure (e.g. by setting
-the field to NULL) when the interpreter is deleted. Otherwise, you may be
-using an interpreter that has been freed and whose memory may already have
-been reused.
+(\fBTcl_Eval\fR, \fBTcl_VarEval\fR, \fBTcl_GlobalEval\fR, \fBTcl_EvalObjv\fR,
+etc.) or variable access functions (\fBTcl_SetVar\fR, \fBTcl_GetVar\fR,
+\fBTcl_SetVar2Ex\fR, etc.), a pair of
+calls to \fBTcl_Preserve\fR and \fBTcl_Release\fR should be wrapped around
+all uses of the interpreter; it is unsafe to reuse the interpreter once
+\fBTcl_Release\fR has been called. If an interpreter is stored inside a
+callback data structure, an appropriate deletion cleanup mechanism should
+be set up by the code that creates the data structure so that the
+interpreter is removed from the data structure (e.g. by setting the field
+to NULL) when the interpreter is deleted. Otherwise, you may be using an
+interpreter that has been freed and whose memory may already have been
+reused.
 .PP
 All uses of interpreters in Tcl and Tk have already been protected.
 Extension writers should ensure that their code also properly protects any

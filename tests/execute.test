@@ -459,10 +459,6 @@ test execute-3.71 {TclExecuteByteCode, INST_LNOT, op is non-numeric} {testobj} {
     list [catch {expr {! $x}} msg] $msg
 } {1 {can't use non-numeric string "foo" as operand of "!"}}
 
-# INST_BITNOT not tested
-# INST_CALL_BUILTIN_FUNC1 not tested
-# INST_CALL_FUNC1 not tested
-
 # INST_TRY_CVT_TO_NUMERIC is partially tested:
 test execute-3.72 {TclExecuteByteCode, INST_TRY_CVT_TO_NUMERIC, op is int} {testobj} {
     set x [testintobj set 1 1]

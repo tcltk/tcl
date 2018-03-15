@@ -3733,26 +3733,6 @@ $as_echo "#define NO_DIRENT_H 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_header_mongrel "$LINENO" "float.h" "ac_cv_header_float_h" "$ac_includes_default"
-if test "x$ac_cv_header_float_h" = xyes; then :
-
-else
-
-$as_echo "#define NO_FLOAT_H 1" >>confdefs.h
-
-fi
-
-
-    ac_fn_c_check_header_mongrel "$LINENO" "values.h" "ac_cv_header_values_h" "$ac_includes_default"
-if test "x$ac_cv_header_values_h" = xyes; then :
-
-else
-
-$as_echo "#define NO_VALUES_H 1" >>confdefs.h
-
-fi
-
-
     ac_fn_c_check_header_mongrel "$LINENO" "stdlib.h" "ac_cv_header_stdlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_stdlib_h" = xyes; then :
   tcl_ok=1
@@ -4280,8 +4260,6 @@ $as_echo "#define TCL_CFGVAL_ENCODING \"iso8859-1\"" >>confdefs.h
     #--------------------------------------------------------------------
     # On a few very rare systems, all of the libm.a stuff is
     # already in libc.a.  Set compiler flags accordingly.
-    # Also, Linux requires the "ieee" library for math to work
-    # right (and it must appear before "-lm").
     #--------------------------------------------------------------------
 
     ac_fn_c_check_func "$LINENO" "sin" "ac_cv_func_sin"
@@ -4289,40 +4267,6 @@ if test "x$ac_cv_func_sin" = xyes; then :
   MATH_LIBS=""
 else
   MATH_LIBS="-lm"
-fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lieee" >&5
-$as_echo_n "checking for main in -lieee... " >&6; }
-if ${ac_cv_lib_ieee_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lieee  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_ieee_main=yes
-else
-  ac_cv_lib_ieee_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ieee_main" >&5
-$as_echo "$ac_cv_lib_ieee_main" >&6; }
-if test "x$ac_cv_lib_ieee_main" = xyes; then :
-  MATH_LIBS="-lieee $MATH_LIBS"
 fi
 
 
@@ -5319,7 +5263,7 @@ $as_echo "$ac_cv_cygwin" >&6; }
 	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_SUFFIX=".so"
-	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
+	    SHLIB_LD='${CC} ${CFLAGS} ${LDFLAGS} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-lroot"
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_ntoa in -lnetwork" >&5
@@ -5641,7 +5585,7 @@ fi
 	    # get rid of the warnings.
 	    #CFLAGS_OPTIMIZE="${CFLAGS_OPTIMIZE} -D__NO_STRING_INLINES -D__NO_MATH_INLINES"
 
-	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
+	    SHLIB_LD='${CC} ${CFLAGS} ${LDFLAGS} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
@@ -5728,7 +5672,7 @@ fi
 		SHLIB_CFLAGS="-fpic"
 		;;
 	    esac
-	    SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
+	    SHLIB_LD='${CC} ${SHLIB_CFLAGS} -shared'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -5755,7 +5699,7 @@ fi
 	NetBSD-*)
 	    # NetBSD has ELF and can use 'cc -shared' to build shared libs
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
+	    SHLIB_LD='${CC} ${SHLIB_CFLAGS} -shared'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -6928,7 +6872,7 @@ else
   tcl_type_64bit="long long"
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-	# See if we should use long anyway  Note that we substitute in the
+	# See if we could use long anyway  Note that we substitute in the
 	# type that is our current guess for a 64-bit type inside this check
 	# program, so it should be modified only carefully...
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -6954,8 +6898,8 @@ fi
 
 $as_echo "#define TCL_WIDE_INT_IS_LONG 1" >>confdefs.h
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: using long" >&5
-$as_echo "using long" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
     else
 
 cat >>confdefs.h <<_ACEOF

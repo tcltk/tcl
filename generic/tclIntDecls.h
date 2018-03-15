@@ -83,7 +83,7 @@ TCLAPI int		TclFindElement(Tcl_Interp *interp,
 /* 23 */
 TCLAPI Proc *		TclFindProc(Interp *iPtr, const char *procName);
 /* 24 */
-TCLAPI int		TclFormatInt(char *buffer, long n);
+TCLAPI int		TclFormatInt(char *buffer, Tcl_WideInt n);
 /* 25 */
 TCLAPI void		TclFreePackageInfo(Interp *iPtr);
 /* Slot 26 is reserved */
@@ -199,10 +199,7 @@ TCLAPI char *		TclpRealloc(char *ptr, unsigned int size);
 /* Slot 85 is reserved */
 /* Slot 86 is reserved */
 /* Slot 87 is reserved */
-/* 88 */
-TCLAPI char *		TclPrecTraceProc(ClientData clientData,
-				Tcl_Interp *interp, const char *name1,
-				const char *name2, int flags);
+/* Slot 88 is reserved */
 /* 89 */
 TCLAPI int		TclPreventAliasLoop(Tcl_Interp *interp,
 				Tcl_Interp *cmdInterp, Tcl_Command cmd);
@@ -365,7 +362,7 @@ TCLAPI int		TclListObjSetElement(Tcl_Interp *interp,
 /* Slot 168 is reserved */
 /* 169 */
 TCLAPI int		TclpUtfNcmp2(const char *s1, const char *s2,
-				size_t n);
+				unsigned long n);
 /* 170 */
 TCLAPI int		TclCheckInterpTraces(Tcl_Interp *interp,
 				const char *command, int numChars,
@@ -600,7 +597,7 @@ typedef struct TclIntStubs {
     void (*reserved21)(void);
     int (*tclFindElement) (Tcl_Interp *interp, const char *listStr, int listLength, const char **elementPtr, const char **nextPtr, int *sizePtr, int *bracePtr); /* 22 */
     Proc * (*tclFindProc) (Interp *iPtr, const char *procName); /* 23 */
-    int (*tclFormatInt) (char *buffer, long n); /* 24 */
+    int (*tclFormatInt) (char *buffer, Tcl_WideInt n); /* 24 */
     void (*tclFreePackageInfo) (Interp *iPtr); /* 25 */
     void (*reserved26)(void);
     void (*reserved27)(void);
@@ -664,7 +661,7 @@ typedef struct TclIntStubs {
     void (*reserved85)(void);
     void (*reserved86)(void);
     void (*reserved87)(void);
-    char * (*tclPrecTraceProc) (ClientData clientData, Tcl_Interp *interp, const char *name1, const char *name2, int flags); /* 88 */
+    void (*reserved88)(void);
     int (*tclPreventAliasLoop) (Tcl_Interp *interp, Tcl_Interp *cmdInterp, Tcl_Command cmd); /* 89 */
     void (*reserved90)(void);
     void (*tclProcCleanupProc) (Proc *procPtr); /* 91 */
@@ -745,7 +742,7 @@ typedef struct TclIntStubs {
     int (*tclListObjSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, int index, Tcl_Obj *valuePtr); /* 166 */
     void (*reserved167)(void);
     void (*reserved168)(void);
-    int (*tclpUtfNcmp2) (const char *s1, const char *s2, size_t n); /* 169 */
+    int (*tclpUtfNcmp2) (const char *s1, const char *s2, unsigned long n); /* 169 */
     int (*tclCheckInterpTraces) (Tcl_Interp *interp, const char *command, int numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 170 */
     int (*tclCheckExecutionTraces) (Tcl_Interp *interp, const char *command, int numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 171 */
     int (*tclInThreadExit) (void); /* 172 */
@@ -978,8 +975,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 85 is reserved */
 /* Slot 86 is reserved */
 /* Slot 87 is reserved */
-#define TclPrecTraceProc \
-	(tclIntStubsPtr->tclPrecTraceProc) /* 88 */
+/* Slot 88 is reserved */
 #define TclPreventAliasLoop \
 	(tclIntStubsPtr->tclPreventAliasLoop) /* 89 */
 /* Slot 90 is reserved */

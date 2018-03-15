@@ -66,7 +66,7 @@ typedef struct {
 
 /*
  *
- * struct Slave:
+ * Slave:
  *
  * Used by the "interp" command to record and find information about slave
  * interpreters. Maps from a command name in the master to information about a
@@ -112,7 +112,7 @@ typedef struct Target {
 } Target;
 
 /*
- * struct Master:
+ * Master:
  *
  * This record is used for two purposes: First, slaveTable (a hashtable) maps
  * from names of commands to slave interpreters. This hashtable is used to
@@ -3208,10 +3208,6 @@ Tcl_MakeSafe(
 
 	(void) Tcl_EvalEx(interp,
 		"namespace eval ::tcl {namespace eval mathfunc {}}", -1, 0);
-	(void) Tcl_CreateAlias(interp, "::tcl::mathfunc::min", master,
-		"::tcl::mathfunc::min", 0, NULL);
-	(void) Tcl_CreateAlias(interp, "::tcl::mathfunc::max", master,
-		"::tcl::mathfunc::max", 0, NULL);
     }
 
     iPtr->flags |= SAFE_INTERP;

@@ -106,7 +106,7 @@ declare 20 {
 declare 21 {
     int Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file, int line)
 }
-# Removed in 9.0
+# Removed in 9.0 (changed to macro):
 #declare 22 {
 #    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
 #}
@@ -122,9 +122,10 @@ declare 25 {
     Tcl_Obj *Tcl_DbNewListObj(int objc, Tcl_Obj *const *objv,
 	    const char *file, int line)
 }
-declare 26 {
-    Tcl_Obj *Tcl_DbNewLongObj(long longValue, const char *file, int line)
-}
+# Removed in 9.0 (changed to macro):
+#declare 26 {
+#    Tcl_Obj *Tcl_DbNewLongObj(long longValue, const char *file, int line)
+#}
 declare 27 {
     Tcl_Obj *Tcl_DbNewObj(const char *file, int line)
 }
@@ -202,7 +203,7 @@ declare 48 {
     int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, int first,
 	    int count, int objc, Tcl_Obj *const objv[])
 }
-# Removed in 9.0:
+# Removed in 9.0 (changed to macro):
 #declare 49 {
 #    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
 #}
@@ -212,22 +213,24 @@ declare 50 {
 declare 51 {
     Tcl_Obj *Tcl_NewDoubleObj(double doubleValue)
 }
-declare 52 {
-    Tcl_Obj *Tcl_NewIntObj(int intValue)
-}
+# Removed in 9.0 (changed to macro):
+#declare 52 {
+#    Tcl_Obj *Tcl_NewIntObj(int intValue)
+#}
 declare 53 {
     Tcl_Obj *Tcl_NewListObj(int objc, Tcl_Obj *const objv[])
 }
-declare 54 {
-    Tcl_Obj *Tcl_NewLongObj(long longValue)
-}
+# Removed in 9.0 (changed to macro):
+#declare 54 {
+#    Tcl_Obj *Tcl_NewLongObj(long longValue)
+#}
 declare 55 {
     Tcl_Obj *Tcl_NewObj(void)
 }
 declare 56 {
     Tcl_Obj *Tcl_NewStringObj(const char *bytes, int length)
 }
-# Removed in 9.0:
+# Removed in 9.0 (changed to macro):
 #declare 57 {
 #    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
 #}
@@ -241,15 +244,17 @@ declare 59 {
 declare 60 {
     void Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue)
 }
-declare 61 {
-    void Tcl_SetIntObj(Tcl_Obj *objPtr, int intValue)
-}
+# Removed in 9.0 (changed to macro):
+#declare 61 {
+#    void Tcl_SetIntObj(Tcl_Obj *objPtr, int intValue)
+#}
 declare 62 {
     void Tcl_SetListObj(Tcl_Obj *objPtr, int objc, Tcl_Obj *const objv[])
 }
-declare 63 {
-    void Tcl_SetLongObj(Tcl_Obj *objPtr, long longValue)
-}
+# Removed in 9.0 (changed to macro):
+#declare 63 {
+#    void Tcl_SetLongObj(Tcl_Obj *objPtr, long longValue)
+#}
 declare 64 {
     void Tcl_SetObjLength(Tcl_Obj *objPtr, int length)
 }
@@ -292,8 +297,8 @@ declare 75 {
 declare 76 {
     void Tcl_BackgroundError(Tcl_Interp *interp)
 }
-# Removed in 9.0
-#declare 77 {
+# Removed in 9.0:
+#declare 77 {deprecated {Use Tcl_UtfBackslash}} {
 #    char Tcl_Backslash(const char *src, int *readPtr)
 #}
 declare 78 {
@@ -360,7 +365,8 @@ declare 93 {
 declare 94 {
     Tcl_Interp *Tcl_CreateInterp(void)
 }
-#declare 95 {
+# Removed in 9.0:
+#declare 95 {deprecated {}} {
 #    void Tcl_CreateMathFunc(Tcl_Interp *interp, const char *name,
 #	    int numArgs, Tcl_ValueType *argTypes,
 #	    Tcl_MathProc *proc, ClientData clientData)
@@ -478,11 +484,10 @@ declare 128 {
 #declare 129 {
 #    int Tcl_Eval(Tcl_Interp *interp, const char *script)
 #}
-# Removed in 9.0:
-#declare 130 {
-#    int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
-#}
-# Removed in 9.0:
+declare 130 {
+    int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
+}
+# Removed in 9.0, replaced by macro.
 #declare 131 {
 #    int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 #}
@@ -649,7 +654,7 @@ declare 176 {
 #declare 177 {
 #    int Tcl_GlobalEval(Tcl_Interp *interp, const char *command)
 #}
-# Removed in 9.0
+# Removed in 9.0, replaced by macro.
 #declare 178 {
 #    int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 #}
@@ -794,7 +799,7 @@ declare 218 {
 declare 219 {
     int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
 }
-# Removed in Tcl 9
+# Removed in 9.0:
 #declare 220 {
 #    int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
 #}
@@ -885,11 +890,11 @@ declare 244 {
 declare 245 {
     int Tcl_StringMatch(const char *str, const char *pattern)
 }
-# Removed in Tcl 9
+# Removed in 9.0:
 #declare 246 {
 #    int Tcl_TellOld(Tcl_Channel chan)
 #}
-# Removed in Tcl 9
+# Removed in 9.0:
 #declare 247 {
 #    int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
 #	    Tcl_VarTraceProc *proc, ClientData clientData)
@@ -968,12 +973,14 @@ declare 265 {
 declare 266 {
     void Tcl_ValidateAllMemory(const char *file, int line)
 }
-declare 267 {
-    void Tcl_AppendResultVA(Tcl_Interp *interp, va_list argList)
-}
-declare 268 {
-    void Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr, va_list argList)
-}
+# Removed in 9.0:
+#declare 267 {
+#    void Tcl_AppendResultVA(Tcl_Interp *interp, va_list argList)
+#}
+# Removed in 9.0:
+#declare 268 {
+#    void Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr, va_list argList)
+#}
 declare 269 {
     char *Tcl_HashStats(Tcl_HashTable *tablePtr)
 }
@@ -1002,19 +1009,21 @@ declare 273 {
 #    const char *Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
 #	    const char *version, int exact)
 #}
-declare 275 {
-    void Tcl_SetErrorCodeVA(Tcl_Interp *interp, va_list argList)
-}
-# Removed in 9.0
+# Removed in 9.0:
+#declare 275 {
+#    void Tcl_SetErrorCodeVA(Tcl_Interp *interp, va_list argList)
+#}
+# Removed in 9.0:
 #declare 276 {
 #    int  Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList)
 #}
 declare 277 {
     Tcl_Pid Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options)
 }
-declare 278 {
-    TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList)
-}
+# Removed in 9.0:
+#declare 278 {
+#    TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList)
+#}
 declare 279 {
     void Tcl_GetVersion(int *major, int *minor, int *patchLevel, int *type)
 }
@@ -1244,12 +1253,12 @@ declare 339 {
 declare 340 {
     char *Tcl_GetString(Tcl_Obj *objPtr)
 }
-# Removed in 9.0
-#declare 341 {
+# Removed in 9.0:
+#declare 341 {deprecated {Use Tcl_GetEncodingSearchPath}} {
 #    const char *Tcl_GetDefaultEncodingDir(void)
 #}
-# Removed in 9.0
-#declare 342 {
+# Removed in 9.0:
+#declare 342 {deprecated {Use Tcl_SetEncodingSearchPath}} {
 #    void Tcl_SetDefaultEncodingDir(const char *path)
 #}
 declare 343 {
@@ -1284,7 +1293,7 @@ declare 352 {
 }
 declare 353 {
     int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-	    size_t numChars)
+	    unsigned long numChars)
 }
 declare 354 {
     char *Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
@@ -1299,7 +1308,7 @@ declare 356 {
 	    int flags)
 }
 # Removed in 9.0:
-#declare 357 {
+#declare 357 {deprecated {Use Tcl_EvalTokensStandard}} {
 #    Tcl_Obj *Tcl_EvalTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 #	    int count)
 #}
@@ -1346,10 +1355,10 @@ declare 368 {
     int Tcl_Stat(const char *path, struct stat *bufPtr)
 }
 declare 369 {
-    int Tcl_UtfNcmp(const char *s1, const char *s2, size_t n)
+    int Tcl_UtfNcmp(const char *s1, const char *s2, unsigned long n)
 }
 declare 370 {
-    int Tcl_UtfNcasecmp(const char *s1, const char *s2, size_t n)
+    int Tcl_UtfNcasecmp(const char *s1, const char *s2, unsigned long n)
 }
 declare 371 {
     int Tcl_StringCaseMatch(const char *str, const char *pattern, int nocase)
@@ -1520,15 +1529,17 @@ declare 418 {
 }
 declare 419 {
     int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-	    size_t numChars)
+	    unsigned long numChars)
 }
 declare 420 {
     int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
 	    const Tcl_UniChar *uniPattern, int nocase)
 }
+# Removed in 9.0, as it is actually a macro:
 #declare 421 {
 #    Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const void *key)
 #}
+# Removed in 9.0, as it is actually a macro:
 #declare 422 {
 #    Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
 #	    const void *key, int *newPtr)
@@ -1581,15 +1592,16 @@ declare 434 {
 }
 
 # TIP#15 (math function introspection) dkf
-#declare 435 {
+# Removed in 9.0:
+#declare 435 {deprecated {}} {
 #    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, const char *name,
 #	    int *numArgsPtr, Tcl_ValueType **argTypesPtr,
 #	    Tcl_MathProc **procPtr, ClientData *clientDataPtr)
 #}
-#declare 436 {
+# Removed in 9.0:
+#declare 436 {deprecated {}} {
 #    Tcl_Obj *Tcl_ListMathFuncs(Tcl_Interp *interp, const char *pattern)
 #}
-
 # TIP#36 (better access to 'subst') dkf
 declare 437 {
     Tcl_Obj *Tcl_SubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
@@ -1905,7 +1917,7 @@ declare 518 {
 
 # TIP#121 (exit handler) dkf for Joe Mistachkin
 declare 519 {
-    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
+    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN Tcl_ExitProc *proc)
 }
 
 # TIP#143 (resource limits) dkf

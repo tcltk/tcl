@@ -463,6 +463,7 @@ Tcl_LoadObjCmd(
 	}
 	code = pkgPtr->initProc(target);
     }
+
     /*
      * Test for whether the initialization failed. If so, transfer the error
      * from the target interpreter to the originating one.
@@ -470,7 +471,7 @@ Tcl_LoadObjCmd(
 
     if (code != TCL_OK) {
 	Interp *iPtr = (Interp *) target;
-	if (iPtr->legacyResult && !iPtr->legacyFreeProc) {
+	if (iPtr->legacyResult && *(iPtr->legacyResult) && !iPtr->legacyFreeProc) {
 	    /*
 	     * A call to Tcl_InitStubs() determined the caller extension and
 	     * this interp are incompatible in their stubs mechanisms, and

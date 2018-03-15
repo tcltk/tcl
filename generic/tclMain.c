@@ -266,18 +266,14 @@ Tcl_SourceRCFile(
 
 	    c = Tcl_OpenFileChannel(NULL, fullName, "r", 0);
 	    if (c != NULL) {
-		Tcl_Obj *fullNameObj = Tcl_NewStringObj(fullName, -1);
-
 		Tcl_Close(NULL, c);
-		Tcl_IncrRefCount(fullNameObj);
-		if (Tcl_FSEvalFileEx(interp, fullNameObj, NULL) != TCL_OK) {
+		if (Tcl_EvalFile(interp, fullName) != TCL_OK) {
 		    chan = Tcl_GetStdChannel(TCL_STDERR);
 		    if (chan) {
 			Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
 			Tcl_WriteChars(chan, "\n", 1);
 		    }
 		}
-		Tcl_DecrRefCount(fullNameObj);
 	    }
 	}
 	Tcl_DStringFree(&temp);
@@ -368,7 +364,7 @@ Tcl_MainEx(
     argc--;
     argv++;
 
-    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewLongObj(argc), TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
 
     argvPtr = Tcl_NewListObj(0, NULL);
     while (argc--) {
@@ -382,7 +378,7 @@ Tcl_MainEx(
 
     is.tty = isatty(0);
     Tcl_SetVar2Ex(interp, "tcl_interactive", NULL,
-	    Tcl_NewLongObj(!path && is.tty), TCL_GLOBAL_ONLY);
+	    Tcl_NewIntObj(!path && is.tty), TCL_GLOBAL_ONLY);
 
     /*
      * Invoke application-specific initialization.

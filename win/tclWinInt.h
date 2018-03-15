@@ -46,25 +46,6 @@ typedef struct TCLEXCEPTION_REGISTRATION {
 #endif
 
 /*
- * Some versions of Borland C have a define for the OSVERSIONINFO for
- * Win32s and for NT, but not for Windows 95.
- * Define VER_PLATFORM_WIN32_CE for those without newer headers.
- */
-
-#ifndef VER_PLATFORM_WIN32_WINDOWS
-#define VER_PLATFORM_WIN32_WINDOWS 1
-#endif
-#ifndef VER_PLATFORM_WIN32_CE
-#define VER_PLATFORM_WIN32_CE 3
-#endif
-
-#ifdef _WIN64
-#         define TCL_I_MODIFIER        "I"
-#else
-#         define TCL_I_MODIFIER        ""
-#endif
-
-/*
  * Declarations of functions that are not accessible by way of the
  * stubs table.
  */
