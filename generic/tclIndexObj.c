@@ -101,6 +101,7 @@ typedef struct {
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_GetIndexFromObj
 int
 Tcl_GetIndexFromObj(
@@ -137,6 +138,7 @@ Tcl_GetIndexFromObj(
     return Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, sizeof(char *),
 	    msg, flags, indexPtr);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -874,7 +876,8 @@ Tcl_WrongNumArgs(
 				 * NULL. */
 {
     Tcl_Obj *objPtr;
-    int i, len, elemLen, flags;
+    int i, len, elemLen;
+    char flags;
     Interp *iPtr = (Interp *) interp;
     const char *elementStr;
 

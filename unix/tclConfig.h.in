@@ -295,9 +295,6 @@
 /* Do we have fd_set? */
 #undef NO_FD_SET
 
-/* Do we have <float.h>? */
-#undef NO_FLOAT_H
-
 /* Do we have fstatfs()? */
 #undef NO_FSTATFS
 
@@ -333,9 +330,6 @@
 
 /* Do we have a usable 'union wait'? */
 #undef NO_UNION_WAIT
-
-/* Do we have <values.h>? */
-#undef NO_VALUES_H
 
 /* Do we have wait3() */
 #undef NO_WAIT3
@@ -400,7 +394,7 @@
 /* Does this platform have wide high-resolution clicks? */
 #undef TCL_WIDE_CLICKS
 
-/* Are wide integers to be implemented with C 'long's? */
+/* Do Tcl_WideInt, 'long' and 'long long' all have the same size (64-bit) ? */
 #undef TCL_WIDE_INT_IS_LONG
 
 /* What type should be used to define wide integers? */

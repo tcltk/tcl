@@ -19,6 +19,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
 testConstraint testobj [llength [info commands testobj]]
+testConstraint fullutf [expr {[format %c 0x010000] != "\ufffd"}]
 
 test cmdIL-1.1 {Tcl_LsortObjCmd procedure} -returnCodes error -body {
     lsort
@@ -147,6 +148,24 @@ test cmdIL-1.36 {lsort -stride and -index: Bug 2918962} {
 	{{b i g} 12345} {{d e m o} 34512}
     }
 } {{{b i g} 12345} {{d e m o} 34512} {{c o d e} 54321} {{b l a h} 94729}}
+test cmdIL-1.37 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
+    lsort -ascii [list \0 \x7f \x80 \uffff]
+} [list \0 \x7f \x80 \uffff]
+test cmdIL-1.38 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
+    lsort -ascii -nocase [list \0 \x7f \x80 \uffff]
+} [list \0 \x7f \x80 \uffff]
+test cmdIL-1.39 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} fullutf {
+    lsort -ascii [list \0 \x7f \x80 \U01ffff \uffff]
+} [list \0 \x7f \x80 \uffff \U01ffff]
+test cmdIL-1.40 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} fullutf {
+    lsort -ascii -nocase [list \0 \x7f \x80 \U01ffff \uffff]
+} [list \0 \x7f \x80 \uffff \U01ffff]
+test cmdIL-1.41 {lsort -stride and -index} -body {
+    lsort -stride 2 -index -2 {a 2 b 1}
+} -returnCodes error -result {index "-2" cannot select an element from any list}
+test cmdIL-1.42 {lsort -stride and-index} -body {
+    lsort -stride 2 -index -1-1 {a 2 b 1}
+} -returnCodes error -result {index "-1-1" cannot select an element from any list}
 
 # Can't think of any good tests for the MergeSort and MergeLists procedures,
 # except a bunch of random lists to sort.
@@ -203,6 +222,33 @@ test cmdIL-3.4.1 {SortCompare procedure, -index option} -body {
 test cmdIL-3.5 {SortCompare procedure, -index option} -body {
     lsort -integer -index 2 {{20 10 13} {15}}
 } -returnCodes error -result {element 2 missing from sublist "15"}
+test cmdIL-3.5.1 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index 1+3 {{1 . c} {2 . b} {3 . a}}
+} -returnCodes error -result {element 4 missing from sublist "1 . c"}
+test cmdIL-3.5.2 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index -1-1 {{1 . c} {2 . b} {3 . a}}
+} -returnCodes error -result {index "-1-1" cannot select an element from any list}
+test cmdIL-3.5.3 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index -2 {{1 . c} {2 . b} {3 . a}}
+} -returnCodes error -result {index "-2" cannot select an element from any list}
+test cmdIL-3.5.4 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index end-4 {{1 . c} {2 . b} {3 . a}}
+} -returnCodes error -result {element -2 missing from sublist "1 . c"}
+test cmdIL-3.5.5 {SortCompare procedure, -index option} {
+    lsort -index {} {a b}
+} {a b}
+test cmdIL-3.5.6 {SortCompare procedure, -index option} {
+    lsort -index {} [list a \{]
+} {a \{}
+test cmdIL-3.5.7 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index end--1 {{1 . c} {2 . b} {3 . a}}
+} -returnCodes error -result {index "end--1" cannot select an element from any list}
+test cmdIL-3.5.8 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index end+1 {{1 . c} {2 . b} {3 . a}}
+} -returnCodes error -result {index "end+1" cannot select an element from any list}
+test cmdIL-3.5.9 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index end+2 {{1 . c} {2 . b} {3 . a}}
+} -returnCodes error -result {index "end+2" cannot select an element from any list}
 test cmdIL-3.6 {SortCompare procedure, -index option} {
     lsort -integer -index 2 {{1 15 30} {2 5 25} {3 25 20}}
 } {{3 25 20} {2 5 25} {1 15 30}}
@@ -219,8 +265,8 @@ test cmdIL-3.10 {SortCompare procedure, -integer option} -body {
     lsort -integer {3 q}
 } -returnCodes error -result {expected integer but got "q"}
 test cmdIL-3.11 {SortCompare procedure, -integer option} {
-    lsort -integer {35 21 0x20 30 0o23 100 8}
-} {8 0o23 21 30 0x20 35 100}
+    lsort -integer {35 21 0x20 0d30 0o23 100 8}
+} {8 0o23 21 0d30 0x20 35 100}
 test cmdIL-3.12 {SortCompare procedure, -real option} -body {
     lsort -real {6...4 3}
 } -returnCodes error -result {expected floating-point number but got "6...4"}
