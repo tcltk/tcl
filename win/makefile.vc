@@ -218,6 +218,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclPosixStr.obj \
 	$(TMP_DIR)\tclPreserve.obj \
 	$(TMP_DIR)\tclProc.obj \
+	$(TMP_DIR)\tclProcess.obj \
 	$(TMP_DIR)\tclRegexp.obj \
 	$(TMP_DIR)\tclResolve.obj \
 	$(TMP_DIR)\tclResult.obj \
