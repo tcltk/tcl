@@ -69,15 +69,15 @@ int fast_s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs)
 
       /* execute loop */
       for (iz = 0; iz < iy; ++iz) {
-         _W += ((mp_word)*tmpx++)*((mp_word)*tmpy--);
+         _W += (mp_word)*tmpx++ * (mp_word)*tmpy--;
 
       }
 
       /* store term */
-      W[ix] = ((mp_digit)_W) & MP_MASK;
+      W[ix] = (mp_digit)_W & MP_MASK;
 
       /* make next carry */
-      _W = _W >> ((mp_word)DIGIT_BIT);
+      _W = _W >> (mp_word)DIGIT_BIT;
    }
 
    /* setup dest */
@@ -87,7 +87,7 @@ int fast_s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs)
    {
       mp_digit *tmpc;
       tmpc = c->dp;
-      for (ix = 0; ix < (pa + 1); ix++) {
+      for (ix = 0; ix < pa; ix++) {
          /* now extract the previous digit [below the carry] */
          *tmpc++ = W[ix];
       }

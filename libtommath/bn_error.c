@@ -27,10 +27,10 @@ static const struct {
 /* return a char * string for a given code */
 const char *mp_error_to_string(int code)
 {
-   int x;
+   size_t x;
 
    /* scan the lookup table for the given message */
-   for (x = 0; x < (int)(sizeof(msgs) / sizeof(msgs[0])); x++) {
+   for (x = 0; x < (sizeof(msgs) / sizeof(msgs[0])); x++) {
       if (msgs[x].code == code) {
          return msgs[x].msg;
       }

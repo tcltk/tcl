@@ -31,7 +31,7 @@ int mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
    int     res;
 
    /* input must be positive if b is even */
-   if (((b & 1) == 0) && (a->sign == MP_NEG)) {
+   if (((b & 1u) == 0u) && (a->sign == MP_NEG)) {
       return MP_VAL;
    }
 
@@ -52,7 +52,7 @@ int mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
    a_.sign = MP_ZPOS;
 
    /* t2 = 2 */
-   mp_set(&t2, 2);
+   mp_set(&t2, 2uL);
 
    do {
       /* t1 = t2 */
@@ -63,7 +63,7 @@ int mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
       /* t2 = t1 - ((t1**b - a) / (b * t1**(b-1))) */
 
       /* t3 = t1**(b-1) */
-      if ((res = mp_expt_d_ex(&t1, b - 1, &t3, fast)) != MP_OKAY) {
+      if ((res = mp_expt_d_ex(&t1, b - 1u, &t3, fast)) != MP_OKAY) {
          goto LBL_T3;
       }
 
@@ -101,7 +101,7 @@ int mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
       }
 
       if (mp_cmp(&t2, &a_) == MP_GT) {
-         if ((res = mp_sub_d(&t1, 1, &t1)) != MP_OKAY) {
+         if ((res = mp_sub_d(&t1, 1uL, &t1)) != MP_OKAY) {
             goto LBL_T3;
          }
       } else {
