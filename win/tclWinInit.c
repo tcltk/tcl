@@ -487,16 +487,9 @@ TclpSetInitialEncodings(void)
 {
     Tcl_DString encodingName;
 
-    TclpSetInterfaces();
     Tcl_SetSystemEncoding(NULL,
 	    Tcl_GetEncodingNameFromEnvironment(&encodingName));
     Tcl_DStringFree(&encodingName);
-}
-
-void TclWinSetInterfaces(
-    int dummy)			/* Not used. */
-{
-    TclpSetInterfaces();
 }
 
 const char *

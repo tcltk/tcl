@@ -1246,17 +1246,11 @@ TclLindexList(
 	return TclLindexFlat(interp, listPtr, 1, &argPtr);
     }
 
-    if (indexListCopy->typePtr == &tclListType) {
-	List *listRepPtr = ListRepPtr(indexListCopy);
+    {
+	int indexCount = -1;		/* Size of the array of list indices. */
+	Tcl_Obj **indices = NULL; 	/* Array of list indices. */
 
-	listPtr = TclLindexFlat(interp, listPtr, listRepPtr->elemCount,
-		&listRepPtr->elements);
-    } else {
-	int indexCount = -1;	/* Size of the array of list indices. */
-	Tcl_Obj **indices = NULL;
-				/* Array of list indices. */
-
-	Tcl_ListObjGetElements(NULL, indexListCopy, &indexCount, &indices);
+	TclListObjGetElements(NULL, indexListCopy, &indexCount, &indices);
 	listPtr = TclLindexFlat(interp, listPtr, indexCount, indices);
     }
     Tcl_DecrRefCount(indexListCopy);

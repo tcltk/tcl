@@ -790,7 +790,7 @@ TclObjGetFrame(
 	level = curLevel - level;
 	result = 1;
     } else if (objPtr->typePtr == &levelReferenceType) {
-	level = (int) objPtr->internalRep.longValue;
+	level = (int) objPtr->internalRep.wideValue;
 	result = 1;
     } else {
 	name = TclGetString(objPtr);
@@ -798,7 +798,7 @@ TclObjGetFrame(
 	    if (TCL_OK == Tcl_GetInt(NULL, name+1, &level) && level >= 0) {
 		TclFreeIntRep(objPtr);
 		objPtr->typePtr = &levelReferenceType;
-		objPtr->internalRep.longValue = level;
+		objPtr->internalRep.wideValue = level;
 		result = 1;
 	    } else {
 		result = -1;
