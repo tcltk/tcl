@@ -21,7 +21,7 @@ int mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b, unsigned long *outle
    if (*outlen < (unsigned long)mp_unsigned_bin_size(a)) {
       return MP_VAL;
    }
-   *outlen = mp_unsigned_bin_size(a);
+   *outlen = (unsigned long)mp_unsigned_bin_size(a);
    return mp_to_unsigned_bin(a, b);
 }
 #endif
