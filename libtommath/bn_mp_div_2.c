@@ -42,7 +42,7 @@ int mp_div_2(const mp_int *a, mp_int *b)
       r = 0;
       for (x = b->used - 1; x >= 0; x--) {
          /* get the carry for the next iteration */
-         rr = *tmpa & 1;
+         rr = *tmpa & 1u;
 
          /* shift the current digit, add in carry and store */
          *tmpb-- = (*tmpa-- >> 1) | (r << (DIGIT_BIT - 1));
