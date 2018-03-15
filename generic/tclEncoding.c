@@ -693,6 +693,7 @@ TclFinalizeEncodingSubsystem(void)
  *-------------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 const char *
 Tcl_GetDefaultEncodingDir(void)
 {
@@ -736,6 +737,7 @@ Tcl_SetDefaultEncodingDir(
     Tcl_ListObjReplace(NULL, searchPath, 0, 0, 1, &directory);
     Tcl_SetEncodingSearchPath(searchPath);
 }
+#endif
 
 /*
  *-------------------------------------------------------------------------
