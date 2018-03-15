@@ -2057,6 +2057,8 @@ test iocmd-32.0 {origin interpreter of moved channel gone} -match glob -body {
     lappend res [catch {interp eval $idb [list close $chan]}      msg] $msg
     set res
 
+} -cleanup {
+    interp delete $idb
 } -constraints {testchannel} \
     -result {1 {Owner lost} 1 {Owner lost} 1 {Owner lost} 1 {Owner lost} 1 {Owner lost}}
 
@@ -2099,6 +2101,8 @@ test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -m
 	set res
     }]
     set res
+} -cleanup {
+    interp delete $idb
 } -constraints {testchannel} -result {Owner lost}
 
 test iocmd-32.2 {delete interp of reflected chan} {

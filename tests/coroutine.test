@@ -739,6 +739,8 @@ test coroutine-7.12 {coro floor above street level #3008307} -body {
     }
     boom   ; # does not crash: the coro floor is a good insulator
     list
+} -cleanup {
+    rename boom {}; rename cc {}; rename c {}
 } -result {}
 
 test coroutine-8.0.0 {coro inject executed} -body {
