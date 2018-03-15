@@ -59,7 +59,8 @@ Tcl_ConsolePanic(
 	WriteConsoleW(handle, msgString, wcslen(msgString), &dummy, 0);
     } else {
 	buf[0] = 0xEF; buf[1] = 0xBB; buf[2] = 0xBF; /* UTF-8 bom */
-	WriteFile(handle, buf, 3, &dummy, 0);
+	WriteFile(handle, buf, strlen(buf), &dummy, 0);
+	WriteFile(handle, "\n", 1, &dummy, 0);
 	FlushFileBuffers(handle);
     }
 #   if defined(__GNUC__)
