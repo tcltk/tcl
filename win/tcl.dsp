@@ -152,10 +152,6 @@ SOURCE=..\compat\fixstrtod.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\compat\float.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\compat\gettod.c
 # End Source File
 # Begin Source File
@@ -1265,6 +1261,10 @@ SOURCE=..\generic\tclPreserve.c
 # Begin Source File
 
 SOURCE=..\generic\tclProc.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\generic\tclProcess.c
 # End Source File
 # Begin Source File
 

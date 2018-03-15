@@ -14,6 +14,7 @@
  *
  * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
  */
+
 #include <stdarg.h>
 
 void mp_clear_multi(mp_int *mp, ...)

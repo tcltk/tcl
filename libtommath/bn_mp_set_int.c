@@ -30,7 +30,7 @@ int mp_set_int(mp_int *a, unsigned long b)
       }
 
       /* OR in the top four bits of the source */
-      a->dp[0] |= (b >> 28) & 15;
+      a->dp[0] |= (mp_digit)(b >> 28) & 15uL;
 
       /* shift the source up to the next four bits */
       b <<= 4;

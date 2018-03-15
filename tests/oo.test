@@ -13,6 +13,13 @@ if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+
+# The foundational objects oo::object and oo::class are sensitive to reference
+# counting errors and are deallocated only when an interp is deleted, so in
+# this test suite, interp creation and interp deletion are often used in
+# leaktests in order to leverage this sensitivity.
+
+
 testConstraint memory [llength [info commands memory]]
 if {[testConstraint memory]} {
     proc getbytes {} {
@@ -47,7 +54,7 @@ test oo-0.2 {basic test of OO's ability to clean up its initial state} {
 } {}
 test oo-0.3 {basic test of OO's ability to clean up its initial state} -body {
     leaktest {
-	[oo::object new] destroy
+        [oo::object new] destroy
     }
 } -constraints memory -result 0
 test oo-0.4 {basic test of OO's ability to clean up its initial state} -body {
@@ -57,7 +64,13 @@ test oo-0.4 {basic test of OO's ability to clean up its initial state} -body {
 	foo destroy
     }
 } -constraints memory -result 0
-test oo-0.5 {testing literal leak on interp delete} memory {
+test oo-0.5.1 {testing object foundation cleanup} memory {
+    leaktest {
+	interp create foo
+	interp delete foo
+    }
+} 0
+test oo-0.5.2 {testing literal leak on interp delete} memory {
     leaktest {
 	interp create foo
 	foo eval {oo::object new}
@@ -128,6 +141,13 @@ test oo-1.3 {basic test of OO functionality: no classes} {
 test oo-1.4 {basic test of OO functionality} -body {
     oo::object create {}
 } -returnCodes 1 -result {object name must not be empty}
+test oo-1.4.1 {fully-qualified nested name} -body {
+    oo::object create ::one::two::three
+} -result {::one::two::three}
+test oo-1.4.2 {automatic command name has same name as namespace} -body {
+    set obj [oo::object new]
+    expr {[info object namespace $obj] == $obj}
+} -result 1
 test oo-1.5 {basic test of OO functionality} -body {
     oo::object doesnotexist
 } -returnCodes 1 -result {unknown method "doesnotexist": must be create, destroy or new}
@@ -258,7 +278,21 @@ test oo-1.18 {OO: create object in NS with same name as global cmd} -setup {
     rename test-oo-1.18 {}
     A destroy
 } -result ::C
-test oo-1.18.1 {Bug 75b8433707: memory leak in oo-1.18} -setup {
+test oo-1.18.1 {no memory leak: superclass} -setup {
+} -constraints memory -body {
+
+    leaktest {
+	interp create t
+	t eval {
+	    oo::class create A {
+		superclass oo::class
+	    }
+	}
+	interp delete t
+    }
+} -cleanup {
+} -result 0
+test oo-1.18.2 {Bug 75b8433707: memory leak in oo-1.18} -setup {
     proc test-oo-1.18 {} return
 } -constraints memory -body {
     leaktest {
@@ -271,7 +305,7 @@ test oo-1.18.1 {Bug 75b8433707: memory leak in oo-1.18} -setup {
 } -cleanup {
     rename test-oo-1.18 {}
 } -result 0
-test oo-1.18.2 {Bug 21c144f0f5} -setup {
+test oo-1.18.3 {Bug 21c144f0f5} -setup {
     interp create slave
 } -body {
     slave eval {
@@ -1482,6 +1516,87 @@ test oo-11.4 {OO: cleanup} {
     lappend result [bar0 destroy] [oo::object create foo] [foo destroy] \
 	[oo::object create bar2] [bar2 destroy]
 } {1 {can't create object "foo": command already exists with that name} destroyed {} ::foo {} ::bar2 {}}
+test oo-11.5 {OO: cleanup} {
+    oo::class create obj1
+
+    trace add command obj1 delete {apply {{name1 name2 action} {
+	set namespace [info object namespace $name1]
+	namespace delete $namespace
+    }}}
+
+    rename obj1 {}
+    # No segmentation fault
+    return done
+} done
+
+test oo-11.6.1 {
+    OO: cleanup of when an class is mixed into itself
+} -constraints memory -body {
+    leaktest {
+	interp create interp1
+	oo::class create obj1
+	::oo::define obj1 {self mixin [uplevel 1 {namespace which obj1}]}
+	rename obj1 {}
+	interp delete interp1
+    }
+} -result 0 -cleanup {
+}
+
+test oo-11.6.2 {
+    OO: cleanup ReleaseClassContents() where class is mixed into one of its
+    instances
+} -constraints memory -body {
+    leaktest {
+	interp create interp1
+	interp1 eval {
+	    oo::class create obj1
+	    ::oo::copy obj1 obj2
+	    rename obj2 {}
+	    rename obj1 {}
+	}
+	interp delete interp1
+    }
+} -result 0 -cleanup {
+}
+
+test oo-11.6.3 {
+    OO: cleanup ReleaseClassContents() where class is mixed into one of its
+    instances
+} -constraints memory -body {
+    leaktest {
+	interp create interp1
+	interp1 eval {
+	    oo::class create obj1
+	    ::oo::define obj1 {self mixin [uplevel 1 {namespace which obj1}]}
+
+	    ::oo::copy obj1 obj2
+	    rename obj2 {}
+	    rename obj1 {}
+	}
+	interp delete interp1
+    }
+} -result 0 -cleanup {
+}
+
+test oo-11.6.4 {
+    OO: cleanup ReleaseClassContents() where class is mixed into one of its
+    instances
+} -body {
+    oo::class create obj1
+    ::oo::define obj1 {self mixin [self]}
+
+    ::oo::copy obj1 obj2
+    ::oo::objdefine obj2 {mixin [self]}
+
+    ::oo::copy obj2 obj3
+    rename obj3 {}
+    rename obj2 {}
+
+    # No segmentation fault
+    return done
+} -result done -cleanup {
+    rename obj1 {}
+}
 
 test oo-12.1 {OO: filters} {
     oo::class create Aclass
@@ -1668,13 +1783,13 @@ test oo-13.2 {OO: changing an object's class} -body {
     oo::objdefine foo class oo::class
 } -cleanup {
     foo destroy
-} -returnCodes 1 -result {may not change a non-class object into a class object}
+} -result {}
 test oo-13.3 {OO: changing an object's class} -body {
     oo::class create foo
     oo::objdefine foo class oo::object
 } -cleanup {
     foo destroy
-} -returnCodes 1 -result {may not change a class object into a non-class object}
+} -result {}
 test oo-13.4 {OO: changing an object's class} -body {
     oo::class create foo {
 	method m {} {
@@ -2026,7 +2141,20 @@ test oo-15.12 {OO: object cloning with target NS} -setup {
     Super destroy
     catch {namespace delete ::existing}
 } -result {::existing refers to an existing namespace}
-test oo-15.13 {OO: object cloning with target NS} -setup {
+test oo-15.13.1 {
+    OO: object cloning with target NS
+    Valgrind will report a leak if the reference count of the namespace isn't
+    properly incremented.
+} -setup {
+    oo::class create Cls {}
+} -body {
+    oo::copy Cls Cls2 ::dupens
+    return done
+} -cleanup {
+    Cls destroy
+    Cls2 destroy
+} -result done 
+test oo-15.13.2 {OO: object cloning with target NS} -setup {
     oo::class create Super
     oo::class create Cls {superclass Super}
 } -body {
@@ -3622,99 +3750,110 @@ test oo-31.2 {Bug 3111059: when objects and coroutines entangle} -setup {
     cls destroy
 } -result {0 {}}
 
-oo::class create SampleSlot {
-    superclass oo::Slot
-    constructor {} {
-	variable contents {a b c} ops {}
+proc SampleSlotSetup script {
+    set script0 {
+	oo::class create SampleSlot {
+	    superclass oo::Slot
+	    constructor {} {
+		variable contents {a b c} ops {}
+	    }
+	    method contents {} {variable contents; return $contents}
+	    method ops {} {variable ops; return $ops}
+	    method Get {} {
+		variable contents
+		variable ops
+		lappend ops [info level] Get
+		return $contents
+	    }
+	    method Set {lst} {
+		variable contents $lst
+		variable ops
+		lappend ops [info level] Set $lst
+		return
+	    }
+	}
     }
-    method contents {} {variable contents; return $contents}
-    method ops {} {variable ops; return $ops}
-    method Get {} {
-	variable contents
-	variable ops
-	lappend ops [info level] Get
-	return $contents
-    }
-    method Set {lst} {
-	variable contents $lst
-	variable ops
-	lappend ops [info level] Set $lst
-	return
-    }
+    append script0 \n$script
 }
 
-test oo-32.1 {TIP 380: slots - class test} -setup {
+proc SampleSlotCleanup script {
+    set script0 {
+	SampleSlot destroy
+    }
+    append script \n$script0
+}
+
+test oo-32.1 {TIP 380: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
-} -body {
+}] -body {
     list [info level] [sampleSlot contents] [sampleSlot ops]
-} -cleanup {
+} -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-} -result {0 {a b c} {}}
-test oo-32.2 {TIP 380: slots - class test} -setup {
+}] -result {0 {a b c} {}}
+test oo-32.2 {TIP 380: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
-} -body {
+}] -body {
     list [info level] [sampleSlot -clear] \
 	[sampleSlot contents] [sampleSlot ops]
-} -cleanup {
+} -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-} -result {0 {} {} {1 Set {}}}
-test oo-32.3 {TIP 380: slots - class test} -setup {
+}] -result {0 {} {} {1 Set {}}}
+test oo-32.3 {TIP 380: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
-} -body {
+}] -body {
     list [info level] [sampleSlot -append g h i] \
 	[sampleSlot contents] [sampleSlot ops]
-} -cleanup {
+} -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-} -result {0 {} {a b c g h i} {1 Get 1 Set {a b c g h i}}}
-test oo-32.4 {TIP 380: slots - class test} -setup {
+}] -result {0 {} {a b c g h i} {1 Get 1 Set {a b c g h i}}}
+test oo-32.4 {TIP 380: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
-} -body {
+}] -body {
     list [info level] [sampleSlot -set d e f] \
 	[sampleSlot contents] [sampleSlot ops]
-} -cleanup {
+} -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-} -result {0 {} {d e f} {1 Set {d e f}}}
-test oo-32.5 {TIP 380: slots - class test} -setup {
+}] -result {0 {} {d e f} {1 Set {d e f}}}
+test oo-32.5 {TIP 380: slots - class test} -setup [SampleSlotSetup {
     SampleSlot create sampleSlot
-} -body {
+}] -body {
     list [info level] [sampleSlot -set d e f] [sampleSlot -append g h i] \
 	[sampleSlot contents] [sampleSlot ops]
-} -cleanup {
+} -cleanup [SampleSlotCleanup {
     rename sampleSlot {}
-} -result {0 {} {} {d e f g h i} {1 Set {d e f} 1 Get 1 Set {d e f g h i}}}
+}] -result {0 {} {} {d e f g h i} {1 Set {d e f} 1 Get 1 Set {d e f g h i}}}
 
-test oo-33.1 {TIP 380: slots - defaulting} -setup {
+test oo-33.1 {TIP 380: slots - defaulting} -setup [SampleSlotSetup {
     set s [SampleSlot new]
-} -body {
+}] -body {
     list [$s x y] [$s contents]
-} -cleanup {
+} -cleanup [SampleSlotCleanup {
     rename $s {}
-} -result {{} {a b c x y}}
-test oo-33.2 {TIP 380: slots - defaulting} -setup {
+}] -result {{} {a b c x y}}
+test oo-33.2 {TIP 380: slots - defaulting} -setup [SampleSlotSetup {
     set s [SampleSlot new]
-} -body {
+}] -body {
     list [$s destroy; $s unknown] [$s contents]
-} -cleanup {
+} -cleanup [SampleSlotCleanup {
     rename $s {}
-} -result {{} {a b c destroy unknown}}
-test oo-33.3 {TIP 380: slots - defaulting} -setup {
+}] -result {{} {a b c destroy unknown}}
+test oo-33.3 {TIP 380: slots - defaulting} -setup [SampleSlotSetup {
     set s [SampleSlot new]
-} -body {
+}] -body {
     oo::objdefine $s forward --default-operation  my -set
     list [$s destroy; $s unknown] [$s contents] [$s ops]
-} -cleanup {
+} -cleanup [SampleSlotCleanup {
     rename $s {}
-} -result {{} unknown {1 Set destroy 1 Set unknown}}
-test oo-33.4 {TIP 380: slots - errors} -setup {
+}] -result {{} unknown {1 Set destroy 1 Set unknown}}
+test oo-33.4 {TIP 380: slots - errors} -setup [SampleSlotSetup {
     set s [SampleSlot new]
-} -body {
+}] -body {
     # Method names beginning with "-" are special to slots
     $s -grill q
-} -returnCodes error -cleanup {
+} -returnCodes error -cleanup [SampleSlotCleanup {
     rename $s {}
-} -result {unknown method "-grill": must be -append, -clear, -set, contents or ops}
-
-SampleSlot destroy
+}] -result \
+    {unknown method "-grill": must be -append, -clear, -set, contents or ops}
 
 test oo-34.1 {TIP 380: slots - presence} -setup {
     set obj [oo::object new]
@@ -3834,6 +3973,28 @@ test oo-35.5 {Bug 1a56550e96: introspectors must traverse mixin links correctly}
 } -cleanup {
     base destroy
 } -result {{c d e} {c d e}}
+test oo-35.6 {
+    Bug : teardown of an object that is a class that is an instance of itself
+} -setup {
+    oo::class create obj
+
+    oo::copy obj obj1 obj1
+    oo::objdefine obj1 {
+	mixin obj1 obj
+    }
+    oo::copy obj1 obj2
+    oo::objdefine obj2 {
+	mixin obj2 obj1
+    }
+} -body {
+    rename obj2 {}
+    rename obj1 {}
+    # doesn't crash
+    return done
+} -cleanup {
+    rename obj {}
+} -result done
+
 test oo-36.1 {TIP #470: introspection within oo::define} {
     oo::define oo::object self
 } ::oo::object

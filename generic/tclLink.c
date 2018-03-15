@@ -2379,7 +2379,7 @@ static Tcl_ObjType invalidRealType = {
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
-    SetInvalidRealFromAny		/* setFromAnyProc */
+    NULL				/* setFromAnyProc */
 };
 
 static int
