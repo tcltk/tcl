@@ -21,7 +21,7 @@ int mp_init(mp_int *a)
    int i;
 
    /* allocate memory required and clear it */
-   a->dp = OPT_CAST(mp_digit) XMALLOC(sizeof(mp_digit) * MP_PREC);
+   a->dp = OPT_CAST(mp_digit) XMALLOC(sizeof(mp_digit) * (size_t)MP_PREC);
    if (a->dp == NULL) {
       return MP_MEM;
    }
