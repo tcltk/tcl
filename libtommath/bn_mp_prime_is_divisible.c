@@ -35,7 +35,7 @@ int mp_prime_is_divisible(const mp_int *a, int *result)
       }
 
       /* is the residue zero? */
-      if (res == 0) {
+      if (res == 0u) {
          *result = MP_YES;
          return MP_OKAY;
       }

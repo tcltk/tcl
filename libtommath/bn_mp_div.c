@@ -47,7 +47,7 @@ int mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d)
    }
 
 
-   mp_set(&tq, 1);
+   mp_set(&tq, 1uL);
    n = mp_count_bits(a) - mp_count_bits(b);
    if (((res = mp_abs(a, &ta)) != MP_OKAY) ||
        ((res = mp_abs(b, &tb)) != MP_OKAY) ||
@@ -150,8 +150,8 @@ int mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d)
 
    /* normalize both x and y, ensure that y >= b/2, [b == 2**DIGIT_BIT] */
    norm = mp_count_bits(&y) % DIGIT_BIT;
-   if (norm < (int)(DIGIT_BIT-1)) {
-      norm = (DIGIT_BIT-1) - norm;
+   if (norm < (DIGIT_BIT - 1)) {
+      norm = (DIGIT_BIT - 1) - norm;
       if ((res = mp_mul_2d(&x, norm, &x)) != MP_OKAY) {
          goto LBL_Y;
       }
@@ -190,16 +190,16 @@ int mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d)
       /* step 3.1 if xi == yt then set q{i-t-1} to b-1,
        * otherwise set q{i-t-1} to (xi*b + x{i-1})/yt */
       if (x.dp[i] == y.dp[t]) {
-         q.dp[(i - t) - 1] = ((((mp_digit)1) << DIGIT_BIT) - 1);
+         q.dp[(i - t) - 1] = ((mp_digit)1 << (mp_digit)DIGIT_BIT) - (mp_digit)1;
       } else {
          mp_word tmp;
-         tmp = ((mp_word) x.dp[i]) << ((mp_word) DIGIT_BIT);
-         tmp |= ((mp_word) x.dp[i - 1]);
-         tmp /= ((mp_word) y.dp[t]);
-         if (tmp > (mp_word) MP_MASK) {
+         tmp = (mp_word)x.dp[i] << (mp_word)DIGIT_BIT;
+         tmp |= (mp_word)x.dp[i - 1];
+         tmp /= (mp_word)y.dp[t];
+         if (tmp > (mp_word)MP_MASK) {
             tmp = MP_MASK;
          }
-         q.dp[(i - t) - 1] = (mp_digit)(tmp & (mp_word)(MP_MASK));
+         q.dp[(i - t) - 1] = (mp_digit)(tmp & (mp_word)MP_MASK);
       }
 
       /* while (q{i-t-1} * (yt * b + y{t-1})) >
@@ -207,13 +207,13 @@ int mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d)
 
          do q{i-t-1} -= 1;
       */
-      q.dp[(i - t) - 1] = (q.dp[(i - t) - 1] + 1) & MP_MASK;
+      q.dp[(i - t) - 1] = (q.dp[(i - t) - 1] + 1uL) & (mp_digit)MP_MASK;
       do {
-         q.dp[(i - t) - 1] = (q.dp[(i - t) - 1] - 1) & MP_MASK;
+         q.dp[(i - t) - 1] = (q.dp[(i - t) - 1] - 1uL) & (mp_digit)MP_MASK;
 
          /* find left hand */
          mp_zero(&t1);
-         t1.dp[0] = ((t - 1) < 0) ? 0 : y.dp[t - 1];
+         t1.dp[0] = ((t - 1) < 0) ? 0u : y.dp[t - 1];
          t1.dp[1] = y.dp[t];
          t1.used = 2;
          if ((res = mp_mul_d(&t1, q.dp[(i - t) - 1], &t1)) != MP_OKAY) {
@@ -221,8 +221,8 @@ int mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d)
          }
 
          /* find right hand */
-         t2.dp[0] = ((i - 2) < 0) ? 0 : x.dp[i - 2];
-         t2.dp[1] = ((i - 1) < 0) ? 0 : x.dp[i - 1];
+         t2.dp[0] = ((i - 2) < 0) ? 0u : x.dp[i - 2];
+         t2.dp[1] = ((i - 1) < 0) ? 0u : x.dp[i - 1];
          t2.dp[2] = x.dp[i];
          t2.used = 3;
       } while (mp_cmp_mag(&t1, &t2) == MP_GT);
@@ -252,7 +252,7 @@ int mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d)
             goto LBL_Y;
          }
 
-         q.dp[(i - t) - 1] = (q.dp[(i - t) - 1] - 1UL) & MP_MASK;
+         q.dp[(i - t) - 1] = (q.dp[(i - t) - 1] - 1uL) & MP_MASK;
       }
    }
 
