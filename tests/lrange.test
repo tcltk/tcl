@@ -90,6 +90,22 @@ test lrange-3.1 {Bug 3588366: end-offsets before start} {
 	lrange $l 0 end-5
     }} {1 2 3 4 5}
 } {}
+test lrange-3.2 {compiled with static indices out of range, negative} {
+    list [lrange {a b c} -1 -2] [lrange {a b c} -2 -1] [lrange {a b c} -3 -2] [lrange {a b c} -2 -3]
+} [lrepeat 4 {}]
+test lrange-3.3 {compiled with calculated indices out of range, negative constant} {
+    list [lrange {a b c} 0-1 -1-1] [lrange {a b c} -2+0 0-1] [lrange {a b c} -2-1 -2+1] [lrange {a b c} -2+1 -2-1]
+} [lrepeat 4 {}]
+test lrange-3.4 {compiled with calculated indices out of range, after end} {
+    list [lrange {a b c} end+1 end+2] [lrange {a b c} end+2 end+1] [lrange {a b c} end+2 end+3] [lrange {a b c} end+3 end+2]
+} [lrepeat 4 {}]
+
+test lrange-3.5 {compiled with calculated indices, start out of range (negative)} {
+    list [lrange {a b c} -1 1] [lrange {a b c} -1+0 end-1] [lrange {a b c} -2 1] [lrange {a b c} -2+0 0+1]
+} [lrepeat 4 {a b}]
+test lrange-3.6 {compiled with calculated indices, end out of range (after end)} {
+    list [lrange {a b c} 1 end+1] [lrange {a b c} 1+0 2+1] [lrange {a b c} 1 end+1] [lrange {a b c} end-1 3+1]
+} [lrepeat 4 {b c}]
 
 test lrange-4.1 {lrange pure promise} -body {
     set ll1 [list $tcl_version 2 3 4]

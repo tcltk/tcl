@@ -32,7 +32,7 @@ int mp_prime_fermat(const mp_int *a, const mp_int *b, int *result)
    *result = MP_NO;
 
    /* ensure b > 1 */
-   if (mp_cmp_d(b, 1) != MP_GT) {
+   if (mp_cmp_d(b, 1uL) != MP_GT) {
       return MP_VAL;
    }
 

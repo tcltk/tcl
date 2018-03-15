@@ -60,6 +60,9 @@ endif # COMPILE_DEBUG
 ifneq ($(findstring clang,$(CC)),)
 CFLAGS += -Wno-typedef-redefinition -Wno-tautological-compare -Wno-builtin-requires-header
 endif
+ifneq ($(findstring mingw,$(CC)),)
+CFLAGS += -Wno-shadow
+endif
 ifeq ($(PLATFORM), Darwin)
 CFLAGS += -Wno-nullability-completeness
 endif

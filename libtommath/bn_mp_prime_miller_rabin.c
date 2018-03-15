@@ -31,7 +31,7 @@ int mp_prime_miller_rabin(const mp_int *a, const mp_int *b, int *result)
    *result = MP_NO;
 
    /* ensure b > 1 */
-   if (mp_cmp_d(b, 1) != MP_GT) {
+   if (mp_cmp_d(b, 1uL) != MP_GT) {
       return MP_VAL;
    }
 
@@ -39,7 +39,7 @@ int mp_prime_miller_rabin(const mp_int *a, const mp_int *b, int *result)
    if ((err = mp_init_copy(&n1, a)) != MP_OKAY) {
       return err;
    }
-   if ((err = mp_sub_d(&n1, 1, &n1)) != MP_OKAY) {
+   if ((err = mp_sub_d(&n1, 1uL, &n1)) != MP_OKAY) {
       goto LBL_N1;
    }
 
@@ -67,7 +67,7 @@ int mp_prime_miller_rabin(const mp_int *a, const mp_int *b, int *result)
    }
 
    /* if y != 1 and y != n1 do */
-   if ((mp_cmp_d(&y, 1) != MP_EQ) && (mp_cmp(&y, &n1) != MP_EQ)) {
+   if ((mp_cmp_d(&y, 1uL) != MP_EQ) && (mp_cmp(&y, &n1) != MP_EQ)) {
       j = 1;
       /* while j <= s-1 and y != n1 */
       while ((j <= (s - 1)) && (mp_cmp(&y, &n1) != MP_EQ)) {
@@ -76,7 +76,7 @@ int mp_prime_miller_rabin(const mp_int *a, const mp_int *b, int *result)
          }
 
          /* if y == 1 then composite */
-         if (mp_cmp_d(&y, 1) == MP_EQ) {
+         if (mp_cmp_d(&y, 1uL) == MP_EQ) {
             goto LBL_Y;
          }
 
