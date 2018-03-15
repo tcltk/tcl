@@ -39,7 +39,7 @@ int mp_exptmod_fast(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y
     * one of many reduction algorithms without modding the guts of
     * the code with if statements everywhere.
     */
-   int (*redux)(mp_int *,const mp_int *,mp_digit);
+   int (*redux)(mp_int *x, const mp_int *n, mp_digit rho);
 
    /* find window size */
    x = mp_count_bits(X);
@@ -96,7 +96,7 @@ int mp_exptmod_fast(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y
 
       /* automatically pick the comba one if available (saves quite a few calls/ifs) */
 #ifdef BN_FAST_MP_MONTGOMERY_REDUCE_C
-      if ((((P->used * 2) + 1) < MP_WARRAY) &&
+      if ((((P->used * 2) + 1) < (int)MP_WARRAY) &&
           (P->used < (1 << ((CHAR_BIT * sizeof(mp_word)) - (2 * DIGIT_BIT))))) {
          redux = fast_mp_montgomery_reduce;
       } else
@@ -160,7 +160,7 @@ int mp_exptmod_fast(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y
       goto LBL_RES;
 #endif
    } else {
-      mp_set(&res, 1);
+      mp_set(&res, 1uL);
       if ((err = mp_mod(G, P, &M[1])) != MP_OKAY) {
          goto LBL_RES;
       }

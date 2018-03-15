@@ -46,10 +46,10 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style)
                 * however, the prime must be
                 * congruent to 3 mod 4
                 */
-               if ((ltm_prime_tab[x + 1] & 3) != 3) {
+               if ((ltm_prime_tab[x + 1] & 3u) != 3u) {
                   /* scan upwards for a prime congruent to 3 mod 4 */
                   for (y = x + 1; y < PRIME_SIZE; y++) {
-                     if ((ltm_prime_tab[y] & 3) == 3) {
+                     if ((ltm_prime_tab[y] & 3u) == 3u) {
                         mp_set(a, ltm_prime_tab[y]);
                         return MP_OKAY;
                      }
@@ -62,8 +62,8 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style)
          }
       }
       /* at this point a maybe 1 */
-      if (mp_cmp_d(a, 1) == MP_EQ) {
-         mp_set(a, 2);
+      if (mp_cmp_d(a, 1uL) == MP_EQ) {
+         mp_set(a, 2uL);
          return MP_OKAY;
       }
       /* fall through to the sieve */
@@ -80,15 +80,15 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style)
 
    if (bbs_style == 1) {
       /* if a mod 4 != 3 subtract the correct value to make it so */
-      if ((a->dp[0] & 3) != 3) {
-         if ((err = mp_sub_d(a, (a->dp[0] & 3) + 1, a)) != MP_OKAY) {
+      if ((a->dp[0] & 3u) != 3u) {
+         if ((err = mp_sub_d(a, (a->dp[0] & 3u) + 1u, a)) != MP_OKAY) {
             return err;
          };
       }
    } else {
       if (mp_iseven(a) == MP_YES) {
          /* force odd */
-         if ((err = mp_sub_d(a, 1, a)) != MP_OKAY) {
+         if ((err = mp_sub_d(a, 1uL, a)) != MP_OKAY) {
             return err;
          }
       }
@@ -127,11 +127,11 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style)
             }
 
             /* set flag if zero */
-            if (res_tab[x] == 0) {
+            if (res_tab[x] == 0u) {
                y = 1;
             }
          }
-      } while ((y == 1) && (step < ((((mp_digit)1) << DIGIT_BIT) - kstep)));
+      } while ((y == 1) && (step < (((mp_digit)1 << DIGIT_BIT) - kstep)));
 
       /* add the step */
       if ((err = mp_add_d(a, step, a)) != MP_OKAY) {
@@ -139,7 +139,7 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style)
       }
 
       /* if didn't pass sieve and step == MAX then skip test */
-      if ((y == 1) && (step >= ((((mp_digit)1) << DIGIT_BIT) - kstep))) {
+      if ((y == 1) && (step >= (((mp_digit)1 << DIGIT_BIT) - kstep))) {
          continue;
       }
 
