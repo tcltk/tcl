@@ -36,6 +36,7 @@
 
 #include "tclInt.h"
 #include "tommath.h"
+#include "tclStringRep.h"
 
 /*
  * Set COMPAT to 1 to restore the shimmering patterns to those of Tcl 8.5.
@@ -89,60 +90,6 @@ const Tcl_ObjType tclStringType = {
     UpdateStringOfString,	/* updateStringProc */
     SetStringFromAny		/* setFromAnyProc */
 };
-
-/*
- * The following structure is the internal rep for a String object. It keeps
- * track of how much memory has been used and how much has been allocated for
- * the Unicode and UTF string to enable growing and shrinking of the UTF and
- * Unicode reps of the String object with fewer mallocs. To optimize string
- * length and indexing operations, this structure also stores the number of
- * characters (same of UTF and Unicode!) once that value has been computed.
- *
- * Under normal configurations, what Tcl calls "Unicode" is actually UTF-16
- * restricted to the Basic Multilingual Plane (i.e. U+00000 to U+0FFFF). This
- * can be officially modified by altering the definition of Tcl_UniChar in
- * tcl.h, but do not do that unless you are sure what you're doing!
- */
-
-typedef struct String {
-    int numChars;		/* The number of chars in the string. -1 means
-				 * this value has not been calculated. >= 0
-				 * means that there is a valid Unicode rep, or
-				 * that the number of UTF bytes == the number
-				 * of chars. */
-    int allocated;		/* The amount of space actually allocated for
-				 * the UTF string (minus 1 byte for the
-				 * termination char). */
-    int maxChars;		/* Max number of chars that can fit in the
-				 * space allocated for the unicode array. */
-    int hasUnicode;		/* Boolean determining whether the string has
-				 * a Unicode representation. */
-    Tcl_UniChar unicode[1];	/* The array of Unicode chars. The actual size
-				 * of this field depends on the 'maxChars'
-				 * field above. */
-} String;
-
-#define STRING_MAXCHARS \
-	(int)(((size_t)UINT_MAX - sizeof(String))/sizeof(Tcl_UniChar))
-#define STRING_SIZE(numChars) \
-	(sizeof(String) + ((numChars) * sizeof(Tcl_UniChar)))
-#define stringCheckLimits(numChars) \
-    if ((numChars) < 0 || (numChars) > STRING_MAXCHARS) { \
-	Tcl_Panic("max length for a Tcl unicode value (%d chars) exceeded", \
-		STRING_MAXCHARS); \
-    }
-#define stringAttemptAlloc(numChars) \
-	(String *) attemptckalloc((unsigned) STRING_SIZE(numChars) )
-#define stringAlloc(numChars) \
-	(String *) ckalloc((unsigned) STRING_SIZE(numChars) )
-#define stringRealloc(ptr, numChars) \
-    (String *) ckrealloc((ptr), (unsigned) STRING_SIZE(numChars) )
-#define stringAttemptRealloc(ptr, numChars) \
-    (String *) attemptckrealloc((ptr), (unsigned) STRING_SIZE(numChars) )
-#define GET_STRING(objPtr) \
-	((String *) (objPtr)->internalRep.twoPtrValue.ptr1)
-#define SET_STRING(objPtr, stringPtr) \
-	((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (stringPtr))
 
 /*
  * TCL STRING GROWTH ALGORITHM
@@ -471,12 +418,16 @@ Tcl_GetCharLength(
     int numChars;
 
     /*
-     * Optimize the case where we're really dealing with a bytearray object
-     * without string representation; we don't need to convert to a string to
-     * perform the get-length operation.
+     * Optimize the case where we're really dealing with a bytearray object;
+     * we don't need to convert to a string to perform the get-length operation.
+     *
+     * NOTE that we do not need the bytearray to be "pure".  A ByteArray value
+     * with a string rep cannot be trusted to represent the same value as the
+     * string rep, but it *can* be trusted to have the same character length
+     * as the string rep, which is all this routine cares about.
      */
 
-    if (TclIsPureByteArray(objPtr)) {
+    if (objPtr->typePtr == &tclByteArrayType) {
 	int length;
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
@@ -582,7 +533,7 @@ Tcl_GetUniChar(
  *
  *	Get the Unicode form of the String object. If the object is not
  *	already a String object, it will be converted to one. If the String
- *	object does not have a Unicode rep, then one is create from the UTF
+ *	object does not have a Unicode rep, then one is created from the UTF
  *	string format.
  *
  * Results:
@@ -716,6 +667,17 @@ Tcl_GetRange(
 	stringPtr = GET_STRING(objPtr);
     }
 
+#if TCL_UTF_MAX == 4
+	/* See: bug [11ae2be95dac9417] */
+	if ((first>0) && ((stringPtr->unicode[first]&0xFC00) == 0xDC00)
+		&& ((stringPtr->unicode[first-1]&0xFC00) == 0xD800)) {
+	    ++first;
+	}
+	if ((last+1<stringPtr->numChars) && ((stringPtr->unicode[last+1]&0xFC00) == 0xDC00)
+		&& ((stringPtr->unicode[last]&0xFC00) == 0xD800)) {
+	    ++last;
+	}
+#endif
     return Tcl_NewUnicodeObj(stringPtr->unicode + first, last-first+1);
 }
 
@@ -1251,6 +1213,8 @@ Tcl_AppendUnicodeToObj(
  * Side effects:
  *	The string rep of appendObjPtr is appended to the string
  *	representation of objPtr.
+ *	IMPORTANT: This routine does not and MUST NOT shimmer appendObjPtr.
+ *	Callers are counting on that.
  *
  *----------------------------------------------------------------------
  */
@@ -1733,6 +1697,7 @@ Tcl_AppendFormatToObj(
     const char *span = format, *msg, *errCode;
     int numBytes = 0, objIndex = 0, gotXpg = 0, gotSequential = 0;
     int originalLength, limit;
+    Tcl_UniChar ch = 0;
     static const char *mixedXPG =
 	    "cannot mix \"%\" and \"%n$\" conversion specifiers";
     static const char *const badIndex[2] = {
@@ -1753,12 +1718,14 @@ Tcl_AppendFormatToObj(
 
     while (*format != '\0') {
 	char *end;
-	int gotMinus, gotHash, gotZero, gotSpace, gotPlus, sawFlag;
-	int width, gotPrecision, precision, useShort, useWide, useBig;
+	int gotMinus = 0, gotHash = 0, gotZero = 0, gotSpace = 0, gotPlus = 0;
+	int width, gotPrecision, precision, sawFlag, useShort = 0, useBig = 0;
+#ifndef TCL_WIDE_INT_IS_LONG
+	int useWide = 0;
+#endif
 	int newXpg, numChars, allocSegment = 0, segmentLimit, segmentNumBytes;
 	Tcl_Obj *segment;
-	Tcl_UniChar ch;
-	int step = Tcl_UtfToUniChar(format, &ch);
+	int step = TclUtfToUniChar(format, &ch);
 
 	format += step;
 	if (ch != '%') {
@@ -1782,7 +1749,7 @@ Tcl_AppendFormatToObj(
 	 * Step 0. Handle special case of escaped format marker (i.e., %%).
 	 */
 
-	step = Tcl_UtfToUniChar(format, &ch);
+	step = TclUtfToUniChar(format, &ch);
 	if (ch == '%') {
 	    span = format;
 	    numBytes = step;
@@ -1802,7 +1769,7 @@ Tcl_AppendFormatToObj(
 		newXpg = 1;
 		objIndex = position - 1;
 		format = end + 1;
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 	    }
 	}
 	if (newXpg) {
@@ -1830,7 +1797,6 @@ Tcl_AppendFormatToObj(
 	 * Step 2. Set of flags.
 	 */
 
-	gotMinus = gotHash = gotZero = gotSpace = gotPlus = 0;
 	sawFlag = 1;
 	do {
 	    switch (ch) {
@@ -1854,7 +1820,7 @@ Tcl_AppendFormatToObj(
 	    }
 	    if (sawFlag) {
 		format += step;
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 	    }
 	} while (sawFlag);
 
@@ -1866,7 +1832,7 @@ Tcl_AppendFormatToObj(
 	if (isdigit(UCHAR(ch))) {
 	    width = strtoul(format, &end, 10);
 	    format = end;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
 	    if (objIndex >= objc - 1) {
 		msg = badIndex[gotXpg];
@@ -1882,7 +1848,7 @@ Tcl_AppendFormatToObj(
 	    }
 	    objIndex++;
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 	}
 	if (width > limit) {
 	    msg = overflow;
@@ -1898,12 +1864,12 @@ Tcl_AppendFormatToObj(
 	if (ch == '.') {
 	    gotPrecision = 1;
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 	}
 	if (isdigit(UCHAR(ch))) {
 	    precision = strtoul(format, &end, 10);
 	    format = end;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
 	    if (objIndex >= objc - 1) {
 		msg = badIndex[gotXpg];
@@ -1924,25 +1890,24 @@ Tcl_AppendFormatToObj(
 	    }
 	    objIndex++;
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 	}
 
 	/*
 	 * Step 5. Length modifier.
 	 */
 
-	useShort = useWide = useBig = 0;
 	if (ch == 'h') {
 	    useShort = 1;
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == 'l') {
 	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    step = TclUtfToUniChar(format, &ch);
 	    if (ch == 'l') {
 		useBig = 1;
 		format += step;
-		step = Tcl_UtfToUniChar(format, &ch);
+		step = TclUtfToUniChar(format, &ch);
 #ifndef TCL_WIDE_INT_IS_LONG
 	    } else {
 		useWide = 1;
@@ -2015,6 +1980,7 @@ Tcl_AppendFormatToObj(
 		    goto error;
 		}
 		isNegative = (mp_cmp_d(&big, 0) == MP_LT);
+#ifndef TCL_WIDE_INT_IS_LONG
 	    } else if (useWide) {
 		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
 		    Tcl_Obj *objPtr;
@@ -2029,6 +1995,7 @@ Tcl_AppendFormatToObj(
 		    Tcl_DecrRefCount(objPtr);
 		}
 		isNegative = (w < (Tcl_WideInt) 0);
+#endif
 	    } else if (TclGetLongFromObj(NULL, segment, &l) != TCL_OK) {
 		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
 		    Tcl_Obj *objPtr;
@@ -2075,8 +2042,11 @@ Tcl_AppendFormatToObj(
 		    segmentLimit -= 1;
 		    precision--;
 		    break;
-		case 'x':
 		case 'X':
+		    Tcl_AppendToObj(segment, "0X", 2);
+		    segmentLimit -= 2;
+		    break;
+		case 'x':
 		    Tcl_AppendToObj(segment, "0x", 2);
 		    segmentLimit -= 2;
 		    break;
@@ -2095,8 +2065,10 @@ Tcl_AppendFormatToObj(
 
 		if (useShort) {
 		    pure = Tcl_NewIntObj((int) s);
+#ifndef TCL_WIDE_INT_IS_LONG
 		} else if (useWide) {
 		    pure = Tcl_NewWideIntObj(w);
+#endif
 		} else if (useBig) {
 		    pure = Tcl_NewBignumObj(&big);
 		} else {
@@ -2179,6 +2151,7 @@ Tcl_AppendFormatToObj(
 			numDigits++;
 			us /= base;
 		    }
+#ifndef TCL_WIDE_INT_IS_LONG
 		} else if (useWide) {
 		    Tcl_WideUInt uw = (Tcl_WideUInt) w;
 
@@ -2187,6 +2160,7 @@ Tcl_AppendFormatToObj(
 			numDigits++;
 			uw /= base;
 		    }
+#endif
 		} else if (useBig && big.used) {
 		    int leftover = (big.used * DIGIT_BIT) % numBits;
 		    mp_digit mask = (~(mp_digit)0) << (DIGIT_BIT-leftover);
@@ -2236,7 +2210,11 @@ Tcl_AppendFormatToObj(
 		    }
 		    digitOffset = (int) (bits % base);
 		    if (digitOffset > 9) {
-			bytes[numDigits] = 'a' + digitOffset - 10;
+			if (ch == 'X') {
+			    bytes[numDigits] = 'A' + digitOffset - 10;
+			} else {
+			    bytes[numDigits] = 'a' + digitOffset - 10;
+			}
 		    } else {
 			bytes[numDigits] = '0' + digitOffset;
 		    }
@@ -2358,14 +2336,6 @@ Tcl_AppendFormatToObj(
 	    goto error;
 	}
 
-	switch (ch) {
-	case 'E':
-	case 'G':
-	case 'X': {
-	    Tcl_SetObjLength(segment, Tcl_UtfToUpper(TclGetString(segment)));
-	}
-	}
-
 	if (width>0 && numChars<0) {
 	    numChars = Tcl_GetCharLength(segment);
 	}
@@ -2379,7 +2349,7 @@ Tcl_AppendFormatToObj(
 	    }
 	}
 
-	Tcl_GetStringFromObj(segment, &segmentNumBytes);
+	TclGetStringFromObj(segment, &segmentNumBytes);
 	if (segmentNumBytes > limit) {
 	    if (allocSegment) {
 		Tcl_DecrRefCount(segment);
@@ -2737,7 +2707,7 @@ TclStringObjReverse(
     Tcl_Obj *objPtr)
 {
     String *stringPtr;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
 
     if (TclIsPureByteArray(objPtr)) {
 	int numBytes;
@@ -2765,7 +2735,6 @@ TclStringObjReverse(
 	     * Tcl_SetObjLength into growing the unicode rep buffer.
 	     */
 
-	    ch = 0;
 	    objPtr = Tcl_NewUnicodeObj(&ch, 1);
 	    Tcl_SetObjLength(objPtr, stringPtr->numChars);
 	    to = Tcl_GetUnicode(objPtr);
@@ -2811,7 +2780,7 @@ TclStringObjReverse(
 		 * It's part of the contract for objPtr->bytes values.
 		 * Thus, we can skip calling Tcl_UtfCharComplete() here.
 		 */
-		int bytesInChar = Tcl_UtfToUniChar(from, &ch);
+		int bytesInChar = TclUtfToUniChar(from, &ch);
 
 		ReverseBytes((unsigned char *)to, (unsigned char *)from,
 			bytesInChar);
@@ -2868,7 +2837,7 @@ ExtendUnicodeRepWithString(
 {
     String *stringPtr = GET_STRING(objPtr);
     int needed, numOrigChars = 0;
-    Tcl_UniChar *dst;
+    Tcl_UniChar *dst, unichar = 0;
 
     if (stringPtr->hasUnicode) {
 	numOrigChars = stringPtr->numChars;
@@ -2891,7 +2860,8 @@ ExtendUnicodeRepWithString(
 	numAppendChars = 0;
     }
     for (dst=stringPtr->unicode + numOrigChars; numAppendChars-- > 0; dst++) {
-	bytes += TclUtfToUniChar(bytes, dst);
+	bytes += TclUtfToUniChar(bytes, &unichar);
+	*dst = unichar;
     }
     *dst = 0;
 }
@@ -3077,6 +3047,16 @@ UpdateStringOfString(
     Tcl_Obj *objPtr)		/* Object with string rep to update. */
 {
     String *stringPtr = GET_STRING(objPtr);
+
+    /*
+     * This routine is only called when we need to generate the
+     * string rep objPtr->bytes because it does not exist -- it is NULL.
+     * In that circumstance, any lingering claim about the size of
+     * memory pointed to by that NULL pointer is clearly bogus, and
+     * needs a reset.
+     */
+
+    stringPtr->allocated = 0;
 
     if (stringPtr->numChars == 0) {
 	TclInitStringRep(objPtr, tclEmptyStringRep, 0);

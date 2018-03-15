@@ -152,8 +152,8 @@ static int triggerPipe = -1;
  * The notifierMutex locks access to all of the global notifier state.
  */
 
-pthread_mutex_t notifierInitMutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t notifierMutex     = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t notifierInitMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t notifierMutex     = PTHREAD_MUTEX_INITIALIZER;
 /*
  * The following static indicates if the notifier thread is running.
  *
@@ -433,9 +433,11 @@ Tcl_FinalizeNotifier(
 			    "unable to write q to triggerPipe");
 		}
 		close(triggerPipe);
+		pthread_mutex_lock(&notifierMutex);
 		while(triggerPipe != -1) {
 		    pthread_cond_wait(&notifierCV, &notifierMutex);
 		}
+		pthread_mutex_unlock(&notifierMutex);
 		if (notifierThreadRunning) {
 		    int result = pthread_join((pthread_t) notifierThread, NULL);
 

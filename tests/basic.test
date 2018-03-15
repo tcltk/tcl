@@ -224,6 +224,21 @@ test basic-15.1 {Tcl_CreateObjCommand, new cmd goes into a namespace specified i
     list [test_ns_basic::cmd] \
          [namespace delete test_ns_basic]
 } {::test_ns_basic {}}
+test basic-15.2 {Tcl_CreateObjCommand, Bug 0e4d88b650} -setup {
+    proc deleter {ns args} {
+        namespace delete $ns
+    }
+    namespace eval n {
+        proc p {} {}
+    }
+    trace add command n::p delete [list [namespace which deleter] [namespace current]::n]
+} -body {
+    proc n::p {} {}
+} -cleanup {
+    namespace delete n
+    rename deleter {}
+}
+
 
 test basic-16.1 {TclInvokeStringCommand} {emptyTest} {
 } {}
@@ -968,6 +983,16 @@ test basic-49.2 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} testevalex {
     namespace delete ns
     set ::context
 } {global}
+
+test basic-50.1 {[586e71dce4] EvalObjv level #0 exception handling} -setup {
+    interp create slave
+    interp alias {} foo slave return
+} -body {
+    list [catch foo m] $m
+} -cleanup {
+    unset -nocomplain m
+    interp delete slave
+} -result {0 {}}
 
 # Clean up after expand tests
 unset noComp l1 l2 constraints

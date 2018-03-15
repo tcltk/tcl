@@ -6,7 +6,7 @@
  *
  * Copyright (c) 1996-1998 Sun Microsystems, Inc.
  * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
- * Copyright (c) 2013 Donal K. Fellows.
+ * Copyright (c) 2013-2016 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -21,9 +21,14 @@
  * Prototypes for procedures defined later in this file:
  */
 
-static Tcl_Obj *	DisassembleByteCodeAsDicts(Tcl_Obj *objPtr);
+static Tcl_Obj *	DisassembleByteCodeAsDicts(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
+static Tcl_Obj *	DisassembleByteCodeObj(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
 static int		FormatInstruction(ByteCode *codePtr,
 			    const unsigned char *pc, Tcl_Obj *bufferObj);
+static void		GetLocationInformation(Proc *procPtr,
+			    Tcl_Obj **fileObjPtr, int *linePtr);
 static void		PrintSourceToObj(Tcl_Obj *appendObj,
 			    const char *stringPtr, int maxChars);
 static void		UpdateStringOfInstName(Tcl_Obj *objPtr);
@@ -48,6 +53,56 @@ static const Tcl_ObjType tclInstNameType = {
 #define BYTECODE(objPtr)					\
     ((ByteCode *) (objPtr)->internalRep.twoPtrValue.ptr1)
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetLocationInformation --
+ *
+ *	This procedure looks up the information about where a procedure was
+ *	originally declared.
+ *
+ * Results:
+ *	Writes to the variables pointed at by fileObjPtr and linePtr.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+GetLocationInformation(
+    Proc *procPtr,		/* What to look up the information for. */
+    Tcl_Obj **fileObjPtr,	/* Where to write the information about what
+				 * file the code came from. Will be written
+				 * to, either with the object (assume shared!)
+				 * that describes what the file was, or with
+				 * NULL if the information is not
+				 * available. */
+    int *linePtr)		/* Where to write the information about what
+				 * line number represented the start of the
+				 * code in question. Will be written to,
+				 * either with the line number or with -1 if
+				 * the information is not available. */
+{
+    CmdFrame *cfPtr = TclGetCmdFrameForProcedure(procPtr);
+
+    *fileObjPtr = NULL;
+    *linePtr = -1;
+    if (cfPtr == NULL) {
+	return;
+    }
+
+    /*
+     * Get the source location data out of the CmdFrame.
+     */
+
+    *linePtr = cfPtr->line[0];
+    if (cfPtr->type == TCL_LOCATION_SOURCE) {
+	*fileObjPtr = cfPtr->data.eval.path;
+    }
+}
+
 #ifdef TCL_COMPILE_DEBUG
 /*
  *----------------------------------------------------------------------
@@ -68,10 +123,10 @@ static const Tcl_ObjType tclInstNameType = {
 
 void
 TclPrintByteCodeObj(
-    Tcl_Interp *interp,		/* Used only for Tcl_GetStringFromObj. */
+    Tcl_Interp *interp,		/* Used only for getting location info. */
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
-    Tcl_Obj *bufPtr = TclDisassembleByteCodeObj(objPtr);
+    Tcl_Obj *bufPtr = DisassembleByteCodeObj(interp, objPtr);
 
     fprintf(stdout, "\n%s", TclGetString(bufPtr));
     Tcl_DecrRefCount(bufPtr);
@@ -176,7 +231,7 @@ TclPrintSource(
 /*
  *----------------------------------------------------------------------
  *
- * TclDisassembleByteCodeObj --
+ * DisassembleByteCodeObj --
  *
  *	Given an object which is of bytecode type, return a disassembled
  *	version of the bytecode (in a new refcount 0 object). No guarantees
@@ -185,17 +240,18 @@ TclPrintSource(
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
-TclDisassembleByteCodeObj(
+static Tcl_Obj *
+DisassembleByteCodeObj(
+    Tcl_Interp *interp,
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
     ByteCode *codePtr = BYTECODE(objPtr);
     unsigned char *codeStart, *codeLimit, *pc;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
-    int codeOffset, codeLen, srcOffset, srcLen, numCmds, delta, i;
+    int codeOffset, codeLen, srcOffset, srcLen, numCmds, delta, i, line;
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
-    Tcl_Obj *bufferObj;
+    Tcl_Obj *bufferObj, *fileObj;
     char ptrBuf1[20], ptrBuf2[20];
 
     TclNewObj(bufferObj);
@@ -220,6 +276,11 @@ TclDisassembleByteCodeObj(
     Tcl_AppendToObj(bufferObj, "  Source ", -1);
     PrintSourceToObj(bufferObj, codePtr->source,
 	    TclMin(codePtr->numSrcBytes, 55));
+    GetLocationInformation(codePtr->procPtr, &fileObj, &line);
+    if (line > -1 && fileObj != NULL) {
+	Tcl_AppendPrintfToObj(bufferObj, "\n  File \"%s\" Line %d",
+		Tcl_GetString(fileObj), line);
+    }
     Tcl_AppendPrintfToObj(bufferObj,
 	    "\n  Cmds %d, src %d, inst %d, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
 	    numCmds, codePtr->numSrcBytes, codePtr->numCodeBytes,
@@ -307,7 +368,7 @@ TclDisassembleByteCodeObj(
 			rangePtr->catchOffset);
 		break;
 	    default:
-		Tcl_Panic("TclDisassembleByteCodeObj: bad ExceptionRange type %d",
+		Tcl_Panic("DisassembleByteCodeObj: bad ExceptionRange type %d",
 			rangePtr->type);
 	    }
 	}
@@ -881,14 +942,16 @@ PrintSourceToObj(
 
 static Tcl_Obj *
 DisassembleByteCodeAsDicts(
+    Tcl_Interp *interp,		/* Used for looking up the CmdFrame for the
+				 * procedure, if one exists. */
     Tcl_Obj *objPtr)		/* The bytecode-holding value to take apart */
 {
     ByteCode *codePtr = BYTECODE(objPtr);
     Tcl_Obj *description, *literals, *variables, *instructions, *inst;
-    Tcl_Obj *aux, *exn, *commands;
+    Tcl_Obj *aux, *exn, *commands, *file;
     unsigned char *pc, *opnd, *codeOffPtr, *codeLenPtr, *srcOffPtr, *srcLenPtr;
     int codeOffset, codeLength, sourceOffset, sourceLength;
-    int i, val;
+    int i, val, line;
 
     /*
      * Get the literals from the bytecode.
@@ -1152,6 +1215,13 @@ DisassembleByteCodeAsDicts(
 #undef Decode
 
     /*
+     * Get the source file and line number information from the CmdFrame
+     * system if it is available.
+     */
+
+    GetLocationInformation(codePtr->procPtr, &file, &line);
+
+    /*
      * Build the overall result.
      */
 
@@ -1174,6 +1244,15 @@ DisassembleByteCodeAsDicts(
 	    Tcl_NewIntObj(codePtr->maxStackDepth));
     Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("exceptdepth", -1),
 	    Tcl_NewIntObj(codePtr->maxExceptDepth));
+    if (line > -1) {
+	Tcl_DictObjPut(NULL, description,
+		Tcl_NewStringObj("initiallinenumber", -1),
+		Tcl_NewIntObj(line));
+    }
+    if (file) {
+	Tcl_DictObjPut(NULL, description,
+		Tcl_NewStringObj("sourcefile", -1), file);
+    }
     return description;
 }
 
@@ -1198,9 +1277,11 @@ Tcl_DisassembleObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const types[] = {
+	"constructor", "destructor",
 	"lambda", "method", "objmethod", "proc", "script", NULL
     };
     enum Types {
+	DISAS_CLASS_CONSTRUCTOR, DISAS_CLASS_DESTRUCTOR,
 	DISAS_LAMBDA, DISAS_CLASS_METHOD, DISAS_OBJECT_METHOD, DISAS_PROC,
 	DISAS_SCRIPT
     };
@@ -1209,6 +1290,7 @@ Tcl_DisassembleObjCmd(
     Proc *procPtr = NULL;
     Tcl_HashEntry *hPtr;
     Object *oPtr;
+    Method *methodPtr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "type ...");
@@ -1301,6 +1383,136 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 	codeObjPtr = objv[2];
+	break;
+
+    case DISAS_CLASS_CONSTRUCTOR:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "className");
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Look up the body of a constructor.
+	 */
+
+	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
+	if (oPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	if (oPtr->classPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "\"%s\" is not a class", TclGetString(objv[2])));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
+		    TclGetString(objv[2]), NULL);
+	    return TCL_ERROR;
+	}
+
+	methodPtr = oPtr->classPtr->constructorPtr;
+	if (methodPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "\"%s\" has no defined constructor",
+		    TclGetString(objv[2])));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		    "CONSRUCTOR", NULL);
+	    return TCL_ERROR;
+	}
+	procPtr = TclOOGetProcFromMethod(methodPtr);
+	if (procPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "body not available for this kind of constructor", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		    "METHODTYPE", NULL);
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Compile if necessary.
+	 */
+
+	if (procPtr->bodyPtr->typePtr != &tclByteCodeType) {
+	    Command cmd;
+
+	    /*
+	     * Yes, this is ugly, but we need to pass the namespace in to the
+	     * compiler in two places.
+	     */
+
+	    cmd.nsPtr = (Namespace *) oPtr->namespacePtr;
+	    procPtr->cmdPtr = &cmd;
+	    result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr,
+		    (Namespace *) oPtr->namespacePtr, "body of constructor",
+		    TclGetString(objv[2]));
+	    procPtr->cmdPtr = NULL;
+	    if (result != TCL_OK) {
+		return result;
+	    }
+	}
+	codeObjPtr = procPtr->bodyPtr;
+	break;
+
+    case DISAS_CLASS_DESTRUCTOR:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "className");
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Look up the body of a destructor.
+	 */
+
+	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
+	if (oPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	if (oPtr->classPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "\"%s\" is not a class", TclGetString(objv[2])));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
+		    TclGetString(objv[2]), NULL);
+	    return TCL_ERROR;
+	}
+
+	methodPtr = oPtr->classPtr->destructorPtr;
+	if (methodPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "\"%s\" has no defined destructor",
+		    TclGetString(objv[2])));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		    "DESRUCTOR", NULL);
+	    return TCL_ERROR;
+	}
+	procPtr = TclOOGetProcFromMethod(methodPtr);
+	if (procPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "body not available for this kind of destructor", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		    "METHODTYPE", NULL);
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Compile if necessary.
+	 */
+
+	if (procPtr->bodyPtr->typePtr != &tclByteCodeType) {
+	    Command cmd;
+
+	    /*
+	     * Yes, this is ugly, but we need to pass the namespace in to the
+	     * compiler in two places.
+	     */
+
+	    cmd.nsPtr = (Namespace *) oPtr->namespacePtr;
+	    procPtr->cmdPtr = &cmd;
+	    result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr,
+		    (Namespace *) oPtr->namespacePtr, "body of destructor",
+		    TclGetString(objv[2]));
+	    procPtr->cmdPtr = NULL;
+	    if (result != TCL_OK) {
+		return result;
+	    }
+	}
+	codeObjPtr = procPtr->bodyPtr;
 	break;
 
     case DISAS_CLASS_METHOD:
@@ -1403,9 +1615,11 @@ Tcl_DisassembleObjCmd(
 	return TCL_ERROR;
     }
     if (PTR2INT(clientData)) {
-	Tcl_SetObjResult(interp, DisassembleByteCodeAsDicts(codeObjPtr));
+	Tcl_SetObjResult(interp,
+		DisassembleByteCodeAsDicts(interp, codeObjPtr));
     } else {
-	Tcl_SetObjResult(interp, TclDisassembleByteCodeObj(codeObjPtr));
+	Tcl_SetObjResult(interp,
+		DisassembleByteCodeObj(interp, codeObjPtr));
     }
     return TCL_OK;
 }

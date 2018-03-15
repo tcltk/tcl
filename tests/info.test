@@ -1841,7 +1841,7 @@ test info-30.48 {Bug 2850901} testevalex {
 # -------------------------------------------------------------------------
 # literal sharing 2, bug 2933089
 
-test info-39.1 {location information not confused by literal sharing, bug 2933089} -setup {
+test info-40.1 {location information not confused by literal sharing, bug 2933089} -setup {
     set result {}
 
     proc print_one {} {}
@@ -2397,6 +2397,23 @@ test info-33.35 {{*}, literal, simple, bytecompiled} -body {
 
 # -------------------------------------------------------------------------
 unset -nocomplain res
+
+test info-39.2 {Bug 4b61afd660} -setup {
+    proc probe {} {
+	return [dict get [info frame -1] line]
+    }
+    set body {
+	set cmd probe
+	$cmd
+    }
+    proc demo {} $body
+} -body {
+    demo
+} -cleanup {
+    unset -nocomplain body
+    rename demo {}
+    rename probe {}
+} -result 3
 
 # cleanup
 catch {namespace delete test_ns_info1 test_ns_info2}

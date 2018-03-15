@@ -16,12 +16,18 @@ namespace eval ::tcl::test::platform {
     namespace import ::tcltest::test
     namespace import ::tcltest::cleanupTests
 
-    variable ::tcl_platform
+    # This is not how [variable] works. See TIP 276.
+    #variable ::tcl_platform
+    namespace upvar :: tcl_platform tcl_platform
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testCPUID [llength [info commands testcpuid]]
+
+test platform-1.0 {tcl_platform(engine)} {
+  set tcl_platform(engine)
+} {Tcl}
 
 test platform-1.1 {TclpSetVariables: tcl_platform} {
     interp create i
@@ -30,7 +36,7 @@ test platform-1.1 {TclpSetVariables: tcl_platform} {
     set result [i eval {lsort [array names tcl_platform]}]
     interp delete i
     set result
-} {byteOrder machine os osVersion pathSeparator platform pointerSize user wordSize}
+} {byteOrder engine machine os osVersion pathSeparator platform pointerSize user wordSize}
 
 # Test assumes twos-complement arithmetic, which is true of virtually
 # everything these days.  Note that this does *not* use wide(), and

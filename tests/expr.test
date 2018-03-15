@@ -910,6 +910,15 @@ test expr-22.9 {non-numeric floats: shared object equality and NaN} {
     set x NaN
     expr {$x == $x}
 } 0
+# Make sure [Bug d0f7ba56f0] stays fixed.
+test expr-22.10 {non-numeric arguments: equality and NaN} {
+    set x NaN
+    expr {$x > "Gran"}
+} 1
+test expr-22.11 {non-numeric arguments: equality and NaN} {
+    set x NaN
+    expr {"Gran" < $x}
+} 1
 
 # Tests for exponentiation handling
 test expr-23.1 {CompileExponentialExpr: just exponential expr} {expr 4**2} 16
@@ -5829,6 +5838,15 @@ test expr-32.5 {Bug 1585704} {
 test expr-32.6 {Bug 1585704} {
     expr -(1<<32)%(1<<63)
 } [expr (1<<63)-(1<<32)]
+test expr-32.7 {bignum regression} {
+    expr {0%(1<<63)}
+} 0
+test expr-32.8 {bignum regression} {
+    expr {0%-(1<<63)}
+} 0
+test expr-32.9 {bignum regression} {
+    expr {0%-(1+(1<<63))}
+} 0
 
 test expr-33.1 {parse largest long value} longIs32bit {
     set max_long_str 2147483647

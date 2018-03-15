@@ -852,7 +852,7 @@ test assemble-8.5 {bad context} {
     -body {
 	namespace eval assem {
 	    set x 1
-	    list [catch {assemble {load x}} result] $result $errorCode
+	    list [catch {assemble {load x}} result opts] $result [dict get $opts -errorcode]
 	}
     }
     -result {1 {cannot use this instruction to create a variable in a non-proc context} {TCL ASSEM LVT}}
@@ -1584,6 +1584,12 @@ test assemble-15.7 {listIndexImm} {
     }
     -result c
 }
+test assemble-15.8 {listIndexImm} {
+    assemble {push {a b c}; listIndexImm end+2}
+} {}
+test assemble-15.9 {listIndexImm} {
+    assemble {push {a b c}; listIndexImm -1-1}
+} {}
 
 # assemble-16 - invokeStk
 
@@ -3279,6 +3285,92 @@ test assemble-51.4 {memory leak testing} memory {
 	}
     }
 } 0
+
+test assemble-52.1 {Bug 3154ea2759} {
+    apply {{} {
+	# Needs six exception ranges to force the range allocations to use the
+	# malloced store.
+	::tcl::unsupported::assemble {
+	    beginCatch @badLabel
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel
+	    label @badLabel
+	    push 1;		# should be pushReturnCode
+	    label @okLabel
+	    endCatch
+	    pop
+	    
+	    beginCatch @badLabel2
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel2
+	    label @badLabel2
+	    push 1;		# should be pushReturnCode
+	    label @okLabel2
+	    endCatch
+	    pop
+	    
+	    beginCatch @badLabel3
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel3
+	    label @badLabel3
+	    push 1;		# should be pushReturnCode
+	    label @okLabel3
+	    endCatch
+	    pop
+	    
+	    beginCatch @badLabel4
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel4
+	    label @badLabel4
+	    push 1;		# should be pushReturnCode
+	    label @okLabel4
+	    endCatch
+	    pop
+	    
+	    beginCatch @badLabel5
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel5
+	    label @badLabel5
+	    push 1;		# should be pushReturnCode
+	    label @okLabel5
+	    endCatch
+	    pop
+	    
+	    beginCatch @badLabel6
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel6
+	    label @badLabel6
+	    push 1;		# should be pushReturnCode
+	    label @okLabel6
+	    endCatch
+	    pop
+	}
+    }}
+} {};				# must not crash
 
 rename fillTables {}
 rename assemble {}

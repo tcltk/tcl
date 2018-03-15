@@ -22,14 +22,10 @@
 
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
-static int		SwitchPostProc(ClientData data[], Tcl_Interp *interp,
-			    int result);
-static int		TryPostBody(ClientData data[], Tcl_Interp *interp,
-			    int result);
-static int		TryPostFinal(ClientData data[], Tcl_Interp *interp,
-			    int result);
-static int		TryPostHandler(ClientData data[], Tcl_Interp *interp,
-			    int result);
+static Tcl_NRPostProc	SwitchPostProc;
+static Tcl_NRPostProc	TryPostBody;
+static Tcl_NRPostProc	TryPostFinal;
+static Tcl_NRPostProc	TryPostHandler;
 static int		UniCharIsAscii(int character);
 static int		UniCharIsHexDigit(int character);
 
@@ -313,7 +309,7 @@ Tcl_RegexpObjCmd(
 	    eflags = 0;
 	} else if (offset > stringLength) {
 	    eflags = TCL_REG_NOTBOL;
-	} else if (Tcl_GetUniChar(objPtr, offset-1) == (Tcl_UniChar)'\n') {
+	} else if (Tcl_GetUniChar(objPtr, offset-1) == '\n') {
 	    eflags = 0;
 	} else {
 	    eflags = TCL_REG_NOTBOL;
@@ -1041,7 +1037,7 @@ Tcl_SplitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     int len;
     const char *splitChars;
     const char *stringPtr;
@@ -1084,13 +1080,22 @@ Tcl_SplitObjCmd(
 	Tcl_InitHashTable(&charReuseTable, TCL_ONE_WORD_KEYS);
 
 	for ( ; stringPtr < end; stringPtr += len) {
+		int fullchar;
 	    len = TclUtfToUniChar(stringPtr, &ch);
+	    fullchar = ch;
+
+#if TCL_UTF_MAX == 4
+	    if (!len) {
+		len += TclUtfToUniChar(stringPtr, &ch);
+		fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	    }
+#endif
 
 	    /*
 	     * Assume Tcl_UniChar is an integral type...
 	     */
 
-	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR((int) ch),
+	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(fullchar),
 		    &isNew);
 	    if (isNew) {
 		TclNewStringObj(objPtr, stringPtr, len);
@@ -1126,7 +1131,7 @@ Tcl_SplitObjCmd(
     } else {
 	const char *element, *p, *splitEnd;
 	int splitLen;
-	Tcl_UniChar splitChar;
+	Tcl_UniChar splitChar = 0;
 
 	/*
 	 * Normal case: split on any of a given set of characters. Discard
@@ -1455,7 +1460,7 @@ StringIsCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *string1, *end, *stop;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
     int i, failat = 0, result = 1, strict = 0, index, length1, length2;
     Tcl_Obj *objPtr, *failVarObj = NULL;
@@ -1650,7 +1655,7 @@ StringIsCmd(
 	}
 	break;
     case STR_IS_WIDE:
-	if (TCL_OK == Tcl_GetWideIntFromObj(NULL, objPtr, &w)) {
+	if (TCL_OK == TclGetWideIntFromObj(NULL, objPtr, &w)) {
 	    break;
 	}
 
@@ -1787,8 +1792,16 @@ StringIsCmd(
 	}
 	end = string1 + length1;
 	for (; string1 < end; string1 += length2, failat++) {
+	    int fullchar;
 	    length2 = TclUtfToUniChar(string1, &ch);
-	    if (!chcomp(ch)) {
+	    fullchar = ch;
+#if TCL_UTF_MAX == 4
+	    if (!length2) {
+	    	length2 = TclUtfToUniChar(string1, &ch);
+	    	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
+	    }
+#endif
+	    if (!chcomp(fullchar)) {
 		result = 0;
 		break;
 	    }
@@ -2340,7 +2353,7 @@ StringRplcCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_UniChar *ustring;
-    int first, last, length;
+    int first, last, length, end;
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string first last ?string?");
@@ -2348,20 +2361,38 @@ StringRplcCmd(
     }
 
     ustring = Tcl_GetUnicodeFromObj(objv[1], &length);
-    length--;
+    end = length - 1;
 
-    if (TclGetIntForIndexM(interp, objv[2], length, &first) != TCL_OK ||
-	    TclGetIntForIndexM(interp, objv[3], length, &last) != TCL_OK){
+    if (TclGetIntForIndexM(interp, objv[2], end, &first) != TCL_OK ||
+	    TclGetIntForIndexM(interp, objv[3], end, &last) != TCL_OK){
 	return TCL_ERROR;
     }
 
-    if ((last < first) || (last < 0) || (first > length)) {
+    /*
+     * The following test screens out most empty substrings as
+     * candidates for replacement. When they are detected, no
+     * replacement is done, and the result is the original string,
+     */
+    if ((last < 0) ||		/* Range ends before start of string */
+	    (first > end) ||	/* Range begins after end of string */
+	    (last < first)) {	/* Range begins after it starts */
+
+	/*
+	 * BUT!!! when (end < 0) -- an empty original string -- we can
+	 * have (first <= end < 0 <= last) and an empty string is permitted
+	 * to be replaced.
+	 */
 	Tcl_SetObjResult(interp, objv[1]);
     } else {
 	Tcl_Obj *resultPtr;
 
+	/*
+	 * We are re-fetching in case the string argument is same value as 
+	 * an index argument, and shimmering cost us our ustring.
+	 */
+
 	ustring = Tcl_GetUnicodeFromObj(objv[1], &length);
-	length--;
+	end = length-1;
 
 	if (first < 0) {
 	    first = 0;
@@ -2371,9 +2402,9 @@ StringRplcCmd(
 	if (objc == 5) {
 	    Tcl_AppendObjToObj(resultPtr, objv[4]);
 	}
-	if (last < length) {
+	if (last < end) {
 	    Tcl_AppendUnicodeToObj(resultPtr, ustring + last + 1,
-		    length - last);
+		    end - last);
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }
@@ -2440,7 +2471,7 @@ StringStartCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     const char *p, *string;
     int cur, index, length, numChars;
 
@@ -2501,7 +2532,7 @@ StringEndCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     const char *p, *end, *string;
     int cur, index, length, numChars;
 
@@ -3254,8 +3285,7 @@ StringTrimCmd(
     }
     string1 = TclGetStringFromObj(objv[1], &length1);
 
-    triml = TclTrimLeft(string1, length1, string2, length2);
-    trimr = TclTrimRight(string1 + triml, length1 - triml, string2, length2);
+    triml = TclTrim(string1, length1, string2, length2, &trimr);
 
     Tcl_SetObjResult(interp,
 	    Tcl_NewStringObj(string1 + triml, length1 - triml - trimr));

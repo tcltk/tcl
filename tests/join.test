@@ -45,6 +45,11 @@ test join-3.1 {joinString is binary ok} {
 test join-3.2 {join is binary ok} {
   string length [join "a\0b a\0b a\0b"]
 } 11
+
+test join-4.1 {shimmer segfault prevention} {
+    set l {0 0}
+    join $l $l
+} {00 00}
 
 # cleanup
 ::tcltest::cleanupTests

@@ -41,6 +41,8 @@ static void		ReflectWatch(ClientData clientData, int mask);
 static int		ReflectBlock(ClientData clientData, int mode);
 #ifdef TCL_THREADS
 static void		ReflectThread(ClientData clientData, int action);
+static int		ReflectEventRun(Tcl_Event *ev, int flags);
+static int		ReflectEventDelete(Tcl_Event *ev, ClientData cd);
 #endif
 static Tcl_WideInt	ReflectSeekWide(ClientData clientData,
 			    Tcl_WideInt offset, int mode, int *errorCodePtr);
@@ -748,6 +750,7 @@ TclChanCreateObjCmd(
  *----------------------------------------------------------------------
  */
 
+#ifdef TCL_THREADS
 typedef struct ReflectEvent {
     Tcl_Event header;
     ReflectedChannel *rcPtr;
@@ -791,6 +794,7 @@ ReflectEventDelete(
     }
     return 1;
 }
+#endif
 
 int
 TclChanPostEventObjCmd(
@@ -1609,8 +1613,6 @@ ReflectWatch(
 	return;
     }
 
-    rcPtr->interest = mask;
-
     /*
      * Are we in the correct thread?
      */
@@ -1633,6 +1635,7 @@ ReflectWatch(
 
     Tcl_Preserve(rcPtr);
 
+    rcPtr->interest = mask;
     maskObj = DecodeEventMask(mask);
     /* assert maskObj.refCount == 1 */
     (void) InvokeTclMethod(rcPtr, METH_WATCH, maskObj, NULL, NULL);
@@ -3083,6 +3086,7 @@ ForwardProc(
         /* assert maskObj.refCount == 1 */
 
         Tcl_Preserve(rcPtr);
+	rcPtr->interest = paramPtr->watch.mask;
 	(void) InvokeTclMethod(rcPtr, METH_WATCH, maskObj, NULL, NULL);
 	Tcl_DecrRefCount(maskObj);
         Tcl_Release(rcPtr);

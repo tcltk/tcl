@@ -535,6 +535,30 @@ test scan-5.13 {integer scanning and overflow} {
 test scan-5.14 {integer scanning} {
     scan 0xff %u
 } 0
+test scan-5.15 {Bug be003d570f} {
+    scan 0x40 %o
+} 0
+test scan-5.16 {Bug be003d570f} {
+    scan 0x40 %b
+} 0
+test scan-5.17 {bigint scanning} -setup {
+    set a {}; set b {}; set c {}
+} -body {
+    list [scan "207698809136909011942886895,abcdef0123456789abcdef,125715736004432126361152746757" \
+	    %lld,%llx,%llo a b c] $a $b $c
+} -result {3 207698809136909011942886895 207698809136909011942886895 207698809136909011942886895}
+test scan-5.18 {bigint scanning underflow} -setup {
+    set a {};
+} -body {
+    list [scan "-207698809136909011942886895" \
+	    %llu a] $a
+} -returnCodes 1 -result {unsigned bignum scans are invalid}
+test scan-5.19 {bigint scanning invalid} -setup {
+    set a {};
+} -body {
+    list [scan "207698809136909011942886895" \
+	    %llu a] $a
+} -returnCodes 1 -result {unsigned bignum scans are invalid}
 
 test scan-6.1 {floating-point scanning} -setup {
     set a {}; set b {}; set c {}; set d {}

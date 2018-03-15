@@ -54,7 +54,7 @@ static int		CompileDictEachCmd(Tcl_Interp *interp,
  * The structures below define the AuxData types defined in this file.
  */
 
-const AuxDataType tclForeachInfoType = {
+static const AuxDataType foreachInfoType = {
     "ForeachInfo",		/* name */
     DupForeachInfo,		/* dupProc */
     FreeForeachInfo,		/* freeProc */
@@ -62,7 +62,7 @@ const AuxDataType tclForeachInfoType = {
     DisassembleForeachInfo	/* disassembleProc */
 };
 
-const AuxDataType tclNewForeachInfoType = {
+static const AuxDataType newForeachInfoType = {
     "NewForeachInfo",		/* name */
     DupForeachInfo,		/* dupProc */
     FreeForeachInfo,		/* freeProc */
@@ -70,13 +70,46 @@ const AuxDataType tclNewForeachInfoType = {
     DisassembleNewForeachInfo	/* disassembleProc */
 };
 
-const AuxDataType tclDictUpdateInfoType = {
+static const AuxDataType dictUpdateInfoType = {
     "DictUpdateInfo",		/* name */
     DupDictUpdateInfo,		/* dupProc */
     FreeDictUpdateInfo,		/* freeProc */
     PrintDictUpdateInfo,	/* printProc */
     DisassembleDictUpdateInfo	/* disassembleProc */
 };
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetAuxDataType --
+ *
+ *	This procedure looks up an Auxdata type by name.
+ *
+ * Results:
+ *	If an AuxData type with name matching "typeName" is found, a pointer
+ *	to its AuxDataType structure is returned; otherwise, NULL is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+const AuxDataType *
+TclGetAuxDataType(
+    const char *typeName)	/* Name of AuxData type to look up. */
+{
+    if (!strcmp(typeName, foreachInfoType.name)) {
+	return &foreachInfoType;
+    } else if (!strcmp(typeName, newForeachInfoType.name)) {
+	return &newForeachInfoType;
+    } else if (!strcmp(typeName, dictUpdateInfoType.name)) {
+	return &dictUpdateInfoType;
+    } else if (!strcmp(typeName, tclJumptableInfoType.name)) {
+	return &tclJumptableInfoType;
+    }
+    return NULL;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -365,7 +398,7 @@ TclCompileArraySetCmd(
     infoPtr->varLists[0]->numVars = 2;
     infoPtr->varLists[0]->varIndexes[0] = keyVar;
     infoPtr->varLists[0]->varIndexes[1] = valVar;
-    infoIndex = TclCreateAuxData(infoPtr, &tclForeachInfoType, envPtr);
+    infoIndex = TclCreateAuxData(infoPtr, &newForeachInfoType, envPtr);
 
     /*
      * Start issuing instructions to write to the array.
@@ -698,6 +731,105 @@ TclCompileCatchCmd(
     TclEmitOpcode(	INST_POP,			envPtr);
 
     TclCheckStackDepth(depth+1, envPtr);
+    return TCL_OK;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * TclCompileClockClicksCmd --
+ *
+ *	Procedure called to compile the "tcl::clock::clicks" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to run time.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "clock clicks"
+ *	command at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileClockClicksCmd(
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token* tokenPtr;
+
+    switch (parsePtr->numWords) {
+    case 1:
+	/*
+	 * No args
+	 */
+	TclEmitInstInt1(INST_CLOCK_READ, 0, envPtr);
+	break;
+    case 2:
+	/*
+	 * -milliseconds or -microseconds
+	 */
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD
+	    || tokenPtr[1].size < 4
+	    || tokenPtr[1].size > 13) {
+	    return TCL_ERROR;
+	} else if (!strncmp(tokenPtr[1].start, "-microseconds",
+			    tokenPtr[1].size)) {
+	    TclEmitInstInt1(INST_CLOCK_READ, 1, envPtr);
+	    break;
+	} else if (!strncmp(tokenPtr[1].start, "-milliseconds",
+			    tokenPtr[1].size)) {
+	    TclEmitInstInt1(INST_CLOCK_READ, 2, envPtr);
+	    break;
+	} else {
+	    return TCL_ERROR;
+	}
+    default:
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+
+/*----------------------------------------------------------------------
+ *
+ * TclCompileClockReadingCmd --
+ *
+ *	Procedure called to compile the "tcl::clock::microseconds",
+ *	"tcl::clock::milliseconds" and "tcl::clock::seconds" commands.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to run time.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "clock clicks"
+ *	command at runtime.
+ *
+ * Client data is 1 for microseconds, 2 for milliseconds, 3 for seconds.
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileClockReadingCmd(
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    if (parsePtr->numWords != 1) {
+	return TCL_ERROR;
+    }
+
+    TclEmitInstInt1(INST_CLOCK_READ, PTR2INT(cmdPtr->objClientData), envPtr);
+
     return TCL_OK;
 }
 
@@ -1669,7 +1801,7 @@ TclCompileDictUpdateCmd(
      * can't be snagged by literal sharing and forced to shimmer dangerously.
      */
 
-    infoIndex = TclCreateAuxData(duiPtr, &tclDictUpdateInfoType, envPtr);
+    infoIndex = TclCreateAuxData(duiPtr, &dictUpdateInfoType, envPtr);
 
     for (i=0 ; i<numVars ; i++) {
 	CompileWord(envPtr, keyTokenPtrs[i], interp, 2*i+2);
@@ -2632,7 +2764,7 @@ CompileEachloopCmd(
      * We will compile the foreach command.
      */
 
-    infoIndex = TclCreateAuxData(infoPtr, &tclNewForeachInfoType, envPtr);
+    infoIndex = TclCreateAuxData(infoPtr, &newForeachInfoType, envPtr);
 
     /*
      * Create the collecting object, unshared.
@@ -3173,17 +3305,6 @@ TclCompileFormatCmd(
 	 */
 
 	TclEmitInstInt1(INST_STR_CONCAT1, i, envPtr);
-    } else {
-	/*
-	 * EVIL HACK! Force there to be a string representation in the case
-	 * where there's just a "%s" in the format; case covered by the test
-	 * format-20.1 (and it is horrible...)
-	 */
-
-	TclEmitOpcode(INST_DUP, envPtr);
-	PushStringLiteral(envPtr, "");
-	TclEmitOpcode(INST_STR_EQ, envPtr);
-	TclEmitOpcode(INST_POP, envPtr);
     }
     return TCL_OK;
 }

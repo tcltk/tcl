@@ -396,6 +396,9 @@ static Tcl_WideUInt	Nokia770Twiddle(Tcl_WideUInt w);
  *	- TCL_PARSE_SCAN_PREFIXES:	ignore the prefixes 0b and 0o that are
  *		not part of the [scan] command's vocabulary. Use only in
  *		combination with TCL_PARSE_INTEGER_ONLY.
+ *	- TCL_PARSE_BINARY_ONLY:	parse only in the binary format, whether
+ *		or not a prefix is present that would lead to binary parsing.
+ *		Use only in combination with TCL_PARSE_INTEGER_ONLY.
  *	- TCL_PARSE_OCTAL_ONLY:		parse only in the octal format, whether
  *		or not a prefix is present that would lead to octal parsing.
  *		Use only in combination with TCL_PARSE_INTEGER_ONLY.
@@ -627,6 +630,9 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    if (c == 'x' || c == 'X') {
+		if (flags & (TCL_PARSE_OCTAL_ONLY|TCL_PARSE_BINARY_ONLY)) {
+		    goto endgame;
+		}
 		state = ZERO_X;
 		break;
 	    }
@@ -637,6 +643,9 @@ TclParseNumber(
 		goto zeroo;
 	    }
 	    if (c == 'b' || c == 'B') {
+		if (flags & TCL_PARSE_OCTAL_ONLY) {
+		    goto endgame;
+		}
 		state = ZERO_B;
 		break;
 	    }
@@ -1174,9 +1183,9 @@ TclParseNumber(
 	case sNA:
 	case sNANPAREN:
 	case sNANHEX:
+#endif
 	    Tcl_Panic("TclParseNumber: bad acceptState %d parsing '%s'",
 		    acceptState, bytes);
-#endif
 	case BINARY:
 	    shift = numTrailZeros;
 	    if (!significandOverflow && significandWide != 0 &&
@@ -1964,7 +1973,7 @@ RefineApproximation(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 MulPow5(
     mp_int *base, 		/* Number to multiply. */
     unsigned n,			/* Power of 5 to multiply by. */
@@ -2009,7 +2018,7 @@ MulPow5(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 NormalizeRightward(
     Tcl_WideUInt *wPtr)		/* INOUT: Number to shift. */
 {
@@ -2100,7 +2109,7 @@ RequiredPrecision(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 DoubleToExpAndSig(
     double dv,			/* Number to convert. */
     Tcl_WideUInt *significand,	/* OUTPUT: Significand of the number. */
@@ -2148,7 +2157,7 @@ DoubleToExpAndSig(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 TakeAbsoluteValue(
     Double *d,			/* Number to replace with absolute value. */
     int *sign)			/* Place to put the signum. */
@@ -2179,7 +2188,7 @@ TakeAbsoluteValue(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 FormatInfAndNaN(
     Double *d,			/* Exceptional number to format. */
     int *decpt,			/* Decimal point to set to a bogus value. */
@@ -2221,7 +2230,7 @@ FormatInfAndNaN(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 FormatZero(
     int *decpt,			/* Location of the decimal point. */
     char **endPtr)		/* Pointer to the end of the formatted data */
@@ -2251,7 +2260,7 @@ FormatZero(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ApproximateLog10(
     Tcl_WideUInt bw,		/* Integer significand of the number. */
     int be,			/* Power of two to scale bw. */
@@ -2299,7 +2308,7 @@ ApproximateLog10(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 BetterLog10(
     double d,			/* Original number to format. */
     int k,			/* Characteristic(Log base 10) of the
@@ -2342,7 +2351,7 @@ BetterLog10(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 ComputeScale(
     int be,			/* Exponent part of number: d = bw * 2**be. */
     int k,			/* Characteristic of log10(number). */
@@ -2405,7 +2414,7 @@ ComputeScale(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 SetPrecisionLimits(
     int convType,		/* Type of conversion: TCL_DD_SHORTEST,
 				 * TCL_DD_STEELE0, TCL_DD_E_FMT,
@@ -2466,7 +2475,7 @@ SetPrecisionLimits(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 BumpUp(
     char *s,		    	/* Cursor pointing one past the end of the
 				 * string. */
@@ -2500,7 +2509,7 @@ BumpUp(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 AdjustRange(
     double *dPtr,		/* INOUT: Number to adjust. */
     int k)			/* IN: floor(log10(d)) */
@@ -2573,7 +2582,7 @@ AdjustRange(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 ShorteningQuickFormat(
     double d,			/* Number to convert. */
     int k,			/* floor(log10(d)) */
@@ -2648,7 +2657,7 @@ ShorteningQuickFormat(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 StrictQuickFormat(
     double d,			/* Number to convert. */
     int k,			/* floor(log10(d)) */
@@ -2722,7 +2731,7 @@ StrictQuickFormat(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 QuickConversion(
     double e,			/* Number to format. */
     int k,			/* floor(log10(d)), approximately. */
@@ -2827,7 +2836,7 @@ QuickConversion(
  *----------------------------------------------------------------------
  */
 
-inline static void
+static inline void
 CastOutPowersOf2(
     int *b2,			/* Power of 2 to multiply the significand. */
     int *m2,			/* Power of 2 to multiply 1/2 ulp. */
@@ -2871,7 +2880,7 @@ CastOutPowersOf2(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 ShorteningInt64Conversion(
     Double *dPtr,		/* Original number to convert. */
     int convType,		/* Type of conversion (shortest, Steele,
@@ -3040,7 +3049,7 @@ ShorteningInt64Conversion(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 StrictInt64Conversion(
     Double *dPtr,		/* Original number to convert. */
     int convType,		/* Type of conversion (shortest, Steele,
@@ -3146,7 +3155,7 @@ StrictInt64Conversion(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ShouldBankerRoundUpPowD(
     mp_int *b,			/* Numerator of the fraction. */
     int sd,			/* Denominator is 2**(sd*DIGIT_BIT). */
@@ -3184,7 +3193,7 @@ ShouldBankerRoundUpPowD(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ShouldBankerRoundUpToNextPowD(
     mp_int *b,			/* Numerator of the fraction. */
     mp_int *m,			/* Numerator of the rounding tolerance. */
@@ -3247,7 +3256,7 @@ ShouldBankerRoundUpToNextPowD(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 ShorteningBignumConversionPowD(
     Double *dPtr,		/* Original number to convert. */
     int convType,		/* Type of conversion (shortest, Steele,
@@ -3440,7 +3449,7 @@ ShorteningBignumConversionPowD(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 StrictBignumConversionPowD(
     Double *dPtr,		/* Original number to convert. */
     int convType,		/* Type of conversion (shortest, Steele,
@@ -3556,7 +3565,7 @@ StrictBignumConversionPowD(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ShouldBankerRoundUp(
     mp_int *twor,		/* 2x the remainder from thd division that
 				 * produced the last digit. */
@@ -3591,7 +3600,7 @@ ShouldBankerRoundUp(
  *----------------------------------------------------------------------
  */
 
-inline static int
+static inline int
 ShouldBankerRoundUpToNext(
     mp_int *b,			/* Remainder from the division that produced
 				 * the last digit. */
@@ -3645,7 +3654,7 @@ ShouldBankerRoundUpToNext(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 ShorteningBignumConversion(
     Double *dPtr,		/* Original number being converted. */
     int convType,		/* Conversion type. */
@@ -3789,7 +3798,7 @@ ShorteningBignumConversion(
 	    --s5;
 
 	    /*
-	     * IDEA: It might possibly be a win to fall back to int64
+	     * IDEA: It might possibly be a win to fall back to int64_t
 	     *       arithmetic here if S < 2**64/10. But it's a win only for
 	     *       a fairly narrow range of magnitudes so perhaps not worth
 	     *       bothering.  We already know that we shorten the
@@ -3861,7 +3870,7 @@ ShorteningBignumConversion(
  *----------------------------------------------------------------------
  */
 
-inline static char *
+static inline char *
 StrictBignumConversion(
     Double *dPtr,		/* Original number being converted. */
     int convType,		/* Conversion type. */
@@ -3954,7 +3963,7 @@ StrictBignumConversion(
 	     * As with the shortening bignum conversion, it's possible at this
 	     * point that we will have reduced the denominator to less than
 	     * 2**64/10, at which point it would be possible to fall back to
-	     * to int64 arithmetic. But the potential payoff is tremendously
+	     * to int64_t arithmetic. But the potential payoff is tremendously
 	     * less - unless we're working in F format - because we know that
 	     * three groups of digits will always suffice for %#.17e, the
 	     * longest format that doesn't introduce empty precision.

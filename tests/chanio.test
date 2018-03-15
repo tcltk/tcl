@@ -4160,12 +4160,20 @@ test chan-io-33.4 {Tcl_Gets with long line} -setup {
 } -cleanup {
     chan close $f
 } -result {abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ}
-test chan-io-33.5 {Tcl_Gets with long line} {
+test chan-io-33.5 {Tcl_Gets with long line} -setup {
+    set f [open $path(test3) w]
+    puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    puts $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    close $f
+} -body {
     set f [open $path(test3)]
     set x [chan gets $f y]
     chan close $f
     list $x $y
-} {260 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ}
+} -result {260 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ}
 test chan-io-33.6 {Tcl_Gets and end of file} -setup {
     file delete $path(test3)
     set x {}
@@ -5330,7 +5338,7 @@ test chan-io-40.2 {POSIX open access modes: CREAT} -setup {
 } -constraints {unix} -body {
     set f [open $path(test3) {WRONLY CREAT} 0600]
     file stat $path(test3) stats
-    set x [format "0%o" [expr $stats(mode)&0o777]]
+    set x [format "%#o" [expr $stats(mode)&0o777]]
     chan puts $f "line 1"
     chan close $f
     set f [open $path(test3) r]
@@ -5344,8 +5352,8 @@ test chan-io-40.3 {POSIX open access modes: CREAT} -setup {
     # This test only works if your umask is 2, like ouster's.
     chan close [open $path(test3) {WRONLY CREAT}]
     file stat $path(test3) stats
-    format "0%o" [expr $stats(mode)&0o777]
-} -result [format %04o [expr {0o666 & ~ $umaskValue}]]
+    format "%#o" [expr $stats(mode)&0o777]
+} -result [format %#4o [expr {0o666 & ~ $umaskValue}]]
 test chan-io-40.4 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
 } -body {
@@ -5858,6 +5866,8 @@ test chan-io-47.6 {file events on shared files, deleting file events} -setup {
     testfevent delete
     chan close $f
 } -result {{script 1} {}}
+unset path(foo)
+removeFile foo
 
 set path(bar) [makeFile {} bar]
 
@@ -5953,6 +5963,9 @@ test chan-io-48.3 {testing readability conditions} -setup {
 } -cleanup {
     chan close $f
 } -result {done {0 1 0 1 0 1 0 1 0 1 0 1 0 0}}
+unset path(bar)
+removeFile bar 
+
 test chan-io-48.4 {lf write, testing readability, ^Z termination, auto read mode} -setup {
     file delete $path(test1)
     set c 0
@@ -6765,7 +6778,12 @@ test chan-io-52.10 {TclCopyChannel & encodings} {fcopy} {
     chan close $out
     file size $path(utf8-fcopy.txt)
 } 5
-test chan-io-52.11 {TclCopyChannel & encodings} {fcopy} {
+test chan-io-52.11 {TclCopyChannel & encodings} -setup {
+    set f [open $path(utf8-fcopy.txt) w]
+    fconfigure $f -encoding utf-8 -translation lf
+    puts $f "\u0410\u0410"
+    close $f
+} -constraints {fcopy} -body {
     # binary to encoding => the input has to be in utf-8 to make sense to the
     # encoder
     set in  [open $path(utf8-fcopy.txt) r]
@@ -6777,7 +6795,7 @@ test chan-io-52.11 {TclCopyChannel & encodings} {fcopy} {
     chan close $in
     chan close $out
     file size $path(kyrillic.txt)
-} 3
+} -result 3
 
 test chan-io-53.1 {CopyData} -setup {
     file delete $path(test1)

@@ -1595,8 +1595,9 @@ Tcl_GlobObjCmd(
     } else if (dir == PATH_GENERAL) {
 	Tcl_DString str;
 
+	Tcl_DStringInit(&str);
 	for (i = 0; i < objc; i++) {
-	    Tcl_DStringInit(&str);
+	    Tcl_DStringSetLength(&str, 0);
 	    if (dir == PATH_GENERAL) {
 		TclDStringAppendDString(&str, &prefix);
 	    }
@@ -1903,7 +1904,7 @@ TclGlob(
     }
 
     /*
-     * To process a [glob] invokation, this function may be called multiple
+     * To process a [glob] invocation, this function may be called multiple
      * times. Each time, the previously discovered filenames are in the
      * interpreter result. We stash that away here so the result is free for
      * error messsages.

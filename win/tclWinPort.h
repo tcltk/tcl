@@ -360,6 +360,20 @@ typedef DWORD_PTR * PDWORD_PTR;
 #   define S_IFLNK        0120000  /* Symbolic Link */
 #endif
 
+/*
+ * Windows compilers do not define S_IFBLK. However, Tcl uses it in
+ * GetTypeFromMode to identify blockSpecial devices based on the
+ * value in the statsbuf st_mode field. We have no other way to pass this
+ * from NativeStat on Windows so are forced to define it here.
+ * The definition here is essentially what is seen on Linux and MingW.
+ * XXX - the root problem is Tcl using Unix definitions instead of
+ * abstracting the structure into a platform independent one. Sigh - perhaps
+ * Tcl 9
+ */
+#ifndef S_IFBLK
+#   define S_IFBLK (S_IFDIR | S_IFCHR)
+#endif
+
 #ifndef S_ISREG
 #   ifdef S_IFREG
 #       define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)

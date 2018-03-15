@@ -135,7 +135,7 @@ typedef struct ExceptionAux {
     int numBreakTargets;	/* The number of [break]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    int *breakTargets;		/* The offsets of the INST_JUMP4 instructions
+    unsigned int *breakTargets;	/* The offsets of the INST_JUMP4 instructions
 				 * issued by the [break]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
@@ -145,7 +145,7 @@ typedef struct ExceptionAux {
     int numContinueTargets;	/* The number of [continue]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    int *continueTargets;	/* The offsets of the INST_JUMP4 instructions
+    unsigned int *continueTargets; /* The offsets of the INST_JUMP4 instructions
 				 * issued by the [continue]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
@@ -821,8 +821,10 @@ typedef struct ByteCode {
 #define INST_LAPPEND_LIST_ARRAY_STK	187
 #define INST_LAPPEND_LIST_STK		188
 
+#define INST_CLOCK_READ			189
+
 /* The last opcode */
-#define LAST_INST_OPCODE		188
+#define LAST_INST_OPCODE		189
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -928,7 +930,7 @@ typedef enum {
 
 typedef struct JumpFixup {
     TclJumpType jumpType;	/* Indicates the kind of jump. */
-    int codeOffset;		/* Offset of the first byte of the one-byte
+    unsigned int codeOffset;	/* Offset of the first byte of the one-byte
 				 * forward jump's code. */
     int cmdIndex;		/* Index of the first command after the one
 				 * for which the jump was emitted. Used to
@@ -995,12 +997,6 @@ typedef struct ForeachInfo {
 				 * LAST FIELD IN THE STRUCTURE! */
 } ForeachInfo;
 
-MODULE_SCOPE const AuxDataType tclForeachInfoType;
-MODULE_SCOPE const AuxDataType tclNewForeachInfoType;
-
-#define FOREACHINFO(envPtr, index) \
-    ((ForeachInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
-
 /*
  * Structure used to hold information about a switch command that is needed
  * during program execution. These structures are stored in CompileEnv and
@@ -1032,11 +1028,6 @@ typedef struct {
 				 * take account of this. MUST BE LAST FIELD IN
 				 * STRUCTURE. */
 } DictUpdateInfo;
-
-MODULE_SCOPE const AuxDataType tclDictUpdateInfoType;
-
-#define DICTUPDATEINFO(envPtr, index) \
-    ((DictUpdateInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
 
 /*
  * ClientData type used by the math operator commands.
@@ -1123,7 +1114,6 @@ MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, unsigned int index);
-MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
@@ -1131,7 +1121,8 @@ MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    int distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
-MODULE_SCOPE void	TclInitAuxDataTypeTable(void);
+MODULE_SCOPE int	TclGetIndexFromToken(Tcl_Token *tokenPtr,
+			    int before, int after, int *indexPtr);
 MODULE_SCOPE void	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
@@ -1221,6 +1212,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define LITERAL_ON_HEAP		0x01
 #define LITERAL_CMD_NAME	0x02
+#define LITERAL_UNSHARED	0x04
 
 /*
  * Form of TclRegisterLiteral with flags == 0. In that case, it is safe to
@@ -1271,10 +1263,10 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define TclCheckStackDepth(depth, envPtr)				\
     do {								\
-	int dd = (depth);						\
-	if (dd != (envPtr)->currStackDepth) {				\
+	int _dd = (depth);						\
+	if (_dd != (envPtr)->currStackDepth) {				\
 	    Tcl_Panic("bad stack depth computations: is %i, should be %i", \
-		    (envPtr)->currStackDepth, dd);		\
+		    (envPtr)->currStackDepth, _dd);		\
 	}								\
     } while (0)
 
@@ -1290,12 +1282,12 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define TclUpdateStackReqs(op, i, envPtr) \
     do {							\
-	int delta = tclInstructionTable[(op)].stackEffect;	\
-	if (delta) {						\
-	    if (delta == INT_MIN) {				\
-		delta = 1 - (i);				\
+	int _delta = tclInstructionTable[(op)].stackEffect;	\
+	if (_delta) {						\
+	    if (_delta == INT_MIN) {				\
+		_delta = 1 - (i);				\
 	    }							\
-	    TclAdjustStackDepth(delta, envPtr);			\
+	    TclAdjustStackDepth(_delta, envPtr);			\
 	}							\
     } while (0)
 
@@ -1409,11 +1401,11 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define TclEmitPush(objIndex, envPtr) \
     do {							 \
-	register int objIndexCopy = (objIndex);			 \
-	if (objIndexCopy <= 255) {				 \
-	    TclEmitInstInt1(INST_PUSH1, objIndexCopy, (envPtr)); \
+	register int _objIndexCopy = (objIndex);			 \
+	if (_objIndexCopy <= 255) {				 \
+	    TclEmitInstInt1(INST_PUSH1, _objIndexCopy, (envPtr)); \
 	} else {						 \
-	    TclEmitInstInt4(INST_PUSH4, objIndexCopy, (envPtr)); \
+	    TclEmitInstInt4(INST_PUSH4, _objIndexCopy, (envPtr)); \
 	}							 \
     } while (0)
 

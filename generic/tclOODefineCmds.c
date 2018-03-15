@@ -47,8 +47,11 @@ struct DeclaredSlot {
 static inline void	BumpGlobalEpoch(Tcl_Interp *interp, Class *classPtr);
 static Tcl_Command	FindCommand(Tcl_Interp *interp, Tcl_Obj *stringObj,
 			    Tcl_Namespace *const namespacePtr);
-static void		GenerateErrorInfo(Tcl_Interp *interp, Object *oPtr,
+static inline void	GenerateErrorInfo(Tcl_Interp *interp, Object *oPtr,
 			    Tcl_Obj *savedNameObj, const char *typeOfSubject);
+static inline int	MagicDefinitionInvoke(Tcl_Interp *interp,
+			    Tcl_Namespace *nsPtr, int cmdIndex,
+			    int objc, Tcl_Obj *const *objv);
 static inline Class *	GetClassInOuterContext(Tcl_Interp *interp,
 			    Tcl_Obj *className, const char *errMsg);
 static inline int	InitDefineContext(Tcl_Interp *interp,
@@ -323,9 +326,8 @@ TclOOObjectSetMixins(
     if (numMixins == 0) {
 	if (oPtr->mixins.num != 0) {
 	    FOREACH(mixinPtr, oPtr->mixins) {
-		if (mixinPtr) {
-		    TclOORemoveFromInstances(oPtr, mixinPtr);
-		}
+		TclOORemoveFromInstances(oPtr, mixinPtr);
+		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
 	    ckfree(oPtr->mixins.list);
 	    oPtr->mixins.num = 0;
@@ -337,6 +339,7 @@ TclOOObjectSetMixins(
 		if (mixinPtr && mixinPtr != oPtr->selfCls) {
 		    TclOORemoveFromInstances(oPtr, mixinPtr);
 		}
+		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
 	    oPtr->mixins.list = ckrealloc(oPtr->mixins.list,
 		    sizeof(Class *) * numMixins);
@@ -349,6 +352,8 @@ TclOOObjectSetMixins(
 	FOREACH(mixinPtr, oPtr->mixins) {
 	    if (mixinPtr != oPtr->selfCls) {
 		TclOOAddToInstances(oPtr, mixinPtr);
+		/* For the new copy created by memcpy */
+		AddRef(mixinPtr->thisPtr);
 	    }
 	}
     }
@@ -378,6 +383,7 @@ TclOOClassSetMixins(
 	if (classPtr->mixins.num != 0) {
 	    FOREACH(mixinPtr, classPtr->mixins) {
 		TclOORemoveFromMixinSubs(classPtr, mixinPtr);
+		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
 	    ckfree(classPtr->mixins.list);
 	    classPtr->mixins.num = 0;
@@ -386,6 +392,7 @@ TclOOClassSetMixins(
 	if (classPtr->mixins.num != 0) {
 	    FOREACH(mixinPtr, classPtr->mixins) {
 		TclOORemoveFromMixinSubs(classPtr, mixinPtr);
+		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
 	    classPtr->mixins.list = ckrealloc(classPtr->mixins.list,
 		    sizeof(Class *) * numMixins);
@@ -396,6 +403,8 @@ TclOOClassSetMixins(
 	memcpy(classPtr->mixins.list, mixins, sizeof(Class *) * numMixins);
 	FOREACH(mixinPtr, classPtr->mixins) {
 	    TclOOAddToMixinSubs(classPtr, mixinPtr);
+	    /* For the new copy created by memcpy */
+	    AddRef(mixinPtr->thisPtr);
 	}
     }
     BumpGlobalEpoch(interp, classPtr);
@@ -755,7 +764,7 @@ GetClassInOuterContext(
  * ----------------------------------------------------------------------
  */
 
-static void
+static inline void
 GenerateErrorInfo(
     Tcl_Interp *interp,		/* Where to store the error info trace. */
     Object *oPtr,		/* What object (or class) was being configured
@@ -787,6 +796,69 @@ GenerateErrorInfo(
 /*
  * ----------------------------------------------------------------------
  *
+ * MagicDefinitionInvoke --
+ *	Part of the implementation of the "oo::define" and "oo::objdefine"
+ *	commands that is used to implement the more-than-one-argument case,
+ *	applying ensemble-like tricks with dispatch so that error messages are
+ *	clearer. Doesn't handle the management of the stack frame.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline int
+MagicDefinitionInvoke(
+    Tcl_Interp *interp,
+    Tcl_Namespace *nsPtr,
+    int cmdIndex,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_Obj *objPtr, *obj2Ptr, **objs;
+    Tcl_Command cmd;
+    int isRoot, dummy, result, offset = cmdIndex + 1;
+
+    /*
+     * More than one argument: fire them through the ensemble processing
+     * engine so that everything appears to be good and proper in error
+     * messages. Note that we cannot just concatenate and send through
+     * Tcl_EvalObjEx, as that doesn't do ensemble processing, and we cannot go
+     * through Tcl_EvalObjv without the extra work to pre-find the command, as
+     * that finds command names in the wrong namespace at the moment. Ugly!
+     */
+
+    isRoot = TclInitRewriteEnsemble(interp, offset, 1, objv);
+
+    /*
+     * Build the list of arguments using a Tcl_Obj as a workspace. See
+     * comments above for why these contortions are necessary.
+     */
+
+    objPtr = Tcl_NewObj();
+    obj2Ptr = Tcl_NewObj();
+    cmd = FindCommand(interp, objv[cmdIndex], nsPtr);
+    if (cmd == NULL) {
+	/* punt this case! */
+	Tcl_AppendObjToObj(obj2Ptr, objv[cmdIndex]);
+    } else {
+	Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
+    }
+    Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
+    /* TODO: overflow? */
+    Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-offset, objv+offset);
+    Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
+
+    result = Tcl_EvalObjv(interp, objc-cmdIndex, objs, TCL_EVAL_INVOKE);
+    if (isRoot) {
+	TclResetRewriteEnsemble(interp, 1);
+    }
+    Tcl_DecrRefCount(objPtr);
+
+    return result;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOODefineObjCmd --
  *	Implementation of the "oo::define" command. Works by effectively doing
  *	the same as 'namespace eval', but with extra magic applied so that the
@@ -805,8 +877,8 @@ TclOODefineObjCmd(
     Tcl_Obj *const *objv)
 {
     Foundation *fPtr = TclOOGetFoundation(interp);
-    int result;
     Object *oPtr;
+    int result;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className arg ?arg ...?");
@@ -846,57 +918,9 @@ TclOODefineObjCmd(
 	}
 	TclDecrRefCount(objNameObj);
     } else {
-	Tcl_Obj *objPtr, *obj2Ptr, **objs;
-	Interp *iPtr = (Interp *) interp;
-	Tcl_Command cmd;
-	int dummy;
-
-	/*
-	 * More than one argument: fire them through the ensemble processing
-	 * engine so that everything appears to be good and proper in error
-	 * messages. Note that we cannot just concatenate and send through
-	 * Tcl_EvalObjEx, as that doesn't do ensemble processing, and we
-	 * cannot go through Tcl_EvalObjv without the extra work to pre-find
-	 * the command, as that finds command names in the wrong namespace at
-	 * the moment. Ugly!
-	 */
-
-	if (iPtr->ensembleRewrite.sourceObjs == NULL) {
-	    iPtr->ensembleRewrite.sourceObjs = objv;
-	    iPtr->ensembleRewrite.numRemovedObjs = 3;
-	    iPtr->ensembleRewrite.numInsertedObjs = 1;
-	} else {
-	    int ni = iPtr->ensembleRewrite.numInsertedObjs;
-	    if (ni < 3) {
-		iPtr->ensembleRewrite.numRemovedObjs += 3 - ni;
-	    } else {
-		iPtr->ensembleRewrite.numInsertedObjs -= 2;
-	    }
-	}
-
-	/*
-	 * Build the list of arguments using a Tcl_Obj as a workspace. See
-	 * comments above for why these contortions are necessary.
-	 */
-
-	objPtr = Tcl_NewObj();
-	obj2Ptr = Tcl_NewObj();
-	cmd = FindCommand(interp, objv[2], fPtr->defineNs);
-	if (cmd == NULL) {
-	    /* punt this case! */
-	    Tcl_AppendObjToObj(obj2Ptr, objv[2]);
-	} else {
-	    Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
-	}
-	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
-	/* TODO: overflow? */
-	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-3, objv+3);
-	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
-
-	result = Tcl_EvalObjv(interp, objc-2, objs, TCL_EVAL_INVOKE);
-	Tcl_DecrRefCount(objPtr);
+	result = MagicDefinitionInvoke(interp, fPtr->defineNs, 2, objc, objv);
     }
-    DelRef(oPtr);
+    TclOODecrRefCount(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -927,8 +951,8 @@ TclOOObjDefObjCmd(
     Tcl_Obj *const *objv)
 {
     Foundation *fPtr = TclOOGetFoundation(interp);
-    int result;
     Object *oPtr;
+    int result;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objectName arg ?arg ...?");
@@ -961,57 +985,9 @@ TclOOObjDefObjCmd(
 	}
 	TclDecrRefCount(objNameObj);
     } else {
-	Tcl_Obj *objPtr, *obj2Ptr, **objs;
-	Interp *iPtr = (Interp *) interp;
-	Tcl_Command cmd;
-	int dummy;
-
-	/*
-	 * More than one argument: fire them through the ensemble processing
-	 * engine so that everything appears to be good and proper in error
-	 * messages. Note that we cannot just concatenate and send through
-	 * Tcl_EvalObjEx, as that doesn't do ensemble processing, and we
-	 * cannot go through Tcl_EvalObjv without the extra work to pre-find
-	 * the command, as that finds command names in the wrong namespace at
-	 * the moment. Ugly!
-	 */
-
-	if (iPtr->ensembleRewrite.sourceObjs == NULL) {
-	    iPtr->ensembleRewrite.sourceObjs = objv;
-	    iPtr->ensembleRewrite.numRemovedObjs = 3;
-	    iPtr->ensembleRewrite.numInsertedObjs = 1;
-	} else {
-	    int ni = iPtr->ensembleRewrite.numInsertedObjs;
-	    if (ni < 3) {
-		iPtr->ensembleRewrite.numRemovedObjs += 3 - ni;
-	    } else {
-		iPtr->ensembleRewrite.numInsertedObjs -= 2;
-	    }
-	}
-
-	/*
-	 * Build the list of arguments using a Tcl_Obj as a workspace. See
-	 * comments above for why these contortions are necessary.
-	 */
-
-	objPtr = Tcl_NewObj();
-	obj2Ptr = Tcl_NewObj();
-	cmd = FindCommand(interp, objv[2], fPtr->objdefNs);
-	if (cmd == NULL) {
-	    /* punt this case! */
-	    Tcl_AppendObjToObj(obj2Ptr, objv[2]);
-	} else {
-	    Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
-	}
-	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
-	/* TODO: overflow? */
-	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-3, objv+3);
-	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
-
-	result = Tcl_EvalObjv(interp, objc-2, objs, TCL_EVAL_INVOKE);
-	Tcl_DecrRefCount(objPtr);
+	result = MagicDefinitionInvoke(interp, fPtr->objdefNs, 2, objc, objv);
     }
-    DelRef(oPtr);
+    TclOODecrRefCount(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -1042,8 +1018,8 @@ TclOODefineSelfObjCmd(
     Tcl_Obj *const *objv)
 {
     Foundation *fPtr = TclOOGetFoundation(interp);
-    int result;
     Object *oPtr;
+    int result;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
@@ -1076,57 +1052,9 @@ TclOODefineSelfObjCmd(
 	}
 	TclDecrRefCount(objNameObj);
     } else {
-	Tcl_Obj *objPtr, *obj2Ptr, **objs;
-	Interp *iPtr = (Interp *) interp;
-	Tcl_Command cmd;
-	int dummy;
-
-	/*
-	 * More than one argument: fire them through the ensemble processing
-	 * engine so that everything appears to be good and proper in error
-	 * messages. Note that we cannot just concatenate and send through
-	 * Tcl_EvalObjEx, as that doesn't do ensemble processing, and we
-	 * cannot go through Tcl_EvalObjv without the extra work to pre-find
-	 * the command, as that finds command names in the wrong namespace at
-	 * the moment. Ugly!
-	 */
-
-	if (iPtr->ensembleRewrite.sourceObjs == NULL) {
-	    iPtr->ensembleRewrite.sourceObjs = objv;
-	    iPtr->ensembleRewrite.numRemovedObjs = 2;
-	    iPtr->ensembleRewrite.numInsertedObjs = 1;
-	} else {
-	    int ni = iPtr->ensembleRewrite.numInsertedObjs;
-	    if (ni < 2) {
-		iPtr->ensembleRewrite.numRemovedObjs += 2 - ni;
-	    } else {
-		iPtr->ensembleRewrite.numInsertedObjs -= 1;
-	    }
-	}
-
-	/*
-	 * Build the list of arguments using a Tcl_Obj as a workspace. See
-	 * comments above for why these contortions are necessary.
-	 */
-
-	objPtr = Tcl_NewObj();
-	obj2Ptr = Tcl_NewObj();
-	cmd = FindCommand(interp, objv[1], fPtr->objdefNs);
-	if (cmd == NULL) {
-	    /* punt this case! */
-	    Tcl_AppendObjToObj(obj2Ptr, objv[1]);
-	} else {
-	    Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
-	}
-	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
-	/* TODO: overflow? */
-	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-2, objv+2);
-	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
-
-	result = Tcl_EvalObjv(interp, objc-1, objs, TCL_EVAL_INVOKE);
-	Tcl_DecrRefCount(objPtr);
+	result = MagicDefinitionInvoke(interp, fPtr->objdefNs, 1, objc, objv);
     }
-    DelRef(oPtr);
+    TclOODecrRefCount(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -1155,7 +1083,6 @@ TclOODefineClassObjCmd(
 {
     Object *oPtr;
     Class *clsPtr;
-    Foundation *fPtr = TclOOGetFoundation(interp);
 
     /*
      * Parse the context to get the object to operate on.
@@ -1192,20 +1119,6 @@ TclOODefineClassObjCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * Apply semantic checks. In particular, classes and non-classes are not
-     * interchangable (too complicated to do the conversion!) so we must
-     * produce an error if any attempt is made to swap from one to the other.
-     */
-
-    if ((oPtr->classPtr==NULL) == TclOOIsReachable(fPtr->classCls, clsPtr)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"may not change a %sclass object into a %sclass object",
-		(oPtr->classPtr==NULL ? "non-" : ""),
-		(oPtr->classPtr==NULL ? "" : "non-")));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "TRANSMUTATION", NULL);
-	return TCL_ERROR;
-    }
 
     /*
      * Set the object's class.
@@ -1213,11 +1126,11 @@ TclOODefineClassObjCmd(
 
     if (oPtr->selfCls != clsPtr) {
 	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
+	TclOODecrRefCount(oPtr->selfCls->thisPtr);
 	oPtr->selfCls = clsPtr;
+	AddRef(oPtr->selfCls->thisPtr);
 	TclOOAddToInstances(oPtr, oPtr->selfCls);
-	if (!(clsPtr->thisPtr->flags & OBJECT_DELETED)) {
-	    oPtr->flags &= ~CLASS_GONE;
-	}
+
 	if (oPtr->classPtr != NULL) {
 	    BumpGlobalEpoch(interp, oPtr->classPtr);
 	} else {
@@ -2100,6 +2013,7 @@ ClassMixinSet(
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
+	    i--;
 	    goto freeAndError;
 	}
 	if (TclOOIsReachable(oPtr->classPtr, mixins[i])) {
@@ -2217,16 +2131,19 @@ ClassSuperSet(
 
     if (superc == 0) {
 	superclasses = ckrealloc(superclasses, sizeof(Class *));
-	superclasses[0] = oPtr->fPtr->objectCls;
-	superc = 1;
 	if (TclOOIsReachable(oPtr->fPtr->classCls, oPtr->classPtr)) {
 	    superclasses[0] = oPtr->fPtr->classCls;
+	} else {
+	    superclasses[0] = oPtr->fPtr->objectCls;
 	}
+	superc = 1;
+	AddRef(superclasses[0]->thisPtr);
     } else {
 	for (i=0 ; i<superc ; i++) {
 	    superclasses[i] = GetClassInOuterContext(interp, superv[i],
 		    "only a class can be a superclass");
 	    if (superclasses[i] == NULL) {
+		i--;
 		goto failedAfterAlloc;
 	    }
 	    for (j=0 ; j<i ; j++) {
@@ -2243,9 +2160,15 @@ ClassSuperSet(
 			"attempt to form circular dependency graph", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OO", "CIRCULARITY", NULL);
 	    failedAfterAlloc:
-		ckfree((char *) superclasses);
+		for (; i > 0; i--) {
+		    TclOODecrRefCount(superclasses[i]->thisPtr);
+		}
+		ckfree(superclasses);
 		return TCL_ERROR;
 	    }
+	    /* Corresponding TclOODecrRefCount() is near the end of this
+	     * function */
+	    AddRef(superclasses[i]->thisPtr);
 	}
     }
 
@@ -2259,6 +2182,7 @@ ClassSuperSet(
     if (oPtr->classPtr->superclasses.num != 0) {
 	FOREACH(superPtr, oPtr->classPtr->superclasses) {
 	    TclOORemoveFromSubclasses(oPtr->classPtr, superPtr);
+	    TclOODecrRefCount(superPtr->thisPtr);
 	}
 	ckfree((char *) oPtr->classPtr->superclasses.list);
     }

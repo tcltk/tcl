@@ -52,32 +52,51 @@ test format-1.7.1 {integer formatting} longIs64bit {
     format "%4x %4x %4x %4x" 6 34 16923 -12 -1
 } {   6   22 421b fffffffffffffff4}
 test format-1.8 {integer formatting} longIs32bit {
-    format "%#x %#X %#X %#x" 6 34 16923 -12 -1
-} {0x6 0X22 0X421B 0xfffffff4}
+    format "%#x %#x %#X %#X %#x" 0 6 34 16923 -12 -1
+} {0x0 0x6 0X22 0X421B 0xfffffff4}
 test format-1.8.1 {integer formatting} longIs64bit {
-    format "%#x %#X %#X %#x" 6 34 16923 -12 -1
-} {0x6 0X22 0X421B 0xfffffffffffffff4}
+    format "%#x %#x %#X %#X %#x" 0 6 34 16923 -12 -1
+} {0x0 0x6 0X22 0X421B 0xfffffffffffffff4}
 test format-1.9 {integer formatting} longIs32bit {
-    format "%#20x %#20x %#20x %#20x" 6 34 16923 -12 -1
-} {                 0x6                 0x22               0x421b           0xfffffff4}
+    format "%#5x %#20x %#20x %#20x %#20x" 0 6 34 16923 -12 -1
+} {  0x0                  0x6                 0x22               0x421b           0xfffffff4}
 test format-1.9.1 {integer formatting} longIs64bit {
-    format "%#20x %#20x %#20x %#20x" 6 34 16923 -12 -1
-} {                 0x6                 0x22               0x421b   0xfffffffffffffff4}
+    format "%#5x %#20x %#20x %#20x %#20x" 0 6 34 16923 -12 -1
+} {  0x0                  0x6                 0x22               0x421b   0xfffffffffffffff4}
 test format-1.10 {integer formatting} longIs32bit {
-    format "%-#20x %-#20x %-#20x %-#20x" 6 34 16923 -12 -1
-} {0x6                  0x22                 0x421b               0xfffffff4          }
+    format "%-#5x %-#20x %-#20x %-#20x %-#20x" 0 6 34 16923 -12 -1
+} {0x0   0x6                  0x22                 0x421b               0xfffffff4          }
 test format-1.10.1 {integer formatting} longIs64bit {
-    format "%-#20x %-#20x %-#20x %-#20x" 6 34 16923 -12 -1
-} {0x6                  0x22                 0x421b               0xfffffffffffffff4  }
+    format "%-#5x %-#20x %-#20x %-#20x %-#20x" 0 6 34 16923 -12 -1
+} {0x0   0x6                  0x22                 0x421b               0xfffffffffffffff4  }
 test format-1.11 {integer formatting} longIs32bit {
-    format "%-#20o %#-20o %#-20o %#-20o" 6 34 16923 -12 -1
-} {06                   042                  041033               037777777764        }
+    format "%-#5o %-#20o %#-20o %#-20o %#-20o" 0 6 34 16923 -12 -1
+} {0     06                   042                  041033               037777777764        }
 test format-1.11.1 {integer formatting} longIs64bit {
-    format "%-#20o %#-20o %#-20o %#-20o" 6 34 16923 -12 -1
-} {06                   042                  041033               01777777777777777777764}
+    format "%-#5o %-#20o %#-20o %#-20o %#-20o" 0 6 34 16923 -12 -1
+} {0     06                   042                  041033               01777777777777777777764}
 test format-1.12 {integer formatting} {
-    format "%b %#b %llb" 5 5 [expr {2**100}]
-} {101 0b101 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}
+    format "%b %#b %#b %llb" 5 0 5 [expr {2**100}]
+} {101 0b0 0b101 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}
+test format-1.13 {integer formatting} longIs32bit {
+    format "%#d %#d %#d %#d %#d" 0 6 34 16923 -12 -1
+} {0 6 34 16923 -12}
+test format-1.13.1 {integer formatting} longIs64bit {
+    format "%#d %#d %#d %#d %#d" 0 6 34 16923 -12 -1
+} {0 6 34 16923 -12}
+test format-1.14 {integer formatting} longIs32bit {
+    format "%#5d %#20d %#20d %#20d %#20d" 0 6 34 16923 -12 -1
+} {    0                    6                   34                16923                  -12}
+test format-1.14.1 {integer formatting} longIs64bit {
+    format "%#5d %#20d %#20d %#20d %#20d" 0 6 34 16923 -12 -1
+} {    0                    6                   34                16923                  -12}
+test format-1.15 {integer formatting} longIs32bit {
+    format "%-#5d %-#20d %-#20d %-#20d %-#20d" 0 6 34 16923 -12 -1
+} {0     6                    34                   16923                -12                 }
+test format-1.15.1 {integer formatting} longIs64bit {
+    format "%-#5d %-#20d %-#20d %-#20d %-#20d" 0 6 34 16923 -12 -1
+} {0     6                    34                   16923                -12                 }
+
 
 test format-2.1 {string formatting} {
     format "%s %s %c %s" abcd {This is a very long test string.} 120 x
@@ -528,6 +547,12 @@ test format-17.3 {testing %ld with non-wide} {wideIs64bit} {
 test format-17.4 {testing %l with non-integer} {
     format %lf 1
 } 1.000000
+test format-17.5 {testing %llu with positive bignum} -body {
+    format %llu 0xabcdef0123456789abcdef
+} -returnCodes 1 -result {unsigned bignum format is invalid}
+test format-17.6 {testing %llu with negative number} -body {
+    format %llu -1
+} -returnCodes 1 -result {unsigned bignum format is invalid}
 
 test format-18.1 {do not demote existing numeric values} {
     set a 0xaaaaaaaa
@@ -564,9 +589,12 @@ test format-19.3 {Bug 2830354} {
 test format-20.1 {Bug 2932421: plain %s caused intrep change of args} -body {
     set x [dict create a b c d]
     format %s $x
-    # After this, obj in $x should be a dict with a non-NULL bytes field
+    # After this, obj in $x should be a dict
+    # We are testing to make sure it has not been shimmered to a
+    # different intrep when that is not necessary.
+    # Whether or not there is a string rep - we should not care!
     tcl::unsupported::representation $x
-} -match glob -result {value is a dict with *, string representation "*"}
+} -match glob -result {value is a dict *}
 
 # cleanup
 catch {unset a}

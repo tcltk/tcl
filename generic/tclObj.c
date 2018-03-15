@@ -320,7 +320,7 @@ const Tcl_HashKeyType tclObjHashKeyType = {
  * does allow them to delete a command when references to it are gone, which
  * is fragile but useful given their somewhat-OO style. Because of this, this
  * structure MUST NOT be const so that the C compiler puts the data in
- * writable memory. [Bug 2558422]
+ * writable memory. [Bug 2558422] [Bug 07d13d99b0a9]
  * TODO: Provide a better API for those extensions so that they can coexist...
  */
 
@@ -663,7 +663,7 @@ TclContinuationsEnterDerived(
      * better way which doesn't shimmer?)
      */
 
-    Tcl_GetStringFromObj(objPtr, &length);
+    TclGetStringFromObj(objPtr, &length);
     end = start + length;       /* First char after the word */
 
     /*
@@ -1989,7 +1989,7 @@ TclSetBooleanFromAny(
   badBoolean:
     if (interp != NULL) {
 	int length;
-	const char *str = Tcl_GetStringFromObj(objPtr, &length);
+	const char *str = TclGetStringFromObj(objPtr, &length);
 	Tcl_Obj *msg;
 
 	TclNewLiteralStringObj(msg, "expected boolean value but got \"");
@@ -2467,23 +2467,26 @@ Tcl_SetIntObj(
  *
  * Tcl_GetIntFromObj --
  *
- *	Attempt to return an int from the Tcl object "objPtr". If the object
- *	is not already an int, an attempt will be made to convert it to one.
+ *	Retrieve the integer value of 'objPtr'.
  *
- *	Integer and long integer objects share the same "integer" type
- *	implementation. We store all integers as longs and Tcl_GetIntFromObj
- *	checks whether the current value of the long can be represented by an
- *	int.
+ * Value
  *
- * Results:
- *	The return value is a standard Tcl object result. If an error occurs
- *	during conversion or if the long integer held by the object can not be
- *	represented by an int, an error message is left in the interpreter's
- *	result unless "interp" is NULL.
+ *	TCL_OK
  *
- * Side effects:
- *	If the object is not already an int, the conversion will free any old
- *	internal representation.
+ *	    Success.
+ *
+ *	TCL_ERROR
+ *	
+ *	    An error occurred during conversion or the integral value can not
+ *	    be represented as an integer (it might be too large). An error
+ *	    message is left in the interpreter's result if 'interp' is not
+ *	    NULL.
+ *
+ * Effect
+ *
+ *	'objPtr' is converted to an integer if necessary if it is not one
+ *	already.  The conversion frees any previously-existing internal
+ *	representation.
  *
  *----------------------------------------------------------------------
  */
@@ -2785,7 +2788,7 @@ Tcl_GetLongFromObj(
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
-                        Tcl_GetString(objPtr)));
+                        TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3086,7 +3089,7 @@ Tcl_GetWideIntFromObj(
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
-                        Tcl_GetString(objPtr)));
+                        TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3253,13 +3256,11 @@ UpdateStringOfBignum(
     if (status != MP_OKAY) {
 	Tcl_Panic("radix size failure in UpdateStringOfBignum");
     }
-    if (size == 3) {
+    if (size < 2) {
 	/*
-	 * mp_radix_size() returns 3 when more than INT_MAX bytes would be
+	 * mp_radix_size() returns < 2 when more than INT_MAX bytes would be
 	 * needed to hold the string rep (because mp_radix_size ignores
-	 * integer overflow issues). When we know the string rep will be more
-	 * than 3, we can conclude the string rep would overflow our string
-	 * length limits.
+	 * integer overflow issues).
 	 *
 	 * Note that so long as we enforce our bignums to the size that fits
 	 * in a packed bignum, this branch will never be taken.
@@ -3417,7 +3418,7 @@ GetBignumFromObj(
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
-                        Tcl_GetString(objPtr)));
+                        TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3967,7 +3968,7 @@ TclCompareObjKeys(
     Tcl_Obj *objPtr1 = keyPtr;
     Tcl_Obj *objPtr2 = (Tcl_Obj *) hPtr->key.oneWordValue;
     register const char *p1, *p2;
-    register int l1, l2;
+    register size_t l1, l2;
 
     /*
      * If the object pointers are the same then they match.
@@ -4176,7 +4177,8 @@ Tcl_GetCommandFromObj(
      * had is invalid one way or another.
      */
 
-    if (SetCmdNameFromAny(interp, objPtr) != TCL_OK) {
+    /* See [] why we cannot call SetCmdNameFromAny() directly here. */
+    if (tclCmdNameType.setFromAnyProc(interp, objPtr) != TCL_OK) {
         return NULL;
     }
     resPtr = objPtr->internalRep.twoPtrValue.ptr1;
@@ -4218,7 +4220,10 @@ TclSetCmdNameObj(
     const char *name;
 
     if (objPtr->typePtr == &tclCmdNameType) {
-	return;
+	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
+	if (resPtr != NULL && resPtr->cmdPtr == cmdPtr) {
+	    return;
+	}
     }
 
     cmdPtr->refCount++;
@@ -4486,6 +4491,24 @@ Tcl_RepresentationCmd(
             objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
 	    objv[1]->refCount, ptrBuffer);
 
+    /*
+     * This is a workaround to silence reports from `make valgrind`
+     * on 64-bit systems.  The problem is that the test suite
+     * includes calling the [represenation] command on values of
+     * &tclDoubleType.  When these values are created, the "doubleValue"
+     * is set, but when the "twoPtrValue" is examined, its "ptr2"
+     * field has never been initialized.  Since [representation]
+     * presents the value of the ptr2 value in its output, valgrind
+     * alerts about the read of uninitialized memory.
+     *
+     * The general problem with [representation], that it can read
+     * and report uninitialized fields, is still present.  This is
+     * just the minimal workaround to silence one particular test.
+     */
+
+    if ((sizeof(void *) > 4) && objv[1]->typePtr == &tclDoubleType) {
+	objv[1]->internalRep.twoPtrValue.ptr2 = NULL;
+    }
     if (objv[1]->typePtr) {
 	sprintf(ptrBuffer, "%p:%p",
 		(void *) objv[1]->internalRep.twoPtrValue.ptr1,
