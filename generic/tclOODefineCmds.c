@@ -124,6 +124,30 @@ static const struct DeclaredSlot slots[] = {
     SLOT("objdefine::variable", ObjVarsGet,     ObjVarsSet),
     {NULL, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}
 };
+
+#define PRIVATE_VARIABLE_PATTERN "%d : %s"
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * IsPrivateDefine --
+ *
+ *	Extracts whether the current context is handling private definitions.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline int
+IsPrivateDefine(
+    Tcl_Interp *interp)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    if (!iPtr->varFramePtr) {
+	return 0;
+    }
+    return iPtr->varFramePtr->isProcCallFrame == PRIVATE_FRAME;
+}
 
 /*
  * ----------------------------------------------------------------------
@@ -426,6 +450,123 @@ TclOOClassSetMixins(
 	}
     }
     BumpGlobalEpoch(interp, classPtr);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InstallStandardVariableMapping, InstallPrivateVariableMapping --
+ *
+ *	Helpers for installing standard and private variable maps.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline void
+InstallStandardVariableMapping(
+    VariableNameList *vnlPtr,
+    int varc,
+    Tcl_Obj *const *varv)
+{
+    Tcl_Obj *variableObj;
+    int i, n, created;
+    Tcl_HashTable uniqueTable;
+
+    for (i=0 ; i<varc ; i++) {
+	Tcl_IncrRefCount(varv[i]);
+    }
+    FOREACH(variableObj, *vnlPtr) {
+	Tcl_DecrRefCount(variableObj);
+    }
+    if (i != varc) {
+	if (varc == 0) {
+	    ckfree(vnlPtr->list);
+	} else if (i) {
+	    vnlPtr->list = ckrealloc(vnlPtr->list, sizeof(Tcl_Obj *) * varc);
+	} else {
+	    vnlPtr->list = ckalloc(sizeof(Tcl_Obj *) * varc);
+	}
+    }
+    vnlPtr->num = 0;
+    if (varc > 0) {
+	Tcl_InitObjHashTable(&uniqueTable);
+	for (i=n=0 ; i<varc ; i++) {
+	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
+	    if (created) {
+		vnlPtr->list[n++] = varv[i];
+	    } else {
+		Tcl_DecrRefCount(varv[i]);
+	    }
+	}
+	vnlPtr->num = n;
+
+	/*
+	 * Shouldn't be necessary, but maintain num/list invariant.
+	 */
+
+	if (n != varc) {
+	    vnlPtr->list = ckrealloc(vnlPtr->list, sizeof(Tcl_Obj *) * n);
+	}
+	Tcl_DeleteHashTable(&uniqueTable);
+    }
+}
+
+static inline void
+InstallPrivateVariableMapping(
+    PrivateVariableList *pvlPtr,
+    int varc,
+    Tcl_Obj *const *varv,
+    int creationEpoch)
+{
+    PrivateVariableMapping *privatePtr;
+    int i, n, created;
+    Tcl_HashTable uniqueTable;
+
+    for (i=0 ; i<varc ; i++) {
+	Tcl_IncrRefCount(varv[i]);
+    }
+    FOREACH_STRUCT(privatePtr, *pvlPtr) {
+	Tcl_DecrRefCount(privatePtr->variableObj);
+	Tcl_DecrRefCount(privatePtr->fullNameObj);
+    }
+    if (i != varc) {
+	if (varc == 0) {
+	    ckfree(pvlPtr->list);
+	} else if (i) {
+	    pvlPtr->list = ckrealloc(pvlPtr->list,
+		    sizeof(PrivateVariableMapping) * varc);
+	} else {
+	    pvlPtr->list = ckalloc(sizeof(PrivateVariableMapping) * varc);
+	}
+    }
+
+    pvlPtr->num = 0;
+    if (varc > 0) {
+	Tcl_InitObjHashTable(&uniqueTable);
+	for (i=n=0 ; i<varc ; i++) {
+	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
+	    if (created) {
+		privatePtr = &(pvlPtr->list[n++]);
+		privatePtr->variableObj = varv[i];
+		privatePtr->fullNameObj = Tcl_ObjPrintf(
+			PRIVATE_VARIABLE_PATTERN,
+			creationEpoch, Tcl_GetString(varv[i]));
+		Tcl_IncrRefCount(privatePtr->fullNameObj);
+	    } else {
+		Tcl_DecrRefCount(varv[i]);
+	    }
+	}
+	pvlPtr->num = n;
+
+	/*
+	 * Shouldn't be necessary, but maintain num/list invariant.
+	 */
+
+	if (n != varc) {
+	    pvlPtr->list = ckrealloc(pvlPtr->list,
+		    sizeof(PrivateVariableMapping) * n);
+	}
+	Tcl_DeleteHashTable(&uniqueTable);
+    }
 }
 
 /*
@@ -1611,6 +1752,9 @@ TclOODefineForwardObjCmd(
     }
     isPublic = Tcl_StringMatch(TclGetString(objv[1]), "[a-z]*")
 	    ? PUBLIC_METHOD : 0;
+    if (IsPrivateDefine(interp)) {
+	isPublic = TRUE_PRIVATE_METHOD;
+    }
 
     /*
      * Create the method structure.
@@ -1670,6 +1814,9 @@ TclOODefineMethodObjCmd(
     }
     isPublic = Tcl_StringMatch(TclGetString(objv[1]), "[a-z]*")
 	    ? PUBLIC_METHOD : 0;
+    if (IsPrivateDefine(interp)) {
+	isPublic = TRUE_PRIVATE_METHOD;
+    }
 
     /*
      * Create the method by using the right back-end API.
@@ -2408,7 +2555,7 @@ ClassVarsGet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    Tcl_Obj *resultObj, *variableObj;
+    Tcl_Obj *resultObj;
     int i;
 
     if (Tcl_ObjectContextSkippedArgs(context) != objc) {
@@ -2426,8 +2573,18 @@ ClassVarsGet(
     }
 
     resultObj = Tcl_NewObj();
-    FOREACH(variableObj, oPtr->classPtr->variables) {
-	Tcl_ListObjAppendElement(NULL, resultObj, variableObj);
+    if (IsPrivateDefine(interp)) {
+	PrivateVariableMapping *privatePtr;
+
+	FOREACH_STRUCT(privatePtr, oPtr->classPtr->privateVariables) {
+	    Tcl_ListObjAppendElement(NULL, resultObj, privatePtr->variableObj);
+	}
+    } else {
+	Tcl_Obj *variableObj;
+
+	FOREACH(variableObj, oPtr->classPtr->variables) {
+	    Tcl_ListObjAppendElement(NULL, resultObj, variableObj);
+	}
     }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
@@ -2443,7 +2600,7 @@ ClassVarsSet(
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     int varc;
-    Tcl_Obj **varv, *variableObj;
+    Tcl_Obj **varv;
     int i;
 
     if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
@@ -2484,49 +2641,11 @@ ClassVarsSet(
 	}
     }
 
-    for (i=0 ; i<varc ; i++) {
-	Tcl_IncrRefCount(varv[i]);
-    }
-    FOREACH(variableObj, oPtr->classPtr->variables) {
-	Tcl_DecrRefCount(variableObj);
-    }
-    if (i != varc) {
-	if (varc == 0) {
-	    ckfree(oPtr->classPtr->variables.list);
-	} else if (i) {
-	    oPtr->classPtr->variables.list = (Tcl_Obj **)
-		    ckrealloc((char *) oPtr->classPtr->variables.list,
-		    sizeof(Tcl_Obj *) * varc);
-	} else {
-	    oPtr->classPtr->variables.list = (Tcl_Obj **)
-		    ckalloc(sizeof(Tcl_Obj *) * varc);
-	}
-    }
-
-    oPtr->classPtr->variables.num = 0;
-    if (varc > 0) {
-	int created, n;
-	Tcl_HashTable uniqueTable;
-
-	Tcl_InitObjHashTable(&uniqueTable);
-	for (i=n=0 ; i<varc ; i++) {
-	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
-	    if (created) {
-		oPtr->classPtr->variables.list[n++] = varv[i];
-	    } else {
-		Tcl_DecrRefCount(varv[i]);
-	    }
-	}
-	oPtr->classPtr->variables.num = n;
-
-	/*
-	 * Shouldn't be necessary, but maintain num/list invariant.
-	 */
-
-	oPtr->classPtr->variables.list = (Tcl_Obj **)
-		ckrealloc((char *) oPtr->classPtr->variables.list,
-		sizeof(Tcl_Obj *) * n);
-	Tcl_DeleteHashTable(&uniqueTable);
+    if (IsPrivateDefine(interp)) {
+	InstallPrivateVariableMapping(&oPtr->classPtr->privateVariables,
+		varc, varv, oPtr->classPtr->thisPtr->creationEpoch);
+    } else {
+	InstallStandardVariableMapping(&oPtr->classPtr->variables, varc, varv);
     }
     return TCL_OK;
 }
@@ -2715,7 +2834,7 @@ ObjVarsGet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    Tcl_Obj *resultObj, *variableObj;
+    Tcl_Obj *resultObj;
     int i;
 
     if (Tcl_ObjectContextSkippedArgs(context) != objc) {
@@ -2727,8 +2846,18 @@ ObjVarsGet(
     }
 
     resultObj = Tcl_NewObj();
-    FOREACH(variableObj, oPtr->variables) {
-	Tcl_ListObjAppendElement(NULL, resultObj, variableObj);
+    if (IsPrivateDefine(interp)) {
+	PrivateVariableMapping *privatePtr;
+
+	FOREACH_STRUCT(privatePtr, oPtr->privateVariables) {
+	    Tcl_ListObjAppendElement(NULL, resultObj, privatePtr->variableObj);
+	}
+    } else {
+	Tcl_Obj *variableObj;
+
+	FOREACH(variableObj, oPtr->variables) {
+	    Tcl_ListObjAppendElement(NULL, resultObj, variableObj);
+	}
     }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
@@ -2744,7 +2873,7 @@ ObjVarsSet(
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     int varc, i;
-    Tcl_Obj **varv, *variableObj;
+    Tcl_Obj **varv;
 
     if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2777,49 +2906,12 @@ ObjVarsSet(
 	    return TCL_ERROR;
 	}
     }
-    for (i=0 ; i<varc ; i++) {
-	Tcl_IncrRefCount(varv[i]);
-    }
 
-    FOREACH(variableObj, oPtr->variables) {
-	Tcl_DecrRefCount(variableObj);
-    }
-    if (i != varc) {
-	if (varc == 0) {
-	    ckfree(oPtr->variables.list);
-	} else if (i) {
-	    oPtr->variables.list = (Tcl_Obj **)
-		    ckrealloc((char *) oPtr->variables.list,
-		    sizeof(Tcl_Obj *) * varc);
-	} else {
-	    oPtr->variables.list = (Tcl_Obj **)
-		    ckalloc(sizeof(Tcl_Obj *) * varc);
-	}
-    }
-    oPtr->variables.num = 0;
-    if (varc > 0) {
-	int created, n;
-	Tcl_HashTable uniqueTable;
-
-	Tcl_InitObjHashTable(&uniqueTable);
-	for (i=n=0 ; i<varc ; i++) {
-	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
-	    if (created) {
-		oPtr->variables.list[n++] = varv[i];
-	    } else {
-		Tcl_DecrRefCount(varv[i]);
-	    }
-	}
-	oPtr->variables.num = n;
-
-	/*
-	 * Shouldn't be necessary, but maintain num/list invariant.
-	 */
-
-	oPtr->variables.list = (Tcl_Obj **)
-		ckrealloc((char *) oPtr->variables.list,
-		sizeof(Tcl_Obj *) * n);
-	Tcl_DeleteHashTable(&uniqueTable);
+    if (IsPrivateDefine(interp)) {
+	InstallPrivateVariableMapping(&oPtr->privateVariables, varc, varv,
+		oPtr->creationEpoch);
+    } else {
+	InstallStandardVariableMapping(&oPtr->variables, varc, varv);
     }
     return TCL_OK;
 }
