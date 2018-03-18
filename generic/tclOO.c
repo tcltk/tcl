@@ -970,6 +970,7 @@ ReleaseClassContents(
     Method *mPtr;
     Foundation *fPtr = oPtr->fPtr;
     Tcl_Obj *variableObj;
+    PrivateVariableMapping *privateVariable;
 
     /*
      * Sanity check!
@@ -1062,6 +1063,14 @@ ReleaseClassContents(
 	ckfree(clsPtr->variables.list);
     }
 
+    FOREACH_STRUCT(privateVariable, clsPtr->privateVariables) {
+	TclDecrRefCount(privateVariable->variableObj);
+	TclDecrRefCount(privateVariable->fullNameObj);
+    }
+    if (i) {
+	ckfree(clsPtr->privateVariables.list);
+    }
+
     if (IsRootClass(oPtr) && !Deleted(fPtr->objectCls->thisPtr)) {
 	Tcl_DeleteCommandFromToken(interp, fPtr->objectCls->thisPtr->command);
     }
@@ -1091,6 +1100,7 @@ ObjectNamespaceDeleted(
     Class *mixinPtr;
     Method *mPtr;
     Tcl_Obj *filterObj, *variableObj;
+    PrivateVariableMapping *privateVariable;
     Tcl_Interp *interp = oPtr->fPtr->interp;
     int i;
 
@@ -1208,6 +1218,14 @@ ObjectNamespaceDeleted(
     }
     if (i) {
 	ckfree(oPtr->variables.list);
+    }
+
+    FOREACH_STRUCT(privateVariable, oPtr->privateVariables) {
+	TclDecrRefCount(privateVariable->variableObj);
+	TclDecrRefCount(privateVariable->fullNameObj);
+    }
+    if (i) {
+	ckfree(oPtr->privateVariables.list);
     }
 
     if (oPtr->chainCache) {

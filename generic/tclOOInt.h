@@ -125,6 +125,18 @@ typedef struct ForwardMethod {
 } ForwardMethod;
 
 /*
+ * Structure used in private variable mappings. Describes the mapping of a
+ * single variable from the user's local name to the system's storage name.
+ * [TIP #500]
+ */
+
+typedef struct {
+    Tcl_Obj *variableObj;	/* Name used within methods. This is the part
+				 * that is properly under user control. */
+    Tcl_Obj *fullNameObj;	/* Name used at the instance namespace level. */
+} PrivateVariableMapping;
+
+/*
  * Helper definitions that declare a "list" array. The two varieties are
  * either optimized for simplicity (in the case that the whole array is
  * typically assigned at once) or efficiency (in the case that the array is
@@ -140,6 +152,13 @@ typedef struct ForwardMethod {
     struct { int num; listType_t *list; }
 #define LIST_DYNAMIC(listType_t) \
     struct { int num, size; listType_t *list; }
+
+/*
+ * These types are needed in function arguments.
+ */
+
+typedef LIST_STATIC(Tcl_Obj *) VariableNameList;
+typedef LIST_STATIC(PrivateVariableMapping) PrivateVariableList;
 
 /*
  * Now, the definition of what an object actually is.
@@ -186,7 +205,10 @@ typedef struct Object {
     Tcl_ObjectMapMethodNameProc *mapMethodNameProc;
 				/* Function to allow remapping of method
 				 * names. For itcl-ng. */
-    LIST_STATIC(Tcl_Obj *) variables;
+    VariableNameList variables;
+    PrivateVariableList privateVariables;
+				/* Configurations for the variable resolver
+				 * used inside methods. */
 } Object;
 
 #define OBJECT_DELETED	1	/* Flag to say that an object has been
@@ -268,7 +290,10 @@ typedef struct Class {
 				 * object doesn't override with its own mixins
 				 * (and filters and method implementations for
 				 * when getting method chains). */
-    LIST_STATIC(Tcl_Obj *) variables;
+    VariableNameList variables;
+    PrivateVariableList privateVariables;
+				/* Configurations for the variable resolver
+				 * used inside methods. */
 } Class;
 
 /*
@@ -374,6 +399,10 @@ typedef struct CallContext {
 #define OO_UNKNOWN_METHOD 0x04	/* This is an unknown method. */
 #define CONSTRUCTOR	  0x08	/* This is a constructor. */
 #define DESTRUCTOR	  0x10	/* This is a destructor. */
+#define TRUE_PRIVATE_METHOD 0x20
+				/* This is a private method only accessible
+				 * from other methods defined on this class
+				 * or instance. [TIP #500] */
 
 /*
  * Structure containing definition information about basic class methods.
@@ -564,10 +593,21 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
     } else if (var = (ary).list[i], 1) 
 
 /*
+ * A variation where the array is an array of structs. There's no issue with
+ * possible NULLs; every element of the array will be iterated over and the
+ * varable set to a pointer to each of those elements in turn.
+ * REQUIRES DECLARATION: int i;
+ */
+
+#define FOREACH_STRUCT(var,ary) \
+    for(i=0 ; var=&((ary).list[i]), i<(ary).num; i++)
+
+/*
  * Convenience macros for iterating through hash tables. FOREACH_HASH_DECLS
  * sets up the declarations needed for the main macro, FOREACH_HASH, which
  * does the actual iteration. FOREACH_HASH_VALUE is a restricted version that
  * only iterates over values.
+ * REQUIRES DECLARATION: FOREACH_HASH_DECLS;
  */
 
 #define FOREACH_HASH_DECLS \
