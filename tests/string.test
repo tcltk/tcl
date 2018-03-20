@@ -20,6 +20,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
+# Helper commands to test various optimizations, code paths, and special cases.
+proc makeByteArray {s} {binary format a* $s}
+
 # Some tests require the testobj command
 
 testConstraint testobj [expr {[info commands testobj] != {}}]
@@ -1396,6 +1399,9 @@ test string-14.18 {string replace} {
 test string-14.19 {string replace} {
     string replace {} -1 0 A
 } A
+test string-14.20 {string replace} {
+    string replace [makeByteArray abcdefghijklmnop] end-10 end-2 [makeByteArray NEW]
+} abcdeNEWop
 
 test string-15.1 {string tolower too few args} {
     list [catch {string tolower} msg] $msg
