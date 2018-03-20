@@ -3603,6 +3603,7 @@ TclStringReplace(
 	    }
 	    result = Tcl_NewByteArrayObj(NULL, numBytes - count + newBytes);
 								/* PANIC? */
+	    Tcl_SetByteArrayLength(result, 0);
 	    TclAppendBytesToByteArray(result, bytes, first);	
 	    TclAppendBytesToByteArray(result, iBytes, newBytes);
 	    TclAppendBytesToByteArray(result, bytes + first + count,
