@@ -1452,6 +1452,63 @@ StringIndexCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * StringInsertCmd --
+ *
+ *	This procedure is invoked to process the "string insert" Tcl command.
+ *	See the user documentation for details on what it does. Note that this
+ *	command only functions correctly on properly formed Tcl UTF strings.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+StringInsertCmd(
+    ClientData dummy,		/* Not used */
+    Tcl_Interp *interp,		/* Current interpreter */
+    int objc,			/* Number of arguments */
+    Tcl_Obj *const objv[])	/* Argument objects */
+{
+    int length;			/* String length */
+    int index;			/* Insert index */
+    Tcl_Obj *outObj;		/* Output object */
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string index insertString");
+	return TCL_ERROR;
+    }
+
+    length = Tcl_GetCharLength(objv[1]);
+    if (TclGetIntForIndexM(interp, objv[2], length, &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (index < 0) {
+	index = 0;
+    }
+    if (index > length) {
+	index = length;
+    }
+
+    outObj = TclStringReplace(interp, objv[1], index, 0, objv[3],
+	    TCL_STRING_IN_PLACE);
+
+    if (outObj != NULL) {
+	Tcl_SetObjResult(interp, outObj);
+	return TCL_OK;
+    }
+
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * StringIsCmd --
  *
  *	This procedure is invoked to process the "string is" Tcl command. See
@@ -3351,6 +3408,7 @@ TclInitStringCmd(
 	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},
 	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, NULL, 0},
 	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL, NULL, 0},
+	{"insert",	StringInsertCmd, NULL, NULL, NULL, 0},
 	{"is",		StringIsCmd,	TclCompileStringIsCmd, NULL, NULL, 0},
 	{"last",	StringLastCmd,	TclCompileStringLastCmd, NULL, NULL, 0},
 	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL, 0},
