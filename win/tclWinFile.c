@@ -1586,7 +1586,7 @@ NativeAccess(
 	 * writable, full stop.	 For directories, the read-only bit is
 	 * (mostly) ignored by Windows, so we can't ascertain anything about
 	 * directory access from the attrib data.  However, if we have the
-	 * advanced 'getNamedSecurityInfoProc', then more robust ACL checks
+	 * advanced 'getFileSecurityProc', then more robust ACL checks
 	 * will be done below.
 	 */
 	if ((mode & W_OK) && (attr & FILE_ATTRIBUTE_READONLY)) {
