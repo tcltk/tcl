@@ -1576,33 +1576,51 @@ NativeAccess(
 	return 0;
     }
 
-    if ((mode & W_OK)
-	&& (attr & FILE_ATTRIBUTE_READONLY)
-	&& !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+    /* 
+     * If it's not a directory (assume file), do several fast checks:
+     */
+    if (!(attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	/*
-	 * The attributes say the file is not writable.	 If the file is a
+	 * If the attributes say this is not writable at all.  The file is a
 	 * regular file (i.e., not a directory), then the file is not
 	 * writable, full stop.	 For directories, the read-only bit is
 	 * (mostly) ignored by Windows, so we can't ascertain anything about
 	 * directory access from the attrib data.  However, if we have the
-	 * advanced 'getFileSecurityProc', then more robust ACL checks
+	 * advanced 'getNamedSecurityInfoProc', then more robust ACL checks
 	 * will be done below.
 	 */
-
-	Tcl_SetErrno(EACCES);
-	return -1;
-    }
-
-    if (mode & X_OK) {
-	if (!(attr & FILE_ATTRIBUTE_DIRECTORY) && !NativeIsExec(nativePath)) {
-	    /*
-	     * It's not a directory and doesn't have the correct extension.
-	     * Therefore it can't be executable
-	     */
-
+	if ((mode & W_OK) && (attr & FILE_ATTRIBUTE_READONLY)) {
 	    Tcl_SetErrno(EACCES);
 	    return -1;
 	}
+
+	/* If doesn't have the correct extension, it can't be executable */
+	if ((mode & X_OK) && !NativeIsExec(nativePath)) {
+	    Tcl_SetErrno(EACCES);
+	    return -1;
+	}
+	/* Special case for read/write/executable check on file */
+	if ((mode & (R_OK|W_OK|X_OK)) && !(mode & ~(R_OK|W_OK|X_OK))) {
+	    DWORD mask = 0;
+	    HANDLE hFile;
+	    if (mode & R_OK) { mask |= GENERIC_READ;  }
+	    if (mode & W_OK) { mask |= GENERIC_WRITE; }
+	    if (mode & X_OK) { mask |= GENERIC_EXECUTE; }
+
+	    hFile = (tclWinProcs->createFileProc)(nativePath, mask,
+		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+		OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, NULL);
+	    if (hFile != INVALID_HANDLE_VALUE) {
+		CloseHandle(hFile);
+		return 0;
+	    }
+	    /* fast exit if access was denied */
+	    if (GetLastError() == ERROR_ACCESS_DENIED) {
+		Tcl_SetErrno(EACCES);
+		return -1;
+	    }
+	}
+	/* We cannnot verify the access fast, check it below using security info. */
     }
 
     /*
@@ -1811,9 +1829,12 @@ NativeIsExec(
 	 * Use wide-char case-insensitive comparison
 	 */
 
-	if ((_wcsicmp(path+len-3, L"exe") == 0)
-		|| (_wcsicmp(path+len-3, L"com") == 0)
-		|| (_wcsicmp(path+len-3, L"bat") == 0)) {
+	path += len-3;
+	if ((_wcsicmp(path, L"exe") == 0)
+		|| (_wcsicmp(path, L"com") == 0)
+		|| (_wcsicmp(path, L"cmd") == 0)
+		|| (_wcsicmp(path, L"ps1") == 0)
+		|| (_wcsicmp(path, L"bat") == 0)) {
 	    return 1;
 	}
     } else {
