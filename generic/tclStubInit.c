@@ -335,10 +335,6 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
    return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
 }
 #define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcasecmp
-static int formatInt(char *buffer, int n){
-   return TclFormatInt(buffer, (long)n);
-}
-#define TclFormatInt (int(*)(char *, long))formatInt
 
 #endif /* TCL_WIDE_INT_IS_LONG */
 
