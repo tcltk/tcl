@@ -1478,6 +1478,7 @@ TclCompileLreplaceCmd(
     if (parsePtr->numWords < 4) {
 	return TCL_ERROR;
     }
+return TCL_ERROR;
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     tokenPtr = TokenAfter(listTokenPtr);
