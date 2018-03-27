@@ -24,6 +24,7 @@ namespace eval http {
 	    -proxyport {}
 	    -proxyfilter http::ProxyRequired
 	    -urlencoding utf-8
+	    -zip 1
 	}
 	# We need a useragent string of this style or various servers will
 	# refuse to send us compressed content even when we ask for it. This
@@ -787,7 +788,10 @@ proc http::Connected {token proto phost srvurl} {
 	if {!$accept_types_seen} {
 	    puts $sock "Accept: $state(accept-types)"
 	}
-	if {!$accept_encoding_seen && ![info exists state(-handler)]} {
+	if {    (!$accept_encoding_seen)
+	     && (![info exists state(-handler)])
+	     && $http(-zip)
+	} {
 	    puts $sock "Accept-Encoding: gzip,deflate,compress"
 	}
 	if {$isQueryChannel && ($state(querylength) == 0)} {
