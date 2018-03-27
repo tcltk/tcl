@@ -749,7 +749,9 @@ proc http::Connected {token proto phost srvurl} {
 	    puts $sock "Host: $host:$port"
 	}
 	puts $sock "User-Agent: $http(-useragent)"
-	if {($state(-protocol) == 1.0) && $state(-keepalive)} {
+	if {($state(-protocol) >= 1.0) && $state(-keepalive)} {
+	    # Send this header, because a 1.1 server is not compelled to treat
+	    # this as the default.
 	    puts $sock "Connection: keep-alive"
 	}
 	if {($state(-protocol) > 1.0) && !$state(-keepalive)} {
