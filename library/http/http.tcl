@@ -262,13 +262,13 @@ proc ::http::CloseSocket {s {token {}}} {
     if {$connId eq {} || ![info exists socketMapping($connId)]} {
 	Log "Closing socket $s (no connection info)"
 	if {[catch {close $s} err]} {
-	    Log "Error: $err"
+	    Log "Error closing socket: $err"
 	}
     } else {
 	if {[info exists socketMapping($connId)]} {
 	    Log "Closing connection $connId (sock $socketMapping($connId))"
 	    if {[catch {close $socketMapping($connId)} err]} {
-		Log "Error: $err"
+		Log "Error closing connection: $err"
 	    }
 	    unset socketMapping($connId)
 	} else {
@@ -595,11 +595,12 @@ proc http::geturl {url args} {
 	variable socketMapping
 	if {[info exists socketMapping($state(socketinfo))]} {
 	    if {[catch {fconfigure $socketMapping($state(socketinfo))}]} {
-		Log "WARNING: socket for $state(socketinfo) was closed"
+		Log "WARNING: socket for $state(socketinfo) was closed\
+			 - token $token"
 		unset socketMapping($state(socketinfo))
 	    } else {
 		set sock $socketMapping($state(socketinfo))
-		Log "reusing socket $sock for $state(socketinfo)"
+		Log "reusing socket $sock for $state(socketinfo) - token $token"
 		catch {fileevent $sock writable {}}
 		catch {fileevent $sock readable {}}
 	    }
@@ -625,7 +626,7 @@ proc http::geturl {url args} {
 	}
     }
     set state(sock) $sock
-    Log "Using $sock for $state(socketinfo)" \
+    Log "Using $sock for $state(socketinfo) - token $token" \
 	[expr {$state(-keepalive)?"keepalive":""}]
     if {$state(-keepalive)} {
 	set socketMapping($state(socketinfo)) $sock
@@ -1021,7 +1022,8 @@ proc http::Event {sock token} {
 	Log "Event $sock with invalid token '$token' - remote close?"
 	if {![eof $sock]} {
 	    if {[set d [read $sock]] ne ""} {
-		Log "WARNING: additional data left on closed socket"
+		Log "WARNING: additional data left on closed socket\
+			- token $token"
 	    }
 	}
 	CloseSocket $sock
@@ -1078,7 +1080,8 @@ proc http::Event {sock token} {
 		 && (![info exists state(transfer)])
 		 && ($state(totalsize) == 0)
 	    } {
-		Log "body size is 0 and no events likely - complete."
+		set msg {body size is 0 and no events likely - complete}
+		Log "$msg - token $token"
 		Eot $token
 		return
 	    }
@@ -1154,7 +1157,7 @@ proc http::Event {sock token} {
 		    Log "trailer of $n bytes after final chunk - token $token"
 		    append state(transfer_final) $line
 		} else {
-		    Log "final chunk part"
+		    Log "final chunk part - token $token"
 		    Eot $token
 		}
 	    } elseif {
@@ -1177,7 +1180,8 @@ proc http::Event {sock token} {
 			}
 			if {$size != [string length $chunk]} {
 			    Log "WARNING: mis-sized chunk:\
-				was [string length $chunk], should be $size"
+				was [string length $chunk], should be $size -\
+				token $token"
 			}
 			getTextLine $sock
 		    } else {
@@ -1186,7 +1190,9 @@ proc http::Event {sock token} {
 		    }
 		}
 	    } else {
-		#Log "read non-chunk $state(currentsize) of $state(totalsize)"
+		set c $state(currentsize)
+		set t $state(totalsize)
+		##Log non-chunk currentsize $c of totalsize $t - token $token
 		set block [read $sock $state(-blocksize)]
 		set n [string length $block]
 		if {$n >= 0} {
@@ -1329,7 +1335,7 @@ proc http::CopyChunk {token chunk} {
 		      $token $state(totalsize) $state(currentsize)]
 	}
     } else {
-	Log "CopyChunk Finish $token"
+	Log "CopyChunk Finish - token $token"
 	if {[info exists state(zlib)]} {
 	    set excess ""
 	    foreach stream $state(zlib) {
@@ -1411,7 +1417,7 @@ proc http::Eot {token {force 0}} {
 		set state(body) [zlib $coding $state(body)]
 	    }
 	} err]} {
-	    Log "error doing decompression: $err"
+	    Log "error doing decompression for token $token: $err"
 	    return [Finish $token $err]
 	}
 
