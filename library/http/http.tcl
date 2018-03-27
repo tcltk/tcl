@@ -60,14 +60,14 @@ namespace eval http {
 	variable formMap [array get map]
 
 	# Create a map for HTTP/1.1 open sockets
-	variable socketmap
-	if {[info exists socketmap]} {
+	variable socketMapping
+	if {[info exists socketMapping]} {
 	    # Close but don't remove open sockets on re-init
-	    foreach {url sock} [array get socketmap] {
+	    foreach {url sock} [array get socketMapping] {
 		catch {close $sock}
 	    }
 	}
-	array set socketmap {}
+	array set socketMapping {}
 	return
     }
     init
@@ -238,37 +238,37 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 #	the second section.
 
 proc ::http::CloseSocket {s {token {}}} {
-    variable socketmap
+    variable socketMapping
     catch {fileevent $s readable {}}
-    set conn_id {}
+    set connId {}
     if {$token ne ""} {
 	variable $token
 	upvar 0 $token state
 	if {[info exists state(socketinfo)]} {
-	    set conn_id $state(socketinfo)
+	    set connId $state(socketinfo)
 	}
     } else {
-	set map [array get socketmap]
+	set map [array get socketMapping]
 	set ndx [lsearch -exact $map $s]
 	if {$ndx != -1} {
 	    incr ndx -1
-	    set conn_id [lindex $map $ndx]
+	    set connId [lindex $map $ndx]
 	}
     }
-    if {$conn_id eq {} || ![info exists socketmap($conn_id)]} {
+    if {$connId eq {} || ![info exists socketMapping($connId)]} {
 	Log "Closing socket $s (no connection info)"
 	if {[catch {close $s} err]} {
 	    Log "Error: $err"
 	}
     } else {
-	if {[info exists socketmap($conn_id)]} {
-	    Log "Closing connection $conn_id (sock $socketmap($conn_id))"
-	    if {[catch {close $socketmap($conn_id)} err]} {
+	if {[info exists socketMapping($connId)]} {
+	    Log "Closing connection $connId (sock $socketMapping($connId))"
+	    if {[catch {close $socketMapping($connId)} err]} {
 		Log "Error: $err"
 	    }
-	    unset socketmap($conn_id)
+	    unset socketMapping($connId)
 	} else {
-	    Log "Cannot close connection $conn_id - no socket in socket map"
+	    Log "Cannot close connection $connId - no socket in socket map"
 	}
     }
     return
@@ -588,13 +588,13 @@ proc http::geturl {url args} {
 
     # See if we are supposed to use a previously opened channel.
     if {$state(-keepalive)} {
-	variable socketmap
-	if {[info exists socketmap($state(socketinfo))]} {
-	    if {[catch {fconfigure $socketmap($state(socketinfo))}]} {
+	variable socketMapping
+	if {[info exists socketMapping($state(socketinfo))]} {
+	    if {[catch {fconfigure $socketMapping($state(socketinfo))}]} {
 		Log "WARNING: socket for $state(socketinfo) was closed"
-		unset socketmap($state(socketinfo))
+		unset socketMapping($state(socketinfo))
 	    } else {
-		set sock $socketmap($state(socketinfo))
+		set sock $socketMapping($state(socketinfo))
 		Log "reusing socket $sock for $state(socketinfo)"
 		catch {fileevent $sock writable {}}
 		catch {fileevent $sock readable {}}
@@ -624,7 +624,7 @@ proc http::geturl {url args} {
     Log "Using $sock for $state(socketinfo)" \
 	[expr {$state(-keepalive)?"keepalive":""}]
     if {$state(-keepalive)} {
-	set socketmap($state(socketinfo)) $sock
+	set socketMapping($state(socketinfo)) $sock
     }
 
     if {![info exists phost]} {
@@ -1024,15 +1024,18 @@ proc http::Event {sock token} {
 	return
     }
     if {$state(state) eq "connecting"} {
-	if {[catch {gets $sock state(http)} n]} {
-	    return [Finish $token $n]
-	} elseif {$n >= 0} {
+	if {[catch {gets $sock state(http)} nsl]} {
+	    return [Finish $token $nsl]
+	} elseif {$nsl >= 0} {
 	    set state(state) "header"
+	} else {
+	    # nsl is -1 so either fblocked (OK) or eof.
+	    # Continue. Any eof is processed at the end of this proc.
 	}
     } elseif {$state(state) eq "header"} {
-	if {[catch {gets $sock line} n]} {
-	    return [Finish $token $n]
-	} elseif {$n == 0} {
+	if {[catch {gets $sock line} nhl]} {
+	    return [Finish $token $nhl]
+	} elseif {$nhl == 0} {
 	    # We have now read all headers
 	    # We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
 	    if {    ($state(http) == "")
@@ -1046,7 +1049,7 @@ proc http::Event {sock token} {
 
 	    # If doing a HEAD, then we won't get any body
 	    if {$state(-validate)} {
-		Eof $token
+		Eot $token
 		return
 	    }
 
@@ -1072,7 +1075,7 @@ proc http::Event {sock token} {
 		 && ($state(totalsize) == 0)
 	    } {
 		Log "body size is 0 and no events likely - complete."
-		Eof $token
+		Eot $token
 		return
 	    }
 
@@ -1096,7 +1099,7 @@ proc http::Event {sock token} {
 		    return
 		}
 	    }
-	} elseif {$n > 0} {
+	} elseif {$nhl > 0} {
 	    # Process header lines
 	    if {[regexp -nocase {^([^:]+):(.+)$} $line x key value]} {
 		switch -- [string tolower $key] {
@@ -1144,17 +1147,17 @@ proc http::Event {sock token} {
 		    append state(transfer_final) $line
 		} else {
 		    Log "final chunk part"
-		    Eof $token
+		    Eot $token
 		}
 	    } elseif {
 		[info exists state(transfer)]
 		&& $state(transfer) eq "chunked"
 	    } {
 		set size 0
-		set chunk [getTextLine $sock]
-		set n [string length $chunk]
-		if {[string trim $chunk] ne ""} {
-		    scan $chunk %x size
+		set hexLenChunk [getTextLine $sock]
+		set ntl [string length $hexLenChunk]
+		if {[string trim $hexLenChunk] ne ""} {
+		    scan $hexLenChunk %x size
 		    if {$size != 0} {
 			set bl [fconfigure $sock -blocking]
 			fconfigure $sock -blocking 1
@@ -1170,6 +1173,7 @@ proc http::Event {sock token} {
 			}
 			getTextLine $sock
 		    } else {
+			set n 0
 			set state(transfer_final) {}
 		    }
 		}
@@ -1190,7 +1194,7 @@ proc http::Event {sock token} {
 		    ($state(totalsize) > 0)
 		    && ($state(currentsize) >= $state(totalsize))
 		} {
-		    Eof $token
+		    Eot $token
 		}
 	    }
 	} err]} {
@@ -1203,11 +1207,11 @@ proc http::Event {sock token} {
 	}
     }
 
-    # catch as an Eof above may have closed the socket already
+    # catch as an Eot above may have closed the socket already
     if {![catch {eof $sock} eof] && $eof} {
 	if {[info exists $token]} {
 	    set state(connection) close
-	    Eof $token
+	    Eot $token
 	} else {
 	    # open connection closed on a token that has been cleaned up.
 	    CloseSocket $sock
@@ -1326,7 +1330,7 @@ proc http::CopyChunk {token chunk} {
 	    foreach stream $state(zlib) { $stream close }
 	    unset state(zlib)
 	}
-	Eof $token ;# FIX ME: pipelining.
+	Eot $token ;# FIX ME: pipelining.
     }
     return
 }
@@ -1355,24 +1359,34 @@ proc http::CopyDone {token count {error {}}} {
     if {[string length $error]} {
 	Finish $token $error
     } elseif {[catch {eof $sock} iseof] || $iseof} {
-	Eof $token
+	Eot $token
     } else {
 	CopyStart $sock $token 0
     }
     return
 }
 
-# http::Eof
+# http::Eot
 #
-#	Handle eof on the socket
+#	Called when either:
+#	a. An eof condition is detected on the socket.
+#	b. The client decides that the response is complete.
+#	c. The client detects an inconsistency and aborts the transaction.
+#
+#	Does:
+#	1. Set state(status)
+#	2. Reverse any Content-Encoding
+#	3. Convert charset encoding and line ends if necessary
+#	4. Call http::Finish
 #
 # Arguments
 #	token	The token returned from http::geturl
+#	force	optional, has no effect
 #
 # Side Effects
 #	Clean up the socket
 
-proc http::Eof {token {force 0}} {
+proc http::Eot {token {force 0}} {
     variable $token
     upvar 0 $token state
     if {$state(state) eq "header"} {
