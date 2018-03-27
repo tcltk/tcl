@@ -216,6 +216,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
     }
     if {  ($state(status) eq "timeout")
        || ($state(status) eq "error")
+       || ($state(status) eq "eof")
        || ([info exists state(-keepalive)] && !$state(-keepalive))
        || ([info exists state(connection)] && ($state(connection) eq "close"))
     } {
@@ -1023,6 +1024,8 @@ proc http::Event {sock token} {
     variable $token
     upvar 0 $token state
 
+    ##Log Event call - token $token
+
     if {![info exists state]} {
 	Log "Event $sock with invalid token '$token' - remote close?"
 	if {![eof $sock]} {
@@ -1035,20 +1038,25 @@ proc http::Event {sock token} {
 	return
     }
     if {$state(state) eq "connecting"} {
+	##Log - connecting - token $token
 	if {[catch {gets $sock state(http)} nsl]} {
 	    Finish $token $nsl
 	    return
 	} elseif {$nsl >= 0} {
+	    ##Log - connecting 1 - token $token
 	    set state(state) "header"
 	} else {
+	    ##Log - connecting 2 - token $token
 	    # nsl is -1 so either fblocked (OK) or eof.
 	    # Continue. Any eof is processed at the end of this proc.
 	}
     } elseif {$state(state) eq "header"} {
 	if {[catch {gets $sock line} nhl]} {
+	    ##Log header failed - token $token
 	    Finish $token $nhl
 	    return
 	} elseif {$nhl == 0} {
+	    ##Log header done - token $token
 	    # We have now read all headers
 	    # We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
 	    if {    ($state(http) == "")
@@ -1062,6 +1070,7 @@ proc http::Event {sock token} {
 
 	    # If doing a HEAD, then we won't get any body
 	    if {$state(-validate)} {
+		set state(state) complete
 		Eot $token
 		return
 	    }
@@ -1089,6 +1098,7 @@ proc http::Event {sock token} {
 	    } {
 		set msg {body size is 0 and no events likely - complete}
 		Log "$msg - token $token"
+		set state(state) complete
 		Eot $token
 		return
 	    }
@@ -1115,6 +1125,7 @@ proc http::Event {sock token} {
 	    }
 	} elseif {$nhl > 0} {
 	    # Process header lines.
+	    ##Log header - token $token - $line
 	    if {[regexp -nocase {^([^:]+):(.+)$} $line x key value]} {
 		switch -- [string tolower $key] {
 		    content-type {
@@ -1150,12 +1161,46 @@ proc http::Event {sock token} {
 	}
     } else {
 	# Now reading body
+	##Log body - token $token
 	if {[catch {
 	    if {[info exists state(-handler)]} {
 		set n [eval $state(-handler) [list $sock $token]]
+		##Log handler $n - token $token
+		# N.B. the protocol has been set to 1.0 because the -handler
+		# logic is not expected to handle chunked encoding.
+		# FIXME allow -handler with 1.1 on dechunked stacked channel.
+		if {$state(totalsize) == 0} {
+		    # We know the transfer is complete only when the server
+		    # closes the connection - i.e. eof is not an error.
+		    set state(state) complete
+		}
+		if {![string is integer -strict $n]} {
+		    if 1 {
+			# Do not tolerate bad -handler - fail with error status.
+			set msg {the -handler command for http::geturl must\
+				return an integer (the number of bytes read)}
+			Eot $token $msg
+		    } else {
+			# Tolerate the bad -handler, and continue.  The penalty:
+			# (a) Because the handler returns nonsense, we know the
+			#     transfer is complete only when the server closes
+			#     the connection - i.e. eof is not an error.
+			# (b) http::size will not be accurate.
+			# (c) The transaction is already downgraded to 1.0 to
+			#     avoid chunked transfer encoding.  It MUST also be
+			#     forced to "Connection: close" or the HTTP/1.0
+			#     equivalent; or it MUST fail (as above) if the
+			#     server sends "Connection: keep-alive" or the
+			#     HTTP/1.0 equivalent.
+			set n 0
+			set state(state) complete
+		    }
+		} else {
+		}
 	    } elseif {[info exists state(transfer_final)]} {
 		set line [getTextLine $sock]
 		set n [string length $line]
+		set state(state) complete
 		if {$n > 0} {
 		    # - HTTP trailers (late response headers) are permitted by
 		    #   Chunked Transfer-Encoding, and can be safely ignored.
@@ -1163,20 +1208,22 @@ proc http::Event {sock token} {
 		    #   response body.
 		    Log "trailer of $n bytes after final chunk - token $token"
 		    append state(transfer_final) $line
+		    set n 0
 		} else {
 		    Log "final chunk part - token $token"
 		    Eot $token
 		}
-	    } elseif {
-		[info exists state(transfer)]
-		&& $state(transfer) eq "chunked"
+	    } elseif {    [info exists state(transfer)]
+		       && ($state(transfer) eq "chunked")
 	    } {
+		##Log chunked - token $token
 		set size 0
 		set hexLenChunk [getTextLine $sock]
-		set ntl [string length $hexLenChunk]
+		#set ntl [string length $hexLenChunk]
 		if {[string trim $hexLenChunk] ne ""} {
 		    scan $hexLenChunk %x size
 		    if {$size != 0} {
+			##Log chunk-measure $size - token $token
 			set bl [fconfigure $sock -blocking]
 			fconfigure $sock -blocking 1
 			set chunk [read $sock $size]
@@ -1184,19 +1231,39 @@ proc http::Event {sock token} {
 			set n [string length $chunk]
 			if {$n >= 0} {
 			    append state(body) $chunk
+			    incr state(log_size) [string length $chunk]
+			    ##Log chunk $n cumul $state(log_size) - token $token
 			}
 			if {$size != [string length $chunk]} {
 			    Log "WARNING: mis-sized chunk:\
 				was [string length $chunk], should be $size -\
 				token $token"
+			    set n 0
+			    set state(connection) close
+			    set msg {error in chunked encoding - fetch\
+				    terminated}
+			    Eot $token $msg
 			}
+			# CRLF that follows chunk:
 			getTextLine $sock
 		    } else {
 			set n 0
 			set state(transfer_final) {}
 		    }
+		} else {
+		    # Line expected to hold chunk length is empty.
+		    ##Log bad-chunk-measure - token $token
+		    set n 0
+		    set state(connection) close
+		    Eot $token {error in chunked encoding - fetch terminated}
 		}
 	    } else {
+		##Log unchunked - token $token
+		if {$state(totalsize) == 0} {
+		    # We know the transfer is complete only when the server
+		    # closes the connection.
+		    set state(state) complete
+		}
 		set c $state(currentsize)
 		set t $state(totalsize)
 		##Log non-chunk currentsize $c of totalsize $t - token $token
@@ -1204,17 +1271,24 @@ proc http::Event {sock token} {
 		set n [string length $block]
 		if {$n >= 0} {
 		    append state(body) $block
+		    ##Log non-chunk [string length $state(body)] - token $token
 		}
 	    }
+	    # This calculation uses n from the -handler, chunked, or unchunked
+	    # case as appropriate.
 	    if {[info exists state]} {
 		if {$n >= 0} {
 		    incr state(currentsize) $n
+		    set c $state(currentsize)
+		    set t $state(totalsize)
+		    ##Log chunk $n currentsize $c totalsize $t - token $token
 		}
 		# If Content-Length - check for end of data.
 		if {
 		    ($state(totalsize) > 0)
 		    && ($state(currentsize) >= $state(totalsize))
 		} {
+		    set state(state) complete
 		    Eot $token
 		}
 	    }
@@ -1230,10 +1304,21 @@ proc http::Event {sock token} {
     }
 
     # catch as an Eot above may have closed the socket already
+    # $state(state) may be connecting, header, body, or complete
     if {![catch {eof $sock} eof] && $eof} {
+	##Log eof - token $token
 	if {[info exists $token]} {
 	    set state(connection) close
-	    Eot $token
+	    if {$state(state) eq "complete"} {
+		# This includes all cases in which the transaction
+		# can be completed by eof.
+		# The value "complete" is set only in http::Event, and it is
+		# used only in the test above.
+		Eot $token
+	    } else {
+		# Premature eof.
+		Eot $token eof
+	    }
 	} else {
 	    # open connection closed on a token that has been cleaned up.
 	    CloseSocket $sock
@@ -1404,18 +1489,28 @@ proc http::CopyDone {token count {error {}}} {
 #
 # Arguments
 #	token	The token returned from http::geturl
-#	force	optional, has no effect
+#	force	(previously) optional, has no effect
+#	reason	- "eof" means premature EOF (not EOF as the natural end of
+#		  the response)
+#		- "" means completion of response, with or without EOF
+#		- anything else describes an error confition other than
+#		  premature EOF.
 #
 # Side Effects
 #	Clean up the socket
 
-proc http::Eot {token {force 0}} {
+proc http::Eot {token {reason {}}} {
     variable $token
     upvar 0 $token state
-    if {$state(state) eq "header"} {
+    if {$reason eq "eof"} {
 	# Premature eof.
 	set state(status) eof
+	set reason {}
+    } elseif {$reason ne ""} {
+	# Abort the transaction.
+	set state(status) $reason
     } else {
+	# The response is complete.
 	set state(status) ok
     }
 
@@ -1445,7 +1540,7 @@ proc http::Eot {token {force 0}} {
 	    set state(body) [string map {\r\n \n \r \n} $state(body)]
 	}
     }
-    Finish $token
+    Finish $token $reason
     return
 }
 
