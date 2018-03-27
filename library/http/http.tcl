@@ -97,7 +97,11 @@ namespace eval http {
     }
 
     namespace export geturl config reset wait formatQuery register unregister
-    # Useful, but not exported: data size status code
+    # Useful, but not exported: data size status code cleanup error meta ncode
+    # Also mapReply.
+    #
+    # Not exported, probably should be upper-case initial letter as part
+    # of the internals: init getTextLine make-transformation-chunked
 }
 
 # http::Log --
@@ -199,7 +203,7 @@ proc http::config {args} {
 #		    reported to two places.
 #
 # Side Effects:
-#        Closes the socket
+#        May close the socket.
 
 proc http::Finish {token {errormsg ""} {skipCB 0}} {
     variable $token
@@ -235,7 +239,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 #	Close a socket and remove it from the persistent sockets table.  If
 #	possible an http token is included here but when we are called from a
 #	fileevent on remote closure we need to find the correct entry - hence
-#	the second section.
+#	the "else" block of the first "if" command.
 
 proc ::http::CloseSocket {s {token {}}} {
     variable socketMapping
@@ -600,7 +604,7 @@ proc http::geturl {url args} {
 		catch {fileevent $sock readable {}}
 	    }
 	}
-	# don't automatically close this connection socket
+	# Do not automatically close this connection socket.
 	set state(connection) {}
     }
     if {![info exists sock]} {
@@ -609,7 +613,7 @@ proc http::geturl {url args} {
 	    lappend sockopts -myaddr $state(-myaddr)
 	}
 	if {[catch {eval $defcmd $sockopts $targetAddr} sock]} {
-	    # something went wrong while trying to establish the connection.
+	    # Something went wrong while trying to establish the connection.
 	    # Clean up after events and such, but DON'T call the command
 	    # callback (if available) because we're going to throw an
 	    # exception from here instead.
@@ -677,7 +681,7 @@ proc http::Connected {token proto phost srvurl} {
     variable $token
     upvar 0 $token state
 
-    # Set back the variables needed here
+    # Set back the variables needed here.
     set sock $state(sock)
     set isQueryChannel [info exists state(-querychannel)]
     set isQuery [info exists state(-query)]
@@ -687,7 +691,7 @@ proc http::Connected {token proto phost srvurl} {
     set lower [string tolower $proto]
     set defport [lindex $urlTypes($lower) 0]
 
-    # Send data in cr-lf format, but accept any line terminators
+    # Send data in cr-lf format, but accept any line terminators.
 
     fconfigure $sock -translation {auto crlf} -buffersize $state(-blocksize)
 
@@ -827,8 +831,8 @@ proc http::Connected {token proto phost srvurl} {
 	# The socket probably was never connected, or the connection dropped
 	# later.
 
-	# if state(status) is error, it means someone's already called Finish
-	# to do the above-described clean up.
+	# if state(status) is error, it means someone's already called
+	# Finish to do the above-described clean up.
 	if {$state(status) ne "error"} {
 	    Finish $token $err
 	}
@@ -838,7 +842,7 @@ proc http::Connected {token proto phost srvurl} {
 
 # Data access functions:
 # Data - the URL data
-# Status - the transaction status: ok, reset, eof, timeout
+# Status - the transaction status: ok, reset, eof, timeout, error
 # Code - the HTTP transaction code, e.g., 200
 # Size - the size of the URL data
 
@@ -1085,7 +1089,7 @@ proc http::Event {sock token} {
 	    if {
 		$state(-binary) || [IsBinaryContentType $state(type)]
 	    } {
-		# Turn off conversions for non-text data
+		# Turn off conversions for non-text data.
 		set state(binary) 1
 	    }
 	    if {[info exists state(-channel)]} {
@@ -1093,19 +1097,19 @@ proc http::Event {sock token} {
 		    fconfigure $state(-channel) -translation binary
 		}
 		if {![info exists state(-handler)]} {
-		    # Initiate a sequence of background fcopies
+		    # Initiate a sequence of background fcopies.
 		    fileevent $sock readable {}
 		    CopyStart $sock $token
 		    return
 		}
 	    }
 	} elseif {$nhl > 0} {
-	    # Process header lines
+	    # Process header lines.
 	    if {[regexp -nocase {^([^:]+):(.+)$} $line x key value]} {
 		switch -- [string tolower $key] {
 		    content-type {
 			set state(type) [string trim [string tolower $value]]
-			# grab the optional charset information
+			# Grab the optional charset information.
 			if {[regexp -nocase \
 				 {charset\s*=\s*\"((?:[^""]|\\\")*)\"} \
 				 $state(type) -> cs]} {
@@ -1143,7 +1147,11 @@ proc http::Event {sock token} {
 		set line [getTextLine $sock]
 		set n [string length $line]
 		if {$n > 0} {
-		    Log "found $n bytes following final chunk"
+		    # - HTTP trailers (late response headers) are permitted by
+		    #   Chunked Transfer-Encoding, and can be safely ignored.
+		    # - Do not count these bytes in the total received for the
+		    #   response body.
+		    Log "trailer of $n bytes after final chunk - token $token"
 		    append state(transfer_final) $line
 		} else {
 		    Log "final chunk part"
@@ -1255,6 +1263,7 @@ proc http::IsBinaryContentType {type} {
 # http::getTextLine --
 #
 #	Get one line with the stream in blocking crlf mode
+#	Used if Transfer-Encoding is chunked
 #
 # Arguments
 #	sock	The socket receiving input.
@@ -1355,7 +1364,7 @@ proc http::CopyDone {token count {error {}}} {
 	eval $state(-progress) \
 	    [list $token $state(totalsize) $state(currentsize)]
     }
-    # At this point the token may have been reset
+    # At this point the token may have been reset.
     if {[string length $error]} {
 	Finish $token $error
     } elseif {[catch {eof $sock} iseof] || $iseof} {
@@ -1390,7 +1399,7 @@ proc http::Eot {token {force 0}} {
     variable $token
     upvar 0 $token state
     if {$state(state) eq "header"} {
-	# Premature eof
+	# Premature eof.
 	set state(status) eof
     } else {
 	set state(status) ok
