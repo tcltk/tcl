@@ -32,14 +32,14 @@ namespace eval http {
 	# ::tcl_platform(osVersion).
 	if {[interp issafe]} {
 	    set http(-useragent) "Mozilla/5.0\
-                (Windows; U;\
-                Windows NT 10.0)\
-                http/[package provide http] Tcl/[package provide Tcl]"
+		(Windows; U;\
+		Windows NT 10.0)\
+		http/[package provide http] Tcl/[package provide Tcl]"
 	} else {
 	    set http(-useragent) "Mozilla/5.0\
-                ([string totitle $::tcl_platform(platform)]; U;\
-                $::tcl_platform(os) $::tcl_platform(osVersion))\
-                http/[package provide http] Tcl/[package provide Tcl]"
+		([string totitle $::tcl_platform(platform)]; U;\
+		$::tcl_platform(os) $::tcl_platform(osVersion))\
+		http/[package provide http] Tcl/[package provide Tcl]"
 	}
     }
 
@@ -211,7 +211,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
        || ([info exists state(-keepalive)] && !$state(-keepalive))
        || ([info exists state(connection)] && ($state(connection) eq "close"))
     } {
-        CloseSocket $state(sock) $token
+	CloseSocket $state(sock) $token
     }
     if {[info exists state(after)]} {
 	after cancel $state(after)
@@ -238,22 +238,22 @@ proc ::http::CloseSocket {s {token {}}} {
     catch {fileevent $s readable {}}
     set conn_id {}
     if {$token ne ""} {
-        variable $token
-        upvar 0 $token state
-        if {[info exists state(socketinfo)]} {
+	variable $token
+	upvar 0 $token state
+	if {[info exists state(socketinfo)]} {
 	    set conn_id $state(socketinfo)
-        }
+	}
     } else {
-        set map [array get socketmap]
-        set ndx [lsearch -exact $map $s]
-        if {$ndx != -1} {
+	set map [array get socketmap]
+	set ndx [lsearch -exact $map $s]
+	if {$ndx != -1} {
 	    incr ndx -1
 	    set conn_id [lindex $map $ndx]
-        }
+	}
     }
     if {$conn_id eq {} || ![info exists socketmap($conn_id)]} {
-        Log "Closing socket $s (no connection info)"
-        if {[catch {close $s} err]} {
+	Log "Closing socket $s (no connection info)"
+	if {[catch {close $s} err]} {
 	    Log "Error: $err"
 	}
     } else {
@@ -602,7 +602,7 @@ proc http::geturl {url args} {
 	if {[info exists state(-myaddr)]} {
 	    lappend sockopts -myaddr $state(-myaddr)
 	}
-        if {[catch {eval $defcmd $sockopts $targetAddr} sock]} {
+	if {[catch {eval $defcmd $sockopts $targetAddr} sock]} {
 	    # something went wrong while trying to establish the connection.
 	    # Clean up after events and such, but DON'T call the command
 	    # callback (if available) because we're going to throw an
@@ -612,13 +612,13 @@ proc http::geturl {url args} {
 	    Finish $token "" 1
 	    cleanup $token
 	    return -code error $sock
-        }
+	}
     }
     set state(sock) $sock
     Log "Using $sock for $state(socketinfo)" \
-        [expr {$state(-keepalive)?"keepalive":""}]
+	[expr {$state(-keepalive)?"keepalive":""}]
     if {$state(-keepalive)} {
-        set socketmap($state(socketinfo)) $sock
+	set socketmap($state(socketinfo)) $sock
     }
 
     if {![info exists phost]} {
@@ -731,16 +731,16 @@ proc http::Connected {token proto phost srvurl} {
 	    puts $sock "Host: $host:$port"
 	}
 	puts $sock "User-Agent: $http(-useragent)"
-        if {$state(-protocol) == 1.0 && $state(-keepalive)} {
+	if {$state(-protocol) == 1.0 && $state(-keepalive)} {
 	    puts $sock "Connection: keep-alive"
-        }
-        if {$state(-protocol) > 1.0 && !$state(-keepalive)} {
+	}
+	if {$state(-protocol) > 1.0 && !$state(-keepalive)} {
 	    puts $sock "Connection: close" ;# RFC2616 sec 8.1.2.1
-        }
-        if {[info exists phost] && ($phost ne "") && $state(-keepalive)} {
+	}
+	if {[info exists phost] && ($phost ne "") && $state(-keepalive)} {
 	    puts $sock "Proxy-Connection: Keep-Alive"
-        }
-        set accept_encoding_seen 0
+	}
+	set accept_encoding_seen 0
 	set content_type_seen 0
 	dict for {key value} $state(-headers) {
 	    set value [string map [list \n "" \r ""] $value]
@@ -770,9 +770,9 @@ proc http::Connected {token proto phost srvurl} {
 	if {!$accept_types_seen} {
 	    puts $sock "Accept: $state(accept-types)"
 	}
-        if {!$accept_encoding_seen && ![info exists state(-handler)]} {
+	if {!$accept_encoding_seen && ![info exists state(-handler)]} {
 	    puts $sock "Accept-Encoding: gzip,deflate,compress"
-        }
+	}
 	if {$isQueryChannel && $state(querylength) == 0} {
 	    # Try to determine size of data in channel. If we cannot seek, the
 	    # surrounding catch will trap us
@@ -1548,31 +1548,31 @@ proc http::ContentEncoding {token} {
 
 proc http::make-transformation-chunked {chan command} {
     set lambda {{chan command} {
-        set data ""
-        set size -1
-        yield
-        while {1} {
-            chan configure $chan -translation {crlf binary}
-            while {[gets $chan line] < 1} { yield }
-            chan configure $chan -translation {binary binary}
-            if {[scan $line %x size] != 1} { return -code error "invalid size: \"$line\"" }
-            set chunk ""
-            while {$size && ![chan eof $chan]} {
-                set part [chan read $chan $size]
-                incr size -[string length $part]
-                append chunk $part
-            }
-            if {[catch {
+	set data ""
+	set size -1
+	yield
+	while {1} {
+	    chan configure $chan -translation {crlf binary}
+	    while {[gets $chan line] < 1} { yield }
+	    chan configure $chan -translation {binary binary}
+	    if {[scan $line %x size] != 1} { return -code error "invalid size: \"$line\"" }
+	    set chunk ""
+	    while {$size && ![chan eof $chan]} {
+		set part [chan read $chan $size]
+		incr size -[string length $part]
+		append chunk $part
+	    }
+	    if {[catch {
 		uplevel #0 [linsert $command end $chunk]
 	    }]} {
 		http::Log "Error in callback: $::errorInfo"
 	    }
-            if {[string length $chunk] == 0} {
+	    if {[string length $chunk] == 0} {
 		# channel might have been closed in the callback
-                catch {chan event $chan readable {}}
-                return
-            }
-        }
+		catch {chan event $chan readable {}}
+		return
+	    }
+	}
     }}
     coroutine dechunk$chan ::apply $lambda $chan $command
     chan event $chan readable [namespace origin dechunk$chan]
