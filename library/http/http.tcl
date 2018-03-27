@@ -209,7 +209,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 	set state(error) [list $errormsg $errorInfo $errorCode]
 	set state(status) "error"
     }
-    if { ($state(status) eq "timeout")
+    if {  ($state(status) eq "timeout")
        || ($state(status) eq "error")
        || ([info exists state(-keepalive)] && !$state(-keepalive))
        || ([info exists state(connection)] && ($state(connection) eq "close"))
@@ -219,8 +219,8 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
     if {[info exists state(after)]} {
 	after cancel $state(after)
     }
-    if {[info exists state(-command)] && !$skipCB
-	    && ![info exists state(done-command-cb)]} {
+    if {[info exists state(-command)] && (!$skipCB)
+	    && (![info exists state(done-command-cb)])} {
 	set state(done-command-cb) yes
 	if {[catch {eval $state(-command) {$token}} err] && $errormsg eq ""} {
 	    set state(error) [list $err $errorInfo $errorCode]
@@ -715,7 +715,7 @@ proc http::Connected {token proto phost srvurl} {
 	fconfigure $state(-querychannel) -blocking 1 -translation binary
 	set contDone 0
     }
-    if {[info exists state(-method)] && $state(-method) ne ""} {
+    if {[info exists state(-method)] && ($state(-method) ne "")} {
 	set how $state(-method)
     }
     # We cannot handle chunked encodings with -handler, so force HTTP/1.0
@@ -737,10 +737,10 @@ proc http::Connected {token proto phost srvurl} {
 	    puts $sock "Host: $host:$port"
 	}
 	puts $sock "User-Agent: $http(-useragent)"
-	if {$state(-protocol) == 1.0 && $state(-keepalive)} {
+	if {($state(-protocol) == 1.0) && $state(-keepalive)} {
 	    puts $sock "Connection: keep-alive"
 	}
-	if {$state(-protocol) > 1.0 && !$state(-keepalive)} {
+	if {($state(-protocol) > 1.0) && !$state(-keepalive)} {
 	    puts $sock "Connection: close" ;# RFC2616 sec 8.1.2.1
 	}
 	if {[info exists phost] && ($phost ne "") && $state(-keepalive)} {
@@ -779,7 +779,7 @@ proc http::Connected {token proto phost srvurl} {
 	if {!$accept_encoding_seen && ![info exists state(-handler)]} {
 	    puts $sock "Accept-Encoding: gzip,deflate,compress"
 	}
-	if {$isQueryChannel && $state(querylength) == 0} {
+	if {$isQueryChannel && ($state(querylength) == 0)} {
 	    # Try to determine size of data in channel. If we cannot seek, the
 	    # surrounding catch will trap us
 
@@ -1050,15 +1050,26 @@ proc http::Event {sock token} {
 		return
 	    }
 
-	    # For non-chunked transfer we may have no body - in this case we
-	    # may get no further file event if the connection doesn't close
-	    # and no more data is sent. We can tell and must finish up now -
-	    # not later.
-	    if {
-		!(([info exists state(connection)]
-			&& ($state(connection) eq "close"))
-		    || [info exists state(transfer)])
-		&& ($state(totalsize) == 0)
+	    # - For non-chunked transfer we may have no body - in this case we
+	    #   may get no further file event if the connection doesn't close
+	    #   and no more data is sent. We can tell and must finish up now -
+	    #   not later - the alternative would be to wait until the server
+	    #   times out.
+	    # - In this case, the server has NOT told the client it will close
+	    #   the connection, AND it has NOT indicated the resource length
+	    #   EITHER by setting the Content-Length (totalsize) OR by using
+	    #   chunked Transer-Encoding.
+	    # - Do not worry here about the case (Connection: close) because
+	    #   the server should close the connection.
+	    # - IF (NOT Connection: close) AND (NOT chunked encoding) AND
+	    #      (totalsize == 0).
+
+	    if {    (!(    [info exists state(connection)]
+			&& ($state(connection) eq "close")
+		      )
+		    )
+		 && (![info exists state(transfer)])
+		 && ($state(totalsize) == 0)
 	    } {
 		Log "body size is 0 and no events likely - complete."
 		Eof $token
