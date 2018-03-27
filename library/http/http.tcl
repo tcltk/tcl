@@ -1263,11 +1263,23 @@ proc http::Event {sock token} {
 		    # We know the transfer is complete only when the server
 		    # closes the connection.
 		    set state(state) complete
+		    set reqSize $state(-blocksize)
+		} else {
+		    # Ask for the whole of the unserved response-body.
+		    # This works around a problem with a tls::socket - for https
+		    # in keep-alive mode, and a request for $state(-blocksize)
+		    # bytes, the last part of the resource does not get read
+		    # until the server times out.
+		    set reqSize [expr {$state(totalsize) - $state(currentsize)}]
+
+		    # The workaround fails if reqSize is
+		    # capped at $state(-blocksize).
+		    # set reqSize [expr {min($reqSize, $state(-blocksize))}]
 		}
 		set c $state(currentsize)
 		set t $state(totalsize)
 		##Log non-chunk currentsize $c of totalsize $t - token $token
-		set block [read $sock $state(-blocksize)]
+		set block [read $sock $reqSize]
 		set n [string length $block]
 		if {$n >= 0} {
 		    append state(body) $block
@@ -1404,6 +1416,10 @@ proc http::CopyStart {sock token {initial 1}} {
 	    }
 	}
 	if {[catch {
+	    # FIXME Keep-Alive on https tls::socket with unchunked transfer
+	    # hangs until the server times out. A workaround is possible, as for
+	    # the case without -channel, but it does not use the neat "fcopy"
+	    # solution.
 	    fcopy $sock $state(-channel) -size $state(-blocksize) -command \
 		[list http::CopyDone $token]
 	} err]} {
