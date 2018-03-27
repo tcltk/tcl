@@ -62,14 +62,35 @@ namespace eval http {
 
 	# Create a map for HTTP/1.1 open sockets
 	variable socketMapping
+	variable socketRdState
+	variable socketWrState
+	variable socketRdQueue
+	variable socketWrQueue
+	variable socketClosing
+	variable socketPlayCmd
 	if {[info exists socketMapping]} {
 	    # Close open sockets on re-init
 	    foreach {url sock} [array get socketMapping] {
 		catch {close $sock}
 	    }
 	}
+
+	# Traces on "unset socketRdState(*)" will cancel any queued responses.
+	# Traces on "unset socketWrState(*)" will cancel any queued requests.
 	array unset socketMapping
+	array unset socketRdState
+	array unset socketWrState
+	array unset socketRdQueue
+	array unset socketWrQueue
+	array unset socketClosing
+	array unset socketPlayCmd
 	array set socketMapping {}
+	array set socketRdState {}
+	array set socketWrState {}
+	array set socketRdQueue {}
+	array set socketWrQueue {}
+	array set socketClosing {}
+	array set socketPlayCmd {}
 	return
     }
     init
@@ -208,6 +229,14 @@ proc http::config {args} {
 #        May close the socket.
 
 proc http::Finish {token {errormsg ""} {skipCB 0}} {
+    variable socketMapping
+    variable socketRdState
+    variable socketWrState
+    variable socketRdQueue
+    variable socketWrQueue
+    variable socketClosing
+    variable socketPlayCmd
+
     variable $token
     upvar 0 $token state
     global errorInfo errorCode
@@ -246,6 +275,13 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 
 proc http::CloseSocket {s {token {}}} {
     variable socketMapping
+    variable socketRdState
+    variable socketWrState
+    variable socketRdQueue
+    variable socketWrQueue
+    variable socketClosing
+    variable socketPlayCmd
+
     catch {fileevent $s readable {}}
     set connId {}
     if {$token ne ""} {
@@ -600,6 +636,13 @@ proc http::geturl {url args} {
     # See if we are supposed to use a previously opened channel.
     if {$state(-keepalive)} {
 	variable socketMapping
+	variable socketRdState
+	variable socketWrState
+	variable socketRdQueue
+	variable socketWrQueue
+	variable socketClosing
+	variable socketPlayCmd
+
 	if {[info exists socketMapping($state(socketinfo))]} {
 	    if {[catch {fconfigure $socketMapping($state(socketinfo))}]} {
 		Log "WARNING: socket for $state(socketinfo) was closed\
@@ -685,6 +728,13 @@ proc http::geturl {url args} {
 proc http::Connected {token proto phost srvurl} {
     variable http
     variable urlTypes
+    variable socketMapping
+    variable socketRdState
+    variable socketWrState
+    variable socketRdQueue
+    variable socketWrQueue
+    variable socketClosing
+    variable socketPlayCmd
 
     variable $token
     upvar 0 $token state
@@ -962,6 +1012,15 @@ proc http::Connect {token proto phost srvurl} {
 #	Write the socket and handle callbacks.
 
 proc http::Write {token} {
+    variable http
+    variable socketMapping
+    variable socketRdState
+    variable socketWrState
+    variable socketRdQueue
+    variable socketWrQueue
+    variable socketClosing
+    variable socketPlayCmd
+
     variable $token
     upvar 0 $token state
     set sock $state(sock)
@@ -1027,6 +1086,15 @@ proc http::Write {token} {
 #	Read the socket and handle callbacks.
 
 proc http::Event {sock token} {
+    variable http
+    variable socketMapping
+    variable socketRdState
+    variable socketWrState
+    variable socketRdQueue
+    variable socketWrQueue
+    variable socketClosing
+    variable socketPlayCmd
+
     variable $token
     upvar 0 $token state
 
