@@ -282,6 +282,8 @@ proc http::CloseSocket {s {token {}}} {
     variable socketClosing
     variable socketPlayCmd
 
+    set tk [namespace tail $token]
+
     catch {fileevent $s readable {}}
     set connId {}
     if {$token ne ""} {
@@ -375,6 +377,7 @@ proc http::geturl {url args} {
     set token [namespace current]::[incr http(uid)]
     variable $token
     upvar 0 $token state
+    set tk [namespace tail $token]
     reset $token
 
     # Process command options.
@@ -738,6 +741,7 @@ proc http::Connected {token proto phost srvurl} {
 
     variable $token
     upvar 0 $token state
+    set tk [namespace tail $token]
 
     # Set back the variables needed here.
     set sock $state(sock)
@@ -988,6 +992,7 @@ proc http::cleanup {token} {
 proc http::Connect {token proto phost srvurl} {
     variable $token
     upvar 0 $token state
+    set tk [namespace tail $token]
     set err "due to unexpected EOF"
     if {
 	[eof $state(sock)] ||
@@ -1023,6 +1028,7 @@ proc http::Write {token} {
 
     variable $token
     upvar 0 $token state
+    set tk [namespace tail $token]
     set sock $state(sock)
 
     # Output a block.  Tcl will buffer this if the socket blocks
@@ -1097,6 +1103,7 @@ proc http::Event {sock token} {
 
     variable $token
     upvar 0 $token state
+    set tk [namespace tail $token]
 
     ##Log Event call - token $token
 
