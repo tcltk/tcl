@@ -62,11 +62,12 @@ namespace eval http {
 	# Create a map for HTTP/1.1 open sockets
 	variable socketMapping
 	if {[info exists socketMapping]} {
-	    # Close but don't remove open sockets on re-init
+	    # Close open sockets on re-init
 	    foreach {url sock} [array get socketMapping] {
 		catch {close $sock}
 	    }
 	}
+	array unset socketMapping
 	array set socketMapping {}
 	return
     }
