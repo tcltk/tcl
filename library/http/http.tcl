@@ -68,6 +68,7 @@ namespace eval http {
 	    }
 	}
 	array set socketmap {}
+	return
     }
     init
 
@@ -123,6 +124,7 @@ if {[info command http::Log] eq {}} {proc http::Log {args} {}}
 proc http::register {proto port command} {
     variable urlTypes
     set urlTypes([string tolower $proto]) [list $port $command]
+    # N.B. Implicit Return.
 }
 
 # http::unregister --
@@ -180,6 +182,7 @@ proc http::config {args} {
 	    }
 	    set http($flag) $value
 	}
+	return
     }
 }
 
@@ -224,6 +227,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 	    set state(status) error
 	}
     }
+    return
 }
 
 # http::CloseSocket -
@@ -267,6 +271,7 @@ proc ::http::CloseSocket {s {token {}}} {
 	    Log "Cannot close connection $conn_id - no socket in socket map"
 	}
     }
+    return
 }
 
 # http::reset --
@@ -292,6 +297,7 @@ proc http::reset {token {why reset}} {
 	unset state
 	eval ::error $errorlist
     }
+    return
 }
 
 # http::geturl --
@@ -827,6 +833,7 @@ proc http::Connected {token proto phost srvurl} {
 	    Finish $token $err
 	}
     }
+    return
 }
 
 # Data access functions:
@@ -897,6 +904,7 @@ proc http::cleanup {token} {
     if {[info exists state]} {
 	unset state
     }
+    return
 }
 
 # http::Connect
@@ -987,6 +995,7 @@ proc http::Write {token} {
 	eval $state(-queryprogress) \
 	    [list $token $state(querylength) $state(queryoffset)]
     }
+    return
 }
 
 # http::Event
@@ -1192,8 +1201,8 @@ proc http::Event {sock token} {
 	    # open connection closed on a token that has been cleaned up.
 	    CloseSocket $sock
 	}
-	return
     }
+    return
 }
 
 # http::IsBinaryContentType --
@@ -1278,6 +1287,7 @@ proc http::CopyStart {sock token {initial 1}} {
 	    Finish $token $err
 	}
     }
+    return
 }
 
 proc http::CopyChunk {token chunk} {
@@ -1307,6 +1317,7 @@ proc http::CopyChunk {token chunk} {
 	}
 	Eof $token ;# FIX ME: pipelining.
     }
+    return
 }
 
 # http::CopyDone
@@ -1337,6 +1348,7 @@ proc http::CopyDone {token count {error {}}} {
     } else {
 	CopyStart $sock $token 0
     }
+    return
 }
 
 # http::Eof
@@ -1385,6 +1397,7 @@ proc http::Eof {token {force 0}} {
 	}
     }
     Finish $token
+    return
 }
 
 # http::wait --
@@ -1487,6 +1500,7 @@ proc http::ProxyRequired {host} {
 	}
 	return [list $http(-proxyhost) $http(-proxyport)]
     }
+    return
 }
 
 # http::CharsetToEncoding --
