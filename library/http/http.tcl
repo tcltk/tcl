@@ -25,9 +25,9 @@ namespace eval http {
 	    -proxyfilter http::ProxyRequired
 	    -urlencoding utf-8
 	}
-	# We need a useragent string of this style or various servers will refuse to
-	# send us compressed content even when we ask for it. This follows the
-	# de-facto layout of user-agent strings in current browsers.
+	# We need a useragent string of this style or various servers will
+	# refuse to send us compressed content even when we ask for it. This
+	# follows the de-facto layout of user-agent strings in current browsers.
 	# Safe interpreters do not have ::tcl_platform(os) or
 	# ::tcl_platform(osVersion).
 	if {[interp issafe]} {
@@ -1026,7 +1026,9 @@ proc http::Event {sock token} {
 	} elseif {$n == 0} {
 	    # We have now read all headers
 	    # We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
-	    if {$state(http) == "" || ([regexp {^\S+\s(\d+)} $state(http) {} x] && $x == 100)} {
+	    if {    ($state(http) == "")
+		 || ([regexp {^\S+\s(\d+)} $state(http) {} x] && $x == 100)
+	    } {
 		set state(state) "connecting"
 		return
 	    }
@@ -1369,8 +1371,8 @@ proc http::Eof {token {force 0}} {
 
 	if {!$state(binary)} {
 	    # If we are getting text, set the incoming channel's encoding
-	    # correctly.  iso8859-1 is the RFC default, but this could be any IANA
-	    # charset.  However, we only know how to convert what we have
+	    # correctly.  iso8859-1 is the RFC default, but this could be any
+	    # IANA charset.  However, we only know how to convert what we have
 	    # encodings for.
 
 	    set enc [CharsetToEncoding $state(charset)]
@@ -1538,7 +1540,8 @@ proc http::ContentEncoding {token} {
 		compress - x-compress { lappend r decompress }
 		identity {}
 		default {
-		    return -code error "unsupported content-encoding \"$coding\""
+		    set msg "unsupported content-encoding \"$coding\""
+		    return -code error $msg
 		}
 	    }
 	}
@@ -1555,7 +1558,9 @@ proc http::make-transformation-chunked {chan command} {
 	    chan configure $chan -translation {crlf binary}
 	    while {[gets $chan line] < 1} { yield }
 	    chan configure $chan -translation {binary binary}
-	    if {[scan $line %x size] != 1} { return -code error "invalid size: \"$line\"" }
+	    if {[scan $line %x size] != 1} {
+		return -code error "invalid size: \"$line\""
+	    }
 	    set chunk ""
 	    while {$size && ![chan eof $chan]} {
 		set part [chan read $chan $size]
