@@ -676,8 +676,13 @@ proc http::geturl {url args} {
 	    Finish $token "" 1
 	    cleanup $token
 	    return -code error $sock
+	} else {
+	    # Initialisation of a new socket.
+	    fconfigure $sock -translation {auto crlf} \
+			     -buffersize $state(-blocksize)
 	}
     }
+
     set state(sock) $sock
     Log "Using $sock for $state(socketinfo) - token $token" \
 	[expr {$state(-keepalive)?"keepalive":""}]
@@ -754,8 +759,11 @@ proc http::Connected {token proto phost srvurl} {
     set defport [lindex $urlTypes($lower) 0]
 
     # Send data in cr-lf format, but accept any line terminators.
-
-    fconfigure $sock -translation {auto crlf} -buffersize $state(-blocksize)
+    # Initialisation to {auto *} now done in geturl.
+    # We are concerned here with the request (write) not the response (read).
+    lassign [fconfigure $sock -translation] trRead trWrite
+    fconfigure $sock -translation [list $trRead crlf] \
+		     -buffersize $state(-blocksize)
 
     # The following is disallowed in safe interpreters, but the socket is
     # already in non-blocking mode in that case.
@@ -778,7 +786,9 @@ proc http::Connected {token proto phost srvurl} {
 	set how POST
 	# The query channel must be blocking for the async Write to
 	# work properly.
-	fconfigure $state(-querychannel) -blocking 1 -translation binary
+	lassign [fconfigure $sock -translation] trRead trWrite
+	fconfigure $state(-querychannel) -blocking 1 \
+					 -translation [list $trRead binary]
 	set contDone 0
     }
     if {[info exists state(-method)] && ($state(-method) ne "")} {
@@ -886,7 +896,8 @@ proc http::Connected {token proto phost srvurl} {
 		puts $sock "Content-Length: $state(querylength)"
 	    }
 	    puts $sock ""
-	    fconfigure $sock -translation {auto binary}
+	    lassign [fconfigure $sock -translation] trRead trWrite
+	    fconfigure $sock -translation [list $trRead binary]
 	    fileevent $sock writable [list http::Write $token]
 	} else {
 	    puts $sock ""
@@ -1185,7 +1196,8 @@ proc http::Event {sock token} {
 	    }
 
 	    # We have to use binary translation to count bytes properly.
-	    fconfigure $sock -translation binary
+	    lassign [fconfigure $sock -translation] trRead trWrite
+	    fconfigure $sock -translation [list binary $trWrite]
 
 	    if {
 		$state(-binary) || [IsBinaryContentType $state(type)]
@@ -1465,8 +1477,9 @@ proc http::IsBinaryContentType {type} {
 
 proc http::getTextLine {sock} {
     set tr [fconfigure $sock -translation]
+    lassign $tr trRead trWrite
     set bl [fconfigure $sock -blocking]
-    fconfigure $sock -translation crlf -blocking 1
+    fconfigure $sock -translation [list crlf $trWrite] -blocking 1
     set r [gets $sock]
     fconfigure $sock -translation $tr -blocking $bl
     return $r
