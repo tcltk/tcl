@@ -241,7 +241,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 #	fileevent on remote closure we need to find the correct entry - hence
 #	the "else" block of the first "if" command.
 
-proc ::http::CloseSocket {s {token {}}} {
+proc http::CloseSocket {s {token {}}} {
     variable socketMapping
     catch {fileevent $s readable {}}
     set connId {}
@@ -250,6 +250,7 @@ proc ::http::CloseSocket {s {token {}}} {
 	upvar 0 $token state
 	if {[info exists state(socketinfo)]} {
 	    set connId $state(socketinfo)
+	} else {
 	}
     } else {
 	set map [array get socketMapping]
@@ -257,18 +258,21 @@ proc ::http::CloseSocket {s {token {}}} {
 	if {$ndx != -1} {
 	    incr ndx -1
 	    set connId [lindex $map $ndx]
+	} else {
 	}
     }
     if {$connId eq {} || ![info exists socketMapping($connId)]} {
 	Log "Closing socket $s (no connection info)"
 	if {[catch {close $s} err]} {
 	    Log "Error closing socket: $err"
+	} else {
 	}
     } else {
 	if {[info exists socketMapping($connId)]} {
 	    Log "Closing connection $connId (sock $socketMapping($connId))"
 	    if {[catch {close $socketMapping($connId)} err]} {
 		Log "Error closing connection: $err"
+	    } else {
 	    }
 	    unset socketMapping($connId)
 	} else {
@@ -1031,7 +1035,8 @@ proc http::Event {sock token} {
     }
     if {$state(state) eq "connecting"} {
 	if {[catch {gets $sock state(http)} nsl]} {
-	    return [Finish $token $nsl]
+	    Finish $token $nsl
+	    return
 	} elseif {$nsl >= 0} {
 	    set state(state) "header"
 	} else {
@@ -1040,7 +1045,8 @@ proc http::Event {sock token} {
 	}
     } elseif {$state(state) eq "header"} {
 	if {[catch {gets $sock line} nhl]} {
-	    return [Finish $token $nhl]
+	    Finish $token $nhl
+	    return
 	} elseif {$nhl == 0} {
 	    # We have now read all headers
 	    # We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
@@ -1212,7 +1218,8 @@ proc http::Event {sock token} {
 		}
 	    }
 	} err]} {
-	    return [Finish $token $err]
+	    Finish $token $err
+	    return
 	} else {
 	    if {[info exists state(-progress)]} {
 		eval $state(-progress) \
@@ -1418,7 +1425,8 @@ proc http::Eot {token {force 0}} {
 	    }
 	} err]} {
 	    Log "error doing decompression for token $token: $err"
-	    return [Finish $token $err]
+	    Finish $token $err
+	    return
 	}
 
 	if {!$state(binary)} {
