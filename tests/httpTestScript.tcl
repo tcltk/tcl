@@ -253,7 +253,7 @@ proc httpTestScript::PIPELINE {b} {
     }
 
     ::http::config -pipeline $b
-    ::http::Log http(-pipeline) is now [::http::config -pipeline]
+    ##::http::Log http(-pipeline) is now [::http::config -pipeline]
     return
 }
 
@@ -273,7 +273,7 @@ proc httpTestScript::POSTFRESH {b} {
     }
 
     ::http::config -postfresh $b
-    ::http::Log http(-postfresh) is now [::http::config -postfresh]
+    ##::http::Log http(-postfresh) is now [::http::config -postfresh]
     return
 }
 
@@ -293,7 +293,7 @@ proc httpTestScript::REPOST {b} {
     }
 
     ::http::config -repost $b
-    ::http::Log http(-repost) is now [::http::config -repost]
+    ##::http::Log http(-repost) is now [::http::config -repost]
     return
 }
 
