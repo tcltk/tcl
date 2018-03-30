@@ -140,28 +140,6 @@ Tcl_WinTCharToUtf(
  * signature. Tcl 9 must find a better solution, but that cannot be done
  * without introducing a binary incompatibility.
  */
-#define Tcl_DbNewLongObj ((Tcl_Obj*(*)(long,const char*,int))dbNewLongObj)
-static Tcl_Obj *dbNewLongObj(
-    int intValue,
-    const char *file,
-    int line
-) {
-#ifdef TCL_MEM_DEBUG
-    register Tcl_Obj *objPtr;
-
-    TclDbNewObj(objPtr, file, line);
-    objPtr->bytes = NULL;
-
-    objPtr->internalRep.wideValue = (long) intValue;
-    objPtr->typePtr = &tclIntType;
-    return objPtr;
-#else
-    return Tcl_NewIntObj(intValue);
-#endif
-}
-#define Tcl_GetLongFromObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))Tcl_GetIntFromObj
-#define Tcl_NewLongObj (Tcl_Obj*(*)(long))Tcl_NewIntObj
-#define Tcl_SetLongObj (void(*)(Tcl_Obj*,long))Tcl_SetIntObj
 static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLong(interp, expr, &longValue);
@@ -210,10 +188,6 @@ static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsig
    return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
 }
 #define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcasecmp
-static int formatInt(char *buffer, int n){
-   return TclFormatInt(buffer, (long)n);
-}
-#define TclFormatInt (int(*)(char *, long))formatInt
 
 #endif /* TCL_WIDE_INT_IS_LONG */
 
