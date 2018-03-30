@@ -493,7 +493,7 @@ Tcl_GetUniChar(
 
     if (TclIsPureByteArray(objPtr)) {
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
-	if (index >- length) {
+	if (index >= length) {
 		return -1;
 	}
 
@@ -3685,6 +3685,7 @@ TclStringReplace(
 	    }
 	    result = Tcl_NewByteArrayObj(NULL, numBytes - count + newBytes);
 								/* PANIC? */
+	    Tcl_SetByteArrayLength(result, 0);
 	    TclAppendBytesToByteArray(result, bytes, first);	
 	    TclAppendBytesToByteArray(result, iBytes, newBytes);
 	    TclAppendBytesToByteArray(result, bytes + first + count,
