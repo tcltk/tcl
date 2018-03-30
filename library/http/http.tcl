@@ -355,7 +355,7 @@ proc http::KeepSocket {token} {
 	    upvar 0 $token3 state3
 	    set tk2 [namespace tail $token3]
 
-	    #Log pipelined, GRANT read access to $token3 in KeepSocket
+	    Log #Log pipelined, GRANT read access to $token3 in KeepSocket
 	    set socketRdState($connId) $token3
 	    lassign [fconfigure $state3(sock) -translation] trRead trWrite
 	    fconfigure $state3(sock) -translation [list auto $trWrite] \
@@ -363,7 +363,7 @@ proc http::KeepSocket {token} {
 	    Log ^D$tk2 begin receiving response - token $token3
 	    fileevent $state3(sock) readable \
 		    [list http::Event $state3(sock) $token3]
-	    #Log ---- $state3(sock) >> conn to $token3 for HTTP response (a)
+	    Log #Log ---- $state3(sock) >> conn to $token3 for HTTP response (a)
 
 	    # Other pipelined cases.
 	    # - The test above ensures that, for the pipelined cases in the two
@@ -400,13 +400,13 @@ proc http::KeepSocket {token} {
 	    #   give that request read and write access.
 	    variable $token3
 	    set conn [set ${token3}(tmpConnArgs)]
-	    #Log nonpipeline, GRANT r/w access to $token3 in KeepSocket
+	    Log #Log nonpipeline, GRANT r/w access to $token3 in KeepSocket
 	    set socketRdState($connId) $token3
 	    set socketWrState($connId) $token3
 	    set socketWrQueue($connId) [lrange $socketWrQueue($connId) 1 end]
 	    # Connect does its own fconfigure.
 	    fileevent $state(sock) writable [list http::Connect $token3 {*}$conn]
-	    #Log ---- $state(sock) << conn to $token3 for HTTP request (c)
+	    Log #Log ---- $state(sock) << conn to $token3 for HTTP request (c)
 
 	} elseif {
 		$state(-pipeline)
@@ -445,13 +445,13 @@ proc http::KeepSocket {token} {
 	    #   case with a queued request.
 	    variable $token3
 	    set conn [set ${token3}(tmpConnArgs)]
-	    #Log nonpipeline, GRANT r/w access to $token3 in KeepSocket
+	    Log #Log nonpipeline, GRANT r/w access to $token3 in KeepSocket
 	    set socketRdState($connId) $token3
 	    set socketWrState($connId) $token3
 	    set socketWrQueue($connId) [lrange $socketWrQueue($connId) 1 end]
 	    # Connect does its own fconfigure.
 	    fileevent $state(sock) writable [list http::Connect $token3 {*}$conn]
-	    #Log ---- $state(sock) << conn to $token3 for HTTP request (c)
+	    Log #Log ---- $state(sock) << conn to $token3 for HTTP request (c)
 
 	} elseif {
 		(!$state(-pipeline))
@@ -467,13 +467,13 @@ proc http::KeepSocket {token} {
 	    set token3 [lindex $socketWrQueue($connId) 0]
 	    variable $token3
 	    set conn [set ${token3}(tmpConnArgs)]
-	    #Log nonpipeline, GRANT r/w access to $token3 in KeepSocket
+	    Log #Log nonpipeline, GRANT r/w access to $token3 in KeepSocket
 	    set socketRdState($connId) $token3
 	    set socketWrState($connId) $token3
 	    set socketWrQueue($connId) [lrange $socketWrQueue($connId) 1 end]
 	    # Connect does its own fconfigure.
 	    fileevent $state(sock) writable [list http::Connect $token3 {*}$conn]
-	    #Log ---- $state(sock) << conn to $token3 for HTTP request (d)
+	    Log #Log ---- $state(sock) << conn to $token3 for HTTP request (d)
 
 	} elseif {(!$state(-pipeline))} {
 	    set socketWrState($connId) Wready
@@ -713,7 +713,7 @@ proc http::geturl {url args} {
 	set http(uid) 0
     }
     set token [namespace current]::[incr http(uid)]
-    ##Log Starting http::geturl - token $token
+    Log ##Log Starting http::geturl - token $token
     variable $token
     upvar 0 $token state
     set tk [namespace tail $token]
@@ -1139,7 +1139,7 @@ proc http::geturl {url args} {
 	}
 
 	if {$state(-pipeline)} {
-	    #Log new, init for pipelined, GRANT write access to $token in geturl
+	    Log #Log new, init for pipelined, GRANT write access to $token in geturl
 	    # Also grant premature read access to the socket. This is OK.
 	    set socketRdState($state(socketinfo)) $token
 	    set socketWrState($state(socketinfo)) $token
@@ -1148,7 +1148,7 @@ proc http::geturl {url args} {
 	    # We cannot leave it as "Wready" because the next call to
 	    # http::geturl with a pipelined transaction would conclude that the
 	    # socket is available for writing.
-	    #Log new, init for nonpipeline, GRANT r/w access to $token in geturl
+	    Log #Log new, init for nonpipeline, GRANT r/w access to $token in geturl
 	    set socketRdState($state(socketinfo)) $token
 	    set socketWrState($state(socketinfo)) $token
 	}
@@ -1193,13 +1193,13 @@ proc http::geturl {url args} {
 	# subsequent calls on this socket will come here because the socket
 	# will close after the current read, and its
 	# socketClosing($connId) is 1.
-	##Log "HTTP request for token $token is queued"
+	Log ##Log "HTTP request for token $token is queued"
 
     } elseif {    $reusing
 	       && $state(-pipeline)
 	       && ($socketWrState($state(socketinfo)) ne "Wready")
     } {
-	##Log "HTTP request for token $token is queued for pipelined use"
+	Log ##Log "HTTP request for token $token is queued for pipelined use"
 	lappend socketWrQueue($state(socketinfo)) $token
 
     } elseif {    $reusing
@@ -1207,7 +1207,7 @@ proc http::geturl {url args} {
 	       && ($socketWrState($state(socketinfo)) ne "Wready")
     } {
 	# A write is queued or in progress.  Lappend to the write queue.
-	##Log "HTTP request for token $token is queued for nonpipeline use"
+	Log ##Log "HTTP request for token $token is queued for nonpipeline use"
 	lappend socketWrQueue($state(socketinfo)) $token
 
     } elseif {    $reusing
@@ -1218,20 +1218,20 @@ proc http::geturl {url args} {
 	# A read is queued or in progress, but not a write.  Cannot start the
 	# nonpipeline transaction, but must set socketWrState to prevent a
 	# pipelined request jumping the queue.
-	##Log "HTTP request for token $token is queued for nonpipeline use"
-	#Log re-use nonpipeline, GRANT delayed write access to $token in geturl
+	Log ##Log "HTTP request for token $token is queued for nonpipeline use"
+	Log #Log re-use nonpipeline, GRANT delayed write access to $token in geturl
 
 	set socketWrState($state(socketinfo)) peNding
 	lappend socketWrQueue($state(socketinfo)) $token
 
     } else {
 	if {$reusing && $state(-pipeline)} {
-	    #Log re-use pipelined, GRANT write access to $token in geturl
+	    Log #Log re-use pipelined, GRANT write access to $token in geturl
 	    set socketWrState($state(socketinfo)) $token
 
 	} elseif {$reusing} {
 	    # Cf tests above - both are ready.
-	    #Log re-use nonpipeline, GRANT r/w access to $token in geturl
+	    Log #Log re-use nonpipeline, GRANT r/w access to $token in geturl
 	    set socketRdState($state(socketinfo)) $token
 	    set socketWrState($state(socketinfo)) $token
 
@@ -1241,7 +1241,7 @@ proc http::geturl {url args} {
 
 	# All (!$reusing) cases come here, and also some $reusing cases if the
 	# connection is ready.
-	#Log ---- $state(socketinfo) << conn to $token for HTTP request (a)
+	Log #Log ---- $state(socketinfo) << conn to $token for HTTP request (a)
 	# Connect does its own fconfigure.
 	fileevent $sock writable \
 		[list http::Connect $token $proto $phost $srvurl]
@@ -1268,7 +1268,7 @@ proc http::geturl {url args} {
 	    return -code error $err
 	}
     }
-    ##Log Leaving http::geturl - token $token
+    Log ##Log Leaving http::geturl - token $token
     return $token
 }
 
@@ -1566,7 +1566,7 @@ proc http::DoneRequest {token} {
 	 && [info exists socketRdState($state(socketinfo))]
 	 && ($socketRdState($state(socketinfo)) eq "Rready")
     } {
-	#Log pipelined, GRANT read access to $token in Connected
+	Log #Log pipelined, GRANT read access to $token in Connected
 	set socketRdState($state(socketinfo)) $token
     }
 
@@ -1576,7 +1576,7 @@ proc http::DoneRequest {token} {
 	 && ($socketRdState($state(socketinfo)) ne $token)
     } {
 	# Do not read from the socket until it is ready.
-	##Log "HTTP response for token $token is queued for pipelined use"
+	Log ##Log "HTTP response for token $token is queued for pipelined use"
 	# If $socketClosing(*), then the caller will be a pipelined write and
 	# execution will come here.
 	# This token has already been recorded as "in flight" for writing.
@@ -1587,7 +1587,7 @@ proc http::DoneRequest {token} {
 	# In the pipelined case, connection for reading depends on the
 	# value of socketRdState.
 	# In the nonpipeline case, connection for reading always occurs.
-	#Log ---- $state(socketinfo) >> conn to $token for HTTP response (b)
+	Log #Log ---- $state(socketinfo) >> conn to $token for HTTP response (b)
 	lassign [fconfigure $sock -translation] trRead trWrite
 	fconfigure $sock -translation [list auto $trWrite] \
 			 -buffersize $state(-blocksize)
@@ -1647,13 +1647,13 @@ proc http::NextPipelinedWrite {token} {
 	    )
     } {
 	# - The usual case for a pipelined connection, ready for a new request.
-	#Log pipelined, GRANT write access to $token2 in NextPipelinedWrite
+	Log #Log pipelined, GRANT write access to $token2 in NextPipelinedWrite
 	set conn [set ${token2}(tmpConnArgs)]
 	set socketWrState($connId) $token2
 	set socketWrQueue($connId) [lrange $socketWrQueue($connId) 1 end]
 	# Connect does its own fconfigure.
 	fileevent $state(sock) writable [list http::Connect $token2 {*}$conn]
-	#Log ---- $connId << conn to $token2 for HTTP request (b)
+	Log #Log ---- $connId << conn to $token2 for HTTP request (b)
 
 	# In the tests below, the next request will be nonpipeline.
     } elseif {    $state(-pipeline)
@@ -1676,13 +1676,13 @@ proc http::NextPipelinedWrite {token} {
 	variable $token3
 	upvar 0 $token3 state3
 	set conn [set ${token3}(tmpConnArgs)]
-	#Log nonpipeline, GRANT r/w access to $token3 in NextPipelinedWrite
+	Log #Log nonpipeline, GRANT r/w access to $token3 in NextPipelinedWrite
 	set socketRdState($connId) $token3
 	set socketWrState($connId) $token3
 	set socketWrQueue($connId) [lrange $socketWrQueue($connId) 1 end]
 	# Connect does its own fconfigure.
 	fileevent $state(sock) writable [list http::Connect $token3 {*}$conn]
-	#Log ---- $state(sock) << conn to $token3 for HTTP request (c)
+	Log #Log ---- $state(sock) << conn to $token3 for HTTP request (c)
 
     } elseif {    $state(-pipeline)
 	 && [info exists socketWrState($connId)]
@@ -1704,7 +1704,7 @@ proc http::NextPipelinedWrite {token} {
 	#   of the connection to $token2 will be done elsewhere - by command
 	#   http::KeepSocket when $socketRdState($connId) is set to "Rready".
 
-	#Log re-use nonpipeline, GRANT delayed write access to $token in NextP..
+	Log #Log re-use nonpipeline, GRANT delayed write access to $token in NextP..
 	set socketWrState($connId) peNding
 
     } else {
@@ -1733,7 +1733,7 @@ proc http::NextPipelinedWrite {token} {
 
 proc http::CancelReadPipeline {name1 connId op} {
     variable socketRdQueue
-    ##Log CancelReadPipeline $name1 $connId $op
+    Log ##Log CancelReadPipeline $name1 $connId $op
     if {[info exists socketRdQueue($connId)]} {
 	set msg {the connection was closed by CancelReadPipeline}
 	foreach token $socketRdQueue($connId) {
@@ -1767,7 +1767,7 @@ proc http::CancelReadPipeline {name1 connId op} {
 proc http::CancelWritePipeline {name1 connId op} {
     variable socketWrQueue
 
-    ##Log CancelWritePipeline $name1 $connId $op
+    Log ##Log CancelWritePipeline $name1 $connId $op
     if {[info exists socketWrQueue($connId)]} {
 	set msg {the connection was closed by CancelWritePipeline}
 	foreach token $socketWrQueue($connId) {
@@ -2053,7 +2053,7 @@ proc http::ReplayCore {newQueue} {
 	return
     }
 
-    ##Log running ReplayCore for {*}$newQueue
+    Log ##Log running ReplayCore for {*}$newQueue
     set newToken [lindex $newQueue 0]
     set newQueue [lrange $newQueue 1 end]
 
@@ -2110,11 +2110,11 @@ proc http::ReplayCore {newQueue} {
 	}
 
 	if {$state(-pipeline)} {
-	    #Log new, init for pipelined, GRANT write acc to $token ReplayCore
+	    Log #Log new, init for pipelined, GRANT write acc to $token ReplayCore
 	    set socketRdState($state(socketinfo)) $token
 	    set socketWrState($state(socketinfo)) $token
 	} else {
-	    #Log new, init for nonpipeline, GRANT r/w acc to $token ReplayCore
+	    Log #Log new, init for nonpipeline, GRANT r/w acc to $token ReplayCore
 	    set socketRdState($state(socketinfo)) $token
 	    set socketWrState($state(socketinfo)) $token
 	}
@@ -2147,7 +2147,7 @@ proc http::ReplayCore {newQueue} {
 
     # Connect does its own fconfigure.
     fileevent $sock writable [list http::Connect $token {*}$tmpConnArgs]
-    #Log ---- $sock << conn to $token for HTTP request (e)
+    Log #Log ---- $sock << conn to $token for HTTP request (e)
     return
 }
 
@@ -2396,7 +2396,7 @@ proc http::Event {sock token} {
     upvar 0 $token state
     set tk [namespace tail $token]
 
-    ##Log Event call - token $token
+    Log ##Log Event call - token $token
 
     if {![info exists state]} {
 	Log "Event $sock with invalid token '$token' - remote close?"
@@ -2411,7 +2411,7 @@ proc http::Event {sock token} {
 	return
     }
     if {$state(state) eq "connecting"} {
-	##Log - connecting - token $token
+	Log ##Log - connecting - token $token
 	if {    $state(reusing)
 	     && $state(-pipeline)
 	     && ($state(-timeout) > 0)
@@ -2443,7 +2443,7 @@ proc http::Event {sock token} {
 		return
 	    }
 	} elseif {$nsl >= 0} {
-	    ##Log - connecting 1 - token $token
+	    Log ##Log - connecting 1 - token $token
 	    set state(state) "header"
 	} elseif {    [eof $sock]
 		   && [info exists state(reusing)]
@@ -2463,18 +2463,18 @@ proc http::Event {sock token} {
 	    # If any other requests are in flight or pipelined/queued, they will
 	    # be discarded.
 	} else {
-	    ##Log - connecting 2 - token $token
+	    Log ##Log - connecting 2 - token $token
 	    # nsl is -1 so either fblocked (OK) or (eof and not reusing).
 	    # Continue. Any eof is processed at the end of this proc.
 	}
     } elseif {$state(state) eq "header"} {
 	if {[catch {gets $sock line} nhl]} {
-	    ##Log header failed - token $token
+	    Log ##Log header failed - token $token
 	    Log ^X$tk end of response (error) - token $token
 	    Finish $token $nhl
 	    return
 	} elseif {$nhl == 0} {
-	    ##Log header done - token $token
+	    Log ##Log header done - token $token
 	    Log ^E$tk end of response headers - token $token
 	    # We have now read all headers
 	    # We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
@@ -2513,7 +2513,7 @@ proc http::Event {sock token} {
 	    } {
 		# The server warns that it will close the socket after this
 		# response.
-		##Log WARNING - socket will close after response for $token
+		Log ##Log WARNING - socket will close after response for $token
 		# Prepare data for a call to ReplayIfClose.
 		if {    ($socketRdQueue($state(socketinfo)) ne {})
 		     || ($socketWrQueue($state(socketinfo)) ne {})
@@ -2525,7 +2525,7 @@ proc http::Event {sock token} {
 			set InFlightW Wready
 		    } else {
 			set msg "token ${InFlightW} is InFlightW"
-			##Log $msg - token $token
+			Log ##Log $msg - token $token
 		    }
 
 		    set socketPlayCmd($state(socketinfo)) \
@@ -2617,7 +2617,7 @@ proc http::Event {sock token} {
 	    }
 	} elseif {$nhl > 0} {
 	    # Process header lines.
-	    ##Log header - token $token - $line
+	    Log ##Log header - token $token - $line
 	    if {[regexp -nocase {^([^:]+):(.+)$} $line x key value]} {
 		switch -- [string tolower $key] {
 		    content-type {
@@ -2653,11 +2653,11 @@ proc http::Event {sock token} {
 	}
     } else {
 	# Now reading body
-	##Log body - token $token
+	Log ##Log body - token $token
 	if {[catch {
 	    if {[info exists state(-handler)]} {
 		set n [eval $state(-handler) [list $sock $token]]
-		##Log handler $n - token $token
+		Log ##Log handler $n - token $token
 		# N.B. the protocol has been set to 1.0 because the -handler
 		# logic is not expected to handle chunked encoding.
 		# FIXME allow -handler with 1.1 on dechunked stacked channel.
@@ -2710,14 +2710,14 @@ proc http::Event {sock token} {
 	    } elseif {    [info exists state(transfer)]
 		       && ($state(transfer) eq "chunked")
 	    } {
-		##Log chunked - token $token
+		Log ##Log chunked - token $token
 		set size 0
 		set hexLenChunk [getTextLine $sock]
 		#set ntl [string length $hexLenChunk]
 		if {[string trim $hexLenChunk] ne ""} {
 		    scan $hexLenChunk %x size
 		    if {$size != 0} {
-			##Log chunk-measure $size - token $token
+			Log ##Log chunk-measure $size - token $token
 			set bl [fconfigure $sock -blocking]
 			fconfigure $sock -blocking 1
 			set chunk [read $sock $size]
@@ -2726,7 +2726,7 @@ proc http::Event {sock token} {
 			if {$n >= 0} {
 			    append state(body) $chunk
 			    incr state(log_size) [string length $chunk]
-			    ##Log chunk $n cumul $state(log_size) - token $token
+			    Log ##Log chunk $n cumul $state(log_size) - token $token
 			}
 			if {$size != [string length $chunk]} {
 			    Log "WARNING: mis-sized chunk:\
@@ -2748,14 +2748,14 @@ proc http::Event {sock token} {
 		    }
 		} else {
 		    # Line expected to hold chunk length is empty.
-		    ##Log bad-chunk-measure - token $token
+		    Log ##Log bad-chunk-measure - token $token
 		    set n 0
 		    set state(connection) close
 		    Log ^X$tk end of response (chunk error) - token $token
 		    Eot $token {error in chunked encoding - fetch terminated}
 		}
 	    } else {
-		##Log unchunked - token $token
+		Log ##Log unchunked - token $token
 		if {$state(totalsize) == 0} {
 		    # We know the transfer is complete only when the server
 		    # closes the connection.
@@ -2775,12 +2775,12 @@ proc http::Event {sock token} {
 		}
 		set c $state(currentsize)
 		set t $state(totalsize)
-		##Log non-chunk currentsize $c of totalsize $t - token $token
+		Log ##Log non-chunk currentsize $c of totalsize $t - token $token
 		set block [read $sock $reqSize]
 		set n [string length $block]
 		if {$n >= 0} {
 		    append state(body) $block
-		    ##Log non-chunk [string length $state(body)] - token $token
+		    Log ##Log non-chunk [string length $state(body)] - token $token
 		}
 	    }
 	    # This calculation uses n from the -handler, chunked, or unchunked
@@ -2790,7 +2790,7 @@ proc http::Event {sock token} {
 		    incr state(currentsize) $n
 		    set c $state(currentsize)
 		    set t $state(totalsize)
-		    ##Log chunk $n currentsize $c totalsize $t - token $token
+		    Log ##Log chunk $n currentsize $c totalsize $t - token $token
 		}
 		# If Content-Length - check for end of data.
 		if {
@@ -2817,7 +2817,7 @@ proc http::Event {sock token} {
     # catch as an Eot above may have closed the socket already
     # $state(state) may be connecting, header, body, or complete
     if {![catch {eof $sock} eof] && $eof} {
-	##Log eof - token $token
+	Log ##Log eof - token $token
 	if {[info exists $token]} {
 	    set state(connection) close
 	    if {$state(state) eq "complete"} {
