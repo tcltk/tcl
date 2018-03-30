@@ -728,8 +728,18 @@ SelectPackage(ClientData data[], Tcl_Interp *interp, int result) {
 	 */
 
 	char *versionToProvide = bestPtr->version;
+	PkgFiles *pkgFiles;
+	PkgName *pkgName;
+
 	Tcl_Preserve(versionToProvide);
 	pkgPtr->clientData = versionToProvide;
+
+	pkgFiles = TclInitPkgFiles(interp);
+	/* Push "ifneeded" package name in "tclPkgFiles" assocdata. */
+	pkgName = ckalloc(sizeof(PkgName) + strlen(name));
+	pkgName->nextPtr = pkgFiles->names;
+	strcpy(pkgName->name, name);
+	pkgFiles->names = pkgName;
 	if (bestPtr->pkgIndex) {
 	    TclPkgFileSeen(interp, bestPtr->pkgIndex);
 	}
@@ -748,17 +758,9 @@ SelectPackageFinal(ClientData data[], Tcl_Interp *interp, int result) {
     const char *name = reqPtr->name;
     char *versionToProvide = reqPtr->versionToProvide;
 
-    PkgFiles *pkgFiles;
-    PkgName *pkgName;
-
-    pkgFiles = TclInitPkgFiles(interp);
-    /* Push "ifneeded" package name in "tclPkgFiles" assocdata. */
-    pkgName = ckalloc(sizeof(PkgName) + strlen(name));
-    pkgName->nextPtr = pkgFiles->names;
-    strcpy(pkgName->name, name);
-    pkgFiles->names = pkgName;
-
     /* Pop the "ifneeded" package name from "tclPkgFiles" assocdata*/
+    PkgFiles *pkgFiles = Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+    PkgName *pkgName = pkgFiles->names;
     pkgFiles->names = pkgName->nextPtr;
     ckfree(pkgName);
 
@@ -1246,7 +1248,6 @@ TclNRPackageObjCmd(
 	     */
 
 	    ov = Tcl_NewStringObj(version, -1);
-	    Tcl_IncrRefCount(ov);
 	    Tcl_AppendStringsToObj(ov, "-", version, NULL);
 	    version = NULL;
 	    argv3 = TclGetString(objv[3]);

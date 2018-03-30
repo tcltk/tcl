@@ -38,6 +38,7 @@
 #include "tommath.h"
 #include "tclStringRep.h"
 
+#include "assert.h"
 /*
  * Prototypes for functions defined later in this file:
  */
@@ -3526,6 +3527,151 @@ TclStringReverse(
     }
 
     return objPtr;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclStringReplace --
+ *
+ *	Implements the inner engine of the [string replace] command.
+ *
+ *	The result is a concatenation of a prefix from objPtr, characters
+ *	0 through first-1, the insertPtr string value, and a suffix from
+ *	objPtr, characters from first + count to the end. The effect is
+ *	as if the inner substring of characters first through first+count-1
+ *	are removed and replaced with insertPtr.
+ *	If insertPtr is NULL, it is treated as an empty string.
+ *	When passed the flag TCL_STRING_IN_PLACE, this routine will try
+ *	to do the work within objPtr, so long as no sharing forbids it.
+ *	Without that request, or as needed, a new Tcl value will be allocated
+ *	to be the result.
+ *
+ * Results:
+ *	A Tcl value that is the result of the substring replacement.
+ *	May return NULL in case of an error. When NULL is returned and
+ *	interp is non-NULL, error information is left in interp
+ *
+ *---------------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclStringReplace(
+    Tcl_Interp *interp,		/* For error reporting, may be NULL */
+    Tcl_Obj *objPtr,		/* String to act upon */
+    int first,			/* First index to replace */
+    int count,			/* How many chars to replace */
+    Tcl_Obj *insertPtr,		/* Replacement string, may be NULL */
+    int flags)			/* TCL_STRING_IN_PLACE => attempt in-place */
+{
+    int inPlace = flags & TCL_STRING_IN_PLACE;
+    Tcl_Obj *result;
+
+    /* Caller is expected to pass sensible arguments */
+    assert ( count >= 0 ) ;
+    assert ( first >= 0 ) ;
+
+    /* Replace nothing with nothing */
+    if ((insertPtr == NULL) && (count == 0)) {
+	if (inPlace) {
+	    return objPtr;
+	} else {
+	    return Tcl_DuplicateObj(objPtr);
+	}
+    }
+
+    /*
+     * The caller very likely had to call Tcl_GetCharLength() or similar
+     * to be able to process index values.  This means it is like that
+     * objPtr is either a proper "bytearray" or a "string" or else it has
+     * a known and short string rep.
+     */
+
+    if (TclIsPureByteArray(objPtr)) {
+	int numBytes;
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &numBytes);
+
+	if (insertPtr == NULL) {
+	    /* Replace something with nothing. */
+
+	    assert ( first <= numBytes ) ;
+	    assert ( count <= numBytes ) ;
+	    assert ( first + count <= numBytes ) ;
+
+	    result = Tcl_NewByteArrayObj(NULL, numBytes - count);/* PANIC? */
+	    TclAppendBytesToByteArray(result, bytes, first);
+	    TclAppendBytesToByteArray(result, bytes + first + count,
+		    numBytes - count - first);
+	    return result;
+	}
+
+	/* Replace everything */
+	if ((first == 0) && (count == numBytes)) {
+	    return insertPtr;
+	}
+
+	if (TclIsPureByteArray(insertPtr)) {
+	    int newBytes;
+	    unsigned char *iBytes
+		    = Tcl_GetByteArrayFromObj(insertPtr, &newBytes);
+
+	    if (count == newBytes && inPlace && !Tcl_IsShared(objPtr)) {
+		/*
+		 * Removal count and replacement count are equal.
+		 * Other conditions permit. Do in-place splice.
+		 */
+
+		memcpy(bytes + first, iBytes, count);
+		Tcl_InvalidateStringRep(objPtr);
+		return objPtr;
+	    }
+
+	    if (newBytes > INT_MAX - (numBytes - count)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "max size for a Tcl value (%d bytes) exceeded",
+			    INT_MAX));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		}
+		return NULL;
+	    }
+	    result = Tcl_NewByteArrayObj(NULL, numBytes - count + newBytes);
+								/* PANIC? */
+	    Tcl_SetByteArrayLength(result, 0);
+	    TclAppendBytesToByteArray(result, bytes, first);	
+	    TclAppendBytesToByteArray(result, iBytes, newBytes);
+	    TclAppendBytesToByteArray(result, bytes + first + count,
+		    numBytes - count - first);
+	    return result;
+	}
+
+	/* Flow through to try other approaches below */
+    }
+
+    /*
+     * TODO: Figure out how not to generate a Tcl_UniChar array rep
+     * when it can be determined objPtr->bytes points to a string of
+     * all single-byte characters so we can index it directly.
+     */
+
+    /* The traditional implementation... */
+    {
+	int numChars;
+	Tcl_UniChar *ustring = Tcl_GetUnicodeFromObj(objPtr, &numChars);
+
+	/* TODO: Is there an in-place option worth pursuing here? */
+	
+	result = Tcl_NewUnicodeObj(ustring, first);
+	if (insertPtr) {
+	    Tcl_AppendObjToObj(result, insertPtr);
+	}
+	if (first + count < numChars) {
+	    Tcl_AppendUnicodeToObj(result, ustring + first + count,
+		    numChars - first - count);
+	}
+
+	return result;
+    }
 }
 
 /*
