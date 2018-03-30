@@ -641,7 +641,7 @@ proc RunTest {header footer delay te} {
 # If still obscure, uncomment #Log and ##Log lines in the http package.
 # ------------------------------------------------------------------------------
 
-set ::httpTest::testOptions(-verbose) 0
+set ::httpTest::testOptions(-verbose) 2
 
 
 # ------------------------------------------------------------------------------
