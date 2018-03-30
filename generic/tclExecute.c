@@ -4940,11 +4940,11 @@ TEBCresume(
 		TclGetInt4AtPtr(pc+5)));
 
 	/*
-	 * Get the contents of the list, making sure that it really is a list
+	 * Get the length of the list, making sure that it really is a list
 	 * in the process.
 	 */
 
-	if (TclListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
+	if (TclListObjLength(interp, valuePtr, &objc) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -4978,7 +4978,10 @@ TEBCresume(
 	}
 
 	if ((toIdx == TCL_INDEX_BEFORE) || (fromIdx == TCL_INDEX_AFTER)) {
-	    goto emptyList;
+	emptyList:
+	    objResultPtr = Tcl_NewObj();
+	    TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
+	    NEXT_INST_F(9, 1, 1);
 	}
 	toIdx = TclIndexDecode(toIdx, objc - 1);
 	if (toIdx < 0) {
@@ -4998,28 +5001,8 @@ TEBCresume(
 	}
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
-	if (fromIdx < 0) {
-	    fromIdx = 0;
-	}
 
-	if (fromIdx <= toIdx) {
-	    /* Construct the subsquence list */
-	    /* unshared optimization */
-	    if (Tcl_IsShared(valuePtr)) {
-		objResultPtr = Tcl_NewListObj(toIdx-fromIdx+1, objv+fromIdx);
-	    } else {
-		if (toIdx != objc - 1) {
-		    Tcl_ListObjReplace(NULL, valuePtr, toIdx + 1, LIST_MAX,
-			    0, NULL);
-		}
-		Tcl_ListObjReplace(NULL, valuePtr, 0, fromIdx, 0, NULL);
-		TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
-		NEXT_INST_F(9, 0, 0);
-	    }
-	} else {
-	emptyList:
-	    TclNewObj(objResultPtr);
-	}
+	objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
 
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
