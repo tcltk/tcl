@@ -2526,7 +2526,6 @@ Tcl_LrangeObjCmd(
     register Tcl_Obj *const objv[])
 				/* Argument objects. */
 {
-    Tcl_Obj **elemPtrs;
     int listLen, first, last, result;
 
     if (objc != 4) {
@@ -2544,55 +2543,14 @@ Tcl_LrangeObjCmd(
     if (result != TCL_OK) {
 	return result;
     }
-    if (first < 0) {
-	first = 0;
-    }
 
     result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
 	    &last);
     if (result != TCL_OK) {
 	return result;
     }
-    if (last >= listLen) {
-	last = listLen - 1;
-    }
 
-    if (first > last) {
-	/*
-	 * Returning an empty list is easy.
-	 */
-
-	return TCL_OK;
-    }
-
-    result = TclListObjGetElements(interp, objv[1], &listLen, &elemPtrs);
-    if (result != TCL_OK) {
-	return result;
-    }
-
-    if (Tcl_IsShared(objv[1]) ||
-	    ((ListRepPtr(objv[1])->refCount > 1))) {
-	Tcl_SetObjResult(interp, Tcl_NewListObj(last - first + 1,
-		&elemPtrs[first]));
-    } else {
-	/*
-	 * In-place is possible.
-	 */
-
-	if (last < (listLen - 1)) {
-	    Tcl_ListObjReplace(interp, objv[1], last + 1, listLen - 1 - last,
-		    0, NULL);
-	}
-
-	/*
-	 * This one is not conditioned on (first > 0) in order to preserve the
-	 * string-canonizing effect of [lrange 0 end].
-	 */
-
-	Tcl_ListObjReplace(interp, objv[1], 0, first, 0, NULL);
-	Tcl_SetObjResult(interp, objv[1]);
-    }
-
+    Tcl_SetObjResult(interp, TclListObjRange(objv[1], first, last));
     return TCL_OK;
 }
 
