@@ -807,7 +807,8 @@ for {set header 1} {$header <= 4} {incr header} {
 
 
 	    # Here's the test:
-            test http11-${header}.${footer}${label}-${tag} $name -constraints $cons \
+            test httpPipeline-${header}.${footer}${label}-${tag} $name \
+            -constraints $cons \
             -setup [string map [list TE $te] {
 		# Restore default values for tests:
 		http::config -pipeline 1 -postfresh 0 -repost 1
