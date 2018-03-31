@@ -383,7 +383,7 @@ proc httpTestScript::Requester {uriCode keepAlive validate query args} {
     if {[catch {
         ::http::geturl     $absUrl        \
                 -validate  $validate      \
-                -timeout   5000           \
+                -timeout   4000           \
                 {*}$queryArgs             \
                 -keepalive $keepAlive     \
                 -command   ::httpTestScript::WhenFinished

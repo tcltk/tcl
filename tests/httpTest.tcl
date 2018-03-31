@@ -25,6 +25,7 @@ package require http
 
 namespace eval ::http {
     variable TestStartTimeInMs [clock milliseconds]
+    catch {puts stderr "Start time (zero ms) is $TestStartTimeInMs"}
 }
 
 namespace eval ::httpTest {
@@ -297,6 +298,32 @@ proc httpTest::TestSequence {someResults n msg badTrans} {
     return $msg
 }
 
+#
+# Arguments:
+# someResults  - list of elements, each a list of a letter and a number
+# n            - (positive integer) the number of HTTP requests
+# msg          - accumulated warning messages
+# skipOverlaps - (boolean) whether to skip testing of transaction overlaps
+# badTrans     - list of transaction numbers not to be assessed as "clean" or
+#                "dirty" by their overlaps
+#   for 1/2 includes all transactions
+#   for 3/4 includes an increasing (with recursion) set that will not be included in the list because they are already handled.
+# notPiped     - subset of badTrans.  List of transaction numbers that cannot
+#                taint another transaction by overlapping with it, because it
+#                used a different socket.
+#
+# Return value: [list $msg $cleanE $cleanF $dirtyE $dirtyF]
+# msg    - warning messages: nothing will be appended to argument $msg if there
+#          is no error with the test.
+# cleanE - list of transactions that have no overlap with other transactions
+#          (not considering response body)
+# dirtyE - list of transactions that have YES overlap with other transactions
+#          (not considering response body)
+# cleanF - list of transactions that have no overlap with other transactions
+#          (including response body)
+# dirtyF - list of transactions that have YES overlap with other transactions
+#          (including response body)
+
 proc httpTest::MostAnalysis {someResults n msg skipOverlaps badTrans notPiped} {
     variable testOptions
 
@@ -362,6 +389,7 @@ proc httpTest::ProcessRetries {someResults n msg skipOverlaps notIncluded notPip
         set last  [lsearch -exact $beforeTry [list F $i]]
         if {$first == -1} {
 	    set res "Transaction $i was not started in connection number $tryCount"
+	    # So lappend it to badTrans and don't include it in the call below of MostAnalysis.
 	    # append msg $res \n
 	    Puts $res
 	    if {$i ni $badTrans} {
@@ -370,12 +398,16 @@ proc httpTest::ProcessRetries {someResults n msg skipOverlaps notIncluded notPip
 	    }
         } elseif {$last == -1} {
 	    set res "Transaction $i was started but unfinished in connection number $tryCount"
+	    # So lappend it to badTrans and don't include it in the call below of MostAnalysis.
 	    # append msg $res \n
 	    Puts $res
 	    lappend badTrans $i
 	    lappend dummyTry [list A $i]
         } else {
 	    set res "Transaction $i was started and finished in connection number $tryCount"
+	    # So include it in the call below of MostAnalysis.
+	    # So lappend it to notIncluded and don't include it in the recursive call of
+	    # ProcessRetries which handles the later connections.
 	    # append msg $res \n
 	    Puts $res
 	    lappend notIncluded $i
@@ -398,7 +430,31 @@ proc httpTest::ProcessRetries {someResults n msg skipOverlaps notIncluded notPip
     return [list $msg $cleanE $cleanF $dirtyE $dirtyF]
 }
 
-proc httpTest::LogAnalyse {n skipOverlaps notIncluded notPiped} {
+# httpTest::logAnalyse --
+#
+#	The main command called to analyse logs for a single test.
+#
+# Arguments:
+# n            - (positive integer) the number of HTTP requests
+# skipOverlaps - (boolean) whether to skip testing of transaction overlaps
+# notIncluded  - list of transaction numbers not to be assessed as "clean" or
+#                "dirty" by their overlaps
+# notPiped     - subset of notIncluded.  List of transaction numbers that cannot
+#                taint another transaction by overlapping with it, because it
+#                used a different socket.
+#
+# Return value: [list $msg $cleanE $cleanF $dirtyE $dirtyF]
+# msg    - warning messages: {} if there is no error with the test.
+# cleanE - list of transactions that have no overlap with other transactions
+#          (not considering response body)
+# dirtyE - list of transactions that have YES overlap with other transactions
+#          (not considering response body)
+# cleanF - list of transactions that have no overlap with other transactions
+#          (including response body)
+# dirtyF - list of transactions that have YES overlap with other transactions
+#          (including response body)
+
+proc httpTest::logAnalyse {n skipOverlaps notIncluded notPiped} {
     variable testResults
     variable testOptions
 
@@ -428,4 +484,22 @@ proc httpTest::LogAnalyse {n skipOverlaps notIncluded notPiped} {
     Puts [join $testResults \n]
     ProcessRetries $testResults $n $msg $skipOverlaps $notIncluded $notPiped
     # N.B. Implicit Return.
+}
+
+proc httpTest::cleanupHttpTest {} {
+    variable testResults
+    set testResults {}
+    return
+}
+
+proc httpTest::setHttpTestOptions {key args} {
+    variable testOptions
+    if {$key ni {-dotted -verbose}} {
+        return -code error {valid options are -dotted, -verbose}
+    }
+    set testOptions($key) {*}$args
+}
+
+namespace eval httpTest {
+    namespace export cleanupHttpTest logAnalyse setHttpTestOptions
 }
