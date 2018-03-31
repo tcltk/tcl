@@ -1086,7 +1086,7 @@ proc http::geturl {url args} {
     # - DoneRequest - if reusing and pipelined, send the next pipelined write
     # - Event       - if reusing and pipelined, start the state(-timeout)
     #                 timeout (when reading).
-    # - Event       - if not reusing and pipelined, send the next pipelined
+    # - Event       - if (not reusing) and pipelined, send the next pipelined
     #                 write
 
     # See comments above re the start of this timeout in other cases.
@@ -1100,6 +1100,9 @@ proc http::geturl {url args} {
 	if {[info exists state(-myaddr)]} {
 	    lappend sockopts -myaddr $state(-myaddr)
 	}
+	set pre [clock milliseconds]
+	Log ##Log pre socket opened, - token $token
+	Log ##Log [concat $defcmd $sockopts $targetAddr] - token $token
 	if {[catch {eval $defcmd $sockopts $targetAddr} sock]} {
 	    # Something went wrong while trying to establish the connection.
 	    # Clean up after events and such, but DON'T call the command
@@ -1112,10 +1115,19 @@ proc http::geturl {url args} {
 	    return -code error $sock
 	} else {
 	    # Initialisation of a new socket.
+	    Log ##Log post socket opened, - token $token
+	    Log ##Log socket opened, now fconfigure - token $token
+	    set delay [expr {[clock milliseconds] - $pre}]
+	    if {$delay > 3000} {
+		Log ##Log socket delay $delay - token $token
+	    }
 	    fconfigure $sock -translation {auto crlf} \
 			     -buffersize $state(-blocksize)
+	    Log ##Log socket opened, DONE fconfigure - token $token
 	}
     }
+    # Command [socket] is called with -async, but occasionally takes seconds to return.
+    # It returns after 5s, and the request times out when this command returns.
 
     set state(sock) $sock
     Log "Using $sock for $state(socketinfo) - token $token" \
@@ -2084,6 +2096,9 @@ proc http::ReplayCore {newQueue} {
 	set state(after) [after $state(-timeout) $resetCmd]
     }
 
+    set pre [clock milliseconds]
+    Log ##Log pre socket opened, - token $token
+    Log ##Log $tmpOpenCmd - token $token
     # 4. Open a socket.
     if {[catch {eval $tmpOpenCmd} sock]} {
 	# Something went wrong while trying to establish the connection.
@@ -2092,6 +2107,13 @@ proc http::ReplayCore {newQueue} {
 	Finish $token $sock
 	return
     }
+    Log ##Log post socket opened, - token $token
+    set delay [expr {[clock milliseconds] - $pre}]
+    if {$delay > 3000} {
+	Log ##Log socket delay $delay - token $token
+    }
+    # Command [socket] is called with -async, but occasionally takes seconds to return.
+    # It returns after 5s, and the request times out when this command returns.
 
     # 5. Configure the persistent socket data.
     if {$state(-keepalive)} {
@@ -2125,6 +2147,7 @@ proc http::ReplayCore {newQueue} {
 	set socketPlayCmd($state(socketinfo)) {ReplayIfClose Wready {} {}}
     }
 
+    Log ##Log pre newQueue ReInit, - token $token
     # 6. Configure sockets in the queue.
     foreach tok $newQueue {
 	if {[ReInit $tok]} {
@@ -2143,7 +2166,9 @@ proc http::ReplayCore {newQueue} {
 	[expr {$state(-keepalive)?"keepalive":""}]
 
     # Initialisation of a new socket.
+    Log ##Log socket opened, now fconfigure - token $token
     fconfigure $sock -translation {auto crlf} -buffersize $state(-blocksize)
+    Log ##Log socket opened, DONE fconfigure - token $token
 
     # Connect does its own fconfigure.
     fileevent $sock writable [list http::Connect $token {*}$tmpConnArgs]
@@ -2790,7 +2815,7 @@ proc http::Event {sock token} {
 		    incr state(currentsize) $n
 		    set c $state(currentsize)
 		    set t $state(totalsize)
-		    Log ##Log chunk $n currentsize $c totalsize $t - token $token
+		    Log ##Log another $n currentsize $c totalsize $t - token $token
 		}
 		# If Content-Length - check for end of data.
 		if {
