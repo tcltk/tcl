@@ -1119,15 +1119,18 @@ proc http::geturl {url args} {
 	    Log ##Log socket opened, now fconfigure - token $token
 	    set delay [expr {[clock milliseconds] - $pre}]
 	    if {$delay > 3000} {
-		Log ##Log socket delay $delay - token $token
+		Log socket delay $delay - token $token
 	    }
 	    fconfigure $sock -translation {auto crlf} \
 			     -buffersize $state(-blocksize)
 	    Log ##Log socket opened, DONE fconfigure - token $token
 	}
     }
-    # Command [socket] is called with -async, but occasionally takes seconds to return.
-    # It returns after 5s, and the request times out when this command returns.
+    # Command [socket] is called with -async, but takes 5s to 5.1s to return,
+    # with probability of order 1 in 10,000.  This may be a bizarre scheduling
+    # issue with my (KJN's) system (Fedora Linux).
+    # This does not cause a problem (unless the request times out when this
+    # command returns).
 
     set state(sock) $sock
     Log "Using $sock for $state(socketinfo) - token $token" \
@@ -2110,10 +2113,13 @@ proc http::ReplayCore {newQueue} {
     Log ##Log post socket opened, - token $token
     set delay [expr {[clock milliseconds] - $pre}]
     if {$delay > 3000} {
-	Log ##Log socket delay $delay - token $token
+	Log socket delay $delay - token $token
     }
-    # Command [socket] is called with -async, but occasionally takes seconds to return.
-    # It returns after 5s, and the request times out when this command returns.
+    # Command [socket] is called with -async, but takes 5s to 5.1s to return,
+    # with probability of order 1 in 10,000.  This may be a bizarre scheduling
+    # issue with my (KJN's) system (Fedora Linux).
+    # This does not cause a problem (unless the request times out when this
+    # command returns).
 
     # 5. Configure the persistent socket data.
     if {$state(-keepalive)} {
