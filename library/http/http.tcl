@@ -255,6 +255,9 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 	set state(error) [list $errormsg $errorInfo $errorCode]
 	set state(status) "error"
     }
+    if {[info commands ${token}EventCoroutine] ne {}} {
+        rename ${token}EventCoroutine {}
+    }
     if {  ($state(status) eq "timeout")
        || ($state(status) eq "error")
        || ($state(status) eq "eof")
@@ -357,13 +360,7 @@ proc http::KeepSocket {token} {
 
 	    Log #Log pipelined, GRANT read access to $token3 in KeepSocket
 	    set socketRdState($connId) $token3
-	    lassign [fconfigure $state3(sock) -translation] trRead trWrite
-	    fconfigure $state3(sock) -translation [list auto $trWrite] \
-				     -buffersize $state3(-blocksize)
-	    Log ^D$tk2 begin receiving response - token $token3
-	    fileevent $state3(sock) readable \
-		    [list http::Event $state3(sock) $token3]
-	    Log #Log ---- $state3(sock) >> conn to $token3 for HTTP response (a)
+	    ReceiveResponse $token3
 
 	    # Other pipelined cases.
 	    # - The test above ensures that, for the pipelined cases in the two
@@ -1602,13 +1599,29 @@ proc http::DoneRequest {token} {
 	# In the pipelined case, connection for reading depends on the
 	# value of socketRdState.
 	# In the nonpipeline case, connection for reading always occurs.
-	Log #Log ---- $state(socketinfo) >> conn to $token for HTTP response (b)
-	lassign [fconfigure $sock -translation] trRead trWrite
-	fconfigure $sock -translation [list auto $trWrite] \
-			 -buffersize $state(-blocksize)
-	Log ^D$tk begin receiving response - token $token
-	fileevent $sock readable [list http::Event $sock $token]
+	ReceiveResponse $token
     }
+    return
+}
+
+# http::ReceiveResponse
+#
+#	Connects token to its socket for reading.
+
+proc http::ReceiveResponse {token} {
+    variable $token
+    upvar 0 $token state
+    set tk [namespace tail $token]
+    set sock $state(sock)
+
+    Log #Log ---- $state(socketinfo) >> conn to $token for HTTP response
+    lassign [fconfigure $sock -translation] trRead trWrite
+    fconfigure $sock -translation [list auto $trWrite] \
+		     -buffersize $state(-blocksize)
+    Log ^D$tk begin receiving response - token $token
+
+    coroutine ${token}EventCoroutine http::Event $sock $token
+    fileevent $sock readable ${token}EventCoroutine
     return
 }
 
@@ -2247,6 +2260,9 @@ proc http::error {token} {
 proc http::cleanup {token} {
     variable $token
     upvar 0 $token state
+    if {[info commands ${token}EventCoroutine] ne {}} {
+        rename ${token}EventCoroutine {}
+    }
     if {[info exists state]} {
 	unset state
     }
@@ -2426,447 +2442,452 @@ proc http::Event {sock token} {
     variable $token
     upvar 0 $token state
     set tk [namespace tail $token]
+    while 1 {
+	yield
+	Log ##Log Event call - token $token
 
-    Log ##Log Event call - token $token
-
-    if {![info exists state]} {
-	Log "Event $sock with invalid token '$token' - remote close?"
-	if {![eof $sock]} {
-	    if {[set d [read $sock]] ne ""} {
-		Log "WARNING: additional data left on closed socket\
-			- token $token"
+	if {![info exists state]} {
+	    Log "Event $sock with invalid token '$token' - remote close?"
+	    if {![eof $sock]} {
+		if {[set d [read $sock]] ne ""} {
+		    Log "WARNING: additional data left on closed socket\
+			    - token $token"
+		}
 	    }
+	    Log ^X$tk end of response (token error) - token $token
+	    CloseSocket $sock
+	    return
 	}
-	Log ^X$tk end of response (token error) - token $token
-	CloseSocket $sock
-	return
-    }
-    if {$state(state) eq "connecting"} {
-	Log ##Log - connecting - token $token
-	if {    $state(reusing)
-	     && $state(-pipeline)
-	     && ($state(-timeout) > 0)
-	     && (![info exists state(after)])
-	} {
-	    set state(after) [after $state(-timeout) \
-		    [list http::reset $token timeout]]
-	}
+	if {$state(state) eq "connecting"} {
+	    Log ##Log - connecting - token $token
+	    if {    $state(reusing)
+		 && $state(-pipeline)
+		 && ($state(-timeout) > 0)
+		 && (![info exists state(after)])
+	    } {
+		set state(after) [after $state(-timeout) \
+			[list http::reset $token timeout]]
+	    }
 
-	if {[catch {gets $sock state(http)} nsl]} {
-	    Log "WARNING - if testing, pay special attention to this\
-		    case (GK) which is seldom executed - token $token"
-	    if {[info exists state(reusing)] && $state(reusing)} {
-		# The socket was closed at the server end, and closed at
-		# this end by http::CheckEof.
+	    if {[catch {gets $sock state(http)} nsl]} {
+		Log "WARNING - if testing, pay special attention to this\
+			case (GK) which is seldom executed - token $token"
+		if {[info exists state(reusing)] && $state(reusing)} {
+		    # The socket was closed at the server end, and closed at
+		    # this end by http::CheckEof.
 
-		if {[TestForReplay $token read $nsl c]} {
+		    if {[TestForReplay $token read $nsl c]} {
+			return
+		    }
+
+		    # else:
+		    # This is NOT a persistent socket that has been closed since its
+		    # last use.
+		    # If any other requests are in flight or pipelined/queued, they
+		    # will be discarded.
+		} else {
+		    Log ^X$tk end of response (error) - token $token
+		    Finish $token $nsl
+		    return
+		}
+	    } elseif {$nsl >= 0} {
+		Log ##Log - connecting 1 - token $token
+		set state(state) "header"
+	    } elseif {    [eof $sock]
+		       && [info exists state(reusing)]
+		       && $state(reusing)
+	    } {
+		# The socket was closed at the server end, and we didn't notice.
+		# This is the first read - where the closure is usually first
+		# detected.
+
+		if {[TestForReplay $token read {} d]} {
 		    return
 		}
 
 		# else:
 		# This is NOT a persistent socket that has been closed since its
 		# last use.
-		# If any other requests are in flight or pipelined/queued, they
-		# will be discarded.
+		# If any other requests are in flight or pipelined/queued, they will
+		# be discarded.
 	    } else {
+		Log ##Log - connecting 2 - token $token
+		# nsl is -1 so either fblocked (OK) or (eof and not reusing).
+		# Continue. Any eof is processed at the end of this proc.
+	    }
+	} elseif {$state(state) eq "header"} {
+	    if {[catch {gets $sock line} nhl]} {
+		Log ##Log header failed - token $token
 		Log ^X$tk end of response (error) - token $token
-		Finish $token $nsl
+		Finish $token $nhl
 		return
-	    }
-	} elseif {$nsl >= 0} {
-	    Log ##Log - connecting 1 - token $token
-	    set state(state) "header"
-	} elseif {    [eof $sock]
-		   && [info exists state(reusing)]
-		   && $state(reusing)
-	} {
-	    # The socket was closed at the server end, and we didn't notice.
-	    # This is the first read - where the closure is usually first
-	    # detected.
-
-	    if {[TestForReplay $token read {} d]} {
-		return
-	    }
-
-	    # else:
-	    # This is NOT a persistent socket that has been closed since its
-	    # last use.
-	    # If any other requests are in flight or pipelined/queued, they will
-	    # be discarded.
-	} else {
-	    Log ##Log - connecting 2 - token $token
-	    # nsl is -1 so either fblocked (OK) or (eof and not reusing).
-	    # Continue. Any eof is processed at the end of this proc.
-	}
-    } elseif {$state(state) eq "header"} {
-	if {[catch {gets $sock line} nhl]} {
-	    Log ##Log header failed - token $token
-	    Log ^X$tk end of response (error) - token $token
-	    Finish $token $nhl
-	    return
-	} elseif {$nhl == 0} {
-	    Log ##Log header done - token $token
-	    Log ^E$tk end of response headers - token $token
-	    # We have now read all headers
-	    # We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
-	    if {    ($state(http) == "")
-		 || ([regexp {^\S+\s(\d+)} $state(http) {} x] && $x == 100)
-	    } {
-		set state(state) "connecting"
-		return
-	    }
-
-	    if {    ([info exists state(connection)])
-		 && ([info exists socketMapping($state(socketinfo))])
-		 && ($state(connection) eq "keep-alive")
-		 && ($state(-keepalive))
-		 && (!$state(reusing))
-		 && ($state(-pipeline))
-	    } {
-		# Response headers received for first request on a persistent
-		# socket.  Now ready for pipelined writes (if any).
-		# Previous value is $token. It cannot be pending.
-		set socketWrState($state(socketinfo)) Wready
-		http::NextPipelinedWrite $token
-	    }
-
-	    # Once a "close" has been signaled, the client MUST NOT send any
-	    # more requests on that connection.
-	    #
-	    # If either the client or the server sends the "close" token in the
-	    # Connection header, that request becomes the last one for the
-	    # connection.
-
-	    if {    ([info exists state(connection)])
-		 && ([info exists socketMapping($state(socketinfo))])
-		 && ($state(connection) eq "close")
-		 && ($state(-keepalive))
-	    } {
-		# The server warns that it will close the socket after this
-		# response.
-		Log ##Log WARNING - socket will close after response for $token
-		# Prepare data for a call to ReplayIfClose.
-		if {    ($socketRdQueue($state(socketinfo)) ne {})
-		     || ($socketWrQueue($state(socketinfo)) ne {})
-		     || ($socketWrState($state(socketinfo)) ni
-						[list Wready peNding $token])
+	    } elseif {$nhl == 0} {
+		Log ##Log header done - token $token
+		Log ^E$tk end of response headers - token $token
+		# We have now read all headers
+		# We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
+		if {    ($state(http) == "")
+		     || ([regexp {^\S+\s(\d+)} $state(http) {} x] && $x == 100)
 		} {
-		    set InFlightW $socketWrState($state(socketinfo))
-		    if {$InFlightW in [list Wready peNding $token]} {
-			set InFlightW Wready
-		    } else {
-			set msg "token ${InFlightW} is InFlightW"
-			Log ##Log $msg - token $token
-		    }
+		    set state(state) "connecting"
+		    continue
+		    # This was a "return" in the pre-coroutine code.
+		}
 
-		    set socketPlayCmd($state(socketinfo)) \
-			    [list ReplayIfClose $InFlightW \
-			    $socketRdQueue($state(socketinfo)) \
-			    $socketWrQueue($state(socketinfo))]
+		if {    ([info exists state(connection)])
+		     && ([info exists socketMapping($state(socketinfo))])
+		     && ($state(connection) eq "keep-alive")
+		     && ($state(-keepalive))
+		     && (!$state(reusing))
+		     && ($state(-pipeline))
+		} {
+		    # Response headers received for first request on a persistent
+		    # socket.  Now ready for pipelined writes (if any).
+		    # Previous value is $token. It cannot be pending.
+		    set socketWrState($state(socketinfo)) Wready
+		    http::NextPipelinedWrite $token
+		}
 
-		    # - All tokens are preserved for re-use by ReplayCore.
-		    # - Queues are preserved in case of Finish with error, but
-		    #   are not used for anything else because socketClosing(*)
-		    #   is set below.
-		    # - Cancel the state(after) timeout events.
-		    foreach tokenElement $socketRdQueue($state(socketinfo)) {
-			if {[info exists ${tokenElement}(after)]} {
-			    after cancel [set ${tokenElement}(after)]
-			    unset ${tokenElement}(after)
+		# Once a "close" has been signaled, the client MUST NOT send any
+		# more requests on that connection.
+		#
+		# If either the client or the server sends the "close" token in the
+		# Connection header, that request becomes the last one for the
+		# connection.
+
+		if {    ([info exists state(connection)])
+		     && ([info exists socketMapping($state(socketinfo))])
+		     && ($state(connection) eq "close")
+		     && ($state(-keepalive))
+		} {
+		    # The server warns that it will close the socket after this
+		    # response.
+		    Log ##Log WARNING - socket will close after response for $token
+		    # Prepare data for a call to ReplayIfClose.
+		    if {    ($socketRdQueue($state(socketinfo)) ne {})
+			 || ($socketWrQueue($state(socketinfo)) ne {})
+			 || ($socketWrState($state(socketinfo)) ni
+						[list Wready peNding $token])
+		    } {
+			set InFlightW $socketWrState($state(socketinfo))
+			if {$InFlightW in [list Wready peNding $token]} {
+			    set InFlightW Wready
+			} else {
+			    set msg "token ${InFlightW} is InFlightW"
+			    Log ##Log $msg - token $token
 			}
+
+			set socketPlayCmd($state(socketinfo)) \
+				[list ReplayIfClose $InFlightW \
+				$socketRdQueue($state(socketinfo)) \
+				$socketWrQueue($state(socketinfo))]
+
+			# - All tokens are preserved for re-use by ReplayCore.
+			# - Queues are preserved in case of Finish with error, but
+			#   are not used for anything else because socketClosing(*)
+			#   is set below.
+			# - Cancel the state(after) timeout events.
+			foreach tokenElement $socketRdQueue($state(socketinfo)) {
+			    if {[info exists ${tokenElement}(after)]} {
+				after cancel [set ${tokenElement}(after)]
+				unset ${tokenElement}(after)
+			    }
+			}
+
+		    } else {
+			set socketPlayCmd($state(socketinfo)) \
+				{ReplayIfClose Wready {} {}}
 		    }
 
-		} else {
-		    set socketPlayCmd($state(socketinfo)) \
-			    {ReplayIfClose Wready {} {}}
+		    # Do not allow further connections on this socket.
+		    set socketClosing($state(socketinfo)) 1
 		}
 
-		# Do not allow further connections on this socket.
-		set socketClosing($state(socketinfo)) 1
-	    }
+		set state(state) body
 
-	    set state(state) body
-
-	    # If doing a HEAD, then we won't get any body
-	    if {$state(-validate)} {
-		Log ^F$tk end of response for HEAD request - token $token
-		set state(state) complete
-		Eot $token
-		return
-	    }
-
-	    # - For non-chunked transfer we may have no body - in this case we
-	    #   may get no further file event if the connection doesn't close
-	    #   and no more data is sent. We can tell and must finish up now -
-	    #   not later - the alternative would be to wait until the server
-	    #   times out.
-	    # - In this case, the server has NOT told the client it will close
-	    #   the connection, AND it has NOT indicated the resource length
-	    #   EITHER by setting the Content-Length (totalsize) OR by using
-	    #   chunked Transer-Encoding.
-	    # - Do not worry here about the case (Connection: close) because
-	    #   the server should close the connection.
-	    # - IF (NOT Connection: close) AND (NOT chunked encoding) AND
-	    #      (totalsize == 0).
-
-	    if {    (!(    [info exists state(connection)]
-			&& ($state(connection) eq "close")
-		      )
-		    )
-		 && (![info exists state(transfer)])
-		 && ($state(totalsize) == 0)
-	    } {
-		set msg {body size is 0 and no events likely - complete}
-		Log "$msg - token $token"
-		set msg {(length unknown, set to 0)}
-		Log ^F$tk end of response body {*}$msg - token $token
-		set state(state) complete
-		Eot $token
-		return
-	    }
-
-	    # We have to use binary translation to count bytes properly.
-	    lassign [fconfigure $sock -translation] trRead trWrite
-	    fconfigure $sock -translation [list binary $trWrite]
-
-	    if {
-		$state(-binary) || [IsBinaryContentType $state(type)]
-	    } {
-		# Turn off conversions for non-text data.
-		set state(binary) 1
-	    }
-	    if {[info exists state(-channel)]} {
-		if {$state(binary) || [llength [ContentEncoding $token]]} {
-		    fconfigure $state(-channel) -translation binary
-		}
-		if {![info exists state(-handler)]} {
-		    # Initiate a sequence of background fcopies.
-		    fileevent $sock readable {}
-		    CopyStart $sock $token
+		# If doing a HEAD, then we won't get any body
+		if {$state(-validate)} {
+		    Log ^F$tk end of response for HEAD request - token $token
+		    set state(state) complete
+		    Eot $token
 		    return
 		}
-	    }
-	} elseif {$nhl > 0} {
-	    # Process header lines.
-	    Log ##Log header - token $token - $line
-	    if {[regexp -nocase {^([^:]+):(.+)$} $line x key value]} {
-		switch -- [string tolower $key] {
-		    content-type {
-			set state(type) [string trim [string tolower $value]]
-			# Grab the optional charset information.
-			if {[regexp -nocase \
-				 {charset\s*=\s*\"((?:[^""]|\\\")*)\"} \
-				 $state(type) -> cs]} {
-			    set state(charset) [string map {{\"} \"} $cs]
-			} else {
-			    regexp -nocase {charset\s*=\s*(\S+?);?} \
-				$state(type) -> state(charset)
+
+		# - For non-chunked transfer we may have no body - in this case we
+		#   may get no further file event if the connection doesn't close
+		#   and no more data is sent. We can tell and must finish up now -
+		#   not later - the alternative would be to wait until the server
+		#   times out.
+		# - In this case, the server has NOT told the client it will close
+		#   the connection, AND it has NOT indicated the resource length
+		#   EITHER by setting the Content-Length (totalsize) OR by using
+		#   chunked Transer-Encoding.
+		# - Do not worry here about the case (Connection: close) because
+		#   the server should close the connection.
+		# - IF (NOT Connection: close) AND (NOT chunked encoding) AND
+		#      (totalsize == 0).
+
+		if {    (!(    [info exists state(connection)]
+			    && ($state(connection) eq "close")
+			  )
+			)
+		     && (![info exists state(transfer)])
+		     && ($state(totalsize) == 0)
+		} {
+		    set msg {body size is 0 and no events likely - complete}
+		    Log "$msg - token $token"
+		    set msg {(length unknown, set to 0)}
+		    Log ^F$tk end of response body {*}$msg - token $token
+		    set state(state) complete
+		    Eot $token
+		    return
+		}
+
+		# We have to use binary translation to count bytes properly.
+		lassign [fconfigure $sock -translation] trRead trWrite
+		fconfigure $sock -translation [list binary $trWrite]
+
+		if {
+		    $state(-binary) || [IsBinaryContentType $state(type)]
+		} {
+		    # Turn off conversions for non-text data.
+		    set state(binary) 1
+		}
+		if {[info exists state(-channel)]} {
+		    if {$state(binary) || [llength [ContentEncoding $token]]} {
+			fconfigure $state(-channel) -translation binary
+		    }
+		    if {![info exists state(-handler)]} {
+			# Initiate a sequence of background fcopies.
+			fileevent $sock readable {}
+			rename ${token}EventCoroutine {}
+			CopyStart $sock $token
+			return
+		    }
+		}
+	    } elseif {$nhl > 0} {
+		# Process header lines.
+		Log ##Log header - token $token - $line
+		if {[regexp -nocase {^([^:]+):(.+)$} $line x key value]} {
+		    switch -- [string tolower $key] {
+			content-type {
+			    set state(type) [string trim [string tolower $value]]
+			    # Grab the optional charset information.
+			    if {[regexp -nocase \
+				    {charset\s*=\s*\"((?:[^""]|\\\")*)\"} \
+				    $state(type) -> cs]} {
+				set state(charset) [string map {{\"} \"} $cs]
+			    } else {
+				regexp -nocase {charset\s*=\s*(\S+?);?} \
+					$state(type) -> state(charset)
+			    }
+			}
+			content-length {
+			    set state(totalsize) [string trim $value]
+			}
+			content-encoding {
+			    set state(coding) [string trim $value]
+			}
+			transfer-encoding {
+			    set state(transfer) \
+				    [string trim [string tolower $value]]
+			}
+			proxy-connection -
+			connection {
+			    set state(connection) \
+				    [string trim [string tolower $value]]
 			}
 		    }
-		    content-length {
-			set state(totalsize) [string trim $value]
-		    }
-		    content-encoding {
-			set state(coding) [string trim $value]
-		    }
-		    transfer-encoding {
-			set state(transfer) \
-			    [string trim [string tolower $value]]
-		    }
-		    proxy-connection -
-		    connection {
-			set state(connection) \
-			    [string trim [string tolower $value]]
-		    }
+		    lappend state(meta) $key [string trim $value]
 		}
-		lappend state(meta) $key [string trim $value]
 	    }
-	}
-    } else {
-	# Now reading body
-	Log ##Log body - token $token
-	if {[catch {
-	    if {[info exists state(-handler)]} {
-		set n [eval $state(-handler) [list $sock $token]]
-		Log ##Log handler $n - token $token
-		# N.B. the protocol has been set to 1.0 because the -handler
-		# logic is not expected to handle chunked encoding.
-		# FIXME allow -handler with 1.1 on dechunked stacked channel.
-		if {$state(totalsize) == 0} {
-		    # We know the transfer is complete only when the server
-		    # closes the connection - i.e. eof is not an error.
-		    set state(state) complete
-		}
-		if {![string is integer -strict $n]} {
-		    if 1 {
-			# Do not tolerate bad -handler - fail with error status.
-			set msg {the -handler command for http::geturl must\
-				return an integer (the number of bytes read)}
-			Log ^X$tk end of response (handler error) - token $token
-			Eot $token $msg
-		    } else {
-			# Tolerate the bad -handler, and continue.  The penalty:
-			# (a) Because the handler returns nonsense, we know the
-			#     transfer is complete only when the server closes
-			#     the connection - i.e. eof is not an error.
-			# (b) http::size will not be accurate.
-			# (c) The transaction is already downgraded to 1.0 to
-			#     avoid chunked transfer encoding.  It MUST also be
-			#     forced to "Connection: close" or the HTTP/1.0
-			#     equivalent; or it MUST fail (as above) if the
-			#     server sends "Connection: keep-alive" or the
-			#     HTTP/1.0 equivalent.
-			set n 0
+	} else {
+	    # Now reading body
+	    Log ##Log body - token $token
+	    if {[catch {
+		if {[info exists state(-handler)]} {
+		    set n [eval $state(-handler) [list $sock $token]]
+		    Log ##Log handler $n - token $token
+		    # N.B. the protocol has been set to 1.0 because the -handler
+		    # logic is not expected to handle chunked encoding.
+		    # FIXME allow -handler with 1.1 on dechunked stacked channel.
+		    if {$state(totalsize) == 0} {
+			# We know the transfer is complete only when the server
+			# closes the connection - i.e. eof is not an error.
 			set state(state) complete
 		    }
-		} else {
-		}
-	    } elseif {[info exists state(transfer_final)]} {
-		set line [getTextLine $sock]
-		set n [string length $line]
-		set state(state) complete
-		if {$n > 0} {
-		    # - HTTP trailers (late response headers) are permitted by
-		    #   Chunked Transfer-Encoding, and can be safely ignored.
-		    # - Do not count these bytes in the total received for the
-		    #   response body.
-		    Log "trailer of $n bytes after final chunk - token $token"
-		    append state(transfer_final) $line
-		    set n 0
-		} else {
-		    Log ^F$tk end of response body (chunked) - token $token
-		    Log "final chunk part - token $token"
-		    Eot $token
-		}
-	    } elseif {    [info exists state(transfer)]
-		       && ($state(transfer) eq "chunked")
-	    } {
-		Log ##Log chunked - token $token
-		set size 0
-		set hexLenChunk [getTextLine $sock]
-		#set ntl [string length $hexLenChunk]
-		if {[string trim $hexLenChunk] ne ""} {
-		    scan $hexLenChunk %x size
-		    if {$size != 0} {
-			Log ##Log chunk-measure $size - token $token
-			set bl [fconfigure $sock -blocking]
-			fconfigure $sock -blocking 1
-			set chunk [read $sock $size]
-			fconfigure $sock -blocking $bl
-			set n [string length $chunk]
-			if {$n >= 0} {
-			    append state(body) $chunk
-			    incr state(log_size) [string length $chunk]
-			    Log ##Log chunk $n cumul $state(log_size) - token $token
-			}
-			if {$size != [string length $chunk]} {
-			    Log "WARNING: mis-sized chunk:\
-				was [string length $chunk], should be $size -\
-				token $token"
-			    set n 0
-			    set state(connection) close
-			    Log ^X$tk end of response (chunk error) \
-				    - token $token
-			    set msg {error in chunked encoding - fetch\
-				    terminated}
+		    if {![string is integer -strict $n]} {
+			if 1 {
+			    # Do not tolerate bad -handler - fail with error status.
+			    set msg {the -handler command for http::geturl must\
+				    return an integer (the number of bytes read)}
+			    Log ^X$tk end of response (handler error) - token $token
 			    Eot $token $msg
+			} else {
+			    # Tolerate the bad -handler, and continue.  The penalty:
+			    # (a) Because the handler returns nonsense, we know the
+			    #     transfer is complete only when the server closes
+			    #     the connection - i.e. eof is not an error.
+			    # (b) http::size will not be accurate.
+			    # (c) The transaction is already downgraded to 1.0 to
+			    #     avoid chunked transfer encoding.  It MUST also be
+			    #     forced to "Connection: close" or the HTTP/1.0
+			    #     equivalent; or it MUST fail (as above) if the
+			    #     server sends "Connection: keep-alive" or the
+			    #     HTTP/1.0 equivalent.
+			    set n 0
+			    set state(state) complete
 			}
-			# CRLF that follows chunk:
-			getTextLine $sock
 		    } else {
+		    }
+		} elseif {[info exists state(transfer_final)]} {
+		    set line [getTextLine $sock]
+		    set n [string length $line]
+		    set state(state) complete
+		    if {$n > 0} {
+			# - HTTP trailers (late response headers) are permitted by
+			#   Chunked Transfer-Encoding, and can be safely ignored.
+			# - Do not count these bytes in the total received for the
+			#   response body.
+			Log "trailer of $n bytes after final chunk - token $token"
+			append state(transfer_final) $line
 			set n 0
-			set state(transfer_final) {}
+		    } else {
+			Log ^F$tk end of response body (chunked) - token $token
+			Log "final chunk part - token $token"
+			Eot $token
+		    }
+		} elseif {    [info exists state(transfer)]
+			   && ($state(transfer) eq "chunked")
+		} {
+		    Log ##Log chunked - token $token
+		    set size 0
+		    set hexLenChunk [getTextLine $sock]
+		    #set ntl [string length $hexLenChunk]
+		    if {[string trim $hexLenChunk] ne ""} {
+			scan $hexLenChunk %x size
+			if {$size != 0} {
+			    Log ##Log chunk-measure $size - token $token
+			    set chunk [BlockingRead $sock $size]
+			    set n [string length $chunk]
+			    if {$n >= 0} {
+				append state(body) $chunk
+				incr state(log_size) [string length $chunk]
+				Log ##Log chunk $n cumul $state(log_size) - token $token
+			    }
+			    if {$size != [string length $chunk]} {
+				Log "WARNING: mis-sized chunk:\
+				    was [string length $chunk], should be $size -\
+				    token $token"
+				set n 0
+				set state(connection) close
+				Log ^X$tk end of response (chunk error) \
+					- token $token
+				set msg {error in chunked encoding - fetch\
+					terminated}
+				Eot $token $msg
+			    }
+			    # CRLF that follows chunk:
+			    getTextLine $sock
+			} else {
+			    set n 0
+			    set state(transfer_final) {}
+			}
+		    } else {
+			# Line expected to hold chunk length is empty.
+			Log ##Log bad-chunk-measure - token $token
+			set n 0
+			set state(connection) close
+			Log ^X$tk end of response (chunk error) - token $token
+			Eot $token {error in chunked encoding - fetch terminated}
 		    }
 		} else {
-		    # Line expected to hold chunk length is empty.
-		    Log ##Log bad-chunk-measure - token $token
-		    set n 0
-		    set state(connection) close
-		    Log ^X$tk end of response (chunk error) - token $token
-		    Eot $token {error in chunked encoding - fetch terminated}
-		}
-	    } else {
-		Log ##Log unchunked - token $token
-		if {$state(totalsize) == 0} {
-		    # We know the transfer is complete only when the server
-		    # closes the connection.
-		    set state(state) complete
-		    set reqSize $state(-blocksize)
-		} else {
-		    # Ask for the whole of the unserved response-body.
-		    # This works around a problem with a tls::socket - for https
-		    # in keep-alive mode, and a request for $state(-blocksize)
-		    # bytes, the last part of the resource does not get read
-		    # until the server times out.
-		    set reqSize [expr {$state(totalsize) - $state(currentsize)}]
+		    Log ##Log unchunked - token $token
+		    if {$state(totalsize) == 0} {
+			# We know the transfer is complete only when the server
+			# closes the connection.
+			set state(state) complete
+			set reqSize $state(-blocksize)
+		    } else {
+			# Ask for the whole of the unserved response-body.
+			# This works around a problem with a tls::socket - for https
+			# in keep-alive mode, and a request for $state(-blocksize)
+			# bytes, the last part of the resource does not get read
+			# until the server times out.
+			set reqSize [expr {$state(totalsize) - $state(currentsize)}]
 
-		    # The workaround fails if reqSize is
-		    # capped at $state(-blocksize).
-		    # set reqSize [expr {min($reqSize, $state(-blocksize))}]
-		}
-		set c $state(currentsize)
-		set t $state(totalsize)
-		Log ##Log non-chunk currentsize $c of totalsize $t - token $token
-		set block [read $sock $reqSize]
-		set n [string length $block]
-		if {$n >= 0} {
-		    append state(body) $block
-		    Log ##Log non-chunk [string length $state(body)] - token $token
-		}
-	    }
-	    # This calculation uses n from the -handler, chunked, or unchunked
-	    # case as appropriate.
-	    if {[info exists state]} {
-		if {$n >= 0} {
-		    incr state(currentsize) $n
+			# The workaround fails if reqSize is
+			# capped at $state(-blocksize).
+			# set reqSize [expr {min($reqSize, $state(-blocksize))}]
+		    }
 		    set c $state(currentsize)
 		    set t $state(totalsize)
-		    Log ##Log another $n currentsize $c totalsize $t - token $token
+		    Log ##Log non-chunk currentsize $c of totalsize $t - token $token
+		    set block [read $sock $reqSize]
+		    set n [string length $block]
+		    if {$n >= 0} {
+			append state(body) $block
+			Log ##Log non-chunk [string length $state(body)] - token $token
+		    }
 		}
-		# If Content-Length - check for end of data.
-		if {
-		    ($state(totalsize) > 0)
-		    && ($state(currentsize) >= $state(totalsize))
-		} {
-		    Log ^F$tk end of response body (unchunked) - token $token
-		    set state(state) complete
-		    Eot $token
+		# This calculation uses n from the -handler, chunked, or unchunked
+		# case as appropriate.
+		if {[info exists state]} {
+		    if {$n >= 0} {
+			incr state(currentsize) $n
+			set c $state(currentsize)
+			set t $state(totalsize)
+			Log ##Log another $n currentsize $c totalsize $t - token $token
+		    }
+		    # If Content-Length - check for end of data.
+		    if {
+			   ($state(totalsize) > 0)
+			&& ($state(currentsize) >= $state(totalsize))
+		    } {
+			Log ^F$tk end of response body (unchunked) - token $token
+			set state(state) complete
+			Eot $token
+		    }
 		}
-	    }
-	} err]} {
-	    Log ^X$tk end of response (error ${err}) - token $token
-	    Finish $token $err
-	    return
-	} else {
-	    if {[info exists state(-progress)]} {
-		eval $state(-progress) \
-		    [list $token $state(totalsize) $state(currentsize)]
+	    } err]} {
+		Log ^X$tk end of response (error ${err}) - token $token
+		Finish $token $err
+		return
+	    } else {
+		if {[info exists state(-progress)]} {
+		    eval $state(-progress) \
+			[list $token $state(totalsize) $state(currentsize)]
+		}
 	    }
 	}
-    }
 
-    # catch as an Eot above may have closed the socket already
-    # $state(state) may be connecting, header, body, or complete
-    if {![catch {eof $sock} eof] && $eof} {
-	Log ##Log eof - token $token
-	if {[info exists $token]} {
-	    set state(connection) close
-	    if {$state(state) eq "complete"} {
-		# This includes all cases in which the transaction
-		# can be completed by eof.
-		# The value "complete" is set only in http::Event, and it is
-		# used only in the test above.
-		Log ^F$tk end of response body (unchunked, eof) - token $token
-		Eot $token
+	# catch as an Eot above may have closed the socket already
+	# $state(state) may be connecting, header, body, or complete
+	if {![set cc [catch {eof $sock} eof]] && $eof} {
+	    Log ##Log eof - token $token
+	    if {[info exists $token]} {
+		set state(connection) close
+		if {$state(state) eq "complete"} {
+		    # This includes all cases in which the transaction
+		    # can be completed by eof.
+		    # The value "complete" is set only in http::Event, and it is
+		    # used only in the test above.
+		    Log ^F$tk end of response body (unchunked, eof) - token $token
+		    Eot $token
+		} else {
+		    # Premature eof.
+		    Log ^X$tk end of response (unexpected eof) - token $token
+		    Eot $token eof
+		}
 	    } else {
-		# Premature eof.
-		Log ^X$tk end of response (unexpected eof) - token $token
-		Eot $token eof
+		# open connection closed on a token that has been cleaned up.
+		Log ^X$tk end of response (token error) - token $token
+		CloseSocket $sock
 	    }
+	} elseif {$cc} {
+	    return
 	} else {
-	    # open connection closed on a token that has been cleaned up.
-	    Log ^X$tk end of response (token error) - token $token
-	    CloseSocket $sock
+	    # Not eof, continue and yield.
 	}
     }
     return
@@ -2970,16 +2991,53 @@ proc http::IsBinaryContentType {type} {
 # Results:
 #	The line of text, without trailing newline
 
-# FIXME get rid of blocking
-
 proc http::getTextLine {sock} {
     set tr [fconfigure $sock -translation]
     lassign $tr trRead trWrite
-    set bl [fconfigure $sock -blocking]
-    fconfigure $sock -translation [list crlf $trWrite] -blocking 1
-    set r [gets $sock]
-    fconfigure $sock -translation $tr -blocking $bl
+    fconfigure $sock -translation [list crlf $trWrite]
+    set r [BlockingGets $sock]
+    fconfigure $sock -translation $tr
     return $r
+}
+
+# http::BlockingRead
+#
+#	Replacement for a blocking read.
+#	The caller must be a coroutine.
+
+proc http::BlockingRead {sock size} {
+    if {$size < 1} {
+        return
+    }
+    set result {}
+    while 1 {
+        set need [expr {$size - [string length $result]}]
+        set block [read $sock $need]
+        set eof [eof $sock]
+        append result $block
+        if {[string length $result] >= $size || $eof} {
+            return $result
+        } else {
+            yield
+        }
+    }
+}
+
+# http::BlockingGets
+#
+#	Replacement for a blocking gets.
+#	The caller must be a coroutine.
+
+proc http::BlockingGets {sock} {
+    while 1 {
+        set count [gets $sock line]
+        set eof [eof $sock]
+        if {$count > -1 || $eof} {
+            return $line
+        } else {
+            yield
+        }
+    }
 }
 
 # http::CopyStart
