@@ -186,7 +186,8 @@ Tcl_NewInstanceMethod(
     mPtr->declaringObjectPtr = oPtr;
     mPtr->declaringClassPtr = NULL;
     if (flags) {
-	mPtr->flags |= flags & (PUBLIC_METHOD | PRIVATE_METHOD);
+	mPtr->flags |= flags &
+		(PUBLIC_METHOD | PRIVATE_METHOD | TRUE_PRIVATE_METHOD);
     }
     oPtr->epoch++;
     return (Tcl_Method) mPtr;
@@ -250,7 +251,8 @@ Tcl_NewMethod(
     mPtr->declaringObjectPtr = NULL;
     mPtr->declaringClassPtr = clsPtr;
     if (flags) {
-	mPtr->flags |= flags & (PUBLIC_METHOD | PRIVATE_METHOD);
+	mPtr->flags |= flags &
+		(PUBLIC_METHOD | PRIVATE_METHOD | TRUE_PRIVATE_METHOD);
     }
 
     return (Tcl_Method) mPtr;
