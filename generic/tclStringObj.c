@@ -3171,6 +3171,8 @@ TclStringCat(
 		dst += more;
 	    }
 	}
+	/* Must NUL-terminate! */
+	*dst = '\0';
     }
     return objResultPtr;
 
