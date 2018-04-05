@@ -395,7 +395,7 @@ typedef struct CallContext {
 
 #define PUBLIC_METHOD     0x01	/* This is a public (exported) method. */
 #define PRIVATE_METHOD    0x02	/* This is a private (class's direct instances
-				 * only) method. */
+				 * only) method. Supports itcl. */
 #define OO_UNKNOWN_METHOD 0x04	/* This is an unknown method. */
 #define CONSTRUCTOR	  0x08	/* This is a constructor. */
 #define DESTRUCTOR	  0x10	/* This is a destructor. */
@@ -403,6 +403,16 @@ typedef struct CallContext {
 				/* This is a private method only accessible
 				 * from other methods defined on this class
 				 * or instance. [TIP #500] */
+#define OBJECT_PRIVATE_METHOD 0x40
+				/* This is a call of a method on an object
+				 * that may include TRUE_PRIVATE_METHOD
+				 * instance method implementations in its call
+				 * chain. */
+#define CLASS_PRIVATE_METHOD 0x80
+				/* This is a call of a method on an object
+				 * that may include TRUE_PRIVATE_METHOD class
+				 * method implementations in its call
+				 * chain. */
 
 /*
  * Structure containing definition information about basic class methods.

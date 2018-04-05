@@ -2546,6 +2546,7 @@ TclOOObjectCmdCore(
 {
     CallContext *contextPtr;
     Tcl_Obj *methodNamePtr;
+    CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
     int result;
 
     /*
@@ -2557,6 +2558,24 @@ TclOOObjectCmdCore(
 	flags |= FORCE_UNKNOWN;
 	methodNamePtr = NULL;
 	goto noMapping;
+    }
+
+    /*
+     * Determine if we're in a context that can see the extra, private methods
+     * in this class.
+     */
+
+    if (framePtr->isProcCallFrame & FRAME_IS_METHOD) {
+	CallContext *callerContextPtr = framePtr->clientData;
+	Method *callerMethodPtr =
+		callerContextPtr->callPtr->chain[callerContextPtr->index].mPtr;
+
+	if (callerMethodPtr->declaringObjectPtr == oPtr) {
+	    flags |= OBJECT_PRIVATE_METHOD;
+	}
+	if (callerMethodPtr->declaringClassPtr == oPtr->selfCls) {
+	    flags |= CLASS_PRIVATE_METHOD;
+	}
     }
 
     /*

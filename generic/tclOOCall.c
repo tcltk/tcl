@@ -717,14 +717,26 @@ AddSimpleChainToCallContext(
 				 * object or this isn't a filter. */
 {
     int i;
+    Tcl_HashEntry *hPtr;
+    Method *mPtr;
 
-    if (!(flags & (KNOWN_STATE | SPECIAL)) && oPtr->methodsPtr) {
-	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(oPtr->methodsPtr,
-		(char *) methodNameObj);
+    if (flags & OBJECT_PRIVATE_METHOD && oPtr->methodsPtr) {
+	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) methodNameObj);
 
 	if (hPtr != NULL) {
-	    Method *mPtr = Tcl_GetHashValue(hPtr);
+	    mPtr = Tcl_GetHashValue(hPtr);
+	    if (mPtr->flags & TRUE_PRIVATE_METHOD) {
+		AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl,
+			flags);
+	    }
+	}
+	flags &= ~OBJECT_PRIVATE_METHOD;
+	flags |= DEFINITE_PROTECTED;
+    } else if (!(flags & (KNOWN_STATE | SPECIAL)) && oPtr->methodsPtr) {
+	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) methodNameObj);
 
+	if (hPtr != NULL) {
+	    mPtr = Tcl_GetHashValue(hPtr);
 	    if (flags & PUBLIC_METHOD) {
 		if (!(mPtr->flags & PUBLIC_METHOD)) {
 		    return;
@@ -737,7 +749,6 @@ AddSimpleChainToCallContext(
 	}
     }
     if (!(flags & SPECIAL)) {
-	Tcl_HashEntry *hPtr;
 	Class *mixinPtr;
 
 	FOREACH(mixinPtr, oPtr->mixins) {
@@ -747,8 +758,11 @@ AddSimpleChainToCallContext(
 	if (oPtr->methodsPtr) {
 	    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char*) methodNameObj);
 	    if (hPtr != NULL) {
-		AddMethodToCallChain(Tcl_GetHashValue(hPtr), cbPtr,
-			doneFilters, filterDecl, flags);
+		mPtr = Tcl_GetHashValue(hPtr);
+		if (!(mPtr->flags & TRUE_PRIVATE_METHOD)) {
+		    AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl,
+			    flags);
+		}
 	    }
 	}
     }
@@ -1433,8 +1447,10 @@ AddSimpleClassChainToCallContext(
 				 * NULL, either the filter was declared by the
 				 * object or this isn't a filter. */
 {
-    int i;
+    int i, private = (flags & CLASS_PRIVATE_METHOD);
     Class *superPtr;
+
+    flags &= ~CLASS_PRIVATE_METHOD;
 
     /*
      * We hard-code the tail-recursive form. It's by far the most common case
@@ -1464,7 +1480,9 @@ AddSimpleClassChainToCallContext(
 	if (hPtr != NULL) {
 	    register Method *mPtr = Tcl_GetHashValue(hPtr);
 
-	    if (!(flags & KNOWN_STATE)) {
+	    if (private && mPtr->flags & TRUE_PRIVATE_METHOD) {
+		flags |= DEFINITE_PROTECTED;
+	    } else if (!(flags & KNOWN_STATE)) {
 		if (flags & PUBLIC_METHOD) {
 		    if (mPtr->flags & PUBLIC_METHOD) {
 			flags |= DEFINITE_PUBLIC;
@@ -1475,7 +1493,10 @@ AddSimpleClassChainToCallContext(
 		    flags |= DEFINITE_PROTECTED;
 		}
 	    }
-	    AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl, flags);
+	    if (private || !(mPtr->flags & TRUE_PRIVATE_METHOD)) {
+		AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl,
+			flags);
+	    }
 	}
     }
 
