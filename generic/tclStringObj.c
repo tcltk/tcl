@@ -1946,6 +1946,7 @@ Tcl_AppendFormatToObj(
 		if (cmpResult == MP_EQ) gotHash = 0;
 		if (ch == 'u') {
 		    if (isNegative) {
+			mp_clear(&big);
 			msg = "unsigned bignum format is invalid";
 			errCode = "BADUNSIGNED";
 			goto errorMsg;
