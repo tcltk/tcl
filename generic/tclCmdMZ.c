@@ -1586,7 +1586,6 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsDigit;
 	break;
     case STR_IS_DOUBLE: {
-	/* TODO */
 	if (Tcl_FetchIntRep(objPtr, &tclDoubleType) ||
 		Tcl_FetchIntRep(objPtr, &tclIntType) ||
 		Tcl_FetchIntRep(objPtr, &tclBignumType)) {
