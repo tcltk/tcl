@@ -136,9 +136,7 @@ Any Unicode control character.
 Any Unicode digit character.  Note that this includes characters
 outside of the [0\-9] range.
 .IP \fBdouble\fR 12
-Any of the valid forms for a double in Tcl, with optional surrounding
-whitespace.  In case of under/overflow in the value, 0 is returned and
-the \fIvarname\fR will contain \-1.
+Any of the forms allowed to \fBTcl_GetDoubleFromObj\fR.
 .IP \fBfalse\fR 12
 Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 false.
@@ -146,7 +144,7 @@ false.
 Any Unicode printing character, except space.
 .IP \fBinteger\fR 12
 Any of the valid string formats for a 32-bit integer value in Tcl,
-with optional surrounding whitespace.  In case of under/overflow in
+with optional surrounding whitespace.  In case of overflow in
 the value, 0 is returned and the \fIvarname\fR will contain \-1.
 .IP \fBlist\fR 12
 Any proper list structure, with optional surrounding whitespace. In
@@ -171,7 +169,7 @@ Any upper case alphabet character in the Unicode character set.
 .VS 8.5
 .IP \fBwideinteger\fR 12
 Any of the valid forms for a wide integer in Tcl, with optional
-surrounding whitespace.  In case of under/overflow in the value, 0 is
+surrounding whitespace.  In case of overflow in the value, 0 is
 returned and the \fIvarname\fR will contain \-1.
 .VE 8.5
 .IP \fBwordchar\fR 12
