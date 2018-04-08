@@ -1207,21 +1207,25 @@ proc ::tcl::clock::scan { args } {
     # Pick up command line options.
 
     foreach { flag value } [lreplace $args 0 0] {
-	set saw($flag) {}
 	switch -exact -- $flag {
 	    -b - -ba - -bas - -base {
+		set saw(-base) {}
 		set base $value
 	    }
 	    -f - -fo - -for - -form - -forma - -format {
+		set saw(-format) {}
 		set format $value
 	    }
 	    -g - -gm - -gmt {
+		set saw(-gmt) {}
 		set gmt $value
 	    }
 	    -l - -lo - -loc - -loca - -local - -locale {
+		set saw(-locale) {}
 		set locale [string tolower $value]
 	    }
 	    -t - -ti - -tim - -time - -timez - -timezo - -timezon - -timezone {
+		set saw(-timezone) {}
 		set timezone $value
 	    }
 	    default {
