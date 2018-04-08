@@ -18543,6 +18543,10 @@ test clock-6.11 {input of seconds - two values} {
     clock scan {1 2} -format {%s %s} -gmt true
 } 2
 
+test clock-6.12 {abbreviation of -format} {
+    clock scan 0 -forma %s
+} 0
+
 test clock-7.1 {Julian Day} {
     clock scan 0 -format %J -gmt true
 } -210866803200
