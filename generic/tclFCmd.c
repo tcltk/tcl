@@ -422,7 +422,7 @@ TclFileDeleteCmd(
 	     * It is important that we break on error, otherwise we might end
 	     * up owning reference counts on numerous errorBuffers.
 	     */
-
+	    result = TCL_ERROR;
 	    break;
 	}
     }
