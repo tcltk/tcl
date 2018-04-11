@@ -2020,6 +2020,7 @@ Tcl_AppendFormatToObj(
 		if (cmpResult == MP_EQ) gotHash = 0;
 		if (ch == 'u') {
 		    if (isNegative) {
+			mp_clear(&big);
 			msg = "unsigned bignum format is invalid";
 			errCode = "BADUNSIGNED";
 			goto errorMsg;
@@ -3253,6 +3254,8 @@ TclStringCat(
 		dst += more;
 	    }
 	}
+	/* Must NUL-terminate! */
+	*dst = '\0';
     }
     return objResultPtr;
 
