@@ -1972,6 +1972,7 @@ Tcl_AppendFormatToObj(
 		if (cmpResult == MP_EQ) gotHash = 0;
 		if (ch == 'u') {
 		    if (isNegative) {
+			mp_clear(&big);
 			msg = "unsigned bignum format is invalid";
 			errCode = "BADUNSIGNED";
 			goto errorMsg;
@@ -3205,6 +3206,8 @@ TclStringCat(
 		dst += more;
 	    }
 	}
+	/* Must NUL-terminate! */
+	*dst = '\0';
     }
     return objResultPtr;
 
@@ -3637,6 +3640,7 @@ TclStringReplace(
 	    }
 	    result = Tcl_NewByteArrayObj(NULL, numBytes - count + newBytes);
 								/* PANIC? */
+	    Tcl_SetByteArrayLength(result, 0);
 	    TclAppendBytesToByteArray(result, bytes, first);	
 	    TclAppendBytesToByteArray(result, iBytes, newBytes);
 	    TclAppendBytesToByteArray(result, bytes + first + count,
