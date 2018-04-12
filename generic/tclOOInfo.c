@@ -22,6 +22,7 @@ static Tcl_ObjCmdProc InfoObjectClassCmd;
 static Tcl_ObjCmdProc InfoObjectDefnCmd;
 static Tcl_ObjCmdProc InfoObjectFiltersCmd;
 static Tcl_ObjCmdProc InfoObjectForwardCmd;
+static Tcl_ObjCmdProc InfoObjectIdCmd;
 static Tcl_ObjCmdProc InfoObjectIsACmd;
 static Tcl_ObjCmdProc InfoObjectMethodsCmd;
 static Tcl_ObjCmdProc InfoObjectMethodTypeCmd;
@@ -50,6 +51,7 @@ static Tcl_ObjCmdProc InfoClassVariablesCmd;
 static const EnsembleImplMap infoObjectCmds[] = {
     {"call",	   InfoObjectCallCmd,	    TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"class",	   InfoObjectClassCmd,	    TclCompileInfoObjectClassCmd, NULL, NULL, 0},
+    {"creationid", InfoObjectIdCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
     {"definition", InfoObjectDefnCmd,	    TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"filters",	   InfoObjectFiltersCmd,    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"forward",	   InfoObjectForwardCmd,    TclCompileBasic2ArgCmd, NULL, NULL, 0},
@@ -58,7 +60,7 @@ static const EnsembleImplMap infoObjectCmds[] = {
     {"methodtype", InfoObjectMethodTypeCmd, TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"mixins",	   InfoObjectMixinsCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"namespace",  InfoObjectNsCmd,	    TclCompileInfoObjectNamespaceCmd, NULL, NULL, 0},
-    {"variables",  InfoObjectVariablesCmd,  TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"variables",  InfoObjectVariablesCmd,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
     {"vars",	   InfoObjectVarsCmd,	    TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
@@ -80,7 +82,7 @@ static const EnsembleImplMap infoClassCmds[] = {
     {"mixins",	     InfoClassMixinsCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"subclasses",   InfoClassSubsCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
     {"superclasses", InfoClassSupersCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"variables",    InfoClassVariablesCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"variables",    InfoClassVariablesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
@@ -517,15 +519,21 @@ InfoObjectMethodsCmd(
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    int flag = PUBLIC_METHOD, recurse = 0;
+    int flag = PUBLIC_METHOD, recurse = 0, scope = -1;
     FOREACH_HASH_DECLS;
     Tcl_Obj *namePtr, *resultObj;
     Method *mPtr;
     static const char *const options[] = {
-	"-all", "-localprivate", "-private", NULL
+	"-all", "-localprivate", "-private", "-scope", NULL
     };
     enum Options {
-	OPT_ALL, OPT_LOCALPRIVATE, OPT_PRIVATE
+	OPT_ALL, OPT_LOCALPRIVATE, OPT_PRIVATE, OPT_SCOPE
+    };
+    static const char *const scopes[] = {
+	"private", "public", "unexported"
+    };
+    enum Scopes {
+	SCOPE_PRIVATE, SCOPE_PUBLIC, SCOPE_UNEXPORTED
     };
 
     if (objc < 2) {
@@ -554,7 +562,34 @@ InfoObjectMethodsCmd(
 	    case OPT_PRIVATE:
 		flag = 0;
 		break;
+	    case OPT_SCOPE:
+		if (++i >= objc) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "missing option for -scope"));
+		    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING",
+			    NULL);
+		    return TCL_ERROR;
+		}
+		if (Tcl_GetIndexFromObj(interp, objv[i], scopes, "scope", 0,
+			&scope) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		break;
 	    }
+	}
+    }
+    if (scope != -1) {
+	recurse = 0;
+	switch (scope) {
+	case SCOPE_PRIVATE:
+	    flag = TRUE_PRIVATE_METHOD;
+	    break;
+	case SCOPE_PUBLIC:
+	    flag = PUBLIC_METHOD;
+	    break;
+	case SCOPE_UNEXPORTED:
+	    flag = 0;
+	    break;
 	}
     }
 
@@ -684,6 +719,38 @@ InfoObjectMixinsCmd(
 /*
  * ----------------------------------------------------------------------
  *
+ * InfoObjectIdCmd --
+ *
+ *	Implements [info object creationid $objName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+InfoObjectIdCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Object *oPtr;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName");
+	return TCL_ERROR;
+    }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(oPtr->creationEpoch));
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * InfoObjectNsCmd --
  *
  *	Implements [info object namespace $objName]
@@ -719,7 +786,7 @@ InfoObjectNsCmd(
  *
  * InfoObjectVariablesCmd --
  *
- *	Implements [info object variables $objName]
+ *	Implements [info object variables $objName ?-private?]
  *
  * ----------------------------------------------------------------------
  */
@@ -735,8 +802,8 @@ InfoObjectVariablesCmd(
     Tcl_Obj *variableObj, *resultObj;
     int i;
 
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "objName");
+    if (objc != 2 && objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-private?");
 	return TCL_ERROR;
     }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
@@ -1128,7 +1195,7 @@ InfoClassInstancesCmd(
  *
  * InfoClassMethodsCmd --
  *
- *	Implements [info class methods $clsName ?-private?]
+ *	Implements [info class methods $clsName ?options...?]
  *
  * ----------------------------------------------------------------------
  */
@@ -1140,15 +1207,21 @@ InfoClassMethodsCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int flag = PUBLIC_METHOD, recurse = 0;
+    int flag = PUBLIC_METHOD, recurse = 0, scope = -1;
     Tcl_Obj *namePtr, *resultObj;
     Method *mPtr;
     Class *clsPtr;
     static const char *const options[] = {
-	"-all", "-localprivate", "-private", NULL
+	"-all", "-localprivate", "-private", "-scope", NULL
     };
     enum Options {
-	OPT_ALL, OPT_LOCALPRIVATE, OPT_PRIVATE
+	OPT_ALL, OPT_LOCALPRIVATE, OPT_PRIVATE, OPT_SCOPE
+    };
+    static const char *const scopes[] = {
+	"private", "public", "unexported"
+    };
+    enum Scopes {
+	SCOPE_PRIVATE, SCOPE_PUBLIC, SCOPE_UNEXPORTED
     };
 
     if (objc < 2) {
@@ -1177,7 +1250,34 @@ InfoClassMethodsCmd(
 	    case OPT_PRIVATE:
 		flag = 0;
 		break;
+	    case OPT_SCOPE:
+		if (++i >= objc) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "missing option for -scope"));
+		    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING",
+			    NULL);
+		    return TCL_ERROR;
+		}
+		if (Tcl_GetIndexFromObj(interp, objv[i], scopes, "scope", 0,
+			&scope) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		break;
 	    }
+	}
+    }
+    if (scope != -1) {
+	recurse = 0;
+	switch (scope) {
+	case SCOPE_PRIVATE:
+	    flag = TRUE_PRIVATE_METHOD;
+	    break;
+	case SCOPE_PUBLIC:
+	    flag = PUBLIC_METHOD;
+	    break;
+	case SCOPE_UNEXPORTED:
+	    flag = 0;
+	    break;
 	}
     }
 
@@ -1399,7 +1499,7 @@ InfoClassSupersCmd(
  *
  * InfoClassVariablesCmd --
  *
- *	Implements [info class variables $clsName]
+ *	Implements [info class variables $clsName ?-private?]
  *
  * ----------------------------------------------------------------------
  */
@@ -1412,12 +1512,18 @@ InfoClassVariablesCmd(
     Tcl_Obj *const objv[])
 {
     Class *clsPtr;
-    Tcl_Obj *variableObj, *resultObj;
-    int i;
+    Tcl_Obj *resultObj;
+    int i, private = 0;
 
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "className");
+    if (objc != 2 && objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className ?-private?");
 	return TCL_ERROR;
+    }
+    if (objc == 3) {
+	if (strcmp("-private", Tcl_GetString(objv[2])) != 0) {
+	    return TCL_ERROR;
+	}
+	private = 1;
     }
     clsPtr = GetClassFromObj(interp, objv[1]);
     if (clsPtr == NULL) {
@@ -1425,8 +1531,18 @@ InfoClassVariablesCmd(
     }
 
     resultObj = Tcl_NewObj();
-    FOREACH(variableObj, clsPtr->variables) {
-	Tcl_ListObjAppendElement(NULL, resultObj, variableObj);
+    if (private) {
+	PrivateVariableMapping *privatePtr;
+
+	FOREACH_STRUCT(privatePtr, clsPtr->privateVariables) {
+	    Tcl_ListObjAppendElement(NULL, resultObj, privatePtr->variableObj);
+	}
+    } else {
+	Tcl_Obj *variableObj;
+
+	FOREACH(variableObj, clsPtr->variables) {
+	    Tcl_ListObjAppendElement(NULL, resultObj, variableObj);
+	}
     }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
