@@ -128,13 +128,13 @@ namespace eval http {
 	set defaultKeepalive 0
     }
 
-    namespace export geturl config reset wait formatQuery register unregister
-    # Useful, but not exported: data size status code cleanup error meta ncode,
-    # mapReply, init.  Comments suggest that "init" can be used for
-    # re-initialisation, although it is undocumented.
-    #
-    # Not exported, probably should be upper-case initial letter as part
-    # of the internals: getTextLine make-transformation-chunked
+    namespace export geturl config reset wait formatQuery
+    namespace export register unregister registerError
+    # - Useful, but not exported: data, size, status, code, cleanup, error,
+    #   meta, ncode, mapReply, init.  Comments suggest that "init" can be used
+    #   for re-initialisation, although the command is undocumented.
+    # - Not exported, probably should be upper-case initial letter as part
+    #   of the internals: getTextLine, make-transformation-chunked.
 }
 
 # http::Log --
@@ -1470,6 +1470,11 @@ proc http::Connected {token proto phost srvurl} {
 		puts $sock "Content-Length: $state(querylength)"
 	    }
 	    puts $sock ""
+	    flush $sock
+	    # Flush flushes the error in the https case with a bad handshake:
+	    # else the socket never becomes writable again, and hangs until
+	    # timeout (if any).
+
 	    lassign [fconfigure $sock -translation] trRead trWrite
 	    fconfigure $sock -translation [list $trRead binary]
 	    fileevent $sock writable [list http::Write $token]
@@ -1496,8 +1501,9 @@ proc http::Connected {token proto phost srvurl} {
 	}
 
     } err]} {
-	# The socket probably was never connected, or the connection dropped
-	# later.
+	# The socket probably was never connected, OR the connection dropped
+	# later, OR https handshake error, which may be discovered as late as
+	# the "flush" command above...
 	Log "WARNING - if testing, pay special attention to this\
 		case (GI) which is seldom executed - token $token"
 	if {[info exists state(reusing)] && $state(reusing)} {
@@ -1515,7 +1521,14 @@ proc http::Connected {token proto phost srvurl} {
 	    # If any other requests are in flight or pipelined/queued, they will
 	    # be discarded.
 	} elseif {$state(status) eq ""} {
-	    Finish $token {failed to re-use socket}
+	    # ...https handshake errors come here.
+	    set msg [registerError $sock]
+	    registerError $sock {}
+	    if {$msg eq {}} {
+		set msg {failed to use socket}
+	    } else {
+	    }
+	    Finish $token $msg
 	} elseif {$state(status) ne "error"} {
 	    Finish $token $err
 	} else {
@@ -1524,6 +1537,35 @@ proc http::Connected {token proto phost srvurl} {
 	}
     }
     return
+}
+
+# http::registerError
+#
+#	Called (for example when processing TclTLS activity) to register
+#	an error for a connection on a specific socket.  This helps
+#	http::Connected to deliver meaningful error messages, e.g. when a TLS
+#	certificate fails verification.
+#
+#	Usage: http::registerError socket ?newValue?
+#
+#	"set" semantics, except that a "get" (a call without a new value) for a
+#	non-existent socket returns {}, not an error.
+
+proc http::registerError {sock args} {
+    variable registeredErrors
+
+    if {    ([llength $args] == 0)
+         && (![info exists registeredErrors($sock)])
+    } {
+        return
+    } elseif {    ([llength $args] == 1)
+               && ([lindex $args 0] eq {})
+    } {
+        unset -nocomplain registeredErrors($sock)
+        return
+    }
+    set registeredErrors($sock) {*}$args
+    # N.B. Implicit Return
 }
 
 # http::DoneRequest --
@@ -2263,6 +2305,10 @@ proc http::cleanup {token} {
     if {[info commands ${token}EventCoroutine] ne {}} {
         rename ${token}EventCoroutine {}
     }
+    if {[info exists state(after)]} {
+	after cancel $state(after)
+	unset state(after)
+    }
     if {[info exists state]} {
 	unset state
     }
@@ -2750,6 +2796,7 @@ proc http::Event {sock token} {
 		    } else {
 		    }
 		} elseif {[info exists state(transfer_final)]} {
+		    # This code forgives EOF in place of the final CRLF.
 		    set line [getTextLine $sock]
 		    set n [string length $line]
 		    set state(state) complete
@@ -2799,14 +2846,15 @@ proc http::Event {sock token} {
 					terminated}
 				Eot $token $msg
 			    }
-			    # CRLF that follows chunk:
+			    # CRLF that follows chunk.
+			    # If eof, this is handled at the end of this proc.
 			    getTextLine $sock
 			} else {
 			    set n 0
 			    set state(transfer_final) {}
 			}
 		    } else {
-			# Line expected to hold chunk length is empty.
+			# Line expected to hold chunk length is empty, or eof.
 			Log ##Log bad-chunk-measure - token $token
 			set n 0
 			set state(connection) close
@@ -3001,8 +3049,10 @@ proc http::IsBinaryContentType {type} {
 
 # http::getTextLine --
 #
-#	Get one line with the stream in blocking crlf mode
-#	Used if Transfer-Encoding is chunked
+#	Get one line with the stream in crlf mode.
+#	Used if Transfer-Encoding is chunked.
+#	Empty line is not distinguished from eof.  The caller must
+#	be able to handle this.
 #
 # Arguments
 #	sock	The socket receiving input.
@@ -3046,6 +3096,8 @@ proc http::BlockingRead {sock size} {
 #
 #	Replacement for a blocking gets.
 #	The caller must be a coroutine.
+#	Empty line is not distinguished from eof.  The caller must
+#	be able to handle this.
 
 proc http::BlockingGets {sock} {
     while 1 {
