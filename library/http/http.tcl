@@ -256,7 +256,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 	set state(status) "error"
     }
     if {[info commands ${token}EventCoroutine] ne {}} {
-        rename ${token}EventCoroutine {}
+	rename ${token}EventCoroutine {}
     }
     if {  ($state(status) eq "timeout")
        || ($state(status) eq "error")
@@ -333,10 +333,10 @@ proc http::KeepSocket {token} {
     if {$TEST_EOF} {
 	# ONLY for testing reaction to server eof.
 	# No server timeouts will be caught.
-        catch {fileevent $state(sock) readable {}}
+	catch {fileevent $state(sock) readable {}}
     } else {
-        # Normal operation.
-        # Test constraint normalEof.
+	# Normal operation.
+	# Test constraint normalEof.
     }
 
     if {    [info exists state(socketinfo)]
@@ -1555,14 +1555,14 @@ proc http::registerError {sock args} {
     variable registeredErrors
 
     if {    ([llength $args] == 0)
-         && (![info exists registeredErrors($sock)])
+	 && (![info exists registeredErrors($sock)])
     } {
-        return
+	return
     } elseif {    ([llength $args] == 1)
-               && ([lindex $args 0] eq {})
+	       && ([lindex $args 0] eq {})
     } {
-        unset -nocomplain registeredErrors($sock)
-        return
+	unset -nocomplain registeredErrors($sock)
+	return
     }
     set registeredErrors($sock) {*}$args
     # N.B. Implicit Return
@@ -2303,7 +2303,7 @@ proc http::cleanup {token} {
     variable $token
     upvar 0 $token state
     if {[info commands ${token}EventCoroutine] ne {}} {
-        rename ${token}EventCoroutine {}
+	rename ${token}EventCoroutine {}
     }
     if {[info exists state(after)]} {
 	after cancel $state(after)
@@ -2876,7 +2876,7 @@ proc http::Event {sock token} {
 			# $state(-blocksize) bytes, the last part of the
 			# resource does not get read until the server times out.
 			set reqSize [expr {  $state(totalsize)
-			                   - $state(currentsize)}]
+					   - $state(currentsize)}]
 
 			# The workaround fails if reqSize is
 			# capped at $state(-blocksize).
@@ -3076,19 +3076,19 @@ proc http::getTextLine {sock} {
 
 proc http::BlockingRead {sock size} {
     if {$size < 1} {
-        return
+	return
     }
     set result {}
     while 1 {
-        set need [expr {$size - [string length $result]}]
-        set block [read $sock $need]
-        set eof [eof $sock]
-        append result $block
-        if {[string length $result] >= $size || $eof} {
-            return $result
-        } else {
-            yield
-        }
+	set need [expr {$size - [string length $result]}]
+	set block [read $sock $need]
+	set eof [eof $sock]
+	append result $block
+	if {[string length $result] >= $size || $eof} {
+	    return $result
+	} else {
+	    yield
+	}
     }
 }
 
@@ -3101,13 +3101,13 @@ proc http::BlockingRead {sock size} {
 
 proc http::BlockingGets {sock} {
     while 1 {
-        set count [gets $sock line]
-        set eof [eof $sock]
-        if {$count > -1 || $eof} {
-            return $line
-        } else {
-            yield
-        }
+	set count [gets $sock line]
+	set eof [eof $sock]
+	if {$count > -1 || $eof} {
+	    return $line
+	} else {
+	    yield
+	}
     }
 }
 
