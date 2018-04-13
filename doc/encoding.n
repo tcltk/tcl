@@ -37,10 +37,10 @@ Performs one of several encoding related operations, depending on
 \fBencoding convertfrom\fR ?\fIencoding\fR? \fIdata\fR
 .
 Convert \fIdata\fR to Unicode from the specified \fIencoding\fR.  The
-characters in \fIdata\fR are treated as binary data where the lower
-8-bits of each character is taken as a single byte.  The resulting
-sequence of bytes is a Unicode string.  If \fIencoding\fR is not
-specified, the current system encoding is used.
+characters in \fIdata\fR are treated as binary data where the lower 8-bits of
+each character is taken as a single byte.  This binary data is treated as a
+string in the specified \fIencoding\fR.  If \fIencoding\fR is not specified,
+the current system encoding is used.
 .TP
 \fBencoding convertto\fR ?\fIencoding\fR? \fIstring\fR
 .
