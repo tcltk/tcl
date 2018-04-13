@@ -1904,6 +1904,7 @@ Tcl_CopyObjectInstance(
     Class *mixinPtr;
     CallContext *contextPtr;
     Tcl_Obj *keyPtr, *filterObj, *variableObj, *args[3];
+    PrivateVariableMapping *privateVariable;
     int i, result;
 
     /*
@@ -1973,12 +1974,19 @@ Tcl_CopyObjectInstance(
     }
 
     /*
-     * Copy the object's variable resolution list to the new object.
+     * Copy the object's variable resolution lists to the new object.
      */
 
     DUPLICATE(o2Ptr->variables, oPtr->variables, Tcl_Obj *);
     FOREACH(variableObj, o2Ptr->variables) {
 	Tcl_IncrRefCount(variableObj);
+    }
+
+    DUPLICATE(o2Ptr->privateVariables, oPtr->privateVariables,
+	    PrivateVariableMapping);
+    FOREACH_STRUCT(privateVariable, o2Ptr->privateVariables) {
+	Tcl_IncrRefCount(privateVariable->variableObj);
+	Tcl_IncrRefCount(privateVariable->fullNameObj);
     }
 
     /*
@@ -2069,12 +2077,19 @@ Tcl_CopyObjectInstance(
 	}
 
 	/*
-	 * Copy the source class's variable resolution list.
+	 * Copy the source class's variable resolution lists.
 	 */
 
 	DUPLICATE(cls2Ptr->variables, clsPtr->variables, Tcl_Obj *);
 	FOREACH(variableObj, cls2Ptr->variables) {
 	    Tcl_IncrRefCount(variableObj);
+	}
+
+	DUPLICATE(cls2Ptr->privateVariables, clsPtr->privateVariables,
+		PrivateVariableMapping);
+	FOREACH_STRUCT(privateVariable, cls2Ptr->privateVariables) {
+	    Tcl_IncrRefCount(privateVariable->variableObj);
+	    Tcl_IncrRefCount(privateVariable->fullNameObj);
 	}
 
 	/*
