@@ -44,20 +44,20 @@ int mp_div_2d(const mp_int *a, int b, mp_int *c, mp_int *d)
    }
 
    /* shift by as many digits in the bit count */
-   if (b >= (int)DIGIT_BIT) {
+   if (b >= DIGIT_BIT) {
       mp_rshd(c, b / DIGIT_BIT);
    }
 
    /* shift any bit count < DIGIT_BIT */
    D = (mp_digit)(b % DIGIT_BIT);
-   if (D != 0) {
+   if (D != 0u) {
       mp_digit *tmpc, mask, shift;
 
       /* mask */
-      mask = (((mp_digit)1) << D) - 1;
+      mask = ((mp_digit)1 << D) - 1uL;
 
       /* shift for lsb */
-      shift = DIGIT_BIT - D;
+      shift = (mp_digit)DIGIT_BIT - D;
 
       /* alias */
       tmpc = c->dp + (c->used - 1);

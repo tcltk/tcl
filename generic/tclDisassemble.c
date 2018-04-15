@@ -820,7 +820,7 @@ UpdateStringOfInstName(
     size_t len, inst = (size_t)objPtr->internalRep.wideValue;
     char *s, buf[TCL_INTEGER_SPACE + 5];
 
-    if (inst > LAST_INST_OPCODE) {
+    if (inst >= LAST_INST_OPCODE) {
         sprintf(buf, "inst_%" TCL_Z_MODIFIER "d", inst);
         s = buf;
     } else {

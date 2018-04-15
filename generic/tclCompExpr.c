@@ -736,16 +736,16 @@ ParseExpr(
 		} else {
 		    Tcl_DecrRefCount(literal);
 		    msg = Tcl_ObjPrintf("invalid bareword \"%.*s%s\"",
-			    (scanned < limit) ? (int)scanned : limit - 3, start,
+			    (scanned < limit) ? (int)scanned : (int)limit - 3, start,
 			    (scanned < limit) ? "" : "...");
 		    post = Tcl_ObjPrintf(
 			    "should be \"$%.*s%s\" or \"{%.*s%s}\"",
-			    (scanned < limit) ? (int)scanned : limit - 3,
+			    (scanned < limit) ? (int)scanned : (int)limit - 3,
 			    start, (scanned < limit) ? "" : "...",
-			    (scanned < limit) ? (int)scanned : limit - 3,
+			    (scanned < limit) ? (int)scanned : (int)limit - 3,
 			    start, (scanned < limit) ? "" : "...");
 		    Tcl_AppendPrintfToObj(post, " or \"%.*s%s(...)\" or ...",
-			    (scanned < limit) ? (int)scanned : limit - 3,
+			    (scanned < limit) ? (int)scanned : (int)limit - 3,
 			    start, (scanned < limit) ? "" : "...");
 		    errCode = "BAREWORD";
 		    if (start[0] == '0') {
@@ -1409,10 +1409,10 @@ ParseExpr(
 			? (int) (start - parsePtr->string) : (int)limit - 3,
 		((start - limit) < parsePtr->string)
 			? parsePtr->string : start - limit + 3,
-		(scanned < limit) ? (int)scanned : limit - 3, start,
+		(scanned < limit) ? (int)scanned : (int)limit - 3, start,
 		(scanned < limit) ? "" : "...", insertMark ? mark : "",
 		(start + scanned + limit > parsePtr->end)
-			? (int) (parsePtr->end - start) - (int)scanned : limit-3,
+			? (int) (parsePtr->end - start) - (int)scanned : (int)limit-3,
 		start + scanned,
 		(start + scanned + limit > parsePtr->end) ? "" : "...");
 

@@ -511,61 +511,53 @@ InitClassSystemRoots(
     Class fakeCls;
     Object fakeObject;
 
-    /*
-     * Stand up a phony class for bootstrapping.
-     */
-
+    /* Stand up a phony class for bootstrapping. */
     fPtr->objectCls = &fakeCls;
-
-    /*
-     * Referenced in AllocClass to increment the refCount.
-     */
-
+    /* referenced in AllocClass to increment the refCount. */
     fakeCls.thisPtr = &fakeObject;
 
     fPtr->objectCls = AllocClass(interp,
 	    AllocObject(interp, "object", (Namespace *)fPtr->ooNs, NULL));
-    fPtr->classCls = AllocClass(interp,
-	    AllocObject(interp, "class", (Namespace *)fPtr->ooNs, NULL));
-
-    /*
-     * Rewire bootstrapped objects.
-     */
-
-    fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
-    fPtr->classCls->thisPtr->selfCls = fPtr->classCls;
-
+    /* Corresponding TclOODecrRefCount in KillFoudation */
     AddRef(fPtr->objectCls->thisPtr);
-    AddRef(fPtr->classCls->thisPtr);
-    AddRef(fPtr->classCls->thisPtr->selfCls->thisPtr);
-    AddRef(fPtr->objectCls->thisPtr->selfCls->thisPtr);
 
-    /*
-     * Special initialization for the primordial objects.
-     */
-
-    fPtr->objectCls->thisPtr->flags |= ROOT_OBJECT;
-    fPtr->objectCls->flags |= ROOT_OBJECT;
-
-    /*
-     * This is why it is unnecessary in this routine to make up for the
-     * incremented reference count of fPtr->objectCls that was sallwed by
-     * fakeObject.
-     */
-
+    /* This is why it is unnecessary in this routine to replace the
+     * incremented reference count of fPtr->objectCls that was swallowed by
+     * fakeObject. */
     fPtr->objectCls->superclasses.num = 0;
     ckfree(fPtr->objectCls->superclasses.list);
     fPtr->objectCls->superclasses.list = NULL;
 
+    /* special initialization for the primordial objects */
+    fPtr->objectCls->thisPtr->flags |= ROOT_OBJECT;
+    fPtr->objectCls->flags |= ROOT_OBJECT;
+
+    fPtr->classCls = AllocClass(interp,
+	    AllocObject(interp, "class", (Namespace *)fPtr->ooNs, NULL));
+    /* Corresponding TclOODecrRefCount in KillFoudation */
+    AddRef(fPtr->classCls->thisPtr);
+
+    /*
+     * Increment reference counts for each reference because these
+     * relationships can be dynamically changed.
+     *
+     * Corresponding TclOODecrRefCount for all incremented refcounts is in
+     * KillFoundation.
+     */
+
+    /* Rewire bootstrapped objects. */
+    fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
+    AddRef(fPtr->classCls->thisPtr);
+    TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
+
+    fPtr->classCls->thisPtr->selfCls = fPtr->classCls;
+    AddRef(fPtr->classCls->thisPtr);
+    TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
+
     fPtr->classCls->thisPtr->flags |= ROOT_CLASS;
     fPtr->classCls->flags |= ROOT_CLASS;
 
-    /*
-     * Standard initialization for new Objects.
-     */
-
-    TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
-    TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
+    /* Standard initialization for new Objects */
     TclOOAddToSubclasses(fPtr->classCls, fPtr->objectCls);
 
     /*
@@ -637,6 +629,9 @@ KillFoundation(
     TclDecrRefCount(fPtr->destructorName);
     TclDecrRefCount(fPtr->clonedName);
     TclDecrRefCount(fPtr->defineName);
+    TclOODecrRefCount(fPtr->objectCls->thisPtr);
+    TclOODecrRefCount(fPtr->classCls->thisPtr);
+
     ckfree(fPtr);
 }
 
@@ -720,12 +715,16 @@ AllocObject(
 	Tcl_ResetResult(interp);
     }
 
+
+  configNamespace:
+
+    ((Namespace *)oPtr->namespacePtr)->refCount++;
+
     /*
      * Make the namespace know about the helper commands. This grants access
      * to the [self] and [next] commands.
      */
 
-  configNamespace:
     if (fPtr->helpersNs != NULL) {
 	TclSetNsPath((Namespace *) oPtr->namespacePtr, 1, &fPtr->helpersNs);
     }
@@ -892,10 +891,9 @@ ObjectRenamedTrace(
 /*
  * ----------------------------------------------------------------------
  *
- * DeleteDescendants, ReleaseClassContents --
+ * DeleteDescendants --
  *
- *	Tear down the special class data structure, including deleting all
- *	dependent classes and objects.
+ *	Delete all descendants of a particular class.
  *
  * ----------------------------------------------------------------------
  */
@@ -907,44 +905,55 @@ DeleteDescendants(
 {
     Class *clsPtr = oPtr->classPtr, *subclassPtr, *mixinSubclassPtr;
     Object *instancePtr;
-    int i;
 
     /*
      * Squelch classes that this class has been mixed into.
      */
 
-    FOREACH(mixinSubclassPtr, clsPtr->mixinSubs) {
-	/*
-	 * This condition also covers the case where mixinSubclassPtr ==
-	 * clsPtr
-	 */
-
-	if (!Deleted(mixinSubclassPtr->thisPtr)) {
-	    Tcl_DeleteCommandFromToken(interp,
-		    mixinSubclassPtr->thisPtr->command);
+    if (clsPtr->mixinSubs.num > 0) {
+	while (clsPtr->mixinSubs.num > 0) {
+	    mixinSubclassPtr = clsPtr->mixinSubs.list[clsPtr->mixinSubs.num-1];
+	    /* This condition also covers the case where mixinSubclassPtr ==
+	     * clsPtr
+	     */
+	    if (!Deleted(mixinSubclassPtr->thisPtr)) {
+		Tcl_DeleteCommandFromToken(interp,
+			mixinSubclassPtr->thisPtr->command);
+	    }
+	    TclOORemoveFromMixinSubs(mixinSubclassPtr, clsPtr);
 	}
-	i -= TclOORemoveFromMixinSubs(mixinSubclassPtr, clsPtr);
-	TclOODecrRefCount(mixinSubclassPtr->thisPtr);
+    }
+    if (clsPtr->mixinSubs.size > 0) {
+	ckfree(clsPtr->mixinSubs.list);
+	clsPtr->mixinSubs.size = 0;
     }
 
     /*
      * Squelch subclasses of this class.
      */
 
-    FOREACH(subclassPtr, clsPtr->subclasses) {
-	if (!Deleted(subclassPtr->thisPtr) && !IsRoot(subclassPtr)) {
-	    Tcl_DeleteCommandFromToken(interp, subclassPtr->thisPtr->command);
+    if (clsPtr->subclasses.num > 0) {
+	while (clsPtr->subclasses.num > 0) {
+	    subclassPtr = clsPtr->subclasses.list[clsPtr->subclasses.num-1];
+	    if (!Deleted(subclassPtr->thisPtr) && !IsRoot(subclassPtr)) {
+		Tcl_DeleteCommandFromToken(interp, subclassPtr->thisPtr->command);
+	    }
+	    TclOORemoveFromSubclasses(subclassPtr, clsPtr);
 	}
-	i -= TclOORemoveFromSubclasses(subclassPtr, clsPtr);
-	TclOODecrRefCount(subclassPtr->thisPtr);
+    }
+    if (clsPtr->subclasses.size > 0) {
+	ckfree(clsPtr->subclasses.list);
+	clsPtr->subclasses.list = NULL;
+	clsPtr->subclasses.size = 0;
     }
 
     /*
      * Squelch instances of this class (includes objects we're mixed into).
      */
 
-    if (!IsRootClass(oPtr)) {
-	FOREACH(instancePtr, clsPtr->instances) {
+    if (clsPtr->instances.num > 0) {
+	while (clsPtr->instances.num > 0) {
+	    instancePtr = clsPtr->instances.list[clsPtr->instances.num-1];
 	    /*
 	     * This condition also covers the case where instancePtr == oPtr
 	     */
@@ -952,10 +961,26 @@ DeleteDescendants(
 	    if (!Deleted(instancePtr) && !IsRoot(instancePtr)) {
 		Tcl_DeleteCommandFromToken(interp, instancePtr->command);
 	    }
-	    i -= TclOORemoveFromInstances(instancePtr, clsPtr);
+	    TclOORemoveFromInstances(instancePtr, clsPtr);
 	}
     }
+    if (clsPtr->instances.size > 0) {
+	ckfree(clsPtr->instances.list);
+	clsPtr->instances.list = NULL;
+	clsPtr->instances.size = 0;
+    }
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ReleaseClassContents --
+ *
+ *	Tear down the special class data structure, including deleting all
+ *	dependent classes and objects.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
 ReleaseClassContents(
@@ -1020,6 +1045,7 @@ ReleaseClassContents(
 	    TclDecrRefCount(filterObj);
 	}
 	ckfree(clsPtr->filters.list);
+	clsPtr->filters.list = NULL;
 	clsPtr->filters.num = 0;
     }
 
@@ -1039,11 +1065,24 @@ ReleaseClassContents(
 	clsPtr->metadataPtr = NULL;
     }
 
-    FOREACH(tmpClsPtr, clsPtr->mixins) {
-	TclOORemoveFromMixinSubs(clsPtr, tmpClsPtr);
+    if (clsPtr->mixins.num) {
+	FOREACH(tmpClsPtr, clsPtr->mixins) {
+	    TclOORemoveFromMixinSubs(clsPtr, tmpClsPtr);
+	    TclOODecrRefCount(tmpClsPtr->thisPtr);
+	}
+	ckfree(clsPtr->mixins.list);
+	clsPtr->mixins.list = NULL;
+	clsPtr->mixins.num = 0;
     }
-    FOREACH(tmpClsPtr, clsPtr->superclasses) {
-	TclOORemoveFromSubclasses(clsPtr, tmpClsPtr);
+
+    if (clsPtr->superclasses.num > 0) {
+	FOREACH(tmpClsPtr, clsPtr->superclasses) {
+	    TclOORemoveFromSubclasses(clsPtr, tmpClsPtr);
+	    TclOODecrRefCount(tmpClsPtr->thisPtr);
+	}
+	ckfree(clsPtr->superclasses.list);
+	clsPtr->superclasses.num = 0;
+	clsPtr->superclasses.list = NULL;
     }
 
     FOREACH_HASH_VALUE(mPtr, &clsPtr->classMethods) {
@@ -1179,10 +1218,11 @@ ObjectNamespaceDeleted(
 
     TclOORemoveFromInstances(oPtr, oPtr->selfCls);
 
-    FOREACH(mixinPtr, oPtr->mixins) {
-	i -= TclOORemoveFromInstances(oPtr, mixinPtr);
-    }
-    if (i) {
+    if (oPtr->mixins.num > 0) {
+	FOREACH(mixinPtr, oPtr->mixins) {
+	    TclOORemoveFromInstances(oPtr, mixinPtr);
+	    TclOODecrRefCount(mixinPtr->thisPtr);
+	}
 	ckfree(oPtr->mixins.list);
     }
 
@@ -1251,7 +1291,9 @@ ObjectNamespaceDeleted(
      * Delete the object structure itself.
      */
 
+    TclNsDecrRefCount((Namespace *)oPtr->namespacePtr);
     oPtr->namespacePtr = NULL;
+    TclOODecrRefCount(oPtr->selfCls->thisPtr);
     oPtr->selfCls = NULL;
     TclOODecrRefCount(oPtr);
     return;
@@ -1274,14 +1316,8 @@ TclOODecrRefCount(
     Object *oPtr)
 {
     if (oPtr->refCount-- <= 1) {
-	Class *clsPtr = oPtr->classPtr;
 
 	if (oPtr->classPtr != NULL) {
-	    ckfree(clsPtr->superclasses.list);
-	    ckfree(clsPtr->subclasses.list);
-	    ckfree(clsPtr->instances.list);
-	    ckfree(clsPtr->mixinSubs.list);
-	    ckfree(clsPtr->mixins.list);
 	    ckfree(oPtr->classPtr);
 	}
 	ckfree(oPtr);
@@ -1309,10 +1345,6 @@ TclOORemoveFromInstances(
 {
     int i, res = 0;
     Object *instPtr;
-
-    if (Deleted(clsPtr->thisPtr)) {
-	return res;
-    }
 
     FOREACH(instPtr, clsPtr->instances) {
 	if (oPtr == instPtr) {
@@ -1375,10 +1407,6 @@ TclOORemoveFromSubclasses(
 {
     int i, res = 0;
     Class *subclsPtr;
-
-    if (Deleted(superPtr->thisPtr)) {
-	return res;
-    }
 
     FOREACH(subclsPtr, superPtr->subclasses) {
 	if (subPtr == subclsPtr) {
@@ -1443,10 +1471,6 @@ TclOORemoveFromMixinSubs(
 {
     int i, res = 0;
     Class *subclsPtr;
-
-    if (Deleted(superPtr->thisPtr)) {
-	return res;
-    }
 
     FOREACH(subclsPtr, superPtr->mixinSubs) {
 	if (subPtr == subclsPtr) {
@@ -1755,6 +1779,7 @@ TclNewObjectInstanceCommon(
 
     oPtr = AllocObject(interp, simpleName, nsPtr, nsNameStr);
     oPtr->selfCls = classPtr;
+    AddRef(classPtr->thisPtr);
     TclOOAddToInstances(oPtr, classPtr);
 
     /*
@@ -1900,16 +1925,22 @@ Tcl_CopyObjectInstance(
      * Copy the object's mixin references to the new object.
      */
 
-    FOREACH(mixinPtr, o2Ptr->mixins) {
-	if (mixinPtr && mixinPtr != o2Ptr->selfCls) {
-	    TclOORemoveFromInstances(o2Ptr, mixinPtr);
+    if (o2Ptr->mixins.num != 0) {
+	FOREACH(mixinPtr, o2Ptr->mixins) {
+	    if (mixinPtr && mixinPtr != o2Ptr->selfCls) {
+		TclOORemoveFromInstances(o2Ptr, mixinPtr);
+	    }
+	    TclOODecrRefCount(mixinPtr->thisPtr);
 	}
+	ckfree(o2Ptr->mixins.list);
     }
     DUPLICATE(o2Ptr->mixins, oPtr->mixins, Class *);
     FOREACH(mixinPtr, o2Ptr->mixins) {
 	if (mixinPtr && mixinPtr != o2Ptr->selfCls) {
 	    TclOOAddToInstances(o2Ptr, mixinPtr);
 	}
+	/* For the reference just created in DUPLICATE */
+	AddRef(mixinPtr->thisPtr);
     }
 
     /*
@@ -1987,6 +2018,7 @@ Tcl_CopyObjectInstance(
 
 	FOREACH(superPtr, cls2Ptr->superclasses) {
 	    TclOORemoveFromSubclasses(cls2Ptr, superPtr);
+	    TclOODecrRefCount(superPtr->thisPtr);
 	}
 	if (cls2Ptr->superclasses.num) {
 	    cls2Ptr->superclasses.list = ckrealloc(cls2Ptr->superclasses.list,
@@ -2000,6 +2032,11 @@ Tcl_CopyObjectInstance(
 	cls2Ptr->superclasses.num = clsPtr->superclasses.num;
 	FOREACH(superPtr, cls2Ptr->superclasses) {
 	    TclOOAddToSubclasses(cls2Ptr, superPtr);
+
+	    /* For the new item in cls2Ptr->superclasses that memcpy just
+	     * created
+	     */
+	    AddRef(superPtr->thisPtr);
 	}
 
 	/*
@@ -2025,15 +2062,18 @@ Tcl_CopyObjectInstance(
 	 * references to the duplicate).
 	 */
 
-	FOREACH(mixinPtr, cls2Ptr->mixins) {
-	    TclOORemoveFromMixinSubs(cls2Ptr, mixinPtr);
-	}
 	if (cls2Ptr->mixins.num != 0) {
+	    FOREACH(mixinPtr, cls2Ptr->mixins) {
+		TclOORemoveFromMixinSubs(cls2Ptr, mixinPtr);
+		TclOODecrRefCount(mixinPtr->thisPtr);
+	    }
 	    ckfree(clsPtr->mixins.list);
 	}
 	DUPLICATE(cls2Ptr->mixins, clsPtr->mixins, Class *);
 	FOREACH(mixinPtr, cls2Ptr->mixins) {
 	    TclOOAddToMixinSubs(cls2Ptr, mixinPtr);
+	    /* For the copy just created in DUPLICATE */
+	    AddRef(mixinPtr->thisPtr);
 	}
 
 	/*
