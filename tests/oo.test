@@ -2202,7 +2202,7 @@ test oo-16.2 {OO: object introspection} -body {
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
 test oo-16.3 {OO: object introspection} -body {
     info object gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, class, definition, filters, forward, isa, methods, methodtype, mixins, namespace, variables, or vars}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, class, creationid, definition, filters, forward, isa, methods, methodtype, mixins, namespace, variables, or vars}
 test oo-16.4 {OO: object introspection} -setup {
     oo::class create meta { superclass oo::class }
     [meta create instance1] create instance2
@@ -2332,6 +2332,73 @@ test oo-16.14 {OO: object introspection: TIP #436} -setup {
 } -cleanup {
     meta destroy
 } -result {class {0 0} meta {0 0 0} type {0 0 0 0 0 0} mix {0 0 0 0 0 0}}
+test oo-16.15 {OO: object introspection: creationid #500} -setup {
+    oo::class create cls
+} -body {
+    info object creationid [cls new]
+} -cleanup {
+    cls destroy
+} -result {^\d+$} -match regexp
+test oo-16.16 {OO: object introspection: creationid #500} -setup {
+    oo::class create cls
+} -body {
+    set obj [cls new]
+    set id [info object creationid $obj]
+    rename $obj gorp
+    set id2 [info object creationid gorp]
+    list $id $id2
+} -cleanup {
+    cls destroy
+} -result {^(\d+) \1$} -match regexp
+test oo-16.17 {OO: object introspection: creationid #500} -body {
+    info object creationid nosuchobject
+} -returnCodes error -result {nosuchobject does not refer to an object}
+test oo-16.18 {OO: object introspection: creationid #500} -body {
+    info object creationid
+} -returnCodes error -result {wrong # args: should be "info object creationid objName"}
+test oo-16.18 {OO: object introspection: creationid #500} -body {
+    info object creationid oo::object gorp
+} -returnCodes error -result {wrong # args: should be "info object creationid objName"}
+test oo-16.19 {OO: object introspection: creationid #500} -setup {
+    oo::class create cls
+} -body {
+    set id1 [info object creationid [set o1 [cls new]]]
+    set id2 [info object creationid [set o2 [cls new]]]
+    if {$id1 == $id2} {
+	format "objects %s and %s have same creation id: %d" $o1 $o2 $id1
+    } else {
+	string cat not-equal
+    }
+} -cleanup {
+    cls destroy
+} -result not-equal
+test oo-16.20 {OO: object introspection: creationid #500} -setup {
+    oo::class create cls
+} -body {
+    set id1 [info object creationid [set o1 [cls new]]]
+    $o1 destroy
+    set id2 [info object creationid [set o2 [cls new]]]
+    if {$id1 == $id2} {
+	format "objects %s and %s have same creation id: %d" $o1 $o2 $id1
+    } else {
+	string cat not-equal
+    }
+} -cleanup {
+    cls destroy
+} -result not-equal
+test oo-16.21 {OO: object introspection: creationid #500} -setup {
+    oo::class create cls
+} -body {
+    set id1 [info object creationid [set o1 [cls new]]]
+    set id2 [info object creationid [set o2 [oo::copy $o1]]]
+    if {$id1 == $id2} {
+	format "objects %s and %s have same creation id: %d" $o1 $o2 $id1
+    } else {
+	string cat not-equal
+    }
+} -cleanup {
+    cls destroy
+} -result not-equal
 
 test oo-17.1 {OO: class introspection} -body {
     info class
