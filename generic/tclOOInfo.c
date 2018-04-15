@@ -799,12 +799,18 @@ InfoObjectVariablesCmd(
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    Tcl_Obj *variableObj, *resultObj;
-    int i;
+    Tcl_Obj *resultObj;
+    int i, private = 0;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-private?");
 	return TCL_ERROR;
+    }
+    if (objc == 3) {
+	if (strcmp("-private", Tcl_GetString(objv[2])) != 0) {
+	    return TCL_ERROR;
+	}
+	private = 1;
     }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
     if (oPtr == NULL) {
@@ -812,8 +818,18 @@ InfoObjectVariablesCmd(
     }
 
     resultObj = Tcl_NewObj();
-    FOREACH(variableObj, oPtr->variables) {
-	Tcl_ListObjAppendElement(NULL, resultObj, variableObj);
+    if (private) {
+	PrivateVariableMapping *privatePtr;
+
+	FOREACH_STRUCT(privatePtr, oPtr->privateVariables) {
+	    Tcl_ListObjAppendElement(NULL, resultObj, privatePtr->variableObj);
+	}
+    } else {
+	Tcl_Obj *variableObj;
+
+	FOREACH(variableObj, oPtr->variables) {
+	    Tcl_ListObjAppendElement(NULL, resultObj, variableObj);
+	}
     }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
