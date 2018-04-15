@@ -4169,6 +4169,88 @@ test oo-36.10 {TIP #470: introspection within oo::define} -setup {
     Cls destroy
     catch {rename oo::objdefine::testself {}}
 } -result {{} {1 {this command may only be called from within the context of an ::oo::define or ::oo::objdefine command} 0 ::obj}}
+
+test oo-37.1 {TIP 500: private variables don't cross-interfere with each other or normal ones} -setup {
+    oo::class create parent
+} -body {
+    oo::class create clsA {
+	superclass parent
+	private variable x
+	constructor {} {
+	    set x 1
+	}
+	method getA {} {
+	    return $x
+	}
+    }
+    oo::class create clsB {
+	superclass clsA
+	private {
+	    variable x
+	}
+	constructor {} {
+	    set x 2
+	    next
+	}
+	method getB {} {
+	    return $x
+	}
+    }
+    oo::class create clsC {
+	superclass clsB
+	variable x
+	constructor {} {
+	    set x 3
+	    next
+	}
+	method getC {} {
+	    return $x
+	}
+    }
+    clsC create obj
+    oo::objdefine obj {
+	private {
+	    variable x
+	}
+	method setup {} {
+	    set x 4
+	}
+	method getO {} {
+	    return $x
+	}
+    }
+    obj setup
+    list [obj getA] [obj getB] [obj getC] [obj getO] \
+	[lsort [string map [list [info object creationid clsA] CLASS-A \
+				[info object creationid clsB] CLASS-B \
+				[info object creationid obj] OBJ] \
+		    [info object vars obj]]]
+} -cleanup {
+    parent destroy
+} -result {1 2 3 4 {{CLASS-A : x} {CLASS-B : x} {OBJ : x} x}}
+test oo-37.2 {TIP 500: private variables introspection} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	private {
+	    variable x1
+	    variable x2
+	}
+	variable y1 y2
+    }
+    cls create obj
+    oo::objdefine obj {
+	private variable a1 a2
+	variable b1 b2
+    }
+    list [lsort [info class variables cls]] \
+	[lsort [info class variables cls -private]] \
+	[lsort [info object variables obj]] \
+	[lsort [info object variables obj -private]]
+} -cleanup {
+    parent destroy
+} -result {{y1 y2} {x1 x2} {b1 b2} {a1 a2}}
 
 cleanupTests
 return
