@@ -406,7 +406,6 @@ static const TalInstDesc TalInstructionTable[] = {
     {"jumpTrue",	ASSEM_JUMP,	INST_JUMP_TRUE1,	1,	0},
     {"jumpTrue4",	ASSEM_JUMP4,	INST_JUMP_TRUE4,	1,	0},
     {"label",		ASSEM_LABEL,	0,			0,	0},
-    {"land",		ASSEM_1BYTE,	INST_LAND,		2,	1},
     {"lappend",		ASSEM_LVT,	(INST_LAPPEND_SCALAR1<<8
 					 | INST_LAPPEND_SCALAR4),
 								1,	1},
@@ -434,7 +433,6 @@ static const TalInstDesc TalInstructionTable[] = {
 					 | INST_LOAD_ARRAY4),	1,	1},
     {"loadArrayStk",	ASSEM_1BYTE,	INST_LOAD_ARRAY_STK,	2,	1},
     {"loadStk",		ASSEM_1BYTE,	INST_LOAD_STK,		1,	1},
-    {"lor",		ASSEM_1BYTE,	INST_LOR,		2,	1},
     {"lsetFlat",	ASSEM_LSET_FLAT,INST_LSET_FLAT,		INT_MIN,1},
     {"lsetList",	ASSEM_1BYTE,	INST_LSET_LIST,		3,	1},
     {"lshift",		ASSEM_1BYTE,	INST_LSHIFT,		2,	1},
@@ -2246,23 +2244,24 @@ GetListIndexOperand(
     Tcl_Token* tokenPtr = *tokenPtrPtr;
 				/* INOUT: Pointer to the next token in the
 				 * source code */
-    Tcl_Obj* intObj;		/* Integer from the source code */
-    int status;			/* Tcl status return */
+    Tcl_Obj *value;
+    int status;
 
-    /*
-     * Extract the next token as a string.
-     */
-
-    if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &intObj) != TCL_OK) {
+    /* General operand validity check */
+    if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &value) != TCL_OK) {
 	return TCL_ERROR;
     }
-
+     
+    /* Convert to an integer, advance to the next token and return. */
     /*
-     * Convert to an integer, advance to the next token and return.
+     * NOTE: Indexing a list with an index before it yields the
+     * same result as indexing after it, and might be more easily portable
+     * when list size limits grow.
      */
+    status = TclIndexEncode(interp, value,
+	    TCL_INDEX_BEFORE,TCL_INDEX_BEFORE, result);
 
-    status = TclGetIntForIndex(interp, intObj, -2, result);
-    Tcl_DecrRefCount(intObj);
+    Tcl_DecrRefCount(value);
     *tokenPtrPtr = TokenAfter(tokenPtr);
     return status;
 }

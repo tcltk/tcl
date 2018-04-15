@@ -303,7 +303,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
 	tclObj.o tclOptimize.o tclPanic.o tclParse.o tclPathObj.o tclPipe.o \
 	tclPkg.o tclPkgConfig.o tclPosixStr.o \
-	tclPreserve.o tclProc.o tclRegexp.o \
+	tclPreserve.o tclProc.o tclProcess.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o \
 	tclStrToD.o tclThread.o \
 	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
@@ -444,6 +444,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclPosixStr.c \
 	$(GENERIC_DIR)/tclPreserve.c \
 	$(GENERIC_DIR)/tclProc.c \
+	$(GENERIC_DIR)/tclProcess.c \
 	$(GENERIC_DIR)/tclRegexp.c \
 	$(GENERIC_DIR)/tclResolve.c \
 	$(GENERIC_DIR)/tclResult.c \
@@ -850,8 +851,8 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/opt0.4; \
 	    done;
-	@echo "Installing package msgcat 1.6.1 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl9/9.0/msgcat-1.6.1.tm;
+	@echo "Installing package msgcat 1.7.0 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl9/9.0/msgcat-1.7.0.tm;
 	@echo "Installing package tcltest 2.4.1 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl9/9.0/tcltest-2.4.1.tm;
 
@@ -1287,6 +1288,9 @@ tclPreserve.o: $(GENERIC_DIR)/tclPreserve.c
 
 tclProc.o: $(GENERIC_DIR)/tclProc.c $(COMPILEHDR) $(NREHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclProc.c
+
+tclProcess.o: $(GENERIC_DIR)/tclProcess.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclProcess.c
 
 tclRegexp.o: $(GENERIC_DIR)/tclRegexp.c $(TCLREHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclRegexp.c

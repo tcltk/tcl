@@ -86,6 +86,7 @@ typedef struct {
 #define GET_STRING(objPtr) \
     ((String *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_STRING(objPtr, stringPtr) \
+    ((objPtr)->internalRep.twoPtrValue.ptr2 = NULL),			\
     ((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (stringPtr))
 
 /*
