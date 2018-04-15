@@ -4170,7 +4170,55 @@ test oo-36.10 {TIP #470: introspection within oo::define} -setup {
     catch {rename oo::objdefine::testself {}}
 } -result {{} {1 {this command may only be called from within the context of an ::oo::define or ::oo::objdefine command} 0 ::obj}}
 
-test oo-37.1 {TIP 500: private variables don't cross-interfere with each other or normal ones} -setup {
+test oo-37.1 {TIP 500: private command propagates errors} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	private ::error "this is an error"
+    }
+} -cleanup {
+    cls destroy
+} -returnCodes error -result {this is an error}
+test oo-37.2 {TIP 500: private command propagates errors} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	private {
+	    ::error "this is an error"
+	}
+    }
+} -cleanup {
+    cls destroy
+} -returnCodes error -result {this is an error}
+test oo-37.3 {TIP 500: private command propagates errors} -setup {
+    oo::object create obj
+} -body {
+    oo::objdefine obj {
+	private ::error "this is an error"
+    }
+} -cleanup {
+    obj destroy
+} -returnCodes error -result {this is an error}
+test oo-37.4 {TIP 500: private command propagates errors} -setup {
+    oo::object create obj
+} -body {
+    oo::objdefine obj {
+	private {
+	    ::error "this is an error"
+	}
+    }
+} -cleanup {
+    obj destroy
+} -returnCodes error -result {this is an error}
+test oo-37.5 {TIP 500: private command can't be used outside definitions} -body {
+    oo::define::private error "xyz"
+} -returnCodes error -result {this command may only be called from within the context of an ::oo::define or ::oo::objdefine command}
+test oo-37.6 {TIP 500: private command can't be used outside definitions} -body {
+    oo::objdefine::private error "xyz"
+} -returnCodes error -result {this command may only be called from within the context of an ::oo::define or ::oo::objdefine command}
+
+
+test oo-38.1 {TIP 500: private variables don't cross-interfere with each other or normal ones} -setup {
     oo::class create parent
 } -body {
     oo::class create clsA {
@@ -4228,7 +4276,7 @@ test oo-37.1 {TIP 500: private variables don't cross-interfere with each other o
 } -cleanup {
     parent destroy
 } -result {1 2 3 4 {{CLASS-A : x} {CLASS-B : x} {OBJ : x} x}}
-test oo-37.2 {TIP 500: private variables introspection} -setup {
+test oo-38.2 {TIP 500: private variables introspection} -setup {
     oo::class create parent
 } -body {
     oo::class create cls {
