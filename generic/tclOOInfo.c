@@ -51,7 +51,7 @@ static Tcl_ObjCmdProc InfoClassVariablesCmd;
 static const EnsembleImplMap infoObjectCmds[] = {
     {"call",	   InfoObjectCallCmd,	    TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"class",	   InfoObjectClassCmd,	    TclCompileInfoObjectClassCmd, NULL, NULL, 0},
-    {"creationid", InfoObjectIdCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"creationid", InfoObjectIdCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"definition", InfoObjectDefnCmd,	    TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"filters",	   InfoObjectFiltersCmd,    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"forward",	   InfoObjectForwardCmd,    TclCompileBasic2ArgCmd, NULL, NULL, 0},
