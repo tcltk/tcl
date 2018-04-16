@@ -1584,7 +1584,6 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsDigit;
 	break;
     case STR_IS_DOUBLE: {
-	/* TODO */
 	if ((objPtr->typePtr == &tclDoubleType) ||
 		(objPtr->typePtr == &tclIntType) ||
 		(objPtr->typePtr == &tclBignumType)) {
@@ -3205,10 +3204,11 @@ StringTrimCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *string1, *string2;
-    int triml, trimr, length1, length2;
+    size_t triml, trimr, length1, length2;
 
     if (objc == 3) {
-	string2 = TclGetStringFromObj(objv[2], &length2);
+	string2 = TclGetString(objv[2]);
+	length2 = objv[2]->length;
     } else if (objc == 2) {
 	string2 = tclDefaultTrimSet;
 	length2 = strlen(tclDefaultTrimSet);
@@ -3216,7 +3216,8 @@ StringTrimCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?chars?");
 	return TCL_ERROR;
     }
-    string1 = TclGetStringFromObj(objv[1], &length1);
+    string1 = TclGetString(objv[1]);
+    length1 = objv[1]->length;
 
     triml = TclTrim(string1, length1, string2, length2, &trimr);
 

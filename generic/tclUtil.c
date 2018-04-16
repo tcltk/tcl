@@ -1700,14 +1700,14 @@ TrimRight(
     return numBytes - (p - bytes);
 }
 
-int
+size_t
 TclTrimRight(
     const char *bytes,	/* String to be trimmed... */
-    int numBytes,	/* ...and its length in bytes */
+    size_t numBytes,	/* ...and its length in bytes */
     const char *trim,	/* String of trim characters... */
-    int numTrim)	/* ...and its length in bytes */
+    size_t numTrim)	/* ...and its length in bytes */
 {
-    int res;
+    size_t res;
     Tcl_DString bytesBuf, trimBuf;
 
     /* Empty strings -> nothing to do */
@@ -1749,12 +1749,12 @@ TclTrimRight(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline size_t
 TrimLeft(
     const char *bytes,		/* String to be trimmed... */
-    int numBytes,		/* ...and its length in bytes */
+    size_t numBytes,		/* ...and its length in bytes */
     const char *trim,		/* String of trim characters... */
-    int numTrim)		/* ...and its length in bytes */
+    size_t numTrim)		/* ...and its length in bytes */
 {
     const char *p = bytes;
 	Tcl_UniChar ch1 = 0, ch2 = 0;
@@ -1798,14 +1798,14 @@ TrimLeft(
     return p - bytes;
 }
 
-int
+size_t
 TclTrimLeft(
     const char *bytes,	/* String to be trimmed... */
-    int numBytes,	/* ...and its length in bytes */
+    size_t numBytes,	/* ...and its length in bytes */
     const char *trim,	/* String of trim characters... */
-    int numTrim)	/* ...and its length in bytes */
+    size_t numTrim)	/* ...and its length in bytes */
 {
-    int res;
+    size_t res;
     Tcl_DString bytesBuf, trimBuf;
 
     /* Empty strings -> nothing to do */
@@ -1845,15 +1845,15 @@ TclTrimLeft(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclTrim(
     const char *bytes,	/* String to be trimmed... */
-    int numBytes,	/* ...and its length in bytes */
+    size_t numBytes,	/* ...and its length in bytes */
     const char *trim,	/* String of trim characters... */
-    int numTrim,	/* ...and its length in bytes */
-    int *trimRight)		/* Offset from the end of the string. */
+    size_t numTrim,	/* ...and its length in bytes */
+    size_t *trimRight)		/* Offset from the end of the string. */
 {
-    int trimLeft;
+    size_t trimLeft;
     Tcl_DString bytesBuf, trimBuf;
 
     *trimRight = 0;
@@ -1953,7 +1953,8 @@ Tcl_Concat(
     result = ckalloc((unsigned) (bytesNeeded + argc));
 
     for (p = result, i = 0;  i < argc;  i++) {
-	int triml, trimr, elemLength;
+	size_t triml, trimr;
+	int elemLength;
 	const char *element;
 
 	element = argv[i];
@@ -2086,8 +2087,7 @@ Tcl_ConcatObj(
     Tcl_SetObjLength(resPtr, 0);
 
     for (i = 0;  i < objc;  i++) {
-	size_t triml;
-	int trimr;
+	size_t triml, trimr;
 
 	element = TclGetString(objv[i]);
 	elemLength = objv[i]->length;

@@ -5396,7 +5396,7 @@ TEBCresume(
 
     {
 	const char *string1, *string2;
-	int trim1, trim2;
+	size_t trim1, trim2;
 
     case INST_STR_TRIM_LEFT:
 	valuePtr = OBJ_UNDER_TOS;	/* String */

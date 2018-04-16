@@ -3136,12 +3136,12 @@ MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int count, int *tokensLeftPtr, int line,
 			    int *clNextOuter, const char *outerScript);
-MODULE_SCOPE int	TclTrim(const char *bytes, int numBytes,
-			    const char *trim, int numTrim, int *trimRight);
-MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
-			    const char *trim, int numTrim);
-MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
-			    const char *trim, int numTrim);
+MODULE_SCOPE size_t	TclTrim(const char *bytes, size_t numBytes,
+			    const char *trim, size_t numTrim, size_t *trimRight);
+MODULE_SCOPE size_t	TclTrimLeft(const char *bytes, size_t numBytes,
+			    const char *trim, size_t numTrim);
+MODULE_SCOPE size_t	TclTrimRight(const char *bytes, size_t numBytes,
+			    const char *trim, size_t numTrim);
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCount(int ch);
