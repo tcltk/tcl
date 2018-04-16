@@ -3097,6 +3097,7 @@ ArrayObjFirst(
 	    &searchPtr->search);
     Tcl_SetHashValue(hPtr, searchPtr);
     searchPtr->name = Tcl_ObjPrintf("s-%d-%s", searchPtr->id, TclGetString(arrayNameObj));
+    Tcl_IncrRefCount(searchPtr->name);
 }
 
 int
@@ -3361,6 +3362,7 @@ ArrayForLoopCallback(
      */
     if (done != TCL_ERROR) {
       ArrayDoneSearch (iPtr, varPtr, searchPtr);
+	Tcl_DecrRefCount(searchPtr->name);
       ckfree(searchPtr);
     }
 
