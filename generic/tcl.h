@@ -273,8 +273,6 @@ extern "C" {
 #ifndef CONST
 #   define CONST const
 #endif
-#define CONST84 const
-#define CONST84_RETURN const
 
 #endif /* !TCL_NO_DEPRECATED */
 
