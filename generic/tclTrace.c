@@ -176,7 +176,9 @@ Tcl_TraceObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int optionIndex;
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
     char *name, *flagOps, *p;
+#endif
     /* Main sub commands to 'trace' */
     static const char *traceOptions[] = {
 	"add", "info", "remove",
@@ -352,10 +354,12 @@ Tcl_TraceObjCmd(
     }
     return TCL_OK;
 
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
   badVarOps:
     Tcl_AppendResult(interp, "bad operations \"", flagOps,
 	    "\": should be one or more of rwua", NULL);
     return TCL_ERROR;
+#endif
 }
 
 /*
@@ -902,9 +906,11 @@ TraceVariableObjCmd(
 		    (sizeof(CombinedTraceVarInfo) + length + 1
 		    - sizeof(ctvarPtr->traceCmdInfo.command)));
 	    ctvarPtr->traceCmdInfo.flags = flags;
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
 	    if (objv[0] == NULL) {
 		ctvarPtr->traceCmdInfo.flags |= TCL_TRACE_OLD_STYLE;
 	    }
+#endif
 	    ctvarPtr->traceCmdInfo.length = length;
 	    flags |= TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT;
 	    memcpy(ctvarPtr->traceCmdInfo.command, command, length+1);
@@ -931,7 +937,11 @@ TraceVariableObjCmd(
 		    TraceVarProc, clientData)) != 0) {
 		tvarPtr = (TraceVarInfo *) clientData;
 		if ((tvarPtr->length == length)
-			&& ((tvarPtr->flags & ~TCL_TRACE_OLD_STYLE)==flags)
+			&& ((tvarPtr->flags
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
+& ~TCL_TRACE_OLD_STYLE
+#endif
+						)==flags)
 			&& (strncmp(command, tvarPtr->command,
 				(size_t) length) == 0)) {
 		    Tcl_UntraceVar2(interp, name, NULL,
