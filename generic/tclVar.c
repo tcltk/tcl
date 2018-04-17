@@ -3175,13 +3175,11 @@ ArrayForNRCmd(
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
-    Tcl_Obj **varv;
-    Tcl_Obj *arrayNameObj;
+    Tcl_Obj *varListObj, *arrayNameObj, *scriptObj;
     ArraySearch *searchPtr = NULL;
     Var *varPtr;
     Var *arrayPtr;
-    int varc;
+    int numVars;
 
     /*
      * array for {k v} a body
@@ -3197,10 +3195,12 @@ ArrayForNRCmd(
      * Parse arguments.
      */
 
-    if (TclListObjGetElements(interp, objv[1], &varc, &varv) != TCL_OK) {
+
+    if (Tcl_ListObjLength(interp, objv[1], &numVars) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (varc != 2) {
+
+    if (numVars != 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"must have two variable names", -1));
 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "array", "for", NULL);
@@ -3208,9 +3208,6 @@ ArrayForNRCmd(
     }
 
     arrayNameObj = objv[2];
-    keyVarObj = varv[0];
-    valueVarObj = varv[1];
-    scriptObj = objv[3];
 
     /*
      * Locate the array variable.
@@ -3262,16 +3259,16 @@ ArrayForNRCmd(
      * loop) don't vanish.
      */
 
-    Tcl_IncrRefCount(keyVarObj);
-    Tcl_IncrRefCount(valueVarObj);
+    varListObj = TclListObjCopy(NULL, objv[1]);
+    scriptObj = objv[3];
     Tcl_IncrRefCount(scriptObj);
 
     /*
      * Run the script.
      */
 
-    TclNRAddCallback(interp, ArrayForLoopCallback, searchPtr, keyVarObj,
-	    valueVarObj, scriptObj);
+    TclNRAddCallback(interp, ArrayForLoopCallback, searchPtr, varListObj,
+	    NULL, scriptObj);
     return TCL_OK;
 }
 
@@ -3283,13 +3280,13 @@ ArrayForLoopCallback(
 {
     Interp *iPtr = (Interp *) interp;
     ArraySearch *searchPtr = data[0];
-    Tcl_Obj *keyVarObj = data[1];
-    Tcl_Obj *valueVarObj = data[2];
+    Tcl_Obj *varListObj = data[1];
     Tcl_Obj *scriptObj = data[3];
+    Tcl_Obj **varv;
     Tcl_Obj *keyObj, *valueObj;
     Var *varPtr;
     Var *arrayPtr;
-    int done;
+    int done, varc;
 
     /*
      * Process the result from the previous execution of the script body.
@@ -3333,12 +3330,14 @@ ArrayForLoopCallback(
         }
 	goto arrayfordone;
     }
-    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj, TCL_LEAVE_ERR_MSG) == NULL) {
+
+    Tcl_ListObjGetElements(NULL, varListObj, &varc, &varv);
+    if (Tcl_ObjSetVar2(interp, varv[0], NULL, keyObj, TCL_LEAVE_ERR_MSG) == NULL) {
       result = TCL_ERROR;
       goto arrayfordone;
     }
     if (valueObj != NULL) {
-      if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj, TCL_LEAVE_ERR_MSG) == NULL) {
+      if (Tcl_ObjSetVar2(interp, varv[1], NULL, valueObj, TCL_LEAVE_ERR_MSG) == NULL) {
         result = TCL_ERROR;
         goto arrayfordone;
       }
@@ -3348,8 +3347,8 @@ ArrayForLoopCallback(
      * Run the script.
      */
 
-    TclNRAddCallback(interp, ArrayForLoopCallback, searchPtr, keyVarObj,
-	    valueVarObj, scriptObj);
+    TclNRAddCallback(interp, ArrayForLoopCallback, searchPtr, varListObj,
+	    NULL, scriptObj);
     return TclNREvalObjEx(interp, scriptObj, 0, iPtr->cmdFramePtr, 3);
 
     /*
@@ -3366,8 +3365,7 @@ ArrayForLoopCallback(
       ckfree(searchPtr);
     }
 
-    TclDecrRefCount(keyVarObj);
-    TclDecrRefCount(valueVarObj);
+    TclDecrRefCount(varListObj);
     TclDecrRefCount(scriptObj);
     return result;
 }
