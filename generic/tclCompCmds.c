@@ -322,8 +322,8 @@ TclCompileArraySetCmd(
      */
 
     if (isDataValid && !isDataEven) {
-	/* Abandon compile and let direct eval raise the error */
-	code = TCL_ERROR;
+	/* Abandon custom compile and let invocation raise the error */
+	code = TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	goto done;
 
 	/*
