@@ -930,6 +930,15 @@ test var-20.9 {[bc1a96407a] array set compiled w/ trace} -setup {
 test var-20.10 {[bc1a96407a] array set don't compile bad varname} -body {
     apply {{} {set name foo(bar); array set $name {a 1}}}
 } -returnCodes error -match glob -result *
+test var-20.11 {array set don't compile bad initializer} -setup {
+    unset -nocomplain foo
+    trace add variable foo array {set foo(bar) baz;#}
+} -body {
+    catch {array set foo bad}
+    set foo(bar)
+} -cleanup {
+    unset -nocomplain foo
+} -result baz
 
 test var-21.0 {PushVarNameWord OBOE in compiled unset} -setup {
     proc linenumber {} {dict get [info frame -1] line}
