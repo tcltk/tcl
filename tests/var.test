@@ -1143,6 +1143,15 @@ test var-23.13 {array enumeration, number of traces} -setup {
     unset -nocomplain ::a
     unset -nocomplain reslist
 } -result 3
+test var-23.14 {array for, shared arguments} -setup {
+    set vn {k v}
+    unset -nocomplain $vn
+} -body {
+    array set $vn {a 1 b 2 c 3}
+    array for $vn $vn {}
+} -cleanup {
+    unset -nocomplain $vn vn
+} -result {}
 
 catch {namespace delete ns}
 catch {unset arr}
