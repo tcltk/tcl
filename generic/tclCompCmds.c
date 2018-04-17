@@ -415,6 +415,10 @@ TclCompileArraySetCmd(
      * Start issuing instructions to write to the array.
      */
 
+    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
+    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
+    TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
+
     CompileWord(envPtr, dataTokenPtr, interp, 2);
     if (!isDataLiteral || !isDataValid) {
 	/*
@@ -439,9 +443,6 @@ TclCompileArraySetCmd(
 	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
     }
 
-    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
-    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
-    TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
     TclEmitInstInt4(INST_FOREACH_START, infoIndex,	envPtr);
     offsetBack = CurrentOffset(envPtr);
     Emit14Inst(	INST_LOAD_SCALAR, keyVar,		envPtr);
