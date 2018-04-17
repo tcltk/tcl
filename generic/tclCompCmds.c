@@ -322,11 +322,22 @@ TclCompileArraySetCmd(
      */
 
     if (isDataValid && !isDataEven) {
+	/* Abandon compile and let direct eval raise the error */
+	code = TCL_ERROR;
+	goto done;
+
+	/*
+	 * We used to compile to the bytecode that would throw the error,
+	 * but that was wrong because it would not invoke the array trace
+	 * on the variable.
+	 *
 	PushStringLiteral(envPtr, "list must have an even number of elements");
 	PushStringLiteral(envPtr, "-errorcode {TCL ARGUMENT FORMAT}");
 	TclEmitInstInt4(INST_RETURN_IMM, TCL_ERROR,		envPtr);
 	TclEmitInt4(		0,				envPtr);
 	goto done;
+	 *
+	 */
     }
 
     /*
