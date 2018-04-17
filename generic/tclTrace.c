@@ -2478,6 +2478,47 @@ TclVarTraceExists(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCheckArrayTraces --
+ *
+ *	This function is invoked to when we operate on an array variable,
+ *	to allow any array traces to fire.
+ *
+ * Results:
+ *	Returns TCL_OK to indicate normal operation. Returns TCL_ERROR if
+ *	invocation of a trace function indicated an error. When TCL_ERROR is
+ *	returned, then error information is left in interp.
+ *
+ * Side effects:
+ *	Almost anything can happen, depending on trace; this function itself
+ *	doesn't have any side effects.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCheckArrayTraces(
+    Tcl_Interp *interp,
+    Var *varPtr,
+    Var *arrayPtr,
+    Tcl_Obj *name,
+    int index)
+{
+    int code = TCL_OK;
+
+    if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
+	&& (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
+	Interp *iPtr = (Interp *)interp;
+
+	code = TclObjCallVarTraces(iPtr, arrayPtr, varPtr, name, NULL,
+		(TCL_NAMESPACE_ONLY|TCL_GLOBAL_ONLY| TCL_TRACE_ARRAY),
+		/* leaveErrMsg */ 1, index);
+    }
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCallVarTraces --
  *
  *	This function is invoked to find and invoke relevant trace functions
