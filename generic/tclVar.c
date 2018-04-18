@@ -177,7 +177,7 @@ static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
 			    Var *varPtr, int flags, int index);
 static int		LocateArray(Tcl_Interp *interp, Tcl_Obj *name,
-			    Var **varPtrPtr);
+			    Var **varPtrPtr, int *isArrayPtr);
 static Tcl_Var		ObjFindNamespaceVar(Tcl_Interp *interp,
 			    Tcl_Obj *namePtr, Tcl_Namespace *contextNsPtr,
 			    int flags);
@@ -276,7 +276,8 @@ static int
 LocateArray(
     Tcl_Interp *interp,
     Tcl_Obj *name,
-    Var **varPtrPtr)
+    Var **varPtrPtr,
+    int *isArrayPtr)
 {
     Var *arrayPtr, *varPtr = TclObjLookupVarEx(interp, name, NULL, /*flags*/ 0,
 	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
@@ -284,7 +285,13 @@ LocateArray(
     if (TclCheckArrayTraces(interp, varPtr, arrayPtr, name, -1) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    *varPtrPtr = varPtr;
+    if (varPtrPtr) {
+	*varPtrPtr = varPtr;
+    }
+    if (isArrayPtr) {
+	*isArrayPtr = varPtr && !TclIsVarUndefined(varPtr)
+		&& TclIsVarArray(varPtr);
+    }
     return TCL_OK;
 }
 
@@ -3142,7 +3149,7 @@ ArrayStartSearchCmd(
     Interp *iPtr = (Interp *)interp;
     Var *varPtr;
     Tcl_HashEntry *hPtr;
-    int isNew;
+    int isNew, isArray;
     ArraySearch *searchPtr;
     const char *varName;
 
@@ -3151,19 +3158,12 @@ ArrayStartSearchCmd(
 	return TCL_ERROR;
     }
 
-    if (TCL_ERROR == LocateArray(interp, objv[1], &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, objv[1], &varPtr, &isArray)) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Verify that it is indeed an array variable. This test comes after the
-     * traces - the variable may actually become an array as an effect of said
-     * traces.
-     */
-
     varName = TclGetString(objv[1]);
-    if ((varPtr == NULL) || !TclIsVarArray(varPtr)
-	    || TclIsVarUndefined(varPtr)) {
+    if (!isArray) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"%s\" isn't an array", varName));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", varName, NULL);
@@ -3221,7 +3221,7 @@ ArrayAnyMoreCmd(
     Interp *iPtr = (Interp *)interp;
     Var *varPtr;
     Tcl_Obj *varNameObj, *searchObj;
-    int gotValue;
+    int gotValue, isArray;
     ArraySearch *searchPtr;
 
     if (objc != 3) {
@@ -3231,18 +3231,11 @@ ArrayAnyMoreCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr, &isArray)) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Verify that it is indeed an array variable. This test comes after the
-     * traces - the variable may actually become an array as an effect of said
-     * traces.
-     */
-
-    if ((varPtr == NULL) || !TclIsVarArray(varPtr)
-	    || TclIsVarUndefined(varPtr)) {
+    if (!isArray) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"%s\" isn't an array", TclGetString(varNameObj)));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY",
@@ -3311,6 +3304,7 @@ ArrayNextElementCmd(
     Var *varPtr;
     Tcl_Obj *varNameObj, *searchObj;
     ArraySearch *searchPtr;
+    int isArray;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName searchId");
@@ -3319,7 +3313,7 @@ ArrayNextElementCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr, &isArray)) {
 	return TCL_ERROR;
     }
 
@@ -3328,9 +3322,7 @@ ArrayNextElementCmd(
      * traces - the variable may actually become an array as an effect of said
      * traces.
      */
-
-    if ((varPtr == NULL) || !TclIsVarArray(varPtr)
-	    || TclIsVarUndefined(varPtr)) {
+    if (!isArray) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"%s\" isn't an array", TclGetString(varNameObj)));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY",
@@ -3404,6 +3396,7 @@ ArrayDoneSearchCmd(
     Tcl_HashEntry *hPtr;
     Tcl_Obj *varNameObj, *searchObj;
     ArraySearch *searchPtr, *prevPtr;
+    int isArray;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName searchId");
@@ -3412,7 +3405,7 @@ ArrayDoneSearchCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr, &isArray)) {
 	return TCL_ERROR;
     }
 
@@ -3422,8 +3415,7 @@ ArrayDoneSearchCmd(
      * traces.
      */
 
-    if ((varPtr == NULL) || !TclIsVarArray(varPtr)
-	    || TclIsVarUndefined(varPtr)) {
+    if (!isArray) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"%s\" isn't an array", TclGetString(varNameObj)));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY",
@@ -3491,25 +3483,18 @@ ArrayExistsCmd(
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *)interp;
-    Var *varPtr;
-    int notArray;
+    int isArray;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
 	return TCL_ERROR;
     }
 
-    if (TCL_ERROR == LocateArray(interp, objv[1], &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, objv[1], NULL, &isArray)) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Check whether we've actually got an array variable.
-     */
-
-    notArray = ((varPtr == NULL) || !TclIsVarArray(varPtr)
-	    || TclIsVarUndefined(varPtr));
-    Tcl_SetObjResult(interp, iPtr->execEnvPtr->constants[!notArray]);
+    Tcl_SetObjResult(interp, iPtr->execEnvPtr->constants[isArray]);
     return TCL_OK;
 }
 
@@ -3543,7 +3528,7 @@ ArrayGetCmd(
     Tcl_Obj **nameObjPtr, *patternObj;
     Tcl_HashSearch search;
     const char *pattern;
-    int i, count, result;
+    int i, count, result, isArray;
 
     switch (objc) {
     case 2:
@@ -3559,18 +3544,12 @@ ArrayGetCmd(
 	return TCL_ERROR;
     }
 
-    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr, &isArray)) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Verify that it is indeed an array variable. This test comes after the
-     * traces - the variable may actually become an array as an effect of said
-     * traces. If not an array, it's an empty result.
-     */
-
-    if ((varPtr == NULL) || !TclIsVarArray(varPtr)
-	    || TclIsVarUndefined(varPtr)) {
+    /* If not an array, it's an empty result. */
+    if (!isArray) {
 	return TCL_OK;
     }
 
@@ -3712,7 +3691,7 @@ ArrayNamesCmd(
     Tcl_Obj *nameObj, *resultObj, *patternObj;
     Tcl_HashSearch search;
     const char *pattern = NULL;
-    int mode = OPT_GLOB;
+    int isArray, mode = OPT_GLOB;
 
     if ((objc < 2) || (objc > 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName ?mode? ?pattern?");
@@ -3720,7 +3699,7 @@ ArrayNamesCmd(
     }
     patternObj = (objc > 2 ? objv[objc-1] : NULL);
 
-    if (TCL_ERROR == LocateArray(interp, objv[1], &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, objv[1], &varPtr, &isArray)) {
 	return TCL_ERROR;
     }
 
@@ -3733,14 +3712,9 @@ ArrayNamesCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * Verify that it is indeed an array variable. This test comes after the
-     * traces - the variable may actually become an array as an effect of said
-     * traces. If not an array, the result is empty.
-     */
+    /* If not an array, the result is empty. */
 
-    if ((varPtr == NULL) || !TclIsVarArray(varPtr)
-	    || TclIsVarUndefined(varPtr)) {
+    if (!isArray) {
 	return TCL_OK;
     }
 
@@ -3877,14 +3851,12 @@ ArraySetCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Var *varPtr;
-
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName list");
 	return TCL_ERROR;
     }
 
-    if (TCL_ERROR == LocateArray(interp, objv[1], &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, objv[1], NULL, NULL)) {
 	return TCL_ERROR;
     }
 
@@ -3919,24 +3891,20 @@ ArraySizeCmd(
     Var *varPtr;
     Tcl_HashSearch search;
     Var *varPtr2;
-    int size = 0;
+    int isArray, size = 0;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
 	return TCL_ERROR;
     }
 
-    if (TCL_ERROR == LocateArray(interp, objv[1], &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, objv[1], &varPtr, &isArray)) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Verify that it is indeed an array variable. This test comes after the
-     * traces - the variable may actually become an array as an effect of said
-     * traces. We can only iterate over the array if it exists...
-     */
+    /* We can only iterate over the array if it exists... */
 
-    if (varPtr && TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
+    if (isArray) {
 	/*
 	 * Must iterate in order to get chance to check for present but
 	 * "undefined" entries.
@@ -3983,6 +3951,7 @@ ArrayStatsCmd(
     Var *varPtr;
     Tcl_Obj *varNameObj;
     char *stats;
+    int isArray;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
@@ -3990,18 +3959,11 @@ ArrayStatsCmd(
     }
     varNameObj = objv[1];
 
-    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr, &isArray)) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Verify that it is indeed an array variable. This test comes after the
-     * traces - the variable may actually become an array as an effect of said
-     * traces.
-     */
-
-    if ((varPtr == NULL) || !TclIsVarArray(varPtr)
-	    || TclIsVarUndefined(varPtr)) {
+    if (!isArray) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"%s\" isn't an array", TclGetString(varNameObj)));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY",
@@ -4050,6 +4012,7 @@ ArrayUnsetCmd(
     Tcl_HashSearch search;
     const char *pattern;
     const int unsetFlags = 0;	/* Should this be TCL_LEAVE_ERR_MSG? */
+    int isArray;
 
     switch (objc) {
     case 2:
@@ -4065,18 +4028,11 @@ ArrayUnsetCmd(
 	return TCL_ERROR;
     }
 
-    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr, &isArray)) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Verify that it is indeed an array variable. This test comes after the
-     * traces - the variable may actually become an array as an effect of said
-     * traces.
-     */
-
-    if ((varPtr == NULL) || !TclIsVarArray(varPtr)
-	    || TclIsVarUndefined(varPtr)) {
+    if (!isArray) {
 	return TCL_OK;
     }
 
