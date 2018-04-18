@@ -3142,7 +3142,6 @@ ArrayStartSearchCmd(
     Interp *iPtr = (Interp *)interp;
     Var *varPtr;
     Tcl_HashEntry *hPtr;
-    Tcl_Obj *varNameObj;
     int isNew;
     ArraySearch *searchPtr;
     const char *varName;
@@ -3151,9 +3150,8 @@ ArrayStartSearchCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
 	return TCL_ERROR;
     }
-    varNameObj = objv[1];
 
-    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, objv[1], &varPtr)) {
 	return TCL_ERROR;
     }
 
@@ -3163,7 +3161,7 @@ ArrayStartSearchCmd(
      * traces.
      */
 
-    varName = TclGetString(varNameObj);
+    varName = TclGetString(objv[1]);
     if ((varPtr == NULL) || !TclIsVarArray(varPtr)
 	    || TclIsVarUndefined(varPtr)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3494,16 +3492,14 @@ ArrayExistsCmd(
 {
     Interp *iPtr = (Interp *)interp;
     Var *varPtr;
-    Tcl_Obj *arrayNameObj;
     int notArray;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
 	return TCL_ERROR;
     }
-    arrayNameObj = objv[1];
 
-    if (TCL_ERROR == LocateArray(interp, arrayNameObj, &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, objv[1], &varPtr)) {
 	return TCL_ERROR;
     }
 
@@ -3713,7 +3709,7 @@ ArrayNamesCmd(
     };
     enum options { OPT_EXACT, OPT_GLOB, OPT_REGEXP };
     Var *varPtr, *varPtr2;
-    Tcl_Obj *varNameObj, *nameObj, *resultObj, *patternObj;
+    Tcl_Obj *nameObj, *resultObj, *patternObj;
     Tcl_HashSearch search;
     const char *pattern = NULL;
     int mode = OPT_GLOB;
@@ -3722,10 +3718,9 @@ ArrayNamesCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName ?mode? ?pattern?");
 	return TCL_ERROR;
     }
-    varNameObj = objv[1];
     patternObj = (objc > 2 ? objv[objc-1] : NULL);
 
-    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, objv[1], &varPtr)) {
 	return TCL_ERROR;
     }
 
@@ -3922,7 +3917,6 @@ ArraySizeCmd(
     Tcl_Obj *const objv[])
 {
     Var *varPtr;
-    Tcl_Obj *varNameObj;
     Tcl_HashSearch search;
     Var *varPtr2;
     int size = 0;
@@ -3931,9 +3925,8 @@ ArraySizeCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName");
 	return TCL_ERROR;
     }
-    varNameObj = objv[1];
 
-    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
+    if (TCL_ERROR == LocateArray(interp, objv[1], &varPtr)) {
 	return TCL_ERROR;
     }
 
