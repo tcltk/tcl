@@ -176,6 +176,8 @@ static void		AppendLocals(Tcl_Interp *interp, Tcl_Obj *listPtr,
 static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
 			    Var *varPtr, int flags, int index);
+static int		LocateArray(Tcl_Interp *interp, Tcl_Obj *name,
+			    Var **varPtrPtr);
 static Tcl_Var		ObjFindNamespaceVar(Tcl_Interp *interp,
 			    Tcl_Obj *namePtr, Tcl_Namespace *contextNsPtr,
 			    int flags);
@@ -268,6 +270,22 @@ TclVarHashCreateVar(
     Tcl_DecrRefCount(keyPtr);
 
     return varPtr;
+}
+
+static int
+LocateArray(
+    Tcl_Interp *interp,
+    Tcl_Obj *name,
+    Var **varPtrPtr)
+{
+    Var *arrayPtr, *varPtr = TclObjLookupVarEx(interp, name, NULL, /*flags*/ 0,
+	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
+
+    if (TclCheckArrayTraces(interp, varPtr, arrayPtr, name, -1) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    *varPtrPtr = varPtr;
+    return TCL_OK;
 }
 
 /*
@@ -3122,7 +3140,7 @@ ArrayStartSearchCmd(
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *)interp;
-    Var *varPtr, *arrayPtr;
+    Var *varPtr;
     Tcl_HashEntry *hPtr;
     Tcl_Obj *varNameObj;
     int isNew;
@@ -3135,16 +3153,7 @@ ArrayStartSearchCmd(
     }
     varNameObj = objv[1];
 
-    /*
-     * Locate the array variable.
-     */
-
-    varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, /*flags*/ 0,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-    varName = TclGetString(varNameObj);
-
-    if (TclCheckArrayTraces(interp, varPtr, arrayPtr, varNameObj, -1)
-	    == TCL_ERROR) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
 	return TCL_ERROR;
     }
 
@@ -3154,6 +3163,7 @@ ArrayStartSearchCmd(
      * traces.
      */
 
+    varName = TclGetString(varNameObj);
     if ((varPtr == NULL) || !TclIsVarArray(varPtr)
 	    || TclIsVarUndefined(varPtr)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3211,7 +3221,7 @@ ArrayAnyMoreCmd(
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *)interp;
-    Var *varPtr, *arrayPtr;
+    Var *varPtr;
     Tcl_Obj *varNameObj, *searchObj;
     int gotValue;
     ArraySearch *searchPtr;
@@ -3223,15 +3233,7 @@ ArrayAnyMoreCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    /*
-     * Locate the array variable.
-     */
-
-    varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, /*flags*/ 0,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-
-    if (TclCheckArrayTraces(interp, varPtr, arrayPtr, varNameObj, -1)
-	    == TCL_ERROR) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
 	return TCL_ERROR;
     }
 
@@ -3308,7 +3310,7 @@ ArrayNextElementCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Var *varPtr, *arrayPtr;
+    Var *varPtr;
     Tcl_Obj *varNameObj, *searchObj;
     ArraySearch *searchPtr;
 
@@ -3319,15 +3321,7 @@ ArrayNextElementCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    /*
-     * Locate the array variable.
-     */
-
-    varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, /*flags*/ 0,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-
-    if (TclCheckArrayTraces(interp, varPtr, arrayPtr, varNameObj, -1)
-	    == TCL_ERROR) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
 	return TCL_ERROR;
     }
 
@@ -3408,7 +3402,7 @@ ArrayDoneSearchCmd(
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *)interp;
-    Var *varPtr, *arrayPtr;
+    Var *varPtr;
     Tcl_HashEntry *hPtr;
     Tcl_Obj *varNameObj, *searchObj;
     ArraySearch *searchPtr, *prevPtr;
@@ -3420,15 +3414,7 @@ ArrayDoneSearchCmd(
     varNameObj = objv[1];
     searchObj = objv[2];
 
-    /*
-     * Locate the array variable.
-     */
-
-    varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, /*flags*/ 0,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-
-    if (TclCheckArrayTraces(interp, varPtr, arrayPtr, varNameObj, -1)
-	    == TCL_ERROR) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
 	return TCL_ERROR;
     }
 
@@ -3507,7 +3493,7 @@ ArrayExistsCmd(
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *)interp;
-    Var *varPtr, *arrayPtr;
+    Var *varPtr;
     Tcl_Obj *arrayNameObj;
     int notArray;
 
@@ -3517,15 +3503,7 @@ ArrayExistsCmd(
     }
     arrayNameObj = objv[1];
 
-    /*
-     * Locate the array variable.
-     */
-
-    varPtr = TclObjLookupVarEx(interp, arrayNameObj, NULL, /*flags*/ 0,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-
-    if (TclCheckArrayTraces(interp, varPtr, arrayPtr, arrayNameObj, -1)
-	    == TCL_ERROR) {
+    if (TCL_ERROR == LocateArray(interp, arrayNameObj, &varPtr)) {
 	return TCL_ERROR;
     }
 
@@ -3564,7 +3542,7 @@ ArrayGetCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Var *varPtr, *arrayPtr, *varPtr2;
+    Var *varPtr, *varPtr2;
     Tcl_Obj *varNameObj, *nameObj, *valueObj, *nameLstObj, *tmpResObj;
     Tcl_Obj **nameObjPtr, *patternObj;
     Tcl_HashSearch search;
@@ -3585,15 +3563,7 @@ ArrayGetCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * Locate the array variable.
-     */
-
-    varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, /*flags*/ 0,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-
-    if (TclCheckArrayTraces(interp, varPtr, arrayPtr, varNameObj, -1)
-	    == TCL_ERROR) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
 	return TCL_ERROR;
     }
 
@@ -3742,7 +3712,7 @@ ArrayNamesCmd(
 	"-exact", "-glob", "-regexp", NULL
     };
     enum options { OPT_EXACT, OPT_GLOB, OPT_REGEXP };
-    Var *varPtr, *arrayPtr, *varPtr2;
+    Var *varPtr, *varPtr2;
     Tcl_Obj *varNameObj, *nameObj, *resultObj, *patternObj;
     Tcl_HashSearch search;
     const char *pattern = NULL;
@@ -3755,15 +3725,7 @@ ArrayNamesCmd(
     varNameObj = objv[1];
     patternObj = (objc > 2 ? objv[objc-1] : NULL);
 
-    /*
-     * Locate the array variable.
-     */
-
-    varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, /*flags*/ 0,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-
-    if (TclCheckArrayTraces(interp, varPtr, arrayPtr, varNameObj, -1)
-	    == TCL_ERROR) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
 	return TCL_ERROR;
     }
 
@@ -3920,22 +3882,14 @@ ArraySetCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Var *varPtr, *arrayPtr;
+    Var *varPtr;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName list");
 	return TCL_ERROR;
     }
 
-    /*
-     * Locate the array variable.
-     */
-
-    varPtr = TclObjLookupVarEx(interp, objv[1], NULL, /*flags*/ 0,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-
-    if (TclCheckArrayTraces(interp, varPtr, arrayPtr, objv[1], -1)
-	    == TCL_ERROR) {
+    if (TCL_ERROR == LocateArray(interp, objv[1], &varPtr)) {
 	return TCL_ERROR;
     }
 
@@ -3967,7 +3921,7 @@ ArraySizeCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Var *varPtr, *arrayPtr;
+    Var *varPtr;
     Tcl_Obj *varNameObj;
     Tcl_HashSearch search;
     Var *varPtr2;
@@ -3979,15 +3933,7 @@ ArraySizeCmd(
     }
     varNameObj = objv[1];
 
-    /*
-     * Locate the array variable.
-     */
-
-    varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, /*flags*/ 0,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-
-    if (TclCheckArrayTraces(interp, varPtr, arrayPtr, varNameObj, -1)
-	    == TCL_ERROR) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
 	return TCL_ERROR;
     }
 
@@ -4041,7 +3987,7 @@ ArrayStatsCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Var *varPtr, *arrayPtr;
+    Var *varPtr;
     Tcl_Obj *varNameObj;
     char *stats;
 
@@ -4051,15 +3997,7 @@ ArrayStatsCmd(
     }
     varNameObj = objv[1];
 
-    /*
-     * Locate the array variable.
-     */
-
-    varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, /*flags*/ 0,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-
-    if (TclCheckArrayTraces(interp, varPtr, arrayPtr, varNameObj, -1)
-	    == TCL_ERROR) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
 	return TCL_ERROR;
     }
 
@@ -4114,7 +4052,7 @@ ArrayUnsetCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Var *varPtr, *arrayPtr, *varPtr2, *protectedVarPtr;
+    Var *varPtr, *varPtr2, *protectedVarPtr;
     Tcl_Obj *varNameObj, *patternObj, *nameObj;
     Tcl_HashSearch search;
     const char *pattern;
@@ -4134,15 +4072,7 @@ ArrayUnsetCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * Locate the array variable
-     */
-
-    varPtr = TclObjLookupVarEx(interp, varNameObj, NULL, /*flags*/ 0,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-
-    if (TclCheckArrayTraces(interp, varPtr, arrayPtr, varNameObj, -1)
-	    == TCL_ERROR) {
+    if (TCL_ERROR == LocateArray(interp, varNameObj, &varPtr)) {
 	return TCL_ERROR;
     }
 
