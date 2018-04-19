@@ -3411,7 +3411,7 @@ TclArraySet(
      * Install the contents of the dictionary or list into the array.
      */
 
-    if (arrayElemObj->typePtr == &tclDictType) {
+    if (arrayElemObj->typePtr == &tclDictType && arrayElemObj->bytes == NULL) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done;
