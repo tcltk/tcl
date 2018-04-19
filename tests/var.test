@@ -761,6 +761,18 @@ test var-17.1 {TclArraySet [Bug 1669489]} -setup {
 } -cleanup {
     unset -nocomplain ::a ::elements
 } -result {}
+test var-17.2 {TclArraySet Dict shortcut only on pure value} -setup {
+    unset -nocomplain a d
+    set d {p 1 p 2}
+    dict get $d p
+    set foo 0
+} -body {
+    trace add variable a write "[list incr [namespace which -variable foo]];#"
+    array set a $d
+    set foo
+} -cleanup {
+    unset -nocomplain a d foo
+} -result 2
 
 test var-18.1 {array unset and unset traces: Bug 2939073} -setup {
     set already 0
