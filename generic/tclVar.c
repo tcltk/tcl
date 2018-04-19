@@ -2968,175 +2968,6 @@ Tcl_LappendObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclArraySet --
- *
- *	Set the elements of an array. If there are no elements to set, create
- *	an empty array. This routine is used by the Tcl_ArrayObjCmd and by the
- *	TclSetupEnv routine.
- *
- * Results:
- *	A standard Tcl result object.
- *
- * Side effects:
- *	A variable will be created if one does not already exist.
- *	Callers must Incr arrayNameObj if they pland to Decr it.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclArraySet(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Obj *arrayNameObj,	/* The array name. */
-    Tcl_Obj *arrayElemObj)	/* The array elements list or dict. If this is
-				 * NULL, create an empty array. */
-{
-    Var *varPtr, *arrayPtr;
-    int result, i;
-
-    varPtr = TclObjLookupVarEx(interp, arrayNameObj, NULL,
-	    /*flags*/ TCL_LEAVE_ERR_MSG, /*msg*/ "set", /*createPart1*/ 1,
-	    /*createPart2*/ 1, &arrayPtr);
-    if (varPtr == NULL) {
-	return TCL_ERROR;
-    }
-    if (arrayPtr) {
-	CleanupVar(varPtr, arrayPtr);
-	TclObjVarErrMsg(interp, arrayNameObj, NULL, "set", needArray, -1);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
-		TclGetString(arrayNameObj), NULL);
-	return TCL_ERROR;
-    }
-
-    if (arrayElemObj == NULL) {
-	goto ensureArray;
-    }
-
-    /*
-     * Install the contents of the dictionary or list into the array.
-     */
-
-    if (arrayElemObj->typePtr == &tclDictType && arrayElemObj->bytes == NULL) {
-	Tcl_Obj *keyPtr, *valuePtr;
-	Tcl_DictSearch search;
-	int done;
-
-	if (Tcl_DictObjSize(interp, arrayElemObj, &done) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	if (done == 0) {
-	    /*
-	     * Empty, so we'll just force the array to be properly existing
-	     * instead.
-	     */
-
-	    goto ensureArray;
-	}
-
-	/*
-	 * Don't need to look at result of Tcl_DictObjFirst as we've just
-	 * successfully used a dictionary operation on the same object.
-	 */
-
-	for (Tcl_DictObjFirst(interp, arrayElemObj, &search,
-		&keyPtr, &valuePtr, &done) ; !done ;
-		Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done)) {
-	    /*
-	     * At this point, it would be nice if the key was directly usable
-	     * by the array. This isn't the case though.
-	     */
-
-	    Var *elemVarPtr = TclLookupArrayElement(interp, arrayNameObj,
-		    keyPtr, TCL_LEAVE_ERR_MSG, "set", 1, 1, varPtr, -1);
-
-	    if ((elemVarPtr == NULL) ||
-		    (TclPtrSetVarIdx(interp, elemVarPtr, varPtr, arrayNameObj,
-		    keyPtr, valuePtr, TCL_LEAVE_ERR_MSG, -1) == NULL)) {
-		Tcl_DictObjDone(&search);
-		return TCL_ERROR;
-	    }
-	}
-	return TCL_OK;
-    } else {
-	/*
-	 * Not a dictionary, so assume (and convert to, for backward-
-	 * -compatibility reasons) a list.
-	 */
-
-	int elemLen;
-	Tcl_Obj **elemPtrs, *copyListObj;
-
-	result = TclListObjGetElements(interp, arrayElemObj,
-		&elemLen, &elemPtrs);
-	if (result != TCL_OK) {
-	    return result;
-	}
-	if (elemLen & 1) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "list must have an even number of elements", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "FORMAT", NULL);
-	    return TCL_ERROR;
-	}
-	if (elemLen == 0) {
-	    goto ensureArray;
-	}
-
-	/*
-	 * We needn't worry about traces invalidating arrayPtr: should that be
-	 * the case, TclPtrSetVarIdx will return NULL so that we break out of
-	 * the loop and return an error.
-	 */
-
-	copyListObj = TclListObjCopy(NULL, arrayElemObj);
-	for (i=0 ; i<elemLen ; i+=2) {
-	    Var *elemVarPtr = TclLookupArrayElement(interp, arrayNameObj,
-		    elemPtrs[i], TCL_LEAVE_ERR_MSG, "set", 1, 1, varPtr, -1);
-
-	    if ((elemVarPtr == NULL) ||
-		    (TclPtrSetVarIdx(interp, elemVarPtr, varPtr, arrayNameObj,
-		    elemPtrs[i],elemPtrs[i+1],TCL_LEAVE_ERR_MSG,-1) == NULL)){
-		result = TCL_ERROR;
-		break;
-	    }
-	}
-	Tcl_DecrRefCount(copyListObj);
-	return result;
-    }
-
-    /*
-     * The list is empty make sure we have an array, or create one if
-     * necessary.
-     */
-
-  ensureArray:
-    if (varPtr != NULL) {
-	if (TclIsVarArray(varPtr)) {
-	    /*
-	     * Already an array, done.
-	     */
-
-	    return TCL_OK;
-	}
-	if (TclIsVarArrayElement(varPtr) || !TclIsVarUndefined(varPtr)) {
-	    /*
-	     * Either an array element, or a scalar: lose!
-	     */
-
-	    TclObjVarErrMsg(interp, arrayNameObj, NULL, "array set",
-		    needArray, -1);
-	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", NULL);
-	    return TCL_ERROR;
-	}
-    }
-    TclSetVarArray(varPtr);
-    varPtr->value.tablePtr = ckalloc(sizeof(TclVarHashTable));
-    TclInitVarHashTable(varPtr->value.tablePtr, TclGetVarNsPtr(varPtr));
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * ArrayStartSearchCmd --
  *
  *	This object-based function is invoked to process the "array
@@ -3839,6 +3670,11 @@ ArraySetCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    Tcl_Obj *arrayNameObj;
+    Tcl_Obj *arrayElemObj;
+    Var *varPtr, *arrayPtr;
+    int result, i;
+
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName list");
 	return TCL_ERROR;
@@ -3848,7 +3684,142 @@ ArraySetCmd(
 	return TCL_ERROR;
     }
 
-    return TclArraySet(interp, objv[1], objv[2]);
+    arrayNameObj = objv[1];
+    varPtr = TclObjLookupVarEx(interp, arrayNameObj, NULL,
+	    /*flags*/ TCL_LEAVE_ERR_MSG, /*msg*/ "set", /*createPart1*/ 1,
+	    /*createPart2*/ 1, &arrayPtr);
+    if (varPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (arrayPtr) {
+	CleanupVar(varPtr, arrayPtr);
+	TclObjVarErrMsg(interp, arrayNameObj, NULL, "set", needArray, -1);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+		TclGetString(arrayNameObj), NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Install the contents of the dictionary or list into the array.
+     */
+
+    arrayElemObj = objv[2];
+    if (arrayElemObj->typePtr == &tclDictType && arrayElemObj->bytes == NULL) {
+	Tcl_Obj *keyPtr, *valuePtr;
+	Tcl_DictSearch search;
+	int done;
+
+	if (Tcl_DictObjSize(interp, arrayElemObj, &done) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (done == 0) {
+	    /*
+	     * Empty, so we'll just force the array to be properly existing
+	     * instead.
+	     */
+
+	    goto ensureArray;
+	}
+
+	/*
+	 * Don't need to look at result of Tcl_DictObjFirst as we've just
+	 * successfully used a dictionary operation on the same object.
+	 */
+
+	for (Tcl_DictObjFirst(interp, arrayElemObj, &search,
+		&keyPtr, &valuePtr, &done) ; !done ;
+		Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done)) {
+	    /*
+	     * At this point, it would be nice if the key was directly usable
+	     * by the array. This isn't the case though.
+	     */
+
+	    Var *elemVarPtr = TclLookupArrayElement(interp, arrayNameObj,
+		    keyPtr, TCL_LEAVE_ERR_MSG, "set", 1, 1, varPtr, -1);
+
+	    if ((elemVarPtr == NULL) ||
+		    (TclPtrSetVarIdx(interp, elemVarPtr, varPtr, arrayNameObj,
+		    keyPtr, valuePtr, TCL_LEAVE_ERR_MSG, -1) == NULL)) {
+		Tcl_DictObjDone(&search);
+		return TCL_ERROR;
+	    }
+	}
+	return TCL_OK;
+    } else {
+	/*
+	 * Not a dictionary, so assume (and convert to, for backward-
+	 * -compatibility reasons) a list.
+	 */
+
+	int elemLen;
+	Tcl_Obj **elemPtrs, *copyListObj;
+
+	result = TclListObjGetElements(interp, arrayElemObj,
+		&elemLen, &elemPtrs);
+	if (result != TCL_OK) {
+	    return result;
+	}
+	if (elemLen & 1) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "list must have an even number of elements", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "FORMAT", NULL);
+	    return TCL_ERROR;
+	}
+	if (elemLen == 0) {
+	    goto ensureArray;
+	}
+
+	/*
+	 * We needn't worry about traces invalidating arrayPtr: should that be
+	 * the case, TclPtrSetVarIdx will return NULL so that we break out of
+	 * the loop and return an error.
+	 */
+
+	copyListObj = TclListObjCopy(NULL, arrayElemObj);
+	for (i=0 ; i<elemLen ; i+=2) {
+	    Var *elemVarPtr = TclLookupArrayElement(interp, arrayNameObj,
+		    elemPtrs[i], TCL_LEAVE_ERR_MSG, "set", 1, 1, varPtr, -1);
+
+	    if ((elemVarPtr == NULL) ||
+		    (TclPtrSetVarIdx(interp, elemVarPtr, varPtr, arrayNameObj,
+		    elemPtrs[i],elemPtrs[i+1],TCL_LEAVE_ERR_MSG,-1) == NULL)){
+		result = TCL_ERROR;
+		break;
+	    }
+	}
+	Tcl_DecrRefCount(copyListObj);
+	return result;
+    }
+
+    /*
+     * The list is empty make sure we have an array, or create one if
+     * necessary.
+     */
+
+  ensureArray:
+    if (varPtr != NULL) {
+	if (TclIsVarArray(varPtr)) {
+	    /*
+	     * Already an array, done.
+	     */
+
+	    return TCL_OK;
+	}
+	if (TclIsVarArrayElement(varPtr) || !TclIsVarUndefined(varPtr)) {
+	    /*
+	     * Either an array element, or a scalar: lose!
+	     */
+
+	    TclObjVarErrMsg(interp, arrayNameObj, NULL, "array set",
+		    needArray, -1);
+	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", NULL);
+	    return TCL_ERROR;
+	}
+    }
+    TclSetVarArray(varPtr);
+    varPtr->value.tablePtr = ckalloc(sizeof(TclVarHashTable));
+    TclInitVarHashTable(varPtr->value.tablePtr, TclGetVarNsPtr(varPtr));
+    return TCL_OK;
 }
 
 /*
