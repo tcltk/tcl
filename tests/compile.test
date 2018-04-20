@@ -1039,6 +1039,36 @@ test compile-21.4 {stack balance management} {
     }} P Q R S T
 } {1 2 3 4 5 6 7 8 9 10}
 
+test compile-22.1 {} -setup {
+    proc retv {v} {return $v}
+    set i 0
+    foreach c {
+        { set j 10; while {[retv [incr j -1]]} {set i0 0; set i1 1; set i2 2; set i3 3} }
+        { set j 10; while {      [incr j -1] } {set i0 0; set i1 1; set i2 2; set i3 3} }
+        { foreach j [retv {9 8 7 6 4 3 2 1}]   {set i0 0; set i1 1; set i2 2; set i3 3} }
+        { foreach j       {9 8 7 6 4 3 2 1}    {set i0 0; set i1 1; set i2 2; set i3 3} }
+    } {
+        proc test_comp_22_[incr i] {} $c
+    }
+    proc test_comp_22 {} {
+        set l {}
+        foreach i {1 2 3 4} {
+            set c [info cmdcount]
+            test_comp_22_$i
+            lappend l [expr {[info cmdcount] - $c}]
+        }
+        return $l
+    }
+} -body {
+    test_comp_22
+} -cleanup {
+    rename test_comp_22 {}
+    foreach i {1 2 3 4} {
+        rename test_comp_22_$i {}
+    }
+    unset c i
+} -result {62 52 38 37}
+
 # TODO sometime - check that bytecode from tbcload is *not* disassembled.
 
 # cleanup
