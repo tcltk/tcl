@@ -5082,8 +5082,8 @@ TEBCresume(
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
 	} else {
-	    char buf[TCL_UTF_MAX];
-	    Tcl_UniChar ch = Tcl_GetUniChar(valuePtr, index);
+	    char buf[4];
+	    int ch = Tcl_GetUniChar(valuePtr, index);
 
 	    /*
 	     * This could be: Tcl_NewUnicodeObj((const Tcl_UniChar *)&ch, 1)
@@ -5091,7 +5091,7 @@ TEBCresume(
 	     * practical use.
 	     */
 
-	    length = Tcl_UniCharToUtf(ch, buf);
+	    length = (ch != -1) ? Tcl_UniCharToUtf(ch, buf) : 0;
 	    objResultPtr = Tcl_NewStringObj(buf, length);
 	}
 

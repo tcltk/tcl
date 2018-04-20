@@ -487,6 +487,9 @@ test string-5.19.$noComp {string index, bytearray object out of bounds} {
 test string-5.20.$noComp {string index, bytearray object out of bounds} {
     run {string index [binary format I* {0x50515253 0x52}] 20}
 } {}
+test string-5.21 {string index, surrogates, bug [11ae2be95dac9417]} fullutf {
+    list [string index a\U100000b 1] [string index a\U100000b 2] [string index a\U100000b 3]
+} [list \U100000 {} b]
 
 
 proc largest_int {} {
