@@ -1039,7 +1039,7 @@ test compile-21.4 {stack balance management} {
     }} P Q R S T
 } {1 2 3 4 5 6 7 8 9 10}
 
-test compile-22.1 {} -setup {
+test compile-22.1 {inst startCmd/cmdcount: compile body with/without invocation} -setup {
     proc retv {v} {return $v}
     set i 0
     foreach c {
@@ -1062,6 +1062,7 @@ test compile-22.1 {} -setup {
 } -body {
     test_comp_22
 } -cleanup {
+	rename retv {}
     rename test_comp_22 {}
     foreach i {1 2 3 4} {
         rename test_comp_22_$i {}
