@@ -44,6 +44,8 @@ http \- Client-side implementation of the HTTP/1.1 protocol
 .sp
 \fB::http::register \fIproto port command\fR
 .sp
+\fB::http::registerError \fIport\fR ?\fImessage\fR?
+.sp
 \fB::http::unregister \fIproto\fR
 .BE
 .SH DESCRIPTION
@@ -453,6 +455,17 @@ package require tls
 set token [::http::geturl https://my.secure.site/]
 .CE
 .RE
+.TP
+\fB::http::registerError\fR \fIport\fR ?\fImessage\fR?
+.
+This procedure allows a registered protocol handler to deliver an error
+message for use by \fBhttp\fR.  Calling this command does not raise an
+error. The command is useful when a registered protocol detects an problem
+(for example, an invalid TLS certificate) that will cause an error to
+propagate to \fBhttp\fR.  The command allows \fBhttp\fR to provide a
+precise error message rather than a general one.  The command returns the
+value provided by the last call with argument \fImessage\fR, or the empty
+string if no such call has been made.
 .TP
 \fB::http::unregister\fR \fIproto\fR
 .
