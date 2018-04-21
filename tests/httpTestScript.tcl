@@ -389,7 +389,7 @@ proc httpTestScript::Requester {uriCode keepAlive validate query args} {
                 -command   ::httpTestScript::WhenFinished
     } token]} {
         set msg $token
-        catch {puts stderr "Error: $msg"}
+        catch {puts stdout "Error: $msg"}
         return
     } else {
         # Request will begin.
