@@ -648,7 +648,7 @@ proc RunTest {header footer delay te} {
 # If still obscure, uncomment #Log and ##Log lines in the http package.
 # ------------------------------------------------------------------------------
 
-setHttpTestOptions -verbose 2
+setHttpTestOptions -verbose 0
 
 # ------------------------------------------------------------------------------
 # (4) Define the base URLs used for testing.  Each must have a query string.
