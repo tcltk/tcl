@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.12
+package provide http 2.8.13
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -1100,7 +1100,7 @@ proc http::geturl {url args} {
 	set pre [clock milliseconds]
 	Log ##Log pre socket opened, - token $token
 	Log ##Log [concat $defcmd $sockopts $targetAddr] - token $token
-	if {[catch {eval $defcmd $sockopts $targetAddr} sock]} {
+	if {[catch {eval $defcmd $sockopts $targetAddr} sock errdict]} {
 	    # Something went wrong while trying to establish the connection.
 	    # Clean up after events and such, but DON'T call the command
 	    # callback (if available) because we're going to throw an
@@ -1109,7 +1109,8 @@ proc http::geturl {url args} {
 	    set state(sock) NONE
 	    Finish $token $sock 1
 	    cleanup $token
-	    return -code error $sock
+	    dict unset errdict -level
+	    return -options $errdict $sock
 	} else {
 	    # Initialisation of a new socket.
 	    Log ##Log post socket opened, - token $token
