@@ -5838,6 +5838,15 @@ test expr-32.5 {Bug 1585704} {
 test expr-32.6 {Bug 1585704} {
     expr -(1<<32)%(1<<63)
 } [expr (1<<63)-(1<<32)]
+test expr-32.7 {bignum regression} {
+    expr {0%(1<<63)}
+} 0
+test expr-32.8 {bignum regression} {
+    expr {0%-(1<<63)}
+} 0
+test expr-32.9 {bignum regression} {
+    expr {0%-(1+(1<<63))}
+} 0
 
 test expr-33.1 {parse largest long value} longIs32bit {
     set max_long_str 2147483647

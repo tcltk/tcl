@@ -326,9 +326,8 @@ TclOOObjectSetMixins(
     if (numMixins == 0) {
 	if (oPtr->mixins.num != 0) {
 	    FOREACH(mixinPtr, oPtr->mixins) {
-		if (mixinPtr) {
-		    TclOORemoveFromInstances(oPtr, mixinPtr);
-		}
+		TclOORemoveFromInstances(oPtr, mixinPtr);
+		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
 	    ckfree(oPtr->mixins.list);
 	    oPtr->mixins.num = 0;
@@ -340,6 +339,7 @@ TclOOObjectSetMixins(
 		if (mixinPtr && mixinPtr != oPtr->selfCls) {
 		    TclOORemoveFromInstances(oPtr, mixinPtr);
 		}
+		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
 	    oPtr->mixins.list = ckrealloc(oPtr->mixins.list,
 		    sizeof(Class *) * numMixins);
@@ -352,6 +352,8 @@ TclOOObjectSetMixins(
 	FOREACH(mixinPtr, oPtr->mixins) {
 	    if (mixinPtr != oPtr->selfCls) {
 		TclOOAddToInstances(oPtr, mixinPtr);
+		/* For the new copy created by memcpy */
+		AddRef(mixinPtr->thisPtr);
 	    }
 	}
     }
@@ -381,6 +383,7 @@ TclOOClassSetMixins(
 	if (classPtr->mixins.num != 0) {
 	    FOREACH(mixinPtr, classPtr->mixins) {
 		TclOORemoveFromMixinSubs(classPtr, mixinPtr);
+		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
 	    ckfree(classPtr->mixins.list);
 	    classPtr->mixins.num = 0;
@@ -389,6 +392,7 @@ TclOOClassSetMixins(
 	if (classPtr->mixins.num != 0) {
 	    FOREACH(mixinPtr, classPtr->mixins) {
 		TclOORemoveFromMixinSubs(classPtr, mixinPtr);
+		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
 	    classPtr->mixins.list = ckrealloc(classPtr->mixins.list,
 		    sizeof(Class *) * numMixins);
@@ -399,6 +403,8 @@ TclOOClassSetMixins(
 	memcpy(classPtr->mixins.list, mixins, sizeof(Class *) * numMixins);
 	FOREACH(mixinPtr, classPtr->mixins) {
 	    TclOOAddToMixinSubs(classPtr, mixinPtr);
+	    /* For the new copy created by memcpy */
+	    AddRef(mixinPtr->thisPtr);
 	}
     }
     BumpGlobalEpoch(interp, classPtr);
@@ -914,7 +920,7 @@ TclOODefineObjCmd(
     } else {
 	result = MagicDefinitionInvoke(interp, fPtr->defineNs, 2, objc, objv);
     }
-    DelRef(oPtr);
+    TclOODecrRefCount(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -981,7 +987,7 @@ TclOOObjDefObjCmd(
     } else {
 	result = MagicDefinitionInvoke(interp, fPtr->objdefNs, 2, objc, objv);
     }
-    DelRef(oPtr);
+    TclOODecrRefCount(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -1048,7 +1054,7 @@ TclOODefineSelfObjCmd(
     } else {
 	result = MagicDefinitionInvoke(interp, fPtr->objdefNs, 1, objc, objv);
     }
-    DelRef(oPtr);
+    TclOODecrRefCount(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -1077,7 +1083,6 @@ TclOODefineClassObjCmd(
 {
     Object *oPtr;
     Class *clsPtr;
-    Foundation *fPtr = TclOOGetFoundation(interp);
 
     /*
      * Parse the context to get the object to operate on.
@@ -1114,20 +1119,6 @@ TclOODefineClassObjCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * Apply semantic checks. In particular, classes and non-classes are not
-     * interchangable (too complicated to do the conversion!) so we must
-     * produce an error if any attempt is made to swap from one to the other.
-     */
-
-    if ((oPtr->classPtr==NULL) == TclOOIsReachable(fPtr->classCls, clsPtr)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"may not change a %sclass object into a %sclass object",
-		(oPtr->classPtr==NULL ? "non-" : ""),
-		(oPtr->classPtr==NULL ? "" : "non-")));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "TRANSMUTATION", NULL);
-	return TCL_ERROR;
-    }
 
     /*
      * Set the object's class.
@@ -1135,11 +1126,11 @@ TclOODefineClassObjCmd(
 
     if (oPtr->selfCls != clsPtr) {
 	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
+	TclOODecrRefCount(oPtr->selfCls->thisPtr);
 	oPtr->selfCls = clsPtr;
+	AddRef(oPtr->selfCls->thisPtr);
 	TclOOAddToInstances(oPtr, oPtr->selfCls);
-	if (!(clsPtr->thisPtr->flags & OBJECT_DELETED)) {
-	    oPtr->flags &= ~CLASS_GONE;
-	}
+
 	if (oPtr->classPtr != NULL) {
 	    BumpGlobalEpoch(interp, oPtr->classPtr);
 	} else {
@@ -2022,6 +2013,7 @@ ClassMixinSet(
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
+	    i--;
 	    goto freeAndError;
 	}
 	if (TclOOIsReachable(oPtr->classPtr, mixins[i])) {
@@ -2139,16 +2131,19 @@ ClassSuperSet(
 
     if (superc == 0) {
 	superclasses = ckrealloc(superclasses, sizeof(Class *));
-	superclasses[0] = oPtr->fPtr->objectCls;
-	superc = 1;
 	if (TclOOIsReachable(oPtr->fPtr->classCls, oPtr->classPtr)) {
 	    superclasses[0] = oPtr->fPtr->classCls;
+	} else {
+	    superclasses[0] = oPtr->fPtr->objectCls;
 	}
+	superc = 1;
+	AddRef(superclasses[0]->thisPtr);
     } else {
 	for (i=0 ; i<superc ; i++) {
 	    superclasses[i] = GetClassInOuterContext(interp, superv[i],
 		    "only a class can be a superclass");
 	    if (superclasses[i] == NULL) {
+		i--;
 		goto failedAfterAlloc;
 	    }
 	    for (j=0 ; j<i ; j++) {
@@ -2165,9 +2160,15 @@ ClassSuperSet(
 			"attempt to form circular dependency graph", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OO", "CIRCULARITY", NULL);
 	    failedAfterAlloc:
-		ckfree((char *) superclasses);
+		for (; i > 0; i--) {
+		    TclOODecrRefCount(superclasses[i]->thisPtr);
+		}
+		ckfree(superclasses);
 		return TCL_ERROR;
 	    }
+	    /* Corresponding TclOODecrRefCount() is near the end of this
+	     * function */
+	    AddRef(superclasses[i]->thisPtr);
 	}
     }
 
@@ -2181,6 +2182,7 @@ ClassSuperSet(
     if (oPtr->classPtr->superclasses.num != 0) {
 	FOREACH(superPtr, oPtr->classPtr->superclasses) {
 	    TclOORemoveFromSubclasses(oPtr->classPtr, superPtr);
+	    TclOODecrRefCount(superPtr->thisPtr);
 	}
 	ckfree((char *) oPtr->classPtr->superclasses.list);
     }
