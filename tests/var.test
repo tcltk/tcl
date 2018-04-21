@@ -819,6 +819,18 @@ test var-17.1 {TclArraySet [Bug 1669489]} -setup {
 } -cleanup {
     unset -nocomplain ::a ::elements
 } -result {}
+test var-17.2 {TclArraySet Dict shortcut only on pure value} -setup {
+    unset -nocomplain a d
+    set d {p 1 p 2}
+    dict get $d p
+    set foo 0
+} -body {
+    trace add variable a write "[list incr [namespace which -variable foo]];#"
+    array set a $d
+    set foo
+} -cleanup {
+    unset -nocomplain a d foo
+} -result 2
 
 test var-18.1 {array unset and unset traces: Bug 2939073} -setup {
     set already 0
@@ -930,6 +942,28 @@ test var-20.9 {[bc1a96407a] array set compiled w/ trace} -setup {
 test var-20.10 {[bc1a96407a] array set don't compile bad varname} -body {
     apply {{} {set name foo(bar); array set $name {a 1}}}
 } -returnCodes error -match glob -result *
+test var-20.11 {array set don't compile bad initializer} -setup {
+    unset -nocomplain foo
+    trace add variable foo array {set foo(bar) baz;#}
+} -body {
+    catch {array set foo bad}
+    set foo(bar)
+} -cleanup {
+    unset -nocomplain foo
+} -result baz
+test var-20.12 {array set don't compile bad initializer} -setup {
+    unset -nocomplain ::foo
+    trace add variable ::foo array {set ::foo(bar) baz;#}
+} -body {
+    catch {apply {{} {
+	set value bad
+	array set ::foo $value
+
+    }}}
+    set ::foo(bar)
+} -cleanup {
+    unset -nocomplain ::foo
+} -result baz
 
 test var-21.0 {PushVarNameWord OBOE in compiled unset} -setup {
     proc linenumber {} {dict get [info frame -1] line}
