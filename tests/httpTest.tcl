@@ -25,7 +25,7 @@ package require http
 
 namespace eval ::http {
     variable TestStartTimeInMs [clock milliseconds]
-    catch {puts stderr "Start time (zero ms) is $TestStartTimeInMs"}
+    catch {puts stdout "Start time (zero ms) is $TestStartTimeInMs"}
 }
 
 namespace eval ::httpTest {
@@ -35,15 +35,15 @@ namespace eval ::httpTest {
         -verbose 0
         -dotted  1
     }
-    # -verbose - 0 quiet 1 write to stderr 2 write more
+    # -verbose - 0 quiet 1 write to stdout 2 write more
     # -dotted  - (boolean) use dots for absences in lists of transactions
 }
 
 proc httpTest::Puts {txt} {
     variable testOptions
     if {$testOptions(-verbose) > 0} {
-        puts stderr $txt
-        flush stderr
+        puts stdout $txt
+        flush stdout
     }
     return
 }
@@ -53,7 +53,7 @@ proc httpTest::Puts {txt} {
 # A special-purpose logger used for running tests.
 # - Processes Log calls that have "^" in their arguments, and records them in
 #   variable ::httpTest::testResults.
-# - Also writes them to stderr (using Puts) if ($testOptions(-verbose) > 0).
+# - Also writes them to stdout (using Puts) if ($testOptions(-verbose) > 0).
 # - Also writes Log calls that do not have "^", if ($testOptions(-verbose) > 1).
 
 proc http::Log {args} {
@@ -78,10 +78,10 @@ proc httpTest::LogRecord {txt} {
     set pos [string first ^ $txt]
     set len [string length  $txt]
     if {$pos > $len - 3} {
-        puts stderr "Logging Error: $txt"
-        puts stderr "Fix this call to Log in http-*.tm so it has ^ then\
+        puts stdout "Logging Error: $txt"
+        puts stdout "Fix this call to Log in http-*.tm so it has ^ then\
 		a letter then a numeral."
-        flush stderr
+        flush stdout
     } elseif {$pos == -1} {
         # Called by mistake.
     } else {
