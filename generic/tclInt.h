@@ -853,6 +853,8 @@ typedef struct VarInHash {
 #define VarHashRefCount(varPtr) \
     ((VarInHash *) (varPtr))->refCount
 
+MODULE_SCOPE Var *	TclArrayContaining(Var *varPtr);
+
 /*
  * Macros for direct variable access by TEBC.
  */

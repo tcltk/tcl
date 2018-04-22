@@ -112,6 +112,13 @@ VarHashNextVar(
     }
 }
 
+Var *
+TclArrayContaining(
+    Var *varPtr)
+{
+    return (Var *) Tcl_GetHashValue( &(((VarInHash *)varPtr)->entry));
+}
+
 #define VarHashGetKey(varPtr) \
     (((VarInHash *)(varPtr))->entry.key.objPtr)
 
@@ -1072,6 +1079,7 @@ TclLookupArrayElement(
 		DeleteSearches((Interp *) interp, arrayPtr);
 	    }
 	    TclSetVarArrayElement(varPtr);
+	    Tcl_SetHashValue( &(((VarInHash *)varPtr)->entry), arrayPtr);
 	}
     } else {
 	varPtr = VarHashFindVar(arrayPtr->value.tablePtr, elNamePtr);
@@ -2487,7 +2495,13 @@ UnsetVarStruct(
     int index)
 {
     Var dummyVar;
-    int traced = TclIsVarTraced(varPtr)
+    int traced;
+
+    if (arrayPtr == NULL && TclIsVarArrayElement(varPtr)) {
+	arrayPtr = TclArrayContaining(varPtr);
+    }
+
+    traced = TclIsVarTraced(varPtr)
 	    || (arrayPtr && (arrayPtr->flags & VAR_TRACED_UNSET));
 
     if (arrayPtr && (arrayPtr->flags & VAR_SEARCH_ACTIVE)) {
