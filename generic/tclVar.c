@@ -5497,9 +5497,6 @@ DeleteArray(
     Tcl_Obj *objPtr;
     VarTrace *tracePtr;
 
-    if (varPtr->flags & VAR_SEARCH_ACTIVE) {
-	DeleteSearches(iPtr, varPtr);
-    }
     for (elPtr = VarHashFirstVar(varPtr->value.tablePtr, &search);
 	    elPtr != NULL; elPtr = VarHashNextVar(&search)) {
 	if (TclIsVarScalar(elPtr) && (elPtr->value.objPtr != NULL)) {
