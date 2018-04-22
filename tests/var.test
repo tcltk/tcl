@@ -1212,6 +1212,17 @@ test var-23.15 {array for, [Bug e87bcf819f]} -setup {
 } -cleanup {
     unset -nocomplain a
 } -returnCodes error -result {array changed during iteration}
+test var-23.15.1 {array for, [Bug e87bcf819f]} -setup {
+    unset -nocomplain a
+    array set a {m 1 n 2}
+    upvar 0 a(n) l
+} -body {
+    array for {k v} a {unset l}
+} -cleanup {
+    unset -nocomplain a
+} -returnCodes error -result {array changed during iteration}
+
+
 
 catch {namespace delete ns}
 catch {unset arr}
