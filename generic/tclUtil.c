@@ -3691,7 +3691,6 @@ GetWideForIndex(
                                  * representing an index. */
 {
     ClientData cd;
-    Tcl_WideInt w1, w2;
     const char *opPtr;
     int numType, length, t1 = 0, t2 = 0;
     int code = TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
@@ -3745,6 +3744,8 @@ GetWideForIndex(
     /* Passed the list screen, so parse for index arithmetic expression */
     if (TCL_OK == TclParseNumber(NULL, objPtr, NULL, NULL, -1, &opPtr,
             TCL_PARSE_INTEGER_ONLY)) {
+	Tcl_WideInt w1=0, w2=0;
+
 	/* value starts with valid integer... */
 
         if ((*opPtr == '-') || (*opPtr == '+')) {
