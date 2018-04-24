@@ -214,12 +214,11 @@ Tcl_UniCharToUtfDString(
     int oldLength;
 
     /*
-     * UTF-8 string length in bytes will be <= Unicode string length *
-     * TCL_UTF_MAX.
+     * UTF-8 string length in bytes will be <= Unicode string length * 4.
      */
 
     oldLength = Tcl_DStringLength(dsPtr);
-    Tcl_DStringSetLength(dsPtr, (oldLength + uniLength + 1) * TCL_UTF_MAX);
+    Tcl_DStringSetLength(dsPtr, (oldLength + uniLength + 1) * 4);
     string = Tcl_DStringValue(dsPtr) + oldLength;
 
     p = string;
@@ -755,7 +754,9 @@ Tcl_UniCharAtIndex(
  * Tcl_UtfAtIndex --
  *
  *	Returns a pointer to the specified character (not byte) position in
- *	the UTF-8 string.
+ *	the UTF-8 string. If TCL_UTF_MAX <= 4, characters > U+FFFF count as
+ *      2 positions, but then the pointer should never be placed between
+ *      the two positions.
  *
  * Results:
  *	As above.
@@ -772,10 +773,18 @@ Tcl_UtfAtIndex(
     register int index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
+    int len = 1;
 
     while (index-- > 0) {
+	len = TclUtfToUniChar(src, &ch);
+	src += len;
+    }
+#if TCL_UTF_MAX <= 4
+     if (!len) {
+	/* Index points at character following High Surrogate */
 	src += TclUtfToUniChar(src, &ch);
     }
+#endif
     return src;
 }
 
@@ -867,12 +876,14 @@ Tcl_UtfToUpper(
     while (*src) {
 	bytes = TclUtfToUniChar(src, &ch);
 	upChar = ch;
+#if TCL_UTF_MAX <= 4
 	if (!bytes) {
 	    /* TclUtfToUniChar only returns 0 for chars > 0xffff ! */
 	    bytes = TclUtfToUniChar(src, &ch);
 	    /* Combine surrogates */
 	    upChar = (((upChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	}
+#endif
 	upChar = Tcl_UniCharToUpper(upChar);
 
 	/*
@@ -928,12 +939,14 @@ Tcl_UtfToLower(
     while (*src) {
 	bytes = TclUtfToUniChar(src, &ch);
 	lowChar = ch;
+#if TCL_UTF_MAX <= 4
 	if (!bytes) {
 	    /* TclUtfToUniChar only returns 0 for chars > 0xffff ! */
 	    bytes = TclUtfToUniChar(src, &ch);
 	    /* Combine surrogates */
 	    lowChar = (((lowChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	}
+#endif
 	lowChar = Tcl_UniCharToLower(lowChar);
 
 	/*
@@ -992,12 +1005,14 @@ Tcl_UtfToTitle(
     if (*src) {
 	bytes = TclUtfToUniChar(src, &ch);
 	titleChar = ch;
+#if TCL_UTF_MAX <= 4
 	if (!bytes) {
 	    /* TclUtfToUniChar only returns 0 for chars > 0xffff ! */
 	    bytes = TclUtfToUniChar(src, &ch);
 	    /* Combine surrogates */
 	    titleChar = (((titleChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	}
+#endif
 	titleChar = Tcl_UniCharToTitle(titleChar);
 
 	if (bytes < TclUtfCount(titleChar)) {
@@ -1011,12 +1026,14 @@ Tcl_UtfToTitle(
     while (*src) {
 	bytes = TclUtfToUniChar(src, &ch);
 	lowChar = ch;
+#if TCL_UTF_MAX <= 4
 	if (!bytes) {
 	    /* TclUtfToUniChar only returns 0 for chars > 0xffff ! */
 	    bytes = TclUtfToUniChar(src, &ch);
 	    /* Combine surrogates */
 	    lowChar = (((lowChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	}
+#endif
 	lowChar = Tcl_UniCharToLower(lowChar);
 
 	if (bytes < TclUtfCount(lowChar)) {
