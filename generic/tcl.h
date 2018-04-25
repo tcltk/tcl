@@ -114,6 +114,7 @@ extern "C" {
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #   define TCL_NORETURN __attribute__ ((noreturn))
 #   define TCL_NOINLINE __attribute__ ((noinline))
+#   define TCL_NORETURN1 __attribute__ ((noreturn))
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER) && (_MSC_VER >= 1310)
@@ -123,6 +124,7 @@ extern "C" {
 #	define TCL_NORETURN /* nothing */
 #	define TCL_NOINLINE /* nothing */
 #   endif
+#   define TCL_NORETURN1 /* nothing */
 #endif
 
 /*
@@ -1999,7 +2001,7 @@ typedef struct Tcl_EncodingType {
  */
 
 #ifndef TCL_UTF_MAX
-#define TCL_UTF_MAX		3
+#define TCL_UTF_MAX		4
 #endif
 
 /*
@@ -2189,10 +2191,10 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------------
  * The following constant is used to test for older versions of Tcl in the
- * stubs tables.
+ * stubs tables. If TCL_UTF_MAX>4 use a different value.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACF + (TCL_UTF_MAX>4))
 
 /*
  * The following function is required to be defined in all stubs aware

@@ -2295,8 +2295,15 @@ UtfToUtfProc(
 	    src += 1;
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	} else {
-	    src += TclUtfToUniChar(src, chPtr);
+	    int len = TclUtfToUniChar(src, chPtr);
+	    src += len;
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
+#if TCL_UTF_MAX <= 4
+	    if (!len) {
+		src += TclUtfToUniChar(src, chPtr);
+		dst += Tcl_UniCharToUtf(*chPtr, dst);
+	    }
+#endif
 	}
     }
 
@@ -2702,13 +2709,17 @@ TableFromUtfProc(
 	}
 	len = TclUtfToUniChar(src, &ch);
 
-#if TCL_UTF_MAX > 3
+#if TCL_UTF_MAX > 4
 	/*
 	 * This prevents a crash condition. More evaluation is required for
 	 * full support of int Tcl_UniChar. [Bug 1004065]
 	 */
 
 	if (ch & 0xffff0000) {
+	    word = 0;
+	} else
+#else
+	if (!len) {
 	    word = 0;
 	} else
 #endif
@@ -2908,12 +2919,18 @@ Iso88591FromUtfProc(
 	 * Check for illegal characters.
 	 */
 
-	if (ch > 0xff) {
+	if (ch > 0xff
+#if TCL_UTF_MAX <= 4
+		|| !len
+#endif
+		) {
 	    if (flags & TCL_ENCODING_STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
-
+#if TCL_UTF_MAX <= 4
+	    if (!len) len = 4;
+#endif
 	    /*
 	     * Plunge on, using '?' as a fallback character.
 	     */
