@@ -3898,7 +3898,8 @@ TEBCresume(
 	}
 	TRACE(("%s %u \"%.30s\" => ",
 		(flags ? "normal" : "noerr"), opnd, O2S(part2Ptr)));
-	if (TclIsVarArray(arrayPtr) && !UnsetTraced(arrayPtr)) {
+	if (TclIsVarArray(arrayPtr) && !UnsetTraced(arrayPtr)
+		&& !(arrayPtr->flags & VAR_SEARCH_ACTIVE)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
 	    if (varPtr && TclIsVarDirectUnsettable(varPtr)) {
 		/*
@@ -4023,17 +4024,12 @@ TEBCresume(
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, NULL,
 		/*createPart1*/0, /*createPart2*/0, &arrayPtr);
     doArrayExists:
-	if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
-		&& (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
-	    DECACHE_STACK_INFO();
-	    result = TclObjCallVarTraces(iPtr, arrayPtr, varPtr, part1Ptr,
-		    NULL, (TCL_LEAVE_ERR_MSG|TCL_NAMESPACE_ONLY|
-		    TCL_GLOBAL_ONLY|TCL_TRACE_ARRAY), 1, opnd);
-	    CACHE_STACK_INFO();
-	    if (result == TCL_ERROR) {
-		TRACE_ERROR(interp);
-		goto gotError;
-	    }
+	DECACHE_STACK_INFO();
+	result = TclCheckArrayTraces(interp, varPtr, arrayPtr, part1Ptr, opnd);
+	CACHE_STACK_INFO();
+	if (result == TCL_ERROR) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
 	}
 	if (varPtr && TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
 	    objResultPtr = TCONST(1);
@@ -5305,8 +5301,8 @@ TEBCresume(
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
 	} else {
-	    char buf[TCL_UTF_MAX];
-	    Tcl_UniChar ch = Tcl_GetUniChar(valuePtr, index);
+	    char buf[4];
+	    int ch = Tcl_GetUniChar(valuePtr, index);
 
 	    /*
 	     * This could be: Tcl_NewUnicodeObj((const Tcl_UniChar *)&ch, 1)
@@ -5314,7 +5310,7 @@ TEBCresume(
 	     * practical use.
 	     */
 
-	    length = Tcl_UniCharToUtf(ch, buf);
+	    length = (ch != -1) ? Tcl_UniCharToUtf(ch, buf) : 0;
 	    objResultPtr = Tcl_NewStringObj(buf, length);
 	}
 
