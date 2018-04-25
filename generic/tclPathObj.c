@@ -2388,16 +2388,14 @@ SetFsPathFromAny(
 
     fsPathPtr = ckalloc(sizeof(FsPath));
 
-    fsPathPtr->translatedPathPtr = transPtr;
-    if (fsPathPtr->translatedPathPtr != NULL) {
-	Tcl_IncrRefCount(fsPathPtr->translatedPathPtr);
-    }
-    if (transPtr != pathPtr) {
-	/* Redo translation when $env(HOME) changes */
-	fsPathPtr->filesystemEpoch = TclFSEpoch();
+    if (transPtr == pathPtr) {
+        transPtr = Tcl_DuplicateObj(pathPtr);
+        fsPathPtr->filesystemEpoch = 0;
     } else {
-	fsPathPtr->filesystemEpoch = 0;
+        fsPathPtr->filesystemEpoch = TclFSEpoch();
     }
+    Tcl_IncrRefCount(transPtr);
+    fsPathPtr->translatedPathPtr = transPtr;
     fsPathPtr->normPathPtr = NULL;
     fsPathPtr->cwdPtr = NULL;
     fsPathPtr->nativePathPtr = NULL;
