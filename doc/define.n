@@ -50,7 +50,7 @@ being constructed. Within the constructor, the \fBnext\fR command should be
 used to call the superclasses' constructors. If \fIbodyScript\fR is the empty
 string, the constructor will be deleted.
 .TP
-\fBdeletemethod\fI name\fR ?\fIname ...\fR
+\fBdeletemethod\fI name\fR ?\fIname ...\fR?
 .
 This deletes each of the methods called \fIname\fR from a class. The methods
 must have previously existed in that class. Does not affect the superclasses

@@ -1317,33 +1317,33 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
     interp bgerror {} $bgerrorsaved
 
-    # Tests msgcat-15.*: [mcutil]
+    # Tests msgcat-18.*: [mcutil]
 
-    test msgcat-15.1 {mcutil - no argument} -body {
+    test msgcat-18.1 {mcutil - no argument} -body {
 	mcutil
     } -returnCodes 1\
     -result {wrong # args: should be "mcutil subcommand ?arg ...?"}
 
-    test msgcat-15.2 {mcutil - wrong argument} -body {
+    test msgcat-18.2 {mcutil - wrong argument} -body {
 	mcutil junk
     } -returnCodes 1\
     -result {unknown subcommand "junk": must be getpreferences, or getsystemlocale}
     
-    test msgcat-15.3 {mcutil - partial argument} -body {
+    test msgcat-18.3 {mcutil - partial argument} -body {
 	mcutil getsystem
     } -returnCodes 1\
     -result {unknown subcommand "getsystem": must be getpreferences, or getsystemlocale}
     
-    test msgcat-15.4 {mcutil getpreferences - no argument} -body {
+    test msgcat-18.4 {mcutil getpreferences - no argument} -body {
 	mcutil getpreferences
     } -returnCodes 1\
     -result {wrong # args: should be "mcutil getpreferences locale"}
     
-    test msgcat-15.5 {mcutil getpreferences - DE_de} -body {
+    test msgcat-18.5 {mcutil getpreferences - DE_de} -body {
 	mcutil getpreferences DE_de
     } -result {de_de de {}}
     
-    test msgcat-15.6 {mcutil getsystemlocale - wrong argument} -body {
+    test msgcat-18.6 {mcutil getsystemlocale - wrong argument} -body {
 	mcutil getsystemlocale DE_de
     } -returnCodes 1\
     -result {wrong # args: should be "mcutil getsystemlocale"}
@@ -1351,7 +1351,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
     # The result is system dependent
     # So just test if it runs
     # The environment variable version was test with test 0.x
-    test msgcat-15.7 {mcutil getsystemlocale} -body {
+    test msgcat-18.7 {mcutil getsystemlocale} -body {
 	mcutil getsystemlocale
 	set ok ok
     } -result {ok}
