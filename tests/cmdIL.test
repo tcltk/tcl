@@ -19,7 +19,6 @@ catch [list package require -exact Tcltest [info patchlevel]]
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
 testConstraint testobj [llength [info commands testobj]]
-testConstraint fullutf [expr {[format %c 0x010000] != "\ufffd"}]
 
 test cmdIL-1.1 {Tcl_LsortObjCmd procedure} -returnCodes error -body {
     lsort
@@ -154,10 +153,10 @@ test cmdIL-1.37 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
 test cmdIL-1.38 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
     lsort -ascii -nocase [list \0 \x7f \x80 \uffff]
 } [list \0 \x7f \x80 \uffff]
-test cmdIL-1.39 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} fullutf {
+test cmdIL-1.39 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
     lsort -ascii [list \0 \x7f \x80 \U01ffff \uffff]
 } [list \0 \x7f \x80 \uffff \U01ffff]
-test cmdIL-1.40 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} fullutf {
+test cmdIL-1.40 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
     lsort -ascii -nocase [list \0 \x7f \x80 \U01ffff \uffff]
 } [list \0 \x7f \x80 \uffff \U01ffff]
 test cmdIL-1.41 {lsort -stride and -index} -body {
