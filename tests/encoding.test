@@ -36,7 +36,7 @@ proc runtests {} {
 testConstraint testencoding [llength [info commands testencoding]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint teststringbytes [llength [info commands teststringbytes]]
-testConstraint fullutf [expr {[format %c 0x010000] != "\ufffd"}]
+testConstraint tip389 [expr {[string length \U010000] == 2}]
 testConstraint exec [llength [info commands exec]]
 testConstraint testgetencpath [llength [info commands testgetencpath]]
 
@@ -323,16 +323,16 @@ test encoding-15.3 {UtfToUtfProc null character input} teststringbytes {
     set z
 } c080
 
-test encoding-16.1 {UnicodeToUtfProc} {
+test encoding-16.1 {UnicodeToUtfProc} -constraints tip389 -body {
     set val [encoding convertfrom unicode NN]
     list $val [format %x [scan $val %c]]
-} "\u4e4e 4e4e"
-test encoding-16.2 {UnicodeToUtfProc} -constraints fullutf -body {
+} -result "\u4e4e 4e4e"
+test encoding-16.2 {UnicodeToUtfProc} -constraints tip389 -body {
     set val [encoding convertfrom unicode "\xd8\xd8\xdc\xdc"]
     list $val [format %x [scan $val %c]]
 } -result "\U460dc 460dc"
 
-test encoding-17.1 {UtfToUnicodeProc} -constraints fullutf -body {
+test encoding-17.1 {UtfToUnicodeProc} -constraints tip389 -body {
     encoding convertto unicode "\U460dc"
 } -result "\xd8\xd8\xdc\xdc"
 
