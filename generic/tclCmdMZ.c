@@ -491,7 +491,7 @@ Tcl_RegsubObjCmd(
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
     Tcl_Obj *resultPtr, *subPtr, *objPtr, *startIndex = NULL;
-    Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
+    Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec = 0, *wend;
 
     static const char *const options[] = {
 	"-all",		"-command",	"-expanded",	"-line",
@@ -1220,7 +1220,7 @@ Tcl_SplitObjCmd(
 	    len = TclUtfToUniChar(stringPtr, &ch);
 	    fullchar = ch;
 
-#if TCL_UTF_MAX == 4
+#if TCL_UTF_MAX <= 4
 	    if (!len) {
 		len += TclUtfToUniChar(stringPtr, &ch);
 		fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
@@ -1419,7 +1419,7 @@ StringIndexCmd(
     }
 
     /*
-     * Get the char length to calulate what 'end' means.
+     * Get the char length to calculate what 'end' means.
      */
 
     length = Tcl_GetCharLength(objv[1]);
@@ -1428,7 +1428,11 @@ StringIndexCmd(
     }
 
     if ((index >= 0) && (index < length)) {
-	Tcl_UniChar ch = Tcl_GetUniChar(objv[1], index);
+	int ch = Tcl_GetUniChar(objv[1], index);
+
+	if (ch == -1) {
+	    return TCL_OK;
+	}
 
 	/*
 	 * If we have a ByteArray object, we're careful to generate a new
@@ -1440,7 +1444,7 @@ StringIndexCmd(
 
 	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
 	} else {
-	    char buf[TCL_UTF_MAX];
+	    char buf[4];
 
 	    length = Tcl_UniCharToUtf(ch, buf);
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, length));
@@ -1586,7 +1590,6 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsDigit;
 	break;
     case STR_IS_DOUBLE: {
-	/* TODO */
 	if ((objPtr->typePtr == &tclDoubleType) ||
 		(objPtr->typePtr == &tclIntType) ||
 		(objPtr->typePtr == &tclBignumType)) {
@@ -1804,7 +1807,7 @@ StringIsCmd(
 	    int fullchar;
 	    length2 = TclUtfToUniChar(string1, &ch);
 	    fullchar = ch;
-#if TCL_UTF_MAX == 4
+#if TCL_UTF_MAX <= 4
 	    if (!length2) {
 	    	length2 = TclUtfToUniChar(string1, &ch);
 	    	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
