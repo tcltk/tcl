@@ -962,13 +962,13 @@ EXTERN void		Tcl_ThreadAlert(Tcl_ThreadId threadId);
 EXTERN void		Tcl_ThreadQueueEvent(Tcl_ThreadId threadId,
 				Tcl_Event *evPtr, Tcl_QueuePosition position);
 /* 320 */
-EXTERN Tcl_UniChar	Tcl_UniCharAtIndex(const char *src, int index);
+EXTERN int		Tcl_UniCharAtIndex(const char *src, int index);
 /* 321 */
-EXTERN Tcl_UniChar	Tcl_UniCharToLower(int ch);
+EXTERN int		Tcl_UniCharToLower(int ch);
 /* 322 */
-EXTERN Tcl_UniChar	Tcl_UniCharToTitle(int ch);
+EXTERN int		Tcl_UniCharToTitle(int ch);
 /* 323 */
-EXTERN Tcl_UniChar	Tcl_UniCharToUpper(int ch);
+EXTERN int		Tcl_UniCharToUpper(int ch);
 /* 324 */
 EXTERN int		Tcl_UniCharToUtf(int ch, char *buf);
 /* 325 */
@@ -1123,7 +1123,7 @@ EXTERN void		Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
 /* 380 */
 EXTERN int		Tcl_GetCharLength(Tcl_Obj *objPtr);
 /* 381 */
-EXTERN Tcl_UniChar	Tcl_GetUniChar(Tcl_Obj *objPtr, int index);
+EXTERN int		Tcl_GetUniChar(Tcl_Obj *objPtr, int index);
 /* 382 */
 EXTERN Tcl_UniChar *	Tcl_GetUnicode(Tcl_Obj *objPtr);
 /* 383 */
@@ -2205,10 +2205,10 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_SetVar2Ex) (Tcl_Interp *interp, const char *part1, const char *part2, Tcl_Obj *newValuePtr, int flags); /* 317 */
     void (*tcl_ThreadAlert) (Tcl_ThreadId threadId); /* 318 */
     void (*tcl_ThreadQueueEvent) (Tcl_ThreadId threadId, Tcl_Event *evPtr, Tcl_QueuePosition position); /* 319 */
-    Tcl_UniChar (*tcl_UniCharAtIndex) (const char *src, int index); /* 320 */
-    Tcl_UniChar (*tcl_UniCharToLower) (int ch); /* 321 */
-    Tcl_UniChar (*tcl_UniCharToTitle) (int ch); /* 322 */
-    Tcl_UniChar (*tcl_UniCharToUpper) (int ch); /* 323 */
+    int (*tcl_UniCharAtIndex) (const char *src, int index); /* 320 */
+    int (*tcl_UniCharToLower) (int ch); /* 321 */
+    int (*tcl_UniCharToTitle) (int ch); /* 322 */
+    int (*tcl_UniCharToUpper) (int ch); /* 323 */
     int (*tcl_UniCharToUtf) (int ch, char *buf); /* 324 */
     const char * (*tcl_UtfAtIndex) (const char *src, int index); /* 325 */
     int (*tcl_UtfCharComplete) (const char *src, int length); /* 326 */
@@ -2266,7 +2266,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_NewUnicodeObj) (const Tcl_UniChar *unicode, int numChars); /* 378 */
     void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int numChars); /* 379 */
     int (*tcl_GetCharLength) (Tcl_Obj *objPtr); /* 380 */
-    Tcl_UniChar (*tcl_GetUniChar) (Tcl_Obj *objPtr, int index); /* 381 */
+    int (*tcl_GetUniChar) (Tcl_Obj *objPtr, int index); /* 381 */
     Tcl_UniChar * (*tcl_GetUnicode) (Tcl_Obj *objPtr); /* 382 */
     Tcl_Obj * (*tcl_GetRange) (Tcl_Obj *objPtr, int first, int last); /* 383 */
     void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int length); /* 384 */
