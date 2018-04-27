@@ -943,8 +943,8 @@ ZipFSCloseArchive(Tcl_Interp *interp, ZipFile *zf)
             zf->tofree = NULL;
         }
         zf->data = NULL;
-        return;   
-    }   
+        return;
+    }
 #if defined(_WIN32) || defined(_WIN64)
     if ((zf->data != NULL) && (zf->tofree == NULL)) {
         UnmapViewOfFile(zf->data);
@@ -1060,7 +1060,7 @@ ZipFS_Find_TOC(Tcl_Interp *interp, int needZip, ZipFile *zf)
             zf->baseoffsp -= i ? (5 + i) : 0;
         }
     }
-    
+
     return TCL_OK;
 
 error:
@@ -1096,7 +1096,7 @@ ZipFSOpenArchive(Tcl_Interp *interp, const char *zipname, int needZip, ZipFile *
 {
     int i;
     ClientData handle;
-    
+    zf->namelen=0;
     zf->is_membuf=0;
 #if defined(_WIN32) || defined(_WIN64)
     zf->data = NULL;
@@ -1210,7 +1210,7 @@ ZipFS_Catalogue_Filesystem(Tcl_Interp *interp, ZipFile *zf0, const char *mntpt, 
     int drive = 0;
 #endif
     WriteLock();
-    
+
     pwlen = 0;
     if (passwd != NULL) {
         pwlen = strlen(passwd);
@@ -1542,7 +1542,7 @@ TclZipfs_Mount(
         Unlock();
         return ret;
     }
- 
+
     if (zipname == NULL) {
         Tcl_HashEntry *hPtr;
         if (interp == NULL) {
@@ -1639,7 +1639,7 @@ TclZipfs_Mount_Buffer(
         Unlock();
         return ret;
     }
- 
+
     if (data == NULL) {
         Tcl_HashEntry *hPtr;
 
@@ -1719,7 +1719,7 @@ TclZipfs_Unmount(Tcl_Interp *interp, const char *mntpt)
      */
     Tcl_DStringInit(&dsm);
     mntpt = CanonicalPath("", mntpt, &dsm, 1);
-    
+
     hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, mntpt);
 
     /* don't report error */
@@ -1817,7 +1817,7 @@ ZipFSMountBufferObjCmd(
         Tcl_HashSearch search;
         int ret = TCL_OK;
         ZipFile *zf;
-        
+
         ReadLock();
         i = 0;
         hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
@@ -2970,7 +2970,7 @@ Tcl_Obj *TclZipfs_TclLibrary(void) {
     } else {
         Tcl_Obj *vfsinitscript;
         int found=0;
-        
+
         /* Look for the library file system within the executable */
         vfsinitscript=Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library/init.tcl",-1);
         Tcl_IncrRefCount(vfsinitscript);
@@ -4570,7 +4570,7 @@ int TclZipfs_AppHook(int *argc, char ***argv)
  */
 
 int
-TclZipfs_Mount(Tcl_Interp *interp, const char *mntpt, const char *zipname, 
+TclZipfs_Mount(Tcl_Interp *interp, const char *mntpt, const char *zipname,
         const char *passwd)
 {
     return TclZipfs_Init(interp, 1);
