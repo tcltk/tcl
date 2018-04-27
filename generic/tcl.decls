@@ -1145,16 +1145,16 @@ declare 319 {
 	    Tcl_QueuePosition position)
 }
 declare 320 {
-    Tcl_UniChar Tcl_UniCharAtIndex(const char *src, int index)
+    int Tcl_UniCharAtIndex(const char *src, int index)
 }
 declare 321 {
-    Tcl_UniChar Tcl_UniCharToLower(int ch)
+    int Tcl_UniCharToLower(int ch)
 }
 declare 322 {
-    Tcl_UniChar Tcl_UniCharToTitle(int ch)
+    int Tcl_UniCharToTitle(int ch)
 }
 declare 323 {
-    Tcl_UniChar Tcl_UniCharToUpper(int ch)
+    int Tcl_UniCharToUpper(int ch)
 }
 declare 324 {
     int Tcl_UniCharToUtf(int ch, char *buf)
@@ -1348,7 +1348,7 @@ declare 380 {
     int Tcl_GetCharLength(Tcl_Obj *objPtr)
 }
 declare 381 {
-    Tcl_UniChar Tcl_GetUniChar(Tcl_Obj *objPtr, int index)
+    int Tcl_GetUniChar(Tcl_Obj *objPtr, int index)
 }
 declare 382 {
     Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)

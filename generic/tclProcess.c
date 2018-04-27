@@ -887,6 +887,7 @@ TclProcessWait(
      * First search for pid in table.
      */
 
+    Tcl_MutexLock(&infoTablesMutex);
     entry = Tcl_FindHashEntry(&infoTablePerPid, pid);
     if (!entry) {
 	/*
@@ -897,6 +898,7 @@ TclProcessWait(
 		msgObjPtr, errorObjPtr);
 	if (msgObjPtr && *msgObjPtr) Tcl_IncrRefCount(*msgObjPtr);
 	if (errorObjPtr && *errorObjPtr) Tcl_IncrRefCount(*errorObjPtr);
+    Tcl_MutexUnlock(&infoTablesMutex);
 	return result;
     }
 
@@ -906,6 +908,7 @@ TclProcessWait(
 	 * Process has completed but TclProcessWait has already been called,
 	 * so report no change.
 	 */
+    Tcl_MutexUnlock(&infoTablesMutex);
 	
 	return TCL_PROCESS_UNCHANGED;
     }
@@ -915,6 +918,7 @@ TclProcessWait(
 	/*
 	 * No change, stop there.
 	 */
+    Tcl_MutexUnlock(&infoTablesMutex);
 	
 	return TCL_PROCESS_UNCHANGED;
     }
@@ -948,5 +952,6 @@ TclProcessWait(
 
 	info->purge = 1;
     }
+    Tcl_MutexUnlock(&infoTablesMutex);
     return result;
 }
