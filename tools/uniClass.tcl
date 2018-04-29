@@ -20,7 +20,7 @@ proc emitRange {first last} {
 	    set extranges 1
 	    set numranges 0
 	    set ranges [string trimright $ranges " \n\r\t,"]
-	    append ranges "\n#if TCL_UTF_MAX > 4\n    ,"
+	    append ranges "\n#if CHRBITS > 16\n    ,"
 	}
 	append ranges [format "{0x%x, 0x%x}, " \
 		$first $last]
@@ -33,7 +33,7 @@ proc emitRange {first last} {
 	    set extchars 1
 	    set numchars 0
 	    set chars [string trimright $chars " \n\r\t,"]
-	    append chars "\n#if TCL_UTF_MAX > 4\n    ,"
+	    append chars "\n#if CHRBITS > 16\n    ,"
 	}
 	append chars [format "0x%x, " $first]
 	incr numchars
