@@ -280,7 +280,7 @@ TclCleanupChildren(
     for (i = 0; i < numPids; i++) {
 	/*
 	 * We need to get the resolved pid before we wait on it as the windows
-	 * implimentation of Tcl_WaitPid deletes the information such that any
+	 * implementation of Tcl_WaitPid deletes the information such that any
 	 * following calls to TclpGetPid fail.
 	 */
 

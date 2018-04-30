@@ -124,9 +124,9 @@ typedef struct ByteArray {
 #define BYTEARRAY_SIZE(len) \
 		((unsigned) (sizeof(ByteArray) - 4 + (len)))
 #define GET_BYTEARRAY(objPtr) \
-		((ByteArray *) (objPtr)->internalRep.otherValuePtr)
+		((ByteArray *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_BYTEARRAY(objPtr, baPtr) \
-		(objPtr)->internalRep.otherValuePtr = (VOID *) (baPtr)
+		(objPtr)->internalRep.twoPtrValue.ptr1 = (VOID *) (baPtr)
 
 
 /*
@@ -271,13 +271,18 @@ Tcl_SetByteArrayObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetByteArrayObj");
     }
     TclFreeIntRep(objPtr);
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
 
+    if (length < 0) {
+	length = 0;
+    }
     byteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
-    memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
 
+    if ((bytes != NULL) && (length > 0)) {
+	memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
+    }
     objPtr->typePtr = &tclByteArrayType;
     SET_BYTEARRAY(objPtr, byteArrayPtr);
 }
@@ -362,7 +367,7 @@ Tcl_SetByteArrayLength(
 	byteArrayPtr->allocated = length;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
     }
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
     byteArrayPtr->used = length;
     return byteArrayPtr->bytes;
 }
@@ -539,6 +544,98 @@ UpdateStringOfByteArray(
 	}
 	*dst = '\0';
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclAppendBytesToByteArray --
+ *
+ *	This function appends an array of bytes to a byte array object. Note
+ *	that the object *must* be unshared, and the array of bytes *must not*
+ *	refer to the object being appended to.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocates enough memory for an array of bytes of the requested total
+ *	size, or possibly larger. [Bug 2992970]
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define TCL_MIN_GROWTH 1024
+void
+TclAppendBytesToByteArray(
+    Tcl_Obj *objPtr,
+    const unsigned char *bytes,
+    int len)
+{
+    ByteArray *byteArrayPtr;
+    int needed;
+
+    if (Tcl_IsShared(objPtr)) {
+	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
+    }
+    if (len < 0) {
+	Tcl_Panic("%s must be called with definite number of bytes to append",
+		"TclAppendBytesToByteArray");
+    }
+    if (len == 0) {
+	/* Append zero bytes is a no-op. */
+	return;
+    }
+    if (objPtr->typePtr != &tclByteArrayType) {
+	SetByteArrayFromAny(NULL, objPtr);
+    }
+    byteArrayPtr = GET_BYTEARRAY(objPtr);
+
+    if (len > INT_MAX - byteArrayPtr->used) {
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+    }
+
+    needed = byteArrayPtr->used + len;
+    /*
+     * If we need to, resize the allocated space in the byte array.
+     */
+
+    if (needed > byteArrayPtr->allocated) {
+	ByteArray *ptr = NULL;
+	int attempt;
+
+	if (needed <= INT_MAX/2) {
+	    /* Try to allocate double the total space that is needed. */
+	    attempt = 2 * needed;
+	    ptr = (ByteArray *) attemptckrealloc((void *) byteArrayPtr,
+		    BYTEARRAY_SIZE(attempt));
+	}
+	if (ptr == NULL) {
+	    /* Try to allocate double the increment that is needed (plus). */
+	    unsigned int limit = INT_MAX - needed;
+	    unsigned int extra = len + TCL_MIN_GROWTH;
+	    int growth = (int) ((extra > limit) ? limit : extra);
+
+	    attempt = needed + growth;
+	    ptr = (ByteArray *) attemptckrealloc((void *) byteArrayPtr,
+		    BYTEARRAY_SIZE(attempt));
+	}
+	if (ptr == NULL) {
+	    /* Last chance: Try to allocate exactly what is needed. */
+	    attempt = needed;
+	    ptr = (ByteArray *) ckrealloc((void *)byteArrayPtr,
+		    BYTEARRAY_SIZE(attempt));
+	}
+	byteArrayPtr = ptr;
+	byteArrayPtr->allocated = attempt;
+	SET_BYTEARRAY(objPtr, byteArrayPtr);
+    }
+
+    if (bytes) {
+	memcpy(byteArrayPtr->bytes + byteArrayPtr->used, bytes, len);
+    }
+    byteArrayPtr->used += len;
+    TclInvalidateStringRep(objPtr);
 }
 
 /*
@@ -1431,7 +1528,15 @@ GetFormatSpec(
 	(*formatPtr)++;
 	(*countPtr) = BINARY_ALL;
     } else if (isdigit(UCHAR(**formatPtr))) { /* INTL: digit */
-	(*countPtr) = strtoul(*formatPtr, formatPtr, 10);
+	unsigned long int count;
+
+	errno = 0;
+	count = strtoul(*formatPtr, formatPtr, 10);
+	if (errno || (count > (unsigned long) INT_MAX)) {
+	    (*countPtr) = INT_MAX;
+	} else {
+	    (*countPtr) = (int) count;
+	}
     } else {
 	(*countPtr) = BINARY_NOCOUNT;
     }

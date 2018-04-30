@@ -10,11 +10,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#ifndef _WIN64
-/* See [Bug 2935503]: file mtime sets wrong time */
-#   define _USE_32BIT_TIME_T
-#endif
-
 #include "tclInt.h"
 
 /*
@@ -378,14 +373,7 @@ TclFileDeleteCmd(
 	 */
 
 	if (Tcl_FSLstat(objv[i], &statBuf) != 0) {
-	    /*
-	     * Trying to delete a file that does not exist is not considered
-	     * an error, just a no-op
-	     */
-
-	    if (errno != ENOENT) {
-		result = TCL_ERROR;
-	    }
+	    result = TCL_ERROR;
 	} else if (S_ISDIR(statBuf.st_mode)) {
 	    /*
 	     * We own a reference count on errorBuffer, if it was set as a
@@ -421,13 +409,20 @@ TclFileDeleteCmd(
 	}
 
 	if (result != TCL_OK) {
-	    result = TCL_ERROR;
 
+	    /*
+	     * Avoid possible race condition (file/directory deleted after call
+	     * of lstat), so bypass ENOENT because not an error, just a no-op
+	     */
+	    if (errno == ENOENT) {
+		result = TCL_OK;
+		continue;
+	    }
 	    /*
 	     * It is important that we break on error, otherwise we might end
 	     * up owning reference counts on numerous errorBuffers.
 	     */
-
+	    result = TCL_ERROR;
 	    break;
 	}
     }
@@ -531,7 +526,7 @@ CopyRenameOneFile(
 	 * 16 bits and we get collisions. See bug #2015723.
 	 */
 
-#ifndef WIN32
+#if !defined(WIN32) && !defined(__CYGWIN__)
 	if ((sourceStatBuf.st_ino != 0) && (targetStatBuf.st_ino != 0)) {
 	    if ((sourceStatBuf.st_ino == targetStatBuf.st_ino) &&
 		    (sourceStatBuf.st_dev == targetStatBuf.st_dev)) {
@@ -747,17 +742,14 @@ CopyRenameOneFile(
 	     */
 
 	    errfile = target;
-
-	    /*
-	     * We now need to reset the result, because the above call, if it
-	     * failed, may have put an error message in place. (Ideally we
-	     * would prefer not to pass an interpreter in above, but the
-	     * channel IO code used by TclCrossFilesystemCopy currently
-	     * requires one).
-	     */
-
-	    Tcl_ResetResult(interp);
 	}
+	/*
+	 * We now need to reset the result, because the above call,
+	 * may have left set it.  (Ideally we would prefer not to pass
+	 * an interpreter in above, but the channel IO code used by
+	 * TclCrossFilesystemCopy currently requires one)
+	 */
+	Tcl_ResetResult(interp);
     }
     if ((copyFlag == 0) && (result == TCL_OK)) {
 	if (S_ISDIR(sourceStatBuf.st_mode)) {

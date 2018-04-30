@@ -406,7 +406,7 @@ TclCreateProc(
 	 * will be holding a reference to it.
 	 */
 
-	procPtr = bodyPtr->internalRep.otherValuePtr;
+	procPtr = bodyPtr->internalRep.twoPtrValue.ptr1;
 	procPtr->iPtr = iPtr;
 	procPtr->refCount++;
 	precompiled = 1;
@@ -1166,7 +1166,7 @@ TclInitCompiledLocals(
     if (bodyPtr->typePtr != &tclByteCodeType) {
 	Tcl_Panic("body object for proc attached to frame is not a byte code type");
     }
-    codePtr = bodyPtr->internalRep.otherValuePtr;
+    codePtr = bodyPtr->internalRep.twoPtrValue.ptr1;
 
     if (framePtr->numCompiledLocals) {
 	if (!codePtr->localCachePtr) {
@@ -1334,7 +1334,7 @@ static void
 InitLocalCache(Proc *procPtr)
 {
     Interp *iPtr = procPtr->iPtr;
-    ByteCode *codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
     int localCt = procPtr->numCompiledLocals;
     int numArgs = procPtr->numArgs, i = 0;
 
@@ -1391,7 +1391,7 @@ InitArgsAndLocals(
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     register Proc *procPtr = framePtr->procPtr;
-    ByteCode *codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
     register Var *varPtr, *defPtr;
     int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
     Tcl_Obj *const *argObjs;
@@ -1579,7 +1579,7 @@ PushProcCallFrame(
 	 * commands and/or resolver changes are considered).
 	 */
 
-	codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
+	codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
  	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
@@ -1747,7 +1747,7 @@ TclObjInterpProcCore(
 	result = TCL_ERROR;
     } else {
 	register ByteCode *codePtr =
-		procPtr->bodyPtr->internalRep.otherValuePtr;
+		procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
 
 	codePtr->refCount++;
 #ifdef USE_DTRACE
@@ -1908,7 +1908,7 @@ ProcCompileProc(
     Interp *iPtr = (Interp *) interp;
     int i;
     Tcl_CallFrame *framePtr;
-    ByteCode *codePtr = bodyPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = bodyPtr->internalRep.twoPtrValue.ptr1;
     CompiledLocal *localPtr;
 
     /*
@@ -2198,7 +2198,7 @@ TclProcCleanupProc(
      * the same ProcPtr is overwritten with a new CmdFrame.
      */
 
-    if (!iPtr) {
+    if (iPtr == NULL) {
 	return;
     }
 
@@ -2209,13 +2209,15 @@ TclProcCleanupProc(
 
     cfPtr = (CmdFrame *) Tcl_GetHashValue(hePtr);
 
-    if (cfPtr->type == TCL_LOCATION_SOURCE) {
-	Tcl_DecrRefCount(cfPtr->data.eval.path);
-	cfPtr->data.eval.path = NULL;
+    if (cfPtr) {
+	if (cfPtr->type == TCL_LOCATION_SOURCE) {
+	    Tcl_DecrRefCount(cfPtr->data.eval.path);
+	    cfPtr->data.eval.path = NULL;
+	}
+	ckfree((char *) cfPtr->line);
+	cfPtr->line = NULL;
+	ckfree((char *) cfPtr);
     }
-    ckfree((char *) cfPtr->line);
-    cfPtr->line = NULL;
-    ckfree((char *) cfPtr);
     Tcl_DeleteHashEntry(hePtr);
 }
 
@@ -2325,7 +2327,7 @@ TclNewProcBodyObj(
     TclNewObj(objPtr);
     if (objPtr) {
 	objPtr->typePtr = &tclProcBodyType;
-	objPtr->internalRep.otherValuePtr = procPtr;
+	objPtr->internalRep.twoPtrValue.ptr1 = procPtr;
 
 	procPtr->refCount++;
     }
@@ -2355,10 +2357,10 @@ ProcBodyDup(
     Tcl_Obj *srcPtr,		/* Object to copy. */
     Tcl_Obj *dupPtr)		/* Target object for the duplication. */
 {
-    Proc *procPtr = srcPtr->internalRep.otherValuePtr;
+    Proc *procPtr = srcPtr->internalRep.twoPtrValue.ptr1;
 
     dupPtr->typePtr = &tclProcBodyType;
-    dupPtr->internalRep.otherValuePtr = procPtr;
+    dupPtr->internalRep.twoPtrValue.ptr1 = procPtr;
     procPtr->refCount++;
 }
 
@@ -2385,10 +2387,9 @@ static void
 ProcBodyFree(
     Tcl_Obj *objPtr)		/* The object to clean up. */
 {
-    Proc *procPtr = objPtr->internalRep.otherValuePtr;
+    Proc *procPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    procPtr->refCount--;
-    if (procPtr->refCount <= 0) {
+    if (procPtr->refCount-- < 2) {
 	TclProcCleanupProc(procPtr);
     }
 }
@@ -2447,7 +2448,8 @@ SetLambdaFromAny(
     Interp *iPtr = (Interp *) interp;
     char *name;
     Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv, *errPtr;
-    int objc, result;
+    int isNew, objc, result;
+    CmdFrame *cfPtr = NULL;
     Proc *procPtr;
 
     if (interp == NULL) {
@@ -2544,14 +2546,14 @@ SetLambdaFromAny(
 
 	    if (contextPtr->line
 		    && (contextPtr->nline >= 2) && (contextPtr->line[1] >= 0)) {
-		int isNew, buf[2];
-		CmdFrame *cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
+		int buf[2];
 
 		/*
 		 * Move from approximation (line of list cmd word) to actual
 		 * location (line of 2nd list element).
 		 */
 
+		cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
 		TclListLines(objPtr, contextPtr->line[1], 2, buf, NULL);
 
 		cfPtr->level = -1;
@@ -2567,9 +2569,6 @@ SetLambdaFromAny(
 
 		cfPtr->cmd.str.cmd = NULL;
 		cfPtr->cmd.str.len = 0;
-
-		Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) procPtr, &isNew), cfPtr);
 	    }
 
 	    /*
@@ -2581,6 +2580,8 @@ SetLambdaFromAny(
 	}
 	TclStackFree(interp, contextPtr);
     }
+    Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr, (char *) procPtr,
+	    &isNew), cfPtr);
 
     /*
      * Set the namespace for this lambda: given by objv[2] understood as a
@@ -2852,7 +2853,7 @@ Tcl_DisassembleObjCmd(
 	    return result;
 	}
 	TclPopStackFrame(interp);
-	if (((ByteCode *) procPtr->bodyPtr->internalRep.otherValuePtr)->flags
+	if (((ByteCode *) procPtr->bodyPtr->internalRep.twoPtrValue.ptr1)->flags
 		& TCL_BYTECODE_PRECOMPILED) {
 	    Tcl_AppendResult(interp, "may not disassemble prebuilt bytecode",
 		    NULL);
@@ -2879,7 +2880,7 @@ Tcl_DisassembleObjCmd(
 	    return result;
 	}
 	TclPopStackFrame(interp);
-	if (((ByteCode *) procPtr->bodyPtr->internalRep.otherValuePtr)->flags
+	if (((ByteCode *) procPtr->bodyPtr->internalRep.twoPtrValue.ptr1)->flags
 		& TCL_BYTECODE_PRECOMPILED) {
 	    Tcl_AppendResult(interp, "may not disassemble prebuilt bytecode",
 		    NULL);

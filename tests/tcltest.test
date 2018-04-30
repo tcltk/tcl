@@ -80,10 +80,7 @@ proc slave {msgVar args} {
 
     # Need to capture output in msg
 
-    set code [catch {i eval {source $argv0}} foo]
-if $code {
-#puts "$code: $foo\n$::errorInfo"
-}
+    set code [catch {i eval {source $argv0}}]
     i eval {close $tcltest::outputChannel}
     interp delete [namespace current]::i
     set f [open $of]
@@ -99,8 +96,6 @@ if $code {
 	append msg \n$err
     }
     return $code
-
-#    return [catch {uplevel 1 [linsert $args 0  exec [interpreter]]} msg]
 }
 test tcltest-2.0 {tcltest (verbose default - 'b')} {unixOrPc} {
     set result [slave msg test.tcl]
@@ -549,13 +544,14 @@ set notWriteableDir [file join [temporaryDirectory] notwriteable]
 makeDirectory notreadable
 makeDirectory notwriteable
 switch -- $::tcl_platform(platform) {
-    "unix" {
+    unix {
 	file attributes $notReadableDir -permissions 00333
 	file attributes $notWriteableDir -permissions 00555
     }
     default {
+	# note in FAT/NTFS we won't be able to protect directory with read-only attribute...
 	catch {file attributes $notWriteableDir -readonly 1}
-	catch {testchmod 000 $notWriteableDir}
+	catch {testchmod 0 $notWriteableDir}
     }
 }
 test tcltest-8.3 {tcltest a.tcl -tmpdir notReadableDir} {
@@ -570,9 +566,10 @@ test tcltest-8.3 {tcltest a.tcl -tmpdir notReadableDir} {
 # This constraint doesn't go at the top of the file so that it doesn't
 # interfere with tcltest-5.5
 testConstraint notFAT [expr {
-    ![string match "FAT*" [lindex [file system $notWriteableDir] 1]]
+       ![regexp {^(FAT\d*|NTFS)$} [lindex [file system $notWriteableDir] 1]]
+    || $::tcl_platform(platform) eq "unix" || [llength [info commands testchmod]]
 }]
-# FAT permissions are fairly hopeless; ignore this test if that FS is used
+# FAT/NTFS permissions are fairly hopeless; ignore this test if that FS is used
 test tcltest-8.4 {tcltest a.tcl -tmpdir notWriteableDir} {
     -constraints {unixOrPc notRoot notFAT}
     -body {
@@ -716,8 +713,8 @@ test tcltest-8.60 {::workingDirectory}  {
 
 # clean up from directory testing
 
-switch $::tcl_platform(platform) {
-    "unix" {
+switch -- $::tcl_platform(platform) {
+    unix {
 	file attributes $notReadableDir -permissions 777
 	file attributes $notWriteableDir -permissions 777
     }
@@ -727,7 +724,7 @@ switch $::tcl_platform(platform) {
     }
 }
 
-file delete -force $notReadableDir $notWriteableDir
+file delete -force -- $notReadableDir $notWriteableDir
 removeFile a.tcl
 removeFile thisdirectoryisafile
 removeDirectory normaldirectory
@@ -1150,7 +1147,7 @@ test tcltest-19.1 {TCLTEST_OPTIONS default} -setup {
     } -cleanup {
 	interp delete slave2
 	interp delete slave1
-	if {$oldoptions == "none"} {
+	if {$oldoptions eq "none"} {
 	    unset ::env(TCLTEST_OPTIONS) 
 	} else {
 	    set ::env(TCLTEST_OPTIONS) $oldoptions

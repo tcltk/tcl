@@ -15,7 +15,7 @@
 #define _TCLWINPORT
 
 #ifndef _WIN64
-/* See [Bug 2935503]: file mtime sets wrong time */
+/* See [Bug 3354324]: file mtime sets wrong time */
 #   define _USE_32BIT_TIME_T
 #endif
 
@@ -51,12 +51,8 @@ typedef DWORD_PTR * PDWORD_PTR;
  *---------------------------------------------------------------------------
  */
 
-#ifdef __CYGWIN__
-#   include <unistd.h>
-#   include <wchar.h>
-#else
-#   include <io.h>
-#endif
+#include <time.h>
+#include <io.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -68,18 +64,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <string.h>
 #include <limits.h>
 
-#ifdef __CYGWIN__
-#   include <unistd.h>
-#   ifndef _wcsicmp
-#	define _wcsicmp wcscasecmp
-#   endif
-#else
-#   ifndef strncasecmp
-#	define strncasecmp strnicmp
-#   endif
-#   ifndef strcasecmp
-#	define strcasecmp stricmp
-#   endif
+#ifndef __GNUC__
+#    define strncasecmp _strnicmp
+#    define strcasecmp _stricmp
 #endif
 
 /*
@@ -97,8 +84,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #   endif /* __BORLANDC__ */
 #endif /* __MWERKS__ */
 
-#include <time.h>
-
 /*
  * Define EINPROGRESS in terms of WSAEINPROGRESS.
  */
@@ -112,25 +97,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 
 #undef ENOTSUP
 #define ENOTSUP	-1030507
-
-/*
- * cygwin does not have this struct.
- */
-#ifdef __CYGWIN__
-  struct _stat32i64 {
-    dev_t st_dev;
-    ino_t st_ino;
-    unsigned short st_mode;
-    short st_nlink;
-    short st_uid;
-    short st_gid;
-    dev_t st_rdev;
-    __int64 st_size;
-    struct {long tv_sec;} st_atim;
-    struct {long tv_sec;} st_mtim;
-    struct {long tv_sec;} st_ctim;
-  };
-#endif
 
 /* Those codes, from Visual Studio 2010, conflict with other values */
 #undef ENODATA
@@ -380,17 +346,17 @@ typedef DWORD_PTR * PDWORD_PTR;
  * EDEADLK as the same value, which confuses Tcl_ErrnoId().
  */
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
 #   define environ _environ
-#    if defined(_MSC_VER) && (_MSC_VER < 1600)
+#   if defined(_MSC_VER) && (_MSC_VER < 1600)
 #	define hypot _hypot
-#    endif
+#   endif
 #   define exception _exception
 #   undef EDEADLOCK
-#   if defined(__MINGW32__) && !defined(__MSVCRT__)
+#   if defined(_MSC_VER) && (_MSC_VER >= 1700)
 #	define timezone _timezone
 #   endif
-#endif /* _MSC_VER || __MINGW32__ */
+#endif /* _MSC_VER || __MSVCRT__ */
 
 /*
  * Borland's timezone and environ functions.
@@ -402,11 +368,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif /* __BORLANDC__ */
 
 #ifdef __WATCOMC__
-    /*
-     * OpenWatcom uses a wine derived winsock2.h that is missing the
-     * LPFN_* typedefs.
-     */
-#   define HAVE_NO_LPFN_DECLS
 #   if !defined(__CHAR_SIGNED__)
 #	error "You must use the -j switch to ensure char is signed."
 #   endif
@@ -418,8 +379,10 @@ typedef DWORD_PTR * PDWORD_PTR;
  * including the *printf family and others. Tell it to shut up.
  * (_MSC_VER is 1200 for VC6, 1300 or 1310 for vc7.net, 1400 for 8.0)
  */
-#if _MSC_VER >= 1400
-#pragma warning(disable:4996)
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+#   pragma warning(disable:4244)
+#   pragma warning(disable:4267)
+#   pragma warning(disable:4996)
 #endif
 
 
@@ -462,14 +425,14 @@ typedef DWORD_PTR * PDWORD_PTR;
  * Msvcrt's putenv() copies the string rather than takes ownership of it.
  */
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
 #   define HAVE_PUTENV_THAT_COPIES 1
 #endif
 
 /*
  * Older version of Mingw are known to lack a MWMO_ALERTABLE define.
  */
-#if defined(HAVE_NO_MWMO_ALERTABLE)
+#if !defined(MWMO_ALERTABLE)
 #   define MWMO_ALERTABLE 2
 #endif
 
@@ -478,29 +441,13 @@ typedef DWORD_PTR * PDWORD_PTR;
  * use by tclAlloc.c.
  */
 
-#ifdef __CYGWIN__
-#   define TclpSysAlloc(size, isBin)	malloc((size))
-#   define TclpSysFree(ptr)		free((ptr))
-#   define TclpSysRealloc(ptr, size)	realloc((ptr), (size))
-#else
-#   define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
+#define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
 					    (DWORD)0, (DWORD)size))
-#   define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
+#define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
 					    (DWORD)0, (HGLOBAL)ptr))
-#   define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
+#define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
 					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
-#endif
 
-/*
- * The following defines map from standard socket names to our internal
- * wrappers that redirect through the winSock function table (see the
- * file tclWinSock.c).
- */
-
-#define getservbyname	TclWinGetServByName
-#define getsockopt	TclWinGetSockOpt
-#define ntohs		TclWinNToHS
-#define setsockopt	TclWinSetSockOpt
 /* This type is not defined in the Windows headers */
 #define socklen_t       int
 

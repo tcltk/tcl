@@ -18,6 +18,16 @@
 #endif
 
 /*
+ * Fallback temporary file location the temporary file generation code. Can be
+ * overridden at compile time for when it is known that temp files can't be
+ * written to /tmp (hello, iOS!).
+ */
+
+#ifndef TCL_TEMPORARY_FILE_DIRECTORY
+#define TCL_TEMPORARY_FILE_DIRECTORY	"/tmp"
+#endif
+
+/*
  * The following macros convert between TclFile's and fd's. The conversion
  * simple involves shifting fd's up by one to ensure that no valid fd is ever
  * the same as NULL.
@@ -48,6 +58,7 @@ typedef struct PipeState {
  * Declarations for local functions defined in this file:
  */
 
+static const char *	DefaultTempDir(void);
 static int		PipeBlockModeProc(ClientData instanceData, int mode);
 static int		PipeCloseProc(ClientData instanceData,
 			    Tcl_Interp *interp);
@@ -198,7 +209,7 @@ TclpCreateTempFile(
      * We should also check against making more then TMP_MAX of these.
      */
 
-    strcpy(fileName, P_tmpdir);				/* INTL: Native. */
+    strcpy(fileName, DefaultTempDir());			/* INTL: Native. */
     if (fileName[strlen(fileName) - 1] != '/') {
 	strcat(fileName, "/");				/* INTL: Native. */
     }
@@ -212,7 +223,7 @@ TclpCreateTempFile(
 
     if (contents != NULL) {
 	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
-	if (write(fd, native, strlen(native)) == -1) {
+	if (write(fd, native, Tcl_DStringLength(&dstring)) == -1) {
 	    close(fd);
 	    Tcl_DStringFree(&dstring);
 	    return NULL;
@@ -250,7 +261,7 @@ TclpTempFileName(void)
      * We should also check against making more then TMP_MAX of these.
      */
 
-    strcpy(fileName, P_tmpdir);		/* INTL: Native. */
+    strcpy(fileName, DefaultTempDir());	/* INTL: Native. */
     if (fileName[strlen(fileName) - 1] != '/') {
 	strcat(fileName, "/");		/* INTL: Native. */
     }
@@ -265,6 +276,44 @@ TclpTempFileName(void)
     result = TclpNativeToNormalized((ClientData) fileName);
     close(fd);
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DefaultTempDir --
+ *
+ *	Helper that does *part* of what tempnam() does.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static const char *
+DefaultTempDir(void)
+{
+    const char *dir;
+    struct stat buf;
+
+    dir = getenv("TMPDIR");
+    if (dir && dir[0] && stat(dir, &buf) == 0 && S_ISDIR(buf.st_mode)
+	    && access(dir, W_OK)) {
+	return dir;
+    }
+
+#ifdef P_tmpdir
+    dir = P_tmpdir;
+    if (stat(dir, &buf) == 0 && S_ISDIR(buf.st_mode) && access(dir, W_OK)) {
+	return dir;
+    }
+#endif
+
+    /*
+     * Assume that the default location ("/tmp" if not overridden) is always
+     * an existing writable directory; we've no recovery mechanism if it
+     * isn't.
+     */
+
+    return TCL_TEMPORARY_FILE_DIRECTORY;
 }
 
 /*

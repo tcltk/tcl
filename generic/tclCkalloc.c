@@ -150,6 +150,10 @@ TclInitDbCkalloc(void)
     if (!ckallocInit) {
 	ckallocInit = 1;
 	ckallocMutexPtr = Tcl_GetAllocMutex();
+#ifndef TCL_THREADS
+	/* Silence compiler warning */
+	(void)ckallocMutexPtr;
+#endif
     }
 }
 
@@ -583,7 +587,7 @@ Tcl_AttemptDbCkalloc(
  *----------------------------------------------------------------------
  */
 
-int
+void
 Tcl_DbCkfree(
     char *ptr,
     CONST char *file,
@@ -592,7 +596,7 @@ Tcl_DbCkfree(
     struct mem_header *memp;
 
     if (ptr == NULL) {
-	return 0;
+	return;
     }
 
     /*
@@ -646,8 +650,6 @@ Tcl_DbCkfree(
     }
     TclpFree((char *) memp);
     Tcl_MutexUnlock(ckallocMutexPtr);
-
-    return 0;
 }
 
 /*
@@ -1219,14 +1221,13 @@ Tcl_Free(
     TclpFree(ptr);
 }
 
-int
+void
 Tcl_DbCkfree(
     char *ptr,
     CONST char *file,
     int line)
 {
     TclpFree(ptr);
-    return 0;
 }
 
 /*

@@ -12,7 +12,7 @@ item: Global
   Log Pathname=%MAINDIR%\INSTALL.LOG
   Message Font=MS Sans Serif
   Font Size=8
-  Disk Label=tcl8.5.11
+  Disk Label=tcl8.5.19
   Disk Filename=setup
   Patch Flags=0000000000000001
   Patch Threshold=85
@@ -156,7 +156,7 @@ item: Custom Dialog Set
     Title=%APPTITLE% Installation
     Title French=Bienvenue
     Title German=Willkommen
-    Title Portuguese=Bem-vindo 
+    Title Portuguese=Bem-vindo
     Title Spanish=Bienvenido
     Title Italian=Benvenuto
     Title Danish=Velkommen
@@ -290,7 +290,7 @@ item: Custom Dialog Set
       Create Flags=01010000000000000000000000000000
       Text=This installation program will install %APPTITLE%.
       Text=
-      Text=Press the Next button to start the installation. You can press the Exit Setup button now if you do not want to install %APPTITLE% at this time. 
+      Text=Press the Next button to start the installation. You can press the Exit Setup button now if you do not want to install %APPTITLE% at this time.
       Text=
       Text=It is strongly recommended that you exit all Windows programs before running this installation program.
       Text French=Ce programme d'installation va installer %APPTITLE%.
@@ -773,10 +773,10 @@ item: Custom Dialog Set
       Name=Times New Roman
       Font Style=-24 0 0 0 700 255 0 0 0 3 2 1 18
       Text=Select ProgMan Group
-      Text French=Sélectionner le groupe du Gestionnaire de programme 
+      Text French=Sélectionner le groupe du Gestionnaire de programme
       Text German=Bestimmung der Programm-Managergruppe
       Text Spanish=Seleccione grupo del Administrador de programas
-      Text Italian=Selezionare il gruppo ProgMan 
+      Text Italian=Selezionare il gruppo ProgMan
     end
     item: Static
       Rectangle=86 44 256 68
@@ -1063,12 +1063,12 @@ item: If/While Statement
 end
 item: Install File
   Source=${__TCLBASEDIR__}\library\msgcat\pkgIndex.tcl
-  Destination=%MAINDIR%\lib\tcl%VER%\msgcat1.4\pkgIndex.tcl
+  Destination=%MAINDIR%\lib\tcl%VER%\msgcat1.5\pkgIndex.tcl
   Flags=0000000010000010
 end
 item: Install File
   Source=${__TCLBASEDIR__}\library\msgcat\msgcat.tcl
-  Destination=%MAINDIR%\lib\tcl%VER%\msgcat1.4\msgcat.tcl
+  Destination=%MAINDIR%\lib\tcl%VER%\msgcat1.5\msgcat.tcl
   Flags=0000000010000010
 end
 item: Install File

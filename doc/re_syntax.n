@@ -5,8 +5,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.so man.macros
 .TH re_syntax n "8.1" Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 .SH NAME
 re_syntax \- Syntax of Tcl regular expressions
@@ -176,7 +176,7 @@ endpoint, so e.g.
 .QW \fBa\-c\-e\fR
 is illegal. Ranges in Tcl always use the
 Unicode collating sequence, but other programs may use other collating
-sequences and this can be a source of incompatability between programs.
+sequences and this can be a source of incompatibility between programs.
 .PP
 To include a literal \fB]\fR or \fB\-\fR in the list, the simplest
 method is to enclose it in \fB[.\fR and \fB.]\fR to make it a

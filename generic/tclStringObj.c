@@ -128,9 +128,9 @@ typedef struct String {
 	(String *) attemptckrealloc((char *) ptr, \
 		(unsigned) STRING_SIZE(STRING_UALLOC(numChars)) )
 #define GET_STRING(objPtr) \
-	((String *) (objPtr)->internalRep.otherValuePtr)
+	((String *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_STRING(objPtr, stringPtr) \
-	((objPtr)->internalRep.otherValuePtr = (void *) (stringPtr))
+	((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (stringPtr))
 
 /*
  * TCL STRING GROWTH ALGORITHM
@@ -741,7 +741,7 @@ Tcl_SetStringObj(
      * length bytes starting at "bytes".
      */
 
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
     if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
     }
@@ -815,7 +815,7 @@ Tcl_SetObjLength(
 
 	    if (objPtr->bytes != NULL && objPtr->length != 0) {
 		memcpy(newBytes, objPtr->bytes, (size_t) objPtr->length);
-		Tcl_InvalidateStringRep(objPtr);
+		TclInvalidateStringRep(objPtr);
 	    }
 	    objPtr->bytes = newBytes;
 	}
@@ -943,7 +943,7 @@ Tcl_AttemptSetObjLength(
 	    }
 	    if (objPtr->bytes != NULL && objPtr->length != 0) {
 		memcpy(newBytes, objPtr->bytes, (size_t) objPtr->length);
-		Tcl_InvalidateStringRep(objPtr);
+		TclInvalidateStringRep(objPtr);
 	    }
 	}
 	objPtr->bytes = newBytes;
@@ -1080,7 +1080,7 @@ SetUnicodeObj(
     memcpy(stringPtr->unicode, unicode, uallocated);
     stringPtr->unicode[numChars] = 0;
 
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
     objPtr->typePtr = &tclStringType;
     SET_STRING(objPtr, stringPtr);
 }
@@ -1139,7 +1139,8 @@ Tcl_AppendLimitedToObj(
 	if (ellipsis == NULL) {
 	    ellipsis = "...";
 	}
-	toCopy = Tcl_UtfPrev(bytes+limit+1-strlen(ellipsis), bytes) - bytes;
+	toCopy = (bytes == NULL) ? limit
+		: Tcl_UtfPrev(bytes+limit+1-strlen(ellipsis), bytes) - bytes;
     }
 
     /*
@@ -1260,6 +1261,8 @@ Tcl_AppendUnicodeToObj(
  * Side effects:
  *	The string rep of appendObjPtr is appended to the string
  *	representation of objPtr.
+ *	IMPORTANT: This routine does not and MUST NOT shimmer appendObjPtr.
+ *	Callers are counting on that.
  *
  *----------------------------------------------------------------------
  */
@@ -1386,11 +1389,12 @@ AppendUnicodeToUnicodeRep(
 	 * due to the reallocs below.
 	 */
 	int offset = -1;
-	if (unicode >= stringPtr->unicode && unicode <= stringPtr->unicode 
+	if (unicode && unicode >= stringPtr->unicode
+		&& unicode <= stringPtr->unicode
 		+ stringPtr->uallocated / sizeof(Tcl_UniChar)) {
 	    offset = unicode - stringPtr->unicode;
 	}
-	
+
 	GrowUnicodeBuffer(objPtr, numChars);
 	stringPtr = GET_STRING(objPtr);
 
@@ -1405,13 +1409,15 @@ AppendUnicodeToUnicodeRep(
      * trailing null.
      */
 
-    memcpy(stringPtr->unicode + stringPtr->numChars, unicode,
-	    appendNumChars * sizeof(Tcl_UniChar));
+    if (unicode) {
+	memcpy(stringPtr->unicode + stringPtr->numChars, unicode,
+		appendNumChars * sizeof(Tcl_UniChar));
+    }
     stringPtr->unicode[numChars] = 0;
     stringPtr->numChars = numChars;
     stringPtr->allocated = 0;
 
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
 }
 
 /*
@@ -1478,8 +1484,8 @@ AppendUtfToUnicodeRep(
     int numBytes)		/* Number of bytes of "bytes" to convert. */
 {
     Tcl_DString dsPtr;
-    int numChars;
-    Tcl_UniChar *unicode;
+    int numChars = numBytes;
+    Tcl_UniChar *unicode = NULL;
 
     if (numBytes < 0) {
 	numBytes = (bytes ? strlen(bytes) : 0);
@@ -1489,8 +1495,11 @@ AppendUtfToUnicodeRep(
     }
 
     Tcl_DStringInit(&dsPtr);
-    numChars = Tcl_NumUtfChars(bytes, numBytes);
-    unicode = (Tcl_UniChar *)Tcl_UtfToUniCharDString(bytes, numBytes, &dsPtr);
+    if (bytes) {
+	numChars = Tcl_NumUtfChars(bytes, numBytes);
+	unicode = (Tcl_UniChar *) Tcl_UtfToUniCharDString(bytes, numBytes,
+		&dsPtr);
+    }
     AppendUnicodeToUnicodeRep(objPtr, unicode, numChars);
     Tcl_DStringFree(&dsPtr);
 }
@@ -1547,7 +1556,7 @@ AppendUtfToUtfRep(
 	 * due to the reallocs below.
 	 */
 	int offset = -1;
-	if (bytes >= objPtr->bytes
+	if (bytes && bytes >= objPtr->bytes
 		&& bytes <= objPtr->bytes + objPtr->length) {
 	    offset = bytes - objPtr->bytes;
 	}
@@ -1568,7 +1577,7 @@ AppendUtfToUtfRep(
 	    unsigned int limit = INT_MAX - newLength;
 	    unsigned int extra = numBytes + TCL_GROWTH_MIN_ALLOC;
 	    int growth = (int) ((extra > limit) ? limit : extra);
-	
+
 	    Tcl_SetObjLength(objPtr, newLength + growth);
 	}
 
@@ -1585,7 +1594,9 @@ AppendUtfToUtfRep(
     stringPtr->numChars = -1;
     stringPtr->hasUnicode = 0;
 
-    memcpy(objPtr->bytes + oldLength, bytes, (size_t) numBytes);
+    if (bytes) {
+	memcpy(objPtr->bytes + oldLength, bytes, (size_t) numBytes);
+    }
     objPtr->bytes[newLength] = 0;
     objPtr->length = newLength;
 }
@@ -2702,6 +2713,38 @@ Tcl_ObjPrintf(
 /*
  *---------------------------------------------------------------------------
  *
+ * TclGetStringStorage --
+ *
+ *	Returns the string storage space of a Tcl_Obj.
+ *
+ * Results:
+ *	The pointer value objPtr->bytes is returned and the number of bytes
+ *	allocated there is written to *sizePtr (if known).
+ *
+ * Side effects:
+ *	May set objPtr->bytes.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+char *
+TclGetStringStorage(
+    Tcl_Obj *objPtr,
+    unsigned int *sizePtr)
+{
+    String *stringPtr;
+
+    if (objPtr->typePtr != &tclStringType || objPtr->bytes == NULL) {
+	return TclGetStringFromObj(objPtr, (int *)sizePtr);
+    }
+
+    stringPtr = GET_STRING(objPtr);
+    *sizePtr = stringPtr->allocated;
+    return objPtr->bytes;
+}
+/*
+ *---------------------------------------------------------------------------
+ *
  * TclStringObjReverse --
  *
  *	Implements the [string reverse] operation.
@@ -2757,7 +2800,7 @@ TclStringObjReverse(
 	    source[lastCharIdx--] = source[i];
 	    source[i++] = tmp;
 	}
-	Tcl_InvalidateStringRep(objPtr);
+	TclInvalidateStringRep(objPtr);
 	stringPtr->allocated = 0;
 	return objPtr;
     }

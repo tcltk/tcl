@@ -10,11 +10,7 @@
  */
 
 #include <stdio.h>
-#ifdef __CYGWIN__
-#   include <unistd.h>
-#else
-#   include <io.h>
-#endif
+#include <io.h>
 #include <string.h>
 
 int

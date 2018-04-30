@@ -12,8 +12,6 @@
 
 #include "tclWinInt.h"
 
-#include <sys/stat.h>
-
 /*
  * The following variable is used to tell whether this module has been
  * initialized.
@@ -685,6 +683,7 @@ TclpCreateTempFile(
     if (contents != NULL) {
 	DWORD result, length;
 	const char *p;
+	int toCopy;
 
 	/*
 	 * Convert the contents from UTF to native encoding
@@ -692,7 +691,8 @@ TclpCreateTempFile(
 
 	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
 
-	for (p = native; *p != '\0'; p++) {
+	toCopy = Tcl_DStringLength(&dstring);
+	for (p = native; toCopy > 0; p++, toCopy--) {
 	    if (*p == '\n') {
 		length = p - native;
 		if (length > 0) {
@@ -869,7 +869,7 @@ TclpCloseFile(
  *--------------------------------------------------------------------------
  */
 
-unsigned long
+int
 TclpGetPid(
     Tcl_Pid pid)		/* The HANDLE of the child process. */
 {
@@ -1369,7 +1369,7 @@ ApplicationType(
     Tcl_DString nameBuf, ds;
     const TCHAR *nativeName;
     WCHAR nativeFullPath[MAX_PATH];
-    static char extensions[][5] = {"", ".com", ".exe", ".bat"};
+    static const char extensions[][5] = {"", ".com", ".exe", ".bat"};
 
     /*
      * Look for the program as an external program. First try the name as it
@@ -1694,7 +1694,7 @@ TclpCreateCommandChannel(
 	infoPtr->stopWriter = CreateEvent(NULL, TRUE, FALSE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
 		infoPtr, 0, &id);
-	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
+	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     }
 
@@ -1705,7 +1705,7 @@ TclpCreateCommandChannel(
      * unique, in case channels share handles (stdin/stdout).
      */
 
-    wsprintfA(channelName, "file%lx", infoPtr);
+    sprintf(channelName, "file%" TCL_I_MODIFIER "x", (size_t)infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    (ClientData) infoPtr, infoPtr->validMask);
 

@@ -6,9 +6,9 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
+#
 # Copyright (c) 2001-2003 David Gravereaux.
-# Copyright (c) 2003-2007 Patrick Thoyts
+# Copyright (c) 2003-2008 Patrick Thoyts
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -159,7 +159,7 @@ DEBUGFLAGS     = $(DEBUGFLAGS) -RTC1
 DEBUGFLAGS     = $(DEBUGFLAGS) -GZ
 !endif
 
-COMPILERFLAGS  =-W3
+COMPILERFLAGS  =-W3 /D_ATL_XP_TARGETING
 
 # In v13 -GL and -YX are incompatible.
 !if [nmakehlp -c -YX]
@@ -188,9 +188,14 @@ COMPILERFLAGS   = $(COMPILERFLAGS) -QIA64_Bx
 !endif
 !endif
 
+# Prevents "LNK1561: entry point must be defined" error compiling from VS-IDE:
+!ifndef LINKER_TESTFLAGS
+LINKER_TESTFLAGS = /DLL /NOENTRY /OUT:nmhlp-out.txt
+!endif
+
 !if "$(MACHINE)" == "IX86"
 ### test for -align:4096, when align:512 will do.
-!if [nmakehlp -l -opt:nowin98]
+!if [nmakehlp -l -opt:nowin98 $(LINKER_TESTFLAGS)]
 !message *** Linker has 'Win98 alignment problem'
 ALIGN98_HACK	= 1
 !else
@@ -203,7 +208,7 @@ ALIGN98_HACK	= 0
 
 LINKERFLAGS     =
 
-!if [nmakehlp -l -ltcg]
+!if [nmakehlp -l -ltcg $(LINKER_TESTFLAGS)]
 LINKERFLAGS     =-ltcg
 !endif
 
@@ -217,7 +222,8 @@ TCL_THREADS	= 0
 DEBUG		= 0
 SYMBOLS		= 0
 PROFILE		= 0
-MSVCRT		= 0
+PGO		= 0
+MSVCRT		= 1
 LOIMPACT	= 0
 TCL_USE_STATIC_PACKAGES	= 0
 USE_THREAD_ALLOC = 0
@@ -233,9 +239,13 @@ STATIC_BUILD	= 0
 !message *** Doing msvcrt
 MSVCRT		= 1
 !else
+!if !$(STATIC_BUILD)
+MSVCRT		= 1
+!else
 MSVCRT		= 0
 !endif
-!if [nmakehlp -f $(OPTS) "staticpkg"]
+!endif
+!if [nmakehlp -f $(OPTS) "staticpkg"] && $(STATIC_BUILD)
 !message *** Doing staticpkg
 TCL_USE_STATIC_PACKAGES	= 1
 !else
@@ -244,8 +254,10 @@ TCL_USE_STATIC_PACKAGES	= 0
 !if [nmakehlp -f $(OPTS) "threads"]
 !message *** Doing threads
 TCL_THREADS	= 1
+USE_THREAD_ALLOC = 1
 !else
 TCL_THREADS	= 0
+USE_THREAD_ALLOC = 0
 !endif
 !if [nmakehlp -f $(OPTS) "symbols"]
 !message *** Doing symbols
@@ -265,6 +277,15 @@ PROFILE		= 1
 !else
 PROFILE		= 0
 !endif
+!if [nmakehlp -f $(OPTS) "pgi"]
+!message *** Doing profile guided optimization instrumentation
+PGO		= 1
+!elseif [nmakehlp -f $(OPTS) "pgo"]
+!message *** Doing profile guided optimization
+PGO		= 2
+!else
+PGO		= 0
+!endif
 !if [nmakehlp -f $(OPTS) "loimpact"]
 !message *** Doing loimpact
 LOIMPACT	= 1
@@ -274,7 +295,9 @@ LOIMPACT	= 0
 !if [nmakehlp -f $(OPTS) "thrdalloc"]
 !message *** Doing thrdalloc
 USE_THREAD_ALLOC = 1
-!else
+!endif
+!if [nmakehlp -f $(OPTS) "tclalloc"]
+!message *** Doing tclalloc
 USE_THREAD_ALLOC = 0
 !endif
 !if [nmakehlp -f $(OPTS) "unchecked"]
@@ -284,15 +307,6 @@ UNCHECKED = 1
 UNCHECKED = 0
 !endif
 !endif
-
-
-!if !$(STATIC_BUILD)
-# Make sure we don't build overly fat DLLs.
-MSVCRT		= 1
-# We shouldn't statically put the extensions inside the shell when dynamic.
-TCL_USE_STATIC_PACKAGES = 0
-!endif
-
 
 #----------------------------------------------------------
 # Figure-out how to name our intermediate and output directories.
@@ -335,10 +349,8 @@ TMP_DIRFULL = .\$(BUILDDIRTOP)\$(PROJECT)_ThreadedDynamicStaticX
 TMP_DIRFULL = $(TMP_DIRFULL:Static=)
 SUFX	    = $(SUFX:s=)
 EXT	    = dll
-!if $(MSVCRT)
 TMP_DIRFULL = $(TMP_DIRFULL:X=)
 SUFX	    = $(SUFX:x=)
-!endif
 !else
 TMP_DIRFULL = $(TMP_DIRFULL:Dynamic=)
 EXT	    = lib
@@ -405,7 +417,7 @@ TCL_NO_DEPRECATED	    = 0
 !if [nmakehlp -f $(CHECKS) "fullwarn"]
 !message *** Doing full warnings check
 WARNINGS		    = -W4
-!if [nmakehlp -l -warn:3]
+!if [nmakehlp -l -warn:3 $(LINKER_TESTFLAGS)]
 LINKERFLAGS		    = $(LINKERFLAGS) -warn:3
 !endif
 !else
@@ -414,6 +426,24 @@ WARNINGS		    = -W3
 !if [nmakehlp -f $(CHECKS) "64bit"] && [nmakehlp -c -Wp64]
 !message *** Doing 64bit portability warnings
 WARNINGS		    = $(WARNINGS) -Wp64
+!endif
+!endif
+
+!if $(PGO) > 1
+!if [nmakehlp -l -ltcg:pgoptimize $(LINKER_TESTFLAGS)]
+LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pgoptimize
+!else
+MSG=^
+This compiler does not support profile guided optimization.
+!error $(MSG)
+!endif
+!elseif $(PGO) > 0
+!if [nmakehlp -l -ltcg:pginstrument $(LINKER_TESTFLAGS)]
+LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pginstrument
+!else
+MSG=^
+This compiler does not support profile guided optimization.
+!error $(MSG)
 !endif
 !endif
 
@@ -442,10 +472,11 @@ OPTDEFINES	= $(OPTDEFINES) -DSTATIC_BUILD
 OPTDEFINES	= $(OPTDEFINES) -DTCL_NO_DEPRECATED
 !endif
 
-!if $(DEBUG)
-OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DEBUG
-!elseif $(OPTIMIZING)
+!if !$(DEBUG)
+OPTDEFINES	= $(OPTDEFINES) -DNDEBUG
+!if $(OPTIMIZING)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_OPTIMIZED
+!endif
 !endif
 !if $(PROFILE)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_PROFILED
@@ -453,7 +484,9 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_PROFILED
 !if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 !endif
-
+!if $(VCVERSION) < 1300
+OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
+!endif
 
 #----------------------------------------------------------
 # Locate the Tcl headers to build against
@@ -548,12 +581,6 @@ Failed to find tcl.h.  The TCLDIR macro does not appear correct.
 !if "$(PROJECT)" != "tcl"
 
 TCL_VERSION	= $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
-
-!if $(TCL_VERSION) < 81
-TCL_DOES_STUBS	= 0
-!else
-TCL_DOES_STUBS	= 1
-!endif
 
 !if $(TCLINSTALL)
 TCLSH		= "$(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX).exe"

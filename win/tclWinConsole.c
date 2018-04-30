@@ -14,7 +14,6 @@
 
 #include <fcntl.h>
 #include <io.h>
-#include <sys/stat.h>
 
 /*
  * The following variable is used to tell whether this module has been
@@ -1362,7 +1361,7 @@ TclWinOpenConsoleChannel(
      * for instance).
      */
 
-    wsprintfA(channelName, "file%lx", PTR2INT(infoPtr));
+    sprintf(channelName, "file%" TCL_I_MODIFIER "x", (size_t)infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&consoleChannelType, channelName,
 	    (ClientData) infoPtr, permissions);

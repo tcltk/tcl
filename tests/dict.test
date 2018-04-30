@@ -1212,7 +1212,7 @@ test dict-23.1 {dict compilation crash: Bug 3487626} {
 	}
     }} [linenumber]
 } 5
-test dict-23.2 {dict compilation crash: Bug 3487626} knownBug {
+test dict-23.2 {dict compilation crash: Bug 3487626} {
     # Something isn't quite right in line number and continuation line
     # tracking; at time of writing, this test produces 7, not 5, which
     # indicates that the extra newlines in the non-script argument are
@@ -1243,6 +1243,41 @@ j
 	}
     }} [linenumber]
 } 5
+test dict-23.3 {CompileWord OBOE} {
+    # segfault when buggy
+    apply {{} {tcl::dict::lappend foo bar \
+	[format baz]}}
+} {bar baz}
+test dict-23.4 {CompileWord OBOE} {
+    apply {n {
+	dict set foo {*}{
+	} [return [incr n -[linenumber]]] val
+    }} [linenumber]
+} 1
+test dict-23.5 {CompileWord OBOE} {
+    # segfault when buggy
+    apply {{} {tcl::dict::incr foo \
+	[format bar]}}
+} {bar 1}
+test dict-23.6 {CompileWord OBOE} {
+    apply {n {
+	dict get {a b} {*}{
+	} [return [incr n -[linenumber]]]
+    }} [linenumber]
+} 1
+test dict-23.7 {CompileWord OBOE} {
+    apply {n {
+	dict for {a b} [return [incr n -[linenumber]]] {*}{
+	} {}
+    }} [linenumber]
+} 2
+test dict-23.8 {CompileWord OBOE} {
+    apply {n {
+	dict update foo {*}{
+	} [return [incr n -[linenumber]]] x {}
+    }} [linenumber]
+} 1
+
 rename linenumber {}
 
 # cleanup

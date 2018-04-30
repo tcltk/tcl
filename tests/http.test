@@ -54,7 +54,7 @@ if {![file exists $httpdFile]} {
 }
 
 if {[info commands testthread] == "testthread" && [file exists $httpdFile]} {
-    set httpthread [testthread create "
+    set httpthread [testthread create -joinable "
 	source [list $httpdFile]
 	testthread wait
     "]
@@ -120,7 +120,7 @@ test http-3.2 {http::geturl} {
     set err
 } {Unsupported URL: http:junk}
 set url //[info hostname]:$port
-set badurl //[info hostname]:6666
+set badurl //[info hostname]:[expr $port+1]
 test http-3.3 {http::geturl} {
     set token [http::geturl $url]
     http::data $token
@@ -130,10 +130,12 @@ test http-3.3 {http::geturl} {
 </body></html>"
 set tail /a/b/c
 set url //[info hostname]:$port/a/b/c
-set fullurl http://user:pass@[info hostname]:$port/a/b/c
+set fullurl HTTP://user:pass@[info hostname]:$port/a/b/c
 set binurl //[info hostname]:$port/binary
+set xmlurl //[info hostname]:$port/xml
 set posturl //[info hostname]:$port/post
 set badposturl //[info hostname]:$port/droppost
+set authorityurl //[info hostname]:$port
 test http-3.4 {http::geturl} {
     set token [http::geturl $url]
     http::data $token
@@ -351,6 +353,24 @@ User-Agent .*
 Connection close
 Content-Type {text/plain;charset=utf-8}
 Content-Length 5}
+test http-3.30 {http::geturl query without path} -body {
+    set token [http::geturl $authorityurl?var=val]
+    http::ncode $token
+} -cleanup {
+    catch { http::cleanup $token }
+} -result 200
+test http-3.31 {http::geturl fragment without path} -body {
+    set token [http::geturl "$authorityurl#fragment42"]
+    http::ncode $token
+} -cleanup {
+    catch { http::cleanup $token }
+} -result 200
+test http-3.32 {http::geturl application/xml is text} -body {
+    set token [http::geturl "$xmlurl"]
+    scan [http::data $token] "<%\[^>]>%c<%\[^>]>"
+} -cleanup {
+    catch { http::cleanup $token }
+} -result {test 4660 /test}
 
 test http-4.1 {http::Event} {
     set token [http::geturl $url -keepalive 0]
@@ -464,9 +484,8 @@ test http-4.14 {http::Event} -body {
 	error "bogus return from http::geturl"
     }
     http::wait $token
-    http::status $token
-    # error code varies among platforms.
-} -returnCodes 1 -match regexp -result {(connect failed|couldn't open socket)}
+    lindex [http::error $token] 0
+} -result {connect failed connection refused}
 # Bogus host
 test http-4.15 {http::Event} -body {
     # This test may fail if you use a proxy server. That is to be
@@ -542,6 +561,7 @@ if {[info exists httpthread]} {
     testthread send -async $httpthread {
 	testthread exit
     }
+    testthread join $httpthread
 } else {
     close $listen
 }

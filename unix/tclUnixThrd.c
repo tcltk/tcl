@@ -14,8 +14,6 @@
 
 #ifdef TCL_THREADS
 
-#include "pthread.h"
-
 typedef struct ThreadSpecificData {
     char nabuf[16];
 } ThreadSpecificData;
@@ -221,13 +219,13 @@ TclpThreadGetStackSize(void)
 #if defined(HAVE_PTHREAD_ATTR_SETSTACKSIZE) && defined(TclpPthreadGetAttrs)
     pthread_attr_t threadAttr;	/* This will hold the thread attributes for
 				 * the current thread. */
-#ifdef __GLIBC__ 
+#ifdef __GLIBC__
     /*
      * Fix for [Bug 1815573]
      *
      * DESCRIPTION:
      * On linux TclpPthreadGetAttrs (which is pthread_attr_get_np) may return
-     * bogus values on the initial thread. 
+     * bogus values on the initial thread.
      *
      * ASSUMPTIONS:
      * There seems to be no api to determine if we are on the initial
@@ -265,7 +263,7 @@ TclpThreadGetStackSize(void)
 	}
     }
 
-    
+
     if (pthread_attr_getstacksize(&threadAttr, &stackSize) != 0) {
 	pthread_attr_destroy(&threadAttr);
 	return (size_t)-1;
@@ -276,7 +274,7 @@ TclpThreadGetStackSize(void)
     /*
      * On Darwin, the API below does not return the correct stack size for the
      * main thread (which is not a real pthread), so fallback to getrlimit().
-     */  
+     */
     if (!pthread_main_np())
 #endif
     stackSize = pthread_get_stacksize_np(pthread_self());
@@ -454,7 +452,6 @@ TclpMasterUnlock(void)
     pthread_mutex_unlock(&masterLock);
 #endif
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -514,6 +511,7 @@ Tcl_MutexLock(
     Tcl_Mutex *mutexPtr)	/* Really (pthread_mutex_t **) */
 {
     pthread_mutex_t *pmutexPtr;
+
     if (*mutexPtr == NULL) {
 	MASTER_LOCK;
 	if (*mutexPtr == NULL) {
@@ -812,14 +810,16 @@ TclpFreeAllocCache(
 {
     if (ptr != NULL) {
 	/*
-	 * Called by the pthread lib when a thread exits
+	 * Called by TclFinalizeThreadAllocThread() during the thread
+	 * finalization initiated from Tcl_FinalizeThread()
 	 */
 
 	TclFreeAllocCache(ptr);
+	pthread_setspecific(key, NULL);
 
     } else if (initialized) {
 	/*
-	 * Called by us in TclFinalizeThreadAlloc() during the library
+	 * Called by TclFinalizeThreadAlloc() during the process
 	 * finalization initiated from Tcl_Finalize()
 	 */
 
@@ -834,7 +834,7 @@ TclpGetAllocCache(void)
     if (!initialized) {
 	pthread_mutex_lock(allocLockPtr);
 	if (!initialized) {
-	    pthread_key_create(&key, TclpFreeAllocCache);
+	    pthread_key_create(&key, NULL);
 	    initialized = 1;
 	}
 	pthread_mutex_unlock(allocLockPtr);

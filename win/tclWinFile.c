@@ -15,9 +15,9 @@
 #include "tclWinInt.h"
 #include "tclFileSystem.h"
 #include <winioctl.h>
-#include <sys/stat.h>
 #include <shlobj.h>
 #include <lmaccess.h>		/* For TclpGetUserHome(). */
+#include <userenv.h>		/* For TclpGetUserHome(). */
 
 /*
  * The number of 100-ns intervals between the Windows system epoch (1601-01-01
@@ -178,6 +178,10 @@ typedef NET_API_STATUS NET_API_FUNCTION NETAPIBUFFERFREEPROC(LPVOID Buffer);
 typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC(
 	LPWSTR servername, LPWSTR domainname, LPBYTE *bufptr);
 
+typedef BOOL WINAPI GETPROFILESDIRECTORYPROC(
+	LPWSTR  lpProfilesDir, LPDWORD lpcchSize
+);
+
 /*
  * Declarations for local functions defined in this file:
  */
@@ -190,7 +194,7 @@ static unsigned short	NativeStatMode(DWORD attr, int checkLinks,
 			    int isExec);
 static int		NativeIsExec(const TCHAR *path);
 static int		NativeReadReparse(const TCHAR *LinkDirectory,
-			    REPARSE_DATA_BUFFER *buffer);
+			    REPARSE_DATA_BUFFER *buffer, DWORD desiredAccess);
 static int		NativeWriteReparse(const TCHAR *LinkDirectory,
 			    REPARSE_DATA_BUFFER *buffer);
 static int		NativeMatchType(int isDrive, DWORD attr,
@@ -481,7 +485,7 @@ TclWinSymLinkCopyDirectory(
     DUMMY_REPARSE_BUFFER dummy;
     REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
 
-    if (NativeReadReparse(linkOrigPath, reparseBuffer)) {
+    if (NativeReadReparse(linkOrigPath, reparseBuffer, GENERIC_READ)) {
 	return -1;
     }
     return NativeWriteReparse(linkCopyPath, reparseBuffer);
@@ -580,7 +584,7 @@ WinReadLinkDirectory(
     if (!(attr & FILE_ATTRIBUTE_REPARSE_POINT)) {
 	goto invalidError;
     }
-    if (NativeReadReparse(linkDirPath, reparseBuffer)) {
+    if (NativeReadReparse(linkDirPath, reparseBuffer, 0)) {
 	return NULL;
     }
 
@@ -699,12 +703,13 @@ WinReadLinkDirectory(
 static int
 NativeReadReparse(
     const TCHAR *linkDirPath,	/* The junction to read */
-    REPARSE_DATA_BUFFER *buffer)/* Pointer to buffer. Cannot be NULL */
+    REPARSE_DATA_BUFFER *buffer,/* Pointer to buffer. Cannot be NULL */
+    DWORD desiredAccess)
 {
     HANDLE hFile;
     DWORD returnedLength;
 
-    hFile = (*tclWinProcs->createFileProc)(linkDirPath, GENERIC_READ, 0,
+    hFile = (*tclWinProcs->createFileProc)(linkDirPath, desiredAccess, FILE_SHARE_READ,
 	    NULL, OPEN_EXISTING,
 	    FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
@@ -1225,9 +1230,9 @@ WinIsReserved(
     if ((path[0] == 'c' || path[0] == 'C')
 	    && (path[1] == 'o' || path[1] == 'O')) {
 	if ((path[2] == 'm' || path[2] == 'M')
-		&& path[3] >= '1' && path[3] <= '4') {
+		&& path[3] >= '1' && path[3] <= '9') {
 	    /*
-	     * May have match for 'com[1-4]:?', which is a serial port.
+	     * May have match for 'com[1-9]:?', which is a serial port.
 	     */
 
 	    if (path[4] == '\0') {
@@ -1246,9 +1251,9 @@ WinIsReserved(
     } else if ((path[0] == 'l' || path[0] == 'L')
 	    && (path[1] == 'p' || path[1] == 'P')
 	    && (path[2] == 't' || path[2] == 'T')) {
-	if (path[3] >= '1' && path[3] <= '3') {
+	if (path[3] >= '1' && path[3] <= '9') {
 	    /*
-	     * May have match for 'lpt[1-3]:?'
+	     * May have match for 'lpt[1-9]:?'
 	     */
 
 	    if (path[4] == '\0') {
@@ -1418,15 +1423,18 @@ TclpGetUserHome(
 {
     char *result;
     HINSTANCE netapiInst;
+    HINSTANCE userenvInst;
 
     result = NULL;
     Tcl_DStringInit(bufferPtr);
 
     netapiInst = LoadLibraryA("netapi32.dll");
-    if (netapiInst != NULL) {
+    userenvInst = LoadLibraryA("userenv.dll");
+    if (netapiInst != NULL && userenvInst != NULL) {
 	NETAPIBUFFERFREEPROC *netApiBufferFreeProc;
 	NETGETDCNAMEPROC *netGetDCNameProc;
 	NETUSERGETINFOPROC *netUserGetInfoProc;
+	GETPROFILESDIRECTORYPROC *getProfilesDirectoryProc;
 
 	netApiBufferFreeProc = (NETAPIBUFFERFREEPROC *)
 		GetProcAddress(netapiInst, "NetApiBufferFree");
@@ -1434,8 +1442,10 @@ TclpGetUserHome(
 		GetProcAddress(netapiInst, "NetGetDCName");
 	netUserGetInfoProc = (NETUSERGETINFOPROC *)
 		GetProcAddress(netapiInst, "NetUserGetInfo");
+	getProfilesDirectoryProc = (GETPROFILESDIRECTORYPROC *)
+		GetProcAddress(userenvInst, "GetProfilesDirectoryW");
 	if ((netUserGetInfoProc != NULL) && (netGetDCNameProc != NULL)
-		&& (netApiBufferFreeProc != NULL)) {
+		&& (netApiBufferFreeProc != NULL) && (getProfilesDirectoryProc != NULL)) {
 	    USER_INFO_1 *uiPtr, **uiPtrPtr = &uiPtr;
 	    Tcl_DString ds;
 	    int nameLen, badDomain;
@@ -1467,12 +1477,16 @@ TclpGetUserHome(
 		    } else {
 			/*
 			 * User exists but has no home dir. Return
-			 * "{Windows Drive}:/users/default".
+			 * "{GetProfilesDirectory}/<user>".
 			 */
-
-			GetWindowsDirectoryW(buf, MAX_PATH);
-			Tcl_UniCharToUtfDString(buf, 2, bufferPtr);
-			Tcl_DStringAppend(bufferPtr, "/users/default", -1);
+			DWORD i, size = MAX_PATH;
+			getProfilesDirectoryProc(buf, &size);
+			for (i = 0; i < size; ++i){
+			    if (buf[i] == '\\') buf[i] = '/';
+			}
+			Tcl_UniCharToUtfDString(buf, size-1, bufferPtr);
+			Tcl_DStringAppend(bufferPtr, "/", -1);
+			Tcl_DStringAppend(bufferPtr, name, -1);
 		    }
 		    result = Tcl_DStringValue(bufferPtr);
 		    (*netApiBufferFreeProc)((void *) uiPtr);
@@ -1483,6 +1497,7 @@ TclpGetUserHome(
 		(*netApiBufferFreeProc)((void *) wDomain);
 	    }
 	}
+	FreeLibrary(userenvInst);
 	FreeLibrary(netapiInst);
     }
     if (result == NULL) {
@@ -1543,11 +1558,14 @@ NativeAccess(
 
     if (attr == 0xffffffff) {
 	/*
-	 * File doesn't exist.
+	 * File might not exist.
 	 */
 
-	TclWinConvertError(GetLastError());
-	return -1;
+	DWORD lasterror = GetLastError();
+	if (lasterror != ERROR_SHARING_VIOLATION) {
+	    TclWinConvertError(lasterror);
+	    return -1;
+	}
     }
 
     if (mode == F_OK) {
@@ -1558,11 +1576,12 @@ NativeAccess(
 	return 0;
     }
 
-    if ((mode & W_OK)
-	&& (attr & FILE_ATTRIBUTE_READONLY)
-	&& !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+    /* 
+     * If it's not a directory (assume file), do several fast checks:
+     */
+    if (!(attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	/*
-	 * The attributes say the file is not writable.	 If the file is a
+	 * If the attributes say this is not writable at all.  The file is a
 	 * regular file (i.e., not a directory), then the file is not
 	 * writable, full stop.	 For directories, the read-only bit is
 	 * (mostly) ignored by Windows, so we can't ascertain anything about
@@ -1570,21 +1589,38 @@ NativeAccess(
 	 * advanced 'getFileSecurityProc', then more robust ACL checks
 	 * will be done below.
 	 */
-
-	Tcl_SetErrno(EACCES);
-	return -1;
-    }
-
-    if (mode & X_OK) {
-	if (!(attr & FILE_ATTRIBUTE_DIRECTORY) && !NativeIsExec(nativePath)) {
-	    /*
-	     * It's not a directory and doesn't have the correct extension.
-	     * Therefore it can't be executable
-	     */
-
+	if ((mode & W_OK) && (attr & FILE_ATTRIBUTE_READONLY)) {
 	    Tcl_SetErrno(EACCES);
 	    return -1;
 	}
+
+	/* If doesn't have the correct extension, it can't be executable */
+	if ((mode & X_OK) && !NativeIsExec(nativePath)) {
+	    Tcl_SetErrno(EACCES);
+	    return -1;
+	}
+	/* Special case for read/write/executable check on file */
+	if ((mode & (R_OK|W_OK|X_OK)) && !(mode & ~(R_OK|W_OK|X_OK))) {
+	    DWORD mask = 0;
+	    HANDLE hFile;
+	    if (mode & R_OK) { mask |= GENERIC_READ;  }
+	    if (mode & W_OK) { mask |= GENERIC_WRITE; }
+	    if (mode & X_OK) { mask |= GENERIC_EXECUTE; }
+
+	    hFile = (tclWinProcs->createFileProc)(nativePath, mask,
+		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+		OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, NULL);
+	    if (hFile != INVALID_HANDLE_VALUE) {
+		CloseHandle(hFile);
+		return 0;
+	    }
+	    /* fast exit if access was denied */
+	    if (GetLastError() == ERROR_ACCESS_DENIED) {
+		Tcl_SetErrno(EACCES);
+		return -1;
+	    }
+	}
+	/* We cannnot verify the access fast, check it below using security info. */
     }
 
     /*
@@ -1597,9 +1633,9 @@ NativeAccess(
     if (tclWinProcs->getFileSecurityProc != NULL) {
 	SECURITY_DESCRIPTOR *sdPtr = NULL;
 	unsigned long size;
-	SID *pSid = 0;
+	PSID pSid = 0;
 	BOOL SidDefaulted;
-	SID_IDENTIFIER_AUTHORITY samba_unmapped = { 0, 0, 0, 0, 0, 22 };
+	SID_IDENTIFIER_AUTHORITY samba_unmapped = {{0, 0, 0, 0, 0, 22}};
 	GENERIC_MAPPING genMap;
 	HANDLE hToken = NULL;
 	DWORD desiredAccess = 0, grantedAccess = 0;
@@ -1765,7 +1801,7 @@ NativeAccess(
  * NativeIsExec --
  *
  *	Determines if a path is executable. On windows this is simply defined
- *	by whether the path ends in any of ".exe", ".com", or ".bat"
+ *	by whether the path ends in a standard executable extension.
  *
  * Results:
  *	1 = executable, 0 = not.
@@ -1793,9 +1829,12 @@ NativeIsExec(
 	 * Use wide-char case-insensitive comparison
 	 */
 
-	if ((_wcsicmp(path+len-3, L"exe") == 0)
-		|| (_wcsicmp(path+len-3, L"com") == 0)
-		|| (_wcsicmp(path+len-3, L"bat") == 0)) {
+	path += len-3;
+	if ((_wcsicmp(path, L"exe") == 0)
+		|| (_wcsicmp(path, L"com") == 0)
+		|| (_wcsicmp(path, L"cmd") == 0)
+		|| (_wcsicmp(path, L"ps1") == 0)
+		|| (_wcsicmp(path, L"bat") == 0)) {
 	    return 1;
 	}
     } else {
@@ -1816,6 +1855,8 @@ NativeIsExec(
 
 	    if ((strcasecmp(p, "exe") == 0)
 		    || (strcasecmp(p, "com") == 0)
+		    || (strcasecmp(p, "cmd") == 0)
+		    || (strcasecmp(p, "ps1") == 0)
 		    || (strcasecmp(p, "bat") == 0)) {
 		/*
 		 * File that ends with .exe, .com, or .bat is executable.
@@ -1850,27 +1891,13 @@ TclpObjChdir(
 {
     int result;
     const TCHAR *nativePath;
-#ifdef __CYGWIN__
-    extern int cygwin_conv_to_posix_path(const char *, char *);
-    char posixPath[MAX_PATH+1];
-    const char *path;
-    Tcl_DString ds;
-#endif /* __CYGWIN__ */
 
     nativePath = (const TCHAR *) Tcl_FSGetNativePath(pathPtr);
 
-#ifdef __CYGWIN__
-    /*
-     * Cygwin chdir only groks POSIX path.
-     */
-
-    path = Tcl_WinTCharToUtf(nativePath, -1, &ds);
-    cygwin_conv_to_posix_path(path, posixPath);
-    result = (chdir(posixPath) == 0 ? 1 : 0);
-    Tcl_DStringFree(&ds);
-#else /* __CYGWIN__ */
+    if (!nativePath) {
+	return -1;
+    }
     result = (*tclWinProcs->setCurrentDirectoryProc)(nativePath);
-#endif /* __CYGWIN__ */
 
     if (result == 0) {
 	TclWinConvertError(GetLastError());
@@ -1878,51 +1905,6 @@ TclpObjChdir(
     }
     return 0;
 }
-
-#ifdef __CYGWIN__
-/*
- *---------------------------------------------------------------------------
- *
- * TclpReadlink --
- *
- *	This function replaces the library version of readlink().
- *
- * Results:
- *	The result is a pointer to a string specifying the contents of the
- *	symbolic link given by 'path', or NULL if the symbolic link could not
- *	be read. Storage for the result string is allocated in bufferPtr; the
- *	caller must call Tcl_DStringFree() when the result is no longer
- *	needed.
- *
- * Side effects:
- *	See readlink() documentation.
- *
- *---------------------------------------------------------------------------
- */
-
-char *
-TclpReadlink(
-    const char *path,		/* Path of file to readlink (UTF-8). */
-    Tcl_DString *linkPtr)	/* Uninitialized or free DString filled with
-				 * contents of link (UTF-8). */
-{
-    char link[MAXPATHLEN];
-    int length;
-    char *native;
-    Tcl_DString ds;
-
-    native = Tcl_UtfToExternalDString(NULL, path, -1, &ds);
-    length = readlink(native, link, sizeof(link));	/* INTL: Native. */
-    Tcl_DStringFree(&ds);
-
-    if (length < 0) {
-	return NULL;
-    }
-
-    Tcl_ExternalToUtfDString(NULL, link, length, linkPtr);
-    return Tcl_DStringValue(linkPtr);
-}
-#endif /* __CYGWIN__ */
 
 /*
  *----------------------------------------------------------------------
@@ -2108,8 +2090,21 @@ NativeStat(
 
 	if ((*tclWinProcs->getFileAttributesExProc)(nativePath,
 		GetFileExInfoStandard, &data) != TRUE) {
-	    Tcl_SetErrno(ENOENT);
-	    return -1;
+	    HANDLE hFind;
+	    WIN32_FIND_DATAT ffd;
+	    DWORD lasterror = GetLastError();
+
+	    if (lasterror != ERROR_SHARING_VIOLATION) {
+		TclWinConvertError(lasterror);
+		return -1;
+		}
+	    hFind = (*tclWinProcs->findFirstFileProc)(nativePath, &ffd);
+	    if (hFind == INVALID_HANDLE_VALUE) {
+		TclWinConvertError(GetLastError());
+		return -1;
+	    }
+	    memcpy(&data, &ffd, sizeof(data));
+	    FindClose(hFind);
 	}
 
 	attr = data.dwFileAttributes;
@@ -2631,6 +2626,12 @@ TclpObjNormalizePath(
 				}
 				Tcl_DStringAppend(&dsNorm, nativePath, len);
 				lastValidPathEnd = currentPathEndPosition;
+			    } else if (nextCheckpoint == 0) {
+				/* Path starts with a drive designation
+				 * that's not actually on the system.
+				 * We still must normalize up past the
+				 * first separator.  [Bug 3603434] */
+				currentPathEndPosition++;
 			    }
 			}
 			Tcl_DStringFree(&ds);
@@ -2773,6 +2774,12 @@ TclpObjNormalizePath(
 			    Tcl_DStringAppend(&dsNorm, nativePath,
 				    (int)(sizeof(WCHAR) * len));
 			    lastValidPathEnd = currentPathEndPosition;
+			} else if (nextCheckpoint == 0) {
+			    /* Path starts with a drive designation
+			     * that's not actually on the system.
+			     * We still must normalize up past the
+			     * first separator.  [Bug 3603434] */
+			    currentPathEndPosition++;
 			}
 		    }
 		    Tcl_DStringFree(&ds);
@@ -3231,19 +3238,75 @@ TclNativeCreateNativeRep(
     }
 
     str = Tcl_GetStringFromObj(validPathPtr, &len);
-    if (str[0] == '/' && str[1] == '/' && str[2] == '?' && str[3] == '/') {
-	char *p;
-
-	for (p = str; p && *p; ++p) {
-	    if (*p == '/') {
-		*p = '\\';
-	    }
-	}
-    }
     Tcl_WinUtfToTChar(str, len, &ds);
     if (tclWinProcs->useWide) {
+	WCHAR *wp = (WCHAR *) Tcl_DStringValue(&ds);
+	/* For a reserved device, strip a possible postfix ':' */
+	len = WinIsReserved(str);
+	/* For normal devices */
+	if (len == 0) len = Tcl_DStringLength(&ds)>>1;
+	/*
+	** If path starts with "//?/" or "\\?\" (extended path), translate
+	** any slashes to backslashes but accept the '?' as being valid.
+	*/
+	if ((str[0]=='\\' || str[0]=='/') && (str[1]=='\\' || str[1]=='/')
+		&& str[2]=='?' && (str[3]=='\\' || str[3]=='/')) {
+	    wp[0] = wp[1] = wp[3] = '\\';
+	    str += 4;
+	    wp += 4;
+	    len -= 4;
+	}
+	/*
+	** If there is a drive prefix, the ':' must be considered valid.
+	**/
+	if (((str[0]>='A'&&str[0]<='Z') || (str[0]>='a'&&str[0]<='z'))
+		&& str[1]==':') {
+	    wp += 2;
+	    len -= 2;
+	}
+	while (len-->0) {
+	    if ((*wp < ' ') || wcschr(L"\"*:<>?|", *wp)) {
+		Tcl_DecrRefCount(validPathPtr);
+		Tcl_DStringFree(&ds);
+		return NULL;
+	    } else if (*wp=='/') {
+		*wp = '\\';
+	    }
+	    ++wp;
+	}
 	len = Tcl_DStringLength(&ds) + sizeof(WCHAR);
     } else {
+	char *p = Tcl_DStringValue(&ds);
+	len = Tcl_DStringLength(&ds);
+	/*
+	** If path starts with "//?/" or "\\?\" (extended path), translate
+	** any slashes to backslashes but accept the '?' as being valid.
+	*/
+	if ((str[0]=='\\' || str[0]=='/') && (str[1]=='\\' || str[1]=='/')
+		&& str[2]=='?' && (str[3]=='\\' || str[3]=='/')) {
+	    p[0] = p[1] = p[3] = '\\';
+	    str += 4;
+	    p += 4;
+	    len -= 4;
+	}
+	/*
+	** If there is a drive prefix, the ':' must be considered valid.
+	**/
+	if (((str[0]>='A'&&str[0]<='Z') || (str[0]>='a'&&str[0]<='z'))
+		&& str[1]==':') {
+	    p += 2;
+	    len -= 2;
+	}
+	while (len-->0) {
+	    if ((*p < ' ') || strchr("\"*:<>?|", *p)) {
+		Tcl_DecrRefCount(validPathPtr);
+		Tcl_DStringFree(&ds);
+		return NULL;
+	    } else if (*p=='/') {
+		*p = '\\';
+	    }
+	    ++p;
+	}
 	len = Tcl_DStringLength(&ds) + sizeof(char);
     }
     Tcl_DecrRefCount(validPathPtr);

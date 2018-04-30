@@ -14,11 +14,11 @@
 #ifdef HAVE_LANGINFO
 #   include <langinfo.h>
 #   ifdef __APPLE__
-#       if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030
+#	if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030
 	    /* Support for weakly importing nl_langinfo on Darwin. */
-#           define WEAK_IMPORT_NL_LANGINFO
+#	    define WEAK_IMPORT_NL_LANGINFO
 	    extern char *nl_langinfo(nl_item) WEAK_IMPORT_ATTRIBUTE;
-#       endif
+#	endif
 #    endif
 #endif
 #include <sys/resource.h>
@@ -31,6 +31,54 @@
 #	include <dlfcn.h>
 #   endif
 #endif
+
+#ifdef __CYGWIN__
+DLLIMPORT extern __stdcall unsigned char GetVersionExW(void *);
+DLLIMPORT extern __stdcall void *GetModuleHandleW(const void *);
+DLLIMPORT extern __stdcall void FreeLibrary(void *);
+DLLIMPORT extern __stdcall void *GetProcAddress(void *, const char *);
+DLLIMPORT extern __stdcall void GetSystemInfo(void *);
+
+#define NUMPLATFORMS 4
+static const char *const platforms[NUMPLATFORMS] = {
+    "Win32s", "Windows 95", "Windows NT", "Windows CE"
+};
+
+#define NUMPROCESSORS 11
+static const char *const processors[NUMPROCESSORS] = {
+    "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
+    "amd64", "ia32_on_win64"
+};
+
+typedef struct {
+  union {
+    DWORD  dwOemId;
+    struct {
+      int wProcessorArchitecture;
+      int wReserved;
+    };
+  };
+  DWORD     dwPageSize;
+  void *lpMinimumApplicationAddress;
+  void *lpMaximumApplicationAddress;
+  void *dwActiveProcessorMask;
+  DWORD     dwNumberOfProcessors;
+  DWORD     dwProcessorType;
+  DWORD     dwAllocationGranularity;
+  int      wProcessorLevel;
+  int      wProcessorRevision;
+} SYSTEM_INFO;
+
+typedef struct {
+  DWORD dwOSVersionInfoSize;
+  DWORD dwMajorVersion;
+  DWORD dwMinorVersion;
+  DWORD dwBuildNumber;
+  DWORD dwPlatformId;
+  wchar_t szCSDVersion[128];
+} OSVERSIONINFOW;
+#endif
+
 #ifdef HAVE_COREFOUNDATION
 #include <CoreFoundation/CoreFoundation.h>
 #endif
@@ -618,7 +666,7 @@ SearchKnownEncodings(
     int left = 0;
     int right = sizeof(localeTable)/sizeof(LocaleTable);
 
-    while (left <= right) {
+    while (left < right) {
 	int test = (left + right)/2;
 	int code = strcmp(localeTable[test].lang, encoding);
 
@@ -764,7 +812,12 @@ void
 TclpSetVariables(
     Tcl_Interp *interp)
 {
-#ifndef NO_UNAME
+#ifdef __CYGWIN__
+    SYSTEM_INFO sysInfo;
+    static OSVERSIONINFOW osInfo;
+    static int osInfoInitialized = 0;
+    char buffer[TCL_INTEGER_SPACE * 2];
+#elif !defined(NO_UNAME)
     struct utsname name;
 #endif
     int unameOK;
@@ -779,8 +832,8 @@ TclpSetVariables(
      */
 
     CFLocaleRef localeRef;
-    
-    if (CFLocaleCopyCurrent != NULL && CFLocaleGetIdentifier != NULL &&
+
+    if (&CFLocaleCopyCurrent != NULL && &CFLocaleGetIdentifier != NULL &&
 	    (localeRef = CFLocaleCopyCurrent())) {
 	CFStringRef locale = CFLocaleGetIdentifier(localeRef);
 
@@ -873,7 +926,34 @@ TclpSetVariables(
 #endif
 
     unameOK = 0;
-#ifndef NO_UNAME
+#ifdef __CYGWIN__
+	unameOK = 1;
+    if (!osInfoInitialized) {
+	HANDLE handle = GetModuleHandleW(L"NTDLL");
+	int(__stdcall *getversion)(void *) =
+		(int(__stdcall *)(void *))GetProcAddress(handle, "RtlGetVersion");
+	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+	if (!getversion || getversion(&osInfo)) {
+	    GetVersionExW(&osInfo);
+	}
+	osInfoInitialized = 1;
+    }
+
+    GetSystemInfo(&sysInfo);
+
+    if (osInfo.dwPlatformId < NUMPLATFORMS) {
+	Tcl_SetVar2(interp, "tcl_platform", "os",
+		platforms[osInfo.dwPlatformId], TCL_GLOBAL_ONLY);
+    }
+    sprintf(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
+    Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
+    if (sysInfo.wProcessorArchitecture < NUMPROCESSORS) {
+	Tcl_SetVar2(interp, "tcl_platform", "machine",
+		processors[sysInfo.wProcessorArchitecture],
+		TCL_GLOBAL_ONLY);
+    }
+
+#elif !defined NO_UNAME
     if (uname(&name) >= 0) {
 	CONST char *native;
 
@@ -1044,10 +1124,10 @@ TclpGetCStackParams(
 	 * Not initialised!
 	 */
 
-	stackGrowsDown = StackGrowsDown(&result);
+	stackGrowsDown = StackGrowsDown(NULL);
     }
 #endif
-    
+
     /*
      * The first time through in a thread: record the "outermost" stack
      * frame and inquire with the OS about the stack size.
@@ -1076,7 +1156,7 @@ TclpGetCStackParams(
 	if (!stackSize) {
 	    /*
 	     * Stack failure: if we didn't already blow up, we are within the
-	     * safety area. Recheck with the OS in case the stack was grown. 
+	     * safety area. Recheck with the OS in case the stack was grown.
 	     */
 	    result = GetStackSize(&stackSize);
 	    if (result != TCL_OK) {
@@ -1119,6 +1199,9 @@ StackGrowsDown(
     int *parent)
 {
     int here;
+    if (!parent) {
+	return StackGrowsDown(&here);
+    }
     return (&here < parent);
 }
 #endif

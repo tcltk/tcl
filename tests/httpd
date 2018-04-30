@@ -40,7 +40,7 @@ proc httpdAccept {newsock ipaddr port} {
     fconfigure $newsock -blocking 0 -translation {auto crlf}
     httpd_log $newsock Connect $ipaddr $port
     set data(ipaddr) $ipaddr
-    fileevent $newsock readable [list httpdRead $newsock]
+    after 50 [list fileevent $newsock readable [list httpdRead $newsock]]
 }
 
 # read data from a client request
@@ -170,6 +170,10 @@ proc httpdRespond { sock } {
 	*binary* {
 	    set html "$bindata[info hostname]:$port$data(url)"
 	    set type application/octet-stream
+	}
+	*xml* {
+	    set html [encoding convertto utf-8 "<test>\u1234</test>"]
+	    set type "application/xml;charset=UTF-8"
 	}
 	*post* {
 	    set html "Got [string length $data(query)] bytes"

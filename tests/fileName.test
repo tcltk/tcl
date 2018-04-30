@@ -189,7 +189,7 @@ test filename-4.12 {Tcl_SplitPath: unix} {testsetplatform} {
 test filename-4.13 {Tcl_SplitPath: unix} {testsetplatform} {
     testsetplatform unix
     file split //foo
-} {/ foo}
+} "/ foo"
 test filename-4.14 {Tcl_SplitPath: unix} {testsetplatform} {
     testsetplatform unix
     file split foo//bar
@@ -429,11 +429,14 @@ test filename-7.16 {Tcl_JoinPath: unix} {testsetplatform} {
 test filename-7.17 {Tcl_JoinPath: unix} {testsetplatform} {
     testsetplatform unix
     file join //a b
-} {/a/b}
+} "/a/b"
 test filename-7.18 {Tcl_JoinPath: unix} {testsetplatform} {
     testsetplatform unix
     file join /// a b
-} {/a/b}
+} "/a/b"
+test filename-7.19 {[Bug f34cf83dd0]} {
+    file join foo //bar
+} /bar
 
 
 test filename-9.1 {Tcl_JoinPath: win} {testsetplatform} {
@@ -767,6 +770,7 @@ test filename-11.16 {Tcl_GlobCmd} {
 
 set globname "globTest"
 set horribleglobname "glob\[\{Test"
+set tildeglobname "./~test.txt"
 
 test filename-11.17 {Tcl_GlobCmd} {unix} {
     list [catch {lsort [glob -directory $globname *]} msg] $msg
@@ -937,11 +941,11 @@ test filename-11.21.1 {Tcl_GlobCmd} {
 
 # Get rid of file/dir if it exists, since it will have
 # been left behind by a previous failed run.
-if {[file exists $horribleglobname]} {
-    file delete -force $horribleglobname
-}
+file delete -force $horribleglobname
 file rename globTest $horribleglobname
 set globname $horribleglobname
+file delete -force $tildeglobname
+close [open $tildeglobname w]
 
 test filename-11.22 {Tcl_GlobCmd} {unix} {
     list [catch {lsort [glob -dir $globname *]} msg] $msg
@@ -1064,7 +1068,9 @@ test filename-11.41 {Tcl_GlobCmd} {
 test filename-11.42 {Tcl_GlobCmd} {
     set res [list]
     foreach f [glob -dir [pwd] *] {
-	lappend res [file tail $f]
+	set f [file tail $f]
+	regsub {^./} $f {} f; # until glob bug [2511011fff] don't fixed (tilde expansion prevention).
+	lappend res $f
     }
     expr {$res == [glob *]}
 } {1}
@@ -1106,8 +1112,9 @@ test filename-11.49 {Tcl_GlobCmd} {
 } {1 {bad argument to "-types": abcde}}
 
 file rename $horribleglobname globTest
+file delete -force $tildeglobname
 set globname globTest
-unset horribleglobname
+unset horribleglobname tildeglobname
 
 test filename-12.1 {simple globbing} {unixOrPc} {
     list [catch {glob {}} msg] $msg

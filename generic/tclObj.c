@@ -569,7 +569,7 @@ TclContinuationsEnter(Tcl_Obj* objPtr,
     Tcl_HashEntry* hPtr =
 	Tcl_CreateHashEntry (tsdPtr->lineCLPtr, (char*) objPtr, &newEntry);
 
-    ContLineLoc* clLocPtr = 
+    ContLineLoc* clLocPtr =
 	(ContLineLoc*) ckalloc (sizeof(ContLineLoc) + num*sizeof(int));
 
     if (!newEntry) {
@@ -675,7 +675,7 @@ TclContinuationsEnterDerived(Tcl_Obj* objPtr, int start, int* clNext)
     num = wordCLLast - clNext;
     if (num) {
 	int i;
-	ContLineLoc* clLocPtr = 
+	ContLineLoc* clLocPtr =
 	    TclContinuationsEnter(objPtr, num, clNext);
 
 	/*
@@ -993,7 +993,12 @@ Tcl_ConvertToType(
      */
 
     if (typePtr->setFromAnyProc == NULL) {
-	Tcl_Panic("may not convert object to type %s", typePtr->name);
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "can't convert value to type %s", typePtr->name));
+	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", NULL);
+	}
+	return TCL_ERROR;
     }
 
     return typePtr->setFromAnyProc(interp, objPtr);
@@ -1243,7 +1248,7 @@ Tcl_DbNewObj(
  * Side effects:
  *	tclFreeObjList, the head of the list of free Tcl_Objs, is set to the
  *	first of a number of free Tcl_Obj's linked together by their
- *	internalRep.otherValuePtrs.
+ *	internalRep.twoPtrValue.ptr1's.
  *
  *----------------------------------------------------------------------
  */
@@ -1272,7 +1277,7 @@ TclAllocateFreeObjects(void)
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
     for (i = 0; i < OBJS_TO_ALLOC_EACH_TIME; i++) {
-	objPtr->internalRep.otherValuePtr = (void *) prevPtr;
+	objPtr->internalRep.twoPtrValue.ptr1 = (void *) prevPtr;
 	prevPtr = objPtr;
 	objPtr++;
     }
@@ -1317,14 +1322,59 @@ TclFreeObj(
 
     ObjInitDeletionContext(context);
 
+# ifdef TCL_THREADS
+    /*
+     * Check to make sure that the Tcl_Obj was allocated by the current
+     * thread. Don't do this check when shutting down since thread local
+     * storage can be finalized before the last Tcl_Obj is freed.
+     */
+
+    if (!TclInExit()) {
+	Tcl_HashTable *tablePtr;
+	Tcl_HashEntry *hPtr;
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+	tablePtr = tsdPtr->objThreadMap;
+	if (!tablePtr) {
+	    Tcl_Panic("TclFreeObj: object table not initialized");
+	}
+	hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
+	if (hPtr) {
+	    /*
+	     * As the Tcl_Obj is going to be deleted we remove the entry.
+	     */
+
+	    ObjData *objData = Tcl_GetHashValue(hPtr);
+
+	    if (objData != NULL) {
+		ckfree((char *) objData);
+	    }
+
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+    }
+# endif
+
+    /*
+     * Check for a double free of the same value.  This is slightly tricky
+     * because it is customary to free a Tcl_Obj when its refcount falls
+     * either from 1 to 0, or from 0 to -1.  Falling from -1 to -2, though,
+     * and so on, is always a sign of a botch in the caller.
+     */
     if (objPtr->refCount < -1) {
 	Tcl_Panic("Reference count for %lx was negative", objPtr);
     }
+    /*
+     * Now, in case we just approved drop from 1 to 0 as acceptable, make
+     * sure we do not accept a second free when falling from 0 to -1.
+     * Skip that possibility so any double free will trigger the panic.
+     */
+    objPtr->refCount = -1;
 
-    /* Invalidate the string rep first so we can use the bytes value 
+    /* Invalidate the string rep first so we can use the bytes value
      * for our pointer chain, and signal an obj deletion (as opposed
-     * to shimmering) with 'length == -1' */ 
-    
+     * to shimmering) with 'length == -1' */
+
     TclInvalidateStringRep(objPtr);
     objPtr->length = -1;
 
@@ -1386,13 +1436,13 @@ void
 TclFreeObj(
     register Tcl_Obj *objPtr)	/* The object to be freed. */
 {
-    /* Invalidate the string rep first so we can use the bytes value 
+    /* Invalidate the string rep first so we can use the bytes value
      * for our pointer chain, and signal an obj deletion (as opposed
-     * to shimmering) with 'length == -1' */ 
+     * to shimmering) with 'length == -1' */
 
     TclInvalidateStringRep(objPtr);
     objPtr->length = -1;
-    
+
     if (!objPtr->typePtr || !objPtr->typePtr->freeIntRepProc) {
 	/*
 	 * objPtr can be freed safely, as it will not attempt to free any
@@ -1683,14 +1733,14 @@ Tcl_InvalidateStringRep(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 #undef Tcl_NewBooleanObj
+#ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
 Tcl_NewBooleanObj(
     register int boolValue)	/* Boolean used to initialize new object. */
 {
-    return Tcl_DbNewBooleanObj(boolValue, "unknown", 0);
+    return Tcl_DbNewLongObj(boolValue!=0, "unknown", 0);
 }
 
 #else /* if not TCL_MEM_DEBUG */
@@ -1701,7 +1751,7 @@ Tcl_NewBooleanObj(
 {
     register Tcl_Obj *objPtr;
 
-    TclNewBooleanObj(objPtr, boolValue);
+    TclNewIntObj(objPtr, boolValue!=0);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -1732,6 +1782,7 @@ Tcl_NewBooleanObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_DbNewBooleanObj
 #ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
@@ -1784,6 +1835,7 @@ Tcl_DbNewBooleanObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetBooleanObj
 void
 Tcl_SetBooleanObj(
     register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
@@ -1793,7 +1845,7 @@ Tcl_SetBooleanObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetBooleanObj");
     }
 
-    TclSetBooleanObj(objPtr, boolValue);
+    TclSetIntObj(objPtr, boolValue!=0);
 }
 
 /*
@@ -2747,7 +2799,7 @@ Tcl_GetLongFromObj(
 	tooLarge:
 #endif
 	    if (interp != NULL) {
-		char *s = "integer value too large to represent";
+		const char *s = "integer value too large to represent";
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
@@ -3046,7 +3098,7 @@ Tcl_GetWideIntFromObj(
 		}
 	    }
 	    if (interp != NULL) {
-		char *s = "integer value too large to represent";
+		const char *s = "integer value too large to represent";
 		Tcl_Obj* msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
@@ -3178,13 +3230,11 @@ UpdateStringOfBignum(
     if (status != MP_OKAY) {
 	Tcl_Panic("radix size failure in UpdateStringOfBignum");
     }
-    if (size == 3) {
+    if (size < 2) {
 	/*
-	 * mp_radix_size() returns 3 when more than INT_MAX bytes would be
+	 * mp_radix_size() returns < 2 when more than INT_MAX bytes would be
 	 * needed to hold the string rep (because mp_radix_size ignores
-	 * integer overflow issues). When we know the string rep will be more
-	 * than 3, we can conclude the string rep would overflow our string
-	 * length limits.
+	 * integer overflow issues).
 	 *
 	 * Note that so long as we enforce our bignums to the size that fits
 	 * in a packed bignum, this branch will never be taken.
@@ -3698,20 +3748,6 @@ Tcl_DbDecrRefCount(
 		    "Trying to decr ref count of "
 		    "Tcl_Obj allocated in another thread");
 	}
-
-	/*
-	 * If the Tcl_Obj is going to be deleted, remove the entry.
-	 */
-
-	if ((objPtr->refCount - 1) <= 0) {
-	    ObjData *objData = Tcl_GetHashValue(hPtr);
-
-	    if (objData != NULL) {
-		ckfree((char *) objData);
-	    }
-
-	    Tcl_DeleteHashEntry(hPtr);
-	}
     }
 # endif
 #endif
@@ -4046,7 +4082,7 @@ Tcl_GetCommandFromObj(
      * is not deleted.
      *
      * If any check fails, then force another conversion to the command type,
-     * to discard the old rep and create a new one.      
+     * to discard the old rep and create a new one.
      */
 
     resPtr = (ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
@@ -4056,15 +4092,15 @@ Tcl_GetCommandFromObj(
 	    || (cmdPtr->flags & CMD_IS_DELETED)
 	    || (interp != cmdPtr->nsPtr->interp)
 	    || (cmdPtr->nsPtr->flags & 	NS_DYING)
-	    || ((resPtr->refNsPtr != NULL) && 
+	    || ((resPtr->refNsPtr != NULL) &&
 		     (((refNsPtr = (Namespace *) TclGetCurrentNamespace(interp))
 			     != resPtr->refNsPtr)
 		     || (resPtr->refNsId != refNsPtr->nsId)
 		     || (resPtr->refNsCmdEpoch != refNsPtr->cmdRefEpoch)))
 	) {
-	
+
 	result = tclCmdNameType.setFromAnyProc(interp, objPtr);
-	
+
 	resPtr = (ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
 	if ((result == TCL_OK) && resPtr) {
 	    cmdPtr = resPtr->cmdPtr;
@@ -4072,7 +4108,7 @@ Tcl_GetCommandFromObj(
 	    cmdPtr = NULL;
 	}
     }
-    
+
     return (Tcl_Command) cmdPtr;
 }
 
@@ -4124,7 +4160,7 @@ TclSetCmdNameObj(
     if ((*name++ == ':') && (*name == ':')) {
 	/*
 	 * The name is fully qualified: set the referring namespace to
-	 * NULL. 
+	 * NULL.
 	 */
 
 	resPtr->refNsPtr = NULL;
@@ -4134,7 +4170,7 @@ TclSetCmdNameObj(
 	 */
 
 	currNsPtr = iPtr->varFramePtr->nsPtr;
-	
+
 	resPtr->refNsPtr = currNsPtr;
 	resPtr->refNsId = currNsPtr->nsId;
 	resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
@@ -4288,13 +4324,13 @@ SetCmdNameFromAny(
 
     if (cmdPtr) {
 	cmdPtr->refCount++;
-	resPtr = (ResolvedCmdName *) objPtr->internalRep.otherValuePtr;
+	resPtr = (ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
 	if ((objPtr->typePtr == &tclCmdNameType)
 		&& resPtr && (resPtr->refCount == 1)) {
 	    /*
 	     * Reuse the old ResolvedCmdName struct instead of freeing it
 	     */
-	    
+
 	    Command *oldCmdPtr = resPtr->cmdPtr;
 	    if (--oldCmdPtr->refCount == 0) {
 		TclCleanupCommandMacro(oldCmdPtr);
@@ -4311,8 +4347,8 @@ SetCmdNameFromAny(
 	resPtr->cmdEpoch = cmdPtr->cmdEpoch;
 	if ((*name++ == ':') && (*name == ':')) {
 	    /*
-	     * The name is fully qualified: set the referring namespace to 
-	     * NULL. 
+	     * The name is fully qualified: set the referring namespace to
+	     * NULL.
 	     */
 
 	    resPtr->refNsPtr = NULL;
@@ -4322,7 +4358,7 @@ SetCmdNameFromAny(
 	     */
 
 	    currNsPtr = iPtr->varFramePtr->nsPtr;
-	    
+
 	    resPtr->refNsPtr = currNsPtr;
 	    resPtr->refNsId = currNsPtr->nsId;
 	    resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;

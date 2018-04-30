@@ -106,6 +106,7 @@ static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_PkgProvide
 int
 Tcl_PkgProvide(
     Tcl_Interp *interp,		/* Interpreter in which package is now
@@ -186,6 +187,7 @@ Tcl_PkgProvideEx(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_PkgRequire
 const char *
 Tcl_PkgRequire(
     Tcl_Interp *interp,		/* Interpreter in which package is now
@@ -347,11 +349,15 @@ PkgRequireCore(
     Interp *iPtr = (Interp *) interp;
     Package *pkgPtr;
     PkgAvail *availPtr, *bestPtr, *bestStablePtr;
-    char *availVersion, *bestVersion;
+    char *availVersion, *bestVersion, *bestStableVersion;
 				/* Internal rep. of versions */
     int availStable, code, satisfies, pass;
     char *script, *pkgVersionI;
     Tcl_DString command;
+
+    if (TCL_OK != CheckAllRequirements(interp, reqc, reqv)) {
+	return NULL;
+    }
 
     /*
      * It can take up to three passes to find the package: one pass to run the
@@ -389,6 +395,7 @@ PkgRequireCore(
 	bestPtr = NULL;
 	bestStablePtr = NULL;
 	bestVersion = NULL;
+	bestStableVersion = NULL;
 
 	for (availPtr = pkgPtr->availPtr; availPtr != NULL;
 		availPtr = availPtr->nextPtr) {
@@ -402,31 +409,9 @@ PkgRequireCore(
 
 		continue;
 	    }
-
-	    if (bestPtr != NULL) {
-		int res = CompareVersions(availVersion, bestVersion, NULL);
-
-		/*
-		 * Note: Use internal reps!
-		 */
-
-		if (res <= 0) {
-		    /*
-		     * The version of the package sought is not as good as the
-		     * currently selected version. Ignore it.
-		     */
-
-		    ckfree(availVersion);
-		    availVersion = NULL;
-		    continue;
-		}
-	    }
-
-	    /* We have found a version which is better than our max. */
-
+	    
+	    /* Check satisfaction of requirements before considering the current version further. */
 	    if (reqc > 0) {
-		/* Check satisfaction of requirements. */
-
 		satisfies = SomeRequirementSatisfied(availVersion, reqc, reqv);
 		if (!satisfies) {
 		    ckfree(availVersion);
@@ -434,26 +419,76 @@ PkgRequireCore(
 		    continue;
 		}
 	    }
+	    
+	    if (bestPtr != NULL) {
+		int res = CompareVersions(availVersion, bestVersion, NULL);
 
-	    bestPtr = availPtr;
+		/*
+		 * Note: Used internal reps in the comparison!
+		 */
 
-	    if (bestVersion != NULL) {
-		ckfree(bestVersion);
+		if (res > 0) {
+		    /*
+		     * The version of the package sought is better than the
+		     * currently selected version.
+		     */
+		    ckfree(bestVersion);
+		    bestVersion = NULL;
+		    goto newbest;
+		}
+	    } else {
+	    newbest:
+		/* We have found a version which is better than our max. */
+
+		bestPtr = availPtr;
+		CheckVersionAndConvert(interp, bestPtr->version, &bestVersion, NULL);
 	    }
-	    bestVersion = availVersion;
 
-	    /*
-	     * If this new best version is stable then it also has to be
-	     * better than the max stable version found so far.
-	     */
+	    if (!availStable) {
+		ckfree(availVersion);
+		availVersion = NULL;
+		continue;
+	    }
 
-	    if (availStable) {
+	    if (bestStablePtr != NULL) {
+		int res = CompareVersions(availVersion, bestStableVersion, NULL);
+
+		/*
+		 * Note: Used internal reps in the comparison!
+		 */
+
+		if (res > 0) {
+		    /*
+		     * This stable version of the package sought is better
+		     * than the currently selected stable version.
+		     */
+		    ckfree(bestStableVersion);
+		    bestStableVersion = NULL;
+		    goto newstable;
+		}
+	    } else {
+	    newstable:
+		/* We have found a stable version which is better than our max stable. */
 		bestStablePtr = availPtr;
+		CheckVersionAndConvert(interp, bestStablePtr->version, &bestStableVersion, NULL);
 	    }
-	}
 
+	    ckfree(availVersion);
+	    availVersion = NULL;
+	} /* end for */
+
+	/*
+	 * Clean up memorized internal reps, if any.
+	 */
+	
 	if (bestVersion != NULL) {
 	    ckfree(bestVersion);
+	    bestVersion = NULL;
+	}
+
+	if (bestStableVersion != NULL) {
+	    ckfree(bestStableVersion);
+	    bestStableVersion = NULL;
 	}
 
 	/*
@@ -651,6 +686,7 @@ PkgRequireCore(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_PkgPresent
 const char *
 Tcl_PkgPresent(
     Tcl_Interp *interp,		/* Interpreter in which package is now
@@ -917,7 +953,7 @@ Tcl_PackageObjCmd(
 		version = TclGetString(objv[3]);
 	    }
 	}
-	Tcl_PkgPresent(interp, name, version, exact);
+	Tcl_PkgPresentEx(interp, name, version, exact, NULL);
 	return TCL_ERROR;
 	break;
     }
@@ -941,7 +977,7 @@ Tcl_PackageObjCmd(
 	if (CheckVersionAndConvert(interp, argv3, NULL, NULL) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	return Tcl_PkgProvide(interp, argv2, argv3);
+	return Tcl_PkgProvideEx(interp, argv2, argv3, NULL);
     case PKG_REQUIRE:
     require:
 	if (objc < 3) {

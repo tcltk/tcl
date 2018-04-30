@@ -31,6 +31,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -78,7 +82,7 @@ EXTERN char *		Tcl_DbCkalloc(unsigned int size, CONST char *file,
 #ifndef Tcl_DbCkfree_TCL_DECLARED
 #define Tcl_DbCkfree_TCL_DECLARED
 /* 7 */
-EXTERN int		Tcl_DbCkfree(char *ptr, CONST char *file, int line);
+EXTERN void		Tcl_DbCkfree(char *ptr, CONST char *file, int line);
 #endif
 #ifndef Tcl_DbCkrealloc_TCL_DECLARED
 #define Tcl_DbCkrealloc_TCL_DECLARED
@@ -3408,6 +3412,61 @@ EXTERN Tcl_Obj *	Tcl_ObjPrintf(CONST char *format, ...);
 EXTERN void		Tcl_AppendPrintfToObj(Tcl_Obj *objPtr,
 				CONST char *format, ...);
 #endif
+/* Slot 580 is reserved */
+/* Slot 581 is reserved */
+/* Slot 582 is reserved */
+/* Slot 583 is reserved */
+/* Slot 584 is reserved */
+/* Slot 585 is reserved */
+/* Slot 586 is reserved */
+/* Slot 587 is reserved */
+/* Slot 588 is reserved */
+/* Slot 589 is reserved */
+/* Slot 590 is reserved */
+/* Slot 591 is reserved */
+/* Slot 592 is reserved */
+/* Slot 593 is reserved */
+/* Slot 594 is reserved */
+/* Slot 595 is reserved */
+/* Slot 596 is reserved */
+/* Slot 597 is reserved */
+/* Slot 598 is reserved */
+/* Slot 599 is reserved */
+/* Slot 600 is reserved */
+/* Slot 601 is reserved */
+/* Slot 602 is reserved */
+/* Slot 603 is reserved */
+/* Slot 604 is reserved */
+/* Slot 605 is reserved */
+/* Slot 606 is reserved */
+/* Slot 607 is reserved */
+/* Slot 608 is reserved */
+/* Slot 609 is reserved */
+/* Slot 610 is reserved */
+/* Slot 611 is reserved */
+/* Slot 612 is reserved */
+/* Slot 613 is reserved */
+/* Slot 614 is reserved */
+/* Slot 615 is reserved */
+/* Slot 616 is reserved */
+/* Slot 617 is reserved */
+/* Slot 618 is reserved */
+/* Slot 619 is reserved */
+/* Slot 620 is reserved */
+/* Slot 621 is reserved */
+/* Slot 622 is reserved */
+/* Slot 623 is reserved */
+/* Slot 624 is reserved */
+/* Slot 625 is reserved */
+/* Slot 626 is reserved */
+/* Slot 627 is reserved */
+/* Slot 628 is reserved */
+/* Slot 629 is reserved */
+#ifndef TclUnusedStubEntry_TCL_DECLARED
+#define TclUnusedStubEntry_TCL_DECLARED
+/* 630 */
+EXTERN void		TclUnusedStubEntry(void);
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -3426,12 +3485,12 @@ typedef struct TclStubs {
     void (*tcl_Free) (char *ptr); /* 4 */
     char * (*tcl_Realloc) (char *ptr, unsigned int size); /* 5 */
     char * (*tcl_DbCkalloc) (unsigned int size, CONST char *file, int line); /* 6 */
-    int (*tcl_DbCkfree) (char *ptr, CONST char *file, int line); /* 7 */
+    void (*tcl_DbCkfree) (char *ptr, CONST char *file, int line); /* 7 */
     char * (*tcl_DbCkrealloc) (char *ptr, unsigned int size, CONST char *file, int line); /* 8 */
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_CreateFileHandler) (int fd, int mask, Tcl_FileProc *proc, ClientData clientData); /* 9 */
 #endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) /* WIN */
     VOID *reserved9;
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -3440,7 +3499,7 @@ typedef struct TclStubs {
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_DeleteFileHandler) (int fd); /* 10 */
 #endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) /* WIN */
     VOID *reserved10;
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -3605,7 +3664,7 @@ typedef struct TclStubs {
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     int (*tcl_GetOpenFile) (Tcl_Interp *interp, CONST char *chanID, int forWriting, int checkUsage, ClientData *filePtr); /* 167 */
 #endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) /* WIN */
     VOID *reserved167;
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -4023,12 +4082,61 @@ typedef struct TclStubs {
     int (*tcl_AppendFormatToObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, CONST char *format, int objc, Tcl_Obj *CONST objv[]); /* 577 */
     Tcl_Obj * (*tcl_ObjPrintf) (CONST char *format, ...); /* 578 */
     void (*tcl_AppendPrintfToObj) (Tcl_Obj *objPtr, CONST char *format, ...); /* 579 */
+    VOID *reserved580;
+    VOID *reserved581;
+    VOID *reserved582;
+    VOID *reserved583;
+    VOID *reserved584;
+    VOID *reserved585;
+    VOID *reserved586;
+    VOID *reserved587;
+    VOID *reserved588;
+    VOID *reserved589;
+    VOID *reserved590;
+    VOID *reserved591;
+    VOID *reserved592;
+    VOID *reserved593;
+    VOID *reserved594;
+    VOID *reserved595;
+    VOID *reserved596;
+    VOID *reserved597;
+    VOID *reserved598;
+    VOID *reserved599;
+    VOID *reserved600;
+    VOID *reserved601;
+    VOID *reserved602;
+    VOID *reserved603;
+    VOID *reserved604;
+    VOID *reserved605;
+    VOID *reserved606;
+    VOID *reserved607;
+    VOID *reserved608;
+    VOID *reserved609;
+    VOID *reserved610;
+    VOID *reserved611;
+    VOID *reserved612;
+    VOID *reserved613;
+    VOID *reserved614;
+    VOID *reserved615;
+    VOID *reserved616;
+    VOID *reserved617;
+    VOID *reserved618;
+    VOID *reserved619;
+    VOID *reserved620;
+    VOID *reserved621;
+    VOID *reserved622;
+    VOID *reserved623;
+    VOID *reserved624;
+    VOID *reserved625;
+    VOID *reserved626;
+    VOID *reserved627;
+    VOID *reserved628;
+    VOID *reserved629;
+    void (*tclUnusedStubEntry) (void); /* 630 */
 } TclStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern TclStubs *tclStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
@@ -6377,13 +6485,171 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_AppendPrintfToObj \
 	(tclStubsPtr->tcl_AppendPrintfToObj) /* 579 */
 #endif
+/* Slot 580 is reserved */
+/* Slot 581 is reserved */
+/* Slot 582 is reserved */
+/* Slot 583 is reserved */
+/* Slot 584 is reserved */
+/* Slot 585 is reserved */
+/* Slot 586 is reserved */
+/* Slot 587 is reserved */
+/* Slot 588 is reserved */
+/* Slot 589 is reserved */
+/* Slot 590 is reserved */
+/* Slot 591 is reserved */
+/* Slot 592 is reserved */
+/* Slot 593 is reserved */
+/* Slot 594 is reserved */
+/* Slot 595 is reserved */
+/* Slot 596 is reserved */
+/* Slot 597 is reserved */
+/* Slot 598 is reserved */
+/* Slot 599 is reserved */
+/* Slot 600 is reserved */
+/* Slot 601 is reserved */
+/* Slot 602 is reserved */
+/* Slot 603 is reserved */
+/* Slot 604 is reserved */
+/* Slot 605 is reserved */
+/* Slot 606 is reserved */
+/* Slot 607 is reserved */
+/* Slot 608 is reserved */
+/* Slot 609 is reserved */
+/* Slot 610 is reserved */
+/* Slot 611 is reserved */
+/* Slot 612 is reserved */
+/* Slot 613 is reserved */
+/* Slot 614 is reserved */
+/* Slot 615 is reserved */
+/* Slot 616 is reserved */
+/* Slot 617 is reserved */
+/* Slot 618 is reserved */
+/* Slot 619 is reserved */
+/* Slot 620 is reserved */
+/* Slot 621 is reserved */
+/* Slot 622 is reserved */
+/* Slot 623 is reserved */
+/* Slot 624 is reserved */
+/* Slot 625 is reserved */
+/* Slot 626 is reserved */
+/* Slot 627 is reserved */
+/* Slot 628 is reserved */
+/* Slot 629 is reserved */
+#ifndef TclUnusedStubEntry
+#define TclUnusedStubEntry \
+	(tclStubsPtr->tclUnusedStubEntry) /* 630 */
+#endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 /* !END!: Do not edit above this line. */
 
+#undef TclUnusedStubEntry
+
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
-#endif /* _TCLDECLS */
+#undef Tcl_PkgPresent
+#define Tcl_PkgPresent(interp, name, version, exact) \
+	Tcl_PkgPresentEx(interp, name, version, exact, NULL)
+#undef Tcl_PkgProvide
+#define Tcl_PkgProvide(interp, name, version) \
+	Tcl_PkgProvideEx(interp, name, version, NULL)
+#undef Tcl_PkgRequire
+#define Tcl_PkgRequire(interp, name, version, exact) \
+	Tcl_PkgRequireEx(interp, name, version, exact, NULL)
+#undef Tcl_GetIndexFromObj
+#define Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr) \
+	Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, \
+	sizeof(char *), msg, flags, indexPtr)
+#undef Tcl_NewBooleanObj
+#define Tcl_NewBooleanObj(boolValue) \
+	Tcl_NewIntObj((boolValue)!=0)
+#undef Tcl_DbNewBooleanObj
+#define Tcl_DbNewBooleanObj(boolValue, file, line) \
+	Tcl_DbNewLongObj((boolValue)!=0, file, line)
+#undef Tcl_SetBooleanObj
+#define Tcl_SetBooleanObj(objPtr, boolValue) \
+	Tcl_SetIntObj((objPtr), (boolValue)!=0)
+#undef Tcl_SetVar
+#define Tcl_SetVar(interp, varName, newValue, flags) \
+	Tcl_SetVar2(interp, varName, NULL, newValue, flags)
+#undef Tcl_UnsetVar
+#define Tcl_UnsetVar(interp, varName, flags) \
+	Tcl_UnsetVar2(interp, varName, NULL, flags)
+#undef Tcl_GetVar
+#define Tcl_GetVar(interp, varName, flags) \
+	Tcl_GetVar2(interp, varName, NULL, flags)
+#undef Tcl_TraceVar
+#define Tcl_TraceVar(interp, varName, flags, proc, clientData) \
+	Tcl_TraceVar2(interp, varName, NULL, flags, proc, clientData)
+#undef Tcl_UntraceVar
+#define Tcl_UntraceVar(interp, varName, flags, proc, clientData) \
+	Tcl_UntraceVar2(interp, varName, NULL, flags, proc, clientData)
+#undef Tcl_VarTraceInfo
+#define Tcl_VarTraceInfo(interp, varName, flags, proc, prevClientData) \
+	Tcl_VarTraceInfo2(interp, varName, NULL, flags, proc, prevClientData)
+#undef Tcl_UpVar
+#define Tcl_UpVar(interp, frameName, varName, localName, flags) \
+	Tcl_UpVar2(interp, frameName, varName, NULL, localName, flags)
 
+#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+#   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)
+/* On Cygwin64, long is 64-bit while on Win64 long is 32-bit. Therefore
+ * we have to make sure that all stub entries on Cygwin64 follow the
+ * Win64 signature. Cygwin64 stubbed extensions cannot use those stub
+ * entries any more, they should use the 64-bit alternatives where
+ * possible. Tcl 9 must find a better solution, but that cannot be done
+ * without introducing a binary incompatibility.
+ */
+#	undef Tcl_DbNewLongObj
+#	undef Tcl_GetLongFromObj
+#	undef Tcl_NewLongObj
+#	undef Tcl_SetLongObj
+#	undef Tcl_ExprLong
+#	undef Tcl_ExprLongObj
+#	undef Tcl_UniCharNcmp
+#	undef Tcl_UtfNcmp
+#	undef Tcl_UtfNcasecmp
+#	undef Tcl_UniCharNcasecmp
+#	define Tcl_DbNewLongObj ((Tcl_Obj*(*)(long,const char*,int))Tcl_DbNewWideIntObj)
+#	define Tcl_GetLongFromObj ((int(*)(Tcl_Interp*,Tcl_Obj*,long*))Tcl_GetWideIntFromObj)
+#	define Tcl_NewLongObj ((Tcl_Obj*(*)(long))Tcl_NewWideIntObj)
+#	define Tcl_SetLongObj ((void(*)(Tcl_Obj*,long))Tcl_SetWideIntObj)
+#	define Tcl_ExprLong TclExprLong
+	static inline int TclExprLong(Tcl_Interp *interp, const char *string, long *ptr){
+	    int intValue;
+	    int result = tclStubsPtr->tcl_ExprLong(interp, string, (long *)&intValue);
+	    if (result == TCL_OK) *ptr = (long)intValue;
+	    return result;
+	}
+#	define Tcl_ExprLongObj TclExprLongObj
+	static inline int TclExprLongObj(Tcl_Interp *interp, Tcl_Obj *obj, long *ptr){
+	    int intValue;
+	    int result = tclStubsPtr->tcl_ExprLongObj(interp, obj, (long *)&intValue);
+	    if (result == TCL_OK) *ptr = (long)intValue;
+	    return result;
+	}
+#	define Tcl_UniCharNcmp(ucs,uct,n) \
+		((int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned int))tclStubsPtr->tcl_UniCharNcmp)(ucs,uct,(unsigned int)(n))
+#	define Tcl_UtfNcmp(s1,s2,n) \
+		((int(*)(const char*,const char*,unsigned int))tclStubsPtr->tcl_UtfNcmp)(s1,s2,(unsigned int)(n))
+#	define Tcl_UtfNcasecmp(s1,s2,n) \
+		((int(*)(const char*,const char*,unsigned int))tclStubsPtr->tcl_UtfNcasecmp)(s1,s2,(unsigned int)(n))
+#	define Tcl_UniCharNcasecmp(ucs,uct,n) \
+		((int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned int))tclStubsPtr->tcl_UniCharNcasecmp)(ucs,uct,(unsigned int)(n))
+#   endif
+#endif
+
+/*
+ * Deprecated Tcl procedures:
+ */
+
+#undef Tcl_EvalObj
+#define Tcl_EvalObj(interp,objPtr) \
+    Tcl_EvalObjEx((interp),(objPtr),0)
+#undef Tcl_GlobalEvalObj
+#define Tcl_GlobalEvalObj(interp,objPtr) \
+    Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+
+#endif /* _TCLDECLS */

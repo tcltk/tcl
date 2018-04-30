@@ -910,6 +910,15 @@ test expr-22.9 {non-numeric floats: shared object equality and NaN} {
     set x NaN
     expr {$x == $x}
 } 0
+# Make sure [Bug d0f7ba56f0] stays fixed.
+test expr-22.10 {non-numeric arguments: equality and NaN} {
+    set x NaN
+    expr {$x > "Gran"}
+} 1
+test expr-22.11 {non-numeric arguments: equality and NaN} {
+    set x NaN
+    expr {"Gran" < $x}
+} 1
 
 # Tests for exponentiation handling
 test expr-23.1 {CompileExponentialExpr: just exponential expr} {expr 4**2} 16
@@ -7164,6 +7173,14 @@ test expr-47.13 {isqrt and floating point rounding (Bug 2143288)} {
 test expr-48.1 {Bug 1770224} {
     expr {-0x8000000000000001 >> 0x8000000000000000}
 } -1
+
+test expr-50.1 {test sqrt() of bignums with non-Inf answer} {
+    expr {sqrt("1[string repeat 0 616]") == 1e308}
+} 1
+
+test expr-51.1 {test round-to-even on input} {
+    expr 6.9294956446009195e15
+} 6929495644600920.0
 
 # cleanup
 if {[info exists a]} {

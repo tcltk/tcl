@@ -391,6 +391,14 @@ test proc-7.3 {Returning loop exception from redefined cmd: Bug 729692} {
     set res
 } {0 4}
 
+test proc-7.4 {Proc struct outlives its interp: Bug 3532959} {
+    set lambda x
+    lappend lambda {set a 1}
+    interp create slave
+    slave eval [list apply $lambda foo]
+    interp delete slave
+    unset lambda
+} {}
 
 
 # cleanup

@@ -46,23 +46,6 @@ typedef VOID (WINAPI UTUNREGISTER)(HANDLE hModule);
 static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
 static int platformId;		/* Running under NT, or 95/98? */
 
-#ifdef HAVE_NO_SEH
-/*
- * Unlike Borland and Microsoft, we don't register exception handlers by
- * pushing registration records onto the runtime stack. Instead, we register
- * them by creating an EXCEPTION_REGISTRATION within the activation record.
- */
-
-typedef struct EXCEPTION_REGISTRATION {
-    struct EXCEPTION_REGISTRATION *link;
-    EXCEPTION_DISPOSITION (*handler)(
-	    struct _EXCEPTION_RECORD*, void*, struct _CONTEXT*, void*);
-    void *ebp;
-    void *esp;
-    int status;
-} EXCEPTION_REGISTRATION;
-#endif
-
 /*
  * VC++ 5.x has no 'cpuid' assembler instruction, so we must emulate it
  */
@@ -302,7 +285,7 @@ DllMain(
     LPVOID reserved)		/* Not used. */
 {
 #if defined(HAVE_NO_SEH) && !defined(_WIN64)
-    EXCEPTION_REGISTRATION registration;
+    TCLEXCEPTION_REGISTRATION registration;
 #endif
 
     switch (reason) {
@@ -321,7 +304,7 @@ DllMain(
 	__asm__ __volatile__ (
 
 	    /*
-	     * Construct an EXCEPTION_REGISTRATION to protect the call to
+	     * Construct an TCLEXCEPTION_REGISTRATION to protect the call to
 	     * Tcl_Finalize
 	     */
 
@@ -335,7 +318,7 @@ DllMain(
 	    "movl	%[error],	0x10(%%edx)"	"\n\t" /* status */
 
 	    /*
-	     * Link the EXCEPTION_REGISTRATION on the chain
+	     * Link the TCLEXCEPTION_REGISTRATION on the chain
 	     */
 
 	    "movl	%%edx,		%%fs:0"		"\n\t"
@@ -347,7 +330,7 @@ DllMain(
 	    "call	_Tcl_Finalize"			"\n\t"
 
 	    /*
-	     * Come here on a normal exit. Recover the EXCEPTION_REGISTRATION
+	     * Come here on a normal exit. Recover the TCLEXCEPTION_REGISTRATION
 	     * and store a TCL_OK status
 	     */
 
@@ -357,7 +340,7 @@ DllMain(
 	    "jmp	2f"				"\n"
 
 	    /*
-	     * Come here on an exception. Get the EXCEPTION_REGISTRATION that
+	     * Come here on an exception. Get the TCLEXCEPTION_REGISTRATION that
 	     * we previously put on the chain.
 	     */
 
@@ -368,7 +351,7 @@ DllMain(
 
 	    /*
 	     * Come here however we exited. Restore context from the
-	     * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+	     * TCLEXCEPTION_REGISTRATION in case the stack is unbalanced.
 	     */
 
 	    "2:"					"\t"
@@ -449,11 +432,11 @@ void
 TclWinInit(
     HINSTANCE hInst)		/* Library instance handle. */
 {
-    OSVERSIONINFO os;
+    OSVERSIONINFOW os;
 
     hInstance = hInst;
-    os.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    GetVersionEx(&os);
+    os.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+    GetVersionExW(&os);
     platformId = os.dwPlatformId;
 
     /*
@@ -636,93 +619,85 @@ TclWinSetInterfaces(
 	tclWinProcs = &unicodeProcs;
 	tclWinTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
 	if (tclWinProcs->getFileAttributesExProc == NULL) {
-	    HINSTANCE hInstance = LoadLibraryA("kernel32");
-	    if (hInstance != NULL) {
-		tclWinProcs->getFileAttributesExProc =
-			(BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS,
-			LPVOID)) GetProcAddress(hInstance,
-			"GetFileAttributesExW");
-		tclWinProcs->createHardLinkProc =
-			(BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*,
-			LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance,
-			"CreateHardLinkW");
-		tclWinProcs->findFirstFileExProc =
-			(HANDLE (WINAPI *)(CONST TCHAR*, UINT, LPVOID, UINT,
-			LPVOID, DWORD)) GetProcAddress(hInstance,
-			"FindFirstFileExW");
-		tclWinProcs->getVolumeNameForVMPProc =
-			(BOOL (WINAPI *)(CONST TCHAR*, TCHAR*,
-			DWORD)) GetProcAddress(hInstance,
-			"GetVolumeNameForVolumeMountPointW");
-		tclWinProcs->getLongPathNameProc =
-			(DWORD (WINAPI *)(CONST TCHAR*, TCHAR*,
-			DWORD)) GetProcAddress(hInstance, "GetLongPathNameW");
-		FreeLibrary(hInstance);
-	    }
-	    hInstance = LoadLibraryA("advapi32");
-	    if (hInstance != NULL) {
-		tclWinProcs->getFileSecurityProc = (BOOL (WINAPI *)(
-			LPCTSTR lpFileName,
-			SECURITY_INFORMATION RequestedInformation,
-			PSECURITY_DESCRIPTOR pSecurityDescriptor,
-			DWORD nLength, LPDWORD lpnLengthNeeded))
-			GetProcAddress(hInstance, "GetFileSecurityW");
-		tclWinProcs->impersonateSelfProc = (BOOL (WINAPI *) (
-			SECURITY_IMPERSONATION_LEVEL ImpersonationLevel))
-			GetProcAddress(hInstance, "ImpersonateSelf");
-		tclWinProcs->openThreadTokenProc = (BOOL (WINAPI *) (
-			HANDLE ThreadHandle, DWORD DesiredAccess,
-			BOOL OpenAsSelf, PHANDLE TokenHandle))
-			GetProcAddress(hInstance, "OpenThreadToken");
-		tclWinProcs->revertToSelfProc = (BOOL (WINAPI *) (void))
-			GetProcAddress(hInstance, "RevertToSelf");
-		tclWinProcs->mapGenericMaskProc = (VOID (WINAPI *) (
-			PDWORD AccessMask, PGENERIC_MAPPING GenericMapping))
-			GetProcAddress(hInstance, "MapGenericMask");
-		tclWinProcs->accessCheckProc = (BOOL (WINAPI *)(
-			PSECURITY_DESCRIPTOR pSecurityDescriptor,
-			HANDLE ClientToken, DWORD DesiredAccess,
-			PGENERIC_MAPPING GenericMapping,
-			PPRIVILEGE_SET PrivilegeSet,
-			LPDWORD PrivilegeSetLength, LPDWORD GrantedAccess,
-			LPBOOL AccessStatus)) GetProcAddress(hInstance,
-			"AccessCheck");
-		FreeLibrary(hInstance);
-	    }
+	    HMODULE handle = GetModuleHandle(TEXT("KERNEL32"));
+	    tclWinProcs->getFileAttributesExProc =
+		    (BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS,
+		    LPVOID)) GetProcAddress(handle,
+		    "GetFileAttributesExW");
+	    tclWinProcs->createHardLinkProc =
+		    (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*,
+		    LPSECURITY_ATTRIBUTES)) GetProcAddress(handle,
+		    "CreateHardLinkW");
+	    tclWinProcs->findFirstFileExProc =
+		    (HANDLE (WINAPI *)(CONST TCHAR*, UINT, LPVOID, UINT,
+		    LPVOID, DWORD)) GetProcAddress(handle,
+		    "FindFirstFileExW");
+	    tclWinProcs->getVolumeNameForVMPProc =
+		    (BOOL (WINAPI *)(CONST TCHAR*, TCHAR*,
+		    DWORD)) GetProcAddress(handle,
+		    "GetVolumeNameForVolumeMountPointW");
+	    tclWinProcs->getLongPathNameProc =
+		    (DWORD (WINAPI *)(CONST TCHAR*, TCHAR*,
+		    DWORD)) GetProcAddress(handle, "GetLongPathNameW");
+
+	    handle = GetModuleHandle(TEXT("ADVAPI32"));
+	    tclWinProcs->getFileSecurityProc = (BOOL (WINAPI *)(
+		    LPCTSTR lpFileName,
+		    SECURITY_INFORMATION RequestedInformation,
+		    PSECURITY_DESCRIPTOR pSecurityDescriptor,
+		    DWORD nLength, LPDWORD lpnLengthNeeded))
+		    GetProcAddress(handle, "GetFileSecurityW");
+	    tclWinProcs->impersonateSelfProc = (BOOL (WINAPI *) (
+		    SECURITY_IMPERSONATION_LEVEL ImpersonationLevel))
+		    GetProcAddress(handle, "ImpersonateSelf");
+	    tclWinProcs->openThreadTokenProc = (BOOL (WINAPI *) (
+		    HANDLE ThreadHandle, DWORD DesiredAccess,
+		    BOOL OpenAsSelf, PHANDLE TokenHandle))
+		    GetProcAddress(handle, "OpenThreadToken");
+	    tclWinProcs->revertToSelfProc = (BOOL (WINAPI *) (void))
+		    GetProcAddress(handle, "RevertToSelf");
+	    tclWinProcs->mapGenericMaskProc = (VOID (WINAPI *) (
+		    PDWORD AccessMask, PGENERIC_MAPPING GenericMapping))
+		    GetProcAddress(handle, "MapGenericMask");
+	    tclWinProcs->accessCheckProc = (BOOL (WINAPI *)(
+		    PSECURITY_DESCRIPTOR pSecurityDescriptor,
+		    HANDLE ClientToken, DWORD DesiredAccess,
+		    PGENERIC_MAPPING GenericMapping,
+		    PPRIVILEGE_SET PrivilegeSet,
+		    LPDWORD PrivilegeSetLength, LPDWORD GrantedAccess,
+		    LPBOOL AccessStatus)) GetProcAddress(handle,
+		    "AccessCheck");
 	}
     } else {
 	tclWinProcs = &asciiProcs;
 	tclWinTCharEncoding = NULL;
 	if (tclWinProcs->getFileAttributesExProc == NULL) {
-	    HINSTANCE hInstance = LoadLibraryA("kernel32");
-	    if (hInstance != NULL) {
-		tclWinProcs->getFileAttributesExProc =
-			(BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS,
-			LPVOID)) GetProcAddress(hInstance,
-			"GetFileAttributesExA");
-		tclWinProcs->createHardLinkProc =
-			(BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*,
-			LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance,
-			"CreateHardLinkA");
-		tclWinProcs->findFirstFileExProc = NULL;
-		tclWinProcs->getLongPathNameProc = NULL;
-		/*
-		 * The 'findFirstFileExProc' function exists on some of
-		 * 95/98/ME, but it seems not to work as anticipated.
-		 * Therefore we don't set this function pointer. The relevant
-		 * code will fall back on a slower approach using the normal
-		 * findFirstFileProc.
-		 *
-		 * (HANDLE (WINAPI *)(CONST TCHAR*, UINT,
-		 * LPVOID, UINT, LPVOID, DWORD)) GetProcAddress(hInstance,
-		 * "FindFirstFileExA");
-		 */
-		tclWinProcs->getVolumeNameForVMPProc =
-			(BOOL (WINAPI *)(CONST TCHAR*, TCHAR*,
-			DWORD)) GetProcAddress(hInstance,
-			"GetVolumeNameForVolumeMountPointA");
-		FreeLibrary(hInstance);
-	    }
+	    HMODULE handle = GetModuleHandle(TEXT("KERNEL32"));
+	    tclWinProcs->getFileAttributesExProc =
+		    (BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS,
+		    LPVOID)) GetProcAddress(handle,
+		    "GetFileAttributesExA");
+	    tclWinProcs->createHardLinkProc =
+		    (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*,
+		    LPSECURITY_ATTRIBUTES)) GetProcAddress(handle,
+		    "CreateHardLinkA");
+	    tclWinProcs->findFirstFileExProc = NULL;
+	    tclWinProcs->getLongPathNameProc = NULL;
+	    /*
+	     * The 'findFirstFileExProc' function exists on some of
+	     * 95/98/ME, but it seems not to work as anticipated.
+	     * Therefore we don't set this function pointer. The relevant
+	     * code will fall back on a slower approach using the normal
+	     * findFirstFileProc.
+	     *
+	     * (HANDLE (WINAPI *)(CONST TCHAR*, UINT,
+	     * LPVOID, UINT, LPVOID, DWORD)) GetProcAddress(handle,
+	     * "FindFirstFileExA");
+	     */
+	    tclWinProcs->getVolumeNameForVMPProc =
+		    (BOOL (WINAPI *)(CONST TCHAR*, TCHAR*,
+		    DWORD)) GetProcAddress(handle,
+		    "GetVolumeNameForVolumeMountPointA");
 	}
     }
 }
@@ -1086,7 +1061,7 @@ TclWinCPUID(
 
 #   else
 
-    EXCEPTION_REGISTRATION registration;
+    TCLEXCEPTION_REGISTRATION registration;
 
     /*
      * Execute the CPUID instruction with the given index, and store results
@@ -1095,7 +1070,7 @@ TclWinCPUID(
 
     __asm__ __volatile__(
 	/*
-	 * Construct an EXCEPTION_REGISTRATION to protect the CPUID
+	 * Construct an TCLEXCEPTION_REGISTRATION to protect the CPUID
 	 * instruction (early 486's don't have CPUID)
 	 */
 
@@ -1109,7 +1084,7 @@ TclWinCPUID(
 	"movl	%[error],	0x10(%%edx)"	"\n\t" /* status */
 
 	/*
-	 * Link the EXCEPTION_REGISTRATION on the chain
+	 * Link the TCLEXCEPTION_REGISTRATION on the chain
 	 */
 
 	"movl	%%edx,		%%fs:0"		"\n\t"
@@ -1128,7 +1103,7 @@ TclWinCPUID(
 	"movl	%%edx,		0xc(%%edi)"	"\n\t"
 
 	/*
-	 * Come here on a normal exit. Recover the EXCEPTION_REGISTRATION and
+	 * Come here on a normal exit. Recover the TCLEXCEPTION_REGISTRATION and
 	 * store a TCL_OK status.
 	 */
 
@@ -1138,7 +1113,7 @@ TclWinCPUID(
 	"jmp	2f"				"\n"
 
 	/*
-	 * Come here on an exception. Get the EXCEPTION_REGISTRATION that we
+	 * Come here on an exception. Get the TCLEXCEPTION_REGISTRATION that we
 	 * previously put on the chain.
 	 */
 
@@ -1148,7 +1123,7 @@ TclWinCPUID(
 
 	/*
 	 * Come here however we exited. Restore context from the
-	 * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+	 * TCLEXCEPTION_REGISTRATION in case the stack is unbalanced.
 	 */
 
 	"2:"					"\t"

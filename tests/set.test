@@ -521,6 +521,11 @@ test set-5.1 {error on malformed array name} testset2 {
     list $msg $msg1
 } {{can't read "z(a)(b)": variable isn't array} {can't read "z(b)(a)": variable isn't array}}
 
+# In a mem-debug build, this test will crash unless Bug 3602706 is fixed.
+test set-5.2 {Bug 3602706} -body {
+    testset2 ::tcl_platform not-in-there
+} -returnCodes error -result * -match glob
+
 # cleanup
 catch {unset a}
 catch {unset b}
