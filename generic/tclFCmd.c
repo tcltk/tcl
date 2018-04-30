@@ -373,14 +373,7 @@ TclFileDeleteCmd(
 	 */
 
 	if (Tcl_FSLstat(objv[i], &statBuf) != 0) {
-	    /*
-	     * Trying to delete a file that does not exist is not considered
-	     * an error, just a no-op
-	     */
-
-	    if (errno != ENOENT) {
-		result = TCL_ERROR;
-	    }
+	    result = TCL_ERROR;
 	} else if (S_ISDIR(statBuf.st_mode)) {
 	    /*
 	     * We own a reference count on errorBuffer, if it was set as a
@@ -416,13 +409,20 @@ TclFileDeleteCmd(
 	}
 
 	if (result != TCL_OK) {
-	    result = TCL_ERROR;
 
+	    /*
+	     * Avoid possible race condition (file/directory deleted after call
+	     * of lstat), so bypass ENOENT because not an error, just a no-op
+	     */
+	    if (errno == ENOENT) {
+		result = TCL_OK;
+		continue;
+	    }
 	    /*
 	     * It is important that we break on error, otherwise we might end
 	     * up owning reference counts on numerous errorBuffers.
 	     */
-
+	    result = TCL_ERROR;
 	    break;
 	}
     }
