@@ -1592,7 +1592,7 @@ NativeAccess(
 	    if (mode & W_OK) { mask |= GENERIC_WRITE; }
 	    if (mode & X_OK) { mask |= GENERIC_EXECUTE; }
 
-	    hFile = (tclWinProcs->createFileProc)(nativePath, mask,
+	    hFile = CreateFile(nativePath, mask,
 		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
 		OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, NULL);
 	    if (hFile != INVALID_HANDLE_VALUE) {
