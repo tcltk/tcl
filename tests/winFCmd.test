@@ -1082,10 +1082,11 @@ test winFCmd-12.6.2 {ConvertFileNameFormat: absolute path with drive (in temp fo
     catch {file delete -force -- $::env(TEMP)/td1}
 } -constraints {win} -body {
     createfile $::env(TEMP)/td1 {}
-    string tolower [file attributes $::env(TEMP)/td1 -longname]
+    string equal [string tolower [file attributes $::env(TEMP)/td1 -longname]] \
+	    [string tolower [file normalize $::env(TEMP)]/td1]]
 } -cleanup {
     file delete -force -- $::env(TEMP)/td1
-} -result [string tolower [file normalize $::env(TEMP)]/td1]
+} -result 1
 test winFCmd-12.7 {ConvertFileNameFormat} -body {
     string tolower [file attributes //bisque/tcl/ws -longname]
 } -constraints {nonPortable win} -result {//bisque/tcl/ws}
