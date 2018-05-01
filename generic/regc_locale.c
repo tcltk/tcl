@@ -828,7 +828,7 @@ element(
      */
 
     Tcl_DStringInit(&ds);
-    np = Tcl_UniCharToUtfDString(startp, (int)len, &ds);
+    np = TclUnicodeToUtfDString(startp, (int)len, &ds);
     for (cn=cnames; cn->name!=NULL; cn++) {
 	if (strlen(cn->name)==len && strncmp(cn->name, np, len)==0) {
 	    break;			/* NOTE BREAK OUT */
@@ -1000,7 +1000,7 @@ cclass(
 
     len = endp - startp;
     Tcl_DStringInit(&ds);
-    np = Tcl_UniCharToUtfDString(startp, (int)len, &ds);
+    np = TclUnicodeToUtfDString(startp, (int)len, &ds);
 
     /*
      * Map the name to the corresponding enumerated value.

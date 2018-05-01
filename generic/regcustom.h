@@ -66,7 +66,7 @@
 #undef __REG_NOCHAR
 #endif
 /* Interface types */
-#define	__REG_WIDE_T	Tcl_UniChar
+#define	__REG_WIDE_T	unsigned
 #define	__REG_REGOFF_T	long	/* Not really right, but good enough... */
 /* Names and declarations */
 #define	__REG_WIDE_COMPILE	TclReComp
@@ -81,22 +81,16 @@
  * Internal character type and related.
  */
 
-typedef Tcl_UniChar chr;	/* The type itself. */
+typedef unsigned chr;	/* The type itself. */
 typedef int pchr;		/* What it promotes to. */
 typedef unsigned uchr;		/* Unsigned type that will hold a chr. */
 typedef int celt;		/* Type to hold chr, or NOCELT */
 #define	NOCELT (-1)		/* Celt value which is not valid chr */
 #define	CHR(c) (UCHAR(c))	/* Turn char literal into chr literal */
 #define	DIGITVAL(c) ((c)-'0')	/* Turn chr digit into its value */
-#if TCL_UTF_MAX > 4
 #define	CHRBITS	32		/* Bits in a chr; must not use sizeof */
 #define	CHR_MIN	0x00000000	/* Smallest and largest chr; the value */
-#define	CHR_MAX	0x10ffff	/* CHR_MAX-CHR_MIN+1 should fit in uchr */
-#else
-#define	CHRBITS	16		/* Bits in a chr; must not use sizeof */
-#define	CHR_MIN	0x0000		/* Smallest and largest chr; the value */
-#define	CHR_MAX	0xffff		/* CHR_MAX-CHR_MIN+1 should fit in uchr */
-#endif
+#define	CHR_MAX	0x0010ffff	/* CHR_MAX-CHR_MIN+1 should fit in uchr */
 
 /*
  * Functions operating on chr.
