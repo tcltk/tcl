@@ -1034,7 +1034,10 @@ Tcl_UtfToTitle(
 	    lowChar = (((lowChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	}
 #endif
-	lowChar = Tcl_UniCharToLower(lowChar);
+	/* Special exception for Gregorian characters, which don't have titlecase */
+	if ((lowChar < 0x1C90) || (lowChar >= 0x1CC0)) {
+	    lowChar = Tcl_UniCharToLower(lowChar);
+	}
 
 	if (bytes < TclUtfCount(lowChar)) {
 	    memcpy(dst, src, (size_t) bytes);
@@ -1355,8 +1358,9 @@ Tcl_UniCharToLower(
 {
     if (!UNICODE_OUT_OF_RANGE(ch)) {
 	int info = GetUniCharInfo(ch);
+	int mode = GetCaseType(info);
 
-	if (GetCaseType(info) & 0x02) {
+	if ((mode & 0x02) && (mode != 0x7)) {
 	    ch += GetDelta(info);
 	}
     }
@@ -1392,7 +1396,9 @@ Tcl_UniCharToTitle(
 	     * Subtract or add one depending on the original case.
 	     */
 
-	    ch += ((mode & 0x4) ? -1 : 1);
+	    if (mode != 0x7) {
+		ch += ((mode & 0x4) ? -1 : 1);
+	    }
 	} else if (mode == 0x4) {
 	    ch -= GetDelta(info);
 	}
