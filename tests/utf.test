@@ -250,6 +250,9 @@ test utf-11.3 {Tcl_UtfToUpper} {
 test utf-11.4 {Tcl_UtfToUpper} {
     string toupper \u01e3ab
 } \u01e2AB
+test utf-11.5 {Tcl_UtfToUpper Georgian (new in Unicode 11)} {
+    string toupper \u10d0\u1c90
+} \u1c90\u1c90
 
 test utf-12.1 {Tcl_UtfToLower} {
     string tolower {}
@@ -263,6 +266,9 @@ test utf-12.3 {Tcl_UtfToLower} {
 test utf-12.4 {Tcl_UtfToLower} {
     string tolower \u01e2AB
 } \u01e3ab
+test utf-12.5 {Tcl_UtfToLower Georgian (new in Unicode 11)} {
+    string tolower \u10d0\u1c90
+} \u10d0\u10d0
 
 test utf-13.1 {Tcl_UtfToTitle} {
     string totitle {}
@@ -276,6 +282,12 @@ test utf-13.3 {Tcl_UtfToTitle} {
 test utf-13.4 {Tcl_UtfToTitle} {
     string totitle \u01f3ab
 } \u01f2ab
+test utf-13.5 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
+    string totitle \u10d0\u1c90
+} \u10d0\u1c90
+test utf-13.6 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
+    string totitle \u1c90\u10d0
+} \u1c90\u10d0
 
 test utf-14.1 {Tcl_UtfNcasecmp} {
     string compare -nocase a b
