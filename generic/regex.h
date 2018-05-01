@@ -99,7 +99,7 @@ extern "C" {
 #undef __REG_NOCHAR
 #endif
 /* interface types */
-#define	__REG_WIDE_T	Tcl_UniChar
+#define	__REG_WIDE_T	unsigned
 #define	__REG_REGOFF_T	long	/* not really right, but good enough... */
 /* names and declarations */
 #define	__REG_WIDE_COMPILE	TclReComp

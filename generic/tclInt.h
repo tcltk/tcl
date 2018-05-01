@@ -3985,6 +3985,15 @@ MODULE_SCOPE int	TclPtrUnsetVarIdx(Tcl_Interp *interp, Var *varPtr,
 MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
 MODULE_SCOPE void	TclFindArrayPtrElements(Var *arrayPtr,
 			    Tcl_HashTable *tablePtr);
+#if TCL_UTF_MAX <= 4
+MODULE_SCOPE char *	TclUnicodeToUtfDString(const unsigned *uniStr,
+				int uniLength, Tcl_DString *dsPtr);
+MODULE_SCOPE unsigned *	TclUtfToUnicodeDString(const char *src, int length,
+				Tcl_DString *dsPtr);
+#else
+#   define TclUnicodeToUtfDString Tcl_UniCharToUtfDString
+#   define TclUtfToUnicodeDString Tcl_UtfToUniCharDString
+#endif
 
 /*
  * The new extended interface to the variable traces.

@@ -90,8 +90,8 @@ static void		DupRegexpInternalRep(Tcl_Obj *srcPtr,
 static void		FinalizeRegexp(ClientData clientData);
 static void		FreeRegexp(TclRegexp *regexpPtr);
 static void		FreeRegexpInternalRep(Tcl_Obj *objPtr);
-static int		RegExpExecUniChar(Tcl_Interp *interp, Tcl_RegExp re,
-			    const Tcl_UniChar *uniString, int numChars,
+static int		RegExpExecUnicode(Tcl_Interp *interp, Tcl_RegExp re,
+			    const __REG_WIDE_T *uniString, int numChars,
 			    int nmatches, int flags);
 static int		SetRegexpFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
@@ -175,7 +175,7 @@ Tcl_RegExpExec(
     int flags, result, numChars;
     TclRegexp *regexp = (TclRegexp *) re;
     Tcl_DString ds;
-    const Tcl_UniChar *ustr;
+    const __REG_WIDE_T *ustr;
 
     /*
      * If the starting point is offset from the beginning of the buffer, then
@@ -200,9 +200,9 @@ Tcl_RegExpExec(
      */
 
     Tcl_DStringInit(&ds);
-    ustr = Tcl_UtfToUniCharDString(text, -1, &ds);
-    numChars = Tcl_DStringLength(&ds) / sizeof(Tcl_UniChar);
-    result = RegExpExecUniChar(interp, re, ustr, numChars, -1 /* nmatches */,
+    ustr = TclUtfToUnicodeDString(text, -1, &ds);
+    numChars = Tcl_DStringLength(&ds) / sizeof(__REG_WIDE_T);
+    result = RegExpExecUnicode(interp, re, ustr, numChars, -1 /* nmatches */,
 	    flags);
     Tcl_DStringFree(&ds);
 
@@ -261,7 +261,7 @@ Tcl_RegExpRange(
 /*
  *---------------------------------------------------------------------------
  *
- * RegExpExecUniChar --
+ * RegExpExecUnicode --
  *
  *	Execute the regular expression matcher using a compiled form of a
  *	regular expression and save information about any match that is found.
@@ -279,12 +279,12 @@ Tcl_RegExpRange(
  */
 
 static int
-RegExpExecUniChar(
+RegExpExecUnicode(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
     Tcl_RegExp re,		/* Compiled regular expression; returned by a
 				 * previous call to Tcl_GetRegExpFromObj */
-    const Tcl_UniChar *wString,	/* String against which to match re. */
-    int numChars,		/* Length of Tcl_UniChar string (must be
+    const __REG_WIDE_T *wString,	/* String against which to match re. */
+    int numChars,		/* Length of Unicode string (must be
 				 * >=0). */
     int nmatches,		/* How many subexpression matches (counting
 				 * the whole match as subexpression 0) are of
@@ -432,8 +432,9 @@ Tcl_RegExpExecObj(
     int flags)			/* Regular expression execution flags. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
-    Tcl_UniChar *udata;
-    int length;
+    Tcl_DString ds;
+    __REG_WIDE_T *udata;
+    int length, result;
     int reflags = regexpPtr->flags;
 #define TCL_REG_GLOBOK_FLAGS \
 	(TCL_REG_ADVANCED | TCL_REG_NOSUB | TCL_REG_NOCASE)
@@ -464,7 +465,9 @@ Tcl_RegExpExecObj(
     regexpPtr->string = NULL;
     regexpPtr->objPtr = textObj;
 
-    udata = Tcl_GetUnicodeFromObj(textObj, &length);
+    Tcl_DStringInit(&ds);
+    udata = TclUtfToUnicodeDString(Tcl_GetString(textObj), -1, &ds);
+    length = Tcl_DStringLength(&ds)/sizeof(__REG_WIDE_T);
 
     if (offset > length) {
 	offset = length;
@@ -472,7 +475,9 @@ Tcl_RegExpExecObj(
     udata += offset;
     length -= offset;
 
-    return RegExpExecUniChar(interp, re, udata, length, nmatches, flags);
+    result = RegExpExecUnicode(interp, re, udata, length, nmatches, flags);
+    Tcl_DStringFree(&ds);
+    return result;
 }
 
 /*
@@ -858,7 +863,7 @@ CompileRegexp(
     int flags)			/* Compilation flags. */
 {
     TclRegexp *regexpPtr;
-    const Tcl_UniChar *uniString;
+    const __REG_WIDE_T *uniString;
     int numChars, status, i, exact;
     Tcl_DString stringBuf;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -923,8 +928,8 @@ CompileRegexp(
      */
 
     Tcl_DStringInit(&stringBuf);
-    uniString = Tcl_UtfToUniCharDString(string, length, &stringBuf);
-    numChars = Tcl_DStringLength(&stringBuf) / sizeof(Tcl_UniChar);
+    uniString = TclUtfToUnicodeDString(string, length, &stringBuf);
+    numChars = Tcl_DStringLength(&stringBuf) / sizeof(__REG_WIDE_T);
 
     /*
      * Compile the string and check for errors.

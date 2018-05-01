@@ -235,6 +235,63 @@ Tcl_UniCharToUtfDString(
 /*
  *---------------------------------------------------------------------------
  *
+ * TclUnicodeToUtfDString --
+ *
+ *	Convert the given Unicode string to UTF-8.
+ *
+ * Results:
+ *	The return value is a pointer to the UTF-8 representation of the
+ *	Unicode string. Storage for the return value is appended to the end of
+ *	dsPtr.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+#if TCL_UTF_MAX <= 4
+char *
+TclUnicodeToUtfDString(
+    const unsigned *uniStr,	/* Unicode string to convert to UTF-8. */
+    int uniLength,		/* Length of Unicode string in Tcl_UniChars
+				 * (must be >= 0). */
+    Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
+				 * to this previously initialized DString. */
+{
+    const unsigned *w, *wEnd;
+    char *p, *string;
+    int oldLength;
+
+    /*
+     * UTF-8 string length in bytes will be <= Unicode string length * 4.
+     */
+
+    oldLength = Tcl_DStringLength(dsPtr);
+    Tcl_DStringSetLength(dsPtr, (oldLength + uniLength + 1) * 4);
+    string = Tcl_DStringValue(dsPtr) + oldLength;
+
+    p = string;
+    wEnd = uniStr + uniLength;
+    for (w = uniStr; w < wEnd; ) {
+	if ((*w & 0xD800) == 0xD800) {
+	    *p++ = (*w >> 12) | 0xE0;
+	    *p++ = ((*w >> 6) & 0x3F) | 0x80;
+	    *p++ = (*w & 0x3F) | 0xE0;
+	} else {
+	    p += Tcl_UniCharToUtf(*w, p);
+	}
+	w++;
+    }
+    Tcl_DStringSetLength(dsPtr, oldLength + (p - string));
+
+    return string;
+}
+#endif
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * Tcl_UtfToUniChar --
  *
  *	Extract the Tcl_UniChar represented by the UTF-8 string. Bad UTF-8
@@ -435,6 +492,74 @@ Tcl_UtfToUniCharDString(
 
     return wString;
 }
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclUtfToUnicodeDString --
+ *
+ *	Convert the UTF-8 string to Unicode.
+ *
+ * Results:
+ *	The return value is a pointer to the Unicode representation of the
+ *	UTF-8 string. Storage for the return value is appended to the end of
+ *	dsPtr. The Unicode string is terminated with a Unicode NULL character.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+#if TCL_UTF_MAX <= 4
+unsigned *
+TclUtfToUnicodeDString(
+    const char *src,		/* UTF-8 string to convert to Unicode. */
+    int length,			/* Length of UTF-8 string in bytes, or -1 for
+				 * strlen(). */
+    Tcl_DString *dsPtr)		/* Unicode representation of string is
+				 * appended to this previously initialized
+				 * DString. */
+{
+    Tcl_UniChar ch = 0;
+    unsigned *w, *wString;
+    const char *p, *end;
+    int oldLength, len;
+
+    if (length < 0) {
+	length = strlen(src);
+    }
+
+    /*
+     * Unicode string length in Tcl_UniChars will be <= UTF-8 string length in
+     * bytes.
+     */
+
+    oldLength = Tcl_DStringLength(dsPtr);
+/* TODO: fix overreach! */
+    Tcl_DStringSetLength(dsPtr,
+	    (int) ((oldLength + length + 1) * sizeof(unsigned)));
+    wString = (unsigned *) (Tcl_DStringValue(dsPtr) + oldLength);
+
+    w = wString;
+    end = src + length;
+    for (p = src; p < end; ) {
+	len = TclUtfToUniChar(p, &ch);
+	if (!len) {
+	    int high = ch;
+	    len = TclUtfToUniChar(p, &ch);
+	    *w++ = ((high & 0x7ff) << 10) + (ch & 0x7ff) + 0x10000;
+	} else {
+	    *w++ = ch;
+	}
+	p += len;
+    }
+    *w = '\0';
+    Tcl_DStringSetLength(dsPtr,
+	    (oldLength + ((char *) w - (char *) wString)));
+
+    return wString;
+}
+#endif
 
 /*
  *---------------------------------------------------------------------------
