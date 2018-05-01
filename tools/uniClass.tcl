@@ -66,7 +66,7 @@ proc genTable {type} {
     for {set i 0} {$i <= 0x10ffff} {incr i} {
     if {$i == 0xd800} {
 	# Skip surrogates
-	set i 0xdc00
+	set i 0xe000
     }
 	if {[string is $type [format %c $i]]} {
 	    if {$i == ($last + 1)} {
