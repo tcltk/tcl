@@ -644,7 +644,7 @@ test binary-18.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
 
 test binary-19.1 {Tcl_BinaryObjCmd: errors} -returnCodes error -body {
     binary s
-} -result {wrong # args: should be "binary scan value formatString ?varName ...?"}
+} -result {unknown or ambiguous subcommand "s": must be decode, encode, format, scan, or set}
 test binary-19.2 {Tcl_BinaryObjCmd: errors} -returnCodes error -body {
     binary scan foo
 } -result {wrong # args: should be "binary scan value formatString ?varName ...?"}

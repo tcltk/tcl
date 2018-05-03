@@ -169,7 +169,7 @@ test set-old-5.4 {errors in reading variables} {
 
 test set-old-6.1 {creating array during write} {
     catch {unset a}
-    trace var a rwu ignore
+    trace add variable a {read write unset} ignore
     list [catch {set a(14) 186} msg] $msg [array names a]
 } {0 186 14}
 test set-old-6.2 {errors in writing variables} {
@@ -407,7 +407,7 @@ test set-old-8.18 {array command, get option} {
 test set-old-8.19 {array command, get option (unset variable)} {
     catch {unset a}
     set a(x) 3
-    trace var a(y) w ignore
+    trace add variable a(y) write ignore
     array get a
 } {x 3}
 test set-old-8.20 {array command, get option, with pattern} {
@@ -445,13 +445,13 @@ test set-old-8.24 {array command, names option} {
 test set-old-8.25 {array command, names option} {
     catch {unset a}
     set a(22) 3; set a(33) 44;
-    trace var a(xxx) w ignore
+    trace add variable a(xxx) write ignore
     list [catch {lsort [array names a]} msg] $msg
 } {0 {22 33}}
 test set-old-8.26 {array command, names option} {
     catch {unset a}
     set a(22) 3; set a(33) 44;
-    trace var a(xxx) w ignore
+    trace add variable a(xxx) write ignore
     set a(xxx) value
     list [catch {lsort [array names a]} msg] $msg
 } {0 {22 33 xxx}}
@@ -579,7 +579,7 @@ test set-old-8.43 {array command, size option} {
 test set-old-8.44 {array command, size option} {
     catch {unset a}
     set a(22) 3;
-    trace var a(33) rwu ignore
+    trace add variable a(33) {read write unset} ignore
     list [catch {array size a} msg] $msg
 } {0 1}
 test set-old-8.45 {array command, size option, array doesn't exist yet but has compiler-allocated procedure slot} {
@@ -786,7 +786,7 @@ test set-old-9.10 {array enumeration: searches automatically stopped} {
     set a(a) 1
     set x [array startsearch a]
     set y [array startsearch a]
-    trace var a(b) r {}
+    trace add variable a(b) read {}
     list [catch {array next a $x} msg] $msg \
 	    [catch {array next a $y} msg2] $msg2
 } {1 {couldn't find search "s-1-a"} 1 {couldn't find search "s-2-a"}}
@@ -795,14 +795,14 @@ test set-old-9.11 {array enumeration: searches automatically stopped} {
     set a(a) 1
     set x [array startsearch a]
     set y [array startsearch a]
-    trace var a(a) r {}
+    trace add variable a(a) read {}
     list [catch {array next a $x} msg] $msg \
 	    [catch {array next a $y} msg2] $msg2
 } {0 a 0 a}
 test set-old-9.12 {array enumeration with traced undefined elements} {
     catch {unset a}
     set a(a) 1
-    trace var a(b) r {}
+    trace add variable a(b) read {}
     set x [array startsearch a]
     lsort [list [array next a $x] [array next a $x]]
 } {{} a}

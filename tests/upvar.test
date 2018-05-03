@@ -187,26 +187,26 @@ test upvar-4.2 {nested upvars} {
 
 proc tproc {args} {global x; set x [list $args [uplevel info vars]]}
 test upvar-5.1 {traces involving upvars} {
-    proc p1 {a b} {set c 22; set d 33; trace var c rw tproc; p2}
+    proc p1 {a b} {set c 22; set d 33; trace add variable c {read write} tproc; p2}
     proc p2 {} {upvar c x1; set x1 22}
     set x ---
     p1 foo bar
     set x
-} {{x1 {} w} x1}
+} {{x1 {} write} x1}
 test upvar-5.2 {traces involving upvars} {
-    proc p1 {a b} {set c 22; set d 33; trace var c rw tproc; p2}
+    proc p1 {a b} {set c 22; set d 33; trace add variable c {read write} tproc; p2}
     proc p2 {} {upvar c x1; set x1}
     set x ---
     p1 foo bar
     set x
-} {{x1 {} r} x1}
+} {{x1 {} read} x1}
 test upvar-5.3 {traces involving upvars} {
-    proc p1 {a b} {set c 22; set d 33; trace var c rwu tproc; p2}
+    proc p1 {a b} {set c 22; set d 33; trace add variable c {read write unset} tproc; p2}
     proc p2 {} {upvar c x1; unset x1}
     set x ---
     p1 foo bar
     set x
-} {{x1 {} u} x1}
+} {{x1 {} unset} x1}
 
 test upvar-6.1 {retargeting an upvar} {
     proc p1 {} {
@@ -317,7 +317,7 @@ test upvar-8.6 {errors in upvar command} -returnCodes error -body {
     p1
 } -result {variable "a" already exists}
 test upvar-8.7 {errors in upvar command} -returnCodes error -body {
-    proc p1 {} {trace variable a w foo; upvar b a}
+    proc p1 {} {trace add variable a write foo; upvar b a}
     p1
 } -result {variable "a" has traces: can't use for upvar}
 test upvar-8.8 {create nested array with upvar} -body {

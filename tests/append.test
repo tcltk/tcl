@@ -188,7 +188,7 @@ test append-7.1 {lappend-created var and error in trace on that var} -setup {
     catch {rename foo ""}
     unset -nocomplain x
 } -body {
-    trace variable x w foo
+    trace add variable x write foo
     proc foo {} {global x; unset x}
     catch {lappend x 1}
     proc foo {args} {global x; unset x}
@@ -201,37 +201,37 @@ test append-7.2 {lappend var triggers read trace} -setup {
     unset -nocomplain myvar
     unset -nocomplain ::result
 } -body {
-    trace variable myvar r foo
+    trace add variable myvar read foo
     proc foo {args} {append ::result $args}
     lappend myvar a
     return $::result
-} -result {myvar {} r}
+} -result {myvar {} read}
 test append-7.3 {lappend var triggers read trace, array var} -setup {
     unset -nocomplain myvar
     unset -nocomplain ::result
 } -body {
     # The behavior of read triggers on lappend changed in 8.0 to not trigger
     # them, and was changed back in 8.4.
-    trace variable myvar r foo
+    trace add variable myvar read foo
     proc foo {args} {append ::result $args}
     lappend myvar(b) a
     return $::result
-} -result {myvar b r}
+} -result {myvar b read}
 test append-7.4 {lappend var triggers read trace, array var exists} -setup {
     unset -nocomplain myvar
     unset -nocomplain ::result
 } -body {
     set myvar(0) 1
-    trace variable myvar r foo
+    trace add variable myvar read foo
     proc foo {args} {append ::result $args}
     lappend myvar(b) a
     return $::result
-} -result {myvar b r}
+} -result {myvar b read}
 test append-7.5 {append var does not trigger read trace} -setup {
     unset -nocomplain myvar
     unset -nocomplain ::result
 } -body {
-    trace variable myvar r foo
+    trace add variable myvar read foo
     proc foo {args} {append ::result $args}
     append myvar a
     info exists ::result

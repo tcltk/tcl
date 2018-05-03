@@ -263,7 +263,7 @@ test set-2.4 {set command: runtime error, readonly variable} -setup {
 } -body {
     proc readonly args {error "variable is read-only"}
     set x 123
-    trace var x w readonly
+    trace add variable x write readonly
     list [catch {set x 1} msg] $msg $::errorInfo
 } -match glob -result {1 {can't set "x": variable is read-only} {*variable is read-only
     while executing
@@ -521,7 +521,7 @@ test set-4.4 {uncompiled set command: runtime error, readonly variable} -body {
     set z set
     proc readonly args {error "variable is read-only"}
     $z x 123
-    trace var x w readonly
+    trace add variable x write readonly
     list [catch {$z x 1} msg] $msg $::errorInfo
 } -match glob -result {1 {can't set "x": variable is read-only} {*variable is read-only
     while executing

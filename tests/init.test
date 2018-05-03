@@ -157,7 +157,7 @@ foreach arg [subst -nocommands -novariables {
 	auto_reset
     } -body {
 	namespace eval junk [list array set $arg [list 1 2 3 4]]
-	trace variable ::junk::$arg r \
+	trace add variable ::junk::$arg read \
 		"[list error [subst {Variable \"$arg\" is write-only}]] ;# "
 	catch {parray ::junk::$arg}
 	set first $::errorInfo
