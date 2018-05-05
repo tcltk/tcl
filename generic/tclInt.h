@@ -2735,6 +2735,10 @@ MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
 MODULE_SCOPE char *	tclEmptyStringRep;
 MODULE_SCOPE char	tclEmptyString;
 
+enum CheckEmptyStringResult {
+	TCL_EMPTYSTRING_UNKNOWN = -1, TCL_EMPTYSTRING_NO, TCL_EMPTYSTRING_YES
+};
+
 /*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside world,
@@ -2875,6 +2879,7 @@ MODULE_SCOPE int	TclCheckArrayTraces(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *name, int index);
 MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp,
 			    const char *value);
+MODULE_SCOPE int	TclCheckEmptyString(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
@@ -4455,6 +4460,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 #define TclIsPureByteArray(objPtr) \
 	(((objPtr)->typePtr==&tclByteArrayType) && ((objPtr)->bytes==NULL))
+#define TclIsPureDict(objPtr) \
+	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclDictType))
+
+#define TclIsPureList(objPtr) \
+	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclListType))
 
 /*
  *----------------------------------------------------------------
