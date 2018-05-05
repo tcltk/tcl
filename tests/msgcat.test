@@ -55,8 +55,13 @@ namespace eval ::msgcat::test {
 	set result [string tolower [lindex $setVars 0]]
 	if {[string length $result] == 0} {
 	    if {[info exists ::tcl::mac::locale]} {
+if {[package vsatisfies [package provide msgcat] 1.7]} {
+		set result [string tolower \
+			[msgcat::mcutil::ConvertLocale $::tcl::mac::locale]]
+} else {
 		set result [string tolower \
 			[msgcat::ConvertLocale $::tcl::mac::locale]]
+}
 	    } else {
 		if {([info sharedlibextension] eq ".dll")
 			&& ![catch {package require registry}]} {
@@ -193,6 +198,28 @@ namespace eval ::msgcat::test {
     } -body {
 	mclocale looks/ok/../../../../but/is/path/to/evil/code
     } -returnCodes error -match glob -result {invalid newLocale value *}
+
+    test msgcat-1.14 {mcpreferences, custom locale preferences} -setup {
+	variable locale [mclocale]
+	mclocale en
+	mcpreferences fr en {}
+    } -cleanup {
+	mclocale $locale
+    } -body {
+	mcpreferences
+    } -result {fr en {}}
+
+    test msgcat-1.15 {mcpreferences, overwrite custom locale preferences}\
+    -setup {
+	variable locale [mclocale]
+	mcpreferences fr en {}
+	mclocale en
+    } -cleanup {
+	mclocale $locale
+    } -body {
+	mcpreferences
+    } -result {en {}}
+
 
     # Tests msgcat-2.*: [mcset], [mcmset], namespace partitioning
 
@@ -688,7 +715,7 @@ namespace eval ::msgcat::test {
 	test msgcat-9.1 {mcexists no parameter} -body {
 	    mcexists
 	} -returnCodes 1\
-	-result {wrong # args: should be "mcexists ?-exactnamespace? ?-exactlocale? src"}
+	-result {wrong # args: should be "mcexists ?-exactnamespace? ?-exactlocale? ?-namespace ns? src"}
 
 	test msgcat-9.2 {mcexists unknown option} -body {
 	    mcexists -unknown src
@@ -724,12 +751,34 @@ namespace eval ::msgcat::test {
 	    mcset foo k1 v1
 	} -cleanup {
 	    mclocale $locale
+	    namespace delete ::foo
 	} -body {
-	    namespace eval ::msgcat::test::sub {
+	    namespace eval ::foo {
 		list [::msgcat::mcexists k1]\
-			[::msgcat::mcexists -exactnamespace k1]
+			[::msgcat::mcexists -namespace ::msgcat::test k1]
 	    }
-	} -result {1 0}
+	} -result {0 1}
+
+	test msgcat-9.6 {mcexists -namespace ns parameter} -setup {
+	    mcforgetpackage
+	    variable locale [mclocale]
+	    mclocale foo_bar
+	    mcset foo k1 v1
+	} -cleanup {
+	    mclocale $locale
+	    namespace delete ::foo
+	} -body {
+	    namespace eval ::foo {
+		list [::msgcat::mcexists k1]\
+			[::msgcat::mcexists -namespace ::msgcat::test k1]
+	    }
+	} -result {0 1}
+
+	test msgcat-9.7 {mcexists -namespace - ns argument missing} -body {
+	    mcexists -namespace src
+	} -returnCodes 1\
+	-result {Argument missing for switch "-namespace"}
+
 
     # Tests msgcat-10.*: [mcloadedlocales]
 
@@ -811,12 +860,17 @@ namespace eval ::msgcat::test {
 	test msgcat-12.1 {mcpackagelocale no subcommand} -body {
 	    mcpackagelocale
 	} -returnCodes 1\
-	-result {wrong # args: should be "mcpackagelocale subcommand ?locale?"}
+	-result {wrong # args: should be "mcpackagelocale subcommand ?arg ...?"}
 
 	test msgcat-12.2 {mclpackagelocale wrong subcommand} -body {
 	    mcpackagelocale junk
 	} -returnCodes 1\
 	-result {unknown subcommand "junk": must be clear, get, isset, loaded, present, set, or unset}
+
+	test msgcat-12.2.1 {mclpackagelocale set multiple args} -body {
+	    mcpackagelocale set a b
+	} -returnCodes 1\
+	-result {wrong # args: should be "mcpackagelocale set ?locale?"}
 
 	test msgcat-12.3 {mcpackagelocale set} -setup {
 	    variable locale [mclocale]
@@ -922,6 +976,30 @@ namespace eval ::msgcat::test {
 	    list [mcpackagelocale present foo] [mcpackagelocale present bar]
 	} -result {0 1}
 
+	test msgcat-12.11 {mcpackagelocale custom preferences} -setup {
+	    variable locale [mclocale]
+	} -cleanup {
+	    mclocale $locale
+	    mcforgetpackage
+	} -body {
+	    mclocale foo
+	    set res [list [mcpackagelocale preferences]]
+	    mcpackagelocale preferences bar {}
+	    lappend res [mcpackagelocale preferences]
+	} -result {{foo {}} {bar {}}}
+
+	test msgcat-12.12 {mcpackagelocale preferences -> no isset} -setup {
+	    variable locale [mclocale]
+	} -cleanup {
+	    mclocale $locale
+	    mcforgetpackage
+	} -body {
+	    mclocale foo
+	    mcpackagelocale preferences
+	    mcpackagelocale isset
+	} -result {0}
+
+	
     # Tests msgcat-13.*: [mcpackageconfig subcmds]
 
 	test msgcat-13.1 {mcpackageconfig no subcommand} -body {
@@ -1073,8 +1151,212 @@ namespace eval ::msgcat::test {
 	} -returnCodes 1\
 	-result {fail}
 
+
+    # Tests msgcat-15.*: tcloo coverage
+    
+    # There are 4 use-cases, where 3 must be tested now:
+    # - namespace defined, in class definition, class defined oo, classless
+
+    test msgcat-15.1 {mc in class setup} -setup {
+	# full namespace is ::msgcat::test:bar
+	namespace eval bar {
+	    ::msgcat::mcset foo_BAR con2 con2bar
+	    oo::class create ClassCur
+	}
+	variable locale [mclocale]
+	mclocale foo_BAR
+    } -cleanup {
+	mclocale $locale
+	namespace eval bar {::msgcat::mcforgetpackage}
+	namespace delete bar
+    } -body {
+	oo::define bar::ClassCur msgcat::mc con2
+    } -result con2bar
+
+    test msgcat-15.2 {mc in class} -setup {
+	# full namespace is ::msgcat::test:bar
+	namespace eval bar {
+	    ::msgcat::mcset foo_BAR con2 con2bar
+	    oo::class create ClassCur
+	    oo::define ClassCur method method1 {} {::msgcat::mc con2}
+	}
+	# full namespace is ::msgcat::test:baz
+	namespace eval baz {
+            set ObjCur [::msgcat::test::bar::ClassCur new]
+	}
+	variable locale [mclocale]
+	mclocale foo_BAR
+    } -cleanup {
+	mclocale $locale
+	namespace eval bar {::msgcat::mcforgetpackage}
+	namespace delete bar baz
+    } -body {
+	$baz::ObjCur method1
+    } -result con2bar
+
+    test msgcat-15.3 {mc in classless object} -setup {
+	# full namespace is ::msgcat::test:bar
+	namespace eval bar {
+	    ::msgcat::mcset foo_BAR con2 con2bar
+	    oo::object create ObjCur
+	    oo::objdefine ObjCur method method1 {} {::msgcat::mc con2}
+	}
+	variable locale [mclocale]
+	mclocale foo_BAR
+    } -cleanup {
+	mclocale $locale
+	namespace eval bar {::msgcat::mcforgetpackage}
+	namespace delete bar
+    } -body {
+	bar::ObjCur method1
+    } -result con2bar
+    
+    test msgcat-15.4 {mc in classless object with explicite namespace eval}\
+    -setup {
+	# full namespace is ::msgcat::test:bar
+	namespace eval bar {
+	    ::msgcat::mcset foo_BAR con2 con2bar
+	    oo::object create ObjCur
+	    oo::objdefine ObjCur method method1 {} {
+		namespace eval ::msgcat::test::baz {
+		    ::msgcat::mc con2
+		}
+	    }
+	}
+	namespace eval baz {
+	    ::msgcat::mcset foo_BAR con2 con2baz
+	}
+	variable locale [mclocale]
+	mclocale foo_BAR
+    } -cleanup {
+	mclocale $locale
+	namespace eval bar {::msgcat::mcforgetpackage}
+	namespace eval baz {::msgcat::mcforgetpackage}
+	namespace delete bar baz
+    } -body {
+	bar::ObjCur method1
+    } -result con2baz
+    
+    # Test msgcat-16.*: command mcpackagenamespaceget
+
+    test msgcat-16.1 {mcpackagenamespaceget in namespace procedure} -body {
+	namespace eval baz {msgcat::mcpackagenamespaceget}
+    } -result ::msgcat::test::baz
+
+    test msgcat-16.2 {mcpackagenamespaceget in class setup} -setup {
+	namespace eval bar {
+	    oo::class create ClassCur
+	    oo::define ClassCur variable a
+	}
+    } -cleanup {
+	namespace delete bar
+    } -body {
+	oo::define bar::ClassCur msgcat::mcpackagenamespaceget
+    } -result ::msgcat::test::bar
+
+    test msgcat-16.3 {mcpackagenamespaceget in class} -setup {
+	namespace eval bar {
+	    oo::class create ClassCur
+	    oo::define ClassCur method method1 {} {msgcat::mcpackagenamespaceget}
+	}
+	namespace eval baz {
+            set ObjCur [::msgcat::test::bar::ClassCur new]
+	}
+    } -cleanup {
+	namespace delete bar baz
+    } -body {
+	$baz::ObjCur method1
+    } -result ::msgcat::test::bar
+
+    test msgcat-16.4 {mcpackagenamespaceget in classless object} -setup {
+	namespace eval bar {
+	    oo::object create ObjCur
+	    oo::objdefine ObjCur method method1 {} {msgcat::mcpackagenamespaceget}
+	}
+    } -cleanup {
+	namespace delete bar
+    } -body {
+	bar::ObjCur method1
+    } -result ::msgcat::test::bar
+
+    test msgcat-16.5\
+    {mcpackagenamespaceget in classless object with explicite namespace eval}\
+    -setup {
+	namespace eval bar {
+	    oo::object create ObjCur
+	    oo::objdefine ObjCur method method1 {} {
+		namespace eval ::msgcat::test::baz {
+		    msgcat::mcpackagenamespaceget
+		}
+	    }
+	}
+    } -cleanup {
+	namespace delete bar baz
+    } -body {
+	bar::ObjCur method1
+    } -result ::msgcat::test::baz
+
+
+    # Test msgcat-17.*: mcn command
+    
+    test msgcat-17.1 {mcn no parameters} -body {
+	mcn
+    } -returnCodes 1\
+    -result {wrong # args: should be "mcn ns src ?arg ...?"}
+
+    test msgcat-17.2 {mcn} -setup {
+	namespace eval bar {::msgcat::mcset foo_BAR con1 con1bar}
+	variable locale [mclocale]
+	mclocale foo_BAR
+    } -cleanup {
+	mclocale $locale
+    } -body {
+	::msgcat::mcn [namespace current]::bar con1
+    } -result con1bar
+
+
     interp bgerror {} $bgerrorsaved
 
+    # Tests msgcat-18.*: [mcutil]
+
+    test msgcat-18.1 {mcutil - no argument} -body {
+	mcutil
+    } -returnCodes 1\
+    -result {wrong # args: should be "mcutil subcommand ?arg ...?"}
+
+    test msgcat-18.2 {mcutil - wrong argument} -body {
+	mcutil junk
+    } -returnCodes 1\
+    -result {unknown subcommand "junk": must be getpreferences, or getsystemlocale}
+    
+    test msgcat-18.3 {mcutil - partial argument} -body {
+	mcutil getsystem
+    } -returnCodes 1\
+    -result {unknown subcommand "getsystem": must be getpreferences, or getsystemlocale}
+    
+    test msgcat-18.4 {mcutil getpreferences - no argument} -body {
+	mcutil getpreferences
+    } -returnCodes 1\
+    -result {wrong # args: should be "mcutil getpreferences locale"}
+    
+    test msgcat-18.5 {mcutil getpreferences - DE_de} -body {
+	mcutil getpreferences DE_de
+    } -result {de_de de {}}
+    
+    test msgcat-18.6 {mcutil getsystemlocale - wrong argument} -body {
+	mcutil getsystemlocale DE_de
+    } -returnCodes 1\
+    -result {wrong # args: should be "mcutil getsystemlocale"}
+    
+    # The result is system dependent
+    # So just test if it runs
+    # The environment variable version was test with test 0.x
+    test msgcat-18.7 {mcutil getsystemlocale} -body {
+	mcutil getsystemlocale
+	set ok ok
+    } -result {ok}
+    
+    
     cleanupTests
 }
 namespace delete ::msgcat::test

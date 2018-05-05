@@ -4,17 +4,17 @@ namespace eval ::tcl::clock {
         "N"\
         "Pn"\
         "Wt"\
-        "\u015ar"\
+        "Śr"\
         "Cz"\
         "Pt"\
         "So"]
     ::msgcat::mcset pl DAYS_OF_WEEK_FULL [list \
         "niedziela"\
-        "poniedzia\u0142ek"\
+        "poniedziałek"\
         "wtorek"\
-        "\u015broda"\
+        "środa"\
         "czwartek"\
-        "pi\u0105tek"\
+        "piątek"\
         "sobota"]
     ::msgcat::mcset pl MONTHS_ABBREV [list \
         "sty"\
@@ -26,23 +26,23 @@ namespace eval ::tcl::clock {
         "lip"\
         "sie"\
         "wrz"\
-        "pa\u017a"\
+        "paź"\
         "lis"\
         "gru"\
         ""]
     ::msgcat::mcset pl MONTHS_FULL [list \
-        "stycze\u0144"\
+        "styczeń"\
         "luty"\
         "marzec"\
-        "kwiecie\u0144"\
+        "kwiecień"\
         "maj"\
         "czerwiec"\
         "lipiec"\
-        "sierpie\u0144"\
-        "wrzesie\u0144"\
-        "pa\u017adziernik"\
+        "sierpień"\
+        "wrzesień"\
+        "październik"\
         "listopad"\
-        "grudzie\u0144"\
+        "grudzień"\
         ""]
     ::msgcat::mcset pl BCE "p.n.e."
     ::msgcat::mcset pl CE "n.e."

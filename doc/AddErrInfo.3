@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_GetReturnOptions, Tcl_SetReturnOptions, Tcl_AddErrorInfo, Tcl_AppendObjToErrorInfo, Tcl_AddObjErrorInfo, Tcl_SetObjErrorCode, Tcl_SetErrorCode, Tcl_SetErrorCodeVA, Tcl_SetErrorLine, Tcl_GetErrorLine, Tcl_PosixError, Tcl_LogCommandInfo \- retrieve or record information about errors and other return options
+Tcl_GetReturnOptions, Tcl_SetReturnOptions, Tcl_AddErrorInfo, Tcl_AppendObjToErrorInfo, Tcl_AddObjErrorInfo, Tcl_SetObjErrorCode, Tcl_SetErrorCode, Tcl_SetErrorLine, Tcl_GetErrorLine, Tcl_PosixError, Tcl_LogCommandInfo \- retrieve or record information about errors and other return options
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -29,8 +29,6 @@ int
 \fBTcl_SetObjErrorCode\fR(\fIinterp, errorObjPtr\fR)
 .sp
 \fBTcl_SetErrorCode\fR(\fIinterp, element, element, ... \fB(char *) NULL\fR)
-.sp
-\fBTcl_SetErrorCodeVA\fR(\fIinterp, argList\fR)
 .sp
 \fBTcl_GetErrorLine\fR(\fIinterp\fR)
 .sp
@@ -244,9 +242,6 @@ The procedure \fBTcl_SetErrorCode\fR is also used to set the
 \fB\-errorcode\fR return option. However, it takes one or more strings to
 record instead of a value. Otherwise, it is similar to
 \fBTcl_SetObjErrorCode\fR in behavior.
-.PP
-\fBTcl_SetErrorCodeVA\fR is the same as \fBTcl_SetErrorCode\fR except that
-instead of taking a variable number of arguments it takes an argument list.
 .PP
 The procedure \fBTcl_GetErrorLine\fR is used to read the integer value
 of the \fB\-errorline\fR return option without the overhead of a full

@@ -1,4 +1,4 @@
-Tcl 8.7 for Windows
+Tcl 9.0 for Windows
 
 1. Introduction
 ---------------
@@ -16,7 +16,7 @@ The information in this file is maintained on the web at:
 
 In order to compile Tcl for Windows, you need the following:
 
-	Tcl 8.7 Source Distribution (plus any patches)
+	Tcl 9.0 Source Distribution (plus any patches)
 
 	and
 
@@ -79,9 +79,9 @@ Use the Makefile "install" target to install Tcl.  It will install it
 according to the prefix options you provided in the correct directory
 structure.
 
-Note that in order to run tclsh87.exe, you must ensure that tcl87.dll is
+Note that in order to run tclsh90.exe, you must ensure that tcl90.dll is
 on your path, in the system directory, or in the directory containing
-tclsh87.exe.
+tclsh90.exe.
 
 Note: Tcl no longer provides support for Win32s.
 

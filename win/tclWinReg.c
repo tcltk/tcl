@@ -1197,14 +1197,12 @@ RecursiveDeleteKey(
 	     */
 
 	    if (mode && !checkExProc) {
-		HINSTANCE dllH;
+		HMODULE handle;
 
 		checkExProc = 1;
-		dllH = LoadLibrary(TEXT("advapi32.dll"));
-		if (dllH) {
-		    regDeleteKeyExProc = (FARPROC)
-			    GetProcAddress(dllH, "RegDeleteKeyExW");
-		}
+		handle = GetModuleHandle(TEXT("ADVAPI32"));
+		regDeleteKeyExProc = (FARPROC)
+			GetProcAddress(handle, "RegDeleteKeyExW");
 	    }
 	    if (mode && regDeleteKeyExProc) {
 		result = regDeleteKeyExProc(startKey, keyName, mode, 0);

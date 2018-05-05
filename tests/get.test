@@ -102,13 +102,13 @@ test get-3.3 {tcl_GetInt with iffy numbers} testgetint {
 	catch {testgetint 44 $x} x
 	set x
     }
-} {44 44 44 44 54 52 52 46}
+} {44 44 44 44 54 54 52 46}
 test get-3.4 {Tcl_GetDouble with iffy numbers} testdoubleobj {
     lmap x {0 0.0 " .0" ".0 " " 0e0 " "09" "- 0" "-0" "0o12" "0b10"} {
 	catch {testdoubleobj set 1 $x} x
 	set x
     }
-} {0.0 0.0 0.0 0.0 0.0 {expected floating-point number but got "09" (looks like invalid octal number)} {expected floating-point number but got "- 0"} 0.0 10.0 2.0}
+} {0.0 0.0 0.0 0.0 0.0 9.0 {expected floating-point number but got "- 0"} 0.0 10.0 2.0}
 
 # cleanup
 ::tcltest::cleanupTests

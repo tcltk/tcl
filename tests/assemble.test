@@ -532,18 +532,6 @@ test assemble-7.16 {incrStk} {
     -result 12
     -cleanup {rename x {}}
 }
-test assemble-7.17 {land/lor} {
-    -body {
-	proc x {a b} {
-	    list \
-		[assemble {load a; load b; land}] \
-		[assemble {load a; load b; lor}]
-	}
-	list [x 0 0] [x 0 23] [x 35 0] [x 47 59]
-    }
-    -result {{0 0} {0 1} {0 1} {1 1}}
-    -cleanup {rename x {}}
-}
 test assemble-7.18 {lappendArrayStk} {
     -body {
 	proc x {} {
@@ -781,7 +769,7 @@ test assemble-7.43 {uplus} {
 	}
     }
     -returnCodes error
-    -result {can't use non-numeric floating-point value as operand of "+"}
+    -result {can't use non-numeric floating-point value "NaN" as operand of "+"}
 }
 test assemble-7.43.1 {tryCvtToNumeric} {
     -body {
@@ -852,7 +840,7 @@ test assemble-8.5 {bad context} {
     -body {
 	namespace eval assem {
 	    set x 1
-	    list [catch {assemble {load x}} result] $result $errorCode
+	    list [catch {assemble {load x}} result opts] $result [dict get $opts -errorcode]
 	}
     }
     -result {1 {cannot use this instruction to create a variable in a non-proc context} {TCL ASSEM LVT}}
@@ -1584,6 +1572,12 @@ test assemble-15.7 {listIndexImm} {
     }
     -result c
 }
+test assemble-15.8 {listIndexImm} {
+    assemble {push {a b c}; listIndexImm end+2}
+} {}
+test assemble-15.9 {listIndexImm} {
+    assemble {push {a b c}; listIndexImm -1-1}
+} {}
 
 # assemble-16 - invokeStk
 

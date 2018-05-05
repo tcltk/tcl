@@ -267,7 +267,7 @@ const Tcl_ObjType tclByteArrayType = {
  * fewer mallocs.
  */
 
-typedef struct ByteArray {
+typedef struct {
     int used;			/* The number of bytes used in the byte
 				 * array. */
     int allocated;		/* The amount of space actually allocated
@@ -536,7 +536,7 @@ SetByteArrayFromAny(
     const char *src, *srcEnd;
     unsigned char *dst;
     ByteArray *byteArrayPtr;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
 
     if (objPtr->typePtr == &properByteArrayType) {
 	return TCL_OK;
@@ -551,7 +551,7 @@ SetByteArrayFromAny(
 
     byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
-	src += Tcl_UtfToUniChar(src, &ch);
+	src += TclUtfToUniChar(src, &ch);
 	improper = improper || (ch > 255);
 	*dst++ = UCHAR(ch);
     }
@@ -1300,10 +1300,10 @@ BinaryFormatCmd(
 
  badField:
     {
-	Tcl_UniChar ch;
+	Tcl_UniChar ch = 0;
 	char buf[TCL_UTF_MAX + 1];
 
-	Tcl_UtfToUniChar(errorString, &ch);
+	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad field specifier \"%s\"", buf));
@@ -1670,10 +1670,10 @@ BinaryScanCmd(
 
  badField:
     {
-	Tcl_UniChar ch;
+	Tcl_UniChar ch = 0;
 	char buf[TCL_UTF_MAX + 1];
 
-	Tcl_UtfToUniChar(errorString, &ch);
+	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad field specifier \"%s\"", buf));
@@ -1743,7 +1743,15 @@ GetFormatSpec(
 	(*formatPtr)++;
 	*countPtr = BINARY_ALL;
     } else if (isdigit(UCHAR(**formatPtr))) { /* INTL: digit */
-	*countPtr = strtoul(*formatPtr, (char **) formatPtr, 10);
+	unsigned long int count;
+
+	errno = 0;
+	count = strtoul(*formatPtr, (char **) formatPtr, 10);
+	if (errno || (count > (unsigned long) INT_MAX)) {
+	    *countPtr = INT_MAX;
+	} else {
+	    *countPtr = (int) count;
+	}
     } else {
 	*countPtr = BINARY_NOCOUNT;
     }
@@ -2276,7 +2284,7 @@ ScanNumber(
 	    Tcl_Obj *bigObj = NULL;
 	    mp_int big;
 
-	    TclBNInitBignumFromWideUInt(&big, uwvalue);
+	    TclInitBignumFromWideUInt(&big, uwvalue);
 	    bigObj = Tcl_NewBignumObj(&big);
 	    return bigObj;
 	}

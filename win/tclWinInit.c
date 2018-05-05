@@ -76,16 +76,17 @@ typedef struct {
 #define PROCESSOR_ARCHITECTURE_UNKNOWN		0xFFFF
 #endif
 
+
+/*
+ * Windows version dependend functions
+ */
+TclWinProcs tclWinProcs;
+
 /*
  * The following arrays contain the human readable strings for the Windows
- * platform and processor values.
+ * processor values.
  */
 
-
-#define NUMPLATFORMS 4
-static const char *const platforms[NUMPLATFORMS] = {
-    "Win32s", "Windows 95", "Windows NT", "Windows CE"
-};
 
 #define NUMPROCESSORS 11
 static const char *const processors[NUMPROCESSORS] = {
@@ -132,6 +133,7 @@ TclpInitPlatform(void)
 {
     WSADATA wsaData;
     WORD wVersionRequested = MAKEWORD(2, 2);
+    HMODULE handle;
 
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
@@ -150,6 +152,14 @@ TclpInitPlatform(void)
 
     TclWinInit(GetModuleHandle(NULL));
 #endif
+
+    /*
+     * Fill available functions depending on windows version
+     */
+    handle = GetModuleHandle(TEXT("KERNEL32"));
+    tclWinProcs.cancelSynchronousIo =
+	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(handle,
+	    "CancelSynchronousIo");
 }
 
 /*
@@ -477,16 +487,9 @@ TclpSetInitialEncodings(void)
 {
     Tcl_DString encodingName;
 
-    TclpSetInterfaces();
     Tcl_SetSystemEncoding(NULL,
 	    Tcl_GetEncodingNameFromEnvironment(&encodingName));
     Tcl_DStringFree(&encodingName);
-}
-
-void TclWinSetInterfaces(
-    int dummy)			/* Not used. */
-{
-    TclpSetInterfaces();
 }
 
 const char *
@@ -537,15 +540,12 @@ TclpSetVariables(
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
 
     if (!osInfoInitialized) {
-	HANDLE handle = LoadLibraryW(L"NTDLL");
+	HMODULE handle = GetModuleHandle(TEXT("NTDLL"));
 	int(__stdcall *getversion)(void *) =
 		(int(__stdcall *)(void *)) GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
 	if (!getversion || getversion(&osInfo)) {
 	    GetVersionExW(&osInfo);
-	}
-	if (handle) {
-		FreeLibrary(handle);
 	}
 	osInfoInitialized = 1;
     }
@@ -557,10 +557,7 @@ TclpSetVariables(
 
     Tcl_SetVar2(interp, "tcl_platform", "platform", "windows",
 	    TCL_GLOBAL_ONLY);
-    if (osInfo.dwPlatformId < NUMPLATFORMS) {
-	Tcl_SetVar2(interp, "tcl_platform", "os",
-		platforms[osInfo.dwPlatformId], TCL_GLOBAL_ONLY);
-    }
+    Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
     wsprintfA(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sys.oemId.wProcessorArchitecture < NUMPROCESSORS) {

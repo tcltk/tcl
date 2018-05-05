@@ -323,7 +323,7 @@ test compile-11.2 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
 } -returnCodes error -result {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}
 test compile-11.3 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; string index a 0o9 }}
-} -returnCodes error -match glob -result {*invalid octal number*}
+} -returnCodes error -match glob -result {*}
 test compile-11.4 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; array set var {one two many} }}
 } -returnCodes error -result {list must have an even number of elements}
@@ -499,7 +499,8 @@ test compile-15.5 {proper TCL_RETURN code from [return]} {
     apply {{} {catch {set a 1}; return}}
 } ""
 
-for {set noComp 0} {$noComp <= 1} {incr noComp} {
+# Do all tests once byte compiled and once with direct string evaluation
+foreach noComp {0 1} {
 
 if $noComp {
     interp alias {} run {} testevalex

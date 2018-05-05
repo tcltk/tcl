@@ -322,11 +322,22 @@ TclCompileArraySetCmd(
      */
 
     if (isDataValid && !isDataEven) {
+	/* Abandon custom compile and let invocation raise the error */
+	code = TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+	goto done;
+
+	/*
+	 * We used to compile to the bytecode that would throw the error,
+	 * but that was wrong because it would not invoke the array trace
+	 * on the variable.
+	 *
 	PushStringLiteral(envPtr, "list must have an even number of elements");
 	PushStringLiteral(envPtr, "-errorcode {TCL ARGUMENT FORMAT}");
 	TclEmitInstInt4(INST_RETURN_IMM, TCL_ERROR,		envPtr);
 	TclEmitInt4(		0,				envPtr);
 	goto done;
+	 *
+	 */
     }
 
     /*
@@ -404,6 +415,10 @@ TclCompileArraySetCmd(
      * Start issuing instructions to write to the array.
      */
 
+    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
+    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
+    TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
+
     CompileWord(envPtr, dataTokenPtr, interp, 2);
     if (!isDataLiteral || !isDataValid) {
 	/*
@@ -428,9 +443,6 @@ TclCompileArraySetCmd(
 	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
     }
 
-    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
-    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
-    TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
     TclEmitInstInt4(INST_FOREACH_START, infoIndex,	envPtr);
     offsetBack = CurrentOffset(envPtr);
     Emit14Inst(	INST_LOAD_SCALAR, keyVar,		envPtr);
@@ -731,6 +743,105 @@ TclCompileCatchCmd(
     TclEmitOpcode(	INST_POP,			envPtr);
 
     TclCheckStackDepth(depth+1, envPtr);
+    return TCL_OK;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * TclCompileClockClicksCmd --
+ *
+ *	Procedure called to compile the "tcl::clock::clicks" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to run time.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "clock clicks"
+ *	command at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileClockClicksCmd(
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token* tokenPtr;
+
+    switch (parsePtr->numWords) {
+    case 1:
+	/*
+	 * No args
+	 */
+	TclEmitInstInt1(INST_CLOCK_READ, 0, envPtr);
+	break;
+    case 2:
+	/*
+	 * -milliseconds or -microseconds
+	 */
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD
+	    || tokenPtr[1].size < 4
+	    || tokenPtr[1].size > 13) {
+	    return TCL_ERROR;
+	} else if (!strncmp(tokenPtr[1].start, "-microseconds",
+			    tokenPtr[1].size)) {
+	    TclEmitInstInt1(INST_CLOCK_READ, 1, envPtr);
+	    break;
+	} else if (!strncmp(tokenPtr[1].start, "-milliseconds",
+			    tokenPtr[1].size)) {
+	    TclEmitInstInt1(INST_CLOCK_READ, 2, envPtr);
+	    break;
+	} else {
+	    return TCL_ERROR;
+	}
+    default:
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+
+/*----------------------------------------------------------------------
+ *
+ * TclCompileClockReadingCmd --
+ *
+ *	Procedure called to compile the "tcl::clock::microseconds",
+ *	"tcl::clock::milliseconds" and "tcl::clock::seconds" commands.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to run time.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "clock clicks"
+ *	command at runtime.
+ *
+ * Client data is 1 for microseconds, 2 for milliseconds, 3 for seconds.
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileClockReadingCmd(
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    if (parsePtr->numWords != 1) {
+	return TCL_ERROR;
+    }
+
+    TclEmitInstInt1(INST_CLOCK_READ, PTR2INT(cmdPtr->objClientData), envPtr);
+
     return TCL_OK;
 }
 

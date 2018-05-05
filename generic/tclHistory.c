@@ -62,24 +62,16 @@ Tcl_RecordAndEval(
 				 * instead of Tcl_Eval. */
 {
     register Tcl_Obj *cmdPtr;
-    int length = strlen(cmd);
     int result;
 
-    if (length > 0) {
+    if (cmd[0]) {
 	/*
 	 * Call Tcl_RecordAndEvalObj to do the actual work.
 	 */
 
-	cmdPtr = Tcl_NewStringObj(cmd, length);
+	cmdPtr = Tcl_NewStringObj(cmd, -1);
 	Tcl_IncrRefCount(cmdPtr);
 	result = Tcl_RecordAndEvalObj(interp, cmdPtr, flags);
-
-	/*
-	 * Move the interpreter's object result to the string result, then
-	 * reset the object result.
-	 */
-
-	(void) Tcl_GetStringResult(interp);
 
 	/*
 	 * Discard the Tcl object created to hold the command.

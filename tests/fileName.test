@@ -441,6 +441,9 @@ test filename-7.18 {Tcl_JoinPath: unix} {testsetplatform} {
     testsetplatform unix
     file join /// a b
 } "/a/b"
+test filename-7.19 {[Bug f34cf83dd0]} {
+    file join foo //bar
+} /bar
 
 test filename-9.1 {Tcl_JoinPath: win} {testsetplatform} {
     testsetplatform win
@@ -775,6 +778,8 @@ test filename-11.16 {Tcl_GlobCmd} {
 } {globTest}
 set globname "globTest"
 set horribleglobname "glob\[\{Test"
+set tildeglobname "./~test.txt"
+
 test filename-11.17 {Tcl_GlobCmd} {unix} {
     lsort [glob -directory $globname *]
 } [lsort [list [file join $globname a1] [file join $globname a2]\
@@ -914,11 +919,12 @@ test filename-11.21.1 {Tcl_GlobCmd} -body {
 } -result {{[tcl].testremains}}
 # Get rid of file/dir if it exists, since it will have been left behind by a
 # previous failed run.
-if {[file exists $horribleglobname]} {
-    file delete -force $horribleglobname
-}
+file delete -force $horribleglobname
 file rename globTest $horribleglobname
 set globname $horribleglobname
+file delete -force $tildeglobname
+close [open $tildeglobname w]
+
 test filename-11.22 {Tcl_GlobCmd} {unix} {
     lsort [glob -dir $globname *]
 } [lsort [list [file join $globname a1] [file join $globname a2]\
@@ -1037,7 +1043,9 @@ test filename-11.41 {Tcl_GlobCmd} -body {
 test filename-11.42 {Tcl_GlobCmd} -body {
     set res [list]
     foreach f [glob -dir [pwd] *] {
-	lappend res [file tail $f]
+	set f [file tail $f]
+	regsub {^./} $f {} f; # until glob bug [2511011fff] don't fixed (tilde expansion prevention).
+	lappend res $f
     }
     list $res [glob *]
 } -match compareWords -result equal
@@ -1077,8 +1085,9 @@ test filename-11.49 {Tcl_GlobCmd} -returnCodes error -body {
 } -result {bad argument to "-types": abcde}
 
 file rename $horribleglobname globTest
+file delete -force $tildeglobname
 set globname globTest
-unset horribleglobname
+unset horribleglobname tildeglobname
 
 test filename-12.1 {simple globbing} {unixOrPc} {
     glob {}

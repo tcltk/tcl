@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_SetObjResult, Tcl_GetObjResult, Tcl_SetResult, Tcl_GetStringResult, Tcl_AppendResult, Tcl_AppendResultVA, Tcl_AppendElement, Tcl_ResetResult, Tcl_TransferResult, Tcl_FreeResult \- manipulate Tcl result
+Tcl_SetObjResult, Tcl_GetObjResult, Tcl_SetResult, Tcl_GetStringResult, Tcl_AppendResult, Tcl_AppendElement, Tcl_ResetResult, Tcl_TransferResult, Tcl_FreeResult \- manipulate Tcl result
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -25,8 +25,6 @@ const char *
 \fBTcl_GetStringResult\fR(\fIinterp\fR)
 .sp
 \fBTcl_AppendResult\fR(\fIinterp, result, result, ... , \fB(char *) NULL\fR)
-.sp
-\fBTcl_AppendResultVA\fR(\fIinterp, argList\fR)
 .sp
 \fBTcl_ResetResult\fR(\fIinterp\fR)
 .sp
@@ -152,9 +150,6 @@ extensions.
 Any number of \fIresult\fR arguments may be passed in a single
 call; the last argument in the list must be a NULL pointer.
 .PP
-\fBTcl_AppendResultVA\fR is the same as \fBTcl_AppendResult\fR except that
-instead of taking a variable number of arguments it takes an argument list.
-.PP
 .VS 8.6
 \fBTcl_TransferResult\fR moves a result from one interpreter to another,
 optionally (dependent on the \fIresult\fR parameter) including the error
@@ -197,19 +192,6 @@ It also sets \fIinterp->freeProc\fR to zero, but does not
 change \fIinterp->result\fR or clear error state.
 \fBTcl_FreeResult\fR is most commonly used when a procedure
 is about to replace one result value with another.
-.SS "DIRECT ACCESS TO INTERP->RESULT"
-.PP
-It used to be legal for programs to
-directly read and write \fIinterp->result\fR
-to manipulate the interpreter result.  The Tcl headers no longer
-permit this access by default, and C code still doing this must
-be updated to use supported routines \fBTcl_GetObjResult\fR,
-\fBTcl_GetStringResult\fR, \fBTcl_SetObjResult\fR, and \fBTcl_SetResult\fR.
-As a migration aid, access can be restored with the compiler directive
-.CS
-#define USE_INTERP_RESULT
-.CE
-but this is meant only to offer life support to otherwise dead code.
 .SH "THE TCL_FREEPROC ARGUMENT TO TCL_SETRESULT"
 .PP
 \fBTcl_SetResult\fR's \fIfreeProc\fR argument specifies how

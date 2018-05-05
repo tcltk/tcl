@@ -22,7 +22,7 @@
  * The tree is composed of OpNodes.
  */
 
-typedef struct OpNode {
+typedef struct {
     int left;			/* "Pointer" to the left operand. */
     int right;			/* "Pointer" to the right operand. */
     union {
@@ -1885,7 +1885,7 @@ ParseLexeme(
 {
     const char *end;
     int scanned;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     Tcl_Obj *literal = NULL;
     unsigned char byte;
 
@@ -2064,13 +2064,13 @@ ParseLexeme(
 
     if (!TclIsBareword(*start) || *start == '_') {
 	if (Tcl_UtfCharComplete(start, numBytes)) {
-	    scanned = Tcl_UtfToUniChar(start, &ch);
+	    scanned = TclUtfToUniChar(start, &ch);
 	} else {
 	    char utfBytes[TCL_UTF_MAX];
 
 	    memcpy(utfBytes, start, (size_t) numBytes);
 	    utfBytes[numBytes] = '\0';
-	    scanned = Tcl_UtfToUniChar(utfBytes, &ch);
+	    scanned = TclUtfToUniChar(utfBytes, &ch);
 	}
 	*lexemePtr = INVALID;
 	Tcl_DecrRefCount(literal);

@@ -50,7 +50,7 @@ being constructed. Within the constructor, the \fBnext\fR command should be
 used to call the superclasses' constructors. If \fIbodyScript\fR is the empty
 string, the constructor will be deleted.
 .TP
-\fBdeletemethod\fI name\fR ?\fIname ...\fR
+\fBdeletemethod\fI name\fR ?\fIname ...\fR?
 .
 This deletes each of the methods called \fIname\fR from a class. The methods
 must have previously existed in that class. Does not affect the superclasses
@@ -142,6 +142,8 @@ be afterwards.
 \fBself\fI subcommand arg ...\fR
 .TP
 \fBself\fI script\fR
+.TP
+\fBself\fR
 .
 This command is equivalent to calling \fBoo::objdefine\fR on the class being
 defined (see \fBCONFIGURING OBJECTS\fR below for a description of the
@@ -151,6 +153,13 @@ and
 .QW "\fBoo::define \fIcls \fBself \fIsubcommand ...\fR"
 operates identically to
 .QW "\fBoo::objdefine \fIcls subcommand ...\fR" .
+.RS
+.PP
+.VS TIP470
+If no arguments at all are used, this gives the name of the class currently
+being configured.
+.VE TIP470
+.RE
 .TP
 \fBsuperclass\fR ?\fI\-slotOperation\fR? ?\fIclassName ...\fR?
 .VS
@@ -264,6 +273,12 @@ The method must have previously existed in the object, and \fItoName\fR must
 not previously refer to a method in that object. Does not affect the classes
 that the object is an instance of. Does not change the export status of the
 method; if it was exported before, it will be afterwards.
+.TP
+\fBself \fR
+.
+.VS TIP470
+This gives the name of the object currently being configured.
+.VE TIP470
 .TP
 \fBunexport\fI name \fR?\fIname ...\fR?
 .

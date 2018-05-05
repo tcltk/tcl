@@ -89,86 +89,11 @@ TclBN_revision(void)
 {
     return TCLTOMMATH_REVISION;
 }
-#if 0
 
 /*
  *----------------------------------------------------------------------
  *
- * TclBNAlloc --
- *
- *	Allocate memory for libtommath.
- *
- * Results:
- *	Returns a pointer to the allocated block.
- *
- * This procedure is a wrapper around Tcl_Alloc, needed because of a
- * mismatched type signature between Tcl_Alloc and malloc.
- *
- *----------------------------------------------------------------------
- */
-
-extern void *
-TclBNAlloc(
-    size_t x)
-{
-    return (void *) ckalloc((unsigned int) x);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclBNRealloc --
- *
- *	Change the size of an allocated block of memory in libtommath
- *
- * Results:
- *	Returns a pointer to the allocated block.
- *
- * This procedure is a wrapper around Tcl_Realloc, needed because of a
- * mismatched type signature between Tcl_Realloc and realloc.
- *
- *----------------------------------------------------------------------
- */
-
-void *
-TclBNRealloc(
-    void *p,
-    size_t s)
-{
-    return (void *) ckrealloc((char *) p, (unsigned int) s);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclBNFree --
- *
- *	Free allocated memory in libtommath.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Memory is freed.
- *
- * This function is simply a wrapper around Tcl_Free, needed in libtommath
- * because of a type mismatch between free and Tcl_Free.
- *
- *----------------------------------------------------------------------
- */
-
-extern void
-TclBNFree(
-    void *p)
-{
-    ckree((char *) p);
-}
-#endif
-
-/*
- *----------------------------------------------------------------------
- *
- * TclBNInitBignumFromLong --
+ * TclInitBignumFromLong --
  *
  *	Allocate and initialize a 'bignum' from a native 'long'.
  *
@@ -181,53 +106,26 @@ TclBNFree(
  *----------------------------------------------------------------------
  */
 
-extern void
-TclBNInitBignumFromLong(
+void
+TclInitBignumFromLong(
     mp_int *a,
-    long initVal)
+    long v)
 {
-    int status;
-    unsigned long v;
-    mp_digit *p;
-
-    /*
-     * Allocate enough memory to hold the largest possible long
-     */
-
-    status = mp_init_size(a,
-	    (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT);
-    if (status != MP_OKAY) {
-	Tcl_Panic("initialization failure in TclBNInitBignumFromLong");
+    if (mp_init_size(a, (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT) != MP_OKAY) {
+	Tcl_Panic("initialization failure in TclInitBignumFromLong");
     }
-
-    /*
-     * Convert arg to sign and magnitude.
-     */
-
-    if (initVal < 0) {
-	a->sign = MP_NEG;
-	v = -initVal;
+    if (v < (long)0) {
+	mp_set_long_long(a, (Tcl_WideUInt)(-(Tcl_WideInt)v));
+	mp_neg(a, a);
     } else {
-	a->sign = MP_ZPOS;
-	v = initVal;
+	mp_set_long_long(a, (Tcl_WideUInt)v);
     }
-
-    /*
-     * Store the magnitude in the bignum.
-     */
-
-    p = a->dp;
-    while (v) {
-	*p++ = (mp_digit) (v & MP_MASK);
-	v >>= MP_DIGIT_BIT;
-    }
-    a->used = p - a->dp;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclBNInitBignumFromWideInt --
+ * TclInitBignumFromWideInt --
  *
  *	Allocate and initialize a 'bignum' from a Tcl_WideInt
  *
@@ -240,23 +138,26 @@ TclBNInitBignumFromLong(
  *----------------------------------------------------------------------
  */
 
-extern void
-TclBNInitBignumFromWideInt(
+void
+TclInitBignumFromWideInt(
     mp_int *a,			/* Bignum to initialize */
     Tcl_WideInt v)		/* Initial value */
 {
+	if (mp_init_size(a, (CHAR_BIT * sizeof(Tcl_WideUInt) + DIGIT_BIT - 1) / DIGIT_BIT) != MP_OKAY) {
+		Tcl_Panic("initialization failure in TclInitBignumFromWideInt");
+	}
     if (v < (Tcl_WideInt)0) {
-	TclBNInitBignumFromWideUInt(a, (Tcl_WideUInt)(-v));
+	mp_set_long_long(a, (Tcl_WideUInt)(-v));
 	mp_neg(a, a);
     } else {
-	TclBNInitBignumFromWideUInt(a, (Tcl_WideUInt)v);
+	mp_set_long_long(a, (Tcl_WideUInt)v);
     }
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclBNInitBignumFromWideUInt --
+ * TclInitBignumFromWideUInt --
  *
  *	Allocate and initialize a 'bignum' from a Tcl_WideUInt
  *
@@ -269,36 +170,15 @@ TclBNInitBignumFromWideInt(
  *----------------------------------------------------------------------
  */
 
-extern void
-TclBNInitBignumFromWideUInt(
+void
+TclInitBignumFromWideUInt(
     mp_int *a,			/* Bignum to initialize */
     Tcl_WideUInt v)		/* Initial value */
 {
-    int status;
-    mp_digit *p;
-
-    /*
-     * Allocate enough memory to hold the largest possible Tcl_WideUInt.
-     */
-
-    status = mp_init_size(a,
-	    (CHAR_BIT * sizeof(Tcl_WideUInt) + DIGIT_BIT - 1) / DIGIT_BIT);
-    if (status != MP_OKAY) {
-	Tcl_Panic("initialization failure in TclBNInitBignumFromWideUInt");
-    }
-
-    a->sign = MP_ZPOS;
-
-    /*
-     * Store the magnitude in the bignum.
-     */
-
-    p = a->dp;
-    while (v) {
-	*p++ = (mp_digit) (v & MP_MASK);
-	v >>= MP_DIGIT_BIT;
-    }
-    a->used = p - a->dp;
+	if (mp_init_size(a, (CHAR_BIT * sizeof(Tcl_WideUInt) + DIGIT_BIT - 1) / DIGIT_BIT) != MP_OKAY) {
+	    Tcl_Panic("initialization failure in TclInitBignumFromWideUInt");
+	}
+	mp_set_long_long(a, v);
 }
 
 /*

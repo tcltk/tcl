@@ -25,14 +25,14 @@ static const char *tclPreInitScript = NULL;
 struct Target;
 
 /*
- * struct Alias:
+ * Alias:
  *
  * Stores information about an alias. Is stored in the slave interpreter and
  * used by the source command to find the target command in the master when
  * the source command is invoked.
  */
 
-typedef struct Alias {
+typedef struct {
     Tcl_Obj *token;		/* Token for the alias command in the slave
 				 * interp. This used to be the command name in
 				 * the slave when the alias was first
@@ -66,14 +66,14 @@ typedef struct Alias {
 
 /*
  *
- * struct Slave:
+ * Slave:
  *
  * Used by the "interp" command to record and find information about slave
  * interpreters. Maps from a command name in the master to information about a
  * slave interpreter, e.g. what aliases are defined in it.
  */
 
-typedef struct Slave {
+typedef struct {
     Tcl_Interp *masterInterp;	/* Master interpreter for this slave. */
     Tcl_HashEntry *slaveEntryPtr;
 				/* Hash entry in masters slave table for this
@@ -112,7 +112,7 @@ typedef struct Target {
 } Target;
 
 /*
- * struct Master:
+ * Master:
  *
  * This record is used for two purposes: First, slaveTable (a hashtable) maps
  * from names of commands to slave interpreters. This hashtable is used to
@@ -127,7 +127,7 @@ typedef struct Target {
  * only load safe extensions.
  */
 
-typedef struct Master {
+typedef struct {
     Tcl_HashTable slaveTable;	/* Hash table for slave interpreters. Maps
 				 * from command names to Slave records. */
     Target *targetsPtr;		/* The head of a doubly-linked list of all the
@@ -144,7 +144,7 @@ typedef struct Master {
  * on a per-interp basis.
  */
 
-typedef struct InterpInfo {
+typedef struct {
     Master master;		/* Keeps track of all interps for which this
 				 * interp is the Master. */
     Slave slave;		/* Information necessary for this interp to
@@ -158,7 +158,7 @@ typedef struct InterpInfo {
  * likely to work properly on 64-bit architectures.
  */
 
-typedef struct ScriptLimitCallback {
+typedef struct {
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * callback. */
     Tcl_Obj *scriptObj;		/* The script to execute to perform the
@@ -171,7 +171,7 @@ typedef struct ScriptLimitCallback {
 				 * table. */
 } ScriptLimitCallback;
 
-typedef struct ScriptLimitCallbackKey {
+typedef struct {
     Tcl_Interp *interp;		/* The interpreter that the limit callback was
 				 * attached to. This is not the interpreter
 				 * that the callback runs in! */
@@ -3208,10 +3208,6 @@ Tcl_MakeSafe(
 
 	(void) Tcl_EvalEx(interp,
 		"namespace eval ::tcl {namespace eval mathfunc {}}", -1, 0);
-	(void) Tcl_CreateAlias(interp, "::tcl::mathfunc::min", master,
-		"::tcl::mathfunc::min", 0, NULL);
-	(void) Tcl_CreateAlias(interp, "::tcl::mathfunc::max", master,
-		"::tcl::mathfunc::max", 0, NULL);
     }
 
     iPtr->flags |= SAFE_INTERP;
@@ -3532,9 +3528,6 @@ Tcl_LimitAddHandler(
 
     if (deleteProc == (Tcl_LimitHandlerDeleteProc *) TCL_DYNAMIC) {
 	deleteProc = (Tcl_LimitHandlerDeleteProc *) Tcl_Free;
-    }
-    if (deleteProc == (Tcl_LimitHandlerDeleteProc *) TCL_STATIC) {
-	deleteProc = NULL;
     }
 
     /*

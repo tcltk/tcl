@@ -57,15 +57,15 @@ after the optional white space and sign are
 .QW \fB0x\fR
 then \fIsrc\fR is expected to be in hexadecimal form;  otherwise,
 if the first such characters are
+.QW \fB0d\fR
+then \fIsrc\fR is expected to be in decimal form; otherwise,
+if the first such characters are
 .QW \fB0o\fR
 then \fIsrc\fR is expected to be in octal form;  otherwise,
 if the first such characters are
 .QW \fB0b\fR
-then \fIsrc\fR is expected to be in binary form;  otherwise,
-if the first such character is
-.QW \fB0\fR
 then \fIsrc\fR
-is expected to be in octal form;  otherwise, \fIsrc\fR is
+is expected to be in binary form;  otherwise, \fIsrc\fR is
 expected to be in decimal form.
 .PP
 \fBTcl_GetDouble\fR expects \fIsrc\fR to consist of a floating-point

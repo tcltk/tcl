@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewStringObj, Tcl_NewUnicodeObj, Tcl_SetStringObj, Tcl_SetUnicodeObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_GetUnicodeFromObj, Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_GetRange, Tcl_AppendToObj, Tcl_AppendUnicodeToObj, Tcl_AppendObjToObj, Tcl_AppendStringsToObj, Tcl_AppendStringsToObjVA, Tcl_AppendLimitedToObj, Tcl_Format, Tcl_AppendFormatToObj, Tcl_ObjPrintf, Tcl_AppendPrintfToObj, Tcl_SetObjLength, Tcl_AttemptSetObjLength, Tcl_ConcatObj \- manipulate Tcl values as strings
+Tcl_NewStringObj, Tcl_NewUnicodeObj, Tcl_SetStringObj, Tcl_SetUnicodeObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_GetUnicodeFromObj, Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_GetRange, Tcl_AppendToObj, Tcl_AppendUnicodeToObj, Tcl_AppendObjToObj, Tcl_AppendStringsToObj, Tcl_AppendLimitedToObj, Tcl_Format, Tcl_AppendFormatToObj, Tcl_ObjPrintf, Tcl_AppendPrintfToObj, Tcl_SetObjLength, Tcl_AttemptSetObjLength, Tcl_ConcatObj \- manipulate Tcl values as strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -37,7 +37,7 @@ Tcl_UniChar *
 Tcl_UniChar *
 \fBTcl_GetUnicode\fR(\fIobjPtr\fR)
 .sp
-Tcl_UniChar
+int
 \fBTcl_GetUniChar\fR(\fIobjPtr, index\fR)
 .sp
 int
@@ -57,9 +57,6 @@ void
 .sp
 void
 \fBTcl_AppendStringsToObj\fR(\fIobjPtr, string, string, ... \fB(char *) NULL\fR)
-.sp
-void
-\fBTcl_AppendStringsToObjVA\fR(\fIobjPtr, argList\fR)
 .sp
 void
 \fBTcl_AppendLimitedToObj\fR(\fIobjPtr, bytes, length, limit, ellipsis\fR)
@@ -204,7 +201,8 @@ where the caller does not need the length of the unicode string
 representation.
 .PP
 \fBTcl_GetUniChar\fR returns the \fIindex\fR'th character in the
-value's Unicode representation.
+value's Unicode representation. If the index is out of range or
+it references a low surrogate preceded by a high surrogate, it returns -1;
 .PP
 \fBTcl_GetRange\fR returns a newly created value comprised of the
 characters between \fIfirst\fR and \fIlast\fR (inclusive) in the
@@ -245,10 +243,6 @@ each value must be a null-terminated string (i.e. none of the
 values may contain internal null characters).  Any number of
 \fIstring\fR arguments may be provided, but the last argument
 must be a NULL pointer to indicate the end of the list.
-.PP
-\fBTcl_AppendStringsToObjVA\fR is the same as \fBTcl_AppendStringsToObj\fR
-except that instead of taking a variable number of arguments it takes an
-argument list.
 .PP
 \fBTcl_AppendLimitedToObj\fR is similar to \fBTcl_AppendToObj\fR
 except that it imposes a limit on how many bytes are appended.

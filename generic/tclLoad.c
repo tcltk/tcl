@@ -130,7 +130,7 @@ Tcl_LoadObjCmd(
     Tcl_PackageInitProc *initProc;
     const char *p, *fullFileName, *packageName;
     Tcl_LoadHandle loadHandle;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     unsigned len;
     int index, flags = 0;
     Tcl_Obj *const *savedobjv = objv;
@@ -336,7 +336,7 @@ Tcl_LoadObjCmd(
 		}
 #endif /* __CYGWIN__ */
 		for (p = pkgGuess; *p != 0; p += offset) {
-		    offset = Tcl_UtfToUniChar(p, &ch);
+		    offset = TclUtfToUniChar(p, &ch);
 		    if ((ch > 0x100)
 			    || !(isalpha(UCHAR(ch)) /* INTL: ISO only */
 				    || (UCHAR(ch) == '_'))) {
@@ -470,6 +470,17 @@ Tcl_LoadObjCmd(
      */
 
     if (code != TCL_OK) {
+	Interp *iPtr = (Interp *) target;
+	if (iPtr->legacyResult && *(iPtr->legacyResult) && !iPtr->legacyFreeProc) {
+	    /*
+	     * A call to Tcl_InitStubs() determined the caller extension and
+	     * this interp are incompatible in their stubs mechanisms, and
+	     * recorded the error in the oldest legacy place we have to do so.
+	     */
+	    Tcl_SetObjResult(target, Tcl_NewStringObj(iPtr->legacyResult, -1));
+	    iPtr->legacyResult = NULL;
+	    iPtr->legacyFreeProc = (void (*) (void))-1;
+	}
 	Tcl_TransferResult(target, code, interp);
 	goto done;
     }

@@ -11,7 +11,7 @@ AC_PREREQ(2.69)
 #       not, assume that its top-level directory is a sibling of ours.
 #--------------------------------------------------------------------
 
-DEF_VER=8.7
+DEF_VER=9.0
 
 AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl $DEF_VER binaries from DIR], TCL_BIN_DIR=$withval, TCL_BIN_DIR=`cd ../../tcl$DEF_VER$TCL_PATCH_LEVEL/unix; pwd`)
 if test ! -d $TCL_BIN_DIR; then

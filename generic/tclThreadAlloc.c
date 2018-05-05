@@ -82,7 +82,7 @@ typedef union Block {
  * and statistics information.
  */
 
-typedef struct Bucket {
+typedef struct {
     Block *firstPtr;		/* First block available */
     Block *lastPtr;		/* End of block list */
     long numFree;		/* Number of blocks available */
