@@ -4217,7 +4217,6 @@ test oo-37.6 {TIP 500: private command can't be used outside definitions} -body 
     oo::objdefine::private error "xyz"
 } -returnCodes error -result {this command may only be called from within the context of an ::oo::define or ::oo::objdefine command}
 
-
 test oo-38.1 {TIP 500: private variables don't cross-interfere with each other or normal ones} -setup {
     oo::class create parent
 } -body {
@@ -4299,6 +4298,115 @@ test oo-38.2 {TIP 500: private variables introspection} -setup {
 } -cleanup {
     parent destroy
 } -result {{y1 y2} {x1 x2} {b1 b2} {a1 a2}}
+
+test oo-38.1 {TIP 500: private methods internal call} -setup {
+    oo::class create parent
+} -body {
+    oo::class create clsA {
+	superclass parent
+	variable x
+	constructor {} {
+	    set x 1
+	}
+	method act {} {
+	    my step
+	    my step
+	    my step
+	    return
+	}
+	private {
+	    method step {} {
+		incr x 2
+	    }
+	}
+	method x {} {
+	    return $x
+	}
+    }
+    clsA create obj
+    obj act
+    list [obj x] [catch {obj step} msg] $msg
+} -cleanup {
+    parent destroy
+} -result {7 1 {unknown method "step": must be act, destroy or x}}
+test oo-38.2 {TIP 500: private methods internal call} -setup {
+    oo::class create parent
+} -body {
+    oo::class create clsA {
+	superclass parent
+	variable x
+	constructor {} {
+	    set x 1
+	}
+	method act {} {
+	    my step
+	    my step
+	    my step
+	    return
+	}
+	private {
+	    method step {} {
+		incr x 2
+	    }
+	}
+	method x {} {
+	    return $x
+	}
+    }
+    oo::class create clsB {
+	superclass clsA
+	variable x
+	method step {} {
+	    incr x 5
+	}
+    }
+    clsB create obj
+    obj act
+    list [obj x] [obj step]
+} -cleanup {
+    parent destroy
+} -result {7 12}
+test oo-38.3 {TIP 500: private methods internal call} -setup {
+    oo::class create parent
+} -body {
+    oo::class create clsA {
+	superclass parent
+	variable x
+	constructor {} {
+	    set x 1
+	}
+	method act {} {
+	    my Step
+	    my Step
+	    my Step
+	    return
+	}
+	method x {} {
+	    return $x
+	}
+    }
+    oo::class create clsB {
+	superclass clsA
+	variable x
+	method Step {} {
+	    incr x 5
+	}
+    }
+    clsB create obj
+    obj act
+    set result [obj x]
+    oo::define clsA {
+	private {
+	    method Step {} {
+		incr x 2
+	    }
+	}
+    }
+    obj act
+    lappend result [obj x]
+} -cleanup {
+    parent destroy
+} -result {16 22}
 
 cleanupTests
 return
