@@ -1597,7 +1597,8 @@ InfoObjectCallCmd(
      * Get the call context and render its call chain.
      */
 
-    contextPtr = TclOOGetCallContext(oPtr, objv[2], PUBLIC_METHOD, NULL);
+    contextPtr = TclOOGetCallContext(oPtr, objv[2], PUBLIC_METHOD, NULL, NULL,
+	    NULL);
     if (contextPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"cannot construct any call chain", -1));
