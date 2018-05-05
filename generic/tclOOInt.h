@@ -403,16 +403,6 @@ typedef struct CallContext {
 				/* This is a private method only accessible
 				 * from other methods defined on this class
 				 * or instance. [TIP #500] */
-#define OBJECT_PRIVATE_METHOD 0x40
-				/* This is a call of a method on an object
-				 * that may include TRUE_PRIVATE_METHOD
-				 * instance method implementations in its call
-				 * chain. */
-#define CLASS_PRIVATE_METHOD 0x80
-				/* This is a call of a method on an object
-				 * that may include TRUE_PRIVATE_METHOD class
-				 * method implementations in its call
-				 * chain. */
 
 /*
  * Structure containing definition information about basic class methods.
@@ -546,6 +536,7 @@ MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
 MODULE_SCOPE void	TclOODelMethodRef(Method *method);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, int flags,
+			    Object *contextObjPtr, Class *contextClsPtr,
 			    Tcl_Obj *cacheInThisObj);
 MODULE_SCOPE CallChain *TclOOGetStereotypeCallChain(Class *clsPtr,
 			    Tcl_Obj *methodNameObj, int flags);
