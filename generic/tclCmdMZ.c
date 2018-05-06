@@ -2865,6 +2865,128 @@ StringCmpCmd(
     return TCL_OK;
 }
 
+int TclStringCmp (
+	Tcl_Obj *value1Ptr,
+	Tcl_Obj *value2Ptr,
+	int checkEq
+) {
+	char *s1, *s2;
+	int empty, match, s1len, s2len;
+	memCmpFn_t memCmpFn;
+
+	/*
+	 * When we have equal-length we can check only for (in)equality.
+	 * We can use memcmp in all (n)eq cases because we
+	 * don't need to worry about lexical LE/BE variance.
+	 */
+
+	if (value1Ptr == value2Ptr) {
+	    match = 0;
+	} else {
+	    if (TclIsPureByteArray(value1Ptr)
+		    && TclIsPureByteArray(value2Ptr)) {
+		s1 = (char *) Tcl_GetByteArrayFromObj(value1Ptr, &s1len);
+		s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
+		memCmpFn = memcmp;
+	    } else if ((value1Ptr->typePtr == &tclStringType)
+		    && (value2Ptr->typePtr == &tclStringType)) {
+		/*
+		 * Do a unicode-specific comparison if both of the args are of
+		 * String type. If the char length == byte length, we can do a
+		 * memcmp. In benchmark testing this proved the most efficient
+		 * check between the unicode and string comparison operations.
+		 */
+
+		s1len = Tcl_GetCharLength(value1Ptr);
+		s2len = Tcl_GetCharLength(value2Ptr);
+		if ((s1len == value1Ptr->length)
+			&& (value1Ptr->bytes != NULL)
+			&& (s2len == value2Ptr->length)
+			&& (value2Ptr->bytes != NULL)) {
+		    s1 = value1Ptr->bytes;
+		    s2 = value2Ptr->bytes;
+		    memCmpFn = memcmp;
+		} else {
+		    s1 = (char *) Tcl_GetUnicode(value1Ptr);
+		    s2 = (char *) Tcl_GetUnicode(value2Ptr);
+		    if (
+#ifdef WORDS_BIGENDIAN
+			1
+#else
+			checkEq
+#endif
+			) {
+			memCmpFn = memcmp;
+			s1len *= sizeof(Tcl_UniChar);
+			s2len *= sizeof(Tcl_UniChar);
+		    } else {
+			memCmpFn = (memCmpFn_t) Tcl_UniCharNcmp;
+		    }
+		}
+	    } else {
+		/*
+		 * In order to handle the special Tcl \xC0\x80 null encoding
+		 * for utf-8, strcmp can't do a simple memcmp.
+		 */
+
+		if ((empty = TclCheckEmptyString(value1Ptr)) > 0) {
+		    switch (TclCheckEmptyString(value2Ptr)) {
+			case -1:
+			s1 = "";
+			s1len = 0;
+			s2 = TclGetStringFromObj(value2Ptr, &s2len);
+			break;
+			case 0:
+			match = -1;
+			goto matchdone;
+			case 1:
+			match = 0;
+			goto matchdone;
+		    }
+		} else if (TclCheckEmptyString(value2Ptr) > 0) {
+		    switch (empty) {
+			case -1:
+			s2 = "";
+			s2len = 0;
+			s1 = TclGetStringFromObj(value1Ptr, &s1len);
+			break;
+			case 0:
+			match = 1;
+			goto matchdone;
+			case 1:
+			match = 0;
+			goto matchdone;
+		    }
+		} else {
+		    s1 = TclGetStringFromObj(value1Ptr, &s1len);
+		    s2 = TclGetStringFromObj(value2Ptr, &s2len);
+		}
+
+		if (checkEq) {
+		    memCmpFn = memcmp;
+		} else {
+		    memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
+		}
+	    }
+
+	    if (checkEq && (s1len != s2len)) {
+		match = 1;
+	    }  else {
+		/*
+		 * The comparison function should compare up to the minimum
+		 * byte length only.
+		 */
+		match = memCmpFn(s1, s2,
+			(size_t) ((s1len < s2len) ? s1len : s2len));
+		if (match == 0) {
+		    match = s1len - s2len;
+		}
+	    }
+	}
+    matchdone:
+    return match;
+}
+
 /*
  *----------------------------------------------------------------------
  *
