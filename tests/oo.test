@@ -4407,6 +4407,50 @@ test oo-38.3 {TIP 500: private methods internal call} -setup {
 } -cleanup {
     parent destroy
 } -result {16 22}
+test oo-38.4 {TIP 500: private methods internal call} -setup {
+    oo::class create parent
+} -body {
+    oo::class create clsA {
+	superclass parent
+	variable x
+	constructor {} {
+	    set x 1
+	}
+	method act {} {
+	    my step
+	    return
+	}
+	method step {} {
+	    incr x
+	}
+	method x {} {
+	    return $x
+	}
+    }
+    clsA create obj
+    obj act
+    set result [obj x]
+    oo::objdefine obj {
+	variable x
+	private {
+	    method step {} {
+		incr x 2
+	    }
+	}
+    }
+    obj act
+    lappend result [obj x]
+    oo::objdefine obj {
+	method act {} {
+	    my step
+	    next
+	}
+    }
+    obj act
+    lappend result [obj x]
+} -cleanup {
+    parent destroy
+} -result {2 3 6}
 
 cleanupTests
 return

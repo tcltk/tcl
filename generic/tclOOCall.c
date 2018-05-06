@@ -59,13 +59,16 @@ static inline void	AddMethodToCallChain(Method *const mPtr,
 			    struct ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters,
 			    Class *const filterDecl, int flags);
-static inline void	AddSimpleChainToCallContext(Object *const oPtr,
-			    Object *const contextObj, Class *const contextCls,
+static inline int	AddInstancePrivateToCallContext(Object *const oPtr,
+			    Tcl_Obj *const methodNameObj,
+			    struct ChainBuilder *const cbPtr, int flags);
+static inline int	AddSimpleChainToCallContext(Object *const oPtr,
+			    Class *const contextCls,
 			    Tcl_Obj *const methodNameObj,
 			    struct ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters, int flags,
 			    Class *const filterDecl);
-static void		AddPrivatesFromClassChainToCallContext(Class *classPtr,
+static int		AddPrivatesFromClassChainToCallContext(Class *classPtr,
 			    Class *const contextCls,
 			    Tcl_Obj *const methodNameObj,
 			    struct ChainBuilder *const cbPtr,
@@ -697,22 +700,58 @@ AddClassMethodNames(
 /*
  * ----------------------------------------------------------------------
  *
+ * AddInstancePrivateToCallContext --
+ *
+ *	Add private methods from the instance. Called when the calling Tcl
+ *	context is a TclOO method declared by an object that is the same as
+ *	the current object. Returns true iff a private method was actually
+ *	found and added to the call chain (as this suppresses caching).
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline int
+AddInstancePrivateToCallContext(
+    Object *const oPtr,		/* Object to add call chain entries for. */
+    Tcl_Obj *const methodName,	/* Name of method to add the call chain
+				 * entries for. */
+    struct ChainBuilder *const cbPtr,
+				/* Where to add the call chain entries. */
+    int flags)			/* What sort of call chain are we building. */
+{
+    Tcl_HashEntry *hPtr;
+    Method *mPtr;
+    int donePrivate = 0;
+
+    if (oPtr->methodsPtr) {
+	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) methodName);
+	if (hPtr != NULL) {
+	    mPtr = Tcl_GetHashValue(hPtr);
+	    if (mPtr->flags & TRUE_PRIVATE_METHOD) {
+		AddMethodToCallChain(mPtr, cbPtr, NULL, NULL, flags);
+		donePrivate = 1;
+	    }
+	}
+    }
+    return donePrivate;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * AddSimpleChainToCallContext --
  *
  *	The core of the call-chain construction engine, this handles calling a
  *	particular method on a particular object. Note that filters and
  *	unknown handling are already handled by the logic that uses this
- *	function.
+ *	function. Returns true if a private method was one of those found.
  *
  * ----------------------------------------------------------------------
  */
 
-static inline void
+static inline int
 AddSimpleChainToCallContext(
     Object *const oPtr,		/* Object to add call chain entries for. */
-    Object *const contextObj,	/* Context object; when equal to oPtr, it
-				 * means that private methods may also be
-				 * added. [TIP 500] */
     Class *const contextCls,	/* Context class; the currently considered
 				 * class is equal to this, private methods may
 				 * also be added. [TIP 500] */
@@ -729,34 +768,25 @@ AddSimpleChainToCallContext(
 				 * NULL, either the filter was declared by the
 				 * object or this isn't a filter. */
 {
-    int i;
+    int i, foundPrivate = 0;
     Tcl_HashEntry *hPtr;
     Method *mPtr;
 
-    if ((oPtr == contextObj) && oPtr->methodsPtr) {
+    if (!(flags & (KNOWN_STATE | SPECIAL)) && oPtr->methodsPtr) {
 	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) methodNameObj);
 
 	if (hPtr != NULL) {
 	    mPtr = Tcl_GetHashValue(hPtr);
-	    if (mPtr->flags & TRUE_PRIVATE_METHOD) {
-		AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl,
-			flags);
-	    }
-	}
-	flags |= DEFINITE_PROTECTED;
-    } else if (!(flags & (KNOWN_STATE | SPECIAL)) && oPtr->methodsPtr) {
-	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) methodNameObj);
-
-	if (hPtr != NULL) {
-	    mPtr = Tcl_GetHashValue(hPtr);
-	    if (flags & PUBLIC_METHOD) {
-		if (!(mPtr->flags & PUBLIC_METHOD)) {
-		    return;
+	    if (!(mPtr->flags & TRUE_PRIVATE_METHOD)) {
+		if (flags & PUBLIC_METHOD) {
+		    if (!(mPtr->flags & PUBLIC_METHOD)) {
+			return 0;
+		    } else {
+			flags |= DEFINITE_PUBLIC;
+		    }
 		} else {
-		    flags |= DEFINITE_PUBLIC;
+		    flags |= DEFINITE_PROTECTED;
 		}
-	    } else {
-		flags |= DEFINITE_PROTECTED;
 	    }
 	}
     }
@@ -765,9 +795,9 @@ AddSimpleChainToCallContext(
 
 	FOREACH(mixinPtr, oPtr->mixins) {
 	    if (contextCls) {
-		AddPrivatesFromClassChainToCallContext(mixinPtr, contextCls,
-			methodNameObj, cbPtr, doneFilters,
-			flags|TRAVERSED_MIXIN, filterDecl);
+		foundPrivate |= AddPrivatesFromClassChainToCallContext(
+			mixinPtr, contextCls, methodNameObj, cbPtr,
+			doneFilters, flags|TRAVERSED_MIXIN, filterDecl);
 	    }
 	    AddSimpleClassChainToCallContext(mixinPtr, methodNameObj, cbPtr,
 		    doneFilters, flags|TRAVERSED_MIXIN, filterDecl);
@@ -784,11 +814,13 @@ AddSimpleChainToCallContext(
 	}
     }
     if (contextCls) {
-	AddPrivatesFromClassChainToCallContext(oPtr->selfCls, contextCls,
-		methodNameObj, cbPtr, doneFilters, flags, filterDecl);
+	foundPrivate |= AddPrivatesFromClassChainToCallContext(oPtr->selfCls,
+		contextCls, methodNameObj, cbPtr, doneFilters, flags,
+		filterDecl);
     }
     AddSimpleClassChainToCallContext(oPtr->selfCls, methodNameObj, cbPtr,
 	    doneFilters, flags, filterDecl);
+    return foundPrivate;
 }
 
 /*
@@ -1005,7 +1037,7 @@ TclOOGetCallContext(
     CallContext *contextPtr;
     CallChain *callPtr;
     struct ChainBuilder cb;
-    int i, count, doFilters;
+    int i, count, doFilters, donePrivate = 0;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable doneFilters;
 
@@ -1097,10 +1129,10 @@ TclOOGetCallContext(
      */
 
     if (flags & FORCE_UNKNOWN) {
-	AddSimpleChainToCallContext(oPtr, NULL, NULL,
+	AddSimpleChainToCallContext(oPtr, NULL,
 		oPtr->fPtr->unknownMethodNameObj, &cb, NULL, BUILDING_MIXINS,
 		NULL);
-	AddSimpleChainToCallContext(oPtr, NULL, NULL,
+	AddSimpleChainToCallContext(oPtr, NULL,
 		oPtr->fPtr->unknownMethodNameObj, &cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
 	callPtr->epoch = -1;
@@ -1130,9 +1162,9 @@ TclOOGetCallContext(
 		    OBJECT_MIXIN);
 	}
 	FOREACH(filterObj, oPtr->filters) {
-	    AddSimpleChainToCallContext(oPtr, contextObj, contextCls,
+	    donePrivate |= AddSimpleChainToCallContext(oPtr, contextCls,
 		    filterObj, &cb, &doneFilters, BUILDING_MIXINS, NULL);
-	    AddSimpleChainToCallContext(oPtr, contextObj, contextCls,
+	    donePrivate |= AddSimpleChainToCallContext(oPtr, contextCls,
 		    filterObj, &cb, &doneFilters, 0, NULL);
 	}
 	AddClassFiltersToCallContext(oPtr, oPtr->selfCls, &cb, &doneFilters,
@@ -1148,10 +1180,14 @@ TclOOGetCallContext(
      * handle class mixins right.
      */
 
-    AddSimpleChainToCallContext(oPtr, contextObj, contextCls, methodNameObj,
-	    &cb, NULL, flags|BUILDING_MIXINS, NULL);
-    AddSimpleChainToCallContext(oPtr, contextObj, contextCls, methodNameObj,
-	    &cb, NULL, flags, NULL);
+    donePrivate |= AddSimpleChainToCallContext(oPtr, contextCls,
+	    methodNameObj, &cb, NULL, flags|BUILDING_MIXINS, NULL);
+    if (oPtr == contextObj) {
+	donePrivate |= AddInstancePrivateToCallContext(oPtr, methodNameObj,
+		&cb, flags);
+    }
+    donePrivate |= AddSimpleChainToCallContext(oPtr, contextCls,
+	    methodNameObj, &cb, NULL, flags, NULL);
 
     /*
      * Check to see if the method has no implementation. If so, we probably
@@ -1169,10 +1205,10 @@ TclOOGetCallContext(
 	    TclOODeleteChain(callPtr);
 	    return NULL;
 	}
-	AddSimpleChainToCallContext(oPtr, NULL, NULL,
+	AddSimpleChainToCallContext(oPtr, NULL,
 		oPtr->fPtr->unknownMethodNameObj, &cb, NULL, BUILDING_MIXINS,
 		NULL);
-	AddSimpleChainToCallContext(oPtr, NULL, NULL,
+	AddSimpleChainToCallContext(oPtr, NULL,
 		oPtr->fPtr->unknownMethodNameObj, &cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
 	callPtr->epoch = -1;
@@ -1180,7 +1216,7 @@ TclOOGetCallContext(
 	    TclOODeleteChain(callPtr);
 	    return NULL;
 	}
-    } else if (doFilters) {
+    } else if (doFilters && !donePrivate) {
 	if (hPtr == NULL) {
 	    if (oPtr->flags & USE_CLASS_CACHE) {
 		if (oPtr->selfCls->classChainCache == NULL) {
@@ -1331,10 +1367,10 @@ TclOOGetStereotypeCallChain(
      * Add the actual method implementations.
      */
 
-    AddSimpleChainToCallContext(&obj, NULL, NULL, methodNameObj, &cb, NULL,
+    AddSimpleChainToCallContext(&obj, NULL, methodNameObj, &cb, NULL,
 	    flags|BUILDING_MIXINS, NULL);
-    AddSimpleChainToCallContext(&obj, NULL, NULL, methodNameObj, &cb, NULL,
-	    flags, NULL);
+    AddSimpleChainToCallContext(&obj, NULL, methodNameObj, &cb, NULL, flags,
+	    NULL);
 
     /*
      * Check to see if the method has no implementation. If so, we probably
@@ -1343,10 +1379,10 @@ TclOOGetStereotypeCallChain(
      */
 
     if (count == callPtr->numChain) {
-	AddSimpleChainToCallContext(&obj, NULL, NULL,
-		fPtr->unknownMethodNameObj, &cb, NULL, BUILDING_MIXINS, NULL);
-	AddSimpleChainToCallContext(&obj, NULL, NULL,
-		fPtr->unknownMethodNameObj, &cb, NULL, 0, NULL);
+	AddSimpleChainToCallContext(&obj, NULL, fPtr->unknownMethodNameObj,
+		&cb, NULL, BUILDING_MIXINS, NULL);
+	AddSimpleChainToCallContext(&obj, NULL, fPtr->unknownMethodNameObj,
+		&cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
 	callPtr->epoch = -1;
 	if (count == callPtr->numChain) {
@@ -1426,9 +1462,9 @@ AddClassFiltersToCallContext(
 	    (void) Tcl_CreateHashEntry(doneFilters, (char *) filterObj,
 		    &isNew);
 	    if (isNew) {
-		AddSimpleChainToCallContext(oPtr, NULL, NULL, filterObj, cbPtr,
+		AddSimpleChainToCallContext(oPtr, NULL, filterObj, cbPtr,
 			doneFilters, clearedFlags|BUILDING_MIXINS, clsPtr);
-		AddSimpleChainToCallContext(oPtr, NULL, NULL, filterObj, cbPtr,
+		AddSimpleChainToCallContext(oPtr, NULL, filterObj, cbPtr,
 			doneFilters, clearedFlags, clsPtr);
 	    }
 	}
@@ -1455,21 +1491,22 @@ AddClassFiltersToCallContext(
 /*
  * ----------------------------------------------------------------------
  *
- * AddSimpleClassChainToCallContext --
+ * AddPrivatesFromClassChainToCallContext --
  *
- *	Construct a call-chain from a class hierarchy.
+ *	Helper for AddSimpleChainToCallContext that is used to find private
+ *	methds and add them to the call chain. Returns true when a private
+ *	method is found and added. [TIP 500]
  *
  * ----------------------------------------------------------------------
  */
 
-static void
+static int
 AddPrivatesFromClassChainToCallContext(
     Class *classPtr,		/* Class to add the call chain entries for. */
     Class *const contextCls,	/* Context class; the currently considered
 				 * class is equal to this, private methods may
-				 * also be added. [TIP 500] */
-    Tcl_Obj *const methodNameObj,
-				/* Name of method to add the call chain
+				 * also be added. */
+    Tcl_Obj *const methodName,	/* Name of method to add the call chain
 				 * entries for. */
     struct ChainBuilder *const cbPtr,
 				/* Where to add the call chain entries. */
@@ -1481,7 +1518,7 @@ AddPrivatesFromClassChainToCallContext(
 				 * NULL, either the filter was declared by the
 				 * object or this isn't a filter. */
 {
-    int i;
+    int i, foundPrivate = 0;
     Class *superPtr;
 
     /*
@@ -1494,14 +1531,14 @@ AddPrivatesFromClassChainToCallContext(
 
   tailRecurse:
     FOREACH(superPtr, classPtr->mixins) {
-	AddPrivatesFromClassChainToCallContext(superPtr, contextCls,
-		methodNameObj, cbPtr, doneFilters, flags|TRAVERSED_MIXIN,
-		filterDecl);
+	foundPrivate |= AddPrivatesFromClassChainToCallContext(superPtr,
+		contextCls, methodName, cbPtr, doneFilters,
+		flags|TRAVERSED_MIXIN, filterDecl);
     }
 
     if (classPtr == contextCls) {
 	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&classPtr->classMethods,
-		(char *) methodNameObj);
+		(char *) methodName);
 
 	if (hPtr != NULL) {
 	    register Method *mPtr = Tcl_GetHashValue(hPtr);
@@ -1509,6 +1546,7 @@ AddPrivatesFromClassChainToCallContext(
 	    if (mPtr->flags & TRUE_PRIVATE_METHOD) {
 		AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl,
 			flags);
+		foundPrivate = 1;
 	    }
 	}
     }
@@ -1519,13 +1557,24 @@ AddPrivatesFromClassChainToCallContext(
 	goto tailRecurse;
     default:
 	FOREACH(superPtr, classPtr->superclasses) {
-	    AddPrivatesFromClassChainToCallContext(superPtr, contextCls,
-		    methodNameObj, cbPtr, doneFilters, flags, filterDecl);
+	    foundPrivate |= AddPrivatesFromClassChainToCallContext(superPtr,
+		    contextCls, methodName, cbPtr, doneFilters, flags,
+		    filterDecl);
 	}
     case 0:
-	return;
+	return foundPrivate;
     }
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * AddSimpleClassChainToCallContext --
+ *
+ *	Construct a call-chain from a class hierarchy.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
 AddSimpleClassChainToCallContext(
