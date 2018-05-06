@@ -561,6 +561,18 @@ If \fIclassName\fR is unspecified, this subcommand returns class of the
 boolean value indicating whether the \fIobject\fR is of that class.
 .VE 8.6
 .TP
+\fBinfo object creationid\fI object\fR
+.VS TIP500
+Returns the unique creation identifier for the \fIobject\fR object. This
+creation identifier is unique to the object (within a Tcl interpreter) and
+cannot be controlled at object creation time or altered afterwards.
+.RS
+.PP
+\fIImplementation note:\fR the creation identifier is used to generate unique
+identifiers associated with the object, especially for private variables.
+.RE
+.VE TIP500
+.TP
 \fBinfo object definition\fI object method\fR
 .VS 8.6
 This subcommand returns a description of the definition of the method named

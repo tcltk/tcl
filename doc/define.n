@@ -105,6 +105,13 @@ fully-qualified, the command will be searched for in each object's namespace,
 using the instances' namespace's path, or by looking in the global namespace.
 The method will be exported if \fIname\fR starts with a lower-case letter, and
 non-exported otherwise.
+.RS
+.PP
+.VS TIP500
+If in a private definition context (see the \fBprivate\fR definition command,
+below), this command creates private forwarded methods.
+.VE TIP500
+.RE
 .TP
 \fBmethod\fI name argList bodyScript\fR
 .
@@ -117,6 +124,13 @@ be a namespace that is unique to the current object. The method will be
 exported if \fIname\fR starts with a lower-case letter, and non-exported
 otherwise; this behavior can be overridden via \fBexport\fR and
 \fBunexport\fR.
+.RS
+.PP
+.VS TIP500
+If in a private definition context (see the \fBprivate\fR definition command,
+below), this command creates private procedure-like methods.
+.VE TIP500
+.RE
 .TP
 \fBmixin\fR ?\fI\-slotOperation\fR? ?\fIclassName ...\fR?
 .VS
@@ -128,6 +142,16 @@ names a single class that is to be mixed in.
 .VS
 By default, this slot works by replacement.
 .VE
+.TP
+\fBprivate \fIcmd arg...\fR
+.TP
+\fBprivate \fIscript\fR
+.
+.VS TIP500
+This evaluates the \fIscript\fR (or the list of command and arguments given by
+\fIcmd\fR and \fIarg\fRs) in a context where the definitions made on the
+current class will be private definitions.
+.VE TIP500
 .TP
 \fBrenamemethod\fI fromName toName\fR
 .
@@ -191,11 +215,25 @@ variables to be automatically made
 available in the methods, constructor and destructor declared by the class
 being defined. Each variable name must not have any namespace
 separators and must not look like an array access. All variables will be
-actually present in the instance object on which the method is executed. Note
+actually present in the namespace of the instance object on which the method
+is executed. Note
 that the variable lists declared by a superclass or subclass are completely
 disjoint, as are variable lists declared by instances; the list of variable
 names is just for methods (and constructors and destructors) declared by this
 class. By default, this slot works by appending.
+.RS
+.PP
+.VS TIP500
+If in a private definition context (see the \fBprivate\fR definition command,
+below), this slot manipulates the list of private variable bindings for this
+class. In a private variable binding, the name of the variable within the
+instance object is different to the name given in the definition; the name
+used in the definition is the name that you use to access the variable within
+the methods of this class, and the name of the variable in the instance
+namespace has a unique prefix that makes accidental use from other classes
+extremely unlikely.
+.VE TIP500
+.RE
 .VE
 .SS "CONFIGURING OBJECTS"
 .PP
@@ -244,6 +282,13 @@ additional arguments, \fIarg\fR etc., added before those arguments specified
 by the caller of the method. Forwarded methods should be deleted using the
 \fBmethod\fR subcommand. The method will be exported if \fIname\fR starts with
 a lower-case letter, and non-exported otherwise.
+.RS
+.PP
+.VS TIP500
+If in a private definition context (see the \fBprivate\fR definition command,
+below), this command creates private forwarded methods.
+.VE TIP500
+.RE
 .TP
 \fBmethod\fI name argList bodyScript\fR
 .
@@ -254,6 +299,13 @@ method will be \fIbodyScript\fR. When the body of the method is evaluated, the
 current namespace of the method will be a namespace that is unique to the
 object. The method will be exported if \fIname\fR starts with a lower-case
 letter, and non-exported otherwise.
+.RS
+.PP
+.VS TIP500
+If in a private definition context (see the \fBprivate\fR definition command,
+below), this command creates private procedure-like methods.
+.VE TIP500
+.RE
 .TP
 \fBmixin\fR ?\fI\-slotOperation\fR? ?\fIclassName ...\fR?
 .VS
@@ -265,6 +317,16 @@ that is to be mixed in.
 .VS
 By default, this slot works by replacement.
 .VE
+.TP
+\fBprivate \fIcmd arg...\fR
+.TP
+\fBprivate \fIscript\fR
+.
+.VS TIP500
+This evaluates the \fIscript\fR (or the list of command and arguments given by
+\fIcmd\fR and \fIarg\fRs) in a context where the definitions made on the
+current object will be private definitions.
+.VE TIP500
 .TP
 \fBrenamemethod\fI fromName toName\fR
 .
@@ -294,10 +356,37 @@ This slot (see \fBSLOTTED DEFINITIONS\fR below) arranges for each of the named
 variables to be automatically made available in the methods declared by the
 object being defined.  Each variable name must not have any namespace
 separators and must not look like an array access. All variables will be
-actually present in the object on which the method is executed. Note that the
+actually present in the namespace of the object on which the method is
+executed. Note that the
 variable lists declared by the classes and mixins of which the object is an
 instance are completely disjoint; the list of variable names is just for
 methods declared by this object. By default, this slot works by appending.
+.RS
+.PP
+.VS TIP500
+If in a private definition context (see the \fBprivate\fR definition command,
+below), this slot manipulates the list of private variable bindings for this
+object.  In a private variable binding, the name of the variable within the
+instance object is different to the name given in the definition; the name
+used in the definition is the name that you use to access the variable within
+the methods of this instance object, and the name of the variable in the
+instance namespace has a unique prefix that makes accidental use from
+superclass methods extremely unlikely.
+.VE TIP500
+.RE
+.SH "PRIVATE METHODS"
+.VS TIP500
+When a class or instance has a private method, that private method can only be
+invoked from within methods of that class or instance. Other callers of the
+object's methods \fIcannot\fR invoke private methods, it is as if the private
+methods do not exist. However, a private method of a class \fIcan\fR be
+invoked from the class's methods when those methods are being used on another
+instance object; this means that a class can use them to coordinate behaviour
+between several instances of itself without interfering with how other
+classes (especially either subclasses or superclasses) interact. Private
+methods precede all mixed in classes in the method call order (as reported by
+\fBself call\fR).
+.VE TIP500
 .SH "SLOTTED DEFINITIONS"
 Some of the configurable definitions of a class or object are \fIslotted
 definitions\fR. This means that the configuration is implemented by a slot

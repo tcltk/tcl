@@ -1180,12 +1180,12 @@ TclOOGetCallContext(
      * handle class mixins right.
      */
 
-    donePrivate |= AddSimpleChainToCallContext(oPtr, contextCls,
-	    methodNameObj, &cb, NULL, flags|BUILDING_MIXINS, NULL);
     if (oPtr == contextObj) {
 	donePrivate |= AddInstancePrivateToCallContext(oPtr, methodNameObj,
 		&cb, flags);
     }
+    donePrivate |= AddSimpleChainToCallContext(oPtr, contextCls,
+	    methodNameObj, &cb, NULL, flags|BUILDING_MIXINS, NULL);
     donePrivate |= AddSimpleChainToCallContext(oPtr, contextCls,
 	    methodNameObj, &cb, NULL, flags, NULL);
 
