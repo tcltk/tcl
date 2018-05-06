@@ -2750,45 +2750,19 @@ StringCmpCmd(
      */
 
     const char *string1, *string2;
-    int length1, length2, i, match, length, nocase = 0, reqlength = -1;
+    int length1, length2, match, length, nocase, reqlength, status;
     typedef int (*strCmpFn_t)(const char *, const char *, unsigned int);
     strCmpFn_t strCmpFn;
 
-    if (objc < 3 || objc > 6) {
-    str_cmp_args:
-	Tcl_WrongNumArgs(interp, 1, objv,
-		"?-nocase? ?-length int? string1 string2");
-	return TCL_ERROR;
-    }
-
-    for (i = 1; i < objc-2; i++) {
-	string2 = TclGetStringFromObj(objv[i], &length2);
-	if ((length2 > 1) && !strncmp(string2, "-nocase", (size_t)length2)) {
-	    nocase = 1;
-	} else if ((length2 > 1)
-		&& !strncmp(string2, "-length", (size_t)length2)) {
-	    if (i+1 >= objc-2) {
-		goto str_cmp_args;
-	    }
-	    i++;
-	    if (TclGetIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad option \"%s\": must be -nocase or -length",
-		    string2));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
-		    string2, NULL);
-	    return TCL_ERROR;
-	}
+    if ((status = TclStringCmpOpts(interp, objc, objv, &reqlength,
+	(char **)&string2, &length2, &nocase)) != TCL_OK){
+	return status;
     }
 
     /*
      * From now on, we only access the two objects at the end of the argument
      * array.
      */
-
     objv += objc-2;
 
     if ((reqlength == 0) || (objv[0] == objv[1])) {
@@ -2802,12 +2776,6 @@ StringCmpCmd(
 
     if (!nocase && TclIsPureByteArray(objv[0]) &&
 	    TclIsPureByteArray(objv[1])) {
-	/*
-	 * Use binary versions of comparisons since that won't cause undue
-	 * type conversions and it is much faster. Only do this if we're
-	 * case-sensitive (which is all that really makes sense with byte
-	 * arrays anyway, and we have no memcasecmp() for some reason... :^)
-	 */
 
 	string1 = (char *) Tcl_GetByteArrayFromObj(objv[0], &length1);
 	string2 = (char *) Tcl_GetByteArrayFromObj(objv[1], &length2);
@@ -2885,6 +2853,12 @@ int TclStringCmp (
 	} else {
 	    if (TclIsPureByteArray(value1Ptr)
 		    && TclIsPureByteArray(value2Ptr)) {
+		/*
+		 * Use binary versions of comparisons since that won't cause undue
+		 * type conversions and it is much faster. Only do this if we're
+		 * case-sensitive (which is all that really makes sense with byte
+		 * arrays anyway, and we have no memcasecmp() for some reason... :^)
+		 */
 		s1 = (char *) Tcl_GetByteArrayFromObj(value1Ptr, &s1len);
 		s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
 		memCmpFn = memcmp;
@@ -2985,6 +2959,54 @@ int TclStringCmp (
 	}
     matchdone:
     return match;
+}
+
+int TclStringCmpOpts (
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[],	/* Argument objects. */
+    int *reqlength,
+    char **stringPtr,
+    int *length,
+    int *nocase
+
+)
+{
+    int i;
+    const char *string = *stringPtr;
+
+    *reqlength = -1;
+    *nocase = 0;
+    if (objc < 3 || objc > 6) {
+    str_cmp_args:
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"?-nocase? ?-length int? string1 string2");
+	return TCL_ERROR;
+    }
+
+    for (i = 1; i < objc-2; i++) {
+	string = TclGetStringFromObj(objv[i], length);
+	if ((*length > 1) && !strncmp(string, "-nocase", (size_t)*length)) {
+	    *nocase = 1;
+	} else if ((*length > 1)
+		&& !strncmp(string, "-length", (size_t)*length)) {
+	    if (i+1 >= objc-2) {
+		goto str_cmp_args;
+	    }
+	    i++;
+	    if (TclGetIntFromObj(interp, objv[i], reqlength) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad option \"%s\": must be -nocase or -length",
+		    string));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
+		    string, NULL);
+	    return TCL_ERROR;
+	}
+    }
+    return TCL_OK;
 }
 
 /*
