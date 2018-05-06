@@ -4299,7 +4299,7 @@ test oo-38.2 {TIP 500: private variables introspection} -setup {
     parent destroy
 } -result {{y1 y2} {x1 x2} {b1 b2} {a1 a2}}
 
-test oo-38.1 {TIP 500: private methods internal call} -setup {
+test oo-39.1 {TIP 500: private methods internal call; class private} -setup {
     oo::class create parent
 } -body {
     oo::class create clsA {
@@ -4329,7 +4329,7 @@ test oo-38.1 {TIP 500: private methods internal call} -setup {
 } -cleanup {
     parent destroy
 } -result {7 1 {unknown method "step": must be act, destroy or x}}
-test oo-38.2 {TIP 500: private methods internal call} -setup {
+test oo-39.2 {TIP 500: private methods internal call; class private} -setup {
     oo::class create parent
 } -body {
     oo::class create clsA {
@@ -4366,7 +4366,7 @@ test oo-38.2 {TIP 500: private methods internal call} -setup {
 } -cleanup {
     parent destroy
 } -result {7 12}
-test oo-38.3 {TIP 500: private methods internal call} -setup {
+test oo-39.3 {TIP 500: private methods internal call; class private} -setup {
     oo::class create parent
 } -body {
     oo::class create clsA {
@@ -4407,7 +4407,7 @@ test oo-38.3 {TIP 500: private methods internal call} -setup {
 } -cleanup {
     parent destroy
 } -result {16 22}
-test oo-38.4 {TIP 500: private methods internal call} -setup {
+test oo-39.4 {TIP 500: private methods internal call; instance private} -setup {
     oo::class create parent
 } -body {
     oo::class create clsA {
