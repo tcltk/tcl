@@ -80,13 +80,10 @@ as a convenience to programmers.
 .TP
 \fBnamespace delete \fR?\fInamespace namespace ...\fR?
 .
-Each namespace \fInamespace\fR is deleted
-and all variables, procedures, and child namespaces
-contained in the namespace are deleted.
-If a procedure is currently executing inside the namespace,
-the namespace will be kept alive until the procedure returns;
-however, the namespace is marked to prevent other code from
-looking it up by name.
+Each namespace \fInamespace\fR is deleted and its ensemble commands, child
+namespaces, commands, and variables are deleted in that order. Any evaluation
+levels using the namespace as the current namespace then use the global
+namespace instead.
 If a namespace does not exist, this command returns an error.
 If no namespace names are given, this command does nothing.
 .TP
