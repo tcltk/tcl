@@ -597,9 +597,9 @@ Tcl_RegsubObjCmd(
 	 * slightly modified version of the one pair STR_MAP code.
 	 */
 
-	int slen, nocase;
+	int slen, nocase, wsrclc;
 	int (*strCmpFn)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long);
-	Tcl_UniChar *p, wsrclc;
+	Tcl_UniChar *p;
 
 	numMatches = 0;
 	nocase = (cflags & TCL_REG_NOCASE);
@@ -1999,8 +1999,8 @@ StringMapCmd(
 	 * larger strings.
 	 */
 
-	int mapLen;
-	Tcl_UniChar *mapString, u2lc;
+	int mapLen, u2lc;
+	Tcl_UniChar *mapString;
 
 	ustring2 = Tcl_GetUnicodeFromObj(mapElemv[0], &length2);
 	p = ustring1;
@@ -2031,8 +2031,8 @@ StringMapCmd(
 	    }
 	}
     } else {
-	Tcl_UniChar **mapStrings, *u2lc = NULL;
-	int *mapLens;
+	Tcl_UniChar **mapStrings;
+	int *mapLens, *u2lc = NULL;
 
 	/*
 	 * Precompute pointers to the unicode string and length. This saves us
@@ -2044,7 +2044,7 @@ StringMapCmd(
 	mapStrings = TclStackAlloc(interp, mapElemc*2*sizeof(Tcl_UniChar *));
 	mapLens = TclStackAlloc(interp, mapElemc * 2 * sizeof(int));
 	if (nocase) {
-	    u2lc = TclStackAlloc(interp, mapElemc * sizeof(Tcl_UniChar));
+	    u2lc = TclStackAlloc(interp, mapElemc * sizeof(int));
 	}
 	for (index = 0; index < mapElemc; index++) {
 	    mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
