@@ -5387,7 +5387,7 @@ TEBCresume(
 	{
 	    int checkEq = ((*pc == INST_EQ) || (*pc == INST_NEQ)
 		    || (*pc == INST_STR_EQ) || (*pc == INST_STR_NEQ));
-	    match = TclStringCmp(valuePtr, value2Ptr, checkEq);
+	    match = TclStringCmp(valuePtr, value2Ptr, checkEq, 0, -1);
 	}
 
 	/*
