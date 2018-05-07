@@ -685,6 +685,7 @@ TclOO_Object_VarName(
 {
     Var *varPtr, *aryVar;
     Tcl_Obj *varNamePtr, *argPtr;
+    CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
     const char *arg;
 
     if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
@@ -709,6 +710,58 @@ TclOO_Object_VarName(
     } else {
 	Tcl_Namespace *namespacePtr =
 		Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context));
+
+	/*
+	 * Private method handling. [TIP 500]
+	 *
+	 * If we're in a context that can see some private methods of an
+	 * object, we may need to precede a variable name with its prefix.
+	 * This is a little tricky as we need to check through the inheritance
+	 * hierarchy when the method was declared by a class to see if the
+	 * current object is an instance of that class.
+	 */
+
+	if (framePtr->isProcCallFrame & FRAME_IS_METHOD) {
+	    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+	    CallContext *callerContext = framePtr->clientData;
+	    Method *mPtr = callerContext->callPtr->chain[
+		    callerContext->index].mPtr;
+	    PrivateVariableMapping *pvPtr;
+	    int i;
+
+	    if (mPtr->declaringObjectPtr == oPtr) {
+		FOREACH_STRUCT(pvPtr, oPtr->privateVariables) {
+		    if (!strcmp(Tcl_GetString(pvPtr->variableObj),
+			    Tcl_GetString(argPtr))) {
+			argPtr = pvPtr->fullNameObj;
+			break;
+		    }
+		}
+	    } else if (mPtr->declaringClassPtr &&
+		    mPtr->declaringClassPtr->privateVariables.num) {
+		Class *clsPtr = mPtr->declaringClassPtr;
+		int isInstance = TclOOIsReachable(clsPtr, oPtr->selfCls);
+		Class *mixinCls;
+
+		if (!isInstance) {
+		    FOREACH(mixinCls, oPtr->mixins) {
+			if (TclOOIsReachable(clsPtr, mixinCls)) {
+			    isInstance = 1;
+			    break;
+			}
+		    }
+		}
+		if (isInstance) {
+		    FOREACH_STRUCT(pvPtr, clsPtr->privateVariables) {
+			if (!strcmp(Tcl_GetString(pvPtr->variableObj),
+				Tcl_GetString(argPtr))) {
+			    argPtr = pvPtr->fullNameObj;
+			    break;
+			}
+		    }
+		}
+	    }
+	}
 
 	varNamePtr = Tcl_NewStringObj(namespacePtr->fullName, -1);
 	Tcl_AppendToObj(varNamePtr, "::", 2);
