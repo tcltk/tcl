@@ -1034,8 +1034,8 @@ Tcl_UtfToTitle(
 	    lowChar = (((lowChar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
 	}
 #endif
-	/* Special exception for Gregorian characters, which don't have titlecase */
-	if ((lowChar < 0x1C90) || (lowChar >= 0x1CC0)) {
+	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
+	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {
 	    lowChar = Tcl_UniCharToLower(lowChar);
 	}
 
