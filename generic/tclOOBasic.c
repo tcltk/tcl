@@ -783,26 +783,16 @@ TclOO_Object_VarName(
 
     varNamePtr = Tcl_NewObj();
     if (aryVar != NULL) {
-	Tcl_HashEntry *hPtr;
-	Tcl_HashSearch search;
-
 	Tcl_GetVariableFullName(interp, (Tcl_Var) aryVar, varNamePtr);
 
 	/*
 	 * WARNING! This code pokes inside the implementation of hash tables!
 	 */
 
-	hPtr = Tcl_FirstHashEntry((Tcl_HashTable *) aryVar->value.tablePtr,
-		&search);
-	while (hPtr != NULL) {
-	    if (varPtr == Tcl_GetHashValue(hPtr)) {
-		Tcl_AppendToObj(varNamePtr, "(", -1);
-		Tcl_AppendObjToObj(varNamePtr, hPtr->key.objPtr);
-		Tcl_AppendToObj(varNamePtr, ")", -1);
-		break;
-	    }
-	    hPtr = Tcl_NextHashEntry(&search);
-	}
+	Tcl_AppendToObj(varNamePtr, "(", -1);
+	Tcl_AppendObjToObj(varNamePtr, ((VarInHash *)
+		varPtr)->entry.key.objPtr);
+	Tcl_AppendToObj(varNamePtr, ")", -1);
     } else {
 	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, varNamePtr);
     }
