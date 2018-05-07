@@ -4298,6 +4298,40 @@ test oo-38.2 {TIP 500: private variables introspection} -setup {
 } -cleanup {
     parent destroy
 } -result {{y1 y2} {x1 x2} {b1 b2} {a1 a2}}
+test oo-38.3 {TIP 500: private variables and obj·varname} -setup {
+    oo::class create parent
+} -body {
+    oo::class create clsA {
+	superclass parent
+	private {
+	    variable x
+	}
+	method getx {} {
+	    set x 1
+	    my varname x
+	}
+	method readx {} {
+	    return $x
+	}
+    }
+    oo::class create clsB {
+	superclass clsA
+	variable x
+	method gety {} {
+	    set x 1
+	    my varname x
+	}
+	method ready {} {
+	    return $x
+	}
+    }
+    clsB create obj
+    set [obj getx] 2
+    set [obj gety] 3
+    list [obj readx] [obj ready]
+} -cleanup {
+    parent destroy
+} -result {2 3}
 
 test oo-39.1 {TIP 500: private methods internal call; class private} -setup {
     oo::class create parent
