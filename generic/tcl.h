@@ -906,10 +906,6 @@ typedef struct Tcl_DString {
 #define TCL_INTERP_DESTROYED	 0x100
 #define TCL_LEAVE_ERR_MSG	 0x200
 #define TCL_TRACE_ARRAY		 0x800
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-/* Required to support old variable/vdelete/vinfo traces. */
-#define TCL_TRACE_OLD_STYLE	 0x1000
-#endif
 /* Indicate the semantics of the result of a trace. */
 #define TCL_TRACE_RESULT_DYNAMIC 0x8000
 #define TCL_TRACE_RESULT_OBJECT  0x10000

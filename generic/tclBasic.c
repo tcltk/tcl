@@ -232,7 +232,6 @@ static const CmdInfo builtInCmds[] = {
     {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	TclNRSwitchObjCmd, CMD_IS_SAFE},
     {"tailcall",	NULL,			TclCompileTailcallCmd,	TclNRTailcallObjCmd,	CMD_IS_SAFE},
     {"throw",		Tcl_ThrowObjCmd,	TclCompileThrowCmd,	NULL,	CMD_IS_SAFE},
-    {"trace",		Tcl_TraceObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"try",		Tcl_TryObjCmd,		TclCompileTryCmd,	TclNRTryObjCmd,	CMD_IS_SAFE},
     {"unset",		Tcl_UnsetObjCmd,	TclCompileUnsetCmd,	NULL,	CMD_IS_SAFE},
     {"uplevel",		Tcl_UplevelObjCmd,	NULL,			TclNRUplevelObjCmd,	CMD_IS_SAFE},
@@ -768,7 +767,7 @@ Tcl_CreateInterp(void)
 
     /*
      * Create the "array", "binary", "chan", "clock", "dict", "encoding",
-     * "file", "info", "namespace" and "string" ensembles. Note that all these
+     * "file", "info", "namespace", "string" and "trace" ensembles. Note that all these
      * commands (and their subcommands that are not present in the global
      * namespace) are wholly safe *except* for "clock", "encoding" and "file".
      */
@@ -792,6 +791,12 @@ Tcl_CreateInterp(void)
      */
 
     TclClockInit(interp);
+
+    /*
+     * Register "trace" subcommands - modelled after the "clock" ensemble
+     */
+
+    TclTraceInit(interp);
 
     /*
      * Register the built-in functions. This is empty now that they are

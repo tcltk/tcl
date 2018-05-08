@@ -3430,9 +3430,7 @@ MODULE_SCOPE int	Tcl_ThrowObjCmd(ClientData dummy, Tcl_Interp *interp,
 MODULE_SCOPE int	Tcl_TimeObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	Tcl_TraceObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+MODULE_SCOPE void	TclTraceInit(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_TryObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -4018,7 +4016,7 @@ typedef enum TclProcessWaitStatus {
     TCL_PROCESS_EXITED = 1,	/* Process has exited. */
     TCL_PROCESS_SIGNALED = 2,	/* Child killed because of a signal. */
     TCL_PROCESS_STOPPED = 3,	/* Child suspended because of a signal. */
-    TCL_PROCESS_UNKNOWN_STATUS = 4 
+    TCL_PROCESS_UNKNOWN_STATUS = 4
 				/* Child wait status didn't make sense. */
 } TclProcessWaitStatus;
 
