@@ -2772,6 +2772,7 @@ int TclStringCmp (
 		    match = -1;
 		    goto matchdone;
 		    case 1:
+		    default: /* avoid warn: `s2` may be used uninitialized */
 		    match = 0;
 		    goto matchdone;
 		}
@@ -2786,6 +2787,7 @@ int TclStringCmp (
 		    match = 1;
 		    goto matchdone;
 		    case 1:
+		    default: /* avoid warn: `s1` may be used uninitialized */
 		    match = 0;
 		    goto matchdone;
 		}
