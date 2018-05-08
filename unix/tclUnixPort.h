@@ -59,9 +59,15 @@
 #ifdef HAVE_STRUCT_DIRENT64
 typedef struct dirent64	Tcl_DirEntry;
 #   define TclOSreaddir		readdir64
+#   define TclOSopendir		opendir64
+#   define TclOSrewinddir	rewinddir64
+#   define TclOSclosedir	closedir64
 #else
 typedef struct dirent	Tcl_DirEntry;
 #   define TclOSreaddir		readdir
+#   define TclOSopendir		opendir
+#   define TclOSrewinddir	rewinddir
+#   define TclOSclosedir	closedir
 #endif
 
 #ifdef HAVE_TYPE_OFF64_T
