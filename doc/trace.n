@@ -354,27 +354,6 @@ containing two elements, which are the \fIopList\fR and \fIcommandPrefix\fR
 associated with the trace.  If \fIname\fR does not exist or does not
 have any traces set, then the result of the command will be an empty
 string.
-.RE
-.PP
-For backwards compatibility, three other subcommands are available:
-.RS
-.TP
-\fBtrace variable \fIname ops command\fR
-This is equivalent to \fBtrace add variable \fIname ops command\fR.
-.TP
-\fBtrace vdelete \fIname ops command\fR
-This is equivalent to \fBtrace remove variable \fIname ops command\fR
-.TP
-\fBtrace vinfo \fIname\fR
-This is equivalent to \fBtrace info variable \fIname\fR
-.RE
-.PP
-These subcommands are deprecated and will likely be removed in a
-future version of Tcl.  They use an older syntax in which \fBarray\fR,
-\fBread\fR, \fBwrite\fR, \fBunset\fR are replaced by \fBa\fR, \fBr\fR,
-\fBw\fR and \fBu\fR respectively, and the \fIops\fR argument is not a
-list, but simply a string concatenation of the operations, such as
-\fBrwua\fR.
 .SH EXAMPLES
 .PP
 Print a message whenever either of the global variables \fBfoo\fR and
