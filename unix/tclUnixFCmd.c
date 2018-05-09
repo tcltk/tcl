@@ -327,7 +327,7 @@ DoRenameFile(
 
     if (errno == EINVAL && haveRealpath) {
 	char srcPath[MAXPATHLEN], dstPath[MAXPATHLEN];
-	DIR *dirPtr;
+	Tcl_Dir *dirPtr;
 	Tcl_DirEntry *dirEntPtr;
 
 	if ((Realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
@@ -920,7 +920,7 @@ TraverseUnixTree(
 #ifndef HAVE_FTS
     int numProcessed = 0;
     Tcl_DirEntry *dirEntPtr;
-    DIR *dirPtr;
+    Tcl_Dir *dirPtr;
 #else
     CONST char *paths[2] = {NULL, NULL};
     FTS *fts = NULL;
