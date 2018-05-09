@@ -653,7 +653,7 @@ TclpFinalizeCondition(
 
 Tcl_DirEntry *
 TclpReaddir(
-    DIR * dir)
+    Tcl_Dir * dir)
 {
     return TclOSreaddir(dir);
 }
