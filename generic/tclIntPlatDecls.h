@@ -16,6 +16,7 @@
 #ifdef _WIN32
 #   define Tcl_DirEntry void
 #   define DIR void
+#   define Tcl_Dir void
 #endif
 
 #undef TCL_STORAGE_CLASS
