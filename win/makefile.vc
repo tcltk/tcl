@@ -832,6 +832,8 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.7" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.7"
 	@if not exist "$(LIB_INSTALL_DIR)\nmake" \
 		$(MKDIR) "$(LIB_INSTALL_DIR)\nmake"
 	@echo Installing header files
