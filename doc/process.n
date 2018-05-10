@@ -69,7 +69,10 @@ be treated as the first \fIarg\fR even if it starts with a \fB\-\fR.
 .TP
 \fB::tcl::process purge ?\fIpids\fR?
 .
-Returns the list of subprocess PIDs.
+Cleans up all data associated with terminated subprocesses. If \fBpids\fR is
+specified as a list of PIDs then the command only cleanup data for the matching
+subprocesses if they exist, and raises an error otherwise. If the process is
+still active then it does nothing.
 .TP
 \fB::tcl::process autopurge ?\fIflag\fR?
 .
