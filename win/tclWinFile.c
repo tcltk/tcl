@@ -833,7 +833,7 @@ tclWinDebugPanic(
 #else
     DebugBreak();
 #endif
-    abort();
+    ExitProcess(1);
 }
 
 /*
@@ -860,15 +860,6 @@ TclpFindExecutable(
 {
     WCHAR wName[MAX_PATH];
     char name[MAX_PATH * TCL_UTF_MAX];
-
-    /*
-     * Under Windows we ignore argv0, and return the path for the file used to
-     * create this process. Only if it is NULL, install a new panic handler.
-     */
-
-    if (argv0 == NULL) {
-	Tcl_SetPanicProc(tclWinDebugPanic);
-    }
 
 #ifdef UNICODE
     GetModuleFileNameW(NULL, wName, MAX_PATH);
