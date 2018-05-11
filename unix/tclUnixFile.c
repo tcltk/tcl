@@ -259,7 +259,7 @@ TclpMatchInDirectory(
 	Tcl_DecrRefCount(tailPtr);
 	Tcl_DecrRefCount(fileNamePtr);
     } else {
-	Tcl_Dir *d;
+	TclDIR *d;
 	Tcl_DirEntry *entryPtr;
 	CONST char *dirName;
 	int dirLength;
