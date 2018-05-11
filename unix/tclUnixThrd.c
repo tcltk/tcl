@@ -615,9 +615,7 @@ TclpFinalizeCondition(
 	*condPtr = NULL;
     }
 }
-#endif /* TCL_THREADS */
 
-#ifdef TCL_THREADS
 /*
  * Additions by AOL for specialized thread memory allocator.
  */

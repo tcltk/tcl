@@ -833,7 +833,7 @@ tclWinDebugPanic(
 #else
     DebugBreak();
 #endif
-    abort();
+    ExitProcess(1);
 }
 
 /*
@@ -860,15 +860,6 @@ TclpFindExecutable(
 {
     WCHAR wName[MAX_PATH];
     char name[MAX_PATH * TCL_UTF_MAX];
-
-    /*
-     * Under Windows we ignore argv0, and return the path for the file used to
-     * create this process. Only if it is NULL, install a new panic handler.
-     */
-
-    if (argv0 == NULL) {
-	Tcl_SetPanicProc(tclWinDebugPanic);
-    }
 
 #ifdef UNICODE
     GetModuleFileNameW(NULL, wName, MAX_PATH);
@@ -1561,11 +1552,12 @@ NativeAccess(
 	return 0;
     }
 
-    if ((mode & W_OK)
-	&& (attr & FILE_ATTRIBUTE_READONLY)
-	&& !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+    /* 
+     * If it's not a directory (assume file), do several fast checks:
+     */
+    if (!(attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	/*
-	 * The attributes say the file is not writable.	 If the file is a
+	 * If the attributes say this is not writable at all.  The file is a
 	 * regular file (i.e., not a directory), then the file is not
 	 * writable, full stop.	 For directories, the read-only bit is
 	 * (mostly) ignored by Windows, so we can't ascertain anything about
@@ -1573,21 +1565,38 @@ NativeAccess(
 	 * advanced 'getFileSecurityProc', then more robust ACL checks
 	 * will be done below.
 	 */
-
-	Tcl_SetErrno(EACCES);
-	return -1;
-    }
-
-    if (mode & X_OK) {
-	if (!(attr & FILE_ATTRIBUTE_DIRECTORY) && !NativeIsExec(nativePath)) {
-	    /*
-	     * It's not a directory and doesn't have the correct extension.
-	     * Therefore it can't be executable
-	     */
-
+	if ((mode & W_OK) && (attr & FILE_ATTRIBUTE_READONLY)) {
 	    Tcl_SetErrno(EACCES);
 	    return -1;
 	}
+
+	/* If doesn't have the correct extension, it can't be executable */
+	if ((mode & X_OK) && !NativeIsExec(nativePath)) {
+	    Tcl_SetErrno(EACCES);
+	    return -1;
+	}
+	/* Special case for read/write/executable check on file */
+	if ((mode & (R_OK|W_OK|X_OK)) && !(mode & ~(R_OK|W_OK|X_OK))) {
+	    DWORD mask = 0;
+	    HANDLE hFile;
+	    if (mode & R_OK) { mask |= GENERIC_READ;  }
+	    if (mode & W_OK) { mask |= GENERIC_WRITE; }
+	    if (mode & X_OK) { mask |= GENERIC_EXECUTE; }
+
+	    hFile = CreateFile(nativePath, mask,
+		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+		OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, NULL);
+	    if (hFile != INVALID_HANDLE_VALUE) {
+		CloseHandle(hFile);
+		return 0;
+	    }
+	    /* fast exit if access was denied */
+	    if (GetLastError() == ERROR_ACCESS_DENIED) {
+		Tcl_SetErrno(EACCES);
+		return -1;
+	    }
+	}
+	/* We cannnot verify the access fast, check it below using security info. */
     }
 
     /*
@@ -1792,10 +1801,12 @@ NativeIsExec(
 	return 0;
     }
 
-    if ((_tcsicmp(path+len-3, TEXT("exe")) == 0)
-	    || (_tcsicmp(path+len-3, TEXT("com")) == 0)
-	    || (_tcsicmp(path+len-3, TEXT("cmd")) == 0)
-	    || (_tcsicmp(path+len-3, TEXT("bat")) == 0)) {
+    path += len-3;
+    if ((_tcsicmp(path, TEXT("exe")) == 0)
+	    || (_tcsicmp(path, TEXT("com")) == 0)
+	    || (_tcsicmp(path, TEXT("cmd")) == 0)
+	    || (_tcsicmp(path, TEXT("cmd")) == 0)
+	    || (_tcsicmp(path, TEXT("bat")) == 0)) {
 	return 1;
     }
     return 0;

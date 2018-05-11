@@ -597,9 +597,9 @@ Tcl_RegsubObjCmd(
 	 * slightly modified version of the one pair STR_MAP code.
 	 */
 
-	int slen, nocase;
+	int slen, nocase, wsrclc;
 	int (*strCmpFn)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long);
-	Tcl_UniChar *p, wsrclc;
+	Tcl_UniChar *p;
 
 	numMatches = 0;
 	nocase = (cflags & TCL_REG_NOCASE);
@@ -1999,8 +1999,8 @@ StringMapCmd(
 	 * larger strings.
 	 */
 
-	int mapLen;
-	Tcl_UniChar *mapString, u2lc;
+	int mapLen, u2lc;
+	Tcl_UniChar *mapString;
 
 	ustring2 = Tcl_GetUnicodeFromObj(mapElemv[0], &length2);
 	p = ustring1;
@@ -2031,8 +2031,8 @@ StringMapCmd(
 	    }
 	}
     } else {
-	Tcl_UniChar **mapStrings, *u2lc = NULL;
-	int *mapLens;
+	Tcl_UniChar **mapStrings;
+	int *mapLens, *u2lc = NULL;
 
 	/*
 	 * Precompute pointers to the unicode string and length. This saves us
@@ -2044,7 +2044,7 @@ StringMapCmd(
 	mapStrings = TclStackAlloc(interp, mapElemc*2*sizeof(Tcl_UniChar *));
 	mapLens = TclStackAlloc(interp, mapElemc * 2 * sizeof(int));
 	if (nocase) {
-	    u2lc = TclStackAlloc(interp, mapElemc * sizeof(Tcl_UniChar));
+	    u2lc = TclStackAlloc(interp, mapElemc * sizeof(int));
 	}
 	for (index = 0; index < mapElemc; index++) {
 	    mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
@@ -2544,10 +2544,8 @@ StringEqualCmd(
      * the expr string comparison in INST_EQ/INST_NEQ/INST_LT/...).
      */
 
-    const char *string1, *string2;
-    int length1, length2, i, match, length, nocase = 0, reqlength = -1;
-    typedef int (*strCmpFn_t)(const char *, const char *, unsigned int);
-    strCmpFn_t strCmpFn;
+    const char *string2;
+    int length, i, match, nocase = 0, reqlength = -1;
 
     if (objc < 3 || objc > 6) {
     str_cmp_args:
@@ -2557,11 +2555,11 @@ StringEqualCmd(
     }
 
     for (i = 1; i < objc-2; i++) {
-	string2 = TclGetStringFromObj(objv[i], &length2);
-	if ((length2 > 1) && !strncmp(string2, "-nocase", (size_t)length2)) {
+	string2 = TclGetStringFromObj(objv[i], &length);
+	if ((length > 1) && !strncmp(string2, "-nocase", (size_t)length)) {
 	    nocase = 1;
-	} else if ((length2 > 1)
-		&& !strncmp(string2, "-length", (size_t)length2)) {
+	} else if ((length > 1)
+		&& !strncmp(string2, "-length", (size_t)length)) {
 	    if (i+1 >= objc-2) {
 		goto str_cmp_args;
 	    }
@@ -2586,78 +2584,7 @@ StringEqualCmd(
 
     objv += objc-2;
 
-    if ((reqlength == 0) || (objv[0] == objv[1])) {
-	/*
-	 * Always match at 0 chars of if it is the same obj.
-	 */
-
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
-	return TCL_OK;
-    }
-
-    if (!nocase && TclIsPureByteArray(objv[0]) &&
-	    TclIsPureByteArray(objv[1])) {
-	/*
-	 * Use binary versions of comparisons since that won't cause undue
-	 * type conversions and it is much faster. Only do this if we're
-	 * case-sensitive (which is all that really makes sense with byte
-	 * arrays anyway, and we have no memcasecmp() for some reason... :^)
-	 */
-
-	string1 = (char *) Tcl_GetByteArrayFromObj(objv[0], &length1);
-	string2 = (char *) Tcl_GetByteArrayFromObj(objv[1], &length2);
-	strCmpFn = (strCmpFn_t) memcmp;
-    } else if ((objv[0]->typePtr == &tclStringType)
-	    && (objv[1]->typePtr == &tclStringType)) {
-	/*
-	 * Do a unicode-specific comparison if both of the args are of String
-	 * type. In benchmark testing this proved the most efficient check
-	 * between the unicode and string comparison operations.
-	 */
-
-	string1 = (char *) Tcl_GetUnicodeFromObj(objv[0], &length1);
-	string2 = (char *) Tcl_GetUnicodeFromObj(objv[1], &length2);
-	strCmpFn = (strCmpFn_t)
-		(nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp);
-    } else {
-	/*
-	 * As a catch-all we will work with UTF-8. We cannot use memcmp() as
-	 * that is unsafe with any string containing NUL (\xC0\x80 in Tcl's
-	 * utf rep). We can use the more efficient TclpUtfNcmp2 if we are
-	 * case-sensitive and no specific length was requested.
-	 */
-
-	string1 = (char *) TclGetStringFromObj(objv[0], &length1);
-	string2 = (char *) TclGetStringFromObj(objv[1], &length2);
-	if ((reqlength < 0) && !nocase) {
-	    strCmpFn = (strCmpFn_t) TclpUtfNcmp2;
-	} else {
-	    length1 = Tcl_NumUtfChars(string1, length1);
-	    length2 = Tcl_NumUtfChars(string2, length2);
-	    strCmpFn = (strCmpFn_t) (nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
-	}
-    }
-
-    if ((reqlength < 0) && (length1 != length2)) {
-	match = 1;		/* This will be reversed below. */
-    } else {
-	length = (length1 < length2) ? length1 : length2;
-	if (reqlength > 0 && reqlength < length) {
-	    length = reqlength;
-	} else if (reqlength < 0) {
-	    /*
-	     * The requested length is negative, so we ignore it by setting it
-	     * to length + 1 so we correct the match var.
-	     */
-
-	    reqlength = length + 1;
-	}
-
-	match = strCmpFn(string1, string2, (unsigned) length);
-	if ((match == 0) && (reqlength > length)) {
-	    match = length1 - length2;
-	}
-    }
+    match = TclStringCmp (objv[0], objv[1], 0, nocase, reqlength);
 
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
     return TCL_OK;
@@ -2694,11 +2621,33 @@ StringCmpCmd(
      * the expr string comparison in INST_EQ/INST_NEQ/INST_LT/...).
      */
 
-    const char *string1, *string2;
-    int length1, length2, i, match, length, nocase = 0, reqlength = -1;
-    typedef int (*strCmpFn_t)(const char *, const char *, unsigned int);
-    strCmpFn_t strCmpFn;
+    int match, nocase, reqlength, status;
 
+    if ((status = TclStringCmpOpts(interp, objc, objv, &nocase, &reqlength))
+	!= TCL_OK) {
+
+	return status;
+    }
+
+    objv += objc-2;
+    match = TclStringCmp (objv[0], objv[1], 0, nocase, reqlength);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
+    return TCL_OK;
+}
+
+int TclStringCmpOpts (
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[],	/* Argument objects. */
+    int *nocase,
+    int *reqlength
+)
+{
+    int i, length;
+    const char *string;
+
+    *reqlength = -1;
+    *nocase = 0;
     if (objc < 3 || objc > 6) {
     str_cmp_args:
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2707,106 +2656,27 @@ StringCmpCmd(
     }
 
     for (i = 1; i < objc-2; i++) {
-	string2 = TclGetStringFromObj(objv[i], &length2);
-	if ((length2 > 1) && !strncmp(string2, "-nocase", (size_t)length2)) {
-	    nocase = 1;
-	} else if ((length2 > 1)
-		&& !strncmp(string2, "-length", (size_t)length2)) {
+	string = TclGetStringFromObj(objv[i], &length);
+	if ((length > 1) && !strncmp(string, "-nocase", (size_t)length)) {
+	    *nocase = 1;
+	} else if ((length > 1)
+		&& !strncmp(string, "-length", (size_t)length)) {
 	    if (i+1 >= objc-2) {
 		goto str_cmp_args;
 	    }
 	    i++;
-	    if (TclGetIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
+	    if (TclGetIntFromObj(interp, objv[i], reqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad option \"%s\": must be -nocase or -length",
-		    string2));
+		    string));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
-		    string2, NULL);
+		    string, NULL);
 	    return TCL_ERROR;
 	}
     }
-
-    /*
-     * From now on, we only access the two objects at the end of the argument
-     * array.
-     */
-
-    objv += objc-2;
-
-    if ((reqlength == 0) || (objv[0] == objv[1])) {
-	/*
-	 * Always match at 0 chars of if it is the same obj.
-	 */
-
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
-	return TCL_OK;
-    }
-
-    if (!nocase && TclIsPureByteArray(objv[0]) &&
-	    TclIsPureByteArray(objv[1])) {
-	/*
-	 * Use binary versions of comparisons since that won't cause undue
-	 * type conversions and it is much faster. Only do this if we're
-	 * case-sensitive (which is all that really makes sense with byte
-	 * arrays anyway, and we have no memcasecmp() for some reason... :^)
-	 */
-
-	string1 = (char *) Tcl_GetByteArrayFromObj(objv[0], &length1);
-	string2 = (char *) Tcl_GetByteArrayFromObj(objv[1], &length2);
-	strCmpFn = (strCmpFn_t) memcmp;
-    } else if ((objv[0]->typePtr == &tclStringType)
-	    && (objv[1]->typePtr == &tclStringType)) {
-	/*
-	 * Do a unicode-specific comparison if both of the args are of String
-	 * type. In benchmark testing this proved the most efficient check
-	 * between the unicode and string comparison operations.
-	 */
-
-	string1 = (char *) Tcl_GetUnicodeFromObj(objv[0], &length1);
-	string2 = (char *) Tcl_GetUnicodeFromObj(objv[1], &length2);
-	strCmpFn = (strCmpFn_t)
-		(nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp);
-    } else {
-	/*
-	 * As a catch-all we will work with UTF-8. We cannot use memcmp() as
-	 * that is unsafe with any string containing NUL (\xC0\x80 in Tcl's
-	 * utf rep). We can use the more efficient TclpUtfNcmp2 if we are
-	 * case-sensitive and no specific length was requested.
-	 */
-
-	string1 = (char *) TclGetStringFromObj(objv[0], &length1);
-	string2 = (char *) TclGetStringFromObj(objv[1], &length2);
-	if ((reqlength < 0) && !nocase) {
-	    strCmpFn = (strCmpFn_t) TclpUtfNcmp2;
-	} else {
-	    length1 = Tcl_NumUtfChars(string1, length1);
-	    length2 = Tcl_NumUtfChars(string2, length2);
-	    strCmpFn = (strCmpFn_t) (nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
-	}
-    }
-
-    length = (length1 < length2) ? length1 : length2;
-    if (reqlength > 0 && reqlength < length) {
-	length = reqlength;
-    } else if (reqlength < 0) {
-	/*
-	 * The requested length is negative, so we ignore it by setting it to
-	 * length + 1 so we correct the match var.
-	 */
-
-	reqlength = length + 1;
-    }
-
-    match = strCmpFn(string1, string2, (unsigned) length);
-    if ((match == 0) && (reqlength > length)) {
-	match = length1 - length2;
-    }
-
-    Tcl_SetObjResult(interp,
-	    Tcl_NewIntObj((match > 0) ? 1 : (match < 0) ? -1 : 0));
     return TCL_OK;
 }
 
