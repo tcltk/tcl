@@ -649,7 +649,7 @@ TclpFinalizeCondition(
 #ifndef TCL_NO_DEPRECATED
 Tcl_DirEntry *
 TclpReaddir(
-    DIR * dir)
+    TclDIR * dir)
 {
     return TclOSreaddir(dir);
 }
