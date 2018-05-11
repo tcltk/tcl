@@ -2149,9 +2149,9 @@ typedef struct Tcl_EncodingType {
 
 /*
  * The maximum number of bytes that are necessary to represent a single
- * Unicode character in UTF-8. The valid values should be 3, 4 or 6
- * (or perhaps 1 if we want to support a non-unicode enabled core). If 3 or
- * 4, then Tcl_UniChar must be 2-bytes in size (UCS-2) (the default). If 6,
+ * Unicode character in UTF-8. The valid values are 4 and 6
+ * (or perhaps 1 if we want to support a non-unicode enabled core). If 4,
+ * then Tcl_UniChar must be 2-bytes in size (UCS-2) (the default). If 6,
  * then Tcl_UniChar must be 4-bytes in size (UCS-4). At this time UCS-2 mode
  * is the default and recommended mode. UCS-4 is experimental and not
  * recommended. It works for the core, but most extensions expect UCS-2.
@@ -2364,6 +2364,11 @@ const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 			    int exact, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
+#if defined(_WIN32)
+    TCL_NORETURN void Tcl_ConsolePanic(const char *format, ...);
+#else
+#   define Tcl_ConsolePanic ((Tcl_PanicProc *)0)
+#endif
 
 #ifdef USE_TCL_STUBS
 #if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
@@ -2395,7 +2400,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  */
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
-	    ((Tcl_CreateInterp)()))
+	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp)()))
 EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
