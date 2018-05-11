@@ -350,7 +350,8 @@ TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
 TCLSTUBOBJS = \
 	$(TMP_DIR)\tclStubLib.obj \
 	$(TMP_DIR)\tclTomMathStubLib.obj \
-	$(TMP_DIR)\tclOOStubLib.obj
+	$(TMP_DIR)\tclOOStubLib.obj \
+	$(TMP_DIR)\tclWinPanic.obj
 
 ### The following paths CANNOT have spaces in them as they appear on
 ### the left side of implicit rules.
@@ -741,6 +742,9 @@ $(TMP_DIR)\tclTomMathStubLib.obj: $(GENERICDIR)\tclTomMathStubLib.c
 $(TMP_DIR)\tclOOStubLib.obj: $(GENERICDIR)\tclOOStubLib.c
 	$(cc32) $(stubscflags) -Fo$@ $?
 
+$(TMP_DIR)\tclWinPanic.obj: $(WINDIR)\tclWinPanic.c
+	$(cc32) $(stubscflags) -Fo$@ $?
+
 $(TMP_DIR)\tclsh.exe.manifest: $(WINDIR)\tclsh.exe.manifest.in
 	@nmakehlp -s << $** >$@
 @MACHINE@	  $(MACHINE:IX86=X86)
@@ -832,6 +836,8 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.7" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.7"
 	@if not exist "$(LIB_INSTALL_DIR)\nmake" \
 		$(MKDIR) "$(LIB_INSTALL_DIR)\nmake"
 	@echo Installing header files
