@@ -984,7 +984,11 @@ Tcl_UtfToTitle(
     }
     while (*src) {
 	bytes = TclUtfToUniChar(src, &ch);
-	lowChar = Tcl_UniCharToLower(ch);
+	lowChar = ch;
+	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
+	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {
+	    lowChar = Tcl_UniCharToLower(lowChar);
+	}
 
 	if (bytes < UtfCount(lowChar)) {
 	    memcpy(dst, src, (size_t) bytes);
@@ -1256,8 +1260,9 @@ Tcl_UniCharToLower(
     int ch)			/* Unicode character to convert. */
 {
     int info = GetUniCharInfo(ch);
+    int mode = GetCaseType(info);
 
-    if (GetCaseType(info) & 0x02) {
+    if ((mode & 0x02) && (mode != 0x7)) {
 	ch += GetDelta(info);
     }
     return (Tcl_UniChar) ch;
@@ -1291,7 +1296,9 @@ Tcl_UniCharToTitle(
 	 * Subtract or add one depending on the original case.
 	 */
 
-	ch += ((mode & 0x4) ? -1 : 1);
+	if (mode != 0x7) {
+	    ch += ((mode & 0x4) ? -1 : 1);
+	}
     } else if (mode == 0x4) {
 	ch -= GetDelta(info);
     }
