@@ -128,8 +128,8 @@ Given several source strings, \fB::msgcat::mcmax\fR returns the length
 of the longest translated string.  This is useful when designing
 localized GUIs, which may require that all buttons, for example, be a
 fixed width (which will be the width of the widest button).
-.TP
 .VS "TIP 412"
+.TP
 \fB::msgcat::mcexists\fR ?\fB-exactnamespace\fR? ?\fB-exactlocale\fR? ?\fB-namespace\fR \fInamespace\fR? \fIsrc-string\fR
 .
 Return true, if there is a translation for the given \fIsrc-string\fR.

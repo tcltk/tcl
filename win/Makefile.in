@@ -446,7 +446,8 @@ REG_OBJS = tclWinReg.$(OBJEXT)
 STUB_OBJS = \
 	tclStubLib.$(OBJEXT) \
 	tclTomMathStubLib.$(OBJEXT) \
-	tclOOStubLib.$(OBJEXT)
+	tclOOStubLib.$(OBJEXT) \
+	tclWinPanic.$(OBJEXT)
 
 TCLSH_OBJS = tclAppInit.$(OBJEXT)
 
@@ -605,6 +606,9 @@ tclTomMathStubLib.${OBJEXT}: tclTomMathStubLib.c
 	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
 
 tclOOStubLib.${OBJEXT}: tclOOStubLib.c
+	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
+
+tclWinPanic.${OBJEXT}: tclWinPanic.c
 	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
 
 # Implicit rule for all object files that will end up in the Tcl library
