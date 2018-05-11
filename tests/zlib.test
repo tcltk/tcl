@@ -840,7 +840,7 @@ test zlib-10.0 "bug #2818131 (close with null interp)" -constraints {
     close $srv
     rename bgerror {}
 } -returnCodes error \
-  -result {bad event name "xyzzy": must be readable or writable}
+  -result {bad event name "xyzzy": must be readable, writable, or exception}
 test zlib-10.1 "bug #2818131 (mismatch read)" -constraints {
     zlib
 } -setup {

@@ -88,6 +88,7 @@ typedef struct {
 
 LIST_HEAD(PlatformReadyFileHandlerList, FileHandler);
 typedef struct ThreadSpecificData {
+    FileHandler *triggerFilePtr; 
     FileHandler *firstFileHandlerPtr;
 				/* Pointer to head of file handler list. */
     struct PlatformReadyFileHandlerList firstReadyFileHandlerPtr;
@@ -312,6 +313,8 @@ PlatformEventsFinalize(
 	tsdPtr->triggerPipe[1] = -1;
     }
 #endif /* HAVE_EVENTFD */
+    ckfree(tsdPtr->triggerFilePtr->pedPtr);
+    ckfree(tsdPtr->triggerFilePtr);
     if (tsdPtr->eventsFd > 0) {
 	close(tsdPtr->eventsFd);
 	tsdPtr->eventsFd = 0;
@@ -374,6 +377,7 @@ PlatformEventsInit(
     }
     filePtr->fd = tsdPtr->triggerPipe[0];
 #endif
+    tsdPtr->triggerFilePtr = filePtr;
     if ((tsdPtr->eventsFd = epoll_create1(EPOLL_CLOEXEC)) == -1) {
 	Tcl_Panic("epoll_create1: %s", strerror(errno));
     }
