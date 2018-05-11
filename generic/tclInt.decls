@@ -1088,7 +1088,7 @@ declare 9 win {
 }
 # new for 8.4.20+/8.5.12+ Cygwin only
 declare 10 win {
-    Tcl_DirEntry *TclpReaddir(Tcl_Dir *dir)
+    Tcl_DirEntry *TclpReaddir(TclDIR *dir)
 }
 # Removed in 8.3.1 (for Win32s only)
 #declare 10 win {
@@ -1226,7 +1226,7 @@ declare 9 unix {
 # Added in 8.4:
 
 declare 10 unix {
-    Tcl_DirEntry *TclpReaddir(Tcl_Dir *dir)
+    Tcl_DirEntry *TclpReaddir(TclDIR *dir)
 }
 # Slots 11 and 12 are forwarders for functions that were promoted to
 # generic Stubs
