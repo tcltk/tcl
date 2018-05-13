@@ -15,7 +15,7 @@
 
 #include "tclInt.h"
 #if defined(_WIN32) || defined(__CYGWIN__)
-    MODULE_SCOPE TCL_NORETURN void tclWinDebugPanic(const char *format, ...);
+    MODULE_SCOPE void tclWinDebugPanic(const char *format, ...);
 #endif
 
 /*
@@ -96,25 +96,23 @@ Tcl_Panic(
     if (panicProc != NULL) {
 	panicProc(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
     } else {
-#ifdef _WIN32
-	tclWinDebugPanic(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+#if defined(_WIN32) || defined(__CYGWIN__)
+    tclWinDebugPanic(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 #else
 	fprintf(stderr, format, arg1, arg2, arg3, arg4, arg5, arg6, arg7,
 		arg8);
 	fprintf(stderr, "\n");
 	fflush(stderr);
-#if defined(_WIN32) || defined(__CYGWIN__)
+#endif
 #   if defined(__GNUC__)
 	__builtin_trap();
 #   elif defined(_WIN64)
 	__debugbreak();
 #   elif defined(_MSC_VER) && defined (_M_IX86)
 	_asm {int 3}
-#   else
+#   elif defined(_WIN32)
 	DebugBreak();
 #   endif
-#endif
-#endif
 #if defined(_WIN32)
 	ExitProcess(1);
 #else

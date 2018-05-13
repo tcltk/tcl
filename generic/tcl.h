@@ -2208,9 +2208,9 @@ const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 #if defined(_WIN32)
-    TCL_NORETURN void Tcl_ConsolePanic(const char *format, ...);
+    TCL_NORETURN1 void Tcl_ConsolePanic(const char *format, ...);
 #else
-#   define Tcl_ConsolePanic ((Tcl_PanicProc *)0)
+#   define Tcl_ConsolePanic NULL
 #endif
 
 #ifdef USE_TCL_STUBS
