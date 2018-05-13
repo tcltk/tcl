@@ -596,7 +596,8 @@ InfoObjectMethodsCmd(
     resultObj = Tcl_NewObj();
     if (recurse) {
 	const char **names;
-	int i, numNames = TclOOGetSortedMethodList(oPtr, flag, &names);
+	int i, numNames = TclOOGetSortedMethodList(oPtr, NULL, NULL, flag,
+		&names);
 
 	for (i=0 ; i<numNames ; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultObj,

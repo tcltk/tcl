@@ -546,7 +546,8 @@ MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
 MODULE_SCOPE Tcl_Obj *	TclOOGetMethodBody(Method *mPtr);
 MODULE_SCOPE int	TclOOGetSortedClassMethodList(Class *clsPtr,
 			    int flags, const char ***stringsPtr);
-MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr, int flags,
+MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr,
+			    Object *contextObj, Class *contextCls, int flags,
 			    const char ***stringsPtr);
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
