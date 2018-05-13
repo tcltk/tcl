@@ -4100,6 +4100,12 @@ MODULE_SCOPE TclProcessWaitStatus TclProcessWait(Tcl_Pid pid, int options,
 			    Tcl_Obj **errorObjPtr);
 
 /*
+ * TIP #508: [array default]
+ */
+
+MODULE_SCOPE void	TclInitArrayVar(Var *arrayPtr);
+
+/*
  * Utility routines for encoding index values as integers. Used by both
  * some of the command compilers and by [lsort] and [lsearch].
  */
