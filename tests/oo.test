@@ -4332,6 +4332,46 @@ test oo-38.3 {TIP 500: private variables and obj·varname} -setup {
 } -cleanup {
     parent destroy
 } -result {2 3}
+test oo-38.4 {TIP 500: private variables introspection} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	private {
+	    variable x1 x2
+	}
+	variable y1 y2
+	constructor {} {
+	    variable z boo
+	    set x1 a
+	    set y1 c
+	}
+	method list {} {
+	    variable z
+	    set ok 1
+	    list [info locals] [lsort [info vars]] [info exist x2]
+	}
+    }
+    cls create obj
+    oo::objdefine obj {
+	private variable a1 a2
+	variable b1 b2
+	method init {} {
+	    # Because we don't have a constructor to do this setup for us
+	    set a1 p
+	    set b1 r
+	}
+	method list {} {
+	    variable z
+	    set yes 1
+	    list {*}[next] [info locals] [lsort [info vars]] [info exist a2]
+	}
+    }
+    obj init
+    obj list
+} -cleanup {
+    parent destroy
+} -result {ok {ok x1 x2 y1 y2 z} 0 yes {a1 a2 b1 b2 yes z} 0}
 
 test oo-39.1 {TIP 500: private methods internal call; class private} -setup {
     oo::class create parent
