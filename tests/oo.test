@@ -4525,6 +4525,145 @@ test oo-39.4 {TIP 500: private methods internal call; instance private} -setup {
 } -cleanup {
     parent destroy
 } -result {2 3 6}
+test oo-39.5 {TIP 500: private methods internal call; cross object} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	variable x
+	constructor {val} {
+	    set x $val
+	}
+	private method x {} {
+	    return $x
+	}
+	method equal {other} {
+	    expr {$x == [$other x]}
+	}
+    }
+    cls create a 1
+    cls create b 2
+    cls create c 1
+    list [a equal b] [b equal c] [c equal a] [catch {a x} msg] $msg
+} -cleanup {
+    parent destroy
+} -result {0 0 1 1 {unknown method "x": must be destroy or equal}}
+test oo-39.6 {TIP 500: private methods internal call; error reporting} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	variable x
+	constructor {val} {
+	    set x $val
+	}
+	private method x {} {
+	    return $x
+	}
+	method equal {other} {
+	    expr {$x == [$other y]}
+	}
+    }
+    cls create a 1
+    cls create b 2
+    a equal b
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {unknown method "y": must be destroy, equal or x}
+test oo-39.7 {TIP 500: private methods internal call; error reporting} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	variable x
+	constructor {val} {
+	    set x $val
+	}
+	private method x {} {
+	    return $x
+	}
+	method equal {other} {
+	    expr {[[self] y] == [$other x]}
+	}
+    }
+    cls create a 1
+    cls create b 2
+    a equal b
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {unknown method "y": must be destroy, equal or x}
+test oo-39.8 {TIP 500: private methods internal call; error reporting} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	variable x
+	constructor {val} {
+	    set x $val
+	}
+	private method x {} {
+	    return $x
+	}
+	method equal {other} {
+	    expr {[my y] == [$other x]}
+	}
+    }
+    cls create a 1
+    cls create b 2
+    a equal b
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {unknown method "y": must be <cloned>, destroy, equal, eval, unknown, variable, varname or x}
+test oo-39.9 {TIP 500: private methods internal call; error reporting} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	variable x
+	constructor {val} {
+	    set x $val
+	}
+	private method x {} {
+	    return $x
+	}
+    }
+    oo::class create cls2 {
+	superclass cls
+	method equal {other} {
+	    expr {[my y] == [$other x]}
+	}
+    }
+    cls2 create a 1
+    cls2 create b 2
+    a equal b
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {unknown method "y": must be <cloned>, destroy, equal, eval, unknown, variable or varname}
+test oo-39.10 {TIP 500: private methods internal call; error reporting} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	variable x
+	constructor {val} {
+	    set x $val
+	}
+	private method x {} {
+	    return $x
+	}
+    }
+    oo::class create cls2 {
+	superclass cls
+	method equal {other} {
+	    expr {[my x] == [$other x]}
+	}
+    }
+    cls2 create a 1
+    cls2 create b 2
+    a equal b
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {unknown method "x": must be <cloned>, destroy, equal, eval, unknown, variable or varname}
 
 cleanupTests
 return
