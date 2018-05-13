@@ -23,7 +23,7 @@
  * procedure.
  */
 
-#if defined(__CYGWIN__)
+#if defined(__CYGWIN__) || (defined(_WIN32) && (defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8))
 static TCL_NORETURN Tcl_PanicProc *panicProc = tclWinDebugPanic;
 #else
 static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;

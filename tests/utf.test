@@ -41,7 +41,7 @@ test utf-1.5 {Tcl_UniCharToUtf: overflowed Tcl_UniChar} testbytestring {
 test utf-1.6 {Tcl_UniCharToUtf: negative Tcl_UniChar} testbytestring {
     expr {[format %c -1] eq [testbytestring "\xef\xbf\xbd"]}
 } 1
-test utf-1.7 {Tcl_UniCharToUtf: 4 byte sequences} -constraints {tip389 testbytestring} -body {
+test utf-1.7 {Tcl_UniCharToUtf: 4 byte sequences} -constraints testbytestring -body {
     expr {"\U014e4e" eq [testbytestring "\xf0\x94\xb9\x8e"]}
 } -result 1
 
@@ -228,15 +228,13 @@ bsCheck \U4e21	20001
 bsCheck \U004e21	20001
 bsCheck \U00004e21	20001
 bsCheck \U0000004e21	78
-if {[testConstraint tip389]} {
-    bsCheck \U00110000	69632
-    bsCheck \U01100000	69632
-    bsCheck \U11000000	69632
-    bsCheck \U0010FFFF	1114111
-    bsCheck \U010FFFF0	1114111
-    bsCheck \U10FFFF00	1114111
-    bsCheck \UFFFFFFFF	1048575
-}
+bsCheck \U00110000	69632
+bsCheck \U01100000	69632
+bsCheck \U11000000	69632
+bsCheck \U0010FFFF	1114111
+bsCheck \U010FFFF0	1114111
+bsCheck \U10FFFF00	1114111
+bsCheck \UFFFFFFFF	1048575
 
 test utf-11.1 {Tcl_UtfToUpper} {
     string toupper {}
