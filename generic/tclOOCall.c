@@ -87,6 +87,8 @@ static inline int	IsStillValid(CallChain *callPtr, Object *oPtr,
 			    int flags, int reuseMask);
 static Tcl_NRPostProc	ResetFilterFlags;
 static Tcl_NRPostProc	SetFilterFlags;
+static int		SortMethodNames(Tcl_HashTable *namesPtr, int flags,
+			    const char ***stringsPtr);
 static inline void	StashCallChain(Tcl_Obj *objPtr, CallChain *callPtr);
 
 /*
@@ -376,6 +378,14 @@ FinalizeMethodRefs(
 int
 TclOOGetSortedMethodList(
     Object *oPtr,		/* The object to get the method names for. */
+    Object *contextObj,		/* From what context object we are inquiring.
+				 * NULL when the context shouldn't see
+				 * object-level private methods. Note that
+				 * flags can override this. */
+    Class *contextCls,		/* From what context class we are inquiring.
+				 * NULL when the context shouldn't see
+				 * class-level private methods. Note that
+				 * flags can override this. */
     int flags,			/* Whether we just want the public method
 				 * names. */
     const char ***stringsPtr)	/* Where to write a pointer to the array of
@@ -388,12 +398,10 @@ TclOOGetSortedMethodList(
 				 * at. Is set-like in nature and keyed by
 				 * pointer to class. */
     FOREACH_HASH_DECLS;
-    int i;
+    int i, numStrings;
     Class *mixinPtr;
     Tcl_Obj *namePtr;
     Method *mPtr;
-    int isWantedIn;
-    void *isWanted;
 
     Tcl_InitObjHashTable(&names);
     Tcl_InitHashTable(&examinedClasses, TCL_ONE_WORD_KEYS);
@@ -415,10 +423,14 @@ TclOOGetSortedMethodList(
 	    if ((mPtr->flags & PRIVATE_METHOD) && !(flags & PRIVATE_METHOD)) {
 		continue;
 	    }
+	    if (mPtr->flags & TRUE_PRIVATE_METHOD) {
+		continue;
+	    }
 	    hPtr = Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
 	    if (isNew) {
-		isWantedIn = ((!(flags & PUBLIC_METHOD)
+		int isWantedIn = ((!(flags & PUBLIC_METHOD)
 			|| mPtr->flags & PUBLIC_METHOD) ? IN_LIST : 0);
+
 		isWantedIn |= (mPtr->typePtr == NULL ? NO_IMPLEMENTATION : 0);
 		Tcl_SetHashValue(hPtr, INT2PTR(isWantedIn));
 	    }
@@ -431,23 +443,52 @@ TclOOGetSortedMethodList(
 
     if (flags & PRIVATE_METHOD) {
 	FOREACH_HASH(namePtr, mPtr, &oPtr->selfCls->classMethods) {
-	    if (mPtr->flags & PRIVATE_METHOD) {
+	    if ((mPtr->flags & PRIVATE_METHOD)
+		    && !(mPtr->flags & TRUE_PRIVATE_METHOD)) {
 		int isNew;
 
 		hPtr = Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
 		if (isNew) {
-		    isWantedIn = IN_LIST;
+		    int isWantedIn = IN_LIST;
+
 		    if (mPtr->typePtr == NULL) {
 			isWantedIn |= NO_IMPLEMENTATION;
 		    }
 		    Tcl_SetHashValue(hPtr, INT2PTR(isWantedIn));
 		} else if (mPtr->typePtr != NULL) {
-		    isWantedIn = PTR2INT(Tcl_GetHashValue(hPtr));
+		    int isWantedIn = PTR2INT(Tcl_GetHashValue(hPtr));
+
 		    if (isWantedIn & NO_IMPLEMENTATION) {
 			isWantedIn &= ~NO_IMPLEMENTATION;
 			Tcl_SetHashValue(hPtr, INT2PTR(isWantedIn));
 		    }
 		}
+	    }
+	}
+    }
+
+    /*
+     * Process method names due to private methods on the context's object or
+     * class. Which must be correct if either are not NULL.
+     */
+
+    if (contextObj && contextObj->methodsPtr) {
+	FOREACH_HASH(namePtr, mPtr, contextObj->methodsPtr) {
+	    if (mPtr->flags & TRUE_PRIVATE_METHOD) {
+		int isNew;
+
+		hPtr = Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
+		Tcl_SetHashValue(hPtr, INT2PTR(IN_LIST));
+	    }
+	}
+    }
+    if (contextCls) {
+	FOREACH_HASH(namePtr, mPtr, &contextCls->classMethods) {
+	    if (mPtr->flags & TRUE_PRIVATE_METHOD) {
+		int isNew;
+
+		hPtr = Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
+		Tcl_SetHashValue(hPtr, INT2PTR(IN_LIST));
 	    }
 	}
     }
@@ -463,50 +504,15 @@ TclOOGetSortedMethodList(
 		&examinedClasses);
     }
 
-    Tcl_DeleteHashTable(&examinedClasses);
-
     /*
-     * See how many (visible) method names there are. If none, we do not (and
-     * should not) try to sort the list of them.
+     * Tidy up, sort the names and resolve finally whether we really want
+     * them (processing export layering).
      */
 
-    i = 0;
-    if (names.numEntries != 0) {
-	const char **strings;
-
-	/*
-	 * We need to build the list of methods to sort. We will be using
-	 * qsort() for this, because it is very unlikely that the list will be
-	 * heavily sorted when it is long enough to matter.
-	 */
-
-	strings = ckalloc(sizeof(char *) * names.numEntries);
-	FOREACH_HASH(namePtr, isWanted, &names) {
-	    if (!(flags & PUBLIC_METHOD) || (PTR2INT(isWanted) & IN_LIST)) {
-		if (PTR2INT(isWanted) & NO_IMPLEMENTATION) {
-		    continue;
-		}
-		strings[i++] = TclGetString(namePtr);
-	    }
-	}
-
-	/*
-	 * Note that 'i' may well be less than names.numEntries when we are
-	 * dealing with public method names.
-	 */
-
-	if (i > 0) {
-	    if (i > 1) {
-		qsort((void *) strings, (unsigned) i, sizeof(char *), CmpStr);
-	    }
-	    *stringsPtr = strings;
-	} else {
-	    ckfree(strings);
-	}
-    }
-
+    Tcl_DeleteHashTable(&examinedClasses);
+    numStrings = SortMethodNames(&names, flags, stringsPtr);
     Tcl_DeleteHashTable(&names);
-    return i;
+    return numStrings;
 }
 
 int
@@ -523,10 +529,7 @@ TclOOGetSortedClassMethodList(
 				/* Used to track what classes have been looked
 				 * at. Is set-like in nature and keyed by
 				 * pointer to class. */
-    FOREACH_HASH_DECLS;
-    int i;
-    Tcl_Obj *namePtr;
-    void *isWanted;
+    int numStrings;
 
     Tcl_InitObjHashTable(&names);
     Tcl_InitHashTable(&examinedClasses, TCL_ONE_WORD_KEYS);
@@ -539,50 +542,111 @@ TclOOGetSortedClassMethodList(
     Tcl_DeleteHashTable(&examinedClasses);
 
     /*
+     * Process private method names if we should. [TIP 500]
+     */
+
+    if (flags & TRUE_PRIVATE_METHOD) {
+	FOREACH_HASH_DECLS;
+	Method *mPtr;
+	Tcl_Obj *namePtr;
+
+	FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
+	    if (mPtr->flags & TRUE_PRIVATE_METHOD) {
+		int isNew;
+
+		hPtr = Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
+		Tcl_SetHashValue(hPtr, INT2PTR(IN_LIST));
+	    }
+	}
+	flags &= ~TRUE_PRIVATE_METHOD;
+    }
+
+    /*
+     * Tidy up, sort the names and resolve finally whether we really want
+     * them (processing export layering).
+     */
+
+    numStrings = SortMethodNames(&names, flags, stringsPtr);
+    Tcl_DeleteHashTable(&names);
+    return numStrings;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * SortMethodNames --
+ *
+ *	Shared helper for TclOOGetSortedMethodList etc. that knows the method
+ *	sorting rules.
+ *
+ * Returns:
+ *	The length of the sorted list.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+SortMethodNames(
+    Tcl_HashTable *namesPtr,	/* The table of names; unsorted, but contains
+				 * whether the names are wanted and under what
+				 * circumstances. */
+    int flags,			/* Whether we are looking for unexported
+				 * methods. Full private methods are handled
+				 * on insertion to the table. */
+    const char ***stringsPtr)	/* Where to store the sorted list of strings
+				 * that we produce. ckalloced() */
+{
+    const char **strings;
+    FOREACH_HASH_DECLS;
+    Tcl_Obj *namePtr;
+    void *isWanted;
+    int i = 0;
+
+    /*
      * See how many (visible) method names there are. If none, we do not (and
      * should not) try to sort the list of them.
      */
 
-    i = 0;
-    if (names.numEntries != 0) {
-	const char **strings;
+    if (namesPtr->numEntries == 0) {
+	*stringsPtr = NULL;
+	return 0;
+    }
 
-	/*
-	 * We need to build the list of methods to sort. We will be using
-	 * qsort() for this, because it is very unlikely that the list will be
-	 * heavily sorted when it is long enough to matter.
-	 */
+    /*
+     * We need to build the list of methods to sort. We will be using qsort()
+     * for this, because it is very unlikely that the list will be heavily
+     * sorted when it is long enough to matter.
+     */
 
-	strings = ckalloc(sizeof(char *) * names.numEntries);
-	FOREACH_HASH(namePtr, isWanted, &names) {
-	    if (!(flags & PUBLIC_METHOD) || (PTR2INT(isWanted) & IN_LIST)) {
-		if (PTR2INT(isWanted) & NO_IMPLEMENTATION) {
-		    continue;
-		}
-		strings[i++] = TclGetString(namePtr);
+    strings = ckalloc(sizeof(char *) * namesPtr->numEntries);
+    FOREACH_HASH(namePtr, isWanted, namesPtr) {
+	if (!(flags & PUBLIC_METHOD) || (PTR2INT(isWanted) & IN_LIST)) {
+	    if (PTR2INT(isWanted) & NO_IMPLEMENTATION) {
+		continue;
 	    }
-	}
-
-	/*
-	 * Note that 'i' may well be less than names.numEntries when we are
-	 * dealing with public method names.
-	 */
-
-	if (i > 0) {
-	    if (i > 1) {
-		qsort((void *) strings, (unsigned) i, sizeof(char *), CmpStr);
-	    }
-	    *stringsPtr = strings;
-	} else {
-	    ckfree(strings);
+	    strings[i++] = TclGetString(namePtr);
 	}
     }
 
-    Tcl_DeleteHashTable(&names);
+    /*
+     * Note that 'i' may well be less than names.numEntries when we are
+     * dealing with public method names. We don't sort unless there's at least
+     * two method names.
+     */
+
+    if (i > 0) {
+	if (i > 1) {
+	    qsort((void *) strings, (unsigned) i, sizeof(char *), CmpStr);
+	}
+	*stringsPtr = strings;
+    } else {
+	ckfree(strings);
+	*stringsPtr = NULL;
+    }
     return i;
 }
 
-/* Comparator for GetSortedMethodList */
+/* Comparator for SortMethodNames */
 static int
 CmpStr(
     const void *ptr1,
@@ -665,6 +729,9 @@ AddClassMethodNames(
 	}
 
 	FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
+	    if (mPtr->flags & TRUE_PRIVATE_METHOD) {
+		continue;
+	    }
 	    hPtr = Tcl_CreateHashEntry(namesPtr, (char *) namePtr, &isNew);
 	    if (isNew) {
 		int isWanted = (!(flags & PUBLIC_METHOD)
