@@ -1528,6 +1528,10 @@ SOURCE=.\tclWinNotify.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\tclWinPanic.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\tclWinPipe.c
 # End Source File
 # Begin Source File
