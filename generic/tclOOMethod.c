@@ -188,6 +188,9 @@ Tcl_NewInstanceMethod(
     if (flags) {
 	mPtr->flags |= flags &
 		(PUBLIC_METHOD | PRIVATE_METHOD | TRUE_PRIVATE_METHOD);
+	if (flags & TRUE_PRIVATE_METHOD) {
+	    oPtr->flags |= HAS_PRIVATE_METHODS;
+	}
     }
     oPtr->epoch++;
     return (Tcl_Method) mPtr;
@@ -253,6 +256,9 @@ Tcl_NewMethod(
     if (flags) {
 	mPtr->flags |= flags &
 		(PUBLIC_METHOD | PRIVATE_METHOD | TRUE_PRIVATE_METHOD);
+	if (flags & TRUE_PRIVATE_METHOD) {
+	    clsPtr->flags |= HAS_PRIVATE_METHODS;
+	}
     }
 
     return (Tcl_Method) mPtr;
