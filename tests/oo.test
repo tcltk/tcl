@@ -4664,6 +4664,33 @@ test oo-39.10 {TIP 500: private methods internal call; error reporting} -setup {
 } -returnCodes error -cleanup {
     parent destroy
 } -result {unknown method "x": must be <cloned>, destroy, equal, eval, unknown, variable or varname}
+test oo-39.11 {TIP 500: private methods; call chain caching and reporting} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	method chain {} {
+	    return [self call]
+	}
+    }
+    oo::class create cls2 {
+	superclass cls
+	private method chain {} {
+	    next
+	}
+	method chain2 {} {
+	    my chain
+	}
+	method chain3 {} {
+	    [self] chain
+	}
+    }
+    cls create a
+    cls2 create b
+    list [a chain] [b chain] [b chain2] [b chain3]
+} -cleanup {
+    parent destroy
+} -result {{{{method chain ::cls method}} 0} {{{method chain ::cls method}} 0} {{{private chain ::cls2 method} {method chain ::cls method}} 1} {{{private chain ::cls2 method} {method chain ::cls method}} 1}}
 
 cleanupTests
 return
