@@ -236,6 +236,10 @@ typedef struct Object {
 				 * other spots). */
 #define FORCE_UNKNOWN 0x10000	/* States that we are *really* looking up the
 				 * unknown method handler at that point. */
+#define HAS_PRIVATE_METHODS 0x20000
+				/* Object/class has (or had) private methods,
+				 * and so shouldn't be cached so
+				 * aggressively. */
 
 /*
  * And the definition of a class. Note that every class also has an associated
