@@ -920,7 +920,7 @@ TraverseUnixTree(
 #ifndef HAVE_FTS
     int numProcessed = 0;
     Tcl_DirEntry *dirEntPtr;
-    Tcl_Dir *dirPtr;
+    TclDIR *dirPtr;
 #else
     CONST char *paths[2] = {NULL, NULL};
     FTS *fts = NULL;
