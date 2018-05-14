@@ -13,11 +13,6 @@
 #ifndef _TCLINTPLATDECLS
 #define _TCLINTPLATDECLS
 
-#ifdef __WIN32__
-#   define Tcl_DirEntry void
-#   define TclDIR void
-#endif
-
 #undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
 #   define TCL_STORAGE_CLASS DLLEXPORT
