@@ -407,6 +407,7 @@ typedef struct CallContext {
 				/* This is a private method only accessible
 				 * from other methods defined on this class
 				 * or instance. [TIP #500] */
+#define SCOPE_FLAGS (PUBLIC_METHOD | PRIVATE_METHOD | TRUE_PRIVATE_METHOD)
 
 /*
  * Structure containing definition information about basic class methods.
