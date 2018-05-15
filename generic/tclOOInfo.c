@@ -533,7 +533,8 @@ InfoObjectMethodsCmd(
 	"private", "public", "unexported"
     };
     enum Scopes {
-	SCOPE_PRIVATE, SCOPE_PUBLIC, SCOPE_UNEXPORTED
+	SCOPE_PRIVATE, SCOPE_PUBLIC, SCOPE_UNEXPORTED,
+	SCOPE_LOCALPRIVATE
     };
 
     if (objc < 2) {
@@ -587,6 +588,9 @@ InfoObjectMethodsCmd(
 	case SCOPE_PUBLIC:
 	    flag = PUBLIC_METHOD;
 	    break;
+	case SCOPE_LOCALPRIVATE:
+	    flag = PRIVATE_METHOD;
+	    break;
 	case SCOPE_UNEXPORTED:
 	    flag = 0;
 	    break;
@@ -608,7 +612,7 @@ InfoObjectMethodsCmd(
 	}
     } else if (oPtr->methodsPtr) {
 	FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
-	    if (mPtr->typePtr != NULL && (mPtr->flags & flag) == flag) {
+	    if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
 		Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
 	    }
 	}
@@ -1314,7 +1318,7 @@ InfoClassMethodsCmd(
 	FOREACH_HASH_DECLS;
 
 	FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
-	    if (mPtr->typePtr != NULL && (mPtr->flags & flag) == flag) {
+	    if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
 		Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
 	    }
 	}
