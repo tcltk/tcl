@@ -44,18 +44,25 @@ struct ChainBuilder {
 #define MIXIN_CONSISTENT(flags) \
     (((flags) & OBJECT_MIXIN) ||					\
 	!((flags) & BUILDING_MIXINS) == !((flags) & TRAVERSED_MIXIN))
+
 /*
- * Note that the flag bit PRIVATE_METHOD has a confusing name.
+ * Note that the flag bit PRIVATE_METHOD has a confusing name; it's just for
+ * Itcl's special type of private.
  */
+
 #define IS_PUBLIC(mPtr)				\
     (((mPtr)->flags & PUBLIC_METHOD) != 0)
 #define IS_UNEXPORTED(mPtr)			\
+    (((mPtr)->flags & SCOPE_FLAGS) == 0)
+#define IS_ITCLPRIVATE(mPtr)				\
     (((mPtr)->flags & PRIVATE_METHOD) != 0)
 #define IS_PRIVATE(mPtr)			\
     (((mPtr)->flags & TRUE_PRIVATE_METHOD) != 0)
 #define WANT_PUBLIC(flags)			\
     (((flags) & PUBLIC_METHOD) != 0)
 #define WANT_UNEXPORTED(flags)			\
+    (((flags) & (PRIVATE_METHOD | TRUE_PRIVATE_METHOD)) == 0)
+#define WANT_ITCLPRIVATE(flags)			\
     (((flags) & PRIVATE_METHOD) != 0)
 #define WANT_PRIVATE(flags)			\
     (((flags) & TRUE_PRIVATE_METHOD) != 0)

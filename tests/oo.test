@@ -4691,6 +4691,42 @@ test oo-39.11 {TIP 500: private methods; call chain caching and reporting} -setu
 } -cleanup {
     parent destroy
 } -result {{{{method chain ::cls method}} 0} {{{method chain ::cls method}} 0} {{{private chain ::cls2 method} {method chain ::cls method}} 1} {{{private chain ::cls2 method} {method chain ::cls method}} 1}}
+test oo-39.12 {TIP 500: private methods; introspection} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	method chain {} {
+	    return [self call]
+	}
+	private method abc {} {}
+    }
+    oo::class create cls2 {
+	superclass cls
+	method chain2 {} {
+	    my chain
+	}
+	method chain3 {} {
+	    [self] chain
+	}
+	private method def {} {}
+	unexport chain3
+    }
+    cls create a
+    cls2 create b
+    oo::objdefine b {
+	private method ghi {} {}
+	method ABC {} {}
+	method foo {} {}
+    }
+    set scopes {public unexported private}
+    list a: [lmap s $scopes {info object methods a -scope $s}] \
+	b: [lmap s $scopes {info object methods b -scope $s}] \
+	cls: [lmap s $scopes {info class methods cls -scope $s}] \
+	cls2: [lmap s $scopes {info class methods cls2 -scope $s}] \
+} -cleanup {
+    parent destroy
+} -result {a: {{} {} {}} b: {foo ABC ghi} cls: {chain {} abc} cls2: {chain2 chain3 def}}
 
 cleanupTests
 return
