@@ -142,7 +142,7 @@ TclpOpenFile(
     Tcl_DString ds;
 
     native = Tcl_UtfToExternalDString(NULL, fname, -1, &ds);
-    fd = TclOSopen(native, mode, 0666);			/* INTL: Native. */
+    fd = open(native, mode, 0666);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
     if (fd != -1) {
 	fcntl(fd, F_SETFD, FD_CLOEXEC);
@@ -153,7 +153,7 @@ TclpOpenFile(
 	 */
 
 	if ((mode & O_WRONLY) && !(mode & O_APPEND)) {
-	    TclOSseek(fd, (Tcl_SeekOffset) 0, SEEK_END);
+	    lseek(fd, (off_t) 0, SEEK_END);
 	}
 
 	/*
@@ -205,7 +205,7 @@ TclpCreateTempFile(
 	    return NULL;
 	}
 	Tcl_DStringFree(&dstring);
-	TclOSseek(fd, (Tcl_SeekOffset) 0, SEEK_SET);
+	lseek(fd, (off_t) 0, SEEK_SET);
     }
     return MakeFile(fd);
 }

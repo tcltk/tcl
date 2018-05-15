@@ -382,7 +382,7 @@ FileSeekProc(
      * Save our current place in case we need to roll-back the seek.
      */
 
-    oldLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) 0, SEEK_CUR);
+    oldLoc = lseek(fsPtr->fd, (off_t) 0, SEEK_CUR);
     if (oldLoc == Tcl_LongAsWide(-1)) {
 	/*
 	 * Bad things are happening. Error out...
@@ -392,7 +392,7 @@ FileSeekProc(
 	return -1;
     }
 
-    newLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
+    newLoc = lseek(fsPtr->fd, (off_t) offset, mode);
 
     /*
      * Check for expressability in our return type, and roll-back otherwise.
@@ -400,7 +400,7 @@ FileSeekProc(
 
     if (newLoc > Tcl_LongAsWide(INT_MAX)) {
 	*errorCodePtr = EOVERFLOW;
-	TclOSseek(fsPtr->fd, (Tcl_SeekOffset) oldLoc, SEEK_SET);
+	lseek(fsPtr->fd, (off_t) oldLoc, SEEK_SET);
 	return -1;
     } else {
 	*errorCodePtr = (newLoc == Tcl_LongAsWide(-1)) ? errno : 0;
@@ -439,7 +439,7 @@ FileWideSeekProc(
     FileState *fsPtr = instanceData;
     Tcl_WideInt newLoc;
 
-    newLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
+    newLoc = lseek(fsPtr->fd, (off_t) offset, mode);
 
     *errorCodePtr = (newLoc == -1) ? errno : 0;
     return newLoc;
@@ -1405,7 +1405,7 @@ TclpOpenFileChannel(
     SET_BITS(mode, O_BINARY);
 #endif
 
-    fd = TclOSopen(native, mode, permissions);
+    fd = open(native, mode, permissions);
 
     if (fd < 0) {
 	if (interp != NULL) {
@@ -1566,12 +1566,12 @@ TclpGetDefaultStdChannel(
      * Some #def's to make the code a little clearer!
      */
 
-#define ZERO_OFFSET	((Tcl_SeekOffset) 0)
-#define ERROR_OFFSET	((Tcl_SeekOffset) -1)
+#define ZERO_OFFSET	((off_t) 0)
+#define ERROR_OFFSET	((off_t) -1)
 
     switch (type) {
     case TCL_STDIN:
-	if ((TclOSseek(0, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+	if ((lseek(0, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
 		&& (errno == EBADF)) {
 	    return NULL;
 	}
@@ -1580,7 +1580,7 @@ TclpGetDefaultStdChannel(
 	bufMode = "line";
 	break;
     case TCL_STDOUT:
-	if ((TclOSseek(1, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+	if ((lseek(1, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
 		&& (errno == EBADF)) {
 	    return NULL;
 	}
@@ -1589,7 +1589,7 @@ TclpGetDefaultStdChannel(
 	bufMode = "line";
 	break;
     case TCL_STDERR:
-	if ((TclOSseek(2, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+	if ((lseek(2, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
 		&& (errno == EBADF)) {
 	    return NULL;
 	}
@@ -1752,15 +1752,7 @@ FileTruncateProc(
     FileState *fsPtr = instanceData;
     int result;
 
-#ifdef HAVE_TYPE_OFF64_T
-    /*
-     * We assume this goes with the type for now...
-     */
-
-    result = ftruncate64(fsPtr->fd, (off64_t) length);
-#else
     result = ftruncate(fsPtr->fd, (off_t) length);
-#endif
     if (result) {
 	return errno;
     }

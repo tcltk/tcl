@@ -259,8 +259,8 @@ TclpMatchInDirectory(
 	Tcl_DecrRefCount(tailPtr);
 	Tcl_DecrRefCount(fileNamePtr);
     } else {
-	TclDIR *d;
-	Tcl_DirEntry *entryPtr;
+	DIR *d;
+	struct dirent *entryPtr;
 	const char *dirName;
 	size_t dirLength, nativeDirLen;
 	int matchHidden, matchHiddenPat;
@@ -310,7 +310,7 @@ TclpMatchInDirectory(
 	    return TCL_OK;
 	}
 
-	d = TclOSopendir(native);				/* INTL: Native. */
+	d = opendir(native);				/* INTL: Native. */
 	if (d == NULL) {
 	    Tcl_DStringFree(&ds);
 	    if (interp != NULL) {
@@ -333,7 +333,7 @@ TclpMatchInDirectory(
 		|| ((pattern[0] == '\\') && (pattern[1] == '.'));
 	matchHidden = matchHiddenPat
 		|| (types && (types->perm & TCL_GLOB_PERM_HIDDEN));
-	while ((entryPtr = TclOSreaddir(d)) != NULL) {	/* INTL: Native. */
+	while ((entryPtr = readdir(d)) != NULL) {	/* INTL: Native. */
 	    Tcl_DString utfDs;
 	    const char *utfname;
 
@@ -388,7 +388,7 @@ TclpMatchInDirectory(
 	    }
 	}
 
-	TclOSclosedir(d);
+	closedir(d);
 	Tcl_DStringFree(&ds);
 	Tcl_DStringFree(&dsOrig);
 	Tcl_DecrRefCount(fileNamePtr);

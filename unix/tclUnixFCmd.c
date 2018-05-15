@@ -273,10 +273,7 @@ MODULE_SCOPE long tclMacOSXDarwinRelease;
 #endif /* NO_REALPATH */
 
 #ifdef HAVE_FTS
-#if defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
-/* fts doesn't do stat64 */
-#   define noFtsStat	1
-#elif defined(__APPLE__) && defined(__LP64__) && \
+#if defined(__APPLE__) && defined(__LP64__) && \
 	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
 	MAC_OS_X_VERSION_MIN_REQUIRED < 1050
 /*
@@ -369,27 +366,27 @@ DoRenameFile(
 
     if (errno == EINVAL && haveRealpath) {
 	char srcPath[MAXPATHLEN], dstPath[MAXPATHLEN];
-	TclDIR *dirPtr;
-	Tcl_DirEntry *dirEntPtr;
+	DIR *dirPtr;
+	struct dirent *dirEntPtr;
 
 	if ((Realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
 		&& (Realpath((char *) dst, dstPath) != NULL) /* INTL: Native */
 		&& (strncmp(srcPath, dstPath, strlen(srcPath)) != 0)) {
-	    dirPtr = TclOSopendir(dst);			/* INTL: Native. */
+	    dirPtr = opendir(dst);			/* INTL: Native. */
 	    if (dirPtr != NULL) {
 		while (1) {
-		    dirEntPtr = TclOSreaddir(dirPtr);	/* INTL: Native. */
+		    dirEntPtr = readdir(dirPtr);	/* INTL: Native. */
 		    if (dirEntPtr == NULL) {
 			break;
 		    }
 		    if ((strcmp(dirEntPtr->d_name, ".") != 0) &&
 			    (strcmp(dirEntPtr->d_name, "..") != 0)) {
 			errno = EEXIST;
-			TclOSclosedir(dirPtr);
+			closedir(dirPtr);
 			return TCL_ERROR;
 		    }
 		}
-		TclOSclosedir(dirPtr);
+		closedir(dirPtr);
 	    }
 	}
 	errno = EINVAL;
@@ -566,11 +563,11 @@ TclUnixCopyFile(
 
 #define DEFAULT_COPY_BLOCK_SIZE 4096
 
-    if ((srcFd = TclOSopen(src, O_RDONLY BINMODE, 0)) < 0) { /* INTL: Native */
+    if ((srcFd = open(src, O_RDONLY BINMODE, 0)) < 0) { /* INTL: Native */
 	return TCL_ERROR;
     }
 
-    dstFd = TclOSopen(dst, O_CREAT|O_TRUNC|O_WRONLY BINMODE, /* INTL: Native */
+    dstFd = open(dst, O_CREAT|O_TRUNC|O_WRONLY BINMODE, /* INTL: Native */
 	    statBufPtr->st_mode);
     if (dstFd < 0) {
 	close(srcFd);
@@ -964,8 +961,8 @@ TraverseUnixTree(
     int targetLen;
 #ifndef HAVE_FTS
     int numProcessed = 0;
-    Tcl_DirEntry *dirEntPtr;
-    TclDIR *dirPtr;
+    struct dirent *dirEntPtr;
+    DIR *dirPtr;
 #else
     const char *paths[2] = {NULL, NULL};
     FTS *fts = NULL;
@@ -990,7 +987,7 @@ TraverseUnixTree(
 		errorPtr);
     }
 #ifndef HAVE_FTS
-    dirPtr = TclOSopendir(source);			/* INTL: Native. */
+    dirPtr = opendir(source);			/* INTL: Native. */
     if (dirPtr == NULL) {
 	/*
 	 * Can't read directory
@@ -1002,7 +999,7 @@ TraverseUnixTree(
     result = traverseProc(sourcePtr, targetPtr, &statBuf, DOTREE_PRED,
 	    errorPtr);
     if (result != TCL_OK) {
-	TclOSclosedir(dirPtr);
+	closedir(dirPtr);
 	return result;
     }
 
@@ -1014,7 +1011,7 @@ TraverseUnixTree(
 	targetLen = Tcl_DStringLength(targetPtr);
     }
 
-    while ((dirEntPtr = TclOSreaddir(dirPtr)) != NULL) { /* INTL: Native. */
+    while ((dirEntPtr = readdir(dirPtr)) != NULL) { /* INTL: Native. */
 	if ((dirEntPtr->d_name[0] == '.')
 		&& ((dirEntPtr->d_name[1] == '\0')
 			|| (strcmp(dirEntPtr->d_name, "..") == 0))) {
@@ -1052,11 +1049,11 @@ TraverseUnixTree(
 	     * NULL-return that may a symptom of a buggy readdir.
 	     */
 
-	    TclOSrewinddir(dirPtr);
+	    rewinddir(dirPtr);
 	    numProcessed = 0;
 	}
     }
-    TclOSclosedir(dirPtr);
+    closedir(dirPtr);
 
     /*
      * Strip off the trailing slash we added

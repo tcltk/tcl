@@ -1110,7 +1110,7 @@ declare 8 win {
 #}
 # Removed in 9.0:
 #declare 10 win {
-#    Tcl_DirEntry *TclpReaddir(TclDIR *dir)
+#    struct dirent *TclpReaddir(DIR *dir)
 #}
 # Removed in 8.3.1 (for Win32s only):
 #declare 10 win {
@@ -1251,7 +1251,7 @@ declare 9 unix {
 
 # Removed in 9.0:
 #declare 10 unix {
-#    Tcl_DirEntry *TclpReaddir(TclDIR *dir)
+#    struct dirent *TclpReaddir(DIR *dir)
 #}
 # Removed in 9.0:
 #declare 11 unix {
