@@ -713,7 +713,7 @@ Tcl_CreateInterp(void)
      * cache was already initialised by the call to alloc the interp struct.
      */
 
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+#if (!defined(TCL_THREADS) || TCL_THREADS) && defined(USE_THREAD_ALLOC)
     iPtr->allocCache = TclpGetAllocCache();
 #else
     iPtr->allocCache = NULL;
@@ -923,7 +923,7 @@ Tcl_CreateInterp(void)
     Tcl_SetVar2(interp, "tcl_version", NULL, TCL_VERSION, TCL_GLOBAL_ONLY);
     TclpSetVariables(interp);
 
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     /*
      * The existence of the "threaded" element of the tcl_platform array
      * indicates that this particular Tcl shell has been compiled with threads
