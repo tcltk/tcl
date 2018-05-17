@@ -37,7 +37,7 @@ Tcl_Obj *tclFreeObjList = NULL;
  * TclNewObj macro, however, so must be visible.
  */
 
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 MODULE_SCOPE Tcl_Mutex tclObjMutex;
 Tcl_Mutex tclObjMutex;
 #endif
@@ -50,7 +50,7 @@ Tcl_Mutex tclObjMutex;
 
 char tclEmptyString = '\0';
 
-#if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
+#if (!defined(TCL_THREADS) || TCL_THREADS) && defined(TCL_MEM_DEBUG)
 /*
  * Structure for tracking the source file and line number where a given
  * Tcl_Obj was allocated.  We also track the pointer to the Tcl_Obj itself,
@@ -87,7 +87,7 @@ typedef struct {
                                  * tclCompile.h for the definition of this
                                  * structure, and for references to all
                                  * related places in the core. */
-#if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
+#if (!defined(TCL_THREADS) || TCL_THREADS) && defined(TCL_MEM_DEBUG)
     Tcl_HashTable *objThreadMap;/* Thread local table that is used to check
                                  * that a Tcl_Obj was not allocated by some
                                  * other thread. */
@@ -156,7 +156,7 @@ typedef struct PendingObjData {
 /*
  * Macro to set up the local reference to the deletion context.
  */
-#ifndef TCL_THREADS
+#if defined(TCL_THREADS) && !TCL_THREADS
 static PendingObjData pendingObjData;
 #define ObjInitDeletionContext(contextPtr) \
     PendingObjData *const contextPtr = &pendingObjData
@@ -418,7 +418,7 @@ TclInitObjSubsystem(void)
 void
 TclFinalizeThreadObjects(void)
 {
-#if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
+#if (!defined(TCL_THREADS) || TCL_THREADS) && defined(TCL_MEM_DEBUG)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -975,7 +975,7 @@ void
 TclDbDumpActiveObjects(
     FILE *outFile)
 {
-#if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
+#if (!defined(TCL_THREADS) || TCL_THREADS) && defined(TCL_MEM_DEBUG)
     Tcl_HashSearch hSearch;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable *tablePtr;
@@ -1035,7 +1035,7 @@ TclDbInitNewObj(
     objPtr->length = 0;
     objPtr->typePtr = NULL;
 
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     /*
      * Add entry to a thread local map used to check if a Tcl_Obj was
      * allocated by the currently executing thread.
@@ -1271,7 +1271,7 @@ TclFreeObj(
 
     ObjInitDeletionContext(context);
 
-# ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     /*
      * Check to make sure that the Tcl_Obj was allocated by the current
      * thread. Don't do this check when shutting down since thread local
@@ -3161,7 +3161,7 @@ Tcl_DbIncrRefCount(
 	Tcl_Panic("incrementing refCount of previously disposed object");
     }
 
-# ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     /*
      * Check to make sure that the Tcl_Obj was allocated by the current
      * thread. Don't do this check when shutting down since thread local
@@ -3224,7 +3224,7 @@ Tcl_DbDecrRefCount(
 	Tcl_Panic("decrementing refCount of previously disposed object");
     }
 
-# ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     /*
      * Check to make sure that the Tcl_Obj was allocated by the current
      * thread. Don't do this check when shutting down since thread local
@@ -3289,7 +3289,7 @@ Tcl_DbIsShared(
 	Tcl_Panic("checking whether previously disposed object is shared");
     }
 
-# ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     /*
      * Check to make sure that the Tcl_Obj was allocated by the current
      * thread. Don't do this check when shutting down since thread local
