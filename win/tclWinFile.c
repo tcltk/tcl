@@ -1444,6 +1444,7 @@ TclpGetUserHome(
     char *domain;
     WCHAR *wName, *wHomeDir, *wDomain, **wDomainPtr = &wDomain;
     WCHAR buf[MAX_PATH];
+    LPCWSTR wServername = NULL;
 
     Tcl_DStringInit(bufferPtr);
     wDomain = NULL;
@@ -1458,7 +1459,8 @@ TclpGetUserHome(
     if (badDomain == 0) {
 	Tcl_DStringInit(&ds);
 	wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
-	if (NetUserGetInfo(wDomain, wName, 1, (LPBYTE *) uiPtrPtr) == 0) {
+        NetGetDCName(NULL, wDomain, (LPBYTE *) &wServername);
+	if (NetUserGetInfo(wServername, wName, 1, (LPBYTE *) uiPtrPtr) == 0) {
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
 		Tcl_UniCharToUtfDString(wHomeDir, lstrlenW(wHomeDir),
