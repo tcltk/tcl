@@ -1699,6 +1699,13 @@ Tcl_MethodIsPublic(
 {
     return (((Method *)method)->flags & PUBLIC_METHOD) ? 1 : 0;
 }
+
+int
+Tcl_MethodIsPrivate(
+    Tcl_Method method)
+{
+    return (((Method *)method)->flags & TRUE_PRIVATE_METHOD) ? 1 : 0;
+}
 
 /*
  * Extended method construction for itcl-ng.

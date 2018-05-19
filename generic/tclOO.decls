@@ -126,6 +126,9 @@ declare 27 {
 declare 28 {
     Tcl_Obj *Tcl_GetObjectName(Tcl_Interp *interp, Tcl_Object object)
 }
+declare 29 {
+    int Tcl_MethodIsPrivate(Tcl_Method method)
+}
 
 ######################################################################
 # Private API, exposed to support advanced OO systems that plug in on top of
