@@ -58,12 +58,12 @@ declare 10 {
 }
 declare 11 {
     Tcl_Method Tcl_NewInstanceMethod(Tcl_Interp *interp, Tcl_Object object,
-	    Tcl_Obj *nameObj, int isPublic, const Tcl_MethodType *typePtr,
+	    Tcl_Obj *nameObj, int flags, const Tcl_MethodType *typePtr,
 	    ClientData clientData)
 }
 declare 12 {
     Tcl_Method Tcl_NewMethod(Tcl_Interp *interp, Tcl_Class cls,
-	    Tcl_Obj *nameObj, int isPublic, const Tcl_MethodType *typePtr,
+	    Tcl_Obj *nameObj, int flags, const Tcl_MethodType *typePtr,
 	    ClientData clientData)
 }
 declare 13 {
