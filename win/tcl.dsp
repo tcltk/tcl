@@ -1264,6 +1264,10 @@ SOURCE=..\generic\tclProc.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\generic\tclProcess.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\generic\tclRegexp.c
 # End Source File
 # Begin Source File
@@ -1521,6 +1525,10 @@ SOURCE=.\tclWinLoad.c
 # Begin Source File
 
 SOURCE=.\tclWinNotify.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\tclWinPanic.c
 # End Source File
 # Begin Source File
 

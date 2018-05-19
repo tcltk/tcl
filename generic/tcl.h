@@ -91,6 +91,10 @@ extern "C" {
 #endif
 #endif /* !TCL_NO_DEPRECATED */
 
+#ifndef TCL_THREADS
+#   define TCL_THREADS 1
+#endif
+
 /*
  * A special definition used to allow this header file to be included from
  * windows resource files so that they can obtain version information.
@@ -107,7 +111,7 @@ extern "C" {
  * using threads.
  */
 
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 #define TCL_DECLARE_MUTEX(name) static Tcl_Mutex name;
 #else
 #define TCL_DECLARE_MUTEX(name)
@@ -269,8 +273,6 @@ extern "C" {
 #ifndef CONST
 #   define CONST const
 #endif
-#define CONST84 const
-#define CONST84_RETURN const
 
 #endif /* !TCL_NO_DEPRECATED */
 
@@ -371,44 +373,40 @@ typedef long LONG;
 #   if defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
 #      define TCL_LL_MODIFIER	"I64"
+#      if defined(_WIN64)
+#         define TCL_Z_MODIFIER	"I"
+#      endif
 #   elif defined(__GNUC__)
-#      define TCL_WIDE_INT_TYPE long long
-#      define TCL_LL_MODIFIER	"ll"
+#      define TCL_Z_MODIFIER	"z"
 #   else /* ! _WIN32 && ! __GNUC__ */
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
  */
 #      include <limits.h>
-#      if (INT_MAX < LONG_MAX)
+#      if defined(LLONG_MAX) && (LLONG_MAX == LONG_MAX)
 #         define TCL_WIDE_INT_IS_LONG	1
-#      else
-#         define TCL_WIDE_INT_TYPE long long
 #      endif
 #   endif /* _WIN32 */
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
-#ifdef TCL_WIDE_INT_IS_LONG
-#   undef TCL_WIDE_INT_TYPE
-#   define TCL_WIDE_INT_TYPE	long
-#endif /* TCL_WIDE_INT_IS_LONG */
+
+#ifndef TCL_WIDE_INT_TYPE
+#   define TCL_WIDE_INT_TYPE		long long
+#endif /* !TCL_WIDE_INT_TYPE */
 
 typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
 typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
-#ifdef TCL_WIDE_INT_IS_LONG
-#   ifndef TCL_LL_MODIFIER
-#      define TCL_LL_MODIFIER		"l"
-#   endif /* !TCL_LL_MODIFIER */
-#else /* TCL_WIDE_INT_IS_LONG */
-/*
- * The next short section of defines are only done when not running on Windows
- * or some other strange platform.
- */
-#   ifndef TCL_LL_MODIFIER
-#      define TCL_LL_MODIFIER		"ll"
-#   endif /* !TCL_LL_MODIFIER */
-#endif /* TCL_WIDE_INT_IS_LONG */
-
+#ifndef TCL_LL_MODIFIER
+#   define TCL_LL_MODIFIER	"ll"
+#endif /* !TCL_LL_MODIFIER */
+#ifndef TCL_Z_MODIFIER
+#   if defined(__GNUC__) && !defined(_WIN32)
+#	define TCL_Z_MODIFIER	"z"
+#   else
+#	define TCL_Z_MODIFIER	""
+#   endif
+#endif /* !TCL_Z_MODIFIER */
 #define Tcl_WideAsLong(val)	((long)((Tcl_WideInt)(val)))
 #define Tcl_LongAsWide(val)	((Tcl_WideInt)((long)(val)))
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
@@ -472,31 +470,9 @@ typedef struct Tcl_Interp
 {
     /* TIP #330: Strongly discourage extensions from using the string
      * result. */
-#ifdef USE_INTERP_RESULT
-    char *result TCL_DEPRECATED_API("use Tcl_GetStringResult/Tcl_SetResult");
-				/* If the last command returned a string
-				 * result, this points to it. */
-    void (*freeProc) (char *blockPtr)
-	    TCL_DEPRECATED_API("use Tcl_GetStringResult/Tcl_SetResult");
-				/* Zero means the string result is statically
-				 * allocated. TCL_DYNAMIC means it was
-				 * allocated with ckalloc and should be freed
-				 * with ckfree. Other values give the address
-				 * of function to invoke to free the result.
-				 * Tcl_Eval must free it before executing next
-				 * command. */
-#else
     char *resultDontUse; /* Don't use in extensions! */
     void (*freeProcDontUse) (char *); /* Don't use in extensions! */
-#endif
-#ifdef USE_INTERP_ERRORLINE
-    int errorLine TCL_DEPRECATED_API("use Tcl_GetErrorLine/Tcl_SetErrorLine");
-				/* When TCL_ERROR is returned, this gives the
-				 * line number within the command where the
-				 * error occurred (1 if first line). */
-#else
     int errorLineDontUse; /* Don't use in extensions! */
-#endif
 }
 #endif /* !TCL_NO_DEPRECATED */
 Tcl_Interp;
@@ -2174,16 +2150,16 @@ typedef struct Tcl_EncodingType {
 
 /*
  * The maximum number of bytes that are necessary to represent a single
- * Unicode character in UTF-8. The valid values should be 3, 4 or 6
- * (or perhaps 1 if we want to support a non-unicode enabled core). If 3 or
- * 4, then Tcl_UniChar must be 2-bytes in size (UCS-2) (the default). If 6,
+ * Unicode character in UTF-8. The valid values are 4 and 6
+ * (or perhaps 1 if we want to support a non-unicode enabled core). If 4,
+ * then Tcl_UniChar must be 2-bytes in size (UCS-2) (the default). If 6,
  * then Tcl_UniChar must be 4-bytes in size (UCS-4). At this time UCS-2 mode
  * is the default and recommended mode. UCS-4 is experimental and not
  * recommended. It works for the core, but most extensions expect UCS-2.
  */
 
 #ifndef TCL_UTF_MAX
-#define TCL_UTF_MAX		3
+#define TCL_UTF_MAX		4
 #endif
 
 /*
@@ -2373,10 +2349,10 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------------
  * The following constant is used to test for older versions of Tcl in the
- * stubs tables.
+ * stubs tables. If TCL_UTF_MAX>4 use a different value.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACF + (TCL_UTF_MAX>4))
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2389,6 +2365,11 @@ const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 			    int exact, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
+#if defined(_WIN32)
+    TCL_NORETURN void Tcl_ConsolePanic(const char *format, ...);
+#else
+#   define Tcl_ConsolePanic ((Tcl_PanicProc *)0)
+#endif
 
 #ifdef USE_TCL_STUBS
 #if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
@@ -2414,24 +2395,20 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 #endif
 #endif
 
-/* Tcl_InitSubsystems, see TIP #414 */
-
-#ifndef USE_TCL_STUBS
-    EXTERN const char *Tcl_InitSubsystems(TCL_NORETURN1 Tcl_PanicProc *panicProc);
-#endif
-
 /*
  * Public functions that are not accessible via the stubs table.
  * Tcl_GetMemoryInfo is needed for AOLserver. [Bug 1868171]
  */
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
-	    ((Tcl_CreateInterp)()))
+	    ((Tcl_InitSubsystems(Tcl_ConsolePanic), Tcl_CreateInterp)()))
 EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+/* Tcl_InitSubsystems, see TIP #414 */
+EXTERN const char *Tcl_InitSubsystems(TCL_NORETURN1 Tcl_PanicProc *panicProc);
 
 /*
  *----------------------------------------------------------------------------
@@ -2545,15 +2522,9 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #  undef  Tcl_NewDoubleObj
 #  define Tcl_NewDoubleObj(val) \
      Tcl_DbNewDoubleObj(val, __FILE__, __LINE__)
-#  undef  Tcl_NewIntObj
-#  define Tcl_NewIntObj(val) \
-     Tcl_DbNewLongObj(val, __FILE__, __LINE__)
 #  undef  Tcl_NewListObj
 #  define Tcl_NewListObj(objc, objv) \
      Tcl_DbNewListObj(objc, objv, __FILE__, __LINE__)
-#  undef  Tcl_NewLongObj
-#  define Tcl_NewLongObj(val) \
-     Tcl_DbNewLongObj(val, __FILE__, __LINE__)
 #  undef  Tcl_NewObj
 #  define Tcl_NewObj() \
      Tcl_DbNewObj(__FILE__, __LINE__)
@@ -2596,7 +2567,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * when compiling without thread support.
  */
 
-#ifndef TCL_THREADS
+#if defined(TCL_THREADS) && !TCL_THREADS
 #undef  Tcl_MutexLock
 #define Tcl_MutexLock(mutexPtr)
 #undef  Tcl_MutexUnlock
@@ -2609,7 +2580,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
 #undef  Tcl_ConditionFinalize
 #define Tcl_ConditionFinalize(condPtr)
-#endif /* TCL_THREADS */
+#endif /* !TCL_THREADS */
 
 /*
  *----------------------------------------------------------------------------

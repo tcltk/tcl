@@ -18,7 +18,7 @@
 #endif
 #include "tclInt.h"
 
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 /*
  * Each thread has an single instance of the following structure. There is one
  * instance of this structure per thread even if that thread contains multiple
@@ -248,7 +248,7 @@ ThreadObjCmd(
 
     switch ((enum options)option) {
     case THREAD_CANCEL: {
-	long id;
+	Tcl_WideInt id;
 	const char *result;
 	int flags, arg;
 
@@ -264,7 +264,7 @@ ThreadObjCmd(
 		arg++;
 	    }
 	}
-	if (Tcl_GetLongFromObj(interp, objv[arg], &id) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, objv[arg], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	arg++;

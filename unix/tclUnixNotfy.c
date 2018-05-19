@@ -18,7 +18,7 @@
  */
 
 #ifdef NOTIFIER_SELECT
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
 #if defined(HAVE_PTHREAD_ATFORK)
 static void	AtForkChild(void);
@@ -28,7 +28,7 @@ static void	AtForkChild(void);
 static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 
 #ifdef NOTIFIER_SELECT
-#if TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 /*
  *----------------------------------------------------------------------
  *
@@ -107,7 +107,7 @@ Tcl_AlertNotifier(
 	return;
     } else {
 #ifdef NOTIFIER_SELECT
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 	ThreadSpecificData *tsdPtr = clientData;
 
 	pthread_mutex_lock(&notifierMutex);
@@ -198,7 +198,7 @@ Tcl_ServiceModeHook(
 	return;
     } else if (mode == TCL_SERVICE_ALL) {
 #ifdef NOTIFIER_SELECT
-#if TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 	StartNotifierThread("Tcl_ServiceModeHook");
 #endif
 #endif /* NOTIFIER_SELECT */
@@ -280,7 +280,7 @@ FileHandlerEventProc(
 }
 
 #ifdef NOTIFIER_SELECT
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 /*
  *----------------------------------------------------------------------
  *
