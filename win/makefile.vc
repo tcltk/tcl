@@ -218,6 +218,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclPosixStr.obj \
 	$(TMP_DIR)\tclPreserve.obj \
 	$(TMP_DIR)\tclProc.obj \
+	$(TMP_DIR)\tclProcess.obj \
 	$(TMP_DIR)\tclRegexp.obj \
 	$(TMP_DIR)\tclResolve.obj \
 	$(TMP_DIR)\tclResult.obj \
@@ -349,7 +350,8 @@ TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
 TCLSTUBOBJS = \
 	$(TMP_DIR)\tclStubLib.obj \
 	$(TMP_DIR)\tclTomMathStubLib.obj \
-	$(TMP_DIR)\tclOOStubLib.obj
+	$(TMP_DIR)\tclOOStubLib.obj \
+	$(TMP_DIR)\tclWinPanic.obj
 
 ### The following paths CANNOT have spaces in them as they appear on
 ### the left side of implicit rules.
@@ -740,6 +742,9 @@ $(TMP_DIR)\tclTomMathStubLib.obj: $(GENERICDIR)\tclTomMathStubLib.c
 $(TMP_DIR)\tclOOStubLib.obj: $(GENERICDIR)\tclOOStubLib.c
 	$(cc32) $(stubscflags) -Fo$@ $?
 
+$(TMP_DIR)\tclWinPanic.obj: $(WINDIR)\tclWinPanic.c
+	$(cc32) $(stubscflags) -Fo$@ $?
+
 $(TMP_DIR)\tclsh.exe.manifest: $(WINDIR)\tclsh.exe.manifest.in
 	@nmakehlp -s << $** >$@
 @MACHINE@	  $(MACHINE:IX86=X86)
@@ -831,6 +836,8 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.7" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.7"
 	@if not exist "$(LIB_INSTALL_DIR)\nmake" \
 		$(MKDIR) "$(LIB_INSTALL_DIR)\nmake"
 	@echo Installing header files
@@ -860,9 +867,6 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(WINDIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WINDIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
-	@echo Installing library http1.0 directory
-	@$(CPY) "$(ROOT)\library\http1.0\*.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\http1.0\"
 	@echo Installing library opt0.4 directory
 	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
@@ -871,7 +875,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6\http-$(PKG_HTTP_VER).tm"
 	@echo Installing package msgcat $(PKG_MSGCAT_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\msgcat\msgcat.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5\msgcat-$(PKG_MSGCAT_VER).tm"
+	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.7\msgcat-$(PKG_MSGCAT_VER).tm"
 	@echo Installing package tcltest $(PKG_TCLTEST_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\tcltest\tcltest.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5\tcltest-$(PKG_TCLTEST_VER).tm"

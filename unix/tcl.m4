@@ -593,113 +593,6 @@ AC_DEFUN([SC_ENABLE_FRAMEWORK], [
 ])
 
 #------------------------------------------------------------------------
-# SC_ENABLE_THREADS --
-#
-#	Specify if thread support should be enabled
-#
-# Arguments:
-#	none
-#
-# Results:
-#
-#	Adds the following arguments to configure:
-#		--enable-threads
-#
-#	Sets the following vars:
-#		THREADS_LIBS	Thread library(s)
-#
-#	Defines the following vars:
-#		TCL_THREADS
-#		_REENTRANT
-#		_THREAD_SAFE
-#------------------------------------------------------------------------
-
-AC_DEFUN([SC_ENABLE_THREADS], [
-    AC_ARG_ENABLE(threads,
-	AC_HELP_STRING([--enable-threads],
-	    [build with threads (default: on)]),
-	[tcl_ok=$enableval], [tcl_ok=yes])
-
-    if test "${TCL_THREADS}" = 1; then
-	tcl_threaded_core=1;
-    fi
-
-    if test "$tcl_ok" = "yes" -o "${TCL_THREADS}" = 1; then
-	TCL_THREADS=1
-	# USE_THREAD_ALLOC tells us to try the special thread-based
-	# allocator that significantly reduces lock contention
-	AC_DEFINE(USE_THREAD_ALLOC, 1,
-	    [Do we want to use the threaded memory allocator?])
-	AC_DEFINE(_REENTRANT, 1, [Do we want the reentrant OS API?])
-	if test "`uname -s`" = "SunOS" ; then
-	    AC_DEFINE(_POSIX_PTHREAD_SEMANTICS, 1,
-		    [Do we really want to follow the standard? Yes we do!])
-	fi
-	AC_DEFINE(_THREAD_SAFE, 1, [Do we want the thread-safe OS API?])
-	AC_CHECK_LIB(pthread,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
-	if test "$tcl_ok" = "no"; then
-	    # Check a little harder for __pthread_mutex_init in the same
-	    # library, as some systems hide it there until pthread.h is
-	    # defined.  We could alternatively do an AC_TRY_COMPILE with
-	    # pthread.h, but that will work with libpthread really doesn't
-	    # exist, like AIX 4.2.  [Bug: 4359]
-	    AC_CHECK_LIB(pthread, __pthread_mutex_init,
-		tcl_ok=yes, tcl_ok=no)
-	fi
-
-	if test "$tcl_ok" = "yes"; then
-	    # The space is needed
-	    THREADS_LIBS=" -lpthread"
-	else
-	    AC_CHECK_LIB(pthreads, pthread_mutex_init,
-		tcl_ok=yes, tcl_ok=no)
-	    if test "$tcl_ok" = "yes"; then
-		# The space is needed
-		THREADS_LIBS=" -lpthreads"
-	    else
-		AC_CHECK_LIB(c, pthread_mutex_init,
-		    tcl_ok=yes, tcl_ok=no)
-		if test "$tcl_ok" = "no"; then
-		    AC_CHECK_LIB(c_r, pthread_mutex_init,
-			tcl_ok=yes, tcl_ok=no)
-		    if test "$tcl_ok" = "yes"; then
-			# The space is needed
-			THREADS_LIBS=" -pthread"
-		    else
-			TCL_THREADS=0
-			AC_MSG_WARN([Don't know how to find pthread lib on your system - you must disable thread support or edit the LIBS in the Makefile...])
-		    fi
-		fi
-	    fi
-	fi
-
-	# Does the pthread-implementation provide
-	# 'pthread_attr_setstacksize' ?
-
-	ac_saved_libs=$LIBS
-	LIBS="$LIBS $THREADS_LIBS"
-	AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork)
-	LIBS=$ac_saved_libs
-    else
-	TCL_THREADS=0
-    fi
-    # Do checking message here to not mess up interleaved configure output
-    AC_MSG_CHECKING([for building with threads])
-    if test "${TCL_THREADS}" = 1; then
-	AC_DEFINE(TCL_THREADS, 1, [Are we building with threads enabled?])
-	if test "${tcl_threaded_core}" = 1; then
-	    AC_MSG_RESULT([yes (threaded core)])
-	else
-	    AC_MSG_RESULT([yes])
-	fi
-    else
-	AC_MSG_RESULT([no])
-    fi
-
-    AC_SUBST(TCL_THREADS)
-])
-
-#------------------------------------------------------------------------
 # SC_ENABLE_SYMBOLS --
 #
 #	Specify if debugging symbols should be used.
@@ -1196,7 +1089,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
-	CYGWIN_*|MINGW32*)
+	CYGWIN_*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
@@ -1912,7 +1805,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 	case $system in
 	    AIX-*) ;;
 	    BSD/OS*) ;;
-	    CYGWIN_*|MINGW32_*) ;;
+	    CYGWIN_*) ;;
 	    IRIX*) ;;
 	    NetBSD-*|FreeBSD-*|OpenBSD-*) ;;
 	    Darwin-*) ;;
@@ -2350,12 +2243,20 @@ AC_DEFUN([SC_BUGGY_STRTOD], [
 #
 #	Search for the libraries needed to link the Tcl shell.
 #	Things like the math library (-lm) and socket stuff (-lsocket vs.
-#	-lnsl) are dealt with here.
+#	-lnsl) or thread library (-lpthread) are dealt with here.
 #
 # Arguments:
 #	None.
 #
 # Results:
+#
+#	Sets the following vars:
+#		THREADS_LIBS	Thread library(s)
+#
+#	Defines the following vars:
+#		TCL_THREADS
+#		_REENTRANT
+#		_THREAD_SAFE
 #
 #	Might append to the following vars:
 #		LIBS
@@ -2370,12 +2271,9 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
     #--------------------------------------------------------------------
     # On a few very rare systems, all of the libm.a stuff is
     # already in libc.a.  Set compiler flags accordingly.
-    # Also, Linux requires the "ieee" library for math to work
-    # right (and it must appear before "-lm").
     #--------------------------------------------------------------------
 
     AC_CHECK_FUNC(sin, MATH_LIBS="", MATH_LIBS="-lm")
-    AC_CHECK_LIB(ieee, main, [MATH_LIBS="-lieee $MATH_LIBS"])
 
     #--------------------------------------------------------------------
     # Interactive UNIX requires -linet instead of -lsocket, plus it
@@ -2417,6 +2315,52 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
     fi
     AC_CHECK_FUNC(gethostbyname, , [AC_CHECK_LIB(nsl, gethostbyname,
 	    [LIBS="$LIBS -lnsl"])])
+
+    AC_DEFINE(_REENTRANT, 1, [Do we want the reentrant OS API?])
+    AC_DEFINE(_THREAD_SAFE, 1, [Do we want the thread-safe OS API?])
+    AC_CHECK_LIB(pthread,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
+    if test "$tcl_ok" = "no"; then
+	# Check a little harder for __pthread_mutex_init in the same
+	# library, as some systems hide it there until pthread.h is
+	# defined.  We could alternatively do an AC_TRY_COMPILE with
+	# pthread.h, but that will work with libpthread really doesn't
+	# exist, like AIX 4.2.  [Bug: 4359]
+	AC_CHECK_LIB(pthread, __pthread_mutex_init,
+		tcl_ok=yes, tcl_ok=no)
+    fi
+
+    if test "$tcl_ok" = "yes"; then
+	# The space is needed
+	THREADS_LIBS=" -lpthread"
+    else
+	AC_CHECK_LIB(pthreads, pthread_mutex_init,
+	_ok=yes, tcl_ok=no)
+	if test "$tcl_ok" = "yes"; then
+	    # The space is needed
+	    THREADS_LIBS=" -lpthreads"
+	else
+	    AC_CHECK_LIB(c, pthread_mutex_init,
+		    tcl_ok=yes, tcl_ok=no)
+	    if test "$tcl_ok" = "no"; then
+		AC_CHECK_LIB(c_r, pthread_mutex_init,
+			tcl_ok=yes, tcl_ok=no)
+		if test "$tcl_ok" = "yes"; then
+		    # The space is needed
+		    THREADS_LIBS=" -pthread"
+		else
+		    AC_MSG_WARN([Don't know how to find pthread lib on your system - you must edit the LIBS in the Makefile...])
+		fi
+	    fi
+	fi
+    fi
+
+    # Does the pthread-implementation provide
+    # 'pthread_attr_setstacksize' ?
+
+    ac_saved_libs=$LIBS
+    LIBS="$LIBS $THREADS_LIBS"
+    AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork)
+    LIBS=$ac_saved_libs
 ])
 
 #--------------------------------------------------------------------
@@ -2492,15 +2436,15 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 	# See if the compiler knows natively about __int64
 	AC_TRY_COMPILE(,[__int64 value = (__int64) 0;],
 	    tcl_type_64bit=__int64, tcl_type_64bit="long long")
-	# See if we should use long anyway  Note that we substitute in the
+	# See if we could use long anyway  Note that we substitute in the
 	# type that is our current guess for a 64-bit type inside this check
 	# program, so it should be modified only carefully...
         AC_TRY_COMPILE(,[switch (0) {
             case 1: case (sizeof(]${tcl_type_64bit}[)==sizeof(long)): ;
         }],tcl_cv_type_64bit=${tcl_type_64bit})])
     if test "${tcl_cv_type_64bit}" = none ; then
-	AC_DEFINE(TCL_WIDE_INT_IS_LONG, 1, [Are wide integers to be implemented with C 'long's?])
-	AC_MSG_RESULT([using long])
+	AC_DEFINE(TCL_WIDE_INT_IS_LONG, 1, [Do 'long' and 'long long' have the same size (64-bit)?])
+	AC_MSG_RESULT([yes])
     else
 	AC_DEFINE_UNQUOTED(TCL_WIDE_INT_TYPE,${tcl_cv_type_64bit},
 	    [What type should be used to define wide integers?])

@@ -161,7 +161,7 @@ static TestChannel *firstDetached;
 
 static int		AsyncHandlerProc(ClientData clientData,
 			    Tcl_Interp *interp, int code);
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 static Tcl_ThreadCreateType AsyncThreadProc(ClientData);
 #endif
 static void		CleanupTestSetassocdataTests(
@@ -722,7 +722,7 @@ Tcltest_Init(
     if (Procbodytest_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
     }
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     if (TclThread_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -902,7 +902,7 @@ TestasyncCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(argv[3], -1));
 	Tcl_MutexUnlock(&asyncTestMutex);
 	return code;
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     } else if (strcmp(argv[1], "marklater") == 0) {
 	if (argc != 3) {
 	    goto wrongNumArgs;
@@ -999,7 +999,7 @@ AsyncHandlerProc(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 static Tcl_ThreadCreateType
 AsyncThreadProc(
     ClientData clientData)	/* Parameter is the id of a
@@ -5207,7 +5207,7 @@ TestmainthreadCmd(
     const char **argv)		/* Argument strings. */
 {
     if (argc == 1) {
-	Tcl_Obj *idObj = Tcl_NewLongObj((long)(size_t)Tcl_GetCurrentThread());
+	Tcl_Obj *idObj = Tcl_NewWideIntObj((Tcl_WideInt)(size_t)Tcl_GetCurrentThread());
 
 	Tcl_SetObjResult(interp, idObj);
 	return TCL_OK;
@@ -5604,8 +5604,8 @@ TestChannelCmd(
 	    return TCL_ERROR;
 	}
 
-	TclFormatInt(buf, (size_t) Tcl_GetChannelThread(chan));
-	Tcl_AppendResult(interp, buf, NULL);
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+		(Tcl_WideInt) (size_t) Tcl_GetChannelThread(chan)));
 	return TCL_OK;
     }
 

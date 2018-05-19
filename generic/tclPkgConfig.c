@@ -40,7 +40,7 @@
  * configuration information.
  */
 
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 #  define  CFG_THREADED		"1"
 #else
 #  define  CFG_THREADED		"0"

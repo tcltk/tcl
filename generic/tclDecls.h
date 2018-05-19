@@ -962,13 +962,13 @@ EXTERN void		Tcl_ThreadAlert(Tcl_ThreadId threadId);
 EXTERN void		Tcl_ThreadQueueEvent(Tcl_ThreadId threadId,
 				Tcl_Event *evPtr, Tcl_QueuePosition position);
 /* 320 */
-EXTERN Tcl_UniChar	Tcl_UniCharAtIndex(const char *src, int index);
+EXTERN int		Tcl_UniCharAtIndex(const char *src, int index);
 /* 321 */
-EXTERN Tcl_UniChar	Tcl_UniCharToLower(int ch);
+EXTERN int		Tcl_UniCharToLower(int ch);
 /* 322 */
-EXTERN Tcl_UniChar	Tcl_UniCharToTitle(int ch);
+EXTERN int		Tcl_UniCharToTitle(int ch);
 /* 323 */
-EXTERN Tcl_UniChar	Tcl_UniCharToUpper(int ch);
+EXTERN int		Tcl_UniCharToUpper(int ch);
 /* 324 */
 EXTERN int		Tcl_UniCharToUtf(int ch, char *buf);
 /* 325 */
@@ -1123,7 +1123,7 @@ EXTERN void		Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
 /* 380 */
 EXTERN int		Tcl_GetCharLength(Tcl_Obj *objPtr);
 /* 381 */
-EXTERN Tcl_UniChar	Tcl_GetUniChar(Tcl_Obj *objPtr, int index);
+EXTERN int		Tcl_GetUniChar(Tcl_Obj *objPtr, int index);
 /* 382 */
 EXTERN Tcl_UniChar *	Tcl_GetUnicode(Tcl_Obj *objPtr);
 /* 383 */
@@ -2193,10 +2193,10 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_SetVar2Ex) (Tcl_Interp *interp, const char *part1, const char *part2, Tcl_Obj *newValuePtr, int flags); /* 317 */
     void (*tcl_ThreadAlert) (Tcl_ThreadId threadId); /* 318 */
     void (*tcl_ThreadQueueEvent) (Tcl_ThreadId threadId, Tcl_Event *evPtr, Tcl_QueuePosition position); /* 319 */
-    Tcl_UniChar (*tcl_UniCharAtIndex) (const char *src, int index); /* 320 */
-    Tcl_UniChar (*tcl_UniCharToLower) (int ch); /* 321 */
-    Tcl_UniChar (*tcl_UniCharToTitle) (int ch); /* 322 */
-    Tcl_UniChar (*tcl_UniCharToUpper) (int ch); /* 323 */
+    int (*tcl_UniCharAtIndex) (const char *src, int index); /* 320 */
+    int (*tcl_UniCharToLower) (int ch); /* 321 */
+    int (*tcl_UniCharToTitle) (int ch); /* 322 */
+    int (*tcl_UniCharToUpper) (int ch); /* 323 */
     int (*tcl_UniCharToUtf) (int ch, char *buf); /* 324 */
     const char * (*tcl_UtfAtIndex) (const char *src, int index); /* 325 */
     int (*tcl_UtfCharComplete) (const char *src, int length); /* 326 */
@@ -2254,7 +2254,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_NewUnicodeObj) (const Tcl_UniChar *unicode, int numChars); /* 378 */
     void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int numChars); /* 379 */
     int (*tcl_GetCharLength) (Tcl_Obj *objPtr); /* 380 */
-    Tcl_UniChar (*tcl_GetUniChar) (Tcl_Obj *objPtr, int index); /* 381 */
+    int (*tcl_GetUniChar) (Tcl_Obj *objPtr, int index); /* 381 */
     Tcl_UniChar * (*tcl_GetUnicode) (Tcl_Obj *objPtr); /* 382 */
     Tcl_Obj * (*tcl_GetRange) (Tcl_Obj *objPtr, int first, int last); /* 383 */
     void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int length); /* 384 */
@@ -3885,6 +3885,7 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_AddObjErrorInfo
 #define Tcl_AddObjErrorInfo(interp, message, length) \
 	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, length))
+#undef Tcl_SetPanicProc
 #ifdef TCL_NO_DEPRECATED
 #undef Tcl_Eval
 #define Tcl_Eval(interp, objPtr) \
@@ -3923,6 +3924,7 @@ extern const TclStubs *tclStubsPtr;
 		} \
 	    } \
 	} while(0)
+#define Tcl_SetPanicProc Tcl_InitSubsystems
 #endif /* TCL_NO_DEPRECATED */
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -3934,20 +3936,14 @@ extern const TclStubs *tclStubsPtr;
  * possible. Tcl 9 must find a better solution, but that cannot be done
  * without introducing a binary incompatibility.
  */
-#	undef Tcl_DbNewLongObj
 #	undef Tcl_GetLongFromObj
-#	undef Tcl_NewLongObj
-#	undef Tcl_SetLongObj
 #	undef Tcl_ExprLong
 #	undef Tcl_ExprLongObj
 #	undef Tcl_UniCharNcmp
 #	undef Tcl_UtfNcmp
 #	undef Tcl_UtfNcasecmp
 #	undef Tcl_UniCharNcasecmp
-#	define Tcl_DbNewLongObj ((Tcl_Obj*(*)(long,const char*,int))Tcl_DbNewWideIntObj)
 #	define Tcl_GetLongFromObj ((int(*)(Tcl_Interp*,Tcl_Obj*,long*))Tcl_GetWideIntFromObj)
-#	define Tcl_NewLongObj ((Tcl_Obj*(*)(long))Tcl_NewWideIntObj)
-#	define Tcl_SetLongObj ((void(*)(Tcl_Obj*,long))Tcl_SetWideIntObj)
 #	define Tcl_ExprLong TclExprLong
 	static inline int TclExprLong(Tcl_Interp *interp, const char *string, long *ptr){
 	    int intValue;
@@ -3972,6 +3968,17 @@ extern const TclStubs *tclStubsPtr;
 		((int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned int))tclStubsPtr->tcl_UniCharNcasecmp)(ucs,uct,(unsigned int)(n))
 #   endif
 #endif
+
+#undef Tcl_NewLongObj
+#define Tcl_NewLongObj(value) Tcl_NewWideIntObj((long)(value))
+#undef Tcl_NewIntObj
+#define Tcl_NewIntObj(value) Tcl_NewWideIntObj((int)(value))
+#undef Tcl_DbNewLongObj
+#define Tcl_DbNewLongObj(value, file, line) Tcl_DbNewWideIntObj((long)(value), file, line)
+#undef Tcl_SetIntObj
+#define Tcl_SetIntObj(objPtr, value)	Tcl_SetWideIntObj(objPtr, (int)(value))
+#undef Tcl_SetLongObj
+#define Tcl_SetLongObj(objPtr, value)	Tcl_SetWideIntObj(objPtr, (long)(value))
 
 /*
  * Deprecated Tcl procedures:

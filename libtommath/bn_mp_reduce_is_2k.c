@@ -32,7 +32,7 @@ int mp_reduce_is_2k(const mp_int *a)
 
       /* Test every bit from the second digit up, must be 1 */
       for (ix = DIGIT_BIT; ix < iy; ix++) {
-         if ((a->dp[iw] & iz) == 0) {
+         if ((a->dp[iw] & iz) == 0u) {
             return MP_NO;
          }
          iz <<= 1;
