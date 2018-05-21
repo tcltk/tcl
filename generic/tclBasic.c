@@ -2709,7 +2709,8 @@ TclRenameCommand(
 	cmdPtr->nsPtr = cmdNsPtr;
 	goto done;
     } else {
-	cmdPtr->nsPtr->refCount++;
+	newNsPtr->refCount++;
+	TclNsDecrRefCount(cmdNsPtr);
     }
 
     /*
