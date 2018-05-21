@@ -1073,6 +1073,7 @@ Tcl_DeleteNamespace(
 	    for (i = 0 ; i < length ; i++) {
 		Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr,
 			(Tcl_Command) cmds[i]);
+		TclCleanupCommandMacro(cmds[i]);
 	    }
 	    TclStackFree((Tcl_Interp *) iPtr, cmds);
 	}
