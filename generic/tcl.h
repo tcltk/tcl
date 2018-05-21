@@ -89,11 +89,11 @@ extern "C" {
 #  define JOIN(a,b) JOIN1(a,b)
 #  define JOIN1(a,b) a##b
 #endif
-#endif /* !TCL_NO_DEPRECATED */
 
 #ifndef TCL_THREADS
 #   define TCL_THREADS 1
 #endif
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * A special definition used to allow this header file to be included from
