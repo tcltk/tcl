@@ -256,7 +256,7 @@ Realpath(
 #endif /* PURIFY */
 
 #ifndef NO_REALPATH
-#if defined(__APPLE__) && defined(TCL_THREADS) && \
+#if defined(__APPLE__) && (!defined(TCL_THREADS) || TCL_THREADS) && \
 	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
 	MAC_OS_X_VERSION_MIN_REQUIRED < 1030
 /*
@@ -965,7 +965,7 @@ TraverseUnixTree(
 #ifndef HAVE_FTS
     int numProcessed = 0;
     Tcl_DirEntry *dirEntPtr;
-    Tcl_Dir *dirPtr;
+    TclDIR *dirPtr;
 #else
     const char *paths[2] = {NULL, NULL};
     FTS *fts = NULL;
@@ -2302,7 +2302,8 @@ winPathFromObj(
 }
 
 static const int attributeArray[] = {
-    0x20, 0, 2, 0, 0, 1, 4};
+    0x20, 0, 2, 0, 0, 1, 4
+};
 
 /*
  *----------------------------------------------------------------------
@@ -2339,8 +2340,8 @@ GetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewIntObj((fileAttributes&attributeArray[objIndex])!=0);
-
+    *attributePtrPtr = Tcl_NewIntObj(
+	    (fileAttributes & attributeArray[objIndex]) != 0);
     return TCL_OK;
 }
 
@@ -2397,7 +2398,7 @@ SetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-	ckfree(winPath);
+    ckfree(winPath);
     return TCL_OK;
 }
 #elif defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
@@ -2439,8 +2440,7 @@ GetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewBooleanObj(statBuf.st_flags&UF_IMMUTABLE);
-
+    *attributePtrPtr = Tcl_NewBooleanObj(statBuf.st_flags & UF_IMMUTABLE);
     return TCL_OK;
 }
 

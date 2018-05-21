@@ -46,7 +46,7 @@ static void		RememberSyncObject(void *objPtr,
  * table.
  */
 
-#ifndef TCL_THREADS
+#if defined(TCL_THREADS) && !TCL_THREADS
 #undef Tcl_MutexLock
 #undef Tcl_MutexUnlock
 #undef Tcl_MutexFinalize
@@ -79,7 +79,7 @@ Tcl_GetThreadData(
     int size)			/* Size of storage block */
 {
     void *result;
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     /*
      * Initialize the key for this thread.
      */
@@ -126,7 +126,7 @@ TclThreadDataKeyGet(
     Tcl_ThreadDataKey *keyPtr)	/* Identifier for the data chunk. */
 
 {
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     return TclThreadStorageKeyGet(keyPtr);
 #else /* TCL_THREADS */
     return *keyPtr;
@@ -273,7 +273,7 @@ void
 Tcl_MutexFinalize(
     Tcl_Mutex *mutexPtr)
 {
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     TclpFinalizeMutex(mutexPtr);
 #endif
     TclpMasterLock();
@@ -326,7 +326,7 @@ void
 Tcl_ConditionFinalize(
     Tcl_Condition *condPtr)
 {
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     TclpFinalizeCondition(condPtr);
 #endif
     TclpMasterLock();
@@ -356,7 +356,7 @@ void
 TclFinalizeThreadData(int quick)
 {
     TclFinalizeThreadDataThread();
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+#if (!defined(TCL_THREADS) || TCL_THREADS) && defined(USE_THREAD_ALLOC)
     if (!quick) {
 	/*
 	 * Quick exit principle makes it useless to terminate allocators
@@ -389,7 +389,7 @@ TclFinalizeSynchronization(void)
     int i;
     void *blockPtr;
     Tcl_ThreadDataKey *keyPtr;
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     Tcl_Mutex *mutexPtr;
     Tcl_Condition *condPtr;
 
@@ -413,7 +413,7 @@ TclFinalizeSynchronization(void)
     keyRecord.max = 0;
     keyRecord.num = 0;
 
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     /*
      * Call thread storage master cleanup.
      */
@@ -473,12 +473,12 @@ Tcl_ExitThread(
     int status)
 {
     Tcl_FinalizeThread();
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     TclpThreadExit(status);
 #endif
 }
 
-#ifndef TCL_THREADS
+#if defined(TCL_THREADS) && !TCL_THREADS
 
 /*
  *----------------------------------------------------------------------

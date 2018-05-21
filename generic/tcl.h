@@ -89,6 +89,10 @@ extern "C" {
 #  define JOIN(a,b) JOIN1(a,b)
 #  define JOIN1(a,b) a##b
 #endif
+
+#ifndef TCL_THREADS
+#   define TCL_THREADS 1
+#endif
 #endif /* !TCL_NO_DEPRECATED */
 
 /*
@@ -107,7 +111,7 @@ extern "C" {
  * using threads.
  */
 
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 #define TCL_DECLARE_MUTEX(name) static Tcl_Mutex name;
 #else
 #define TCL_DECLARE_MUTEX(name)
@@ -2562,7 +2566,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * when compiling without thread support.
  */
 
-#ifndef TCL_THREADS
+#if defined(TCL_THREADS) && !TCL_THREADS
 #undef  Tcl_MutexLock
 #define Tcl_MutexLock(mutexPtr)
 #undef  Tcl_MutexUnlock
@@ -2575,7 +2579,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
 #undef  Tcl_ConditionFinalize
 #define Tcl_ConditionFinalize(condPtr)
-#endif /* TCL_THREADS */
+#endif /* !TCL_THREADS */
 
 /*
  *----------------------------------------------------------------------------
