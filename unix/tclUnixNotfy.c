@@ -18,7 +18,7 @@
  */
 
 static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
-#if defined(TCL_THREADS) && !TCL_THREADS
+#if !TCL_THREADS
 # undef NOTIFIER_EPOLL
 # undef NOTIFIER_KQUEUE
 # define NOTIFIER_SELECT
@@ -106,7 +106,7 @@ Tcl_AlertNotifier(
 	return;
     } else {
 #ifdef NOTIFIER_SELECT
-#if !defined(TCL_THREADS) || TCL_THREADS
+#if TCL_THREADS
 	ThreadSpecificData *tsdPtr = clientData;
 
 	pthread_mutex_lock(&notifierMutex);
@@ -197,7 +197,7 @@ Tcl_ServiceModeHook(
 	return;
     } else if (mode == TCL_SERVICE_ALL) {
 #ifdef NOTIFIER_SELECT
-#if !defined(TCL_THREADS) || TCL_THREADS
+#if TCL_THREADS
 	StartNotifierThread("Tcl_ServiceModeHook");
 #endif
 #endif /* NOTIFIER_SELECT */
@@ -279,7 +279,7 @@ FileHandlerEventProc(
 }
 
 #ifdef NOTIFIER_SELECT
-#if !defined(TCL_THREADS) || TCL_THREADS
+#if TCL_THREADS
 /*
  *----------------------------------------------------------------------
  *
