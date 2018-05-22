@@ -13,7 +13,7 @@
 
 #include "tclInt.h"
 
-#if !defined(TCL_THREADS) || TCL_THREADS
+#if TCL_THREADS
 #include <signal.h>
 
 /*

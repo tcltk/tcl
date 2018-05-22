@@ -12,7 +12,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#ifdef NOTIFIER_EPOLL
+#if defined(NOTIFIER_EPOLL) && TCL_THREADS
 
 #define _GNU_SOURCE		/* For pipe2(2) */
 #include "tclInt.h"
