@@ -13,7 +13,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#if defined(NOTIFIER_KQUEUE) && (!defined(TCL_THREADS) || TCL_THREADS)
+#if defined(NOTIFIER_KQUEUE) && TCL_THREADS
 
 #include "tclInt.h"
 #ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
