@@ -4976,7 +4976,7 @@ fi
 fi
     case $system in
 	AIX-*)
-	    if test "${TCL_THREADS}" = "1" -a "$GCC" != "yes"; then :
+	    if test "$GCC" != "yes"; then :
 
 		# AIX requires the _r compiler when gcc isn't being used
 		case "${CC}" in
@@ -5177,9 +5177,6 @@ fi
 $as_echo "$ac_cv_cygwin" >&6; }
 	    if test "$ac_cv_cygwin" = "no"; then
 		as_fn_error $? "${CC} is not a cygwin compiler." "$LINENO" 5
-	    fi
-	    if test "x${TCL_THREADS}" = "x0"; then
-		as_fn_error $? "CYGWIN compile is only supported with --enable-threads" "$LINENO" 5
 	    fi
 	    do64bit_ok=yes
 	    if test "x${SHARED_BUILD}" = "x1"; then
@@ -5627,14 +5624,10 @@ fi
 	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
 	    LDFLAGS="-Wl,-export-dynamic"
 	    CFLAGS_OPTIMIZE="-O2"
-	    if test "${TCL_THREADS}" = "1"; then :
-
-		# On OpenBSD:	Compile with -pthread
-		#		Don't link with -lpthread
-		LIBS=`echo $LIBS | sed s/-lpthread//`
-		CFLAGS="$CFLAGS -pthread"
-
-fi
+	    # On OpenBSD:	Compile with -pthread
+	    #		Don't link with -lpthread
+	    LIBS=`echo $LIBS | sed s/-lpthread//`
+	    CFLAGS="$CFLAGS -pthread"
 	    # OpenBSD doesn't do version numbers with dots.
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
@@ -5652,14 +5645,10 @@ fi
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 fi
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-	    if test "${TCL_THREADS}" = "1"; then :
-
-		# The -pthread needs to go in the CFLAGS, not LIBS
-		LIBS=`echo $LIBS | sed s/-pthread//`
-		CFLAGS="$CFLAGS -pthread"
-	    	LDFLAGS="$LDFLAGS -pthread"
-
-fi
+	    # The -pthread needs to go in the CFLAGS, not LIBS
+	    LIBS=`echo $LIBS | sed s/-pthread//`
+	    CFLAGS="$CFLAGS -pthread"
+	    LDFLAGS="$LDFLAGS -pthread"
 	    ;;
 	FreeBSD-*)
 	    # This configuration from FreeBSD Ports.
@@ -5675,13 +5664,10 @@ fi
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 fi
-	    if test "${TCL_THREADS}" = "1"; then :
-
-		# The -pthread needs to go in the LDFLAGS, not LIBS
-		LIBS=`echo $LIBS | sed s/-pthread//`
-		CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-		LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
-fi
+	    # The -pthread needs to go in the LDFLAGS, not LIBS
+	    LIBS=`echo $LIBS | sed s/-pthread//`
+	    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+	    LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
 	    case $system in
 	    FreeBSD-3.*)
 		# Version numbers are dot-stripped by system policy.
@@ -6043,21 +6029,17 @@ else
 		CFLAGS="$CFLAGS -DHAVE_TZSET -std1 -ieee"
 fi
 	    # see pthread_intro(3) for pthread support on osf1, k.furukawa
-	    if test "${TCL_THREADS}" = 1; then :
+	    CFLAGS="$CFLAGS -DHAVE_PTHREAD_ATTR_SETSTACKSIZE"
+	    CFLAGS="$CFLAGS -DTCL_THREAD_STACK_MIN=PTHREAD_STACK_MIN*64"
+	    LIBS=`echo $LIBS | sed s/-lpthreads//`
+	    if test "$GCC" = yes; then :
 
-		CFLAGS="$CFLAGS -DHAVE_PTHREAD_ATTR_SETSTACKSIZE"
-		CFLAGS="$CFLAGS -DTCL_THREAD_STACK_MIN=PTHREAD_STACK_MIN*64"
-		LIBS=`echo $LIBS | sed s/-lpthreads//`
-		if test "$GCC" = yes; then :
-
-		    LIBS="$LIBS -lpthread -lmach -lexc"
+		LIBS="$LIBS -lpthread -lmach -lexc"
 
 else
 
-		    CFLAGS="$CFLAGS -pthread"
-		    LDFLAGS="$LDFLAGS -pthread"
-
-fi
+		CFLAGS="$CFLAGS -pthread"
+		LDFLAGS="$LDFLAGS -pthread"
 
 fi
 	    ;;
@@ -7316,7 +7298,7 @@ $as_echo "#define NO_UNAME 1" >>confdefs.h
 fi
 
 
-if test "`uname -s`" = "Darwin" && test "${TCL_THREADS}" = 1 && \
+if test "`uname -s`" = "Darwin" && \
 	test "`uname -r | awk -F. '{print $1}'`" -lt 7; then
     # prior to Darwin 7, realpath is not threadsafe, so don't
     # use it when threads are enabled, c.f. bug # 711232
@@ -7439,8 +7421,7 @@ fi
 #	Look for thread-safe variants of some library functions.
 #--------------------------------------------------------------------
 
-if test "${TCL_THREADS}" = 1; then
-    ac_fn_c_check_func "$LINENO" "getpwuid_r" "ac_cv_func_getpwuid_r"
+ac_fn_c_check_func "$LINENO" "getpwuid_r" "ac_cv_func_getpwuid_r"
 if test "x$ac_cv_func_getpwuid_r" = xyes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getpwuid_r with 5 args" >&5
@@ -7536,7 +7517,7 @@ $as_echo "#define HAVE_GETPWUID_R 1" >>confdefs.h
 
 fi
 
-    ac_fn_c_check_func "$LINENO" "getpwnam_r" "ac_cv_func_getpwnam_r"
+ac_fn_c_check_func "$LINENO" "getpwnam_r" "ac_cv_func_getpwnam_r"
 if test "x$ac_cv_func_getpwnam_r" = xyes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getpwnam_r with 5 args" >&5
@@ -7632,7 +7613,7 @@ $as_echo "#define HAVE_GETPWNAM_R 1" >>confdefs.h
 
 fi
 
-    ac_fn_c_check_func "$LINENO" "getgrgid_r" "ac_cv_func_getgrgid_r"
+ac_fn_c_check_func "$LINENO" "getgrgid_r" "ac_cv_func_getgrgid_r"
 if test "x$ac_cv_func_getgrgid_r" = xyes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getgrgid_r with 5 args" >&5
@@ -7728,7 +7709,7 @@ $as_echo "#define HAVE_GETGRGID_R 1" >>confdefs.h
 
 fi
 
-    ac_fn_c_check_func "$LINENO" "getgrnam_r" "ac_cv_func_getgrnam_r"
+ac_fn_c_check_func "$LINENO" "getgrnam_r" "ac_cv_func_getgrnam_r"
 if test "x$ac_cv_func_getgrnam_r" = xyes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getgrnam_r with 5 args" >&5
@@ -7824,11 +7805,11 @@ $as_echo "#define HAVE_GETGRNAM_R 1" >>confdefs.h
 
 fi
 
-    if test "`uname -s`" = "Darwin" && \
-	    test "`uname -r | awk -F. '{print $1}'`" -gt 5; then
-	# Starting with Darwin 6 (Mac OSX 10.2), gethostbyX
-	# are actually MT-safe as they always return pointers
-	# from TSD instead of static storage.
+if test "`uname -s`" = "Darwin" && \
+	test "`uname -r | awk -F. '{print $1}'`" -gt 5; then
+    # Starting with Darwin 6 (Mac OSX 10.2), gethostbyX
+    # are actually MT-safe as they always return pointers
+    # from TSD instead of static storage.
 
 $as_echo "#define HAVE_MTSAFE_GETHOSTBYNAME 1" >>confdefs.h
 
@@ -7836,11 +7817,11 @@ $as_echo "#define HAVE_MTSAFE_GETHOSTBYNAME 1" >>confdefs.h
 $as_echo "#define HAVE_MTSAFE_GETHOSTBYADDR 1" >>confdefs.h
 
 
-    elif test "`uname -s`" = "HP-UX" && \
-	      test "`uname -r|sed -e 's|B\.||' -e 's|\..*$||'`" -gt 10; then
-        # Starting with HPUX 11.00 (we believe), gethostbyX
-        # are actually MT-safe as they always return pointers
-	# from TSD instead of static storage.
+elif test "`uname -s`" = "HP-UX" && \
+	test "`uname -r|sed -e 's|B\.||' -e 's|\..*$||'`" -gt 10; then
+    # Starting with HPUX 11.00 (we believe), gethostbyX
+    # are actually MT-safe as they always return pointers
+    # from TSD instead of static storage.
 
 $as_echo "#define HAVE_MTSAFE_GETHOSTBYNAME 1" >>confdefs.h
 
@@ -7848,8 +7829,8 @@ $as_echo "#define HAVE_MTSAFE_GETHOSTBYNAME 1" >>confdefs.h
 $as_echo "#define HAVE_MTSAFE_GETHOSTBYADDR 1" >>confdefs.h
 
 
-    else
-	ac_fn_c_check_func "$LINENO" "gethostbyname_r" "ac_cv_func_gethostbyname_r"
+else
+    ac_fn_c_check_func "$LINENO" "gethostbyname_r" "ac_cv_func_gethostbyname_r"
 if test "x$ac_cv_func_gethostbyname_r" = xyes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gethostbyname_r with 6 args" >&5
@@ -7986,7 +7967,7 @@ $as_echo "#define HAVE_GETHOSTBYNAME_R 1" >>confdefs.h
 
 fi
 
-	ac_fn_c_check_func "$LINENO" "gethostbyaddr_r" "ac_cv_func_gethostbyaddr_r"
+    ac_fn_c_check_func "$LINENO" "gethostbyaddr_r" "ac_cv_func_gethostbyaddr_r"
 if test "x$ac_cv_func_gethostbyaddr_r" = xyes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gethostbyaddr_r with 7 args" >&5
@@ -8088,7 +8069,6 @@ $as_echo "#define HAVE_GETHOSTBYADDR_R 1" >>confdefs.h
 
 fi
 
-    fi
 fi
 
 #---------------------------------------------------------------------------
@@ -8280,10 +8260,6 @@ fi;;
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: OSX" >&5
 $as_echo "OSX" >&6; };;
   *)
-	cat >>confdefs.h <<_ACEOF
-#define NOTIFIER_SELECT 1
-_ACEOF
-
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
 $as_echo "none" >&6; };;
 esac
