@@ -1441,11 +1441,13 @@ TclpGetUserHome(
     Tcl_DString ds;
     int nameLen = -1;
     int badDomain = 0;
-    char *domain;
+    char *domain, *user;
+    const char *nameStart;
     WCHAR *wName, *wHomeDir, *wDomain, **wDomainPtr = &wDomain;
     WCHAR buf[MAX_PATH];
     LPCWSTR wServername = NULL;
 
+    nameStart = name;
     Tcl_DStringInit(bufferPtr);
     wDomain = NULL;
     domain = strchr(name, '@');
@@ -1455,10 +1457,20 @@ TclpGetUserHome(
 	badDomain = NetGetDCName(NULL, wName, (LPBYTE *) wDomainPtr);
 	Tcl_DStringFree(&ds);
 	nameLen = domain - name;
+    } else {
+        user = strchr(name, '\\');
+        if (user != NULL) {
+	    Tcl_DStringInit(&ds);
+	    wName = Tcl_UtfToUniCharDString(name, user - name, &ds);
+	    badDomain = NetGetDCName(NULL, wName, (LPBYTE *) wDomainPtr);
+	    Tcl_DStringFree(&ds);
+            nameStart = user + 1;
+	    nameLen = name + strlen(name) - 1 - user;
+        }
     }
     if (badDomain == 0) {
 	Tcl_DStringInit(&ds);
-	wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
+	wName = Tcl_UtfToUniCharDString(nameStart, nameLen, &ds);
         NetGetDCName(NULL, wDomain, (LPBYTE *) &wServername);
 	if (NetUserGetInfo(wServername, wName, 1, (LPBYTE *) uiPtrPtr) == 0) {
 	    wHomeDir = uiPtr->usri1_home_dir;
@@ -1477,7 +1489,7 @@ TclpGetUserHome(
 		}
 		Tcl_UniCharToUtfDString(buf, size-1, bufferPtr);
 		Tcl_DStringAppend(bufferPtr, "/", -1);
-		Tcl_DStringAppend(bufferPtr, name, -1);
+		Tcl_DStringAppend(bufferPtr, nameStart, nameLen);
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
 	    NetApiBufferFree((void *) uiPtr);

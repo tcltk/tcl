@@ -270,6 +270,9 @@ test filesystem-1.30.1 {normalisation of existing user} -body {
 test filesystem-1.30.2 {normalisation of nonexistent user specified as user@domain} -body {
     file normalize ~nonexistentuser@nonexistentdomain
 } -returnCodes error -result {user "nonexistentuser@nonexistentdomain" doesn't exist}
+test filesystem-1.30.3 {normalisation of nonexistent user specified as domain\user} -body {
+    file normalize ~nonexistentdomain\\nonexistentuser
+} -returnCodes error -result {user "nonexistentdomain\nonexistentuser" doesn't exist}
 test filesystem-1.31 {link normalisation: link near filesystem root} {testsetplatform} {
     testsetplatform unix
     file normalize /foo/../bar
