@@ -136,6 +136,26 @@ typedef int ptrdiff_t;
 #   define vsnprintf _vsnprintf
 #endif
 
+#if !defined(TCL_THREADS)
+#   define TCL_THREADS 1
+#endif
+#if !TCL_THREADS
+#   undef TCL_DECLARE_MUTEX
+#   define TCL_DECLARE_MUTEX(name)
+#   undef  Tcl_MutexLock
+#   define Tcl_MutexLock(mutexPtr)
+#   undef  Tcl_MutexUnlock
+#   define Tcl_MutexUnlock(mutexPtr)
+#   undef  Tcl_MutexFinalize
+#   define Tcl_MutexFinalize(mutexPtr)
+#   undef  Tcl_ConditionNotify
+#   define Tcl_ConditionNotify(condPtr)
+#   undef  Tcl_ConditionWait
+#   define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
+#   undef  Tcl_ConditionFinalize
+#   define Tcl_ConditionFinalize(condPtr)
+#endif
+
 /*
  * The following procedures allow namespaces to be customized to support
  * special name resolution rules for commands/variables.
@@ -4200,9 +4220,6 @@ typedef const char *TclDTraceStr;
 	} \
     }
 
-#if !defined(TCL_THREADS)
-#   define TCL_THREADS 1
-#endif
 #if TCL_THREADS && !defined(USE_THREAD_ALLOC)
 #   define USE_THREAD_ALLOC 1
 #endif

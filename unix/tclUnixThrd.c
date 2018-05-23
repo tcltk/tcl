@@ -166,7 +166,6 @@ Tcl_JoinThread(
 #endif
 }
 
-#if TCL_THREADS
 /*
  *----------------------------------------------------------------------
  *
@@ -187,9 +186,12 @@ void
 TclpThreadExit(
     int status)
 {
+#if TCL_THREADS
     pthread_exit(INT2PTR(status));
-}
+#else /* TCL_THREADS */
+    exit(status);
 #endif /* TCL_THREADS */
+}
 
 /*
  *----------------------------------------------------------------------
