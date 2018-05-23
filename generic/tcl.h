@@ -88,15 +88,10 @@ extern "C" {
 #ifndef RC_INVOKED
 
 /*
- * Special macro to define mutexes, that doesn't do anything if we are not
- * using threads.
+ * Special macro to define mutexes.
  */
 
-#ifdef TCL_THREADS
 #define TCL_DECLARE_MUTEX(name) static Tcl_Mutex name;
-#else
-#define TCL_DECLARE_MUTEX(name)
-#endif
 
 /*
  * Tcl's public routine Tcl_FSSeek() uses the values SEEK_SET, SEEK_CUR, and
@@ -1995,16 +1990,16 @@ typedef struct Tcl_EncodingType {
 
 /*
  * The maximum number of bytes that are necessary to represent a single
- * Unicode character in UTF-8. The valid values should be 3, 4 or 6
- * (or perhaps 1 if we want to support a non-unicode enabled core). If 3 or
- * 4, then Tcl_UniChar must be 2-bytes in size (UCS-2) (the default). If 6,
+ * Unicode character in UTF-8. The valid values are 4 and 6
+ * (or perhaps 1 if we want to support a non-unicode enabled core). If 4,
+ * then Tcl_UniChar must be 2-bytes in size (UCS-2) (the default). If 6,
  * then Tcl_UniChar must be 4-bytes in size (UCS-4). At this time UCS-2 mode
  * is the default and recommended mode. UCS-4 is experimental and not
  * recommended. It works for the core, but most extensions expect UCS-2.
  */
 
 #ifndef TCL_UTF_MAX
-#define TCL_UTF_MAX		3
+#define TCL_UTF_MAX		4
 #endif
 
 /*
@@ -2194,10 +2189,10 @@ typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------------
  * The following constant is used to test for older versions of Tcl in the
- * stubs tables.
+ * stubs tables. If TCL_UTF_MAX>4 use a different value.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACB + (int) sizeof(void *))
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACB + (int) sizeof(void *) + (TCL_UTF_MAX>4))
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2210,6 +2205,11 @@ const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 			    int exact, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
+#if defined(_WIN32)
+    TCL_NORETURN1 void Tcl_ConsolePanic(const char *format, ...);
+#else
+#   define Tcl_ConsolePanic NULL
+#endif
 
 #ifdef USE_TCL_STUBS
 #if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
@@ -2241,7 +2241,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  */
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
-	    ((Tcl_CreateInterp)()))
+	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp)()))
 EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
@@ -2381,27 +2381,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 	(*((tablePtr)->findProc))(tablePtr, (const char *)(key))
 #define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
-
-/*
- *----------------------------------------------------------------------------
- * Macros that eliminate the overhead of the thread synchronization functions
- * when compiling without thread support.
- */
-
-#ifndef TCL_THREADS
-#undef  Tcl_MutexLock
-#define Tcl_MutexLock(mutexPtr)
-#undef  Tcl_MutexUnlock
-#define Tcl_MutexUnlock(mutexPtr)
-#undef  Tcl_MutexFinalize
-#define Tcl_MutexFinalize(mutexPtr)
-#undef  Tcl_ConditionNotify
-#define Tcl_ConditionNotify(condPtr)
-#undef  Tcl_ConditionWait
-#define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
-#undef  Tcl_ConditionFinalize
-#define Tcl_ConditionFinalize(condPtr)
-#endif /* TCL_THREADS */
 
 #endif /* RC_INVOKED */
 

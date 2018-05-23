@@ -13,9 +13,9 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#ifdef NOTIFIER_KQUEUE
-
 #include "tclInt.h"
+#if defined(NOTIFIER_KQUEUE) && TCL_THREADS
+
 #ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
 				 * in tclMacOSXNotify.c */
 #include <signal.h>

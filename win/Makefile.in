@@ -401,7 +401,8 @@ REG_OBJS = tclWinReg.$(OBJEXT)
 STUB_OBJS = \
 	tclStubLib.$(OBJEXT) \
 	tclTomMathStubLib.$(OBJEXT) \
-	tclOOStubLib.$(OBJEXT)
+	tclOOStubLib.$(OBJEXT) \
+	tclWinPanic.$(OBJEXT)
 
 TCLSH_OBJS = tclAppInit.$(OBJEXT)
 
@@ -538,6 +539,9 @@ tclTomMathStubLib.${OBJEXT}: tclTomMathStubLib.c
 tclOOStubLib.${OBJEXT}: tclOOStubLib.c
 	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
 
+tclWinPanic.${OBJEXT}: tclWinPanic.c
+	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
+
 # Implicit rule for all object files that will end up in the Tcl library
 
 %.${OBJEXT}: %.c
@@ -653,8 +657,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)"; \
 	    done;
-	@echo "Installing package http 2.8.12 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl9/9.0/http-2.8.12.tm;
+	@echo "Installing package http 2.8.13 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl9/9.0/http-2.8.13.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \
