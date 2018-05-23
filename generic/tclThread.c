@@ -254,6 +254,7 @@ TclRememberMutex(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_MutexFinalize
 void
 Tcl_MutexFinalize(
     Tcl_Mutex *mutexPtr)
@@ -307,6 +308,7 @@ TclRememberCondition(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_ConditionFinalize
 void
 Tcl_ConditionFinalize(
     Tcl_Condition *condPtr)
@@ -458,9 +460,7 @@ Tcl_ExitThread(
     int status)
 {
     Tcl_FinalizeThread();
-#if TCL_THREADS
     TclpThreadExit(status);
-#endif
 }
 
 #if !TCL_THREADS
