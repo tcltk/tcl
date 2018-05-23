@@ -12,6 +12,7 @@
  */
 
 #include <poll.h>
+#include "tclInt.h"
 
 /*
  * Static routines defined in this file.
