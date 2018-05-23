@@ -826,7 +826,7 @@ declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
 declare 230 {
-    void Tcl_SetPanicProc(TCL_NORETURN Tcl_PanicProc *panicProc)
+    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 }
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
@@ -1164,16 +1164,16 @@ declare 319 {
 	    Tcl_QueuePosition position)
 }
 declare 320 {
-    Tcl_UniChar Tcl_UniCharAtIndex(const char *src, size_t index)
+    int Tcl_UniCharAtIndex(const char *src, size_t index)
 }
 declare 321 {
-    Tcl_UniChar Tcl_UniCharToLower(int ch)
+    int Tcl_UniCharToLower(int ch)
 }
 declare 322 {
-    Tcl_UniChar Tcl_UniCharToTitle(int ch)
+    int Tcl_UniCharToTitle(int ch)
 }
 declare 323 {
-    Tcl_UniChar Tcl_UniCharToUpper(int ch)
+    int Tcl_UniCharToUpper(int ch)
 }
 declare 324 {
     int Tcl_UniCharToUtf(int ch, char *buf)
@@ -1370,7 +1370,7 @@ declare 380 {
     size_t Tcl_GetCharLength(Tcl_Obj *objPtr)
 }
 declare 381 {
-    Tcl_UniChar Tcl_GetUniChar(Tcl_Obj *objPtr, int index)
+    int Tcl_GetUniChar(Tcl_Obj *objPtr, int index)
 }
 declare 382 {
     Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)
@@ -1895,7 +1895,7 @@ declare 518 {
 
 # TIP#121 (exit handler) dkf for Joe Mistachkin
 declare 519 {
-    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN Tcl_ExitProc *proc)
+    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
 }
 
 # TIP#143 (resource limits) dkf

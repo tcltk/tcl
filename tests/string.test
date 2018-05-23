@@ -31,7 +31,7 @@ proc makeShared {s} {uplevel 1 [list lappend copy $s]; return $s}
 testConstraint testobj [expr {[info commands testobj] ne {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
-testConstraint fullutf [expr {[format %c 0x010000] != "\ufffd"}]
+testConstraint tip389 [expr {[string length \U010000] == 2}]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -487,6 +487,9 @@ test string-5.19.$noComp {string index, bytearray object out of bounds} {
 test string-5.20.$noComp {string index, bytearray object out of bounds} {
     run {string index [binary format I* {0x50515253 0x52}] 20}
 } {}
+test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} tip389 {
+    run {list [string index a\U100000b 1] [string index a\U100000b 2] [string index a\U100000b 3]}
+} [list \U100000 {} b]
 
 
 proc largest_int {} {
@@ -1481,7 +1484,7 @@ test string-12.22.$noComp {string range, shimmering binary/index} {
     binary scan $s a* x
     run {string range $s $s end}
 } 000000001
-test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} fullutf {
+test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} tip389 {
     run {list [string range a\U100000b 1 1] [string range a\U100000b 2 2] [string range a\U100000b 3 3]}
 } [list \U100000 {} b]
 
@@ -1722,6 +1725,10 @@ test string-17.7.$noComp {string totitle, unicode} {
 test string-17.8.$noComp {string totitle, compiled} {
     lindex [run {string totitle [list aa bb [list cc]]}] 0
 } Aa
+test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} tip389 {
+    run {list [string totitle a\U118c0c 1 1] [string totitle a\U118c0c 2 2] \
+	[string totitle a\U118c0c 3 3]}
+} [list a\U118a0c a\U118c0C a\U118c0C]
 
 test string-18.1.$noComp {string trim} {
     list [catch {run {string trim}} msg] $msg

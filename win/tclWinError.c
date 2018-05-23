@@ -381,7 +381,7 @@ TclWinConvertError(
  *----------------------------------------------------------------------
  */
 
-TCL_NORETURN void
+void
 tclWinDebugPanic(
     const char *format, ...)
 {
@@ -406,16 +406,13 @@ tclWinDebugPanic(
 	}
 	OutputDebugStringW(msgString);
     } else {
+	if (!isatty(fileno(stderr))) {
+	    fprintf(stderr, "\xef\xbb\xbf");
+	}
 	vfprintf(stderr, format, argList);
 	fprintf(stderr, "\n");
 	fflush(stderr);
     }
-#   if defined(__GNUC__)
-    __builtin_trap();
-#   else
-    DebugBreak();
-#   endif
-    abort();
 }
 #endif
 /*
