@@ -57,11 +57,19 @@
  */
 
 #ifdef HAVE_STRUCT_DIRENT64
+typedef DIR64		TclDIR;
 typedef struct dirent64	Tcl_DirEntry;
 #   define TclOSreaddir		readdir64
+#   define TclOSopendir		opendir64
+#   define TclOSrewinddir	rewinddir64
+#   define TclOSclosedir	closedir64
 #else
+typedef DIR		TclDIR;
 typedef struct dirent	Tcl_DirEntry;
 #   define TclOSreaddir		readdir
+#   define TclOSopendir		opendir
+#   define TclOSrewinddir	rewinddir
+#   define TclOSclosedir	closedir
 #endif
 
 #ifdef HAVE_TYPE_OFF64_T
@@ -602,10 +610,8 @@ extern char **		environ;
 #	    undef HAVE_COPYFILE
 #	endif
 #	if MAC_OS_X_VERSION_MAX_ALLOWED < 1030
-#	    ifdef TCL_THREADS
-		/* prior to 10.3, realpath is not threadsafe, c.f. bug 711232 */
-#		define NO_REALPATH 1
-#	    endif
+	    /* prior to 10.3, realpath is not threadsafe, c.f. bug 711232 */
+#	    define NO_REALPATH 1
 #	    undef HAVE_LANGINFO
 #	endif
 #   endif /* MAC_OS_X_VERSION_MAX_ALLOWED */
@@ -678,7 +684,7 @@ typedef int socklen_t;
 
 #define TclpExit	exit
 
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 #   include <pthread.h>
 #endif /* TCL_THREADS */
 

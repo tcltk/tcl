@@ -68,13 +68,6 @@ MODULE_SCOPE int	TclWinSymLinkCopyDirectory(const TCHAR *LinkOriginal,
 MODULE_SCOPE int	TclWinSymLinkDelete(const TCHAR *LinkOriginal,
 			    int linkOnly);
 MODULE_SCOPE int        TclWinFileOwned(Tcl_Obj *);
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-MODULE_SCOPE void	TclWinFreeAllocCache(void);
-MODULE_SCOPE void	TclFreeAllocCache(void *);
-MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
-MODULE_SCOPE void *	TclpGetAllocCache(void);
-MODULE_SCOPE void	TclpSetAllocCache(void *);
-#endif /* TCL_THREADS */
 
 /* Needed by tclWinFile.c and tclWinFCmd.c */
 #ifndef FILE_ATTRIBUTE_REPARSE_POINT

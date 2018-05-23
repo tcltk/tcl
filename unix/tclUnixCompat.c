@@ -45,7 +45,7 @@
  * library calls.
  */
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 
 typedef struct {
     struct passwd pwd;
@@ -180,7 +180,7 @@ struct passwd *
 TclpGetPwNam(
     const char *name)
 {
-#if !defined(TCL_THREADS)
+#if !TCL_THREADS
     return getpwnam(name);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -260,7 +260,7 @@ struct passwd *
 TclpGetPwUid(
     uid_t uid)
 {
-#if !defined(TCL_THREADS)
+#if !TCL_THREADS
     return getpwuid(uid);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -363,7 +363,7 @@ struct group *
 TclpGetGrNam(
     const char *name)
 {
-#if !defined(TCL_THREADS)
+#if !TCL_THREADS
     return getgrnam(name);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -443,7 +443,7 @@ struct group *
 TclpGetGrGid(
     gid_t gid)
 {
-#if !defined(TCL_THREADS)
+#if !TCL_THREADS
     return getgrgid(gid);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -546,7 +546,7 @@ struct hostent *
 TclpGetHostByName(
     const char *name)
 {
-#if !defined(TCL_THREADS) || defined(HAVE_MTSAFE_GETHOSTBYNAME)
+#if !TCL_THREADS || defined(HAVE_MTSAFE_GETHOSTBYNAME)
     return gethostbyname(name);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -616,7 +616,7 @@ TclpGetHostByAddr(
     int length,
     int type)
 {
-#if !defined(TCL_THREADS) || defined(HAVE_MTSAFE_GETHOSTBYADDR)
+#if !TCL_THREADS || defined(HAVE_MTSAFE_GETHOSTBYADDR)
     return gethostbyaddr(addr, length, type);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
