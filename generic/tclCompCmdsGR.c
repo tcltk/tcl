@@ -27,7 +27,6 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
 			    Tcl_Obj *returnOpts);
 static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr);
-
 
 /*
  *----------------------------------------------------------------------
@@ -127,9 +126,12 @@ TclCompileGlobalCmd(
 	    return TCL_ERROR;
 	}
 
-	/* TODO: Consider what value can pass through the
-	 * IndexTailVarIfKnown() screen.  Full CompileWord()
-	 * likely does not apply here.  Push known value instead. */
+	/*
+	 * TODO: Consider what value can pass through the
+	 * IndexTailVarIfKnown() screen. Full CompileWord() likely does not
+	 * apply here. Push known value instead.
+	 */
+
 	CompileWord(envPtr, varTokenPtr, interp, i);
 	TclEmitInstInt4(	INST_NSUPVAR, localIndex,	envPtr);
     }
@@ -270,7 +272,7 @@ TclCompileIfCmd(
 		jumpIndex = jumpFalseFixupArray.next;
 		jumpFalseFixupArray.next++;
 		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
-			jumpFalseFixupArray.fixup+jumpIndex);
+			jumpFalseFixupArray.fixup + jumpIndex);
 	    }
 	    code = TCL_OK;
 	}
@@ -317,7 +319,7 @@ TclCompileIfCmd(
 	    }
 	    jumpEndFixupArray.next++;
 	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-		    jumpEndFixupArray.fixup+jumpIndex);
+		    jumpEndFixupArray.fixup + jumpIndex);
 
 	    /*
 	     * Fix the target of the jumpFalse after the test. Generate a 4
@@ -329,7 +331,7 @@ TclCompileIfCmd(
 
 	    TclAdjustStackDepth(-1, envPtr);
 	    if (TclFixupForwardJumpToHere(envPtr,
-		    jumpFalseFixupArray.fixup+jumpIndex, 120)) {
+		    jumpFalseFixupArray.fixup + jumpIndex, 120)) {
 		/*
 		 * Adjust the code offset for the proceeding jump to the end
 		 * of the "if" command.
@@ -412,7 +414,7 @@ TclCompileIfCmd(
     for (j = jumpEndFixupArray.next;  j > 0;  j--) {
 	jumpIndex = (j - 1);	/* i.e. process the closest jump first. */
 	if (TclFixupForwardJumpToHere(envPtr,
-		jumpEndFixupArray.fixup+jumpIndex, 127)) {
+		jumpEndFixupArray.fixup + jumpIndex, 127)) {
 	    /*
 	     * Adjust the immediately preceeding "ifFalse" jump. We moved it's
 	     * target (just after this jump) down three bytes.
@@ -920,7 +922,7 @@ TclCompileLappendCmd(
 	CompileWord(envPtr, valueTokenPtr, interp, i);
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
-    TclEmitInstInt4(	    INST_LIST, numWords-2,		envPtr);
+    TclEmitInstInt4(	    INST_LIST, numWords - 2,		envPtr);
     if (isScalar) {
 	if (localIndex < 0) {
 	    TclEmitOpcode(  INST_LAPPEND_LIST_STK,		envPtr);
@@ -997,7 +999,7 @@ TclCompileLassignCmd(
 	 */
 
 	PushVarNameWord(interp, tokenPtr, envPtr, 0, &localIndex,
-		&isScalar, idx+2);
+		&isScalar, idx + 2);
 
 	/*
 	 * Emit instructions to get the idx'th item out of the list value on
@@ -1414,7 +1416,7 @@ TclCompileLinsertCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
-    TclEmitInstInt4(		INST_LIST, i-3,			envPtr);
+    TclEmitInstInt4(		INST_LIST, i - 3,		envPtr);
 
     if (idx == TCL_INDEX_START) {
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
@@ -1439,7 +1441,7 @@ TclCompileLinsertCmd(
 	}
 	TclEmitInstInt4(	INST_OVER, 1,			envPtr);
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
-	TclEmitInt4(			idx-1,			envPtr);
+	TclEmitInt4(			idx - 1,		envPtr);
 	TclEmitInstInt4(	INST_REVERSE, 3,		envPtr);
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, idx,	envPtr);
 	TclEmitInt4(			TCL_INDEX_END,		envPtr);
@@ -2234,7 +2236,7 @@ TclCompileRegexpCmd(
     }
 
     if (!simple) {
-	CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords-2);
+	CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords - 2);
     }
 
     /*
@@ -2242,7 +2244,7 @@ TclCompileRegexpCmd(
      */
 
     varTokenPtr = TokenAfter(varTokenPtr);
-    CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords-1);
+    CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords - 1);
 
     if (simple) {
 	if (exact && !nocase) {
@@ -2426,7 +2428,7 @@ TclCompileRegsubCmd(
     PushLiteral(envPtr,	bytes, len);
     bytes = TclGetStringFromObj(replacementObj, &len);
     PushLiteral(envPtr,	bytes, len);
-    CompileWord(envPtr,	stringTokenPtr, interp, parsePtr->numWords-2);
+    CompileWord(envPtr,	stringTokenPtr, interp, parsePtr->numWords - 2);
     TclEmitOpcode(	INST_STR_MAP,	envPtr);
 
   done:
@@ -2555,7 +2557,7 @@ TclCompileReturnCmd(
      */
 
     if (explicitResult) {
-	 CompileWord(envPtr, wordTokenPtr, interp, numWords-1);
+	 CompileWord(envPtr, wordTokenPtr, interp, numWords - 1);
     } else {
 	/*
 	 * No explict result argument, so default result is empty string.
@@ -2633,7 +2635,7 @@ TclCompileReturnCmd(
      */
 
     if (explicitResult) {
-	CompileWord(envPtr, wordTokenPtr, interp, numWords-1);
+	CompileWord(envPtr, wordTokenPtr, interp, numWords - 1);
     } else {
 	PushStringLiteral(envPtr, "");
     }
@@ -2864,12 +2866,12 @@ TclCompileVariableCmd(
 	CompileWord(envPtr, varTokenPtr, interp, i);
 	TclEmitInstInt4(	INST_VARIABLE, localIndex,	envPtr);
 
-	if (i+1 < numWords) {
+	if (i + 1 < numWords) {
 	    /*
 	     * A value has been given: set the variable, pop the value
 	     */
 
-	    CompileWord(envPtr, valueTokenPtr, interp, i+1);
+	    CompileWord(envPtr, valueTokenPtr, interp, i + 1);
 	    Emit14Inst(		INST_STORE_SCALAR, localIndex,	envPtr);
 	    TclEmitOpcode(	INST_POP,			envPtr);
 	}
@@ -2945,7 +2947,7 @@ IndexTailVarIfKnown(
     tailName = TclGetStringFromObj(tailPtr, &len);
 
     if (len) {
-	if (*(tailName+len-1) == ')') {
+	if (*(tailName + len - 1) == ')') {
 	    /*
 	     * Possible array: bail out
 	     */
@@ -2959,7 +2961,7 @@ IndexTailVarIfKnown(
 	 */
 
 	for (p = tailName + len -1; p > tailName; p--) {
-	    if ((*p == ':') && (*(p-1) == ':')) {
+	    if ((*p == ':') && (*(p - 1) == ':')) {
 		p++;
 		break;
 	    }

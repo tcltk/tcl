@@ -2586,7 +2586,7 @@ StringEqualCmd(
 
     objv += objc-2;
 
-    match = TclStringCmp (objv[0], objv[1], 0, nocase, reqlength);
+    match = TclStringCmp(objv[0], objv[1], 0, nocase, reqlength);
 
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
     return TCL_OK;
@@ -2625,25 +2625,23 @@ StringCmpCmd(
 
     int match, nocase, reqlength, status;
 
-    if ((status = TclStringCmpOpts(interp, objc, objv, &nocase, &reqlength))
-	!= TCL_OK) {
-
+    status = TclStringCmpOpts(interp, objc, objv, &nocase, &reqlength);
+    if (status != TCL_OK) {
 	return status;
     }
 
     objv += objc-2;
-    match = TclStringCmp (objv[0], objv[1], 0, nocase, reqlength);
+    match = TclStringCmp(objv[0], objv[1], 0, nocase, reqlength);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
     return TCL_OK;
 }
 
-int TclStringCmpOpts (
+int TclStringCmpOpts(
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects. */
     int *nocase,
-    int *reqlength
-)
+    int *reqlength)
 {
     int i, length;
     const char *string;

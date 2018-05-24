@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 2
+RULES_VERSION_MINOR = 3
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -730,15 +730,6 @@ TCL_USE_STATIC_PACKAGES	= 1
 TCL_USE_STATIC_PACKAGES	= 0
 !endif
 
-!if [nmakehlp -f $(OPTS) "nothreads"]
-!message *** Compile explicitly for non-threaded tcl
-TCL_THREADS	= 0
-USE_THREAD_ALLOC= 0
-!else
-TCL_THREADS	= 1
-USE_THREAD_ALLOC= 1
-!endif
-
 !if [nmakehlp -f $(OPTS) "symbols"]
 !message *** Doing symbols
 DEBUG		= 1
@@ -772,12 +763,6 @@ PGO		= 0
 
 !if [nmakehlp -f $(OPTS) "loimpact"]
 !message *** Warning: ignoring option "loimpact" - deprecated on modern Windows.
-!endif
-
-# TBD - should get rid of this option
-!if [nmakehlp -f $(OPTS) "thrdalloc"]
-!message *** Doing thrdalloc
-USE_THREAD_ALLOC = 1
 !endif
 
 !if [nmakehlp -f $(OPTS) "tclalloc"]
@@ -970,7 +955,7 @@ VERSION         = $(DOTVERSION:.=)
 # different compilers, build configurations etc.,
 #
 # Naming convention (suffixes):
-#   t = full thread support.
+#   t = full thread support. (Not used for Tcl >= 8.7)
 #   s = static library (as opposed to an import library)
 #   g = linked to the debug enabled C run-time.
 #   x = special static build when it links to the dynamic C run-time.
@@ -1028,7 +1013,7 @@ SUFX	    = $(SUFX:x=)
 !endif
 !endif
 
-!if !$(TCL_THREADS)
+!if !$(TCL_THREADS) || $(TCL_VERSION) > 86
 TMP_DIRFULL = $(TMP_DIRFULL:Threaded=)
 SUFX	    = $(SUFX:t=)
 !endif
@@ -1078,20 +1063,17 @@ TCL_INCLUDES    = -I"$(WINDIR)" -I"$(GENERICDIR)"
 # When building extensions, we need to locate tclsh. Depending on version
 # of Tcl we are building against, this may or may not have a "t" suffix.
 # Try various possibilities in turn.
-TCLSH		= $(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX).exe
-!if !exist("$(TCLSH)") && $(TCL_THREADS)
-TCLSH           = $(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX).exe
-!endif
+TCLSH		= $(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX:t=).exe
 !if !exist("$(TCLSH)")
-TCLSH           = $(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX:t=).exe
+TCLSH           = $(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX:t=).exe
 !endif
 
 TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib
-TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX).lib
+TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX:t=).lib
 # When building extensions, may be linking against Tcl that does not add
 # "t" suffix (e.g. 8.5 or 8.7). If lib not found check for that possibility.
 !if !exist("$(TCLIMPLIB)")
-TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX:t=).lib
+TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)t$(SUFX:t=).lib
 !endif
 TCL_LIBRARY	= $(_TCLDIR)\lib
 TCLREGLIB	= $(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib
@@ -1101,19 +1083,16 @@ TCL_INCLUDES    = -I"$(_TCLDIR)\include"
 
 !else # Building against Tcl sources
 
-TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)$(SUFX).exe
-!if !exist($(TCLSH)) && $(TCL_THREADS)
-TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX).exe
-!endif
-!if !exist($(TCLSH))
 TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)$(SUFX:t=).exe
+!if !exist($(TCLSH))
+TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX:t=).exe
 !endif
 TCLSTUBLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib
-TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX).lib
+TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX:t=).lib
 # When building extensions, may be linking against Tcl that does not add
 # "t" suffix (e.g. 8.5 or 8.7). If lib not found check for that possibility.
 !if !exist("$(TCLIMPLIB)")
-TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX:t=).lib
+TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)t$(SUFX:t=).lib
 !endif
 TCL_LIBRARY	= $(_TCLDIR)\library
 TCLREGLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib
@@ -1264,7 +1243,7 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_MEM_DEBUG
 !if $(TCL_COMPILE_DEBUG)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
 !endif
-!if $(TCL_THREADS)
+!if $(TCL_THREADS) && $(TCL_VERSION) < 86
 OPTDEFINES	= $(OPTDEFINES) -DTCL_THREADS=1
 !if $(USE_THREAD_ALLOC)
 OPTDEFINES	= $(OPTDEFINES) -DUSE_THREAD_ALLOC=1
@@ -1707,9 +1686,6 @@ TCLNMAKECONFIG = "$(OUT_DIR)\tcl.nmake"
 
 !if defined(CORE_MACHINE) && "$(CORE_MACHINE)" != "$(MACHINE)"
 !error ERROR: Build target ($(MACHINE)) does not match the Tcl library architecture ($(CORE_MACHINE)).
-!endif
-!if defined(CORE_USE_THREAD_ALLOC) && $(CORE_USE_THREAD_ALLOC) != $(USE_THREAD_ALLOC)
-!message WARNING: Value of USE_THREAD_ALLOC ($(USE_THREAD_ALLOC)) does not match its Tcl core value ($(CORE_USE_THREAD_ALLOC)).
 !endif
 !if defined(CORE_DEBUG) && $(CORE_DEBUG) != $(DEBUG)
 !message WARNING: Value of DEBUG ($(DEBUG)) does not match its Tcl library configuration ($(DEBUG)).
