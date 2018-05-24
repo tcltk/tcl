@@ -383,42 +383,6 @@ AC_DEFUN([SC_ENABLE_SHARED], [
 ])
 
 #------------------------------------------------------------------------
-# SC_ENABLE_THREADS --
-#
-#	Specify if thread support should be enabled
-#
-# Arguments:
-#	none
-#
-# Results:
-#
-#	Adds the following arguments to configure:
-#		--enable-threads=yes|no
-#
-#	Defines the following vars:
-#		TCL_THREADS
-#------------------------------------------------------------------------
-
-AC_DEFUN([SC_ENABLE_THREADS], [
-    AC_MSG_CHECKING(for building with threads)
-    AC_ARG_ENABLE(threads, [  --enable-threads        build with threads (default: on)],
-	[tcl_ok=$enableval], [tcl_ok=yes])
-
-    if test "$tcl_ok" = "yes"; then
-	AC_MSG_RESULT([yes (default)])
-	TCL_THREADS=1
-	AC_DEFINE(TCL_THREADS)
-	# USE_THREAD_ALLOC tells us to try the special thread-based
-	# allocator that significantly reduces lock contention
-	AC_DEFINE(USE_THREAD_ALLOC)
-    else
-	TCL_THREADS=0
-	AC_MSG_RESULT(no)
-    fi
-    AC_SUBST(TCL_THREADS)
-])
-
-#------------------------------------------------------------------------
 # SC_ENABLE_SYMBOLS --
 #
 #	Specify if debugging symbols should be used.

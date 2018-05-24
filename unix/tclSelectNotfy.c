@@ -11,9 +11,9 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#if !defined(NOTIFIER_EPOLL) && !defined(NOTIFIER_KQUEUE)
-
 #include "tclInt.h"
+#if (!defined(NOTIFIER_EPOLL) && !defined(NOTIFIER_KQUEUE)) || !TCL_THREADS
+
 #ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
 				 * in tclMacOSXNotify.c */
 #include <signal.h>
@@ -81,7 +81,7 @@ typedef struct ThreadSpecificData {
     int numFdBits;		/* Number of valid bits in checkMasks (one
 				 * more than highest fd for which
 				 * Tcl_WatchFile has been called). */
-#ifdef TCL_THREADS
+#if TCL_THREADS
     int onList;			/* True if it is in this list */
     unsigned int pollState;	/* pollState is used to implement a polling
 				 * handshake between each thread and the
@@ -112,7 +112,7 @@ typedef struct ThreadSpecificData {
 
 static Tcl_ThreadDataKey dataKey;
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 /*
  * The following static indicates the number of threads that have initialized
  * notifiers.
@@ -193,7 +193,7 @@ static Tcl_ThreadId notifierThread;
  * Static routines defined in this file.
  */
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
 #if defined(HAVE_PTHREAD_ATFORK)
 static int	atForkInit = 0;
@@ -206,7 +206,7 @@ static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
  * Import of Windows API when building threaded with Cygwin.
  */
 
-#if defined(TCL_THREADS) && defined(__CYGWIN__)
+#if defined(__CYGWIN__)
 typedef struct {
     void *hwnd;
     unsigned int *message;
@@ -285,7 +285,7 @@ Tcl_InitNotifier(void)
     } else {
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 	tsdPtr->eventReady = 0;
 
 	/*
@@ -370,7 +370,7 @@ Tcl_FinalizeNotifier(
 	tclNotifierHooks.finalizeNotifierProc(clientData);
 	return;
     } else {
-#ifdef TCL_THREADS
+#if TCL_THREADS
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	pthread_mutex_lock(&notifierInitMutex);
@@ -587,7 +587,7 @@ Tcl_DeleteFileHandler(
     }
 }
 
-#if defined(TCL_THREADS) && defined(__CYGWIN__)
+#if defined(__CYGWIN__)
 
 static DWORD __stdcall
 NotifierProc(
@@ -640,7 +640,7 @@ Tcl_WaitForEvent(
 	FileHandler *filePtr;
 	int mask;
 	Tcl_Time vTime;
-#ifdef TCL_THREADS
+#if TCL_THREADS
 	int waitForFiles;
 #   ifdef __CYGWIN__
 	MSG msg;
@@ -675,7 +675,7 @@ Tcl_WaitForEvent(
 		tclScaleTimeProcPtr(&vTime, tclTimeClientData);
 		timePtr = &vTime;
 	    }
-#ifndef TCL_THREADS
+#if !TCL_THREADS
 	    timeout.tv_sec = timePtr->sec;
 	    timeout.tv_usec = timePtr->usec;
 	    timeoutPtr = &timeout;
@@ -694,7 +694,7 @@ Tcl_WaitForEvent(
 #endif /* !TCL_THREADS */
 	}
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 	/*
 	 * Start notifier thread and place this thread on the list of
 	 * interested threads, signal the notifier thread, and wait for a
@@ -885,14 +885,14 @@ Tcl_WaitForEvent(
 	    }
 	    filePtr->readyMask = mask;
 	}
-#ifdef TCL_THREADS
+#if TCL_THREADS
 	pthread_mutex_unlock(&notifierMutex);
 #endif /* TCL_THREADS */
 	return 0;
     }
 }
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 
 /*
  *----------------------------------------------------------------------
