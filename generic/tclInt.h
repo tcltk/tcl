@@ -136,6 +136,26 @@ typedef int ptrdiff_t;
 #   define vsnprintf _vsnprintf
 #endif
 
+#if !defined(TCL_THREADS)
+#   define TCL_THREADS 1
+#endif
+#if !TCL_THREADS
+#   undef TCL_DECLARE_MUTEX
+#   define TCL_DECLARE_MUTEX(name)
+#   undef  Tcl_MutexLock
+#   define Tcl_MutexLock(mutexPtr)
+#   undef  Tcl_MutexUnlock
+#   define Tcl_MutexUnlock(mutexPtr)
+#   undef  Tcl_MutexFinalize
+#   define Tcl_MutexFinalize(mutexPtr)
+#   undef  Tcl_ConditionNotify
+#   define Tcl_ConditionNotify(condPtr)
+#   undef  Tcl_ConditionWait
+#   define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
+#   undef  Tcl_ConditionFinalize
+#   define Tcl_ConditionFinalize(condPtr)
+#endif
+
 /*
  * The following procedures allow namespaces to be customized to support
  * special name resolution rules for commands/variables.
@@ -2920,19 +2940,13 @@ MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 			    Tcl_Obj *originObjPtr);
 MODULE_SCOPE int	TclConvertElement(const char *src, int length,
 			    char *dst, int flags);
-MODULE_SCOPE Tcl_Command TclCreateObjCommandInNs (
-			    Tcl_Interp *interp,
-			    const char *cmdName,
-			    Tcl_Namespace *nsPtr,
-			    Tcl_ObjCmdProc *proc,
-			    ClientData clientData,
+MODULE_SCOPE Tcl_Command TclCreateObjCommandInNs(Tcl_Interp *interp,
+			    const char *cmdName, Tcl_Namespace *nsPtr,
+			    Tcl_ObjCmdProc *proc, ClientData clientData,
 			    Tcl_CmdDeleteProc *deleteProc);
-MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(
-			    Tcl_Interp *interp,
-			    const char *name,
-			    Tcl_Namespace *nameNamespacePtr,
-			    Tcl_Namespace *ensembleNamespacePtr,
-			    int flags);
+MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
+			    const char *name, Tcl_Namespace *nameNamespacePtr,
+			    Tcl_Namespace *ensembleNamespacePtr, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, int dictLength,
@@ -2959,9 +2973,9 @@ MODULE_SCOPE char *	TclDStringAppendObj(Tcl_DString *dsPtr,
 MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 			    Tcl_DString *toAppendPtr);
 MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
-MODULE_SCOPE Tcl_Obj *const *	TclFetchEnsembleRoot(Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Obj *const *TclFetchEnsembleRoot(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, int objc, int *objcPtr);
-MODULE_SCOPE Tcl_Namespace * 	TclEnsureNamespace(Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Namespace *TclEnsureNamespace(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr);
 MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
 MODULE_SCOPE void	TclFinalizeAsync(void);
@@ -2989,15 +3003,11 @@ MODULE_SCOPE double	TclFloor(const mp_int *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    const char *attributeName, int *indexPtr);
-MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs (
-			    Tcl_Interp *interp,
-			    const char *cmdName,
-			    Tcl_Namespace *nsPtr,
-			    Tcl_ObjCmdProc *proc,
-			    Tcl_ObjCmdProc *nreProc,
+MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
+			    const char *cmdName, Tcl_Namespace *nsPtr,
+			    Tcl_ObjCmdProc *proc, Tcl_ObjCmdProc *nreProc,
 			    ClientData clientData,
 			    Tcl_CmdDeleteProc *deleteProc);
-
 MODULE_SCOPE int	TclNREvalFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    const char *encodingName);
 MODULE_SCOPE void	TclFSUnloadTempFile(Tcl_LoadHandle loadHandle);
@@ -3178,7 +3188,8 @@ MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);
 MODULE_SCOPE void	TclSetBignumIntRep(Tcl_Obj *objPtr,
 			    mp_int *bignumValue);
-MODULE_SCOPE int	TclSetBooleanFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+MODULE_SCOPE int	TclSetBooleanFromAny(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclSetCmdNameObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    Command *cmdPtr);
 MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
@@ -3190,12 +3201,12 @@ MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
 			    Tcl_Obj *bad, Tcl_Obj *fix);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 			    int numBytes);
-
 typedef int (*memCmpFn_t)(const void*, const void*, size_t);
-MODULE_SCOPE int	TclStringCmp (Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
+MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
 			    int checkEq, int nocase, int reqlength);
-MODULE_SCOPE int	TclStringCmpOpts (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
-			    int *nocase, int *reqlength);
+MODULE_SCOPE int	TclStringCmpOpts(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[], int *nocase,
+			    int *reqlength);
 MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
 			    const char *pattern, int ptnLen, int flags);
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
@@ -3244,8 +3255,8 @@ MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void	TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
 MODULE_SCOPE void *	TclpThreadGetMasterTSD(void *tsdKeyPtr);
-
-MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp, const char *msg, int length);
+MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp,
+			    const char *msg, int length);
 
 /*
  *----------------------------------------------------------------
@@ -4098,7 +4109,7 @@ typedef enum TclProcessWaitStatus {
     TCL_PROCESS_EXITED = 1,	/* Process has exited. */
     TCL_PROCESS_SIGNALED = 2,	/* Child killed because of a signal. */
     TCL_PROCESS_STOPPED = 3,	/* Child suspended because of a signal. */
-    TCL_PROCESS_UNKNOWN_STATUS = 4 
+    TCL_PROCESS_UNKNOWN_STATUS = 4
 				/* Child wait status didn't make sense. */
 } TclProcessWaitStatus;
 
@@ -4209,6 +4220,10 @@ typedef const char *TclDTraceStr;
 	} \
     }
 
+#if TCL_THREADS && !defined(USE_THREAD_ALLOC)
+#   define USE_THREAD_ALLOC 1
+#endif
+
 #if defined(PURIFY)
 
 /*
@@ -4226,7 +4241,7 @@ typedef const char *TclDTraceStr;
 
 #undef USE_THREAD_ALLOC
 #undef USE_TCLALLOC
-#elif defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+#elif TCL_THREADS && defined(USE_THREAD_ALLOC)
 
 /*
  * The TCL_THREADS mode is like the regular mode but allocates Tcl_Obj's from
@@ -4291,7 +4306,7 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 #   define USE_TCLALLOC 0
 #endif
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 /* declared in tclObj.c */
 MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 #endif
