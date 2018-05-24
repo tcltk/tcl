@@ -78,12 +78,6 @@ AC_PROG_MAKE_SET
 AC_OBJEXT
 AC_EXEEXT
 
-#--------------------------------------------------------------------
-# Check whether --enable-threads or --disable-threads was given.
-#--------------------------------------------------------------------
-
-SC_ENABLE_THREADS
-
 #------------------------------------------------------------------------
 # Embedded configuration information, encoding to use for the values, TIP #59
 #------------------------------------------------------------------------
