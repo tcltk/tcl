@@ -87,8 +87,8 @@ static const Tcl_ObjType ensembleCmdType = {
 };
 
 /*
- * The internal rep for caching ensemble subcommand lookups and
- * spell corrections.
+ * The internal rep for caching ensemble subcommand lookups and spelling
+ * corrections.
  */
 
 typedef struct {
@@ -98,10 +98,9 @@ typedef struct {
     Command *token;             /* Reference to the command for which this
                                  * structure is a cache of the resolution. */
     Tcl_Obj *fix;               /* Corrected spelling, if needed. */
-    Tcl_HashEntry *hPtr;        /* Direct link to entry in the subcommand
-                                 * hash table. */
+    Tcl_HashEntry *hPtr;        /* Direct link to entry in the subcommand hash
+                                 * table. */
 } EnsembleCmdRep;
-
 
 static inline Tcl_Obj *
 NewNsObj(
@@ -111,9 +110,8 @@ NewNsObj(
 
     if (namespacePtr == TclGetGlobalNamespace(nsPtr->interp)) {
 	return Tcl_NewStringObj("::", 2);
-    } else {
-	return Tcl_NewStringObj(nsPtr->fullName, -1);
     }
+    return Tcl_NewStringObj(nsPtr->fullName, -1);
 }
 
 /*
@@ -147,7 +145,7 @@ TclNamespaceEnsembleCmd(
 {
     Tcl_Namespace *namespacePtr;
     Namespace *nsPtr = (Namespace *) TclGetCurrentNamespace(interp), *cxtPtr,
-    	*foundNsPtr, *altFoundNsPtr, *actualCxtPtr;
+	    *foundNsPtr, *altFoundNsPtr, *actualCxtPtr;
     Tcl_Command token;
     Tcl_DictSearch search;
     Tcl_Obj *listObj;
@@ -302,7 +300,8 @@ TclNamespaceEnsembleCmd(
 			Tcl_DictObjPut(NULL, patchedDict, subcmdWordsObj,
 				newList);
 		    }
-		    Tcl_DictObjNext(&search, &subcmdWordsObj,&listObj, &done);
+		    Tcl_DictObjNext(&search, &subcmdWordsObj, &listObj,
+			    &done);
 		} while (!done);
 
 		if (allocatedMapFlag) {
@@ -336,8 +335,8 @@ TclNamespaceEnsembleCmd(
 	}
 
 	TclGetNamespaceForQualName(interp, name, cxtPtr,
-	TCL_CREATE_NS_IF_UNKNOWN, &foundNsPtr, &altFoundNsPtr, &actualCxtPtr,
-	&simpleName);
+		TCL_CREATE_NS_IF_UNKNOWN, &foundNsPtr, &altFoundNsPtr,
+		&actualCxtPtr, &simpleName);
 
 	/*
 	 * Create the ensemble. Note that this might delete another ensemble
@@ -347,8 +346,8 @@ TclNamespaceEnsembleCmd(
 	 */
 
 	token = TclCreateEnsembleInNs(interp, simpleName,
-	     (Tcl_Namespace *) foundNsPtr, (Tcl_Namespace *) nsPtr,
-	     (permitPrefix ? TCL_ENSEMBLE_PREFIX : 0));
+		(Tcl_Namespace *) foundNsPtr, (Tcl_Namespace *) nsPtr,
+		(permitPrefix ? TCL_ENSEMBLE_PREFIX : 0));
 	Tcl_SetEnsembleSubcommandList(interp, token, subcmdObj);
 	Tcl_SetEnsembleMappingDict(interp, token, mapObj);
 	Tcl_SetEnsembleUnknownHandler(interp, token, unknownObj);
@@ -576,7 +575,8 @@ TclNamespaceEnsembleCmd(
 				Tcl_AppendStringsToObj(newCmd, "::", NULL);
 			    }
 			    Tcl_AppendObjToObj(newCmd, listv[0]);
-			    Tcl_ListObjReplace(NULL, newList, 0,1, 1,&newCmd);
+			    Tcl_ListObjReplace(NULL, newList, 0, 1, 1,
+				    &newCmd);
 			    if (patchedDict == NULL) {
 				patchedDict = Tcl_DuplicateObj(objv[1]);
 			    }
@@ -650,15 +650,13 @@ TclNamespaceEnsembleCmd(
 Tcl_Command
 TclCreateEnsembleInNs(
     Tcl_Interp *interp,
-
-    const char *name,   /* Simple name of command to create (no */
-			/* namespace components). */
-    Tcl_Namespace       /* Name of namespace to create the command in. */
-    *nameNsPtr,
-    Tcl_Namespace
-    *ensembleNsPtr,	/* Name of the namespace for the ensemble. */
-    int flags
-    )
+    const char *name,		/* Simple name of command to create (no
+				 * namespace components). */
+    Tcl_Namespace *nameNsPtr,	/* Name of namespace to create the command
+				 * in. */
+    Tcl_Namespace *ensembleNsPtr,
+				/* Name of the namespace for the ensemble. */
+    int flags)
 {
     Namespace *nsPtr = (Namespace *) ensembleNsPtr;
     EnsembleConfig *ensemblePtr;
@@ -666,8 +664,8 @@ TclCreateEnsembleInNs(
 
     ensemblePtr = ckalloc(sizeof(EnsembleConfig));
     token = TclNRCreateCommandInNs(interp, name,
-	(Tcl_Namespace *) nameNsPtr, NsEnsembleImplementationCmd,
-	NsEnsembleImplementationCmdNR, ensemblePtr, DeleteEnsembleConfig);
+	    (Tcl_Namespace *) nameNsPtr, NsEnsembleImplementationCmd,
+	    NsEnsembleImplementationCmdNR, ensemblePtr, DeleteEnsembleConfig);
     if (token == NULL) {
 	ckfree(ensemblePtr);
 	return NULL;
@@ -701,18 +699,15 @@ TclCreateEnsembleInNs(
     }
 
     return ensemblePtr->token;
-
 }
-
-
+
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_CreateEnsemble
  *
- *	Create a simple ensemble attached to the given namespace.
- *
- *	Deprecated by TclCreateEnsembleInNs.
+ *	Create a simple ensemble attached to the given namespace. Deprecated
+ *	(internally) by TclCreateEnsembleInNs.
  *
  * Value
  *
@@ -732,8 +727,8 @@ Tcl_CreateEnsemble(
     Tcl_Namespace *namespacePtr,
     int flags)
 {
-    Namespace *nsPtr = (Namespace *)namespacePtr, *foundNsPtr, *altNsPtr,
-    	*actualNsPtr;
+    Namespace *nsPtr = (Namespace *) namespacePtr, *foundNsPtr, *altNsPtr,
+	    *actualNsPtr;
     const char * simpleName;
 
     if (nsPtr == NULL) {
@@ -741,11 +736,10 @@ Tcl_CreateEnsemble(
     }
 
     TclGetNamespaceForQualName(interp, name, nsPtr, TCL_CREATE_NS_IF_UNKNOWN,
-    	&foundNsPtr, &altNsPtr, &actualNsPtr, &simpleName);
+	    &foundNsPtr, &altNsPtr, &actualNsPtr, &simpleName);
     return TclCreateEnsembleInNs(interp, simpleName,
-	(Tcl_Namespace *) foundNsPtr, (Tcl_Namespace *) nsPtr, flags);
+	    (Tcl_Namespace *) foundNsPtr, (Tcl_Namespace *) nsPtr, flags);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -2117,22 +2111,27 @@ TclSpellFix(
 	iPtr->ensembleRewrite.numInsertedObjs = 0;
     }
 
-    /* Compute the valid length of the ensemble root */
+    /*
+     * Compute the valid length of the ensemble root.
+     */
 
     size = iPtr->ensembleRewrite.numRemovedObjs + objc
-		- iPtr->ensembleRewrite.numInsertedObjs;
+	    - iPtr->ensembleRewrite.numInsertedObjs;
 
     search = iPtr->ensembleRewrite.sourceObjs;
     if (search[0] == NULL) {
-	/* Awful casting abuse here */
+	/*
+	 * Awful casting abuse here...
+	 */
 	search = (Tcl_Obj *const *) search[1];
     }
 
     if (badIdx < iPtr->ensembleRewrite.numInsertedObjs) {
 	/*
-	 * Misspelled value was inserted. We cannot directly jump
-	 * to the bad value, but have to search.
+	 * Misspelled value was inserted. We cannot directly jump to the bad
+	 * value, but have to search.
 	 */
+
 	idx = 1;
 	while (idx < size) {
 	    if (search[idx] == bad) {
@@ -2156,13 +2155,14 @@ TclSpellFix(
 
     search = iPtr->ensembleRewrite.sourceObjs;
     if (search[0] == NULL) {
-	store = (Tcl_Obj **)search[2];
-    }  else {
+	store = (Tcl_Obj **) search[2];
+    } else {
 	Tcl_Obj **tmp = ckalloc(3 * sizeof(Tcl_Obj *));
+
 	tmp[0] = NULL;
-	tmp[1] = (Tcl_Obj *)iPtr->ensembleRewrite.sourceObjs;
-	tmp[2] = (Tcl_Obj *)ckalloc(size * sizeof(Tcl_Obj *));
-	memcpy(tmp[2], tmp[1], size*sizeof(Tcl_Obj *));
+	tmp[1] = (Tcl_Obj *) iPtr->ensembleRewrite.sourceObjs;
+	tmp[2] = (Tcl_Obj *) ckalloc(size * sizeof(Tcl_Obj *));
+	memcpy(tmp[2], tmp[1], size * sizeof(Tcl_Obj *));
 
 	iPtr->ensembleRewrite.sourceObjs = (Tcl_Obj *const *) tmp;
 	TclNRAddCallback(interp, FreeER, tmp, NULL, NULL, NULL);
@@ -2589,7 +2589,9 @@ BuildEnsembleConfig(
                 }
             }
         } else {
-            /* Usual case where we can freely act on the list and dict. */
+            /*
+	     * Usual case where we can freely act on the list and dict.
+	     */
 
             for (i = 0; i < subc; i++) {
                 name = TclGetString(subv[i]);
@@ -2598,7 +2600,10 @@ BuildEnsembleConfig(
                     continue;
                 }
 
-                /* Lookup target in the dictionary */
+                /*
+		 * Lookup target in the dictionary.
+		 */
+
                 if (mapDict) {
                     Tcl_DictObjGet(NULL, mapDict, subv[i], &target);
                     if (target) {
@@ -2610,10 +2615,11 @@ BuildEnsembleConfig(
 
                 /*
                  * target was not in the dictionary so map onto the namespace.
-                 * Note in this case that we do not guarantee that the
-                 * command is actually there; that is the programmer's
-                 * responsibility (or [::unknown] of course).
+                 * Note in this case that we do not guarantee that the command
+                 * is actually there; that is the programmer's responsibility
+                 * (or [::unknown] of course).
                  */
+
                 cmdObj = Tcl_NewStringObj(name, -1);
                 cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
                 Tcl_SetHashValue(hPtr, cmdPrefixObj);
