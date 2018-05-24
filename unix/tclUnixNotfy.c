@@ -12,29 +12,30 @@
  */
 
 #include <poll.h>
+#include "tclInt.h"
 
 /*
  * Static routines defined in this file.
  */
 
-#ifdef NOTIFIER_SELECT
-#ifdef TCL_THREADS
-static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
-#if defined(HAVE_PTHREAD_ATFORK)
-static void	AtForkChild(void);
-#endif /* HAVE_PTHREAD_ATFORK */
-#endif /* TCL_THREADS */
-#endif /* NOTIFIER_SELECT */
 static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
+#if !TCL_THREADS
+# undef NOTIFIER_EPOLL
+# undef NOTIFIER_KQUEUE
+# define NOTIFIER_SELECT
+#elif !defined(NOTIFIER_EPOLL) && !defined(NOTIFIER_KQUEUE)
+# define NOTIFIER_SELECT
+static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
+# if defined(HAVE_PTHREAD_ATFORK)
+static void	AtForkChild(void);
+# endif /* HAVE_PTHREAD_ATFORK */
 
-#ifdef NOTIFIER_SELECT
-#if TCL_THREADS
 /*
  *----------------------------------------------------------------------
  *
  * StartNotifierThread --
  *
- *	Start a notfier thread and wait for the notifier pipe to be created.
+ *	Start a notifier thread and wait for the notifier pipe to be created.
  *
  * Results:
  *	None.
@@ -70,7 +71,6 @@ StartNotifierThread(const char *proc)
 	pthread_mutex_unlock(&notifierInitMutex);
     }
 }
-#endif /* TCL_THREADS */
 #endif /* NOTIFIER_SELECT */
 
 /*
@@ -107,7 +107,7 @@ Tcl_AlertNotifier(
 	return;
     } else {
 #ifdef NOTIFIER_SELECT
-#ifdef TCL_THREADS
+#if TCL_THREADS
 	ThreadSpecificData *tsdPtr = clientData;
 
 	pthread_mutex_lock(&notifierMutex);
@@ -280,7 +280,7 @@ FileHandlerEventProc(
 }
 
 #ifdef NOTIFIER_SELECT
-#ifdef TCL_THREADS
+#if TCL_THREADS
 /*
  *----------------------------------------------------------------------
  *
