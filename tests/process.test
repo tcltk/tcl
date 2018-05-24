@@ -279,3 +279,6 @@ test process-7.3 {child killed} -body {
     tcl::process purge
     tcl::process autopurge 1
 }
+
+::tcltest::cleanupTests
+return
