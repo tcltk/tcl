@@ -4487,7 +4487,7 @@ Tcl_InitBignumFromDouble(
 	return TCL_ERROR;
     }
 
-    fract = frexp(d,&expt);
+    fract = frexp(d, &expt);
     if (expt <= 0) {
 	mp_init(b);
 	mp_zero(b);
@@ -4827,7 +4827,7 @@ Pow10TimesFrExp(
 	 * Multiply by 10**exponent.
 	 */
 
-	retval = frexp(retval * pow10vals[exponent&0xf], &j);
+	retval = frexp(retval * pow10vals[exponent & 0xf], &j);
 	expt += j;
 	for (i=4; i<9; ++i) {
 	    if (exponent & (1<<i)) {

@@ -385,9 +385,6 @@
 /* What is the default extension for shared libraries? */
 #undef TCL_SHLIB_EXT
 
-/* Are we building with threads enabled? */
-#undef TCL_THREADS
-
 /* Do we allow unloading of shared libraries? */
 #undef TCL_UNLOAD_DLLS
 
