@@ -1446,30 +1446,41 @@ TclpGetUserHome(
 		GetProcAddress(userenvInst, "GetProfilesDirectoryW");
 	if ((netUserGetInfoProc != NULL) && (netGetDCNameProc != NULL)
 		&& (netApiBufferFreeProc != NULL) && (getProfilesDirectoryProc != NULL)) {
-	    USER_INFO_1 *uiPtr, **uiPtrPtr = &uiPtr;
+	    USER_INFO_1 *uiPtr;
 	    Tcl_DString ds;
-	    int nameLen, badDomain;
+	    int nameLen, rc;
 	    char *domain;
 	    WCHAR *wName, *wHomeDir, *wDomain;
 	    WCHAR buf[MAX_PATH];
 
-	    badDomain = 0;
+	    rc = 0;
 	    nameLen = -1;
 	    wDomain = NULL;
 	    domain = strchr(name, '@');
 	    if (domain != NULL) {
 		Tcl_DStringInit(&ds);
 		wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
-		badDomain = (netGetDCNameProc)(NULL, wName,
-			(LPBYTE *) &wDomain);
+		rc = (netGetDCNameProc)(NULL, wName, (LPBYTE *) &wDomain);
 		Tcl_DStringFree(&ds);
 		nameLen = domain - name;
 	    }
-	    if (badDomain == 0) {
+	    if (rc == 0) {
 		Tcl_DStringInit(&ds);
 		wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
-		if ((netUserGetInfoProc)(wDomain, wName, 1,
-			(LPBYTE *) uiPtrPtr) == 0) {
+		while ((netUserGetInfoProc)(wDomain, wName, 1,
+			(LPBYTE *) &uiPtr) != 0) {
+		    /* 
+		     * user does not exists - if domain was not specified,
+		     * try again using current domain.
+		     */
+		    rc = 1;
+		    if (domain != NULL) break;
+		    /* get current domain */
+		    rc = (netGetDCNameProc)(NULL, NULL, (LPBYTE *) &wDomain);
+		    if (rc != 0) break;
+		    domain = INT2PTR(-1); /* repeat once */
+		}
+		if (rc == 0) {
 		    DWORD i, size = MAX_PATH;
 		    wHomeDir = uiPtr->usri1_home_dir;
 		    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
