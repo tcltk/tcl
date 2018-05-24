@@ -3197,8 +3197,8 @@ TclSkipUnlink(
 #ifndef AUFS_SUPER_MAGIC
 #define AUFS_SUPER_MAGIC ('a' << 24 | 'u' << 16 | 'f' << 8 | 's')
 #endif /* AUFS_SUPER_MAGIC */
-	if ((statfs(Tcl_GetString (shlibFile), &fs) == 0) &&
-	    (fs.f_type == AUFS_SUPER_MAGIC)) {
+	if ((statfs(Tcl_GetString(shlibFile), &fs) == 0)
+		&& (fs.f_type == AUFS_SUPER_MAGIC)) {
 	    return 1;
 	}
     }

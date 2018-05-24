@@ -13,7 +13,7 @@
 
 #include "tclInt.h"
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 
 /*
  * masterLock is used to serialize creation of mutexes, condition variables,
@@ -66,7 +66,7 @@ TclpThreadCreate(
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     pthread_attr_t attr;
     pthread_t theThread;
     int result;
@@ -144,7 +144,7 @@ Tcl_JoinThread(
 				 * thread we wait upon will be written into.
 				 * May be NULL. */
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     int result;
     unsigned long retcode, *retcodePtr = &retcode;
 
@@ -158,7 +158,6 @@ Tcl_JoinThread(
 #endif
 }
 
-#ifdef TCL_THREADS
 /*
  *----------------------------------------------------------------------
  *
@@ -179,9 +178,12 @@ void
 TclpThreadExit(
     int status)
 {
+#if TCL_THREADS
     pthread_exit(INT2PTR(status));
-}
+#else /* TCL_THREADS */
+    exit(status);
 #endif /* TCL_THREADS */
+}
 
 /*
  *----------------------------------------------------------------------
@@ -202,7 +204,7 @@ TclpThreadExit(
 Tcl_ThreadId
 Tcl_GetCurrentThread(void)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     return (Tcl_ThreadId) pthread_self();
 #else
     return (Tcl_ThreadId) 0;
@@ -231,7 +233,7 @@ Tcl_GetCurrentThread(void)
 void
 TclpInitLock(void)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     pthread_mutex_lock(&initLock);
 #endif
 }
@@ -257,7 +259,7 @@ TclpInitLock(void)
 void
 TclFinalizeLock(void)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     /*
      * You do not need to destroy mutexes that were created with the
      * PTHREAD_MUTEX_INITIALIZER macro. These mutexes do not need any
@@ -288,7 +290,7 @@ TclFinalizeLock(void)
 void
 TclpInitUnlock(void)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     pthread_mutex_unlock(&initLock);
 #endif
 }
@@ -317,7 +319,7 @@ TclpInitUnlock(void)
 void
 TclpMasterLock(void)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     pthread_mutex_lock(&masterLock);
 #endif
 }
@@ -343,7 +345,7 @@ TclpMasterLock(void)
 void
 TclpMasterUnlock(void)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     pthread_mutex_unlock(&masterLock);
 #endif
 }
@@ -370,7 +372,7 @@ TclpMasterUnlock(void)
 Tcl_Mutex *
 Tcl_GetAllocMutex(void)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     pthread_mutex_t **allocLockPtrPtr = &allocLockPtr;
     return (Tcl_Mutex *) allocLockPtrPtr;
 #else
@@ -378,7 +380,7 @@ Tcl_GetAllocMutex(void)
 #endif
 }
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 
 /*
  *----------------------------------------------------------------------

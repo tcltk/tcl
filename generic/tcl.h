@@ -88,15 +88,10 @@ extern "C" {
 #ifndef RC_INVOKED
 
 /*
- * Special macro to define mutexes, that doesn't do anything if we are not
- * using threads.
+ * Special macro to define mutexes.
  */
 
-#ifdef TCL_THREADS
 #define TCL_DECLARE_MUTEX(name) static Tcl_Mutex name;
-#else
-#define TCL_DECLARE_MUTEX(name)
-#endif
 
 /*
  * Tcl's public routine Tcl_FSSeek() uses the values SEEK_SET, SEEK_CUR, and
@@ -2208,9 +2203,9 @@ const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 #if defined(_WIN32)
-    TCL_NORETURN void Tcl_ConsolePanic(const char *format, ...);
+    TCL_NORETURN1 void Tcl_ConsolePanic(const char *format, ...);
 #else
-#   define Tcl_ConsolePanic ((Tcl_PanicProc *)0)
+#   define Tcl_ConsolePanic NULL
 #endif
 
 #ifdef USE_TCL_STUBS
@@ -2398,27 +2393,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 	(*((tablePtr)->findProc))(tablePtr, (const char *)(key))
 #define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
-
-/*
- *----------------------------------------------------------------------------
- * Macros that eliminate the overhead of the thread synchronization functions
- * when compiling without thread support.
- */
-
-#ifndef TCL_THREADS
-#undef  Tcl_MutexLock
-#define Tcl_MutexLock(mutexPtr)
-#undef  Tcl_MutexUnlock
-#define Tcl_MutexUnlock(mutexPtr)
-#undef  Tcl_MutexFinalize
-#define Tcl_MutexFinalize(mutexPtr)
-#undef  Tcl_ConditionNotify
-#define Tcl_ConditionNotify(condPtr)
-#undef  Tcl_ConditionWait
-#define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
-#undef  Tcl_ConditionFinalize
-#define Tcl_ConditionFinalize(condPtr)
-#endif /* TCL_THREADS */
 
 #endif /* RC_INVOKED */
 
