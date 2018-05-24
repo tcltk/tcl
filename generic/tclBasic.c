@@ -749,7 +749,7 @@ Tcl_CreateInterp(void)
      * cache was already initialised by the call to alloc the interp struct.
      */
 
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+#if TCL_THREADS && defined(USE_THREAD_ALLOC)
     iPtr->allocCache = TclpGetAllocCache();
 #else
     iPtr->allocCache = NULL;
@@ -964,7 +964,7 @@ Tcl_CreateInterp(void)
 #endif /* !TCL_NO_DEPRECATED */
     TclpSetVariables(interp);
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
     /*
      * The existence of the "threaded" element of the tcl_platform array
      * indicates that this particular Tcl shell has been compiled with threads
@@ -2298,30 +2298,33 @@ Tcl_CreateObjCommand(
 }
 
 Tcl_Command
-TclCreateObjCommandInNs (
+TclCreateObjCommandInNs(
     Tcl_Interp *interp,
-    const char *cmdName,	/* Name of command, without any namespace components */
+    const char *cmdName,	/* Name of command, without any namespace
+                                 * components. */
     Tcl_Namespace *namespace,   /* The namespace to create the command in */
     Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
 				 * name. */
     ClientData clientData,	/* Arbitrary value to pass to object
 				 * function. */
-    Tcl_CmdDeleteProc *deleteProc
+    Tcl_CmdDeleteProc *deleteProc)
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
-) {
+{
     int deleted = 0, isNew = 0;
     Command *cmdPtr;
     ImportRef *oldRefPtr = NULL;
     ImportedCmdData *dataPtr;
     Tcl_HashEntry *hPtr;
     Namespace *nsPtr = (Namespace *) namespace;
+
     /*
-     * If the command name we seek to create already exists, we need to
-     * delete that first.  That can be tricky in the presence of traces.
-     * Loop until we no longer find an existing command in the way, or
-     * until we've deleted one command and that didn't finish the job.
+     * If the command name we seek to create already exists, we need to delete
+     * that first. That can be tricky in the presence of traces. Loop until we
+     * no longer find an existing command in the way, or until we've deleted
+     * one command and that didn't finish the job.
      */
+
     while (1) {
 	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, cmdName, &isNew);
 
@@ -2333,16 +2336,18 @@ TclCreateObjCommandInNs (
 	    break;
 	}
 
+	/*
+         * An existing command conflicts. Try to delete it.
+         */
 
-	/* An existing command conflicts. Try to delete it.. */
 	cmdPtr = Tcl_GetHashValue(hPtr);
 
 	/*
-	 * [***] This is wrong.  See Tcl Bug a16752c252.
-	 * However, this buggy behavior is kept under particular
-	 * circumstances to accommodate deployed binaries of the
-	 * "tclcompiler" program. http://sourceforge.net/projects/tclpro/
-	 * that crash if the bug is fixed.
+	 * [***] This is wrong. See Tcl Bug a16752c252. However, this buggy
+	 * behavior is kept under particular circumstances to accommodate
+	 * deployed binaries of the "tclcompiler" program
+	 *     http://sourceforge.net/projects/tclpro/
+         * that crash if the bug is fixed.
 	 */
 
 	if (cmdPtr->objProc == TclInvokeStringCommand
@@ -2366,12 +2371,15 @@ TclCreateObjCommandInNs (
 	    cmdPtr->flags |= CMD_REDEF_IN_PROGRESS;
 	}
 
-	/* Make sure namespace doesn't get deallocated. */
+	/*
+         * Make sure namespace doesn't get deallocated.
+         */
+
 	cmdPtr->nsPtr->refCount++;
 
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
 	nsPtr = (Namespace *) TclEnsureNamespace(interp,
-	    (Tcl_Namespace *)cmdPtr->nsPtr);
+                (Tcl_Namespace *) cmdPtr->nsPtr);
 	TclNsDecrRefCount(cmdPtr->nsPtr);
 
 	if (cmdPtr->flags & CMD_REDEF_IN_PROGRESS) {
@@ -2383,9 +2391,9 @@ TclCreateObjCommandInNs (
     }
     if (!isNew) {
 	/*
-	 * If the deletion callback recreated the command, just throw away
-	 * the new command (if we try to delete it again, we could get
-	 * stuck in an infinite loop).
+	 * If the deletion callback recreated the command, just throw away the
+	 * new command (if we try to delete it again, we could get stuck in an
+	 * infinite loop).
 	 */
 
 	ckfree(Tcl_GetHashValue(hPtr));
@@ -2440,6 +2448,7 @@ TclCreateObjCommandInNs (
 	cmdPtr->importRefPtr = oldRefPtr;
 	while (oldRefPtr != NULL) {
 	    Command *refCmdPtr = oldRefPtr->importedCmdPtr;
+
 	    dataPtr = refCmdPtr->objClientData;
 	    dataPtr->realCmdPtr = cmdPtr;
 	    oldRefPtr = oldRefPtr->nextPtr;
@@ -8279,23 +8288,26 @@ Tcl_NRCreateCommand(
 				 * this command is deleted. */
 {
     Command *cmdPtr = (Command *)
-	    Tcl_CreateObjCommand(interp,cmdName,proc,clientData,deleteProc);
+	    Tcl_CreateObjCommand(interp, cmdName, proc, clientData,
+                    deleteProc);
 
     cmdPtr->nreProc = nreProc;
     return (Tcl_Command) cmdPtr;
 }
 
 Tcl_Command
-TclNRCreateCommandInNs (
+TclNRCreateCommandInNs(
     Tcl_Interp *interp,
     const char *cmdName,
     Tcl_Namespace *nsPtr,
     Tcl_ObjCmdProc *proc,
     Tcl_ObjCmdProc *nreProc,
     ClientData clientData,
-    Tcl_CmdDeleteProc *deleteProc) {
+    Tcl_CmdDeleteProc *deleteProc)
+{
     Command *cmdPtr = (Command *)
-	TclCreateObjCommandInNs(interp,cmdName,nsPtr,proc,clientData,deleteProc);
+            TclCreateObjCommandInNs(interp, cmdName, nsPtr, proc, clientData,
+                    deleteProc);
 
     cmdPtr->nreProc = nreProc;
     return (Tcl_Command) cmdPtr;
@@ -8399,7 +8411,6 @@ TclPushTailcallPoint(
     TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
     ((Interp *) interp)->numLevels++;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -8435,7 +8446,6 @@ TclSetTailcall(
     }
     runPtr->data[1] = listPtr;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -8511,7 +8521,6 @@ TclNRTailcallObjCmd(
     }
     return TCL_RETURN;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -8579,7 +8588,6 @@ TclNRReleaseValues(
     }
     return result;
 }
-
 
 void
 Tcl_NRAddCallback(

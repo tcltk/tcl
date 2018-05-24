@@ -719,7 +719,6 @@ CFLAGS_DEBUG
 DL_LIBS
 CYGPATH
 SHARED_BUILD
-TCL_THREADS
 SET_MAKE
 RC
 RANLIB
@@ -776,7 +775,6 @@ OBJEXT_FOR_BUILD'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
-enable_threads
 with_encoding
 enable_shared
 enable_64bit
@@ -1400,7 +1398,6 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-threads        build with threads (default: on)
   --enable-shared         build and link with shared libraries (default: on)
   --enable-64bit          enable 64bit support (where applicable)
   --enable-zipfs          build with Zipfs support (default: on)
@@ -3685,39 +3682,6 @@ fi
 # Determines the correct binary file extension (.o, .obj, .exe etc.)
 #--------------------------------------------------------------------
 
-
-
-
-#--------------------------------------------------------------------
-# Check whether --enable-threads or --disable-threads was given.
-#--------------------------------------------------------------------
-
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for building with threads" >&5
-$as_echo_n "checking for building with threads... " >&6; }
-    # Check whether --enable-threads was given.
-if test "${enable_threads+set}" = set; then :
-  enableval=$enable_threads; tcl_ok=$enableval
-else
-  tcl_ok=yes
-fi
-
-
-    if test "$tcl_ok" = "yes"; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (default)" >&5
-$as_echo "yes (default)" >&6; }
-	TCL_THREADS=1
-	$as_echo "#define TCL_THREADS 1" >>confdefs.h
-
-	# USE_THREAD_ALLOC tells us to try the special thread-based
-	# allocator that significantly reduces lock contention
-	$as_echo "#define USE_THREAD_ALLOC 1" >>confdefs.h
-
-    else
-	TCL_THREADS=0
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    fi
 
 
 
