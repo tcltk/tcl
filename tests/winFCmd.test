@@ -1083,7 +1083,7 @@ test winFCmd-12.6.2 {ConvertFileNameFormat: absolute path with drive (in temp fo
 } -constraints {win} -body {
     createfile $::env(TEMP)/td1 {}
     string equal [string tolower [file attributes $::env(TEMP)/td1 -longname]] \
-	    [string tolower [file normalize $::env(TEMP)]/td1]]
+	    [string tolower [file normalize $::env(TEMP)]/td1]
 } -cleanup {
     file delete -force -- $::env(TEMP)/td1
 } -result 1
