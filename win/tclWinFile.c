@@ -1440,17 +1440,17 @@ TclpGetUserHome(
 	    handle = LoadLibraryA("netapi32.dll");
 	    if (handle) {
 		netApiBufferFreeProc = (NETAPIBUFFERFREEPROC *)
-		GetProcAddress(handle, "NetApiBufferFree");
+			GetProcAddress(handle, "NetApiBufferFree");
 		netGetDCNameProc = (NETGETDCNAMEPROC *)
-		GetProcAddress(handle, "NetGetDCName");
+			GetProcAddress(handle, "NetGetDCName");
 		netUserGetInfoProc = (NETUSERGETINFOPROC *)
-		GetProcAddress(handle, "NetUserGetInfo");
+			GetProcAddress(handle, "NetUserGetInfo");
 		Tcl_CreateExitHandler(TclpUnloadFile, handle);
 	    }
 	    handle = LoadLibraryA("userenv.dll");
 	    if (handle) {
 		getProfilesDirectoryProc = (GETPROFILESDIRECTORYPROC *)
-		GetProcAddress(handle, "GetProfilesDirectoryW");
+			GetProcAddress(handle, "GetProfilesDirectoryW");
 		Tcl_CreateExitHandler(TclpUnloadFile, handle);
 	    }
 	    
