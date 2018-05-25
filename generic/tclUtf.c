@@ -773,11 +773,17 @@ Tcl_UtfAtIndex(
     register size_t index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
+#if TCL_UTF_MAX <= 4
     int len = 1;
+#endif
 
     if (index != (size_t)-1) {
 	while (index--) {
+#if TCL_UTF_MAX <= 4
+	    src += (len = TclUtfToUniChar(src, &ch));
+#else
 	    src += TclUtfToUniChar(src, &ch);
+#endif
 	}
 #if TCL_UTF_MAX <= 4
 	if (!len) {

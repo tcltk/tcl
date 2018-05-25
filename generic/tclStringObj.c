@@ -564,7 +564,7 @@ Tcl_GetUniChar(
 	stringPtr = GET_STRING(objPtr);
     }
 
-    if (index >= stringPtr->numChars) {
+    if (index >= (int)stringPtr->numChars) {
 	return -1;
     }
     ch = stringPtr->unicode[index];
@@ -576,7 +576,7 @@ Tcl_GetUniChar(
 		    && ((stringPtr->unicode[index-1] & 0xFC00) == 0xD800)) {
 		ch = -1; /* low surrogate preceded by high surrogate */
 	    }
-	} else if ((++index < stringPtr->numChars)
+	} else if ((++index < (int)stringPtr->numChars)
 		&& ((stringPtr->unicode[index] & 0xFC00) == 0xDC00)) {
 	    /* high surrogate followed by low surrogate */
 	    ch = (((ch & 0x3FF) << 10) |
@@ -723,7 +723,7 @@ Tcl_GetRange(
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
-	    if (last >= stringPtr->numChars) {
+	    if (last >= (int)stringPtr->numChars) {
 		last = stringPtr->numChars - 1;
 	    }
 	    if (last < first) {
@@ -743,7 +743,7 @@ Tcl_GetRange(
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
-    if (last > stringPtr->numChars) {
+    if (last > (int)stringPtr->numChars) {
 	last = stringPtr->numChars;
     }
     if (last < first) {
@@ -755,7 +755,7 @@ Tcl_GetRange(
 	    && ((stringPtr->unicode[first-1] & 0xFC00) == 0xD800)) {
 	++first;
     }
-    if ((last + 1 < stringPtr->numChars)
+    if ((last + 1 < (int)stringPtr->numChars)
 	    && ((stringPtr->unicode[last+1] & 0xFC00) == 0xDC00)
 	    && ((stringPtr->unicode[last] & 0xFC00) == 0xD800)) {
 	++last;
@@ -3347,9 +3347,9 @@ int TclStringCmp(
 	    } else {
 		s1len = Tcl_GetCharLength(value1Ptr);
 		s2len = Tcl_GetCharLength(value2Ptr);
-		if ((s1len == value1Ptr->length)
+		if ((s1len == (int)value1Ptr->length)
 			&& (value1Ptr->bytes != NULL)
-			&& (s2len == value2Ptr->length)
+			&& (s2len == (int)value2Ptr->length)
 			&& (value2Ptr->bytes != NULL)) {
 		    s1 = value1Ptr->bytes;
 		    s2 = value2Ptr->bytes;
