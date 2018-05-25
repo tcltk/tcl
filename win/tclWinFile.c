@@ -1436,29 +1436,30 @@ TclpGetUserHome(
 	HINSTANCE handle;
 	TCL_DECLARE_MUTEX(initializeMutex)
 	Tcl_MutexLock(&initializeMutex);
-
-	handle = LoadLibraryA("netapi32.dll");
-	if (handle) {
-	    netApiBufferFreeProc = (NETAPIBUFFERFREEPROC *)
+	if (!apistubs) {
+	    handle = LoadLibraryA("netapi32.dll");
+	    if (handle) {
+		netApiBufferFreeProc = (NETAPIBUFFERFREEPROC *)
 		GetProcAddress(handle, "NetApiBufferFree");
-	    netGetDCNameProc = (NETGETDCNAMEPROC *)
+		netGetDCNameProc = (NETGETDCNAMEPROC *)
 		GetProcAddress(handle, "NetGetDCName");
-	    netUserGetInfoProc = (NETUSERGETINFOPROC *)
+		netUserGetInfoProc = (NETUSERGETINFOPROC *)
 		GetProcAddress(handle, "NetUserGetInfo");
-	    Tcl_CreateExitHandler(TclpUnloadFile, handle);
-	}
-	handle = LoadLibraryA("userenv.dll");
-	if (handle) {
-	    getProfilesDirectoryProc = (GETPROFILESDIRECTORYPROC *)
+		Tcl_CreateExitHandler(TclpUnloadFile, handle);
+	    }
+	    handle = LoadLibraryA("userenv.dll");
+	    if (handle) {
+		getProfilesDirectoryProc = (GETPROFILESDIRECTORYPROC *)
 		GetProcAddress(handle, "GetProfilesDirectoryW");
-	    Tcl_CreateExitHandler(TclpUnloadFile, handle);
-	}
-	
-	apistubs = -1;
-	if ( (netUserGetInfoProc != NULL) && (netGetDCNameProc != NULL)
-	  && (netApiBufferFreeProc != NULL) && (getProfilesDirectoryProc != NULL)
-	) {
-	    apistubs = 1;
+		Tcl_CreateExitHandler(TclpUnloadFile, handle);
+	    }
+	    
+	    apistubs = -1;
+	    if ( (netUserGetInfoProc != NULL) && (netGetDCNameProc != NULL)
+	      && (netApiBufferFreeProc != NULL) && (getProfilesDirectoryProc != NULL)
+	    ) {
+		apistubs = 1;
+	    }
 	}
 	Tcl_MutexUnlock(&initializeMutex);
     }
