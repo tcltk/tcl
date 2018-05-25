@@ -1417,13 +1417,13 @@ TclpGetUserHome(
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
 				 * name of user's home directory. */
 {
-    const char *result = NULL;
+    char *result = NULL;
     USER_INFO_1 *uiPtr, **uiPtrPtr = &uiPtr;
     Tcl_DString ds;
     int nameLen = -1;
     int badDomain = 0;
     char *domain;
-    WCHAR *wName, *wHomeDir, *wDomain, **wDomainPtr = &wDomain;
+    WCHAR *wName, *wHomeDir, *wDomain;
     WCHAR buf[MAX_PATH];
 
     Tcl_DStringInit(bufferPtr);
@@ -1432,7 +1432,7 @@ TclpGetUserHome(
     if (domain != NULL) {
 	Tcl_DStringInit(&ds);
 	wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
-	badDomain = NetGetDCName(NULL, wName, (LPBYTE *) wDomainPtr);
+	badDomain = NetGetDCName(NULL, wName, (LPBYTE *) &wDomain);
 	Tcl_DStringFree(&ds);
 	nameLen = domain - name;
     }
@@ -1440,25 +1440,27 @@ TclpGetUserHome(
 	Tcl_DStringInit(&ds);
 	wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
 	if (NetUserGetInfo(wDomain, wName, 1, (LPBYTE *) uiPtrPtr) == 0) {
+	    DWORD i, size = MAX_PATH;
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
-		Tcl_UniCharToUtfDString(wHomeDir, lstrlenW(wHomeDir),
+		size = lstrlenW(wHomeDir);
+		Tcl_UniCharToUtfDString(wHomeDir, size,
 			bufferPtr);
 	    } else {
 		/*
 		 * User exists but has no home dir. Return
 		 * "{GetProfilesDirectory}/<user>".
 		 */
-		DWORD i, size = MAX_PATH;
 		GetProfilesDirectoryW(buf, &size);
-		for (i = 0; i < size; ++i){
-		    if (buf[i] == '\\') buf[i] = '/';
-		}
 		Tcl_UniCharToUtfDString(buf, size-1, bufferPtr);
-		Tcl_DStringAppend(bufferPtr, "/", -1);
-		Tcl_DStringAppend(bufferPtr, name, -1);
+		Tcl_DStringAppend(bufferPtr, "/", 1);
+		Tcl_DStringAppend(bufferPtr, name, nameLen);
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
+	    /* be sure we returns normalized path */
+	    for (i = 0; i < size; ++i){
+		if (result[i] == '\\') result[i] = '/';
+	    }
 	    NetApiBufferFree((void *) uiPtr);
 	}
 	Tcl_DStringFree(&ds);
