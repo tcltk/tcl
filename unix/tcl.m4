@@ -696,6 +696,9 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 	AC_MSG_RESULT([no])
     fi
 
+	# TIP #509.
+	AC_CHECK_DECLS([PTHREAD_MUTEX_RECURSIVE],tcl_ok=yes,tcl_ok=no, [[#include <pthread.h>]])
+
     AC_SUBST(TCL_THREADS)
 ])
 

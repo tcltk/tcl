@@ -15,6 +15,109 @@
 
 #ifdef TCL_THREADS
 
+/*
+ * TIP #509.
+ */
+
+#if defined(HAVE_DECL_PTHREAD_MUTEX_RECURSIVE) \
+    && HAVE_DECL_PTHREAD_MUTEX_RECURSIVE
+/*
+ * Pthread has native reentrant (AKA recursive) mutexes. Use them for Tcl_Mutex.
+ */
+
+typedef pthread_mutex_t PMutex;
+
+static void
+PMutexInit(
+    PMutex *pmutexPtr
+)
+{
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(pmutexPtr, &attr);
+}
+
+#define PMutexDestroy pthread_mutex_destroy
+#define PMutexLock pthread_mutex_lock
+#define PMutexUnlock pthread_mutex_unlock
+#define PCondWait pthread_cond_wait
+#define PCondTimedWait pthread_cond_timedwait
+
+#else /* HAVE_PTHREAD_MUTEX_RECURSIVE */
+
+/*
+ * No native support for reentrant mutexes. Emulate them with regular mutexes
+ * and thread-local counters.
+ */
+
+typedef struct PMutex {
+    pthread_mutex_t mutex;
+    pthread_key_t counter;
+} PMutex;
+
+static void
+PMutexInit(
+    PMutex *pmutexPtr
+)
+{
+    pthread_mutex_init(&pmutexPtr->mutex, NULL);
+    pthread_key_create(&pmutexPtr->counter, NULL);
+}
+
+static void
+PMutexDestroy(
+    PMutex *pmutexPtr
+)
+{
+	pthread_mutex_destroy(&pmutexPtr->mutex);
+	pthread_key_delete(pmutexPtr->counter);
+}
+
+static void
+PMutexLock(
+    PMutex *pmutexPtr
+)
+{
+    intptr_t count = (intptr_t)pthread_getspecific(pmutexPtr->counter);
+    pthread_setspecific(pmutexPtr->counter, (const void *)(count+1));
+    if (count == 0) {
+	pthread_mutex_lock(&pmutexPtr->mutex);
+    }
+}
+
+static void
+PMutexUnlock(
+    PMutex *pmutexPtr
+)
+{
+    intptr_t count = (intptr_t)pthread_getspecific(pmutexPtr->counter);
+    pthread_setspecific(pmutexPtr->counter, (const void *)(count-1));
+    if (count == 1) {
+	pthread_mutex_unlock(&pmutexPtr->mutex);
+    }
+}
+
+static void
+PCondWait(
+    pthread_cond_t *pcondPtr,
+    PMutex *pmutexPtr
+)
+{
+    pthread_cond_wait(pcondPtr, &pmutexPtr->mutex);
+}
+
+static void
+PCondTimedWait(
+    pthread_cond_t *pcondPtr,
+    PMutex *pmutexPtr,
+    struct timespec *ptime
+)
+{
+    pthread_cond_timedwait(pcondPtr, &pmutexPtr->mutex, ptime);
+}
+#endif /* HAVE_PTHREAD_MUTEX_RECURSIVE */
+
 #ifndef TCL_NO_DEPRECATED
 typedef struct {
     char nabuf[16];
@@ -43,8 +146,14 @@ static pthread_mutex_t initLock = PTHREAD_MUTEX_INITIALIZER;
  * obvious reasons, cannot use any dyamically allocated storage.
  */
 
-static pthread_mutex_t allocLock = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t *allocLockPtr = &allocLock;
+static PMutex allocLock;
+static pthread_once_t allocLockInitOnce = PTHREAD_ONCE_INIT;
+static void
+allocLockInit()
+{
+    PMutexInit(&allocLock);
+}
+static PMutex *allocLockPtr = &allocLock;
 
 #endif /* TCL_THREADS */
 
@@ -379,7 +488,8 @@ Tcl_Mutex *
 Tcl_GetAllocMutex(void)
 {
 #ifdef TCL_THREADS
-    pthread_mutex_t **allocLockPtrPtr = &allocLockPtr;
+    PMutex **allocLockPtrPtr = &allocLockPtr;
+    pthread_once(&allocLockInitOnce, allocLockInit);
     return (Tcl_Mutex *) allocLockPtrPtr;
 #else
     return NULL;
@@ -411,9 +521,9 @@ Tcl_GetAllocMutex(void)
 
 void
 Tcl_MutexLock(
-    Tcl_Mutex *mutexPtr)	/* Really (pthread_mutex_t **) */
+    Tcl_Mutex *mutexPtr)	/* Really (PMutex **) */
 {
-    pthread_mutex_t *pmutexPtr;
+    PMutex *pmutexPtr;
 
     if (*mutexPtr == NULL) {
 	pthread_mutex_lock(&masterLock);
@@ -422,15 +532,15 @@ Tcl_MutexLock(
 	     * Double inside master lock check to avoid a race condition.
 	     */
 
-	    pmutexPtr = ckalloc(sizeof(pthread_mutex_t));
-	    pthread_mutex_init(pmutexPtr, NULL);
+	    pmutexPtr = ckalloc(sizeof(PMutex));
+	    PMutexInit(pmutexPtr);
 	    *mutexPtr = (Tcl_Mutex)pmutexPtr;
 	    TclRememberMutex(mutexPtr);
 	}
 	pthread_mutex_unlock(&masterLock);
     }
-    pmutexPtr = *((pthread_mutex_t **)mutexPtr);
-    pthread_mutex_lock(pmutexPtr);
+    pmutexPtr = *((PMutex **)mutexPtr);
+    PMutexLock(pmutexPtr);
 }
 
 /*
@@ -452,11 +562,11 @@ Tcl_MutexLock(
 
 void
 Tcl_MutexUnlock(
-    Tcl_Mutex *mutexPtr)	/* Really (pthread_mutex_t **) */
+    Tcl_Mutex *mutexPtr)	/* Really (PMutex **) */
 {
-    pthread_mutex_t *pmutexPtr = *(pthread_mutex_t **) mutexPtr;
+    PMutex *pmutexPtr = *(PMutex **) mutexPtr;
 
-    pthread_mutex_unlock(pmutexPtr);
+    PMutexUnlock(pmutexPtr);
 }
 
 /*
@@ -482,10 +592,10 @@ void
 TclpFinalizeMutex(
     Tcl_Mutex *mutexPtr)
 {
-    pthread_mutex_t *pmutexPtr = *(pthread_mutex_t **) mutexPtr;
+    PMutex *pmutexPtr = *(PMutex **) mutexPtr;
 
     if (pmutexPtr != NULL) {
-	pthread_mutex_destroy(pmutexPtr);
+	PMutexDestroy(pmutexPtr);
 	ckfree(pmutexPtr);
 	*mutexPtr = NULL;
     }
@@ -516,11 +626,11 @@ TclpFinalizeMutex(
 void
 Tcl_ConditionWait(
     Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
-    Tcl_Mutex *mutexPtr,	/* Really (pthread_mutex_t **) */
+    Tcl_Mutex *mutexPtr,	/* Really (PMutex **) */
     const Tcl_Time *timePtr) /* Timeout on waiting period */
 {
     pthread_cond_t *pcondPtr;
-    pthread_mutex_t *pmutexPtr;
+    PMutex *pmutexPtr;
     struct timespec ptime;
 
     if (*condPtr == NULL) {
@@ -539,10 +649,10 @@ Tcl_ConditionWait(
 	}
 	pthread_mutex_unlock(&masterLock);
     }
-    pmutexPtr = *((pthread_mutex_t **)mutexPtr);
+    pmutexPtr = *((PMutex **)mutexPtr);
     pcondPtr = *((pthread_cond_t **)condPtr);
     if (timePtr == NULL) {
-	pthread_cond_wait(pcondPtr, pmutexPtr);
+	PCondWait(pcondPtr, pmutexPtr);
     } else {
 	Tcl_Time now;
 
@@ -555,7 +665,7 @@ Tcl_ConditionWait(
 	ptime.tv_sec = timePtr->sec + now.sec +
 	    (timePtr->usec + now.usec) / 1000000;
 	ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
-	pthread_cond_timedwait(pcondPtr, pmutexPtr, &ptime);
+	PCondTimedWait(pcondPtr, pmutexPtr, &ptime);
     }
 }
 
@@ -681,14 +791,14 @@ static pthread_key_t key;
 
 typedef struct {
     Tcl_Mutex tlock;
-    pthread_mutex_t plock;
+    PMutex plock;
 } allocMutex;
 
 Tcl_Mutex *
 TclpNewAllocMutex(void)
 {
     allocMutex *lockPtr;
-    register pthread_mutex_t *plockPtr;
+    register PMutex *plockPtr;
 
     lockPtr = malloc(sizeof(allocMutex));
     if (lockPtr == NULL) {
@@ -696,7 +806,7 @@ TclpNewAllocMutex(void)
     }
     plockPtr = &lockPtr->plock;
     lockPtr->tlock = (Tcl_Mutex) plockPtr;
-    pthread_mutex_init(&lockPtr->plock, NULL);
+    PMutexInit(&lockPtr->plock);
     return &lockPtr->tlock;
 }
 
@@ -708,7 +818,7 @@ TclpFreeAllocMutex(
     if (!lockPtr) {
 	return;
     }
-    pthread_mutex_destroy(&lockPtr->plock);
+    PMutexDestroy(&lockPtr->plock);
     free(lockPtr);
 }
 
