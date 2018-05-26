@@ -2709,7 +2709,7 @@ TclRenameCommand(
 	cmdPtr->nsPtr = cmdNsPtr;
 	goto done;
     } else {
-	newNsPtr->refCount++;
+	cmdPtr->nsPtr->refCount++;
 	TclNsDecrRefCount(cmdNsPtr);
     }
 
@@ -4267,7 +4267,7 @@ static int
 EvalObjvCore(
     ClientData data[],
     Tcl_Interp *interp,
-    int result)
+    int result)		    /* ignored */
 {
     Command *cmdPtr = NULL, *preCmdPtr = data[0];
     int flags = PTR2INT(data[1]);
@@ -4275,7 +4275,8 @@ EvalObjvCore(
     Tcl_Obj **objv = data[3];
     Interp *iPtr = (Interp *) interp;
     Namespace *lookupNsPtr = NULL;
-    int enterTracesDone = 0, notFoundResult;
+    int enterTracesDone = 0;
+    result = TCL_OK;
 
     /*
      * Push records for task to be done on return, in INVERSE order. First, if
@@ -4353,21 +4354,16 @@ EvalObjvCore(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "attempt to invoke a deleted command"));
 	    Tcl_SetErrorCode(interp, "TCL", "EVAL", "DELETEDCOMMAND", NULL);
-	    return TCL_ERROR;
+	    result = TCL_ERROR;
+	    goto cleanup;
 	}
     }
     if (cmdPtr == NULL) {
 	cmdPtr = TEOV_LookupCmdFromObj(interp, objv[0], lookupNsPtr);
 	if (!cmdPtr) {
-	    notFoundResult = TEOV_NotFound(interp, objc, objv, lookupNsPtr);
-	    if (lookupNsPtr) {
-		TclNsDecrRefCount(lookupNsPtr);
-	    }
-	    return notFoundResult;
+	    result = TEOV_NotFound(interp, objc, objv, lookupNsPtr);
+	    goto cleanup;
 	}
-    }
-    if (lookupNsPtr) {
-	TclNsDecrRefCount(lookupNsPtr);
     }
 
     if (enterTracesDone || iPtr->tracePtr
@@ -4380,7 +4376,7 @@ EvalObjvCore(
 
 	if (!enterTracesDone) {
 
-	    int code = TEOV_RunEnterTraces(interp, &cmdPtr, commandPtr,
+	    result = TEOV_RunEnterTraces(interp, &cmdPtr, commandPtr,
 		    objc, objv);
 
 	    /*
@@ -4393,9 +4389,9 @@ EvalObjvCore(
 	     * problem of permanently hiding program errors.)
 	     */
 
-	    if (code != TCL_OK) {
+	    if (result != TCL_OK) {
 		Tcl_DecrRefCount(commandPtr);
-		return code;
+		goto cleanup;
 	    }
 
 	    /*
@@ -4425,7 +4421,14 @@ EvalObjvCore(
     TclNRAddCallback(interp, Dispatch,
 	    cmdPtr->nreProc ? cmdPtr->nreProc : cmdPtr->objProc,
 	    cmdPtr->objClientData, INT2PTR(objc), objv);
-    return TCL_OK;
+
+cleanup:
+
+    if (lookupNsPtr) {
+	TclNsDecrRefCount(lookupNsPtr);
+    }
+
+    return result;
 }
 
 static int
