@@ -22,7 +22,7 @@
  */
 
 #include "tclInt.h"
-#if (defined(TCL_THREADS) && !TCL_THREADS) || !defined(USE_THREAD_ALLOC)
+#if !TCL_THREADS || !defined(USE_THREAD_ALLOC)
 
 #if USE_TCLALLOC
 
@@ -121,7 +121,7 @@ static struct block bigBlocks={	/* Big blocks aren't suballocated. */
  * variable.
  */
 
-#if !defined(TCL_THREADS) || TCL_THREADS
+#if TCL_THREADS
 static Tcl_Mutex *allocMutexPtr;
 #endif
 static int allocInit = 0;
@@ -171,7 +171,7 @@ TclInitAlloc(void)
 {
     if (!allocInit) {
 	allocInit = 1;
-#if !defined(TCL_THREADS) || TCL_THREADS
+#if TCL_THREADS
 	allocMutexPtr = Tcl_GetAllocMutex();
 #endif
     }

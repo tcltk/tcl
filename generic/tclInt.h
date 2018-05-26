@@ -136,6 +136,26 @@ typedef int ptrdiff_t;
 #   define vsnprintf _vsnprintf
 #endif
 
+#if !defined(TCL_THREADS)
+#   define TCL_THREADS 1
+#endif
+#if !TCL_THREADS
+#   undef TCL_DECLARE_MUTEX
+#   define TCL_DECLARE_MUTEX(name)
+#   undef  Tcl_MutexLock
+#   define Tcl_MutexLock(mutexPtr)
+#   undef  Tcl_MutexUnlock
+#   define Tcl_MutexUnlock(mutexPtr)
+#   undef  Tcl_MutexFinalize
+#   define Tcl_MutexFinalize(mutexPtr)
+#   undef  Tcl_ConditionNotify
+#   define Tcl_ConditionNotify(condPtr)
+#   undef  Tcl_ConditionWait
+#   define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
+#   undef  Tcl_ConditionFinalize
+#   define Tcl_ConditionFinalize(condPtr)
+#endif
+
 /*
  * The following procedures allow namespaces to be customized to support
  * special name resolution rules for commands/variables.
@@ -4198,7 +4218,7 @@ typedef const char *TclDTraceStr;
 	} \
     }
 
-#if (!defined(TCL_THREADS) || TCL_THREADS) && !defined(USE_THREAD_ALLOC)
+#if TCL_THREADS && !defined(USE_THREAD_ALLOC)
 #   define USE_THREAD_ALLOC 1
 #endif
 
@@ -4219,7 +4239,7 @@ typedef const char *TclDTraceStr;
 
 #undef USE_THREAD_ALLOC
 #undef USE_TCLALLOC
-#elif (!defined(TCL_THREADS) || TCL_THREADS) && defined(USE_THREAD_ALLOC)
+#elif TCL_THREADS && defined(USE_THREAD_ALLOC)
 
 /*
  * The TCL_THREADS mode is like the regular mode but allocates Tcl_Obj's from
@@ -4284,7 +4304,7 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 #   define USE_TCLALLOC 0
 #endif
 
-#if !defined(TCL_THREADS) || TCL_THREADS
+#if TCL_THREADS
 /* declared in tclObj.c */
 MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 #endif
