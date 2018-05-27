@@ -254,7 +254,7 @@ Tcl_Obj *
 Tcl_NewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    int length)			/* The number of bytes to copy from "bytes"
+    size_t length)			/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
 				 * negative, use bytes up to the first NUL
 				 * byte. */
@@ -266,14 +266,14 @@ Tcl_Obj *
 Tcl_NewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    int length)			/* The number of bytes to copy from "bytes"
+    size_t length)		/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
 				 * negative, use bytes up to the first NUL
 				 * byte. */
 {
     Tcl_Obj *objPtr;
 
-    if (length < 0) {
+    if (length == (size_t)-1) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclNewStringObj(objPtr, bytes, length);
@@ -519,14 +519,10 @@ int
 Tcl_GetUniChar(
     Tcl_Obj *objPtr,		/* The object to get the Unicode charater
 				 * from. */
-    int index)			/* Get the index'th Unicode character. */
+    size_t index)		/* Get the index'th Unicode character. */
 {
     String *stringPtr;
-    int ch, length;
-
-    if (index < 0) {
-	return -1;
-    }
+    int ch;
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
@@ -534,8 +530,9 @@ Tcl_GetUniChar(
      */
 
     if (TclIsPureByteArray(objPtr)) {
+	int length;
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
-	if (index >= length) {
+	if (index >= (size_t)length) {
 		return -1;
 	}
 
@@ -557,14 +554,14 @@ Tcl_GetUniChar(
 	if (stringPtr->numChars == (size_t)-1) {
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
-	if (stringPtr->numChars == (size_t)objPtr->length) {
+	if (stringPtr->numChars == objPtr->length) {
 	    return (Tcl_UniChar) objPtr->bytes[index];
 	}
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
 
-    if (index >= (int)stringPtr->numChars) {
+    if (index >= stringPtr->numChars) {
 	return -1;
     }
     ch = stringPtr->unicode[index];
@@ -576,7 +573,7 @@ Tcl_GetUniChar(
 		    && ((stringPtr->unicode[index-1] & 0xFC00) == 0xD800)) {
 		ch = -1; /* low surrogate preceded by high surrogate */
 	    }
-	} else if ((++index < (int)stringPtr->numChars)
+	} else if ((++index < stringPtr->numChars)
 		&& ((stringPtr->unicode[index] & 0xFC00) == 0xDC00)) {
 	    /* high surrogate followed by low surrogate */
 	    ch = (((ch & 0x3FF) << 10) |

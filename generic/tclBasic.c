@@ -6330,7 +6330,7 @@ Tcl_AddObjErrorInfo(
 				 * pertains. */
     const char *message,	/* Points to the first byte of an array of
 				 * bytes of the message. */
-    int length)			/* The number of bytes in the message. If < 0,
+    size_t length)		/* The number of bytes in the message. If (size_t)-1,
 				 * then append all bytes up to a NULL byte. */
 {
     register Interp *iPtr = (Interp *) interp;

@@ -2854,14 +2854,11 @@ Tcl_DStringAppendElement(
 void
 Tcl_DStringSetLength(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
-    int length)			/* New length for dynamic string. */
+    size_t length)			/* New length for dynamic string. */
 {
-    int newsize;
+    size_t newsize;
 
-    if (length < 0) {
-	length = 0;
-    }
-    if (length >= dsPtr->spaceAvl) {
+    if (length >= (size_t)dsPtr->spaceAvl) {
 	/*
 	 * There are two interesting cases here. In the first case, the user
 	 * may be trying to allocate a large buffer of a specific size. It

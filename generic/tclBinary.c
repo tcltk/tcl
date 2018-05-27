@@ -268,7 +268,7 @@ const Tcl_ObjType tclByteArrayType = {
  */
 
 typedef struct {
-    size_t used;			/* The number of bytes used in the byte
+    size_t used;		/* The number of bytes used in the byte
 				 * array. */
     size_t allocated;		/* The amount of space actually allocated
 				 * minus 1 byte. */
@@ -315,8 +315,7 @@ Tcl_Obj *
 Tcl_NewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    int length)			/* Length of the array of bytes, which must be
-				 * >= 0. */
+    size_t length)		/* Length of the array of bytes */
 {
 #ifdef TCL_MEM_DEBUG
     return Tcl_DbNewByteArrayObj(bytes, length, "unknown", 0);
@@ -358,8 +357,7 @@ Tcl_Obj *
 Tcl_DbNewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    int length,			/* Length of the array of bytes, which must be
-				 * >= 0. */
+    size_t length,		/* Length of the array of bytes. */
     const char *file,		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line)			/* Line number in the source file; used for
@@ -410,15 +408,12 @@ Tcl_SetByteArrayObj(
     TclFreeIntRep(objPtr);
     TclInvalidateStringRep(objPtr);
 
-    if (length < 0) {
-	length = 0;
-    }
     byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
 
     if ((bytes != NULL) && (length > 0)) {
-	memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
+	memcpy(byteArrayPtr->bytes, bytes, length);
     }
     objPtr->typePtr = &properByteArrayType;
     SET_BYTEARRAY(objPtr, byteArrayPtr);
@@ -748,7 +743,7 @@ TclAppendBytesToByteArray(
 
     if (needed > byteArrayPtr->allocated) {
 	ByteArray *ptr = NULL;
-	int attempt;
+	size_t attempt;
 
 	if (needed <= INT_MAX/2) {
 	    /* Try to allocate double the total space that is needed. */
