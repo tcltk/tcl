@@ -125,6 +125,11 @@ static const struct DeclaredSlot slots[] = {
     {NULL, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}
 };
 
+/*
+ * How to build the in-namespace name of a private variable. This is a pattern
+ * used with Tcl_ObjPrintf().
+ */
+
 #define PRIVATE_VARIABLE_PATTERN "%d : %s"
 
 /*
@@ -1687,8 +1692,9 @@ TclOODefineExportObjCmd(
 	} else {
 	    mPtr = Tcl_GetHashValue(hPtr);
 	}
-	if (isNew || !(mPtr->flags & PUBLIC_METHOD)) {
+	if (isNew || !(mPtr->flags & (PUBLIC_METHOD | PRIVATE_METHOD))) {
 	    mPtr->flags |= PUBLIC_METHOD;
+	    mPtr->flags &= ~TRUE_PRIVATE_METHOD;
 	    changed = 1;
 	}
     }
@@ -2028,8 +2034,8 @@ TclOODefineUnexportObjCmd(
 	} else {
 	    mPtr = Tcl_GetHashValue(hPtr);
 	}
-	if (isNew || mPtr->flags & PUBLIC_METHOD) {
-	    mPtr->flags &= ~PUBLIC_METHOD;
+	if (isNew || mPtr->flags & (PUBLIC_METHOD | TRUE_PRIVATE_METHOD)) {
+	    mPtr->flags &= ~(PUBLIC_METHOD | TRUE_PRIVATE_METHOD);
 	    changed = 1;
 	}
     }
