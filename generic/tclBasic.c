@@ -8515,18 +8515,14 @@ TclNRTailcallObjCmd(
 
     /*
      * Create the callback to actually evaluate the tailcalled
-     * command, then set it in the varFrame so that PopCallFrame can use it
+     * command, then set it in the varFrame so that Tcl_PopCallFrame can use it
      * at the proper time.
      */
 
     if (objc > 1) {
-        Tcl_Obj *listPtr;
-        Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
-
-        listPtr = Tcl_NewListObj(objc-1, objv+1);
-        iPtr->varFramePtr->tailcallNsPtr = nsPtr;
-	nsPtr->refCount++;
-        iPtr->varFramePtr->tailcallCmdPtr = listPtr;
+        iPtr->varFramePtr->tailcallNsPtr = iPtr->varFramePtr->nsPtr;
+	iPtr->varFramePtr->tailcallNsPtr->refCount++;
+        iPtr->varFramePtr->tailcallCmdPtr = Tcl_NewListObj(objc-1, objv+1);
     }
     return TCL_RETURN;
 }
