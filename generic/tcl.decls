@@ -318,10 +318,10 @@ declare 83 {
     char *Tcl_Concat(int argc, const char *const *argv)
 }
 declare 84 {
-    int Tcl_ConvertElement(const char *src, char *dst, int flags)
+    size_t Tcl_ConvertElement(const char *src, char *dst, int flags)
 }
 declare 85 {
-    int Tcl_ConvertCountedElement(const char *src, int length, char *dst,
+    size_t Tcl_ConvertCountedElement(const char *src, size_t length, char *dst,
 	    int flags)
 }
 declare 86 {
@@ -786,10 +786,10 @@ declare 217 {
     void Tcl_ResetResult(Tcl_Interp *interp)
 }
 declare 218 {
-    int Tcl_ScanElement(const char *src, int *flagPtr)
+    size_t Tcl_ScanElement(const char *src, int *flagPtr)
 }
 declare 219 {
-    int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
+    size_t Tcl_ScanCountedElement(const char *src, size_t length, int *flagPtr)
 }
 # Removed in 9.0:
 #declare 220 {

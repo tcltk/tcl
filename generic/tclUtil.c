@@ -933,7 +933,7 @@ Tcl_SplitList(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_ScanElement(
     const char *src,	/* String to convert to list element. */
     int *flagPtr)	/* Where to store information to guide
@@ -950,7 +950,7 @@ Tcl_ScanElement(
  *	This function is a companion function to Tcl_ConvertCountedElement. It
  *	scans a string to see what needs to be done to it (e.g. add
  *	backslashes or enclosing braces) to make the string into a valid Tcl
- *	list element. If length is -1, then the string is scanned from src up
+ *	list element. If length is (size_t)-1, then the string is scanned from src up
  *	to the first null byte.
  *
  * Results:
@@ -965,10 +965,10 @@ Tcl_ScanElement(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_ScanCountedElement(
     const char *src,		/* String to convert to Tcl list element. */
-    int length,			/* Number of bytes in src, or -1. */
+    size_t length,		/* Number of bytes in src, or (size_t)-1. */
     int *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
@@ -1009,10 +1009,10 @@ Tcl_ScanCountedElement(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
-    int length,			/* Number of bytes in src, or -1. */
+    size_t length,		/* Number of bytes in src, or (size_t)-1. */
     char *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
@@ -1033,7 +1033,7 @@ TclScanElement(
     int braceCount = 0;		/* Count of all braces '{' '}' seen. */
 #endif /* COMPAT */
 
-    if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == -1))) {
+    if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == (size_t)-1))) {
 	/*
 	 * Empty string element must be brace quoted.
 	 */
@@ -1105,7 +1105,7 @@ TclScanElement(
 	    break;
 	case '\\':	/* TYPE_SUBS */
 	    extra++;				/* Escape '\' => '\\' */
-	    if ((length == 1) || ((length == -1) && (p[1] == '\0'))) {
+	    if ((length == 1) || ((length == (size_t)-1) && (p[1] == '\0'))) {
 		/*
 		 * Final backslash. Cannot format with brace quoting.
 		 */
@@ -1136,14 +1136,14 @@ TclScanElement(
 #endif /* COMPAT */
 	    break;
 	case '\0':	/* TYPE_SUBS */
-	    if (length == -1) {
+	    if (length == (size_t)-1) {
 		goto endOfString;
 	    }
 	    /* TODO: Panic on improper encoding? */
 	    break;
 	}
       }
-	length -= (length > 0);
+	length -= (length+1 > 1);
 	p++;
     }
 
@@ -1296,7 +1296,7 @@ TclScanElement(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_ConvertElement(
     const char *src,	/* Source information for list element. */
     char *dst,		/* Place to put list-ified element. */
@@ -1326,14 +1326,14 @@ Tcl_ConvertElement(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_ConvertCountedElement(
     register const char *src,	/* Source information for list element. */
-    int length,			/* Number of bytes in src, or -1. */
+    size_t length,		/* Number of bytes in src, or (size_t)-1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
-    int numBytes = TclConvertElement(src, length, dst, flags);
+    size_t numBytes = TclConvertElement(src, length, dst, flags);
     dst[numBytes] = '\0';
     return numBytes;
 }
@@ -1359,10 +1359,10 @@ Tcl_ConvertCountedElement(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclConvertElement(
     register const char *src,	/* Source information for list element. */
-    int length,			/* Number of bytes in src, or -1. */
+    size_t length,		/* Number of bytes in src, or (size_t)-1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
@@ -1381,7 +1381,7 @@ TclConvertElement(
      * No matter what the caller demands, empty string must be braced!
      */
 
-    if ((src == NULL) || (length == 0) || (*src == '\0' && length == -1)) {
+    if ((src == NULL) || (length == 0) || (*src == '\0' && length == (size_t)-1)) {
 	src = &tclEmptyString;
 	length = 0;
 	conversion = CONVERT_BRACE;
@@ -1397,7 +1397,7 @@ TclConvertElement(
 	    p[1] = '#';
 	    p += 2;
 	    src++;
-	    length -= (length > 0);
+	    length -= (length+1 > 1);
 	} else {
 	    conversion = CONVERT_BRACE;
 	}
@@ -1408,7 +1408,7 @@ TclConvertElement(
      */
 
     if (conversion == CONVERT_NONE) {
-	if (length == -1) {
+	if (length == (size_t)-1) {
 	    /* TODO: INT_MAX overflow? */
 	    while (*src) {
 		*p++ = *src++;
@@ -1427,7 +1427,7 @@ TclConvertElement(
     if (conversion == CONVERT_BRACE) {
 	*p = '{';
 	p++;
-	if (length == -1) {
+	if (length == (size_t)-1) {
 	    /* TODO: INT_MAX overflow? */
 	    while (*src) {
 		*p++ = *src++;
@@ -1447,7 +1447,7 @@ TclConvertElement(
      * Formatted string is original string converted to escape sequences.
      */
 
-    for ( ; length; src++, length -= (length > 0)) {
+    for ( ; length; src++, length -= (length+1 > 1)) {
 	switch (*src) {
 	case ']':
 	case '[':
@@ -1500,7 +1500,7 @@ TclConvertElement(
 	    p++;
 	    continue;
 	case '\0':
-	    if (length == -1) {
+	    if (length == (size_t)-1) {
 		return p - dst;
 	    }
 
