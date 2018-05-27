@@ -4813,6 +4813,38 @@ test oo-40.1 {TIP 500: private and self} -setup {
 } -cleanup {
     cls destroy
 } -result {e d b {a c}}
+test oo-40.2 {TIP 500: private and export} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	private method foo {} {}
+    }
+    set result [lmap s {public unexported private} {
+	info class methods cls -scope $s}]
+    oo::define cls {
+	export foo
+    }
+    lappend result {*}[lmap s {public unexported private} {
+	info class methods cls -scope $s}]
+} -cleanup {
+    cls destroy
+} -result {{} {} foo foo {} {}}
+test oo-40.3 {TIP 500: private and unexport} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	private method foo {} {}
+    }
+    set result [lmap s {public unexported private} {
+	info class methods cls -scope $s}]
+    oo::define cls {
+	unexport foo
+    }
+    lappend result {*}[lmap s {public unexported private} {
+	info class methods cls -scope $s}]
+} -cleanup {
+    cls destroy
+} -result {{} {} foo {} foo {}}
 
 cleanupTests
 return
