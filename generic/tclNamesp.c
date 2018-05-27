@@ -409,9 +409,7 @@ Tcl_PopCallFrame(
     }
 
     /*
-     * Decrement the namespace's count of active call frames. If the namespace
-     * is "dying" and there are no more active call frames, call
-     * Tcl_DeleteNamespace to destroy it.
+     * Decrement the namespace's count of active call frames.
      */
 
     /* Corresponds to refCount++ in Tcl_PushCallFrame */
@@ -421,6 +419,8 @@ Tcl_PopCallFrame(
     if (framePtr->tailcallNsPtr) {
 	TclSetTailcall(interp, framePtr->tailcallNsPtr,
 	    framePtr->tailcallCmdPtr);
+	TclNsDecrRefCount(framePtr->tailcallNsPtr);
+	framePtr->tailcallNsPtr = NULL;
     }
 }
 

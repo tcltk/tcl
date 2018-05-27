@@ -749,7 +749,7 @@ Tcl_CreateInterp(void)
      * cache was already initialised by the call to alloc the interp struct.
      */
 
-#if TCL_THREADS && defined(USE_THREAD_ALLOC)
+#if (!defined(TCL_THREADS) || TCL_THREADS) && defined(USE_THREAD_ALLOC)
     iPtr->allocCache = TclpGetAllocCache();
 #else
     iPtr->allocCache = NULL;
@@ -965,7 +965,7 @@ Tcl_CreateInterp(void)
 #endif /* !TCL_NO_DEPRECATED */
     TclpSetVariables(interp);
 
-#if TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
     /*
      * The existence of the "threaded" element of the tcl_platform array
      * indicates that this particular Tcl shell has been compiled with threads
@@ -8523,9 +8523,6 @@ TclNRTailcallObjCmd(
         Tcl_Obj *listPtr;
         Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
 
-        /* The tailcall data is in a Tcl list: the first element is the
-         * namespace, the rest the command to be tailcalled. */
-
         listPtr = Tcl_NewListObj(objc-1, objv+1);
         iPtr->varFramePtr->tailcallNsPtr = nsPtr;
 	nsPtr->refCount++;
@@ -8564,7 +8561,10 @@ TclNRTailcallEval(
 
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
+
+    /* Reference count already incremented in TclSetTailcall. */
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
+
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
 
