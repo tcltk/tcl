@@ -109,7 +109,7 @@ declare 21 {
 #    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
 #}
 declare 23 {
-    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, int length,
+    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, size_t length,
 	    const char *file, int line)
 }
 declare 24 {
@@ -205,7 +205,7 @@ declare 48 {
 #    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
 #}
 declare 50 {
-    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int length)
+    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, size_t length)
 }
 declare 51 {
     Tcl_Obj *Tcl_NewDoubleObj(double doubleValue)
@@ -225,7 +225,7 @@ declare 55 {
     Tcl_Obj *Tcl_NewObj(void)
 }
 declare 56 {
-    Tcl_Obj *Tcl_NewStringObj(const char *bytes, int length)
+    Tcl_Obj *Tcl_NewStringObj(const char *bytes, size_t length)
 }
 # Removed in 9.0 (changed to macro):
 #declare 57 {
@@ -263,7 +263,7 @@ declare 66 {
 }
 declare 67 {
     void Tcl_AddObjErrorInfo(Tcl_Interp *interp, const char *message,
-	    int length)
+	    size_t length)
 }
 declare 68 {
     void Tcl_AllowExceptions(Tcl_Interp *interp)
@@ -462,7 +462,7 @@ declare 123 {
     void Tcl_DStringResult(Tcl_Interp *interp, Tcl_DString *dsPtr)
 }
 declare 124 {
-    void Tcl_DStringSetLength(Tcl_DString *dsPtr, int length)
+    void Tcl_DStringSetLength(Tcl_DString *dsPtr, size_t length)
 }
 declare 125 {
     void Tcl_DStringStartSublist(Tcl_DString *dsPtr)
@@ -1370,7 +1370,7 @@ declare 380 {
     size_t Tcl_GetCharLength(Tcl_Obj *objPtr)
 }
 declare 381 {
-    int Tcl_GetUniChar(Tcl_Obj *objPtr, int index)
+    int Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index)
 }
 declare 382 {
     Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)
