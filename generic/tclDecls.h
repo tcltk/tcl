@@ -270,11 +270,11 @@ EXTERN int		Tcl_CommandComplete(const char *cmd);
 /* 83 */
 EXTERN char *		Tcl_Concat(int argc, const char *const *argv);
 /* 84 */
-EXTERN int		Tcl_ConvertElement(const char *src, char *dst,
+EXTERN size_t		Tcl_ConvertElement(const char *src, char *dst,
 				int flags);
 /* 85 */
-EXTERN int		Tcl_ConvertCountedElement(const char *src,
-				int length, char *dst, int flags);
+EXTERN size_t		Tcl_ConvertCountedElement(const char *src,
+				size_t length, char *dst, int flags);
 /* 86 */
 EXTERN int		Tcl_CreateAlias(Tcl_Interp *slave,
 				const char *slaveCmd, Tcl_Interp *target,
@@ -641,10 +641,10 @@ EXTERN void		Tcl_Release(void *clientData);
 /* 217 */
 EXTERN void		Tcl_ResetResult(Tcl_Interp *interp);
 /* 218 */
-EXTERN int		Tcl_ScanElement(const char *src, int *flagPtr);
+EXTERN size_t		Tcl_ScanElement(const char *src, int *flagPtr);
 /* 219 */
-EXTERN int		Tcl_ScanCountedElement(const char *src, int length,
-				int *flagPtr);
+EXTERN size_t		Tcl_ScanCountedElement(const char *src,
+				size_t length, int *flagPtr);
 /* Slot 220 is reserved */
 /* 221 */
 EXTERN int		Tcl_ServiceAll(void);
@@ -1879,8 +1879,8 @@ typedef struct TclStubs {
     int (*tcl_Close) (Tcl_Interp *interp, Tcl_Channel chan); /* 81 */
     int (*tcl_CommandComplete) (const char *cmd); /* 82 */
     char * (*tcl_Concat) (int argc, const char *const *argv); /* 83 */
-    int (*tcl_ConvertElement) (const char *src, char *dst, int flags); /* 84 */
-    int (*tcl_ConvertCountedElement) (const char *src, int length, char *dst, int flags); /* 85 */
+    size_t (*tcl_ConvertElement) (const char *src, char *dst, int flags); /* 84 */
+    size_t (*tcl_ConvertCountedElement) (const char *src, size_t length, char *dst, int flags); /* 85 */
     int (*tcl_CreateAlias) (Tcl_Interp *slave, const char *slaveCmd, Tcl_Interp *target, const char *targetCmd, int argc, const char *const *argv); /* 86 */
     int (*tcl_CreateAliasObj) (Tcl_Interp *slave, const char *slaveCmd, Tcl_Interp *target, const char *targetCmd, int objc, Tcl_Obj *const objv[]); /* 87 */
     Tcl_Channel (*tcl_CreateChannel) (const Tcl_ChannelType *typePtr, const char *chanName, void *instanceData, int mask); /* 88 */
@@ -2021,8 +2021,8 @@ typedef struct TclStubs {
     void (*tcl_RegExpRange) (Tcl_RegExp regexp, int index, const char **startPtr, const char **endPtr); /* 215 */
     void (*tcl_Release) (void *clientData); /* 216 */
     void (*tcl_ResetResult) (Tcl_Interp *interp); /* 217 */
-    int (*tcl_ScanElement) (const char *src, int *flagPtr); /* 218 */
-    int (*tcl_ScanCountedElement) (const char *src, int length, int *flagPtr); /* 219 */
+    size_t (*tcl_ScanElement) (const char *src, int *flagPtr); /* 218 */
+    size_t (*tcl_ScanCountedElement) (const char *src, size_t length, int *flagPtr); /* 219 */
     void (*reserved220)(void);
     int (*tcl_ServiceAll) (void); /* 221 */
     int (*tcl_ServiceEvent) (int flags); /* 222 */
