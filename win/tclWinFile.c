@@ -1468,14 +1468,14 @@ TclpGetUserHome(
 	USER_INFO_1 *uiPtr;
 	Tcl_DString ds;
 	int nameLen, rc;
-	char *domain;
+	const char *domain;
 	WCHAR *wName, *wHomeDir, *wDomain;
 	WCHAR buf[MAX_PATH];
 
 	rc = 0;
 	nameLen = -1;
 	wDomain = NULL;
-	domain = strchr(name, '@');
+	domain = Tcl_UtfFindFirst(name, '@');
 	if (domain == NULL) {
 	    const char *ptr;
 	    
