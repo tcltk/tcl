@@ -383,7 +383,7 @@ typedef struct ClockScanTokenMap {
     const void	       *data;
 } ClockScanTokenMap;
 
-typedef struct ClockScanToken {
+struct ClockScanToken {
     ClockScanTokenMap  *map;
     struct {
 	const char *start;
@@ -393,7 +393,7 @@ typedef struct ClockScanToken {
     unsigned short int	lookAhMin;
     unsigned short int	lookAhMax;
     unsigned short int	lookAhTok;
-} ClockScanToken;
+};
 
 
 #define MIN_FMT_RESULT_BLOCK_ALLOC 200
@@ -432,18 +432,19 @@ typedef struct ClockFormatTokenMap {
     ClockFormatTokenProc *fmtproc;
     void	       *data;
 } ClockFormatTokenMap;
-typedef struct ClockFormatToken {
+
+struct ClockFormatToken {
     ClockFormatTokenMap *map;
     struct {
 	const char *start;
 	const char *end;
     } tokWord;
-} ClockFormatToken;
+};
 
 
 typedef struct ClockFmtScnStorage ClockFmtScnStorage;
 
-typedef struct ClockFmtScnStorage {
+struct ClockFmtScnStorage {
     int			 objRefCount;	/* Reference count shared across threads */
     ClockScanToken	*scnTok;
     unsigned int	 scnTokC;
@@ -458,7 +459,7 @@ typedef struct ClockFmtScnStorage {
    +Tcl_HashEntry    hashEntry		/* ClockFmtScnStorage is a derivate of Tcl_HashEntry,
 					 * stored by offset +sizeof(self) */
 #endif
-} ClockFmtScnStorage;
+};
 
 /*
  * Prototypes of module functions.
