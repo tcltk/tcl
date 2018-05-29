@@ -35974,12 +35974,14 @@ test clock-34.20.10 {clock scan tests (merid and TZ)} {
 } {Jan 24,1970 21:59:00 GMT}
 test clock-34.20.11 {clock scan tests (complex TZ)} {
     list [clock scan "GMT+1000" -base 100000000 -gmt 1] \
+	 [clock scan "GMT+10" -base 100000000 -gmt 1] \
 	 [clock scan "+1000" -base 100000000 -gmt 1]
-} {99964000 99964000}
+} [lrepeat 3 99964000]
 test clock-34.20.12 {clock scan tests (complex TZ)} {
     list [clock scan "GMT-1000" -base 100000000 -gmt 1] \
+	 [clock scan "GMT-10" -base 100000000 -gmt 1] \
 	 [clock scan "-1000" -base 100000000 -gmt 1]
-} {100036000 100036000}
+} [lrepeat 3 100036000]
 test clock-34.20.13 {clock scan tests (complex TZ)} {
     list [clock scan "GMT-0000" -base 100000000 -gmt 1] \
 	 [clock scan "GMT+0000" -base 100000000 -gmt 1] \
@@ -35994,6 +35996,36 @@ test clock-34.20.15 {clock scan tests (complex TZ)} {
 	 [clock scan "CET+0000" -base 100000000 -gmt 1] \
 	 [clock scan "CET" -base 100000000 -gmt 1]
 } [lrepeat 3 99996400]
+test clock-34.20.16 {clock scan tests (complex TZ)} {
+    list [clock format [clock scan "00:00 GMT+1000" -base 100000000 -gmt 1] -gmt 1] \
+	 [clock format [clock scan "00:00 GMT+10" -base 100000000 -gmt 1] -gmt 1] \
+	 [clock format [clock scan "00:00 +1000" -base 100000000 -gmt 1] -gmt 1] \
+	 [clock format [clock scan "00:00" -base 100000000 -timezone +1000] -gmt 1]
+} [lrepeat 4 "Fri Mar 02 14:00:00 GMT 1973"]
+test clock-34.20.17 {clock scan tests (complex TZ)} {
+    list [clock format [clock scan "00:00 GMT+0100" -base 100000000 -gmt 1] -gmt 1] \
+	 [clock format [clock scan "00:00 GMT+01" -base 100000000 -gmt 1] -gmt 1] \
+	 [clock format [clock scan "00:00 GMT+1" -base 100000000 -gmt 1] -gmt 1] \
+	 [clock format [clock scan "00:00" -base 100000000 -timezone +0100] -gmt 1]
+} [lrepeat 4 "Fri Mar 02 23:00:00 GMT 1973"]
+test clock-34.20.18 {clock scan tests (no TZ)} {
+    list [clock scan "1000days" -base 100000000 -gmt 1] \
+	 [clock scan "1000 days" -base 100000000 -gmt 1] \
+	 [clock scan "+1000days" -base 100000000 -gmt 1] \
+	 [clock scan "+1000 days" -base 100000000 -gmt 1] \
+	 [clock scan "GMT +1000 days" -base 100000000 -gmt 1] \
+	 [clock scan "00:00 GMT +1000 days" -base 100000000 -gmt 1]
+} [lrepeat 6 186364800]
+test clock-34.20.19 {clock scan tests (no TZ)} {
+    list [clock scan "-1000days" -base 100000000 -gmt 1] \
+	 [clock scan "-1000 days" -base 100000000 -gmt 1] \
+	 [clock scan "GMT -1000days" -base 100000000 -gmt 1] \
+	 [clock scan "00:00 GMT -1000 days" -base 100000000 -gmt 1] \
+} [lrepeat 4 13564800]
+test clock-34.20.20 {clock scan tests (TZ, TZ + 1day)} {
+    clock scan "00:00 GMT+1000 day" -base 100000000 -gmt 1
+} 100015200
+
 
 # CLOCK SCAN REAL TESTS
 # We use 5am PST, 31-12-1999 as the base for these scans because irrespective

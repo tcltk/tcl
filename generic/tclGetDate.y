@@ -46,6 +46,10 @@
 #pragma warning( disable : 4102 )
 #endif /* _MSC_VER */
 
+#if 0
+#define YYDEBUG 1
+#endif
+
 /*
  * yyparse will accept a 'struct DateInfo' as its parameter; that's where the
  * parsed fields will be returned.
@@ -120,14 +124,16 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 %token	tMONTH_UNIT
 %token	tSTARDATE
 %token	tSEC_UNIT
-%token	tSNUMBER
 %token	tUNUMBER
 %token	tZONE
+%token	tZONEwO4
+%token	tZONEwO2
 %token	tEPOCH
 %token	tDST
 %token	tISOBASE
 %token	tDAY_UNIT
 %token	tNEXT
+%token	SP
 
 %type	<Number>	tDAY
 %type	<Number>	tDAYZONE
@@ -135,9 +141,11 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 %type	<Number>	tMONTH_UNIT
 %type	<Number>	tDST
 %type	<Number>	tSEC_UNIT
-%type	<Number>	tSNUMBER
 %type	<Number>	tUNUMBER
+%type	<Number>	INTNUM
 %type	<Number>	tZONE
+%type	<Number>	tZONEwO4
+%type	<Number>	tZONEwO2
 %type	<Number>	tISOBASE
 %type	<Number>	tDAY_UNIT
 %type	<Number>	unit
@@ -151,6 +159,7 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 
 spec	: /* NULL */
 	| spec item
+	| spec SP item
 	;
 
 item	: time {
@@ -215,27 +224,39 @@ zone	: tZONE tDST {
 	    yyTimezone = $1;
 	    yyDSTmode = DSTon;
 	}
-	| sign tUNUMBER {
-	    yyTimezone = -$1*($2 % 100 + ($2 / 100) * 60);
-	    yyDSTmode = DSToff;
-	}
-	| tZONE sign tUNUMBER {
+	| tZONEwO4 sign INTNUM { /* GMT+0100, GMT-1000, etc. */
 	    yyTimezone = $1 - $2*($3 % 100 + ($3 / 100) * 60);
 	    yyDSTmode = DSToff;
 	}
+	| tZONEwO2 sign INTNUM { /* GMT+1, GMT-10, etc. */
+	    yyTimezone = $1 - $2*($3 * 60);
+	    yyDSTmode = DSToff;
+	}
+	| sign INTNUM { /* +0100, -0100 */
+	    yyTimezone = -$1*($2 % 100 + ($2 / 100) * 60);
+	    yyDSTmode = DSToff;
+	}
+	;
+
+comma	: ','
+	| ',' SP
 	;
 
 day	: tDAY {
 	    yyDayOrdinal = 1;
 	    yyDayNumber = $1;
 	}
-	| tDAY ',' {
+	| tDAY comma {
 	    yyDayOrdinal = 1;
 	    yyDayNumber = $1;
 	}
 	| tUNUMBER tDAY {
 	    yyDayOrdinal = $1;
 	    yyDayNumber = $2;
+	}
+	| sign SP tUNUMBER tDAY {
+	    yyDayOrdinal = $1 * $3;
+	    yyDayNumber = $4;
 	}
 	| sign tUNUMBER tDAY {
 	    yyDayOrdinal = $1 * $2;
@@ -275,7 +296,7 @@ date	: tUNUMBER '/' tUNUMBER {
 	    yyMonth = $1;
 	    yyDay = $2;
 	}
-	| tMONTH tUNUMBER ',' tUNUMBER {
+	| tMONTH tUNUMBER comma tUNUMBER {
 	    yyMonth = $1;
 	    yyDay = $2;
 	    yyYear = $4;
@@ -307,22 +328,13 @@ ordMonth: tNEXT tMONTH {
 	;
 
 iso	: tISOBASE tZONE tISOBASE {
-	    if ($2 != HOUR( 7)) YYABORT;
+	    if ($2 != HOUR( 7)) YYABORT; /* T */
 	    yyYear = $1 / 10000;
 	    yyMonth = ($1 % 10000)/100;
 	    yyDay = $1 % 100;
 	    yyHour = $3 / 10000;
 	    yyMinutes = ($3 % 10000)/100;
 	    yySeconds = $3 % 100;
-	}
-	| tISOBASE tZONE tUNUMBER ':' tUNUMBER ':' tUNUMBER {
-	    if ($2 != HOUR( 7)) YYABORT;
-	    yyYear = $1 / 10000;
-	    yyMonth = ($1 % 10000)/100;
-	    yyDay = $1 % 100;
-	    yyHour = $3;
-	    yyMinutes = $5;
-	    yySeconds = $7;
 	}
 	| tISOBASE tISOBASE {
 	    yyYear = $1 / 10000;
@@ -332,9 +344,34 @@ iso	: tISOBASE tZONE tISOBASE {
 	    yyMinutes = ($2 % 10000)/100;
 	    yySeconds = $2 % 100;
 	}
+	| tISOBASE SP tUNUMBER ':' tUNUMBER ':' tUNUMBER {
+	    yyYear = $1 / 10000;
+	    yyMonth = ($1 % 10000)/100;
+	    yyDay = $1 % 100;
+	    yyHour = $3;
+	    yyMinutes = $5;
+	    yySeconds = $7;
+	}
+	| tISOBASE tZONE tUNUMBER ':' tUNUMBER ':' tUNUMBER {
+	    if ($2 != HOUR( 7)) YYABORT; /* T */
+	    yyYear = $1 / 10000;
+	    yyMonth = ($1 % 10000)/100;
+	    yyDay = $1 % 100;
+	    yyHour = $3;
+	    yyMinutes = $5;
+	    yySeconds = $7;
+	}
+	| tISOBASE SP tISOBASE {
+	    yyYear = $1 / 10000;
+	    yyMonth = ($1 % 10000)/100;
+	    yyDay = $1 % 100;
+	    yyHour = $3 / 10000;
+	    yyMinutes = ($3 % 10000)/100;
+	    yySeconds = $3 % 100;
+	}
 	;
 
-trek	: tSTARDATE tUNUMBER '.' tUNUMBER {
+trek	: tSTARDATE INTNUM '.' tUNUMBER {
 	    /*
 	     * Offset computed year by -377 so that the returned years will be
 	     * in a range accessible with a 32 bit clock seconds value.
@@ -356,16 +393,19 @@ relspec : relunits tAGO {
 	| relunits
 	;
 
-relunits : sign tUNUMBER unit {
+relunits : sign SP INTNUM unit {
+	    *yyRelPointer += $1 * $3 * $4;
+	}
+	| sign INTNUM unit {
 	    *yyRelPointer += $1 * $2 * $3;
 	}
-	| tUNUMBER unit {
+	| INTNUM unit {
 	    *yyRelPointer += $1 * $2;
 	}
 	| tNEXT unit {
 	    *yyRelPointer += $2;
 	}
-	| tNEXT tUNUMBER unit {
+	| tNEXT INTNUM unit {
 	    *yyRelPointer += $2 * $3;
 	}
 	| unit {
@@ -395,7 +435,15 @@ unit	: tSEC_UNIT {
 	}
 	;
 
-number	: tUNUMBER {
+INTNUM	: tUNUMBER {
+	    $$ = $1
+	}
+	| tISOBASE {
+	    $$ = $1
+	}
+	;
+
+number	: INTNUM {
 	    if (yyHaveTime && yyHaveDate && !yyHaveRel) {
 		yyYear = $1;
 	    } else {
@@ -623,6 +671,18 @@ static const TABLE MilitaryTable[] = {
     { NULL, 0, 0 }
 };
 
+static inline const char *
+bypassSpaces(
+    register const char *s)
+{
+    if (isspace(UCHAR(*s))) {
+	do {
+	    s++;
+	} while (isspace(UCHAR(*s)));
+    }
+    return s;
+}
+
 /*
  * Dump error messages in the bit bucket.
  */
@@ -696,11 +756,11 @@ LookupWord(
 
     Tcl_UtfToLower(buff);
 
-    if (strcmp(buff, "am") == 0 || strcmp(buff, "a.m.") == 0) {
+    if (*buff == 'a' && (strcmp(buff, "am") == 0 || strcmp(buff, "a.m.") == 0)) {
 	yylvalPtr->Meridian = MERam;
 	return tMERIDIAN;
     }
-    if (strcmp(buff, "pm") == 0 || strcmp(buff, "p.m.") == 0) {
+    if (*buff == 'p' && (strcmp(buff, "pm") == 0 || strcmp(buff, "p.m.") == 0)) {
 	yylvalPtr->Meridian = MERpm;
 	return tMERIDIAN;
     }
@@ -817,29 +877,38 @@ TclDatelex(
 
     location->first_column = yyInput - info->dateStart;
     for ( ; ; ) {
-	while (isspace(UCHAR(*yyInput))) {
-	    yyInput++;
+
+	if (isspace(UCHAR(*yyInput))) {
+	    yyInput = bypassSpaces(yyInput);
+	    /* ignore space at end of text and before some words */
+	    c = *yyInput;
+	    if (c != '\0' && !isalpha(UCHAR(c))) {
+		return SP;
+	    }
 	}
 
 	if (isdigit(UCHAR(c = *yyInput))) { /* INTL: digit */
+	    
 	    /*
 	     * Convert the string into a number; count the number of digits.
 	     */
+	    register int num = c - '0';
+	    p = (char *)yyInput;
+	    while (isdigit(UCHAR(c = *(++p)))) {
+		num *= 10;
+		num += c - '0';
+	    };
+	    yylvalPtr->Number = num;
+	    yyDigitCount = p - yyInput;
+	    yyInput = p;
 
-	    Count = 0;
-	    for (yylvalPtr->Number = 0;
-		    isdigit(UCHAR(c = *yyInput++)); ) {	  /* INTL: digit */
-		yylvalPtr->Number = 10 * yylvalPtr->Number + c - '0';
-		Count++;
-	    }
-	    yyInput--;
-	    yyDigitCount = Count;
-
+	    /* ignore spaces after digits (optional) */
+	    yyInput = bypassSpaces(yyInput);
 	    /*
 	     * A number with 6 or more digits is considered an ISO 8601 base.
 	     */
 
-	    if (Count >= 6) {
+	    if (yyDigitCount >= 6) {
 		location->last_column = yyInput - info->dateStart - 1;
 		return tISOBASE;
 	    } else {
@@ -848,6 +917,7 @@ TclDatelex(
 	    }
 	}
 	if (!(c & 0x80) && isalpha(UCHAR(c))) {		  /* INTL: ISO only. */
+	    int ret;
 	    for (p = buff; isalpha(UCHAR(c = *yyInput++)) /* INTL: ISO only. */
 		     || c == '.'; ) {
 		if (p < &buff[sizeof buff - 1]) {
@@ -857,7 +927,30 @@ TclDatelex(
 	    *p = '\0';
 	    yyInput--;
 	    location->last_column = yyInput - info->dateStart - 1;
-	    return LookupWord(yylvalPtr, buff);
+	    ret = LookupWord(yylvalPtr, buff);
+	    /* 
+	     * lookahead for +/- digit, to differentiate between "GMT+1000 day" and "GMT +1000 day",
+	     * bypass spaces after token (but ignore by TZ+OFFS), because should 
+	     * recognize next SP token, if TZ only.
+	     */
+	    if (ret == tZONE || ret == tDAYZONE) {
+		c = *yyInput;
+		if ((c == '+' || c == '-') && isdigit(UCHAR(*(yyInput+1)))) {
+		    if ( !isdigit(UCHAR(*(yyInput+2)))
+		      || !isdigit(UCHAR(*(yyInput+3)))) {
+			/* GMT+1, GMT-10, etc. */
+			return tZONEwO2;
+		    }
+		    if ( isdigit(UCHAR(*(yyInput+4)))
+		      && !isdigit(UCHAR(*(yyInput+5)))) {
+			/* GMT+1000, etc. */
+			return tZONEwO4;
+		    }
+		}
+	    }
+	    yyInput = bypassSpaces(yyInput);
+	    return ret;
+
 	}
 	if (c != '(') {
 	    location->last_column = yyInput - info->dateStart;
@@ -885,6 +978,11 @@ TclClockFreeScan(
 {
     int status;
 
+  #if YYDEBUG
+    /* enable debugging if compiled with YYDEBUG */
+    yydebug = 1;
+  #endif
+
     /*
      * yyInput = stringToParse;
      *
@@ -898,6 +996,11 @@ TclClockFreeScan(
     Tcl_IncrRefCount(info->messages);
 
     info->dateStart = yyInput;
+
+    /* ignore spaces at begin */
+    yyInput = bypassSpaces(yyInput);
+
+    /* parse */
     status = yyparse(info);
     if (status == 1) {
 	Tcl_SetObjResult(interp, info->messages);
