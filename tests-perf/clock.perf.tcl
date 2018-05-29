@@ -15,6 +15,10 @@
 # of this file.
 # 
 
+array set in {-time 500}
+if {[info exists ::argv0] && [file tail $::argv0] eq [file tail [info script]]} {
+  array set in $argv
+}
 
 ## common test performance framework:
 if {![namespace exists ::tclTestPerf]} {
@@ -239,7 +243,7 @@ proc test-freescan {{reptime 1000}} {
 }
 
 proc test-add {{reptime 1000}} {
-  _test_run $reptime {
+  set tests {
     # Add : years
     {clock add 1246379415 5 years -gmt 1}
     # Add : months
@@ -273,7 +277,12 @@ proc test-add {{reptime 1000}} {
     # Add : all in system timezone
     {clock add 1246379415 4 years 18 months 50 weeks 378 days 3 weekdays 5 hours 30 minutes 10 seconds -timezone :CET}
 
-  } {puts [clock format $_(r) -locale en]}
+  }
+  # if does not support add of weekdays:
+  if {[catch {clock add 0 3 weekdays -gmt 1}]} {
+    regsub -all {\mweekdays\M} $tests "days" tests
+  }
+  _test_run $reptime $tests {puts [clock format $_(r) -locale en]}
 }
 
 proc test-convert {{reptime 1000}} {
@@ -309,7 +318,7 @@ proc test-convert {{reptime 1000}} {
     # Scan locale 2x: with switching locale (en, de)
     {clock scan "Tue May 30 2017" -format "%a %b %d %Y" -gmt 1 -locale en; clock scan "Di Mai 30 2017" -format "%a %b %d %Y" -gmt 1 -locale de}
     # Scan locale 3x: with switching locale (en, de, fr)
-    {clock scan "Tue May 30 2017" -format "%a %b %d %Y" -gmt 1 -locale en; clock scan "Di Mai 30 2017" -format "%a %b %d %Y" -gmt 1 -locale de; clock scan "mar mai 30 2017" -format "%a %b %d %Y" -gmt 1 -locale fr}
+    {clock scan "Tue May 30 2017" -format "%a %b %d %Y" -gmt 1 -locale en; clock scan "Di Mai 30 2017" -format "%a %b %d %Y" -gmt 1 -locale de; clock scan "mar. mai 30 2017" -format "%a %b %d %Y" -gmt 1 -locale fr}
 
     # Format TZ 2x: comparison values
     {clock format 0 -timezone CET -format "%Y-%m-%d %H:%M:%S %z"}
@@ -398,7 +407,5 @@ proc test {{reptime 1000}} {
 
 # if calling direct:
 if {[info exists ::argv0] && [file tail $::argv0] eq [file tail [info script]]} {
-  array set in {-time 500}
-  array set in $argv
   ::tclTestPerf-TclClock::test $in(-time)
 }
