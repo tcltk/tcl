@@ -253,6 +253,7 @@ ClockInitDateInfo(DateInfo *info) {
  * Structure containing the command arguments supplied to [clock format] and [clock scan]
  */
 
+#define CLF_VALIDATE	(1 << 2)
 #define CLF_EXTENDED	(1 << 4)
 #define CLF_STRICT	(1 << 8)
 #define CLF_LOCALE_USED (1 << 15)
@@ -338,6 +339,9 @@ typedef struct ClockClientData {
 	/* values */
 	int	    tzOffset;
     } local2utc;
+
+    int defFlags;		    /* Default flags (from configure), ATM
+				     * only CLF_VALIDATE supported */
 } ClockClientData;
 
 #define ClockDefaultYearCentury 2000
