@@ -34,6 +34,13 @@ testConstraint y2038 \
 testConstraint no_tclclockmod \
     [expr {[namespace which -command ::tcl::clock::configure] eq {}}]
 
+# Test with both validity modes - validate on / off:
+
+set valid_mode [clock configure -valid]
+   
+puts [outputChannel] "  Validity default mode: [expr {$valid_mode ? "on": "off"}]"
+testConstraint valid_off [expr {![clock configure -valid]}]
+
 # TEST PLAN
 
 # clock-0:
@@ -272,15 +279,6 @@ test clock-0.1 "initial: auto-loading of ensemble and stubs on demand" no_tclclo
     interp delete $i
     set ret
 } {ens:0 ens:1 stubs:0 stubs:1}
-
-# Test with both validity modes - validate on / off:
-
-foreach valid_mode [list [expr {![clock configure -valid]}] [clock configure -valid]] {
-    clock configure -valid $valid_mode
-    
-    puts "Validity default mode: [expr {$valid_mode ? "on": "off"}]"
-    testConstraint valid_off [expr {![clock configure -valid]}]
-
 
 # Test some of the basics of [clock format]
 
@@ -37637,11 +37635,6 @@ test clock-67.5.vm$valid_mode {Change scan %x output on global locale change [Bu
 
 ::tcl::clock::ClearCaches
 ::tcltest::cleanupTests
-puts ""
-
-}; # foreach validate mode.
-unset -nocomplain valid_mode
-
 namespace delete ::testClock
 
 return
