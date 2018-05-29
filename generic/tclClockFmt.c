@@ -2474,7 +2474,7 @@ ClockFmtToken_HourAMPM_Proc(
     ClockFormatToken *tok,
     int *val)
 {
-    *val = ( ( ( *val % SECONDS_PER_DAY ) + SECONDS_PER_DAY - 3600 ) / 3600 ) % 12 + 1;
+    *val = ( ( *val + SECONDS_PER_DAY - 3600 ) / 3600 ) % 12 + 1;
     return TCL_OK;
 }
 
@@ -2489,7 +2489,7 @@ ClockFmtToken_AMPM_Proc(
     const char *s;
     int len;
 
-    if ((*val % SECONDS_PER_DAY) < (SECONDS_PER_DAY / 2)) {
+    if (*val < (SECONDS_PER_DAY / 2)) {
 	mcObj = ClockMCGet(opts, MCLIT_AM);
     } else {
 	mcObj = ClockMCGet(opts, MCLIT_PM);
@@ -2536,7 +2536,7 @@ ClockFmtToken_StarDate_Proc(
 	fractYear, '0', 3);
     *dateFmt->output++ = '.';
     /* be sure positive after decimal point (note: clock-value can be negative) */
-    v = dateFmt->date.localSeconds % SECONDS_PER_DAY / ( SECONDS_PER_DAY / 10 );
+    v = dateFmt->date.secondOfDay / ( SECONDS_PER_DAY / 10 );
     if (v < 0) v = 10 + v;
     dateFmt->output = _itoaw(dateFmt->output, v, '0', 1);
 
