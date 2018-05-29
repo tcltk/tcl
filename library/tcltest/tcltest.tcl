@@ -2595,6 +2595,18 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
     return
 }
 
+proc tcltest::__SortFiles {lst} {
+    set slst {}
+    foreach f $lst {
+	lappend slst [list [file rootname $f] $f]
+    }
+    set lst {}
+    foreach f [lsort -dictionary -index 0 $slst] {
+	lappend lst [lindex $f 1]
+    }
+    return $lst
+}
+
 #####################################################################
 
 # Procs that determine which tests/test files to run
@@ -2659,7 +2671,8 @@ proc tcltest::GetMatchingFiles { args } {
 	PrintError "No test files remain after applying your match and\
 		skip patterns!"
     }
-    return $matchingFiles
+    
+    return [__SortFiles $matchingFiles]
 }
 
 # tcltest::GetMatchingDirectories --
