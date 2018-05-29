@@ -64,8 +64,9 @@ typedef struct SortInfo {
 				 * SORTMODE_COMMAND. Pre-initialized to hold
 				 * base of command. */
     int *indexv;		/* If the -index option was specified, this
-				 * holds the indexes contained in the list
-				 * supplied as an argument to that option.
+				 * holds an encoding of the indexes contained
+				 * in the list supplied as an argument to
+				 * that option.
 				 * NULL if no indexes supplied, and points to
 				 * singleIndex field when only one
 				 * supplied. */
@@ -91,14 +92,6 @@ typedef struct SortInfo {
 #define SORTMODE_COMMAND	3
 #define SORTMODE_DICTIONARY	4
 #define SORTMODE_ASCII_NC	8
-
-/*
- * Magic values for the index field of the SortInfo structure. Note that the
- * index "end-1" will be translated to SORTIDX_END-1, etc.
- */
-
-#define SORTIDX_NONE	-1	/* Not indexed; use whole value. */
-#define SORTIDX_END	-2	/* Indexed from end. */
 
 /*
  * Forward declarations for procedures defined in this file:
@@ -2762,7 +2755,7 @@ Tcl_LreplaceObjCmd(
      * (to allow for replacing the last elem).
      */
 
-    if ((first > listLen) && (listLen > 0)) {
+    if ((first >= listLen) && (listLen > 0)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"list doesn't contain element %s", TclGetString(objv[2])));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPLACE", "BADIDX",
@@ -2913,7 +2906,7 @@ Tcl_LsearchObjCmd(
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     const char *bytes, *patternBytes;
-    int i, match, index, result, listc, length, elemLen, bisect;
+    int i, match, index, result=TCL_OK, listc, length, elemLen, bisect;
     int dataType, isIncreasing, lower, upper, offset;
     Tcl_WideInt patWide, objWide;
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
@@ -3113,13 +3106,26 @@ Tcl_LsearchObjCmd(
 	     */
 
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		if (TclGetIntForIndexM(interp, indices[j], SORTIDX_END,
-			&sortInfo.indexv[j]) != TCL_OK) {
+		int encoded = 0;
+		if (TclIndexEncode(interp, indices[j], TCL_INDEX_BEFORE,
+			TCL_INDEX_AFTER, &encoded) != TCL_OK) {
+		    result = TCL_ERROR;
+		}
+		if ((encoded == TCL_INDEX_BEFORE)
+			|| (encoded == TCL_INDEX_AFTER)) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "index \"%s\" cannot select an element "
+			    "from any list", Tcl_GetString(indices[j])));
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
+			    "OUTOFRANGE", NULL);
+		    result = TCL_ERROR;
+		}
+		if (result == TCL_ERROR) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (-index option item number %d)", j));
-		    result = TCL_ERROR;
 		    goto done;
 		}
+		sortInfo.indexv[j] = encoded;
 	    }
 	    break;
 	}
@@ -3492,8 +3498,8 @@ Tcl_LsearchObjCmd(
 
 		itemPtr = Tcl_NewIntObj(i);
 		for (j=0 ; j<sortInfo.indexc ; j++) {
-		    Tcl_ListObjAppendElement(interp, itemPtr,
-			    Tcl_NewIntObj(sortInfo.indexv[j]));
+		    Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewIntObj(
+			    TclIndexDecode(sortInfo.indexv[j], listc)));
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 	    } else {
@@ -3514,8 +3520,8 @@ Tcl_LsearchObjCmd(
 
 	    itemPtr = Tcl_NewIntObj(index);
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		Tcl_ListObjAppendElement(interp, itemPtr,
-			Tcl_NewIntObj(sortInfo.indexv[j]));
+		Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewIntObj(
+			TclIndexDecode(sortInfo.indexv[j], listc)));
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
 	} else {
@@ -3732,7 +3738,7 @@ Tcl_LsortObjCmd(
 	    sortInfo.isIncreasing = 1;
 	    break;
 	case LSORT_INDEX: {
-	    int indexc, dummy;
+	    int indexc;
 	    Tcl_Obj **indexv;
 
 	    if (i == objc-2) {
@@ -3758,8 +3764,20 @@ Tcl_LsortObjCmd(
 	     */
 
 	    for (j=0 ; j<indexc ; j++) {
-		if (TclGetIntForIndexM(interp, indexv[j], SORTIDX_END,
-			&dummy) != TCL_OK) {
+		int encoded = 0;
+		int result = TclIndexEncode(interp, indexv[j],
+			TCL_INDEX_BEFORE, TCL_INDEX_AFTER, &encoded);
+
+		if ((result == TCL_OK) && ((encoded == TCL_INDEX_BEFORE)
+			|| (encoded == TCL_INDEX_AFTER))) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "index \"%s\" cannot select an element "
+			    "from any list", Tcl_GetString(indexv[j])));
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
+			    "OUTOFRANGE", NULL);
+		    result = TCL_ERROR;
+		}
+		if (result == TCL_ERROR) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (-index option item number %d)", j));
 		    sortInfo.resultCode = TCL_ERROR;
@@ -3839,8 +3857,8 @@ Tcl_LsortObjCmd(
 					 * might be decreased by 1 later. */
 	}
 	for (j=0 ; j<sortInfo.indexc ; j++) {
-	    TclGetIntForIndexM(interp, indexv[j], SORTIDX_END,
-		    &sortInfo.indexv[j]);
+	    /* Prescreened values, no errors or out of range possible */
+	    TclIndexEncode(NULL, indexv[j], 0, 0, &sortInfo.indexv[j]);
 	}
     }
 
@@ -3911,10 +3929,7 @@ Tcl_LsortObjCmd(
 	     * offset of the element within each group by which to sort.
 	     */
 
-	    groupOffset = sortInfo.indexv[0];
-	    if (groupOffset <= SORTIDX_END) {
-		groupOffset = (groupOffset - SORTIDX_END) + groupSize - 1;
-	    }
+	    groupOffset = TclIndexDecode(sortInfo.indexv[0], groupSize - 1);
 	    if (groupOffset < 0 || groupOffset >= groupSize) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"when used with \"-stride\", the leading \"-index\""
@@ -3933,6 +3948,9 @@ Tcl_LsortObjCmd(
 		/*
 		 * Do not shrink the actual memory block used; that doesn't
 		 * work with TclStackAlloc-allocated memory. [Bug 2918962]
+		 * 
+		 * TODO: Consider a pointer increment to replace this
+		 * array shift.
 		 */
 
 		for (i = 0; i < sortInfo.indexc; i++) {
@@ -4501,15 +4519,8 @@ SelectObjFromSublist(
 	    infoPtr->resultCode = TCL_ERROR;
 	    return NULL;
 	}
-	index = infoPtr->indexv[i];
 
-	/*
-	 * Adjust for end-based indexing.
-	 */
-
-	if (index < SORTIDX_NONE) {
-	    index += listLen + 1;
-	}
+	index = TclIndexDecode(infoPtr->indexv[i], listLen - 1);
 
 	if (Tcl_ListObjIndex(infoPtr->interp, objPtr, index,
 		&currentObj) != TCL_OK) {

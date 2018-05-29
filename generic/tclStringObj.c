@@ -418,17 +418,22 @@ Tcl_GetCharLength(
     int numChars;
 
     /*
-     * Optimize the case where we're really dealing with a bytearray object
-     * without string representation; we don't need to convert to a string to
-     * perform the get-length operation.
+     * Optimize the case where we're really dealing with a bytearray object;
+     * we don't need to convert to a string to perform the get-length operation.
+     *
+     * NOTE that we do not need the bytearray to be "pure".  A ByteArray value
+     * with a string rep cannot be trusted to represent the same value as the
+     * string rep, but it *can* be trusted to have the same character length
+     * as the string rep, which is all this routine cares about.
      */
 
-    if (TclIsPureByteArray(objPtr)) {
+    if (objPtr->typePtr == &tclByteArrayType) {
 	int length;
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
 	return length;
     }
+
 
     /*
      * OK, need to work with the object as a string.
@@ -459,6 +464,50 @@ Tcl_GetCharLength(
 #endif
     }
     return numChars;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCheckEmptyString --
+ *
+ *	Determine whether the string value of an object is or would be the
+ *	empty string, without generating a string representation.
+ *
+ * Results:
+ *	Returns 1 if empty, 0 if not, and -1 if unknown.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclCheckEmptyString (
+    Tcl_Obj *objPtr
+) {
+    int length = -1;
+
+    if (objPtr->bytes == tclEmptyStringRep) {
+	return TCL_EMPTYSTRING_YES;
+    }
+
+    if (TclIsPureList(objPtr)) {
+	Tcl_ListObjLength(NULL, objPtr, &length);
+	return length == 0;
+    }
+
+    if (TclIsPureDict(objPtr)) {
+	Tcl_DictObjSize(NULL, objPtr, &length);
+	return length == 0;
+    }
+    
+    if (objPtr->bytes == NULL) {
+	return TCL_EMPTYSTRING_UNKNOWN;
+    }
+    return objPtr->length == 0;
 }
 
 /*
@@ -529,7 +578,7 @@ Tcl_GetUniChar(
  *
  *	Get the Unicode form of the String object. If the object is not
  *	already a String object, it will be converted to one. If the String
- *	object does not have a Unicode rep, then one is create from the UTF
+ *	object does not have a Unicode rep, then one is created from the UTF
  *	string format.
  *
  * Results:
@@ -663,6 +712,17 @@ Tcl_GetRange(
 	stringPtr = GET_STRING(objPtr);
     }
 
+#if TCL_UTF_MAX == 4
+	/* See: bug [11ae2be95dac9417] */
+	if ((first>0) && ((stringPtr->unicode[first]&0xFC00) == 0xDC00)
+		&& ((stringPtr->unicode[first-1]&0xFC00) == 0xD800)) {
+	    ++first;
+	}
+	if ((last+1<stringPtr->numChars) && ((stringPtr->unicode[last+1]&0xFC00) == 0xDC00)
+		&& ((stringPtr->unicode[last]&0xFC00) == 0xD800)) {
+	    ++last;
+	}
+#endif
     return Tcl_NewUnicodeObj(stringPtr->unicode + first, last-first+1);
 }
 
@@ -2720,7 +2780,6 @@ TclStringObjReverse(
 	     * Tcl_SetObjLength into growing the unicode rep buffer.
 	     */
 
-	    ch = 0;
 	    objPtr = Tcl_NewUnicodeObj(&ch, 1);
 	    Tcl_SetObjLength(objPtr, stringPtr->numChars);
 	    to = Tcl_GetUnicode(objPtr);
@@ -2823,7 +2882,7 @@ ExtendUnicodeRepWithString(
 {
     String *stringPtr = GET_STRING(objPtr);
     int needed, numOrigChars = 0;
-    Tcl_UniChar *dst;
+    Tcl_UniChar *dst, unichar = 0;
 
     if (stringPtr->hasUnicode) {
 	numOrigChars = stringPtr->numChars;
@@ -2846,7 +2905,8 @@ ExtendUnicodeRepWithString(
 	numAppendChars = 0;
     }
     for (dst=stringPtr->unicode + numOrigChars; numAppendChars-- > 0; dst++) {
-	bytes += TclUtfToUniChar(bytes, dst);
+	bytes += TclUtfToUniChar(bytes, &unichar);
+	*dst = unichar;
     }
     *dst = 0;
 }

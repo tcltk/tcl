@@ -188,7 +188,7 @@ test cmdAH-4.5 {Tcl_EncodingObjCmd} -setup {
 test cmdAH-4.6 {Tcl_EncodingObjCmd} -setup {
     set system [encoding system]
 } -body {
-    encoding system identity
+    encoding system iso8859-1
     encoding convertto jis0208 \u4e4e
 } -cleanup {
     encoding system $system
@@ -210,7 +210,7 @@ test cmdAH-4.9 {Tcl_EncodingObjCmd} -setup {
 test cmdAH-4.10 {Tcl_EncodingObjCmd} -setup {
     set system [encoding system]
 } -body {
-    encoding system identity
+    encoding system iso8859-1
     encoding convertfrom jis0208 8C
 } -cleanup {
     encoding system $system
@@ -224,11 +224,11 @@ test cmdAH-4.12 {Tcl_EncodingObjCmd} -returnCodes error -body {
 test cmdAH-4.13 {Tcl_EncodingObjCmd} -setup {
     set system [encoding system]
 } -body {
-    encoding system identity
+    encoding system iso8859-1
     encoding system
 } -cleanup {
     encoding system $system
-} -result identity
+} -result iso8859-1
 
 test cmdAH-5.1 {Tcl_FileObjCmd} -returnCodes error -body {
     file
