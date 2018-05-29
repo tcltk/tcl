@@ -1781,16 +1781,16 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     {CTOKT_INT, CLF_CENTURY|CLF_ISO8601CENTURY, 0, 1, 2, TclOffset(DateInfo, dateCentury),
 	NULL},
     /* %g */
-    {CTOKT_INT, CLF_ISO8601YEAR | CLF_ISO8601, 0, 2, 2, TclOffset(DateInfo, date.iso8601Year),
+    {CTOKT_INT, CLF_ISO8601YEAR, 0, 2, 2, TclOffset(DateInfo, date.iso8601Year),
 	NULL},
     /* %G */
-    {CTOKT_INT, CLF_ISO8601YEAR | CLF_ISO8601 | CLF_ISO8601CENTURY, 0, 4, 4, TclOffset(DateInfo, date.iso8601Year),
+    {CTOKT_INT, CLF_ISO8601YEAR | CLF_ISO8601CENTURY, 0, 4, 4, TclOffset(DateInfo, date.iso8601Year),
 	NULL},
     /* %V */
-    {CTOKT_INT, CLF_ISO8601, 0, 1, 2, TclOffset(DateInfo, date.iso8601Week),
+    {CTOKT_INT, CLF_ISO8601WEAK, 0, 1, 2, TclOffset(DateInfo, date.iso8601Week),
 	NULL},
     /* %a %A %u %w */
-    {CTOKT_PARSER, CLF_DAYOFWEEK | CLF_ISO8601, 0, 0, 0xffff, 0,
+    {CTOKT_PARSER, CLF_DAYOFWEEK | CLF_ISO8601WEAK, 0, 0, 0xffff, 0,
 	ClockScnToken_DayOfWeek_Proc, NULL},
     /* %z %Z */
     {CTOKT_PARSER, CLF_OPTIONAL, 0, 0, 0xffff, 0,
@@ -1854,7 +1854,7 @@ static ClockScanTokenMap ScnOTokenMap[] = {
     {CTOKT_PARSER, CLF_TIME, 0, 0, 0xffff, TclOffset(DateInfo, date.secondOfMin),
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %Ou Ow */
-    {CTOKT_PARSER, CLF_DAYOFWEEK | CLF_ISO8601, 0, 0, 0xffff, 0,
+    {CTOKT_PARSER, CLF_DAYOFWEEK | CLF_ISO8601WEAK, 0, 0, 0xffff, 0,
 	ClockScnToken_DayOfWeek_Proc, (void *)MCLIT_LOCALE_NUMERALS},
 };
 static const char *ScnOTokenMapAliasIndex[2] = {
@@ -2324,7 +2324,7 @@ ClockScan(
 		    case (CLF_DAYOFYEAR):
 		    /* ddd over naked weekday */
 		    if (!(flags & CLF_ISO8601YEAR)) {
-			flags &= ~CLF_ISO8601;
+			flags &= ~CLF_ISO8601WEAK;
 		    }
 		    break;
 		    case (CLF_MONTH|CLF_DAYOFYEAR|CLF_DAYOFMONTH):
@@ -2333,13 +2333,13 @@ ClockScan(
 		    case (CLF_DAYOFMONTH):
 		    /* mmdd / dd over naked weekday */
 		    if (!(flags & CLF_ISO8601YEAR)) {
-			flags &= ~CLF_ISO8601;
+			flags &= ~CLF_ISO8601WEAK;
 		    }
 		    break;
 		}
 
 		/* YearWeekDay below YearMonthDay */
-		if ( (flags & CLF_ISO8601)
+		if ( (flags & CLF_ISO8601WEAK)
 		  && ( (flags & (CLF_YEAR|CLF_DAYOFYEAR)) == (CLF_YEAR|CLF_DAYOFYEAR)
 		    || (flags & (CLF_YEAR|CLF_DAYOFMONTH|CLF_MONTH)) == (CLF_YEAR|CLF_DAYOFMONTH|CLF_MONTH)
 		  )
@@ -2347,16 +2347,16 @@ ClockScan(
 		    /* yy precedence below yyyy */
 		    if (!(flags & CLF_ISO8601CENTURY) && (flags & CLF_CENTURY)) {
 			/* normally precedence of ISO is higher, but no century - so put it down */
-			flags &= ~CLF_ISO8601;
+			flags &= ~CLF_ISO8601WEAK;
 		    }
 		    else
 		    /* yymmdd or yyddd over naked weekday */
 		    if (!(flags & CLF_ISO8601YEAR)) {
-			flags &= ~CLF_ISO8601;
+			flags &= ~CLF_ISO8601WEAK;
 		    }
 		}
 
-		if ( (flags & CLF_YEAR) || !(flags & CLF_ISO8601) ) {
+		if ( (flags & CLF_YEAR) ) {
 		    if (yyYear < 100) {
 			if (!(flags & CLF_CENTURY)) {
 			    if (yyYear >= dataPtr->yearOfCenturySwitch) {
@@ -2368,7 +2368,12 @@ ClockScan(
 			}
 		    }
 		} 
-		if ( (flags & CLF_ISO8601) ) {
+		if ( (flags & (CLF_ISO8601WEAK|CLF_ISO8601YEAR)) ) {
+		    if ((flags & (CLF_ISO8601YEAR|CLF_YEAR)) == CLF_YEAR) {
+		    	/* for calculations expected iso year */
+			info->date.iso8601Year = yyYear;
+		    }
+		    else
 		    if (info->date.iso8601Year < 100) {
 			if (!(flags & CLF_ISO8601CENTURY)) {
 			    if (info->date.iso8601Year >= dataPtr->yearOfCenturySwitch) {
@@ -2378,6 +2383,10 @@ ClockScan(
 			} else {
 			    info->date.iso8601Year += info->dateCentury * 100;
 			}
+		    }
+		    if ((flags & (CLF_ISO8601YEAR|CLF_YEAR)) == CLF_ISO8601YEAR) {
+		    	/* for calculations expected year (e. g. CLF_ISO8601WEAK not set) */
+			yyYear = info->date.iso8601Year;
 		    }
 		}
 	    }

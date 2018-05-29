@@ -44,7 +44,7 @@
 #define CLF_YEAR	       (1 << 10)
 #define CLF_DAYOFWEEK	       (1 << 11)
 #define CLF_ISO8601YEAR	       (1 << 12)
-#define CLF_ISO8601	       (1 << 13)
+#define CLF_ISO8601WEAK	       (1 << 13)
 #define CLF_ISO8601CENTURY     (1 << 14)
 #define CLF_SIGNED	       (1 << 15)
 /* On demand (lazy) assemble flags */
@@ -53,7 +53,7 @@
 #define CLF_ASSEMBLE_SECONDS   (1 << 30) /* assemble localSeconds (and seconds at end) */
 
 #define CLF_DATE	       (CLF_JULIANDAY | CLF_DAYOFMONTH | CLF_DAYOFYEAR | \
-				CLF_MONTH | CLF_YEAR | CLF_ISO8601YEAR | CLF_ISO8601)
+				CLF_MONTH | CLF_YEAR | CLF_ISO8601YEAR | CLF_ISO8601WEAK)
 
 /*
  * Enumeration of the string literals used in [clock]
