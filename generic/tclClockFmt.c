@@ -1766,10 +1766,10 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     {CTOKT_INT, CLF_TIME, 0, 1, 2, TclOffset(DateInfo, date.minutes),
 	NULL},
     /* %S */
-    {CTOKT_INT, CLF_TIME, 0, 1, 2, TclOffset(DateInfo, date.secondOfDay),
+    {CTOKT_INT, CLF_TIME, 0, 1, 2, TclOffset(DateInfo, date.secondOfMin),
 	NULL},
     /* %p %P */
-    {CTOKT_PARSER, CLF_ISO8601, 0, 0, 0xffff, 0,
+    {CTOKT_PARSER, 0, 0, 0, 0xffff, 0,
 	ClockScnToken_amPmInd_Proc, NULL},
     /* %J */
     {CTOKT_WIDE, CLF_JULIANDAY, 0, 1, 0xffff, TclOffset(DateInfo, date.julianDay),
@@ -1790,7 +1790,7 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     {CTOKT_INT, CLF_ISO8601, 0, 1, 2, TclOffset(DateInfo, date.iso8601Week),
 	NULL},
     /* %a %A %u %w */
-    {CTOKT_PARSER, CLF_ISO8601, 0, 0, 0xffff, 0,
+    {CTOKT_PARSER, CLF_DAYOFWEEK | CLF_ISO8601, 0, 0, 0xffff, 0,
 	ClockScnToken_DayOfWeek_Proc, NULL},
     /* %z %Z */
     {CTOKT_PARSER, CLF_OPTIONAL, 0, 0, 0xffff, 0,
@@ -1851,10 +1851,10 @@ static ClockScanTokenMap ScnOTokenMap[] = {
     {CTOKT_PARSER, CLF_TIME, 0, 0, 0xffff, TclOffset(DateInfo, date.minutes),
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %OS */
-    {CTOKT_PARSER, CLF_TIME, 0, 0, 0xffff, TclOffset(DateInfo, date.secondOfDay),
+    {CTOKT_PARSER, CLF_TIME, 0, 0, 0xffff, TclOffset(DateInfo, date.secondOfMin),
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %Ou Ow */
-    {CTOKT_PARSER, CLF_ISO8601, 0, 0, 0xffff, 0,
+    {CTOKT_PARSER, CLF_DAYOFWEEK | CLF_ISO8601, 0, 0, 0xffff, 0,
 	ClockScnToken_DayOfWeek_Proc, (void *)MCLIT_LOCALE_NUMERALS},
 };
 static const char *ScnOTokenMapAliasIndex[2] = {
@@ -2329,7 +2329,6 @@ ClockScan(
 		    break;
 		    case (CLF_MONTH|CLF_DAYOFYEAR|CLF_DAYOFMONTH):
 		    /* both available: mmdd over ddd */
-		    flags &= ~CLF_DAYOFYEAR;
 		    case (CLF_MONTH|CLF_DAYOFMONTH):
 		    case (CLF_DAYOFMONTH):
 		    /* mmdd / dd over naked weekday */
@@ -2357,7 +2356,7 @@ ClockScan(
 		    }
 		}
 
-		if (!(flags & CLF_ISO8601)) {
+		if ( (flags & CLF_YEAR) || !(flags & CLF_ISO8601) ) {
 		    if (yyYear < 100) {
 			if (!(flags & CLF_CENTURY)) {
 			    if (yyYear >= dataPtr->yearOfCenturySwitch) {
@@ -2368,7 +2367,8 @@ ClockScan(
 			    yyYear += info->dateCentury * 100;
 			}
 		    }
-		} else {
+		} 
+		if ( (flags & CLF_ISO8601) ) {
 		    if (info->date.iso8601Year < 100) {
 			if (!(flags & CLF_ISO8601CENTURY)) {
 			    if (info->date.iso8601Year >= dataPtr->yearOfCenturySwitch) {
@@ -2391,12 +2391,12 @@ ClockScan(
 
 	if (flags & CLF_TIME) {
 	    info->flags |= CLF_ASSEMBLE_SECONDS;
-	    yySeconds = ToSeconds(yyHour, yyMinutes,
+	    yySecondOfDay = ToSeconds(yyHour, yyMinutes,
 				yySeconds, yyMeridian);
 	} else
 	if (!(flags & (CLF_LOCALSEC|CLF_POSIXSEC))) {
 	    info->flags |= CLF_ASSEMBLE_SECONDS;
-	    yySeconds = yydate.localSeconds % SECONDS_PER_DAY;
+	    yySecondOfDay = yydate.localSeconds % SECONDS_PER_DAY;
 	}
     }
 
