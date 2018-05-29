@@ -3112,11 +3112,13 @@ done:
 		return TCL_ERROR;
 	    }
 	    memcpy(result->bytes, dateFmt->resMem, size);
-	} else {
+	} else if ((dateFmt->resEnd - dateFmt->resMem) / size > MAX_FMT_RESULT_THRESHOLD) {
 	    result->bytes = ckrealloc(dateFmt->resMem, size);
 	    if (result->bytes == NULL) {
 		result->bytes = dateFmt->resMem;
 	    }
+	} else {
+	    result->bytes = dateFmt->resMem;
 	}
 	/* save last used buffer length */
 	if ( dateFmt->resMem != resMem

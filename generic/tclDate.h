@@ -398,7 +398,10 @@ struct ClockScanToken {
 
 
 #define MIN_FMT_RESULT_BLOCK_ALLOC 80
-#define MIN_FMT_RESULT_BLOCK_DELTA 30
+#define MIN_FMT_RESULT_BLOCK_DELTA 0
+/* Maximal permitted threshold (buffer size > result size) in percent, 
+ * to directly return the buffer without reallocate */
+#define MAX_FMT_RESULT_THRESHOLD   2
 
 typedef struct DateFormat {
     char *resMem;
