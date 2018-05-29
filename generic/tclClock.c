@@ -137,6 +137,9 @@ static int		ClockCalcRelTime(
 static int		ClockAddObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		ClockValidDate(
+			    ClientData, register DateInfo *,
+			    register ClockFmtScnCmdArgs *);
 static struct tm *	ThreadSafeLocalTime(const time_t *);
 static size_t		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(ClientData);
@@ -3660,6 +3663,13 @@ ClockScanCommit(
 	}
     }
 
+    /* Apply validation rules, if expected */
+    if ( (opts->flags & CLF_VALIDATE) ) {
+	if (ClockValidDate(clientData, info, opts) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+
     /* Local seconds to UTC (stored in yydate.seconds) */
 
     if (info->flags & (CLF_ASSEMBLE_SECONDS|CLF_ASSEMBLE_JULIANDAY)) {
@@ -3681,6 +3691,67 @@ ClockScanCommit(
     yydate.seconds += yyRelSeconds;
 
     return TCL_OK;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * ClockValidDate --
+ *
+ *	Validate date info structure for wrong data (e. g. out of ranges).
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ClockValidDate(
+    ClientData clientData,	/* Client data containing literal pool */
+    register DateInfo  *info,	/* Clock scan info structure */
+    register
+    ClockFmtScnCmdArgs *opts)	/* Format, locale, timezone and base */
+{
+    const char *errMsg;
+
+    //printf("yyMonth %d, yyDay %d, yyHour %d, yyMinutes %d, yySeconds %d\n", yyMonth, yyDay, yyHour, yyMinutes, yySeconds);
+    
+    /* first month (used later in hath) */
+    if ( yyMonth < 1 || yyMonth > 12 ) {
+	errMsg = "invalid month"; goto error;
+    }
+    /* day of month */
+    if ( yyDay < 1 || yyDay > 31 ) {
+	errMsg = "invalid day"; goto error;
+    } else {
+	const int *h = hath[IsGregorianLeapYear(&yydate)];
+	if ( yyDay > h[yyMonth-1] ) {
+	    errMsg = "invalid day"; goto error;
+	}
+    }
+    /* hour */
+    if ( yyHour < 0 || yyHour > ((yyMeridian == MER24) ? 24 : 12) ) {
+	errMsg = "invalid time (hour)"; goto error;
+    }
+    /* minutes */
+    if ( yyMinutes < 0 || yyMinutes > 59 ) {
+	errMsg = "invalid time (minutes)"; goto error;
+    }
+    /* oldscan could return secondOfDay (parsedTime) -1 by invalid time (ex.: 25:00:00) */
+    if (yySeconds <= -1) {
+	errMsg = "invalid time"; goto error;
+    }
+
+    return TCL_OK;
+
+  error:
+    Tcl_SetObjResult(opts->interp,
+	Tcl_ObjPrintf("unable to convert input string: %s", errMsg));
+    Tcl_SetErrorCode(opts->interp, "CLOCK", "invInpStr", NULL);
+    return TCL_ERROR;
 }
 
 /*----------------------------------------------------------------------
