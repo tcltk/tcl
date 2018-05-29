@@ -1920,15 +1920,22 @@ ClockGetOrParseScanFormat(
     Tcl_Obj    *formatObj)	/* Format container */
 {
     ClockFmtScnStorage *fss;
-    ClockScanToken     *tok;
 
     fss = Tcl_GetClockFrmScnFromObj(interp, formatObj);
     if (fss == NULL) {
 	return NULL;
     }
 
-    /* if first time scanning - tokenize format */
+    /* if format (scnTok) already tokenized */
+    if (fss->scnTok != NULL) {
+	return fss;
+    }
+
+    Tcl_MutexLock(&ClockFmtMutex);
+
+    /* first time scanning - tokenize format */
     if (fss->scnTok == NULL) {
+	ClockScanToken *tok, *scnTok;
 	unsigned int tokCnt;
 	register const char *p, *e, *cp;
 
@@ -1940,9 +1947,7 @@ ClockGetOrParseScanFormat(
 
 	fss->scnSpaceCount = 0;
 
-	Tcl_MutexLock(&ClockFmtMutex);
-
-	fss->scnTok = tok = ckalloc(sizeof(*tok) * fss->scnTokC);
+	scnTok = tok = ckalloc(sizeof(*tok) * fss->scnTokC);
 	memset(tok, 0, sizeof(*(tok)));
 	tokCnt = 1;
 	while (p < e) {
@@ -1964,7 +1969,7 @@ ClockGetOrParseScanFormat(
 		    tok->map = &ScnWordTokenMap;
 		    tok->tokWord.start = p;
 		    tok->tokWord.end = p+1;
-		    AllocTokenInChain(tok, fss->scnTok, fss->scnTokC); tokCnt++;
+		    AllocTokenInChain(tok, scnTok, fss->scnTokC); tokCnt++;
 		    p++;
 		    continue;
 		break;
@@ -2003,10 +2008,10 @@ ClockGetOrParseScanFormat(
 		tok->tokWord.start = p;
 
 		/* calculate look ahead value by standing together tokens */
-		if (tok > fss->scnTok) {
+		if (tok > scnTok) {
 		    ClockScanToken     *prevTok = tok - 1;
 
-		    while (prevTok >= fss->scnTok) {
+		    while (prevTok >= scnTok) {
 			if (prevTok->map->type != tok->map->type) {
 			    break;
 			}
@@ -2025,7 +2030,7 @@ ClockGetOrParseScanFormat(
 		}
 
 		/* next token */
-		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC); tokCnt++;
+		AllocTokenInChain(tok, scnTok, fss->scnTokC); tokCnt++;
 		p++;
 		continue;
 	    }
@@ -2040,7 +2045,7 @@ ClockGetOrParseScanFormat(
 		/* increase space count used in format */
 		fss->scnSpaceCount++;
 		/* next token */
-		AllocTokenInChain(tok, fss->scnTok, fss->scnTokC); tokCnt++;
+		AllocTokenInChain(tok, scnTok, fss->scnTokC); tokCnt++;
 		p++;
 		continue;
 	    break;
@@ -2048,14 +2053,14 @@ ClockGetOrParseScanFormat(
 word_tok:
 	    if (1) {
 		ClockScanToken	 *wordTok = tok;
-		if (tok > fss->scnTok && (tok-1)->map == &ScnWordTokenMap) {
+		if (tok > scnTok && (tok-1)->map == &ScnWordTokenMap) {
 		    wordTok = tok-1;
 		}
 		/* new word token */
 		if (wordTok == tok) {
 		    wordTok->tokWord.start = p;
 		    wordTok->map = &ScnWordTokenMap;
-		    AllocTokenInChain(tok, fss->scnTok, fss->scnTokC); tokCnt++;
+		    AllocTokenInChain(tok, scnTok, fss->scnTokC); tokCnt++;
 		}
 		if (isspace(UCHAR(*p))) {
 		    fss->scnSpaceCount++;
@@ -2068,11 +2073,11 @@ word_tok:
 	}
 
 	/* calculate end distance value for each tokens */
-	if (tok > fss->scnTok) {
+	if (tok > scnTok) {
 	    unsigned int	endDist = 0;
 	    ClockScanToken     *prevTok = tok-1;
 
-	    while (prevTok >= fss->scnTok) {
+	    while (prevTok >= scnTok) {
 		prevTok->endDistance = endDist;
 		if (prevTok->map->type != CTOKT_WORD) {
 		    endDist += prevTok->map->minSize;
@@ -2086,15 +2091,17 @@ word_tok:
 	/* correct count of real used tokens and free mem if desired
 	 * (1 is acceptable delta to prevent memory fragmentation) */
 	if (fss->scnTokC > tokCnt + (CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE / 2)) {
-	    if ( (tok = ckrealloc(fss->scnTok, tokCnt * sizeof(*tok))) != NULL ) {
-		fss->scnTok = tok;
+	    if ( (tok = ckrealloc(scnTok, tokCnt * sizeof(*tok))) != NULL ) {
+		scnTok = tok;
 	    }
 	}
-	fss->scnTokC = tokCnt;
 
-done:
-	Tcl_MutexUnlock(&ClockFmtMutex);
+	/* now we're ready - assign now to storage (note the threaded race condition) */
+	fss->scnTok = scnTok;
+	fss->scnTokC = tokCnt;
     }
+done:
+    Tcl_MutexUnlock(&ClockFmtMutex);
 
     return fss;
 }
@@ -2408,8 +2415,18 @@ overflow:
 
 not_match:
 
+  #if 1
     Tcl_SetObjResult(opts->interp, Tcl_NewStringObj("input string does not match supplied format",
 	-1));
+  #else
+	/* to debug where exactly scan breaks */
+    Tcl_SetObjResult(opts->interp, Tcl_ObjPrintf(
+	"input string \"%s\" does not match supplied format \"%s\","
+	" locale \"%s\" - token \"%s\"",
+	info->dateStart, HashEntry4FmtScn(fss)->key.string,
+        Tcl_GetString(opts->localeObj), 
+        tok && tok->tokWord.start ? tok->tokWord.start : "NULL"));
+  #endif
     Tcl_SetErrorCode(opts->interp, "CLOCK", "badInputString", NULL);
 
 done:
@@ -2843,15 +2860,22 @@ ClockGetOrParseFmtFormat(
     Tcl_Obj    *formatObj)	/* Format container */
 {
     ClockFmtScnStorage *fss;
-    ClockFormatToken   *tok;
 
     fss = Tcl_GetClockFrmScnFromObj(interp, formatObj);
     if (fss == NULL) {
 	return NULL;
     }
 
-    /* if first time scanning - tokenize format */
+    /* if format (fmtTok) already tokenized */
+    if (fss->fmtTok != NULL) {
+	return fss;
+    }
+
+    Tcl_MutexLock(&ClockFmtMutex);
+
+    /* first time formatting - tokenize format */
     if (fss->fmtTok == NULL) {
+	ClockFormatToken *tok, *fmtTok;
 	unsigned int tokCnt;
 	register const char *p, *e, *cp;
 
@@ -2861,9 +2885,7 @@ ClockGetOrParseFmtFormat(
 	/* estimate token count by % char and format length */
 	fss->fmtTokC = EstimateTokenCount(p, e);
 
-	Tcl_MutexLock(&ClockFmtMutex);
-
-	fss->fmtTok = tok = ckalloc(sizeof(*tok) * fss->fmtTokC);
+	fmtTok = tok = ckalloc(sizeof(*tok) * fss->fmtTokC);
 	memset(tok, 0, sizeof(*(tok)));
 	tokCnt = 1;
 	while (p < e) {
@@ -2885,7 +2907,7 @@ ClockGetOrParseFmtFormat(
 		    tok->map = &FmtWordTokenMap;
 		    tok->tokWord.start = p;
 		    tok->tokWord.end = p+1;
-		    AllocTokenInChain(tok, fss->fmtTok, fss->fmtTokC); tokCnt++;
+		    AllocTokenInChain(tok, fmtTok, fss->fmtTokC); tokCnt++;
 		    p++;
 		    continue;
 		break;
@@ -2923,7 +2945,7 @@ ClockGetOrParseFmtFormat(
 		tok->map = &fmtMap[cp - mapIndex];
 		tok->tokWord.start = p;
 		/* next token */
-		AllocTokenInChain(tok, fss->fmtTok, fss->fmtTokC); tokCnt++;
+		AllocTokenInChain(tok, fmtTok, fss->fmtTokC); tokCnt++;
 		p++;
 		continue;
 	    }
@@ -2932,13 +2954,13 @@ ClockGetOrParseFmtFormat(
 word_tok:
 	    if (1) {
 		ClockFormatToken *wordTok = tok;
-		if (tok > fss->fmtTok && (tok-1)->map == &FmtWordTokenMap) {
+		if (tok > fmtTok && (tok-1)->map == &FmtWordTokenMap) {
 		    wordTok = tok-1;
 		}
 		if (wordTok == tok) {
 		    wordTok->tokWord.start = p;
 		    wordTok->map = &FmtWordTokenMap;
-		    AllocTokenInChain(tok, fss->fmtTok, fss->fmtTokC); tokCnt++;
+		    AllocTokenInChain(tok, fmtTok, fss->fmtTokC); tokCnt++;
 		}
 		p = TclUtfNext(p);
 		wordTok->tokWord.end = p;
@@ -2950,15 +2972,17 @@ word_tok:
 	/* correct count of real used tokens and free mem if desired
 	 * (1 is acceptable delta to prevent memory fragmentation) */
 	if (fss->fmtTokC > tokCnt + (CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE / 2)) {
-	    if ( (tok = ckrealloc(fss->fmtTok, tokCnt * sizeof(*tok))) != NULL ) {
-		fss->fmtTok = tok;
+	    if ( (tok = ckrealloc(fmtTok, tokCnt * sizeof(*tok))) != NULL ) {
+		fmtTok = tok;
 	    }
 	}
-	fss->fmtTokC = tokCnt;
 
-done:
-	Tcl_MutexUnlock(&ClockFmtMutex);
+	/* now we're ready - assign now to storage (note the threaded race condition) */
+	fss->fmtTok = fmtTok;
+	fss->fmtTokC = tokCnt;
     }
+done:
+    Tcl_MutexUnlock(&ClockFmtMutex);
 
     return fss;
 }
