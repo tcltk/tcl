@@ -261,6 +261,8 @@ TclClockInit(
     data->utc2local.tzName = NULL;
     data->local2utc.timezoneObj = NULL;
 
+    data->defFlags = 0;
+
     /*
      * Install the commands.
      */
@@ -974,12 +976,14 @@ ClockConfigureObjCmd(
 	"-system-tz",	  "-setup-tz",	  "-default-locale",	"-current-locale",
 	"-clear",
 	"-year-century",  "-century-switch",
+	"-validate",
 	NULL
     };
     enum optionInd {
 	CLOCK_SYSTEM_TZ,  CLOCK_SETUP_TZ, CLOCK_DEFAULT_LOCALE, CLOCK_CURRENT_LOCALE,
 	CLOCK_CLEAR_CACHE,
-	CLOCK_YEAR_CENTURY, CLOCK_CENTURY_SWITCH
+	CLOCK_YEAR_CENTURY, CLOCK_CENTURY_SWITCH,
+	CLOCK_VALIDATE
     };
     int optionIndex;		/* Index of an option. */
     int i;
@@ -1076,6 +1080,23 @@ ClockConfigureObjCmd(
 	    if (i+1 >= objc) {
 		Tcl_SetObjResult(interp,
 		    Tcl_NewIntObj(dataPtr->yearOfCenturySwitch));
+	    }
+	break;
+	case CLOCK_VALIDATE:
+	    if (i < objc) {
+		int val;
+		if (Tcl_GetBooleanFromObj(interp, objv[i], &val) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (val) {
+		    dataPtr->defFlags |= CLF_VALIDATE;
+		} else {
+		    dataPtr->defFlags &= ~CLF_VALIDATE;
+		}
+	    }
+	    if (i+1 >= objc) {
+		Tcl_SetObjResult(interp,
+		    Tcl_NewIntObj(dataPtr->defFlags & CLF_VALIDATE ? 1 : 0));
 	    }
 	break;
 	case CLOCK_CLEAR_CACHE:
@@ -3208,19 +3229,22 @@ ClockParseFmtScnArgs(
     ClockClientData *dataPtr = opts->clientData;
     int gmtFlag = 0;
     static const char *const options[] = {
-	"-base", "-format", "-gmt", "-locale", "-timezone", NULL
+	"-base", "-format", "-gmt", "-locale", "-timezone", "-validate", NULL
     };
     enum optionInd {
 	CLC_ARGS_BASE, CLC_ARGS_FORMAT, CLC_ARGS_GMT, CLC_ARGS_LOCALE,
-	CLC_ARGS_TIMEZONE,
+	CLC_ARGS_TIMEZONE, CLC_ARGS_VALIDATE
     };
     int optionIndex;		/* Index of an option. */
     int saw = 0;		/* Flag == 1 if option was seen already. */
     int i;
     Tcl_WideInt baseVal;	/* Base time, expressed in seconds from the Epoch */
 
-    /* clock value (as current base) */
-    if ( !(flags & (CLC_SCN_ARGS)) ) {
+    if ( flags & (CLC_SCN_ARGS) ) {
+    	/* default flags (from configure) */
+    	opts->flags |= dataPtr->defFlags & (CLF_VALIDATE);
+    } else {
+    	/* clock value (as current base) */
 	opts->baseObj = objv[1];
 	saw |= (1 << CLC_ARGS_BASE);
     }
@@ -3274,6 +3298,21 @@ ClockParseFmtScnArgs(
 	    break;
 	case CLC_ARGS_BASE:
 	    opts->baseObj = objv[i+1];
+	    break;
+	case CLC_ARGS_VALIDATE:
+	    if ( !(flags & CLC_SCN_ARGS) ) {
+		goto badOptionMsg;
+	    } else {
+		int val;
+		if (Tcl_GetBooleanFromObj(interp, objv[i+1], &val) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (val) {
+		    opts->flags |= CLF_VALIDATE;
+		} else {
+		    opts->flags &= ~CLF_VALIDATE;
+		}
+	    }
 	    break;
 	}
 	saw |= (1 << optionIndex);
@@ -3510,7 +3549,7 @@ ClockScanObjCmd(
 	    "?-base seconds? "
 	    "?-format string? "
 	    "?-gmt boolean? "
-	    "?-locale LOCALE? ?-timezone ZONE?";
+	    "?-locale LOCALE? ?-timezone ZONE? ?-validate boolean?";
     int ret;
     ClockFmtScnCmdArgs opts;	/* Format, locale, timezone and base */
     DateInfo	    yy;		/* Common structure used for parsing */

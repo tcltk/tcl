@@ -35827,7 +35827,7 @@ test clock-33.11a {clock test, millis align with micros} {
 } {1}
 
 # clock scan
-set syntax "clock scan string ?-base seconds? ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"
+set syntax "clock scan string ?-base seconds? ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE? ?-validate boolean?"
 test clock-34.1 {clock scan tests} {
     list [catch {clock scan} msg] $msg
 } [subst {1 {wrong # args: should be "$syntax"}}]
