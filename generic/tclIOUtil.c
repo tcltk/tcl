@@ -412,7 +412,6 @@ Tcl_GetCwd(
     return Tcl_DStringValue(cwdPtr);
 }
 
-/* Obsolete */
 int
 Tcl_EvalFile(
     Tcl_Interp *interp,		/* Interpreter in which to process file. */

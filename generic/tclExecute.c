@@ -1333,12 +1333,12 @@ TclStackAlloc(
     int numBytes)
 {
     Interp *iPtr = (Interp *) interp;
-    int numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
+    int numWords;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return (void *) ckalloc(numBytes);
     }
-
+    numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
     return (void *) StackAllocWords(interp, numWords);
 }
 
@@ -4169,7 +4169,8 @@ TEBCresume(
 	}
 	TRACE(("%s %u \"%.30s\" => ",
 		(flags ? "normal" : "noerr"), opnd, O2S(part2Ptr)));
-	if (TclIsVarArray(arrayPtr) && !UnsetTraced(arrayPtr)) {
+	if (TclIsVarArray(arrayPtr) && !UnsetTraced(arrayPtr)
+		&& !(arrayPtr->flags & VAR_SEARCH_ACTIVE)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
 	    if (varPtr && TclIsVarDirectUnsettable(varPtr)) {
 		/*
@@ -4294,17 +4295,12 @@ TEBCresume(
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, NULL,
 		/*createPart1*/0, /*createPart2*/0, &arrayPtr);
     doArrayExists:
-	if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
-		&& (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
-	    DECACHE_STACK_INFO();
-	    result = TclObjCallVarTraces(iPtr, arrayPtr, varPtr, part1Ptr,
-		    NULL, (TCL_LEAVE_ERR_MSG|TCL_NAMESPACE_ONLY|
-		    TCL_GLOBAL_ONLY|TCL_TRACE_ARRAY), 1, opnd);
-	    CACHE_STACK_INFO();
-	    if (result == TCL_ERROR) {
-		TRACE_ERROR(interp);
-		goto gotError;
-	    }
+	DECACHE_STACK_INFO();
+	result = TclCheckArrayTraces(interp, varPtr, arrayPtr, part1Ptr, opnd);
+	CACHE_STACK_INFO();
+	if (result == TCL_ERROR) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
 	}
 	if (varPtr && TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
 	    objResultPtr = TCONST(1);
@@ -5089,16 +5085,9 @@ TEBCresume(
 	    goto gotError;
 	}
 
-	/*
-	 * Select the list item based on the index. Negative operand means
-	 * end-based indexing.
-	 */
+	/* Decode end-offset index values. */
 
-	if (opnd < -1) {
-	    index = opnd+1 + objc;
-	} else {
-	    index = opnd;
-	}
+	index = TclIndexDecode(opnd, objc - 1);
 	pcAdjustment = 5;
 
     lindexFastPath:
@@ -5246,60 +5235,64 @@ TEBCresume(
 	}
 #endif
 
-	/*
-	 * Adjust the indices for end-based handling.
-	 */
-
-	if (fromIdx < -1) {
-	    fromIdx += 1+objc;
-	    if (fromIdx < -1) {
-		fromIdx = -1;
-	    }
-	} else if (fromIdx > objc) {
-	    fromIdx = objc;
-	}
-	if (toIdx < -1) {
-	    toIdx += 1 + objc;
-	    if (toIdx < -1) {
-		toIdx = -1;
-	    }
-	} else if (toIdx > objc) {
-	    toIdx = objc;
+	/* Every range of an empty list is an empty list */
+	if (objc == 0) {
+	    TRACE_APPEND(("\n"));
+	    NEXT_INST_F(9, 0, 0);
 	}
 
-	/*
-	 * Check if we are referring to a valid, non-empty list range, and if
-	 * so, build the list of elements in that range.
+	/* Decode index value operands. */
+
+	/* 
+	assert ( toIdx != TCL_INDEX_AFTER);
+	 *
+	 * Extra safety for legacy bytecodes:
 	 */
+	if (toIdx == TCL_INDEX_AFTER) {
+	    toIdx = TCL_INDEX_END;
+	}
 
-	if (fromIdx<=toIdx && fromIdx<objc && toIdx>=0) {
-	    if (fromIdx < 0) {
-		fromIdx = 0;
-	    }
-	    if (toIdx >= objc) {
-		toIdx = objc-1;
-	    }
-	    if (fromIdx == 0 && toIdx != objc-1 && !Tcl_IsShared(valuePtr)) {
-		/*
-		 * BEWARE! This is looking inside the implementation of the
-		 * list type.
-		 */
+	if ((toIdx == TCL_INDEX_BEFORE) || (fromIdx == TCL_INDEX_AFTER)) {
+	    goto emptyList;
+	}
+	toIdx = TclIndexDecode(toIdx, objc - 1);
+	if (toIdx < 0) {
+	    goto emptyList;
+	} else if (toIdx >= objc) {
+	    toIdx = objc - 1;
+	}
 
-		List *listPtr = valuePtr->internalRep.twoPtrValue.ptr1;
+	assert ( toIdx >= 0 && toIdx < objc);
+	/*
+	assert ( fromIdx != TCL_INDEX_BEFORE );
+	 *
+	 * Extra safety for legacy bytecodes:
+	 */
+	if (fromIdx == TCL_INDEX_BEFORE) {
+	    fromIdx = TCL_INDEX_START;
+	}
 
-		if (listPtr->refCount == 1) {
-		    for (index=toIdx+1; index<objc ; index++) {
-			TclDecrRefCount(objv[index]);
-		    }
-		    listPtr->elemCount = toIdx+1;
-		    listPtr->canonicalFlag = 1;
-		    TclInvalidateStringRep(valuePtr);
-		    TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
-		    NEXT_INST_F(9, 0, 0);
+	fromIdx = TclIndexDecode(fromIdx, objc - 1);
+	if (fromIdx < 0) {
+	    fromIdx = 0;
+	}
+
+	if (fromIdx <= toIdx) {
+	    /* Construct the subsquence list */
+	    /* unshared optimization */
+	    if (Tcl_IsShared(valuePtr)) {
+		objResultPtr = Tcl_NewListObj(toIdx-fromIdx+1, objv+fromIdx);
+	    } else {
+		if (toIdx != objc - 1) {
+		    Tcl_ListObjReplace(NULL, valuePtr, toIdx + 1, LIST_MAX,
+			    0, NULL);
 		}
+		Tcl_ListObjReplace(NULL, valuePtr, 0, fromIdx, 0, NULL);
+		TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
+		NEXT_INST_F(9, 0, 0);
 	    }
-	    objResultPtr = Tcl_NewListObj(toIdx-fromIdx+1, objv+fromIdx);
 	} else {
+	emptyList:
 	    TclNewObj(objResultPtr);
 	}
 
@@ -5391,88 +5384,10 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 
-	if (valuePtr == value2Ptr) {
-	    match = 0;
-	} else {
-	    /*
-	     * We only need to check (in)equality when we have equal length
-	     * strings.  We can use memcmp in all (n)eq cases because we
-	     * don't need to worry about lexical LE/BE variance.
-	     */
-
-	    typedef int (*memCmpFn_t)(const void*, const void*, size_t);
-	    memCmpFn_t memCmpFn;
+	{
 	    int checkEq = ((*pc == INST_EQ) || (*pc == INST_NEQ)
 		    || (*pc == INST_STR_EQ) || (*pc == INST_STR_NEQ));
-
-	    if (TclIsPureByteArray(valuePtr)
-		    && TclIsPureByteArray(value2Ptr)) {
-		s1 = (char *) Tcl_GetByteArrayFromObj(valuePtr, &s1len);
-		s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
-		memCmpFn = memcmp;
-	    } else if ((valuePtr->typePtr == &tclStringType)
-		    && (value2Ptr->typePtr == &tclStringType)) {
-		/*
-		 * Do a unicode-specific comparison if both of the args are of
-		 * String type. If the char length == byte length, we can do a
-		 * memcmp. In benchmark testing this proved the most efficient
-		 * check between the unicode and string comparison operations.
-		 */
-
-		s1len = Tcl_GetCharLength(valuePtr);
-		s2len = Tcl_GetCharLength(value2Ptr);
-		if ((s1len == valuePtr->length)
-			&& (valuePtr->bytes != NULL)
-			&& (s2len == value2Ptr->length)
-			&& (value2Ptr->bytes != NULL)) {
-		    s1 = valuePtr->bytes;
-		    s2 = value2Ptr->bytes;
-		    memCmpFn = memcmp;
-		} else {
-		    s1 = (char *) Tcl_GetUnicode(valuePtr);
-		    s2 = (char *) Tcl_GetUnicode(value2Ptr);
-		    if (
-#ifdef WORDS_BIGENDIAN
-			1
-#else
-			checkEq
-#endif
-			) {
-			memCmpFn = memcmp;
-			s1len *= sizeof(Tcl_UniChar);
-			s2len *= sizeof(Tcl_UniChar);
-		    } else {
-			memCmpFn = (memCmpFn_t) Tcl_UniCharNcmp;
-		    }
-		}
-	    } else {
-		/*
-		 * strcmp can't do a simple memcmp in order to handle the
-		 * special Tcl \xC0\x80 null encoding for utf-8.
-		 */
-
-		s1 = TclGetStringFromObj(valuePtr, &s1len);
-		s2 = TclGetStringFromObj(value2Ptr, &s2len);
-		if (checkEq) {
-		    memCmpFn = memcmp;
-		} else {
-		    memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
-		}
-	    }
-
-	    if (checkEq && (s1len != s2len)) {
-		match = 1;
-	    } else {
-		/*
-		 * The comparison function should compare up to the minimum
-		 * byte length only.
-		 */
-		match = memCmpFn(s1, s2,
-			(size_t) ((s1len < s2len) ? s1len : s2len));
-		if (match == 0) {
-		    match = s1len - s2len;
-		}
-	    }
+	    match = TclStringCmp(valuePtr, value2Ptr, checkEq, 0, -1);
 	}
 
 	/*
@@ -5645,31 +5560,58 @@ TEBCresume(
 	length = Tcl_GetCharLength(valuePtr);
 	TRACE(("\"%.20s\" %d %d => ", O2S(valuePtr), fromIdx, toIdx));
 
-	/*
-	 * Adjust indices for end-based indexing.
-	 */
-
-	if (fromIdx < -1) {
-	    fromIdx += 1 + length;
-	    if (fromIdx < 0) {
-		fromIdx = 0;
-	    }
-	} else if (fromIdx >= length) {
-	    fromIdx = length;
+	/* Every range of an empty value is an empty value */
+	if (length == 0) {
+	    TRACE_APPEND(("\n"));
+	    NEXT_INST_F(9, 0, 0);
 	}
-	if (toIdx < -1) {
-	    toIdx += 1 + length;
+
+	/* Decode index operands. */
+
+	/*
+	assert ( toIdx != TCL_INDEX_BEFORE );
+	assert ( toIdx != TCL_INDEX_AFTER);
+	 *
+	 * Extra safety for legacy bytecodes:
+	 */
+	if (toIdx == TCL_INDEX_BEFORE) {
+	    goto emptyRange;
+	}
+	if (toIdx == TCL_INDEX_AFTER) {
+	    toIdx = TCL_INDEX_END;
+	}
+
+	toIdx = TclIndexDecode(toIdx, length - 1);
+	if (toIdx < 0) {
+	    goto emptyRange;
 	} else if (toIdx >= length) {
 	    toIdx = length - 1;
 	}
 
+	assert ( toIdx >= 0 && toIdx < length );
+
 	/*
-	 * Check if we can do a sane substring.
+	assert ( fromIdx != TCL_INDEX_BEFORE );
+	assert ( fromIdx != TCL_INDEX_AFTER);
+	 *
+	 * Extra safety for legacy bytecodes:
 	 */
+	if (fromIdx == TCL_INDEX_BEFORE) {
+	    fromIdx = TCL_INDEX_START;
+	}
+	if (fromIdx == TCL_INDEX_AFTER) {
+	    goto emptyRange;
+	}
+
+	fromIdx = TclIndexDecode(fromIdx, length - 1);
+	if (fromIdx < 0) {
+	    fromIdx = 0;
+	}
 
 	if (fromIdx <= toIdx) {
 	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
 	} else {
+	emptyRange:
 	    TclNewObj(objResultPtr);
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
@@ -5677,18 +5619,18 @@ TEBCresume(
 
     {
 	Tcl_UniChar *ustring1, *ustring2, *ustring3, *end, *p;
-	int length3;
+	int length3, endIdx;
 	Tcl_Obj *value3Ptr;
 
     case INST_STR_REPLACE:
 	value3Ptr = POP_OBJECT();
 	valuePtr = OBJ_AT_DEPTH(2);
-	length = Tcl_GetCharLength(valuePtr) - 1;
+	endIdx = Tcl_GetCharLength(valuePtr) - 1;
 	TRACE(("\"%.20s\" %s %s \"%.20s\" => ", O2S(valuePtr),
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(value3Ptr)));
-	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, length,
+	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, endIdx,
 		    &fromIdx) != TCL_OK
-	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, length,
+	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, endIdx,
 		    &toIdx) != TCL_OK) {
 	    TclDecrRefCount(value3Ptr);
 	    TRACE_ERROR(interp);
@@ -5698,21 +5640,24 @@ TEBCresume(
 	(void) POP_OBJECT();
 	TclDecrRefCount(OBJ_AT_TOS);
 	(void) POP_OBJECT();
-	if (fromIdx < 0) {
-	    fromIdx = 0;
-	}
 
-	if (fromIdx > toIdx || fromIdx > length) {
+	if ((toIdx < 0) ||
+		(fromIdx > endIdx) ||
+		(toIdx < fromIdx)) {
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
 	    TclDecrRefCount(value3Ptr);
 	    NEXT_INST_F(1, 0, 0);
 	}
 
-	if (toIdx > length) {
-	    toIdx = length;
+	if (fromIdx < 0) {
+	    fromIdx = 0;
 	}
 
-	if (fromIdx == 0 && toIdx == length) {
+	if (toIdx > endIdx) {
+	    toIdx = endIdx;
+	}
+
+	if (fromIdx == 0 && toIdx == endIdx) {
 	    TclDecrRefCount(OBJ_AT_TOS);
 	    OBJ_AT_TOS = value3Ptr;
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(value3Ptr)));
@@ -5995,12 +5940,7 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;		/* TrimSet */
 	string2 = TclGetStringFromObj(value2Ptr, &length2);
 	string1 = TclGetStringFromObj(valuePtr, &length);
-	trim1 = TclTrimLeft(string1, length, string2, length2);
-	if (trim1 < length) {
-	    trim2 = TclTrimRight(string1, length, string2, length2);
-	} else {
-	    trim2 = 0;
-	}
+	trim1 = TclTrim(string1, length, string2, length2, &trim2);
     createTrimmedString:
 	/*
 	 * Careful here; trim set often contains non-ASCII characters so we
@@ -6123,6 +6063,14 @@ TEBCresume(
 
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
+
+	/*
+	    Try to determine, without triggering generation of a string
+	    representation, whether one value is not a number.
+	*/
+	if (TclCheckEmptyString(valuePtr) > 0 || TclCheckEmptyString(value2Ptr) > 0) {
+	    goto stringCompare;
+	}
 
 	if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK
 		|| GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2) != TCL_OK) {
