@@ -40,7 +40,7 @@ uplevel \#0 {
 # library code can find message catalogs and time zone definition files.
 
 namespace eval ::tcl::clock \
-    [list variable LibDir [file dirname [info script]]]
+    [list variable LibDir [info library]]
 
 #----------------------------------------------------------------------
 #
@@ -67,9 +67,7 @@ namespace eval ::tcl::clock {
 
     # Import the message catalog commands that we use.
 
-    namespace import ::msgcat::mcload
     namespace import ::msgcat::mclocale
-    namespace import ::msgcat::mc
     namespace import ::msgcat::mcpackagelocale
 
 }
@@ -496,13 +494,6 @@ proc ::tcl::clock::Initialize {} {
     variable LocaleFormats \
 			[dict create];	# Dictionary with localized formats
 
-    variable LocaleNumeralCache \
-			[dict create];	# Dictionary whose keys are locale
-					# names and whose values are pairs
-					# comprising regexes matching numerals
-					# in the given locales and dictionaries
-					# mapping the numerals to their numeric
-					# values.
     variable TimeZoneBad [dict create]; # Dictionary whose keys are time zone
     					# names and whose values are 1 if
 					# the time zone is unknown and 0
@@ -512,9 +503,6 @@ proc ::tcl::clock::Initialize {} {
 					# comprising start time, UTC offset,
 					# Daylight Saving Time indicator, and
 					# time zone abbreviation.
-    variable FormatProc;		# Array mapping format group
-					# and locale to the name of a procedure
-					# that renders the given format
 
     variable mcLocales	 [dict create];	# Dictionary with loaded locales
     variable mcMergedCat [dict create];	# Dictionary with merged locale catalogs
@@ -537,7 +525,7 @@ proc ::tcl::clock::Initialize {} {
 # Results:
 #	Returns the dictionary object as whole catalog of the package/locale.
 #
-proc mcget {loc} {
+proc ::tcl::clock::mcget {loc} {
     variable mcMergedCat
     switch -- $loc system {
 	set loc [GetSystemLocale]
@@ -583,7 +571,7 @@ proc mcget {loc} {
 # Results:
 #	Returns the (weak pointer) to merged dictionary of message catalog.
 #
-proc mcMerge {locales} {
+proc ::tcl::clock::mcMerge {locales} {
     variable mcMergedCat
     if {[dict exists $mcMergedCat [set loc [lindex $locales 0]]]} {
 	return [dict get $mcMergedCat $loc]
@@ -2057,19 +2045,6 @@ proc ::tcl::clock::WeekdayOnOrBefore { weekday j } {
 proc ::tcl::clock::ChangeCurrentLocale {args} {
 
     configure -current-locale [lindex $args 0]
-
-    variable FormatProc
-    variable LocaleNumeralCache
-
-    foreach p [info procs [namespace current]::scanproc'*'current] {
-        rename $p {}
-    }
-    foreach p [info procs [namespace current]::formatproc'*'current] {
-        rename $p {}
-    }
-
-    catch {array unset FormatProc *'current}
-    set LocaleNumeralCache {}
 }
 
 #----------------------------------------------------------------------
@@ -2090,9 +2065,7 @@ proc ::tcl::clock::ChangeCurrentLocale {args} {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::ClearCaches {} {
-    variable FormatProc
     variable LocaleFormats
-    variable LocaleNumeralCache
     variable mcMergedCat
     variable TimeZoneBad
 
@@ -2102,16 +2075,7 @@ proc ::tcl::clock::ClearCaches {} {
     # clear msgcat cache:
     set mcMergedCat [dict create]
 
-    foreach p [info procs [namespace current]::scanproc'*] {
-	rename $p {}
-    }
-    foreach p [info procs [namespace current]::formatproc'*] {
-	rename $p {}
-    }
-
-    unset -nocomplain FormatProc
     set LocaleFormats {}
-    set LocaleNumeralCache {}
     set TimeZoneBad {}
     InitTZData
 }
