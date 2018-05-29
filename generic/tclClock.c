@@ -1231,17 +1231,20 @@ ClockSetupTimeZone(
     Tcl_Obj *callargs[2];
 
     /* if cached (if already setup this one) */
-    if ( dataPtr->lastSetupTimeZone != NULL
-      && ( timezoneObj == dataPtr->lastSetupTimeZone
+    if ( timezoneObj == dataPtr->literals[LIT_GMT]
+      && dataPtr->gmtSetupTZData != NULL
+    ) {
+	return timezoneObj;
+    }
+    if ( ( timezoneObj == dataPtr->lastSetupTimeZone
 	|| timezoneObj == dataPtr->lastSetupTimeZoneUnnorm
-      )
+      ) && dataPtr->lastSetupTimeZone != NULL
     ) {
 	return dataPtr->lastSetupTimeZone;
     }
-    if ( dataPtr->prevSetupTimeZone != NULL
-      && ( timezoneObj == dataPtr->prevSetupTimeZone
+    if ( ( timezoneObj == dataPtr->prevSetupTimeZone
 	|| timezoneObj == dataPtr->prevSetupTimeZoneUnnorm
-      )
+      ) && dataPtr->prevSetupTimeZone != NULL
     ) {
 	return dataPtr->prevSetupTimeZone;
     }
@@ -3276,9 +3279,8 @@ ClockParseFmtScnArgs(
     if (gmtFlag) {
 	opts->timezoneObj = dataPtr->literals[LIT_GMT];
     }
-
+    else
     /* If time zone not specified use system time zone */
-
     if ( opts->timezoneObj == NULL
       || TclGetString(opts->timezoneObj) == NULL
       || opts->timezoneObj->length == 0
