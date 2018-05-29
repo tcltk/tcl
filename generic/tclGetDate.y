@@ -244,15 +244,18 @@ comma	: ','
 
 day	: tDAY {
 	    yyDayOrdinal = 1;
-	    yyDayNumber = $1;
+	    yyDayOfWeek = $1;
+	    info->flags |= CLF_DAYOFWEEK;
 	}
 	| tDAY comma {
 	    yyDayOrdinal = 1;
-	    yyDayNumber = $1;
+	    yyDayOfWeek = $1;
+	    info->flags |= CLF_DAYOFWEEK;
 	}
 	| tUNUMBER tDAY {
 	    yyDayOrdinal = $1;
-	    yyDayNumber = $2;
+	    yyDayOfWeek = $2;
+	    info->flags |= CLF_DAYOFWEEK;
 	}
 	| sign SP tUNUMBER tDAY {
 	    yyDayOrdinal = $1 * $3;
@@ -260,11 +263,13 @@ day	: tDAY {
 	}
 	| sign tUNUMBER tDAY {
 	    yyDayOrdinal = $1 * $2;
-	    yyDayNumber = $3;
+	    yyDayOfWeek = $3;
+	    info->flags |= CLF_DAYOFWEEK;
 	}
 	| tNEXT tDAY {
 	    yyDayOrdinal = 2;
-	    yyDayNumber = $2;
+	    yyDayOfWeek = $2;
+	    info->flags |= CLF_DAYOFWEEK;
 	}
 	;
 
