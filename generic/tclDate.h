@@ -53,7 +53,8 @@
 #define CLF_ASSEMBLE_SECONDS   (1 << 30) /* assemble localSeconds (and seconds at end) */
 
 #define CLF_DATE	       (CLF_JULIANDAY | CLF_DAYOFMONTH | CLF_DAYOFYEAR | \
-				CLF_MONTH | CLF_YEAR | CLF_ISO8601YEAR | CLF_ISO8601WEAK)
+				CLF_MONTH | CLF_YEAR | CLF_ISO8601YEAR | \
+				CLF_DAYOFWEEK | CLF_ISO8601WEAK)
 
 /*
  * Enumeration of the string literals used in [clock]
