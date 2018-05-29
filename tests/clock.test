@@ -35189,6 +35189,29 @@ test clock-29.1800 {time parsing} {
         -gmt true -locale en_US_roman \
         -format {%J %Ol:%OM:%OS %P}
 } 86399
+
+test clock-29.1811 {parsing of several localized formats} {
+    set res {}
+    foreach loc {en de fr} {
+	foreach fmt {"%x %X" "%X %x"} {
+	    lappend res [clock scan \
+	      [clock format 0 -format $fmt -locale $loc -gmt 1] \
+	      -format $fmt -locale $loc -gmt 1]
+	}
+    }
+    set res
+} [lrepeat 6 0]
+test clock-29.1812 {parsing of several localized formats} {
+    set res {}
+    foreach loc {en de fr} {
+	foreach fmt {"%a %d-%m-%Y" "%a %b %x-%X" "%a, %x %X" "%b, %x %X"} {
+	    lappend res [clock scan \
+	      [clock format 0 -format $fmt -locale $loc -gmt 1] \
+	      -format $fmt -locale $loc -gmt 1]
+	}
+    }
+    set res
+} [lrepeat 12 0]
 # END testcases29
 
 

@@ -275,7 +275,8 @@ TclStrIdxTreeBuildFromList(
 		/* if shortest key was found with the same value,
 		 * just replace its current key with longest key */
 		if ( foundItem->value == val
-		  && foundItem->length < lwrv[i]->length
+		  && foundItem->length <= lwrv[i]->length
+		  && foundItem->length <= (f - s) /* only if found item is covered in full */
 		  && foundItem->childTree.firstPtr == NULL
 		) {
 		    Tcl_SetObjRef(foundItem->key, lwrv[i]);
