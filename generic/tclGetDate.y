@@ -195,28 +195,11 @@ time	: tUNUMBER tMERIDIAN {
 	    yySeconds = 0;
 	    yyMeridian = $4;
 	}
-	| tUNUMBER ':' tUNUMBER '-' tUNUMBER {
-	    yyHour = $1;
-	    yyMinutes = $3;
-	    yyMeridian = MER24;
-	    yyDSTmode = DSToff;
-	    yyTimezone = ($5 % 100 + ($5 / 100) * 60);
-	    ++yyHaveZone;
-	}
 	| tUNUMBER ':' tUNUMBER ':' tUNUMBER o_merid {
 	    yyHour = $1;
 	    yyMinutes = $3;
 	    yySeconds = $5;
 	    yyMeridian = $6;
-	}
-	| tUNUMBER ':' tUNUMBER ':' tUNUMBER '-' tUNUMBER {
-	    yyHour = $1;
-	    yyMinutes = $3;
-	    yySeconds = $5;
-	    yyMeridian = MER24;
-	    yyDSTmode = DSToff;
-	    yyTimezone = ($7 % 100 + ($7 / 100) * 60);
-	    ++yyHaveZone;
 	}
 	;
 
@@ -231,6 +214,10 @@ zone	: tZONE tDST {
 	| tDAYZONE {
 	    yyTimezone = $1;
 	    yyDSTmode = DSTon;
+	}
+	| sign tUNUMBER {
+	    yyTimezone = -$1*($2 % 100 + ($2 / 100) * 60);
+	    yyDSTmode = DSToff;
 	}
 	;
 
@@ -659,7 +646,7 @@ TclDateerror(
     infoPtr->separatrix = "\n";
 }
 
-MODULE_SCOPE int
+int
 ToSeconds(
     int Hours,
     int Minutes,
