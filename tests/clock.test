@@ -31,6 +31,8 @@ testConstraint detroit \
     [expr {![catch {clock format 0 -timezone :America/Detroit -format %z}]}]
 testConstraint y2038 \
     [expr {[clock format 2158894800 -format %z -timezone :America/Detroit] eq {-0400}}]
+testConstraint no_tclclockmod \
+    [expr {[namespace which -command ::tcl::clock::configure] eq {}}]
 
 # TEST PLAN
 
@@ -255,7 +257,7 @@ proc ::testClock::registry { cmd path key } {
 
 # Base test cases:
 
-test clock-0.1 "initial: auto-loading of ensemble and stubs on demand" {
+test clock-0.1 "initial: auto-loading of ensemble and stubs on demand" no_tclclockmod {
     set i [interp create]; # because clock can be used somewhere, test it in new interp:
 
     set ret [$i eval {
