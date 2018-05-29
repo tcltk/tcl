@@ -238,6 +238,7 @@ TclClockInit(
     data->gmtSetupTimeZoneUnnorm = NULL;
     data->gmtSetupTimeZone = NULL;
     data->gmtSetupTZData = NULL;
+    data->gmtTZName = NULL;
     data->lastSetupTimeZoneUnnorm = NULL;
     data->lastSetupTimeZone = NULL;
     data->lastSetupTZData = NULL;
@@ -310,6 +311,7 @@ ClockConfigureClear(
     Tcl_UnsetObjRef(data->gmtSetupTimeZoneUnnorm);
     Tcl_UnsetObjRef(data->gmtSetupTimeZone);
     Tcl_UnsetObjRef(data->gmtSetupTZData);
+    Tcl_UnsetObjRef(data->gmtTZName);
     Tcl_UnsetObjRef(data->lastSetupTimeZoneUnnorm);
     Tcl_UnsetObjRef(data->lastSetupTimeZone);
     Tcl_UnsetObjRef(data->lastSetupTZData);
@@ -1557,6 +1559,15 @@ ClockGetDateFields(
     GetMonthDay(fields);
     GetYearWeekDay(fields, changeover);
 
+    
+    /*
+     * Seconds of the day.
+     */
+    fields->secondOfDay = (int)(fields->localSeconds % SECONDS_PER_DAY);
+    if (fields->secondOfDay < 0) {
+	fields->secondOfDay += SECONDS_PER_DAY;
+    }
+
     return TCL_OK;
 }
 
@@ -2112,16 +2123,19 @@ ConvertUTCToLocal(
     Tcl_Obj **rowv;		/* Pointers to the rows */
 
     /* fast phase-out for shared GMT-object (don't need to convert UTC 2 UTC) */
-    if (timezoneObj == dataPtr->literals[LIT_GMT]
-	&& dataPtr->gmtSetupTZData != NULL
-    ) {
+    if (timezoneObj == dataPtr->literals[LIT_GMT]) {
 	fields->localSeconds = fields->seconds;
 	fields->tzOffset = 0;
-	if ( TclListObjGetElements(interp, dataPtr->gmtSetupTZData, &rowc, &rowv) != TCL_OK
-	  || Tcl_ListObjIndex(interp, rowv[0], 3, &fields->tzName) != TCL_OK) {
-	    return TCL_ERROR;
+	if (dataPtr->gmtTZName == NULL) {
+	    Tcl_Obj *tzName;
+	    tzdata = ClockGetTZData(clientData, interp, timezoneObj);
+	    if ( TclListObjGetElements(interp, tzdata, &rowc, &rowv) != TCL_OK
+	      || Tcl_ListObjIndex(interp, rowv[0], 3, &tzName) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    Tcl_SetObjRef(dataPtr->gmtTZName, tzName);
 	}
-	Tcl_IncrRefCount(fields->tzName);
+	Tcl_SetObjRef(fields->tzName, dataPtr->gmtTZName);
 	return TCL_OK;
     }
 
