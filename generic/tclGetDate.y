@@ -219,6 +219,10 @@ zone	: tZONE tDST {
 	    yyTimezone = -$1*($2 % 100 + ($2 / 100) * 60);
 	    yyDSTmode = DSToff;
 	}
+	| tZONE sign tUNUMBER {
+	    yyTimezone = $1 - $2*($3 % 100 + ($3 / 100) * 60);
+	    yyDSTmode = DSToff;
+	}
 	;
 
 day	: tDAY {
