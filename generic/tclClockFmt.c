@@ -865,9 +865,9 @@ ClockLocalizeFormat(
 	/* check special case - format object is not localizable */
 	if (valObj == opts->formatObj) {
 	    /* mark it as unlocalizable, by setting self as key (without refcount incr) */
-	    if (opts->formatObj->typePtr == &ClockFmtObjType) {
-		Tcl_UnsetObjRef(ObjLocFmtKey(opts->formatObj));
-		ObjLocFmtKey(opts->formatObj) = opts->formatObj;
+	    if (valObj->typePtr == &ClockFmtObjType) {
+		Tcl_UnsetObjRef(ObjLocFmtKey(valObj));
+		ObjLocFmtKey(valObj) = valObj;
 	    }
 	}
     }
