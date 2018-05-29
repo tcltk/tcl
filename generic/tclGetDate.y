@@ -259,7 +259,7 @@ day	: tDAY {
 	}
 	| sign SP tUNUMBER tDAY {
 	    yyDayOrdinal = $1 * $3;
-	    yyDayNumber = $4;
+	    yyDayOfWeek = $4;
 	}
 	| sign tUNUMBER tDAY {
 	    yyDayOrdinal = $1 * $2;

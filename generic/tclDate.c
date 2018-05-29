@@ -1745,7 +1745,7 @@ yyreduce:
 
     {
 	    yyDayOrdinal = (yyvsp[(1) - (4)].Number) * (yyvsp[(3) - (4)].Number);
-	    yyDayNumber = (yyvsp[(4) - (4)].Number);
+	    yyDayOfWeek = (yyvsp[(4) - (4)].Number);
 	;}
     break;
 
