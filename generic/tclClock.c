@@ -3686,7 +3686,7 @@ ClockScanCommit(
 {
     /* If needed assemble julianDay using year, month, etc. */
     if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
-	if ((info->flags & CLF_ISO8601)) {
+	if ((info->flags & CLF_ISO8601WEAK)) {
 	    GetJulianDayFromEraYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
 	}
 	else
@@ -3761,13 +3761,38 @@ ClockValidDate(
     TclDateFields temp;
     int tempCpyFlg = 0;
 
-    //printf("yyMonth %d, yyDay %d, yyHour %d, yyMinutes %d, yySeconds %d\n", yyMonth, yyDay, yyHour, yyMinutes, yySeconds);
+    // printf("yyMonth %d, yyDay %d, yyDayOfYear %d, yyHour %d, yyMinutes %d, yySeconds %d\n", yyMonth, yyDay, yydate.dayOfYear, yyHour, yyMinutes, yySeconds);
 
     if (!(stage & 1)) {
 	goto stage_2;
     }
 
-    /* first month (used later in hath) */
+    /* first year (used later in hath / daysInPriorMonths) */
+    if ((info->flags & (CLF_YEAR|CLF_ISO8601YEAR)) || yyHaveDate) {
+	ClockClientData *dataPtr = opts->clientData;
+
+	if ((info->flags & CLF_ISO8601YEAR)) {
+	    if ( yydate.iso8601Year < dataPtr->validMinYear
+	      || yydate.iso8601Year > dataPtr->validMaxYear ) {
+		errMsg = "invalid iso year"; errCode = "iso year"; goto error;
+	    }
+	}
+	if ((info->flags & CLF_YEAR) || yyHaveDate) {
+	    if ( yyYear < dataPtr->validMinYear 
+	      || yyYear > dataPtr->validMaxYear ) {
+		errMsg = "invalid year"; errCode = "year"; goto error;
+	    }
+	} else if ((info->flags & CLF_ISO8601YEAR)) {
+	    yyYear = yydate.iso8601Year; /* used to recognize leap */
+	}
+	if ((info->flags & (CLF_ISO8601YEAR|CLF_YEAR))
+		== (CLF_ISO8601YEAR|CLF_YEAR)) {
+	    if (yyYear != yydate.iso8601Year) {
+		errMsg = "ambiguous year"; errCode = "year"; goto error;
+	    }
+	}
+    }
+    /* and month (used later in hath) */
     if ((info->flags & CLF_MONTH) || yyHaveDate) {
     	info->flags |= CLF_MONTH;
 	if ( yyMonth < 1 || yyMonth > 12 ) {
@@ -3788,26 +3813,10 @@ ClockValidDate(
 	    }
 	}
     }
-    if ((info->flags & (CLF_YEAR|CLF_ISO8601YEAR)) || yyHaveDate) {
-    	ClockClientData *dataPtr = opts->clientData;
-
-	if ((info->flags & CLF_ISO8601YEAR)) {
-	    if ( yydate.iso8601Year < dataPtr->validMinYear
-	      || yydate.iso8601Year > dataPtr->validMaxYear ) {
-		errMsg = "invalid iso year"; errCode = "iso year"; goto error;
-	    }
-	}
-	if ((info->flags & CLF_YEAR) || yyHaveDate) {
-	    if ( yyYear < dataPtr->validMinYear 
-	      || yyYear > dataPtr->validMaxYear ) {
-		errMsg = "invalid year"; errCode = "year"; goto error;
-	    }
-	}
-	if ((info->flags & (CLF_ISO8601YEAR|CLF_YEAR))
-		== (CLF_ISO8601YEAR|CLF_YEAR)) {
-	    if (yyYear != yydate.iso8601Year) {
-		errMsg = "ambiguous year"; errCode = "year"; goto error;
-	    }
+    if ((info->flags & CLF_DAYOFYEAR)) {
+	if ( yydate.dayOfYear < 1
+	  || yydate.dayOfYear > daysInPriorMonths[IsGregorianLeapYear(&yydate)][12] ) {
+	    errMsg = "invalid day of year"; errCode = "day of year"; goto error;
 	}
     }
 

@@ -36645,6 +36645,20 @@ test clock-46.28.vm$valid_mode {scan: validation rules: invalid day of week} \
     -body {
 	list [catch {clock scan "Sat Jan 01 00:00:00 1970" -format "%a %b %d %H:%M:%S %Y" -valid 1 -gmt 1} msg] $msg
     } -result {1 {unable to convert input string: invalid day of week}}
+test clock-46.29-1.vm$valid_mode {scan: validation rules: invalid day of year} \
+    -body {
+	list [catch {clock scan "000-2017" -format "%j-%Y" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "366-2017" -format "%j-%Y" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "000-2017" -format "%j-%G" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "366-2017" -format "%j-%G" -valid 1 -gmt 1} msg] $msg
+    } -result [lrepeat 4 1 {unable to convert input string: invalid day of year}]
+test clock-46.29-2.vm$valid_mode {scan: validation rules: valid day of leap/not leap year} \
+    -body {
+	list [clock format [clock scan "366-2016" -format "%j-%Y" -valid 1 -gmt 1] -format "%d-%m-%Y"] \
+	     [clock format [clock scan "365-2017" -format "%j-%Y" -valid 1 -gmt 1] -format "%d-%m-%Y"] \
+	     [clock format [clock scan "366-2016" -format "%j-%G" -valid 1 -gmt 1] -format "%d-%m-%Y"] \
+	     [clock format [clock scan "365-2017" -format "%j-%G" -valid 1 -gmt 1] -format "%d-%m-%Y"]
+    } -result {31-12-2016 31-12-2017 31-12-2016 31-12-2017}
 test clock-46.30.vm$valid_mode {scan: validation rules: invalid year} -setup {
 	set orgcfg [list -min-year [clock configure -min-year] -max-year [clock configure -max-year] \
 	     -year-century [clock configure -year-century] -century-switch [clock configure -century-switch]]
