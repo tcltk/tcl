@@ -86,7 +86,7 @@ TclStrIdxTreeSearch(
 {
     TclStrIdxTree *parent = tree, *prevParent = tree;
     TclStrIdx  *item = tree->firstPtr, *prevItem = NULL;
-    const char *s = start, *f, *cin, *cinf, *prevf;
+    const char *s = start, *f, *cin, *cinf, *prevf = NULL;
     int offs = 0;
 
     if (item == NULL) {
