@@ -1790,7 +1790,7 @@ static ClockScanTokenMap ScnSTokenMap[] = {
     {CTOKT_INT, CLF_ISO8601WEAK, 0, 1, 2, TclOffset(DateInfo, date.iso8601Week),
 	NULL},
     /* %a %A %u %w */
-    {CTOKT_PARSER, CLF_DAYOFWEEK | CLF_ISO8601WEAK, 0, 0, 0xffff, 0,
+    {CTOKT_PARSER, CLF_DAYOFWEEK, 0, 0, 0xffff, 0,
 	ClockScnToken_DayOfWeek_Proc, NULL},
     /* %z %Z */
     {CTOKT_PARSER, CLF_OPTIONAL, 0, 0, 0xffff, 0,
@@ -1854,7 +1854,7 @@ static ClockScanTokenMap ScnOTokenMap[] = {
     {CTOKT_PARSER, CLF_TIME, 0, 0, 0xffff, TclOffset(DateInfo, date.secondOfMin),
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %Ou Ow */
-    {CTOKT_PARSER, CLF_DAYOFWEEK | CLF_ISO8601WEAK, 0, 0, 0xffff, 0,
+    {CTOKT_PARSER, CLF_DAYOFWEEK, 0, 0, 0xffff, 0,
 	ClockScnToken_DayOfWeek_Proc, (void *)MCLIT_LOCALE_NUMERALS},
 };
 static const char *ScnOTokenMapAliasIndex[2] = {
@@ -2336,6 +2336,13 @@ ClockScan(
 			flags &= ~CLF_ISO8601WEAK;
 		    }
 		    break;
+		    /* neither mmdd nor ddd available */
+		    case 0:
+		    /* but we have day of the week, which can be used */
+		    if (flags & CLF_DAYOFWEEK) {
+			/* prefer week based calculation of julianday */
+			flags |= CLF_ISO8601WEAK;
+		    }
 		}
 
 		/* YearWeekDay below YearMonthDay */
