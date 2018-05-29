@@ -422,6 +422,8 @@ proc ::tcl::clock::Initialize {} {
 	pdt	-0700 \
 	yst	-0900 \
 	ydt	-0800 \
+	akst	-0900 \
+	akdt	-0800 \
 	hst	-1000 \
 	hdt	-0900 \
 	cat	-1000 \
