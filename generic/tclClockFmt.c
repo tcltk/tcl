@@ -2416,6 +2416,9 @@ done:
 
     return ret;
 }
+
+#define FrmResultIsAllocated(dateFmt) \
+    (dateFmt->resEnd - dateFmt->resMem > MIN_FMT_RESULT_BLOCK_ALLOC)
 
 static inline int
 FrmResultAllocate(
@@ -2425,10 +2428,20 @@ FrmResultAllocate(
     int needed = dateFmt->output + len - dateFmt->resEnd;
     if (needed >= 0) { /* >= 0 - regards NTS zero */
 	int newsize = dateFmt->resEnd - dateFmt->resMem
-		    + needed + MIN_FMT_RESULT_BLOCK_ALLOC;
-	char *newRes = ckrealloc(dateFmt->resMem, newsize);
-	if (newRes == NULL) {
-	    return TCL_ERROR;
+		    + needed + MIN_FMT_RESULT_BLOCK_ALLOC*2;
+	char *newRes;
+	/* differentiate between stack and memory */
+	if (!FrmResultIsAllocated(dateFmt)) {
+	    newRes = ckalloc(newsize);
+	    if (newRes == NULL) {
+		return TCL_ERROR;
+	    }
+	    memcpy(newRes, dateFmt->resMem, dateFmt->output - dateFmt->resMem);
+	} else {
+	    newRes = ckrealloc(dateFmt->resMem, newsize);
+	    if (newRes == NULL) {
+		return TCL_ERROR;
+	    }
 	}
 	dateFmt->output = newRes + (dateFmt->output - dateFmt->resMem);
 	dateFmt->resMem = newRes;
@@ -2961,6 +2974,7 @@ ClockFormat(
     ClockFmtScnStorage	*fss;
     ClockFormatToken	*tok;
     ClockFormatTokenMap *map;
+    char resMem[MIN_FMT_RESULT_BLOCK_ALLOC];
 
     /* get localized format */
     if (ClockLocalizeFormat(opts) == NULL) {
@@ -2973,19 +2987,17 @@ ClockFormat(
 	return TCL_ERROR;
     }
 
-    /* prepare formatting */
-    dateFmt->date.secondOfDay = (int)(dateFmt->date.localSeconds % SECONDS_PER_DAY);
-    if (dateFmt->date.secondOfDay < 0) {
-	dateFmt->date.secondOfDay += SECONDS_PER_DAY;
-    }
-
     /* result container object */
-    dateFmt->resMem = ckalloc(MIN_FMT_RESULT_BLOCK_ALLOC);
-    if (dateFmt->resMem == NULL) {
-	return TCL_ERROR;
+    dateFmt->resMem = resMem;
+    dateFmt->resEnd = dateFmt->resMem + sizeof(resMem);
+    if (fss->fmtMinAlloc > sizeof(resMem)) {
+	dateFmt->resMem = ckalloc(fss->fmtMinAlloc);
+	dateFmt->resEnd = dateFmt->resMem + fss->fmtMinAlloc;
+	if (dateFmt->resMem == NULL) {
+	    return TCL_ERROR;
+	}
     }
     dateFmt->output = dateFmt->resMem;
-    dateFmt->resEnd = dateFmt->resMem + MIN_FMT_RESULT_BLOCK_ALLOC;
     *dateFmt->output = '\0';
 
     /* do format each token */
@@ -3082,18 +3094,35 @@ ClockFormat(
 
 error:
 
-    ckfree(dateFmt->resMem);
+    if (dateFmt->resMem != resMem) {
+	ckfree(dateFmt->resMem);
+    }
     dateFmt->resMem = NULL;
 
 done:
 
     if (dateFmt->resMem) {
+    	size_t size;
 	Tcl_Obj * result = Tcl_NewObj();
 	result->length = dateFmt->output - dateFmt->resMem;
-	result->bytes = NULL;
-	result->bytes = ckrealloc(dateFmt->resMem, result->length+1);
-	if (result->bytes == NULL) {
-	    result->bytes = dateFmt->resMem;
+	size = result->length+1;
+	if (dateFmt->resMem == resMem) {
+	    result->bytes = ckalloc(size);
+	    if (result->bytes == NULL) {
+		return TCL_ERROR;
+	    }
+	    memcpy(result->bytes, dateFmt->resMem, size);
+	} else {
+	    result->bytes = ckrealloc(dateFmt->resMem, size);
+	    if (result->bytes == NULL) {
+		result->bytes = dateFmt->resMem;
+	    }
+	}
+	/* save last used buffer length */
+	if ( dateFmt->resMem != resMem
+	  && fss->fmtMinAlloc < size + MIN_FMT_RESULT_BLOCK_DELTA
+	) {
+	    fss->fmtMinAlloc = size + MIN_FMT_RESULT_BLOCK_DELTA;
 	}
 	result->bytes[result->length] = '\0';
 	Tcl_SetObjResult(opts->interp, result);
