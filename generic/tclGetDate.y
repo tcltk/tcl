@@ -260,6 +260,7 @@ day	: tDAY {
 	| sign SP tUNUMBER tDAY {
 	    yyDayOrdinal = $1 * $3;
 	    yyDayOfWeek = $4;
+	    info->flags |= CLF_DAYOFWEEK;
 	}
 	| sign tUNUMBER tDAY {
 	    yyDayOrdinal = $1 * $2;
