@@ -35972,6 +35972,28 @@ test clock-34.20.10 {clock scan tests (merid and TZ)} {
     set time [clock scan "10:59 pm +0100" -base 2000000]
     clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
 } {Jan 24,1970 21:59:00 GMT}
+test clock-34.20.11 {clock scan tests (complex TZ)} {
+    list [clock scan "GMT+1000" -base 100000000 -gmt 1] \
+	 [clock scan "+1000" -base 100000000 -gmt 1]
+} {99964000 99964000}
+test clock-34.20.12 {clock scan tests (complex TZ)} {
+    list [clock scan "GMT-1000" -base 100000000 -gmt 1] \
+	 [clock scan "-1000" -base 100000000 -gmt 1]
+} {100036000 100036000}
+test clock-34.20.13 {clock scan tests (complex TZ)} {
+    list [clock scan "GMT-0000" -base 100000000 -gmt 1] \
+	 [clock scan "GMT+0000" -base 100000000 -gmt 1] \
+	 [clock scan "GMT" -base 100000000 -gmt 1]
+} [lrepeat 3 100000000]
+test clock-34.20.14 {clock scan tests (complex TZ)} {
+    list [clock scan "CET+1000" -base 100000000 -gmt 1] \
+	 [clock scan "CET-1000" -base 100000000 -gmt 1]
+} {99960400 100032400}
+test clock-34.20.15 {clock scan tests (complex TZ)} {
+    list [clock scan "CET-0000" -base 100000000 -gmt 1] \
+	 [clock scan "CET+0000" -base 100000000 -gmt 1] \
+	 [clock scan "CET" -base 100000000 -gmt 1]
+} [lrepeat 3 99996400]
 
 # CLOCK SCAN REAL TESTS
 # We use 5am PST, 31-12-1999 as the base for these scans because irrespective
