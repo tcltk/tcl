@@ -19,13 +19,18 @@ package require TclOO
 .BE
 .SH DESCRIPTION
 .PP
-The \fBmy\fR command is used to allow methods of objects to invoke any method
+The \fBmy\fR command is used to allow methods of objects to invoke methods
 of the object (or its class). In particular, the set of valid values for
 \fImethodName\fR is the set of all methods supported by an object and its
-superclasses, including those that are not exported. The object upon which the
-method is invoked is always the one that is the current context of the method
-(i.e. the object that is returned by \fBself object\fR) from which the
-\fBmy\fR command is invoked.
+superclasses, including those that are not exported
+.VS TIP500
+and private methods of the object or class when used within another method
+defined by that object or class.
+.VE TIP500
+The object upon which the method is invoked is the one that owns the namespace
+that the \fBmy\fR command is contained in initially (\fBNB:\fR the link
+remains if the command is renamed), which is the currently invoked object by
+default.
 .PP
 Each object has its own \fBmy\fR command, contained in its instance namespace.
 .SH EXAMPLES
@@ -40,16 +45,38 @@ oo::class create c {
         puts [incr counter]
     }
 }
+
 c create o
 o count              \fI\(-> prints "1"\fR
 o count              \fI\(-> prints "2"\fR
 o count              \fI\(-> prints "3"\fR
 .CE
+.PP
+This example shows how you can use \fBmy\fR to make callbacks to private
+methods from outside the object (from a \fBtrace\fR), using
+\fBnamespace code\fR to enter the correct context:
+.PP
+.CS
+oo::class create HasCallback {
+    method makeCallback {} {
+        return [namespace code {
+            \fBmy\fR Callback
+        }]
+    }
+
+    method Callback {args} {
+        puts "callback: $args"
+    }
+}
+
+set o [HasCallback new]
+trace add variable xyz write [$o makeCallback]
+set xyz "called"     \fI\(-> prints "callback: xyz {} write"\fR
+.CE
 .SH "SEE ALSO"
 next(n), oo::object(n), self(n)
 .SH KEYWORDS
 method, method visibility, object, private method, public method
-
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78
