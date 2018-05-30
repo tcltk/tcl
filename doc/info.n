@@ -406,7 +406,11 @@ stereotypical instance of \fIclass\fR's implementation of \fImethod\fR
 any object-specific definitions added). This consists of a list of lists of
 four elements, where each sublist consists of a word that describes the
 general type of method implementation (being one of \fBmethod\fR for an
-ordinary method, \fBfilter\fR for an applied filter, and \fBunknown\fR for a
+ordinary method, \fBfilter\fR for an applied filter,
+.VS TIP500
+\fBprivate\fR for a private method,
+.VE TIP500
+and \fBunknown\fR for a
 method that is invoked as part of unknown method handling), a word giving the
 name of the particular method invoked (which is always the same as
 \fImethod\fR for the \fBmethod\fR type, and
@@ -417,7 +421,11 @@ implementation (see \fBinfo class methodtype\fR).
 .RS
 .PP
 Note that there is no inspection of whether the method implementations
-actually use \fBnext\fR to transfer control along the call chain.
+actually use \fBnext\fR to transfer control along the call chain,
+.VS TIP500
+and the call chains that this command files do not actually contain private
+methods.
+.VE TIP500
 .RE
 .TP
 \fBinfo class constructor\fI class\fR
@@ -551,7 +559,11 @@ Returns a description of the method implementations that are used to provide
 \fIobject\fR's implementation of \fImethod\fR.  This consists of a list of
 lists of four elements, where each sublist consists of a word that describes
 the general type of method implementation (being one of \fBmethod\fR for an
-ordinary method, \fBfilter\fR for an applied filter, and \fBunknown\fR for a
+ordinary method, \fBfilter\fR for an applied filter,
+.VS TIP500
+\fBprivate\fR for a private method,
+.VE TIP500
+and \fBunknown\fR for a
 method that is invoked as part of unknown method handling), a word giving the
 name of the particular method invoked (which is always the same as
 \fImethod\fR for the \fBmethod\fR type, and
@@ -563,7 +575,11 @@ implementation (see \fBinfo object methodtype\fR).
 .RS
 .PP
 Note that there is no inspection of whether the method implementations
-actually use \fBnext\fR to transfer control along the call chain.
+actually use \fBnext\fR to transfer control along the call chain,
+.VS TIP500
+and the call chains that this command files do not actually contain private
+methods.
+.VE TIP500
 .RE
 .TP
 \fBinfo object class\fI object\fR ?\fIclassName\fR?
@@ -763,8 +779,10 @@ method and get how it is defined. This procedure illustrates how:
 proc getDef {obj method} {
     foreach inf [\fBinfo object call\fR $obj $method] {
         lassign $inf calltype name locus methodtype
+
         # Assume no forwards or filters, and hence no $calltype
         # or $methodtype checks...
+
         if {$locus eq "object"} {
             return [\fBinfo object definition\fR $obj $name]
         } else {
@@ -787,7 +805,9 @@ proc getDef {obj method} {
         # Assume no forwards
         return [\fBinfo object definition\fR $obj $method]
     }
+
     set cls [\fBinfo object class\fR $obj]
+
     while {$method ni [\fBinfo class methods\fR $cls]} {
         # Assume the simple case
         set cls [lindex [\fBinfo class superclass\fR $cls] 0]
@@ -795,6 +815,7 @@ proc getDef {obj method} {
             error "no definition for $method"
         }
     }
+
     # Assume no forwards
     return [\fBinfo class definition\fR $cls $method]
 }
