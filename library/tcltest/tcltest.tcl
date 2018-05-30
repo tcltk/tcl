@@ -2672,7 +2672,7 @@ proc tcltest::GetMatchingFiles { args } {
 		skip patterns!"
     }
     
-    return [__SortFiles $matchingFiles]
+    return $matchingFiles
 }
 
 # tcltest::GetMatchingDirectories --
@@ -2795,7 +2795,7 @@ proc tcltest::runAllTests { {shell ""} } {
     puts [outputChannel] "Tests began at [eval $timeCmd]"
 
     # Run each of the specified tests
-    foreach file [lsort [GetMatchingFiles]] {
+    foreach file [__SortFiles [GetMatchingFiles]] {
 	set tail [file tail $file]
 	puts [outputChannel] $tail
 	flush [outputChannel]
