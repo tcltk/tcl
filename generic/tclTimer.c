@@ -42,11 +42,15 @@ typedef struct AfterInfo {
     Tcl_Obj *commandPtr;	/* Command to execute. */
     int id;			/* Integer identifier for command; used to
 				 * cancel it. */
+    int isAbsolute;		/* True for "after -at ..." command form. */
+    Tcl_Time absoluteTime;	/* Used for "after -at ..." command form. */
     Tcl_TimerToken token;	/* Used to cancel the "after" command. NULL
 				 * means that the command is run as an idle
 				 * handler rather than as a timer handler.
 				 * NULL means this is an "after idle" handler
 				 * rather than a timer handler. */
+    struct AfterInfo *prevPtr;	/* Previous in list of all "after" commands for
+				 * this interpreter. */
     struct AfterInfo *nextPtr;	/* Next in list of all "after" commands for
 				 * this interpreter. */
 } AfterInfo;
@@ -146,6 +150,15 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 #define TCL_TIME_MAXIMUM_SLICE 500
+
+/*
+ * Interval to re-schedule "after -at" type events in seconds. If less
+ * than one, re-schedule is done when needed, otherwise a timer with this
+ * interval "polls" for the "after -at" event(s). The variable can be
+ * modified through the Tcl_LinkVar() mechanism.
+ */
+
+static int afterAtInterval = 0;
 
 /*
  * Prototypes for functions referenced only in this file:
@@ -794,6 +807,8 @@ Tcl_AfterObjCmd(
     AfterAssocData *assocPtr;
     int length;
     int index;
+    int isAbsolute = 0;
+    const char *arg;
     static const char *const afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
     };
@@ -816,30 +831,52 @@ Tcl_AfterObjCmd(
 	assocPtr->interp = interp;
 	assocPtr->firstAfterPtr = NULL;
 	Tcl_SetAssocData(interp, "tclAfter", AfterCleanupProc, assocPtr);
+	if (!Tcl_IsSafe(interp)) {
+	    Tcl_LinkVar(interp, "::tcl::unsupported::afteratinterval",
+		    (char *) &afterAtInterval, TCL_LINK_INT);
+	}
     }
 
     /*
      * First lets see if the command was passed a number as the first argument.
      */
 
-    if (objv[1]->typePtr == &tclIntType
+    arg = Tcl_GetString(objv[1]);
+    if (strcmp(arg, "-at") == 0) {
+	if (objc < 3) {
+	    goto badAtArg;
+	}
+	isAbsolute = 1;
+    }
+    if (objv[1 + isAbsolute]->typePtr == &tclIntType
 #ifndef TCL_WIDE_INT_IS_LONG
-	    || objv[1]->typePtr == &tclWideIntType
+	    || objv[1 + isAbsolute]->typePtr == &tclWideIntType
 #endif
-	    || objv[1]->typePtr == &tclBignumType
-	    || (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0,
-		    &index) != TCL_OK)) {
+	    || objv[1 + isAbsolute]->typePtr == &tclBignumType
+	    || (Tcl_GetIndexFromObj(NULL, objv[1 + isAbsolute],
+		    afterSubCmds, "", 0, &index) != TCL_OK)) {
 	index = -1;
-	if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
-            const char *arg = Tcl_GetString(objv[1]);
-
+	if (Tcl_GetWideIntFromObj(NULL, objv[1 + isAbsolute], &ms) != TCL_OK) {
+badArg:
+            arg = Tcl_GetString(objv[1 + isAbsolute]);
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                     "bad argument \"%s\": must be"
-                    " cancel, idle, info, or an integer", arg));
+                    " cancel, idle, info, an integer, or \"-at\" integer",
+		    arg));
             Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "argument",
                     arg, NULL);
 	    return TCL_ERROR;
 	}
+    }
+
+    if ((index >= 0) && isAbsolute) {
+	isAbsolute = 0;
+	goto badArg;
+    }
+    if (isAbsolute && (objc < 4)) {
+badAtArg:
+	Tcl_WrongNumArgs(interp, 2, objv, "time script ...");
+	return TCL_ERROR;
     }
 
     /*
@@ -857,10 +894,11 @@ Tcl_AfterObjCmd(
 	}
 	afterPtr = ckalloc(sizeof(AfterInfo));
 	afterPtr->assocPtr = assocPtr;
-	if (objc == 3) {
-	    afterPtr->commandPtr = objv[2];
+	if (objc == 3 + isAbsolute) {
+	    afterPtr->commandPtr = objv[2 + isAbsolute];
 	} else {
-	    afterPtr->commandPtr = Tcl_ConcatObj(objc-2, objv+2);
+	    afterPtr->commandPtr = Tcl_ConcatObj(objc - 2 - isAbsolute,
+					objv + 2 + isAbsolute);
 	}
 	Tcl_IncrRefCount(afterPtr->commandPtr);
 
@@ -875,7 +913,37 @@ Tcl_AfterObjCmd(
 	 */
 
 	afterPtr->id = tsdPtr->afterId;
+	afterPtr->isAbsolute = isAbsolute;
 	tsdPtr->afterId += 1;
+	if (afterPtr->isAbsolute) {
+	    Tcl_GetTime(&wakeup);
+	    afterPtr->absoluteTime.sec = ms;
+	    afterPtr->absoluteTime.usec = 0;
+	    ms = TCL_TIME_DIFF_MS_CEILING(afterPtr->absoluteTime, wakeup);
+#ifndef TCL_WIDE_INT_IS_LONG
+	    if (ms > LONG_MAX) {
+		ms = LONG_MAX;
+	    }
+#endif
+	    if (ms < 0) {
+		ms = 0;
+	    }
+	    if (afterAtInterval > 0) {
+		Tcl_WideInt aai = (Tcl_WideInt) afterAtInterval * 1000;
+
+#ifndef TCL_WIDE_INT_IS_LONG
+		if (aai > LONG_MAX) {
+		    aai = LONG_MAX;
+		}
+#endif
+		if ((aai > 0) && (ms > aai)) {
+		    ms = aai;
+		}
+	    }
+	} else {
+	    afterPtr->absoluteTime.sec = 0;
+	    afterPtr->absoluteTime.usec = 0;
+	}
 	TclpGetMonotonicTime(&wakeup);
 	if (((wakeup.sec + (long)(ms / 1000)) - (wakeup.sec)) < 0) {
 	    wakeup.sec += LONG_MAX - 1;
@@ -890,7 +958,11 @@ Tcl_AfterObjCmd(
 	}
 	afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup,
 		AfterProc, afterPtr);
+	afterPtr->prevPtr = NULL;
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
+	if (afterPtr->nextPtr != NULL) {
+	    afterPtr->nextPtr->prevPtr = afterPtr;
+	}
 	assocPtr->firstAfterPtr = afterPtr;
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
 	return TCL_OK;
@@ -907,7 +979,7 @@ Tcl_AfterObjCmd(
 	if (objc == 3) {
 	    commandPtr = objv[2];
 	} else {
-	    commandPtr = Tcl_ConcatObj(objc-2, objv+2);;
+	    commandPtr = Tcl_ConcatObj(objc-2, objv+2);
 	}
 	command = Tcl_GetStringFromObj(commandPtr, &length);
 	for (afterPtr = assocPtr->firstAfterPtr;  afterPtr != NULL;
@@ -949,9 +1021,16 @@ Tcl_AfterObjCmd(
 	}
 	Tcl_IncrRefCount(afterPtr->commandPtr);
 	afterPtr->id = tsdPtr->afterId;
+	afterPtr->isAbsolute = 0;
+	afterPtr->absoluteTime.sec = 0;
+	afterPtr->absoluteTime.usec = 0;
 	tsdPtr->afterId += 1;
 	afterPtr->token = NULL;
+	afterPtr->prevPtr = NULL;
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
+	if (afterPtr->nextPtr != NULL) {
+	    afterPtr->nextPtr->prevPtr = afterPtr;
+	}
 	assocPtr->firstAfterPtr = afterPtr;
 	Tcl_DoWhenIdle(AfterProc, afterPtr);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
@@ -1171,9 +1250,58 @@ AfterProc(
 {
     AfterInfo *afterPtr = clientData;
     AfterAssocData *assocPtr = afterPtr->assocPtr;
-    AfterInfo *prevPtr;
     int result;
     Tcl_Interp *interp;
+
+    /*
+     * For absolute timed events see if the timer needs
+     * to be re-scheduled due to not having reached the
+     * absolute point in wall-time.
+     */
+
+    if (afterPtr->isAbsolute) {
+	Tcl_Time now, wakeup;
+	Tcl_WideInt ms;
+
+	Tcl_GetTime(&now);
+	if (TCL_TIME_BEFORE(now, afterPtr->absoluteTime)) {
+	    ms = TCL_TIME_DIFF_MS_CEILING(afterPtr->absoluteTime, now);
+#ifndef TCL_WIDE_INT_IS_LONG
+	    if (ms > LONG_MAX) {
+		ms = LONG_MAX;
+	    }
+#endif
+	    if (ms > 0) {
+		if (afterAtInterval > 0) {
+		    Tcl_WideInt aai = (Tcl_WideInt) afterAtInterval * 1000;
+
+#ifndef TCL_WIDE_INT_IS_LONG
+		    if (aai > LONG_MAX) {
+			aai = LONG_MAX;
+		    }
+#endif
+		    if ((aai > 0) && (ms > aai)) {
+			ms = aai;
+		    }
+		}
+		TclpGetMonotonicTime(&wakeup);
+		if (((wakeup.sec + (long)(ms / 1000)) - (wakeup.sec)) < 0) {
+		    wakeup.sec += LONG_MAX - 1;
+		    /* Don't consider fractional part. */
+		} else {
+		    wakeup.sec += (long)(ms / 1000);
+		    wakeup.usec += ((long)(ms % 1000)) * 1000;
+		    if (wakeup.usec > 1000000) {
+			wakeup.sec++;
+			wakeup.usec -= 1000000;
+		    }
+		}
+		afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup,
+					AfterProc, afterPtr);
+		return;
+	    }
+	}
+    }
 
     /*
      * First remove the callback from our list of callbacks; otherwise someone
@@ -1184,11 +1312,10 @@ AfterProc(
     if (assocPtr->firstAfterPtr == afterPtr) {
 	assocPtr->firstAfterPtr = afterPtr->nextPtr;
     } else {
-	for (prevPtr = assocPtr->firstAfterPtr; prevPtr->nextPtr != afterPtr;
-		prevPtr = prevPtr->nextPtr) {
-	    /* Empty loop body. */
-	}
-	prevPtr->nextPtr = afterPtr->nextPtr;
+	afterPtr->prevPtr->nextPtr = afterPtr->nextPtr;
+    }
+    if (afterPtr->nextPtr != NULL) {
+	afterPtr->nextPtr->prevPtr = afterPtr->prevPtr;
     }
 
     /*
@@ -1234,17 +1361,15 @@ static void
 FreeAfterPtr(
     AfterInfo *afterPtr)		/* Command to be deleted. */
 {
-    AfterInfo *prevPtr;
     AfterAssocData *assocPtr = afterPtr->assocPtr;
 
     if (assocPtr->firstAfterPtr == afterPtr) {
 	assocPtr->firstAfterPtr = afterPtr->nextPtr;
     } else {
-	for (prevPtr = assocPtr->firstAfterPtr; prevPtr->nextPtr != afterPtr;
-		prevPtr = prevPtr->nextPtr) {
-	    /* Empty loop body. */
-	}
-	prevPtr->nextPtr = afterPtr->nextPtr;
+	afterPtr->prevPtr->nextPtr = afterPtr->nextPtr;
+    }
+    if (afterPtr->nextPtr != NULL) {
+	afterPtr->nextPtr->prevPtr = afterPtr->prevPtr;
     }
     Tcl_DecrRefCount(afterPtr->commandPtr);
     ckfree(afterPtr);
@@ -1280,6 +1405,9 @@ AfterCleanupProc(
     while (assocPtr->firstAfterPtr != NULL) {
 	afterPtr = assocPtr->firstAfterPtr;
 	assocPtr->firstAfterPtr = afterPtr->nextPtr;
+	if (afterPtr->nextPtr != NULL) {
+	    afterPtr->nextPtr->prevPtr = afterPtr->prevPtr;
+	}
 	if (afterPtr->token != NULL) {
 	    Tcl_DeleteTimerHandler(afterPtr->token);
 	} else {

@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 1
+RULES_VERSION_MINOR = 2
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -393,7 +393,7 @@ MSG = ^
 !endif
 
 
-# If INSTALLDIR set to tcl installation root dir then reset to the
+# If INSTALLDIR set to Tcl installation root dir then reset to the
 # lib dir for installing extensions 
 !if exist("$(_INSTALLDIR)\include\tcl.h")
 _INSTALLDIR=$(_INSTALLDIR)\lib
@@ -1209,7 +1209,7 @@ RESFILE = $(TMP_DIR)\$(PROJECT).res
 # SCRIPT_INSTALL_DIR - where scripts should be installed
 # INCLUDE_INSTALL_DIR - where C include files should be installed
 # DEMO_INSTALL_DIR - where demos should be installed
-# PRJ_INSTALL_DIR - where package will be installed (not set for tcl and tk)
+# PRJ_INSTALL_DIR - where package will be installed (not set for Tcl and Tk)
 
 !if $(DOING_TCL) || $(DOING_TK)
 LIB_INSTALL_DIR		= $(_INSTALLDIR)\lib
@@ -1231,7 +1231,7 @@ BIN_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
 DOC_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
 SCRIPT_INSTALL_DIR	= $(PRJ_INSTALL_DIR)
 DEMO_INSTALL_DIR	= $(PRJ_INSTALL_DIR)\demos
-INCLUDE_INSTALL_DIR	= $(_TCLDIR)\include
+INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 
 !endif
 

@@ -156,6 +156,16 @@ TclpInitPlatform(void)
     WSAStartup(wVersionRequested, &wsaData);
 
 #ifdef WIN32_USE_TICKCOUNT
+    /*
+     * Check for availability of the GetTickCount64() API.
+     */
+
+    handle = GetModuleHandle(TEXT("KERNEL32"));
+    if (handle != NULL) {
+	GetTickCount64ProcPtr = (GetTickCount64Proc *)
+		GetProcAddress(handle, "GetTickCount64");
+    }
+
     InitializeCriticalSection(&TickMutex);
 
     /*
@@ -185,9 +195,6 @@ TclpInitPlatform(void)
     tclWinProcs.cancelSynchronousIo =
 	    (BOOL (WINAPI *)(HANDLE)) GetProcAddress(handle,
 	    "CancelSynchronousIo");
-    tclWinProcs.getTickCount64 =
-	    (ULONGLONG (WINAPI *)(void)) GetProcAddress(handle,
-	    "GetTickCount64");
 }
 
 /*
@@ -559,6 +566,27 @@ Tcl_GetEncodingNameFromEnvironment(
     return Tcl_DStringValue(bufPtr);
 }
 
+const char *
+TclpGetUserName(
+    Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
+				 * the name of user. */
+{
+    Tcl_DStringInit(bufferPtr);
+
+    if (TclGetEnv("USERNAME", bufferPtr) == NULL) {
+	TCHAR szUserName[UNLEN+1];
+	DWORD cchUserNameLen = UNLEN;
+
+	if (!GetUserName(szUserName, &cchUserNameLen)) {
+	    return NULL;
+	}
+	cchUserNameLen--;
+	cchUserNameLen *= sizeof(TCHAR);
+	Tcl_WinTCharToUtf(szUserName, cchUserNameLen, bufferPtr);
+    }
+    return Tcl_DStringValue(bufferPtr);
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -589,8 +617,6 @@ TclpSetVariables(
     static OSVERSIONINFOW osInfo;
     static int osInfoInitialized = 0;
     Tcl_DString ds;
-    TCHAR szUserName[UNLEN+1];
-    DWORD cchUserNameLen = UNLEN;
 
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
@@ -668,15 +694,8 @@ TclpSetVariables(
      * Note: cchUserNameLen is number of characters including nul terminator.
      */
 
-    Tcl_DStringInit(&ds);
-    if (TclGetEnv("USERNAME", &ds) == NULL) {
-	if (GetUserName(szUserName, &cchUserNameLen) != 0) {
-	    int cbUserNameLen = cchUserNameLen - 1;
-	    cbUserNameLen *= sizeof(TCHAR);
-	    Tcl_WinTCharToUtf(szUserName, cbUserNameLen, &ds);
-	}
-    }
-    Tcl_SetVar2(interp, "tcl_platform", "user", Tcl_DStringValue(&ds),
+    ptr = TclpGetUserName(&ds);
+    Tcl_SetVar2(interp, "tcl_platform", "user", ptr ? ptr : "",
 	    TCL_GLOBAL_ONLY);
     Tcl_DStringFree(&ds);
 

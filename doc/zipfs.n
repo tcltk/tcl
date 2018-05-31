@@ -1,6 +1,6 @@
 '\"
 '\" Copyright (c) 2015 Jan Nijtmans <jan.nijtmans@gmail.com>
-'\" Copyright (c) 2015 Christian Werner <chw@ch-werner.de>
+'\" Copyright (c) 2015-2018 Christian Werner <chw@ch-werner.de>
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -19,8 +19,8 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fBzipfs::find\fR \fIdir\fR
 \fBzipfs::info\fR \fIfilename\fR
 \fBzipfs::list\fR \fB?(-glob|-regexp)?\fR \fI?pattern?\fR
-\fBzipfs::lmkimg\fR \fIoutfile\fR \fIinlist\fR \fI?strip?\fR \fI?password?\fR \fI?infile?\fR
-\fBzipfs::lmkzip\fR \fIoutfile\fR \fIinlist\fR \fI?strip?\fR \fI?password?\fR
+\fBzipfs::lmkimg\fR \fIoutfile\fR \fIinlist\fR \fI?password?\fR \fI?infile?\fR
+\fBzipfs::lmkzip\fR \fIoutfile\fR \fIinlist\fR \fI?password?\fR
 \fBzipfs::mkimg\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR \fI?infile?\fR
 \fBzipfs::mkkey\fR \fIpassword\fR
 \fBzipfs::mkzip\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR
@@ -68,13 +68,13 @@ the mounted archive as a directory.
 Return a list of all files in the mounted zipfs.  The order of the names
 in the list is arbitrary.
 .TP
-\fBzipfs::lmkimg\fR \fIoutfile\fR \fIinlist\fR \fI?strip?\fR \fI?password?\fR \fI?infile?\fR
+\fBzipfs::lmkimg\fR \fIoutfile\fR \fIinlist\fR \fI?password?\fR \fI?infile?\fR
 Like \fBzipfs::mkimg\fR but instead of an input directory \fIinlist\fR
 must be a list where the odd elements are the original input file names as
 copied into the archive and the even elements their respective names within
 the archive.
 .TP
-\fBzipfs::lmkzip\fR \fIoutfile\fR \fIinlist\fR \fI?strip?\fR \fI?password?\fR
+\fBzipfs::lmkzip\fR \fIoutfile\fR \fIinlist\fR \fI?password?\fR
 .
 Like \fBzipfs::mkzip\fR but instead of an input directory \fIinlist\fR
 must be a list where the odd elements are the original input file names as
@@ -116,7 +116,7 @@ Caution: the choice of the \fIindir\fR parameter
 archive's content.
 .RE
 .TP
-\fBzipfs::mount ?\fIzipfile\fR? ?\fImountpoint\fR?
+\fBzipfs::mount ?\fIzipfile\fR? ?\fImountpoint\fR? ?\fIpassword\fR?
 .
 The \fBzipfs::mount\fR command mounts a ZIP archive file as a VFS.
 After this command executes, files contained in \fIzipfile\fR

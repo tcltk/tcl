@@ -418,6 +418,34 @@ test lsearch-17.6 {lsearch -index option, basic functionality} {
 test lsearch-17.7 {lsearch -index option, basic functionality} {
     lsearch -all -index 1 -regexp {{ab cb} {ab bb} {ab ab}} {[cb]b}
 } {0 1}
+test lsearch-17.8 {lsearch -index option, empty argument} {
+    lsearch -index {} a a
+} 0
+test lsearch-17.9 {lsearch -index option, empty argument} {
+    lsearch -index {} a a
+} [lsearch a a]
+test lsearch-17.10 {lsearch -index option, empty argument} {
+    lsearch -index {} [list \{] \{
+} 0
+test lsearch-17.11 {lsearch -index option, empty argument} {
+    lsearch -index {} [list \{] \{
+} [lsearch [list \{] \{]
+test lsearch-17.12 {lsearch -index option, encoding aliasing} -body {
+    lsearch -index -2 a a
+} -returnCodes error -result {index "-2" cannot select an element from any list}
+test lsearch-17.13 {lsearch -index option, encoding aliasing} -body {
+    lsearch -index -1-1 a a
+} -returnCodes error -result {index "-1-1" cannot select an element from any list}
+test lsearch-17.14 {lsearch -index option, encoding aliasing} -body {
+    lsearch -index end--1 a a
+} -returnCodes error -result {index "end--1" cannot select an element from any list}
+test lsearch-17.15 {lsearch -index option, encoding aliasing} -body {
+    lsearch -index end+1 a a
+} -returnCodes error -result {index "end+1" cannot select an element from any list}
+test lsearch-17.16 {lsearch -index option, encoding aliasing} -body {
+    lsearch -index end+2 a a
+} -returnCodes error -result {index "end+2" cannot select an element from any list}
+
 
 test lsearch-18.1 {lsearch -index option, list as index basic functionality} {
     lsearch -index {0 0} {{{x x} {x b} {a d}} {{a c} {a b} {a a}}} a
@@ -435,21 +463,27 @@ test lsearch-18.5 {lsearch -index option, list as index basic functionality} {
     lsearch -all -index {0 0} -exact {{{a c} {a b} {d a}} {{a c} {a b} {d a}}} a
 } {0 1}
 
-test lsearch-19.1 {lsearch -sunindices option} {
+test lsearch-19.1 {lsearch -subindices option} {
     lsearch -subindices -index {0 0} {{{x x} {x b} {a d}} {{a c} {a b} {a a}}} a
 } {1 0 0}
-test lsearch-19.2 {lsearch -sunindices option} {
+test lsearch-19.2 {lsearch -subindices option} {
     lsearch -subindices -index {2 0} -exact {{{x x} {x b} {a d}} {{a c} {a b} {a a}}} a
 } {0 2 0}
-test lsearch-19.3 {lsearch -sunindices option} {
+test lsearch-19.3 {lsearch -subindices option} {
     lsearch -subindices -index {1 1} -glob {{{ab cb} {ab bb} {ab ab}} {{ab cb} {ab bb} {ab ab}}} b*
 } {0 1 1}
-test lsearch-19.4 {lsearch -sunindices option} {
+test lsearch-19.4 {lsearch -subindices option} {
     lsearch -subindices -index {0 1} -regexp {{{ab cb} {ab bb} {ab ab}} {{ab cb} {ab bb} {ab ab}}} {[cb]b}
 } {0 0 1}
-test lsearch-19.5 {lsearch -sunindices option} {
+test lsearch-19.5 {lsearch -subindices option} {
     lsearch -subindices -all -index {0 0} -exact {{{a c} {a b} {d a}} {{a c} {a b} {d a}}} a
 } {{0 0 0} {1 0 0}}
+test lsearch-19.7 {lsearch -subindices option} {
+    lsearch -subindices -index end {{1 a}} a
+} {0 1}
+test lsearch-19.8 {lsearch -subindices option} {
+    lsearch -subindices -all -index end {{1 a}} a
+} {{0 1}}
 
 test lsearch-20.1 {lsearch -index option, index larger than sublists} -body {
     lsearch -index 2 {{a c} {a b} {a a}} a

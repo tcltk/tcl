@@ -1444,7 +1444,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-encoding         encoding for configuration values (default:
                           iso8859-1)
-  --with-zipfs            include ZIP filesystem
+  --with-zipfs            include ZIP filesystem in Tcl core
   --with-tzdata           install timezone data (default: autodetect)
 
 Some influential environment variables:
@@ -5491,8 +5491,6 @@ _ACEOF
     #--------------------------------------------------------------------
     # On a few very rare systems, all of the libm.a stuff is
     # already in libc.a.  Set compiler flags accordingly.
-    # Also, Linux requires the "ieee" library for math to work
-    # right (and it must appear before "-lm").
     #--------------------------------------------------------------------
 
     { $as_echo "$as_me:$LINENO: checking for sin" >&5
@@ -5585,70 +5583,6 @@ if test "x$ac_cv_func_sin" = x""yes; then
 else
   MATH_LIBS="-lm"
 fi
-
-    { $as_echo "$as_me:$LINENO: checking for main in -lieee" >&5
-$as_echo_n "checking for main in -lieee... " >&6; }
-if test "${ac_cv_lib_ieee_main+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lieee  $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext && {
-	 test "$cross_compiling" = yes ||
-	 $as_test_x conftest$ac_exeext
-       }; then
-  ac_cv_lib_ieee_main=yes
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_cv_lib_ieee_main=no
-fi
-
-rm -rf conftest.dSYM
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_ieee_main" >&5
-$as_echo "$ac_cv_lib_ieee_main" >&6; }
-if test "x$ac_cv_lib_ieee_main" = x""yes; then
-  MATH_LIBS="-lieee $MATH_LIBS"
-fi
-
 
     #--------------------------------------------------------------------
     # Interactive UNIX requires -linet instead of -lsocket, plus it
@@ -6998,6 +6932,8 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_ZLIB 1
 _ACEOF
 
+{ $as_echo "$as_me:$LINENO: checking for ZIP filesystem in Tcl core" >&5
+$as_echo_n "checking for ZIP filesystem in Tcl core... " >&6; }
 
 # Check whether --with-zipfs was given.
 if test "${with_zipfs+set}" = set; then
@@ -8411,7 +8347,7 @@ fi
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LDFLAGS=""
+	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'

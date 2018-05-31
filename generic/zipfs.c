@@ -3,7 +3,7 @@
  *
  *	Implementation of the ZIP filesystem used in AndroWish.
  *
- * Copyright (c) 2013-2017 Christian Werner <chw@ch-werner.de>
+ * Copyright (c) 2013-2018 Christian Werner <chw@ch-werner.de>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -189,6 +189,7 @@ typedef struct ZipChannel {
     unsigned long nbyte;      /* Number of bytes of uncompressed data */
     unsigned long nread;      /* Pos of next byte to be read from the channel */
     unsigned char *ubuf;      /* Pointer to the uncompressed data */
+    unsigned char *tofree;    /* Pointer to free on close or NULL */
     int iscompr;              /* True if data is compressed */
     int isdir;	              /* Set to 1 if directory, -1 if root */
     int isenc;                /* True if data is encrypted */
@@ -1737,8 +1738,9 @@ wrerr:
 	 * Align payload to next 4-byte boundary using a dummy extra
 	 * entry similar to the zipalign tool from Android's SDK.
 	 */
+	align = 0xffff;
+	zip_write_short(abuf, align);
 	align = 4 + ((len + pos[0]) & 3);
-	zip_write_short(abuf, 0xffff);
 	zip_write_short(abuf + 2, align - 4);
 	zip_write_int(abuf + 4, 0x03020100);
 	if (Tcl_Write(out, abuf, align) != align) {
@@ -2561,17 +2563,19 @@ ZipChannelClose(ClientData instanceData, Tcl_Interp *interp)
 {
     ZipChannel *info = (ZipChannel *) instanceData;
 
-    if (info->iscompr && (info->ubuf != NULL)) {
-	Tcl_Free((char *) info->ubuf);
-	info->ubuf = NULL;
-    }
     if (info->isenc) {
 	info->isenc = 0;
 	memset(info->keys, 0, sizeof (info->keys));
     }
+    WriteLock();
     if (info->iswr) {
 	ZipEntry *z = info->zipentry;
 	unsigned char *newdata;
+
+	/*
+	 * If opened for writing, commit the entire file
+	 * to the mounted archive now.
+	 */
 
 	newdata = (unsigned char *)
 	    Tcl_AttemptRealloc((char *) info->ubuf, info->nread);
@@ -2587,13 +2591,14 @@ ZipChannelClose(ClientData instanceData, Tcl_Interp *interp)
 	    z->isenc = 0;
 	    z->offset = 0;
 	    z->crc32 = 0;
-	} else {
-	    Tcl_Free((char *) info->ubuf);
+	    info->tofree = info->ubuf = NULL;
 	}
     }
-    WriteLock();
     info->zipfile->nopen--;
     Unlock();
+    if (info->tofree != NULL) {
+	Tcl_Free((char *) info->tofree);
+    }
     Tcl_Free((char *) info);
     return TCL_OK;
 }
@@ -2946,6 +2951,7 @@ ZipChannelOpen(Tcl_Interp *interp, char *filename, int mode, int permissions)
 	flags |= TCL_WRITABLE;
 	info->iswr = 1;
 	info->isdir = 0;
+	info->nbyte = 0;
 	info->nmax = ZipFS.wrmax;
 	info->iscompr = 0;
 	info->isenc = 0;
@@ -2962,6 +2968,7 @@ merror0:
 	    }
 	    goto error;
 	}
+	info->tofree = info->ubuf;
 	memset(info->ubuf, 0, info->nmax);
 	if (trunc) {
 	    info->nbyte = 0;
@@ -2989,7 +2996,7 @@ merror0:
 		    init_keys(pwbuf, info->keys, crc32tab);
 		    memset(pwbuf, 0, sizeof (pwbuf));
 		    for (i = 0; i < 12; i++) {
-			ch = info->ubuf[i];
+			ch = zbuf[i];
 			zdecode(info->keys, crc32tab, ch);
 		    }
 		    zbuf += i;
@@ -3014,7 +3021,7 @@ merror0:
 			    goto merror0;
 			}
 			for (j = 0; j < stream.avail_in; j++) {
-			    ch = info->ubuf[j];
+			    ch = zbuf[j];
 			    cbuf[j] = zdecode(info->keys, crc32tab, ch);
 			}
 			stream.next_in = cbuf;
@@ -3034,6 +3041,7 @@ merror0:
 			    memset(info->keys, 0, sizeof (info->keys));
 			    Tcl_Free((char *) cbuf);
 			}
+			info->nbyte = z->nbyte;
 			goto wrapchan;
 		    }
 cerror0:
@@ -3055,11 +3063,12 @@ cerror0:
 			ch = zbuf[i];
 			info->ubuf[i] = zdecode(info->keys, crc32tab, ch);
 		    }
+		    info->nbyte = i;
 		} else {
 		    memcpy(info->ubuf, zbuf, z->nbyte);
+		    info->nbyte = z->nbyte;
 		}
 		memset(info->keys, 0, sizeof (info->keys));
-		goto wrapchan;
 	    }
 	}
     } else if (z->data != NULL) {
@@ -3070,7 +3079,17 @@ cerror0:
 	info->isenc = 0;
 	info->nbyte = z->nbyte;
 	info->nmax = 0;
-	info->ubuf = z->data;
+	/*
+	 * Must copy data since other channel to same archive member
+	 * in another thread may write and close its channel and thus
+	 * invalidate z->data.
+	 */
+	info->ubuf = (unsigned char *) Tcl_AttemptAlloc(info->nbyte);
+	if (info->ubuf == NULL) {
+	    goto merror0;
+	}
+	memcpy(info->ubuf, z->data, info->nbyte);
+	info->tofree = info->ubuf;
     } else {
 	flags |= TCL_READABLE;
 	info->iswr = 0;
@@ -3080,6 +3099,7 @@ cerror0:
 	info->isenc = z->isenc;
 	info->nbyte = z->nbyte;
 	info->nmax = 0;
+	info->tofree = NULL;
 	if (info->isenc) {
 	    int len = z->zipfile->pwbuf[0];
 	    char pwbuf[260];
@@ -3139,6 +3159,7 @@ merror:
 		}
 		goto error;
 	    }
+	    info->tofree = info->ubuf;
 	    stream.avail_out = info->nbyte;
 	    if (inflateInit2(&stream, -15) != Z_OK) {
 		goto cerror;

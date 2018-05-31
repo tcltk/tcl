@@ -177,9 +177,10 @@ AS_IF([test $zlib_ok = no], [
   AC_SUBST(ZLIB_INCLUDE,[-I\${ZLIB_DIR}])
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
+AC_MSG_CHECKING([for ZIP filesystem in Tcl core])
 AC_ARG_WITH(zipfs,
     AC_HELP_STRING([--with-zipfs],
-	[include ZIP filesystem]),
+	[include ZIP filesystem in Tcl core]),
     [tcl_ok=$withval], [tcl_ok=no])
 AC_MSG_RESULT([$tcl_ok])
 if test $tcl_ok = yes; then

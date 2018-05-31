@@ -440,6 +440,9 @@
    first (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN
 
+/* Should we include ZIP filesystem in Tcl core? */
+#undef ZIPFS_IN_TCL
+
 /* Are Darwin SUSv3 extensions available? */
 #undef _DARWIN_C_SOURCE
 

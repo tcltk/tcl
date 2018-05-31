@@ -853,7 +853,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-encoding         encoding for configuration values
   --with-celib=DIR        use Windows/CE support library from DIR
-  --with-zipfs            include ZIP filesystem
+  --with-zipfs            include ZIP filesystem in Tcl core?
   --with-tickcount        use GetTickCount for timers, turns off TIP #233
 
 Some influential environment variables:
@@ -4409,6 +4409,8 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_ZLIB 1
 _ACEOF
 
+echo "$as_me:$LINENO: checking for ZIP filesystem in Tcl core" >&5
+echo $ECHO_N "checking for ZIP filesystem in Tcl core... $ECHO_C" >&6
 
 # Check whether --with-zipfs or --without-zipfs was given.
 if test "${with_zipfs+set}" = set; then

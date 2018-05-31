@@ -189,10 +189,10 @@ test timer-6.1 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
 } -result {wrong # args: should be "after option ?arg ...?"}
 test timer-6.2 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after 2x
-} -result {bad argument "2x": must be cancel, idle, info, or an integer}
+} -result {bad argument "2x": must be cancel, idle, info, an integer, or "-at" integer}
 test timer-6.3 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after gorp
-} -result {bad argument "gorp": must be cancel, idle, info, or an integer}
+} -result {bad argument "gorp": must be cancel, idle, info, an integer, or "-at" integer}
 test timer-6.4 {Tcl_AfterCmd procedure, ms argument} {
     set x before
     after 400 {set x after}
@@ -446,6 +446,30 @@ test timer-6.29 {Tcl_AfterCmd procedure, info option, script with NUL} -setup {
 	after cancel $i
     }
 } -result 5
+test timer-6.30 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
+    after -at cancel
+} -result {bad argument "-at": must be cancel, idle, info, an integer, or "-at" integer}
+test timer-6.31 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
+    after -at
+} -result {wrong # args: should be "after -at time script ..."}
+test timer-6.32 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
+    after -at 1000
+} -result {wrong # args: should be "after -at time script ..."}
+test timer-6.33 {Tcl_AfterCmd procedure, -at option} -body {
+    set now [clock seconds]
+    after -at $now {set then $now}
+    after 1000
+    update
+    expr {$then == $now}
+} -result {1}
+test timer-6.34 {Tcl_AfterCmd procedure, -at option} -body {
+    set now [clock seconds]
+    incr now
+    after -at $now {set then [clock seconds]}
+    after 1000
+    update
+    expr {$then >= $now}
+} -result {1}
 
 set event [after idle foo bar]
 scan $event after#%d lastId

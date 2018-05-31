@@ -16,6 +16,8 @@ after \- Execute a command after a time delay
 .sp
 \fBafter \fIms \fR?\fIscript script script ...\fR?
 .sp
+\fBafter \-at \fItime script script script ...\fR
+.sp
 \fBafter cancel \fIid\fR
 .sp
 \fBafter cancel \fIscript script script ...\fR
@@ -52,6 +54,21 @@ the background error will be reported by the command
 registered with \fBinterp bgerror\fR.
 The \fBafter\fR command returns an identifier that can be used
 to cancel the delayed command using \fBafter cancel\fR.
+.TP
+\fB after \-at \fItime script script script ...\fR
+.
+This command form is similar to the milliseconds form above but
+arranges for a Tcl command to be executed not before \fItime\fR,
+which specifies an absolute point in time based on the \fBclock\fR
+command. It implies a resolution of one second. Error handling
+and return value are identical to the millisecond form of the
+\fBafter\fR command. If the platform supports some kind of monotonic
+clock, the initial computation of the duration when the script is to
+execute is based on the difference of the wall time to the monotonic
+clock source at command evaluation. Should the wall time change
+until that initial duration expires, the time to execute the script
+is recomputed based on the new wall time and the timer is restarted
+to fit the new situation.
 .TP
 \fBafter cancel \fIid\fR
 .

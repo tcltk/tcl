@@ -148,6 +148,7 @@ static ThreadSpecificData *waitingListPtr = NULL;
  */
 
 static int triggerPipe = -1;
+static int otherPipe = -1;
 
 /*
  * The notifierMutex locks access to all of the global notifier state.
@@ -155,6 +156,7 @@ static int triggerPipe = -1;
 
 static pthread_mutex_t notifierInitMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t notifierMutex     = PTHREAD_MUTEX_INITIALIZER;
+
 /*
  * The following static indicates if the notifier thread is running.
  *
@@ -164,9 +166,17 @@ static pthread_mutex_t notifierMutex     = PTHREAD_MUTEX_INITIALIZER;
 static int notifierThreadRunning = 0;
 
 /*
+ * The following static flag indicates that async handlers are pending.
+ */
+
+#if defined(TCL_THREADS) && !defined(ANDROID)
+static int asyncPending = 0;
+#endif
+
+/*
  * The notifier thread signals the notifierCV when it has finished
  * initializing the triggerPipe and right before the notifier thread
- * terminates.
+ * terminates. This condition is used to deal with the signal mask, too.
  */
 
 static pthread_cond_t notifierCV = PTHREAD_COND_INITIALIZER;
@@ -188,6 +198,30 @@ static pthread_cond_t notifierCV = PTHREAD_COND_INITIALIZER;
  */
 
 static Tcl_ThreadId notifierThread;
+
+/*
+ * Signal mask information for notifier thread.
+ */
+
+#ifndef ANDROID
+static sigset_t notifierSigMask;
+static sigset_t allSigMask;
+#endif
+
+/*
+ * Structure for TclpSigProcMask() rendez-vous with notifier thread.
+ * Protected by notifier(Init)Mutex and notifierCV.
+ */
+
+#ifndef ANDROID
+static struct {
+    int run;			/* Run state flag. */
+    int ret;			/* Return code of pthread_sigmask(). */
+    int how;			/* 1st argument for pthread_sigmask(). */
+    const sigset_t *set;	/* 2nd argument for pthread_sigmask(). */
+    sigset_t *oldset;		/* 3rt argument for pthread_sigmask(). */
+} SigMaskInfo;
+#endif
 
 #endif /* TCL_THREADS */
 
@@ -282,12 +316,25 @@ StartNotifierThread(const char *proc)
     if (!notifierThreadRunning) {
 	pthread_mutex_lock(&notifierInitMutex);
 	if (!notifierThreadRunning) {
+#ifndef ANDROID
+	    /*
+	     * Signal handling vs. pthreads:
+	     * Now that we start the notifier thread we block all signals
+	     * in the calling thread which is inherited by the notifier thread.
+	     * Later on, the notifier thread unblocks/re-blocks all signals
+	     * when it waits for events. The overall effect is that only the
+	     * notifier catches and dispatches signals, given that this code
+	     * was called before any further threads were created.
+	     */
+	    sigfillset(&allSigMask);
+	    pthread_sigmask(SIG_BLOCK, &allSigMask, &notifierSigMask);
+#endif
+	    pthread_mutex_lock(&notifierMutex);
 	    if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
 		    TCL_THREAD_STACK_DEFAULT, TCL_THREAD_JOINABLE) != TCL_OK) {
 		Tcl_Panic("%s: unable to start notifier thread", proc);
 	    }
 
-	    pthread_mutex_lock(&notifierMutex);
 	    /*
 	     * Wait for the notifier pipe to be created.
 	     */
@@ -462,6 +509,22 @@ Tcl_FinalizeNotifier(
 				"thread");
 		    }
 		    notifierThreadRunning = 0;
+
+#ifndef ANDROID
+		    /*
+		     * Unblock all signals now, since the notifier isn't
+		     * anymore to deal with them.
+		     */
+		    pthread_sigmask(SIG_SETMASK, &notifierSigMask, NULL);
+
+		    /*
+		     * If async marks are outstanding, perform actions now.
+		     */
+		    if (asyncPending) {
+			asyncPending = 0;
+			TclAsyncMarkFromNotifier();
+		    }
+#endif
 		}
 	    }
 	}
@@ -1147,6 +1210,50 @@ Tcl_WaitForEvent(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclAsyncInNotifier --
+ *
+ *	This procedure sets the async mark of an async handler to a
+ *	given value, if it is called from the notifier thread.
+ *
+ * Result:
+ *	True, when flag set. False, otherwise.
+ *
+ * Side effetcs:
+ *	The trigger pipe is written when called from the notifier
+ *	thread.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclAsyncInNotifier(
+    int *flagPtr,		/* Flag to mark. */
+    int value)			/* Value of mark. */
+{
+#if defined(TCL_THREADS) && !defined(ANDROID)
+
+    /*
+     * WARNING:
+     * This code most likely runs in a signal handler. Thus,
+     * only few async-signal-safe system calls are allowed,
+     * e.g. pthread_self(), sem_post(), write().
+     */
+
+    if (Tcl_GetCurrentThread() == notifierThread) {
+	if (notifierThreadRunning) {
+	    *flagPtr = value;
+	    asyncPending = 1;
+	    write(triggerPipe, "S", 1);
+	    return 1;
+	}
+    }
+#endif
+    return 0;
+}
+
 #ifdef TCL_THREADS
 /*
  *----------------------------------------------------------------------
@@ -1181,10 +1288,14 @@ NotifierThreadProc(
     fd_set writableMask;
     fd_set exceptionMask;
     int fds[2];
-    int i, numFdBits = 0, receivePipe;
+    int i, numFdBits = 0, receivePipe, ret;
     long found;
     struct timeval poll = {0., 0.}, *timePtr;
     char buf[2];
+#ifndef ANDROID
+    sigset_t newset, oldset, *newsetPtr = NULL;
+    int run = 0, how;
+#endif
 
     if (pipe(fds) != 0) {
 	Tcl_Panic("NotifierThreadProc: %s", "could not create trigger pipe");
@@ -1215,6 +1326,7 @@ NotifierThreadProc(
 
     pthread_mutex_lock(&notifierMutex);
     triggerPipe = fds[1];
+    otherPipe = fds[0];
 
     /*
      * Signal any threads that are waiting.
@@ -1275,12 +1387,48 @@ NotifierThreadProc(
 	}
 	FD_SET(receivePipe, &readableMask);
 
-	if (select(numFdBits, &readableMask, &writableMask, &exceptionMask,
-		timePtr) == -1) {
+#ifndef ANDROID
+	if (run) {
 	    /*
-	     * Try again immediately on an error.
+	     * Perform query/change of notifier thread's signal mask.
+	     * On success, re-query the current signal mask for result.
 	     */
+	    if ((how != SIG_SETMASK) || (newsetPtr == NULL)) {
+		pthread_sigmask(SIG_SETMASK, &notifierSigMask, NULL);
+	    }
+	    ret = pthread_sigmask(how, newsetPtr, &oldset);
+	    if (ret == 0) {
+		pthread_sigmask(SIG_BLOCK, NULL, &notifierSigMask);
+	    }
 
+	    /*
+	     * Transfer result back to caller.
+	     */
+	    pthread_mutex_lock(&notifierMutex);
+	    SigMaskInfo.ret = ret;
+	    if (SigMaskInfo.oldset != NULL) {
+		*SigMaskInfo.oldset = oldset;
+	    }
+	    SigMaskInfo.run = 2;			/* set to done */
+	    pthread_cond_broadcast(&notifierCV);
+	    pthread_mutex_unlock(&notifierMutex);
+	    run = 0;
+	} else {
+	    pthread_sigmask(SIG_SETMASK, &notifierSigMask, NULL);
+	}
+#endif
+
+	ret = select(numFdBits, &readableMask, &writableMask, &exceptionMask,
+			timePtr);
+
+#ifndef ANDROID
+	pthread_sigmask(SIG_BLOCK, &allSigMask, NULL);
+#endif
+
+	if (ret == -1) {
+	    /*
+	     * Try again immediately on select() error.
+	     */
 	    continue;
 	}
 
@@ -1339,6 +1487,22 @@ NotifierThreadProc(
 #endif /* __CYGWIN__ */
 	    }
 	}
+
+#ifndef ANDROID
+	/*
+	 * Remember request to query/change notifier thread's signal mask.
+	 */
+	if (!run && SigMaskInfo.run == 1) {		/* perform run */
+	    run = 1;
+	    how = SigMaskInfo.how;
+	    if (SigMaskInfo.set != NULL) {
+		newset = *SigMaskInfo.set;
+		newsetPtr = &newset;
+	    } else {
+		newsetPtr = NULL;
+	    }
+	}
+#endif
 	pthread_mutex_unlock(&notifierMutex);
 
 	/*
@@ -1359,6 +1523,12 @@ NotifierThreadProc(
 
 		break;
 	    }
+#ifndef ANDROID
+	    if (asyncPending) {
+		asyncPending = 0;
+		TclAsyncMarkFromNotifier();
+	    }
+#endif
 	}
     }
 
@@ -1370,6 +1540,7 @@ NotifierThreadProc(
     close(receivePipe);
     pthread_mutex_lock(&notifierMutex);
     triggerPipe = -1;
+    otherPipe = -1;
     pthread_cond_broadcast(&notifierCV);
     pthread_mutex_unlock(&notifierMutex);
 
@@ -1403,6 +1574,11 @@ AtForkChild(void)
     pthread_mutex_init(&notifierMutex, NULL);
     pthread_cond_init(&notifierCV, NULL);
 
+#ifndef ANDROID
+    asyncPending = 0;
+    SigMaskInfo.run = 0;				/* set to idle */
+#endif
+
     /*
      * notifierThreadRunning == 1: thread is running, (there might be data in notifier lists)
      * atForkInit == 0: InitNotifier was never called
@@ -1418,7 +1594,9 @@ AtForkChild(void)
 	    notifierThreadRunning = 0;
 
 	    close(triggerPipe);
+	    close(otherPipe);
 	    triggerPipe = -1;
+	    otherPipe = -1;
 	    /*
 	     * The waitingListPtr might contain event info from multiple
 	     * threads, which are invalid here, so setting it to NULL is not
@@ -1438,7 +1616,20 @@ AtForkChild(void)
 	    ResetEvent(tsdPtr->event);
 #else
 	    pthread_cond_destroy(&tsdPtr->waitCV);
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
+	    if (tsdPtr->useMonoTime) {
+		pthread_condattr_t attr;
+
+		pthread_condattr_init(&attr);
+		pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
+		pthread_cond_init(&tsdPtr->waitCV, &attr);
+		pthread_condattr_destroy(&attr);
+	    } else {
+		pthread_cond_init(&tsdPtr->waitCV, NULL);
+	    }
+#else
 	    pthread_cond_init(&tsdPtr->waitCV, NULL);
+#endif
 #endif
 	    /*
 	     * In case, we had multiple threads running before the fork,
@@ -1458,6 +1649,65 @@ AtForkChild(void)
 #endif /* HAVE_PTHREAD_ATFORK */
 
 #endif /* TCL_THREADS */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpSigProcMask --
+ *
+ *	This routine is a wrapper for sigprocmask(2)/pthread_sigmask(3).
+ *	It uses a rendez-vous with the notifier thread in order to
+ *	query or change its signal mask.
+ *
+ * Result:
+ *	0 on success, else error number, similar to pthread_sigmask(3).
+ *
+ * Side effects:
+ *	See manual page sigprocmask(2) and pthread_sigmask(3).
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpSigProcMask(
+    int how,
+    const void *set,
+    void *oldset)
+{
+#if defined(TCL_THREADS) && !defined(ANDROID)
+    int ret, fromNotifier = 0;
+
+    pthread_mutex_lock(&notifierInitMutex);
+    if (notifierThreadRunning) {
+	pthread_mutex_lock(&notifierMutex);
+	while (SigMaskInfo.run != 0) {			/* wait for idle */
+	    pthread_cond_wait(&notifierCV, &notifierMutex);
+	}
+	SigMaskInfo.how = how;
+	SigMaskInfo.set = (const sigset_t *) set;
+	SigMaskInfo.oldset = (sigset_t *) oldset;
+	SigMaskInfo.run = 1;				/* set to run */
+	if (write(triggerPipe, "m", 1) != 1) {
+	    ret = errno;
+	    SigMaskInfo.run = 0;			/* set to idle */
+	} else {
+	    while (SigMaskInfo.run != 2) {		/* wait for done */
+		pthread_cond_wait(&notifierCV, &notifierMutex);
+	    }
+	    ret = SigMaskInfo.ret;
+	    SigMaskInfo.run = 0;			/* set to idle */
+	    pthread_cond_broadcast(&notifierCV);
+	}
+	pthread_mutex_unlock(&notifierMutex);
+	fromNotifier = 1;
+    }
+    pthread_mutex_unlock(&notifierInitMutex);
+    if (fromNotifier) {
+	return ret;
+    }
+#endif
+    return pthread_sigmask(how, (const sigset_t *) set, (sigset_t *) oldset);
+}
 
 #endif /* !HAVE_COREFOUNDATION */
 

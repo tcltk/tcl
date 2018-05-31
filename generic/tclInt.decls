@@ -1088,7 +1088,7 @@ declare 9 win {
 }
 # new for 8.4.20+/8.5.12+ Cygwin only
 declare 10 win {
-    Tcl_DirEntry *TclpReaddir(DIR *dir)
+    Tcl_DirEntry *TclpReaddir(TclDIR *dir)
 }
 # Removed in 8.3.1 (for Win32s only)
 #declare 10 win {
@@ -1226,7 +1226,7 @@ declare 9 unix {
 # Added in 8.4:
 
 declare 10 unix {
-    Tcl_DirEntry *TclpReaddir(DIR *dir)
+    Tcl_DirEntry *TclpReaddir(TclDIR *dir)
 }
 # Slots 11 and 12 are forwarders for functions that were promoted to
 # generic Stubs
@@ -1282,6 +1282,9 @@ declare 30 {win unix} {
 # TIP#302 ???
 declare 31 {win unix macosx} {
     int TclpGetMonotonicTime(Tcl_Time *timePtr)
+
+declare 32 {win unix macosx} {
+    int TclpSigProcMask(int how, const void *set, void *oldset)
 }
 
 

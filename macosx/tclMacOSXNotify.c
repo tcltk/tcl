@@ -352,6 +352,36 @@ static int receivePipe = -1; /* Output end of triggerPipe */
 static int notifierThreadRunning;
 
 /*
+ * The following static flag indicates that async handlers are pending.
+ */
+
+#ifdef TCL_THREADS
+static int asyncPending = 0;
+#endif
+
+/*
+ * Signal mask information for notifier thread.
+ */
+static sigset_t notifierSigMask;
+static sigset_t allSigMask;
+
+/*
+ * Structure for TclpSigProcMask() rendez-vous with notifier thread.
+ * Protected by NOTIFIER_INIT_LOCK, sigMaskMutex, and sigMaskCV.
+ */
+
+static pthread_mutex_t sigMaskMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t sigMaskCV = PTHREAD_COND_INITIALIZER;
+
+static struct {
+    int run;			/* Run state flag. */
+    int ret;			/* Return code of pthread_sigmask(). */
+    int how;			/* 1st argument for pthread_sigmask(). */
+    const sigset_t *set;	/* 2nd argument for pthread_sigmask(). */
+    sigset_t *oldset;		/* 3rt argument for pthread_sigmask(). */
+} SigMaskInfo;
+
+/*
  * This is the thread ID of the notifier thread that does select. Only valid
  * when notifierThreadRunning is non-zero.
  *
@@ -650,6 +680,18 @@ StartNotifierThread(void)
 	int result;
 	pthread_attr_t attr;
 
+	/*
+	 * Signal handling vs. pthreads:
+	 * Now that we start the notifier thread we block all signals
+	 * in the calling thread which is inherited by the notifier thread.
+	 * Later on, the notifier thread unblocks/re-blocks all signals
+	 * when it waits for events. The overall effect is that only the
+	 * notifier catches and dispatches signals, given that this code
+	 * was called before any further threads were created.
+	 */
+	sigfillset(&allSigMask);
+	pthread_sigmask(SIG_BLOCK, &allSigMask, &notifierSigMask);
+
 	pthread_attr_init(&attr);
 	pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -730,6 +772,20 @@ Tcl_FinalizeNotifier(
 			    "thread");
 		}
 		notifierThreadRunning = 0;
+
+		/*
+		 * Unblock all signals now, since the notifier isn't
+		 * anymore to deal with them.
+		 */
+		pthread_sigmask(SIG_SETMASK, &notifierSigMask, NULL);
+
+		/*
+		 * If async marks are outstanding, perform actions now.
+		 */
+		if (asyncPending) {
+		    asyncPending = 0;
+		    TclAsyncMarkFromNotifier();
+		}
 	    }
 
 	    close(receivePipe);
@@ -1732,6 +1788,50 @@ TclUnixWaitForFile(
 /*
  *----------------------------------------------------------------------
  *
+ * TclAsyncInNotifier --
+ *
+ *	This procedure sets the async mark of an async handler to a
+ *	given value, if it is called from the notifier thread.
+ *
+ * Result:
+ *	True, when flag set. False, otherwise.
+ *
+ * Side effetcs:
+ *	The trigger pipe is written when called from the notifier
+ *	thread.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclAsyncInNotifier(
+    int *flagPtr,		/* Flag to mark. */
+    int value)			/* Value of mark. */
+{
+#ifdef TCL_THREADS
+
+    /*
+     * WARNING:
+     * This code most likely runs in a signal handler. Thus,
+     * only few async-signal-safe system calls are allowed,
+     * e.g. pthread_self(), sem_post(), write().
+     */
+
+    if (pthread_self() == notifierThread) {
+	if (notifierThreadRunning) {
+	    *flagPtr = value;
+	    asyncPending = 1;
+	    write(triggerPipe, "S", 1);
+	    return 1;
+	}
+    }
+#endif
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NotifierThreadProc --
  *
  *	This routine is the initial (and only) function executed by the
@@ -1759,9 +1859,11 @@ NotifierThreadProc(
 {
     ThreadSpecificData *tsdPtr;
     fd_set readableMask, writableMask, exceptionalMask;
-    int i, numFdBits = 0, polling;
+    int i, ret, numFdBits = 0, polling;
     struct timeval poll = {0., 0.}, *timePtr;
     char buf[2];
+    sigset_t newset, oldset, *newsetPtr = NULL;
+    int run = 0, how;
 
     /*
      * Look for file events and report them to interested threads.
@@ -1812,12 +1914,44 @@ NotifierThreadProc(
 	}
 	FD_SET(receivePipe, &readableMask);
 
-	if (select(numFdBits, &readableMask, &writableMask, &exceptionalMask,
-		timePtr) == -1) {
+	if (run) {
+	    /*
+	     * Perform query/change of notifier thread's signal mask.
+	     * On success, re-query the current signal mask for result.
+	     */
+	    if ((how != SIG_SETMASK) || (newsetPtr == NULL)) {
+		pthread_sigmask(SIG_SETMASK, &notifierSigMask, NULL);
+	    }
+	    ret = pthread_sigmask(how, newsetPtr, &oldset);
+	    if (ret == 0) {
+		pthread_sigmask(SIG_BLOCK, NULL, &notifierSigMask);
+	    }
+
+	    /*
+	     * Transfer result back to caller.
+	     */
+	    pthread_mutex_lock(&sigMaskMutex);
+	    SigMaskInfo.ret = ret;
+	    if (SigMaskInfo.oldset != NULL) {
+		*SigMaskInfo.oldset = oldset;
+	    }
+	    SigMaskInfo.run = 2;			/* set to done */
+	    pthread_cond_broadcast(&sigMaskCV);
+	    pthread_mutex_unlock(&sigMaskMutex);
+	    run = 0;
+	} else {
+	    pthread_sigmask(SIG_SETMASK, &notifierSigMask, NULL);
+	}
+
+	ret = select(numFdBits, &readableMask, &writableMask, &exceptionalMask,
+		    timePtr);
+
+	pthread_sigmask(SIG_BLOCK, &allSigMask, NULL);
+
+	if (ret == -1) {
 	    /*
 	     * Try again immediately on an error.
 	     */
-
 	    continue;
 	}
 
@@ -1881,7 +2015,24 @@ NotifierThreadProc(
 		}
 	    }
 	}
+
 	UNLOCK_NOTIFIER;
+
+	/*
+	 * Remember request to query/change notifier thread's signal mask.
+	 */
+	pthread_mutex_lock(&sigMaskMutex);
+	if (!run && SigMaskInfo.run == 1) {		/* perform run */
+	    run = 1;
+	    how = SigMaskInfo.how;
+	    if (SigMaskInfo.set != NULL) {
+		newset = *SigMaskInfo.set;
+		newsetPtr = &newset;
+	    } else {
+		newsetPtr = NULL;
+	    }
+	}
+	pthread_mutex_unlock(&sigMaskMutex);
 
 	/*
 	 * Consume the next byte from the notifier pipe if the pipe was
@@ -1900,6 +2051,11 @@ NotifierThreadProc(
 		 */
 
 		break;
+	    }
+
+	    if (asyncPending) {
+		asyncPending = 0;
+		TclAsyncMarkFromNotifier();
 	    }
 	}
     }
@@ -1983,6 +2139,13 @@ AtForkChild(void)
     UNLOCK_NOTIFIER_TSD;
     UNLOCK_NOTIFIER;
     UNLOCK_NOTIFIER_INIT;
+
+    pthread_mutex_init(&sigMaskMutex, NULL);
+    pthread_cond_init(&sigMaskCV, NULL);
+
+    asyncPending = 0;
+    SigMaskInfo.run = 0;				/* set to idle */
+
     if (tsdPtr->runLoop) {
 	tsdPtr->runLoop = NULL;
 	if (!noCFafterFork) {
@@ -1999,6 +2162,12 @@ AtForkChild(void)
     if (notifierCount > 0) {
 	notifierCount = 1;
 	notifierThreadRunning = 0;
+
+	/*
+	 * Unblock all signals now, since the notifier isn't
+	 * anymore to deal with them.
+	 */
+	pthread_sigmask(SIG_SETMASK, &notifierSigMask, NULL);
 
 	/*
 	 * Assume that the return value of Tcl_InitNotifier in the child will
@@ -2027,6 +2196,65 @@ TclMacOSXNotifierAddRunLoopMode(
 }
 
 #endif /* HAVE_COREFOUNDATION */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpSigProcMask --
+ *
+ *	This routine is a wrapper for sigprocmask(2)/pthread_sigmask(3).
+ *	It uses a rendez-vous with the notifier thread in order to
+ *	query or change its signal mask.
+ *
+ * Result:
+ *	0 on success, else error number, similar to pthread_sigmask(3).
+ *
+ * Side effects:
+ *	See manual page sigprocmask(2) and pthread_sigmask(3).
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpSigProcMask(
+    int how,
+    const void *set,
+    void *oldset)
+{
+#ifdef TCL_THREADS
+    int ret, fromNotifier = 0;
+
+    LOCK_NOTIFIER_INIT;
+    if (notifierThreadRunning) {
+	pthread_mutex_lock(&sigMaskMutex);
+	while (SigMaskInfo.run != 0) {			/* wait for idle */
+	    pthread_cond_wait(&sigMaskCV, &sigMaskMutex);
+	}
+	SigMaskInfo.how = how;
+	SigMaskInfo.set = (const sigset_t *) set;
+	SigMaskInfo.oldset = (sigset_t *) oldset;
+	SigMaskInfo.run = 1;				/* set to run */
+	if (write(triggerPipe, "m", 1) != 1) {
+	    ret = errno;
+	    SigMaskInfo.run = 0;			/* set to idle */
+	} else {
+	    while (SigMaskInfo.run != 2) {		/* wait for done */
+		pthread_cond_wait(&sigMaskCV, &sigMaskMutex);
+	    }
+	    ret = SigMaskInfo.ret;
+	    SigMaskInfo.run = 0;			/* set to idle */
+	    pthread_cond_broadcast(&sigMaskCV);
+	}
+	pthread_mutex_unlock(&sigMaskMutex);
+	fromNotifier = 1;
+    }
+    UNLOCK_NOTIFIER_INIT;
+    if (fromNotifier) {
+	return ret;
+    }
+#endif
+    return pthread_sigmask(how, (const sigset_t *) set, (sigset_t *) oldset);
+}
 
 /*
  * Local Variables:

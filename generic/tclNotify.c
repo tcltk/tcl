@@ -139,6 +139,14 @@ TclInitNotifier(void)
 	firstNotifierPtr = tsdPtr;
     }
     Tcl_MutexUnlock(&listLock);
+
+#if !defined(_WIN32) && !defined(ANDROID)
+    /*
+     * Kick off notifier thread if it is not running already.
+     * Needed for proper setup of signal masks.
+     */
+    Tcl_SetServiceMode(TCL_SERVICE_ALL);
+#endif
 }
 
 /*

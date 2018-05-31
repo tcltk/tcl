@@ -3397,13 +3397,24 @@ Tcl_LoadFile(
     }
 
     if (TclCrossFilesystemCopy(interp, pathPtr, copyToPtr) != TCL_OK) {
+#ifdef _WIN32
+	/*
+	 * Could be a sharing violation due to multiple loads
+	 * of the same DLL. If the destination is already there
+	 * we try to continue now instead of throwing an error.
+	 */
+	if (Tcl_FSAccess(copyToPtr, R_OK) == 0) {
+	    Tcl_ResetResult(interp);
+	} else
+#endif
 	/*
 	 * Cross-platform copy failed.
 	 */
-
-	Tcl_FSDeleteFile(copyToPtr);
-	Tcl_DecrRefCount(copyToPtr);
-	return TCL_ERROR;
+	{
+	    Tcl_FSDeleteFile(copyToPtr);
+	    Tcl_DecrRefCount(copyToPtr);
+	    return TCL_ERROR;
+	}
     }
 
 #ifndef _WIN32
