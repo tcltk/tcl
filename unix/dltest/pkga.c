@@ -10,6 +10,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#undef STATIC_BUILD
 #include "tcl.h"
 
 /*
@@ -62,7 +63,7 @@ Pkga_EqObjCmd(
     } else {
 	result = 0;
     }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(result));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
     return TCL_OK;
 }
 
@@ -125,7 +126,7 @@ Pkga_Init(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvideEx(interp, "Pkga", "1.0", NULL);
+    code = Tcl_PkgProvide(interp, "Pkga", "1.0");
     if (code != TCL_OK) {
 	return code;
     }

@@ -492,7 +492,7 @@ UpdateStringOfDict(
     Dict *dict = DICT(dictPtr);
     ChainEntry *cPtr;
     Tcl_Obj *keyPtr, *valuePtr;
-    size_t i, length, bytesNeeded = 0;
+    int i, length, bytesNeeded = 0;
     const char *elem;
     char *dst;
 
@@ -501,7 +501,7 @@ UpdateStringOfDict(
      * is not exposed by any API function...
      */
 
-    size_t numElems = dict->table.numEntries * 2;
+    int numElems = dict->table.numEntries * 2;
 
     /* Handle empty list case first, simplifies what follows */
     if (numElems == 0) {
@@ -527,18 +527,22 @@ UpdateStringOfDict(
 
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = TclGetString(keyPtr);
-	length = keyPtr->length;
+	elem = TclGetStringFromObj(keyPtr, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
-	if (bytesNeeded > INT_MAX) {
+	if (bytesNeeded < 0) {
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
 
 	flagPtr[i+1] = TCL_DONT_QUOTE_HASH;
 	valuePtr = Tcl_GetHashValue(&cPtr->entry);
-	elem = TclGetString(valuePtr);
-	length = valuePtr->length;
+	elem = TclGetStringFromObj(valuePtr, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i+1);
+	if (bytesNeeded < 0) {
+	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+	}
+    }
+    if (bytesNeeded > INT_MAX - numElems + 1) {
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
     bytesNeeded += numElems;
 
@@ -552,15 +556,13 @@ UpdateStringOfDict(
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = TclGetString(keyPtr);
-	length = keyPtr->length;
+	elem = TclGetStringFromObj(keyPtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';
 
 	flagPtr[i+1] |= TCL_DONT_QUOTE_HASH;
 	valuePtr = Tcl_GetHashValue(&cPtr->entry);
-	elem = TclGetString(valuePtr);
-	length = valuePtr->length;
+	elem = TclGetStringFromObj(valuePtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i+1]);
 	*dst++ = ' ';
     }
@@ -1945,7 +1947,7 @@ DictSizeCmd(
     }
     result = Tcl_DictObjSize(interp, objv[1], &size);
     if (result == TCL_OK) {
-	Tcl_SetObjResult(interp, Tcl_NewLongObj(size));
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
     }
     return result;
 }
@@ -1987,9 +1989,9 @@ DictExistsCmd(
     if (dictPtr == NULL || dictPtr == DICT_PATH_NON_EXISTENT
 	    || Tcl_DictObjGet(interp, dictPtr, objv[objc-1],
 		    &valuePtr) != TCL_OK) {
-	Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
     } else {
-	Tcl_SetObjResult(interp, Tcl_NewLongObj(valuePtr != NULL));
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(valuePtr != NULL));
     }
     return TCL_OK;
 }
@@ -2140,7 +2142,7 @@ DictIncrCmd(
 	if (objc == 4) {
 	    code = TclIncrObj(interp, valuePtr, objv[3]);
 	} else {
-	    Tcl_Obj *incrPtr = Tcl_NewLongObj(1);
+	    Tcl_Obj *incrPtr = Tcl_NewIntObj(1);
 
 	    Tcl_IncrRefCount(incrPtr);
 	    code = TclIncrObj(interp, valuePtr, incrPtr);
@@ -2919,8 +2921,8 @@ DictFilterCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary filterType ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObjStruct(interp, objv[2], filters,
-	    sizeof(char *), "filterType", 0, &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[2], filters, "filterType",
+	     0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 

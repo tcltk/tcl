@@ -69,6 +69,8 @@ MODULE_SCOPE int	TclWinSymLinkDelete(const TCHAR *LinkOriginal,
 			    int linkOnly);
 MODULE_SCOPE int        TclWinFileOwned(Tcl_Obj *);
 
+MODULE_SCOPE const char*TclpGetUserName(Tcl_DString *bufferPtr);
+
 /* Needed by tclWinFile.c and tclWinFCmd.c */
 #ifndef FILE_ATTRIBUTE_REPARSE_POINT
 #define FILE_ATTRIBUTE_REPARSE_POINT 0x00000400

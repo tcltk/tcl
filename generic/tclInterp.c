@@ -84,7 +84,7 @@ typedef struct {
     Tcl_Interp	*slaveInterp;	/* The slave interpreter. */
     Tcl_Command interpCmd;	/* Interpreter object command. */
     Tcl_HashTable aliasTable;	/* Table which maps from names of commands in
-				 * slave interpreter to Alias defined
+				 * slave interpreter to struct Alias defined
 				 * below. */
 } Slave;
 

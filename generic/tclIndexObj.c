@@ -812,7 +812,7 @@ Tcl_WrongNumArgs(
 				 * NULL. */
 {
     Tcl_Obj *objPtr;
-    size_t i, len, elemLen;
+    int i, len, elemLen;
     char flags;
     Interp *iPtr = (Interp *) interp;
     const char *elementStr;
@@ -832,8 +832,8 @@ Tcl_WrongNumArgs(
      */
 
     if (iPtr->ensembleRewrite.sourceObjs != NULL) {
-	size_t toSkip = iPtr->ensembleRewrite.numInsertedObjs;
-	size_t toPrint = iPtr->ensembleRewrite.numRemovedObjs;
+	int toSkip = iPtr->ensembleRewrite.numInsertedObjs;
+	int toPrint = iPtr->ensembleRewrite.numRemovedObjs;
 	Tcl_Obj *const *origObjv = iPtr->ensembleRewrite.sourceObjs;
 
 	/*
@@ -851,7 +851,7 @@ Tcl_WrongNumArgs(
 	 * confusing error message...
 	 */
 
-	if ((size_t)objc < toSkip) {
+	if (objc < toSkip) {
 	    goto addNormalArgumentsToMessage;
 	}
 
@@ -878,8 +878,7 @@ Tcl_WrongNumArgs(
 		elementStr = EXPAND_OF(indexRep);
 		elemLen = strlen(elementStr);
 	    } else {
-		elementStr = TclGetString(origObjv[i]);
-		elemLen = origObjv[i]->length;
+		elementStr = TclGetStringFromObj(origObjv[i], &elemLen);
 	    }
 	    flags = 0;
 	    len = TclScanElement(elementStr, elemLen, &flags);
@@ -913,7 +912,7 @@ Tcl_WrongNumArgs(
      */
 
   addNormalArgumentsToMessage:
-    for (i = 0; i < (size_t)objc; i++) {
+    for (i = 0; i < objc; i++) {
 	/*
 	 * If the object is an index type use the index table which allows for
 	 * the correct error message even if the subcommand was abbreviated.
@@ -929,14 +928,13 @@ Tcl_WrongNumArgs(
 	     * Quote the argument if it contains spaces (Bug 942757).
 	     */
 
-	    elementStr = TclGetString(objv[i]);
-	    elemLen = objv[i]->length;
+	    elementStr = TclGetStringFromObj(objv[i], &elemLen);
 	    flags = 0;
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (len != elemLen) {
 		char *quotedElementStr = TclStackAlloc(interp,
-			len + 1);
+			(unsigned) len + 1);
 
 		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
@@ -952,7 +950,7 @@ Tcl_WrongNumArgs(
 	 * (either another element from objv, or the message string).
 	 */
 
-	if (i<(size_t)(objc-1) || message!=NULL) {
+	if (i<objc-1 || message!=NULL) {
 	    Tcl_AppendStringsToObj(objPtr, " ", NULL);
 	}
     }

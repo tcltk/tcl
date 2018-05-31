@@ -382,6 +382,19 @@ Tcl_PopCallFrame(
     register CallFrame *framePtr = iPtr->framePtr;
     Namespace *nsPtr;
 
+    /*
+     * It's important to remove the call frame from the interpreter's stack of
+     * call frames before deleting local variables, so that traces invoked by
+     * the variable deletion don't see the partially-deleted frame.
+     */
+
+    if (framePtr->callerPtr) {
+	iPtr->framePtr = framePtr->callerPtr;
+	iPtr->varFramePtr = framePtr->callerVarPtr;
+    } else {
+	/* Tcl_PopCallFrame: trying to pop rootCallFrame! */
+    }
+
     if (framePtr->varTablePtr != NULL) {
 	TclDeleteVars(iPtr, framePtr->varTablePtr);
 	ckfree(framePtr->varTablePtr);
@@ -404,17 +417,10 @@ Tcl_PopCallFrame(
     nsPtr = framePtr->nsPtr;
     nsPtr->activationCount--;
     if ((nsPtr->flags & NS_DYING)
-	    && (nsPtr->activationCount == (nsPtr == iPtr->globalNsPtr))) {
+	    && (nsPtr->activationCount - (nsPtr == iPtr->globalNsPtr) == 0)) {
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
     framePtr->nsPtr = NULL;
-
-    if (framePtr->callerPtr) {
-	iPtr->framePtr = framePtr->callerPtr;
-	iPtr->varFramePtr = framePtr->callerVarPtr;
-    } else {
-	/* Tcl_PopCallFrame: trying to pop rootCallFrame! */
-    }
 
     if (framePtr->tailcallPtr) {
 	TclSetTailcall(interp, framePtr->tailcallPtr);
@@ -1002,7 +1008,7 @@ Tcl_DeleteNamespace(
      * refCount reaches 0.
      */
 
-    if (nsPtr->activationCount  > (nsPtr == globalNsPtr)) {
+    if (nsPtr->activationCount - (nsPtr == globalNsPtr) > 0) {
 	nsPtr->flags |= NS_DYING;
 	if (nsPtr->parentPtr != NULL) {
 	    entryPtr = Tcl_FindHashEntry(
@@ -1096,7 +1102,7 @@ TclTeardownNamespace(
     Interp *iPtr = (Interp *) nsPtr->interp;
     register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
-    size_t i;
+    int i;
 
     /*
      * Start by destroying the namespace's variable table, since variables
@@ -1117,7 +1123,7 @@ TclTeardownNamespace(
      */
 
     while (nsPtr->cmdTable.numEntries > 0) {
-	size_t length = nsPtr->cmdTable.numEntries;
+	int length = nsPtr->cmdTable.numEntries;
 	Command **cmds = TclStackAlloc((Tcl_Interp *) iPtr,
 		sizeof(Command *) * length);
 
@@ -1189,7 +1195,7 @@ TclTeardownNamespace(
 
 #ifndef BREAK_NAMESPACE_COMPAT
     while (nsPtr->childTable.numEntries > 0) {
-	size_t length = nsPtr->childTable.numEntries;
+	int length = nsPtr->childTable.numEntries;
 	Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
 		sizeof(Namespace *) * length);
 
@@ -1362,7 +1368,7 @@ Tcl_Export(
     Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     const char *simplePattern;
     char *patternCpy;
-    size_t neededElems, len, i;
+    int neededElems, len, i;
 
     /*
      * If the specified namespace is NULL, use the current namespace.
@@ -1489,8 +1495,7 @@ Tcl_AppendExportList(
 				 * export pattern list is appended. */
 {
     Namespace *nsPtr;
-    size_t i;
-    int result;
+    int i, result;
 
     /*
      * If the specified namespace is NULL, use the current namespace.
@@ -1692,7 +1697,7 @@ DoImport(
     Namespace *importNsPtr,
     int allowOverwrite)
 {
-    size_t i = 0, exported = 0;
+    int i = 0, exported = 0;
     Tcl_HashEntry *found;
 
     /*
@@ -3473,7 +3478,7 @@ NamespaceExistsCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
 	    GetNamespaceFromObj(interp, objv[1], &namespacePtr) == TCL_OK));
     return TCL_OK;
 }
@@ -4625,8 +4630,8 @@ NamespaceWhichCmd(
 	 * Look for a flag controlling the lookup.
 	 */
 
-	if (Tcl_GetIndexFromObjStruct(interp, objv[1], opts,
-		sizeof(char *), "option", 0, &lookupType) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+		&lookupType) != TCL_OK) {
 	    /*
 	     * Preserve old style of error message!
 	     */
@@ -5016,7 +5021,7 @@ TclLogCommandInfo(
 	 */
 
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->upLiteral);
-	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewLongObj(
+	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewIntObj(
 		iPtr->framePtr->level - iPtr->varFramePtr->level));
     } else if (iPtr->framePtr != iPtr->rootFramePtr) {
 	/*

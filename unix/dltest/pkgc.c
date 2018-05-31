@@ -11,6 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#undef STATIC_BUILD
 #include "tcl.h"
 
 /*
@@ -56,7 +57,7 @@ Pkgc_SubObjCmd(
 	    || (Tcl_GetIntFromObj(interp, objv[2], &second) != TCL_OK)) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(first - second));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(first - second));
     return TCL_OK;
 }
 
@@ -115,7 +116,7 @@ Pkgc_Init(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvideEx(interp, "Pkgc", "1.7.2", NULL);
+    code = Tcl_PkgProvide(interp, "Pkgc", "1.7.2");
     if (code != TCL_OK) {
 	return code;
     }
@@ -152,7 +153,7 @@ Pkgc_SafeInit(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvideEx(interp, "Pkgc", "1.7.2", NULL);
+    code = Tcl_PkgProvide(interp, "Pkgc", "1.7.2");
     if (code != TCL_OK) {
 	return code;
     }

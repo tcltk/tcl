@@ -1061,7 +1061,7 @@ TclOOGetCallContext(
 	AddSimpleChainToCallContext(oPtr, oPtr->fPtr->unknownMethodNameObj,
 		&cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
-	callPtr->epoch = 0;
+	callPtr->epoch = -1;
 	if (callPtr->numChain == 0) {
 	    TclOODeleteChain(callPtr);
 	    return NULL;
@@ -1131,7 +1131,7 @@ TclOOGetCallContext(
 	AddSimpleChainToCallContext(oPtr, oPtr->fPtr->unknownMethodNameObj,
 		&cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
-	callPtr->epoch = 0;
+	callPtr->epoch = -1;
 	if (count == callPtr->numChain) {
 	    TclOODeleteChain(callPtr);
 	    return NULL;
@@ -1303,7 +1303,7 @@ TclOOGetStereotypeCallChain(
 	AddSimpleChainToCallContext(&obj, fPtr->unknownMethodNameObj, &cb,
 		NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
-	callPtr->epoch = 0;
+	callPtr->epoch = -1;
 	if (count == callPtr->numChain) {
 	    TclOODeleteChain(callPtr);
 	    return NULL;

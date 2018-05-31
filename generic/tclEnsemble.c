@@ -166,8 +166,8 @@ TclNamespaceEnsembleCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObjStruct(interp, objv[1], ensembleSubcommands,
-	    sizeof(char *), "subcommand", 0, &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], ensembleSubcommands,
+	    "subcommand", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -206,8 +206,8 @@ TclNamespaceEnsembleCmd(
 	 */
 
 	for (; objc>1 ; objc-=2,objv+=2) {
-	    if (Tcl_GetIndexFromObjStruct(interp, objv[0], ensembleCreateOptions,
-		    sizeof(char *), "option", 0, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObj(interp, objv[0], ensembleCreateOptions,
+		    "option", 0, &index) != TCL_OK) {
 		if (allocatedMapFlag) {
 		    Tcl_DecrRefCount(mapObj);
 		}
@@ -387,8 +387,8 @@ TclNamespaceEnsembleCmd(
 	if (objc == 4) {
 	    Tcl_Obj *resultObj = NULL;		/* silence gcc 4 warning */
 
-	    if (Tcl_GetIndexFromObjStruct(interp, objv[3], ensembleConfigOptions,
-		    sizeof(char *), "option", 0, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObj(interp, objv[3], ensembleConfigOptions,
+		    "option", 0, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch ((enum EnsConfigOpts) index) {
@@ -508,8 +508,8 @@ TclNamespaceEnsembleCmd(
 	     */
 
 	    for (; objc>0 ; objc-=2,objv+=2) {
-		if (Tcl_GetIndexFromObjStruct(interp, objv[0],ensembleConfigOptions,
-			sizeof(char *), "option", 0, &index) != TCL_OK) {
+		if (Tcl_GetIndexFromObj(interp, objv[0],ensembleConfigOptions,
+			"option", 0, &index) != TCL_OK) {
 		freeMapAndError:
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
@@ -1687,7 +1687,7 @@ NsEnsembleImplementationCmdNR(
     int reparseCount = 0;	/* Number of reparses. */
     Tcl_Obj *errorObj;		/* Used for building error messages. */
     Tcl_Obj *subObj;
-    size_t subIdx;
+    int subIdx;
 
     /*
      * Must recheck objc, since numParameters might have changed. Cf. test
@@ -1696,7 +1696,7 @@ NsEnsembleImplementationCmdNR(
 
   restartEnsembleParse:
     subIdx = 1 + ensemblePtr->numParameters;
-    if ((size_t)objc < subIdx + 1) {
+    if (objc < subIdx + 1) {
 	/*
 	 * We don't have a subcommand argument. Make error message.
 	 */
@@ -1793,16 +1793,15 @@ NsEnsembleImplementationCmdNR(
 				 * it (will be an error for a non-unique
 				 * prefix). */
 	char *fullName = NULL;	/* Full name of the subcommand. */
-	size_t stringLength, i;
-	size_t tableLength = ensemblePtr->subcommandTable.numEntries;
+	int stringLength, i;
+	int tableLength = ensemblePtr->subcommandTable.numEntries;
 	Tcl_Obj *fix;
 
-	subcmdName = TclGetString(subObj);
-	stringLength = subObj->length;
+	subcmdName = TclGetStringFromObj(subObj, &stringLength);
 	for (i=0 ; i<tableLength ; i++) {
 	    register int cmp = strncmp(subcmdName,
 		    ensemblePtr->subcommandArrayPtr[i],
-		    stringLength);
+		    (unsigned) stringLength);
 
 	    if (cmp == 0) {
 		if (fullName != NULL) {
@@ -1959,7 +1958,7 @@ NsEnsembleImplementationCmdNR(
     if (ensemblePtr->subcommandTable.numEntries == 1) {
 	Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[0], -1);
     } else {
-	size_t i;
+	int i;
 
 	for (i=0 ; i<ensemblePtr->subcommandTable.numEntries-1 ; i++) {
 	    Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[i], -1);
@@ -2004,8 +2003,8 @@ TclClearRootEnsemble(
 int
 TclInitRewriteEnsemble(
     Tcl_Interp *interp,
-    size_t numRemoved,
-    size_t numInserted,
+    int numRemoved,
+    int numInserted,
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
@@ -2017,7 +2016,7 @@ TclInitRewriteEnsemble(
 	iPtr->ensembleRewrite.numRemovedObjs = numRemoved;
 	iPtr->ensembleRewrite.numInsertedObjs = numInserted;
     } else {
-	size_t numIns = iPtr->ensembleRewrite.numInsertedObjs;
+	int numIns = iPtr->ensembleRewrite.numInsertedObjs;
 
 	if (numIns < numRemoved) {
 	    iPtr->ensembleRewrite.numRemovedObjs += numRemoved - numIns;
@@ -2096,7 +2095,7 @@ TclSpellFix(
     Tcl_Interp *interp,
     Tcl_Obj *const *objv,
     int objc,
-    size_t badIdx,
+    int badIdx,
     Tcl_Obj *bad,
     Tcl_Obj *fix)
 {
@@ -2668,11 +2667,10 @@ BuildEnsembleConfig(
 	for (; hPtr!= NULL ; hPtr=Tcl_NextHashEntry(&search)) {
 	    char *nsCmdName =		/* Name of command in namespace. */
 		    Tcl_GetHashKey(&ensemblePtr->nsPtr->cmdTable, hPtr);
-	    size_t k;
 
-	    for (k=0 ; k<ensemblePtr->nsPtr->numExportPatterns ; k++) {
+	    for (i=0 ; i<ensemblePtr->nsPtr->numExportPatterns ; i++) {
 		if (Tcl_StringMatch(nsCmdName,
-			ensemblePtr->nsPtr->exportArrayPtr[k])) {
+			ensemblePtr->nsPtr->exportArrayPtr[i])) {
 		    hPtr = Tcl_CreateHashEntry(hash, nsCmdName, &isNew);
 
 		    /*
@@ -2746,7 +2744,7 @@ BuildEnsembleConfig(
 	hPtr = Tcl_NextHashEntry(&search);
     }
     if (hash->numEntries > 1) {
-	qsort(ensemblePtr->subcommandArrayPtr, hash->numEntries,
+	qsort(ensemblePtr->subcommandArrayPtr, (unsigned) hash->numEntries,
 		sizeof(char *), NsEnsembleStringOrder);
     }
 }

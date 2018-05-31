@@ -547,7 +547,7 @@ ExtractHeader(
 		&tmp);
 	SetValue(dictObj, "comment", TclDStringToObj(&tmp));
     }
-    SetValue(dictObj, "crc", Tcl_NewLongObj(headerPtr->hcrc!=0));
+    SetValue(dictObj, "crc", Tcl_NewBooleanObj(headerPtr->hcrc));
     if (headerPtr->name != Z_NULL) {
 	if (latin1enc == NULL) {
 	    /*
@@ -565,7 +565,7 @@ ExtractHeader(
 	SetValue(dictObj, "filename", TclDStringToObj(&tmp));
     }
     if (headerPtr->os != 255) {
-	SetValue(dictObj, "os", Tcl_NewLongObj(headerPtr->os));
+	SetValue(dictObj, "os", Tcl_NewIntObj(headerPtr->os));
     }
     if (headerPtr->time != 0 /* magic - no time */) {
 	SetValue(dictObj, "time", Tcl_NewLongObj((long) headerPtr->time));
@@ -2617,7 +2617,7 @@ ZlibStreamCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewLongObj(Tcl_ZlibStreamEof(zstream)));
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_ZlibStreamEof(zstream)));
 	return TCL_OK;
     case zs_checksum:		/* $strm checksum */
 	if (objc != 2) {
@@ -3912,7 +3912,7 @@ TclZlibInit(
      * Formally provide the package as a Tcl built-in.
      */
 
-    return Tcl_PkgProvideEx(interp, "zlib", TCL_ZLIB_VERSION, NULL);
+    return Tcl_PkgProvide(interp, "zlib", TCL_ZLIB_VERSION);
 }
 
 /*

@@ -185,7 +185,7 @@ ProcBodyTestInitInternal(
 	}
     }
 
-    return Tcl_PkgProvideEx(interp, packageName, packageVersion, NULL);
+    return Tcl_PkgProvide(interp, packageName, packageVersion);
 }
 
 /*

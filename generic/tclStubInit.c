@@ -42,6 +42,7 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #undef Tcl_NewStringObj
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
+#undef Tcl_SetPanicProc
 #undef TclpGetPid
 #undef TclPkgProvide
 #undef Tcl_SetIntObj

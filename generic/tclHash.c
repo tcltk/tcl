@@ -190,6 +190,23 @@ Tcl_InitCustomHashTable(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindHashEntry --
+ *
+ *	Given a hash table find the entry with a matching key.
+ *
+ * Results:
+ *	The return value is a token for the matching entry in the hash table,
+ *	or NULL if there was no matching entry.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static Tcl_HashEntry *
 FindHashEntry(
     Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
@@ -252,7 +269,7 @@ CreateHashEntry(
 	    index = hash & tablePtr->mask;
 	}
     } else {
-	hash = (size_t) key;
+	hash = PTR2UINT(key);
 	index = RANDOM_INDEX(tablePtr, hash);
     }
 
@@ -304,7 +321,7 @@ CreateHashEntry(
     } else {
 	hPtr = ckalloc(sizeof(Tcl_HashEntry));
 	hPtr->key.oneWordValue = (char *) key;
-	Tcl_SetHashValue(hPtr, NULL);
+	hPtr->clientData = 0;
     }
 
     hPtr->tablePtr = tablePtr;
@@ -419,7 +436,7 @@ Tcl_DeleteHashTable(
 {
     register Tcl_HashEntry *hPtr, *nextPtr;
     const Tcl_HashKeyType *typePtr;
-    size_t i;
+    int i;
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
@@ -568,7 +585,7 @@ Tcl_HashStats(
     Tcl_HashTable *tablePtr)	/* Table for which to produce stats. */
 {
 #define NUM_COUNTERS 10
-    size_t count[NUM_COUNTERS], overflow, i, j;
+    int count[NUM_COUNTERS], overflow, i, j;
     double average, tmp;
     register Tcl_HashEntry *hPtr;
     char *result, *p;
@@ -603,16 +620,16 @@ Tcl_HashStats(
      */
 
     result = ckalloc((NUM_COUNTERS * 60) + 300);
-    sprintf(result, "%" TCL_LL_MODIFIER "d entries in table, %" TCL_LL_MODIFIER "d buckets\n",
-	    (Tcl_WideInt)tablePtr->numEntries, (Tcl_WideInt)tablePtr->numBuckets);
+    sprintf(result, "%d entries in table, %d buckets\n",
+	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i = 0; i < NUM_COUNTERS; i++) {
-	sprintf(p, "number of buckets with %d entries: %" TCL_LL_MODIFIER "d\n",
-		(int)i, (Tcl_WideInt)count[i]);
+	sprintf(p, "number of buckets with %d entries: %d\n",
+		i, count[i]);
 	p += strlen(p);
     }
     sprintf(p, "number of buckets with %d or more entries: %d\n",
-	    NUM_COUNTERS, (int)overflow);
+	    NUM_COUNTERS, overflow);
     p += strlen(p);
     sprintf(p, "average search distance for entry: %.1f", average);
     return result;
@@ -657,7 +674,7 @@ AllocArrayEntry(
 	    count > 0; count--, iPtr1++, iPtr2++) {
 	*iPtr2 = *iPtr1;
     }
-    Tcl_SetHashValue(hPtr, NULL);
+    hPtr->clientData = 0;
 
     return hPtr;
 }
@@ -757,7 +774,7 @@ AllocStringEntry(
 {
     const char *string = (const char *) keyPtr;
     Tcl_HashEntry *hPtr;
-    size_t size, allocsize;
+    unsigned int size, allocsize;
 
     allocsize = size = strlen(string) + 1;
     if (size < sizeof(hPtr->key)) {
@@ -765,7 +782,7 @@ AllocStringEntry(
     }
     hPtr = ckalloc(TclOffset(Tcl_HashEntry, key) + allocsize);
     memcpy(hPtr->key.string, string, size);
-    Tcl_SetHashValue(hPtr, NULL);
+    hPtr->clientData = 0;
     return hPtr;
 }
 
@@ -942,14 +959,15 @@ static void
 RebuildTable(
     register Tcl_HashTable *tablePtr)	/* Table to enlarge. */
 {
-    size_t count, index, oldSize = tablePtr->numBuckets;
+    int count, oldSize = tablePtr->numBuckets;
+    unsigned int index;
     Tcl_HashEntry **oldBuckets = tablePtr->buckets;
     register Tcl_HashEntry **oldChainPtr, **newChainPtr;
     register Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
 
     /* Avoid outgrowing capability of the memory allocators */
-    if (oldSize > UINT_MAX / (4 * sizeof(Tcl_HashEntry *))) {
+    if (oldSize > (int)(UINT_MAX / (4 * sizeof(Tcl_HashEntry *)))) {
 	tablePtr->rebuildSize = INT_MAX;
 	return;
     }
@@ -972,8 +990,8 @@ RebuildTable(
 
     tablePtr->numBuckets *= 4;
     if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
-	tablePtr->buckets = (Tcl_HashEntry **) TclpSysAlloc(
-		tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
+	tablePtr->buckets = (Tcl_HashEntry **) TclpSysAlloc((unsigned)
+		(tablePtr->numBuckets * sizeof(Tcl_HashEntry *)));
     } else {
 	tablePtr->buckets =
 		ckalloc(tablePtr->numBuckets * sizeof(Tcl_HashEntry *));

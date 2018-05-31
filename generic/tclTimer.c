@@ -820,8 +820,8 @@ Tcl_AfterObjCmd(
 
     if (objv[1]->typePtr == &tclIntType
 	    || objv[1]->typePtr == &tclBignumType
-	    || (Tcl_GetIndexFromObjStruct(NULL, objv[1], afterSubCmds,
-		    sizeof(char *), "", 0, &index) != TCL_OK)) {
+	    || (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0,
+		    &index) != TCL_OK)) {
 	index = -1;
 	if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
             const char *arg = Tcl_GetString(objv[1]);
