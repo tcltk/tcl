@@ -338,6 +338,42 @@ long tclMacOSXDarwinRelease = 0;
 /*
  *---------------------------------------------------------------------------
  *
+ * GetLocEncFromEnv --
+ *
+ *	Read initial locale-dependend encoding (or language), corresponding
+ *	environment specified parameters.
+ *
+ *	Typically called once by process initialization (before "setlocale").
+ *
+ * Results:
+ *	String contains encoding/language or NULL.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static const char *
+GetLocEncFromEnv()
+{
+    const char *encoding;
+
+    encoding = getenv("LC_ALL");
+
+    if (encoding == NULL || encoding[0] == '\0') {
+	encoding = getenv("LC_CTYPE");
+    }
+    if (encoding == NULL || encoding[0] == '\0') {
+	encoding = getenv("LANG");
+    }
+    if (encoding == NULL || encoding[0] == '\0') {
+	encoding = NULL;
+    }
+
+    return encoding;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * TclpInitPlatform --
  *
  *	Initialize all the platform-dependant things like signals and
@@ -354,9 +390,19 @@ long tclMacOSXDarwinRelease = 0;
  *---------------------------------------------------------------------------
  */
 
+static const char *init_EnvEnc = NULL;
+static const char *init_LocCType = NULL;
+
 void
 TclpInitPlatform(void)
 {
+    /*
+     * Save current env/locale encoding before set locale (because it could change
+     * later env-var "LANG" to "C" (if selected local unsupported).
+     */
+
+    init_EnvEnc = GetLocEncFromEnv();
+
 #ifdef DJGPP
     tclPlatform = TCL_PLATFORM_WINDOWS;
 #else
@@ -419,7 +465,7 @@ TclpInitPlatform(void)
      * 2521].
      */
 
-    setlocale(LC_CTYPE, "");
+    init_LocCType = setlocale(LC_CTYPE, "");
 
     /*
      * In case the initial locale is not "C", ensure that the numeric
@@ -622,10 +668,18 @@ const char *
 Tcl_GetEncodingNameFromEnvironment(
     Tcl_DString *bufPtr)
 {
-    const char *encoding;
-    const char *knownEncoding;
+    const char *encoding, *initEncoding, *knownEncoding;
+    const char *initLocCType;
 
     Tcl_DStringInit(bufPtr);
+
+    /*
+     * First time called during initialization process (once).
+     */
+    initEncoding = init_EnvEnc;
+    init_EnvEnc = NULL;
+    initLocCType = init_LocCType;
+    init_LocCType = NULL;
 
     /*
      * Determine the current encoding from the LC_* or LANG environment
@@ -638,7 +692,12 @@ Tcl_GetEncodingNameFromEnvironment(
 #ifdef WEAK_IMPORT_NL_LANGINFO
 	    nl_langinfo != NULL &&
 #endif
-	    setlocale(LC_CTYPE, "") != NULL) {
+	    (initLocCType != NULL || 
+		(initLocCType = setlocale(LC_CTYPE, "")) != NULL) &&
+	    /* avoid implicit fallback to C */
+	    (strcmp(initLocCType, "C") != 0 || 
+		!initEncoding || strcmp(initEncoding, "C") == 0)
+    ) {
 	Tcl_DString ds;
 
 	/*
@@ -666,16 +725,13 @@ Tcl_GetEncodingNameFromEnvironment(
      * what encoding should be used based on env vars.
      */
 
-    encoding = getenv("LC_ALL");
-
-    if (encoding == NULL || encoding[0] == '\0') {
-	encoding = getenv("LC_CTYPE");
-    }
-    if (encoding == NULL || encoding[0] == '\0') {
-	encoding = getenv("LANG");
-    }
-    if (encoding == NULL || encoding[0] == '\0') {
-	encoding = NULL;
+    /* Try to determine proper encoding after locale was changed (setlocale). */
+    encoding = GetLocEncFromEnv();
+    if (initEncoding && strcmp(initEncoding, "C") != 0 &&
+    	(!initLocCType || strcmp(initLocCType, "C") == 0)
+    ) {
+	/* use initial encoding, setlocale has not found better suitable one. */
+	encoding = initEncoding;
     }
 
     if (encoding != NULL) {
