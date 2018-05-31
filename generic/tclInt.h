@@ -3091,6 +3091,9 @@ MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, ClientData clientData,
 			    int stackSize, int flags);
 MODULE_SCOPE int	TclpFindVariable(const char *name, int *lengthPtr);
+MODULE_SCOPE void TclpGetObjNameOfExecutable(char **valuePtr,
+          int *lengthPtr, Tcl_Encoding *encodingPtr);
+MODULE_SCOPE void TclpExtendWithRelativeLibraryPaths(Tcl_Obj *pathPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
 			    int *lengthPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE void	TclpInitLock(void);

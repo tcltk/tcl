@@ -490,6 +490,41 @@ TclpInitPlatform(void)
 /*
  *---------------------------------------------------------------------------
  *
+ * TclpGetObjNameOfExecutable --
+ *
+ *	This is the fallback routine that sets the name of executable if the
+ *	application has not yet set one by the first time it is needed.
+ *
+ *	Typically set by TclSetObjNameOfExecutable from TclpFindExecutable.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the path to an initial value (name of the current process).
+ *
+ *-------------------------------------------------------------------------
+ */
+
+void
+TclpGetObjNameOfExecutable(
+    char **valuePtr,
+    int *lengthPtr,
+    Tcl_Encoding *encodingPtr)
+{
+    char buf[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", buf, sizeof(buf)-1);
+    if (len != -1) {
+	buf[len] = '\0';
+	*lengthPtr = len;
+	*valuePtr = ckalloc(len+1);
+	memcpy(*valuePtr, buf, len+1);
+    }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * TclpInitLibraryPath --
  *
  *	This is the fallback routine that sets the library path if the
@@ -514,6 +549,7 @@ TclpInitLibraryPath(
     Tcl_Obj *pathPtr, *objPtr;
     const char *str;
     Tcl_DString buffer;
+    Tcl_StatBuf stat;
 
     pathPtr = Tcl_NewObj();
 
@@ -548,7 +584,12 @@ TclpInitLibraryPath(
 	 * If TCL_LIBRARY is set, search there.
 	 */
 
-	Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_NewStringObj(str, -1));
+	objPtr = Tcl_NewStringObj(str, -1);
+	Tcl_IncrRefCount(objPtr);
+	if ((0 == Tcl_FSStat(objPtr, &stat)) && S_ISDIR(stat.st_mode)) {
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	}
+	Tcl_DecrRefCount(objPtr);
 
 	Tcl_SplitPath(str, &pathc, &pathv);
 	if ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc-1]) != 0)) {
@@ -562,14 +603,22 @@ TclpInitLibraryPath(
 
 	    pathv[pathc - 1] = installLib + 4;
 	    str = Tcl_JoinPath(pathc, pathv, &ds);
-	    Tcl_ListObjAppendElement(NULL, pathPtr, TclDStringToObj(&ds));
+	    objPtr = TclDStringToObj(&ds);
+	    Tcl_IncrRefCount(objPtr);
+	    if ((0 == Tcl_FSStat(objPtr, &stat)) && S_ISDIR(stat.st_mode)) {
+		Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    }
+	    Tcl_DecrRefCount(objPtr);
 	}
 	ckfree(pathv);
     }
 
     /*
-     * Finally, look for the library relative to the compiled-in path. This is
-     * needed when users install Tcl with an exec-prefix that is different
+     * Finally, look for the library relative to the compiled-in path:
+     *    defaultLibraryDir
+     * as well as for the runtime paths relative executable:
+     *    parentDir/lib/tcl<V> and parentDir/library.
+     * This is needed when users install Tcl with an exec-prefix that is different
      * from the prefix.
      */
 
@@ -590,9 +639,17 @@ TclpInitLibraryPath(
 	}
 	if (str[0] != '\0') {
 	    objPtr = Tcl_NewStringObj(str, -1);
-	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_IncrRefCount(objPtr);
+	    if ((0 == Tcl_FSStat(objPtr, &stat)) && S_ISDIR(stat.st_mode)) {
+		Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    }
+	    Tcl_DecrRefCount(objPtr);
 	}
     }
+
+    /* extend path-list with parents relative library paths */
+    TclpExtendWithRelativeLibraryPaths(pathPtr);
+
     Tcl_DStringFree(&buffer);
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);

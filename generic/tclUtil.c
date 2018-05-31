@@ -23,7 +23,7 @@
  */
 
 static ProcessGlobalValue executableName = {
-    0, 0, NULL, NULL, NULL, NULL, NULL
+    0, 0, NULL, NULL, TclpGetObjNameOfExecutable, NULL, NULL
 };
 
 /*
@@ -4474,6 +4474,94 @@ Tcl_GetNameOfExecutable(void)
 	return NULL;
     }
     return bytes;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpExtendWithRelativeLibraryPaths --
+ *
+ *	This function extends the library search path list (pathPtr) with all
+ *	possible parent paths, relative executable (similar the tclInit proc).
+ *	
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+TclpExtendWithRelativeLibraryPaths(
+    Tcl_Obj *pathPtr)		/* Target list object to extend. */
+{
+    Tcl_Obj *objPtr, *parentDir, *grandParentDir, *grGrandParentDir;
+    Tcl_DString ds;
+    char tclVerDir[20];
+    char tclPLVerDir[20];
+    Tcl_StatBuf stat;
+
+    const struct {
+	int cnt;
+	const char *dirs[3];
+    } *dp, tryDirs[] = {
+	/* file join $parentDir lib tcl[info tclversion] */
+	{3, {"*1", "lib", "*4"}},
+	/* file join $grandParentDir lib tcl[info tclversion] */
+	{3, {"*2", "lib", "*4"}},
+	/* file join $parentDir library */
+	{2, {"*1", "library", NULL}},
+	/* file join $grandParentDir library */
+	{2, {"*2", "library", NULL}},
+	/* file join $grandParentDir tcl[info patchlevel] library */
+	{3, {"*2", "*5", "library"}},
+	/* file join [file dirname $grandParentDir] tcl[info patchlevel] library */
+	{3, {"*3", "*5", "library"}},
+	{0, {NULL}},
+    };
+    const char *dirs[3];
+
+    /* get current known name of executable */
+    objPtr = TclGetObjNameOfExecutable();
+
+    /* preset possible relative parts of path */
+    sprintf(tclVerDir, "tcl%s", TCL_VERSION);
+    sprintf(tclPLVerDir, "tcl%s", TCL_PATCH_LEVEL);
+
+    objPtr = TclPathPart(NULL, objPtr, TCL_PATH_DIRNAME);
+    parentDir = TclPathPart(NULL, objPtr, TCL_PATH_DIRNAME);
+    Tcl_DecrRefCount(objPtr);
+    grandParentDir = TclPathPart(NULL, parentDir, TCL_PATH_DIRNAME);
+    grGrandParentDir = TclPathPart(NULL, grandParentDir, TCL_PATH_DIRNAME);
+
+    /* search for valid paths and extend search-list pathPtr */
+    dp = tryDirs;
+    do {
+	int i;
+	for (i = 0; i < dp->cnt; i++) {
+	    const char *str = dp->dirs[i];
+	    if (*str == '*') {
+		switch(str[1]) {
+		case '1': str = Tcl_GetString(parentDir); break;
+		case '2': str = Tcl_GetString(grandParentDir); break;
+		case '3': str = Tcl_GetString(grGrandParentDir); break;
+		case '4': str = tclVerDir; break;
+		case '5': str = tclPLVerDir; break;
+		}
+	    }
+	    dirs[i] = str;
+	}
+	Tcl_DStringInit(&ds);
+	Tcl_JoinPath(dp->cnt, dirs, &ds);
+	objPtr = TclDStringToObj(&ds);
+	Tcl_IncrRefCount(objPtr);
+	if ((0 == Tcl_FSStat(objPtr, &stat)) && S_ISDIR(stat.st_mode)) {
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	}
+	Tcl_DecrRefCount(objPtr);
+    } while((++dp)->cnt);
+
+    Tcl_DecrRefCount(grGrandParentDir);
+    Tcl_DecrRefCount(grandParentDir);
+    Tcl_DecrRefCount(parentDir);
 }
 
 /*
