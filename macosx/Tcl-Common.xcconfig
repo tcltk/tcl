@@ -30,7 +30,7 @@ MANDIR = $(PREFIX)/man
 PER_ARCH_CFLAGS_ppc = -mcpu=G3 -mtune=G4 $(PER_ARCH_CFLAGS_ppc)
 PER_ARCH_CFLAGS_ppc64 = -mcpu=G5 -mpowerpc64 $(PER_ARCH_CFLAGS_ppc64)
 PREFIX = /usr/local
-TCL_CONFIGURE_ARGS = --enable-threads --enable-dtrace
+TCL_CONFIGURE_ARGS = --enable-dtrace
 TCL_LIBRARY = $(LIBDIR)/tcl$(VERSION)
 TCL_PACKAGE_PATH = "$(LIBDIR)"
 TCL_DEFS = HAVE_TCL_CONFIG_H
