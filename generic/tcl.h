@@ -89,11 +89,11 @@ extern "C" {
 #  define JOIN(a,b) JOIN1(a,b)
 #  define JOIN1(a,b) a##b
 #endif
-#endif /* !TCL_NO_DEPRECATED */
 
 #ifndef TCL_THREADS
 #   define TCL_THREADS 1
 #endif
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * A special definition used to allow this header file to be included from
@@ -107,15 +107,10 @@ extern "C" {
 #ifndef RC_INVOKED
 
 /*
- * Special macro to define mutexes, that doesn't do anything if we are not
- * using threads.
+ * Special macro to define mutexes.
  */
 
-#if !defined(TCL_THREADS) || TCL_THREADS
 #define TCL_DECLARE_MUTEX(name) static Tcl_Mutex name;
-#else
-#define TCL_DECLARE_MUTEX(name)
-#endif
 
 /*
  * Tcl's public routine Tcl_FSSeek() uses the values SEEK_SET, SEEK_CUR, and
@@ -2560,27 +2555,6 @@ EXTERN const char *Tcl_InitSubsystems(TCL_NORETURN1 Tcl_PanicProc *panicProc);
 #undef  Tcl_CreateHashEntry
 #define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
-
-/*
- *----------------------------------------------------------------------------
- * Macros that eliminate the overhead of the thread synchronization functions
- * when compiling without thread support.
- */
-
-#if defined(TCL_THREADS) && !TCL_THREADS
-#undef  Tcl_MutexLock
-#define Tcl_MutexLock(mutexPtr)
-#undef  Tcl_MutexUnlock
-#define Tcl_MutexUnlock(mutexPtr)
-#undef  Tcl_MutexFinalize
-#define Tcl_MutexFinalize(mutexPtr)
-#undef  Tcl_ConditionNotify
-#define Tcl_ConditionNotify(condPtr)
-#undef  Tcl_ConditionWait
-#define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
-#undef  Tcl_ConditionFinalize
-#define Tcl_ConditionFinalize(condPtr)
-#endif /* !TCL_THREADS */
 
 /*
  *----------------------------------------------------------------------------

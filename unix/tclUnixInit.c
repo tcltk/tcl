@@ -316,7 +316,7 @@ static int		MacOSXGetLibraryPath(Tcl_Interp *interp,
 #endif /* HAVE_COREFOUNDATION */
 #if defined(__APPLE__) && (defined(TCL_LOAD_FROM_MEMORY) || ( \
 	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && ( \
-	((!defined(TCL_THREADS) || TCL_THREADS) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030) || \
+	(TCL_THREADS && MAC_OS_X_VERSION_MIN_REQUIRED < 1030) || \
 	(defined(__LP64__) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050) || \
 	(defined(HAVE_COREFOUNDATION) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050)\
 	)))

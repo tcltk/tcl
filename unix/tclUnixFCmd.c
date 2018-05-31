@@ -256,7 +256,7 @@ Realpath(
 #endif /* PURIFY */
 
 #ifndef NO_REALPATH
-#if defined(__APPLE__) && (!defined(TCL_THREADS) || TCL_THREADS) && \
+#if defined(__APPLE__) && TCL_THREADS && \
 	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
 	MAC_OS_X_VERSION_MIN_REQUIRED < 1030
 /*

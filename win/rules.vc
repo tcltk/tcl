@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 2
+RULES_VERSION_MINOR = 3
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -1063,17 +1063,17 @@ TCL_INCLUDES    = -I"$(WINDIR)" -I"$(GENERICDIR)"
 # When building extensions, we need to locate tclsh. Depending on version
 # of Tcl we are building against, this may or may not have a "t" suffix.
 # Try various possibilities in turn.
-TCLSH		= $(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX).exe
+TCLSH		= $(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX:t=).exe
 !if !exist("$(TCLSH)")
-TCLSH           = $(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX:t=).exe
+TCLSH           = $(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX:t=).exe
 !endif
 
 TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib
-TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX).lib
+TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX:t=).lib
 # When building extensions, may be linking against Tcl that does not add
 # "t" suffix (e.g. 8.5 or 8.7). If lib not found check for that possibility.
 !if !exist("$(TCLIMPLIB)")
-TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX:t=).lib
+TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)t$(SUFX:t=).lib
 !endif
 TCL_LIBRARY	= $(_TCLDIR)\lib
 TCLREGLIB	= $(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib
@@ -1083,16 +1083,16 @@ TCL_INCLUDES    = -I"$(_TCLDIR)\include"
 
 !else # Building against Tcl sources
 
-TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)$(SUFX).exe
-!if !exist($(TCLSH))
 TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)$(SUFX:t=).exe
+!if !exist($(TCLSH))
+TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX:t=).exe
 !endif
 TCLSTUBLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib
-TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX).lib
+TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX:t=).lib
 # When building extensions, may be linking against Tcl that does not add
 # "t" suffix (e.g. 8.5 or 8.7). If lib not found check for that possibility.
 !if !exist("$(TCLIMPLIB)")
-TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX:t=).lib
+TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)t$(SUFX:t=).lib
 !endif
 TCL_LIBRARY	= $(_TCLDIR)\library
 TCLREGLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib

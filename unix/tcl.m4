@@ -994,7 +994,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     AS_IF([test "x${SHLIB_VERSION}" = x], [SHLIB_VERSION="1.0"])
     case $system in
 	AIX-*)
-	    AS_IF([test "${TCL_THREADS}" = "1" -a "$GCC" != "yes"], [
+	    AS_IF([test "$GCC" != "yes"], [
 		# AIX requires the _r compiler when gcc isn't being used
 		case "${CC}" in
 		    *_r|*_r\ *)
@@ -1114,9 +1114,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    )
 	    if test "$ac_cv_cygwin" = "no"; then
 		AC_MSG_ERROR([${CC} is not a cygwin compiler.])
-	    fi
-	    if test "x${TCL_THREADS}" = "x0"; then
-		AC_MSG_ERROR([CYGWIN compile is only supported with --enable-threads])
 	    fi
 	    do64bit_ok=yes
 	    if test "x${SHARED_BUILD}" = "x1"; then
@@ -1347,12 +1344,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
 	    LDFLAGS="-Wl,-export-dynamic"
 	    CFLAGS_OPTIMIZE="-O2"
-	    AS_IF([test "${TCL_THREADS}" = "1"], [
-		# On OpenBSD:	Compile with -pthread
-		#		Don't link with -lpthread
-		LIBS=`echo $LIBS | sed s/-lpthread//`
-		CFLAGS="$CFLAGS -pthread"
-	    ])
+	    # On OpenBSD:	Compile with -pthread
+	    #		Don't link with -lpthread
+	    LIBS=`echo $LIBS | sed s/-lpthread//`
+	    CFLAGS="$CFLAGS -pthread"
 	    # OpenBSD doesn't do version numbers with dots.
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
@@ -1368,12 +1363,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-	    AS_IF([test "${TCL_THREADS}" = "1"], [
-		# The -pthread needs to go in the CFLAGS, not LIBS
-		LIBS=`echo $LIBS | sed s/-pthread//`
-		CFLAGS="$CFLAGS -pthread"
-	    	LDFLAGS="$LDFLAGS -pthread"
-	    ])
+	    # The -pthread needs to go in the CFLAGS, not LIBS
+	    LIBS=`echo $LIBS | sed s/-pthread//`
+	    CFLAGS="$CFLAGS -pthread"
+	    LDFLAGS="$LDFLAGS -pthread"
 	    ;;
 	FreeBSD-*)
 	    # This configuration from FreeBSD Ports.
@@ -1387,11 +1380,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
-	    AS_IF([test "${TCL_THREADS}" = "1"], [
-		# The -pthread needs to go in the LDFLAGS, not LIBS
-		LIBS=`echo $LIBS | sed s/-pthread//`
-		CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-		LDFLAGS="$LDFLAGS $PTHREAD_LIBS"])
+	    # The -pthread needs to go in the LDFLAGS, not LIBS
+	    LIBS=`echo $LIBS | sed s/-pthread//`
+	    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+	    LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
 	    case $system in
 	    FreeBSD-3.*)
 		# Version numbers are dot-stripped by system policy.
@@ -1563,16 +1555,14 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test "$GCC" = yes], [CFLAGS="$CFLAGS -mieee"], [
 		CFLAGS="$CFLAGS -DHAVE_TZSET -std1 -ieee"])
 	    # see pthread_intro(3) for pthread support on osf1, k.furukawa
-	    AS_IF([test "${TCL_THREADS}" = 1], [
-		CFLAGS="$CFLAGS -DHAVE_PTHREAD_ATTR_SETSTACKSIZE"
-		CFLAGS="$CFLAGS -DTCL_THREAD_STACK_MIN=PTHREAD_STACK_MIN*64"
-		LIBS=`echo $LIBS | sed s/-lpthreads//`
-		AS_IF([test "$GCC" = yes], [
-		    LIBS="$LIBS -lpthread -lmach -lexc"
-		], [
-		    CFLAGS="$CFLAGS -pthread"
-		    LDFLAGS="$LDFLAGS -pthread"
-		])
+	    CFLAGS="$CFLAGS -DHAVE_PTHREAD_ATTR_SETSTACKSIZE"
+	    CFLAGS="$CFLAGS -DTCL_THREAD_STACK_MIN=PTHREAD_STACK_MIN*64"
+	    LIBS=`echo $LIBS | sed s/-lpthreads//`
+	    AS_IF([test "$GCC" = yes], [
+		LIBS="$LIBS -lpthread -lmach -lexc"
+	    ], [
+		CFLAGS="$CFLAGS -pthread"
+		LDFLAGS="$LDFLAGS -pthread"
 	    ])
 	    ;;
 	QNX-6*)
@@ -2254,7 +2244,6 @@ AC_DEFUN([SC_BUGGY_STRTOD], [
 #		THREADS_LIBS	Thread library(s)
 #
 #	Defines the following vars:
-#		TCL_THREADS
 #		_REENTRANT
 #		_THREAD_SAFE
 #
