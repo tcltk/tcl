@@ -209,7 +209,7 @@ AC_CHECK_FUNC(getwd, , [AC_DEFINE(NO_GETWD, 1, [Do we have getwd()])])
 AC_CHECK_FUNC(wait3, , [AC_DEFINE(NO_WAIT3, 1, [Do we have wait3()])])
 AC_CHECK_FUNC(uname, , [AC_DEFINE(NO_UNAME, 1, [Do we have uname()])])
 
-if test "`uname -s`" = "Darwin" && test "${TCL_THREADS}" = 1 && \
+if test "`uname -s`" = "Darwin" && \
 	test "`uname -r | awk -F. '{print [$]1}'`" -lt 7; then
     # prior to Darwin 7, realpath is not threadsafe, so don't
     # use it when threads are enabled, c.f. bug # 711232
@@ -223,35 +223,33 @@ SC_TCL_IPV6
 #	Look for thread-safe variants of some library functions.
 #--------------------------------------------------------------------
 
-if test "${TCL_THREADS}" = 1; then
-    SC_TCL_GETPWUID_R
-    SC_TCL_GETPWNAM_R
-    SC_TCL_GETGRGID_R
-    SC_TCL_GETGRNAM_R
-    if test "`uname -s`" = "Darwin" && \
-	    test "`uname -r | awk -F. '{print [$]1}'`" -gt 5; then
-	# Starting with Darwin 6 (Mac OSX 10.2), gethostbyX
-	# are actually MT-safe as they always return pointers
-	# from TSD instead of static storage.
-	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
-		[Do we have MT-safe gethostbyname() ?])
-	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
-		[Do we have MT-safe gethostbyaddr() ?])
+SC_TCL_GETPWUID_R
+SC_TCL_GETPWNAM_R
+SC_TCL_GETGRGID_R
+SC_TCL_GETGRNAM_R
+if test "`uname -s`" = "Darwin" && \
+	test "`uname -r | awk -F. '{print [$]1}'`" -gt 5; then
+    # Starting with Darwin 6 (Mac OSX 10.2), gethostbyX
+    # are actually MT-safe as they always return pointers
+    # from TSD instead of static storage.
+    AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
+	    [Do we have MT-safe gethostbyname() ?])
+    AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
+	    [Do we have MT-safe gethostbyaddr() ?])
 
-    elif test "`uname -s`" = "HP-UX" && \
-	      test "`uname -r|sed -e 's|B\.||' -e 's|\..*$||'`" -gt 10; then
-        # Starting with HPUX 11.00 (we believe), gethostbyX
-        # are actually MT-safe as they always return pointers
-	# from TSD instead of static storage.
-	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
-		[Do we have MT-safe gethostbyname() ?])
-	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
-		[Do we have MT-safe gethostbyaddr() ?])
+elif test "`uname -s`" = "HP-UX" && \
+	test "`uname -r|sed -e 's|B\.||' -e 's|\..*$||'`" -gt 10; then
+    # Starting with HPUX 11.00 (we believe), gethostbyX
+    # are actually MT-safe as they always return pointers
+    # from TSD instead of static storage.
+    AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
+	    [Do we have MT-safe gethostbyname() ?])
+    AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
+	    [Do we have MT-safe gethostbyaddr() ?])
 
-    else
-	SC_TCL_GETHOSTBYNAME_R
-	SC_TCL_GETHOSTBYADDR_R
-    fi
+else
+    SC_TCL_GETHOSTBYNAME_R
+    SC_TCL_GETHOSTBYADDR_R
 fi
 
 #---------------------------------------------------------------------------
@@ -321,7 +319,6 @@ case x`uname -s` in
 	# of wider impact).
 	AC_MSG_RESULT([OSX]);;
   *)
-	AC_DEFINE_UNQUOTED(NOTIFIER_SELECT)
 	AC_MSG_RESULT([none]);;
 esac
 
