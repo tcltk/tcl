@@ -1227,7 +1227,7 @@ test trace-17.3 {traced variables must survive procedure exits} {
 
 test trace-18.1 {unset traces on procedure returns} {
     proc p1 {x y} {set a 44; p2 14}
-    proc p2 {z} {trace add variable z unset {traceCheck {lsort [uplevel 2 {info vars}]}}}
+    proc p2 {z} {trace add variable z unset {traceCheck {lsort [uplevel 1 {info vars}]}}}
     set info {}
     p1 foo bar
     set info
