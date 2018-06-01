@@ -87,6 +87,15 @@ slowing its clock by a tiny fraction for some minutes until it is
 back in sync with UTC; its data model does not represent minutes that
 have 59 or 61 seconds.
 .TP
+\fI\-now\fR
+Instead of \fItimeVal\fR a non-integer option \fI\-now\fR can be used as
+replacement for today, which is simply interpolated to the runt-time as value
+of \fBclock seconds\fR. For example:
+.sp
+\fBclock format -now -f %a; # current day of the week\fR
+.sp
+\fBclock add -now 1 month; # next month\fR
+.TP
 \fIunit\fR
 One of the words, \fBseconds\fR, \fBminutes\fR, \fBhours\fR,
 \fBdays\fR, \fBweekdays\fR, \fBweeks\fR, \fBmonths\fR, or \fByears\fR.
@@ -527,6 +536,12 @@ abbreviation appropriate to the current locale, and uses it to fix
 whether \fB%Y\fR refers to years before or after Year 1 of the
 Common Era.
 .TP
+\fB%Es\fR
+This affects similar to \fB%s\fR, but in opposition to \fB%s\fR it parses
+or formats local seconds (not the posix seconds).
+Because \fB%s\fR has the same precedence as \fB%s\fR (uniquely determines 
+a point in time), it overrides all other input formats.
+.TP
 \fB%Ex\fR
 On output, produces a locale-dependent representation of the date
 in the locale's alternative calendar.  On input, matches
@@ -721,13 +736,15 @@ week number \fB%V\fR; programs should use \fB%G\fR for that purpose.
 On output, produces the current time zone, expressed in hours and
 minutes east (+hhmm) or west (\-hhmm) of Greenwich. On input, accepts a
 time zone specifier (see \fBTIME ZONES\fR below) that will be used to
-determine the time zone.
+determine the time zone (this token is optionally applicable on input, 
+so the value is not mandatory and can be missing in input).
 .TP
 \fB%Z\fR
 On output, produces the current time zone's name, possibly
 translated to the given locale. On input, accepts a time zone
 specifier (see \fBTIME ZONES\fR below) that will be used to determine the
-time zone. This option should, in general, be used on input only when
+time zone (token is also like \fB%z\fR optionally applicable on input).
+This option should, in general, be used on input only when
 parsing RFC822 dates. Other uses are fraught with ambiguity; for
 instance, the string \fBBST\fR may represent British Summer Time or
 Brazilian Standard Time. It is recommended that date/time strings for
@@ -926,6 +943,24 @@ used.  Finally, a correction is applied so that the correct hour of
 the day is produced after allowing for daylight savings time
 differences and the correct date is given when going from the end
 of a long month to a short month.
+.PP
+The precedence of the applying of single tokens resp. which sequence will be
+used by calculating of the time is complex, e. g. heavily dependent on the
+precision of type of the token.
+.sp
+In example below the second date-string contains "next January", therefore
+it results in next year but in January. And third date-string besides "January"
+contains also additionally "Fri", so it results in the nearest Friday.
+Thus both win before "385 days" resp. make it more precise, because of higher 
+precision of this token types.
+.CS
+% clock format [clock scan "5 years 18 months 385 days" -base 0 -gmt 1] -gmt 1
+Thu Jul 21 00:00:00 GMT 1977
+% clock format [clock scan "5 years 18 months 385 days next January" -base 0 -gmt 1] -gmt 1
+Sat Jan 21 00:00:00 GMT 1978
+% clock format [clock scan "5 years 18 months 385 days next January Fri" -base 0 -gmt 1] -gmt 1
+Fri Jan 27 00:00:00 GMT 1978
+.CE
 .SH "SEE ALSO"
 msgcat(n)
 .SH KEYWORDS

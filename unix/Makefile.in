@@ -292,7 +292,7 @@ XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclAssembly.o tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o \
-	tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
+	tclClock.o tclClockFmt.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
 	tclCompCmds.o tclCompCmdsGR.o tclCompCmdsSZ.o tclCompExpr.o \
 	tclCompile.o tclConfig.o tclDate.o tclDictObj.o tclDisassemble.o \
 	tclEncoding.o tclEnsemble.o \
@@ -304,7 +304,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclObj.o tclOptimize.o tclPanic.o tclParse.o tclPathObj.o tclPipe.o \
 	tclPkg.o tclPkgConfig.o tclPosixStr.o \
 	tclPreserve.o tclProc.o tclProcess.o tclRegexp.o \
-	tclResolve.o tclResult.o tclScan.o tclStringObj.o \
+	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclStrIdxTree.o \
 	tclStrToD.o tclThread.o \
 	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
 	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o \
@@ -396,6 +396,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclBinary.c \
 	$(GENERIC_DIR)/tclCkalloc.c \
 	$(GENERIC_DIR)/tclClock.c \
+	$(GENERIC_DIR)/tclClockFmt.c \
 	$(GENERIC_DIR)/tclCmdAH.c \
 	$(GENERIC_DIR)/tclCmdIL.c \
 	$(GENERIC_DIR)/tclCmdMZ.c \
@@ -451,6 +452,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclScan.c \
 	$(GENERIC_DIR)/tclStubInit.c \
 	$(GENERIC_DIR)/tclStringObj.c \
+	$(GENERIC_DIR)/tclStrIdxTree.c \
 	$(GENERIC_DIR)/tclStrToD.c \
 	$(GENERIC_DIR)/tclTest.c \
 	$(GENERIC_DIR)/tclTestObj.c \
@@ -1037,6 +1039,7 @@ MATHHDRS=$(GENERIC_DIR)/tommath.h $(GENERIC_DIR)/tclTomMath.h
 PARSEHDR=$(GENERIC_DIR)/tclParse.h
 NREHDR=$(GENERIC_DIR)/tclInt.h
 TRIMHDR=$(GENERIC_DIR)/tclStringTrim.h
+TCLDATEHDR=$(GENERIC_DIR)/tclDate.h $(GENERIC_DIR)/tclStrIdxTree.h
 
 regcomp.o: $(REGHDRS) $(GENERIC_DIR)/regcomp.c $(GENERIC_DIR)/regc_lex.c \
 		$(GENERIC_DIR)/regc_color.c $(GENERIC_DIR)/regc_locale.c \
@@ -1073,8 +1076,11 @@ tclBinary.o: $(GENERIC_DIR)/tclBinary.c
 tclCkalloc.o: $(GENERIC_DIR)/tclCkalloc.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCkalloc.c
 
-tclClock.o: $(GENERIC_DIR)/tclClock.c
+tclClock.o: $(GENERIC_DIR)/tclClock.c $(TCLDATEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclClock.c
+
+tclClockFmt.o: $(GENERIC_DIR)/tclClockFmt.c $(TCLDATEHDR)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclClockFmt.c
 
 tclCmdAH.o: $(GENERIC_DIR)/tclCmdAH.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCmdAH.c
@@ -1085,7 +1091,7 @@ tclCmdIL.o: $(GENERIC_DIR)/tclCmdIL.c $(TCLREHDRS)
 tclCmdMZ.o: $(GENERIC_DIR)/tclCmdMZ.c $(TCLREHDRS) $(TRIMHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCmdMZ.c
 
-tclDate.o: $(GENERIC_DIR)/tclDate.c
+tclDate.o: $(GENERIC_DIR)/tclDate.c $(TCLDATEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDate.c
 
 tclCompCmds.o: $(GENERIC_DIR)/tclCompCmds.c $(COMPILEHDR)
@@ -1306,6 +1312,9 @@ tclScan.o: $(GENERIC_DIR)/tclScan.c
 
 tclStringObj.o: $(GENERIC_DIR)/tclStringObj.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStringObj.c
+
+tclStrIdxTree.o: $(GENERIC_DIR)/tclStrIdxTree.c $(GENERIC_DIR)/tclStrIdxTree.h $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStrIdxTree.c
 
 tclStrToD.o: $(GENERIC_DIR)/tclStrToD.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStrToD.c
