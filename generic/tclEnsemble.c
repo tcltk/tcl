@@ -352,6 +352,14 @@ TclNamespaceEnsembleCmd(
 	Tcl_SetEnsembleMappingDict(interp, token, mapObj);
 	Tcl_SetEnsembleUnknownHandler(interp, token, unknownObj);
 	Tcl_SetEnsembleParameterList(interp, token, paramObj);
+	/*
+	 * Ensemble should be compiled if it has map (performance purposes)
+	 * Currently only for internal using namespace (like ::tcl::clock).
+	 * (An enhancement for completelly compile-feature is in work.)
+	 */
+	if (mapObj != NULL && strncmp("::tcl::", nsPtr->fullName, 7) == 0) {
+	    Tcl_SetEnsembleFlags(interp, token, ENSEMBLE_COMPILE);
+	}
 
 	/*
 	 * Tricky! Must ensure that the result is not shared (command delete

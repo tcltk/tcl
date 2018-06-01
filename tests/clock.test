@@ -7,6 +7,7 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
+# Copyright (c) 2015 by Sergey G. Brester aka sebres.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -19,9 +20,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 if {[testConstraint win]} {
     if {[catch {
 	    ::tcltest::loadTestedCommands
-	    package require registry
 	}]} {
-	namespace eval ::tcl::clock {variable NoRegistry {}}
+	# nothing to be done (registry loaded on demand)
     }
 }
 
@@ -31,9 +31,29 @@ testConstraint detroit \
     [expr {![catch {clock format 0 -timezone :America/Detroit -format %z}]}]
 testConstraint y2038 \
     [expr {[clock format 2158894800 -format %z -timezone :America/Detroit] eq {-0400}}]
+testConstraint no_tclclockmod \
+    [expr {[namespace which -command ::tcl::clock::configure] eq {}}]
+
+# Test with both validity modes - validate on / off:
+
+set valid_mode [clock configure -valid]
+
+# Wrapper to show validity mode in the test-case name (for possible errors):
+rename test __test
+proc test {args} {
+  variable valid_mode
+  lset args 0 [lindex $args 0].vm:$valid_mode
+  uplevel [linsert $args [set args 0] __test]
+}
+
+puts [outputChannel] "  Validity default mode: [expr {$valid_mode ? "on": "off"}]"
+testConstraint valid_off [expr {![clock configure -valid]}]
 
 # TEST PLAN
 
+# clock-0:
+#	several base test-cases
+#
 # clock-1:
 #	[clock format] - tests of bad and empty arguments
 #
@@ -250,11 +270,34 @@ proc ::testClock::registry { cmd path key } {
     return [dict get $reg $path $key]
 }
 
+# Base test cases:
+
+test clock-0.1 "initial: auto-loading of ensemble and stubs on demand" no_tclclockmod {
+    set i [interp create]; # because clock can be used somewhere, test it in new interp:
+
+    set ret [$i eval {
+
+	lappend ret ens:[namespace ensemble exists ::clock]
+	clock seconds; # init ensemble (but not yet stubs, loading of clock.tcl retarded)
+	lappend ret ens:[namespace ensemble exists ::clock]
+	lappend ret stubs:[expr {[namespace which -command ::tcl::clock::GetSystemTimeZone] ne ""}]
+	clock format -now; # clock.tcl stubs expected
+	lappend ret stubs:[expr {[namespace which -command ::tcl::clock::GetSystemTimeZone] ne ""}]
+    }]
+    interp delete $i
+    set ret
+} {ens:0 ens:1 stubs:0 stubs:1}
+
 # Test some of the basics of [clock format]
 
+set syntax "clock format clockval|-now ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"
 test clock-1.0 "clock format - wrong # args" {
     list [catch {clock format} msg] $msg $::errorCode
-} {1 {wrong # args: should be "clock format clockval ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"} {CLOCK wrongNumArgs}}
+} [subst {1 {wrong # args: should be "$syntax"} {CLOCK wrongNumArgs}}]
+
+test clock-1.0.1 "clock format - wrong # args (compiled ensemble with invalid syntax)" {
+    list [catch {clock format 0 -too-few-options-4-test} msg] $msg $::errorCode
+} [subst {1 {wrong # args: should be "$syntax"} {CLOCK wrongNumArgs}}]
 
 test clock-1.1 "clock format - bad time" {
     list [catch {clock format foo} msg] $msg
@@ -268,13 +311,14 @@ test clock-1.3 "clock format - empty val" {
     clock format 0 -gmt 1 -format ""
 } {}
 
-test clock-1.4 "clock format - bad flag" {*}{
-    -body {
+test clock-1.4 "clock format - bad flag" {
+    # range error message for possible extensions:
     list [catch {clock format 0 -oops badflag} msg] $msg $::errorCode
-    }
-    -match glob
-    -result {1 {bad option "-oops": must be -format, -gmt, -locale, or -timezone} {CLOCK badOption -oops}}
-}
+} [subst {1 {bad option "-oops": should be "$syntax"} {CLOCK badOption -oops}}]
+test clock-1.4.1 "clock format - unexpected option for this sub-command" {
+    # range error message for possible extensions:
+    list [catch {clock format 0 -base 0} msg] $msg $::errorCode
+} [subst {1 {bad option "-base": should be "$syntax"} {CLOCK badOption -base}}]
 
 test clock-1.5 "clock format - bad timezone" {
     list [catch {clock format 0 -format "%s" -timezone :NOWHERE} msg] $msg $::errorCode
@@ -287,6 +331,16 @@ test clock-1.6 "clock format - gmt + timezone" {
 test clock-1.7 "clock format - option abbreviations" {
     clock format 0 -g true -f "%Y-%m-%d"
 } 1970-01-01
+
+test clock-1.8 "clock format -now" {
+    # give one second more for test (if on boundary of the current second):
+    set n [clock format [clock seconds] -g 1 -f "%s"]
+    expr {[clock format -now -g 1 -f "%s"] in [list $n [incr n]]}
+} 1
+
+test clock-1.9 "clock arguments: option doubly present" {
+    list [catch {clock format 0 -gmt 1 -gmt 0} result] $result
+} {1 {bad option "-gmt": doubly present}}
 
 # BEGIN testcases2
 
@@ -18532,16 +18586,176 @@ test clock-6.8 {input of seconds} {
 } 9223372036854775807
 
 test clock-6.9 {input of seconds - overflow} {
-    list [catch {clock scan -9223372036854775809 -format %s -gmt true} result] $result
-} {1 {integer value too large to represent}}
+    list [catch {clock scan -9223372036854775809 -format %s -gmt true} result] $result $::errorCode
+} {1 {requested date too large to represent} {CLOCK dateTooLarge}}
 
 test clock-6.10 {input of seconds - overflow} {
-    list [catch {clock scan 9223372036854775808 -format %s -gmt true} result] $result
-} {1 {integer value too large to represent}}
+    list [catch {clock scan 9223372036854775808 -format %s -gmt true} result] $result $::errorCode
+} {1 {requested date too large to represent} {CLOCK dateTooLarge}}
 
 test clock-6.11 {input of seconds - two values} {
     clock scan {1 2} -format {%s %s} -gmt true
 } 2
+
+test clock-6.12 {input of unambiguous short locale token (%b)} {
+    list [clock scan "12 Ja 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1] \
+	 [clock scan "12 Au 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1]
+} {979257600 997574400}
+test clock-6.13 {input of lowercase locale token (%b)} {
+    list [clock scan "12 ja 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1] \
+	 [clock scan "12 au 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1]
+} {979257600 997574400}
+test clock-6.14 {input of uppercase locale token (%b)} {
+    list [clock scan "12 JA 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1] \
+	 [clock scan "12 AU 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1]
+} {979257600 997574400}
+test clock-6.15 {input of ambiguous short locale token (%b)} {
+    list [catch {
+	clock scan "12 J 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1
+    } result] $result $errorCode
+} {1 {input string does not match supplied format} {CLOCK badInputString}}
+test clock-6.16 {input of ambiguous short locale token (%b)} {
+    list [catch {
+	clock scan "12 Ju 2001" -format "%d %b %Y" -locale en_US_roman -gmt 1
+    } result] $result $errorCode
+} {1 {input string does not match supplied format} {CLOCK badInputString}}
+
+test clock-6.17 {spaces are always optional in non-strict mode (default)} {
+    list [clock scan "2009-06-30T18:30:00+02:00" -format "%Y-%m-%dT%H:%M:%S%z" -gmt 1] \
+	 [clock scan "2009-06-30T18:30:00  +02:00" -format "%Y-%m-%dT%H:%M:%S%z" -gmt 1] \
+	 [clock scan "2009-06-30T18:30:00Z" -format "%Y-%m-%dT%H:%M:%S%z" -timezone CET] \
+	 [clock scan "2009-06-30T18:30:00  Z" -format "%Y-%m-%dT%H:%M:%S%z" -timezone CET]
+} {1246379400 1246379400 1246386600 1246386600}
+
+test clock-6.18 {zone token (%z) is optional} {
+    list [clock scan "2009-06-30T18:30:00 -01:00" -format "%Y-%m-%dT%H:%M:%S%z" -gmt 1] \
+         [clock scan "2009-06-30T18:30:00" -format "%Y-%m-%dT%H:%M:%S%z" -gmt 1] \
+	 [clock scan "  2009-06-30T18:30:00  " -format "%Y-%m-%dT%H:%M:%S%z" -gmt 1] \
+} {1246390200 1246386600 1246386600}
+
+test clock-6.19 {no token parsing} {
+    list [catch { clock scan "%E%O%" -format "%E%O%" }] \
+         [catch { clock scan "...%..." -format "...%%..." }]
+} {0 0}
+
+test clock-6.20 {special char tokens %n, %t} {
+    clock scan "30\t06\t2009\n18\t30" -format "%d%t%m%t%Y%n%H%t%M" -gmt 1
+} 1246386600
+
+# Hi, Jeff!
+proc _testStarDates {s {days {366*2}} {step {86400}}} {
+    set step [expr {int($step * 86400)}]
+    # reconvert - arrange in order of stardate:
+    set s [set i [clock scan [clock format $s -f "%Q" -g 1] -g 1]]
+    # test:
+    set wrong {}
+    while {$i < $s + $days*86400} {
+	set d [clock format $i -f "%Q" -g 1]
+	if {![regexp {^Stardate \d+\.\d$} $d]} {
+	    lappend wrong "wrong: $d -- ($i) -- [clock format $i -g 1]"
+	}
+	if {[catch {
+	    set i2 [clock scan $d -f "%Q" -g 1]
+	} msg]} {
+	    lappend wrong "$d -- ($i) -- [clock format $i -g 1]: $msg"
+	}
+	if {$i != $i2} {
+	    lappend wrong "$d -- ($i != $i2) -- [clock format $i -g 1]"
+	}
+	incr i $step
+    }
+    join $wrong \n
+}
+test clock-6.21.0 {Stardate 0 day} {
+    list [set d [clock format -757382400 -format "%Q" -gmt 1]] \
+         [clock scan $d -format "%Q" -gmt 1]
+} [list "Stardate 00000.0" -757382400]
+test clock-6.21.0.1 {Stardate 0.1 - 1.9 (test negative clock value -> positive Stardate)} {
+    _testStarDates -757382400 2 0.1
+} {}
+test clock-6.21.0.2 {Stardate 10000.1 - 10002.9 (test negative clock value -> positive Stardate)} {
+    _testStarDates [clock scan "Stardate 10000.1" -f %Q -g 1] 3 0.1
+} {}
+test clock-6.21.0.2 {Stardate 80000.1 - 80002.9 (test positive clock value)} {
+    _testStarDates [clock scan "Stardate 80001.1" -f %Q -g 1] 3 0.1
+} {}
+test clock-6.21.1 {Stardate} {
+    list [set d [clock format 1482857280 -format "%Q" -gmt 1]] \
+         [clock scan $d -format "%Q" -gmt 1]
+} [list "Stardate 70986.7" 1482857280]
+test clock-6.21.2 {Stardate next time} {
+    list [set d [clock format 1482865920 -format "%Q" -gmt 1]] \
+         [clock scan $d -format "%Q" -gmt 1]
+} [list "Stardate 70986.8" 1482865920]
+test clock-6.21.3 {Stardate correct scan over year (leap year, begin, middle and end of the year)} {
+    _testStarDates [clock scan "01.01.2016" -f "%d.%m.%Y" -g 1] [expr {366*2}] 1
+} {}
+rename _testStarDates {}
+
+test clock-6.22.1 {Greedy match} {
+    clock format [clock scan "111" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Mon Jan 01 00:00:00 GMT 2001}
+test clock-6.22.2 {Greedy match} {
+    clock format [clock scan "1111" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Thu Jan 11 00:00:00 GMT 2001}
+test clock-6.22.3 {Greedy match} {
+    clock format [clock scan "11111" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Sun Nov 11 00:00:00 GMT 2001}
+test clock-6.22.4 {Greedy match} {
+    clock format [clock scan "111111" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Fri Nov 11 00:00:00 GMT 2011}
+test clock-6.22.5 {Greedy match} {
+    clock format [clock scan "1 1 1" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Mon Jan 01 00:00:00 GMT 2001}
+test clock-6.22.6 {Greedy match} {
+    clock format [clock scan "111 1" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Thu Jan 11 00:00:00 GMT 2001}
+test clock-6.22.7 {Greedy match} {
+    clock format [clock scan "1 111" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Thu Nov 01 00:00:00 GMT 2001}
+test clock-6.22.8 {Greedy match} {
+    clock format [clock scan "1 11 1" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Thu Nov 01 00:00:00 GMT 2001}
+test clock-6.22.9 {Greedy match} {
+    clock format [clock scan "1 11 11" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Tue Nov 01 00:00:00 GMT 2011}
+test clock-6.22.10 {Greedy match} {
+    clock format [clock scan "11 11 11" -format "%d%m%y" -gmt 1] -locale en -gmt 1
+} {Fri Nov 11 00:00:00 GMT 2011}
+test clock-6.22.11 {Greedy match} {
+    clock format [clock scan "1111 120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
+} {Sat Jan 01 01:02:00 GMT 2011}
+test clock-6.22.12 {Greedy match} {
+    clock format [clock scan "11 1 120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
+} {Mon Jan 01 01:02:00 GMT 2001}
+test clock-6.22.13 {Greedy match} {
+    clock format [clock scan "1 11 120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
+} {Mon Jan 01 01:02:00 GMT 2001}
+test clock-6.22.14 {Greedy match} {
+    clock format [clock scan "111120" -format "%y%m%d%H%M%S" -gmt 1] -locale en -gmt 1
+} {Mon Jan 01 01:02:00 GMT 2001}
+test clock-6.22.15 {Greedy match} {
+    clock format [clock scan "1111120" -format "%y%m%d%H%M%S" -gmt 1] -locale en -gmt 1
+} {Sat Jan 01 01:02:00 GMT 2011}
+test clock-6.22.16 {Greedy match} {
+    clock format [clock scan "11121120" -format "%y%m%d%H%M%S" -gmt 1] -locale en -gmt 1
+} {Thu Dec 01 01:02:00 GMT 2011}
+test clock-6.22.17 {Greedy match} {
+    clock format [clock scan "111213120" -format "%y%m%d%H%M%S" -gmt 1] -locale en -gmt 1
+} {Tue Dec 13 01:02:00 GMT 2011}
+test clock-6.22.17 {Greedy match (space wins as date-time separator)} {
+    clock format [clock scan "1112 13120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
+} {Sun Jan 02 13:12:00 GMT 2011}
+test clock-6.22.18 {Greedy match (second space wins as date-time separator)} {
+    clock format [clock scan "1112 13 120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
+} {Tue Dec 13 01:02:00 GMT 2011}
+test clock-6.22.19 {Greedy match (space wins as date-time separator)} {
+    clock format [clock scan "111 213120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
+} {Mon Jan 01 21:31:20 GMT 2001}
+test clock-6.22.20 {Greedy match (second space wins as date-time separator)} {
+    clock format [clock scan "111 2 13120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
+} {Sun Jan 02 13:12:00 GMT 2011}
+
 
 test clock-7.1 {Julian Day} {
     clock scan 0 -format %J -gmt true
@@ -21049,80 +21263,87 @@ test clock-10.10 {julian day takes precedence over ccyyddd} {
 
 # BEGIN testcases11
 
-# Test precedence among yyyymmdd and yyyyddd
+# Test precedence yyyymmdd over yyyyddd
 
-test clock-11.1 {precedence of ccyyddd and ccyymmdd} {
+if {!$valid_mode} {
+    set res {-result 0}
+} else {
+    set res {-returnCodes error -result "unable to convert input string: ambiguous day"}
+}
+test clock-11.1 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 19700101002 -format %Y%m%d%j -gmt 1
-} 86400
-test clock-11.2 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.2 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 01197001002 -format %m%Y%d%j -gmt 1
-} 86400
-test clock-11.3 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.3 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 01197001002 -format %d%Y%m%j -gmt 1
-} 86400
-test clock-11.4 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.4 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 00219700101 -format %j%Y%m%d -gmt 1
-} 0
-test clock-11.5 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.5 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 19700100201 -format %Y%m%j%d -gmt 1
-} 0
-test clock-11.6 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.6 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 01197000201 -format %m%Y%j%d -gmt 1
-} 0
-test clock-11.7 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.7 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 01197000201 -format %d%Y%j%m -gmt 1
-} 0
-test clock-11.8 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.8 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 00219700101 -format %j%Y%d%m -gmt 1
-} 0
-test clock-11.9 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.9 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 19700101002 -format %Y%d%m%j -gmt 1
-} 86400
-test clock-11.10 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.10 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 01011970002 -format %m%d%Y%j -gmt 1
-} 86400
-test clock-11.11 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.11 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 01011970002 -format %d%m%Y%j -gmt 1
-} 86400
-test clock-11.12 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.12 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 00201197001 -format %j%m%Y%d -gmt 1
-} 0
-test clock-11.13 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.13 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 19700100201 -format %Y%d%j%m -gmt 1
-} 0
-test clock-11.14 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.14 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 01010021970 -format %m%d%j%Y -gmt 1
-} 86400
-test clock-11.15 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.15 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 01010021970 -format %d%m%j%Y -gmt 1
-} 86400
-test clock-11.16 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.16 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 00201011970 -format %j%m%d%Y -gmt 1
-} 0
-test clock-11.17 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.17 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 19700020101 -format %Y%j%m%d -gmt 1
-} 0
-test clock-11.18 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.18 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 01002197001 -format %m%j%Y%d -gmt 1
-} 0
-test clock-11.19 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.19 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 01002197001 -format %d%j%Y%m -gmt 1
-} 0
-test clock-11.20 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.20 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 00201197001 -format %j%d%Y%m -gmt 1
-} 0
-test clock-11.21 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.21 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 19700020101 -format %Y%j%d%m -gmt 1
-} 0
-test clock-11.22 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.22 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 01002011970 -format %m%j%d%Y -gmt 1
-} 0
-test clock-11.23 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.23 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 01002011970 -format %d%j%m%Y -gmt 1
-} 0
-test clock-11.24 {precedence of ccyyddd and ccyymmdd} {
+} {*}$res
+test clock-11.24 {precedence of ccyymmdd over ccyyddd} -body {
     clock scan 00201011970 -format %j%d%m%Y -gmt 1
-} 0
+} {*}$res
+
+unset -nocomplain res
 # END testcases11
 
 # BEGIN testcases12
@@ -21419,11 +21640,11 @@ test clock-12.96 {parse ccyyWwwd} {
 } 1009756800
 # END testcases12
 
-test clock-13.1 {test that %s takes precedence over ccyyWwwd} {
+test clock-13.1 {test that %s takes precedence over ccyyWwwd} valid_off {
     list [clock scan {0 2000W011} -format {%s %GW%V%u} -gmt true] \
 	 [clock scan {2000W011 0} -format {%GW%V%u %s} -gmt true]
 } {0 0}
-test clock-13.2 {test that %J takes precedence over ccyyWwwd} {
+test clock-13.2 {test that %J takes precedence over ccyyWwwd} valid_off {
     list [clock scan {2440588 2000W011} -format {%J %GW%V%u} -gmt true] \
 	 [clock scan {2000W011 2440588} -format {%GW%V%u %J} -gmt true]
 } {0 0}
@@ -23759,7 +23980,7 @@ test clock-15.2 {yymmdd precedence below julian day} {
 	[clock scan {000101 2440588} -format {%y%m%d %J} -gmt true]
 } {0 0}
 
-test clock-15.3 {yymmdd precedence below yyyyWwwd} {
+test clock-15.3 {yymmdd precedence below yyyyWwwd} valid_off {
     list [clock scan {1970W014000101} -format {%GW%V%u%y%m%d} -gmt true] \
 	[clock scan {0001011970W014} -format {%y%m%d%GW%V%u} -gmt true]
 } {0 0}
@@ -23799,7 +24020,7 @@ test clock-16.10 {julian day takes precedence over yyddd} {
     list [clock scan {2440588 00001} -format {%J %y%j} -gmt true] \
 	 [clock scan {00001 2440588} -format {%Y%j %J} -gmt true]
 } {0 0}
-test clock-16.11 {yyddd precedence below yyyyWwwd} {
+test clock-16.11 {yyddd precedence below yyyyWwwd} valid_off {
     list [clock scan {1970W01400001} -format {%GW%V%u%y%j} -gmt true] \
 	[clock scan {000011970W014} -format {%y%j%GW%V%u} -gmt true]
 } {0 0}
@@ -24100,7 +24321,7 @@ test clock-17.96 {parse yyWwwd} {
 
 # Test precedence of yyWwwd
 
-test clock-18.1 {seconds take precedence over yyWwwd} {
+test clock-18.1 {seconds take precedence over yyWwwd} valid_off {
     list [clock scan {0 00W014} -format {%s %gW%V%u} -gmt true] \
 	 [clock scan {00W014 0} -format {%gW%V%u %s} -gmt true]
 } {0 0}
@@ -24108,11 +24329,11 @@ test clock-18.2 {julian day takes precedence over yyddd} {
     list [clock scan {2440588 00W014} -format {%J %gW%V%u} -gmt true] \
 	 [clock scan {00W014 2440588} -format {%gW%V%u %J} -gmt true]
 } {0 0}
-test clock-18.3 {yyWwwd precedence below yyyymmdd} {
+test clock-18.3 {yyWwwd precedence below yyyymmdd} valid_off {
     list [clock scan {19700101 00W014} -format {%Y%m%d %gW%V%u} -gmt true] \
 	[clock scan {00W014 19700101} -format {%gW%V%u %Y%m%d} -gmt true]
 } {0 0}
-test clock-18.4 {yyWwwd precedence below yyyyddd} {
+test clock-18.4 {yyWwwd precedence below yyyyddd} valid_off {
     list [clock scan {1970001 00W014} -format {%Y%j %gW%V%u} -gmt true] \
 	[clock scan {00W014 1970001} -format {%gW%V%u %Y%j} -gmt true]
 } {0 0}
@@ -25924,42 +26145,48 @@ test clock-26.48 {parse naked day of week} {
 } 1009670400
 # END testcases26
 
-test clock-27.1 {seconds take precedence over naked weekday} {
+if {!$valid_mode} {
+    set res {-result {0 0}}
+} else {
+    set res {-returnCodes error -result "unable to convert input string: invalid day of week"}
+}
+test clock-27.1 {seconds take precedence over naked weekday} -body {
     list [clock scan {0 1} -format {%s %u} -gmt true -base 0] \
 	 [clock scan {1 0} -format {%u %s} -gmt true -base 0]
-} {0 0}
-test clock-27.2 {julian day takes precedence over naked weekday} {
+} {*}$res
+test clock-27.2 {julian day takes precedence over naked weekday} -body {
     list [clock scan {2440588 1} -format {%J %u} -gmt true -base 0] \
 	 [clock scan {1 2440588} -format {%u %J} -gmt true -base 0]
-} {0 0}
-test clock-27.3 {yyyymmdd over naked weekday} {
+} {*}$res
+test clock-27.3 {yyyymmdd over naked weekday} -body {
     list [clock scan {19700101 1} -format {%Y%m%d %u} -gmt true -base 0] \
 	[clock scan {1 19700101} -format {%u %Y%m%d} -gmt true -base 0]
-} {0 0}
-test clock-27.4 {yyyyddd over naked weekday} {
+} {*}$res
+test clock-27.4 {yyyyddd over naked weekday} -body {
     list [clock scan {1970001 1} -format {%Y%j %u} -gmt true -base 0] \
 	[clock scan {1 1970001} -format {%u %Y%j} -gmt true -base 0]
-} {0 0}
-test clock-27.5 {yymmdd over naked weekday} {
+} {*}$res
+test clock-27.5 {yymmdd over naked weekday} -body {
     list [clock scan {700101 1} -format {%y%m%d %u} -gmt true -base 0] \
 	[clock scan {1 700101} -format {%u %y%m%d} -gmt true -base 0]
-} {0 0}
-test clock-27.6 {yyddd over naked weekday} {
+} {*}$res
+test clock-27.6 {yyddd over naked weekday} -body {
     list [clock scan {70001 1} -format {%y%j %u} -gmt true -base 0] \
 	[clock scan {1 70001} -format {%u %y%j} -gmt true -base 0]
-} {0 0}
-test clock-27.7 {mmdd over naked weekday} {
+} {*}$res
+test clock-27.7 {mmdd over naked weekday} -body {
     list [clock scan {0101 1} -format {%m%d %u} -gmt true -base 0] \
 	[clock scan {1 0101} -format {%u %m%d} -gmt true -base 0]
-} {0 0}
-test clock-27.8 {ddd over naked weekday} {
+} {*}$res
+test clock-27.8 {ddd over naked weekday} -body {
     list [clock scan {001 1} -format {%j %u} -gmt true -base 0] \
 	[clock scan {1 001} -format {%u %j} -gmt true -base 0]
-} {0 0}
-test clock-27.9 {naked day of month over naked weekday} {
+} {*}$res
+test clock-27.9 {naked day of month over naked weekday} -body {
     list [clock scan {01 1} -format {%d %u} -gmt true -base 0] \
 	[clock scan {1 01} -format {%u %d} -gmt true -base 0]
-} {0 0}
+} {*}$res
+unset -nocomplain res
 
 test clock-28.1 {base date} {
     clock scan {} -format {} -gmt true -base 1234567890
@@ -34969,8 +35196,35 @@ test clock-29.1800 {time parsing} {
         -gmt true -locale en_US_roman \
         -format {%J %Ol:%OM:%OS %P}
 } 86399
+
+test clock-29.1811 {parsing of several localized formats} {
+    set res {}
+    foreach loc {en de fr} {
+	foreach fmt {"%x %X" "%X %x"} {
+	    lappend res [clock scan \
+	      [clock format 0 -format $fmt -locale $loc -gmt 1] \
+	      -format $fmt -locale $loc -gmt 1]
+	}
+    }
+    set res
+} [lrepeat 6 0]
+test clock-29.1812 {parsing of several localized formats} {
+    set res {}
+    foreach loc {en de fr} {
+	foreach fmt {"%a %d-%m-%Y" "%a %b %x-%X" "%a, %x %X" "%b, %x %X"} {
+	    lappend res [clock scan \
+	      [clock format 0 -format $fmt -locale $loc -gmt 1] \
+	      -format $fmt -locale $loc -gmt 1]
+	}
+    }
+    set res
+} [lrepeat 12 0]
 # END testcases29
 
+
+# BEGIN testcases30
+
+# Test [clock add]
 test clock-30.1 {clock add years} {
     set t [clock scan 2000-01-01 -format %Y-%m-%d -timezone :UTC]
     set f [clock add $t 1 year -timezone :UTC]
@@ -35197,6 +35451,57 @@ test clock-30.25 {clock add seconds at DST conversion} {
     set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} \
 		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
 } {2004-10-31 01:00:00 -0500}
+test clock-30.26 {clock add weekdays} {
+    set t [clock scan {2013-11-20}] ;# Wednesday
+    set f1 [clock add $t 3 weekdays]
+    set x1 [clock format $f1 -format {%Y-%m-%d}]
+} {2013-11-25}
+test clock-30.27 {clock add weekdays starting on Saturday} {
+    set t [clock scan {2013-11-23}] ;# Saturday
+    set f1 [clock add $t 1 weekday]
+    set x1 [clock format $f1 -format {%Y-%m-%d}]
+} {2013-11-25}
+test clock-30.28 {clock add weekdays starting on Sunday} {
+    set t [clock scan {2013-11-24}] ;# Sunday
+    set f1 [clock add $t 1 weekday]
+    set x1 [clock format $f1 -format {%Y-%m-%d}]
+} {2013-11-25}
+test clock-30.29 {clock add 0 weekdays starting on a weekend} {
+    set t [clock scan {2016-02-27}] ;# Saturday
+    set f1 [clock add $t 0 weekdays]
+    set x1 [clock format $f1 -format {%Y-%m-%d}]
+} {2016-02-27}
+test clock-30.30 {clock add weekdays and back} -body {
+    set n [clock seconds]
+    # we start on each day of the week
+    for {set i 0} {$i < 7} {incr i} {
+        set start  [clock add $n $i days]
+        set startu [clock format $start -format %u]
+        # add 0 - 100 weekdays
+        for {set j 0} {$j < 100} {incr j} {
+            set forth [clock add $start $j weekdays]
+            set back  [clock add $forth -$j weekdays]
+            # If $s was a weekday or $j was 0, $b must be the same day.
+            # Otherwise, $b must be the immediately preceeding Friday
+            set fail 0
+            if {$j == 0 || $startu < 6} {
+                if {$start != $back} { set fail 1}
+            } else {
+                set friday [clock add $start -[expr {$startu % 5}] days]
+                if {$friday != $back} { set fail 1 }
+            }
+            if {$fail} {
+                set sdate [clock format $start -format {%Y-%m-%d}]
+                set bdate [clock format $back  -format {%Y-%m-%d}]
+                return "$sdate + $j - $j := $bdate"
+            }
+        }
+    }
+    return "OK"
+} -result {OK}
+
+# END testcases30
+
 
 test clock-31.1 {system locale} \
     -constraints win \
@@ -35550,9 +35855,10 @@ test clock-33.11a {clock test, millis align with micros} {
 } {1}
 
 # clock scan
+set syntax "clock scan string ?-base seconds? ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE? ?-validate boolean?"
 test clock-34.1 {clock scan tests} {
     list [catch {clock scan} msg] $msg
-} {1 {wrong # args: should be "clock scan string ?-base seconds? ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"}}
+} [subst {1 {wrong # args: should be "$syntax"}}]
 test clock-34.2 {clock scan tests} {*}{
     -body {clock scan "bad-string"}
     -returnCodes error
@@ -35586,7 +35892,7 @@ test clock-34.8 {clock scan tests} {
 } {Oct 23,1992 15:00 GMT}
 test clock-34.9 {clock scan tests} {
     list [catch {clock scan "Jan 12" -bad arg} msg] $msg
-} {1 {bad option "-bad", must be -base, -format, -gmt, -locale or -timezone}}
+} [subst {1 {bad option "-bad": should be "$syntax"}}]
 # The following two two tests test the two year date policy
 test clock-34.10 {clock scan tests} {
     set time [clock scan "1/1/71" -gmt true]
@@ -35596,7 +35902,15 @@ test clock-34.11 {clock scan tests} {
     set time [clock scan "1/1/37" -gmt true]
     clock format $time -format {%b %d,%Y %H:%M GMT} -gmt true
 } {Jan 01,2037 00:00 GMT}
-
+test clock-34.11.1 {clock scan tests: same century switch} {
+    set times [clock scan "1/1/37" -gmt true]
+} [clock scan "1/1/37" -format "%m/%d/%y" -gmt true]
+test clock-34.11.2 {clock scan tests: same century switch} {
+    set times [clock scan "1/1/38" -gmt true]
+} [clock scan "1/1/38" -format "%m/%d/%y" -gmt true]
+test clock-34.11.3 {clock scan tests: same century switch} {
+    set times [clock scan "1/1/39" -gmt true]
+} [clock scan "1/1/39" -format "%m/%d/%y" -gmt true]
 test clock-34.12 {clock scan, relative times} {
     set time [clock scan "Oct 23, 1992 -1 day"]
     clock format $time -format {%b %d, %Y}
@@ -35625,6 +35939,100 @@ test clock-34.18 {clock scan, ISO 8601 point in time format} {
     set time [clock scan "19921023T000000"]
     clock format $time -format {%b %d, %Y %H:%M:%S}
 } "Oct 23, 1992 00:00:00"
+test clock-34.20.1 {clock scan tests (-TZ)} {
+    set time [clock scan "31 Jan 14 23:59:59 -0100"]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Feb 01,2014 00:59:59 GMT}
+test clock-34.20.2 {clock scan tests (+TZ)} {
+    set time [clock scan "31 Jan 14 23:59:59 +0100"]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jan 31,2014 22:59:59 GMT}
+test clock-34.20.3 {clock scan tests (-TZ)} {
+    set time [clock scan "23:59:59 -0100" -base 0]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jan 02,1970 00:59:59 GMT}
+test clock-34.20.4 {clock scan tests (+TZ)} {
+    set time [clock scan "23:59:59 +0100" -base 0]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jan 01,1970 22:59:59 GMT}
+test clock-34.20.5 {clock scan tests (TZ)} {
+    set time [clock scan "Mon, 30 Jun 2014 23:59:59 CEST"]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jun 30,2014 21:59:59 GMT}
+test clock-34.20.6 {clock scan tests (TZ)} {
+    set time [clock scan "Fri, 31 Jan 2014 23:59:59 CET"]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jan 31,2014 22:59:59 GMT}
+test clock-34.20.7 {clock scan tests (relspec, day unit not TZ)} {
+    set time [clock scan "23:59:59 +15 day" -base 2000000 -gmt true]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Feb 08,1970 23:59:59 GMT}
+test clock-34.20.8 {clock scan tests (relspec, day unit not TZ)} {
+    set time [clock scan "23:59:59 -15 day" -base 2000000 -gmt true]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jan 09,1970 23:59:59 GMT}
+test clock-34.20.9 {clock scan tests (merid and TZ)} {
+    set time [clock scan "10:59 pm CET" -base 2000000]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jan 24,1970 21:59:00 GMT}
+test clock-34.20.10 {clock scan tests (merid and TZ)} {
+    set time [clock scan "10:59 pm +0100" -base 2000000]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jan 24,1970 21:59:00 GMT}
+test clock-34.20.11 {clock scan tests (complex TZ)} {
+    list [clock scan "GMT+1000" -base 100000000 -gmt 1] \
+	 [clock scan "GMT+10" -base 100000000 -gmt 1] \
+	 [clock scan "+1000" -base 100000000 -gmt 1]
+} [lrepeat 3 99964000]
+test clock-34.20.12 {clock scan tests (complex TZ)} {
+    list [clock scan "GMT-1000" -base 100000000 -gmt 1] \
+	 [clock scan "GMT-10" -base 100000000 -gmt 1] \
+	 [clock scan "-1000" -base 100000000 -gmt 1]
+} [lrepeat 3 100036000]
+test clock-34.20.13 {clock scan tests (complex TZ)} {
+    list [clock scan "GMT-0000" -base 100000000 -gmt 1] \
+	 [clock scan "GMT+0000" -base 100000000 -gmt 1] \
+	 [clock scan "GMT" -base 100000000 -gmt 1]
+} [lrepeat 3 100000000]
+test clock-34.20.14 {clock scan tests (complex TZ)} {
+    list [clock scan "CET+1000" -base 100000000 -gmt 1] \
+	 [clock scan "CET-1000" -base 100000000 -gmt 1]
+} {99960400 100032400}
+test clock-34.20.15 {clock scan tests (complex TZ)} {
+    list [clock scan "CET-0000" -base 100000000 -gmt 1] \
+	 [clock scan "CET+0000" -base 100000000 -gmt 1] \
+	 [clock scan "CET" -base 100000000 -gmt 1]
+} [lrepeat 3 99996400]
+test clock-34.20.16 {clock scan tests (complex TZ)} {
+    list [clock format [clock scan "00:00 GMT+1000" -base 100000000 -gmt 1] -gmt 1] \
+	 [clock format [clock scan "00:00 GMT+10" -base 100000000 -gmt 1] -gmt 1] \
+	 [clock format [clock scan "00:00 +1000" -base 100000000 -gmt 1] -gmt 1] \
+	 [clock format [clock scan "00:00" -base 100000000 -timezone +1000] -gmt 1]
+} [lrepeat 4 "Fri Mar 02 14:00:00 GMT 1973"]
+test clock-34.20.17 {clock scan tests (complex TZ)} {
+    list [clock format [clock scan "00:00 GMT+0100" -base 100000000 -gmt 1] -gmt 1] \
+	 [clock format [clock scan "00:00 GMT+01" -base 100000000 -gmt 1] -gmt 1] \
+	 [clock format [clock scan "00:00 GMT+1" -base 100000000 -gmt 1] -gmt 1] \
+	 [clock format [clock scan "00:00" -base 100000000 -timezone +0100] -gmt 1]
+} [lrepeat 4 "Fri Mar 02 23:00:00 GMT 1973"]
+test clock-34.20.18 {clock scan tests (no TZ)} {
+    list [clock scan "1000days" -base 100000000 -gmt 1] \
+	 [clock scan "1000 days" -base 100000000 -gmt 1] \
+	 [clock scan "+1000days" -base 100000000 -gmt 1] \
+	 [clock scan "+1000 days" -base 100000000 -gmt 1] \
+	 [clock scan "GMT +1000 days" -base 100000000 -gmt 1] \
+	 [clock scan "00:00 GMT +1000 days" -base 100000000 -gmt 1]
+} [lrepeat 6 186364800]
+test clock-34.20.19 {clock scan tests (no TZ)} {
+    list [clock scan "-1000days" -base 100000000 -gmt 1] \
+	 [clock scan "-1000 days" -base 100000000 -gmt 1] \
+	 [clock scan "GMT -1000days" -base 100000000 -gmt 1] \
+	 [clock scan "00:00 GMT -1000 days" -base 100000000 -gmt 1] \
+} [lrepeat 4 13564800]
+test clock-34.20.20 {clock scan tests (TZ, TZ + 1day)} {
+    clock scan "00:00 GMT+1000 day" -base 100000000 -gmt 1
+} 100015200
+
 
 # CLOCK SCAN REAL TESTS
 # We use 5am PST, 31-12-1999 as the base for these scans because irrespective
@@ -35719,6 +36127,27 @@ test clock-34.40 {clock scan, next day of week} {
     clock format [clock scan "next thursday" -base [clock scan 20000112]] \
 	    -format {%b %d, %Y}
 } "Jan 20, 2000"
+test clock-34.40.1 {clock scan, ordinal month after relative date} {
+    # This will fail without the bug fix (clock.tcl), as still missing
+    # month/julian day conversion before ordinal month increment
+    clock format [ \
+        clock scan "5 years 18 months 387 days" -base 0 -gmt 1
+    ] -format {%a, %b %d, %Y} -gmt 1 -locale en_US_roman
+} "Sat, Jul 23, 1977"
+test clock-34.40.2 {clock scan, ordinal month after relative date} {
+    # This will fail without the bug fix (clock.tcl), as still missing
+    # month/julian day conversion before ordinal month increment
+    clock format [ \
+        clock scan "5 years 18 months 387 days next Jan" -base 0 -gmt 1
+    ] -format {%a, %b %d, %Y} -gmt 1 -locale en_US_roman
+} "Mon, Jan 23, 1978"
+test clock-34.40.3 {clock scan, day of week after ordinal date} {
+    # This will fail without the bug fix (clock.tcl), because the relative
+    # week day should be applied after whole date conversion
+    clock format [ \
+        clock scan "5 years 18 months 387 days next January Fri" -base 0 -gmt 1
+    ] -format {%a, %b %d, %Y} -gmt 1 -locale en_US_roman
+} "Fri, Jan 27, 1978"
 
 # weekday specification and base.
 test clock-34.41 {2nd monday in november} {
@@ -35812,7 +36241,94 @@ test clock-34.52 {more than one ordinal month} {*}{
     -result {unable to convert date-time string "next January next March": more than one ordinal month in string}
 }
 
+test clock-34.53.1 {relative from base, date switch} {
+    set base [clock scan "12/31/2016 23:59:59" -gmt 1]
+    clock format [clock scan "+1 second" \
+       -base $base -gmt 1] -gmt 1 -format {%Y-%m-%d %H:%M:%S}
+} {2017-01-01 00:00:00}
 
+test clock-34.53.2 {relative time, daylight switch} {
+    set base [clock scan "03/27/2016" -timezone CET]
+    set res {}
+    lappend res [clock format [clock scan "+1 hour" \
+       -base $base -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+    lappend res [clock format [clock scan "+2 hour" \
+       -base $base -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+} {{2016-03-27 01:00:00 CET} {2016-03-27 03:00:00 CEST}}
+
+test clock-34.53.3 {relative time with day increment / daylight switch} {
+    set base [clock scan "03/27/2016" -timezone CET]
+    set res {}
+    lappend res [clock format [clock scan "+5 day +25 hour" \
+       -base [expr {$base - 6*24*60*60}] -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+    lappend res [clock format [clock scan "+5 day +26 hour" \
+       -base [expr {$base - 6*24*60*60}] -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+} {{2016-03-27 01:00:00 CET} {2016-03-27 03:00:00 CEST}}
+
+test clock-34.53.4 {relative time with month & day increment / daylight switch} {
+    set base [clock scan "03/27/2016" -timezone CET]
+    set res {}
+    lappend res [clock format [clock scan "next Mar +5 day +25 hour" \
+       -base [expr {$base - 35*24*60*60}] -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+    lappend res [clock format [clock scan "next Mar +5 day +26 hour" \
+       -base [expr {$base - 35*24*60*60}] -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+} {{2016-03-27 01:00:00 CET} {2016-03-27 03:00:00 CEST}}
+
+test clock-34.54.1 {check date in DST-hole: daylight switch CET -> CEST} {
+    set res {}
+    # forwards
+    set base 1459033200
+    for {set i 0} {$i <= 3} {incr i} {
+    	set d [clock scan "+$i hour" -base $base -timezone CET]
+    	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+    }
+    lappend res "#--"
+    # backwards
+    set base 1459044000
+    for {set i 0} {$i <= 3} {incr i} {
+    	set d [clock scan "-$i hour" -base $base -timezone CET]
+    	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+    }
+    set res
+} [split [regsub -all {^\n|\n$} {
+1459033200 = 2016-03-27 00:00:00 CET
+1459036800 = 2016-03-27 01:00:00 CET
+1459040400 = 2016-03-27 03:00:00 CEST
+1459044000 = 2016-03-27 04:00:00 CEST
+#--
+1459044000 = 2016-03-27 04:00:00 CEST
+1459040400 = 2016-03-27 03:00:00 CEST
+1459036800 = 2016-03-27 01:00:00 CET
+1459033200 = 2016-03-27 00:00:00 CET
+} {}] \n]
+
+test clock-34.54.2 {check date in DST-hole: daylight switch CEST -> CET} {
+    set res {}
+    # forwards
+    set base 1477782000
+    for {set i 0} {$i <= 3} {incr i} {
+    	set d [clock scan "+$i hour" -base $base -timezone CET]
+    	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+    }
+    lappend res "#--"
+    # backwards
+    set base 1477792800
+    for {set i 0} {$i <= 3} {incr i} {
+    	set d [clock scan "-$i hour" -base $base -timezone CET]
+    	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+    }
+    set res
+} [split [regsub -all {^\n|\n$} {
+1477782000 = 2016-10-30 01:00:00 CEST
+1477785600 = 2016-10-30 02:00:00 CEST
+1477789200 = 2016-10-30 02:00:00 CET
+1477792800 = 2016-10-30 03:00:00 CET
+#--
+1477792800 = 2016-10-30 03:00:00 CET
+1477789200 = 2016-10-30 02:00:00 CET
+1477785600 = 2016-10-30 02:00:00 CEST
+1477782000 = 2016-10-30 01:00:00 CEST
+} {}] \n]
 
 # clock seconds
 test clock-35.1 {clock seconds tests} {
@@ -35844,13 +36360,33 @@ test clock-36.3 {clock scan next monthname} {
 } "05.2001"
 
 test clock-37.1 {%s gmt testing} {
-    set s [clock seconds]
+    set s [clock scan "2017-05-10 09:00:00" -gmt 1]
     set a [clock format $s -format %s -gmt 0]
     set b [clock format $s -format %s -gmt 1]
+    set c [clock scan $s -format %s -gmt 0]
+    set d [clock scan $s -format %s -gmt 1]
     # %s, being the difference between local and Greenwich, does not
     # depend on the time zone.
-    set c [expr {$b-$a}]
-} {0}
+    list [expr {$b-$a}] [expr {$d-$c}]
+} {0 0}
+test clock-37.2 {%Es gmt testing CET} {
+    set s [clock scan "2017-01-10 09:00:00" -gmt 1]
+    set a [clock format $s -format %Es -timezone CET]
+    set b [clock format $s -format %Es -gmt 1]
+    set c [clock scan $s -format %Es -timezone CET]
+    set d [clock scan $s -format %Es -gmt 1]
+    # %Es depend on the time zone (local seconds instead of posix seconds).
+    list [expr {$b-$a}] [expr {$d-$c}]
+} {-3600 3600}
+test clock-37.3 {%Es gmt testing CEST} {
+    set s [clock scan "2017-05-10 09:00:00" -gmt 1]
+    set a [clock format $s -format %Es -timezone CET]
+    set b [clock format $s -format %Es -gmt 1]
+    set c [clock scan $s -format %Es -timezone CET]
+    set d [clock scan $s -format %Es -gmt 1]
+    # %Es depend on the time zone (local seconds instead of posix seconds).
+    list [expr {$b-$a}] [expr {$d-$c}]
+} {-7200 7200}
 
 test clock-38.1 {regression - convertUTCToLocalViaC - east of Greenwich} \
     -setup {
@@ -35982,23 +36518,178 @@ test clock-45.1 {regression test - time zone containing only two digits} \
     } \
     -result 482134530
 
-test clock-46.1 {regression test - month zero} \
+test clock-46.1 {regression test - month zero} -constraints valid_off \
     -body {
 	clock scan 2004-00-00 -format %Y-%m-%d
     } -result [clock scan 2003-11-30 -format %Y-%m-%d]
-test clock-46.2 {regression test - month zero} \
+test clock-46.2 {regression test - month zero} -constraints valid_off \
     -body {
 	clock scan 20040000
     } -result [clock scan 2003-11-30 -format %Y-%m-%d]
-test clock-46.3 {regression test - month thirteen} \
+test clock-46.3 {regression test - month thirteen} -constraints valid_off \
     -body {
 	clock scan 2004-13-01 -format %Y-%m-%d
     } -result [clock scan 2005-01-01 -format %Y-%m-%d]
-test clock-46.4 {regression test - month thirteen} \
+test clock-46.4 {regression test - month thirteen} -constraints valid_off \
     -body {
 	clock scan 20041301
     } -result [clock scan 2005-01-01 -format %Y-%m-%d]
 
+test clock-46.5 {regression test - good time} \
+    -body {
+	# 12:01 apm are valid input strings...
+	list [clock scan "12:01 am" -base 0 -gmt 1] \
+	     [clock scan "12:01 pm" -base 0 -gmt 1]
+    } -result {60 43260}
+test clock-46.6 {freescan: regression test - bad time} -constraints valid_off \
+    -body {
+	# 13:00 am/pm are invalid input strings...
+	list [clock scan "13:00 am" -base 0 -gmt 1] \
+	     [clock scan "13:00 pm" -base 0 -gmt 1]
+    } -result {-1 -1}
+
+# test without and with relative offsets:
+foreach {idx relstr} {"" "" "+rel" "+ 15 month + 40 days + 30 hours + 80 minutes +9999 seconds"} {
+test clock-46.10$idx {freescan: validation rules: invalid time} \
+    -body {
+	# 13:00 am/pm are invalid input strings...
+	list [catch {clock scan "13:00 am$relstr" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "13:00 pm$relstr" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: invalid time (hour)} 1 {unable to convert input string: invalid time (hour)}}
+test clock-46.11$idx {freescan: validation rules: invalid time} \
+    -body {
+	# invalid minutes in input strings...
+	list [catch {clock scan "23:70$relstr" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "11:80 pm$relstr" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: invalid time (minutes)} 1 {unable to convert input string: invalid time (minutes)}}
+test clock-46.12$idx {freescan: validation rules: invalid time} \
+    -body {
+	# invalid seconds in input strings...
+	list [catch {clock scan "23:00:70$relstr" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "11:00:80 pm$relstr" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: invalid time} 1 {unable to convert input string: invalid time}}
+test clock-46.13$idx {freescan: validation rules: invalid day} \
+    -body {
+	list [catch {clock scan "29 Feb 2017$relstr" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "30 Feb 2016$relstr" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: invalid day} 1 {unable to convert input string: invalid day}}
+test clock-46.14$idx {freescan: validation rules: invalid day} \
+    -body {
+	list [catch {clock scan "0 Feb 2017$relstr" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "00 Feb 2017$relstr" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: invalid day} 1 {unable to convert input string: invalid day}}
+test clock-46.15$idx {freescan: validation rules: invalid month} \
+    -body {
+	list [catch {clock scan "13/13/2017$relstr" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "00/00/2017$relstr" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: invalid month} 1 {unable to convert input string: invalid month}}
+test clock-46.16$idx {freescan: validation rules: invalid day of week} \
+    -body {
+	list [catch {clock scan "Sat Jan 01 00:00:00 1970$relstr" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "Thu Jan 03 00:00:00 1970$relstr" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: invalid day of week} 1 {unable to convert input string: invalid day of week}}
+test clock-46.17$idx {scan: validation rules: invalid year} -setup {
+	set orgcfg [list -min-year [clock configure -min-year] -max-year [clock configure -max-year] \
+	     -year-century [clock configure -year-century] -century-switch [clock configure -century-switch]]
+	clock configure -min-year 2000 -max-year 2100 -year-century 2000 -century-switch 38
+    } -body {
+	list [catch {clock scan "70-01-01$relstr" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "1870-01-01$relstr" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "9570-01-01$relstr" -valid 1 -gmt 1} msg] $msg \
+    } -result [lrepeat 3 1 {unable to convert input string: invalid year}] -cleanup {
+	clock configure {*}$orgcfg
+	unset -nocomplain orgcfg
+    }
+
+}; # foreach
+unset -nocomplain idx relstr
+
+test clock-46.20 {scan: validation rules: invalid time} \
+    -body {
+	# 13:00 am/pm are invalid input strings...
+	list [catch {clock scan "13:00 am" -format "%H:%M %p" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "13:00 pm" -format "%H:%M %p" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: invalid time (hour)} 1 {unable to convert input string: invalid time (hour)}}
+test clock-46.21 {scan: validation rules: invalid time} \
+    -body {
+	# invalid minutes in input strings...
+	list [catch {clock scan "23:70" -format "%H:%M" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "11:80 pm" -format "%H:%M %p" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: invalid time (minutes)} 1 {unable to convert input string: invalid time (minutes)}}
+test clock-46.22 {scan: validation rules: invalid time} \
+    -body {
+	# invalid seconds in input strings...
+	list [catch {clock scan "23:00:70" -format "%H:%M:%S" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "11:00:80 pm" -format "%H:%M:%S %p" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: invalid time} 1 {unable to convert input string: invalid time}}
+test clock-46.23 {scan: validation rules: invalid day} \
+    -body {
+	list [catch {clock scan "29 Feb 2017" -format "%d %b %Y" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "30 Feb 2016" -format "%d %b %Y" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: invalid day} 1 {unable to convert input string: invalid day}}
+test clock-46.24 {scan: validation rules: invalid day} \
+    -body {
+	list [catch {clock scan "0 Feb 2017" -format "%d %b %Y" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "00 Feb 2017" -format "%d %b %Y" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: invalid day} 1 {unable to convert input string: invalid day}}
+test clock-46.25 {scan: validation rules: invalid month} \
+    -body {
+	list [catch {clock scan "13/13/2017" -format "%m/%d/%Y" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "00/00/2017" -format "%m/%d/%Y" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: invalid month} 1 {unable to convert input string: invalid month}}
+test clock-46.26 {scan: validation rules: ambiguous day} \
+    -body {
+	list [catch {clock scan "1970-01-01--002" -format "%Y-%m-%d--%j" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "70-01-01--002" -format "%y-%m-%d--%j" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: ambiguous day} 1 {unable to convert input string: ambiguous day}}
+test clock-46.27 {scan: validation rules: ambiguous year} \
+    -body {
+	list [catch {clock scan "19700101 00W014" -format "%Y%m%d %gW%V%u" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "1970001 00W014" -format "%Y%j %gW%V%u" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: ambiguous year} 1 {unable to convert input string: ambiguous year}}
+test clock-46.28 {scan: validation rules: invalid day of week} \
+    -body {
+	list [catch {clock scan "Sat Jan 01 00:00:00 1970" -format "%a %b %d %H:%M:%S %Y" -valid 1 -gmt 1} msg] $msg
+    } -result {1 {unable to convert input string: invalid day of week}}
+test clock-46.29-1 {scan: validation rules: invalid day of year} \
+    -body {
+	list [catch {clock scan "000-2017" -format "%j-%Y" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "366-2017" -format "%j-%Y" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "000-2017" -format "%j-%G" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "366-2017" -format "%j-%G" -valid 1 -gmt 1} msg] $msg
+    } -result [lrepeat 4 1 {unable to convert input string: invalid day of year}]
+test clock-46.29-2 {scan: validation rules: valid day of leap/not leap year} \
+    -body {
+	list [clock format [clock scan "366-2016" -format "%j-%Y" -valid 1 -gmt 1] -format "%d-%m-%Y"] \
+	     [clock format [clock scan "365-2017" -format "%j-%Y" -valid 1 -gmt 1] -format "%d-%m-%Y"] \
+	     [clock format [clock scan "366-2016" -format "%j-%G" -valid 1 -gmt 1] -format "%d-%m-%Y"] \
+	     [clock format [clock scan "365-2017" -format "%j-%G" -valid 1 -gmt 1] -format "%d-%m-%Y"]
+    } -result {31-12-2016 31-12-2017 31-12-2016 31-12-2017}
+test clock-46.30 {scan: validation rules: invalid year} -setup {
+	set orgcfg [list -min-year [clock configure -min-year] -max-year [clock configure -max-year] \
+	     -year-century [clock configure -year-century] -century-switch [clock configure -century-switch]]
+	clock configure -min-year 2000 -max-year 2100 -year-century 2000 -century-switch 38
+    } -body {
+	list [catch {clock scan "01-01-70" -format "%d-%m-%y" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "01-01-1870" -format "%d-%m-%C%y" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "01-01-1970" -format "%d-%m-%Y" -valid 1 -gmt 1} msg] $msg \
+    } -result [lrepeat 3 1 {unable to convert input string: invalid year}] -cleanup {
+	clock configure {*}$orgcfg
+	unset -nocomplain orgcfg
+    }
+test clock-46.31 {scan: validation rules: invalid iso year} -setup {
+	set orgcfg [list -min-year [clock configure -min-year] -max-year [clock configure -max-year] \
+	     -year-century [clock configure -year-century] -century-switch [clock configure -century-switch]]
+	clock configure -min-year 2000 -max-year 2100 -year-century 2000 -century-switch 38
+    } -body {
+	list [catch {clock scan "01-01-70" -format "%d-%m-%g" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "01-01-9870" -format "%d-%m-%C%g" -valid 1 -gmt 1} msg] $msg \
+	     [catch {clock scan "01-01-9870" -format "%d-%m-%G" -valid 1 -gmt 1} msg] $msg \
+    } -result [lrepeat 3 1 {unable to convert input string: invalid iso year}] -cleanup {
+	clock configure {*}$orgcfg
+	unset -nocomplain orgcfg
+    }
+    
 test clock-47.1 {regression test - four-digit time} {
     clock scan 0012
 } [clock scan 0012 -format %H%M]
@@ -36837,12 +37528,19 @@ test clock-61.2 {overflow of a wide integer on output} {*}{
     -result {integer value too large to represent}
     -returnCodes error
 }
-test clock-61.3 {near-miss overflow of a wide integer on output} {
-    clock format 0x7fffffffffffffff -format %s -gmt true
-} [expr 0x7fffffffffffffff]
-test clock-61.4 {near-miss overflow of a wide integer on output} {
-    clock format -0x8000000000000000 -format %s -gmt true
-} [expr -0x8000000000000000]
+test clock-61.3 {near-miss overflow of a wide integer on output, very large datetime (upper range)} {
+    clock format 0x00F0000000000000 -format "%s %Y %EE" -gmt true
+} [list [expr 0x00F0000000000000] 2140702833 C.E.]
+test clock-61.4 {near-miss overflow of a wide integer on output, very small datetime (lower range)} {
+    clock format -0x00F0000000000000 -format "%s %Y %EE" -gmt true
+} [list [expr -0x00F0000000000000] 2140654939 B.C.E.]
+
+test clock-61.5 {overflow of possible date-time (upper range)} -body {
+    clock format 0x00F0000000000001 -gmt true
+} -returnCodes error -result {integer value too large to represent}
+test clock-61.6 {overflow of possible date-time (lower range)} -body {
+    clock format -0x00F0000000000001 -gmt true
+} -returnCodes error -result {integer value too large to represent}
 
 test clock-62.1 {Bug 1902423} {*}{
     -setup {::tcl::clock::ClearCaches}
@@ -36943,9 +37641,12 @@ test clock-67.5 {Change scan %x output on global locale change [Bug 4a0c163d24]}
 
 # cleanup
 
-namespace delete ::testClock
 ::tcl::clock::ClearCaches
+rename test {}
+rename __test test
 ::tcltest::cleanupTests
+namespace delete ::testClock
+
 return
 
 # Local Variables:
