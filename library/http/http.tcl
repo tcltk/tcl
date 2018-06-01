@@ -264,8 +264,10 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
        || ([info exists state(-keepalive)] && !$state(-keepalive))
        || ([info exists state(connection)] && ($state(connection) eq "close"))
     } {
-	CloseSocket $state(sock) $token
 	set closeQueue 1
+	set connId $state(socketinfo)
+	set sock $state(sock)
+	CloseSocket $state(sock) $token
     } elseif {
 	  ([info exists state(-keepalive)] && $state(-keepalive))
        && ([info exists state(connection)] && ($state(connection) ne "close"))
@@ -286,11 +288,10 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
     }
 
     if {    $closeQueue
-	 && [info exists state(socketinfo)]
-	 && [info exists socketMapping($state(socketinfo))]
-	 && ($socketMapping($state(socketinfo)) eq $state(sock))
+	 && [info exists socketMapping($connId)]
+	 && ($socketMapping($connId) eq $sock)
     } {
-	    http::CloseQueuedQueries $state(socketinfo) $token
+	http::CloseQueuedQueries $connId $token
     }
 
     return
