@@ -45,8 +45,6 @@ How To Compile And Install Tcl:
     refer to the autoconf documentation (not included here). Tcl's "configure"
     supports the following special switches in addition to the standard ones:
 
-	--enable-threads	If this switch is set, Tcl will compile itself
-				with multithreading support.
 	--disable-load		If this switch is specified then Tcl will
 				configure itself not to allow dynamic loading,
 				even if your system appears to support it.
