@@ -1151,6 +1151,10 @@ typedef struct CallFrame {
 				 * field contains an Object reference that has
 				 * been confirmed to refer to a class. Part of
 				 * TIP#257. */
+#define FRAME_IS_PRIVATE_DEFINE 0x10
+				/* Marks this frame as being used for private
+				 * declarations with [oo::define]. Usually
+				 * OR'd with FRAME_IS_OO_DEFINE. TIP#500. */
 
 /*
  * TIP #280
