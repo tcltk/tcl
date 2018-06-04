@@ -2202,7 +2202,7 @@ test oo-16.2 {OO: object introspection} -body {
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
 test oo-16.3 {OO: object introspection} -body {
     info object gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, class, definition, filters, forward, isa, methods, methodtype, mixins, namespace, variables, or vars}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, class, creationid, definition, filters, forward, isa, methods, methodtype, mixins, namespace, variables, or vars}
 test oo-16.4 {OO: object introspection} -setup {
     oo::class create meta { superclass oo::class }
     [meta create instance1] create instance2
@@ -2332,6 +2332,73 @@ test oo-16.14 {OO: object introspection: TIP #436} -setup {
 } -cleanup {
     meta destroy
 } -result {class {0 0} meta {0 0 0} type {0 0 0 0 0 0} mix {0 0 0 0 0 0}}
+test oo-16.15 {OO: object introspection: creationid #500} -setup {
+    oo::class create cls
+} -body {
+    info object creationid [cls new]
+} -cleanup {
+    cls destroy
+} -result {^\d+$} -match regexp
+test oo-16.16 {OO: object introspection: creationid #500} -setup {
+    oo::class create cls
+} -body {
+    set obj [cls new]
+    set id [info object creationid $obj]
+    rename $obj gorp
+    set id2 [info object creationid gorp]
+    list $id $id2
+} -cleanup {
+    cls destroy
+} -result {^(\d+) \1$} -match regexp
+test oo-16.17 {OO: object introspection: creationid #500} -body {
+    info object creationid nosuchobject
+} -returnCodes error -result {nosuchobject does not refer to an object}
+test oo-16.18 {OO: object introspection: creationid #500} -body {
+    info object creationid
+} -returnCodes error -result {wrong # args: should be "info object creationid objName"}
+test oo-16.18 {OO: object introspection: creationid #500} -body {
+    info object creationid oo::object gorp
+} -returnCodes error -result {wrong # args: should be "info object creationid objName"}
+test oo-16.19 {OO: object introspection: creationid #500} -setup {
+    oo::class create cls
+} -body {
+    set id1 [info object creationid [set o1 [cls new]]]
+    set id2 [info object creationid [set o2 [cls new]]]
+    if {$id1 == $id2} {
+	format "objects %s and %s have same creation id: %d" $o1 $o2 $id1
+    } else {
+	string cat not-equal
+    }
+} -cleanup {
+    cls destroy
+} -result not-equal
+test oo-16.20 {OO: object introspection: creationid #500} -setup {
+    oo::class create cls
+} -body {
+    set id1 [info object creationid [set o1 [cls new]]]
+    $o1 destroy
+    set id2 [info object creationid [set o2 [cls new]]]
+    if {$id1 == $id2} {
+	format "objects %s and %s have same creation id: %d" $o1 $o2 $id1
+    } else {
+	string cat not-equal
+    }
+} -cleanup {
+    cls destroy
+} -result not-equal
+test oo-16.21 {OO: object introspection: creationid #500} -setup {
+    oo::class create cls
+} -body {
+    set id1 [info object creationid [set o1 [cls new]]]
+    set id2 [info object creationid [set o2 [oo::copy $o1]]]
+    if {$id1 == $id2} {
+	format "objects %s and %s have same creation id: %d" $o1 $o2 $id1
+    } else {
+	string cat not-equal
+    }
+} -cleanup {
+    cls destroy
+} -result not-equal
 
 test oo-17.1 {OO: class introspection} -body {
     info class
@@ -4102,6 +4169,682 @@ test oo-36.10 {TIP #470: introspection within oo::define} -setup {
     Cls destroy
     catch {rename oo::objdefine::testself {}}
 } -result {{} {1 {this command may only be called from within the context of an ::oo::define or ::oo::objdefine command} 0 ::obj}}
+
+test oo-37.1 {TIP 500: private command propagates errors} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	private ::error "this is an error"
+    }
+} -cleanup {
+    cls destroy
+} -returnCodes error -result {this is an error}
+test oo-37.2 {TIP 500: private command propagates errors} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	private {
+	    ::error "this is an error"
+	}
+    }
+} -cleanup {
+    cls destroy
+} -returnCodes error -result {this is an error}
+test oo-37.3 {TIP 500: private command propagates errors} -setup {
+    oo::object create obj
+} -body {
+    oo::objdefine obj {
+	private ::error "this is an error"
+    }
+} -cleanup {
+    obj destroy
+} -returnCodes error -result {this is an error}
+test oo-37.4 {TIP 500: private command propagates errors} -setup {
+    oo::object create obj
+} -body {
+    oo::objdefine obj {
+	private {
+	    ::error "this is an error"
+	}
+    }
+} -cleanup {
+    obj destroy
+} -returnCodes error -result {this is an error}
+test oo-37.5 {TIP 500: private command can't be used outside definitions} -body {
+    oo::define::private error "xyz"
+} -returnCodes error -result {this command may only be called from within the context of an ::oo::define or ::oo::objdefine command}
+test oo-37.6 {TIP 500: private command can't be used outside definitions} -body {
+    oo::objdefine::private error "xyz"
+} -returnCodes error -result {this command may only be called from within the context of an ::oo::define or ::oo::objdefine command}
+
+test oo-38.1 {TIP 500: private variables don't cross-interfere with each other or normal ones} -setup {
+    oo::class create parent
+} -body {
+    oo::class create clsA {
+	superclass parent
+	private variable x
+	constructor {} {
+	    set x 1
+	}
+	method getA {} {
+	    return $x
+	}
+    }
+    oo::class create clsB {
+	superclass clsA
+	private {
+	    variable x
+	}
+	constructor {} {
+	    set x 2
+	    next
+	}
+	method getB {} {
+	    return $x
+	}
+    }
+    oo::class create clsC {
+	superclass clsB
+	variable x
+	constructor {} {
+	    set x 3
+	    next
+	}
+	method getC {} {
+	    return $x
+	}
+    }
+    clsC create obj
+    oo::objdefine obj {
+	private {
+	    variable x
+	}
+	method setup {} {
+	    set x 4
+	}
+	method getO {} {
+	    return $x
+	}
+    }
+    obj setup
+    list [obj getA] [obj getB] [obj getC] [obj getO] \
+	[lsort [string map [list [info object creationid clsA] CLASS-A \
+				[info object creationid clsB] CLASS-B \
+				[info object creationid obj] OBJ] \
+		    [info object vars obj]]]
+} -cleanup {
+    parent destroy
+} -result {1 2 3 4 {{CLASS-A : x} {CLASS-B : x} {OBJ : x} x}}
+test oo-38.2 {TIP 500: private variables introspection} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	private {
+	    variable x1
+	    variable x2
+	}
+	variable y1 y2
+    }
+    cls create obj
+    oo::objdefine obj {
+	private variable a1 a2
+	variable b1 b2
+    }
+    list [lsort [info class variables cls]] \
+	[lsort [info class variables cls -private]] \
+	[lsort [info object variables obj]] \
+	[lsort [info object variables obj -private]]
+} -cleanup {
+    parent destroy
+} -result {{y1 y2} {x1 x2} {b1 b2} {a1 a2}}
+test oo-38.3 {TIP 500: private variables and oo::object·varname} -setup {
+    oo::class create parent
+} -body {
+    oo::class create clsA {
+	superclass parent
+	private {
+	    variable x
+	}
+	method getx {} {
+	    set x 1
+	    my varname x
+	}
+	method readx {} {
+	    return $x
+	}
+    }
+    oo::class create clsB {
+	superclass clsA
+	variable x
+	method gety {} {
+	    set x 1
+	    my varname x
+	}
+	method ready {} {
+	    return $x
+	}
+    }
+    clsB create obj
+    set [obj getx] 2
+    set [obj gety] 3
+    list [obj readx] [obj ready]
+} -cleanup {
+    parent destroy
+} -result {2 3}
+test oo-38.4 {TIP 500: private variables introspection} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	private {
+	    variable x1 x2
+	}
+	variable y1 y2
+	constructor {} {
+	    variable z boo
+	    set x1 a
+	    set y1 c
+	}
+	method list {} {
+	    variable z
+	    set ok 1
+	    list [info locals] [lsort [info vars]] [info exist x2]
+	}
+    }
+    cls create obj
+    oo::objdefine obj {
+	private variable a1 a2
+	variable b1 b2
+	method init {} {
+	    # Because we don't have a constructor to do this setup for us
+	    set a1 p
+	    set b1 r
+	}
+	method list {} {
+	    variable z
+	    set yes 1
+	    list {*}[next] [info locals] [lsort [info vars]] [info exist a2]
+	}
+    }
+    obj init
+    obj list
+} -cleanup {
+    parent destroy
+} -result {ok {ok x1 x2 y1 y2 z} 0 yes {a1 a2 b1 b2 yes z} 0}
+test oo-38.5 {TIP 500: private variables and oo::object·variable} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls1 {
+	superclass parent
+	private variable x
+	method abc val {
+	    my variable x
+	    set x $val
+	}
+	method def val {
+	    my variable y
+	    set y $val
+	}
+	method get1 {} {
+	    my variable x y
+	    return [list $x $y]
+	}
+    }
+    oo::class create cls2 {
+	superclass cls1
+	private variable x
+	method x-exists {} {
+	    return [info exists x],[uplevel 1 {info exists x}]
+	}
+	method ghi x {
+	    # Additional instrumentation to show that we're not using the
+	    # resolved variable until we ask for it; the argument nixed that
+	    # happening by default.
+	    set val $x
+	    set before [my x-exists]
+	    unset x
+	    set x $val
+	    set mid [my x-exists]
+	    unset x
+	    set mid2 [my x-exists]
+	    my variable x
+	    set x $val
+	    set after [my x-exists]
+	    return "$before;$mid;$mid2;$after"
+	}
+	method jkl val {
+	    my variable y
+	    set y $val
+	}
+	method get2 {} {
+	    my variable x y
+	    return [list $x $y]
+	}
+    }
+    cls2 create a
+    a abc 123
+    a def 234
+    set tmp [a ghi 345]
+    a jkl 456
+    list $tmp [a get1] [a get2]
+} -cleanup {
+    parent destroy
+} -result {{0,1;0,1;0,0;1,1} {123 456} {345 456}}
+
+test oo-39.1 {TIP 500: private methods internal call; class private} -setup {
+    oo::class create parent
+} -body {
+    oo::class create clsA {
+	superclass parent
+	variable x
+	constructor {} {
+	    set x 1
+	}
+	method act {} {
+	    my step
+	    my step
+	    my step
+	    return
+	}
+	private {
+	    method step {} {
+		incr x 2
+	    }
+	}
+	method x {} {
+	    return $x
+	}
+    }
+    clsA create obj
+    obj act
+    list [obj x] [catch {obj step} msg] $msg
+} -cleanup {
+    parent destroy
+} -result {7 1 {unknown method "step": must be act, destroy or x}}
+test oo-39.2 {TIP 500: private methods internal call; class private} -setup {
+    oo::class create parent
+} -body {
+    oo::class create clsA {
+	superclass parent
+	variable x
+	constructor {} {
+	    set x 1
+	}
+	method act {} {
+	    my step
+	    my step
+	    my step
+	    return
+	}
+	private {
+	    method step {} {
+		incr x 2
+	    }
+	}
+	method x {} {
+	    return $x
+	}
+    }
+    oo::class create clsB {
+	superclass clsA
+	variable x
+	method step {} {
+	    incr x 5
+	}
+    }
+    clsB create obj
+    obj act
+    list [obj x] [obj step]
+} -cleanup {
+    parent destroy
+} -result {7 12}
+test oo-39.3 {TIP 500: private methods internal call; class private} -setup {
+    oo::class create parent
+} -body {
+    oo::class create clsA {
+	superclass parent
+	variable x
+	constructor {} {
+	    set x 1
+	}
+	method act {} {
+	    my Step
+	    my Step
+	    my Step
+	    return
+	}
+	method x {} {
+	    return $x
+	}
+    }
+    oo::class create clsB {
+	superclass clsA
+	variable x
+	method Step {} {
+	    incr x 5
+	}
+    }
+    clsB create obj
+    obj act
+    set result [obj x]
+    oo::define clsA {
+	private {
+	    method Step {} {
+		incr x 2
+	    }
+	}
+    }
+    obj act
+    lappend result [obj x]
+} -cleanup {
+    parent destroy
+} -result {16 22}
+test oo-39.4 {TIP 500: private methods internal call; instance private} -setup {
+    oo::class create parent
+} -body {
+    oo::class create clsA {
+	superclass parent
+	variable x
+	constructor {} {
+	    set x 1
+	}
+	method act {} {
+	    my step
+	    return
+	}
+	method step {} {
+	    incr x
+	}
+	method x {} {
+	    return $x
+	}
+    }
+    clsA create obj
+    obj act
+    set result [obj x]
+    oo::objdefine obj {
+	variable x
+	private {
+	    method step {} {
+		incr x 2
+	    }
+	}
+    }
+    obj act
+    lappend result [obj x]
+    oo::objdefine obj {
+	method act {} {
+	    my step
+	    next
+	}
+    }
+    obj act
+    lappend result [obj x]
+} -cleanup {
+    parent destroy
+} -result {2 3 6}
+test oo-39.5 {TIP 500: private methods internal call; cross object} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	variable x
+	constructor {val} {
+	    set x $val
+	}
+	private method x {} {
+	    return $x
+	}
+	method equal {other} {
+	    expr {$x == [$other x]}
+	}
+    }
+    cls create a 1
+    cls create b 2
+    cls create c 1
+    list [a equal b] [b equal c] [c equal a] [catch {a x} msg] $msg
+} -cleanup {
+    parent destroy
+} -result {0 0 1 1 {unknown method "x": must be destroy or equal}}
+test oo-39.6 {TIP 500: private methods internal call; error reporting} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	variable x
+	constructor {val} {
+	    set x $val
+	}
+	private method x {} {
+	    return $x
+	}
+	method equal {other} {
+	    expr {$x == [$other y]}
+	}
+    }
+    cls create a 1
+    cls create b 2
+    a equal b
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {unknown method "y": must be destroy, equal or x}
+test oo-39.7 {TIP 500: private methods internal call; error reporting} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	variable x
+	constructor {val} {
+	    set x $val
+	}
+	private method x {} {
+	    return $x
+	}
+	method equal {other} {
+	    expr {[[self] y] == [$other x]}
+	}
+    }
+    cls create a 1
+    cls create b 2
+    a equal b
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {unknown method "y": must be destroy, equal or x}
+test oo-39.8 {TIP 500: private methods internal call; error reporting} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	variable x
+	constructor {val} {
+	    set x $val
+	}
+	private method x {} {
+	    return $x
+	}
+	method equal {other} {
+	    expr {[my y] == [$other x]}
+	}
+    }
+    cls create a 1
+    cls create b 2
+    a equal b
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {unknown method "y": must be <cloned>, destroy, equal, eval, unknown, variable, varname or x}
+test oo-39.9 {TIP 500: private methods internal call; error reporting} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	variable x
+	constructor {val} {
+	    set x $val
+	}
+	private method x {} {
+	    return $x
+	}
+    }
+    oo::class create cls2 {
+	superclass cls
+	method equal {other} {
+	    expr {[my y] == [$other x]}
+	}
+    }
+    cls2 create a 1
+    cls2 create b 2
+    a equal b
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {unknown method "y": must be <cloned>, destroy, equal, eval, unknown, variable or varname}
+test oo-39.10 {TIP 500: private methods internal call; error reporting} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	variable x
+	constructor {val} {
+	    set x $val
+	}
+	private method x {} {
+	    return $x
+	}
+    }
+    oo::class create cls2 {
+	superclass cls
+	method equal {other} {
+	    expr {[my x] == [$other x]}
+	}
+    }
+    cls2 create a 1
+    cls2 create b 2
+    a equal b
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {unknown method "x": must be <cloned>, destroy, equal, eval, unknown, variable or varname}
+test oo-39.11 {TIP 500: private methods; call chain caching and reporting} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	method chain {} {
+	    return [self call]
+	}
+    }
+    oo::class create cls2 {
+	superclass cls
+	private method chain {} {
+	    next
+	}
+	method chain2 {} {
+	    my chain
+	}
+	method chain3 {} {
+	    [self] chain
+	}
+    }
+    cls create a
+    cls2 create b
+    list [a chain] [b chain] [b chain2] [b chain3]
+} -cleanup {
+    parent destroy
+} -result {{{{method chain ::cls method}} 0} {{{method chain ::cls method}} 0} {{{private chain ::cls2 method} {method chain ::cls method}} 1} {{{private chain ::cls2 method} {method chain ::cls method}} 1}}
+test oo-39.12 {TIP 500: private methods; introspection} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	method chain {} {
+	    return [self call]
+	}
+	private method abc {} {}
+    }
+    oo::class create cls2 {
+	superclass cls
+	method chain2 {} {
+	    my chain
+	}
+	method chain3 {} {
+	    [self] chain
+	}
+	private method def {} {}
+	unexport chain3
+    }
+    cls create a
+    cls2 create b
+    oo::objdefine b {
+	private method ghi {} {}
+	method ABC {} {}
+	method foo {} {}
+    }
+    set scopes {public unexported private}
+    list a: [lmap s $scopes {info object methods a -scope $s}] \
+	b: [lmap s $scopes {info object methods b -scope $s}] \
+	cls: [lmap s $scopes {info class methods cls -scope $s}] \
+	cls2: [lmap s $scopes {info class methods cls2 -scope $s}] \
+} -cleanup {
+    parent destroy
+} -result {a: {{} {} {}} b: {foo ABC ghi} cls: {chain {} abc} cls2: {chain2 chain3 def}}
+
+test oo-40.1 {TIP 500: private and self} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	self {
+	    private {
+		variable a
+	    }
+	    variable b
+	}
+	private {
+	    self {
+		variable c
+	    }
+	    variable d
+	}
+	variable e
+    }
+    list \
+	[lsort [info class variables cls]] \
+	[lsort [info class variables cls -private]] \
+	[lsort [info object variables cls]] \
+	[lsort [info object variables cls -private]]
+} -cleanup {
+    cls destroy
+} -result {e d b {a c}}
+test oo-40.2 {TIP 500: private and export} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	private method foo {} {}
+    }
+    set result [lmap s {public unexported private} {
+	info class methods cls -scope $s}]
+    oo::define cls {
+	export foo
+    }
+    lappend result {*}[lmap s {public unexported private} {
+	info class methods cls -scope $s}]
+} -cleanup {
+    cls destroy
+} -result {{} {} foo foo {} {}}
+test oo-40.3 {TIP 500: private and unexport} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	private method foo {} {}
+    }
+    set result [lmap s {public unexported private} {
+	info class methods cls -scope $s}]
+    oo::define cls {
+	unexport foo
+    }
+    lappend result {*}[lmap s {public unexported private} {
+	info class methods cls -scope $s}]
+} -cleanup {
+    cls destroy
+} -result {{} {} foo {} foo {}}
 
 cleanupTests
 return
