@@ -271,7 +271,7 @@ test process-7.2 {abnormal exit} -body {
     tcl::process purge
     tcl::process autopurge 1
 }
-test process-7.3 {child killed} -body {
+test process-7.3 {child killed} -constraints {win} -body {
     tcl::process autopurge 0
     set pid [exec [interpreter] $path(exit) -1 &]
     lindex [tcl::process status -wait $pid] 1
