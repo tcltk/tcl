@@ -74,6 +74,7 @@ const TclOOStubs tclOOStubs = {
     Tcl_ClassSetConstructor, /* 26 */
     Tcl_ClassSetDestructor, /* 27 */
     Tcl_GetObjectName, /* 28 */
+    Tcl_MethodIsPrivate, /* 29 */
 };
 
 /* !END!: Do not edit above this line. */

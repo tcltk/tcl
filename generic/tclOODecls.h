@@ -62,11 +62,11 @@ TCLAPI Tcl_Obj *	Tcl_MethodName(Tcl_Method method);
 /* 11 */
 TCLAPI Tcl_Method	Tcl_NewInstanceMethod(Tcl_Interp *interp,
 				Tcl_Object object, Tcl_Obj *nameObj,
-				int isPublic, const Tcl_MethodType *typePtr,
+				int flags, const Tcl_MethodType *typePtr,
 				ClientData clientData);
 /* 12 */
 TCLAPI Tcl_Method	Tcl_NewMethod(Tcl_Interp *interp, Tcl_Class cls,
-				Tcl_Obj *nameObj, int isPublic,
+				Tcl_Obj *nameObj, int flags,
 				const Tcl_MethodType *typePtr,
 				ClientData clientData);
 /* 13 */
@@ -119,6 +119,8 @@ TCLAPI void		Tcl_ClassSetDestructor(Tcl_Interp *interp,
 /* 28 */
 TCLAPI Tcl_Obj *	Tcl_GetObjectName(Tcl_Interp *interp,
 				Tcl_Object object);
+/* 29 */
+TCLAPI int		Tcl_MethodIsPrivate(Tcl_Method method);
 
 typedef struct {
     const struct TclOOPrivateStubs *tclOOPrivateStubs;
@@ -139,8 +141,8 @@ typedef struct TclOOStubs {
     int (*tcl_MethodIsPublic) (Tcl_Method method); /* 8 */
     int (*tcl_MethodIsType) (Tcl_Method method, const Tcl_MethodType *typePtr, ClientData *clientDataPtr); /* 9 */
     Tcl_Obj * (*tcl_MethodName) (Tcl_Method method); /* 10 */
-    Tcl_Method (*tcl_NewInstanceMethod) (Tcl_Interp *interp, Tcl_Object object, Tcl_Obj *nameObj, int isPublic, const Tcl_MethodType *typePtr, ClientData clientData); /* 11 */
-    Tcl_Method (*tcl_NewMethod) (Tcl_Interp *interp, Tcl_Class cls, Tcl_Obj *nameObj, int isPublic, const Tcl_MethodType *typePtr, ClientData clientData); /* 12 */
+    Tcl_Method (*tcl_NewInstanceMethod) (Tcl_Interp *interp, Tcl_Object object, Tcl_Obj *nameObj, int flags, const Tcl_MethodType *typePtr, ClientData clientData); /* 11 */
+    Tcl_Method (*tcl_NewMethod) (Tcl_Interp *interp, Tcl_Class cls, Tcl_Obj *nameObj, int flags, const Tcl_MethodType *typePtr, ClientData clientData); /* 12 */
     Tcl_Object (*tcl_NewObjectInstance) (Tcl_Interp *interp, Tcl_Class cls, const char *nameStr, const char *nsNameStr, int objc, Tcl_Obj *const *objv, int skip); /* 13 */
     int (*tcl_ObjectDeleted) (Tcl_Object object); /* 14 */
     int (*tcl_ObjectContextIsFiltering) (Tcl_ObjectContext context); /* 15 */
@@ -157,6 +159,7 @@ typedef struct TclOOStubs {
     void (*tcl_ClassSetConstructor) (Tcl_Interp *interp, Tcl_Class clazz, Tcl_Method method); /* 26 */
     void (*tcl_ClassSetDestructor) (Tcl_Interp *interp, Tcl_Class clazz, Tcl_Method method); /* 27 */
     Tcl_Obj * (*tcl_GetObjectName) (Tcl_Interp *interp, Tcl_Object object); /* 28 */
+    int (*tcl_MethodIsPrivate) (Tcl_Method method); /* 29 */
 } TclOOStubs;
 
 extern const TclOOStubs *tclOOStubsPtr;
@@ -229,6 +232,8 @@ extern const TclOOStubs *tclOOStubsPtr;
 	(tclOOStubsPtr->tcl_ClassSetDestructor) /* 27 */
 #define Tcl_GetObjectName \
 	(tclOOStubsPtr->tcl_GetObjectName) /* 28 */
+#define Tcl_MethodIsPrivate \
+	(tclOOStubsPtr->tcl_MethodIsPrivate) /* 29 */
 
 #endif /* defined(USE_TCLOO_STUBS) */
 
