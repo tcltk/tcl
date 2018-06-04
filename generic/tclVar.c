@@ -6323,23 +6323,48 @@ AppendLocals(
     }
 
     if (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_METHOD) {
-	CallContext *contextPtr = iPtr->varFramePtr->clientData;
-	Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
+	Method *mPtr = (Method *)
+		Tcl_ObjectContextMethod(iPtr->varFramePtr->clientData);
+	PrivateVariableMapping *privatePtr;
 
 	if (mPtr->declaringObjectPtr) {
-	    FOREACH(objNamePtr, mPtr->declaringObjectPtr->variables) {
+	    Object *oPtr = mPtr->declaringObjectPtr;
+
+	    FOREACH(objNamePtr, oPtr->variables) {
 		Tcl_CreateHashEntry(&addedTable, objNamePtr, &added);
 		if (added && (!pattern ||
 			Tcl_StringMatch(TclGetString(objNamePtr), pattern))) {
 		    Tcl_ListObjAppendElement(interp, listPtr, objNamePtr);
 		}
 	    }
+	    FOREACH_STRUCT(privatePtr, oPtr->privateVariables) {
+		Tcl_CreateHashEntry(&addedTable, privatePtr->variableObj,
+			&added);
+		if (added && (!pattern ||
+			Tcl_StringMatch(TclGetString(privatePtr->variableObj),
+				pattern))) {
+		    Tcl_ListObjAppendElement(interp, listPtr,
+			    privatePtr->variableObj);
+		}
+	    }
 	} else {
-	    FOREACH(objNamePtr, mPtr->declaringClassPtr->variables) {
+	    Class *clsPtr = mPtr->declaringClassPtr;
+
+	    FOREACH(objNamePtr, clsPtr->variables) {
 		Tcl_CreateHashEntry(&addedTable, objNamePtr, &added);
 		if (added && (!pattern ||
 			Tcl_StringMatch(TclGetString(objNamePtr), pattern))) {
 		    Tcl_ListObjAppendElement(interp, listPtr, objNamePtr);
+		}
+	    }
+	    FOREACH_STRUCT(privatePtr, clsPtr->privateVariables) {
+		Tcl_CreateHashEntry(&addedTable, privatePtr->variableObj,
+			&added);
+		if (added && (!pattern ||
+			Tcl_StringMatch(TclGetString(privatePtr->variableObj),
+				pattern))) {
+		    Tcl_ListObjAppendElement(interp, listPtr,
+			    privatePtr->variableObj);
 		}
 	    }
 	}
