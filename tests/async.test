@@ -20,7 +20,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testasync [llength [info commands testasync]]
-testConstraint threaded [::tcl::pkgconfig get threaded]
 
 proc async1 {result code} {
     global aresult acode
@@ -149,7 +148,7 @@ test async-3.1 {deleting handlers} testasync {
 } {3 del2 {0 0 0 del1 del2}}
 
 test async-4.1 {async interrupting bytecode sequence} -constraints {
-    testasync threaded
+    testasync
 } -setup {
     set hm [testasync create async3]
     proc nothing {} {
@@ -171,7 +170,7 @@ test async-4.1 {async interrupting bytecode sequence} -constraints {
     testasync delete $hm
 }
 test async-4.2 {async interrupting straight bytecode sequence} -constraints {
-    testasync threaded
+    testasync
 } -setup {
     set hm [testasync create async3]
 } -body {
@@ -188,7 +187,7 @@ test async-4.2 {async interrupting straight bytecode sequence} -constraints {
     testasync delete $hm
 }
 test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
-    testasync threaded
+    testasync
 } -setup {
     set hm [testasync create async3]
 } -body {
