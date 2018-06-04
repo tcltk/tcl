@@ -264,6 +264,12 @@ removeDirectory dir.dir
 test filesystem-1.30 {normalisation of nonexistent user} -body {
     file normalize ~noonewiththisname
 } -returnCodes error -result {user "noonewiththisname" doesn't exist}
+test filesystem-1.30.1 {normalisation of existing user} -body {
+    catch {file normalize ~$::tcl_platform(user)}
+} -result {0}
+test filesystem-1.30.2 {normalisation of nonexistent user specified as user@domain} -body {
+    file normalize ~nonexistentuser@nonexistentdomain
+} -returnCodes error -result {user "nonexistentuser@nonexistentdomain" doesn't exist}
 test filesystem-1.31 {link normalisation: link near filesystem root} {testsetplatform} {
     testsetplatform unix
     file normalize /foo/../bar
