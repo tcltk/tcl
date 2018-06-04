@@ -774,7 +774,7 @@ packages:
 	      if [ ! -f $(PKG_DIR)/$$pkg/Makefile ]; then \
 	        ( cd $(PKG_DIR)/$$pkg; \
 	          echo "Configuring package '$$i' wd = `$(CYGPATH) $$(pwd -P)`"; \
-	          $$i/configure --with-tcl=$$builddir --with-tclinclude=$(GENERIC_DIR_NATIVE) $(PKG_CFG_ARGS) --enable-shared --enable-threads; ) \
+	          $$i/configure --with-tcl=$$builddir --with-tclinclude=$(GENERIC_DIR_NATIVE) $(PKG_CFG_ARGS) --enable-shared; ) \
 	      fi ; \
 	      echo "Building package '$$pkg'"; \
 	      ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) \
