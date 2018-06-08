@@ -83,6 +83,8 @@ typedef struct EventScriptRecord {
 				 * stored script to be invoked. */
     struct EventScriptRecord *nextPtr;
 				/* Next in chain of records. */
+    int execDepth;		/* Execution depth inside the event-handlers,
+				 * if negative it should be removed as 0 reached. */
 } EventScriptRecord;
 
 /*

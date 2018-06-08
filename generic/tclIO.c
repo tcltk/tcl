@@ -3210,6 +3210,12 @@ Tcl_CutChannel(
 				/* State of the channel stack. */
 
     /*
+     * Firstly notify any - channel has no owner threads anymore.
+     */
+
+    statePtr->managingThread = NULL;
+
+    /*
      * Remove this channel from of the list of all channels (in the current
      * thread).
      */
@@ -8715,6 +8721,20 @@ Tcl_DeleteChannelHandler(
     UpdateInterest(statePtr->topChanPtr);
 }
 
+static void
+SafeFreeScriptRecord(
+    EventScriptRecord *esPtr)
+{
+    /* if not executed - remove it right now */
+    if (esPtr->execDepth == 0) {
+	TclDecrRefCount(esPtr->scriptPtr);
+	ckfree(esPtr);
+    } else if (esPtr->execDepth > 0) {
+	/* inverse depth to notify event-handlers, they should remove it hereafter */
+	esPtr->execDepth = -esPtr->execDepth;
+    }
+    /* execution in-between and already notified (negative). */
+}
 /*
  *----------------------------------------------------------------------
  *
@@ -8758,8 +8778,7 @@ DeleteScriptRecord(
 	    Tcl_DeleteChannelHandler((Tcl_Channel) chanPtr,
 		    TclChannelEventScriptInvoker, esPtr);
 
-	    TclDecrRefCount(esPtr->scriptPtr);
-	    ckfree(esPtr);
+	    SafeFreeScriptRecord(esPtr);
 
 	    break;
 	}
@@ -8799,8 +8818,7 @@ CreateScriptRecord(
 
     for (esPtr=statePtr->scriptRecordPtr; esPtr!=NULL; esPtr=esPtr->nextPtr) {
 	if ((esPtr->interp == interp) && (esPtr->mask == mask)) {
-	    TclDecrRefCount(esPtr->scriptPtr);
-	    esPtr->scriptPtr = NULL;
+	    SafeFreeScriptRecord(esPtr);
 	    break;
 	}
     }
@@ -8824,6 +8842,7 @@ CreateScriptRecord(
     esPtr->mask = mask;
     Tcl_IncrRefCount(scriptPtr);
     esPtr->scriptPtr = scriptPtr;
+    esPtr->execDepth = 0;
 
     if (makeCH) {
 	esPtr->nextPtr = statePtr->scriptRecordPtr;
@@ -8866,6 +8885,13 @@ TclChannelEventScriptInvoker(
 
     esPtr = clientData;
     chanPtr = esPtr->chanPtr;
+
+    if ( esPtr->scriptPtr == NULL || esPtr->execDepth < 0 
+      || Tcl_GetCurrentThread() != chanPtr->state->managingThread
+    ) {
+	return;
+    }
+
     mask = esPtr->mask;
     interp = esPtr->interp;
 
@@ -8877,7 +8903,22 @@ TclChannelEventScriptInvoker(
 
     Tcl_Preserve(interp);
     TclChannelPreserve((Tcl_Channel)chanPtr);
+
+    esPtr->execDepth++;
     result = Tcl_EvalObjEx(interp, esPtr->scriptPtr, TCL_EVAL_GLOBAL);
+
+    if (esPtr->execDepth > 0) {
+	--esPtr->execDepth;
+    } else if (esPtr->execDepth < 0) {
+	/* 
+	 * Negative depth meants - the handler was removed, so we should increase,
+	 * and remove esPtr record by the last handler (if it reached 0).
+	 */
+	if (++esPtr->execDepth == 0) {
+	    SafeFreeScriptRecord(esPtr);
+	    /* don't use esPtr at here. */
+	}
+    }
 
     /*
      * On error, cause a background error and remove the channel handler and
