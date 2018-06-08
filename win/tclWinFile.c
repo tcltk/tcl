@@ -1394,6 +1394,12 @@ NativeMatchType(
     return 1;
 }
 
+static void
+FreeLoadLibHandle(
+    ClientData clientData)
+{
+    FreeLibrary((HMODULE)clientData);
+}
 /*
  *----------------------------------------------------------------------
  *
@@ -1445,13 +1451,13 @@ TclpGetUserHome(
 			GetProcAddress(handle, "NetGetDCName");
 		netUserGetInfoProc = (NETUSERGETINFOPROC *)
 			GetProcAddress(handle, "NetUserGetInfo");
-		Tcl_CreateExitHandler(TclpUnloadFile, handle);
+		Tcl_CreateExitHandler(FreeLoadLibHandle, handle);
 	    }
 	    handle = LoadLibraryA("userenv.dll");
 	    if (handle) {
 		getProfilesDirectoryProc = (GETPROFILESDIRECTORYPROC *)
 			GetProcAddress(handle, "GetProfilesDirectoryW");
-		Tcl_CreateExitHandler(TclpUnloadFile, handle);
+		Tcl_CreateExitHandler(FreeLoadLibHandle, handle);
 	    }
 	    
 	    apistubs = -1;
