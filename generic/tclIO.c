@@ -1093,7 +1093,15 @@ Tcl_RegisterChannel(
 	}
 	Tcl_SetHashValue(hPtr, chanPtr);
     }
+
+    /*
+     * Increase ref-count of the state and channel (note the transfer-process to
+     * other thread could temporary share the channel in two threads (especially 
+     * if initiated from event-handler like TclChannelEventScriptInvoker,
+     * see [815e246806]).
+     */
     statePtr->refCount++;
+    TclChannelPreserve(chan);
 }
 
 /*
@@ -1294,6 +1302,8 @@ DetachChannel(
 	CleanupChannelHandlers(interp, chanPtr);
     }
 
+    /* Opposite of TclChannelPreserve in Tcl_RegisterChannel */
+    TclChannelRelease(chan);
     statePtr->refCount--;
 
     return TCL_OK;
