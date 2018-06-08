@@ -1975,7 +1975,7 @@ void
 TclChannelPreserve(
     Tcl_Channel chan)
 {
-    ((Channel *)chan)->refCount++;
+    TclAtomicFetchInc(&((Channel *)chan)->refCount);
 }
 
 void
@@ -1987,7 +1987,7 @@ TclChannelRelease(
     if (chanPtr->refCount == 0) {
 	Tcl_Panic("Channel released more than preserved");
     }
-    if (--chanPtr->refCount) {
+    if (TclAtomicFetchDec(&chanPtr->refCount)) {
 	return;
     }
     if (chanPtr->typePtr == NULL) {
