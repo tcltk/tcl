@@ -2154,7 +2154,7 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * stubs tables. If TCL_UTF_MAX>4 use a different value.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACB + (int) sizeof(void *) + (TCL_UTF_MAX>4))
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACF + (TCL_UTF_MAX>4))
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2226,7 +2226,8 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 
 /*
  * Include platform specific public function declarations that are accessible
- * via the stubs table.
+ * via the stubs table. Make all TclOO symbols MODULE_SCOPE (which only
+ * has effect on building it as a shared library). See ticket [3010352].
  */
 
 #if defined(BUILD_tcl)

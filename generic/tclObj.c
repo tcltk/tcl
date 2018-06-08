@@ -3382,7 +3382,7 @@ AllocObjEntry(
 
     hPtr->key.objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
-    Tcl_SetHashValue(hPtr, NULL);
+    hPtr->clientData = NULL;
 
     return hPtr;
 }
@@ -3499,9 +3499,9 @@ TclHashObjKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = keyPtr;
-    const char *string = TclGetString(objPtr);
-    size_t length = objPtr->length;
-    TCL_HASH_TYPE result = 0;
+    int length;
+    const char *string = TclGetStringFromObj(objPtr, &length);
+    unsigned int result = 0;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -3543,7 +3543,7 @@ TclHashObjKey(
 	    result += (result << 3) + UCHAR(*++string);
 	}
     }
-    return result;
+    return (TCL_HASH_TYPE) result;
 }
 
 /*

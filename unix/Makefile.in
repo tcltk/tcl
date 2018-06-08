@@ -139,8 +139,8 @@ TCL_STUB_LIB_FLAG	= @TCL_STUB_LIB_FLAG@
 
 # To compile without backward compatibility and deprecated code uncomment the
 # following
-#NO_DEPRECATED_FLAGS	=
-NO_DEPRECATED_FLAGS	= -DTCL_NO_DEPRECATED
+NO_DEPRECATED_FLAGS	=
+#NO_DEPRECATED_FLAGS	= -DTCL_NO_DEPRECATED
 
 # Some versions of make, like SGI's, use the following variable to determine
 # which shell to use for executing commands:

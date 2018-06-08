@@ -4503,63 +4503,6 @@ TclPtrObjMakeUpvarIdx(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UpVar --
- *
- *	This function links one variable to another, just like the "upvar"
- *	command.
- *
- * Results:
- *	A standard Tcl completion code. If an error occurs then an error
- *	message is left in the interp's result.
- *
- * Side effects:
- *	The variable in frameName whose name is given by varName becomes
- *	accessible under the name localNameStr, so that references to
- *	localNameStr are redirected to the other variable like a symbolic
- *	link.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-#undef Tcl_UpVar
-int
-Tcl_UpVar(
-    Tcl_Interp *interp,		/* Command interpreter in which varName is to
-				 * be looked up. */
-    const char *frameName,	/* Name of the frame containing the source
-				 * variable, such as "1" or "#0". */
-    const char *varName,	/* Name of a variable in interp to link to.
-				 * May be either a scalar name or an element
-				 * in an array. */
-    const char *localNameStr,	/* Name of link variable. */
-    int flags)			/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
-				 * indicates scope of localNameStr. */
-{
-    int result;
-    CallFrame *framePtr;
-    Tcl_Obj *varNamePtr, *localNamePtr;
-
-    if (TclGetFrame(interp, frameName, &framePtr) == -1) {
-	return TCL_ERROR;
-    }
-
-    varNamePtr = Tcl_NewStringObj(varName, -1);
-    Tcl_IncrRefCount(varNamePtr);
-    localNamePtr = Tcl_NewStringObj(localNameStr, -1);
-    Tcl_IncrRefCount(localNamePtr);
-
-    result = ObjMakeUpvar(interp, framePtr, varNamePtr, NULL, 0,
-	    localNamePtr, flags, -1);
-    Tcl_DecrRefCount(varNamePtr);
-    Tcl_DecrRefCount(localNamePtr);
-    return result;
-}
-#endif /* TCL_NO_DEPRECATED */
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_UpVar2 --
  *
  *	This function links one variable to another, just like the "upvar"

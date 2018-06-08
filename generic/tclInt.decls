@@ -1025,7 +1025,7 @@ declare 250 {
 # Allow extensions for optimization
 declare 251 {
     int TclRegisterLiteral(void *envPtr,
-	    const char *bytes, size_t length, int flags)
+	    const char *bytes, int length, int flags)
 }
 
 # Exporting of the internal API to variables.

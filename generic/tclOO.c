@@ -672,7 +672,7 @@ AllocObject(
     Object *oPtr;
     Command *cmdPtr;
     CommandTrace *tracePtr;
-    size_t creationEpoch;
+    int creationEpoch;
 
     oPtr = ckalloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
@@ -701,7 +701,7 @@ AllocObject(
     while (1) {
 	char objName[10 + TCL_INTEGER_SPACE];
 
-	sprintf(objName, "::oo::Obj%" TCL_LL_MODIFIER "u", (Tcl_WideUInt)++fPtr->tsdPtr->nsCount);
+	sprintf(objName, "::oo::Obj%d", ++fPtr->tsdPtr->nsCount);
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, objName, oPtr, NULL);
 	if (oPtr->namespacePtr != NULL) {
 	    creationEpoch = fPtr->tsdPtr->nsCount;

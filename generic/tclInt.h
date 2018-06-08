@@ -300,9 +300,9 @@ typedef struct Namespace {
 				 * commands; however, no namespace qualifiers
 				 * are allowed. NULL if no export patterns are
 				 * registered. */
-    size_t numExportPatterns;	/* Number of export patterns currently
+    int numExportPatterns;	/* Number of export patterns currently
 				 * registered using "namespace export". */
-    size_t maxExportPatterns;	/* Mumber of export patterns for which space
+    int maxExportPatterns;	/* Mumber of export patterns for which space
 				 * is currently allocated. */
     size_t cmdRefEpoch;		/* Incremented if a newly added command
 				 * shadows a command for which this namespace
@@ -1519,13 +1519,13 @@ typedef struct LiteralTable {
     LiteralEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables to avoid
 				 * mallocs and frees. */
-    size_t numBuckets;		/* Total number of buckets allocated at
+    int numBuckets;		/* Total number of buckets allocated at
 				 * **buckets. */
-    size_t numEntries;		/* Total number of entries present in
+    int numEntries;		/* Total number of entries present in
 				 * table. */
-    size_t rebuildSize;		/* Enlarge table when numEntries gets to be
+    int rebuildSize;		/* Enlarge table when numEntries gets to be
 				 * this large. */
-    size_t mask;		/* Mask value used in hashing function. */
+    unsigned int mask;		/* Mask value used in hashing function. */
 } LiteralTable;
 
 /*
@@ -1781,7 +1781,6 @@ typedef struct AllocCache {
  */
 
 typedef struct Interp {
-
     /*
      * The first two fields were named "result" and "freeProc" in earlier
      * versions of Tcl.  They are no longer used within Tcl, and are no
@@ -1986,9 +1985,9 @@ typedef struct Interp {
 				 * *root* ensemble command? (Nested ensembles
 				 * don't rewrite this.) NULL if we're not
 				 * processing an ensemble. */
-	size_t numRemovedObjs;	/* How many arguments have been stripped off
+	int numRemovedObjs;	/* How many arguments have been stripped off
 				 * because of ensemble processing. */
-	size_t numInsertedObjs;	/* How many of the current arguments were
+	int numInsertedObjs;	/* How many of the current arguments were
 				 * inserted by an ensemble. */
     } ensembleRewrite;
 
@@ -4125,29 +4124,24 @@ typedef const char *TclDTraceStr;
  * Invalidate the string rep first so we can use the bytes value for our
  * pointer chain, and signal an obj deletion (as opposed to shimmering) with
  * 'length == -1'.
- *
- * Use do/while0 idiom for optimum correctness without compiler warnings.
- * http://c2.com/cgi/wiki?TrivialDoWhileLoop
+ * Use empty 'if ; else' to handle use in unbraced outer if/else conditions.
  */
 
 # define TclDecrRefCount(objPtr) \
-    do { \
-	Tcl_Obj *_objPtr = (objPtr); \
-	if (_objPtr->refCount-- <= 1) { \
-	    if (!_objPtr->typePtr || !_objPtr->typePtr->freeIntRepProc) { \
-		TCL_DTRACE_OBJ_FREE(_objPtr); \
-		if (_objPtr->bytes \
-			&& (_objPtr->bytes != &tclEmptyString)) { \
-		    ckfree(_objPtr->bytes); \
-		} \
-		_objPtr->length = -1; \
-		TclFreeObjStorage(_objPtr); \
-		TclIncrObjsFreed(); \
-	    } else { \
-		TclFreeObj(_objPtr); \
+    if ((objPtr)->refCount-- > 1) ; else { \
+	if (!(objPtr)->typePtr || !(objPtr)->typePtr->freeIntRepProc) { \
+	    TCL_DTRACE_OBJ_FREE(objPtr); \
+	    if ((objPtr)->bytes \
+		    && ((objPtr)->bytes != &tclEmptyString)) { \
+		ckfree((objPtr)->bytes); \
 	    } \
+	    (objPtr)->length = -1; \
+	    TclFreeObjStorage(objPtr); \
+	    TclIncrObjsFreed(); \
+	} else { \
+	    TclFreeObj(objPtr); \
 	} \
-    } while(0)
+    }
 
 #if TCL_THREADS && !defined(USE_THREAD_ALLOC)
 #   define USE_THREAD_ALLOC 1
@@ -4294,7 +4288,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  * is referenced multiple times, it should be as simple an expression as
  * possible. The ANSI C "prototype" for this macro is:
  *
- * MODULE_SCOPE void TclInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
+ * MODULE_SCOPE void TclInitStringRep(Tcl_Obj *objPtr, char *bytePtr, int len);
  *
  * This macro should only be called on an unshared objPtr where
  *  objPtr->typePtr->freeIntRepProc == NULL
@@ -4306,8 +4300,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = (char *) ckalloc((len) + 1); \
-	memcpy((objPtr)->bytes, (bytePtr), (len)); \
+	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1)); \
+	memcpy((objPtr)->bytes, (bytePtr), (unsigned) (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
     }
@@ -4469,7 +4463,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 #define TclNumUtfChars(numChars, bytes, numBytes) \
     do { \
-	size_t _count, _i = (numBytes); \
+	int _count, _i = (numBytes); \
 	unsigned char *_str = (unsigned char *) (bytes); \
 	while (_i && (*_str < 0xC0)) { _i--; _str++; } \
 	_count = (numBytes) - _i; \
@@ -4608,7 +4602,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  *
  * MODULE_SCOPE void	TclNewIntObj(Tcl_Obj *objPtr, Tcl_WideInt w);
  * MODULE_SCOPE void	TclNewDoubleObj(Tcl_Obj *objPtr, double d);
- * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, size_t len);
+ * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, int len);
  * MODULE_SCOPE void	TclNewLiteralStringObj(Tcl_Obj*objPtr, const char *sLiteral);
  *
  *----------------------------------------------------------------
@@ -4663,7 +4657,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  * sizeof(sLiteral "") will fail to compile otherwise.
  */
 #define TclNewLiteralStringObj(objPtr, sLiteral) \
-    TclNewStringObj((objPtr), (sLiteral), sizeof(sLiteral "") - 1)
+    TclNewStringObj((objPtr), (sLiteral), (int) (sizeof(sLiteral "") - 1))
 
 /*
  *----------------------------------------------------------------
