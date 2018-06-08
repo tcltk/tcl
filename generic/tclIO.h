@@ -113,7 +113,7 @@ typedef struct Channel {
     ChannelBuffer *inQueueHead;	/* Points at first buffer in input queue. */
     ChannelBuffer *inQueueTail;	/* Points at last buffer in input queue. */
 
-    volatile int refCount;	/* Reference counter, volatile forces atomic
+    TclAtomicInt refCount;	/* Reference counter, volatile forces atomic
 				 * direct incr/decr during transfer process,
 				 * if temorary shared between threads (avoids
 				 * unexpected compiler optimization) */
