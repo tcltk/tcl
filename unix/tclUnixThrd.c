@@ -53,7 +53,8 @@ PMutexInit(
 
 typedef struct PMutex {
     pthread_mutex_t mutex;
-    pthread_key_t counter;
+    pthread_t thread;
+    int counter;
 } PMutex;
 
 static void
@@ -62,7 +63,8 @@ PMutexInit(
 )
 {
     pthread_mutex_init(&pmutexPtr->mutex, NULL);
-    pthread_key_create(&pmutexPtr->counter, NULL);
+    pmutexPtr->thread = 0;
+    pmutexPtr->counter = 0;
 }
 
 static void
@@ -71,7 +73,6 @@ PMutexDestroy(
 )
 {
 	pthread_mutex_destroy(&pmutexPtr->mutex);
-	pthread_key_delete(pmutexPtr->counter);
 }
 
 static void
@@ -79,11 +80,12 @@ PMutexLock(
     PMutex *pmutexPtr
 )
 {
-    intptr_t count = (intptr_t)pthread_getspecific(pmutexPtr->counter);
-    pthread_setspecific(pmutexPtr->counter, (const void *)(count+1));
-    if (count == 0) {
-	pthread_mutex_lock(&pmutexPtr->mutex);
+    if (pmutexPtr->thread != pthread_self() || pmutexPtr->counter == 0) {
+	    pthread_mutex_lock(&pmutexPtr->mutex);
+        pmutexPtr->thread = pthread_self();
+        pmutexPtr->counter = 0;
     }
+    pmutexPtr->counter++;
 }
 
 static void
@@ -91,10 +93,10 @@ PMutexUnlock(
     PMutex *pmutexPtr
 )
 {
-    intptr_t count = (intptr_t)pthread_getspecific(pmutexPtr->counter);
-    pthread_setspecific(pmutexPtr->counter, (const void *)(count-1));
-    if (count == 1) {
-	pthread_mutex_unlock(&pmutexPtr->mutex);
+    pmutexPtr->counter--;
+    if (pmutexPtr->counter == 0) {
+        pmutexPtr->thread = 0;
+	    pthread_mutex_unlock(&pmutexPtr->mutex);
     }
 }
 
