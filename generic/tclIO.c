@@ -3515,6 +3515,7 @@ Tcl_ClearChannelHandlers(
      * Remove any EventScript records for this channel.
      */
 
+    esPtr = statePtr->scriptRecordPtr;
     statePtr->scriptRecordPtr = NULL;
     while (esPtr != NULL) {
 	eNextPtr = esPtr->nextPtr;
@@ -8320,7 +8321,7 @@ SafeFreeScriptRecord(
     /* if not executed - remove it right now */
     if (esPtr->execDepth == 0) {
 	TclDecrRefCount(esPtr->scriptPtr);
-	ckfree(esPtr);
+	ckfree((char*)esPtr);
     } else if (esPtr->execDepth > 0) {
 	/* inverse depth to notify event-handlers, they should remove it hereafter */
 	esPtr->execDepth = -esPtr->execDepth;
