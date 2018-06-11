@@ -224,6 +224,7 @@ static void		UpdateInterest(Channel *chanPtr);
 static int		Write(Channel *chanPtr, const char *src,
 			    int srcLen, Tcl_Encoding encoding);
 static Tcl_Obj *	FixLevelCode(Tcl_Obj *msg);
+static void		SafeFreeScriptRecord(EventScriptRecord *esPtr);
 static void		SpliceChannel(Tcl_Channel chan);
 static void		CutChannel(Tcl_Channel chan);
 static int              WillRead(Channel *chanPtr);
@@ -973,7 +974,7 @@ DeleteChannelTable(
     Tcl_HashEntry *hPtr;	/* Search variable. */
     Channel *chanPtr;		/* Channel being deleted. */
     ChannelState *statePtr;	/* State of Channel being deleted. */
-    EventScriptRecord *sPtr, *prevPtr, *nextPtr;
+    EventScriptRecord *esPtr, *prevPtr, *nextPtr;
 				/* Variables to loop over all channel events
 				 * registered, to delete the ones that refer
 				 * to the interpreter being deleted. */
@@ -993,10 +994,10 @@ DeleteChannelTable(
 	 * Remove any fileevents registered in this interpreter.
 	 */
 
-	for (sPtr = statePtr->scriptRecordPtr, prevPtr = NULL;
-		sPtr != NULL; sPtr = nextPtr) {
-	    nextPtr = sPtr->nextPtr;
-	    if (sPtr->interp == interp) {
+	for (esPtr = statePtr->scriptRecordPtr, prevPtr = NULL;
+		esPtr != NULL; esPtr = nextPtr) {
+	    nextPtr = esPtr->nextPtr;
+	    if (esPtr->interp == interp) {
 		if (prevPtr == NULL) {
 		    statePtr->scriptRecordPtr = nextPtr;
 		} else {
@@ -1004,12 +1005,11 @@ DeleteChannelTable(
 		}
 
 		Tcl_DeleteChannelHandler((Tcl_Channel) chanPtr,
-			TclChannelEventScriptInvoker, sPtr);
+			TclChannelEventScriptInvoker, esPtr);
 
-		TclDecrRefCount(sPtr->scriptPtr);
-		ckfree(sPtr);
+		SafeFreeScriptRecord(esPtr);
 	    } else {
-		prevPtr = sPtr;
+		prevPtr = esPtr;
 	    }
 	}
 
@@ -3882,7 +3882,7 @@ Tcl_ClearChannelHandlers(
     Tcl_Channel channel)
 {
     ChannelHandler *chPtr, *chNext;	/* Iterate over channel handlers. */
-    EventScriptRecord *ePtr, *eNextPtr;	/* Iterate over eventscript records. */
+    EventScriptRecord *esPtr, *eNextPtr;	/* Iterate over eventscript records. */
     Channel *chanPtr;			/* The real IO channel. */
     ChannelState *statePtr;		/* State of real IO channel. */
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -3945,12 +3945,14 @@ Tcl_ClearChannelHandlers(
      * Remove any EventScript records for this channel.
      */
 
-    for (ePtr = statePtr->scriptRecordPtr; ePtr != NULL; ePtr = eNextPtr) {
-	eNextPtr = ePtr->nextPtr;
-	TclDecrRefCount(ePtr->scriptPtr);
-	ckfree(ePtr);
-    }
+    esPtr = statePtr->scriptRecordPtr;
     statePtr->scriptRecordPtr = NULL;
+    while (esPtr != NULL) {
+	eNextPtr = esPtr->nextPtr;
+	SafeFreeScriptRecord(esPtr);
+	esPtr = eNextPtr;
+    }
+    
 }
 
 /*
@@ -8234,17 +8236,17 @@ CleanupChannelHandlers(
 {
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
-    EventScriptRecord *sPtr, *prevPtr, *nextPtr;
+    EventScriptRecord *esPtr, *prevPtr, *nextPtr;
 
     /*
      * Remove fileevent records on this channel that refer to the given
      * interpreter.
      */
 
-    for (sPtr = statePtr->scriptRecordPtr, prevPtr = NULL;
-	    sPtr != NULL; sPtr = nextPtr) {
-	nextPtr = sPtr->nextPtr;
-	if (sPtr->interp == interp) {
+    for (esPtr = statePtr->scriptRecordPtr, prevPtr = NULL;
+	    esPtr != NULL; esPtr = nextPtr) {
+	nextPtr = esPtr->nextPtr;
+	if (esPtr->interp == interp) {
 	    if (prevPtr == NULL) {
 		statePtr->scriptRecordPtr = nextPtr;
 	    } else {
@@ -8252,12 +8254,11 @@ CleanupChannelHandlers(
 	    }
 
 	    Tcl_DeleteChannelHandler((Tcl_Channel) chanPtr,
-		    TclChannelEventScriptInvoker, sPtr);
+		    TclChannelEventScriptInvoker, esPtr);
 
-	    TclDecrRefCount(sPtr->scriptPtr);
-	    ckfree(sPtr);
+	    SafeFreeScriptRecord(esPtr);
 	} else {
-	    prevPtr = sPtr;
+	    prevPtr = esPtr;
 	}
     }
 }
@@ -8334,7 +8335,7 @@ Tcl_NotifyChannel(
      * We break out of the procedure if it is the latter.
      */
 
-    if (!mask) {
+    if (!mask || chanPtr->state->managingThread != Tcl_GetCurrentThread()) {
 	return;
     }
 
@@ -8382,6 +8383,13 @@ Tcl_NotifyChannel(
 	} else {
 	    chPtr = chPtr->nextPtr;
 	}
+
+	/*
+	 * Stop if the channel owner has been changed.
+	 */
+	if (chanPtr->state->managingThread != Tcl_GetCurrentThread()) {
+	    goto done;
+	}
     }
 
     /*
@@ -8399,6 +8407,7 @@ Tcl_NotifyChannel(
 	UpdateInterest(chanPtr);
     }
 
+done:
     Tcl_Release(statePtr);
     TclChannelRelease(channel);
 
@@ -8818,7 +8827,16 @@ CreateScriptRecord(
 
     for (esPtr=statePtr->scriptRecordPtr; esPtr!=NULL; esPtr=esPtr->nextPtr) {
 	if ((esPtr->interp == interp) && (esPtr->mask == mask)) {
-	    SafeFreeScriptRecord(esPtr);
+	    if (esPtr->scriptPtr == scriptPtr) {
+		/* the same - nothing to do */
+		return;
+	    }
+	    /* 
+	     * Replace, we can safe decrement scriptPtr reference, because it
+	     * is increased during the execution.
+	     */
+	    TclDecrRefCount(esPtr->scriptPtr);
+	    esPtr->scriptPtr = NULL;
 	    break;
 	}
     }
@@ -8827,6 +8845,7 @@ CreateScriptRecord(
 
     if (makeCH) {
 	esPtr = ckalloc(sizeof(EventScriptRecord));
+	esPtr->execDepth = 0;
     }
 
     /*
@@ -8842,7 +8861,6 @@ CreateScriptRecord(
     esPtr->mask = mask;
     Tcl_IncrRefCount(scriptPtr);
     esPtr->scriptPtr = scriptPtr;
-    esPtr->execDepth = 0;
 
     if (makeCH) {
 	esPtr->nextPtr = statePtr->scriptRecordPtr;
@@ -8886,8 +8904,9 @@ TclChannelEventScriptInvoker(
     esPtr = clientData;
     chanPtr = esPtr->chanPtr;
 
-    if ( esPtr->scriptPtr == NULL || esPtr->execDepth < 0 
-      || Tcl_GetCurrentThread() != chanPtr->state->managingThread
+    /* First check owner thread and it's cleaned up (e. g. detach in progress) */
+    if ( chanPtr->state->managingThread != Tcl_GetCurrentThread()
+     || esPtr->scriptPtr == NULL || esPtr->execDepth < 0
     ) {
 	return;
     }
