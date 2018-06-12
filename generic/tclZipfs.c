@@ -2381,7 +2381,7 @@ ZipFSMkZipOrImgObjCmd(ClientData clientData, Tcl_Interp *interp,
                 Unlock();
             }
         } else {
-            int k, n, m;
+            int k, m, n;
             Tcl_Channel in;
             const char *errMsg = "seek error";
 
@@ -2414,8 +2414,8 @@ cperr:
             k = 0;
             while (k < i) {
                 m = i - k;
-                if (m > sizeof (buf)) {
-                    m = sizeof (buf);
+                if (m > (int)sizeof (buf)) {
+                    m = (int)sizeof (buf);
                 }
                 n = Tcl_Read(in, buf, m);
                 if (n == -1) {
