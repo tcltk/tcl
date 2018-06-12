@@ -159,10 +159,12 @@ test async-4.1 {async interrupting bytecode sequence} -constraints {
 	global aresult
 	set aresult {Async event not delivered}
 	testasync marklater $handle
-	for {set i 0} {
-	    $i < 2500000  &&  $aresult eq "Async event not delivered"
-	} {incr i} {
-	    nothing
+	# allow plenty of time to pass in case valgrind is running
+	set start [clock seconds]
+	while {
+		[clock seconds] - $start < 180 && $aresult eq "Async event not delivered"
+	} { 
+		nothing
 	}
 	return $aresult
     }} $hm
@@ -178,9 +180,12 @@ test async-4.2 {async interrupting straight bytecode sequence} -constraints {
 	global aresult
 	set aresult {Async event not delivered}
 	testasync marklater $handle
-	for {set i 0} {
-	    $i < 2500000  &&  $aresult eq "Async event not delivered"
-	} {incr i} {}
+	# allow plenty of time to pass in case valgrind is running
+	set start [clock seconds]
+	while {
+		[clock seconds] - $start < 180 && $aresult eq "Async event not delivered"
+	} {
+	}
 	return $aresult
     }} $hm
 } -result {test pattern} -cleanup {
