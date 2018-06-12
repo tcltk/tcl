@@ -132,29 +132,65 @@ typedef int ptrdiff_t;
  *
  * Note gcc > 4.1 (also for mingw) has native support for builtin atomic operations.
  * ToDo: extend with support for atomic_ops, Darwin atomic, Sun atomics if available.
+ *
+ * TclAtomicFetchAdd -- 
+ *	Performs an atomic addition and returns INITIAL value (before change);
+ * TclAtomicFetchSub --
+ *	Performs an atomic subtraction and returns INITIAL value (before change);
+ * TclpAtomicIncrFetch -- 
+ *	Increments (by one) the value as an atomic operation and returns new value (after change);
+ * TclpAtomicDecrFetch --
+ *	Decrements (by one) the value as an atomic operation and returns new value (after change);
  */
 #if !defined(__WIN32__) || defined(__GNUC__) || defined(__MINGW32__) /* UNIX or GCC */
 #  define TclAtomicInt			long volatile
-
-#  define TclAtomicFetchAdd(p, add) \
+#  define TclAtomicArg			long
+#  define TclpAtomicFetchAdd(p, add) \
 		__sync_fetch_and_add((p), (add))
-#  define TclAtomicFetchSub(p, sub) \
+#  define TclpAtomicFetchSub(p, sub) \
 		__sync_fetch_and_sub((p), (sub))
-#  define TclAtomicFetchInc(p)	\
+#  define TclpAtomicIncrFetch(p)	\
 		(__sync_add_and_fetch((p), 1))
-#  define TclAtomicFetchDec(p)	\
+#  define TclpAtomicDecrFetch(p)	\
 		(__sync_sub_and_fetch((p), 1))
 #else  /* defined(__WIN32__) */
 #  define TclAtomicInt			LONG volatile
-#  define TclAtomicFetchAdd(p, add) \
-		InterlockedExchangeAdd((LONG volatile *)(p), (add))
-#  define TclAtomicFetchSub(p, sub) \
-		InterlockedExchangeSubtract((LONG volatile *)(p), (sub))
-#  define TclAtomicFetchInc(p)	\
-		InterlockedIncrement((LONG volatile *)(p))
-#  define TclAtomicFetchDec(p)	\
-		InterlockedDecrement((LONG volatile *)(p))
+#  define TclAtomicArg			LONG
+#  define TclpAtomicFetchAdd(p, add) \
+		InterlockedExchangeAdd((p), (add))
+#  define TclpAtomicFetchSub(p, sub) \
+		InterlockedExchangeSubtract((p), (sub))
+#  define TclpAtomicIncrFetch(p)	\
+		InterlockedIncrement((p))
+#  define TclpAtomicDecrFetch(p)	\
+		InterlockedDecrement((p))
 #endif /* defined(__WIN32__) */
+
+#ifdef TCL_THREADS
+/* use atomic primitives */
+#  define TclAtomicFetchAdd(p, add) \
+		TclpAtomicFetchAdd((p), (add))
+#  define TclAtomicFetchSub(p, sub) \
+		TclpAtomicFetchSub((p), (sub))
+#  define TclAtomicIncrFetch(p)	\
+		TclpAtomicIncrFetch((p))
+#  define TclAtomicDecrFetch(p)	\
+		TclpAtomicDecrFetch((p))
+#else
+/* don't use atomic primitives (unsupported or unneeded) */
+static inline TclAtomicInt
+	  TclAtomicFetchAdd(TclAtomicInt *p, TclAtomicArg add) {
+		TclAtomicInt prev = *p; *p += add; return prev;
+	  }
+static inline TclAtomicInt
+	  TclAtomicFetchSub(TclAtomicInt *p, TclAtomicArg sub) {
+		TclAtomicInt prev = *p; *p -= sub; return prev;
+	  }
+#  define TclAtomicIncrFetch(p)	\
+		(++*(p))
+#  define TclAtomicDecrFetch(p)	\
+		(--*(p))
+#endif
 /*
  * The following procedures allow namespaces to be customized to support
  * special name resolution rules for commands/variables.
