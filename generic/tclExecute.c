@@ -6810,7 +6810,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	if (length != duiPtr->length) {
+	if ((unsigned int)length != duiPtr->length) {
 	    Tcl_Panic("dictUpdateStart argument length mismatch");
 	}
 	for (i=0 ; i<length ; i++) {

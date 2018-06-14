@@ -4899,8 +4899,8 @@ TclLogCommandInfo(
 				 * command (must be <= command). */
     const char *command,	/* First character in command that generated
 				 * the error. */
-    int length,			/* Number of bytes in command (-1 means use
-				 * all bytes up to first null byte). */
+    size_t length,			/* Number of bytes in command ((size_t)-1 means
+				 * use all bytes up to first null byte). */
     const unsigned char *pc,    /* Current pc of bytecode execution context */
     Tcl_Obj **tosPtr)		/* Current stack of bytecode execution
 				 * context */
@@ -4931,14 +4931,14 @@ TclLogCommandInfo(
 	    }
 	}
 
-	if (length < 0) {
+	if (length == (size_t)-1) {
 	    length = strlen(command);
 	}
-	overflow = (length > limit);
+	overflow = (length > (size_t)limit);
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    %s\n\"%.*s%s\"", ((iPtr->errorInfo == NULL)
 		? "while executing" : "invoked from within"),
-		(overflow ? limit : length), command,
+		(overflow ? limit : (int)length), command,
 		(overflow ? "..." : "")));
 
 	varPtr = TclObjLookupVarEx(interp, iPtr->eiVar, NULL, TCL_GLOBAL_ONLY,

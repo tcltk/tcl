@@ -2283,7 +2283,7 @@ PrintDictUpdateInfo(
     unsigned int pcOffset)
 {
     DictUpdateInfo *duiPtr = clientData;
-    int i;
+    size_t i;
 
     for (i=0 ; i<duiPtr->length ; i++) {
 	if (i) {
@@ -2301,7 +2301,7 @@ DisassembleDictUpdateInfo(
     unsigned int pcOffset)
 {
     DictUpdateInfo *duiPtr = clientData;
-    int i;
+    size_t i;
     Tcl_Obj *variables = Tcl_NewObj();
 
     for (i=0 ; i<duiPtr->length ; i++) {

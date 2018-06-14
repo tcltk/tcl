@@ -1000,7 +1000,7 @@ MODULE_SCOPE const AuxDataType tclJumptableInfoType;
  */
 
 typedef struct {
-    int length;			/* Size of array */
+    size_t length;			/* Size of array */
     int varIndices[1];		/* Array of variable indices to manage when
 				 * processing the start and end of a [dict
 				 * update]. There is really more than one
@@ -1166,7 +1166,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
 			    const char *script, const char *command,
-			    int length, const unsigned char *pc,
+			    size_t length, const unsigned char *pc,
 			    Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
@@ -1505,7 +1505,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  * these macros are:
  *
  * static void		PushLiteral(CompileEnv *envPtr,
- *			    const char *string, int length);
+ *			    const char *string, size_t length);
  * static void		PushStringLiteral(CompileEnv *envPtr,
  *			    const char *string);
  */
@@ -1513,7 +1513,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 #define PushLiteral(envPtr, string, length) \
     TclEmitPush(TclRegisterLiteral(envPtr, string, length, 0), (envPtr))
 #define PushStringLiteral(envPtr, string) \
-    PushLiteral(envPtr, string, (int) (sizeof(string "") - 1))
+    PushLiteral(envPtr, string, sizeof(string "") - 1)
 
 /*
  * Macro to advance to the next token; it is more mnemonic than the address

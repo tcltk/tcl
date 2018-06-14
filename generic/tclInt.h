@@ -1151,6 +1151,10 @@ typedef struct CallFrame {
 				 * field contains an Object reference that has
 				 * been confirmed to refer to a class. Part of
 				 * TIP#257. */
+#define FRAME_IS_PRIVATE_DEFINE 0x10
+				/* Marks this frame as being used for private
+				 * declarations with [oo::define]. Usually
+				 * OR'd with FRAME_IS_OO_DEFINE. TIP#500. */
 
 /*
  * TIP #280
@@ -3057,7 +3061,7 @@ MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
 MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp, Tcl_Obj* pathPtr);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
-			    int len);
+			    size_t len);
 MODULE_SCOPE int	TclpDeleteFile(const void *path);
 MODULE_SCOPE void	TclpFinalizeCondition(Tcl_Condition *condPtr);
 MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);

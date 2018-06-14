@@ -466,8 +466,8 @@ TclWinDriveLetterForVolMountPoint(
 TCHAR *
 Tcl_WinUtfToTChar(
     const char *string,		/* Source string in UTF-8. */
-    int len,			/* Source string length in bytes, or -1 for
-				 * strlen(). */
+    size_t len,			/* Source string length in bytes, or (size_t)-1
+				 * for strlen(). */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
@@ -478,7 +478,7 @@ Tcl_WinUtfToTChar(
     Tcl_DStringSetLength(dsPtr, 2*size+2);
     wp = (TCHAR *)Tcl_DStringValue(dsPtr);
     MultiByteToWideChar(CP_UTF8, 0, string, len, wp, size+1);
-    if (len == -1) --size; /* account for 0-byte at string end */
+    if (len == (size_t)-1) --size; /* account for 0-byte at string end */
     Tcl_DStringSetLength(dsPtr, 2*size);
     wp[size] = 0;
     return wp;
@@ -487,15 +487,15 @@ Tcl_WinUtfToTChar(
 char *
 Tcl_WinTCharToUtf(
     const TCHAR *string,	/* Source string in Unicode. */
-    int len,			/* Source string length in bytes, or -1 for
-				 * platform-specific string length. */
+    size_t len,			/* Source string length in bytes, or (size_t)-1
+				 * for platform-specific string length. */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
     char *p;
     int size;
 
-    if (len > 0) {
+    if (len != (size_t)-1) {
 	len /= 2;
     }
     size = WideCharToMultiByte(CP_UTF8, 0, string, len, 0, 0, NULL, NULL);
@@ -503,7 +503,7 @@ Tcl_WinTCharToUtf(
     Tcl_DStringSetLength(dsPtr, size+1);
     p = (char *)Tcl_DStringValue(dsPtr);
     WideCharToMultiByte(CP_UTF8, 0, string, len, p, size, NULL, NULL);
-    if (len == -1) --size; /* account for 0-byte at string end */
+    if (len == (size_t)-1) --size; /* account for 0-byte at string end */
     Tcl_DStringSetLength(dsPtr, size);
     p[size] = 0;
     return p;
