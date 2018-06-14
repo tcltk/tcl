@@ -25,7 +25,7 @@ static void		DupFsPathInternalRep(Tcl_Obj *srcPtr,
 static void		FreeFsPathInternalRep(Tcl_Obj *pathPtr);
 static void		UpdateStringOfFsPath(Tcl_Obj *pathPtr);
 static int		SetFsPathFromAny(Tcl_Interp *interp, Tcl_Obj *pathPtr);
-static int		FindSplitPos(const char *path, int separator);
+static size_t	FindSplitPos(const char *path, int separator);
 static int		IsSeparatorOrNull(int ch);
 static Tcl_Obj *	GetExtension(Tcl_Obj *pathPtr);
 static int		MakePathFromNormalized(Tcl_Interp *interp,
@@ -1225,7 +1225,7 @@ IsSeparatorOrNull(
  * of the end of the string.
  */
 
-static int
+static size_t
 FindSplitPos(
     const char *path,
     int separator)
@@ -1279,7 +1279,7 @@ Tcl_Obj *
 TclNewFSPathObj(
     Tcl_Obj *dirPtr,
     const char *addStrRep,
-    int len)
+    size_t len)
 {
     FsPath *fsPathPtr;
     Tcl_Obj *pathPtr;

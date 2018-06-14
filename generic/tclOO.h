@@ -99,6 +99,15 @@ typedef struct {
  */
 
 #define TCL_OO_METHOD_VERSION_CURRENT 1
+
+/*
+ * Visibility constants for the flags parameter to Tcl_NewMethod and
+ * Tcl_NewInstanceMethod.
+ */
+
+#define TCL_OO_METHOD_PUBLIC		1
+#define TCL_OO_METHOD_UNEXPORTED	0
+#define TCL_OO_METHOD_PRIVATE		0x20
 
 /*
  * The type of some object (or class) metadata. This describes how to delete
