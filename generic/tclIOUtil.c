@@ -533,9 +533,16 @@ TclFSCwdIsNative(void)
 
     if (tsdPtr->cwdClientData != NULL) {
 	return 1;
-    } else {
-	return 0;
+    } else if (TclFSCwdPointerEquals(NULL)) {
+	/* we've still never been called, so initialize it here and try again */
+	Tcl_Obj *objPtr = Tcl_FSGetCwd(NULL);
+	if (objPtr) {
+	    Tcl_DecrRefCount(objPtr);
+	}
+	/* check again */
+	return (tsdPtr->cwdClientData != NULL) ? 1 : 0;
     }
+    return 0;
 }
 
 /*

@@ -1271,11 +1271,11 @@ test cmdAH-24.13 {Tcl_FileObjCmd: directory mtime} -setup {
     file delete -force $dirname
 } -result {0 1}
 test cmdAH-24.14 {Tcl_FileObjCmd: directory mtime relative, bug 3e25ac512e} -body {
-    set tm [file mtime [file join [info nameofexecutable] ..]]
+    set r [catch {file mtime [file join [info nameofexecutable] ..]}]
     file mtime [pwd]
-    expr { [file mtime [file join [info nameofexecutable] ..]] >= $tm }
+    expr { [catch {file mtime [file join [info nameofexecutable] ..]}] == $r }
 } -cleanup {
-    unset -nocomplain tm
+    unset -nocomplain r
 } -result {1}
 
 # owned
