@@ -3781,7 +3781,6 @@ test iocmd.tf-32.0 {origin thread of moved channel gone} -match glob -body {
 # Use constraints to skip this test while valgrinding so this expected leak
 # doesn't prevent a finding of "leak-free".
 #
-testConstraint notValgrind [expr {![testConstraint valgrind]}]
 test iocmd.tf-32.1 {origin thread of moved channel destroyed during access} -match glob -body {
 
     #puts <<$tcltest::mainThread>>main
