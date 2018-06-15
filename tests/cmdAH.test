@@ -1270,6 +1270,13 @@ test cmdAH-24.13 {Tcl_FileObjCmd: directory mtime} -setup {
 } -cleanup {
     file delete -force $dirname
 } -result {0 1}
+test cmdAH-24.14 {Tcl_FileObjCmd: directory mtime relative, bug 3e25ac512e} -body {
+    set tm [file mtime [file join [info nameofexecutable] ..]]
+    file mtime [pwd]
+    expr { [file mtime [file join [info nameofexecutable] ..]] >= $tm }
+} -cleanup {
+    unset -nocomplain tm
+} -result {1}
 
 # owned
 

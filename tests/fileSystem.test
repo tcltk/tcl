@@ -1146,6 +1146,26 @@ test filesystem-10.1 {Bug 3414754} {
     string match */ [file join [pwd] foo/]
 } 0
 
+test filesystem-10.2.1 {Initial file-system access, bug 3e25ac512e} {
+    ## without file-access (first time):
+    set f [open "| [info nameofexecutable]" w+]
+    puts $f {puts [file exists "[info nameofexecutable]/.."]}; flush $f
+    set r [gets $f]
+    close $f
+    ## compare with this interpreter (it has already the file-access several times):
+    expr { $r == [file exists "[info nameofexecutable]/.."] }
+} 1
+test filesystem-10.2.2 {Initial file-system access, bug 3e25ac512e} {
+    ## without file-access (first time):
+    set f [open "| [info nameofexecutable]" w+]
+    puts $f {puts [catch {file mtime "[info nameofexecutable]/.."}]}; flush $f
+    set r [gets $f]
+    close $f
+    set res {}
+    ## compare with this interpreter (it has already the file-access several times):
+    expr { $r == [catch {file mtime "[info nameofexecutable]/.."}] }
+} 1
+
 cleanupTests
 unset -nocomplain drive
 }
