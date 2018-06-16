@@ -384,11 +384,10 @@ TclCreateProc(
     Proc **procPtrPtr)		/* Returns: pointer to proc data. */
 {
     Interp *iPtr = (Interp *) interp;
-    CONST char **argArray = NULL;
 
     register Proc *procPtr;
     int i, length, result, numArgs;
-    CONST char *args, *bytes, *p;
+    CONST char *bytes, *p;
     register CompiledLocal *localPtr = NULL;
     Tcl_Obj *defPtr;
     int precompiled = 0;
@@ -468,8 +467,7 @@ TclCreateProc(
      * THIS FAILS IF THE ARG LIST OBJECT'S STRING REP CONTAINS NULS.
      */
 
-    args = TclGetStringFromObj(argsPtr, &length);
-    result = Tcl_SplitList(interp, args, &numArgs, &argArray);
+    result = Tcl_ListObjLength(interp, argsPtr, &numArgs);
     if (result != TCL_OK) {
 	goto procError;
     }
@@ -489,43 +487,57 @@ TclCreateProc(
     }
 
     for (i = 0; i < numArgs; i++) {
-	int fieldCount, nameLength, valueLength;
-	CONST char **fieldValues;
+	Tcl_Obj *thisArgPtr;
+	int fieldCount;
+	Tcl_Obj *argNamePtr,   *argDefaultPtr;
+	char    *argName,      *argDefault;
+	int      argNameLength, argDefaultLength;
+
+	(void) Tcl_ListObjIndex(interp, argsPtr, i, &thisArgPtr);
 
 	/*
 	 * Now divide the specifier up into name and default.
 	 */
 
-	result = Tcl_SplitList(interp, argArray[i], &fieldCount,
-		&fieldValues);
+	result = Tcl_ListObjLength(interp, thisArgPtr, &fieldCount);
 	if (result != TCL_OK) {
 	    goto procError;
 	}
+
 	if (fieldCount > 2) {
-	    ckfree((char *) fieldValues);
 	    Tcl_AppendResult(interp,
 		    "too many fields in argument specifier \"",
-		    argArray[i], "\"", NULL);
-	    goto procError;
-	}
-	if ((fieldCount == 0) || (*fieldValues[0] == 0)) {
-	    ckfree((char *) fieldValues);
-	    Tcl_AppendResult(interp, "argument with no name", NULL);
+		    Tcl_GetStringFromObj(thisArgPtr, NULL), "\"", NULL);
 	    goto procError;
 	}
 
-	nameLength = strlen(fieldValues[0]);
-	if (fieldCount == 2) {
-	    valueLength = strlen(fieldValues[1]);
+	(void) Tcl_ListObjIndex(interp, thisArgPtr, 0, &argNamePtr);
+	(void) Tcl_ListObjIndex(interp, thisArgPtr, 1, &argDefaultPtr);
+
+	if (argNamePtr != NULL) {
+	    argName    = Tcl_GetStringFromObj(argNamePtr,    &argNameLength);
 	} else {
-	    valueLength = 0;
+	    argName = NULL;
+	    argNameLength = 0;
+	}
+
+	if (argDefaultPtr != NULL) {
+	    argDefault = Tcl_GetStringFromObj(argDefaultPtr, &argDefaultLength);
+	} else {
+	    argDefault = NULL;
+	    argDefaultLength = 0;
+	}
+
+	if ((argName == NULL) || (argName[0] == '\0')) {
+	    Tcl_AppendResult(interp, "argument with no name", NULL);
+	    goto procError;
 	}
 
 	/*
 	 * Check that the formal parameter name is a scalar.
 	 */
 
-	p = fieldValues[0];
+	p = argName;
 	while (*p != '\0') {
 	    if (*p == '(') {
 		CONST char *q = p;
@@ -535,16 +547,14 @@ TclCreateProc(
 		q--;
 		if (*q == ')') {	/* We have an array element. */
 		    Tcl_AppendResult(interp, "formal parameter \"",
-			    fieldValues[0],
+			    argName,
 			    "\" is an array element", NULL);
-		    ckfree((char *) fieldValues);
 		    goto procError;
 		}
 	    } else if ((*p == ':') && (*(p+1) == ':')) {
 		Tcl_AppendResult(interp, "formal parameter \"",
-			fieldValues[0],
+			argName,
 			"\" is not a simple name", NULL);
-		ckfree((char *) fieldValues);
 		goto procError;
 	    }
 	    p++;
@@ -562,8 +572,8 @@ TclCreateProc(
 	     * needed later when retrieving the variable names.
 	     */
 
-	    if ((localPtr->nameLength != nameLength)
-		    || (strcmp(localPtr->name, fieldValues[0]))
+	    if ((localPtr->nameLength != argNameLength)
+		    || (strcmp(localPtr->name, argName))
 		    || (localPtr->frameIndex != i)
 		    || !(localPtr->flags & VAR_ARGUMENT)
 		    || (localPtr->defValuePtr == NULL && fieldCount == 2)
@@ -571,7 +581,6 @@ TclCreateProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"procedure \"%s\": formal parameter %d is "
 			"inconsistent with precompiled body", procName, i));
-		ckfree((char *) fieldValues);
 		goto procError;
 	    }
 
@@ -584,13 +593,13 @@ TclCreateProc(
 		char *tmpPtr = TclGetStringFromObj(localPtr->defValuePtr,
 			&tmpLength);
 
-		if ((valueLength != tmpLength) ||
-			strncmp(fieldValues[1], tmpPtr, (size_t) tmpLength)) {
+		if ((argDefaultLength != tmpLength) ||
+			((tmpLength != 0) &&
+			 strncmp(argDefault, tmpPtr, (size_t) tmpLength))) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "procedure \"%s\": formal parameter \"%s\" has "
 			    "default value inconsistent with precompiled body",
-			    procName, fieldValues[0]));
-		    ckfree((char *) fieldValues);
+			    procName, argName));
 		    goto procError;
 		}
 	    }
@@ -610,7 +619,7 @@ TclCreateProc(
 
 	    localPtr = (CompiledLocal *) ckalloc((unsigned)
 		    (sizeof(CompiledLocal) - sizeof(localPtr->name)
-			    + nameLength + 1));
+			    + argNameLength + 1));
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
@@ -618,19 +627,18 @@ TclCreateProc(
 		procPtr->lastLocalPtr = localPtr;
 	    }
 	    localPtr->nextPtr = NULL;
-	    localPtr->nameLength = nameLength;
+	    localPtr->nameLength = argNameLength;
 	    localPtr->frameIndex = i;
 	    localPtr->flags = VAR_ARGUMENT;
 	    localPtr->resolveInfo = NULL;
 
 	    if (fieldCount == 2) {
-		localPtr->defValuePtr =
-			Tcl_NewStringObj(fieldValues[1], valueLength);
-		Tcl_IncrRefCount(localPtr->defValuePtr);
+		localPtr->defValuePtr = argDefaultPtr;
+		Tcl_IncrRefCount(argDefaultPtr);
 	    } else {
 		localPtr->defValuePtr = NULL;
 	    }
-	    memcpy(localPtr->name, fieldValues[0], nameLength + 1);
+	    memcpy(localPtr->name, argName, argNameLength + 1);
 	    if ((i == numArgs - 1)
 		    && (localPtr->nameLength == 4)
 		    && (localPtr->name[0] == 'a')
@@ -638,12 +646,9 @@ TclCreateProc(
 		localPtr->flags |= VAR_IS_ARGS;
 	    }
 	}
-
-	ckfree((char *) fieldValues);
     }
 
     *procPtrPtr = procPtr;
-    ckfree((char *) argArray);
     return TCL_OK;
 
   procError:
@@ -663,9 +668,6 @@ TclCreateProc(
 	    ckfree((char *) localPtr);
 	}
 	ckfree((char *) procPtr);
-    }
-    if (argArray != NULL) {
-	ckfree((char *) argArray);
     }
     return TCL_ERROR;
 }
