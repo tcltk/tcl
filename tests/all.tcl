@@ -18,5 +18,14 @@ configure {*}$argv -testdir [file dir [info script]]
 if {[singleProcess]} {
     interp debug {} -frame 1
 }
+
+set testsdir [file dirname [file dirname [file normalize [info script]/...]]]
+lappend auto_path $testsdir {*}[apply {{testsdir args} {
+    lmap x $args {
+	if {$x eq $testsdir} continue
+	lindex $x
+    }
+}} $testsdir {*}$auto_path]
+
 runAllTests
 proc exit args {}
