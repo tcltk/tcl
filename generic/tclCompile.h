@@ -1529,7 +1529,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  * Macro to get the offset to the next instruction to be issued. The ANSI C
  * "prototype" for this macro is:
  *
- * static int	CurrentOffset(CompileEnv *envPtr);
+ * static ptrdiff_t	CurrentOffset(CompileEnv *envPtr);
  */
 
 #define CurrentOffset(envPtr) \

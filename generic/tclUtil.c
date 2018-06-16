@@ -3436,6 +3436,7 @@ TclGetIntForIndex(
     const char *bytes;
 
     if (TclGetIntFromObj(NULL, objPtr, indexPtr) == TCL_OK) {
+	if (*indexPtr < -1) *indexPtr = -1;
 	return TCL_OK;
     }
 
@@ -3480,6 +3481,7 @@ TclGetIntForIndex(
 	} else {
 	    *indexPtr = first - second;
 	}
+	if (*indexPtr < -1) *indexPtr = -1;
 	return TCL_OK;
     }
 
@@ -3533,6 +3535,7 @@ GetEndOffsetFromObj(
 
     /* TODO: Handle overflow cases sensibly */
     *indexPtr = endValue + (int)objPtr->internalRep.wideValue;
+	if ((*indexPtr < -1) && (endValue < 0)) *indexPtr = -1;
     return TCL_OK;
 }
 
