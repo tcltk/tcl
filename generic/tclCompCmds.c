@@ -701,8 +701,8 @@ TclCompileCatchCmd(
     /* Stack at this point on both branches: result returnCode */
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d",
-		(int)(CurrentOffset(envPtr) - jumpFixup.codeOffset));
+	Tcl_Panic("TclCompileCatchCmd: bad jump distance %td",
+		(CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
 
     /*
@@ -1863,8 +1863,8 @@ TclCompileDictUpdateCmd(
     TclEmitInvoke(envPtr,INST_RETURN_STK);
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
-		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
+	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %td",
+		CurrentOffset(envPtr) - jumpFixup.codeOffset);
     }
     TclStackFree(interp, keyTokenPtrs);
     return TCL_OK;
@@ -2225,8 +2225,8 @@ TclCompileDictWithCmd(
      */
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
-		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
+	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %td",
+		CurrentOffset(envPtr) - jumpFixup.codeOffset);
     }
     return TCL_OK;
 }

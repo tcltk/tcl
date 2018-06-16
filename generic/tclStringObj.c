@@ -676,14 +676,17 @@ Tcl_GetUnicodeFromObj(
 Tcl_Obj *
 Tcl_GetRange(
     Tcl_Obj *objPtr,		/* The Tcl object to find the range of. */
-    int first,			/* First index of the range. */
-    int last)			/* Last index of the range. */
+    size_t first,			/* First index of the range. */
+    size_t last)			/* Last index of the range. */
 {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
     int length;
 
-    if (first < 0) {
+    if (last == (size_t)-2) {
+	last = (size_t)-1; /* For compatibility with pre-9.0 behavior */
+    }
+    if (first == (size_t)-1) {
 	first = 0;
     }
 
@@ -695,10 +698,10 @@ Tcl_GetRange(
     if (TclIsPureByteArray(objPtr)) {
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
 
-	if (last >= length) {
+	if (last+1 >= (size_t)(unsigned int)length+1) {
 	    last = length - 1;
 	}
-	if (last < first) {
+	if (last + 1 < first + 1) {
 	    return Tcl_NewObj();
 	}
 	return Tcl_NewByteArrayObj(bytes + first, last - first + 1);
@@ -720,10 +723,10 @@ Tcl_GetRange(
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
-	    if (last >= (int)stringPtr->numChars) {
+	    if (last + 1 >= stringPtr->numChars + 1) {
 		last = stringPtr->numChars - 1;
 	    }
-	    if (last < first) {
+	    if (last + 1 < first + 1) {
 		return Tcl_NewObj();
 	    }
 	    newObjPtr = Tcl_NewStringObj(objPtr->bytes + first, last-first+1);
@@ -740,19 +743,19 @@ Tcl_GetRange(
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
-    if (last > (int)stringPtr->numChars) {
+    if (last + 1 > stringPtr->numChars + 1) {
 	last = stringPtr->numChars;
     }
-    if (last < first) {
+    if (last + 1 < first + 1) {
 	return Tcl_NewObj();
     }
 #if TCL_UTF_MAX <= 4
     /* See: bug [11ae2be95dac9417] */
-    if ((first > 0) && ((stringPtr->unicode[first] & 0xFC00) == 0xDC00)
+    if ((first + 1 > 1) && ((stringPtr->unicode[first] & 0xFC00) == 0xDC00)
 	    && ((stringPtr->unicode[first-1] & 0xFC00) == 0xD800)) {
 	++first;
     }
-    if ((last + 1 < (int)stringPtr->numChars)
+    if ((last + 1 < stringPtr->numChars)
 	    && ((stringPtr->unicode[last+1] & 0xFC00) == 0xDC00)
 	    && ((stringPtr->unicode[last] & 0xFC00) == 0xD800)) {
 	++last;

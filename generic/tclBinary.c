@@ -752,9 +752,9 @@ TclAppendBytesToByteArray(
 	}
 	if (ptr == NULL) {
 	    /* Try to allocate double the increment that is needed (plus). */
-	    unsigned int limit = INT_MAX - needed;
-	    unsigned int extra = len + TCL_MIN_GROWTH;
-	    int growth = (int) ((extra > limit) ? limit : extra);
+	    size_t limit = INT_MAX - needed;
+	    size_t extra = len + TCL_MIN_GROWTH;
+	    size_t growth = (extra > limit) ? limit : extra;
 
 	    attempt = needed + growth;
 	    ptr = attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
@@ -2513,8 +2513,8 @@ BinaryDecodeHex(
   badChar:
     TclDecrRefCount(resultObj);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid hexadecimal digit \"%c\" at position %d",
-	    c, (int) (data - datastart - 1)));
+	    "invalid hexadecimal digit \"%c\" at position %td",
+	    c, data - datastart - 1));
     return TCL_ERROR;
 }
 
@@ -2915,8 +2915,8 @@ BinaryDecodeUu(
 
   badUu:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid uuencode character \"%c\" at position %d",
-	    c, (int) (data - datastart - 1)));
+	    "invalid uuencode character \"%c\" at position %td",
+	    c, data - datastart - 1));
     Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
@@ -3065,8 +3065,8 @@ BinaryDecode64(
 
   bad64:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid base64 character \"%c\" at position %d",
-	    (char) c, (int) (data - datastart - 1)));
+	    "invalid base64 character \"%c\" at position %td",
+	    (char) c, data - datastart - 1));
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
 }

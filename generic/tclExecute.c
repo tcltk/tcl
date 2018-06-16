@@ -8645,7 +8645,7 @@ PrintByteCodeInfo(
 #endif /* TCL_COMPILE_STATS */
     if (procPtr != NULL) {
 	fprintf(stdout,
-		"  Proc 0x%p, refCt %zd, args %d, compiled locals %d\n",
+		"  Proc 0x%p, refCt %zu, args %d, compiled locals %d\n",
 		procPtr, procPtr->refCount, procPtr->numArgs,
 		procPtr->numCompiledLocals);
     }
@@ -9063,8 +9063,8 @@ GetExceptRangeForPc(
     ExceptionRange *rangeArrayPtr;
     int numRanges = codePtr->numExceptRanges;
     register ExceptionRange *rangePtr;
-    int pcOffset = pc - codePtr->codeStart;
-    register int start;
+    unsigned int pcOffset = pc - codePtr->codeStart;
+    unsigned int start;
 
     if (numRanges == 0) {
 	return NULL;

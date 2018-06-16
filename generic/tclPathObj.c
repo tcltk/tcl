@@ -668,7 +668,7 @@ TclPathPart(
 
 		    Tcl_Obj *resultPtr =
 			    TclNewFSPathObj(fsPathPtr->cwdPtr, fileName,
-			    (int)(length - strlen(extension)));
+			    length - strlen(extension));
 
 		    Tcl_IncrRefCount(resultPtr);
 		    return resultPtr;
@@ -706,7 +706,7 @@ TclPathPart(
 		return pathPtr;
 	    } else {
 		Tcl_Obj *root = Tcl_NewStringObj(fileName,
-			(int) (length - strlen(extension)));
+			length - strlen(extension));
 
 		Tcl_IncrRefCount(root);
 		return root;
@@ -1100,7 +1100,7 @@ TclJoinPath(
 		Tcl_AppendToObj(res, &separator, 1);
 		TclGetStringFromObj(res, &length);
 	    }
-	    Tcl_SetObjLength(res, length + (int) strlen(strElt));
+	    Tcl_SetObjLength(res, length + strlen(strElt));
 
 	    ptr = TclGetString(res) + length;
 	    for (; *strElt != '\0'; strElt++) {
@@ -1338,12 +1338,12 @@ TclNewFSPathObj(
      * things as needing more aggressive normalization that don't actually
      * need it. No harm done.
      */
-    for (p = addStrRep; len > 0; p++, len--) {
+    for (p = addStrRep; len+1 > 1; p++, len--) {
 	switch (state) {
 	case 0:		/* So far only "." since last dirsep or start */
 	    switch (*p) {
 	    case '.':
-		count++;
+		count = 1;
 		break;
 	    case '/':
 	    case '\\':
