@@ -343,7 +343,7 @@ test oo-1.21 {basic test of OO functionality: default relations} -setup {
     }] {lsort $x}
 } -cleanup {
     interp delete $fresh
-} -result {{} {::oo::Slot ::oo::class ::oo::object} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class} {} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
+} -result {{} {::oo::Slot ::oo::abstract ::oo::class ::oo::object ::oo::singleton} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class} {::oo::abstract ::oo::singleton} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
