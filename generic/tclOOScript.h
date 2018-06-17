@@ -51,7 +51,6 @@ static const char *tclOOSetupScript =
 "    return\n"
 "}\n"
 
-/*
 "proc ::oo::define::classmethod {name {args {}} {body {}}} {\n"
 "    # Create the method on the class if the caller gave arguments and body\n"
 "    set argc [llength [info level 0]]\n"
@@ -59,12 +58,13 @@ static const char *tclOOSetupScript =
 "        return -code error [string cat {wrong # args: should be \"}"
 "                [lindex [info level 0] 0] { name ?args body?\"}]\n"
 "    }\n"
-"    # Get the name of the current class or class delegate\n"
 "    set cls [uplevel 1 self]\n"
+/*
 "    set d $cls.Delegate\n"
 "    if {[info object isa object $d] && [info object isa class $d]} {\n"
 "        set cls $d\n"
 "    }\n"
+*/
 "    if {$argc == 4} {\n"
 "        ::oo::define $cls method $name $args $body\n"
 "    }\n"
@@ -72,6 +72,7 @@ static const char *tclOOSetupScript =
 "    tailcall forward $name [info object namespace $cls]::my $name\n"
 "}\n"
 
+/*
 "# Build this *almost* like a class method, but with extra care to avoid\n"
 "# nuking the existing method.\n"
 "::oo::class create ::oo::class.Delegate {\n"
