@@ -991,6 +991,14 @@ TclParseBackslash(
     if (readPtr != NULL) {
 	*readPtr = count;
     }
+#if TCL_UTF_MAX >= 4
+    if ((result & 0xFC00) == 0xD800) {
+	dst[2] = (char) ((result | 0x80) & 0xBF);
+	dst[1] = (char) (((result >> 6) | 0x80) & 0xBF);
+	dst[0] = (char) ((result >> 12) | 0xE0);
+	return 3;
+    }
+#endif
     return Tcl_UniCharToUtf(result, dst);
 }
 
