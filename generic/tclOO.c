@@ -152,65 +152,10 @@ static const char *initScript =
 /* " tcloo.tcl OO_LIBRARY oo::library;"; */
 
 /*
- * The scripted part of the definitions of slots.
+ * The scripted part of the definitions of TclOO.
  */
 
-static const char *slotScript =
-"::oo::define ::oo::Slot {\n"
-"    method Get {} {error unimplemented}\n"
-"    method Set list {error unimplemented}\n"
-"    method -set args {\n"
-"        uplevel 1 [list [namespace which my] Set $args]\n"
-"    }\n"
-"    method -append args {\n"
-"        uplevel 1 [list [namespace which my] Set [list"
-"                {*}[uplevel 1 [list [namespace which my] Get]] {*}$args]]\n"
-"    }\n"
-"    method -clear {} {uplevel 1 [list [namespace which my] Set {}]}\n"
-"    forward --default-operation my -append\n"
-"    method unknown {args} {\n"
-"        set def --default-operation\n"
-"        if {[llength $args] == 0} {\n"
-"            return [uplevel 1 [list [namespace which my] $def]]\n"
-"        } elseif {![string match -* [lindex $args 0]]} {\n"
-"            return [uplevel 1 [list [namespace which my] $def {*}$args]]\n"
-"        }\n"
-"        next {*}$args\n"
-"    }\n"
-"    export -set -append -clear\n"
-"    unexport unknown destroy\n"
-"}\n"
-"::oo::objdefine ::oo::define::superclass forward --default-operation my -set\n"
-"::oo::objdefine ::oo::define::mixin forward --default-operation my -set\n"
-"::oo::objdefine ::oo::objdefine::mixin forward --default-operation my -set\n";
-
-/*
- * The body of the <cloned> method of oo::object.
- */
-
-static const char *clonedBody =
-"foreach p [info procs [info object namespace $originObject]::*] {"
-"    set args [info args $p];"
-"    set idx -1;"
-"    foreach a $args {"
-"        lset args [incr idx] "
-"            [if {[info default $p $a d]} {list $a $d} {list $a}]"
-"    };"
-"    set b [info body $p];"
-"    set p [namespace tail $p];"
-"    proc $p $args $b;"
-"};"
-"foreach v [info vars [info object namespace $originObject]::*] {"
-"    upvar 0 $v vOrigin;"
-"    namespace upvar [namespace current] [namespace tail $v] vNew;"
-"    if {[info exists vOrigin]} {"
-"        if {[array exists vOrigin]} {"
-"            array set vNew [array get vOrigin];"
-"        } else {"
-"            set vNew $vOrigin;"
-"        }"
-"    }"
-"}";
+#include "tclOOScript.h"
 
 /*
  * The actual definition of the variable holding the TclOO stub table.
@@ -491,7 +436,12 @@ InitFoundation(
     if (TclOODefineSlots(fPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
-    return Tcl_EvalEx(interp, slotScript, -1, 0);
+
+    /*
+     * Evaluate the remaining definitions, which are a compiled-in Tcl script.
+     */
+
+    return Tcl_EvalEx(interp, tclOOSetupScript, -1, 0);
 }
 
 /*
