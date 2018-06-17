@@ -1220,7 +1220,7 @@ tclNamesp.o: $(GENERIC_DIR)/tclNamesp.c $(COMPILEHDR)
 tclNotify.o: $(GENERIC_DIR)/tclNotify.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclNotify.c
 
-tclOO.o: $(GENERIC_DIR)/tclOO.c
+tclOO.o: $(GENERIC_DIR)/tclOO.c $(GENERIC_DIR)/tclOOScript.h
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOO.c
 
 tclOOBasic.o: $(GENERIC_DIR)/tclOOBasic.c
