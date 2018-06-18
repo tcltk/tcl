@@ -1996,6 +1996,12 @@ Tcl_AppendFormatToObj(
 		goto error;
 	    }
 	    length = Tcl_UniCharToUtf(code, buf);
+#if TCL_UTF_MAX > 3
+	    if (!length) {
+		/* Special case for handling upper surrogates. */
+		length = Tcl_UniCharToUtf(-1, buf);
+	    }
+#endif
 	    segment = Tcl_NewStringObj(buf, length);
 	    Tcl_IncrRefCount(segment);
 	    allocSegment = 1;
