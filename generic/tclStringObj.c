@@ -2040,6 +2040,10 @@ Tcl_AppendFormatToObj(
 		goto error;
 	    }
 	    length = Tcl_UniCharToUtf(code, buf);
+	    if (!length) {
+		/* Special case for handling upper surrogates. */
+		length = Tcl_UniCharToUtf(-1, buf);
+	    }
 	    segment = Tcl_NewStringObj(buf, length);
 	    Tcl_IncrRefCount(segment);
 	    allocSegment = 1;

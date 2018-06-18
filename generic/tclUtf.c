@@ -173,6 +173,13 @@ Tcl_UniCharToUtf(
 	    buf[0] = (char) ((ch >> 18) | 0xF0);
 	    return 4;
 	}
+    } else if (ch == -1) {
+	if (((buf[0] & 0xF8) == 0xF0) && ((buf[1] & 0xC0) == 0x80)
+		&& ((buf[2] & 0xCF) == 0)) {
+	    ch = 0xD7C0 + ((buf[0] & 0x07) << 8) + ((buf[1] & 0x3F) << 2)
+		    + ((buf[2] & 0x30) >> 4);
+	    goto three;
+	}
     }
 
     ch = 0xFFFD;
