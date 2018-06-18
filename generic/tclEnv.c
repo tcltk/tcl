@@ -727,10 +727,9 @@ TclFinalizeEnvironment(void)
      * free all strings in the cache.
      */
 
-    size_t i;
-
     if (env.cache) {
 #ifdef PURIFY
+	int i;
 	for (i = 0; i < env.cacheSize; i++) {
 	    ckfree(env.cache[i]);
 	}
@@ -738,11 +737,11 @@ TclFinalizeEnvironment(void)
 	ckfree(env.cache);
 	env.cache = NULL;
 	env.cacheSize = 0;
+#ifndef USE_PUTENV
 	if ((env.ourEnviron != NULL)) {
 	    ckfree(env.ourEnviron);
 	    env.ourEnviron = NULL;
 	}
-#ifndef USE_PUTENV
 	env.ourEnvironSize = 0;
 #endif
     }
