@@ -723,10 +723,18 @@ TclFinalizeEnvironment(void)
      * strings. This may leak more memory that strictly necessary, since some
      * of the strings may no longer be in the environment. However,
      * determining which ones are ok to delete is n-squared, and is pretty
-     * unlikely, so we don't bother.
+     * unlikely, so we don't bother.  However, in the case of DPURIFY, just
+     * free all strings in the cache.
      */
 
+    size_t i;
+
     if (env.cache) {
+#ifdef PURIFY
+	for (i = 0; i < env.cacheSize; i++) {
+	    ckfree(env.cache[i]);
+	}
+#endif
 	ckfree(env.cache);
 	env.cache = NULL;
 	env.cacheSize = 0;
