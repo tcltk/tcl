@@ -730,6 +730,10 @@ TclFinalizeEnvironment(void)
 	ckfree(env.cache);
 	env.cache = NULL;
 	env.cacheSize = 0;
+	if ((env.ourEnviron != NULL)) {
+	    ckfree(env.ourEnviron);
+	    env.ourEnviron = NULL;
+	}
 #ifndef USE_PUTENV
 	env.ourEnvironSize = 0;
 #endif
