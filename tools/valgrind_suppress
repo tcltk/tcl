@@ -1,0 +1,33 @@
+{
+   TclpGetPwNam/getpwname_r/__nss_next2/calloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   ...
+   fun:__nss_next2
+   ...
+   fun:TclpGetPwNam
+}
+
+{
+   TclpGetPwNam/getpwname_r/__nss_next2/malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+   fun:__nss_next2
+   ...
+   fun:TclpGetPwNam
+}
+
+{
+   TclpGetPwNam/getpwname_r/_nss_systemd_getpwnam_r/malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+   fun:_nss_systemd_getpwnam_r
+   ...
+   fun:TclpGetPwNam
+}
+
