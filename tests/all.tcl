@@ -15,22 +15,12 @@ package require Tcl 8.5-
 package require tcltest 2.2
 namespace import tcltest::*
 
-apply {args {
-    global auto_path
-    set testsdir [file dirname [file dirname [file normalize [
-	info script]/...]]]
+configure {*}$argv -testdir [file dirname [file dirname [file normalize [
+    info script]/...]]]
 
-    configure {*}$args -testdir $testsdir
-
-    if {[singleProcess]} {
-	interp debug {} -frame 1
-    }
-
-    set auto_path [lmap x $auto_path[set auto_path {}] {
-	if {$x eq $testsdir} continue
-	lindex $x
-    }]
-}} {*}$argv
+if {[singleProcess]} {
+    interp debug {} -frame 1
+}
 
 runAllTests
 proc exit args {}
