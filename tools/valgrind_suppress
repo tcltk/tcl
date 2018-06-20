@@ -51,3 +51,13 @@
    fun:TclCreateSocketAddress
 }
 
+{
+   TclpDlopen/load
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   ...
+   fun:dlopen
+   fun:TclpDlopen
+}
+
