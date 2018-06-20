@@ -31,3 +31,23 @@
    fun:TclpGetPwNam
 }
 
+{
+   TclCreatesocketAddress/getaddrinfo/calloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   ...
+   fun:getaddrinfo
+   fun:TclCreateSocketAddress
+}
+
+{
+   TclCreatesocketAddress/getaddrinfo/malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+   fun:getaddrinfo
+   fun:TclCreateSocketAddress
+}
+
