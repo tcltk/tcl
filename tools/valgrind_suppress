@@ -1,4 +1,67 @@
 {
+   TclCreatesocketAddress/getaddrinfo/calloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   ...
+   fun:getaddrinfo
+   fun:TclCreateSocketAddress
+}
+
+{
+   TclCreatesocketAddress/getaddrinfo/malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+   fun:getaddrinfo
+   fun:TclCreateSocketAddress
+}
+
+{
+   TclpDlopen/load
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   ...
+   fun:dlopen
+   fun:TclpDlopen
+}
+
+{
+   TclpGetGrNam/__nss_next2/calloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   ...
+   fun:__nss_next2
+   ...
+   fun:TclpGetGrNam
+}
+
+{
+   TclpGetGrNam/__nss_next2/malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+   fun:__nss_next2
+   ...
+   fun:TclpGetGrNam
+}
+
+{
+   TclpGetGrNam/__nss_systemd_getfrname_r/malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+   fun:_nss_systemd_getgrnam_r
+   ...
+   fun:TclpGetGrNam
+}
+
+{
    TclpGetPwNam/getpwname_r/__nss_next2/calloc
    Memcheck:Leak
    match-leak-kinds: reachable
@@ -32,32 +95,22 @@
 }
 
 {
-   TclCreatesocketAddress/getaddrinfo/calloc
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:calloc
-   ...
-   fun:getaddrinfo
-   fun:TclCreateSocketAddress
+	TclpThreadExit/pthread_exit/calloc
+    Memcheck:Leak
+    match-leak-kinds: reachable
+	fun:calloc
+	...
+	fun:pthread_exit
+	fun:TclpThreadExit
 }
 
 {
-   TclCreatesocketAddress/getaddrinfo/malloc
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   ...
-   fun:getaddrinfo
-   fun:TclCreateSocketAddress
-}
-
-{
-   TclpDlopen/load
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:calloc
-   ...
-   fun:dlopen
-   fun:TclpDlopen
+	TclpThreadExit/pthread_exit/malloc
+    Memcheck:Leak
+    match-leak-kinds: reachable
+	fun:malloc
+	...
+	fun:pthread_exit
+	fun:TclpThreadExit
 }
 
