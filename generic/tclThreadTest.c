@@ -176,11 +176,12 @@ TclThread_Init(
 }
 
 
-void * TclThreadTestFinalize() {
+void TclThreadTestFinalize() {
     if (errorProcString != NULL) {
 	ckfree(errorProcString);
 	errorProcString= NULL;
     }
+    return;
 }
 
 /*
