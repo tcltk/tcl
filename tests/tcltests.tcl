@@ -1,7 +1,11 @@
 #! /usr/bin/env tclsh
 
-# Some tests require the "exec" command.
-# Skip them if exec is not defined.
-testConstraint exec [llength [info commands exec]]
+package require tcltest 2.2
+namespace import -force ::tcltest::*
 
-testConstraint notValgrind [expr {![testConstraint valgrind]}]
+testConstraint exec          [llength [info commands exec]]
+testConstraint fcopy         [llength [info commands fcopy]]
+testConstraint fileevent     [llength [info commands fileevent]]
+testConstraint thread        [
+    expr {0 == [catch {package require Thread 2.7-}]}]
+testConstraint notValgrind   [expr {![testConstraint valgrind]}]

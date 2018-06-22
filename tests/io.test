@@ -36,14 +36,10 @@ namespace eval ::tcl::test::io {
     variable expected
 
 testConstraint testchannel      [llength [info commands testchannel]]
-testConstraint exec             [llength [info commands exec]]
 testConstraint openpipe         1
-testConstraint fileevent        [llength [info commands fileevent]]
-testConstraint fcopy            [llength [info commands fcopy]]
 testConstraint testfevent       [llength [info commands testfevent]]
 testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
-testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 testConstraint testobj		[llength [info commands testobj]]
 
 # You need a *very* special environment to do some tests.  In
