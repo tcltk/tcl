@@ -14,10 +14,6 @@
 
 #  when thread::release is used, -wait is passed in order allow the thread to
 #  be fully finalized, which avoids valgrind "still reachable" reports.
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2.2
-    namespace import -force ::tcltest::*
-}
 
 package require tcltests
 
@@ -28,13 +24,6 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testthread [expr {[info commands testthread] ne {}}]
 
-# Some tests require the Thread package
-
-testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
-
-# Some tests may not work under valgrind
-
-testConstraint notValgrind [expr {![testConstraint valgrind]}]
 
 set threadSuperKillScript {
     rename catch ""

@@ -29,6 +29,16 @@
 }
 
 {
+   TclpDlopen/load
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+   fun:dlopen
+   fun:TclpDlopen
+}
+
+{
    TclpGetGrNam/__nss_next2/calloc
    Memcheck:Leak
    match-leak-kinds: reachable
