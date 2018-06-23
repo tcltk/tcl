@@ -340,7 +340,7 @@ test oo-1.21 {basic test of OO functionality: default relations} -setup {
 	    lappend x [info object class ::oo::$initial]
 	}
 	return $x
-    }] {lsort $x}
+    }] {lsort [lmap y $x {if {[string match *::delegate $y]} continue; set y}]}
 } -cleanup {
     interp delete $fresh
 } -result {{} {::oo::Slot ::oo::abstract ::oo::class ::oo::object ::oo::singleton} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class} {::oo::abstract ::oo::singleton} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
@@ -4845,6 +4845,49 @@ test oo-40.3 {TIP 500: private and unexport} -setup {
 } -cleanup {
     cls destroy
 } -result {{} {} foo {} foo {}}
+
+test oo-41.1 {TIP 478: classmethod} -setup {
+    oo::class create parent
+} -body {
+    oo::class create ActiveRecord {
+	superclass parent
+        classmethod find args { puts "[self] called with arguments: $args" }
+    }
+    oo::class create Table {
+        superclass ActiveRecord
+    }
+    Table find foo bar
+} -cleanup {
+    parent destroy
+} -output "::Table called with arguments: foo bar\n"
+test oo-41.2 {TIP 478: classmethod in namespace} -setup {
+    namespace eval ::testns {}
+} -body {
+    namespace eval ::testns {
+	oo::class create ActiveRecord {
+	    classmethod find args { puts "[self] called with arguments: $args" }
+	}
+	oo::class create Table {
+	    superclass ActiveRecord
+	}
+    }
+    testns::Table find foo bar
+} -cleanup {
+    namespace delete ::testns
+} -output "::testns::Table called with arguments: foo bar\n"
+test oo-41.3 {TIP 478: classmethod must not interfere with constructor signatures} -setup {
+    oo::class create parent
+} -body {
+    oo::class create TestClass {
+        superclass oo::class parent
+        self method create {name ignore body} {
+            next $name $body
+        }
+    }
+    TestClass create okay {} {}
+} -cleanup {
+    parent destroy
+} -result {::okay}
 
 cleanupTests
 return
