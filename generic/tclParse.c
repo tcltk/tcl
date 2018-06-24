@@ -981,6 +981,7 @@ TclParseBackslash(
     }
     count = Tcl_UniCharToUtf(result, dst);
     if (!count) {
+	/* Special case for handling upper surrogates. */
 	count = Tcl_UniCharToUtf(-1, dst);
     }
     return count;
