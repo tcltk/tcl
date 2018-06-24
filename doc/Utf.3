@@ -121,8 +121,8 @@ case-insensitive (1).
 
 .SH DESCRIPTION
 .PP
-These routines convert between UTF-8 strings and Tcl_UniChars.  A
-Tcl_UniChar is a Unicode character represented as an unsigned, fixed-size
+These routines convert between UTF-8 strings and Unicode characters.  An
+Unicode character represented as an unsigned, fixed-size
 quantity.  A UTF-8 character is a Unicode character represented as
 a varying-length sequence of up to \fBTCL_UTF_MAX\fR bytes.  A multibyte UTF-8
 sequence consists of a lead byte followed by some number of trail bytes.
@@ -130,9 +130,12 @@ sequence consists of a lead byte followed by some number of trail bytes.
 \fBTCL_UTF_MAX\fR is the maximum number of bytes that it takes to
 represent one Unicode character in the UTF-8 representation.
 .PP
-\fBTcl_UniCharToUtf\fR stores the Tcl_UniChar \fIch\fR as a UTF-8 string
+\fBTcl_UniCharToUtf\fR stores the character \fIch\fR as a UTF-8 string
 in starting at \fIbuf\fR.  The return value is the number of bytes stored
-in \fIbuf\fR.
+in \fIbuf\fR. If ch is an upper surrogate (range U+D800 - U+DBFF), then
+the return value will be 0 and nothing will be stored. If you still
+want to produce UTF-8 output for it (even though knowing it's an illegal
+code-point on its own), just call \fBTcl_UniCharToUtf\fR again using ch = -1.
 .PP
 \fBTcl_UtfToUniChar\fR reads one UTF-8 character starting at \fIsrc\fR
 and stores it as a Tcl_UniChar in \fI*chPtr\fR.  The return value is the
@@ -203,7 +206,7 @@ of \fIlength\fR bytes is long enough to be decoded by
 \fBTcl_UtfToUniChar\fR, or 0 otherwise.  This function does not guarantee
 that the UTF-8 string is properly formed.  This routine is used by
 procedures that are operating on a byte at a time and need to know if a
-full Tcl_UniChar has been seen.
+full Unicode character has been seen.
 .PP
 \fBTcl_NumUtfChars\fR corresponds to \fBstrlen\fR for UTF-8 strings.  It
 returns the number of Tcl_UniChars that are represented by the UTF-8 string
@@ -211,12 +214,12 @@ returns the number of Tcl_UniChars that are represented by the UTF-8 string
 length is negative, all bytes up to the first null byte are used.
 .PP
 \fBTcl_UtfFindFirst\fR corresponds to \fBstrchr\fR for UTF-8 strings.  It
-returns a pointer to the first occurrence of the Tcl_UniChar \fIch\fR
+returns a pointer to the first occurrence of the Unicode character \fIch\fR
 in the null-terminated UTF-8 string \fIsrc\fR.  The null terminator is
 considered part of the UTF-8 string.
 .PP
 \fBTcl_UtfFindLast\fR corresponds to \fBstrrchr\fR for UTF-8 strings.  It
-returns a pointer to the last occurrence of the Tcl_UniChar \fIch\fR
+returns a pointer to the last occurrence of the Unicode character \fIch\fR
 in the null-terminated UTF-8 string \fIsrc\fR.  The null terminator is
 considered part of the UTF-8 string.
 .PP
