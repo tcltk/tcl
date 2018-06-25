@@ -44,6 +44,7 @@
 
 DLLEXPORT int		Tcltest_Init(Tcl_Interp *interp);
 DLLEXPORT int		Tcltest_SafeInit(Tcl_Interp *interp);
+EXTERN TCL_NORETURN void	Tcltest_Exit(ClientData clientData);
 
 /*
  * Dynamic string shared by TestdcallCmd and DelCallbackProc; used to collect
@@ -570,6 +571,10 @@ Tcltest_Init(
 	return TCL_ERROR;
     }
 
+
+    /* Finalizer */
+    Tcl_SetExitProc(Tcltest_Exit);
+
     /*
      * Create additional commands and math functions for testing Tcl.
      */
@@ -796,6 +801,17 @@ Tcltest_SafeInit(
     }
     return Procbodytest_SafeInit(interp);
 }
+
+TCL_NORETURN void Tcltest_Exit(
+    ClientData clientData
+) {
+    int status = PTR2INT(clientData);
+    Tcl_Finalize();
+    TclThreadTestFinalize();
+    TclpExit(status);
+    Tcl_Panic("OS exit failed!");
+}
+	
 
 /*
  *----------------------------------------------------------------------
