@@ -15,13 +15,7 @@
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
-    namespace import -force ::tcltest::*
 }
-
-::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
-
-testConstraint testbytestring [llength [info commands testbytestring]]
 
 namespace eval ::tcl::test::io {
     namespace import ::tcltest::*
@@ -35,6 +29,11 @@ namespace eval ::tcl::test::io {
     variable msg
     variable expected
 
+    loadTestedCommands
+    catch [list package require -exact Tcltest [info patchlevel]]
+    package require tcltests
+
+testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testchannel      [llength [info commands testchannel]]
 testConstraint openpipe         1
 testConstraint testfevent       [llength [info commands testfevent]]
