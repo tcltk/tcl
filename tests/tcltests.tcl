@@ -1,7 +1,7 @@
 #! /usr/bin/env tclsh
 
 package require tcltest 2.2
-namespace import -force ::tcltest::*
+namespace import ::tcltest::*
 
 testConstraint exec          [llength [info commands exec]]
 testConstraint fcopy         [llength [info commands fcopy]]
