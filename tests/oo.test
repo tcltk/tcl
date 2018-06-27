@@ -4851,7 +4851,9 @@ test oo-41.1 {TIP 478: classmethod} -setup {
 } -body {
     oo::class create ActiveRecord {
 	superclass parent
-        classmethod find args { puts "[self] called with arguments: $args" }
+        classmethod find args {
+	    return "[self] called with arguments: $args"
+	}
     }
     oo::class create Table {
         superclass ActiveRecord
@@ -4859,13 +4861,15 @@ test oo-41.1 {TIP 478: classmethod} -setup {
     Table find foo bar
 } -cleanup {
     parent destroy
-} -output "::Table called with arguments: foo bar\n"
+} -result {::Table called with arguments: foo bar}
 test oo-41.2 {TIP 478: classmethod in namespace} -setup {
     namespace eval ::testns {}
 } -body {
     namespace eval ::testns {
 	oo::class create ActiveRecord {
-	    classmethod find args { puts "[self] called with arguments: $args" }
+	    classmethod find args {
+		return "[self] called with arguments: $args"
+	    }
 	}
 	oo::class create Table {
 	    superclass ActiveRecord
@@ -4874,7 +4878,7 @@ test oo-41.2 {TIP 478: classmethod in namespace} -setup {
     testns::Table find foo bar
 } -cleanup {
     namespace delete ::testns
-} -output "::testns::Table called with arguments: foo bar\n"
+} -result {::testns::Table called with arguments: foo bar}
 test oo-41.3 {TIP 478: classmethod must not interfere with constructor signatures} -setup {
     oo::class create parent
 } -body {
@@ -4888,6 +4892,133 @@ test oo-41.3 {TIP 478: classmethod must not interfere with constructor signature
 } -cleanup {
     parent destroy
 } -result {::okay}
+test oo-41.4 {TIP 478: classmethod with three levels} -setup {
+    oo::class create parent
+} -body {
+    oo::class create ActiveRecord {
+	superclass parent
+        classmethod find args {
+	    return "[self] called with arguments: $args"
+	}
+    }
+    oo::class create Table {
+        superclass ActiveRecord
+    }
+    oo::class create SubTable {
+        superclass Table
+    }
+    SubTable find foo bar
+} -cleanup {
+    parent destroy
+} -result {::SubTable called with arguments: foo bar}
+
+test oo-42.1 {TIP 478: callback generation} -setup {
+    oo::class create parent
+} -body {
+    oo::class create c {
+	superclass parent
+	method CallMe {} { return ok,[self] }
+	method makeCall {} {
+	    return [callback CallMe]
+	}
+    }
+    c create ::context
+    set cb [context makeCall]
+    {*}$cb
+} -cleanup {
+    parent destroy
+} -result {ok,::context}
+test oo-42.2 {TIP 478: callback generation} -setup {
+    oo::class create parent
+} -body {
+    oo::class create c {
+	superclass parent
+	method CallMe {a b c} { return ok,[self],$a,$b,$c }
+	method makeCall {b} {
+	    return [callback CallMe 123 $b]
+	}
+    }
+    c create ::context
+    set cb [context makeCall "a b c"]
+    {*}$cb PQR
+} -cleanup {
+    parent destroy
+} -result {ok,::context,123,a b c,PQR}
+test oo-42.3 {TIP 478: callback generation, alternate name} -setup {
+    oo::class create parent
+} -body {
+    oo::class create c {
+	superclass parent
+	method CallMe {} { return ok,[self] }
+	method makeCall {} {
+	    return [mymethod CallMe]
+	}
+    }
+    c create ::context
+    set cb [context makeCall]
+    {*}$cb
+} -cleanup {
+    parent destroy
+} -result {ok,::context}
+test oo-42.4 {TIP 478: callback generation, alternate name} -setup {
+    oo::class create parent
+} -body {
+    oo::class create c {
+	superclass parent
+	method CallMe {a b c} { return ok,[self],$a,$b,$c }
+	method makeCall {b} {
+	    return [mymethod CallMe 123 $b]
+	}
+    }
+    c create ::context
+    set cb [context makeCall "a b c"]
+    {*}$cb PQR
+} -cleanup {
+    parent destroy
+} -result {ok,::context,123,a b c,PQR}
+test oo-42.5 {TIP 478: callbacks and method lifetime} -setup {
+    oo::class create parent
+} -body {
+    oo::class create c {
+	superclass parent
+	method makeCall {b} {
+	    return [callback CallMe 123 $b]
+	}
+    }
+    c create ::context
+    set cb [context makeCall "a b c"]
+    set result [list [catch {{*}$cb PQR} msg] $msg]
+    oo::objdefine context {
+	method CallMe {a b c} { return ok,[self],$a,$b,$c }
+    }
+    lappend result [{*}$cb PQR]
+} -cleanup {
+    parent destroy
+} -result {1 {unknown method "CallMe": must be <cloned>, destroy, eval, makeCall, unknown, variable or varname} {ok,::context,123,a b c,PQR}}
+test oo-42.6 {TIP 478: callback use case} -setup {
+    oo::class create parent
+    unset -nocomplain x
+} -body {
+    oo::class create c {
+	superclass parent
+	variable count
+	constructor {var} {
+	    set count 0
+	    upvar 1 $var v
+	    trace add variable v write [callback TraceCallback]
+	}
+	method count {} {return $count}
+	method TraceCallback {name1 name2 op} {
+	    incr count
+	}
+    }
+    set o [c new x]
+    for {set x 0} {$x < 5} {incr x} {}
+    $o count
+} -cleanup {
+    unset -nocomplain x
+    parent destroy
+} -result 6
 
 cleanupTests
 return

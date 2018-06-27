@@ -73,10 +73,21 @@ static const char *tclOOSetupScript =
 "}\n"
 
 "proc ::oo::MixinClassDelegates {class} {\n"
-"    ::oo::objdefine $class mixin -append {*}[lmap c [info class superclass $class] {\n"
+"    if {![info object isa class $class]} {\n"
+"        return\n"
+"    }\n"
+"    set delegate [::oo::DelegateName $class]\n"
+"    if {![info object isa class $delegate]} {\n"
+"        return\n"
+"    }\n"
+"    foreach c [info class superclass $class] {"
 "        set d [::oo::DelegateName $c]\n"
-"        if {![info object isa class $d]} continue; set d\n"
-"    }]\n"
+"        if {![info object isa class $d]} {\n"
+"            continue\n"
+"        }\n"
+"        ::oo::define $delegate superclass -append $d\n"
+"    }\n"
+"    ::oo::objdefine $class mixin -append $delegate\n"
 "}\n"
 
 "::proc ::oo::define::initialise {body} {\n"
@@ -114,6 +125,19 @@ static const char *tclOOSetupScript =
 "::oo::objdefine ::oo::define::mixin forward --default-operation my -set\n"
 "::oo::objdefine ::oo::objdefine::mixin forward --default-operation my -set\n"
 
+"::oo::define ::oo::class method <cloned> {originObject} {\n"
+"    next $originObject\n"
+"    # Rebuild the class inheritance delegation class\n"
+"    set originDelegate [::oo::DelegateName $originObject]\n"
+"    set targetDelegate [::oo::DelegateName [self]]\n"
+"    if {[info object isa class $originDelegate] && ![info object isa class $targetDelegate]} {\n"
+"        ::oo::copy $originDelegate $targetDelegate\n"
+"        ::oo::objdefine [self] mixin -set {*}[lmap c [info object mixin [self]] {\n"
+"            if {$c eq $originDelegate} {set targetDelegate} {set c}\n"
+"        }]\n"
+"    }\n"
+"}\n"
+
 "::oo::class create ::oo::singleton {\n"
 "    superclass ::oo::class\n"
 "    variable object\n"
@@ -137,6 +161,7 @@ static const char *tclOOSetupScript =
  */
 
 static const char *clonedBody =
+"# Copy over the procedures from the original namespace\n"
 "foreach p [info procs [info object namespace $originObject]::*] {\n"
 "    set args [info args $p]\n"
 "    set idx -1\n"
@@ -148,6 +173,7 @@ static const char *clonedBody =
 "    set p [namespace tail $p]\n"
 "    proc $p $args $b\n"
 "}\n"
+"# Copy over the variables from the original namespace\n"
 "foreach v [info vars [info object namespace $originObject]::*] {\n"
 "    upvar 0 $v vOrigin\n"
 "    namespace upvar [namespace current] [namespace tail $v] vNew\n"
@@ -158,7 +184,8 @@ static const char *clonedBody =
 "            set vNew $vOrigin\n"
 "        }\n"
 "    }\n"
-"}\n";
+"}\n"
+;
 
 #endif /* TCL_OO_SCRIPT_H */
 
