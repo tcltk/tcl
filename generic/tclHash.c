@@ -34,18 +34,18 @@
  * Prototypes for the array hash key methods.
  */
 
-static Tcl_HashEntry *	AllocArrayEntry(Tcl_HashTable *tablePtr, CONST90 void *keyPtr);
-static int		CompareArrayKeys(CONST90 void *keyPtr, Tcl_HashEntry *hPtr);
-static TCL_HASH_TYPE	HashArrayKey(Tcl_HashTable *tablePtr, CONST90 void *keyPtr);
+static Tcl_HashEntry *	AllocArrayEntry(Tcl_HashTable *tablePtr, void *keyPtr);
+static int		CompareArrayKeys(void *keyPtr, Tcl_HashEntry *hPtr);
+static TCL_HASH_TYPE	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Prototypes for the string hash key methods.
  */
 
 static Tcl_HashEntry *	AllocStringEntry(Tcl_HashTable *tablePtr,
-			    CONST90 void *keyPtr);
-static int		CompareStringKeys(CONST90 void *keyPtr, Tcl_HashEntry *hPtr);
-static TCL_HASH_TYPE	HashStringKey(Tcl_HashTable *tablePtr, CONST90 void *keyPtr);
+			    void *keyPtr);
+static int		CompareStringKeys(void *keyPtr, Tcl_HashEntry *hPtr);
+static TCL_HASH_TYPE	HashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Function prototypes for static functions in this file:
@@ -619,16 +619,16 @@ Tcl_HashStats(
      */
 
     result = ckalloc((NUM_COUNTERS * 60) + 300);
-    sprintf(result, "%" TCL_LL_MODIFIER "d entries in table, %" TCL_LL_MODIFIER "d buckets\n",
-	    (Tcl_WideInt)tablePtr->numEntries, (Tcl_WideInt)tablePtr->numBuckets);
+    sprintf(result, "%" TCL_Z_MODIFIER "u entries in table, %" TCL_Z_MODIFIER "u buckets\n",
+	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i = 0; i < NUM_COUNTERS; i++) {
-	sprintf(p, "number of buckets with %d entries: %" TCL_LL_MODIFIER "d\n",
-		(int)i, (Tcl_WideInt)count[i]);
+	sprintf(p, "number of buckets with %" TCL_Z_MODIFIER "u entries: %" TCL_Z_MODIFIER "u\n",
+		i, count[i]);
 	p += strlen(p);
     }
-    sprintf(p, "number of buckets with %d or more entries: %d\n",
-	    NUM_COUNTERS, (int)overflow);
+    sprintf(p, "number of buckets with %d or more entries: %" TCL_Z_MODIFIER "u\n",
+	    NUM_COUNTERS, overflow);
     p += strlen(p);
     sprintf(p, "average search distance for entry: %.1f", average);
     return result;
@@ -653,7 +653,7 @@ Tcl_HashStats(
 static Tcl_HashEntry *
 AllocArrayEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    CONST90 void *keyPtr)		/* Key to store in the hash table entry. */
+    void *keyPtr)			/* Key to store in the hash table entry. */
 {
     int *array = (int *) keyPtr;
     register int *iPtr1, *iPtr2;
@@ -697,11 +697,11 @@ AllocArrayEntry(
 
 static int
 CompareArrayKeys(
-    CONST90 void *keyPtr,		/* New key to compare. */
+    void *keyPtr,			/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
-    register const int *iPtr1 = (const int *) keyPtr;
-    register const int *iPtr2 = (const int *) hPtr->key.words;
+    const int *iPtr1 = keyPtr;
+    const int *iPtr2 = hPtr->key.words;
     Tcl_HashTable *tablePtr = hPtr->tablePtr;
     int count;
 
@@ -737,7 +737,7 @@ CompareArrayKeys(
 static TCL_HASH_TYPE
 HashArrayKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    CONST90 void *keyPtr)		/* Key from which to compute hash value. */
+    void *keyPtr)				/* Key from which to compute hash value. */
 {
     register const int *array = (const int *) keyPtr;
     register TCL_HASH_TYPE result;
@@ -769,7 +769,7 @@ HashArrayKey(
 static Tcl_HashEntry *
 AllocStringEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    CONST90 void *keyPtr)		/* Key to store in the hash table entry. */
+    void *keyPtr)			/* Key to store in the hash table entry. */
 {
     const char *string = (const char *) keyPtr;
     Tcl_HashEntry *hPtr;
@@ -804,13 +804,10 @@ AllocStringEntry(
 
 static int
 CompareStringKeys(
-    CONST90 void *keyPtr,		/* New key to compare. */
+    void *keyPtr,			/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
-    register const char *p1 = (const char *) keyPtr;
-    register const char *p2 = (const char *) hPtr->key.string;
-
-    return !strcmp(p1, p2);
+    return !strcmp(keyPtr, hPtr->key.string);
 }
 
 /*
@@ -833,7 +830,7 @@ CompareStringKeys(
 static TCL_HASH_TYPE
 HashStringKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    CONST90 void *keyPtr)		/* Key from which to compute hash value. */
+    void *keyPtr)			/* Key from which to compute hash value. */
 {
     register const char *string = keyPtr;
     register TCL_HASH_TYPE result;

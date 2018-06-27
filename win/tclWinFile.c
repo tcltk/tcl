@@ -567,7 +567,6 @@ WinReadLinkDirectory(
 	 */
 
 	offset = 0;
-#ifdef UNICODE
 	if (reparseBuffer->MountPointReparseBuffer.PathBuffer[0] == L'\\') {
 	    /*
 	     * Check whether this is a mounted volume.
@@ -629,7 +628,6 @@ WinReadLinkDirectory(
 		offset = 4;
 	    }
 	}
-#endif /* UNICODE */
 
 	Tcl_WinTCharToUtf((const TCHAR *)
 		reparseBuffer->MountPointReparseBuffer.PathBuffer,
@@ -800,7 +798,7 @@ tclWinDebugPanic(
 {
 #define TCL_MAX_WARN_LEN 1024
     va_list argList;
-    char buf[TCL_MAX_WARN_LEN * TCL_UTF_MAX];
+    char buf[TCL_MAX_WARN_LEN * 3];
     WCHAR msgString[TCL_MAX_WARN_LEN];
 
     va_start(argList, format);
@@ -849,19 +847,9 @@ TclpFindExecutable(
 				 * ignore. */
 {
     WCHAR wName[MAX_PATH];
-    char name[MAX_PATH * TCL_UTF_MAX];
+    char name[MAX_PATH * 3];
 
-#ifdef UNICODE
     GetModuleFileNameW(NULL, wName, MAX_PATH);
-#else
-    GetModuleFileNameA(NULL, name, sizeof(name));
-
-    /*
-     * Convert to WCHAR to get out of ANSI codepage
-     */
-
-    MultiByteToWideChar(CP_ACP, 0, name, -1, wName, MAX_PATH);
-#endif
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
     TclWinNoBackslash(name);
     TclSetObjNameOfExecutable(Tcl_NewStringObj(name, -1), NULL);
@@ -1626,7 +1614,6 @@ NativeAccess(
      * what permissions the OS has set for a file.
      */
 
-#ifdef UNICODE
     {
 	SECURITY_DESCRIPTOR *sdPtr = NULL;
 	unsigned long size;
@@ -1789,7 +1776,6 @@ NativeAccess(
 	}
 
     }
-#endif /* !UNICODE */
     return 0;
 }
 

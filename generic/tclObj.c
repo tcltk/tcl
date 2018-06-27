@@ -220,7 +220,7 @@ static int		GetBignumFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  * Prototypes for the array hash key methods.
  */
 
-static Tcl_HashEntry *	AllocObjEntry(Tcl_HashTable *tablePtr, CONST90 void *keyPtr);
+static Tcl_HashEntry *	AllocObjEntry(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Prototypes for the CommandName object type.
@@ -3111,8 +3111,7 @@ TclGetNumberFromObj(
 	}
 	if (objPtr->typePtr == &tclBignumType) {
 	    static Tcl_ThreadDataKey bignumKey;
-	    mp_int *bigPtr = Tcl_GetThreadData(&bignumKey,
-		    (int) sizeof(mp_int));
+	    mp_int *bigPtr = Tcl_GetThreadData(&bignumKey, sizeof(mp_int));
 
 	    UNPACK_BIGNUM(objPtr, *bigPtr);
 	    *typePtr = TCL_NUMBER_BIG;
@@ -3375,7 +3374,7 @@ Tcl_InitObjHashTable(
 static Tcl_HashEntry *
 AllocObjEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    CONST90 void *keyPtr)		/* Key to store in the hash table entry. */
+    void *keyPtr)		/* Key to store in the hash table entry. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     Tcl_HashEntry *hPtr = ckalloc(sizeof(Tcl_HashEntry));
@@ -3406,7 +3405,7 @@ AllocObjEntry(
 
 int
 TclCompareObjKeys(
-    CONST90 void *keyPtr,		/* New key to compare. */
+    void *keyPtr,		/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
     Tcl_Obj *objPtr1 = (Tcl_Obj *) keyPtr;
@@ -3496,7 +3495,7 @@ TclFreeObjEntry(
 TCL_HASH_TYPE
 TclHashObjKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    CONST90 void *keyPtr)		/* Key from which to compute hash value. */
+    void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     const char *string = TclGetString(objPtr);
@@ -3914,10 +3913,10 @@ Tcl_RepresentationCmd(
      * "1872361827361287"
      */
 
-    descObj = Tcl_ObjPrintf("value is a %s with a refcount of %d,"
+    descObj = Tcl_ObjPrintf("value is a %s with a refcount of %" TCL_Z_MODIFIER "d,"
 	    " object pointer at %p",
 	    objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
-	    (int) objv[1]->refCount, objv[1]);
+	    objv[1]->refCount, objv[1]);
 
     if (objv[1]->typePtr) {
 	if (objv[1]->typePtr == &tclDoubleType) {

@@ -208,9 +208,6 @@ extern "C" {
 #if !defined(CONST86) && !defined(TCL_NO_DEPRECATED)
 #      define CONST86 const
 #endif
-#ifndef CONST90
-#      define CONST90 const
-#endif
 
 /*
  * Make sure EXTERN isn't defined elsewhere.
@@ -967,10 +964,10 @@ typedef struct Tcl_HashKeyType Tcl_HashKeyType;
 typedef struct Tcl_HashTable Tcl_HashTable;
 typedef struct Tcl_HashEntry Tcl_HashEntry;
 
-typedef TCL_HASH_TYPE (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, CONST90 void *keyPtr);
-typedef int (Tcl_CompareHashKeysProc) (CONST90 void *keyPtr, Tcl_HashEntry *hPtr);
+typedef TCL_HASH_TYPE (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
+typedef int (Tcl_CompareHashKeysProc) (void *keyPtr, Tcl_HashEntry *hPtr);
 typedef Tcl_HashEntry * (Tcl_AllocHashEntryProc) (Tcl_HashTable *tablePtr,
-	CONST90 void *keyPtr);
+	void *keyPtr);
 typedef void (Tcl_FreeHashEntryProc) (Tcl_HashEntry *hPtr);
 
 /*

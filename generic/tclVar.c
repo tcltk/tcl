@@ -24,9 +24,9 @@
  * Prototypes for the variable hash key methods.
  */
 
-static Tcl_HashEntry *	AllocVarEntry(Tcl_HashTable *tablePtr, CONST90 void *keyPtr);
+static Tcl_HashEntry *	AllocVarEntry(Tcl_HashTable *tablePtr, void *keyPtr);
 static void		FreeVarEntry(Tcl_HashEntry *hPtr);
-static int		CompareVarKeys(CONST90 void *keyPtr, Tcl_HashEntry *hPtr);
+static int		CompareVarKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 
 static const Tcl_HashKeyType tclVarHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,	/* version */
@@ -6389,7 +6389,7 @@ TclInitVarHashTable(
 static Tcl_HashEntry *
 AllocVarEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    CONST90 void *keyPtr)		/* Key to store in the hash table entry. */
+    void *keyPtr)		/* Key to store in the hash table entry. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     Tcl_HashEntry *hPtr;
@@ -6428,7 +6428,7 @@ FreeVarEntry(
 
 static int
 CompareVarKeys(
-    CONST90 void *keyPtr,		/* New key to compare. */
+    void *keyPtr,			/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
     Tcl_Obj *objPtr1 = (Tcl_Obj *)keyPtr;
