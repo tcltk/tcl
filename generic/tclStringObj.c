@@ -536,7 +536,7 @@ Tcl_GetUniChar(
 		return -1;
 	}
 
-	return (int) bytes[index];
+	return bytes[index];
     }
 
     /*
@@ -683,9 +683,6 @@ Tcl_GetRange(
     String *stringPtr;
     int length;
 
-    if (last == (size_t)-2) {
-	last = (size_t)-1; /* For compatibility with pre-9.0 behavior */
-    }
     if (first == (size_t)-1) {
 	first = 0;
     }
@@ -698,10 +695,10 @@ Tcl_GetRange(
     if (TclIsPureByteArray(objPtr)) {
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
 
-	if (last+1 >= (size_t)(unsigned int)length+1) {
+	if (last+2 >= (size_t)(unsigned int)length+2) {
 	    last = length - 1;
 	}
-	if (last + 1 < first + 1) {
+	if (last + 2 < first + 2) {
 	    return Tcl_NewObj();
 	}
 	return Tcl_NewByteArrayObj(bytes + first, last - first + 1);
@@ -723,10 +720,10 @@ Tcl_GetRange(
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
-	    if (last + 1 >= stringPtr->numChars + 1) {
+	    if (last + 2 >= stringPtr->numChars + 2) {
 		last = stringPtr->numChars - 1;
 	    }
-	    if (last + 1 < first + 1) {
+	    if (last + 2 < first + 2) {
 		return Tcl_NewObj();
 	    }
 	    newObjPtr = Tcl_NewStringObj(objPtr->bytes + first, last-first+1);
@@ -743,10 +740,10 @@ Tcl_GetRange(
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
-    if (last + 1 > stringPtr->numChars + 1) {
+    if (last + 2 > stringPtr->numChars + 2) {
 	last = stringPtr->numChars;
     }
-    if (last + 1 < first + 1) {
+    if (last + 2 < first + 2) {
 	return Tcl_NewObj();
     }
 #if TCL_UTF_MAX <= 4
@@ -755,7 +752,7 @@ Tcl_GetRange(
 	    && ((stringPtr->unicode[first-1] & 0xFC00) == 0xD800)) {
 	++first;
     }
-    if ((last + 1 < stringPtr->numChars)
+    if ((last + 2 < stringPtr->numChars + 1)
 	    && ((stringPtr->unicode[last+1] & 0xFC00) == 0xDC00)
 	    && ((stringPtr->unicode[last] & 0xFC00) == 0xD800)) {
 	++last;
@@ -1995,6 +1992,10 @@ Tcl_AppendFormatToObj(
 		goto error;
 	    }
 	    length = Tcl_UniCharToUtf(code, buf);
+	    if (!length) {
+		/* Special case for handling upper surrogates. */
+		length = Tcl_UniCharToUtf(-1, buf);
+	    }
 	    segment = Tcl_NewStringObj(buf, length);
 	    Tcl_IncrRefCount(segment);
 	    allocSegment = 1;
@@ -2124,7 +2125,7 @@ Tcl_AppendFormatToObj(
 		const char *bytes;
 
 		if (useShort) {
-		    pure = Tcl_NewIntObj((int) s);
+		    pure = Tcl_NewIntObj(s);
 #ifndef TCL_WIDE_INT_IS_LONG
 		} else if (useWide) {
 		    pure = Tcl_NewWideIntObj(w);
@@ -2255,9 +2256,9 @@ Tcl_AppendFormatToObj(
 		    numDigits = 1;
 		}
 		pure = Tcl_NewObj();
-		Tcl_SetObjLength(pure, (int) numDigits);
+		Tcl_SetObjLength(pure, numDigits);
 		bytes = TclGetString(pure);
-		toAppend = length = (int) numDigits;
+		toAppend = length = numDigits;
 		while (numDigits--) {
 		    int digitOffset;
 
@@ -2269,7 +2270,7 @@ Tcl_AppendFormatToObj(
 			}
 			shift -= numBits;
 		    }
-		    digitOffset = (int) (bits % base);
+		    digitOffset = bits % base;
 		    if (digitOffset > 9) {
 			if (ch == 'X') {
 			    bytes[numDigits] = 'A' + digitOffset - 10;
@@ -2561,7 +2562,7 @@ AppendPrintfToObjVA(
 		 */
 
 		q = Tcl_UtfPrev(end, bytes);
-		if (!Tcl_UtfCharComplete(q, (int)(end - q))) {
+		if (!Tcl_UtfCharComplete(q, (end - q))) {
 		    end = q;
 		}
 
@@ -2572,7 +2573,7 @@ AppendPrintfToObjVA(
 		}
 
 		Tcl_ListObjAppendElement(NULL, list,
-			Tcl_NewStringObj(bytes , (int)(end - bytes)));
+			Tcl_NewStringObj(bytes , (end - bytes)));
 
 		break;
 	    }
@@ -2622,7 +2623,7 @@ AppendPrintfToObjVA(
 		seekingConversion = 0;
 		break;
 	    case '*':
-		lastNum = (int) va_arg(argList, int);
+		lastNum = va_arg(argList, int);
 		Tcl_ListObjAppendElement(NULL, list, Tcl_NewIntObj(lastNum));
 		p++;
 		break;
@@ -2630,7 +2631,7 @@ AppendPrintfToObjVA(
 	    case '5': case '6': case '7': case '8': case '9': {
 		char *end;
 
-		lastNum = (int) strtoul(p, &end, 10);
+		lastNum = strtoul(p, &end, 10);
 		p = end;
 		break;
 	    }
@@ -4210,7 +4211,7 @@ ExtendStringRepWithUnicode(
   copyBytes:
     dst = objPtr->bytes + origLength;
     for (i = 0; i < numChars; i++) {
-	dst += Tcl_UniCharToUtf((int) unicode[i], dst);
+	dst += Tcl_UniCharToUtf(unicode[i], dst);
     }
     *dst = '\0';
     objPtr->length = dst - objPtr->bytes;

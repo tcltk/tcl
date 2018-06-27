@@ -173,6 +173,13 @@ Tcl_UniCharToUtf(
 	    buf[0] = (char) ((ch >> 18) | 0xF0);
 	    return 4;
 	}
+    } else if (ch == -1) {
+	if (((buf[0] & 0xF8) == 0xF0) && ((buf[1] & 0xC0) == 0x80)
+		&& ((buf[2] & 0xCF) == 0)) {
+	    ch = 0xD7C0 + ((buf[0] & 0x07) << 8) + ((buf[1] & 0x3F) << 2)
+		    + ((buf[2] & 0x30) >> 4);
+	    goto three;
+	}
     }
 
     ch = 0xFFFD;
@@ -212,6 +219,7 @@ Tcl_UniCharToUtfDString(
     const Tcl_UniChar *w, *wEnd;
     char *p, *string;
     size_t oldLength;
+    int len = 1;
 
     /*
      * UTF-8 string length in bytes will be <= Unicode string length * 4.
@@ -224,8 +232,17 @@ Tcl_UniCharToUtfDString(
     p = string;
     wEnd = uniStr + uniLength;
     for (w = uniStr; w < wEnd; ) {
-	p += Tcl_UniCharToUtf(*w, p);
+	if (!len && ((*w & 0xFC00) != 0xDC00)) {
+	    /* Special case for handling upper surrogates. */
+	    p += Tcl_UniCharToUtf(-1, p);
+	}
+	len = Tcl_UniCharToUtf(*w, p);
+	p += len;
 	w++;
+    }
+    if (!len) {
+	/* Special case for handling upper surrogates. */
+	p += Tcl_UniCharToUtf(-1, p);
     }
     Tcl_DStringSetLength(dsPtr, oldLength + (p - string));
 
@@ -899,7 +916,7 @@ Tcl_UtfToUpper(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if (bytes < TclUtfCount(upChar)) {
+	if ((bytes < TclUtfCount(upChar)) || ((upChar & 0xF800) == 0xD800)) {
 	    memcpy(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {
@@ -962,7 +979,7 @@ Tcl_UtfToLower(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if (bytes < TclUtfCount(lowChar)) {
+	if ((bytes < TclUtfCount(lowChar)) || ((lowChar & 0xF800) == 0xD800)) {
 	    memcpy(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {
@@ -1022,7 +1039,7 @@ Tcl_UtfToTitle(
 #endif
 	titleChar = Tcl_UniCharToTitle(titleChar);
 
-	if (bytes < TclUtfCount(titleChar)) {
+	if ((bytes < TclUtfCount(titleChar)) || ((titleChar & 0xF800) == 0xD800)) {
 	    memcpy(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {
@@ -1046,7 +1063,7 @@ Tcl_UtfToTitle(
 	    lowChar = Tcl_UniCharToLower(lowChar);
 	}
 
-	if (bytes < TclUtfCount(lowChar)) {
+	if ((bytes < TclUtfCount(lowChar)) || ((lowChar & 0xF800) == 0xD800)) {
 	    memcpy(dst, src, (size_t) bytes);
 	    dst += bytes;
 	} else {

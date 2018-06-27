@@ -35,7 +35,7 @@ Tcl_ConsolePanic(
 #define TCL_MAX_WARN_LEN 26000
     va_list argList;
     WCHAR msgString[TCL_MAX_WARN_LEN];
-    char buf[TCL_MAX_WARN_LEN * TCL_UTF_MAX];
+    char buf[TCL_MAX_WARN_LEN * 3];
     HANDLE handle = GetStdHandle(STD_ERROR_HANDLE);
     DWORD dummy;
 

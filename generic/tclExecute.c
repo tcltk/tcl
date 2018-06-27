@@ -4754,7 +4754,7 @@ TEBCresume(
 
 	/* Decode index value operands. */
 
-	/* 
+	/*
 	assert ( toIdx != TCL_INDEX_AFTER);
 	 *
 	 * Extra safety for legacy bytecodes:
@@ -5015,9 +5015,15 @@ TEBCresume(
 	     * but creating the object as a string seems to be faster in
 	     * practical use.
 	     */
-
-	    length = (ch != -1) ? Tcl_UniCharToUtf(ch, buf) : 0;
-	    objResultPtr = Tcl_NewStringObj(buf, length);
+	    if (ch == -1) {
+		objResultPtr = Tcl_NewObj();
+	    } else {
+		length = Tcl_UniCharToUtf(ch, buf);
+		if (!length) {
+		    length = Tcl_UniCharToUtf(-1, buf);
+		}
+		objResultPtr = Tcl_NewStringObj(buf, length);
+	    }
 	}
 
 	TRACE_APPEND(("\"%s\"\n", O2S(objResultPtr)));

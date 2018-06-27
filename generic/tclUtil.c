@@ -1907,7 +1907,7 @@ TclTrim(
  */
 
 /* The whitespace characters trimmed during [concat] operations */
-#define CONCAT_WS_SIZE (int) (sizeof(CONCAT_TRIM_SET "") - 1)
+#define CONCAT_WS_SIZE (sizeof(CONCAT_TRIM_SET "") - 1)
 
 char *
 Tcl_Concat(
@@ -3535,7 +3535,7 @@ GetEndOffsetFromObj(
 
     /* TODO: Handle overflow cases sensibly */
     *indexPtr = endValue + (int)objPtr->internalRep.wideValue;
-	if ((*indexPtr < -1) && (endValue < 0)) *indexPtr = -1;
+	if ((*indexPtr < -1) && (endValue > 0)) *indexPtr = -1;
     return TCL_OK;
 }
 
