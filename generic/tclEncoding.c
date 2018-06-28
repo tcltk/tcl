@@ -1048,12 +1048,13 @@ Tcl_ExternalToUtfDString(
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
-    int srcLen,			/* Source string length in bytes, or < 0 for
+    size_t xxx1,		/* Source string length in bytes, or (size_t)-1 for
 				 * encoding-specific string length. */
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
     char *dst;
+    int srcLen = xxx1;
     Tcl_EncodingState state;
     const Encoding *encodingPtr;
     int flags, dstLen, result, soFar, srcRead, dstWrote, dstChars;
@@ -1121,7 +1122,7 @@ Tcl_ExternalToUtf(
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
-    int srcLen,			/* Source string length in bytes, or < 0 for
+    size_t xxx1,		/* Source string length in bytes, or < 0 for
 				 * encoding-specific string length. */
     int flags,			/* Conversion control flags. */
     Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
@@ -1131,7 +1132,7 @@ Tcl_ExternalToUtf(
 				 * routine under control of flags argument. */
     char *dst,			/* Output buffer in which converted string is
 				 * stored. */
-    int dstLen,			/* The maximum length of output buffer in
+    size_t xxx11,		/* The maximum length of output buffer in
 				 * bytes. */
     int *srcReadPtr,		/* Filled with the number of bytes from the
 				 * source string that were converted. This may
@@ -1146,6 +1147,7 @@ Tcl_ExternalToUtf(
 				 * output buffer. */
 {
     const Encoding *encodingPtr;
+    int srcLen = xxx1, dstLen = xxx11;
     int result, srcRead, dstWrote, dstChars = 0;
     int noTerminate = flags & TCL_ENCODING_NO_TERMINATE;
     int charLimited = (flags & TCL_ENCODING_CHAR_LIMIT) && dstCharsPtr;
@@ -1238,12 +1240,13 @@ Tcl_UtfToExternalDString(
     Tcl_Encoding encoding,	/* The encoding for the converted string, or
 				 * NULL for the default system encoding. */
     const char *src,		/* Source string in UTF-8. */
-    int srcLen,			/* Source string length in bytes, or < 0 for
+    size_t xxx1,		/* Source string length in bytes, or (size_t)-1 for
 				 * strlen(). */
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
     char *dst;
+    int srcLen = xxx1;
     Tcl_EncodingState state;
     const Encoding *encodingPtr;
     int flags, dstLen, result, soFar, srcRead, dstWrote, dstChars;
@@ -1313,7 +1316,7 @@ Tcl_UtfToExternal(
     Tcl_Encoding encoding,	/* The encoding for the converted string, or
 				 * NULL for the default system encoding. */
     const char *src,		/* Source string in UTF-8. */
-    int srcLen,			/* Source string length in bytes, or < 0 for
+    size_t xxx1,		/* Source string length in bytes, or < 0 for
 				 * strlen(). */
     int flags,			/* Conversion control flags. */
     Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
@@ -1323,7 +1326,7 @@ Tcl_UtfToExternal(
 				 * routine under control of flags argument. */
     char *dst,			/* Output buffer in which converted string
 				 * is stored. */
-    int dstLen,			/* The maximum length of output buffer in
+    size_t xxx11,		/* The maximum length of output buffer in
 				 * bytes. */
     int *srcReadPtr,		/* Filled with the number of bytes from the
 				 * source string that were converted. This may
@@ -1338,6 +1341,7 @@ Tcl_UtfToExternal(
 				 * output buffer. */
 {
     const Encoding *encodingPtr;
+    int srcLen = xxx1, dstLen = xxx11;
     int result, srcRead, dstWrote, dstChars;
     Tcl_EncodingState state;
 

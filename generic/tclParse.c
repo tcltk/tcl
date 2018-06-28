@@ -236,7 +236,7 @@ Tcl_ParseCommand(
 				 * NULL, then no error message is provided. */
     const char *start,		/* First character of string containing one or
 				 * more Tcl commands. */
-    register int numBytes,	/* Total number of bytes in string. If < 0,
+    size_t xxx1,		/* Total number of bytes in string. If (size_t)-1,
 				 * the script consists of all bytes up to the
 				 * first null character. */
     int nested,			/* Non-zero means this is a nested command:
@@ -250,6 +250,7 @@ Tcl_ParseCommand(
 {
     register const char *src;	/* Points to current character in the
 				 * command. */
+    int numBytes = xxx1;
     char type;			/* Result returned by CHAR_TYPE(*src). */
     Tcl_Token *tokenPtr;	/* Pointer to token being filled in. */
     int wordIndex;		/* Index of word token for current word. */
@@ -1360,7 +1361,7 @@ Tcl_ParseVarName(
 				 * NULL, then no error message is provided. */
     const char *start,		/* Start of variable substitution string.
 				 * First character must be "$". */
-    register int numBytes,	/* Total number of bytes in string. If < 0,
+    size_t xxx1,		/* Total number of bytes in string. If (size_t)-1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr,	/* Structure to fill in with information about
@@ -1371,6 +1372,7 @@ Tcl_ParseVarName(
 				 * reinitialize it. */
 {
     Tcl_Token *tokenPtr;
+    int numBytes = xxx1;
     register const char *src;
     int varIndex;
     unsigned array;
@@ -1638,7 +1640,7 @@ Tcl_ParseBraces(
 				 * NULL, then no error message is provided. */
     const char *start,		/* Start of string enclosed in braces. The
 				 * first character must be {'. */
-    register int numBytes,	/* Total number of bytes in string. If < 0,
+    size_t xxx1,		/* Total number of bytes in string. If (size_t)-1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
     register Tcl_Parse *parsePtr,
@@ -1654,6 +1656,7 @@ Tcl_ParseBraces(
 				 * successful. */
 {
     Tcl_Token *tokenPtr;
+    int numBytes = xxx1;
     register const char *src;
     int startIndex, level;
     size_t length;
@@ -1841,7 +1844,7 @@ Tcl_ParseQuotedString(
 				 * NULL, then no error message is provided. */
     const char *start,		/* Start of the quoted string. The first
 				 * character must be '"'. */
-    register int numBytes,	/* Total number of bytes in string. If < 0,
+    size_t xxx1,		/* Total number of bytes in string. If < 0,
 				 * the string consists of all bytes up to the
 				 * first null character. */
     register Tcl_Parse *parsePtr,
@@ -1856,6 +1859,7 @@ Tcl_ParseQuotedString(
 				 * the quoted string's terminating close-quote
 				 * if the parse succeeds. */
 {
+    int numBytes = xxx1;
     if ((numBytes == 0) || (start == NULL)) {
 	return TCL_ERROR;
     }
@@ -2122,7 +2126,7 @@ TclSubstTokens(
 				 * errors. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * evaluate and concatenate. */
-    int count,			/* Number of tokens to consider at tokenPtr.
+    size_t count,		/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     int *tokensLeftPtr,		/* If not NULL, points to memory where an
 				 * integer representing the number of tokens

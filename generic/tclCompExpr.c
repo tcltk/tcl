@@ -1819,7 +1819,7 @@ int
 Tcl_ParseExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *start,		/* Start of source string to parse. */
-    int numBytes,		/* Number of bytes in string. If < 0, the
+    size_t xxx1,		/* Number of bytes in string. If < 0, the
 				 * string consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr)	/* Structure to fill with information about
@@ -1827,6 +1827,7 @@ Tcl_ParseExpr(
 				 * information in the structure is ignored. */
 {
     int code;
+    int numBytes = xxx1;
     OpNode *opTree = NULL;	/* Will point to the tree of operators. */
     Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals. */
     Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names. */

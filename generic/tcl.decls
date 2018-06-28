@@ -896,7 +896,7 @@ declare 249 {
 	    Tcl_DString *bufferPtr)
 }
 declare 250 {
-    int Tcl_Ungets(Tcl_Channel chan, const char *str, int len, int atHead)
+    size_t Tcl_Ungets(Tcl_Channel chan, const char *str, size_t len, int atHead)
 }
 declare 251 {
     void Tcl_UnlinkVar(Tcl_Interp *interp, const char *varName)
@@ -1079,13 +1079,13 @@ declare 294 {
 }
 declare 295 {
     int Tcl_ExternalToUtf(Tcl_Interp *interp, Tcl_Encoding encoding,
-	    const char *src, int srcLen, int flags,
-	    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+	    const char *src, size_t srcLen, int flags,
+	    Tcl_EncodingState *statePtr, char *dst, size_t dstLen,
 	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
 declare 296 {
     char *Tcl_ExternalToUtfDString(Tcl_Encoding encoding,
-	    const char *src, int srcLen, Tcl_DString *dsPtr)
+	    const char *src, size_t srcLen, Tcl_DString *dsPtr)
 }
 declare 297 {
     void Tcl_FinalizeThread(void)
@@ -1140,7 +1140,7 @@ declare 312 {
     size_t Tcl_NumUtfChars(const char *src, size_t length)
 }
 declare 313 {
-    int Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr, int charsToRead,
+    int Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr, size_t charsToRead,
 	    int appendFlag)
 }
 declare 314 {
@@ -1201,13 +1201,13 @@ declare 331 {
 }
 declare 332 {
     int Tcl_UtfToExternal(Tcl_Interp *interp, Tcl_Encoding encoding,
-	    const char *src, int srcLen, int flags,
-	    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+	    const char *src, size_t srcLen, int flags,
+	    Tcl_EncodingState *statePtr, char *dst, size_t dstLen,
 	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
 declare 333 {
     char *Tcl_UtfToExternalDString(Tcl_Encoding encoding,
-	    const char *src, int srcLen, Tcl_DString *dsPtr)
+	    const char *src, size_t srcLen, Tcl_DString *dsPtr)
 }
 declare 334 {
     int Tcl_UtfToLower(char *src)
@@ -1222,7 +1222,7 @@ declare 337 {
     int Tcl_UtfToUpper(char *src)
 }
 declare 338 {
-    int Tcl_WriteChars(Tcl_Channel chan, const char *src, int srcLen)
+    size_t Tcl_WriteChars(Tcl_Channel chan, const char *src, size_t srcLen)
 }
 declare 339 {
     int Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
@@ -1266,7 +1266,7 @@ declare 351 {
     int Tcl_UniCharIsWordChar(int ch)
 }
 declare 352 {
-    int Tcl_UniCharLen(const Tcl_UniChar *uniStr)
+    size_t Tcl_UniCharLen(const Tcl_UniChar *uniStr)
 }
 declare 353 {
     int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
@@ -1294,27 +1294,27 @@ declare 358 {
 }
 declare 359 {
     void Tcl_LogCommandInfo(Tcl_Interp *interp, const char *script,
-	    const char *command, int length)
+	    const char *command, size_t length)
 }
 declare 360 {
-    int Tcl_ParseBraces(Tcl_Interp *interp, const char *start, int numBytes,
+    int Tcl_ParseBraces(Tcl_Interp *interp, const char *start, size_t numBytes,
 	    Tcl_Parse *parsePtr, int append, const char **termPtr)
 }
 declare 361 {
-    int Tcl_ParseCommand(Tcl_Interp *interp, const char *start, int numBytes,
+    int Tcl_ParseCommand(Tcl_Interp *interp, const char *start, size_t numBytes,
 	    int nested, Tcl_Parse *parsePtr)
 }
 declare 362 {
-    int Tcl_ParseExpr(Tcl_Interp *interp, const char *start, int numBytes,
+    int Tcl_ParseExpr(Tcl_Interp *interp, const char *start, size_t numBytes,
 	    Tcl_Parse *parsePtr)
 }
 declare 363 {
     int Tcl_ParseQuotedString(Tcl_Interp *interp, const char *start,
-	    int numBytes, Tcl_Parse *parsePtr, int append,
+	    size_t numBytes, Tcl_Parse *parsePtr, int append,
 	    const char **termPtr)
 }
 declare 364 {
-    int Tcl_ParseVarName(Tcl_Interp *interp, const char *start, int numBytes,
+    int Tcl_ParseVarName(Tcl_Interp *interp, const char *start, size_t numBytes,
 	    Tcl_Parse *parsePtr, int append)
 }
 # These 4 functions are obsolete, use Tcl_FSGetCwd, Tcl_FSChdir,
@@ -1360,7 +1360,7 @@ declare 377 {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
 }
 declare 378 {
-    Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, int numChars)
+    Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, size_t numChars)
 }
 declare 379 {
     void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
@@ -1410,15 +1410,15 @@ declare 392 {
 }
 declare 393 {
     int Tcl_CreateThread(Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc *proc,
-	    void *clientData, int stackSize, int flags)
+	    void *clientData, size_t stackSize, int flags)
 }
 
 # Introduced in 8.3.2
 declare 394 {
-    int Tcl_ReadRaw(Tcl_Channel chan, char *dst, int bytesToRead)
+    int Tcl_ReadRaw(Tcl_Channel chan, char *dst, size_t bytesToRead)
 }
 declare 395 {
-    int Tcl_WriteRaw(Tcl_Channel chan, const char *src, int srcLen)
+    int Tcl_WriteRaw(Tcl_Channel chan, const char *src, size_t srcLen)
 }
 declare 396 {
     Tcl_Channel Tcl_GetTopChannel(Tcl_Channel chan)
@@ -1735,7 +1735,7 @@ declare 480 {
 # TIP#56 (evaluate a parsed script) msofer
 declare 481 {
     int Tcl_EvalTokensStandard(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-	    int count)
+	    size_t count)
 }
 
 # TIP#73 (access to current time) kbk
