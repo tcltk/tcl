@@ -71,8 +71,8 @@ typedef struct {
 #define stringCheckLimits(numChars) \
     do {								\
 	if ((size_t)(numChars) > STRING_MAXCHARS) {		\
-	    Tcl_Panic("max length for a Tcl unicode value (%" TCL_LL_MODIFIER "d chars) exceeded", \
-		      (Tcl_WideInt)STRING_MAXCHARS);					\
+	    Tcl_Panic("max length for a Tcl unicode value (%" TCL_Z_MODIFIER "u chars) exceeded", \
+		      STRING_MAXCHARS);					\
 	}								\
     } while (0)
 #define stringAttemptAlloc(numChars) \

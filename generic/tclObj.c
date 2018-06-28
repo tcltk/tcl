@@ -984,7 +984,7 @@ TclDbDumpActiveObjects(
     tablePtr = tsdPtr->objThreadMap;
 
     if (tablePtr != NULL) {
-	fprintf(outFile, "total objects: %" TCL_LL_MODIFIER "d\n", (Tcl_WideInt)tablePtr->numEntries);
+	fprintf(outFile, "total objects: %" TCL_Z_MODIFIER "u\n", tablePtr->numEntries);
 	for (hPtr = Tcl_FirstHashEntry(tablePtr, &hSearch); hPtr != NULL;
 		hPtr = Tcl_NextHashEntry(&hSearch)) {
 	    ObjData *objData = Tcl_GetHashValue(hPtr);
@@ -3913,7 +3913,7 @@ Tcl_RepresentationCmd(
      * "1872361827361287"
      */
 
-    descObj = Tcl_ObjPrintf("value is a %s with a refcount of %" TCL_Z_MODIFIER "d,"
+    descObj = Tcl_ObjPrintf("value is a %s with a refcount of %" TCL_Z_MODIFIER "u,"
 	    " object pointer at %p",
 	    objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
 	    objv[1]->refCount, objv[1]);

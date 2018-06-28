@@ -2513,7 +2513,7 @@ BinaryDecodeHex(
   badChar:
     TclDecrRefCount(resultObj);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid hexadecimal digit \"%c\" at position %" TCL_Z_MODIFIER "d",
+	    "invalid hexadecimal digit \"%c\" at position %" TCL_Z_MODIFIER "u",
 	    c, data - datastart - 1));
     return TCL_ERROR;
 }
@@ -2915,7 +2915,7 @@ BinaryDecodeUu(
 
   badUu:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid uuencode character \"%c\" at position %" TCL_Z_MODIFIER "d",
+	    "invalid uuencode character \"%c\" at position %" TCL_Z_MODIFIER "u",
 	    c, data - datastart - 1));
     Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     TclDecrRefCount(resultObj);
@@ -3065,7 +3065,7 @@ BinaryDecode64(
 
   bad64:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid base64 character \"%c\" at position %" TCL_Z_MODIFIER "d",
+	    "invalid base64 character \"%c\" at position %" TCL_Z_MODIFIER "u",
 	    (char) c, data - datastart - 1));
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
