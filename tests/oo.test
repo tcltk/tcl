@@ -4892,7 +4892,7 @@ test oo-41.3 {TIP 478: classmethod must not interfere with constructor signature
 } -cleanup {
     parent destroy
 } -result {::okay}
-test oo-41.4 {TIP 478: classmethod with three levels} -setup {
+test oo-41.4 {TIP 478: classmethod with several inheritance levels} -setup {
     oo::class create parent
 } -body {
     oo::class create ActiveRecord {
@@ -4911,6 +4911,41 @@ test oo-41.4 {TIP 478: classmethod with three levels} -setup {
 } -cleanup {
     parent destroy
 } -result {::SubTable called with arguments: foo bar}
+test oo-41.5 {TIP 478: classmethod and instances} -setup {
+    oo::class create parent
+} -body {
+    oo::class create ActiveRecord {
+	superclass parent
+        classmethod find args {
+	    return "[self] called with arguments: $args"
+	}
+    }
+    oo::class create Table {
+	superclass ActiveRecord
+    }
+    set t [Table new]
+    $t find 1 2 3
+} -cleanup {
+    parent destroy
+} -result {::ActiveRecord called with arguments: 1 2 3}
+test oo-41.6 {TIP 478: classmethod and instances} -setup {
+    oo::class create parent
+} -body {
+    oo::class create ActiveRecord {
+	superclass parent
+        classmethod find args {
+	    return "[self] called with arguments: $args"
+	}
+    }
+    oo::class create Table {
+	superclass ActiveRecord
+	unexport find
+    }
+    set t [Table new]
+    $t find 1 2 3
+} -returnCodes error -cleanup {
+    parent destroy
+} -match glob -result {unknown method "find": must be *}
 
 test oo-42.1 {TIP 478: callback generation} -setup {
     oo::class create parent
@@ -5019,6 +5054,61 @@ test oo-42.6 {TIP 478: callback use case} -setup {
     unset -nocomplain x
     parent destroy
 } -result 6
+
+test oo-43.1 {TIP 478: class initialisation} -setup {
+    oo::class create parent
+} -body {
+    oo::class create ::cls {
+	superclass parent
+	initialise {
+	    proc foobar {} {return ok}
+	}
+	method calls {} {
+	    list [catch foobar msg] $msg \
+		[namespace eval [info object namespace [self class]] foobar]
+	}
+    }
+    [cls new] calls
+} -cleanup {
+    parent destroy
+} -result {1 {invalid command name "foobar"} ok}
+
+test oo-44.1 {TIP 478: singleton} -setup {
+    oo::class create parent
+} -body {
+    oo::singleton create xyz {
+	superclass parent
+    }
+    set x [xyz new]
+    set y [xyz new]
+    set z [xyz new]
+    set code [catch {$x destroy} msg]
+    set p [xyz new]
+    lappend code $msg [catch {rename $x ""}]
+    set q [xyz new]
+    string map [list $x ONE $q TWO] [list {*}$code $x $y $z $p $q [xyz new]]
+} -cleanup {
+    parent destroy
+} -result {1 {object "ONE" has no visible methods} 0 ONE ONE ONE ONE TWO TWO}
+
+test oo-45.1 {TIP 478: abstract} -setup {
+    oo::class create parent
+} -body {
+    oo::abstract create xyz {
+	superclass parent
+	method foo {} {return 123}
+    }
+    oo::class create pqr {
+	superclass xyz
+	method bar {} {return 456}
+    }
+    set codes [list [catch {xyz new}] [catch {xyz create x}] [catch {xyz createWithNamespace x y}]]
+    set x [pqr new]
+    set y [pqr create ::y]
+    lappend codes [$x foo] [$x bar] $y
+} -cleanup {
+    parent destroy
+} -result {1 1 1 123 456 ::y}
 
 cleanupTests
 return
