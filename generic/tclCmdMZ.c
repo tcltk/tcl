@@ -335,7 +335,7 @@ Tcl_RegexpObjCmd(
 		 */
 
 		if (!doinline) {
-		    Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
+		    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
 		}
 		return TCL_OK;
 	    }
@@ -457,7 +457,7 @@ Tcl_RegexpObjCmd(
     if (doinline) {
 	Tcl_SetObjResult(interp, resultPtr);
     } else {
-	Tcl_SetObjResult(interp, Tcl_NewLongObj(all ? all-1 : 1));
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(all ? all-1 : 1));
     }
     return TCL_OK;
 }
@@ -959,7 +959,7 @@ Tcl_RegsubObjCmd(
 	     * holding the number of matches.
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_NewLongObj(numMatches));
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(numMatches));
 	}
     } else {
 	/*
@@ -1118,8 +1118,8 @@ TclNRSourceObjCmd(
 	};
 	int index;
 
-	if (TCL_ERROR == Tcl_GetIndexFromObjStruct(interp, objv[1], options,
-		sizeof(char *), "option", TCL_EXACT, &index)) {
+	if (TCL_ERROR == Tcl_GetIndexFromObj(interp, objv[1], options,
+		"option", TCL_EXACT, &index)) {
 	    return TCL_ERROR;
 	}
 	encodingName = TclGetString(objv[2]);
@@ -1516,8 +1516,8 @@ StringIsCmd(
 		"class ?-strict? ?-failindex var? str");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObjStruct(interp, objv[1], isClasses,
-	    sizeof(char *), "class", 0, &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], isClasses, "class", 0,
+	    &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1525,8 +1525,8 @@ StringIsCmd(
 	for (i = 2; i < objc-1; i++) {
 	    int idx2;
 
-	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], isOptions,
-		    sizeof(char *), "option", 0, &idx2) != TCL_OK) {
+	    if (Tcl_GetIndexFromObj(interp, objv[i], isOptions, "option", 0,
+		    &idx2) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch ((enum isOptions) idx2) {
@@ -1829,11 +1829,11 @@ StringIsCmd(
 
  str_is_done:
     if ((result == 0) && (failVarObj != NULL) &&
-	Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewLongObj(failat),
+	Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewIntObj(failat),
 		TCL_LEAVE_ERR_MSG) == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(result!=0));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
     return TCL_OK;
 }
 
@@ -2021,7 +2021,7 @@ StringMapCmd(
 		if (((*ustring1 == *ustring2) ||
 			(nocase&&Tcl_UniCharToLower(*ustring1)==u2lc)) &&
 			(length2==1 || strCmpFn(ustring1, ustring2,
-				(size_t) length2) == 0)) {
+				length2) == 0)) {
 		    if (p != ustring1) {
 			Tcl_AppendUnicodeToObj(resultPtr, p, ustring1-p);
 			p = ustring1 + length2;
@@ -2069,7 +2069,7 @@ StringMapCmd(
 			(Tcl_UniCharToLower(*ustring1) == u2lc[index/2]))) &&
 			/* Restrict max compare length. */
 			(end-ustring1 >= length2) && ((length2 == 1) ||
-			!strCmpFn(ustring2, ustring1, (size_t) length2))) {
+			!strCmpFn(ustring2, ustring1, length2))) {
 		    if (p != ustring1) {
 			/*
 			 * Put the skipped chars onto the result first.
@@ -2168,8 +2168,8 @@ StringMatchCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(
-		TclStringMatchObj(objv[objc-1], objv[objc-2], nocase)!=0));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
+		TclStringMatchObj(objv[objc-1], objv[objc-2], nocase)));
     return TCL_OK;
 }
 
@@ -2451,7 +2451,7 @@ StringStartCmd(
 	    cur += 1;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(cur));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(cur));
     return TCL_OK;
 }
 
@@ -2513,7 +2513,7 @@ StringEndCmd(
     } else {
 	cur = numChars;
     }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(cur));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(cur));
     return TCL_OK;
 }
 
@@ -2590,7 +2590,7 @@ StringEqualCmd(
 
     match = TclStringCmp(objv[0], objv[1], 0, nocase, reqlength);
 
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(match==0));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
     return TCL_OK;
 }
 
@@ -2760,7 +2760,7 @@ StringBytesCmd(
     }
 
     (void) TclGetStringFromObj(objv[1], &length);
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(length));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(length));
     return TCL_OK;
 }
 
@@ -2794,7 +2794,7 @@ StringLenCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(Tcl_GetCharLength(objv[1])));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_GetCharLength(objv[1])));
     return TCL_OK;
 }
 
@@ -3411,8 +3411,8 @@ TclNRSwitchObjCmd(
 	if (TclGetString(objv[i])[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
-		sizeof(char *), "option", 0, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
+		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum options) index) {
@@ -3688,7 +3688,7 @@ TclNRSwitchObjCmd(
 		    rangeObjAry[0] = Tcl_NewLongObj(info.matches[j].start);
 		    rangeObjAry[1] = Tcl_NewLongObj(info.matches[j].end-1);
 		} else {
-		    rangeObjAry[0] = rangeObjAry[1] = Tcl_NewLongObj(-1);
+		    rangeObjAry[0] = rangeObjAry[1] = Tcl_NewIntObj(-1);
 		}
 
 		/*
@@ -4088,8 +4088,8 @@ TclNRTryObjCmd(
 	int type;
 	Tcl_Obj *info[5];
 
-	if (Tcl_GetIndexFromObjStruct(interp, objv[i], handlerNames,
-		sizeof(char *), "handler type", 0, &type) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], handlerNames, "handler type",
+		0, &type) != TCL_OK) {
 	    Tcl_DecrRefCount(handlersObj);
 	    return TCL_ERROR;
 	}

@@ -741,8 +741,8 @@ ExpandLocalLiteralArray(
     size_t newSize = (currBytes <= UINT_MAX / 2) ? 2*currBytes : UINT_MAX;
 
     if (currBytes == newSize) {
-	Tcl_Panic("max size of Tcl literal array (%" TCL_LL_MODIFIER "d literals) exceeded",
-		(Tcl_WideInt)currElems);
+	Tcl_Panic("max size of Tcl literal array (%" TCL_Z_MODIFIER "u literals) exceeded",
+		currElems);
     }
 
     if (envPtr->mallocedLiteralArray) {
@@ -1117,8 +1117,8 @@ TclLiteralStats(
      */
 
     result = ckalloc(NUM_COUNTERS*60 + 300);
-    sprintf(result, "%" TCL_LL_MODIFIER "d entries in table, %" TCL_LL_MODIFIER "d buckets\n",
-	    (Tcl_WideInt)tablePtr->numEntries, (Tcl_WideInt)tablePtr->numBuckets);
+    sprintf(result, "%" TCL_Z_MODIFIER "u entries in table, %" TCL_Z_MODIFIER "u buckets\n",
+	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i=0 ; i<NUM_COUNTERS ; i++) {
 	sprintf(p, "number of buckets with %d entries: %d\n",
@@ -1167,9 +1167,9 @@ TclVerifyLocalLiteralTable(
 	    if (localPtr->refCount != -1) {
 		bytes = TclGetString(localPtr->objPtr);
 		length = localPtr->objPtr->length;
-		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %" TCL_LL_MODIFIER "d",
+		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "u",
 			"TclVerifyLocalLiteralTable",
-			(length>60? 60 : (int) length), bytes, (Tcl_WideInt)localPtr->refCount);
+			(length>60? 60 : (int) length), bytes, localPtr->refCount);
 	    }
 	    if (localPtr->objPtr->bytes == NULL) {
 		Tcl_Panic("%s: literal has NULL string rep",

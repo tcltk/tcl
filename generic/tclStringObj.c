@@ -2190,8 +2190,8 @@ Tcl_AppendFormatToObj(
 	    case 'x':
 	    case 'X':
 	    case 'b': {
-		Tcl_WideUInt bits = (Tcl_WideUInt) 0;
-		Tcl_WideInt numDigits = (Tcl_WideInt) 0;
+		Tcl_WideUInt bits = 0;
+		Tcl_WideInt numDigits = 0;
 		int length, numBits = 4, base = 16, index = 0, shift = 0;
 		Tcl_Obj *pure;
 		char *bytes;

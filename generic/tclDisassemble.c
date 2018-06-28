@@ -267,9 +267,8 @@ DisassembleByteCodeObj(
      */
 
     Tcl_AppendPrintfToObj(bufferObj,
-	    "ByteCode %p, refCt %" TCL_LL_MODIFIER "d, epoch %" TCL_LL_MODIFIER "d, interp %p (epoch %" TCL_LL_MODIFIER "d)\n",
-	    codePtr, (Tcl_WideUInt)codePtr->refCount, (Tcl_WideUInt)codePtr->compileEpoch, iPtr,
-		(Tcl_WideUInt)iPtr->compileEpoch);
+	    "ByteCode %p, refCt %" TCL_Z_MODIFIER "u, epoch %" TCL_Z_MODIFIER "u, interp %p (epoch %" TCL_Z_MODIFIER "u)\n",
+	    codePtr, codePtr->refCount, codePtr->compileEpoch, iPtr, iPtr->compileEpoch);
     Tcl_AppendToObj(bufferObj, "  Source ", -1);
     PrintSourceToObj(bufferObj, codePtr->source,
 	    TclMin(codePtr->numSrcBytes, 55));
@@ -312,8 +311,8 @@ DisassembleByteCodeObj(
 	int numCompiledLocals = procPtr->numCompiledLocals;
 
 	Tcl_AppendPrintfToObj(bufferObj,
-		"  Proc %p, refCt %" TCL_LL_MODIFIER "d, args %d, compiled locals %d\n",
-		procPtr, (Tcl_WideUInt)procPtr->refCount, procPtr->numArgs,
+		"  Proc %p, refCt %" TCL_Z_MODIFIER "u, args %d, compiled locals %d\n",
+		procPtr, procPtr->refCount, procPtr->numArgs,
 		numCompiledLocals);
 	if (numCompiledLocals > 0) {
 	    CompiledLocal *localPtr = procPtr->firstLocalPtr;
@@ -821,7 +820,7 @@ UpdateStringOfInstName(
     char *s, buf[TCL_INTEGER_SPACE + 5];
 
     if (inst >= LAST_INST_OPCODE) {
-        sprintf(buf, "inst_%" TCL_Z_MODIFIER "d", inst);
+        sprintf(buf, "inst_%" TCL_Z_MODIFIER "u", inst);
         s = buf;
     } else {
         s = (char *) tclInstructionTable[inst].name;

@@ -243,7 +243,7 @@ ValidateMemory(
 	    guard_failed = TRUE;
 	    fflush(stdout);
 	    byte &= 0xff;
-	    fprintf(stderr, "low guard byte %zu is 0x%x  \t%c\n", idx, byte,
+	    fprintf(stderr, "low guard byte %" TCL_Z_MODIFIER "u is 0x%x  \t%c\n", idx, byte,
 		    (isprint(UCHAR(byte)) ? byte : ' ')); /* INTL: bytes */
 	}
     }
@@ -264,7 +264,7 @@ ValidateMemory(
 	    guard_failed = TRUE;
 	    fflush(stdout);
 	    byte &= 0xff;
-	    fprintf(stderr, "hi guard byte %zu is 0x%x  \t%c\n", idx, byte,
+	    fprintf(stderr, "hi guard byte %" TCL_Z_MODIFIER "u is 0x%x  \t%c\n", idx, byte,
 		    (isprint(UCHAR(byte)) ? byte : ' ')); /* INTL: bytes */
 	}
     }
@@ -409,7 +409,7 @@ Tcl_DbCkalloc(
     if (result == NULL) {
 	fflush(stdout);
 	TclDumpMemoryInfo((ClientData) stderr, 0);
-	Tcl_Panic("unable to alloc %" TCL_LL_MODIFIER "d bytes, %s line %d", (Tcl_WideInt)size, file, line);
+	Tcl_Panic("unable to alloc %" TCL_Z_MODIFIER "u bytes, %s line %d", size, file, line);
     }
 
     /*
@@ -455,8 +455,8 @@ Tcl_DbCkalloc(
     }
 
     if (alloc_tracing) {
-	fprintf(stderr,"ckalloc %p %" TCL_LL_MODIFIER "d %s %d\n",
-		result->body, (Tcl_WideInt)size, file, line);
+	fprintf(stderr,"ckalloc %p %" TCL_Z_MODIFIER "u %s %d\n",
+		result->body, size, file, line);
     }
 
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
@@ -544,8 +544,8 @@ Tcl_AttemptDbCkalloc(
     }
 
     if (alloc_tracing) {
-	fprintf(stderr,"ckalloc %p %" TCL_LL_MODIFIER "d %s %d\n",
-		result->body, (Tcl_WideInt)size, file, line);
+	fprintf(stderr,"ckalloc %p %" TCL_Z_MODIFIER "u %s %d\n",
+		result->body, size, file, line);
     }
 
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
@@ -1017,7 +1017,7 @@ Tcl_Alloc(
      */
 
     if ((result == NULL) && size) {
-	Tcl_Panic("unable to alloc %" TCL_LL_MODIFIER "u bytes", (Tcl_WideInt)size);
+	Tcl_Panic("unable to alloc %" TCL_Z_MODIFIER "u bytes", size);
     }
     return result;
 }
@@ -1034,8 +1034,8 @@ Tcl_DbCkalloc(
 
     if ((result == NULL) && size) {
 	fflush(stdout);
-	Tcl_Panic("unable to alloc %" TCL_LL_MODIFIER "u bytes, %s line %d",
-		(Tcl_WideInt)size, file, line);
+	Tcl_Panic("unable to alloc %" TCL_Z_MODIFIER "u bytes, %s line %d",
+		size, file, line);
     }
     return result;
 }
@@ -1095,7 +1095,7 @@ Tcl_Realloc(
     result = TclpRealloc(ptr, size);
 
     if ((result == NULL) && size) {
-	Tcl_Panic("unable to realloc %" TCL_LL_MODIFIER "u bytes", (Tcl_WideInt)size);
+	Tcl_Panic("unable to realloc %" TCL_Z_MODIFIER "u bytes", size);
     }
     return result;
 }
@@ -1113,8 +1113,8 @@ Tcl_DbCkrealloc(
 
     if ((result == NULL) && size) {
 	fflush(stdout);
-	Tcl_Panic("unable to realloc %" TCL_LL_MODIFIER "u bytes, %s line %d",
-		(Tcl_WideInt)size, file, line);
+	Tcl_Panic("unable to realloc %" TCL_Z_MODIFIER "u bytes, %s line %d",
+		size, file, line);
     }
     return result;
 }
