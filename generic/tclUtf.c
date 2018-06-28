@@ -1447,11 +1447,11 @@ Tcl_UniCharToTitle(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_UniCharLen(
     const Tcl_UniChar *uniStr)	/* Unicode string to find length of. */
 {
-    int len = 0;
+    size_t len = 0;
 
     while (*uniStr != '\0') {
 	len++;

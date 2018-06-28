@@ -4042,10 +4042,11 @@ int
 Tcl_WriteRaw(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* Data to queue in output buffer. */
-    int srcLen)			/* Length of data in bytes, or < 0 for
+    size_t xxx1)		/* Length of data in bytes, or (size_t)-1 for
 				 * strlen(). */
 {
     Channel *chanPtr = ((Channel *) chan);
+    int srcLen = xxx1;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     int errorCode, written;
@@ -4084,7 +4085,7 @@ Tcl_WriteRaw(
  *	specified channel to the topmost channel in a stack.
  *
  * Results:
- *	The number of bytes written or -1 in case of error. If -1,
+ *	The number of bytes written or (size_t)-1 in case of error. If (size_t)-1,
  *	Tcl_GetErrno will return the error code.
  *
  * Side effects:
@@ -4094,15 +4095,16 @@ Tcl_WriteRaw(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_WriteChars(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* UTF-8 characters to queue in output
 				 * buffer. */
-    int len)			/* Length of string in bytes, or < 0 for
+    size_t xxx1)		/* Length of string in bytes, or (size_t)-1 for
 				 * strlen(). */
 {
     Channel *chanPtr = (Channel *) chan;
+    int len = xxx1;
     ChannelState *statePtr = chanPtr->state;	/* State info for channel */
     int result;
     Tcl_Obj *objPtr;
@@ -5616,9 +5618,10 @@ int
 Tcl_ReadRaw(
     Tcl_Channel chan,		/* The channel from which to read. */
     char *readBuf,		/* Where to store input read. */
-    int bytesToRead)		/* Maximum number of bytes to read. */
+    size_t xxx1)		/* Maximum number of bytes to read. */
 {
     Channel *chanPtr = (Channel *) chan;
+    int bytesToRead = xxx1;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     int copied = 0;
@@ -5734,8 +5737,8 @@ int
 Tcl_ReadChars(
     Tcl_Channel chan,		/* The channel to read. */
     Tcl_Obj *objPtr,		/* Input data is stored in this object. */
-    int toRead,			/* Maximum number of characters to store, or
-				 * -1 to read all available data (up to EOF or
+    size_t xxx1,		/* Maximum number of characters to store, or
+				 * (size_t)-1 to read all available data (up to EOF or
 				 * when channel blocks). */
     int appendFlag)		/* If non-zero, data read from the channel
 				 * will be appended to the object. Otherwise,
@@ -5743,6 +5746,7 @@ Tcl_ReadChars(
 				 * of the object. */
 {
     Channel *chanPtr = (Channel *) chan;
+    int toRead = xxx1;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
 
@@ -6600,7 +6604,7 @@ TranslateInputEOL(
  *	channel, at either the head or tail of the queue.
  *
  * Results:
- *	The number of bytes stored in the channel, or -1 on error.
+ *	The number of bytes stored in the channel, or (size_t)-1 on error.
  *
  * Side effects:
  *	Adds input to the input queue of a channel.
@@ -6608,11 +6612,11 @@ TranslateInputEOL(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_Ungets(
     Tcl_Channel chan,		/* The channel for which to add the input. */
     const char *str,		/* The input itself. */
-    int len,			/* The length of the input. */
+    size_t xxx1,		/* The length of the input. */
     int atEnd)			/* If non-zero, add at end of queue; otherwise
 				 * add at head of queue. */
 {
@@ -6620,6 +6624,7 @@ Tcl_Ungets(
     ChannelState *statePtr;	/* State of actual channel. */
     ChannelBuffer *bufPtr;	/* Buffer to contain the data. */
     int flags;
+    int len = xxx1;
 
     chanPtr = (Channel *) chan;
     statePtr = chanPtr->state;
