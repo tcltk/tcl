@@ -2759,11 +2759,11 @@ CompileEachloopCmd(
 	for (j = 0;  j < numVars;  j++) {
 	    Tcl_Obj *varNameObj;
 	    const char *bytes;
-	    int numBytes, varIndex;
+	    int varIndex;
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
-	    bytes = TclGetStringFromObj(varNameObj, &numBytes);
-	    varIndex = LocalScalar(bytes, numBytes, envPtr);
+	    bytes = TclGetString(varNameObj);
+	    varIndex = LocalScalar(bytes, varNameObj->length, envPtr);
 	    if (varIndex < 0) {
 		code = TCL_ERROR;
 		goto done;

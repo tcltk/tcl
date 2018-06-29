@@ -1303,7 +1303,7 @@ CompileSubstObj(
     if (objPtr->typePtr != &substCodeType) {
 	CompileEnv compEnv;
 	const char *bytes = TclGetString(objPtr);
-	int numBytes = objPtr->length;
+	size_t numBytes = objPtr->length;
 
 	/* TODO: Check for more TIP 280 */
 	TclInitCompileEnv(interp, &compEnv, bytes, numBytes, NULL, 0);

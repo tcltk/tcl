@@ -554,7 +554,7 @@ TclUnixCopyFile(
     int dontCopyAtts)		/* If flag set, don't copy attributes. */
 {
     int srcFd, dstFd;
-    unsigned blockSize;		/* Optimal I/O blocksize for filesystem */
+    size_t blockSize;		/* Optimal I/O blocksize for filesystem */
     char *buffer;		/* Data buffer for copy */
     size_t nread;
 
@@ -960,8 +960,8 @@ TraverseUnixTree(
 {
     Tcl_StatBuf statBuf;
     const char *source, *errfile;
-    int result, sourceLen;
-    int targetLen;
+    int result;
+    size_t targetLen, sourceLen;
 #ifndef HAVE_FTS
     int numProcessed = 0;
     Tcl_DirEntry *dirEntPtr;
@@ -2054,7 +2054,7 @@ TclpObjNormalizePath(
 
 	nativePath = Tcl_UtfToExternalDString(NULL, path,nextCheckpoint, &ds);
 	if (Realpath(nativePath, normPath) != NULL) {
-	    int newNormLen;
+	    size_t newNormLen;
 
 	wholeStringOk:
 	    newNormLen = strlen(normPath);
@@ -2088,7 +2088,7 @@ TclpObjNormalizePath(
 	     */
 
 	    Tcl_DStringFree(&ds);
-	    Tcl_ExternalToUtfDString(NULL, normPath, (int) newNormLen, &ds);
+	    Tcl_ExternalToUtfDString(NULL, normPath, newNormLen, &ds);
 
 	    if (path[nextCheckpoint] != '\0') {
 		/*
@@ -2290,7 +2290,7 @@ static WCHAR *
 winPathFromObj(
     Tcl_Obj *fileName)
 {
-    int size;
+    size_t size;
     const char *native =  Tcl_FSGetNativePath(fileName);
     WCHAR *winPath;
 

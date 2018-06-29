@@ -5247,7 +5247,7 @@ TclArgumentBCEnter(
     void *codePtr,
     CmdFrame *cfPtr,
     int cmd,
-    int pc)
+    size_t pc)
 {
     ExtCmdLoc *eclPtr;
     int word;

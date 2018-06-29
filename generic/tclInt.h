@@ -1244,7 +1244,7 @@ typedef struct CFWord {
 
 typedef struct CFWordBC {
     CmdFrame *framePtr;		/* CmdFrame to access. */
-    int pc;			/* Instruction pointer of a command in
+    size_t pc;			/* Instruction pointer of a command in
 				 * ExtCmdLoc.loc[.] */
     int word;			/* Index of word in
 				 * ExtCmdLoc.loc[cmd]->line[.] */
@@ -2850,7 +2850,7 @@ MODULE_SCOPE void	TclArgumentRelease(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc);
 MODULE_SCOPE void	TclArgumentBCEnter(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc,
-			    void *codePtr, CmdFrame *cfPtr, int cmd, int pc);
+			    void *codePtr, CmdFrame *cfPtr, int cmd, size_t pc);
 MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
@@ -3054,7 +3054,7 @@ MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int numBytes, const char **endPtrPtr, int flags);
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 			    size_t numBytes, Tcl_Parse *parsePtr);
-MODULE_SCOPE int	TclParseAllWhiteSpace(const char *src, size_t numBytes);
+MODULE_SCOPE size_t	TclParseAllWhiteSpace(const char *src, size_t numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
