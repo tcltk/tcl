@@ -160,14 +160,14 @@ const char tclCharTypeTable[] = {
  * Prototypes for local functions defined in this file:
  */
 
-static inline int	CommandComplete(const char *script, int numBytes);
-static int		ParseComment(const char *src, int numBytes,
+static inline int	CommandComplete(const char *script, size_t numBytes);
+static size_t		ParseComment(const char *src, size_t numBytes,
 			    Tcl_Parse *parsePtr);
-static int		ParseTokens(const char *src, int numBytes, int mask,
+static int		ParseTokens(const char *src, size_t numBytes, int mask,
 			    int flags, Tcl_Parse *parsePtr);
-static int		ParseWhiteSpace(const char *src, int numBytes,
+static size_t		ParseWhiteSpace(const char *src, size_t numBytes,
 			    int *incompletePtr, char *typePtr);
-static int		ParseAllWhiteSpace(const char *src, int numBytes,
+static size_t		ParseAllWhiteSpace(const char *src, size_t numBytes,
 			    int *incompletePtr);
 
 /*
@@ -659,10 +659,10 @@ TclIsBareword(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 ParseWhiteSpace(
     const char *src,		/* First character to parse. */
-    register int numBytes,	/* Max number of bytes to scan. */
+    size_t numBytes,		/* Max number of bytes to scan. */
     int *incompletePtr,		/* Set this boolean memory to true if parsing
 				 * indicates an incomplete command. */
     char *typePtr)		/* Points to location to store character type
@@ -713,17 +713,17 @@ ParseWhiteSpace(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 ParseAllWhiteSpace(
     const char *src,		/* First character to parse. */
-    int numBytes,		/* Max number of byes to scan */
+    size_t numBytes,		/* Max number of byes to scan */
     int *incompletePtr)		/* Set true if parse is incomplete. */
 {
     char type;
     const char *p = src;
 
     do {
-	int scanned = ParseWhiteSpace(p, numBytes, incompletePtr, &type);
+	size_t scanned = ParseWhiteSpace(p, numBytes, incompletePtr, &type);
 
 	p += scanned;
 	numBytes -= scanned;
@@ -731,7 +731,7 @@ ParseAllWhiteSpace(
     return (p-src);
 }
 
-int
+size_t
 TclParseAllWhiteSpace(
     const char *src,		/* First character to parse. */
     size_t numBytes)		/* Max number of byes to scan */
@@ -1006,10 +1006,10 @@ TclParseBackslash(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 ParseComment(
     const char *src,		/* First character to parse. */
-    register int numBytes,	/* Max number of bytes to scan. */
+    size_t numBytes,		/* Max number of bytes to scan. */
     Tcl_Parse *parsePtr)	/* Information about parse in progress.
 				 * Updated if parsing indicates an incomplete
 				 * command. */
@@ -1018,7 +1018,7 @@ ParseComment(
     int incomplete = parsePtr->incomplete;
 
     while (numBytes) {
-	int scanned = ParseAllWhiteSpace(p, numBytes, &incomplete);
+	size_t scanned = ParseAllWhiteSpace(p, numBytes, &incomplete);
 	p += scanned;
 	numBytes -= scanned;
 
@@ -1082,7 +1082,7 @@ ParseComment(
 static int
 ParseTokens(
     register const char *src,	/* First character to parse. */
-    register int numBytes,	/* Max number of bytes to scan. */
+    size_t numBytes,		/* Max number of bytes to scan. */
     int mask,			/* Specifies when to stop parsing. The parse
 				 * stops at the first unquoted character whose
 				 * CHAR_TYPE contains any of the bits in
@@ -2431,7 +2431,7 @@ TclSubstTokens(
 static inline int
 CommandComplete(
     const char *script,		/* Script to check. */
-    int numBytes)		/* Number of bytes in script. */
+    size_t numBytes)		/* Number of bytes in script. */
 {
     Tcl_Parse parse;
     const char *p, *end;

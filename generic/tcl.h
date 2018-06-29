@@ -797,9 +797,9 @@ typedef struct Tcl_CmdInfo {
 typedef struct Tcl_DString {
     char *string;		/* Points to beginning of string: either
 				 * staticSpace below or a malloced array. */
-    int length;			/* Number of non-NULL characters in the
+    size_t length;		/* Number of non-NULL characters in the
 				 * string. */
-    int spaceAvl;		/* Total number of bytes available for the
+    size_t spaceAvl;		/* Total number of bytes available for the
 				 * string and its terminating NULL char. */
     char staticSpace[TCL_DSTRING_STATIC_SIZE];
 				/* Space to use in common case where string is
@@ -1516,7 +1516,7 @@ typedef struct Tcl_FSVersion_ *Tcl_FSVersion;
 
 typedef struct Tcl_Filesystem {
     const char *typeName;	/* The name of the filesystem. */
-    int structureLength;	/* Length of this structure, so future binary
+    size_t structureLength;	/* Length of this structure, so future binary
 				 * compatibility can be assured. */
     Tcl_FSVersion version;	/* Version of the filesystem type. */
     Tcl_FSPathInFilesystemProc *pathInFilesystemProc;
@@ -1821,7 +1821,7 @@ typedef struct Tcl_Token {
 typedef struct Tcl_Parse {
     const char *commentStart;	/* Pointer to # that begins the first of one
 				 * or more comments preceding the command. */
-    int commentSize;		/* Number of bytes in comments (up through
+    size_t commentSize;		/* Number of bytes in comments (up through
 				 * newline character that terminates the last
 				 * comment). If there were no comments, this
 				 * field is 0. */

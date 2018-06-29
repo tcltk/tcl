@@ -973,7 +973,7 @@ Tcl_ScanCountedElement(
 				 * Tcl_ConvertElement. */
 {
     char flags = CONVERT_ANY;
-    int numBytes = TclScanElement(src, length, &flags);
+    size_t numBytes = TclScanElement(src, length, &flags);
 
     *flagPtr = flags;
     return numBytes;
@@ -1025,7 +1025,7 @@ TclScanElement(
     int extra = 0;		/* Count of number of extra bytes needed for
 				 * formatted element, assuming we use escape
 				 * sequences in formatting. */
-    int bytesNeeded;		/* Buffer length computed to complete the
+    size_t bytesNeeded;		/* Buffer length computed to complete the
 				 * element formatting in the selected mode. */
 #if COMPAT
     int preferEscape = 0;	/* Use preferences to track whether to use */
@@ -1269,9 +1269,6 @@ TclScanElement(
     *flagPtr = CONVERT_NONE;
 
   overflowCheck:
-    if (bytesNeeded < 0) {
-	Tcl_Panic("TclScanElement: string length overflow");
-    }
     return bytesNeeded;
 }
 
@@ -1653,9 +1650,9 @@ UtfWellFormedEnd(
 static inline int
 TrimRight(
     const char *bytes,		/* String to be trimmed... */
-    int numBytes,		/* ...and its length in bytes */
+    size_t numBytes,		/* ...and its length in bytes */
     const char *trim,		/* String of trim characters... */
-    int numTrim)		/* ...and its length in bytes */
+    size_t numTrim)		/* ...and its length in bytes */
 {
     const char *p = bytes + numBytes;
     int pInc;
@@ -1914,7 +1911,8 @@ Tcl_Concat(
     int argc,			/* Number of strings to concatenate. */
     const char *const *argv)	/* Array of strings to concatenate. */
 {
-    int i, needSpace = 0, bytesNeeded = 0;
+    int i, needSpace = 0;
+    size_t bytesNeeded = 0;
     char *result, *p;
 
     /*
@@ -1933,24 +1931,13 @@ Tcl_Concat(
 
     for (i = 0;  i < argc;  i++) {
 	bytesNeeded += strlen(argv[i]);
-	if (bytesNeeded < 0) {
-	    Tcl_Panic("Tcl_Concat: max size of Tcl value exceeded");
-	}
-    }
-    if (bytesNeeded + argc - 1 < 0) {
-	/*
-	 * Panic test could be tighter, but not going to bother for this
-	 * legacy routine.
-	 */
-
-	Tcl_Panic("Tcl_Concat: max size of Tcl value exceeded");
     }
 
     /*
      * All element bytes + (argc - 1) spaces + 1 terminating NULL.
      */
 
-    result = ckalloc((unsigned) (bytesNeeded + argc));
+    result = ckalloc(bytesNeeded + argc);
 
     for (p = result, i = 0;  i < argc;  i++) {
 	size_t triml, trimr;
@@ -2669,7 +2656,7 @@ Tcl_DStringAppend(
 				 * (size_t)-1, then append all of bytes, up to null
 				 * at end. */
 {
-    int newSize;
+    size_t newSize;
 
     if (length == (size_t)-1) {
 	length = strlen(bytes);
@@ -2687,7 +2674,7 @@ Tcl_DStringAppend(
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString = ckalloc(dsPtr->spaceAvl);
 
-	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
+	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
 	    int offset = -1;
@@ -2773,7 +2760,7 @@ Tcl_DStringAppendElement(
     char *dst = dsPtr->string + dsPtr->length;
     int needSpace = TclNeedSpace(dsPtr->string, dst);
     char flags = needSpace ? TCL_DONT_QUOTE_HASH : 0;
-    int newSize = dsPtr->length + needSpace
+    size_t newSize = dsPtr->length + needSpace
 	    + TclScanElement(element, -1, &flags);
 
     /*

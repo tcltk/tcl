@@ -3086,7 +3086,7 @@ TclStringCat(
 	    first = last = objc - oc - 1;
 
 	    if (oc && (length == 0)) {
-		int numBytes;
+		size_t numBytes;
 
 		/* assert ( pendingPtr != NULL ) */
 
@@ -3098,7 +3098,8 @@ TclStringCat(
 
 		do {
 		    Tcl_Obj *objPtr = *ov++;
-		    Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
+		    Tcl_GetString(objPtr); /* PANIC? */
+		    numBytes = objPtr->length;
 		} while (--oc && numBytes == 0 && pendingPtr->bytes == NULL);
 
 		if (numBytes) {
@@ -3111,7 +3112,7 @@ TclStringCat(
 		    if (numBytes) {
 			first = last;
 		    }
-		} else if (numBytes > INT_MAX - length) {
+		} else if (numBytes + length > (size_t)INT_MAX) {
 		    goto overflow;
 		}
 		length += numBytes;
@@ -3119,15 +3120,16 @@ TclStringCat(
 	} while (oc && (length == 0));
 
 	while (oc) {
-	    int numBytes;
+	    size_t numBytes;
 	    Tcl_Obj *objPtr = *ov++;
 
 	    /* assert ( length > 0 && pendingPtr == NULL )  */
 
-	    Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
+	    Tcl_GetString(objPtr); /* PANIC? */
+	    numBytes = objPtr->length;
 	    if (numBytes) {
 		last = objc - oc;
-		if (numBytes > INT_MAX - length) {
+		if (numBytes + length > (size_t)INT_MAX) {
 		    goto overflow;
 		}
 		length += numBytes;

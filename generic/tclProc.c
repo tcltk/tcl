@@ -305,7 +305,7 @@ Tcl_ProcObjCmd(
     }
 
     if ((procArgs[0] == 'a') && (strncmp(procArgs, "args", 4) == 0)) {
-	int numBytes;
+	size_t numBytes;
 
 	procArgs +=4;
 	while (*procArgs != '\0') {
@@ -319,7 +319,8 @@ Tcl_ProcObjCmd(
 	 * The argument list is just "args"; check the body
 	 */
 
-	procBody = TclGetStringFromObj(objv[3], &numBytes);
+	procBody = TclGetString(objv[3]);
+	numBytes = objv[3]->length;
 	if (TclParseAllWhiteSpace(procBody, numBytes) < numBytes) {
 	    goto done;
 	}

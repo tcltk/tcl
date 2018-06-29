@@ -501,13 +501,13 @@ static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    int index, Tcl_Obj *const **litObjvPtr,
 			    Tcl_Obj *const *funcObjv, Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr, int optimize);
-static void		ConvertTreeToTokens(const char *start, int numBytes,
+static void		ConvertTreeToTokens(const char *start, size_t numBytes,
 			    OpNode *nodes, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
 static int		ExecConstantExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    int index, Tcl_Obj * const **litObjvPtr);
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
-			    int numBytes, OpNode **opTreePtr,
+			    size_t numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
 			    Tcl_Parse *parsePtr, int parseOnly);
 static size_t		ParseLexeme(const char *start, size_t numBytes,
@@ -548,7 +548,7 @@ static int
 ParseExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *start,		/* Start of source string to parse. */
-    int numBytes,		/* Number of bytes in string. */
+    size_t numBytes,		/* Number of bytes in string. */
     OpNode **opTreePtr,		/* Points to space where a pointer to the
 				 * allocated OpNode tree should go. */
     Tcl_Obj *litList,		/* List to append literals to. */
@@ -1434,8 +1434,8 @@ ParseExpr(
 	numBytes = parsePtr->end - parsePtr->string;
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (parsing expression \"%.*s%s\")",
-		(numBytes < (int)limit) ? numBytes : (int)limit - 3,
-		parsePtr->string, (numBytes < (int)limit) ? "" : "..."));
+		(numBytes < limit) ? (int)numBytes : (int)limit - 3,
+		parsePtr->string, (numBytes < limit) ? "" : "..."));
 	if (errCode) {
 	    Tcl_SetErrorCode(interp, "TCL", "PARSE", "EXPR", errCode,
 		    subErrCode, NULL);
@@ -1471,7 +1471,7 @@ ParseExpr(
 static void
 ConvertTreeToTokens(
     const char *start,
-    int numBytes,
+    size_t numBytes,
     OpNode *nodes,
     Tcl_Token *tokenPtr,
     Tcl_Parse *parsePtr)
