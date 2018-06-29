@@ -1465,7 +1465,7 @@ void
 TclSubstCompile(
     Tcl_Interp *interp,
     const char *bytes,
-    int numBytes,
+    size_t numBytes,
     int flags,
     int line,
     CompileEnv *envPtr)

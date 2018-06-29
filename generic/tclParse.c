@@ -236,21 +236,20 @@ Tcl_ParseCommand(
 				 * NULL, then no error message is provided. */
     const char *start,		/* First character of string containing one or
 				 * more Tcl commands. */
-    size_t xxx1,		/* Total number of bytes in string. If (size_t)-1,
+    size_t numBytes,		/* Total number of bytes in string. If (size_t)-1,
 				 * the script consists of all bytes up to the
 				 * first null character. */
     int nested,			/* Non-zero means this is a nested command:
 				 * close bracket should be considered a
 				 * command terminator. If zero, then close
 				 * bracket has no special meaning. */
-    register Tcl_Parse *parsePtr)
+    Tcl_Parse *parsePtr)
 				/* Structure to fill in with information about
 				 * the parsed command; any previous
 				 * information in the structure is ignored. */
 {
-    register const char *src;	/* Points to current character in the
+    const char *src;		/* Points to current character in the
 				 * command. */
-    int numBytes = xxx1;
     char type;			/* Result returned by CHAR_TYPE(*src). */
     Tcl_Token *tokenPtr;	/* Pointer to token being filled in. */
     int wordIndex;		/* Index of word token for current word. */
@@ -258,7 +257,7 @@ Tcl_ParseCommand(
 				 * command. */
     const char *termPtr;	/* Set by Tcl_ParseBraces/QuotedString to
 				 * point to char after terminating one. */
-    int scanned;
+    size_t scanned;
 
     if ((start == NULL) && (numBytes != 0)) {
 	if (interp != NULL) {
@@ -267,7 +266,7 @@ Tcl_ParseCommand(
 	}
 	return TCL_ERROR;
     }
-    if (numBytes < 0) {
+    if (numBytes == (size_t)-1) {
 	numBytes = strlen(start);
     }
     TclParseInit(interp, start, numBytes, parsePtr);
@@ -735,7 +734,7 @@ ParseAllWhiteSpace(
 int
 TclParseAllWhiteSpace(
     const char *src,		/* First character to parse. */
-    int numBytes)		/* Max number of byes to scan */
+    size_t numBytes)		/* Max number of byes to scan */
 {
     int dummy;
     return ParseAllWhiteSpace(src, numBytes, &dummy);
@@ -766,8 +765,8 @@ TclParseAllWhiteSpace(
 int
 TclParseHex(
     const char *src,		/* First character to parse. */
-    int numBytes,		/* Max number of byes to scan */
-    int *resultPtr)	/* Points to storage provided by caller where
+    size_t numBytes,		/* Max number of byes to scan */
+    int *resultPtr)		/* Points to storage provided by caller where
 				 * the character resulting from the
 				 * conversion is to be written. */
 {
@@ -822,7 +821,7 @@ int
 TclParseBackslash(
     const char *src,		/* Points to the backslash character of a a
 				 * backslash sequence. */
-    int numBytes,		/* Max number of bytes to scan. */
+    size_t numBytes,		/* Max number of bytes to scan. */
     size_t *readPtr,		/* NULL, or points to storage where the number
 				 * of bytes scanned should be written. */
     char *dst)			/* NULL, or points to buffer where the UTF-8
@@ -833,7 +832,7 @@ TclParseBackslash(
     register const char *p = src+1;
     Tcl_UniChar unichar = 0;
     int result;
-    int count;
+    size_t count;
     char buf[TCL_UTF_MAX];
 
     if (numBytes == 0) {
@@ -1361,7 +1360,7 @@ Tcl_ParseVarName(
 				 * NULL, then no error message is provided. */
     const char *start,		/* Start of variable substitution string.
 				 * First character must be "$". */
-    size_t xxx1,		/* Total number of bytes in string. If (size_t)-1,
+    size_t numBytes,		/* Total number of bytes in string. If (size_t)-1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr,	/* Structure to fill in with information about
@@ -1372,7 +1371,6 @@ Tcl_ParseVarName(
 				 * reinitialize it. */
 {
     Tcl_Token *tokenPtr;
-    int numBytes = xxx1;
     register const char *src;
     int varIndex;
     unsigned array;
@@ -1380,7 +1378,7 @@ Tcl_ParseVarName(
     if ((numBytes == 0) || (start == NULL)) {
 	return TCL_ERROR;
     }
-    if (numBytes < 0) {
+    if (numBytes == (size_t)-1) {
 	numBytes = strlen(start);
     }
 
@@ -1640,7 +1638,7 @@ Tcl_ParseBraces(
 				 * NULL, then no error message is provided. */
     const char *start,		/* Start of string enclosed in braces. The
 				 * first character must be {'. */
-    size_t xxx1,		/* Total number of bytes in string. If (size_t)-1,
+    size_t numBytes,		/* Total number of bytes in string. If (size_t)-1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
     register Tcl_Parse *parsePtr,
@@ -1656,7 +1654,6 @@ Tcl_ParseBraces(
 				 * successful. */
 {
     Tcl_Token *tokenPtr;
-    int numBytes = xxx1;
     register const char *src;
     int startIndex, level;
     size_t length;
@@ -1664,7 +1661,7 @@ Tcl_ParseBraces(
     if ((numBytes == 0) || (start == NULL)) {
 	return TCL_ERROR;
     }
-    if (numBytes < 0) {
+    if (numBytes == (size_t)-1) {
 	numBytes = strlen(start);
     }
 
@@ -1844,7 +1841,7 @@ Tcl_ParseQuotedString(
 				 * NULL, then no error message is provided. */
     const char *start,		/* Start of the quoted string. The first
 				 * character must be '"'. */
-    size_t xxx1,		/* Total number of bytes in string. If < 0,
+    size_t numBytes,		/* Total number of bytes in string. If (size_t)-1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
     register Tcl_Parse *parsePtr,
@@ -1859,11 +1856,10 @@ Tcl_ParseQuotedString(
 				 * the quoted string's terminating close-quote
 				 * if the parse succeeds. */
 {
-    int numBytes = xxx1;
     if ((numBytes == 0) || (start == NULL)) {
 	return TCL_ERROR;
     }
-    if (numBytes < 0) {
+    if (numBytes == (size_t)-1) {
 	numBytes = strlen(start);
     }
 
@@ -1927,12 +1923,12 @@ void
 TclSubstParse(
     Tcl_Interp *interp,
     const char *bytes,
-    int numBytes,
+    size_t numBytes,
     int flags,
     Tcl_Parse *parsePtr,
     Tcl_InterpState *statePtr)
 {
-    int length = numBytes;
+    size_t length = numBytes;
     const char *p = bytes;
 
     TclParseInit(interp, p, length, parsePtr);
@@ -2126,7 +2122,7 @@ TclSubstTokens(
 				 * errors. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * evaluate and concatenate. */
-    size_t count,		/* Number of tokens to consider at tokenPtr.
+    int count,			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     int *tokensLeftPtr,		/* If not NULL, points to memory where an
 				 * integer representing the number of tokens

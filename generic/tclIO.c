@@ -4042,20 +4042,20 @@ int
 Tcl_WriteRaw(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* Data to queue in output buffer. */
-    size_t xxx1)		/* Length of data in bytes, or (size_t)-1 for
+    size_t srcLen)		/* Length of data in bytes, or (size_t)-1 for
 				 * strlen(). */
 {
     Channel *chanPtr = ((Channel *) chan);
-    int srcLen = xxx1;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
-    int errorCode, written;
+    int errorCode;
+    size_t written;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | CHANNEL_RAW_MODE) != 0) {
 	return -1;
     }
 
-    if (srcLen < 0) {
+    if (srcLen == (size_t)-1) {
 	srcLen = strlen(src);
     }
 
@@ -4065,7 +4065,7 @@ Tcl_WriteRaw(
      */
 
     written = ChanWrite(chanPtr, src, srcLen, &errorCode);
-    if (written < 0) {
+    if (written == (size_t)-1) {
 	Tcl_SetErrno(errorCode);
     }
 
@@ -4100,22 +4100,21 @@ Tcl_WriteChars(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* UTF-8 characters to queue in output
 				 * buffer. */
-    size_t xxx1)		/* Length of string in bytes, or (size_t)-1 for
+    size_t len)		/* Length of string in bytes, or (size_t)-1 for
 				 * strlen(). */
 {
     Channel *chanPtr = (Channel *) chan;
-    int len = xxx1;
     ChannelState *statePtr = chanPtr->state;	/* State info for channel */
-    int result;
+    int result, len1;
     Tcl_Obj *objPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
-	return -1;
+	return (size_t)-1;
     }
 
     chanPtr = statePtr->topChanPtr;
 
-    if (len < 0) {
+    if (len == (size_t)-1) {
 	len = strlen(src);
     }
     if (statePtr->encoding) {
@@ -4134,8 +4133,8 @@ Tcl_WriteChars(
     }
 
     objPtr = Tcl_NewStringObj(src, len);
-    src = (char *) Tcl_GetByteArrayFromObj(objPtr, &len);
-    result = WriteBytes(chanPtr, src, len);
+    src = (char *) Tcl_GetByteArrayFromObj(objPtr, &len1);
+    result = WriteBytes(chanPtr, src, len1);
     TclDecrRefCount(objPtr);
     return result;
 }
@@ -5618,10 +5617,9 @@ int
 Tcl_ReadRaw(
     Tcl_Channel chan,		/* The channel from which to read. */
     char *readBuf,		/* Where to store input read. */
-    size_t xxx1)		/* Maximum number of bytes to read. */
+    size_t bytesToRead)		/* Maximum number of bytes to read. */
 {
     Channel *chanPtr = (Channel *) chan;
-    int bytesToRead = xxx1;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     int copied = 0;
@@ -5638,8 +5636,8 @@ Tcl_ReadRaw(
     while (chanPtr->inQueueHead && bytesToRead > 0) {
 	ChannelBuffer *bufPtr = chanPtr->inQueueHead;
 	int bytesInBuffer = BytesLeft(bufPtr);
-	int toCopy = (bytesInBuffer < bytesToRead) ? bytesInBuffer
-		: bytesToRead;
+	int toCopy = (bytesInBuffer < (int)bytesToRead) ? bytesInBuffer
+		: (int)bytesToRead;
 
 	/*
          * Copy the current chunk into the read buffer.
@@ -5682,13 +5680,7 @@ Tcl_ReadRaw(
     if (bytesToRead > 0) {
 	int nread = ChanRead(chanPtr, readBuf, bytesToRead);
 
-	if (nread > 0) {
-	    /*
-             * Successful read (short is OK) - add to bytes copied.
-             */
-
-	    copied += nread;
-	} else if (nread < 0) {
+	if (nread == -1) {
 	    /*
 	     * An error signaled.  If CHANNEL_BLOCKED, then the error is not
 	     * real, but an indication of blocked state.  In that case, retain
@@ -5702,6 +5694,12 @@ Tcl_ReadRaw(
 	    if (!GotFlag(statePtr, CHANNEL_BLOCKED) || copied == 0) {
 		copied = -1;
 	    }
+	} else if (nread > 0) {
+	    /*
+             * Successful read (short is OK) - add to bytes copied.
+             */
+
+	    copied += nread;
 	} else {
 	    /*
 	     * nread == 0.  Driver is at EOF. Let that state filter up.
@@ -5737,7 +5735,7 @@ int
 Tcl_ReadChars(
     Tcl_Channel chan,		/* The channel to read. */
     Tcl_Obj *objPtr,		/* Input data is stored in this object. */
-    size_t xxx1,		/* Maximum number of characters to store, or
+    size_t toRead,		/* Maximum number of characters to store, or
 				 * (size_t)-1 to read all available data (up to EOF or
 				 * when channel blocks). */
     int appendFlag)		/* If non-zero, data read from the channel
@@ -5746,7 +5744,6 @@ Tcl_ReadChars(
 				 * of the object. */
 {
     Channel *chanPtr = (Channel *) chan;
-    int toRead = xxx1;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
 
@@ -6616,7 +6613,7 @@ size_t
 Tcl_Ungets(
     Tcl_Channel chan,		/* The channel for which to add the input. */
     const char *str,		/* The input itself. */
-    size_t xxx1,		/* The length of the input. */
+    size_t len,			/* The length of the input. */
     int atEnd)			/* If non-zero, add at end of queue; otherwise
 				 * add at head of queue. */
 {
@@ -6624,7 +6621,6 @@ Tcl_Ungets(
     ChannelState *statePtr;	/* State of actual channel. */
     ChannelBuffer *bufPtr;	/* Buffer to contain the data. */
     int flags;
-    int len = xxx1;
 
     chanPtr = (Channel *) chan;
     statePtr = chanPtr->state;
@@ -6641,7 +6637,7 @@ Tcl_Ungets(
 
     flags = statePtr->flags;
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	len = -1;
+	len = (size_t)-1;
 	goto done;
     }
     statePtr->flags = flags;
@@ -6658,7 +6654,7 @@ Tcl_Ungets(
     statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 
     bufPtr = AllocChannelBuffer(len);
-    memcpy(InsertPoint(bufPtr), str, (size_t) len);
+    memcpy(InsertPoint(bufPtr), str, len);
     bufPtr->nextAdded += len;
 
     if (statePtr->inQueueHead == NULL) {

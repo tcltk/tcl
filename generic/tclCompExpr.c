@@ -510,7 +510,7 @@ static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    int numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
 			    Tcl_Parse *parsePtr, int parseOnly);
-static int		ParseLexeme(const char *start, int numBytes,
+static size_t		ParseLexeme(const char *start, size_t numBytes,
 			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
 
 /*
@@ -1819,7 +1819,7 @@ int
 Tcl_ParseExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *start,		/* Start of source string to parse. */
-    size_t xxx1,		/* Number of bytes in string. If < 0, the
+    size_t numBytes,		/* Number of bytes in string. If (size_t)-1, the
 				 * string consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr)	/* Structure to fill with information about
@@ -1827,14 +1827,13 @@ Tcl_ParseExpr(
 				 * information in the structure is ignored. */
 {
     int code;
-    int numBytes = xxx1;
     OpNode *opTree = NULL;	/* Will point to the tree of operators. */
     Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals. */
     Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names. */
     Tcl_Parse *exprParsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions. */
 
-    if (numBytes < 0) {
+    if (numBytes == (size_t)-1) {
 	numBytes = (start ? strlen(start) : 0);
     }
 
@@ -1875,17 +1874,16 @@ Tcl_ParseExpr(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 ParseLexeme(
     const char *start,		/* Start of lexeme to parse. */
-    int numBytes,		/* Number of bytes in string. */
+    size_t numBytes,		/* Number of bytes in string. */
     unsigned char *lexemePtr,	/* Write code of parsed lexeme to this
 				 * storage. */
     Tcl_Obj **literalPtr)	/* Write corresponding literal value to this
 				   storage, if non-NULL. */
 {
     const char *end;
-    int scanned;
     Tcl_UniChar ch = 0;
     Tcl_Obj *literal = NULL;
     unsigned char byte;
@@ -2064,12 +2062,13 @@ ParseLexeme(
      */
 
     if (!TclIsBareword(*start) || *start == '_') {
+	size_t scanned;
 	if (Tcl_UtfCharComplete(start, numBytes)) {
 	    scanned = TclUtfToUniChar(start, &ch);
 	} else {
 	    char utfBytes[TCL_UTF_MAX];
 
-	    memcpy(utfBytes, start, (size_t) numBytes);
+	    memcpy(utfBytes, start, numBytes);
 	    utfBytes[numBytes] = '\0';
 	    scanned = TclUtfToUniChar(utfBytes, &ch);
 	}
@@ -2113,7 +2112,7 @@ void
 TclCompileExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *script,		/* The source script to compile. */
-    int numBytes,		/* Number of bytes in script. */
+    size_t numBytes,		/* Number of bytes in script. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int optimize)		/* 0 for one-off expressions. */
 {
