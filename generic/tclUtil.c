@@ -385,12 +385,12 @@ static const Tcl_ObjType endOffsetType = {
 int
 TclMaxListLength(
     const char *bytes,
-    int numBytes,
+    size_t numBytes,
     const char **endPtr)
 {
-    int count = 0;
+    size_t count = 0;
 
-    if ((numBytes == 0) || ((numBytes == -1) && (*bytes == '\0'))) {
+    if ((numBytes == 0) || ((numBytes == (size_t)-1) && (*bytes == '\0'))) {
 	/* Empty string case - quick exit */
 	goto done;
     }
@@ -406,7 +406,7 @@ TclMaxListLength(
      */
 
     while (numBytes) {
-	if ((numBytes == -1) && (*bytes == '\0')) {
+	if ((numBytes == (size_t)-1) && (*bytes == '\0')) {
 	    break;
 	}
 	if (TclIsSpaceProc(*bytes)) {
@@ -417,9 +417,9 @@ TclMaxListLength(
 	    count++;
 	    do {
 		bytes++;
-		numBytes -= (numBytes != -1);
+		numBytes -= (numBytes != (size_t)-1);
 	    } while (numBytes && TclIsSpaceProc(*bytes));
-	    if ((numBytes == 0) || ((numBytes == -1) && (*bytes == '\0'))) {
+	    if ((numBytes == 0) || ((numBytes == (size_t)-1) && (*bytes == '\0'))) {
 		break;
 	    }
 
@@ -428,7 +428,7 @@ TclMaxListLength(
 	     */
 	}
 	bytes++;
-	numBytes -= (numBytes != -1);
+	numBytes -= (numBytes != (size_t)-1);
     }
 
     /*

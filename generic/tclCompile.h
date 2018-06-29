@@ -181,7 +181,7 @@ typedef struct {
  */
 
 typedef struct {
-    int srcOffset;		/* Command location to find the entry. */
+    size_t srcOffset;		/* Command location to find the entry. */
     int nline;			/* Number of words in the command */
     int *line;			/* Line information for all words in the
 				 * command. */
@@ -842,7 +842,7 @@ typedef enum InstOperandType {
 
 typedef struct InstructionDesc {
     const char *name;		/* Name of instruction. */
-    int numBytes;		/* Total number of bytes for instruction. */
+    size_t numBytes;		/* Total number of bytes for instruction. */
     int stackEffect;		/* The worst-case balance stack effect of the
 				 * instruction, used for stack requirements
 				 * computations. The value INT_MIN signals
@@ -1000,7 +1000,7 @@ MODULE_SCOPE const AuxDataType tclJumptableInfoType;
  */
 
 typedef struct {
-    size_t length;			/* Size of array */
+    size_t length;		/* Size of array */
     int varIndices[1];		/* Array of variable indices to manage when
 				 * processing the start and end of a [dict
 				 * update]. There is really more than one
@@ -1055,7 +1055,7 @@ MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
-			    int numBytes, CompileEnv *envPtr, int optimize);
+			    size_t numBytes, CompileEnv *envPtr, int optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
 			    CompileEnv *envPtr);
@@ -1063,7 +1063,7 @@ MODULE_SCOPE void	TclCompileInvocation(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj, int numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
-			    const char *script, int numBytes,
+			    const char *script, size_t numBytes,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
@@ -1076,7 +1076,7 @@ MODULE_SCOPE int	TclCreateAuxData(void *clientData,
 			    const AuxDataType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
-MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
+MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, size_t size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, const char *bytes,
 			    size_t length, size_t hash, int *newPtr,
 			    Namespace *nsPtr, int flags,
@@ -1093,7 +1093,7 @@ MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, size_t index);
-MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
+MODULE_SCOPE int	TclFindCompiledLocal(const char *name, size_t nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, int jumpDist,
@@ -1107,7 +1107,7 @@ MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
-			    int numBytes, const CmdFrame *invoker, int word);
+			    size_t numBytes, const CmdFrame *invoker, int word);
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
@@ -1134,9 +1134,9 @@ MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
 MODULE_SCOPE int	TclPrintInstruction(ByteCode *codePtr,
 			    const unsigned char *pc);
 MODULE_SCOPE void	TclPrintObject(FILE *outFile,
-			    Tcl_Obj *objPtr, int maxChars);
+			    Tcl_Obj *objPtr, size_t maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
-			    const char *string, int maxChars);
+			    const char *string, size_t maxChars);
 MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,

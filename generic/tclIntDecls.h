@@ -460,7 +460,7 @@ EXTERN Tcl_Obj *	TclGetObjNameOfExecutable(void);
 EXTERN void		TclSetObjNameOfExecutable(Tcl_Obj *name,
 				Tcl_Encoding encoding);
 /* 215 */
-EXTERN void *		TclStackAlloc(Tcl_Interp *interp, int numBytes);
+EXTERN void *		TclStackAlloc(Tcl_Interp *interp, size_t numBytes);
 /* 216 */
 EXTERN void		TclStackFree(Tcl_Interp *interp, void *freePtr);
 /* 217 */
@@ -798,7 +798,7 @@ typedef struct TclIntStubs {
     void (*tclpFindExecutable) (const char *argv0); /* 212 */
     Tcl_Obj * (*tclGetObjNameOfExecutable) (void); /* 213 */
     void (*tclSetObjNameOfExecutable) (Tcl_Obj *name, Tcl_Encoding encoding); /* 214 */
-    void * (*tclStackAlloc) (Tcl_Interp *interp, int numBytes); /* 215 */
+    void * (*tclStackAlloc) (Tcl_Interp *interp, size_t numBytes); /* 215 */
     void (*tclStackFree) (Tcl_Interp *interp, void *freePtr); /* 216 */
     int (*tclPushStackFrame) (Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr, Tcl_Namespace *namespacePtr, int isProcCallFrame); /* 217 */
     void (*tclPopStackFrame) (Tcl_Interp *interp); /* 218 */

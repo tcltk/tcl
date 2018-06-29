@@ -1302,8 +1302,8 @@ CompileSubstObj(
     }
     if (objPtr->typePtr != &substCodeType) {
 	CompileEnv compEnv;
-	int numBytes;
-	const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
+	const char *bytes = TclGetString(objPtr);
+	int numBytes = objPtr->length;
 
 	/* TODO: Check for more TIP 280 */
 	TclInitCompileEnv(interp, &compEnv, bytes, numBytes, NULL, 0);
@@ -1403,7 +1403,7 @@ TclInitCompileEnv(
     register CompileEnv *envPtr,/* Points to the CompileEnv structure to
 				 * initialize. */
     const char *stringPtr,	/* The source string to be compiled. */
-    int numBytes,		/* Number of bytes in source string. */
+    size_t numBytes,		/* Number of bytes in source string. */
     const CmdFrame *invoker,	/* Location context invoking the bcc */
     int word)			/* Index of the word in that context getting
 				 * compiled */
@@ -1780,7 +1780,6 @@ CompileCmdLiteral(
     Tcl_Obj *cmdObj,
     CompileEnv *envPtr)
 {
-    int numBytes;
     const char *bytes;
     Command *cmdPtr;
     int cmdLitIdx, extraLiteralFlags = LITERAL_CMD_NAME;
@@ -1790,8 +1789,8 @@ CompileCmdLiteral(
 	extraLiteralFlags |= LITERAL_UNSHARED;
     }
 
-    bytes = TclGetStringFromObj(cmdObj, &numBytes);
-    cmdLitIdx = TclRegisterLiteral(envPtr, bytes, numBytes, extraLiteralFlags);
+    bytes = TclGetString(cmdObj);
+    cmdLitIdx = TclRegisterLiteral(envPtr, bytes, cmdObj->length, extraLiteralFlags);
 
     if (cmdPtr) {
 	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLitIdx), cmdPtr);
@@ -2105,7 +2104,7 @@ TclCompileScript(
 				 * serves as context for finding and compiling
 				 * commands. May not be NULL. */
     const char *script,		/* The source script to compile. */
-    int numBytes,		/* Number of bytes in script. If < 0, the
+    size_t numBytes,		/* Number of bytes in script. If (size_t)-1, the
 				 * script consists of all bytes up to the
 				 * first null character. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
@@ -2123,7 +2122,7 @@ TclCompileScript(
 
     /* Each iteration compiles one command from the script. */
 
-    while (numBytes > 0) {
+    while (numBytes + 1 > 1) {
 	Tcl_Parse parse;
 	const char *next;
 
@@ -2333,7 +2332,8 @@ TclCompileTokens(
     Tcl_DString textBuffer;	/* Holds concatenated chars from adjacent
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
     char buffer[TCL_UTF_MAX];
-    int i, numObjsToConcat, length, adjust;
+    int i, numObjsToConcat, adjust;
+    size_t length;
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
     int isLiteral, maxNumCL, numCL;
@@ -2725,8 +2725,8 @@ PreventCycle(
              * can be sure we do not have any lingering cycles hiding in
 	     * the intrep.
 	     */
-	    int numBytes;
-	    const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
+	    const char *bytes = TclGetString(objPtr);
+	    size_t numBytes = objPtr->length;
 	    Tcl_Obj *copyPtr = Tcl_NewStringObj(bytes, numBytes);
 
 	    Tcl_IncrRefCount(copyPtr);
@@ -2930,7 +2930,7 @@ TclFindCompiledLocal(
     register const char *name,	/* Points to first character of the name of a
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
-    int nameBytes,		/* Number of bytes in the name. */
+    size_t nameBytes,		/* Number of bytes in the name. */
     int create,			/* If 1, allocate a local frame entry for the
 				 * variable if it is new. */
     CompileEnv *envPtr)		/* Points to the current compile environment*/
@@ -2956,7 +2956,7 @@ TclFindCompiledLocal(
 	LocalCache *cachePtr = envPtr->iPtr->varFramePtr->localCachePtr;
 	const char *localName;
 	Tcl_Obj **varNamePtr;
-	int len;
+	size_t len;
 
 	if (!cachePtr || !name) {
 	    return -1;
@@ -2983,8 +2983,8 @@ TclFindCompiledLocal(
 	    if (!TclIsVarTemporary(localPtr)) {
 		char *localName = localPtr->name;
 
-		if ((nameBytes == localPtr->nameLength) &&
-			(strncmp(name,localName,(unsigned)nameBytes) == 0)) {
+		if ((nameBytes == (size_t)localPtr->nameLength) &&
+			(strncmp(name,localName,nameBytes) == 0)) {
 		    return i;
 		}
 	    }
@@ -3927,7 +3927,7 @@ TclFixupForwardJump(
 {
     unsigned char *jumpPc, *p;
     int firstCmd, lastCmd, firstRange, lastRange, k;
-    unsigned numBytes;
+    size_t numBytes;
 
     if (jumpDist <= distThreshold) {
 	jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
