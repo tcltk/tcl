@@ -301,6 +301,104 @@ test ooUtil-5.1 {TIP 478: abstract} -setup {
     parent destroy
 } -result {1 1 1 123 456 ::y}
 
+test ooUtil-6.1 {TIP 478: classvarable} -setup {
+    oo::class create parent
+} -body {
+    oo::class create xyz {
+	superclass parent
+	initialise {
+	    variable x 1 y 2
+	}
+	method a {} {
+	    classvariable x
+	    incr x
+	}
+	method b {} {
+	    classvariable y
+	    incr y
+	}
+	method c {} {
+	    classvariable x y
+	    list $x $y
+	}
+    }
+    set p [xyz new]
+    set q [xyz new]
+    set result [list [$p c] [$q c]]
+    $p a
+    $q b
+    lappend result [[xyz new] c]
+} -cleanup {
+    parent destroy
+} -result {{1 2} {1 2} {2 3}}
+test ooUtil-6.2 {TIP 478: classvarable error case} -setup {
+    oo::class create parent
+} -body {
+    oo::class create xyz {
+	superclass parent
+	method a {} {
+	    classvariable x(1)
+	    incr x(1)
+	}
+    }
+    set p [xyz new]
+    set q [xyz new]
+    list [$p a] [$q a]
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {bad variable name "x(1)": can't create a scalar variable that looks like an array element}
+test ooUtil-6.3 {TIP 478: classvarable error case} -setup {
+    oo::class create parent
+} -body {
+    oo::class create xyz {
+	superclass parent
+	method a {} {
+	    classvariable ::x
+	    incr x
+	}
+    }
+    set p [xyz new]
+    set q [xyz new]
+    list [$p a] [$q a]
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {bad variable name "::x": can't create a local variable with a namespace separator in it}
+
+test ooUtil-7.1 {TIP 478: link calling pattern} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	method foo {} {return "in foo of [self]"}
+	method Bar {} {return "in bar of [self]"}
+	method Grill {} {return "in grill of [self]"}
+	export eval
+	constructor {} {
+	    link foo
+	    link {bar Bar} {grill Grill}
+	}
+    }
+    cls create o
+    o eval {list [foo] [bar] [grill]}
+} -cleanup {
+    parent destroy
+} -result {{in foo of ::o} {in bar of ::o} {in grill of ::o}}
+test ooUtil-7.2 {TIP 478: link removed when [my] disappears} -setup {
+    oo::class create parent
+} -body {
+    oo::class create cls {
+	superclass parent
+	method foo {} {return "in foo of [self]"}
+	constructor {cmd} {
+	    link [list ::$cmd foo]
+	}
+    }
+    cls create o pqr
+    list [o foo] [pqr] [rename [info object namespace o]::my {}] [catch pqr msg] $msg
+} -cleanup {
+    parent destroy
+} -result {{in foo of ::o} {in foo of ::o} {} 1 {invalid command name "pqr"}}
+
 # Tests that verify issues detected with the tcllib version of the code
 test ooUtil-tcllib-ticket-b3577ed586 {test scoping of delegation in oo::class.Delegate } -setup {
     oo::class create animal {}
