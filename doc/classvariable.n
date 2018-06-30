@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH classvariable n 0.1 TclOO "TclOO Commands"
+.TH classvariable n 0.3 TclOO "TclOO Commands"
 .so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
