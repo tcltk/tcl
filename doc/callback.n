@@ -19,14 +19,16 @@ package require TclOO
 .fi
 .BE
 .SH DESCRIPTION
-The \fBcallback\fR command, also called \fBmymethod\fR for compatibility with
-the ooutil package of Tcllib, and which should only be used from within the
-context of a call to a method (i.e. inside a method, constructor or destructor
-body) is used to generate a script fragment that will invoke the method,
-\fImethodName\fR, on the current object (as reported by \fBself\fR) when
-executed. Any additional arguments provided will be provided as leading
-arguments to the callback. The resulting script fragment shall be a proper
-list.
+The \fBcallback\fR command,
+'\" Based on notes in the tcllib docs, we know the provenance of mymethod
+also called \fBmymethod\fR for compatibility with the ooutil and snit packages
+of Tcllib,
+and which should only be used from within the context of a call to a method
+(i.e. inside a method, constructor or destructor body) is used to generate a
+script fragment that will invoke the method, \fImethodName\fR, on the current
+object (as reported by \fBself\fR) when executed. Any additional arguments
+provided will be provided as leading arguments to the callback. The resulting
+script fragment shall be a proper list.
 .PP
 Note that it is up to the caller to ensure that the current object is able to
 handle the call of \fImethodName\fR; this command does not check that.
