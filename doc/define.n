@@ -110,6 +110,13 @@ below), this command creates private forwarded methods.
 .VE TIP500
 .RE
 .TP
+\fBinitialise\fI script\fR
+.VS TIP478
+This evaluates \fIscript\fR in a context which supports local variables and
+where the current namespace is the instance namespace of the class object
+itself. This is useful for setting up, e.g., class-scoped variables.
+.VE TIP478
+.TP
 \fBmethod\fI name argList bodyScript\fR
 .
 This creates or updates a method that is implemented as a procedure-like
