@@ -18,7 +18,7 @@
 TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 
 static struct {
-    int cacheSize;		/* Number of env strings in cache. */
+    size_t cacheSize;		/* Number of env strings in cache. */
     char **cache;		/* Array containing all of the environment
 				 * strings that Tcl has allocated. */
 #ifndef USE_PUTENV
@@ -26,7 +26,7 @@ static struct {
 				 * need to track this in case another
 				 * subsystem swaps around the environ array
 				 * like we do. */
-    int ourEnvironSize;		/* Non-zero means that the environ array was
+    size_t ourEnvironSize;	/* Non-zero means that the environ array was
 				 * malloced and has this many total entries
 				 * allocated to it (not all may be in use at
 				 * once). Zero means that the environment
@@ -204,7 +204,7 @@ TclSetEnv(
 {
     Tcl_DString envString;
     unsigned nameLength, valueLength;
-    int index, length;
+    size_t index, length;
     char *p, *oldValue;
     const char *p2;
 
@@ -217,7 +217,7 @@ TclSetEnv(
     Tcl_MutexLock(&envMutex);
     index = TclpFindVariable(name, &length);
 
-    if (index == -1) {
+    if (index == (size_t)-1) {
 #ifndef USE_PUTENV
 	/*
 	 * We need to handle the case where the environment may be changed
@@ -301,7 +301,7 @@ TclSetEnv(
      * string in the cache.
      */
 
-    if ((index != -1) && (environ[index] == p)) {
+    if ((index != (size_t)-1) && (environ[index] == p)) {
 	ReplaceString(oldValue, p);
 #ifdef HAVE_PUTENV_THAT_COPIES
     } else {
@@ -401,8 +401,7 @@ TclUnsetEnv(
     const char *name)		/* Name of variable to remove (UTF-8). */
 {
     char *oldValue;
-    int length;
-    int index;
+    size_t length, index;
 #ifdef USE_PUTENV_FOR_UNSET
     Tcl_DString envString;
     char *string;
@@ -418,7 +417,7 @@ TclUnsetEnv(
      * needless work and to avoid recursion on the unset.
      */
 
-    if (index == -1) {
+    if (index == (size_t)-1) {
 	Tcl_MutexUnlock(&envMutex);
 	return;
     }
@@ -517,13 +516,13 @@ TclGetEnv(
 				 * value of the environment variable is
 				 * stored. */
 {
-    int length, index;
+    size_t length, index;
     const char *result;
 
     Tcl_MutexLock(&envMutex);
     index = TclpFindVariable(name, &length);
     result = NULL;
-    if (index != -1) {
+    if (index != (size_t)-1) {
 	Tcl_DString envStr;
 
 	result = Tcl_ExternalToUtfDString(NULL, environ[index], -1, &envStr);
@@ -650,7 +649,7 @@ ReplaceString(
     const char *oldStr,		/* Old environment string. */
     char *newStr)		/* New environment string. */
 {
-    int i;
+    size_t i;
 
     /*
      * Check to see if the old value was allocated by Tcl. If so, it needs to

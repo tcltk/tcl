@@ -347,7 +347,7 @@ typedef struct Namespace {
     Tcl_Obj *unknownHandlerPtr;	/* A script fragment to be used when command
 				 * resolution in this namespace fails. TIP
 				 * 181. */
-    int commandPathLength;	/* The length of the explicit path. */
+    size_t commandPathLength;	/* The length of the explicit path. */
     NamespacePathEntry *commandPathArray;
 				/* The explicit path of the namespace as an
 				 * array. */
@@ -1227,7 +1227,7 @@ typedef struct CmdFrame {
     } data;
     Tcl_Obj *cmdObj;
     const char *cmd;		/* The executed command, if possible... */
-    int len;			/* ... and its length. */
+    size_t len;			/* ... and its length. */
     const struct CFWordBC *litarg;
 				/* Link to set of literal arguments which have
 				 * ben pushed on the lineLABCPtr stack by
@@ -1325,7 +1325,7 @@ typedef struct {
 				 * proc field is NULL. */
 } ExtraFrameInfoField;
 typedef struct {
-    int length;			/* Length of array. */
+    size_t length;			/* Length of array. */
     ExtraFrameInfoField fields[2];
 				/* Really as long as necessary, but this is
 				 * long enough for nearly anything. */
@@ -2857,8 +2857,8 @@ MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
 			    CmdFrame **cfPtrPtr, int *wordPtr);
 MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
 MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
-			    int strLen, const unsigned char *pattern,
-			    int ptnLen, int flags);
+			    size_t strLen, const unsigned char *pattern,
+			    size_t ptnLen, int flags);
 MODULE_SCOPE double	TclCeil(const mp_int *a);
 MODULE_SCOPE void	TclChannelPreserve(Tcl_Channel chan);
 MODULE_SCOPE void	TclChannelRelease(Tcl_Channel chan);
@@ -3074,7 +3074,7 @@ MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, void *clientData,
 			    size_t stackSize, int flags);
-MODULE_SCOPE int	TclpFindVariable(const char *name, int *lengthPtr);
+MODULE_SCOPE size_t	TclpFindVariable(const char *name, size_t *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
 			    size_t *lengthPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE void	TclpInitLock(void);
@@ -3143,11 +3143,11 @@ MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 			    size_t numBytes);
 typedef int (*memCmpFn_t)(const void*, const void*, size_t);
 MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
-			    int checkEq, int nocase, int reqlength);
+			    int checkEq, int nocase, size_t reqlength);
 MODULE_SCOPE int	TclStringCmpOpts(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int *nocase,
 			    int *reqlength);
-MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
+MODULE_SCOPE int	TclStringMatch(const char *str, size_t strLen,
 			    const char *pattern, int ptnLen, int flags);
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
 			    Tcl_Obj *patternObj, int flags);
@@ -3959,14 +3959,14 @@ MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 
 MODULE_SCOPE Tcl_Obj *	TclStringCat(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int flags);
-MODULE_SCOPE int	TclStringFirst(Tcl_Obj *needle, Tcl_Obj *haystack,
-			    int start);
-MODULE_SCOPE int	TclStringLast(Tcl_Obj *needle, Tcl_Obj *haystack,
-			    int last);
+MODULE_SCOPE size_t	TclStringFirst(Tcl_Obj *needle, Tcl_Obj *haystack,
+			    size_t start);
+MODULE_SCOPE size_t	TclStringLast(Tcl_Obj *needle, Tcl_Obj *haystack,
+			    size_t last);
 MODULE_SCOPE Tcl_Obj *	TclStringRepeat(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    int count, int flags);
+			    size_t count, int flags);
 MODULE_SCOPE Tcl_Obj *	TclStringReplace(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    int first, int count, Tcl_Obj *insertPtr,
+			    size_t first, size_t count, Tcl_Obj *insertPtr,
 			    int flags);
 MODULE_SCOPE Tcl_Obj *	TclStringReverse(Tcl_Obj *objPtr, int flags);
 
@@ -4135,7 +4135,7 @@ typedef const char *TclDTraceStr;
 /*
  * Invalidate the string rep first so we can use the bytes value for our
  * pointer chain, and signal an obj deletion (as opposed to shimmering) with
- * 'length == -1'.
+ * 'length == (size_t)-1'.
  * Use empty 'if ; else' to handle use in unbraced outer if/else conditions.
  */
 
@@ -4337,13 +4337,22 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
    static inline const char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
       const char *response = Tcl_GetString(objPtr);
       if (lenPtr) *lenPtr = objPtr->length;
-	return response;
+      return response;
+   }
+   static inline Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr) {
+      Tcl_GetUnicodeFromObj(objPtr, NULL);
+      *lenPtr = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1)
+      return Tcl_GetUnicodeFromObj(objPtr, NULL);
    }
 #else
 #define TclGetStringFromObj(objPtr, lenPtr) \
     (((objPtr)->bytes \
 	    ? 0 : Tcl_GetString((objPtr)), \
 	    *(lenPtr) = (objPtr)->length, (objPtr)->bytes))
+#define TclGetUnicodeFromObj(objPtr, lenPtr) \
+    (Tcl_GetUnicodeFromObj(objPtr, NULL), \
+	    *lenPtr = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
+	    Tcl_GetUnicodeFromObj(objPtr, NULL))
 #endif
 
 /*

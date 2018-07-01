@@ -53,7 +53,7 @@ typedef struct {
 				 * cancellation. */
     char *result;		/* The script cancellation result or NULL for
 				 * a default result. */
-    int length;			/* Length of the above error message. */
+    size_t length;		/* Length of the above error message. */
     ClientData clientData;	/* Ignored */
     int flags;			/* Additional flags */
 } CancelInfo;
@@ -3630,7 +3630,7 @@ Tcl_Canceled(
 
     if (flags & TCL_LEAVE_ERR_MSG) {
         const char *id, *message = NULL;
-        int length;
+        size_t length;
 
         /*
          * Setup errorCode variables so that we can differentiate between
@@ -4222,7 +4222,7 @@ TEOV_Error(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *listPtr;
     const char *cmdString;
-    int cmdLen;
+    size_t cmdLen;
     int objc = PTR2INT(data[0]);
     Tcl_Obj **objv = data[1];
 
@@ -4378,8 +4378,8 @@ TEOV_RunEnterTraces(
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr = *cmdPtrPtr;
-    size_t newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
-    int length, traceCode = TCL_OK;
+    size_t length, newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
+    int traceCode = TCL_OK;
     const char *command = TclGetStringFromObj(commandPtr, &length);
 
     /*
@@ -4431,7 +4431,7 @@ TEOV_RunLeaveTraces(
     Tcl_Obj *commandPtr = data[1];
     Command *cmdPtr = data[2];
     Tcl_Obj **objv = data[3];
-    int length;
+    size_t length;
     const char *command = TclGetStringFromObj(commandPtr, &length);
 
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
@@ -5680,7 +5680,7 @@ TclNREvalObjEx(
 	 */
 
 	const char *script;
-	int numSrcBytes;
+	size_t numSrcBytes;
 
 	/*
 	 * Now we check if we have data about invisible continuation lines for
@@ -5734,7 +5734,7 @@ TEOEx_ByteCodeCallback(
 	}
 	if ((result != TCL_OK) && (result != TCL_ERROR) && !allowExceptions) {
 	    const char *script;
-	    int numSrcBytes;
+	    size_t numSrcBytes;
 
 	    ProcessUnexpectedResult(interp, result);
 	    result = TCL_ERROR;

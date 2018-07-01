@@ -658,7 +658,7 @@ InfoCommandsCmd(
     Tcl_Obj *listPtr, *elemObjPtr;
     int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
     Tcl_Command cmd;
-    int i;
+    size_t i;
 
     /*
      * Get the pattern and find the "effective namespace" in which to list
@@ -1403,7 +1403,7 @@ TclInfoFrame(
 	    ADD_PAIR("proc", procNameObj);
 	} else if (procPtr->cmdPtr->clientData) {
 	    ExtraFrameInfo *efiPtr = procPtr->cmdPtr->clientData;
-	    int i;
+	    size_t i;
 
 	    /*
 	     * This is a non-standard command. Luckily, it's told us how to

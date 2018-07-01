@@ -2391,11 +2391,11 @@ Tcl_StringCaseMatch(
 int
 TclByteArrayMatch(
     const unsigned char *string,/* String. */
-    int strLen,			/* Length of String */
+    size_t strLen,			/* Length of String */
     const unsigned char *pattern,
 				/* Pattern, which may contain special
 				 * characters. */
-    int ptnLen,			/* Length of Pattern */
+    size_t ptnLen,			/* Length of Pattern */
     int flags)
 {
     const unsigned char *stringEnd, *patternEnd;
@@ -2572,7 +2572,8 @@ TclStringMatchObj(
     int flags)			/* Only TCL_MATCH_NOCASE should be passed, or
 				 * 0. */
 {
-    int match, length, plen;
+    int match;
+    size_t length, plen;
 
     /*
      * Promote based on the type of incoming object.
@@ -2584,15 +2585,17 @@ TclStringMatchObj(
     if ((strObj->typePtr == &tclStringType) || (strObj->typePtr == NULL)) {
 	Tcl_UniChar *udata, *uptn;
 
-	udata = Tcl_GetUnicodeFromObj(strObj, &length);
-	uptn  = Tcl_GetUnicodeFromObj(ptnObj, &plen);
+	udata = TclGetUnicodeFromObj(strObj, &length);
+	uptn  = TclGetUnicodeFromObj(ptnObj, &plen);
 	match = TclUniCharMatch(udata, length, uptn, plen, flags);
     } else if (TclIsPureByteArray(strObj) && TclIsPureByteArray(ptnObj)
 		&& !flags) {
 	unsigned char *data, *ptn;
+	int xxx1length, xxx1plen;
 
-	data = Tcl_GetByteArrayFromObj(strObj, &length);
-	ptn  = Tcl_GetByteArrayFromObj(ptnObj, &plen);
+	data = Tcl_GetByteArrayFromObj(strObj, &xxx1length);
+	ptn  = Tcl_GetByteArrayFromObj(ptnObj, &xxx1plen);
+	length = xxx1length; plen = xxx1plen;
 	match = TclByteArrayMatch(data, length, ptn, plen, 0);
     } else {
 	match = Tcl_StringCaseMatch(TclGetString(strObj),
@@ -2776,7 +2779,7 @@ Tcl_DStringAppendElement(
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString = ckalloc(dsPtr->spaceAvl);
 
-	    memcpy(newString, dsPtr->string, (size_t) dsPtr->length);
+	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
 	    int offset = -1;
@@ -3521,7 +3524,7 @@ GetEndOffsetFromObj(
 
     /* TODO: Handle overflow cases sensibly */
     *indexPtr = endValue + (int)objPtr->internalRep.wideValue;
-	if ((*indexPtr < -1) && (endValue > 0)) *indexPtr = -1;
+    if ((*indexPtr < -1) && (endValue > 0)) *indexPtr = -1;
     return TCL_OK;
 }
 
