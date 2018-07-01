@@ -4336,14 +4336,20 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #if 0
    static inline const char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
       const char *response = Tcl_GetString(objPtr);
-      if (lenPtr) *lenPtr = objPtr->length;
+      *(lenPtr) = objPtr->length;
       return response;
    }
-   static inline Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr) {
+   static inline Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
       Tcl_GetUnicodeFromObj(objPtr, NULL);
-      *lenPtr = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1)
+      *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
       return Tcl_GetUnicodeFromObj(objPtr, NULL);
    }
+   static inline unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, int *lenPtr) {
+      Tcl_GetByteArrayFromObj(objPtr, NULL);
+      *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
+      return Tcl_GetByteArrayFromObj(objPtr, NULL);
+   }
+
 #else
 #define TclGetStringFromObj(objPtr, lenPtr) \
     (((objPtr)->bytes \
@@ -4351,8 +4357,12 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	    *(lenPtr) = (objPtr)->length, (objPtr)->bytes))
 #define TclGetUnicodeFromObj(objPtr, lenPtr) \
     (Tcl_GetUnicodeFromObj(objPtr, NULL), \
-	    *lenPtr = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
+	    *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
 	    Tcl_GetUnicodeFromObj(objPtr, NULL))
+#define TclGetByteArrayFromObj(objPtr, lenPtr) \
+    (Tcl_GetByteArrayFromObj(objPtr, NULL), \
+	    *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
+	    Tcl_GetByteArrayFromObj(objPtr, NULL))
 #endif
 
 /*

@@ -486,7 +486,8 @@ Tcl_RegsubObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int idx, result, cflags, all, wlen, wsublen, numMatches, offset;
+    int idx, result, cflags, all, numMatches, offset;
+    size_t wlen, wsublen = 0;
     int start, end, subStart, subEnd, match, command, numParts;
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
@@ -597,7 +598,8 @@ Tcl_RegsubObjCmd(
 	 * slightly modified version of the one pair STR_MAP code.
 	 */
 
-	int slen, nocase, wsrclc;
+	size_t slen;
+	int nocase, wsrclc;
 	int (*strCmpFn)(const Tcl_UniChar*,const Tcl_UniChar*,size_t);
 	Tcl_UniChar *p;
 
@@ -605,9 +607,9 @@ Tcl_RegsubObjCmd(
 	nocase = (cflags & TCL_REG_NOCASE);
 	strCmpFn = nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp;
 
-	wsrc = Tcl_GetUnicodeFromObj(objv[0], &slen);
-	wstring = Tcl_GetUnicodeFromObj(objv[1], &wlen);
-	wsubspec = Tcl_GetUnicodeFromObj(objv[2], &wsublen);
+	wsrc = TclGetUnicodeFromObj(objv[0], &slen);
+	wstring = TclGetUnicodeFromObj(objv[1], &wlen);
+	wsubspec = TclGetUnicodeFromObj(objv[2], &wsublen);
 	wend = wstring + wlen - (slen ? slen - 1 : 0);
 	result = TCL_OK;
 
@@ -698,14 +700,14 @@ Tcl_RegsubObjCmd(
     } else {
 	objPtr = objv[1];
     }
-    wstring = Tcl_GetUnicodeFromObj(objPtr, &wlen);
+    wstring = TclGetUnicodeFromObj(objPtr, &wlen);
     if (objv[2] == objv[0]) {
 	subPtr = Tcl_DuplicateObj(objv[2]);
     } else {
 	subPtr = objv[2];
     }
     if (!command) {
-	wsubspec = Tcl_GetUnicodeFromObj(subPtr, &wsublen);
+	wsubspec = TclGetUnicodeFromObj(subPtr, &wsublen);
     }
 
     result = TCL_OK;
@@ -721,7 +723,7 @@ Tcl_RegsubObjCmd(
      */
 
     numMatches = 0;
-    for ( ; offset <= wlen; ) {
+    for ( ; (size_t)offset <= wlen; ) {
 
 	/*
 	 * The flags argument is set if string is part of a larger string, so
@@ -825,7 +827,7 @@ Tcl_RegsubObjCmd(
 	     * the user code.
 	     */
 
-	    wstring = Tcl_GetUnicodeFromObj(objPtr, &wlen);
+	    wstring = TclGetUnicodeFromObj(objPtr, &wlen);
 
 	    offset += end;
 	    if (end == 0 || start == end) {
@@ -836,7 +838,7 @@ Tcl_RegsubObjCmd(
 		 * again at the same spot.
 		 */
 
-		if (offset < wlen) {
+		if ((size_t)offset < wlen) {
 		    Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
 		}
 		offset++;
@@ -909,7 +911,7 @@ Tcl_RegsubObjCmd(
 	     * order to prevent infinite loops.
 	     */
 
-	    if (offset < wlen) {
+	    if ((size_t)offset < wlen) {
 		Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
 	    }
 	    offset++;
@@ -921,7 +923,7 @@ Tcl_RegsubObjCmd(
 		 * one more step so we don't match again at the same spot.
 		 */
 
-		if (offset < wlen) {
+		if ((size_t)offset < wlen) {
 		    Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
 		}
 		offset++;
@@ -946,7 +948,7 @@ Tcl_RegsubObjCmd(
 
 	resultPtr = objv[1];
 	Tcl_IncrRefCount(resultPtr);
-    } else if (offset < wlen) {
+    } else if ((size_t)offset < wlen) {
 	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, wlen - offset);
     }
     if (objc == 4) {
