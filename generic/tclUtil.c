@@ -2591,11 +2591,9 @@ TclStringMatchObj(
     } else if (TclIsPureByteArray(strObj) && TclIsPureByteArray(ptnObj)
 		&& !flags) {
 	unsigned char *data, *ptn;
-	int xxx1length, xxx1plen;
 
-	data = Tcl_GetByteArrayFromObj(strObj, &xxx1length);
-	ptn  = Tcl_GetByteArrayFromObj(ptnObj, &xxx1plen);
-	length = xxx1length; plen = xxx1plen;
+	data = TclGetByteArrayFromObj(strObj, &length);
+	ptn  = TclGetByteArrayFromObj(ptnObj, &plen);
 	match = TclByteArrayMatch(data, length, ptn, plen, 0);
     } else {
 	match = Tcl_StringCaseMatch(TclGetString(strObj),
