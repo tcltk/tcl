@@ -3314,15 +3314,14 @@ TclNeedSpace(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclFormatInt(
     char *buffer,		/* Points to the storage into which the
 				 * formatted characters are written. */
     Tcl_WideInt n)			/* The integer to format. */
 {
-	Tcl_WideInt intVal;
-    int i;
-    int numFormatted, j;
+    Tcl_WideInt intVal;
+    size_t i, numFormatted, j;
     const char *digits = "0123456789";
 
     /*

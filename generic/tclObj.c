@@ -606,7 +606,8 @@ TclContinuationsEnterDerived(
     int start,
     int *clNext)
 {
-    int length, end, num;
+    size_t length;
+    int end, num;
     int *wordCLLast = clNext;
 
     /*
@@ -633,7 +634,7 @@ TclContinuationsEnterDerived(
      * better way which doesn't shimmer?)
      */
 
-    TclGetStringFromObj(objPtr, &length);
+    (void)TclGetStringFromObj(objPtr, &length);
     end = start + length;       /* First char after the word */
 
     /*
@@ -1803,7 +1804,7 @@ TclSetBooleanFromAny(
 
   badBoolean:
     if (interp != NULL) {
-	int length;
+	size_t length;
 	const char *str = TclGetStringFromObj(objPtr, &length);
 	Tcl_Obj *msg;
 
@@ -1822,8 +1823,8 @@ ParseBoolean(
 {
     int newBool;
     char lowerCase[6];
-    const char *str = TclGetString(objPtr);
-    size_t i, length = objPtr->length;
+    size_t i, length;
+    const char *str = TclGetStringFromObj(objPtr, &length);
 
     if ((length == 0) || (length > 5)) {
 	/*
@@ -2177,14 +2178,14 @@ UpdateStringOfDouble(
     register Tcl_Obj *objPtr)	/* Double obj with string rep to update. */
 {
     char buffer[TCL_DOUBLE_SPACE];
-    register int len;
+    size_t len;
 
     Tcl_PrintDouble(NULL, objPtr->internalRep.doubleValue, buffer);
     len = strlen(buffer);
 
-    objPtr->bytes = ckalloc(len + 1);
-    memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
     objPtr->length = len;
+    objPtr->bytes = ckalloc(++len);
+    memcpy(objPtr->bytes, buffer, len);
 }
 
 /*
@@ -2293,13 +2294,13 @@ UpdateStringOfInt(
     register Tcl_Obj *objPtr)	/* Int object whose string rep to update. */
 {
     char buffer[TCL_INTEGER_SPACE];
-    register int len;
+    size_t len;
 
     len = TclFormatInt(buffer, objPtr->internalRep.wideValue);
 
+    objPtr->length = len;
     objPtr->bytes = ckalloc(len + 1);
     memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
-    objPtr->length = len;
 }
 
 /*

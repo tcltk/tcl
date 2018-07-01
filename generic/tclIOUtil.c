@@ -682,7 +682,7 @@ FsUpdateCwd(
     Tcl_Obj *cwdObj,
     ClientData clientData)
 {
-    int len;
+    int len = 0;
     const char *str = NULL;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 

@@ -1731,7 +1731,7 @@ Tcl_AppendFormatToObj(
     if (Tcl_IsShared(appendObj)) {
 	Tcl_Panic("%s called with shared object", "Tcl_AppendFormatToObj");
     }
-    TclGetStringFromObj(appendObj, &originalLength);
+    (void)TclGetStringFromObj(appendObj, &originalLength);
     limit = INT_MAX - originalLength;
 
     /*
@@ -2419,7 +2419,7 @@ Tcl_AppendFormatToObj(
 	    }
 	}
 
-	TclGetStringFromObj(segment, &segmentNumBytes);
+	(void)TclGetStringFromObj(segment, &segmentNumBytes);
 	if (segmentNumBytes > limit) {
 	    if (allocSegment) {
 		Tcl_DecrRefCount(segment);
