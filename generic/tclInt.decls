@@ -913,7 +913,7 @@ declare 226 {
     int TclObjBeingDeleted(Tcl_Obj *objPtr)
 }
 declare 227 {
-    void TclSetNsPath(Namespace *nsPtr, int pathLength,
+    void TclSetNsPath(Namespace *nsPtr, size_t pathLength,
             Tcl_Namespace *pathAry[])
 }
 #  Used to be needed for TclOO-extension; unneeded now that TclOO is in the

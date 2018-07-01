@@ -2606,7 +2606,7 @@ Tcl_FindCommand(
     cmdPtr = NULL;
     if (cxtNsPtr->commandPathLength!=0 && strncmp(name, "::", 2)
 	    && !(flags & TCL_NAMESPACE_ONLY)) {
-	int i;
+	size_t i;
 	Namespace *pathNsPtr, *realNsPtr, *dummyNsPtr;
 
 	(void) TclGetNamespaceForQualName(interp, name, cxtNsPtr,
@@ -4004,7 +4004,8 @@ NamespacePathCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Namespace *nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-    int i, nsObjc, result = TCL_ERROR;
+    size_t i;
+    int nsObjc, result = TCL_ERROR;
     Tcl_Obj **nsObjv;
     Tcl_Namespace **namespaceList = NULL;
 
@@ -4041,7 +4042,7 @@ NamespacePathCmd(
 	namespaceList = TclStackAlloc(interp,
 		sizeof(Tcl_Namespace *) * nsObjc);
 
-	for (i=0 ; i<nsObjc ; i++) {
+	for (i=0 ; i<(size_t)nsObjc ; i++) {
 	    if (TclGetNamespaceFromObj(interp, nsObjv[i],
 		    &namespaceList[i]) != TCL_OK) {
 		goto badNamespace;
@@ -4086,13 +4087,13 @@ NamespacePathCmd(
 void
 TclSetNsPath(
     Namespace *nsPtr,		/* Namespace whose path is to be set. */
-    int pathLength,		/* Length of pathAry. */
+    size_t pathLength,		/* Length of pathAry. */
     Tcl_Namespace *pathAry[])	/* Array of namespaces that are the path. */
 {
     if (pathLength != 0) {
 	NamespacePathEntry *tmpPathArray =
 		ckalloc(sizeof(NamespacePathEntry) * pathLength);
-	int i;
+	size_t i;
 
 	for (i=0 ; i<pathLength ; i++) {
 	    tmpPathArray[i].nsPtr = (Namespace *) pathAry[i];
@@ -4143,7 +4144,7 @@ static void
 UnlinkNsPath(
     Namespace *nsPtr)
 {
-    int i;
+    size_t i;
     for (i=0 ; i<nsPtr->commandPathLength ; i++) {
 	NamespacePathEntry *nsPathPtr = &nsPtr->commandPathArray[i];
 

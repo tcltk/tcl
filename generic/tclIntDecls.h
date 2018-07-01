@@ -484,7 +484,7 @@ EXTERN Tcl_Obj *	TclTraceDictPath(Tcl_Interp *interp,
 /* 226 */
 EXTERN int		TclObjBeingDeleted(Tcl_Obj *objPtr);
 /* 227 */
-EXTERN void		TclSetNsPath(Namespace *nsPtr, int pathLength,
+EXTERN void		TclSetNsPath(Namespace *nsPtr, size_t pathLength,
 				Tcl_Namespace *pathAry[]);
 /* Slot 228 is reserved */
 /* 229 */
@@ -810,7 +810,7 @@ typedef struct TclIntStubs {
     TclPlatformType * (*tclGetPlatform) (void); /* 224 */
     Tcl_Obj * (*tclTraceDictPath) (Tcl_Interp *interp, Tcl_Obj *rootPtr, int keyc, Tcl_Obj *const keyv[], int flags); /* 225 */
     int (*tclObjBeingDeleted) (Tcl_Obj *objPtr); /* 226 */
-    void (*tclSetNsPath) (Namespace *nsPtr, int pathLength, Tcl_Namespace *pathAry[]); /* 227 */
+    void (*tclSetNsPath) (Namespace *nsPtr, size_t pathLength, Tcl_Namespace *pathAry[]); /* 227 */
     void (*reserved228)(void);
     int (*tclPtrMakeUpvar) (Tcl_Interp *interp, Var *otherP1Ptr, const char *myName, int myFlags, int index); /* 229 */
     Var * (*tclObjLookupVar) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, const char *part2, int flags, const char *msg, const int createPart1, const int createPart2, Var **arrayPtrPtr); /* 230 */

@@ -625,7 +625,7 @@ static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
 static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int searchMode, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
-			    ByteCode *codePtr, int *lengthPtr,
+			    ByteCode *codePtr, size_t *lengthPtr,
 			    const unsigned char **pcBeg, int *cmdIdxPtr);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth,
 			    int move);
@@ -7176,11 +7176,12 @@ TEBCresume(
 	}
 	if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
 	    const unsigned char *pcBeg;
+	    size_t xxx1length;
 
-	    bytes = GetSrcInfoForPc(pc, codePtr, &length, &pcBeg, NULL);
+	    bytes = GetSrcInfoForPc(pc, codePtr, &xxx1length, &pcBeg, NULL);
 	    DECACHE_STACK_INFO();
 	    TclLogCommandInfo(interp, codePtr->source, bytes,
-		    bytes ? length : 0, pcBeg, tosPtr);
+		    bytes ? xxx1length : 0, pcBeg, tosPtr);
 	    CACHE_STACK_INFO();
 	}
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
@@ -7342,9 +7343,10 @@ TEBCresume(
 	instStartCmdFailed:
 	{
 	    const char *bytes;
+	    size_t xxx1length;
 
 	    checkInterp = 1;
-	    length = 0;
+	    xxx1length = 0;
 
 	    /*
 	     * We used to switch to direct eval; for NRE-awareness we now
@@ -7357,11 +7359,11 @@ TEBCresume(
 	    }
 
 	    codePtr->flags |= TCL_BYTECODE_RECOMPILE;
-	    bytes = GetSrcInfoForPc(pc, codePtr, &length, NULL, NULL);
+	    bytes = GetSrcInfoForPc(pc, codePtr, &xxx1length, NULL, NULL);
 	    opnd = TclGetUInt4AtPtr(pc+1);
 	    pc += (opnd-1);
 	    assert(bytes);
-	    PUSH_OBJECT(Tcl_NewStringObj(bytes, length));
+	    PUSH_OBJECT(Tcl_NewStringObj(bytes, xxx1length));
 	    goto instEvalStk;
 	}
 }
@@ -8906,7 +8908,7 @@ GetSrcInfoForPc(
 				 * in codePtr's code. */
     ByteCode *codePtr,		/* The bytecode sequence in which to look up
 				 * the command source for the pc. */
-    int *lengthPtr,		/* If non-NULL, the location where the length
+    size_t *lengthPtr,		/* If non-NULL, the location where the length
 				 * of the command's source should be stored.
 				 * If NULL, no length is stored. */
     const unsigned char **pcBeg,/* If non-NULL, the bytecode location
@@ -8916,18 +8918,18 @@ GetSrcInfoForPc(
 				 * of the command containing the pc should
 				 * be stored. */
 {
-    int pcOffset = (pc - codePtr->codeStart);
-    int numCmds = codePtr->numCommands;
+    size_t pcOffset = (pc - codePtr->codeStart);
+    size_t numCmds = codePtr->numCommands;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
-    int codeOffset, codeLen, codeEnd, srcOffset, srcLen, delta, i;
+    size_t codeOffset, codeLen, codeEnd, srcOffset, srcLen, delta, i;
     int bestDist = INT_MAX;	/* Distance of pc to best cmd's start pc. */
     int bestSrcOffset = -1;	/* Initialized to avoid compiler warning. */
     int bestSrcLength = -1;	/* Initialized to avoid compiler warning. */
     int bestCmdIdx = -1;
 
     /* The pc must point within the bytecode */
-    assert ((pcOffset >= 0) && (pcOffset < codePtr->numCodeBytes));
+    assert (pcOffset < codePtr->numCodeBytes);
 
     /*
      * Decode the code and source offset and length for each command. The
