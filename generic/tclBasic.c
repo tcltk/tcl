@@ -6265,10 +6265,11 @@ Tcl_AppendObjToErrorInfo(
 				 * pertains. */
     Tcl_Obj *objPtr)		/* Message to record. */
 {
-    const char *message = TclGetString(objPtr);
+    size_t length;
+    const char *message = TclGetStringFromObj(objPtr, &length);
 
     Tcl_IncrRefCount(objPtr);
-    Tcl_AddObjErrorInfo(interp, message, objPtr->length);
+    Tcl_AddObjErrorInfo(interp, message, length);
     Tcl_DecrRefCount(objPtr);
 }
 

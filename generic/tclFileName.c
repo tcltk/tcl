@@ -578,7 +578,7 @@ Tcl_SplitPath(
     size = 1;
     for (i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
-	TclGetStringFromObj(eltPtr, &len);
+	(void)TclGetStringFromObj(eltPtr, &len);
 	size += len + 1;
     }
 
@@ -885,7 +885,7 @@ TclpNativeJoinPath(
 
 	if (length > 0 && (start[length-1] != '/')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
-	    TclGetStringFromObj(prefix, &length);
+	    (void)TclGetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
 
@@ -921,7 +921,7 @@ TclpNativeJoinPath(
 	if ((length > 0) &&
 		(start[length-1] != '/') && (start[length-1] != ':')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
-	    TclGetStringFromObj(prefix, &length);
+	    (void)TclGetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
 

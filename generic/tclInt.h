@@ -4333,10 +4333,18 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #define TclGetString(objPtr) \
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString(objPtr))
 
+#if 0
+   static inline const char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
+      const char *response = Tcl_GetString(objPtr);
+      if (lenPtr) *lenPtr = objPtr->length;
+	return response;
+   }
+#else
 #define TclGetStringFromObj(objPtr, lenPtr) \
-    ((objPtr)->bytes \
-	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)	\
-	    : Tcl_GetStringFromObj((objPtr), (lenPtr)))
+    (((objPtr)->bytes \
+	    ? 0 : Tcl_GetString((objPtr)), \
+	    *(lenPtr) = (objPtr)->length, (objPtr)->bytes))
+#endif
 
 /*
  *----------------------------------------------------------------

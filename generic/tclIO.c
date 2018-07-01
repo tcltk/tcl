@@ -4563,7 +4563,7 @@ Tcl_GetsObj(
      * newline in the available input.
      */
 
-    TclGetStringFromObj(objPtr, &oldLength);
+    (void)TclGetStringFromObj(objPtr, &oldLength);
     oldFlags = statePtr->inputEncodingFlags;
     oldState = statePtr->inputEncodingState;
     oldRemoved = BUFFER_PADDING;
