@@ -102,6 +102,13 @@ static int		PrivateObjectCmd(ClientData clientData,
 static int		PrivateNRObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+static int		MyClassObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+static int		MyClassNRObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+static void		MyClassDeletedCmd(ClientData clientData);
 
 /*
  * Methods in the oo::object and oo::class classes. First, we define a helper
@@ -747,6 +754,9 @@ AllocObject(
 
     oPtr->myCommand = TclNRCreateCommandInNs(interp, "my", oPtr->namespacePtr,
 	    PrivateObjectCmd, PrivateNRObjectCmd, oPtr, MyDeleted);
+    oPtr->myclassCommand = TclNRCreateCommandInNs(interp, " :my:class",
+	    oPtr->namespacePtr, MyClassObjCmd, MyClassNRObjCmd, oPtr,
+            MyClassDeletedCmd);
     return oPtr;
 }
 
@@ -1165,6 +1175,9 @@ ObjectNamespaceDeleted(
 	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->command);
     }
 
+    if (oPtr->myclassCommand) {
+	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->myclassCommand);
+    }
     if (oPtr->myCommand) {
 	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->myCommand);
     }
@@ -2483,6 +2496,51 @@ TclOOInvokeObject(
 	return TclOOObjectCmdCore((Object *) object, interp, objc, objv, 0,
 		(Class *) startCls);
     }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MyClassObjCmd, MyClassNRObjCmd, MyClassDeletedCmd --
+ *
+ *	Special trap door to allow an object to delegate simply to its class.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+MyClassObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    return Tcl_NRCallObjProc(interp, MyClassNRObjCmd, clientData, objc, objv);
+}
+
+static int
+MyClassNRObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = clientData;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "methodName ?arg ...?");
+	return TCL_ERROR;
+    }
+    return TclOOObjectCmdCore(oPtr->selfCls->thisPtr, interp, objc, objv, 0,
+	    NULL);
+}
+
+static void
+MyClassDeletedCmd(
+    ClientData clientData)
+{
+    Object *oPtr = clientData;
+    oPtr->myclassCommand = NULL;
 }
 
 /*
