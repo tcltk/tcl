@@ -96,7 +96,7 @@ test ooUtil-1.5 {TIP 478: classmethod and instances} -setup {
     $t find 1 2 3
 } -cleanup {
     parent destroy
-} -result {::ActiveRecord called with arguments: 1 2 3}
+} -result {::Table called with arguments: 1 2 3}
 test ooUtil-1.6 {TIP 478: classmethod and instances} -setup {
     oo::class create parent
 } -body {
@@ -115,6 +115,29 @@ test ooUtil-1.6 {TIP 478: classmethod and instances} -setup {
 } -returnCodes error -cleanup {
     parent destroy
 } -match glob -result {unknown method "find": must be *}
+test ooUtil-1.7 {} -setup {
+    oo::class create parent
+} -body {
+    oo::class create Foo {
+	superclass parent
+        classmethod bar {} {
+            puts "This is in the class; self is [self]"
+            my meee
+        }
+        classmethod meee {} {
+            puts "This is meee"
+        }
+    }
+    oo::class create Grill {
+        superclass Foo
+        classmethod meee {} {
+            puts "This is meee 2"
+        }
+    }
+    list [Foo bar] [Grill bar] [[Foo new] bar] [[Grill new] bar]
+} -cleanup {
+    parent destroy
+} -result {{} {} {} {}} -output "This is in the class; self is ::Foo\nThis is meee\nThis is in the class; self is ::Grill\nThis is meee 2\nThis is in the class; self is ::Foo\nThis is meee\nThis is in the class; self is ::Grill\nThis is meee 2\n"
 
 test ooUtil-2.1 {TIP 478: callback generation} -setup {
     oo::class create parent

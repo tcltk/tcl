@@ -259,6 +259,7 @@ INSTALL_TZDATA		= @INSTALL_TZDATA@
 #--------------------------------------------------------------------------
 
 GDB			= gdb
+LLDB			= lldb
 TRACE			= strace
 TRACE_OPTS		=
 VALGRIND		= valgrind
@@ -729,6 +730,12 @@ gdb-test: ${TCLTEST_EXE}
 	@echo "set args $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) -singleproc 1" >> gdb.run
 	$(GDB) ./${TCLTEST_EXE} --command=gdb.run
 	rm gdb.run
+
+lldb-test: ${TCLTEST_EXE}
+	@echo "settings set target.env-vars @LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}" > lldb.run
+	@echo "settings set target.env-vars TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> lldb.run
+	$(LLDB) --source lldb.run ./${TCLTEST_EXE} -- $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) -singleproc 1
+	rm lldb.run
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: ${TCLTEST_EXE}
