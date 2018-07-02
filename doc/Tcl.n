@@ -193,8 +193,40 @@ The hexadecimal digits \fIhhhh\fR (one, two, three, or four of them) give a
 sixteen-bit hexadecimal value for the Unicode character that will be
 inserted.
 .LP
+\fBText enclosed in braces.\fR
 Backslash substitution is not performed on words enclosed in braces,
-except for backslash-newline as described above.
+except for backslash-newline as described above.  But the backslash with any
+other character is still a valid escape-sequence in sense of the Tcl parser,
+so just ignores (masquerades) the next character without substitution, unless
+that next character is a newline, in this case this sequence will be replaced
+as described for \e\fB<newline>\fIwhiteSpace\fR.
+.LP
+This interpolation logic is important to allow parsing of multi-line commands
+in code-blocks like bodies of the proc, methods, namespaces or cycles which
+are normally always enclosed in braces, as well as to provide a proper way to
+ignore escape sequences which are enclosed in quotes resp. will be substituted
+first by the command interpolation, like in example below.
+.RS
+.CS
+ namespace eval test {
+    proc ok {n} {
+       switch -- $n \e
+         0 { puts "No" } \e
+         1 { puts "Yes" } \e
+         default { return -code error "unexpected here" }
+    }
+    proc wrap {s} {
+       puts [string map {\e\e / \er {} \en " " \e{ ' \e} '} $s]
+    }
+ }
+.CE
+.RE
+In this example the sequence \e\fB<newline>\fIwhiteSpace\fR in body of proc 
+\fIok\fR will be replaced with space so the command \fIswitch\fR gets 8 
+arguments as expected by developer. And the backslash-chars inside of the 
+body of proc \fIwrap\fR resp. the map of the command \fIstring map\fR are
+remained and not interpolated at all until supplied to the command.
+.TP
 .RE
 .IP "[10] \fBComments.\fR"
 If a hash character
