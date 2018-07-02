@@ -1113,6 +1113,22 @@ test cmdAH-23.10 {Tcl_FileObjCmd: mkdir} {
     file delete -force $dirB
     set res
 } {1 1}
+test cmdAH-23.11 {Tcl_FileObjCmd: mkdir with creation counter} -setup {
+    catch {file delete -force $dirA}
+    catch {file delete -force $dirB}
+} -body {
+    set res {}
+    # $dirA and $dirB may be equal, so returns 1 or 2:
+    lappend res [expr {[file mkdir $dirA $dirB] == 1 + ($dirA ne $dirB)}]
+    lappend res [file mkdir $dirA/b $dirB/a/c] ;# 2 new tail-directories
+    lappend res [file mkdir $dirA/b $dirB/a/c] ;# 0 new tail-directories
+    lappend res [file mkdir $dirA/a/b $dirB/a] ;# a/b is new
+    lappend res [file mkdir $dirA/b $dirB/b/a] ;# b/a is new
+    set res
+} -cleanup {
+    file delete -force $dirA
+    file delete -force $dirB    
+} -result {1 2 0 1 1}
 
 # mtime
 
