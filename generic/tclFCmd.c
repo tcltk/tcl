@@ -221,7 +221,7 @@ TclFileMakeDirsCmd(
     Tcl_Obj *CONST objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     Tcl_Obj *errfile;
-    int result, i, j, pobjc;
+    int result, i, j, pobjc, cntr = 0;
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
     Tcl_StatBuf statBuf;
@@ -235,15 +235,15 @@ TclFileMakeDirsCmd(
 	    break;
 	}
 
-	split = Tcl_FSSplitPath(objv[i],&pobjc);
+	split = Tcl_FSSplitPath(objv[i], &pobjc);
 	Tcl_IncrRefCount(split);
 	if (pobjc == 0) {
 	    errno = ENOENT;
 	    errfile = objv[i];
 	    break;
 	}
-	for (j = 0; j < pobjc; j++) {
-	    target = Tcl_FSJoinPath(split, j + 1);
+	for (j = 1; j <= pobjc; j++) {
+	    target = Tcl_FSJoinPath(split, j);
 	    Tcl_IncrRefCount(target);
 
 	    /*
@@ -265,7 +265,12 @@ TclFileMakeDirsCmd(
 
 		errfile = target;
 		goto done;
-	    } else if (Tcl_FSCreateDirectory(target) != TCL_OK) {
+	    } else if (Tcl_FSCreateDirectory(target) == TCL_OK) {
+		/*
+		 * Increase counter of created directories (if tail)
+		 */
+		cntr += (j >= pobjc);
+	    } else {
 		/*
 		 * Create might have failed because of being in a race
 		 * condition with another process trying to create the same
@@ -273,15 +278,8 @@ TclFileMakeDirsCmd(
 		 */
 
 		if (errno == EEXIST) {
-		    if ((Tcl_FSStat(target, &statBuf) == 0)
-			    && S_ISDIR(statBuf.st_mode)) {
-			/*
-			 * It is a directory that wasn't there before, so keep
-			 * going without error.
-			 */
-
-			Tcl_ResetResult(interp);
-		    } else {
+		    if (Tcl_FSStat(target, &statBuf) != 0
+			    || !S_ISDIR(statBuf.st_mode)) {
 			errfile = target;
 			goto done;
 		    }
@@ -303,10 +301,16 @@ TclFileMakeDirsCmd(
     }
 
   done:
-    if (errfile != NULL) {
-	Tcl_AppendResult(interp, "can't create directory \"",
+    if (interp) {
+	if (errfile == NULL) {
+	    if (result == TCL_OK) {
+		Tcl_SetObjResult(interp, Tcl_NewIntObj(cntr));
+	    }
+	} else {
+	    Tcl_AppendResult(interp, "can't create directory \"",
 		TclGetString(errfile), "\": ", Tcl_PosixError(interp), NULL);
-	result = TCL_ERROR;
+	    result = TCL_ERROR;
+	}
     }
     if (split != NULL) {
 	Tcl_DecrRefCount(split);
