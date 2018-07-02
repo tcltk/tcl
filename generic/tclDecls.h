@@ -634,7 +634,7 @@ EXTERN int		Tcl_RegExpExec(Tcl_Interp *interp, Tcl_RegExp regexp,
 EXTERN int		Tcl_RegExpMatch(Tcl_Interp *interp, const char *text,
 				const char *pattern);
 /* 215 */
-EXTERN void		Tcl_RegExpRange(Tcl_RegExp regexp, int index,
+EXTERN void		Tcl_RegExpRange(Tcl_RegExp regexp, size_t index,
 				const char **startPtr, const char **endPtr);
 /* 216 */
 EXTERN void		Tcl_Release(void *clientData);
@@ -1060,7 +1060,7 @@ EXTERN int		Tcl_UniCharIsPunct(int ch);
 /* 376 */
 EXTERN int		Tcl_RegExpExecObj(Tcl_Interp *interp,
 				Tcl_RegExp regexp, Tcl_Obj *textObj,
-				int offset, int nmatches, int flags);
+				size_t offset, size_t nmatches, int flags);
 /* 377 */
 EXTERN void		Tcl_RegExpGetInfo(Tcl_RegExp regexp,
 				Tcl_RegExpInfo *infoPtr);
@@ -2019,7 +2019,7 @@ typedef struct TclStubs {
     Tcl_RegExp (*tcl_RegExpCompile) (Tcl_Interp *interp, const char *pattern); /* 212 */
     int (*tcl_RegExpExec) (Tcl_Interp *interp, Tcl_RegExp regexp, const char *text, const char *start); /* 213 */
     int (*tcl_RegExpMatch) (Tcl_Interp *interp, const char *text, const char *pattern); /* 214 */
-    void (*tcl_RegExpRange) (Tcl_RegExp regexp, int index, const char **startPtr, const char **endPtr); /* 215 */
+    void (*tcl_RegExpRange) (Tcl_RegExp regexp, size_t index, const char **startPtr, const char **endPtr); /* 215 */
     void (*tcl_Release) (void *clientData); /* 216 */
     void (*tcl_ResetResult) (Tcl_Interp *interp); /* 217 */
     size_t (*tcl_ScanElement) (const char *src, int *flagPtr); /* 218 */
@@ -2180,7 +2180,7 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsGraph) (int ch); /* 373 */
     int (*tcl_UniCharIsPrint) (int ch); /* 374 */
     int (*tcl_UniCharIsPunct) (int ch); /* 375 */
-    int (*tcl_RegExpExecObj) (Tcl_Interp *interp, Tcl_RegExp regexp, Tcl_Obj *textObj, int offset, int nmatches, int flags); /* 376 */
+    int (*tcl_RegExpExecObj) (Tcl_Interp *interp, Tcl_RegExp regexp, Tcl_Obj *textObj, size_t offset, size_t nmatches, int flags); /* 376 */
     void (*tcl_RegExpGetInfo) (Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr); /* 377 */
     Tcl_Obj * (*tcl_NewUnicodeObj) (const Tcl_UniChar *unicode, size_t numChars); /* 378 */
     void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, size_t numChars); /* 379 */

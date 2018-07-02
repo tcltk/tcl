@@ -372,7 +372,8 @@ TclCreateProc(
     Interp *iPtr = (Interp *) interp;
 
     register Proc *procPtr;
-    int i, result, numArgs, plen;
+    int i, result, numArgs;
+    size_t plen;
     const char *bytes, *argname, *argnamei;
     char argnamelast;
     register CompiledLocal *localPtr = NULL;
@@ -518,7 +519,7 @@ TclCreateProc(
 	 * Check that the formal parameter name is a scalar.
 	 */
 
-	argname = Tcl_GetStringFromObj(fieldValues[0], &plen);
+	argname = TclGetStringFromObj(fieldValues[0], &plen);
 	argnamei = argname;
 	argnamelast = argname[plen-1];
 	while (plen--) {

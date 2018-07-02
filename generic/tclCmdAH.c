@@ -596,7 +596,7 @@ EncodingConvertfromObjCmd(
     Tcl_Obj *data;		/* Byte array to convert */
     Tcl_DString ds;		/* Buffer to hold the string */
     Tcl_Encoding encoding;	/* Encoding to use */
-    int length;			/* Length of the byte array being converted */
+    size_t length;			/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
 
     if (objc == 2) {
@@ -615,7 +615,7 @@ EncodingConvertfromObjCmd(
     /*
      * Convert the string into a byte array in 'ds'
      */
-    bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
+    bytesPtr = (char *) TclGetByteArrayFromObj(data, &length);
     Tcl_ExternalToUtfDString(encoding, bytesPtr, length, &ds);
 
     /*

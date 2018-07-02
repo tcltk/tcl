@@ -336,7 +336,7 @@ EXTERN void		TclHandleRelease(TclHandle handle);
 /* 150 */
 EXTERN int		TclRegAbout(Tcl_Interp *interp, Tcl_RegExp re);
 /* 151 */
-EXTERN void		TclRegExpRangeUniChar(Tcl_RegExp re, int index,
+EXTERN void		TclRegExpRangeUniChar(Tcl_RegExp re, size_t index,
 				int *startPtr, int *endPtr);
 /* 152 */
 EXTERN void		TclSetLibraryPath(Tcl_Obj *pathPtr);
@@ -734,7 +734,7 @@ typedef struct TclIntStubs {
     TclHandle (*tclHandlePreserve) (TclHandle handle); /* 148 */
     void (*tclHandleRelease) (TclHandle handle); /* 149 */
     int (*tclRegAbout) (Tcl_Interp *interp, Tcl_RegExp re); /* 150 */
-    void (*tclRegExpRangeUniChar) (Tcl_RegExp re, int index, int *startPtr, int *endPtr); /* 151 */
+    void (*tclRegExpRangeUniChar) (Tcl_RegExp re, size_t index, int *startPtr, int *endPtr); /* 151 */
     void (*tclSetLibraryPath) (Tcl_Obj *pathPtr); /* 152 */
     Tcl_Obj * (*tclGetLibraryPath) (void); /* 153 */
     void (*reserved154)(void);

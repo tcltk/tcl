@@ -3051,7 +3051,7 @@ MODULE_SCOPE int	TclParseHex(const char *src, size_t numBytes,
 			    int *resultPtr);
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    const char *expected, const char *bytes,
-			    int numBytes, const char **endPtrPtr, int flags);
+			    size_t numBytes, const char **endPtrPtr, int flags);
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 			    size_t numBytes, Tcl_Parse *parsePtr);
 MODULE_SCOPE size_t	TclParseAllWhiteSpace(const char *src, size_t numBytes);
