@@ -614,7 +614,7 @@ declare 150 {
     int TclRegAbout(Tcl_Interp *interp, Tcl_RegExp re)
 }
 declare 151 {
-    void TclRegExpRangeUniChar(Tcl_RegExp re, int index, int *startPtr,
+    void TclRegExpRangeUniChar(Tcl_RegExp re, size_t index, int *startPtr,
 	    int *endPtr)
 }
 declare 152 {

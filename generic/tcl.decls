@@ -776,7 +776,7 @@ declare 214 {
 	    const char *pattern)
 }
 declare 215 {
-    void Tcl_RegExpRange(Tcl_RegExp regexp, int index,
+    void Tcl_RegExpRange(Tcl_RegExp regexp, size_t index,
 	    const char **startPtr, const char **endPtr)
 }
 declare 216 {
@@ -1354,7 +1354,7 @@ declare 375 {
 }
 declare 376 {
     int Tcl_RegExpExecObj(Tcl_Interp *interp, Tcl_RegExp regexp,
-	    Tcl_Obj *textObj, int offset, int nmatches, int flags)
+	    Tcl_Obj *textObj, size_t offset, size_t nmatches, int flags)
 }
 declare 377 {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)

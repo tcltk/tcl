@@ -474,7 +474,7 @@ TclParseNumber(
 				 * ("integer", "boolean value", etc.). */
     const char *bytes,		/* Pointer to the start of the string to
 				 * scan. */
-    int numBytes,		/* Maximum number of bytes to scan, see
+    size_t numBytes,		/* Maximum number of bytes to scan, see
 				 * above. */
     const char **endPtrPtr,	/* Place to store pointer to the character
 				 * that terminated the scan. */
@@ -1111,7 +1111,7 @@ TclParseNumber(
 	    }
 	}
 	if (endPtrPtr == NULL) {
-	    if ((len != 0) && ((numBytes > 0) || (*p != '\0'))) {
+	    if ((len != 0) && ((numBytes + 1 > 1) || (*p != '\0'))) {
 		status = TCL_ERROR;
 	    }
 	} else {
