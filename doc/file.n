@@ -258,7 +258,23 @@ this command will create all non-existing parent directories as
 well as \fIdir\fR itself.  If an existing directory is specified, then
 no action is taken and no error is returned.  Trying to overwrite an existing
 file with a directory will result in an error.  Arguments are processed in
-the order specified, halting at the first error, if any.
+the order specified, halting at the first error, if any.  If successful,
+it returns count of arguments \fIdir\fR, that lead to creating a directory,
+or 0 if all paths supplied as \fIdir\fR already exists.  This could be used to
+avoid a race condition by creation of some unique paths with multiple workers:
+.RS
+.CS
+proc createUniquePath {globalDir} {
+   while 1 {
+      set p [file join $globalDir [clock milliseconds]]
+      if {[file mkdir $p]} {
+         break
+      }
+   }
+   return $p
+}
+.CE
+.RE
 .TP
 \fBfile mtime \fIname\fR ?\fItime\fR?
 .
