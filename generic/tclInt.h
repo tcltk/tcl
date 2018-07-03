@@ -4344,7 +4344,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
       *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
       return Tcl_GetUnicodeFromObj(objPtr, NULL);
    }
-   static inline unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, int *lenPtr) {
+   static inline unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
       Tcl_GetByteArrayFromObj(objPtr, NULL);
       *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
       return Tcl_GetByteArrayFromObj(objPtr, NULL);

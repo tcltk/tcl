@@ -2890,7 +2890,8 @@ Tcl_LsearchObjCmd(
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     const char *bytes, *patternBytes;
-    int i, match, index, result=TCL_OK, listc, length = 0, elemLen, bisect;
+    int i, match, index, result=TCL_OK, listc, bisect;
+    size_t length = 0, elemLen;
     int allocatedIndexVector = 0;
     int dataType, isIncreasing, lower, upper, start, groupSize, groupOffset;
     Tcl_WideInt patWide, objWide;

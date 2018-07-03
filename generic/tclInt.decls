@@ -48,7 +48,7 @@ declare 6 {
     void TclCleanupCommand(Command *cmdPtr)
 }
 declare 7 {
-    int TclCopyAndCollapse(int count, const char *src, char *dst)
+    size_t TclCopyAndCollapse(size_t count, const char *src, char *dst)
 }
 # Removed in 9.0:
 #declare 8 {
@@ -153,8 +153,8 @@ declare 32 {
 #    TclCmdProcType TclGetInterpProc(void)
 #}
 declare 34 {
-    int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int endValue, int *indexPtr)
+    size_t TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    size_t endValue, size_t *indexPtr)
 }
 # Removed in 8.4b2:
 #declare 35 {
@@ -707,12 +707,12 @@ declare 169 {
 }
 declare 170 {
     int TclCheckInterpTraces(Tcl_Interp *interp, const char *command,
-	    int numChars, Command *cmdPtr, int result, int traceFlags,
+	    size_t numChars, Command *cmdPtr, int result, int traceFlags,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 171 {
     int TclCheckExecutionTraces(Tcl_Interp *interp, const char *command,
-	    int numChars, Command *cmdPtr, int result, int traceFlags,
+	    size_t numChars, Command *cmdPtr, int result, int traceFlags,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 172 {
@@ -722,8 +722,8 @@ declare 172 {
 # added for 8.4.2
 
 declare 173 {
-    int TclUniCharMatch(const Tcl_UniChar *string, int strLen,
-	    const Tcl_UniChar *pattern, int ptnLen, int flags)
+    int TclUniCharMatch(const Tcl_UniChar *string, size_t strLen,
+	    const Tcl_UniChar *pattern, size_t ptnLen, int flags)
 }
 
 # added for 8.4.3

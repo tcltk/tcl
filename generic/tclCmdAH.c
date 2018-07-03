@@ -658,7 +658,7 @@ EncodingConverttoObjCmd(
     Tcl_Obj *data;		/* String to convert */
     Tcl_DString ds;		/* Buffer to hold the byte array */
     Tcl_Encoding encoding;	/* Encoding to use */
-    int length;			/* Length of the string being converted */
+    size_t length;			/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
 
     /* TODO - ADJUST OBJ INDICES WHEN ENSEMBLIFYING THIS */

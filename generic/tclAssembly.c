@@ -843,7 +843,7 @@ CompileAssembleObj(
 				 * names in the bytecode resolve */
     int status;			/* Status return from Tcl_AssembleCode */
     const char* source;		/* String representation of the source code */
-    int sourceLen;		/* Length of the source code in bytes */
+    size_t sourceLen;		/* Length of the source code in bytes */
 
 
     /*
@@ -1257,7 +1257,7 @@ AssembleOneLine(
     Tcl_Obj* operand1Obj = NULL;
 				/* First operand to the instruction */
     const char* operand1;	/* String rep of the operand */
-    int operand1Len;		/* String length of the operand */
+    size_t operand1Len;		/* String length of the operand */
     int opnd;			/* Integer representation of an operand */
     int litIndex;		/* Literal pool index of a constant */
     int localVar;		/* LVT index of a local variable */
@@ -2301,7 +2301,7 @@ FindLocalVar(
 				 * source code. */
     Tcl_Obj* varNameObj;	/* Name of the variable */
     const char* varNameStr;
-    int varNameLen;
+    size_t varNameLen;
     int localVar;		/* Index of the variable in the LVT */
 
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &varNameObj) != TCL_OK) {

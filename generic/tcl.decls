@@ -618,10 +618,10 @@ declare 168 {
     Tcl_PathType Tcl_GetPathType(const char *path)
 }
 declare 169 {
-    int Tcl_Gets(Tcl_Channel chan, Tcl_DString *dsPtr)
+    size_t Tcl_Gets(Tcl_Channel chan, Tcl_DString *dsPtr)
 }
 declare 170 {
-    int Tcl_GetsObj(Tcl_Channel chan, Tcl_Obj *objPtr)
+    size_t Tcl_GetsObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
 declare 171 {
     int Tcl_GetServiceMode(void)
@@ -747,7 +747,7 @@ declare 205 {
     void Tcl_QueueEvent(Tcl_Event *evPtr, Tcl_QueuePosition position)
 }
 declare 206 {
-    int Tcl_Read(Tcl_Channel chan, char *bufPtr, int toRead)
+    size_t Tcl_Read(Tcl_Channel chan, char *bufPtr, size_t toRead)
 }
 declare 207 {
     void Tcl_ReapDetachedProcs(void)
@@ -944,7 +944,7 @@ declare 262 {
 	    void *prevClientData)
 }
 declare 263 {
-    int Tcl_Write(Tcl_Channel chan, const char *s, int slen)
+    size_t Tcl_Write(Tcl_Channel chan, const char *s, size_t slen)
 }
 declare 264 {
     void Tcl_WrongNumArgs(Tcl_Interp *interp, int objc,
@@ -1140,8 +1140,8 @@ declare 312 {
     size_t Tcl_NumUtfChars(const char *src, size_t length)
 }
 declare 313 {
-    int Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr, size_t charsToRead,
-	    int appendFlag)
+    size_t Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
+	    size_t charsToRead, int appendFlag)
 }
 declare 314 {
     void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
@@ -1185,7 +1185,7 @@ declare 326 {
     int Tcl_UtfCharComplete(const char *src, size_t length)
 }
 declare 327 {
-    int Tcl_UtfBackslash(const char *src, int *readPtr, char *dst)
+    size_t Tcl_UtfBackslash(const char *src, int *readPtr, char *dst)
 }
 declare 328 {
     const char *Tcl_UtfFindFirst(const char *src, int ch)
@@ -1225,7 +1225,7 @@ declare 338 {
     size_t Tcl_WriteChars(Tcl_Channel chan, const char *src, size_t srcLen)
 }
 declare 339 {
-    int Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
+    size_t Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
 declare 340 {
     char *Tcl_GetString(Tcl_Obj *objPtr)
@@ -1297,12 +1297,13 @@ declare 359 {
 	    const char *command, size_t length)
 }
 declare 360 {
-    int Tcl_ParseBraces(Tcl_Interp *interp, const char *start, size_t numBytes,
-	    Tcl_Parse *parsePtr, int append, const char **termPtr)
+    int Tcl_ParseBraces(Tcl_Interp *interp, const char *start,
+	    size_t numBytes, Tcl_Parse *parsePtr, int append,
+	    const char **termPtr)
 }
 declare 361 {
-    int Tcl_ParseCommand(Tcl_Interp *interp, const char *start, size_t numBytes,
-	    int nested, Tcl_Parse *parsePtr)
+    int Tcl_ParseCommand(Tcl_Interp *interp, const char *start,
+	    size_t numBytes, int nested, Tcl_Parse *parsePtr)
 }
 declare 362 {
     int Tcl_ParseExpr(Tcl_Interp *interp, const char *start, size_t numBytes,
@@ -1314,8 +1315,8 @@ declare 363 {
 	    const char **termPtr)
 }
 declare 364 {
-    int Tcl_ParseVarName(Tcl_Interp *interp, const char *start, size_t numBytes,
-	    Tcl_Parse *parsePtr, int append)
+    int Tcl_ParseVarName(Tcl_Interp *interp, const char *start,
+	    size_t numBytes, Tcl_Parse *parsePtr, int append)
 }
 # These 4 functions are obsolete, use Tcl_FSGetCwd, Tcl_FSChdir,
 # Tcl_FSAccess and Tcl_FSStat
@@ -1415,10 +1416,10 @@ declare 393 {
 
 # Introduced in 8.3.2
 declare 394 {
-    int Tcl_ReadRaw(Tcl_Channel chan, char *dst, size_t bytesToRead)
+    size_t Tcl_ReadRaw(Tcl_Channel chan, char *dst, size_t bytesToRead)
 }
 declare 395 {
-    int Tcl_WriteRaw(Tcl_Channel chan, const char *src, size_t srcLen)
+    size_t Tcl_WriteRaw(Tcl_Channel chan, const char *src, size_t srcLen)
 }
 declare 396 {
     Tcl_Channel Tcl_GetTopChannel(Tcl_Channel chan)
@@ -2115,8 +2116,8 @@ declare 574 {
     void Tcl_AppendObjToErrorInfo(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
 declare 575 {
-    void Tcl_AppendLimitedToObj(Tcl_Obj *objPtr, const char *bytes, size_t length,
-	    size_t limit, const char *ellipsis)
+    void Tcl_AppendLimitedToObj(Tcl_Obj *objPtr, const char *bytes,
+	    size_t length, size_t limit, const char *ellipsis)
 }
 declare 576 {
     Tcl_Obj *Tcl_Format(Tcl_Interp *interp, const char *format, int objc,
@@ -2161,8 +2162,8 @@ declare 584 {
     int Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 declare 585 {
-    int Tcl_NREvalObjv(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
-	    int flags)
+    int Tcl_NREvalObjv(Tcl_Interp *interp, int objc,
+	    Tcl_Obj *const objv[], int flags)
 }
 declare 586 {
     int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, int objc,
@@ -2272,11 +2273,11 @@ declare 611 {
 }
 declare 612 {
     unsigned int Tcl_ZlibCRC32(unsigned int crc, const unsigned char *buf,
-	    int len)
+	    size_t len)
 }
 declare 613 {
     unsigned int Tcl_ZlibAdler32(unsigned int adler, const unsigned char *buf,
-	    int len)
+	    size_t len)
 }
 declare 614 {
     int Tcl_ZlibStreamInit(Tcl_Interp *interp, int mode, int format,
@@ -2295,7 +2296,8 @@ declare 618 {
     int Tcl_ZlibStreamPut(Tcl_ZlibStream zshandle, Tcl_Obj *data, int flush)
 }
 declare 619 {
-    int Tcl_ZlibStreamGet(Tcl_ZlibStream zshandle, Tcl_Obj *data, int count)
+    int Tcl_ZlibStreamGet(Tcl_ZlibStream zshandle, Tcl_Obj *data,
+	    size_t count)
 }
 declare 620 {
     int Tcl_ZlibStreamClose(Tcl_ZlibStream zshandle)
@@ -2389,12 +2391,12 @@ declare 1 win {
 declare 0 macosx {
     int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, int hasResourceFile,
-	    int maxPathLen, char *libraryPath)
+	    size_t maxPathLen, char *libraryPath)
 }
 declare 1 macosx {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
-	    int hasResourceFile, int maxPathLen, char *libraryPath)
+	    int hasResourceFile, size_t maxPathLen, char *libraryPath)
 }
 
 ##############################################################################
