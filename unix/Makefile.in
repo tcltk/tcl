@@ -2082,6 +2082,11 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 		$(TOOL_DIR)/*.tcl $(TOOL_DIR)/man2tcl.c \
 		$(TOOL_DIR)/*.bmp $(TOOL_DIR)/tcl.hpj.in \
 		$(DISTDIR)/tools
+	chmod 755 $(DISTDIR)/tools/checkLibraryDoc.tcl \
+		$(DISTDIR)/tools/configure $(DISTDIR)/tools/findBadExternals.tcl \
+		$(DISTDIR)/tools/fix_tommath_h.tcl $(DISTDIR)/tools/loadICU.tcl \
+		$(DISTDIR)/tools/makeTestCases.tcl $(DISTDIR)/tools/tclZIC.tcl \
+		$(DISTDIR)/tools/tcltk-man2html.tcl
 	$(INSTALL_DATA_DIR) $(DISTDIR)/libtommath
 	$(DIST_INSTALL_DATA) $(TOMMATH_SRCS) $(TOMMATH_DIR)/*.h $(DISTDIR)/libtommath
 	$(INSTALL_DATA_DIR) $(DISTDIR)/pkgs
