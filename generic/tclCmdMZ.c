@@ -1180,7 +1180,7 @@ Tcl_SplitObjCmd(
     const char *splitChars;
     const char *stringPtr;
     const char *end;
-    int splitCharLen, stringLen;
+    size_t splitCharLen, stringLen;
     Tcl_Obj *listPtr, *objPtr;
 
     if (objc == 2) {
@@ -1486,7 +1486,8 @@ StringIsCmd(
     const char *string1, *end, *stop;
     Tcl_UniChar ch = 0;
     int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
-    int i, failat = 0, result = 1, strict = 0, index, length1, length2;
+    int i, failat = 0, result = 1, strict = 0, index, length3;
+    size_t length1, length2;
     Tcl_Obj *objPtr, *failVarObj = NULL;
     Tcl_WideInt w;
 
@@ -1728,7 +1729,7 @@ StringIsCmd(
 	 * well-formed lists.
 	 */
 
-	if (TCL_OK == TclListObjLength(NULL, objPtr, &length2)) {
+	if (TCL_OK == TclListObjLength(NULL, objPtr, &length3)) {
 	    break;
 	}
 
@@ -1740,7 +1741,7 @@ StringIsCmd(
 	     */
 
 	    const char *elemStart, *nextElem;
-	    int lenRemain;
+	    size_t lenRemain;
 	    size_t elemSize;
 	    register const char *p;
 
@@ -1878,7 +1879,8 @@ StringMapCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int length1, length2, mapElemc, index;
+    size_t length1, length2;
+    int mapElemc, index;
     int nocase = 0, mapWithDict = 0, copySource = 0;
     Tcl_Obj **mapElemv, *sourceObj, *resultPtr;
     Tcl_UniChar *ustring1, *ustring2, *p, *end;
@@ -1979,7 +1981,7 @@ StringMapCmd(
     } else {
 	sourceObj = objv[objc-1];
     }
-    ustring1 = Tcl_GetUnicodeFromObj(sourceObj, &length1);
+    ustring1 = TclGetUnicodeFromObj(sourceObj, &length1);
     if (length1 == 0) {
 	/*
 	 * Empty input string, just stop now.
@@ -2005,10 +2007,11 @@ StringMapCmd(
 	 * larger strings.
 	 */
 
-	int mapLen, u2lc;
+	size_t mapLen;
+	int u2lc;
 	Tcl_UniChar *mapString;
 
-	ustring2 = Tcl_GetUnicodeFromObj(mapElemv[0], &length2);
+	ustring2 = TclGetUnicodeFromObj(mapElemv[0], &length2);
 	p = ustring1;
 	if ((length2 > length1) || (length2 == 0)) {
 	    /*
@@ -2017,7 +2020,7 @@ StringMapCmd(
 
 	    ustring1 = end;
 	} else {
-	    mapString = Tcl_GetUnicodeFromObj(mapElemv[1], &mapLen);
+	    mapString = TclGetUnicodeFromObj(mapElemv[1], &mapLen);
 	    u2lc = (nocase ? Tcl_UniCharToLower(*ustring2) : 0);
 	    for (; ustring1 < end; ustring1++) {
 		if (((*ustring1 == *ustring2) ||
@@ -2038,7 +2041,8 @@ StringMapCmd(
 	}
     } else {
 	Tcl_UniChar **mapStrings;
-	int *mapLens, *u2lc = NULL;
+	size_t *mapLens;
+	int *u2lc = 0;
 
 	/*
 	 * Precompute pointers to the unicode string and length. This saves us
@@ -2047,13 +2051,13 @@ StringMapCmd(
 	 * case.
 	 */
 
-	mapStrings = TclStackAlloc(interp, mapElemc*2*sizeof(Tcl_UniChar *));
-	mapLens = TclStackAlloc(interp, mapElemc * 2 * sizeof(int));
+	mapStrings = TclStackAlloc(interp, mapElemc*sizeof(Tcl_UniChar *)*2);
+	mapLens = TclStackAlloc(interp, mapElemc * sizeof(size_t) * 2);
 	if (nocase) {
 	    u2lc = TclStackAlloc(interp, mapElemc * sizeof(int));
 	}
 	for (index = 0; index < mapElemc; index++) {
-	    mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
+	    mapStrings[index] = TclGetUnicodeFromObj(mapElemv[index],
 		    mapLens+index);
 	    if (nocase && ((index % 2) == 0)) {
 		u2lc[index/2] = Tcl_UniCharToLower(*mapStrings[index]);
@@ -2070,7 +2074,7 @@ StringMapCmd(
 		if ((length2 > 0) && ((*ustring1 == *ustring2) || (nocase &&
 			(Tcl_UniCharToLower(*ustring1) == u2lc[index/2]))) &&
 			/* Restrict max compare length. */
-			(end-ustring1 >= length2) && ((length2 == 1) ||
+			((size_t)(end-ustring1) >= length2) && ((length2 == 1) ||
 			!strCmpFn(ustring2, ustring1, length2))) {
 		    if (p != ustring1) {
 			/*
@@ -2156,11 +2160,11 @@ StringMatchCmd(
     }
 
     if (objc == 4) {
-	int length;
+	size_t length;
 	const char *string = TclGetStringFromObj(objv[1], &length);
 
 	if ((length > 1) &&
-	    strncmp(string, "-nocase", (size_t) length) == 0) {
+	    strncmp(string, "-nocase", length) == 0) {
 	    nocase = TCL_MATCH_NOCASE;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2200,7 +2204,8 @@ StringRangeCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int length, first, last;
+    size_t length;
+    int first, last;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string first last");
@@ -2222,7 +2227,7 @@ StringRangeCmd(
     if (first < 0) {
 	first = 0;
     }
-    if (last >= length) {
+    if (last >= (int)length) {
 	last = length;
     }
     if (last >= first) {
@@ -3084,8 +3089,7 @@ StringTrimCmd(
     size_t triml, trimr, length1, length2;
 
     if (objc == 3) {
-	string2 = TclGetString(objv[2]);
-	length2 = objv[2]->length;
+	string2 = TclGetStringFromObj(objv[2], &length2);
     } else if (objc == 2) {
 	string2 = tclDefaultTrimSet;
 	length2 = strlen(tclDefaultTrimSet);
@@ -3093,8 +3097,7 @@ StringTrimCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?chars?");
 	return TCL_ERROR;
     }
-    string1 = TclGetString(objv[1]);
-    length1 = objv[1]->length;
+    string1 = TclGetStringFromObj(objv[1], &length1);
 
     triml = TclTrim(string1, length1, string2, length2, &trimr);
 

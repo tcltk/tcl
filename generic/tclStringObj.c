@@ -684,7 +684,7 @@ Tcl_GetRange(
     if (first == (size_t)-1) {
 	first = 0;
     }
-    if (last >= (size_t)-2) {
+    if (last + 2 <= first + 1) {
 	return Tcl_NewObj();
     }
 
@@ -3070,7 +3070,7 @@ TclStringCat(
 		    /* No string rep; Take the chance we can avoid making it */
 		    pendingPtr = objPtr;
 		} else {
-		    (void *)TclGetStringFromObj(objPtr, &length); /* PANIC? */
+		    (void)TclGetStringFromObj(objPtr, &length); /* PANIC? */
 		}
 	    } while (--oc && (length == 0) && (pendingPtr == NULL));
 
@@ -3237,7 +3237,7 @@ TclStringCat(
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    	"concatenation failed: unable to alloc %u bytes",
+		    	"concatenation failed: unable to alloc %" TCL_Z_MODIFIER "u bytes",
 			length));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
@@ -3253,7 +3253,7 @@ TclStringCat(
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    	"concatenation failed: unable to alloc %u bytes",
+		    	"concatenation failed: unable to alloc %" TCL_Z_MODIFIER "u bytes",
 			length));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}

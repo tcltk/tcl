@@ -1181,7 +1181,7 @@ RenderDeclarerName(
 
 #define LIMIT 60
 #define ELLIPSIFY(str,len) \
-	((len) > LIMIT ? LIMIT : (len)), (str), ((len) > LIMIT ? "..." : "")
+	((len) > LIMIT ? LIMIT : ((int)len)), (str), ((len) > LIMIT ? "..." : "")
 
 static void
 MethodErrorHandler(
