@@ -91,6 +91,7 @@ static int		CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void		DeleteCoroutine(ClientData clientData);
 static void		DeleteInterpProc(Tcl_Interp *interp);
 static void		DeleteOpCmdClientData(ClientData clientData);
+static void		AddObjErrorInfo(Tcl_Interp *, const char *, size_t length);
 #ifdef USE_DTRACE
 static Tcl_ObjCmdProc	DTraceObjCmd;
 static Tcl_NRPostProc	DTraceCmdReturn;
@@ -5456,40 +5457,6 @@ TclArgumentGet(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Eval --
- *
- *	Execute a Tcl command in a string. This function executes the script
- *	directly, rather than compiling it to bytecodes. Before the arrival of
- *	the bytecode compiler in Tcl 8.0 Tcl_Eval was the main function used
- *	for executing Tcl commands, but nowadays it isn't used much.
- *
- * Results:
- *	The return value is one of the return codes defined in tcl.h (such as
- *	TCL_OK), and interp's result contains a value to supplement the return
- *	code. The value of the result will persist only until the next call to
- *	Tcl_Eval or Tcl_EvalObj: you must copy it or lose it!
- *
- * Side effects:
- *	Can be almost arbitrary, depending on the commands in the script.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-#undef Tcl_Eval
-int
-Tcl_Eval(
-    Tcl_Interp *interp,		/* Token for command interpreter (returned by
-				 * previous call to Tcl_CreateInterp). */
-    const char *script)		/* Pointer to TCL command to execute. */
-{
-    return Tcl_EvalEx(interp, script, -1, 0);
-}
-#endif /* TCL_NO_DEPRECATED */
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_EvalObjEx, TclEvalObjEx --
  *
  *	Execute Tcl commands stored in a Tcl object. These commands are
@@ -6269,45 +6236,14 @@ Tcl_AppendObjToErrorInfo(
     const char *message = TclGetStringFromObj(objPtr, &length);
 
     Tcl_IncrRefCount(objPtr);
-    Tcl_AddObjErrorInfo(interp, message, length);
+    AddObjErrorInfo(interp, message, objPtr->length);
     Tcl_DecrRefCount(objPtr);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_AddErrorInfo --
- *
- *	Add information to the errorInfo field that describes the current
- *	error.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The contents of message are appended to the errorInfo field. If we are
- *	just starting to log an error, errorInfo is initialized from the error
- *	message in the interpreter's result.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-#undef Tcl_AddErrorInfo
-void
-Tcl_AddErrorInfo(
-    Tcl_Interp *interp,		/* Interpreter to which error information
-				 * pertains. */
-    const char *message)	/* Message to record. */
-{
-    Tcl_AddObjErrorInfo(interp, message, -1);
-}
-#endif /* TCL_NO_DEPRECATED */
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_AddObjErrorInfo --
+ * AddObjErrorInfo --
  *
  *	Add information to the errorInfo field that describes the current
  *	error. This routine differs from Tcl_AddErrorInfo by taking a byte
@@ -6326,7 +6262,7 @@ Tcl_AddErrorInfo(
  */
 
 void
-Tcl_AddObjErrorInfo(
+AddObjErrorInfo(
     Tcl_Interp *interp,		/* Interpreter to which error information
 				 * pertains. */
     const char *message,	/* Points to the first byte of an array of
@@ -6412,45 +6348,6 @@ Tcl_VarEval(
     Tcl_DStringFree(&buf);
     return result;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_GlobalEval --
- *
- *	Evaluate a command at global level in an interpreter.
- *
- * Results:
- *	A standard Tcl result is returned, and the interp's result is modified
- *	accordingly.
- *
- * Side effects:
- *	The command string is executed in interp, and the execution is carried
- *	out in the variable context of global level (no functions active),
- *	just as if an "uplevel #0" command were being executed.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-#undef Tcl_GlobalEval
-int
-Tcl_GlobalEval(
-    Tcl_Interp *interp,		/* Interpreter in which to evaluate
-				 * command. */
-    const char *command)	/* Command to evaluate. */
-{
-    register Interp *iPtr = (Interp *) interp;
-    int result;
-    CallFrame *savedVarFramePtr;
-
-    savedVarFramePtr = iPtr->varFramePtr;
-    iPtr->varFramePtr = iPtr->rootFramePtr;
-    result = Tcl_EvalEx(interp, command, -1, 0);
-    iPtr->varFramePtr = savedVarFramePtr;
-    return result;
-}
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

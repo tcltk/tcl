@@ -1091,51 +1091,6 @@ TclLookupArrayElement(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetVar --
- *
- *	Return the value of a Tcl variable as a string.
- *
- * Results:
- *	The return value points to the current value of varName as a string.
- *	If the variable is not defined or can't be read because of a clash in
- *	array usage then a NULL pointer is returned and an error message is
- *	left in the interp's result if the TCL_LEAVE_ERR_MSG flag is set.
- *	Note: the return value is only valid up until the next change to the
- *	variable; if you depend on the value lasting longer than that, then
- *	make yourself a private copy.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-#undef Tcl_GetVar
-const char *
-Tcl_GetVar(
-    Tcl_Interp *interp,		/* Command interpreter in which varName is to
-				 * be looked up. */
-    const char *varName,	/* Name of a variable in interp. */
-    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY or TCL_LEAVE_ERR_MSG
-				 * bits. */
-{
-    Tcl_Obj *varNamePtr = Tcl_NewStringObj(varName, -1);
-    Tcl_Obj *resultPtr = Tcl_ObjGetVar2(interp, varNamePtr, NULL, flags);
-
-    TclDecrRefCount(varNamePtr);
-
-    if (resultPtr == NULL) {
-	return NULL;
-    }
-    return TclGetString(resultPtr);
-}
-#endif /* TCL_NO_DEPRECATED */
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_GetVar2 --
  *
  *	Return the value of a Tcl variable as a string, given a two-part name
@@ -1476,53 +1431,6 @@ Tcl_SetObjCmd(
 	return TCL_ERROR;
     }
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_SetVar --
- *
- *	Change the value of a variable.
- *
- * Results:
- *	Returns a pointer to the malloc'ed string which is the character
- *	representation of the variable's new value. The caller must not modify
- *	this string. If the write operation was disallowed then NULL is
- *	returned; if the TCL_LEAVE_ERR_MSG flag is set, then an explanatory
- *	message will be left in the interp's result. Note that the returned
- *	string may not be the same as newValue; this is because variable
- *	traces may modify the variable's value.
- *
- * Side effects:
- *	If varName is defined as a local or global variable in interp, its
- *	value is changed to newValue. If varName isn't currently defined, then
- *	a new global variable by that name is created.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-#undef Tcl_SetVar
-const char *
-Tcl_SetVar(
-    Tcl_Interp *interp,		/* Command interpreter in which varName is to
-				 * be looked up. */
-    const char *varName,	/* Name of a variable in interp. */
-    const char *newValue,	/* New value for varName. */
-    int flags)			/* Various flags that tell how to set value:
-				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
-				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
-				 * TCL_LEAVE_ERR_MSG. */
-{
-    Tcl_Obj *varValuePtr = Tcl_SetVar2Ex(interp, varName, NULL,
-	    Tcl_NewStringObj(newValue, -1), flags);
-
-    if (varValuePtr == NULL) {
-	return NULL;
-    }
-    return TclGetString(varValuePtr);
-}
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2182,57 +2090,6 @@ TclPtrIncrObjVarIdx(
 	}
     }
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_UnsetVar --
- *
- *	Delete a variable, so that it may not be accessed anymore.
- *
- * Results:
- *	Returns TCL_OK if the variable was successfully deleted, TCL_ERROR if
- *	the variable can't be unset. In the event of an error, if the
- *	TCL_LEAVE_ERR_MSG flag is set then an error message is left in the
- *	interp's result.
- *
- * Side effects:
- *	If varName is defined as a local or global variable in interp, it is
- *	deleted.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-#undef Tcl_UnsetVar
-int
-Tcl_UnsetVar(
-    Tcl_Interp *interp,		/* Command interpreter in which varName is to
-				 * be looked up. */
-    const char *varName,	/* Name of a variable in interp. May be either
-				 * a scalar name or an array name or an
-				 * element in an array. */
-    int flags)			/* OR-ed combination of any of
-				 * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY or
-				 * TCL_LEAVE_ERR_MSG. */
-{
-    int result;
-    Tcl_Obj *varNamePtr;
-
-    varNamePtr = Tcl_NewStringObj(varName, -1);
-    Tcl_IncrRefCount(varNamePtr);
-
-    /*
-     * Filter to pass through only the flags this interface supports.
-     */
-
-    flags &= (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG);
-    result = TclObjUnsetVar2(interp, varNamePtr, NULL, flags);
-
-    Tcl_DecrRefCount(varNamePtr);
-    return result;
-}
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -4642,63 +4499,6 @@ TclPtrObjMakeUpvarIdx(
     }
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_UpVar --
- *
- *	This function links one variable to another, just like the "upvar"
- *	command.
- *
- * Results:
- *	A standard Tcl completion code. If an error occurs then an error
- *	message is left in the interp's result.
- *
- * Side effects:
- *	The variable in frameName whose name is given by varName becomes
- *	accessible under the name localNameStr, so that references to
- *	localNameStr are redirected to the other variable like a symbolic
- *	link.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-#undef Tcl_UpVar
-int
-Tcl_UpVar(
-    Tcl_Interp *interp,		/* Command interpreter in which varName is to
-				 * be looked up. */
-    const char *frameName,	/* Name of the frame containing the source
-				 * variable, such as "1" or "#0". */
-    const char *varName,	/* Name of a variable in interp to link to.
-				 * May be either a scalar name or an element
-				 * in an array. */
-    const char *localNameStr,	/* Name of link variable. */
-    int flags)			/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
-				 * indicates scope of localNameStr. */
-{
-    int result;
-    CallFrame *framePtr;
-    Tcl_Obj *varNamePtr, *localNamePtr;
-
-    if (TclGetFrame(interp, frameName, &framePtr) == -1) {
-	return TCL_ERROR;
-    }
-
-    varNamePtr = Tcl_NewStringObj(varName, -1);
-    Tcl_IncrRefCount(varNamePtr);
-    localNamePtr = Tcl_NewStringObj(localNameStr, -1);
-    Tcl_IncrRefCount(localNamePtr);
-
-    result = ObjMakeUpvar(interp, framePtr, varNamePtr, NULL, 0,
-	    localNamePtr, flags, -1);
-    Tcl_DecrRefCount(varNamePtr);
-    Tcl_DecrRefCount(localNamePtr);
-    return result;
-}
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

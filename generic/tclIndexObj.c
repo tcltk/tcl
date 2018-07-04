@@ -79,70 +79,6 @@ typedef struct {
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetIndexFromObj --
- *
- *	This function looks up an object's value in a table of strings and
- *	returns the index of the matching string, if any.
- *
- * Results:
- *	If the value of objPtr is identical to or a unique abbreviation for
- *	one of the entries in tablePtr, then the return value is TCL_OK and the
- *	index of the matching entry is stored at *indexPtr. If there isn't a
- *	proper match, then TCL_ERROR is returned and an error message is left
- *	in interp's result (unless interp is NULL). The msg argument is used
- *	in the error message; for example, if msg has the value "option" then
- *	the error message will say something flag 'bad option "foo": must be
- *	...'
- *
- * Side effects:
- *	The result of the lookup is cached as the internal rep of objPtr, so
- *	that repeated lookups can be done quickly.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-#undef Tcl_GetIndexFromObj
-int
-Tcl_GetIndexFromObj(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
-    const char *const*tablePtr,	/* Array of strings to compare against the
-				 * value of objPtr; last entry must be NULL
-				 * and there must not be duplicate entries. */
-    const char *msg,		/* Identifying word to use in error
-				 * messages. */
-    int flags,			/* 0 or TCL_EXACT */
-    int *indexPtr)		/* Place to store resulting integer index. */
-{
-    /*
-     * See if there is a valid cached result from a previous lookup (doing the
-     * check here saves the overhead of calling Tcl_GetIndexFromObjStruct in
-     * the common case where the result is cached).
-     */
-
-    if (!(flags & INDEX_TEMP_TABLE) && objPtr->typePtr == &indexType) {
-	IndexRep *indexRep = objPtr->internalRep.twoPtrValue.ptr1;
-
-	/*
-	 * Here's hoping we don't get hit by unfortunate packing constraints
-	 * on odd platforms like a Cray PVP...
-	 */
-
-	if (indexRep->tablePtr == tablePtr
-		&& indexRep->offset == sizeof(char *)) {
-	    *indexPtr = indexRep->index;
-	    return TCL_OK;
-	}
-    }
-    return Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, sizeof(char *),
-	    msg, flags, indexPtr);
-}
-#endif /* TCL_NO_DEPRECATED */
-
-/*
- *----------------------------------------------------------------------
- *
  * GetIndexFromObjList --
  *
  *	This procedure looks up an object's value in a table of strings and
