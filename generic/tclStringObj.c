@@ -590,33 +590,6 @@ Tcl_GetUniChar(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetUnicode --
- *
- *	Get the Unicode form of the String object. If the object is not
- *	already a String object, it will be converted to one. If the String
- *	object does not have a Unicode rep, then one is created from the UTF
- *	string format.
- *
- * Results:
- *	Returns a pointer to the object's internal Unicode string.
- *
- * Side effects:
- *	Converts the object to have the String internal rep.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_UniChar *
-Tcl_GetUnicode(
-    Tcl_Obj *objPtr)		/* The object to find the unicode string
-				 * for. */
-{
-    return Tcl_GetUnicodeFromObj(objPtr, NULL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_GetUnicodeFromObj --
  *
  *	Get the Unicode form of the String object with length. If the object
