@@ -606,6 +606,8 @@ Tcl_GetUniChar(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
+#undef Tcl_GetUnicode
 Tcl_UniChar *
 Tcl_GetUnicode(
     Tcl_Obj *objPtr)		/* The object to find the unicode string
@@ -613,6 +615,7 @@ Tcl_GetUnicode(
 {
     return Tcl_GetUnicodeFromObj(objPtr, NULL);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
