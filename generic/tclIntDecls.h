@@ -56,7 +56,7 @@ EXTERN int		TclCleanupChildren(Tcl_Interp *interp, int numPids,
 /* 6 */
 EXTERN void		TclCleanupCommand(Command *cmdPtr);
 /* 7 */
-EXTERN int		TclCopyAndCollapse(int count, const char *src,
+EXTERN size_t		TclCopyAndCollapse(size_t count, const char *src,
 				char *dst);
 /* Slot 8 is reserved */
 /* 9 */
@@ -376,20 +376,20 @@ EXTERN int		TclpUtfNcmp2(const char *s1, const char *s2,
 				size_t n);
 /* 170 */
 EXTERN int		TclCheckInterpTraces(Tcl_Interp *interp,
-				const char *command, int numChars,
+				const char *command, size_t numChars,
 				Command *cmdPtr, int result, int traceFlags,
 				int objc, Tcl_Obj *const objv[]);
 /* 171 */
 EXTERN int		TclCheckExecutionTraces(Tcl_Interp *interp,
-				const char *command, int numChars,
+				const char *command, size_t numChars,
 				Command *cmdPtr, int result, int traceFlags,
 				int objc, Tcl_Obj *const objv[]);
 /* 172 */
 EXTERN int		TclInThreadExit(void);
 /* 173 */
 EXTERN int		TclUniCharMatch(const Tcl_UniChar *string,
-				int strLen, const Tcl_UniChar *pattern,
-				int ptnLen, int flags);
+				size_t strLen, const Tcl_UniChar *pattern,
+				size_t ptnLen, int flags);
 /* Slot 174 is reserved */
 /* 175 */
 EXTERN int		TclCallVarTraces(Interp *iPtr, Var *arrayPtr,
@@ -590,7 +590,7 @@ typedef struct TclIntStubs {
     void (*reserved4)(void);
     int (*tclCleanupChildren) (Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr, Tcl_Channel errorChan); /* 5 */
     void (*tclCleanupCommand) (Command *cmdPtr); /* 6 */
-    int (*tclCopyAndCollapse) (int count, const char *src, char *dst); /* 7 */
+    size_t (*tclCopyAndCollapse) (size_t count, const char *src, char *dst); /* 7 */
     void (*reserved8)(void);
     int (*tclCreatePipeline) (Tcl_Interp *interp, int argc, const char **argv, Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr, TclFile *errFilePtr); /* 9 */
     int (*tclCreateProc) (Tcl_Interp *interp, Namespace *nsPtr, const char *procName, Tcl_Obj *argsPtr, Tcl_Obj *bodyPtr, Proc **procPtrPtr); /* 10 */
@@ -753,10 +753,10 @@ typedef struct TclIntStubs {
     void (*reserved167)(void);
     void (*reserved168)(void);
     int (*tclpUtfNcmp2) (const char *s1, const char *s2, size_t n); /* 169 */
-    int (*tclCheckInterpTraces) (Tcl_Interp *interp, const char *command, int numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 170 */
-    int (*tclCheckExecutionTraces) (Tcl_Interp *interp, const char *command, int numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 171 */
+    int (*tclCheckInterpTraces) (Tcl_Interp *interp, const char *command, size_t numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 170 */
+    int (*tclCheckExecutionTraces) (Tcl_Interp *interp, const char *command, size_t numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 171 */
     int (*tclInThreadExit) (void); /* 172 */
-    int (*tclUniCharMatch) (const Tcl_UniChar *string, int strLen, const Tcl_UniChar *pattern, int ptnLen, int flags); /* 173 */
+    int (*tclUniCharMatch) (const Tcl_UniChar *string, size_t strLen, const Tcl_UniChar *pattern, size_t ptnLen, int flags); /* 173 */
     void (*reserved174)(void);
     int (*tclCallVarTraces) (Interp *iPtr, Var *arrayPtr, Var *varPtr, const char *part1, const char *part2, int flags, int leaveErrMsg); /* 175 */
     void (*tclCleanupVar) (Var *varPtr, Var *arrayPtr); /* 176 */

@@ -838,7 +838,7 @@ Tcl_UtfAtIndex(
  *---------------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_UtfBackslash(
     const char *src,		/* Points to the backslash character of a
 				 * backslash sequence. */
@@ -848,8 +848,7 @@ Tcl_UtfBackslash(
 				 * backslash sequence. */
 {
 #define LINE_LENGTH 128
-    size_t numRead;
-    int result;
+    size_t numRead, result;
 
     result = TclParseBackslash(src, LINE_LENGTH, &numRead, dst);
     if (numRead == LINE_LENGTH) {
@@ -857,7 +856,7 @@ Tcl_UtfBackslash(
 	 * We ate a whole line. Pay the price of a strlen()
 	 */
 
-	result = TclParseBackslash(src, (int)strlen(src), &numRead, dst);
+	result = TclParseBackslash(src, strlen(src), &numRead, dst);
     }
     if (readPtr != NULL) {
 	*readPtr = numRead;
@@ -2064,10 +2063,10 @@ Tcl_UniCharCaseMatch(
 int
 TclUniCharMatch(
     const Tcl_UniChar *string,	/* Unicode String. */
-    int strLen,			/* Length of String */
+    size_t strLen,			/* Length of String */
     const Tcl_UniChar *pattern,	/* Pattern, which may contain special
 				 * characters. */
-    int ptnLen,			/* Length of Pattern */
+    size_t ptnLen,			/* Length of Pattern */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
     const Tcl_UniChar *stringEnd, *patternEnd;

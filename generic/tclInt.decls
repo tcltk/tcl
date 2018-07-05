@@ -153,8 +153,8 @@ declare 32 {
 #    TclCmdProcType TclGetInterpProc(void)
 #}
 declare 34 {
-    size_t TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    size_t endValue, size_t *indexPtr)
+    int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    int endValue, int *indexPtr)
 }
 # Removed in 8.4b2:
 #declare 35 {

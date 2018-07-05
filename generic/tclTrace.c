@@ -271,7 +271,8 @@ Tcl_TraceObjCmd(
     case TRACE_OLD_VDELETE: {
 	Tcl_Obj *copyObjv[6];
 	Tcl_Obj *opsList;
-	int code, numFlags;
+	int code;
+	size_t numFlags;
 
 	if (objc != 5) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "name ops command");
@@ -403,9 +404,9 @@ TraceExecutionObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int commandLength, index;
+    int index;
     const char *name, *command;
-    size_t length;
+    size_t commandLength, length;
     enum traceOptions {
 	TRACE_ADD, TRACE_INFO, TRACE_REMOVE
     };
@@ -653,9 +654,9 @@ TraceCommandObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int commandLength, index;
+    int index;
     const char *name, *command;
-    size_t length;
+    size_t commandLength, length;
     enum traceOptions { TRACE_ADD, TRACE_INFO, TRACE_REMOVE };
     static const char *const opStrings[] = { "delete", "rename", NULL };
     enum operations { TRACE_CMD_DELETE, TRACE_CMD_RENAME };
@@ -847,9 +848,9 @@ TraceVariableObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int commandLength, index;
+    int index;
     const char *name, *command;
-    size_t length;
+    size_t commandLength, length;
     ClientData clientData;
     enum traceOptions { TRACE_ADD, TRACE_INFO, TRACE_REMOVE };
     static const char *const opStrings[] = {
@@ -1427,7 +1428,7 @@ TclCheckExecutionTraces(
     Tcl_Interp *interp,		/* The current interpreter. */
     const char *command,	/* Pointer to beginning of the current command
 				 * string. */
-    int numChars,		/* The number of characters in 'command' which
+    size_t numChars,		/* The number of characters in 'command' which
 				 * are part of the command string. */
     Command *cmdPtr,		/* Points to command's Command struct. */
     int code,			/* The current result code. */
@@ -1533,7 +1534,7 @@ TclCheckInterpTraces(
     Tcl_Interp *interp,		/* The current interpreter. */
     const char *command,	/* Pointer to beginning of the current command
 				 * string. */
-    int numChars,		/* The number of characters in 'command' which
+    size_t numChars,		/* The number of characters in 'command' which
 				 * are part of the command string. */
     Command *cmdPtr,		/* Points to command's Command struct. */
     int code,			/* The current result code. */
