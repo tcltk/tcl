@@ -784,20 +784,20 @@ FindElement(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclCopyAndCollapse(
-    int count,			/* Number of byte to copy from src. */
+    size_t count,			/* Number of byte to copy from src. */
     const char *src,		/* Copy from here... */
     char *dst)			/* ... to here. */
 {
-    int newCount = 0;
+    size_t newCount = 0;
 
     while (count > 0) {
 	char c = *src;
 
 	if (c == '\\') {
 	    size_t numRead;
-	    int backslashCount = TclParseBackslash(src, count, &numRead, dst);
+	    size_t backslashCount = TclParseBackslash(src, count, &numRead, dst);
 
 	    dst += backslashCount;
 	    newCount += backslashCount;
@@ -3552,7 +3552,7 @@ SetEndOffsetFromAny(
 {
     Tcl_WideInt offset;			/* Offset in the "end-offset" expression */
     register const char *bytes;	/* String rep of the object */
-    int length;			/* Length of the object's string rep */
+    size_t length;			/* Length of the object's string rep */
 
     /*
      * If it's already the right type, we're fine.
@@ -3568,7 +3568,7 @@ SetEndOffsetFromAny(
 
     bytes = TclGetStringFromObj(objPtr, &length);
     if ((*bytes != 'e') || (strncmp(bytes, "end",
-	    (size_t)((length > 3) ? 3 : length)) != 0)) {
+	    ((length > 3) ? 3 : length)) != 0)) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad index \"%s\": must be end?[+-]integer?", bytes));
