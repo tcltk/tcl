@@ -298,12 +298,33 @@ test ooUtil-4.1 {TIP 478: singleton} -setup {
     set z [xyz new]
     set code [catch {$x destroy} msg]
     set p [xyz new]
-    lappend code $msg [catch {rename $x ""}]
+    lappend code [catch {rename $x ""}]
     set q [xyz new]
     string map [list $x ONE $q TWO] [list {*}$code $x $y $z $p $q [xyz new]]
 } -cleanup {
     parent destroy
-} -result {1 {object "ONE" has no visible methods} 0 ONE ONE ONE ONE TWO TWO}
+} -result {1 0 ONE ONE ONE ONE TWO TWO}
+test ooUtil-4.2 {TIP 478: singleton errors} -setup {
+    oo::class create parent
+} -body {
+    oo::singleton create xyz {
+	superclass parent
+    }
+    [xyz new] destroy
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {may not destroy a singleton object}
+test ooUtil-4.3 {TIP 478: singleton errors} -setup {
+    oo::class create parent
+} -body {
+    oo::singleton create xyz {
+	superclass parent
+    }
+    oo::copy [xyz new]
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {may not clone a singleton object}
+
 
 test ooUtil-5.1 {TIP 478: abstract} -setup {
     oo::class create parent
