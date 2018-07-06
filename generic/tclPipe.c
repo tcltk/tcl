@@ -336,7 +336,7 @@ TclCleanupChildren(
 	    Tcl_Seek(errorChan, (Tcl_WideInt)0, SEEK_SET);
 	    objPtr = Tcl_NewObj();
 	    count = Tcl_ReadChars(errorChan, objPtr, -1, 0);
-	    if (count < 0) {
+	    if (count == -1) {
 		result = TCL_ERROR;
 		Tcl_DecrRefCount(objPtr);
 		Tcl_ResetResult(interp);

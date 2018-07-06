@@ -168,12 +168,12 @@ Tcl_PutsObjCmd(
 
     TclChannelPreserve(chan);
     result = Tcl_WriteObj(chan, string);
-    if (result < 0) {
+    if (result == -1) {
 	goto error;
     }
     if (newline != 0) {
 	result = Tcl_WriteChars(chan, "\n", 1);
-	if (result < 0) {
+	if (result == -1) {
 	    goto error;
 	}
     }
@@ -964,7 +964,7 @@ Tcl_ExecObjCmd(
 
     resultPtr = Tcl_NewObj();
     if (Tcl_GetChannelHandle(chan, TCL_READABLE, NULL) == TCL_OK) {
-	if (Tcl_ReadChars(chan, resultPtr, -1, 0) < 0) {
+	if (Tcl_ReadChars(chan, resultPtr, -1, 0) == (size_t)-1) {
 	    /*
 	     * TIP #219.
 	     * Capture error messages put by the driver into the bypass area

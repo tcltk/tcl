@@ -2940,7 +2940,7 @@ ZlibTransformClose(
 		result = TCL_ERROR;
 		break;
 	    }
-	    if (written && Tcl_WriteRaw(cd->parent, cd->outBuffer, written) == -1) {
+	    if (written && Tcl_WriteRaw(cd->parent, cd->outBuffer, written) == (size_t)-1) {
 		/* TODO: is this the right way to do errors on close?
 		 * Note: when close is called from FinalizeIOSubsystem then
 		 * interp may be NULL */
@@ -3140,7 +3140,7 @@ ZlibTransformOutput(
 	    break;
 	}
 
-	if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) == -1) {
+	if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) == (size_t)-1) {
 	    *errorCodePtr = Tcl_GetErrno();
 	    return -1;
 	}
@@ -3197,7 +3197,7 @@ ZlibTransformFlush(
 	 * Write the bytes we've received to the next layer.
 	 */
 
-	if (len > 0 && Tcl_WriteRaw(cd->parent, cd->outBuffer, len) == -1) {
+	if (len > 0 && Tcl_WriteRaw(cd->parent, cd->outBuffer, len) == (size_t)-1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "problem flushing channel: %s",
 		    Tcl_PosixError(interp)));
