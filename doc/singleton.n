@@ -32,16 +32,20 @@ not recommended to inherit from a singleton class; singleton-ness is \fInot\fR
 inherited. It is not recommended that a singleton class's constructor take any
 arguments.
 .PP
-Instances have their\fB destroy\fR method (from \fBoo::object\fR) unexported
-in order to discourage destruction of the object, but destruction remains
-possible if strictly necessary (e.g., by destroying the class or using
-\fBrename\fR to delete it).
+Instances have their\fB destroy\fR method overridden with a method that always
+returns an error in order to discourage destruction of the object, but
+destruction remains possible if strictly necessary (e.g., by destroying the
+class or using \fBrename\fR to delete it). They also have a (non-exported)
+\fB<cloned>\fR method defined on them that similarly always returns errors to
+make attempts to use the singleton instance with \fBoo::copy\fR fail.
 .SS CONSTRUCTOR
 The \fBoo::singleton\fR class does not define an explicit constructor; this
 means that it is effectively the same as the constructor of the
 \fBoo::class\fR class.
 .SS DESTRUCTOR
-The \fBoo::singleton\fR class does not define an explicit destructor.
+The \fBoo::singleton\fR class does not define an explicit destructor;
+destroying an instance of it is just like destroying an ordinary class (and
+will destroy the singleton object).
 .SS "EXPORTED METHODS"
 .TP
 \fIcls \fBnew \fR?\fIarg ...\fR?
@@ -53,11 +57,13 @@ manufactured; that construction is via the \fBoo::class\fR class's \fBnew\fR
 method.
 .RS
 .PP
-This is an override of the behaviour of a superclass's method.
+This is an override of the behaviour of a superclass's method with an
+identical call signature to the superclass's implementation.
 .RE
 .SS "NON-EXPORTED METHODS"
 The \fBoo::singleton\fR class explicitly states that \fBcreate\fR and
-\fBcreateWithNamespace\fR are unexported.
+\fBcreateWithNamespace\fR are unexported; callers should not assume that they
+have control over either the name or the namespace name of the singleton instance.
 .SH EXAMPLE
 .PP
 This example demonstrates that there is only one instance even though the

@@ -36,7 +36,9 @@ The \fBoo::abstract\fR class does not define an explicit constructor; this
 means that it is effectively the same as the constructor of the
 \fBoo::class\fR class.
 .SS DESTRUCTOR
-The \fBoo::abstract\fR class does not define an explicit destructor.
+The \fBoo::abstract\fR class does not define an explicit destructor;
+destroying an instance of it is just like destroying an ordinary class (and
+will destroy all its subclasses).
 .SS "EXPORTED METHODS"
 The \fBoo::abstract\fR class defines no new exported methods.
 .SS "NON-EXPORTED METHODS"
