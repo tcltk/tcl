@@ -3974,7 +3974,7 @@ Tcl_ClearChannelHandlers(
  *	No encoding conversions are applied to the bytes being read.
  *
  * Results:
- *	The number of bytes written or -1 in case of error. If -1,
+ *	The number of bytes written or (size_t)-1 in case of error. If (size_t)-1,
  *	Tcl_GetErrno will return the error code.
  *
  * Side effects:
@@ -3984,7 +3984,7 @@ Tcl_ClearChannelHandlers(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_Write(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* Data to queue in output buffer. */
@@ -4028,7 +4028,7 @@ Tcl_Write(
  *	No encoding conversions are applied to the bytes being read.
  *
  * Results:
- *	The number of bytes written or -1 in case of error. If -1,
+ *	The number of bytes written or (size_t)-1 in case of error. If (size_t)-1,
  *	Tcl_GetErrno will return the error code.
  *
  * Side effects:
@@ -4038,7 +4038,7 @@ Tcl_Write(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_WriteRaw(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* Data to queue in output buffer. */
@@ -4052,7 +4052,7 @@ Tcl_WriteRaw(
     size_t written;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | CHANNEL_RAW_MODE) != 0) {
-	return -1;
+	return (size_t)-1;
     }
 
     if (srcLen == (size_t)-1) {
@@ -4164,7 +4164,7 @@ Tcl_WriteChars(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_WriteObj(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     Tcl_Obj *objPtr)		/* The object to write. */
@@ -4182,7 +4182,7 @@ Tcl_WriteObj(
     chanPtr = statePtr->topChanPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
-	return -1;
+	return (size_t)-1;
     }
     if (statePtr->encoding == NULL) {
 	src = (char *) TclGetByteArrayFromObj(objPtr, &srcLen);
@@ -4458,7 +4458,7 @@ Write(
  *---------------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_Gets(
     Tcl_Channel chan,		/* Channel from which to read. */
     Tcl_DString *lineRead)	/* The line read will be appended to this
@@ -4467,7 +4467,7 @@ Tcl_Gets(
 				 * for managing the storage. */
 {
     Tcl_Obj *objPtr;
-    int charsStored;
+    size_t charsStored;
 
     TclNewObj(objPtr);
     charsStored = Tcl_GetsObj(chan, objPtr);
@@ -4501,7 +4501,7 @@ Tcl_Gets(
  *---------------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_GetsObj(
     Tcl_Channel chan,		/* Channel from which to read. */
     Tcl_Obj *objPtr)		/* The line read will be appended to this
@@ -4518,7 +4518,7 @@ Tcl_GetsObj(
     Tcl_EncodingState oldState;
 
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	return -1;
+	return (size_t)-1;
     }
 
     /*
@@ -4533,7 +4533,7 @@ Tcl_GetsObj(
 
 	/* TODO: Do we need this? */
 	UpdateInterest(chanPtr);
-	return -1;
+	return (size_t)-1;
     }
 
     /*
@@ -5569,7 +5569,7 @@ CommonGetsCleanup(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_Read(
     Tcl_Channel chan,		/* The channel from which to read. */
     char *dst,			/* Where to store input read. */
@@ -5586,7 +5586,7 @@ Tcl_Read(
     chanPtr = statePtr->topChanPtr;
 
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	return -1;
+	return (size_t)-1;
     }
 
     return DoRead(chanPtr, dst, bytesToRead, 0);
@@ -5614,7 +5614,7 @@ Tcl_Read(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_ReadRaw(
     Tcl_Channel chan,		/* The channel from which to read. */
     char *readBuf,		/* Where to store input read. */
@@ -5627,7 +5627,7 @@ Tcl_ReadRaw(
 
     assert(bytesToRead > 0);
     if (CheckChannelErrors(statePtr, TCL_READABLE | CHANNEL_RAW_MODE) != 0) {
-	return -1;
+	return (size_t)-1;
     }
 
     /*
@@ -5732,7 +5732,7 @@ Tcl_ReadRaw(
  *---------------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_ReadChars(
     Tcl_Channel chan,		/* The channel to read. */
     Tcl_Obj *objPtr,		/* Input data is stored in this object. */

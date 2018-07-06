@@ -1846,7 +1846,7 @@ LoadTableEncoding(
      */
 
     for (TclDStringClear(&lineString);
-	    (len = Tcl_Gets(chan, &lineString)) >= 0;
+	    (len = Tcl_Gets(chan, &lineString)) != -1;
 	    TclDStringClear(&lineString)) {
 	const unsigned char *p;
 	int to, from;
@@ -1940,7 +1940,7 @@ LoadEscapeEncoding(
 	Tcl_DString lineString;
 
 	Tcl_DStringInit(&lineString);
-	if (Tcl_Gets(chan, &lineString) < 0) {
+	if (Tcl_Gets(chan, &lineString) == (size_t)-1) {
 	    break;
 	}
 	line = Tcl_DStringValue(&lineString);
