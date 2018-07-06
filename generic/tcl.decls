@@ -2289,7 +2289,7 @@ declare 610 {
 }
 declare 611 {
     int Tcl_ZlibInflate(Tcl_Interp *interp, int format, Tcl_Obj *data,
-	    int buffersize, Tcl_Obj *gzipHeaderDictObj)
+	    size_t buffersize, Tcl_Obj *gzipHeaderDictObj)
 }
 declare 612 {
     unsigned int Tcl_ZlibCRC32(unsigned int crc, const unsigned char *buf,
