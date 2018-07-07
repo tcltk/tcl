@@ -108,7 +108,7 @@ static int		MyClassObjCmd(ClientData clientData,
 static int		MyClassNRObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
-static void		MyClassDeletedCmd(ClientData clientData);
+static void		MyClassDeleted(ClientData clientData);
 
 /*
  * Methods in the oo::object and oo::class classes. First, we define a helper
@@ -754,9 +754,9 @@ AllocObject(
 
     oPtr->myCommand = TclNRCreateCommandInNs(interp, "my", oPtr->namespacePtr,
 	    PrivateObjectCmd, PrivateNRObjectCmd, oPtr, MyDeleted);
-    oPtr->myclassCommand = TclNRCreateCommandInNs(interp, " :my:class",
+    oPtr->myclassCommand = TclNRCreateCommandInNs(interp, "myclass",
 	    oPtr->namespacePtr, MyClassObjCmd, MyClassNRObjCmd, oPtr,
-            MyClassDeletedCmd);
+            MyClassDeleted);
     return oPtr;
 }
 
@@ -784,12 +784,12 @@ SquelchCachedName(
 /*
  * ----------------------------------------------------------------------
  *
- * MyDeleted --
+ * MyDeleted, MyClassDeleted --
  *
- *	This callback is triggered when the object's [my] command is deleted
- *	by any mechanism. It just marks the object as not having a [my]
- *	command, and so prevents cleanup of that when the object itself is
- *	deleted.
+ *	These callbacks are triggered when the object's [my] or [myclass]
+ *	commands are deleted by any mechanism. They just mark the object as
+ *	not having a [my] command or [myclass] command, and so prevent cleanup
+ *	of those commands when the object itself is deleted.
  *
  * ----------------------------------------------------------------------
  */
@@ -802,6 +802,14 @@ MyDeleted(
     register Object *oPtr = clientData;
 
     oPtr->myCommand = NULL;
+}
+
+static void
+MyClassDeleted(
+    ClientData clientData)
+{
+    Object *oPtr = clientData;
+    oPtr->myclassCommand = NULL;
 }
 
 /*
@@ -2501,7 +2509,7 @@ TclOOInvokeObject(
 /*
  * ----------------------------------------------------------------------
  *
- * MyClassObjCmd, MyClassNRObjCmd, MyClassDeletedCmd --
+ * MyClassObjCmd, MyClassNRObjCmd --
  *
  *	Special trap door to allow an object to delegate simply to its class.
  *
@@ -2533,14 +2541,6 @@ MyClassNRObjCmd(
     }
     return TclOOObjectCmdCore(oPtr->selfCls->thisPtr, interp, objc, objv, 0,
 	    NULL);
-}
-
-static void
-MyClassDeletedCmd(
-    ClientData clientData)
-{
-    Object *oPtr = clientData;
-    oPtr->myclassCommand = NULL;
 }
 
 /*
