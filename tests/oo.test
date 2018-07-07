@@ -4845,6 +4845,59 @@ test oo-40.3 {TIP 500: private and unexport} -setup {
 } -cleanup {
     cls destroy
 } -result {{} {} foo {} foo {}}
+
+test oo-41.1 {TIP 478: myclass command, including class morphing} -setup {
+    oo::class create parent
+    set result {}
+} -body {
+    oo::class create cls1 {
+	superclass parent
+	self method count {} {
+	    my variable c
+	    incr c
+	}
+	method act {} {
+	    myclass count
+	}
+    }
+    cls1 create x
+    lappend result [x act] [x act]
+    cls1 create y
+    lappend result [y act] [y act] [x act]
+    oo::class create cls2 {
+	superclass cls1
+	self method count {} {
+	    my variable d
+	    expr {1.0 * [incr d]}
+	}
+    }
+    oo::objdefine x {class cls2}
+    lappend result [x act] [y act] [x act] [y act]
+} -cleanup {
+    parent destroy
+} -result {1 2 3 4 5 1.0 6 2.0 7}
+test oo-41.2 {TIP 478: myclass command cleanup} -setup {
+    oo::class create parent
+    set result {}
+} -body {
+    oo::class create cls1 {
+	superclass parent
+	self method hi {} {
+	    return "this is [self]"
+	}
+	method hi {} {
+	    return "this is [self]"
+	}
+    }
+    cls1 create x
+    rename [info object namespace x]::my foo
+    rename [info object namespace x]::myclass bar
+    lappend result [cls1 hi] [x hi] [foo hi] [bar hi]
+    x destroy
+    lappend result [catch {foo hi}] [catch {bar hi}]
+} -cleanup {
+    parent destroy
+} -result {{this is ::cls1} {this is ::x} {this is ::x} {this is ::cls1} 1 1}
 
 cleanupTests
 return
