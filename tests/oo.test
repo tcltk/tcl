@@ -4898,6 +4898,22 @@ test oo-41.2 {TIP 478: myclass command cleanup} -setup {
 } -cleanup {
     parent destroy
 } -result {{this is ::cls1} {this is ::x} {this is ::x} {this is ::cls1} 1 1}
+test oo-41.3 {TIP 478: myclass command calls unexported methods, via forward} -setup {
+    oo::class create parent
+    set result {}
+} -body {
+    oo::class create cls1 {
+	superclass parent
+	self method Hi {} {
+	    return "this is [self]"
+	}
+	forward poke myclass Hi
+    }
+    cls1 create x
+    lappend result [catch {cls1 Hi}] [x poke]
+} -cleanup {
+    parent destroy
+} -result {1 {this is ::cls1}}
 
 cleanupTests
 return
