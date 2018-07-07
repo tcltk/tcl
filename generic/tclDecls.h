@@ -3815,4 +3815,52 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
 
+#if defined(TCL_USE_INT_RETURN) && !defined(BUILD_tcl)
+#   ifdef USE_TCL_STUBS
+#	undef Tcl_ConvertElement
+#	undef Tcl_ConvertCountedElement
+#	undef Tcl_Gets
+#	undef Tcl_GetsObj
+#	undef Tcl_Read
+#	undef Tcl_ScanElement
+#	undef Tcl_ScanCountedElement
+#	undef Tcl_Ungets
+#	undef Tcl_Write
+#	undef Tcl_ReadChars
+#	undef Tcl_WriteChars
+#	undef Tcl_WriteObj
+#	undef Tcl_ReadRaw
+#	undef Tcl_WriteRaw
+#	define Tcl_ConvertElement(src, dst, flags) (((Tcl_WideInt)((tclStubsPtr->tcl_ConvertElement)(src, dst, flags)+1))-1)
+#	define Tcl_ConvertCountedElement(src, length, dst, flags) (((Tcl_WideInt)((tclStubsPtr->tcl_ConvertCountedElement)(src, length, dst, flags)+1))-1)
+#	define Tcl_Gets(chan, dsPtr) (((Tcl_WideInt)((tclStubsPtr->tcl_Gets)(chan, dsPtr)+1))-1)
+#	define Tcl_GetsObj(chan, objPtr) (((Tcl_WideInt)((tclStubsPtr->tcl_GetsObj)(chan, objPtr)+1))-1)
+#	define Tcl_Read(chan, bufPtr, toRead) (((Tcl_WideInt)((tclStubsPtr->tcl_Read)(chan, bufPtr, toRead)+1))-1)
+#	define Tcl_ScanElement(src, flagPtr) (((Tcl_WideInt)((tclStubsPtr->tcl_ScanElement)(src, flagPtr)+1))-1)
+#	define Tcl_ScanCountedElement(src, length, flagPtr) (((tclStubsPtr->tcl_WideInt)((Tcl_ScanCountedElement)(src, length, flagPtr)+1))-1)
+#	define Tcl_Ungets(chan, str, len, atHead) (((Tcl_WideInt)((tclStubsPtr->tcl_Ungets)(chan, str, len, atHead)+1))-1)
+#	define Tcl_Write(chan, s, slen) (((Tcl_WideInt)((tclStubsPtr->tcl_Write)(chan, s, slen)+1))-1)
+#	define Tcl_ReadChars(channel, objPtr, charsToRead, appendFlag) (((Tcl_WideInt)((tclStubsPtr->tcl_ReadChars)(channel, objPtr, charsToRead, appendFlag)+1))-1)
+#	define Tcl_WriteChars(chan, src, srcLen) (((Tcl_WideInt)((tclStubsPtr->tcl_WriteChars)(chan, src, srcLen)+1))-1)
+#	define Tcl_WriteObj(chan, objPtr) (((Tcl_WideInt)((tclStubsPtr->tcl_WriteObj)(chan, objPtr)+1))-1)
+#	define Tcl_ReadRaw(chan, dst, bytesToRead) (((Tcl_WideInt)((tclStubsPtr->tcl_ReadRaw)(chan, dst, bytesToRead)+1))-1)
+#	define Tcl_WriteRaw(chan, src, srcLen) (((Tcl_WideInt)((tclStubsPtr->tcl_WriteRaw()(chan, src, srcLen)+1))-1)
+#   else
+#	define Tcl_ConvertElement(src, dst, flags) (((Tcl_WideInt)((Tcl_ConvertElement)(src, dst, flags)+1))-1)
+#	define Tcl_ConvertCountedElement(src, length, dst, flags) (((Tcl_WideInt)((Tcl_ConvertCountedElement)(src, length, dst, flags)+1))-1)
+#	define Tcl_Gets(chan, dsPtr) (((Tcl_WideInt)((Tcl_Gets)(chan, dsPtr)+1))-1)
+#	define Tcl_GetsObj(chan, objPtr) (((Tcl_WideInt)((Tcl_GetsObj)(chan, objPtr)+1))-1)
+#	define Tcl_Read(chan, bufPtr, toRead) (((Tcl_WideInt)((Tcl_Read)(chan, bufPtr, toRead)+1))-1)
+#	define Tcl_ScanElement(src, flagPtr) (((Tcl_WideInt)((Tcl_ScanElement)(src, flagPtr)+1))-1)
+#	define Tcl_ScanCountedElement(src, length, flagPtr) (((Tcl_WideInt)((Tcl_ScanCountedElement)(src, length, flagPtr)+1))-1)
+#	define Tcl_Ungets(chan, str, len, atHead) (((Tcl_WideInt)((Tcl_Ungets)(chan, str, len, atHead)+1))-1)
+#	define Tcl_Write(chan, s, slen) (((Tcl_WideInt)((Tcl_Write)(chan, s, slen)+1))-1)
+#	define Tcl_ReadChars(channel, objPtr, charsToRead, appendFlag) (((Tcl_WideInt)((Tcl_ReadChars)(channel, objPtr, charsToRead, appendFlag)+1))-1)
+#	define Tcl_WriteChars(chan, src, srcLen) (((Tcl_WideInt)((Tcl_WriteChars)(chan, src, srcLen)+1))-1)
+#	define Tcl_WriteObj(chan, objPtr) (((Tcl_WideInt)((Tcl_WriteObj)(chan, objPtr)+1))-1)
+#	define Tcl_ReadRaw(chan, dst, bytesToRead) (((Tcl_WideInt)((Tcl_ReadRaw)(chan, dst, bytesToRead)+1))-1)
+#	define Tcl_WriteRaw(chan, src, srcLen) (((Tcl_WideInt)((Tcl_WriteRaw()(chan, src, srcLen)+1))-1)
+#   endif
+#endif
+
 #endif /* _TCLDECLS */
