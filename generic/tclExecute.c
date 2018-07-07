@@ -8919,7 +8919,7 @@ GetSrcInfoForPc(
 				 * of the command containing the pc should
 				 * be stored. */
 {
-    size_t pcOffset = (pc - codePtr->codeStart);
+    size_t pcOffset = (size_t)(pc - codePtr->codeStart);
     size_t numCmds = codePtr->numCommands;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
