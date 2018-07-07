@@ -85,7 +85,7 @@ static const char *tclOOSetupScript =
 "        ::oo::define [::oo::DelegateName $cls] method $name $args $body\n"
 "    }\n"
 "    # Make the connection by forwarding\n"
-"    tailcall forward $name { :my:class} $name\n"
+"    tailcall forward $name myclass $name\n"
 "}\n"
 
 "proc ::oo::MixinClassDelegates {class} {\n"
