@@ -23,7 +23,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 # Do all this in a slave interp to avoid garbaging the package list
 set i [interp create]
 tcltest::loadIntoSlaveInterpreter $i {*}$argv
-load {} Tcltest $i
+catch [list load {} Tcltest $i]
 interp eval $i {
 namespace import -force ::tcltest::*
 #package forget {*}[package names]
