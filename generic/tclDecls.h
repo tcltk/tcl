@@ -3837,7 +3837,7 @@ extern const TclStubs *tclStubsPtr;
 #	define Tcl_GetsObj(chan, objPtr) (((Tcl_WideInt)((tclStubsPtr->tcl_GetsObj)(chan, objPtr)+1))-1)
 #	define Tcl_Read(chan, bufPtr, toRead) (((Tcl_WideInt)((tclStubsPtr->tcl_Read)(chan, bufPtr, toRead)+1))-1)
 #	define Tcl_ScanElement(src, flagPtr) (((Tcl_WideInt)((tclStubsPtr->tcl_ScanElement)(src, flagPtr)+1))-1)
-#	define Tcl_ScanCountedElement(src, length, flagPtr) (((tclStubsPtr->tcl_WideInt)((Tcl_ScanCountedElement)(src, length, flagPtr)+1))-1)
+#	define Tcl_ScanCountedElement(src, length, flagPtr) (((Tcl_WideInt)((tclStubsPtr->tcl_ScanCountedElement)(src, length, flagPtr)+1))-1)
 #	define Tcl_Ungets(chan, str, len, atHead) (((Tcl_WideInt)((tclStubsPtr->tcl_Ungets)(chan, str, len, atHead)+1))-1)
 #	define Tcl_Write(chan, s, slen) (((Tcl_WideInt)((tclStubsPtr->tcl_Write)(chan, s, slen)+1))-1)
 #	define Tcl_ReadChars(channel, objPtr, charsToRead, appendFlag) (((Tcl_WideInt)((tclStubsPtr->tcl_ReadChars)(channel, objPtr, charsToRead, appendFlag)+1))-1)
