@@ -243,8 +243,12 @@ TclFileMakeDirsCmd(
 	    break;
 	}
 	for (j = 1; j <= pobjc; j++) {
+	    int errCount = 2;
+
 	    target = Tcl_FSJoinPath(split, j);
 	    Tcl_IncrRefCount(target);
+
+	createDir:
 
 	    /*
 	     * Call Tcl_FSStat() so that if target is a symlink that points to
@@ -278,17 +282,24 @@ TclFileMakeDirsCmd(
 		 */
 
 		if (errno == EEXIST) {
-		    if (Tcl_FSStat(target, &statBuf) != 0
-			    || !S_ISDIR(statBuf.st_mode)) {
-			errfile = target;
-			goto done;
+		    /* Be aware other workers could delete it immediately after
+		     * creation, so give this worker still one chance (repeat once),
+		     * see [270f78ca95] for description of the race-condition.
+		     * Don't repeat the create always (to avoid endless loop). */
+		    if (--errCount > 0) {
+			goto createDir;
 		    }
-		} else {
-		    errfile = target;
-		    goto done;
+		    /* Already tried, with delete in-between directly after
+		     * creation, so just continue (assume created successful). */
+		    goto nextPart;
 		}
+
+		/* return with error */
+		errfile = target;
+		goto done;
 	    }
 
+	nextPart:
 	    /*
 	     * Forget about this sub-path.
 	     */
