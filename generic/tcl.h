@@ -2268,18 +2268,15 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 
 /*
  *----------------------------------------------------------------------------
- * The following declarations either map Tcl_Alloc and Tcl_Free to malloc and
- * free, or they map them to functions with all sorts of debugging hooks
- * defined in tclCkalloc.c.
+ * The following declarations map ckalloc and ckfree to Tcl_Alloc and
+ * Tcl_Free.
  */
 
-#if !defined(TCL_NO_DEPRECATED) || defined(BUILD_tcl)
-#   define ckalloc Tcl_Alloc
-#   define ckfree Tcl_Free
-#   define ckrealloc Tcl_Realloc
-#   define attemptckalloc Tcl_AttemptAlloc
-#   define attemptckrealloc Tcl_AttemptRealloc
-#endif
+#define ckalloc Tcl_Alloc
+#define ckfree Tcl_Free
+#define ckrealloc Tcl_Realloc
+#define attemptckalloc Tcl_AttemptAlloc
+#define attemptckrealloc Tcl_AttemptRealloc
 
 #ifndef TCL_MEM_DEBUG
 
