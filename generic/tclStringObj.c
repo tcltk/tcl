@@ -606,6 +606,8 @@ Tcl_GetUniChar(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
+#undef Tcl_GetUnicode
 Tcl_UniChar *
 Tcl_GetUnicode(
     Tcl_Obj *objPtr)		/* The object to find the unicode string
@@ -613,6 +615,7 @@ Tcl_GetUnicode(
 {
     return Tcl_GetUnicodeFromObj(objPtr, NULL);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2040,6 +2043,10 @@ Tcl_AppendFormatToObj(
 		goto error;
 	    }
 	    length = Tcl_UniCharToUtf(code, buf);
+	    if (!length) {
+		/* Special case for handling upper surrogates. */
+		length = Tcl_UniCharToUtf(-1, buf);
+	    }
 	    segment = Tcl_NewStringObj(buf, length);
 	    Tcl_IncrRefCount(segment);
 	    allocSegment = 1;
