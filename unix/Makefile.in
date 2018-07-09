@@ -262,7 +262,9 @@ GDB			= gdb
 TRACE			= strace
 TRACE_OPTS		=
 VALGRIND		= valgrind
-VALGRINDARGS		= --tool=memcheck --num-callers=8 --leak-resolution=high --leak-check=yes --show-reachable=yes -v
+VALGRINDARGS		= --tool=memcheck --num-callers=24 \
+    --leak-resolution=high --leak-check=yes --show-reachable=yes -v \
+    --suppressions=$(TOOL_DIR)/valgrind_suppress
 
 #--------------------------------------------------------------------------
 # The information below should be usable as is. The configure script won't
@@ -830,7 +832,7 @@ install-libraries: libraries
 		else true; \
 		fi; \
 	    done;
-	@for i in opt0.4 encoding ../tcl8 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5 ../tcl8/8.6; \
+	@for i in opt0.4 encoding ../tcl8 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5 ../tcl8/8.6 ../tcl8/8.7; \
 	    do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
