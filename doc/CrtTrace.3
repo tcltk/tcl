@@ -41,7 +41,7 @@ details of the calling sequence.
 .AP Tcl_CmdTraceProc *proc in
 Procedure to call for each command that is executed.  See below for
 details on the calling sequence.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIobjProc\fR or \fIproc\fR.
 .AP Tcl_CmdObjTraceDeleteProc *deleteProc in
 Procedure to call when the trace is deleted.  See below for details of
@@ -66,7 +66,7 @@ interpreter.
 .PP
 .CS
 typedef int \fBTcl_CmdObjTraceProc\fR(
-        \fBClientData\fR \fIclientData\fR,
+        \fBvoid *\fR \fIclientData\fR,
         \fBTcl_Interp\fR* \fIinterp\fR,
         int \fIlevel\fR,
         const char *\fIcommand\fR,
@@ -77,7 +77,7 @@ typedef int \fBTcl_CmdObjTraceProc\fR(
 .PP
 The \fIclientData\fR and \fIinterp\fR parameters are copies of the
 corresponding arguments given to \fBTcl_CreateTrace\fR.
-\fIClientData\fR typically points to an application-specific data
+\fIclientData\fR typically points to an application-specific data
 structure that describes what to do when \fIobjProc\fR is invoked.  The
 \fIlevel\fR parameter gives the nesting level of the command (1 for
 top-level commands passed to \fBTcl_Eval\fR by the application, 2 for
@@ -144,7 +144,7 @@ When \fBTcl_DeleteTrace\fR is called, the interpreter invokes the
 .PP
 .CS
 typedef void \fBTcl_CmdObjTraceDeleteProc\fR(
-        \fBClientData\fR \fIclientData\fR);
+        \fBvoid *\fR \fIclientData\fR);
 .CE
 .PP
 The \fIclientData\fR parameter will be the same as the
@@ -160,12 +160,12 @@ match the type \fBTcl_CmdTraceProc\fR:
 .PP
 .CS
 typedef void \fBTcl_CmdTraceProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         int \fIlevel\fR,
         char *\fIcommand\fR,
         Tcl_CmdProc *\fIcmdProc\fR,
-        ClientData \fIcmdClientData\fR,
+        void *\fIcmdClientData\fR,
         int \fIargc\fR,
         const char *\fIargv\fR[]);
 .CE

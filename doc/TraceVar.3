@@ -24,13 +24,13 @@ int
 .sp
 \fBTcl_UntraceVar2(\fIinterp, name1, name2, flags, proc, clientData\fB)\fR
 .sp
-ClientData
+void *
 \fBTcl_VarTraceInfo(\fIinterp, varName, flags, proc, prevClientData\fB)\fR
 .sp
-ClientData
+void *
 \fBTcl_VarTraceInfo2(\fIinterp, name1, name2, flags, proc, prevClientData\fB)\fR
 .SH ARGUMENTS
-.AS Tcl_VarTraceProc prevClientData
+.AS void *prevClientData
 .AP Tcl_Interp *interp in
 Interpreter containing variable.
 .AP "const char" *varName in
@@ -46,7 +46,7 @@ Not all flags are used by all
 procedures.  See below for more information.
 .AP Tcl_VarTraceProc *proc in
 Procedure to invoke whenever one of the traced operations occurs.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
 .AP "const char" *name1 in
 Name of scalar or array variable (without array index).
@@ -54,7 +54,7 @@ Name of scalar or array variable (without array index).
 For a trace on an element of an array, gives the index of the
 element.  For traces on scalar variables or on whole arrays,
 is NULL.
-.AP ClientData prevClientData in
+.AP void *prevClientData in
 If non-NULL, gives last value returned by \fBTcl_VarTraceInfo\fR or
 \fBTcl_VarTraceInfo2\fR, so this call will return information about
 next trace.  If NULL, this call will return information about first
@@ -124,7 +124,7 @@ It should have arguments and result that match the type
 .PP
 .CS
 typedef char *\fBTcl_VarTraceProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         char *\fIname1\fR,
         char *\fIname2\fR,
@@ -134,7 +134,7 @@ typedef char *\fBTcl_VarTraceProc\fR(
 The \fIclientData\fR and \fIinterp\fR parameters will
 have the same values as those passed to \fBTcl_TraceVar\fR when the
 trace was created.
-\fIClientData\fR typically points to an application-specific
+\fIclientData\fR typically points to an application-specific
 data structure that describes what to do when \fIproc\fR
 is invoked.
 \fIName1\fR and \fIname2\fR give the name of the traced variable

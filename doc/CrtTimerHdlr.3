@@ -24,7 +24,7 @@ Tcl_TimerToken
 How many milliseconds to wait before invoking \fIproc\fR.
 .AP Tcl_TimerProc *proc in
 Procedure to invoke after \fImilliseconds\fR have elapsed.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
 .AP Tcl_TimerToken token in
 Token for previously created timer handler (the return value
@@ -51,7 +51,7 @@ the type \fBTcl_TimerProc\fR:
 .PP
 .CS
 typedef void \fBTcl_TimerProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 The \fIclientData\fR parameter to \fIproc\fR is a

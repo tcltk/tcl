@@ -30,7 +30,7 @@ Tcl_HashEntry *
 Tcl_HashEntry *
 \fBTcl_FindHashEntry\fR(\fItablePtr, key\fR)
 .sp
-ClientData
+void *
 \fBTcl_GetHashValue\fR(\fIentryPtr\fR)
 .sp
 \fBTcl_SetHashValue\fR(\fIentryPtr, value\fR)
@@ -66,9 +66,8 @@ The word at \fI*newPtr\fR is set to 1 if a new entry was created
 and 0 if there was already an entry for \fIkey\fR.
 .AP Tcl_HashEntry *entryPtr in
 Pointer to hash table entry.
-.AP ClientData value in
-New value to assign to hash table entry.  Need not have type
-ClientData, but must fit in same space as ClientData.
+.AP void *value in
+New value to assign to hash table entry.
 .AP Tcl_HashSearch *searchPtr in
 Pointer to record to use to keep track of progress in enumerating
 all the entries in a hash table.
@@ -186,11 +185,6 @@ instead, it returns NULL as result.
 .PP
 \fBTcl_GetHashValue\fR and \fBTcl_SetHashValue\fR are used to
 read and write an entry's value, respectively.
-Values are stored and retrieved as type
-.QW ClientData ,
-which is
-large enough to hold a pointer value.  On almost all machines this is
-large enough to hold an integer value too.
 .PP
 \fBTcl_GetHashKey\fR returns the key for a given hash table entry,
 either as a pointer to a string, a one-word

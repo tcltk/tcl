@@ -20,7 +20,7 @@ int
 int
 \fBTcl_FSUnregister\fR(\fIfsPtr\fR)
 .sp
-ClientData
+void *
 \fBTcl_FSData\fR(\fIfsPtr\fR)
 .sp
 void
@@ -125,7 +125,7 @@ Tcl_Obj *
 int
 \fBTcl_FSConvertToPathType\fR(\fIinterp, pathPtr\fR)
 .sp
-ClientData
+void *
 \fBTcl_FSGetInternalRep\fR(\fIpathPtr, fsPtr\fR)
 .sp
 Tcl_Obj *
@@ -212,7 +212,7 @@ this structure will be returned. This parameter may be NULL.
 .AP Tcl_Interp *interp in
 Interpreter to use either for results, evaluation, or reporting error
 messages.
-.AP ClientData clientData in
+.AP void *clientData in
 The native description of the path value to create.
 .AP Tcl_Obj *firstPtr in
 The first of two path values to compare. The value may be converted
@@ -249,7 +249,7 @@ Name of a procedure to look up in the file's symbol table
 Filled with the init function for this code.
 .AP Tcl_PackageInitProc **proc2Ptr out
 Filled with the safe-init function for this code.
-.AP ClientData *clientDataPtr out
+.AP void **clientDataPtr out
 Filled with the clientData value to pass to this code's unload
 function when it is called.
 .AP Tcl_LoadHandle *loadHandlePtr out
@@ -841,7 +841,7 @@ general that is not a good thing to do). \fBTCL_OK\fR will be returned.
 the list of known filesystems, if it is known, and returns \fBTCL_OK\fR. If
 the filesystem is not currently registered, \fBTCL_ERROR\fR is returned.
 .PP
-\fBTcl_FSData\fR will return the ClientData associated with the given
+\fBTcl_FSData\fR will return the clientData associated with the given
 filesystem, if that filesystem is registered. Otherwise it will
 return NULL.
 .PP
@@ -1018,7 +1018,7 @@ Tcl's internal list of known filesystems.
 .CS
 typedef int \fBTcl_FSPathInFilesystemProc\fR(
         Tcl_Obj *\fIpathPtr\fR,
-        ClientData *\fIclientDataPtr\fR);
+        void **\fIclientDataPtr\fR);
 .CE
 .SS DUPINTERNALREPPROC
 .PP
@@ -1028,8 +1028,8 @@ simply not copy the internal representation, which may then need to be
 regenerated later.
 .PP
 .CS
-typedef ClientData \fBTcl_FSDupInternalRepProc\fR(
-        ClientData \fIclientData\fR);
+typedef void *\fBTcl_FSDupInternalRepProc\fR(
+        void *\fIclientData\fR);
 .CE
 .SS FREEINTERNALREPPROC
 Free the internal representation. This must be implemented if internal
@@ -1038,7 +1038,7 @@ internal representation is generated), but may otherwise be NULL.
 .PP
 .CS
 typedef void \fBTcl_FSFreeInternalRepProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .SS INTERNALTONORMALIZEDPROC
 .PP
@@ -1049,7 +1049,7 @@ representation is the normalized path.
 .PP
 .CS
 typedef Tcl_Obj *\fBTcl_FSInternalToNormalizedProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .SS CREATEINTERNALREPPROC
 .PP
@@ -1060,7 +1060,7 @@ the \fITcl_FSPathInFilesystemProc\fR for this filesystem always
 immediately creates an internal representation for paths it accepts.
 .PP
 .CS
-typedef ClientData \fBTcl_FSCreateInternalRepProc\fR(
+typedef void *\fBTcl_FSCreateInternalRepProc\fR(
         Tcl_Obj *\fIpathPtr\fR);
 .CE
 .SS NORMALIZEPATHPROC

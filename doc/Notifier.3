@@ -38,7 +38,7 @@ Tcl_ThreadId
 void
 \fBTcl_DeleteEvents\fR(\fIdeleteProc, clientData\fR)
 .sp
-ClientData
+void *
 \fBTcl_InitNotifier\fR()
 .sp
 void
@@ -78,7 +78,7 @@ Procedure to invoke to prepare for event wait in \fBTcl_DoOneEvent\fR.
 Procedure for \fBTcl_DoOneEvent\fR to invoke after waiting for
 events.  Checks to see if any events have occurred and, if so,
 queues them.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIsetupProc\fR, \fIcheckProc\fR, or
 \fIdeleteProc\fR.
 .AP "const Tcl_Time" *timePtr in
@@ -230,7 +230,7 @@ the event source.
 .PP
 .CS
 typedef void \fBTcl_EventSetupProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         int \fIflags\fR);
 .CE
 .PP
@@ -308,7 +308,7 @@ following prototype:
 .PP
 .CS
 typedef void \fBTcl_EventCheckProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         int \fIflags\fR);
 .CE
 .PP
@@ -428,7 +428,7 @@ queue.  \fIProc\fR should match the following prototype:
 .CS
 typedef int \fBTcl_EventDeleteProc\fR(
         Tcl_Event *\fIevPtr\fR,
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 The \fIclientData\fR argument will be the same as the \fIclientData\fR
