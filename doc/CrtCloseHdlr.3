@@ -26,7 +26,7 @@ void
 The channel for which to create or delete a close callback.
 .AP Tcl_CloseProc *proc in
 The procedure to call as the callback.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
 .BE
 .SH DESCRIPTION
@@ -38,7 +38,7 @@ Arbitrary one-word value to pass to \fIproc\fR.
 .PP
 .CS
 typedef void \fBTcl_CloseProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 The \fIclientData\fR is the same as the value provided in the call to

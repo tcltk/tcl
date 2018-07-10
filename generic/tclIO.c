@@ -4471,7 +4471,7 @@ Tcl_Gets(
 
     TclNewObj(objPtr);
     charsStored = Tcl_GetsObj(chan, objPtr);
-    if (charsStored > 0) {
+    if (charsStored + 1 > 1) {
 	TclDStringAppendObj(lineRead, objPtr);
     }
     TclDecrRefCount(objPtr);
@@ -4660,7 +4660,7 @@ Tcl_GetsObj(
 		     */
 
 		    if (eol >= dstEnd) {
-			int offset;
+			size_t offset;
 
 			if (eol != eof) {
 			    offset = eol - objPtr->bytes;

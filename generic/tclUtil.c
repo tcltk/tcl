@@ -1435,7 +1435,7 @@ TclConvertElement(
 	}
 	*p = '}';
 	p++;
-	return p - dst;
+	return (size_t)(p - dst);
     }
 
     /* conversion == CONVERT_ESCAPE or CONVERT_MASK */
@@ -1498,7 +1498,7 @@ TclConvertElement(
 	    continue;
 	case '\0':
 	    if (length == (size_t)-1) {
-		return p - dst;
+		return (size_t)(p - dst);
 	    }
 
 	    /*
@@ -1514,7 +1514,7 @@ TclConvertElement(
 	*p = *src;
 	p++;
     }
-    return p - dst;
+    return (size_t)(p - dst);
 }
 
 /*

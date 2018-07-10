@@ -21,7 +21,7 @@ Tcl_Preserve, Tcl_Release, Tcl_EventuallyFree \- avoid freeing storage while it 
 \fBTcl_EventuallyFree\fR(\fIclientData, freeProc\fR)
 .SH ARGUMENTS
 .AS Tcl_FreeProc clientData
-.AP ClientData clientData in
+.AP void *clientData in
 Token describing structure to be freed or reallocated.  Usually a pointer
 to memory for structure.
 .AP Tcl_FreeProc *freeProc in

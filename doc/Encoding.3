@@ -308,7 +308,7 @@ typedef struct Tcl_EncodingType {
     Tcl_EncodingConvertProc *\fItoUtfProc\fR;
     Tcl_EncodingConvertProc *\fIfromUtfProc\fR;
     Tcl_EncodingFreeProc *\fIfreeProc\fR;
-    ClientData \fIclientData\fR;
+    void *\fIclientData\fR;
     int \fInullSize\fR;
 } \fBTcl_EncodingType\fR;
 .CE
@@ -339,7 +339,7 @@ type \fBTcl_EncodingConvertProc\fR:
 .PP
 .CS
 typedef int \fBTcl_EncodingConvertProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         const char *\fIsrc\fR,
         int \fIsrcLen\fR,
         int \fIflags\fR,
@@ -371,7 +371,7 @@ The callback procedure \fIfreeProc\fR, if non-NULL, should match the type
 .PP
 .CS
 typedef void \fBTcl_EncodingFreeProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 This \fIfreeProc\fR function is called when the encoding is deleted.  The
