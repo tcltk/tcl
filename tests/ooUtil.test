@@ -286,6 +286,51 @@ test ooUtil-3.2 {TIP 478: class variables} -setup {
 } -cleanup {
     parent destroy
 } -result {124 125 126 127 128 129}
+test ooUtil-3.3 {TIP 478: class initialisation} -setup {
+    oo::class create parent
+    catch {rename ::foobar-3.3 {}}
+} -body {
+    oo::class create ::cls {
+	superclass parent
+	initialize {
+	    proc foobar-3.3 {} {return ok}
+	}
+	method calls {} {
+	    list [catch foobar-3.3 msg] $msg \
+		[namespace eval [info object namespace [self class]] foobar-3.3]
+	}
+    }
+    [cls new] calls
+} -cleanup {
+    parent destroy
+} -result {1 {invalid command name "foobar-3.3"} ok}
+test ooUtil-3.4 {TIP 478: class initialisation} -setup {
+    oo::class create parent
+    catch {rename ::appendToResultVar {}}
+    proc ::appendToResultVar args {
+	lappend ::result {*}$args
+    }
+    set result {}
+} -body {
+    trace add execution oo::define::initialise enter appendToResultVar
+    oo::class create ::cls {
+	superclass parent
+	initialize {proc xyzzy {} {}}
+    }
+    return $result
+} -cleanup {
+    catch {
+	trace remove execution oo::define::initialise enter appendToResultVar
+    }
+    rename ::appendToResultVar {}
+    parent destroy
+} -result {{initialize {proc xyzzy {} {}}} enter}
+test ooUtil-3.5 {TIP 478: class initialisation} -body {
+    oo::define oo::object {
+	::list [::namespace which initialise] [::namespace which initialize] \
+	     [::namespace origin initialise] [::namespace origin initialize]
+    }
+} -result {::oo::define::initialise ::oo::define::initialize ::oo::define::initialise ::oo::define::initialise}
 
 test ooUtil-4.1 {TIP 478: singleton} -setup {
     oo::class create parent
