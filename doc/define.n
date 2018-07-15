@@ -132,6 +132,8 @@ below), this command creates private forwarded methods.
 .RE
 .TP
 \fBinitialise\fI script\fR
+.TP
+\fBinitialize\fI script\fR
 .VS TIP478
 This evaluates \fIscript\fR in a context which supports local variables and
 where the current namespace is the instance namespace of the class object
