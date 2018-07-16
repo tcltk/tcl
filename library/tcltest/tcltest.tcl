@@ -731,6 +731,15 @@ namespace eval tcltest {
     } AcceptBoolean singleProcess 
 
     proc AcceptTemporaryDirectory { directory } {
+	if {$directory eq ""} {
+	    if {[info exists ::env(TEMP)] && [file exists $::env(TEMP)]} {
+		return $::env(TEMP)
+	    } elseif {[file exists /tmp] && [file writable /tmp]} {
+		return /tmp
+	    } else {
+		set directory [workingDirectory]
+	    }
+	}
 	set directory [AcceptAbsolutePath $directory]
 	if {![file exists $directory]} {
 	    file mkdir $directory
@@ -748,7 +757,7 @@ namespace eval tcltest {
     }
 
     # Directory where files should be created
-    Option -tmpdir [workingDirectory] {
+    Option -tmpdir [AcceptTemporaryDirectory ""] {
 	Save temporary files in the specified directory.
     } AcceptTemporaryDirectory temporaryDirectory
     trace add variable Option(-tmpdir) write \
