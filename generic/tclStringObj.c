@@ -3065,24 +3065,22 @@ TclStringCat(
 	 * Result will be pure byte array. Pre-size it
 	 */
 
+	int numBytes;
 	ov = objv;
 	oc = objc;
 	do {
 	    Tcl_Obj *objPtr = *ov++;
 
-	    if (objPtr->bytes == NULL) {
-		int numBytes;
+	    Tcl_GetByteArrayFromObj(objPtr, &numBytes); /* PANIC? */
 
-		Tcl_GetByteArrayFromObj(objPtr, &numBytes); /* PANIC? */
-		if (numBytes) {
-		    last = objc - oc;
-		    if (length == 0) {
-			first = last;
-		    } else if (numBytes > INT_MAX - length) {
-			goto overflow;
-		    }
-		    length += numBytes;
+	    if (numBytes) {
+		last = objc - oc;
+		if (length == 0) {
+		    first = last;
+		} else if (numBytes > INT_MAX - length) {
+		    goto overflow;
 		}
+		length += numBytes;
 	    }
 	} while (--oc);
     } else if (allowUniChar && requestUniChar) {
