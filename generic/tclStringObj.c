@@ -1938,6 +1938,10 @@ Tcl_AppendFormatToObj(
 	width = 0;
 	if (isdigit(UCHAR(ch))) {
 	    width = strtoul(format, &end, 10);
+	    if (width < 0) {
+		msg = overflow;
+		goto errorMsg;
+	    }
 	    format = end;
 	    step = Tcl_UtfToUniChar(format, &ch);
 	} else if (ch == '*') {
