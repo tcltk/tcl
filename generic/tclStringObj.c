@@ -1878,6 +1878,7 @@ Tcl_AppendFormatToObj(
 	    width = strtoul(format, &end, 10);
 	    if (width < 0) {
 		msg = overflow;
+		errCode = "OVERFLOW";
 		goto errorMsg;
 	    }
 	    format = end;
