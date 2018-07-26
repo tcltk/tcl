@@ -1848,6 +1848,11 @@ Tcl_AppendFormatToObj(
 	width = 0;
 	if (isdigit(UCHAR(ch))) {
 	    width = strtoul(format, &end, 10);
+	    if (width < 0) {
+		msg = overflow;
+		errCode = "OVERFLOW";
+		goto errorMsg;
+	    }
 	    format = end;
 	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
@@ -3001,15 +3006,21 @@ TclStringCat(
 	 * Result will be pure byte array. Pre-size it
 	 */
 
+	int numBytes;
 	ov = objv;
 	oc = objc;
 	do {
 	    Tcl_Obj *objPtr = *ov++;
 
-	    if (objPtr->bytes == NULL) {
-		int numBytes;
+	    /*
+	     * Every argument is either a bytearray with a ("pure")
+	     * value we know we can safely use, or it is an empty string.
+	     * We don't need to count bytes for the empty strings.
+	     */
 
+	    if (TclIsPureByteArray(objPtr)) {
 		Tcl_GetByteArrayFromObj(objPtr, &numBytes); /* PANIC? */
+
 		if (numBytes) {
 		    last = objc - oc;
 		    if (length == 0) {
@@ -3161,7 +3172,13 @@ TclStringCat(
 	while (objc--) {
 	    Tcl_Obj *objPtr = *objv++;
 
-	    if (objPtr->bytes == NULL) {
+	    /*
+	     * Every argument is either a bytearray with a ("pure")
+	     * value we know we can safely use, or it is an empty string.
+	     * We don't need to copy bytes from the empty strings.
+	     */
+
+	    if (TclIsPureByteArray(objPtr)) {
 		int more;
 		unsigned char *src = Tcl_GetByteArrayFromObj(objPtr, &more);
 		memcpy(dst, src, (size_t) more);
