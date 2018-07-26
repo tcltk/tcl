@@ -337,17 +337,18 @@ Tcl_Main(
 				 * function to call after most initialization
 				 * but before starting to execute commands. */
 {
-    Tcl_Obj *path, *resultPtr, *argvPtr, *commandPtr = NULL;
-    CONST char *encodingName = NULL;
+    Tcl_Obj *path, *resultPtr, *argvPtr, 
+	*commandPtr = NULL /* given or input script or command */;
+    CONST char *argv0 = argv[0], *encodingName = NULL;
     PromptType prompt = PROMPT_START;
-    int code, length, tty, exitCode = 0;
+    int code, interact = 0, length, tty, exitCode = 0;
     Tcl_Channel inChannel, outChannel, errChannel;
     Tcl_Interp *interp;
     Tcl_DString appName;
 
     interp = Tcl_CreateInterp();
     TclpSetInitialEncodings();
-    TclpFindExecutable(argv[0]);
+    TclpFindExecutable(argv0);
 
     Tcl_InitMemory(interp);
 
@@ -357,30 +358,99 @@ Tcl_Main(
      * encoding.
      */
 
-    if (NULL == Tcl_GetStartupScript(NULL)) {
-
+    path = Tcl_GetStartupScript(&encodingName);
+    argv++; argc--;
+    if (path == NULL) {
 	/*
-	 * Check whether first 3 args (argv[1] - argv[3]) look like
-	 * 	-encoding ENCODING FILENAME
-	 * or like
-	 * 	FILENAME
+	 * Check the enhanced syntax:
+	 * 	?-c COMMAND? ?-i? ?-encoding ENCODING? ?FILENAME|--? ?args?
 	 */
 
-	if ((argc > 3) && (0 == strcmp("-encoding", argv[1]))
-		&& ('-' != argv[3][0])) {
-	    Tcl_SetStartupScript(Tcl_NewStringObj(argv[3], -1), argv[2]);
-	    argc -= 3;
-	    argv += 3;
-	} else if ((argc > 1) && ('-' != argv[1][0])) {
-	    Tcl_SetStartupScript(Tcl_NewStringObj(argv[1], -1), NULL);
+	while (argc) {
+	    const char *opt = argv[0];
+	#if defined __WIN32__
+	    /* /?   - windows usage wrapper (to -h) */
+	    if (*opt == '/' && opt[1] == '?' && opt[2] == '\0') {
+		opt = "-h";
+	    }
+	#endif
+	    if (*opt != '-') {
+	    	break;
+	    }
+	    if (argc >= 2) {
+		/* -c   - execute the script or the command */
+		if (commandPtr == NULL && opt[1] == 'c' && opt[2] == '\0') {
+		    commandPtr = Tcl_NewStringObj(argv[1], -1);
+		    Tcl_IncrRefCount(commandPtr);
+		    argc -= 2;
+		    argv += 2;
+		    continue;
+		}
+		/* -e   - encoding of the script to source */
+		if ( (opt[1] == 'e' && (opt[2] == '\0' || strcmp("-encoding", opt) == 0))
+		  || (opt[1] == '-' && strcmp("--encoding", opt) == 0)) {
+		    encodingName = argv[1];
+		    argc -= 2;
+		    argv += 2;
+		    continue;
+		}
+	    }
+	    /* -i   - enter interactive mode after executing the command or the script */
+	    if ((opt[1] == 'i' && opt[2] == '\0')
+		    || (opt[1] == '-' && strcmp("--interactive", opt) == 0)) {
+		interact = 1;
+		argc--;
+		argv++;
+		continue;
+	    }
+	    /* --   - stop arguments processing (and no file), following all are args */
+	    if ((opt[1] == '-' && opt[2] == '\0')) {
+		argc--;
+		argv++;
+		goto start;
+	    }
+	    /* -v   - print version (and exit if not interactive) */
+	    if ((opt[1] == 'v' && opt[2] == '\0')
+		    || (opt[1] == '-' && strcmp("--version", opt) == 0)) {
+		if (commandPtr) {Tcl_DecrRefCount(commandPtr);};
+		commandPtr = Tcl_NewStringObj(
+		  "::puts [info patchlevel]", -1);
+		Tcl_IncrRefCount(commandPtr);
+		argc = 0;
+		goto start;
+	    }
+	    /* -h   - print syntax (and exit if not interactive) */
+	    if ((opt[1] == 'h' && opt[2] == '\0')
+		    || (opt[1] == '-' && strcmp("--help", opt) == 0)) {
+		if (commandPtr) {Tcl_DecrRefCount(commandPtr);};
+		commandPtr = Tcl_NewStringObj(
+		  "::puts \"[file tail $::argv0] ?-c command? ?-i?"
+		    " ?-e|--encoding name? ?fileName|--? ?arg arg ...?\n"
+		  "[file tail $::argv0] ?-v|--version? ?-h|--help?\";", -1);
+		Tcl_IncrRefCount(commandPtr);
+		argc = 0;
+		goto start;
+	    }
+	    /* default - unknown argument (filename?) */
+	    break;
+	}
+
+	/*
+	 * Check whether first args look like FILENAME (avoid if starts with '-'
+	 * for backwards-compatibility reasons).
+	 */
+
+	if ((argc >= 1) && (*argv[0] != '-')) {
+	    path = Tcl_NewStringObj(argv[0], -1);
+	    Tcl_SetStartupScript(path, encodingName);
 	    argc--;
 	    argv++;
 	}
     }
 
-    path = Tcl_GetStartupScript(&encodingName);
+start:
     if (path == NULL) {
-	Tcl_ExternalToUtfDString(NULL, argv[0], -1, &appName);
+	Tcl_ExternalToUtfDString(NULL, argv0, -1, &appName);
     } else {
 	CONST char *pathName = Tcl_GetStringFromObj(path, &length);
 	Tcl_ExternalToUtfDString(NULL, pathName, length, &appName);
@@ -389,8 +459,6 @@ Tcl_Main(
     }
     Tcl_SetVar(interp, "argv0", Tcl_DStringValue(&appName), TCL_GLOBAL_ONLY);
     Tcl_DStringFree(&appName);
-    argc--;
-    argv++;
 
     Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
 
@@ -409,7 +477,8 @@ Tcl_Main(
      */
 
     tty = isatty(0);
-    Tcl_SetVar(interp, "tcl_interactive", ((path == NULL) && tty) ? "1" : "0",
+    interact |= ((commandPtr == NULL) && (path == NULL) && tty);
+    Tcl_SetVar2Ex(interp, "tcl_interactive", NULL, Tcl_NewIntObj(interact),
 	    TCL_GLOBAL_ONLY);
 
     /*
@@ -426,10 +495,22 @@ Tcl_Main(
 	    Tcl_WriteChars(errChannel, "\n", 1);
 	}
     }
-    if (Tcl_InterpDeleted(interp)) {
+    if (Tcl_InterpDeleted(interp) || Tcl_LimitExceeded(interp)) {
 	goto done;
     }
-    if (Tcl_LimitExceeded(interp)) {
+
+    /*
+     * If a (pre)script was specified with "-c" then just execute that here.
+     */
+
+    if (commandPtr != NULL) {
+	code = Tcl_EvalObjEx(interp, commandPtr, 0);
+	if (code != TCL_OK) {
+	    goto exit_error;
+	}
+    }
+
+    if (Tcl_InterpDeleted(interp) || Tcl_LimitExceeded(interp)) {
 	goto done;
     }
 
@@ -442,6 +523,9 @@ Tcl_Main(
     if (path != NULL) {
 	code = Tcl_FSEvalFileEx(interp, path, encodingName);
 	if (code != TCL_OK) {
+
+exit_error:
+
 	    errChannel = Tcl_GetStdChannel(TCL_STDERR);
 	    if (errChannel) {
 		Tcl_Obj *options = Tcl_GetReturnOptions(interp, code);
@@ -460,7 +544,27 @@ Tcl_Main(
 	    }
 	    exitCode = 1;
 	}
+    }
+
+    /*
+     * If not interactive, exit
+     */
+    if (!interact) {
+	if (exitCode == 0 && commandPtr != NULL) {
+	    /* output the last result if not empty (enhanced by -c syntax) */
+	    Tcl_Obj *res = Tcl_GetObjResult(interp);
+	    if (Tcl_GetString(res) && res->length) {
+		outChannel = Tcl_GetStdChannel(TCL_STDOUT);
+		Tcl_WriteObj(outChannel, res);
+		Tcl_WriteChars(outChannel, "\n", 1);
+	    }
+	}
 	goto done;
+    }
+    exitCode = 0;
+    if (commandPtr != NULL) {
+	Tcl_DecrRefCount(commandPtr);
+	commandPtr = NULL;
     }
 
     /*
