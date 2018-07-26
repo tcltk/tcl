@@ -3071,16 +3071,24 @@ TclStringCat(
 	do {
 	    Tcl_Obj *objPtr = *ov++;
 
-	    Tcl_GetByteArrayFromObj(objPtr, &numBytes); /* PANIC? */
+	    /*
+	     * Every argument is either a bytearray with a ("pure")
+	     * value we know we can safely use, or it is an empty string.
+	     * We don't need to count bytes for the empty strings.
+	     */
 
-	    if (numBytes) {
-		last = objc - oc;
-		if (length == 0) {
-		    first = last;
-		} else if (numBytes > INT_MAX - length) {
-		    goto overflow;
+	    if (TclIsPureByteArray(objPtr)) {
+		Tcl_GetByteArrayFromObj(objPtr, &numBytes); /* PANIC? */
+
+		if (numBytes) {
+		    last = objc - oc;
+		    if (length == 0) {
+			first = last;
+		    } else if (numBytes > INT_MAX - length) {
+			goto overflow;
+		    }
+		    length += numBytes;
 		}
-		length += numBytes;
 	    }
 	} while (--oc);
     } else if (allowUniChar && requestUniChar) {
@@ -3223,7 +3231,13 @@ TclStringCat(
 	while (objc--) {
 	    Tcl_Obj *objPtr = *objv++;
 
-	    if (objPtr->bytes == NULL) {
+	    /*
+	     * Every argument is either a bytearray with a ("pure")
+	     * value we know we can safely use, or it is an empty string.
+	     * We don't need to copy bytes from the empty strings.
+	     */
+
+	    if (TclIsPureByteArray(objPtr)) {
 		int more;
 		unsigned char *src = Tcl_GetByteArrayFromObj(objPtr, &more);
 		memcpy(dst, src, (size_t) more);
