@@ -252,7 +252,7 @@ typedef struct {
 struct ForwardParamInput {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
     char *buf;			/* O: Where to store the read bytes */
-    int toRead;			/* I: #bytes to read,
+    size_t toRead;			/* I: #bytes to read,
 				 * O: #bytes actually read */
 };
 struct ForwardParamOutput {
@@ -1259,7 +1259,7 @@ ReflectInput(
 {
     ReflectedChannel *rcPtr = clientData;
     Tcl_Obj *toReadObj;
-    int bytec;			/* Number of returned bytes */
+    size_t bytec;			/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     Tcl_Obj *resObj;		/* Result data for 'read' */
 
@@ -1287,7 +1287,7 @@ ReflectInput(
 		PassReceivedError(rcPtr->chan, &p);
 		*errorCodePtr = EINVAL;
 	    }
-	    p.input.toRead = -1;
+	    p.input.toRead = (size_t)-1;
 	} else {
 	    *errorCodePtr = EOK;
 	}
@@ -1316,17 +1316,17 @@ ReflectInput(
         goto invalid;
     }
 
-    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+    bytev = TclGetByteArrayFromObj(resObj, &bytec);
 
-    if (toRead < bytec) {
+    if ((size_t)toRead < bytec) {
 	SetChannelErrorStr(rcPtr->chan, msg_read_toomuch);
-        goto invalid;
+	goto invalid;
     }
 
     *errorCodePtr = EOK;
 
-    if (bytec > 0) {
-	memcpy(buf, bytev, (size_t) bytec);
+    if (bytec + 1 > 1) {
+	memcpy(buf, bytev, bytec);
     }
 
  stop:
@@ -2992,23 +2992,23 @@ ForwardProc(
 	    } else {
 		ForwardSetObjError(paramPtr, resObj);
 	    }
-	    paramPtr->input.toRead = -1;
+	    paramPtr->input.toRead = (size_t)-1;
 	} else {
 	    /*
 	     * Process a regular result.
 	     */
 
-	    int bytec;			/* Number of returned bytes */
+	    size_t bytec;			/* Number of returned bytes */
 	    unsigned char *bytev;	/* Array of returned bytes */
 
-	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+	    bytev = TclGetByteArrayFromObj(resObj, &bytec);
 
 	    if (paramPtr->input.toRead < bytec) {
 		ForwardSetStaticError(paramPtr, msg_read_toomuch);
-		paramPtr->input.toRead = -1;
+		paramPtr->input.toRead = (size_t)-1;
 	    } else {
-		if (bytec > 0) {
-		    memcpy(paramPtr->input.buf, bytev, (size_t) bytec);
+		if (bytec + 1 > 1) {
+		    memcpy(paramPtr->input.buf, bytev, bytec);
 		}
 		paramPtr->input.toRead = bytec;
 	    }
