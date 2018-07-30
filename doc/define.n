@@ -443,7 +443,7 @@ defining new operations whose names start with a hyphen.
 .SH EXAMPLES
 This example demonstrates how to use both forms of the \fBoo::define\fR and
 \fBoo::objdefine\fR commands (they work in the same way), as well as
-illustrating four of the subcommands of them.
+illustrating four of their subcommands.
 .PP
 .CS
 oo::class create c

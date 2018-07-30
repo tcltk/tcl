@@ -488,7 +488,7 @@ TclCheckEmptyString(
 	Tcl_DictObjSize(NULL, objPtr, &length);
 	return length == 0;
     }
-    
+
     if (objPtr->bytes == NULL) {
 	return TCL_EMPTYSTRING_UNKNOWN;
     }
@@ -1827,6 +1827,11 @@ Tcl_AppendFormatToObj(
 	width = 0;
 	if (isdigit(UCHAR(ch))) {
 	    width = strtoul(format, &end, 10);
+	    if (width < 0) {
+		msg = overflow;
+		errCode = "OVERFLOW";
+		goto errorMsg;
+	    }
 	    format = end;
 	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
@@ -2981,15 +2986,21 @@ TclStringCat(
 	 * Result will be pure byte array. Pre-size it
 	 */
 
+	size_t numBytes;
 	ov = objv;
 	oc = objc;
 	do {
 	    Tcl_Obj *objPtr = *ov++;
 
-	    if (objPtr->bytes == NULL) {
-		size_t numBytes;
+	    /*
+	     * Every argument is either a bytearray with a ("pure")
+	     * value we know we can safely use, or it is an empty string.
+	     * We don't need to count bytes for the empty strings.
+	     */
 
+	    if (TclIsPureByteArray(objPtr)) {
 		TclGetByteArrayFromObj(objPtr, &numBytes); /* PANIC? */
+
 		if (numBytes) {
 		    last = objc - oc;
 		    if (length == 0) {
@@ -3139,7 +3150,13 @@ TclStringCat(
 	while (objc--) {
 	    Tcl_Obj *objPtr = *objv++;
 
-	    if (objPtr->bytes == NULL) {
+	    /*
+	     * Every argument is either a bytearray with a ("pure")
+	     * value we know we can safely use, or it is an empty string.
+	     * We don't need to copy bytes from the empty strings.
+	     */
+
+	    if (TclIsPureByteArray(objPtr)) {
 		size_t more;
 		unsigned char *src = TclGetByteArrayFromObj(objPtr, &more);
 		memcpy(dst, src, more);
@@ -3471,7 +3488,7 @@ TclStringFirst(
 	start = 0;
     }
     if (ln == 0) {
-	/* We don't find empty substrings.  Bizarre! 
+	/* We don't find empty substrings.  Bizarre!
 	 * Whenever this routine is turned into a proper substring
 	 * finder, change to `return start` after limits imposed. */
 	return -1;
@@ -3864,7 +3881,7 @@ TclStringReplace(
 	    result = Tcl_NewByteArrayObj(NULL, numBytes - count + newBytes);
 								/* PANIC? */
 	    Tcl_SetByteArrayLength(result, 0);
-	    TclAppendBytesToByteArray(result, bytes, first);	
+	    TclAppendBytesToByteArray(result, bytes, first);
 	    TclAppendBytesToByteArray(result, iBytes, newBytes);
 	    TclAppendBytesToByteArray(result, bytes + first + count,
 		    numBytes - count - first);
@@ -3886,7 +3903,7 @@ TclStringReplace(
 	Tcl_UniChar *ustring = TclGetUnicodeFromObj(objPtr, &numChars);
 
 	/* TODO: Is there an in-place option worth pursuing here? */
-	
+
 	result = Tcl_NewUnicodeObj(ustring, first);
 	if (insertPtr) {
 	    Tcl_AppendObjToObj(result, insertPtr);

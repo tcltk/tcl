@@ -2306,6 +2306,12 @@ test string-29.15.$noComp {string cat, efficiency} -setup {
     tcl::unsupported::representation [run {string cat $e $f $e $f [list x]}]
 } -match glob -result {*no string representation}
 }
+test string-30.1.1.$noComp {[Bug ba921a8d98]: string cat} {
+    run {string cat [set data [binary format a* hello]] [encoding convertto $data] [unset data]}
+} hellohello
+test string-30.1.2.$noComp {[Bug ba921a8d98]: inplace cat by subst (compiled to "strcat" instruction)} {
+    run {set x "[set data [binary format a* hello]][encoding convertto $data][unset data]"}
+} hellohello
 
 }
 
