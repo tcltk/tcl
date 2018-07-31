@@ -114,9 +114,9 @@ typedef struct ThreadSpecificData {
 
 static Tcl_ThreadDataKey dataKey;
 
-void PlatformEventsControl(FileHandler *filePtr, ThreadSpecificData *tsdPtr, int op, int isNew);
+static void PlatformEventsControl(FileHandler *filePtr, ThreadSpecificData *tsdPtr, int op, int isNew);
 static void PlatformEventsFinalize(void);
-void PlatformEventsInit(void);
+static void PlatformEventsInit(void);
 static int PlatformEventsTranslate(struct epoll_event *event);
 static int PlatformEventsWait(struct epoll_event *events, size_t numEvents, struct timeval *timePtr);
 
