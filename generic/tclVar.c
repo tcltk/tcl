@@ -2846,7 +2846,7 @@ ArrayObjNext(
     return donerc;
 }
 
-int
+static int
 ArrayForObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
