@@ -8462,7 +8462,7 @@ TclNRTailcallEval(
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
-    return TclNREvalObjv(interp, objc-1, objv+1, 0, NULL);
+    return TclNREvalObjv(interp, objc-1, objv+1, TCL_EVAL_NOERR, NULL);
 }
 
 int
