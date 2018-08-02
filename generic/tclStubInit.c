@@ -679,6 +679,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_get_long_long, /* 69 */
     TclBN_mp_set_long, /* 70 */
     TclBN_mp_get_long, /* 71 */
+    TclBN_mp_get_int, /* 72 */
 };
 
 static const TclStubHooks tclStubHooks = {
