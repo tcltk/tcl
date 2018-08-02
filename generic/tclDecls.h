@@ -3667,7 +3667,7 @@ extern const TclStubs *tclStubsPtr;
 #if defined(_WIN32) && defined(UNICODE)
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #   define Tcl_MainEx Tcl_MainExW
-    EXTERN void Tcl_MainExW(int argc, wchar_t **argv,
+    EXTERN TCL_NORETURN void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 
@@ -3815,7 +3815,7 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
 
-#if defined(TCL_USE_INT_RETURN) && !defined(BUILD_tcl)
+#if defined(TCL_8_COMPAT) && !defined(BUILD_tcl)
 #   ifdef USE_TCL_STUBS
 #	undef Tcl_Gets
 #	undef Tcl_GetsObj

@@ -1841,70 +1841,6 @@ TclOODefineMethodObjCmd(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOODefineMixinObjCmd --
- *
- *	Implementation of the "mixin" subcommand of the "oo::define" and
- *	"oo::objdefine" commands.
- *
- * ----------------------------------------------------------------------
- */
-
-int
-TclOODefineMixinObjCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    const int objc,
-    Tcl_Obj *const *objv)
-{
-    int isInstanceMixin = (clientData != NULL);
-    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    Class **mixins;
-    int i;
-
-    if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
-    if (!isInstanceMixin && !oPtr->classPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
-	return TCL_ERROR;
-    }
-    mixins = TclStackAlloc(interp, sizeof(Class *) * (objc-1));
-
-    for (i=1 ; i<objc ; i++) {
-	Class *clsPtr = GetClassInOuterContext(interp, objv[i],
-		"may only mix in classes");
-
-	if (clsPtr == NULL) {
-	    goto freeAndError;
-	}
-	if (!isInstanceMixin && TclOOIsReachable(oPtr->classPtr, clsPtr)) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "may not mix a class into itself", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "SELF_MIXIN", NULL);
-	    goto freeAndError;
-	}
-	mixins[i-1] = clsPtr;
-    }
-
-    if (isInstanceMixin) {
-	TclOOObjectSetMixins(oPtr, objc-1, mixins);
-    } else {
-	TclOOClassSetMixins(interp, oPtr->classPtr, objc-1, mixins);
-    }
-
-    TclStackFree(interp, mixins);
-    return TCL_OK;
-
-  freeAndError:
-    TclStackFree(interp, mixins);
-    return TCL_ERROR;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
  * TclOODefineRenameMethodObjCmd --
  *
  *	Implementation of the "renamemethod" subcommand of the "oo::define"
