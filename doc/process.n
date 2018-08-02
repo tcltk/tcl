@@ -24,11 +24,11 @@ Returns the list of subprocess PIDs.
 .TP
 \fB::tcl::process status\fR ?\fIswitches\fR? ?\fIpids\fR?
 .
-Returns a dictionary mapping subprocess PIDs to their respective status. If 
-\fIpids\fR is specified as a list of PIDs then the command only returns the 
-status of the matching subprocesses if they exist, and raises an error 
+Returns a dictionary mapping subprocess PIDs to their respective status. If
+\fIpids\fR is specified as a list of PIDs then the command only returns the
+status of the matching subprocesses if they exist, and raises an error
 otherwise. For active processes, the status is an empty value. For terminated
-processes, the status is a list with the following format: 
+processes, the status is a list with the following format:
 .QW "{code ?\fImsg errorCode\fR?}" ,
 where:
 .RS
@@ -45,7 +45,7 @@ is the human-readable error message,
 .
 uses the same format as the \fBerrorCode\fR global variable
 .RE
-Note that \fBmsg\fR and \fBerrorCode\fR are only present for abnormally 
+Note that \fBmsg\fR and \fBerrorCode\fR are only present for abnormally
 terminated processes (i.e. those where \fBcode\fR is nonzero). Under the hood
 this command calls \fBTcl_WaitPid\fR with the \fBWNOHANG\fR flag set for
 non-blocking behavior, unless the \fB\-wait\fR switch is set (see below).
