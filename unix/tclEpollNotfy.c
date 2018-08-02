@@ -88,7 +88,7 @@ typedef struct {
 
 LIST_HEAD(PlatformReadyFileHandlerList, FileHandler);
 typedef struct ThreadSpecificData {
-    FileHandler *triggerFilePtr; 
+    FileHandler *triggerFilePtr;
     FileHandler *firstFileHandlerPtr;
 				/* Pointer to head of file handler list. */
     struct PlatformReadyFileHandlerList firstReadyFileHandlerPtr;
