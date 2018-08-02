@@ -490,7 +490,7 @@ TclCheckEmptyString(
 	Tcl_DictObjSize(NULL, objPtr, &length);
 	return length == 0;
     }
-    
+
     if (objPtr->bytes == NULL) {
 	return TCL_EMPTYSTRING_UNKNOWN;
     }
@@ -3573,7 +3573,7 @@ TclStringFirst(
 	start = 0;
     }
     if (ln == 0) {
-	/* We don't find empty substrings.  Bizarre! 
+	/* We don't find empty substrings.  Bizarre!
 	 * Whenever this routine is turned into a proper substring
 	 * finder, change to `return start` after limits imposed. */
 	return -1;
@@ -3970,7 +3970,7 @@ TclStringReplace(
 	    result = Tcl_NewByteArrayObj(NULL, numBytes - count + newBytes);
 								/* PANIC? */
 	    Tcl_SetByteArrayLength(result, 0);
-	    TclAppendBytesToByteArray(result, bytes, first);	
+	    TclAppendBytesToByteArray(result, bytes, first);
 	    TclAppendBytesToByteArray(result, iBytes, newBytes);
 	    TclAppendBytesToByteArray(result, bytes + first + count,
 		    numBytes - count - first);
@@ -3992,7 +3992,7 @@ TclStringReplace(
 	Tcl_UniChar *ustring = Tcl_GetUnicodeFromObj(objPtr, &numChars);
 
 	/* TODO: Is there an in-place option worth pursuing here? */
-	
+
 	result = Tcl_NewUnicodeObj(ustring, first);
 	if (insertPtr) {
 	    Tcl_AppendObjToObj(result, insertPtr);

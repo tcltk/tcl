@@ -280,7 +280,7 @@ test string-3.17.$noComp {string equal, unicode} {
 } 1
 test string-3.18.$noComp {string equal, unicode} {
     run {string equal \334 \u00fc}
-} 0 
+} 0
 test string-3.19.$noComp {string equal, unicode} {
     run {string equal \334\334\334\374\374 \334\334\334\334\334}
 } 0
@@ -307,7 +307,7 @@ test string-3.24.$noComp {string equal -nocase with length} {
 } 1
 test string-3.25.$noComp {string equal -nocase with length} {
     run {string equal -nocase -length 3 abcde Abxyz}
-} 0 
+} 0
 test string-3.26.$noComp {string equal -nocase with length <= 0} {
     run {string equal -nocase -length -1 abcde AbCdEf}
 } 0

@@ -120,7 +120,7 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
 /*
  * The following is the Tcl object type definition for an object that
  * represents a list index in the form, "end-offset". It is used as a
- * performance optimization in TclGetIntForIndex. The internal rep is 
+ * performance optimization in TclGetIntForIndex. The internal rep is
  * stored directly in the wideValue, so no memory management is required
  * for it. This is a caching intrep, keeping the result of a parse
  * around. This type is only created from a pre-existing string, so an
@@ -1673,7 +1673,7 @@ UtfWellFormedEnd(
     if (Tcl_UtfCharComplete(p, l - p)) {
 	return bytes;
     }
-    /* 
+    /*
      * Malformed utf-8 end, be sure we've NTS to safe compare of end-character,
      * avoid segfault by access violation out of range.
      */
@@ -3793,7 +3793,7 @@ GetEndOffsetFromObj(
     return TCL_OK;
 }
 
-    
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3976,12 +3976,12 @@ TclIndexEncode(
         /* usual case, the absolute index value encodes itself */
     } else if (TCL_OK == GetEndOffsetFromObj(objPtr, 0, &idx)) {
         /*
-         * We parsed an end+offset index value. 
+         * We parsed an end+offset index value.
          * idx holds the offset value in the range INT_MIN...INT_MAX.
          */
         if (idx > 0) {
             /*
-             * All end+postive or end-negative expressions 
+             * All end+postive or end-negative expressions
              * always indicate "after the end".
              */
             idx = after;
