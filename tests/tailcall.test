@@ -709,7 +709,7 @@ test tailcall-14.1-bc {{in a deleted namespace} {byte compiled}} -body {
 } -returnCodes 1 -result {namespace "::ns" not found}
 
 # following tests cover tailcall as direct break/return from proc into proc
-# or top-level upscope loop, in case of "infinite" loop the result is 10 
+# coro or top-level upscope loop, in case of "infinite" loop the result is 10
 # (expected 1 for break and "" for return)
 test tailcall-15.1a {as direct return from proc: break into proc upscope loop} -setup {
     proc p {} {tailcall break}
@@ -719,8 +719,16 @@ test tailcall-15.1a {as direct return from proc: break into proc upscope loop} -
 } -result 1
 test tailcall-15.1b {as direct return from proc: break into top-level upscope loop} -setup {
     proc p {} {tailcall break}
+    set i 0
 } -body {
     while {[incr i] < 10} p; set i
+} -result 1
+test tailcall-15.1c {as direct return from proc: break into top-level upscope loop} -setup {
+    proc p {} {yield; tailcall break}
+    set i 0
+} -body {
+    apply {{} {coroutine c p}}
+    while {[incr i] < 10} c; set i
 } -result 1
 
 test tailcall-15.2a {as direct return from proc: return into proc upscope loop} -setup {
@@ -731,8 +739,16 @@ test tailcall-15.2a {as direct return from proc: return into proc upscope loop} 
 } -result ""
 test tailcall-15.2b {as direct return from proc: return into top-level upscope loop} -setup {
     proc p {} {tailcall return}
+    set i 0
 } -body {
     while {[incr i] < 10} p; set i
+} -result ""
+test tailcall-15.2c {as direct return from proc: return into top-level upscope loop} -setup {
+    proc p {} {yield; tailcall return}
+    set i 0
+} -body {
+    apply {{} {coroutine c p}}
+    while {[incr i] < 10} c; set i
 } -result ""
 
 # cleanup
