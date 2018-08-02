@@ -33,7 +33,7 @@ namespace eval ::tcl::test::io {
     loadTestedCommands
     catch [list package require -exact Tcltest [info patchlevel]]
     package require tcltests
-    
+
     testConstraint testbytestring   [llength [info commands testbytestring]]
     testConstraint testchannel      [llength [info commands testchannel]]
     testConstraint openpipe         1
@@ -5957,7 +5957,7 @@ test chan-io-48.3 {testing readability conditions} -setup {
     chan close $f
 } -result {done {0 1 0 1 0 1 0 1 0 1 0 1 0 0}}
 unset path(bar)
-removeFile bar 
+removeFile bar
 
 test chan-io-48.4 {lf write, testing readability, ^Z termination, auto read mode} -setup {
     file delete $path(test1)
