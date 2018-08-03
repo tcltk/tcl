@@ -19,6 +19,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testnrelevels [llength [info commands testnrelevels]]
 testConstraint memory [llength [info commands memory]]
+testConstraint testevalobjv [llength [info commands testevalobjv]]
 
 set lambda [list {{start 0} {stop 10}} {
     # init
@@ -781,6 +782,129 @@ test coroutine-8.1.2 {coro inject with result, ticket 42202ba1e5ff566e} -body {
     set result
 } -result {inject-executed}
 
+# following tests cover direct break/return from coroutine into proc,
+# coro or top-level up-scope loop, in case of "infinite" loop the result is 10 or 
+# `invalid command name "c"`, in case of broken scope - `invoked "break" outside of a loop`
+# (expected 1 for break and "" for return), test with "-nc" suffix are non-compiled.
+test coroutine-9.1a {as direct return from proc: break into proc up-scope loop} -setup {
+    proc p {} {yield; return -code break}
+} -body {
+    coroutine c p;
+    proc t {} {while {[incr i] < 10} {c}; set i}
+    t
+} -cleanup {
+    rename p {}; rename t {}
+} -result 1
+test coroutine-9.1b {as direct return from proc: break into top-level up-scope loop} -setup {
+    proc p {} {yield; return -code break}
+    set i 0
+} -body {
+    coroutine c p;
+    while {[incr i] < 10} {c}; set i
+} -cleanup {
+    rename p {}
+} -result 1
+test coroutine-9.1b-nc {as direct return from proc: break into top-level up-scope loop (non-compiled)} \
+-constraints {testevalobjv} -body {
+    exec [info nameofexecutable] << {
+	proc p {} {yield; return -code break}
+	set i 0
+	coroutine c p;
+	testevalobjv 1 while {[incr i] < 10} c; puts $i
+    }
+} -result 1
+test coroutine-9.1c {as direct return from coro: break into lambda up-scope loop} -setup {
+    proc p {} {yield; return -code break}
+    set i 0
+} -body {
+    apply {{} {coroutine c p; while {[incr i] < 10} c; set i}}
+} -cleanup {
+    rename p {}
+} -result 1
+test coroutine-9.1d {no yield, as direct return from proc: break into proc up-scope loop} -setup {
+    proc p {} {return -code break}
+} -body {
+    proc t {} {while {[incr i] < 10} {coroutine c p}; set i}
+    t
+} -cleanup {
+    rename p {}; rename t {}
+} -result 1
+test coroutine-9.1e {no yield, as direct return from proc: break into top-level up-scope loop} -setup {
+    proc p {} {return -code break}
+    set i 0
+} -body {
+    while {[incr i] < 10} {coroutine c p}; set i
+} -cleanup {
+    rename p {}
+} -result 1
+test coroutine-9.1e-nc {no yield, as direct return from proc: break into top-level up-scope loop (non-compiled)} \
+-constraints {testevalobjv} -body {
+    exec [info nameofexecutable] << {
+	proc p {} {return -code break}
+	set i 0
+	testevalobjv 1 while {[incr i] < 10} {coroutine c p}; puts $i
+    }
+} -result 1
+
+test coroutine-9.2a {as direct return from proc: return into proc up-scope loop} -setup {
+    proc p {} {yield; return -code return}
+} -body {
+    coroutine c p;
+    proc t {} {while {[incr i] < 10} {c}; set i}
+    t
+} -cleanup {
+    rename p {}; rename t {}
+} -result ""
+test coroutine-9.2b {as direct return from proc: return into top-level up-scope loop} -setup {
+    proc p {} {yield; return -code return}
+    set i 0
+} -body {
+    coroutine c p;
+    while {[incr i] < 10} {c}; set i
+} -cleanup {
+    rename p {}
+} -result ""
+test coroutine-9.2b-nc {as direct return from proc: return into top-level up-scope loop (non-compiled)} \
+-constraints {testevalobjv} -body {
+    exec [info nameofexecutable] << {
+	proc p {} {yield; return -code return}
+	set i 0
+	coroutine c p;
+	testevalobjv 1 while {[incr i] < 10} c; puts $i
+    }
+} -result ""
+test coroutine-9.2c {as direct return from coro: return into lambda up-scope loop} -setup {
+    proc p {} {yield; return -code return}
+    set i 0
+} -body {
+    apply {{} {coroutine c p; while {[incr i] < 10} c; set i}}
+} -cleanup {
+    rename p {}
+} -result ""
+test coroutine-9.2d {no yield, as direct return from proc: return into proc up-scope loop} -setup {
+    proc p {} {return -code return}
+} -body {
+    proc t {} {while {[incr i] < 10} {coroutine c p}; set i}
+    t
+} -cleanup {
+    rename p {}; rename t {}
+} -result ""
+test coroutine-9.2e {no yield, as direct return from proc: return into top-level up-scope loop} -setup {
+    proc p {} {return -code return}
+    set i 0
+} -body {
+    while {[incr i] < 10} {coroutine c p}; set i
+} -cleanup {
+    rename p {}
+} -result ""
+test coroutine-9.2e-nc {no yield, as direct return from proc: return into top-level up-scope loop (non-compiled)} \
+-constraints {testevalobjv} -body {
+    exec [info nameofexecutable] << {
+	proc p {} {return -code return}
+	set i 0
+	testevalobjv 1 while {[incr i] < 10} {coroutine c p}; puts $i
+    }
+} -result ""
 
 
 # cleanup

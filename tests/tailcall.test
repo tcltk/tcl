@@ -18,6 +18,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testnrelevels [llength [info commands testnrelevels]]
+testConstraint testevalobjv [llength [info commands testevalobjv]]
 
 #
 # The tests that risked blowing the C stack on failure have been removed: we
@@ -708,47 +709,91 @@ test tailcall-14.1-bc {{in a deleted namespace} {byte compiled}} -body {
     }
 } -returnCodes 1 -result {namespace "::ns" not found}
 
-# following tests cover tailcall as direct break/return from proc into proc
-# coro or top-level upscope loop, in case of "infinite" loop the result is 10
-# (expected 1 for break and "" for return)
-test tailcall-15.1a {as direct return from proc: break into proc upscope loop} -setup {
+# following tests cover tailcall as direct break/return from proc into proc,
+# coro or top-level up-scope loop, in case of "infinite" loop the result is 10
+# (expected 1 for break and "" for return), test with "-nc" suffix are non-compiled.
+test tailcall-15.1a {as direct return from proc: break into proc up-scope loop} -setup {
     proc p {} {tailcall break}
 } -body {
     proc t {} {while {[incr i] < 10} p; set i}
     t
+} -cleanup {
+    rename p {}; rename t {}
 } -result 1
-test tailcall-15.1b {as direct return from proc: break into top-level upscope loop} -setup {
+test tailcall-15.1b {as direct return from proc: break into top-level up-scope loop} -setup {
     proc p {} {tailcall break}
     set i 0
 } -body {
     while {[incr i] < 10} p; set i
+} -cleanup {
+    rename p {}
 } -result 1
-test tailcall-15.1c {as direct return from proc: break into top-level upscope loop} -setup {
+test tailcall-15.1b-nc {as direct return from proc: break into top-level up-scope loop (non-compiled)} \
+-constraints {testevalobjv} -body {
+    exec [info nameofexecutable] << {
+	proc p {} {tailcall break}
+	set i 0
+	while {[incr i] < 10} p; puts $i
+    }
+} -result 1
+test tailcall-15.1c {as direct return from coro: break into lambda up-scope loop} -setup {
     proc p {} {yield; tailcall break}
     set i 0
 } -body {
     apply {{} {coroutine c p}}
     while {[incr i] < 10} c; set i
+} -cleanup {
+    rename p {}
+} -result 1
+test tailcall-15.1d {as direct return from proc: break into coro up-scope loop} -setup {
+    proc p {} {tailcall break}
+    set i 0
+} -body {
+    apply {{} {while {[incr i] < 10} {coroutine c p}; set i}}
+} -cleanup {
+    rename p {}
 } -result 1
 
-test tailcall-15.2a {as direct return from proc: return into proc upscope loop} -setup {
+test tailcall-15.2a {as direct return from proc: return into proc up-scope loop} -setup {
     proc p {} {tailcall return}
 } -body {
     proc t {} {while {[incr i] < 10} p; set i}
     t
+} -cleanup {
+    rename p {}; rename t {}
 } -result ""
-test tailcall-15.2b {as direct return from proc: return into top-level upscope loop} -setup {
+test tailcall-15.2b {as direct return from proc: return into top-level up-scope loop} -setup {
     proc p {} {tailcall return}
     set i 0
 } -body {
     while {[incr i] < 10} p; set i
+} -cleanup {
+    rename p {}
 } -result ""
-test tailcall-15.2c {as direct return from proc: return into top-level upscope loop} -setup {
+test tailcall-15.2b-nc {as direct return from proc: return into top-level up-scope loop (non-compiled)} \
+-constraints {testevalobjv} -body {
+    exec [info nameofexecutable] << {
+	proc p {} {tailcall return}
+	set i 0
+	while {[incr i] < 10} p; puts $i
+    }
+} -result ""
+test tailcall-15.2c {as direct return from coro: return into lambda up-scope loop} -setup {
     proc p {} {yield; tailcall return}
     set i 0
 } -body {
     apply {{} {coroutine c p}}
     while {[incr i] < 10} c; set i
+} -cleanup {
+    rename p {}
+} -result ""
+test tailcall-15.2d {as direct return from proc: return into coro up-scope loop} -setup {
+    proc p {} {tailcall return}
+    set i 0
+} -body {
+    apply {{} {while {[incr i] < 10} {coroutine c p}; set i}}
+} -cleanup {
+    rename p {}
 } -result ""
 
 # cleanup
