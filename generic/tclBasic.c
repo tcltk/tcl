@@ -8462,7 +8462,12 @@ TclNRTailcallEval(
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
-    return TclNREvalObjv(interp, objc-1, objv+1, TCL_EVAL_NOERR, NULL);
+    /* Error messages (because TCL_EVAL_NOERR - don't call TEOV_PushExceptionHandlers,
+     * to avoid exception on CONTINUE, BREAK or RETURN at level 0. */
+    objc--; objv++;
+    TclNRAddCallback(interp, TEOV_Error, INT2PTR(objc),
+		(ClientData)objv, NULL, NULL);
+    return TclNREvalObjv(interp, objc, objv, TCL_EVAL_NOERR, NULL);
 }
 
 int
