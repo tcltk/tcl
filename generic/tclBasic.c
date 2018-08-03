@@ -9089,7 +9089,7 @@ TclNRCoroutineObjCmd(
 
     /* ensure that the command is looked up in the correct namespace */
     iPtr->lookupNsPtr = lookupNsPtr;
-    Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), 0);
+    Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), TCL_EVAL_NOERR);
     iPtr->numLevels--;
 
     SAVE_CONTEXT(corPtr->running);
