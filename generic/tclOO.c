@@ -312,7 +312,7 @@ InitFoundation(
     ThreadLocalData *tsdPtr =
 	    Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
     Foundation *fPtr = ckalloc(sizeof(Foundation));
-    Tcl_Obj *namePtr, *argsPtr, *bodyPtr;
+    Tcl_Obj *namePtr;
     Tcl_DString buffer;
     Command *cmdPtr;
     int i;
@@ -390,18 +390,6 @@ InitFoundation(
     for (i=0 ; clsMethods[i].name ; i++) {
 	TclOONewBasicMethod(interp, fPtr->classCls, &clsMethods[i]);
     }
-
-    /*
-     * Create the default <cloned> method implementation, used when 'oo::copy'
-     * is called to finish the copying of one object to another.
-     */
-
-    TclNewLiteralStringObj(argsPtr, "originObject");
-    Tcl_IncrRefCount(argsPtr);
-    bodyPtr = Tcl_NewStringObj(clonedBody, -1);
-    TclOONewProcMethod(interp, fPtr->objectCls, 0, fPtr->clonedName, argsPtr,
-	    bodyPtr, NULL);
-    TclDecrRefCount(argsPtr);
 
     /*
      * Finish setting up the class of classes by marking the 'new' method as
