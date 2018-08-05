@@ -1895,12 +1895,21 @@ $(GENERIC_DIR)/tclOOStubInit.c: $(GENERIC_DIR)/tclOO.decls
 	@echo "Developers may want to run \"make genstubs\" to regenerate."
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
+$(GENERIC_DIR)/tclOOScript.h: $(GENERIC_DIR)/tclOOScript.tcl
+	@echo "Warning: tclOOScript.h may be out of date."
+	@echo "Developers may want to run \"make genscript\" to regenerate."
+	@echo "This warning can be safely ignored, do not report as a bug!"
+
 genstubs:
 	$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls \
 		$(GENERIC_DIR)/tclTomMath.decls
 	$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tclOO.decls
+
+genscript:
+	$(NATIVE_TCLSH) $(TOOL_DIR)/makeHeader.tcl \
+		$(GENERIC_DIR)/tclOOScript.tcl $(GENERIC_DIR)/tclOOScript.h
 
 #
 # Target to check that all exported functions have an entry in the stubs
