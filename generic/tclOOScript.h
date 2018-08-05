@@ -21,16 +21,17 @@
  */
 
 static const char *tclOOSetupScript =
+/* !BEGIN!: Do not edit below this line. */
 "::proc ::oo::Helpers::callback {method args} {\n"
 "    list [uplevel 1 {namespace which my}] $method {*}$args\n"
 "}\n"
-
+"\n"
 "::proc ::oo::Helpers::mymethod {method args} {\n"
 "    list [uplevel 1 {namespace which my}] $method {*}$args\n"
 "}\n"
-
+"\n"
 "::proc ::oo::Helpers::classvariable {name args} {\n"
-"    # Get a reference to the class's namespace\n"
+"    # Get a reference to the class\'s namespace\n"
 "    set ns [info object namespace [uplevel 1 {self class}]]\n"
 "    # Double up the list of variable names\n"
 "    foreach v [list $name {*}$args] {\n"
@@ -42,10 +43,10 @@ static const char *tclOOSetupScript =
 "        }\n"
 "        lappend vs $v $v\n"
 "    }\n"
-"    # Lastly, link the caller's local variables to the class's variables\n"
+"    # Lastly, link the caller\'s local variables to the class\'s variables\n"
 "    tailcall namespace upvar $ns {*}$vs\n"
 "}\n"
-
+"\n"
 "::proc ::oo::Helpers::link {args} {\n"
 "    set ns [uplevel 1 {namespace current}]\n"
 "    foreach link $args {\n"
@@ -68,11 +69,11 @@ static const char *tclOOSetupScript =
 "        rename $cmd {}\n"
 "    }\n"
 "}\n"
-
+"\n"
 "::proc ::oo::DelegateName {class} {\n"
 "    string cat [info object namespace $class] {:: oo ::delegate}\n"
 "}\n"
-
+"\n"
 "proc ::oo::MixinClassDelegates {class} {\n"
 "    if {![info object isa class $class]} {\n"
 "        return\n"
@@ -81,7 +82,7 @@ static const char *tclOOSetupScript =
 "    if {![info object isa class $delegate]} {\n"
 "        return\n"
 "    }\n"
-"    foreach c [info class superclass $class] {"
+"    foreach c [info class superclass $class] {\n"
 "        set d [::oo::DelegateName $c]\n"
 "        if {![info object isa class $d]} {\n"
 "            continue\n"
@@ -90,14 +91,14 @@ static const char *tclOOSetupScript =
 "    }\n"
 "    ::oo::objdefine $class mixin -append $delegate\n"
 "}\n"
-
-"::namespace eval ::oo::define {"
+"\n"
+"::namespace eval ::oo::define {\n"
 "    ::proc classmethod {name {args {}} {body {}}} {\n"
 "        # Create the method on the class if the caller gave arguments and body\n"
 "        ::set argc [::llength [::info level 0]]\n"
 "        ::if {$argc == 3} {\n"
-"            ::return -code error [::string cat {wrong # args: should be \"}"
-"                    [::lindex [::info level 0] 0] { name ?args body?\"}]\n"
+"            ::return -code error [::string cat {wrong # args: should be \"} \\\n"
+"                    [::lindex [::info level 0] 0] { name \?args body\?\"}]\n"
 "        }\n"
 "        ::set cls [::uplevel 1 self]\n"
 "        ::if {$argc == 4} {\n"
@@ -106,12 +107,12 @@ static const char *tclOOSetupScript =
 "        # Make the connection by forwarding\n"
 "        ::tailcall forward $name myclass $name\n"
 "    }\n"
-
+"\n"
 "    ::proc initialise {body} {\n"
 "        ::set clsns [::info object namespace [::uplevel 1 self]]\n"
 "        ::tailcall apply [::list {} $body $clsns]\n"
 "    }\n"
-
+"\n"
 "    # Make the initialise command appear with US spelling too\n"
 "    ::namespace export initialise\n"
 "    ::namespace eval tmp {::namespace import ::oo::define::initialise}\n"
@@ -119,11 +120,11 @@ static const char *tclOOSetupScript =
 "    ::namespace delete tmp\n"
 "    ::namespace export -clear\n"
 "}\n"
-
+"\n"
 "::oo::define ::oo::Slot {\n"
 "    method Get {} {return -code error unimplemented}\n"
 "    method Set list {return -code error unimplemented}\n"
-
+"\n"
 "    method -set args {tailcall my Set $args}\n"
 "    method -append args {\n"
 "        set current [uplevel 1 [list [namespace which my] Get]]\n"
@@ -131,7 +132,7 @@ static const char *tclOOSetupScript =
 "    }\n"
 "    method -clear {} {tailcall my Set {}}\n"
 "    forward --default-operation my -append\n"
-
+"\n"
 "    method unknown {args} {\n"
 "        set def --default-operation\n"
 "        if {[llength $args] == 0} {\n"
@@ -141,7 +142,7 @@ static const char *tclOOSetupScript =
 "        }\n"
 "        next {*}$args\n"
 "    }\n"
-
+"\n"
 "    export -set -append -clear\n"
 "    unexport unknown destroy\n"
 "}\n"
@@ -149,7 +150,7 @@ static const char *tclOOSetupScript =
 "::oo::objdefine ::oo::define::superclass forward --default-operation my -set\n"
 "::oo::objdefine ::oo::define::mixin forward --default-operation my -set\n"
 "::oo::objdefine ::oo::objdefine::mixin forward --default-operation my -set\n"
-
+"\n"
 "::oo::define ::oo::class method <cloned> {originObject} {\n"
 "    next $originObject\n"
 "    # Rebuild the class inheritance delegation class\n"
@@ -162,7 +163,7 @@ static const char *tclOOSetupScript =
 "        }]\n"
 "    }\n"
 "}\n"
-
+"\n"
 "::oo::class create ::oo::singleton {\n"
 "    superclass ::oo::class\n"
 "    variable object\n"
@@ -180,11 +181,12 @@ static const char *tclOOSetupScript =
 "        return $object\n"
 "    }\n"
 "}\n"
-
+"\n"
 "::oo::class create ::oo::abstract {\n"
 "    superclass ::oo::class\n"
 "    unexport create createWithNamespace new\n"
 "}\n"
+/* !END!: Do not edit above this line. */
 ;
 
 /*
