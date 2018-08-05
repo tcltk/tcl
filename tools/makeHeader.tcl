@@ -21,7 +21,7 @@ namespace eval makeHeader {
 	# All Tcl metacharacters and key C backslash sequences
 	set MAP {
 	    \" \\\\\" \\ \\\\\\\\ $ \\$ [ \\[ ] \\] ' \\\\' ? \\\\?
-	    \a \\\\a \b \\\\b \f \\\\f \n \\\\n \r \\\\r \t \\\\t \v \\\\v
+	    \a \\\\a \b \\\\b \f \\\\f \n \\\\n \r \\\\r \t {        } \v \\\\v
 	}
 	set XFORM {[format \\\\\\\\u%04x {*}[scan & %c]]}
 
