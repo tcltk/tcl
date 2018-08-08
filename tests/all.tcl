@@ -13,7 +13,7 @@
 package prefer latest
 package require Tcl 8.5-
 package require tcltest 2.2
-namespace import -force ::tcltest::*
+namespace import ::tcltest::*
 
 configure {*}$argv -testdir [file dirname [file dirname [file normalize [
     info script]/...]]]

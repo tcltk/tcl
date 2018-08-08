@@ -174,15 +174,6 @@ TclThread_Init(
     Tcl_CreateObjCommand(interp, "testthread", ThreadObjCmd, NULL, NULL);
     return TCL_OK;
 }
-
-
-void TclThreadTestFinalize() {
-    if (errorProcString != NULL) {
-	ckfree(errorProcString);
-	errorProcString= NULL;
-    }
-    return;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -1165,6 +1156,14 @@ ThreadExitProc(
     }
 
     Tcl_MutexLock(&threadMutex);
+
+    if (self == errorThreadId) {
+	if (errorProcString) {	/* Extra safety */
+	    ckfree(errorProcString);
+	    errorProcString = NULL;
+	}
+	errorThreadId = 0;
+    }
 
     if (threadEvalScript) {
 	ckfree(threadEvalScript);
