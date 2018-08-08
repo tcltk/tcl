@@ -908,7 +908,7 @@ removeFile load.tcl
 
 # [interpreter]
 test tcltest-13.1 {interpreter} {
-    -constraints notValgrind 
+    -constraints notValgrind
     -setup {
 	#to do:  Why is $::tcltest::tcltest being saved and restored here?
 	set old $::tcltest::tcltest
@@ -926,7 +926,7 @@ test tcltest-13.1 {interpreter} {
 	# constraint, which involves a call to [exec] that might fail after
 	# "fork" and before "exec", in which case the forked process will not
 	# have a chance to clean itself up before exiting, which causes
-	# valgrind to issue numerous "still reachable" reports. 
+	# valgrind to issue numerous "still reachable" reports.
 	set ::tcltest::tcltest $old
     }
 }

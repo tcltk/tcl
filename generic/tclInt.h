@@ -4634,7 +4634,6 @@ MODULE_SCOPE Tcl_PackageInitProc TclObjTest_Init;
 MODULE_SCOPE Tcl_PackageInitProc TclThread_Init;
 MODULE_SCOPE Tcl_PackageInitProc Procbodytest_Init;
 MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
-MODULE_SCOPE void TclThreadTestFinalize();
 
 /*
  *----------------------------------------------------------------

@@ -2253,7 +2253,7 @@ GetListIndexOperand(
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &value) != TCL_OK) {
 	return TCL_ERROR;
     }
-     
+
     /* Convert to an integer, advance to the next token and return. */
     /*
      * NOTE: Indexing a list with an index before it yields the
