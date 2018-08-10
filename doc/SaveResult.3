@@ -33,7 +33,7 @@ int
 .SH ARGUMENTS
 .AS Tcl_InterpState savedPtr
 .AP Tcl_Interp *interp in
-The current interpreter.
+The interpreter for the operation.
 .AP int status in
 The return code for the state.
 .AP Tcl_InterpState state in
@@ -65,18 +65,18 @@ deprecated.  Instead use \fBTcl_SaveInterpState\fR,
 \fBTcl_RestoreInterpState\fR, and \fBTcl_DiscardInterpState\fR, which are more
 capable.
 .PP
-\fBTcl_SaveResult\fR moves the string result and structured result of
-\fIinterp\fR to the location \fIstatePtr\fR points to and returns the
-interpreter result to its initial state.  It does not save options such as
-\fB\-errorcode\fR or \fB\-errorinfo\fR.
+\fBTcl_SaveResult\fR moves the result of \fIinterp\fR to the location
+\fIstatePtr\fR points to and returns the interpreter result to its initial
+state.  It does not save options such as \fB\-errorcode\fR or
+\fB\-errorinfo\fR.
 .PP
 \fBTcl_RestoreResult\fR clears any existing result or error in \fIinterp\fR and
-moves the string result and structured result from \fIstatePtr\fR back to
-\fIinterp\fR.  \fIstatePtr\fR is then in an undefined state and cannot be used
-until passed again to \fBTcl_SaveResult\fR.
+moves the result from \fIstatePtr\fR back to \fIinterp\fR.  \fIstatePtr\fR is
+then in an undefined state and must not be used until passed again to
+\fBTcl_SaveResult\fR.
 .PP
 \fBTcl_DiscardResult\fR releases the state stored at \fBstatePtr\fR, which is
-then in an undefined state and cannot be used until passed again to
+then in an undefined state and must not be used until passed again to
 \fBTcl_SaveResult\fR.
 .PP
 If a saved result is not restored, \fBTcl_DiscardResult\fR must be called to
