@@ -138,6 +138,45 @@ test ooUtil-1.7 {} -setup {
 } -cleanup {
     parent destroy
 } -result {{} {} {} {}} -output "This is in the class; self is ::Foo\nThis is meee\nThis is in the class; self is ::Grill\nThis is meee 2\nThis is in the class; self is ::Foo\nThis is meee\nThis is in the class; self is ::Grill\nThis is meee 2\n"
+# Two tests to confirm that we correctly initialise the scripted part of TclOO
+# in child interpreters. This is slightly tricky at the implementation level
+# because we cannot count on either [source] or [open] being available.
+test ooUtil-1.8 {TIP 478: classmethod in child interp} -setup {
+    set childinterp [interp create]
+} -body {
+    $childinterp eval {
+	oo::class create ActiveRecord {
+	    classmethod find args {
+		return "[self] called with arguments: $args"
+	    }
+	}
+	oo::class create Table {
+	    superclass ActiveRecord
+	}
+	# This is confirming that this is not the master interpreter
+	list [Table find foo bar] [info globals childinterp]
+    }
+} -cleanup {
+    interp delete $childinterp
+} -result {{::Table called with arguments: foo bar} {}}
+test ooUtil-1.9 {TIP 478: classmethod in safe child interp} -setup {
+    set safeinterp [interp create -safe]
+} -body {
+    $safeinterp eval {
+	oo::class create ActiveRecord {
+	    classmethod find args {
+		return "[self] called with arguments: $args"
+	    }
+	}
+	oo::class create Table {
+	    superclass ActiveRecord
+	}
+	# This is confirming that this is a (basic) safe interpreter
+	list [Table find foo bar] [info commands source]
+    }
+} -cleanup {
+    interp delete $safeinterp
+} -result {{::Table called with arguments: foo bar} {}}
 
 test ooUtil-2.1 {TIP 478: callback generation} -setup {
     oo::class create parent
