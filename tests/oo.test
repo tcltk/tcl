@@ -2153,7 +2153,7 @@ test oo-15.13.1 {
 } -cleanup {
     Cls destroy
     Cls2 destroy
-} -result done 
+} -result done
 test oo-15.13.2 {OO: object cloning with target NS} -setup {
     oo::class create Super
     oo::class create Cls {superclass Super}

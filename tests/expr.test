@@ -7164,7 +7164,7 @@ test expr-52.1 {
 	list [expr {$a eq {}}] [expr {$a < {}}] [expr {$a > {}}] [
 		string match {*no string representation*} [
 		::tcl::unsupported::representation $a]]
-} {0 0 1 1} 
+} {0 0 1 1}
 
 
 

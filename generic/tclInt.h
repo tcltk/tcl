@@ -4334,20 +4334,20 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString(objPtr))
 
 #if 0
-   static inline const char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
-      const char *response = Tcl_GetString(objPtr);
+   static inline char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
+      char *response = Tcl_GetString(objPtr);
       *(lenPtr) = objPtr->length;
       return response;
    }
    static inline Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
-      Tcl_GetUnicodeFromObj(objPtr, NULL);
+      Tcl_UniChar *response = Tcl_GetUnicodeFromObj(objPtr, NULL);
       *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
-      return Tcl_GetUnicodeFromObj(objPtr, NULL);
+      return response;
    }
    static inline unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
-      Tcl_GetByteArrayFromObj(objPtr, NULL);
+      unsigned char *response = Tcl_GetByteArrayFromObj(objPtr, NULL);
       *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
-      return Tcl_GetByteArrayFromObj(objPtr, NULL);
+      return response;
    }
 
 #else
