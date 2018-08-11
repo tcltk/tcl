@@ -21,11 +21,26 @@ namespace eval makeHeader {
 	# All Tcl metacharacters and key C backslash sequences
 	set MAP {
 	    \" \\\\\" \\ \\\\\\\\ $ \\$ [ \\[ ] \\] ' \\\\' ? \\\\?
-	    \a \\\\a \b \\\\b \f \\\\f \n \\\\n \r \\\\r \t {        } \v \\\\v
+	    \a \\\\a \b \\\\b \f \\\\f \n \\\\n \r \\\\r \t \\\\t \v \\\\v
 	}
 	set XFORM {[format \\\\\\\\u%04x {*}[scan & %c]]}
 
 	subst [regsub -all {[^\u0020-\u007e]} [string map $MAP $str] $XFORM]
+    }
+
+    ####################################################################
+    #
+    # compactLeadingSpaces --
+    #	Converts the leading whitespace on a line into a more compact form.
+    #
+    proc compactLeadingSpaces {line} {
+	set line [string map {\t {        }} [string trimright $line]]
+	if {[regexp {^[ ]+} $line spaces]} {
+	    regsub -all {[ ]{4}} $spaces \t replace
+	    set len [expr {[string length $spaces] - 1}]
+	    set line [string replace $line 0 $len $replace]
+	}
+	return $line
     }
 
     ####################################################################
@@ -35,7 +50,10 @@ namespace eval makeHeader {
     #
     proc processScript {scriptLines} {
 	lmap line $scriptLines {
-	    format {"%s"} [mapSpecial $line\n]
+	    # Skip blank and comment lines; they're there in the original
+	    # sources so we don't need to copy them over.
+	    if {[regexp {^\s*(?:#|$)} $line]} continue
+	    format {"%s"} [mapSpecial [compactLeadingSpaces $line]\n]
 	}
     }
 
