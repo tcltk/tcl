@@ -464,7 +464,7 @@ a Daylight Saving Time change skips over that time, or an ambiguous
 time because a Daylight Saving Time change skips back so that the clock
 observes the given time twice, and no time zone specifier (\fB%z\fR
 or \fB%Z\fR) is present in the format, the time is interpreted as
-if the clock had not changed. 
+if the clock had not changed.
 .SH "FORMAT GROUPS"
 .PP
 The following format groups are recognized by the \fBclock scan\fR and

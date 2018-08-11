@@ -55,7 +55,7 @@
 #       c:\tcl_src\win\>nmake -f makefile.vc release
 #       c:\tcl_src\win\>nmake -f makefile.vc test
 #       c:\tcl_src\win\>nmake -f makefile.vc install INSTALLDIR=c:\progra~1\tcl
-#       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=pdbs 
+#       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=pdbs
 #       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=symbols
 #
 
