@@ -268,9 +268,9 @@ const Tcl_ObjType tclByteArrayType = {
  */
 
 typedef struct ByteArray {
-    int used;			/* The number of bytes used in the byte
+    unsigned int used;		/* The number of bytes used in the byte
 				 * array. */
-    int allocated;		/* The amount of space actually allocated
+    unsigned int allocated;	/* The amount of space actually allocated
 				 * minus 1 byte. */
     unsigned char bytes[1];	/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
@@ -278,7 +278,7 @@ typedef struct ByteArray {
 } ByteArray;
 
 #define BYTEARRAY_SIZE(len) \
-		((unsigned) (TclOffset(ByteArray, bytes) + (len)))
+		(TclOffset(ByteArray, bytes) + (len))
 #define GET_BYTEARRAY(objPtr) \
 		((ByteArray *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_BYTEARRAY(objPtr, baPtr) \
@@ -427,7 +427,7 @@ Tcl_SetByteArrayObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetByteArrayFromObj --
+ * Tcl_GetByteArrayFromObj/Tcl_GetByteArrayFromObj2 --
  *
  *	Attempt to get the array of bytes from the Tcl object. If the object
  *	is not already a ByteArray object, an attempt will be made to convert
@@ -442,10 +442,31 @@ Tcl_SetByteArrayObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetByteArrayFromObj
 unsigned char *
 Tcl_GetByteArrayFromObj(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
     int *lengthPtr)		/* If non-NULL, filled with length of the
+				 * array of bytes in the ByteArray object. */
+{
+    ByteArray *baPtr;
+
+    if ((objPtr->typePtr != &properByteArrayType)
+	    && (objPtr->typePtr != &tclByteArrayType)) {
+	SetByteArrayFromAny(NULL, objPtr);
+    }
+    baPtr = GET_BYTEARRAY(objPtr);
+
+    if (lengthPtr != NULL) {
+	*lengthPtr = baPtr->used;
+    }
+    return (unsigned char *) baPtr->bytes;
+}
+
+unsigned char *
+Tcl_GetByteArrayFromObj2(
+    Tcl_Obj *objPtr,		/* The ByteArray object. */
+    size_t *lengthPtr)		/* If non-NULL, filled with length of the
 				 * array of bytes in the ByteArray object. */
 {
     ByteArray *baPtr;
@@ -500,7 +521,7 @@ Tcl_SetByteArrayLength(
     }
 
     byteArrayPtr = GET_BYTEARRAY(objPtr);
-    if (length > byteArrayPtr->allocated) {
+    if ((size_t)length > byteArrayPtr->allocated) {
 	byteArrayPtr = ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(length));
 	byteArrayPtr->allocated = length;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
@@ -718,7 +739,7 @@ TclAppendBytesToByteArray(
     int len)
 {
     ByteArray *byteArrayPtr;
-    int needed;
+    size_t needed;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
@@ -737,7 +758,7 @@ TclAppendBytesToByteArray(
     }
     byteArrayPtr = GET_BYTEARRAY(objPtr);
 
-    if (len > INT_MAX - byteArrayPtr->used) {
+    if ((size_t)len + byteArrayPtr->used > INT_MAX) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 

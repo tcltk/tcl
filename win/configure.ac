@@ -78,12 +78,6 @@ AC_PROG_MAKE_SET
 AC_OBJEXT
 AC_EXEEXT
 
-#--------------------------------------------------------------------
-# Check whether --enable-threads or --disable-threads was given.
-#--------------------------------------------------------------------
-
-SC_ENABLE_THREADS
-
 #------------------------------------------------------------------------
 # Embedded configuration information, encoding to use for the values, TIP #59
 #------------------------------------------------------------------------
@@ -128,7 +122,7 @@ AS_IF([test "${enable_shared+set}" = "set"], [
 ])
 AS_IF([test "$tcl_ok" = "yes"], [
   AC_SUBST(ZLIB_DLL_FILE,[\${ZLIB_DLL_FILE}])
-  AS_IF([test "$do64bit" = "yes"], [
+  AS_IF([test "$do64bit" != "no"], [
     AS_IF([test "$GCC" == "yes"],[
       AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/libz.dll.a])
     ], [

@@ -20,7 +20,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testasync [llength [info commands testasync]]
-testConstraint threaded [::tcl::pkgconfig get threaded]
 
 proc async1 {result code} {
     global aresult acode
@@ -149,7 +148,7 @@ test async-3.1 {deleting handlers} testasync {
 } {3 del2 {0 0 0 del1 del2}}
 
 test async-4.1 {async interrupting bytecode sequence} -constraints {
-    testasync threaded
+    testasync
 } -setup {
     set hm [testasync create async3]
     proc nothing {} {
@@ -157,21 +156,28 @@ test async-4.1 {async interrupting bytecode sequence} -constraints {
     }
 } -body {
     apply {{handle} {
-	global aresult
-	set aresult {Async event not delivered}
-	testasync marklater $handle
-	for {set i 0} {
-	    $i < 2500000  &&  $aresult eq "Async event not delivered"
-	} {incr i} {
-	    nothing
-	}
+    global aresult
+    set aresult {Async event not delivered}
+    testasync marklater $handle
+    # allow plenty of time to pass in case valgrind is running
+    set start [clock seconds]
+    while {
+	[clock seconds] - $start < 180 && $aresult eq "Async event not delivered"
+    } {
+	# be less busy
+	after 100
+	nothing
+    }
 	return $aresult
     }} $hm
 } -result {test pattern} -cleanup {
+    # give other threads some time to go way so that valgrind doesn't pick up
+    # "still reachable" cases from early thread termination
+    after 100
     testasync delete $hm
 }
 test async-4.2 {async interrupting straight bytecode sequence} -constraints {
-    testasync threaded
+    testasync
 } -setup {
     set hm [testasync create async3]
 } -body {
@@ -179,16 +185,24 @@ test async-4.2 {async interrupting straight bytecode sequence} -constraints {
 	global aresult
 	set aresult {Async event not delivered}
 	testasync marklater $handle
-	for {set i 0} {
-	    $i < 2500000  &&  $aresult eq "Async event not delivered"
-	} {incr i} {}
+	# allow plenty of time to pass in case valgrind is running
+	set start [clock seconds]
+	while {
+		[clock seconds] - $start < 180 && $aresult eq "Async event not delivered"
+	} {
+		# be less busy
+	    after 100
+	}
 	return $aresult
     }} $hm
 } -result {test pattern} -cleanup {
+    # give other threads some time to go way so that valgrind doesn't pick up
+    # "still reachable" cases from early thread termination
+    after 100
     testasync delete $hm
 }
 test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
-    testasync threaded
+    testasync
 } -setup {
     set hm [testasync create async3]
 } -body {
@@ -201,6 +215,9 @@ test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
 	return $aresult
     }]] $hm
 } -result {test pattern} -cleanup {
+    # give other threads some time to go way so that valgrind doesn't pick up
+    # "still reachable" cases from early thread termination
+    after 100
     testasync delete $hm
 }
 
