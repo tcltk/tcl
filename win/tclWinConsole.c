@@ -1320,7 +1320,7 @@ TclWinOpenConsoleChannel(
      * for instance).
      */
 
-    sprintf(channelName, "file%" TCL_I_MODIFIER "x", (size_t) infoPtr);
+    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&consoleChannelType, channelName,
 	    infoPtr, permissions);
@@ -1360,11 +1360,7 @@ TclWinOpenConsoleChannel(
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
-#ifdef UNICODE
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", "unicode");
-#else
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", encoding);
-#endif
     return infoPtr->channel;
 }
 

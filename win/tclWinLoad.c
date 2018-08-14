@@ -63,7 +63,7 @@ TclpDlopen(
 				 * file. */
     int flags)
 {
-    HINSTANCE hInstance;
+    HINSTANCE hInstance = NULL;
     const TCHAR *nativeName;
     Tcl_LoadHandle handlePtr;
     DWORD firstError;
@@ -75,7 +75,10 @@ TclpDlopen(
      */
 
     nativeName = Tcl_FSGetNativePath(pathPtr);
-    hInstance = LoadLibraryEx(nativeName,NULL,LOAD_WITH_ALTERED_SEARCH_PATH);
+    if (nativeName != NULL) {
+	hInstance = LoadLibraryEx(nativeName, NULL,
+		LOAD_WITH_ALTERED_SEARCH_PATH);
+    }
     if (hInstance == NULL) {
 	/*
 	 * Let the OS loader examine the binary search path for whatever
@@ -89,7 +92,8 @@ TclpDlopen(
          * Remember the first error on load attempt to be used if the
          * second load attempt below also fails.
         */
-        firstError = GetLastError();
+        firstError = (nativeName == NULL) ?
+		ERROR_MOD_NOT_FOUND : GetLastError();
 
 	nativeName = Tcl_WinUtfToTChar(Tcl_GetString(pathPtr), -1, &ds);
 	hInstance = LoadLibraryEx(nativeName, NULL,

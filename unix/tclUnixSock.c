@@ -217,7 +217,7 @@ printaddrinfo(
 static void
 InitializeHostName(
     char **valuePtr,
-    size_t *lengthPtr,
+    unsigned int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     const char *native = NULL;
@@ -1124,7 +1124,7 @@ TcpGetHandleProc(
  * TcpAsyncCallback --
  *
  *	Called by the event handler that TcpConnect sets up internally for
- *	[socket -async] to get notified when the asyncronous connection
+ *	[socket -async] to get notified when the asynchronous connection
  *	attempt has succeeded or failed.
  *
  * ----------------------------------------------------------------------
@@ -1157,7 +1157,7 @@ TcpAsyncCallback(
  *
  * Remarks:
  *	A single host name may resolve to more than one IP address, e.g. for
- *	an IPv4/IPv6 dual stack host. For handling asyncronously connecting
+ *	an IPv4/IPv6 dual stack host. For handling asynchronously connecting
  *	sockets in the background for such hosts, this function can act as a
  *	coroutine. On the first call, it sets up the control variables for the
  *	two nested loops over the local and remote addresses. Once the first
@@ -1165,7 +1165,7 @@ TcpAsyncCallback(
  *	event handler for that socket, and returns. When the callback occurs,
  *	control is transferred to the "reenter" label, right after the initial
  *	return and the loops resume as if they had never been interrupted.
- *	For syncronously connecting sockets, the loops work the usual way.
+ *	For synchronously connecting sockets, the loops work the usual way.
  *
  * ----------------------------------------------------------------------
  */

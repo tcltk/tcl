@@ -18,10 +18,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
-testConstraint testmathfunctions [expr {
-    ([catch {expr T1()} msg] != 1) || ($msg ne {invalid command name "tcl::mathfunc::T1"})
-}]
-
 # Determine if "long int" type is a 32 bit number and if the wide
 # type is a 64 bit number on this machine.
 
@@ -685,41 +681,6 @@ test expr-15.5 {CompileMathFuncCall: too few arguments} -body {
 test expr-15.6 {CompileMathFuncCall: missing ')'} -body {
     expr sin(1
 } -returnCodes error -match glob -result *
-test expr-15.7 {CompileMathFuncCall: call registered math function} {testmathfunctions} {
-    expr 2*T1()
-} 246
-test expr-15.8 {CompileMathFuncCall: call registered math function} {testmathfunctions} {
-    expr T2()*3
-} 1035
-test expr-15.9 {CompileMathFuncCall: call registered math function} {testmathfunctions} {
-    expr T3(21, 37)
-} 37
-test expr-15.10 {CompileMathFuncCall: call registered math function} {testmathfunctions} {
-    expr T3(21.2, 37)
-} 37.0
-test expr-15.11 {CompileMathFuncCall: call registered math function} {testmathfunctions} {
-    expr T3(-21.2, -17.5)
-} -17.5
-test expr-15.12 {ExprCallMathFunc: call registered math function} {testmathfunctions} {
-    expr T3(21, wide(37))
-} 37
-test expr=15.13 {ExprCallMathFunc: call registered math function} {testmathfunctions} {
-    expr T3(wide(21), 37)
-} 37
-test expr=15.14 {ExprCallMathFunc: call registered math function} {testmathfunctions} {
-    expr T3(wide(21), wide(37))
-} 37
-test expr-15.15 {ExprCallMathFunc: call registered math function} {testmathfunctions} {
-    expr T3(21.0, wide(37))
-} 37.0
-test expr-15.16 {ExprCallMathFunc: call registered math function} {testmathfunctions} {
-    expr T3(wide(21), 37.0)
-} 37.0
-test expr-15.17 {ExprCallMathFunc: non-numeric arg} -constraints {
-    testmathfunctions
-} -body {
-    expr T3(0,"a")
-} -returnCodes error -result {argument to math function didn't have numeric value}
 
 
 test expr-16.1 {GetToken: checks whether integer token starting with "0x" (e.g., "0x$") is invalid} {
@@ -5838,6 +5799,15 @@ test expr-32.5 {Bug 1585704} {
 test expr-32.6 {Bug 1585704} {
     expr -(1<<32)%(1<<63)
 } [expr (1<<63)-(1<<32)]
+test expr-32.7 {bignum regression} {
+    expr {0%(1<<63)}
+} 0
+test expr-32.8 {bignum regression} {
+    expr {0%-(1<<63)}
+} 0
+test expr-32.9 {bignum regression} {
+    expr {0%-(1+(1<<63))}
+} 0
 
 test expr-33.1 {parse largest long value} longIs32bit {
     set max_long_str 2147483647
@@ -7186,6 +7156,15 @@ test expr-50.1 {test sqrt() of bignums with non-Inf answer} {
 test expr-51.1 {test round-to-even on input} {
     expr 6.9294956446009195e15
 } 6929495644600920.0
+
+test expr-52.1 {
+	comparison with empty string does not generate string representation
+} {
+	set a [list one two three]
+	list [expr {$a eq {}}] [expr {$a < {}}] [expr {$a > {}}] [
+		string match {*no string representation*} [
+		::tcl::unsupported::representation $a]]
+} {0 0 1 1}
 
 
 

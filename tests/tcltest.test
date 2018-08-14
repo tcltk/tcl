@@ -550,6 +550,7 @@ switch -- $::tcl_platform(platform) {
 	file attributes $notWriteableDir -permissions 00555
     }
     default {
+	# note in FAT/NTFS we won't be able to protect directory with read-only attribute...
 	catch {file attributes $notWriteableDir -readonly 1}
 	catch {testchmod 0 $notWriteableDir}
     }
@@ -566,9 +567,10 @@ test tcltest-8.3 {tcltest a.tcl -tmpdir notReadableDir} {
 # This constraint doesn't go at the top of the file so that it doesn't
 # interfere with tcltest-5.5
 testConstraint notFAT [expr {
-    ![string match "FAT*" [lindex [file system $notWriteableDir] 1]]
+       ![regexp {^(FAT\d*|NTFS)$} [lindex [file system $notWriteableDir] 1]]
+    || $::tcl_platform(platform) eq "unix" || [llength [info commands testchmod]]
 }]
-# FAT permissions are fairly hopeless; ignore this test if that FS is used
+# FAT/NTFS permissions are fairly hopeless; ignore this test if that FS is used
 test tcltest-8.4 {tcltest a.tcl -tmpdir notWriteableDir} {
     -constraints {unixOrPc notRoot notFAT}
     -body {
@@ -906,7 +908,9 @@ removeFile load.tcl
 
 # [interpreter]
 test tcltest-13.1 {interpreter} {
+    -constraints notValgrind
     -setup {
+	#to do:  Why is $::tcltest::tcltest being saved and restored here?
 	set old $::tcltest::tcltest
 	set ::tcltest::tcltest tcltest
     }
@@ -918,6 +922,11 @@ test tcltest-13.1 {interpreter} {
     }
     -result {tcltest tclsh tclsh}
     -cleanup {
+	# writing ::tcltest::tcltest triggers a trace that sets up the stdio
+	# constraint, which involves a call to [exec] that might fail after
+	# "fork" and before "exec", in which case the forked process will not
+	# have a chance to clean itself up before exiting, which causes
+	# valgrind to issue numerous "still reachable" reports.
 	set ::tcltest::tcltest $old
     }
 }

@@ -869,7 +869,7 @@ TclpGetPid(
 
     Tcl_MutexLock(&pipeMutex);
     for (infoPtr = procList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
-	if (infoPtr->hProcess == (HANDLE) pid) {
+	if (infoPtr->dwProcessId == (DWORD) pid) {
 	    Tcl_MutexUnlock(&pipeMutex);
 	    return infoPtr->dwProcessId;
 	}
@@ -941,7 +941,7 @@ TclpCreateProcess(
     PROCESS_INFORMATION procInfo;
     SECURITY_ATTRIBUTES secAtts;
     HANDLE hProcess, h, inputHandle, outputHandle, errorHandle;
-    char execPath[MAX_PATH * TCL_UTF_MAX];
+    char execPath[MAX_PATH * 3];
     WinFile *filePtr;
 
     PipeInit();
@@ -1095,40 +1095,23 @@ TclpCreateProcess(
      * detached processes. The GUI window will still pop up to the foreground.
      */
 
-    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_NT) {
-	if (HasConsole()) {
+    if (HasConsole()) {
 	    createFlags = 0;
-	} else if (applType == APPL_DOS) {
-	    /*
-	     * Under NT, 16-bit DOS applications will not run unless they can
-	     * be attached to a console. If we are running without a console,
-	     * run the 16-bit program as an normal process inside of a hidden
-	     * console application, and then run that hidden console as a
-	     * detached process.
-	     */
+    } else if (applType == APPL_DOS) {
+	/*
+	 * Under NT, 16-bit DOS applications will not run unless they can
+	 * be attached to a console. If we are running without a console,
+	 * run the 16-bit program as an normal process inside of a hidden
+	 * console application, and then run that hidden console as a
+	 * detached process.
+	 */
 
-	    startInfo.wShowWindow = SW_HIDE;
-	    startInfo.dwFlags |= STARTF_USESHOWWINDOW;
-	    createFlags = CREATE_NEW_CONSOLE;
-	    TclDStringAppendLiteral(&cmdLine, "cmd.exe /c");
-	} else {
-	    createFlags = DETACHED_PROCESS;
-	}
+	startInfo.wShowWindow = SW_HIDE;
+	startInfo.dwFlags |= STARTF_USESHOWWINDOW;
+	createFlags = CREATE_NEW_CONSOLE;
+	TclDStringAppendLiteral(&cmdLine, "cmd.exe /c");
     } else {
-	if (HasConsole()) {
-	    createFlags = 0;
-	} else {
-	    createFlags = DETACHED_PROCESS;
-	}
-
-	if (applType == APPL_DOS) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "DOS application process not supported on this platform",
-		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "DOS_APP",
-		    NULL);
-	    goto end;
-	}
+	createFlags = DETACHED_PROCESS;
     }
 
     /*
@@ -1180,7 +1163,7 @@ TclpCreateProcess(
     WaitForInputIdle(procInfo.hProcess, 5000);
     CloseHandle(procInfo.hThread);
 
-    *pidPtr = (Tcl_Pid) procInfo.hProcess;
+    *pidPtr = (Tcl_Pid) procInfo.dwProcessId;
     if (*pidPtr != 0) {
 	TclWinAddProcess(procInfo.hProcess, procInfo.dwProcessId);
     }
@@ -1623,7 +1606,7 @@ TclpCreateCommandChannel(
      * unique, in case channels share handles (stdin/stdout).
      */
 
-    sprintf(channelName, "file%" TCL_I_MODIFIER "x", (size_t) infoPtr);
+    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    infoPtr, infoPtr->validMask);
 
@@ -2364,7 +2347,7 @@ Tcl_WaitPid(
     prevPtrPtr = &procList;
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
-	 if (infoPtr->hProcess == (HANDLE) pid) {
+	 if (infoPtr->dwProcessId == (DWORD) pid) {
 	    *prevPtrPtr = infoPtr->nextPtr;
 	    break;
 	}

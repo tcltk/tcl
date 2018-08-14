@@ -13,9 +13,9 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#ifdef NOTIFIER_KQUEUE
-
 #include "tclInt.h"
+#if defined(NOTIFIER_KQUEUE) && TCL_THREADS
+
 #ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
 				 * in tclMacOSXNotify.c */
 #include <signal.h>
@@ -104,9 +104,9 @@ typedef struct ThreadSpecificData {
 
 static Tcl_ThreadDataKey dataKey;
 
-void PlatformEventsControl(FileHandler *filePtr, ThreadSpecificData *tsdPtr, int op, int isNew);
+static void PlatformEventsControl(FileHandler *filePtr, ThreadSpecificData *tsdPtr, int op, int isNew);
 static void PlatformEventsFinalize(void);
-void PlatformEventsInit(void);
+static void PlatformEventsInit(void);
 static int PlatformEventsTranslate(struct kevent *eventPtr);
 static int PlatformEventsWait(struct kevent *events, size_t numEvents, struct timeval *timePtr);
 

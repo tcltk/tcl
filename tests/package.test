@@ -20,18 +20,19 @@ if {"::tcltest" ni [namespace children]} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
-testConstraint testpreferstable [llength [info commands testpreferstable]]
-
 # Do all this in a slave interp to avoid garbaging the package list
 set i [interp create]
 tcltest::loadIntoSlaveInterpreter $i {*}$argv
+catch [list load {} Tcltest $i]
 interp eval $i {
 namespace import -force ::tcltest::*
-package forget {*}[package names]
+#package forget {*}[package names]
 set oldPkgUnknown [package unknown]
 package unknown {}
 set oldPath $auto_path
 set auto_path ""
+
+testConstraint testpreferstable [llength [info commands testpreferstable]]
 
 test package-1.1 {pkg::create gives error on insufficient args} -body {
     ::pkg::create
@@ -139,7 +140,7 @@ test package-3.1 {Tcl_PkgRequire procedure, picking best version} -setup {
 	package ifneeded t $i "set x $i; package provide t $i"
     }
     package require t
-    return $x
+    set x
 } -result {3.4}
 test package-3.2 {Tcl_PkgRequire procedure, picking best version} -setup {
     package forget t
@@ -149,7 +150,7 @@ test package-3.2 {Tcl_PkgRequire procedure, picking best version} -setup {
 	package ifneeded t $i "set x $i; package provide t $i"
     }
     package require t
-    return $x
+    set x
 } -result {3.5}
 test package-3.3 {Tcl_PkgRequire procedure, picking best version} -setup {
     package forget t
@@ -159,7 +160,7 @@ test package-3.3 {Tcl_PkgRequire procedure, picking best version} -setup {
 	package ifneeded t $i "set x $i; package provide t $i"
     }
     package require t 2.2
-    return $x
+    set x
 } -result {2.3}
 test package-3.4 {Tcl_PkgRequire procedure, picking best version} -setup {
     package forget t
@@ -169,7 +170,7 @@ test package-3.4 {Tcl_PkgRequire procedure, picking best version} -setup {
 	package ifneeded t $i "set x $i; package provide t $i"
     }
     package require -exact t 2.3
-    return $x
+    set x
 } -result {2.3}
 test package-3.5 {Tcl_PkgRequire procedure, picking best version} -setup {
     package forget t
@@ -179,7 +180,7 @@ test package-3.5 {Tcl_PkgRequire procedure, picking best version} -setup {
 	package ifneeded t $i "set x $i; package provide t $i"
     }
     package require t 2.1
-    return $x
+    set x
 } -result {2.4}
 test package-3.6 {Tcl_PkgRequire procedure, can't find suitable version} -setup {
     package forget t
@@ -238,7 +239,7 @@ test package-3.12 {Tcl_PkgRequire procedure, self-deleting script} -setup {
 } -body {
     package ifneeded t 1.2 "package forget t; set x 1.2; package provide t 1.2"
     package require t 1.2
-    return $x
+    set x
 } -result {1.2}
 test package-3.13 {Tcl_PkgRequire procedure, "package unknown" support} -setup {
     package forget t
@@ -256,7 +257,7 @@ test package-3.13 {Tcl_PkgRequire procedure, "package unknown" support} -setup {
     }
     package unknown pkgUnknown
     package require -exact t 1.5
-    return $x
+    set x
 } -cleanup {
     package unknown {}
 } -result {t 1.5-1.5}
@@ -283,7 +284,7 @@ test package-3.15 {Tcl_PkgRequire procedure, "package unknown" support} -setup {
 	package provide [lindex $args 0] 2.0
     }
     package require {a b}
-    return $x
+    set x
 } -cleanup {
     package unknown {}
 } -result {{a b} 0-}
@@ -575,15 +576,23 @@ test package-3.44 {Tcl_PkgRequire: exact version matching (1578344)} -setup {
     package forget demo
 } -result {version conflict for package "demo": have 1.2.3, need exactly 1.2}
 test package-3.50 {Tcl_PkgRequire procedure, picking best stable version} -constraints testpreferstable -setup {
+    interp create child
+    load {} Tcltest child
+    child eval {
     testpreferstable
     package forget t
     set x xxx
+    }
 } -body {
+    child eval {
     foreach i {1.4 3.4 4.0a1 2.3 2.4 2.2} {
 	package ifneeded t $i "set x $i; package provide t $i"
     }
     package require t
-    return $x
+    set x
+    }
+} -cleanup {
+    interp delete child
 } -result {3.4}
 test package-3.51 {Tcl_PkgRequire procedure, picking best stable version} -setup {
     package forget t
@@ -593,7 +602,7 @@ test package-3.51 {Tcl_PkgRequire procedure, picking best stable version} -setup
 	package ifneeded t $i "set x $i; package provide t $i"
     }
     package require t
-    return $x
+    set x
 } -result {1.3}
 test package-3.52 {Tcl_PkgRequire procedure, picking best stable version} -setup {
     package forget t
@@ -603,34 +612,81 @@ test package-3.52 {Tcl_PkgRequire procedure, picking best stable version} -setup
 	package ifneeded t $i "set x $i; package provide t $i"
     }
     package require t
-    return $x
+    set x
 } -result {1.3}
+test pkg-3.53 {Tcl_PkgRequire procedure, picking best stable version} -constraints testpreferstable -setup {
+    testpreferstable
+    package forget t
+    set x xxx
+} -body {
+    foreach i {1.2b1 1.1} {
+        package ifneeded t $i "set x $i; package provide t $i"
+    }
+    package require t
+    set x
+} -result {1.1}
+test package-3.54 {Tcl_PkgRequire procedure, coroutine support} -setup {
+    package forget t
+} -body {
+    coroutine coro1 apply {{} {
+	package ifneeded t 2.1 {
+	    yield
+	    package provide t 2.1
+	}
+	package require t 2.1
+    }}
+    list [catch {coro1} msg] $msg
+} -match glob -result {0 2.1}
+
 
 test package-4.1 {Tcl_PackageCmd procedure} -returnCodes error -body {
     package
 } -result {wrong # args: should be "package option ?arg ...?"}
-test package-4.2 {Tcl_PackageCmd procedure, "forget" option} {
+test package-4.2 {Tcl_PackageCmd procedure, "forget" option} -setup {
+    interp create child
+} -body {
+    child eval {
     package forget {*}[package names]
     package names
-} {}
-test package-4.3 {Tcl_PackageCmd procedure, "forget" option} {
+    }
+} -cleanup {
+    interp delete child
+} -result {}
+test package-4.3 {Tcl_PackageCmd procedure, "forget" option} -setup {
+    interp create child
+} -body {
+    child eval {
     package forget {*}[package names]
     package forget foo
-} {}
+    }
+} -cleanup {
+    interp delete child
+} -result {}
 test package-4.4 {Tcl_PackageCmd procedure, "forget" option} -setup {
+    interp create child
+    child eval {
     package forget {*}[package names]
     set result {}
+    }
 } -body {
+    child eval {
     package ifneeded t 1.1 {first script}
     package ifneeded t 2.3 {second script}
     package ifneeded x 1.4 {x's script}
     lappend result [lsort [package names]] [package versions t]
     package forget t
     lappend result [lsort [package names]] [package versions t]
+    }
+} -cleanup {
+    interp delete child
 } -result {{t x} {1.1 2.3} x {}}
 test package-4.5 {Tcl_PackageCmd procedure, "forget" option} -setup {
+    interp create child
+    child eval {
     package forget {*}[package names]
+    }
 } -body {
+    child eval {
     package ifneeded a 1.1 {first script}
     package ifneeded b 2.3 {second script}
     package ifneeded c 1.4 {third script}
@@ -638,6 +694,9 @@ test package-4.5 {Tcl_PackageCmd procedure, "forget" option} -setup {
     set result [list [lsort [package names]]]
     package forget a c
     lappend result [lsort [package names]]
+    }
+} -cleanup {
+    interp delete child
 } -result {{a b c} b}
 test package-4.5.1 {Tcl_PackageCmd procedure, "forget" option} -body {
     # Test for Bug 415273
@@ -656,28 +715,55 @@ test package-4.7 {Tcl_PackageCmd procedure, "ifneeded" option} -body {
 test package-4.8 {Tcl_PackageCmd procedure, "ifneeded" option} -body {
     package ifneeded t xyz
 } -returnCodes error -result {expected version number but got "xyz"}
-test package-4.9 {Tcl_PackageCmd procedure, "ifneeded" option} {
+test package-4.9 {Tcl_PackageCmd procedure, "ifneeded" option} -setup {
+    interp create child
+} -body {
+    child eval {
     package forget {*}[package names]
     list [package ifneeded foo 1.1] [package names]
-} {{} {}}
+    }
+} -cleanup {
+    interp delete child
+} -result {{} {}}
 test package-4.10 {Tcl_PackageCmd procedure, "ifneeded" option} -setup {
-    package forget t
+    interp create child
+    child eval {
+    package forget {*}[package names]
+    }
 } -body {
+    child eval {
     package ifneeded t 1.4 "script for t 1.4"
     list [package names] [package ifneeded t 1.4] [package versions t]
+    }
+} -cleanup {
+    interp delete child
 } -result {t {script for t 1.4} 1.4}
 test package-4.11 {Tcl_PackageCmd procedure, "ifneeded" option} -setup {
-    package forget t
+    interp create child
+    child eval {
+    package forget {*}[package names]
+    }
 } -body {
+    child eval {
     package ifneeded t 1.4 "script for t 1.4"
     list [package ifneeded t 1.5] [package names] [package versions t]
+    }
+} -cleanup {
+    interp delete child
 } -result {{} t 1.4}
 test package-4.12 {Tcl_PackageCmd procedure, "ifneeded" option} -setup {
-    package forget t
+    interp create child
+    child eval {
+    package forget {*}[package names]
+    }
 } -body {
+    child eval {
     package ifneeded t 1.4 "script for t 1.4"
     package ifneeded t 1.4 "second script for t 1.4"
     list [package ifneeded t 1.4] [package names] [package versions t]
+    }
+} -cleanup {
+    interp delete child
 } -result {{second script for t 1.4} t 1.4}
 test package-4.13 {Tcl_PackageCmd procedure, "ifneeded" option} -setup {
     package forget t
@@ -690,18 +776,31 @@ test package-4.13 {Tcl_PackageCmd procedure, "ifneeded" option} -setup {
 test package-4.14 {Tcl_PackageCmd procedure, "names" option} -body {
     package names a
 } -returnCodes error -result {wrong # args: should be "package names"}
-test package-4.15 {Tcl_PackageCmd procedure, "names" option} {
+test package-4.15 {Tcl_PackageCmd procedure, "names" option} -setup {
+    interp create child
+} -body {
+    child eval {
     package forget {*}[package names]
     package names
-} {}
+    }
+} -cleanup {
+    interp delete child
+} -result {}
 test package-4.16 {Tcl_PackageCmd procedure, "names" option} -setup {
+    interp create child
+    child eval {
     package forget {*}[package names]
+    }
 } -body {
+    child eval {
     package ifneeded x 1.2 {dummy}
     package provide x 1.3
     package provide y 2.4
     catch {package require z 47.16}
     lsort [package names]
+    }
+} -cleanup {
+    interp delete child
 } -result {x y}
 test package-4.17 {Tcl_PackageCmd procedure, "provide" option} -body {
     package provide
@@ -1239,11 +1338,9 @@ proc prefer {args} {
     }
 }
 
-test package-13.0 {package prefer defaults} -constraints testpreferstable -setup {
-    testpreferstable
-} -body {
+test package-13.0 {package prefer defaults} -body {
     prefer
-} -result stable
+} -result [expr {[string match {*[ab]*} [package provide Tcl]] ? "latest" : "stable"}]
 test package-13.1 {package prefer defaults} -body {
     set ::env(TCL_PKG_PREFER_LATEST) stable	;# value not relevant!
     prefer
@@ -1260,23 +1357,25 @@ test package-14.1 {bogus argument} -returnCodes error -body {
 
 test package-15.0 {set, keep} -constraints testpreferstable -setup {
     testpreferstable
-} -body {package prefer stable} -result stable
+} -body {package prefer} -result stable
 test package-15.1 {set stable, keep} -constraints testpreferstable -setup {
     testpreferstable
-} -body {prefer stable} -result {stable stable}
+} -body {package prefer stable} -result stable
 test package-15.2 {set latest, change} -constraints testpreferstable -setup {
     testpreferstable
-} -body {prefer latest} -result {stable latest}
+} -body {package prefer latest} -result latest
 test package-15.3 {set latest, keep} -constraints testpreferstable -setup {
     testpreferstable
 } -body {
-    prefer latest latest
-} -result {stable latest latest}
+    package prefer latest
+    package prefer latest
+} -result latest
 test package-15.4 {set stable, rejected} -constraints testpreferstable -setup {
     testpreferstable
 } -body {
-    prefer latest stable
-} -result {stable latest latest}
+    package prefer latest
+    package prefer stable
+} -result latest
 
 rename prefer {}
 
