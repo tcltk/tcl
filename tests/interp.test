@@ -1847,7 +1847,7 @@ test interp-23.2 {testing hiding vs aliases: safe interp} -setup {
     lappend l [lsort [interp aliases a]] [lsort [interp hidden a]]
 } -cleanup {
     interp delete a
-} -result [list $hidden_cmds {::tcl::mathfunc::max ::tcl::mathfunc::min bar clock} $hidden_cmds {::tcl::mathfunc::max ::tcl::mathfunc::min bar clock} [lsort [concat $hidden_cmds bar]] {::tcl::mathfunc::max ::tcl::mathfunc::min clock} $hidden_cmds]
+} -result [list $hidden_cmds {bar clock} $hidden_cmds {bar clock} [lsort [concat $hidden_cmds bar]] {clock} $hidden_cmds]
 
 test interp-24.1 {result resetting on error} -setup {
     catch {interp delete a}

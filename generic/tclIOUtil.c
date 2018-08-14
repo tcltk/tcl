@@ -139,7 +139,6 @@ Tcl_FSRenameFileProc		TclpObjRenameFile;
 Tcl_FSCreateDirectoryProc	TclpObjCreateDirectory;
 Tcl_FSCopyDirectoryProc		TclpObjCopyDirectory;
 Tcl_FSRemoveDirectoryProc	TclpObjRemoveDirectory;
-Tcl_FSUnloadFileProc		TclpUnloadFile;
 Tcl_FSLinkProc			TclpObjLink;
 Tcl_FSListVolumesProc		TclpObjListVolumes;
 
@@ -245,7 +244,7 @@ static Tcl_ThreadDataKey fsDataKey;
  * code.
  */
 
-typedef struct FsDivertLoad {
+typedef struct {
     Tcl_LoadHandle loadHandle;
     Tcl_FSUnloadFileProc *unloadProcPtr;
     Tcl_Obj *divertedFile;
@@ -412,7 +411,6 @@ Tcl_GetCwd(
     return Tcl_DStringValue(cwdPtr);
 }
 
-/* Obsolete */
 int
 Tcl_EvalFile(
     Tcl_Interp *interp,		/* Interpreter in which to process file. */
@@ -831,15 +829,6 @@ TclResetFilesystem(void)
     if (++theFilesystemEpoch == 0) {
 	++theFilesystemEpoch;
     }
-
-#ifdef _WIN32
-    /*
-     * Cleans up the win32 API filesystem proc lookup table. This must happen
-     * very late in finalization so that deleting of copied dlls can occur.
-     */
-
-    TclWinResetInterfaces();
-#endif
 }
 
 /*
@@ -3164,8 +3153,8 @@ Tcl_FSLoadFile(
  * present and set to true (any integer > 0) then the unlink is skipped.
  */
 
-int
-TclSkipUnlink(
+static int
+skipUnlink(
     Tcl_Obj *shlibFile)
 {
     /*
@@ -3207,8 +3196,8 @@ TclSkipUnlink(
 #ifndef AUFS_SUPER_MAGIC
 #define AUFS_SUPER_MAGIC ('a' << 24 | 'u' << 16 | 'f' << 8 | 's')
 #endif /* AUFS_SUPER_MAGIC */
-	if ((statfs(Tcl_GetString (shlibFile), &fs) == 0) &&
-	    (fs.f_type == AUFS_SUPER_MAGIC)) {
+	if ((statfs(Tcl_GetString(shlibFile), &fs) == 0)
+		&& (fs.f_type == AUFS_SUPER_MAGIC)) {
 	    return 1;
 	}
     }
@@ -3423,7 +3412,7 @@ Tcl_LoadFile(
      * avoids any worries about leaving the copy laying around on exit.
      */
 
-    if (!TclSkipUnlink(copyToPtr) &&
+    if (!skipUnlink(copyToPtr) &&
 	    (Tcl_FSDeleteFile(copyToPtr) == TCL_OK)) {
 	Tcl_DecrRefCount(copyToPtr);
 
@@ -3692,30 +3681,10 @@ Tcl_FSUnloadFile(
 	}
 	return TCL_ERROR;
     }
-    TclpUnloadFile(handle);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpUnloadFile --
- *
- *	Unloads a library given its handle
- *
- * This function was once filesystem-specific, but has been made portable by
- * having TclpDlopen return a structure that includes procedure pointers.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpUnloadFile(
-    Tcl_LoadHandle handle)
-{
     if (handle->unloadFileProcPtr != NULL) {
 	handle->unloadFileProcPtr(handle);
     }
+    return TCL_OK;
 }
 
 /*

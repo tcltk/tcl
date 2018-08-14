@@ -38,33 +38,33 @@ int mp_export(void *rop, size_t *countp, int order, size_t size,
       } lint;
       lint.i = 0x01020304;
 
-      endian = (lint.c[0] == 4) ? -1 : 1;
+      endian = (lint.c[0] == '\x04') ? -1 : 1;
    }
 
-   odd_nails = (nails % 8);
+   odd_nails = (nails % 8u);
    odd_nail_mask = 0xff;
    for (i = 0; i < odd_nails; ++i) {
-      odd_nail_mask ^= (1 << (7 - i));
+      odd_nail_mask ^= (unsigned char)(1u << (7u - i));
    }
-   nail_bytes = nails / 8;
+   nail_bytes = nails / 8u;
 
-   bits = mp_count_bits(&t);
-   count = (bits / ((size * 8) - nails)) + (((bits % ((size * 8) - nails)) != 0) ? 1 : 0);
+   bits = (size_t)mp_count_bits(&t);
+   count = (bits / ((size * 8u) - nails)) + (((bits % ((size * 8u) - nails)) != 0u) ? 1u : 0u);
 
    for (i = 0; i < count; ++i) {
       for (j = 0; j < size; ++j) {
          unsigned char *byte = (unsigned char *)rop +
-                               (((order == -1) ? i : ((count - 1) - i)) * size) +
-                               ((endian == -1) ? j : ((size - 1) - j));
+                               (((order == -1) ? i : ((count - 1u) - i)) * size) +
+                               ((endian == -1) ? j : ((size - 1u) - j));
 
          if (j >= (size - nail_bytes)) {
             *byte = 0;
             continue;
          }
 
-         *byte = (unsigned char)((j == ((size - nail_bytes) - 1)) ? (t.dp[0] & odd_nail_mask) : (t.dp[0] & 0xFF));
+         *byte = (unsigned char)((j == ((size - nail_bytes) - 1u)) ? (t.dp[0] & odd_nail_mask) : (t.dp[0] & 0xFFuL));
 
-         if ((result = mp_div_2d(&t, ((j == ((size - nail_bytes) - 1)) ? (8 - odd_nails) : 8), &t, NULL)) != MP_OKAY) {
+         if ((result = mp_div_2d(&t, (j == ((size - nail_bytes) - 1u)) ? (int)(8u - odd_nails) : 8, &t, NULL)) != MP_OKAY) {
             mp_clear(&t);
             return result;
          }
