@@ -692,9 +692,6 @@ TclCompileStringIsCmd(
 
 	switch (t) {
 	case STR_IS_INT:
-	    PUSH(	"1");
-	    OP(		EQ);
-	    break;
 	case STR_IS_WIDE:
 	    PUSH(	"2");
 	    OP(		LE);
