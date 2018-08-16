@@ -807,20 +807,20 @@ test string-6.91.$noComp {string is double, bad doubles} {
     }
     return $result
 } {1 1 0 0 0 1 0 0}
-test string-6.92.$noComp {string is integer, 32-bit overflow} {
+test string-6.92.$noComp {string is integer, 64-bit overflow} {
     # Bug 718878
-    set x 0x100000000
+    set x 0x10000000000000000
     list [run {string is integer -failindex var $x}] $var
 } {0 -1}
-test string-6.93.$noComp {string is integer, 32-bit overflow} {
+test string-6.93.$noComp {string is integer, 64-bit overflow} {
     # Bug 718878
-    set x 0x100000000
+    set x 0x10000000000000000
     append x ""
     list [run {string is integer -failindex var $x}] $var
 } {0 -1}
-test string-6.94.$noComp {string is integer, 32-bit overflow} {
+test string-6.94.$noComp {string is integer, 64-bit overflow} {
     # Bug 718878
-    set x 0x100000000
+    set x 0x10000000000000000
     list [run {string is integer -failindex var [expr {$x}]}] $var
 } {0 -1}
 test string-6.95.$noComp {string is wideinteger, true} {
