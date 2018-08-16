@@ -116,7 +116,6 @@ static Tcl_ObjCmdProc	ExprCeilFunc;
 static Tcl_ObjCmdProc	ExprDoubleFunc;
 static Tcl_ObjCmdProc	ExprEntierFunc;
 static Tcl_ObjCmdProc	ExprFloorFunc;
-static Tcl_ObjCmdProc	ExprIntFunc;
 static Tcl_ObjCmdProc	ExprIsqrtFunc;
 static Tcl_ObjCmdProc	ExprMaxFunc;
 static Tcl_ObjCmdProc	ExprMinFunc;
@@ -125,7 +124,7 @@ static Tcl_ObjCmdProc	ExprRoundFunc;
 static Tcl_ObjCmdProc	ExprSqrtFunc;
 static Tcl_ObjCmdProc	ExprSrandFunc;
 static Tcl_ObjCmdProc	ExprUnaryFunc;
-static Tcl_ObjCmdProc	ExprWideFunc;
+static Tcl_ObjCmdProc	ExprIntFunc;
 static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
@@ -336,7 +335,7 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "srand",	ExprSrandFunc,	NULL			},
     { "tan",	ExprUnaryFunc,	(ClientData) tan	},
     { "tanh",	ExprUnaryFunc,	(ClientData) tanh	},
-    { "wide",	ExprWideFunc,	NULL			},
+    { "wide",	ExprIntFunc,	NULL			},
     { NULL, NULL, NULL }
 };
 
@@ -3660,16 +3659,8 @@ OldMathFuncProc(
 	    args[k].doubleValue = d;
 	    break;
 	case TCL_INT:
-	    if (ExprIntFunc(NULL, interp, 2, &objv[j-1]) != TCL_OK) {
-		ckfree(args);
-		return TCL_ERROR;
-	    }
-	    valuePtr = Tcl_GetObjResult(interp);
-	    Tcl_GetLongFromObj(NULL, valuePtr, &args[k].intValue);
-	    Tcl_ResetResult(interp);
-	    break;
 	case TCL_WIDE_INT:
-	    if (ExprWideFunc(NULL, interp, 2, &objv[j-1]) != TCL_OK) {
+	    if (ExprIntFunc(NULL, interp, 2, &objv[j-1]) != TCL_OK) {
 		ckfree(args);
 		return TCL_ERROR;
 	    }
@@ -7674,38 +7665,6 @@ ExprEntierFunc(
 
 static int
 ExprIntFunc(
-    ClientData clientData,	/* Ignored. */
-    Tcl_Interp *interp,		/* The interpreter in which to execute the
-				 * function. */
-    int objc,			/* Actual parameter count. */
-    Tcl_Obj *const *objv)	/* Actual parameter vector. */
-{
-    long iResult;
-    Tcl_Obj *objPtr;
-    if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    objPtr = Tcl_GetObjResult(interp);
-    if (TclGetLongFromObj(NULL, objPtr, &iResult) != TCL_OK) {
-	/*
-	 * Truncate the bignum; keep only bits in long range.
-	 */
-
-	mp_int big;
-
-	Tcl_GetBignumFromObj(NULL, objPtr, &big);
-	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
-	objPtr = Tcl_NewBignumObj(&big);
-	Tcl_IncrRefCount(objPtr);
-	TclGetLongFromObj(NULL, objPtr, &iResult);
-	Tcl_DecrRefCount(objPtr);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(iResult));
-    return TCL_OK;
-}
-
-static int
-ExprWideFunc(
     ClientData clientData,	/* Ignored. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
