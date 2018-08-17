@@ -7606,7 +7606,19 @@ ExprEntierFunc(
 
     if (type == TCL_NUMBER_DOUBLE) {
 	d = *((const double *) ptr);
-	if ((d >= (double)LONG_MAX) || (d <= (double)LONG_MIN)) {
+	if ((d < (double)LONG_MAX) && (d > (double)LONG_MIN)) {
+	    long result = (long) d;
+
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj(result));
+	    return TCL_OK;
+#ifndef TCL_WIDE_INT_IS_LONG
+	} else if ((d < (double)LLONG_MAX) && (d > (double)LLONG_MIN)) {
+	    Tcl_WideInt result = (Tcl_WideInt) d;
+
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
+	    return TCL_OK;
+#endif
+	} else {
 	    mp_int big;
 
 	    if (Tcl_InitBignumFromDouble(interp, d, &big) != TCL_OK) {
@@ -7614,11 +7626,6 @@ ExprEntierFunc(
 		return TCL_ERROR;
 	    }
 	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
-	    return TCL_OK;
-	} else {
-	    long result = (long) d;
-
-	    Tcl_SetObjResult(interp, Tcl_NewLongObj(result));
 	    return TCL_OK;
 	}
     }
