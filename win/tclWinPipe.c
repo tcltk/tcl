@@ -900,7 +900,7 @@ TclpGetPid(
  *
  *	The complete Windows search path is searched to find the specified
  *	executable. If an executable by the given name is not found,
- *	automatically tries appending ".com", ".exe", and ".bat" to the
+ *	automatically tries appending ".com", ".exe", ".bat" and ".cmd" to the
  *	executable name.
  *
  * Results:
@@ -1369,11 +1369,11 @@ ApplicationType(
     Tcl_DString nameBuf, ds;
     const TCHAR *nativeName;
     WCHAR nativeFullPath[MAX_PATH];
-    static const char extensions[][5] = {"", ".com", ".exe", ".bat"};
+    static const char extensions[][5] = {"", ".com", ".exe", ".bat", ".cmd"};
 
     /*
      * Look for the program as an external program. First try the name as it
-     * is, then try adding .com, .exe, and .bat, in that order, to the name,
+     * is, then try adding .com, .exe, .bat and .cmd, in that order, to the name,
      * looking for an executable.
      *
      * Using the raw SearchPath() function doesn't do quite what is necessary.
@@ -1414,7 +1414,8 @@ ApplicationType(
 	Tcl_DStringFree(&ds);
 
 	ext = strrchr(fullName, '.');
-	if ((ext != NULL) && (strcasecmp(ext, ".bat") == 0)) {
+	if ((ext != NULL) &&
+	    (strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
 	    applType = APPL_DOS;
 	    break;
 	}
