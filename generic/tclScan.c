@@ -571,11 +571,10 @@ Tcl_ScanObjCmd(
     const char *format;
     int numVars, nconversions, totalVars = -1;
     int objIndex, offset, i, result, code;
-    long value;
+    Tcl_WideInt value;
     const char *string, *end, *baseString;
     char op = 0;
     int width, underflow = 0;
-    Tcl_WideInt wideValue;
     Tcl_UniChar ch = 0, sch = 0;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
     int flags;
@@ -924,21 +923,7 @@ Tcl_ScanObjCmd(
 		Tcl_DecrRefCount(objPtr);
 		break;
 	    }
-	    if (flags & SCAN_LONGER) {
-		if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
-		    wideValue = LLONG_MAX;
-		    if (TclGetString(objPtr)[0] == '-') {
-			wideValue = LLONG_MIN;
-		    }
-		}
-		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
-		    sprintf(buf, "%" TCL_LL_MODIFIER "u",
-			    (Tcl_WideUInt)wideValue);
-		    Tcl_SetStringObj(objPtr, buf, -1);
-		} else {
-		    TclSetIntObj(objPtr, wideValue);
-		}
-	    } else if (flags & SCAN_BIG) {
+	    if (flags & SCAN_BIG) {
 		if (flags & SCAN_UNSIGNED) {
 		    mp_int big;
 		    int code = Tcl_GetBignumFromObj(interp, objPtr, &big);
@@ -963,15 +948,15 @@ Tcl_ScanObjCmd(
 		    }
 		}
 	    } else {
-		if (TclGetLongFromObj(NULL, objPtr, &value) != TCL_OK) {
+		if (TclGetWideIntFromObj(NULL, objPtr, &value) != TCL_OK) {
 		    if (TclGetString(objPtr)[0] == '-') {
-			value = LONG_MIN;
+			value = LLONG_MIN;
 		    } else {
-			value = LONG_MAX;
+			value = LLONG_MAX;
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (value < 0)) {
-		    sprintf(buf, "%lu", value);	/* INTL: ISO digit */
+		    sprintf(buf, "%" TCL_LL_MODIFIER "u", value);	/* INTL: ISO digit */
 		    Tcl_SetStringObj(objPtr, buf, -1);
 		} else {
 		    TclSetIntObj(objPtr, value);
