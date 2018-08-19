@@ -2516,7 +2516,7 @@ Tcl_GetIntFromObj(
     if (TclGetLongFromObj(interp, objPtr, &l) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if ((ULONG_MAX > UINT_MAX) && ((l > UINT_MAX) || (l < -(long)UINT_MAX))) {
+    if ((ULONG_MAX > UINT_MAX) && ((l > (long)(UINT_MAX)) || (l < (long)(INT_MIN)))) {
 	if (interp != NULL) {
 	    const char *s =
 		    "integer value too large to represent as non-long integer";
@@ -2796,7 +2796,7 @@ Tcl_GetLongFromObj(
 #else
 	if (objPtr->typePtr == &tclIntType) {
 	    /*
-	     * We return any integer in the range -ULONG_MAX to ULONG_MAX
+	     * We return any integer in the range LONG_MIN to ULONG_MAX
 	     * converted to a long, ignoring overflow. The rule preserves
 	     * existing semantics for conversion of integers on input, but
 	     * avoids inadvertent demotion of wide integers to 32-bit ones in
@@ -2805,7 +2805,7 @@ Tcl_GetLongFromObj(
 
 	    Tcl_WideInt w = objPtr->internalRep.wideValue;
 
-	    if (w >= -(Tcl_WideInt)(ULONG_MAX)
+	    if (w >= (Tcl_WideInt)(LONG_MIN)
 		    && w <= (Tcl_WideInt)(ULONG_MAX)) {
 		*longPtr = Tcl_WideAsLong(w);
 		return TCL_OK;

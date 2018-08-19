@@ -558,9 +558,9 @@ test obj-33.2 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
     list [string is integer $x] [expr { wide($x) }]
 } {1 4294967295}
 test obj-33.3 {integer overflow on input} {
-    set x 0x10000; append x 0000
-    list [string is integer $x] [expr { wide($x) }]
-} {0 4294967296}
+    set x 0x100000000; append x 00000000
+    list [string is integer $x] [expr { $x }]
+} {0 18446744073709551616}
 test obj-33.4 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
     set x -0x8000; append x 0000
     list [string is integer $x] [expr { wide($x) }]
@@ -574,9 +574,9 @@ test obj-33.6 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
     list [string is integer $x] [expr { wide($x) }]
 } {1 -4294967295}
 test obj-33.7 {integer overflow on input} {
-    set x -0x10000; append x 0000
-    list [string is integer $x] [expr { wide($x) }]
-} {0 -4294967296}
+    set x -0x100000000; append x 00000000
+    list [string is integer $x] [expr { $x }]
+} {0 -18446744073709551616}
 
 test obj-34.1 {mp_iseven} testobj {
     set result ""
