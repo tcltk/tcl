@@ -271,7 +271,7 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLong(interp, expr, &longValue);
     if (result == TCL_OK) {
-	    if ((longValue >= -(long)(UINT_MAX))
+	    if ((longValue >= (long)(INT_MIN))
 		    && (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
@@ -287,7 +287,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLongObj(interp, expr, &longValue);
     if (result == TCL_OK) {
-	    if ((longValue >= -(long)(UINT_MAX))
+	    if ((longValue >= (long)(INT_MIN))
 		    && (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
