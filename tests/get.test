@@ -45,14 +45,14 @@ test get-1.7 {Tcl_GetInt procedure} {testgetint longIs64bit} {
     list [catch {testgetint 44 18446744073709551616} msg] $msg $errorCode
 } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
 test get-1.8 {Tcl_GetInt procedure} {testgetint longIs64bit} {
-    list [catch {testgetint 18446744073709551614} msg] $msg
-} {0 -2}
+    list [catch {testgetint 18446744073709551614} msg] $msg $errorCode
+} {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
 test get-1.9 {Tcl_GetInt procedure} {testgetint longIs64bit} {
-    list [catch {testgetint +18446744073709551614} msg] $msg
-} {0 -2}
+    list [catch {testgetint +18446744073709551614} msg] $msg $errorCode
+} {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
 test get-1.10 {Tcl_GetInt procedure} {testgetint longIs64bit} {
-    list [catch {testgetint -18446744073709551614} msg] $msg
-} {0 2}
+    list [catch {testgetint -18446744073709551614} msg] $msg $errorCode
+} {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
 test get-1.11 {Tcl_GetInt procedure} {testgetint longIs32bit} {
     list [catch {testgetint 44 4294967296} msg] $msg $errorCode
 } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}

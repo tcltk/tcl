@@ -43,7 +43,7 @@ test platform-1.1 {TclpSetVariables: tcl_platform} {
 # everything these days.  Note that this does *not* use wide(), and
 # this is intentional since that could make Tcl's numbers wider than
 # the machine-integer on some platforms...
-test platform-2.1 {tcl_platform(wordSize) indicates size of native word} {
+test platform-2.1 {tcl_platform(wordSize) indicates size of native word} nonPortable {
     set result [expr {int(1 << (8 * $tcl_platform(wordSize) - 1))}]
     # Result must be the largest bit in a machine word, which this checks
     # without assuming how wide the word really is
