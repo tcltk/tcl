@@ -1540,6 +1540,8 @@ BuildCommandLine(
     int quote, i;
     Tcl_DString ds;
 
+    const static char *specMetaChars = "&|^<>!%()";
+
     Tcl_DStringInit(&ds);
 
     /*
@@ -1567,52 +1569,59 @@ BuildCommandLine(
 	    Tcl_UniChar ch;
 	    for (start = arg; *start != '\0'; start += count) {
 		count = Tcl_UtfToUniChar(start, &ch);
-		if (Tcl_UniCharIsSpace(ch)) {	/* INTL: ISO space. */
+		if (Tcl_UniCharIsSpace(ch) ||
+		   (count == 1 && (*start=='"' || strchr(specMetaChars, *start)))
+		) {
+		    /* must be quoted */
 		    quote = 1;
 		    break;
 		}
 	    }
 	}
-	if (quote) {
+	if (!quote) {
+	    Tcl_DStringAppend(&ds, arg, -1);
+	} else {
 	    Tcl_DStringAppend(&ds, "\"", 1);
-	}
-	start = arg;
-	for (special = arg; ; ) {
-	    if ((*special == '\\') && (special[1] == '\\' ||
-		    special[1] == '"' || (quote && special[1] == '\0'))) {
-		Tcl_DStringAppend(&ds, start, (int) (special - start));
-		start = special;
-		while (1) {
-		    special++;
-		    if (*special == '"' || (quote && *special == '\0')) {
-			/*
-			 * N backslashes followed a quote -> insert N * 2 + 1
-			 * backslashes then a quote.
-			 */
-
-			Tcl_DStringAppend(&ds, start,
-				(int) (special - start));
-			break;
+	    start = arg;
+	    for (special = arg; *special != '\0'; ) {
+		if (*special == '\\' && (special[1] == '\\' || special[1] == '"' || special[1] == '\0')) {
+		    if (special > start) {
+			Tcl_DStringAppend(&ds, start, (int) (special - start));
 		    }
-		    if (*special != '\\') {
-			break;
-		    }
+		    Tcl_DStringAppend(&ds, "\\\\", 2);
+		    start = ++special;
+		    continue;
 		}
+		if (*special == '"') {
+		    quote ^= 2; /* observe unpaired quotes */
+		    if (special > start) {
+			Tcl_DStringAppend(&ds, start, (int) (special - start));
+		    }
+		    Tcl_DStringAppend(&ds, "\\\"", 2);
+		    start = ++special;
+		    continue;
+		}
+		/* unpaired (escaped) quote causes special handling on meta-chars */
+		if ((quote & 2) && strchr(specMetaChars, *special)) {
+		    if (special > start) {
+			Tcl_DStringAppend(&ds, start, (int) (special - start));
+		    }
+		    /* unpaired - escape all special chars inside quotes "..." */
+		    Tcl_DStringAppend(&ds, "\"", 1);
+		    start = special;
+		    do {
+			special++;
+		    } while(*special && strchr(specMetaChars, *special));
+		    Tcl_DStringAppend(&ds, start, (int) (special - start));
+		    Tcl_DStringAppend(&ds, "\"", 1);
+		    start = special;
+		    continue;
+		}
+		special++;
+	    }
+	    if (special > start) {
 		Tcl_DStringAppend(&ds, start, (int) (special - start));
-		start = special;
 	    }
-	    if (*special == '"') {
-		Tcl_DStringAppend(&ds, start, (int) (special - start));
-		Tcl_DStringAppend(&ds, "\\\"", 2);
-		start = special + 1;
-	    }
-	    if (*special == '\0') {
-		break;
-	    }
-	    special++;
-	}
-	Tcl_DStringAppend(&ds, start, (int) (special - start));
-	if (quote) {
 	    Tcl_DStringAppend(&ds, "\"", 1);
 	}
     }
