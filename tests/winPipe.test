@@ -310,21 +310,33 @@ test winpipe-6.2 {PipeSetupProc & PipeCheckProc: write threads} \
 
 proc _testExecArgs {single args} {
     variable path
-    set path(echoArgs.tcl) [makeFile {
-	puts "[list [file tail $argv0] {*}$argv]"
-    } echoArgs.tcl]
-    set path(echoArgs.bat) [makeFile "@[file native [interpreter]] $path(echoArgs.tcl) %*" echoArgs.bat]
+    if {![info exists path(echoArgs.tcl)] || ![file exists $path(echoArgs.tcl)]} {
+	set path(echoArgs.tcl) [makeFile {
+	    puts "[list [file tail $argv0] {*}$argv]"
+	} echoArgs.tcl]
+    }
+    if {![info exists path(echoArgs.bat)] || ![file exists $path(echoArgs.bat)]} {
+	set path(echoArgs.bat) [makeFile "@[file native [interpreter]] $path(echoArgs.tcl) %*" "echoArgs.bat"]
+    }
+    set cmds [list [list [interpreter] $path(echoArgs.tcl)]]
+    if {!($single & 2)} {
+	lappend cmds [list $path(echoArgs.bat)]
+    } else {
+	if {![info exists path(echoArgs2.bat)] || ![file exists $path(echoArgs2.bat)]} {
+	    file mkdir [file join [temporaryDirectory] test(Dir)Check]
+	    set path(echoArgs2.bat) [makeFile "@[file native [interpreter]] $path(echoArgs.tcl) %*" \
+		"test(Dir)Check/echo(Cmd)Test Args & Batch.bat"]
+	}
+	lappend cmds [list $path(echoArgs2.bat)]
+    }
     set broken {}
     foreach args $args {
-	if {$single} {
+	if {$single & 1} {
 	    set args [list $args]
 	}
-	foreach cmd [list \
-	    [list [interpreter] $path(echoArgs.tcl)] \
-	    [list $path(echoArgs.bat)] \
-	] {
+	foreach cmd $cmds {
 	    set e [list [file tail $path(echoArgs.tcl)] {*}$args]
-	    tcltest::DebugPuts 4 "  ## test exec [file extension [lindex $cmd 0]] for $e"
+	    tcltest::DebugPuts 4 "  ## test exec [file extension [lindex $cmd 0]] ($cmd) for\n  ##   $args"
 	    if {[catch {
 		exec {*}$cmd {*}$args
 	    } r]} {
@@ -475,6 +487,15 @@ test winpipe-8.3 {BuildCommandLine/parse_cmdline pass-thru: check injection on s
 	[list "START\"" {*}$injectList "\"END"]
 } -result {}
 
+test winpipe-8.4 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (command/jointly args)} \
+-constraints {win exec} -body {
+    _testExecArgs 2 \
+	[list START     {*}$injectList END] \
+	[list "START\"" {*}$injectList END] \
+	[list START     {*}$injectList "\"END"] \
+	[list "START\"" {*}$injectList "\"END"]
+} -result {}
+
 rename _testExecArgs {}
 
 # restore old values for env(TMP) and env(TEMP)
@@ -487,6 +508,7 @@ if {[catch {set env(TEMP) $env_temp}]} {
 }
 
 # cleanup
-file delete big little stdout stderr nothing echoArgs.tcl
+file delete big little stdout stderr nothing echoArgs.tcl echoArgs.bat 
+file delete -force [file join [temporaryDirectory] test(Dir)Check]
 ::tcltest::cleanupTests
 return

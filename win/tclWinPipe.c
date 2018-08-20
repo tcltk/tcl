@@ -1492,7 +1492,7 @@ ApplicationType(
 	return APPL_NONE;
     }
 
-    if ((applType == APPL_DOS) || (applType == APPL_WIN3X)) {
+    if (applType == APPL_WIN3X) {
 	/*
 	 * Replace long path name of executable with short path name for
 	 * 16-bit applications. Otherwise the application may not be able to
