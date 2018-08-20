@@ -1537,7 +1537,7 @@ BuildCommandLine(
 				 * command line (TCHAR). */
 {
     const char *arg, *start, *special;
-    int quote, i;
+    int quote = 0, i;
     Tcl_DString ds;
 
     const static char *specMetaChars = "&|^<>!%()";
@@ -1561,7 +1561,11 @@ BuildCommandLine(
 	    Tcl_DStringAppend(&ds, " ", 1);
 	}
 
-	quote = 0;
+	/* Quote flags:
+	 *   1 - escape argument;
+	 *   2 - previous arguments chain contains unpaired quote-char;
+	 */
+	quote &= ~1; /* reset escape flag */
 	if (arg[0] == '\0') {
 	    quote = 1;
 	} else {
@@ -1572,31 +1576,36 @@ BuildCommandLine(
 		if (Tcl_UniCharIsSpace(ch) ||
 		   (count == 1 && (*start=='"' || strchr(specMetaChars, *start)))
 		) {
-		    /* must be quoted */
-		    quote = 1;
+		    quote |= 1; /* set escape flag - must be quoted */
 		    break;
 		}
 	    }
 	}
-	if (!quote) {
+	if (!(quote & 1)) {
+	    /* nothing to escape */
 	    Tcl_DStringAppend(&ds, arg, -1);
 	} else {
+	    /* start of argument (open quote-char) */
 	    Tcl_DStringAppend(&ds, "\"", 1);
 	    start = arg;
 	    for (special = arg; *special != '\0'; ) {
+	    	/* `\\` or `\"` or `\` at end (so equal `\"` because quoted) */
 		if (*special == '\\' && (special[1] == '\\' || special[1] == '"' || special[1] == '\0')) {
 		    if (special > start) {
 			Tcl_DStringAppend(&ds, start, (int) (special - start));
 		    }
+		    /* escape using backslash */
 		    Tcl_DStringAppend(&ds, "\\\\", 2);
 		    start = ++special;
 		    continue;
 		}
+		/* ["] */
 		if (*special == '"') {
-		    quote ^= 2; /* observe unpaired quotes */
+		    quote ^= 2; /* invert unpaired flag - observe unpaired quotes */
 		    if (special > start) {
 			Tcl_DStringAppend(&ds, start, (int) (special - start));
 		    }
+		    /* escape using backslash */
 		    Tcl_DStringAppend(&ds, "\\\"", 2);
 		    start = ++special;
 		    continue;
@@ -1606,7 +1615,7 @@ BuildCommandLine(
 		    if (special > start) {
 			Tcl_DStringAppend(&ds, start, (int) (special - start));
 		    }
-		    /* unpaired - escape all special chars inside quotes "..." */
+		    /* unpaired - escape all special chars inside quotes like `"..."` */
 		    Tcl_DStringAppend(&ds, "\"", 1);
 		    start = special;
 		    do {
@@ -1619,9 +1628,11 @@ BuildCommandLine(
 		}
 		special++;
 	    }
+	    /* rest of argument (don't contain special chars) */
 	    if (special > start) {
 		Tcl_DStringAppend(&ds, start, (int) (special - start));
 	    }
+	    /* end of argument (closed quote-char) */
 	    Tcl_DStringAppend(&ds, "\"", 1);
 	}
     }
